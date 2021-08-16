@@ -1,0 +1,5 @@
+# tidrangescan extension
+comment = 'example implementation for custom-scan-provider interface'
+default_version = '1.0'
+module_pathname = '$libdir/tidrangescan'
+relocatable = true
