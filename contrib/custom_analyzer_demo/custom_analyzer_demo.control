@@ -1,0 +1,5 @@
+# custom_analyzer_demo extension
+comment = 'custom analyzer demo'
+default_version = '1.0'
+module_pathname = '$libdir/custom_analyzer_demo'
+relocatable = false

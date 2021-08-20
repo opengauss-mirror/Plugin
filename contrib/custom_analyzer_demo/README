@@ -1,0 +1,3 @@
+This is a demo to show how to implement an custom analyzer for openGauss.
+This demo changes the logic of check_ungrouped_columns_walker, in order to support syntax like SELECT a, b FROM t1 GROUP BY a; which is not supported by original openGauss.
+The main logic is to implement an custom AnalyzerRoutine. Check function transformStmt for more details.
