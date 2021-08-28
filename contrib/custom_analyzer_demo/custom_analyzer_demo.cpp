@@ -40,17 +40,7 @@ typedef struct {
 } check_ungrouped_columns_context;
 
 static AnalyzerRoutine g_routine = {
-    transInsert: NULL,
-    transDelete: NULL,
-    transUpdate: NULL,
-    transMerge: NULL,
-    transValues: NULL,
-    transSelect: demo_transformSelectStmt,
-    transSetOp: NULL,
-    transDeclare: NULL,
-    transExplain: NULL,
-    transExecDirect: NULL,
-    transCtas: NULL
+    transSelect: demo_transformSelectStmt
 };
 
 PG_FUNCTION_INFO_V1(custom_analyzer_demo_invoke);
@@ -103,6 +93,11 @@ void init_session_vars(void)
 
 void _PG_init(void)
 {
+    if (t_thrd.proc->workingVersionNum < ANALYZER_HOOK_VERSION_NUM) {
+        ereport(ERROR,
+            (errmsg("Current version(%d) does not support analyzer hook, please upgrade your gaussdb to version: %d",
+            t_thrd.proc->workingVersionNum, ANALYZER_HOOK_VERSION_NUM)));
+    }
     ereport(LOG, (errmsg("init " EXTENSION_NAME)));
     preAnalyzerRoutine = u_sess->hook_cxt.analyzerRoutineHook;
 }
