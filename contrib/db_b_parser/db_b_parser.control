@@ -1,0 +1,5 @@
+# db_b_parser extension
+comment = 'db b parser'
+default_version = '1.0'
+module_pathname = '$libdir/db_b_parser'
+relocatable = false
