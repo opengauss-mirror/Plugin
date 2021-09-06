@@ -1,0 +1,288 @@
+CREATE EXTENSION db_a_parser;
+ERROR:  extension "db_a_parser" already exists in schema "public"
+-- test without db_a_parser
+set enable_custom_parser = off;
+-- constant
+select systimestamp;
+ERROR:  column "systimestamp" does not exist
+LINE 1: select systimestamp;
+               ^
+CONTEXT:  referenced column: systimestamp
+-- data type
+create table test_long (a long);
+ERROR:  type "long" does not exist
+LINE 1: create table test_long (a long);
+                                  ^
+drop table test_long;
+ERROR:  table "test_long" does not exist
+create table test_raw (a long raw);
+ERROR:  syntax error at or near "raw"
+LINE 1: create table test_raw (a long raw);
+                                      ^
+drop table test_raw;
+ERROR:  table "test_raw" does not exist
+create table test_nclob (a nclob);
+ERROR:  type "nclob" does not exist
+LINE 1: create table test_nclob (a nclob);
+                                   ^
+drop table test_nclob;
+ERROR:  table "test_nclob" does not exist
+create table test_bfile (a bfile);
+ERROR:  type "bfile" does not exist
+LINE 1: create table test_bfile (a bfile);
+                                   ^
+drop table test_bfile;
+ERROR:  table "test_bfile" does not exist
+create table test_urowid (a urowid);
+ERROR:  type "urowid" does not exist
+LINE 1: create table test_urowid (a urowid);
+                                    ^
+drop table test_urowid;
+ERROR:  table "test_urowid" does not exist
+create table test_rowid (a rowid);
+ERROR:  type "rowid" does not exist
+LINE 1: create table test_rowid (a rowid);
+                                   ^
+drop table test_rowid;
+ERROR:  table "test_rowid" does not exist
+create table test_binary_float (a binary_float);
+ERROR:  type "binary_float" does not exist
+LINE 1: create table test_binary_float (a binary_float);
+                                          ^
+drop table test_binary_float;
+ERROR:  table "test_binary_float" does not exist
+create table test_xmltype (a xmltype);
+ERROR:  type "xmltype" does not exist
+LINE 1: create table test_xmltype (a xmltype);
+                                     ^
+drop table test_xmltype;
+ERROR:  table "test_xmltype" does not exist
+create table test_pls_integer (a pls_integer);
+ERROR:  type "pls_integer" does not exist
+LINE 1: create table test_pls_integer (a pls_integer);
+                                         ^
+drop table test_pls_integer;
+ERROR:  table "test_pls_integer" does not exist
+create table test_timestamp_with_local_timezone (a timestamp with local time zone);
+ERROR:  syntax error at or near "with local"
+LINE 1: ...e test_timestamp_with_local_timezone (a timestamp with local...
+                                                             ^
+drop table test_timestamp_with_local_timezone;
+ERROR:  table "test_timestamp_with_local_timezone" does not exist
+create table test_number (a number(10, 0));
+drop table test_number;
+-- ddl
+create type test_type as object (
+    attr varchar2(60));
+ERROR:  syntax error at or near "object"
+LINE 1: create type test_type as object (
+                                 ^
+-- nocache
+create sequence test_seq minvalue 0 maxvalue 20 start with 0 increment by 1 cycle nocache;
+ERROR:  syntax error at or near "nocache"
+LINE 1: ...lue 0 maxvalue 20 start with 0 increment by 1 cycle nocache;
+                                                               ^
+create tablespace ts1 relative location 'ts1';
+create table test_ts1 (id int primary key);
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "test_ts1_pkey" for table "test_ts1"
+-- rebuild tablespace
+alter index test_ts1_pkey rebuild tablespace ts1;
+ERROR:  syntax error at or near "tablespace"
+LINE 1: alter index test_ts1_pkey rebuild tablespace ts1;
+                                          ^
+drop table test_ts1;
+drop tablespace ts1;
+-- operator
+select 7 mod 5;
+ERROR:  syntax error at or near "5"
+LINE 1: select 7 mod 5;
+                     ^
+create or replace function mod_func (a int, b int) return int is
+begin
+    return a mod b;
+    exception when others then null;
+end;
+/
+ERROR:  syntax error at or near "b"
+LINE 3:     return a mod b;
+                         ^
+QUERY:   DECLARE 
+begin
+    return a mod b;
+    exception when others then null;
+end
+select 7 < = 5;
+ERROR:  syntax error at or near "="
+LINE 1: select 7 < = 5;
+                   ^
+select 7 > = 5;
+ERROR:  syntax error at or near "="
+LINE 1: select 7 > = 5;
+                   ^
+select 7 < > 5;
+ERROR:  syntax error at or near ">"
+LINE 1: select 7 < > 5;
+                   ^
+-- plpgsql
+create or replace function test_end_label(
+    a int,
+    b int)
+return int
+is
+begin
+    b = a;
+    exception when others then null;
+end test_end_label;
+/
+ERROR:  end label "test_end_label" specified for unlabelled block
+LINE 5: end test_end_label
+            ^
+QUERY:   DECLARE 
+begin
+    b = a;
+    exception when others then null;
+end test_end_label
+create or replace procedure add_record(
+    a int,
+    b out int)
+is
+begin
+    b := a;
+    exception when others then null;
+end add_record;
+/
+ERROR:  end label "add_record" specified for unlabelled block
+LINE 5: end add_record
+            ^
+QUERY:   DECLARE 
+begin
+    b := a;
+    exception when others then null;
+end add_record
+create table test_reverse (id int);
+begin
+  for j in reverse 1..4 loop
+   insert into test_reverse values (j);
+  end loop;
+  exception when others then null;
+end;
+/
+select * from test_reverse;
+ id 
+----
+(0 rows)
+
+drop table test_reverse;
+-- test db_a_parser
+set enable_custom_parser = on;
+-- constant
+select systimestamp;
+          pg_systimestamp           
+------------------------------------
+ Tue Jun 22 01:20:55.43189 2021 PDT
+(1 row)
+
+-- data type
+create table test_long (a long);
+drop table test_long;
+create table test_raw (a long raw);
+drop table test_raw;
+create table test_nclob (a nclob);
+drop table test_nclob;
+create table test_bfile (a bfile);
+drop table test_bfile;
+create table test_urowid (a urowid);
+drop table test_urowid;
+create table test_rowid (a rowid);
+drop table test_rowid;
+create table test_binary_float (a binary_float);
+drop table test_binary_float;
+create table test_xmltype (a xmltype);
+drop table test_xmltype;
+create table test_pls_integer (a pls_integer);
+drop table test_pls_integer;
+create table test_timestamp_with_local_timezone (a timestamp with local time zone);
+drop table test_timestamp_with_local_timezone;
+create table test_number (a number(10, 0));
+drop table test_number;
+-- ddl
+create type test_type as object (
+    attr varchar2(60));
+-- nocache
+create sequence test_seq minvalue 0 maxvalue 20 start with 0 increment by 1 cycle nocache;
+create tablespace ts1 relative location 'ts1';
+create table test_ts1 (id int primary key);
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "test_ts1_pkey" for table "test_ts1"
+-- rebuild tablespace
+alter index test_ts1_pkey rebuild tablespace ts1;
+drop table test_ts1;
+drop tablespace ts1;
+-- operator
+select 7 mod 5;
+ ?column? 
+----------
+        2
+(1 row)
+
+create or replace function mod_func (a int, b int) return int is
+begin
+    return a mod b;
+    exception when others then null;
+end;
+/
+select 7 < = 5;
+ ?column? 
+----------
+ f
+(1 row)
+
+select 7 > = 5;
+ ?column? 
+----------
+ t
+(1 row)
+
+select 7 < > 5;
+ ?column? 
+----------
+ t
+(1 row)
+
+-- plpgsql
+create or replace function test_end_label(
+    a int,
+    b int)
+return int
+is
+begin
+    b = a;
+    exception when others then null;
+end test_end_label;
+/
+create or replace procedure add_record(
+    a int,
+    b out int)
+is
+begin
+    b := a;
+    exception when others then null;
+end add_record;
+/
+create table test_reverse (id int);
+begin
+  for j in reverse 1..4 loop
+   insert into test_reverse values (j);
+  end loop;
+  exception when others then null;
+end;
+/
+select * from test_reverse;
+ id 
+----
+  4
+  3
+  2
+  1
+(4 rows)
+
+drop table test_reverse;
