@@ -93,10 +93,11 @@ void init_session_vars(void)
 
 void _PG_init(void)
 {
-    if (t_thrd.proc->workingVersionNum < ANALYZER_HOOK_VERSION_NUM) {
+    uint32 version = pg_atomic_read_u32(&WorkingGrandVersionNum);
+    if (version < ANALYZER_HOOK_VERSION_NUM) {
         ereport(ERROR,
-            (errmsg("Current version(%d) does not support analyzer hook, please upgrade your gaussdb to version: %d",
-            t_thrd.proc->workingVersionNum, ANALYZER_HOOK_VERSION_NUM)));
+            (errmsg("Current version(%u) does not support analyzer hook, please upgrade your gaussdb to version: %u",
+            version, ANALYZER_HOOK_VERSION_NUM)));
     }
     ereport(LOG, (errmsg("init " EXTENSION_NAME)));
     preAnalyzerRoutine = u_sess->hook_cxt.analyzerRoutineHook;
