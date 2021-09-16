@@ -265,5 +265,22 @@ FETCH LAST c;
 (1 row)
 
 COMMIT;
+-- insert enough tuples to fill at least two pages
+INSERT INTO tidrangescan SELECT i,repeat('x', 100) FROM generate_series(1,200) AS s(i);
+EXPLAIN (COSTS OFF)
+SELECT count(*) FROM tidrangescan WHERE ctid < '(1,0)';
+               QUERY PLAN                
+-----------------------------------------
+ Aggregate
+   ->  Tid Range Scan on tidrangescan
+         TID Cond: (ctid < '(1,0)'::tid)
+(3 rows)
+
+SELECT count(*) FROM tidrangescan WHERE ctid < '(1,0)';
+ count 
+-------
+    10
+(1 row)
+
 DROP TABLE tidrangescan;
 RESET enable_seqscan;

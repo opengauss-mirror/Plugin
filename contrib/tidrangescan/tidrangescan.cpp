@@ -100,6 +100,7 @@ static void ExecReScanTidRangeScan(ExtensiblePlanState *node);
 static tidrangescan_context* get_session_context();
 
 static uint32 tidrangescan_index;
+extern List* reassign_nodelist(RangeTblEntry* rte, List* ori_node_list);
 #define ENABLE_TIDRANGESCAN (get_session_context()->enable_tidrangescan)
 
 #define IsCTIDVar(node)                                                                                   \
@@ -386,6 +387,63 @@ static void SetTidRangeScanPath(PlannerInfo *root, RelOptInfo *baserel, Index rt
     }
 }
 
+static void add_distribute_info(PlannerInfo* root, Plan* scanPlan, Index relIndex, Path* bestPath, List* scanClauses)
+{
+    ExecNodes* execNodes = NULL;
+    if (unlikely(root->simple_rte_array == NULL)) {
+        ereport(ERROR,
+            (errcode(ERRCODE_UNEXPECTED_NULL_VALUE),
+                errmsg("Range table should not be null")));
+    }
+    RangeTblEntry* rte = root->simple_rte_array[relIndex];
+
+    if (is_sys_table(rte->relid) || rte->relkind == RELKIND_SEQUENCE) {
+        execNodes = ng_convert_to_exec_nodes(&bestPath->distribution, bestPath->locator_type, RELATION_ACCESS_READ);
+        scanPlan->exec_type = EXEC_ON_COORDS;
+    } else if (IsToastNamespace(get_rel_namespace(rte->relid))) {
+        execNodes = ng_convert_to_exec_nodes(&bestPath->distribution, bestPath->locator_type, RELATION_ACCESS_READ);
+        scanPlan->exec_type = EXEC_ON_DATANODES;
+    } else {
+        if (GetLocatorType(rte->relid) == LOCATOR_TYPE_REPLICATED) {
+            Assert(bestPath->locator_type == LOCATOR_TYPE_REPLICATED);
+            execNodes = ng_convert_to_exec_nodes(&bestPath->distribution, bestPath->locator_type, RELATION_ACCESS_READ);
+        } else {
+            List* quals = scanClauses;
+
+            /*
+             * If the type of scanPlan is DfsScan, must use the following opExpressionList
+             * instead of scanClauses which do not include pushdown quals.
+             */
+            if (IsA(scanPlan, DfsScan)) {
+                DfsPrivateItem* item = (DfsPrivateItem*)((DefElem*)linitial(((DfsScan*)scanPlan)->privateData))->arg;
+                quals = item->opExpressionList;
+            }
+
+            /* A hashed table may have filter quals, it's exec nodes are not equal to it's data nodes */
+            execNodes = GetRelationNodesByQuals(
+                    (void*)root->parse, rte->relid, relIndex, (Node*)quals, RELATION_ACCESS_READ, NULL, false);
+
+            if (execNodes == NULL) {
+                elog(DEBUG1, "[add_distribute_info] execNodes is NULL. Oid [%u]", rte->relid);
+                Assert(rte->relid < FirstNormalObjectId || IS_PGXC_DATANODE || IsA(scanPlan, DfsScan));
+
+                execNodes = makeNode(ExecNodes);
+                Distribution* distribution = ng_get_installation_group_distribution();
+                ng_set_distribution(&execNodes->distribution, distribution);
+                execNodes->nodeList = ng_convert_to_nodeid_list(execNodes->distribution.bms_data_nodeids);
+            }
+
+            if (!IsLocatorDistributedBySlice(execNodes->baselocatortype)) {
+                execNodes->baselocatortype = LOCATOR_TYPE_HASH;
+            }
+        }
+        scanPlan->exec_type = EXEC_ON_DATANODES;
+    }
+
+    scanPlan->exec_nodes = execNodes;
+    scanPlan->distributed_keys = bestPath->parent->distribute_keys;
+}
+
 /*
  * PlanTidRangeScanPath - A method of ExtensiblePath; that populate a extensible
  * object being delivered from ExtensiblePlan type, according to the supplied
@@ -434,6 +492,10 @@ static Plan *PlanTidRangeScanPath(PlannerInfo *root, RelOptInfo *rel, struct Ext
     plan->righttree = NULL;
     node->scan.scanrelid = scan_relid;
     node->extensible_exprs = tidrangequals;
+
+#ifdef STREAMPLAN
+    add_distribute_info(root, plan, scan_relid, &best_path->path, clauses);
+#endif
 
     node->flags = best_path->flags;
     node->scan.plan.startup_cost = best_path->path.startup_cost;
