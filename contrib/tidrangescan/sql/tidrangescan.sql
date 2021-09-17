@@ -87,6 +87,13 @@ FETCH FIRST c;
 FETCH LAST c;
 COMMIT;
 
+-- insert enough tuples to fill at least two pages
+INSERT INTO tidrangescan SELECT i,repeat('x', 100) FROM generate_series(1,200) AS s(i);
+
+EXPLAIN (COSTS OFF)
+SELECT count(*) FROM tidrangescan WHERE ctid < '(1,0)';
+SELECT count(*) FROM tidrangescan WHERE ctid < '(1,0)';
+
 DROP TABLE tidrangescan;
 
 RESET enable_seqscan;
