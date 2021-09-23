@@ -39,7 +39,13 @@ PG_MODULE_MAGIC;
 extern "C" void _PG_init(void);
 extern "C" void _PG_fini(void);
 
+extern int db_b_core_yylex(core_YYSTYPE* lvalp, YYLTYPE* llocp, core_yyscan_t yyscanner);
+
+#define MAXARGLEN 1024
+char transform_data_type[MAXARGLEN] = "tinytext:text,mediumtext:text,longtext:text";
+
 static void* pre_raw_parser;
+static void read_conf_file (const char* path);
 extern "C" void db_b_parser_invoke(void);
 PG_FUNCTION_INFO_V1(db_b_parser_invoke);
 void db_b_parser_invoke(void)
@@ -53,6 +59,10 @@ void _PG_init(void)
     if (!u_sess->misc_cxt.process_shared_preload_libraries_in_progress && !DB_IS_CMPT(B_FORMAT)) {
         ereport(ERROR, (errmsg("Can't create db_b_parser extension since current database compatibility is not 'B'")));
     }
+
+    char *conf_path = "db_b_parser.conf";
+    read_conf_file(conf_path);
+
     ereport(INFO, (errmsg("db_b parser extension init, this parser is not enabled until enable_custom_parser is to true")));
     pre_raw_parser = g_instance.raw_parser_hook[DB_CMPT_B];
     g_instance.raw_parser_hook[DB_CMPT_B] = (void*)db_b_raw_parser;
@@ -126,7 +136,7 @@ List* db_b_raw_parser(const char* str, List** query_string_locationlist)
             yyextra->lookahead_num--;                                                    \
             Assert(yyextra->lookahead_num == 0);                                         \
         } else {                                                                         \
-            next_token = core_yylex(&(lvalp->core_yystype), llocp, yyscanner);           \
+            next_token = db_b_core_yylex(&(lvalp->core_yystype), llocp, yyscanner);           \
         }                                                                                \
     } while (0)
 
@@ -170,7 +180,7 @@ int db_b_base_yylex(YYSTYPE* lvalp, YYLTYPE* llocp, core_yyscan_t yyscanner)
         *llocp = yyextra->lookahead_yylloc[yyextra->lookahead_num - 1];
         yyextra->lookahead_num--;
     } else {
-        cur_token = core_yylex(&(lvalp->core_yystype), llocp, yyscanner);
+        cur_token = db_b_core_yylex(&(lvalp->core_yystype), llocp, yyscanner);
     }
 
     /* Do we need to look ahead for a possible multiword token? */
@@ -389,14 +399,14 @@ int db_b_base_yylex(YYSTYPE* lvalp, YYLTYPE* llocp, core_yyscan_t yyscanner)
              */
             cur_yylval = lvalp->core_yystype;
             cur_yylloc = *llocp;
-            next_token = core_yylex(&(lvalp->core_yystype), llocp, yyscanner);
+            next_token = db_b_core_yylex(&(lvalp->core_yystype), llocp, yyscanner);
             /* get first token after DECLARE. We don't care what it is */
             yyextra->lookahead_token[1] = next_token;
             yyextra->lookahead_yylval[1] = lvalp->core_yystype;
             yyextra->lookahead_yylloc[1] = *llocp;
 
             /* get the second token after DECLARE. If it is cursor grammer, we are sure that this is a cursr stmt */
-            next_token = core_yylex(&(lvalp->core_yystype), llocp, yyscanner);
+            next_token = db_b_core_yylex(&(lvalp->core_yystype), llocp, yyscanner);
             yyextra->lookahead_token[0] = next_token;
             yyextra->lookahead_yylval[0] = lvalp->core_yystype;
             yyextra->lookahead_yylloc[0] = *llocp;
@@ -448,6 +458,81 @@ int db_b_base_yylex(YYSTYPE* lvalp, YYLTYPE* llocp, core_yyscan_t yyscanner)
     }
 
     return cur_token;
+}
+
+static void read_conf_file (const char* path) {
+    FILE* infile = NULL;
+    int c;
+    int linelen = 0;
+    int maxlength = 1;
+    char* buffer = NULL;
+    char* p = NULL;
+    char* q = NULL;
+    int rc;
+    if ((infile = fopen(path, "r")) == NULL) {
+        ereport(WARNING, (errmsg("could not open file for reading: %s\n", path)));
+        return;
+    }
+    while ((c = fgetc(infile)) != EOF) {
+        linelen++;
+        if (c == '\n') {
+            if (linelen > maxlength) {
+                maxlength = linelen;
+            }
+            linelen = 0;
+        }
+    }
+
+    /* handle last line without a terminating newline */
+    if (linelen > maxlength) {
+        maxlength = linelen;
+    }
+
+    if (maxlength <= 1) {
+        fclose(infile);
+        infile = NULL;
+        return;
+    }
+
+    buffer = (char*)palloc0(maxlength + 1);
+    rewind(infile);
+
+    while (fgets(buffer, maxlength + 1, infile) != NULL) {
+        p = buffer;
+        /* Skip all the blanks at the begin of the optLine */
+        while (isspace((unsigned char)*p)) {
+            p++;
+        }
+
+        if ('#' == *p) {
+            continue;
+        }
+
+        if (strncmp(p, "data_type", strlen("data_type")) == 0) {
+            p += strlen("data_type");
+            while (isspace((unsigned char)*p)) {
+                p++;
+            }
+            if (*p != '=') {
+                continue;
+            }
+            p++;
+            /* Skip all the blanks after '=' and before the value */
+            while (isspace((unsigned char)*p)) {
+                p++;
+            }
+            if (*p != '\'') {
+                continue;
+            }
+            for (q = p + 1; *q && '\n' != *q && '#' != *q && '\'' != *q; q++);
+            p++;
+            rc = strncpy_s(transform_data_type, MAXARGLEN, p, q - p);
+            securec_check_c(rc, "\0", "\0");
+            transform_data_type[q - p] = '\0';
+        }
+    }
+    (void)fclose(infile);
+    pfree(buffer);
 }
 
 /*
