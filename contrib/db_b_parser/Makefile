@@ -4,7 +4,7 @@ subdir = contrib/db_b_parser
 top_builddir = ../..
 
 MODULE_big = db_b_parser
-OBJS =db_b_gram.o db_b_parser.o pl/pl_b_gram.o pl/pl_b.o pl/pl_b_scanner.o
+OBJS =db_b_gram.o db_b_parser.o db_b_hint_gram.o db_b_funcs.o pl/pl_b_gram.o pl/pl_b.o pl/pl_b_scanner.o
 
 FLEXFLAGS = -CF -b -p -p
 # Latest flex causes warnings in this file.
@@ -34,8 +34,21 @@ db_b_scan.inc: db_b_scan.l
 # Force these dependencies to be known even without dependency info built:
 db_b_gram.o db_b_parser.o: db_b_gram.hpp
 
+db_b_hint_gram.o: db_b_hint_scan.inc
+ifeq ($(GCC),yes)
+db_b_hint_gram.o: CXXFLAGS += -Wno-error
+endif
+
+db_b_hint_gram.hpp: db_b_hint_gram.cpp ;
+
+db_b_hint_gram.cpp: db_b_hint_gram.y
+	$(BISON) -d $(BISONFLAGS) -o $@ $<
+	sed -i 's/YY_NULL nullptr/YY_NULL 0/g' db_b_hint_gram.cpp
+
 db_b_hint_scan.inc: db_b_hint_scan.l | db_b_scan.inc
 	$(FLEX) $(FLEXFLAGS) -o'$@' $<
+
+db_b_hint_gram.o: db_b_hint_gram.hpp
 
 pl/pl_b_scanner.o: pl/pl_b_scanner.cpp pl/pl_b_gram.o
 pl/pl_b_gram.o : pl/pl_b_gram.hpp

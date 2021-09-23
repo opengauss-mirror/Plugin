@@ -84,9 +84,9 @@ static bool is_utf16_surrogate_second(pg_wchar c);
 static pg_wchar surrogate_pair_to_codepoint(pg_wchar first, pg_wchar second);
 static void addunicode(pg_wchar c, yyscan_t yyscanner);
 
-#define yyerror(msg)  scanner_yyerror(msg, yyscanner)
+#define yyerror(msg)  db_b_scanner_yyerror(msg, yyscanner)
 
-#define lexer_errposition()  scanner_errposition(*(yylloc), yyscanner)
+#define lexer_errposition()  db_b_scanner_errposition(*(yylloc), yyscanner)
 
 static void check_string_escape_warning(unsigned char ychar, core_yyscan_t yyscanner);
 static void check_escape_warning(core_yyscan_t yyscanner);
@@ -97,8 +97,8 @@ static bool is_trans_stmt(const char *haystack, int haystack_len);
  * this would cause warnings.  Providing our own declarations should be
  * harmless even when the bug gets fixed.
  */
-extern int	core_yyget_column(yyscan_t yyscanner);
-extern void core_yyset_column(int column_no, yyscan_t yyscanner);
+extern int	db_b_core_yyget_column(yyscan_t yyscanner);
+extern void db_b_core_yyset_column(int column_no, yyscan_t yyscanner);
 
 %}
 
@@ -115,7 +115,7 @@ extern void core_yyset_column(int column_no, yyscan_t yyscanner);
 %option noyyrealloc
 %option noyyfree
 %option warn
-%option prefix="core_yy"
+%option prefix="db_b_core_yy"
 
 /*
  * OK, here is a short description of lex/flex rules behavior.
@@ -1007,7 +1007,8 @@ other			.
 
 					yyextra->is_hint_str = false;
 
-					if (keyword != NULL)
+					/* for B_format database, float and real are not keywords anymore. */
+					if (keyword != NULL && keyword->value != FLOAT_P && keyword->value != REAL)
 					{
 						yylval->keyword = keyword->name;
 
@@ -1089,7 +1090,7 @@ other			.
 
 
 /*
- * scanner_errposition
+ * db_b_scanner_errposition
  *		Report a lexer or grammar error cursor position, if possible.
  *
  * This is expected to be used within an ereport() call.  The return value
@@ -1100,7 +1101,7 @@ other			.
  * to still be available.
  */
 int
-scanner_errposition(int location, core_yyscan_t yyscanner)
+db_b_scanner_errposition(int location, core_yyscan_t yyscanner)
 {
 	int		pos;
 
@@ -1114,7 +1115,7 @@ scanner_errposition(int location, core_yyscan_t yyscanner)
 }
 
 /*
- * scanner_yyerror
+ * db_b_scanner_yyerror
  *		Report a lexer or grammar error.
  *
  * The message's cursor position is whatever YYLLOC was last set to,
@@ -1126,7 +1127,7 @@ scanner_errposition(int location, core_yyscan_t yyscanner)
  * be misleading!
  */
 void
-scanner_yyerror(const char *message, core_yyscan_t yyscanner)
+db_b_scanner_yyerror(const char *message, core_yyscan_t yyscanner)
 {
 	const char *loc = yyextra->scanbuf + *yylloc;
 
@@ -1166,7 +1167,7 @@ db_b_scanner_init(const char *str,
 				(errcode(ERRCODE_OBJECT_NOT_IN_PREREQUISITE_STATE),
 					errmsg("yylex_init() failed: %m")));
 
-	core_yyset_extra(yyext, scanner);
+	db_b_core_yyset_extra(yyext, scanner);
 
 	yyext->keywords = keywords;
 	yyext->num_keywords = num_keywords;
@@ -1600,13 +1601,13 @@ check_escape_warning(core_yyscan_t yyscanner)
  */
 
 void *
-core_yyalloc(yy_size_t bytes, core_yyscan_t yyscanner)
+db_b_core_yyalloc(yy_size_t bytes, core_yyscan_t yyscanner)
 {
 	return palloc(bytes);
 }
 
 void *
-core_yyrealloc(void *ptr, yy_size_t bytes, core_yyscan_t yyscanner)
+db_b_core_yyrealloc(void *ptr, yy_size_t bytes, core_yyscan_t yyscanner)
 {
 	if (ptr)
 		return repalloc(ptr, bytes);
@@ -1615,7 +1616,7 @@ core_yyrealloc(void *ptr, yy_size_t bytes, core_yyscan_t yyscanner)
 }
 
 void
-core_yyfree(void *ptr, core_yyscan_t yyscanner)
+db_b_core_yyfree(void *ptr, core_yyscan_t yyscanner)
 {
 	if (ptr)
 		FREE_POINTER(ptr);

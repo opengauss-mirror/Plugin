@@ -66,7 +66,7 @@
 #include "nodes/makefuncs.h"
 #include "nodes/nodeFuncs.h"
 #include "parser/scanner.h"
-//#include "db_b_gram.hpp"
+#include "db_b_gram.hpp"
 #include "parser/gramparse.h"
 #include "parser/parse_hint.h"
 #include "pgxc/pgxc.h"
@@ -89,6 +89,8 @@
 #define MAXFNAMELEN		64
 
 extern int db_b_base_yylex(YYSTYPE* lvalp, YYLTYPE* llocp, core_yyscan_t yyscanner);
+extern int db_b_scanner_errposition(int location, core_yyscan_t yyscanner);
+extern void db_b_scanner_yyerror(const char* message, core_yyscan_t yyscanner);
 
 #ifndef ENABLE_MULTIPLE_NODES
 DB_CompatibilityAttr g_dbCompatArray[] = {
@@ -96,6 +98,23 @@ DB_CompatibilityAttr g_dbCompatArray[] = {
     {DB_CMPT_B, "B"},
     {DB_CMPT_C, "C"},
     {DB_CMPT_PG, "PG"}
+};
+
+extern char transform_data_type[1024];
+
+/*
+ * The old func name is mapped to the new func name following.
+ * example:  lcase -> lower, rand -> random
+ * Make sure the last two iteams are NULL.
+ */
+static const char* func_name_map[] = {
+//  old name  ->  new name
+    "bit_length", "mysql_parser_bit_length",
+    "lcase",      "lower",
+    "rand",       "random",
+    "truncate",   "trunc",
+    "ucase",      "upper",
+    NULL,         NULL
 };
 
 IntervalStylePack g_interStyleVal = {"a"};
@@ -220,6 +239,10 @@ bool IsValidGroupname(const char *input);
 static bool checkNlssortArgs(const char *argname);
 static void ParseUpdateMultiSet(List *set_target_list, SelectStmt *stmt, core_yyscan_t yyscanner);
 static void parameter_check_execute_direct(const char* query);
+static const char* replace_data_type(char* input);
+static TypeName* parseFloatTypeByPrecision(int ival, int location, core_yyscan_t yyscanner);
+static TypeName* transferFloat4TypeInBFormat(char *typnam, List* list, int location, core_yyscan_t yyscanner);
+static char* mapping_func_name(char* old_name, bool free_old);
 %}
 
 %pure-parser
@@ -729,8 +752,8 @@ static void parameter_check_execute_direct(const char* query);
 	CURRENT_CATALOG CURRENT_DATE CURRENT_ROLE CURRENT_SCHEMA
 	CURRENT_TIME CURRENT_TIMESTAMP CURRENT_USER CURSOR CYCLE
 
-	DATA_P DATABASE DATAFILE DATANODE DATANODES DATATYPE_CL DATE_P DATE_FORMAT_P DAY_P DBCOMPATIBILITY_P DEALLOCATE DEC DECIMAL_P DECLARE DECODE DEFAULT DEFAULTS
-	DEFERRABLE DEFERRED DEFINER DELETE_P DELIMITER DELIMITERS DELTA DELTAMERGE DESC DETERMINISTIC
+	DATA_P DATABASE DATAFILE DATANODE DATANODES DATATYPE_CL DATE_P DATE_FORMAT_P DAY_P DAYOFMONTH DAYOFWEEK DAYOFYEAR DBCOMPATIBILITY_P DEALLOCATE DEC DECIMAL_P DECLARE DECODE DEFAULT DEFAULTS
+	DEFERRABLE DEFERRED DEFINER DELETE_P DELIMITER DELIMITERS DELTA DELTAMERGE DESC DETERMINISTIC DIV
 /* PGXC_BEGIN */
 	DICTIONARY DIRECT DIRECTORY DISABLE_P DISCARD DISTINCT DISTRIBUTE DISTRIBUTION DO DOCUMENT_P DOMAIN_P DOUBLE_P
 /* PGXC_END */
@@ -748,7 +771,7 @@ static void parameter_check_execute_direct(const char* query);
 
 	HANDLER HAVING HDFSDIRECTORY HEADER_P HOLD HOUR_P
 
-	IDENTIFIED IDENTITY_P IF_P IGNORE_EXTRA_DATA ILIKE IMMEDIATE IMMUTABLE IMPLICIT_P IN_P INCLUDE
+	IDENTIFIED IDENTITY_P IF_P IFNULL IGNORE_EXTRA_DATA ILIKE IMMEDIATE IMMUTABLE IMPLICIT_P IN_P INCLUDE
 	INCLUDING INCREMENT INCREMENTAL INDEX INDEXES INHERIT INHERITS INITIAL_P INITIALLY INITRANS INLINE_P
 
 	INNER_P INOUT INPUT_P INSENSITIVE INSERT INSTEAD INT_P INTEGER INTERNAL
@@ -760,8 +783,8 @@ static void parameter_check_execute_direct(const char* query);
 
 	LABEL LANGUAGE LARGE_P LAST_P LC_COLLATE_P LC_CTYPE_P LEADING LEAKPROOF
 	LEAST LESS LEFT LEVEL LIKE LIMIT LIST LISTEN LOAD LOCAL LOCALTIME LOCALTIMESTAMP
-	LOCATION LOCK_P LOG_P LOGGING LOGIN_ANY LOGIN_FAILURE LOGIN_SUCCESS LOGOUT LOOP
-	MAPPING MASKING MASTER MATCH MATERIALIZED MATCHED MAXEXTENTS MAXSIZE MAXTRANS MAXVALUE MERGE MINUS_P MINUTE_P MINVALUE MINEXTENTS MODE MODIFY_P MONTH_P MOVE MOVEMENT
+	LOCATE LOCATION LOCK_P LOG_P LOGGING LOGIN_ANY LOGIN_FAILURE LOGIN_SUCCESS LOGOUT LOOP
+	MAPPING MASKING MASTER MATCH MATERIALIZED MATCHED MAXEXTENTS MAXSIZE MAXTRANS MAXVALUE MERGE MICROSECOND_P MINUS_P MINUTE_P MINVALUE MINEXTENTS MOD MODE MODIFY_P MONTH_P MOVE MOVEMENT
 	MODEL // DB4AI
 	NAME_P NAMES NATIONAL NATURAL NCHAR NEXT NLSSORT NO NOCOMPRESS NOCYCLE NODE NOLOGGING NOMAXVALUE NOMINVALUE NONE
 	NOT NOTHING NOTIFY NOTNULL NOWAIT NULL_P NULLIF NULLS_P NUMBER_P NUMERIC NUMSTR NVARCHAR2 NVL
@@ -779,11 +802,11 @@ static void parameter_check_execute_direct(const char* query);
 /* PGXC_END */
 	PRIVATE PRIOR PRIVILEGES PRIVILEGE PROCEDURAL PROCEDURE PROFILE PUBLISH PURGE
 
-	QUERY QUOTE
+	QUARTER QUERY QUOTE
 
 	RANDOMIZED RANGE RATIO RAW READ REAL REASSIGN REBUILD RECHECK RECURSIVE REDISANYVALUE REF REFERENCES REFRESH REINDEX REJECT_P
-	RELATIVE_P RELEASE RELOPTIONS REMOTE_P REMOVE RENAME REPEATABLE REPLACE REPLICA
-	RESET RESIZE RESOURCE RESTART RESTRICT RETURN RETURNING RETURNS REUSE REVOKE RIGHT ROLE ROLES ROLLBACK ROLLUP
+	RELATIVE_P RELEASE RELOPTIONS REMOTE_P REMOVE RENAME REPEATABLE REPLACE REPLICA REGEXP
+	RESET RESIZE RESOURCE RESTART RESTRICT RETURN RETURNING RETURNS REUSE REVOKE RIGHT RLIKE ROLE ROLES ROLLBACK ROLLUP
 	ROW ROWNUM ROWS RULE
 
 	SAMPLE SAVEPOINT SCHEMA SCROLL SEARCH SECOND_P SECURITY SELECT SEQUENCE SEQUENCES
@@ -802,10 +825,10 @@ static void parameter_check_execute_direct(const char* query);
 	VACUUM VALID VALIDATE VALIDATION VALIDATOR VALUE_P VALUES VARCHAR VARCHAR2 VARIABLES VARIADIC VARRAY VARYING VCGROUP
 	VERBOSE VERIFY VERSION_P VIEW VOLATILE
 
-	WEAK WHEN WHERE WHITESPACE_P WINDOW WITH WITHIN WITHOUT WORK WORKLOAD WRAPPER WRITE
+	WEAK WEEKDAY WEEKOFYEAR WHEN WHERE WHITESPACE_P WINDOW WITH WITHIN WITHOUT WORK WORKLOAD WRAPPER WRITE
 
 	XML_P XMLATTRIBUTES XMLCONCAT XMLELEMENT XMLEXISTS XMLFOREST XMLPARSE
-	XMLPI XMLROOT XMLSERIALIZE
+	XMLPI XMLROOT XMLSERIALIZE XOR
 
 	YEAR_P YES_P
 
@@ -844,6 +867,8 @@ static void parameter_check_execute_direct(const char* query);
 %nonassoc	OVERLAPS
 %nonassoc	BETWEEN
 %nonassoc	IN_P
+%left		DIV MOD XOR
+%nonassoc	REGEXP RLIKE
 %left		POSTFIXOP		/* dummy for postfix Op rules */
 /*
  * To support target_el without AS, we must give IDENT an explicit priority
@@ -1865,7 +1890,7 @@ generic_set:
 					}
 					$$ = n;
 				}
-			| var_name '=' var_list
+			| var_name assign_operator var_list
 				{
 					VariableSetStmt *n = makeNode(VariableSetStmt);
 					n->kind = VAR_SET_VALUE;
@@ -1892,7 +1917,7 @@ generic_set:
 					n->name = $1;
 					$$ = n;
 				}
-			| var_name '=' DEFAULT
+			| var_name assign_operator DEFAULT
 				{
 					VariableSetStmt *n = makeNode(VariableSetStmt);
 					n->kind = VAR_SET_DEFAULT;
@@ -1907,7 +1932,7 @@ generic_set:
 					n->args = $3;
 					$$ = n;
 				}
-			| CURRENT_SCHEMA '=' var_list
+			| CURRENT_SCHEMA assign_operator var_list
 				{
 					VariableSetStmt *n = makeNode(VariableSetStmt);
 					n->kind = VAR_SET_VALUE;
@@ -1922,7 +1947,7 @@ generic_set:
 					n->name = "current_schema";
 					$$ = n;
 				}
-			| CURRENT_SCHEMA '=' DEFAULT
+			| CURRENT_SCHEMA assign_operator DEFAULT
 				{
 					VariableSetStmt *n = makeNode(VariableSetStmt);
 					n->kind = VAR_SET_DEFAULT;
@@ -15543,7 +15568,7 @@ set_clause:
 		;
 
 single_set_clause:
-			set_target '=' ctext_expr
+			set_target assign_operator ctext_expr
 				{
 					$$ = $1;
 					$$->val = (Node *) $3;
@@ -15551,7 +15576,7 @@ single_set_clause:
 			/* this is only used in ON DUPLICATE KEY UPDATE col = VALUES(col) case
 			 * for mysql compatibility
 			 */
-			| set_target '=' VALUES '(' columnref ')'
+			| set_target assign_operator VALUES '(' columnref ')'
 				{
 					ColumnRef *c = NULL;
 					int nfields = 0;
@@ -15576,7 +15601,7 @@ single_set_clause:
 		;
 
 multiple_set_clause:
-			'(' set_target_list ')' '=' ctext_row
+			'(' set_target_list ')' assign_operator ctext_row
 				{
 					ListCell *col_cell;
 					ListCell *val_cell;
@@ -15601,7 +15626,7 @@ multiple_set_clause:
 
 					$$ = $2;
 				}
-			|	'(' set_target_list ')' '=' '(' SELECT hint_string opt_distinct target_list
+			|	'(' set_target_list ')' assign_operator '(' SELECT hint_string opt_distinct target_list
 					from_clause where_clause group_clause having_clause ')'
 					{
 						SelectStmt *select = makeNode(SelectStmt);
@@ -17019,9 +17044,20 @@ ConstTypename:
 GenericType:
 			type_function_name opt_type_modifiers
 				{
-					$$ = makeTypeName($1);
-					$$->typmods = $2;
-					$$->location = @1;
+					/* for B_FORMAT compatibility, float4(n) refers to float4 */
+					if (($1 != NULL) && (strcmp($1, "float4") == 0 || strcmp($1, "float") == 0)) {
+						$$ = transferFloat4TypeInBFormat($1, $2, @2, yyscanner);
+						/* for B_FORMAT compatibility, real and double refer to float8 */
+					} else if (($1 != NULL) && ((strcmp($1, "real") == 0 || strcmp($1, "double") == 0))) {
+							$$ = makeTypeName("float8");
+							$$->typmods = $2;
+					} else if ($1 != NULL && strcmp($1, "text") == 0) {
+							$$ = SystemTypeName("text");
+							$$->location = @1;
+					} else {
+						$$ = makeTypeName($1);
+						$$->typmods = $2;
+					}
 				}
 			| type_function_name attrs opt_type_modifiers
 				{
@@ -17100,24 +17136,44 @@ Numeric:	INT_P
 			| DECIMAL_P opt_type_modifiers
 				{
 					$$ = SystemTypeName("numeric");
+					/* for B_FORMAT compatibility, default (p, s) of decimal is (10, 0) */
+					if ($2 == NULL) {
+						$2 = list_make1(makeIntConst(10, -1));
+						$2 = lappend($2, makeIntConst(0, -1));  
+					}
 					$$->typmods = $2;
 					$$->location = @1;
 				}
 			| NUMBER_P opt_type_modifiers
 				{
 					$$ = SystemTypeName("numeric");
+					/* for B_FORMAT compatibility, default (p, s) of decimal is (10, 0) */
+					if ($2 == NULL) {
+						$2 = list_make1(makeIntConst(10, -1));
+						$2 = lappend($2, makeIntConst(0, -1));  
+					}
 					$$->typmods = $2;
 					$$->location = @1;
 				}
 			| DEC opt_type_modifiers
 				{
 					$$ = SystemTypeName("numeric");
+					/* for B_FORMAT compatibility, default (p, s) of decimal is (10, 0) */
+					if ($2 == NULL) {
+						$2 = list_make1(makeIntConst(10, -1));
+						$2 = lappend($2, makeIntConst(0, -1));  
+					}
 					$$->typmods = $2;
 					$$->location = @1;
 				}
 			| NUMERIC opt_type_modifiers
 				{
 					$$ = SystemTypeName("numeric");
+					/* for B_FORMAT compatibility, default (p, s) of decimal is (10, 0) */
+					if ($2 == NULL) {
+						$2 = list_make1(makeIntConst(10, -1));
+						$2 = lappend($2, makeIntConst(0, -1));  
+					}
 					$$->typmods = $2;
 					$$->location = @1;
 				}
@@ -17134,24 +17190,12 @@ opt_float:	'(' Iconst ')'
 					 * Check FLOAT() precision limits assuming IEEE floating
 					 * types - thomas 1997-09-18
 					 */
-					if ($2 < 1)
-						ereport(ERROR,
-								(errcode(ERRCODE_INVALID_PARAMETER_VALUE),
-								 errmsg("precision for type float must be at least 1 bit"),
-								 parser_errposition(@2)));
-					else if ($2 <= 24)
-						$$ = SystemTypeName("float4");
-					else if ($2 <= 53)
-						$$ = SystemTypeName("float8");
-					else
-						ereport(ERROR,
-								(errcode(ERRCODE_INVALID_PARAMETER_VALUE),
-								 errmsg("precision for type float must be less than 54 bits"),
-								 parser_errposition(@2)));
+					$$ = parseFloatTypeByPrecision($2, @2, yyscanner);
 				}
 			| /*EMPTY*/
 				{
-					$$ = SystemTypeName("float8");
+					/* for B_FORMAT compatibility, float refers to float4 */
+					$$ = SystemTypeName("float4");
 				}
 		;
 
@@ -17612,6 +17656,90 @@ a_expr:		c_expr									{ $$ = $1; }
 				{ $$ = (Node *) makeA_Expr(AEXPR_OR, NIL, $1, $3, @2); }
 			| NOT a_expr
 				{ $$ = (Node *) makeA_Expr(AEXPR_NOT, NIL, NULL, $2, @1); }
+			| a_expr DIV a_expr
+				{
+					FuncCall *n = makeNode(FuncCall);
+					n->funcname = SystemFuncName("div");
+					n->args = list_make2($1, $3);
+					n->agg_order = NIL;
+					n->agg_star = FALSE;
+					n->agg_distinct = FALSE;
+					n->func_variadic = FALSE;
+					n->over = NULL;
+					n->location = @2;
+					n->call_func = false;
+					$$ = (Node *) n;
+				}
+			| a_expr MOD a_expr
+				{
+					FuncCall *n = makeNode(FuncCall);
+					n->funcname = SystemFuncName("b_mod");
+					n->args = list_make2($1, $3);
+					n->agg_order = NIL;
+					n->agg_star = FALSE;
+					n->agg_distinct = FALSE;
+					n->func_variadic = FALSE;
+					n->over = NULL;
+					n->location = @2;
+					n->call_func = false;
+					$$ = (Node *) n;
+				}
+			| a_expr REGEXP a_expr
+				{
+					FuncCall *n = makeNode(FuncCall);
+					n->funcname = SystemFuncName("regexp");
+					n->args = list_make2($1, $3);
+					n->agg_order = NIL;
+					n->agg_star = FALSE;
+					n->agg_distinct = FALSE;
+					n->func_variadic = FALSE;
+					n->over = NULL;
+					n->location = @2;
+					n->call_func = false;
+					$$ = (Node *) n;
+				}
+			| a_expr NOT REGEXP a_expr
+				{
+					FuncCall *n = makeNode(FuncCall);
+					n->funcname = SystemFuncName("not_regexp");
+					n->args = list_make2($1, $4);
+					n->agg_order = NIL;
+					n->agg_star = FALSE;
+					n->agg_distinct = FALSE;
+					n->func_variadic = FALSE;
+					n->over = NULL;
+					n->location = @2;
+					n->call_func = false;
+					$$ = (Node *) n;
+				}
+			| a_expr RLIKE a_expr
+				{
+					FuncCall *n = makeNode(FuncCall);
+					n->funcname = SystemFuncName("rlike");
+					n->args = list_make2($1, $3);
+					n->agg_order = NIL;
+					n->agg_star = FALSE;
+					n->agg_distinct = FALSE;
+					n->func_variadic = FALSE;
+					n->over = NULL;
+					n->location = @2;
+					n->call_func = false;
+					$$ = (Node *) n;
+				}
+			| a_expr XOR a_expr
+				{
+					FuncCall *n = makeNode(FuncCall);
+					n->funcname = SystemFuncName("xor");
+					n->args = list_make2($1, $3);
+					n->agg_order = NIL;
+					n->agg_star = FALSE;
+					n->agg_distinct = FALSE;
+					n->func_variadic = FALSE;
+					n->over = NULL;
+					n->location = @2;
+					n->call_func = false;
+					$$ = (Node *) n;
+				}
 
 			| a_expr LIKE a_expr
 				{ $$ = (Node *) makeSimpleA_Expr(AEXPR_OP, "~~", $1, $3, @2); }
@@ -18549,7 +18677,7 @@ func_expr_common_subexpr:
 					n->call_func = false;
 					$$ = (Node *)n;
 				}
-			| CURRENT_DATE
+			| current_date_func
 				{
 					/*
 					 * Translate as "text_date('now'::text)".
@@ -18814,6 +18942,160 @@ func_expr_common_subexpr:
 					n->call_func = false;
 					$$ = (Node *)n;
 				}
+			| DAYOFMONTH '(' a_expr ')'
+				{
+					FuncCall *n = makeNode(FuncCall);
+					n->funcname = SystemFuncName("date_part");
+					n->args = list_make2(makeStringConst("day", -1), $3);
+					n->agg_order = NIL;
+					n->agg_star = FALSE;
+					n->agg_distinct = FALSE;
+					n->func_variadic = FALSE;
+					n->over = NULL;
+					n->location = @1;
+					n->call_func = false;
+					$$ = (Node *)n;
+				}
+			| DAYOFWEEK '(' a_expr ')'
+				{
+					FuncCall *n = makeNode(FuncCall);
+					n->funcname = SystemFuncName("date_part");
+					n->args = list_make2(makeStringConst("dow", -1), $3);
+					n->agg_order = NIL;
+					n->agg_star = FALSE;
+					n->agg_distinct = FALSE;
+					n->func_variadic = FALSE;
+					n->over = NULL;
+					n->location = @1;
+					n->call_func = false;
+					$$ = (Node *) makeSimpleA_Expr(AEXPR_OP, "+", (Node *)n, makeIntConst(1, -1), -1);
+				}
+			| DAYOFYEAR '(' a_expr ')'
+				{
+					FuncCall *n = makeNode(FuncCall);
+					n->funcname = SystemFuncName("date_part");
+					n->args = list_make2(makeStringConst("doy", -1), $3);
+					n->agg_order = NIL;
+					n->agg_star = FALSE;
+					n->agg_distinct = FALSE;
+					n->func_variadic = FALSE;
+					n->over = NULL;
+					n->location = @1;
+					n->call_func = false;
+					$$ = (Node *)n;
+				}
+			| HOUR_P '(' a_expr ')'
+				{
+					FuncCall *n = makeNode(FuncCall);
+					n->funcname = SystemFuncName("date_part");
+					n->args = list_make2(makeStringConst("hour", -1), $3);
+					n->agg_order = NIL;
+					n->agg_star = FALSE;
+					n->agg_distinct = FALSE;
+					n->func_variadic = FALSE;
+					n->over = NULL;
+					n->location = @1;
+					n->call_func = false;
+					$$ = (Node *)n;
+				}
+			| MICROSECOND_P '(' a_expr ')'
+				{
+					FuncCall *n = makeNode(FuncCall);
+					n->funcname = SystemFuncName("date_part");
+					n->args = list_make2(makeStringConst("microsecond", -1), $3);
+					n->agg_order = NIL;
+					n->agg_star = FALSE;
+					n->agg_distinct = FALSE;
+					n->func_variadic = FALSE;
+					n->over = NULL;
+					n->location = @1;
+					n->call_func = false;
+					$$ = (Node *)n;
+				}
+			| MINUTE_P '(' a_expr ')'
+				{
+					FuncCall *n = makeNode(FuncCall);
+					n->funcname = SystemFuncName("date_part");
+					n->args = list_make2(makeStringConst("minute", -1), $3);
+					n->agg_order = NIL;
+					n->agg_star = FALSE;
+					n->agg_distinct = FALSE;
+					n->func_variadic = FALSE;
+					n->over = NULL;
+					n->location = @1;
+					n->call_func = false;
+					$$ = (Node *)n;
+				}
+			| QUARTER '(' a_expr ')'
+				{
+					FuncCall *n = makeNode(FuncCall);
+					n->funcname = SystemFuncName("date_part");
+					n->args = list_make2(makeStringConst("quarter", -1), $3);
+					n->agg_order = NIL;
+					n->agg_star = FALSE;
+					n->agg_distinct = FALSE;
+					n->func_variadic = FALSE;
+					n->over = NULL;
+					n->location = @1;
+					n->call_func = false;
+					$$ = (Node *)n;
+				}
+			| SECOND_P '(' a_expr ')'
+				{
+					FuncCall *n = makeNode(FuncCall);
+					n->funcname = SystemFuncName("date_part");
+					n->args = list_make2(makeStringConst("second", -1), $3);
+					n->agg_order = NIL;
+					n->agg_star = FALSE;
+					n->agg_distinct = FALSE;
+					n->func_variadic = FALSE;
+					n->over = NULL;
+					n->location = @1;
+					n->call_func = false;
+					$$ = (Node *)n;
+				}
+			| WEEKDAY '(' a_expr ')'
+				{
+					FuncCall *n = makeNode(FuncCall);
+					n->funcname = SystemFuncName("date_part");
+					n->args = list_make2(makeStringConst("isodow", -1), $3);
+					n->agg_order = NIL;
+					n->agg_star = FALSE;
+					n->agg_distinct = FALSE;
+					n->func_variadic = FALSE;
+					n->over = NULL;
+					n->location = @1;
+					n->call_func = false;
+					$$ = (Node *) makeSimpleA_Expr(AEXPR_OP, "-", (Node *)n, makeIntConst(1, -1), -1);
+				}
+			| WEEKOFYEAR '(' a_expr ')'
+				{
+					FuncCall *n = makeNode(FuncCall);
+					n->funcname = SystemFuncName("date_part");
+					n->args = list_make2(makeStringConst("week", -1), $3);
+					n->agg_order = NIL;
+					n->agg_star = FALSE;
+					n->agg_distinct = FALSE;
+					n->func_variadic = FALSE;
+					n->over = NULL;
+					n->location = @1;
+					n->call_func = false;
+					$$ = (Node *)n;
+				}
+			| YEAR_P '(' a_expr ')'
+				{
+					FuncCall *n = makeNode(FuncCall);
+					n->funcname = SystemFuncName("date_part");
+					n->args = list_make2(makeStringConst("year", -1), $3);
+					n->agg_order = NIL;
+					n->agg_star = FALSE;
+					n->agg_distinct = FALSE;
+					n->func_variadic = FALSE;
+					n->over = NULL;
+					n->location = @1;
+					n->call_func = false;
+					$$ = (Node *)n;
+				}
 			| TIMESTAMPDIFF '(' timestamp_arg_list ')'
 				{
 					if (u_sess->attr.attr_sql.sql_compatibility == B_FORMAT)
@@ -18865,6 +19147,34 @@ func_expr_common_subexpr:
 					FuncCall *n = makeNode(FuncCall);
 					n->funcname = SystemFuncName("position");
 					n->args = $3;
+					n->agg_order = NIL;
+					n->agg_star = FALSE;
+					n->agg_distinct = FALSE;
+					n->func_variadic = FALSE;
+					n->over = NULL;
+					n->location = @1;
+					n->call_func = false;
+					$$ = (Node *)n;
+				}
+			| LOCATE '(' b_expr ',' b_expr ')'
+				{
+					FuncCall *n = makeNode(FuncCall);
+					n->funcname = SystemFuncName("position");
+					n->args = list_make2($5, $3);
+					n->agg_order = NIL;
+					n->agg_star = FALSE;
+					n->agg_distinct = FALSE;
+					n->func_variadic = FALSE;
+					n->over = NULL;
+					n->location = @1;
+					n->call_func = false;
+					$$ = (Node *)n;
+				}
+			| LOCATE '(' b_expr ',' b_expr ',' b_expr ')'
+				{
+					FuncCall *n = makeNode(FuncCall);
+					n->funcname = SystemFuncName("instr");
+					n->args = list_make3($5, $3, $7);
 					n->agg_order = NIL;
 					n->agg_star = FALSE;
 					n->agg_distinct = FALSE;
@@ -18985,6 +19295,14 @@ func_expr_common_subexpr:
 					c->isnvl = true;
 					$$ = (Node *)c;
 				}
+			| IFNULL '(' a_expr ',' a_expr ')'
+				{
+					CoalesceExpr *c = makeNode(CoalesceExpr);
+					c->args = list_make2($3,$5);
+					// modify NVL display to A db's style "NVL" instead of "COALESCE"
+					c->isnvl = true;
+					$$ = (Node *)c;
+				}
 			| COALESCE '(' expr_list ')'
 				{
 					CoalesceExpr *c = makeNode(CoalesceExpr);
@@ -19081,6 +19399,10 @@ func_expr_common_subexpr:
 					n->location = @1;
 					$$ = (Node *)n;
 				}
+		;
+
+current_date_func:	CURRENT_DATE
+			| CURRENT_DATE '(' ')'
 		;
 
 /*
@@ -19414,6 +19736,10 @@ sub_type:	ANY										{ $$ = ANY_SUBLINK; }
 			| ALL									{ $$ = ALL_SUBLINK; }
 		;
 
+assign_operator: 	'='								{ }
+			| COLON_EQUALS							{ }
+			;
+
 all_Op:		Op										{ $$ = $1; }
 			| CmpOp									{ $$ = $1; }
 			| MathOp								{ $$ = $1; }
@@ -19554,6 +19880,8 @@ extract_arg:
 			| HOUR_P								{ $$ = "hour"; }
 			| MINUTE_P								{ $$ = "minute"; }
 			| SECOND_P								{ $$ = "second"; }
+			| QUARTER								{ $$ = "quarter"; }
+			| MICROSECOND_P								{ $$ = "microsecond"; }
 			| Sconst								{ $$ = $1; }
 		;
 
@@ -19691,6 +20019,19 @@ case_expr:	CASE case_arg when_clause_list case_default END_P
 					c->arg = (Expr *) $2;
 					c->args = $3;
 					c->defresult = (Expr *) $4;
+					c->location = @1;
+					$$ = (Node *)c;
+				}
+			| IF_P '(' a_expr ',' a_expr ',' a_expr ')'
+				{
+					CaseExpr *c = makeNode(CaseExpr);
+					c->casetype = InvalidOid; /* not analyzed yet */
+					c->arg = NULL;
+					CaseWhen *w = makeNode(CaseWhen);
+					w->expr = (Expr *) $3;
+					w->result = (Expr *) $5;
+					c->args = list_make1(w);
+					c->defresult = (Expr *) $7;
 					c->location = @1;
 					$$ = (Node *)c;
 				}
@@ -20176,8 +20517,11 @@ ColId:		IDENT									{ $$ = $1; }
 
 /* Type/function identifier --- names that can be type or function names.
  */
-type_function_name:	IDENT							{ $$ = $1; }
-			| unreserved_keyword					{ $$ = pstrdup($1); }
+type_function_name:	IDENT
+				{
+					$$ = pstrdup(replace_data_type($1));
+				}
+			| unreserved_keyword					{ $$ = mapping_func_name(pstrdup($1), true); }
 			| type_func_name_keyword				{ $$ = pstrdup($1); }
 		;
 
@@ -20369,10 +20713,8 @@ unreserved_keyword:
 			| HANDLER
 			| HEADER_P
 			| HOLD
-			| HOUR_P
 			| IDENTIFIED
 			| IDENTITY_P
-			| IF_P
 			| IGNORE_EXTRA_DATA
 			| IMMEDIATE
 			| IMMUTABLE
@@ -20433,8 +20775,8 @@ unreserved_keyword:
 			| MAXTRANS
 			| MERGE
 			| MINEXTENTS
-			| MINUTE_P
 			| MINVALUE
+			| MOD
 			| MODE
 			| MODEL      // DB4AI
 			| MONTH_P
@@ -20541,7 +20883,6 @@ unreserved_keyword:
 			| SCHEMA
 			| SCROLL
 			| SEARCH
-			| SECOND_P
 			| SECURITY
 			| SEQUENCE
 			| SEQUENCES
@@ -20632,7 +20973,6 @@ unreserved_keyword:
 			| WRAPPER
 			| WRITE
 			| XML_P
-			| YEAR_P
 			| YES_P
 			| ZONE
 		;
@@ -20660,6 +21000,9 @@ col_name_keyword:
 			| CHARACTER
 			| COALESCE
 			| DATE_P
+			| DAYOFMONTH
+			| DAYOFWEEK
+			| DAYOFYEAR
 			| DEC
 			| DECIMAL_P
 			| DECODE
@@ -20668,11 +21011,17 @@ col_name_keyword:
 			| FLOAT_P
 			| GREATEST
 			| GROUPING_P
+			| HOUR_P
+			| IF_P
+			| IFNULL
 			| INOUT
 			| INT_P
 			| INTEGER
 			| INTERVAL
 			| LEAST
+			| LOCATE
+			| MICROSECOND_P
+			| MINUTE_P
 			| NATIONAL
 			| NCHAR
 			| NONE
@@ -20685,8 +21034,10 @@ col_name_keyword:
 			| OVERLAY
 			| POSITION
 			| PRECISION
+			| QUARTER
 			| REAL
 			| ROW
+			| SECOND_P
 			| SETOF
 			| SMALLDATETIME
 			| SMALLINT
@@ -20700,6 +21051,8 @@ col_name_keyword:
 			| VALUES
 			| VARCHAR
 			| VARCHAR2
+			| WEEKDAY
+			| WEEKOFYEAR
 			| XMLATTRIBUTES
 			| XMLCONCAT
 			| XMLELEMENT
@@ -20709,6 +21062,7 @@ col_name_keyword:
 			| XMLPI
 			| XMLROOT
 			| XMLSERIALIZE
+			| YEAR_P
 		;
 
 /* Type/function identifier --- keywords that can be type or function names.
@@ -20730,6 +21084,7 @@ type_func_name_keyword:
 			| CROSS
 			| CURRENT_SCHEMA
 			| DELTAMERGE
+			| DIV
 			| FREEZE
 			| FULL
 			| HDFSDIRECTORY
@@ -20742,10 +21097,13 @@ type_func_name_keyword:
 			| NOTNULL
 			| OUTER_P
 			| OVERLAPS
+			| REGEXP
 			| RIGHT
+			| RLIKE
 			| SIMILAR
 			| TABLESAMPLE
 			| VERBOSE
+			| XOR
 		;
 
 /* Reserved keyword --- these keywords are usable only as a ColLabel.
@@ -22362,6 +22720,102 @@ static void parameter_check_execute_direct(const char* query)
 		ereport(ERROR,
 			(errcode(ERRCODE_INSUFFICIENT_PRIVILEGE),
 				errmsg("must be system admin or monitor admin to use EXECUTE DIRECT")));
+}
+
+static const char* replace_data_type(char* input)
+{
+	int rc;
+	Size inputLen = strlen(input);
+	char *ident = (char*)palloc(inputLen + 2);
+	rc = sprintf_s(ident, inputLen + 2, "%s%s", input, ":");
+	securec_check_ss(rc, "\0", "\0");
+	const char* substr = strstr(transform_data_type, ident);
+	while (substr != NULL && strlen(transform_data_type) != strlen(substr) &&
+		transform_data_type[strlen(transform_data_type) - strlen(substr) - 1] != ',') {
+		substr = strstr(substr + 1, ident);
+	}
+	pfree(ident);
+	if (substr != NULL && substr[inputLen] == ':') {
+		int len = 0;
+
+		while (substr[inputLen + len + 1] != ',' && substr[inputLen + len + 1] != '\0') {
+			len++;
+		}
+		char* replace = (char *)palloc0(len + 1);
+		rc = strncpy_s(replace, len + 1, substr + inputLen + 1, len);
+		securec_check(rc, "\0", "\0");
+		return replace;
+	} else {
+		return mapping_func_name(input, false);
+	}
+}
+
+static TypeName* parseFloatTypeByPrecision(int ival, int location, core_yyscan_t yyscanner)
+{
+    TypeName *typnam = NULL;
+    if (ival < 1) {
+        ereport(ERROR,
+            (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+             errmsg("precision for type float must be at least 1 bit"),
+             parser_errposition(location)));
+    } else if (ival <= 24) {
+        typnam = SystemTypeName("float4");
+    } else if (ival <= 53) {
+        typnam = SystemTypeName("float8");
+    } else {
+        ereport(ERROR,
+            (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+             errmsg("precision for type float must be less than 54 bits"),
+             parser_errposition(location)));
+    }
+    return typnam;
+}
+static TypeName* transferFloat4TypeInBFormat(char *typnam, List* list, int location, core_yyscan_t yyscanner)
+{
+    TypeName *transResult = NULL;
+    if (list == NULL) {
+        transResult = SystemTypeName("float4");
+        return transResult;
+    }
+    if (list->length == 1) {
+        Node *node = (Node*)(list->head->data.ptr_value);
+        if (node->type == T_A_Const) {
+            A_Const aConst = *(A_Const*)(list->head->data.ptr_value);
+            if (aConst.val.type == T_Integer) {
+                int ival = aConst.val.val.ival;
+                transResult = parseFloatTypeByPrecision(ival, location, yyscanner);
+                transResult->typmods = NIL;
+                list_free_ext(list);
+                return transResult;
+            }
+        }
+    }else if (list->length == 2) {
+        transResult = SystemTypeName("numeric");
+        transResult->typmods = list;
+        return transResult;
+    }
+    /* exception */
+    transResult = SystemTypeName("float4");
+    transResult->typmods = list;
+    return transResult;
+}
+
+static char* mapping_func_name(char* old_name, bool free_old)
+{
+#define KEY func_name_map[i]
+#define VAL func_name_map[i + 1]
+#define SEARCH_NEXT_KV (i += 2)
+
+    int i = 0;
+    while (KEY != NULL && strcmp(old_name, KEY) != 0) SEARCH_NEXT_KV;
+
+    if (KEY == NULL) {
+        return old_name;
+    } else {
+        Assert(VAL != NULL);
+        if (free_old) pfree(old_name);
+        return pstrdup(VAL);
+    }
 }
 
 /*

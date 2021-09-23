@@ -12,6 +12,7 @@
  *
  * -------------------------------------------------------------------------
  */
+#ifndef PLPGSQL_H
 #define PLPGSQL_H
 #ifndef PLBSQL_H
 #define PLBSQL_H
@@ -1032,3 +1033,4 @@ extern bool plpgsql_is_token_match2(int token, int token_next);
 extern bool plpgsql_is_token_match(int token);
 
 #endif /* PLBSQL_H */
+#endif /* PLPGSQL_H */
