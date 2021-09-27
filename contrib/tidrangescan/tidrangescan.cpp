@@ -11,7 +11,7 @@
 #include "commands/defrem.h"
 #include "commands/explain.h"
 #include "executor/executor.h"
-#include "executor/execdebug.h"
+#include "executor/exec/execdebug.h"
 #include "fmgr.h"
 #include "miscadmin.h"
 #include "nodes/makefuncs.h"
@@ -35,7 +35,7 @@
 #include "utils/spccache.h"
 #include "access/tableam.h"
 #include "access/htup.h"
-#include "executor/nodeExtensible.h"
+#include "executor/node/nodeExtensible.h"
 #include "commands/extension.h"
 
 #include "tidrangescan.h"
