@@ -1,0 +1,1991 @@
+create database db_b_parser_test_db dbcompatibility 'B';
+\c db_b_parser_test_db
+
+create extension db_b_parser;
+WARNING:  could not open file for reading: db_b_parser.conf
+
+INFO:  db_b parser extension init, this parser is not enabled until enable_custom_parser is to true
+INFO:  db_b_extension init
+
+-- test with parser disabled
+set enable_custom_parser to off;
+
+--text(n), tinytext, mediumtext, longtext, failed
+create table t1(a text(10));
+ERROR:  type modifier is not allowed for type "text"
+LINE 1: create table t1(a text(10));
+                          ^
+create table t2(a tinytext);
+ERROR:  type "tinytext" does not exist
+LINE 1: create table t2(a tinytext);
+                          ^
+create table t3(a mediumtext);
+ERROR:  type "mediumtext" does not exist
+LINE 1: create table t3(a mediumtext);
+                          ^
+create table t4(a longtext);
+ERROR:  type "longtext" does not exist
+LINE 1: create table t4(a longtext);
+                          ^
+
+drop table if exists t1;
+NOTICE:  table "t1" does not exist, skipping
+drop table if exists t2;
+NOTICE:  table "t2" does not exist, skipping
+drop table if exists t3;
+NOTICE:  table "t3" does not exist, skipping
+drop table if exists t4;
+NOTICE:  table "t4" does not exist, skipping
+
+--default presicion of decimal/number/dec/numeric
+create table t_default_decimal(a decimal, b number, c dec, d numeric);
+\d t_default_decimal
+Table "public.t_default_decimal"
+ Column |  Type   | Modifiers 
+--------+---------+-----------
+ a      | numeric | 
+ b      | numeric | 
+ c      | numeric | 
+ d      | numeric | 
+
+drop table t_default_decimal;
+
+--failed
+create table t_default_float1(a float4(10));
+ERROR:  type modifier is not allowed for type "float4"
+LINE 1: create table t_default_float1(a float4(10));
+                                        ^
+create table t_default_float2(a double);
+ERROR:  type "double" does not exist
+LINE 1: create table t_default_float2(a double);
+                                        ^
+
+drop table if exists t_default_float1;
+NOTICE:  table "t_default_float1" does not exist, skipping
+drop table if exists t_default_float2;
+NOTICE:  table "t_default_float2" does not exist, skipping
+
+--real is single presicion, float is double presicion
+create table t_default_float3(a real, b float);
+\d t_default_float3
+    Table "public.t_default_float3"
+ Column |       Type       | Modifiers 
+--------+------------------+-----------
+ a      | real             | 
+ b      | double precision | 
+
+drop table if exists t_default_float3;
+
+-- :=
+-- only support 
+--     update set clause
+--     set stmt\alter system set
+----------------------------
+create table a(a1 int, a2 int);
+insert into a select generate_series(1,5);
+update a set a1 := 11;
+ERROR:  syntax error at or near ":="
+LINE 1: update a set a1 := 11;
+                        ^
+select a1 from a;
+ a1 
+----
+  1
+  2
+  3
+  4
+  5
+(5 rows)
+
+update a set (a1, a2) := (12,13);
+ERROR:  syntax error at or near ":="
+LINE 1: update a set (a1, a2) := (12,13);
+                              ^
+set io_limits := 100;
+ERROR:  syntax error at or near ":="
+LINE 1: set io_limits := 100;
+                      ^
+set io_limits := default;
+ERROR:  syntax error at or near ":="
+LINE 1: set io_limits := default;
+                      ^
+
+drop table if exists a;
+
+-- DIV\MOD\REGEXP\NOT REGEXP\RLIKE\XOR  gram test
+Select 8div3;
+ div3 
+------
+    8
+(1 row)
+
+Select 8 div3;
+ div3 
+------
+    8
+(1 row)
+
+Select 8div 3, 8div 3div2, 8div 3div 2;
+ERROR:  syntax error at or near "3"
+LINE 1: Select 8div 3, 8div 3div2, 8div 3div 2;
+                    ^
+Select 8mod;
+ mod 
+-----
+   8
+(1 row)
+
+Select 8 div;
+ div 
+-----
+   8
+(1 row)
+
+Select 8 as div;
+ div 
+-----
+   8
+(1 row)
+
+Select xor1;
+ERROR:  column "xor1" does not exist
+LINE 1: Select xor1;
+               ^
+CONTEXT:  referenced column: xor1
+Select div 1;
+ERROR:  syntax error at or near "1"
+LINE 1: Select div 1;
+                   ^
+
+create schema xor;
+create table xor(a int);
+create table opr_test2(regexp int);
+create type regexp;
+create type regexpp as (regexp int);
+CREATE FUNCTION regexp(int) returns bigint as 'SELECT count(*) FROM  pg_class ;' LANGUAGE SQL;
+CREATE FUNCTION regexp2(regexp int) returns bigint as 'SELECT count(*) FROM  pg_class ;' LANGUAGE SQL;
+create procedure mod(int,int)
+as
+begin
+        select $1 + $2;
+end;
+/
+create procedure mod2(mod int, xxx int)
+as
+begin
+        select $1 + $2;
+end;
+/
+
+drop schema xor;
+drop table xor;
+drop table opr_test2;
+drop type regexp;
+drop type regexpp;
+drop function regexp;
+ERROR:  function regexp asks parameters
+drop function regexp2;
+drop procedure mod(int,int);
+drop procedure mod2;
+
+SELECT '-12.3abc' div NULL;
+ERROR:  syntax error at or near "NULL"
+LINE 1: SELECT '-12.3abc' div NULL;
+                              ^
+SELECT '-12.3abc' div -100.1;
+ERROR:  syntax error at or near "-"
+LINE 1: SELECT '-12.3abc' div -100.1;
+                              ^
+SELECT '-12.3abc' div 0;
+ERROR:  syntax error at or near "0"
+LINE 1: SELECT '-12.3abc' div 0;
+                              ^
+SELECT '-12.3abc' div 5;
+ERROR:  syntax error at or near "5"
+LINE 1: SELECT '-12.3abc' div 5;
+                              ^
+SELECT '-12.3abc' div 158.3;
+ERROR:  syntax error at or near "158.3"
+LINE 1: SELECT '-12.3abc' div 158.3;
+                              ^
+SELECT '-12.3abc' div -8.222e4;
+ERROR:  syntax error at or near "-"
+LINE 1: SELECT '-12.3abc' div -8.222e4;
+                              ^
+SELECT '-12.3abc' div true;
+ERROR:  syntax error at or near "true"
+LINE 1: SELECT '-12.3abc' div true;
+                              ^
+SELECT '-12.3abc' div false;
+ERROR:  syntax error at or near "false"
+LINE 1: SELECT '-12.3abc' div false;
+                              ^
+SELECT '-12.3abc' div 'NULL';
+ERROR:  syntax error at or near "'NULL'"
+LINE 1: SELECT '-12.3abc' div 'NULL';
+                              ^
+
+select 123456 div 5 div 4;
+ERROR:  syntax error at or near "5"
+LINE 1: select 123456 div 5 div 4;
+                          ^
+select 8 div 1 where 100 div 3 div 4 = 0;
+ERROR:  syntax error at or near "1"
+LINE 1: select 8 div 1 where 100 div 3 div 4 = 0;
+                     ^
+select 8 div 3 where 100 div 3 div 4 > 0;
+ERROR:  syntax error at or near "3"
+LINE 1: select 8 div 3 where 100 div 3 div 4 > 0;
+                     ^
+SELECT '-12.3abc' mod NULL;
+ERROR:  syntax error at or near "NULL"
+LINE 1: SELECT '-12.3abc' mod NULL;
+                              ^
+SELECT '-12.3abc' mod -100.1;
+ERROR:  syntax error at or near "-"
+LINE 1: SELECT '-12.3abc' mod -100.1;
+                              ^
+SELECT '-12.3abc' mod 0;
+ERROR:  syntax error at or near "0"
+LINE 1: SELECT '-12.3abc' mod 0;
+                              ^
+SELECT '-12.3abc' mod 5;
+ERROR:  syntax error at or near "5"
+LINE 1: SELECT '-12.3abc' mod 5;
+                              ^
+SELECT '-12.3abc' mod 158.3;
+ERROR:  syntax error at or near "158.3"
+LINE 1: SELECT '-12.3abc' mod 158.3;
+                              ^
+SELECT '-12.3abc' mod -8.222e4;
+ERROR:  syntax error at or near "-"
+LINE 1: SELECT '-12.3abc' mod -8.222e4;
+                              ^
+SELECT '-12.3abc' mod true;
+ERROR:  syntax error at or near "true"
+LINE 1: SELECT '-12.3abc' mod true;
+                              ^
+SELECT '-12.3abc' mod false;
+ERROR:  syntax error at or near "false"
+LINE 1: SELECT '-12.3abc' mod false;
+                              ^
+SELECT '-12.3abc' mod 'NULL';
+ERROR:  syntax error at or near "'NULL'"
+LINE 1: SELECT '-12.3abc' mod 'NULL';
+                              ^
+select 123456 mod 5 mod 4;
+ERROR:  syntax error at or near "5"
+LINE 1: select 123456 mod 5 mod 4;
+                          ^
+select 8 mod 1 where 100 mod 3 mod 4 = 0;
+ERROR:  syntax error at or near "1"
+LINE 1: select 8 mod 1 where 100 mod 3 mod 4 = 0;
+                     ^
+select 8 mod 3 where 100 mod 3 mod 4 > 0;
+ERROR:  syntax error at or near "3"
+LINE 1: select 8 mod 3 where 100 mod 3 mod 4 > 0;
+                     ^
+SELECT '-12.3abc' regexp NULL;
+ERROR:  syntax error at or near "NULL"
+LINE 1: SELECT '-12.3abc' regexp NULL;
+                                 ^
+SELECT '-12.3abc' regexp -100.1;
+ERROR:  syntax error at or near "-"
+LINE 1: SELECT '-12.3abc' regexp -100.1;
+                                 ^
+SELECT '-12.3abc' regexp 0;
+ERROR:  syntax error at or near "0"
+LINE 1: SELECT '-12.3abc' regexp 0;
+                                 ^
+SELECT '-12.3abc' regexp 5;
+ERROR:  syntax error at or near "5"
+LINE 1: SELECT '-12.3abc' regexp 5;
+                                 ^
+SELECT '-12.3abc' regexp 158.3;
+ERROR:  syntax error at or near "158.3"
+LINE 1: SELECT '-12.3abc' regexp 158.3;
+                                 ^
+SELECT '-12.3abc' regexp -8.222e4;
+ERROR:  syntax error at or near "-"
+LINE 1: SELECT '-12.3abc' regexp -8.222e4;
+                                 ^
+SELECT '-12.3abc' regexp true;
+ERROR:  syntax error at or near "true"
+LINE 1: SELECT '-12.3abc' regexp true;
+                                 ^
+SELECT '-12.3abc' regexp false;
+ERROR:  syntax error at or near "false"
+LINE 1: SELECT '-12.3abc' regexp false;
+                                 ^
+SELECT '-12.3abc' regexp 'NULL';
+ERROR:  syntax error at or near "'NULL'"
+LINE 1: SELECT '-12.3abc' regexp 'NULL';
+                                 ^
+SELECT '-12.3abc' not regexp NULL;
+ERROR:  syntax error at or near "regexp"
+LINE 1: SELECT '-12.3abc' not regexp NULL;
+                              ^
+SELECT '-12.3abc' not regexp -100.1;
+ERROR:  syntax error at or near "regexp"
+LINE 1: SELECT '-12.3abc' not regexp -100.1;
+                              ^
+SELECT '-12.3abc' not regexp 0;
+ERROR:  syntax error at or near "regexp"
+LINE 1: SELECT '-12.3abc' not regexp 0;
+                              ^
+SELECT '-12.3abc' not regexp 5;
+ERROR:  syntax error at or near "regexp"
+LINE 1: SELECT '-12.3abc' not regexp 5;
+                              ^
+SELECT '-12.3abc' not regexp 158.3;
+ERROR:  syntax error at or near "regexp"
+LINE 1: SELECT '-12.3abc' not regexp 158.3;
+                              ^
+SELECT '-12.3abc' not regexp -8.222e4;
+ERROR:  syntax error at or near "regexp"
+LINE 1: SELECT '-12.3abc' not regexp -8.222e4;
+                              ^
+SELECT '-12.3abc' not regexp true;
+ERROR:  syntax error at or near "regexp"
+LINE 1: SELECT '-12.3abc' not regexp true;
+                              ^
+SELECT '-12.3abc' not regexp false;
+ERROR:  syntax error at or near "regexp"
+LINE 1: SELECT '-12.3abc' not regexp false;
+                              ^
+SELECT '-12.3abc' not regexp 'NULL';
+ERROR:  syntax error at or near "regexp"
+LINE 1: SELECT '-12.3abc' not regexp 'NULL';
+                              ^
+SELECT '-12.3abc' xor NULL;
+ERROR:  syntax error at or near "NULL"
+LINE 1: SELECT '-12.3abc' xor NULL;
+                              ^
+SELECT '-12.3abc' xor -100.1;
+ERROR:  syntax error at or near "-"
+LINE 1: SELECT '-12.3abc' xor -100.1;
+                              ^
+SELECT '-12.3abc' xor 0;
+ERROR:  syntax error at or near "0"
+LINE 1: SELECT '-12.3abc' xor 0;
+                              ^
+SELECT '-12.3abc' xor 5;
+ERROR:  syntax error at or near "5"
+LINE 1: SELECT '-12.3abc' xor 5;
+                              ^
+SELECT '-12.3abc' xor 158.3;
+ERROR:  syntax error at or near "158.3"
+LINE 1: SELECT '-12.3abc' xor 158.3;
+                              ^
+SELECT '-12.3abc' xor -8.222e4;
+ERROR:  syntax error at or near "-"
+LINE 1: SELECT '-12.3abc' xor -8.222e4;
+                              ^
+SELECT '-12.3abc' xor true;
+ERROR:  syntax error at or near "true"
+LINE 1: SELECT '-12.3abc' xor true;
+                              ^
+SELECT '-12.3abc' xor false;
+ERROR:  syntax error at or near "false"
+LINE 1: SELECT '-12.3abc' xor false;
+                              ^
+SELECT '-12.3abc' xor 'NULL';
+ERROR:  syntax error at or near "'NULL'"
+LINE 1: SELECT '-12.3abc' xor 'NULL';
+                              ^
+SELECT '-12.3abc' rlike NULL;
+ERROR:  syntax error at or near "NULL"
+LINE 1: SELECT '-12.3abc' rlike NULL;
+                                ^
+SELECT '-12.3abc' rlike -100.1;
+ERROR:  syntax error at or near "-"
+LINE 1: SELECT '-12.3abc' rlike -100.1;
+                                ^
+SELECT '-12.3abc' rlike 0;
+ERROR:  syntax error at or near "0"
+LINE 1: SELECT '-12.3abc' rlike 0;
+                                ^
+SELECT '-12.3abc' rlike 5;
+ERROR:  syntax error at or near "5"
+LINE 1: SELECT '-12.3abc' rlike 5;
+                                ^
+SELECT '-12.3abc' rlike 158.3;
+ERROR:  syntax error at or near "158.3"
+LINE 1: SELECT '-12.3abc' rlike 158.3;
+                                ^
+SELECT '-12.3abc' rlike -8.222e4;
+ERROR:  syntax error at or near "-"
+LINE 1: SELECT '-12.3abc' rlike -8.222e4;
+                                ^
+SELECT '-12.3abc' rlike true;
+ERROR:  syntax error at or near "true"
+LINE 1: SELECT '-12.3abc' rlike true;
+                                ^
+SELECT '-12.3abc' rlike false;
+ERROR:  syntax error at or near "false"
+LINE 1: SELECT '-12.3abc' rlike false;
+                                ^
+SELECT '-12.3abc' rlike 'NULL';
+ERROR:  syntax error at or near "'NULL'"
+LINE 1: SELECT '-12.3abc' rlike 'NULL';
+                                ^
+----------------------------------------
+-- copy from regex.sql of fastcheck
+----------------------------------------
+set enable_bitmapscan = off;
+set standard_conforming_strings = on;
+select 'bbbbb' regexp '^([bc])\1*$' as t, 'bbbbb' not regexp '^([bc])\1*$' as t2, 'bbbbb' rlike '^([bc])\1*$' as t;
+ERROR:  syntax error at or near "'^([bc])\1*$'"
+LINE 1: select 'bbbbb' regexp '^([bc])\1*$' as t, 'bbbbb' not regexp...
+                              ^
+select 'ccc' regexp '^([bc])\1*$' as t, 'ccc' not regexp '^([bc])\1*$' as t2, 'ccc' rlike '^([bc])\1*$' as t;
+ERROR:  syntax error at or near "'^([bc])\1*$'"
+LINE 1: select 'ccc' regexp '^([bc])\1*$' as t, 'ccc' not regexp '^(...
+                            ^
+select 'xxx' regexp '^([bc])\1*$' as f, 'xxx' not regexp '^([bc])\1*$' as f2, 'xxx' rlike '^([bc])\1*$' as f;
+ERROR:  syntax error at or near "'^([bc])\1*$'"
+LINE 1: select 'xxx' regexp '^([bc])\1*$' as f, 'xxx' not regexp '^(...
+                            ^
+select 'bbc' regexp '^([bc])\1*$' as f, 'bbc' not regexp '^([bc])\1*$' as f2, 'bbc' rlike '^([bc])\1*$' as f;
+ERROR:  syntax error at or near "'^([bc])\1*$'"
+LINE 1: select 'bbc' regexp '^([bc])\1*$' as f, 'bbc' not regexp '^(...
+                            ^
+select 'b' regexp '^([bc])\1*$' as t, 'b' not regexp '^([bc])\1*$' as t2, 'b' rlike '^([bc])\1*$' as t;
+ERROR:  syntax error at or near "'^([bc])\1*$'"
+LINE 1: select 'b' regexp '^([bc])\1*$' as t, 'b' not regexp '^([bc]...
+                          ^
+select 'abc abc abc' regexp '^(\w+)( \1)+$' as t, 'abc abc abc' not regexp '^(\w+)( \1)+$' as t, 'abc abc abc' rlike '^(\w+)( \1)+$' as t;
+ERROR:  syntax error at or near "'^(\w+)( \1)+$'"
+LINE 1: select 'abc abc abc' regexp '^(\w+)( \1)+$' as t, 'abc abc a...
+                                    ^
+select 'abc abd abc' regexp '^(\w+)( \1)+$' as f, 'abc abd abc' not regexp '^(\w+)( \1)+$' as f, 'abc abd abc' rlike '^(\w+)( \1)+$' as f;
+ERROR:  syntax error at or near "'^(\w+)( \1)+$'"
+LINE 1: select 'abc abd abc' regexp '^(\w+)( \1)+$' as f, 'abc abd a...
+                                    ^
+select 'abc abc abd' regexp '^(\w+)( \1)+$' as f, 'abc abc abd' not regexp '^(\w+)( \1)+$' as f, 'abc abc abd' rlike '^(\w+)( \1)+$' as f;
+ERROR:  syntax error at or near "'^(\w+)( \1)+$'"
+LINE 1: select 'abc abc abd' regexp '^(\w+)( \1)+$' as f, 'abc abc a...
+                                    ^
+select 'abc abc abc' regexp '^(.+)( \1)+$' as t, 'abc abc abc' not regexp '^(.+)( \1)+$' as t, 'abc abc abc' rlike '^(.+)( \1)+$' as t;
+ERROR:  syntax error at or near "'^(.+)( \1)+$'"
+LINE 1: select 'abc abc abc' regexp '^(.+)( \1)+$' as t, 'abc abc ab...
+                                    ^
+select 'abc abd abc' regexp '^(.+)( \1)+$' as f, 'abc abd abc' not regexp '^(.+)( \1)+$' as f, 'abc abd abc' rlike '^(.+)( \1)+$' as f;
+ERROR:  syntax error at or near "'^(.+)( \1)+$'"
+LINE 1: select 'abc abd abc' regexp '^(.+)( \1)+$' as f, 'abc abd ab...
+                                    ^
+select 'abc abc abd' regexp '^(.+)( \1)+$' as f, 'abc abc abd' not regexp '^(.+)( \1)+$' as f, 'abc abc abd' rlike '^(.+)( \1)+$' as f;
+ERROR:  syntax error at or near "'^(.+)( \1)+$'"
+LINE 1: select 'abc abc abd' regexp '^(.+)( \1)+$' as f, 'abc abc ab...
+                                    ^
+select 'a' regexp '($|^)*', 'a' not regexp '($|^)*', 'a' rlike '($|^)*';
+ERROR:  syntax error at or near "'($|^)*'"
+LINE 1: select 'a' regexp '($|^)*', 'a' not regexp '($|^)*', 'a' rli...
+                          ^
+select 'a' regexp '(^)+^', 'a' not regexp '(^)+^', 'a' rlike '(^)+^';
+ERROR:  syntax error at or near "'(^)+^'"
+LINE 1: select 'a' regexp '(^)+^', 'a' not regexp '(^)+^', 'a' rlike...
+                          ^
+select 'a' regexp '$($$)+', 'a' not regexp '$($$)+', 'a' rlike '$($$)+';
+ERROR:  syntax error at or near "'$($$)+'"
+LINE 1: select 'a' regexp '$($$)+', 'a' not regexp '$($$)+', 'a' rli...
+                          ^
+select 'a' regexp '($^)+', 'a' not regexp '($^)+', 'a' rlike '($^)+';
+ERROR:  syntax error at or near "'($^)+'"
+LINE 1: select 'a' regexp '($^)+', 'a' not regexp '($^)+', 'a' rlike...
+                          ^
+select 'a' regexp '(^$)*', 'a' not regexp '(^$)*', 'a' rlike '(^$)*';
+ERROR:  syntax error at or near "'(^$)*'"
+LINE 1: select 'a' regexp '(^$)*', 'a' not regexp '(^$)*', 'a' rlike...
+                          ^
+select 'aa bb cc' regexp '(^(?!aa))+', 'aa bb cc' not regexp '(^(?!aa))+', 'aa bb cc' rlike '(^(?!aa))+';
+ERROR:  syntax error at or near "'(^(?!aa))+'"
+LINE 1: select 'aa bb cc' regexp '(^(?!aa))+', 'aa bb cc' not regexp...
+                                 ^
+select 'aa x' regexp '(^(?!aa)(?!bb)(?!cc))+', 'aa x' not regexp '(^(?!aa)(?!bb)(?!cc))+', 'aa x' rlike '(^(?!aa)(?!bb)(?!cc))+';
+ERROR:  syntax error at or near "'(^(?!aa)(?!bb)(?!cc))+'"
+LINE 1: select 'aa x' regexp '(^(?!aa)(?!bb)(?!cc))+', 'aa x' not re...
+                             ^
+select 'bb x' regexp '(^(?!aa)(?!bb)(?!cc))+', 'bb x' not regexp '(^(?!aa)(?!bb)(?!cc))+', 'bb x' rlike '(^(?!aa)(?!bb)(?!cc))+';
+ERROR:  syntax error at or near "'(^(?!aa)(?!bb)(?!cc))+'"
+LINE 1: select 'bb x' regexp '(^(?!aa)(?!bb)(?!cc))+', 'bb x' not re...
+                             ^
+select 'cc x' regexp '(^(?!aa)(?!bb)(?!cc))+', 'cc x' not regexp '(^(?!aa)(?!bb)(?!cc))+', 'cc x' rlike '(^(?!aa)(?!bb)(?!cc))+';
+ERROR:  syntax error at or near "'(^(?!aa)(?!bb)(?!cc))+'"
+LINE 1: select 'cc x' regexp '(^(?!aa)(?!bb)(?!cc))+', 'cc x' not re...
+                             ^
+select 'dd x' regexp '(^(?!aa)(?!bb)(?!cc))+', 'dd x' not regexp '(^(?!aa)(?!bb)(?!cc))+', 'dd x' rlike '(^(?!aa)(?!bb)(?!cc))+';
+ERROR:  syntax error at or near "'(^(?!aa)(?!bb)(?!cc))+'"
+LINE 1: select 'dd x' regexp '(^(?!aa)(?!bb)(?!cc))+', 'dd x' not re...
+                             ^
+select 'x' regexp 'abcd(\m)+xyz', 'x' not regexp 'abcd(\m)+xyz', 'x' rlike 'abcd(\m)+xyz';
+ERROR:  syntax error at or near "'abcd(\m)+xyz'"
+LINE 1: select 'x' regexp 'abcd(\m)+xyz', 'x' not regexp 'abcd(\m)+x...
+                          ^
+select 'x' regexp 'a^(^)bcd*xy(((((($a+|)+|)+|)+$|)+|)+|)^$', 'x' not regexp 'a^(^)bcd*xy(((((($a+|)+|)+|)+$|)+|)+|)^$', 'x' rlike 'a^(^)bcd*xy(((((($a+|)+|)+|)+$|)+|)+|)^$';
+ERROR:  syntax error at or near "'a^(^)bcd*xy(((((($a+|)+|)+|)+$|)+|)+|)^$'"
+LINE 1: select 'x' regexp 'a^(^)bcd*xy(((((($a+|)+|)+|)+$|)+|)+|)^$'...
+                          ^
+select 'a' regexp '((((((a)*)*)*)*)*)*', 'a' not regexp '((((((a)*)*)*)*)*)*', 'a' rlike '((((((a)*)*)*)*)*)*';
+ERROR:  syntax error at or near "'((((((a)*)*)*)*)*)*'"
+LINE 1: select 'a' regexp '((((((a)*)*)*)*)*)*', 'a' not regexp '(((...
+                          ^
+select 'a' regexp '((((((a+|)+|)+|)+|)+|)+|)', 'a' not regexp '((((((a+|)+|)+|)+|)+|)+|)', 'a' rlike '((((((a+|)+|)+|)+|)+|)+|)';
+ERROR:  syntax error at or near "'((((((a+|)+|)+|)+|)+|)+|)'"
+LINE 1: select 'a' regexp '((((((a+|)+|)+|)+|)+|)+|)', 'a' not regex...
+                          ^
+select 'a' regexp '\x7fffffff', 'a' not regexp '\x7fffffff', 'a' rlike '\x7fffffff';
+ERROR:  syntax error at or near "'\x7fffffff'"
+LINE 1: select 'a' regexp '\x7fffffff', 'a' not regexp '\x7fffffff',...
+                          ^
+select 'a' regexp '$()|^\1', 'a' not regexp '$()|^\1', 'a' rlike '$()|^\1';
+ERROR:  syntax error at or near "'$()|^\1'"
+LINE 1: select 'a' regexp '$()|^\1', 'a' not regexp '$()|^\1', 'a' r...
+                          ^
+select 'a' regexp '.. ()|\1', 'a' not regexp '.. ()|\1', 'a' rlike '.. ()|\1';
+ERROR:  syntax error at or near "'.. ()|\1'"
+LINE 1: select 'a' regexp '.. ()|\1', 'a' not regexp '.. ()|\1', 'a'...
+                          ^
+select 'a' regexp '()*\1', 'a' not regexp '()*\1', 'a' rlike '()*\1';
+ERROR:  syntax error at or near "'()*\1'"
+LINE 1: select 'a' regexp '()*\1', 'a' not regexp '()*\1', 'a' rlike...
+                          ^
+select 'a' regexp '()+\1', 'a' not regexp '()+\1', 'a' rlike '()+\1';
+ERROR:  syntax error at or near "'()+\1'"
+LINE 1: select 'a' regexp '()+\1', 'a' not regexp '()+\1', 'a' rlike...
+                          ^
+explain (costs off) select * from pg_proc where proname regexp 'abc';
+ERROR:  syntax error at or near "regexp"
+LINE 1: ...n (costs off) select * from pg_proc where proname regexp 'ab...
+                                                             ^
+explain (costs off) select * from pg_proc where proname regexp '^abc';
+ERROR:  syntax error at or near "regexp"
+LINE 1: ...n (costs off) select * from pg_proc where proname regexp '^a...
+                                                             ^
+explain (costs off) select * from pg_proc where proname regexp '^abc$';
+ERROR:  syntax error at or near "regexp"
+LINE 1: ...n (costs off) select * from pg_proc where proname regexp '^a...
+                                                             ^
+explain (costs off) select * from pg_proc where proname regexp '^abcd*e';
+ERROR:  syntax error at or near "regexp"
+LINE 1: ...n (costs off) select * from pg_proc where proname regexp '^a...
+                                                             ^
+explain (costs off) select * from pg_proc where proname regexp '^abc+d';
+ERROR:  syntax error at or near "regexp"
+LINE 1: ...n (costs off) select * from pg_proc where proname regexp '^a...
+                                                             ^
+explain (costs off) select * from pg_proc where proname regexp '^(abc)(def)';
+ERROR:  syntax error at or near "regexp"
+LINE 1: ...n (costs off) select * from pg_proc where proname regexp '^(...
+                                                             ^
+explain (costs off) select * from pg_proc where proname regexp '^(abc)$';
+ERROR:  syntax error at or near "regexp"
+LINE 1: ...n (costs off) select * from pg_proc where proname regexp '^(...
+                                                             ^
+explain (costs off) select * from pg_proc where proname regexp '^(abc)?d';
+ERROR:  syntax error at or near "regexp"
+LINE 1: ...n (costs off) select * from pg_proc where proname regexp '^(...
+                                                             ^
+explain (costs off) select * from pg_proc where proname not regexp 'abc';
+ERROR:  syntax error at or near "regexp"
+LINE 1: ...osts off) select * from pg_proc where proname not regexp 'ab...
+                                                             ^
+explain (costs off) select * from pg_proc where proname not regexp '^abc';
+ERROR:  syntax error at or near "regexp"
+LINE 1: ...osts off) select * from pg_proc where proname not regexp '^a...
+                                                             ^
+explain (costs off) select * from pg_proc where proname not regexp '^abc$';
+ERROR:  syntax error at or near "regexp"
+LINE 1: ...osts off) select * from pg_proc where proname not regexp '^a...
+                                                             ^
+explain (costs off) select * from pg_proc where proname not regexp '^abcd*e';
+ERROR:  syntax error at or near "regexp"
+LINE 1: ...osts off) select * from pg_proc where proname not regexp '^a...
+                                                             ^
+explain (costs off) select * from pg_proc where proname not regexp '^abc+d';
+ERROR:  syntax error at or near "regexp"
+LINE 1: ...osts off) select * from pg_proc where proname not regexp '^a...
+                                                             ^
+explain (costs off) select * from pg_proc where proname not regexp '^(abc)(def)';
+ERROR:  syntax error at or near "regexp"
+LINE 1: ...osts off) select * from pg_proc where proname not regexp '^(...
+                                                             ^
+explain (costs off) select * from pg_proc where proname not regexp '^(abc)$';
+ERROR:  syntax error at or near "regexp"
+LINE 1: ...osts off) select * from pg_proc where proname not regexp '^(...
+                                                             ^
+explain (costs off) select * from pg_proc where proname not regexp '^(abc)?d';
+ERROR:  syntax error at or near "regexp"
+LINE 1: ...osts off) select * from pg_proc where proname not regexp '^(...
+                                                             ^
+explain (costs off) select * from pg_proc where proname rlike 'abc';
+ERROR:  syntax error at or near "rlike"
+LINE 1: ...n (costs off) select * from pg_proc where proname rlike 'abc...
+                                                             ^
+explain (costs off) select * from pg_proc where proname rlike '^abc';
+ERROR:  syntax error at or near "rlike"
+LINE 1: ...n (costs off) select * from pg_proc where proname rlike '^ab...
+                                                             ^
+explain (costs off) select * from pg_proc where proname rlike '^abc$';
+ERROR:  syntax error at or near "rlike"
+LINE 1: ...n (costs off) select * from pg_proc where proname rlike '^ab...
+                                                             ^
+explain (costs off) select * from pg_proc where proname rlike '^abcd*e';
+ERROR:  syntax error at or near "rlike"
+LINE 1: ...n (costs off) select * from pg_proc where proname rlike '^ab...
+                                                             ^
+explain (costs off) select * from pg_proc where proname rlike '^abc+d';
+ERROR:  syntax error at or near "rlike"
+LINE 1: ...n (costs off) select * from pg_proc where proname rlike '^ab...
+                                                             ^
+explain (costs off) select * from pg_proc where proname rlike '^(abc)(def)';
+ERROR:  syntax error at or near "rlike"
+LINE 1: ...n (costs off) select * from pg_proc where proname rlike '^(a...
+                                                             ^
+explain (costs off) select * from pg_proc where proname rlike '^(abc)$';
+ERROR:  syntax error at or near "rlike"
+LINE 1: ...n (costs off) select * from pg_proc where proname rlike '^(a...
+                                                             ^
+explain (costs off) select * from pg_proc where proname rlike '^(abc)?d';
+ERROR:  syntax error at or near "rlike"
+LINE 1: ...n (costs off) select * from pg_proc where proname rlike '^(a...
+                                                             ^
+set enable_bitmapscan = default;
+set standard_conforming_strings = default;
+------DAYOFMONTH() DAYOFWEEK() DAYOFYEAR() HOUR() MICROSECOND() MINUTE() QUARTER() SECOND() WEEKDAY() WEEKOFYEAR() YEAR() 
+select DAYOFMONTH(timestamp '2021-05-26 16:30:44.341191');
+ERROR:  function dayofmonth(timestamp without time zone) does not exist
+LINE 1: select DAYOFMONTH(timestamp '2021-05-26 16:30:44.341191');
+               ^
+HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
+CONTEXT:  referenced column: dayofmonth
+select DAYOFWEEK(timestamp '2021-05-26 16:30:44.341191');
+ERROR:  function dayofweek(timestamp without time zone) does not exist
+LINE 1: select DAYOFWEEK(timestamp '2021-05-26 16:30:44.341191');
+               ^
+HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
+CONTEXT:  referenced column: dayofweek
+select DAYOFYEAR(timestamp '2021-05-26 16:30:44.341191');
+ERROR:  function dayofyear(timestamp without time zone) does not exist
+LINE 1: select DAYOFYEAR(timestamp '2021-05-26 16:30:44.341191');
+               ^
+HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
+CONTEXT:  referenced column: dayofyear
+select HOUR(timestamp '2021-05-26 16:30:44.341191');
+ERROR:  function hour(timestamp without time zone) does not exist
+LINE 1: select HOUR(timestamp '2021-05-26 16:30:44.341191');
+               ^
+HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
+CONTEXT:  referenced column: hour
+select MICROSECOND(timestamp '2021-05-26 16:30:44.341191');
+ERROR:  function microsecond(timestamp without time zone) does not exist
+LINE 1: select MICROSECOND(timestamp '2021-05-26 16:30:44.341191');
+               ^
+HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
+CONTEXT:  referenced column: microsecond
+select MINUTE(timestamp '2021-05-26 16:30:44.341191');
+ERROR:  function minute(timestamp without time zone) does not exist
+LINE 1: select MINUTE(timestamp '2021-05-26 16:30:44.341191');
+               ^
+HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
+CONTEXT:  referenced column: minute
+select QUARTER(timestamp '2021-05-26 16:30:44.341191');
+ERROR:  function quarter(timestamp without time zone) does not exist
+LINE 1: select QUARTER(timestamp '2021-05-26 16:30:44.341191');
+               ^
+HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
+CONTEXT:  referenced column: quarter
+select SECOND(timestamp '2021-05-26 16:30:44.341191');
+ERROR:  function second(timestamp without time zone) does not exist
+LINE 1: select SECOND(timestamp '2021-05-26 16:30:44.341191');
+               ^
+HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
+CONTEXT:  referenced column: second
+select WEEKDAY(timestamp '2021-05-26 16:30:44.341191');
+ERROR:  function weekday(timestamp without time zone) does not exist
+LINE 1: select WEEKDAY(timestamp '2021-05-26 16:30:44.341191');
+               ^
+HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
+CONTEXT:  referenced column: weekday
+select WEEKOFYEAR(timestamp '2021-05-26 16:30:44.341191');
+ERROR:  function weekofyear(timestamp without time zone) does not exist
+LINE 1: select WEEKOFYEAR(timestamp '2021-05-26 16:30:44.341191');
+               ^
+HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
+CONTEXT:  referenced column: weekofyear
+select YEAR(timestamp '2021-05-26 16:30:44.341191');
+ERROR:  function year(timestamp without time zone) does not exist
+LINE 1: select YEAR(timestamp '2021-05-26 16:30:44.341191');
+               ^
+HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
+CONTEXT:  referenced column: year
+--- LOCATE
+select locate('test','testgood');
+ERROR:  function locate(unknown, unknown) does not exist
+LINE 1: select locate('test','testgood');
+               ^
+HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
+CONTEXT:  referenced column: locate
+select locate('test','11testgood',5);
+ERROR:  function locate(unknown, unknown, integer) does not exist
+LINE 1: select locate('test','11testgood',5);
+               ^
+HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
+CONTEXT:  referenced column: locate
+select locate('test','11testgood',3);
+ERROR:  function locate(unknown, unknown, integer) does not exist
+LINE 1: select locate('test','11testgood',3);
+               ^
+HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
+CONTEXT:  referenced column: locate
+-- IFNULL
+SELECT IFNULL(NULL, 'test');
+ERROR:  function ifnull(unknown, unknown) does not exist
+LINE 1: SELECT IFNULL(NULL, 'test');
+               ^
+HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
+CONTEXT:  referenced column: ifnull
+-- IF
+SELECT IF(TRUE,'A','B');
+ERROR:  function if(boolean, unknown, unknown) does not exist
+LINE 1: SELECT IF(TRUE,'A','B');
+               ^
+HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
+CONTEXT:  referenced column: if
+SELECT IF(FALSE,'A','B');
+ERROR:  function if(boolean, unknown, unknown) does not exist
+LINE 1: SELECT IF(FALSE,'A','B');
+               ^
+HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
+CONTEXT:  referenced column: if
+------------------------------------------------------------------------------------------------------------------------
+----------------------------
+-- bit_length\octet_length\length
+----------------------------
+select * from pg_proc where proname in ('db_b_parser_bit_length');
+ proname | pronamespace | proowner | prolang | procost | prorows | provariadic | protransform | proisagg | proiswindow | prosecdef | proleakproof | proisstrict | proretset | provolatile | pronargs | pronargdefaults | prorettype | proargtypes | proallargtypes | proargmodes | proargnames | proargdefaults | prosrc | probin | proconfig | proacl | prodefaultargpos | fencedmode | proshippable | propackage | prokind | proargsrc | propackageid | proisprivate | proargtypesext | prodefaultargposext 
+---------+--------------+----------+---------+---------+---------+-------------+--------------+----------+-------------+-----------+--------------+-------------+-----------+-------------+----------+-----------------+------------+-------------+----------------+-------------+-------------+----------------+--------+--------+-----------+--------+------------------+------------+--------------+------------+---------+-----------+--------------+--------------+----------------+---------------------
+(0 rows)
+
+select bit_length(b'1'), bit_length(b'101'), bit_length(b'1011111111');
+ bit_length | bit_length | bit_length 
+------------+------------+------------
+          1 |          3 |         10
+(1 row)
+
+select bit_length( '1'), bit_length( '101'), bit_length( '1011111111');
+ bit_length | bit_length | bit_length 
+------------+------------+------------
+          8 |         24 |         80
+(1 row)
+
+select bit_length( '哈1哈\n'),bit_length( '\n'),bit_length( '\\n');
+ bit_length | bit_length | bit_length 
+------------+------------+------------
+         72 |         16 |         24
+(1 row)
+
+select octet_length(b'1'), octet_length(b'101'), octet_length(b'1011111111');
+ octet_length | octet_length | octet_length 
+--------------+--------------+--------------
+            1 |            1 |            2
+(1 row)
+
+select octet_length( '1'), octet_length( '101'), octet_length( '1011111111');
+ octet_length | octet_length | octet_length 
+--------------+--------------+--------------
+            1 |            3 |           10
+(1 row)
+
+select octet_length( '哈1哈\n'),octet_length( '\n'),octet_length( '\\n');
+ octet_length | octet_length | octet_length 
+--------------+--------------+--------------
+            9 |            2 |            3
+(1 row)
+
+select length(b'1'), length(b'101'), length(b'1011111111');
+ length | length | length 
+--------+--------+--------
+      1 |      3 |     10
+(1 row)
+
+select length( '1'), length( '101'), length( '1011111111');
+ length | length | length 
+--------+--------+--------
+      1 |      3 |     10
+(1 row)
+
+select length( '哈1哈\n'),length( '\n'),length( '\\n');
+ length | length | length 
+--------+--------+--------
+      5 |      2 |      3
+(1 row)
+
+----------------------------
+-- \lcase\ucase\rand\truncate\current_date()
+----------------------------
+select * from pg_proc where proname in ('db_b_parser_bit_length', 'lower', 'upper', 'random', 'trunc') order by oid;
+ proname | pronamespace | proowner | prolang | procost | prorows | provariadic | protransform | proisagg | proiswindow | prosecdef | proleakproof | proisstrict | proretset | provolatile | pronargs | pronargdefaults | prorettype | proargtypes | proallargtypes | proargmodes | proargnames | proargdefaults |                                  prosrc                                   | probin | proconfig | proacl | prodefaultargpos | fencedmode | proshippable | propackage | prokind | proargsrc | propackageid | proisprivate | proargtypesext | prodefaultargposext 
+---------+--------------+----------+---------+---------+---------+-------------+--------------+----------+-------------+-----------+--------------+-------------+-----------+-------------+----------+-----------------+------------+-------------+----------------+-------------+-------------+----------------+---------------------------------------------------------------------------+--------+-----------+--------+------------------+------------+--------------+------------+---------+-----------+--------------+--------------+----------------+---------------------
+ trunc   |           11 |       10 |      12 |       1 |       0 |           0 | -            | f        | f           | f         | f            | t           | f         | i           |        1 |               0 |        829 | 829         |                |             |             |                | macaddr_trunc                                                             |        |           |        |                  | f          |              | f          | f       |           |            0 | f            |                | 
+ lower   |           11 |       10 |      12 |       1 |       0 |           0 | -            | f        | f           | f         | f            | t           | f         | i           |        1 |               0 |         25 | 25          |                |             |             |                | lower                                                                     |        |           |        |                  | f          |              | f          | f       |           |            0 | f            |                | 
+ upper   |           11 |       10 |      12 |       1 |       0 |           0 | -            | f        | f           | f         | f            | t           | f         | i           |        1 |               0 |         25 | 25          |                |             |             |                | upper                                                                     |        |           |        |                  | f          |              | f          | f       |           |            0 | f            |                | 
+ trunc   |           11 |       10 |      12 |       1 |       0 |           0 | -            | f        | f           | f         | f            | t           | f         | i           |        1 |               0 |        701 | 701         |                |             |             |                | dtrunc                                                                    |        |           |        |                  | f          |              | f          | f       |           |            0 | f            |                | 
+ random  |           11 |       10 |      12 |       1 |       0 |           0 | -            | f        | f           | f         | f            | t           | f         | v           |        0 |               0 |        701 |             |                |             |             |                | drandom                                                                   |        |           |        |                  | f          | t            | f          | f       |           |            0 | f            |                | 
+ trunc   |           11 |       10 |      12 |       1 |       0 |           0 | -            | f        | f           | f         | f            | t           | f         | i           |        2 |               0 |       1700 | 1700 23     |                |             |             |                | numeric_trunc                                                             |        |           |        |                  | f          |              | f          | f       |           |            0 | f            |                | 
+ trunc   |           11 |       10 |      14 |       1 |       0 |           0 | -            | f        | f           | f         | f            | t           | f         | i           |        1 |               0 |       1700 | 1700        |                |             |             |                | select pg_catalog.trunc($1,0)                                             |        |           |        |                  | f          |              | f          | f       |           |            0 | f            |                | 
+ lower   |           11 |       10 |      12 |       1 |       0 |           0 | -            | f        | f           | f         | f            | t           | f         | i           |        1 |               0 |       2283 | 3831        |                |             |             |                | range_lower                                                               |        |           |        |                  | f          |              | f          | f       |           |            0 | f            |                | 
+ upper   |           11 |       10 |      12 |       1 |       0 |           0 | -            | f        | f           | f         | f            | t           | f         | i           |        1 |               0 |       2283 | 3831        |                |             |             |                | range_upper                                                               |        |           |        |                  | f          |              | f          | f       |           |            0 | f            |                | 
+ trunc   |           11 |       10 |      14 |     100 |       0 |           0 | -            | f        | f           | f         | f            | t           | f         | i           |        1 |               0 |       1114 | 1184        |                |             |             |                |                                                                          +|        |           |        |                  | f          | f            | f          | f       |           |            0 | f            |                | 
+         |              |          |         |         |         |             |              |          |             |           |              |             |           |             |          |                 |            |             |                |             |             |                |         SELECT CAST(DATE_TRUNC('day',$1) AS TIMESTAMP WITHOUT TIME ZONE);+|        |           |        |                  |            |              |            |         |           |              |              |                | 
+         |              |          |         |         |         |             |              |          |             |           |              |             |           |             |          |                 |            |             |                |             |             |                |                                                                           |        |           |        |                  |            |              |            |         |           |              |              |                | 
+(10 rows)
+
+select lcase('ABc'), lcase('哈哈'), lcase('123456');
+ERROR:  function lcase(unknown) does not exist
+LINE 1: select lcase('ABc'), lcase('哈哈'), lcase('123456');
+               ^
+HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
+CONTEXT:  referenced column: lcase
+select lower('ABc'), lower('哈哈'), lower('123456');
+ lower | lower | lower  
+-------+-------+--------
+ abc   | 哈哈  | 123456
+(1 row)
+
+select ucase('ABc'), ucase('哈哈'), ucase('123456');
+ERROR:  function ucase(unknown) does not exist
+LINE 1: select ucase('ABc'), ucase('哈哈'), ucase('123456');
+               ^
+HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
+CONTEXT:  referenced column: ucase
+select upper('ABc'), upper('哈哈'), upper('123456');
+ upper | upper | upper  
+-------+-------+--------
+ ABC   | 哈哈  | 123456
+(1 row)
+
+select rand(), random();
+ERROR:  function rand() does not exist
+LINE 1: select rand(), random();
+               ^
+HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
+CONTEXT:  referenced column: rand
+select truncate(111.28), truncate(111.28,1), truncate(111.28,5), truncate(111.28,500), truncate(111.28,-1), truncate(111.28,-4);
+ERROR:  function truncate(numeric) does not exist
+LINE 1: select truncate(111.28), truncate(111.28,1), truncate(111.28...
+               ^
+HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
+CONTEXT:  referenced column: truncate
+select    trunc(111.28),    trunc(111.28,1),    trunc(111.28,5),    trunc(111.28,500),    trunc(111.28,-1),    trunc(111.28,-4);
+ trunc | trunc |   trunc   |                                                                                                                                                                                                                                                          trunc                                                                                                                                                                                                                                                           | trunc | trunc 
+-------+-------+-----------+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+-------+-------
+   111 | 111.2 | 111.28000 | 111.28000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000 |   110 |     0
+(1 row)
+
+truncate a;
+ERROR:  relation "a" does not exist
+select current_date(), current_date;
+ERROR:  syntax error at or near "("
+LINE 1: select current_date(), current_date;
+                           ^
+----------------------------------------------
+-- test with parser enabled, same testcases --
+----------------------------------------------
+set enable_custom_parser to on;
+--text(n), tinytext, mediumtext, longtext, failed
+create table t1(a text(10));
+create table t2(a tinytext);
+create table t3(a mediumtext);
+create table t4(a longtext);
+
+drop table if exists t1;
+drop table if exists t2;
+drop table if exists t3;
+drop table if exists t4;
+--default presicion of decimal/number/dec/numeric
+create table t_default_decimal(a decimal, b number, c dec, d numeric);
+\d t_default_decimal
+  Table "public.t_default_decimal"
+ Column |     Type      | Modifiers 
+--------+---------------+-----------
+ a      | numeric(10,0) | 
+ b      | numeric(10,0) | 
+ c      | numeric(10,0) | 
+ d      | numeric(10,0) | 
+
+drop table t_default_decimal;
+--failed
+create table t_default_float1(a float4(10));
+create table t_default_float2(a double);
+
+drop table if exists t_default_float1;
+drop table if exists t_default_float2;
+--real is single presicion, float is double presicion
+create table t_default_float3(a real, b float);
+\d t_default_float3
+    Table "public.t_default_float3"
+ Column |       Type       | Modifiers 
+--------+------------------+-----------
+ a      | double precision | 
+ b      | real             | 
+
+drop table t_default_float3;
+-- :=
+-- only support 
+--     update set clause
+--     set stmt\alter system set
+----------------------------
+create table a(a1 int, a2 int);
+insert into a select generate_series(1,5);
+update a set a1 := 11;
+select a1 from a;
+ a1 
+----
+ 11
+ 11
+ 11
+ 11
+ 11
+(5 rows)
+
+update a set (a1, a2) := (12,13);
+set io_limits := 100;
+set io_limits := default;
+
+drop table if exists a;
+-- DIV\MOD\REGEXP\NOT REGEXP\RLIKE\XOR  gram test
+Select 8div3;
+ div3 
+------
+    8
+(1 row)
+
+Select 8 div3;
+ div3 
+------
+    8
+(1 row)
+
+Select 8div 3, 8div 3div2, 8div 3div 2;
+ div | div2 | div 
+-----+------+-----
+   2 |    2 |   1
+(1 row)
+
+Select 8mod;
+ERROR:  syntax error at or near ";"
+LINE 1: Select 8mod;
+                   ^
+Select 8 div;
+ERROR:  syntax error at or near ";"
+LINE 1: Select 8 div;
+                    ^
+Select 8 as div;
+ div 
+-----
+   8
+(1 row)
+
+Select xor1;
+ERROR:  column "xor1" does not exist
+LINE 1: Select xor1;
+               ^
+CONTEXT:  referenced column: xor1
+Select div 1;
+ERROR:  syntax error at or near "1"
+LINE 1: Select div 1;
+                   ^
+create schema xor;
+ERROR:  syntax error at or near "xor"
+LINE 1: create schema xor;
+                      ^
+create table xor(a int);
+ERROR:  syntax error at or near "xor"
+LINE 1: create table xor(a int);
+                     ^
+create table opr_test2(regexp int);
+ERROR:  syntax error at or near "regexp"
+LINE 1: create table opr_test2(regexp int);
+                               ^
+create type regexp;
+ERROR:  syntax error at or near "regexp"
+LINE 1: create type regexp;
+                    ^
+create type regexpp as (regexp int);
+ERROR:  syntax error at or near "regexp"
+LINE 1: create type regexpp as (regexp int);
+                                ^
+CREATE FUNCTION regexp(int) returns bigint as 'SELECT count(*) FROM  pg_class ;' LANGUAGE SQL;
+ERROR:  function "regexp" already exists with same argument types
+CREATE FUNCTION regexp2(regexp int) returns bigint as 'SELECT count(*) FROM  pg_class ;' LANGUAGE SQL;
+create procedure mod(int,int)
+as
+begin
+        select $1 + $2;
+end;
+/
+create procedure mod2(mod int, xxx int)
+as
+begin
+        select $1 + $2;
+end;
+/
+drop schema xor;
+ERROR:  syntax error at or near "xor"
+LINE 1: drop schema xor;
+                    ^
+drop table xor;
+ERROR:  syntax error at or near "xor"
+LINE 1: drop table xor;
+                   ^
+drop table opr_test2;
+ERROR:  table "opr_test2" does not exist
+drop type regexp;
+ERROR:  syntax error at or near "regexp"
+LINE 1: drop type regexp;
+                  ^
+drop type regexpp;
+ERROR:  type "regexpp" does not exist
+drop function regexp;
+ERROR:  function regexp asks parameters
+drop function regexp2;
+drop procedure mod(int,int);
+drop procedure mod2;
+SELECT '-12.3abc' div NULL;
+ERROR:  invalid input syntax for type numeric: "-12.3abc"
+LINE 1: SELECT '-12.3abc' div NULL;
+               ^
+CONTEXT:  referenced column: div
+SELECT '-12.3abc' div -100.1;
+ERROR:  invalid input syntax for type numeric: "-12.3abc"
+LINE 1: SELECT '-12.3abc' div -100.1;
+               ^
+CONTEXT:  referenced column: div
+SELECT '-12.3abc' div 0;
+ERROR:  invalid input syntax for type numeric: "-12.3abc"
+LINE 1: SELECT '-12.3abc' div 0;
+               ^
+CONTEXT:  referenced column: div
+SELECT '-12.3abc' div 5;
+ERROR:  invalid input syntax for type numeric: "-12.3abc"
+LINE 1: SELECT '-12.3abc' div 5;
+               ^
+CONTEXT:  referenced column: div
+SELECT '-12.3abc' div 158.3;
+ERROR:  invalid input syntax for type numeric: "-12.3abc"
+LINE 1: SELECT '-12.3abc' div 158.3;
+               ^
+CONTEXT:  referenced column: div
+SELECT '-12.3abc' div -8.222e4;
+ERROR:  invalid input syntax for type numeric: "-12.3abc"
+LINE 1: SELECT '-12.3abc' div -8.222e4;
+               ^
+CONTEXT:  referenced column: div
+SELECT '-12.3abc' div true;
+ERROR:  invalid input syntax for type numeric: "-12.3abc"
+LINE 1: SELECT '-12.3abc' div true;
+               ^
+CONTEXT:  referenced column: div
+SELECT '-12.3abc' div false;
+ERROR:  invalid input syntax for type numeric: "-12.3abc"
+LINE 1: SELECT '-12.3abc' div false;
+               ^
+CONTEXT:  referenced column: div
+SELECT '-12.3abc' div 'NULL';
+ERROR:  invalid input syntax for type numeric: "-12.3abc"
+LINE 1: SELECT '-12.3abc' div 'NULL';
+               ^
+CONTEXT:  referenced column: div
+select 123456 div 5 div 4;
+ div  
+------
+ 6172
+(1 row)
+
+select 8 div 1 where 100 div 3 div 4 = 0;
+ div 
+-----
+(0 rows)
+
+select 8 div 3 where 100 div 3 div 4 > 0;
+ div 
+-----
+   2
+(1 row)
+
+SELECT '-12.3abc' mod NULL;
+ERROR:  invalid input syntax for type numeric: "-12.3abc"
+LINE 1: SELECT '-12.3abc' mod NULL;
+               ^
+CONTEXT:  referenced column: b_mod
+SELECT '-12.3abc' mod -100.1;
+ERROR:  invalid input syntax for type numeric: "-12.3abc"
+LINE 1: SELECT '-12.3abc' mod -100.1;
+               ^
+CONTEXT:  referenced column: b_mod
+SELECT '-12.3abc' mod 0;
+ERROR:  invalid input syntax for type numeric: "-12.3abc"
+LINE 1: SELECT '-12.3abc' mod 0;
+               ^
+CONTEXT:  referenced column: b_mod
+SELECT '-12.3abc' mod 5;
+ERROR:  invalid input syntax for type numeric: "-12.3abc"
+LINE 1: SELECT '-12.3abc' mod 5;
+               ^
+CONTEXT:  referenced column: b_mod
+SELECT '-12.3abc' mod 158.3;
+ERROR:  invalid input syntax for type numeric: "-12.3abc"
+LINE 1: SELECT '-12.3abc' mod 158.3;
+               ^
+CONTEXT:  referenced column: b_mod
+SELECT '-12.3abc' mod -8.222e4;
+ERROR:  invalid input syntax for type numeric: "-12.3abc"
+LINE 1: SELECT '-12.3abc' mod -8.222e4;
+               ^
+CONTEXT:  referenced column: b_mod
+SELECT '-12.3abc' mod true;
+ERROR:  invalid input syntax for type numeric: "-12.3abc"
+LINE 1: SELECT '-12.3abc' mod true;
+               ^
+CONTEXT:  referenced column: b_mod
+SELECT '-12.3abc' mod false;
+ERROR:  invalid input syntax for type numeric: "-12.3abc"
+LINE 1: SELECT '-12.3abc' mod false;
+               ^
+CONTEXT:  referenced column: b_mod
+SELECT '-12.3abc' mod 'NULL';
+ERROR:  invalid input syntax for type numeric: "-12.3abc"
+LINE 1: SELECT '-12.3abc' mod 'NULL';
+               ^
+CONTEXT:  referenced column: b_mod
+select 123456 mod 5 mod 4;
+ b_mod 
+-------
+     1
+(1 row)
+
+select 8 mod 1 where 100 mod 3 mod 4 = 0;
+ b_mod 
+-------
+(0 rows)
+
+select 8 mod 3 where 100 mod 3 mod 4 > 0;
+ b_mod 
+-------
+     2
+(1 row)
+
+SELECT '-12.3abc' regexp NULL;
+ regexp 
+--------
+       
+(1 row)
+
+SELECT '-12.3abc' regexp -100.1;
+ regexp 
+--------
+      0
+(1 row)
+
+SELECT '-12.3abc' regexp 0;
+ regexp 
+--------
+      0
+(1 row)
+
+SELECT '-12.3abc' regexp 5;
+ regexp 
+--------
+      0
+(1 row)
+
+SELECT '-12.3abc' regexp 158.3;
+ regexp 
+--------
+      0
+(1 row)
+
+SELECT '-12.3abc' regexp -8.222e4;
+ regexp 
+--------
+      0
+(1 row)
+
+SELECT '-12.3abc' regexp true;
+ERROR:  function pg_catalog.regexp(unknown, boolean) does not exist
+LINE 1: SELECT '-12.3abc' regexp true;
+                          ^
+HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
+CONTEXT:  referenced column: regexp
+SELECT '-12.3abc' regexp false;
+ERROR:  function pg_catalog.regexp(unknown, boolean) does not exist
+LINE 1: SELECT '-12.3abc' regexp false;
+                          ^
+HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
+CONTEXT:  referenced column: regexp
+SELECT '-12.3abc' regexp 'NULL';
+ regexp 
+--------
+      0
+(1 row)
+
+SELECT '-12.3abc' not regexp NULL;
+ not_regexp 
+------------
+           
+(1 row)
+
+SELECT '-12.3abc' not regexp -100.1;
+ not_regexp 
+------------
+          1
+(1 row)
+
+SELECT '-12.3abc' not regexp 0;
+ not_regexp 
+------------
+          1
+(1 row)
+
+SELECT '-12.3abc' not regexp 5;
+ not_regexp 
+------------
+          1
+(1 row)
+
+SELECT '-12.3abc' not regexp 158.3;
+ not_regexp 
+------------
+          1
+(1 row)
+
+SELECT '-12.3abc' not regexp -8.222e4;
+ not_regexp 
+------------
+          1
+(1 row)
+
+SELECT '-12.3abc' not regexp true;
+ERROR:  function pg_catalog.not_regexp(unknown, boolean) does not exist
+LINE 1: SELECT '-12.3abc' not regexp true;
+                          ^
+HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
+CONTEXT:  referenced column: not_regexp
+SELECT '-12.3abc' not regexp false;
+ERROR:  function pg_catalog.not_regexp(unknown, boolean) does not exist
+LINE 1: SELECT '-12.3abc' not regexp false;
+                          ^
+HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
+CONTEXT:  referenced column: not_regexp
+SELECT '-12.3abc' not regexp 'NULL';
+ not_regexp 
+------------
+          1
+(1 row)
+
+SELECT '-12.3abc' xor NULL;
+ xor 
+-----
+    
+(1 row)
+
+SELECT '-12.3abc' xor -100.1;
+ xor 
+-----
+   0
+(1 row)
+
+SELECT '-12.3abc' xor 0;
+ xor 
+-----
+   1
+(1 row)
+
+SELECT '-12.3abc' xor 5;
+ xor 
+-----
+   0
+(1 row)
+
+SELECT '-12.3abc' xor 158.3;
+ xor 
+-----
+   0
+(1 row)
+
+SELECT '-12.3abc' xor -8.222e4;
+ xor 
+-----
+   0
+(1 row)
+
+SELECT '-12.3abc' xor true;
+ xor 
+-----
+   0
+(1 row)
+
+SELECT '-12.3abc' xor false;
+ xor 
+-----
+   1
+(1 row)
+
+SELECT '-12.3abc' xor 'NULL';
+ xor 
+-----
+   1
+(1 row)
+
+SELECT '-12.3abc' rlike NULL;
+ rlike 
+-------
+      
+(1 row)
+
+SELECT '-12.3abc' rlike -100.1;
+ rlike 
+-------
+     0
+(1 row)
+
+SELECT '-12.3abc' rlike 0;
+ rlike 
+-------
+     0
+(1 row)
+
+SELECT '-12.3abc' rlike 5;
+ rlike 
+-------
+     0
+(1 row)
+
+SELECT '-12.3abc' rlike 158.3;
+ rlike 
+-------
+     0
+(1 row)
+
+SELECT '-12.3abc' rlike -8.222e4;
+ rlike 
+-------
+     0
+(1 row)
+
+SELECT '-12.3abc' rlike true;
+ERROR:  function pg_catalog.rlike(unknown, boolean) does not exist
+LINE 1: SELECT '-12.3abc' rlike true;
+                          ^
+HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
+CONTEXT:  referenced column: rlike
+SELECT '-12.3abc' rlike false;
+ERROR:  function pg_catalog.rlike(unknown, boolean) does not exist
+LINE 1: SELECT '-12.3abc' rlike false;
+                          ^
+HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
+CONTEXT:  referenced column: rlike
+SELECT '-12.3abc' rlike 'NULL';
+ rlike 
+-------
+     0
+(1 row)
+
+----------------------------------------
+-- copy from regex.sql of fastcheck
+----------------------------------------
+set enable_bitmapscan = off;
+set standard_conforming_strings = on;
+select 'bbbbb' regexp '^([bc])\1*$' as t, 'bbbbb' not regexp '^([bc])\1*$' as t2, 'bbbbb' rlike '^([bc])\1*$' as t;
+ t | t2 | t 
+---+----+---
+ 1 |  0 | 1
+(1 row)
+
+select 'ccc' regexp '^([bc])\1*$' as t, 'ccc' not regexp '^([bc])\1*$' as t2, 'ccc' rlike '^([bc])\1*$' as t;
+ t | t2 | t 
+---+----+---
+ 1 |  0 | 1
+(1 row)
+
+select 'xxx' regexp '^([bc])\1*$' as f, 'xxx' not regexp '^([bc])\1*$' as f2, 'xxx' rlike '^([bc])\1*$' as f;
+ f | f2 | f 
+---+----+---
+ 0 |  1 | 0
+(1 row)
+
+select 'bbc' regexp '^([bc])\1*$' as f, 'bbc' not regexp '^([bc])\1*$' as f2, 'bbc' rlike '^([bc])\1*$' as f;
+ f | f2 | f 
+---+----+---
+ 0 |  1 | 0
+(1 row)
+
+select 'b' regexp '^([bc])\1*$' as t, 'b' not regexp '^([bc])\1*$' as t2, 'b' rlike '^([bc])\1*$' as t;
+ t | t2 | t 
+---+----+---
+ 1 |  0 | 1
+(1 row)
+
+select 'abc abc abc' regexp '^(\w+)( \1)+$' as t, 'abc abc abc' not regexp '^(\w+)( \1)+$' as t, 'abc abc abc' rlike '^(\w+)( \1)+$' as t;
+ t | t | t 
+---+---+---
+ 1 | 0 | 1
+(1 row)
+
+select 'abc abd abc' regexp '^(\w+)( \1)+$' as f, 'abc abd abc' not regexp '^(\w+)( \1)+$' as f, 'abc abd abc' rlike '^(\w+)( \1)+$' as f;
+ f | f | f 
+---+---+---
+ 0 | 1 | 0
+(1 row)
+
+select 'abc abc abd' regexp '^(\w+)( \1)+$' as f, 'abc abc abd' not regexp '^(\w+)( \1)+$' as f, 'abc abc abd' rlike '^(\w+)( \1)+$' as f;
+ f | f | f 
+---+---+---
+ 0 | 1 | 0
+(1 row)
+
+select 'abc abc abc' regexp '^(.+)( \1)+$' as t, 'abc abc abc' not regexp '^(.+)( \1)+$' as t, 'abc abc abc' rlike '^(.+)( \1)+$' as t;
+ t | t | t 
+---+---+---
+ 1 | 0 | 1
+(1 row)
+
+select 'abc abd abc' regexp '^(.+)( \1)+$' as f, 'abc abd abc' not regexp '^(.+)( \1)+$' as f, 'abc abd abc' rlike '^(.+)( \1)+$' as f;
+ f | f | f 
+---+---+---
+ 0 | 1 | 0
+(1 row)
+
+select 'abc abc abd' regexp '^(.+)( \1)+$' as f, 'abc abc abd' not regexp '^(.+)( \1)+$' as f, 'abc abc abd' rlike '^(.+)( \1)+$' as f;
+ f | f | f 
+---+---+---
+ 0 | 1 | 0
+(1 row)
+
+select 'a' regexp '($|^)*', 'a' not regexp '($|^)*', 'a' rlike '($|^)*';
+ regexp | not_regexp | rlike 
+--------+------------+-------
+      1 |          0 |     1
+(1 row)
+
+select 'a' regexp '(^)+^', 'a' not regexp '(^)+^', 'a' rlike '(^)+^';
+ regexp | not_regexp | rlike 
+--------+------------+-------
+      1 |          0 |     1
+(1 row)
+
+select 'a' regexp '$($$)+', 'a' not regexp '$($$)+', 'a' rlike '$($$)+';
+ regexp | not_regexp | rlike 
+--------+------------+-------
+      1 |          0 |     1
+(1 row)
+
+select 'a' regexp '($^)+', 'a' not regexp '($^)+', 'a' rlike '($^)+';
+ regexp | not_regexp | rlike 
+--------+------------+-------
+      0 |          1 |     0
+(1 row)
+
+select 'a' regexp '(^$)*', 'a' not regexp '(^$)*', 'a' rlike '(^$)*';
+ regexp | not_regexp | rlike 
+--------+------------+-------
+      1 |          0 |     1
+(1 row)
+
+select 'aa bb cc' regexp '(^(?!aa))+', 'aa bb cc' not regexp '(^(?!aa))+', 'aa bb cc' rlike '(^(?!aa))+';
+ regexp | not_regexp | rlike 
+--------+------------+-------
+      0 |          1 |     0
+(1 row)
+
+select 'aa x' regexp '(^(?!aa)(?!bb)(?!cc))+', 'aa x' not regexp '(^(?!aa)(?!bb)(?!cc))+', 'aa x' rlike '(^(?!aa)(?!bb)(?!cc))+';
+ regexp | not_regexp | rlike 
+--------+------------+-------
+      0 |          1 |     0
+(1 row)
+
+select 'bb x' regexp '(^(?!aa)(?!bb)(?!cc))+', 'bb x' not regexp '(^(?!aa)(?!bb)(?!cc))+', 'bb x' rlike '(^(?!aa)(?!bb)(?!cc))+';
+ regexp | not_regexp | rlike 
+--------+------------+-------
+      0 |          1 |     0
+(1 row)
+
+select 'cc x' regexp '(^(?!aa)(?!bb)(?!cc))+', 'cc x' not regexp '(^(?!aa)(?!bb)(?!cc))+', 'cc x' rlike '(^(?!aa)(?!bb)(?!cc))+';
+ regexp | not_regexp | rlike 
+--------+------------+-------
+      0 |          1 |     0
+(1 row)
+
+select 'dd x' regexp '(^(?!aa)(?!bb)(?!cc))+', 'dd x' not regexp '(^(?!aa)(?!bb)(?!cc))+', 'dd x' rlike '(^(?!aa)(?!bb)(?!cc))+';
+ regexp | not_regexp | rlike 
+--------+------------+-------
+      1 |          0 |     1
+(1 row)
+
+select 'x' regexp 'abcd(\m)+xyz', 'x' not regexp 'abcd(\m)+xyz', 'x' rlike 'abcd(\m)+xyz';
+ regexp | not_regexp | rlike 
+--------+------------+-------
+      0 |          1 |     0
+(1 row)
+
+select 'x' regexp 'a^(^)bcd*xy(((((($a+|)+|)+|)+$|)+|)+|)^$', 'x' not regexp 'a^(^)bcd*xy(((((($a+|)+|)+|)+$|)+|)+|)^$', 'x' rlike 'a^(^)bcd*xy(((((($a+|)+|)+|)+$|)+|)+|)^$';
+ regexp | not_regexp | rlike 
+--------+------------+-------
+      0 |          1 |     0
+(1 row)
+
+select 'a' regexp '((((((a)*)*)*)*)*)*', 'a' not regexp '((((((a)*)*)*)*)*)*', 'a' rlike '((((((a)*)*)*)*)*)*';
+ regexp | not_regexp | rlike 
+--------+------------+-------
+      1 |          0 |     1
+(1 row)
+
+select 'a' regexp '((((((a+|)+|)+|)+|)+|)+|)', 'a' not regexp '((((((a+|)+|)+|)+|)+|)+|)', 'a' rlike '((((((a+|)+|)+|)+|)+|)+|)';
+ regexp | not_regexp | rlike 
+--------+------------+-------
+      1 |          0 |     1
+(1 row)
+
+select 'a' regexp '\x7fffffff', 'a' not regexp '\x7fffffff', 'a' rlike '\x7fffffff';
+ERROR:  invalid regular expression: invalid escape \ sequence
+CONTEXT:  referenced column: int4
+SQL statement "SELECT (select lower(a)~ lower(b))::integer"
+PL/pgSQL function regexp(text,text) line 6 at RETURN
+referenced column: regexp
+select 'a' regexp '$()|^\1', 'a' not regexp '$()|^\1', 'a' rlike '$()|^\1';
+ regexp | not_regexp | rlike 
+--------+------------+-------
+      0 |          1 |     0
+(1 row)
+
+select 'a' regexp '.. ()|\1', 'a' not regexp '.. ()|\1', 'a' rlike '.. ()|\1';
+ regexp | not_regexp | rlike 
+--------+------------+-------
+      0 |          1 |     0
+(1 row)
+
+select 'a' regexp '()*\1', 'a' not regexp '()*\1', 'a' rlike '()*\1';
+ regexp | not_regexp | rlike 
+--------+------------+-------
+      1 |          0 |     1
+(1 row)
+
+select 'a' regexp '()+\1', 'a' not regexp '()+\1', 'a' rlike '()+\1';
+ regexp | not_regexp | rlike 
+--------+------------+-------
+      1 |          0 |     1
+(1 row)
+
+explain (costs off) select * from pg_proc where proname regexp 'abc';
+                   QUERY PLAN                   
+------------------------------------------------
+ Seq Scan on pg_proc
+   Filter: regexp((proname)::text, 'abc'::text)
+(2 rows)
+
+explain (costs off) select * from pg_proc where proname regexp '^abc';
+                   QUERY PLAN                    
+-------------------------------------------------
+ Seq Scan on pg_proc
+   Filter: regexp((proname)::text, '^abc'::text)
+(2 rows)
+
+explain (costs off) select * from pg_proc where proname regexp '^abc$';
+                    QUERY PLAN                    
+--------------------------------------------------
+ Seq Scan on pg_proc
+   Filter: regexp((proname)::text, '^abc$'::text)
+(2 rows)
+
+explain (costs off) select * from pg_proc where proname regexp '^abcd*e';
+                     QUERY PLAN                     
+----------------------------------------------------
+ Seq Scan on pg_proc
+   Filter: regexp((proname)::text, '^abcd*e'::text)
+(2 rows)
+
+explain (costs off) select * from pg_proc where proname regexp '^abc+d';
+                    QUERY PLAN                     
+---------------------------------------------------
+ Seq Scan on pg_proc
+   Filter: regexp((proname)::text, '^abc+d'::text)
+(2 rows)
+
+explain (costs off) select * from pg_proc where proname regexp '^(abc)(def)';
+                       QUERY PLAN                       
+--------------------------------------------------------
+ Seq Scan on pg_proc
+   Filter: regexp((proname)::text, '^(abc)(def)'::text)
+(2 rows)
+
+explain (costs off) select * from pg_proc where proname regexp '^(abc)$';
+                     QUERY PLAN                     
+----------------------------------------------------
+ Seq Scan on pg_proc
+   Filter: regexp((proname)::text, '^(abc)$'::text)
+(2 rows)
+
+explain (costs off) select * from pg_proc where proname regexp '^(abc)?d';
+                     QUERY PLAN                      
+-----------------------------------------------------
+ Seq Scan on pg_proc
+   Filter: regexp((proname)::text, '^(abc)?d'::text)
+(2 rows)
+
+explain (costs off) select * from pg_proc where proname not regexp 'abc';
+                     QUERY PLAN                     
+----------------------------------------------------
+ Seq Scan on pg_proc
+   Filter: not_regexp((proname)::text, 'abc'::text)
+(2 rows)
+
+explain (costs off) select * from pg_proc where proname not regexp '^abc';
+                     QUERY PLAN                      
+-----------------------------------------------------
+ Seq Scan on pg_proc
+   Filter: not_regexp((proname)::text, '^abc'::text)
+(2 rows)
+
+explain (costs off) select * from pg_proc where proname not regexp '^abc$';
+                      QUERY PLAN                      
+------------------------------------------------------
+ Seq Scan on pg_proc
+   Filter: not_regexp((proname)::text, '^abc$'::text)
+(2 rows)
+
+explain (costs off) select * from pg_proc where proname not regexp '^abcd*e';
+                       QUERY PLAN                       
+--------------------------------------------------------
+ Seq Scan on pg_proc
+   Filter: not_regexp((proname)::text, '^abcd*e'::text)
+(2 rows)
+
+explain (costs off) select * from pg_proc where proname not regexp '^abc+d';
+                      QUERY PLAN                       
+-------------------------------------------------------
+ Seq Scan on pg_proc
+   Filter: not_regexp((proname)::text, '^abc+d'::text)
+(2 rows)
+
+explain (costs off) select * from pg_proc where proname not regexp '^(abc)(def)';
+                         QUERY PLAN                         
+------------------------------------------------------------
+ Seq Scan on pg_proc
+   Filter: not_regexp((proname)::text, '^(abc)(def)'::text)
+(2 rows)
+
+explain (costs off) select * from pg_proc where proname not regexp '^(abc)$';
+                       QUERY PLAN                       
+--------------------------------------------------------
+ Seq Scan on pg_proc
+   Filter: not_regexp((proname)::text, '^(abc)$'::text)
+(2 rows)
+
+explain (costs off) select * from pg_proc where proname not regexp '^(abc)?d';
+                       QUERY PLAN                        
+---------------------------------------------------------
+ Seq Scan on pg_proc
+   Filter: not_regexp((proname)::text, '^(abc)?d'::text)
+(2 rows)
+
+explain (costs off) select * from pg_proc where proname rlike 'abc';
+                  QUERY PLAN                   
+-----------------------------------------------
+ Seq Scan on pg_proc
+   Filter: rlike((proname)::text, 'abc'::text)
+(2 rows)
+
+explain (costs off) select * from pg_proc where proname rlike '^abc';
+                   QUERY PLAN                   
+------------------------------------------------
+ Seq Scan on pg_proc
+   Filter: rlike((proname)::text, '^abc'::text)
+(2 rows)
+
+explain (costs off) select * from pg_proc where proname rlike '^abc$';
+                   QUERY PLAN                    
+-------------------------------------------------
+ Seq Scan on pg_proc
+   Filter: rlike((proname)::text, '^abc$'::text)
+(2 rows)
+
+explain (costs off) select * from pg_proc where proname rlike '^abcd*e';
+                    QUERY PLAN                     
+---------------------------------------------------
+ Seq Scan on pg_proc
+   Filter: rlike((proname)::text, '^abcd*e'::text)
+(2 rows)
+
+explain (costs off) select * from pg_proc where proname rlike '^abc+d';
+                    QUERY PLAN                    
+--------------------------------------------------
+ Seq Scan on pg_proc
+   Filter: rlike((proname)::text, '^abc+d'::text)
+(2 rows)
+
+explain (costs off) select * from pg_proc where proname rlike '^(abc)(def)';
+                      QUERY PLAN                       
+-------------------------------------------------------
+ Seq Scan on pg_proc
+   Filter: rlike((proname)::text, '^(abc)(def)'::text)
+(2 rows)
+
+explain (costs off) select * from pg_proc where proname rlike '^(abc)$';
+                    QUERY PLAN                     
+---------------------------------------------------
+ Seq Scan on pg_proc
+   Filter: rlike((proname)::text, '^(abc)$'::text)
+(2 rows)
+
+explain (costs off) select * from pg_proc where proname rlike '^(abc)?d';
+                     QUERY PLAN                     
+----------------------------------------------------
+ Seq Scan on pg_proc
+   Filter: rlike((proname)::text, '^(abc)?d'::text)
+(2 rows)
+
+set enable_bitmapscan = default;
+set standard_conforming_strings = default;
+------DAYOFMONTH() DAYOFWEEK() DAYOFYEAR() HOUR() MICROSECOND() MINUTE() QUARTER() SECOND() WEEKDAY() WEEKOFYEAR() YEAR() 
+select DAYOFMONTH(timestamp '2021-05-26 16:30:44.341191');
+ date_part 
+-----------
+        26
+(1 row)
+
+select DAYOFWEEK(timestamp '2021-05-26 16:30:44.341191');
+ ?column? 
+----------
+        4
+(1 row)
+
+select DAYOFYEAR(timestamp '2021-05-26 16:30:44.341191');
+ date_part 
+-----------
+       146
+(1 row)
+
+select HOUR(timestamp '2021-05-26 16:30:44.341191');
+ date_part 
+-----------
+        16
+(1 row)
+
+select MICROSECOND(timestamp '2021-05-26 16:30:44.341191');
+ date_part 
+-----------
+  44341191
+(1 row)
+
+select MINUTE(timestamp '2021-05-26 16:30:44.341191');
+ date_part 
+-----------
+        30
+(1 row)
+
+select QUARTER(timestamp '2021-05-26 16:30:44.341191');
+ date_part 
+-----------
+         2
+(1 row)
+
+select SECOND(timestamp '2021-05-26 16:30:44.341191');
+ date_part 
+-----------
+ 44.341191
+(1 row)
+
+select WEEKDAY(timestamp '2021-05-26 16:30:44.341191');
+ ?column? 
+----------
+        2
+(1 row)
+
+select WEEKOFYEAR(timestamp '2021-05-26 16:30:44.341191');
+ date_part 
+-----------
+        21
+(1 row)
+
+select YEAR(timestamp '2021-05-26 16:30:44.341191');
+ date_part 
+-----------
+      2021
+(1 row)
+
+--- LOCATE
+select locate('test','testgood');
+ position 
+----------
+        1
+(1 row)
+
+select locate('test','11testgood',5);
+ instr 
+-------
+     0
+(1 row)
+
+select locate('test','11testgood',3);
+ instr 
+-------
+     3
+(1 row)
+
+-- IFNULL
+SELECT IFNULL(NULL, 'test');
+ nvl  
+------
+ test
+(1 row)
+
+-- IF
+SELECT IF(TRUE,'A','B');
+ case 
+------
+ A
+(1 row)
+
+SELECT IF(FALSE,'A','B');
+ case 
+------
+ B
+(1 row)
+
+------------------------------------------------------------------------------------------------------------------------
+----------------------------
+-- bit_length\octet_length\length
+----------------------------
+select * from pg_proc where proname in ('db_b_parser_bit_length');
+ proname | pronamespace | proowner | prolang | procost | prorows | provariadic | protransform | proisagg | proiswindow | prosecdef | proleakproof | proisstrict | proretset | provolatile | pronargs | pronargdefaults | prorettype | proargtypes | proallargtypes | proargmodes | proargnames | proargdefaults | prosrc | probin | proconfig | proacl | prodefaultargpos | fencedmode | proshippable | propackage | prokind | proargsrc | propackageid | proisprivate | proargtypesext | prodefaultargposext 
+---------+--------------+----------+---------+---------+---------+-------------+--------------+----------+-------------+-----------+--------------+-------------+-----------+-------------+----------+-----------------+------------+-------------+----------------+-------------+-------------+----------------+--------+--------+-----------+--------+------------------+------------+--------------+------------+---------+-----------+--------------+--------------+----------------+---------------------
+(0 rows)
+
+select bit_length(b'1'), bit_length(b'101'), bit_length(b'1011111111');
+ mysql_parser_bit_length | mysql_parser_bit_length | mysql_parser_bit_length 
+-------------------------+-------------------------+-------------------------
+                       8 |                       8 |                      16
+(1 row)
+
+select bit_length( '1'), bit_length( '101'), bit_length( '1011111111');
+ mysql_parser_bit_length | mysql_parser_bit_length | mysql_parser_bit_length 
+-------------------------+-------------------------+-------------------------
+                       8 |                      24 |                      80
+(1 row)
+
+select bit_length( '哈1哈\n'),bit_length( '\n'),bit_length( '\\n');
+ mysql_parser_bit_length | mysql_parser_bit_length | mysql_parser_bit_length 
+-------------------------+-------------------------+-------------------------
+                      72 |                      16 |                      24
+(1 row)
+
+select octet_length(b'1'), octet_length(b'101'), octet_length(b'1011111111');
+ octet_length | octet_length | octet_length 
+--------------+--------------+--------------
+            1 |            1 |            2
+(1 row)
+
+select octet_length( '1'), octet_length( '101'), octet_length( '1011111111');
+ octet_length | octet_length | octet_length 
+--------------+--------------+--------------
+            1 |            3 |           10
+(1 row)
+
+select octet_length( '哈1哈\n'),octet_length( '\n'),octet_length( '\\n');
+ octet_length | octet_length | octet_length 
+--------------+--------------+--------------
+            9 |            2 |            3
+(1 row)
+
+select length(b'1'), length(b'101'), length(b'1011111111');
+ length | length | length 
+--------+--------+--------
+      1 |      3 |     10
+(1 row)
+
+select length( '1'), length( '101'), length( '1011111111');
+ length | length | length 
+--------+--------+--------
+      1 |      3 |     10
+(1 row)
+
+select length( '哈1哈\n'),length( '\n'),length( '\\n');
+ length | length | length 
+--------+--------+--------
+      5 |      2 |      3
+(1 row)
+
+----------------------------
+-- \lcase\ucase\rand\truncate\current_date()
+----------------------------
+select * from pg_proc where proname in ('db_b_parser_bit_length', 'lower', 'upper', 'random', 'trunc') order by oid;
+ proname | pronamespace | proowner | prolang | procost | prorows | provariadic | protransform | proisagg | proiswindow | prosecdef | proleakproof | proisstrict | proretset | provolatile | pronargs | pronargdefaults | prorettype | proargtypes | proallargtypes | proargmodes | proargnames | proargdefaults |                                  prosrc                                   | probin | proconfig | proacl | prodefaultargpos | fencedmode | proshippable | propackage | prokind | proargsrc | propackageid | proisprivate | proargtypesext | prodefaultargposext 
+---------+--------------+----------+---------+---------+---------+-------------+--------------+----------+-------------+-----------+--------------+-------------+-----------+-------------+----------+-----------------+------------+-------------+----------------+-------------+-------------+----------------+---------------------------------------------------------------------------+--------+-----------+--------+------------------+------------+--------------+------------+---------+-----------+--------------+--------------+----------------+---------------------
+ trunc   |           11 |       10 |      12 |       1 |       0 |           0 | -            | f        | f           | f         | f            | t           | f         | i           |        1 |               0 |        829 | 829         |                |             |             |                | macaddr_trunc                                                             |        |           |        |                  | f          |              | f          | f       |           |            0 | f            |                | 
+ lower   |           11 |       10 |      12 |       1 |       0 |           0 | -            | f        | f           | f         | f            | t           | f         | i           |        1 |               0 |         25 | 25          |                |             |             |                | lower                                                                     |        |           |        |                  | f          |              | f          | f       |           |            0 | f            |                | 
+ upper   |           11 |       10 |      12 |       1 |       0 |           0 | -            | f        | f           | f         | f            | t           | f         | i           |        1 |               0 |         25 | 25          |                |             |             |                | upper                                                                     |        |           |        |                  | f          |              | f          | f       |           |            0 | f            |                | 
+ trunc   |           11 |       10 |      12 |       1 |       0 |           0 | -            | f        | f           | f         | f            | t           | f         | i           |        1 |               0 |        701 | 701         |                |             |             |                | dtrunc                                                                    |        |           |        |                  | f          |              | f          | f       |           |            0 | f            |                | 
+ random  |           11 |       10 |      12 |       1 |       0 |           0 | -            | f        | f           | f         | f            | t           | f         | v           |        0 |               0 |        701 |             |                |             |             |                | drandom                                                                   |        |           |        |                  | f          | t            | f          | f       |           |            0 | f            |                | 
+ trunc   |           11 |       10 |      12 |       1 |       0 |           0 | -            | f        | f           | f         | f            | t           | f         | i           |        2 |               0 |       1700 | 1700 23     |                |             |             |                | numeric_trunc                                                             |        |           |        |                  | f          |              | f          | f       |           |            0 | f            |                | 
+ trunc   |           11 |       10 |      14 |       1 |       0 |           0 | -            | f        | f           | f         | f            | t           | f         | i           |        1 |               0 |       1700 | 1700        |                |             |             |                | select pg_catalog.trunc($1,0)                                             |        |           |        |                  | f          |              | f          | f       |           |            0 | f            |                | 
+ lower   |           11 |       10 |      12 |       1 |       0 |           0 | -            | f        | f           | f         | f            | t           | f         | i           |        1 |               0 |       2283 | 3831        |                |             |             |                | range_lower                                                               |        |           |        |                  | f          |              | f          | f       |           |            0 | f            |                | 
+ upper   |           11 |       10 |      12 |       1 |       0 |           0 | -            | f        | f           | f         | f            | t           | f         | i           |        1 |               0 |       2283 | 3831        |                |             |             |                | range_upper                                                               |        |           |        |                  | f          |              | f          | f       |           |            0 | f            |                | 
+ trunc   |           11 |       10 |      14 |     100 |       0 |           0 | -            | f        | f           | f         | f            | t           | f         | i           |        1 |               0 |       1114 | 1184        |                |             |             |                |                                                                          +|        |           |        |                  | f          | f            | f          | f       |           |            0 | f            |                | 
+         |              |          |         |         |         |             |              |          |             |           |              |             |           |             |          |                 |            |             |                |             |             |                |         SELECT CAST(DATE_TRUNC('day',$1) AS TIMESTAMP WITHOUT TIME ZONE);+|        |           |        |                  |            |              |            |         |           |              |              |                | 
+         |              |          |         |         |         |             |              |          |             |           |              |             |           |             |          |                 |            |             |                |             |             |                |                                                                           |        |           |        |                  |            |              |            |         |           |              |              |                | 
+(10 rows)
+
+select lcase('ABc'), lcase('哈哈'), lcase('123456');
+ lower | lower | lower  
+-------+-------+--------
+ abc   | 哈哈  | 123456
+(1 row)
+
+select lower('ABc'), lower('哈哈'), lower('123456');
+ lower | lower | lower  
+-------+-------+--------
+ abc   | 哈哈  | 123456
+(1 row)
+
+select ucase('ABc'), ucase('哈哈'), ucase('123456');
+ upper | upper | upper  
+-------+-------+--------
+ ABC   | 哈哈  | 123456
+(1 row)
+
+select upper('ABc'), upper('哈哈'), upper('123456');
+ upper | upper | upper  
+-------+-------+--------
+ ABC   | 哈哈  | 123456
+(1 row)
+
+select rand(), random();
+      random      |      random      
+------------------+------------------
+ .901107039768249 | .417141783051193
+(1 row)
+
+select truncate(111.28), truncate(111.28,1), truncate(111.28,5), truncate(111.28,500), truncate(111.28,-1), truncate(111.28,-4);
+ trunc | trunc |   trunc   |                                                                                                                                                                                                                                                          trunc                                                                                                                                                                                                                                                           | trunc | trunc 
+-------+-------+-----------+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+-------+-------
+   111 | 111.2 | 111.28000 | 111.28000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000 |   110 |     0
+(1 row)
+
+select    trunc(111.28),    trunc(111.28,1),    trunc(111.28,5),    trunc(111.28,500),    trunc(111.28,-1),    trunc(111.28,-4);
+ trunc | trunc |   trunc   |                                                                                                                                                                                                                                                          trunc                                                                                                                                                                                                                                                           | trunc | trunc 
+-------+-------+-----------+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+-------+-------
+   111 | 111.2 | 111.28000 | 111.28000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000 |   110 |     0
+(1 row)
+
+truncate a;
+ERROR:  relation "a" does not exist
+select current_date(), current_date;
+    date    |    date    
+------------+------------
+ 10-28-2021 | 10-28-2021
+(1 row)
+
+------------------------------------------------------------------------------------------------------------------------
+\c contrib_regression
+drop database db_b_parser_test_db;
