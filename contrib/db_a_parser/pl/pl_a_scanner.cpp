@@ -55,121 +55,126 @@
  * gram.y's unreserved_keyword production agrees with the second list.
  */
 
-static const ScanKeyword reserved_keywords[] = {PG_KEYWORD("all", K_ALL, RESERVED_KEYWORD)
-                                                PG_KEYWORD("begin", K_BEGIN, RESERVED_KEYWORD)
-                                                PG_KEYWORD("by", K_BY, RESERVED_KEYWORD)
-                                                PG_KEYWORD("case", K_CASE, RESERVED_KEYWORD)
-                                                PG_KEYWORD("close", K_CLOSE, RESERVED_KEYWORD)
-                                                PG_KEYWORD("collate", K_COLLATE, RESERVED_KEYWORD)
-                                                PG_KEYWORD("cursor", K_CURSOR, RESERVED_KEYWORD)
-                                                PG_KEYWORD("declare", K_DECLARE, RESERVED_KEYWORD)
-                                                PG_KEYWORD("default", K_DEFAULT, RESERVED_KEYWORD)
-                                                PG_KEYWORD("delete", K_DELETE, RESERVED_KEYWORD)
-                                                PG_KEYWORD("diagnostics", K_DIAGNOSTICS, RESERVED_KEYWORD)
-                                                PG_KEYWORD("else", K_ELSE, RESERVED_KEYWORD)
-                                                PG_KEYWORD("elseif", K_ELSIF, RESERVED_KEYWORD)
-                                                PG_KEYWORD("elsif", K_ELSIF, RESERVED_KEYWORD)
-                                                PG_KEYWORD("end", K_END, RESERVED_KEYWORD)
-                                                PG_KEYWORD("exception", K_EXCEPTION, RESERVED_KEYWORD)
-                                                PG_KEYWORD("execute", K_EXECUTE, RESERVED_KEYWORD)
-                                                PG_KEYWORD("exit", K_EXIT, RESERVED_KEYWORD)
-                                                PG_KEYWORD("fetch", K_FETCH, RESERVED_KEYWORD)
-                                                PG_KEYWORD("for", K_FOR, RESERVED_KEYWORD)
-                                                PG_KEYWORD("forall", K_FORALL, RESERVED_KEYWORD)
-                                                PG_KEYWORD("foreach", K_FOREACH, RESERVED_KEYWORD)
-                                                PG_KEYWORD("from", K_FROM, RESERVED_KEYWORD)
-                                                PG_KEYWORD("get", K_GET, RESERVED_KEYWORD)
-                                                PG_KEYWORD("goto", K_GOTO, RESERVED_KEYWORD)
-                                                PG_KEYWORD("if", K_IF, RESERVED_KEYWORD)
-                                                PG_KEYWORD("in", K_IN, RESERVED_KEYWORD)
-                                                PG_KEYWORD("insert", K_INSERT, RESERVED_KEYWORD)
-                                                PG_KEYWORD("into", K_INTO, RESERVED_KEYWORD)
-                                                PG_KEYWORD("loop", K_LOOP, RESERVED_KEYWORD)
-                                                PG_KEYWORD("move", K_MOVE, RESERVED_KEYWORD)
-                                                PG_KEYWORD("not", K_NOT, RESERVED_KEYWORD)
-                                                PG_KEYWORD("null", K_NULL, RESERVED_KEYWORD)
-                                                PG_KEYWORD("of", K_OF, RESERVED_KEYWORD)
-                                                PG_KEYWORD("open", K_OPEN, RESERVED_KEYWORD)
-                                                PG_KEYWORD("or", K_OR, RESERVED_KEYWORD)
-                                                PG_KEYWORD("out", K_OUT, RESERVED_KEYWORD)
-                                                PG_KEYWORD("perform", K_PERFORM, RESERVED_KEYWORD)
-                                                PG_KEYWORD("raise", K_RAISE, RESERVED_KEYWORD)
-                                                PG_KEYWORD("ref", K_REF, RESERVED_KEYWORD)
-                                                PG_KEYWORD("return", K_RETURN, RESERVED_KEYWORD)
-                                                PG_KEYWORD("select", K_SELECT, RESERVED_KEYWORD)
-                                                PG_KEYWORD("strict", K_STRICT, RESERVED_KEYWORD)
-                                                PG_KEYWORD("then", K_THEN, RESERVED_KEYWORD)
-                                                PG_KEYWORD("to", K_TO, RESERVED_KEYWORD)
-                                                PG_KEYWORD("type", K_TYPE, RESERVED_KEYWORD)
-                                                PG_KEYWORD("update", K_UPDATE, RESERVED_KEYWORD)
-                                                PG_KEYWORD("using", K_USING, RESERVED_KEYWORD)
-                                                PG_KEYWORD("when", K_WHEN, RESERVED_KEYWORD)
-                                                PG_KEYWORD("while", K_WHILE, RESERVED_KEYWORD)};
+static const ScanKeyword reserved_keywords[] = {
+        PG_KEYWORD("all", K_ALL, RESERVED_KEYWORD)
+        PG_KEYWORD("begin", K_BEGIN, RESERVED_KEYWORD)
+        PG_KEYWORD("by", K_BY, RESERVED_KEYWORD)
+        PG_KEYWORD("case", K_CASE, RESERVED_KEYWORD)
+        PG_KEYWORD("close", K_CLOSE, RESERVED_KEYWORD)
+        PG_KEYWORD("collate", K_COLLATE, RESERVED_KEYWORD)
+        PG_KEYWORD("declare", K_DECLARE, RESERVED_KEYWORD)
+        PG_KEYWORD("default", K_DEFAULT, RESERVED_KEYWORD)
+        PG_KEYWORD("delete", K_DELETE, RESERVED_KEYWORD)
+        PG_KEYWORD("diagnostics", K_DIAGNOSTICS, RESERVED_KEYWORD)
+        PG_KEYWORD("else", K_ELSE, RESERVED_KEYWORD)
+        PG_KEYWORD("elseif", K_ELSIF, RESERVED_KEYWORD)
+        PG_KEYWORD("elsif", K_ELSIF, RESERVED_KEYWORD)
+        PG_KEYWORD("end", K_END, RESERVED_KEYWORD)
+        PG_KEYWORD("exception", K_EXCEPTION, RESERVED_KEYWORD)
+        PG_KEYWORD("execute", K_EXECUTE, RESERVED_KEYWORD)
+        PG_KEYWORD("exit", K_EXIT, RESERVED_KEYWORD)
+        PG_KEYWORD("fetch", K_FETCH, RESERVED_KEYWORD)
+        PG_KEYWORD("for", K_FOR, RESERVED_KEYWORD)
+        PG_KEYWORD("forall", K_FORALL, RESERVED_KEYWORD)
+        PG_KEYWORD("foreach", K_FOREACH, RESERVED_KEYWORD)
+        PG_KEYWORD("from", K_FROM, RESERVED_KEYWORD)
+        PG_KEYWORD("function", K_FUNCTION, RESERVED_KEYWORD)
+        PG_KEYWORD("get", K_GET, RESERVED_KEYWORD)
+        PG_KEYWORD("goto", K_GOTO, RESERVED_KEYWORD)
+        PG_KEYWORD("if", K_IF, RESERVED_KEYWORD)
+        PG_KEYWORD("in", K_IN, RESERVED_KEYWORD)
+        PG_KEYWORD("insert", K_INSERT, RESERVED_KEYWORD)
+        PG_KEYWORD("into", K_INTO, RESERVED_KEYWORD)
+        PG_KEYWORD("loop", K_LOOP, RESERVED_KEYWORD)
+        PG_KEYWORD("move", K_MOVE, RESERVED_KEYWORD)
+        PG_KEYWORD("not", K_NOT, RESERVED_KEYWORD)
+        PG_KEYWORD("null", K_NULL, RESERVED_KEYWORD)
+        PG_KEYWORD("of", K_OF, RESERVED_KEYWORD)
+        PG_KEYWORD("open", K_OPEN, RESERVED_KEYWORD)
+        PG_KEYWORD("or", K_OR, RESERVED_KEYWORD)
+        PG_KEYWORD("out", K_OUT, RESERVED_KEYWORD)
+        PG_KEYWORD("procedure", K_PROCEDURE, RESERVED_KEYWORD)
+        PG_KEYWORD("raise", K_RAISE, RESERVED_KEYWORD)
+        PG_KEYWORD("ref", K_REF, RESERVED_KEYWORD)
+        PG_KEYWORD("return", K_RETURN, RESERVED_KEYWORD)
+        PG_KEYWORD("select", K_SELECT, RESERVED_KEYWORD)
+        PG_KEYWORD("strict", K_STRICT, RESERVED_KEYWORD)
+        PG_KEYWORD("then", K_THEN, RESERVED_KEYWORD)
+        PG_KEYWORD("to", K_TO, RESERVED_KEYWORD)
+        PG_KEYWORD("type", K_TYPE, RESERVED_KEYWORD)
+        PG_KEYWORD("update", K_UPDATE, RESERVED_KEYWORD)
+        PG_KEYWORD("using", K_USING, RESERVED_KEYWORD)
+        PG_KEYWORD("when", K_WHEN, RESERVED_KEYWORD)
+        PG_KEYWORD("while", K_WHILE, RESERVED_KEYWORD)
+};
 
 static const int num_reserved_keywords = lengthof(reserved_keywords);
 
-static const ScanKeyword unreserved_keywords[] = {PG_KEYWORD("absolute", K_ABSOLUTE, UNRESERVED_KEYWORD)
-                                                  PG_KEYWORD("alias", K_ALIAS, UNRESERVED_KEYWORD)
-                                                  PG_KEYWORD("alter", K_ALTER, UNRESERVED_KEYWORD)
-                                                  PG_KEYWORD("array", K_ARRAY, UNRESERVED_KEYWORD)
-                                                  PG_KEYWORD("backward", K_BACKWARD, UNRESERVED_KEYWORD)
-                                                  PG_KEYWORD("commit", K_COMMIT, UNRESERVED_KEYWORD)
-                                                  PG_KEYWORD("constant", K_CONSTANT, UNRESERVED_KEYWORD)
-                                                  PG_KEYWORD("continue", K_CONTINUE, UNRESERVED_KEYWORD)
-                                                  PG_KEYWORD("current", K_CURRENT, UNRESERVED_KEYWORD)
-                                                  PG_KEYWORD("cursor", K_CURSOR, UNRESERVED_KEYWORD)
-                                                  PG_KEYWORD("debug", K_DEBUG, UNRESERVED_KEYWORD)
-                                                  PG_KEYWORD("detail", K_DETAIL, UNRESERVED_KEYWORD)
-                                                  PG_KEYWORD("dump", K_DUMP, UNRESERVED_KEYWORD)
-                                                  PG_KEYWORD("errcode", K_ERRCODE, UNRESERVED_KEYWORD)
-                                                  PG_KEYWORD("error", K_ERROR, UNRESERVED_KEYWORD)
-                                                  PG_KEYWORD("first", K_FIRST, UNRESERVED_KEYWORD)
-                                                  PG_KEYWORD("forward", K_FORWARD, UNRESERVED_KEYWORD)
-                                                  PG_KEYWORD("hint", K_HINT, UNRESERVED_KEYWORD)
-                                                  PG_KEYWORD("immediate", K_IMMEDIATE, UNRESERVED_KEYWORD)
-                                                  PG_KEYWORD("info", K_INFO, UNRESERVED_KEYWORD)
-                                                  PG_KEYWORD("is", K_IS, UNRESERVED_KEYWORD)
-                                                  PG_KEYWORD("last", K_LAST, UNRESERVED_KEYWORD)
-                                                  PG_KEYWORD("log", K_LOG, UNRESERVED_KEYWORD)
-                                                  PG_KEYWORD("merge", K_MERGE, UNRESERVED_KEYWORD)
-                                                  PG_KEYWORD("message", K_MESSAGE, UNRESERVED_KEYWORD)
-                                                  PG_KEYWORD("message_text", K_MESSAGE_TEXT, UNRESERVED_KEYWORD)
-                                                  PG_KEYWORD("next", K_NEXT, UNRESERVED_KEYWORD)
-                                                  PG_KEYWORD("no", K_NO, UNRESERVED_KEYWORD)
-                                                  PG_KEYWORD("notice", K_NOTICE, UNRESERVED_KEYWORD)
-                                                  PG_KEYWORD("option", K_OPTION, UNRESERVED_KEYWORD)
-                                                  PG_KEYWORD("pg_exception_context", K_PG_EXCEPTION_CONTEXT,
-                                                             UNRESERVED_KEYWORD)
-                                                  PG_KEYWORD("pg_exception_detail", K_PG_EXCEPTION_DETAIL,
-                                                             UNRESERVED_KEYWORD)
-                                                  PG_KEYWORD("pg_exception_hint", K_PG_EXCEPTION_HINT,
-                                                             UNRESERVED_KEYWORD)
-                                                  PG_KEYWORD("pragma", K_PRAGMA, UNRESERVED_KEYWORD)
-                                                  PG_KEYWORD("prior", K_PRIOR, UNRESERVED_KEYWORD)
-                                                  PG_KEYWORD("query", K_QUERY, UNRESERVED_KEYWORD)
-                                                  PG_KEYWORD("record", K_RECORD, UNRESERVED_KEYWORD)
-                                                  PG_KEYWORD("relative", K_RELATIVE, UNRESERVED_KEYWORD)
-                                                  PG_KEYWORD("result_oid", K_RESULT_OID, UNRESERVED_KEYWORD)
-                                                  PG_KEYWORD("returned_sqlstate", K_RETURNED_SQLSTATE,
-                                                             UNRESERVED_KEYWORD)
-                                                  PG_KEYWORD("reverse", K_REVERSE, UNRESERVED_KEYWORD)
-                                                  PG_KEYWORD("rollback", K_ROLLBACK, UNRESERVED_KEYWORD)
-                                                  PG_KEYWORD("row_count", K_ROW_COUNT, UNRESERVED_KEYWORD)
-                                                  PG_KEYWORD("rowtype", K_ROWTYPE, UNRESERVED_KEYWORD)
-                                                  PG_KEYWORD("savepoint", K_SAVEPOINT, UNRESERVED_KEYWORD)
-                                                  PG_KEYWORD("scroll", K_SCROLL, UNRESERVED_KEYWORD)
-                                                  PG_KEYWORD("slice", K_SLICE, UNRESERVED_KEYWORD)
-                                                  PG_KEYWORD("sqlstate", K_SQLSTATE, UNRESERVED_KEYWORD)
-                                                  PG_KEYWORD("stacked", K_STACKED, UNRESERVED_KEYWORD)
-                                                  PG_KEYWORD("sys_refcursor", K_SYS_REFCURSOR, UNRESERVED_KEYWORD)
-                                                  PG_KEYWORD("type", K_TYPE, UNRESERVED_KEYWORD)
-                                                  PG_KEYWORD("use_column", K_USE_COLUMN, UNRESERVED_KEYWORD)
-                                                  PG_KEYWORD("use_variable", K_USE_VARIABLE, UNRESERVED_KEYWORD)
-                                                  PG_KEYWORD("variable_conflict", K_VARIABLE_CONFLICT,
-                                                             UNRESERVED_KEYWORD)
-                                                  PG_KEYWORD("varray", K_VARRAY, UNRESERVED_KEYWORD)
-                                                  PG_KEYWORD("warning", K_WARNING, UNRESERVED_KEYWORD)
-                                                  PG_KEYWORD("with", K_WITH, UNRESERVED_KEYWORD)};
+static const ScanKeyword unreserved_keywords[] = {
+        PG_KEYWORD("absolute", K_ABSOLUTE, UNRESERVED_KEYWORD)
+        PG_KEYWORD("alias", K_ALIAS, UNRESERVED_KEYWORD)
+        PG_KEYWORD("alter", K_ALTER, UNRESERVED_KEYWORD)
+        PG_KEYWORD("array", K_ARRAY, UNRESERVED_KEYWORD)
+        PG_KEYWORD("as", K_AS, UNRESERVED_KEYWORD)
+        PG_KEYWORD("backward", K_BACKWARD, UNRESERVED_KEYWORD)
+        PG_KEYWORD("commit", K_COMMIT, UNRESERVED_KEYWORD)
+        PG_KEYWORD("constant", K_CONSTANT, UNRESERVED_KEYWORD)
+        PG_KEYWORD("continue", K_CONTINUE, UNRESERVED_KEYWORD)
+        PG_KEYWORD("current", K_CURRENT, UNRESERVED_KEYWORD)
+        PG_KEYWORD("cursor", K_CURSOR, UNRESERVED_KEYWORD)
+        PG_KEYWORD("debug", K_DEBUG, UNRESERVED_KEYWORD)
+        PG_KEYWORD("detail", K_DETAIL, UNRESERVED_KEYWORD)
+        PG_KEYWORD("dump", K_DUMP, UNRESERVED_KEYWORD)
+        PG_KEYWORD("errcode", K_ERRCODE, UNRESERVED_KEYWORD)
+        PG_KEYWORD("error", K_ERROR, UNRESERVED_KEYWORD)
+        PG_KEYWORD("first", K_FIRST, UNRESERVED_KEYWORD)
+        PG_KEYWORD("forward", K_FORWARD, UNRESERVED_KEYWORD)
+        PG_KEYWORD("function", K_FUNCTION, UNRESERVED_KEYWORD)
+        PG_KEYWORD("hint", K_HINT, UNRESERVED_KEYWORD)
+        PG_KEYWORD("immediate", K_IMMEDIATE, UNRESERVED_KEYWORD)
+        PG_KEYWORD("info", K_INFO, UNRESERVED_KEYWORD)
+        PG_KEYWORD("instantiation", K_INSTANTIATION, UNRESERVED_KEYWORD)
+        PG_KEYWORD("is", K_IS, UNRESERVED_KEYWORD)
+        PG_KEYWORD("last", K_LAST, UNRESERVED_KEYWORD)
+        PG_KEYWORD("log", K_LOG, UNRESERVED_KEYWORD)
+        PG_KEYWORD("merge", K_MERGE, UNRESERVED_KEYWORD)
+        PG_KEYWORD("message", K_MESSAGE, UNRESERVED_KEYWORD)
+        PG_KEYWORD("message_text", K_MESSAGE_TEXT, UNRESERVED_KEYWORD)
+        PG_KEYWORD("next", K_NEXT, UNRESERVED_KEYWORD)
+        PG_KEYWORD("no", K_NO, UNRESERVED_KEYWORD)
+        PG_KEYWORD("notice", K_NOTICE, UNRESERVED_KEYWORD)
+        PG_KEYWORD("option", K_OPTION, UNRESERVED_KEYWORD)
+        PG_KEYWORD("package", K_PACKAGE, UNRESERVED_KEYWORD)
+        PG_KEYWORD("perform", K_PERFORM, UNRESERVED_KEYWORD)
+        PG_KEYWORD("pg_exception_context", K_PG_EXCEPTION_CONTEXT, UNRESERVED_KEYWORD)
+        PG_KEYWORD("pg_exception_detail", K_PG_EXCEPTION_DETAIL, UNRESERVED_KEYWORD)
+        PG_KEYWORD("pg_exception_hint", K_PG_EXCEPTION_HINT, UNRESERVED_KEYWORD)
+        PG_KEYWORD("pragma", K_PRAGMA, UNRESERVED_KEYWORD)
+        PG_KEYWORD("prior", K_PRIOR, UNRESERVED_KEYWORD)
+        PG_KEYWORD("procedure", K_PROCEDURE, UNRESERVED_KEYWORD)
+        PG_KEYWORD("query", K_QUERY, UNRESERVED_KEYWORD)
+        PG_KEYWORD("record", K_RECORD, UNRESERVED_KEYWORD)
+        PG_KEYWORD("relative", K_RELATIVE, UNRESERVED_KEYWORD)
+        PG_KEYWORD("result_oid", K_RESULT_OID, UNRESERVED_KEYWORD)
+        PG_KEYWORD("returned_sqlstate", K_RETURNED_SQLSTATE, UNRESERVED_KEYWORD)
+        PG_KEYWORD("reverse", K_REVERSE, UNRESERVED_KEYWORD)
+        PG_KEYWORD("rollback", K_ROLLBACK, UNRESERVED_KEYWORD)
+        PG_KEYWORD("row_count", K_ROW_COUNT, UNRESERVED_KEYWORD)
+        PG_KEYWORD("rowtype", K_ROWTYPE, UNRESERVED_KEYWORD)
+        PG_KEYWORD("savepoint", K_SAVEPOINT, UNRESERVED_KEYWORD)
+        PG_KEYWORD("scroll", K_SCROLL, UNRESERVED_KEYWORD)
+        PG_KEYWORD("slice", K_SLICE, UNRESERVED_KEYWORD)
+        PG_KEYWORD("sqlstate", K_SQLSTATE, UNRESERVED_KEYWORD)
+        PG_KEYWORD("stacked", K_STACKED, UNRESERVED_KEYWORD)
+        PG_KEYWORD("sys_refcursor", K_SYS_REFCURSOR, UNRESERVED_KEYWORD)
+        PG_KEYWORD("type", K_TYPE, UNRESERVED_KEYWORD)
+        PG_KEYWORD("use_column", K_USE_COLUMN, UNRESERVED_KEYWORD)
+        PG_KEYWORD("use_variable", K_USE_VARIABLE, UNRESERVED_KEYWORD)
+        PG_KEYWORD("variable_conflict", K_VARIABLE_CONFLICT, UNRESERVED_KEYWORD)
+        PG_KEYWORD("varray", K_VARRAY, UNRESERVED_KEYWORD)
+        PG_KEYWORD("warning", K_WARNING, UNRESERVED_KEYWORD)
+        PG_KEYWORD("with", K_WITH, UNRESERVED_KEYWORD)
+};
 
 static const int num_unreserved_keywords = lengthof(unreserved_keywords);
 
@@ -238,7 +243,7 @@ int plasql_yylex(void)
                     tok5 = internal_yylex(&aux5);
                     if (tok5 == IDENT) {
                         if (plpgsql_parse_tripword(
-                            aux1.lval.str, aux3.lval.str, aux5.lval.str, &aux1.lval.wdatum, &aux1.lval.cword)) {
+                                aux1.lval.str, aux3.lval.str, aux5.lval.str, &aux1.lval.wdatum, &aux1.lval.cword)) {
                             tok1 = T_DATUM;
                         } else {
                             tok1 = T_CWORD;
@@ -248,7 +253,7 @@ int plasql_yylex(void)
                         push_back_token(tok5, &aux5);
                         push_back_token(tok4, &aux4);
                         if (plpgsql_parse_dblword(
-                            aux1.lval.str, aux3.lval.str, &aux1.lval.wdatum, &aux1.lval.cword, &dbl_tok_flag)) {
+                                aux1.lval.str, aux3.lval.str, &aux1.lval.wdatum, &aux1.lval.cword, &dbl_tok_flag)) {
                             if (dbl_tok_flag != -1) {
                                 tok1 = get_self_defined_tok(dbl_tok_flag);
                             } else {
@@ -262,7 +267,7 @@ int plasql_yylex(void)
                     /* not A.B.C, so just process A.B */
                     push_back_token(tok4, &aux4);
                     if (plpgsql_parse_dblword(
-                        aux1.lval.str, aux3.lval.str, &aux1.lval.wdatum, &aux1.lval.cword, &dbl_tok_flag)) {
+                            aux1.lval.str, aux3.lval.str, &aux1.lval.wdatum, &aux1.lval.cword, &dbl_tok_flag)) {
                         if (dbl_tok_flag != -1) {
                             tok1 = get_self_defined_tok(dbl_tok_flag);
                         } else {
@@ -277,8 +282,8 @@ int plasql_yylex(void)
                 push_back_token(tok3, &aux3);
                 push_back_token(tok2, &aux2);
                 if (plpgsql_parse_word(
-                    aux1.lval.str, u_sess->plsql_cxt.core_yy->scanbuf + aux1.lloc, &aux1.lval.wdatum,
-                    &aux1.lval.word, &tok_flag)) {
+                        aux1.lval.str, u_sess->plsql_cxt.core_yy->scanbuf + aux1.lloc, &aux1.lval.wdatum,
+                        &aux1.lval.word, &tok_flag)) {
                     /* Get self defined token */
                     if (tok_flag != -1) {
                         tok1 = get_self_defined_tok(tok_flag);
@@ -287,7 +292,7 @@ int plasql_yylex(void)
                     }
                 } else if (!aux1.lval.word.quoted &&
                            (kw = ScanKeywordLookup(
-                               aux1.lval.word.ident, unreserved_keywords, num_unreserved_keywords))) {
+                                   aux1.lval.word.ident, unreserved_keywords, num_unreserved_keywords))) {
                     aux1.lval.keyword = kw->name;
                     tok1 = kw->value;
                 } else {
@@ -298,8 +303,8 @@ int plasql_yylex(void)
             /* not A.B, so just process A */
             push_back_token(tok2, &aux2);
             if (plpgsql_parse_word(
-                aux1.lval.str, u_sess->plsql_cxt.core_yy->scanbuf + aux1.lloc, &aux1.lval.wdatum,
-                &aux1.lval.word, &tok_flag)) {
+                    aux1.lval.str, u_sess->plsql_cxt.core_yy->scanbuf + aux1.lloc, &aux1.lval.wdatum,
+                    &aux1.lval.word, &tok_flag)) {
                 /* Get self defined token */
                 if (tok_flag != -1) {
                     tok1 = get_self_defined_tok(tok_flag);
@@ -376,10 +381,10 @@ static void push_back_token(int token, TokenAuxData* auxdata)
     if (u_sess->plsql_cxt.num_pushbacks >= MAX_PUSHBACKS) {
         ereport(ERROR,
                 (errmodule(MOD_PLSQL),
-                    errcode(ERRCODE_INVALID_OPTION),
-                    errmsg("too many tokens %d pushed back, max push back token is: %d",
-                           u_sess->plsql_cxt.num_pushbacks,
-                           MAX_PUSHBACKS)));
+                        errcode(ERRCODE_INVALID_OPTION),
+                        errmsg("too many tokens %d pushed back, max push back token is: %d",
+                               u_sess->plsql_cxt.num_pushbacks,
+                               MAX_PUSHBACKS)));
     }
     u_sess->plsql_cxt.pushback_token[u_sess->plsql_cxt.num_pushbacks] = token;
     pushback_auxdata[u_sess->plsql_cxt.num_pushbacks] = *auxdata;
@@ -486,9 +491,9 @@ void plasql_yyerror(const char* message)
     if (*yytext == '\0') {
         ereport(ERROR,
                 (errcode(ERRCODE_SYNTAX_ERROR),
-                    /* translator: %s is typically the translation of "syntax error" */
-                    errmsg("%s at end of input", _(message)),
-                    plpgsql_scanner_errposition(plasql_yylloc)));
+                        /* translator: %s is typically the translation of "syntax error" */
+                        errmsg("%s at end of input", _(message)),
+                        plpgsql_scanner_errposition(plasql_yylloc)));
     } else {
         /*
          * If we have done any lookahead then flex will have restored the
@@ -500,9 +505,9 @@ void plasql_yyerror(const char* message)
 
         ereport(ERROR,
                 (errcode(ERRCODE_SYNTAX_ERROR),
-                    /* translator: first %s is typically the translation of "syntax error" */
-                    errmsg("%s at or near \"%s\"", _(message), yytext),
-                    plpgsql_scanner_errposition(plasql_yylloc)));
+                        /* translator: first %s is typically the translation of "syntax error" */
+                        errmsg("%s at or near \"%s\"", _(message), yytext),
+                        plpgsql_scanner_errposition(plasql_yylloc)));
     }
 }
 
@@ -537,6 +542,24 @@ int plpgsql_location_to_lineno(int location)
     return u_sess->plsql_cxt.cur_line_num;
 }
 
+char* plpgsql_get_curline_query()
+{
+    int len = 0;
+    if (u_sess->plsql_cxt.cur_line_end == NULL) {
+        /* no '\n' in whole procedure source text */
+        len = strlen(u_sess->plsql_cxt.cur_line_start);
+    } else {
+        len = u_sess->plsql_cxt.cur_line_end - u_sess->plsql_cxt.cur_line_start;
+    }
+    char* curQuery = NULL;
+    if (len > 0) {
+        curQuery = (char*)palloc0(sizeof(char) * (len + 1));
+        int rc = memcpy_s(curQuery, len + 1, u_sess->plsql_cxt.cur_line_start, len);
+        securec_check(rc, "\0", "\0");
+    }
+    return curQuery;
+}
+
 /* initialize or reset the state for plpgsql_location_to_lineno */
 static void location_lineno_init(void)
 {
@@ -563,7 +586,7 @@ void plpgsql_scanner_init(const char* str)
 {
     /* Start up the core scanner */
     u_sess->plsql_cxt.yyscanner =
-        scanner_init(str, u_sess->plsql_cxt.core_yy, reserved_keywords, num_reserved_keywords);
+            scanner_init(str, u_sess->plsql_cxt.core_yy, reserved_keywords, num_reserved_keywords);
 
     /*
      * u_sess->plsql_cxt.scanorig points to the original string, which unlike the scanner's
@@ -626,8 +649,8 @@ static int get_self_defined_tok(int tok_flag)
         default:
             ereport(ERROR,
                     (errmodule(MOD_PLSQL),
-                        errcode(ERRCODE_UNDEFINED_OBJECT),
-                        errmsg("unknown plpgsql token: %d", tok_flag)));
+                            errcode(ERRCODE_UNDEFINED_OBJECT),
+                            errmsg("unknown plpgsql token: %d", tok_flag)));
     }
     /*never reach here*/
     return -1;
@@ -651,6 +674,9 @@ static int plpgsql_parse_cursor_attribute(int* loc)
     int token = -1;
     PLpgSQL_nsitem* ns = NULL;
 
+    if (u_sess->parser_cxt.in_package_function_compile) {
+        return token;
+    }
     /* coverity warning clear */
     tok1 = internal_yylex(&aux1);
     if (tok1 != IDENT && tok1 != PARAM) {
@@ -720,15 +746,15 @@ static int plpgsql_parse_cursor_attribute(int* loc)
                 if (!(var != NULL && var->datatype && var->datatype->typoid == REFCURSOROID)) {
                     ereport(ERROR,
                             (errmodule(MOD_PLSQL),
-                                errcode(ERRCODE_INVALID_CURSOR_DEFINITION),
-                                errmsg("%s isn't a cursor", var ? var->refname : "")));
+                                    errcode(ERRCODE_INVALID_CURSOR_DEFINITION),
+                                    errmsg("%s isn't a cursor", var ? var->refname : "")));
                 }
                 aux1.lval.ival = var->dno;
             } else {
                 ereport(ERROR,
                         (errmodule(MOD_PLSQL),
-                            errcode(ERRCODE_INVALID_CURSOR_DEFINITION),
-                            errmsg("undefined cursor: %s", aux1.lval.str)));
+                                errcode(ERRCODE_INVALID_CURSOR_DEFINITION),
+                                errmsg("undefined cursor: %s", aux1.lval.str)));
             }
 
             /* get the cursor attribute location */
@@ -791,5 +817,6 @@ bool plpgsql_is_token_match(int token)
         plasql_push_back_token(tok);
         return true;
     }
+    plasql_push_back_token(tok);
     return false;
 }

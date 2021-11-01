@@ -56,6 +56,7 @@
 #include "catalog/index.h"
 #include "catalog/namespace.h"
 #include "catalog/pg_proc.h"
+#include "catalog/gs_package.h"
 #include "catalog/pg_trigger.h"
 #include "commands/defrem.h"
 #ifdef ENABLE_MULTIPLE_NODES
@@ -68,12 +69,15 @@
 #include "parser/scanner.h"
 #include "db_a_gram.hpp"
 #include "parser/gramparse.h"
+#include "parser/parse_type.h"
 #include "parser/parse_hint.h"
+#include "parser/scansup.h"
 #include "pgxc/pgxc.h"
 #include "nodes/nodes.h"
 #include "pgxc/poolmgr.h"
 #include "parser/parser.h"
 #include "storage/lmgr.h"
+#include "storage/tcap.h"
 #include "utils/builtins.h"
 #include "utils/date.h"
 #include "utils/datetime.h"
@@ -101,7 +105,6 @@ DB_CompatibilityAttr g_dbCompatArray[] = {
 extern char transform_data_type[1024];
 
 IntervalStylePack g_interStyleVal = {"a"};
-
 #endif
 
 /* Location tracking support --- simpler than bison's default */
@@ -198,14 +201,23 @@ static void SplitColQualList(List *qualList,
 static void processCASbits(int cas_bits, int location, const char *constrType,
 			   bool *deferrable, bool *initdeferred, bool *not_valid,
 			   bool *no_inherit, core_yyscan_t yyscanner);
+static void getPkgName(char* pkgname);
 static Expr *makeNodeDecodeCondtion(Expr* firstCond,Expr* secondCond);
 static List *make_action_func(List *arguments);
 static List *get_func_args(char *sid);
 static char *pg_strsep(char **stringp, const char *delim);
 static long long get_pid(const char *strsid);
 static Node *MakeAnonyBlockFuncStmt(int flag, const char * str);
+#define  TYPE_LEN     4 /* strlen("TYPE") */
+#define  DATE_LEN     4 /* strlen("DATE") */
 #define  DECLARE_LEN     9 /* strlen(" DECLARE ") */
 #define  DECLARE_STR     " DECLARE "
+#define  PACKAGE_STR     " PACKAGE "
+#define  PACKAGE_LEN     9 /* strlen(" PACKAGE ") */
+#define  INSTANTIATION_STR   " INSTANTIATION "
+#define  INSTANTIATION_LEN     15
+#define  END_STR         "\nEND\n"
+#define  END_LEN         6
 static int get_outarg_num(List *fun_args);
 static int get_table_modes(int nargs, const char *p_argmodes);
 static void get_arg_mode_by_name(const char *argname, const char * const *argnames,
@@ -221,9 +233,13 @@ bool IsValidIdent(char *input);
 bool IsValidGroupname(const char *input);
 static bool checkNlssortArgs(const char *argname);
 static void ParseUpdateMultiSet(List *set_target_list, SelectStmt *stmt, core_yyscan_t yyscanner);
+static char *GetTargetFuncArgTypeName(char *typeString, TypeName* t);
+static char *FormatFuncArgType(core_yyscan_t yyscanner, char *argsString, List* parameters);
+static char *ParseFunctionArgSrc(core_yyscan_t yyscanner);
 static void parameter_check_execute_direct(const char* query);
-static char* remove_end_funcname_label(const char* body, const char* funcname);
+static Node *make_node_from_scanbuf(int start_pos, int end_pos, core_yyscan_t yyscanner);
 static const char* replace_data_type(const char* input);
+static char* remove_end_funcname_label(const char* body, const char* funcname);
 %}
 
 %pure-parser
@@ -252,6 +268,7 @@ static const char* replace_data_type(const char* input);
 	Value				*value;
 	ObjectType			objtype;
 	TypeName			*typnam;
+	FunctionSources		*fun_src;
 	FunctionParameter   *fun_param;
 	FunctionParameterMode fun_param_mode;
 	FuncWithArgs		*funwithargs;
@@ -282,7 +299,7 @@ static const char* replace_data_type(const char* input);
 
 %type <node>	stmt schema_stmt
 		AlterDatabaseStmt AlterDatabaseSetStmt AlterDataSourceStmt AlterDomainStmt AlterEnumStmt
-		AlterFdwStmt AlterForeignServerStmt AlterGroupStmt
+		AlterFdwStmt AlterForeignServerStmt AlterGroupStmt AlterSchemaStmt
 		AlterObjectSchemaStmt AlterOwnerStmt AlterSeqStmt AlterTableStmt
 		AlterExtensionStmt AlterExtensionContentsStmt AlterForeignTableStmt
 		AlterCompositeTypeStmt AlterUserStmt AlterUserMappingStmt AlterUserSetStmt
@@ -305,10 +322,10 @@ static const char* replace_data_type(const char* input);
 		DropForeignServerStmt DropUserMappingStmt ExplainStmt ExecDirectStmt FetchStmt
 		GrantStmt GrantRoleStmt IndexStmt InsertStmt ListenStmt LoadStmt
 		LockStmt NotifyStmt ExplainableStmt PreparableStmt
-		CreateFunctionStmt CreateProcedureStmt AlterFunctionStmt AlterProcedureStmt ReindexStmt RemoveAggrStmt
-		RemoveFuncStmt RemoveOperStmt RenameStmt RevokeStmt RevokeRoleStmt
+		CreateFunctionStmt CreateProcedureStmt CreatePackageStmt CreatePackageBodyStmt AlterFunctionStmt AlterProcedureStmt ReindexStmt RemoveAggrStmt
+		RemoveFuncStmt RemoveOperStmt RemovePackageStmt RenameStmt RevokeStmt RevokeRoleStmt
 		RuleActionStmt RuleActionStmtOrEmpty RuleStmt
-		SecLabelStmt SelectStmt TransactionStmt TruncateStmt CallFuncStmt
+		SecLabelStmt SelectStmt TimeCapsuleStmt TransactionStmt TruncateStmt CallFuncStmt
 		UnlistenStmt UpdateStmt VacuumStmt
 		VariableResetStmt VariableSetStmt VariableShowStmt VerifyStmt ShutdownStmt
 		ViewStmt CheckPointStmt CreateConversionStmt
@@ -319,12 +336,26 @@ static const char* replace_data_type(const char* input);
 		CreateNodeGroupStmt AlterNodeGroupStmt DropNodeGroupStmt 
 		CreatePolicyLabelStmt AlterPolicyLabelStmt DropPolicyLabelStmt 
         CreateAuditPolicyStmt AlterAuditPolicyStmt DropAuditPolicyStmt 
-		CreateMaskingPolicyStmt AlterMaskingPolicyStmt DropMaskingPolicyStmt 
+		CreateMaskingPolicyStmt AlterMaskingPolicyStmt DropMaskingPolicyStmt
 		CreateResourcePoolStmt AlterResourcePoolStmt DropResourcePoolStmt
 		CreateWorkloadGroupStmt AlterWorkloadGroupStmt DropWorkloadGroupStmt
 		CreateAppWorkloadGroupMappingStmt AlterAppWorkloadGroupMappingStmt DropAppWorkloadGroupMappingStmt
-		MergeStmt CreateMatViewStmt RefreshMatViewStmt
+		MergeStmt PurgeStmt CreateMatViewStmt RefreshMatViewStmt
 		CreateWeakPasswordDictionaryStmt DropWeakPasswordDictionaryStmt
+
+/* <DB4AI> */
+/* SNAPSHOTS */
+%type <node>	SnapshotStmt
+%type <list>	AlterSnapshotCmdOrEmpty AlterSnapshotCmdList AlterSnapshotCmdListNoParens
+%type <list>	AlterSnapshotCmdListWithParens SnapshotSample SnapshotSampleList OptSnapshotStratify
+%type <str>		SnapshotVersion OptSnapshotVersion OptSnapshotComment
+%type <boolean>	OptSnapshotAlias AlterSnapshotDdl AlterSnapshotDdlList
+%type <boolean>	OptAlterUpdateSnapshot OptInsertIntoSnapshot OptDeleteFromSnapshot
+
+/* TRAIN MODEL */
+%type <node>    CreateModelStmt	hyperparameter_name_value DropModelStmt
+%type <list>	features_clause hyperparameter_name_value_list target_clause with_hyperparameters_clause
+/* </DB4AI> */
 
 %type <node>	select_no_parens select_with_parens select_clause
 				simple_select values_clause
@@ -362,10 +393,11 @@ static const char* replace_data_type(const char* input);
 %type <str>		foreign_server_version opt_foreign_server_version
 %type <str>		data_source_version opt_data_source_version data_source_type opt_data_source_type
 %type <str>		auth_ident
-%type <str>		opt_in_database
+%type <str>		opt_in_database opt_rename
 
 %type <str>		OptSchemaName
 %type <list>	OptSchemaEltList
+%type <boolean>	OptBlockchainWith OptAlterToBlockchain
 
 %type <boolean> TriggerForSpec TriggerForType ForeignTblWritable
 %type <ival>	TriggerActionTime
@@ -379,7 +411,7 @@ static const char* replace_data_type(const char* input);
 				index_name cluster_index_specification
 				pgxcnode_name pgxcgroup_name resource_pool_name workload_group_name
 				application_name password_string hint_string
-%type <list>	func_name func_name_opt_arg handler_name qual_Op qual_all_Op subquery_Op
+%type <list>	func_name func_name_opt_arg pkg_name  handler_name qual_Op qual_all_Op subquery_Op
 				opt_class opt_inline_handler opt_validator validator_clause
 				opt_collate
 
@@ -434,6 +466,7 @@ static const char* replace_data_type(const char* input);
 				create_generic_options alter_generic_options
 				relation_expr_list dostmt_opt_list
 				merge_values_clause
+				invoker_rights
 
 %type <list>	group_by_list
 %type <node>	group_by_item empty_grouping_set rollup_clause cube_clause
@@ -450,7 +483,7 @@ static const char* replace_data_type(const char* input);
 %type <fun_param_mode> arg_class
 %type <typnam>	func_return func_type
 
-%type <boolean>  opt_trusted opt_restart_seqs
+%type <boolean>  opt_trusted opt_restart_seqs opt_purge
 %type <ival>	 OptTemp OptKind
 %type <oncommit> OnCommitOption
 
@@ -525,7 +558,7 @@ static const char* replace_data_type(const char* input);
 %type <range>	relation_expr
 %type <range>	relation_expr_opt_alias
 %type <target>	target_el single_set_clause set_target insert_column_item
-%type <node>	tablesample_clause opt_repeatable_clause
+%type <node>	tablesample_clause timecapsule_clause opt_timecapsule_clause opt_repeatable_clause
 
 %type <str>		generic_option_name
 %type <node>	generic_option_arg
@@ -546,7 +579,8 @@ static const char* replace_data_type(const char* input);
 				CharacterWithLength CharacterWithoutLength
 				ConstDatetime ConstInterval
 				Bit ConstBit BitWithLength BitWithoutLength client_logic_type
-				datatypecl Long
+				datatypecl OptCopyColTypename
+%type <typnam>	Long
 %type <str>		character
 %type <str>		extract_arg
 %type <str>		timestamp_units
@@ -593,7 +627,7 @@ static const char* replace_data_type(const char* input);
 %type <with>	with_clause opt_with_clause
 %type <list>	cte_list
 
-%type <list>	within_group_clause
+%type <list>	within_group_clause pkg_subprogram pkg_body_subprogram
 %type <list>	window_clause window_definition_list opt_partition_clause
 %type <windef>	window_definition over_clause window_specification
 				opt_frame_clause frame_extent frame_bound
@@ -602,7 +636,7 @@ static const char* replace_data_type(const char* input);
 %type <chr>		OptCompress
 %type <ival>	KVType
 %type <ival>		ColCmprsMode
-%type <str>		subprogram_body
+%type <fun_src>		subprogram_body
 %type <keyword> as_is
 %type <node>	column_item opt_table_partitioning_clause
 				opt_partition_index_def  range_partition_index_item  range_partition_index_list
@@ -629,10 +663,10 @@ static const char* replace_data_type(const char* input);
 /* PGXC_END */
 
 %type <str>		OptPartitionElement
-%type <node>	OptForeignTableLogError OptForeignTableLogRemote
-%type <node> 	ForeignPosition ForeignColDef copy_col_format_def
+%type <node>	OptForeignTableLogError OptForeignTableLogRemote OptCopyColExpr
+%type <node> 	ForeignPosition ForeignColDef copy_col_format_def copy_column_expr_item
 %type <node> 	OptPerNodeRejectLimit
-%type <list> 	copy_foramtter_opt
+%type <list> 	copy_foramtter_opt copy_column_expr_list
 
 /* FOREIGN_PARTITION */
 %type <foreignpartby> OptForeignPartBy OptForeignPartAuto
@@ -643,6 +677,8 @@ static const char* replace_data_type(const char* input);
 %type <boolean> opt_vcgroup opt_to_elastic_group
 %type <ival>	opt_set_vcgroup
 %type <str>	opt_redistributed opt_internal_data internal_data_body
+%type <ival>	bucket_cnt
+%type <str>	pgxcgroup_parent
 
 /* MERGE INTO */
 %type <node> merge_when_clause opt_merge_where_condition
@@ -678,7 +714,7 @@ static const char* replace_data_type(const char* input);
 %type <str> alter_policy_action_clause policy_comments_alter_clause
 
 /* MASKING POLICY */
-%type <str> 	masking_func masking_policy_target_type alter_masking_policy_action_clause
+%type <str> 	masking_func masking_func_nsp masking_policy_target_type alter_masking_policy_action_clause
 				masking_policy_condition_operator
 %type <list> 	masking_clause masking_func_params_opt masking_func_params_list
 				alter_masking_policy_func_items_list
@@ -697,7 +733,7 @@ static const char* replace_data_type(const char* input);
  * DOT_DOT is unused in the core SQL grammar, and so will always provoke
  * parse errors.  It is needed by PL/pgsql.
  */
-%token <str>	IDENT FCONST SCONST BCONST XCONST Op CmpOp COMMENTSTRING
+%token <str>	IDENT FCONST SCONST BCONST VCONST XCONST Op CmpOp COMMENTSTRING
 %token <ival>	ICONST PARAM
 %token			TYPECAST ORA_JOINOP DOT_DOT COLON_EQUALS PARA_EQUALS
 
@@ -711,18 +747,18 @@ static const char* replace_data_type(const char* input);
 /* ordinary key words in alphabetical order */
 /* PGXC - added DISTRIBUTE, DIRECT, COORDINATOR, CLEAN,  NODE, BARRIER, SLICE, DATANODE */
 %token <keyword> ABORT_P ABSOLUTE_P ACCESS ACCOUNT ACTION ADD_P ADMIN AFTER
-	AGGREGATE ALGORITHM ALL ALSO ALTER ALWAYS ANALYSE ANALYZE AND ANY APP ARRAY AS ASC
+	AGGREGATE ALGORITHM ALL ALSO ALTER ALWAYS ANALYSE ANALYZE AND ANY APP ARCHIVE ARRAY AS ASC
         ASSERTION ASSIGNMENT ASYMMETRIC AT ATTRIBUTE AUDIT AUTHID AUTHORIZATION AUTOEXTEND AUTOMAPPED
 
-	BACKWARD BARRIER BEFORE BEGIN_NON_ANOYBLOCK BEGIN_P BETWEEN BIGINT BINARY BINARY_DOUBLE BINARY_INTEGER BIT BLOB_P BOGUS
-	BOOLEAN_P BOTH BUCKETS BY BYTEAWITHOUTORDER BYTEAWITHOUTORDERWITHEQUAL
+	BACKWARD BARRIER BEFORE BEGIN_NON_ANOYBLOCK BEGIN_P BETWEEN BIGINT BINARY BINARY_DOUBLE BINARY_FLOAT BINARY_INTEGER BIT BLOB_P
+	BLOCKCHAIN BODY_P BOGUS BOOLEAN_P BOTH BUCKETCNT BUCKETS BY BYTEAWITHOUTORDER BYTEAWITHOUTORDERWITHEQUAL
 
 	CACHE CALL CALLED CASCADE CASCADED CASE CAST CATALOG_P CHAIN CHAR_P
 	CHARACTER CHARACTERISTICS CHECK CHECKPOINT CLASS CLEAN CLIENT CLIENT_MASTER_KEY CLIENT_MASTER_KEYS CLOB CLOSE
 	CLUSTER COALESCE COLLATE COLLATION COLUMN COLUMN_ARGS COLUMN_ENCRYPTION_KEY COLUMN_ENCRYPTION_KEYS COLUMN_FUNCTION COMMENT COMMENTS COMMIT
 	COMMITTED COMPACT COMPATIBLE_ILLEGAL_CHARS COMPLETE COMPRESS CONCURRENTLY CONDITION CONFIGURATION CONNECTION CONSTRAINT CONSTRAINTS
 	CONTENT_P CONTINUE_P CONTVIEW CONVERSION_P COORDINATOR COORDINATORS COPY COST CREATE
-	CROSS CSV CUBE CURRENT_P
+	CROSS CSN CSV CUBE CURRENT_P
 	CURRENT_CATALOG CURRENT_DATE CURRENT_ROLE CURRENT_SCHEMA
 	CURRENT_TIME CURRENT_TIMESTAMP CURRENT_USER CURSOR CYCLE
 
@@ -738,9 +774,10 @@ static const char* replace_data_type(const char* input);
 	EXTENSION EXTERNAL EXTRACT
 
 	FALSE_P FAMILY FAST FENCED FETCH FILEHEADER_P FILL_MISSING_FIELDS FILTER FIRST_P FIXED_P FLOAT_P FOLLOWING FOR FORCE FOREIGN FORMATTER FORWARD
+	FEATURES // DB4AI
 	FREEZE FROM FULL FUNCTION FUNCTIONS
 
-	GLOBAL GLOBAL_FUNCTION GRANT GRANTED GREATEST GROUP_P GROUPING_P
+	GENERATED GLOBAL GLOBAL_FUNCTION GRANT GRANTED GREATEST GROUP_P GROUPING_P GROUPPARENT
 
 	HANDLER HAVING HDFSDIRECTORY HEADER_P HOLD HOUR_P
 
@@ -758,6 +795,7 @@ static const char* replace_data_type(const char* input);
 	LEAST LESS LEFT LEVEL LIKE LIMIT LIST LISTEN LOAD LOCAL LOCALTIME LOCALTIMESTAMP
 	LOCATION LOCK_P LOG_P LOGGING LOGIN_ANY LOGIN_FAILURE LOGIN_SUCCESS LOGOUT LONG LOOP
 	MAPPING MASKING MASTER MATCH MATERIALIZED MATCHED MAXEXTENTS MAXSIZE MAXTRANS MAXVALUE MERGE MINUS_P MINUTE_P MINVALUE MINEXTENTS MOD MODE MODIFY_P MONTH_P MOVE MOVEMENT
+	MODEL // DB4AI
 	NAME_P NAMES NATIONAL NATURAL NCHAR NEXT NLSSORT NO NOCACHE NOCOMPRESS NOCYCLE NODE NOLOGGING NOMAXVALUE NOMINVALUE NONE
 	NOT NOTHING NOTIFY NOTNULL NOWAIT NULL_P NULLIF NULLS_P NUMBER_P NUMERIC NUMSTR NVARCHAR2 NVL
 
@@ -766,25 +804,29 @@ static const char* replace_data_type(const char* input);
 
 	PACKAGE PARSER PARTIAL PARTITION PARTITIONS PASSING PASSWORD PCTFREE PER_P PERCENT PERFORMANCE PERM PLACING PLAN PLANS POLICY POSITION
 /* PGXC_BEGIN */
-	POOL PRECEDING PRECISION PREFERRED PREFIX PRESERVE PREPARE PREPARED PRIMARY
+	POOL PRECEDING PRECISION
 /* PGXC_END */
-	PRIVATE PRIOR PRIVILEGES PRIVILEGE PROCEDURAL PROCEDURE PROFILE
+	PREDICT  // DB4AI
+/* PGXC_BEGIN */
+	PREFERRED PREFIX PRESERVE PREPARE PREPARED PRIMARY
+/* PGXC_END */
+	PRIVATE PRIOR PRIVILEGES PRIVILEGE PROCEDURAL PROCEDURE PROFILE PUBLISH PURGE
 
 	QUERY QUOTE
 
-	RANDOMIZED RANGE RAW READ REAL REASSIGN REBUILD RECHECK RECURSIVE REDISANYVALUE REF REFERENCES REFRESH REINDEX REJECT_P
+	RANDOMIZED RANGE RATIO RAW READ REAL REASSIGN REBUILD RECHECK RECURSIVE RECYCLEBIN REDISANYVALUE REF REFERENCES REFRESH REINDEX REJECT_P
 	RELATIVE_P RELEASE RELOPTIONS REMOTE_P REMOVE RENAME REPEATABLE REPLACE REPLICA
 	RESET RESIZE RESOURCE RESTART RESTRICT RETURN RETURNING RETURNS REUSE REVOKE RIGHT ROLE ROLES ROLLBACK ROLLUP
-	ROW ROWNUM ROWS RULE
+	ROTATION ROW ROWNUM ROWS RULE
 
-	SAVEPOINT SCHEMA SCROLL SEARCH SECOND_P SECURITY SELECT SEQUENCE SEQUENCES
+	SAMPLE SAVEPOINT SCHEMA SCROLL SEARCH SECOND_P SECURITY SELECT SEQUENCE SEQUENCES
 	SERIALIZABLE SERVER SESSION SESSION_USER SET SETS SETOF SHARE SHIPPABLE SHOW SHUTDOWN
 	SIMILAR SIMPLE SIZE SLICE SMALLDATETIME SMALLDATETIME_FORMAT_P SMALLINT SNAPSHOT SOME SOURCE_P SPACE SPILL SPLIT STABLE STANDALONE_P START
-	STATEMENT STATEMENT_ID STATISTICS STDIN STDOUT STORAGE STORE_P STREAM STRICT_P STRIP_P SUBSTRING
+	STATEMENT STATEMENT_ID STATISTICS STDIN STDOUT STORAGE STORE_P STORED STRATIFY STREAM STRICT_P STRIP_P SUBSTRING
 	SYMMETRIC SYNONYM SYSDATE SYSID SYSTEM_P SYSTIMESTAMP SYS_REFCURSOR
 
-	TABLE TABLES TABLESAMPLE TABLESPACE TEMP TEMPLATE TEMPORARY TEXT_P THAN THEN TIME TIME_FORMAT_P TIMESTAMP TIMESTAMP_FORMAT_P TIMESTAMPDIFF TINYINT
-	TO TRAILING TRANSACTION TREAT TRIGGER TRIM TRUE_P
+	TABLE TABLES TABLESAMPLE TABLESPACE TARGET TEMP TEMPLATE TEMPORARY TEXT_P THAN THEN TIME TIME_FORMAT_P TIMECAPSULE TIMESTAMP TIMESTAMP_FORMAT_P TIMESTAMPDIFF TINYINT
+	TO TRAILING TRANSACTION TRANSFORM TREAT TRIGGER TRIM TRUE_P
 	TRUNCATE TRUSTED TSFIELD TSTAG TSTIME TYPE_P TYPES_P
 
 	UNBOUNDED UNCOMMITTED UNENCRYPTED UNION UNIQUE UNKNOWN UNLIMITED UNLISTEN UNLOCK UNLOGGED
@@ -822,6 +864,7 @@ static const char* replace_data_type(const char* input);
 %nonassoc   PARTIAL_EMPTY_PREC
 %nonassoc   CLUSTER
 %nonassoc	SET				/* see relation_expr_opt_alias */
+%right      FEATURES TARGET   // DB4AI
 %left		UNION EXCEPT MINUS_P
 %left		INTERSECT
 %left		MOD
@@ -862,8 +905,8 @@ static const char* replace_data_type(const char* input);
  * blame any funny behavior of UNBOUNDED on the SQL standard, though.
  */
 %nonassoc	UNBOUNDED		/* ideally should have same precedence as IDENT */
-%nonassoc	IDENT NULL_P PARTITION RANGE ROWS PRECEDING FOLLOWING CUBE ROLLUP
-%left		Op OPERATOR		/* multi-character ops and user-defined operators */
+%nonassoc	IDENT GENERATED NULL_P PARTITION RANGE ROWS PRECEDING FOLLOWING CUBE ROLLUP
+%left		Op OPERATOR '@'		/* multi-character ops and user-defined operators */
 %nonassoc	NOTNULL
 %nonassoc	ISNULL
 %nonassoc	IS				/* sets precedence for IS NULL, etc */
@@ -958,6 +1001,7 @@ stmt :
 			| AlterRlsPolicyStmt
 			| AlterResourcePoolStmt
 			| AlterSeqStmt
+			| AlterSchemaStmt
 			| AlterTableStmt
 			| AlterSystemStmt
 			| AlterCompositeTypeStmt
@@ -996,8 +1040,11 @@ stmt :
 			| CreateForeignTableStmt
 			| CreateDataSourceStmt
 			| CreateFunctionStmt
+			| CreatePackageStmt
+			| CreatePackageBodyStmt
 			| CreateGroupStmt
 			| CreateMatViewStmt
+			| CreateModelStmt  // DB4AI
 			| CreateNodeGroupStmt
 			| CreateNodeStmt
 			| CreateOpClassStmt
@@ -1044,6 +1091,7 @@ stmt :
 			| DropFdwStmt
 			| DropForeignServerStmt
 			| DropGroupStmt
+			| DropModelStmt // DB4AI
 			| DropNodeGroupStmt
 			| DropNodeStmt
 			| DropOpClassStmt
@@ -1077,10 +1125,12 @@ stmt :
 			| MergeStmt
 			| NotifyStmt
 			| PrepareStmt
+			| PurgeStmt
 			| ReassignOwnedStmt
 			| ReindexStmt
 			| RemoveAggrStmt
 			| RemoveFuncStmt
+			| RemovePackageStmt
 			| RemoveOperStmt
 			| RenameStmt
 			| RevokeStmt
@@ -1088,7 +1138,9 @@ stmt :
 			| RuleStmt
 			| SecLabelStmt
 			| SelectStmt
-                        | ShutdownStmt
+            | ShutdownStmt
+			| TimeCapsuleStmt
+			| SnapshotStmt
 			| TransactionStmt
 			| TruncateStmt
 			| UnlistenStmt
@@ -1686,10 +1738,10 @@ AlterSystemStmt:
 
 			| ALTER SYSTEM_P SET generic_set
 				{
-#ifdef ENABLE_MULTIPLE_NODES
+#if defined(ENABLE_MULTIPLE_NODES) || defined (ENABLE_PRIVATEGAUSS)
 					ereport(ERROR,
 					    (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
-					     errmsg("ALTER SYSTEM SET is not supported in distributed mode.")));
+					     errmsg("ALTER SYSTEM SET is not supported.")));
 #else
 					AlterSystemStmt *n = makeNode(AlterSystemStmt);
 					n->setstmt = $4;
@@ -1735,7 +1787,7 @@ DropGroupStmt:
  *****************************************************************************/
 
 CreateSchemaStmt:
-			CREATE SCHEMA OptSchemaName AUTHORIZATION RoleId OptSchemaEltList
+			CREATE SCHEMA OptSchemaName AUTHORIZATION RoleId OptBlockchainWith OptSchemaEltList
 				{
 					CreateSchemaStmt *n = makeNode(CreateSchemaStmt);
 					/* One can omit the schema name or the authorization id. */
@@ -1744,16 +1796,18 @@ CreateSchemaStmt:
 					else
 						n->schemaname = $5;
 					n->authid = $5;
-					n->schemaElts = $6;
+					n->hasBlockChain = $6;
+					n->schemaElts = $7;
 					$$ = (Node *)n;
 				}
-			| CREATE SCHEMA ColId OptSchemaEltList
+			| CREATE SCHEMA ColId OptBlockchainWith OptSchemaEltList
 				{
 					CreateSchemaStmt *n = makeNode(CreateSchemaStmt);
 					/* ...but not both */
 					n->schemaname = $3;
 					n->authid = NULL;
-					n->schemaElts = $4;
+					n->hasBlockChain = $4;
+					n->schemaElts = $5;
 					$$ = (Node *)n;
 				}
 		;
@@ -1768,13 +1822,39 @@ OptSchemaEltList:
 			| /* EMPTY */							{ $$ = NIL; }
 		;
 
+OptBlockchainWith:
+			WITH BLOCKCHAIN							{ $$ = true; }
+			| /* EMPTY */							{ $$ = false; }
+		;
+
+/*****************************************************************************
+ *
+ * ALTER SCHEMA WITH BLOCKCHAIN
+ * alter blockchain property of a schema.
+ *
+ *****************************************************************************/
+AlterSchemaStmt:
+			ALTER SCHEMA ColId OptAlterToBlockchain
+				{
+					AlterSchemaStmt *n = makeNode(AlterSchemaStmt);
+					n->schemaname = $3;
+					n->authid = NULL;
+					n->hasBlockChain = $4;
+					$$ = (Node *)n;
+				}
+			;
+
+OptAlterToBlockchain:
+			WITH BLOCKCHAIN							{ $$ = true; }
+			| WITHOUT BLOCKCHAIN					{ $$ = false; }
+		;
+
 /*
  *	schema_stmt are the ones that can show up inside a CREATE SCHEMA
  *	statement (in addition to by themselves).
  */
 schema_stmt:
 			CreateStmt
-            | CreateKeyStmt
 			| IndexStmt
 			| CreateSeqStmt
 			| CreateTrigStmt
@@ -2218,13 +2298,6 @@ VariableShowStmt:
 					VariableShowStmt *n = makeNode(VariableShowStmt);
 					n->name = "session_authorization";
 					$$ = (Node *) n;
-				}
-			| SHOW VARIABLES LIKE var_name
-				{
-					VariableShowStmt *n = makeNode(VariableShowStmt);
-					n->name = "all";
-					n->likename = $4;
-					$$ =(Node *) n;
 				}
 			| SHOW ALL
 				{
@@ -3078,6 +3151,15 @@ alter_table_cmd:
 					n->def = $3;
 					$$ = (Node *)n;
 				}
+			| ADD_P TABLE qualified_name
+				{
+					AlterTableCmd *n = makeNode(AlterTableCmd);
+					AddTableIntoCBIState *s = makeNode(AddTableIntoCBIState);
+					s->relation = $3;
+					n->def = (Node *)s;
+					n->subtype = AT_AddIntoCBI;
+					$$ = (Node *)n;
+				}
 			/* ALTER TABLE <name> ALTER [COLUMN] <colname> {SET DEFAULT <expr>|DROP DEFAULT} */
 			| ALTER opt_column ColId alter_column_default
 				{
@@ -3509,6 +3591,14 @@ alter_table_cmd:
 					n->def = (Node *)$3;
 					$$ = (Node *)n;
 				}
+			/* ALTER TABLE <name> UPDATE SLICE LIKE (reftalbename), only used for redis range/list distribution table */
+			| UPDATE SLICE LIKE qualified_name
+				{
+					AlterTableCmd *n = makeNode(AlterTableCmd);
+					n->subtype = AT_UpdateSliceLike;
+					n->exchange_with_rel = $4;
+					$$ = (Node *)n;
+				}
 			/* ALTER TABLE <name> ENABLE ROW LEVEL SECURITY */
 			| ENABLE_P ROW LEVEL SECURITY
 				{
@@ -3535,6 +3625,13 @@ alter_table_cmd:
 				{
 					AlterTableCmd *n = makeNode(AlterTableCmd);
 					n->subtype = AT_NoForceRls;
+					$$ = (Node *)n;
+				}
+			/* ALTER TABLE <name> ENCRYPTION KEY ROTATION */
+			| ENCRYPTION KEY ROTATION
+				{
+					AlterTableCmd *n = makeNode(AlterTableCmd);
+					n->subtype = AT_EncryptionKeyRotation;
 					$$ = (Node *)n;
 				}
 /* PGXC_END */
@@ -3949,9 +4046,13 @@ copy_opt_item:
 					$$ = makeDefElem("compatible_illegal_chars", (Node *)makeInteger(TRUE));
 				}
 			| FILL_MISSING_FIELDS
-			{
+			    {
 					$$ = makeDefElem("fill_missing_fields", (Node *)makeInteger(TRUE));
-			}
+			    }
+            | TRANSFORM '(' copy_column_expr_list ')'
+			    {
+                    $$ = MakeDefElemWithLoc("transform", (Node *)$3, @1, @4);
+                }
 		;
 
 /* The following exist for backward compatibility with very old versions */
@@ -4077,6 +4178,42 @@ copy_col_format_def:
 					$$ = (Node*)arg;
 				}
 		;
+
+copy_column_expr_list:
+			copy_column_expr_item
+				{
+					$$ = list_make1($1);
+				}
+			| copy_column_expr_list ',' copy_column_expr_item
+				{
+					$$ = lappend($1, $3);
+				}
+		;
+copy_column_expr_item:
+			ColId OptCopyColTypename OptCopyColExpr
+				{
+					CopyColExpr* n = makeNode(CopyColExpr);
+					n->colname = $1;
+					if ($2 != NULL)
+						n->typname = $2;
+					else
+						n->typname = NULL;
+					if ($3 != NULL)
+						n->colexpr = $3;
+					else
+						n->colexpr = NULL;
+					$$ = (Node*)n;
+				}
+		;
+OptCopyColTypename:
+				Typename			{ $$ = $1; }
+				| /*EMPTY*/			{ $$ = NULL; }
+		;
+OptCopyColExpr:
+				AS b_expr			{ $$ = $2; }
+				| /*EMPTY*/			{ $$ = NULL; }
+		;
+
 /*****************************************************************************
  *
  *       QUERY :
@@ -4108,6 +4245,105 @@ CreateStreamStmt:
                 $$ = (Node *)n;
             }
         ;
+
+/*****************************************************************************
+ *
+ *		PURGE :
+ *			PURGE TABLE [schema_name.]table_name
+ *			PURGE INDEX [schema_name.]index_name
+ *			PURGE TABLESPACE tablespace_name
+ *			PURGE RECYCLEBIN
+ *
+ *****************************************************************************/
+PurgeStmt:
+	PURGE TABLE qualified_name 
+		{
+			TcapFeatureEnsure();
+			PurgeStmt *n = makeNode(PurgeStmt);
+			n->purtype = PURGE_TABLE;
+			n->purobj = $3;
+			$$ = (Node *)n;
+		}
+
+	| PURGE INDEX qualified_name
+		{
+			TcapFeatureEnsure();
+			PurgeStmt *n = makeNode(PurgeStmt);
+			n->purtype = PURGE_INDEX;
+			n->purobj = $3;
+			$$ = (Node *)n;
+		}
+
+	| PURGE TABLESPACE name
+		{
+			ereport(ERROR,
+				(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+					errmsg("PURGE TABLESPACE is not yet supported.")));
+			TcapFeatureEnsure();
+			PurgeStmt *n = makeNode(PurgeStmt);
+			n->purtype = PURGE_TABLESPACE;
+			n->purobj = makeRangeVar(NULL, $3, @3);
+			$$ = (Node *) n;
+		}
+
+	| PURGE RECYCLEBIN
+		{
+			TcapFeatureEnsure();
+			PurgeStmt *n = makeNode(PurgeStmt);
+			n->purtype = PURGE_RECYCLEBIN;
+			n->purobj = makeRangeVar(NULL, NULL, @2);
+			$$ = (Node *) n;
+		}
+		;
+
+/*****************************************************************************
+ *
+ *      TIMECAPSULE :
+ *          TIMECAPSULE TABLE { table_name } TO { TIMESTAMP | CSN } expression
+ *          TIMECAPSULE TABLE { table_name } TO BEFORE DROP [RENAME TO new_tablename]
+ *          TIMECAPSULE TABLE { table_name } TO BEFORE TRUNCATE [ FORCE ]
+ *
+ *****************************************************************************/
+ 
+TimeCapsuleStmt:
+	TIMECAPSULE TABLE qualified_name TO opt_timecapsule_clause 
+		{
+			TcapFeatureEnsure();
+			TimeCapsuleStmt *n = makeNode(TimeCapsuleStmt);
+
+			n->relation = $3;
+			n->tcaptype = TIMECAPSULE_VERSION;
+
+			n->tvtype = ((RangeTimeCapsule *)$5)->tvtype;
+			n->tvver = ((RangeTimeCapsule *)$5)->tvver;
+
+			$$ = (Node *) n;
+		}
+
+	| TIMECAPSULE TABLE qualified_name TO BEFORE DROP opt_rename
+		{
+			TcapFeatureEnsure();
+			TimeCapsuleStmt *n = makeNode(TimeCapsuleStmt);
+			n->relation = $3;
+			n->tcaptype = TIMECAPSULE_DROP;
+			n->new_relname = $7;
+			$$ = (Node *) n;
+		}
+
+	| TIMECAPSULE TABLE qualified_name TO BEFORE TRUNCATE
+		{
+			TcapFeatureEnsure();
+			TimeCapsuleStmt *n = makeNode(TimeCapsuleStmt);
+			n->relation = $3;
+			n->tcaptype = TIMECAPSULE_TRUNCATE;
+			$$ = (Node *) n;
+		}
+		;
+
+opt_rename:
+	RENAME TO name					{ $$ = $3; }
+	| /* EMPTY */					{ $$ = NULL; }
+	;
 
 /*****************************************************************************
  *
@@ -4720,8 +4956,13 @@ columnDef:	ColId Typename KVType ColCmprsMode create_generic_options ColQualList
 					n->cooked_default = NULL;
 					n->collOid = InvalidOid;
 					n->fdwoptions = $5;
-					SplitColQualList($6, &n->constraints, &n->collClause, &n->clientLogicColumnRef,
+					if ($3 == ATT_KV_UNDEFINED) {
+						SplitColQualList($6, &n->constraints, &n->collClause, &n->clientLogicColumnRef,
 									 yyscanner);
+					} else {
+						SplitColQualList($6, &n->constraints, &n->collClause,
+										yyscanner);
+					}
 					$$ = (Node *)n;
 				}
 		;
@@ -5108,6 +5349,20 @@ ColConstraintElem:
 					n->cooked_expr = NULL;
 					$$ = (Node *)n;
 				}
+			| GENERATED ALWAYS AS '(' a_expr ')' STORED
+				{
+#ifdef ENABLE_MULTIPLE_NODES
+					ereport(ERROR, (errmodule(MOD_GEN_COL), errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+						errmsg("Generated column is not yet supported.")));
+#endif
+					Constraint *n = makeNode(Constraint);
+					n->contype = CONSTR_GENERATED;
+					n->generated_when = ATTRIBUTE_IDENTITY_ALWAYS;
+					n->raw_expr = $5;
+					n->cooked_expr = NULL;
+					n->location = @1;
+					$$ = (Node *)n;
+				}
 			| REFERENCES qualified_name opt_column_list key_match key_actions
 				{
 #ifdef 			ENABLE_MULTIPLE_NODES
@@ -5248,6 +5503,7 @@ TableLikeIncludingOption:
 				| RELOPTIONS		{ $$ = CREATE_TABLE_LIKE_RELOPTIONS; }
 				| DISTRIBUTION		{ $$ = CREATE_TABLE_LIKE_DISTRIBUTION; }
 				| OIDS				{ $$ = CREATE_TABLE_LIKE_OIDS;}
+				| GENERATED			{ $$ = CREATE_TABLE_LIKE_GENERATED; }
 		;
 
 TableLikeExcludingOption:
@@ -5260,6 +5516,7 @@ TableLikeExcludingOption:
 				| RELOPTIONS		{ $$ = CREATE_TABLE_LIKE_RELOPTIONS; }
 				| DISTRIBUTION		{ $$ = CREATE_TABLE_LIKE_DISTRIBUTION; }
 				| OIDS				{ $$ = CREATE_TABLE_LIKE_OIDS; }
+				| GENERATED			{ $$ = CREATE_TABLE_LIKE_GENERATED; }
 				| ALL				{ $$ = CREATE_TABLE_LIKE_ALL; }
 		;
 
@@ -6064,8 +6321,330 @@ opt_with_data:
 
 /*****************************************************************************
  *
- *	   QUERY :
- *			   CREATE MATERIALIZED VIEW relname AS SelectStmt
+ *              QUERY :
+ *                              CREATE SNAPSHOT relname AS SelectStmt
+ *                              CREATE SNAPSHOT relname FROM @ version USING (AlterAndDMLStmts)
+ *                              SAMPLE SNAPSHOT relname AS postfix AT RATIO FCONST
+ *                              PUBLISH SNAPSHOT relname @ version
+ *                              ARCHIVE SNAPSHOT relname @ version
+ *                              PURGE SNAPSHOT relname @ version
+ *
+ *****************************************************************************/
+
+SnapshotStmt:
+			CREATE OptTemp SNAPSHOT qualified_name OptSnapshotVersion
+/* PGXC_BEGIN */
+			OptDistributeBy OptSubCluster
+/* PGXC_END */
+			OptSnapshotComment
+			AS SelectStmt
+			{
+#ifdef ENABLE_MULTIPLE_NODES
+				ereport(ERROR,
+					(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+					errmsg("CREATE SNAPSHOT is not yet supported.")));
+#endif
+
+				if ($2 != RELPERSISTENCE_PERMANENT)
+				{
+					ereport(ERROR,
+						(errcode(ERRCODE_SYNTAX_ERROR),
+						errmsg("Temporary snapshots are not supported.")));
+				}
+
+				if ($7 != NULL)
+				{
+					ereport(ERROR,
+						(errcode(ERRCODE_SYNTAX_ERROR),
+						errmsg("Clustered snapshots are not supported.")));
+				}
+
+				$$ = makeCallFuncStmt(
+					list_make2(makeString("db4ai"), makeString("create_snapshot")),
+					lcons(makeStringConst($4->schemaname, @4), list_make4(makeStringConst($4->relname, @4),
+					makeAArrayExpr(list_make1(make_node_from_scanbuf(@10, yylloc , yyscanner)), @10),
+					makeStringConst($5, @5),makeStringConst($8, @8))));
+			}
+			| CREATE OptTemp SNAPSHOT qualified_name OptSnapshotVersion
+/* PGXC_BEGIN */
+			OptDistributeBy OptSubCluster
+/* PGXC_END */
+			FROM SnapshotVersion
+			OptSnapshotComment
+			USING '(' AlterSnapshotCmdList ')'
+			{
+#ifdef ENABLE_MULTIPLE_NODES
+				ereport(ERROR,
+					(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+					errmsg("CREATE SNAPSHOT is not yet supported.")));
+#endif
+
+				if ($2 != RELPERSISTENCE_PERMANENT)
+				{
+					ereport(ERROR,
+						(errcode(ERRCODE_SYNTAX_ERROR),
+						errmsg("Temporary snapshots are not supported.")));
+				}
+
+				if ($6 != NULL)
+				{
+					ereport(ERROR,
+						(errcode(ERRCODE_SYNTAX_ERROR),
+						errmsg("illegal DISTRIBUTE BY clause in CREATE SNAPSHOT ... FROM"),
+						errhint("DISTRIBUTE BY is inherited from parent snapshot."),
+						parser_errposition(@6)));
+				}
+
+				if ($7 != NULL)
+				{
+					ereport(ERROR,
+						(errcode(ERRCODE_SYNTAX_ERROR),
+						errmsg("Clustered snapshots are not supported."),
+						parser_errposition(@7)));
+				}
+
+				if ($13 == NIL)
+				{
+					ereport(ERROR,
+						(errcode(ERRCODE_SYNTAX_ERROR),
+						errmsg("List of snapshot modifications is empty."),
+						parser_errposition(@13)));
+				}
+
+				char *snapshot_name = (char *)palloc0(strlen($4->relname) + 1 + strlen($9) + 1);
+				sprintf(snapshot_name, "%s%c%s", $4->relname, DB4AI_SNAPSHOT_VERSION_DELIMITER, $9);
+				$4->relname = snapshot_name;
+
+				$$ = makeCallFuncStmt(
+					list_make2(makeString("db4ai"), makeString("prepare_snapshot")),
+					lcons(makeStringConst($4->schemaname, @4), list_make4(makeStringConst($4->relname, @4),
+					makeAArrayExpr($13, @13), makeStringConst($5, @5), makeStringConst($10, @10))));
+			}
+			| SAMPLE SNAPSHOT qualified_name SnapshotVersion OptSnapshotStratify SnapshotSampleList
+			{
+#ifdef ENABLE_MULTIPLE_NODES
+				ereport(ERROR,
+					(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+					errmsg("SAMPLE SNAPSHOT is not yet supported.")));
+#endif
+
+				char *snapshot_name = (char *)palloc0(strlen($3->relname) + 1 + strlen($4) + 1);
+				sprintf(snapshot_name, "%s%c%s", $3->relname, DB4AI_SNAPSHOT_VERSION_DELIMITER, $4);
+				$3->relname = snapshot_name;
+
+				List *stratify = NIL;
+				foreach_cell (c, $5) {
+					ColumnRef *r = (ColumnRef*)lfirst(c);
+					stratify = lappend(stratify, makeStringConst(((Value *)llast(r->fields))->val.str, @5));
+				}
+
+				List *names = NIL, *ratios = NIL, *comments = NIL;
+				foreach_cell (c, $6) {
+					names = lappend(names, lfirst(c));
+					c = lnext(c);
+					ratios = lappend(ratios, lfirst(c));
+					c = lnext(c);
+					comments = lappend(comments, lfirst(c));
+				}
+
+				$$ = makeCallFuncStmt(
+					list_make2(makeString("db4ai"), makeString("sample_snapshot")),
+					lcons(makeStringConst($3->schemaname, @3),
+					lcons(makeStringConst($3->relname, @3),
+					list_make4(makeAArrayExpr(names, -1), makeAArrayExpr(ratios, -1),
+						(stratify == NIL) ? makeNullAConst(-1) : makeAArrayExpr(stratify, @5),
+						makeAArrayExpr(comments, -1)))));
+			}
+			| ARCHIVE SNAPSHOT qualified_name SnapshotVersion
+			{
+#ifdef ENABLE_MULTIPLE_NODES
+				ereport(ERROR,
+					(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+					errmsg("ARCHIVE SNAPSHOT is not yet supported.")));
+#endif
+
+				char *snapshot_name = (char *)palloc0(strlen($3->relname) + 1 + strlen($4) + 1);
+				sprintf(snapshot_name, "%s%c%s", $3->relname, DB4AI_SNAPSHOT_VERSION_DELIMITER, $4);
+				$3->relname = snapshot_name;
+
+				$$ = makeCallFuncStmt(
+					list_make2(makeString("db4ai"), makeString("archive_snapshot")),
+					list_make2(makeStringConst($3->schemaname, @3), makeStringConst($3->relname, @3)));
+			}
+			| PUBLISH SNAPSHOT qualified_name SnapshotVersion
+			{
+#ifdef ENABLE_MULTIPLE_NODES
+				ereport(ERROR,
+					(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+					errmsg("PUBLISH SNAPSHOT is not yet supported.")));
+#endif
+
+				char *snapshot_name = (char *)palloc0(strlen($3->relname) + 1 + strlen($4) + 1);
+				sprintf(snapshot_name, "%s%c%s", $3->relname, DB4AI_SNAPSHOT_VERSION_DELIMITER, $4);
+				$3->relname = snapshot_name;
+
+				$$ = makeCallFuncStmt(
+					list_make2(makeString("db4ai"), makeString("publish_snapshot")),
+					list_make2(makeStringConst($3->schemaname, @3), makeStringConst($3->relname, @3)));
+			}
+			| PURGE SNAPSHOT qualified_name SnapshotVersion {}
+			{
+#ifdef ENABLE_MULTIPLE_NODES
+				ereport(ERROR,
+					(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+					errmsg("PURGE SNAPSHOT is not yet supported.")));
+#endif
+
+				char *snapshot_name = (char *)palloc0(strlen($3->relname) + 1 + strlen($4) + 1);
+				sprintf(snapshot_name, "%s%c%s", $3->relname, DB4AI_SNAPSHOT_VERSION_DELIMITER, $4);
+				$3->relname = snapshot_name;
+
+				$$ = makeCallFuncStmt(
+					list_make2(makeString("db4ai"), makeString("purge_snapshot")),
+					list_make2(makeStringConst($3->schemaname, @3), makeStringConst($3->relname, @3)));
+			}
+		;
+
+SnapshotVersion:
+			'@' Iconst
+				{
+					char buf[64];
+					snprintf(buf, sizeof(buf), "%d", $2);
+					$$ = pstrdup(buf);
+				}
+			| '@' FCONST
+				{	for (int i = strlen($2) - 1; i >= 0; i--)
+					{
+						if ($2[i] == '.')
+						{
+							$2[i] = DB4AI_SNAPSHOT_VERSION_SEPARATOR;
+						}
+					}
+					$$ = $2;
+				}
+			| '@' VCONST			{ $$ = $2; }
+			| '@' ColId_or_Sconst	{ $$ = $2; }
+		;
+
+OptSnapshotVersion:
+			SnapshotVersion
+				{
+#ifdef ENABLE_MULTIPLE_NODES
+					ereport(ERROR,
+						(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+						errmsg("SNAPSHOT VERSION syntax is not yet supported.")));
+#endif
+					$$ = $1;
+				}
+			| /*EMPTY*/				{ $$ = NULL; }
+		;
+
+OptSnapshotComment:
+			COMMENT IS comment_text	{ $$ = $3; }
+			| /*EMPTY*/				{ $$ = NULL; }
+		;
+
+AlterSnapshotCmdList: AlterSnapshotCmdListNoParens
+			| AlterSnapshotCmdListWithParens
+		;
+
+AlterSnapshotCmdListWithParens:
+			'(' AlterSnapshotCmdListNoParens ')'		{ $$ = $2; }
+			| '(' AlterSnapshotCmdListWithParens ')'	{ $$ = $2; }
+		;
+
+AlterSnapshotCmdListNoParens:
+			AlterSnapshotCmdOrEmpty { $$ = $1; }
+			| AlterSnapshotCmdListNoParens ';' AlterSnapshotCmdOrEmpty { $$ = list_concat($1, $3); }
+		;
+
+AlterSnapshotCmdOrEmpty:
+			INSERT OptInsertIntoSnapshot insert_rest
+				{
+					$$ = list_make2(make_node_from_scanbuf(@1, ($2) ? @2 : @3, yyscanner),
+									make_node_from_scanbuf(@3, yylloc, yyscanner));
+				}
+			| UPDATE OptAlterUpdateSnapshot OptSnapshotAlias SET set_clause_list from_clause where_clause
+				{
+					$$ = list_make1(make_node_from_scanbuf(@1, ($2) ? @2 : ($3) ? @3 : @4, yyscanner));
+					if ($3)
+						$$ = lappend($$, make_node_from_scanbuf(@3, @4, yyscanner));
+					$$ = lappend($$, make_node_from_scanbuf(@4, (@5 == @6) ? ((@5 == @7) ? yylloc : @7) : @6, yyscanner));
+					if ($6 != NIL)
+						$$ = lappend($$, make_node_from_scanbuf(@6, (@6 == @7) ? yylloc : @7, yyscanner));
+					if ($7 != NULL)
+						$$ = lappend($$, make_node_from_scanbuf(@7, yylloc, yyscanner));
+				}
+			| DELETE_P OptDeleteFromSnapshot OptSnapshotAlias using_clause where_clause
+				{
+					$$ = list_make1(make_node_from_scanbuf(@1, ($2) ? @2 : ($3) ? @3 : (@1 == @4) ? ((@1 == @5) ? yylloc : @5) : @4, yyscanner));
+					if ($3)
+						$$ = lappend($$, make_node_from_scanbuf(@3, (@3 == @4) ? ((@3 == @5) ? yylloc : @5) : @4, yyscanner));
+					if ($4 != NIL)
+						$$ = lappend($$, make_node_from_scanbuf(@4, (@4 == @5) ? yylloc : @5, yyscanner));
+					if ($5 != NULL)
+						$$ = lappend($$, make_node_from_scanbuf(@5, yylloc, yyscanner));
+				}
+			| ALTER OptAlterUpdateSnapshot AlterSnapshotDdlList
+				{
+					$$ = list_make2(make_node_from_scanbuf(@1, ($2) ? @2 : @3, yyscanner),
+									make_node_from_scanbuf(@3, yylloc, yyscanner));
+				}
+			| /*EMPTY*/		{ $$ = NIL; }
+		;
+
+OptAlterUpdateSnapshot:
+			SNAPSHOT		{ $$ = TRUE; }
+			| /*EMPTY*/		{ $$ = FALSE; }
+		;
+
+OptInsertIntoSnapshot:
+			INTO SNAPSHOT	{ $$ = TRUE; }
+			| /*EMPTY*/		{ $$ = FALSE; }
+		;
+
+OptDeleteFromSnapshot:
+			FROM SNAPSHOT	{ $$ = TRUE; }
+			| /*EMPTY*/		{ $$ = FALSE; }
+		;
+
+OptSnapshotAlias:
+			AS ColId		{ $$ = TRUE; }
+			| /*EMPTY*/		{ $$ = FALSE; }
+		;
+
+AlterSnapshotDdlList:		// parse and ignore
+			AlterSnapshotDdl							{ $$ = FALSE; }
+			| AlterSnapshotDdlList ',' AlterSnapshotDdl	{ $$ = FALSE; }
+		;
+
+AlterSnapshotDdl:			// parse and ignore
+			ADD_P opt_column columnDef			{ $$ = FALSE; }
+			| DROP opt_column IF_P EXISTS ColId	{ $$ = FALSE; }
+			| DROP opt_column ColId				{ $$ = FALSE; }
+		;
+
+SnapshotSample:
+			AS ColLabel AT RATIO FCONST OptSnapshotComment
+			{
+				$$ = list_make3(makeStringConst($2, @2), makeStringConst($5, @5), makeStringConst($6, @6));
+			}
+		;
+
+SnapshotSampleList:
+			SnapshotSample { $$ = $1; }
+			| SnapshotSampleList ',' SnapshotSample { $$ = list_concat($1, $3); }
+		;
+
+OptSnapshotStratify:
+			STRATIFY BY column_item_list	{ $$ = $3; }
+			| /*EMPTY*/						{ $$ = NIL; }
+		;
+
+ /*****************************************************************************
+ *
+ *        QUERY :
+ *                        CREATE MATERIALIZED VIEW relname AS SelectStmt
  *
  *****************************************************************************/
 
@@ -7591,6 +8170,133 @@ AlterUserMappingStmt: ALTER USER MAPPING FOR auth_ident SERVER name alter_generi
 				}
 		;
 
+
+/*****************************************************************************
+ *
+ *		QUERY:
+ *				CREATE MODEL <model_name>
+ *
+ *
+ *****************************************************************************/
+
+
+CreateModelStmt:
+		CREATE MODEL ColId
+		USING ColId
+		features_clause
+		target_clause
+		from_clause
+		with_hyperparameters_clause
+	{
+		CreateModelStmt *n = makeNode(CreateModelStmt);
+		n->model 			= pstrdup($3);
+		n->architecture 	= pstrdup($5);
+		n->model_features 	= $6;
+		n->model_target   	= $7;
+
+		// The clause will be constructed in tranform
+		SelectStmt *s = makeNode(SelectStmt);
+		s->fromClause = $8;	
+
+		n->select_query = (Node*) s;
+		n->hyperparameters  = $9;
+
+		$$ = (Node*) n;
+	}
+	;
+
+features_clause:
+	FEATURES target_list{
+		List* result = $2;
+
+		// Verify that target clause is not '*'
+		foreach_cell(it, result){
+			ResTarget* n = (ResTarget*) lfirst(it);
+			ColumnRef* cr = (n->val != NULL && IsA(n->val, ColumnRef)) ? (ColumnRef*)(n->val) : NULL;
+			List* l = (cr != NULL) ? cr->fields : NULL;
+			Node* node = list_length(l) > 0 ? linitial_node(Node, l) : NULL;
+			if (node != NULL && IsA(node, A_Star)){
+				elog(ERROR, "FEATURES clause cannot be *");
+			}		
+		}
+
+		$$ = result;
+	}
+	| {
+		List* result = NULL;
+		$$ = result;
+	}
+
+target_clause:
+	TARGET target_list{
+		List* result = $2;
+
+		// Verify that target clause is not '*'
+		foreach_cell(it, result){
+			ResTarget* n = (ResTarget*) lfirst(it);
+			ColumnRef* cr = (n->val != NULL && IsA(n->val, ColumnRef)) ? (ColumnRef*)(n->val) : NULL;
+			List* l = (cr != NULL) ? cr->fields : NULL;
+			Node* node = list_length(l) > 0 ? linitial_node(Node, l) : NULL;
+			if (node != NULL && IsA(node, A_Star)){
+				elog(ERROR, "TARGET clause cannot be *");
+			}
+		}
+
+		$$ = result;
+	}
+	| {
+		List* result = NULL;
+		$$ = result;
+	}
+
+
+with_hyperparameters_clause:
+	WITH hyperparameter_name_value_list { $$ = $2; }
+	| { $$ = NULL; }
+	;
+
+hyperparameter_name_value_list:
+	hyperparameter_name_value		{ $$ = list_make1($1); }
+	| hyperparameter_name_value_list ',' hyperparameter_name_value
+	{
+		$$ = lappend($1,$3);
+	}
+	;
+
+hyperparameter_name_value:
+	ColLabel '=' var_value
+	{
+		VariableSetStmt *n = makeNode(VariableSetStmt);
+		n->kind = VAR_SET_VALUE;
+		n->name = $1;
+		n->args = list_make1($3);
+		$$ = (Node*) n;
+	}
+	| ColLabel '=' DEFAULT
+	{
+		VariableSetStmt *n = makeNode(VariableSetStmt);
+		n->kind = VAR_SET_DEFAULT;
+		n->name = $1;
+		n->args = NULL;
+		$$ = (Node*) n;
+	}
+	;
+
+DropModelStmt:
+	DROP MODEL ColId opt_drop_behavior
+	{
+		DropStmt *n = makeNode(DropStmt);
+		n->removeType = OBJECT_DB4AI_MODEL;
+		n->objects = list_make1(list_make1(makeString($3)));
+		n->arguments = NULL;
+		n->behavior = $4;
+		n->missing_ok = false;
+		n->concurrent = false;
+		n->isProcedure = false;
+		$$ = (Node *)n;
+	}
+	;
+
 /*****************************************************************************
  *
  *      QUERIES For ROW LEVEL SECURITY:
@@ -8743,7 +9449,7 @@ ReassignOwnedStmt:
  *
  *****************************************************************************/
 
-DropStmt:	DROP drop_type IF_P EXISTS any_name_list opt_drop_behavior
+DropStmt:	DROP drop_type IF_P EXISTS any_name_list opt_drop_behavior opt_purge
 				{
 					DropStmt *n = makeNode(DropStmt);
 					n->removeType = $2;
@@ -8752,9 +9458,17 @@ DropStmt:	DROP drop_type IF_P EXISTS any_name_list opt_drop_behavior
 					n->arguments = NIL;
 					n->behavior = $6;
 					n->concurrent = false;
+					n->purge = $7;
+					if (n->removeType != OBJECT_TABLE && n->purge) {
+						ereport(ERROR,
+							(errcode(ERRCODE_SYNTAX_ERROR),
+							 errmsg("PURGE clause only allowed in \"DROP TABLE\" statement"),
+							 parser_errposition(@7)));
+					}
+
 					$$ = (Node *)n;
 				}
-			| DROP drop_type any_name_list opt_drop_behavior
+			| DROP drop_type any_name_list opt_drop_behavior opt_purge
 				{
 					DropStmt *n = makeNode(DropStmt);
 					n->removeType = $2;
@@ -8763,6 +9477,13 @@ DropStmt:	DROP drop_type IF_P EXISTS any_name_list opt_drop_behavior
 					n->arguments = NIL;
 					n->behavior = $4;
 					n->concurrent = false;
+					n->purge = $5;
+					if (n->removeType != OBJECT_TABLE && n->purge) {
+						ereport(ERROR,
+							(errcode(ERRCODE_SYNTAX_ERROR),
+							 errmsg("PURGE clause only allowed in \"DROP TABLE\" statement"),
+							 parser_errposition(@5)));
+					}
 					$$ = (Node *)n;
 				}
 			| DROP INDEX CONCURRENTLY any_name_list opt_drop_behavior
@@ -8787,6 +9508,11 @@ DropStmt:	DROP drop_type IF_P EXISTS any_name_list opt_drop_behavior
 					n->concurrent = true;
 					$$ = (Node *)n;
 				}
+		;
+
+opt_purge:
+			PURGE								{ $$ = true; }
+			| /* EMPTY */							{ $$ = false; }
 		;
 
 
@@ -8836,12 +9562,13 @@ attrs:		'.' attr_name
  *****************************************************************************/
 
 TruncateStmt:
-			TRUNCATE opt_table relation_expr_list opt_restart_seqs opt_drop_behavior
+			TRUNCATE opt_table relation_expr_list opt_restart_seqs opt_drop_behavior opt_purge
 				{
 					TruncateStmt *n = makeNode(TruncateStmt);
 					n->relations = $3;
 					n->restart_seqs = $4;
 					n->behavior = $5;
+					n->purge = $6;
 					$$ = (Node *)n;
 				}
 		;
@@ -8864,7 +9591,7 @@ opt_restart_seqs:
  *				   TEXT SEARCH DICTIONARY | TEXT SEARCH TEMPLATE |
  *				   TEXT SEARCH CONFIGURATION | FOREIGN TABLE |
  *				   FOREIGN DATA WRAPPER | SERVER | EVENT TRIGGER |
-				   MATERIALIZED VIEW] <objname> |
+ *				   MATERIALIZED VIEW | SNAPSHOT] <objname> |
  *				 AGGREGATE <aggname> (arg1, ...) |
  *				 FUNCTION <funcname> (arg1, arg2, ...) |
  *				 OPERATOR <op> (leftoperand_typ, rightoperand_typ) |
@@ -9039,6 +9766,7 @@ comment_type:
 			| TYPE_P							{ $$ = OBJECT_TYPE; }
 			| VIEW								{ $$ = OBJECT_VIEW; }
 			| MATERIALIZED VIEW 				{ $$ = OBJECT_MATVIEW; }
+			| SNAPSHOT							{ $$ = OBJECT_VIEW; }
 			| COLLATION							{ $$ = OBJECT_COLLATION; }
 			| CONVERSION_P						{ $$ = OBJECT_CONVERSION; }
 			| TABLESPACE						{ $$ = OBJECT_TABLESPACE; }
@@ -9497,11 +10225,19 @@ privilege_target:
 					n->objs = $2;
 					$$ = n;
 				}
-			| PROCEDURE function_with_argtypes_list
+            | PROCEDURE function_with_argtypes_list
+                {
+                    PrivTarget *n = (PrivTarget *) palloc(sizeof(PrivTarget));
+                    n->targtype = ACL_TARGET_OBJECT;
+                    n->objtype = ACL_OBJECT_FUNCTION;
+                    n->objs = $2;
+                    $$ = n;
+                }
+			| PACKAGE any_name_list
 				{
 					PrivTarget *n = (PrivTarget *) palloc(sizeof(PrivTarget));
 					n->targtype = ACL_TARGET_OBJECT;
-					n->objtype = ACL_OBJECT_FUNCTION;
+					n->objtype = ACL_OBJECT_PACKAGE;
 					n->objs = $2;
 					$$ = n;
 				}
@@ -10090,6 +10826,7 @@ CreateFunctionStmt:
 				{
 					CreateFunctionStmt *n = makeNode(CreateFunctionStmt);
 					n->isOraStyle = false;
+					n->isPrivate = false;
 					n->replace = $2;
 					n->funcname = $4;
 					n->parameters = $5;
@@ -10104,6 +10841,7 @@ CreateFunctionStmt:
 				{
 					CreateFunctionStmt *n = makeNode(CreateFunctionStmt);
 					n->isOraStyle = false;
+					n->isPrivate = false;
 					n->replace = $2;
 					n->funcname = $4;
 					n->parameters = mergeTableFuncParameters($5, $9);
@@ -10119,6 +10857,7 @@ CreateFunctionStmt:
 				{
 					CreateFunctionStmt *n = makeNode(CreateFunctionStmt);
 					n->isOraStyle = false;
+					n->isPrivate = false;
 					n->replace = $2;
 					n->funcname = $4;
 					n->parameters = $5;
@@ -10129,18 +10868,26 @@ CreateFunctionStmt:
 					$$ = (Node *)n;
 				}
 			| CREATE opt_or_replace FUNCTION func_name_opt_arg proc_args
-			  RETURN func_return opt_createproc_opt_list as_is {u_sess->parser_cxt.eaten_declare = false; u_sess->parser_cxt.eaten_begin = false;} subprogram_body
+			  RETURN func_return opt_createproc_opt_list as_is {
+				  u_sess->parser_cxt.eaten_declare = false;
+				  u_sess->parser_cxt.eaten_begin = false;
+				  pg_yyget_extra(yyscanner)->core_yy_extra.include_ora_comment = true;
+			  } subprogram_body
 				{
 					CreateFunctionStmt *n = makeNode(CreateFunctionStmt);
+					FunctionSources *funSource = (FunctionSources *)$11;
 					n->isOraStyle = true;
+					n->isPrivate = false;
 					n->replace = $2;
 					n->funcname = $4;
 					n->parameters = $5;
+					n->inputHeaderSrc = FormatFuncArgType(yyscanner, funSource->headerSrc, n->parameters);
 					n->returnType = $7;
 					n->options = $8;
-					char *as_body = remove_end_funcname_label($11, ((Value *)lfirst(list_head(n->funcname)))->val.str);
+					char *asBody = remove_end_funcname_label(funSource->bodySrc, 
+					    ((Value *)lfirst(list_head(n->funcname)))->val.str);
 					n->options = lappend(n->options, makeDefElem("as",
-										(Node *)list_make1(makeString(as_body))));
+										(Node *)list_make1(makeString(asBody))));
 
 					n->options = lappend(n->options, makeDefElem("language",
 										(Node *)makeString("plpgsql")));
@@ -10170,14 +10917,22 @@ callfunc_args:   func_arg_expr
 			;
 CreateProcedureStmt:
 			CREATE opt_or_replace PROCEDURE func_name_opt_arg proc_args
-			opt_createproc_opt_list as_is {u_sess->parser_cxt.eaten_declare = false; u_sess->parser_cxt.eaten_begin = false;} subprogram_body
+			opt_createproc_opt_list as_is {
+				u_sess->parser_cxt.eaten_declare = false;
+				u_sess->parser_cxt.eaten_begin = false;
+				pg_yyget_extra(yyscanner)->core_yy_extra.include_ora_comment = true;
+			} subprogram_body
 				{
 					CreateFunctionStmt *n = makeNode(CreateFunctionStmt);
+					FunctionSources *funSource = (FunctionSources *)$9;
 					int count = get_outarg_num($5);
+
 					n->isOraStyle = true;
+					n->isPrivate = false;
 					n->replace = $2;
 					n->funcname = $4;
 					n->parameters = $5;
+					n->inputHeaderSrc = FormatFuncArgType(yyscanner, funSource->headerSrc, n->parameters);
 					n->returnType = NULL;
 					n->isProcedure = true;
 					if (0 == count)
@@ -10186,9 +10941,12 @@ CreateProcedureStmt:
 						n->returnType->typmods = NULL;
 						n->returnType->arrayBounds = NULL;
 					}
-					char *as_body = remove_end_funcname_label($9, ((Value *)lfirst(list_head(n->funcname)))->val.str);
+					n->options = $6;
+					
+                    char *asBody = remove_end_funcname_label(funSource->bodySrc, 
+                        ((Value *)lfirst(list_head(n->funcname)))->val.str);
 					n->options = lappend(n->options, makeDefElem("as",
-										(Node *)list_make1(makeString(as_body))));
+										(Node *)list_make1(makeString(asBody))));
 					n->options = lappend(n->options, makeDefElem("language",
 										(Node *)makeString("plpgsql")));
 					n->withClause = NIL;
@@ -10197,6 +10955,387 @@ CreateProcedureStmt:
 
 		;
 
+CreatePackageStmt:
+			CREATE opt_or_replace PACKAGE pkg_name invoker_rights as_is {pg_yyget_extra(yyscanner)->core_yy_extra.include_ora_comment = true;} pkg_subprogram
+				{
+					char *pkgNameBegin = NULL;
+					char *pkgNameEnd = NULL;
+                                        char *pkgName = NULL;
+					DefElem *def = NULL;
+					switch (list_length($4)) {
+						case 1:
+							pkgName = strVal(linitial($4));
+							break;
+						case 2:
+							pkgName = strVal(lsecond($4));
+							break;
+						case 3:
+							pkgName = strVal(lthird($4));
+							break;
+						default:
+							parser_yyerror("package name is invalid!");
+							break;
+					}
+                                        pkgNameBegin = (char *)palloc(strlen(pkgName) + 1);
+                                        strcpy(pkgNameBegin, pkgName);
+					pkgNameBegin = pg_strtolower(pkgNameBegin);
+					def = (DefElem *)lsecond($8);
+					if (strcmp(def->defname,"name") != 0)
+					{
+						parser_yyerror("internal grammer error!");
+					}
+					pkgNameEnd = strVal(def->arg);
+					getPkgName(pkgNameEnd);
+					if (strcmp(pkgNameBegin, pkgNameEnd) != 0)
+					{
+						parser_yyerror("package name end is not match the one begin!");
+					}
+					CreatePackageStmt *n = makeNode(CreatePackageStmt);
+					n->replace = $2;
+					n->pkgname = $4;
+					n->options = $5;
+					def = (DefElem *)linitial($8);
+					if (strcmp(def->defname,"decl") != 0)
+					{
+						parser_yyerror("internal grammer error!");
+					}
+					n->pkgspec = strVal(def->arg);
+					$$ = (Node *)n;
+				}
+		;
+pkg_name:	ColId
+				{ $$ = list_make1(makeString($1)); }
+			| ColId indirection
+				{
+					$$ = check_func_name(lcons(makeString($1), $2),
+										 yyscanner);
+				}
+		;
+invoker_rights:	 AUTHID DEFINER
+				{
+					$$ = list_make1(makeDefElem("security", (Node *)makeInteger(TRUE)));
+				}
+			| AUTHID CURRENT_USER
+				{
+					$$ = list_make1(makeDefElem("security", (Node *)makeInteger(FALSE)));
+				}
+			|
+				{
+					$$ = list_make1(makeDefElem("security", (Node *)makeInteger(TRUE)));
+				}
+			;
+pkg_subprogram:	{
+					int	proc_b	= 0;
+					int	proc_e	= 0;
+					char	*pkg_spec_str = NULL;
+					char 	*pkg_name_str = NULL;
+					int	pkg_spec_len	= 0;
+					int	tok = YYEMPTY;
+					int	pre_tok = 0;
+					base_yy_extra_type *yyextra = pg_yyget_extra(yyscanner);
+					yyextra->core_yy_extra.in_slash_proc_body = true;
+					/* the token BEGIN_P have been parsed */
+					if (yychar == YYEOF || yychar == YYEMPTY)
+						tok = YYLEX;
+					else
+					{
+						tok = yychar;
+						yychar = YYEMPTY;
+					}
+					proc_b = yylloc;
+					while(true)
+					{
+						if (tok == YYEOF)
+							parser_yyerror("package spec is not ended correctly");
+
+						if (tok == END_P)
+						{
+							pg_yyget_extra(yyscanner)->core_yy_extra.include_ora_comment = false;
+							tok = YYLEX;
+							proc_e = yylloc;
+
+							if (tok == ';')
+							{
+								continue;
+							}
+
+							tok = YYLEX;
+							if (tok != ';')
+							{
+								parser_yyerror("variable declare in package spec is not ended correctly");
+							}
+
+							if (proc_e == 0) {
+								parser_yyerror("variable declare in package spec is not ended correctly");
+							}
+
+							pkg_spec_len = proc_e - proc_b + 1;
+							pkg_spec_str = (char *)palloc0(pkg_spec_len + DECLARE_LEN + PACKAGE_LEN + 1);
+							strncpy_s(pkg_spec_str, PACKAGE_LEN + 1, PACKAGE_STR, PACKAGE_LEN);
+							strncpy_s(pkg_spec_str + PACKAGE_LEN, DECLARE_LEN + 1, DECLARE_STR, DECLARE_LEN);
+							strncpy_s(pkg_spec_str + DECLARE_LEN + PACKAGE_LEN, pkg_spec_len + 1,
+							yyextra->core_yy_extra.scanbuf + proc_b - 1, pkg_spec_len);
+							pkg_spec_str[pkg_spec_len + DECLARE_LEN + PACKAGE_LEN] = '\0';
+							proc_b = proc_e;
+							proc_e = yylloc;
+							if (proc_e == 0)
+							{
+								parser_yyerror("variable declare in package spec is not ended correctly");
+							}
+							pkg_spec_len = proc_e - proc_b + 1 ;
+							pkg_name_str = (char *)palloc0(pkg_spec_len + 1);
+							strncpy_s(pkg_name_str, pkg_spec_len + 1,
+							yyextra->core_yy_extra.scanbuf + proc_b - 1, pkg_spec_len);
+							pkg_name_str[pkg_spec_len] = '\0';
+                                                        while (isspace((unsigned char)*pkg_name_str)) {
+                                                                pkg_name_str++;
+                                                        }
+                                                        truncate_identifier(pkg_name_str, strlen(pkg_name_str), false);
+							break;
+						}
+						tok = YYLEX;
+					}
+				pkg_name_str = pg_strtolower(pkg_name_str);
+				if (yyextra->lookahead_num != 0)
+					parser_yyerror("package spec is not ended correctly");
+				else
+				{
+					yyextra->lookahead_token[0] = tok;
+					yyextra->lookahead_num = 1;
+				}
+				/* Reset the flag which mark whether we are in slash proc. */
+				yyextra->core_yy_extra.in_slash_proc_body = false;
+				yyextra->core_yy_extra.dolqstart = NULL;
+				/*
+				* Add the end location of slash proc to the locationlist for the multi-query 
+				* processed.
+				*/
+				yyextra->core_yy_extra.query_string_locationlist = 
+					lappend_int(yyextra->core_yy_extra.query_string_locationlist, yylloc);
+				$$ = list_concat(list_make1(makeDefElem("decl", (Node *)makeString(pkg_spec_str))), 
+					     list_make1(makeDefElem("name", (Node *)makeString(pkg_name_str))));
+			}
+			;
+
+			
+pkg_body_subprogram: {
+                int proc_b  = 0;
+                int proc_e  = 0;
+                char    *pkg_body_str = NULL;
+                char    *pkg_name_str = NULL;
+                int pkg_name_len    = 0;
+                int pkg_body_len    = 0;
+                int instantiation_start = 0;
+                int instantiation_end = 0;
+                int block_level = 0;
+                int tok = YYEMPTY;
+                int pre_tok_loc = 0;
+                bool pkg_end = true;
+                char* instantiation_str = NULL;
+                base_yy_extra_type *yyextra = pg_yyget_extra(yyscanner);
+                bool in_procedure = false;
+                yyextra->core_yy_extra.in_slash_proc_body = true;
+                /* the token BEGIN_P have been parsed */
+                List* result_list = NULL;
+                if (yychar == YYEOF || yychar == YYEMPTY)
+                {
+                    tok = YYLEX;
+                }
+                else
+                {
+                    tok = yychar;
+                    yychar = YYEMPTY;
+                }
+                proc_b = yylloc;
+                while(true)
+                {
+                    if (tok == YYEOF) {
+                        parser_yyerror("package is not ended correctly");
+					}
+                    if (tok == PROCEDURE || tok == FUNCTION) {
+                        in_procedure = true;
+					}
+
+                    if (tok == BEGIN_P) {
+                        block_level = block_level + 1;
+                        if (in_procedure == false) {
+                            instantiation_start = yylloc;
+                        }
+                    }
+					
+                    if (tok == END_P)
+                    {
+						pg_yyget_extra(yyscanner)->core_yy_extra.include_ora_comment = false;
+                        tok = YYLEX;
+                        proc_e = yylloc;
+                        if (tok == ';')
+                        {
+                            block_level = block_level - 1;
+                            if (block_level == 0)
+                            {
+                                in_procedure = false;
+                            }
+                            continue;
+                        }
+						if (tok == LOOP || tok == IF_P || tok == CASE)
+						{
+							continue;
+						}
+                        tok = YYLEX;
+                        if (tok != ';' && tok != 0) {
+                          continue;
+                        } else if (tok == 0){
+                            parser_yyerror("package is not ended correctly");
+                        }
+                        if (proc_e == 0)
+                            parser_yyerror("variable declare in package is not ended correctly");
+                        if (instantiation_start == 0) {
+                            pkg_body_len = proc_e - proc_b + 1;
+                            pkg_body_str = (char *)palloc0(pkg_body_len + DECLARE_LEN + PACKAGE_LEN + 1);
+                            strncpy_s(pkg_body_str, PACKAGE_LEN + 1, PACKAGE_STR, PACKAGE_LEN);
+                            strncpy_s(pkg_body_str + PACKAGE_LEN, DECLARE_LEN + 1, DECLARE_STR, DECLARE_LEN);
+                            strncpy_s(pkg_body_str + DECLARE_LEN + PACKAGE_LEN, pkg_body_len + 1,
+                            yyextra->core_yy_extra.scanbuf + proc_b - 1, pkg_body_len);
+                            pkg_body_str[pkg_body_len + DECLARE_LEN + PACKAGE_LEN] = '\0';
+                            proc_b = proc_e;
+                            proc_e = yylloc;
+                            if (proc_e == 0)
+                                parser_yyerror("variable declare in package spec is not ended correctly");
+                            pkg_name_len = proc_e - proc_b + 1 ;
+                            pkg_name_str = (char *)palloc0(pkg_name_len + 1);
+                            strncpy_s(pkg_name_str, pkg_name_len + 1,
+                            yyextra->core_yy_extra.scanbuf + proc_b - 1, pkg_name_len);
+                            pkg_name_str[pkg_name_len] = '\0';
+                            while (isspace((unsigned char)*pkg_name_str)) {
+                                pkg_name_str++;
+                            }
+                            truncate_identifier(pkg_name_str, strlen(pkg_name_str), false);
+                            break;
+                        } else {
+                            int proc_end_all = proc_e;
+                            proc_e = instantiation_start;
+                            pkg_body_len = proc_e - proc_b + 1;
+                            pkg_body_str = (char *)palloc0(pkg_body_len + DECLARE_LEN + PACKAGE_LEN + END_LEN + 2); 
+                            strncpy_s(pkg_body_str, PACKAGE_LEN + 1, PACKAGE_STR, PACKAGE_LEN);
+                            strncpy_s(pkg_body_str + PACKAGE_LEN, DECLARE_LEN + 1, DECLARE_STR, DECLARE_LEN);
+                            strncpy_s(pkg_body_str + DECLARE_LEN + PACKAGE_LEN, pkg_body_len + 1,
+                            yyextra->core_yy_extra.scanbuf + proc_b - 1, pkg_body_len);
+                            strncpy_s(pkg_body_str + DECLARE_LEN + PACKAGE_LEN + pkg_body_len, END_LEN + 1,
+                            END_STR, END_LEN);
+                            pkg_body_str[pkg_body_len + DECLARE_LEN + PACKAGE_LEN + END_LEN] = '\0'; 
+                            proc_b = proc_end_all;
+                            proc_e = yylloc;
+                            if (proc_e == 0) 
+                                parser_yyerror("variable declare in package spec is not ended correctly");
+                            pkg_name_len = proc_e - proc_b + 1 ; 
+                            pkg_name_str = (char *)palloc0(pkg_name_len + 1); 
+                            strncpy_s(pkg_name_str, pkg_name_len + 1,
+                            yyextra->core_yy_extra.scanbuf + proc_b - 1, pkg_name_len);
+                            pkg_name_str[pkg_name_len] = '\0';
+                            while (isspace((unsigned char)*pkg_name_str)) {
+                                pkg_name_str++;
+                            }
+                            truncate_identifier(pkg_name_str, strlen(pkg_name_str), false);
+                            instantiation_end = pre_tok_loc;
+                            int pkg_instantiation_len = instantiation_end - instantiation_start;
+                            instantiation_str = (char *)palloc0(INSTANTIATION_LEN + pkg_instantiation_len + END_LEN + 2); 
+                            strncpy_s(instantiation_str, INSTANTIATION_LEN + 1, INSTANTIATION_STR, INSTANTIATION_LEN);
+                            strncpy_s(instantiation_str +  INSTANTIATION_LEN, pkg_instantiation_len + 1,  
+                                yyextra->core_yy_extra.scanbuf + instantiation_start - 1, pkg_instantiation_len);
+                            strncpy_s(instantiation_str  + INSTANTIATION_LEN + pkg_instantiation_len, END_LEN + 1 , END_STR, END_LEN);
+                            instantiation_str[INSTANTIATION_LEN + pkg_instantiation_len + END_LEN] = '\0';
+                            break;
+                        }
+                    }
+                    tok = YYLEX;
+                    pre_tok_loc = yylloc;
+                }
+				pkg_name_str = pg_strtolower(pkg_name_str);
+                if (yyextra->lookahead_num != 0)
+                    parser_yyerror("package spec is not ended correctly");
+                else
+                {
+                    yyextra->lookahead_token[0] = tok;
+                    yyextra->lookahead_num = 1;
+                }
+                /* Reset the flag which mark whether we are in slash proc. */
+                yyextra->core_yy_extra.in_slash_proc_body = false;
+                yyextra->core_yy_extra.dolqstart = NULL;
+                /*
+                * Add the end location of slash proc to the locationlist for the multi-query 
+                * processed.
+                */
+                yyextra->core_yy_extra.query_string_locationlist = 
+                    lappend_int(yyextra->core_yy_extra.query_string_locationlist, yylloc);
+            
+                result_list = list_concat(list_make1(makeDefElem("decl", (Node *)makeString(pkg_body_str))), 
+                         list_make1(makeDefElem("name", (Node *)makeString(pkg_name_str))));
+                if (instantiation_start != 0)  {
+                    result_list = list_concat(result_list,list_make1(makeDefElem(("init"), (Node *)makeString(instantiation_str))));
+                } else {
+                    result_list = list_concat(result_list,list_make1(makeDefElem(("init"), NULL)));
+                }
+                $$ = result_list;
+            }
+            ;
+CreatePackageBodyStmt:
+			CREATE opt_or_replace PACKAGE BODY_P pkg_name as_is {pg_yyget_extra(yyscanner)->core_yy_extra.include_ora_comment = true;} pkg_body_subprogram
+				{
+					char *pkgNameBegin = NULL;
+					char *pkgNameEnd = NULL;
+                                        char *pkgName = NULL;
+					DefElem *def = NULL;
+					switch (list_length($5)) {
+						case 1:
+							pkgName = strVal(linitial($5));
+							break;
+						case 2:
+							pkgName = strVal(lsecond($5));
+							break;
+						case 3:
+							pkgName = strVal(lthird($5));
+							break;
+						default:
+							parser_yyerror("package name is invalid!");
+							break;
+					}
+                                        pkgNameBegin = (char *)palloc(strlen(pkgName) + 1);
+                                        strcpy(pkgNameBegin, pkgName);
+					pkgNameBegin = pg_strtolower(pkgNameBegin);
+                    int length = list_length($8);
+					def = (DefElem *)lsecond($8);
+					if (strcmp(def->defname,"name") != 0)
+					{
+						parser_yyerror("internal grammer error!");
+					}
+					pkgNameEnd = strVal(def->arg);
+					getPkgName(pkgNameEnd);
+					if (strcmp(pkgNameBegin, pkgNameEnd) != 0)
+					{
+						parser_yyerror("package name end is not match the one begin!");
+					}
+					CreatePackageBodyStmt *n = makeNode(CreatePackageBodyStmt);
+					n->replace = $2;
+					n->pkgname = $5;
+					def = (DefElem *)linitial($8);
+					if (strcmp(def->defname,"decl") != 0)
+					{
+						parser_yyerror("internal grammer error!");
+					}
+					n->pkgbody = strVal(def->arg);
+                    def = (DefElem *)lthird($8);
+                    if (strcmp(def->defname,"init") != 0) 
+                    {     
+                        parser_yyerror("internal grammer error!");
+                    } 
+                    if (def->arg) {
+                        n->pkginit = strVal(def->arg);
+                    } else {
+                        n->pkginit = NULL;
+                    }
+					$$ = (Node *)n;
+				}
+		;
 opt_or_replace:
 			OR REPLACE								{ $$ = TRUE; }
 			| /*EMPTY*/								{ $$ = FALSE; }
@@ -10206,7 +11345,9 @@ func_args:	'(' func_args_list ')'					{ $$ = $2; }
 			| '(' ')'								{ $$ = NIL; }
 		;
 
-proc_args:   func_args_with_defaults				{ $$ = $1;  }
+proc_args:  {
+				pg_yyget_extra(yyscanner)->core_yy_extra.func_param_begin = yylloc;
+			} func_args_with_defaults				{ pg_yyget_extra(yyscanner)->core_yy_extra.func_param_end = yylloc; $$ = $2;  }
 			|/*EMPTY*/								{ $$ = NIL; }
 		;
 
@@ -10333,6 +11474,7 @@ func_type:	Typename								{ $$ = $1; }
 					$$ = makeTypeNameFromNameList(lcons(makeString($1), $2));
 					$$->pct_type = true;
 					$$->location = @1;
+					$$->end_location = @4 + TYPE_LEN;
 				}
 			| SETOF type_function_name attrs '%' TYPE_P
 				{
@@ -10340,6 +11482,7 @@ func_type:	Typename								{ $$ = $1; }
 					$$->pct_type = true;
 					$$->setof = TRUE;
 					$$->location = @2;
+					$$->end_location = @5 + TYPE_LEN;
 				}
 		;
 
@@ -10465,13 +11608,6 @@ common_func_opt_item:
 				}
 			| FENCED
 				{
-					if (IS_SINGLE_NODE)
-					{
-						ereport(ERROR,
-								(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
-								errmsg("FENCED mode function is not yet supported in current version.")));
-					}
-
 					$$ = makeDefElem("fenced", (Node *)makeInteger(TRUE));
 				}
 			| NOT FENCED
@@ -10524,6 +11660,8 @@ subprogram_body: 	{
 				int		proc_body_len	= 0;
 				int		blocklevel		= 0;
 				bool	add_declare		= true;  /* Mark if need to add a DECLARE */
+				FunctionSources *funSrc = NULL;
+				char *proc_header_str = NULL;
 
 				int	tok = YYEMPTY;
 				int	pre_tok = 0;
@@ -10545,8 +11683,13 @@ subprogram_body: 	{
 				if (u_sess->parser_cxt.eaten_declare || DECLARE == tok)
 					add_declare = false;
 
+				/* Save procedure header str,start with param exclude brackets */
+				proc_header_str = ParseFunctionArgSrc(yyscanner);
+
 				/* Save the beginning of procedure body. */
 				proc_b = yylloc;
+
+				/* start procedure body scan */
 				while(true)
 				{
 					if (tok == YYEOF)
@@ -10646,7 +11789,11 @@ subprogram_body: 	{
 				yyextra->core_yy_extra.query_string_locationlist = 
 					lappend_int(yyextra->core_yy_extra.query_string_locationlist, yylloc);
 
-				$$ = proc_body_str;
+				funSrc = (FunctionSources*)palloc0(sizeof(FunctionSources));
+				funSrc->bodySrc   = proc_body_str;
+				funSrc->headerSrc = proc_header_str;
+
+				$$ = funSrc;
 			}
 		;
 opt_definition:
@@ -10684,6 +11831,57 @@ table_func_column_list:
  * only be applied to functions.
  *
  *****************************************************************************/
+
+ RemovePackageStmt:
+				DROP PACKAGE pkg_name 
+				{
+					DropStmt *n = makeNode(DropStmt);
+					n->removeType = OBJECT_PACKAGE;
+					n->objects = list_make1($3);
+					n->arguments = NULL;
+					n->behavior = DROP_CASCADE;
+					n->missing_ok = false;
+					n->concurrent = false;
+					n->isProcedure = false;
+					$$ = (Node *)n;
+				}
+				| DROP PACKAGE IF_P EXISTS pkg_name
+				{
+					DropStmt *n = makeNode(DropStmt);
+					n->removeType = OBJECT_PACKAGE;
+					n->objects = list_make1($5);
+					n->arguments = NULL;
+					n->behavior = DROP_CASCADE;
+					n->missing_ok = true;
+					n->concurrent = false;
+					n->isProcedure = false;
+					$$ = (Node *)n;
+				}
+				| DROP PACKAGE BODY_P pkg_name 
+				{
+					DropStmt *n = makeNode(DropStmt);
+					n->removeType = OBJECT_PACKAGE_BODY;
+					n->objects = list_make1($4);
+					n->arguments = NULL;
+					n->behavior = DROP_CASCADE;
+					n->missing_ok = false;
+					n->concurrent = false;
+					n->isProcedure = false;
+					$$ = (Node *)n;
+				}
+				| DROP PACKAGE BODY_P IF_P EXISTS pkg_name
+				{
+					DropStmt *n = makeNode(DropStmt);
+					n->removeType = OBJECT_PACKAGE_BODY;
+					n->objects = list_make1($6);
+					n->arguments = NULL;
+					n->behavior = DROP_CASCADE;
+					n->missing_ok = true;
+					n->concurrent = false;
+					n->isProcedure = false;
+					$$ = (Node *)n;
+				}
+
 AlterFunctionStmt:
 			ALTER FUNCTION function_with_argtypes alterfunc_opt_list opt_restrict
 				{
@@ -10936,11 +12134,11 @@ dostmt_opt_item:
 AnonyBlockStmt:
 		DECLARE { u_sess->parser_cxt.eaten_declare = true; u_sess->parser_cxt.eaten_begin = false; } subprogram_body
 			{
-				$$ = (Node *)MakeAnonyBlockFuncStmt(DECLARE, $3);
+				$$ = (Node *)MakeAnonyBlockFuncStmt(DECLARE, ((FunctionSources*)$3)->bodySrc);
 			}
 		| BEGIN_P { u_sess->parser_cxt.eaten_declare = true; u_sess->parser_cxt.eaten_begin = true; } subprogram_body
 			{
-				$$ = (Node *)MakeAnonyBlockFuncStmt(BEGIN_P, $3);
+				$$ = (Node *)MakeAnonyBlockFuncStmt(BEGIN_P, ((FunctionSources*)$3)->bodySrc);
 			}
 		;
 /*****************************************************************************
@@ -13414,6 +14612,16 @@ bucket_list:
 			| Iconst					{ $$ = list_make1(makeInteger($1)); }
 		;
 
+bucket_cnt:
+			BUCKETCNT Iconst			{ $$ = $2; }
+			| /*EMPTY*/ 				{ $$ = -1; }
+		;
+
+pgxcgroup_parent:
+			GROUPPARENT pgxcnode_name      		{ $$ = $2; }
+			| /*EMPTY*/ 				{ $$ = NULL;}
+		;
+
 opt_vcgroup: 
             		VCGROUP			{$$ = TRUE;}
 			| /* EMPTY */		{$$ = FALSE;}
@@ -13425,7 +14633,7 @@ opt_to_elastic_group:
 		;
 
 opt_redistributed: 
-            		DISTRIBUTE FROM  ColId	{$$ = $3;}
+			DISTRIBUTE FROM  ColId  {$$ = $3;}
 			| /* EMPTY */      	{$$ = NULL;}
 		;
 
@@ -13519,15 +14727,17 @@ opt_pgxcnodes:	WITH pgxcnodes
  *
  *****************************************************************************/
 
-CreateNodeGroupStmt: CREATE NODE GROUP_P pgxcgroup_name WITH pgxcnodes bucket_maps opt_vcgroup opt_redistributed
+CreateNodeGroupStmt: CREATE NODE GROUP_P pgxcgroup_name opt_pgxcnodes bucket_maps opt_vcgroup opt_redistributed bucket_cnt pgxcgroup_parent
 				{
 					CreateGroupStmt *n = makeNode(CreateGroupStmt);
 					IsValidGroupname($4);
 					n->group_name = $4;
-					n->nodes = $6;
-					n->buckets = $7;
-					n->vcgroup = $8;
-					n->src_group_name = $9;
+					n->nodes = $5;
+					n->buckets = $6;
+					n->vcgroup = $7;
+					n->src_group_name = $8;
+					n->bucketcnt = $9;
+					n->group_parent = $10;
 					$$ = (Node *)n;
 				}
 		;
@@ -14109,6 +15319,14 @@ masking_clause_elem:
             {
                 $$ = makeDefElem($1, (Node *)lappend(list_make1($2) , $4));
             }
+        | masking_func_nsp '.' masking_func masking_func_params_opt ON masking_target
+            {
+                $$ = makeDefElemExtended($1, $3, (Node *)lappend(list_make1($4) , $6), DEFELEM_UNSPEC);
+            }
+        ;
+
+masking_func_nsp:
+        ColLabel        { IsValidIdent($1); $$ = $1; }
         ;
 
 masking_func:
@@ -14188,6 +15406,7 @@ masking_policy_condition_operator:
     | '<'       { $$ = "<"; }
     | '>'       { $$ = ">"; }
     | '='       { $$ = "="; }
+    | '@'       { $$ = "@"; }
     ;
 
 masking_policy_condition_value:
@@ -14839,6 +16058,8 @@ ExplainableStmt:
 			| MergeStmt
 			| DeclareCursorStmt
 			| CreateAsStmt
+			| CreateModelStmt
+			| SnapshotStmt
 			| ExecuteStmt					/* by default all are $$=$1 */
 		;
 
@@ -15263,15 +16484,17 @@ upsert_clause:
 						/* check subquery in set clause*/
 						ListCell* cell = NULL;
 						ResTarget* res = NULL;
+#ifdef ENABLE_MULTIPLE_NODES
 						foreach (cell, $5) {
 							res = (ResTarget*)lfirst(cell);
 							if (IsA(res->val,SubLink)) {
 								ereport(ERROR,
 									(errmodule(MOD_PARSER),
-									  errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
-									  errmsg("Update with subquery is not yet supported whithin INSERT ON DUPLICATE KEY UPDATE statement.")));
+									errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+									errmsg("Update with subquery is not yet supported whithin INSERT ON DUPLICATE KEY UPDATE statement.")));
 							}
 						}
+#endif
 
 						UpsertClause *uc = makeNode(UpsertClause);
 						uc->targetList = $5;
@@ -16347,7 +17570,20 @@ table_ref:	relation_expr
 					n->relation = (Node *) $1;
 					$$ = (Node *) n;
 				}
+			| relation_expr opt_alias_clause timecapsule_clause
+				{
+					RangeTimeCapsule *n = (RangeTimeCapsule *) $3;
+					$1->alias = $2;
+					/* relation_expr goes inside the RangeTimeCapsule node */
+					n->relation = (Node *) $1;
 
+					if (IsA($1, RangeVar)) {
+						RangeVar *rv = (RangeVar *)$1;
+						rv->withVerExpr = true;
+					}
+
+					$$ = (Node *) n;
+				}
 			| relation_expr PARTITION '(' name ')'
 				{
 					$1->partitionname = $4;
@@ -16623,10 +17859,16 @@ join_qual:	USING '(' name_list ')'					{ $$ = (Node *) $3; }
 
 
 relation_expr:
-			qualified_name
+			qualified_name OptSnapshotVersion
 				{
 					/* default inheritance */
 					$$ = $1;
+					if ($2 != NULL)
+					{
+						char *snapshot_name = (char *)palloc0(strlen($1->relname) + 1 + strlen($2) + 1);
+						sprintf(snapshot_name, "%s%c%s", $1->relname, DB4AI_SNAPSHOT_VERSION_DELIMITER, $2);
+						$$->relname = snapshot_name;
+					}
 					$$->inhOpt = INH_DEFAULT;
 					$$->alias = NULL;
 				}
@@ -16700,6 +17942,33 @@ tablesample_clause:
 					n->method = $2;
 					n->args = $4;
 					n->repeatable = $6;
+					n->location = @2;
+					$$ = (Node *) n;
+				}
+		;
+
+/*
+ * TIMECAPSULE decoration in a FROM item
+ */
+timecapsule_clause:
+			TIMECAPSULE opt_timecapsule_clause { $$ = $2; }
+
+opt_timecapsule_clause:
+			CSN a_expr
+				{
+					TcapFeatureEnsure();
+					RangeTimeCapsule *n = makeNode(RangeTimeCapsule);
+					n->tvtype = TV_VERSION_CSN;
+					n->tvver = (Node *)$2;
+					n->location = @2;
+					$$ = (Node *) n;
+				}
+			| TIMESTAMP a_expr
+				{
+					TcapFeatureEnsure();
+					RangeTimeCapsule *n = makeNode(RangeTimeCapsule);
+					n->tvtype = TV_VERSION_TIMESTAMP;
+					n->tvver = (Node *)$2;
 					n->location = @2;
 					$$ = (Node *) n;
 				}
@@ -16965,6 +18234,11 @@ Numeric:	INT_P
 					$$ = SystemTypeName("float8");
 					$$->location = @1;
 				}
+			| BINARY_FLOAT
+				{
+					$$ = SystemTypeName("float4");
+					$$->location = @1;
+				}
 			| BINARY_INTEGER
 				{
 					$$ = SystemTypeName("int4");
@@ -16984,33 +18258,6 @@ Numeric:	INT_P
 			| NUMBER_P opt_type_modifiers
 				{
 					$$ = SystemTypeName("numeric");
-					ListCell *cell = NULL;
-					A_Const *aconst = NULL;
-					int rc;
-					foreach (cell, $2) {
-						aconst = (A_Const*)lfirst(cell);
-						char *val = aconst->val.val.str;
-						if (aconst->val.type == T_Float) {
-							char *dot = strstr(val, ".");
-							bool flag = true;
-							for (int i = 1; i < strlen(dot); i++) {
-								if (dot[i] >= '1' && dot[i] <= '9') {
-									flag = false;
-									break;
-								}
-							}
-							if (flag) {
-								aconst->val.type = T_Integer;
-								rc = strncpy_s(val, strlen(val), val, strlen(val) - strlen(dot));
-								securec_check(rc, "\0", "\0");
-								int ival = 0;
-								for (int i = 0; i < strlen(val); i++) {
-									ival = ival * 10 + val[i] - '0';
-								}
-								aconst->val.val.ival = ival;
-							}
-						}
-					}
 					$$->typmods = $2;
 					$$->location = @1;
 				}
@@ -17266,6 +18513,7 @@ ConstDatetime:
 					else
 						$$ = SystemTypeName("date");
 					$$->location = @1;
+					$$->end_location = @1 + DATE_LEN;
 				}
 			| SMALLDATETIME
 				{
@@ -17497,6 +18745,8 @@ a_expr:		c_expr									{ $$ = $1; }
 				{ $$ = (Node *) makeSimpleA_Expr(AEXPR_OP, "+", NULL, $2, @1); }
 			| '-' a_expr					%prec UMINUS
 				{ $$ = doNegate($2, @1); }
+			| '@' a_expr
+				{ $$ = (Node *) makeSimpleA_Expr(AEXPR_OP, "@", NULL, $2, @1); }
 			| a_expr '+' a_expr
 				{ $$ = (Node *) makeSimpleA_Expr(AEXPR_OP, "+", $1, $3, @2); }
 			| a_expr '-' a_expr
@@ -17517,12 +18767,14 @@ a_expr:		c_expr									{ $$ = $1; }
 				{ $$ = (Node *) makeSimpleA_Expr(AEXPR_OP, ">", $1, $3, @2); }
 			| a_expr '=' a_expr
 				{ $$ = (Node *) makeSimpleA_Expr(AEXPR_OP, "=", $1, $3, @2); }
-			| a_expr '<' '=' a_expr
-				{ $$ = (Node *) makeSimpleA_Expr(AEXPR_OP, "<=", $1, $4, @2); }
-			| a_expr '>' '=' a_expr
-				{ $$ = (Node *) makeSimpleA_Expr(AEXPR_OP, ">=", $1, $4, @2); }
-			| a_expr '<' '>' a_expr
-				{ $$ = (Node *) makeSimpleA_Expr(AEXPR_OP, "<>", $1, $4, @2); }
+            | a_expr '@' a_expr
+                { $$ = (Node *) makeSimpleA_Expr(AEXPR_OP, "@", $1, $3, @2); }
+            | a_expr '<' '=' a_expr
+                { $$ = (Node *) makeSimpleA_Expr(AEXPR_OP, "<=", $1, $4, @2); }
+            | a_expr '>' '=' a_expr
+                { $$ = (Node *) makeSimpleA_Expr(AEXPR_OP, ">=", $1, $4, @2); }
+            | a_expr '<' '>' a_expr
+                { $$ = (Node *) makeSimpleA_Expr(AEXPR_OP, "<>", $1, $4, @2); }
 			| a_expr CmpOp a_expr
 				{ $$ = (Node *) makeSimpleA_Expr(AEXPR_OP, $2, $1, $3, @2); }
 			| a_expr qual_Op a_expr				%prec Op
@@ -17916,6 +19168,15 @@ a_expr:		c_expr									{ $$ = $1; }
 														 list_make1($1), @2),
 											 @2);
 				}
+			| PREDICT BY ColId '(' FEATURES func_arg_list ')'
+				{
+					PredictByFunction * n = makeNode(PredictByFunction);
+					n->model_name = $3;
+					n->model_name_location = @3;
+					n->model_args = $6;	
+					n->model_args_location = @6;
+					$$ = (Node*) n;				
+				}
 		;
 
 /*
@@ -17935,6 +19196,8 @@ b_expr:		c_expr
 				{ $$ = (Node *) makeSimpleA_Expr(AEXPR_OP, "+", NULL, $2, @1); }
 			| '-' b_expr					%prec UMINUS
 				{ $$ = doNegate($2, @1); }
+			| '@' b_expr
+				{ $$ = (Node *) makeSimpleA_Expr(AEXPR_OP, "@", NULL, $2, @1); }
 			| b_expr '+' b_expr
 				{ $$ = (Node *) makeSimpleA_Expr(AEXPR_OP, "+", $1, $3, @2); }
 			| b_expr '-' b_expr
@@ -17953,6 +19216,8 @@ b_expr:		c_expr
 				{ $$ = (Node *) makeSimpleA_Expr(AEXPR_OP, ">", $1, $3, @2); }
 			| b_expr '=' b_expr
 				{ $$ = (Node *) makeSimpleA_Expr(AEXPR_OP, "=", $1, $3, @2); }
+                        | b_expr '@' b_expr
+                                { $$ = (Node *) makeSimpleA_Expr(AEXPR_OP, "@", $1, $3, @2); }
 			| b_expr CmpOp b_expr
 				{ $$ = (Node *) makeSimpleA_Expr(AEXPR_OP, $2, $1, $3, @2); }
 			| b_expr qual_Op b_expr				%prec Op
@@ -19363,6 +20628,7 @@ MathOp:		 '+'									{ $$ = "+"; }
 			| '<'									{ $$ = "<"; }
 			| '>'									{ $$ = ">"; }
 			| '='									{ $$ = "="; }
+			| '@'									{ $$ = "@"; }
 		;
 
 qual_Op:	Op
@@ -20171,6 +21437,7 @@ unreserved_keyword:
 			| ALTER
 			| ALWAYS
 			| APP
+			| ARCHIVE
 			| ASSERTION
 			| ASSIGNMENT
 			| AT
@@ -20186,6 +21453,8 @@ unreserved_keyword:
 			| BEGIN_NON_ANOYBLOCK
 			| BEGIN_P
 			| BLOB_P
+			| BLOCKCHAIN
+			| BODY_P
 			| BY
 			| CACHE
 			| CALL
@@ -20288,6 +21557,7 @@ unreserved_keyword:
 			| EXTERNAL
 			| FAMILY
 			| FAST
+			| FEATURES 			// DB4AI
 			| FILEHEADER_P
 			| FILL_MISSING_FIELDS
 			| FILTER
@@ -20299,6 +21569,7 @@ unreserved_keyword:
 			| FORWARD
 			| FUNCTION
 			| FUNCTIONS
+			| GENERATED
 			| GLOBAL
 			| GLOBAL_FUNCTION
 			| GRANTED
@@ -20373,6 +21644,7 @@ unreserved_keyword:
 			| MINVALUE
 			| MOD
 			| MODE
+			| MODEL      // DB4AI
 			| MONTH_P
 			| MOVE
 			| MOVEMENT
@@ -20419,6 +21691,7 @@ unreserved_keyword:
 			| POLICY
 			| POOL
 			| PRECEDING
+			| PREDICT   // DB4AI
 /* PGXC_BEGIN */
 			| PREFERRED
 /* PGXC_END */
@@ -20432,10 +21705,13 @@ unreserved_keyword:
 			| PRIVILEGES
 			| PROCEDURAL
 			| PROFILE
+			| PUBLISH
+			| PURGE
 			| QUERY
 			| QUOTE
 			| RANDOMIZED
 			| RANGE
+			| RATIO
 			| RAW  '(' Iconst ')'				{	$$ = "raw";}
 			| RAW  %prec UNION				{	$$ = "raw";}
 			| READ
@@ -20469,8 +21745,10 @@ unreserved_keyword:
 			| ROLES
 			| ROLLBACK
 			| ROLLUP
+			| ROTATION
 			| ROWS
 			| RULE
+			| SAMPLE
 			| SAVEPOINT
 			| SCHEMA
 			| SCROLL
@@ -20507,7 +21785,9 @@ unreserved_keyword:
 			| STDOUT
 			| STORAGE
 			| STORE_P
-            | STREAM
+			| STORED
+			| STRATIFY
+                        | STREAM
 			| STRICT_P
 			| STRIP_P
 			| SYNONYM
@@ -20516,6 +21796,7 @@ unreserved_keyword:
 			| SYSTEM_P
 			| TABLES
 			| TABLESPACE
+			| TARGET
 			| TEMP
 			| TEMPLATE
 			| TEMPORARY
@@ -20524,6 +21805,7 @@ unreserved_keyword:
 			| TIME_FORMAT_P
 			| TIMESTAMP_FORMAT_P
 			| TRANSACTION
+			| TRANSFORM
 			| TRIGGER
 			| TRUNCATE
 			| TRUSTED
@@ -20549,7 +21831,6 @@ unreserved_keyword:
 			| VALIDATION
 			| VALIDATOR
 			| VALUE_P
-			| VARIABLES
 			| VARYING
 			| VERSION_P
 			| VIEW
@@ -20582,9 +21863,11 @@ col_name_keyword:
 			  BETWEEN
 			| BIGINT
 			| BINARY_DOUBLE
+			| BINARY_FLOAT
 			| BINARY_INTEGER
 			| BIT
 			| BOOLEAN_P
+			| BUCKETCNT
 			| BYTEAWITHOUTORDER
 			| BYTEAWITHOUTORDERWITHEQUAL
 			| CHAR_P
@@ -20660,6 +21943,7 @@ type_func_name_keyword:
 			| COMPACT
 			| CONCURRENTLY
 			| CROSS
+			| CSN
 			| CURRENT_SCHEMA
 			| DELTAMERGE
 			| FREEZE
@@ -20674,9 +21958,11 @@ type_func_name_keyword:
 			| NOTNULL
 			| OUTER_P
 			| OVERLAPS
+			| RECYCLEBIN
 			| RIGHT
 			| SIMILAR
 			| TABLESAMPLE
+			| TIMECAPSULE
 			| VERBOSE
 		;
 
@@ -20728,6 +22014,7 @@ reserved_keyword:
 			| FROM
 			| GRANT
 			| GROUP_P
+			| GROUPPARENT
 			| HAVING
 			| IN_P
 			| INITIALLY
@@ -20762,7 +22049,6 @@ reserved_keyword:
 			| SOME
 			| SYMMETRIC
 			| SYSDATE
-			| SYSTIMESTAMP
 			| TABLE
 			| THEN
 			| TO
@@ -20858,6 +22144,19 @@ makeTypeCast(Node *arg, TypeName *typname, int location)
 	n->typname = typname;
 	n->location = location;
 	return (Node *) n;
+}
+
+static void
+getPkgName(char* pkgname) {
+	while (isspace((unsigned char)*pkgname) && (unsigned char)*pkgname != '\0') {
+        pkgname++;
+    }
+	while (!isspace((unsigned char)*pkgname) && (unsigned char)*pkgname != '\0') {
+		pkgname++;
+	}
+	if (isspace((unsigned char)*pkgname)) {
+		*pkgname = '\0';
+	}
 }
 
 static Node *
@@ -21408,6 +22707,13 @@ SplitColQualList(List *qualList,
 						 errmsg("multiple COLLATE clauses not allowed"),
 						 parser_errposition(c->location)));
 			*collClause = c;
+		}
+		else if (IsA(n, ClientLogicColumnRef))
+		{
+			ereport(ERROR, (errmodule(MOD_SEC), errcode(ERRCODE_SYNTAX_ERROR),
+				errmsg("unsupported syntax: ENCRYPTED WITH in this operation"), errdetail("N/A"),
+					errcause("client encryption feature is not supported this operation."),
+						erraction("Check client encryption feature whether supported this operation.")));
 		}
 		else
 			ereport(ERROR,
@@ -21966,6 +23272,8 @@ makeCallFuncStmt(List* funcname,List* parameters)
 	RangeFunction *rangeFunction = NULL;
 	char *schemaname = NULL;
 	char *name = NULL;
+	char *pkgname = NULL;
+	Oid pkgoid = InvalidOid;
 	FuncCandidateList clist = NULL;
 	HeapTuple proctup = NULL;
 	Form_pg_proc procStruct;
@@ -21980,9 +23288,9 @@ makeCallFuncStmt(List* funcname,List* parameters)
 	int ntable_colums = 0;
 	bool *have_assigend = NULL;
 	bool	has_overload_func = false;
-
+	Datum package_oid_datum;
 	/* deconstruct the name list */
-	DeconstructQualifiedName(funcname, &schemaname, &name);
+	DeconstructQualifiedName(funcname, &schemaname, &name, &pkgname);
 
 	/* search the function */
 	clist = FuncnameGetCandidates(funcname, -1, NIL, false, false, false);
@@ -22006,23 +23314,21 @@ makeCallFuncStmt(List* funcname,List* parameters)
 		}
 	}
 
+	proctup = SearchSysCache(PROCOID,
+							ObjectIdGetDatum(clist->oid),
+							0, 0, 0);
+	/*
+	 * function may be deleted after clist be searched.
+	 */
+	if (!HeapTupleIsValid(proctup))
+	{
+		ereport(ERROR,
+				(errcode(ERRCODE_UNDEFINED_FUNCTION),
+					errmsg("function \"%s\" doesn't exist ", name)));
+		return NULL;
+	}
 	if (!has_overload_func)
 	{
-		proctup = SearchSysCache(PROCOID,
-								 ObjectIdGetDatum(clist->oid),
-								 0, 0, 0);
-
-		/*
-		 * function may be deleted after clist be searched.
-		 */
-		if (!HeapTupleIsValid(proctup))
-		{
-			ereport(ERROR,
-					(errcode(ERRCODE_UNDEFINED_FUNCTION),
-					 errmsg("function \"%s\" doesn't exist ", name)));
-			return NULL;
-		}
-
 		/* get the all args informations, only "in" parameters if p_argmodes is null */
 		narg = get_func_arg_info(proctup,&p_argtypes,&p_argnames,&p_argmodes);
 
@@ -22032,7 +23338,6 @@ makeCallFuncStmt(List* funcname,List* parameters)
 
 		procStruct = (Form_pg_proc) GETSTRUCT(proctup);
 		ndefaultargs = procStruct->pronargdefaults;
-		ReleaseSysCache(proctup);
 
 		/* check the parameters' count*/
 		if (narg - ndefaultargs > (parameters ? parameters->length : 0) )
@@ -22086,7 +23391,7 @@ makeCallFuncStmt(List* funcname,List* parameters)
 	{
 		in_parameters = parameters;
 	}
-	
+	ReleaseSysCache(proctup);
 
 	column = makeNode(ColumnRef);
 	column->fields = list_make1(makeNode(A_Star));
@@ -22107,6 +23412,7 @@ makeCallFuncStmt(List* funcname,List* parameters)
 	funcCall->agg_order = NIL;
 	funcCall->over = NULL;
 	funcCall->location = -1;
+	/*funcCall->pkgoid = pkgoid;*/
 	if (has_overload_func)
 		funcCall->call_func = true;
 	else
@@ -22123,7 +23429,7 @@ makeCallFuncStmt(List* funcname,List* parameters)
 	newm->fromClause  = list_make1(rangeFunction);
 	newm->whereClause = NULL;
 	newm->havingClause= NULL;
-        newm->groupClause = NIL;
+    newm->groupClause = NIL;
 	return (Node*)newm;
 }
 
@@ -22276,6 +23582,134 @@ static void ParseUpdateMultiSet(List *set_target_list, SelectStmt *stmt, core_yy
 	pfree_ext(buf.data);
 }
 
+/* get proc header sting len and start pos in scanbuffer */
+static int GetProcHeaderLen(core_yyscan_t yyscanner, int *startPos)
+{
+	int param_pos_b = 0;
+	int param_pos_e = 0;
+	int proc_header_len = 0;
+	base_yy_extra_type *yyextra = pg_yyget_extra(yyscanner);
+
+	param_pos_b = yyextra->core_yy_extra.func_param_begin;
+	param_pos_e = yyextra->core_yy_extra.func_param_end;
+	/* exclude left parenthesis at beginning of param */
+	param_pos_b++;
+	/* exclude right parenthesis at end of param */
+	proc_header_len = param_pos_e - param_pos_b;
+
+	*startPos = param_pos_b;
+
+	return proc_header_len;
+}
+
+/* get pg_dump type name by input name */
+static char *GetTargetFuncArgTypeName(char *typeString, TypeName* t)
+{
+	char *target = NULL;
+
+	if (t->pct_type)
+	{
+		Type typtup;
+		Oid toid;
+		typtup = LookupTypeName(NULL, t, NULL, false);
+		if (typtup)
+		{
+			toid = typeTypeId(typtup);
+			target = format_type_be(toid);
+			ReleaseSysCache(typtup);
+		}
+	}
+	else
+	{
+		if (t->end_location - t->location == DATE_LEN
+			&& (u_sess->attr.attr_sql.sql_compatibility == A_FORMAT)
+			&& pg_strncasecmp(typeString, "date", DATE_LEN) == 0)
+		{
+			target = pstrdup("timestamp without time zone");
+		}
+	}
+
+	return target;
+}
+
+/* covert input type name into pg_dump type name */
+static char *FormatFuncArgType(core_yyscan_t yyscanner, char *argsString, List* parameters)
+{
+	ListCell* x = NULL;
+	char *tmp_pos = argsString;
+	int param_pos_b = 0;
+	int proc_header_len = 0;
+	base_yy_extra_type *yyextra = pg_yyget_extra(yyscanner);
+	StringInfoData buf;
+	char *target = NULL;
+	int token_offset = 0;
+
+	if (argsString == NULL)
+	{
+		return NULL;
+	}
+
+	proc_header_len = GetProcHeaderLen(yyscanner, &param_pos_b);
+	initStringInfo(&buf);
+
+	foreach (x, parameters)
+	{
+		FunctionParameter* fp = (FunctionParameter*)lfirst(x);
+		TypeName* t = fp->argType;
+
+		if (t->end_location > 0)
+		{
+			token_offset = t->location - param_pos_b;
+			target = GetTargetFuncArgTypeName(argsString + token_offset, t);
+			if (target != NULL)
+			{
+				*(argsString + token_offset) = '\0';
+				appendStringInfoString(&buf, tmp_pos);
+				appendStringInfoString(&buf, target);
+				tmp_pos = argsString + (t->end_location - param_pos_b);
+				pfree(target);
+			}
+		}
+	}
+	appendStringInfoString(&buf, tmp_pos);
+	pfree(argsString);
+	proc_header_len = proc_header_len;
+
+	yyextra->core_yy_extra.func_param_begin = 0;
+	yyextra->core_yy_extra.func_param_end = 0;
+
+	return buf.data;
+}
+
+/*
+ * get function and procedure args input string
+ */
+static char *ParseFunctionArgSrc(core_yyscan_t yyscanner)
+{
+	base_yy_extra_type *yyextra = pg_yyget_extra(yyscanner);
+	int param_pos_b = 0;
+	int proc_header_len = 0;
+	char *proc_header_str = NULL;
+
+	if (yyextra->core_yy_extra.include_ora_comment == false)
+	{
+		return NULL;
+	}
+
+	/* exclude right parenthesis at end of param */
+	proc_header_len = GetProcHeaderLen(yyscanner, &param_pos_b);
+	if (proc_header_len > 0)
+	{
+		proc_header_str = (char *)palloc0(proc_header_len + 1);
+		strncpy_s(proc_header_str, (proc_header_len + 1), yyextra->core_yy_extra.scanbuf + param_pos_b, proc_header_len);
+		proc_header_str[proc_header_len] = '\0';
+	}
+
+	yyextra->core_yy_extra.include_ora_comment = false;
+
+	return proc_header_str;
+}
+
 static void parameter_check_execute_direct(const char* query)
 {
 #ifndef ENABLE_MULTIPLE_NODES					
@@ -22297,31 +23731,22 @@ static void parameter_check_execute_direct(const char* query)
 				errmsg("must be system admin or monitor admin to use EXECUTE DIRECT")));
 }
 
-static char* remove_end_funcname_label(const char* body, const char* funcname) {
-	int len = strlen(body);
-	int end;
-	int start;
-	int rc;
-	char* as_body = (char *)palloc0(len + 1);
-	for (end = len - 1; body[end] == '\n' || body[end] == '\t' ||
-			body[end] == '\r' || body[end] == '\f' || body[end] == ' '; end--);
-	for (start = end; body[start] != '\n' && body[start] != '\t' &&
-			body[start] != '\r' && body[start] != '\f' && body[start] != ' '; start--);
-	char* tempName = (char *)palloc0(end - start + 1);
-	rc = strncpy_s(tempName, end - start + 1, body + start + 1, end - start);
-	securec_check(rc, "\0", "\0");
-	tempName[end - start] = '\0';
-	if (strcmp(funcname, tempName) == 0) {
-		rc = strncpy_s(as_body, len + 1, body, start);
-		securec_check(rc, "\0", "\0");
-		as_body[start] = '\0';
-	} else {
-		rc = strncpy_s(as_body, len + 1, body, len);
-		securec_check(rc, "\0", "\0");
-	}
-	pfree(tempName);
-	return as_body;
+static Node *make_node_from_scanbuf(int start_pos, int end_pos, core_yyscan_t yyscanner)
+{
+	base_yy_extra_type *yyextra = pg_yyget_extra(yyscanner);
+	int len = end_pos - 1;
+
+	/* trim trailing blanks */
+	while (yyextra->core_yy_extra.scanbuf[len] == ' ')
+		len--;
+
+	len = len - start_pos + 1;
+	char *str = (char *)palloc0(len + 1);
+	strncpy(str, yyextra->core_yy_extra.scanbuf + start_pos, len);
+	str[len] = '\0';
+	return makeStringConst(str, start_pos);
 }
+
 
 static const char* replace_data_type(const char* input) {
 	int rc;
@@ -22348,6 +23773,32 @@ static const char* replace_data_type(const char* input) {
 	} else {
 		return input;
 	}
+}
+
+static char* remove_end_funcname_label(const char* body, const char* funcname) {
+	int len = strlen(body);
+	int end;
+	int start;
+	int rc;
+	char* as_body = (char *)palloc0(len + 1);
+	for (end = len - 1; body[end] == '\n' || body[end] == '\t' ||
+			body[end] == '\r' || body[end] == '\f' || body[end] == ' '; end--);
+	for (start = end; body[start] != '\n' && body[start] != '\t' &&
+			body[start] != '\r' && body[start] != '\f' && body[start] != ' '; start--);
+	char* tempName = (char *)palloc0(end - start + 1);
+	rc = strncpy_s(tempName, end - start + 1, body + start + 1, end - start);
+	securec_check(rc, "\0", "\0");
+	tempName[end - start] = '\0';
+	if (strcmp(funcname, tempName) == 0) {
+		rc = strncpy_s(as_body, len + 1, body, start);
+		securec_check(rc, "\0", "\0");
+		as_body[start] = '\0';
+	} else {
+		rc = strncpy_s(as_body, len + 1, body, len);
+		securec_check(rc, "\0", "\0");
+	}
+	pfree(tempName);
+	return as_body;
 }
 
 /*
