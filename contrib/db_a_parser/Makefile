@@ -45,7 +45,8 @@ pl/pl_a_gram.cpp: pl/pl_a_gram.y $(top_builddir)/$(subdir)/pl/tool/mtlocal.pl
 	$(PERL) $(top_builddir)/$(subdir)/pl/tool/mtlocal.pl $(top_builddir)/$(subdir)/pl/pl_a_gram.cpp
 	$(PERL) $(top_builddir)/$(subdir)/pl/tool/mtlocal.pl $(top_builddir)/$(subdir)/pl/pl_a_gram.hpp
 
-
+REGRESS = db_a_parser
+REGRESS_OPTS = --dlpath=$(top_builddir)/src/test/regress -c 0 -d 1 --single_node
 EXTENSION = db_a_parser
 DATA = db_a_parser--1.0.sql
 
