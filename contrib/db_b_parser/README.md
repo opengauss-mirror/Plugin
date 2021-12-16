@@ -10,7 +10,7 @@ create extension db_b_parser;
 ```
 2. 设置GUC参数启动对应解析器。
 ```sql
-set enable_csutom_parser = on;
+set enable_custom_parser = on;
 ```
 3. 测试兼容语句。
 ```
