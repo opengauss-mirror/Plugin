@@ -2,7 +2,7 @@
 
 ## 编译
 1. 下载代码，将db_b_parser源码拷贝到openGauss源码contrib目录下。
-2. 编译完openGauss后，单独编译插件：make && make install。
+2. 编译完openGauss后，进入db_b_parser文件夹单独编译插件：make && make install。
 ## 使用
 1. 连接数据库，通过SQL命令加载插件。通过回显判断是否创建成功。
 ```sql
