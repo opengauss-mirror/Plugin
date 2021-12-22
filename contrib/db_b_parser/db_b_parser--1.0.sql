@@ -11,6 +11,24 @@ RETURNS INTEGER AS '$libdir/db_b_parser','mp_bit_length_bytea' LANGUAGE C STRICT
 CREATE FUNCTION pg_catalog.mysql_parser_bit_length( text )
 RETURNS INTEGER AS '$libdir/db_b_parser','mp_bit_length_text' LANGUAGE C STRICT;
 
+CREATE FUNCTION pg_catalog.time_sec(text, timestamp)
+RETURNS float AS '$libdir/db_b_parser','time_sec' LANGUAGE C STRICT;
+
+CREATE FUNCTION pg_catalog.SECOND(a timestamp)
+RETURN float 
+AS 
+begin
+return (select time_sec('second', a)); 
+end;
+
+CREATE FUNCTION pg_catalog.MICROSECOND(a timestamp)
+RETURN float 
+AS 
+begin
+return (select time_sec('microsecond', a)); 
+end;
+
+
 create function pg_catalog.curdate()
 return date
 as
