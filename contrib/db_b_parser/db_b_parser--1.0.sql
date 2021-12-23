@@ -1,6 +1,6 @@
 \echo Use "CREATE EXTENSION db_b_parser" to load this file. \quit
 CREATE FUNCTION pg_catalog.db_b_parser_invoke()
-    RETURNS VOID AS '$libdir/db_b_parser','db_b_parser_invoke' LANGUAGE C STRICT;
+RETURNS VOID AS '$libdir/db_b_parser','db_b_parser_invoke' LANGUAGE C STRICT;
 
 CREATE FUNCTION pg_catalog.mysql_parser_bit_length( bit )
 RETURNS INTEGER AS '$libdir/db_b_parser','mp_bit_length_bit'  LANGUAGE C STRICT;
@@ -18,14 +18,14 @@ CREATE FUNCTION pg_catalog.SECOND(a timestamp)
 RETURN float 
 AS 
 begin
-return (select time_sec('second', a)); 
+    return (select time_sec("second", a)); 
 end;
 
 CREATE FUNCTION pg_catalog.MICROSECOND(a timestamp)
 RETURN float 
 AS 
 begin
-return (select time_sec('microsecond', a)); 
+    return (select time_sec('microsecond', a)); 
 end;
 
 
@@ -99,8 +99,9 @@ begin
 end;
 
 create function pg_catalog.regexp(a text, b text)
-return integer
-as
+returns integer
+as 
+$$
 begin
   if b = '' then
     raise 'invalid regular expression';
@@ -108,10 +109,29 @@ begin
     return (select lower(a) ~ lower(b))::integer;
   end if;
 end;
+$$
+language plpgsql;
+
+create function pg_catalog.regexp(a text, b boolean)
+returns integer
+as 
+$$
+begin
+  if b = true then
+    return 1;
+  elsif b = false then
+    return 0;
+  else
+    raise 'invalid regular expression';
+  end if;
+end;
+$$
+language plpgsql;
 
 create function pg_catalog.not_regexp(a text, b text)
-return integer
+returns integer
 as
+$$
 begin
   if b = '' then
     raise 'invalid regular expression';
@@ -119,10 +139,29 @@ begin
     return (select lower(a) !~ lower(b))::integer;
   end if;
 end;
+$$
+language plpgsql;
+
+create function pg_catalog.not_regexp(a text, b boolean)
+returns integer
+as 
+$$
+begin
+  if b = true then
+    return 0;
+  elsif b = false then
+    return 1;
+  else
+    raise 'invalid regular expression';
+  end if;
+end;
+$$
+language plpgsql;
 
 create function pg_catalog.rlike(a text, b text)
-return integer
+returns integer
 as
+$$
 begin
   if b = '' then
     raise 'invalid regular expression';
@@ -130,6 +169,24 @@ begin
     return (select lower(a) ~ lower(b))::integer;
   end if;
 end;
+$$
+language plpgsql;
+
+create function pg_catalog.rlike(a text, b boolean)
+returns integer
+as 
+$$
+begin
+  if b = true then
+    return 1;
+  elsif b = false then
+    return b::Integer;
+  else
+    raise 'invalid regular expression';
+  end if;
+end;
+$$
+language plpgsql;
 
 create function pg_catalog.xor(a integer, b integer)
 return integer
@@ -137,3 +194,23 @@ as
 begin
   return (select a::bool # b::bool)::integer;
 end;
+
+CREATE FUNCTION pg_catalog.locate(t1 text, t2 text)
+returns integer
+as 
+$$
+begin
+   return (select position(t2 in t1))::integer;
+end;
+$$
+language plpgsql;
+
+CREATE FUNCTION pg_catalog.locate(t1 text, t2 boolean)
+returns integer
+as 
+$$
+begin
+   return 0;
+end;
+$$
+language plpgsql;

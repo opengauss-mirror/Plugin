@@ -82,8 +82,8 @@ Datum time_sec(PG_FUNCTION_ARGS)
 #endif
                 break;
             default:
-                ereport(ERROR,
-                    (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("timestamp units \"%s\" not supported", lowunits)));
+                ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+                                errmsg("timestamp units \"%s\" not supported", lowunits)));
                 result = 0;
         }
     }
