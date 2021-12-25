@@ -39,7 +39,7 @@ PG_FUNCTION_INFO_V1(nvarchar2recv);
 static VarChar *
 nvarchar2_input(const char *s, size_t len, int32 atttypmod)
 {
-	VarChar		*result;		/* input data */
+	VarChar		*result = NULL;		/* input data */
 	size_t		maxlen;
 
 	maxlen = atttypmod - VARHDRSZ;

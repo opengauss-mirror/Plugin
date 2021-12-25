@@ -1,7 +1,7 @@
 #include "postgres.h"
 #include "funcapi.h"
 #include "access/heapam.h"
-#include "access/htup_details.h"
+#include "access/htup.h"
 #include "catalog/pg_type.h"
 #include "lib/stringinfo.h"
 
@@ -30,12 +30,6 @@ extern PGDLLIMPORT ProtocolVersion FrontendProtocol;	/* for mingw */
 #define BUFSIZE_MAX			1000000
 #define BUFSIZE_UNLIMITED	BUFSIZE_MAX
 
-static bool is_server_output = false;
-static char *buffer = NULL;
-static int   buffer_size = 0;	/* allocated bytes in buffer */
-static int   buffer_len = 0;	/* used bytes in buffer */
-static int   buffer_get = 0;	/* retrieved bytes in buffer */
-
 static void add_str(const char *str, int len);
 static void add_text(text *str);
 static void add_newline(void);
@@ -47,23 +41,27 @@ static void send_buffer(void);
 static void
 add_str(const char *str, int len)
 {
+	errno_t sret = EOK;
 	/* Discard all buffers if get_line was called. */
-	if (buffer_get > 0)
+	if (get_session_context()->buffer_get > 0)
 	{
-		buffer_get = 0;
-		buffer_len = 0;
+		get_session_context()->buffer_get = 0;
+		get_session_context()->buffer_len = 0;
 	}
 
-	if (buffer_len + len > buffer_size)
+	if (get_session_context()->buffer_len + len > get_session_context()->buffer_size)
 		ereport(ERROR,
 			(errcode(ERRCODE_INSUFFICIENT_RESOURCES),
 			 errmsg("buffer overflow"),
-			 errdetail("Buffer overflow, limit of %d bytes", buffer_size),
+			 errdetail("Buffer overflow, limit of %d bytes", get_session_context()->buffer_size),
 			 errhint("Increase buffer size in dbms_output.enable() next time")));
 
-	memcpy(buffer + buffer_len, str, len);
-	buffer_len += len;
-	buffer[buffer_len] = '\0';
+	if ( len != 0 ) {
+		sret = memcpy_s(get_session_context()->buffer + get_session_context()->buffer_len, len, str, len);
+		securec_check(sret, "\0", "\0");
+	}
+	get_session_context()->buffer_len += len;
+	get_session_context()->buffer[get_session_context()->buffer_len] = '\0';
 }
 
 static void
@@ -76,7 +74,7 @@ static void
 add_newline(void)
 {
 	add_str("", 1);	/* add \0 */
-	if (is_server_output)
+	if (get_session_context()->is_server_output)
 		send_buffer();
 }
 
@@ -84,12 +82,12 @@ add_newline(void)
 static void
 send_buffer()
 {
-	if (buffer_len > 0)
+	if (get_session_context()->buffer_len > 0)
 	{
 		StringInfoData msgbuf;
-		char *cursor = buffer;
+		char *cursor = get_session_context()->buffer;
 
-		while (--buffer_len > 0)
+		while (--get_session_context()->buffer_len > 0)
 		{
 			if (*cursor == '\0')
 				*cursor = '\n';
@@ -117,7 +115,7 @@ send_buffer()
 #endif
 
 			pq_sendbyte(&msgbuf, PG_DIAG_MESSAGE_PRIMARY);
-			pq_sendstring(&msgbuf, buffer);
+			pq_sendstring(&msgbuf, get_session_context()->buffer);
 			pq_sendbyte(&msgbuf, '\0');
 
 #ifndef _MSC_VER
@@ -127,7 +125,7 @@ send_buffer()
 		{
 			*cursor++ = '\n';
 			*cursor = '\0';
-			pq_sendstring(&msgbuf, buffer);
+			pq_sendstring(&msgbuf, get_session_context()->buffer);
 		}
 
 #endif
@@ -147,18 +145,18 @@ static void
 dbms_output_enable_internal(int32 n_buf_size)
 {
 	/* We allocate +2 bytes for an end-of-line and a string terminator. */
-	if (buffer == NULL)
+	if (get_session_context()->buffer == NULL)
 	{
-		buffer = MemoryContextAlloc(TopMemoryContext, n_buf_size + 2);
-		buffer_size = n_buf_size;
-		buffer_len = 0;
-		buffer_get = 0;
+		get_session_context()->buffer = (char*)MemoryContextAlloc(u_sess->self_mem_cxt, n_buf_size + 2);
+		get_session_context()->buffer_size = n_buf_size;
+		get_session_context()->buffer_len = 0;
+		get_session_context()->buffer_get = 0;
 	}
-	else if (n_buf_size > buffer_len)
+	else if (n_buf_size > get_session_context()->buffer_len)
 	{
 		/* We cannot shrink buffer less than current length. */
-		buffer = repalloc(buffer, n_buf_size + 2);
-		buffer_size = n_buf_size;
+		get_session_context()->buffer = (char*)repalloc(get_session_context()->buffer, n_buf_size + 2);
+		get_session_context()->buffer_size = n_buf_size;
 	}
 }
 
@@ -206,13 +204,13 @@ PG_FUNCTION_INFO_V1(dbms_output_disable);
 Datum
 dbms_output_disable(PG_FUNCTION_ARGS)
 {
-	if (buffer)
-		pfree(buffer);
+	if (get_session_context()->buffer)
+		pfree(get_session_context()->buffer);
 
-	buffer = NULL;
-	buffer_size = 0;
-	buffer_len = 0;
-	buffer_get = 0;
+	get_session_context()->buffer = NULL;
+	get_session_context()->buffer_size = 0;
+	get_session_context()->buffer_len = 0;
+	get_session_context()->buffer_get = 0;
 	PG_RETURN_VOID();
 }
 
@@ -221,8 +219,8 @@ PG_FUNCTION_INFO_V1(dbms_output_serveroutput);
 Datum
 dbms_output_serveroutput(PG_FUNCTION_ARGS)
 {
-	is_server_output = PG_GETARG_BOOL(0);
-	if (is_server_output && !buffer)
+	get_session_context()->is_server_output = PG_GETARG_BOOL(0);
+	if (get_session_context()->is_server_output && !get_session_context()->buffer)
 		dbms_output_enable_internal(BUFSIZE_DEFAULT);
 	PG_RETURN_VOID();
 }
@@ -237,7 +235,7 @@ PG_FUNCTION_INFO_V1(dbms_output_put);
 Datum
 dbms_output_put(PG_FUNCTION_ARGS)
 {
-	if (buffer)
+	if (get_session_context()->buffer)
 		add_text(PG_GETARG_TEXT_PP(0));
 	PG_RETURN_VOID();
 }
@@ -247,7 +245,7 @@ PG_FUNCTION_INFO_V1(dbms_output_put_line);
 Datum
 dbms_output_put_line(PG_FUNCTION_ARGS)
 {
-	if (buffer)
+	if (get_session_context()->buffer)
 	{
 		add_text(PG_GETARG_TEXT_PP(0));
 		add_newline();
@@ -260,7 +258,7 @@ PG_FUNCTION_INFO_V1(dbms_output_new_line);
 Datum
 dbms_output_new_line(PG_FUNCTION_ARGS)
 {
-	if (buffer)
+	if (get_session_context()->buffer)
 		add_newline();
 	PG_RETURN_VOID();
 }
@@ -268,10 +266,10 @@ dbms_output_new_line(PG_FUNCTION_ARGS)
 static text *
 dbms_output_next(void)
 {
-	if (buffer_get < buffer_len)
+	if (get_session_context()->buffer_get < get_session_context()->buffer_len)
 	{
-		text *line = cstring_to_text(buffer + buffer_get);
-		buffer_get += VARSIZE_ANY_EXHDR(line) + 1;
+		text *line = cstring_to_text(get_session_context()->buffer + get_session_context()->buffer_get);
+		get_session_context()->buffer_get += VARSIZE_ANY_EXHDR(line) + 1;
 		return line;
 	}
 	else
@@ -350,7 +348,7 @@ dbms_output_get_lines(PG_FUNCTION_ARGS)
 
 		get_typlenbyvalalign(TEXTOID, &typlen, &typbyval, &typalign);
 		arr = construct_md_array(
-			NULL,
+			values,
 			NULL,
 			0, NULL, NULL, TEXTOID, typlen, typbyval, typalign);
 		values[0] = PointerGetDatum(arr);

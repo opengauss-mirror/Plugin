@@ -8,3 +8,5 @@ typedef struct
 	char   *modificator;
 	char   *classname;
 } orafce_lexnode;
+
+#define PLVLEX_D

@@ -5,7 +5,7 @@ CREATE TABLE TEMP(id integer,name text);
 INSERT INTO TEMP VALUES (1,'bob'),(2,'rob'),(3,'john');
 
 DROP USER IF EXISTS pipe_test_owner;
-CREATE ROLE pipe_test_owner WITH CREATEROLE;
+CREATE ROLE pipe_test_owner WITH SYSADMIN CREATEROLE PASSWORD 'Test@123';
 ALTER TABLE TEMP OWNER TO pipe_test_owner;
 SET client_min_messages = notice;
 
@@ -13,7 +13,7 @@ SET client_min_messages = notice;
 SELECT dbms_pipe.pack_message(1);
 SELECT dbms_pipe.send_message('pipe_test_owner_created_notifier');
 -- Create a new connection under the userid of pipe_test_owner
-SET SESSION AUTHORIZATION pipe_test_owner;
+SET SESSION AUTHORIZATION pipe_test_owner PASSWORD 'Test@123';
 
 /* create an implicit pipe and sends message using
  * send_message(text,integer,integer)

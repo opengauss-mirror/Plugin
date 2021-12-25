@@ -101,8 +101,8 @@ SELECT utl_file.fopen(utl_file.tmpdir(),'non_existent_file.txt','r');
 
 --Other test cases
 --run this under unprivileged user
-CREATE ROLE test_role_files LOGIN;
-SET ROLE TO test_role_files;
+CREATE ROLE test_role_files PASSWORD 'Test@123' LOGIN;
+SET SESSION AUTHORIZATION test_role_files PASSWORD 'Test@123';
 
 -- should to fail, unpriviliged user cannot to change utl_file_dir
 INSERT INTO utl_file.utl_file_dir(dir) VALUES('test_tmp_dir');
@@ -120,7 +120,7 @@ SELECT fexists FROM utl_file.fgetattr(utl_file.tmpdir(), 'regress_orafce.txt');
 SELECT checkFlushFile(utl_file.tmpdir());
 SELECT utl_file.fremove(utl_file.tmpdir(), 'regressflush_orafce.txt');
 
-SET ROLE TO DEFAULT;
+SET SESSION AUTHORIZATION DEFAULT;
 DROP ROLE test_role_files;
 
 DROP FUNCTION checkFlushFile(text);

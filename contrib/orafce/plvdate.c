@@ -62,18 +62,6 @@ do { \
 #define SATURDAY   (1 << 6)
 
 static unsigned char nonbizdays = SUNDAY | SATURDAY;
-static bool use_easter = true;
-static bool use_great_friday = true;
-static bool include_start = true;
-static int country_id = -1;			/* unknown */
-
-#define MAX_holidays   30
-#define MAX_EXCEPTIONS 50
-
-typedef struct {
-	char day;
-	char month;
-} holiday_desc;
 
 typedef struct {
 	unsigned char nonbizdays;
@@ -82,12 +70,6 @@ typedef struct {
 	holiday_desc *holidays;
 	int holidays_c;
 } cultural_info;
-
-static holiday_desc holidays[MAX_holidays];  /* sorted array */
-static DateADT exceptions[MAX_EXCEPTIONS];   /* sorted array */
-
-static int holidays_c = 0;
-static int exceptions_c = 0;
 
 static holiday_desc czech_holidays[] = {
 	{1,1}, // Novy rok
@@ -213,7 +195,7 @@ calc_easter_sunday(int year, int* dd, int* mm)
 static bool
 easter_holidays(DateADT day, int y, int m)
 {
-	if (use_great_friday || use_easter)
+	if (get_session_context()->use_great_friday || get_session_context()->use_easter)
 	{
 		if (m == 3 || m == 4)
 		{
@@ -224,13 +206,13 @@ easter_holidays(DateADT day, int y, int m)
 			calc_easter_sunday(y, &easter_sunday_day, &easter_sunday_month);
 			easter_sunday = date2j(y, easter_sunday_month, easter_sunday_day) - POSTGRES_EPOCH_JDATE;
 
-			if (use_easter && (day == easter_sunday || day == easter_sunday + 1))
+			if (get_session_context()->use_easter && (day == easter_sunday || day == easter_sunday + 1))
 				return true;
 
-			if (use_great_friday && day == easter_sunday - 2)
+			if (get_session_context()->use_great_friday && day == easter_sunday - 2)
 			{
 				/* Great Friday is introduced in Czech Republic in 2016 */
-				if (country_id == 0)
+				if (get_session_context()->country_id == 0)
 				{
 					if (y >= 2016)
 						return true;
@@ -262,7 +244,7 @@ ora_add_bizdays(DateADT day, int days)
 		if ((1 << d) & nonbizdays)
 			continue;
 
-		if (NULL != bsearch(&day, exceptions, exceptions_c,
+		if (NULL != bsearch(&day, get_session_context()->exceptions, get_session_context()->exceptions_c,
 							sizeof(DateADT), dateadt_comp))
 			continue;
 
@@ -273,7 +255,7 @@ ora_add_bizdays(DateADT day, int days)
 		if (easter_holidays(day, y, m))
 			continue;
 
-		if (NULL != bsearch(&hd, holidays, holidays_c,
+		if (NULL != bsearch(&hd, get_session_context()->holidays, get_session_context()->holidays_c,
 							sizeof(holiday_desc), holiday_desc_comp))
 			continue;
 
@@ -314,7 +296,7 @@ ora_diff_bizdays(DateADT day1, DateADT day2)
 		if ((1 << d) & nonbizdays)
 			continue;
 
-		if (NULL != bsearch(&day1, exceptions, exceptions_c,
+		if (NULL != bsearch(&day1, get_session_context()->exceptions, get_session_context()->exceptions_c,
 							sizeof(DateADT), dateadt_comp))
 			continue;
 
@@ -325,7 +307,7 @@ ora_diff_bizdays(DateADT day1, DateADT day2)
 		if (easter_holidays(day1, y, m))
 			continue;
 
-		if (NULL != bsearch(&hd, holidays, holidays_c,
+		if (NULL != bsearch(&hd, get_session_context()->holidays, get_session_context()->holidays_c,
 							sizeof(holiday_desc), holiday_desc_comp))
 			continue;
 
@@ -340,7 +322,7 @@ ora_diff_bizdays(DateADT day1, DateADT day2)
 	 * decrease result when first day was bizday, but we don't want
 	 * calculate first day.
 	 */
-	if ( start_is_bizday && !include_start && days > 0)
+	if ( start_is_bizday && !get_session_context()->include_start && days > 0)
 		days -= 1;
 
 	return days;
@@ -353,7 +335,7 @@ ora_diff_bizdays(DateADT day1, DateADT day2)
  * Syntax:
  *   FUNCTION add_bizdays(IN dt DATE, IN days int) RETURNS DATE;
  *
- * Purpouse:
+ * Purpose:
  *   Get the date created by adding <n> business days to a date
  *
  ****************************************************************/
@@ -375,7 +357,7 @@ plvdate_add_bizdays (PG_FUNCTION_ARGS)
  * Syntax:
  *   FUNCTION nearest_bizday(IN dt DATE) RETURNS DATE;
  *
- * Purpouse:
+ * Purpose:
  *   Get the nearest business date to a given date, user defined
  *
  ****************************************************************/
@@ -404,7 +386,7 @@ plvdate_nearest_bizday (PG_FUNCTION_ARGS)
  * Syntax:
  *   FUNCTION next_bizday(IN dt DATE) RETURNS DATE;
  *
- * Purpouse:
+ * Purpose:
  *   Get the next business date from a given date, user defined
  *
  ****************************************************************/
@@ -425,7 +407,7 @@ plvdate_next_bizday (PG_FUNCTION_ARGS)
  *   FUNCTION bizdays_between(IN dt1 DATE, IN dt2 DATE)
  *     RETURNS int;
  *
- * Purpouse:
+ * Purpose:
  *   Get the number of business days between two dates
  *
  ****************************************************************/
@@ -446,7 +428,7 @@ plvdate_bizdays_between (PG_FUNCTION_ARGS)
  * Syntax:
  *   FUNCTION prev_bizday(IN dt DATE) RETURNS date;
  *
- * Purpouse:
+ * Purpose:
  *   Get the previous business date from a given date, user
  * defined
  *
@@ -467,7 +449,7 @@ plvdate_prev_bizday (PG_FUNCTION_ARGS)
  * Syntax:
  *   FUNCTION isbizday(IN dt DATE) RETURNS bool;
  *
- * Purpouse:
+ * Purpose:
  *   Call this function to determine if a date is a business day
  *
  ****************************************************************/
@@ -482,7 +464,7 @@ plvdate_isbizday (PG_FUNCTION_ARGS)
 	if (0 != ((1 << j2day(day+POSTGRES_EPOCH_JDATE)) & nonbizdays))
 		return false;
 
-	if (NULL != bsearch(&day, exceptions, exceptions_c,
+	if (NULL != bsearch(&day, get_session_context()->exceptions, get_session_context()->exceptions_c,
 						sizeof(DateADT), dateadt_comp))
 		return false;
 
@@ -492,7 +474,7 @@ plvdate_isbizday (PG_FUNCTION_ARGS)
 	if (easter_holidays(day, y, m))
 		return false;
 
-	PG_RETURN_BOOL (NULL == bsearch(&hd, holidays, holidays_c,
+	PG_RETURN_BOOL (NULL == bsearch(&hd, get_session_context()->holidays, get_session_context()->holidays_c,
 									sizeof(holiday_desc), holiday_desc_comp));
 }
 
@@ -503,7 +485,7 @@ plvdate_isbizday (PG_FUNCTION_ARGS)
  * Syntax:
  *   FUNCTION set_nonbizday(IN dow VARCHAR) RETURNS void;
  *
- * Purpouse:
+ * Purpose:
  *   Set day of week as non bussines day
  *
  ****************************************************************/
@@ -522,7 +504,7 @@ plvdate_set_nonbizday_dow (PG_FUNCTION_ARGS)
 	if (check == 0x7f)
 		ereport(ERROR,
 			    (errcode(ERRCODE_DATA_EXCEPTION),
-			     errmsg("nonbizday registeration error"),
+			     errmsg("nonbizday registration error"),
 			     errdetail("Constraint violation."),
 			     errhint("One day in week have to be bizday.")));
 
@@ -537,7 +519,7 @@ plvdate_set_nonbizday_dow (PG_FUNCTION_ARGS)
  * Syntax:
  *   FUNCTION unset_nonbizday(IN dow VARCHAR) RETURNS void;
  *
- * Purpouse:
+ * Purpose:
  *   Unset day of week as non bussines day
  *
  ****************************************************************/
@@ -562,7 +544,7 @@ plvdate_unset_nonbizday_dow (PG_FUNCTION_ARGS)
  *   FUNCTION set_nonbizday(IN day DATE) RETURNS void;
  *   FUNCTION set_nonbizday(IN day DATE, IN repeat := false BOOL) RETURNS void;
  *
- * Purpouse:
+ * Purpose:
  *   Set day as non bussines day, second arg specify year's
  * periodicity
  *
@@ -578,45 +560,45 @@ plvdate_set_nonbizday_day (PG_FUNCTION_ARGS)
 
 	if (arg2)
 	{
-		if (holidays_c == MAX_holidays)
+		if (get_session_context()->holidays_c == MAX_holidays)
 			ereport(ERROR,
 				    (errcode(ERRCODE_PROGRAM_LIMIT_EXCEEDED),
-				     errmsg("nonbizday registeration error"),
+				     errmsg("nonbizday registration error"),
 				     errdetail("Too much registered nonbizdays."),
 				     errhint("Increase MAX_holidays in 'plvdate.c'.")));
 
 		j2date(arg1 + POSTGRES_EPOCH_JDATE, &y, &m, &d);
 		hd.month = m; hd.day = d;
 
-		if (NULL != bsearch(&hd, holidays, holidays_c, sizeof(holiday_desc), holiday_desc_comp))
+		if (NULL != bsearch(&hd, get_session_context()->holidays, get_session_context()->holidays_c, sizeof(holiday_desc), holiday_desc_comp))
 			ereport(ERROR,
 				    (errcode(ERRCODE_DUPLICATE_OBJECT),
-				     errmsg("nonbizday registeration error"),
+				     errmsg("nonbizday registration error"),
 				     errdetail("Date is registered.")));
 
-		holidays[holidays_c].month = m;
-		holidays[holidays_c].day = d;
-		holidays_c += 1;
+		get_session_context()->holidays[get_session_context()->holidays_c].month = m;
+		get_session_context()->holidays[get_session_context()->holidays_c].day = d;
+		get_session_context()->holidays_c += 1;
 
-		qsort(holidays, holidays_c, sizeof(holiday_desc), holiday_desc_comp);
+		qsort(get_session_context()->holidays, get_session_context()->holidays_c, sizeof(holiday_desc), holiday_desc_comp);
 	}
 	else
 	{
-		if (exceptions_c == MAX_EXCEPTIONS)
+		if (get_session_context()->exceptions_c == MAX_EXCEPTIONS)
 			ereport(ERROR,
 				    (errcode(ERRCODE_PROGRAM_LIMIT_EXCEEDED),
-				     errmsg("nonbizday registeration error"),
+				     errmsg("nonbizday registration error"),
 				     errdetail("Too much registered nonrepeated nonbizdays."),
 				     errhint("Increase MAX_EXCEPTIONS in 'plvdate.c'.")));
 
-		if (NULL != bsearch(&arg1, exceptions, exceptions_c, sizeof(DateADT), dateadt_comp))
+		if (NULL != bsearch(&arg1, get_session_context()->exceptions, get_session_context()->exceptions_c, sizeof(DateADT), dateadt_comp))
 			ereport(ERROR,
 				    (errcode(ERRCODE_DUPLICATE_OBJECT),
-				     errmsg("nonbizday registeration error"),
+				     errmsg("nonbizday registration error"),
 				     errdetail("Date is registered.")));
 
-		exceptions[exceptions_c++] = arg1;
-		qsort(exceptions, exceptions_c, sizeof(DateADT), dateadt_comp);
+		get_session_context()->exceptions[get_session_context()->exceptions_c++] = arg1;
+		qsort(get_session_context()->exceptions, get_session_context()->exceptions_c, sizeof(DateADT), dateadt_comp);
 	}
 
 	PG_RETURN_VOID();
@@ -629,7 +611,7 @@ plvdate_set_nonbizday_day (PG_FUNCTION_ARGS)
  *   FUNCTION unset_nonbizday(IN day DATE) RETURNS void;
  *   FUNCTION unset_nonbizday(IN day DATE, IN repeat := false BOOL) RETURNS void;
  *
- * Purpouse:
+ * Purpose:
  *   Unset day as non bussines day, second arg specify year's
  * periodicity
  *
@@ -647,33 +629,33 @@ plvdate_unset_nonbizday_day (PG_FUNCTION_ARGS)
 	if (arg2)
 	{
 		j2date(arg1 + POSTGRES_EPOCH_JDATE, &y, &m, &d);
-		for (i = 0; i < holidays_c; i++)
+		for (i = 0; i < get_session_context()->holidays_c; i++)
 		{
-			if (!found && holidays[i].month == m && holidays[i].day == d)
+			if (!found && get_session_context()->holidays[i].month == m && get_session_context()->holidays[i].day == d)
 				found = true;
 			else if (found)
 			{
-				holidays[i-1].month = holidays[i].month;
-				holidays[i-1].day = holidays[i].day;
+				get_session_context()->holidays[i-1].month = get_session_context()->holidays[i].month;
+				get_session_context()->holidays[i-1].day = get_session_context()->holidays[i].day;
 			}
 		}
 		if (found)
-			holidays_c -= 1;
+			get_session_context()->holidays_c -= 1;
 	}
 	else
 	{
-		for (i = 0; i < exceptions_c; i++)
-			if (!found && exceptions[i] == arg1)
+		for (i = 0; i < get_session_context()->exceptions_c; i++)
+			if (!found && get_session_context()->exceptions[i] == arg1)
 				found = true;
 			else if (found)
-				exceptions[i-1] = exceptions[i];
+				get_session_context()->exceptions[i-1] = get_session_context()->exceptions[i];
 		if (found)
-			exceptions_c -= 1;
+			get_session_context()->exceptions_c -= 1;
 	}
 	if (!found)
 		ereport(ERROR,
 			    (errcode(ERRCODE_UNDEFINED_OBJECT),
-			     errmsg("nonbizday unregisteration error"),
+			     errmsg("nonbizday unregistration error"),
 			     errdetail("Nonbizday not found.")));
 
 	PG_RETURN_VOID();
@@ -688,7 +670,7 @@ plvdate_unset_nonbizday_day (PG_FUNCTION_ARGS)
  *   FUNCTION use_easter() RETURNS void;
  *   FUNCTION use_easter(IN bool) RETURNS void
  *
- * Purpouse:
+ * Purpose:
  *   Have to use easter as nonbizday?
  *
  ****************************************************************/
@@ -696,7 +678,7 @@ plvdate_unset_nonbizday_day (PG_FUNCTION_ARGS)
 Datum
 plvdate_use_easter (PG_FUNCTION_ARGS)
 {
-	use_easter = PG_GETARG_BOOL(0);
+	get_session_context()->use_easter = PG_GETARG_BOOL(0);
 
 	PG_RETURN_VOID();
 }
@@ -708,7 +690,7 @@ plvdate_use_easter (PG_FUNCTION_ARGS)
  * Syntax:
  *   FUNCTION using_easter() RETURNS bool
  *
- * Purpouse:
+ * Purpose:
  *   Use it easter as nonbizday?
  *
  ****************************************************************/
@@ -716,7 +698,7 @@ plvdate_use_easter (PG_FUNCTION_ARGS)
 Datum
 plvdate_using_easter (PG_FUNCTION_ARGS)
 {
-	PG_RETURN_BOOL(use_easter);
+	PG_RETURN_BOOL(get_session_context()->use_easter);
 }
 
 
@@ -728,7 +710,7 @@ plvdate_using_easter (PG_FUNCTION_ARGS)
  *   FUNCTION use_great_friday() RETURNS void;
  *   FUNCTION use_great_friday(IN bool) RETURNS void
  *
- * Purpouse:
+ * Purpose:
  *   Have to use great_friday as nonbizday?
  *
  ****************************************************************/
@@ -736,7 +718,7 @@ plvdate_using_easter (PG_FUNCTION_ARGS)
 Datum
 plvdate_use_great_friday (PG_FUNCTION_ARGS)
 {
-	use_great_friday = PG_GETARG_BOOL(0);
+	get_session_context()->use_great_friday = PG_GETARG_BOOL(0);
 
 	PG_RETURN_VOID();
 }
@@ -748,7 +730,7 @@ plvdate_use_great_friday (PG_FUNCTION_ARGS)
  * Syntax:
  *   FUNCTION using_great_friday() RETURNS bool
  *
- * Purpouse:
+ * Purpose:
  *   Use it great friday as nonbizday?
  *
  ****************************************************************/
@@ -756,7 +738,7 @@ plvdate_use_great_friday (PG_FUNCTION_ARGS)
 Datum
 plvdate_using_great_friday (PG_FUNCTION_ARGS)
 {
-	PG_RETURN_BOOL(use_great_friday);
+	PG_RETURN_BOOL(get_session_context()->use_great_friday);
 }
 
 
@@ -768,7 +750,7 @@ plvdate_using_great_friday (PG_FUNCTION_ARGS)
  *   FUNCTION noinclude_start() RETURNS void;
  *   FUNCTION include_start(IN bool) RETURNS void
  *
- * Purpouse:
+ * Purpose:
  *   Have to include current day in bizdays_between calculation?
  *
  ****************************************************************/
@@ -776,7 +758,7 @@ plvdate_using_great_friday (PG_FUNCTION_ARGS)
 Datum
 plvdate_include_start (PG_FUNCTION_ARGS)
 {
-	include_start = PG_GETARG_BOOL(0);
+	get_session_context()->include_start = PG_GETARG_BOOL(0);
 
 	PG_RETURN_VOID();
 }
@@ -788,7 +770,7 @@ plvdate_include_start (PG_FUNCTION_ARGS)
  * Syntax:
  *   FUNCTION including_start() RETURNS bool
  *
- * Purpouse:
+ * Purpose:
  *   include current day in bizdays_between calculation?
  *
  ****************************************************************/
@@ -796,7 +778,7 @@ plvdate_include_start (PG_FUNCTION_ARGS)
 Datum
 plvdate_including_start (PG_FUNCTION_ARGS)
 {
-	PG_RETURN_BOOL(include_start);
+	PG_RETURN_BOOL(get_session_context()->include_start);
 }
 
 
@@ -808,18 +790,21 @@ plvdate_including_start (PG_FUNCTION_ARGS)
 Datum
 plvdate_default_holidays (PG_FUNCTION_ARGS)
 {
+	errno_t sret;
 	text *country = PG_GETARG_TEXT_PP(0);
 
-	country_id = ora_seq_search(VARDATA_ANY(country), states, VARSIZE_ANY_EXHDR(country));
-	CHECK_SEQ_SEARCH(country_id, "STATE/State/state");
+	get_session_context()->country_id = ora_seq_search(VARDATA_ANY(country), states, VARSIZE_ANY_EXHDR(country));
+	CHECK_SEQ_SEARCH(get_session_context()->country_id, "STATE/State/state");
 
-	nonbizdays = defaults_ci[country_id].nonbizdays;
-	use_easter = defaults_ci[country_id].use_easter;
-	use_great_friday = defaults_ci[country_id].use_great_friday;
-	exceptions_c = 0;
+	nonbizdays = defaults_ci[get_session_context()->country_id].nonbizdays;
+	get_session_context()->use_easter = defaults_ci[get_session_context()->country_id].use_easter;
+	get_session_context()->use_great_friday = defaults_ci[get_session_context()->country_id].use_great_friday;
+	get_session_context()->exceptions_c = 0;
 
-	holidays_c = defaults_ci[country_id].holidays_c;
-	memcpy(holidays, defaults_ci[country_id].holidays, holidays_c*sizeof(holiday_desc));
+	get_session_context()->holidays_c = defaults_ci[get_session_context()->country_id].holidays_c;
+	sret = memcpy_s(get_session_context()->holidays, get_session_context()->holidays_c*sizeof(holiday_desc),
+			defaults_ci[get_session_context()->country_id].holidays, get_session_context()->holidays_c*sizeof(holiday_desc));
+	securec_check(sret, "", "");
 
 	PG_RETURN_VOID();
 }
@@ -841,7 +826,7 @@ plvdate_version (PG_FUNCTION_ARGS)
  * Syntax:
  *   FUNCTION days_inmonth(date) RETURNS integer
  *
- * Purpouse:
+ * Purpose:
  *   Returns month's length
  *
  ****************************************************************/
@@ -867,7 +852,7 @@ plvdate_days_inmonth(PG_FUNCTION_ARGS)
  * Syntax:
  *   FUNCTION isleapyear() RETURNS bool
  *
- * Purpouse:
+ * Purpose:
  *   Returns true, if year is leap
  *
  ****************************************************************/
@@ -891,7 +876,7 @@ plvdate_isleapyear(PG_FUNCTION_ARGS)
  * Syntax:
  *   FUNCTION set_nonbizdays(IN dow bool[7]) RETURNS void;
  *
- * Purpouse:
+ * Purpose:
  *   Set pattern bussines/nonbussines days in week
  *
  ****************************************************************/
@@ -903,7 +888,7 @@ plvdate_isleapyear(PG_FUNCTION_ARGS)
  *   FUNCTION set_nonbizdays(IN days DATE[]) RETURNS void;
  *   FUNCTION set_nonbizdays(IN days DATE[], IN repeat := false BOOL) RETURNS void;
  *
- * Purpouse:
+ * Purpose:
  *   Set days as non bussines day, second arg specify year's
  * periodicity
  *
@@ -915,7 +900,7 @@ plvdate_isleapyear(PG_FUNCTION_ARGS)
  * Syntax:
  *   FUNCTION display() RETURNS void;
  *
- * Purpouse:
+ * Purpose:
  *   Show current calendar
  *
  ****************************************************************/

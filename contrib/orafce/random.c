@@ -80,10 +80,8 @@ static double ltqnorm(double p);
 Datum
 dbms_random_initialize(PG_FUNCTION_ARGS)
 {
-	int seed = PG_GETARG_INT32(0);
+	get_session_context()->seed = PG_GETARG_INT32(0);
 
-	srand(seed);
-	
 	PG_RETURN_VOID();
 }
 
@@ -96,9 +94,9 @@ Datum
 dbms_random_normal(PG_FUNCTION_ARGS)
 {
 	float8 result;
-	
+	unsigned int seed = get_session_context()->seed;
 	/* need random value from (0..1) */
-	result = ltqnorm(((double) rand() + 1) / ((double) RAND_MAX + 2));
+	result = ltqnorm(((double) rand_r(&seed) + 1) / ((double) RAND_MAX + 2));
 
 	PG_RETURN_FLOAT8(result);
 }
@@ -112,11 +110,12 @@ Datum
 dbms_random_random(PG_FUNCTION_ARGS)
 {
 	int result;
+	unsigned int seed = get_session_context()->seed;
 	/*
 	 * Oracle generator generates numebers from -2^31 and +2^31,
 	 * ANSI C only from 0 .. RAND_MAX,
 	 */
-	result = 2 * (rand() - RAND_MAX / 2);
+	result = 2 * (rand_r(&seed) - RAND_MAX / 2);
 
 	PG_RETURN_INT32(result);
 }
@@ -130,10 +129,8 @@ dbms_random_random(PG_FUNCTION_ARGS)
 Datum
 dbms_random_seed_int(PG_FUNCTION_ARGS)
 {
-	int seed = PG_GETARG_INT32(0);
+	get_session_context()->seed = PG_GETARG_INT32(0);
 	
-	srand(seed);
-
 	PG_RETURN_VOID();
 }
 
@@ -150,9 +147,8 @@ dbms_random_seed_varchar(PG_FUNCTION_ARGS)
 	Datum seed;
 	
 	seed = hash_any((unsigned char *) VARDATA_ANY(key), VARSIZE_ANY_EXHDR(key));
-	
-	srand((int) seed);
-					
+	get_session_context()->seed = seed;
+
 	PG_RETURN_VOID();
 }
 
@@ -172,11 +168,12 @@ random_string(const char *charset, size_t chrset_size, int len)
 {
 	StringInfo	str;
 	int	i;
+	unsigned int seed = get_session_context()->seed;
 	
 	str = makeStringInfo();
 	for (i = 0; i < len; i++)
 	{
-		int pos = (int) ((double) rand() / ((double) RAND_MAX + 1) * chrset_size);
+		int pos = (int) ((double) rand_r(&seed) / ((double) RAND_MAX + 1) * chrset_size);
 		
 		appendStringInfoChar(str, charset[pos]);
 	}
@@ -268,9 +265,9 @@ Datum
 dbms_random_value(PG_FUNCTION_ARGS)
 {
 	float8 result;
-	
+	unsigned int seed = get_session_context()->seed;
 	/* result [0.0 - 1.0) */
-	result = (double) rand() / ((double) RAND_MAX + 1);
+	result = (double) rand_r(&seed) / ((double) RAND_MAX + 1);
 	
 	PG_RETURN_FLOAT8(result);
 }
@@ -287,11 +284,12 @@ dbms_random_value_range(PG_FUNCTION_ARGS)
 	float8 low = PG_GETARG_FLOAT8(0);
 	float8 high = PG_GETARG_FLOAT8(1);
 	float8 result;
+	unsigned int seed = get_session_context()->seed;
 
 	if (low > high)
 		PG_RETURN_NULL();
 
-	result = ((double) rand() / ((double) RAND_MAX + 1)) * ( high -  low) + low;
+	result = ((double) rand_r(&seed) / ((double) RAND_MAX + 1)) * ( high -  low) + low;
 
 	PG_RETURN_FLOAT8(result);
 }

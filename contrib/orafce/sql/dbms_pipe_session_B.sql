@@ -4,7 +4,7 @@
 SELECT dbms_pipe.receive_message('pipe_test_owner_created_notifier');
 
 -- create new connection under the userid of 'pipe_test_owner'
-SET SESSION AUTHORIZATION pipe_test_owner;
+SET SESSION AUTHORIZATION pipe_test_owner PASSWORD 'Test@123';
 
 /* Tests receive_message(text,integer), next_item_type() and all versions of
  *  unpack_message_<type>() and  purge(text)
@@ -95,8 +95,8 @@ SELECT receiveFrom('private_pipe_1');
 
 -- Switch user to 'pipe_test_other'
 DROP USER IF EXISTS pipe_test_other;
-CREATE USER pipe_test_other;
-SET SESSION AUTHORIZATION pipe_test_other;
+CREATE USER pipe_test_other PASSWORD 'Test@123';
+SET SESSION AUTHORIZATION pipe_test_other PASSWORD 'Test@123';
 
 -- Try to receive messages sent via an explicit private pipe under the user
 -- 'pipe_test_other' who is not the owner of pipe.
@@ -114,7 +114,7 @@ SELECT dbms_pipe.receive_message('recv_public2_notifier');
 SELECT receiveFrom('public_pipe_4');
 
 -- Switch back to user 'pipe_test_owner'
-SET SESSION AUTHORIZATION pipe_test_owner;
+SET SESSION AUTHORIZATION pipe_test_owner PASSWORD 'Test@123';
 DROP USER pipe_test_other;
 
 -- Tests receive_message(text)

@@ -19,7 +19,6 @@ else \
 
 #include "postgres.h"
 #include "orafce.h"
-#include "plvlex.h"
 #include "nodes/pg_list.h"
 
 
@@ -45,9 +44,6 @@ static orafce_lexnode *__node;
 
 
 extern int yylex(void);      /* defined as fdate_yylex in fdatescan.l */
-
-static char *scanbuf;
-static int	scanbuflen;
 
 void orafce_sql_yyerror(List **result, const char *message);
 

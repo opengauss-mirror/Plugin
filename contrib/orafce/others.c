@@ -23,10 +23,6 @@
  * package by Jan Pazdziora
  */
 
-static char *lc_collate_cache = NULL;
-static size_t multiplication = 1;
-
-text *def_locale = NULL;
 
 PG_FUNCTION_INFO_V1(ora_lnnvl);
 
@@ -44,11 +40,12 @@ PG_FUNCTION_INFO_V1(ora_concat);
 Datum
 ora_concat(PG_FUNCTION_ARGS)
 {
-	text *t1;
-	text *t2;
+	text *t1 = NULL;
+	text *t2 = NULL;
 	int l1;
 	int l2;
-	text *result;
+	text *result = NULL;
+	errno_t sret;
 
 	if (PG_ARGISNULL(0) && PG_ARGISNULL(1))
 		PG_RETURN_NULL();
@@ -65,9 +62,11 @@ ora_concat(PG_FUNCTION_ARGS)
 	l1 = VARSIZE_ANY_EXHDR(t1);
 	l2 = VARSIZE_ANY_EXHDR(t2);
 
-	result = palloc(l1+l2+VARHDRSZ);
-	memcpy(VARDATA(result), VARDATA_ANY(t1), l1);
-	memcpy(VARDATA(result) + l1, VARDATA_ANY(t2), l2);
+	result = (text *)palloc(l1+l2+VARHDRSZ);
+	sret = memcpy_s(VARDATA(result), l1, VARDATA_ANY(t1), l1);
+	securec_check(sret, "", "");
+	sret = memcpy_s(VARDATA(result) + l1, l2, VARDATA_ANY(t2), l2);
+	securec_check(sret, "", "");
 	SET_VARSIZE(result, l1 + l2 + VARHDRSZ);
 
 	PG_RETURN_TEXT_P(result);
@@ -111,16 +110,18 @@ PG_FUNCTION_INFO_V1(ora_set_nls_sort);
 Datum
 ora_set_nls_sort(PG_FUNCTION_ARGS)
 {
+	errno_t sret;
 	text *arg = PG_GETARG_TEXT_P(0);
 
-	if (def_locale != NULL)
+	if (get_session_context()->def_locale != NULL)
 	{
-		pfree(def_locale);
-		def_locale = NULL;
+		pfree(get_session_context()->def_locale);
+		get_session_context()->def_locale = NULL;
 	}
 
-	def_locale = (text*) MemoryContextAlloc(TopMemoryContext, VARSIZE(arg));
-	memcpy(def_locale, arg, VARSIZE(arg));
+	get_session_context()->def_locale = (text*) MemoryContextAlloc(u_sess->self_mem_cxt, VARSIZE(arg));
+	sret = memcpy_s(get_session_context()->def_locale, VARSIZE(arg), arg, VARSIZE(arg));
+	securec_check(sret, "", "");
 
 	PG_RETURN_VOID();
 }
@@ -136,25 +137,25 @@ _nls_run_strxfrm(text *string, text *locale)
 
 	text *result;
 	char *tmp = NULL;
-	size_t size = 0;
 	size_t rest = 0;
 	int changed_locale = 0;
+	errno_t sret;
 
 	/*
 	 * Save the default, server-wide locale setting.
 	 * It should not change during the life-span of the server so it
 	 * is safe to save it only once, during the first invocation.
 	 */
-	if (!lc_collate_cache)
+	if (!get_session_context()->lc_collate_cache)
 	{
-		if ((lc_collate_cache = setlocale(LC_COLLATE, NULL)))
+		if ((get_session_context()->lc_collate_cache = setlocale(LC_COLLATE, NULL)))
 			/* Make a copy of the locale name string. */
 #ifdef _MSC_VER
-			lc_collate_cache = _strdup(lc_collate_cache);
+			get_session_context()->lc_collate_cache = _strdup(get_session_context()->lc_collate_cache);
 #else
-			lc_collate_cache = strdup(lc_collate_cache);
+			get_session_context()->lc_collate_cache = strdup(get_session_context()->lc_collate_cache);
 #endif
-		if (!lc_collate_cache)
+		if (!get_session_context()->lc_collate_cache)
 			elog(ERROR, "failed to retrieve the default LC_COLLATE value");
 	}
 
@@ -164,8 +165,9 @@ _nls_run_strxfrm(text *string, text *locale)
 	string_len = VARSIZE_ANY_EXHDR(string);
 	if (string_len < 0)
 		return NULL;
-	string_str = palloc(string_len + 1);
-	memcpy(string_str, VARDATA_ANY(string), string_len);
+	string_str = (char *)palloc(string_len + 1);
+	sret = memcpy_s(string_str, string_len, VARDATA_ANY(string), string_len);
+	securec_check(sret, "", "");
 
 	*(string_str + string_len) = '\0';
 
@@ -178,11 +180,12 @@ _nls_run_strxfrm(text *string, text *locale)
 	 * If different than default locale is requested, call setlocale.
 	 */
 	if (locale_len > 0
-		&& (strncmp(lc_collate_cache, VARDATA_ANY(locale), locale_len)
-			|| *(lc_collate_cache + locale_len) != '\0'))
+		&& (strncmp(get_session_context()->lc_collate_cache, VARDATA_ANY(locale), locale_len)
+			|| *(get_session_context()->lc_collate_cache + locale_len) != '\0'))
 	{
-		locale_str = palloc(locale_len + 1);
-		memcpy(locale_str, VARDATA_ANY(locale), locale_len);
+		locale_str = (char *)palloc(locale_len + 1);
+		sret = memcpy_s(locale_str, locale_len, VARDATA_ANY(locale), locale_len);
+		securec_check(sret, "", "");
 		*(locale_str + locale_len) = '\0';
 
 		/*
@@ -209,22 +212,22 @@ _nls_run_strxfrm(text *string, text *locale)
 		 * Text transformation.
 		 * Increase the buffer until the strxfrm is able to fit.
 		 */
-		size = string_len * multiplication + 1;
-		tmp = palloc(size + VARHDRSZ);
+		size_t size = string_len * get_session_context()->multiplication + 1;
+		tmp = (char *)palloc(size + VARHDRSZ);
 
 		rest = strxfrm(tmp + VARHDRSZ, string_str, size);
 		while (rest >= size)
 		{
 			pfree(tmp);
 			size = rest + 1;
-			tmp = palloc(size + VARHDRSZ);
+			tmp = (char *)palloc(size + VARHDRSZ);
 			rest = strxfrm(tmp + VARHDRSZ, string_str, size);
 			/*
 			 * Cache the multiplication factor so that the next
 			 * time we start with better value.
 			 */
 			if (string_len)
-				multiplication = (rest / string_len) + 2;
+				get_session_context()->multiplication = (rest / string_len) + 2;
 		}
 	}
 	PG_CATCH ();
@@ -233,8 +236,8 @@ _nls_run_strxfrm(text *string, text *locale)
 			/*
 			 * Set original locale
 			 */
-			if (!setlocale(LC_COLLATE, lc_collate_cache))
-				elog(FATAL, "failed to set back the default LC_COLLATE value [%s]", lc_collate_cache);
+			if (!setlocale(LC_COLLATE, get_session_context()->lc_collate_cache))
+				elog(FATAL, "failed to set back the default LC_COLLATE value [%s]", get_session_context()->lc_collate_cache);
 		}
 	}
 	PG_END_TRY ();
@@ -244,8 +247,8 @@ _nls_run_strxfrm(text *string, text *locale)
 		/*
 		 * Set original locale
 		 */
-		if (!setlocale(LC_COLLATE, lc_collate_cache))
-			elog(FATAL, "failed to set back the default LC_COLLATE value [%s]", lc_collate_cache);
+		if (!setlocale(LC_COLLATE, get_session_context()->lc_collate_cache))
+			elog(FATAL, "failed to set back the default LC_COLLATE value [%s]", get_session_context()->lc_collate_cache);
 		pfree(locale_str);
 	}
 	pfree(string_str);
@@ -253,8 +256,8 @@ _nls_run_strxfrm(text *string, text *locale)
 	/*
 	 * If the multiplication factor went down, reset it.
 	 */
-	if (string_len && rest < string_len * multiplication / 4)
-		multiplication = (rest / string_len) + 1;
+	if (string_len && rest < string_len * get_session_context()->multiplication / 4)
+		get_session_context()->multiplication = (rest / string_len) + 1;
 
 	result = (text *) tmp;
 	SET_VARSIZE(result, rest + VARHDRSZ);
@@ -273,11 +276,11 @@ ora_nlssort(PG_FUNCTION_ARGS)
 		PG_RETURN_NULL();
 	if (PG_ARGISNULL(1))
 	{
-		if (def_locale != NULL)
-			locale = def_locale;
+		if (get_session_context()->def_locale != NULL)
+			locale = get_session_context()->def_locale;
 		else
 		{
-			locale = palloc(VARHDRSZ);
+			locale = (text *)palloc(VARHDRSZ);
 			SET_VARSIZE(locale, VARHDRSZ);
 		}
 	}
@@ -343,14 +346,14 @@ ora_decode(PG_FUNCTION_ARGS)
 			Oid				eqoid = equality_oper_funcid(typid);
 
 			oldctx = MemoryContextSwitchTo(fcinfo->flinfo->fn_mcxt);
-			eq = palloc(sizeof(FmgrInfo));
+			eq = (FmgrInfo*)palloc(sizeof(FmgrInfo));
 			fmgr_info(eqoid, eq);
 			MemoryContextSwitchTo(oldctx);
 
 			fcinfo->flinfo->fn_extra = eq;
 		}
 		else
-			eq = fcinfo->flinfo->fn_extra;
+			eq = (FmgrInfo*)fcinfo->flinfo->fn_extra;
 
 		for (i = 1; i < nargs; i += 2)
 		{

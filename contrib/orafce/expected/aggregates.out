@@ -1,34 +1,26 @@
 -- Tests for the aggregate listagg
 SELECT listagg(i::text) from generate_series(1,3) g(i);
- listagg 
----------
- 123
-(1 row)
-
+ERROR:  missing WITHIN keyword.
+LINE 1: SELECT listagg(i::text) from generate_series(1,3) g(i);
+               ^
 SELECT listagg(i::text, ',') from generate_series(1,3) g(i);
- listagg 
----------
- 1,2,3
-(1 row)
-
+ERROR:  missing WITHIN keyword.
+LINE 1: SELECT listagg(i::text, ',') from generate_series(1,3) g(i);
+               ^
 SELECT coalesce(listagg(i::text), '<NULL>') from (SELECT ''::text) g(i);
- coalesce 
-----------
- 
-(1 row)
-
+ERROR:  missing WITHIN keyword.
+LINE 1: SELECT coalesce(listagg(i::text), '<NULL>') from (SELECT '':...
+                        ^
 SELECT coalesce(listagg(i::text), '<NULL>') from generate_series(1,0) g(i);
- coalesce 
-----------
- <NULL>
-(1 row)
-
+ERROR:  missing WITHIN keyword.
+LINE 1: SELECT coalesce(listagg(i::text), '<NULL>') from generate_se...
+                        ^
 SELECT wm_concat(i::text) from generate_series(1,3) g(i);
- wm_concat 
------------
- 1,2,3
-(1 row)
-
+ERROR:  function wm_concat(text) does not exist
+LINE 1: SELECT wm_concat(i::text) from generate_series(1,3) g(i);
+               ^
+HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
+CONTEXT:  referenced column: wm_concat
 -- Tests for the aggregate median( real | double )
 CREATE FUNCTION checkMedianRealOdd()  RETURNS real AS $$
 DECLARE
@@ -47,6 +39,7 @@ BEGIN
         
 END;
 $$ LANGUAGE plpgsql;
+CREATE FUNCTION
 CREATE FUNCTION checkMedianRealEven() RETURNS real AS $$
 DECLARE
  med real;
@@ -64,6 +57,7 @@ BEGIN
         return med;
 END;
 $$ LANGUAGE plpgsql;
+CREATE FUNCTION
 CREATE FUNCTION checkMedianDoubleOdd() RETURNS double precision AS $$
 DECLARE 
   med double precision;
@@ -79,6 +73,7 @@ BEGIN
         return med;
 END;
 $$ LANGUAGE plpgsql;
+CREATE FUNCTION
 CREATE FUNCTION checkMedianDoubleEven() RETURNS double precision AS $$
 DECLARE
  med double precision;
@@ -96,6 +91,7 @@ BEGIN
         return med;
 END;
 $$ LANGUAGE plpgsql;
+CREATE FUNCTION
 SELECT checkMedianRealOdd();
  checkmedianrealodd 
 --------------------
@@ -121,6 +117,10 @@ SELECT checkMedianDoubleEven();
 (1 row)
 
 DROP FUNCTION checkMedianRealOdd();
+DROP FUNCTION
 DROP FUNCTION checkMedianRealEven();
+DROP FUNCTION
 DROP FUNCTION checkMedianDoubleOdd();
+DROP FUNCTION
 DROP FUNCTION checkMedianDoubleEven();
+DROP FUNCTION

@@ -102,7 +102,6 @@ ora_mb_strlen(text *str, char **sizes, int **positions)
 {
 	int r_len;
 	int cur_size = 0;
-	int sz;
 	char *p;
 	int cur = 0;
 
@@ -110,12 +109,13 @@ ora_mb_strlen(text *str, char **sizes, int **positions)
 	r_len = VARSIZE_ANY_EXHDR(str);
 
 	if (NULL != sizes)
-		*sizes = palloc(r_len * sizeof(char));
+		*sizes = (char*)palloc(r_len * sizeof(char));
 	if (NULL != positions)
-		*positions = palloc(r_len * sizeof(int));
+		*positions = (int*)palloc(r_len * sizeof(int));
 
 	while (cur < r_len)
 	{
+		int sz;
 		sz = _pg_mblen(p);
 		if (sizes)
 			(*sizes)[cur_size] = sz;
@@ -313,22 +313,23 @@ plvstr_normalize(PG_FUNCTION_ARGS)
 
 #endif
 
-	char c, *cur;
+	char *cur;
 	bool write_spc = false;
 	bool ignore_stsp = true;
 	bool mb_encode;
 	int sz;
+	errno_t sret;
 
 	mb_encode = pg_database_encoding_max_length() > 1;
 
 	l = VARSIZE_ANY_EXHDR(str);
-	aux_cur = aux = palloc(l);
+	aux_cur = aux = (char *)palloc(l);
 
-	write_spc = false;
 	cur = VARDATA_ANY(str);
 
 	for (i = 0; i < l; i++)
 	{
+		char c;
 		switch ((c = *cur))
 		{
 			case '\t':
@@ -381,9 +382,10 @@ plvstr_normalize(PG_FUNCTION_ARGS)
 	}
 
 	l = aux_cur - aux;
-	result = palloc(l+VARHDRSZ);
+	result = (text *)palloc(l+VARHDRSZ);
 	SET_VARSIZE(result, l + VARHDRSZ);
-	memcpy(VARDATA(result), aux, l);
+	sret = memcpy_s(VARDATA(result), l, aux, l);
+	securec_check(sret, "", "");
 
 	PG_RETURN_TEXT_P(result);
 }
@@ -617,9 +619,9 @@ plvstr_rvrs(PG_FUNCTION_ARGS)
 		fz_size = VARSIZE_ANY_EXHDR(str);
 
 		if ((max_size = (new_len*pg_database_encoding_max_length())) > fz_size)
-			result = palloc(fz_size + VARHDRSZ);
+			result = (text *)palloc(fz_size + VARHDRSZ);
 		else
-			result = palloc(max_size + VARHDRSZ);
+			result = (text *)palloc(max_size + VARHDRSZ);
 		data = (char*) VARDATA(result);
 
 		cur_size = 0;
@@ -636,7 +638,7 @@ plvstr_rvrs(PG_FUNCTION_ARGS)
 	else
 	{
 		char *p = VARDATA_ANY(str);
-		result = palloc(new_len + VARHDRSZ);
+		result = (text *)palloc(new_len + VARHDRSZ);
 		data = (char*) VARDATA(result);
 		SET_VARSIZE(result, new_len + VARHDRSZ);
 
@@ -750,13 +752,14 @@ plvstr_lstrip (PG_FUNCTION_ARGS)
 	int count = 0;
 	int len_p, len_s, i;
 
-	char *str_p, *aux_str_p, *pat_p;
+	char *str_p;
 	len_p = VARSIZE_ANY_EXHDR(pat);
 	len_s = VARSIZE_ANY_EXHDR(str);
 
 	str_p = VARDATA_ANY(str);
 	while (count < num)
 	{
+		char *aux_str_p, *pat_p;
 		pat_p = VARDATA_ANY(pat);
 		aux_str_p = str_p;
 
@@ -806,7 +809,7 @@ plvstr_rstrip (PG_FUNCTION_ARGS)
 	int count = 0;
 	int len_p, len_s, i;
 
-	char *str_p, *aux_str_p, *pat_p;
+	char *str_p;
 	len_p = VARSIZE_ANY_EXHDR(pat);
 	len_s = VARSIZE_ANY_EXHDR(str);
 
@@ -814,6 +817,7 @@ plvstr_rstrip (PG_FUNCTION_ARGS)
 
 	while (count < num)
 	{
+		char *aux_str_p, *pat_p;
 		pat_p = VARDATA_ANY(pat) + len_p - 1;
 		aux_str_p = str_p;
 
@@ -1121,13 +1125,16 @@ ora_concat2(text *str1, text *str2)
 	int l1;
 	int l2;
 	text *result;
+	errno_t sret;
 
 	l1 = VARSIZE_ANY_EXHDR(str1);
 	l2 = VARSIZE_ANY_EXHDR(str2);
 
-	result = palloc(l1+l2+VARHDRSZ);
-	memcpy(VARDATA(result), VARDATA_ANY(str1), l1);
-	memcpy(VARDATA(result) + l1, VARDATA_ANY(str2), l2);
+	result = (text *)palloc(l1+l2+VARHDRSZ);
+	sret = memcpy_s(VARDATA(result), l1, VARDATA_ANY(str1), l1);
+	securec_check(sret, "", "");
+	sret = memcpy_s(VARDATA(result) + l1, l2, VARDATA_ANY(str2), l2);
+	securec_check(sret, "", "");
 	SET_VARSIZE(result, l1 + l2 + VARHDRSZ);
 
 	return result;
@@ -1141,15 +1148,19 @@ ora_concat3(text *str1, text *str2, text *str3)
 	int l2;
 	int l3;
 	text *result;
+	errno_t sret;
 
 	l1 = VARSIZE_ANY_EXHDR(str1);
 	l2 = VARSIZE_ANY_EXHDR(str2);
 	l3 = VARSIZE_ANY_EXHDR(str3);
 
-	result = palloc(l1+l2+l3+VARHDRSZ);
-	memcpy(VARDATA(result), VARDATA_ANY(str1), l1);
-	memcpy(VARDATA(result) + l1, VARDATA_ANY(str2), l2);
-	memcpy(VARDATA(result) + l1+l2, VARDATA_ANY(str3), l3);
+	result = (text *)palloc(l1+l2+l3+VARHDRSZ);
+	sret = memcpy_s(VARDATA(result), l1, VARDATA_ANY(str1), l1);
+	securec_check(sret, "", "");
+	sret = memcpy_s(VARDATA(result) + l1, l2, VARDATA_ANY(str2), l2);
+	securec_check(sret, "", "");
+	sret = memcpy_s(VARDATA(result) + l1+l2, l3, VARDATA_ANY(str3), l3);
+	securec_check(sret, "", "");
 	SET_VARSIZE(result, l1 + l2 + l3 + VARHDRSZ);
 
 	return result;

@@ -1,116 +1,123 @@
 \set ECHO none
+SET
+SET
+SET
 --
 -- test built-in date type oracle compatibility functions
 --
+set behavior_compat_options='display_leading_zero';
+SET
 SELECT add_months ('2003-08-01', 3);
- add_months 
-------------
- 2003-11-01
+     add_months      
+---------------------
+ 2003-11-01 00:00:00
 (1 row)
 
 SELECT add_months ('2003-08-01', -3);
- add_months 
-------------
- 2003-05-01
+     add_months      
+---------------------
+ 2003-05-01 00:00:00
 (1 row)
 
 SELECT add_months ('2003-08-21', -3);
- add_months 
-------------
- 2003-05-21
+     add_months      
+---------------------
+ 2003-05-21 00:00:00
 (1 row)
 
 SELECT add_months ('2003-01-31', 1);
- add_months 
-------------
- 2003-02-28
+     add_months      
+---------------------
+ 2003-02-28 00:00:00
 (1 row)
 
 SELECT add_months ('2008-02-28', 1);
- add_months 
-------------
- 2008-03-28
+     add_months      
+---------------------
+ 2008-03-28 00:00:00
 (1 row)
 
 SELECT add_months ('2008-02-29', 1);
- add_months 
-------------
- 2008-03-31
+     add_months      
+---------------------
+ 2008-03-29 00:00:00
 (1 row)
 
 SELECT add_months ('2008-01-31', 12);
- add_months 
-------------
- 2009-01-31
+     add_months      
+---------------------
+ 2009-01-31 00:00:00
 (1 row)
 
 SELECT add_months ('2008-01-31', -12);
- add_months 
-------------
- 2007-01-31
+     add_months      
+---------------------
+ 2007-01-31 00:00:00
 (1 row)
 
 SELECT add_months ('2008-01-31', 95903);
- add_months 
-------------
- 9999-12-31
+     add_months      
+---------------------
+ 9999-12-31 00:00:00
 (1 row)
 
 SELECT add_months ('2008-01-31', -80640);
-  add_months   
----------------
- 4712-01-31 BC
+       add_months       
+------------------------
+ 4713-01-31 00:00:00 BC
 (1 row)
 
 SELECT add_months ('03-21-2008',3);
- add_months 
-------------
- 2008-06-21
+     add_months      
+---------------------
+ 2008-06-21 00:00:00
 (1 row)
 
 SELECT add_months ('21-MAR-2008',3);
- add_months 
-------------
- 2008-06-21
+     add_months      
+---------------------
+ 2008-06-21 00:00:00
 (1 row)
 
 SELECT add_months ('21-MAR-08',3);
- add_months 
-------------
- 2008-06-21
+     add_months      
+---------------------
+ 2008-06-21 00:00:00
 (1 row)
 
 SELECT add_months ('2008-MAR-21',3);
- add_months 
-------------
- 2008-06-21
+     add_months      
+---------------------
+ 2008-06-21 00:00:00
 (1 row)
 
 SELECT add_months ('March 21,2008',3);
- add_months 
-------------
- 2008-06-21
+     add_months      
+---------------------
+ 2008-06-21 00:00:00
 (1 row)
 
 SELECT add_months('03/21/2008',3);
- add_months 
-------------
- 2008-06-21
+     add_months      
+---------------------
+ 2008-06-21 00:00:00
 (1 row)
 
 SELECT add_months('20080321',3);
- add_months 
-------------
- 2008-06-21
+     add_months      
+---------------------
+ 2008-06-21 00:00:00
 (1 row)
 
 SELECT add_months('080321',3);
- add_months 
-------------
- 2008-06-21
+     add_months      
+---------------------
+ 2008-06-21 00:00:00
 (1 row)
 
 SET search_path TO oracle,"$user", public, pg_catalog;
+WARNING:  It is invalid to set pg_temp or pg_catalog behind other schemas in search path explicitly. The priority order is pg_temp, pg_catalog and other schemas.
+SET
 SELECT add_months ('2003-08-01 10:12:21', 3);
      add_months      
 ---------------------
@@ -144,7 +151,7 @@ SELECT add_months ('2008-02-28 02:12:12', 1);
 SELECT add_months ('2008-02-29 12:12:12', 1);
      add_months      
 ---------------------
- 2008-03-31 12:12:12
+ 2008-03-29 12:12:12
 (1 row)
 
 SELECT add_months ('2008-01-31 11:11:21', 12);
@@ -168,7 +175,7 @@ SELECT add_months ('2008-01-31 12:12:12', 95903);
 SELECT add_months ('2008-01-31 11:32:12', -80640);
        add_months       
 ------------------------
- 4712-01-31 11:32:12 BC
+ 4713-01-31 11:32:12 BC
 (1 row)
 
 SELECT add_months ('03-21-2008 08:12:22',3);
@@ -220,49 +227,52 @@ SELECT add_months('080321 121212',3);
 (1 row)
 
 SET search_path TO default;
+SET
 SELECT last_day(to_date('2003/03/15', 'yyyy/mm/dd'));
-  last_day  
-------------
- 2003-03-31
+      last_day       
+---------------------
+ 2003-03-31 00:00:00
 (1 row)
 
 SELECT last_day(to_date('2003/02/03', 'yyyy/mm/dd'));
-  last_day  
-------------
- 2003-02-28
+      last_day       
+---------------------
+ 2003-02-28 00:00:00
 (1 row)
 
 SELECT last_day(to_date('2004/02/03', 'yyyy/mm/dd'));
-  last_day  
-------------
- 2004-02-29
+      last_day       
+---------------------
+ 2004-02-29 00:00:00
 (1 row)
 
 SELECT last_day('1900-02-01');
-  last_day  
-------------
- 1900-02-28
+      last_day       
+---------------------
+ 1900-02-28 00:00:00
 (1 row)
 
 SELECT last_day('2000-02-01');
-  last_day  
-------------
- 2000-02-29
+      last_day       
+---------------------
+ 2000-02-29 00:00:00
 (1 row)
 
 SELECT last_day('2007-02-01');
-  last_day  
-------------
- 2007-02-28
+      last_day       
+---------------------
+ 2007-02-28 00:00:00
 (1 row)
 
 SELECT last_day('2008-02-01');
-  last_day  
-------------
- 2008-02-29
+      last_day       
+---------------------
+ 2008-02-29 00:00:00
 (1 row)
 
 SET search_path TO oracle,"$user", public, pg_catalog;
+WARNING:  It is invalid to set pg_temp or pg_catalog behind other schemas in search path explicitly. The priority order is pg_temp, pg_catalog and other schemas.
+SET
 SELECT last_day(to_date('2003/03/15 11:12:21', 'yyyy/mm/dd hh:mi:ss'));
       last_day       
 ---------------------
@@ -306,49 +316,52 @@ SELECT last_day('2008-02-01 121212');
 (1 row)
 
 SET search_path TO default;
+SET
 SELECT next_day ('2003-08-01', 'TUESDAY');
-  next_day  
-------------
- 2003-08-05
+      next_day       
+---------------------
+ 2003-08-05 00:00:00
 (1 row)
 
 SELECT next_day ('2003-08-06', 'WEDNESDAY');
-  next_day  
-------------
- 2003-08-13
+      next_day       
+---------------------
+ 2003-08-13 00:00:00
 (1 row)
 
 SELECT next_day ('2003-08-06', 'SUNDAY');
-  next_day  
-------------
- 2003-08-10
+      next_day       
+---------------------
+ 2003-08-10 00:00:00
 (1 row)
 
 SELECT next_day ('2008-01-01', 'sun');
-  next_day  
-------------
- 2008-01-06
+      next_day       
+---------------------
+ 2008-01-06 00:00:00
 (1 row)
 
-SELECT next_day ('2008-01-01', 'sunAAA');
-  next_day  
-------------
- 2008-01-06
+SELECT next_day ('2008-01-01', 'sun');
+      next_day       
+---------------------
+ 2008-01-06 00:00:00
 (1 row)
 
 SELECT next_day ('2008-01-01', 1);
-  next_day  
-------------
- 2008-01-06
+      next_day       
+---------------------
+ 2008-01-06 00:00:00
 (1 row)
 
 SELECT next_day ('2008-01-01', 7);
-  next_day  
-------------
- 2008-01-05
+      next_day       
+---------------------
+ 2008-01-05 00:00:00
 (1 row)
 
 SET search_path TO oracle,"$user", public, pg_catalog;
+WARNING:  It is invalid to set pg_temp or pg_catalog behind other schemas in search path explicitly. The priority order is pg_temp, pg_catalog and other schemas.
+SET
 SELECT next_day ('2003-08-01 111211', 'TUESDAY');
       next_day       
 ---------------------
@@ -373,7 +386,7 @@ SELECT next_day ('2008-01-01 111343', 'sun');
  2008-01-06 11:13:43
 (1 row)
 
-SELECT next_day ('2008-01-01 121212', 'sunAAA');
+SELECT next_day ('2008-01-01 121212', 'sun');
       next_day       
 ---------------------
  2008-01-06 12:12:12
@@ -392,6 +405,7 @@ SELECT next_day ('2008-01-01 11:12:13', 7);
 (1 row)
 
 SET search_path TO default;
+SET
 SELECT months_between (to_date ('2003/01/01', 'yyyy/mm/dd'), to_date ('2003/03/14', 'yyyy/mm/dd'));
   months_between   
 -------------------
@@ -447,25 +461,27 @@ SELECT trunc(months_between('21-feb-2008', '2008-02-29'));
 (1 row)
 
 SET search_path TO oracle,"$user", public, pg_catalog;
-SELECT months_between (to_date ('2003/01/01 12:12:12', 'yyyy/mm/dd h24:mi:ss'), to_date ('2003/03/14 11:11:11', 'yyyy/mm/dd h24:mi:ss'));
+WARNING:  It is invalid to set pg_temp or pg_catalog behind other schemas in search path explicitly. The priority order is pg_temp, pg_catalog and other schemas.
+SET
+SELECT months_between (to_date ('2003/01/01 12:12:12', 'yyyy/mm/dd hh24:mi:ss'), to_date ('2003/03/14 11:11:11', 'yyyy/mm/dd hh24:mi:ss'));
   months_between   
 -------------------
  -2.41935483870968
 (1 row)
 
-SELECT months_between (to_date ('2003/07/01 10:11:11', 'yyyy/mm/dd h24:mi:ss'), to_date ('2003/03/14 10:12:12', 'yyyy/mm/dd h24:mi:ss'));
+SELECT months_between (to_date ('2003/07/01 10:11:11', 'yyyy/mm/dd hh24:mi:ss'), to_date ('2003/03/14 10:12:12', 'yyyy/mm/dd hh24:mi:ss'));
   months_between  
 ------------------
  3.58064516129032
 (1 row)
 
-SELECT months_between (to_date ('2003/07/02 11:21:21', 'yyyy/mm/dd h24:mi:ss'), to_date ('2003/07/02 11:11:11', 'yyyy/mm/dd h24:mi:ss'));
+SELECT months_between (to_date ('2003/07/02 11:21:21', 'yyyy/mm/dd hh24:mi:ss'), to_date ('2003/07/02 11:11:11', 'yyyy/mm/dd hh24:mi:ss'));
  months_between 
 ----------------
               0
 (1 row)
 
-SELECT months_between (to_timestamp ('2003/08/02 10:11:12', 'yyyy/mm/dd h24:mi:ss'), to_date ('2003/06/02 10:10:11', 'yyyy/mm/dd h24:mi:ss'));
+SELECT months_between (to_timestamp ('2003/08/02 10:11:12', 'yyyy/mm/dd hh24:mi:ss'), to_date ('2003/06/02 10:10:11', 'yyyy/mm/dd hh24:mi:ss'));
  months_between 
 ----------------
               2
@@ -502,6 +518,7 @@ SELECT trunc(months_between('21-feb-2008 12:11:11', '2008-02-29 11:11:11'));
 (1 row)
 
 SET search_path TO default;
+SET
 select length('jmenuji se Pavel Stehule'),dbms_pipe.pack_message('jmenuji se Pavel Stehule');
  length | pack_message 
 --------+--------------
@@ -716,15 +733,13 @@ select dbms_pipe.receive_message('test_date');
 select dbms_pipe.next_item_type();
  next_item_type 
 ----------------
-             12
+             13
 (1 row)
 
 select dbms_pipe.unpack_message_date();
- unpack_message_date 
----------------------
- 2006-10-11
-(1 row)
-
+ERROR:  datatype mismatch
+DETAIL:  unpack unexpected type: 13
+CONTEXT:  referenced column: unpack_message_date
 select dbms_pipe.pack_message(to_timestamp('2008-10-30 01:23:45', 'YYYY-MM-DD HH24:MI:SS'));
  pack_message 
 --------------
@@ -788,6 +803,12 @@ select dbms_pipe.unpack_message_number();
 select dbms_pipe.purge('bob');
  purge 
 -------
+ 
+(1 row)
+
+select dbms_pipe.reset_buffer();
+ reset_buffer 
+--------------
  
 (1 row)
 
@@ -887,11 +908,15 @@ select plvsubst.string('My name is %s.', 'Stěhule');
 (1 row)
 
 select plvsubst.string('My name is %s.', '');
-ERROR:  too few parameters specified for template string
+ string 
+--------
+ 
+(1 row)
+
 select plvsubst.string('My name is empty.', '');
-      string       
--------------------
- My name is empty.
+ string 
+--------
+ 
 (1 row)
 
 select round(to_date ('22-AUG-03', 'DD-MON-YY'),'YEAR')  =  to_date ('01-JAN-04', 'DD-MON-YY');
@@ -954,6 +979,8 @@ select trunc(to_date('22-AUG-03', 'DD-MON-YY'), 'DAY')  =  to_date ('17-AUG-03',
  t
 (1 row)
 
+set time zone 'US/Pacific';
+SET
 select trunc(TIMESTAMP WITH TIME ZONE '2004-10-19 10:23:54+02','YEAR') = '2004-01-01 00:00:00-08';
  ?column? 
 ----------
@@ -1015,13 +1042,15 @@ select next_day(to_date('06-Aug-03', 'DD-MON-YY'), 'SUNDAY')  =  to_date ('10-Au
 (1 row)
 
 SET search_path TO oracle,"$user", public, pg_catalog;
-select next_day(to_date('01-Aug-03 101111', 'DD-MON-YY h24miss'), 'TUESDAY') = to_date ('05-Aug-03 101111', 'DD-MON-YY h24miss');
+WARNING:  It is invalid to set pg_temp or pg_catalog behind other schemas in search path explicitly. The priority order is pg_temp, pg_catalog and other schemas.
+SET
+select next_day(to_date('01-Aug-03 101111', 'DD-MON-YY hh24miss'), 'TUESDAY') = to_date ('05-Aug-03 101111', 'DD-MON-YY hh24miss');
  ?column? 
 ----------
  t
 (1 row)
 
-select next_day(to_date('06-Aug-03 10:12:13', 'DD-MON-YY H24:MI:SS'), 'WEDNESDAY') = to_date ('13-Aug-03 10:12:13', 'DD-MON-YY H24:MI:SS');
+select next_day(to_date('06-Aug-03 10:12:13', 'DD-MON-YY HH24:MI:SS'), 'WEDNESDAY') = to_date ('13-Aug-03 10:12:13', 'DD-MON-YY HH24:MI:SS');
  ?column? 
 ----------
  t
@@ -1034,6 +1063,7 @@ select next_day(to_date('06-Aug-03 11:11:11', 'DD-MON-YY HH:MI:SS'), 'SUNDAY') =
 (1 row)
 
 SET search_path TO default;
+SET
 select instr('Tech on the net', 'e') =2;
  ?column? 
 ----------
@@ -1073,7 +1103,7 @@ select instr('abc', NULL) IS NULL;
 select 1 = instr('abc', '');
  ?column? 
 ----------
- t
+ 
 (1 row)
 
 select 1 = instr('abc', 'a');
@@ -1199,7 +1229,7 @@ select oracle.substr('TechOnTheNet', -8, 2) =  'On';
 select oracle.substr('TechOnTheNet', -8, 0) =  '';
  ?column? 
 ----------
- t
+ 
 (1 row)
 
 select oracle.substr('TechOnTheNet', -8, -1) =  '';
@@ -1463,7 +1493,7 @@ select nvl(1, 2);
 select nvl(NULL, 2);
  nvl 
 -----
-   2
+ 2
 (1 row)
 
 select nvl2('A'::text, 'B', 'C');
@@ -1520,734 +1550,734 @@ select lnnvl(NULL);
  t
 (1 row)
 
-select decode(1, 1, 100, 2, 200);
+select public.decode(1, 1, 100, 2, 200);
  decode 
 --------
     100
 (1 row)
 
-select decode(2, 1, 100, 2, 200);
+select public.decode(2, 1, 100, 2, 200);
  decode 
 --------
     200
 (1 row)
 
-select decode(3, 1, 100, 2, 200);
+select public.decode(3, 1, 100, 2, 200);
  decode 
 --------
        
 (1 row)
 
-select decode(3, 1, 100, 2, 200, 300);
+select public.decode(3, 1, 100, 2, 200, 300);
  decode 
 --------
     300
 (1 row)
 
-select decode(NULL, 1, 100, NULL, 200, 300);
+select public.decode(NULL, 1, 100, NULL, 200, 300);
  decode 
 --------
     200
 (1 row)
 
-select decode('1'::text, '1', 100, '2', 200);
+select public.decode('1'::text, '1', 100, '2', 200);
  decode 
 --------
     100
 (1 row)
 
-select decode(2, 1, 'ABC', 2, 'DEF');
+select public.decode(2, 1, 'ABC', 2, 'DEF');
  decode 
 --------
  DEF
 (1 row)
 
-select decode('2009-02-05'::date, '2009-02-05', 'ok');
+select public.decode('2009-02-05'::date, '2009-02-05', 'ok');
  decode 
 --------
  ok
 (1 row)
 
-select decode('2009-02-05 01:02:03'::timestamp, '2009-02-05 01:02:03', 'ok');
+select public.decode('2009-02-05 01:02:03'::timestamp, '2009-02-05 01:02:03', 'ok');
  decode 
 --------
  ok
 (1 row)
 
 -- For type 'bpchar'
-select decode('a'::bpchar, 'a'::bpchar,'postgres'::bpchar);
+select public.decode('a'::bpchar, 'a'::bpchar,'postgres'::bpchar);
   decode  
 ----------
  postgres
 (1 row)
 
-select decode('c'::bpchar, 'a'::bpchar,'postgres'::bpchar);
+select public.decode('c'::bpchar, 'a'::bpchar,'postgres'::bpchar);
  decode 
 --------
  
 (1 row)
 
-select decode('a'::bpchar, 'a'::bpchar,'postgres'::bpchar,'default value'::bpchar);
+select public.decode('a'::bpchar, 'a'::bpchar,'postgres'::bpchar,'default value'::bpchar);
   decode  
 ----------
  postgres
 (1 row)
 
-select decode('c', 'a'::bpchar,'postgres'::bpchar,'default value'::bpchar);
+select public.decode('c', 'a'::bpchar,'postgres'::bpchar,'default value'::bpchar);
     decode     
 ---------------
  default value
 (1 row)
 
-select decode('a'::bpchar, 'a'::bpchar,'postgres'::bpchar,'b'::bpchar,'database'::bpchar);
+select public.decode('a'::bpchar, 'a'::bpchar,'postgres'::bpchar,'b'::bpchar,'database'::bpchar);
   decode  
 ----------
  postgres
 (1 row)
 
-select decode('d'::bpchar, 'a'::bpchar,'postgres'::bpchar,'b'::bpchar,'database'::bpchar);
+select public.decode('d'::bpchar, 'a'::bpchar,'postgres'::bpchar,'b'::bpchar,'database'::bpchar);
  decode 
 --------
  
 (1 row)
 
-select decode('a'::bpchar, 'a'::bpchar,'postgres'::bpchar,'b'::bpchar,'database'::bpchar,'default value'::bpchar);
+select public.decode('a'::bpchar, 'a'::bpchar,'postgres'::bpchar,'b'::bpchar,'database'::bpchar,'default value'::bpchar);
   decode  
 ----------
  postgres
 (1 row)
 
-select decode('d'::bpchar, 'a'::bpchar,'postgres'::bpchar,'b'::bpchar,'database'::bpchar,'default value'::bpchar);
+select public.decode('d'::bpchar, 'a'::bpchar,'postgres'::bpchar,'b'::bpchar,'database'::bpchar,'default value'::bpchar);
     decode     
 ---------------
  default value
 (1 row)
 
-select decode('a'::bpchar, 'a'::bpchar,'postgres'::bpchar,'b'::bpchar,'database'::bpchar, 'c'::bpchar, 'system'::bpchar);
+select public.decode('a'::bpchar, 'a'::bpchar,'postgres'::bpchar,'b'::bpchar,'database'::bpchar, 'c'::bpchar, 'system'::bpchar);
   decode  
 ----------
  postgres
 (1 row)
 
-select decode('d'::bpchar, 'a'::bpchar,'postgres'::bpchar,'b'::bpchar,'database'::bpchar, 'c'::bpchar, 'system'::bpchar);
+select public.decode('d'::bpchar, 'a'::bpchar,'postgres'::bpchar,'b'::bpchar,'database'::bpchar, 'c'::bpchar, 'system'::bpchar);
  decode 
 --------
  
 (1 row)
 
-select decode('a'::bpchar, 'a'::bpchar,'postgres'::bpchar,'b'::bpchar,'database'::bpchar, 'c'::bpchar, 'system'::bpchar,'default value'::bpchar);
+select public.decode('a'::bpchar, 'a'::bpchar,'postgres'::bpchar,'b'::bpchar,'database'::bpchar, 'c'::bpchar, 'system'::bpchar,'default value'::bpchar);
   decode  
 ----------
  postgres
 (1 row)
 
-select decode('d'::bpchar, 'a'::bpchar,'postgres'::bpchar,'b'::bpchar,'database'::bpchar, 'c'::bpchar, 'system'::bpchar,'default value'::bpchar);
+select public.decode('d'::bpchar, 'a'::bpchar,'postgres'::bpchar,'b'::bpchar,'database'::bpchar, 'c'::bpchar, 'system'::bpchar,'default value'::bpchar);
     decode     
 ---------------
  default value
 (1 row)
 
-select decode(NULL, 'a'::bpchar, 'postgres'::bpchar, NULL,'database'::bpchar);
+select public.decode(NULL, 'a'::bpchar, 'postgres'::bpchar, NULL,'database'::bpchar);
   decode  
 ----------
  database
 (1 row)
 
-select decode(NULL, 'a'::bpchar, 'postgres'::bpchar, 'b'::bpchar,'database'::bpchar);
+select public.decode(NULL, 'a'::bpchar, 'postgres'::bpchar, 'b'::bpchar,'database'::bpchar);
  decode 
 --------
  
 (1 row)
 
-select decode(NULL, 'a'::bpchar, 'postgres'::bpchar, NULL,'database'::bpchar,'default value'::bpchar);
+select public.decode(NULL, 'a'::bpchar, 'postgres'::bpchar, NULL,'database'::bpchar,'default value'::bpchar);
   decode  
 ----------
  database
 (1 row)
 
-select decode(NULL, 'a'::bpchar, 'postgres'::bpchar, 'b'::bpchar,'database'::bpchar,'default value'::bpchar);
+select public.decode(NULL, 'a'::bpchar, 'postgres'::bpchar, 'b'::bpchar,'database'::bpchar,'default value'::bpchar);
     decode     
 ---------------
  default value
 (1 row)
 
 -- For type 'bigint'
-select decode(2147483651::bigint, 2147483650::bigint,2147483650::bigint);
+select public.decode(2147483651::bigint, 2147483650::bigint,2147483650::bigint);
  decode 
 --------
        
 (1 row)
 
-select decode(2147483653::bigint, 2147483651::bigint,2147483650::bigint);
+select public.decode(2147483653::bigint, 2147483651::bigint,2147483650::bigint);
  decode 
 --------
        
 (1 row)
 
-select decode(2147483653::bigint, 2147483651::bigint,2147483650::bigint,9999999999::bigint);
+select public.decode(2147483653::bigint, 2147483651::bigint,2147483650::bigint,9999999999::bigint);
    decode   
 ------------
  9999999999
 (1 row)
 
-select decode(2147483653::bigint, 2147483651::bigint,2147483650::bigint,9999999999::bigint);
+select public.decode(2147483653::bigint, 2147483651::bigint,2147483650::bigint,9999999999::bigint);
    decode   
 ------------
  9999999999
 (1 row)
 
-select decode(2147483651::bigint, 2147483651::bigint,2147483650::bigint,2147483652::bigint,2147483651::bigint);
+select public.decode(2147483651::bigint, 2147483651::bigint,2147483650::bigint,2147483652::bigint,2147483651::bigint);
    decode   
 ------------
  2147483650
 (1 row)
 
-select decode(2147483654::bigint, 2147483651::bigint,2147483650::bigint,2147483652::bigint,2147483651::bigint);
+select public.decode(2147483654::bigint, 2147483651::bigint,2147483650::bigint,2147483652::bigint,2147483651::bigint);
  decode 
 --------
        
 (1 row)
 
-select decode(2147483651::bigint, 2147483651::bigint,2147483650::bigint,2147483652::bigint,2147483651::bigint,9999999999::bigint);
+select public.decode(2147483651::bigint, 2147483651::bigint,2147483650::bigint,2147483652::bigint,2147483651::bigint,9999999999::bigint);
    decode   
 ------------
  2147483650
 (1 row)
 
-select decode(2147483654::bigint, 2147483651::bigint,2147483650::bigint,2147483652::bigint,2147483651::bigint,9999999999::bigint);
+select public.decode(2147483654::bigint, 2147483651::bigint,2147483650::bigint,2147483652::bigint,2147483651::bigint,9999999999::bigint);
    decode   
 ------------
  9999999999
 (1 row)
 
-select decode(2147483651::bigint, 2147483651::bigint,2147483650::bigint, 2147483652::bigint,2147483651::bigint, 2147483653::bigint, 2147483652::bigint);
+select public.decode(2147483651::bigint, 2147483651::bigint,2147483650::bigint, 2147483652::bigint,2147483651::bigint, 2147483653::bigint, 2147483652::bigint);
    decode   
 ------------
  2147483650
 (1 row)
 
-select decode(2147483654::bigint, 2147483651::bigint,2147483650::bigint, 2147483652::bigint,2147483651::bigint, 2147483653::bigint, 2147483652::bigint);
+select public.decode(2147483654::bigint, 2147483651::bigint,2147483650::bigint, 2147483652::bigint,2147483651::bigint, 2147483653::bigint, 2147483652::bigint);
  decode 
 --------
        
 (1 row)
 
-select decode(2147483651::bigint, 2147483651::bigint,2147483650::bigint, 2147483652::bigint,2147483651::bigint, 2147483653::bigint, 2147483652::bigint,9999999999::bigint);
+select public.decode(2147483651::bigint, 2147483651::bigint,2147483650::bigint, 2147483652::bigint,2147483651::bigint, 2147483653::bigint, 2147483652::bigint,9999999999::bigint);
    decode   
 ------------
  2147483650
 (1 row)
 
-select decode(2147483654::bigint, 2147483651::bigint,2147483650::bigint, 2147483652::bigint,2147483651::bigint, 2147483653::bigint, 2147483652::bigint,9999999999::bigint);
+select public.decode(2147483654::bigint, 2147483651::bigint,2147483650::bigint, 2147483652::bigint,2147483651::bigint, 2147483653::bigint, 2147483652::bigint,9999999999::bigint);
    decode   
 ------------
  9999999999
 (1 row)
 
-select decode(NULL, 2147483651::bigint, 2147483650::bigint, NULL,2147483651::bigint);
+select public.decode(NULL, 2147483651::bigint, 2147483650::bigint, NULL,2147483651::bigint);
    decode   
 ------------
  2147483651
 (1 row)
 
-select decode(NULL, 2147483651::bigint, 2147483650::bigint, 2147483652::bigint,2147483651::bigint);
+select public.decode(NULL, 2147483651::bigint, 2147483650::bigint, 2147483652::bigint,2147483651::bigint);
  decode 
 --------
        
 (1 row)
 
-select decode(NULL, 2147483651::bigint, 2147483650::bigint, NULL,2147483651::bigint,9999999999::bigint);
+select public.decode(NULL, 2147483651::bigint, 2147483650::bigint, NULL,2147483651::bigint,9999999999::bigint);
    decode   
 ------------
  2147483651
 (1 row)
 
-select decode(NULL, 2147483651::bigint, 2147483650::bigint, 2147483652::bigint,2147483651::bigint,9999999999::bigint);
+select public.decode(NULL, 2147483651::bigint, 2147483650::bigint, 2147483652::bigint,2147483651::bigint,9999999999::bigint);
    decode   
 ------------
  9999999999
 (1 row)
 
 -- For type 'numeric'
-select decode(12.001::numeric(5,3), 12.001::numeric(5,3),214748.3650::numeric(10,4));
+select public.decode(12.001::numeric(5,3), 12.001::numeric(5,3),214748.3650::numeric(10,4));
    decode    
 -------------
  214748.3650
 (1 row)
 
-select decode(12.003::numeric(5,3), 12.001::numeric(5,3),214748.3650::numeric(10,4));
+select public.decode(12.003::numeric(5,3), 12.001::numeric(5,3),214748.3650::numeric(10,4));
  decode 
 --------
        
 (1 row)
 
-select decode(12.001::numeric(5,3), 12.001::numeric(5,3),214748.3650::numeric(10,4),999999.9999::numeric(10,4));
+select public.decode(12.001::numeric(5,3), 12.001::numeric(5,3),214748.3650::numeric(10,4),999999.9999::numeric(10,4));
    decode    
 -------------
  214748.3650
 (1 row)
 
-select decode(12.003::numeric(5,3), 12.001::numeric(5,3),214748.3650::numeric(10,4),999999.9999::numeric(10,4));
+select public.decode(12.003::numeric(5,3), 12.001::numeric(5,3),214748.3650::numeric(10,4),999999.9999::numeric(10,4));
    decode    
 -------------
  999999.9999
 (1 row)
 
-select decode(12.001::numeric(5,3), 12.001::numeric(5,3),214748.3650::numeric(10,4),12.002::numeric(5,3),214748.3651::numeric(10,4));
+select public.decode(12.001::numeric(5,3), 12.001::numeric(5,3),214748.3650::numeric(10,4),12.002::numeric(5,3),214748.3651::numeric(10,4));
    decode    
 -------------
  214748.3650
 (1 row)
 
-select decode(12.004::numeric(5,3), 12.001::numeric(5,3),214748.3650::numeric(10,4),12.002::numeric(5,3),214748.3651::numeric(10,4));
+select public.decode(12.004::numeric(5,3), 12.001::numeric(5,3),214748.3650::numeric(10,4),12.002::numeric(5,3),214748.3651::numeric(10,4));
  decode 
 --------
        
 (1 row)
 
-select decode(12.001::numeric(5,3), 12.001::numeric(5,3),214748.3650::numeric(10,4),12.002::numeric(5,3),214748.3651::numeric(10,4),999999.9999::numeric(10,4));
+select public.decode(12.001::numeric(5,3), 12.001::numeric(5,3),214748.3650::numeric(10,4),12.002::numeric(5,3),214748.3651::numeric(10,4),999999.9999::numeric(10,4));
    decode    
 -------------
  214748.3650
 (1 row)
 
-select decode(12.004::numeric(5,3), 12.001::numeric(5,3),214748.3650::numeric(10,4),12.002::numeric(5,3),214748.3651::numeric(10,4),999999.9999::numeric(10,4));
+select public.decode(12.004::numeric(5,3), 12.001::numeric(5,3),214748.3650::numeric(10,4),12.002::numeric(5,3),214748.3651::numeric(10,4),999999.9999::numeric(10,4));
    decode    
 -------------
  999999.9999
 (1 row)
 
-select decode(12.001::numeric(5,3), 12.001::numeric(5,3),214748.3650::numeric(10,4),12.002::numeric(5,3),214748.3651::numeric(10,4), 12.003::numeric(5,3), 214748.3652::numeric(10,4));
+select public.decode(12.001::numeric(5,3), 12.001::numeric(5,3),214748.3650::numeric(10,4),12.002::numeric(5,3),214748.3651::numeric(10,4), 12.003::numeric(5,3), 214748.3652::numeric(10,4));
    decode    
 -------------
  214748.3650
 (1 row)
 
-select decode(12.004::numeric(5,3), 12.001::numeric(5,3),214748.3650::numeric(10,4),12.002::numeric(5,3),214748.3651::numeric(10,4), 12.003::numeric(5,3), 214748.3652::numeric(10,4));
+select public.decode(12.004::numeric(5,3), 12.001::numeric(5,3),214748.3650::numeric(10,4),12.002::numeric(5,3),214748.3651::numeric(10,4), 12.003::numeric(5,3), 214748.3652::numeric(10,4));
  decode 
 --------
        
 (1 row)
 
-select decode(12.001::numeric(5,3), 12.001::numeric(5,3),214748.3650::numeric(10,4),12.002::numeric(5,3),214748.3651::numeric(10,4), 12.003::numeric(5,3), 214748.3652::numeric(10,4),999999.9999::numeric(10,4));
+select public.decode(12.001::numeric(5,3), 12.001::numeric(5,3),214748.3650::numeric(10,4),12.002::numeric(5,3),214748.3651::numeric(10,4), 12.003::numeric(5,3), 214748.3652::numeric(10,4),999999.9999::numeric(10,4));
    decode    
 -------------
  214748.3650
 (1 row)
 
-select decode(12.004::numeric(5,3), 12.001::numeric(5,3),214748.3650::numeric(10,4),12.002::numeric(5,3),214748.3651::numeric(10,4), 12.003::numeric(5,3), 214748.3652::numeric(10,4),999999.9999::numeric(10,4));
+select public.decode(12.004::numeric(5,3), 12.001::numeric(5,3),214748.3650::numeric(10,4),12.002::numeric(5,3),214748.3651::numeric(10,4), 12.003::numeric(5,3), 214748.3652::numeric(10,4),999999.9999::numeric(10,4));
    decode    
 -------------
  999999.9999
 (1 row)
 
-select decode(NULL, 12.001::numeric(5,3), 214748.3650::numeric(10,4), NULL,214748.3651::numeric(10,4));
+select public.decode(NULL, 12.001::numeric(5,3), 214748.3650::numeric(10,4), NULL,214748.3651::numeric(10,4));
    decode    
 -------------
  214748.3651
 (1 row)
 
-select decode(NULL, 12.001::numeric(5,3), 214748.3650::numeric(10,4), 12.002::numeric(5,3),214748.3651::numeric(10,4));
+select public.decode(NULL, 12.001::numeric(5,3), 214748.3650::numeric(10,4), 12.002::numeric(5,3),214748.3651::numeric(10,4));
  decode 
 --------
        
 (1 row)
 
-select decode(NULL, 12.001::numeric(5,3), 214748.3650::numeric(10,4), NULL,214748.3651::numeric(10,4),999999.9999::numeric(10,4));
+select public.decode(NULL, 12.001::numeric(5,3), 214748.3650::numeric(10,4), NULL,214748.3651::numeric(10,4),999999.9999::numeric(10,4));
    decode    
 -------------
  214748.3651
 (1 row)
 
-select decode(NULL, 12.001::numeric(5,3), 214748.3650::numeric(10,4), 12.002::numeric(5,3),214748.3651::numeric(10,4),999999.9999::numeric(10,4));
+select public.decode(NULL, 12.001::numeric(5,3), 214748.3650::numeric(10,4), 12.002::numeric(5,3),214748.3651::numeric(10,4),999999.9999::numeric(10,4));
    decode    
 -------------
  999999.9999
 (1 row)
 
 --For type 'date'
-select decode('2020-01-01'::date, '2020-01-01'::date,'2012-12-20'::date);
-   decode   
-------------
- 2012-12-20
+select public.decode('2020-01-01'::date, '2020-01-01'::date,'2012-12-20'::date);
+       decode        
+---------------------
+ 2012-12-20 00:00:00
 (1 row)
 
-select decode('2020-01-03'::date, '2020-01-01'::date,'2012-12-20'::date);
+select public.decode('2020-01-03'::date, '2020-01-01'::date,'2012-12-20'::date);
  decode 
 --------
  
 (1 row)
 
-select decode('2020-01-01'::date, '2020-01-01'::date,'2012-12-20'::date,'2012-12-21'::date);
-   decode   
-------------
- 2012-12-20
+select public.decode('2020-01-01'::date, '2020-01-01'::date,'2012-12-20'::date,'2012-12-21'::date);
+       decode        
+---------------------
+ 2012-12-20 00:00:00
 (1 row)
 
-select decode('2020-01-03'::date, '2020-01-01'::date,'2012-12-20'::date,'2012-12-21'::date);
-   decode   
-------------
- 2012-12-21
+select public.decode('2020-01-03'::date, '2020-01-01'::date,'2012-12-20'::date,'2012-12-21'::date);
+       decode        
+---------------------
+ 2012-12-21 00:00:00
 (1 row)
 
-select decode('2020-01-01'::date, '2020-01-01'::date,'2012-12-20'::date,'2020-01-02'::date,'2012-12-21'::date);
-   decode   
-------------
- 2012-12-20
+select public.decode('2020-01-01'::date, '2020-01-01'::date,'2012-12-20'::date,'2020-01-02'::date,'2012-12-21'::date);
+       decode        
+---------------------
+ 2012-12-20 00:00:00
 (1 row)
 
-select decode('2020-01-04'::date, '2020-01-01'::date,'2012-12-20'::date,'2020-01-02'::date,'2012-12-21'::date);
+select public.decode('2020-01-04'::date, '2020-01-01'::date,'2012-12-20'::date,'2020-01-02'::date,'2012-12-21'::date);
  decode 
 --------
  
 (1 row)
 
-select decode('2020-01-01'::date, '2020-01-01'::date,'2012-12-20'::date,'2020-01-02'::date,'2012-12-21'::date,'2012-12-31'::date);
-   decode   
-------------
- 2012-12-20
+select public.decode('2020-01-01'::date, '2020-01-01'::date,'2012-12-20'::date,'2020-01-02'::date,'2012-12-21'::date,'2012-12-31'::date);
+       decode        
+---------------------
+ 2012-12-20 00:00:00
 (1 row)
 
-select decode('2020-01-04'::date, '2020-01-01'::date,'2012-12-20'::date,'2020-01-02'::date,'2012-12-21'::date,'2012-12-31'::date);
-   decode   
-------------
- 2012-12-31
+select public.decode('2020-01-04'::date, '2020-01-01'::date,'2012-12-20'::date,'2020-01-02'::date,'2012-12-21'::date,'2012-12-31'::date);
+       decode        
+---------------------
+ 2012-12-31 00:00:00
 (1 row)
 
-select decode('2020-01-01'::date, '2020-01-01'::date,'2012-12-20'::date,'2020-01-02'::date,'2012-12-21'::date, '2020-01-03'::date, '2012-12-31'::date);
-   decode   
-------------
- 2012-12-20
+select public.decode('2020-01-01'::date, '2020-01-01'::date,'2012-12-20'::date,'2020-01-02'::date,'2012-12-21'::date, '2020-01-03'::date, '2012-12-31'::date);
+       decode        
+---------------------
+ 2012-12-20 00:00:00
 (1 row)
 
-select decode('2020-01-04'::date, '2020-01-01'::date,'2012-12-20'::date,'2020-01-02'::date,'2012-12-21'::date, '2020-01-03'::date, '2012-12-31'::date);
+select public.decode('2020-01-04'::date, '2020-01-01'::date,'2012-12-20'::date,'2020-01-02'::date,'2012-12-21'::date, '2020-01-03'::date, '2012-12-31'::date);
  decode 
 --------
  
 (1 row)
 
-select decode('2020-01-01'::date, '2020-01-01'::date,'2012-12-20'::date,'2020-01-02'::date,'2012-12-21'::date, '2020-01-03'::date, '2012-12-31'::date,'2013-01-01'::date);
-   decode   
-------------
- 2012-12-20
+select public.decode('2020-01-01'::date, '2020-01-01'::date,'2012-12-20'::date,'2020-01-02'::date,'2012-12-21'::date, '2020-01-03'::date, '2012-12-31'::date,'2013-01-01'::date);
+       decode        
+---------------------
+ 2012-12-20 00:00:00
 (1 row)
 
-select decode('2020-01-04'::date, '2020-01-01'::date,'2012-12-20'::date,'2020-01-02'::date,'2012-12-21'::date, '2020-01-03'::date, '2012-12-31'::date,'2013-01-01'::date);
-   decode   
-------------
- 2013-01-01
+select public.decode('2020-01-04'::date, '2020-01-01'::date,'2012-12-20'::date,'2020-01-02'::date,'2012-12-21'::date, '2020-01-03'::date, '2012-12-31'::date,'2013-01-01'::date);
+       decode        
+---------------------
+ 2013-01-01 00:00:00
 (1 row)
 
-select decode(NULL, '2020-01-01'::date, '2012-12-20'::date, NULL,'2012-12-21'::date);
-   decode   
-------------
- 2012-12-21
+select public.decode(NULL, '2020-01-01'::date, '2012-12-20'::date, NULL,'2012-12-21'::date);
+       decode        
+---------------------
+ 2012-12-21 00:00:00
 (1 row)
 
-select decode(NULL, '2020-01-01'::date, '2012-12-20'::date, '2020-01-02'::date,'2012-12-21'::date);
+select public.decode(NULL, '2020-01-01'::date, '2012-12-20'::date, '2020-01-02'::date,'2012-12-21'::date);
  decode 
 --------
  
 (1 row)
 
-select decode(NULL, '2020-01-01'::date, '2012-12-20'::date, NULL,'2012-12-21'::date,'2012-12-31'::date);
-   decode   
-------------
- 2012-12-21
+select public.decode(NULL, '2020-01-01'::date, '2012-12-20'::date, NULL,'2012-12-21'::date,'2012-12-31'::date);
+       decode        
+---------------------
+ 2012-12-21 00:00:00
 (1 row)
 
-select decode(NULL, '2020-01-01'::date, '2012-12-20'::date, '2020-01-02'::date,'2012-12-21'::date,'2012-12-31'::date);
-   decode   
-------------
- 2012-12-31
+select public.decode(NULL, '2020-01-01'::date, '2012-12-20'::date, '2020-01-02'::date,'2012-12-21'::date,'2012-12-31'::date);
+       decode        
+---------------------
+ 2012-12-31 00:00:00
 (1 row)
 
 -- For type 'time'
-select decode('01:00:01'::time, '01:00:01'::time,'09:00:00'::time);
+select public.decode('01:00:01'::time, '01:00:01'::time,'09:00:00'::time);
   decode  
 ----------
  09:00:00
 (1 row)
 
-select decode('01:00:03'::time, '01:00:01'::time,'09:00:00'::time);
+select public.decode('01:00:03'::time, '01:00:01'::time,'09:00:00'::time);
  decode 
 --------
  
 (1 row)
 
-select decode('01:00:01'::time, '01:00:01'::time,'09:00:00'::time,'00:00:00'::time);
+select public.decode('01:00:01'::time, '01:00:01'::time,'09:00:00'::time,'00:00:00'::time);
   decode  
 ----------
  09:00:00
 (1 row)
 
-select decode('01:00:03'::time, '01:00:01'::time,'09:00:00'::time,'00:00:00'::time);
+select public.decode('01:00:03'::time, '01:00:01'::time,'09:00:00'::time,'00:00:00'::time);
   decode  
 ----------
  00:00:00
 (1 row)
 
-select decode('01:00:01'::time, '01:00:01'::time,'09:00:00'::time,'01:00:02'::time,'12:00:00'::time);
+select public.decode('01:00:01'::time, '01:00:01'::time,'09:00:00'::time,'01:00:02'::time,'12:00:00'::time);
   decode  
 ----------
  09:00:00
 (1 row)
 
-select decode('01:00:04'::time, '01:00:01'::time,'09:00:00'::time,'01:00:02'::time,'12:00:00'::time);
+select public.decode('01:00:04'::time, '01:00:01'::time,'09:00:00'::time,'01:00:02'::time,'12:00:00'::time);
  decode 
 --------
  
 (1 row)
 
-select decode('01:00:01'::time, '01:00:01'::time,'09:00:00'::time,'01:00:02'::time,'12:00:00'::time,'00:00:00'::time);
+select public.decode('01:00:01'::time, '01:00:01'::time,'09:00:00'::time,'01:00:02'::time,'12:00:00'::time,'00:00:00'::time);
   decode  
 ----------
  09:00:00
 (1 row)
 
-select decode('01:00:04'::time, '01:00:01'::time,'09:00:00'::time,'01:00:01'::time,'12:00:00'::time,'00:00:00'::time);
+select public.decode('01:00:04'::time, '01:00:01'::time,'09:00:00'::time,'01:00:01'::time,'12:00:00'::time,'00:00:00'::time);
   decode  
 ----------
  00:00:00
 (1 row)
 
-select decode('01:00:01'::time, '01:00:01'::time,'09:00:00'::time,'01:00:02'::time,'12:00:00'::time, '01:00:03'::time, '15:00:00'::time);
+select public.decode('01:00:01'::time, '01:00:01'::time,'09:00:00'::time,'01:00:02'::time,'12:00:00'::time, '01:00:03'::time, '15:00:00'::time);
   decode  
 ----------
  09:00:00
 (1 row)
 
-select decode('01:00:04'::time, '01:00:01'::time,'09:00:00'::time,'01:00:02'::time,'12:00:00'::time, '01:00:03'::time, '15:00:00'::time);
+select public.decode('01:00:04'::time, '01:00:01'::time,'09:00:00'::time,'01:00:02'::time,'12:00:00'::time, '01:00:03'::time, '15:00:00'::time);
  decode 
 --------
  
 (1 row)
 
-select decode('01:00:01'::time, '01:00:01'::time,'09:00:00'::time,'01:00:02'::time,'12:00:00'::time, '01:00:03'::time, '15:00:00'::time,'00:00:00'::time);
+select public.decode('01:00:01'::time, '01:00:01'::time,'09:00:00'::time,'01:00:02'::time,'12:00:00'::time, '01:00:03'::time, '15:00:00'::time,'00:00:00'::time);
   decode  
 ----------
  09:00:00
 (1 row)
 
-select decode('01:00:04'::time, '01:00:01'::time,'09:00:00'::time,'01:00:02'::time,'12:00:00'::time, '01:00:03'::time, '15:00:00'::time,'00:00:00'::time);
+select public.decode('01:00:04'::time, '01:00:01'::time,'09:00:00'::time,'01:00:02'::time,'12:00:00'::time, '01:00:03'::time, '15:00:00'::time,'00:00:00'::time);
   decode  
 ----------
  00:00:00
 (1 row)
 
-select decode(NULL, '01:00:01'::time, '09:00:00'::time, NULL,'12:00:00'::time);
+select public.decode(NULL, '01:00:01'::time, '09:00:00'::time, NULL,'12:00:00'::time);
   decode  
 ----------
  12:00:00
 (1 row)
 
-select decode(NULL, '01:00:01'::time, '09:00:00'::time, '01:00:02'::time,'12:00:00'::time);
+select public.decode(NULL, '01:00:01'::time, '09:00:00'::time, '01:00:02'::time,'12:00:00'::time);
  decode 
 --------
  
 (1 row)
 
-select decode(NULL, '01:00:01'::time, '09:00:00'::time, NULL,'12:00:00'::time,'00:00:00'::time);
+select public.decode(NULL, '01:00:01'::time, '09:00:00'::time, NULL,'12:00:00'::time,'00:00:00'::time);
   decode  
 ----------
  12:00:00
 (1 row)
 
-select decode(NULL, '01:00:01'::time, '09:00:00'::time, '01:00:02'::time,'12:00:00'::time,'00:00:00'::time);
+select public.decode(NULL, '01:00:01'::time, '09:00:00'::time, '01:00:02'::time,'12:00:00'::time,'00:00:00'::time);
   decode  
 ----------
  00:00:00
 (1 row)
 
 -- For type 'timestamp'
-select decode('2020-01-01 01:00:01'::timestamp, '2020-01-01 01:00:01'::timestamp,'2012-12-20 09:00:00'::timestamp);
+select public.decode('2020-01-01 01:00:01'::timestamp, '2020-01-01 01:00:01'::timestamp,'2012-12-20 09:00:00'::timestamp);
        decode        
 ---------------------
  2012-12-20 09:00:00
 (1 row)
 
-select decode('2020-01-03 01:00:01'::timestamp, '2020-01-01 01:00:01'::timestamp,'2012-12-20 09:00:00'::timestamp);
+select public.decode('2020-01-03 01:00:01'::timestamp, '2020-01-01 01:00:01'::timestamp,'2012-12-20 09:00:00'::timestamp);
  decode 
 --------
  
 (1 row)
 
-select decode('2020-01-01 01:00:01'::timestamp, '2020-01-01 01:00:01'::timestamp,'2012-12-20 09:00:00'::timestamp,'2012-12-20 00:00:00'::timestamp);
+select public.decode('2020-01-01 01:00:01'::timestamp, '2020-01-01 01:00:01'::timestamp,'2012-12-20 09:00:00'::timestamp,'2012-12-20 00:00:00'::timestamp);
        decode        
 ---------------------
  2012-12-20 09:00:00
 (1 row)
 
-select decode('2020-01-03 01:00:01'::timestamp, '2020-01-01 01:00:01'::timestamp,'2012-12-20 09:00:00'::timestamp,'2012-12-20 00:00:00'::timestamp);
+select public.decode('2020-01-03 01:00:01'::timestamp, '2020-01-01 01:00:01'::timestamp,'2012-12-20 09:00:00'::timestamp,'2012-12-20 00:00:00'::timestamp);
        decode        
 ---------------------
  2012-12-20 00:00:00
 (1 row)
 
-select decode('2020-01-01 01:00:01'::timestamp, '2020-01-01 01:00:01'::timestamp,'2012-12-20 09:00:00'::timestamp,'2020-01-02 01:00:01'::timestamp,'2012-12-20 12:00:00'::timestamp);
+select public.decode('2020-01-01 01:00:01'::timestamp, '2020-01-01 01:00:01'::timestamp,'2012-12-20 09:00:00'::timestamp,'2020-01-02 01:00:01'::timestamp,'2012-12-20 12:00:00'::timestamp);
        decode        
 ---------------------
  2012-12-20 09:00:00
 (1 row)
 
-select decode('2020-01-04 01:00:01'::timestamp, '2020-01-01 01:00:01'::timestamp,'2012-12-20 09:00:00'::timestamp,'2020-01-02 01:00:01'::timestamp,'2012-12-20 12:00:00'::timestamp);
+select public.decode('2020-01-04 01:00:01'::timestamp, '2020-01-01 01:00:01'::timestamp,'2012-12-20 09:00:00'::timestamp,'2020-01-02 01:00:01'::timestamp,'2012-12-20 12:00:00'::timestamp);
  decode 
 --------
  
 (1 row)
 
-select decode('2020-01-01 01:00:01'::timestamp, '2020-01-01 01:00:01'::timestamp,'2012-12-20 09:00:00'::timestamp,'2020-01-02 01:00:01'::timestamp,'2012-12-20 12:00:00'::timestamp,'2012-12-20 00:00:00'::timestamp);
+select public.decode('2020-01-01 01:00:01'::timestamp, '2020-01-01 01:00:01'::timestamp,'2012-12-20 09:00:00'::timestamp,'2020-01-02 01:00:01'::timestamp,'2012-12-20 12:00:00'::timestamp,'2012-12-20 00:00:00'::timestamp);
        decode        
 ---------------------
  2012-12-20 09:00:00
 (1 row)
 
-select decode('2020-01-04 01:00:01'::timestamp, '2020-01-01 01:00:01'::timestamp,'2012-12-20 09:00:00'::timestamp,'2020-01-02 01:00:01'::timestamp,'2012-12-20 12:00:00'::timestamp,'2012-12-20 00:00:00'::timestamp);
+select public.decode('2020-01-04 01:00:01'::timestamp, '2020-01-01 01:00:01'::timestamp,'2012-12-20 09:00:00'::timestamp,'2020-01-02 01:00:01'::timestamp,'2012-12-20 12:00:00'::timestamp,'2012-12-20 00:00:00'::timestamp);
        decode        
 ---------------------
  2012-12-20 00:00:00
 (1 row)
 
-select decode('2020-01-01 01:00:01'::timestamp, '2020-01-01 01:00:01'::timestamp,'2012-12-20 09:00:00'::timestamp,'2020-01-02 01:00:01'::timestamp,'2012-12-20 12:00:00'::timestamp, '2020-01-03 01:00:01'::timestamp, '2012-12-20 15:00:00'::timestamp);
+select public.decode('2020-01-01 01:00:01'::timestamp, '2020-01-01 01:00:01'::timestamp,'2012-12-20 09:00:00'::timestamp,'2020-01-02 01:00:01'::timestamp,'2012-12-20 12:00:00'::timestamp, '2020-01-03 01:00:01'::timestamp, '2012-12-20 15:00:00'::timestamp);
        decode        
 ---------------------
  2012-12-20 09:00:00
 (1 row)
 
-select decode('2020-01-04 01:00:01'::timestamp, '2020-01-01 01:00:01'::timestamp,'2012-12-20 09:00:00'::timestamp,'2020-01-02 01:00:01'::timestamp,'2012-12-20 12:00:00'::timestamp, '2020-01-03 01:00:01'::timestamp, '2012-12-20 15:00:00'::timestamp);
+select public.decode('2020-01-04 01:00:01'::timestamp, '2020-01-01 01:00:01'::timestamp,'2012-12-20 09:00:00'::timestamp,'2020-01-02 01:00:01'::timestamp,'2012-12-20 12:00:00'::timestamp, '2020-01-03 01:00:01'::timestamp, '2012-12-20 15:00:00'::timestamp);
  decode 
 --------
  
 (1 row)
 
-select decode('2020-01-01 01:00:01'::timestamp, '2020-01-01 01:00:01'::timestamp,'2012-12-20 09:00:00'::timestamp,'2020-01-02 01:00:01'::timestamp,'2012-12-20 12:00:00'::timestamp, '2020-01-03 01:00:01'::timestamp, '2012-12-20 15:00:00'::timestamp,'2012-12-20 00:00:00'::timestamp);
+select public.decode('2020-01-01 01:00:01'::timestamp, '2020-01-01 01:00:01'::timestamp,'2012-12-20 09:00:00'::timestamp,'2020-01-02 01:00:01'::timestamp,'2012-12-20 12:00:00'::timestamp, '2020-01-03 01:00:01'::timestamp, '2012-12-20 15:00:00'::timestamp,'2012-12-20 00:00:00'::timestamp);
        decode        
 ---------------------
  2012-12-20 09:00:00
 (1 row)
 
-select decode('2020-01-04 01:00:01'::timestamp, '2020-01-01 01:00:01'::timestamp,'2012-12-20 09:00:00'::timestamp,'2020-01-02 01:00:01'::timestamp,'2012-12-20 12:00:00'::timestamp, '2020-01-03 01:00:01'::timestamp, '2012-12-20 15:00:00'::timestamp,'2012-12-20 00:00:00'::timestamp);
+select public.decode('2020-01-04 01:00:01'::timestamp, '2020-01-01 01:00:01'::timestamp,'2012-12-20 09:00:00'::timestamp,'2020-01-02 01:00:01'::timestamp,'2012-12-20 12:00:00'::timestamp, '2020-01-03 01:00:01'::timestamp, '2012-12-20 15:00:00'::timestamp,'2012-12-20 00:00:00'::timestamp);
        decode        
 ---------------------
  2012-12-20 00:00:00
 (1 row)
 
-select decode(NULL, '2020-01-01 01:00:01'::timestamp, '2012-12-20 09:00:00'::timestamp, NULL,'2012-12-20 12:00:00'::timestamp);
+select public.decode(NULL, '2020-01-01 01:00:01'::timestamp, '2012-12-20 09:00:00'::timestamp, NULL,'2012-12-20 12:00:00'::timestamp);
        decode        
 ---------------------
  2012-12-20 12:00:00
 (1 row)
 
-select decode(NULL, '2020-01-01 01:00:01'::timestamp, '2012-12-20 09:00:00'::timestamp, '2020-01-02 01:00:01'::timestamp,'2012-12-20 12:00:00'::timestamp);
+select public.decode(NULL, '2020-01-01 01:00:01'::timestamp, '2012-12-20 09:00:00'::timestamp, '2020-01-02 01:00:01'::timestamp,'2012-12-20 12:00:00'::timestamp);
  decode 
 --------
  
 (1 row)
 
-select decode(NULL, '2020-01-01 01:00:01'::timestamp, '2012-12-20 09:00:00'::timestamp, NULL,'2012-12-20 12:00:00'::timestamp,'2012-12-20 00:00:00'::timestamp);
+select public.decode(NULL, '2020-01-01 01:00:01'::timestamp, '2012-12-20 09:00:00'::timestamp, NULL,'2012-12-20 12:00:00'::timestamp,'2012-12-20 00:00:00'::timestamp);
        decode        
 ---------------------
  2012-12-20 12:00:00
 (1 row)
 
-select decode(NULL, '2020-01-01 01:00:01'::timestamp, '2012-12-20 09:00:00'::timestamp, '2020-01-02 01:00:01'::timestamp,'2012-12-20 12:00:00'::timestamp,'2012-12-20 00:00:00'::timestamp);
+select public.decode(NULL, '2020-01-01 01:00:01'::timestamp, '2012-12-20 09:00:00'::timestamp, '2020-01-02 01:00:01'::timestamp,'2012-12-20 12:00:00'::timestamp,'2012-12-20 00:00:00'::timestamp);
        decode        
 ---------------------
  2012-12-20 00:00:00
 (1 row)
 
 -- For type 'timestamptz'
-select decode('2020-01-01 01:00:01-08'::timestamptz, '2020-01-01 01:00:01-08'::timestamptz,'2012-12-20 09:00:00-08'::timestamptz);
+select public.decode('2020-01-01 01:00:01-08'::timestamptz, '2020-01-01 01:00:01-08'::timestamptz,'2012-12-20 09:00:00-08'::timestamptz);
          decode         
 ------------------------
  2012-12-20 09:00:00-08
 (1 row)
 
-select decode('2020-01-03 01:00:01-08'::timestamptz, '2020-01-01 01:00:01-08'::timestamptz,'2012-12-20 09:00:00-08'::timestamptz);
+select public.decode('2020-01-03 01:00:01-08'::timestamptz, '2020-01-01 01:00:01-08'::timestamptz,'2012-12-20 09:00:00-08'::timestamptz);
  decode 
 --------
  
 (1 row)
 
-select decode('2020-01-01 01:00:01-08'::timestamptz, '2020-01-01 01:00:01-08'::timestamptz,'2012-12-20 09:00:00-08'::timestamptz,'2012-12-20 00:00:00-08'::timestamptz);
+select public.decode('2020-01-01 01:00:01-08'::timestamptz, '2020-01-01 01:00:01-08'::timestamptz,'2012-12-20 09:00:00-08'::timestamptz,'2012-12-20 00:00:00-08'::timestamptz);
          decode         
 ------------------------
  2012-12-20 09:00:00-08
 (1 row)
 
-select decode('2020-01-03 01:00:01-08'::timestamptz, '2020-01-01 01:00:01-08'::timestamptz,'2012-12-20 09:00:00-08'::timestamptz,'2012-12-20 00:00:00-08'::timestamptz);
+select public.decode('2020-01-03 01:00:01-08'::timestamptz, '2020-01-01 01:00:01-08'::timestamptz,'2012-12-20 09:00:00-08'::timestamptz,'2012-12-20 00:00:00-08'::timestamptz);
          decode         
 ------------------------
  2012-12-20 00:00:00-08
 (1 row)
 
-select decode('2020-01-01 01:00:01-08'::timestamptz, '2020-01-01 01:00:01-08'::timestamptz,'2012-12-20 09:00:00-08'::timestamptz,'2020-01-02 01:00:01-08'::timestamptz,'2012-12-20 12:00:00-08'::timestamptz);
+select public.decode('2020-01-01 01:00:01-08'::timestamptz, '2020-01-01 01:00:01-08'::timestamptz,'2012-12-20 09:00:00-08'::timestamptz,'2020-01-02 01:00:01-08'::timestamptz,'2012-12-20 12:00:00-08'::timestamptz);
          decode         
 ------------------------
  2012-12-20 09:00:00-08
 (1 row)
 
-select decode('2020-01-04 01:00:01-08'::timestamptz, '2020-01-01 01:00:01-08'::timestamptz,'2012-12-20 09:00:00-08'::timestamptz,'2020-01-02 01:00:01-08'::timestamptz,'2012-12-20 12:00:00-08'::timestamptz);
+select public.decode('2020-01-04 01:00:01-08'::timestamptz, '2020-01-01 01:00:01-08'::timestamptz,'2012-12-20 09:00:00-08'::timestamptz,'2020-01-02 01:00:01-08'::timestamptz,'2012-12-20 12:00:00-08'::timestamptz);
  decode 
 --------
  
 (1 row)
 
-select decode('2020-01-01 01:00:01-08'::timestamptz, '2020-01-01 01:00:01-08'::timestamptz,'2012-12-20 09:00:00-08'::timestamptz,'2020-01-02 01:00:01-08'::timestamptz,'2012-12-20 12:00:00-08'::timestamptz,'2012-12-20 00:00:00-08'::timestamptz);
+select public.decode('2020-01-01 01:00:01-08'::timestamptz, '2020-01-01 01:00:01-08'::timestamptz,'2012-12-20 09:00:00-08'::timestamptz,'2020-01-02 01:00:01-08'::timestamptz,'2012-12-20 12:00:00-08'::timestamptz,'2012-12-20 00:00:00-08'::timestamptz);
          decode         
 ------------------------
  2012-12-20 09:00:00-08
 (1 row)
 
-select decode('2020-01-04 01:00:01-08'::timestamptz, '2020-01-01 01:00:01-08'::timestamptz,'2012-12-20 09:00:00-08'::timestamptz,'2020-01-02 01:00:01-08'::timestamptz,'2012-12-20 12:00:00-08'::timestamptz,'2012-12-20 00:00:00-08'::timestamptz);
+select public.decode('2020-01-04 01:00:01-08'::timestamptz, '2020-01-01 01:00:01-08'::timestamptz,'2012-12-20 09:00:00-08'::timestamptz,'2020-01-02 01:00:01-08'::timestamptz,'2012-12-20 12:00:00-08'::timestamptz,'2012-12-20 00:00:00-08'::timestamptz);
          decode         
 ------------------------
  2012-12-20 00:00:00-08
 (1 row)
 
-select decode('2020-01-01 01:00:01-08'::timestamptz, '2020-01-01 01:00:01-08'::timestamptz,'2012-12-20 09:00:00-08'::timestamptz,'2020-01-02 01:00:01-08'::timestamptz,'2012-12-20 12:00:00-08'::timestamptz, '2020-01-03 01:00:01-08'::timestamptz, '2012-12-20 15:00:00-08'::timestamptz);
+select public.decode('2020-01-01 01:00:01-08'::timestamptz, '2020-01-01 01:00:01-08'::timestamptz,'2012-12-20 09:00:00-08'::timestamptz,'2020-01-02 01:00:01-08'::timestamptz,'2012-12-20 12:00:00-08'::timestamptz, '2020-01-03 01:00:01-08'::timestamptz, '2012-12-20 15:00:00-08'::timestamptz);
          decode         
 ------------------------
  2012-12-20 09:00:00-08
 (1 row)
 
-select decode('2020-01-04 01:00:01-08'::timestamptz, '2020-01-01 01:00:01-08'::timestamptz,'2012-12-20 09:00:00-08'::timestamptz,'2020-01-02 01:00:01-08'::timestamptz,'2012-12-20 12:00:00-08'::timestamptz, '2020-01-03 01:00:01-08'::timestamptz, '2012-12-20 15:00:00-08'::timestamptz);
+select public.decode('2020-01-04 01:00:01-08'::timestamptz, '2020-01-01 01:00:01-08'::timestamptz,'2012-12-20 09:00:00-08'::timestamptz,'2020-01-02 01:00:01-08'::timestamptz,'2012-12-20 12:00:00-08'::timestamptz, '2020-01-03 01:00:01-08'::timestamptz, '2012-12-20 15:00:00-08'::timestamptz);
  decode 
 --------
  
 (1 row)
 
-select decode('2020-01-01 01:00:01-08'::timestamptz, '2020-01-01 01:00:01-08'::timestamptz,'2012-12-20 09:00:00-08'::timestamptz,'2020-01-02 01:00:01-08'::timestamptz,'2012-12-20 12:00:00-08'::timestamptz, '2020-01-03 01:00:01-08'::timestamptz, '2012-12-20 15:00:00-08'::timestamptz,'2012-12-20 00:00:00-08'::timestamptz);
+select public.decode('2020-01-01 01:00:01-08'::timestamptz, '2020-01-01 01:00:01-08'::timestamptz,'2012-12-20 09:00:00-08'::timestamptz,'2020-01-02 01:00:01-08'::timestamptz,'2012-12-20 12:00:00-08'::timestamptz, '2020-01-03 01:00:01-08'::timestamptz, '2012-12-20 15:00:00-08'::timestamptz,'2012-12-20 00:00:00-08'::timestamptz);
          decode         
 ------------------------
  2012-12-20 09:00:00-08
 (1 row)
 
-select decode(4, 1,'2012-12-20 09:00:00-08'::timestamptz,2,'2012-12-20 12:00:00-08'::timestamptz, 3, '2012-12-20 15:00:00-08'::timestamptz,'2012-12-20 00:00:00-08'::timestamptz);
+select public.decode(4, 1,'2012-12-20 09:00:00-08'::timestamptz,2,'2012-12-20 12:00:00-08'::timestamptz, 3, '2012-12-20 15:00:00-08'::timestamptz,'2012-12-20 00:00:00-08'::timestamptz);
          decode         
 ------------------------
  2012-12-20 00:00:00-08
 (1 row)
 
-select decode(NULL, '2020-01-01 01:00:01-08'::timestamptz, '2012-12-20 09:00:00-08'::timestamptz, NULL,'2012-12-20 12:00:00-08'::timestamptz);
+select public.decode(NULL, '2020-01-01 01:00:01-08'::timestamptz, '2012-12-20 09:00:00-08'::timestamptz, NULL,'2012-12-20 12:00:00-08'::timestamptz);
          decode         
 ------------------------
  2012-12-20 12:00:00-08
 (1 row)
 
-select decode(NULL, '2020-01-01 01:00:01-08'::timestamptz, '2012-12-20 09:00:00-08'::timestamptz, '2020-01-02 01:00:01-08'::timestamptz,'2012-12-20 12:00:00-08'::timestamptz);
+select public.decode(NULL, '2020-01-01 01:00:01-08'::timestamptz, '2012-12-20 09:00:00-08'::timestamptz, '2020-01-02 01:00:01-08'::timestamptz,'2012-12-20 12:00:00-08'::timestamptz);
  decode 
 --------
  
 (1 row)
 
-select decode(NULL, '2020-01-01 01:00:01-08'::timestamptz, '2012-12-20 09:00:00-08'::timestamptz, NULL,'2012-12-20 12:00:00-08'::timestamptz,'2012-12-20 00:00:00-08'::timestamptz);
+select public.decode(NULL, '2020-01-01 01:00:01-08'::timestamptz, '2012-12-20 09:00:00-08'::timestamptz, NULL,'2012-12-20 12:00:00-08'::timestamptz,'2012-12-20 00:00:00-08'::timestamptz);
          decode         
 ------------------------
  2012-12-20 12:00:00-08
 (1 row)
 
-select decode(NULL, '2020-01-01 01:00:01-08'::timestamptz, '2012-12-20 09:00:00-08'::timestamptz, '2020-01-02 01:00:01-08'::timestamptz,'2012-12-20 12:00:00-08'::timestamptz,'2012-12-20 00:00:00-08'::timestamptz);
+select public.decode(NULL, '2020-01-01 01:00:01-08'::timestamptz, '2012-12-20 09:00:00-08'::timestamptz, '2020-01-02 01:00:01-08'::timestamptz,'2012-12-20 12:00:00-08'::timestamptz,'2012-12-20 00:00:00-08'::timestamptz);
          decode         
 ------------------------
  2012-12-20 00:00:00-08
@@ -2259,15 +2289,17 @@ BEGIN
 	RETURN 5;
 END; 
 $$ LANGUAGE plpgsql;
-select decode(five(), 1, 'one', 2, 'two', 5, 'five');
+CREATE FUNCTION
+select public.decode(five(), 1, 'one', 2, 'two', 5, 'five');
  decode 
 --------
  five
 (1 row)
 
 DROP FUNCTION five();
+DROP FUNCTION
 -- Test case to check duplicate keys in search list
-select decode(1, 1, 'one', 2, 'two', 1, 'one-again') = 'one';
+select public.decode(1, 1, 'one', 2, 'two', 1, 'one-again') = 'one';
  ?column? 
 ----------
  t
@@ -2277,13 +2309,13 @@ select decode(1, 1, 'one', 2, 'two', 1, 'one-again') = 'one';
  * case of ambiguous key (1st argument) provided.
  */
 -- 1) succeed and return 'result-1'
-select decode('2012-01-01', '2012-01-01'::date,'result-1','2012-01-02', 'result-2');
+select public.decode('2012-01-01', '2012-01-01'::date,'result-1','2012-01-02', 'result-2');
   decode  
 ----------
  result-1
 (1 row)
 
-select decode('2012-01-01', '2012-01-01', 'result-1', '2012-02-01'::date, 'result-2');
+select public.decode('2012-01-01', '2012-01-01', 'result-1', '2012-02-01'::date, 'result-2');
   decode  
 ----------
  result-1
@@ -2377,6 +2409,7 @@ select pos,token from plvlex.tokens('select * from a.b.c join d ON x=y', true, t
 (10 rows)
 
 SET lc_numeric TO 'C';
+SET
 select to_char(22);
  to_char 
 ---------
@@ -2428,13 +2461,13 @@ select to_char(1234567890.12345);
 select to_char('4.00'::numeric);
  to_char 
 ---------
- 4
+ 4.00
 (1 row)
 
 select to_char('4.0010'::numeric);
  to_char 
 ---------
- 4.001
+ 4.0010
 (1 row)
 
 SELECT to_number('123'::text);
@@ -2637,6 +2670,7 @@ select dbms_assert.qualified_sql_name('aaa.bbb.ccc."aaaa""aaa"');
 
 select dbms_assert.qualified_sql_name('aaa.bbb.cc%c."aaaa""aaa"');
 ERROR:  string is not qualified SQL name
+CONTEXT:  referenced column: qualified_sql_name
 select dbms_assert.schema_name('dbms_assert');
  schema_name 
 -------------
@@ -2645,6 +2679,7 @@ select dbms_assert.schema_name('dbms_assert');
 
 select dbms_assert.schema_name('jabadabado');
 ERROR:  invalid schema name
+CONTEXT:  referenced column: schema_name
 select dbms_assert.simple_sql_name('"Aaa dghh shsh"');
  simple_sql_name 
 -----------------
@@ -2653,6 +2688,7 @@ select dbms_assert.simple_sql_name('"Aaa dghh shsh"');
 
 select dbms_assert.simple_sql_name('ajajaj -- ajaj');
 ERROR:  string is not simple SQL name
+CONTEXT:  referenced column: simple_sql_name
 select dbms_assert.object_name('pg_catalog.pg_class');
      object_name     
 ---------------------
@@ -2661,6 +2697,7 @@ select dbms_assert.object_name('pg_catalog.pg_class');
 
 select dbms_assert.object_name('dbms_assert.fooo');
 ERROR:  invalid object name
+CONTEXT:  referenced column: object_name
 select dbms_assert.enquote_literal(NULL);
  enquote_literal 
 -----------------
@@ -2687,29 +2724,40 @@ select dbms_assert.noop(NULL);
 
 select dbms_assert.qualified_sql_name(NULL);
 ERROR:  string is not qualified SQL name
+CONTEXT:  referenced column: qualified_sql_name
 select dbms_assert.qualified_sql_name(NULL);
 ERROR:  string is not qualified SQL name
+CONTEXT:  referenced column: qualified_sql_name
 select dbms_assert.schema_name(NULL);
 ERROR:  invalid schema name
+CONTEXT:  referenced column: schema_name
 select dbms_assert.schema_name(NULL);
 ERROR:  invalid schema name
+CONTEXT:  referenced column: schema_name
 select dbms_assert.simple_sql_name(NULL);
 ERROR:  string is not simple SQL name
+CONTEXT:  referenced column: simple_sql_name
 select dbms_assert.simple_sql_name(NULL);
 ERROR:  string is not simple SQL name
+CONTEXT:  referenced column: simple_sql_name
 select dbms_assert.object_name(NULL);
 ERROR:  invalid object name
+CONTEXT:  referenced column: object_name
 select dbms_assert.object_name(NULL);
 ERROR:  invalid object name
+CONTEXT:  referenced column: object_name
 select plunit.assert_true(NULL);
 ERROR:  plunit.assert_true exception
 DETAIL:  Plunit.assertation fails (assert_true).
+CONTEXT:  referenced column: assert_true
 select plunit.assert_true(1 = 2);
 ERROR:  plunit.assert_true exception
 DETAIL:  Plunit.assertation fails (assert_true).
+CONTEXT:  referenced column: assert_true
 select plunit.assert_true(1 = 2, 'one is not two');
 ERROR:  one is not two
 DETAIL:  Plunit.assertation fails (assert_true).
+CONTEXT:  referenced column: assert_true
 select plunit.assert_true(1 = 1);
  assert_true 
 -------------
@@ -2719,15 +2767,19 @@ select plunit.assert_true(1 = 1);
 select plunit.assert_false(1 = 1);
 ERROR:  plunit.assert_false exception
 DETAIL:  Plunit.assertation fails (assert_false).
+CONTEXT:  referenced column: assert_false
 select plunit.assert_false(1 = 1, 'trap is open');
 ERROR:  trap is open
 DETAIL:  Plunit.assertation fails (assert_false).
+CONTEXT:  referenced column: assert_false
 select plunit.assert_false(NULL);
 ERROR:  plunit.assert_false exception
 DETAIL:  Plunit.assertation fails (assert_false).
+CONTEXT:  referenced column: assert_false
 select plunit.assert_null(current_date);
 ERROR:  plunit.assert_null exception
 DETAIL:  Plunit.assertation fails (assert_null).
+CONTEXT:  referenced column: assert_null
 select plunit.assert_null(NULL::date);
  assert_null 
 -------------
@@ -2743,6 +2795,7 @@ select plunit.assert_not_null(current_date);
 select plunit.assert_not_null(NULL::date);
 ERROR:  plunit.assert_not_null exception
 DETAIL:  Plunit.assertation fails (assert_not_null).
+CONTEXT:  referenced column: assert_not_null
 select plunit.assert_equals('Pavel','Pa'||'vel');
  assert_equals 
 ---------------
@@ -2752,6 +2805,7 @@ select plunit.assert_equals('Pavel','Pa'||'vel');
 select plunit.assert_equals(current_date, current_date + 1, 'diff dates');
 ERROR:  diff dates
 DETAIL:  Plunit.assertation fails (assert_equals).
+CONTEXT:  referenced column: assert_equals
 select plunit.assert_equals(10.2, 10.3, 0.5);
  assert_equals 
 ---------------
@@ -2761,6 +2815,7 @@ select plunit.assert_equals(10.2, 10.3, 0.5);
 select plunit.assert_equals(10.2, 10.3, 0.01, 'attention some diff');
 ERROR:  attention some diff
 DETAIL:  Plunit.assertation fails (assert_equals).
+CONTEXT:  referenced column: assert_equals
 select plunit.assert_not_equals(current_date, current_date + 1, 'yestarday is today');
  assert_not_equals 
 -------------------
@@ -2770,9 +2825,11 @@ select plunit.assert_not_equals(current_date, current_date + 1, 'yestarday is to
 select plunit.fail();
 ERROR:  plunit.assert_fail exception
 DETAIL:  Plunit.assertation (assert_fail).
+CONTEXT:  referenced column: fail
 select plunit.fail('custom exception');
 ERROR:  custom exception
 DETAIL:  Plunit.assertation (assert_fail).
+CONTEXT:  referenced column: fail
 SELECT dump('Yellow dog'::text) ~ E'^Typ=25 Len=(\\d+): \\d+(,\\d+)*$' AS t;
  t 
 ---
@@ -2791,55 +2848,55 @@ SELECT dump('Yellow dog'::text, 17) ~ E'^Typ=25 Len=(\\d+): .(,.)*$' AS t;
  t
 (1 row)
 
-SELECT dump(10::int2) ~ E'^Typ=21 Len=2: \\d+(,\\d+){1}$' AS t;
+SELECT dump(10::int2) ~ E'^Typ=25 Len=6: \\d+(,\\d+){5}$' AS t;
  t 
 ---
  t
 (1 row)
 
-SELECT dump(10::int4) ~ E'^Typ=23 Len=4: \\d+(,\\d+){3}$' AS t;
+SELECT dump(10::int4) ~ E'^Typ=25 Len=6: \\d+(,\\d+){5}$' AS t;
  t 
 ---
  t
 (1 row)
 
-SELECT dump(10::int8) ~ E'^Typ=20 Len=8: \\d+(,\\d+){7}$' AS t;
+SELECT dump(10::int8) ~ E'^Typ=25 Len=6: \\d+(,\\d+){5}$' AS t;
  t 
 ---
  t
 (1 row)
 
-SELECT dump(10.23::float4) ~ E'^Typ=700 Len=4: \\d+(,\\d+){3}$' AS t;
+SELECT dump(10.23::float4) ~ E'^Typ=25 Len=9: \\d+(,\\d+){8}$' AS t;
  t 
 ---
  t
 (1 row)
 
-SELECT dump(10.23::float8) ~ E'^Typ=701 Len=8: \\d+(,\\d+){7}$' AS t;
+SELECT dump(10.23::float8) ~ E'^Typ=25 Len=9: \\d+(,\\d+){8}$' AS t;
  t 
 ---
  t
 (1 row)
 
-SELECT dump(10.23::numeric) ~ E'^Typ=1700 Len=(\\d+): \\d+(,\\d+)*$' AS t;
+SELECT dump(10.23::numeric) ~ E'^Typ=25 Len=(\\d+): \\d+(,\\d+)*$' AS t;
  t 
 ---
  t
 (1 row)
 
-SELECT dump('2008-10-10'::date) ~ E'^Typ=1082 Len=4: \\d+(,\\d+){3}$' AS t;
+SELECT dump('2008-10-10'::date) ~ E'^Typ=25 Len=23: \\d+(,\\d+){22}$' AS t;
  t 
 ---
  t
 (1 row)
 
-SELECT dump('2008-10-10'::timestamp) ~ E'^Typ=1114 Len=8: \\d+(,\\d+){7}$' AS t;
+SELECT dump('2008-10-10'::timestamp) ~ E'^Typ=25 Len=23: \\d+(,\\d+){22}$' AS t;
  t 
 ---
  t
 (1 row)
 
-SELECT dump('2009-10-10'::timestamp) ~ E'^Typ=1114 Len=8: \\d+(,\\d+){7}$' AS t;
+SELECT dump('2009-10-10'::timestamp) ~ E'^Typ=25 Len=23: \\d+(,\\d+){22}$' AS t;
  t 
 ---
  t
@@ -2936,71 +2993,76 @@ select round(TIMESTAMP WITH TIME ZONE'12/08/1990 05:35:25','mi') = '1990-12-08 0
 
 -- Tests for to_date
 SET DATESTYLE TO SQL, MDY;
+SET
 SELECT to_date('2009-01-02');
        to_date       
 ---------------------
  01/02/2009 00:00:00
 (1 row)
 
-select to_date('January 8,1999');
+select orafce.to_date('January 8,1999');
        to_date       
 ---------------------
  01/08/1999 00:00:00
 (1 row)
 
 SET DATESTYLE TO POSTGRES, MDY;
+SET
 select to_date('1999-01-08');
          to_date          
 --------------------------
  Fri Jan 08 00:00:00 1999
 (1 row)
 
-select to_date('1/12/1999');
+select orafce.to_date('1/12/1999');
          to_date          
 --------------------------
  Tue Jan 12 00:00:00 1999
 (1 row)
 
 SET DATESTYLE TO SQL, DMY;
-select to_date('01/02/03');
+SET
+select orafce.to_date('01/02/03');
        to_date       
 ---------------------
  01/02/2003 00:00:00
 (1 row)
 
-select to_date('1999-Jan-08');
+select orafce.to_date('1999-Jan-08');
        to_date       
 ---------------------
  08/01/1999 00:00:00
 (1 row)
 
-select to_date('Jan-08-1999');
+select orafce.to_date('Jan-08-1999');
        to_date       
 ---------------------
  08/01/1999 00:00:00
 (1 row)
 
-select to_date('08-Jan-1999');
+select orafce.to_date('08-Jan-1999');
        to_date       
 ---------------------
  08/01/1999 00:00:00
 (1 row)
 
 SET DATESTYLE TO ISO, YMD;
-select to_date('99-Jan-08');
+SET
+select orafce.to_date('99-Jan-08');
        to_date       
 ---------------------
  1999-01-08 00:00:00
 (1 row)
 
 SET DATESTYLE TO ISO, DMY;
-select to_date('08-Jan-99');
+SET
+select orafce.to_date('08-Jan-99');
        to_date       
 ---------------------
  1999-01-08 00:00:00
 (1 row)
 
-select to_date('Jan-08-99');
+select orafce.to_date('Jan-08-99');
        to_date       
 ---------------------
  1999-01-08 00:00:00
@@ -3012,61 +3074,53 @@ select to_date('19990108');
  1999-01-08 00:00:00
 (1 row)
 
-select to_date('990108');
+select orafce.to_date('990108');
        to_date       
 ---------------------
  1999-01-08 00:00:00
 (1 row)
 
-select to_date('J2451187');
+select orafce.to_date('J2451187');
        to_date       
 ---------------------
  1999-01-08 00:00:00
 (1 row)
 
 set orafce.nls_date_format='YY-MonDD HH24:MI:SS';
+SET
 select to_date('14-Jan08 11:44:49+05:30');
-       to_date       
----------------------
- 2014-01-08 11:44:49
-(1 row)
-
+ERROR:  the format is not correct!
+CONTEXT:  referenced column: to_date
 set orafce.nls_date_format='YY-DDMon HH24:MI:SS';
-select to_date('14-08Jan 11:44:49+05:30');
-       to_date       
----------------------
- 2014-01-08 11:44:49
-(1 row)
-
+SET
+select orafce.to_date('14-08Jan 11:44:49+05:30');
+ERROR:  invalid data for match  in date string
+CONTEXT:  referenced column: to_date
 set orafce.nls_date_format='DDMMYYYY HH24:MI:SS';
-select to_date('21052014 12:13:44+05:30');
-       to_date       
----------------------
- 2014-05-21 12:13:44
-(1 row)
-
+SET
+select orafce.to_date('21052014 12:13:44+05:30');
+ERROR:  invalid data for match  in date string
+CONTEXT:  referenced column: to_date
 set orafce.nls_date_format='DDMMYY HH24:MI:SS';
-select to_date('210514 12:13:44+05:30');
-       to_date       
----------------------
- 2014-05-21 12:13:44
-(1 row)
-
+SET
+select orafce.to_date('210514 12:13:44+05:30');
+ERROR:  invalid data for match  in date string
+CONTEXT:  referenced column: to_date
+set time zone 'UTC';
+SET
 set orafce.nls_date_format='DDMMYY HH24:MI:SS.MS';
-select pg_catalog.to_date('210514 12:13:44.55');
+SET
+select orafce.to_date('210514 12:13:44.55');
         to_date         
 ------------------------
  2014-05-21 12:13:44.55
 (1 row)
 
-select oracle.to_date('210514 12:13:44.55');
-       to_date       
----------------------
- 2014-05-21 12:13:45
-(1 row)
-
+-- select oracle.to_date('210514 12:13:44.55');
 -- Tests for oracle.to_date(text,text)
 SET search_path TO oracle,"$user", public, pg_catalog;
+WARNING:  It is invalid to set pg_temp or pg_catalog behind other schemas in search path explicitly. The priority order is pg_temp, pg_catalog and other schemas.
+SET
 select to_date('2014/04/25 10:13', 'YYYY/MM/DD HH:MI');
        to_date       
 ---------------------
@@ -3122,55 +3176,52 @@ select to_date('January 15, 1989, 11:00 A.M.','Month dd, YYYY, HH:MI A.M.');
 (1 row)
 
 select to_date('14-Jan08 11:44:49+05:30' ,'YY-MonDD HH24:MI:SS');
-       to_date       
----------------------
- 2014-01-08 11:44:49
-(1 row)
-
+ERROR:  invalid data for match  in date string
+CONTEXT:  referenced column: to_date
 select to_date('14-08Jan 11:44:49+05:30','YY-DDMon HH24:MI:SS');
-       to_date       
----------------------
- 2014-01-08 11:44:49
-(1 row)
-
+ERROR:  invalid data for match  in date string
+CONTEXT:  referenced column: to_date
 select to_date('21052014 12:13:44+05:30','DDMMYYYY HH24:MI:SS');
-       to_date       
----------------------
- 2014-05-21 12:13:44
-(1 row)
-
+ERROR:  invalid data for match  in date string
+CONTEXT:  referenced column: to_date
 select to_date('210514 12:13:44+05:30','DDMMYY HH24:MI:SS');
-       to_date       
----------------------
- 2014-05-21 12:13:44
-(1 row)
-
+ERROR:  invalid data for match  in date string
+CONTEXT:  referenced column: to_date
 SET search_path TO default;
+SET
 -- Tests for + operator with DATE and number(smallint,integer,bigint,numeric)
 SET search_path TO oracle,"$user", public, pg_catalog;
+WARNING:  It is invalid to set pg_temp or pg_catalog behind other schemas in search path explicitly. The priority order is pg_temp, pg_catalog and other schemas.
+SET
+SET time zone 'UTC';
+SET
 SET orafce.nls_date_format='YYYY-MM-DD HH24:MI:SS';
-SELECT to_date('2014-07-02 10:08:55') + 9::smallint;
+SET
+SELECT orafce.to_date('2014-07-02 10:08:55') + 9::smallint;
       ?column?       
 ---------------------
  2014-07-11 10:08:55
 (1 row)
 
 SET orafce.nls_date_format='MM-DD-YYYY HH24:MI:SS';
-SELECT to_date('07-02-2014 10:08:55') + 9::smallint;
+SET
+SELECT orafce.to_date('07-02-2014 10:08:55') + 9::smallint;
       ?column?       
 ---------------------
  2014-07-11 10:08:55
 (1 row)
 
 SET orafce.nls_date_format='DD-MM-YYYY HH24:MI:SS';
-SELECT to_date('02-07-2014 10:08:55') + 9::smallint;
+SET
+SELECT orafce.to_date('02-07-2014 10:08:55') + 9::smallint;
       ?column?       
 ---------------------
  2014-07-11 10:08:55
 (1 row)
 
 SET orafce.nls_date_format='YYYY-MM-DD HH24:MI:SS';
-SELECT to_date('2014-07-02 10:08:55') + 9;
+SET
+SELECT orafce.to_date('2014-07-02 10:08:55') + 9;
       ?column?       
 ---------------------
  2014-07-11 10:08:55
@@ -3195,6 +3246,7 @@ SELECT to_date('07-02-2014 10:08:55','MM-DD-YYYY HH:MI:SS') + 9::smallint;
 (1 row)
 
 SET orafce.nls_date_format='YYYY-MM-DD HH24:MI:SS';
+SET
 SELECT to_date('2014-07-02 10:08:55') + 9::bigint;
       ?column?       
 ---------------------
@@ -3202,14 +3254,16 @@ SELECT to_date('2014-07-02 10:08:55') + 9::bigint;
 (1 row)
 
 SET orafce.nls_date_format='MM-DD-YYYY HH24:MI:SS';
-SELECT to_date('07-02-2014 10:08:55') + 9::bigint;
+SET
+SELECT orafce.to_date('07-02-2014 10:08:55') + 9::bigint;
       ?column?       
 ---------------------
  2014-07-11 10:08:55
 (1 row)
 
 SET orafce.nls_date_format='DD-MM-YYYY HH24:MI:SS';
-SELECT to_date('02-07-2014 10:08:55') + 9::bigint;
+SET
+SELECT orafce.to_date('02-07-2014 10:08:55') + 9::bigint;
       ?column?       
 ---------------------
  2014-07-11 10:08:55
@@ -3234,21 +3288,24 @@ SELECT to_date('07-02-2014 10:08:55','MM-DD-YYYY HH:MI:SS') + 9::bigint;
 (1 row)
 
 SET orafce.nls_date_format='YYYY-MM-DD HH24:MI:SS';
-SELECT to_date('2014-07-02 10:08:55') + 9::integer;
+SET
+SELECT orafce.to_date('2014-07-02 10:08:55') + 9::integer;
       ?column?       
 ---------------------
  2014-07-11 10:08:55
 (1 row)
 
 SET orafce.nls_date_format='MM-DD-YYYY HH24:MI:SS';
-SELECT to_date('07-02-2014 10:08:55') + 9::integer;
+SET
+SELECT orafce.to_date('07-02-2014 10:08:55') + 9::integer;
       ?column?       
 ---------------------
  2014-07-11 10:08:55
 (1 row)
 
 SET orafce.nls_date_format='DD-MM-YYYY HH24:MI:SS';
-SELECT to_date('02-07-2014 10:08:55') + 9::integer;
+SET
+SELECT orafce.to_date('02-07-2014 10:08:55') + 9::integer;
       ?column?       
 ---------------------
  2014-07-11 10:08:55
@@ -3273,21 +3330,24 @@ SELECT to_date('07-02-2014 10:08:55','MM-DD-YYYY HH:MI:SS') + 9::integer;
 (1 row)
 
 SET orafce.nls_date_format='YYYY-MM-DD HH24:MI:SS';
-SELECT to_date('2014-07-02 10:08:55') + 9::numeric;
+SET
+SELECT orafce.to_date('2014-07-02 10:08:55') + 9::numeric;
       ?column?       
 ---------------------
  2014-07-11 10:08:55
 (1 row)
 
 SET orafce.nls_date_format='MM-DD-YYYY HH24:MI:SS';
-SELECT to_date('07-02-2014 10:08:55') + 9::numeric;
+SET
+SELECT orafce.to_date('07-02-2014 10:08:55') + 9::numeric;
       ?column?       
 ---------------------
  2014-07-11 10:08:55
 (1 row)
 
 SET orafce.nls_date_format='DD-MM-YYYY HH24:MI:SS';
-SELECT to_date('02-07-2014 10:08:55') + 9::numeric;
+SET
+SELECT orafce.to_date('02-07-2014 10:08:55') + 9::numeric;
       ?column?       
 ---------------------
  2014-07-11 10:08:55
@@ -3312,7 +3372,8 @@ SELECT to_date('07-02-2014 10:08:55','MM-DD-YYYY HH:MI:SS') + 9::numeric;
 (1 row)
 
 SET orafce.nls_date_format='YYYY-MM-DD HH24:MI:SS';
-SELECT to_date('2014-01-01 00:00:00') + 1.5;
+SET
+SELECT orafce.to_date('2014-01-01 00:00:00') + 1.5;
       ?column?       
 ---------------------
  2014-01-02 12:00:00
@@ -3325,31 +3386,38 @@ SELECT to_date('2014-01-01 00:00:00','yyyy-mm-dd hh24:mi:ss') + 1.5;
 (1 row)
 
 SET search_path TO default;
+SET
 -- Tests for - operator with DATE and number(smallint,integer,bigint,numeric)
 SET search_path TO oracle,"$user", public, pg_catalog;
+WARNING:  It is invalid to set pg_temp or pg_catalog behind other schemas in search path explicitly. The priority order is pg_temp, pg_catalog and other schemas.
+SET
 SET orafce.nls_date_format='YYYY-MM-DD HH24:MI:SS';
-SELECT to_date('2014-07-02 10:08:55') - 9::smallint;
+SET
+SELECT orafce.to_date('2014-07-02 10:08:55') - 9::smallint;
       ?column?       
 ---------------------
  2014-06-23 10:08:55
 (1 row)
 
 SET orafce.nls_date_format='MM-DD-YYYY HH24:MI:SS';
-SELECT to_date('07-02-2014 10:08:55') - 9::smallint;
+SET
+SELECT orafce.to_date('07-02-2014 10:08:55') - 9::smallint;
       ?column?       
 ---------------------
  2014-06-23 10:08:55
 (1 row)
 
 SET orafce.nls_date_format='DD-MM-YYYY HH24:MI:SS';
-SELECT to_date('02-07-2014 10:08:55') - 9::smallint;
+SET
+SELECT orafce.to_date('02-07-2014 10:08:55') - 9::smallint;
       ?column?       
 ---------------------
  2014-06-23 10:08:55
 (1 row)
 
 SET orafce.nls_date_format='YYYY-MM-DD HH24:MI:SS';
-SELECT to_date('2014-07-02 10:08:55') - 9;
+SET
+SELECT orafce.to_date('2014-07-02 10:08:55') - 9;
       ?column?       
 ---------------------
  2014-06-23 10:08:55
@@ -3374,6 +3442,7 @@ SELECT to_date('07-02-2014 10:08:55','MM-DD-YYYY HH:MI:SS') - 9::smallint;
 (1 row)
 
 SET orafce.nls_date_format='YYYY-MM-DD HH24:MI:SS';
+SET
 SELECT to_date('2014-07-02 10:08:55') - 9::bigint;
       ?column?       
 ---------------------
@@ -3381,14 +3450,16 @@ SELECT to_date('2014-07-02 10:08:55') - 9::bigint;
 (1 row)
 
 SET orafce.nls_date_format='MM-DD-YYYY HH24:MI:SS';
-SELECT to_date('07-02-2014 10:08:55') - 9::bigint;
+SET
+SELECT orafce.to_date('07-02-2014 10:08:55') - 9::bigint;
       ?column?       
 ---------------------
  2014-06-23 10:08:55
 (1 row)
 
 SET orafce.nls_date_format='DD-MM-YYYY HH24:MI:SS';
-SELECT to_date('02-07-2014 10:08:55') - 9::bigint;
+SET
+SELECT orafce.to_date('02-07-2014 10:08:55') - 9::bigint;
       ?column?       
 ---------------------
  2014-06-23 10:08:55
@@ -3413,21 +3484,24 @@ SELECT to_date('07-02-2014 10:08:55','MM-DD-YYYY HH:MI:SS') - 9::bigint;
 (1 row)
 
 SET orafce.nls_date_format='YYYY-MM-DD HH24:MI:SS';
-SELECT to_date('2014-07-02 10:08:55') - 9::integer;
+SET
+SELECT orafce.to_date('2014-07-02 10:08:55') - 9::integer;
       ?column?       
 ---------------------
  2014-06-23 10:08:55
 (1 row)
 
 SET orafce.nls_date_format='MM-DD-YYYY HH24:MI:SS';
-SELECT to_date('07-02-2014 10:08:55') - 9::integer;
+SET
+SELECT orafce.to_date('07-02-2014 10:08:55') - 9::integer;
       ?column?       
 ---------------------
  2014-06-23 10:08:55
 (1 row)
 
 SET orafce.nls_date_format='DD-MM-YYYY HH24:MI:SS';
-SELECT to_date('02-07-2014 10:08:55') - 9::integer;
+SET
+SELECT orafce.to_date('02-07-2014 10:08:55') - 9::integer;
       ?column?       
 ---------------------
  2014-06-23 10:08:55
@@ -3452,21 +3526,24 @@ SELECT to_date('07-02-2014 10:08:55','MM-DD-YYYY HH:MI:SS') - 9::integer;
 (1 row)
 
 SET orafce.nls_date_format='YYYY-MM-DD HH24:MI:SS';
-SELECT to_date('2014-07-02 10:08:55') - 9::numeric;
+SET
+SELECT orafce.to_date('2014-07-02 10:08:55') - 9::numeric;
       ?column?       
 ---------------------
  2014-06-23 10:08:55
 (1 row)
 
 SET orafce.nls_date_format='MM-DD-YYYY HH24:MI:SS';
-SELECT to_date('07-02-2014 10:08:55') - 9::numeric;
+SET
+SELECT orafce.to_date('07-02-2014 10:08:55') - 9::numeric;
       ?column?       
 ---------------------
  2014-06-23 10:08:55
 (1 row)
 
 SET orafce.nls_date_format='DD-MM-YYYY HH24:MI:SS';
-SELECT to_date('02-07-2014 10:08:55') - 9::numeric;
+SET
+SELECT orafce.to_date('02-07-2014 10:08:55') - 9::numeric;
       ?column?       
 ---------------------
  2014-06-23 10:08:55
@@ -3491,7 +3568,8 @@ SELECT to_date('07-02-2014 10:08:55','MM-DD-YYYY HH:MI:SS') - 9::numeric;
 (1 row)
 
 SET orafce.nls_date_format='YYYY-MM-DD HH24:MI:SS';
-SELECT to_date('2014-01-01 00:00:00') - 1.5;
+SET
+SELECT orafce.to_date('2014-01-01 00:00:00') - 1.5;
       ?column?       
 ---------------------
  2013-12-30 12:00:00
@@ -3504,44 +3582,41 @@ SELECT to_date('2014-01-01 00:00:00','yyyy-mm-dd hh24:mi:ss') - 1.5;
 (1 row)
 
 SET search_path TO default;
+SET
 --Tests for oracle.to_char(timestamp)-used to set the DATE output format
 SET search_path TO oracle,"$user", public, pg_catalog;
+WARNING:  It is invalid to set pg_temp or pg_catalog behind other schemas in search path explicitly. The priority order is pg_temp, pg_catalog and other schemas.
+SET
 SET orafce.nls_date_format to default;
-select oracle.to_char(to_date('19-APR-16 21:41:48'));
+SET
+select oracle.to_char(orafce.to_date('19-APR-16 21:41:48'));
        to_char       
 ---------------------
  2016-04-19 21:41:48
 (1 row)
 
 set orafce.nls_date_format='YY-MonDD HH24:MI:SS';
-select oracle.to_char(to_date('14-Jan08 11:44:49+05:30'));
-      to_char      
--------------------
- 14-Jan08 11:44:49
-(1 row)
-
+SET
+select oracle.to_char(orafce.to_date('14-Jan08 11:44:49+05:30'));
+ERROR:  invalid data for match  in date string
+CONTEXT:  referenced column: to_char
 set orafce.nls_date_format='YY-DDMon HH24:MI:SS';
-select oracle.to_char(to_date('14-08Jan 11:44:49+05:30'));
-      to_char      
--------------------
- 14-08Jan 11:44:49
-(1 row)
-
+SET
+select oracle.to_char(orafce.to_date('14-08Jan 11:44:49+05:30'));
+ERROR:  invalid data for match  in date string
+CONTEXT:  referenced column: to_char
 set orafce.nls_date_format='DDMMYYYY HH24:MI:SS';
-select oracle.to_char(to_date('21052014 12:13:44+05:30'));
-      to_char      
--------------------
- 21052014 12:13:44
-(1 row)
-
+SET
+select oracle.to_char(orafce.to_date('21052014 12:13:44+05:30'));
+ERROR:  invalid data for match  in date string
+CONTEXT:  referenced column: to_char
 set orafce.nls_date_format='DDMMYY HH24:MI:SS';
-select oracle.to_char(to_date('210514 12:13:44+05:30'));
-     to_char     
------------------
- 210514 12:13:44
-(1 row)
-
+SET
+select oracle.to_char(orafce.to_date('210514 12:13:44+05:30'));
+ERROR:  invalid data for match  in date string
+CONTEXT:  referenced column: to_char
 set orafce.nls_date_format='DDMMYYYY HH24:MI:SS';
+SET
 select oracle.to_char(oracle.to_date('2014/04/25 10:13', 'YYYY/MM/DD HH:MI'));
       to_char      
 -------------------
@@ -3549,6 +3624,7 @@ select oracle.to_char(oracle.to_date('2014/04/25 10:13', 'YYYY/MM/DD HH:MI'));
 (1 row)
 
 set orafce.nls_date_format='YY-DDMon HH24:MI:SS';
+SET
 select oracle.to_char(oracle.to_date('16-Feb-09 10:11:11', 'DD-Mon-YY HH:MI:SS'));
       to_char      
 -------------------
@@ -3556,6 +3632,7 @@ select oracle.to_char(oracle.to_date('16-Feb-09 10:11:11', 'DD-Mon-YY HH:MI:SS')
 (1 row)
 
 set orafce.nls_date_format='YY-DDMon HH24:MI:SS';
+SET
 select oracle.to_char(oracle.to_date('02/16/09 04:12:12', 'MM/DD/YY HH24:MI:SS'));
       to_char      
 -------------------
@@ -3563,6 +3640,7 @@ select oracle.to_char(oracle.to_date('02/16/09 04:12:12', 'MM/DD/YY HH24:MI:SS')
 (1 row)
 
 set orafce.nls_date_format='YY-MonDD HH24:MI:SS';
+SET
 select oracle.to_char(oracle.to_date('021609 111213', 'MMDDYY HHMISS'));
       to_char      
 -------------------
@@ -3570,6 +3648,7 @@ select oracle.to_char(oracle.to_date('021609 111213', 'MMDDYY HHMISS'));
 (1 row)
 
 set orafce.nls_date_format='DDMMYYYY HH24:MI:SS';
+SET
 select oracle.to_char(oracle.to_date('16-Feb-09 11:12:12', 'DD-Mon-YY HH:MI:SS'));
       to_char      
 -------------------
@@ -3577,6 +3656,7 @@ select oracle.to_char(oracle.to_date('16-Feb-09 11:12:12', 'DD-Mon-YY HH:MI:SS')
 (1 row)
 
 set orafce.nls_date_format='DDMMYYYY HH24:MI:SS';
+SET
 select oracle.to_char(oracle.to_date('Feb/16/09 11:21:23', 'Mon/DD/YY HH:MI:SS'));
       to_char      
 -------------------
@@ -3584,6 +3664,7 @@ select oracle.to_char(oracle.to_date('Feb/16/09 11:21:23', 'Mon/DD/YY HH:MI:SS')
 (1 row)
 
 set orafce.nls_date_format='DDMMYYYY HH24:MI:SS';
+SET
 select oracle.to_char(oracle.to_date('February.16.2009 10:11:12', 'Month.DD.YYYY HH:MI:SS'));
       to_char      
 -------------------
@@ -3591,6 +3672,7 @@ select oracle.to_char(oracle.to_date('February.16.2009 10:11:12', 'Month.DD.YYYY
 (1 row)
 
 set orafce.nls_date_format='YY-MonDD HH24:MI:SS';
+SET
 select oracle.to_char(oracle.to_date('20020315111212', 'yyyymmddhh12miss'));
       to_char      
 -------------------
@@ -3598,6 +3680,7 @@ select oracle.to_char(oracle.to_date('20020315111212', 'yyyymmddhh12miss'));
 (1 row)
 
 set orafce.nls_date_format='DDMMYYYY HH24:MI:SS';
+SET
 select oracle.to_char(oracle.to_date('January 15, 1989, 11:00 A.M.','Month dd, YYYY, HH:MI A.M.'));
       to_char      
 -------------------
@@ -3605,36 +3688,31 @@ select oracle.to_char(oracle.to_date('January 15, 1989, 11:00 A.M.','Month dd, Y
 (1 row)
 
 set orafce.nls_date_format='DDMMYY HH24:MI:SS';
-select oracle.to_char(oracle.to_date('14-Jan08 11:44:49+05:30' ,'YY-MonDD HH24:MI:SS'));
-     to_char     
------------------
- 080114 11:44:49
-(1 row)
-
+SET
+select oracle.to_char(to_date('14-Jan08 11:44:49+05:30' ,'YY-MonDD HH24:MI:SS'));
+ERROR:  invalid data for match  in date string
+CONTEXT:  referenced column: to_char
 set orafce.nls_date_format='DDMMYYYY HH24:MI:SS';
-select oracle.to_char(oracle.to_date('14-08Jan 11:44:49+05:30','YY-DDMon HH24:MI:SS'));
-      to_char      
--------------------
- 08012014 11:44:49
-(1 row)
-
+SET
+select oracle.to_char(to_date('14-08Jan 11:44:49+05:30','YY-DDMon HH24:MI:SS'));
+ERROR:  invalid data for match  in date string
+CONTEXT:  referenced column: to_char
 set orafce.nls_date_format='YY-MonDD HH24:MI:SS';
-select oracle.to_char(oracle.to_date('21052014 12:13:44+05:30','DDMMYYYY HH24:MI:SS'));
-      to_char      
--------------------
- 14-May21 12:13:44
-(1 row)
-
+SET
+select oracle.to_char(to_date('21052014 12:13:44+05:30','DDMMYYYY HH24:MI:SS'));
+ERROR:  invalid data for match  in date string
+CONTEXT:  referenced column: to_char
 set orafce.nls_date_format='DDMMYY HH24:MI:SS';
-select oracle.to_char(oracle.to_date('210514 12:13:44+05:30','DDMMYY HH24:MI:SS'));
-     to_char     
------------------
- 210514 12:13:44
-(1 row)
-
+SET
+select oracle.to_char(to_date('210514 12:13:44+05:30','DDMMYY HH24:MI:SS'));
+ERROR:  invalid data for match  in date string
+CONTEXT:  referenced column: to_char
 SET search_path TO default;
+SET
 --Tests for oracle.-(oracle.date,oracle.date)
 SET search_path TO oracle,"$user", public, pg_catalog;
+WARNING:  It is invalid to set pg_temp or pg_catalog behind other schemas in search path explicitly. The priority order is pg_temp, pg_catalog and other schemas.
+SET
 SELECT (to_date('2014-07-17 11:10:15', 'yyyy-mm-dd hh24:mi:ss') - to_date('2014-02-01 10:00:00', 'yyyy-mm-dd hh24:mi:ss'))::numeric(10,4);
  numeric  
 ----------
@@ -3726,6 +3804,7 @@ SELECT round(to_date('210514 12:13:44','DDMMYY HH24:MI:SS'));
 (1 row)
 
 SET search_path TO default;
+SET
 --
 -- Note: each Japanese character used below has display width of 2, otherwise 1.
 -- Note: each output string is surrounded by '|' for improved readability
@@ -3737,7 +3816,7 @@ SET search_path TO default;
 SELECT '|' || oracle.lpad('あbcd'::char(8), 10) || '|';
    ?column?   
 --------------
- | あbcd    |
+ |   あbcd  |
 (1 row)
 
 SELECT '|' || oracle.lpad('あbcd'::char(8),  5) || '|';
@@ -3755,37 +3834,37 @@ SELECT '|' || oracle.lpad('あbcd'::char(8), 1) || '|';
 SELECT '|' || oracle.lpad('あbcd'::char(5), 10, 'xい'::char(3)) || '|';
    ?column?   
 --------------
- |xい あbcd |
+ |x  x  あbc|
 (1 row)
 
 SELECT '|' || oracle.lpad('あbcd'::char(5),  5, 'xい'::char(3)) || '|';
  ?column? 
 ----------
- |あbcd|
+ |xあbc|
 (1 row)
 
 SELECT '|' || oracle.lpad('あbcd'::char(5), 10, 'xい'::text) || '|';
    ?column?   
 --------------
- |xいxあbcd |
+ |xいxいあbc|
 (1 row)
 
 SELECT '|' || oracle.lpad('あbcd'::char(5), 10, 'xい'::varchar2(5)) || '|';
    ?column?   
 --------------
- |xいxあbcd |
+ |xいxいあbc|
 (1 row)
 
 SELECT '|' || oracle.lpad('あbcd'::char(5), 10, 'xい'::nvarchar2(3)) || '|';
    ?column?   
 --------------
- |xいxあbcd |
+ |xいxいあbc|
 (1 row)
 
 SELECT '|' || oracle.lpad('あbcd'::text, 10, 'xい'::char(3)) || '|';
    ?column?   
 --------------
- |xい xあbcd|
+ |x  x あbcd|
 (1 row)
 
 SELECT '|' || oracle.lpad('あbcd'::text,  5, 'xい'::char(3)) || '|';
@@ -3797,7 +3876,7 @@ SELECT '|' || oracle.lpad('あbcd'::text,  5, 'xい'::char(3)) || '|';
 SELECT '|' || oracle.lpad('あbcd'::varchar2(5), 10, 'xい'::char(3)) || '|';
    ?column?   
 --------------
- | xい xあbc|
+ |x  x  あbc|
 (1 row)
 
 SELECT '|' || oracle.lpad('あbcd'::varchar2(5),  5, 'xい'::char(3)) || '|';
@@ -3809,7 +3888,7 @@ SELECT '|' || oracle.lpad('あbcd'::varchar2(5),  5, 'xい'::char(3)) || '|';
 SELECT '|' || oracle.lpad('あbcd'::nvarchar2(5), 10, 'xい'::char(3)) || '|';
    ?column?   
 --------------
- |xい xあbcd|
+ |x  x あbcd|
 (1 row)
 
 SELECT '|' || oracle.lpad('あbcd'::nvarchar2(5),  5, 'xい'::char(3)) || '|';
@@ -3934,37 +4013,37 @@ SELECT '|' || oracle.rpad('あbcd'::char(8), 1) || '|';
 SELECT '|' || oracle.rpad('あbcd'::char(5), 10, 'xい'::char(3)) || '|';
    ?column?   
 --------------
- |あbcd xい |
+ |あbcx  x  |
 (1 row)
 
 SELECT '|' || oracle.rpad('あbcd'::char(5),  5, 'xい'::char(3)) || '|';
  ?column? 
 ----------
- |あbcd|
+ |あbcx|
 (1 row)
 
 SELECT '|' || oracle.rpad('あbcd'::char(5), 10, 'xい'::text) || '|';
    ?column?   
 --------------
- |あbcd xいx|
+ |あbcxいxい|
 (1 row)
 
 SELECT '|' || oracle.rpad('あbcd'::char(5), 10, 'xい'::varchar2(5)) || '|';
    ?column?   
 --------------
- |あbcd xいx|
+ |あbcxいxい|
 (1 row)
 
 SELECT '|' || oracle.rpad('あbcd'::char(5), 10, 'xい'::nvarchar2(3)) || '|';
    ?column?   
 --------------
- |あbcd xいx|
+ |あbcxいxい|
 (1 row)
 
 SELECT '|' || oracle.rpad('あbcd'::text, 10, 'xい'::char(3)) || '|';
    ?column?   
 --------------
- |あbcdxい x|
+ |あbcdx  x |
 (1 row)
 
 SELECT '|' || oracle.rpad('あbcd'::text,  5, 'xい'::char(3)) || '|';
@@ -3976,7 +4055,7 @@ SELECT '|' || oracle.rpad('あbcd'::text,  5, 'xい'::char(3)) || '|';
 SELECT '|' || oracle.rpad('あbcd'::varchar2(5), 10, 'xい'::char(3)) || '|';
    ?column?   
 --------------
- |あbcxい x |
+ |あbcx  x  |
 (1 row)
 
 SELECT '|' || oracle.rpad('あbcd'::varchar2(5),  5, 'xい'::char(3)) || '|';
@@ -3988,7 +4067,7 @@ SELECT '|' || oracle.rpad('あbcd'::varchar2(5),  5, 'xい'::char(3)) || '|';
 SELECT '|' || oracle.rpad('あbcd'::nvarchar2(5), 10, 'xい'::char(3)) || '|';
    ?column?   
 --------------
- |あbcdxい x|
+ |あbcdx  x |
 (1 row)
 
 SELECT '|' || oracle.rpad('あbcd'::nvarchar2(5),  5, 'xい'::char(3)) || '|';
@@ -4252,13 +4331,13 @@ SELECT '|' || oracle.btrim(' abcd  '::nvarchar2(10),'d'::char(3)) || '|' as LTRI
 SELECT oracle.length('あbb'::char(6));
  length 
 --------
-      6
+      4
 (1 row)
 
 SELECT oracle.length(''::char(6));
  length 
 --------
-      6
+       
 (1 row)
 
 --
@@ -4317,12 +4396,15 @@ SELECT oracle.round(1.234::float, 2), oracle.trunc(1.234::float, 2);
 --
 select dbms_random.string(null, 42);
 ERROR:  an argument is NULL
+CONTEXT:  referenced column: string
 select dbms_pipe.create_pipe(null);
 ERROR:  pipe name is NULL
 DETAIL:  Pipename may not be NULL.
+CONTEXT:  referenced column: create_pipe
 select plunit.assert_not_equals(1,2,3);
 ERROR:  plunit.assert_not_equal exception
 DETAIL:  Plunit.assertation fails (assert_not_equals).
+CONTEXT:  referenced column: assert_not_equals
 --
 -- lexer text
 --
@@ -4345,34 +4427,49 @@ SELECT pos, token, class, mod FROM plvlex.tokens('select * from a.b.c join d on 
 -- trigger functions
 --
 CREATE TABLE trg_test(a varchar, b int, c varchar, d date, e int);
+CREATE TABLE
 CREATE TRIGGER trg_test_xx BEFORE INSERT OR UPDATE
   ON trg_test FOR EACH ROW EXECUTE PROCEDURE oracle.replace_empty_strings(true);
+WARNING:  Trigger function with non-plpgsql type is not recommended.
+DETAIL:  Non-plpgsql trigger function are not shippable by default.
+HINT:  Unshippable trigger may lead to bad performance.
+CREATE TRIGGER
 \pset null ***
+Null display is "***".
 INSERT INTO trg_test VALUES('',10, 'AHOJ', NULL, NULL);
-WARNING:  Field "a" of table "trg_test" is empty string (replaced by NULL).
+INSERT 0 1
 INSERT INTO trg_test VALUES('AHOJ', NULL, '', '2020-01-01', 100);
-WARNING:  Field "c" of table "trg_test" is empty string (replaced by NULL).
+INSERT 0 1
 SELECT * FROM trg_test;
-  a   |  b  |  c   |     d      |  e  
-------+-----+------+------------+-----
- ***  |  10 | AHOJ | ***        | ***
- AHOJ | *** | ***  | 2020-01-01 | 100
+  a   |  b  |  c   |          d          |  e  
+------+-----+------+---------------------+-----
+ ***  |  10 | AHOJ | ***                 | ***
+ AHOJ | *** | ***  | 2020-01-01 00:00:00 | 100
 (2 rows)
 
 DELETE FROM trg_test;
+DELETE 2
 DROP TRIGGER trg_test_xx ON trg_test;
+DROP TRIGGER
 CREATE TRIGGER trg_test_xx BEFORE INSERT OR UPDATE
   ON trg_test FOR EACH ROW EXECUTE PROCEDURE oracle.replace_null_strings();
+WARNING:  Trigger function with non-plpgsql type is not recommended.
+DETAIL:  Non-plpgsql trigger function are not shippable by default.
+HINT:  Unshippable trigger may lead to bad performance.
+CREATE TRIGGER
 INSERT INTO trg_test VALUES(NULL, 10, 'AHOJ', NULL, NULL);
+INSERT 0 1
 INSERT INTO trg_test VALUES('AHOJ', NULL, NULL, '2020-01-01', 100);
+INSERT 0 1
 SELECT * FROM trg_test;
-  a   |  b  |  c   |     d      |  e  
-------+-----+------+------------+-----
-      |  10 | AHOJ | ***        | ***
- AHOJ | *** |      | 2020-01-01 | 100
+  a   |  b  |  c   |          d          |  e  
+------+-----+------+---------------------+-----
+      |  10 | AHOJ | ***                 | ***
+ AHOJ | *** |      | 2020-01-01 00:00:00 | 100
 (2 rows)
 
 DROP TABLE trg_test;
+DROP TABLE
 SELECT oracle.unistr('\0441\043B\043E\043D');
  unistr 
 --------
@@ -4388,15 +4485,22 @@ SELECT oracle.unistr('d\u0061t\U00000061');
 -- run-time error
 SELECT oracle.unistr('wrong: \db99');
 ERROR:  invalid Unicode surrogate pair
+CONTEXT:  referenced column: unistr
 SELECT oracle.unistr('wrong: \db99\0061');
 ERROR:  invalid Unicode surrogate pair
+CONTEXT:  referenced column: unistr
 SELECT oracle.unistr('wrong: \+00db99\+000061');
 ERROR:  invalid Unicode surrogate pair
+CONTEXT:  referenced column: unistr
 SELECT oracle.unistr('wrong: \+2FFFFF');
 ERROR:  invalid Unicode escape value
+CONTEXT:  referenced column: unistr
 SELECT oracle.unistr('wrong: \udb99\u0061');
 ERROR:  invalid Unicode surrogate pair
+CONTEXT:  referenced column: unistr
 SELECT oracle.unistr('wrong: \U0000db99\U00000061');
 ERROR:  invalid Unicode surrogate pair
+CONTEXT:  referenced column: unistr
 SELECT oracle.unistr('wrong: \U002FFFFF');
 ERROR:  invalid Unicode escape value
+CONTEXT:  referenced column: unistr

@@ -19,14 +19,14 @@
 
 #include "executor/spi.h"
 
-#include "access/htup_details.h"
+#include "access/htup.h"
 #include "catalog/pg_type.h"
 #include "fmgr.h"
 #include "funcapi.h"
 #include "mb/pg_wchar.h"
 #include "miscadmin.h"
 #include "port.h"
-#include "storage/fd.h"
+#include "storage/smgr/fd.h"
 #include "utils/builtins.h"
 #include "utils/memutils.h"
 #include "orafce.h"
@@ -99,19 +99,7 @@ PG_FUNCTION_INFO_V1(utl_file_tmpdir);
 			CUSTOM_EXCEPTION(INVALID_MAXLINESIZE, "maxlinesize is out of range"); \
 	} while(0)
 
-typedef struct FileSlot
-{
-	FILE   *file;
-	int		max_linesize;
-	int		encoding;
-	int32	id;
-} FileSlot;
-
-#define MAX_SLOTS		50			/* Oracle 10g supports 50 files */
 #define INVALID_SLOTID	0			/* invalid slot id */
-
-static FileSlot	slots[MAX_SLOTS];	/* initilaized with zeros */
-static int32	slotid = 0;			/* next slot id */
 
 static void check_secure_locality(const char *path);
 static char *get_safe_path(text *location, text *filename);
@@ -130,15 +118,15 @@ get_descriptor(FILE *file, int max_linesize, int encoding)
 
 	for (i = 0; i < MAX_SLOTS; i++)
 	{
-		if (slots[i].id == INVALID_SLOTID)
+		if (get_session_context()->slots[i].id == INVALID_SLOTID)
 		{
-			slots[i].id = ++slotid;
-			if (slots[i].id == INVALID_SLOTID)
-				slots[i].id = ++slotid;	/* skip INVALID_SLOTID */
-			slots[i].file = file;
-			slots[i].max_linesize = max_linesize;
-			slots[i].encoding = encoding;
-			return slots[i].id;
+			get_session_context()->slots[i].id = ++get_session_context()->slotid;
+			if (get_session_context()->slots[i].id == INVALID_SLOTID)
+				get_session_context()->slots[i].id = ++get_session_context()->slotid;	/* skip INVALID_SLOTID */
+			get_session_context()->slots[i].file = file;
+			get_session_context()->slots[i].max_linesize = max_linesize;
+			get_session_context()->slots[i].encoding = encoding;
+			return get_session_context()->slots[i].id;
 		}
 	}
 
@@ -156,13 +144,13 @@ get_stream(int d, size_t *max_linesize, int *encoding)
 
 	for (i = 0; i < MAX_SLOTS; i++)
 	{
-		if (slots[i].id == d)
+		if (get_session_context()->slots[i].id == d)
 		{
 			if (max_linesize)
-				*max_linesize = slots[i].max_linesize;
+				*max_linesize = get_session_context()->slots[i].max_linesize;
 			if (encoding)
-				*encoding = slots[i].encoding;
-			return slots[i].file;
+				*encoding = get_session_context()->slots[i].encoding;
+			return get_session_context()->slots[i].file;
 		}
 	}
 
@@ -299,8 +287,8 @@ utl_file_is_open(PG_FUNCTION_ARGS)
 
 		for (i = 0; i < MAX_SLOTS; i++)
 		{
-			if (slots[i].id == d)
-				PG_RETURN_BOOL(slots[i].file != NULL);
+			if (get_session_context()->slots[i].id == d)
+				PG_RETURN_BOOL(get_session_context()->slots[i].file != NULL);
 		}
 	}
 
@@ -317,13 +305,14 @@ static text *
 get_line(FILE *f, size_t max_linesize, int encoding, bool *iseof)
 {
 	int c;
-	char *buffer = NULL;
+	char *buffer;
 	char *bpt;
 	size_t csize = 0;
 	text *result = NULL;
 	bool eof = true;
+	errno_t sret = EOK;
 
-	buffer = palloc(max_linesize + 2);
+	buffer = (char *)palloc(max_linesize + 2);
 	bpt = buffer;
 
 	errno = 0;
@@ -359,8 +348,11 @@ get_line(FILE *f, size_t max_linesize, int encoding, bool *iseof)
 		decoded = (char *) pg_do_encoding_conversion((unsigned char *) buffer,
 									 size2int(csize), encoding, GetDatabaseEncoding());
 		len = (decoded == buffer ? csize : strlen(decoded));
-		result = palloc(len + VARHDRSZ);
-		memcpy(VARDATA(result), decoded, len);
+		result = (text *)palloc(len + VARHDRSZ);
+		if ( len != 0 ) {
+			sret = memcpy_s(VARDATA(result), len, decoded, len);
+			securec_check(sret, "\0", "\0");
+		}
 		SET_VARSIZE(result, len + VARHDRSZ);
 		if (decoded != buffer)
 			pfree(decoded);
@@ -721,17 +713,17 @@ utl_file_fclose(PG_FUNCTION_ARGS)
 
 	for (i = 0; i < MAX_SLOTS; i++)
 	{
-		if (slots[i].id == d)
+		if (get_session_context()->slots[i].id == d)
 		{
-			if (slots[i].file && fclose(slots[i].file) != 0)
+			if (get_session_context()->slots[i].file && fclose(get_session_context()->slots[i].file) != 0)
 			{
 				if (errno == EBADF)
 					CUSTOM_EXCEPTION(INVALID_FILEHANDLE, "File is not an opened");
 				else
 					STRERROR_EXCEPTION(WRITE_ERROR);
 			}
-			slots[i].file = NULL;
-			slots[i].id = INVALID_SLOTID;
+			get_session_context()->slots[i].file = NULL;
+			get_session_context()->slots[i].id = INVALID_SLOTID;
 			PG_RETURN_NULL();
 		}
 	}
@@ -756,17 +748,17 @@ utl_file_fclose_all(PG_FUNCTION_ARGS)
 
 	for (i = 0; i < MAX_SLOTS; i++)
 	{
-		if (slots[i].id != INVALID_SLOTID)
+		if (get_session_context()->slots[i].id != INVALID_SLOTID)
 		{
-			if (slots[i].file && fclose(slots[i].file) != 0)
+			if (get_session_context()->slots[i].file && fclose(get_session_context()->slots[i].file) != 0)
 			{
 				if (errno == EBADF)
 					CUSTOM_EXCEPTION(INVALID_FILEHANDLE, "File is not an opened");
 				else
 					STRERROR_EXCEPTION(WRITE_ERROR);
 			}
-			slots[i].file = NULL;
-			slots[i].id = INVALID_SLOTID;
+			get_session_context()->slots[i].file = NULL;
+			get_session_context()->slots[i].id = INVALID_SLOTID;
 		}
 	}
 
@@ -903,6 +895,8 @@ get_safe_path(text *location_or_dirname, text *filename)
 	char	   *fullname;
 	char	   *location;
 	bool		check_locality;
+	errno_t		sret;
+	errno_t errorno = EOK;
 
 	NON_EMPTY_TEXT(location_or_dirname);
 	NON_EMPTY_TEXT(filename);
@@ -913,10 +907,12 @@ get_safe_path(text *location_or_dirname, text *filename)
 		int		aux_pos = size2int(strlen(location));
 		int		aux_len = VARSIZE_ANY_EXHDR(filename);
 
-		fullname = palloc(aux_pos + 1 + aux_len + 1);
-		strcpy(fullname, location);
+		fullname = (char *)palloc(aux_pos + 1 + aux_len + 1);
+		errorno = strcpy_s(fullname, aux_pos + 1 + aux_len + 1, location);
+		securec_check(errorno, "", "");
 		fullname[aux_pos] = '/';
-		memcpy(fullname + aux_pos + 1, VARDATA(filename), aux_len);
+		sret = memcpy_s(fullname + aux_pos + 1, aux_len, VARDATA(filename), aux_len);
+		securec_check(sret, "", "");
 		fullname[aux_pos + aux_len + 1] = '\0';
 
 		/* location is safe (ensured by dirname) */
@@ -928,10 +924,12 @@ get_safe_path(text *location_or_dirname, text *filename)
 		int aux_pos = VARSIZE_ANY_EXHDR(location_or_dirname);
 		int aux_len = VARSIZE_ANY_EXHDR(filename);
 
-		fullname = palloc(aux_pos + 1 + aux_len + 1);
-		memcpy(fullname, VARDATA(location_or_dirname), aux_pos);
+		fullname = (char *)palloc(aux_pos + 1 + aux_len + 1);
+		sret = memcpy_s(fullname, aux_pos, VARDATA(location_or_dirname), aux_pos);
+		securec_check(sret, "", "");
 		fullname[aux_pos] = '/';
-		memcpy(fullname + aux_pos + 1, VARDATA(filename), aux_len);
+		sret = memcpy_s(fullname + aux_pos + 1, aux_len, VARDATA(filename), aux_len);
+		securec_check(sret, "", "");
 		fullname[aux_pos + aux_len + 1] = '\0';
 
 		check_locality = true;
@@ -1080,7 +1078,7 @@ copy_text_file(FILE *srcfile, FILE *dstfile, int start_line, int end_line)
 	size_t		len;
 	int			i;
 
-	buffer = palloc(MAX_LINESIZE);
+	buffer = (char *)palloc(MAX_LINESIZE);
 
 	errno = 0;
 

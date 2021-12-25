@@ -14,12 +14,6 @@
 
 #ifdef ENABLE_INTERNATIONALIZED_WEEKDAY
 
-typedef struct WeekDays
-{
-	int			encoding;
-	const char *names[7];
-} WeekDays;
-
 /*
  * { encoding, { "sun", "mon", "tue", "wed", "thu", "fri", "sat" } },
  */
@@ -32,8 +26,6 @@ static const WeekDays WEEKDAYS[] =
 	/* Japanese, EUC_JIS_2004 (same as EUC_JP) */
 	{ PG_EUC_JIS_2004, { "\306\374", "\267\356", "\262\320", "\277\345", "\314\332", "\266\342", "\305\332" } },
 };
-
-static const WeekDays *mru_weekdays = NULL;
 
 static int
 weekday_search(const WeekDays *weekdays, const char *str, size_t len)
@@ -173,12 +165,12 @@ next_day(PG_FUNCTION_ARGS)
 
 #ifdef ENABLE_INTERNATIONALIZED_WEEKDAY
 	/* Check mru_weekdays first for performance. */
-	if (mru_weekdays)
+	if (get_session_context()->mru_weekdays)
 	{
-		if ((d = weekday_search(mru_weekdays, str, len)) >= 0)
+		if ((d = weekday_search(get_session_context()->mru_weekdays, str, len)) >= 0)
 			goto found;
 		else
-			mru_weekdays = NULL;
+			get_session_context()->mru_weekdays = NULL;
 	}
 #endif
 
@@ -201,7 +193,7 @@ next_day(PG_FUNCTION_ARGS)
 			{
 				if ((d = weekday_search(&WEEKDAYS[i], str, len)) >= 0)
 				{
-					mru_weekdays = &WEEKDAYS[i];
+					get_session_context()->mru_weekdays = &WEEKDAYS[i];
 					goto found;
 				}
 			}
@@ -305,22 +297,33 @@ days_of_month(int y, int m)
 Datum
 months_between(PG_FUNCTION_ARGS)
 {
-	DateADT date1 = PG_GETARG_DATEADT(0);
-	DateADT date2 = PG_GETARG_DATEADT(1);
+	Timestamp timestamp1 = PG_GETARG_TIMESTAMP(0);
+	Timestamp timestamp2 = PG_GETARG_TIMESTAMP(1);
+	//DateADT date1 = PG_GETARG_DATEADT(0);
+	//DateADT date2 = PG_GETARG_DATEADT(1);
 
-	int y1, m1, d1;
-	int y2, m2, d2;
+	//int y1, m1, d1;
+	//int y2, m2, d2;
+	struct pg_tm tt1, tt2, *tm1 = &tt1, *tm2 = &tt2;
+	fsec_t fsec1, fsec2;
 
 	float8 result;
 
-	j2date(date1 + POSTGRES_EPOCH_JDATE, &y1, &m1, &d1);
-	j2date(date2 + POSTGRES_EPOCH_JDATE, &y2, &m2, &d2);
+	if (timestamp2tm(timestamp1, NULL, tm1, &fsec1, NULL, NULL) != 0) {
+		ereport(ERROR, (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE), errmsg("timestamp out of range")));
+	}
+	if (timestamp2tm(timestamp2, NULL, tm2, &fsec2, NULL, NULL) != 0) {
+		ereport(ERROR, (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE), errmsg("timestamp out of range")));
+	}
+
+	//j2date(date1 + POSTGRES_EPOCH_JDATE, &y1, &m1, &d1);
+	//j2date(date2 + POSTGRES_EPOCH_JDATE, &y2, &m2, &d2);
 
 	/* Ignore day components for last days, or based on a 31-day month. */
-	if (d1 == days_of_month(y1, m1) && d2 == days_of_month(y2, m2))
-		result = (y1 - y2) * 12 + (m1 - m2);
+	if (tm1->tm_mday == days_of_month(tm1->tm_year, tm1->tm_mon) && tm2->tm_mday == days_of_month(tm2->tm_year, tm2->tm_mon))
+		result = (tm1->tm_year - tm2->tm_year) * 12 + (tm1->tm_mon - tm2->tm_mon);
 	else
-		result = (y1 - y2) * 12 + (m1 - m2) + (d1 - d2) / 31.0;
+		result = (tm1->tm_year - tm2->tm_year) * 12 + (tm1->tm_mon - tm2->tm_mon) + (tm1->tm_mday - tm2->tm_mday) / 31.0;
 
 	PG_RETURN_NUMERIC(
 		DirectFunctionCall1(float8_numeric, Float8GetDatumFast(result)));
@@ -583,14 +586,14 @@ ora_to_date(PG_FUNCTION_ARGS)
 	text *date_txt = PG_GETARG_TEXT_PP(0);
 	Timestamp result;
 
-	if(nls_date_format && strlen(nls_date_format))
+	if(get_session_context()->nls_date_format && strlen(get_session_context()->nls_date_format))
 	{
 		Datum newDate;
 
 		/* it will return timestamp at GMT */
 		newDate = DirectFunctionCall2(to_timestamp,
 					      PointerGetDatum(date_txt),
-					      CStringGetTextDatum(nls_date_format));
+					      CStringGetTextDatum(get_session_context()->nls_date_format));
 
 		/* convert to local timestamp */
 		result = DatumGetTimestamp(DirectFunctionCall1(timestamptz_timestamp, newDate));
@@ -1008,7 +1011,7 @@ orafce_sysdate(PG_FUNCTION_ARGS)
 
 
 	sysdate = DirectFunctionCall2(timestamptz_zone,
-					CStringGetTextDatum(orafce_timezone),
+					CStringGetTextDatum(get_session_context()->orafce_timezone),
 					TimestampTzGetDatum(GetCurrentStatementStartTimestamp()));
 
 	/* necessary to cast to timestamp(0) to emulate Oracle's date */
@@ -1056,5 +1059,5 @@ orafce_sessiontimezone(PG_FUNCTION_ARGS)
 Datum
 orafce_dbtimezone(PG_FUNCTION_ARGS)
 {
-	PG_RETURN_TEXT_P(cstring_to_text(orafce_timezone));
+	PG_RETURN_TEXT_P(cstring_to_text(get_session_context()->orafce_timezone));
 }

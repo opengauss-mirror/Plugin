@@ -34,8 +34,6 @@ static int getindex(const char **map, char *mbchar, int mblen);
 
 #if PG_VERSION_NUM < 130000
 
-static FmgrInfo *orafce_Utf8ToServerConvProc = NULL;
-
 #endif
 
 Datum
@@ -98,7 +96,7 @@ orafce_to_char_numeric(PG_FUNCTION_ARGS)
 	Numeric		arg0 = PG_GETARG_NUMERIC(0);
 	StringInfo	buf = makeStringInfo();
 	struct lconv *lconv = PGLC_localeconv();
-	char	   *p;
+	char	   *p = NULL;
 	char       *decimal = NULL;
 
 	appendStringInfoString(buf, DatumGetCString(DirectFunctionCall1(numeric_out, NumericGetDatum(arg0))));
@@ -145,12 +143,12 @@ orafce_to_char_timestamp(PG_FUNCTION_ARGS)
 	Timestamp ts = PG_GETARG_TIMESTAMP(0);
 	text *result = NULL;
 
-	if(nls_date_format && strlen(nls_date_format) > 0)
+	if(get_session_context()->nls_date_format && strlen(get_session_context()->nls_date_format) > 0)
 	{
 		/* it will return the DATE in nls_date_format*/
 		result = DatumGetTextP(DirectFunctionCall2(timestamp_to_char,
 												   TimestampGetDatum(ts),
-												   CStringGetTextDatum(nls_date_format)));
+												   CStringGetTextDatum(get_session_context()->nls_date_format)));
 	}
 	else
 	{
@@ -495,7 +493,8 @@ orafce_to_single_byte(PG_FUNCTION_ARGS)
 	text	   *dst;
 	char	   *s;
 	char	   *d;
-	int			srclen;
+	int	   srclen;
+	errno_t	   sret;
 
 #if defined(_MSC_VER) && (defined(_M_X64) || defined(__amd64__))
 
@@ -551,7 +550,8 @@ orafce_to_single_byte(PG_FUNCTION_ARGS)
 		}
 		else
 		{
-			memcpy(d, u, clen);
+			sret = memcpy_s(d, clen, u, clen);
+			securec_check(sret, "", "");
 			d += clen;
 		}
 	}
@@ -676,7 +676,7 @@ pg_unicode_to_server(pg_wchar c, unsigned char *s)
 	}
 
 	/* For all other cases, we must have a conversion function available */
-	if (orafce_Utf8ToServerConvProc == NULL)
+	if (get_session_context()->orafce_Utf8ToServerConvProc == NULL)
 		ereport(ERROR,
 				(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
 				 errmsg("conversion between UTF8 and %s is not supported",
@@ -688,7 +688,7 @@ pg_unicode_to_server(pg_wchar c, unsigned char *s)
 	c_as_utf8[c_as_utf8_len] = '\0';
 
 	/* Convert, or throw error if we can't */
-	FunctionCall5(orafce_Utf8ToServerConvProc,
+	FunctionCall5(get_session_context()->orafce_Utf8ToServerConvProc,
 				  Int32GetDatum(PG_UTF8),
 				  Int32GetDatum(server_encoding),
 				  CStringGetDatum(c_as_utf8),
@@ -701,7 +701,7 @@ initializeUtf8ToServerConvProc(void)
 {
 	int			current_server_encoding;
 
-	orafce_Utf8ToServerConvProc = NULL;
+	get_session_context()->orafce_Utf8ToServerConvProc = NULL;
 
 	/*
 	 * Also look up the UTF8-to-server conversion function if needed.  Since
@@ -727,7 +727,7 @@ initializeUtf8ToServerConvProc(void)
 			fmgr_info_cxt(utf8_to_server_proc, finfo,
 						  TopMemoryContext);
 			/* Set Utf8ToServerConvProc only after data is fully valid */
-			orafce_Utf8ToServerConvProc = finfo;
+			get_session_context()->orafce_Utf8ToServerConvProc = finfo;
 		}
 	}
 }

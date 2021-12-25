@@ -1,13 +1,13 @@
 #include "postgres.h"
 #include "executor/spi.h"
 
-#include "access/htup_details.h"
+#include "access/htup.h"
 #include "catalog/pg_type.h"
 #include "commands/trigger.h"
 #include "funcapi.h"
 #include "miscadmin.h"
 #include "string.h"
-#include "storage/lwlock.h"
+#include "storage/lock/lwlock.h"
 #include "storage/procarray.h"
 #include "utils/timestamp.h"
 
@@ -26,9 +26,6 @@ PG_FUNCTION_INFO_V1(dbms_alert_waitany);
 PG_FUNCTION_INFO_V1(dbms_alert_waitone);
 PG_FUNCTION_INFO_V1(dbms_alert_defered_signal);
 
-extern int sid;
-float8 sensitivity = 250.0;
-extern LWLockId shmem_lockid;
 
 #ifndef _GetCurrentTimestamp
 #define _GetCurrentTimestamp()		GetCurrentTimestamp()
@@ -45,7 +42,7 @@ extern LWLockId shmem_lockid;
 #define TDAYS (1000*24*3600)
 
 static void unregister_event(int event_id, int sid);
-static char*find_and_remove_message_item(int message_id, int sid,
+static char* find_and_remove_message_item(int message_id, int sid,
 							 bool all, bool remove_all,
 							 bool filter_message,
 							 int *sleep, char **event_name);
@@ -57,10 +54,6 @@ static char*find_and_remove_message_item(int message_id, int sid,
  *
  */
 
-alert_event *events;
-alert_lock  *locks;
-
-alert_lock *session_lock = NULL;
 
 #define NOT_FOUND  -1
 #define NOT_USED -1
@@ -72,7 +65,6 @@ alert_lock *session_lock = NULL;
 static int
 textcmpm(text *txt, char *str)
 {
-	int retval;
 	char *p;
 	int len;
 
@@ -81,7 +73,7 @@ textcmpm(text *txt, char *str)
 
 	while (len-- && *p != '\0')
 	{
-
+		int retval;
 		if (0 != (retval = *p++ - *str++))
 			return retval;
 	}
@@ -114,27 +106,27 @@ purge_shared_alert_mem()
 	{
 		PGPROC	   *proc;
 
-		if (locks[i].sid == NOT_USED)
+		if (get_session_context()->alert_locks[i].sid == NOT_USED)
 			continue;
 
 #if PG_VERSION_NUM < 90600
 
-		proc = BackendPidGetProc(locks[i].pid);
+		proc = BackendPidGetProc(get_session_context()->alert_locks[i].pid);
 
 #else
 
-		proc = BackendPidGetProcWithLock(locks[i].pid);
+		proc = BackendPidGetProcWithLock(get_session_context()->alert_locks[i].pid);
 
 #endif
 
 		if (proc == NULL)
 		{
 			int		j;
-			int		invalid_sid = locks[i].sid;
+			int		invalid_sid = get_session_context()->alert_locks[i].sid;
 
-			for (j = 0; j < MAX_EVENTS; j++)
+			for (j = 0; j < ORA_MAX_EVENTS; j++)
 			{
-				if (events[j].event_name != NULL)
+				if (get_session_context()->alert_events[j].event_name != NULL)
 				{
 					find_and_remove_message_item(j, invalid_sid,
 											false, true, true, NULL, NULL);
@@ -142,7 +134,7 @@ purge_shared_alert_mem()
 				}
 			}
 
-			locks[i].sid = NOT_USED;
+			get_session_context()->alert_locks[i].sid = NOT_USED;
 		}
 	}
 
@@ -165,14 +157,14 @@ find_lock(int sid, bool create)
 	int i;
 	int first_free = NOT_FOUND;
 
-	if (session_lock != NULL)
-		return session_lock;
+	if (get_session_context()->alert_session_lock != NULL)
+		return get_session_context()->alert_session_lock;
 
 	for (i = 0; i < MAX_LOCKS; i++)
 	{
-		if (locks[i].sid == sid)
-			return &locks[i];
-		else if (locks[i].sid == NOT_USED && first_free == NOT_FOUND)
+		if (get_session_context()->alert_locks[i].sid == sid)
+			return &(get_session_context()->alert_locks[i]);
+		else if (get_session_context()->alert_locks[i].sid == NOT_USED && first_free == NOT_FOUND)
 			first_free = i;
 	}
 
@@ -184,7 +176,7 @@ find_lock(int sid, bool create)
 
 			for (i = 0; i < MAX_LOCKS; i++)
 			{
-				if (locks[i].sid == NOT_USED)
+				if (get_session_context()->alert_locks[i].sid == NOT_USED)
 				{
 					first_free = i;
 					break;
@@ -194,11 +186,11 @@ find_lock(int sid, bool create)
 
 		if (first_free != NOT_FOUND)
 		{
-			locks[first_free].sid = sid;
-			locks[first_free].echo = NULL;
-			locks[first_free].pid = MyProcPid;
-			session_lock = &locks[first_free];
-			return &locks[first_free];
+			get_session_context()->alert_locks[first_free].sid = sid;
+			get_session_context()->alert_locks[first_free].echo = NULL;
+			get_session_context()->alert_locks[first_free].pid = (IS_THREAD_POOL_WORKER ? u_sess->session_id : t_thrd.proc_cxt.MyProcPid);
+			get_session_context()->alert_session_lock = &(get_session_context()->alert_locks[first_free]);
+			return &(get_session_context()->alert_locks[first_free]);
 		}
 		else
 			ereport(ERROR,
@@ -217,40 +209,40 @@ find_event(text *event_name, bool create, int *event_id)
 {
 	int i;
 
-	for (i = 0; i < MAX_EVENTS;i++)
+	for (i = 0; i < ORA_MAX_EVENTS;i++)
 	{
-		if (events[i].event_name != NULL && textcmpm(event_name,events[i].event_name) == 0)
+		if (get_session_context()->alert_events[i].event_name != NULL && textcmpm(event_name,get_session_context()->alert_events[i].event_name) == 0)
 		{
 			if (event_id != NULL)
 				*event_id = i;
-			return &events[i];
+			return &(get_session_context()->alert_events[i]);
 		}
 	}
 
 	if (create)
 	{
-		for (i=0; i < MAX_EVENTS; i++)
+		for (i=0; i < ORA_MAX_EVENTS; i++)
 		{
-			if (events[i].event_name == NULL)
+			if (get_session_context()->alert_events[i].event_name == NULL)
 			{
-				events[i].event_name = ora_scstring(event_name);
+				get_session_context()->alert_events[i].event_name = ora_scstring(event_name);
 
-				events[i].max_receivers = 0;
-				events[i].receivers = NULL;
-				events[i].messages = NULL;
-				events[i].receivers_number = 0;
+				get_session_context()->alert_events[i].max_receivers = 0;
+				get_session_context()->alert_events[i].receivers = NULL;
+				get_session_context()->alert_events[i].messages = NULL;
+				get_session_context()->alert_events[i].receivers_number = 0;
 
 				if (event_id != NULL)
 					*event_id = i;
-				return &events[i];
+				return &(get_session_context()->alert_events[i]);
 			}
 		}
 
 		ereport(ERROR,
 				(errcode(ERRCODE_PROGRAM_LIMIT_EXCEEDED),
-				 errmsg("event registeration error"),
+				 errmsg("event registration error"),
 				 errdetail("Too many registered events."),
-				 errhint("There are too many collaborating sessions. Increase MAX_EVENTS in 'pipe.h'.")));
+				 errhint("There are too many collaborating sessions. Increase ORA_MAX_EVENTS in 'pipe.h'.")));
 	}
 
 	return NULL;
@@ -265,13 +257,13 @@ register_event(text *event_name)
 	int first_free;
 	int i;
 
-	find_lock(sid, true);
+	find_lock(get_session_context()->pipe_sid, true);
 	ev = find_event(event_name, true, NULL);
 
 	first_free = NOT_FOUND;
 	for (i = 0; i < ev->max_receivers; i++)
 	{
-		if (ev->receivers[i] == sid)
+		if (ev->receivers[i] == get_session_context()->pipe_sid)
 			return;   /* event is registered */
 		if (ev->receivers[i] == NOT_USED && first_free == NOT_FOUND)
 			first_free = i;
@@ -312,7 +304,7 @@ register_event(text *event_name)
 	}
 
 	ev->receivers_number += 1;
-	ev->receivers[first_free] = sid;
+	ev->receivers[first_free] = get_session_context()->pipe_sid;
 }
 
 /*
@@ -324,12 +316,11 @@ static void
 unregister_event(int event_id, int sid)
 {
 	alert_event *ev;
-	int i;
 
-	ev = &events[event_id];
+	ev = &(get_session_context()->alert_events[event_id]);
 	if (ev->receivers_number > 0)
 	{
-		for (i = 0; i < ev->max_receivers; i++)
+		for (int i = 0; i < ev->max_receivers; i++)
 		{
 			if (ev->receivers[i] == sid)
 			{
@@ -397,7 +388,6 @@ find_and_remove_message_item(int message_id, int sid,
 							 int *sleep, char **event_name)
 {
 	alert_lock *alck;
-	int _message_id;
 
 	char *result = NULL;
 	if (sleep != NULL)
@@ -420,6 +410,7 @@ find_and_remove_message_item(int message_id, int sid,
 		{
 			char *message_text;
 			bool destroy_msg_item = false;
+			int _message_id;
 
 			if (filter_message && echo->message_id != message_id)
 			{
@@ -438,7 +429,7 @@ find_and_remove_message_item(int message_id, int sid,
 					echo->message->prev_message->next_message =
 						echo->message->next_message;
 				else
-					events[echo->message_id].messages =
+					get_session_context()->alert_events[echo->message_id].messages =
 						echo->message->next_message;
 				if (echo->message->next_message != NULL)
 					echo->message->next_message->prev_message =
@@ -476,7 +467,7 @@ find_and_remove_message_item(int message_id, int sid,
 				}
 
 				if (event_name != NULL)
-					*event_name = pstrdup(events[_message_id].event_name);
+					*event_name = pstrdup(get_session_context()->alert_events[_message_id].event_name);
 
 				break;
 			}
@@ -496,7 +487,6 @@ create_message(text *event_name, text *message)
 	int event_id;
 	alert_event *ev;
 	message_item *msg_item = NULL;
-	int i,j,k;
 
 	find_event(event_name, false, &event_id);
 
@@ -505,6 +495,7 @@ create_message(text *event_name, text *message)
 	{
 		if (ev->receivers_number > 0)
 		{
+			int i,j;
 			msg_item = ev->messages;
 			while (msg_item != NULL)
 			{
@@ -517,9 +508,9 @@ create_message(text *event_name, text *message)
 				msg_item = msg_item->next_message;
 			}
 
-			msg_item = salloc(sizeof(message_item));
+			msg_item = (message_item*)salloc(sizeof(message_item));
 
-			msg_item->receivers = salloc( ev->receivers_number*sizeof(int));
+			msg_item->receivers = (int*)salloc( ev->receivers_number*sizeof(int));
 			msg_item->receivers_number = ev->receivers_number;
 
 			if (message != NULL)
@@ -533,22 +524,22 @@ create_message(text *event_name, text *message)
 				if (ev->receivers[j] != NOT_USED)
 				{
 					msg_item->receivers[i++] = ev->receivers[j];
-					for (k = 0; k < MAX_LOCKS; k++)
-						if (locks[k].sid == ev->receivers[j])
+					for (int k = 0; k < MAX_LOCKS; k++)
+						if (get_session_context()->alert_locks[k].sid == ev->receivers[j])
 						{
 							/* create echo */
 
-							message_echo *echo = salloc(sizeof(message_echo));
+							message_echo *echo = (message_echo*)salloc(sizeof(message_echo));
 							echo->message = msg_item;
 							echo->message_id = event_id;
 							echo->next_echo = NULL;
 
-							if (locks[k].echo == NULL)
-								locks[k].echo = echo;
+							if (get_session_context()->alert_locks[k].echo == NULL)
+								get_session_context()->alert_locks[k].echo = echo;
 							else
 							{
 								message_echo *p;
-								p = locks[k].echo;
+								p = get_session_context()->alert_locks[k].echo;
 
 								while (p->next_echo != NULL)
 									p = p->next_echo;
@@ -612,10 +603,10 @@ dbms_alert_register(PG_FUNCTION_ARGS)
 	float8 timeout = 2;
 
 	WATCH_PRE(timeout, endtime, cycle);
-	if (ora_lock_shmem(SHMEMMSGSZ, MAX_PIPES, MAX_EVENTS, MAX_LOCKS, false))
+	if (ora_lock_shmem(SHMEMMSGSZ, MAX_PIPES, ORA_MAX_EVENTS, MAX_LOCKS, false))
 	{
 		register_event(name);
-		LWLockRelease(shmem_lockid);
+		LWLockRelease(get_session_context()->shmem_lockid);
 		PG_RETURN_VOID();
 	}
 	WATCH_POST(timeout, endtime, cycle);
@@ -638,23 +629,24 @@ dbms_alert_remove(PG_FUNCTION_ARGS)
 {
 	text *name = PG_GETARG_TEXT_P(0);
 
-	alert_event *ev;
+
 	int ev_id;
 	int cycle = 0;
 	float8 endtime;
 	float8 timeout = 2;
 
 	WATCH_PRE(timeout, endtime, cycle);
-	if (ora_lock_shmem(SHMEMMSGSZ, MAX_PIPES,MAX_EVENTS,MAX_LOCKS,false))
+	if (ora_lock_shmem(SHMEMMSGSZ, MAX_PIPES,ORA_MAX_EVENTS,MAX_LOCKS,false))
 	{
+		alert_event *ev;
 		ev = find_event(name, false, &ev_id);
 		if (NULL != ev)
 		{
-			find_and_remove_message_item(ev_id, sid,
+			find_and_remove_message_item(ev_id, get_session_context()->pipe_sid,
 							 false, true, true, NULL, NULL);
-			unregister_event(ev_id, sid);
+			unregister_event(ev_id, get_session_context()->pipe_sid);
 		}
-		LWLockRelease(shmem_lockid);
+		LWLockRelease(get_session_context()->shmem_lockid);
 		PG_RETURN_VOID();
 	}
 	WATCH_POST(timeout, endtime, cycle);
@@ -674,36 +666,36 @@ dbms_alert_remove(PG_FUNCTION_ARGS)
 Datum
 dbms_alert_removeall(PG_FUNCTION_ARGS)
 {
-	int i;
 	int cycle = 0;
 	float8 endtime;
 	float8 timeout = 2;
-	alert_lock *alck;
+
 
 	WATCH_PRE(timeout, endtime, cycle);
-	if (ora_lock_shmem(SHMEMMSGSZ, MAX_PIPES,MAX_EVENTS,MAX_LOCKS,false))
+	if (ora_lock_shmem(SHMEMMSGSZ, MAX_PIPES,ORA_MAX_EVENTS,MAX_LOCKS,false))
 	{
-		for (i = 0; i < MAX_EVENTS; i++)
+		alert_lock *alck;
+		for (int i = 0; i < ORA_MAX_EVENTS; i++)
 		{
-			if (events[i].event_name != NULL)
+			if (get_session_context()->alert_events[i].event_name != NULL)
 			{
-				find_and_remove_message_item(i, sid,
+				find_and_remove_message_item(i, get_session_context()->pipe_sid,
 								 false, true, true, NULL, NULL);
-				unregister_event(i, sid);
+				unregister_event(i, get_session_context()->pipe_sid);
 			}
 		}
 
-		alck = find_lock(sid, false);
+		alck = find_lock(get_session_context()->pipe_sid, false);
 		if (alck)
 		{
 			/* After all events unregistration, an echo field should NULL */
 			Assert(alck->echo == NULL);
 
 			alck->sid = NOT_USED;
-			session_lock = NULL;
+			get_session_context()->alert_session_lock = NULL;
 		}
 
-		LWLockRelease(shmem_lockid);
+		LWLockRelease(get_session_context()->shmem_lockid);
 		PG_RETURN_VOID();
 	}
 	WATCH_POST(timeout, endtime, cycle);
@@ -745,17 +737,17 @@ dbms_alert_waitany(PG_FUNCTION_ARGS)
 		timeout = PG_GETARG_FLOAT8(0);
 
 	WATCH_PRE(timeout, endtime, cycle);
-	if (ora_lock_shmem(SHMEMMSGSZ, MAX_PIPES, MAX_EVENTS, MAX_LOCKS, false))
+	if (ora_lock_shmem(SHMEMMSGSZ, MAX_PIPES, ORA_MAX_EVENTS, MAX_LOCKS, false))
 	{
-		str[1]  = find_and_remove_message_item(-1, sid,
+		str[1]  = find_and_remove_message_item(-1, get_session_context()->pipe_sid,
 							   true, false, false, NULL, &str[0]);
 		if (str[0])
 		{
 			str[2] = "0";
-			LWLockRelease(shmem_lockid);
+			LWLockRelease(get_session_context()->shmem_lockid);
 			break;
 		}
-		LWLockRelease(shmem_lockid);
+		LWLockRelease(get_session_context()->shmem_lockid);
 	}
 	WATCH_POST(timeout, endtime, cycle);
 
@@ -817,21 +809,21 @@ dbms_alert_waitone(PG_FUNCTION_ARGS)
 	name = PG_GETARG_TEXT_P(0);
 
 	WATCH_PRE(timeout, endtime, cycle);
-	if (ora_lock_shmem(SHMEMMSGSZ, MAX_PIPES, MAX_EVENTS, MAX_LOCKS, false))
+	if (ora_lock_shmem(SHMEMMSGSZ, MAX_PIPES, ORA_MAX_EVENTS, MAX_LOCKS, false))
 	{
 		if (NULL != find_event(name, false, &message_id))
 		{
-			str[0] = find_and_remove_message_item(message_id, sid,
+			str[0] = find_and_remove_message_item(message_id, get_session_context()->pipe_sid,
 								  false, false, false, NULL, &event_name);
 			if (event_name != NULL)
 			{
 				str[1] = "0";
 				pfree(event_name);
-				LWLockRelease(shmem_lockid);
+				LWLockRelease(get_session_context()->shmem_lockid);
 				break;
 			}
 		}
-		LWLockRelease(shmem_lockid);
+		LWLockRelease(get_session_context()->shmem_lockid);
 	}
 	WATCH_POST(timeout, endtime, cycle);
 
@@ -957,16 +949,16 @@ dbms_alert_defered_signal(PG_FUNCTION_ARGS)
 		message = DatumGetTextP(datum);
 
 	WATCH_PRE(timeout, endtime, cycle);
-	if (ora_lock_shmem(SHMEMMSGSZ, MAX_PIPES, MAX_EVENTS, MAX_LOCKS, false))
+	if (ora_lock_shmem(SHMEMMSGSZ, MAX_PIPES, ORA_MAX_EVENTS, MAX_LOCKS, false))
 	{
 		ItemPointer tid;
 		Oid argtypes[1] = {TIDOID};
 		char nulls[1] = {' '};
 		Datum values[1];
-		void *plan;
+		SPIPlanPtr plan;
 
 		create_message(name, message);
-		LWLockRelease(shmem_lockid);
+		LWLockRelease(get_session_context()->shmem_lockid);
 
 		tid = &rettuple->t_data->t_ctid;
 
@@ -1030,7 +1022,7 @@ if (SPI_OK_##_type_ != SPI_exec(cmd, 1)) \
 Datum
 dbms_alert_signal(PG_FUNCTION_ARGS)
 {
-	void *plan;
+	SPIPlanPtr plan;
 	Oid argtypes[] = {TEXTOID, TEXTOID};
 	Datum values[2];
 	char nulls[2] = {' ',' '};
@@ -1057,14 +1049,14 @@ dbms_alert_signal(PG_FUNCTION_ARGS)
                             "AND c.relkind='r' AND c.relname = 'ora_alerts'", SELECT);
 	if (0 == SPI_processed)
 	{
-		SPI_EXEC("CREATE TEMP TABLE ora_alerts(event text, message text)", UTILITY);
+		SPI_EXEC("CREATE TABLE ora_alerts(event text, message text, session_id bigint)", UTILITY);
 		SPI_EXEC("REVOKE ALL ON TABLE ora_alerts FROM PUBLIC", UTILITY);
 		SPI_EXEC("CREATE CONSTRAINT TRIGGER ora_alert_signal AFTER INSERT ON ora_alerts "
 		"INITIALLY DEFERRED FOR EACH ROW EXECUTE PROCEDURE dbms_alert.defered_signal()", UTILITY);
 	}
 
 	if (!(plan = SPI_prepare(
-			"INSERT INTO ora_alerts(event,message) VALUES($1, $2)",
+			"INSERT INTO ora_alerts(event,message,session_id) SELECT $1, $2, (SELECT PG_CURRENT_SESSID())",
 			2,
 			argtypes)))
 			ereport(ERROR,

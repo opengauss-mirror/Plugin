@@ -1,6 +1,6 @@
 #include "postgres.h"
 
-#include "access/htup_details.h"
+#include "access/htup.h"
 #include "catalog/pg_type.h"
 #include "commands/trigger.h"
 #include "executor/spi.h"
@@ -139,7 +139,7 @@ Datum
 orafce_replace_empty_strings(PG_FUNCTION_ARGS)
 {
 	TriggerData	   *trigdata = (TriggerData *) fcinfo->context;
-	HeapTuple		rettuple = NULL;
+	HeapTuple		rettuple;
 	TupleDesc		tupdesc;
 	int			   *resetcols = NULL;
 	Datum		   *values = NULL;
@@ -148,7 +148,7 @@ orafce_replace_empty_strings(PG_FUNCTION_ARGS)
 	bool			is_string = false;
 	int				nresetcols = 0;
 	int				attnum;
-	bool			raise_warning = false;
+	bool			raise_warning;
 	char		   *relname = NULL;
 
 	trigger_sanity_check(fcinfo, "replace_empty_strings");
@@ -193,9 +193,9 @@ orafce_replace_empty_strings(PG_FUNCTION_ARGS)
 					if (!resetcols)
 					{
 						/* lazy allocation of dynamic memory */
-						resetcols = palloc0(tupdesc->natts * sizeof(int));
-						nulls = palloc0(tupdesc->natts * sizeof(bool));
-						values = palloc0(tupdesc->natts * sizeof(Datum));
+						resetcols = (int*)palloc0(tupdesc->natts * sizeof(int));
+						nulls = (bool *)palloc0(tupdesc->natts * sizeof(bool));
+						values = (Datum*)palloc0(tupdesc->natts * sizeof(Datum));
 					}
 
 					resetcols[nresetcols] = attnum;
@@ -243,7 +243,7 @@ Datum
 orafce_replace_null_strings(PG_FUNCTION_ARGS)
 {
 	TriggerData	   *trigdata = (TriggerData *) fcinfo->context;
-	HeapTuple		rettuple = NULL;
+	HeapTuple		rettuple;
 	TupleDesc		tupdesc;
 	int			   *resetcols = NULL;
 	Datum		   *values = NULL;
@@ -252,7 +252,7 @@ orafce_replace_null_strings(PG_FUNCTION_ARGS)
 	bool			is_string = false;
 	int				nresetcols = 0;
 	int				attnum;
-	bool			raise_warning = false;
+	bool			raise_warning;
 	char		   *relname = NULL;
 
 	trigger_sanity_check(fcinfo, "replace_null_strings");
@@ -296,9 +296,9 @@ orafce_replace_null_strings(PG_FUNCTION_ARGS)
 				if (!resetcols)
 				{
 					/* lazy allocation of dynamic memory */
-					resetcols = palloc0(tupdesc->natts * sizeof(int));
-					nulls = palloc0(tupdesc->natts * sizeof(bool));
-					values = palloc0(tupdesc->natts * sizeof(Datum));
+					resetcols = (int*)palloc0(tupdesc->natts * sizeof(int));
+					nulls = (bool*)palloc0(tupdesc->natts * sizeof(bool));
+					values = (Datum *)palloc0(tupdesc->natts * sizeof(Datum));
 				}
 
 				resetcols[nresetcols] = attnum;

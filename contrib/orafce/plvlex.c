@@ -40,18 +40,13 @@ extern void orafce_sql_yyerror(List **result, const char *message);
 extern void orafce_sql_scanner_init(const char *str);
 extern void orafce_sql_scanner_finish(void);
 
-static orafce_lexnode *__node;
-
-static char *__result;
-static int __len;
-
 #define CSTRING(txt) \
 	( \
-    __len = VARSIZE(txt) - VARHDRSZ, \
-    __result = palloc(__len + 1), \
-    memcpy(__result, VARDATA(txt), __len), \
-    __result[__len] = '\0', \
-    __result)
+    get_session_context()->__len = VARSIZE(txt) - VARHDRSZ, \
+    get_session_context()->__result = (char*)palloc(get_session_context()->__len + 1), \
+    memcpy_s(get_session_context()->__result, get_session_context()->__len, VARDATA(txt), get_session_context()->__len), \
+    get_session_context()->__result[get_session_context()->__len] = '\0', \
+    get_session_context()->__result)
 
 
 #define COPY_TO_S(src,dest,col)	(dest->col = (src->col ? pstrdup(src->col) : NULL))
@@ -69,9 +64,9 @@ static int __len;
 
 #define COPY_NODE(src)   \
   ( \
-    __node = (orafce_lexnode*) palloc(sizeof(orafce_lexnode)),  \
-    COPY_FIELDS(src,__node), \
-    __node)
+    get_session_context()->__node = (orafce_lexnode*) palloc(sizeof(orafce_lexnode)),  \
+    COPY_FIELDS(src,get_session_context()->__node), \
+    get_session_context()->__node)
 
 
 /* Finding triplet a.b --> a */
@@ -89,14 +84,14 @@ static int __len;
 
 #define NEWNODE(type) \
 	( \
-	__node = (orafce_lexnode *) palloc(sizeof(orafce_lexnode)), \
-	__node->typenode = X_##type, \
-	__node->modificator = NULL, \
-	__node->sep = NULL, \
-	__node->keycode = -1, \
-	__node->classname = #type, \
-	__node->lloc = 0, \
-	__node )
+	get_session_context()->__node = (orafce_lexnode *) palloc(sizeof(orafce_lexnode)), \
+	get_session_context()->__node->typenode = X_##type, \
+	get_session_context()->__node->modificator = NULL, \
+	get_session_context()->__node->sep = NULL, \
+	get_session_context()->__node->keycode = -1, \
+	get_session_context()->__node->classname = #type, \
+	get_session_context()->__node->lloc = 0, \
+	get_session_context()->__node )
 
 
 
@@ -254,6 +249,7 @@ plvlex_tokens(PG_FUNCTION_ARGS)
 		Datum result;
 		HeapTuple tuple;
 		char *back_vals[6];
+		errno_t ret;
 
 		orafce_lexnode *nd = (orafce_lexnode*) list_nth(fctx->nodes, fctx->cnode++);
 		values = fctx->values;
@@ -262,12 +258,18 @@ plvlex_tokens(PG_FUNCTION_ARGS)
 		back_vals[4] = values[4];
 		back_vals[5] = values[5];
 
-		snprintf(values[0],    16, "%d", nd->lloc);
-		snprintf(values[1], 10000, "%s", SF(nd->str));
-		snprintf(values[2],    16, "%d", nd->keycode);
-		snprintf(values[3],    16, "%s", nd->classname);
-		snprintf(values[4],   255, "%s", SF(nd->sep));
-		snprintf(values[5],    48, "%s", SF(nd->modificator));
+		ret = snprintf_s(values[0],    16,    16, "%d", nd->lloc);
+		securec_check_ss(ret, "", "");
+		ret = snprintf_s(values[1], 10000, 10000, "%s", SF(nd->str));
+		securec_check_ss(ret, "", "");
+		ret = snprintf_s(values[2],    16,    16, "%d", nd->keycode);
+		securec_check_ss(ret, "", "");
+		ret = snprintf_s(values[3],    16,    16, "%s", nd->classname);
+		securec_check_ss(ret, "", "");
+		ret = snprintf_s(values[4],   255,   255, "%s", SF(nd->sep));
+		securec_check_ss(ret, "", "");
+		ret = snprintf_s(values[5],    48,    48, "%s", SF(nd->modificator));
+		securec_check_ss(ret, "", "");
 
 		if (nd->keycode == -1)
 			values[2] = NULL;

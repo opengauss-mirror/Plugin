@@ -1,109 +1,113 @@
 -- Test for the regexp_*() function
 \set ECHO none
+SET
+SET
 SET search_path TO oracle,"$user", public, pg_catalog;
+WARNING:  It is invalid to set pg_temp or pg_catalog behind other schemas in search path explicitly. The priority order is pg_temp, pg_catalog and other schemas.
+SET
 ----
 -- Tests for REGEXP_LIKE()
 ----
 -- ORACLE> SELECT 1 FROM DUAL WHERE REGEXP_LIKE('a'||CHR(10)||'d', 'a.d'); -> NULL
-SELECT REGEXP_LIKE('a'||CHR(10)||'d', 'a.d');
+SELECT ORACLE.REGEXP_LIKE('a'||CHR(10)||'d', 'a.d');
  regexp_like 
 -------------
  f
 (1 row)
 
 -- ORACLE> SELECT 1 FROM DUAL WHERE REGEXP_LIKE('a'||CHR(10)||'d', 'a.d', 'm'); -> NULL
-SELECT REGEXP_LIKE('a'||CHR(10)||'d', 'a.d', 'm');
+SELECT ORACLE.REGEXP_LIKE('a'||CHR(10)||'d', 'a.d', 'm');
  regexp_like 
 -------------
  f
 (1 row)
 
 -- ORACLE> SELECT 1 FROM DUAL WHERE REGEXP_LIKE('a'||CHR(10)||'d', 'a.d', 'n'); -> 1
-SELECT REGEXP_LIKE('a'||CHR(10)||'d', 'a.d', 'n');
+SELECT ORACLE.REGEXP_LIKE('a'||CHR(10)||'d', 'a.d', 'n');
  regexp_like 
 -------------
  t
 (1 row)
 
 -- ORACLE> SELECT 1 FROM DUAL WHERE REGEXP_LIKE('Steven', '^Ste(v|ph)en$'); -> 1
-SELECT REGEXP_LIKE('Steven', '^Ste(v|ph)en$');
+SELECT ORACLE.REGEXP_LIKE('Steven', '^Ste(v|ph)en$');
  regexp_like 
 -------------
  t
 (1 row)
 
 -- ORACLE> SELECT 1 FROM DUAL WHERE regexp_like('foo' || chr(10) || 'bar' || chr(10) || 'bequq' || chr(10) || 'baz', '^bar'); -> NULL
-SELECT REGEXP_LIKE('foo' || chr(10) || 'bar' || chr(10) || 'bequq' || chr(10) || 'baz', '^bar');
+SELECT ORACLE.REGEXP_LIKE('foo' || chr(10) || 'bar' || chr(10) || 'bequq' || chr(10) || 'baz', '^bar');
  regexp_like 
 -------------
  f
 (1 row)
 
 -- ORACLE> SELECT 1 FROM DUAL WHERE regexp_like('foo' || chr(10) || 'bar' || chr(10) || 'bequq' || chr(10) || 'baz', 'bar'); -> 1
-SELECT REGEXP_LIKE('foo' || chr(10) || 'bar' || chr(10) || 'bequq' || chr(10) || 'baz', 'bar');
+SELECT ORACLE.REGEXP_LIKE('foo' || chr(10) || 'bar' || chr(10) || 'bequq' || chr(10) || 'baz', 'bar');
  regexp_like 
 -------------
  t
 (1 row)
 
 -- ORACLE> SELECT 1 FROM DUAL WHERE regexp_like('foo' || chr(10) || 'bar' || chr(10) || 'bequq' || chr(10) || 'baz', '^bar', 'm'); -> 1
-SELECT REGEXP_LIKE('foo' || chr(10) || 'bar' || chr(10) || 'bequq' || chr(10) || 'baz', '^bar', 'm');
+SELECT ORACLE.REGEXP_LIKE('foo' || chr(10) || 'bar' || chr(10) || 'bequq' || chr(10) || 'baz', '^bar', 'm');
  regexp_like 
 -------------
  t
 (1 row)
 
 -- ORACLE> SELECT 1 FROM DUAL WHERE regexp_like('foo' || chr(10) || 'bar' || chr(10) || 'bequq' || chr(10) || 'baz', '^bar', 'n'); -> NULL
-SELECT REGEXP_LIKE('foo' || chr(10) || 'bar' || chr(10) || 'bequq' || chr(10) || 'baz', '^bar', 'n');
+SELECT ORACLE.REGEXP_LIKE('foo' || chr(10) || 'bar' || chr(10) || 'bequq' || chr(10) || 'baz', '^bar', 'n');
  regexp_like 
 -------------
  f
 (1 row)
 
 -- ORACLE> SELECT 1 FROM DUAL WHERE REGEXP_LIKE('GREEN', '([aeiou])\1'); -> NULL
-SELECT REGEXP_LIKE('GREEN', '([aeiou])\1');
+SELECT ORACLE.REGEXP_LIKE('GREEN', '([aeiou])\1');
  regexp_like 
 -------------
  f
 (1 row)
 
 -- ORACLE> SELECT 1 FROM DUAL WHERE REGEXP_LIKE('GREEN', '([aeiou])\1', 'i'); -> 1
-SELECT REGEXP_LIKE('GREEN', '([aeiou])\1', 'i');
+SELECT ORACLE.REGEXP_LIKE('GREEN', '([aeiou])\1', 'i');
  regexp_like 
 -------------
  t
 (1 row)
 
 -- ORACLE> SELECT 1 FROM DUAL WHERE REGEXP_LIKE('ORANGE' || chr(10) || 'GREEN', '([aeiou])\1', 'i'); -> 1
-SELECT REGEXP_LIKE('ORANGE' || chr(10) || 'GREEN', '([aeiou])\1', 'i');
+SELECT ORACLE.REGEXP_LIKE('ORANGE' || chr(10) || 'GREEN', '([aeiou])\1', 'i');
  regexp_like 
 -------------
  t
 (1 row)
 
 -- ORACLE> SELECT 1 FROM DUAL WHERE REGEXP_LIKE('ORANGE' || chr(10) || 'GREEN', '^..([aeiou])\1', 'i'); -> NULL
-SELECT REGEXP_LIKE('ORANGE' || chr(10) || 'GREEN', '^..([aeiou])\1', 'i');
+SELECT ORACLE.REGEXP_LIKE('ORANGE' || chr(10) || 'GREEN', '^..([aeiou])\1', 'i');
  regexp_like 
 -------------
  f
 (1 row)
 
 -- ORACLE> SELECT 1 FROM DUAL WHERE REGEXP_LIKE('ORANGE' || chr(10) || 'GREEN', '([aeiou])\1', 'in'); -> 1
-SELECT REGEXP_LIKE('ORANGE' || chr(10) || 'GREEN', '([aeiou])\1', 'in');
+SELECT ORACLE.REGEXP_LIKE('ORANGE' || chr(10) || 'GREEN', '([aeiou])\1', 'in');
  regexp_like 
 -------------
  t
 (1 row)
 
 -- ORACLE> SELECT 1 FROM DUAL WHERE REGEXP_LIKE('ORANGE' || chr(10) || 'GREEN', '^..([aeiou])\1', 'in'); -> NULL
-SELECT REGEXP_LIKE('ORANGE' || chr(10) || 'GREEN', '^..([aeiou])\1', 'in');
+SELECT ORACLE.REGEXP_LIKE('ORANGE' || chr(10) || 'GREEN', '^..([aeiou])\1', 'in');
  regexp_like 
 -------------
  f
 (1 row)
 
 -- ORACLE> SELECT 1 FROM DUAL WHERE REGEXP_LIKE('ORANGE' || chr(10) || 'GREEN', '^..([aeiou])\1', 'im'); -> 1
-SELECT REGEXP_LIKE('ORANGE' || chr(10) || 'GREEN', '^..([aeiou])\1', 'im');
+SELECT ORACLE.REGEXP_LIKE('ORANGE' || chr(10) || 'GREEN', '^..([aeiou])\1', 'im');
  regexp_like 
 -------------
  t
@@ -393,8 +397,11 @@ SELECT REGEXP_INSTR('1234567890 1234567890 1234567890', '(123)(4(56)(78))', 1, 3
 -- INSERT INTO regexp_temp (empName, emailID) VALUES ('Jane Doe', 'janedoe');
 -- COMMIT;
 CREATE TEMPORARY TABLE regexp_temp(empName varchar(20), emailID varchar(20));
+CREATE TABLE
 INSERT INTO regexp_temp (empName, emailID) VALUES ('John Doe', 'johndoe@example.com');
+INSERT 0 1
 INSERT INTO regexp_temp (empName, emailID) VALUES ('Jane Doe', 'janedoe');
+INSERT 0 1
 -- -- ORACLE> SELECT emailID, REGEXP_INSTR(emailID, '\w+@\w+(\.\w+)+') "IS_A_VALID_EMAIL" FROM regexp_temp;
 -- EMAILID              IS_A_VALID_EMAIL
 -- -------------------- ----------------
@@ -432,6 +439,7 @@ SELECT emailID, REGEXP_INSTR(emailID, '\w+@\w+(\.\w+)+', 1, 1, 0, 'i', 1) FROM r
 (2 rows)
 
 DROP TABLE regexp_temp;
+DROP TABLE
 -- Check negatives values that must throw an error
 SELECT REGEXP_INSTR('1234567890 1234567890 1234567890', '(123)(4(56)(78))', -1, 3, 1, 'i', 4);
 ERROR:  argument 'position' must be a number greater than 0
@@ -695,13 +703,13 @@ SELECT oracle.REGEXP_LIKE('1234', NULL, 'i');
 SELECT oracle.REGEXP_LIKE('1234', '\d+', NULL);
  regexp_like 
 -------------
- t
+ f
 (1 row)
 
 SELECT oracle.REGEXP_LIKE('1234', '\d+', '');
  regexp_like 
 -------------
- t
+ f
 (1 row)
 
 SELECT oracle.REGEXP_COUNT('1234', '\d', NULL) ;

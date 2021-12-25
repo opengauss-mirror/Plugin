@@ -1,5 +1,14 @@
 -- Tests for nlssort
 \set ECHO none
+SET
+DROP DATABASE
+CREATE DATABASE
+You are now connected to database "regression_sort" as user "hlv".
+SET
+CREATE EXTENSION
+SET
+CREATE TABLE
+INSERT 0 4
   name  
 --------
  brown
@@ -10,36 +19,11 @@
 
   name  
 --------
- Purple
  brown
+ Purple
  red
  yellow
 (4 rows)
-
- set_nls_sort 
---------------
- 
-(1 row)
-
-ERROR:  failed to set the requested LC_COLLATE value [invalid]
-CONTEXT:  SQL function "nlssort" statement 1
- set_nls_sort 
---------------
- 
-(1 row)
-
-  name  
---------
- Purple
- brown
- red
- yellow
-(4 rows)
-
- set_nls_sort 
---------------
- 
-(1 row)
 
   name  
 --------
@@ -49,6 +33,23 @@ CONTEXT:  SQL function "nlssort" statement 1
  yellow
 (4 rows)
 
+  name  
+--------
+ brown
+ Purple
+ red
+ yellow
+(4 rows)
+
+  name  
+--------
+ brown
+ Purple
+ red
+ yellow
+(4 rows)
+
+INSERT 0 1
   name  
 --------
  brown

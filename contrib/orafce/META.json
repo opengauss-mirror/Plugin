@@ -14,10 +14,10 @@
       "runtime": {
          "requires": {
             "plpgsql": 0,
-            "PostgreSQL": "9.5.0"
+            "MogDB": "2.1.0"
          },
          "recommends": {
-            "PostgreSQL": "14.0.0"
+            "MogDB": "2.1.0"
          }
       }
    },
@@ -25,7 +25,7 @@
      "orafce": {
        "file": "sql/orafce.sql",
        "docfile": "README.orafce",
-       "version": "3.17.0",
+       "version": "2.1.0",
        "abstract": "Oracle's compatibility functions and packages"
      }
    },

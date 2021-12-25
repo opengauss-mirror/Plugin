@@ -1,4 +1,8 @@
 \set ECHO none
+Output format is unaligned.
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
 checkhexcallstack
 ----- PL/pgSQL Call Stack -----
   object     line  object
@@ -14,4 +18,8 @@ checkintunpaddedcallstack
 0,,anonymous object
 0,,checkintunpaddedcallstack
 (1 row)
+DROP FUNCTION
+DROP FUNCTION
+DROP FUNCTION
 NOTICE:  Execution time: 2 seconds
+ANONYMOUS BLOCK EXECUTE

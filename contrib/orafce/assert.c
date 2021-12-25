@@ -75,8 +75,8 @@ ParseIdentifierString(char *rawstring)
 	/* At the top of the loop, we are at start of a new identifier. */
 	do
 	{
-		char	   *curname;
-		char	   *endp;
+		char	   *curname = NULL;
+		char	   *endp = NULL;
 
 		if (*nextp == '\"')
 		{
@@ -90,7 +90,8 @@ ParseIdentifierString(char *rawstring)
 				if (endp[1] != '\"')
 					break;		/* found end of quoted name */
 				/* Collapse adjacent quotes into one quote, and look again */
-				memmove(endp, endp + 1, strlen(endp));
+				errno_t ret = memmove_s(endp, strlen(endp), endp + 1, strlen(endp));
+				securec_check(ret, "\0", "\0");
 				nextp = endp;
 			}
 			/* endp now points at the terminating quote */

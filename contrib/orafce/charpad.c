@@ -37,12 +37,13 @@ orafce_lpad(PG_FUNCTION_ARGS)
 	text	*string1 = PG_GETARG_TEXT_PP(0);
 	int32	output_width = PG_GETARG_INT32(1);
 	text	*string2 = PG_GETARG_TEXT_PP(2);
-	text	*ret;
-	char	*ptr1,
+	text	*ret = NULL;
+	errno_t sret;
+	char	*ptr1 = NULL,
 			*ptr2 = NULL,
 			*ptr2start = NULL,
 			*ptr2end = NULL,
-			*ptr_ret,
+			*ptr_ret = NULL,
 			*spc = " ";
 	int		mlen,
 			dsplen,
@@ -51,7 +52,6 @@ orafce_lpad(PG_FUNCTION_ARGS)
 			hslen,
 			total_blen = 0,
 			s1_width = 0,
-			s2_add_width = 0,
 			s1_add_blen = 0,
 			s2_add_blen = 0;
 	bool	s2_operate = ON,
@@ -141,6 +141,7 @@ orafce_lpad(PG_FUNCTION_ARGS)
 	/* Calculate the length of the portion composed of string2 to use for padding */
 	if (s2_operate)
 	{
+		int	s2_add_width = 0;
 		/* remaining part of output_width is composed of string2 */
 		s2_add_width = output_width - s1_width;
 
@@ -195,7 +196,8 @@ orafce_lpad(PG_FUNCTION_ARGS)
 	 */
 	if (half_space)
 	{
-		memcpy(ptr_ret, spc, hslen);
+		sret = memcpy_s(ptr_ret, hslen, spc, hslen);
+		securec_check(sret, "", "");
 		ptr_ret += hslen;
 	}
 
@@ -213,7 +215,8 @@ orafce_lpad(PG_FUNCTION_ARGS)
 		if ( s2_add_blen < mlen )
 			break;
 
-		memcpy(ptr_ret, ptr2, mlen);
+		sret = memcpy_s(ptr_ret, mlen, ptr2, mlen);
+		securec_check(sret, "", "");
 		ptr_ret += mlen;
 		ptr2 += mlen;
 
@@ -242,7 +245,8 @@ orafce_lpad(PG_FUNCTION_ARGS)
 		if( s1_add_blen < mlen )
 			break;
 
-		memcpy(ptr_ret, ptr1, mlen);
+		sret = memcpy_s(ptr_ret, mlen, ptr1, mlen);
+		securec_check(sret, "", "");
 		ptr_ret += mlen;
 		ptr1 += mlen;
 
@@ -281,12 +285,12 @@ orafce_rpad(PG_FUNCTION_ARGS)
 			hslen,
 			total_blen = 0,
 			s1_width = 0,
-			s2_add_width = 0,
 			s1_add_blen = 0,
 			s2_add_blen = 0;
 	bool	s2_operate = ON,
 			half_space = OFF,
 			init_ptr = ON;
+	errno_t		sret;
 
 	/* validate output width (the 2nd argument) */
 	if (output_width < 0)
@@ -371,6 +375,7 @@ orafce_rpad(PG_FUNCTION_ARGS)
 	/* Calculate the length of the portion composed of string2 to use for padding */
 	if (s2_operate)
 	{
+		int	s2_add_width = 0;
 		/* remaining part of output_width is composed of string2 */
 		s2_add_width = output_width - s1_width;
 
@@ -431,7 +436,8 @@ orafce_rpad(PG_FUNCTION_ARGS)
 		if( s1_add_blen < mlen )
 			break;
 
-		memcpy(ptr_ret, ptr1, mlen);
+		sret = memcpy_s(ptr_ret, mlen, ptr1, mlen);
+		securec_check(sret, "", "");
 		ptr_ret += mlen;
 		ptr1 += mlen;
 
@@ -455,7 +461,8 @@ orafce_rpad(PG_FUNCTION_ARGS)
 		if ( s2_add_blen < mlen )
 			break;
 
-		memcpy(ptr_ret, ptr2, mlen);
+		sret = memcpy_s(ptr_ret, mlen, ptr2, mlen);
+		securec_check(sret, "", "");
 		ptr_ret += mlen;
 		ptr2 += mlen;
 
@@ -476,7 +483,8 @@ orafce_rpad(PG_FUNCTION_ARGS)
 	 */
 	if (half_space)
 	{
-		memcpy(ptr_ret, spc, hslen);
+		sret = memcpy_s(ptr_ret, hslen, spc, hslen);
+		securec_check(sret, "", "");
 		ptr_ret += hslen;
 	}
 

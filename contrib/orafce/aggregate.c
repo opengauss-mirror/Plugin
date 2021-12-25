@@ -147,11 +147,11 @@ accumFloat4(MedianState *mstate, float4 value, MemoryContext aggcontext)
 	{
 		/* First call - initialize */
 		oldcontext = MemoryContextSwitchTo(aggcontext);
-		mstate = palloc(sizeof(MedianState));
+		mstate = (MedianState*)palloc(sizeof(MedianState));
 		mstate->alen = 1024;
 		mstate->nextlen = 2 * 1024;
 		mstate->nelems = 0;
-		mstate->d.float4_values = palloc(mstate->alen * sizeof(float4));
+		mstate->d.float4_values = (float4*)palloc(mstate->alen * sizeof(float4));
 		MemoryContextSwitchTo(oldcontext);
 	}
 	else
@@ -164,7 +164,7 @@ accumFloat4(MedianState *mstate, float4 value, MemoryContext aggcontext)
 			oldcontext = MemoryContextSwitchTo(aggcontext);
 			mstate->nextlen += mstate->alen;
 			mstate->alen = newlen;
-			mstate->d.float4_values = repalloc(mstate->d.float4_values,
+			mstate->d.float4_values = (float4*)repalloc(mstate->d.float4_values,
 									    mstate->alen * sizeof(float4));
 			MemoryContextSwitchTo(oldcontext);
 		}
@@ -184,11 +184,11 @@ accumFloat8(MedianState *mstate, float8 value, MemoryContext aggcontext)
 	{
 		/* First call - initialize */
 		oldcontext = MemoryContextSwitchTo(aggcontext);
-		mstate = palloc(sizeof(MedianState));
+		mstate = (MedianState*)palloc(sizeof(MedianState));
 		mstate->alen = 1024;
 		mstate->nextlen = 2 * 1024;
 		mstate->nelems = 0;
-		mstate->d.float8_values = palloc(mstate->alen * sizeof(float8));
+		mstate->d.float8_values = (float8*)palloc(mstate->alen * sizeof(float8));
 		MemoryContextSwitchTo(oldcontext);
 	}
 	else
@@ -201,7 +201,7 @@ accumFloat8(MedianState *mstate, float8 value, MemoryContext aggcontext)
 			oldcontext = MemoryContextSwitchTo(aggcontext);
 			mstate->nextlen += mstate->alen;
 			mstate->alen = newlen;
-			mstate->d.float8_values = repalloc(mstate->d.float8_values,
+			mstate->d.float8_values = (float8*)repalloc(mstate->d.float8_values,
 									    mstate->alen * sizeof(float8));
 			MemoryContextSwitchTo(oldcontext);
 		}

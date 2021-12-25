@@ -12,35 +12,35 @@ SET search_path TO oracle,"$user", public, pg_catalog;
 ----
 
 -- ORACLE> SELECT 1 FROM DUAL WHERE REGEXP_LIKE('a'||CHR(10)||'d', 'a.d'); -> NULL
-SELECT REGEXP_LIKE('a'||CHR(10)||'d', 'a.d');
+SELECT ORACLE.REGEXP_LIKE('a'||CHR(10)||'d', 'a.d');
 -- ORACLE> SELECT 1 FROM DUAL WHERE REGEXP_LIKE('a'||CHR(10)||'d', 'a.d', 'm'); -> NULL
-SELECT REGEXP_LIKE('a'||CHR(10)||'d', 'a.d', 'm');
+SELECT ORACLE.REGEXP_LIKE('a'||CHR(10)||'d', 'a.d', 'm');
 -- ORACLE> SELECT 1 FROM DUAL WHERE REGEXP_LIKE('a'||CHR(10)||'d', 'a.d', 'n'); -> 1
-SELECT REGEXP_LIKE('a'||CHR(10)||'d', 'a.d', 'n');
+SELECT ORACLE.REGEXP_LIKE('a'||CHR(10)||'d', 'a.d', 'n');
 -- ORACLE> SELECT 1 FROM DUAL WHERE REGEXP_LIKE('Steven', '^Ste(v|ph)en$'); -> 1
-SELECT REGEXP_LIKE('Steven', '^Ste(v|ph)en$');
+SELECT ORACLE.REGEXP_LIKE('Steven', '^Ste(v|ph)en$');
 -- ORACLE> SELECT 1 FROM DUAL WHERE regexp_like('foo' || chr(10) || 'bar' || chr(10) || 'bequq' || chr(10) || 'baz', '^bar'); -> NULL
-SELECT REGEXP_LIKE('foo' || chr(10) || 'bar' || chr(10) || 'bequq' || chr(10) || 'baz', '^bar');
+SELECT ORACLE.REGEXP_LIKE('foo' || chr(10) || 'bar' || chr(10) || 'bequq' || chr(10) || 'baz', '^bar');
 -- ORACLE> SELECT 1 FROM DUAL WHERE regexp_like('foo' || chr(10) || 'bar' || chr(10) || 'bequq' || chr(10) || 'baz', 'bar'); -> 1
-SELECT REGEXP_LIKE('foo' || chr(10) || 'bar' || chr(10) || 'bequq' || chr(10) || 'baz', 'bar');
+SELECT ORACLE.REGEXP_LIKE('foo' || chr(10) || 'bar' || chr(10) || 'bequq' || chr(10) || 'baz', 'bar');
 -- ORACLE> SELECT 1 FROM DUAL WHERE regexp_like('foo' || chr(10) || 'bar' || chr(10) || 'bequq' || chr(10) || 'baz', '^bar', 'm'); -> 1
-SELECT REGEXP_LIKE('foo' || chr(10) || 'bar' || chr(10) || 'bequq' || chr(10) || 'baz', '^bar', 'm');
+SELECT ORACLE.REGEXP_LIKE('foo' || chr(10) || 'bar' || chr(10) || 'bequq' || chr(10) || 'baz', '^bar', 'm');
 -- ORACLE> SELECT 1 FROM DUAL WHERE regexp_like('foo' || chr(10) || 'bar' || chr(10) || 'bequq' || chr(10) || 'baz', '^bar', 'n'); -> NULL
-SELECT REGEXP_LIKE('foo' || chr(10) || 'bar' || chr(10) || 'bequq' || chr(10) || 'baz', '^bar', 'n');
+SELECT ORACLE.REGEXP_LIKE('foo' || chr(10) || 'bar' || chr(10) || 'bequq' || chr(10) || 'baz', '^bar', 'n');
 -- ORACLE> SELECT 1 FROM DUAL WHERE REGEXP_LIKE('GREEN', '([aeiou])\1'); -> NULL
-SELECT REGEXP_LIKE('GREEN', '([aeiou])\1');
+SELECT ORACLE.REGEXP_LIKE('GREEN', '([aeiou])\1');
 -- ORACLE> SELECT 1 FROM DUAL WHERE REGEXP_LIKE('GREEN', '([aeiou])\1', 'i'); -> 1
-SELECT REGEXP_LIKE('GREEN', '([aeiou])\1', 'i');
+SELECT ORACLE.REGEXP_LIKE('GREEN', '([aeiou])\1', 'i');
 -- ORACLE> SELECT 1 FROM DUAL WHERE REGEXP_LIKE('ORANGE' || chr(10) || 'GREEN', '([aeiou])\1', 'i'); -> 1
-SELECT REGEXP_LIKE('ORANGE' || chr(10) || 'GREEN', '([aeiou])\1', 'i');
+SELECT ORACLE.REGEXP_LIKE('ORANGE' || chr(10) || 'GREEN', '([aeiou])\1', 'i');
 -- ORACLE> SELECT 1 FROM DUAL WHERE REGEXP_LIKE('ORANGE' || chr(10) || 'GREEN', '^..([aeiou])\1', 'i'); -> NULL
-SELECT REGEXP_LIKE('ORANGE' || chr(10) || 'GREEN', '^..([aeiou])\1', 'i');
+SELECT ORACLE.REGEXP_LIKE('ORANGE' || chr(10) || 'GREEN', '^..([aeiou])\1', 'i');
 -- ORACLE> SELECT 1 FROM DUAL WHERE REGEXP_LIKE('ORANGE' || chr(10) || 'GREEN', '([aeiou])\1', 'in'); -> 1
-SELECT REGEXP_LIKE('ORANGE' || chr(10) || 'GREEN', '([aeiou])\1', 'in');
+SELECT ORACLE.REGEXP_LIKE('ORANGE' || chr(10) || 'GREEN', '([aeiou])\1', 'in');
 -- ORACLE> SELECT 1 FROM DUAL WHERE REGEXP_LIKE('ORANGE' || chr(10) || 'GREEN', '^..([aeiou])\1', 'in'); -> NULL
-SELECT REGEXP_LIKE('ORANGE' || chr(10) || 'GREEN', '^..([aeiou])\1', 'in');
+SELECT ORACLE.REGEXP_LIKE('ORANGE' || chr(10) || 'GREEN', '^..([aeiou])\1', 'in');
 -- ORACLE> SELECT 1 FROM DUAL WHERE REGEXP_LIKE('ORANGE' || chr(10) || 'GREEN', '^..([aeiou])\1', 'im'); -> 1
-SELECT REGEXP_LIKE('ORANGE' || chr(10) || 'GREEN', '^..([aeiou])\1', 'im');
+SELECT ORACLE.REGEXP_LIKE('ORANGE' || chr(10) || 'GREEN', '^..([aeiou])\1', 'im');
 
 ----
 -- Tests for REGEXP_COUNT()

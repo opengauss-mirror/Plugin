@@ -19,13 +19,6 @@
 int context;
 
 typedef struct {
-	size_t size;
-	void* first_byte_ptr;
-	bool dispossible;
-/*	int16 context; */
-} list_item;
-
-typedef struct {
 	int list_c;
 	size_t max_size;
 	vardata data[1];	 /* flexible array member */
@@ -40,10 +33,6 @@ static size_t asize[] = {
 	2848,   4608,  7456, 12064,
 	19520, 31584, 51104, 82688};
 
-
-int *list_c = NULL;
-list_item *list = NULL;
-size_t max_size;
 
 int cycle = 0;
 
@@ -64,14 +53,16 @@ ptr_comp(const void* a, const void* b)
 }
 
 char *
-ora_sstrcpy(char *str)
+ora_copystring(char *str)
 {
 	size_t len;
 	char *result;
 
 	len = strlen(str);
-	if (NULL != (result = ora_salloc(len+1)))
-		memcpy(result, str, len + 1);
+	if (NULL != (result = (char *)ora_salloc(len+1))) {
+		errno_t sret = memcpy_s(result, len + 1, str, len + 1);
+		securec_check(sret, "", "");
+	}
 	else
 		ereport(ERROR,
 			(errcode(ERRCODE_OUT_OF_MEMORY),
@@ -90,9 +81,10 @@ ora_scstring(text *str)
 
 	len = VARSIZE_ANY_EXHDR(str);
 
-	if (NULL != (result = ora_salloc(len+1)))
+	if (NULL != (result = (char *)ora_salloc(len+1)))
 	{
-		memcpy(result, VARDATA_ANY(str), len);
+		errno_t sret = memcpy_s(result, len, VARDATA_ANY(str), len);
+		securec_check(sret, "", "");
 		result[len] = '\0';
 	}
 	else
@@ -113,48 +105,52 @@ static void
 defragmentation()
 {
 	int src, target;
+	errno_t sret;
 
 	/* Sort the array to pointer order */
-	qsort(list, *list_c, sizeof(list_item), ptr_comp);
+	qsort(get_session_context()->list, *(get_session_context()->list_c), sizeof(list_item), ptr_comp);
 
 	/* Merge adjacent dispossible slots, and move up other slots */
 	target = 0;
-	for (src = 0; src < *list_c; src++)
+	for (src = 0; src < *(get_session_context()->list_c); src++)
 	{
 		if (target > 0 &&
-			list[src].dispossible &&
-			list[target - 1].dispossible)
+			get_session_context()->list[src].dispossible &&
+			get_session_context()->list[target - 1].dispossible)
 		{
-			list[target - 1].size += list[src].size;
+			get_session_context()->list[target - 1].size += get_session_context()->list[src].size;
 		}
 		else
 		{
 			if (src != target)
-				memcpy(&list[target], &list[src], sizeof(list_item));
+				sret = memcpy_s(&(get_session_context()->list[target]), sizeof(list_item), &(get_session_context()->list[src]), sizeof(list_item));
+				securec_check(sret, "", "");
 			target++;
 		}
 	}
-	*list_c = target;
+	*(get_session_context()->list_c) = target;
 }
 
 static size_t
 align_size(size_t size)
 {
-	int i;
+    int i;
 
-	/* default, we can allocate max MAX_SIZE memory block */
+    /* default, we can allocate max MAX_SIZE memory block */
 
-	for (i = 0; i < 17; i++)
-		if (asize[i] >= size)
-			return asize[i];
+    for (i = 0; i < 17; i++) {
+        if (asize[i] >= size) {
+            return asize[i];
+        }
+    }
 
-	ereport(ERROR,
-		   (errcode(ERRCODE_OUT_OF_MEMORY),
-		    errmsg("too much large memory block request"),
-		    errdetail("Failed while allocation block %lu bytes in shared memory.", (unsigned long) size),
-		    errhint("Increase MAX_SIZE constant, fill table a_size and recompile package.")));
+    ereport(ERROR,
+        (errcode(ERRCODE_OUT_OF_MEMORY),
+            errmsg("too much large memory block request"),
+            errdetail("Failed while allocation block %lu bytes in shared memory.", (unsigned long) size),
+            errhint("Increase MAX_SIZE constant, fill table a_size and recompile package.")));
 
-	return 0;
+    return 0;
 }
 
 /*
@@ -166,19 +162,19 @@ align_size(size_t size)
 void
 ora_sinit(void *ptr, size_t size, bool create)
 {
-	if (list == NULL)
+	if (get_session_context()->list == NULL)
 	{
 		mem_desc *m = (mem_desc*)ptr;
-		list = (list_item*)m->data;
-		list_c = &m->list_c;
-		max_size = m->max_size = size;
+		get_session_context()->list = (list_item*)m->data;
+		get_session_context()->list_c = &m->list_c;
+		get_session_context()->max_size = m->max_size = size;
 
 		if (create)
 		{
-			list[0].size = size - sizeof(list_item)*LIST_ITEMS - sizeof(mem_desc);
-			list[0].first_byte_ptr = ((char *) &m->data) + sizeof(list_item)*LIST_ITEMS;
-			list[0].dispossible = true;
-			*list_c = 1;
+			get_session_context()->list[0].size = size - sizeof(list_item)*LIST_ITEMS - sizeof(mem_desc);
+			get_session_context()->list[0].first_byte_ptr = ((char *) &m->data) + sizeof(list_item)*LIST_ITEMS;
+			get_session_context()->list[0].dispossible = true;
+			*(get_session_context()->list_c) = 1;
 		}
 	}
 }
@@ -195,35 +191,35 @@ ora_salloc(size_t size)
 
 	for (repeat_c = 0; repeat_c < 2; repeat_c++)
 	{
-		size_t	max_min = max_size;
+		size_t	max_min = get_session_context()->max_size;
 		int		select = -1;
 		int		i;
 
 		/* find first good free block */
-		for (i = 0; i < *list_c; i++)
+		for (i = 0; i < *(get_session_context()->list_c); i++)
 		{
-			if (list[i].dispossible)
+			if (get_session_context()->list[i].dispossible)
 			{
 				/* If this block is just the right size, return it */
-				if (list[i].size == aligned_size)
+				if (get_session_context()->list[i].size == aligned_size)
 				{
-					list[i].dispossible = false;
-					ptr = list[i].first_byte_ptr;
+					get_session_context()->list[i].dispossible = false;
+					ptr = get_session_context()->list[i].first_byte_ptr;
 					/* list[i].context = context; */
 
 					return ptr;
 				}
 
-				if (list[i].size > aligned_size && list[i].size < max_min)
+				if (get_session_context()->list[i].size > aligned_size && get_session_context()->list[i].size < max_min)
 				{
-					max_min = list[i].size;
+					max_min = get_session_context()->list[i].size;
 					select = i;
 				}
 			}
 		}
 
 		/* If no suitable free slot found, defragment and try again. */
-		if (select == -1 || *list_c == LIST_ITEMS)
+		if (select == -1 || *(get_session_context()->list_c) == LIST_ITEMS)
 		{
 			defragmentation();
 			continue;
@@ -233,14 +229,14 @@ ora_salloc(size_t size)
 		 * A slot larger than required was found. Divide it to avoid wasting
 		 * space, and return the slot of the right size.
 		 */
-		list[*list_c].size = list[select].size - aligned_size;
-		list[*list_c].first_byte_ptr = (char*)list[select].first_byte_ptr + aligned_size;
-		list[*list_c].dispossible = true;
-		list[select].size = aligned_size;
-		list[select].dispossible = false;
+		get_session_context()->list[*(get_session_context()->list_c)].size = get_session_context()->list[select].size - aligned_size;
+		get_session_context()->list[*(get_session_context()->list_c)].first_byte_ptr = (char*)(get_session_context()->list[select].first_byte_ptr) + aligned_size;
+		get_session_context()->list[*(get_session_context()->list_c)].dispossible = true;
+		get_session_context()->list[select].size = aligned_size;
+		get_session_context()->list[select].dispossible = false;
 		/* list[select].context = context; */
-		ptr = list[select].first_byte_ptr;
-		*list_c += 1;
+		ptr = get_session_context()->list[select].first_byte_ptr;
+		*(get_session_context()->list_c) += 1;
 		break;
 	}
 
@@ -251,6 +247,7 @@ void
 ora_sfree(void* ptr)
 {
 	int i;
+	errno_t rc = EOK;
 
 /*
 	if (cycle++ % 100 == 0)
@@ -263,12 +260,13 @@ ora_sfree(void* ptr)
 	}
 */
 
-	for (i = 0; i < *list_c; i++)
-		if (list[i].first_byte_ptr == ptr)
+	for (i = 0; i < *(get_session_context()->list_c); i++)
+		if (get_session_context()->list[i].first_byte_ptr == ptr)
 		{
-			list[i].dispossible = true;
+			get_session_context()->list[i].dispossible = true;
 			/* list[i].context = -1; */
-			memset(list[i].first_byte_ptr, '#', list[i].size);
+			rc = memset_s(get_session_context()->list[i].first_byte_ptr, get_session_context()->list[i].size, '#', get_session_context()->list[i].size);
+			securec_check(rc, "\0", "\0");
 			return;
 		}
 
@@ -287,12 +285,12 @@ ora_srealloc(void *ptr, size_t size)
 	size_t aux_s = 0;
 	int i;
 
-	for (i = 0; i < *list_c; i++)
-		if (list[i].first_byte_ptr == ptr)
+	for (i = 0; i < *(get_session_context()->list_c); i++)
+		if (get_session_context()->list[i].first_byte_ptr == ptr)
 		{
-			if (align_size(size) <= list[i].size)
+			if (align_size(size) <= get_session_context()->list[i].size)
 				return ptr;
-			aux_s = list[i].size;
+			aux_s = get_session_context()->list[i].size;
 		}
 
 	if (aux_s == 0)
@@ -303,9 +301,10 @@ ora_srealloc(void *ptr, size_t size)
 			errhint("Report this bug to autors.")));
 
 
-	if (NULL != (result = ora_salloc(size)))
+	if (NULL != (result = (char *)ora_salloc(size)))
 	{
-		memcpy(result, ptr, aux_s);
+		errno_t sret = memcpy_s(result, aux_s, ptr, aux_s);
+		securec_check(sret, "", "");
 		ora_sfree(ptr);
 	}
 

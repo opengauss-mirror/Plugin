@@ -4,7 +4,7 @@
 #define LOCALMSGSZ (8*1024)
 #define SHMEMMSGSZ (30*1024)
 #define MAX_PIPES  30
-#define MAX_EVENTS 30
+#define ORA_MAX_EVENTS 30
 #define MAX_LOCKS  256
 
 typedef struct _message_item {

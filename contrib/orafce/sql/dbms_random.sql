@@ -1,4 +1,5 @@
 -- Tests for package DBMS_RANDOM
+SET behavior_compat_options='display_leading_zero';
 SELECT dbms_random.initialize(8);
 SELECT dbms_random.normal()::numeric(10, 8);
 SELECT dbms_random.normal()::numeric(10, 8);

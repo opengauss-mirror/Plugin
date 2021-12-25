@@ -38,18 +38,15 @@ PG_FUNCTION_INFO_V1(plvsubst_subst);
 
 #define C_SUBST  "%s"
 
-
-text *c_subst = NULL;
-
 static void
 init_c_subst()
 {
-	if (!c_subst)
+	if (!get_session_context()->c_subst)
 	{
 		MemoryContext oldctx;
 
-		oldctx = MemoryContextSwitchTo(TopMemoryContext);
-		c_subst = cstring_to_text(C_SUBST);
+		oldctx = MemoryContextSwitchTo(u_sess->self_mem_cxt);
+		get_session_context()->c_subst = cstring_to_text(C_SUBST);
 		MemoryContextSwitchTo(oldctx);
 	}
 }
@@ -59,22 +56,22 @@ set_c_subst(text *sc)
 {
 	MemoryContext oldctx;
 
-	if (c_subst)
-		pfree(c_subst);
+	if (get_session_context()->c_subst)
+		pfree(get_session_context()->c_subst);
 
 	oldctx = MemoryContextSwitchTo(TopMemoryContext);
-	c_subst = sc ? TextPCopy(sc) : cstring_to_text(C_SUBST);
+	get_session_context()->c_subst = sc ? TextPCopy(sc) : cstring_to_text(C_SUBST);
 	MemoryContextSwitchTo(oldctx);
 }
 
 static text*
-plvsubst_string(text *template_in, ArrayType *vals_in, text *c_subst, FunctionCallInfo fcinfo)
+plvsubst_string(text *template_in, ArrayType *vals_in, text *c_subst_arg, FunctionCallInfo fcinfo)
 {
 	ArrayType	   *v = vals_in;
 	int				nitems,
-				   *dims,
+				   *dims = NULL,
 					ndims;
-	char		   *p;
+	char		   *p = NULL;
 	int16			typlen;
 	bool			typbyval;
 	char			typalign;
@@ -84,13 +81,13 @@ plvsubst_string(text *template_in, ArrayType *vals_in, text *c_subst, FunctionCa
 	FmgrInfo		proc;
 	int				i = 0, items = 0;
 	StringInfo		sinfo;
-	const char	   *template_str;
+	const char	   *template_str = NULL;
 	int				template_len;
-	char		   *sizes;
-	int			   *positions;
+	char		   *sizes = NULL;
+	int			   *positions = NULL;
 	int				subst_mb_len;
 	int				subst_len;
-	const bits8	   *bitmap;
+	const bits8	   *bitmap = NULL;
 	int				bitmask;
 
 	if (v != NULL && (ndims = ARR_NDIM(v)) > 0)
@@ -120,20 +117,20 @@ plvsubst_string(text *template_in, ArrayType *vals_in, text *c_subst, FunctionCa
 
 	template_str = VARDATA(template_in);
 	template_len = ora_mb_strlen(template_in, &sizes, &positions);
-	subst_mb_len = ora_mb_strlen1(c_subst);
-	subst_len = VARSIZE_ANY_EXHDR(c_subst);
+	subst_mb_len = ora_mb_strlen1(c_subst_arg);
+	subst_len = VARSIZE_ANY_EXHDR(c_subst_arg);
 	sinfo = makeStringInfo();
 
 	bitmask = 1;
 	for (i = 0; i < template_len; i++)
 	{
-		if (strncmp(&template_str[positions[i]], VARDATA(c_subst), subst_len) == 0)
+		if (strncmp(&template_str[positions[i]], VARDATA(c_subst_arg), subst_len) == 0)
 		{
 			Datum    itemvalue;
-			char     *value;
 
 			if (items++ < nitems)
 			{
+				char    *value;
 				if (bitmap && (*bitmap & bitmask) == 0)
 					value = pstrdup("NULL");
 				else
@@ -185,7 +182,7 @@ plvsubst_string_array(PG_FUNCTION_ARGS)
 
 	PG_RETURN_TEXT_P(plvsubst_string(PG_GETARG_TEXT_P(0),
 									 PG_GETARG_ARRAYTYPE_P(1),
-									 PG_ARGISNULL(2) ? c_subst : PG_GETARG_TEXT_P(2),
+									 PG_ARGISNULL(2) ? get_session_context()->c_subst : PG_GETARG_TEXT_P(2),
 									 fcinfo));
 }
 
@@ -244,7 +241,7 @@ plvsubst_string_string(PG_FUNCTION_ARGS)
 
 	PG_RETURN_TEXT_P(plvsubst_string(PG_GETARG_TEXT_P(0),
 									 array,
-									 PG_GETARG_IF_EXISTS(3, TEXT_P, c_subst),
+									 PG_GETARG_IF_EXISTS(3, TEXT_P, get_session_context()->c_subst),
 									 fcinfo));
 }
 
@@ -273,5 +270,5 @@ Datum
 plvsubst_subst(PG_FUNCTION_ARGS)
 {
 	init_c_subst();
-	PG_RETURN_TEXT_P(TextPCopy(c_subst));
+	PG_RETURN_TEXT_P(TextPCopy(get_session_context()->c_subst));
 }

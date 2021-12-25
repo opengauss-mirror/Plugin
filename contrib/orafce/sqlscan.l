@@ -23,11 +23,6 @@ fprintf_to_ereport(const char *fmt, const char *msg)
 	ereport(ERROR, (errmsg_internal("%s", msg)));
 }
 
-static int		xcdepth = 0;	/* depth of nesting in slash-star comments */
-static char    *dolqstart;      /* current $foo$ quote start string */
-static bool extended_string = false;
-
-
 /* No reason to constrain amount of data slurped */
 #define YY_READ_BUF_SIZE 16777216
 
@@ -36,10 +31,9 @@ static bool extended_string = false;
 
 static YY_BUFFER_STATE scanbufhandle;
 
-#define SET_YYLLOC()  (orafce_sql_yylval.val.lloc = yytext - scanbuf)                                                                                              
-                                                                                                                                               
-/* Handles to the buffer that the lexer uses internally */                                                                                     
-static char *scanbuf;       
+#define SET_YYLLOC()  (orafce_sql_yylval.val.lloc = yytext - get_session_context()->scanbuf)
+
+/* Handles to the buffer that the lexer uses internally */
 
 /* flex 2.5.4 doesn't bother with a decl for this */
 
@@ -74,7 +68,6 @@ static int	lexer_errposition(void);
  */
 
 /* Handles to the buffer that the lexer uses internally */
-static char *scanbuf;
 
 static unsigned char unescape_single_char(unsigned char c);
 
@@ -329,7 +322,7 @@ other			.
 {xcstart}		{
 					/* Set location in case of syntax error in comment */
 					SET_YYLLOC();
-					xcdepth = 0;
+					get_session_context()->xcdepth = 0;
 					BEGIN(xc);
 					/* Put back any characters past slash-star; see above */
 					startlit();
@@ -340,7 +333,7 @@ other			.
 				}
 
 <xc>{xcstart}	{
-					xcdepth++;
+					get_session_context()->xcdepth++;
 					/* Put back any characters past slash-star; see above */
 					addlitchar('/');
 					addlitchar('*');
@@ -349,7 +342,7 @@ other			.
 				}
 
 <xc>{xcstop}	{
-					if (xcdepth <= 0)
+					if (get_session_context()->xcdepth <= 0)
 					{
 						BEGIN(INITIAL);
 						addlitchar('*');
@@ -363,7 +356,7 @@ other			.
 					}
 					else
 					{
-						xcdepth--;
+						get_session_context()->xcdepth--;
 						addlitchar('*');
 						addlitchar('/');
 					}
@@ -482,13 +475,13 @@ other			.
 {xqstart}		{
 					SET_YYLLOC();
 					BEGIN(xq);
-					extended_string = false;
+					get_session_context()->extended_string = false;
 					startlit();
 				}
 {xestart}		{
 					SET_YYLLOC();
 					BEGIN(xe);
-					extended_string = true;
+					get_session_context()->extended_string = true;
 					startlit();
 				}
 <xq,xe>{quotestop}	|
@@ -496,7 +489,7 @@ other			.
 					yyless(1);
 					BEGIN(INITIAL);
 					yylval.val.str = litbufdup();
-					yylval.val.modificator = extended_string ? "es" : "qs";
+					yylval.val.modificator = get_session_context()->extended_string ? (char*)"es" : (char*)"qs";
 					yylval.val.keycode = -1;
 					yylval.val.sep = NULL;
 					return X_SCONST;
@@ -532,7 +525,7 @@ other			.
 				}
 <xq,xe><<EOF>>		{ 
 					yylval.val.str = litbufdup();
-					yylval.val.modificator = extended_string ? "esu" : "qsu";
+					yylval.val.modificator = get_session_context()->extended_string ? (char*)"esu" : (char*)"qsu";
 					yylval.val.keycode = -1;
 					yylval.val.sep = NULL;
 					return X_SCONST;
@@ -540,7 +533,7 @@ other			.
 
 {dolqdelim}		{
 					SET_YYLLOC();
-					dolqstart = pstrdup(yytext);
+					get_session_context()->dolqstart = pstrdup(yytext);
 					BEGIN(xdolq);
 					startlit();
 				}
@@ -555,9 +548,9 @@ other			.
 					return X_OTHERS;
 				}
 <xdolq>{dolqdelim} {
-					if (strcmp(yytext, dolqstart) == 0)
+					if (strcmp(yytext, get_session_context()->dolqstart) == 0)
 					{
-						yylval.val.sep = dolqstart;
+						yylval.val.sep = get_session_context()->dolqstart;
 						yylval.val.modificator = "dolq";
 						BEGIN(INITIAL);
 						yylval.val.str = litbufdup();
@@ -586,7 +579,7 @@ other			.
 					addlitchar(yytext[0]);
 				}
 <xdolq><<EOF>>	{ 
-					yylval.val.sep = dolqstart;
+					yylval.val.sep = get_session_context()->dolqstart;
 					yylval.val.modificator = "dolqu";
 					yylval.val.str = litbufdup();
 					yylval.val.keycode = -1;
@@ -877,7 +870,7 @@ lexer_errposition(void)
 	int		pos;
 
 	/* Convert byte offset to character number */
-	pos = _pg_mbstrlen_with_len(scanbuf, orafce_sql_yylval.val.lloc) + 1;
+	pos = _pg_mbstrlen_with_len(get_session_context()->scanbuf, orafce_sql_yylval.val.lloc) + 1;
 	/* And pass it to the ereport mechanism */
 
 #if PG_VERSION_NUM >= 130000
@@ -907,7 +900,7 @@ lexer_errposition(void)
 void
 orafce_sql_yyerror(List **result, const char *message)
 {
-	const char *loc = scanbuf + orafce_sql_yylval.val.lloc;
+	const char *loc = get_session_context()->scanbuf + orafce_sql_yylval.val.lloc;
 
 	if (*loc == YY_END_OF_BUFFER_CHAR)
 	{
@@ -943,11 +936,12 @@ orafce_sql_scanner_init(const char *str)
 	/*
 	 * Make a scan buffer with special termination needed by flex.
 	 */
-	scanbuflen = slen;
-	scanbuf = palloc(slen + 2);
-	memcpy(scanbuf, str, slen);
-	scanbuf[slen] = scanbuf[slen + 1] = YY_END_OF_BUFFER_CHAR;
-	scanbufhandle = yy_scan_buffer(scanbuf, slen + 2);
+	get_session_context()->scanbuflen = slen;
+	get_session_context()->scanbuf = (char*)palloc(slen + 2);
+	errno_t rc = memcpy_s(get_session_context()->scanbuf, slen, str, slen);
+	securec_check(rc, "", "");
+	get_session_context()->scanbuf[slen] = get_session_context()->scanbuf[slen + 1] = YY_END_OF_BUFFER_CHAR;
+	scanbufhandle = yy_scan_buffer(get_session_context()->scanbuf, slen + 2);
 
 	/* initialize literal buffer to a reasonable but expansible size */
 	literalalloc = 128;
@@ -965,7 +959,7 @@ void
 orafce_sql_scanner_finish(void)
 {
 	yy_delete_buffer(scanbufhandle);
-	pfree(scanbuf);
+	pfree(get_session_context()->scanbuf);
 }
 
 static void
@@ -980,7 +974,8 @@ addlit(char *ytext, int yleng)
 		literalbuf = (char *) repalloc(literalbuf, literalalloc);
 	}
 	/* append new data, add trailing null */
-	memcpy(literalbuf+literallen, ytext, yleng);
+	errno_t rc = memcpy_s(literalbuf+literallen, yleng, ytext, yleng);
+	securec_check(rc, "", "");
 	literallen += yleng;
 	literalbuf[literallen] = '\0';
 }
@@ -1010,11 +1005,12 @@ addlitchar(unsigned char ychar)
 static char *
 litbufdup(void)
 {
-	char *new;
+	char *newbuf;
 
-	new = palloc(literallen + 1);
-	memcpy(new, literalbuf, literallen+1);
-	return new;
+	newbuf = (char*)palloc(literallen + 1);
+	errno_t rc = memcpy_s(newbuf, literallen+1, literalbuf, literallen+1);
+	securec_check(rc, "", "");
+	return newbuf;
 }
 
 

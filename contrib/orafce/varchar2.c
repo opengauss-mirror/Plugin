@@ -25,8 +25,6 @@ PG_FUNCTION_INFO_V1(varchar2recv);
 PG_FUNCTION_INFO_V1(orafce_concat2);
 PG_FUNCTION_INFO_V1(orafce_varchar_transform);
 
-bool orafce_varchar2_null_safe_concat = false;
-
 
 /*
  * varchar2_input -- common guts of varchar2in and varchar2recv
@@ -43,7 +41,7 @@ bool orafce_varchar2_null_safe_concat = false;
 static VarChar *
 varchar2_input(const char *s, size_t len, int32 atttypmod)
 {
-	VarChar		*result;		/* input data */
+	VarChar		*result = NULL;		/* input data */
 	size_t		maxlen;
 
 	maxlen = atttypmod - VARHDRSZ;
@@ -214,6 +212,7 @@ orafce_concat2(PG_FUNCTION_ARGS)
 				len2 = 0,
 				len;
 	char	   *ptr;
+	errno_t	   sret;
 
 	if (!PG_ARGISNULL(0))
 	{
@@ -227,7 +226,7 @@ orafce_concat2(PG_FUNCTION_ARGS)
 	}
 
 	/* default behave should be compatible with Postgres */
-	if (!orafce_varchar2_null_safe_concat)
+	if (!(get_session_context()->orafce_varchar2_null_safe_concat))
 	{
 		if (PG_ARGISNULL(0) || PG_ARGISNULL(1))
 			PG_RETURN_NULL();
@@ -246,10 +245,14 @@ orafce_concat2(PG_FUNCTION_ARGS)
 
 	ptr = VARDATA(result);
 
-	if (len1 > 0)
-		memcpy(ptr, VARDATA_ANY(arg1), len1);
-	if (len2 > 0)
-		memcpy(ptr + len1, VARDATA_ANY(arg2), len2);
+	if (len1 > 0) {
+		sret = memcpy_s(ptr, len1, VARDATA_ANY(arg1), len1);
+		securec_check(sret, "", "");
+	}
+	if (len2 > 0) {
+		sret = memcpy_s(ptr + len1, len2, VARDATA_ANY(arg2), len2);
+		securec_check(sret, "", "");
+	}
 
 	PG_RETURN_TEXT_P(result);
 }
