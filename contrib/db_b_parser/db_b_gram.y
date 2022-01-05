@@ -814,7 +814,7 @@ static char* mapping_func_name(char* old_name, bool free_old);
 	LABEL LANGUAGE LARGE_P LAST_P LC_COLLATE_P LC_CTYPE_P LEADING LEAKPROOF
 	LEAST LESS LEFT LEVEL LIKE LIMIT LIST LISTEN LOAD LOCAL LOCALTIME LOCALTIMESTAMP
 	LOCATE LOCATION LOCK_P LOG_P LOGGING LOGIN_ANY LOGIN_FAILURE LOGIN_SUCCESS LOGOUT LOOP
-	MAPPING MASKING MASTER MATCH MATERIALIZED MATCHED MAXEXTENTS MAXSIZE MAXTRANS MAXVALUE MERGE MICROSECOND_P MINUS_P MINUTE_P MINVALUE MINEXTENTS MOD MODE MODIFY_P MONTH_P MOVE MOVEMENT
+	MAPPING MASKING MASTER MATCH MATERIALIZED MATCHED MAXEXTENTS MAXSIZE MAXTRANS MAXVALUE MERGE MINUS_P MINUTE_P MINVALUE MINEXTENTS MOD MODE MODIFY_P MONTH_P MOVE MOVEMENT
 	MODEL // DB4AI
 	NAME_P NAMES NATIONAL NATURAL NCHAR NEXT NLSSORT NO NOCOMPRESS NOCYCLE NODE NOLOGGING NOMAXVALUE NOMINVALUE NONE
 	NOT NOTHING NOTIFY NOTNULL NOWAIT NULL_P NULLIF NULLS_P NUMBER_P NUMERIC NUMSTR NVARCHAR2 NVL
@@ -20116,20 +20116,6 @@ func_expr_common_subexpr:
 					n->call_func = false;
 					$$ = (Node *)n;
 				}
-			| MICROSECOND_P '(' a_expr ')'
-				{
-					FuncCall *n = makeNode(FuncCall);
-					n->funcname = SystemFuncName("date_part");
-					n->args = list_make2(makeStringConst("microsecond", -1), $3);
-					n->agg_order = NIL;
-					n->agg_star = FALSE;
-					n->agg_distinct = FALSE;
-					n->func_variadic = FALSE;
-					n->over = NULL;
-					n->location = @1;
-					n->call_func = false;
-					$$ = (Node *)n;
-				}
 			| MINUTE_P '(' a_expr ')'
 				{
 					FuncCall *n = makeNode(FuncCall);
@@ -20161,7 +20147,7 @@ func_expr_common_subexpr:
 			| SECOND_P '(' a_expr ')'
 				{
 					FuncCall *n = makeNode(FuncCall);
-					n->funcname = SystemFuncName("date_part");
+					n->funcname = SystemFuncName("second");
 					n->args = list_make2(makeStringConst("second", -1), $3);
 					n->agg_order = NIL;
 					n->agg_star = FALSE;
@@ -20277,7 +20263,7 @@ func_expr_common_subexpr:
 			| LOCATE '(' b_expr ',' b_expr ')'
 				{
 					FuncCall *n = makeNode(FuncCall);
-					n->funcname = SystemFuncName("position");
+					n->funcname = SystemFuncName("locate");
 					n->args = list_make2($5, $3);
 					n->agg_order = NIL;
 					n->agg_star = FALSE;
@@ -21000,7 +20986,6 @@ extract_arg:
 			| MINUTE_P								{ $$ = "minute"; }
 			| SECOND_P								{ $$ = "second"; }
 			| QUARTER								{ $$ = "quarter"; }
-			| MICROSECOND_P								{ $$ = "microsecond"; }
 			| Sconst								{ $$ = $1; }
 		;
 
@@ -22147,7 +22132,6 @@ col_name_keyword:
 			| INTERVAL
 			| LEAST
 			| LOCATE
-			| MICROSECOND_P
 			| MINUTE_P
 			| NATIONAL
 			| NCHAR
