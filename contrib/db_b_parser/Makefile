@@ -63,7 +63,7 @@ REGRESS_OPTS = --dlpath=$(top_builddir)/src/test/regress -c 0 -d 1 --single_node
 EXTENSION = db_b_parser
 DATA = db_b_parser--1.0.sql
 
-override CPPFLAGS :=$(filter-out -fPIE, $(CPPFLAGS)) -fPIC
+override CPPFLAGS :=$(filter-out -fPIE, $(CPPFLAGS)) -I$(top_builddir)/$(subdir) -fPIC 
 
 include $(top_builddir)/src/Makefile.global
 include $(top_srcdir)/contrib/contrib-global.mk

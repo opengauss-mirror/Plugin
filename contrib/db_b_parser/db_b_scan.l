@@ -1159,9 +1159,9 @@ db_b_scanner_yyerror(const char *message, core_yyscan_t yyscanner)
 {
 	const char *loc = yyextra->scanbuf + *yylloc;
 
-    if (u_sess->plsql_cxt.plpgsql_curr_compile != NULL &&
-               u_sess->plsql_cxt.plpgsql_curr_compile_package != NULL) {
-		PLpgSQL_function* func = u_sess->plsql_cxt.plpgsql_curr_compile;
+    if (u_sess->plsql_cxt.curr_compile_context->plpgsql_curr_compile != NULL &&
+               u_sess->plsql_cxt.curr_compile_context->plpgsql_curr_compile_package != NULL) {
+		PLpgSQL_function* func = u_sess->plsql_cxt.curr_compile_context->plpgsql_curr_compile;
 		if (*loc == YY_END_OF_BUFFER_CHAR)
 		{
             ereport(ERROR,
