@@ -64,13 +64,13 @@ record_stmt_label(char * label, PLpgSQL_stmt *stmt)
             (PLpgSQL_gotoLabel *)palloc0(sizeof(PLpgSQL_gotoLabel));
     gl->label = label;
     gl->stmt = stmt;
-    u_sess->plsql_cxt.goto_labels = lappend(u_sess->plsql_cxt.goto_labels, (void *)gl);
+    u_sess->plsql_cxt.curr_compile_context->goto_labels = lappend(u_sess->plsql_cxt.curr_compile_context->goto_labels, (void *)gl);
 }
 
 static void IsInPublicNamespace(char* varname) {
-    if (u_sess->plsql_cxt.plpgsql_curr_compile == NULL && 
-        u_sess->plsql_cxt.plpgsql_curr_compile_package != NULL) {
-        PLpgSQL_package* pkg = u_sess->plsql_cxt.plpgsql_curr_compile_package;
+    if (u_sess->plsql_cxt.curr_compile_context->plpgsql_curr_compile == NULL && 
+        u_sess->plsql_cxt.curr_compile_context->plpgsql_curr_compile_package != NULL) {
+        PLpgSQL_package* pkg = u_sess->plsql_cxt.curr_compile_context->plpgsql_curr_compile_package;
         if (plpgsql_ns_lookup(pkg->public_ns, true, varname, NULL, NULL, NULL) != NULL) {
             ereport(ERROR,
                 (errmodule(MOD_PLSQL), errcode(ERRCODE_SYNTAX_ERROR),
@@ -473,40 +473,40 @@ pl_body         : pl_package_spec
 pl_package_spec : K_PACKAGE decl_sect K_END
                     {
                         int nDatums = 0;
-                        if (u_sess->plsql_cxt.plpgsql_curr_compile!=NULL) {
-                            nDatums = u_sess->plsql_cxt.plpgsql_nDatums;
+                        if (u_sess->plsql_cxt.curr_compile_context->plpgsql_curr_compile!=NULL) {
+                            nDatums = u_sess->plsql_cxt.curr_compile_context->plpgsql_nDatums;
                         } else {
-                            nDatums = u_sess->plsql_cxt.plpgsql_pkg_nDatums;
+                            u_sess->plsql_cxt.curr_compile_context->plpgsql_pkg_nDatums;
                         }
 
                         for (int i = 0; i < nDatums; i++) {
-                            u_sess->plsql_cxt.plpgsql_Datums[i]->ispkg = true;
+                            u_sess->plsql_cxt.curr_compile_context->plpgsql_Datums[i]->ispkg = true;
                         }
                         PLpgSQL_nsitem* ns_cur = plpgsql_ns_top();
                         while (ns_cur != NULL) {
-                            ns_cur->pkgname =  u_sess->plsql_cxt.plpgsql_curr_compile_package->pkg_signature;
+                            ns_cur->pkgname =  u_sess->plsql_cxt.curr_compile_context->plpgsql_curr_compile_package->pkg_signature;
                             ns_cur = ns_cur->prev;
                         }
-                        u_sess->plsql_cxt.plpgsql_curr_compile_package->n_initvars = $2.n_initvars;
-                        u_sess->plsql_cxt.plpgsql_curr_compile_package->initvarnos = $2.initvarnos;
+                        u_sess->plsql_cxt.curr_compile_context->plpgsql_curr_compile_package->n_initvars = $2.n_initvars;
+                        u_sess->plsql_cxt.curr_compile_context->plpgsql_curr_compile_package->initvarnos = $2.initvarnos;
                     }
                 ;
 pl_package_init : K_INSTANTIATION init_proc
                     {
-                        if (u_sess->plsql_cxt.plpgsql_curr_compile_package!=NULL)
+                        if (u_sess->plsql_cxt.curr_compile_context->plpgsql_curr_compile_package != NULL)
                         {
                             List* raw_parsetree_list = NULL;
                             raw_parsetree_list = raw_parser($2);
                             DoStmt* stmt;
                             stmt = (DoStmt *)linitial(raw_parsetree_list);
                             stmt->isExecuted = false;
-                            if (u_sess->plsql_cxt.plpgsql_curr_compile_package->is_spec_compiling) {
+                            if (u_sess->plsql_cxt.curr_compile_context->plpgsql_curr_compile_package->is_spec_compiling) {
                                 stmt->isSpec = true;
                             } else {
                                 stmt->isSpec = false;
                             }
-                            List *proc_list = u_sess->plsql_cxt.plpgsql_curr_compile_package->proc_list;
-                            u_sess->plsql_cxt.plpgsql_curr_compile_package->proc_list = lappend(proc_list,stmt);
+                            List *proc_list = u_sess->plsql_cxt.curr_compile_context->plpgsql_curr_compile_package->proc_list;
+                            u_sess->plsql_cxt.curr_compile_context->plpgsql_curr_compile_package->proc_list = lappend(proc_list,stmt);
                         } else {
                             yyerror("instantiation only use in package compile");
                         }
@@ -514,7 +514,7 @@ pl_package_init : K_INSTANTIATION init_proc
 
 pl_function		: comp_options pl_block opt_semi
                     {
-                        u_sess->plsql_cxt.plpgsql_parse_result = (PLpgSQL_stmt_block *) $2;
+                        u_sess->plsql_cxt.curr_compile_context->plpgsql_parse_result = (PLpgSQL_stmt_block *) $2;
                     }
                 ;
 
@@ -524,19 +524,19 @@ comp_options	:
 
 comp_option		: '#' K_OPTION K_DUMP
                     {
-                        u_sess->plsql_cxt.plpgsql_DumpExecTree = true;
+                        u_sess->plsql_cxt.curr_compile_context->plpgsql_DumpExecTree = true;
                     }
                 | '#' K_VARIABLE_CONFLICT K_ERROR
                     {
-                        u_sess->plsql_cxt.plpgsql_curr_compile->resolve_option = PLPGSQL_RESOLVE_ERROR;
+                        u_sess->plsql_cxt.curr_compile_context->plpgsql_curr_compile->resolve_option = PLPGSQL_RESOLVE_ERROR;
                     }
                 | '#' K_VARIABLE_CONFLICT K_USE_VARIABLE
                     {
-                        u_sess->plsql_cxt.plpgsql_curr_compile->resolve_option = PLPGSQL_RESOLVE_VARIABLE;
+                        u_sess->plsql_cxt.curr_compile_context->plpgsql_curr_compile->resolve_option = PLPGSQL_RESOLVE_VARIABLE;
                     }
                 | '#' K_VARIABLE_CONFLICT K_USE_COLUMN
                     {
-                        u_sess->plsql_cxt.plpgsql_curr_compile->resolve_option = PLPGSQL_RESOLVE_COLUMN;
+                        u_sess->plsql_cxt.curr_compile_context->plpgsql_curr_compile->resolve_option = PLPGSQL_RESOLVE_COLUMN;
                     }
                 ;
 
@@ -574,7 +574,7 @@ pl_block		: decl_sect K_BEGIN proc_sect exception_sect K_END opt_label
 decl_sect		: opt_block_label
                     {
                         /* done with decls, so resume identifier lookup */
-                        u_sess->plsql_cxt.plpgsql_IdentifierLookup = IDENTIFIER_LOOKUP_NORMAL;
+                        u_sess->plsql_cxt.curr_compile_context->plpgsql_IdentifierLookup = IDENTIFIER_LOOKUP_NORMAL;
                         $$.label	  = $1;
                         $$.n_initvars = 0;
                         $$.initvarnos = NULL;
@@ -582,7 +582,7 @@ decl_sect		: opt_block_label
                     }
                 | opt_block_label decl_start
                     {
-                        u_sess->plsql_cxt.plpgsql_IdentifierLookup = IDENTIFIER_LOOKUP_NORMAL;
+                         u_sess->plsql_cxt.curr_compile_context->plpgsql_IdentifierLookup = IDENTIFIER_LOOKUP_NORMAL;
                         $$.label	  = $1;
                         $$.n_initvars = 0;
                         $$.initvarnos = NULL;
@@ -590,7 +590,7 @@ decl_sect		: opt_block_label
                     }
                 | opt_block_label decl_start decl_stmts
                     {
-                        u_sess->plsql_cxt.plpgsql_IdentifierLookup = IDENTIFIER_LOOKUP_NORMAL;
+                         u_sess->plsql_cxt.curr_compile_context->plpgsql_IdentifierLookup = IDENTIFIER_LOOKUP_NORMAL;
                         $$.label	  = $1;
                         /* Remember variables declared in decl_stmts */
                         $$.n_initvars = plpgsql_add_initdatums(&($$.initvarnos));
@@ -608,7 +608,7 @@ decl_start		: K_DECLARE
                          * Disable scanner lookup of identifiers while
                          * we process the decl_stmts
                          */
-                        u_sess->plsql_cxt.plpgsql_IdentifierLookup = IDENTIFIER_LOOKUP_DECLARE;
+                         u_sess->plsql_cxt.curr_compile_context->plpgsql_IdentifierLookup = IDENTIFIER_LOOKUP_NORMAL;
                     }
                 ;
 
@@ -774,7 +774,7 @@ decl_statement	: decl_varname decl_const decl_datatype decl_collate decl_notnull
                         IsInPublicNamespace($1.name);
                         char *type_name;
                         errno_t ret;
-                        PLpgSQL_type * var_type = ((PLpgSQL_var *)u_sess->plsql_cxt.plpgsql_Datums[$2])->datatype;
+                        PLpgSQL_type * var_type = (PLpgSQL_type *)u_sess->plsql_cxt.curr_compile_context->plpgsql_Datums[$2];
                         PLpgSQL_var *newp;
                         int len = strlen(var_type->typname) + 3;
                         type_name = (char *)palloc0(len);
@@ -808,7 +808,7 @@ decl_statement	: decl_varname decl_const decl_datatype decl_collate decl_notnull
                     {
                         IsInPublicNamespace($1.name);
                         PLpgSQL_var *newp = NULL;
-                        PLpgSQL_type * var_type = (PLpgSQL_type *)u_sess->plsql_cxt.plpgsql_Datums[$2];
+                        PLpgSQL_type * var_type = (PLpgSQL_type *)u_sess->plsql_cxt.curr_compile_context->plpgsql_Datums[$2];
 
                         newp = (PLpgSQL_var *)plpgsql_build_variable($1.name,$1.lineno,
                                                                     var_type,true);
@@ -2298,14 +2298,14 @@ stmt_raise		: K_RAISE
                             if (T_CWORD == tok) {
                                 PLpgSQL_expr *expr = NULL;
                                 List* wholeName = yylval.cword.idents;
-                                int dno = plpgsql_pkg_add_unknown_var_to_namespace(wholeName, PLPGSQL_DTYPE_ROW);
+                                int dno = plpgsql_pkg_add_unknown_var_to_namespace(wholeName);
                                 if (dno == -1) {
                                     yyerror("not found package");
                                 }
                                 sprintf(message, "line:%d ", plpgsql_location_to_lineno(@1));
                                 appendStringInfoString(&ds, message);
                                 appendStringInfoString(&ds,"%");
-                                row = (PLpgSQL_row*)u_sess->plsql_cxt.plpgsql_Datums[dno];
+                                row = (PLpgSQL_row*)u_sess->plsql_cxt.curr_compile_context->plpgsql_Datums[dno];
                                 row->dtype = PLPGSQL_DTYPE_ROW;
                                 row->customErrorCode = plpgsql_getCustomErrorCode();
                                 /* condname is system embedded error name, so it is still null in this case. */
@@ -2581,7 +2581,7 @@ stmt_execsql			: K_ALTER
                 bool isCallFunc = false;
                 bool FuncNoarg = false;
                 checkFuncName($1.idents);
-                MemoryContext colCxt = MemoryContextSwitchTo(u_sess->plsql_cxt.compile_tmp_cxt);
+                MemoryContext colCxt = MemoryContextSwitchTo(u_sess->plsql_cxt.curr_compile_context->compile_tmp_cxt);
                 name = NameListToString($1.idents);
                 (void)MemoryContextSwitchTo(colCxt);
                 isCallFunc = is_function(name, false, false);
@@ -2613,7 +2613,7 @@ stmt_execsql			: K_ALTER
                 char *name = NULL;
                 bool isCallFunc = false;
                 checkFuncName($1.idents);
-                MemoryContext colCxt = MemoryContextSwitchTo(u_sess->plsql_cxt.compile_tmp_cxt);
+                MemoryContext colCxt = MemoryContextSwitchTo(u_sess->plsql_cxt.curr_compile_context->compile_tmp_cxt);
                 name = NameListToString($1.idents);
                 (void)MemoryContextSwitchTo(colCxt);
                 isCallFunc = is_function(name, false, true);
@@ -2966,26 +2966,8 @@ exception_sect	:
                          * scope of the names extends to the end of the
                          * current block.
                          */
-                        int			lineno = plpgsql_location_to_lineno(@1);
                         PLpgSQL_exception_block *newp = (PLpgSQL_exception_block *)palloc(sizeof(PLpgSQL_exception_block));
-                        PLpgSQL_variable *var;
-
-                        var = plpgsql_build_variable("sqlstate", lineno,
-                                                     plpgsql_build_datatype(TEXTOID,
-                                                                            -1,
-                                                                            u_sess->plsql_cxt.plpgsql_curr_compile->fn_input_collation),
-                                                     true, true);
-                        ((PLpgSQL_var *) var)->isconst = true;
-                        newp->sqlstate_varno = var->dno;
-
-                        var = plpgsql_build_variable("sqlerrm", lineno,
-                                                     plpgsql_build_datatype(TEXTOID,
-                                                                            -1,
-                                                                            u_sess->plsql_cxt.plpgsql_curr_compile->fn_input_collation),
-                                                     true, true);
-                        ((PLpgSQL_var *) var)->isconst = true;
-                        newp->sqlerrm_varno = var->dno;
-
+                        
                         $<exception_block>$ = newp;
                     }
                     proc_exceptions
@@ -3042,7 +3024,7 @@ proc_condition	: any_identifier
                                 if (PLPGSQL_DTYPE_ROW == yylval.wdatum.datum->dtype)
                                 {
                                     PLpgSQL_condition *newp = NULL;
-                                    PLpgSQL_row * row = ( PLpgSQL_row* ) u_sess->plsql_cxt.plpgsql_Datums[yylval.wdatum.datum->dno];
+                                    PLpgSQL_row * row = ( PLpgSQL_row* ) u_sess->plsql_cxt.curr_compile_context->plpgsql_Datums[yylval.wdatum.datum->dno];
                                     TupleDesc	rowtupdesc = row ? row->rowtupdesc : NULL;
 
                                     if(rowtupdesc && 
@@ -3525,7 +3507,7 @@ make_callfunc_stmt(const char *sqlstart, int location, bool is_assign, bool eate
     cp[1] = NULL;
     cp[2] = NULL;
     /* the function make_callfunc_stmt is only to assemble a sql statement, so the context is set to tmp context */
-    oldCxt = MemoryContextSwitchTo(u_sess->plsql_cxt.compile_tmp_cxt);
+    oldCxt = MemoryContextSwitchTo(u_sess->plsql_cxt.curr_compile_context->compile_tmp_cxt);
     plpgsql_parser_funcname(sqlstart, cp, 3);
 
     if (cp[2] && cp[2][0] != '\0')
@@ -3952,13 +3934,14 @@ make_callfunc_stmt(const char *sqlstart, int location, bool is_assign, bool eate
         function->fn_is_trigger = false;
         function->fn_input_collation = InvalidOid;
         function->out_param_varno = -1;		/* set up for no OUT param */
-        function->resolve_option = (PLpgSQL_resolve_option)u_sess->plsql_cxt.plpgsql_variable_conflict;
+        function->resolve_option = (u_sess->attr.attr_sql.sql_compatibility == A_FORMAT) ? PLPGSQL_RESOLVE_COLUMN : PLPGSQL_RESOLVE_ERROR;/*(PLpgSQL_resolve_option)u_sess->plsql_cxt.plpgsql_variable_conflict;*/
         function->fn_cxt = CurrentMemoryContext;
 
-        estate->ndatums = u_sess->plsql_cxt.plpgsql_nDatums;
-        estate->datums = (PLpgSQL_datum **)palloc(sizeof(PLpgSQL_datum *) * u_sess->plsql_cxt.plpgsql_nDatums);
-        for (int i = 0; i < u_sess->plsql_cxt.plpgsql_nDatums; i++)
-            estate->datums[i] = u_sess->plsql_cxt.plpgsql_Datums[i];
+        PLpgSQL_compile_context* curr_compile = u_sess->plsql_cxt.curr_compile_context;
+        estate->ndatums = curr_compile->plpgsql_nDatums;
+        estate->datums = (PLpgSQL_datum **)palloc(sizeof(PLpgSQL_datum *) * curr_compile->plpgsql_nDatums);
+        for (int i = 0; i < curr_compile->plpgsql_nDatums; i++)
+            estate->datums[i] = curr_compile->plpgsql_Datums[i];
 
         function->cur_estate = estate;
         function->cur_estate->func = function;
@@ -4199,7 +4182,7 @@ is_function(const char *name, bool is_assign, bool no_parenthesis)
     char *cp[3] = {0};
 
     /* the function is_function is only to judge if it's a function call, so memory used in it is all temp */
-    AutoContextSwitch plCompileCxtGuard(u_sess->plsql_cxt.compile_tmp_cxt);
+    AutoContextSwitch plCompileCxtGuard(u_sess->plsql_cxt.curr_compile_context->compile_tmp_cxt);
 
     plpgsql_parser_funcname(name, cp, 3);
 
@@ -4290,7 +4273,7 @@ is_function(const char *name, bool is_assign, bool no_parenthesis)
 
 static void checkFuncName(List* funcname) 
 {
-    MemoryContext colCxt = MemoryContextSwitchTo(u_sess->plsql_cxt.compile_tmp_cxt);
+    MemoryContext colCxt = MemoryContextSwitchTo(u_sess->plsql_cxt.curr_compile_context->compile_tmp_cxt);
     char* name = NameListToString(funcname);
     Oid packageOid = InvalidOid;
     Oid namespaceId = InvalidOid;
@@ -4407,15 +4390,15 @@ read_sql_construct5(int until,
      * context will be Plpgsql function context, which has a long term life cycle, 
      * may cause memory accumulation.
      */
-    oldCxt = MemoryContextSwitchTo(u_sess->plsql_cxt.compile_tmp_cxt);
+    oldCxt = MemoryContextSwitchTo(u_sess->plsql_cxt.curr_compile_context->compile_tmp_cxt);
     initStringInfo(&ds);
     MemoryContextSwitchTo(oldCxt);
 
     appendStringInfoString(&ds, sqlstart);
 
     /* special lookup mode for identifiers within the SQL text */
-    save_IdentifierLookup = u_sess->plsql_cxt.plpgsql_IdentifierLookup;
-    u_sess->plsql_cxt.plpgsql_IdentifierLookup = IDENTIFIER_LOOKUP_EXPR;
+    save_IdentifierLookup = u_sess->plsql_cxt.curr_compile_context->plpgsql_IdentifierLookup;
+    u_sess->plsql_cxt.curr_compile_context->plpgsql_IdentifierLookup = IDENTIFIER_LOOKUP_EXPR;
 
     for (;;)
     {
@@ -4593,7 +4576,7 @@ read_sql_construct5(int until,
         }
     }
 
-    u_sess->plsql_cxt.plpgsql_IdentifierLookup = save_IdentifierLookup;
+    u_sess->plsql_cxt.curr_compile_context->plpgsql_IdentifierLookup = save_IdentifierLookup;
 
     if (startloc)
         *startloc = startlocation;
@@ -4674,7 +4657,7 @@ get_proc_str(int tok)
 {
     int     blocklevel = 0;
     int     pre_tok = 0;
-    if (u_sess->plsql_cxt.plpgsql_curr_compile_package==NULL) {
+    if (u_sess->plsql_cxt.curr_compile_context->plpgsql_curr_compile_package == NULL) {
         yyerror("not allowed create procedure in function or procedure.");
     }
     tok = yylex(); 
@@ -4682,7 +4665,7 @@ get_proc_str(int tok)
     bool is_defining_proc = false;
     int startlocation = yylloc;
     char * spec_proc_str = NULL;
-    MemoryContext oldCxt = MemoryContextSwitchTo(u_sess->plsql_cxt.compile_tmp_cxt);
+    MemoryContext oldCxt = MemoryContextSwitchTo(u_sess->plsql_cxt.curr_compile_context->compile_tmp_cxt);
     initStringInfo(&ds);
     MemoryContextSwitchTo(oldCxt);
     if (u_sess->parser_cxt.is_procedure==false){
@@ -4715,7 +4698,7 @@ get_proc_str(int tok)
         /* if have is or as,it means in body*/
         if (tok == K_IS || tok == K_AS)
         {
-            if (u_sess->plsql_cxt.plpgsql_curr_compile_package->is_spec_compiling) {
+            if (u_sess->plsql_cxt.curr_compile_context->plpgsql_curr_compile_package->is_spec_compiling) {
                 yyerror("not allow define function or procedure in package specification");
             } 
             is_defining_proc = true;
@@ -4805,7 +4788,7 @@ read_datatype(int tok)
     int					parenlevel = 0;
 
     /* Should only be called while parsing DECLARE sections */
-    AssertEreport(u_sess->plsql_cxt.plpgsql_IdentifierLookup == IDENTIFIER_LOOKUP_DECLARE,
+    AssertEreport(u_sess->plsql_cxt.curr_compile_context->plpgsql_IdentifierLookup == IDENTIFIER_LOOKUP_DECLARE,
                         MOD_PLSQL,
                         "Should only be called while parsing DECLARE sections");
 
@@ -4842,7 +4825,7 @@ read_datatype(int tok)
                             dtname, NULL, NULL, NULL);
                 if (ns && ns->itemtype == PLPGSQL_NSTYPE_VAR)
                 {
-                    PLpgSQL_var* var = (PLpgSQL_var*)u_sess->plsql_cxt.plpgsql_Datums[ns->itemno];
+                    PLpgSQL_var* var = (PLpgSQL_var*)u_sess->plsql_cxt.curr_compile_context->plpgsql_Datums[ns->itemno];
                     if(var && var->datatype 
                            && var->datatype->typoid == REFCURSOROID)
                     {
@@ -4941,8 +4924,8 @@ make_execsql_stmt(int firsttoken, int location)
     initStringInfo(&ds);
 
     /* special lookup mode for identifiers within the SQL text */
-    save_IdentifierLookup = u_sess->plsql_cxt.plpgsql_IdentifierLookup;
-    u_sess->plsql_cxt.plpgsql_IdentifierLookup = IDENTIFIER_LOOKUP_EXPR;
+    save_IdentifierLookup = u_sess->plsql_cxt.curr_compile_context->plpgsql_IdentifierLookup;
+    u_sess->plsql_cxt.curr_compile_context->plpgsql_IdentifierLookup = IDENTIFIER_LOOKUP_EXPR;
 
     /*
      * Scan to the end of the SQL command.  Identify any INTO-variables
@@ -5001,9 +4984,9 @@ make_execsql_stmt(int firsttoken, int location)
                 yyerror("INTO specified more than once");
             have_into = true;
             into_start_loc = yylloc;
-            u_sess->plsql_cxt.plpgsql_IdentifierLookup = IDENTIFIER_LOOKUP_NORMAL;
+            u_sess->plsql_cxt.curr_compile_context->plpgsql_IdentifierLookup = IDENTIFIER_LOOKUP_NORMAL;
             read_into_target(&rec, &row, &have_strict);
-            u_sess->plsql_cxt.plpgsql_IdentifierLookup = IDENTIFIER_LOOKUP_EXPR;
+            u_sess->plsql_cxt.curr_compile_context->plpgsql_IdentifierLookup = IDENTIFIER_LOOKUP_EXPR;
         }
         if (tok == T_CWORD && prev_tok!=K_SELECT 
                            && prev_tok!= K_PERFORM) {
@@ -5018,7 +5001,7 @@ make_execsql_stmt(int firsttoken, int location)
         }
     }
 
-    u_sess->plsql_cxt.plpgsql_IdentifierLookup = save_IdentifierLookup;
+    u_sess->plsql_cxt.curr_compile_context->plpgsql_IdentifierLookup = save_IdentifierLookup;
 
     if (have_into)
     {
@@ -5238,7 +5221,7 @@ make_return_stmt(int location)
     newp->retvarno = -1;
     newp->sqlString = plpgsql_get_curline_query();
 
-    if (u_sess->plsql_cxt.plpgsql_curr_compile->fn_retset)
+    if (u_sess->plsql_cxt.curr_compile_context->plpgsql_curr_compile->fn_retset)
     {
         if (yylex() != ';')
             ereport(ERROR,
@@ -5249,12 +5232,12 @@ make_return_stmt(int location)
     }
 
     // adapting A db, where return value is independent from OUT parameters 
-    else if (';' == (token = yylex()) && u_sess->plsql_cxt.plpgsql_curr_compile->out_param_varno >= 0)
-        newp->retvarno = u_sess->plsql_cxt.plpgsql_curr_compile->out_param_varno;
+    else if (';' == (token = yylex()) && u_sess->plsql_cxt.curr_compile_context->plpgsql_curr_compile->out_param_varno >= 0)
+        newp->retvarno = u_sess->plsql_cxt.curr_compile_context->plpgsql_curr_compile->out_param_varno;
     else
     {
         plbsql_push_back_token(token);
-        if (u_sess->plsql_cxt.plpgsql_curr_compile->fn_rettype == VOIDOID)
+        if (u_sess->plsql_cxt.curr_compile_context->plpgsql_curr_compile->fn_rettype == VOIDOID)
         {
             if (yylex() != ';')
                 ereport(ERROR,
@@ -5262,7 +5245,7 @@ make_return_stmt(int location)
                          errmsg("RETURN cannot have a parameter in function returning void"),
                          parser_errposition(yylloc)));
         }
-        else if (u_sess->plsql_cxt.plpgsql_curr_compile->fn_retistuple)
+        else if (u_sess->plsql_cxt.curr_compile_context->plpgsql_curr_compile->fn_retistuple)
         {
             int     tok = yylex();
             if(tok < 0)
@@ -5319,7 +5302,7 @@ make_return_next_stmt(int location)
 {
     PLpgSQL_stmt_return_next *newp;
 
-    if (!u_sess->plsql_cxt.plpgsql_curr_compile->fn_retset)
+    if (!u_sess->plsql_cxt.curr_compile_context->plpgsql_curr_compile->fn_retset)
         ereport(ERROR,
                 (errcode(ERRCODE_DATATYPE_MISMATCH),
                  errmsg("cannot use RETURN NEXT in a non-SETOF function"),
@@ -5332,16 +5315,16 @@ make_return_next_stmt(int location)
     newp->retvarno	= -1;
     newp->sqlString = plpgsql_get_curline_query();
 
-    if (u_sess->plsql_cxt.plpgsql_curr_compile->out_param_varno >= 0)
+    if (u_sess->plsql_cxt.curr_compile_context->plpgsql_curr_compile->out_param_varno >= 0)
     {
         if (yylex() != ';')
             ereport(ERROR,
                     (errcode(ERRCODE_DATATYPE_MISMATCH),
                      errmsg("RETURN NEXT cannot have a parameter in function with OUT parameters"),
                      parser_errposition(yylloc)));
-        newp->retvarno = u_sess->plsql_cxt.plpgsql_curr_compile->out_param_varno;
+        newp->retvarno = u_sess->plsql_cxt.curr_compile_context->plpgsql_curr_compile->out_param_varno;
     }
-    else if (u_sess->plsql_cxt.plpgsql_curr_compile->fn_retistuple)
+    else if (u_sess->plsql_cxt.curr_compile_context->plpgsql_curr_compile->fn_retistuple)
     {
         switch (yylex())
         {
@@ -5379,7 +5362,7 @@ make_return_query_stmt(int location)
     PLpgSQL_stmt_return_query *newp;
     int			tok;
 
-    if (!u_sess->plsql_cxt.plpgsql_curr_compile->fn_retset)
+    if (!u_sess->plsql_cxt.curr_compile_context->plpgsql_curr_compile->fn_retset)
         ereport(ERROR,
                 (errcode(ERRCODE_DATATYPE_MISMATCH),
                  errmsg("cannot use RETURN QUERY in a non-SETOF function"),
@@ -6028,7 +6011,7 @@ check_sql_expr(const char *stmt, int location, int leaderlen)
     ErrorContextCallback  syntax_errcontext;
     MemoryContext oldCxt;
 
-    if (!u_sess->plsql_cxt.plpgsql_check_syntax)
+    if (!u_sess->plsql_cxt.curr_compile_context->plpgsql_check_syntax)
         return;
 
     cbarg.location = location;
@@ -6039,7 +6022,7 @@ check_sql_expr(const char *stmt, int location, int leaderlen)
     syntax_errcontext.previous = t_thrd.log_cxt.error_context_stack;
     t_thrd.log_cxt.error_context_stack = &syntax_errcontext;
 
-    oldCxt = MemoryContextSwitchTo(u_sess->plsql_cxt.compile_tmp_cxt);
+    oldCxt = MemoryContextSwitchTo(u_sess->plsql_cxt.curr_compile_context->compile_tmp_cxt);
     (void) db_b_raw_parser(stmt);
     MemoryContextSwitchTo(oldCxt);
 
@@ -6107,7 +6090,7 @@ parse_datatype(const char *string, int location)
      * parseTypeString is only for getting type_id and typemod, who are both scalars, 
      * so memory used in it is all temp.
      */
-    oldCxt = MemoryContextSwitchTo(u_sess->plsql_cxt.compile_tmp_cxt);
+    oldCxt = MemoryContextSwitchTo(u_sess->plsql_cxt.curr_compile_context->compile_tmp_cxt);
 
     /* Let the main parser try to parse it under standard SQL rules */
     parseTypeString(string, &type_id, &typmod);
@@ -6118,13 +6101,13 @@ parse_datatype(const char *string, int location)
     t_thrd.log_cxt.error_context_stack = syntax_errcontext.previous;
 
     /* Okay, build a PLpgSQL_type data structure for it */
-    if (u_sess->plsql_cxt.plpgsql_curr_compile == NULL)
+    if (u_sess->plsql_cxt.curr_compile_context->plpgsql_curr_compile == NULL)
     {
         return plpgsql_build_datatype(type_id, typmod, 0);
     }
 
     return plpgsql_build_datatype(type_id, typmod,
-                                  u_sess->plsql_cxt.plpgsql_curr_compile->fn_input_collation);
+                                  u_sess->plsql_cxt.curr_compile_context->plpgsql_curr_compile->fn_input_collation);
 }
 
 /*
@@ -6201,7 +6184,7 @@ read_cursor_args(PLpgSQL_var *cursor, int until, const char *expected)
     /*
      * Read the arguments, one by one.
      */
-    row = (PLpgSQL_row *) u_sess->plsql_cxt.plpgsql_Datums[cursor->cursor_explicit_argrow];
+    row = (PLpgSQL_row *) u_sess->plsql_cxt.curr_compile_context->plpgsql_Datums[cursor->cursor_explicit_argrow];
     argv = (char **) palloc0(row->nfields * sizeof(char *));
 
     for (argc = 0; argc < row->nfields; argc++)
@@ -6221,11 +6204,11 @@ read_cursor_args(PLpgSQL_var *cursor, int until, const char *expected)
             IdentifierLookup save_IdentifierLookup;
 
             /* Read the argument name, ignoring any matching variable */
-            save_IdentifierLookup = u_sess->plsql_cxt.plpgsql_IdentifierLookup;
-            u_sess->plsql_cxt.plpgsql_IdentifierLookup = IDENTIFIER_LOOKUP_DECLARE;
+            save_IdentifierLookup = u_sess->plsql_cxt.curr_compile_context->plpgsql_IdentifierLookup;
+            u_sess->plsql_cxt.curr_compile_context->plpgsql_IdentifierLookup = IDENTIFIER_LOOKUP_DECLARE;
             yylex();
             argname = yylval.str;
-            u_sess->plsql_cxt.plpgsql_IdentifierLookup = save_IdentifierLookup;
+            u_sess->plsql_cxt.curr_compile_context->plpgsql_IdentifierLookup = save_IdentifierLookup;
 
             /* Match argument name to cursor arguments */
             for (argpos = 0; argpos < row->nfields; argpos++)
@@ -6419,7 +6402,7 @@ make_case(int location, PLpgSQL_expr *t_expr,
 
         /* use a name unlikely to collide with any user names */
         snprintf(varname, sizeof(varname), "__Case__Variable_%d__",
-                 u_sess->plsql_cxt.plpgsql_nDatums);
+                 u_sess->plsql_cxt.curr_compile_context->plpgsql_nDatums);
 
         /*
          * We don't yet know the result datatype of t_expr.  Build the
@@ -6482,7 +6465,7 @@ make_callfunc_stmt_no_arg(const char *sqlstart, int location)
      * the function make_callfunc_stmt_no_arg is only to assemble a sql statement, 
      * so the context is set to tmp context. 
      */
-    oldCxt = MemoryContextSwitchTo(u_sess->plsql_cxt.compile_tmp_cxt);
+    oldCxt = MemoryContextSwitchTo(u_sess->plsql_cxt.curr_compile_context->compile_tmp_cxt);
     /* get the function's name. */
     plpgsql_parser_funcname(sqlstart, cp, 3);
 
@@ -6634,14 +6617,14 @@ parse_lob_open_close(int location)
 
 static void raw_parse_package_function(char* proc_str)
 {
-    if (u_sess->plsql_cxt.plpgsql_curr_compile_package!=NULL)
+    if (u_sess->plsql_cxt.curr_compile_context->plpgsql_curr_compile_package!=NULL)
     {
         List* raw_parsetree_list = NULL;
         raw_parsetree_list = raw_parser(proc_str);
         CreateFunctionStmt* stmt;;
         stmt = (CreateFunctionStmt *)linitial(raw_parsetree_list);
         stmt->queryStr = proc_str;
-        if (u_sess->plsql_cxt.plpgsql_curr_compile_package->is_spec_compiling) {
+        if (u_sess->plsql_cxt.curr_compile_context->plpgsql_curr_compile_package->is_spec_compiling) {
             stmt->isPrivate = false;
         } else {
             stmt->isPrivate = true;
@@ -6651,8 +6634,8 @@ static void raw_parse_package_function(char* proc_str)
         } else {
             stmt->isFunctionDeclare = false;
         }
-            List *proc_list = u_sess->plsql_cxt.plpgsql_curr_compile_package->proc_list;
-            u_sess->plsql_cxt.plpgsql_curr_compile_package->proc_list = lappend(proc_list,stmt);
+            List *proc_list = u_sess->plsql_cxt.curr_compile_context->plpgsql_curr_compile_package->proc_list;
+            u_sess->plsql_cxt.curr_compile_context->plpgsql_curr_compile_package->proc_list = lappend(proc_list,stmt);
         } else {
             yyerror("kerword PROCEDURE only use in package compile");
         }

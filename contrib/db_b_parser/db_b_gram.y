@@ -10989,7 +10989,7 @@ CreatePackageStmt:
 					CreatePackageStmt *n = makeNode(CreatePackageStmt);
 					n->replace = $2;
 					n->pkgname = $4;
-					n->options = $5;
+					n->pkgsecdef = $5;
 					def = (DefElem *)linitial($8);
 					if (strcmp(def->defname,"decl") != 0)
 					{

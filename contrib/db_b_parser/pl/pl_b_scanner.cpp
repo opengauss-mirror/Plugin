@@ -13,7 +13,7 @@
  *
  * -------------------------------------------------------------------------
  */
-#include "pl_b_sql.h"
+#include "pl/pl_b_sql.h"
 
 #include "catalog/pg_type.h"
 #include "mb/pg_wchar.h"
@@ -212,6 +212,7 @@ int plbsql_yylex(void)
     /* enum flag for returning specified tokens */
     int tok_flag = -1;
     int dbl_tok_flag = -1;
+    int trip_tok_flag = -1;
 
     /* parse cursor attribute, return token and location */
     tok1 = plpgsql_parse_cursor_attribute(&loc);
@@ -242,8 +243,8 @@ int plbsql_yylex(void)
 
                     tok5 = internal_yylex(&aux5);
                     if (tok5 == IDENT) {
-                        if (plpgsql_parse_tripword(
-                                aux1.lval.str, aux3.lval.str, aux5.lval.str, &aux1.lval.wdatum, &aux1.lval.cword)) {
+                        if (plpgsql_parse_tripword(aux1.lval.str, aux3.lval.str, aux5.lval.str,
+                                &aux1.lval.wdatum, &aux1.lval.cword, &trip_tok_flag)) {
                             tok1 = T_DATUM;
                         } else {
                             tok1 = T_CWORD;
@@ -282,7 +283,7 @@ int plbsql_yylex(void)
                 push_back_token(tok3, &aux3);
                 push_back_token(tok2, &aux2);
                 if (plpgsql_parse_word(
-                    aux1.lval.str, u_sess->plsql_cxt.core_yy->scanbuf + aux1.lloc, &aux1.lval.wdatum,
+                    aux1.lval.str, u_sess->plsql_cxt.curr_compile_context->core_yy->scanbuf + aux1.lloc, &aux1.lval.wdatum,
                     &aux1.lval.word, &tok_flag)) {
                     /* Get self defined token */
                     if (tok_flag != -1) {
@@ -303,7 +304,7 @@ int plbsql_yylex(void)
             /* not A.B, so just process A */
             push_back_token(tok2, &aux2);
             if (plpgsql_parse_word(
-                aux1.lval.str, u_sess->plsql_cxt.core_yy->scanbuf + aux1.lloc, &aux1.lval.wdatum,
+                aux1.lval.str, u_sess->plsql_cxt.curr_compile_context->core_yy->scanbuf + aux1.lloc, &aux1.lval.wdatum,
                 &aux1.lval.word, &tok_flag)) {
                 /* Get self defined token */
                 if (tok_flag != -1) {
@@ -329,7 +330,7 @@ int plbsql_yylex(void)
 
     plbsql_yylval = aux1.lval;
     plbsql_yylloc = aux1.lloc;
-    u_sess->plsql_cxt.plpgsql_yyleng = aux1.leng;
+    u_sess->plsql_cxt.curr_compile_context->plpgsql_yyleng = aux1.leng;
     return tok1;
 }
 
@@ -344,15 +345,15 @@ static int internal_yylex(TokenAuxData* auxdata)
     int token;
     const char* yytext = NULL;
 
-    if (u_sess->plsql_cxt.num_pushbacks > 0) {
-        u_sess->plsql_cxt.num_pushbacks--;
-        token = u_sess->plsql_cxt.pushback_token[u_sess->plsql_cxt.num_pushbacks];
-        *auxdata = pushback_auxdata[u_sess->plsql_cxt.num_pushbacks];
+    if (u_sess->plsql_cxt.curr_compile_context->num_pushbacks > 0) {
+        u_sess->plsql_cxt.curr_compile_context->num_pushbacks--;
+        token = u_sess->plsql_cxt.curr_compile_context->pushback_token[u_sess->plsql_cxt.curr_compile_context->num_pushbacks];
+        *auxdata = pushback_auxdata[u_sess->plsql_cxt.curr_compile_context->num_pushbacks];
     } else {
-        token = core_yylex(&auxdata->lval.core_yystype, &auxdata->lloc, u_sess->plsql_cxt.yyscanner);
+        token = core_yylex(&auxdata->lval.core_yystype, &auxdata->lloc, u_sess->plsql_cxt.curr_compile_context->yyscanner);
 
         /* remember the length of yytext before it gets changed */
-        yytext = u_sess->plsql_cxt.core_yy->scanbuf + auxdata->lloc;
+        yytext = u_sess->plsql_cxt.curr_compile_context->core_yy->scanbuf + auxdata->lloc;
         auxdata->leng = strlen(yytext);
 
         /* Check for << >> and #, which the core considers operators */
@@ -378,17 +379,17 @@ static int internal_yylex(TokenAuxData* auxdata)
  */
 static void push_back_token(int token, TokenAuxData* auxdata)
 {
-    if (u_sess->plsql_cxt.num_pushbacks >= MAX_PUSHBACKS) {
+    if (u_sess->plsql_cxt.curr_compile_context->num_pushbacks >= MAX_PUSHBACKS) {
         ereport(ERROR,
             (errmodule(MOD_PLSQL),
                 errcode(ERRCODE_INVALID_OPTION),
                 errmsg("too many tokens %d pushed back, max push back token is: %d",
-                    u_sess->plsql_cxt.num_pushbacks,
+                    u_sess->plsql_cxt.curr_compile_context->num_pushbacks,
                     MAX_PUSHBACKS)));
     }
-    u_sess->plsql_cxt.pushback_token[u_sess->plsql_cxt.num_pushbacks] = token;
-    pushback_auxdata[u_sess->plsql_cxt.num_pushbacks] = *auxdata;
-    u_sess->plsql_cxt.num_pushbacks++;
+    u_sess->plsql_cxt.curr_compile_context->pushback_token[u_sess->plsql_cxt.curr_compile_context->num_pushbacks] = token;
+    pushback_auxdata[u_sess->plsql_cxt.curr_compile_context->num_pushbacks] = *auxdata;
+    u_sess->plsql_cxt.curr_compile_context->num_pushbacks++;
 }
 
 /*
@@ -403,7 +404,7 @@ void plbsql_push_back_token(int token)
 
     auxdata.lval = plbsql_yylval;
     auxdata.lloc = plbsql_yylloc;
-    auxdata.leng = u_sess->plsql_cxt.plpgsql_yyleng;
+    auxdata.leng = u_sess->plsql_cxt.curr_compile_context->plpgsql_yyleng;
     push_back_token(token, &auxdata);
 }
 
@@ -414,7 +415,7 @@ void plbsql_push_back_token(int token)
 void plpgsql_append_source_text(StringInfo buf, int startlocation, int endlocation)
 {
     AssertEreport(startlocation <= endlocation, MOD_PLSQL, "start should be less or equal end.");
-    appendBinaryStringInfo(buf, u_sess->plsql_cxt.scanorig + startlocation, endlocation - startlocation);
+    appendBinaryStringInfo(buf, u_sess->plsql_cxt.curr_compile_context->scanorig + startlocation, endlocation - startlocation);
 }
 
 /*
@@ -454,23 +455,23 @@ void plpgsql_peek2(int* tok1_p, int* tok2_p, int* tok1_loc, int* tok2_loc)
  * is a dummy (always 0, in fact).
  *
  * Note that this can only be used for messages emitted during initial
- * parsing of a plpgsql function, since it requires the u_sess->plsql_cxt.scanorig string
+ * parsing of a plpgsql function, since it requires the u_sess->plsql_cxt.curr_compile_context->scanorig string
  * to still be available.
  */
 int plpgsql_scanner_errposition(int location)
 {
     int pos;
 
-    if (location < 0 || u_sess->plsql_cxt.scanorig == NULL) {
+    if (location < 0 || u_sess->plsql_cxt.curr_compile_context->scanorig == NULL) {
         return 0; /* no-op if location is unknown */
     }
 
     /* Convert byte offset to character number */
-    pos = pg_mbstrlen_with_len(u_sess->plsql_cxt.scanorig, location) + 1;
+    pos = pg_mbstrlen_with_len(u_sess->plsql_cxt.curr_compile_context->scanorig, location) + 1;
     /* And pass it to the ereport mechanism */
     (void)internalerrposition(pos);
     /* Also pass the function body string */
-    return internalerrquery(u_sess->plsql_cxt.scanorig);
+    return internalerrquery(u_sess->plsql_cxt.curr_compile_context->scanorig);
 }
 
 /*
@@ -484,9 +485,9 @@ int plpgsql_scanner_errposition(int location)
  * Beware of using yyerror for other purposes, as the cursor position might
  * be misleading!
  */
-void plbsql_yyerror(const char* message)
+void plbsql_yyerror(const char* message, bool isError)
 {
-    char* yytext = u_sess->plsql_cxt.core_yy->scanbuf + plbsql_yylloc;
+    char* yytext = u_sess->plsql_cxt.curr_compile_context->core_yy->scanbuf + plbsql_yylloc;
 
     if (*yytext == '\0') {
         ereport(ERROR,
@@ -501,7 +502,7 @@ void plbsql_yyerror(const char* message)
          * only the single token here.	This modifies scanbuf but we no longer
          * care about that.
          */
-        yytext[u_sess->plsql_cxt.plpgsql_yyleng] = '\0';
+        yytext[u_sess->plsql_cxt.curr_compile_context->plpgsql_yyleng] = '\0';
 
         ereport(ERROR,
             (errcode(ERRCODE_SYNTAX_ERROR),
@@ -523,38 +524,38 @@ int plpgsql_location_to_lineno(int location)
 {
     const char* loc = NULL;
 
-    if (location < 0 || u_sess->plsql_cxt.scanorig == NULL) {
+    if (location < 0 || u_sess->plsql_cxt.curr_compile_context->scanorig == NULL) {
         return 0; /* garbage in, garbage out */
     }
-    loc = u_sess->plsql_cxt.scanorig + location;
+    loc = u_sess->plsql_cxt.curr_compile_context->scanorig + location;
 
     /* be correct, but not fast, if input location goes backwards */
-    if (loc < u_sess->plsql_cxt.cur_line_start) {
+    if (loc < u_sess->plsql_cxt.curr_compile_context->cur_line_start) {
         location_lineno_init();
     }
 
-    while (u_sess->plsql_cxt.cur_line_end != NULL && loc > u_sess->plsql_cxt.cur_line_end) {
-        u_sess->plsql_cxt.cur_line_start = u_sess->plsql_cxt.cur_line_end + 1;
-        u_sess->plsql_cxt.cur_line_num++;
-        u_sess->plsql_cxt.cur_line_end = strchr(u_sess->plsql_cxt.cur_line_start, '\n');
+    while (u_sess->plsql_cxt.curr_compile_context->cur_line_end != NULL && loc > u_sess->plsql_cxt.curr_compile_context->cur_line_end) {
+        u_sess->plsql_cxt.curr_compile_context->cur_line_start = u_sess->plsql_cxt.curr_compile_context->cur_line_end + 1;
+        u_sess->plsql_cxt.curr_compile_context->cur_line_num++;
+        u_sess->plsql_cxt.curr_compile_context->cur_line_end = strchr(u_sess->plsql_cxt.curr_compile_context->cur_line_start, '\n');
     }
 
-    return u_sess->plsql_cxt.cur_line_num;
+    return u_sess->plsql_cxt.curr_compile_context->cur_line_num;
 }
 
 char* plpgsql_get_curline_query()
 {
     int len = 0;
-    if (u_sess->plsql_cxt.cur_line_end == NULL) {
+    if (u_sess->plsql_cxt.curr_compile_context->cur_line_end == NULL) {
         /* no '\n' in whole procedure source text */
-        len = strlen(u_sess->plsql_cxt.cur_line_start);
+        len = strlen(u_sess->plsql_cxt.curr_compile_context->cur_line_start);
     } else {
-        len = u_sess->plsql_cxt.cur_line_end - u_sess->plsql_cxt.cur_line_start;
+        len = u_sess->plsql_cxt.curr_compile_context->cur_line_end - u_sess->plsql_cxt.curr_compile_context->cur_line_start;
     }
     char* curQuery = NULL;
     if (len > 0) {
         curQuery = (char*)palloc0(sizeof(char) * (len + 1));
-        int rc = memcpy_s(curQuery, len + 1, u_sess->plsql_cxt.cur_line_start, len);
+        int rc = memcpy_s(curQuery, len + 1, u_sess->plsql_cxt.curr_compile_context->cur_line_start, len);
         securec_check(rc, "\0", "\0");
     }
     return curQuery;
@@ -563,16 +564,16 @@ char* plpgsql_get_curline_query()
 /* initialize or reset the state for plpgsql_location_to_lineno */
 static void location_lineno_init(void)
 {
-    u_sess->plsql_cxt.cur_line_start = u_sess->plsql_cxt.scanorig;
-    u_sess->plsql_cxt.cur_line_num = 1;
+    u_sess->plsql_cxt.curr_compile_context->cur_line_start = u_sess->plsql_cxt.curr_compile_context->scanorig;
+    u_sess->plsql_cxt.curr_compile_context->cur_line_num = 1;
 
-    u_sess->plsql_cxt.cur_line_end = strchr(u_sess->plsql_cxt.cur_line_start, '\n');
+    u_sess->plsql_cxt.curr_compile_context->cur_line_end = strchr(u_sess->plsql_cxt.curr_compile_context->cur_line_start, '\n');
 }
 
 /* return the most recently computed lineno */
 int plpgsql_latest_lineno(void)
 {
-    return u_sess->plsql_cxt.cur_line_num;
+    return u_sess->plsql_cxt.curr_compile_context->cur_line_num;
 }
 
 /*
@@ -585,21 +586,21 @@ int plpgsql_latest_lineno(void)
 void plpgsql_scanner_init(const char* str)
 {
     /* Start up the core scanner */
-    u_sess->plsql_cxt.yyscanner =
-        scanner_init(str, u_sess->plsql_cxt.core_yy, reserved_keywords, num_reserved_keywords);
+    u_sess->plsql_cxt.curr_compile_context->yyscanner =
+        scanner_init(str, u_sess->plsql_cxt.curr_compile_context->core_yy, reserved_keywords, num_reserved_keywords);
 
     /*
-     * u_sess->plsql_cxt.scanorig points to the original string, which unlike the scanner's
+     * u_sess->plsql_cxt.curr_compile_context->scanorig points to the original string, which unlike the scanner's
      * scanbuf won't be modified on-the-fly by flex.  Notice that although
      * yytext points into scanbuf, we rely on being able to apply locations
-     * (offsets from string start) to u_sess->plsql_cxt.scanorig as well.
+     * (offsets from string start) to u_sess->plsql_cxt.curr_compile_context->scanorig as well.
      */
-    u_sess->plsql_cxt.scanorig = str;
+    u_sess->plsql_cxt.curr_compile_context->scanorig = str;
 
     /* Other setup */
-    u_sess->plsql_cxt.plpgsql_IdentifierLookup = IDENTIFIER_LOOKUP_NORMAL;
+    u_sess->plsql_cxt.curr_compile_context->plpgsql_IdentifierLookup = IDENTIFIER_LOOKUP_NORMAL;
 
-    u_sess->plsql_cxt.num_pushbacks = 0;
+    u_sess->plsql_cxt.curr_compile_context->num_pushbacks = 0;
 
     location_lineno_init();
     /*
@@ -608,7 +609,7 @@ void plpgsql_scanner_init(const char* str)
      * in case of execution error-out, it better to help avoid access to in garbage
      * pointer
      */
-    u_sess->plsql_cxt.goto_labels = NIL;
+    u_sess->plsql_cxt.curr_compile_context->goto_labels = NIL;
 }
 
 /*
@@ -617,10 +618,10 @@ void plpgsql_scanner_init(const char* str)
 void plpgsql_scanner_finish(void)
 {
     /* release storage */
-    scanner_finish(u_sess->plsql_cxt.yyscanner);
+    scanner_finish(u_sess->plsql_cxt.curr_compile_context->yyscanner);
     /* avoid leaving any dangling pointers */
-    u_sess->plsql_cxt.yyscanner = NULL;
-    u_sess->plsql_cxt.scanorig = NULL;
+    u_sess->plsql_cxt.curr_compile_context->yyscanner = NULL;
+    u_sess->plsql_cxt.curr_compile_context->scanorig = NULL;
 }
 
 /*
@@ -742,7 +743,7 @@ static int plpgsql_parse_cursor_attribute(int* loc)
             /* check the valid of cursor variable */
             ns = plpgsql_ns_lookup(plpgsql_ns_top(), false, aux1.lval.str, NULL, NULL, NULL);
             if (ns != NULL && ns->itemtype == PLPGSQL_NSTYPE_VAR) {
-                PLpgSQL_var* var = (PLpgSQL_var*)u_sess->plsql_cxt.plpgsql_Datums[ns->itemno];
+                PLpgSQL_var* var = (PLpgSQL_var*)u_sess->plsql_cxt.curr_compile_context->plpgsql_Datums[ns->itemno];
                 if (!(var != NULL && var->datatype && var->datatype->typoid == REFCURSOROID)) {
                     ereport(ERROR,
                         (errmodule(MOD_PLSQL),
