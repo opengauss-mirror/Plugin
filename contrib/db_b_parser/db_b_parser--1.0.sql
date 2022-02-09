@@ -18,15 +18,8 @@ RETURNS float AS '$libdir/db_b_parser','time_sec' LANGUAGE C STRICT;
 CREATE FUNCTION pg_catalog.second(text, timestamp)
 RETURNS float AS '$libdir/db_b_parser','time_sec' LANGUAGE C STRICT;
 
-CREATE FUNCTION pg_catalog.MICROSECOND(a timestamp)
-RETURNS float 
-AS
-$$ 
-begin
-    return (select time_sec('microsecond', a)); 
-end;
-$$
-language plpgsql;
+CREATE FUNCTION pg_catalog.microsecond(text, timestamp)
+RETURNS float AS '$libdir/db_b_parser','time_sec' LANGUAGE C STRICT;
 
 create function pg_catalog.curdate()
 returns date
@@ -58,7 +51,7 @@ $$
 language plpgsql;
 
 -- create some functions for operator
-create function pg_catalog.b_mod(a numeric, b numeric)
+create or replace function pg_catalog.b_mod(a numeric, b numeric)
 returns numeric
 as
 $$
