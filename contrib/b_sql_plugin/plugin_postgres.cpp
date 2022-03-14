@@ -37,6 +37,7 @@
 #include "catalog/pg_synonym.h"
 #include "catalog/gs_matview.h"
 #include "catalog/gs_db_privilege.h"
+#include "catalog/pg_extension.h"
 #include "executor/spi_priv.h"
 #include "tcop/utility.h"
 #include "gs_ledger/ledger_utils.h"
@@ -64,6 +65,12 @@
 #include "plugin_parser/parse_func.h"
 #include "plugin_parser/parse_utilcmd.h"
 #include "replication/archive_walreceiver.h"
+#ifndef WIN32_ONLY_COMPILER
+#include "dynloader.h"
+#else
+#include "port/dynloader/win32.h"
+#endif
+
 static RemoteQueryExecType ExecUtilityFindNodes(ObjectType object_type, Oid rel_id, bool* is_temp);
 static RemoteQueryExecType exec_utility_find_nodes_relkind(Oid rel_id, bool* is_temp);
 static RemoteQueryExecType get_nodes_4_comment_utility(CommentStmt* stmt, bool* is_temp, ExecNodes** exec_nodes);
@@ -83,7 +90,8 @@ PG_MODULE_MAGIC_PUBLIC;
 extern void initBSQLBuiltinFuncs();
 extern struct HTAB* b_nameHash;
 extern struct HTAB* b_oidHash;
-extern THR_LOCAL int client_min_messages;
+extern void set_hypopg_prehook(ProcessUtility_hook_type func);
+extern void set_pgaudit_prehook(ProcessUtility_hook_type func);
 extern bool isAllTempObjects(Node* parse_tree, const char* query_string, bool sent_to_remote);
 extern void ts_check_feature_disable();
 extern void ExecAlterDatabaseSetStmt(Node* parse_tree, const char* query_string, bool sent_to_remote);
@@ -93,6 +101,13 @@ extern void ExecAlterRoleSetStmt(Node* parse_tree, const char* query_string, boo
 static bool need_full_dn_execution(const char* group_name);
 static ExecNodes* GetFunctionNodes(Oid func_id);
 static const int LOADER_COL_BUF_CNT = 5;
+void ProcessUtilityMain(Node* parse_tree, const char* query_string, ParamListInfo params, bool is_top_level,
+    DestReceiver* dest,
+#ifdef PGXC
+    bool sent_to_remote,
+#endif /* PGXC */
+    char* completion_tag,
+    bool isCTAS);
 void bsql_ProcessUtility(Node* parse_tree, const char* query_string, ParamListInfo params, bool is_top_level,
     DestReceiver* dest,
 #ifdef PGXC
@@ -108,100 +123,105 @@ void b_sql_plugin_invoke(void)
     return;
 }
 
-typedef struct b_sql_plugin_context {
-    bool have_accessed;
-} b_sql_plugin_context;
-static b_sql_plugin_context* get_session_context();
-
-#define EXTENSION_NAME "b_sql_plugin"
-#define HAVE_ACCESED (get_session_context()->have_accessed)
-static uint32 extension_index;
-const char* create_type_file_name = "b_sql_plugin_type";
-
-void set_extension_index(uint32 index)
+static bool CheckIfSqlEngineExists(const char* extname)
 {
-    extension_index = index;
+    Relation rel;
+    ScanKeyData entry[1];
+    SysScanDesc scandesc;
+    HeapTuple tuple;
+    bool isExists = false;
+
+    /* search pg_extension to check if sql plugin exists. */
+    rel = heap_open(ExtensionRelationId, AccessShareLock);
+    ScanKeyInit(&entry[0], Anum_pg_extension_extname, BTEqualStrategyNumber, F_NAMEEQ, CStringGetDatum(extname));
+    scandesc = systable_beginscan(rel, ExtensionNameIndexId, true, NULL, 1, entry);
+    tuple = systable_getnext(scandesc);
+
+    isExists = HeapTupleIsValid(tuple);
+
+    systable_endscan(scandesc);
+
+    heap_close(rel, AccessShareLock);
+
+    return isExists;
 }
 
-void init_session_vars(void)
-{
-    RepallocSessionVarsArrayIfNecessary();
-    b_sql_plugin_context *cxt = (b_sql_plugin_context*)MemoryContextAlloc(u_sess->self_mem_cxt, sizeof(b_sql_plugin_context));
-    u_sess->attr.attr_common.extension_session_vars_array[extension_index] = cxt;
-    cxt->have_accessed = false;
-    DefineCustomBoolVariable(EXTENSION_NAME".have_accessed",
-                                    "never access",
-                                    NULL,
-                                    &HAVE_ACCESED,
-                                    false,
-                                    PGC_USERSET,
-                                    0,
-                                    NULL, NULL, NULL);
-    EmitWarningsOnPlaceholders(EXTENSION_NAME);
-}
-
-static b_sql_plugin_context* get_session_context()
-{
-    if (u_sess->attr.attr_common.extension_session_vars_array[extension_index] == NULL) {
-        init_session_vars();
+void ProcessUtilityMain(Node* parse_tree, const char* query_string, ParamListInfo params, bool is_top_level,
+    DestReceiver* dest,
+#ifdef PGXC
+    bool sent_to_remote,
+#endif /* PGXC */
+    char* completion_tag,
+    bool isCTAS) {
+    if (DB_IS_CMPT(B_FORMAT) && CheckIfSqlEngineExists("b_sql_plugin")) {
+        return bsql_ProcessUtility(parse_tree,
+            query_string,
+            params,
+            is_top_level,
+            dest,
+#ifdef PGXC
+            sent_to_remote,
+#endif /* PGXC */
+            completion_tag,
+            isCTAS);
+    } else {
+        return standard_ProcessUtility(parse_tree,
+            query_string,
+            params,
+            is_top_level,
+            dest,
+#ifdef PGXC
+            sent_to_remote,
+#endif /* PGXC */
+            completion_tag,
+            isCTAS);
     }
-    return (b_sql_plugin_context*)u_sess->attr.attr_common.extension_session_vars_array[extension_index];
-}
-
-static void execute_sql_file()
-{
-    char* dest_str = "create extension if not exists b_sql_plugin;\n"
-        "DO $$\n"
-        "BEGIN\n"
-        "    execute 'alter database '||current_database()||' set b_sql_plugin.have_accessed = true';\n"
-        "END\n"
-        "$$;";
-    int rc = 0;
-
-    SPI_STACK_LOG("connect", NULL, NULL);
-    if ((rc = SPI_connect()) != SPI_OK_CONNECT) {
-        ereport(ERROR, (errcode(ERRCODE_INTERNAL_ERROR),
-            errmsg("b_sql_plugin SPI_connect failed: %s", SPI_result_code_string(rc)),
-            errdetail("SPI_connect failed"),
-            errcause("System error."),
-            erraction("Check whether the snapshot retry is successful")));
-    }
-
-    if (SPI_execute(dest_str, false, 0) != SPI_OK_UTILITY) {
-        ereport(WARNING, (errcode(ERRCODE_DATA_EXCEPTION), errmsg("invalid query : %s", dest_str)));
-    }
-    SPI_STACK_LOG("finish", NULL, NULL);
-    SPI_finish();
 }
 
 void init_plugin_object()
 {
     u_sess->hook_cxt.transformStmtHook = (void*)transformStmt;
-    ProcessUtility_hook = (ProcessUtility_hook_type)bsql_ProcessUtility;
+    DynamicFileList* file_scanner = NULL;
+    void (*set_gsaudit_prehook)(ProcessUtility_hook_type);
 
-    if (HAVE_ACCESED) {
-        return;
+    char* securityPluginPath = expand_dynamic_library_name("security_plugin");
+    check_backend_env(securityPluginPath);
+
+    for (file_scanner = file_list; file_scanner != NULL && strcmp(securityPluginPath, file_scanner->filename) != 0;
+         file_scanner = file_scanner->next);
+
+    if (file_scanner != NULL) {
+        set_gsaudit_prehook = (void(*)(ProcessUtility_hook_type))pg_dlsym(file_scanner->handle, "set_gsaudit_prehook");
+        if (set_gsaudit_prehook != NULL) {
+            (*set_gsaudit_prehook)((ProcessUtility_hook_type)ProcessUtilityMain);
+            return;
+        }
     }
-    int oldClientMessage = client_min_messages;
-    client_min_messages = ERROR;
-    start_xact_command();
-    execute_sql_file();
-    finish_xact_command();
-    client_min_messages = oldClientMessage;
+
+    if (u_sess->attr.attr_security.Audit_enabled) {
+        set_pgaudit_prehook((ProcessUtility_hook_type)ProcessUtilityMain);
+    } else {
+        set_hypopg_prehook((ProcessUtility_hook_type)ProcessUtilityMain);
+    }
 }
 
 void _PG_init(void)
 {
+    if (!u_sess->misc_cxt.process_shared_preload_libraries_in_progress && !DB_IS_CMPT(B_FORMAT)) {
+        ereport(ERROR, (errmsg("Can't create b_sql_plugin extension since current database compatibility is not 'B'")));
+    }
     if (b_oidHash == NULL || b_nameHash == NULL) {
         initBSQLBuiltinFuncs();
     }
     g_instance.raw_parser_hook[DB_CMPT_B] = (void*)raw_parser;
+    init_plugin_object();
 }
 
 void _PG_fini(void)
 {
     hash_destroy(b_nameHash);
     hash_destroy(b_oidHash);
+    g_instance.raw_parser_hook[DB_CMPT_B] = NULL;
 }
 
 #ifdef PGXC
