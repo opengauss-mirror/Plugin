@@ -156,9 +156,12 @@ void ProcessUtilityMain(Node* parse_tree, const char* query_string, ParamListInf
     }
 }
 
-void init_plugin_object()
+/* 
+ * Set ProcessUtility PreHook of other ProcessUtilityHook Users, so that
+ * we can hook standard_ProcessUtility.
+ */
+void set_processutility_prehook()
 {
-    u_sess->hook_cxt.transformStmtHook = (void*)transformStmt;
     DynamicFileList* file_scanner = NULL;
     void (*set_gsaudit_prehook)(ProcessUtility_hook_type);
 
@@ -181,6 +184,12 @@ void init_plugin_object()
     } else {
         set_hypopg_prehook((ProcessUtility_hook_type)ProcessUtilityMain);
     }
+}
+
+void init_plugin_object()
+{
+    u_sess->hook_cxt.transformStmtHook = (void*)transformStmt;
+    set_processutility_prehook();
 }
 
 void _PG_init(void)
