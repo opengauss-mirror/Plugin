@@ -59,6 +59,17 @@ OBJS += pg_builtin_proc.o
 pg_builtin_proc.o: pg_builtin_proc.cpp utils
 EXTENSION = b_sql_plugin
 DATA = b_sql_plugin--1.0.sql
+REGRESS = regexp
+REGRESS_OPTS = --dlpath=$(top_builddir)/src/test/regress -c 0 -d 1 --single_node
+
 override CPPFLAGS :=$(filter-out -fPIE, $(CPPFLAGS)) -fPIC -I$(top_builddir)/$(subdir)/include -fvisibility=hidden -I.
+ifdef USE_PGXS
+PG_CONFIG = pg_config
+PGXS := $(shell $(PG_CONFIG) --pgxs)
+include $(PGXS)
+else
+subdir = contrib/chkpass
+top_builddir = ../..
 include $(top_builddir)/src/Makefile.global
 include $(top_srcdir)/contrib/contrib-global.mk
+endif
