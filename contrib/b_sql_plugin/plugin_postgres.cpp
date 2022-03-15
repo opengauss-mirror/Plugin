@@ -30,6 +30,7 @@
 #include "commands/publicationcmds.h"
 #include "commands/cluster.h"
 #include "commands/matview.h"
+#include "commands/extension.h"
 #include "utils/guc.h"
 #include "plugin_mb/pg_wchar.h"
 #include "utils/builtins.h"
@@ -123,29 +124,6 @@ void b_sql_plugin_invoke(void)
     return;
 }
 
-static bool CheckIfSqlEngineExists(const char* extname)
-{
-    Relation rel;
-    ScanKeyData entry[1];
-    SysScanDesc scandesc;
-    HeapTuple tuple;
-    bool isExists = false;
-
-    /* search pg_extension to check if sql plugin exists. */
-    rel = heap_open(ExtensionRelationId, AccessShareLock);
-    ScanKeyInit(&entry[0], Anum_pg_extension_extname, BTEqualStrategyNumber, F_NAMEEQ, CStringGetDatum(extname));
-    scandesc = systable_beginscan(rel, ExtensionNameIndexId, true, NULL, 1, entry);
-    tuple = systable_getnext(scandesc);
-
-    isExists = HeapTupleIsValid(tuple);
-
-    systable_endscan(scandesc);
-
-    heap_close(rel, AccessShareLock);
-
-    return isExists;
-}
-
 void ProcessUtilityMain(Node* parse_tree, const char* query_string, ParamListInfo params, bool is_top_level,
     DestReceiver* dest,
 #ifdef PGXC
@@ -153,7 +131,7 @@ void ProcessUtilityMain(Node* parse_tree, const char* query_string, ParamListInf
 #endif /* PGXC */
     char* completion_tag,
     bool isCTAS) {
-    if (DB_IS_CMPT(B_FORMAT) && CheckIfSqlEngineExists("b_sql_plugin")) {
+    if (DB_IS_CMPT(B_FORMAT) && CheckIfExtensionExists("b_sql_plugin")) {
         return bsql_ProcessUtility(parse_tree,
             query_string,
             params,
