@@ -49,4 +49,5 @@ extern bool CheckExtensionSqlValid(char *queryString);
 
 extern void RepallocSessionVarsArrayIfNecessary();
 
+extern bool CheckIfExtensionExists(const char* extname);
 #endif /* EXTENSION_H */
