@@ -30,7 +30,6 @@
 #include "commands/publicationcmds.h"
 #include "commands/cluster.h"
 #include "commands/matview.h"
-#include "commands/extension.h"
 #include "utils/guc.h"
 #include "plugin_mb/pg_wchar.h"
 #include "utils/builtins.h"
