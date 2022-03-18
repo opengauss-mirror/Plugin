@@ -17,6 +17,8 @@
 #include "knl/knl_variable.h"
 
 #include <limits.h>
+#include <cstring>
+#include <cmath>
 
 #include "access/hash.h"
 #include "access/tuptoaster.h"
@@ -40,7 +42,9 @@
 #include "utils/int8.h"
 #include "utils/sortsupport.h"
 #include "executor/node/nodeSort.h"
+#include "plugin_utils/my_locale.h"
 #include "pgxc/groupmgr.h"
+#include "plugin_postgres.h"
 
 #define JUDGE_INPUT_VALID(X, Y) ((NULL == (X)) || (NULL == (Y)))
 #define GET_POSITIVE(X) ((X) > 0 ? (X) : ((-1) * (X)))
@@ -4962,6 +4966,7 @@ static text* array_to_text_internal(FunctionCallInfo fcinfo, ArrayType* v, char*
 }
 
 #define HEXBASE 16
+#define HEX_CHARS "0123456789abcdef"
 /*
  * Convert a int32 to a string containing a base 16 (hex) representation of
  * the number.
@@ -4970,14 +4975,13 @@ Datum to_hex32(PG_FUNCTION_ARGS)
 {
     uint32 value = (uint32)PG_GETARG_INT32(0);
     char* ptr = NULL;
-    const char* digits = "0123456789abcdef";
     char buf[32]; /* bigger than needed, but reasonable */
 
     ptr = buf + sizeof(buf) - 1;
     *ptr = '\0';
 
     do {
-        *--ptr = digits[value % HEXBASE];
+        *--ptr = HEX_CHARS[value % HEXBASE];
         value /= HEXBASE;
     } while (ptr > buf && value);
 
@@ -4992,18 +4996,86 @@ Datum to_hex64(PG_FUNCTION_ARGS)
 {
     uint64 value = (uint64)PG_GETARG_INT64(0);
     char* ptr = NULL;
-    const char* digits = "0123456789abcdef";
     char buf[32]; /* bigger than needed, but reasonable */
 
     ptr = buf + sizeof(buf) - 1;
     *ptr = '\0';
 
     do {
-        *--ptr = digits[value % HEXBASE];
+        *--ptr = HEX_CHARS[value % HEXBASE];
         value /= HEXBASE;
     } while (ptr > buf && value);
 
     PG_RETURN_TEXT_P(cstring_to_text(ptr));
+}
+
+#define HEX_BUF_LEN 32
+/*
+ * Convert an int64 to a string containing a base 16 (hex) representation of the input.
+ * The input parameter must be integer.
+ */
+Datum int_to_hex(PG_FUNCTION_ARGS)
+{
+    uint64 value = (uint64)PG_GETARG_INT64(0);
+    char* ptr = NULL;
+    char buf[HEX_BUF_LEN]; /* bigger than needed, but reasonable */
+
+    ptr = buf + sizeof(buf) - 1;
+    *ptr = '\0';
+
+    do {
+        *(--ptr) = HEX_CHARS[value % HEXBASE];
+        value /= HEXBASE;
+    } while (ptr > buf && value);
+
+    PG_RETURN_TEXT_P(cstring_to_text(ptr));
+}
+
+Datum text_to_hex(PG_FUNCTION_ARGS)
+{
+    text* str = PG_GETARG_TEXT_PP(0);
+    int len = VARSIZE_ANY_EXHDR(str);
+    if (len == 0) {
+        PG_RETURN_TEXT_P(cstring_to_text(""));
+    }
+
+    unsigned char* str_val = (unsigned char*) text_to_cstring(str);
+    unsigned char* str_val_ptr = str_val + len - 1;
+    char buf[2 * len + 1];
+    char* result_ptr = buf + sizeof(buf) - 1;
+    *result_ptr = '\0';
+
+    do {
+        *(--result_ptr) = HEX_CHARS[*str_val_ptr % HEXBASE];
+        *(--result_ptr) = HEX_CHARS[*str_val_ptr / HEXBASE];
+        str_val_ptr--;
+    } while (result_ptr > buf);
+
+    PG_RETURN_TEXT_P(cstring_to_text(result_ptr));
+}
+
+Datum bytea_to_hex(PG_FUNCTION_ARGS)
+{
+    bytea* in = PG_GETARG_BYTEA_PP(0);
+    char* str = VARDATA_ANY(in);
+    int len = VARSIZE_ANY_EXHDR(in);
+    if (len == 0) {
+        PG_RETURN_TEXT_P(cstring_to_text(""));
+    }
+
+    char* str_ptr = str + len - 1;
+
+    char buf[2 * len + 1];
+    char* result_ptr = buf + sizeof(buf) - 1;
+    *result_ptr = '\0';
+
+    do {
+        *(--result_ptr) = HEX_CHARS[*str_ptr % HEXBASE];
+        *(--result_ptr) = HEX_CHARS[*str_ptr / HEXBASE];
+        str_ptr--;
+    } while (result_ptr > buf);
+
+    PG_RETURN_TEXT_P(cstring_to_text(result_ptr));
 }
 
 /*
@@ -6110,6 +6182,151 @@ Datum text_reverse(PG_FUNCTION_ARGS)
             ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("unterminated conversion specifier"))); \
     } while (0)
 
+#define MAX_PRECISION 32
+#define THOUS_INTERVAL 3
+#define ASCII_9 57
+#define ASCII_5 53
+#define ASCII_0 48
+
+static void round_string_number(char *source, char *dest, int precision) {
+    errno_t errorno = 0;
+    int src_len = strlen(source);
+    // find index of source's decimal point
+    int dec_point_index = -1;
+    for (int i = 0; i < src_len; i++) {
+        if (source[i] == '.') {
+            dec_point_index = i;
+            break;
+        }
+    }
+    // if the input source is not a decimal, then return.
+    if (dec_point_index == -1) {
+        errorno = strcpy_s(dest, src_len + 1, source);
+        securec_check_c(errorno, "\0", "\0");
+        return;
+    }
+
+    int dec_part_len = src_len - dec_point_index - 1;
+    // if decimal part len <= precision, then return.
+    if (dec_part_len <= precision) {
+        errorno = strcpy_s(dest, src_len + 1, source);
+        securec_check_c(errorno, "\0", "\0");
+        return;
+    }
+
+    char *round_ptr = NULL;
+    round_ptr = source + dec_point_index + precision + 1;
+    bool carry_flag = *round_ptr >= ASCII_5;
+    // clear all char behind required precision
+    for (int i = dec_point_index + precision + 1; i < src_len; i++) {
+        source[i] = '\0';
+    }
+    round_ptr = source + dec_point_index + precision;
+    while (round_ptr >= source) {
+        if (*round_ptr == '.') {
+            if (precision == 0) {
+                *round_ptr = '\0';
+            }
+            round_ptr--;
+            continue;
+        }
+        if (carry_flag) {
+            if (*round_ptr == ASCII_9) {
+                *(round_ptr--) = ASCII_0;
+                continue;
+            } else {
+                *round_ptr = *round_ptr + 1;
+                errorno = strcpy_s(dest, dec_point_index + precision + 2, source);
+                securec_check_c(errorno, "\0", "\0");
+                return;
+            }
+        }
+        errorno = strcpy_s(dest, dec_point_index + precision + 2, source);
+        securec_check_c(errorno, "\0", "\0");
+        return;
+    }
+    dest[0] = '1';
+    errorno = strcpy_s(dest + 1, dec_point_index + precision + 2, source);
+    securec_check_c(errorno, "\0", "\0");
+}
+
+/*
+ * Format input float8 number keeping specific number of decimal in specific locale style
+ * e.g. db_b_format_transfer(1234.456, 2 ,'en_US') -> 1,234.46
+ *      db_b_format_transfer(1234.456, 5 ,'de_DE') -> 1.234,45600
+ */
+static char *db_b_format_transfer(char *ch_val, int precision, char *ch_locale) {
+    precision = precision > MAX_PRECISION ? MAX_PRECISION : (precision < 0 ? 0 : precision);
+    MyLocale *locale = MyLocaleSearch(ch_locale);
+    if (locale == NULL) {
+        ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("the provided locale is invalid.")));
+    }
+
+    char *rounded_val = (char *) palloc(strlen(ch_val) + 1);
+    round_string_number(ch_val, rounded_val, precision);
+
+    // find decimal point index
+    int len = strlen(rounded_val);
+    int dec_point_index = -1;
+    for (int i = 0; i < len; i++) {
+        if (rounded_val[i] == '.') {
+            dec_point_index = i;
+            break;
+        }
+    }
+    int int_part_len = dec_point_index == -1 ? len : dec_point_index;
+    int thousand_sep_num =
+            locale->thousand_sep == '\0'
+            ? 0
+            : (int_part_len % THOUS_INTERVAL == 0 ? int_part_len / THOUS_INTERVAL - 1 : int_part_len / THOUS_INTERVAL);
+
+    // length of buf = integer_part_len + thousand_separator_num + (decimal_point + precision) + 1(for '\0')
+    int buf_len;
+    if (precision <= 0) {
+        buf_len = int_part_len + thousand_sep_num + 1;
+    } else {
+        buf_len = int_part_len + thousand_sep_num + precision + 2;
+    }
+
+    char *buf = NULL;
+    buf = (char *) palloc(buf_len);
+    buf[buf_len - 1] = '\0';
+
+    // pointer start from position of decimal point
+    char *buf_ptr = buf + int_part_len + thousand_sep_num;
+    // add decimal point when requiring precision
+    if (precision > 0) {
+        *buf_ptr = locale->decimal_point;
+    }
+    char *val_ptr = rounded_val + int_part_len;
+    // handle integer part
+    int acc = 0;
+    do {
+        *(--buf_ptr) = *(--val_ptr);
+        acc++;
+        if (acc % THOUS_INTERVAL == 0 && acc != int_part_len && locale->thousand_sep != '\0') {
+            *--buf_ptr = locale->thousand_sep;
+        }
+    } while (buf_ptr > buf);
+
+    if (precision <= 0) {
+        return buf;
+    }
+
+    // handle decimal part
+    buf_ptr = buf + int_part_len + thousand_sep_num;
+    val_ptr = rounded_val + int_part_len;
+    for (int i = 0; i < precision; i++) {
+        if (*val_ptr == '\0' || *(val_ptr + 1) == '\0') {
+            *(++buf_ptr) = '0';
+        } else {
+            *(++buf_ptr) = *(++val_ptr);
+        }
+    }
+    pfree(rounded_val);
+    return buf;
+}
+
 /*
  * Returns a formated string
  */
@@ -6350,6 +6567,21 @@ Datum text_format(PG_FUNCTION_ARGS)
         PG_RETURN_NULL();
     else
         PG_RETURN_TEXT_P(result);
+}
+
+Datum db_b_format_locale(PG_FUNCTION_ARGS)
+{
+    int precision = PG_GETARG_INT32(1);
+    char* ch_locale = text_to_cstring(PG_GETARG_TEXT_PP(2));
+    char* ch_value = DatumGetCString(DirectFunctionCall1(float8out, PG_GETARG_DATUM(0)));
+    PG_RETURN_TEXT_P(cstring_to_text(db_b_format_transfer(ch_value, precision, ch_locale)));
+}
+
+Datum db_b_format(PG_FUNCTION_ARGS)
+{
+    int precision = PG_GETARG_INT32(1);
+    char* ch_value = DatumGetCString(DirectFunctionCall1(float8out, PG_GETARG_DATUM(0)));
+    PG_RETURN_TEXT_P(cstring_to_text(db_b_format_transfer(ch_value, precision, "en_US")));
 }
 
 /*

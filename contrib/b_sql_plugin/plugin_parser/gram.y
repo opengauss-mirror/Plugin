@@ -799,7 +799,7 @@ static int errstate;
 	CURRENT_CATALOG CURRENT_DATE CURRENT_ROLE CURRENT_SCHEMA
 	CURRENT_TIME CURRENT_TIMESTAMP CURRENT_USER CURSOR CYCLE
 
-	DATA_P DATABASE DATAFILE DATANODE DATANODES DATATYPE_CL DATE_P DATE_FORMAT_P DAY_P  DAYOFMONTH DAYOFWEEK DAYOFYEAR DBCOMPATIBILITY_P DEALLOCATE DEC DECIMAL_P DECLARE DECODE DEFAULT DEFAULTS
+	DATA_P DATABASE DATAFILE DATANODE DATANODES DATATYPE_CL DATE_P DATE_FORMAT_P DAY_P  DAYOFMONTH DAYOFWEEK DAYOFYEAR DBCOMPATIBILITY_P DB_B_FORMAT DEALLOCATE DEC DECIMAL_P DECLARE DECODE DEFAULT DEFAULTS
 	DEFERRABLE DEFERRED DEFINER DELETE_P DELIMITER DELIMITERS DELTA DELTAMERGE DESC DETERMINISTIC DIV
 /* PGXC_BEGIN */
 	DICTIONARY DIRECT DIRECTORY DISABLE_P DISCARD DISTINCT DISTRIBUTE DISTRIBUTION DO DOCUMENT_P DOMAIN_P DOUBLE_P
@@ -22375,6 +22375,48 @@ func_expr_common_subexpr:
 					n->call_func = false;
 					$$ = (Node *)n;
 				}
+            | DB_B_FORMAT '(' a_expr ',' a_expr ')'
+                {
+                    FuncCall *n = makeNode(FuncCall);
+                    if (u_sess->attr.attr_sql.sql_compatibility == B_FORMAT)
+                    {
+                        n->funcname = SystemFuncName("db_b_format");
+                    }
+                    else
+                    {
+                        n->funcname = SystemFuncName("format");
+                    }
+                    n->args = list_make2($3, $5);
+                    n->agg_order = NIL;
+                    n->agg_star = FALSE;
+                    n->agg_distinct = FALSE;
+                    n->func_variadic = FALSE;
+                    n->over = NULL;
+                    n->location = @1;
+                    n->call_func = false;
+                    $$ = (Node *)n;
+                }
+            | DB_B_FORMAT '(' a_expr ',' a_expr ',' a_expr ')'
+                {
+                    FuncCall *n = makeNode(FuncCall);
+                    if (u_sess->attr.attr_sql.sql_compatibility == B_FORMAT)
+                    {
+                        n->funcname = SystemFuncName("db_b_format");
+                    }
+                    else
+                    {
+                        n->funcname = SystemFuncName("format");
+                    }
+                    n->args = list_make3($3, $5, $7);
+                    n->agg_order = NIL;
+                    n->agg_star = FALSE;
+                    n->agg_distinct = FALSE;
+                    n->func_variadic = FALSE;
+                    n->over = NULL;
+                    n->location = @1;
+                    n->call_func = false;
+                    $$ = (Node *)n;
+                }
 			| SESSION_USER
 				{
 					FuncCall *n = makeNode(FuncCall);
@@ -24625,6 +24667,7 @@ col_name_keyword:
 			| DAYOFMONTH
 			| DAYOFWEEK
 			| DAYOFYEAR
+			| DB_B_FORMAT
 			| DEC
 			| DECIMAL_P
 			| DECODE

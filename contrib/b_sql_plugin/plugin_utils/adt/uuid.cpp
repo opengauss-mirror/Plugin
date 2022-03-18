@@ -10,14 +10,21 @@
  *
  * -------------------------------------------------------------------------
  */
+#include <cstdio>
 
 #include "postgres.h"
+#include "pgxc/pgxcnode.h"
 #include "knl/knl_variable.h"
 
 #include "access/hash.h"
+#include "access/xlog.h"
 #include "libpq/pqformat.h"
 #include "utils/builtins.h"
 #include "utils/uuid.h"
+#include "utils/timestamp.h"
+#include "utils/inet.h"
+#include <net/if.h>
+#include "plugin_postgres.h"
 
 static void string_to_uuid(const char* source, pg_uuid_t* uuid);
 static int uuid_internal_cmp(const pg_uuid_t* arg1, const pg_uuid_t* arg2);
@@ -32,10 +39,11 @@ Datum uuid_in(PG_FUNCTION_ARGS)
     PG_RETURN_UUID_P(uuid);
 }
 
+#define HEX_CHARS "0123456789abcdef"
+
 Datum uuid_out(PG_FUNCTION_ARGS)
 {
     pg_uuid_t* uuid = PG_GETARG_UUID_P(0);
-    static const char hex_chars[] = "0123456789abcdef";
     StringInfoData buf;
     int i;
 
@@ -55,8 +63,8 @@ Datum uuid_out(PG_FUNCTION_ARGS)
         hi = uuid->data[i] >> 4;
         lo = uuid->data[i] & 0x0F;
 
-        appendStringInfoChar(&buf, hex_chars[hi]);
-        appendStringInfoChar(&buf, hex_chars[lo]);
+        appendStringInfoChar(&buf, HEX_CHARS[hi]);
+        appendStringInfoChar(&buf, HEX_CHARS[lo]);
     }
 
     PG_RETURN_CSTRING(buf.data);
@@ -247,7 +255,6 @@ Datum hash16in(PG_FUNCTION_ARGS)
 Datum hash16out(PG_FUNCTION_ARGS)
 {
     uint64 hash16 = PG_GETARG_TRANSACTIONID(0);
-    static const char hex_chars[] = "0123456789abcdef";
     StringInfoData buf;
     StringInfoData res;
 
@@ -258,7 +265,7 @@ Datum hash16out(PG_FUNCTION_ARGS)
         for (int i = 0; i < 16; ++i) {
             int ho = hash16 & 0x0F;
             hash16 = hash16 >> 4;
-            appendStringInfoChar(&buf, hex_chars[ho]);
+            appendStringInfoChar(&buf, HEX_CHARS[ho]);
         }
         for (int j = strlen(buf.data) - 1; j >= 0; --j) {
             appendStringInfoChar(&res, buf.data[j]);
@@ -294,7 +301,6 @@ Datum hash32in(PG_FUNCTION_ARGS)
 Datum hash32out(PG_FUNCTION_ARGS)
 {
     hash32_t* hash32 = PG_GETARG_HASH32_P(0);
-    static const char hex_chars[] = "0123456789abcdef";
     StringInfoData buf;
     int i;
 
@@ -306,8 +312,8 @@ Datum hash32out(PG_FUNCTION_ARGS)
         h_low = hash32->data[i] & 0x0F;
         h_high = (hash32->data[i] >> 4) & 0x0F;
 
-        appendStringInfoChar(&buf, hex_chars[h_high]);
-        appendStringInfoChar(&buf, hex_chars[h_low]);
+        appendStringInfoChar(&buf, HEX_CHARS[h_high]);
+        appendStringInfoChar(&buf, HEX_CHARS[h_low]);
     }
 
     PG_RETURN_CSTRING(buf.data);
@@ -327,4 +333,195 @@ Datum hash16_eq(PG_FUNCTION_ARGS)
     uint64 arg2 = DatumGetUInt64(PG_GETARG_DATUM(1));
 
     PG_RETURN_BOOL(arg1 == arg2);
+}
+
+
+#define UUID_VERSION 0x1000
+#define FORMATTED_UUID_LEN 36
+#define UUID_FIRST_PART_LEN 8
+#define UUID_MID_PART_LEN 4
+#define UUID_LAST_PART_LEN 12
+#define UUID_TIME_OFFSET ((uint64)141427 * 24 * 60 * 60 * 1000 * 1000 * 10)
+#define INT_RANGE_REVISE_PARAM 128
+#define HEX_BASE 16
+#define URANDOM_FILE_PATH "/dev/urandom"
+#define MAC_CHAR_NUM 6
+#define CLOCK_SEQ_CHAR_NUM 2
+#define MaxMacAddrList 10
+
+static uint64 uuid_time = 0;
+static uint64 nano_seq = 0;
+static uint64 mac_addr = 0;
+static char clock_seq[2] = {0};
+
+/*
+* transfer char* into hexadecimal style.
+* offset is used to modify the range of source char in case of getting range of signed int8. set to 0 if not needed.
+*/
+static void string_to_hex(char* source, char* dest, int src_len, int offset)
+{
+    int dest_index = 0;
+    for (int i = 0; i < src_len; i++) {
+        dest[dest_index++] = HEX_CHARS[(source[i] + offset) / HEX_BASE];
+        dest[dest_index++] = HEX_CHARS[(source[i] + offset) % HEX_BASE];
+    }
+}
+
+static void int_to_hex(uint64 source, char* dest, int src_len)
+{
+    char* dest_ptr = dest + src_len;
+    for (int i = 0; i < src_len; i++) {
+        *(--dest_ptr) = HEX_CHARS[source & 0xF];
+        source >>= 4;
+    }
+}
+
+/*
+ * get specific num of character read from /dev/urandom, storing in rand_buf.
+ */
+static void pseudo_rand_read(char* rand_buf, int bytes_read)
+{
+    FILE* f = fopen(URANDOM_FILE_PATH, "r");
+    if (!f) {
+        ereport(ERROR, (errcode(ERRCODE_FILE_READ_FAILED), (errmsg("cannot open urandom file"))));
+    }
+    size_t b_read;
+    char* buf_ptr = rand_buf;
+    while (bytes_read) {
+        b_read = fread(buf_ptr, 1, bytes_read, f);
+        if (b_read <= 0) {
+            fclose(f);
+            ereport(ERROR, (errcode(ERRCODE_FILE_READ_FAILED), (errmsg("failed to get random number"))));
+        }
+        buf_ptr += b_read;
+        bytes_read -= (int)b_read;
+    }
+    fclose(f);
+}
+
+static uint64 GetMACAddr(void)
+{
+    macaddr mac;
+    uint64 macAddr;
+    int sockFd = NO_SOCKET;
+    struct ifconf ifconfInfo;
+    struct ifreq ifreqInfo;
+    char *buf = NULL;
+    errno_t ss_rc = EOK;
+    uint32 i;
+
+    ss_rc = memset_s((void *)&mac, sizeof(macaddr), 0, sizeof(macaddr));
+    securec_check(ss_rc, "\0", "\0");
+
+    sockFd = socket(AF_INET, SOCK_DGRAM, IPPROTO_IP);
+    if (sockFd != NO_SOCKET) {
+        buf = (char *)palloc(MaxMacAddrList * sizeof(ifreq));
+        ifconfInfo.ifc_len = MaxMacAddrList * sizeof(ifreq);
+        ifconfInfo.ifc_buf = buf;
+
+        if (ioctl(sockFd, SIOCGIFCONF, &ifconfInfo) != -1) {
+            struct ifreq *ifrepTmp = ifconfInfo.ifc_req;
+            for (i = 0; i < (ifconfInfo.ifc_len / sizeof(struct ifreq)); i++) {
+                ss_rc = strcpy_s(ifreqInfo.ifr_name, strlen(ifrepTmp->ifr_name) + 1, ifrepTmp->ifr_name);
+                securec_check(ss_rc, "\0", "\0");
+
+                if (ioctl(sockFd, SIOCGIFFLAGS, &ifreqInfo) == 0) {
+                    if (!(ifreqInfo.ifr_flags & IFF_LOOPBACK)) {
+                        if (ioctl(sockFd, SIOCGIFHWADDR, &ifreqInfo) == 0) {
+                            mac.a = (unsigned char)ifreqInfo.ifr_hwaddr.sa_data[0];
+                            mac.b = (unsigned char)ifreqInfo.ifr_hwaddr.sa_data[1];
+                            mac.c = (unsigned char)ifreqInfo.ifr_hwaddr.sa_data[2];
+                            mac.d = (unsigned char)ifreqInfo.ifr_hwaddr.sa_data[3];
+                            mac.e = (unsigned char)ifreqInfo.ifr_hwaddr.sa_data[4];
+                            mac.f = (unsigned char)ifreqInfo.ifr_hwaddr.sa_data[5];
+                            break;
+                        }
+                    }
+                }
+                ifrepTmp++;
+            }
+        }
+        pfree_ext(buf);
+        close(sockFd);
+    }
+    macAddr = ((uint64)mac.a << 40) | ((uint64)mac.b << 32) | ((uint64)mac.c << 24) | ((uint64)mac.d << 16) |
+            ((uint64)mac.e << 8) | (uint64)mac.f;
+    return macAddr;
+}
+
+/*
+ * generate uuid in v1 style.
+ */
+Datum uuid_generate(PG_FUNCTION_ARGS)
+{
+    // first time in this function. get mac address first
+    if (!mac_addr) {
+        mac_addr = GetMACAddr();
+    }
+    // still no mac obtained. init or use random string as virtual mac
+    if (!mac_addr) {
+        char virtual_mac_string[6] = {0};
+        if (strlen(virtual_mac_string) == 0) {
+            pseudo_rand_read(virtual_mac_string, MAC_CHAR_NUM);
+        }
+        mac_addr = ((uint64)virtual_mac_string[0] << 40) | ((uint64)virtual_mac_string[1] << 32) |
+                ((uint64)virtual_mac_string[2] << 24) | ((uint64)virtual_mac_string[3] << 16) |
+                ((uint64)virtual_mac_string[4] << 8) | (uint64)virtual_mac_string[5];
+    }
+
+    uint64 curr_time;
+#ifdef HAVE_INT64_TIMESTAMP
+    curr_time = GetCurrentTimestamp() * 10 + UUID_TIME_OFFSET + nano_seq;
+#else
+    curr_time = GetCurrentTimestamp() * 1000 * 1000 * 10 + UUID_TIME_OFFSET + nano_seq;
+#endif
+    // give back nano_seq we borrowed before
+    if (curr_time > uuid_time && nano_seq > 0) {
+        uint give_back = Min(nano_seq, curr_time - uuid_time - 1);
+        curr_time -= give_back;
+        nano_seq -= give_back;
+    }
+
+    // borrow an extra nano_seq if curr_time == uuid_time to prevent timestamp collision
+    if (curr_time == uuid_time) {
+        ++nano_seq;
+        ++curr_time;
+    }
+
+    // if first time creating uuid, or sys time changed backward, we reset clock_seq to prevent time stamp duplication.
+    // meanwhile, we reset nano_seq.
+    if (!uuid_time || curr_time <= uuid_time) {
+        pseudo_rand_read(clock_seq, CLOCK_SEQ_CHAR_NUM);
+    }
+    uuid_time = curr_time;
+    uint32 timestamp_low = (uint32)(uuid_time & 0xFFFFFFFF);
+    uint16 timestamp_mid = (uint16)((uuid_time >> 32) & 0xFFFF);
+    uint16 timestamp_high_and_v = (uint16)((uuid_time >> 48) | UUID_VERSION);
+
+    // result len equals to 32 + 4 * '-' + '\0'
+    char* res = (char*)palloc(UUID_LEN * 2 + 5);
+    res[UUID_LEN * 2 + 4] = '\0';
+    int cursor = 0;
+
+    int_to_hex(timestamp_low, res, UUID_FIRST_PART_LEN);
+    cursor += UUID_FIRST_PART_LEN;
+    res[cursor++] = '-';
+
+    int_to_hex(timestamp_mid, res + cursor, UUID_MID_PART_LEN);
+    cursor += UUID_MID_PART_LEN;
+    res[cursor++] = '-';
+
+    int_to_hex(timestamp_high_and_v, res + cursor, UUID_MID_PART_LEN);
+    cursor += UUID_MID_PART_LEN;
+    res[cursor++] = '-';
+
+    string_to_hex(clock_seq, res + cursor, sizeof(clock_seq), INT_RANGE_REVISE_PARAM);
+    cursor += UUID_MID_PART_LEN;
+    res[cursor++] = '-';
+
+    int_to_hex(mac_addr, res + cursor, UUID_LAST_PART_LEN);
+    cursor += UUID_LAST_PART_LEN;
+
+    VarChar* result = (VarChar*)cstring_to_text_with_len(res, FORMATTED_UUID_LEN);
+    PG_RETURN_VARCHAR_P(result);
 }
