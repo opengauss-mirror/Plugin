@@ -901,6 +901,8 @@ static int errstate;
 			START_WITH CONNECT_BY
 
 /* Precedence: lowest to highest */
+%nonassoc lower_than_on
+%left ON USING
 %nonassoc   PARTIAL_EMPTY_PREC
 %nonassoc   CLUSTER
 %nonassoc	SET				/* see relation_expr_opt_alias */
@@ -19979,6 +19981,26 @@ joined_table:
 						n->quals = $4; /* ON clause */
 					$$ = n;
 				}
+			| table_ref JOIN table_ref 
+			%prec lower_than_on
+				{
+					JoinExpr *n = makeNode(JoinExpr);
+					n->jointype = JOIN_INNER;
+					n->isNatural = FALSE;
+					n->larg = $1;
+					n->rarg = $3;
+					n->usingClause = NIL;
+					n->quals = NULL;
+					if (IsA($3, JoinExpr))
+					{
+						JoinExpr* join = (JoinExpr*)$3;
+						n->rarg = join->larg;
+						join->larg = (Node *)n;
+						$$ = join;
+					}
+					else
+					$$ = n;	
+				}
 			| table_ref NATURAL join_type JOIN table_ref
 				{
 					JoinExpr *n = makeNode(JoinExpr);
@@ -19998,6 +20020,50 @@ joined_table:
 					n->isNatural = TRUE;
 					n->larg = $1;
 					n->rarg = $4;
+					n->usingClause = NIL; /* figure out which columns later... */
+					n->quals = NULL; /* fill later */
+					$$ = n;
+				}
+			| table_ref INNER_P JOIN table_ref join_qual
+				{
+					JoinExpr *n = makeNode(JoinExpr);
+					n->jointype = JOIN_INNER;
+					n->isNatural = FALSE;
+					n->larg = $1;
+					n->rarg = $4;
+					if ($5 != NULL && IsA($5, List))
+						n->usingClause = (List *) $5; /* USING clause */
+					else
+						n->quals = $5; /* ON clause */
+					$$ = n;
+				}
+			| table_ref INNER_P JOIN table_ref 
+			%prec lower_than_on
+				{
+					JoinExpr *n = makeNode(JoinExpr);
+					n->jointype = JOIN_INNER;
+					n->isNatural = FALSE;
+					n->larg = $1;
+					n->rarg = $4;
+					n->usingClause = NIL;
+					n->quals = NULL;
+					if (IsA($4, JoinExpr))
+					{
+						JoinExpr* join = (JoinExpr*)$4;
+						n->rarg = join->larg;
+						join->larg = (Node *)n;
+						$$ = join;
+					}
+					else
+					$$ = n;
+				}
+			| table_ref NATURAL INNER_P JOIN table_ref
+				{
+					JoinExpr *n = makeNode(JoinExpr);
+					n->jointype = JOIN_INNER;
+					n->isNatural = TRUE;
+					n->larg = $1;
+					n->rarg = $5;
 					n->usingClause = NIL; /* figure out which columns later... */
 					n->quals = NULL; /* fill later */
 					$$ = n;
@@ -20036,7 +20102,6 @@ opt_alias_clause: alias_clause		{ $$ = $1; }
 join_type:	FULL join_outer							{ $$ = JOIN_FULL; }
 			| LEFT join_outer						{ $$ = JOIN_LEFT; }
 			| RIGHT join_outer						{ $$ = JOIN_RIGHT; }
-			| INNER_P								{ $$ = JOIN_INNER; }
 		;
 
 /* OUTER is just noise... */
