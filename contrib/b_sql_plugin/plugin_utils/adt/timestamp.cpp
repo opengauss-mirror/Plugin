@@ -4077,9 +4077,9 @@ Datum timestamp_part(PG_FUNCTION_ARGS)
         switch (val) {
             case DTK_MICROSEC:
 #ifdef HAVE_INT64_TIMESTAMP
-                result = tm->tm_sec * 1000000.0 + fsec;
+                result = fsec;
 #else
-                result = (tm->tm_sec + fsec) * 1000000;
+                result = fsec * 1000000;
 #endif
                 break;
 
@@ -4093,9 +4093,9 @@ Datum timestamp_part(PG_FUNCTION_ARGS)
 
             case DTK_SECOND:
 #ifdef HAVE_INT64_TIMESTAMP
-                result = tm->tm_sec + fsec / 1000000.0;
+                result = tm->tm_sec;
 #else
-                result = tm->tm_sec + fsec;
+                result = tm->tm_sec;
 #endif
                 break;
 

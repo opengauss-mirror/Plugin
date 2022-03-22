@@ -23,12 +23,16 @@
 #include "nodes/nodeFuncs.h"
 #include "utils/array.h"
 #include "utils/varbit.h"
+#include "access/tuptoaster.h"
 
 #define HEXDIG(z) ((z) < 10 ? ((z) + '0') : ((z)-10 + 'A'))
 
 static VarBit* bit_catenate(VarBit* arg1, VarBit* arg2);
 static VarBit* bitsubstring(VarBit* arg, int32 s, int32 l, bool length_not_specified);
 static VarBit* bit_overlay(VarBit* t1, VarBit* t2, int sp, int sl);
+extern Datum mp_bit_length_bit(PG_FUNCTION_ARGS); 
+extern Datum mp_bit_length_text(PG_FUNCTION_ARGS);
+extern Datum mp_bit_length_bytea(PG_FUNCTION_ARGS);
 
 /*
  * common code for bittypmodin and varbittypmodin
@@ -1653,4 +1657,28 @@ Datum bitgetbit(PG_FUNCTION_ARGS)
         PG_RETURN_INT32(1);
     else
         PG_RETURN_INT32(0);
+}
+
+Datum mp_bit_length_bit(PG_FUNCTION_ARGS)
+{
+    VarBit* arg = PG_GETARG_VARBIT_P(0);
+
+    PG_RETURN_INT32(VARBITBYTES(arg) * 8);
+}
+
+Datum mp_bit_length_text(PG_FUNCTION_ARGS)
+{
+    Datum str = PG_GETARG_DATUM(0);
+
+    /* We need not detoast the input at all */
+    PG_RETURN_INT32((toast_raw_datum_size(str) - VARHDRSZ) * 8);
+
+}
+
+Datum mp_bit_length_bytea(PG_FUNCTION_ARGS)
+{
+    Datum str = PG_GETARG_DATUM(0);
+
+    /* We need not detoast the input at all */
+    PG_RETURN_INT32((toast_raw_datum_size(str) - VARHDRSZ) * 8);
 }

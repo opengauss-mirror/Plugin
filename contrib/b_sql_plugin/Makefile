@@ -59,7 +59,7 @@ OBJS += pg_builtin_proc.o
 pg_builtin_proc.o: pg_builtin_proc.cpp utils
 EXTENSION = b_sql_plugin
 DATA = b_sql_plugin--1.0.sql
-REGRESS = regexp join_without_on
+REGRESS = regexp join_without_on db_b_parser1 db_b_parser2 db_b_parser3 db_b_parser4 
 REGRESS_OPTS = --dlpath=$(top_builddir)/src/test/regress -c 0 -d 1 --single_node
 
 override CPPFLAGS :=$(filter-out -fPIE, $(CPPFLAGS)) -fPIC -I$(top_builddir)/$(subdir)/include -fvisibility=hidden -I.
