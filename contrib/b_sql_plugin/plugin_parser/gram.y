@@ -20470,7 +20470,7 @@ GenericType:
 							$$ = makeTypeName("float8");
 							$$->typmods = $2;
 					} else if ($1 != NULL && (strcmp($1, "text") == 0 || strcmp($1, "tinytext") == 0 || strcmp($1, "mediumtext") == 0 || strcmp($1, "longtext") == 0)) {
-						$$ = SystemTypeName("text");
+							$$ = SystemTypeName("text");
 							$$->location = @1;
 					} else {
 						$$ = makeTypeName($1);
@@ -20479,7 +20479,7 @@ GenericType:
 				}
 			| type_function_name attrs opt_type_modifiers
 				{
-					$$ = makeTypeNameFromNameList(lcons(makeString($1), $2));
+					$$ = makeTypeNam24eFromNameList(lcons(makeString($1), $2));
 					$$->typmods = $3;
 					$$->location = @1;
 				}
@@ -23413,7 +23413,7 @@ extract_arg:
 			| MINUTE_P								{ $$ = "minute"; }
 			| SECOND_P								{ $$ = "second"; }
 			| QUARTER								{ $$ = "quarter"; }
-			| MICROSECOND_P							{ $$ = "microsecond"; }
+			| MICROSECOND_P								{ $$ = "microsecond"; }
 			| Sconst								{ $$ = $1; }
 		;
 
