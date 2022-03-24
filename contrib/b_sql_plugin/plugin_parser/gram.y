@@ -20479,7 +20479,7 @@ GenericType:
 				}
 			| type_function_name attrs opt_type_modifiers
 				{
-					$$ = makeTypeNam24eFromNameList(lcons(makeString($1), $2));
+					$$ = makeTypeNameFromNameList(lcons(makeString($1), $2));
 					$$->typmods = $3;
 					$$->location = @1;
 				}
