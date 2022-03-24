@@ -1,6 +1,6 @@
-drop database if exists mysql;
-create database mysql dbcompatibility 'b';
-\c mysql
+drop database if exists mysql_test;
+create database mysql_test dbcompatibility 'b';
+\c mysql_test
 create extension b_sql_plugin;
 CREATE TABLE J1_TBL (
   i integer,
@@ -41,22 +41,9 @@ SELECT '' AS "xxx", *
      | 0 |   | zero |   |  0
 (6 rows)
 
- xxx | i | j |  t   | i | k  
------+---+---+------+---+----
-     | 1 | 4 | one  | 1 | -1
-     | 2 | 3 | two  | 1 | -1
-     | 0 |   | zero | 1 | -1
-     | 1 | 4 | one  |   |  0
-     | 2 | 3 | two  |   |  0
-     | 0 |   | zero |   |  0
-(6 rows)
-
 --INNER JOIN
 SELECT '' AS "xxx", *
   FROM J1_TBL INNER JOIN J2_TBL;
-ERROR:  syntax error at or near "xxx"
-LINE 1: xxx | i | j |  t   | i | k  
-        ^
  xxx | i | j |  t   | i | k  
 -----+---+---+------+---+----
      | 1 | 4 | one  | 1 | -1
@@ -70,9 +57,6 @@ LINE 1: xxx | i | j |  t   | i | k
 -- THREE JOIN
 SELECT '' AS "xxx", *
   FROM J1_TBL  JOIN J2_TBL JOIN J3_TBL;
-ERROR:  syntax error at or near "xxx"
-LINE 1: xxx | i | j |  t   | i | k  
-        ^
  xxx | i | j |  t   | i | k  | i | k  
 -----+---+---+------+---+----+---+----
      | 1 | 4 | one  | 1 | -1 | 1 | -1
@@ -92,9 +76,6 @@ LINE 1: xxx | i | j |  t   | i | k
 --THREE INNER JOIN
 SELECT '' AS "xxx", *
   FROM J1_TBL INNER JOIN J2_TBL INNER JOIN J3_TBL;
-ERROR:  syntax error at or near "xxx"
-LINE 1: xxx | i | j |  t   | i | k  | i | k  
-        ^
  xxx | i | j |  t   | i | k  | i | k  
 -----+---+---+------+---+----+---+----
      | 1 | 4 | one  | 1 | -1 | 1 | -1
@@ -113,9 +94,6 @@ LINE 1: xxx | i | j |  t   | i | k  | i | k
 
 --THREE JOIN WITH ONE ON
 SELECT  * FROM J1_TBL  JOIN (J2_TBL JOIN J3_TBL) ON J1_TBL.i = J2_TBL.i;
-ERROR:  syntax error at or near "xxx"
-LINE 1: xxx | i | j |  t   | i | k  | i | k  
-        ^
  i | j |  t  | i | k  | i | k  
 ---+---+-----+---+----+---+----
  1 | 4 | one | 1 | -1 | 1 | -1
@@ -123,9 +101,6 @@ LINE 1: xxx | i | j |  t   | i | k  | i | k
 (2 rows)
 
 SELECT  * FROM J1_TBL  INNER JOIN J2_TBL JOIN J3_TBL ON J2_TBL.i = J3_TBL.i;
-ERROR:  syntax error at or near "i"
-LINE 1: i | j |  t  | i | k  | i | k  
-        ^
  i | j |  t   | i | k  | i | k  
 ---+---+------+---+----+---+----
  1 | 4 | one  | 1 | -1 | 1 | -1
@@ -134,9 +109,6 @@ LINE 1: i | j |  t  | i | k  | i | k
 (3 rows)
 
 SELECT  * FROM J1_TBL  JOIN J2_TBL JOIN J3_TBL ON J1_TBL.i = J3_TBL.i;
-ERROR:  syntax error at or near "i"
-LINE 1: i | j |  t   | i | k  | i | k  
-        ^
  i | j |  t  | i | k  | i | k  
 ---+---+-----+---+----+---+----
  1 | 4 | one | 1 | -1 | 1 | -1
@@ -147,9 +119,6 @@ LINE 1: i | j |  t   | i | k  | i | k
 
 --FOUR JOIN WITH ON
 SELECT  * FROM J1_TBL  JOIN J2_TBL JOIN J3_TBL JOIN J4_TBL ON J1_TBL.i = J4_TBL.i;
-ERROR:  syntax error at or near "i"
-LINE 1: i | j |  t  | i | k  | i | k  
-        ^
  i | j |  t  | i | k  | i | k  | i | k  
 ---+---+-----+---+----+---+----+---+----
  1 | 4 | one |   |  0 | 1 | -1 | 1 | -1
@@ -159,9 +128,6 @@ LINE 1: i | j |  t  | i | k  | i | k
 (4 rows)
 
 SELECT  * FROM J1_TBL  JOIN J2_TBL INNER JOIN J3_TBL INNER JOIN J4_TBL ON J1_TBL.i = J4_TBL.i;
-ERROR:  syntax error at or near "i"
-LINE 1: i | j |  t  | i | k  | i | k  | i | k  
-        ^
  i | j |  t  | i | k  | i | k  | i | k  
 ---+---+-----+---+----+---+----+---+----
  1 | 4 | one |   |  0 | 1 | -1 | 1 | -1
@@ -169,6 +135,4 @@ LINE 1: i | j |  t  | i | k  | i | k  | i | k
  1 | 4 | one |   |  0 | 2 |  2 | 1 | -1
  1 | 4 | one | 1 | -1 | 2 |  2 | 1 | -1
 (4 rows)
-ERROR:  syntax error at or near "i"
-LINE 1: i | j |  t  | i | k  | i | k  | i | k  
-        ^
+
