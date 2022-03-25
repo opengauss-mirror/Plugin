@@ -2,6 +2,14 @@ drop database if exists format_test;
 create database format_test dbcompatibility 'B';
 \c format_test
 create extension b_sql_plugin;
+-- test for b_format_mode = false
+select format(1234.456, 2);
+select format(1234.456, 2, 'en_US');
+select format('%1s!', 'Hello');
+select format('%1s %1s!', 'Hello', 'world');
+
+-- test for b_format_mode = true
+set b_format_mode = 1;
 
 -- test for basic functionality of FORMAT
 select db_b_format(234.567, 3);
@@ -34,6 +42,13 @@ select db_b_format('abcde', 2);
 select db_b_format(1234.456, 2, 'zz_AA');
 -- wrong type of third param
 select db_b_format(1234.456, 2, 123123);
+
+-- test for setting b_format_mode back to false
+set b_format_mode = 0;
+select format(1234.456, 2);
+select format(1234.456, 2, 'en_US');
+select format('%1s!', 'Hello');
+select format('%1s %1s!', 'Hello', 'world');
 
 \c postgres
 drop database format_test;

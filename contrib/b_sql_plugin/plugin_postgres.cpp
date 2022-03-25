@@ -101,6 +101,7 @@ extern void ExecAlterRoleSetStmt(Node* parse_tree, const char* query_string, boo
 static bool need_full_dn_execution(const char* group_name);
 static ExecNodes* GetFunctionNodes(Oid func_id);
 static const int LOADER_COL_BUF_CNT = 5;
+static uint32 b_sql_plugin_index;
 void ProcessUtilityMain(Node* parse_tree, const char* query_string, ParamListInfo params, bool is_top_level,
     DestReceiver* dest,
 #ifdef PGXC
@@ -6923,4 +6924,33 @@ void bsql_ProcessUtility(Node* parse_tree, const char* query_string, ParamListIn
                     errmsg("unrecognized node type: %d", (int)nodeTag(parse_tree))));
         } break;
     }
+}
+
+BSqlPluginContext* GetSessionContext() {
+    if (u_sess->attr.attr_common.extension_session_vars_array[b_sql_plugin_index] == NULL) {
+        init_session_vars();
+    }
+    return (BSqlPluginContext *) u_sess->attr.attr_common.extension_session_vars_array[b_sql_plugin_index];
+}
+
+void set_extension_index(uint32 index) {
+    b_sql_plugin_index = index;
+}
+
+void init_session_vars(void)
+{
+    RepallocSessionVarsArrayIfNecessary();
+
+    BSqlPluginContext *cxt = (BSqlPluginContext *) MemoryContextAlloc(u_sess->self_mem_cxt, sizeof(bSqlPluginContext));
+    u_sess->attr.attr_common.extension_session_vars_array[b_sql_plugin_index] = cxt;
+    cxt->enableBFormatMode = false;
+
+    DefineCustomBoolVariable("b_format_mode",
+                             "Enable mysql functions override opengauss's when collision happens.",
+                             NULL,
+                             &ENABLE_B_FORMAT_MODE,
+                             false,
+                             PGC_USERSET,
+                             0,
+                             NULL, NULL, NULL);
 }

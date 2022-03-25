@@ -2,6 +2,33 @@ drop database if exists format_test;
 create database format_test dbcompatibility 'B';
 \c format_test
 create extension b_sql_plugin;
+-- test for b_format_mode = false
+select format(1234.456, 2);
+  format  
+----------
+ 1234.456
+(1 row)
+
+select format(1234.456, 2, 'en_US');
+  format  
+----------
+ 1234.456
+(1 row)
+
+select format('%1s!', 'Hello');
+ format 
+--------
+ Hello!
+(1 row)
+
+select format('%1s %1s!', 'Hello', 'world');
+    format    
+--------------
+ Hello world!
+(1 row)
+
+-- test for b_format_mode = true
+set b_format_mode = 1;
 -- test for basic functionality of FORMAT
 select db_b_format(234.567, 3);
  db_b_format 
@@ -111,6 +138,32 @@ CONTEXT:  referenced column: db_b_format
 select db_b_format(1234.456, 2, 123123);
 ERROR:  the provided locale is invalid.
 CONTEXT:  referenced column: db_b_format
+-- test for setting b_format_mode back to false
+set b_format_mode = 0;
+select format(1234.456, 2);
+  format  
+----------
+ 1234.456
+(1 row)
+
+select format(1234.456, 2, 'en_US');
+  format  
+----------
+ 1234.456
+(1 row)
+
+select format('%1s!', 'Hello');
+ format 
+--------
+ Hello!
+(1 row)
+
+select format('%1s %1s!', 'Hello', 'world');
+    format    
+--------------
+ Hello world!
+(1 row)
+
 \c postgres
 drop database format_test;
 -- test for A compatibility to ensure the original functionality is good.

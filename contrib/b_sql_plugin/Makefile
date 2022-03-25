@@ -63,7 +63,7 @@ plugin_postgres.o: plugin_postgres.cpp
 OBJS += pg_builtin_proc.o
 pg_builtin_proc.o: pg_builtin_proc.cpp utils
 EXTENSION = b_sql_plugin
-REGRESS:=$(shell find ./sql -maxdepth 1 -type f)
+REGRESS:=$(shell find ./sql -maxdepth 2 -type f)
 REGRESS:=$(basename $(patsubst ./sql/%,%,$(REGRESS)) .sql)
 
 REGRESS_OPTS = --dlpath=$(top_builddir)/src/test/regress -c 0 -d 1 --single_node

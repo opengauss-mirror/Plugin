@@ -1,6 +1,8 @@
 #ifndef PLUGIN_POSTGRES_H
 #define PLUGIN_POSTGRES_H
 
+#define ENABLE_B_FORMAT_MODE (GetSessionContext()->enableBFormatMode)
+
 #if defined _WIN32 || defined __CYGWIN__
   #ifdef BUILDING_DLL
     #ifdef __GNUC__
@@ -50,5 +52,12 @@ extern "C" DLL_PUBLIC void _PG_init(void);
 extern "C" DLL_PUBLIC void _PG_fini(void);
 extern "C" DLL_PUBLIC void b_sql_plugin_invoke(void);
 extern "C" DLL_PUBLIC void init_plugin_object();
+extern "C" DLL_PUBLIC void init_session_vars(void);
+
+typedef struct BSqlPluginContext {
+    bool enableBFormatMode;
+} bSqlPluginContext;
+
+BSqlPluginContext* GetSessionContext();
 
 #endif
