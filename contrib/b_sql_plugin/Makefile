@@ -52,14 +52,20 @@ parser:
 utils:
 	make -C $(utils)
 
+
+b_sql_plugin--1.0.sql: sql_script/*
+	cat $^ >> $@
+DATA_built = b_sql_plugin--1.0.sql
+
 OBJS += plugin_postgres.o 
 plugin_postgres.o: plugin_postgres.cpp
 
 OBJS += pg_builtin_proc.o
 pg_builtin_proc.o: pg_builtin_proc.cpp utils
 EXTENSION = b_sql_plugin
-DATA = b_sql_plugin--1.0.sql
-REGRESS = regexp join_without_on db_b_parser1 db_b_parser2 db_b_parser3 db_b_parser4 
+REGRESS:=$(shell find ./sql -maxdepth 1 -type f)
+REGRESS:=$(basename $(patsubst ./sql/%,%,$(REGRESS)) .sql)
+
 REGRESS_OPTS = --dlpath=$(top_builddir)/src/test/regress -c 0 -d 1 --single_node
 
 override CPPFLAGS :=$(filter-out -fPIE, $(CPPFLAGS)) -fPIC -I$(top_builddir)/$(subdir)/include -fvisibility=hidden -I.

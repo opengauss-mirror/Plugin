@@ -44,6 +44,14 @@
 
 #define JUDGE_INPUT_VALID(X, Y) ((NULL == (X)) || (NULL == (Y)))
 #define GET_POSITIVE(X) ((X) > 0 ? (X) : ((-1) * (X)))
+#define GetMaxLen(typmod) (typmod < (int32)VARHDRSZ ? 1 : typmod - (int32)VARHDRSZ)
+
+#define MAX_BINARY_LENGTH 255
+#define MAX_VARBINARY_LENGTH 65535
+
+#define TinyBlobMaxAllocSize ((Size)255) /* 255B */
+#define MediumBlobMaxAllocSize ((Size)(16 * 1024 * 1024 - 1)) /* 16MB - 1 */
+#define LongBlobMaxAllocSize (((Size)4 * 1024 * 1024 * 1024 - 1)) /* 4GB - 1 */
 static int getResultPostionReverse(text* textStr, text* textStrToSearch, int32 beginIndex, int occurTimes);
 static int getResultPostion(text* textStr, text* textStrToSearch, int32 beginIndex, int occurTimes);
 
@@ -134,6 +142,51 @@ static void text_format_append_string(StringInfo buf, const char* str, int flags
 
 // adapt A db's substrb
 static text* get_substring_really(Datum str, int32 start, int32 length, bool length_not_specified);
+
+static void check_blob_size(Datum blob, int64 max_size);
+static int32 anybinary_typmodin(ArrayType* ta, const char* typname, uint32 max);
+static char* anybinary_typmodout(int32 typmod);
+static Datum copy_binary(Datum source, int typmod, bool target_is_var);
+static bytea* copy_blob(bytea* source, int64 max_size);
+
+PG_FUNCTION_INFO_V1_PUBLIC(binary_typmodin);
+extern "C" DLL_PUBLIC Datum binary_typmodin(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1_PUBLIC(varbinary_typmodin);
+extern "C" DLL_PUBLIC Datum varbinary_typmodin(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1_PUBLIC(binary_typmodout);
+extern "C" DLL_PUBLIC Datum binary_typmodout(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1_PUBLIC(bytea2binary);
+extern "C" DLL_PUBLIC Datum bytea2binary(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1_PUBLIC(bytea2var);
+extern "C" DLL_PUBLIC Datum bytea2var(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1_PUBLIC(tinyblob_rawin);
+extern "C" DLL_PUBLIC Datum tinyblob_rawin(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1_PUBLIC(mediumblob_rawin);
+extern "C" DLL_PUBLIC Datum mediumblob_rawin(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1_PUBLIC(longblob_rawin);
+extern "C" DLL_PUBLIC Datum longblob_rawin(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1_PUBLIC(tinyblob_recv);
+extern "C" DLL_PUBLIC Datum tinyblob_recv(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1_PUBLIC(mediumblob_recv);
+extern "C" DLL_PUBLIC Datum mediumblob_recv(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1_PUBLIC(longblob_recv);
+extern "C" DLL_PUBLIC Datum longblob_recv(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1_PUBLIC(longblob2tinyblob);
+extern "C" DLL_PUBLIC Datum longblob2tinyblob(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1_PUBLIC(longblob2mediumblob);
+extern "C" DLL_PUBLIC Datum longblob2mediumblob(PG_FUNCTION_ARGS);
 
 /*****************************************************************************
  *	 CONVERSION ROUTINES EXPORTED FOR USE BY C CODE							 *
@@ -6802,4 +6855,192 @@ Datum float8_text(PG_FUNCTION_ARGS)
 
     pfree_ext(tmp);
     PG_RETURN_DATUM(result);
+}
+
+static Datum copy_binary(Datum source, int typmod, bool target_is_var)
+{
+    int maxlen = GetMaxLen(typmod);
+    int length = VARSIZE(source) - VARHDRSZ;
+
+    if (length > maxlen) {
+        ereport(ERROR, (errmsg("The input length:%d exceeds the maximum length:%d.", length, maxlen)));
+    }
+
+    char* data = NULL;
+    struct varlena* attr = (struct varlena*)DatumGetPointer(source);
+    data = attr->vl_dat;
+
+    bytea* result = NULL;
+    int alloc_size = (target_is_var ? length : maxlen) + VARHDRSZ;
+    result = (bytea*)palloc0(alloc_size);
+    SET_VARSIZE(result, alloc_size);
+    if (length == 0) {
+        PG_RETURN_POINTER(result);
+    }
+    char* rp = VARDATA(result);
+    errno_t errorno = memcpy_s(rp, length, data, length);
+    securec_check(errorno, "\0", "\0");
+    PG_RETURN_BYTEA_P(result);
+}
+
+static bytea* copy_blob(bytea* source, int64 max_size)
+{
+    int64 nbytes = VARSIZE(source);
+    if (nbytes - VARHDRSZ > max_size) {
+        ereport(ERROR, (errmsg("The length: %ld bytes is exceeded the max length: %ld bytes",
+                                nbytes, max_size)));
+    }
+    bytea* target = (bytea*)palloc(nbytes);
+    SET_VARSIZE(target, nbytes);
+    if (nbytes == VARHDRSZ) {
+        return target;
+    }
+    char* rp = VARDATA(target);
+    char* data = source->vl_dat;
+    errno_t errorno = memcpy_s(rp, nbytes - VARHDRSZ, data, nbytes - VARHDRSZ);
+    securec_check(errorno, "\0", "\0");
+    return target;
+}
+
+static void check_blob_size(Datum blob, int64 max_size)
+{
+    int64 nbytes = toast_datum_size(blob) - VARHDRSZ;
+    if (nbytes > max_size) {
+        ereport(ERROR, (errmsg("The length: %ld bytes is exceeded the max length: %ld bytes",
+                                nbytes, max_size)));
+    }
+}
+
+static int32 anybinary_typmodin(ArrayType* ta, const char* typname, uint32 max)
+{
+    int32 typmod;
+    int32* tl = NULL;
+    int n;
+
+    tl = ArrayGetIntegerTypmods(ta, &n);
+
+    if (n != 1) {
+        ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("invalid type modifier")));
+    }
+
+    if (*tl < 0){
+        ereport(ERROR,
+            (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("length for type %s must be at least 0", typname)));
+    }
+
+    if (*((uint32*)tl) > max) {
+        ereport(ERROR,
+            (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+                errmsg("length for type %s cannot exceed %u", typname, max)));
+    }
+
+    typmod = VARHDRSZ + *tl;
+
+    return typmod;
+}
+
+/* common code for bpchartypmodout and varchartypmodout */
+static char* anybinary_typmodout(int32 typmod)
+{
+    const size_t buffer_len = 64;
+
+    char* res = (char*)palloc(buffer_len);
+    errno_t ss_rc = 0;
+
+    if (typmod > VARHDRSZ) {
+        ss_rc = snprintf_s(res, buffer_len, buffer_len - 1, "(%d)", (int)(typmod - VARHDRSZ));
+        securec_check_ss(ss_rc, "\0", "\0");
+    } else
+        *res = '\0';
+
+    return res;
+}
+
+Datum binary_typmodin(PG_FUNCTION_ARGS)
+{
+    ArrayType* ta = PG_GETARG_ARRAYTYPE_P(0);
+
+    PG_RETURN_INT32(anybinary_typmodin(ta, "binary", MAX_BINARY_LENGTH));
+}
+
+Datum varbinary_typmodin(PG_FUNCTION_ARGS)
+{
+    ArrayType* ta = PG_GETARG_ARRAYTYPE_P(0);
+
+    PG_RETURN_INT32(anybinary_typmodin(ta, "varbinary", MAX_VARBINARY_LENGTH));
+}
+
+Datum binary_typmodout(PG_FUNCTION_ARGS)
+{
+    int32 typmod = PG_GETARG_INT32(0);
+
+    PG_RETURN_CSTRING(anybinary_typmodout(typmod));
+}
+
+Datum bytea2binary(PG_FUNCTION_ARGS)
+{
+    bytea* source = PG_GETARG_BYTEA_P(0);
+    int32 maxlen = PG_GETARG_INT32(1);
+    return copy_binary(PointerGetDatum(source), maxlen, false);
+}
+
+Datum bytea2var(PG_FUNCTION_ARGS)
+{
+    bytea* source = PG_GETARG_BYTEA_P(0);
+    int32 maxlen = PG_GETARG_INT32(1);
+    return copy_binary(PointerGetDatum(source), maxlen, true);
+}
+
+Datum tinyblob_rawin(PG_FUNCTION_ARGS)
+{
+    Datum result = rawin(fcinfo);
+    check_blob_size(result, (int64)TinyBlobMaxAllocSize);
+    return result;
+}
+
+Datum mediumblob_rawin(PG_FUNCTION_ARGS)
+{
+    Datum result = rawin(fcinfo);
+    check_blob_size(result, (int64)MediumBlobMaxAllocSize);
+    return result;
+}
+
+Datum longblob_rawin(PG_FUNCTION_ARGS)
+{
+    Datum result = rawin(fcinfo);
+    check_blob_size(result, (int64)LongBlobMaxAllocSize);
+    return result;
+}
+
+Datum tinyblob_recv(PG_FUNCTION_ARGS)
+{
+    Datum result = bytearecv(fcinfo);
+    check_blob_size(result, (int64)TinyBlobMaxAllocSize);
+    return result;
+}
+
+Datum mediumblob_recv(PG_FUNCTION_ARGS)
+{
+    Datum result = bytearecv(fcinfo);
+    check_blob_size(result, (int64)MediumBlobMaxAllocSize);
+    return result;
+}
+
+Datum longblob_recv(PG_FUNCTION_ARGS)
+{
+    Datum result = bytearecv(fcinfo);
+    check_blob_size(result, (int64)LongBlobMaxAllocSize);
+    return result;
+}
+
+Datum longblob2tinyblob(PG_FUNCTION_ARGS)
+{
+    bytea* source = PG_GETARG_BYTEA_P(0);
+    PG_RETURN_BYTEA_P(copy_blob(source, (int64)TinyBlobMaxAllocSize));
+}
+
+Datum longblob2mediumblob(PG_FUNCTION_ARGS)
+{
+    bytea* source = PG_GETARG_BYTEA_P(0);
+    PG_RETURN_BYTEA_P(copy_blob(source, (int64)MediumBlobMaxAllocSize));
 }
