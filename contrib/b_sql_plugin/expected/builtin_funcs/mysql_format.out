@@ -1,0 +1,132 @@
+drop database if exists format_test;
+create database format_test dbcompatibility 'B';
+\c format_test
+create extension b_sql_plugin;
+-- test for basic functionality of FORMAT
+select db_b_format(234.567, 3);
+ db_b_format 
+-------------
+ 234.567
+(1 row)
+
+select db_b_format(234.567, 2);
+ db_b_format 
+-------------
+ 234.57
+(1 row)
+
+select db_b_format(234.567, 1);
+ db_b_format 
+-------------
+ 234.6
+(1 row)
+
+select db_b_format(234.567, 8);
+ db_b_format  
+--------------
+ 234.56700000
+(1 row)
+
+select db_b_format(234.567, 0);
+ db_b_format 
+-------------
+ 235
+(1 row)
+
+-- test for carry
+select db_b_format(999.999, 3);
+ db_b_format 
+-------------
+ 999.999
+(1 row)
+
+select db_b_format(999.999, 2);
+ db_b_format 
+-------------
+ 1,000.00
+(1 row)
+
+select db_b_format(999.999, 0);
+ db_b_format 
+-------------
+ 1,000
+(1 row)
+
+-- test for thousand separator
+select db_b_format(1234.45, 0);
+ db_b_format 
+-------------
+ 1,234
+(1 row)
+
+select db_b_format(1234567.89, 1);
+ db_b_format 
+-------------
+ 1,234,567.9
+(1 row)
+
+-- test for different locale
+select db_b_format(1234.45, 2, 'en_US');
+ db_b_format 
+-------------
+ 1,234.45
+(1 row)
+
+select db_b_format(1234.45, 2, 'de_DE');
+ db_b_format 
+-------------
+ 1.234,45
+(1 row)
+
+select db_b_format(1234.45, 2, 'fr_FR');
+ db_b_format 
+-------------
+ 1234,45
+(1 row)
+
+-- test for type check
+select db_b_format(1234.456, 2.49);
+ db_b_format 
+-------------
+ 1,234.46
+(1 row)
+
+select db_b_format(1234.456, 2.99);
+ db_b_format 
+-------------
+ 1,234.456
+(1 row)
+
+-- wrong type of first param
+select db_b_format('abcde', 2);
+ERROR:  invalid input syntax for type double precision: "abcde"
+LINE 1: select db_b_format('abcde', 2);
+                           ^
+CONTEXT:  referenced column: db_b_format
+-- non-existent locale input
+select db_b_format(1234.456, 2, 'zz_AA');
+ERROR:  the provided locale is invalid.
+CONTEXT:  referenced column: db_b_format
+-- wrong type of third param
+select db_b_format(1234.456, 2, 123123);
+ERROR:  the provided locale is invalid.
+CONTEXT:  referenced column: db_b_format
+\c postgres
+drop database format_test;
+-- test for A compatibility to ensure the original functionality is good.
+create database db_a_format_test dbcompatibility 'A';
+\c db_a_format_test
+select format(1234.456, 2);
+  format  
+----------
+ 1234.456
+(1 row)
+
+select format(1234.456, 2, 'en_US');
+  format  
+----------
+ 1234.456
+(1 row)
+
+\c postgres
+drop database db_a_format_test;

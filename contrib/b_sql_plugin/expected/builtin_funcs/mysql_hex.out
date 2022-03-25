@@ -1,0 +1,93 @@
+drop database if exists format_test;
+NOTICE:  database "format_test" does not exist, skipping
+create database format_test dbcompatibility 'B';
+\c format_test
+create extension b_sql_plugin;
+select hex(int1(255));
+ hex 
+-----
+ ff
+(1 row)
+
+select hex(int1(256));
+ERROR:  tinyint out of range
+CONTEXT:  referenced column: to_number
+SQL function "int1" statement 1
+referenced column: hex
+-- max value for int32
+select hex(2147483647);
+   hex    
+----------
+ 7fffffff
+(1 row)
+
+-- max value for int64
+select hex(9223372036854775807);
+       hex        
+------------------
+ 7fffffffffffffff
+(1 row)
+
+-- out of range for int64
+select hex(9223372036854775808);
+ERROR:  bigint out of range
+CONTEXT:  referenced column: hex
+-- test for float
+select hex(12.34);
+ hex 
+-----
+ c
+(1 row)
+
+select hex(12.55);
+ hex 
+-----
+ d
+(1 row)
+
+select hex(TRUE);
+ hex 
+-----
+ 1
+(1 row)
+
+select hex(FALSE);
+ hex 
+-----
+ 0
+(1 row)
+
+select hex('abcde');
+    hex     
+------------
+ 6162636465
+(1 row)
+
+select hex('12.34');
+    hex     
+------------
+ 31322e3334
+(1 row)
+
+select hex(NULL);
+ hex 
+-----
+ 
+(1 row)
+
+select hex('');
+ hex 
+-----
+ 
+(1 row)
+
+create table bytea_to_hex_test(c1 bytea);
+insert into bytea_to_hex_test values ('123');
+insert into bytea_to_hex_test values ('abc');
+select hex(c1) from bytea_to_hex_test;
+  hex   
+--------
+ 313233
+ 616263
+(2 rows)
+
