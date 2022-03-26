@@ -68,6 +68,7 @@
 #include "nodes/makefuncs.h"
 #include "nodes/nodeFuncs.h"
 #include "optimizer/planner.h"
+#include "plugin_postgres.h"
 #include "plugin_parser/gramparse.h"
 #include "plugin_parser/parse_type.h"
 #include "plugin_parser/parse_hint.h"
@@ -22378,7 +22379,7 @@ func_expr_common_subexpr:
             | DB_B_FORMAT '(' a_expr ',' a_expr ')'
                 {
                     FuncCall *n = makeNode(FuncCall);
-                    if (u_sess->attr.attr_sql.sql_compatibility == B_FORMAT)
+                    if (u_sess->attr.attr_sql.sql_compatibility == B_FORMAT && GetSessionContext()->enableBFormatMode)
                     {
                         n->funcname = SystemFuncName("db_b_format");
                     }
@@ -22399,7 +22400,7 @@ func_expr_common_subexpr:
             | DB_B_FORMAT '(' a_expr ',' a_expr ',' a_expr ')'
                 {
                     FuncCall *n = makeNode(FuncCall);
-                    if (u_sess->attr.attr_sql.sql_compatibility == B_FORMAT)
+                    if (u_sess->attr.attr_sql.sql_compatibility == B_FORMAT && GetSessionContext()->enableBFormatMode)
                     {
                         n->funcname = SystemFuncName("db_b_format");
                     }
