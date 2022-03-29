@@ -7,8 +7,8 @@
 subdir = contrib/b_sql_plugin/plugin_utils
 top_builddir = ../../..
 include $(top_builddir)/src/Makefile.global
-
-override CPPFLAGS :=$(filter-out -fPIE, $(CPPFLAGS)) -fPIC -I$(top_builddir)/$(subdir)/include -fvisibility=hidden -I.
+base_dir = contrib/b_sql_plugin
+include $(top_builddir)/$(base_dir)/configure.mk
 
 ifneq "$(MAKECMDGOALS)" "clean"
   ifneq "$(MAKECMDGOALS)" "distclean"

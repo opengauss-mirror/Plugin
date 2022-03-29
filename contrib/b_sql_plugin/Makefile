@@ -7,6 +7,7 @@ mb = $(utils)/mb
 optimizer = plugin_optimizer
 subdir = contrib/b_sql_plugin
 top_builddir = ../..
+base_dir = contrib/b_sql_plugin
 MODULE_big = b_sql_plugin
 
 OBJS = $(parser)/analyze.o $(parser)/gram.o $(parser)/hint_gram.o $(parser)/keywords.o $(parser)/kwlookup.o $(parser)/parser.o \
@@ -62,7 +63,7 @@ DATA = b_sql_plugin--1.0.sql
 REGRESS = regexp join_without_on db_b_parser1 db_b_parser2 db_b_parser3 db_b_parser4 
 REGRESS_OPTS = --dlpath=$(top_builddir)/src/test/regress -c 0 -d 1 --single_node
 
-override CPPFLAGS :=$(filter-out -fPIE, $(CPPFLAGS)) -fPIC -I$(top_builddir)/$(subdir)/include -fvisibility=hidden -I.
+include $(top_builddir)/$(base_dir)/configure.mk
 ifdef USE_PGXS
 PG_CONFIG = pg_config
 PGXS := $(shell $(PG_CONFIG) --pgxs)

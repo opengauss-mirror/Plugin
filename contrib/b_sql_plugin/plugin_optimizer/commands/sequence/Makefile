@@ -7,8 +7,9 @@
 
 subdir = contrib/b_sql_plugin/plugin_optimizer/commands/sequence
 top_builddir = ../../../../..
+base_dir = contrib/b_sql_plugin
 include $(top_builddir)/src/Makefile.global
-override CPPFLAGS :=$(filter-out -fPIE, $(CPPFLAGS)) -fPIC -I. -I$(srcdir) $(CPPFLAGS) -I$(top_builddir)/$(subdir)/../../../include -fvisibility=hidden
+include $(top_builddir)/$(base_dir)/configure.mk
 ifneq "$(MAKECMDGOALS)" "clean"
   ifneq "$(MAKECMDGOALS)" "distclean"
     ifneq "$(shell which g++ |grep hutaf_llt |wc -l)" "1"
