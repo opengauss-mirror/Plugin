@@ -30,7 +30,6 @@
 #include "libpq/pqformat.h"
 #include "miscadmin.h"
 #include "plugin_parser/scansup.h"
-#include "plugin_postgres.h"
 #include "port/pg_bswap.h"
 #include "regex/regex.h"
 #include "utils/builtins.h"

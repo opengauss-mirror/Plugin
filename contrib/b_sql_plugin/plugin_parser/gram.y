@@ -22382,6 +22382,7 @@ func_expr_common_subexpr:
                     if (u_sess->attr.attr_sql.sql_compatibility == B_FORMAT && GetSessionContext()->enableBFormatMode)
                     {
                         n->funcname = SystemFuncName("db_b_format");
+                        n->colname = "format";
                     }
                     else
                     {
@@ -22403,6 +22404,7 @@ func_expr_common_subexpr:
                     if (u_sess->attr.attr_sql.sql_compatibility == B_FORMAT && GetSessionContext()->enableBFormatMode)
                     {
                         n->funcname = SystemFuncName("db_b_format");
+                        n->colname = "format";
                     }
                     else
                     {
