@@ -12,36 +12,36 @@ select format('%1s %1s!', 'Hello', 'world');
 set b_format_mode = 1;
 
 -- test for basic functionality of FORMAT
-select db_b_format(234.567, 3);
-select db_b_format(234.567, 2);
-select db_b_format(234.567, 1);
-select db_b_format(234.567, 8);
-select db_b_format(234.567, 0);
+select format(234.567, 3);
+select format(234.567, 2);
+select format(234.567, 1);
+select format(234.567, 8);
+select format(234.567, 0);
 
 -- test for carry
-select db_b_format(999.999, 3);
-select db_b_format(999.999, 2);
-select db_b_format(999.999, 0);
+select format(999.999, 3);
+select format(999.999, 2);
+select format(999.999, 0);
 
 -- test for thousand separator
-select db_b_format(1234.45, 0);
-select db_b_format(1234567.89, 1);
+select format(1234.45, 0);
+select format(1234567.89, 1);
 
 -- test for different locale
-select db_b_format(1234.45, 2, 'en_US');
-select db_b_format(1234.45, 2, 'de_DE');
-select db_b_format(1234.45, 2, 'fr_FR');
+select format(1234.45, 2, 'en_US');
+select format(1234.45, 2, 'de_DE');
+select format(1234.45, 2, 'fr_FR');
 
 -- test for type check
-select db_b_format(1234.456, 2.49);
-select db_b_format(1234.456, 2.99);
+select format(1234.456, 2.49);
+select format(1234.456, 2.99);
 
 -- wrong type of first param
-select db_b_format('abcde', 2);
+select format('abcde', 2);
 -- non-existent locale input
-select db_b_format(1234.456, 2, 'zz_AA');
+select format(1234.456, 2, 'zz_AA');
 -- wrong type of third param
-select db_b_format(1234.456, 2, 123123);
+select format(1234.456, 2, 123123);
 
 -- test for setting b_format_mode back to false
 set b_format_mode = 0;

@@ -6926,14 +6926,16 @@ void bsql_ProcessUtility(Node* parse_tree, const char* query_string, ParamListIn
     }
 }
 
-BSqlPluginContext* GetSessionContext() {
+BSqlPluginContext* GetSessionContext()
+{
     if (u_sess->attr.attr_common.extension_session_vars_array[b_sql_plugin_index] == NULL) {
         init_session_vars();
     }
     return (BSqlPluginContext *) u_sess->attr.attr_common.extension_session_vars_array[b_sql_plugin_index];
 }
 
-void set_extension_index(uint32 index) {
+void set_extension_index(uint32 index)
+{
     b_sql_plugin_index = index;
 }
 

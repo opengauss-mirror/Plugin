@@ -30,114 +30,114 @@ select format('%1s %1s!', 'Hello', 'world');
 -- test for b_format_mode = true
 set b_format_mode = 1;
 -- test for basic functionality of FORMAT
-select db_b_format(234.567, 3);
- db_b_format 
--------------
+select format(234.567, 3);
+ format  
+---------
  234.567
 (1 row)
 
-select db_b_format(234.567, 2);
- db_b_format 
--------------
+select format(234.567, 2);
+ format 
+--------
  234.57
 (1 row)
 
-select db_b_format(234.567, 1);
- db_b_format 
--------------
+select format(234.567, 1);
+ format 
+--------
  234.6
 (1 row)
 
-select db_b_format(234.567, 8);
- db_b_format  
+select format(234.567, 8);
+    format    
 --------------
  234.56700000
 (1 row)
 
-select db_b_format(234.567, 0);
- db_b_format 
--------------
+select format(234.567, 0);
+ format 
+--------
  235
 (1 row)
 
 -- test for carry
-select db_b_format(999.999, 3);
- db_b_format 
--------------
+select format(999.999, 3);
+ format  
+---------
  999.999
 (1 row)
 
-select db_b_format(999.999, 2);
- db_b_format 
--------------
+select format(999.999, 2);
+  format  
+----------
  1,000.00
 (1 row)
 
-select db_b_format(999.999, 0);
- db_b_format 
--------------
+select format(999.999, 0);
+ format 
+--------
  1,000
 (1 row)
 
 -- test for thousand separator
-select db_b_format(1234.45, 0);
- db_b_format 
--------------
+select format(1234.45, 0);
+ format 
+--------
  1,234
 (1 row)
 
-select db_b_format(1234567.89, 1);
- db_b_format 
+select format(1234567.89, 1);
+   format    
 -------------
  1,234,567.9
 (1 row)
 
 -- test for different locale
-select db_b_format(1234.45, 2, 'en_US');
- db_b_format 
--------------
+select format(1234.45, 2, 'en_US');
+  format  
+----------
  1,234.45
 (1 row)
 
-select db_b_format(1234.45, 2, 'de_DE');
- db_b_format 
--------------
+select format(1234.45, 2, 'de_DE');
+  format  
+----------
  1.234,45
 (1 row)
 
-select db_b_format(1234.45, 2, 'fr_FR');
- db_b_format 
--------------
+select format(1234.45, 2, 'fr_FR');
+ format  
+---------
  1234,45
 (1 row)
 
 -- test for type check
-select db_b_format(1234.456, 2.49);
- db_b_format 
--------------
+select format(1234.456, 2.49);
+  format  
+----------
  1,234.46
 (1 row)
 
-select db_b_format(1234.456, 2.99);
- db_b_format 
--------------
+select format(1234.456, 2.99);
+  format   
+-----------
  1,234.456
 (1 row)
 
 -- wrong type of first param
-select db_b_format('abcde', 2);
+select format('abcde', 2);
 ERROR:  invalid input syntax for type double precision: "abcde"
-LINE 1: select db_b_format('abcde', 2);
-                           ^
-CONTEXT:  referenced column: db_b_format
+LINE 1: select format('abcde', 2);
+                      ^
+CONTEXT:  referenced column: format
 -- non-existent locale input
-select db_b_format(1234.456, 2, 'zz_AA');
+select format(1234.456, 2, 'zz_AA');
 ERROR:  the provided locale is invalid.
-CONTEXT:  referenced column: db_b_format
+CONTEXT:  referenced column: format
 -- wrong type of third param
-select db_b_format(1234.456, 2, 123123);
+select format(1234.456, 2, 123123);
 ERROR:  the provided locale is invalid.
-CONTEXT:  referenced column: db_b_format
+CONTEXT:  referenced column: format
 -- test for setting b_format_mode back to false
 set b_format_mode = 0;
 select format(1234.456, 2);
