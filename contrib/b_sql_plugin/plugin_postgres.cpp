@@ -80,6 +80,7 @@ typedef struct sql_mode_entry {
 static const struct sql_mode_entry sql_mode_options[OPT_SQL_MODE_MAX] = {
     {"sql_mode_defaults", OPT_SQL_MODE_DEFAULT},
     {"sql_mode_strict", OPT_SQL_MODE_STRICT},
+    {"sql_mode_full_group", OPT_SQL_MODE_FULL_GROUP},
 };
 
 static RemoteQueryExecType ExecUtilityFindNodes(ObjectType object_type, Oid rel_id, bool* is_temp);
@@ -7050,7 +7051,7 @@ void init_session_vars(void)
                                gettext_noop("CUSTOM_OPTIONS"),
                                NULL,
                                &GetSessionContext()->sqlModeString,
-                               "sql_mode_strict",
+                               "sql_mode_strict,sql_mode_full_group",
                                PGC_USERSET,
                                GUC_LIST_INPUT | GUC_REPORT,
                                CheckSqlMode,
