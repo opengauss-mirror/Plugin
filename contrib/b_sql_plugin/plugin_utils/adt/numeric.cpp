@@ -45,6 +45,7 @@
 #include "vecexecutor/vechashtable.h"
 #include "vecexecutor/vechashagg.h"
 #include "vectorsonic/vsonichashagg.h"
+#include "plugin_commands/mysqlmode.h"
 
 /* ----------
  * Data for generate_series
@@ -2926,16 +2927,30 @@ static int32 numericvar_to_int32(const NumericVar* var)
     int32 result;
     int64 val;
 
-    if (!numericvar_to_int64(var, &val))
-        ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("integer out of range")));
-
+    if (!numericvar_to_int64(var, &val)) {
+        if (!SQL_MODE_STRICT()) {
+            if (NUMERIC_POS == var->sign)
+                return INT32_MAX;
+            else
+                return INT32_MIN;
+        } else {
+            ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("integer out of range")));
+        }
+    }
     /* Down-convert to int4 */
     result = (int32)val;
 
     /* Test for overflow by reverse-conversion. */
-    if ((int64)result != val)
-        ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("integer out of range")));
-
+    if ((int64)result != val) {
+        if (!SQL_MODE_STRICT()) {
+            if (NUMERIC_POS == var->sign)
+                result = INT32_MAX;
+            else
+                result = INT32_MIN;
+        } else {
+            ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("integer out of range")));
+        }
+    }
     return result;
 }
 
@@ -2975,8 +2990,16 @@ Datum numeric_int8(PG_FUNCTION_ARGS)
     /* Convert to variable format and thence to int8 */
     init_var_from_num(num, &x);
 
-    if (!numericvar_to_int64(&x, &result))
-        ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("bigint out of range")));
+    if (!numericvar_to_int64(&x, &result)) {
+        if (!SQL_MODE_STRICT()) {
+            if (NUMERIC_POS == x.sign)
+                PG_RETURN_INT64(INT64_MAX);
+            else
+                PG_RETURN_INT64(INT64_MIN);
+        } else {
+            ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("bigint out of range")));
+        }
+    }
 
     PG_RETURN_INT64(result);
 }
@@ -3018,15 +3041,31 @@ Datum numeric_int2(PG_FUNCTION_ARGS)
     /* Convert to variable format and thence to int8 */
     init_var_from_num(num, &x);
 
-    if (!numericvar_to_int64(&x, &val))
-        ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("smallint out of range")));
+    if (!numericvar_to_int64(&x, &val)) {
+        if (!SQL_MODE_STRICT()) {
+            if (NUMERIC_POS == x.sign)
+                PG_RETURN_INT16(INT16_MAX);
+            else
+                PG_RETURN_INT16(INT16_MIN);
+        } else {
+            ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("smallint out of range")));
+        }
+    }
 
     /* Down-convert to int2 */
     result = (int16)val;
 
     /* Test for overflow by reverse-conversion. */
-    if ((int64)result != val)
-        ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("smallint out of range")));
+    if ((int64)result != val) {
+        if (!SQL_MODE_STRICT()) {
+            if (NUMERIC_POS == x.sign)
+                PG_RETURN_INT16(INT16_MAX);
+            else
+                PG_RETURN_INT16(INT16_MIN);
+        } else {
+            ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("smallint out of range")));
+        }
+    }
 
     PG_RETURN_INT16(result);
 }

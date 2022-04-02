@@ -209,6 +209,19 @@ List* transformExpressionList(ParseState* pstate, List* exprlist)
     return result;
 }
 
+/*check if a not-null-attr col is inserted into NULL*/
+void checkNullValue(Relation relation, Expr* expr, AttrNumber attr_num)
+{
+    if (expr && nodeTag(expr) == T_Const) {
+        Form_pg_attribute attr = relation->rd_att->attrs[attr_num-1];
+        Const* con = (Const*)expr;
+        if (attr->attnotnull && con->constisnull) {
+            ereport(ERROR, (errcode(ERRCODE_NOT_NULL_VIOLATION),
+                errmsg("null value in column \"%s\" violates not-null constraint",NameStr(attr->attname))));
+        }
+    }
+}
+
 /*
  * resolveTargetListUnknowns()
  *		Convert any unknown-type targetlist entries to type TEXT.
@@ -921,6 +934,59 @@ List* checkInsertTargets(ParseState* pstate, List* cols, List** attrnos)
         }
     }
 
+    return cols;
+}
+
+/* If the col with NOT NULL attr is not in the insert clause cols list, append it.*/
+List* appendNotNullCols(ParseState* pstate, List* cols, List** attrnos)
+{
+    Form_pg_attribute* attr = pstate->p_target_relation->rd_att->attrs;
+    auto nums_relation_attr = RelationGetNumberOfAttributes(pstate->p_target_relation);
+    bool is_blockchain_rel = false;
+    is_blockchain_rel = pstate->p_target_relation->rd_isblockchain;
+    if(cols && attrnos && cols->length < nums_relation_attr)
+    {
+        for (int i = 0; i < nums_relation_attr; i++)
+        {
+            if(!attr[i]->attnotnull)
+            {
+                continue;
+            }
+            bool find_flag = false;
+            ListCell* attrno = NULL;
+            foreach (attrno, *attrnos)
+            {
+                if(lfirst_int(attrno) == i+1)
+                {
+                    find_flag = true;
+                    continue;
+                }
+            }
+            if(!find_flag)
+            {
+                ResTarget* col = NULL;
+
+                if (attr[i]->attisdropped) {
+                    continue;
+                }
+                /* If the hidden column in timeseries relation, skip it */
+                if (TsRelWithImplDistColumn(attr, i) && RelationIsTsStore(pstate->p_target_relation)) {
+                    continue;
+                }
+
+                col = makeNode(ResTarget);
+                col->name = pstrdup(NameStr(attr[i]->attname));
+                if (is_blockchain_rel && strcmp(col->name, "hash") == 0) {
+                    continue;
+                }
+                col->indirection = NIL;
+                col->val = NULL;
+                col->location = -1; //-1 indicate the col is appended here, used in func appendValueForColOfNotnull
+                cols = lappend(cols, col);
+                *attrnos = lappend_int(*attrnos, i + 1);
+            }
+        }
+    }
     return cols;
 }
 

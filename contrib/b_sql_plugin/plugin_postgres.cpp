@@ -65,11 +65,22 @@
 #include "plugin_parser/parse_func.h"
 #include "plugin_parser/parse_utilcmd.h"
 #include "replication/archive_walreceiver.h"
+#include "plugin_commands/mysqlmode.h"
 #ifndef WIN32_ONLY_COMPILER
 #include "dynloader.h"
 #else
 #include "port/dynloader/win32.h"
 #endif
+
+typedef struct sql_mode_entry {
+    const char* name; /* name of sql mode entry */
+    int flag;         /* bit flag position */
+} sql_mode_entry;
+
+static const struct sql_mode_entry sql_mode_options[OPT_SQL_MODE_MAX] = {
+    {"sql_mode_defaults", OPT_SQL_MODE_DEFAULT},
+    {"sql_mode_strict", OPT_SQL_MODE_STRICT},
+};
 
 static RemoteQueryExecType ExecUtilityFindNodes(ObjectType object_type, Oid rel_id, bool* is_temp);
 static RemoteQueryExecType exec_utility_find_nodes_relkind(Oid rel_id, bool* is_temp);
@@ -98,6 +109,8 @@ extern void ExecAlterDatabaseSetStmt(Node* parse_tree, const char* query_string,
 extern void DoVacuumMppTable(VacuumStmt* stmt, const char* query_string, bool is_top_level, bool sent_to_remote);
 extern bool IsVariableinBlackList(const char* name);
 extern void ExecAlterRoleSetStmt(Node* parse_tree, const char* query_string, bool sent_to_remote);
+static bool check_sql_mode(char** newval, void** extra, GucSource source);
+static void assign_sql_mode(const char* newval, void* extra);
 static bool need_full_dn_execution(const char* group_name);
 static ExecNodes* GetFunctionNodes(Oid func_id);
 static const int LOADER_COL_BUF_CNT = 5;
@@ -552,6 +565,83 @@ static void drop_stmt_pre_treatment(
     *exec_type = res_exec_type;
 }
 #endif
+
+/*
+ * check_behavior_compat_options: GUC check_hook for behavior compat options
+ */
+static bool check_sql_mode(char** newval, void** extra, GucSource source)
+{
+    char* rawstring = NULL;
+    List* elemlist = NULL;
+    ListCell* cell = NULL;
+    int start = 0;
+
+    /* Need a modifiable copy of string */
+    rawstring = pstrdup(*newval);
+    /* Parse string into list of identifiers */
+    if (!SplitIdentifierString(rawstring, ',', &elemlist)) {
+        /* syntax error in list */
+        GUC_check_errdetail("invalid paramater for sql_mode.");
+        pfree(rawstring);
+        list_free(elemlist);
+
+        return false;
+    }
+
+    foreach (cell, elemlist) {
+        const char* item = (const char*)lfirst(cell);
+        bool nfound = true;
+
+        for (start = 0; start < OPT_SQL_MODE_MAX; start++) {
+            if (strcmp(item, sql_mode_options[start].name) == 0) {
+                nfound = false;
+                break;
+            }
+        }
+
+        if (nfound) {
+            GUC_check_errdetail("invalid sql_mode option \"%s\"", item);
+            pfree(rawstring);
+            list_free(elemlist);
+            return false;
+        }
+    }
+
+    pfree(rawstring);
+    list_free(elemlist);
+
+    return true;
+}
+
+/*
+ * assign_distribute_test_param: GUC assign_hook for distribute_test_param
+ */
+static void assign_sql_mode(const char* newval, void* extra)
+{
+    char* rawstring = NULL;
+    List* elemlist = NULL;
+    ListCell* cell = NULL;
+    int start = 0;
+    int result = 0;
+
+    rawstring = pstrdup(newval);
+    (void)SplitIdentifierString(rawstring, ',', &elemlist);
+
+    GetSessionContext()->sql_mode_flags = 0;
+    foreach (cell, elemlist) {
+        for (start = 0; start < OPT_SQL_MODE_MAX; start++) {
+            const char* item = (const char*)lfirst(cell);
+
+            if (strcmp(item, sql_mode_options[start].name) == 0)
+                result += sql_mode_options[start].flag;
+        }
+    }
+
+    pfree(rawstring);
+    list_free(elemlist);
+
+    GetSessionContext()->sql_mode_flags = result;
+}
 
 static ExecNodes* GetNodeGroupExecNodes(Oid group_oid)
 {
@@ -6955,4 +7045,15 @@ void init_session_vars(void)
                              PGC_USERSET,
                              0,
                              NULL, NULL, NULL);
+
+    DefineCustomStringVariable("sql_mode",
+                               gettext_noop("CUSTOM_OPTIONS"),
+                               NULL,
+                               &GetSessionContext()->sql_mode_string,
+                               "sql_mode_strict",
+                               PGC_USERSET,
+                               GUC_LIST_INPUT | GUC_REPORT,
+                               check_sql_mode,
+                               assign_sql_mode,
+                               NULL);
 }

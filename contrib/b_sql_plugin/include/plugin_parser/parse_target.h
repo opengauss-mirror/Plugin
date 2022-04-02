@@ -26,8 +26,10 @@ extern Expr* transformAssignedExpr(
 extern void updateTargetListEntry(
     ParseState* pstate, TargetEntry* tle, char* colname, int attrno, List* indirection, int location);
 extern List* checkInsertTargets(ParseState* pstate, List* cols, List** attrnos);
+extern List* appendNotNullCols(ParseState* pstate, List* cols, List** attrnos);
 extern TupleDesc expandRecordVariable(ParseState* pstate, Var* var, int levelsup);
 extern char* FigureColname(Node* node);
 extern char* FigureIndexColname(Node* node);
+extern void checkNullValue(Relation relation, Expr* expr, AttrNumber attr_num);
 
 #endif /* PARSE_TARGET_H */

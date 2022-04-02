@@ -27,6 +27,7 @@
 #include "plugin_parser/parse_func.h"
 #include "plugin_parser/parse_relation.h"
 #include "plugin_parser/parse_type.h"
+#include "plugin_commands/mysqlmode.h"
 #include "utils/builtins.h"
 #include "utils/lsyscache.h"
 #include "utils/syscache.h"
@@ -683,6 +684,8 @@ static Node* coerce_type_typmod(Node* node, Oid targetTypeId, int32 targetTypMod
      * A negative typmod is assumed to mean that no coercion is wanted. Also,
      * skip coercion if already done.
      */
+    if (!SQL_MODE_STRICT() && node->type == T_Const && ((Const*)node)->constisnull)
+        return node;
     if (targetTypMod < 0 || targetTypMod == exprTypmod(node)) {
         return node;
     }

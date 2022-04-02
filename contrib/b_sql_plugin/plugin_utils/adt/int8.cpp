@@ -24,6 +24,7 @@
 #include "libpq/pqformat.h"
 #include "utils/int8.h"
 #include "utils/builtins.h"
+#include "plugin_commands/mysqlmode.h"
 
 #define MAXINT8LEN 25
 
@@ -50,6 +51,11 @@ typedef struct {
  * If errorOK is true, just return "false" for bad input.
  */
 bool scanint8(const char* str, bool errorOK, int64* result)
+{
+    return scanint8_internal(str, errorOK, result, true);
+}
+
+bool scanint8_internal(const char* str, bool errorOK, int64* result, bool sql_mode_strict)
 {
     const char* ptr = str;
     int64 tmp = 0;
@@ -79,6 +85,10 @@ bool scanint8(const char* str, bool errorOK, int64* result)
     if (unlikely(!isdigit((unsigned char)*ptr))) {
         if (errorOK)
             return false;
+        else if (!sql_mode_strict) {
+            *result = tmp;
+            return true;
+        }
         else if (DB_IS_CMPT(A_FORMAT | PG_FORMAT))
             ereport(ERROR,
                 (errmodule(MOD_FUNCTION),
@@ -97,10 +107,18 @@ bool scanint8(const char* str, bool errorOK, int64* result)
         if (unlikely(pg_mul_s64_overflow(tmp, 10, &tmp)) || unlikely(pg_sub_s64_overflow(tmp, digit, &tmp))) {
             if (errorOK)
                 return false;
-            else
+            else if (sql_mode_strict)
                 ereport(ERROR,
                     (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE),
                         errmsg("value \"%s\" is out of range for type %s", str, "bigint")));
+            else if(neg) {
+                *result = PG_INT64_MIN;
+                return true;
+            }
+            else {
+                *result = PG_INT64_MAX;
+                return true;
+            }
         }
     }
 
@@ -112,7 +130,7 @@ bool scanint8(const char* str, bool errorOK, int64* result)
     if (unlikely(*ptr != '\0')) {
         if (errorOK)
             return false;
-        else
+        else if (sql_mode_strict)
             /* Empty string will be treated as NULL if sql_compatibility == A_FORMAT,
                 Other wise whitespace will be convert to 0 */
             ereport(ERROR,
@@ -125,7 +143,7 @@ bool scanint8(const char* str, bool errorOK, int64* result)
         if (unlikely(tmp == PG_INT64_MIN)) {
             if (errorOK)
                 return false;
-            else
+            else if (sql_mode_strict)
                 ereport(ERROR,
                     (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE),
                         errmsg("value \"%s\" is out of range for type %s", str, "bigint")));
@@ -144,7 +162,7 @@ Datum int8in(PG_FUNCTION_ARGS)
     char* str = PG_GETARG_CSTRING(0);
     int64 result;
 
-    (void)scanint8(str, false, &result);
+    (void)scanint8_internal(str, false, &result, SQL_MODE_STRICT());
     PG_RETURN_INT64(result);
 }
 
@@ -1092,9 +1110,17 @@ Datum int84(PG_FUNCTION_ARGS)
     result = (int32)arg;
 
     /* Test for overflow by reverse-conversion. */
-    if ((int64)result != arg)
-        ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("integer out of range")));
-
+    if ((int64)result != arg) {
+        if (!SQL_MODE_STRICT()) {
+            if (result < 0) {
+                result = INT32_MIN;
+            } else {
+                result = INT32_MAX;
+            }
+        } else {
+            ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("integer out of range")));
+        }
+    }
     PG_RETURN_INT32(result);
 }
 
@@ -1113,8 +1139,17 @@ Datum int82(PG_FUNCTION_ARGS)
     result = (int16)arg;
 
     /* Test for overflow by reverse-conversion. */
-    if ((int64)result != arg)
-        ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("smallint out of range")));
+    if ((int64)result != arg) {
+        if (!SQL_MODE_STRICT()) {
+            if (result < 0) {
+                result = INT16_MIN;
+            } else {
+                result = INT16_MAX;
+            }
+        } else {
+            ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("smallint out of range")));
+        }
+    }
 
     PG_RETURN_INT16(result);
 }
@@ -1149,8 +1184,17 @@ Datum dtoi8(PG_FUNCTION_ARGS)
      * exact power of 2, so it will be represented exactly; but PG_INT64_MAX
      * isn't, and might get rounded off, so avoid using it.
      */
-    if (num < (float8)PG_INT64_MIN || num >= -((float8)PG_INT64_MIN) || isnan(num))
+    if (isnan(num))
         ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("bigint out of range")));
+
+    if (SQL_MODE_STRICT()) {
+        if (num < (float8)PG_INT64_MIN || num >= -((float8)PG_INT64_MIN))
+            ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("bigint out of range")));
+    }
+    else if (num < (float8)PG_INT64_MIN)
+        PG_RETURN_INT64(PG_INT64_MIN);
+    else if (num >= -((float8)PG_INT64_MIN))
+        PG_RETURN_INT64(PG_INT64_MAX);
 
     PG_RETURN_INT64((int64)num);
 }
@@ -1185,8 +1229,17 @@ Datum ftoi8(PG_FUNCTION_ARGS)
      * exact power of 2, so it will be represented exactly; but PG_INT64_MAX
      * isn't, and might get rounded off, so avoid using it.
      */
-    if (num < (float4)PG_INT64_MIN || num >= -((float4)PG_INT64_MIN) || isnan(num))
+    if (isnan(num))
         ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("bigint out of range")));
+
+    if (SQL_MODE_STRICT()) {
+        if (num < (float4)PG_INT64_MIN || num >= -((float4)PG_INT64_MIN))
+            ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("bigint out of range")));
+    }
+    else if (num < (float4)PG_INT64_MIN)
+        PG_RETURN_INT64(PG_INT64_MIN);
+    else if (num >= -((float4)PG_INT64_MIN))
+        PG_RETURN_INT64(PG_INT64_MAX);
 
     PG_RETURN_INT64((int64)num);
 }
