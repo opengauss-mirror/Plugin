@@ -200,12 +200,8 @@ CREATE OR REPLACE FUNCTION PG_CATALOG.truncate(t1 numeric, t2 integer)
 returns numeric
 as 
 $$
-DECLARE
-  num integer;
 begin
-  select length(substr(t1,instr(t1,'.')+1)) into num;
-  select case when t2 < num then t2 else num end as min_value into num;
-  return (select trunc(t1, num));
+  return (select trunc(t1, t2));
 end;
 $$
 language plpgsql;
