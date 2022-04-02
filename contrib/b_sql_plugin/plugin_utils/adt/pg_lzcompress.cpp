@@ -575,7 +575,7 @@ bool pglz_compress(const char* source, int32 slen, PGLZ_Header* dest, const PGLZ
  *		Decompresses source into dest.
  * ----------
  */
-void pglz_decompress(const PGLZ_Header* source, char* dest)
+int32 pglz_decompress(const PGLZ_Header* source, char* dest)
 {
     const unsigned char* sp = NULL;
     const unsigned char* srcend = NULL;
@@ -657,12 +657,18 @@ void pglz_decompress(const PGLZ_Header* source, char* dest)
     /*
      * Check we decompressed the right amount.
      */
-    if (dp != destend || sp != srcend)
+    if (dp != destend || sp != srcend) {
+#ifndef FRONTEND
         ereport(ERROR, (errcode(ERRCODE_DATA_CORRUPTED), errmsg("compressed data is corrupt")));
+#else
+        return -1;
+#endif
+    }
 
     /*
      * That's it.
      */
+    return (char*) dp - dest;
 }
 
 /* ----------
