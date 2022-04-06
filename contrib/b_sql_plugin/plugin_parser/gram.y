@@ -761,6 +761,9 @@ static int errstate;
 %type <list>    load_column_expr_list copy_column_sequence_list copy_column_filler_list copy_column_constant_list 
 %type <typnam>  load_col_data_type
 %type <ival64>  load_col_sequence_item_sart column_sequence_item_step column_sequence_item_sart
+%type <node>	on_table opt_engine opt_compression set_compress_type
+%type <keyword>	into_empty opt_temporary opt_values_in
+%type <str>	compression_args
 
 /*
  * Non-keyword token types.  These are hard-wired into the "flex" lexer.
@@ -794,7 +797,7 @@ static int errstate;
 	CACHE CALL CALLED CANCELABLE CASCADE CASCADED CASE CAST CATALOG_P CHAIN CHAR_P
 	CHARACTER CHARACTERISTICS CHARACTERSET CHECK CHECKPOINT CLASS CLEAN CLIENT CLIENT_MASTER_KEY CLIENT_MASTER_KEYS CLOB CLOSE
 	CLUSTER COALESCE COLLATE COLLATION COLUMN COLUMN_ENCRYPTION_KEY COLUMN_ENCRYPTION_KEYS COMMENT COMMENTS COMMIT
-	COMMITTED COMPACT COMPATIBLE_ILLEGAL_CHARS COMPLETE COMPRESS CONCURRENTLY CONDITION CONFIGURATION CONNECTION CONSTANT CONSTRAINT CONSTRAINTS
+	COMMITTED COMPACT COMPATIBLE_ILLEGAL_CHARS COMPLETE COMPRESS COMPRESSION CONCURRENTLY CONDITION CONFIGURATION CONNECTION CONSTANT CONSTRAINT CONSTRAINTS
 	CONTENT_P CONTINUE_P CONTVIEW CONVERSION_P CONNECT COORDINATOR COORDINATORS COPY COST CREATE
 	CROSS CSN CSV CUBE CURRENT_P
 	CURRENT_CATALOG CURRENT_DATE CURRENT_ROLE CURRENT_SCHEMA
@@ -803,11 +806,11 @@ static int errstate;
 	DATA_P DATABASE DATAFILE DATANODE DATANODES DATATYPE_CL DATE_P DATE_FORMAT_P DAY_P  DAYOFMONTH DAYOFWEEK DAYOFYEAR DBCOMPATIBILITY_P DB_B_FORMAT DEALLOCATE DEC DECIMAL_P DECLARE DECODE DEFAULT DEFAULTS
 	DEFERRABLE DEFERRED DEFINER DELETE_P DELIMITER DELIMITERS DELTA DELTAMERGE DESC DETERMINISTIC DIV
 /* PGXC_BEGIN */
-	DICTIONARY DIRECT DIRECTORY DISABLE_P DISCARD DISTINCT DISTRIBUTE DISTRIBUTION DO DOCUMENT_P DOMAIN_P DOUBLE_P
+	DICTIONARY DIRECT DIRECTORY DISABLE_P DISCARD DISTINCT DISTINCTROW DISTRIBUTE DISTRIBUTION DO DOCUMENT_P DOMAIN_P DOUBLE_P
 /* PGXC_END */
 	DROP DUPLICATE DISCONNECT
 
-	EACH ELASTIC ELSE ENABLE_P ENCLOSED ENCODING ENCRYPTED ENCRYPTED_VALUE ENCRYPTION ENCRYPTION_TYPE END_P ENFORCED ENUM_P ERRORS ESCAPE EOL ESCAPING EVERY EXCEPT EXCHANGE
+	EACH ELASTIC ELSE ENABLE_P ENCLOSED ENCODING ENCRYPTED ENCRYPTED_VALUE ENCRYPTION ENCRYPTION_TYPE END_P ENFORCED ENGINE_P ENUM_P ERRORS ESCAPE EOL ESCAPING EVERY EXCEPT EXCHANGE
 	EXCLUDE EXCLUDED EXCLUDING EXCLUSIVE EXECUTE EXISTS EXPIRED_P EXPLAIN
 	EXTENSION EXTERNAL EXTRACT
 
@@ -903,6 +906,7 @@ static int errstate;
 			START_WITH CONNECT_BY
 
 /* Precedence: lowest to highest */
+%nonassoc lower_than_row
 %nonassoc lower_than_on
 %left ON USING
 %nonassoc   PARTIAL_EMPTY_PREC
@@ -4917,7 +4921,7 @@ CreateStmt:	CREATE OptTemp TABLE qualified_name '(' OptTableElementList ')'
 			OptDistributeBy OptSubCluster
 /* PGXC_END */
 			opt_table_partitioning_clause
-			opt_internal_data OptKind
+			opt_internal_data OptKind opt_compression opt_engine
 				{
 					CreateStmt *n = makeNode(CreateStmt);
 					$4->relpersistence = $2;
@@ -4937,6 +4941,9 @@ CreateStmt:	CREATE OptTemp TABLE qualified_name '(' OptTableElementList ')'
 /* PGXC_END */
 					n->partTableState = (PartitionState *)$15;
 					n->internalData = $16;
+					if ($18 != NULL) {
+						n->options = lappend(n->options, $18);
+					}
 					$$ = (Node *)n;
 				}
 		| CREATE OptTemp TABLE IF_P NOT EXISTS qualified_name '('
@@ -4946,7 +4953,7 @@ CreateStmt:	CREATE OptTemp TABLE qualified_name '(' OptTableElementList ')'
 			OptDistributeBy OptSubCluster
 /* PGXC_END */
 			opt_table_partitioning_clause
-			opt_internal_data
+			opt_internal_data opt_compression opt_engine
 				{
 					CreateStmt *n = makeNode(CreateStmt);
 					$7->relpersistence = $2;
@@ -4965,6 +4972,9 @@ CreateStmt:	CREATE OptTemp TABLE qualified_name '(' OptTableElementList ')'
 /* PGXC_END */
 					n->partTableState = (PartitionState *)$18;
 					n->internalData = $19;
+					if ($20 != NULL) {
+						n->options = lappend(n->options, $20);
+					}
 					$$ = (Node *)n;
 				}
 		| CREATE OptTemp TABLE qualified_name OF any_name
@@ -4972,6 +4982,7 @@ CreateStmt:	CREATE OptTemp TABLE qualified_name '(' OptTableElementList ')'
 /* PGXC_BEGIN */
 			OptDistributeBy OptSubCluster
 /* PGXC_END */
+			opt_compression opt_engine
 				{
 					CreateStmt *n = makeNode(CreateStmt);
 					$4->relpersistence = $2;
@@ -4991,6 +5002,9 @@ CreateStmt:	CREATE OptTemp TABLE qualified_name '(' OptTableElementList ')'
 /* PGXC_END */
 					n->partTableState = NULL;
 					n->internalData = NULL;
+					if ($14 != NULL) {
+						n->options = lappend(n->options, $14);
+					}
 					$$ = (Node *)n;
 				}
 		| CREATE OptTemp TABLE IF_P NOT EXISTS qualified_name OF any_name
@@ -4998,6 +5012,7 @@ CreateStmt:	CREATE OptTemp TABLE qualified_name '(' OptTableElementList ')'
 /* PGXC_BEGIN */
 			OptDistributeBy OptSubCluster
 /* PGXC_END */
+			opt_compression opt_engine
 				{
 					CreateStmt *n = makeNode(CreateStmt);
 					$7->relpersistence = $2;
@@ -5017,9 +5032,57 @@ CreateStmt:	CREATE OptTemp TABLE qualified_name '(' OptTableElementList ')'
 /* PGXC_END */
 					n->partTableState = NULL;
 					n->internalData = NULL;
+					if ($17 != NULL) {
+						n->options = lappend(n->options, $17);
+					}
 					$$ = (Node *)n;
 				}
 		;
+
+opt_engine:
+	ENGINE_P opt_equal IDENT
+		{
+			$$ = NULL;
+		}
+	| /* empty */
+		{
+			$$ = NULL;
+		}
+	;
+
+compression_args:	IDENT		{ $$ = $1; }
+					| Sconst	{ $$ = $1; }
+		;
+
+set_compress_type:
+	COMPRESSION opt_equal compression_args
+		{
+			int type = 0;
+			if (strcmp($3, "pglz") == 0) {
+				type = 1;
+			} else if (strcmp($3, "zstd") == 0) {
+ 				type = 2;
+			} else if (strcmp($3, "none") == 0) {
+ 				type = 0;
+			} else {
+				ereport(errstate,
+						(errcode(ERRCODE_SYNTAX_ERROR),
+							errmsg("unrecognized compress type")));
+            }
+			$$ = (Node*)makeDefElem("compresstype", (Node*)makeInteger(type));
+		}
+	;
+
+opt_compression:
+	set_compress_type
+		{
+			$$ = $1;
+		}
+	| /* empty */
+		{
+			$$ = NULL;
+		}
+	;
 
 OptKind:
 	FOR MATERIALIZED VIEW
@@ -5442,8 +5505,13 @@ range_less_than_list:
 			}
 		;
 
+opt_values_in: 
+			VALUES IN_P
+			| VALUES
+	;
+
 list_partition_item:
-		PARTITION name VALUES '(' expr_list ')' OptTableSpace
+		PARTITION name opt_values_in '(' expr_list ')' OptTableSpace
 			{
 				ListPartitionDefState *n = makeNode(ListPartitionDefState);
 				n->partitionName = $2;
@@ -5452,7 +5520,7 @@ list_partition_item:
 
 				$$ = (Node *)n;
 			}
-		| PARTITION name VALUES '(' DEFAULT ')' OptTableSpace
+		| PARTITION name opt_values_in '(' DEFAULT ')' OptTableSpace
 			{
 				ListPartitionDefState *n = makeNode(ListPartitionDefState);
 				n->partitionName = $2;
@@ -5463,7 +5531,7 @@ list_partition_item:
 				n->tablespacename = $7;
 				$$ = (Node *)n;
 			}
-		| PARTITION name VALUES '(' expr_list ')' OptTableSpace '(' subpartition_definition_list ')'
+		| PARTITION name opt_values_in '(' expr_list ')' OptTableSpace '(' subpartition_definition_list ')'
 			{
 				ListPartitionDefState *n = makeNode(ListPartitionDefState);
 				n->partitionName = $2;
@@ -5483,7 +5551,7 @@ list_partition_item:
 				}
 				$$ = (Node *)n;
 			}
-		| PARTITION name VALUES '(' DEFAULT ')' OptTableSpace '(' subpartition_definition_list ')'
+		| PARTITION name opt_values_in '(' DEFAULT ')' OptTableSpace '(' subpartition_definition_list ')'
 			{
 				ListPartitionDefState *n = makeNode(ListPartitionDefState);
 				n->partitionName = $2;
@@ -7155,6 +7223,7 @@ create_as_target:
 /* PGXC_BEGIN */
 			OptDistributeBy OptSubCluster
 /* PGXC_END */
+			opt_compression opt_engine
 				{
 					$$ = makeNode(IntoClause);
 					$$->rel = $1;
@@ -7169,6 +7238,9 @@ create_as_target:
 					$$->subcluster = $8;
 					$$->relkind = INTO_CLAUSE_RELKIND_DEFAULT;
 /* PGXC_END */
+					if ($9 != NULL) {
+						$$->options = lappend($$->options, $9);
+					}
 				}
 		;
 
@@ -7942,7 +8014,7 @@ tblspc_option_elem:
  *
  *****************************************************************************/
 
-CreateTableSpaceStmt: CREATE TABLESPACE name OptTableSpaceOwner OptRelative LOCATION Sconst OptMaxSize opt_tblspc_options
+CreateTableSpaceStmt: CREATE TABLESPACE name OptTableSpaceOwner OptRelative LOCATION Sconst OptMaxSize opt_tblspc_options opt_engine
 				{
 					CreateTableSpaceStmt *n = makeNode(CreateTableSpaceStmt);
 					n->tablespacename = $3;
@@ -7953,7 +8025,7 @@ CreateTableSpaceStmt: CREATE TABLESPACE name OptTableSpaceOwner OptRelative LOCA
 					n->relative = $5;
 					$$ = (Node *) n;
 				}
-				| CREATE TABLESPACE name LoggingStr DATAFILE Sconst OptDatafileSize OptReuse OptAuto
+				| CREATE TABLESPACE name LoggingStr DATAFILE Sconst OptDatafileSize OptReuse OptAuto opt_engine
 				{
 					CreateTableSpaceStmt *n = makeNode(CreateTableSpaceStmt);
 					n->tablespacename = $3;
@@ -7962,7 +8034,7 @@ CreateTableSpaceStmt: CREATE TABLESPACE name OptTableSpaceOwner OptRelative LOCA
 					n->maxsize = $7;
 					$$ = (Node *) n;
 				}
-				| CREATE TABLESPACE name DATAFILE Sconst OptDatafileSize OptReuse OptAuto LoggingStr
+				| CREATE TABLESPACE name DATAFILE Sconst OptDatafileSize OptReuse OptAuto LoggingStr opt_engine
 				{
 					CreateTableSpaceStmt *n = makeNode(CreateTableSpaceStmt);
 					n->tablespacename = $3;
@@ -7971,7 +8043,7 @@ CreateTableSpaceStmt: CREATE TABLESPACE name OptTableSpaceOwner OptRelative LOCA
 					n->maxsize = $6;
 					$$ = (Node *) n;
 				}
-				| CREATE TABLESPACE name DATAFILE Sconst OptDatafileSize OptReuse OptAuto
+				| CREATE TABLESPACE name DATAFILE Sconst OptDatafileSize OptReuse OptAuto opt_engine
 				{
 					CreateTableSpaceStmt *n = makeNode(CreateTableSpaceStmt);
 					n->tablespacename = $3;
@@ -10439,7 +10511,48 @@ DropStmt:	DROP drop_type IF_P EXISTS any_name_list opt_drop_behavior opt_purge
 					}
 					$$ = (Node *)n;
 				}
-			| DROP INDEX CONCURRENTLY any_name_list opt_drop_behavior
+			| DROP INDEX IF_P EXISTS any_name_list opt_drop_behavior opt_purge on_table
+				{
+					DropStmt *n = makeNode(DropStmt);
+					n->removeType = OBJECT_INDEX;
+					n->missing_ok = TRUE;
+					n->objects = $5;
+					n->arguments = NIL;
+					n->behavior = $6;
+					n->concurrent = false;
+					n->purge = $7;
+					if (n->removeType != OBJECT_TABLE && n->purge) {
+        				const char* message = "PURGE clause only allowed in \"DROP TABLE\" statement";
+    					InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);
+						ereport(errstate,
+							(errcode(ERRCODE_SYNTAX_ERROR),
+							 errmsg("PURGE clause only allowed in \"DROP TABLE\" statement"),
+							 parser_errposition(@7)));
+					}
+
+					$$ = (Node *)n;
+				}
+			| DROP INDEX any_name_list opt_drop_behavior opt_purge on_table
+				{
+					DropStmt *n = makeNode(DropStmt);
+					n->removeType = OBJECT_INDEX;
+					n->missing_ok = FALSE;
+					n->objects = $3;
+					n->arguments = NIL;
+					n->behavior = $4;
+					n->concurrent = false;
+					n->purge = $5;
+					if (n->removeType != OBJECT_TABLE && n->purge) {
+        				const char* message = "PURGE clause only allowed in \"DROP TABLE\" statement";
+    					InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);
+						ereport(errstate,
+							(errcode(ERRCODE_SYNTAX_ERROR),
+							 errmsg("PURGE clause only allowed in \"DROP TABLE\" statement"),
+							 parser_errposition(@5)));
+					}
+					$$ = (Node *)n;
+				}
+			| DROP INDEX CONCURRENTLY any_name_list opt_drop_behavior on_table
 				{
 					DropStmt *n = makeNode(DropStmt);
 					n->removeType = OBJECT_INDEX;
@@ -10450,7 +10563,7 @@ DropStmt:	DROP drop_type IF_P EXISTS any_name_list opt_drop_behavior opt_purge
 					n->concurrent = true;
 					$$ = (Node *)n;
 				}
-			| DROP INDEX CONCURRENTLY IF_P EXISTS any_name_list opt_drop_behavior
+			| DROP INDEX CONCURRENTLY IF_P EXISTS any_name_list opt_drop_behavior on_table
 				{
 					DropStmt *n = makeNode(DropStmt);
 					n->removeType = OBJECT_INDEX;
@@ -10463,20 +10576,28 @@ DropStmt:	DROP drop_type IF_P EXISTS any_name_list opt_drop_behavior opt_purge
 				}
 		;
 
+on_table:
+			ON qualified_name					{ $$ = NULL; }
+			| /* EMPTY */						{ $$ = NULL; }
+		;
+
 opt_purge:
 			PURGE								{ $$ = true; }
 			| /* EMPTY */							{ $$ = false; }
 		;
 
+opt_temporary:
+			TEMPORARY
+			| /* EMPTY */							{ $$ = NULL; }
+		;
 
-drop_type:	TABLE									{ $$ = OBJECT_TABLE; }
+drop_type:	opt_temporary TABLE						{ $$ = OBJECT_TABLE; }
             | CONTVIEW                              { $$ = OBJECT_CONTQUERY; }
             | STREAM                                { $$ = OBJECT_STREAM; }
 			| SEQUENCE								{ $$ = OBJECT_SEQUENCE; }
 			| LARGE_P SEQUENCE						{ $$ = OBJECT_LARGE_SEQUENCE; }
 			| VIEW									{ $$ = OBJECT_VIEW; }
 			| MATERIALIZED VIEW 					{ $$ = OBJECT_MATVIEW; }
-			| INDEX									{ $$ = OBJECT_INDEX; }
 			| FOREIGN TABLE							{ $$ = OBJECT_FOREIGN_TABLE; }
 			| TYPE_P								{ $$ = OBJECT_TYPE; }
 			| DOMAIN_P								{ $$ = OBJECT_DOMAIN; }
@@ -18210,6 +18331,12 @@ DeallocateStmt: DEALLOCATE name
 						n->name = $3;
 						$$ = (Node *) n;
 					}
+				| DROP PREPARE name
+					{
+						DeallocateStmt *n = makeNode(DeallocateStmt);
+						n->name = $3;
+						$$ = (Node *) n;
+					}
 				| DEALLOCATE ALL
 					{
 						DeallocateStmt *n = makeNode(DeallocateStmt);
@@ -18217,6 +18344,12 @@ DeallocateStmt: DEALLOCATE name
 						$$ = (Node *) n;
 					}
 				| DEALLOCATE PREPARE ALL
+					{
+						DeallocateStmt *n = makeNode(DeallocateStmt);
+						n->name = NULL;
+						$$ = (Node *) n;
+					}
+				| DROP PREPARE ALL
 					{
 						DeallocateStmt *n = makeNode(DeallocateStmt);
 						n->name = NULL;
@@ -18275,7 +18408,7 @@ update_delete_partition_clause: PARTITION '(' name ')'
  *
  *****************************************************************************/
 
-InsertStmt: opt_with_clause INSERT hint_string INTO insert_target insert_rest returning_clause
+InsertStmt: opt_with_clause INSERT hint_string into_empty insert_target insert_rest returning_clause
 			{
 				$6->relation = $5;
 				$6->returningList = $7;
@@ -18283,7 +18416,7 @@ InsertStmt: opt_with_clause INSERT hint_string INTO insert_target insert_rest re
 				$6->hintState = create_hintstate($3);
 				$$ = (Node *) $6;
 			}
-			| opt_with_clause INSERT hint_string INTO insert_target insert_rest upsert_clause returning_clause
+			| opt_with_clause INSERT hint_string into_empty insert_target insert_rest upsert_clause returning_clause
 				{
 					if ($8 != NIL) {
 						const char* message = "RETURNING clause is not yet supported whithin INSERT ON DUPLICATE KEY UPDATE statement.";
@@ -18382,6 +18515,9 @@ InsertStmt: opt_with_clause INSERT hint_string INTO insert_target insert_rest re
 					}
 				}
 		;
+
+into_empty: INTO
+			| /*EMPTY*/		{ $$ = NULL; }
 
 /*
  * It is difficult to use relation_expr_opt_alias as update or delete statement,
@@ -19305,10 +19441,12 @@ opt_all:	ALL										{ $$ = TRUE; }
  * should be placed in the DISTINCT list during parsetree analysis.
  */
 opt_distinct:
-			DISTINCT								{ $$ = list_make1(NIL); }
-			| DISTINCT ON '(' expr_list ')'			{ $$ = $4; }
-			| ALL									{ $$ = NIL; }
-			| /*EMPTY*/								{ $$ = NIL; }
+			DISTINCT									{ $$ = list_make1(NIL); }
+			| DISTINCTROW								{ $$ = list_make1(NIL); }
+			| DISTINCT ON '(' expr_list ')'				{ $$ = $4; }
+			| DISTINCTROW ON '(' expr_list ')'			{ $$ = $4; }
+			| ALL										{ $$ = NIL; }
+			| /*EMPTY*/									{ $$ = NIL; }
 		;
 
 opt_sort_clause:
@@ -19666,6 +19804,12 @@ locked_rels_list:
 
 values_clause:
 			VALUES ctext_row
+				{
+					SelectStmt *n = makeNode(SelectStmt);
+					n->valuesLists = list_make1($2);
+					$$ = (Node *) n;
+				}
+			| VALUE_P ctext_row
 				{
 					SelectStmt *n = makeNode(SelectStmt);
 					n->valuesLists = list_make1($2);
@@ -24267,6 +24411,7 @@ unreserved_keyword:
 			| COMPATIBLE_ILLEGAL_CHARS
 			| COMPLETE
 			| COMPRESS
+			| COMPRESSION
 			| CONDITION
 			| CONFIGURATION
                         | CONNECT
@@ -24327,6 +24472,7 @@ unreserved_keyword:
             | ENCRYPTED_VALUE
 			| ENCRYPTION
             | ENCRYPTION_TYPE
+			| ENGINE_P
 			| ENFORCED
 			| ENUM_P
 			| EOL
@@ -24814,6 +24960,7 @@ reserved_keyword:
 			| DEFERRABLE
 			| DESC
 			| DISTINCT
+			| DISTINCTROW
 			| DO
 			| ELSE
 			| END_P

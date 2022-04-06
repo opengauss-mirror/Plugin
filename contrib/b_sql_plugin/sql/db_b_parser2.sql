@@ -93,3 +93,6 @@ select length('1'), length('101'), length('1011111111');
 select length('哈1哈\n'),length('\n'),length('\\n');
 --返回0、1、空
 select length(''),length(' '),length(NULL);
+
+\c postgres
+drop database if exists mysql_test;

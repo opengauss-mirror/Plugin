@@ -64,3 +64,6 @@ select '-12.3abc' rlike '中文';
 select '-12.3abc' rlike true;
 select '-12.3abc' rlike false;
 select '-12.3abc' rlike 'null';
+
+\c postgres
+drop database if exists mysql_test;

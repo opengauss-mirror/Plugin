@@ -1,4 +1,5 @@
 drop database if exists mysql_test;
+NOTICE:  database "mysql_test" does not exist, skipping
 create database mysql_test dbcompatibility 'b';
 \c mysql_test
 create extension b_sql_plugin;
@@ -356,3 +357,5 @@ select '-12.3abc' rlike 'null';
      0
 (1 row)
 
+\c postgres
+drop database if exists mysql_test;
