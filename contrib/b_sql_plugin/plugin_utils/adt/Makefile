@@ -34,8 +34,8 @@ OBJS = acl.o arrayfuncs.o array_selfuncs.o array_typanalyze.o \
 	rowtypes.o regexp.o regproc.o ruleutils.o selfuncs.o \
 	timestamp.o varbit.o varchar.o varlena.o version.o \
 	network.o mac.o inet_cidr_ntop.o inet_net_pton.o \
-	ri_triggers.o pg_lzcompress.o pg_locale.o formatting.o \
-	ascii.o quote.o pgstatfuncs.o encode.o dbsize.o genfile.o trigfuncs.o \
+	ri_triggers.o pg_locale.o formatting.o \
+	ascii.o quote.o pgstatfuncs.o encode.o dbsize.o trigfuncs.o \
 	uuid.o windowfuncs.o xml.o extended_statistics.o clientlogic_bytea.o clientlogicsettings.o \
 	median_aggs.o expr_distinct.o nlssort.o first_last_agg.o
 
