@@ -57,11 +57,11 @@ create index on test_index using btree (b);
 create index on test_index using hash (b);
 create index on test_index using gin (to_tsvector(b::text));
 \d test_index
-     Table "public.test_index"
- Column |     Type      | Modifiers 
---------+---------------+-----------
- a      | "binary"(10)  | 
- b      | varbinary(10) | 
+      Table "public.test_index"
+ Column |      Type       | Modifiers 
+--------+-----------------+-----------
+ a      | "binary"(10)    | 
+ b      | "varbinary"(10) | 
 Indexes:
     "test_index_a_idx" btree (a) TABLESPACE pg_default
     "test_index_a_idx1" hash (a) TABLESPACE pg_default
@@ -92,5 +92,35 @@ drop table shorter_binary;
 drop table shorter_varbinary;
 drop table test_index;
 drop table test_text2binary;
+drop table if exists t_binary_061;
+NOTICE:  table "t_binary_061" does not exist, skipping
+create table t_binary_061(id int, field_name binary(10));
+PREPARE insert_binary(int,binary(10)) as insert into t_binary_061 values($1,$2);
+EXECUTE insert_binary(1, 'aaa'::bytea);  -- length 3
+EXECUTE insert_binary(1, 'aaaaaaaaaaa'::bytea);  -- length 11
+ERROR:  The input length:11 exceeds the maximum length:10.
+CONTEXT:  referenced column: field_name
+drop table if exists t_varbinary_061;
+NOTICE:  table "t_varbinary_061" does not exist, skipping
+create table t_varbinary_061(id int, field_name varbinary(10));
+PREPARE insert_varbinary(int,varbinary(10)) as insert into t_varbinary_061 values($1,$2);
+EXECUTE insert_varbinary(1, 'aaa'::bytea);  -- length 3
+EXECUTE insert_varbinary(1, 'aaaaaaaaaaa'::bytea); -- length 11
+ERROR:  The input length:11 exceeds the maximum length:10.
+CONTEXT:  referenced column: field_name
+select * from t_binary_061;
+ id |       field_name       
+----+------------------------
+  1 | \x61616100000000000000
+(1 row)
+
+select * from t_varbinary_061;
+ id | field_name 
+----+------------
+  1 | \x616161
+(1 row)
+
+drop table if exists t_binary_061;
+drop table if exists t_varbinary_061;
 \c postgres
 drop database test;
