@@ -102,15 +102,15 @@ select locate(false,'testgood');
 
 --测试点：LOCATE(substr,str,pos)
 select locate('test','11testgood',5);
- instr 
--------
-     0
+ locate 
+--------
+      0
 (1 row)
 
 select locate('test','11testgood',3);
- instr 
--------
-     3
+ locate 
+--------
+      3
 (1 row)
 
 --测试点：IFNULL
