@@ -166,6 +166,20 @@ end;
 $$
 language plpgsql;
 
+CREATE OR REPLACE FUNCTION pg_catalog.locate(t1 text, t2 text, t3 integer)
+returns integer
+as 
+$$
+begin
+  if t3 < 0 then
+    return 0;
+  else 
+    return (select instr(t1, t2, t3));
+  end if;
+end;
+$$
+language plpgsql;
+
 CREATE OR REPLACE FUNCTION pg_catalog.lcase(t1 text)
 returns text
 as 
