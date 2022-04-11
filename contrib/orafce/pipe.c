@@ -969,7 +969,7 @@ dbms_pipe_unique_session_name (PG_FUNCTION_ARGS)
 	{
 		text *result;
 		initStringInfo(&strbuf);
-		appendStringInfo(&strbuf,"PG$PIPE$%d$%d",get_session_context()->pipe_sid, (IS_THREAD_POOL_WORKER ? u_sess->session_id : t_thrd.proc_cxt.MyProcPid));
+		appendStringInfo(&strbuf,"PG$PIPE$%d$%lu",get_session_context()->pipe_sid, (IS_THREAD_POOL_WORKER ? u_sess->session_id : t_thrd.proc_cxt.MyProcPid));
 
 		result = cstring_to_text_with_len(strbuf.data, strbuf.len);
 		pfree(strbuf.data);

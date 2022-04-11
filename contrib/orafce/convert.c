@@ -930,4 +930,5 @@ invalid_pair:
 	return 0;
 
 #endif
+	PG_RETURN_DATUM(0);
 }
