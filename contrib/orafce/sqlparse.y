@@ -19,7 +19,7 @@ else \
 
 #include "postgres.h"
 #include "orafce.h"
-// #include "nodes/pg_list.h"
+#include "nodes/pg_list.h"
 
 
 #define MOVE_TO_S(src,dest,col)	dest->col = src.col ? pstrdup(src.col) : NULL
