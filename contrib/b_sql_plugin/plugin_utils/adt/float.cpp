@@ -33,6 +33,10 @@
 #define M_PI 3.14159265358979323846
 #endif
 
+#ifndef S_PI
+#define S_PI 3.141593
+#endif
+
 /* Visual C++ etc lacks NAN, and won't accept 0.0/0.0.  NAN definition from
  * http://msdn.microsoft.com/library/default.asp?url=/library/en-us/vclang/html/vclrfNotNumberNANItems.asp
  */
@@ -1728,7 +1732,11 @@ Datum degrees(PG_FUNCTION_ARGS)
  */
 Datum dpi(PG_FUNCTION_ARGS)
 {
-    PG_RETURN_FLOAT8(M_PI);
+    if (DB_IS_CMPT(B_FORMAT)) {
+        PG_RETURN_FLOAT8(S_PI);
+    } else {
+        PG_RETURN_FLOAT8(M_PI);
+    }
 }
 
 /*

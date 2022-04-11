@@ -25,6 +25,7 @@
 #include <float.h>
 #include <limits.h>
 #include <math.h>
+#include <stdlib.h>
 
 #include "access/hash.h"
 #include "catalog/pg_type.h"
@@ -45,6 +46,25 @@
 #include "vecexecutor/vechashtable.h"
 #include "vecexecutor/vechashagg.h"
 #include "vectorsonic/vsonichashagg.h"
+
+#ifndef CRCMASK
+#define CRCMASK 0xEDB88320
+#endif
+
+#ifndef MASK128BIT
+#define MASK128BIT 0xffffffffffffffff
+#endif
+/* --------------------------------------------------------------------------------
+ * Convert a number from one number base system to another number base system.
+ * The minimum base is 2 and the maximum base is 36. If the base to be converted
+ * is negative, the number is treated as a signed number. Otherwise, it is considered
+ * unsigned.
+ * ------------------------------------------------------------------------------------
+ */
+#ifndef BASE_SCOPE
+#define MAXBASE 36
+#define MINBASE 2
+#endif
 
 /* ----------
  * Data for generate_series
@@ -19194,4 +19214,194 @@ Datum bool_numeric(PG_FUNCTION_ARGS)
     free_var(&result);
 
     PG_RETURN_NUMERIC(res);
+}
+
+static unsigned int crc32_cal(unsigned char *data, int len)
+{
+	unsigned int crc = ~0;
+	int j;
+	while (len--) {
+		crc ^= *data++;
+		for (j = 0; j < 8; j++) {
+			if (crc & 1) {
+				crc = (crc >> 1) ^ CRCMASK;
+			} else {
+				crc >>= 1;
+			}
+		}
+	}
+	return ~crc;
+}
+
+Datum crc32(PG_FUNCTION_ARGS)
+{
+    text* string = PG_GETARG_TEXT_PP(0);
+    unsigned char* data = (unsigned char *)VARDATA_ANY(string);
+    int len = VARSIZE_ANY_EXHDR(string);
+    unsigned int result = 0;
+
+    if (data == NULL) {
+        PG_RETURN_NULL();
+    }
+
+    result = crc32_cal(data, len);
+    PG_RETURN_UINT32(result);
+}
+
+static int conv_s(char *result, char *str, int len, int from_base, int to_base_s)
+{
+	uint64 sum = 0;
+	int128 sum_128 = 0;
+    int64 sum_s;
+	int i, num = 0;
+	int to_base = abs(to_base_s);
+	char tmp[65] = "";	/*64bit max len 64 when to_base is 2*/
+    if ((from_base < MINBASE) || (from_base > MAXBASE)) {
+        ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("from_base out of range:2~36")));
+        return -1;
+    }
+    if ((to_base < MINBASE) || (to_base > MAXBASE)) {
+        ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("to_base out of range:2~36")));
+        return -1;
+    }
+    if (len <= 0) {
+        ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("len out of range:must greater 0")));
+        return -1;
+    }
+
+	for (i = 0; i < len; i++) {
+		if ((str[i] >= '0') && (str[i] <= '9')) {
+			num = str[i] - '0';
+		} else if ((str[i] >= 'a') && (str[i] <= 'z')) {
+			num = str[i] - 'a' + 10;
+		} else if ((str[i] >= 'A') && (str[i] <= 'Z')) {
+			num = str[i] - 'A' + 10;
+		} else {
+            if (i != 0) {
+                break;  /*illegal character*/
+            }
+        }
+        if ((num > 9) && (from_base <= num)) {
+            return -1;   /*param error*/
+        }
+		sum_128 = sum_128 * from_base + num;
+        if (sum_128 > MASK128BIT) {
+            break;
+        }
+	}
+
+    if (sum_128 > MASK128BIT) {
+        sum_128 = MASK128BIT;
+    } else {
+        if (str[0] == '-') {
+            sum_128 *= -1;
+        }
+    }
+    sum_s = (int64)sum_128;
+	
+	if (to_base_s < 0) {
+		if (sum_s < 0) {
+			*result++ = '-';
+		}
+        sum = abs(sum_s);
+	} else {
+        sum = (uint64)sum_s;
+    }
+
+    i = 0;
+	while (sum) {
+		num = sum % to_base;
+		if (num <= 9) {
+			tmp[i++] = num + '0';
+		} else {
+			tmp[i++] = num - 10 + 'A';
+		}
+		sum /= to_base;
+	}
+	
+	for (; i > 0; i--) {
+		*result++ = tmp[i - 1];
+	}
+	return 0;
+}
+
+Datum conv_str(PG_FUNCTION_ARGS)
+{
+    text* string = PG_GETARG_TEXT_PP(0);
+    int from_base = PG_GETARG_INT32(1);
+    int to_base = PG_GETARG_INT32(2);
+    char* data = VARDATA_ANY(string);
+    char result[100] = "";
+    int len = VARSIZE_ANY_EXHDR(string);
+    int ret;
+
+    ret = conv_s(result, data, len, from_base, to_base);
+    if (ret != 0) {
+        PG_RETURN_NULL();
+    }
+    PG_RETURN_TEXT_P(cstring_to_text(result));
+}
+
+static int conv_n(char *result, int64 data, int from_base, int to_base_s)
+{
+	uint64 sum = 0;
+	int64 sum_s = 0;
+	int i, num = 0;
+    int base = 1;
+	int to_base = abs(to_base_s);
+	char tmp[65] = "";	/*64bit max len 64 when to_base is 2*/
+    if ((from_base < MINBASE) || (from_base > MAXBASE)) {
+        ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("from_base out of range:2~36")));
+        return -1;
+    }
+    if ((to_base < MINBASE) || (to_base > MAXBASE)) {
+        ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("to_base out of range:2~36")));
+        return -1;
+    }
+
+    while (data) {
+        sum_s += (data % 10) * base;
+        data /= 10;
+        base *= from_base;
+    }
+	
+	if (to_base_s < 0) {
+		if (sum_s < 0) {
+			*result++ = '-';
+		}
+        sum = abs(sum_s);
+	} else {
+        sum = (uint64)sum_s;
+    }
+    
+    i = 0;
+	while (sum) {
+		num = sum % to_base;
+		if (num <= 9) {
+			tmp[i++] = num + '0';
+		} else {
+			tmp[i++] = num - 10 + 'A';
+		}
+		sum /= to_base;
+	}
+	
+	for (; i > 0; i--) {
+		*result++ = tmp[i - 1];
+	}
+	return 0;
+}
+
+Datum conv_num(PG_FUNCTION_ARGS)
+{
+    int64 num = PG_GETARG_INT64(0);
+    int from_base = PG_GETARG_INT32(1);
+    int to_base = PG_GETARG_INT32(2);
+    char result[100] = "";
+    int ret;
+
+    ret = conv_n(result, num, from_base, to_base);
+    if (ret != 0) {
+        PG_RETURN_NULL();
+    }
+    PG_RETURN_TEXT_P(cstring_to_text(result));
 }

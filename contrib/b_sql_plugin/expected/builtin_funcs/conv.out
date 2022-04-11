@@ -1,0 +1,76 @@
+drop database if exists format_test;
+create database format_test dbcompatibility 'B';
+\c format_test
+create extension b_sql_plugin;
+select conv('a',16,2);
+ conv 
+------
+ 1010
+(1 row)
+
+select conv('6e',18,8);
+ conv 
+------
+ 172
+(1 row)
+
+select conv(-17,10,-18);
+ conv 
+------
+ -H
+(1 row)
+
+select conv('10'+10,16,10);
+ conv 
+------
+ 32
+(1 row)
+
+select conv('ffffffffffffffff',16,10);
+         conv         
+----------------------
+ 18446744073709551615
+(1 row)
+
+select conv('ffffffffffffffff',16,-10);
+ conv 
+------
+ -1
+(1 row)
+
+select conv('-ffffffffffffffff',16,10);
+ conv 
+------
+ 1
+(1 row)
+
+select conv('-ffffffffffffffff',16,-10);
+ conv 
+------
+ 1
+(1 row)
+
+select conv('ffffffffffffffff1',16,10);
+         conv         
+----------------------
+ 18446744073709551615
+(1 row)
+
+select conv('ffffffffffffffff1',16,-10);
+ conv 
+------
+ -1
+(1 row)
+
+select conv('-ffffffffffffffff1',16,10);
+         conv         
+----------------------
+ 18446744073709551615
+(1 row)
+
+select conv('-ffffffffffffffff1',16,-10);
+ conv 
+------
+ -1
+(1 row)
+
