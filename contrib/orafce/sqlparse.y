@@ -107,4 +107,4 @@ anyelement:
 
 #undef YYLTYPE
 
-/* #include "sqlscan.c" */
+#include "sqlscan.c"

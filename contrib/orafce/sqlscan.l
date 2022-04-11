@@ -33,7 +33,6 @@ static YY_BUFFER_STATE scanbufhandle;
 
 #define SET_YYLLOC()  (orafce_sql_yylval.val.lloc = yytext - get_session_context()->scanbuf)
 
-/* Handles to the buffer that the lexer uses internally */
 
 /* flex 2.5.4 doesn't bother with a decl for this */
 
@@ -685,7 +684,7 @@ other			.
 
 					SET_YYLLOC();
 
-					if (nchars < yyleng)
+					if (nchars < (int)yyleng)
 					{
 						/* Strip the unwanted chars from the token */
 						yyless(nchars);

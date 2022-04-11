@@ -9,12 +9,6 @@
  LANGUAGE C IMMUTABLE STRICT;
  COMMENT ON FUNCTION pg_catalog.months_between(date, date) IS 'returns the number of months between date1 and date2';
 
-CREATE FUNCTION pg_catalog.trunc(value timestamp with time zone, fmt text)
-RETURNS timestamp with time zone
-AS 'MODULE_PATHNAME', 'ora_timestamptz_trunc'
-LANGUAGE C IMMUTABLE STRICT;
-COMMENT ON FUNCTION pg_catalog.trunc(timestamp with time zone, text) IS 'truncate date according to the specified format';
-
 CREATE FUNCTION pg_catalog.round(value timestamp with time zone, fmt text)
 RETURNS timestamp with time zone
 AS 'MODULE_PATHNAME','ora_timestamptz_round'
@@ -27,21 +21,8 @@ AS $$ SELECT pg_catalog.round($1, 'DDD'); $$
 LANGUAGE SQL IMMUTABLE STRICT;
 COMMENT ON FUNCTION pg_catalog.round(timestamp with time zone) IS 'will round dates according to the specified format';
 
-DROP FUNCTION IF EXISTS pg_catalog.trunc(value timestamp with time zone);
-CREATE FUNCTION pg_catalog.trunc(value timestamp with time zone)
-RETURNS timestamp with time zone
-AS $$ SELECT pg_catalog.trunc($1, 'DDD'); $$
-LANGUAGE SQL IMMUTABLE STRICT;
-COMMENT ON FUNCTION pg_catalog.trunc(timestamp with time zone) IS 'truncate date according to the specified format';
-
-CREATE FUNCTION pg_catalog.nlssort(text, text)
-RETURNS bytea
-AS 'MODULE_PATHNAME', 'ora_nlssort'
-LANGUAGE C IMMUTABLE;
-COMMENT ON FUNCTION pg_catalog.nlssort(text, text) IS '';
-
 CREATE FUNCTION pg_catalog.nlssort(text)
-RETURNS bytea
+RETURNS text
 AS $$ SELECT pg_catalog.nlssort($1, null); $$
 LANGUAGE SQL IMMUTABLE STRICT;
 COMMENT ON FUNCTION pg_catalog.nlssort(text)IS '';
@@ -140,13 +121,13 @@ RETURNS NUMERIC
 AS $$ SELECT pg_catalog.months_between($1::pg_catalog.date,$2::pg_catalog.date); $$
 LANGUAGE SQL IMMUTABLE STRICT;
 
-CREATE FUNCTION oracle.substr(str text, start int)
+CREATE FUNCTION oracle.substr(str text, start_arg int)
 RETURNS text
 AS 'MODULE_PATHNAME','oracle_substr2'
 LANGUAGE C IMMUTABLE STRICT;
 COMMENT ON FUNCTION oracle.substr(text, int) IS 'Returns substring started on start_in to end';
 
-CREATE FUNCTION oracle.substr(str text, start int, len int)
+CREATE FUNCTION oracle.substr(str text, start_arg int, len int)
 RETURNS text
 AS 'MODULE_PATHNAME','oracle_substr3'
 LANGUAGE C IMMUTABLE STRICT;
@@ -254,9 +235,7 @@ AS 'MODULE_PATHNAME','dbms_output_get_lines'
 LANGUAGE C VOLATILE STRICT;
 COMMENT ON FUNCTION dbms_output.get_lines(OUT text[], INOUT int4) IS 'Get lines from output buffer';
 
-
 -- others functions
-
 
 CREATE FUNCTION nvl2(anyelement, anyelement, anyelement)
 RETURNS anyelement
@@ -712,8 +691,6 @@ REVOKE ALL ON utl_file.utl_file_dir FROM PUBLIC;
 /* allow only read on utl_file.utl_file_dir to unprivileged users */
 GRANT SELECT ON TABLE utl_file.utl_file_dir TO PUBLIC;
 
-
-
 -- dbms_random
 CREATE SCHEMA dbms_random;
 
@@ -840,14 +817,11 @@ CREATE AGGREGATE pg_catalog.median(real) (
   FINALFUNC=pg_catalog.median4_finalfn
 );
 
-
-
 CREATE OR REPLACE FUNCTION pg_catalog.strposb(varchar2, varchar2) RETURNS integer
 AS 'byteapos'
 LANGUAGE internal
 STRICT IMMUTABLE;
 COMMENT ON FUNCTION pg_catalog.strposb(varchar2, varchar2) IS 'returns the byte position of a specified string in the input varchar2 string';
-
 
 /* PAD */
 
@@ -1603,14 +1577,6 @@ GRANT USAGE ON SCHEMA utl_file TO PUBLIC;
 GRANT USAGE ON SCHEMA dbms_random TO PUBLIC;
 GRANT USAGE ON SCHEMA oracle TO PUBLIC;
 
-
-
-
-CREATE FUNCTION pg_catalog.trunc(value timestamp without time zone, fmt text)
-RETURNS timestamp without time zone
-AS 'MODULE_PATHNAME', 'ora_timestamp_trunc'
-LANGUAGE C IMMUTABLE STRICT;
-COMMENT ON FUNCTION pg_catalog.trunc(timestamp without time zone, text) IS 'truncate date according to the specified format';
 
 CREATE FUNCTION pg_catalog.round(value timestamp without time zone, fmt text)
 RETURNS timestamp without time zone
@@ -2556,13 +2522,13 @@ AS $$ SELECT $1 & $2; $$
 LANGUAGE sql IMMUTABLE STRICT;
 CREATE SCHEMA plvstr;
 
-CREATE FUNCTION plvstr.rvrs(str text, start int, _end int)
+CREATE FUNCTION plvstr.rvrs(str text, start_arg int, _end int)
 RETURNS text
 AS 'MODULE_PATHNAME','plvstr_rvrs'
 LANGUAGE C IMMUTABLE;
 COMMENT ON FUNCTION plvstr.rvrs(text, int, int) IS 'Reverse string or part of string';
 
-CREATE FUNCTION plvstr.rvrs(str text, start int)
+CREATE FUNCTION plvstr.rvrs(str text, start_arg int)
 RETURNS text
 AS $$ SELECT plvstr.rvrs($1,$2,NULL);$$
 LANGUAGE SQL IMMUTABLE STRICT;
@@ -3028,25 +2994,25 @@ AS 'MODULE_PATHNAME','plvstr_is_prefix_int64'
 LANGUAGE C IMMUTABLE STRICT;
 COMMENT ON FUNCTION plvstr.is_prefix(bigint, bigint) IS 'Returns true, if prefix is prefix of str';
 
-CREATE FUNCTION plvstr.substr(str text, start int, len int)
+CREATE FUNCTION plvstr.substr(str text, start_arg int, len int)
 RETURNS varchar
 AS 'MODULE_PATHNAME','plvstr_substr3'
 LANGUAGE C IMMUTABLE STRICT;
 COMMENT ON FUNCTION plvstr.substr(text, int, int) IS 'Returns substring started on start_in to end';
 
-CREATE FUNCTION plvstr.substr(str text, start int)
+CREATE FUNCTION plvstr.substr(str text, start_arg int)
 RETURNS varchar
 AS 'MODULE_PATHNAME','plvstr_substr2'
 LANGUAGE C IMMUTABLE STRICT;
 COMMENT ON FUNCTION plvstr.substr(text, int) IS 'Returns substring started on start_in to end';
 
-CREATE FUNCTION plvstr.instr(str text, patt text, start int, nth int)
+CREATE FUNCTION plvstr.instr(str text, patt text, start_arg int, nth int)
 RETURNS int
 AS 'MODULE_PATHNAME','plvstr_instr4'
 LANGUAGE C IMMUTABLE STRICT;
 COMMENT ON FUNCTION plvstr.instr(text, text, int, int) IS 'Search pattern in string';
 
-CREATE FUNCTION plvstr.instr(str text, patt text, start int)
+CREATE FUNCTION plvstr.instr(str text, patt text, start_arg int)
 RETURNS int
 AS 'MODULE_PATHNAME','plvstr_instr3'
 LANGUAGE C IMMUTABLE STRICT;
@@ -3058,19 +3024,19 @@ AS 'MODULE_PATHNAME','plvstr_instr2'
 LANGUAGE C IMMUTABLE STRICT;
 COMMENT ON FUNCTION plvstr.instr(text, text) IS 'Search pattern in string';
 
-CREATE FUNCTION plvstr.lpart(str text, div text, start int, nth int, all_if_notfound bool)
+CREATE FUNCTION plvstr.lpart(str text, div text, start_arg int, nth int, all_if_notfound bool)
 RETURNS text
 AS 'MODULE_PATHNAME','plvstr_lpart'
 LANGUAGE C IMMUTABLE STRICT;
 COMMENT ON FUNCTION plvstr.lpart(text, text, int, int, bool) IS 'Call this function to return the left part of a string';
 
-CREATE FUNCTION plvstr.lpart(str text, div text, start int, nth int)
+CREATE FUNCTION plvstr.lpart(str text, div text, start_arg int, nth int)
 RETURNS text
 AS $$ SELECT plvstr.lpart($1,$2, $3, $4, false); $$
 LANGUAGE SQL IMMUTABLE STRICT;
 COMMENT ON FUNCTION plvstr.lpart(text, text, int, int) IS 'Call this function to return the left part of a string';
 
-CREATE FUNCTION plvstr.lpart(str text, div text, start int)
+CREATE FUNCTION plvstr.lpart(str text, div text, start_arg int)
 RETURNS text
 AS $$ SELECT plvstr.lpart($1,$2, $3, 1, false); $$
 LANGUAGE SQL IMMUTABLE STRICT;
@@ -3082,19 +3048,19 @@ AS $$ SELECT plvstr.lpart($1,$2, 1, 1, false); $$
 LANGUAGE SQL IMMUTABLE STRICT;
 COMMENT ON FUNCTION plvstr.lpart(text, text) IS 'Call this function to return the left part of a string';
 
-CREATE FUNCTION plvstr.rpart(str text, div text, start int, nth int, all_if_notfound bool)
+CREATE FUNCTION plvstr.rpart(str text, div text, start_arg int, nth int, all_if_notfound bool)
 RETURNS text
 AS 'MODULE_PATHNAME','plvstr_rpart'
 LANGUAGE C IMMUTABLE STRICT;
 COMMENT ON FUNCTION plvstr.rpart(text, text, int, int, bool) IS 'Call this function to return the right part of a string';
 
-CREATE FUNCTION plvstr.rpart(str text, div text, start int, nth int)
+CREATE FUNCTION plvstr.rpart(str text, div text, start_arg int, nth int)
 RETURNS text
 AS $$ SELECT plvstr.rpart($1,$2, $3, $4, false); $$
 LANGUAGE SQL IMMUTABLE STRICT;
 COMMENT ON FUNCTION plvstr.rpart(text, text, int, int) IS 'Call this function to return the right part of a string';
 
-CREATE FUNCTION plvstr.rpart(str text, div text, start int)
+CREATE FUNCTION plvstr.rpart(str text, div text, start_arg int)
 RETURNS text
 AS $$ SELECT plvstr.rpart($1,$2, $3, 1, false); $$
 LANGUAGE SQL IMMUTABLE STRICT;
@@ -3132,7 +3098,7 @@ COMMENT ON FUNCTION plvstr.rstrip(text, text) IS 'Call this function to remove c
 
 
 
-CREATE FUNCTION plvstr.swap(str text, replace text, start int, length int)
+CREATE FUNCTION plvstr.swap(str text, replace text, start_arg int, length int)
 RETURNS text
 AS 'MODULE_PATHNAME','plvstr_swap'
 LANGUAGE C IMMUTABLE;
@@ -3144,31 +3110,31 @@ AS $$ SELECT plvstr.swap($1,$2,1, NULL);$$
 LANGUAGE SQL IMMUTABLE STRICT;
 COMMENT ON FUNCTION plvstr.swap(text,text) IS 'Replace a substring in a string with a specified string';
 
-CREATE FUNCTION plvstr.betwn(str text, start int, _end int, inclusive bool)
+CREATE FUNCTION plvstr.betwn(str text, start_arg int, _end int, inclusive bool)
 RETURNS text
 AS 'MODULE_PATHNAME','plvstr_betwn_i'
 LANGUAGE C IMMUTABLE STRICT;
 COMMENT ON FUNCTION plvstr.betwn(text, int, int, bool) IS 'Find the Substring Between Start and End Locations';
 
-CREATE FUNCTION plvstr.betwn(str text, start int, _end int)
+CREATE FUNCTION plvstr.betwn(str text, start_arg int, _end int)
 RETURNS text
 AS $$ SELECT plvstr.betwn($1,$2,$3,true);$$
 LANGUAGE SQL IMMUTABLE STRICT;
 COMMENT ON FUNCTION plvstr.betwn(text, int, int) IS 'Find the Substring Between Start and End Locations';
 
-CREATE FUNCTION plvstr.betwn(str text, start text, _end text, startnth int, endnth int, inclusive bool, gotoend bool)
+CREATE FUNCTION plvstr.betwn(str text, start_arg text, _end text, startnth int, endnth int, inclusive bool, gotoend bool)
 RETURNS text
 AS 'MODULE_PATHNAME','plvstr_betwn_c'
 LANGUAGE C IMMUTABLE;
 COMMENT ON FUNCTION plvstr.betwn(text, text, text, int, int, bool, bool) IS 'Find the Substring Between Start and End Locations';
 
-CREATE FUNCTION plvstr.betwn(str text, start text, _end text)
+CREATE FUNCTION plvstr.betwn(str text, start_arg text, _end text)
 RETURNS text
 AS $$ SELECT plvstr.betwn($1,$2,$3,1,1,true,false);$$
 LANGUAGE SQL IMMUTABLE;
 COMMENT ON FUNCTION plvstr.betwn(text, text, text) IS 'Find the Substring Between Start and End Locations';
 
-CREATE FUNCTION plvstr.betwn(str text, start text, _end text, startnth int, endnth int)
+CREATE FUNCTION plvstr.betwn(str text, start_arg text, _end text, startnth int, endnth int)
 RETURNS text
 AS $$ SELECT plvstr.betwn($1,$2,$3,$4,$5,true,false);$$
 LANGUAGE SQL IMMUTABLE;
@@ -3575,10 +3541,6 @@ AS 'varchartypmodout'
 LANGUAGE internal
 STRICT
 IMMUTABLE;
-
-CREATE CAST (varchar2 AS smallint)
-WITH INOUT
-AS IMPLICIT;
 
 CREATE OR REPLACE FUNCTION pg_catalog.substrb(varchar2, integer, integer) RETURNS varchar2
 AS 'bytea_substr'
