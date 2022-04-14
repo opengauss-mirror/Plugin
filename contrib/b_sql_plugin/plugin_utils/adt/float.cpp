@@ -1732,11 +1732,7 @@ Datum degrees(PG_FUNCTION_ARGS)
  */
 Datum dpi(PG_FUNCTION_ARGS)
 {
-    if (DB_IS_CMPT(B_FORMAT)) {
-        PG_RETURN_FLOAT8(S_PI);
-    } else {
-        PG_RETURN_FLOAT8(M_PI);
-    }
+    PG_RETURN_FLOAT8(S_PI);
 }
 
 /*
