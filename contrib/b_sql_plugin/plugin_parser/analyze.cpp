@@ -1482,7 +1482,7 @@ static Query* transformInsertStmt(ParseState* pstate, InsertStmt* stmt)
     /* Validate stmt->cols list, or build default list if no list given */
     icolumns = checkInsertTargets(pstate, stmt->cols, &attrnos);
     if (!SQL_MODE_STRICT())
-        icolumns = appendNotNullCols(pstate, icolumns, &attrnos);
+        icolumns = AppendNotNullCols(pstate, icolumns, &attrnos);
     AssertEreport(list_length(icolumns) == list_length(attrnos), MOD_OPT, "list length inconsistent");
 
     /*
@@ -1824,7 +1824,7 @@ static Query* transformInsertStmt(ParseState* pstate, InsertStmt* stmt)
         attr_num = (AttrNumber)lfirst_int(attnos);
 
         if (!SQL_MODE_STRICT())
-            checkNullValue(pstate->p_target_relation, expr, attr_num);
+            CheckNullValue(pstate->p_target_relation, expr, attr_num);
 
         tle = makeTargetEntry(expr, attr_num, col->name, false);
         qry->targetList = lappend(qry->targetList, tle);
@@ -2099,22 +2099,22 @@ static UpsertExpr* transformUpsertClause(ParseState* pstate, UpsertClause* upser
 /* If there is no expr in the insert clause value lists for the column with NOT NULL attr,
  * append it based on the col type, append 0 when it's INT and append "" when it's str type.
  */
-void appendValueForColOfNotnull(ParseState* pstate, List* exprlist, List* icolumns, List* attrnos)
+void AppendValueForColOfNotnull(ParseState* pstate, List* exprlist, List* icolumns, List* attrnos)
 {
-    int attr_num = 0;
-    ListCell* attr_cell = NULL;
-    ListCell* col_cell = list_head(icolumns);
-    foreach (attr_cell, attrnos) {
-        attr_num++;
-        if (col_cell) {
-            ResTarget* col = (ResTarget*)lfirst(col_cell);
+    int attrNum = 0;
+    ListCell* attrCell = NULL;
+    ListCell* colCell = list_head(icolumns);
+    foreach (attrCell, attrnos) {
+        attrNum++;
+        if (colCell) {
+            ResTarget* col = (ResTarget*)lfirst(colCell);
             AssertEreport(IsA(col, ResTarget), MOD_OPT, "nodeType inconsistant");
-            if (attr_num <= list_length(exprlist) || col->location != -1) {
-                col_cell = col_cell->next;
+            if (attrNum <= list_length(exprlist) || col->location != -1) {
+                colCell = colCell->next;
                 continue;
             }
-            col_cell = col_cell->next;
-            Form_pg_attribute attr = pstate->p_target_relation->rd_att->attrs[lfirst_int(attr_cell)-1];
+            colCell = colCell->next;
+            Form_pg_attribute attr = pstate->p_target_relation->rd_att->attrs[lfirst_int(attrCell)-1];
             Value* val = makeNode(Value);
             switch (attr->atttypid)
             {
@@ -2195,7 +2195,7 @@ List* transformInsertRow(ParseState* pstate, List* exprlist, List* stmtcols, Lis
          * hint in that case.)
          */
         if (!SQL_MODE_STRICT()) {
-            appendValueForColOfNotnull(pstate, exprlist, icolumns, attrnos);
+            AppendValueForColOfNotnull(pstate, exprlist, icolumns, attrnos);
         } else {
             ereport(ERROR,
                 (errcode(ERRCODE_SYNTAX_ERROR),

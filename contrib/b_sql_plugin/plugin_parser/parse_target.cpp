@@ -210,10 +210,10 @@ List* transformExpressionList(ParseState* pstate, List* exprlist)
 }
 
 /*check if a not-null-attr col is inserted into NULL*/
-void checkNullValue(Relation relation, Expr* expr, AttrNumber attr_num)
+void CheckNullValue(Relation relation, Expr* expr, AttrNumber attrNum)
 {
     if (expr && nodeTag(expr) == T_Const) {
-        Form_pg_attribute attr = relation->rd_att->attrs[attr_num-1];
+        Form_pg_attribute attr = relation->rd_att->attrs[attrNum-1];
         Const* con = (Const*)expr;
         if (attr->attnotnull && con->constisnull) {
             ereport(ERROR, (errcode(ERRCODE_NOT_NULL_VIOLATION),
@@ -938,31 +938,31 @@ List* checkInsertTargets(ParseState* pstate, List* cols, List** attrnos)
 }
 
 /* If the col with NOT NULL attr is not in the insert clause cols list, append it.*/
-List* appendNotNullCols(ParseState* pstate, List* cols, List** attrnos)
+List* AppendNotNullCols(ParseState* pstate, List* cols, List** attrnos)
 {
     Form_pg_attribute* attr = pstate->p_target_relation->rd_att->attrs;
-    auto nums_relation_attr = RelationGetNumberOfAttributes(pstate->p_target_relation);
-    bool is_blockchain_rel = false;
-    is_blockchain_rel = pstate->p_target_relation->rd_isblockchain;
-    if(cols && attrnos && cols->length < nums_relation_attr)
+    auto numsRelationAttr = RelationGetNumberOfAttributes(pstate->p_target_relation);
+    bool isBlockchainRel = false;
+    isBlockchainRel = pstate->p_target_relation->rd_isblockchain;
+    if(cols && attrnos && cols->length < numsRelationAttr)
     {
-        for (int i = 0; i < nums_relation_attr; i++)
+        for (int i = 0; i < numsRelationAttr; i++)
         {
             if(!attr[i]->attnotnull)
             {
                 continue;
             }
-            bool find_flag = false;
+            bool findFlag = false;
             ListCell* attrno = NULL;
             foreach (attrno, *attrnos)
             {
                 if(lfirst_int(attrno) == i+1)
                 {
-                    find_flag = true;
+                    findFlag = true;
                     continue;
                 }
             }
-            if(!find_flag)
+            if(!findFlag)
             {
                 ResTarget* col = NULL;
 
@@ -976,12 +976,12 @@ List* appendNotNullCols(ParseState* pstate, List* cols, List** attrnos)
 
                 col = makeNode(ResTarget);
                 col->name = pstrdup(NameStr(attr[i]->attname));
-                if (is_blockchain_rel && strcmp(col->name, "hash") == 0) {
+                if (isBlockchainRel && strcmp(col->name, "hash") == 0) {
                     continue;
                 }
                 col->indirection = NIL;
                 col->val = NULL;
-                col->location = -1; //-1 indicate the col is appended here, used in func appendValueForColOfNotnull
+                col->location = -1; //-1 indicate the col is appended here, used in func AppendValueForColOfNotnull
                 cols = lappend(cols, col);
                 *attrnos = lappend_int(*attrnos, i + 1);
             }

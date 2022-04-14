@@ -52,10 +52,10 @@ typedef struct {
  */
 bool scanint8(const char* str, bool errorOK, int64* result)
 {
-    return scanint8_internal(str, errorOK, result, true);
+    return Scanint8Internal(str, errorOK, result, true);
 }
 
-bool scanint8_internal(const char* str, bool errorOK, int64* result, bool sql_mode_strict)
+bool Scanint8Internal(const char* str, bool errorOK, int64* result, bool sqlModeStrict)
 {
     const char* ptr = str;
     int64 tmp = 0;
@@ -85,7 +85,7 @@ bool scanint8_internal(const char* str, bool errorOK, int64* result, bool sql_mo
     if (unlikely(!isdigit((unsigned char)*ptr))) {
         if (errorOK)
             return false;
-        else if (!sql_mode_strict) {
+        else if (!sqlModeStrict) {
             *result = tmp;
             return true;
         }
@@ -107,7 +107,7 @@ bool scanint8_internal(const char* str, bool errorOK, int64* result, bool sql_mo
         if (unlikely(pg_mul_s64_overflow(tmp, 10, &tmp)) || unlikely(pg_sub_s64_overflow(tmp, digit, &tmp))) {
             if (errorOK)
                 return false;
-            else if (sql_mode_strict)
+            else if (sqlModeStrict)
                 ereport(ERROR,
                     (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE),
                         errmsg("value \"%s\" is out of range for type %s", str, "bigint")));
@@ -130,7 +130,7 @@ bool scanint8_internal(const char* str, bool errorOK, int64* result, bool sql_mo
     if (unlikely(*ptr != '\0')) {
         if (errorOK)
             return false;
-        else if (sql_mode_strict)
+        else if (sqlModeStrict)
             /* Empty string will be treated as NULL if sql_compatibility == A_FORMAT,
                 Other wise whitespace will be convert to 0 */
             ereport(ERROR,
@@ -143,7 +143,7 @@ bool scanint8_internal(const char* str, bool errorOK, int64* result, bool sql_mo
         if (unlikely(tmp == PG_INT64_MIN)) {
             if (errorOK)
                 return false;
-            else if (sql_mode_strict)
+            else if (sqlModeStrict)
                 ereport(ERROR,
                     (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE),
                         errmsg("value \"%s\" is out of range for type %s", str, "bigint")));
@@ -162,7 +162,7 @@ Datum int8in(PG_FUNCTION_ARGS)
     char* str = PG_GETARG_CSTRING(0);
     int64 result;
 
-    (void)scanint8_internal(str, false, &result, SQL_MODE_STRICT());
+    (void)Scanint8Internal(str, false, &result, SQL_MODE_STRICT());
     PG_RETURN_INT64(result);
 }
 

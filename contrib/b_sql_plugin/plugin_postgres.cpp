@@ -109,8 +109,8 @@ extern void ExecAlterDatabaseSetStmt(Node* parse_tree, const char* query_string,
 extern void DoVacuumMppTable(VacuumStmt* stmt, const char* query_string, bool is_top_level, bool sent_to_remote);
 extern bool IsVariableinBlackList(const char* name);
 extern void ExecAlterRoleSetStmt(Node* parse_tree, const char* query_string, bool sent_to_remote);
-static bool check_sql_mode(char** newval, void** extra, GucSource source);
-static void assign_sql_mode(const char* newval, void* extra);
+static bool CheckSqlMode(char** newval, void** extra, GucSource source);
+static void AssignSqlMode(const char* newval, void* extra);
 static bool need_full_dn_execution(const char* group_name);
 static ExecNodes* GetFunctionNodes(Oid func_id);
 static const int LOADER_COL_BUF_CNT = 5;
@@ -569,7 +569,7 @@ static void drop_stmt_pre_treatment(
 /*
  * check_behavior_compat_options: GUC check_hook for behavior compat options
  */
-static bool check_sql_mode(char** newval, void** extra, GucSource source)
+static bool CheckSqlMode(char** newval, void** extra, GucSource source)
 {
     char* rawstring = NULL;
     List* elemlist = NULL;
@@ -616,7 +616,7 @@ static bool check_sql_mode(char** newval, void** extra, GucSource source)
 /*
  * assign_distribute_test_param: GUC assign_hook for distribute_test_param
  */
-static void assign_sql_mode(const char* newval, void* extra)
+static void AssignSqlMode(const char* newval, void* extra)
 {
     char* rawstring = NULL;
     List* elemlist = NULL;
@@ -627,7 +627,7 @@ static void assign_sql_mode(const char* newval, void* extra)
     rawstring = pstrdup(newval);
     (void)SplitIdentifierString(rawstring, ',', &elemlist);
 
-    GetSessionContext()->sql_mode_flags = 0;
+    GetSessionContext()->sqlModeFlags = 0;
     foreach (cell, elemlist) {
         for (start = 0; start < OPT_SQL_MODE_MAX; start++) {
             const char* item = (const char*)lfirst(cell);
@@ -640,7 +640,7 @@ static void assign_sql_mode(const char* newval, void* extra)
     pfree(rawstring);
     list_free(elemlist);
 
-    GetSessionContext()->sql_mode_flags = result;
+    GetSessionContext()->sqlModeFlags = result;
 }
 
 static ExecNodes* GetNodeGroupExecNodes(Oid group_oid)
@@ -7049,11 +7049,11 @@ void init_session_vars(void)
     DefineCustomStringVariable("sql_mode",
                                gettext_noop("CUSTOM_OPTIONS"),
                                NULL,
-                               &GetSessionContext()->sql_mode_string,
+                               &GetSessionContext()->sqlModeString,
                                "sql_mode_strict",
                                PGC_USERSET,
                                GUC_LIST_INPUT | GUC_REPORT,
-                               check_sql_mode,
-                               assign_sql_mode,
+                               CheckSqlMode,
+                               AssignSqlMode,
                                NULL);
 }

@@ -62,7 +62,7 @@ Datum int2in(PG_FUNCTION_ARGS)
 {
     char* num = PG_GETARG_CSTRING(0);
 
-    PG_RETURN_INT16(pg_strtoint16_internal(num, SQL_MODE_STRICT()));
+    PG_RETURN_INT16(PgStrtoint16Internal(num, SQL_MODE_STRICT()));
 }
 
 /*
@@ -297,7 +297,7 @@ Datum int4in(PG_FUNCTION_ARGS)
 {
     char* num = PG_GETARG_CSTRING(0);
 
-    PG_RETURN_INT32(pg_strtoint32_internal(num, SQL_MODE_STRICT()));
+    PG_RETURN_INT32(PgStrtoint32Internal(num, SQL_MODE_STRICT()));
 }
 
 /*
@@ -1225,7 +1225,7 @@ Datum int1in(PG_FUNCTION_ARGS)
 {
     char* num = PG_GETARG_CSTRING(0);
 
-    PG_RETURN_UINT8((uint8)pg_atoi_internal(num, sizeof(uint8), '\0', SQL_MODE_STRICT()));
+    PG_RETURN_UINT8((uint8)PgAtoiInternal(num, sizeof(uint8), '\0', SQL_MODE_STRICT()));
 }
 
 // int1out - converts uint8 to "num"
