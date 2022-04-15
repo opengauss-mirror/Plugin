@@ -526,7 +526,7 @@ static int errstate;
 %type <boolean> opt_instead opt_incremental
 %type <boolean> opt_unique opt_concurrently opt_verbose opt_full opt_deltamerge opt_compact opt_hdfsdirectory opt_verify
 %type <boolean> opt_freeze opt_default opt_recheck opt_cascade
-%type <defelt>	opt_binary opt_oids copy_delimiter opt_noescaping
+%type <defelt>	opt_oids copy_delimiter opt_noescaping
 %type <defelt>	OptCopyLogError OptCopyRejectLimit opt_load
 
 %type <boolean> opt_processed
@@ -603,7 +603,7 @@ static int errstate;
 				CharacterWithLength CharacterWithoutLength
 				ConstDatetime ConstInterval
 				Bit ConstBit BitWithLength BitWithoutLength client_logic_type
-				datatypecl OptCopyColTypename
+				datatypecl OptCopyColTypename Binary
 %type <str>		character
 %type <str>		extract_arg
 %type <str>		timestamp_units
@@ -788,7 +788,7 @@ static int errstate;
 	AGGREGATE ALGORITHM ALL ALSO ALTER ALWAYS ANALYSE ANALYZE AND ANY APP APPEND ARCHIVE ARRAY AS ASC
         ASSERTION ASSIGNMENT ASYMMETRIC AT ATTRIBUTE AUDIT AUTHID AUTHORIZATION AUTOEXTEND AUTOMAPPED
 
-	BACKWARD BARRIER BEFORE BEGIN_NON_ANOYBLOCK BEGIN_P BETWEEN BIGINT BINARY BINARY_DOUBLE BINARY_INTEGER BIT BLANKS
+	BACKWARD BARRIER BEFORE BEGIN_NON_ANOYBLOCK BEGIN_P BETWEEN BIGINT BINARY BINARY_P BINARY_DOUBLE BINARY_INTEGER BIT BLANKS
 	BLOB_P BLOCKCHAIN BODY_P BOGUS BOOLEAN_P BOTH BUCKETCNT BUCKETS BY BYTEAWITHOUTORDER BYTEAWITHOUTORDERWITHEQUAL
 
 	CACHE CALL CALLED CANCELABLE CASCADE CASCADED CASE CAST CATALOG_P CHAIN CHAR_P
@@ -870,7 +870,7 @@ static int errstate;
 	UNBOUNDED UNCOMMITTED UNENCRYPTED UNION UNIQUE UNKNOWN UNLIMITED UNLISTEN UNLOCK UNLOGGED
 	UNTIL UNUSABLE UPDATE USEEOF USER USING
 
-	VACUUM VALID VALIDATE VALIDATION VALIDATOR VALUE_P VALUES VARCHAR VARCHAR2 VARIABLES VARIADIC VARRAY VARYING VCGROUP
+	VACUUM VALID VALIDATE VALIDATION VALIDATOR VALUE_P VALUES VARBINARY VARCHAR VARCHAR2 VARIABLES VARIADIC VARRAY VARYING VCGROUP
 	VERBOSE VERIFY VERSION_P VIEW VOLATILE
 
 	WAIT WEAK WEEKDAY WEEKOFYEAR WHEN WHERE WHITESPACE_P WINDOW WITH WITHIN WITHOUT WORK WORKLOAD WRAPPER WRITE
@@ -4262,7 +4262,7 @@ ClosePortalStmt:
  *
  *****************************************************************************/
 
-CopyStmt:	COPY opt_binary qualified_name opt_column_list opt_oids
+CopyStmt:	COPY BINARY qualified_name opt_column_list opt_oids
 			copy_from copy_file_name opt_load opt_useeof copy_delimiter opt_noescaping OptCopyLogError OptCopyRejectLimit opt_with copy_options 
 			opt_processed
 				{
@@ -4280,8 +4280,7 @@ CopyStmt:	COPY opt_binary qualified_name opt_column_list opt_oids
 						n->relation->length = @6;
 					n->options = NIL;
 					/* Concatenate user-supplied flags */
-					if ($2)
-						n->options = lappend(n->options, $2);
+					n->options = lappend(n->options, (Node*)makeDefElem("format", (Node *)makeString("binary")));
 					if ($5)
 						n->options = lappend(n->options, $5);
 
@@ -4300,6 +4299,47 @@ CopyStmt:	COPY opt_binary qualified_name opt_column_list opt_oids
 						n->options = lappend(n->options, $13);
 					if ($15)
 						n->options = list_concat(n->options, $15);
+					$$ = (Node *)n;
+
+					u_sess->parser_cxt.is_load_copy = false;
+					u_sess->parser_cxt.col_list = NULL;
+				}
+			| COPY qualified_name opt_column_list opt_oids
+			copy_from copy_file_name opt_load opt_useeof copy_delimiter opt_noescaping OptCopyLogError OptCopyRejectLimit opt_with copy_options 
+			opt_processed
+				{
+					CopyStmt *n = makeNode(CopyStmt);
+					n->relation = $2;
+					n->query = NULL;
+					n->attlist = u_sess->parser_cxt.col_list;
+					n->is_from = $5;
+					n->filename = $6;
+					if ($3)
+						n->relation->length = @3;
+					else if ($4)
+						n->relation->length = @4;
+					else
+						n->relation->length = @5;
+					n->options = NIL;
+					/* Concatenate user-supplied flags */
+					if ($4)
+						n->options = lappend(n->options, $4);
+
+					if ($7)
+						n->options = lappend(n->options, $7);
+
+					if ($8)
+						n->options = lappend(n->options, $8);
+                                        if ($9)
+                                                n->options = lappend(n->options, $9);
+					if ($10)
+						n->options = lappend(n->options, $10);
+					if ($11)
+						n->options = lappend(n->options, $11);
+					if ($12)
+						n->options = lappend(n->options, $12);
+					if ($14)
+						n->options = list_concat(n->options, $14);
 					$$ = (Node *)n;
 
 					u_sess->parser_cxt.is_load_copy = false;
@@ -4528,16 +4568,6 @@ copy_opt_item:
 #endif
 					$$ = makeDefElem("constant", (Node *)$3);
 				}
-		;
-
-/* The following exist for backward compatibility with very old versions */
-
-opt_binary:
-			BINARY
-				{
-					$$ = makeDefElem("format", (Node *)makeString("binary"));
-				}
-			| /*EMPTY*/								{ $$ = NULL; }
 		;
 
 opt_oids:
@@ -20433,6 +20463,15 @@ SimpleTypename:
 						$$->typmods = list_make2(makeIntConst(INTERVAL_FULL_RANGE, -1),
 												 makeIntConst($3, @3));
 				}
+			| Binary opt_type_modifiers
+				{
+					$$ = $1;
+					$$->typmods = $2;
+                    Type typtup = LookupTypeName(NULL, $1, NULL);
+					if ($$->typmods == NIL && typtup) {
+						$$->typmods = list_make1((Node*)makeIntConst(1, 1));
+					}
+				}
 		;
 
 /* We have a separate ConstTypename to allow defaulting fixed-length
@@ -20489,6 +20528,17 @@ GenericType:
 opt_type_modifiers: '(' expr_list ')'				{ $$ = $2; }
 					| /* EMPTY */					{ $$ = NIL; }
 		;
+
+Binary:	BINARY
+		{
+			$$ = SystemTypeName("binary");
+			$$->location = @1;
+		}
+		| VARBINARY
+		{
+			$$ = SystemTypeName("varbinary");
+			$$->location = @1;
+		}
 
 /*
  * SQL92 numeric data types
@@ -24656,6 +24706,7 @@ unreserved_keyword:
 col_name_keyword:
 			  BETWEEN
 			| BIGINT
+			| BINARY
 			| BINARY_DOUBLE
 			| BINARY_INTEGER
 			| BIT
@@ -24718,6 +24769,7 @@ col_name_keyword:
 			| TREAT
 			| TRIM
 			| VALUES
+			| VARBINARY
 			| VARCHAR
 			| VARCHAR2
 			| WEEKDAY
@@ -24746,7 +24798,6 @@ col_name_keyword:
  */
 type_func_name_keyword:
 			 AUTHORIZATION
-			| BINARY
 			| COLLATION
 			| COMPACT
 			| CONCURRENTLY

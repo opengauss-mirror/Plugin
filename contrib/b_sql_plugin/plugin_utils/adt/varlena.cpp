@@ -48,7 +48,6 @@
 
 #define JUDGE_INPUT_VALID(X, Y) ((NULL == (X)) || (NULL == (Y)))
 #define GET_POSITIVE(X) ((X) > 0 ? (X) : ((-1) * (X)))
-#define GetMaxLen(typmod) (typmod < (int32)VARHDRSZ ? 1 : typmod - (int32)VARHDRSZ)
 
 #define MAX_BINARY_LENGTH 255
 #define MAX_VARBINARY_LENGTH 65535
@@ -7091,10 +7090,10 @@ Datum float8_text(PG_FUNCTION_ARGS)
 
 static Datum copy_binary(Datum source, int typmod, bool target_is_var)
 {
-    int maxlen = GetMaxLen(typmod);
+    int maxlen = typmod - (int32)VARHDRSZ;
     int length = VARSIZE(source) - VARHDRSZ;
 
-    if (length > maxlen) {
+    if (maxlen > 0 && length > maxlen) {
         ereport(ERROR, (errmsg("The input length:%d exceeds the maximum length:%d.", length, maxlen)));
     }
 
@@ -7103,7 +7102,7 @@ static Datum copy_binary(Datum source, int typmod, bool target_is_var)
     data = attr->vl_dat;
 
     bytea* result = NULL;
-    int alloc_size = (target_is_var ? length : maxlen) + VARHDRSZ;
+    int alloc_size = (target_is_var ? length : (maxlen < 0 ? length : maxlen)) + VARHDRSZ;
     result = (bytea*)palloc0(alloc_size);
     SET_VARSIZE(result, alloc_size);
     if (length == 0) {

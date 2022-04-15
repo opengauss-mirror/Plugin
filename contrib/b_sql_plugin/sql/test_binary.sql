@@ -65,5 +65,24 @@ drop table shorter_binary;
 drop table shorter_varbinary;
 drop table test_index;
 drop table test_text2binary;
+
+drop table if exists t_binary_061;
+create table t_binary_061(id int, field_name binary(10));
+PREPARE insert_binary(int,binary(10)) as insert into t_binary_061 values($1,$2);
+EXECUTE insert_binary(1, 'aaa'::bytea);  -- length 3
+EXECUTE insert_binary(1, 'aaaaaaaaaaa'::bytea);  -- length 11
+
+drop table if exists t_varbinary_061;
+create table t_varbinary_061(id int, field_name varbinary(10));
+PREPARE insert_varbinary(int,varbinary(10)) as insert into t_varbinary_061 values($1,$2);
+EXECUTE insert_varbinary(1, 'aaa'::bytea);  -- length 3
+EXECUTE insert_varbinary(1, 'aaaaaaaaaaa'::bytea); -- length 11
+
+select * from t_binary_061;
+select * from t_varbinary_061;
+
+drop table if exists t_binary_061;
+drop table if exists t_varbinary_061;
+
 \c postgres
 drop database test;

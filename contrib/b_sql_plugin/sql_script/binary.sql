@@ -51,7 +51,7 @@ DROP TYPE IF EXISTS pg_catalog._varbinary CASCADE;
 
 CREATE TYPE pg_catalog.varbinary;
 
-DROP FUNCTION IF EXISTS pg_catalog.varbinary_in(cstring, oid, int) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.varbinary_in(cstring) CASCADE;
 
 CREATE FUNCTION pg_catalog.varbinary_in (
 cstring
