@@ -25,6 +25,7 @@
 #include <float.h>
 #include <limits.h>
 #include <math.h>
+#include <stdlib.h>
 
 #include "access/hash.h"
 #include "catalog/pg_type.h"
@@ -45,6 +46,25 @@
 #include "vecexecutor/vechashtable.h"
 #include "vecexecutor/vechashagg.h"
 #include "vectorsonic/vsonichashagg.h"
+
+#ifndef CRCMASK
+#define CRCMASK 0xEDB88320
+#endif
+
+#ifndef CONV_MAX_CHAR_LEN
+#define CONV_MAX_CHAR_LEN 65 //max 64bit and 1 sign bit
+#endif
+/* --------------------------------------------------------------------------------
+ * Convert a number from one number base system to another number base system.
+ * The minimum base is 2 and the maximum base is 36. If the base to be converted
+ * is negative, the number is treated as a signed number. Otherwise, it is considered
+ * unsigned.
+ * ------------------------------------------------------------------------------------
+ */
+#ifndef BASE_SCOPE
+#define MAXBASE 36
+#define MINBASE 2
+#endif
 
 /* ----------
  * Data for generate_series
@@ -19194,4 +19214,195 @@ Datum bool_numeric(PG_FUNCTION_ARGS)
     free_var(&result);
 
     PG_RETURN_NUMERIC(res);
+}
+
+static unsigned int crc32_cal(unsigned char *data, int len)
+{
+    unsigned int crc = PG_UINT32_MAX;
+    int j;
+    while (len--) {
+        crc ^= *data++;
+        for (j = 0; j < 8; j++) {
+            if (crc & 1) {
+                crc = (crc >> 1) ^ CRCMASK;
+            } else {
+                crc >>= 1;
+            }
+        }
+    }
+    return ~crc;
+}
+
+Datum crc32(PG_FUNCTION_ARGS)
+{
+    text* string = PG_GETARG_TEXT_PP(0);
+    unsigned char* data = (unsigned char *)VARDATA_ANY(string);
+    int len = VARSIZE_ANY_EXHDR(string);
+    unsigned int result = 0;
+
+    if (data == NULL) {
+        PG_RETURN_NULL();
+    }
+
+    result = crc32_cal(data, len);
+    PG_RETURN_UINT32(result);
+}
+
+static int conv_n(char *result, int64 data, int from_base_s, int to_base_s)
+{
+    uint64 sum = 0;
+    int64 sum_s = 0;
+    int i = 0;
+    int num = 0;
+    int64 base = 1;
+    int remain = 0;
+    int to_base = abs(to_base_s);
+    int from_base = abs(from_base_s);
+    char tmp[CONV_MAX_CHAR_LEN + 1] = "";
+
+    /*minimum base is 2, maximum base is 36*/
+    if ((from_base < MINBASE) || (from_base > MAXBASE)) {
+        ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("from_base out of range:2~36")));
+        return -1;
+    }
+    if ((to_base < MINBASE) || (to_base > MAXBASE)) {
+        ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("to_base out of range:2~36")));
+        return -1;
+    }
+
+    while (data) {
+        remain = data % 10;
+        if (remain >= from_base) {
+            return -1; //remainder out of base
+        }
+        sum_s += remain * base;
+        data /= 10;
+        base *= from_base;
+    }
+
+    if (to_base_s < 0) {
+        if (sum_s < 0) {
+            *result++ = '-';
+        }
+        sum = abs(sum_s);
+    } else {
+        sum = (uint64)sum_s;
+    }
+
+    i = 0;
+    while (sum) {
+        num = sum % to_base;
+        if (num <= 9) {
+            tmp[i++] = num + '0';
+        } else {
+            tmp[i++] = num - 10 + 'A';
+        }
+        sum /= to_base;
+    }
+
+    for (; i > 0; i--) {
+        *result++ = tmp[i - 1];
+    }
+    return 0;
+}
+
+static int str_to_int64(char *str, int len, int64 *result, int *from_base_s)
+{
+    int128 sum_128 = 0;
+    int128 int64_min = PG_INT64_MIN;
+    int128 int64_max = PG_INT64_MAX;
+    int128 uint64_max = PG_UINT64_MAX;
+    int i, num = 0;
+    int from_base = abs(*from_base_s);
+    if ((from_base < MINBASE) || (from_base > MAXBASE)) {	/*minimum base is 2, maximum base is 36*/
+        return -1;
+    }
+
+    for (i = 0; i < len; i++) {
+        if ((str[i] >= '0') && (str[i] <= '9')) {
+            num = str[i] - '0';
+        } else if ((str[i] >= 'a') && (str[i] <= 'z')) {
+            num = str[i] - 'a' + 10;
+        } else if ((str[i] >= 'A') && (str[i] <= 'Z')) {
+            num = str[i] - 'A' + 10;
+        } else {
+            if (i != 0) {
+                break;  /*illegal character*/
+            }
+        }
+        if ((num > 9) && (from_base <= num)) {
+            return -1;  /*param error*/
+        }
+        sum_128 = sum_128 * from_base + num;
+        if (sum_128 > PG_UINT64_MAX) {
+            break;
+        }
+    }
+
+    if (str[0] == '-') {
+        if (*from_base_s > 0) {
+            sum_128 = uint64_max - sum_128 + 1;
+        } else {
+            sum_128 *= -1;
+        }
+    }
+
+    if (*from_base_s > 0) {
+        if (sum_128 > uint64_max) {
+            sum_128 = uint64_max;
+        } else if (sum_128 < int64_min) {
+            sum_128 = uint64_max;
+        }
+    } else {
+        if (sum_128 > int64_max) {
+            sum_128 = int64_max;
+        } else if (sum_128 < int64_min) {
+            sum_128 = int64_min;
+        }
+    }
+
+    *from_base_s = 10;  //change base to 10
+    *result = (int64)sum_128;
+    return 0;
+}
+
+Datum conv_str(PG_FUNCTION_ARGS)
+{
+    text* string = PG_GETARG_TEXT_PP(0);
+    int from_base = PG_GETARG_INT32(1);
+    int to_base = PG_GETARG_INT32(2);
+    char* data = VARDATA_ANY(string);
+    char result[CONV_MAX_CHAR_LEN + 1] = "";
+    int len = VARSIZE_ANY_EXHDR(string);
+    int ret;
+    int64 num = 0;
+
+    if (len <= 0) {
+        PG_RETURN_NULL();
+    }
+
+    if (0 != str_to_int64(data, len, &num, &from_base)) {
+        PG_RETURN_NULL();
+    }
+
+    ret = conv_n(result, num, from_base, to_base);
+    if (ret != 0) {
+        PG_RETURN_NULL();
+    }
+    PG_RETURN_TEXT_P(cstring_to_text(result));
+}
+
+Datum conv_num(PG_FUNCTION_ARGS)
+{
+    int64 num = PG_GETARG_INT64(0);
+    int from_base = PG_GETARG_INT32(1);
+    int to_base = PG_GETARG_INT32(2);
+    char result[CONV_MAX_CHAR_LEN + 1] = "";
+    int ret;
+
+    ret = conv_n(result, num, from_base, to_base);
+    if (ret != 0) {
+        PG_RETURN_NULL();
+    }
+    PG_RETURN_TEXT_P(cstring_to_text(result));
 }
