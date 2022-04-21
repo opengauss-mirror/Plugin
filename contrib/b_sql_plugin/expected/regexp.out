@@ -1,4 +1,5 @@
 drop database if exists mysql;
+NOTICE:  database "mysql" does not exist, skipping
 create database mysql dbcompatibility 'b';
 \c mysql
 create extension b_sql_plugin;
@@ -8,3 +9,5 @@ select regexp('a', true);
       1
 (1 row)
 
+\c postgres
+drop database if exists mysql;

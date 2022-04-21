@@ -29,3 +29,7 @@ drop table if exists tb_db_b_parser_0002;
 drop table if exists tb_default_float;
 drop table if exists tb_default_double;
 drop table if exists tb_real_float;
+
+
+\c postgres
+drop database if exists mysql_test;

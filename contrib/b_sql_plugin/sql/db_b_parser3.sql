@@ -109,3 +109,7 @@ select '-12.3abc' xor -8.222e4;
 select '-12.3abc' xor true;
 select '-12.3abc' xor false;
 select '-12.3abc' xor 'null';
+
+
+\c postgres
+drop database if exists mysql_test;
