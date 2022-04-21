@@ -91,3 +91,5 @@ select hex(c1) from bytea_to_hex_test;
  616263
 (2 rows)
 
+\c postgres
+drop database if exists format_test;
