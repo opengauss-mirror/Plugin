@@ -79,7 +79,6 @@ static void DropExtensionInListIsSupported(List* objname)
         "db_b_parser",
         "db_c_parser",
         "db_pg_parser",
-        "b_sql_plugin",
 #endif
     };
     int len = lengthof(supportList);
