@@ -77,3 +77,6 @@ select conv('-1',16,16);
 select conv('-1',16,-16);
 select conv('-1',-16,16);
 select conv('-1',-16,-16);
+
+\c postgres
+drop database if exists format_test;

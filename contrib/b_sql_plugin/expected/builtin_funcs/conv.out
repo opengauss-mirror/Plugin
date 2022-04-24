@@ -1,4 +1,5 @@
 drop database if exists format_test;
+NOTICE:  database "format_test" does not exist, skipping
 create database format_test dbcompatibility 'B';
 \c format_test
 create extension b_sql_plugin;
@@ -389,3 +390,5 @@ select conv('-1',-16,-16);
  -1
 (1 row)
 
+\c postgres
+drop database if exists format_test;

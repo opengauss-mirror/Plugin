@@ -30,3 +30,6 @@ create table bytea_to_hex_test(c1 bytea);
 insert into bytea_to_hex_test values ('123');
 insert into bytea_to_hex_test values ('abc');
 select hex(c1) from bytea_to_hex_test;
+
+\c postgres
+drop database if exists format_test;

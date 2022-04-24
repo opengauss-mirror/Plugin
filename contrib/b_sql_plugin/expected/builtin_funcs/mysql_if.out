@@ -1,4 +1,5 @@
 drop database if exists format_test;
+NOTICE:  database "format_test" does not exist, skipping
 create database format_test dbcompatibility 'B';
 \c format_test
 create extension b_sql_plugin;
@@ -20,3 +21,5 @@ ERROR:  invalid input syntax for type boolean: "abc"
 LINE 1: select if('abc', 1, 2);
                   ^
 CONTEXT:  referenced column: case
+\c postgres
+drop database if exists format_test;
