@@ -10,6 +10,12 @@ CREATE TYPE test_engine_type1 AS (a int, b text);
 CREATE TABLE test_engine_type_table1 OF test_engine_type1 engine = InnoDB;
 CREATE TYPE test_engine_type2 AS (a int, b text);
 CREATE TABLE IF NOT EXISTS test_engine_type_table2 OF test_engine_type2 engine = InnoDB;
+CREATE TABLE test_engine_1_1 (a int) engine = 'InnoDB';
+CREATE TABLE  IF NOT EXISTS test_engine_2_1 (a int) engine = 'InnoDB';
+CREATE TYPE test_engine_type1_1 AS (a int, b text);
+CREATE TABLE test_engine_type_table1_1 OF test_engine_type1_1 engine = 'InnoDB';
+CREATE TYPE test_engine_type2_1 AS (a int, b text);
+CREATE TABLE IF NOT EXISTS test_engine_type_table2_1 OF test_engine_type2_1 engine = 'InnoDB';
 CREATE TABLE test_engine_as engine = InnoDB as select a from test_engine_1;
 -- CREATE TABLE COMPRESSION test
 CREATE TABLE test_compression_1_pglz (a int) COMPRESSION = pglz;
@@ -151,10 +157,14 @@ Has OIDs: no
 Options: orientation=row, compresstype=0, compression=no
 
 CREATE TABLE test_compression_as_none COMPRESSION = none as select a from test_compression_1_none;
-ERROR:  syntax error at or near "none"
-LINE 1: ...EATE TABLE test_compression_as_none COMPRESSION = none as se...
-                                                             ^
 \d+ test_compression_as_none
+               Table "public.test_compression_as_none"
+ Column |  Type   | Modifiers | Storage | Stats target | Description 
+--------+---------+-----------+---------+--------------+-------------
+ a      | integer |           | plain   |              | 
+Has OIDs: no
+Options: orientation=row, compresstype=0, compression=no
+
 CREATE TABLE test_compression_1_aaaa (a int) COMPRESSION = aaaa;
 ERROR:  unrecognized compress type
 CREATE TABLE  IF NOT EXISTS test_compression_create_2_aaaa (a int) COMPRESSION = aaaa;
