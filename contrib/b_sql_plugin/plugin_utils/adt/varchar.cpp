@@ -300,14 +300,12 @@ Datum bpchar(PG_FUNCTION_ARGS)
 
         maxmblen = pg_mbcharcliplen(s, len, maxlen);
 
-        if (SQL_MODE_STRICT()) {
-            if (!isExplicit) {
-                for (i = maxmblen; i < len; i++)
-                    if (s[i] != ' ')
-                        ereport(ERROR,
-                            (errcode(ERRCODE_STRING_DATA_RIGHT_TRUNCATION),
-                                errmsg("value too long for type character(%d)", maxlen)));
-            }
+        if (SQL_MODE_STRICT() && !isExplicit) {
+            for (i = maxmblen; i < len; i++)
+                if (s[i] != ' ')
+                    ereport(ERROR,
+                        (errcode(ERRCODE_STRING_DATA_RIGHT_TRUNCATION),
+                            errmsg("value too long for type character(%d)", maxlen)));
         }
 
         len = maxmblen;
@@ -606,14 +604,12 @@ Datum varchar(PG_FUNCTION_ARGS)
     /* truncate multibyte string preserving multibyte boundary */
     maxmblen = pg_mbcharcliplen(s_data, len, maxlen);
 
-    if (SQL_MODE_STRICT()) {
-        if (!isExplicit) {
-            for (i = maxmblen; i < len; i++)
-                if (s_data[i] != ' ')
-                    ereport(ERROR,
-                        (errcode(ERRCODE_STRING_DATA_RIGHT_TRUNCATION),
-                            errmsg("value too long for type character varying(%d)", maxlen)));
-        }
+    if (SQL_MODE_STRICT() && !isExplicit) {
+        for (i = maxmblen; i < len; i++)
+            if (s_data[i] != ' ')
+                ereport(ERROR,
+                    (errcode(ERRCODE_STRING_DATA_RIGHT_TRUNCATION),
+                        errmsg("value too long for type character varying(%d)", maxlen)));
     }
 
     PG_RETURN_VARCHAR_P((VarChar*)cstring_to_text_with_len(s_data, maxmblen));

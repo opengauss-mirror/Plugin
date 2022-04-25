@@ -355,11 +355,12 @@ Datum i4toi2(PG_FUNCTION_ARGS)
     if (SQL_MODE_STRICT()) {
         if (unlikely(arg1 < SHRT_MIN) || unlikely(arg1 > SHRT_MAX))
             ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("smallint out of range")));
-    }
-    else if (arg1 > SHRT_MAX)
+    } else if (arg1 > SHRT_MAX) {
         arg1 = SHRT_MAX;
-    else if (arg1 < SHRT_MIN)
+    } else if (arg1 < SHRT_MIN) {
         arg1 = SHRT_MIN;
+    }
+
     PG_RETURN_INT16((int16)arg1);
 }
 

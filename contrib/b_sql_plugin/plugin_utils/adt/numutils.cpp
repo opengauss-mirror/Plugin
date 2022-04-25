@@ -195,15 +195,16 @@ int16 PgStrtoint16Internal(const char* s, bool sqlModeStrict)
     return tmp;
 
 out_of_range:
-    if (sqlModeStrict)
+    if (sqlModeStrict) {
         ereport(ERROR,
             (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE),
                 errmsg("value \"%s\" is out of range for type %s", s, "smallint")));
-    else
+    } else {
         if (neg)
             return PG_INT16_MIN;
         else
             return PG_INT16_MAX;
+    }
 
 invalid_syntax:
     ereport(ERROR,
@@ -280,15 +281,16 @@ int32 PgStrtoint32Internal(const char* s, bool sqlModeStrict)
     return tmp;
 
 out_of_range:
-    if (sqlModeStrict)
+    if (sqlModeStrict) {
         ereport(ERROR,
             (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE),
                 errmsg("value \"%s\" is out of range for type %s", s, "integer")));
-    else
+    } else {
         if (neg)
             return PG_INT32_MIN;
         else
             return PG_INT32_MAX;
+    }
 
 invalid_syntax:
     ereport(ERROR,

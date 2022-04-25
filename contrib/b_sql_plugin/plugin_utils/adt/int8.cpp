@@ -1190,11 +1190,11 @@ Datum dtoi8(PG_FUNCTION_ARGS)
     if (SQL_MODE_STRICT()) {
         if (num < (float8)PG_INT64_MIN || num >= -((float8)PG_INT64_MIN))
             ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("bigint out of range")));
-    }
-    else if (num < (float8)PG_INT64_MIN)
+    } else if (num < (float8)PG_INT64_MIN) {
         PG_RETURN_INT64(PG_INT64_MIN);
-    else if (num >= -((float8)PG_INT64_MIN))
+    } else if (num >= -((float8)PG_INT64_MIN)) {
         PG_RETURN_INT64(PG_INT64_MAX);
+    }
 
     PG_RETURN_INT64((int64)num);
 }
@@ -1235,11 +1235,11 @@ Datum ftoi8(PG_FUNCTION_ARGS)
     if (SQL_MODE_STRICT()) {
         if (num < (float4)PG_INT64_MIN || num >= -((float4)PG_INT64_MIN))
             ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("bigint out of range")));
-    }
-    else if (num < (float4)PG_INT64_MIN)
+    } else if (num < (float4)PG_INT64_MIN) {
         PG_RETURN_INT64(PG_INT64_MIN);
-    else if (num >= -((float4)PG_INT64_MIN))
+    } else if (num >= -((float4)PG_INT64_MIN)) {
         PG_RETURN_INT64(PG_INT64_MAX);
+    }
 
     PG_RETURN_INT64((int64)num);
 }

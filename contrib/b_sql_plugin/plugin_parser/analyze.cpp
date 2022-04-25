@@ -1481,8 +1481,13 @@ static Query* transformInsertStmt(ParseState* pstate, InsertStmt* stmt)
 
     /* Validate stmt->cols list, or build default list if no list given */
     icolumns = checkInsertTargets(pstate, stmt->cols, &attrnos);
+
+    /* Compatible with MySQL, when not in strict sql mode,
+     * append the cols with not_null attributes into the insert cols list.
+     */
     if (!SQL_MODE_STRICT())
         icolumns = AppendNotNullCols(pstate, icolumns, &attrnos);
+
     AssertEreport(list_length(icolumns) == list_length(attrnos), MOD_OPT, "list length inconsistent");
 
     /*
@@ -1823,8 +1828,9 @@ static Query* transformInsertStmt(ParseState* pstate, InsertStmt* stmt)
         AssertEreport(IsA(col, ResTarget), MOD_OPT, "nodeType inconsistant");
         attr_num = (AttrNumber)lfirst_int(attnos);
 
-        if (!SQL_MODE_STRICT())
+        if (!SQL_MODE_STRICT()) {
             CheckNullValue(pstate->p_target_relation, expr, attr_num);
+        }
 
         tle = makeTargetEntry(expr, attr_num, col->name, false);
         qry->targetList = lappend(qry->targetList, tle);
@@ -2118,30 +2124,39 @@ void AppendValueForColOfNotnull(ParseState* pstate, List* exprlist, List* icolum
             Value* val = makeNode(Value);
             switch (attr->atttypid)
             {
-            case CHAROID:
-            case NVARCHAR2OID:
-            case BPCHAROID:
-            case VARCHAROID:
-            {
-                val->type = T_String;
-                val->val.str = "";
-                auto* const_ptr = (Node*)make_const(pstate, val, -1);
-                lappend(exprlist, const_ptr);
-                break;
-            }
-            case INT1OID:
-            case INT2OID:
-            case INT4OID:
-            case INT8OID:
-            {
-                val->type = T_Integer;
-                val->val.ival = 0;
-                auto* const_ptr = (Node*)make_const(pstate, val, -1);
-                lappend(exprlist, const_ptr);
-                break;
-            }
-            default:
-                break;
+                case CHAROID:
+                case NVARCHAR2OID:
+                case BPCHAROID:
+                case VARCHAROID:
+                case CLOBOID:
+                case TEXTOID: {
+                    val->type = T_String;
+                    val->val.str = "";
+                    auto* const_ptr = (Node*)make_const(pstate, val, -1);
+                    lappend(exprlist, const_ptr);
+                    break;
+                }
+                case INT1OID:
+                case INT2OID:
+                case INT4OID:
+                case INT8OID: {
+                    val->type = T_Integer;
+                    val->val.ival = 0;
+                    auto* const_ptr = (Node*)make_const(pstate, val, -1);
+                    lappend(exprlist, const_ptr);
+                    break;
+                }
+                case FLOAT4OID:
+                case FLOAT8OID:
+                case NUMERICOID: {
+                    val->type = T_Float;
+                    val->val.str = "0";
+                    auto* const_ptr = (Node*)make_const(pstate, val, -1);
+                    lappend(exprlist, const_ptr);
+                    break;
+                }
+                default:
+                    break;
             }
         }
     }

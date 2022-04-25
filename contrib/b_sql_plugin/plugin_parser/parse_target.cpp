@@ -944,26 +944,20 @@ List* AppendNotNullCols(ParseState* pstate, List* cols, List** attrnos)
     auto numsRelationAttr = RelationGetNumberOfAttributes(pstate->p_target_relation);
     bool isBlockchainRel = false;
     isBlockchainRel = pstate->p_target_relation->rd_isblockchain;
-    if(cols && attrnos && cols->length < numsRelationAttr)
-    {
-        for (int i = 0; i < numsRelationAttr; i++)
-        {
-            if(!attr[i]->attnotnull)
-            {
+    if(cols && attrnos && cols->length < numsRelationAttr) {
+        for (int i = 0; i < numsRelationAttr; i++) {
+            if(!attr[i]->attnotnull) {
                 continue;
             }
             bool findFlag = false;
             ListCell* attrno = NULL;
-            foreach (attrno, *attrnos)
-            {
-                if(lfirst_int(attrno) == i+1)
-                {
+            foreach (attrno, *attrnos) {
+                if(lfirst_int(attrno) == i+1) {
                     findFlag = true;
                     continue;
                 }
             }
-            if(!findFlag)
-            {
+            if(!findFlag) {
                 ResTarget* col = NULL;
 
                 if (attr[i]->attisdropped) {

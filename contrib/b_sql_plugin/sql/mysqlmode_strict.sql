@@ -263,6 +263,11 @@ create table test_notnull_int(a int, b int not null);
 create table test_notnull_bint(a bigint, b bigint not null);
 create table test_notnull_char(a char, b char not null);
 create table test_notnull_varchar(a varchar(5), b varchar(5) not null);
+create table test_notnull_clob(a clob, b clob not null);
+create table test_notnull_text(a text, b text not null);
+create table test_notnull_real(a real, b real not null);
+create table test_notnull_double(a double, b double not null);
+create table test_notnull_numeric(a numeric(5,2), b numeric(5,2) not null);
 
 insert into test_notnull_tint(a) values(1);
 select * from test_notnull_tint;
@@ -282,6 +287,21 @@ select * from test_notnull_char;
 insert into test_notnull_varchar(a) values(1);
 select * from test_notnull_varchar;
 
+insert into test_notnull_clob(a) values(1);
+select * from test_notnull_clob;
+
+insert into test_notnull_text(a) values(1);
+select * from test_notnull_text;
+
+insert into test_notnull_real(a) values(1);
+select * from test_notnull_real;
+
+insert into test_notnull_double(a) values(1);
+select * from test_notnull_double;
+
+insert into test_notnull_numeric(a) values(1);
+select * from test_notnull_numeric;
+
 
 
 --insert into table values(null)
@@ -297,5 +317,15 @@ insert into test_notnull_char(b) values(null);
 
 insert into test_notnull_varchar(b) values(null);
 
-\c regression;
+insert into test_notnull_clob(b) values(null);
+
+insert into test_notnull_text(b) values(null);
+
+insert into test_notnull_real(b) values(null);
+
+insert into test_notnull_double(b) values(null);
+
+insert into test_notnull_numeric(b) values(null);
+
+\c contrib_regression;
 drop DATABASE if exists sql_mode_strict;
