@@ -94,6 +94,9 @@
 #ifndef ENABLE_MULTIPLE_NODES
 #include "optimizer/clauses.h"
 #endif
+#include "utils/date.h"
+#include "utils/nabstime.h"
+#include "utils/geo_decls.h"
 /* Hook for plugins to get control at end of parse analysis */
 THR_LOCAL post_parse_analyze_hook_type post_parse_analyze_hook = NULL;
 static const int MILLISECONDS_PER_SECONDS = 1000;
@@ -141,6 +144,8 @@ static const char* NOKEYUPDATE_KEYSHARE_ERRMSG = "/NO KEY UPDATE/KEY SHARE";
 #else
 static const char* NOKEYUPDATE_KEYSHARE_ERRMSG = "";
 #endif
+
+static Node* makeConstByType(Form_pg_attribute att_tup);
 
 /*
  * parse_analyze
@@ -1493,7 +1498,7 @@ static Query* transformInsertStmt(ParseState* pstate, InsertStmt* stmt)
     /*
      * Determine which variant of INSERT we have.
      */
-    if (selectStmt == NULL) {
+    if (selectStmt == NULL && SQL_MODE_STRICT()) {
         /*
          * We have INSERT ... DEFAULT VALUES.  We can handle this case by
          * emitting an empty targetlist --- all columns will be defaulted when
@@ -1657,7 +1662,7 @@ static Query* transformInsertStmt(ParseState* pstate, InsertStmt* stmt)
                 }
             }
         }
-    } else if (list_length(selectStmt->valuesLists) > 1) {
+    } else if (selectStmt && list_length(selectStmt->valuesLists) > 1) {
         /*
          * Process INSERT ... VALUES with multiple VALUES sublists. We
          * generate a VALUES RTE holding the transformed expression lists, and
@@ -1784,6 +1789,42 @@ static Query* transformInsertStmt(ParseState* pstate, InsertStmt* stmt)
          * with no VALUES RTE.	So it works just like SELECT without FROM.
          * ----------
          */
+        if (selectStmt == NULL) {
+            selectStmt = makeNode(SelectStmt);
+            Form_pg_attribute* attr = pstate->p_target_relation->rd_att->attrs;
+            auto numsRelationAttr = RelationGetNumberOfAttributes(pstate->p_target_relation);
+            for (int i = 0; i < numsRelationAttr; i++) {
+                SetToDefault* expr = NULL;
+                TupleDesc rd_att = pstate->p_target_relation->rd_att;
+                if (!attr[i]->attnotnull) {
+                    expr = makeNode(SetToDefault);
+                    selectStmt->valuesLists = lappend(selectStmt->valuesLists, expr);
+                }
+                /*
+                 * Scan to see if relation has a default for this column.
+                 */
+                if (rd_att->constr && rd_att->constr->num_defval > 0) {
+                    AttrDefault* defval = rd_att->constr->defval;
+                    int ndef = rd_att->constr->num_defval;
+
+                    while (--ndef >= 0) {
+                        if (defval[ndef].adnum == i + 1) {
+                            /*
+                             * Found it, make a SetToDefault node.
+                             */
+                            expr = makeNode(SetToDefault);
+                            selectStmt->valuesLists = lappend(selectStmt->valuesLists, expr);
+                            break;
+                        }
+                    }
+                }
+                if (expr == NULL) {
+                    selectStmt->valuesLists = lappend(selectStmt->valuesLists, makeConstByType(attr[i]));
+                }
+            }
+            selectStmt->valuesLists = list_make1(selectStmt->valuesLists);
+        }
+
         List* valuesLists = selectStmt->valuesLists;
 
         AssertEreport(list_length(valuesLists) == 1, MOD_OPT, "list length is wrong");
@@ -1886,6 +1927,182 @@ static Query* transformInsertStmt(ParseState* pstate, InsertStmt* stmt)
     qry->hintState = stmt->hintState;
 
     return qry;
+}
+
+static Node* makeConstByType(Form_pg_attribute att_tup) {
+    Node* new_expr;
+    Oid targetType = att_tup->atttypid;
+    Oid targetCollation = att_tup->attcollation;
+    int16 targetLen = att_tup->attlen;
+    bool targetByval = att_tup->attbyval;
+    bool targetIsVarlena = (!targetByval) && (targetLen == -1) && targetType != PATHOID && targetType != POLYGONOID;
+    int32 targetTypmod;
+    bool targetIsTimetype = (targetType == DATEOID || targetType == TIMESTAMPOID || targetType == TIMESTAMPTZOID ||
+                             targetType == TIMETZOID || targetType == INTERVALOID || targetType == TINTERVALOID || targetType == SMALLDATETIMEOID);
+    targetTypmod = targetIsTimetype ? -1 : att_tup->atttypmod;
+    if (!targetIsTimetype) {
+        if (targetIsVarlena) {
+            new_expr = (Node*)makeConst(
+                targetType, targetTypmod, targetCollation, 0, CStringGetDatum(" "), false, targetByval);
+        } else {
+            switch (targetType) {
+                case NUMERICOID: {
+                    new_expr = (Node*)makeConst(NUMERICOID,
+                        targetTypmod,
+                        targetCollation,
+                        targetLen,
+                        (Datum)DirectFunctionCall3(
+                            numeric_in, CStringGetDatum("0"), ObjectIdGetDatum(0), Int32GetDatum(-1)),
+                        false,
+                        targetByval);
+                    break;
+                }
+                case UUIDOID: {
+                    new_expr = (Node*)makeConst(targetType,
+                        targetTypmod,
+                        targetCollation,
+                        targetLen,
+                        (Datum)DirectFunctionCall3(uuid_in,
+                            CStringGetDatum("00000000-0000-0000-0000-000000000000"),
+                            ObjectIdGetDatum(0),
+                            Int32GetDatum(-1)),
+                        false,
+                        targetByval);
+                    break;
+                }
+                case NAMEOID: {
+                    new_expr = (Node*)makeConst(targetType,
+                        targetTypmod,
+                        targetCollation,
+                        0,
+                        (Datum)DirectFunctionCall1(namein, CStringGetDatum("")),
+                        false,
+                        targetByval);
+                    break;
+                }
+                case POINTOID: {
+                    new_expr = (Node*)makeConst(targetType,
+                        targetTypmod,
+                        targetCollation,
+                        targetLen,
+                        (Datum)DirectFunctionCall1(point_in, CStringGetDatum("(0,0)")),
+                        false,
+                        targetByval);
+                    break;
+                }
+                case PATHOID: {
+                    new_expr = (Node*)makeConst(targetType,
+                        targetTypmod,
+                        targetCollation,
+                        targetLen,
+                        (Datum)DirectFunctionCall1(path_in, CStringGetDatum("0,0")),
+                        false,
+                        targetByval);
+                    break;
+                }
+                case POLYGONOID: {
+                    new_expr = (Node*)makeConst(targetType,
+                        targetTypmod,
+                        targetCollation,
+                        targetLen,
+                        (Datum)DirectFunctionCall1(poly_in, CStringGetDatum("(0,0)")),
+                        false,
+                        targetByval);
+                    break;
+                }
+                case CIRCLEOID: {
+                    new_expr = (Node*)makeConst(targetType,
+                        targetTypmod,
+                        targetCollation,
+                        targetLen,
+                        (Datum)DirectFunctionCall1(circle_in, CStringGetDatum("0,0,0")),
+                        false,
+                        targetByval);
+                    break;
+                }
+                case LSEGOID:
+                case BOXOID: {
+                    new_expr = (Node*)makeConst(targetType,
+                        targetTypmod,
+                        targetCollation,
+                        targetLen,
+                        (Datum)DirectFunctionCall1(box_in, CStringGetDatum("0,0,0,0")),
+                        false,
+                        targetByval);
+                    break;
+                }
+                default: {
+                    new_expr =
+                        (Node*)makeConst(targetType, targetTypmod, targetCollation, 1, (Datum)0, false, targetByval);
+                    break;
+                }
+            }
+        }
+    } else {
+        switch (targetType) {
+            case TIMESTAMPOID:
+            case TIMESTAMPTZOID: {
+                new_expr = (Node*)makeConst(
+                    targetType, targetTypmod, targetCollation, targetLen, clock_timestamp(NULL), false, targetByval);
+                break;
+            }
+            case TIMETZOID: {
+                new_expr = (Node*)makeConst(targetType,
+                    targetTypmod,
+                    targetCollation,
+                    targetLen,
+                    (Datum)DirectFunctionCall3(
+                        timetz_in, CStringGetDatum("00:00:00"), ObjectIdGetDatum(0), Int32GetDatum(-1)),
+                    false,
+                    targetByval);
+                break;
+            }
+            case INTERVALOID: {
+                new_expr = (Node*)makeConst(targetType,
+                    targetTypmod,
+                    targetCollation,
+                    targetLen,
+                    (Datum)DirectFunctionCall3(
+                        interval_in, CStringGetDatum("00:00:00"), ObjectIdGetDatum(0), Int32GetDatum(-1)),
+                    false,
+                    targetByval);
+                break;
+            }
+            case TINTERVALOID: {
+                Datum epoch = (Datum)DirectFunctionCall1(timestamp_abstime, (TimestampGetDatum(SetEpochTimestamp())));
+                new_expr = (Node*)makeConst(targetType,
+                    targetTypmod,
+                    targetCollation,
+                    targetLen,
+                    (Datum)DirectFunctionCall2(mktinterval, epoch, epoch),
+                    false,
+                    targetByval);
+                break;
+            }
+            case SMALLDATETIMEOID: {
+                new_expr = (Node*)makeConst(targetType,
+                    targetTypmod,
+                    targetCollation,
+                    targetLen,
+                    (Datum)DirectFunctionCall3(
+                        smalldatetime_in, CStringGetDatum("1970-01-01 08:00:00"), ObjectIdGetDatum(0), Int32GetDatum(-1)),
+                    false,
+                    targetByval);
+                break;
+            }
+            default: {
+                new_expr = (Node*)makeConst(targetType,
+                    targetTypmod,
+                    targetCollation,
+                    targetLen,
+                    timestamp2date(SetEpochTimestamp()),
+                    false,
+                    targetByval);
+                break;
+            }
+        }
+    }
+    return new_expr;
 }
 
 static void checkUpsertTargetlist(Relation targetTable, List* updateTlist)

@@ -18605,6 +18605,14 @@ insert_rest:
 					$$->selectStmt = NULL;
 					$$->isRewritten = false;
 				}
+			| VALUES '(' ')'
+				{
+						$$ = makeNode(InsertStmt);
+						$$->cols = NIL;
+						$$->selectStmt = NULL;
+						$$->isRewritten = false;
+				}
+			
 		;
 
 insert_column_list:
