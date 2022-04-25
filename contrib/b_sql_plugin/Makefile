@@ -9,6 +9,7 @@ subdir = contrib/b_sql_plugin
 top_builddir = ../..
 base_dir = contrib/b_sql_plugin
 MODULE_big = b_sql_plugin
+p=25432
 
 OBJS = $(parser)/analyze.o $(parser)/gram.o $(parser)/hint_gram.o $(parser)/keywords.o $(parser)/kwlookup.o $(parser)/parser.o \
 $(parser)/parse_agg.o $(parser)/parse_clause.o $(parser)/parse_coerce.o $(parser)/parse_collate.o $(parser)/parse_cte.o \
@@ -67,7 +68,7 @@ EXTENSION = b_sql_plugin
 REGRESS:=$(shell find ./sql -maxdepth 2 -type f)
 REGRESS:=$(basename $(patsubst ./sql/%,%,$(REGRESS)) .sql)
 
-REGRESS_OPTS = --dlpath=$(top_builddir)/src/test/regress -c 0 -d 1 --single_node
+REGRESS_OPTS = --dlpath=$(top_builddir)/src/test/regress -c 0 -d 1 --single_node -p ${p}
 
 include $(top_builddir)/$(base_dir)/configure.mk
 ifdef USE_PGXS

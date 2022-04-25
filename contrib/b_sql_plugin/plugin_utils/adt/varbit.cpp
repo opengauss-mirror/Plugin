@@ -335,7 +335,7 @@ Datum bit(PG_FUNCTION_ARGS)
     errno_t ss_rc = 0;
 
     /* No work if typmod is invalid or supplied data matches it already */
-    if (len <= 0 || len > VARBITMAXLEN || len == VARBITLEN(arg))
+    if (len <= 0 || len > VARBITMAXLEN || len >= VARBITLEN(arg))
         PG_RETURN_VARBIT_P(arg);
 
     if (!isExplicit)
