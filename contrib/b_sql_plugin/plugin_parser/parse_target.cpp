@@ -209,6 +209,19 @@ List* transformExpressionList(ParseState* pstate, List* exprlist)
     return result;
 }
 
+/*check if a not-null-attr col is inserted into NULL*/
+void CheckNullValue(Relation relation, Expr* expr, AttrNumber attrNum)
+{
+    if (expr && nodeTag(expr) == T_Const) {
+        Form_pg_attribute attr = relation->rd_att->attrs[attrNum-1];
+        Const* con = (Const*)expr;
+        if (attr->attnotnull && con->constisnull) {
+            ereport(ERROR, (errcode(ERRCODE_NOT_NULL_VIOLATION),
+                errmsg("null value in column \"%s\" violates not-null constraint",NameStr(attr->attname))));
+        }
+    }
+}
+
 /*
  * resolveTargetListUnknowns()
  *		Convert any unknown-type targetlist entries to type TEXT.
@@ -921,6 +934,53 @@ List* checkInsertTargets(ParseState* pstate, List* cols, List** attrnos)
         }
     }
 
+    return cols;
+}
+
+/* If the col with NOT NULL attr is not in the insert clause cols list, append it.*/
+List* AppendNotNullCols(ParseState* pstate, List* cols, List** attrnos)
+{
+    Form_pg_attribute* attr = pstate->p_target_relation->rd_att->attrs;
+    auto numsRelationAttr = RelationGetNumberOfAttributes(pstate->p_target_relation);
+    bool isBlockchainRel = false;
+    isBlockchainRel = pstate->p_target_relation->rd_isblockchain;
+    if(cols && attrnos && cols->length < numsRelationAttr) {
+        for (int i = 0; i < numsRelationAttr; i++) {
+            if(!attr[i]->attnotnull) {
+                continue;
+            }
+            bool findFlag = false;
+            ListCell* attrno = NULL;
+            foreach (attrno, *attrnos) {
+                if(lfirst_int(attrno) == i+1) {
+                    findFlag = true;
+                    continue;
+                }
+            }
+            if(!findFlag) {
+                ResTarget* col = NULL;
+
+                if (attr[i]->attisdropped) {
+                    continue;
+                }
+                /* If the hidden column in timeseries relation, skip it */
+                if (TsRelWithImplDistColumn(attr, i) && RelationIsTsStore(pstate->p_target_relation)) {
+                    continue;
+                }
+
+                col = makeNode(ResTarget);
+                col->name = pstrdup(NameStr(attr[i]->attname));
+                if (isBlockchainRel && strcmp(col->name, "hash") == 0) {
+                    continue;
+                }
+                col->indirection = NIL;
+                col->val = NULL;
+                col->location = -1; //-1 indicate the col is appended here, used in func AppendValueForColOfNotnull
+                cols = lappend(cols, col);
+                *attrnos = lappend_int(*attrnos, i + 1);
+            }
+        }
+    }
     return cols;
 }
 

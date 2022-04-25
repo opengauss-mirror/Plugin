@@ -39,6 +39,7 @@
 #include "libpq/pqformat.h"
 #include "utils/array.h"
 #include "utils/builtins.h"
+#include "plugin_commands/mysqlmode.h"
 
 #define SAMESIGN(a, b) (((a) < 0) == ((b) < 0))
 
@@ -61,7 +62,7 @@ Datum int2in(PG_FUNCTION_ARGS)
 {
     char* num = PG_GETARG_CSTRING(0);
 
-    PG_RETURN_INT16(pg_strtoint16(num));
+    PG_RETURN_INT16(PgStrtoint16Internal(num, SQL_MODE_STRICT()));
 }
 
 /*
@@ -296,7 +297,7 @@ Datum int4in(PG_FUNCTION_ARGS)
 {
     char* num = PG_GETARG_CSTRING(0);
 
-    PG_RETURN_INT32(pg_strtoint32(num));
+    PG_RETURN_INT32(PgStrtoint32Internal(num, SQL_MODE_STRICT()));
 }
 
 /*
@@ -351,8 +352,14 @@ Datum i4toi2(PG_FUNCTION_ARGS)
 {
     int32 arg1 = PG_GETARG_INT32(0);
 
-    if (unlikely(arg1 < SHRT_MIN) || unlikely(arg1 > SHRT_MAX))
-        ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("smallint out of range")));
+    if (SQL_MODE_STRICT()) {
+        if (unlikely(arg1 < SHRT_MIN) || unlikely(arg1 > SHRT_MAX))
+            ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("smallint out of range")));
+    } else if (arg1 > SHRT_MAX) {
+        arg1 = SHRT_MAX;
+    } else if (arg1 < SHRT_MIN) {
+        arg1 = SHRT_MIN;
+    }
 
     PG_RETURN_INT16((int16)arg1);
 }
@@ -1219,7 +1226,7 @@ Datum int1in(PG_FUNCTION_ARGS)
 {
     char* num = PG_GETARG_CSTRING(0);
 
-    PG_RETURN_UINT8((uint8)pg_atoi(num, sizeof(uint8), '\0'));
+    PG_RETURN_UINT8((uint8)PgAtoiInternal(num, sizeof(uint8), '\0', SQL_MODE_STRICT()));
 }
 
 // int1out - converts uint8 to "num"

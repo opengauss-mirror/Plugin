@@ -59,6 +59,7 @@
 #include "plugin_parser/parse_type.h"
 #include "plugin_parser/parse_expr.h"
 #include "plugin_parser/parsetree.h"
+#include "plugin_commands/mysqlmode.h"
 #include "rewrite/rewriteManip.h"
 #include "rewrite/rewriteRlsPolicy.h"
 #ifdef PGXC
@@ -1480,6 +1481,13 @@ static Query* transformInsertStmt(ParseState* pstate, InsertStmt* stmt)
 
     /* Validate stmt->cols list, or build default list if no list given */
     icolumns = checkInsertTargets(pstate, stmt->cols, &attrnos);
+
+    /* Compatible with MySQL, when not in strict sql mode,
+     * append the cols with not_null attributes into the insert cols list.
+     */
+    if (!SQL_MODE_STRICT())
+        icolumns = AppendNotNullCols(pstate, icolumns, &attrnos);
+
     AssertEreport(list_length(icolumns) == list_length(attrnos), MOD_OPT, "list length inconsistent");
 
     /*
@@ -1820,6 +1828,10 @@ static Query* transformInsertStmt(ParseState* pstate, InsertStmt* stmt)
         AssertEreport(IsA(col, ResTarget), MOD_OPT, "nodeType inconsistant");
         attr_num = (AttrNumber)lfirst_int(attnos);
 
+        if (!SQL_MODE_STRICT()) {
+            CheckNullValue(pstate->p_target_relation, expr, attr_num);
+        }
+
         tle = makeTargetEntry(expr, attr_num, col->name, false);
         qry->targetList = lappend(qry->targetList, tle);
 
@@ -2090,6 +2102,77 @@ static UpsertExpr* transformUpsertClause(ParseState* pstate, UpsertClause* upser
     return result;
 }
 
+/* If there is no expr in the insert clause value lists for the column with NOT NULL attr,
+ * append it based on the col type, append 0 when it's INT and append "" when it's str type.
+ */
+void AppendValueForColOfNotnull(ParseState* pstate, List* exprlist, List* icolumns, List* attrnos)
+{
+    int attrNum = 0;
+    ListCell* attrCell = NULL;
+    ListCell* colCell = list_head(icolumns);
+    foreach (attrCell, attrnos) {
+        attrNum++;
+        if (colCell) {
+            ResTarget* col = (ResTarget*)lfirst(colCell);
+            AssertEreport(IsA(col, ResTarget), MOD_OPT, "nodeType inconsistant");
+            if (attrNum <= list_length(exprlist) || col->location != -1) {
+                colCell = colCell->next;
+                continue;
+            }
+            colCell = colCell->next;
+            Form_pg_attribute attr = pstate->p_target_relation->rd_att->attrs[lfirst_int(attrCell)-1];
+            Value* val = makeNode(Value);
+            switch (attr->atttypid)
+            {
+                case CHAROID:
+                case NVARCHAR2OID:
+                case BPCHAROID:
+                case VARCHAROID:
+                case CLOBOID:
+                case TEXTOID: {
+                    val->type = T_String;
+                    val->val.str = "";
+                    auto* const_ptr = (Node*)make_const(pstate, val, -1);
+                    lappend(exprlist, const_ptr);
+                    break;
+                }
+                case INT1OID:
+                case INT2OID:
+                case INT4OID:
+                case INT8OID: {
+                    val->type = T_Integer;
+                    val->val.ival = 0;
+                    auto* const_ptr = (Node*)make_const(pstate, val, -1);
+                    lappend(exprlist, const_ptr);
+                    break;
+                }
+                case FLOAT4OID:
+                case FLOAT8OID:
+                case NUMERICOID: {
+                    val->type = T_Float;
+                    val->val.str = "0";
+                    auto* const_ptr = (Node*)make_const(pstate, val, -1);
+                    lappend(exprlist, const_ptr);
+                    break;
+                }
+                default:
+                    break;
+            }
+        }
+    }
+    if (list_length(exprlist) < list_length(icolumns)) {
+        ereport(ERROR,
+            (errcode(ERRCODE_SYNTAX_ERROR),
+                errmsg("INSERT has more target columns than expressions"),
+                ((list_length(exprlist) == 1 &&
+                    count_rowexpr_columns(pstate, (Node*)linitial(exprlist)) == list_length(icolumns))
+                        ? errhint("The insertion source is a row expression containing the same number of columns "
+                                "expected by the INSERT. Did you accidentally use extra parentheses?")
+                        : 0),
+                parser_errposition(pstate, exprLocation((Node*)list_nth(icolumns, list_length(exprlist))))));
+    }
+}
+
 /*
  * Prepare an INSERT row for assignment to the target table.
  *
@@ -2126,15 +2209,19 @@ List* transformInsertRow(ParseState* pstate, List* exprlist, List* stmtcols, Lis
          * mismatch, which is less misleading so we don't worry about giving a
          * hint in that case.)
          */
-        ereport(ERROR,
-            (errcode(ERRCODE_SYNTAX_ERROR),
-                errmsg("INSERT has more target columns than expressions"),
-                ((list_length(exprlist) == 1 &&
-                     count_rowexpr_columns(pstate, (Node*)linitial(exprlist)) == list_length(icolumns))
-                        ? errhint("The insertion source is a row expression containing the same number of columns "
-                                  "expected by the INSERT. Did you accidentally use extra parentheses?")
-                        : 0),
-                parser_errposition(pstate, exprLocation((Node*)list_nth(icolumns, list_length(exprlist))))));
+        if (!SQL_MODE_STRICT()) {
+            AppendValueForColOfNotnull(pstate, exprlist, icolumns, attrnos);
+        } else {
+            ereport(ERROR,
+                (errcode(ERRCODE_SYNTAX_ERROR),
+                    errmsg("INSERT has more target columns than expressions"),
+                    ((list_length(exprlist) == 1 &&
+                        count_rowexpr_columns(pstate, (Node*)linitial(exprlist)) == list_length(icolumns))
+                            ? errhint("The insertion source is a row expression containing the same number of columns "
+                                    "expected by the INSERT. Did you accidentally use extra parentheses?")
+                            : 0),
+                    parser_errposition(pstate, exprLocation((Node*)list_nth(icolumns, list_length(exprlist))))));
+        }
     }
 
     /*

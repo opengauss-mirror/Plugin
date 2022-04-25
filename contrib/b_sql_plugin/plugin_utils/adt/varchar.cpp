@@ -22,6 +22,7 @@
 #include "utils/array.h"
 #include "utils/builtins.h"
 #include "plugin_mb/pg_wchar.h"
+#include "plugin_commands/mysqlmode.h"
 #include "utils/sortsupport.h"
 #include "vecexecutor/vectorbatch.h"
 
@@ -299,7 +300,7 @@ Datum bpchar(PG_FUNCTION_ARGS)
 
         maxmblen = pg_mbcharcliplen(s, len, maxlen);
 
-        if (!isExplicit) {
+        if (SQL_MODE_STRICT() && !isExplicit) {
             for (i = maxmblen; i < len; i++)
                 if (s[i] != ' ')
                     ereport(ERROR,
@@ -603,7 +604,7 @@ Datum varchar(PG_FUNCTION_ARGS)
     /* truncate multibyte string preserving multibyte boundary */
     maxmblen = pg_mbcharcliplen(s_data, len, maxlen);
 
-    if (!isExplicit) {
+    if (SQL_MODE_STRICT() && !isExplicit) {
         for (i = maxmblen; i < len; i++)
             if (s_data[i] != ' ')
                 ereport(ERROR,
@@ -1609,6 +1610,44 @@ ScalarVector* vlpad(PG_FUNCTION_ARGS)
     return PG_GETARG_VECTOR(4);
 }
 
+PG_FUNCTION_INFO_V1_PUBLIC(varchar_int1);
+extern "C" DLL_PUBLIC Datum varchar_int1(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1_PUBLIC(varchar_int2);
+extern "C" DLL_PUBLIC Datum varchar_int2(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1_PUBLIC(bpchar_int1);
+extern "C" DLL_PUBLIC Datum bpchar_int1(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1_PUBLIC(bpchar_int2);
+extern "C" DLL_PUBLIC Datum bpchar_int2(PG_FUNCTION_ARGS);
+
+Datum varchar_int1(PG_FUNCTION_ARGS)
+{
+    Datum txt = PG_GETARG_DATUM(0);
+    char* tmp = NULL;
+    Datum result;
+    tmp = DatumGetCString(DirectFunctionCall1(varcharout, txt));
+
+    result = DirectFunctionCall1(int1in, CStringGetDatum(tmp));
+    pfree_ext(tmp);
+
+    PG_RETURN_DATUM(result);
+}
+
+Datum varchar_int2(PG_FUNCTION_ARGS)
+{
+    Datum txt = PG_GETARG_DATUM(0);
+    char* tmp = NULL;
+    Datum result;
+    tmp = DatumGetCString(DirectFunctionCall1(varcharout, txt));
+
+    result = DirectFunctionCall1(int2in, CStringGetDatum(tmp));
+    pfree_ext(tmp);
+
+    PG_RETURN_DATUM(result);
+}
+
 Datum varchar_int4(PG_FUNCTION_ARGS)
 {
     Datum txt = PG_GETARG_DATUM(0);
@@ -1617,6 +1656,32 @@ Datum varchar_int4(PG_FUNCTION_ARGS)
     tmp = DatumGetCString(DirectFunctionCall1(varcharout, txt));
 
     result = DirectFunctionCall1(int4in, CStringGetDatum(tmp));
+    pfree_ext(tmp);
+
+    PG_RETURN_DATUM(result);
+}
+
+Datum bpchar_int1(PG_FUNCTION_ARGS)
+{
+    Datum txt = PG_GETARG_DATUM(0);
+    char* tmp = NULL;
+    Datum result;
+    tmp = DatumGetCString(DirectFunctionCall1(bpcharout, txt));
+
+    result = DirectFunctionCall1(int1in, CStringGetDatum(tmp));
+    pfree_ext(tmp);
+
+    PG_RETURN_DATUM(result);
+}
+
+Datum bpchar_int2(PG_FUNCTION_ARGS)
+{
+    Datum txt = PG_GETARG_DATUM(0);
+    char* tmp = NULL;
+    Datum result;
+    tmp = DatumGetCString(DirectFunctionCall1(bpcharout, txt));
+
+    result = DirectFunctionCall1(int2in, CStringGetDatum(tmp));
     pfree_ext(tmp);
 
     PG_RETURN_DATUM(result);

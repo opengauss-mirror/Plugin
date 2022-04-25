@@ -56,6 +56,8 @@ extern "C" DLL_PUBLIC void init_session_vars(void);
 
 typedef struct BSqlPluginContext {
     bool enableBFormatMode;
+    char* sqlModeString;
+    unsigned int sqlModeFlags;
 } bSqlPluginContext;
 
 BSqlPluginContext* GetSessionContext();

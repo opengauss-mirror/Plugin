@@ -22,6 +22,7 @@
 
 #include "common/int.h"
 #include "utils/builtins.h"
+#include "plugin_commands/mysqlmode.h"
 
 /*
  * pg_atoi: convert string to integer
@@ -38,6 +39,11 @@
  */
 int32 pg_atoi(char* s, int size, int c)
 {
+    return PgAtoiInternal(s, size, c, true);
+}
+
+int32 PgAtoiInternal(char* s, int size, int c, bool sqlModeStrict)
+{
     long l;
     char* badp = NULL;
 
@@ -48,7 +54,7 @@ int32 pg_atoi(char* s, int size, int c)
     if (s == NULL)
         ereport(ERROR, (errmodule(MOD_FUNCTION), errcode(ERRCODE_UNEXPECTED_NULL_VALUE), errmsg("NULL pointer")));
 
-    if ((*s == 0) && DB_IS_CMPT(A_FORMAT | PG_FORMAT))
+    if (sqlModeStrict&& (*s == 0) && DB_IS_CMPT(A_FORMAT | PG_FORMAT))
         ereport(ERROR,
             (errmodule(MOD_FUNCTION),
                 errcode(ERRCODE_INVALID_TEXT_REPRESENTATION),
@@ -65,7 +71,7 @@ int32 pg_atoi(char* s, int size, int c)
 
     /* We made no progress parsing the string, so bail out */
     if (s == badp) {
-        if (DB_IS_CMPT(A_FORMAT | PG_FORMAT))
+        if (sqlModeStrict && DB_IS_CMPT(A_FORMAT | PG_FORMAT))
             ereport(ERROR,
                 (errmodule(MOD_FUNCTION),
                     errcode(ERRCODE_INVALID_TEXT_REPRESENTATION),
@@ -113,7 +119,7 @@ int32 pg_atoi(char* s, int size, int c)
         badp++;
     }
 
-    if (*badp && *badp != c && u_sess->attr.attr_sql.sql_compatibility != B_FORMAT)
+    if (sqlModeStrict && *badp && *badp != c && u_sess->attr.attr_sql.sql_compatibility != B_FORMAT)
         ereport(ERROR,
             (errcode(ERRCODE_INVALID_TEXT_REPRESENTATION), errmsg("invalid input syntax for integer: \"%s\"", s)));
 
@@ -131,6 +137,11 @@ int32 pg_atoi(char* s, int size, int c)
  * positive number.
  */
 int16 pg_strtoint16(const char* s)
+{
+    return PgStrtoint16Internal(s, true);
+}
+
+int16 PgStrtoint16Internal(const char* s, bool sqlModeStrict)
 {
     const char* ptr = s;
     int16 tmp = 0;
@@ -150,6 +161,8 @@ int16 pg_strtoint16(const char* s)
 
     /* require at least one digit */
     if (unlikely(!isdigit((unsigned char)*ptr))) {
+        if (!sqlModeStrict)
+            return tmp;
         if (DB_IS_CMPT(A_FORMAT | PG_FORMAT))
             goto invalid_syntax;
         if (DB_IS_CMPT(B_FORMAT))
@@ -169,7 +182,7 @@ int16 pg_strtoint16(const char* s)
         ptr++;
     }
 
-    if (unlikely(*ptr != '\0') && u_sess->attr.attr_sql.sql_compatibility != B_FORMAT)
+    if (sqlModeStrict && unlikely(*ptr != '\0') && u_sess->attr.attr_sql.sql_compatibility != B_FORMAT)
         goto invalid_syntax;
 
     if (!neg) {
@@ -182,9 +195,16 @@ int16 pg_strtoint16(const char* s)
     return tmp;
 
 out_of_range:
-    ereport(ERROR,
-        (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE),
-            errmsg("value \"%s\" is out of range for type %s", s, "smallint")));
+    if (sqlModeStrict) {
+        ereport(ERROR,
+            (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE),
+                errmsg("value \"%s\" is out of range for type %s", s, "smallint")));
+    } else {
+        if (neg)
+            return PG_INT16_MIN;
+        else
+            return PG_INT16_MAX;
+    }
 
 invalid_syntax:
     ereport(ERROR,
@@ -204,6 +224,11 @@ invalid_syntax:
  */
 int32 pg_strtoint32(const char* s)
 {
+    return PgStrtoint32Internal(s, true);
+}
+
+int32 PgStrtoint32Internal(const char* s, bool sqlModeStrict)
+{
     const char* ptr = s;
     int32 tmp = 0;
     bool neg = false;
@@ -222,6 +247,8 @@ int32 pg_strtoint32(const char* s)
 
     /* require at least one digit */
     if (unlikely(!isdigit((unsigned char)*ptr))) {
+        if (!sqlModeStrict)
+            return tmp;
         if (DB_IS_CMPT(A_FORMAT | PG_FORMAT))
             goto invalid_syntax;
         else if (DB_IS_CMPT(B_FORMAT))
@@ -241,7 +268,7 @@ int32 pg_strtoint32(const char* s)
         ptr++;
     }
 
-    if (unlikely(*ptr != '\0') && u_sess->attr.attr_sql.sql_compatibility != B_FORMAT)
+    if (sqlModeStrict && unlikely(*ptr != '\0') && u_sess->attr.attr_sql.sql_compatibility != B_FORMAT)
         goto invalid_syntax;
 
     if (!neg) {
@@ -254,9 +281,16 @@ int32 pg_strtoint32(const char* s)
     return tmp;
 
 out_of_range:
-    ereport(ERROR,
-        (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE),
-            errmsg("value \"%s\" is out of range for type %s", s, "integer")));
+    if (sqlModeStrict) {
+        ereport(ERROR,
+            (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE),
+                errmsg("value \"%s\" is out of range for type %s", s, "integer")));
+    } else {
+        if (neg)
+            return PG_INT32_MIN;
+        else
+            return PG_INT32_MAX;
+    }
 
 invalid_syntax:
     ereport(ERROR,

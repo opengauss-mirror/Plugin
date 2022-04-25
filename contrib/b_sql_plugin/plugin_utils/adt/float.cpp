@@ -27,6 +27,7 @@
 #include "utils/builtins.h"
 #include "optimizer/pgxcship.h"
 #include "miscadmin.h"
+#include "plugin_commands/mysqlmode.h"
 
 #ifndef M_PI
 /* from my RH5.2 gcc math.h file - thomas 2000-04-03 */
@@ -308,7 +309,7 @@ Datum float4in(PG_FUNCTION_ARGS)
                 ereport(ERROR,
                     (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE),
                         errmsg("\"%s\" is out of range for type real", orig_num)));
-        } else
+        } else if (SQL_MODE_STRICT())
             ereport(ERROR,
                 (errcode(ERRCODE_INVALID_TEXT_REPRESENTATION),
                     errmsg("invalid input syntax for type real: \"%s\"", orig_num)));
@@ -351,15 +352,23 @@ Datum float4in(PG_FUNCTION_ARGS)
         endptr++;
 
     /* if there is any junk left at the end of the string, bail out */
-    if (*endptr != '\0')
+    if(SQL_MODE_STRICT() && (*endptr != '\0')) {
         ereport(ERROR,
             (errcode(ERRCODE_INVALID_TEXT_REPRESENTATION),
                 errmsg("invalid input syntax for type real: \"%s\"", orig_num)));
+    }
 
     /*
      * if we get here, we have a legal double, still need to check to see if
      * it's a legal float4
      */
+    if (!SQL_MODE_STRICT()) {
+        if (val > __FLT_MAX__)
+            val = __FLT_MAX__;
+        else if(val < -__FLT_MAX__)
+            val = -__FLT_MAX__;
+    }
+
     CHECKFLOATVAL((float4)val, isinf(val), val == 0);
 
     PG_RETURN_FLOAT4((float4)val);
@@ -526,7 +535,7 @@ Datum float8in(PG_FUNCTION_ARGS)
                 ereport(ERROR,
                     (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE),
                         errmsg("\"%s\" is out of range for type double precision", orig_num)));
-        } else
+        } else if (SQL_MODE_STRICT())
             ereport(ERROR,
                 (errcode(ERRCODE_INVALID_TEXT_REPRESENTATION),
                     errmsg("invalid input syntax for type double precision: \"%s\"", orig_num)));
@@ -569,10 +578,11 @@ Datum float8in(PG_FUNCTION_ARGS)
         endptr++;
 
     /* if there is any junk left at the end of the string, bail out */
-    if (*endptr != '\0')
+    if (SQL_MODE_STRICT() && (*endptr != '\0')) {
         ereport(ERROR,
             (errcode(ERRCODE_INVALID_TEXT_REPRESENTATION),
                 errmsg("invalid input syntax for type double precision: \"%s\"", orig_num)));
+    }
 
     CHECKFLOATVAL(val, true, true);
 
@@ -1179,6 +1189,13 @@ Datum dtof(PG_FUNCTION_ARGS)
 {
     float8 num = PG_GETARG_FLOAT8(0);
 
+    if (!SQL_MODE_STRICT()) {
+        if (num > __FLT_MAX__)
+            num = __FLT_MAX__;
+        else if(num < -__FLT_MAX__)
+            num = -__FLT_MAX__;
+    }
+
     CHECKFLOATVAL((float4)num, isinf(num), num == 0);
 
     PG_RETURN_FLOAT4((float4)num);
@@ -1204,8 +1221,17 @@ Datum dtoi4(PG_FUNCTION_ARGS)
      * exact power of 2, so it will be represented exactly; but PG_INT32_MAX
      * isn't, and might get rounded off, so avoid using it.
      */
-    if (num < (float8)PG_INT32_MIN || num >= -((float8)PG_INT32_MIN) || isnan(num))
+    if (isnan(num))
         ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("integer out of range")));
+
+    if (SQL_MODE_STRICT()) {
+        if (num < (float8)PG_INT32_MIN || num >= -((float8)PG_INT32_MIN))
+            ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("integer out of range")));
+    } else if (num < (float8)PG_INT32_MIN) {
+        PG_RETURN_INT32(PG_INT32_MIN);
+    } else if (num >= -((float8)PG_INT32_MIN)) {
+        PG_RETURN_INT32(PG_INT32_MAX);
+    }
 
     PG_RETURN_INT32((int32)num);
 }
@@ -1230,8 +1256,17 @@ Datum dtoi2(PG_FUNCTION_ARGS)
      * exact power of 2, so it will be represented exactly; but PG_INT16_MAX
      * isn't, and might get rounded off, so avoid using it.
      */
-    if (num < (float8)PG_INT16_MIN || num >= -((float8)PG_INT16_MIN) || isnan(num))
+    if (isnan(num))
         ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("smallint out of range")));
+
+    if (SQL_MODE_STRICT()) {
+        if (num < (float8)PG_INT16_MIN || num >= -((float8)PG_INT16_MIN))
+            ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("smallint out of range")));
+    } else if (num < (float8)PG_INT16_MIN) {
+        PG_RETURN_INT16(PG_INT16_MIN);
+    } else if (num >= -((float8)PG_INT16_MIN)) {
+        PG_RETURN_INT16(PG_INT16_MAX);
+    }
 
     PG_RETURN_INT16((int16)num);
 }
@@ -1276,8 +1311,17 @@ Datum ftoi4(PG_FUNCTION_ARGS)
      * exact power of 2, so it will be represented exactly; but PG_INT32_MAX
      * isn't, and might get rounded off, so avoid using it.
      */
-    if (num < (float4)PG_INT32_MIN || num >= -((float4)PG_INT32_MIN) || isnan(num))
+    if (isnan(num))
         ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("integer out of range")));
+
+    if (SQL_MODE_STRICT()) {
+        if (num < (float4)PG_INT32_MIN || num >= -((float4)PG_INT32_MIN))
+            ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("integer out of range")));
+    } else if (num < (float4)PG_INT32_MIN) {
+        PG_RETURN_INT32(PG_INT32_MIN);
+    } else if (num >= -((float4)PG_INT32_MIN)) {
+        PG_RETURN_INT32(PG_INT32_MAX);
+    }
 
     PG_RETURN_INT32((int32)num);
 }
@@ -1302,8 +1346,17 @@ Datum ftoi2(PG_FUNCTION_ARGS)
      * exact power of 2, so it will be represented exactly; but PG_INT16_MAX
      * isn't, and might get rounded off, so avoid using it.
      */
-    if (num < (float4)PG_INT16_MIN || num >= -((float4)PG_INT16_MIN) || isnan(num))
+    if (isnan(num))
         ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("smallint out of range")));
+
+    if (SQL_MODE_STRICT()) {
+        if (num < (float4)PG_INT16_MIN || num >= -((float4)PG_INT16_MIN))
+            ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("smallint out of range")));
+    } else if (num < (float4)PG_INT16_MIN) {
+        PG_RETURN_INT16(PG_INT16_MIN);
+    } else if (num >= -((float4)PG_INT16_MIN)) {
+        PG_RETURN_INT16(PG_INT16_MAX);
+    }
 
     PG_RETURN_INT16((int16)num);
 }
