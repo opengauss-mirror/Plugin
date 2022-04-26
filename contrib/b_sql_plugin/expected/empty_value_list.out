@@ -46,34 +46,23 @@ create table test39(num numeric not null);
 create table test40(num uuid not null);
 create table test41(num smalldatetime not null);
 --strict_all_tables mode
-insert into test1 values();
-ERROR:  syntax error at or near "insert into test1 values"
-LINE 1: insert into test1 values();
-        ^
-insert into test2 values();
-ERROR:  syntax error at or near "insert into test2 values"
-LINE 1: insert into test2 values();
-        ^
-insert into test3 values();
-ERROR:  syntax error at or near "insert into test3 values"
-LINE 1: insert into test3 values();
-        ^
-insert into test4 values();
-ERROR:  syntax error at or near "insert into test4 values"
-LINE 1: insert into test4 values();
-        ^
-insert into test5 values();
-ERROR:  syntax error at or near "insert into test5 values"
-LINE 1: insert into test5 values();
-        ^
-insert into test6 values();
-ERROR:  syntax error at or near "insert into test6 values"
-LINE 1: insert into test6 values();
-        ^
-insert into test7 values();
-ERROR:  syntax error at or near "insert into test7 values"
-LINE 1: insert into test7 values();
-        ^
+insert into test1 values();
+insert into test2 values();
+insert into test3 values();
+ERROR:  null value in column "num" violates not-null constraint
+DETAIL:  Failing row contains (null).
+insert into test4 values();
+ERROR:  null value in column "num" violates not-null constraint
+DETAIL:  Failing row contains (null).
+insert into test5 values();
+ERROR:  null value in column "num" violates not-null constraint
+DETAIL:  Failing row contains (null).
+insert into test6 values();
+ERROR:  null value in column "num" violates not-null constraint
+DETAIL:  Failing row contains (null).
+insert into test7 values();
+ERROR:  null value in column "num" violates not-null constraint
+DETAIL:  Failing row contains (null).
 insert into test8 values();
 ERROR:  null value in column "num" violates not-null constraint
 DETAIL:  Failing row contains (null).
@@ -183,16 +172,16 @@ select *from test1;
  num 
 -----
     
-(1 row)
+    
+(2 rows)
 
 insert into test2 values();
-ERROR:  INSERT has more expressions than target columns
-LINE 1: insert into test2 values();
-        ^
 select *from test2;
  num 
 -----
-(0 rows)
+   3
+   3
+(2 rows)
 
 insert into test3 values();
 select *from test3;
@@ -467,6 +456,39 @@ select *from test41;
  Thu Jan 01 08:00:00 1970
 (1 row)
 
+--multiple type test
+create table m1(a int not null, b int, c int default 3, d int default 3 not null);
+create table m2(a date not null, b timestamp, c timestamp default '2020-01-01', d timestamp default '2020-01-01' not null);
+create table m3(a box not null, b path, c circle default '0,0,3', d box default '1,2,3,4' not null);
+create table m4(a text not null, b char, c nvarchar2 default 'abc', d bpchar default 'bcd' not null);
+insert into m1 values();
+select * from m1;
+ a | b | c | d 
+---+---+---+---
+ 0 |   | 3 | 3
+(1 row)
+
+insert into m2 values();
+select * from m2;
+     a      | b |            c             |            d             
+------------+---+--------------------------+--------------------------
+ 01-01-1970 |   | Wed Jan 01 00:00:00 2020 | Wed Jan 01 00:00:00 2020
+(1 row)
+
+insert into m3 values();
+select * from m3;
+      a      | b |     c     |      d      
+-------------+---+-----------+-------------
+ (0,0),(0,0) |   | <(0,0),3> | (3,4),(1,2)
+(1 row)
+
+insert into m4 values();
+select * from m4;
+ a | b |  c  |  d  
+---+---+-----+-----
+   |   | abc | bcd
+(1 row)
+
 --pg_get_basic_value
 select * from pg_get_basic_value('timestamp');
  pg_get_basic_value 
@@ -516,3 +538,5 @@ select * from pg_type_basic_value where typename = 'tinterval';
  tinterval | ["1970-01-01 00:00:00+08" "1970-01-01 00:00:00+08"]
 (1 row)
 
+\c postgres
+drop database if exists b;

@@ -48,13 +48,13 @@ create table test40(num uuid not null);
 create table test41(num smalldatetime not null);
 
 --strict_all_tables mode
-insert into test1 values();
-insert into test2 values();
-insert into test3 values();
-insert into test4 values();
-insert into test5 values();
-insert into test6 values();
-insert into test7 values();
+insert into test1 values();
+insert into test2 values();
+insert into test3 values();
+insert into test4 values();
+insert into test5 values();
+insert into test6 values();
+insert into test7 values();
 insert into test8 values();
 insert into test9 values();
 insert into test10 values();
@@ -175,6 +175,19 @@ select *from test40;
 insert into test41 values();
 select *from test41;
 
+--multiple type test
+create table m1(a int not null, b int, c int default 3, d int default 3 not null);
+create table m2(a date not null, b timestamp, c timestamp default '2020-01-01', d timestamp default '2020-01-01' not null);
+create table m3(a box not null, b path, c circle default '0,0,3', d box default '1,2,3,4' not null);
+create table m4(a text not null, b char, c nvarchar2 default 'abc', d bpchar default 'bcd' not null);
+insert into m1 values();
+select * from m1;
+insert into m2 values();
+select * from m2;
+insert into m3 values();
+select * from m3;
+insert into m4 values();
+select * from m4;
 
 --pg_get_basic_value
 select * from pg_get_basic_value('timestamp');
@@ -187,3 +200,6 @@ select * from pg_type_basic_value where typename = 'box';
 select * from pg_type_basic_value where typename = 'int';
 select * from pg_type_basic_value where typename = 'point';
 select * from pg_type_basic_value where typename = 'tinterval';
+
+\c postgres
+drop database if exists b;

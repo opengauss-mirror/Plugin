@@ -1799,6 +1799,7 @@ static Query* transformInsertStmt(ParseState* pstate, InsertStmt* stmt)
                 if (!attr[i]->attnotnull) {
                     expr = makeNode(SetToDefault);
                     selectStmt->valuesLists = lappend(selectStmt->valuesLists, expr);
+                    continue;
                 }
                 /*
                  * Scan to see if relation has a default for this column.

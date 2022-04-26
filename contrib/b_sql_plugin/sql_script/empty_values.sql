@@ -1,4 +1,4 @@
-CREATE OR REPLACE FUNCTION pg_get_basic_value(typename text)
+CREATE OR REPLACE FUNCTION pg_catalog.pg_get_basic_value(typename text)
 RETURNS text
 AS
 $$
@@ -34,9 +34,11 @@ end;
 $$
 LANGUAGE plpgsql;
 
-CREATE VIEW pg_type_basic_value AS
+CREATE VIEW public.pg_type_basic_value AS
     SELECT
             t.typname As typename,
             pg_get_basic_value(t.typname) As basic_value
 
     FROM pg_type t;
+REVOKE ALL ON public.pg_type_basic_value  FROM PUBLIC;
+GRANT SELECT, REFERENCES ON public.pg_type_basic_value  TO PUBLIC;
