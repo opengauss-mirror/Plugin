@@ -1930,7 +1930,8 @@ static Query* transformInsertStmt(ParseState* pstate, InsertStmt* stmt)
     return qry;
 }
 
-static Node* makeConstByType(Form_pg_attribute att_tup) {
+static Node* makeConstByType(Form_pg_attribute att_tup) 
+{
     Node* new_expr;
     Oid targetType = att_tup->atttypid;
     Oid targetCollation = att_tup->attcollation;
@@ -1939,7 +1940,8 @@ static Node* makeConstByType(Form_pg_attribute att_tup) {
     bool targetIsVarlena = (!targetByval) && (targetLen == -1) && targetType != PATHOID && targetType != POLYGONOID;
     int32 targetTypmod;
     bool targetIsTimetype = (targetType == DATEOID || targetType == TIMESTAMPOID || targetType == TIMESTAMPTZOID ||
-                             targetType == TIMETZOID || targetType == INTERVALOID || targetType == TINTERVALOID || targetType == SMALLDATETIMEOID);
+                             targetType == TIMETZOID || targetType == INTERVALOID || targetType == TINTERVALOID || 
+                             targetType == SMALLDATETIMEOID);
     targetTypmod = targetIsTimetype ? -1 : att_tup->atttypmod;
     if (!targetIsTimetype) {
         if (targetIsVarlena) {
