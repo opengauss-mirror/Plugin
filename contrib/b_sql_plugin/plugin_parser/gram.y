@@ -20611,9 +20611,12 @@ SimpleTypename:
 				{
 					$$ = $1;
 					$$->typmods = $2;
-                    Type typtup = LookupTypeName(NULL, $1, NULL);
-					if ($$->typmods == NIL && typtup) {
-						$$->typmods = list_make1((Node*)makeIntConst(1, 1));
+					Type typtup = LookupTypeName(NULL, $1, NULL);
+					if (typtup) {
+						if ($$->typmods == NIL) {
+							$$->typmods = list_make1((Node*)makeIntConst(1, 1));
+						}
+						ReleaseSysCache(typtup);
 					}
 				}
 		;
