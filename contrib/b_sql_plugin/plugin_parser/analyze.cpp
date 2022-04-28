@@ -148,7 +148,7 @@ static const char* NOKEYUPDATE_KEYSHARE_ERRMSG = "";
 static Node* makeConstByType(Form_pg_attribute att_tup);
 static Node* makeTimetypeConst(Oid targetType, int32 targetTypmod, Oid targetCollation, int16 targetLen, bool targetByval);
 static Node* makeNotTimetypeConst(Oid targetType, int32 targetTypmod, Oid targetCollation, int16 targetLen, bool targetByval);
-static List* makeValueLists(ParseState* pstate, bool is_strict_mode);
+static List* makeValueLists(ParseState* pstate);
 
 /*
  * parse_analyze
@@ -1690,8 +1690,8 @@ static Query* transformInsertStmt(ParseState* pstate, InsertStmt* stmt)
          */
         foreach (lc, selectStmt->valuesLists) {
             List* sublist = (List*)lfirst(lc);
-            if(list_length(sublist) == 0) {
-                sublist = (List*)linitial(makeValueLists(pstate, SQL_MODE_STRICT()));
+            if (list_length(sublist) == 0) {
+                sublist = (List*)linitial(makeValueLists(pstate));
             }
             /* Do basic expression transformation (same as a ROW() expr) */
             sublist = transformExpressionList(pstate, sublist);
@@ -1796,7 +1796,7 @@ static Query* transformInsertStmt(ParseState* pstate, InsertStmt* stmt)
          */
         if (selectStmt == NULL) {
             selectStmt = makeNode(SelectStmt);
-            selectStmt->valuesLists = makeValueLists(pstate, SQL_MODE_STRICT());
+            selectStmt->valuesLists = makeValueLists(pstate);
         }
 
         List* valuesLists = selectStmt->valuesLists;
@@ -1903,7 +1903,7 @@ static Query* transformInsertStmt(ParseState* pstate, InsertStmt* stmt)
     return qry;
 }
 
-static List* makeValueLists(ParseState* pstate, bool is_strict_mode)
+static List* makeValueLists(ParseState* pstate)
 {
     Form_pg_attribute* attr = pstate->p_target_relation->rd_att->attrs;
     auto numsRelationAttr = RelationGetNumberOfAttributes(pstate->p_target_relation);
@@ -1911,7 +1911,7 @@ static List* makeValueLists(ParseState* pstate, bool is_strict_mode)
     for (int i = 0; i < numsRelationAttr; i++) {
         SetToDefault* expr = NULL;
         TupleDesc rd_att = pstate->p_target_relation->rd_att;
-        if (is_strict_mode || !attr[i]->attnotnull) {
+        if (SQL_MODE_STRICT() || !attr[i]->attnotnull) {
             expr = makeNode(SetToDefault);
             valuesLists = lappend(valuesLists, expr);
             continue;

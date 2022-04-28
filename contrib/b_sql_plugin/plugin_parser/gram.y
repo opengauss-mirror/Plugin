@@ -18609,7 +18609,7 @@ insert_rest:
 				{
 						$$ = makeNode(InsertStmt);
 						$$->cols = NIL;
-						if(list_length(((SelectStmt *)$1)->valuesLists) == 1) {
+						if (list_length(((SelectStmt *)$1)->valuesLists) == 1) {
 							$$->selectStmt = NULL;
 						} else {
 							$$->selectStmt = $1;
