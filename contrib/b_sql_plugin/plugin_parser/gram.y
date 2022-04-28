@@ -378,7 +378,7 @@ static int errstate;
 /* </DB4AI> */
 
 %type <node>	select_no_parens select_with_parens select_clause
-				simple_select values_clause
+				simple_select values_clause insert_empty_values
 
 %type <node>	alter_column_default opclass_item opclass_drop alter_using
 %type <ival>	add_drop opt_asc_desc opt_nulls_order
@@ -486,7 +486,7 @@ static int errstate;
 				opt_enum_val_list enum_val_list table_func_column_list
 				create_generic_options alter_generic_options
 				relation_expr_list dostmt_opt_list
-				merge_values_clause publication_name_list
+				merge_values_clause publication_name_list empty_value
 
 %type <list>	group_by_list
 %type <node>	group_by_item empty_grouping_set rollup_clause cube_clause
@@ -18605,14 +18605,37 @@ insert_rest:
 					$$->selectStmt = NULL;
 					$$->isRewritten = false;
 				}
-			| VALUES '(' ')'
+			| insert_empty_values
 				{
 						$$ = makeNode(InsertStmt);
 						$$->cols = NIL;
-						$$->selectStmt = NULL;
+						if (list_length(((SelectStmt *)$1)->valuesLists) == 1) {
+							$$->selectStmt = NULL;
+						} else {
+							$$->selectStmt = $1;
+						}
 						$$->isRewritten = false;
 				}
 			
+		;
+
+insert_empty_values:
+			VALUES empty_value
+				{
+					SelectStmt *n = makeNode(SelectStmt);
+					n->valuesLists = list_make1($2);
+					$$ = (Node *) n;
+				}
+			| insert_empty_values ',' empty_value
+				{
+					SelectStmt *n = (SelectStmt *) $1;
+					n->valuesLists = lappend(n->valuesLists, $3);
+					$$ = (Node *) n;
+				}
+		;
+
+empty_value:
+			'(' ')'  {$$ = NIL; }
 		;
 
 insert_column_list:

@@ -148,6 +148,7 @@ static const char* NOKEYUPDATE_KEYSHARE_ERRMSG = "";
 static Node* makeConstByType(Form_pg_attribute att_tup);
 static Node* makeTimetypeConst(Oid targetType, int32 targetTypmod, Oid targetCollation, int16 targetLen, bool targetByval);
 static Node* makeNotTimetypeConst(Oid targetType, int32 targetTypmod, Oid targetCollation, int16 targetLen, bool targetByval);
+static List* makeValueLists(ParseState* pstate);
 
 /*
  * parse_analyze
@@ -1689,7 +1690,9 @@ static Query* transformInsertStmt(ParseState* pstate, InsertStmt* stmt)
          */
         foreach (lc, selectStmt->valuesLists) {
             List* sublist = (List*)lfirst(lc);
-
+            if (list_length(sublist) == 0) {
+                sublist = (List*)linitial(makeValueLists(pstate));
+            }
             /* Do basic expression transformation (same as a ROW() expr) */
             sublist = transformExpressionList(pstate, sublist);
 
@@ -1793,39 +1796,7 @@ static Query* transformInsertStmt(ParseState* pstate, InsertStmt* stmt)
          */
         if (selectStmt == NULL) {
             selectStmt = makeNode(SelectStmt);
-            Form_pg_attribute* attr = pstate->p_target_relation->rd_att->attrs;
-            auto numsRelationAttr = RelationGetNumberOfAttributes(pstate->p_target_relation);
-            for (int i = 0; i < numsRelationAttr; i++) {
-                SetToDefault* expr = NULL;
-                TupleDesc rd_att = pstate->p_target_relation->rd_att;
-                if (!attr[i]->attnotnull) {
-                    expr = makeNode(SetToDefault);
-                    selectStmt->valuesLists = lappend(selectStmt->valuesLists, expr);
-                    continue;
-                }
-                /*
-                 * Scan to see if relation has a default for this column.
-                 */
-                if (rd_att->constr && rd_att->constr->num_defval > 0) {
-                    AttrDefault* defval = rd_att->constr->defval;
-                    int ndef = rd_att->constr->num_defval;
-
-                    while (--ndef >= 0) {
-                        if (defval[ndef].adnum == i + 1) {
-                            /*
-                             * Found it, make a SetToDefault node.
-                             */
-                            expr = makeNode(SetToDefault);
-                            selectStmt->valuesLists = lappend(selectStmt->valuesLists, expr);
-                            break;
-                        }
-                    }
-                }
-                if (expr == NULL) {
-                    selectStmt->valuesLists = lappend(selectStmt->valuesLists, makeConstByType(attr[i]));
-                }
-            }
-            selectStmt->valuesLists = list_make1(selectStmt->valuesLists);
+            selectStmt->valuesLists = makeValueLists(pstate);
         }
 
         List* valuesLists = selectStmt->valuesLists;
@@ -1930,6 +1901,45 @@ static Query* transformInsertStmt(ParseState* pstate, InsertStmt* stmt)
     qry->hintState = stmt->hintState;
 
     return qry;
+}
+
+static List* makeValueLists(ParseState* pstate)
+{
+    Form_pg_attribute* attr = pstate->p_target_relation->rd_att->attrs;
+    auto numsRelationAttr = RelationGetNumberOfAttributes(pstate->p_target_relation);
+    List* valuesLists = NULL;
+    for (int i = 0; i < numsRelationAttr; i++) {
+        SetToDefault* expr = NULL;
+        TupleDesc rd_att = pstate->p_target_relation->rd_att;
+        if (SQL_MODE_STRICT() || !attr[i]->attnotnull) {
+            expr = makeNode(SetToDefault);
+            valuesLists = lappend(valuesLists, expr);
+            continue;
+        }
+        /*
+            * Scan to see if relation has a default for this column.
+            */
+        if (rd_att->constr && rd_att->constr->num_defval > 0) {
+            AttrDefault* defval = rd_att->constr->defval;
+            int ndef = rd_att->constr->num_defval;
+
+            while (--ndef >= 0) {
+                if (defval[ndef].adnum == i + 1) {
+                    /*
+                        * Found it, make a SetToDefault node.
+                        */
+                    expr = makeNode(SetToDefault);
+                    valuesLists = lappend(valuesLists, expr);
+                    break;
+                }
+            }
+        }
+        if (expr == NULL) {
+            valuesLists = lappend(valuesLists, makeConstByType(attr[i]));
+        }
+    }
+    valuesLists = list_make1(valuesLists);
+    return valuesLists;
 }
 
 static Node* makeTimetypeConst(Oid targetType, int32 targetTypmod, Oid targetCollation, int16 targetLen, bool targetByval)
