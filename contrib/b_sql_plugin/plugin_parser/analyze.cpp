@@ -146,6 +146,8 @@ static const char* NOKEYUPDATE_KEYSHARE_ERRMSG = "";
 #endif
 
 static Node* makeConstByType(Form_pg_attribute att_tup);
+static Node* makeTimetypeConst(Oid targetType, int32 targetTypmod, Oid targetCollation, int16 targetLen, bool targetByval);
+static Node* makeNotTimetypeConst(Oid targetType, int32 targetTypmod, Oid targetCollation, int16 targetLen, bool targetByval);
 
 /*
  * parse_analyze
@@ -1930,25 +1932,78 @@ static Query* transformInsertStmt(ParseState* pstate, InsertStmt* stmt)
     return qry;
 }
 
-static Node* makeConstByType(Form_pg_attribute att_tup) 
+static Node* makeTimetypeConst(Oid targetType, int32 targetTypmod, Oid targetCollation, int16 targetLen, bool targetByval)
 {
     Node* new_expr;
-    Oid targetType = att_tup->atttypid;
-    Oid targetCollation = att_tup->attcollation;
-    int16 targetLen = att_tup->attlen;
-    bool targetByval = att_tup->attbyval;
-    bool targetIsVarlena = (!targetByval) && (targetLen == -1) && targetType != PATHOID && targetType != POLYGONOID;
-    int32 targetTypmod;
-    bool targetIsTimetype = (targetType == DATEOID || targetType == TIMESTAMPOID || targetType == TIMESTAMPTZOID ||
-                             targetType == TIMETZOID || targetType == INTERVALOID || targetType == TINTERVALOID || 
-                             targetType == SMALLDATETIMEOID);
-    targetTypmod = targetIsTimetype ? -1 : att_tup->atttypmod;
-    if (!targetIsTimetype) {
-        if (targetIsVarlena) {
-            new_expr = (Node*)makeConst(
-                targetType, targetTypmod, targetCollation, 0, CStringGetDatum(" "), false, targetByval);
-        } else {
-            switch (targetType) {
+    switch (targetType) {
+            case TIMESTAMPOID:
+            case TIMESTAMPTZOID: {
+                new_expr = (Node*)makeConst(
+                    targetType, targetTypmod, targetCollation, targetLen, clock_timestamp(NULL), false, targetByval);
+                break;
+            }
+            case TIMETZOID: {
+                new_expr = (Node*)makeConst(targetType,
+                    targetTypmod,
+                    targetCollation,
+                    targetLen,
+                    (Datum)DirectFunctionCall3(
+                        timetz_in, CStringGetDatum("00:00:00"), ObjectIdGetDatum(0), Int32GetDatum(-1)),
+                    false,
+                    targetByval);
+                break;
+            }
+            case INTERVALOID: {
+                new_expr = (Node*)makeConst(targetType,
+                    targetTypmod,
+                    targetCollation,
+                    targetLen,
+                    (Datum)DirectFunctionCall3(
+                        interval_in, CStringGetDatum("00:00:00"), ObjectIdGetDatum(0), Int32GetDatum(-1)),
+                    false,
+                    targetByval);
+                break;
+            }
+            case TINTERVALOID: {
+                Datum epoch = (Datum)DirectFunctionCall1(timestamp_abstime, (TimestampGetDatum(SetEpochTimestamp())));
+                new_expr = (Node*)makeConst(targetType,
+                    targetTypmod,
+                    targetCollation,
+                    targetLen,
+                    (Datum)DirectFunctionCall2(mktinterval, epoch, epoch),
+                    false,
+                    targetByval);
+                break;
+            }
+            case SMALLDATETIMEOID: {
+                new_expr = (Node*)makeConst(targetType,
+                    targetTypmod,
+                    targetCollation,
+                    targetLen,
+                    (Datum)DirectFunctionCall3(
+                        smalldatetime_in, CStringGetDatum("1970-01-01 08:00:00"), ObjectIdGetDatum(0), Int32GetDatum(-1)),
+                    false,
+                    targetByval);
+                break;
+            }
+            default: {
+                new_expr = (Node*)makeConst(targetType,
+                    targetTypmod,
+                    targetCollation,
+                    targetLen,
+                    timestamp2date(SetEpochTimestamp()),
+                    false,
+                    targetByval);
+                break;
+            }
+        }
+    return new_expr;
+}
+
+static Node* makeNotTimetypeConst(Oid targetType, int32 targetTypmod, Oid targetCollation, int16 targetLen, bool targetByval)
+{
+    Node* new_expr;
+    switch (targetType) {
                 case NUMERICOID: {
                     new_expr = (Node*)makeConst(NUMERICOID,
                         targetTypmod,
@@ -2040,70 +2095,31 @@ static Node* makeConstByType(Form_pg_attribute att_tup)
                     break;
                 }
             }
+    return new_expr;
+}
+
+static Node* makeConstByType(Form_pg_attribute att_tup) 
+{
+    Node* new_expr;
+    Oid targetType = att_tup->atttypid;
+    Oid targetCollation = att_tup->attcollation;
+    int16 targetLen = att_tup->attlen;
+    bool targetByval = att_tup->attbyval;
+    bool targetIsVarlena = (!targetByval) && (targetLen == -1) && targetType != PATHOID && targetType != POLYGONOID;
+    int32 targetTypmod;
+    bool targetIsTimetype = (targetType == DATEOID || targetType == TIMESTAMPOID || targetType == TIMESTAMPTZOID ||
+                             targetType == TIMETZOID || targetType == INTERVALOID || targetType == TINTERVALOID || 
+                             targetType == SMALLDATETIMEOID);
+    targetTypmod = targetIsTimetype ? -1 : att_tup->atttypmod;
+    if (!targetIsTimetype) {
+        if (targetIsVarlena) {
+            new_expr = (Node*)makeConst(
+                targetType, targetTypmod, targetCollation, 0, CStringGetDatum(" "), false, targetByval);
+        } else {
+            new_expr = makeNotTimetypeConst(targetType, targetTypmod, targetCollation, targetLen, targetByval);
         }
     } else {
-        switch (targetType) {
-            case TIMESTAMPOID:
-            case TIMESTAMPTZOID: {
-                new_expr = (Node*)makeConst(
-                    targetType, targetTypmod, targetCollation, targetLen, clock_timestamp(NULL), false, targetByval);
-                break;
-            }
-            case TIMETZOID: {
-                new_expr = (Node*)makeConst(targetType,
-                    targetTypmod,
-                    targetCollation,
-                    targetLen,
-                    (Datum)DirectFunctionCall3(
-                        timetz_in, CStringGetDatum("00:00:00"), ObjectIdGetDatum(0), Int32GetDatum(-1)),
-                    false,
-                    targetByval);
-                break;
-            }
-            case INTERVALOID: {
-                new_expr = (Node*)makeConst(targetType,
-                    targetTypmod,
-                    targetCollation,
-                    targetLen,
-                    (Datum)DirectFunctionCall3(
-                        interval_in, CStringGetDatum("00:00:00"), ObjectIdGetDatum(0), Int32GetDatum(-1)),
-                    false,
-                    targetByval);
-                break;
-            }
-            case TINTERVALOID: {
-                Datum epoch = (Datum)DirectFunctionCall1(timestamp_abstime, (TimestampGetDatum(SetEpochTimestamp())));
-                new_expr = (Node*)makeConst(targetType,
-                    targetTypmod,
-                    targetCollation,
-                    targetLen,
-                    (Datum)DirectFunctionCall2(mktinterval, epoch, epoch),
-                    false,
-                    targetByval);
-                break;
-            }
-            case SMALLDATETIMEOID: {
-                new_expr = (Node*)makeConst(targetType,
-                    targetTypmod,
-                    targetCollation,
-                    targetLen,
-                    (Datum)DirectFunctionCall3(
-                        smalldatetime_in, CStringGetDatum("1970-01-01 08:00:00"), ObjectIdGetDatum(0), Int32GetDatum(-1)),
-                    false,
-                    targetByval);
-                break;
-            }
-            default: {
-                new_expr = (Node*)makeConst(targetType,
-                    targetTypmod,
-                    targetCollation,
-                    targetLen,
-                    timestamp2date(SetEpochTimestamp()),
-                    false,
-                    targetByval);
-                break;
-            }
-        }
+        new_expr = makeTimetypeConst(targetType, targetTypmod, targetCollation, targetLen, targetByval);
     }
     return new_expr;
 }
