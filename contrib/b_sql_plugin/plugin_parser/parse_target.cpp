@@ -960,7 +960,7 @@ List* AppendNotNullCols(ParseState* pstate, List* cols, List** attrnos)
             if(!findFlag) {
                 ResTarget* col = NULL;
 
-                if (attr[i]->attisdropped) {
+                if (attr[i]->attisdropped || attr[i]->atthasdef) {
                     continue;
                 }
                 /* If the hidden column in timeseries relation, skip it */

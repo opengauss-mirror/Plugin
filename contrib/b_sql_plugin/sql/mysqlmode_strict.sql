@@ -327,5 +327,90 @@ insert into test_notnull_double(b) values(null);
 
 insert into test_notnull_numeric(b) values(null);
 
+
+--insert into table(a) values(...,...)
+insert into test_notnull_tint(a) values(2,2);
+insert into test_notnull_sint(a) values(2,2);
+insert into test_notnull_int(a) values(2,2);
+insert into test_notnull_bint(a) values(2,2);
+insert into test_notnull_char(a) values(2,2);
+insert into test_notnull_varchar(a) values(2,2);
+insert into test_notnull_clob(a) values(2,2);
+insert into test_notnull_text(a) values(2,2);
+insert into test_notnull_real(a) values(2,2);
+insert into test_notnull_double(a) values(2,2);
+insert into test_notnull_numeric(a) values(2,2);
+
+
+--insert into table values(...,default,...)
+insert into test_notnull_tint values(2,default);
+select * from test_notnull_tint;
+
+insert into test_notnull_sint values(2,default);
+select * from test_notnull_sint;
+
+insert into test_notnull_int values(2,default);
+select * from test_notnull_int;
+
+insert into test_notnull_bint values(2,default);
+select * from test_notnull_bint;
+
+insert into test_notnull_char values(2,default);
+select * from test_notnull_char;
+
+insert into test_notnull_varchar values(2,default);
+select * from test_notnull_varchar;
+
+insert into test_notnull_clob values(2,default);
+select * from test_notnull_clob;
+
+insert into test_notnull_text values(2,default);
+select * from test_notnull_text;
+
+insert into test_notnull_real values(2,default);
+select * from test_notnull_real;
+
+insert into test_notnull_double values(2,default);
+select * from test_notnull_double;
+
+insert into test_notnull_numeric values(2,default);
+select * from test_notnull_numeric;
+
+
+
+--insert into table values(...),(...)
+insert into test_notnull_tint(a) values(3),(4),(5);
+select * from test_notnull_tint;
+
+insert into test_notnull_sint(a) values(3),(4),(5);
+select * from test_notnull_sint;
+
+insert into test_notnull_int(a) values(3),(4),(5);
+select * from test_notnull_int;
+
+insert into test_notnull_bint(a) values(3),(4),(5);
+select * from test_notnull_bint;
+
+insert into test_notnull_char(a) values(3),(4),(5);
+select * from test_notnull_char;
+
+insert into test_notnull_varchar(a) values(3),(4),(5);
+select * from test_notnull_varchar;
+
+insert into test_notnull_clob(a) values(3),(4),(5);
+select * from test_notnull_clob;
+
+insert into test_notnull_text(a) values(3),(4),(5);
+select * from test_notnull_text;
+
+insert into test_notnull_real(a) values(3),(4),(5);
+select * from test_notnull_real;
+
+insert into test_notnull_double(a) values(3),(4),(5);
+select * from test_notnull_double;
+
+insert into test_notnull_numeric(a) values(3),(4),(5);
+select * from test_notnull_numeric;
+
 \c contrib_regression;
 drop DATABASE if exists sql_mode_strict;

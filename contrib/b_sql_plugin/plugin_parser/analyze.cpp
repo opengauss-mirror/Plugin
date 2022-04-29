@@ -1490,12 +1490,6 @@ static Query* transformInsertStmt(ParseState* pstate, InsertStmt* stmt)
     /* Validate stmt->cols list, or build default list if no list given */
     icolumns = checkInsertTargets(pstate, stmt->cols, &attrnos);
 
-    /* Compatible with MySQL, when not in strict sql mode,
-     * append the cols with not_null attributes into the insert cols list.
-     */
-    if (!SQL_MODE_STRICT())
-        icolumns = AppendNotNullCols(pstate, icolumns, &attrnos);
-
     AssertEreport(list_length(icolumns) == list_length(attrnos), MOD_OPT, "list length inconsistent");
 
     /*
@@ -1751,6 +1745,13 @@ static Query* transformInsertStmt(ParseState* pstate, InsertStmt* stmt)
             exprsLists = lappend(exprsLists, sublist);
         }
 
+        /* Update the sublist_length when the sql_mode is not sql_mode_strict to support the multi-rows insert.
+         * For example, insert into ... values(...),(...)...
+         */
+        if (!SQL_MODE_STRICT() && exprsLists) {
+            sublist_length = list_length((List*)(linitial(exprsLists)));
+        }
+
         /*
          * Although we don't really need collation info, let's just make sure
          * we provide a correctly-sized list in the VALUES RTE.
@@ -1910,29 +1911,16 @@ static List* makeValueLists(ParseState* pstate)
     List* valuesLists = NULL;
     for (int i = 0; i < numsRelationAttr; i++) {
         SetToDefault* expr = NULL;
-        TupleDesc rd_att = pstate->p_target_relation->rd_att;
         if (SQL_MODE_STRICT() || !attr[i]->attnotnull) {
             expr = makeNode(SetToDefault);
             valuesLists = lappend(valuesLists, expr);
             continue;
         }
-        /*
-            * Scan to see if relation has a default for this column.
-            */
-        if (rd_att->constr && rd_att->constr->num_defval > 0) {
-            AttrDefault* defval = rd_att->constr->defval;
-            int ndef = rd_att->constr->num_defval;
-
-            while (--ndef >= 0) {
-                if (defval[ndef].adnum == i + 1) {
-                    /*
-                        * Found it, make a SetToDefault node.
-                        */
-                    expr = makeNode(SetToDefault);
-                    valuesLists = lappend(valuesLists, expr);
-                    break;
-                }
-            }
+        /* Judge if relation has a default for this column. */
+        if (attr[i]->atthasdef) {
+            expr = makeNode(SetToDefault);
+            valuesLists = lappend(valuesLists, expr);
+            break;
         }
         if (expr == NULL) {
             valuesLists = lappend(valuesLists, makeConstByType(attr[i]));
@@ -2014,17 +2002,6 @@ static Node* makeNotTimetypeConst(Oid targetType, int32 targetTypmod, Oid target
 {
     Node* new_expr;
     switch (targetType) {
-                case NUMERICOID: {
-                    new_expr = (Node*)makeConst(NUMERICOID,
-                        targetTypmod,
-                        targetCollation,
-                        targetLen,
-                        (Datum)DirectFunctionCall3(
-                            numeric_in, CStringGetDatum("0"), ObjectIdGetDatum(0), Int32GetDatum(-1)),
-                        false,
-                        targetByval);
-                    break;
-                }
                 case UUIDOID: {
                     new_expr = (Node*)makeConst(targetType,
                         targetTypmod,
@@ -2348,6 +2325,26 @@ static UpsertExpr* transformUpsertClause(ParseState* pstate, UpsertClause* upser
     return result;
 }
 
+/* Check whether the not-null col has a default value when it is assgin a default expr in the values list.
+ * If not, then assgin the col a default value here.
+ */
+void CheckDefaultForNotnullCols(ParseState* pstate, List* exprlist, List* attrnos)
+{
+    ListCell* exprCell = NULL;
+    ListCell* attrn = list_head(attrnos);
+    auto rd_att = pstate->p_target_relation->rd_att;
+    foreach (exprCell, exprlist) {
+        Form_pg_attribute attr = rd_att->attrs[lfirst_int(attrn)-1];
+        Node* expr = (Node*)lfirst(exprCell);
+        if (IsA(expr, SetToDefault) && attr->attnotnull && !attr->atthasdef) {
+            lfirst(exprCell) = makeConstByType(attr);
+            pfree(expr);
+        } else {
+            attrn = attrn->next;
+        }
+    }
+}
+
 /* If there is no expr in the insert clause value lists for the column with NOT NULL attr,
  * append it based on the col type, append 0 when it's INT and append "" when it's str type.
  */
@@ -2367,43 +2364,7 @@ void AppendValueForColOfNotnull(ParseState* pstate, List* exprlist, List* icolum
             }
             colCell = colCell->next;
             Form_pg_attribute attr = pstate->p_target_relation->rd_att->attrs[lfirst_int(attrCell)-1];
-            Value* val = makeNode(Value);
-            switch (attr->atttypid)
-            {
-                case CHAROID:
-                case NVARCHAR2OID:
-                case BPCHAROID:
-                case VARCHAROID:
-                case CLOBOID:
-                case TEXTOID: {
-                    val->type = T_String;
-                    val->val.str = "";
-                    auto* const_ptr = (Node*)make_const(pstate, val, -1);
-                    lappend(exprlist, const_ptr);
-                    break;
-                }
-                case INT1OID:
-                case INT2OID:
-                case INT4OID:
-                case INT8OID: {
-                    val->type = T_Integer;
-                    val->val.ival = 0;
-                    auto* const_ptr = (Node*)make_const(pstate, val, -1);
-                    lappend(exprlist, const_ptr);
-                    break;
-                }
-                case FLOAT4OID:
-                case FLOAT8OID:
-                case NUMERICOID: {
-                    val->type = T_Float;
-                    val->val.str = "0";
-                    auto* const_ptr = (Node*)make_const(pstate, val, -1);
-                    lappend(exprlist, const_ptr);
-                    break;
-                }
-                default:
-                    break;
-            }
+            lappend(exprlist, makeConstByType(attr));
         }
     }
     if (list_length(exprlist) < list_length(icolumns)) {
@@ -2445,6 +2406,15 @@ List* transformInsertRow(ParseState* pstate, List* exprlist, List* stmtcols, Lis
                 errmsg("INSERT has more expressions than target columns"),
                 parser_errposition(pstate, exprLocation((Node*)list_nth(exprlist, list_length(icolumns))))));
     }
+
+    if (!SQL_MODE_STRICT()) {
+        CheckDefaultForNotnullCols(pstate, exprlist, attrnos);
+        /* Compatible with MySQL, when not in strict sql mode,
+        * append the cols with not_null attributes into the insert cols list.
+        */
+        icolumns = AppendNotNullCols(pstate, icolumns, &attrnos);
+    }
+
     if (stmtcols != NIL && list_length(exprlist) < list_length(icolumns)) {
         /*
          * We can get here for cases like INSERT ... SELECT (a,b,c) FROM ...
