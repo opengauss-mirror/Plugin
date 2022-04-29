@@ -835,7 +835,7 @@ static int errstate;
 	LABEL LANGUAGE LARGE_P LAST_P LC_COLLATE_P LC_CTYPE_P LEADING LEAKPROOF
 	LEAST LESS LEFT LEVEL LIKE LIMIT LIST LISTEN LOAD LOCAL LOCALTIME LOCALTIMESTAMP
 	LOCATE LOCATION LOCK_P LOG_P LOGGING LOGIN_ANY LOGIN_FAILURE LOGIN_SUCCESS LOGOUT LOOP
-	MAPPING MASKING MASTER MATCH MATERIALIZED MATCHED MAXEXTENTS MAXSIZE MAXTRANS MAXVALUE MERGE MICROSECOND_P MINUS_P MINUTE_P MINVALUE MINEXTENTS MOD MODE MODIFY_P MONTH_P MOVE MOVEMENT
+	MAPPING MASKING MASTER MATCH MATERIALIZED MATCHED MAXEXTENTS MAXSIZE MAXTRANS MAXVALUE MEDIUMINT MERGE MICROSECOND_P MINUS_P MINUTE_P MINVALUE MINEXTENTS MOD MODE MODIFY_P MONTH_P MOVE MOVEMENT
 	MODEL // DB4AI
 	NAME_P NAMES NATIONAL NATURAL NCHAR NEXT NO NOCOMPRESS NOCYCLE NODE NOLOGGING NOMAXVALUE NOMINVALUE NONE
 	NOT NOTHING NOTIFY NOTNULL NOWAIT NULL_P NULLCOLS NULLIF NULLS_P NUMBER_P NUMERIC NUMSTR NVARCHAR2 NVL
@@ -20690,11 +20690,11 @@ GenericType:
 						$$ = transferFloat4TypeInBFormat($1, $2, @2, yyscanner);
 						/* for B_FORMAT compatibility, real and double refer to float8 */
 					} else if (($1 != NULL) && ((strcmp($1, "real") == 0 || strcmp($1, "double") == 0))) {
-							$$ = makeTypeName("float8");
-							$$->typmods = $2;
+						$$ = makeTypeName("float8");
+						$$->typmods = $2;
 					} else if ($1 != NULL && (strcmp($1, "text") == 0 || strcmp($1, "tinytext") == 0 || strcmp($1, "mediumtext") == 0 || strcmp($1, "longtext") == 0)) {
-							$$ = SystemTypeName("text");
-							$$->location = @1;
+						$$ = SystemTypeName("text");
+						$$->location = @1;
 					} else {
 						$$ = makeTypeName($1);
 						$$->typmods = $2;
@@ -20726,7 +20726,7 @@ Binary:	BINARY
 /*
  * SQL92 numeric data types
  */
-Numeric:	INT_P
+Numeric:	INT_P opt_type_modifiers
 				{
 					$$ = SystemTypeName("int4");
 					$$->location = @1;
@@ -20745,17 +20745,22 @@ Numeric:	INT_P
 					$$->location = @1;
 				}
 				}
-			| SMALLINT
+			| SMALLINT opt_type_modifiers
 				{
 					$$ = SystemTypeName("int2");
 					$$->location = @1;
 				}
-			| TINYINT
+			| TINYINT opt_type_modifiers
 				{
 					$$ = SystemTypeName("int1");
 					$$->location = @1;
 				}
-			| BIGINT
+			| MEDIUMINT opt_type_modifiers
+				{
+					$$ = SystemTypeName("int4");
+					$$->location = @1;
+				}
+			| BIGINT opt_type_modifiers
 				{
 					$$ = SystemTypeName("int8");
 					$$->location = @1;
@@ -24925,6 +24930,7 @@ col_name_keyword:
 			| INTERVAL
 			| LEAST
 			| LOCATE
+			| MEDIUMINT
 			| MICROSECOND_P
 			| MINUTE_P
 			| NATIONAL
