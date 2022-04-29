@@ -17,6 +17,7 @@
 #include "knl/knl_variable.h"
 
 #include <limits.h>
+#include <stdlib.h>
 #include <cstring>
 #include <cmath>
 
@@ -45,6 +46,9 @@
 #include "plugin_utils/my_locale.h"
 #include "pgxc/groupmgr.h"
 #include "plugin_postgres.h"
+#include "parser/parse_coerce.h"
+#include "catalog/pg_type.h"
+#include "workload/cpwlm.h"
 
 #define JUDGE_INPUT_VALID(X, Y) ((NULL == (X)) || (NULL == (Y)))
 #define GET_POSITIVE(X) ((X) > 0 ? (X) : ((-1) * (X)))
@@ -6186,6 +6190,9 @@ Datum text_reverse(PG_FUNCTION_ARGS)
 #define ASCII_9 57
 #define ASCII_5 53
 #define ASCII_0 48
+#define ASCII_ADD 43
+#define ASCII_MINUS 45
+#define ASCII_DOT 46
 
 static void round_string_number(char *source, char *dest, int precision) {
     errno_t errorno = 0;
@@ -6257,8 +6264,9 @@ static void round_string_number(char *source, char *dest, int precision) {
 static char *db_b_format_transfer(char *ch_val, int precision, char *ch_locale) {
     precision = precision > MAX_PRECISION ? MAX_PRECISION : (precision < 0 ? 0 : precision);
     MyLocale *locale = MyLocaleSearch(ch_locale);
+    // if invalid locale received, set locale to 'en_US'
     if (locale == NULL) {
-        ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("the provided locale is invalid.")));
+        locale = MyLocaleSearch("en_US");
     }
 
     char *rounded_val = (char *) palloc(strlen(ch_val) + 1);
@@ -6273,18 +6281,19 @@ static char *db_b_format_transfer(char *ch_val, int precision, char *ch_locale) 
             break;
         }
     }
-    int int_part_len = dec_point_index == -1 ? len : dec_point_index;
+    int has_minus = ch_val[0] == ASCII_MINUS ? 1 : 0;
+    int int_part_len = (dec_point_index == -1 ? len : dec_point_index) - has_minus;
     int thousand_sep_num =
             locale->thousand_sep == '\0'
             ? 0
             : (int_part_len % THOUS_INTERVAL == 0 ? int_part_len / THOUS_INTERVAL - 1 : int_part_len / THOUS_INTERVAL);
 
-    // length of buf = integer_part_len + thousand_separator_num + (decimal_point + precision) + 1(for '\0')
+    // length of buf = integer_part_len + thousand_separator_num + (decimal_point + precision) + 1(for '\0') (+ 1 if has minus)
     int buf_len;
     if (precision <= 0) {
-        buf_len = int_part_len + thousand_sep_num + 1;
+        buf_len = int_part_len + thousand_sep_num + 1 + has_minus;
     } else {
-        buf_len = int_part_len + thousand_sep_num + precision + 2;
+        buf_len = int_part_len + thousand_sep_num + precision + 2 + has_minus;
     }
 
     char *buf = NULL;
@@ -6292,12 +6301,12 @@ static char *db_b_format_transfer(char *ch_val, int precision, char *ch_locale) 
     buf[buf_len - 1] = '\0';
 
     // pointer start from position of decimal point
-    char *buf_ptr = buf + int_part_len + thousand_sep_num;
+    char *buf_ptr = buf + int_part_len + thousand_sep_num + has_minus;
     // add decimal point when requiring precision
     if (precision > 0) {
         *buf_ptr = locale->decimal_point;
     }
-    char *val_ptr = rounded_val + int_part_len;
+    char *val_ptr = rounded_val + int_part_len + has_minus;
     // handle integer part
     int acc = 0;
     do {
@@ -6313,8 +6322,8 @@ static char *db_b_format_transfer(char *ch_val, int precision, char *ch_locale) 
     }
 
     // handle decimal part
-    buf_ptr = buf + int_part_len + thousand_sep_num;
-    val_ptr = rounded_val + int_part_len;
+    buf_ptr = buf + int_part_len + thousand_sep_num + has_minus;
+    val_ptr = rounded_val + int_part_len + has_minus;
     for (int i = 0; i < precision; i++) {
         if (*val_ptr == '\0' || *(val_ptr + 1) == '\0') {
             *(++buf_ptr) = '0';
@@ -6568,18 +6577,89 @@ Datum text_format(PG_FUNCTION_ARGS)
         PG_RETURN_TEXT_P(result);
 }
 
+/*
+ * Check whether a cstring can transform to float8
+ */
+static bool can_transform_to_float8(char* ch_value)
+{
+    char* end_ptr;
+    strtod(ch_value, &end_ptr);
+    // we don't need to check errno, because we will handle overflowing in caller function later.
+    bool result = (end_ptr != ch_value);
+    *end_ptr = '\0';
+    return result;
+}
+
+static char* to_cstring_type(Datum param, Oid param_oid)
+{
+    FmgrInfo typoutputfinfo;
+    Oid typoutputfunc;
+    bool typIsVarlena = false;
+    getTypeOutputInfo(param_oid, &typoutputfunc, &typIsVarlena);
+    fmgr_info(typoutputfunc, &typoutputfinfo);
+    return OutputFunctionCall(&typoutputfinfo, param);
+}
+
+/*
+ * Transform an any type input into char*. If the input is not a valid float number, or cannot be transformed to
+ * a valid float number, set it to 0
+ */
+static char* db_b_format_get_cstring(Datum param, Oid param_oid)
+{
+    Oid float8_oid = FLOAT8OID;
+    char* ch_value;
+    char* tmp = NULL;
+    if (can_coerce_type(1, &param_oid, &float8_oid, COERCION_IMPLICIT)) {
+        ch_value = to_cstring_type(param, param_oid);
+        // store point for ch_value in case of requiring pfree later
+        tmp = ch_value;
+        ch_value = trim(ch_value);
+        if (!can_transform_to_float8(ch_value)) {
+            pfree(tmp);
+            ch_value = "0";
+        }
+    } else {
+        ch_value = "0";
+    }
+    if (ch_value[0] == ASCII_ADD) {
+        ch_value = ch_value + 1;
+    }
+    // in case of variable display_leading_zero set to false. the input may like '-.123'
+    if (ch_value[0] == '.' || (ch_value[0] == '-' && ch_value[1] == '.')) {
+        int dot_pos = ch_value[0] == ASCII_DOT ? 0 : 1;
+        int len = strlen(ch_value);
+        char* value = (char *) palloc(len + 2);
+        if (dot_pos == 1) {
+            value[0] = ch_value[0];
+        }
+        value[dot_pos] = '0';
+        errno_t ascii_dot_errorno = strcpy_s(value + dot_pos + 1, len + 1, ch_value + dot_pos);
+        securec_check_c(ascii_dot_errorno, "\0", "\0");
+        // free pointer tmp which might be the starter of ch_value, so as to free ch_value
+        if (tmp != NULL) {
+            pfree(tmp);
+        }
+        return value;
+    }
+    return ch_value;
+}
+
 Datum db_b_format_locale(PG_FUNCTION_ARGS)
 {
+    Oid first_param_oid = get_fn_expr_argtype(fcinfo->flinfo, 0);
+    char* ch_value = db_b_format_get_cstring(PG_GETARG_DATUM(0), first_param_oid);
     int precision = PG_GETARG_INT32(1);
-    char* ch_locale = text_to_cstring(PG_GETARG_TEXT_PP(2));
-    char* ch_value = DatumGetCString(DirectFunctionCall1(float8out, PG_GETARG_DATUM(0)));
+
+    Oid third_param_oid = get_fn_expr_argtype(fcinfo->flinfo, 2);
+    char* ch_locale = to_cstring_type(PG_GETARG_DATUM(2), third_param_oid);
     PG_RETURN_TEXT_P(cstring_to_text(db_b_format_transfer(ch_value, precision, ch_locale)));
 }
 
 Datum db_b_format(PG_FUNCTION_ARGS)
 {
+    Oid first_oid = get_fn_expr_argtype(fcinfo->flinfo, 0);
+    char* ch_value = db_b_format_get_cstring(PG_GETARG_DATUM(0), first_oid);
     int precision = PG_GETARG_INT32(1);
-    char* ch_value = DatumGetCString(DirectFunctionCall1(float8out, PG_GETARG_DATUM(0)));
     PG_RETURN_TEXT_P(cstring_to_text(db_b_format_transfer(ch_value, precision, "en_US")));
 }
 
