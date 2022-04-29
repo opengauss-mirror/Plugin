@@ -55,7 +55,7 @@ utils:
 
 
 b_sql_plugin--1.0.sql: sql_script/*
-	cat $^ >> $@
+	cat $^ > $@
 DATA_built = b_sql_plugin--1.0.sql
 
 OBJS += plugin_postgres.o 
