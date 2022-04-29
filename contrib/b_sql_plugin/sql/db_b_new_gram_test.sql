@@ -11,6 +11,13 @@ CREATE TABLE test_engine_type_table1 OF test_engine_type1 engine = InnoDB;
 CREATE TYPE test_engine_type2 AS (a int, b text);
 CREATE TABLE IF NOT EXISTS test_engine_type_table2 OF test_engine_type2 engine = InnoDB;
 
+CREATE TABLE test_engine_1_1 (a int) engine = 'InnoDB';
+CREATE TABLE  IF NOT EXISTS test_engine_2_1 (a int) engine = 'InnoDB';
+CREATE TYPE test_engine_type1_1 AS (a int, b text);
+CREATE TABLE test_engine_type_table1_1 OF test_engine_type1_1 engine = 'InnoDB';
+CREATE TYPE test_engine_type2_1 AS (a int, b text);
+CREATE TABLE IF NOT EXISTS test_engine_type_table2_1 OF test_engine_type2_1 engine = 'InnoDB';
+
 CREATE TABLE test_engine_as engine = InnoDB as select a from test_engine_1;
 
 -- CREATE TABLE COMPRESSION test

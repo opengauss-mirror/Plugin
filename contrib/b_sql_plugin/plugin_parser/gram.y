@@ -5074,6 +5074,10 @@ opt_engine:
 		{
 			$$ = NULL;
 		}
+	| ENGINE_P opt_equal Sconst
+		{
+			$$ = NULL;
+		}
 	| /* empty */
 		{
 			$$ = NULL;
@@ -5082,6 +5086,7 @@ opt_engine:
 
 compression_args:	IDENT		{ $$ = $1; }
 					| Sconst	{ $$ = $1; }
+					| NONE		{ $$ = "none"; }
 		;
 
 set_compress_type:
