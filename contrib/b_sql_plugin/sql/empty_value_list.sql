@@ -19,7 +19,7 @@ create table test11(num raw not null);
 create table test12(num blob not null);
 create table test13(num clob not null);
 create table test14(num json not null);
-create table test15(num xml not null);
+create table test15(num jsonb not null);
 create table test16(num point not null);
 create table test17(num lseg not null);
 create table test18(num path not null);
@@ -190,16 +190,16 @@ insert into m4 values();
 select * from m4;
 
 --pg_get_basic_value
-select * from pg_get_basic_value('timestamp');
-select * from pg_get_basic_value('uuid');
+select * from pg_get_nonstrict_basic_value('timestamp');
+select * from pg_get_nonstrict_basic_value('uuid');
 
 --view
-select * from pg_type_basic_value where typename = 'timestamp';
-select * from pg_type_basic_value where typename = 'uuid';
-select * from pg_type_basic_value where typename = 'box';
-select * from pg_type_basic_value where typename = 'int';
-select * from pg_type_basic_value where typename = 'point';
-select * from pg_type_basic_value where typename = 'tinterval';
+select * from pg_type_nonstrict_basic_value where typename = 'timestamp';
+select * from pg_type_nonstrict_basic_value where typename = 'uuid';
+select * from pg_type_nonstrict_basic_value where typename = 'box';
+select * from pg_type_nonstrict_basic_value where typename = 'int';
+select * from pg_type_nonstrict_basic_value where typename = 'point';
+select * from pg_type_nonstrict_basic_value where typename = 'tinterval';
 
 \c postgres
 drop database if exists b;

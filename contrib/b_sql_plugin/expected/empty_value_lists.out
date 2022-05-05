@@ -18,7 +18,7 @@ create table test11(num raw not null);
 create table test12(num blob not null);
 create table test13(num clob not null);
 create table test14(num json not null);
-create table test15(num xml not null);
+create table test15(num jsonb not null);
 create table test16(num point not null);
 create table test17(num lseg not null);
 create table test18(num path not null);
@@ -81,10 +81,10 @@ DETAIL:  Failing row contains (null).
 insert into test13 values(),();
 ERROR:  null value in column "num" violates not-null constraint
 DETAIL:  Failing row contains (null).
-insert into test14 values(),();
+insert into test14 values(),();    
 ERROR:  null value in column "num" violates not-null constraint
 DETAIL:  Failing row contains (null).
-insert into test15 values(),();
+insert into test15 values(),();    
 ERROR:  null value in column "num" violates not-null constraint
 DETAIL:  Failing row contains (null).
 insert into test16 values(),();
@@ -213,18 +213,18 @@ select *from test5;
 
 insert into test6 values(),();
 select *from test6;
-    num     
-------------
- \x00000000
- \x00000000
+ num 
+-----
+ \x
+ \x
 (2 rows)
 
 insert into test7 values(),();
 select *from test7;
  num 
 -----
- 
- 
+  
+  
 (2 rows)
 
 insert into test8 values(),();
@@ -253,18 +253,18 @@ select *from test10;
 
 insert into test11 values(),();
 select *from test11;
-   num    
-----------
- 00000000
- 00000000
+ num 
+-----
+ 
+ 
 (2 rows)
 
 insert into test12 values(),();
 select *from test12;
-   num    
-----------
- 00000000
- 00000000
+ num 
+-----
+ 
+ 
 (2 rows)
 
 insert into test13 values(),();
@@ -279,16 +279,16 @@ insert into test14 values(),();
 select *from test14;
  num 
 -----
- 
- 
+ 0
+ 0
 (2 rows)
 
 insert into test15 values(),();
 select *from test15;
  num 
 -----
- 
- 
+ 0
+ 0
 (2 rows)
 
 insert into test16 values(),();
@@ -430,7 +430,7 @@ select *from test32;
 insert into test33 values(),();
 select *from test33;
                num               
----------------------------------
+--?.*
 --?.*
 --?.*
 (2 rows)
@@ -438,7 +438,7 @@ select *from test33;
 insert into test34 values(),();
 select *from test34;
                  num                 
--------------------------------------
+--?.*
 --?.*
 --?.*
 (2 rows)

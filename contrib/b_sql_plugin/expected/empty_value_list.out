@@ -18,7 +18,7 @@ create table test11(num raw not null);
 create table test12(num blob not null);
 create table test13(num clob not null);
 create table test14(num json not null);
-create table test15(num xml not null);
+create table test15(num jsonb not null);
 create table test16(num point not null);
 create table test17(num lseg not null);
 create table test18(num path not null);
@@ -206,16 +206,16 @@ select *from test5;
 
 insert into test6 values();
 select *from test6;
-    num     
-------------
- \x00000000
+ num 
+-----
+ \x
 (1 row)
 
 insert into test7 values();
 select *from test7;
  num 
 -----
- 
+  
 (1 row)
 
 insert into test8 values();
@@ -241,16 +241,16 @@ select *from test10;
 
 insert into test11 values();
 select *from test11;
-   num    
-----------
- 00000000
+ num 
+-----
+ 
 (1 row)
 
 insert into test12 values();
 select *from test12;
-   num    
-----------
- 00000000
+ num 
+-----
+ 
 (1 row)
 
 insert into test13 values();
@@ -264,14 +264,14 @@ insert into test14 values();
 select *from test14;
  num 
 -----
- 
+ 0
 (1 row)
 
 insert into test15 values();
 select *from test15;
  num 
 -----
- 
+ 0
 (1 row)
 
 insert into test16 values();
@@ -396,14 +396,14 @@ select *from test32;
 insert into test33 values();
 select *from test33;
                num               
----------------------------------
+--?.*
 --?.*
 (1 row)
 
 insert into test34 values();
 select *from test34;
                  num                 
--------------------------------------
+--?.*
 --?.*
 (1 row)
 
@@ -490,49 +490,49 @@ select * from m4;
 (1 row)
 
 --pg_get_basic_value
-select * from pg_get_basic_value('timestamp');
- pg_get_basic_value 
---------------------
+select * from pg_get_nonstrict_basic_value('timestamp');
+ pg_get_nonstrict_basic_value 
+------------------------------
  now
 (1 row)
 
-select * from pg_get_basic_value('uuid');
-          pg_get_basic_value          
+select * from pg_get_nonstrict_basic_value('uuid');
+     pg_get_nonstrict_basic_value     
 --------------------------------------
  00000000-0000-0000-0000-000000000000
 (1 row)
 
 --view
-select * from pg_type_basic_value where typename = 'timestamp';
+select * from pg_type_nonstrict_basic_value where typename = 'timestamp';
  typename  | basic_value 
 -----------+-------------
  timestamp | now
 (1 row)
 
-select * from pg_type_basic_value where typename = 'uuid';
+select * from pg_type_nonstrict_basic_value where typename = 'uuid';
  typename |             basic_value              
 ----------+--------------------------------------
  uuid     | 00000000-0000-0000-0000-000000000000
 (1 row)
 
-select * from pg_type_basic_value where typename = 'box';
+select * from pg_type_nonstrict_basic_value where typename = 'box';
  typename | basic_value 
 ----------+-------------
  box      | (0,0),(0,0)
 (1 row)
 
-select * from pg_type_basic_value where typename = 'int';
+select * from pg_type_nonstrict_basic_value where typename = 'int';
  typename | basic_value 
 ----------+-------------
 (0 rows)
 
-select * from pg_type_basic_value where typename = 'point';
+select * from pg_type_nonstrict_basic_value where typename = 'point';
  typename | basic_value 
 ----------+-------------
  point    | (0,0)
 (1 row)
 
-select * from pg_type_basic_value where typename = 'tinterval';
+select * from pg_type_nonstrict_basic_value where typename = 'tinterval';
  typename  |                     basic_value                     
 -----------+-----------------------------------------------------
  tinterval | ["1970-01-01 00:00:00+08" "1970-01-01 00:00:00+08"]
