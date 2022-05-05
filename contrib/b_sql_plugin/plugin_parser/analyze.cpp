@@ -97,6 +97,10 @@
 #include "utils/date.h"
 #include "utils/nabstime.h"
 #include "utils/geo_decls.h"
+#include "utils/varbit.h"
+#include "utils/json.h"
+#include "utils/jsonb.h"
+#include "utils/xml.h"
 /* Hook for plugins to get control at end of parse analysis */
 THR_LOCAL post_parse_analyze_hook_type post_parse_analyze_hook = NULL;
 static const int MILLISECONDS_PER_SECONDS = 1000;
@@ -2099,9 +2103,55 @@ static Node* makeNotTimetypeConst(Oid targetType, int32 targetTypmod, Oid target
                         targetByval);
                     break;
                 }
+                case JSONOID: {
+                    new_expr = (Node*)makeConst(targetType,
+                        targetTypmod,
+                        targetCollation,
+                        targetLen,
+                        (Datum)DirectFunctionCall1(json_in, CStringGetDatum("0")),
+                        false,
+                        targetByval);
+                    break;    
+                }
+                case JSONBOID: {
+                    new_expr = (Node*)makeConst(targetType,
+                        targetTypmod,
+                        targetCollation,
+                        targetLen,
+                        (Datum)DirectFunctionCall1(jsonb_in, CStringGetDatum("0")),
+                        false,
+                        targetByval);
+                    break;    
+                }
+                case XMLOID: {
+                    new_expr = (Node*)makeConst(targetType,
+                        targetTypmod,
+                        targetCollation,
+                        targetLen,
+                        (Datum)DirectFunctionCall1(xml_in, CStringGetDatum("")),
+                        false,
+                        targetByval);
+                    break;    
+                }
+                case BITOID: {
+                    new_expr = (Node*)makeConst(targetType,
+                        targetTypmod,
+                        targetCollation,
+                        targetLen,
+                        (Datum)DirectFunctionCall3(bit_in, CStringGetDatum(""), ObjectIdGetDatum(0), Int32GetDatum(-1)),
+                        false,
+                        targetByval);
+                    break;    
+                }                
                 default: {
+                    bool targetIsVarlena = (!targetByval) && (targetLen == -1);
+                    if (targetIsVarlena) {
+                        new_expr = (Node*)makeConst(UNKNOWNOID, -1, InvalidOid, -2, CStringGetDatum(""), false, false);
+                    }
+                    else {
                     new_expr =
                         (Node*)makeConst(targetType, targetTypmod, targetCollation, 1, (Datum)0, false, targetByval);
+                    }
                     break;
                 }
             }
@@ -2115,19 +2165,13 @@ static Node* makeConstByType(Form_pg_attribute att_tup)
     Oid targetCollation = att_tup->attcollation;
     int16 targetLen = att_tup->attlen;
     bool targetByval = att_tup->attbyval;
-    bool targetIsVarlena = (!targetByval) && (targetLen == -1) && targetType != PATHOID && targetType != POLYGONOID;
     int32 targetTypmod;
     bool targetIsTimetype = (targetType == DATEOID || targetType == TIMESTAMPOID || targetType == TIMESTAMPTZOID ||
                              targetType == TIMETZOID || targetType == INTERVALOID || targetType == TINTERVALOID || 
                              targetType == SMALLDATETIMEOID);
     targetTypmod = targetIsTimetype ? -1 : att_tup->atttypmod;
     if (!targetIsTimetype) {
-        if (targetIsVarlena) {
-            new_expr = (Node*)makeConst(
-                targetType, targetTypmod, targetCollation, 0, CStringGetDatum(" "), false, targetByval);
-        } else {
-            new_expr = makeNotTimetypeConst(targetType, targetTypmod, targetCollation, targetLen, targetByval);
-        }
+        new_expr = makeNotTimetypeConst(targetType, targetTypmod, targetCollation, targetLen, targetByval);
     } else {
         new_expr = makeTimetypeConst(targetType, targetTypmod, targetCollation, targetLen, targetByval);
     }
