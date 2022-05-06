@@ -381,10 +381,10 @@ select *from test26;
 
 insert into test27 values(),();
 select *from test27;
-  num   
---------
- ￥0.00
- ￥0.00
+--?.*num
+--?.*
+--?.*0.00
+--?.*0.00
 (2 rows)
 
 insert into test28 values(),();
@@ -429,7 +429,7 @@ select *from test32;
 
 insert into test33 values(),();
 select *from test33;
-               num               
+--?.*num
 --?.*
 --?.*
 --?.*
@@ -437,7 +437,7 @@ select *from test33;
 
 insert into test34 values(),();
 select *from test34;
-                 num                 
+--?.*num
 --?.*
 --?.*
 --?.*
