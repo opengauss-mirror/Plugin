@@ -49,6 +49,7 @@
 #include "parser/parse_coerce.h"
 #include "catalog/pg_type.h"
 #include "workload/cpwlm.h"
+#include "utils/varbit.h"
 
 #define JUDGE_INPUT_VALID(X, Y) ((NULL == (X)) || (NULL == (Y)))
 #define GET_POSITIVE(X) ((X) > 0 ? (X) : ((-1) * (X)))
@@ -5061,12 +5062,13 @@ Datum bytea_to_hex(PG_FUNCTION_ARGS)
 {
     bytea* in = PG_GETARG_BYTEA_PP(0);
     char* str = VARDATA_ANY(in);
+    auto* unsigned_str = (unsigned char*) str;
     int len = VARSIZE_ANY_EXHDR(in);
     if (len == 0) {
         PG_RETURN_TEXT_P(cstring_to_text(""));
     }
 
-    char* str_ptr = str + len - 1;
+    unsigned char* str_ptr = unsigned_str + len - 1;
 
     char buf[2 * len + 1];
     char* result_ptr = buf + sizeof(buf) - 1;
@@ -5079,6 +5081,27 @@ Datum bytea_to_hex(PG_FUNCTION_ARGS)
     } while (result_ptr > buf);
 
     PG_RETURN_TEXT_P(cstring_to_text(result_ptr));
+}
+
+Datum bit_to_hex(PG_FUNCTION_ARGS)
+{
+    int64 arg_int = DatumGetInt64(DirectFunctionCall1(bittoint8, PG_GETARG_DATUM(0)));
+    int len = 0;
+
+    // get len of result
+    int64 value = arg_int;
+    do {
+        value >>= 8;
+        len += 2;
+    } while (value > 0);
+
+    char* result = (char*)palloc(len + 1);
+    result[len] = '\0';
+    do {
+        result[--len] = HEX_CHARS[arg_int & 15];
+        arg_int >>= 4;
+    } while (len > 0);
+    PG_RETURN_TEXT_P(cstring_to_text(result));
 }
 
 /*
@@ -6646,17 +6669,26 @@ static char* db_b_format_get_cstring(Datum param, Oid param_oid)
 
 Datum db_b_format_locale(PG_FUNCTION_ARGS)
 {
+    if (PG_ARGISNULL(0) || PG_ARGISNULL(1)) {
+        PG_RETURN_NULL();
+    }
     Oid first_param_oid = get_fn_expr_argtype(fcinfo->flinfo, 0);
     char* ch_value = db_b_format_get_cstring(PG_GETARG_DATUM(0), first_param_oid);
     int precision = PG_GETARG_INT32(1);
 
     Oid third_param_oid = get_fn_expr_argtype(fcinfo->flinfo, 2);
+    if (PG_ARGISNULL(2)) {
+        PG_RETURN_TEXT_P(cstring_to_text(db_b_format_transfer(ch_value, precision, "en_US")));
+    }
     char* ch_locale = to_cstring_type(PG_GETARG_DATUM(2), third_param_oid);
     PG_RETURN_TEXT_P(cstring_to_text(db_b_format_transfer(ch_value, precision, ch_locale)));
 }
 
 Datum db_b_format(PG_FUNCTION_ARGS)
 {
+    if (PG_ARGISNULL(0) || PG_ARGISNULL(1)) {
+        PG_RETURN_NULL();
+    }
     Oid first_oid = get_fn_expr_argtype(fcinfo->flinfo, 0);
     char* ch_value = db_b_format_get_cstring(PG_GETARG_DATUM(0), first_oid);
     int precision = PG_GETARG_INT32(1);

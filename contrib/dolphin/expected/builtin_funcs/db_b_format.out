@@ -449,6 +449,37 @@ select format('       ',2);
  0.00
 (1 row)
 
+-- test for null params
+select format(null, 1);
+ format 
+--------
+ 
+(1 row)
+
+select format(1, null);
+ format 
+--------
+ 
+(1 row)
+
+select format(1, 1, null);
+ format 
+--------
+ 1.0
+(1 row)
+
+select format(null, null, 1);
+ format 
+--------
+ 
+(1 row)
+
+select format(null, null, null);
+ format 
+--------
+ 
+(1 row)
+
 -- test for setting b_format_mode back to false
 set b_format_mode = 0;
 select format(1234.456, 2);
