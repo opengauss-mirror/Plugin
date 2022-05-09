@@ -1,0 +1,5 @@
+# whale extension
+comment = 'sql engine'
+default_version = '1.0'
+module_pathname = '$libdir/whale'
+relocatable = false
