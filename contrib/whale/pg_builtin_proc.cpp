@@ -38,18 +38,18 @@ static_assert(sizeof(true) == sizeof(char), "illegal bool size");
 static_assert(sizeof(false) == sizeof(char), "illegal bool size");
 
 #ifdef ENABLE_MULTIPLE_NODES
-    FuncGroup b_func_groups[] = {
+    FuncGroup a_func_groups[] = {
         #include "include/builtin_funcs.ini"
         #include "../../../distribute/kernel/catalog/distribute_builtin_funcs.ini"
     };
 #else
-    FuncGroup b_func_groups[] = {
+    FuncGroup a_func_groups[] = {
         #include "include/builtin_funcs.ini"
     };
 #endif
-extern struct HTAB* b_nameHash;
-extern struct HTAB* b_oidHash;
-const int b_nfuncgroups = sizeof(b_func_groups) / sizeof(FuncGroup);
+extern struct HTAB* a_nameHash;
+extern struct HTAB* a_oidHash;
+const int b_nfuncgroups = sizeof(a_func_groups) / sizeof(FuncGroup);
 
 static const int MAX_PROC_NAME_LEN = NAMEDATALEN;
 
@@ -91,13 +91,13 @@ static void InitHashTable(int size)
     info.entrysize = sizeof(HashEntryNameToFuncGroup);
     info.hash = string_hash;
     info.hcxt = g_instance.builtin_proc_context;
-    b_nameHash = hash_create("builtin proc name Lookup Table", size, &info,
+    a_nameHash = hash_create("builtin proc name Lookup Table", size, &info,
                                 HASH_ELEM | HASH_FUNCTION | HASH_CONTEXT);
     info.keysize = sizeof(Oid);
     info.entrysize = sizeof(HashEntryOidToBuiltinFunc);
     info.hash = oid_hash;
     info.hcxt = g_instance.builtin_proc_context;
-    b_oidHash = hash_create("builtin proc Oid Lookup Table", size, &info,
+    a_oidHash = hash_create("builtin proc Oid Lookup Table", size, &info,
                                 HASH_ELEM | HASH_FUNCTION | HASH_CONTEXT);
 }
 
@@ -111,7 +111,7 @@ static const FuncGroup* NameHashTableAccess(HASHACTION action, const char* name,
 
     Assert(name != NULL);
 
-    result = (HashEntryNameToFuncGroup *)hash_search(b_nameHash, &temp_name, action, &found);
+    result = (HashEntryNameToFuncGroup *)hash_search(a_nameHash, &temp_name, action, &found);
     if (action == HASH_ENTER) {
         Assert(!found);
         result->group = group;
@@ -133,7 +133,7 @@ static const Builtin_func* OidHashTableAccess(HASHACTION action, Oid oid, const 
     bool found = false;
     Assert(oid > 0);
 
-    result = (HashEntryOidToBuiltinFunc *)hash_search(b_oidHash, &oid, action, &found);
+    result = (HashEntryOidToBuiltinFunc *)hash_search(a_oidHash, &oid, action, &found);
     if (action == HASH_ENTER) {
         Assert(!found);
         result->func = func;
@@ -160,10 +160,10 @@ static void CheckNameLength(const char* name)
 void initBSQLBuiltinFuncs()
 {
     InitHashTable(b_nfuncgroups);
-    SortBuiltinFuncGroups(b_func_groups);
+    SortBuiltinFuncGroups(a_func_groups);
     int nfunc = 0;
     for (int i = 0; i < b_nfuncgroups; i++) {
-        const FuncGroup* fg = &b_func_groups[i];
+        const FuncGroup* fg = &a_func_groups[i];
         CheckNameLength(fg->funcName);
         NameHashTableAccess(HASH_ENTER, fg->funcName, fg);
 

@@ -10,9 +10,6 @@ top_builddir = ../..
 base_dir = contrib/whale
 MODULE_big = whale
 p=25432
-b_sql_plugin--1.0.sql: sql_script/*
-	cat $^ > $@
-DATA_built = b_sql_plugin--1.0.sql
 
 
 OBJS = $(parser)/analyze.o $(parser)/gram.o $(parser)/hint_gram.o $(parser)/keywords.o $(parser)/kwlookup.o $(parser)/parser.o \

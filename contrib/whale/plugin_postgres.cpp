@@ -88,8 +88,8 @@ static ExecNodes* assign_utility_stmt_exec_nodes(Node* parse_tree);
 PG_MODULE_MAGIC_PUBLIC;
 
 extern void initBSQLBuiltinFuncs();
-extern struct HTAB* b_nameHash;
-extern struct HTAB* b_oidHash;
+extern struct HTAB* a_nameHash;
+extern struct HTAB* a_oidHash;
 extern void set_hypopg_prehook(ProcessUtility_hook_type func);
 extern void set_pgaudit_prehook(ProcessUtility_hook_type func);
 extern bool isAllTempObjects(Node* parse_tree, const char* query_string, bool sent_to_remote);
@@ -130,7 +130,7 @@ void ProcessUtilityMain(Node* parse_tree, const char* query_string, ParamListInf
 #endif /* PGXC */
     char* completion_tag,
     bool isCTAS) {
-    if (DB_IS_CMPT(B_FORMAT) && CheckIfExtensionExists("whale")) {
+    if (DB_IS_CMPT(A_FORMAT) && CheckIfExtensionExists("whale")) {
         return bsql_ProcessUtility(parse_tree,
             query_string,
             params,
@@ -193,21 +193,21 @@ void init_plugin_object()
 
 void _PG_init(void)
 {
-    if (!u_sess->misc_cxt.process_shared_preload_libraries_in_progress && !DB_IS_CMPT(B_FORMAT)) {
-        ereport(ERROR, (errmsg("Can't create whale extension since current database compatibility is not 'B'")));
+    if (!u_sess->misc_cxt.process_shared_preload_libraries_in_progress && !DB_IS_CMPT(A_FORMAT)) {
+        ereport(ERROR, (errmsg("Can't create whale extension since current database compatibility is not 'A'")));
     }
-    if (b_oidHash == NULL || b_nameHash == NULL) {
+    if (a_oidHash == NULL || a_nameHash == NULL) {
         initBSQLBuiltinFuncs();
     }
-    g_instance.raw_parser_hook[DB_CMPT_B] = (void*)raw_parser;
+    g_instance.raw_parser_hook[DB_CMPT_A] = (void*)raw_parser;
     init_plugin_object();
 }
 
 void _PG_fini(void)
 {
-    hash_destroy(b_nameHash);
-    hash_destroy(b_oidHash);
-    g_instance.raw_parser_hook[DB_CMPT_B] = NULL;
+    hash_destroy(a_nameHash);
+    hash_destroy(a_oidHash);
+    g_instance.raw_parser_hook[DB_CMPT_A] = NULL;
 }
 
 #ifdef PGXC
