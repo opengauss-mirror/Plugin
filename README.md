@@ -23,10 +23,11 @@ Gitee 是 OSCHINA 推出的基于 Git 的代码托管平台（同时支持 SVN�
 
 #### 参与贡献
 
-1.  Fork 本仓库
-2.  新建 Feat_xxx 分支
-3.  提交代码
-4.  新建 Pull Request
+1.  按照社区特性设计模板（ https://gitee.com/opengauss/community/tree/master/design/template ）撰写特性设计说明书，并在plugin sig例会上评审通过
+2.  代码编写/自测，提交代码review，修改检视意见
+3.  按照社区check-in模板（ https://gitee.com/opengauss/community/tree/master/check-in/template ）撰写checkin说明书，并在plugin sig例会上评审通过
+4.  代码合入
+5.  按照社区QA测试报告模板（ https://gitee.com/opengauss/QA/tree/master/Test_Delivery_Templates ）撰写openGauss XX版本XX特性测试报告模板.md、openGauss XX版本测试策略模板.md，并在 QA sig例会上评审通过（QA sig例会请通过订阅QA SIG邮件列表获知信息： https://mailweb.opengauss.org/postorius/lists/qa.opengauss.org/ ）
 
 
 #### 特技
