@@ -1,0 +1,31 @@
+drop database if exists b;
+NOTICE:  database "b" does not exist, skipping
+create database b dbcompatibility 'b';
+\c b
+create extension b_sql_plugin;
+create table test1(num int not null);
+insert into test1 value();
+ERROR:  null value in column "num" violates not-null constraint
+DETAIL:  Failing row contains (null).
+insert into test1 value(),();
+ERROR:  null value in column "num" violates not-null constraint
+DETAIL:  Failing row contains (null).
+set sql_mode = '';
+insert into test1 value();
+select * from test1;
+ num 
+-----
+   0
+(1 row)
+
+insert into test1 value(),();
+select * from test1;
+ num 
+-----
+   0
+   0
+   0
+(3 rows)
+
+\c postgres
+drop database if exists b;
