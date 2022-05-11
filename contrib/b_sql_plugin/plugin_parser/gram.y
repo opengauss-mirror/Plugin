@@ -18626,6 +18626,12 @@ insert_empty_values:
 					n->valuesLists = list_make1($2);
 					$$ = (Node *) n;
 				}
+			| VALUE_P empty_value
+				{
+					SelectStmt *n = makeNode(SelectStmt);
+					n->valuesLists = list_make1($2);
+					$$ = (Node *) n;
+				} 
 			| insert_empty_values ',' empty_value
 				{
 					SelectStmt *n = (SelectStmt *) $1;
