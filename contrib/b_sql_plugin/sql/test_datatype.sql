@@ -1,7 +1,7 @@
 drop database if exists b_datatype_test;
 create database b_datatype_test dbcompatibility 'B';
 \c b_datatype_test
-create extension b_sql_plugin;
+create extension dolphin;
 
 -- bit(n), when insert into bit, support the length less than n, which must be equal to n in normal case
 create table bit_test(a bit);

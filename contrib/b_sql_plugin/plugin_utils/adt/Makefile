@@ -4,10 +4,10 @@
 # src/common/backend/utils/adt/Makefile
 #
 
-subdir = contrib/b_sql_plugin/plugin_utils/adt
+subdir = contrib/dolphin/plugin_utils/adt
 top_builddir = ../../../../
 include $(top_builddir)/src/Makefile.global
-base_dir = contrib/b_sql_plugin
+base_dir = contrib/dolphin
 include $(top_builddir)/$(base_dir)/configure.mk
 # seems to be required for some date/time stuff 1999/07/22 bjm
 ifeq "$(findstring alpha,$(host_cpu))" "alpha"

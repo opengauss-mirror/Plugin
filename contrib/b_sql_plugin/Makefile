@@ -1,14 +1,14 @@
-# contrib/b_sql_plugin/Makefile
+# contrib/dolphin/Makefile
 commands = plugin_optimizer/commands
 parser = plugin_parser
 utils = plugin_utils
 adt = $(utils)/adt
 mb = $(utils)/mb
 optimizer = plugin_optimizer
-subdir = contrib/b_sql_plugin
+subdir = contrib/dolphin
 top_builddir = ../..
-base_dir = contrib/b_sql_plugin
-MODULE_big = b_sql_plugin
+base_dir = contrib/dolphin
+MODULE_big = dolphin
 p=25432
 
 OBJS = $(parser)/analyze.o $(parser)/gram.o $(parser)/hint_gram.o $(parser)/keywords.o $(parser)/kwlookup.o $(parser)/parser.o \
@@ -55,16 +55,16 @@ utils:
 	make -C $(utils)
 
 
-b_sql_plugin--1.0.sql: sql_script/*
+dolphin--1.0.sql: sql_script/*
 	cat $^ > $@
-DATA_built = b_sql_plugin--1.0.sql
+DATA_built = dolphin--1.0.sql
 
 OBJS += plugin_postgres.o 
 plugin_postgres.o: plugin_postgres.cpp
 
 OBJS += pg_builtin_proc.o
 pg_builtin_proc.o: pg_builtin_proc.cpp utils
-EXTENSION = b_sql_plugin
+EXTENSION = dolphin
 REGRESS:=$(shell find ./sql -maxdepth 2 -type f)
 REGRESS:=$(basename $(patsubst ./sql/%,%,$(REGRESS)) .sql)
 

@@ -5,9 +5,9 @@
 #
 # ---------------------------------------------------------------------------------------
 
-subdir = contrib/b_sql_plugin/plugin_optimizer/commands
+subdir = contrib/dolphin/plugin_optimizer/commands
 top_builddir = ../../../..
-base_dir = contrib/b_sql_plugin
+base_dir = contrib/dolphin
 include $(top_builddir)/src/Makefile.global
 include $(top_builddir)/$(base_dir)/configure.mk
 ifneq "$(MAKECMDGOALS)" "clean"

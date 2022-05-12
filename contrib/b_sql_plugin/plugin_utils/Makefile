@@ -4,10 +4,10 @@
 # src/common/backend/utils/Makefile
 #
 
-subdir = contrib/b_sql_plugin/plugin_utils
+subdir = contrib/dolphin/plugin_utils
 top_builddir = ../../..
 include $(top_builddir)/src/Makefile.global
-base_dir = contrib/b_sql_plugin
+base_dir = contrib/dolphin
 include $(top_builddir)/$(base_dir)/configure.mk
 
 ifneq "$(MAKECMDGOALS)" "clean"

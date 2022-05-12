@@ -8,7 +8,7 @@ DROP FUNCTION IF EXISTS pg_catalog.tinyblob_rawin(cstring) CASCADE;
 
 CREATE FUNCTION pg_catalog.tinyblob_rawin (
 cstring
-) RETURNS tinyblob LANGUAGE C IMMUTABLE STRICT as '$libdir/b_sql_plugin', 'tinyblob_rawin';
+) RETURNS tinyblob LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'tinyblob_rawin';
 
 DROP FUNCTION IF EXISTS pg_catalog.tinyblob_rawout(tinyblob) CASCADE;
 
@@ -20,7 +20,7 @@ DROP FUNCTION IF EXISTS pg_catalog.tinyblob_recv(internal) CASCADE;
 
 CREATE FUNCTION pg_catalog.tinyblob_recv (
 internal
-) RETURNS tinyblob LANGUAGE C IMMUTABLE STRICT as '$libdir/b_sql_plugin',  'tinyblob_recv';
+) RETURNS tinyblob LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'tinyblob_recv';
 
 DROP FUNCTION IF EXISTS pg_catalog.tinyblob_send(tinyblob) CASCADE;
 
@@ -41,7 +41,7 @@ DROP FUNCTION IF EXISTS pg_catalog.mediumblob_rawin(cstring) CASCADE;
 
 CREATE FUNCTION pg_catalog.mediumblob_rawin (
 cstring
-) RETURNS mediumblob LANGUAGE C IMMUTABLE STRICT as '$libdir/b_sql_plugin',  'mediumblob_rawin';
+) RETURNS mediumblob LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'mediumblob_rawin';
 
 DROP FUNCTION IF EXISTS pg_catalog.mediumblob_rawout(mediumblob) CASCADE;
 
@@ -53,7 +53,7 @@ DROP FUNCTION IF EXISTS pg_catalog.mediumblob_recv(internal) CASCADE;
 
 CREATE FUNCTION pg_catalog.mediumblob_recv (
 internal
-) RETURNS mediumblob LANGUAGE C IMMUTABLE STRICT as '$libdir/b_sql_plugin',  'mediumblob_recv';
+) RETURNS mediumblob LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'mediumblob_recv';
 
 DROP FUNCTION IF EXISTS pg_catalog.mediumblob_send(mediumblob) CASCADE;
 
@@ -73,7 +73,7 @@ DROP FUNCTION IF EXISTS pg_catalog.longblob_rawin(cstring) CASCADE;
 
 CREATE FUNCTION pg_catalog.longblob_rawin (
 cstring
-) RETURNS longblob LANGUAGE C IMMUTABLE STRICT as '$libdir/b_sql_plugin',  'longblob_rawin';
+) RETURNS longblob LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'longblob_rawin';
 
 DROP FUNCTION IF EXISTS pg_catalog.longblob_rawout(longblob) CASCADE;
 
@@ -85,7 +85,7 @@ DROP FUNCTION IF EXISTS pg_catalog.longblob_recv(internal) CASCADE;
 
 CREATE FUNCTION pg_catalog.longblob_recv (
 internal
-) RETURNS longblob LANGUAGE C IMMUTABLE STRICT as '$libdir/b_sql_plugin',  'longblob_recv';
+) RETURNS longblob LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'longblob_recv';
 
 DROP FUNCTION IF EXISTS pg_catalog.longblob_send(longblob) CASCADE;
 
@@ -100,14 +100,14 @@ DROP FUNCTION IF EXISTS pg_catalog.to_tinyblob(longblob) CASCADE;
 
 CREATE FUNCTION pg_catalog.to_tinyblob (
 longblob
-) RETURNS tinyblob LANGUAGE C IMMUTABLE STRICT as '$libdir/b_sql_plugin',  'longblob2tinyblob';
+) RETURNS tinyblob LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'longblob2tinyblob';
 
 -- to_mediumblob
 DROP FUNCTION IF EXISTS pg_catalog.to_mediumblob(longblob) CASCADE;
 
 CREATE FUNCTION pg_catalog.to_mediumblob (
 longblob
-) RETURNS mediumblob LANGUAGE C IMMUTABLE STRICT as '$libdir/b_sql_plugin',  'longblob2mediumblob';
+) RETURNS mediumblob LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'longblob2mediumblob';
 
 CREATE CAST (tinyblob AS longblob) WITHOUT FUNCTION AS IMPLICIT;
 CREATE CAST (mediumblob AS longblob) WITHOUT FUNCTION AS IMPLICIT;

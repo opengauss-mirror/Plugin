@@ -32,13 +32,13 @@ DROP FUNCTION IF EXISTS pg_catalog.binary_typmodin(_cstring) CASCADE;
 
 CREATE FUNCTION pg_catalog.binary_typmodin (
 _cstring
-) RETURNS int LANGUAGE C IMMUTABLE STRICT as '$libdir/b_sql_plugin',  'binary_typmodin';
+) RETURNS int LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'binary_typmodin';
 
 DROP FUNCTION IF EXISTS pg_catalog.binary_typmodout(int) CASCADE;
 
 CREATE FUNCTION pg_catalog.binary_typmodout (
 int
-) RETURNS cstring LANGUAGE C IMMUTABLE STRICT as '$libdir/b_sql_plugin',  'binary_typmodout';
+) RETURNS cstring LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'binary_typmodout';
 
 CREATE TYPE pg_catalog.binary (input=binary_in, output=binary_out,
                                 typmod_in = binary_typmodin, typmod_out = binary_typmodout,
@@ -79,7 +79,7 @@ DROP FUNCTION IF EXISTS pg_catalog.varbinary_typmodin(_cstring) CASCADE;
 
 CREATE FUNCTION pg_catalog.varbinary_typmodin (
 _cstring
-) RETURNS int LANGUAGE C IMMUTABLE STRICT as '$libdir/b_sql_plugin',  'varbinary_typmodin';
+) RETURNS int LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'varbinary_typmodin';
 
 CREATE TYPE pg_catalog.varbinary (input=varbinary_in, output=varbinary_out,
                                 typmod_in = varbinary_typmodin, typmod_out = binary_typmodout,
@@ -92,14 +92,14 @@ DROP FUNCTION IF EXISTS pg_catalog.to_binary(bytea, int) CASCADE;
 CREATE FUNCTION pg_catalog.to_binary (
 bytea,
 int
-) RETURNS binary LANGUAGE C IMMUTABLE STRICT as '$libdir/b_sql_plugin',  'bytea2binary';
+) RETURNS binary LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'bytea2binary';
 -- to_varbinary
 DROP FUNCTION IF EXISTS pg_catalog.to_varbinary(bytea, int) CASCADE;
 
 CREATE FUNCTION pg_catalog.to_varbinary (
 bytea,
 int
-) RETURNS varbinary LANGUAGE C IMMUTABLE STRICT as '$libdir/b_sql_plugin',  'bytea2var';
+) RETURNS varbinary LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'bytea2var';
 
 
 CREATE CAST (binary AS bytea) WITHOUT FUNCTION AS IMPLICIT;

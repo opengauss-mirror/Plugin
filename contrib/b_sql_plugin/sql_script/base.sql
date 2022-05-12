@@ -1,6 +1,6 @@
-\echo Use "CREATE EXTENSION b_sql_plugin" to load this file. \quit
-CREATE FUNCTION pg_catalog.b_sql_plugin_invoke()
-    RETURNS VOID AS '$libdir/b_sql_plugin','b_sql_plugin_invoke' LANGUAGE C STRICT;
+\echo Use "CREATE EXTENSION dolphin" to load this file. \quit
+CREATE FUNCTION pg_catalog.dolphin_invoke()
+    RETURNS VOID AS '$libdir/dolphin','dolphin_invoke' LANGUAGE C STRICT;
 
 CREATE OR REPLACE FUNCTION pg_catalog.curdate()
 returns date
@@ -227,19 +227,19 @@ DROP FUNCTION IF EXISTS pg_catalog.bpchar_int2(char) CASCADE;
 
 CREATE FUNCTION pg_catalog.varchar_int1 (
 varchar
-) RETURNS tinyint LANGUAGE C IMMUTABLE STRICT as '$libdir/b_sql_plugin',  'varchar_int1';
+) RETURNS tinyint LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'varchar_int1';
 
 CREATE FUNCTION pg_catalog.varchar_int2 (
 varchar
-) RETURNS smallint LANGUAGE C IMMUTABLE STRICT as '$libdir/b_sql_plugin',  'varchar_int2';
+) RETURNS smallint LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'varchar_int2';
 
 CREATE FUNCTION pg_catalog.bpchar_int1 (
 char
-) RETURNS tinyint LANGUAGE C IMMUTABLE STRICT as '$libdir/b_sql_plugin',  'bpchar_int1';
+) RETURNS tinyint LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'bpchar_int1';
 
 CREATE FUNCTION pg_catalog.bpchar_int2 (
 char
-) RETURNS smallint LANGUAGE C IMMUTABLE STRICT as '$libdir/b_sql_plugin',  'bpchar_int2';
+) RETURNS smallint LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'bpchar_int2';
 
 CREATE CAST (varchar AS tinyint) WITH FUNCTION varchar_int1(varchar) AS IMPLICIT;
 CREATE CAST (char AS tinyint) WITH FUNCTION bpchar_int1(char) AS IMPLICIT;

@@ -2,7 +2,7 @@ drop DATABASE if exists sql_mode_strict;
 
 CREATE DATABASE sql_mode_strict dbcompatibility 'B';
 \c sql_mode_strict;
-create extension b_sql_plugin;
+create extension dolphin;
 set sql_mode = '';
 
 create table test_tint(a tinyint);

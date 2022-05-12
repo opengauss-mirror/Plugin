@@ -1,7 +1,7 @@
 drop database if exists mysql_test;
 create database mysql_test dbcompatibility 'b';
 \c mysql_test
-create extension b_sql_plugin;
+create extension dolphin;
 --验证DAYOFMONTH() DAYOFWEEK() DAYOFYEAR() HOUR() MICROSECOND() MINUTE() QUARTER() SECOND() WEEKDAY() WEEKOFYEAR() YEAR()
 select DAYOFMONTH(timestamp '2021-11-4 16:30:44.341191');
 

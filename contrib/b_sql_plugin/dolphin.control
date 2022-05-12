@@ -1,5 +1,5 @@
-# b_sql_plugin extension
+# dolphin extension
 comment = 'sql engine'
 default_version = '1.0'
-module_pathname = '$libdir/b_sql_plugin'
+module_pathname = '$libdir/dolphin'
 relocatable = false

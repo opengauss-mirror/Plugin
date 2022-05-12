@@ -114,7 +114,7 @@ static void AssignSqlMode(const char* newval, void* extra);
 static bool need_full_dn_execution(const char* group_name);
 static ExecNodes* GetFunctionNodes(Oid func_id);
 static const int LOADER_COL_BUF_CNT = 5;
-static uint32 b_sql_plugin_index;
+static uint32 dolphin_index;
 void ProcessUtilityMain(Node* parse_tree, const char* query_string, ParamListInfo params, bool is_top_level,
     DestReceiver* dest,
 #ifdef PGXC
@@ -130,8 +130,8 @@ void bsql_ProcessUtility(Node* parse_tree, const char* query_string, ParamListIn
     char* completion_tag,
     bool isCTAS);
 
-PG_FUNCTION_INFO_V1_PUBLIC(b_sql_plugin_invoke);
-void b_sql_plugin_invoke(void)
+PG_FUNCTION_INFO_V1_PUBLIC(dolphin_invoke);
+void dolphin_invoke(void)
 {
     ereport(DEBUG2, (errmsg("dummy function to let process load this library.")));
     return;
@@ -144,7 +144,7 @@ void ProcessUtilityMain(Node* parse_tree, const char* query_string, ParamListInf
 #endif /* PGXC */
     char* completion_tag,
     bool isCTAS) {
-    if (DB_IS_CMPT(B_FORMAT) && CheckIfExtensionExists("b_sql_plugin")) {
+    if (DB_IS_CMPT(B_FORMAT) && CheckIfExtensionExists("dolphin")) {
         return bsql_ProcessUtility(parse_tree,
             query_string,
             params,
@@ -208,7 +208,7 @@ void init_plugin_object()
 void _PG_init(void)
 {
     if (!u_sess->misc_cxt.process_shared_preload_libraries_in_progress && !DB_IS_CMPT(B_FORMAT)) {
-        ereport(ERROR, (errmsg("Can't create b_sql_plugin extension since current database compatibility is not 'B'")));
+        ereport(ERROR, (errmsg("Can't create dolphin extension since current database compatibility is not 'B'")));
     }
     if (b_oidHash == NULL || b_nameHash == NULL) {
         initBSQLBuiltinFuncs();
@@ -7018,15 +7018,15 @@ void bsql_ProcessUtility(Node* parse_tree, const char* query_string, ParamListIn
 
 BSqlPluginContext* GetSessionContext()
 {
-    if (u_sess->attr.attr_common.extension_session_vars_array[b_sql_plugin_index] == NULL) {
+    if (u_sess->attr.attr_common.extension_session_vars_array[dolphin_index] == NULL) {
         init_session_vars();
     }
-    return (BSqlPluginContext *) u_sess->attr.attr_common.extension_session_vars_array[b_sql_plugin_index];
+    return (BSqlPluginContext *) u_sess->attr.attr_common.extension_session_vars_array[dolphin_index];
 }
 
 void set_extension_index(uint32 index)
 {
-    b_sql_plugin_index = index;
+    dolphin_index = index;
 }
 
 void init_session_vars(void)
@@ -7034,7 +7034,7 @@ void init_session_vars(void)
     RepallocSessionVarsArrayIfNecessary();
 
     BSqlPluginContext *cxt = (BSqlPluginContext *) MemoryContextAlloc(u_sess->self_mem_cxt, sizeof(bSqlPluginContext));
-    u_sess->attr.attr_common.extension_session_vars_array[b_sql_plugin_index] = cxt;
+    u_sess->attr.attr_common.extension_session_vars_array[dolphin_index] = cxt;
     cxt->enableBFormatMode = false;
 
     DefineCustomBoolVariable("b_format_mode",

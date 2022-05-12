@@ -1,7 +1,7 @@
 drop database if exists mysql;
 create database mysql dbcompatibility 'b';
 \c mysql
-create extension b_sql_plugin;
+create extension dolphin;
 select regexp('a', true);
 
 \c postgres

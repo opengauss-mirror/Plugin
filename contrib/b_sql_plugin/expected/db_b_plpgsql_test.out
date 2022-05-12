@@ -2,7 +2,7 @@ drop database if exists test;
 NOTICE:  database "test" does not exist, skipping
 create database test dbcompatibility 'b';
 \c test
-create extension b_sql_plugin;
+create extension dolphin;
 create table tb_b_grammar_0038(a text(10)) engine = 表1;
 create or replace procedure proc_01()
 as

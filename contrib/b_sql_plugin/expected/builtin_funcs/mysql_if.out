@@ -2,7 +2,7 @@ drop database if exists format_test;
 NOTICE:  database "format_test" does not exist, skipping
 create database format_test dbcompatibility 'B';
 \c format_test
-create extension b_sql_plugin;
+create extension dolphin;
 select if(TRUE, 1, 2);
  case 
 ------

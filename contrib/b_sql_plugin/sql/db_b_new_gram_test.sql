@@ -1,7 +1,7 @@
 drop database if exists test;
 create database test dbcompatibility 'B';
 \c test
-create extension b_sql_plugin;
+create extension dolphin;
 
 -- CREATE TABLE engine test
 CREATE TABLE test_engine_1 (a int) engine = InnoDB;

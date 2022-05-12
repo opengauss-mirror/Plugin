@@ -2,7 +2,7 @@ drop database if exists test;
 NOTICE:  database "test" does not exist, skipping
 create database test dbcompatibility 'B';
 \c test
-create extension b_sql_plugin;
+create extension dolphin;
 create table test_template (t tinyblob, b blob, m mediumblob, l longblob);
 insert into test_template values('aaaaaaaaa', 'aaaaaaaaa', 'aaaaaaaaa', 'aaaaaaaaa');
 create table test_tiny (t tinyblob);

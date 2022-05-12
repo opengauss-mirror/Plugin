@@ -1,7 +1,7 @@
 drop database if exists mysql_test;
 create database mysql_test dbcompatibility 'b';
 \c mysql_test
-create extension b_sql_plugin;
+create extension dolphin;
 --验证text类型
 drop table if exists tb_db_b_parser_0001;
 create table tb_db_b_parser_0001(a text(10),b tinytext,c mediumtext,d longtext);

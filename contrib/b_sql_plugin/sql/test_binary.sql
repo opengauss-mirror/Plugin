@@ -1,7 +1,7 @@
 drop database if exists test;
 create database test dbcompatibility 'B';
 \c test
-create extension b_sql_plugin;
+create extension dolphin;
 create table binary_templates (a bytea, b binary(5), c varbinary(5));
 
 -- invalid typmod
