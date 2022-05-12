@@ -1,0 +1,404 @@
+drop database if exists mysql_test;
+NOTICE:  database "mysql_test" does not exist, skipping
+create database mysql_test dbcompatibility 'b';
+\c mysql_test
+create extension dolphin;
+--测试点一：验证lcase函数
+select lcase('ABc'), lcase('哈哈'), lcase('123456'),lcase('哈市&%%￥#'),lcase(null);
+ lcase | lcase | lcase  |   lcase    | lcase 
+-------+-------+--------+------------+-------
+ abc   | 哈哈  | 123456 | 哈市&%%￥# | 
+(1 row)
+
+--测试点二：验证lower函数
+select lower('ABc'), lower('哈哈'), lower('123456'),lower('哈市&%%￥#'),lower(null);
+ lower | lower | lower  |   lower    | lower 
+-------+-------+--------+------------+-------
+ abc   | 哈哈  | 123456 | 哈市&%%￥# | 
+(1 row)
+
+--测试点三：验证ucase函数
+select ucase('ABc'), ucase('哈哈'), ucase('123456'),ucase('哈市&%%￥#'),ucase(null);
+ ucase | ucase | ucase  |   ucase    | ucase 
+-------+-------+--------+------------+-------
+ ABC   | 哈哈  | 123456 | 哈市&%%￥# | 
+(1 row)
+
+select upper('ABc'), upper('哈哈'), upper('123456'),upper('哈市&%%￥#'),upper(null);
+ upper | upper | upper  |   upper    | upper 
+-------+-------+--------+------------+-------
+ ABC   | 哈哈  | 123456 | 哈市&%%￥# | 
+(1 row)
+
+--测试点四：验证rand和random函数
+-- select rand(), random();--不显示小数点前的0
+-- set behavior_compat_options := 'display_leading_zero';
+-- select rand(), random();--显示小数点前的0
+--测试点五：验证truncate函数
+select truncate(111.28);--返回111
+ERROR:  function truncate(numeric) does not exist
+LINE 1: select truncate(111.28);
+               ^
+HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
+CONTEXT:  referenced column: truncate
+select truncate(111.28,0);--返回111
+ truncate 
+----------
+      111
+(1 row)
+
+select truncate(111.28,1);--返回111.2
+ truncate 
+----------
+    111.2
+(1 row)
+
+select truncate(111.28,5);
+ truncate  
+-----------
+ 111.28000
+(1 row)
+
+select truncate(111.28,500);
+                                                                                                                                                                                                                                                         truncate                                                                                                                                                                                                                                                         
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ 111.28000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+(1 row)
+
+select truncate(111.28,-1);--返回110
+ truncate 
+----------
+      110
+(1 row)
+
+select truncate(111.28,-4);--返回0
+ truncate 
+----------
+        0
+(1 row)
+
+select  trunc(111.28),  trunc(111.28,0),  trunc(111.28,1),   trunc(111.28,5),   trunc(111.28,500),   trunc(111.28,-1),    trunc(111.28,-4);
+ trunc | trunc | trunc |   trunc   |                                                                                                                                                                                                                                                          trunc                                                                                                                                                                                                                                                           | trunc | trunc 
+-------+-------+-------+-----------+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+-------+-------
+   111 |   111 | 111.2 | 111.28000 | 111.28000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000 |   110 |     0
+(1 row)
+
+--测试点六：验证current_date
+--测试点一：验证:=操作符
+--step4:建表;expect:创建成功
+drop table if exists tb_db_b_parser0003;
+NOTICE:  table "tb_db_b_parser0003" does not exist, skipping
+create table tb_db_b_parser0003(a1 int, a2 int);
+insert into tb_db_b_parser0003 select generate_series(1,5);
+--step5:使用:=(赋值)操作符修改a1列值;
+update tb_db_b_parser0003 set a1 := 11;
+--step6:使用:=(赋值)操作符同时修改a1,a2列值;
+update tb_db_b_parser0003 set (a1,a2) := (12,13);
+--step7:使用:=(赋值)操作符,修改参数值;
+show io_limits; --默认是0
+ io_limits 
+-----------
+ 0
+(1 row)
+
+set io_limits := 100;
+--alter system set设置参数值
+alter system set pagewriter_thread_num := 5;
+NOTICE:  please restart the database for the POSTMASTER level parameter to take effect.
+--测试点二：验证div操作符
+select 8div3;--8
+ div3 
+------
+    8
+(1 row)
+
+select 8 div3;--结果为8
+ div3 
+------
+    8
+(1 row)
+
+select 8 div 3;
+ div 
+-----
+   2
+(1 row)
+
+select 8 div 0;
+ERROR:  division by zero
+CONTEXT:  referenced column: div
+select 8div 3, 8div 3div2, 8div 3div 2;
+ div | div2 | div 
+-----+------+-----
+   2 |    2 |   1
+(1 row)
+
+select 8 div;
+ERROR:  syntax error at or near ";"
+LINE 1: select 8 div;
+                    ^
+select 8 as div;
+ div 
+-----
+   8
+(1 row)
+
+select div 1;
+ERROR:  syntax error at or near "1"
+LINE 1: select div 1;
+                   ^
+select '-12.3abc' div null;
+ERROR:  invalid input syntax for type numeric: "-12.3abc"
+LINE 1: select '-12.3abc' div null;
+               ^
+CONTEXT:  referenced column: div
+select '-12.3abc' div -100.1;
+ERROR:  invalid input syntax for type numeric: "-12.3abc"
+LINE 1: select '-12.3abc' div -100.1;
+               ^
+CONTEXT:  referenced column: div
+select '-12.3abc' div 0;
+ERROR:  invalid input syntax for type numeric: "-12.3abc"
+LINE 1: select '-12.3abc' div 0;
+               ^
+CONTEXT:  referenced column: div
+select '-12.3abc' div 5;
+ERROR:  invalid input syntax for type numeric: "-12.3abc"
+LINE 1: select '-12.3abc' div 5;
+               ^
+CONTEXT:  referenced column: div
+select '-12.3abc' div 158.3;
+ERROR:  invalid input syntax for type numeric: "-12.3abc"
+LINE 1: select '-12.3abc' div 158.3;
+               ^
+CONTEXT:  referenced column: div
+select '-12.3abc' div -8.222e4;
+ERROR:  invalid input syntax for type numeric: "-12.3abc"
+LINE 1: select '-12.3abc' div -8.222e4;
+               ^
+CONTEXT:  referenced column: div
+select '-12.3abc' div true;
+ERROR:  invalid input syntax for type numeric: "-12.3abc"
+LINE 1: select '-12.3abc' div true;
+               ^
+CONTEXT:  referenced column: div
+select '-12.3abc' div false;
+ERROR:  invalid input syntax for type numeric: "-12.3abc"
+LINE 1: select '-12.3abc' div false;
+               ^
+CONTEXT:  referenced column: div
+select '-12.3abc' div 'null';
+ERROR:  invalid input syntax for type numeric: "-12.3abc"
+LINE 1: select '-12.3abc' div 'null';
+               ^
+CONTEXT:  referenced column: div
+select 123456 div 5 div 4;
+ div  
+------
+ 6172
+(1 row)
+
+select 8 div 1 where 100 div 3 div 4 = 0;
+ div 
+-----
+(0 rows)
+
+select 8 div 3 where 100 div 3 div 4 > 0;
+ div 
+-----
+   2
+(1 row)
+
+--测试点三：验证mod操作符
+select 8mod3;--返回mod3 8
+ mod3 
+------
+    8
+(1 row)
+
+select 8 mod3;--返回mod3 8
+ mod3 
+------
+    8
+(1 row)
+
+select 8 mod 3; 
+ b_mod 
+-------
+     2
+(1 row)
+
+select 8 mod 0;
+ b_mod 
+-------
+      
+(1 row)
+
+select 8mod 3, 8mod 3mod2, 8mod 3mod 2;
+ b_mod | mod2 | b_mod 
+-------+------+-------
+     2 |    2 |     0
+(1 row)
+
+select 8 mod;--返回8
+ERROR:  syntax error at or near ";"
+LINE 1: select 8 mod;
+                    ^
+select 8 as mod;--返回mod 8
+ mod 
+-----
+   8
+(1 row)
+
+select mod 1;
+ERROR:  syntax error at or near "1"
+LINE 1: select mod 1;
+                   ^
+select '-12.3abc' mod null;
+ERROR:  invalid input syntax for type numeric: "-12.3abc"
+LINE 1: select '-12.3abc' mod null;
+               ^
+CONTEXT:  referenced column: b_mod
+select '-12.3abc' mod -100.1;
+ERROR:  invalid input syntax for type numeric: "-12.3abc"
+LINE 1: select '-12.3abc' mod -100.1;
+               ^
+CONTEXT:  referenced column: b_mod
+select '-12.3abc' mod 0;
+ERROR:  invalid input syntax for type numeric: "-12.3abc"
+LINE 1: select '-12.3abc' mod 0;
+               ^
+CONTEXT:  referenced column: b_mod
+select '-12.3abc' mod 5;
+ERROR:  invalid input syntax for type numeric: "-12.3abc"
+LINE 1: select '-12.3abc' mod 5;
+               ^
+CONTEXT:  referenced column: b_mod
+select '-12.3abc' mod 158.3;
+ERROR:  invalid input syntax for type numeric: "-12.3abc"
+LINE 1: select '-12.3abc' mod 158.3;
+               ^
+CONTEXT:  referenced column: b_mod
+select '-12.3abc' mod -8.222e4;
+ERROR:  invalid input syntax for type numeric: "-12.3abc"
+LINE 1: select '-12.3abc' mod -8.222e4;
+               ^
+CONTEXT:  referenced column: b_mod
+select '-12.3abc' mod true;
+ERROR:  invalid input syntax for type numeric: "-12.3abc"
+LINE 1: select '-12.3abc' mod true;
+               ^
+CONTEXT:  referenced column: b_mod
+select '-12.3abc' mod false;
+ERROR:  invalid input syntax for type numeric: "-12.3abc"
+LINE 1: select '-12.3abc' mod false;
+               ^
+CONTEXT:  referenced column: b_mod
+select '-12.3abc' mod 'null';
+ERROR:  invalid input syntax for type numeric: "-12.3abc"
+LINE 1: select '-12.3abc' mod 'null';
+               ^
+CONTEXT:  referenced column: b_mod
+select 123456 mod 5 mod 4;
+ b_mod 
+-------
+     1
+(1 row)
+
+select 8 mod 1 where 100 mod 3 mod 4 = 0;
+ b_mod 
+-------
+(0 rows)
+
+select 8 mod 3 where 100 mod 3 mod 4 > 0;
+ b_mod 
+-------
+     2
+(1 row)
+
+--测试点四：验证xor操作符
+select xor1;
+ERROR:  column "xor1" does not exist
+LINE 1: select xor1;
+               ^
+CONTEXT:  referenced column: xor1
+select 1 xor 1;
+ xor 
+-----
+   0
+(1 row)
+
+select 1 xor null;
+ xor 
+-----
+    
+(1 row)
+
+select null xor 1;
+ xor 
+-----
+    
+(1 row)
+
+select 1 xor 0;
+ xor 
+-----
+   1
+(1 row)
+
+select '-12.3abc' xor null;
+ xor 
+-----
+    
+(1 row)
+
+select '-12.3abc' xor -100.1;
+ xor 
+-----
+   0
+(1 row)
+
+select '-12.3abc' xor 0;
+ xor 
+-----
+   1
+(1 row)
+
+select '-12.3abc' xor 5;
+ xor 
+-----
+   0
+(1 row)
+
+select '-12.3abc' xor 158.3;
+ xor 
+-----
+   0
+(1 row)
+
+select '-12.3abc' xor -8.222e4;
+ xor 
+-----
+   0
+(1 row)
+
+select '-12.3abc' xor true;
+ xor 
+-----
+   0
+(1 row)
+
+select '-12.3abc' xor false;
+ xor 
+-----
+   1
+(1 row)
+
+select '-12.3abc' xor 'null';
+ xor 
+-----
+   1
+(1 row)
+
+\c postgres
+drop database if exists mysql_test;

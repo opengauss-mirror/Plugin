@@ -1,0 +1,13 @@
+drop database if exists mysql;
+NOTICE:  database "mysql" does not exist, skipping
+create database mysql dbcompatibility 'b';
+\c mysql
+create extension dolphin;
+select regexp('a', true);
+ regexp 
+--------
+      1
+(1 row)
+
+\c postgres
+drop database if exists mysql;

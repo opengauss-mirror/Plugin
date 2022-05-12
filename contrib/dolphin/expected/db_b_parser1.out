@@ -1,0 +1,361 @@
+drop database if exists mysql_test;
+NOTICE:  database "mysql_test" does not exist, skipping
+create database mysql_test dbcompatibility 'b';
+\c mysql_test
+create extension dolphin;
+select 'bbbbb' regexp '^([bc])\1*$' as t, 'bbbbb' not regexp '^([bc])\1*$' as t2, 'bbbbb' rlike '^([bc])\1*$' as t;
+ t | t2 | t 
+---+----+---
+ 1 |  0 | 1
+(1 row)
+
+select 'ccc' regexp '^([bc])\1*$' as t, 'ccc' not regexp '^([bc])\1*$' as t2, 'ccc' rlike '^([bc])\1*$' as t;
+ t | t2 | t 
+---+----+---
+ 1 |  0 | 1
+(1 row)
+
+select 'xxx' regexp '^([bc])\1*$' as f, 'xxx' not regexp '^([bc])\1*$' as f2, 'xxx' rlike '^([bc])\1*$' as f;
+ f | f2 | f 
+---+----+---
+ 0 |  1 | 0
+(1 row)
+
+select 'bbc' regexp '^([bc])\1*$' as f, 'bbc' not regexp '^([bc])\1*$' as f2, 'bbc' rlike '^([bc])\1*$' as f;
+ f | f2 | f 
+---+----+---
+ 0 |  1 | 0
+(1 row)
+
+select 'b' regexp '^([bc])\1*$' as t, 'b' not regexp '^([bc])\1*$' as t2, 'b' rlike '^([bc])\1*$' as t;
+ t | t2 | t 
+---+----+---
+ 1 |  0 | 1
+(1 row)
+
+select 'abc abc abc' regexp '^(\w+)( \1)+$' as t, 'abc abc abc' not regexp '^(\w+)( \1)+$' as t, 'abc abc abc' rlike '^(\w+)( \1)+$' as t;
+ t | t | t 
+---+---+---
+ 1 | 0 | 1
+(1 row)
+
+select 'abc abc abc' regexp '^(.+)( \1)+$' as t, 'abc abc abc' not regexp '^(.+)( \1)+$' as t, 'abc abc abc' rlike '^(.+)( \1)+$' as t;
+ t | t | t 
+---+---+---
+ 1 | 0 | 1
+(1 row)
+
+select 'a' regexp '($|^)*', 'a' not regexp '($|^)*', 'a' rlike '($|^)*';
+ regexp | not_regexp | rlike 
+--------+------------+-------
+      1 |          0 |     1
+(1 row)
+
+select 'a' regexp '(^)+^', 'a' not regexp '(^)+^', 'a' rlike '(^)+^';
+ regexp | not_regexp | rlike 
+--------+------------+-------
+      1 |          0 |     1
+(1 row)
+
+select 'a' regexp '$($$)+', 'a' not regexp '$($$)+', 'a' rlike '$($$)+';
+ regexp | not_regexp | rlike 
+--------+------------+-------
+      1 |          0 |     1
+(1 row)
+
+select 'a' regexp '($^)+', 'a' not regexp '($^)+', 'a' rlike '($^)+';
+ regexp | not_regexp | rlike 
+--------+------------+-------
+      0 |          1 |     0
+(1 row)
+
+select 'a' regexp '(^$)*', 'a' not regexp '(^$)*', 'a' rlike '(^$)*';
+ regexp | not_regexp | rlike 
+--------+------------+-------
+      1 |          0 |     1
+(1 row)
+
+select 'aa bb cc' regexp '(^(?!aa))+', 'aa bb cc' not regexp '(^(?!aa))+', 'aa bb cc' rlike '(^(?!aa))+';
+ regexp | not_regexp | rlike 
+--------+------------+-------
+      0 |          1 |     0
+(1 row)
+
+select 'aa x' regexp '(^(?!aa)(?!bb)(?!cc))+', 'aa x' not regexp '(^(?!aa)(?!bb)(?!cc))+', 'aa x' rlike '(^(?!aa)(?!bb)(?!cc))+';
+ regexp | not_regexp | rlike 
+--------+------------+-------
+      0 |          1 |     0
+(1 row)
+
+select 'bb x' regexp '(^(?!aa)(?!bb)(?!cc))+', 'bb x' not regexp '(^(?!aa)(?!bb)(?!cc))+', 'bb x' rlike '(^(?!aa)(?!bb)(?!cc))+';
+ regexp | not_regexp | rlike 
+--------+------------+-------
+      0 |          1 |     0
+(1 row)
+
+select 'x' regexp 'abcd(\m)+xyz', 'x' not regexp 'abcd(\m)+xyz', 'x' rlike 'abcd(\m)+xyz';
+ regexp | not_regexp | rlike 
+--------+------------+-------
+      0 |          1 |     0
+(1 row)
+
+select 'x' regexp 'a^(^)bcd*xy(((((($a+|)+|)+|)+$|)+|)+|)^$', 'x' not regexp 'a^(^)bcd*xy(((((($a+|)+|)+|)+$|)+|)+|)^$', 'x' rlike 'a^(^)bcd*xy(((((($a+|)+|)+|)+$|)+|)+|)^$';
+ regexp | not_regexp | rlike 
+--------+------------+-------
+      0 |          1 |     0
+(1 row)
+
+select 'a' regexp '((((((a)*)*)*)*)*)*', 'a' not regexp '((((((a)*)*)*)*)*)*', 'a' rlike '((((((a)*)*)*)*)*)*';
+ regexp | not_regexp | rlike 
+--------+------------+-------
+      1 |          0 |     1
+(1 row)
+
+select 'a' regexp '((((((a+|)+|)+|)+|)+|)+|)', 'a' not regexp '((((((a+|)+|)+|)+|)+|)+|)', 'a' rlike '((((((a+|)+|)+|)+|)+|)+|)';
+ regexp | not_regexp | rlike 
+--------+------------+-------
+      1 |          0 |     1
+(1 row)
+
+select 'a' regexp '\\x7fffffff', 'a' not regexp '\\x7fffffff', 'a' rlike '\\x7fffffff';
+ regexp | not_regexp | rlike 
+--------+------------+-------
+      0 |          1 |     0
+(1 row)
+
+select 'a' regexp '$()|^\1', 'a' not regexp '$()|^\1', 'a' rlike '$()|^\1';
+ regexp | not_regexp | rlike 
+--------+------------+-------
+      0 |          1 |     0
+(1 row)
+
+select 'a' regexp '.. ()|\1', 'a' not regexp '.. ()|\1', 'a' rlike '.. ()|\1';
+ regexp | not_regexp | rlike 
+--------+------------+-------
+      0 |          1 |     0
+(1 row)
+
+select 'a' regexp '()*\1', 'a' not regexp '()*\1', 'a' rlike '()*\1';--()*\1匹配一切字符
+ regexp | not_regexp | rlike 
+--------+------------+-------
+      1 |          0 |     1
+(1 row)
+
+select 'a' regexp '()+\1', 'a' not regexp '()+\1', 'a' rlike '()+\1';
+ regexp | not_regexp | rlike 
+--------+------------+-------
+      1 |          0 |     1
+(1 row)
+
+select '-12.3abc' regexp null;
+ regexp 
+--------
+       
+(1 row)
+
+select '-12.3abc' regexp -100.1;
+ regexp 
+--------
+      0
+(1 row)
+
+select '-12.3abc' regexp 0;
+ regexp 
+--------
+      0
+(1 row)
+
+select '-12.3abc' regexp 5;
+ regexp 
+--------
+      0
+(1 row)
+
+select '-12.3abc' regexp 158.3;
+ regexp 
+--------
+      0
+(1 row)
+
+select '-12.3abc' regexp -8.222e4;
+ regexp 
+--------
+      0
+(1 row)
+
+select '-12.3abc' regexp true;
+ regexp 
+--------
+      1
+(1 row)
+
+select '-12.3abc' regexp false;
+ regexp 
+--------
+      0
+(1 row)
+
+select '-12.3abc' regexp 'null';
+ regexp 
+--------
+      0
+(1 row)
+
+select '-12.3abc' regexp '12';
+ regexp 
+--------
+      1
+(1 row)
+
+ select 'xxxyyy' regexp '^xx';
+ regexp 
+--------
+      1
+(1 row)
+
+ select 'xxxyyy' regexp 'x*';
+ regexp 
+--------
+      1
+(1 row)
+
+ select 'fonfo' regexp '^fo$';
+ regexp 
+--------
+      0
+(1 row)
+
+ select '-12.3abc' regexp '中文';
+ regexp 
+--------
+      0
+(1 row)
+
+select '-12.3abc' not regexp null;
+ not_regexp 
+------------
+           
+(1 row)
+
+select '-12.3abc' not regexp -100.1;
+ not_regexp 
+------------
+          1
+(1 row)
+
+select '-12.3abc' not regexp 0;
+ not_regexp 
+------------
+          1
+(1 row)
+
+select '-12.3abc' not regexp 5;
+ not_regexp 
+------------
+          1
+(1 row)
+
+select '-12.3abc' not regexp 158.3;
+ not_regexp 
+------------
+          1
+(1 row)
+
+select '-12.3abc' not regexp -8.222e4;
+ not_regexp 
+------------
+          1
+(1 row)
+
+select '-12.3abc' not regexp true;
+ not_regexp 
+------------
+          0
+(1 row)
+
+select '-12.3abc' not regexp false;
+ not_regexp 
+------------
+          1
+(1 row)
+
+select '-12.3abc' not regexp 'null';
+ not_regexp 
+------------
+          1
+(1 row)
+
+select 'fonfo' not REGEXP '^fo$';
+ not_regexp 
+------------
+          1
+(1 row)
+
+select '-12.3abc' not regexp '中文';
+ not_regexp 
+------------
+          1
+(1 row)
+
+select '-12.3abc' rlike null;
+ rlike 
+-------
+      
+(1 row)
+
+select '-12.3abc' rlike -100.1;
+ rlike 
+-------
+     0
+(1 row)
+
+select '-12.3abc' rlike 0;
+ rlike 
+-------
+     0
+(1 row)
+
+select '-12.3abc' rlike 5;
+ rlike 
+-------
+     0
+(1 row)
+
+select '-12.3abc' rlike 158.3;
+ rlike 
+-------
+     0
+(1 row)
+
+select '-12.3abc' rlike -8.222e4;
+ rlike 
+-------
+     0
+(1 row)
+
+select '-12.3abc' rlike '中文';
+ rlike 
+-------
+     0
+(1 row)
+
+select '-12.3abc' rlike true;
+ rlike 
+-------
+     1
+(1 row)
+
+select '-12.3abc' rlike false;
+ rlike 
+-------
+     0
+(1 row)
+
+select '-12.3abc' rlike 'null';
+ rlike 
+-------
+     0
+(1 row)
+
+\c postgres
+drop database if exists mysql_test;
