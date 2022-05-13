@@ -14,7 +14,7 @@
 #include "postgres.h"
 #include "knl/knl_variable.h"
 
-#include "plugin_commands/trigger.h"
+#include "commands/trigger.h"
 #include "utils/builtins.h"
 #include "utils/rel.h"
 #include "utils/rel_gs.h"

@@ -20,7 +20,7 @@
 #include <float.h>
 
 #include "access/hash.h"
-#include "plugin_commands/copy.h"
+#include "commands/copy.h"
 #include "libpq/pqformat.h"
 #include "miscadmin.h"
 #include "plugin_parser/scansup.h"

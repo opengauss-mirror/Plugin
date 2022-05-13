@@ -59,7 +59,7 @@
 #include "catalog/pg_proc.h"
 #include "catalog/gs_package.h"
 #include "catalog/pg_trigger.h"
-#include "plugin_commands/defrem.h"
+#include "commands/defrem.h"
 #ifdef ENABLE_MULTIPLE_NODES
 #include "distribute_core.h"
 #endif

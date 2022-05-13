@@ -28,10 +28,10 @@
 #include "catalog/pg_tablespace.h"
 #include "catalog/pg_statistic.h"
 #include "catalog/pg_hashbucket_fn.h"
-#include "plugin_commands/defrem.h"
-#include "plugin_commands/dbcommands.h"
+#include "commands/defrem.h"
+#include "commands/dbcommands.h"
 #include "commands/matview.h"
-#include "plugin_commands/tablespace.h"
+#include "commands/tablespace.h"
 #include "executor/spi.h"
 #include "miscadmin.h"
 #ifdef ENABLE_MOT

@@ -28,7 +28,7 @@ OBJS = acl.o arrayfuncs.o array_selfuncs.o array_typanalyze.o \
 	cash.o char.o date.o datetime.o datum.o domains.o \
 	enum.o float.o format_type.o \
 	int.o int8.o int16.o \
-	json.o jsonb.o jsonb_gin.o jsonb_op.o jsonb_util.o jsonfuncs.o like.o lockfuncs.o \
+	json.o jsonfuncs.o like.o lockfuncs.o \
 	misc.o nabstime.o name.o numeric.o numutils.o \
 	a_compat.o orderedsetaggs.o pseudotypes.o rangetypes.o rangetypes_gist.o \
 	rowtypes.o regexp.o regproc.o ruleutils.o selfuncs.o \
@@ -36,7 +36,7 @@ OBJS = acl.o arrayfuncs.o array_selfuncs.o array_typanalyze.o \
 	network.o mac.o inet_cidr_ntop.o inet_net_pton.o \
 	ri_triggers.o pg_locale.o formatting.o \
 	ascii.o quote.o pgstatfuncs.o encode.o dbsize.o trigfuncs.o \
-	uuid.o windowfuncs.o xml.o extended_statistics.o clientlogic_bytea.o clientlogicsettings.o \
+	uuid.o windowfuncs.o extended_statistics.o clientlogic_bytea.o clientlogicsettings.o \
 	median_aggs.o expr_distinct.o nlssort.o first_last_agg.o my_locale.o
 
 like.o: like.cpp like_match.cpp

@@ -19,7 +19,7 @@
 #include "catalog/pg_type.h"
 #include "catalog/pg_database.h"
 #include "catalog/indexing.h"
-#include "plugin_commands/dbcommands.h"
+#include "commands/dbcommands.h"
 #include "funcapi.h"
 #include "miscadmin.h"
 #ifdef PGXC

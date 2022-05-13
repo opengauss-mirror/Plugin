@@ -15,7 +15,7 @@
 #include "postgres.h"
 #include "knl/knl_variable.h"
 #include "catalog/pg_type.h"
-#include "plugin_commands/dbcommands.h"
+#include "commands/dbcommands.h"
 #include "foreign/foreign.h"
 #include "miscadmin.h"
 #include "nodes/makefuncs.h"
