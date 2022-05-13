@@ -790,6 +790,15 @@ RETURNS text
 AS 'MODULE_PATHNAME','orafce_listagg_finalfn'
 LANGUAGE C IMMUTABLE;
 
+/*
+ * Undocumented function wm_concat - removed from
+ * Oracle 12c.
+ */
+CREATE AGGREGATE pg_catalog.wm_concat(text) (
+  SFUNC=pg_catalog.wm_concat_transfn,
+  STYPE=internal,
+  FINALFUNC=pg_catalog.listagg_finalfn
+);
 
 CREATE FUNCTION pg_catalog.median4_transfn(internal, real)
 RETURNS internal
