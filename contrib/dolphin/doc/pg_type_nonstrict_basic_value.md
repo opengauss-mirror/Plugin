@@ -1,8 +1,8 @@
-# pg\_type\_basic\_value<a name="ZH-CN_TOPIC_0000001116241547"></a>
+# pg\_type\_nonstrict\_basic\_value<a name="ZH-CN_TOPIC_0000001116241547"></a>
 
-pg\_type\_basic\_value视图存储类型的基础值，用于insert values()的插入。默认只有系统管理员权限才可以访问此系统表，普通用户需要授权才可以访问。
+pg\_type\_nonstrict\_basic\_value视图存储类型的基础值，用于insert values()的插入。默认只有系统管理员权限才可以访问此系统表，普通用户需要授权才可以访问。
 
-**表 1**  pg\_type\_basic\_value字段
+**表 1**  pg\_type\_nonstrict\_basic\_value字段
 
 <a name="zh-cn_topic_0059777917_t0df1b611492d4f07b1d6e42373142023"></a>
 <table><thead align="left"><tr id="zh-cn_topic_0059777917_rab2e23b3e0f34f37b75a508b8269f07a"><th class="cellrowborder" valign="top" width="18.82%" id="mcps1.2.4.1.1"><p id="zh-cn_topic_0059777917_a32924e78d0334e82a36a777752a0b52b"><a name="zh-cn_topic_0059777917_a32924e78d0334e82a36a777752a0b52b"></a><a name="zh-cn_topic_0059777917_a32924e78d0334e82a36a777752a0b52b"></a>名称</p>
