@@ -32,7 +32,7 @@
 #include "postgres.h"
 #include "knl/knl_variable.h"
 
-#include "plugin_commands/typecmds.h"
+#include "commands/typecmds.h"
 #include "executor/executor.h"
 #include "utils/builtins.h"
 #include "utils/lsyscache.h"

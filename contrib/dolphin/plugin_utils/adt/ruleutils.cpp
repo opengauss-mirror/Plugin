@@ -50,10 +50,10 @@
 #include "catalog/gs_encrypted_proc.h"
 #include "catalog/gs_encrypted_columns.h"
 #include "catalog/gs_package.h"
-#include "plugin_commands/comment.h"
-#include "plugin_commands/defrem.h"
-#include "plugin_commands/tablespace.h"
-#include "plugin_commands/tablecmds.h"
+#include "commands/comment.h"
+#include "commands/defrem.h"
+#include "commands/tablespace.h"
+#include "commands/tablecmds.h"
 #include "executor/spi.h"
 #include "executor/spi_priv.h"
 #include "funcapi.h"
@@ -97,7 +97,7 @@
 #include "utils/xml.h"
 #include "vecexecutor/vecnodes.h"
 #include "db4ai/gd.h"
-#include "plugin_commands/sqladvisor.h"
+#include "commands/sqladvisor.h"
 
 /* ----------
  * Pretty formatting constants
