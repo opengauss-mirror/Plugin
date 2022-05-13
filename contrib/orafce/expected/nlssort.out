@@ -1,0 +1,61 @@
+-- Tests for nlssort
+\set ECHO none
+SET
+DROP DATABASE
+CREATE DATABASE
+You are now connected to database "regression_sort" as user "hlv".
+SET
+CREATE EXTENSION
+SET
+CREATE TABLE
+INSERT 0 4
+  name  
+--------
+ brown
+ Purple
+ red
+ yellow
+(4 rows)
+
+  name  
+--------
+ brown
+ Purple
+ red
+ yellow
+(4 rows)
+
+  name  
+--------
+ brown
+ Purple
+ red
+ yellow
+(4 rows)
+
+  name  
+--------
+ brown
+ Purple
+ red
+ yellow
+(4 rows)
+
+  name  
+--------
+ brown
+ Purple
+ red
+ yellow
+(4 rows)
+
+INSERT 0 1
+  name  
+--------
+ brown
+ Purple
+ red
+ yellow
+ 
+(5 rows)
+

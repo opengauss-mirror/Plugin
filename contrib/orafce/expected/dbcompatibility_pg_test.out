@@ -1,0 +1,248 @@
+\set ECHO none
+SET
+DROP DATABASE
+CREATE DATABASE
+You are now connected to database "pg_test" as user "hlv".
+SET
+SET
+Null display is "<NULL>".
+SET client_min_messages = error;
+SET
+CREATE EXTENSION orafce;
+CREATE EXTENSION
+SET client_min_messages = default;
+SET
+-- returns 1 (start of the source string)
+SELECT strposb('ABCありがとう', '');
+ strposb 
+---------
+       1
+(1 row)
+
+-- returns 0
+SELECT lengthb('');
+ lengthb 
+---------
+       0
+(1 row)
+
+/* cases where one or more arguments are of type CHAR */
+SELECT '|' || oracle.lpad('あbcd'::char(8), 10) || '|';
+   ?column?   
+--------------
+ | あbcd    |
+(1 row)
+
+SELECT '|' || oracle.lpad('あbcd'::char(5), 10, 'xい'::char(3)) || '|';
+   ?column?   
+--------------
+ |xい あbcd |
+(1 row)
+
+SELECT '|' || oracle.lpad('あbcd'::char(5),  5, 'xい'::char(3)) || '|';
+ ?column? 
+----------
+ |あbcd|
+(1 row)
+
+SELECT '|' || oracle.lpad('あbcd'::char(5), 10, 'xい'::text) || '|';
+   ?column?   
+--------------
+ |xいxあbcd |
+(1 row)
+
+SELECT '|' || oracle.lpad('あbcd'::char(5), 10, 'xい'::varchar2(5)) || '|';
+   ?column?   
+--------------
+ |xいxあbcd |
+(1 row)
+
+SELECT '|' || oracle.lpad('あbcd'::char(5), 10, 'xい'::nvarchar2(3)) || '|';
+   ?column?   
+--------------
+ |xいxあbcd |
+(1 row)
+
+SELECT '|' || oracle.lpad('あbcd'::text, 10, 'xい'::char(3)) || '|';
+   ?column?   
+--------------
+ |xい xあbcd|
+(1 row)
+
+SELECT '|' || oracle.lpad('あbcd'::nvarchar2(5), 10, 'xい'::char(3)) || '|';
+   ?column?   
+--------------
+ |xい xあbcd|
+(1 row)
+
+SELECT '|' || oracle.rpad('あbcd'::char(5), 10, 'xい'::char(3)) || '|';
+   ?column?   
+--------------
+ |あbcd xい |
+(1 row)
+
+SELECT '|' || oracle.rpad('あbcd'::char(5),  5, 'xい'::char(3)) || '|';
+ ?column? 
+----------
+ |あbcd|
+(1 row)
+
+SELECT '|' || oracle.rpad('あbcd'::char(5),  5, 'xい'::char(3)) || '|';
+ ?column? 
+----------
+ |あbcd|
+(1 row)
+
+SELECT '|' || oracle.rpad('あbcd'::char(5), 10, 'xい'::text) || '|';
+   ?column?   
+--------------
+ |あbcd xいx|
+(1 row)
+
+SELECT '|' || oracle.rpad('あbcd'::char(5), 10, 'xい'::text) || '|';
+   ?column?   
+--------------
+ |あbcd xいx|
+(1 row)
+
+SELECT '|' || oracle.rpad('あbcd'::char(5), 10, 'xい'::varchar2(5)) || '|';
+   ?column?   
+--------------
+ |あbcd xいx|
+(1 row)
+
+SELECT '|' || oracle.rpad('あbcd'::char(5), 10, 'xい'::nvarchar2(3)) || '|';
+   ?column?   
+--------------
+ |あbcd xいx|
+(1 row)
+
+SELECT '|' || oracle.rpad('あbcd'::text, 10, 'xい'::char(3)) || '|';
+   ?column?   
+--------------
+ |あbcdxい x|
+(1 row)
+
+SELECT '|' || oracle.rpad('あbcd'::varchar2(5), 10, 'xい'::char(3)) || '|';
+   ?column?   
+--------------
+ |あbcdxい x|
+(1 row)
+
+SELECT '|' || oracle.rpad('あbcd'::nvarchar2(5), 10, 'xい'::char(3)) || '|';
+   ?column?   
+--------------
+ |あbcdxい x|
+(1 row)
+
+CREATE TABLE dbms_output_test (buff VARCHAR(20), status INTEGER);
+CREATE TABLE
+CREATE FUNCTION dbms_output_test() RETURNS VOID AS $$
+DECLARE
+	buff1	VARCHAR(20) := 'orafce';
+BEGIN
+	PERFORM DBMS_OUTPUT.DISABLE();
+	PERFORM DBMS_OUTPUT.ENABLE();
+	PERFORM DBMS_OUTPUT.SERVEROUTPUT ('t');
+	PERFORM DBMS_OUTPUT.PUT_LINE ('ORAFCE');
+	PERFORM DBMS_OUTPUT.PUT_LINE (buff1);
+	PERFORM DBMS_OUTPUT.PUT ('ABC');
+	PERFORM DBMS_OUTPUT.PUT_LINE ('');
+END;
+$$ LANGUAGE plpgsql;
+CREATE FUNCTION
+SELECT dbms_output_test();
+ORAFCE
+orafce
+ABC
+ dbms_output_test 
+------------------
+ 
+(1 row)
+
+DROP FUNCTION dbms_output_test();
+DROP FUNCTION
+CREATE FUNCTION dbms_output_test() RETURNS VOID AS $$
+DECLARE
+	buff1	VARCHAR(20) := 'ora';
+	buff2	VARCHAR(20) := 'f';
+	buff3	VARCHAR(20) := 'ce';
+BEGIN
+	PERFORM DBMS_OUTPUT.DISABLE();
+	PERFORM DBMS_OUTPUT.ENABLE();
+	PERFORM DBMS_OUTPUT.SERVEROUTPUT ('t');
+	PERFORM DBMS_OUTPUT.PUT ('ORA');
+	PERFORM DBMS_OUTPUT.PUT ('F');
+	PERFORM DBMS_OUTPUT.PUT ('CE');
+	PERFORM DBMS_OUTPUT.PUT_LINE ('');
+	PERFORM DBMS_OUTPUT.PUT ('ABC');
+	PERFORM DBMS_OUTPUT.PUT_LINE ('');
+END;
+$$ LANGUAGE plpgsql;
+CREATE FUNCTION
+SELECT dbms_output_test();
+ORAFCE
+ABC
+ dbms_output_test 
+------------------
+ 
+(1 row)
+
+DROP FUNCTION dbms_output_test();
+DROP FUNCTION
+CREATE FUNCTION dbms_output_test() RETURNS VOID AS $$
+BEGIN
+	PERFORM DBMS_OUTPUT.DISABLE();
+	PERFORM DBMS_OUTPUT.ENABLE();
+	PERFORM DBMS_OUTPUT.SERVEROUTPUT ('t');
+	PERFORM DBMS_OUTPUT.PUT ('ORA
+F
+CE');
+	PERFORM DBMS_OUTPUT.PUT_LINE ('');
+END;
+$$ LANGUAGE plpgsql;
+CREATE FUNCTION
+SELECT dbms_output_test();
+ORA
+F
+CE
+ dbms_output_test 
+------------------
+ 
+(1 row)
+
+DROP FUNCTION dbms_output_test();
+DROP FUNCTION
+SELECT oracle.REGEXP_LIKE('1234', '\d+', NULL);
+ regexp_like 
+-------------
+ t
+(1 row)
+
+SELECT oracle.REGEXP_LIKE('1234', '\d+', '');
+ regexp_like 
+-------------
+ t
+(1 row)
+
+select plvsubst.string('My name is %s.', '');
+ERROR:  too few parameters specified for template string
+CONTEXT:  referenced column: string
+select plvsubst.string('My name is empty.', '');
+      string       
+-------------------
+ My name is empty.
+(1 row)
+
+select 1 = instr('abc', '');
+ ?column? 
+----------
+ t
+(1 row)
+
+select oracle.substr('TechOnTheNet', -8, 0) =  '';
+ ?column? 
+----------
+ t
+(1 row)
+

@@ -1,5 +1,0 @@
-# b_sql_plugin extension
-comment = 'sql engine'
-default_version = '1.0'
-module_pathname = '$libdir/b_sql_plugin'
-relocatable = false
