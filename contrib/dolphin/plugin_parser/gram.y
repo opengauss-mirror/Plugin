@@ -25868,6 +25868,20 @@ AexprConst: Iconst
 					t->typmods = $3;
 					$$ = makeStringConstCast($2, @2, t);
 				}
+			| ConstInterval ICONST opt_interval
+				{
+					TypeName *t = $1;
+					t->typmods = $3;
+					char buf[64];
+					snprintf(buf, sizeof(buf), "%d", $2);
+					$$ = makeStringConstCast(pstrdup(buf), @2, t);
+				}
+			| ConstInterval FCONST opt_interval
+				{
+					TypeName *t = $1;
+					t->typmods = $3;
+					$$ = makeStringConstCast($2, @2, t);
+				}
 			| ConstInterval '(' Iconst ')' Sconst opt_interval
 				{
 					TypeName *t = $1;

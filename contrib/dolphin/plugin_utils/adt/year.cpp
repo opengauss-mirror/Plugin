@@ -67,6 +67,11 @@ extern "C" DLL_PUBLIC Datum year_integer(PG_FUNCTION_ARGS);
 PG_FUNCTION_INFO_V1_PUBLIC(year_scale);
 extern "C" DLL_PUBLIC Datum year_scale(PG_FUNCTION_ARGS);
 
+/* b compatibility time function */
+PG_FUNCTION_INFO_V1_PUBLIC(period_add);
+extern "C" DLL_PUBLIC Datum period_add(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(period_diff);
+extern "C" DLL_PUBLIC Datum period_diff(PG_FUNCTION_ARGS);
 
 /*****************************************************************************
  *	 Year4 
@@ -444,6 +449,55 @@ Datum year_mi(YearADT y1, YearADT y2)
     PG_RETURN_INTERVAL_P(result);
 }
 
+ulong convert_period_to_month(ulong period)
+{
+    ulong a, b;
+    if (period == 0)
+        return 0L;
+    if ((a = period / 100) < YEAR2_BOUND_BETWEEN_20C_21C)
+        a += 2000;
+    else if (a < 100)
+        a += 1900;
+    b = period % 100;
+    return a * 12 + b - 1;
+}
+
+ulong convert_month_to_period(ulong month)
+{
+    ulong year;
+    if (month == 0L)
+        return 0L;
+    if ((year = month / 12) < 100) {
+        year += (year < YEAR2_BOUND_BETWEEN_20C_21C) ? 2000 : 1900;
+    }
+    return year * 100 + month % 12 + 1;
+}
+
+/*
+ * @Description: Add some months to a period of time.
+ * @return: result, int64 type.
+ */
+Datum period_add(PG_FUNCTION_ARGS)
+{
+    ulong period = (ulong)PG_GETARG_INT64(0);
+    int months = (int)PG_GETARG_INT64(1);
+    if (period == 0)
+        PG_RETURN_INT32(0);
+    PG_RETURN_INT64((int64)convert_month_to_period((uint)((int)convert_period_to_month(period) + months)));
+}
+
+/*
+ * @Description: Calculate the number of months between two period of times.
+ * @return: result, int64 type.
+ */
+Datum period_diff(PG_FUNCTION_ARGS)
+{
+    uint64 input1 = (uint64)PG_GETARG_INT64(0);
+    uint64 input2 = (uint64)PG_GETARG_INT64(1);
+
+    int64 ret = (int64)((int64)convert_period_to_month(input1) - (int64)convert_period_to_month(input2));
+    PG_RETURN_INT64(ret);
+}
 Datum year_hash(PG_FUNCTION_ARGS)
 {
     return hashint8(fcinfo);
