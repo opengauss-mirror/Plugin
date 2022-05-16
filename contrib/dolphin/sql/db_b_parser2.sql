@@ -2,27 +2,27 @@ drop database if exists mysql_test;
 create database mysql_test dbcompatibility 'b';
 \c mysql_test
 --验证DAYOFMONTH() DAYOFWEEK() DAYOFYEAR() HOUR() MICROSECOND() MINUTE() QUARTER() SECOND() WEEKDAY() WEEKOFYEAR() YEAR()
-select DAYOFMONTH(timestamp '2021-11-4 16:30:44.341191');
+select DAYOFMONTH(datetime '2021-11-4 16:30:44.341191');
 
-select DAYOFWEEK(timestamp '2021-11-4 16:30:44.341191');
+select DAYOFWEEK(datetime '2021-11-4 16:30:44.341191');
 
-select DAYOFYEAR(timestamp '2021-12-31 16:30:44.341191');
+select DAYOFYEAR(datetime '2021-12-31 16:30:44.341191');
 
-select HOUR(timestamp '2021-11-4 16:30:44.341191');
+select HOUR(datetime '2021-11-4 16:30:44.341191');
 
-select MICROSECOND(timestamp '2021-11-4 16:30:44.341191');
+select MICROSECOND(datetime '2021-11-4 16:30:44.341191');
 
-select MINUTE(timestamp '2021-11-4 16:30:44.341191');
+select MINUTE(datetime '2021-11-4 16:30:44.341191');
 
-select QUARTER(timestamp '2021-11-4 16:30:44.341191');
+select QUARTER(datetime '2021-11-4 16:30:44.341191');
 
-select SECOND(timestamp '2021-11-4 16:30:44.341191');
+select SECOND(datetime '2021-11-4 16:30:44.341191');
 
-select WEEKDAY(timestamp '2021-11-4 16:30:44.341191');
+select WEEKDAY(datetime '2021-11-4 16:30:44.341191');
 
-select WEEKOFYEAR(timestamp '2021-11-4 16:30:44.341191');
+select WEEKOFYEAR(datetime '2021-11-4 16:30:44.341191');
 
-select YEAR(timestamp '2021-11-4 16:30:44.341191');
+select YEAR(datetime '2021-11-4 16:30:44.341191');
 
 
 --测试点：LOCATE(substr,str)
