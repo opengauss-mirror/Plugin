@@ -1950,7 +1950,17 @@ static Node* makeTimetypeConst(Oid targetType, int32 targetTypmod, Oid targetCol
 {
     Node* new_expr;
     switch (targetType) {
-            case TIMESTAMPOID:
+            case TIMESTAMPOID: {
+                new_expr = (Node *)makeConst(targetType,
+                targetTypmod,
+                targetCollation,
+                targetLen,
+                (Datum)DirectFunctionCall3(
+                    timestamp_in, CStringGetDatum("now"), ObjectIdGetDatum(InvalidOid), Int32GetDatum(-1)),
+                false,
+                targetByval);
+                break;
+            }
             case TIMESTAMPTZOID: {
                 new_expr = (Node*)makeConst(
                     targetType, targetTypmod, targetCollation, targetLen, clock_timestamp(NULL), false, targetByval);
