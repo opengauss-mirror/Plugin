@@ -84,7 +84,7 @@ DB_CompatibilityAttr g_dbCompatArray[] = {{DB_CMPT_A, "A"},
         {DB_CMPT_C, "C"},
         {DB_CMPT_PG, "PG"}};
 
-char* g_dbPlugins[] = {nullptr, "b_sql_plugin", nullptr, nullptr};
+char* g_dbPlugins[] = {nullptr, "dolphin", nullptr, nullptr};
 
 #define NO_ARGUMENT 0
 #define REQUIRED_ARGUMENT 1

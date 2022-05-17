@@ -1,7 +1,7 @@
 drop database if exists ast_test;
 create database ast_test dbcompatibility 'b';
 \c ast_test
-create extension b_sql_plugin;
+create extension dolphin;
 ast select * from test;
 ast create table test(id int);
 ast create table test(id int(5));

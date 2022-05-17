@@ -85,7 +85,7 @@ Datum AssessmentAstTree(PG_FUNCTION_ARGS)
     char* sql = text_to_cstring(sqlText);
 
     List * (*parser_hook)(const char*, List**) = raw_parser;
-    if (u_sess->attr.attr_sql.b_sql_plugin) {
+    if (u_sess->attr.attr_sql.dolphin) {
         int id = GetCustomParserId();
         if (id >= 0 && g_instance.raw_parser_hook[id] != NULL) {
             parser_hook = (List* (*)(const char*, List**)) g_instance.raw_parser_hook[id];

@@ -12,6 +12,7 @@ REGRESS = assessment
 top_builddir = ../..
 subdir = contrib/assessment
 
+override CPPFLAGS :=$(filter-out -fPIE,  $(CPPFLAGS)) -fPIC
 TARGET_NAME=assessment_database
 EXTRA_CLEAN=$(TARGET_NAME)
 # make clean if change EXEC_OBJS

@@ -20,7 +20,7 @@
 
 | 可选插件（对应数据库兼容性插件） | 备注            |
 | -------------------------------- | --------------- |
-| contrib/b_sql_plugin             | B兼容数据库插件 |
+| contrib/dolphin             | B兼容数据库插件 |
 
 1. 下载openGauss源码，按照READMD.md指导编译openGauss源码
 2. 将上述插件拷贝到openGauss源码路径的`contrib`路径下。`cd`进入对应目录后`make install -sj`
@@ -28,29 +28,32 @@
 
 **assessment依赖文件**
 
-> 二进制路径
-> ├── bin
-> │   └── ***assessment_database***
-> ├── lib
-> │   └── postgresql
-> │       └── ***assessment.so***
-> └── share
->     └── postgresql
->         └── extension
->             ├── ***assessment--1.0.sql***
->             └── ***assessment.control***
+```
+二进制路径
+├── bin
+│   └── ***assessment_database***
+├── lib
+│   └── postgresql
+│       └── ***assessment.so***
+└── share
+    └── postgresql
+        └── extension
+            ├── ***assessment--1.0.sql***
+            └── ***assessment.control***
+```
+**dolphin以来文件**
 
-**b_sql_plugin以来文件**
-
-> 二进制路径
-> ├── lib
-> │   └── postgresql
-> │       └── ***b_sql_plugin.so***
-> └── share
->     └── postgresql
->         └── extension
->             ├── ***b_sql_plugin--1.0.sql***
->             └── ***b_sql_plugin.control***
+```
+二进制路径
+├── lib
+│   └── postgresql
+│       └── ***dolphin.so***
+└── share
+    └── postgresql
+        └── extension
+            ├── ***dolphin--1.0.sql***
+            └── ***dolphin.control***
+```
 
 ### 运行
 
@@ -82,7 +85,7 @@ assessment_database -p5432 -cB -ftest.sql -oresult.html
 
 ```shell
 assessment_database: create database "assessment_197561" automatically.
-assessment_database: Create plugin[b_sql_plugin] automatically.
+assessment_database: Create plugin[dolphin] automatically.
 assessment_database: Create extension[assessment] automatically.
 assessment_database: 解析[100.00%]:35/35
 assessment_database: Create database assessment_197561 automatically, clear it manually!
@@ -122,7 +125,7 @@ assessment_database -p5432 -devaluation -h127.0.0.2 -Utest -W***** -ftest.sql -o
 
 1. 首先存在一个正常运行的数据库节点，可以直接通过`gs_initdb`初始化。
 2. 配置好对应连接参数，连接参数与`openGauss`的`gsql`连接方式是一致的。
-3. 如果指定`-c 兼容类型`方式，工具会通过上述配置的连接参数连接到数据库，手动创建对应兼容类型评估数据库，再通过`create extension`创建必要的插件。（如`assessment`、`b_sql_plugin`）。
+3. 如果指定`-c 兼容类型`方式，工具会通过上述配置的连接参数连接到数据库，手动创建对应兼容类型评估数据库，再通过`create extension`创建必要的插件。（如`assessment`、`dolphin`）。
 4. 如果指定`-d database`方式，工具会在对应数据库创建插件。
 5. 在对应评估数据库评估。评估类型包含：语法树兼容评估、实际语句是否兼容评估。
 
