@@ -217,7 +217,23 @@
     OPTIMIZE PARTITION { partition_name } [, ...]
     OPTIMIZE PARTITION ALL
     ```
-
+-   兼容b database Truncate分区语法
+    Truncate操作会删除当前分区对应的所有数据。
+    ```
+    TRUNCATE PARTITION { partition_name } [, ...]
+    TRUNCATE PARTITION all
+    ```
+-   兼容b database exchange分区语法对齐
+    可以用来交换分区表和普通表的数据，普通表和分区的数据被置换，同时普通表和分区的表空间信息被置换。此时，普通表和分区的统计信息变得不可靠，需要对普通表和分区重新执行analyze。
+    ```
+    exchange partition partition_name with table table_name (without/with validation);
+    ```
+-   兼容b database analyze分区语法对齐
+    用于收集与表内容相关的统计信息。执行计划生成器会使用这些统计数据，以确定最有效的执行计划。
+    ```
+    analyze partition { partition_name } [, ...]
+    analyze partition all;
+    ```
 
 ## 参数说明<a name="zh-cn_topic_0283137443_zh-cn_topic_0237122077_zh-cn_topic_0059778761_sff7a5cc103ab41709c6f7249e8d47808"></a>
 

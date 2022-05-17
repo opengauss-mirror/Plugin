@@ -6,6 +6,9 @@ extern "C" DLL_PUBLIC Datum RemovePartitioning(PG_FUNCTION_ARGS);
 PG_FUNCTION_INFO_V1_PUBLIC(RebuildPartition);
 extern "C" DLL_PUBLIC Datum RebuildPartition(PG_FUNCTION_ARGS);
 
+PG_FUNCTION_INFO_V1_PUBLIC(AnalyzePartitions);
+extern "C" DLL_PUBLIC Datum AnalyzePartitions(PG_FUNCTION_ARGS);
+
 void dropPartitionTableInfo(Relation relation)
 {
     List* partCacheList = NIL;
@@ -249,5 +252,56 @@ Datum RebuildPartition(PG_FUNCTION_ARGS)
     releasePartitionList(rel, &partList, AccessExclusiveLock);
     relation_close(rel, AccessShareLock);
     RelationForgetRelation(relid);
+    PG_RETURN_TEXT_P(cstring_to_text(tableName));
+}
+
+extern void DoVacuumMppTable(VacuumStmt* stmt, const char* query_string, bool is_top_level, bool sent_to_remote);
+extern RangeVar *makeRangeVar(char *schemaname, char *relname, int location);
+
+Datum AnalyzePartitions(PG_FUNCTION_ARGS)
+{
+    /* get args */
+    ArrayType* args = PG_GETARG_ARRAYTYPE_P(0);
+    char *schemaname = PG_GETARG_DATUM(2) ? text_to_cstring(PG_GETARG_TEXT_PP(2)) : NULL;
+    char *catalogname = PG_GETARG_DATUM(1) ? text_to_cstring(PG_GETARG_TEXT_PP(1)) : NULL;
+	Datum* argText = NULL;
+    bool* argmnulls = NULL;
+    int argnum = 0;
+    if (array_contains_nulls(args)) {
+        ereport(ERROR,
+                (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+                 errmsg("cannot call function with null arg elements")));
+    }
+    deconstruct_array(args, TEXTOID, -1, false, 'i', &argText, &argmnulls, &argnum);
+    if (argnum <= 0)
+        PG_RETURN_NULL();
+    char *tableName = TextDatumGetCString(argText[0]);
+    int count = 1;
+    char *partName = NULL;
+    VacuumStmt *vacstmt = makeNode(VacuumStmt);
+    RangeVar *rangevar = makeRangeVar(NULL, NULL, -1);
+    rangevar->relname = tableName;
+    rangevar->catalogname = catalogname;
+    rangevar->schemaname = schemaname;
+    vacstmt->type = T_VacuumStmt;
+    vacstmt->options = VACOPT_ANALYZE;
+    vacstmt->freeze_min_age = -1;
+    vacstmt->freeze_table_age = -1;
+    vacstmt->relation = rangevar;
+    StringInfoData str;
+    while (count < argnum) 
+    {
+        partName = TextDatumGetCString(argText[count]);
+        rangevar->partitionname = partName;
+        initStringInfo(&str);
+        appendStringInfo(&str, "ANALYZE ");
+        appendStringInfo(&str, "%s PARTITION (%s)", tableName, partName);
+        DoVacuumMppTable(vacstmt, str.data, true, false);
+        pfree_ext(partName);
+        pfree_ext(str.data);
+        count++;
+    }
+    pfree_ext(rangevar);
+    pfree_ext(vacstmt);
     PG_RETURN_TEXT_P(cstring_to_text(tableName));
 }
