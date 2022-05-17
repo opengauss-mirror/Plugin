@@ -188,12 +188,15 @@ int main(int argc, char* argv[])
         CreateAssessmentDatabase();
     }
 
+    /* connect to assessment database */
     OpenGaussConnection* conn = new OpenGaussConnection();
     conn->SetDB(g_assessmentSettings.dbname);
     conn->SetHost(g_assessmentSettings.host);
     conn->SetPort(g_assessmentSettings.port);
     conn->SetPassword(g_assessmentSettings.password);
     conn->SetUsername(g_assessmentSettings.username);
+
+    /* free password on g_assessmentSettings.password */
     if (g_assessmentSettings.password) {
         char* passwdPointer = g_assessmentSettings.password;
         securec_check_c(memset_s(passwdPointer, strlen(passwdPointer), 0, strlen(passwdPointer)), "", "");
@@ -270,6 +273,7 @@ int main(int argc, char* argv[])
                             compatibilityType = AST_COMPATIBLE;
                             errorResult = conn->GetExecError();
                         }
+                        break;
                     case COMMENT:
                         compatibilityType = SKIP_COMMAND;
                         /* do nothing */

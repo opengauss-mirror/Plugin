@@ -68,25 +68,44 @@ bool OpenGaussConnection::CreateAssessmentDB(char* compatibility)
 
 bool OpenGaussConnection::ConnectDB()
 {
-    string connect =
-            "application_name=assessment port=" + string(this->port) + " connect_timeout=" + this->connectTimeout;
-
-    if (this->username) {
-        connect = connect + " user=" + this->username;
-    }
+    char connectionString[MAXPGPATH];
+    errno_t result;
+    /* username and password must be present at the same time */
+    char hostInfo[MAXPGPATH] = {0};
     if (this->host) {
-        connect = connect + " host=" + this->host;
-    }
-    if (this->dbname) {
-        connect = connect + " dbname=" + this->dbname;
+        result = snprintf_s(hostInfo, MAXPGPATH, MAXPGPATH - 1,
+                                    "host=%s", this->host);
+        securec_check_ss_c(result, "", "");
     }
 
-    if (this->password) {
-        connect = connect + " password=" + this->password;
+    if (this->username && this->password) {
+        result = snprintf_s(connectionString, MAXPGPATH, MAXPGPATH - 1,
+                            "application_name=assessment "
+                            "port=%s "
+                            "connect_timeout=%s "
+                            "dbname=%s user=%s password=%s %s",
+                            this->port, this->connectTimeout, this->dbname, this->username, this->password, hostInfo);
+        securec_check_ss_c(result, "", "");
         securec_check_c(memset_s(this->password, strlen(this->password), 0, strlen(this->password)), "", "");
+    } else {
+        result = snprintf_s(connectionString, MAXPGPATH, MAXPGPATH - 1,
+                            "application_name=assessment "
+                            "port=%s "
+                            "connect_timeout=%s "
+                            "dbname=%s %s",
+                            this->port, this->connectTimeout, this->dbname, hostInfo);
+        securec_check_ss_c(result, "", "");
     }
 
-    if ((this->connection = PQconnectdb(connect.c_str())) != nullptr && PQstatus(this->connection) == CONNECTION_OK) {
+    this->connection = PQconnectdb(connectionString);
+    /* set connectionString to zeros */
+    securec_check_c(memset_s(connectionString, sizeof(connectionString), 0, sizeof(connectionString)), "", "");
+    /* clear password in conn */
+    auto passwordInConn = PQpass(this->connection);
+    if (passwordInConn != nullptr) {
+        securec_check_c(memset_s(passwordInConn, sizeof(passwordInConn), 0, sizeof(passwordInConn)), "", "");
+    }
+    if (this->connection != nullptr && PQstatus(this->connection) == CONNECTION_OK) {
         return true;
     }
     return false;
@@ -163,6 +182,10 @@ static void SetValue(char** dst, char* value)
     }
     auto newLen = strlen(value) + 1;
     *dst = (char*) malloc(newLen);
+    if (*dst == nullptr) {
+        fprintf(stderr, "%s: out of memeory", pset.progname);
+        exit(EXIT_FAILURE);
+    }
     auto ret = memcpy_s(*dst, newLen, value, newLen);
     securec_check_c(ret, "\0", "\0");
     (*dst)[newLen - 1] = '\0';

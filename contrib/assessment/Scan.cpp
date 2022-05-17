@@ -135,6 +135,10 @@ void* pg_malloc_zero(size_t size)
     errno_t rc = 0;
 
     tmp = malloc(size);
+    if (tmp == nullptr) {
+        fprintf(stderr, "%s: out of memeory", pset.progname);
+        exit(EXIT_FAILURE);
+    }
     rc = memset_s(tmp, size, 0, size);
     check_memset_s(rc);
     return tmp;
@@ -206,7 +210,7 @@ void Scan::FreeScan()
 Scan::Scan(FILE* fd)
 {
     this->fd = fd;
-    this->scanState = (PsqlScanStateData*) malloc(sizeof(PsqlScanStateData));
+    this->scanState = (PsqlScanStateData*) pg_malloc_zero(sizeof(PsqlScanStateData));
     auto rc = memset_s(this->scanState, sizeof(PsqlScanStateData), 0, sizeof(PsqlScanStateData));
     securec_check_c(rc, "", "");
     psql_scan_reset(this->scanState);
