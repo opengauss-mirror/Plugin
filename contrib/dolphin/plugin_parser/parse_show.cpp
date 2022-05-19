@@ -43,10 +43,6 @@ extern TypeName* SystemTypeName(char* name);
  */
 SelectStmt* makeProcesslistQuery(bool isFull)
 {
-    char *s = (char*)malloc(100);
-    strcpy(s, "Hello world!");
-    printf("string is: %s\n", s);
-    
     List* tl = (List*)list_make1(makeNormalColumn("sessionid", "Id"));
     tl = lappend(tl, makeNormalColumn("pid", "Pid"));
     tl = lappend(tl, makeNormalColumn("query_id", "QueryId"));
