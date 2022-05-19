@@ -2383,8 +2383,8 @@ VariableShowStmt:
 			| SHOW FULL PROCESSLIST
 				{
 					SelectStmt *n = makeProcesslistQuery(TRUE);
-                    $$ = (Node *) n;
-                }
+                    			$$ = (Node *) n;
+                		}
 			| SHOW CURRENT_SCHEMA
 				{
 					VariableShowStmt *n = makeNode(VariableShowStmt);
@@ -18126,10 +18126,10 @@ ExplainStmt:
 					$$ = (Node *) n;
 				}
 		| describe_command qualified_name
-        		{
-        			SelectStmt *n = makeDescribeQuery($2->schemaname, $2->relname);
-        			$$ = (Node *) n;
-        		}
+				{
+					SelectStmt *n = makeDescribeQuery($2->schemaname, $2->relname);
+					$$ = (Node *) n;
+				}
 		;
 
 ExplainableStmt:
