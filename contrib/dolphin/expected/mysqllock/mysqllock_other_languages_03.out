@@ -1,0 +1,107 @@
+drop database if exists mysqllock;
+NOTICE:  database "mysqllock" does not exist, skipping
+create database mysqllock dbcompatibility 'b';
+\c mysqllock
+create extension dolphin;
+select get_lock('База данных');
+ get_lock 
+----------
+        1
+(1 row)
+
+select get_lock('Полиция');
+ get_lock 
+----------
+        1
+(1 row)
+
+select get_lock('Воплощение света');
+ get_lock 
+----------
+        1
+(1 row)
+
+select get_lock('Облепиховый сок');
+ get_lock 
+----------
+        1
+(1 row)
+
+select get_lock('Прилагатель души дракона');
+ get_lock 
+----------
+        1
+(1 row)
+
+select lockname from get_all_locks() order by lockname;
+         lockname         
+--------------------------
+ База данных
+ Воплощение света
+ Облепиховый сок
+ Полиция
+ Прилагатель души дракона
+(5 rows)
+
+select is_free_lock('База данных');
+ is_free_lock 
+--------------
+            0
+(1 row)
+
+select is_free_lock('Полиция');
+ is_free_lock 
+--------------
+            0
+(1 row)
+
+select is_free_lock('Воплощение света');
+ is_free_lock 
+--------------
+            0
+(1 row)
+
+select is_free_lock('Облепиховый сок');
+ is_free_lock 
+--------------
+            0
+(1 row)
+
+select is_free_lock('Прилагатель души дракона');
+ is_free_lock 
+--------------
+            0
+(1 row)
+
+select release_lock('База данных');
+ release_lock 
+--------------
+            1
+(1 row)
+
+select release_lock('Полиция');
+ release_lock 
+--------------
+            1
+(1 row)
+
+select release_lock('Воплощение света');
+ release_lock 
+--------------
+            1
+(1 row)
+
+select release_lock('Облепиховый сок');
+ release_lock 
+--------------
+            1
+(1 row)
+
+select release_lock('Прилагатель души дракона');
+ release_lock 
+--------------
+            1
+(1 row)
+
+\c postgres
+drop database if exists mysqllock;

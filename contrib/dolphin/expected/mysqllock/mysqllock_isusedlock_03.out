@@ -1,0 +1,46 @@
+drop database if exists mysqllock;
+NOTICE:  database "mysqllock" does not exist, skipping
+create database mysqllock dbcompatibility 'b';
+\c mysqllock
+create extension dolphin;
+select is_used_lock('a                                                             a');
+ is_used_lock 
+--------------
+             
+(1 row)
+
+select is_used_lock('a                                                              a');
+ is_used_lock 
+--------------
+             
+(1 row)
+
+--failed
+select is_used_lock('a                                                               a');
+ERROR:  max length of advisory lock is 64
+CONTEXT:  referenced column: is_used_lock
+--failed
+select is_used_lock(1                                                              1);
+ERROR:  syntax error at or near "1"
+LINE 1: ...                                                         1);
+                                                                    ^
+select is_used_lock('1                                                              1');
+ is_used_lock 
+--------------
+             
+(1 row)
+
+select is_used_lock('a                                                              1');
+ is_used_lock 
+--------------
+             
+(1 row)
+
+select is_used_lock(' ');
+ is_used_lock 
+--------------
+             
+(1 row)
+
+\c postgres
+drop database if exists mysqllock;

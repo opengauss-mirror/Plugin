@@ -86,6 +86,9 @@ static ExecNodes* assign_utility_stmt_exec_nodes(Node* parse_tree);
 
 PG_MODULE_MAGIC_PUBLIC;
 
+extern void InitLockNameHash();
+extern struct HTAB* lockNameHash;
+extern pthread_mutex_t gNameHashLock;
 extern void initBSQLBuiltinFuncs();
 extern struct HTAB* b_nameHash;
 extern struct HTAB* b_oidHash;
@@ -122,6 +125,13 @@ void _PG_init(void)
     if (b_oidHash == NULL || b_nameHash == NULL) {
         initBSQLBuiltinFuncs();
     }
+
+    AutoMutexLock nameHashLock(&gNameHashLock);
+    nameHashLock.lock();
+    if (lockNameHash == NULL)
+        InitLockNameHash();
+    nameHashLock.unLock();
+
     g_instance.raw_parser_hook[DB_CMPT_B] = (void*)raw_parser;
     init_plugin_object();
 }
@@ -536,6 +546,7 @@ void init_session_vars(void)
     BSqlPluginContext *cxt = (BSqlPluginContext *) MemoryContextAlloc(u_sess->self_mem_cxt, sizeof(bSqlPluginContext));
     u_sess->attr.attr_common.extension_session_vars_array[dolphin_index] = cxt;
     cxt->enableBFormatMode = false;
+    cxt->lockNameList = NIL;
 
     DefineCustomBoolVariable("b_format_mode",
                              "Enable mysql functions override opengauss's when collision happens.",

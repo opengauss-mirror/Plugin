@@ -1,0 +1,79 @@
+drop database if exists mysqllock;
+NOTICE:  database "mysqllock" does not exist, skipping
+create database mysqllock dbcompatibility 'b';
+\c mysqllock
+create extension dolphin;
+select release_all_locks( );
+ release_all_locks 
+-------------------
+                 0
+(1 row)
+
+--failed
+select release_all_locks('');
+ERROR:  function release_all_locks(unknown) does not exist
+LINE 1: select release_all_locks('');
+               ^
+HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
+CONTEXT:  referenced column: release_all_locks
+--failed
+select release_all_locks(' ');
+ERROR:  function release_all_locks(unknown) does not exist
+LINE 1: select release_all_locks(' ');
+               ^
+HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
+CONTEXT:  referenced column: release_all_locks
+--failed
+select release_all_locks(a);
+ERROR:  column "a" does not exist
+LINE 1: select release_all_locks(a);
+                                 ^
+CONTEXT:  referenced column: release_all_locks
+--failed
+select release_all_locks(1);
+ERROR:  function release_all_locks(integer) does not exist
+LINE 1: select release_all_locks(1);
+               ^
+HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
+CONTEXT:  referenced column: release_all_locks
+--failed
+select release_all_locks(a1);
+ERROR:  column "a1" does not exist
+LINE 1: select release_all_locks(a1);
+                                 ^
+CONTEXT:  referenced column: release_all_locks
+--failed
+select release_all_locks('a');
+ERROR:  function release_all_locks(unknown) does not exist
+LINE 1: select release_all_locks('a');
+               ^
+HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
+CONTEXT:  referenced column: release_all_locks
+--failed
+select release_all_locks('1');
+ERROR:  function release_all_locks(unknown) does not exist
+LINE 1: select release_all_locks('1');
+               ^
+HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
+CONTEXT:  referenced column: release_all_locks
+--failed
+select release_all_locks('a1');
+ERROR:  function release_all_locks(unknown) does not exist
+LINE 1: select release_all_locks('a1');
+               ^
+HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
+CONTEXT:  referenced column: release_all_locks
+--failed
+select release_all_locks(.);
+ERROR:  syntax error at or near "."
+LINE 1: select release_all_locks(.);
+                                 ^
+--failed
+select release_all_locks('.');
+ERROR:  function release_all_locks(unknown) does not exist
+LINE 1: select release_all_locks('.');
+               ^
+HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
+CONTEXT:  referenced column: release_all_locks
+\c postgres
+drop database if exists mysqllock;

@@ -58,6 +58,7 @@ typedef struct BSqlPluginContext {
     bool enableBFormatMode;
     char* sqlModeString;
     unsigned int sqlModeFlags;
+    List* lockNameList;
 } bSqlPluginContext;
 
 BSqlPluginContext* GetSessionContext();
