@@ -24,6 +24,3 @@ endif
 OBJS = mbutils.o
 
 include $(top_srcdir)/src/gausskernel/common.mk
-
-clean distclean maintainer-clean:
-	$(MAKE) -C conversion_procs $@

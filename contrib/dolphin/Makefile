@@ -40,6 +40,11 @@ parser:
 utils:
 	make -C $(utils)
 
+extra_clean:
+	make clean -C $(optimizer)
+	make clean -C $(parser)
+	make clean -C $(utils)
+clean: extra_clean
 
 dolphin--1.0.sql: sql_script/*
 	cat $^ > $@

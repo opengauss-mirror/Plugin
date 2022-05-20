@@ -1,0 +1,21 @@
+drop database if exists ast_test;
+NOTICE:  database "ast_test" does not exist, skipping
+create database ast_test dbcompatibility 'b';
+\c ast_test
+create extension dolphin;
+ast select * from test;
+ast create table test(id int);
+ast create table test(id int(5));
+ast USE "custcomcenter";
+ERROR:  syntax error at or near "USE"
+LINE 1: ast USE "custcomcenter";
+            ^
+ast select 1;select 1;
+ ?column? 
+----------
+        1
+(1 row)
+
+ast select 1;ast select 1;
+\c postgres
+drop database ast_test;
