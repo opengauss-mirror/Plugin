@@ -3734,11 +3734,11 @@ CREATE FUNCTION orafce.to_date(str text)
 RETURNS timestamp
 AS 'MODULE_PATHNAME','ora_to_date'
 LANGUAGE C STABLE STRICT;
-COMMENT ON FUNCTION pg_catalog.to_date(text) IS 'Convert string to timestamp';
+COMMENT ON FUNCTION orafce.to_date(text) IS 'Convert string to timestamp';
 
 CREATE FUNCTION oracle.to_date(TEXT)
 RETURNS oracle.date
-AS $$ SELECT pg_catalog.to_date($1)::oracle.date; $$
+AS $$ SELECT orafce.to_date($1)::oracle.date; $$
 LANGUAGE SQL STABLE STRICT;
 
 CREATE OR REPLACE FUNCTION oracle.to_date(TEXT,TEXT)
