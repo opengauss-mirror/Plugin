@@ -36,7 +36,7 @@ void CompatibilityTable::AppendOneSQL(std::string sql, std::string compatibility
 
 bool CompatibilityTable::GenerateReport()
 {
-    string str = "<table border=\"0\" class=\"tdiff\" summary=\"This table displays SQL Assessment Data\"><tr>\n"
+    string str = "<table border=\"1\" class=\"tdiff\" summary=\"This table displays SQL Assessment Data\"><tr>\n"
                  "<th class=\"wdrbg\" scope=\"col\">SQL</th>"
                  "<th class=\"wdrbg\" scope=\"col\">compatibility</th>"
                  "<th class=\"wdrbg\" scope=\"col\">Detail</th>"
@@ -54,7 +54,7 @@ bool CompatibilityTable::GenerateReport()
         auto &sqlCompatibility = this->sqlCompatibilities[index];
 
         string sqlDetail =
-                "<td class=\"wdrtext\"><a class=\"wdr\" name=\"\">" + sqlCompatibility.sql + "</td>\n<td class=\"" +
+                "<tr><td class=\"wdrtext\"><a class=\"wdr\" name=\"\">" + sqlCompatibility.sql + "</td>\n<td class=\"" +
                 type + "\" align=\"left\" >" + sqlCompatibility.compatibility + "</td>\n<td class=\"" + type +
                 "_err\" align=\"left\" >" + sqlCompatibility.errDetail + "</td>\n</tr>\n";
 
@@ -76,8 +76,8 @@ bool CompatibilityTable::GenerateReportHeader(char* fileName, char* output, cons
         return false;
     }
     stringstream ss;
-    ss << "<html lang=\"en\"><head><title>openGauss Compatibility Report</title>\n"
-          "<meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\" />\n"
+    ss << "<meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\" />\n"
+          "<head><title>openGauss Compatibility Report</title>\n"
           "<style type=\"text/css\">\n"
           "a.wdr {font:bold 8pt Arial,Helvetica,sans-serif;color:#663300;vertical-align:top;"
           "margin-top:0pt; margin-bottom:0pt;}\n"
@@ -95,15 +95,15 @@ bool CompatibilityTable::GenerateReportHeader(char* fileName, char* output, cons
           "th.wdrbg {font:bold 8pt Arial,Helvetica,Geneva,sans-serif; color:White; "
           "background:#8F170B;padding-left:4px; padding-right:4px;padding-bottom:2px}\n"
           "td.wdrnc {font:8pt Arial,Helvetica,Geneva,sans-serif;color:black; white-space:pre;;"
-          "background:#F4F6F6; vertical-align:top;word-break: break-word; max-width: 400px;}\n"
+          "background:#F4F6F6; vertical-align:top;word-break: break-word; width: 4%;}\n"
           "td.wdrc {font:8pt Arial,Helvetica,Geneva,sans-serif;color:black; white-space:pre;"
-          "background:White; vertical-align:top;word-break: break-word; max-width: 400px;}\n"
+          "background:White; vertical-align:top;word-break: break-word; width: 4%;}\n"
           "td.wdrnc_err {font:8pt fangsong;color:black; white-space:pre;;"
-          "background:#F4F6F6; vertical-align:top;word-break: break-word; max-width: 400px;}\n"
+          "background:#F4F6F6; vertical-align:top;word-break: break-word; width: 13%;}\n"
           "td.wdrc_err {font:8pt fangsong;color:black; white-space:pre;"
-          "background:White; vertical-align:top;word-break: break-word; max-width: 400px;}\n"
+          "background:White; vertical-align:top;word-break: break-word; width: 13%;}\n"
           "td.wdrtext {font:8pt Arial,Helvetica,Geneva,sans-serif;color:black;background:White;vertical-align:top;"
-          "white-space:pre;}"
+          "white-space:pre-wrap;word-break: break-word;width: 83%;}"
           "</style>";
 
     ss << "<script type=\"text/javascript\">function msg(titlename, inputname, objname) {\n"
