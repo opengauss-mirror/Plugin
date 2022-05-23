@@ -32,7 +32,7 @@ $(adt)/median_aggs.o $(adt)/expr_distinct.o $(adt)/nlssort.o $(adt)/first_last_a
 
 OBJS += $(mb)/mbutils.o
 
-all $(OBJS): parser utils
+all $(OBJS): parser utils;
 
 parser:
 	make -C $(parser)
@@ -41,7 +41,6 @@ utils:
 	make -C $(utils)
 
 extra_clean:
-	make clean -C $(optimizer)
 	make clean -C $(parser)
 	make clean -C $(utils)
 clean: extra_clean
