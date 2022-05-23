@@ -114,24 +114,24 @@ void SanityCheck()
 void InstallPlugins(OpenGaussConnection* conn)
 {
     /* if ths user specifies the database, read id from database connection */
-    auto globalDatabaseType = g_assessmentSettings.database;
-    if (globalDatabaseType < 0) {
+    g_globalDatabaseType = g_assessmentSettings.database;
+    if (g_globalDatabaseType < 0) {
         string extensionSql = "show sql_compatibility";
         string result = conn->ExecQuery(extensionSql.c_str());
         for (int i = DB_CMPT_A; i <= DB_CMPT_PG; i++) {
             if (pg_strcasecmp(result.c_str(), g_dbCompatArray[i].name) == 0) {
-                globalDatabaseType = i;
+                g_globalDatabaseType = i;
                 break;
             }
         }
-        if (globalDatabaseType < 0) {
+        if (g_globalDatabaseType < 0) {
             fprintf(stderr, _("%s: compatibility: only support A\\B\\C\\PG, current is %s \n"), pset.progname,
                     result.c_str());
             exit(EXIT_FAILURE);
         }
     }
-    if (g_dbPlugins[globalDatabaseType] != nullptr) {
-        auto pluginName = g_dbPlugins[globalDatabaseType];
+    if (g_dbPlugins[g_globalDatabaseType] != nullptr) {
+        auto pluginName = g_dbPlugins[g_globalDatabaseType];
         string extensionSql = "select installed_version is not null from pg_available_extensions where name = ";
         extensionSql = extensionSql + "\'" + pluginName + "\'";
         const char* sql = extensionSql.c_str();
@@ -221,7 +221,7 @@ int main(int argc, char* argv[])
 
     CompatibilityTable* compatibilityTable = new CompatibilityTable();
     if (!compatibilityTable->GenerateReportHeader(g_assessmentSettings.inputFile, g_assessmentSettings.outputFile,
-                                                  g_dbCompatArray[g_assessmentSettings.database].name)) {
+                                                  g_dbCompatArray[g_globalDatabaseType].name)) {
         fprintf(stderr, "%s: can not write to file \"%s\": %s", pset.progname, g_assessmentSettings.outputFile,
                 strerror(errno));
         exit(EXIT_FAILURE);
@@ -229,6 +229,7 @@ int main(int argc, char* argv[])
     for (size_t i = 0; i < allSql.size(); i++) {
         auto &str = allSql[i];
         bool gramTest = true;
+        AssessmentType assessmentType = UNSUPPORTED;
         CompatibilityType compatibilityType = UNSUPPORTED_COMPATIBLE;
         string errorResult = "";
         /* there is `AST` grammar in sql plugin */
@@ -247,9 +248,9 @@ int main(int argc, char* argv[])
                 compatibilityType = INCOMPATIBLE;
                 errorResult = conn->GetExecError();
             } else {
-                AssessmentType type = AssessmentType(stoi(result));
+                assessmentType = AssessmentType(stoi(result));
 
-                switch (type) {
+                switch (assessmentType) {
                     case DDL:
                         if (conn->ExecDDLCommand(str.c_str())) {
                             compatibilityType = COMPATIBLE;
@@ -285,19 +286,12 @@ int main(int argc, char* argv[])
                 }
             }
         }
-        if (compatibilityType == COMPATIBLE) {
-            compatibilityTable->AppendOneSQL(str, "完全兼容", errorResult);
-        } else if (compatibilityType == AST_COMPATIBLE) {
-            compatibilityTable->AppendOneSQL(str, "语法兼容", errorResult);
-        } else if (compatibilityType == INCOMPATIBLE) {
-            compatibilityTable->AppendOneSQL(str, "不兼容", errorResult);
-        } else if (compatibilityType == UNSUPPORTED_COMPATIBLE) {
-            compatibilityTable->AppendOneSQL(str, "暂不支持兼容性评估", errorResult);
-        }
+        compatibilityTable->AppendOneSQL(str, assessmentType, compatibilityType, errorResult);
         PrintProcess(allSql.size(), i);
     }
     fprintf(stdout, _("%s"), "\n");
-    if (!compatibilityTable->GenerateReport() || !compatibilityTable->GenerateReportEnd()) {
+    if (!compatibilityTable->GenerateSQLCompatibilityStatistic() || !compatibilityTable->GenerateReport() ||
+        !compatibilityTable->GenerateReportEnd()) {
         fprintf(stderr, "%s: can not write to file \"%s\": %s", pset.progname, g_assessmentSettings.outputFile,
                 strerror(errno));
         exit(EXIT_FAILURE);
@@ -428,7 +422,6 @@ void InitParam(char* argv[], int argc)
             default:
                 fprintf(stderr, _("Try \"%s --help\" for more information.\n"), pset.progname);
                 exit(EXIT_FAILURE);
-                break;
         }
     }
 }
