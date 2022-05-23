@@ -2364,7 +2364,7 @@ void AppendValueForColOfNotnull(ParseState* pstate, List* exprlist, List* icolum
             }
             colCell = colCell->next;
             Form_pg_attribute attr = pstate->p_target_relation->rd_att->attrs[lfirst_int(attrCell)-1];
-            lappend(exprlist, makeConstByType(attr));
+            exprlist = lappend(exprlist, makeConstByType(attr));
         }
     }
     if (list_length(exprlist) < list_length(icolumns)) {
