@@ -109,6 +109,14 @@ select format('    abcc',2);
 select format('    abcc   ',2);
 select format('    abcc   ',2);
 select format('       ',2);
+
+-- test for null params
+select format(null, 1);
+select format(1, null);
+select format(1, 1, null);
+select format(null, null, 1);
+select format(null, null, null);
+
 -- test for setting b_format_mode back to false
 set b_format_mode = 0;
 select format(1234.456, 2);
