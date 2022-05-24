@@ -1,0 +1,91 @@
+SELECT TRIM('  bar   ');
+ btrim 
+-------
+ bar
+(1 row)
+
+SELECT TRIM(LEADING 'x' FROM 'xxxbarxxx');
+ ltrim  
+--------
+ barxxx
+(1 row)
+
+SELECT TRIM(BOTH 'x' FROM 'xxxbarxxx');
+ btrim 
+-------
+ bar
+(1 row)
+
+SELECT TRIM(TRAILING 'x' FROM 'xxxbarxxx');
+ rtrim  
+--------
+ xxxbar
+(1 row)
+
+SELECT TRIM(LEADING 'xyz' FROM 'xyzxbarxxyz');
+  ltrim  
+---------
+ barxxyz
+(1 row)
+
+SELECT TRIM(BOTH 'xyz' FROM 'xyzxbarxxyz');
+ btrim 
+-------
+ bar
+(1 row)
+
+SELECT TRIM(TRAILING 'xyz' FROM 'xyzxbarxxyz');
+  rtrim  
+---------
+ xyzxbar
+(1 row)
+
+drop database if exists test;
+NOTICE:  database "test" does not exist, skipping
+create database test dbcompatibility 'B';
+\c test
+create extension dolphin;
+SELECT TRIM('  bar   ');
+ btrim 
+-------
+ bar
+(1 row)
+
+SELECT TRIM(LEADING 'x' FROM 'xxxbarxxx');
+ ltrim  
+--------
+ barxxx
+(1 row)
+
+SELECT TRIM(BOTH 'x' FROM 'xxxbarxxx');
+ btrim 
+-------
+ bar
+(1 row)
+
+SELECT TRIM(TRAILING 'x' FROM 'xxxbarxxx');
+ rtrim  
+--------
+ xxxbar
+(1 row)
+
+SELECT TRIM(LEADING 'xyz' FROM 'xyzxbarxxyz');
+  ltrim   
+----------
+ xbarxxyz
+(1 row)
+
+SELECT TRIM(BOTH 'xyz' FROM 'xyzxbarxxyz');
+ btrim 
+-------
+ xbarx
+(1 row)
+
+SELECT TRIM(TRAILING 'xyz' FROM 'xyzxbarxxyz');
+  rtrim   
+----------
+ xyzxbarx
+(1 row)
+
+\c postgres
+drop database test;

@@ -1,0 +1,31 @@
+SELECT ASCII('a');
+ ascii 
+-------
+    97
+(1 row)
+
+SELECT ASCII('你');
+ ascii 
+-------
+ 20320
+(1 row)
+
+drop database if exists test;
+NOTICE:  database "test" does not exist, skipping
+create database test dbcompatibility 'B';
+\c test
+create extension dolphin;
+SELECT ASCII('a');
+ ascii 
+-------
+    97
+(1 row)
+
+SELECT ASCII('你');
+ ascii 
+-------
+   228
+(1 row)
+
+\c postgres
+drop database test;

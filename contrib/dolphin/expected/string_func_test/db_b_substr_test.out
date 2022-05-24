@@ -1,0 +1,249 @@
+DROP TABLE IF EXISTS template_string;
+NOTICE:  table "template_string" does not exist, skipping
+CREATE TABLE template_string(a TEXT, b BYTEA);
+INSERT INTO template_string VALUES('abcdefghijklmnopqrstuvwxyz', 'abcdefghijklmnopqrstuvwxyz');
+SELECT
+SUBSTR(a, 1, 6) AS "normal",
+SUBSTR(a, 0, 6) AS "from = 0",
+SUBSTR(a, -1, 6) AS "from < 0",
+SUBSTR(a, 1, 0) AS "for = 0",
+SUBSTR(a, 1, -6) AS "for < 0"
+FROM template_string;
+ normal | from = 0 | from < 0 | for = 0 | for < 0 
+--------+----------+----------+---------+---------
+ abcdef | abcdef   | z        |         | 
+(1 row)
+
+SELECT SUBSTRING(a, 1, -6) AS "for < 0" FROM template_string;
+ERROR:  negative substring length not allowed
+CONTEXT:  referenced column: for < 0
+SELECT
+SUBSTRING(a, 1, 6) AS "normal",
+SUBSTRING(a, 0, 6) AS "from = 0",
+SUBSTRING(a, -1, 6) AS "from < 0",
+SUBSTRING(a, 1, 0) AS "for = 0"
+FROM template_string;
+ normal | from = 0 | from < 0 | for = 0 
+--------+----------+----------+---------
+ abcdef | abcde    | abcd     | 
+(1 row)
+
+SELECT
+SUBSTR(b, 1, 6) AS "normal",
+SUBSTR(b, 0, 6) AS "from = 0",
+SUBSTR(b, -1, 6) AS "from < 0",
+SUBSTR(b, 1, 0) AS "for = 0",
+SUBSTR(b, 1, -6) AS "for < 0"
+FROM template_string;
+     normal     |    from = 0    | from < 0 | for = 0 | for < 0 
+----------------+----------------+----------+---------+---------
+ \x616263646566 | \x616263646566 | \x7a     |         | 
+(1 row)
+
+SELECT SUBSTRING(b, 1, -6) AS "for < 0" FROM template_string;
+ERROR:  negative substring length not allowed
+CONTEXT:  referenced column: for < 0
+SELECT
+SUBSTRING(b, 1, 6) AS "normal",
+SUBSTRING(b, 0, 6) AS "from = 0",
+SUBSTRING(b, -1, 6) AS "from < 0",
+SUBSTRING(b, 1, 0) AS "for = 0"
+FROM template_string;
+     normal     |   from = 0   |  from < 0  | for = 0 
+----------------+--------------+------------+---------
+ \x616263646566 | \x6162636465 | \x61626364 | \x
+(1 row)
+
+DROP TABLE IF EXISTS template_string;
+drop database if exists test;
+NOTICE:  database "test" does not exist, skipping
+create database test dbcompatibility 'B';
+\c test
+create extension dolphin;
+DROP TABLE IF EXISTS template_string;
+NOTICE:  table "template_string" does not exist, skipping
+CREATE TABLE template_string(a TEXT, b BYTEA);
+INSERT INTO template_string VALUES('abcdefghijklmnopqrstuvwxyz', 'abcdefghijklmnopqrstuvwxyz');
+SELECT
+SUBSTR(a, 1, 6) AS "normal",
+SUBSTR('你是我的好兄弟', 1, 6) AS "Chinese",
+SUBSTR(a, 0, 6) AS "from = 0",
+SUBSTR(a, -1, 6) AS "from < 0",
+SUBSTR(a, 1, 0) AS "for = 0",
+SUBSTR(a, 1, -6) AS "for < 0"
+FROM template_string;
+ normal |   Chinese    | from = 0 | from < 0 | for = 0 | for < 0 
+--------+--------------+----------+----------+---------+---------
+ abcdef | 你是我的好兄 |          | z        |         | 
+(1 row)
+
+SELECT SUBSTRING(a, 1, -6) AS "for < 0" FROM template_string;
+ for < 0 
+---------
+ 
+(1 row)
+
+SELECT
+SUBSTRING(a, 1, 6) AS "normal",
+SUBSTRING('你是我的好兄弟', 1, 6) AS "Chinese",
+SUBSTRING(a, 0, 6) AS "from = 0",
+SUBSTRING(a, -1, 6) AS "from < 0",
+SUBSTRING(a, 1, 0) AS "for = 0"
+FROM template_string;
+ normal |   Chinese    | from = 0 | from < 0 | for = 0 
+--------+--------------+----------+----------+---------
+ abcdef | 你是我的好兄 |          | z        | 
+(1 row)
+
+SELECT
+MID(a, 1, 6) AS "normal",
+MID('你是我的好兄弟', 1, 6) AS "Chinese",
+MID(a, 0, 6) AS "from = 0",
+MID(a, -1, 6) AS "from < 0",
+MID(a, 1, 0) AS "for = 0",
+MID(a, 1, -6) AS "for < 0"
+FROM template_string;
+ normal |   Chinese    | from = 0 | from < 0 | for = 0 | for < 0 
+--------+--------------+----------+----------+---------+---------
+ abcdef | 你是我的好兄 |          | z        |         | 
+(1 row)
+
+SELECT
+SUBSTR(b, 1, 6) AS "normal",
+SUBSTR(b, 0, 6) AS "from = 0",
+SUBSTR(b, -1, 6) AS "from < 0",
+SUBSTR(b, 1, 0) AS "for = 0",
+SUBSTR(b, 1, -6) AS "for < 0"
+FROM template_string;
+     normal     | from = 0 | from < 0 | for = 0 | for < 0 
+----------------+----------+----------+---------+---------
+ \x616263646566 | \x       | \x7a     | \x      | \x
+(1 row)
+
+SELECT SUBSTRING(b, 1, -6) AS "for < 0" FROM template_string;
+ for < 0 
+---------
+ \x
+(1 row)
+
+SELECT
+SUBSTRING(b, 1, 6) AS "normal",
+SUBSTRING(b, 0, 6) AS "from = 0",
+SUBSTRING(b, -1, 6) AS "from < 0",
+SUBSTRING(b, 1, 0) AS "for = 0"
+FROM template_string;
+     normal     | from = 0 | from < 0 | for = 0 
+----------------+----------+----------+---------
+ \x616263646566 | \x       | \x7a     | \x
+(1 row)
+
+SELECT
+MID(b, 1, 6) AS "normal",
+MID(b, 0, 6) AS "from = 0",
+MID(b, -1, 6) AS "from < 0",
+MID(b, 1, 0) AS "for = 0",
+MID(b, 1, -6) AS "for < 0"
+FROM template_string;
+     normal     | from = 0 | from < 0 | for = 0 | for < 0 
+----------------+----------+----------+---------+---------
+ \x616263646566 | \x       | \x7a     | \x      | \x
+(1 row)
+
+SELECT SUBSTR(a FROM 1 FOR 6) FROM template_string;
+ substr 
+--------
+ abcdef
+(1 row)
+
+SELECT SUBSTR(a FOR 6 FROM 1) FROM template_string;
+ substr 
+--------
+ abcdef
+(1 row)
+
+SELECT SUBSTR(a FROM 1) FROM template_string;
+           substr           
+----------------------------
+ abcdefghijklmnopqrstuvwxyz
+(1 row)
+
+SELECT SUBSTR(a FROM 0) FROM template_string;
+ substr 
+--------
+ 
+(1 row)
+
+SELECT SUBSTR(a FROM -1) FROM template_string;
+ substr 
+--------
+ z
+(1 row)
+
+SELECT SUBSTR(a FOR 1) FROM template_string;
+ substr 
+--------
+ a
+(1 row)
+
+SELECT SUBSTR(a FOR 0) FROM template_string;
+ substr 
+--------
+ 
+(1 row)
+
+SELECT SUBSTR(a FOR -1) FROM template_string;
+ substr 
+--------
+ 
+(1 row)
+
+SELECT MID(a FROM 1 FOR 6) FROM template_string;
+  mid   
+--------
+ abcdef
+(1 row)
+
+SELECT MID(a FOR 6 FROM 1) FROM template_string;
+  mid   
+--------
+ abcdef
+(1 row)
+
+SELECT MID(a FROM 1) FROM template_string;
+            mid             
+----------------------------
+ abcdefghijklmnopqrstuvwxyz
+(1 row)
+
+SELECT MID(a FROM 0) FROM template_string;
+ mid 
+-----
+ 
+(1 row)
+
+SELECT MID(a FROM -1) FROM template_string;
+ mid 
+-----
+ z
+(1 row)
+
+SELECT MID(a FOR 1) FROM template_string;
+ mid 
+-----
+ a
+(1 row)
+
+SELECT MID(a FOR 0) FROM template_string;
+ mid 
+-----
+ 
+(1 row)
+
+SELECT MID(a FOR -1) FROM template_string;
+ mid 
+-----
+ 
+(1 row)
+
+\c postgres
+drop database test;
