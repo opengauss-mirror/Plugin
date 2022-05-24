@@ -67,7 +67,6 @@ pthread_mutex_t gNameHashLock;
 typedef struct LockName {
     char name[MAX_ADVISORY_LOCK_NAME_LENTH+1];
     int64 nlocks;
-    char reserved[63];
 } LockName;
 
 PG_FUNCTION_INFO_V1_PUBLIC(GetAdvisoryLockWithtimeTextFormat);
