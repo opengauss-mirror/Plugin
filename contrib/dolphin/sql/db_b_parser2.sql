@@ -85,12 +85,12 @@ select octet_length(''),bit_length(' '),bit_length(NULL);
 
 --测试点：验证length（返回字符数）
 select * from pg_proc where proname in ('db_b_parser_length');
---返回1、3、10
+--返回1、1、2
 select length(b'1'), length(b'101'), length(b'1011111111');
 --返回1、3、10
 select length('1'), length('101'), length('1011111111');
---返回5、2、3
-select length('哈1哈\n'),length('\n'),length('\\n');
+--返回8、1、2
+select length(E'哈1哈\n'),length(E'\n'),length(E'\\n');
 --返回0、1、空
 select length(''),length(' '),length(NULL);
 

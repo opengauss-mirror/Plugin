@@ -50,6 +50,7 @@
 #include "catalog/pg_type.h"
 #include "workload/cpwlm.h"
 #include "utils/varbit.h"
+#include "plugin_utils/vecfunc_plugin.h"
 
 #define JUDGE_INPUT_VALID(X, Y) ((NULL == (X)) || (NULL == (Y)))
 #define GET_POSITIVE(X) ((X) > 0 ? (X) : ((-1) * (X)))
@@ -813,7 +814,7 @@ Datum textlen(PG_FUNCTION_ARGS)
         return text_length_huge(str);
     } else {
         /* try to avoid decompressing argument */
-        PG_RETURN_INT32(text_length(str));
+        PG_RETURN_INT64(toast_raw_datum_size(str) - VARHDRSZ);
     }
 }
 
@@ -1077,10 +1078,14 @@ Datum text_substr_null(PG_FUNCTION_ARGS)
     fun_mblen = *pg_wchar_table[GetDatabaseEncoding()].mblen;
 
     is_compress = (VARATT_IS_COMPRESSED(DatumGetPointer(str)) || VARATT_IS_EXTERNAL(DatumGetPointer(str)));
-    // orclcompat is false withlen is true
-    baseIdx = 2 + (int)is_compress + (eml - 1) * 8;
 
-    result = (*substr_Array[baseIdx])(str, start, length, &is_null, fun_mblen);
+    /*
+     * To ensure M* compatibility, replace the function template
+     * with the function template whose orclcompat is true.
+     */
+    baseIdx = 6 + (int)is_compress + (eml - 1) * 8;
+
+    result = (*substr_Array_Plugin[baseIdx])(str, start, length, &is_null, fun_mblen);
 
     if (is_null == true)
         PG_RETURN_NULL();
@@ -1102,9 +1107,8 @@ Datum text_substr_no_len_null(PG_FUNCTION_ARGS)
 
     is_compress = (VARATT_IS_COMPRESSED(DatumGetPointer(str)) || VARATT_IS_EXTERNAL(DatumGetPointer(str)));
     // orclcompat is false withlen is false
-    baseIdx = (int)is_compress + (eml - 1) * 8;
-
-    result = (*substr_Array[baseIdx])(str, start, 0, &is_null, fun_mblen);
+    baseIdx = 4 + (int)is_compress + (eml - 1) * 8;
+    result = (*substr_Array_Plugin[baseIdx])(str, start, 0, &is_null, fun_mblen);
 
     if (is_null == true)
         PG_RETURN_NULL();
@@ -1340,8 +1344,7 @@ Datum text_substr_orclcompat(PG_FUNCTION_ARGS)
     is_compress = (VARATT_IS_COMPRESSED(DatumGetPointer(str)) || VARATT_IS_EXTERNAL(DatumGetPointer(str)));
     // orclcompat is true, withlen is true
     baseIdx = 6 + (int)is_compress + (eml - 1) * 8;
-
-    result = (*substr_Array[baseIdx])(str, start, length, &is_null, fun_mblen);
+    result = (*substr_Array_Plugin[baseIdx])(str, start, length, &is_null, fun_mblen);
 
     if (is_null == true)
         PG_RETURN_NULL();
@@ -1372,8 +1375,7 @@ Datum text_substr_no_len_orclcompat(PG_FUNCTION_ARGS)
     is_compress = (VARATT_IS_COMPRESSED(DatumGetPointer(str)) || VARATT_IS_EXTERNAL(DatumGetPointer(str)));
     // orclcompat is true, withlen is false
     baseIdx = 4 + (int)is_compress + (eml - 1) * 8;
-
-    result = (*substr_Array[baseIdx])(str, start, 0, &is_null, fun_mblen);
+    result = (*substr_Array_Plugin[baseIdx])(str, start, 0, &is_null, fun_mblen);
 
     if (is_null == true)
         PG_RETURN_NULL();
@@ -3175,14 +3177,12 @@ Datum bytea_substr_orclcompat(PG_FUNCTION_ARGS)
     int32 total = 0;
 
     total = toast_raw_datum_size(str) - VARHDRSZ;
-    if ((length < 0) || (start > total) || (start + total < 0)) {
-        if (u_sess->attr.attr_sql.sql_compatibility == A_FORMAT ||
-            u_sess->attr.attr_sql.sql_compatibility == B_FORMAT)
-            PG_RETURN_NULL();
-        else {
-            result = PG_STR_GET_BYTEA("");
-            PG_RETURN_BYTEA_P(result);
-        }
+
+    /* 
+     * Set length to 0 so that an empty bytea can be returned later.
+     */
+    if ((length < 0) || (start > total) || (start + total < 0) || (start == 0)) {
+        length = 0;
     }
     /*
      * the param length_not_specified is false,
@@ -3243,13 +3243,10 @@ static bytea* bytea_substring_orclcompat(Datum str, int S, int L, bool length_no
 
     /*
      * amend the start position. when S < 0,
-     * amend the sartPosition to abs(start) from last char,
-     * when s==0, the start position is set 1
+     * amend the sartPosition to abs(start) from last char
      */
     if (S < 0) {
         S = total + S + 1;
-    } else if (0 == S) {
-        S = 1;
     }
 
     S1 = Max(S, 1);
@@ -6099,7 +6096,7 @@ Datum text_left(PG_FUNCTION_ARGS)
     text* part_str = NULL;
 
     if (n < 0) {
-        n = pg_mbstrlen_with_len(p, len) + n;
+        PG_RETURN_TEXT_P(cstring_to_text(""));
     }
 
     if (n >= 0) {
@@ -6136,7 +6133,7 @@ Datum text_right(PG_FUNCTION_ARGS)
     text* part_str = NULL;
 
     if (n < 0)
-        n = -n;
+        PG_RETURN_TEXT_P(cstring_to_text(""));
     else
         n = pg_mbstrlen_with_len(p, len) - n;
 

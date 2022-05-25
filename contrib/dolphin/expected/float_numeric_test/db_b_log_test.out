@@ -1,0 +1,151 @@
+SELECT LOG(10);
+ log 
+-----
+   1
+(1 row)
+
+drop database if exists test;
+NOTICE:  database "test" does not exist, skipping
+create database test dbcompatibility 'B';
+\c test
+create extension dolphin;
+SELECT LOG(10);
+       log        
+------------------
+ 2.30258509299405
+(1 row)
+
+SELECT LOG10(100);
+ log10 
+-------
+     2
+(1 row)
+
+SELECT LOG2(64);
+ log2 
+------
+    6
+(1 row)
+
+SELECT LOG(10::numeric);
+        log         
+--------------------
+ 2.3025850929940457
+(1 row)
+
+SELECT LOG10(100::numeric);
+       log10        
+--------------------
+ 2.0000000000000000
+(1 row)
+
+SELECT LOG2(64::numeric);
+        log2        
+--------------------
+ 6.0000000000000000
+(1 row)
+
+SELECT LOG(0) IS NULL;
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT LOG10(0) IS NULL;
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT LOG2(0) IS NULL;
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT LOG(-1) IS NULL;
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT LOG10(-1) IS NULL;
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT LOG2(-1) IS NULL;
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT LOG(0::numeric) IS NULL;
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT LOG10(0::numeric) IS NULL;
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT LOG2(0::numeric) IS NULL;
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT LOG(-1::numeric) IS NULL;
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT LOG10(-1::numeric) IS NULL;
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT LOG2(-1::numeric) IS NULL;
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT LOG(2, 64) IS NULL;
+ ?column? 
+----------
+ f
+(1 row)
+
+SELECT LOG(-2, 64) IS NULL;
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT LOG(2, -64) IS NULL;
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT LOG(0, 64) IS NULL;
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT LOG(2, 0) IS NULL;
+ ?column? 
+----------
+ t
+(1 row)
+
+\c postgres
+drop database test;

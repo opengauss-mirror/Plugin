@@ -210,7 +210,8 @@ static void mod_var(NumericVar* var1, NumericVar* var2, NumericVar* result);
 static void ceil_var(NumericVar* var, NumericVar* result);
 static void floor_var(NumericVar* var, NumericVar* result);
 
-static void sqrt_var(NumericVar* arg, NumericVar* result, int rscale);
+static void sqrt_var(NumericVar* arg, NumericVar* result, int rscale,
+                        bool is_negative_valid = false, bool* is_null = NULL);
 static void exp_var(NumericVar* arg, NumericVar* result, int rscale);
 static int estimate_ln_dweight(NumericVar* var);
 static void ln_var(NumericVar* arg, NumericVar* result, int rscale);
@@ -2635,7 +2636,11 @@ Datum numeric_sqrt(PG_FUNCTION_ARGS)
     /*
      * Let sqrt_var() do the calculation and return the result.
      */
-    sqrt_var(&arg, &result, rscale);
+    bool is_null = false;
+    sqrt_var(&arg, &result, rscale, true, &is_null);
+    if (is_null) {
+        PG_RETURN_NULL();
+    }
 
     res = make_result(&result);
 
@@ -2727,6 +2732,16 @@ Datum numeric_ln(PG_FUNCTION_ARGS)
     int rscale;
     uint16 numFlags = NUMERIC_NB_FLAGBITS(num);
 
+    Numeric zero;
+    NumericVar zero_var;
+    init_var(&zero_var);
+    int64_to_numericvar((int64)0, &zero_var);
+    zero = make_result(&zero_var);
+
+    if (cmp_numerics(num, zero) <= 0) {
+        PG_RETURN_NULL();
+    }
+
     if (NUMERIC_FLAG_IS_NANORBI(numFlags)) {
         /*
          * Handle Big Integer
@@ -2776,6 +2791,17 @@ Datum numeric_log(PG_FUNCTION_ARGS)
     NumericVar result;
     uint16 num1Flags = NUMERIC_NB_FLAGBITS(num1);
     uint16 num2Flags = NUMERIC_NB_FLAGBITS(num2);
+
+    /* create a numeric that value is zero */
+    Numeric zero;
+    NumericVar zero_var;
+    init_var(&zero_var);
+    int64_to_numericvar((int64)0, &zero_var);
+    zero = make_result(&zero_var);
+
+    if (cmp_numerics(num1, zero) <= 0 || cmp_numerics(num2, zero) <= 0) {
+        PG_RETURN_NULL();
+    }
 
     if (NUMERIC_FLAG_IS_NANORBI(num1Flags) || NUMERIC_FLAG_IS_NANORBI(num2Flags)) {
         /*
@@ -5873,7 +5899,7 @@ static void floor_var(NumericVar* var, NumericVar* result)
  *
  *	Compute the square root of x using Newton's algorithm
  */
-static void sqrt_var(NumericVar* arg, NumericVar* result, int rscale)
+static void sqrt_var(NumericVar* arg, NumericVar* result, int rscale, bool is_negative_valid, bool* is_null)
 {
     NumericVar tmp_arg;
     NumericVar tmp_val;
@@ -5894,10 +5920,16 @@ static void sqrt_var(NumericVar* arg, NumericVar* result, int rscale)
      * SQL2003 defines sqrt() in terms of power, so we need to emit the right
      * SQLSTATE error code if the operand is negative.
      */
-    if (stat < 0)
-        ereport(ERROR,
-            (errcode(ERRCODE_INVALID_ARGUMENT_FOR_POWER_FUNCTION),
-                errmsg("cannot take square root of a negative number")));
+    if (stat < 0) {
+        if (!is_negative_valid) {
+            ereport(ERROR,
+                (errcode(ERRCODE_INVALID_ARGUMENT_FOR_POWER_FUNCTION),
+                    errmsg("cannot take square root of a negative number")));
+        } else {
+            *is_null = true;
+            return;
+        }
+    }
 
     init_var(&tmp_arg);
     init_var(&tmp_val);

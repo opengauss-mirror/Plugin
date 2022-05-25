@@ -64,6 +64,7 @@
 #include "storage/tcap.h"
 #include "plugin_parser/parse_func.h"
 #include "plugin_parser/parse_utilcmd.h"
+#include "plugin_utils/vecfunc_plugin.h"
 #include "replication/archive_walreceiver.h"
 #include "plugin_commands/mysqlmode.h"
 #ifndef WIN32_ONLY_COMPILER
@@ -124,6 +125,7 @@ void _PG_init(void)
     }
     g_instance.raw_parser_hook[DB_CMPT_B] = (void*)raw_parser;
     init_plugin_object();
+    InitVecsubarrayPlugin();
 }
 
 void _PG_fini(void)
