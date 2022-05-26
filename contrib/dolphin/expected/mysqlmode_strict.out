@@ -805,5 +805,261 @@ insert into test_notnull_double(b) values(null);
 ERROR:  null value in column "b" violates not-null constraint
 insert into test_notnull_numeric(b) values(null);
 ERROR:  null value in column "b" violates not-null constraint
+--insert into table(a) values(...,...)
+insert into test_notnull_tint(a) values(2,2);
+ERROR:  INSERT has more expressions than target columns
+LINE 1: insert into test_notnull_tint(a) values(2,2);
+                                                  ^
+insert into test_notnull_sint(a) values(2,2);
+ERROR:  INSERT has more expressions than target columns
+LINE 1: insert into test_notnull_sint(a) values(2,2);
+                                                  ^
+insert into test_notnull_int(a) values(2,2);
+ERROR:  INSERT has more expressions than target columns
+LINE 1: insert into test_notnull_int(a) values(2,2);
+                                                 ^
+insert into test_notnull_bint(a) values(2,2);
+ERROR:  INSERT has more expressions than target columns
+LINE 1: insert into test_notnull_bint(a) values(2,2);
+                                                  ^
+insert into test_notnull_char(a) values(2,2);
+ERROR:  INSERT has more expressions than target columns
+LINE 1: insert into test_notnull_char(a) values(2,2);
+                                                  ^
+insert into test_notnull_varchar(a) values(2,2);
+ERROR:  INSERT has more expressions than target columns
+LINE 1: insert into test_notnull_varchar(a) values(2,2);
+                                                     ^
+insert into test_notnull_clob(a) values(2,2);
+ERROR:  INSERT has more expressions than target columns
+LINE 1: insert into test_notnull_clob(a) values(2,2);
+                                                  ^
+insert into test_notnull_text(a) values(2,2);
+ERROR:  INSERT has more expressions than target columns
+LINE 1: insert into test_notnull_text(a) values(2,2);
+                                                  ^
+insert into test_notnull_real(a) values(2,2);
+ERROR:  INSERT has more expressions than target columns
+LINE 1: insert into test_notnull_real(a) values(2,2);
+                                                  ^
+insert into test_notnull_double(a) values(2,2);
+ERROR:  INSERT has more expressions than target columns
+LINE 1: insert into test_notnull_double(a) values(2,2);
+                                                    ^
+insert into test_notnull_numeric(a) values(2,2);
+ERROR:  INSERT has more expressions than target columns
+LINE 1: insert into test_notnull_numeric(a) values(2,2);
+                                                     ^
+--insert into table values(...,default,...)
+insert into test_notnull_tint values(2,default);
+select * from test_notnull_tint;
+ a | b 
+---+---
+ 1 | 0
+ 2 | 0
+(2 rows)
+
+insert into test_notnull_sint values(2,default);
+select * from test_notnull_sint;
+ a | b 
+---+---
+ 1 | 0
+ 2 | 0
+(2 rows)
+
+insert into test_notnull_int values(2,default);
+select * from test_notnull_int;
+ a | b 
+---+---
+ 1 | 0
+ 2 | 0
+(2 rows)
+
+insert into test_notnull_bint values(2,default);
+select * from test_notnull_bint;
+ a | b 
+---+---
+ 1 | 0
+ 2 | 0
+(2 rows)
+
+insert into test_notnull_char values(2,default);
+select * from test_notnull_char;
+ a | b 
+---+---
+ 1 |  
+ 2 |  
+(2 rows)
+
+insert into test_notnull_varchar values(2,default);
+select * from test_notnull_varchar;
+ a | b 
+---+---
+ 1 | 
+ 2 | 
+(2 rows)
+
+insert into test_notnull_clob values(2,default);
+select * from test_notnull_clob;
+ a | b 
+---+---
+ 1 | 
+ 2 | 
+(2 rows)
+
+insert into test_notnull_text values(2,default);
+select * from test_notnull_text;
+ a | b 
+---+---
+ 1 | 
+ 2 | 
+(2 rows)
+
+insert into test_notnull_real values(2,default);
+select * from test_notnull_real;
+ a | b 
+---+---
+ 1 | 0
+ 2 | 0
+(2 rows)
+
+insert into test_notnull_double values(2,default);
+select * from test_notnull_double;
+ a | b 
+---+---
+ 1 | 0
+ 2 | 0
+(2 rows)
+
+insert into test_notnull_numeric values(2,default);
+select * from test_notnull_numeric;
+  a   |  b   
+------+------
+ 1.00 | 0.00
+ 2.00 | 0.00
+(2 rows)
+
+--insert into table values(...),(...)
+insert into test_notnull_tint(a) values(3),(4),(5);
+select * from test_notnull_tint;
+ a | b 
+---+---
+ 1 | 0
+ 2 | 0
+ 3 | 0
+ 4 | 0
+ 5 | 0
+(5 rows)
+
+insert into test_notnull_sint(a) values(3),(4),(5);
+select * from test_notnull_sint;
+ a | b 
+---+---
+ 1 | 0
+ 2 | 0
+ 3 | 0
+ 4 | 0
+ 5 | 0
+(5 rows)
+
+insert into test_notnull_int(a) values(3),(4),(5);
+select * from test_notnull_int;
+ a | b 
+---+---
+ 1 | 0
+ 2 | 0
+ 3 | 0
+ 4 | 0
+ 5 | 0
+(5 rows)
+
+insert into test_notnull_bint(a) values(3),(4),(5);
+select * from test_notnull_bint;
+ a | b 
+---+---
+ 1 | 0
+ 2 | 0
+ 3 | 0
+ 4 | 0
+ 5 | 0
+(5 rows)
+
+insert into test_notnull_char(a) values(3),(4),(5);
+select * from test_notnull_char;
+ a | b 
+---+---
+ 1 |  
+ 2 |  
+ 3 |  
+ 4 |  
+ 5 |  
+(5 rows)
+
+insert into test_notnull_varchar(a) values(3),(4),(5);
+select * from test_notnull_varchar;
+ a | b 
+---+---
+ 1 | 
+ 2 | 
+ 3 | 
+ 4 | 
+ 5 | 
+(5 rows)
+
+insert into test_notnull_clob(a) values(3),(4),(5);
+select * from test_notnull_clob;
+ a | b 
+---+---
+ 1 | 
+ 2 | 
+ 3 | 
+ 4 | 
+ 5 | 
+(5 rows)
+
+insert into test_notnull_text(a) values(3),(4),(5);
+select * from test_notnull_text;
+ a | b 
+---+---
+ 1 | 
+ 2 | 
+ 3 | 
+ 4 | 
+ 5 | 
+(5 rows)
+
+insert into test_notnull_real(a) values(3),(4),(5);
+select * from test_notnull_real;
+ a | b 
+---+---
+ 1 | 0
+ 2 | 0
+ 3 | 0
+ 4 | 0
+ 5 | 0
+(5 rows)
+
+insert into test_notnull_double(a) values(3),(4),(5);
+select * from test_notnull_double;
+ a | b 
+---+---
+ 1 | 0
+ 2 | 0
+ 3 | 0
+ 4 | 0
+ 5 | 0
+(5 rows)
+
+insert into test_notnull_numeric(a) values(3),(4),(5);
+select * from test_notnull_numeric;
+  a   |  b   
+------+------
+ 1.00 | 0.00
+ 2.00 | 0.00
+ 3.00 | 0.00
+ 4.00 | 0.00
+ 5.00 | 0.00
+(5 rows)
+
 \c contrib_regression;
 drop DATABASE if exists sql_mode_strict;
