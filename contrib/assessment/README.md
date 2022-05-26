@@ -1,3 +1,22 @@
+### 工具介绍
+本工具支持利用已有的openGauss节点评估数据SQL文本在openGauss的兼容性。包含但不限于以下限制：
+1. 仅支持SQL文本文件输入，且SQL之间以`;`分割。
+2. 不使用`dolphin`、`whale`等兼容性插件场景，不兼容语句的报错信息可能不准确。
+3. 存储过程、函数语句仅支持：创建体的合法性校验和函数体的语法兼容校验。
+4. 对于评估结果的准确率：
+   1. 完全兼容：openGauss完全支持该语法。兼容结果可能依赖于传入SQL语句的前置执行结果，因此实际在openGauss内执行时不一定完全兼容。
+   2. 语法兼容：openGauss支持该语法，但是实际使用过程中可能包含字段类型不支持、函数不存在等问题。
+   3. 语句不兼容：openGauss不支持该语法。
+   4. 不支持评估：未考虑的语句。后续会陆续支持语句评估（例如create database等跨数据库影响语句）。
+   
+<font color='red'>对于A兼容数据库，在作SQL语句导出时，最好提前作如下设置：</font>
+```sql
+EXECUTE DBMS_METADATA.SET_TRANSFORM_PARAM(DBMS_METADATA.SESSION_TRANSFORM,'SEGMENT_ATTRIBUTES',false);
+EXECUTE DBMS_METADATA.SET_TRANSFORM_PARAM(DBMS_METADATA.SESSION_TRANSFORM,'SQLTERMINATOR',true);
+EXECUTE DBMS_METADATA.SET_TRANSFORM_PARAM(DBMS_METADATA.SESSION_TRANSFORM,'STORAGE',false);
+EXECUTE DBMS_METADATA.SET_TRANSFORM_PARAM(DBMS_METADATA.SESSION_TRANSFORM,'TABLESPACE',false);
+```
+
 ### 代码获取
 
 - openGauss源码路径：

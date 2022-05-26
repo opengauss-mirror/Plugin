@@ -28,15 +28,117 @@
 
 using namespace std;
 
-void CompatibilityTable::AppendOneSQL(std::string sql, std::string compatibility, std::string errDetail)
+void CompatibilityTable::AppendOneSQL(std::string sql, AssessmentType assessmentType,
+        CompatibilityType compatibilityType, std::string errDetail)
 {
-    this->sqlCompatibilities.emplace_back(sql, compatibility, errDetail);
+    this->sqlCompatibilities.emplace_back(sql, assessmentType, compatibilityType, errDetail);
 }
 
+static string GetCompatibilityString(CompatibilityType compatibilityType)
+{
+    switch (compatibilityType) {
+        case COMPATIBLE:
+            return "完全兼容";
+        case AST_COMPATIBLE:
+            return "语法兼容";
+        case INCOMPATIBLE:
+            return "不兼容";
+        case UNSUPPORTED_COMPATIBLE:
+            return "暂不支持评估";
+        case SKIP_COMMAND:
+            return "忽略语句";
+        default:
+            return "unreached branch";
+    }
+}
+
+bool CompatibilityTable::GenerateSQLCompatibilityStatistic()
+{
+    stringstream ss;
+    ss << "<a class=\"wdr\" name=\"top\"></a>"
+          "<h2 class=\"wdr\">SQL Compatibility Statistics</h2>"
+          "<table border=\"1\" class=\"tdiff\" summary=\"This table displays SQL Assessment Data\"><tr>\n"
+          "<th class=\"wdrbg\" scope=\"col\">总数</th>"
+          "<th class=\"wdrbg\" scope=\"col\">"
+       << GetCompatibilityString(COMPATIBLE)
+       << "</th>"
+          "<th class=\"wdrbg\" scope=\"col\">"
+       << GetCompatibilityString(AST_COMPATIBLE)
+       << "</th>"
+          "<th class=\"wdrbg\" scope=\"col\">" <<
+       GetCompatibilityString(INCOMPATIBLE)
+       << "</th>"
+          "<th class=\"wdrbg\" scope=\"col\">"
+       << GetCompatibilityString(UNSUPPORTED_COMPATIBLE)
+       << "</th>"
+          "<th class=\"wdrbg\" scope=\"col\">"
+       << GetCompatibilityString(SKIP_COMMAND)
+       << "</th>\n</tr>\n";
+    auto str = ss.str();
+    if (fwrite(str.c_str(), 1, str.length(), fd) != str.length()) {
+        return false;
+    }
+
+    auto total = this->sqlCompatibilities.size();
+    auto compatible = 0;
+    auto astCompatible = 0;
+    auto incompatible = 0;
+    auto unsupportedCompatible = 0;
+    auto skipCommand = 0;
+    for (auto &compatibility: this->sqlCompatibilities) {
+        switch (compatibility.compatibility) {
+            case COMPATIBLE:
+                compatible++;
+                break;
+            case AST_COMPATIBLE:
+                astCompatible++;
+                break;
+            case INCOMPATIBLE:
+                incompatible++;
+                break;
+            case UNSUPPORTED_COMPATIBLE:
+                unsupportedCompatible++;
+                break;
+            case SKIP_COMMAND:
+                skipCommand++;
+                break;
+            default:
+                break;
+        }
+    }
+    stringstream data;
+    data << "<tr>"
+         << "<td class=\"wdrnc\"><a class=\"wdr\" name=\"\">"
+         << to_string(total)
+         << "</td>\n"
+         << "<td class=\"wdrnc\" align=\"left\" >"
+         << to_string(compatible)
+         << "</td>\n"
+         << "<td class=\"wdrnc\"align=\"left\" >"
+         << to_string(astCompatible)
+         << "</td>\n"
+         << "<td class=\"wdrnc\"align=\"left\" >"
+         << to_string(incompatible)
+         << "</td>\n"
+         << "<td class=\"wdrnc\"align=\"left\" >"
+         << to_string(unsupportedCompatible)
+         << "</td>\n"
+         << "<td class=\"wdrnc\"align=\"left\" >"
+         << to_string(skipCommand)
+         << "</td>\n"
+         << "</tr>\n"
+         << "</table>\n";
+    auto dataStr = data.str();
+    if (fwrite(dataStr.c_str(), 1, dataStr.length(), fd) != dataStr.length()) {
+        return false;
+    }
+    return true;
+}
 
 bool CompatibilityTable::GenerateReport()
 {
-    string str = "<table border=\"0\" class=\"tdiff\" summary=\"This table displays SQL Assessment Data\"><tr>\n"
+    string str = "<a class=\"wdr\" name=\"top\"></a><h2 class=\"wdr\">SQL Compatibility Details</h2>"
+                 "<table border=\"1\" class=\"tdiff\" summary=\"This table displays SQL Assessment Data\"><tr>\n"
                  "<th class=\"wdrbg\" scope=\"col\">SQL</th>"
                  "<th class=\"wdrbg\" scope=\"col\">compatibility</th>"
                  "<th class=\"wdrbg\" scope=\"col\">Detail</th>"
@@ -54,8 +156,8 @@ bool CompatibilityTable::GenerateReport()
         auto &sqlCompatibility = this->sqlCompatibilities[index];
 
         string sqlDetail =
-                "<td class=\"wdrtext\"><a class=\"wdr\" name=\"\">" + sqlCompatibility.sql + "</td>\n<td class=\"" +
-                type + "\" align=\"left\" >" + sqlCompatibility.compatibility + "</td>\n<td class=\"" + type +
+                "<tr><td class=\"wdrtext\"><a class=\"wdr\" name=\"\">" + sqlCompatibility.sql + "\n</td>\n<td class=\"" +
+                type + "\" align=\"left\" >" + GetCompatibilityString(sqlCompatibility.compatibility) + "</td>\n<td class=\"" + type +
                 "_err\" align=\"left\" >" + sqlCompatibility.errDetail + "</td>\n</tr>\n";
 
         if (fwrite(sqlDetail.c_str(), 1, sqlDetail.length(), fd) != sqlDetail.length()) {
@@ -71,13 +173,13 @@ bool CompatibilityTable::GenerateReport()
 
 bool CompatibilityTable::GenerateReportHeader(char* fileName, char* output, const char* dbName)
 {
-    fd = fopen(output, "wb+");
+    this->fd = fopen(output, "wb+");
     if (fd == nullptr) {
         return false;
     }
     stringstream ss;
-    ss << "<html lang=\"en\"><head><title>openGauss Compatibility Report</title>\n"
-          "<meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\" />\n"
+    ss << "<meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\" />\n"
+          "<head><title>openGauss Compatibility Report</title>\n"
           "<style type=\"text/css\">\n"
           "a.wdr {font:bold 8pt Arial,Helvetica,sans-serif;color:#663300;vertical-align:top;"
           "margin-top:0pt; margin-bottom:0pt;}\n"
@@ -95,15 +197,15 @@ bool CompatibilityTable::GenerateReportHeader(char* fileName, char* output, cons
           "th.wdrbg {font:bold 8pt Arial,Helvetica,Geneva,sans-serif; color:White; "
           "background:#8F170B;padding-left:4px; padding-right:4px;padding-bottom:2px}\n"
           "td.wdrnc {font:8pt Arial,Helvetica,Geneva,sans-serif;color:black; white-space:pre;;"
-          "background:#F4F6F6; vertical-align:top;word-break: break-word; max-width: 400px;}\n"
+          "background:#F4F6F6; vertical-align:top;word-break: break-word; width: 4%;}\n"
           "td.wdrc {font:8pt Arial,Helvetica,Geneva,sans-serif;color:black; white-space:pre;"
-          "background:White; vertical-align:top;word-break: break-word; max-width: 400px;}\n"
+          "background:White; vertical-align:top;word-break: break-word; width: 4%;}\n"
           "td.wdrnc_err {font:8pt fangsong;color:black; white-space:pre;;"
-          "background:#F4F6F6; vertical-align:top;word-break: break-word; max-width: 400px;}\n"
+          "background:#F4F6F6; vertical-align:top;word-break: break-word; width: 13%;}\n"
           "td.wdrc_err {font:8pt fangsong;color:black; white-space:pre;"
-          "background:White; vertical-align:top;word-break: break-word; max-width: 400px;}\n"
+          "background:White; vertical-align:top;word-break: break-word; width: 13%;}\n"
           "td.wdrtext {font:8pt Arial,Helvetica,Geneva,sans-serif;color:black;background:White;vertical-align:top;"
-          "white-space:pre;}"
+          "white-space:pre-wrap;word-break: break-word;width: 83%;}"
           "</style>";
 
     ss << "<script type=\"text/javascript\">function msg(titlename, inputname, objname) {\n"
@@ -118,7 +220,7 @@ bool CompatibilityTable::GenerateReportHeader(char* fileName, char* output, cons
           "}}</script>\n"
           "</head><body class=\"wdr\"\n>";
 
-    ss << "<h1 class=\"wdr\">" << dbName << " Compatibility Assessment</h1>";
+    ss << "<h1 class=\"wdr\">" << dbName << " Compatibility Assessment</h1>\n";
     auto str = ss.str();
     if (fwrite(str.c_str(), 1, str.length(), fd) != str.length()) {
         return false;
