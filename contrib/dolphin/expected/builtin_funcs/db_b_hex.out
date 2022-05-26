@@ -113,6 +113,42 @@ select hex(B'1110110111111100001110111110111');
  76fe1df7
 (1 row)
 
+select hex(b'0000');
+ hex 
+-----
+ 00
+(1 row)
+
+select hex(b'00001');
+ hex 
+-----
+ 01
+(1 row)
+
+select hex(b'00000000');
+ hex 
+-----
+ 00
+(1 row)
+
+select hex(b'000000001');
+ hex  
+------
+ 0001
+(1 row)
+
+select hex(b'000000000000');
+ hex  
+------
+ 0000
+(1 row)
+
+select hex(b'0000000000001');
+ hex  
+------
+ 0001
+(1 row)
+
 select hex(TRUE);
  hex 
 -----

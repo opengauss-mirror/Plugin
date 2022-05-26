@@ -31,6 +31,12 @@ select hex(b'1111');
 select hex(b'111100');
 select hex(B'1110110');
 select hex(B'1110110111111100001110111110111');
+select hex(b'0000');
+select hex(b'00001');
+select hex(b'00000000');
+select hex(b'000000001');
+select hex(b'000000000000');
+select hex(b'0000000000001');
 
 select hex(TRUE);
 select hex(FALSE);

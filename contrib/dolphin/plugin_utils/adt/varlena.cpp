@@ -5083,14 +5083,7 @@ Datum bytea_to_hex(PG_FUNCTION_ARGS)
 Datum bit_to_hex(PG_FUNCTION_ARGS)
 {
     int64 arg_int = DatumGetInt64(DirectFunctionCall1(bittoint8, PG_GETARG_DATUM(0)));
-    int len = 0;
-
-    // get len of result
-    int64 value = arg_int;
-    do {
-        value >>= 8;
-        len += 2;
-    } while (value > 0);
+    int len = VARBITBYTES(PG_GETARG_VARBIT_P(0)) * 2;
 
     char* result = (char*)palloc(len + 1);
     result[len] = '\0';
