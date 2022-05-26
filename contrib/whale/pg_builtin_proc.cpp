@@ -157,7 +157,7 @@ static void CheckNameLength(const char* name)
     }
 }
 
-void initBSQLBuiltinFuncs()
+void initASQLBuiltinFuncs()
 {
     InitHashTable(b_nfuncgroups);
     SortBuiltinFuncGroups(a_func_groups);
