@@ -26,6 +26,7 @@
 #include "plugin_parser/parse_coerce.h"
 #include "plugin_parser/parsetree.h"
 #include "plugin_parser/parse_expr.h"
+#include "plugin_commands/mysqlmode.h"
 #include "rewrite/rewriteManip.h"
 #include "utils/builtins.h"
 #include "utils/lsyscache.h"
@@ -825,23 +826,26 @@ static bool check_ungrouped_columns_walker(Node* node, check_ungrouped_columns_c
             attname = (attname != NULL) ? (attname + 1) : orig_attname;
         }
 
-        if (context->sublevels_up == 0) {
-            ereport(ERROR,
-                (errcode(ERRCODE_GROUPING_ERROR),
-                    errmsg("column \"%s.%s\" must appear in the GROUP BY clause or be used in an aggregate function",
-                        rte->eref->aliasname,
-                        attname),
-                    context->in_agg_direct_args
-                        ? errdetail("Direct arguments of an ordered-set aggregate must use only grouped columns.")
-                        : 0,
-                    rte->swConverted ? errdetail("Please check your start with rewrite table's column.") : 0,
-                    parser_errposition(context->pstate, var->location)));
-        } else {
-            ereport(ERROR,
-                (errcode(ERRCODE_GROUPING_ERROR),
-                    errmsg("subquery uses ungrouped column \"%s.%s\" from outer query", rte->eref->aliasname, attname),
-                    parser_errposition(context->pstate, var->location)));
+        if (SQL_MODE_FULL_GROUP()) {
+            if (context->sublevels_up == 0) {
+                ereport(ERROR,
+                    (errcode(ERRCODE_GROUPING_ERROR),
+                        errmsg("column \"%s.%s\" must appear in the GROUP BY clause or be used in an aggregate function",
+                            rte->eref->aliasname,
+                            attname),
+                        context->in_agg_direct_args
+                            ? errdetail("Direct arguments of an ordered-set aggregate must use only grouped columns.")
+                            : 0,
+                        rte->swConverted ? errdetail("Please check your start with rewrite table's column.") : 0,
+                        parser_errposition(context->pstate, var->location)));
+            } else {
+                ereport(ERROR,
+                    (errcode(ERRCODE_GROUPING_ERROR),
+                        errmsg("subquery uses ungrouped column \"%s.%s\" from outer query", rte->eref->aliasname, attname),
+                        parser_errposition(context->pstate, var->location)));
+            }
         }
+
         if (attname != NULL) {
             pfree_ext(attname);
         }
