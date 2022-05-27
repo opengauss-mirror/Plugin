@@ -18,6 +18,7 @@
 
 #include "access/hash.h"
 #include "access/xlog.h"
+#include "executor/executor.h"
 #include "libpq/pqformat.h"
 #include "utils/builtins.h"
 #include "utils/uuid.h"
@@ -350,9 +351,9 @@ Datum hash16_eq(PG_FUNCTION_ARGS)
 #define MaxMacAddrList 10
 
 static uint64 uuid_time = 0;
-static uint64 nano_seq = 0;
-static uint64 mac_addr = 0;
-static char clock_seq[2] = {0};
+static uint nano_seq = 0;
+static char g_clockSeqAndMac[]="0000-000000000000";
+static pthread_mutex_t gUuidMutex = PTHREAD_MUTEX_INITIALIZER;
 
 /*
 * transfer char* into hexadecimal style.
@@ -454,22 +455,36 @@ static uint64 GetMACAddr(void)
  */
 Datum uuid_generate(PG_FUNCTION_ARGS)
 {
-    // first time in this function. get mac address first
-    if (!mac_addr) {
-        mac_addr = GetMACAddr();
-    }
-    // still no mac obtained. init or use random string as virtual mac
-    if (!mac_addr) {
-        char virtual_mac_string[6] = {0};
-        if (strlen(virtual_mac_string) == 0) {
-            pseudo_rand_read(virtual_mac_string, MAC_CHAR_NUM);
+    char clockSeq[CLOCK_SEQ_CHAR_NUM];
+    /* two extra bytes, one for '-', one for '\0' */
+    char clockSeqAndMac[UUID_MID_PART_LEN + UUID_LAST_PART_LEN + 2];
+    AutoMutexLock localeLock(&gUuidMutex);
+    localeLock.lock();
+
+    // first time in this function. get mac address and clock seq first
+    if (unlikely(!uuid_time)) {
+        pseudo_rand_read(clockSeq, CLOCK_SEQ_CHAR_NUM);
+        string_to_hex(clockSeq, g_clockSeqAndMac, CLOCK_SEQ_CHAR_NUM, INT_RANGE_REVISE_PARAM);
+
+        uint64 mac_addr = GetMACAddr();
+        // no mac obtained. init or use random string as virtual mac
+        if (!mac_addr) {
+            char virtual_mac_string[6] = {0};
+            if (strlen(virtual_mac_string) == 0) {
+                pseudo_rand_read(virtual_mac_string, MAC_CHAR_NUM);
+            }
+            mac_addr = ((uint64)virtual_mac_string[0] << 40) | ((uint64)virtual_mac_string[1] << 32) |
+                    ((uint64)virtual_mac_string[2] << 24) | ((uint64)virtual_mac_string[3] << 16) |
+                    ((uint64)virtual_mac_string[4] << 8) | (uint64)virtual_mac_string[5];
         }
-        mac_addr = ((uint64)virtual_mac_string[0] << 40) | ((uint64)virtual_mac_string[1] << 32) |
-                ((uint64)virtual_mac_string[2] << 24) | ((uint64)virtual_mac_string[3] << 16) |
-                ((uint64)virtual_mac_string[4] << 8) | (uint64)virtual_mac_string[5];
+        int_to_hex(mac_addr, g_clockSeqAndMac + UUID_MID_PART_LEN + 1, UUID_LAST_PART_LEN);
     }
 
     uint64 curr_time;
+    /*
+     * this is why nano_seq should be uint but not uint64, cause nano_seq will increase, if it is uint64
+     * add increase to UINT64_MAX, the final result of curr_time will be overflow.
+     */
 #ifdef HAVE_INT64_TIMESTAMP
     curr_time = GetCurrentTimestamp() * 10 + UUID_TIME_OFFSET + nano_seq;
 #else
@@ -477,30 +492,44 @@ Datum uuid_generate(PG_FUNCTION_ARGS)
 #endif
     // give back nano_seq we borrowed before
     if (curr_time > uuid_time && nano_seq > 0) {
-        uint give_back = Min(nano_seq, curr_time - uuid_time - 1);
+        uint64 give_back = Min(nano_seq, curr_time - uuid_time - 1);
         curr_time -= give_back;
         nano_seq -= give_back;
     }
 
     // borrow an extra nano_seq if curr_time == uuid_time to prevent timestamp collision
     if (curr_time == uuid_time) {
-        ++nano_seq;
-        ++curr_time;
+        /*
+         * If nanoseq overflows, we need to start over with a new numberspace, cause in the next loop,
+         * the value of curr_time may collide with an already generated value. So if nano_seq overflows,
+         * we won't increase curr_time, then the curr_time will equal to uuid_time, which will lead to
+         * new numberspace.
+         */
+        if (likely(++nano_seq)) {
+            ++curr_time;
+        }
     }
 
     // if first time creating uuid, or sys time changed backward, we reset clock_seq to prevent time stamp duplication.
     // meanwhile, we reset nano_seq.
-    if (!uuid_time || curr_time <= uuid_time) {
-        pseudo_rand_read(clock_seq, CLOCK_SEQ_CHAR_NUM);
+    if (unlikely(curr_time <= uuid_time)) {
+        pseudo_rand_read(clockSeq, CLOCK_SEQ_CHAR_NUM);
+        string_to_hex(clockSeq, g_clockSeqAndMac, CLOCK_SEQ_CHAR_NUM, INT_RANGE_REVISE_PARAM);
+        nano_seq = 0;
     }
+    /* we need a local copy during hold the lock, so it won't be changed by other thread */
+    int rc = strcpy_s(clockSeqAndMac, UUID_MID_PART_LEN + UUID_LAST_PART_LEN + 2, g_clockSeqAndMac);
+    securec_check(rc, "", "");
     uuid_time = curr_time;
-    uint32 timestamp_low = (uint32)(uuid_time & 0xFFFFFFFF);
-    uint16 timestamp_mid = (uint16)((uuid_time >> 32) & 0xFFFF);
-    uint16 timestamp_high_and_v = (uint16)((uuid_time >> 48) | UUID_VERSION);
+    localeLock.unLock();
+
+    uint32 timestamp_low = (uint32)(curr_time & 0xFFFFFFFF);
+    uint16 timestamp_mid = (uint16)((curr_time >> 32) & 0xFFFF);
+    uint16 timestamp_high_and_v = (uint16)((curr_time >> 48) | UUID_VERSION);
 
     // result len equals to 32 + 4 * '-' + '\0'
-    char* res = (char*)palloc(UUID_LEN * 2 + 5);
-    res[UUID_LEN * 2 + 4] = '\0';
+    char* res = (char*)palloc(FORMATTED_UUID_LEN + 1);
+    res[FORMATTED_UUID_LEN] = '\0';
     int cursor = 0;
 
     int_to_hex(timestamp_low, res, UUID_FIRST_PART_LEN);
@@ -515,12 +544,8 @@ Datum uuid_generate(PG_FUNCTION_ARGS)
     cursor += UUID_MID_PART_LEN;
     res[cursor++] = '-';
 
-    string_to_hex(clock_seq, res + cursor, sizeof(clock_seq), INT_RANGE_REVISE_PARAM);
-    cursor += UUID_MID_PART_LEN;
-    res[cursor++] = '-';
-
-    int_to_hex(mac_addr, res + cursor, UUID_LAST_PART_LEN);
-    cursor += UUID_LAST_PART_LEN;
+    rc = strcpy_s(res + cursor, FORMATTED_UUID_LEN + 1 - cursor, clockSeqAndMac);
+    securec_check(rc, "", "");
 
     VarChar* result = (VarChar*)cstring_to_text_with_len(res, FORMATTED_UUID_LEN);
     PG_RETURN_VARCHAR_P(result);
