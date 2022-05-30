@@ -46,6 +46,8 @@ int32 PgAtoiInternal(char* s, int size, int c, bool sqlModeStrict)
 {
     long l;
     char* badp = NULL;
+    bool isFirstDot = true;
+    char digitAfterDot = '\0';
 
     /*
      * Some versions of strtol treat the empty string as an error, but some
@@ -54,16 +56,17 @@ int32 PgAtoiInternal(char* s, int size, int c, bool sqlModeStrict)
     if (s == NULL)
         ereport(ERROR, (errmodule(MOD_FUNCTION), errcode(ERRCODE_UNEXPECTED_NULL_VALUE), errmsg("NULL pointer")));
 
-    if (sqlModeStrict&& (*s == 0) && DB_IS_CMPT(A_FORMAT | PG_FORMAT))
-        ereport(ERROR,
-            (errmodule(MOD_FUNCTION),
-                errcode(ERRCODE_INVALID_TEXT_REPRESENTATION),
-                errmsg("invalid input syntax for integer: \"%s\"", s)));
-
-    /* In B compatibility, empty str is treated as 0 */
-    if ((*s == 0) && (u_sess->attr.attr_sql.sql_compatibility == B_FORMAT)) {
-        long l = 0;
-        return (int32)l;
+    if (*s == 0) {
+        if (sqlModeStrict || DB_IS_CMPT(A_FORMAT | PG_FORMAT))
+            ereport(ERROR,
+                (errmodule(MOD_FUNCTION),
+                    errcode(ERRCODE_INVALID_TEXT_REPRESENTATION),
+                    errmsg("invalid input syntax for integer: \"%s\"", s)));
+        /* In B compatibility, when not sql_mode_strict, empty str is treated as 0 */
+        if (!sqlModeStrict) {
+            long l = 0;
+            return (int32)l;
+        }
     }
 
     errno = 0;
@@ -71,17 +74,34 @@ int32 PgAtoiInternal(char* s, int size, int c, bool sqlModeStrict)
 
     /* We made no progress parsing the string, so bail out */
     if (s == badp) {
-        if (sqlModeStrict && DB_IS_CMPT(A_FORMAT | PG_FORMAT))
+        if (sqlModeStrict || DB_IS_CMPT(A_FORMAT | PG_FORMAT))
             ereport(ERROR,
                 (errmodule(MOD_FUNCTION),
                     errcode(ERRCODE_INVALID_TEXT_REPRESENTATION),
                     errmsg("invalid input syntax for integer: \"%s\"", s)));
-        /* string is treated as 0 in B compatibility */
-        if (u_sess->attr.attr_sql.sql_compatibility == B_FORMAT) {
+        /* string is treated as 0 in B compatibility, when not sql_mode_strict */
+        if (!sqlModeStrict) {
             long l = 0;
             return (int32)l;
         }
     }
+
+    /*
+     * Skip any trailing whitespace; if anything but whitespace remains before
+     * the terminating character, bail out
+     */
+    while (*badp && *badp != c && ((isspace((unsigned char)*badp)) || (*badp == '.' && isFirstDot) || (isdigit((unsigned char)*badp)))) {
+        if (*badp == '.') {
+            isFirstDot = false;
+            digitAfterDot = *(badp + 1);
+        }
+        badp++;
+    }
+    if (!isFirstDot && digitAfterDot == '\0')
+        badp--;
+    if (sqlModeStrict && *badp && *badp != c)
+        ereport(ERROR,
+            (errcode(ERRCODE_INVALID_TEXT_REPRESENTATION), errmsg("invalid input syntax for integer: \"%s\"", s)));
 
     switch (size) {
         case sizeof(int32):
@@ -111,18 +131,6 @@ int32 PgAtoiInternal(char* s, int size, int c, bool sqlModeStrict)
             ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("unsupported result size: %d", size)));
     }
 
-    /*
-     * Skip any trailing whitespace; if anything but whitespace remains before
-     * the terminating character, bail out
-     */
-    while (*badp && *badp != c && isspace((unsigned char)*badp)) {
-        badp++;
-    }
-
-    if (sqlModeStrict && *badp && *badp != c && u_sess->attr.attr_sql.sql_compatibility != B_FORMAT)
-        ereport(ERROR,
-            (errcode(ERRCODE_INVALID_TEXT_REPRESENTATION), errmsg("invalid input syntax for integer: \"%s\"", s)));
-
     return (int32)l;
 }
 
@@ -146,6 +154,8 @@ int16 PgStrtoint16Internal(const char* s, bool sqlModeStrict)
     const char* ptr = s;
     int16 tmp = 0;
     bool neg = false;
+    bool isFirstDot = true;
+    char digitAfterDot = '\0';
 
     /* skip leading spaces */
     while (likely(*ptr) && isspace((unsigned char)*ptr)) {
@@ -178,11 +188,16 @@ int16 PgStrtoint16Internal(const char* s, bool sqlModeStrict)
     }
 
     /* allow trailing whitespace, but not other trailing chars */
-    while (*ptr != '\0' && isspace((unsigned char)*ptr)) {
+    while (*ptr != '\0' && ((isspace((unsigned char)*ptr)) || (*ptr == '.' && isFirstDot) || (isdigit((unsigned char)*ptr)))) {
+        if (*ptr == '.') {
+            isFirstDot = false;
+            digitAfterDot = *(ptr + 1);
+        }
         ptr++;
     }
-
-    if (sqlModeStrict && unlikely(*ptr != '\0') && u_sess->attr.attr_sql.sql_compatibility != B_FORMAT)
+    if (!isFirstDot && digitAfterDot == '\0')
+        ptr--;
+    if (sqlModeStrict && unlikely(*ptr != '\0'))
         goto invalid_syntax;
 
     if (!neg) {
@@ -190,6 +205,13 @@ int16 PgStrtoint16Internal(const char* s, bool sqlModeStrict)
         if (unlikely(tmp == PG_INT16_MIN))
             goto out_of_range;
         tmp = -tmp;
+    }
+
+    if ((isdigit(digitAfterDot)) && digitAfterDot >= '5') {
+        if (!neg && tmp < PG_INT16_MAX)
+            tmp++;
+        if (neg && tmp > PG_INT16_MIN)
+            tmp--;
     }
 
     return tmp;
@@ -232,6 +254,8 @@ int32 PgStrtoint32Internal(const char* s, bool sqlModeStrict)
     const char* ptr = s;
     int32 tmp = 0;
     bool neg = false;
+    bool isFirstDot = true;
+    char digitAfterDot = '\0';
 
     /* skip leading spaces */
     while (likely(*ptr) && isspace((unsigned char)*ptr)) {
@@ -264,10 +288,15 @@ int32 PgStrtoint32Internal(const char* s, bool sqlModeStrict)
     }
 
     /* allow trailing whitespace, but not other trailing chars */
-    while (*ptr != '\0' && isspace((unsigned char)*ptr)) {
+    while (*ptr != '\0' && ((isspace((unsigned char)*ptr)) || (*ptr == '.' && isFirstDot) || (isdigit((unsigned char)*ptr)))) {
+        if (*ptr == '.') {
+            isFirstDot = false;
+            digitAfterDot = *(ptr + 1);
+        }
         ptr++;
     }
-
+    if (!isFirstDot && digitAfterDot == '\0')
+        ptr--;
     if (sqlModeStrict && unlikely(*ptr != '\0') && u_sess->attr.attr_sql.sql_compatibility != B_FORMAT)
         goto invalid_syntax;
 
@@ -276,6 +305,13 @@ int32 PgStrtoint32Internal(const char* s, bool sqlModeStrict)
         if (unlikely(tmp == PG_INT32_MIN))
             goto out_of_range;
         tmp = -tmp;
+    }
+
+    if ((isdigit(digitAfterDot)) && digitAfterDot >= '5') {
+        if (!neg && tmp < PG_INT32_MAX)
+            tmp++;
+        if (neg && tmp > PG_INT32_MIN)
+            tmp--;
     }
 
     return tmp;
