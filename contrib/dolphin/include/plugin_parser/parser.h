@@ -44,4 +44,7 @@ extern char** get_next_snippet(
 
 extern void fixResTargetNameWithAlias(List* clause_list, const char* aliasname);
 
+SelectStmt* makeProcesslistQuery(bool isFull);
+SelectStmt* makeDescribeQuery(char *schemaName, char *tableName);
+
 #endif /* PARSER_H */

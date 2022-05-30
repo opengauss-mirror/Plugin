@@ -589,6 +589,7 @@ static int errstate;
 %type <defelt>	generic_option_elem alter_generic_option_elem
 %type <list>	generic_option_list alter_generic_option_list
 %type <str>		explain_option_name
+%type <keyword>	describe_command
 %type <node>	explain_option_arg
 %type <defelt>	explain_option_elem
 %type <list>	explain_option_list
@@ -804,7 +805,7 @@ static int errstate;
 	CURRENT_TIME CURRENT_TIMESTAMP CURRENT_USER CURSOR CYCLE
 
 	DATA_P DATABASE DATAFILE DATANODE DATANODES DATATYPE_CL DATE_P DATE_FORMAT_P DAY_P  DAYOFMONTH DAYOFWEEK DAYOFYEAR DBCOMPATIBILITY_P DB_B_FORMAT DEALLOCATE DEC DECIMAL_P DECLARE DECODE DEFAULT DEFAULTS
-	DEFERRABLE DEFERRED DEFINER DELETE_P DELIMITER DELIMITERS DELTA DELTAMERGE DESC DETERMINISTIC DIV
+	DEFERRABLE DEFERRED DEFINER DELETE_P DELIMITER DELIMITERS DELTA DELTAMERGE DESC DESCRIBE DETERMINISTIC DIV
 /* PGXC_BEGIN */
 	DICTIONARY DIRECT DIRECTORY DISABLE_P DISCARD DISTINCT DISTINCTROW DISTRIBUTE DISTRIBUTION DO DOCUMENT_P DOMAIN_P DOUBLE_P
 /* PGXC_END */
@@ -851,7 +852,7 @@ static int errstate;
 /* PGXC_BEGIN */
 	PREFERRED PREFIX PRESERVE PREPARE PREPARED PRIMARY
 /* PGXC_END */
-	PRIVATE PRIOR PRIORER PRIVILEGES PRIVILEGE PROCEDURAL PROCEDURE PROFILE PUBLICATION PUBLISH PURGE
+	PRIVATE PRIOR PRIORER PRIVILEGES PRIVILEGE PROCEDURAL PROCEDURE PROCESSLIST PROFILE PUBLICATION PUBLISH PURGE
 
 	QUARTER QUERY QUOTE
 
@@ -2376,10 +2377,20 @@ FunctionSetResetClause:
 VariableShowStmt:
 			SHOW var_name
 				{
-					VariableShowStmt *n = makeNode(VariableShowStmt);
-					n->name = $2;
-					$$ = (Node *) n;
+					if (pg_strcasecmp($2, "processlist") == 0) {
+						SelectStmt *n = makeProcesslistQuery(FALSE);
+                       				$$ = (Node *) n;
+					} else {
+						VariableShowStmt *n = makeNode(VariableShowStmt);
+						n->name = $2;
+						$$ = (Node *) n;
+					}
 				}
+			| SHOW FULL PROCESSLIST
+				{
+					SelectStmt *n = makeProcesslistQuery(TRUE);
+                    			$$ = (Node *) n;
+                		}
 			| SHOW CURRENT_SCHEMA
 				{
 					VariableShowStmt *n = makeNode(VariableShowStmt);
@@ -18120,6 +18131,11 @@ ExplainStmt:
 					n->options = list_make1(makeDefElem("plan", NULL));
 					$$ = (Node *) n;
 				}
+		| describe_command qualified_name
+				{
+					SelectStmt *n = makeDescribeQuery($2->schemaname, $2->relname);
+					$$ = (Node *) n;
+				}
 		;
 
 ExplainableStmt:
@@ -18164,6 +18180,11 @@ explain_option_arg:
 			| NumericOnly			{ $$ = (Node *) $1; }
 			| /* EMPTY */			{ $$ = NULL; }
 		;
+
+describe_command:
+          		DESC
+       			| DESCRIBE
+        	;
 
 /*****************************************************************************
  *
@@ -24590,6 +24611,7 @@ unreserved_keyword:
 			| DELIMITER
 			| DELIMITERS
 			| DELTA
+			| DESCRIBE
 			| DETERMINISTIC
 			| DICTIONARY
 			| DIRECT
@@ -24779,6 +24801,7 @@ unreserved_keyword:
 			| PRIVILEGE
 			| PRIVILEGES
 			| PROCEDURAL
+			| PROCESSLIST
 			| PROFILE
 			| PUBLICATION
 			| PUBLISH
