@@ -49,18 +49,12 @@ SELECT add_months('20080321 123244',3);
 SELECT add_months('080321 121212',3);
 SET search_path TO default;
 
-SELECT last_day(to_date('2003/03/15', 'yyyy/mm/dd'));
-SELECT last_day(to_date('2003/02/03', 'yyyy/mm/dd'));
-SELECT last_day(to_date('2004/02/03', 'yyyy/mm/dd'));
 SELECT last_day('1900-02-01');
 SELECT last_day('2000-02-01');
 SELECT last_day('2007-02-01');
 SELECT last_day('2008-02-01');
 
 SET search_path TO oracle,"$user", public, pg_catalog;
-SELECT last_day(to_date('2003/03/15 11:12:21', 'yyyy/mm/dd hh:mi:ss'));
-SELECT last_day(to_date('2003/02/03 10:21:32', 'yyyy/mm/dd hh:mi:ss'));
-SELECT last_day(to_date('2004/02/03 11:32:12', 'yyyy/mm/dd hh:mi:ss'));
 SELECT last_day('1900-02-01 12:12:11');
 SELECT last_day('2000-02-01 121143');
 SELECT last_day('2007-02-01 12:21:33');
@@ -85,10 +79,6 @@ SELECT next_day ('2008-01-01 111213', 1);
 SELECT next_day ('2008-01-01 11:12:13', 7);
 SET search_path TO default;
 
-SELECT months_between (to_date ('2003/01/01', 'yyyy/mm/dd'), to_date ('2003/03/14', 'yyyy/mm/dd'));
-SELECT months_between (to_date ('2003/07/01', 'yyyy/mm/dd'), to_date ('2003/03/14', 'yyyy/mm/dd'));
-SELECT months_between (to_date ('2003/07/02', 'yyyy/mm/dd'), to_date ('2003/07/02', 'yyyy/mm/dd'));
-SELECT months_between (to_date ('2003/08/02', 'yyyy/mm/dd'), to_date ('2003/06/02', 'yyyy/mm/dd'));
 SELECT months_between ('2007-02-28', '2007-04-30');
 SELECT months_between ('2008-01-31', '2008-02-29');
 SELECT months_between ('2008-02-29', '2008-03-31');
@@ -96,10 +86,6 @@ SELECT months_between ('2008-02-29', '2008-04-30');
 SELECT trunc(months_between('21-feb-2008', '2008-02-29'));
 
 SET search_path TO oracle,"$user", public, pg_catalog;
-SELECT months_between (to_date ('2003/01/01 12:12:12', 'yyyy/mm/dd hh24:mi:ss'), to_date ('2003/03/14 11:11:11', 'yyyy/mm/dd hh24:mi:ss'));
-SELECT months_between (to_date ('2003/07/01 10:11:11', 'yyyy/mm/dd hh24:mi:ss'), to_date ('2003/03/14 10:12:12', 'yyyy/mm/dd hh24:mi:ss'));
-SELECT months_between (to_date ('2003/07/02 11:21:21', 'yyyy/mm/dd hh24:mi:ss'), to_date ('2003/07/02 11:11:11', 'yyyy/mm/dd hh24:mi:ss'));
-SELECT months_between (to_timestamp ('2003/08/02 10:11:12', 'yyyy/mm/dd hh24:mi:ss'), to_date ('2003/06/02 10:10:11', 'yyyy/mm/dd hh24:mi:ss'));
 SELECT months_between ('2007-02-28 111111', '2007-04-30 112121');
 SELECT months_between ('2008-01-31 11:32:11', '2008-02-29 11:12:12');
 SELECT months_between ('2008-02-29 10:11:13', '2008-03-31 10:12:11');
@@ -185,16 +171,6 @@ select plvsubst.string('My name is %s.', 'Stěhule');
 select plvsubst.string('My name is %s.', '');
 select plvsubst.string('My name is empty.', '');
 
-select round(to_date ('22-AUG-03', 'DD-MON-YY'),'YEAR')  =  to_date ('01-JAN-04', 'DD-MON-YY');
-select round(to_date ('22-AUG-03', 'DD-MON-YY'),'Q')  =  to_date ('01-OCT-03', 'DD-MON-YY');
-select round(to_date ('22-AUG-03', 'DD-MON-YY'),'MONTH') =  to_date ('01-SEP-03', 'DD-MON-YY');
-select round(to_date ('22-AUG-03', 'DD-MON-YY'),'DDD')  =  to_date ('22-AUG-03', 'DD-MON-YY');
-select round(to_date ('22-AUG-03', 'DD-MON-YY'),'DAY')  =  to_date ('24-AUG-03', 'DD-MON-YY');
-select trunc(to_date('22-AUG-03', 'DD-MON-YY'), 'YEAR')  =  to_date ('01-JAN-03', 'DD-MON-YY');
-select trunc(to_date('22-AUG-03', 'DD-MON-YY'), 'Q')  =  to_date ('01-JUL-03', 'DD-MON-YY');
-select trunc(to_date('22-AUG-03', 'DD-MON-YY'), 'MONTH') =  to_date ('01-AUG-03', 'DD-MON-YY');
-select trunc(to_date('22-AUG-03', 'DD-MON-YY'), 'DDD')  =  to_date ('22-AUG-03', 'DD-MON-YY');
-select trunc(to_date('22-AUG-03', 'DD-MON-YY'), 'DAY')  =  to_date ('17-AUG-03', 'DD-MON-YY');
 
 set time zone 'US/Pacific';
 select trunc(TIMESTAMP WITH TIME ZONE '2004-10-19 10:23:54+02','YEAR') = '2004-01-01 00:00:00-08';
@@ -205,14 +181,6 @@ select trunc(TIMESTAMP WITH TIME ZONE '2004-10-19 10:23:54+02','DAY') = '2004-10
 select trunc(TIMESTAMP WITH TIME ZONE '2004-10-19 10:23:54+02','HH') = '2004-10-19 01:00:00-07';
 select trunc(TIMESTAMP WITH TIME ZONE '2004-10-19 10:23:54+02','MI') = '2004-10-19 01:23:00-07';
 
-select next_day(to_date('01-Aug-03', 'DD-MON-YY'), 'TUESDAY')  =  to_date ('05-Aug-03', 'DD-MON-YY');
-select next_day(to_date('06-Aug-03', 'DD-MON-YY'), 'WEDNESDAY') =  to_date ('13-Aug-03', 'DD-MON-YY');
-select next_day(to_date('06-Aug-03', 'DD-MON-YY'), 'SUNDAY')  =  to_date ('10-Aug-03', 'DD-MON-YY');
-
-SET search_path TO oracle,"$user", public, pg_catalog;
-select next_day(to_date('01-Aug-03 101111', 'DD-MON-YY hh24miss'), 'TUESDAY') = to_date ('05-Aug-03 101111', 'DD-MON-YY hh24miss');
-select next_day(to_date('06-Aug-03 10:12:13', 'DD-MON-YY HH24:MI:SS'), 'WEDNESDAY') = to_date ('13-Aug-03 10:12:13', 'DD-MON-YY HH24:MI:SS');
-select next_day(to_date('06-Aug-03 11:11:11', 'DD-MON-YY HH:MI:SS'), 'SUNDAY') = to_date ('10-Aug-03 11:11:11', 'DD-MON-YY HH:MI:SS');
 SET search_path TO default;
 
 select instr('Tech on the net', 'e') =2;
@@ -518,8 +486,6 @@ SELECT to_number(1210::int, 9999::int);
 SELECT to_number(1210::bigint, 9999::bigint);
 SELECT to_number(1210.73::numeric, 9999.99::numeric);
 
-SELECT to_date('2009-01-02');
-
 SELECT bitand(5,1), bitand(5,2), bitand(5,4);
 SELECT sinh(1.570796)::numeric(10, 8), cosh(1.570796)::numeric(10, 8), tanh(4)::numeric(10, 8);
 SELECT nanvl(12345, 1), nanvl('NaN', 1);
@@ -614,206 +580,6 @@ select round(TIMESTAMP WITH TIME ZONE'12/08/1990 05:35:25','DDD') = '1990-12-08 
 select round(TIMESTAMP WITH TIME ZONE'12/08/1990 05:35:25','DAY') = '1990-12-09 00:00:00';
 select round(TIMESTAMP WITH TIME ZONE'12/08/1990 05:35:25','hh') = '1990-12-08 06:00:00';
 select round(TIMESTAMP WITH TIME ZONE'12/08/1990 05:35:25','mi') = '1990-12-08 05:35:00';
-
--- Tests for to_date
-SET DATESTYLE TO SQL, MDY;
-SELECT to_date('2009-01-02');
-select orafce.to_date('January 8,1999');
-SET DATESTYLE TO POSTGRES, MDY;
-select to_date('1999-01-08');
-select orafce.to_date('1/12/1999');
-SET DATESTYLE TO SQL, DMY;
-select orafce.to_date('01/02/03');
-select orafce.to_date('1999-Jan-08');
-select orafce.to_date('Jan-08-1999');
-select orafce.to_date('08-Jan-1999');
-SET DATESTYLE TO ISO, YMD;
-select orafce.to_date('99-Jan-08');
-SET DATESTYLE TO ISO, DMY;
-select orafce.to_date('08-Jan-99');
-select orafce.to_date('Jan-08-99');
-select to_date('19990108');
-select orafce.to_date('990108');
-select orafce.to_date('J2451187');
-set orafce.nls_date_format='YY-MonDD HH24:MI:SS';
-select to_date('14-Jan08 11:44:49+05:30');
-set orafce.nls_date_format='YY-DDMon HH24:MI:SS';
-select orafce.to_date('14-08Jan 11:44:49+05:30');
-set orafce.nls_date_format='DDMMYYYY HH24:MI:SS';
-select orafce.to_date('21052014 12:13:44+05:30');
-set orafce.nls_date_format='DDMMYY HH24:MI:SS';
-select orafce.to_date('210514 12:13:44+05:30');
-set time zone 'UTC';
-set orafce.nls_date_format='DDMMYY HH24:MI:SS.MS';
-select orafce.to_date('210514 12:13:44.55');
--- select oracle.to_date('210514 12:13:44.55');
-
--- Tests for oracle.to_date(text,text)
-SET search_path TO oracle,"$user", public, pg_catalog;
-select to_date('2014/04/25 10:13', 'YYYY/MM/DD HH:MI');
-select to_date('16-Feb-09 10:11:11', 'DD-Mon-YY HH:MI:SS');
-select to_date('02/16/09 04:12:12', 'MM/DD/YY HH24:MI:SS');
-select to_date('021609 111213', 'MMDDYY HHMISS');
-select to_date('16-Feb-09 11:12:12', 'DD-Mon-YY HH:MI:SS');
-select to_date('Feb/16/09 11:21:23', 'Mon/DD/YY HH:MI:SS');
-select to_date('February.16.2009 10:11:12', 'Month.DD.YYYY HH:MI:SS');
-select to_date('20020315111212', 'yyyymmddhh12miss');
-select to_date('January 15, 1989, 11:00 A.M.','Month dd, YYYY, HH:MI A.M.');
-select to_date('14-Jan08 11:44:49+05:30' ,'YY-MonDD HH24:MI:SS');
-select to_date('14-08Jan 11:44:49+05:30','YY-DDMon HH24:MI:SS');
-select to_date('21052014 12:13:44+05:30','DDMMYYYY HH24:MI:SS');
-select to_date('210514 12:13:44+05:30','DDMMYY HH24:MI:SS');
-SET search_path TO default;
-
--- Tests for + operator with DATE and number(smallint,integer,bigint,numeric)
-SET search_path TO oracle,"$user", public, pg_catalog;
-SET time zone 'UTC';
-SET orafce.nls_date_format='YYYY-MM-DD HH24:MI:SS';
-SELECT orafce.to_date('2014-07-02 10:08:55') + 9::smallint;
-SET orafce.nls_date_format='MM-DD-YYYY HH24:MI:SS';
-SELECT orafce.to_date('07-02-2014 10:08:55') + 9::smallint;
-SET orafce.nls_date_format='DD-MM-YYYY HH24:MI:SS';
-SELECT orafce.to_date('02-07-2014 10:08:55') + 9::smallint;
-SET orafce.nls_date_format='YYYY-MM-DD HH24:MI:SS';
-SELECT orafce.to_date('2014-07-02 10:08:55') + 9;
-SELECT to_date('2014-07-02 10:08:55','YYYY-MM-DD HH:MI:SS') + 9::smallint;
-SELECT to_date('02-07-2014 10:08:55','DD-MM-YYYY HH:MI:SS') + 9::smallint;
-SELECT to_date('07-02-2014 10:08:55','MM-DD-YYYY HH:MI:SS') + 9::smallint;
-SET orafce.nls_date_format='YYYY-MM-DD HH24:MI:SS';
-SELECT to_date('2014-07-02 10:08:55') + 9::bigint;
-SET orafce.nls_date_format='MM-DD-YYYY HH24:MI:SS';
-SELECT orafce.to_date('07-02-2014 10:08:55') + 9::bigint;
-SET orafce.nls_date_format='DD-MM-YYYY HH24:MI:SS';
-SELECT orafce.to_date('02-07-2014 10:08:55') + 9::bigint;
-SELECT to_date('2014-07-02 10:08:55','YYYY-MM-DD HH:MI:SS') + 9::bigint;
-SELECT to_date('02-07-2014 10:08:55','DD-MM-YYYY HH:MI:SS') + 9::bigint;
-SELECT to_date('07-02-2014 10:08:55','MM-DD-YYYY HH:MI:SS') + 9::bigint;
-SET orafce.nls_date_format='YYYY-MM-DD HH24:MI:SS';
-SELECT orafce.to_date('2014-07-02 10:08:55') + 9::integer;
-SET orafce.nls_date_format='MM-DD-YYYY HH24:MI:SS';
-SELECT orafce.to_date('07-02-2014 10:08:55') + 9::integer;
-SET orafce.nls_date_format='DD-MM-YYYY HH24:MI:SS';
-SELECT orafce.to_date('02-07-2014 10:08:55') + 9::integer;
-SELECT to_date('2014-07-02 10:08:55','YYYY-MM-DD HH:MI:SS') + 9::integer;
-SELECT to_date('02-07-2014 10:08:55','DD-MM-YYYY HH:MI:SS') + 9::integer;
-SELECT to_date('07-02-2014 10:08:55','MM-DD-YYYY HH:MI:SS') + 9::integer;
-SET orafce.nls_date_format='YYYY-MM-DD HH24:MI:SS';
-SELECT orafce.to_date('2014-07-02 10:08:55') + 9::numeric;
-SET orafce.nls_date_format='MM-DD-YYYY HH24:MI:SS';
-SELECT orafce.to_date('07-02-2014 10:08:55') + 9::numeric;
-SET orafce.nls_date_format='DD-MM-YYYY HH24:MI:SS';
-SELECT orafce.to_date('02-07-2014 10:08:55') + 9::numeric;
-SELECT to_date('2014-07-02 10:08:55','YYYY-MM-DD HH:MI:SS') + 9::numeric;
-SELECT to_date('02-07-2014 10:08:55','DD-MM-YYYY HH:MI:SS') + 9::numeric;
-SELECT to_date('07-02-2014 10:08:55','MM-DD-YYYY HH:MI:SS') + 9::numeric;
-SET orafce.nls_date_format='YYYY-MM-DD HH24:MI:SS';
-SELECT orafce.to_date('2014-01-01 00:00:00') + 1.5;
-SELECT to_date('2014-01-01 00:00:00','yyyy-mm-dd hh24:mi:ss') + 1.5;
-SET search_path TO default;
-
--- Tests for - operator with DATE and number(smallint,integer,bigint,numeric)
-SET search_path TO oracle,"$user", public, pg_catalog;
-SET orafce.nls_date_format='YYYY-MM-DD HH24:MI:SS';
-SELECT orafce.to_date('2014-07-02 10:08:55') - 9::smallint;
-SET orafce.nls_date_format='MM-DD-YYYY HH24:MI:SS';
-SELECT orafce.to_date('07-02-2014 10:08:55') - 9::smallint;
-SET orafce.nls_date_format='DD-MM-YYYY HH24:MI:SS';
-SELECT orafce.to_date('02-07-2014 10:08:55') - 9::smallint;
-SET orafce.nls_date_format='YYYY-MM-DD HH24:MI:SS';
-SELECT orafce.to_date('2014-07-02 10:08:55') - 9;
-SELECT to_date('2014-07-02 10:08:55','YYYY-MM-DD HH:MI:SS') - 9::smallint;
-SELECT to_date('02-07-2014 10:08:55','DD-MM-YYYY HH:MI:SS') - 9::smallint;
-SELECT to_date('07-02-2014 10:08:55','MM-DD-YYYY HH:MI:SS') - 9::smallint;
-SET orafce.nls_date_format='YYYY-MM-DD HH24:MI:SS';
-SELECT to_date('2014-07-02 10:08:55') - 9::bigint;
-SET orafce.nls_date_format='MM-DD-YYYY HH24:MI:SS';
-SELECT orafce.to_date('07-02-2014 10:08:55') - 9::bigint;
-SET orafce.nls_date_format='DD-MM-YYYY HH24:MI:SS';
-SELECT orafce.to_date('02-07-2014 10:08:55') - 9::bigint;
-SELECT to_date('2014-07-02 10:08:55','YYYY-MM-DD HH:MI:SS') - 9::bigint;
-SELECT to_date('02-07-2014 10:08:55','DD-MM-YYYY HH:MI:SS') - 9::bigint;
-SELECT to_date('07-02-2014 10:08:55','MM-DD-YYYY HH:MI:SS') - 9::bigint;
-SET orafce.nls_date_format='YYYY-MM-DD HH24:MI:SS';
-SELECT orafce.to_date('2014-07-02 10:08:55') - 9::integer;
-SET orafce.nls_date_format='MM-DD-YYYY HH24:MI:SS';
-SELECT orafce.to_date('07-02-2014 10:08:55') - 9::integer;
-SET orafce.nls_date_format='DD-MM-YYYY HH24:MI:SS';
-SELECT orafce.to_date('02-07-2014 10:08:55') - 9::integer;
-SELECT to_date('2014-07-02 10:08:55','YYYY-MM-DD HH:MI:SS') - 9::integer;
-SELECT to_date('02-07-2014 10:08:55','DD-MM-YYYY HH:MI:SS') - 9::integer;
-SELECT to_date('07-02-2014 10:08:55','MM-DD-YYYY HH:MI:SS') - 9::integer;
-SET orafce.nls_date_format='YYYY-MM-DD HH24:MI:SS';
-SELECT orafce.to_date('2014-07-02 10:08:55') - 9::numeric;
-SET orafce.nls_date_format='MM-DD-YYYY HH24:MI:SS';
-SELECT orafce.to_date('07-02-2014 10:08:55') - 9::numeric;
-SET orafce.nls_date_format='DD-MM-YYYY HH24:MI:SS';
-SELECT orafce.to_date('02-07-2014 10:08:55') - 9::numeric;
-SELECT to_date('2014-07-02 10:08:55','YYYY-MM-DD HH:MI:SS') - 9::numeric;
-SELECT to_date('02-07-2014 10:08:55','DD-MM-YYYY HH:MI:SS') - 9::numeric;
-SELECT to_date('07-02-2014 10:08:55','MM-DD-YYYY HH:MI:SS') - 9::numeric;
-SET orafce.nls_date_format='YYYY-MM-DD HH24:MI:SS';
-SELECT orafce.to_date('2014-01-01 00:00:00') - 1.5;
-SELECT to_date('2014-01-01 00:00:00','yyyy-mm-dd hh24:mi:ss') - 1.5;
-SET search_path TO default;
-
---Tests for oracle.to_char(timestamp)-used to set the DATE output format
-SET search_path TO oracle,"$user", public, pg_catalog;
-SET orafce.nls_date_format to default;
-select oracle.to_char(orafce.to_date('19-APR-16 21:41:48'));
-set orafce.nls_date_format='YY-MonDD HH24:MI:SS';
-select oracle.to_char(orafce.to_date('14-Jan08 11:44:49+05:30'));
-set orafce.nls_date_format='YY-DDMon HH24:MI:SS';
-select oracle.to_char(orafce.to_date('14-08Jan 11:44:49+05:30'));
-set orafce.nls_date_format='DDMMYYYY HH24:MI:SS';
-select oracle.to_char(orafce.to_date('21052014 12:13:44+05:30'));
-set orafce.nls_date_format='DDMMYY HH24:MI:SS';
-select oracle.to_char(orafce.to_date('210514 12:13:44+05:30'));
-set orafce.nls_date_format='DDMMYYYY HH24:MI:SS';
-select oracle.to_char(oracle.to_date('2014/04/25 10:13', 'YYYY/MM/DD HH:MI'));
-set orafce.nls_date_format='YY-DDMon HH24:MI:SS';
-select oracle.to_char(oracle.to_date('16-Feb-09 10:11:11', 'DD-Mon-YY HH:MI:SS'));
-set orafce.nls_date_format='YY-DDMon HH24:MI:SS';
-select oracle.to_char(oracle.to_date('02/16/09 04:12:12', 'MM/DD/YY HH24:MI:SS'));
-set orafce.nls_date_format='YY-MonDD HH24:MI:SS';
-select oracle.to_char(oracle.to_date('021609 111213', 'MMDDYY HHMISS'));
-set orafce.nls_date_format='DDMMYYYY HH24:MI:SS';
-select oracle.to_char(oracle.to_date('16-Feb-09 11:12:12', 'DD-Mon-YY HH:MI:SS'));
-set orafce.nls_date_format='DDMMYYYY HH24:MI:SS';
-select oracle.to_char(oracle.to_date('Feb/16/09 11:21:23', 'Mon/DD/YY HH:MI:SS'));
-set orafce.nls_date_format='DDMMYYYY HH24:MI:SS';
-select oracle.to_char(oracle.to_date('February.16.2009 10:11:12', 'Month.DD.YYYY HH:MI:SS'));
-set orafce.nls_date_format='YY-MonDD HH24:MI:SS';
-select oracle.to_char(oracle.to_date('20020315111212', 'yyyymmddhh12miss'));
-set orafce.nls_date_format='DDMMYYYY HH24:MI:SS';
-select oracle.to_char(oracle.to_date('January 15, 1989, 11:00 A.M.','Month dd, YYYY, HH:MI A.M.'));
-set orafce.nls_date_format='DDMMYY HH24:MI:SS';
-select oracle.to_char(to_date('14-Jan08 11:44:49+05:30' ,'YY-MonDD HH24:MI:SS'));
-set orafce.nls_date_format='DDMMYYYY HH24:MI:SS';
-select oracle.to_char(to_date('14-08Jan 11:44:49+05:30','YY-DDMon HH24:MI:SS'));
-set orafce.nls_date_format='YY-MonDD HH24:MI:SS';
-select oracle.to_char(to_date('21052014 12:13:44+05:30','DDMMYYYY HH24:MI:SS'));
-set orafce.nls_date_format='DDMMYY HH24:MI:SS';
-select oracle.to_char(to_date('210514 12:13:44+05:30','DDMMYY HH24:MI:SS'));
-SET search_path TO default;
-
---Tests for oracle.-(oracle.date,oracle.date)
-SET search_path TO oracle,"$user", public, pg_catalog;
-SELECT (to_date('2014-07-17 11:10:15', 'yyyy-mm-dd hh24:mi:ss') - to_date('2014-02-01 10:00:00', 'yyyy-mm-dd hh24:mi:ss'))::numeric(10,4);
-SELECT (to_date('2014-07-17 13:14:15', 'yyyy-mm-dd hh24:mi:ss') - to_date('2014-02-01 10:00:00', 'yyyy-mm-dd hh24:mi:ss'))::numeric(10,4);
-SELECT (to_date('07-17-2014 13:14:15', 'mm-dd-yyyy hh24:mi:ss') - to_date('2014-02-01 10:00:00', 'yyyy-mm-dd hh24:mi:ss'))::numeric(10,4);
-SELECT (to_date('07-17-2014 13:14:15', 'mm-dd-yyyy hh24:mi:ss') - to_date('2015-02-01 10:00:00', 'yyyy-mm-dd hh24:mi:ss'))::numeric(10,4);
-SELECT (to_date('07-17-2014 13:14:15', 'mm-dd-yyyy hh24:mi:ss') - to_date('01-01-2013 10:00:00', 'mm-dd-yyyy hh24:mi:ss'))::numeric(10,4);
-SELECT (to_date('17-07-2014 13:14:15', 'dd-mm-yyyy hh24:mi:ss') - to_date('01-01-2013 10:00:00', 'dd--mm-yyyy hh24:mi:ss'))::numeric(10,4);
-SELECT (to_date('2014/02/01 10:11:12', 'YYYY/MM/DD hh12:mi:ss') - to_date('2013/02/01 10:11:12', 'YYYY/MM/DD hh12:mi:ss'))::numeric(10,4);
-SELECT (to_date('17-Jul-14 10:11:11', 'DD-Mon-YY HH:MI:SS') - to_date('17-Jan-14 00:00:00', 'DD-Mon-YY HH24:MI:SS'))::numeric(10,4);
-SELECT (to_date('July.17.2014 10:11:12', 'Month.DD.YYYY HH:MI:SS') - to_date('February.16.2014 10:21:12', 'Month.DD.YYYY HH:MI:SS'))::numeric(10,4);
-SELECT (to_date('20140717111211', 'yyyymmddhh12miss') - to_date('20140315111212', 'yyyymmddhh12miss'))::numeric(10,4);
-SELECT (to_date('January 15, 1990, 11:00 A.M.','Month dd, YYYY, HH:MI A.M.') - to_date('January 15, 1989, 10:00 A.M.','Month dd, YYYY, HH:MI A.M.'))::numeric(10,4);
-SELECT (to_date('14-Jul14 11:44:49' ,'YY-MonDD HH24:MI:SS') - to_date('14-Jan14 12:44:49' ,'YY-MonDD HH24:MI:SS'))::numeric(10,4);
-SELECT (to_date('210514 12:13:44','DDMMYY HH24:MI:SS') - to_date('210114 10:13:44','DDMMYY HH24:MI:SS'))::numeric(10,4);
-SELECT trunc(to_date('210514 12:13:44','DDMMYY HH24:MI:SS'));
-SELECT round(to_date('210514 12:13:44','DDMMYY HH24:MI:SS'));
-
 
 SET search_path TO default;
 

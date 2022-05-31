@@ -1,9 +1,9 @@
 #include "postgres.h"
+#include "knl/knl_session.h"
 #include "storage/lock/lwlock.h"
 #include "storage/shmem.h"
 #include "utils/guc.h"
 #include "commands/variable.h"
-#include "knl/knl_session.h"
 
 #include "orafce.h"
 #include "builtins.h"
