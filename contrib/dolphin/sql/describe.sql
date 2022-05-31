@@ -1,7 +1,6 @@
 drop database if exists mysql;
 create database mysql dbcompatibility 'b';
 \c mysql
-create extension dolphin;
 CREATE TABLE test2
 (
 id int PRIMARY KEY

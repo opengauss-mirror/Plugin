@@ -9,7 +9,6 @@ SELECT TRIM(TRAILING 'xyz' FROM 'xyzxbarxxyz');
 drop database if exists test;
 create database test dbcompatibility 'B';
 \c test
-create extension dolphin;
 
 SELECT TRIM('  bar   ');
 SELECT TRIM(LEADING 'x' FROM 'xxxbarxxx');

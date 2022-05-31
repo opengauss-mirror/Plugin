@@ -6,7 +6,6 @@ SELECT right('abcdefg', -3);
 drop database if exists test;
 create database test dbcompatibility 'B';
 \c test
-create extension dolphin;
 
 SELECT left('abcdefg', 3);
 SELECT left('abcdefg', -3), left('abcdefg', -3) is null ;

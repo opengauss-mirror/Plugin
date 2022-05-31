@@ -42,7 +42,6 @@ DROP TABLE IF EXISTS template_string;
 drop database if exists test;
 create database test dbcompatibility 'B';
 \c test
-create extension dolphin;
 
 DROP TABLE IF EXISTS template_string;
 CREATE TABLE template_string(a TEXT, b BYTEA);

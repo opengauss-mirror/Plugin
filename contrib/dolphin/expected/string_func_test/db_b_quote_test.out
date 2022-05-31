@@ -2,7 +2,6 @@ drop database if exists test;
 NOTICE:  database "test" does not exist, skipping
 create database test dbcompatibility 'B';
 \c test
-create extension dolphin;
 SELECT QUOTE(E'Don\'t!');
    quote   
 -----------

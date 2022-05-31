@@ -560,3 +560,41 @@ void init_session_vars(void)
                                AssignSqlMode,
                                NULL);
 }
+
+static void execute_sql_file()
+{
+    char* dest_str = "create extension dolphin;\n";
+    int rc = 0;
+
+    SPI_STACK_LOG("connect", NULL, NULL);
+    if ((rc = SPI_connect()) != SPI_OK_CONNECT) {
+        ereport(ERROR, (errcode(ERRCODE_INTERNAL_ERROR),
+            errmsg("dolphin SPI_connect failed: %s", SPI_result_code_string(rc)),
+            errdetail("SPI_connect failed"),
+            errcause("System error."),
+            erraction("Check whether the snapshot retry is successful")));
+    }
+
+    if (SPI_execute(dest_str, false, 0) != SPI_OK_UTILITY) {
+        ereport(WARNING, (errcode(ERRCODE_DATA_EXCEPTION), errmsg("invalid query : %s", dest_str)));
+    }
+    SPI_STACK_LOG("finish", NULL, NULL);
+    SPI_finish();
+}
+
+void create_dolphin_extension()
+{
+    if (u_sess->attr.attr_sql.dolphin) {
+        return;
+    }
+    start_xact_command();
+    /*
+    * change enable_full_encryption to false here to avoid SPI crush
+    * when dealing with sql contains polymorphic type.
+    */   
+    bool pre_enable_full_encryption = u_sess->attr.attr_common.enable_full_encryption;
+    u_sess->attr.attr_common.enable_full_encryption = false;
+    execute_sql_file();
+    u_sess->attr.attr_common.enable_full_encryption = pre_enable_full_encryption;
+    finish_xact_command();
+}

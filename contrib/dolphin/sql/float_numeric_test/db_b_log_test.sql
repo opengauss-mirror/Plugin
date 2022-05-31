@@ -2,7 +2,6 @@ SELECT LOG(10);
 drop database if exists test;
 create database test dbcompatibility 'B';
 \c test
-create extension dolphin;
 
 SELECT LOG(10);
 SELECT LOG10(100);

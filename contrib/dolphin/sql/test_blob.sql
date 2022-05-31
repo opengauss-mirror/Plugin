@@ -1,7 +1,6 @@
 drop database if exists test;
 create database test dbcompatibility 'B';
 \c test
-create extension dolphin;
 create table test_template (t tinyblob, b blob, m mediumblob, l longblob);
 insert into test_template values('aaaaaaaaa', 'aaaaaaaaa', 'aaaaaaaaa', 'aaaaaaaaa');
 create table test_tiny (t tinyblob);

@@ -2,7 +2,6 @@ drop database if exists test;
 NOTICE:  database "test" does not exist, skipping
 create database test dbcompatibility 'B';
 \c test
-create extension dolphin;
 -- CREATE TABLE engine test
 CREATE TABLE test_engine_1 (a int) engine = InnoDB;
 CREATE TABLE  IF NOT EXISTS test_engine_2 (a int) engine = InnoDB;

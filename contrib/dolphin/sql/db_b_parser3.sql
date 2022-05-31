@@ -1,7 +1,6 @@
 drop database if exists mysql_test;
 create database mysql_test dbcompatibility 'b';
 \c mysql_test
-create extension dolphin;
 
 --测试点一：验证lcase函数
 select lcase('ABc'), lcase('哈哈'), lcase('123456'),lcase('哈市&%%￥#'),lcase(null);
