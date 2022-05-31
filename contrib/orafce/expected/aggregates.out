@@ -16,11 +16,11 @@ ERROR:  missing WITHIN keyword.
 LINE 1: SELECT coalesce(listagg(i::text), '<NULL>') from generate_se...
                         ^
 SELECT wm_concat(i::text) from generate_series(1,3) g(i);
-ERROR:  function wm_concat(text) does not exist
-LINE 1: SELECT wm_concat(i::text) from generate_series(1,3) g(i);
-               ^
-HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
-CONTEXT:  referenced column: wm_concat
+ wm_concat 
+-----------
+ 1,2,3
+(1 row)
+
 -- Tests for the aggregate median( real | double )
 CREATE FUNCTION checkMedianRealOdd()  RETURNS real AS $$
 DECLARE

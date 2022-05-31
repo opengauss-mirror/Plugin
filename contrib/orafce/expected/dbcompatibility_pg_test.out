@@ -36,7 +36,7 @@ SELECT '|' || oracle.lpad('あbcd'::char(8), 10) || '|';
 SELECT '|' || oracle.lpad('あbcd'::char(5), 10, 'xい'::char(3)) || '|';
    ?column?   
 --------------
- |xい あbcd |
+ | xいxあbcd|
 (1 row)
 
 SELECT '|' || oracle.lpad('あbcd'::char(5),  5, 'xい'::char(3)) || '|';
@@ -48,37 +48,37 @@ SELECT '|' || oracle.lpad('あbcd'::char(5),  5, 'xい'::char(3)) || '|';
 SELECT '|' || oracle.lpad('あbcd'::char(5), 10, 'xい'::text) || '|';
    ?column?   
 --------------
- |xいxあbcd |
+ | xいxあbcd|
 (1 row)
 
 SELECT '|' || oracle.lpad('あbcd'::char(5), 10, 'xい'::varchar2(5)) || '|';
    ?column?   
 --------------
- |xいxあbcd |
+ | xいxあbcd|
 (1 row)
 
 SELECT '|' || oracle.lpad('あbcd'::char(5), 10, 'xい'::nvarchar2(3)) || '|';
    ?column?   
 --------------
- |xいxあbcd |
+ | xいxあbcd|
 (1 row)
 
 SELECT '|' || oracle.lpad('あbcd'::text, 10, 'xい'::char(3)) || '|';
    ?column?   
 --------------
- |xい xあbcd|
+ | xいxあbcd|
 (1 row)
 
 SELECT '|' || oracle.lpad('あbcd'::nvarchar2(5), 10, 'xい'::char(3)) || '|';
    ?column?   
 --------------
- |xい xあbcd|
+ | xいxあbcd|
 (1 row)
 
 SELECT '|' || oracle.rpad('あbcd'::char(5), 10, 'xい'::char(3)) || '|';
    ?column?   
 --------------
- |あbcd xい |
+ |あbcdxいx |
 (1 row)
 
 SELECT '|' || oracle.rpad('あbcd'::char(5),  5, 'xい'::char(3)) || '|';
@@ -96,43 +96,43 @@ SELECT '|' || oracle.rpad('あbcd'::char(5),  5, 'xい'::char(3)) || '|';
 SELECT '|' || oracle.rpad('あbcd'::char(5), 10, 'xい'::text) || '|';
    ?column?   
 --------------
- |あbcd xいx|
+ |あbcdxいx |
 (1 row)
 
 SELECT '|' || oracle.rpad('あbcd'::char(5), 10, 'xい'::text) || '|';
    ?column?   
 --------------
- |あbcd xいx|
+ |あbcdxいx |
 (1 row)
 
 SELECT '|' || oracle.rpad('あbcd'::char(5), 10, 'xい'::varchar2(5)) || '|';
    ?column?   
 --------------
- |あbcd xいx|
+ |あbcdxいx |
 (1 row)
 
 SELECT '|' || oracle.rpad('あbcd'::char(5), 10, 'xい'::nvarchar2(3)) || '|';
    ?column?   
 --------------
- |あbcd xいx|
+ |あbcdxいx |
 (1 row)
 
 SELECT '|' || oracle.rpad('あbcd'::text, 10, 'xい'::char(3)) || '|';
    ?column?   
 --------------
- |あbcdxい x|
+ |あbcdxいx |
 (1 row)
 
 SELECT '|' || oracle.rpad('あbcd'::varchar2(5), 10, 'xい'::char(3)) || '|';
    ?column?   
 --------------
- |あbcdxい x|
+ |あbcdxいx |
 (1 row)
 
 SELECT '|' || oracle.rpad('あbcd'::nvarchar2(5), 10, 'xい'::char(3)) || '|';
    ?column?   
 --------------
- |あbcdxい x|
+ |あbcdxいx |
 (1 row)
 
 CREATE TABLE dbms_output_test (buff VARCHAR(20), status INTEGER);
