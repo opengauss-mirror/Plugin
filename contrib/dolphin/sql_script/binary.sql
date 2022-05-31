@@ -43,7 +43,7 @@ int
 CREATE TYPE pg_catalog.binary (input=binary_in, output=binary_out,
                                 typmod_in = binary_typmodin, typmod_out = binary_typmodout,
                                 receive = binary_recv, send = binary_send,
-                                STORAGE=EXTENDED, category='U');
+                                STORAGE=EXTENDED, category='S');
 
 /* varbinary */
 DROP TYPE IF EXISTS pg_catalog.varbinary CASCADE;
@@ -84,7 +84,7 @@ _cstring
 CREATE TYPE pg_catalog.varbinary (input=varbinary_in, output=varbinary_out,
                                 typmod_in = varbinary_typmodin, typmod_out = binary_typmodout,
                                 receive = varbinary_recv, send = varbinary_send,
-                                STORAGE=EXTENDED, category='U');
+                                STORAGE=EXTENDED, category='S');
 
 -- to_binary
 DROP FUNCTION IF EXISTS pg_catalog.to_binary(bytea, int) CASCADE;
