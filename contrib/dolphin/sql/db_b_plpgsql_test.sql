@@ -1,7 +1,6 @@
 drop database if exists test;
 create database test dbcompatibility 'b';
 \c test
-create extension dolphin;
 
 create table tb_b_grammar_0038(a text(10)) engine = 表1;
 

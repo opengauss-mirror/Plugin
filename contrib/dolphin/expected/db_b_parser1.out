@@ -2,7 +2,6 @@ drop database if exists mysql_test;
 NOTICE:  database "mysql_test" does not exist, skipping
 create database mysql_test dbcompatibility 'b';
 \c mysql_test
-create extension dolphin;
 select 'bbbbb' regexp '^([bc])\1*$' as t, 'bbbbb' not regexp '^([bc])\1*$' as t2, 'bbbbb' rlike '^([bc])\1*$' as t;
  t | t2 | t 
 ---+----+---

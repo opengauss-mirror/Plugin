@@ -1,7 +1,6 @@
 drop database if exists format_test;
 create database format_test dbcompatibility 'B';
 \c format_test
-create extension dolphin;
 
 select if(TRUE, 1, 2);
 select if(FALSE, 1, 2);

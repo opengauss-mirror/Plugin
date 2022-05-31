@@ -1,7 +1,6 @@
 drop database if exists format_test;
 create database format_test dbcompatibility 'B';
 \c format_test
-create extension dolphin;
 
 select conv('a',16,2);
 select conv('6e',18,8);

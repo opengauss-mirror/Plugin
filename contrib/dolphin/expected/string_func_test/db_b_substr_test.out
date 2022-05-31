@@ -59,7 +59,6 @@ drop database if exists test;
 NOTICE:  database "test" does not exist, skipping
 create database test dbcompatibility 'B';
 \c test
-create extension dolphin;
 DROP TABLE IF EXISTS template_string;
 NOTICE:  table "template_string" does not exist, skipping
 CREATE TABLE template_string(a TEXT, b BYTEA);

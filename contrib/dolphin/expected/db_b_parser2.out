@@ -2,7 +2,6 @@ drop database if exists mysql_test;
 NOTICE:  database "mysql_test" does not exist, skipping
 create database mysql_test dbcompatibility 'b';
 \c mysql_test
-create extension dolphin;
 --验证DAYOFMONTH() DAYOFWEEK() DAYOFYEAR() HOUR() MICROSECOND() MINUTE() QUARTER() SECOND() WEEKDAY() WEEKOFYEAR() YEAR()
 select DAYOFMONTH(timestamp '2021-11-4 16:30:44.341191');
  date_part 
