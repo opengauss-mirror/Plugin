@@ -1813,7 +1813,7 @@ Datum degrees(PG_FUNCTION_ARGS)
  */
 Datum dpi(PG_FUNCTION_ARGS)
 {
-    PG_RETURN_FLOAT8(S_PI);
+    PG_RETURN_FLOAT8(M_PI);
 }
 
 /*
