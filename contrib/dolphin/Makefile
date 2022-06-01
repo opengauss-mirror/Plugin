@@ -55,6 +55,10 @@ plugin_postgres.o: plugin_postgres.cpp
 
 OBJS += pg_builtin_proc.o
 pg_builtin_proc.o: pg_builtin_proc.cpp utils
+
+OBJS += plugin_utility.o
+plugin_utility.o: plugin_utility.cpp
+
 EXTENSION = dolphin
 REGRESS:=$(shell find ./sql -maxdepth 2 -type f)
 REGRESS:=$(basename $(patsubst ./sql/%,%,$(REGRESS)) .sql)
