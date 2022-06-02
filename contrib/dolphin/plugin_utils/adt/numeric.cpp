@@ -19319,36 +19319,49 @@ Datum crc32(PG_FUNCTION_ARGS)
     PG_RETURN_UINT32(result);
 }
 
-static int conv_n(char *result, int64 data, int from_base_s, int to_base_s)
+static int conv_n(char *result, int128 data, int from_base_s, int to_base_s)
 {
     uint64 sum = 0;
     int64 sum_s = 0;
     int i = 0;
     int num = 0;
-    int64 base = 1;
-    int remain = 0;
     int to_base = abs(to_base_s);
     int from_base = abs(from_base_s);
     char tmp[CONV_MAX_CHAR_LEN + 1] = "";
 
     /*minimum base is 2, maximum base is 36*/
     if ((from_base < MINBASE) || (from_base > MAXBASE)) {
-        ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("from_base out of range:2~36")));
         return -1;
     }
     if ((to_base < MINBASE) || (to_base > MAXBASE)) {
-        ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("to_base out of range:2~36")));
         return -1;
     }
-
-    while (data) {
-        remain = data % 10;
-        if (remain >= from_base) {
-            return -1; //remainder out of base
+    if (from_base_s > 0) {
+        if (data > PG_UINT64_MAX) {
+            data = PG_UINT64_MAX;
+        } else if (data < PG_INT64_MIN) {
+            data = PG_UINT64_MAX;
         }
-        sum_s += remain * base;
-        data /= 10;
-        base *= from_base;
+    } else {
+        if (data > PG_INT64_MAX) {
+            data = PG_INT64_MAX;
+        } else if (data < PG_INT64_MIN) {
+            data = PG_INT64_MIN;
+        }
+    }
+
+    int64 dataTmp = (int64)data;
+    while (dataTmp) {
+        tmp[i++] = dataTmp % 10;
+        dataTmp /= 10;
+        
+    }
+
+    for (; i > 0; i--) {
+        if (tmp[i-1] >= from_base) {
+            break;
+        }
+        sum_s = sum_s * from_base + tmp[i-1];
     }
 
     if (to_base_s < 0) {
@@ -19361,14 +19374,19 @@ static int conv_n(char *result, int64 data, int from_base_s, int to_base_s)
     }
 
     i = 0;
-    while (sum) {
-        num = sum % to_base;
-        if (num <= 9) {
-            tmp[i++] = num + '0';
-        } else {
-            tmp[i++] = num - 10 + 'A';
+    memset_s(tmp, 0, sizeof(tmp), sizeof(tmp));
+    if (sum == 0) {
+        tmp[i++] = '0';
+    } else {
+        while (sum) {
+            num = sum % to_base;
+            if (num <= 9) {
+                tmp[i++] = num + '0';
+            } else {
+                tmp[i++] = num - 10 + 'A';
+            }
+            sum /= to_base;
         }
-        sum /= to_base;
     }
 
     for (; i > 0; i--) {
@@ -19377,12 +19395,9 @@ static int conv_n(char *result, int64 data, int from_base_s, int to_base_s)
     return 0;
 }
 
-static int str_to_int64(char *str, int len, int64 *result, int *from_base_s)
+static int str_to_int64(char *str, int len, int128 *result, int *from_base_s)
 {
     int128 sum_128 = 0;
-    int128 int64_min = PG_INT64_MIN;
-    int128 int64_max = PG_INT64_MAX;
-    int128 uint64_max = PG_UINT64_MAX;
     int i, num = 0;
     int from_base = abs(*from_base_s);
     if ((from_base < MINBASE) || (from_base > MAXBASE)) {	/*minimum base is 2, maximum base is 36*/
@@ -19402,7 +19417,7 @@ static int str_to_int64(char *str, int len, int64 *result, int *from_base_s)
             }
         }
         if ((num > 9) && (from_base <= num)) {
-            return -1;  /*param error*/
+            break;   /*param error*/
         }
         sum_128 = sum_128 * from_base + num;
         if (sum_128 > PG_UINT64_MAX) {
@@ -19412,28 +19427,18 @@ static int str_to_int64(char *str, int len, int64 *result, int *from_base_s)
 
     if (str[0] == '-') {
         if (*from_base_s > 0) {
-            sum_128 = uint64_max - sum_128 + 1;
+            sum_128 = PG_UINT64_MAX - sum_128 + 1;
         } else {
             sum_128 *= -1;
         }
     }
 
     if (*from_base_s > 0) {
-        if (sum_128 > uint64_max) {
-            sum_128 = uint64_max;
-        } else if (sum_128 < int64_min) {
-            sum_128 = uint64_max;
-        }
+        *from_base_s = 10;    //change base to 10
     } else {
-        if (sum_128 > int64_max) {
-            sum_128 = int64_max;
-        } else if (sum_128 < int64_min) {
-            sum_128 = int64_min;
-        }
+        *from_base_s = -10;    //change base to 10
     }
-
-    *from_base_s = 10;  //change base to 10
-    *result = (int64)sum_128;
+    *result = sum_128;
     return 0;
 }
 
@@ -19443,10 +19448,10 @@ Datum conv_str(PG_FUNCTION_ARGS)
     int from_base = PG_GETARG_INT32(1);
     int to_base = PG_GETARG_INT32(2);
     char* data = VARDATA_ANY(string);
-    char result[CONV_MAX_CHAR_LEN + 1] = "";
+    char result[CONV_MAX_CHAR_LEN + 1] = "0";
     int len = VARSIZE_ANY_EXHDR(string);
     int ret;
-    int64 num = 0;
+    int128 num = 0;
 
     if (len <= 0) {
         PG_RETURN_NULL();
@@ -19463,9 +19468,35 @@ Datum conv_str(PG_FUNCTION_ARGS)
     PG_RETURN_TEXT_P(cstring_to_text(result));
 }
 
+int128 conv_numeric_int16(Numeric num)
+{
+    int128 result = 0;
+    NumericVar x;
+    uint16 numFlags = NUMERIC_NB_FLAGBITS(num);
+
+    if (NUMERIC_FLAG_IS_NANORBI(numFlags)) {
+        /* Handle Big Integer */
+        if (NUMERIC_FLAG_IS_BI(numFlags))
+            num = makeNumericNormal(num);
+        /* XXX would it be better to return NULL? */
+        else
+            ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("cannot convert NaN to int128")));
+    }
+
+    /* Convert to variable format and thence to int8 */
+    init_var_from_num(num, &x);
+    floor_var(&x, &x);
+
+    if (!numericvar_to_int128(&x, &result))
+        ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("int128 out of range")));
+
+    return result;
+}
+
 Datum conv_num(PG_FUNCTION_ARGS)
 {
-    int64 num = PG_GETARG_INT64(0);
+    Numeric value = PG_GETARG_NUMERIC(0);
+    int128 num = conv_numeric_int16(value);
     int from_base = PG_GETARG_INT32(1);
     int to_base = PG_GETARG_INT32(2);
     char result[CONV_MAX_CHAR_LEN + 1] = "";
