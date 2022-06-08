@@ -34,6 +34,25 @@ typedef struct {
     int64 step;
 } generate_series_fctx;
 
+void CheckSpaceAndDotInternal(bool errorOK, int c, char* digitAfterDot, const char** ptr)
+{
+    bool isFirstDot = true;
+    if (!errorOK) {
+        while (*(*ptr) && *(*ptr) != c && ((isspace((unsigned char)*(*ptr))) || (*(*ptr) == '.' && isFirstDot) || (isdigit((unsigned char)*(*ptr))))) {
+            if (*(*ptr) == '.') {
+                isFirstDot = false;
+                *digitAfterDot = *((*ptr) + 1);
+            }
+            (*ptr)++;
+        }
+        if (!isFirstDot && *digitAfterDot == '\0')
+            (*ptr)--;
+    } else {
+        while (*(*ptr) != '\0' && (isspace((unsigned char)*(*ptr)))) {
+            (*ptr)++;
+        }
+    }
+}
 /***********************************************************************
  **
  **		Routines for 64-bit integers.
@@ -119,23 +138,8 @@ bool Scanint8Internal(const char* str, bool errorOK, int64* result, bool sqlMode
     }
 
     /* allow trailing whitespace and dot, but not other trailing chars */
-    bool isFirstDot = true;
     char digitAfterDot = '\0';
-    if (!errorOK) {
-        while (*ptr != '\0' && ((isspace((unsigned char)*ptr)) || (*ptr == '.' && isFirstDot) || (isdigit((unsigned char)*ptr)))) {
-            if (*ptr == '.') {
-                isFirstDot = false;
-                digitAfterDot = *(ptr + 1);
-            }
-            ptr++;
-        }
-        if (!isFirstDot && digitAfterDot == '\0')
-            ptr--;
-    } else {
-        while (*ptr != '\0' && (isspace((unsigned char)*ptr))) {
-            ptr++;
-        }
-    }
+    CheckSpaceAndDotInternal(errorOK, '\0', &digitAfterDot, &ptr);
 
     if (unlikely(*ptr != '\0')) {
         if (errorOK)

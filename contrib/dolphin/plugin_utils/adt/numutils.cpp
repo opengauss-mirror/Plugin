@@ -46,7 +46,6 @@ int32 PgAtoiInternal(char* s, int size, int c, bool sqlModeStrict)
 {
     long l;
     char* badp = NULL;
-    bool isFirstDot = true;
     char digitAfterDot = '\0';
 
     /*
@@ -90,15 +89,10 @@ int32 PgAtoiInternal(char* s, int size, int c, bool sqlModeStrict)
      * Skip any trailing whitespace; if anything but whitespace remains before
      * the terminating character, bail out
      */
-    while (*badp && *badp != c && ((isspace((unsigned char)*badp)) || (*badp == '.' && isFirstDot) || (isdigit((unsigned char)*badp)))) {
-        if (*badp == '.') {
-            isFirstDot = false;
-            digitAfterDot = *(badp + 1);
-        }
-        badp++;
-    }
-    if (!isFirstDot && digitAfterDot == '\0')
-        badp--;
+    const char* ptr = badp;
+    CheckSpaceAndDotInternal(false, c, &digitAfterDot, &ptr);
+    badp = const_cast<char*>(ptr);
+
     if (sqlModeStrict && *badp && *badp != c)
         ereport(ERROR,
             (errcode(ERRCODE_INVALID_TEXT_REPRESENTATION), errmsg("invalid input syntax for integer: \"%s\"", s)));
@@ -154,7 +148,6 @@ int16 PgStrtoint16Internal(const char* s, bool sqlModeStrict)
     const char* ptr = s;
     int16 tmp = 0;
     bool neg = false;
-    bool isFirstDot = true;
     char digitAfterDot = '\0';
 
     /* skip leading spaces */
@@ -188,15 +181,8 @@ int16 PgStrtoint16Internal(const char* s, bool sqlModeStrict)
     }
 
     /* allow trailing whitespace, but not other trailing chars */
-    while (*ptr != '\0' && ((isspace((unsigned char)*ptr)) || (*ptr == '.' && isFirstDot) || (isdigit((unsigned char)*ptr)))) {
-        if (*ptr == '.') {
-            isFirstDot = false;
-            digitAfterDot = *(ptr + 1);
-        }
-        ptr++;
-    }
-    if (!isFirstDot && digitAfterDot == '\0')
-        ptr--;
+    CheckSpaceAndDotInternal(false, '\0', &digitAfterDot, &ptr);
+
     if (sqlModeStrict && unlikely(*ptr != '\0'))
         goto invalid_syntax;
 
@@ -254,7 +240,6 @@ int32 PgStrtoint32Internal(const char* s, bool sqlModeStrict)
     const char* ptr = s;
     int32 tmp = 0;
     bool neg = false;
-    bool isFirstDot = true;
     char digitAfterDot = '\0';
 
     /* skip leading spaces */
@@ -288,15 +273,8 @@ int32 PgStrtoint32Internal(const char* s, bool sqlModeStrict)
     }
 
     /* allow trailing whitespace, but not other trailing chars */
-    while (*ptr != '\0' && ((isspace((unsigned char)*ptr)) || (*ptr == '.' && isFirstDot) || (isdigit((unsigned char)*ptr)))) {
-        if (*ptr == '.') {
-            isFirstDot = false;
-            digitAfterDot = *(ptr + 1);
-        }
-        ptr++;
-    }
-    if (!isFirstDot && digitAfterDot == '\0')
-        ptr--;
+    CheckSpaceAndDotInternal(false, '\0', &digitAfterDot, &ptr);
+
     if (sqlModeStrict && unlikely(*ptr != '\0') && u_sess->attr.attr_sql.sql_compatibility != B_FORMAT)
         goto invalid_syntax;
 

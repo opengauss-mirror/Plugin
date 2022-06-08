@@ -1077,7 +1077,6 @@ select * from mysql_strictsqlmode_t1 order by c1;
 (5 rows)
 
 drop table mysql_strictsqlmode_t1;
-
 --test sql_mode = 'sql_mode_strict'
 set sql_mode = 'sql_mode_strict';
 create table test_tint_strict(a tinyint);
