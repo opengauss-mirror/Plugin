@@ -16,7 +16,7 @@ CREATE FUNCTION pg_catalog.binary_out (
 binary
 ) RETURNS cstring LANGUAGE INTERNAL IMMUTABLE STRICT as 'byteaout';
 
-DROP FUNCTION IF EXISTS pg_catalog.binary_recv(internal, oid, int) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.binary_recv(internal) CASCADE;
 
 CREATE FUNCTION pg_catalog.binary_recv (
 internal
