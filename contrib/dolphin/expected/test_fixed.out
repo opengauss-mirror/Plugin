@@ -2,7 +2,6 @@ drop database if exists test;
 NOTICE:  database "test" does not exist, skipping
 create database test dbcompatibility 'B';
 \c test
-CREATE EXTENSION dolphin;
 DROP TABLE IF EXISTS fixed_test;
 NOTICE:  table "fixed_test" does not exist, skipping
 CREATE TABLE fixed_test (a fixed(10, 5));

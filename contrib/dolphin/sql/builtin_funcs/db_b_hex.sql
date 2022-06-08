@@ -1,7 +1,6 @@
 drop database if exists format_test;
 create database format_test dbcompatibility 'B';
 \c format_test
-create extension dolphin;
 
 select hex(int1(255));
 select hex(int1(256));

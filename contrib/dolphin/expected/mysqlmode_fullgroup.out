@@ -1,6 +1,5 @@
 CREATE DATABASE sql_mode_full_group dbcompatibility 'B';
 \c sql_mode_full_group;
-create extension dolphin;
 create table test_group(a int, b int, c int, d int);
 create table test_group1(a int, b int, c int, d int);
 insert into test_group values(1,2,3,4);

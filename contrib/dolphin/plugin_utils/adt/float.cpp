@@ -313,10 +313,17 @@ Datum float4in(PG_FUNCTION_ARGS)
              * detect whether it's a "real" out-of-range condition by checking
              * to see if the result is zero or huge.
              */
-            if (val == 0.0 || val >= HUGE_VAL || val <= -HUGE_VAL)
-                ereport(ERROR,
-                    (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE),
-                        errmsg("\"%s\" is out of range for type real", orig_num)));
+            if (val == 0.0 || val >= HUGE_VAL || val <= -HUGE_VAL) {
+                if (SQL_MODE_STRICT() || val == 0.0) {
+                    ereport(ERROR,
+                        (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE),
+                            errmsg("\"%s\" is out of range for type real", orig_num)));
+                } else if (val >= HUGE_VAL) {
+                    val = __FLT_MAX__;
+                } else if (val <= -HUGE_VAL) {
+                    val = -__FLT_MAX__;
+                }
+            }
         } else if (SQL_MODE_STRICT())
             ereport(ERROR,
                 (errcode(ERRCODE_INVALID_TEXT_REPRESENTATION),
@@ -539,10 +546,17 @@ Datum float8in(PG_FUNCTION_ARGS)
              * detect whether it's a "real" out-of-range condition by checking
              * to see if the result is zero or huge.
              */
-            if (val == 0.0 || val >= HUGE_VAL || val <= -HUGE_VAL)
-                ereport(ERROR,
-                    (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE),
-                        errmsg("\"%s\" is out of range for type double precision", orig_num)));
+            if (val == 0.0 || val >= HUGE_VAL || val <= -HUGE_VAL) {
+                if (SQL_MODE_STRICT() || val == 0.0) {
+                    ereport(ERROR,
+                        (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE),
+                            errmsg("\"%s\" is out of range for type double precision", orig_num)));
+                } else if (val >= HUGE_VAL) {
+                    val = __DBL_MAX__;
+                } else if (val <= -HUGE_VAL) {
+                    val = -__DBL_MAX__;
+                }
+            }
         } else if (SQL_MODE_STRICT())
             ereport(ERROR,
                 (errcode(ERRCODE_INVALID_TEXT_REPRESENTATION),
@@ -590,6 +604,13 @@ Datum float8in(PG_FUNCTION_ARGS)
         ereport(ERROR,
             (errcode(ERRCODE_INVALID_TEXT_REPRESENTATION),
                 errmsg("invalid input syntax for type double precision: \"%s\"", orig_num)));
+    }
+
+    if (!SQL_MODE_STRICT()) {
+        if (val > __DBL_MAX__)
+            val = __DBL_MAX__;
+        else if(val < -__DBL_MAX__)
+            val = -__DBL_MAX__;
     }
 
     CHECKFLOATVAL(val, true, true);
@@ -1813,7 +1834,7 @@ Datum degrees(PG_FUNCTION_ARGS)
  */
 Datum dpi(PG_FUNCTION_ARGS)
 {
-    PG_RETURN_FLOAT8(S_PI);
+    PG_RETURN_FLOAT8(M_PI);
 }
 
 /*

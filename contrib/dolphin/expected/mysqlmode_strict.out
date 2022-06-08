@@ -2,7 +2,6 @@ drop DATABASE if exists sql_mode_strict;
 NOTICE:  database "sql_mode_strict" does not exist, skipping
 CREATE DATABASE sql_mode_strict dbcompatibility 'B';
 \c sql_mode_strict;
-create extension dolphin;
 set sql_mode = '';
 create table test_tint(a tinyint);
 create table test_sint(a smallint);
@@ -1060,6 +1059,24 @@ select * from test_notnull_numeric;
  4.00 | 0.00
  5.00 | 0.00
 (5 rows)
+
+create table mysql_strictsqlmode_t1(c1 int,c2 double precision);
+insert into mysql_strictsqlmode_t1 values(1,0);
+insert into mysql_strictsqlmode_t1 values(2,-99);
+insert into mysql_strictsqlmode_t1 values(3,-999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999);
+insert into mysql_strictsqlmode_t1 values(4,99);
+insert into mysql_strictsqlmode_t1 values(5,999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999);
+select * from mysql_strictsqlmode_t1 order by c1;
+ c1 |           c2           
+----+------------------------
+  1 |                      0
+  2 |                    -99
+  3 | -1.79769313486232e+308
+  4 |                     99
+  5 |  1.79769313486232e+308
+(5 rows)
+
+drop table mysql_strictsqlmode_t1;
 
 --test sql_mode = 'sql_mode_strict'
 set sql_mode = 'sql_mode_strict';

@@ -28,7 +28,7 @@ CREATE FUNCTION pg_catalog.tinyblob_send (
 tinyblob
 ) RETURNS bytea LANGUAGE INTERNAL IMMUTABLE STRICT as 'byteasend';
 
-CREATE TYPE pg_catalog.tinyblob (input=tinyblob_rawin, output=tinyblob_rawout, RECEIVE = tinyblob_recv, SEND = tinyblob_send, STORAGE=EXTENDED, category='C');
+CREATE TYPE pg_catalog.tinyblob (input=tinyblob_rawin, output=tinyblob_rawout, RECEIVE = tinyblob_recv, SEND = tinyblob_send, STORAGE=EXTENDED, category='S');
 
 
 --mediumblob
@@ -61,7 +61,7 @@ CREATE FUNCTION pg_catalog.mediumblob_send (
 mediumblob
 ) RETURNS bytea LANGUAGE INTERNAL IMMUTABLE STRICT as 'byteasend';
 
-CREATE TYPE pg_catalog.mediumblob (input=mediumblob_rawin, output=mediumblob_rawout, RECEIVE = mediumblob_recv, SEND = mediumblob_send, STORAGE=EXTENDED, category='U');
+CREATE TYPE pg_catalog.mediumblob (input=mediumblob_rawin, output=mediumblob_rawout, RECEIVE = mediumblob_recv, SEND = mediumblob_send, STORAGE=EXTENDED, category='S');
 
 -- longblob
 DROP TYPE IF EXISTS pg_catalog.longblob CASCADE;
@@ -93,7 +93,7 @@ CREATE FUNCTION pg_catalog.longblob_send (
 longblob
 ) RETURNS bytea LANGUAGE INTERNAL IMMUTABLE STRICT as 'byteasend';
 
-CREATE TYPE pg_catalog.longblob (input=longblob_rawin, output=longblob_rawout, RECEIVE = longblob_recv, SEND = longblob_send, STORAGE=EXTENDED, category='U');
+CREATE TYPE pg_catalog.longblob (input=longblob_rawin, output=longblob_rawout, RECEIVE = longblob_recv, SEND = longblob_send, STORAGE=EXTENDED, category='S');
 
 -- to_tinyblob
 DROP FUNCTION IF EXISTS pg_catalog.to_tinyblob(longblob) CASCADE;

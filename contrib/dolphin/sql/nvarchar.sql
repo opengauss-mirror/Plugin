@@ -3,7 +3,6 @@ drop database if exists b;
 create database b dbcompatibility 'b';
 
 \c b
-create extension dolphin;
 --
 -- VARCHAR
 --

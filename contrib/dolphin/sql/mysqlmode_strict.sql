@@ -2,7 +2,6 @@ drop DATABASE if exists sql_mode_strict;
 
 CREATE DATABASE sql_mode_strict dbcompatibility 'B';
 \c sql_mode_strict;
-create extension dolphin;
 set sql_mode = '';
 
 create table test_tint(a tinyint);
@@ -412,7 +411,14 @@ select * from test_notnull_double;
 insert into test_notnull_numeric(a) values(3),(4),(5);
 select * from test_notnull_numeric;
 
-
+create table mysql_strictsqlmode_t1(c1 int,c2 double precision);
+insert into mysql_strictsqlmode_t1 values(1,0);
+insert into mysql_strictsqlmode_t1 values(2,-99);
+insert into mysql_strictsqlmode_t1 values(3,-999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999);
+insert into mysql_strictsqlmode_t1 values(4,99);
+insert into mysql_strictsqlmode_t1 values(5,999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999);
+select * from mysql_strictsqlmode_t1 order by c1;
+drop table mysql_strictsqlmode_t1;
 
 --test sql_mode = 'sql_mode_strict'
 set sql_mode = 'sql_mode_strict';

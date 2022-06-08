@@ -84,8 +84,6 @@ static const struct sql_mode_entry sql_mode_options[OPT_SQL_MODE_MAX] = {
     {"sql_mode_full_group", OPT_SQL_MODE_FULL_GROUP},
 };
 
-static ExecNodes* assign_utility_stmt_exec_nodes(Node* parse_tree);
-
 PG_MODULE_MAGIC_PUBLIC;
 
 extern void initBSQLBuiltinFuncs();
@@ -99,10 +97,72 @@ extern bool IsVariableinBlackList(const char* name);
 extern void ExecAlterRoleSetStmt(Node* parse_tree, const char* query_string, bool sent_to_remote);
 static bool CheckSqlMode(char** newval, void** extra, GucSource source);
 static void AssignSqlMode(const char* newval, void* extra);
-static bool need_full_dn_execution(const char* group_name);
-static ExecNodes* GetFunctionNodes(Oid func_id);
 static const int LOADER_COL_BUF_CNT = 5;
 static uint32 dolphin_index;
+extern void set_hypopg_prehook(ProcessUtility_hook_type func);
+extern void set_pgaudit_prehook(ProcessUtility_hook_type func);
+
+void ProcessUtilityMain(Node* parse_tree, const char* query_string, ParamListInfo params, bool is_top_level,
+    DestReceiver* dest,
+#ifdef PGXC
+    bool sent_to_remote,
+#endif /* PGXC */
+    char* completion_tag,
+    bool isCTAS) {
+    if (u_sess->attr.attr_sql.dolphin) {
+        return ProcessUtility(parse_tree,
+            query_string,
+            params,
+            is_top_level,
+            dest,
+#ifdef PGXC
+            sent_to_remote,
+#endif /* PGXC */
+            completion_tag,
+            isCTAS);
+    } else {
+        return standard_ProcessUtility(parse_tree,
+            query_string,
+            params,
+            is_top_level,
+            dest,
+#ifdef PGXC
+            sent_to_remote,
+#endif /* PGXC */
+            completion_tag,
+            isCTAS);
+    }
+}
+
+/* 
+ * Set ProcessUtility PreHook of other ProcessUtilityHook Users, so that
+ * we can hook standard_ProcessUtility.
+ */
+void set_processutility_prehook()
+{
+    DynamicFileList* file_scanner = NULL;
+    void (*set_gsaudit_prehook)(ProcessUtility_hook_type);
+
+    char* securityPluginPath = expand_dynamic_library_name("security_plugin");
+    check_backend_env(securityPluginPath);
+
+    for (file_scanner = file_list; file_scanner != NULL && strcmp(securityPluginPath, file_scanner->filename) != 0;
+         file_scanner = file_scanner->next);
+
+    if (file_scanner != NULL) {
+        set_gsaudit_prehook = (void(*)(ProcessUtility_hook_type))pg_dlsym(file_scanner->handle, "set_gsaudit_prehook");
+        if (set_gsaudit_prehook != NULL) {
+            (*set_gsaudit_prehook)((ProcessUtility_hook_type)ProcessUtilityMain);
+            return;
+        }
+    }
+
+    if (u_sess->attr.attr_security.Audit_enabled) {
+        set_pgaudit_prehook((ProcessUtility_hook_type)ProcessUtilityMain);
+    } else {
+        set_hypopg_prehook((ProcessUtility_hook_type)ProcessUtilityMain);
+    }
+}
 
 PG_FUNCTION_INFO_V1_PUBLIC(dolphin_invoke);
 void dolphin_invoke(void)
@@ -114,6 +174,7 @@ void dolphin_invoke(void)
 void init_plugin_object()
 {
     u_sess->hook_cxt.transformStmtHook = (void*)transformStmt;
+    set_processutility_prehook();
 }
 
 void _PG_init(void)
@@ -213,312 +274,6 @@ static void AssignSqlMode(const char* newval, void* extra)
     GetSessionContext()->sqlModeFlags = result;
 }
 
-static ExecNodes* GetNodeGroupExecNodes(Oid group_oid)
-{
-    ExecNodes* exec_nodes = NULL;
-    Oid* members = NULL;
-    int nmembers;
-    bool need_full_dn = false;
-
-    exec_nodes = makeNode(ExecNodes);
-
-    if (!in_logic_cluster()) {
-        char* group_name = get_pgxc_groupname(group_oid);
-        if (group_name == NULL) {
-            ereport(ERROR,
-                (errmodule(MOD_EXECUTOR),
-                    errcode(ERRCODE_DATA_EXCEPTION),
-                    errmsg("computing nodegroup is not a valid group.")));
-        }
-        need_full_dn = need_full_dn_execution(group_name);
-        pfree_ext(group_name);
-    }
-
-    if (need_full_dn) {
-        exec_nodes->nodeList = GetAllDataNodes();
-        return exec_nodes;
-    }
-
-    nmembers = get_pgxc_groupmembers_redist(group_oid, &members);
-
-    exec_nodes->nodeList = GetNodeGroupNodeList(members, nmembers);
-
-    pfree_ext(members);
-
-    return exec_nodes;
-}
-
-static ExecNodes* GetFunctionNodes(Oid func_id)
-{
-    Oid goid;
-
-    /* Fetching group_oid for given relation */
-    goid = GetFunctionNodeGroupByFuncid(func_id);
-    if (!OidIsValid(goid))
-        return NULL;
-
-    return GetNodeGroupExecNodes(goid);
-}
-
-static bool need_full_dn_execution(const char* group_name)
-{
-    if (in_logic_cluster()) {
-        return false;
-    }
-    const char* redistribution_group_name = PgxcGroupGetInRedistributionGroup();
-    const char* installation_group_name = PgxcGroupGetInstallationGroup();
-
-    if ((installation_group_name && strcmp(group_name, installation_group_name) == 0) ||
-        (redistribution_group_name && strcmp(group_name, redistribution_group_name) == 0)) {
-        return true;
-    }
-
-    Oid group_oid = get_pgxc_groupoid(group_name, false);
-    const char* group_parent_name = get_pgxc_groupparent(group_oid);
-    if (group_parent_name != NULL) {
-        if ((installation_group_name && strcmp(group_parent_name, installation_group_name) == 0) ||
-            (redistribution_group_name && strcmp(group_parent_name, redistribution_group_name) == 0)) {
-            return true;
-        }
-    }
-    return false;
-}
-
-#ifdef PGXC
-
-/*
- * Execute a Utility statement on nodes, including Coordinators
- * If the DDL is received from a remote Coordinator,
- * it is not possible to push down DDL to Datanodes
- * as it is taken in charge by the remote Coordinator.
- */
-void ExecUtilityStmtOnNodes(const char* query_string, ExecNodes* nodes, bool sent_to_remote, bool force_auto_commit,
-    RemoteQueryExecType exec_type, bool is_temp, Node* parse_tree)
-{
-    bool need_free_nodes = false;
-    /*
-     * @NodeGroup Support
-     *
-     * Binding necessary datanodes under exec_nodes to run utility, we put the logic here to
-     * re-calculate the exec_nodes for target relation in some statements like VACUUM, GRANT,
-     * as we don't want to put the similar logic in each swith-case branches in standard_ProcessUtility()
-     */
-    if (IS_PGXC_COORDINATOR && !IsConnFromCoord() && parse_tree && nodes == NULL && exec_type != EXEC_ON_COORDS) {
-        nodes = assign_utility_stmt_exec_nodes(parse_tree);
-        need_free_nodes = true;
-    }
-
-    /* single-user mode */
-    if (!IsPostmasterEnvironment)
-        return;
-
-    /* gs_dump cn do not connect datanode */
-    if (u_sess->attr.attr_common.application_name &&
-        !strncmp(u_sess->attr.attr_common.application_name, "gs_dump", strlen("gs_dump")))
-        return;
-
-    /* Return if query is launched on no nodes */
-    if (exec_type == EXEC_ON_NONE)
-        return;
-
-    /* Nothing to be done if this statement has been sent to the nodes */
-    if (sent_to_remote)
-        return;
-
-    /*
-     * If no Datanodes defined and the remote utility sent to DN, the query cannot
-     * be launched
-     */
-    if ((exec_type == EXEC_ON_DATANODES || exec_type == EXEC_ON_ALL_NODES) && u_sess->pgxc_cxt.NumDataNodes == 0)
-        ereport(ERROR,
-            (errcode(ERRCODE_UNDEFINED_OBJECT),
-                errmsg("No Datanode defined in cluster"),
-                errhint("You need to define at least 1 Datanode with "
-                        "CREATE NODE.")));
-
-#ifdef ENABLE_MULTIPLE_NODES
-    if (!IsConnFromCoord()) {
-        RemoteQuery* step = makeNode(RemoteQuery);
-        step->combine_type = COMBINE_TYPE_SAME;
-        step->exec_nodes = nodes;
-        step->sql_statement = pstrdup(query_string);
-        step->force_autocommit = force_auto_commit;
-        step->exec_type = exec_type;
-        step->is_temp = is_temp;
-        ExecRemoteUtility(step);
-        pfree_ext(step->sql_statement);
-        pfree_ext(step);
-        if (need_free_nodes)
-            FreeExecNodes(&nodes);
-    }
-#endif
-}
-
-/*
- * Execute a Utility statement on nodes, including Coordinators
- * If the DDL is received from a remote Coordinator,
- * it is not possible to push down DDL to Datanodes
- * as it is taken in charge by the remote Coordinator.
- */
-void ExecUtilityStmtOnNodes_ParallelDDLMode(const char* query_string, ExecNodes* nodes, bool sent_to_remote,
-    bool force_auto_commit, RemoteQueryExecType exec_type, bool is_temp, const char* first_exec_node, Node* parse_tree)
-{
-    /*
-     * @NodeGroup Support
-     *
-     * Binding necessary datanodes under exec_nodes to run utility, we put the logic here to
-     * re-calculate the exec_nodes for target relation in some statements like VACUUM, GRANT,
-     * as we don't want to put the similar logic in each swith-case branches in standard_ProcessUtility()
-     */
-    if (IS_PGXC_COORDINATOR && !IsConnFromCoord() && parse_tree && nodes == NULL && exec_type != EXEC_ON_COORDS) {
-        nodes = assign_utility_stmt_exec_nodes(parse_tree);
-    }
-
-    // single-user mode
-    //
-    if (!IsPostmasterEnvironment)
-        return;
-
-    /* gs_dump cn do not connect datanode */
-    if (u_sess->attr.attr_common.application_name &&
-        !strncmp(u_sess->attr.attr_common.application_name, "gs_dump", strlen("gs_dump")))
-        return;
-
-    /* Return if query is launched on no nodes */
-    if (exec_type == EXEC_ON_NONE)
-        return;
-
-    /* Nothing to be done if this statement has been sent to the nodes */
-    if (sent_to_remote)
-        return;
-
-    /*
-     * If no Datanodes defined and the remote utility sent to DN, the query cannot
-     * be launched
-     */
-    if ((exec_type == EXEC_ON_DATANODES || exec_type == EXEC_ON_ALL_NODES) && u_sess->pgxc_cxt.NumDataNodes == 0)
-        ereport(ERROR,
-            (errcode(ERRCODE_UNDEFINED_OBJECT),
-                errmsg("No Datanode defined in cluster"),
-                errhint("You need to define at least 1 Datanode with "
-                        "CREATE NODE.")));
-
-    if (!IsConnFromCoord()) {
-        RemoteQuery* step = makeNode(RemoteQuery);
-        step->combine_type = COMBINE_TYPE_SAME;
-        step->exec_nodes = nodes;
-        step->sql_statement = pstrdup(query_string);
-        step->force_autocommit = force_auto_commit;
-        step->exec_type = exec_type;
-        step->is_temp = is_temp;
-        ExecRemoteUtility_ParallelDDLMode(step, first_exec_node);
-        pfree_ext(step->sql_statement);
-        pfree_ext(step);
-    }
-}
-#endif
-
-static ExecNodes* assign_utility_stmt_exec_nodes(Node* parse_tree)
-{
-    ExecNodes* nodes = NULL;
-    Oid rel_id = InvalidOid;
-
-    AssertEreport(parse_tree, MOD_EXECUTOR, "parser tree is NULL");
-    AssertEreport(IS_PGXC_COORDINATOR && !IsConnFromCoord(), MOD_EXECUTOR, "the node is not a CN node");
-
-    /* Do special processing for nodegroup support */
-    switch (nodeTag(parse_tree)) {
-        case T_ReindexStmt: {
-            ReindexStmt* stmt = (ReindexStmt*)parse_tree;
-            if (stmt->relation) {
-                rel_id = RangeVarGetRelid(stmt->relation, NoLock, false);
-                nodes = RelidGetExecNodes(rel_id);
-            }
-            break;
-        }
-        case T_GrantStmt: {
-            GrantStmt* stmt = (GrantStmt*)parse_tree;
-            if (stmt->objects && stmt->objtype == ACL_OBJECT_RELATION && stmt->targtype == ACL_TARGET_OBJECT) {
-                RangeVar* relvar = (RangeVar*)list_nth(stmt->objects, 0);
-                Oid relation_id = RangeVarGetRelid(relvar, NoLock, false);
-                nodes = RelidGetExecNodes(relation_id);
-            }
-            break;
-        }
-        case T_ClusterStmt: {
-            ClusterStmt* stmt = (ClusterStmt*)parse_tree;
-            if (stmt->relation) {
-                Oid relation_id = RangeVarGetRelid(stmt->relation, NoLock, false);
-                nodes = RelidGetExecNodes(relation_id);
-            }
-            break;
-        }
-        case T_LockStmt: {
-            LockStmt* stmt = (LockStmt*)parse_tree;
-            if (stmt->relations) {
-                RangeVar* relvar = (RangeVar*)list_nth(stmt->relations, 0);
-                Oid relation_id = RangeVarGetRelid(relvar, NoLock, false);
-                nodes = RelidGetExecNodes(relation_id);
-            }
-            break;
-        }
-        case T_VacuumStmt: {
-            VacuumStmt* stmt = (VacuumStmt*)parse_tree;
-            if (stmt->relation) {
-                Oid relation_id = RangeVarGetRelid(stmt->relation, NoLock, false);
-                nodes = RelidGetExecNodes(relation_id);
-            } else if (stmt->options & VACOPT_VERIFY) {
-                nodes = RelidGetExecNodes(stmt->curVerifyRel);
-            }
-            break;
-        }
-        case T_RenameStmt: {
-            RenameStmt* stmt = (RenameStmt*)parse_tree;
-            if (stmt->relation) {
-                Oid relation_id = RangeVarGetRelid(stmt->relation, NoLock, stmt->missing_ok);
-                nodes = RelidGetExecNodes(relation_id);
-            } else if (stmt->renameType == OBJECT_FUNCTION) {
-                Oid funcid = LookupFuncNameTypeNames(stmt->object, stmt->objarg, false);
-
-                nodes = GetFunctionNodes(funcid);
-            }
-            break;
-        }
-        case T_AlterObjectSchemaStmt: {
-            AlterObjectSchemaStmt* stmt = (AlterObjectSchemaStmt*)parse_tree;
-            if (stmt->relation) {
-                rel_id = RangeVarGetRelid(stmt->relation, NoLock, true);
-                nodes = RelidGetExecNodes(rel_id);
-            } else if (stmt->objectType == OBJECT_FUNCTION) {
-                Oid funcid = LookupFuncNameTypeNames(stmt->object, stmt->objarg, false);
-
-                nodes = GetFunctionNodes(funcid);
-            }
-
-            break;
-        }
-        case T_CreateTrigStmt: {
-            CreateTrigStmt* stmt = (CreateTrigStmt*)parse_tree;
-            if (stmt->relation) {
-                /*
-                 * Notice : When support create or replace trigger in future,
-                 * we may need adjust the missing_ok parameter here.
-                 */
-                rel_id = RangeVarGetRelidExtended(stmt->relation, NoLock, false, false, false, true, NULL, NULL);
-                nodes = RelidGetExecNodes(rel_id);
-            }
-            break;
-        }
-        default: {
-            ereport(ERROR,
-                (errcode(ERRCODE_UNRECOGNIZED_NODE_TYPE),
-                    errmsg("unrecognized nodes %s in node group utility execution", nodeTagToString(parse_tree->type))));
-        }
-    }
-
-    return nodes;
-}
-
 BSqlPluginContext* GetSessionContext()
 {
     if (u_sess->attr.attr_common.extension_session_vars_array[dolphin_index] == NULL) {
@@ -559,4 +314,42 @@ void init_session_vars(void)
                                CheckSqlMode,
                                AssignSqlMode,
                                NULL);
+}
+
+static void execute_sql_file()
+{
+    char* dest_str = "create extension dolphin;\n";
+    int rc = 0;
+
+    SPI_STACK_LOG("connect", NULL, NULL);
+    if ((rc = SPI_connect()) != SPI_OK_CONNECT) {
+        ereport(ERROR, (errcode(ERRCODE_INTERNAL_ERROR),
+            errmsg("dolphin SPI_connect failed: %s", SPI_result_code_string(rc)),
+            errdetail("SPI_connect failed"),
+            errcause("System error."),
+            erraction("Check whether the snapshot retry is successful")));
+    }
+
+    if (SPI_execute(dest_str, false, 0) != SPI_OK_UTILITY) {
+        ereport(WARNING, (errcode(ERRCODE_DATA_EXCEPTION), errmsg("invalid query : %s", dest_str)));
+    }
+    SPI_STACK_LOG("finish", NULL, NULL);
+    SPI_finish();
+}
+
+void create_dolphin_extension()
+{
+    if (u_sess->attr.attr_sql.dolphin) {
+        return;
+    }
+    start_xact_command();
+    /*
+    * change enable_full_encryption to false here to avoid SPI crush
+    * when dealing with sql contains polymorphic type.
+    */   
+    bool pre_enable_full_encryption = u_sess->attr.attr_common.enable_full_encryption;
+    u_sess->attr.attr_common.enable_full_encryption = false;
+    execute_sql_file();
+    u_sess->attr.attr_common.enable_full_encryption = pre_enable_full_encryption;
+    finish_xact_command();
 }

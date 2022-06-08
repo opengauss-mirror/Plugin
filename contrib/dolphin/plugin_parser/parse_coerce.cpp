@@ -49,6 +49,14 @@ static Oid choose_specific_expr_type(ParseState* pstate, List* exprs, const char
 static Oid choose_nvl_type(ParseState* pstate, List* exprs, const char* context);
 static Oid choose_expr_type(ParseState* pstate, List* exprs, const char* context, Node** which_expr);
 
+static const int convertFunctionsCount = 3;
+typedef bool(*doConvert)(Oid*, Oid*, TYPCATEGORY*, TYPCATEGORY*);
+static bool String2Others(Oid* ptype, Oid* ntype, TYPCATEGORY* pcategory, TYPCATEGORY* ncategory);
+static bool Date2Others(Oid* ptype, Oid* ntype, TYPCATEGORY* pcategory, TYPCATEGORY* ncategory);
+static bool Numeric2Others(Oid* ptype, Oid* ntype, TYPCATEGORY* pcategory, TYPCATEGORY* ncategory);
+
+static const doConvert convertFunctions[convertFunctionsCount] = {&String2Others, &Date2Others, &Numeric2Others};
+
 /*
  * @Description: same as get_element_type() except this reports error
  * when the result is invalid.
@@ -1068,6 +1076,66 @@ int parser_coercion_errposition(ParseState* pstate, int coerce_location, Node* i
     }
 }
 
+static bool String2Others(Oid* ptype, Oid* ntype, TYPCATEGORY* pcategory, TYPCATEGORY* ncategory)
+{
+    TYPCATEGORY preferCategory = *pcategory;
+    Oid nextType = *ntype;
+    TYPCATEGORY nextCategory = *ncategory;
+    bool result = false;
+
+    if (preferCategory == TYPCATEGORY_STRING && nextCategory == TYPCATEGORY_UNKNOWN) {
+        /* Unknown and string mix, we will choose unknown type, Finally unknow will be treated as text type*/
+        *ptype = nextType;
+        *pcategory = nextCategory;
+        result = true;
+    }
+    return result;
+}
+
+static bool Numeric2Others(Oid* ptype, Oid* ntype, TYPCATEGORY* pcategory, TYPCATEGORY* ncategory)
+{
+    TYPCATEGORY preferCategory = *pcategory;
+    Oid nextType = *ntype;
+    TYPCATEGORY nextCategory = *ncategory;
+    bool result = false;
+
+    if (preferCategory == TYPCATEGORY_NUMERIC &&
+        (nextCategory == TYPCATEGORY_STRING || nextCategory == TYPCATEGORY_UNKNOWN)) {
+        /* Number and string mix, will return string type*/
+        *ptype = nextType;
+        *pcategory = nextCategory;
+        result = true;
+    } else if (preferCategory == TYPCATEGORY_NUMERIC && nextCategory == TYPCATEGORY_DATETIME) {
+        /* Number and date mix, will return text type*/
+        *ptype = VARCHAROID;
+        *pcategory = TYPCATEGORY_STRING;
+        result = true;
+    }
+    return result;
+}
+
+static bool Date2Others(Oid* ptype, Oid* ntype, TYPCATEGORY* pcategory, TYPCATEGORY* ncategory)
+{
+    TYPCATEGORY preferCategory = *pcategory;
+    Oid nextType = *ntype;
+    TYPCATEGORY nextCategory = *ncategory;
+    bool result = false;
+
+    if (preferCategory == TYPCATEGORY_DATETIME &&
+        (nextCategory == TYPCATEGORY_STRING || nextCategory == TYPCATEGORY_UNKNOWN)) {
+        /* date and string mix, will return string type*/
+        *ptype = nextType;
+        *pcategory = nextCategory;
+        result = true;
+    } else if (preferCategory == TYPCATEGORY_DATETIME && nextCategory == TYPCATEGORY_NUMERIC) {
+        /* date and number mix, will return string type*/
+        *ptype = TEXTOID;
+        *pcategory = TYPCATEGORY_STRING;
+        result = true;
+    }
+    return result;
+}
+
 /* choose_specific_expr_type
  * Choose case when and coalesce return value type in C_FORMAT.
  */
@@ -1118,17 +1186,12 @@ static Oid choose_specific_expr_type(ParseState* pstate, List* exprs, const char
              * expr will return string type. Here we will treat unknow type as text type.
              */
             if (nextCategory != preferCategory) {
-                /* Number and string mix, will return string type*/
-                if (preferCategory == TYPCATEGORY_NUMERIC &&
-                    (nextCategory == TYPCATEGORY_STRING || nextCategory == TYPCATEGORY_UNKNOWN)) {
-                    preferType = nextType;
-                    preferCategory = nextCategory;
+                bool result = false;
+                for (int i = 0; i < convertFunctionsCount && !result; i++) {
+                    result = convertFunctions[i](&preferType, &nextType, &preferCategory, &nextCategory);
                 }
-                /* Unknown and string mix, we will choose unknown type, Finally unknow will be treated as text type*/
-                else if (preferCategory == TYPCATEGORY_STRING && nextCategory == TYPCATEGORY_UNKNOWN) {
-                    preferType = nextType;
-                    preferCategory = nextCategory;
-                } else {
+
+                if (!result) {
                     /* Number and string mix, will return string type.
                      * Unknown and string mix, we will choose unknown type, Finally unknow will be treated as text type.
                      * we nothing to do when othercondition is true, current preferCategory is prefer type.
@@ -1136,7 +1199,9 @@ static Oid choose_specific_expr_type(ParseState* pstate, List* exprs, const char
                     bool othercondition =
                         ((preferCategory == TYPCATEGORY_STRING || preferCategory == TYPCATEGORY_UNKNOWN) &&
                             nextCategory == TYPCATEGORY_NUMERIC) ||
-                        (preferCategory == TYPCATEGORY_UNKNOWN && nextCategory == TYPCATEGORY_STRING);
+                        (preferCategory == TYPCATEGORY_UNKNOWN && nextCategory == TYPCATEGORY_STRING) ||
+                        ((preferCategory == TYPCATEGORY_STRING || preferCategory == TYPCATEGORY_UNKNOWN) &&
+                            nextCategory == TYPCATEGORY_DATETIME);
                     /* Not to deal with other categories mix*/
                     if (!othercondition) {
                         ereport(ERROR,
@@ -1362,6 +1427,8 @@ Oid select_common_type(ParseState* pstate, List* exprs, const char* context, Nod
     /* Follow A db nvl*/
     else if (context != NULL && 0 == strncmp(context, "NVL", sizeof("NVL"))) {
         ptype = choose_nvl_type(pstate, exprs, context);
+    } else if (context != NULL && 0 == strncmp(context, "CASE", sizeof("CASE"))) {
+        ptype = choose_specific_expr_type(pstate, exprs, context);
     } else {
         ptype = choose_expr_type(pstate, exprs, context, which_expr);
     }

@@ -1,7 +1,6 @@
 drop database if exists format_test;
 create database format_test dbcompatibility 'B';
 \c format_test
-create extension dolphin;
 -- test for b_format_mode = false
 select format(1234.456, 2);
 select format(1234.456, 2, 'en_US');
