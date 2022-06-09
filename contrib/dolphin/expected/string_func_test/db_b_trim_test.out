@@ -45,43 +45,43 @@ NOTICE:  database "test" does not exist, skipping
 create database test dbcompatibility 'B';
 \c test
 SELECT TRIM('  bar   ');
- btrim 
--------
+ trim 
+------
  bar
 (1 row)
 
 SELECT TRIM(LEADING 'x' FROM 'xxxbarxxx');
- ltrim  
+  trim  
 --------
  barxxx
 (1 row)
 
 SELECT TRIM(BOTH 'x' FROM 'xxxbarxxx');
- btrim 
--------
+ trim 
+------
  bar
 (1 row)
 
 SELECT TRIM(TRAILING 'x' FROM 'xxxbarxxx');
- rtrim  
+  trim  
 --------
  xxxbar
 (1 row)
 
 SELECT TRIM(LEADING 'xyz' FROM 'xyzxbarxxyz');
-  ltrim   
+   trim   
 ----------
  xbarxxyz
 (1 row)
 
 SELECT TRIM(BOTH 'xyz' FROM 'xyzxbarxxyz');
- btrim 
+ trim  
 -------
  xbarx
 (1 row)
 
 SELECT TRIM(TRAILING 'xyz' FROM 'xyzxbarxxyz');
-  rtrim   
+   trim   
 ----------
  xyzxbarx
 (1 row)

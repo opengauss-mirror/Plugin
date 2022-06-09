@@ -3207,7 +3207,7 @@ Datum bytea_substr_no_len_orclcompat(PG_FUNCTION_ARGS)
     int32 total = 0;
 
     total = toast_raw_datum_size(str) - VARHDRSZ;
-    if ((start > total) || (start + total < 0)) {
+    if ((start > total) || (start + total < 0) || start == 0) {
         if (u_sess->attr.attr_sql.sql_compatibility == A_FORMAT)
             PG_RETURN_NULL();
         else {

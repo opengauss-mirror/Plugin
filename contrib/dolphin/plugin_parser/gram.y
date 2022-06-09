@@ -23090,6 +23090,7 @@ func_expr_common_subexpr:
 					 */
 					FuncCall *n = makeNode(FuncCall);
 					n->funcname = SystemFuncName("btrim");
+					n->colname = "trim";
 					n->args = $4;
 					n->agg_order = NIL;
 					n->agg_star = FALSE;
@@ -23104,6 +23105,7 @@ func_expr_common_subexpr:
 				{
 					FuncCall *n = makeNode(FuncCall);
 					n->funcname = SystemFuncName("ltrim");
+					n->colname = "trim";
 					n->args = $4;
 					n->agg_order = NIL;
 					n->agg_star = FALSE;
@@ -23118,6 +23120,7 @@ func_expr_common_subexpr:
 				{
 					FuncCall *n = makeNode(FuncCall);
 					n->funcname = SystemFuncName("rtrim");
+					n->colname = "trim";
 					n->args = $4;
 					n->agg_order = NIL;
 					n->agg_star = FALSE;
@@ -23132,6 +23135,7 @@ func_expr_common_subexpr:
 				{
 					FuncCall *n = makeNode(FuncCall);
 					n->funcname = SystemFuncName("btrim");
+					n->colname = "trim";
 					n->args = $3;
 					n->agg_order = NIL;
 					n->agg_star = FALSE;
