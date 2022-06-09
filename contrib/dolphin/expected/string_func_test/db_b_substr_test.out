@@ -59,6 +59,7 @@ drop database if exists test;
 NOTICE:  database "test" does not exist, skipping
 create database test dbcompatibility 'B';
 \c test
+set bytea_output to escape;
 DROP TABLE IF EXISTS template_string;
 NOTICE:  table "template_string" does not exist, skipping
 CREATE TABLE template_string(a TEXT, b BYTEA);
@@ -114,15 +115,15 @@ SUBSTR(b, -1, 6) AS "from < 0",
 SUBSTR(b, 1, 0) AS "for = 0",
 SUBSTR(b, 1, -6) AS "for < 0"
 FROM template_string;
-     normal     | from = 0 | from < 0 | for = 0 | for < 0 
-----------------+----------+----------+---------+---------
- \x616263646566 | \x       | \x7a     | \x      | \x
+ normal | from = 0 | from < 0 | for = 0 | for < 0 
+--------+----------+----------+---------+---------
+ abcdef |          | z        |         | 
 (1 row)
 
 SELECT SUBSTRING(b, 1, -6) AS "for < 0" FROM template_string;
  for < 0 
 ---------
- \x
+ 
 (1 row)
 
 SELECT
@@ -131,9 +132,9 @@ SUBSTRING(b, 0, 6) AS "from = 0",
 SUBSTRING(b, -1, 6) AS "from < 0",
 SUBSTRING(b, 1, 0) AS "for = 0"
 FROM template_string;
-     normal     | from = 0 | from < 0 | for = 0 
-----------------+----------+----------+---------
- \x616263646566 | \x       | \x7a     | \x
+ normal | from = 0 | from < 0 | for = 0 
+--------+----------+----------+---------
+ abcdef |          | z        | 
 (1 row)
 
 SELECT
@@ -143,9 +144,9 @@ MID(b, -1, 6) AS "from < 0",
 MID(b, 1, 0) AS "for = 0",
 MID(b, 1, -6) AS "for < 0"
 FROM template_string;
-     normal     | from = 0 | from < 0 | for = 0 | for < 0 
-----------------+----------+----------+---------+---------
- \x616263646566 | \x       | \x7a     | \x      | \x
+ normal | from = 0 | from < 0 | for = 0 | for < 0 
+--------+----------+----------+---------+---------
+ abcdef |          | z        |         | 
 (1 row)
 
 SELECT SUBSTR(a FROM 1 FOR 6) FROM template_string;
@@ -196,6 +197,114 @@ SELECT SUBSTR(a FOR -1) FROM template_string;
  
 (1 row)
 
+SELECT SUBSTR(b FROM 1) FROM template_string;
+           substr           
+----------------------------
+ abcdefghijklmnopqrstuvwxyz
+(1 row)
+
+SELECT SUBSTR(b FROM 0) FROM template_string;
+ substr 
+--------
+ 
+(1 row)
+
+SELECT SUBSTR(b FROM -1) FROM template_string;
+ substr 
+--------
+ z
+(1 row)
+
+SELECT SUBSTR(b FOR 1) FROM template_string;
+ substr 
+--------
+ a
+(1 row)
+
+SELECT SUBSTR(b FOR 0) FROM template_string;
+ substr 
+--------
+ 
+(1 row)
+
+SELECT SUBSTR(b FOR -1) FROM template_string;
+ substr 
+--------
+ 
+(1 row)
+
+SELECT SUBSTRING(a FROM 1) FROM template_string;
+         substring          
+----------------------------
+ abcdefghijklmnopqrstuvwxyz
+(1 row)
+
+SELECT SUBSTRING(a FROM 0) FROM template_string;
+ substring 
+-----------
+ 
+(1 row)
+
+SELECT SUBSTRING(a FROM -1) FROM template_string;
+ substring 
+-----------
+ z
+(1 row)
+
+SELECT SUBSTRING(a FOR 1) FROM template_string;
+ substring 
+-----------
+ a
+(1 row)
+
+SELECT SUBSTRING(a FOR 0) FROM template_string;
+ substring 
+-----------
+ 
+(1 row)
+
+SELECT SUBSTRING(a FOR -1) FROM template_string;
+ substring 
+-----------
+ 
+(1 row)
+
+SELECT SUBSTRING(b FROM 1) FROM template_string;
+         substring          
+----------------------------
+ abcdefghijklmnopqrstuvwxyz
+(1 row)
+
+SELECT SUBSTRING(b FROM 0) FROM template_string;
+ substring 
+-----------
+ 
+(1 row)
+
+SELECT SUBSTRING(b FROM -1) FROM template_string;
+ substring 
+-----------
+ z
+(1 row)
+
+SELECT SUBSTRING(b FOR 1) FROM template_string;
+ substring 
+-----------
+ a
+(1 row)
+
+SELECT SUBSTRING(b FOR 0) FROM template_string;
+ substring 
+-----------
+ 
+(1 row)
+
+SELECT SUBSTRING(b FOR -1) FROM template_string;
+ substring 
+-----------
+ 
+(1 row)
+
 SELECT MID(a FROM 1 FOR 6) FROM template_string;
   mid   
 --------
@@ -239,6 +348,151 @@ SELECT MID(a FOR 0) FROM template_string;
 (1 row)
 
 SELECT MID(a FOR -1) FROM template_string;
+ mid 
+-----
+ 
+(1 row)
+
+SELECT MID(b FROM 1) FROM template_string;
+            mid             
+----------------------------
+ abcdefghijklmnopqrstuvwxyz
+(1 row)
+
+SELECT MID(b FROM 0) FROM template_string;
+ mid 
+-----
+ 
+(1 row)
+
+SELECT MID(b FROM -1) FROM template_string;
+ mid 
+-----
+ z
+(1 row)
+
+SELECT MID(b FOR 1) FROM template_string;
+ mid 
+-----
+ a
+(1 row)
+
+SELECT MID(b FOR 0) FROM template_string;
+ mid 
+-----
+ 
+(1 row)
+
+SELECT MID(b FOR -1) FROM template_string;
+ mid 
+-----
+ 
+(1 row)
+
+-- The input is in hexadecimal format. Two hexadecimal digits are one byte. The substring is obtained by byte.
+select substring(E'\\xDEADBEEF'::bytea,2);
+  substring   
+--------------
+ \255\276\357
+(1 row)
+
+select substring(E'\\xDEADBEEF'::bytea,2,2);
+ substring 
+-----------
+ \255\276
+(1 row)
+
+select substring(E'\\xDEADBEEF'::bytea,2,8);
+  substring   
+--------------
+ \255\276\357
+(1 row)
+
+select substring(E'\\xDEADBEEF'::bytea,2,10);
+  substring   
+--------------
+ \255\276\357
+(1 row)
+
+select substring(E'\\xDEADBEEF'::bytea,2,0);
+ substring 
+-----------
+ 
+(1 row)
+
+select substring(E'\\xDEADBEEF'::bytea,2,-1);
+ substring 
+-----------
+ 
+(1 row)
+
+select substr(E'\\xDEADBEEF'::bytea,2);
+    substr    
+--------------
+ \255\276\357
+(1 row)
+
+select substr(E'\\xDEADBEEF'::bytea,2,2);
+  substr  
+----------
+ \255\276
+(1 row)
+
+select substr(E'\\xDEADBEEF'::bytea,2,8);
+    substr    
+--------------
+ \255\276\357
+(1 row)
+
+select substr(E'\\xDEADBEEF'::bytea,2,10);
+    substr    
+--------------
+ \255\276\357
+(1 row)
+
+select substr(E'\\xDEADBEEF'::bytea,2,0);
+ substr 
+--------
+ 
+(1 row)
+
+select substr(E'\\xDEADBEEF'::bytea,2,-1);
+ substr 
+--------
+ 
+(1 row)
+
+select mid(E'\\xDEADBEEF'::bytea,2);
+     mid      
+--------------
+ \255\276\357
+(1 row)
+
+select mid(E'\\xDEADBEEF'::bytea,2,2);
+   mid    
+----------
+ \255\276
+(1 row)
+
+select mid(E'\\xDEADBEEF'::bytea,2,8);
+     mid      
+--------------
+ \255\276\357
+(1 row)
+
+select mid(E'\\xDEADBEEF'::bytea,2,10);
+     mid      
+--------------
+ \255\276\357
+(1 row)
+
+select mid(E'\\xDEADBEEF'::bytea,2,0);
+ mid 
+-----
+ 
+(1 row)
+
+select mid(E'\\xDEADBEEF'::bytea,2,-1);
  mid 
 -----
  
