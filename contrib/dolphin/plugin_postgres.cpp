@@ -171,10 +171,16 @@ void dolphin_invoke(void)
     return;
 }
 
+void set_default_guc()
+{
+    set_config_option("behavior_compat_options", "display_leading_zero", PGC_USERSET, PGC_S_SESSION, GUC_ACTION_SAVE, true, 0, false);
+}
+
 void init_plugin_object()
 {
     u_sess->hook_cxt.transformStmtHook = (void*)transformStmt;
     set_processutility_prehook();
+    set_default_guc();
 }
 
 void _PG_init(void)
