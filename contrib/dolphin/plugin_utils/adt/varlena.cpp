@@ -197,6 +197,12 @@ extern "C" DLL_PUBLIC Datum longblob2tinyblob(PG_FUNCTION_ARGS);
 PG_FUNCTION_INFO_V1_PUBLIC(longblob2mediumblob);
 extern "C" DLL_PUBLIC Datum longblob2mediumblob(PG_FUNCTION_ARGS);
 
+PG_FUNCTION_INFO_V1_PUBLIC(gs_interval);
+extern "C" DLL_PUBLIC Datum gs_interval(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1_PUBLIC(gs_strcmp);
+extern "C" DLL_PUBLIC Datum gs_strcmp(PG_FUNCTION_ARGS);
+
 /*****************************************************************************
  *	 CONVERSION ROUTINES EXPORTED FOR USE BY C CODE							 *
  *****************************************************************************/
@@ -7376,4 +7382,161 @@ Datum longblob2mediumblob(PG_FUNCTION_ARGS)
 {
     bytea* source = PG_GETARG_BYTEA_P(0);
     PG_RETURN_BYTEA_P(copy_blob(source, (int64)MediumBlobMaxAllocSize));
+}
+
+// return the first non ' ' index or the '\0' index
+static size_t truncate_front_space(char* str)
+{
+    size_t cursor = 0;
+    size_t len = strlen(str);
+    while (cursor < len && str[cursor] == ' ')
+        cursor++;
+    return cursor;
+}
+
+// truncate a cstring to be a valid numeric cstring(could be 0 length cstring)
+static void truncate_numeric_cstring(char* str)
+{
+    bool dot = false;
+    bool power = false;
+    bool digit = false;
+    bool sign = false;
+    size_t begin = truncate_front_space(str);
+    size_t len = strlen(str);
+    for (size_t i=begin; i<len; i++) {
+        if (!sign && (str[i] == '+' || str[i] == '-')) {
+            sign = true;
+        } else if (str[i] == '.' && !dot) {
+            dot = true;
+        } else if ((str[i] == 'e' || str[i] == 'E') && !power) {
+            if (!digit) {
+                str[i] = '\0';
+                break;
+            } else {
+                power = true;
+            }
+        } else if (str[i] >= '0' && str[i] <= '9') {
+            digit = true;
+        } else {
+            if (begin == i) {
+                str[0] = '\0';
+            } else {
+                str[i] = '\0';
+            }
+            break;
+        }
+    }
+    return;
+}
+
+Datum gs_interval(PG_FUNCTION_ARGS)
+{
+    // early return
+    if (PG_NARGS() == 0)
+        PG_RETURN_INT32(0);
+
+    if (PG_ARGISNULL(0))
+        PG_RETURN_INT32(-1);
+
+    Datum dt = PG_GETARG_DATUM(0);
+    Oid valtype = get_fn_expr_argtype(fcinfo->flinfo, 0);
+    bool typIsVarlena = false;
+    Oid typOutput;
+
+    check_huge_toast_pointer(dt, valtype);
+    if (!OidIsValid(valtype))
+        ereport(ERROR, (errcode(ERRCODE_INDETERMINATE_DATATYPE),
+            errmsg("could not determine data type of gs_interval() input")));
+
+    getTypeOutputInfo(valtype, &typOutput, &typIsVarlena);
+    char* str0 = OidOutputFunctionCall(typOutput, dt);
+
+    truncate_numeric_cstring(str0);
+
+    float8 first_value=0;
+
+    if (strlen(str0)!=0) {
+        first_value = DatumGetFloat8(DirectFunctionCall1(float8in, CStringGetDatum(str0)));
+    }
+
+    pfree_ext(str0);
+
+    int count=0;
+
+    // traverse arguments after the first one
+    for (int i=1; i < PG_NARGS(); i++) {
+        if (PG_ARGISNULL(i)) {
+            ++count;
+            continue;
+        }
+
+        dt = PG_GETARG_DATUM(i);
+        valtype = get_fn_expr_argtype(fcinfo->flinfo, i);
+        check_huge_toast_pointer(dt, valtype);
+
+        if (!OidIsValid(valtype))
+            ereport(ERROR, (errcode(ERRCODE_INDETERMINATE_DATATYPE),
+                errmsg("could not determine data type of gs_interval() input")));
+
+        getTypeOutputInfo(valtype, &typOutput, &typIsVarlena);
+
+        char* str = OidOutputFunctionCall(typOutput, dt);
+
+        truncate_numeric_cstring(str);
+
+        float8 value = 0;
+
+        if (strlen(str)!=0) {
+            value = DatumGetFloat8(DirectFunctionCall1(float8in, CStringGetDatum(str)));
+        }
+
+        pfree_ext(str);
+
+        if (value > first_value) {
+            break;
+        }
+        ++count;
+    }
+
+    PG_RETURN_INT32(count);
+}
+
+Datum gs_strcmp(PG_FUNCTION_ARGS)
+{
+    bool typIsVarlena = false;
+    Oid typOutput;
+    Datum dt = 0;
+    Oid valtype = 0;
+
+    dt = PG_GETARG_DATUM(0);
+    valtype = get_fn_expr_argtype(fcinfo->flinfo, 0);
+    check_huge_toast_pointer(dt, valtype);
+    if (!OidIsValid(valtype))
+        ereport(ERROR, (errcode(ERRCODE_INDETERMINATE_DATATYPE),
+            errmsg("could not determine data type of strcmp() input")));
+    getTypeOutputInfo(valtype, &typOutput, &typIsVarlena);
+    char* str0 = OidOutputFunctionCall(typOutput, dt);
+
+    dt = PG_GETARG_DATUM(1);
+    valtype = get_fn_expr_argtype(fcinfo->flinfo, 1);
+    check_huge_toast_pointer(dt, valtype);
+    if (!OidIsValid(valtype))
+        ereport(ERROR, (errcode(ERRCODE_INDETERMINATE_DATATYPE),
+            errmsg("could not determine data type of strcmp() input")));
+    getTypeOutputInfo(valtype, &typOutput, &typIsVarlena);
+    char* str1 = OidOutputFunctionCall(typOutput, dt);
+
+    int32 ret = strcmp(str0, str1);
+
+    if (ret>0) {
+        ret = 1;
+    } else if (ret<0) {
+        ret = -1;
+    } else {
+        ret = 0;
+    } 
+
+    pfree_ext(str0);
+    pfree_ext(str1);
+    PG_RETURN_INT32(ret);
 }
