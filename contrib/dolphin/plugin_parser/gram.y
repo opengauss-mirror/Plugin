@@ -765,6 +765,7 @@ static int errstate;
 %type <node>	on_table opt_engine opt_compression set_compress_type
 %type <keyword>	into_empty opt_temporary opt_values_in
 %type <str>	compression_args
+%type <boolean> opt_ignore
 
 /*
  * Non-keyword token types.  These are hard-wired into the "flex" lexer.
@@ -823,7 +824,7 @@ static int errstate;
 
 	HANDLER HAVING HDFSDIRECTORY HEADER_P HOLD HOUR_P
 
-	IDENTIFIED IDENTITY_P IF_P IFNULL IGNORE_EXTRA_DATA ILIKE IMMEDIATE IMMUTABLE IMPLICIT_P IN_P INCLUDE
+	IDENTIFIED IDENTITY_P IF_P IFNULL IGNORE IGNORE_EXTRA_DATA ILIKE IMMEDIATE IMMUTABLE IMPLICIT_P IN_P INCLUDE
 	INCLUDING INCREMENT INCREMENTAL INDEX INDEXES INFILE INHERIT INHERITS INITIAL_P INITIALLY INITRANS INLINE_P
 
 	INNER_P INOUT INPUT_P INSENSITIVE INSERT INSTEAD INT_P INTEGER INTERNAL
@@ -18470,17 +18471,18 @@ update_delete_partition_clause: PARTITION '(' name ')'
  *
  *****************************************************************************/
 
-InsertStmt: opt_with_clause INSERT hint_string into_empty insert_target insert_rest returning_clause
+InsertStmt: opt_with_clause INSERT hint_string opt_ignore into_empty insert_target insert_rest returning_clause
 			{
-				$6->relation = $5;
-				$6->returningList = $7;
-				$6->withClause = $1;
-				$6->hintState = create_hintstate($3);
-				$$ = (Node *) $6;
+				$7->relation = $6;
+				$7->returningList = $8;
+				$7->withClause = $1;
+				$7->hintState = create_hintstate($3);
+				$7->hasIgnore = $4;
+				$$ = (Node *) $7;
 			}
-			| opt_with_clause INSERT hint_string into_empty insert_target insert_rest upsert_clause returning_clause
+			| opt_with_clause INSERT hint_string opt_ignore into_empty insert_target insert_rest upsert_clause returning_clause
 				{
-					if ($8 != NIL) {
+					if ($9 != NIL) {
 						const char* message = "RETURNING clause is not yet supported whithin INSERT ON DUPLICATE KEY UPDATE statement.";
     					InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);
 						ereport(errstate,
@@ -18503,9 +18505,9 @@ InsertStmt: opt_with_clause INSERT hint_string into_empty insert_target insert_r
 #endif						
 					    ) {
 
-						if ($6 != NULL && $6->cols != NIL) {
+						if ($7 != NULL && $7->cols != NIL) {
 							ListCell *c = NULL;
-							List *cols = $6->cols;
+							List *cols = $7->cols;
 							foreach (c, cols) {
 								ResTarget *rt = (ResTarget *)lfirst(c);
 								if (rt->indirection != NIL) {
@@ -18527,53 +18529,55 @@ InsertStmt: opt_with_clause INSERT hint_string into_empty insert_target insert_r
 						m->is_insert_update = true;
 
 						/* for UPSERT, keep the INSERT statement as well */
-						$6->relation = $5;
-						$6->returningList = $8;
-						$6->withClause = $1;
+						$7->relation = $6;
+						$7->returningList = $9;
+						$7->withClause = $1;
+						$7->hasIgnore = $4;
 #ifdef ENABLE_MULTIPLE_NODES						
 						if (t_thrd.proc->workingVersionNum >= UPSERT_ROW_STORE_VERSION_NUM) {
 							UpsertClause *uc = makeNode(UpsertClause);
-							if ($7 == NULL)
+							if ($8 == NULL)
 								uc->targetList = NIL;
 							else
-								uc->targetList = ((MergeWhenClause *)$7)->targetList;
-							$6->upsertClause = uc;
+								uc->targetList = ((MergeWhenClause *)$8)->targetList;
+							$7->upsertClause = uc;
 						}
 #endif						
-						m->insert_stmt = (Node *)copyObject($6);
+						m->insert_stmt = (Node *)copyObject($7);
 
 						/* fill a MERGE statement*/
-						m->relation = $5;
+						m->relation = $6;
 
-						Alias *a1 = makeAlias(($5->relname), NIL);
-						$5->alias = a1;
+						Alias *a1 = makeAlias(($6->relname), NIL);
+						$6->alias = a1;
 
 						Alias *a2 = makeAlias("excluded", NIL);
 						RangeSubselect *r = makeNode(RangeSubselect);
 						r->alias = a2;
-						r->subquery = (Node *) ($6->selectStmt);
+						r->subquery = (Node *) ($7->selectStmt);
 						m->source_relation = (Node *) r;
 
 						MergeWhenClause *n = makeNode(MergeWhenClause);
 						n->matched = false;
 						n->commandType = CMD_INSERT;
-						n->cols = $6->cols;
+						n->cols = $7->cols;
 						n->values = NULL;
 
 						m->mergeWhenClauses = list_make1((Node *) n);
-						if ($7 != NULL)
-							m->mergeWhenClauses = list_concat(list_make1($7), m->mergeWhenClauses);
+						if ($8 != NULL)
+							m->mergeWhenClauses = list_concat(list_make1($8), m->mergeWhenClauses);
 
 						m->hintState = create_hintstate($3);
 
 						$$ = (Node *)m;
 					} else {
-						$6->relation = $5;
-						$6->returningList = $8;
-						$6->withClause = $1;
-						$6->upsertClause = (UpsertClause *)$7;
-						$6->hintState = create_hintstate($3);
-						$$ = (Node *) $6;
+						$7->relation = $6;
+						$7->returningList = $9;
+						$7->withClause = $1;
+						$7->upsertClause = (UpsertClause *)$8;
+						$7->hintState = create_hintstate($3);
+						$7->hasIgnore = $4;
+						$$ = (Node *) $7;
 					}
 				}
 		;
@@ -18843,20 +18847,26 @@ opt_wait:	WAIT Iconst						{ $$ = $2; }
  *
  *****************************************************************************/
 
-UpdateStmt: opt_with_clause UPDATE hint_string relation_expr_opt_alias
+UpdateStmt: opt_with_clause UPDATE hint_string opt_ignore relation_expr_opt_alias
 			SET set_clause_list
 			from_clause
 			where_or_current_clause
 			returning_clause
 				{
 					UpdateStmt *n = makeNode(UpdateStmt);
-					n->relation = $4;
-					n->targetList = $6;
-					n->fromClause = $7;
-					n->whereClause = $8;
-					n->returningList = $9;
+					if ($4 && DB_IS_CMPT(B_FORMAT)) {
+						n->hasIgnore = true;
+					} else {
+						n->hasIgnore = false;
+					}
+					n->relation = $5;
+					n->targetList = $7;
+					n->fromClause = $8;
+					n->whereClause = $9;
+					n->returningList = $10;
 					n->withClause = $1;
 					n->hintState = create_hintstate($3);
+					n->hasIgnore = $4;
 					$$ = (Node *)n;
 				}
 		;
@@ -19437,6 +19447,11 @@ opt_materialized:
 opt_with_clause:
 		with_clause								{ $$ = $1; }
 		| /*EMPTY*/								{ $$ = NULL; }
+		;
+
+opt_ignore:
+		IGNORE								    {  $$ = TRUE; }
+		| /*EMPTY*/							    {  $$ = FALSE; }
 		;
 
 into_clause:
@@ -25061,6 +25076,7 @@ type_func_name_keyword:
 			| FREEZE
 			| FULL
 			| HDFSDIRECTORY
+			| IGNORE
 			| ILIKE
 			| INNER_P
 			| JOIN

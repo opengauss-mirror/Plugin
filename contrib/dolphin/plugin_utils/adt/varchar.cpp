@@ -299,13 +299,30 @@ Datum bpchar(PG_FUNCTION_ARGS)
         size_t maxmblen;
 
         maxmblen = pg_mbcharcliplen(s, len, maxlen);
-
-        if (SQL_MODE_STRICT() && !isExplicit) {
-            for (i = maxmblen; i < len; i++)
-                if (s[i] != ' ')
-                    ereport(ERROR,
-                        (errcode(ERRCODE_STRING_DATA_RIGHT_TRUNCATION),
-                            errmsg("value too long for type character(%d)", maxlen)));
+        
+        if (!isExplicit) {
+            for (i = maxmblen; i < len; i++) {
+                if (s[i] != ' ') {
+                    /*
+                     * There are 3 conditions for can_ignore and SQL_MODE_STRICT():
+                     * 1. With can_ignore == true, we raise WARNING regardless of the value of SQL_MODE_STRICT()
+                     * 2. With can_ignore == false && SQL_MODE_STRICT() == false, do nothing but break in order to keep functionality integrity of SQL MODE
+                     * 3. With can_ignore == false && SQL_MODE_STRICT() == true, we raise ERROR.
+                     */
+                    if (fcinfo->can_ignore) {
+                        ereport(WARNING,
+                            (errcode(ERRCODE_STRING_DATA_RIGHT_TRUNCATION),
+                                errmsg("value too long for type character(%d)", maxlen)));
+                        break;
+                    } else if (!SQL_MODE_STRICT()) {
+                        break;
+                    } else {
+                        ereport(ERROR,
+                            (errcode(ERRCODE_STRING_DATA_RIGHT_TRUNCATION),
+                                errmsg("value too long for type character(%d)", maxlen)));
+                    }
+                }
+            }
         }
 
         len = maxmblen;
@@ -604,12 +621,29 @@ Datum varchar(PG_FUNCTION_ARGS)
     /* truncate multibyte string preserving multibyte boundary */
     maxmblen = pg_mbcharcliplen(s_data, len, maxlen);
 
-    if (SQL_MODE_STRICT() && !isExplicit) {
-        for (i = maxmblen; i < len; i++)
-            if (s_data[i] != ' ')
-                ereport(ERROR,
-                    (errcode(ERRCODE_STRING_DATA_RIGHT_TRUNCATION),
-                        errmsg("value too long for type character varying(%d)", maxlen)));
+    if (!isExplicit) {
+        for (i = maxmblen; i < len; i++) {
+            if (s_data[i] != ' ') {
+                /*
+                 * There are 3 conditions for can_ignore and SQL_MODE_STRICT():
+                 * 1. With can_ignore == true, we raise WARNING regardless of the value of SQL_MODE_STRICT()
+                 * 2. With can_ignore == false && SQL_MODE_STRICT() == false, do nothing but break in order to keep functionality integrity of SQL MODE
+                 * 3. With can_ignore == false && SQL_MODE_STRICT() == true, we raise ERROR.
+                 */
+                if (fcinfo->can_ignore) {
+                    ereport(WARNING,
+                        (errcode(ERRCODE_STRING_DATA_RIGHT_TRUNCATION),
+                            errmsg("value too long for type character varying(%d)", maxlen)));
+                    break;
+                } else if (!SQL_MODE_STRICT()) {
+                    break;
+                } else {
+                    ereport(ERROR,
+                        (errcode(ERRCODE_STRING_DATA_RIGHT_TRUNCATION),
+                            errmsg("value too long for type character varying(%d)", maxlen)));
+                }
+            }
+        }
     }
 
     PG_RETURN_VARCHAR_P((VarChar*)cstring_to_text_with_len(s_data, maxmblen));
@@ -1216,10 +1250,12 @@ Datum nvarchar2(PG_FUNCTION_ARGS)
 
     if (!isExplicit) {
         for (i = maxmblen; i < len; i++)
-            if (s_data[i] != ' ')
-                ereport(ERROR,
+            if (s_data[i] != ' ') {
+                ereport(fcinfo->can_ignore ? WARNING: ERROR,
                     (errcode(ERRCODE_STRING_DATA_RIGHT_TRUNCATION),
                         errmsg("value too long for type nvarchar2(%d)", maxlen)));
+                break;
+            }
     }
 
     PG_RETURN_NVARCHAR2_P((NVarChar2*)cstring_to_text_with_len(s_data, maxmblen));

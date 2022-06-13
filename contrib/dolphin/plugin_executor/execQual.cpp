@@ -2367,6 +2367,10 @@ static Datum ExecMakeFunctionResultNoSets(
         fcinfo->context = (Node *)node;
     }
 
+    if (econtext != NULL) {
+        fcinfo->can_ignore = econtext->can_ignore;
+    }
+
     /*
      * Incause of connet_by_root() and sys_connect_by_path() we need get the
      * current scan tuple slot so attach the econtext here

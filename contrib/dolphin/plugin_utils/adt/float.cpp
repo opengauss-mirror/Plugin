@@ -314,7 +314,8 @@ Datum float4in(PG_FUNCTION_ARGS)
              * to see if the result is zero or huge.
              */
             if (val == 0.0 || val >= HUGE_VAL || val <= -HUGE_VAL) {
-                if (SQL_MODE_STRICT() || val == 0.0) {
+                /* If keyword IGNORE and strict SQL mode are both in effect, IGNORE takes precedence */
+                if (!fcinfo->can_ignore && (SQL_MODE_STRICT() || val == 0.0)) {
                     ereport(ERROR,
                         (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE),
                             errmsg("\"%s\" is out of range for type real", orig_num)));
@@ -324,7 +325,7 @@ Datum float4in(PG_FUNCTION_ARGS)
                     val = -__FLT_MAX__;
                 }
             }
-        } else if (SQL_MODE_STRICT())
+        } else if (!fcinfo->can_ignore && SQL_MODE_STRICT())
             ereport(ERROR,
                 (errcode(ERRCODE_INVALID_TEXT_REPRESENTATION),
                     errmsg("invalid input syntax for type real: \"%s\"", orig_num)));
@@ -367,7 +368,7 @@ Datum float4in(PG_FUNCTION_ARGS)
         endptr++;
 
     /* if there is any junk left at the end of the string, bail out */
-    if(SQL_MODE_STRICT() && (*endptr != '\0')) {
+    if(!fcinfo->can_ignore && SQL_MODE_STRICT() && (*endptr != '\0')) {
         ereport(ERROR,
             (errcode(ERRCODE_INVALID_TEXT_REPRESENTATION),
                 errmsg("invalid input syntax for type real: \"%s\"", orig_num)));
@@ -377,11 +378,19 @@ Datum float4in(PG_FUNCTION_ARGS)
      * if we get here, we have a legal double, still need to check to see if
      * it's a legal float4
      */
-    if (!SQL_MODE_STRICT()) {
-        if (val > __FLT_MAX__)
+    if (fcinfo->can_ignore || !SQL_MODE_STRICT()) {
+        if (val > __FLT_MAX__) {
+            if (fcinfo->can_ignore) {
+                ereport(WARNING, (errmsg("value out of range: overflow")));
+            }
             val = __FLT_MAX__;
-        else if(val < -__FLT_MAX__)
+        }
+        else if(val < -__FLT_MAX__) {
+            if (fcinfo->can_ignore) {
+                ereport(WARNING, (errmsg("value out of range: overflow")));
+            }
             val = -__FLT_MAX__;
+        }
     }
 
     CHECKFLOATVAL((float4)val, isinf(val), val == 0);
@@ -1218,11 +1227,18 @@ Datum dtof(PG_FUNCTION_ARGS)
 {
     float8 num = PG_GETARG_FLOAT8(0);
 
-    if (!SQL_MODE_STRICT()) {
-        if (num > __FLT_MAX__)
+    if (fcinfo->can_ignore || !SQL_MODE_STRICT()) {
+        if (num > __FLT_MAX__) {
+            if (fcinfo->can_ignore) {
+                ereport(WARNING, (errmsg("value out of range: overflow")));
+            }
             num = __FLT_MAX__;
-        else if(num < -__FLT_MAX__)
+        } else if(num < -__FLT_MAX__) {
+            if (fcinfo->can_ignore) {
+                ereport(WARNING, (errmsg("value out of range: overflow")));
+            }
             num = -__FLT_MAX__;
+        }
     }
 
     CHECKFLOATVAL((float4)num, isinf(num), num == 0);
@@ -1252,7 +1268,13 @@ Datum dtoi4(PG_FUNCTION_ARGS)
      */
     if (isnan(num))
         ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("integer out of range")));
-
+    
+    /* keyword IGNORE has priority than sql mode */
+    if (fcinfo->can_ignore && (num < (float8)PG_INT32_MIN || num >= -((float8)PG_INT32_MIN))) {
+        ereport(WARNING, (errmsg("integer out of range")));
+        PG_RETURN_INT32(num < (float8)PG_INT32_MIN ? PG_INT32_MIN : PG_INT32_MAX);
+    }
+    
     if (SQL_MODE_STRICT()) {
         if (num < (float8)PG_INT32_MIN || num >= -((float8)PG_INT32_MIN))
             ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("integer out of range")));
@@ -1288,6 +1310,12 @@ Datum dtoi2(PG_FUNCTION_ARGS)
     if (isnan(num))
         ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("smallint out of range")));
 
+    /* keyword IGNORE has priority than sql mode */
+    if (fcinfo->can_ignore && (num < (float8)PG_INT16_MIN || num >= -((float8)PG_INT16_MIN))) {
+        ereport(WARNING, (errmsg("smallint out of range")));
+        PG_RETURN_INT16(num < (float8)PG_INT16_MIN ? PG_INT16_MIN : PG_INT16_MAX);
+    }
+    
     if (SQL_MODE_STRICT()) {
         if (num < (float8)PG_INT16_MIN || num >= -((float8)PG_INT16_MIN))
             ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("smallint out of range")));
@@ -1342,6 +1370,12 @@ Datum ftoi4(PG_FUNCTION_ARGS)
      */
     if (isnan(num))
         ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("integer out of range")));
+    
+    /* keyword IGNORE has priority than sql mode */
+    if (fcinfo->can_ignore && (num < (float4)PG_INT32_MIN || num >= -((float4)PG_INT32_MIN))) {
+        ereport(WARNING, (errmsg("integer out of range")));
+        PG_RETURN_INT32(num < (float8)PG_INT32_MIN ? PG_INT32_MIN : PG_INT32_MAX);
+    }
 
     if (SQL_MODE_STRICT()) {
         if (num < (float4)PG_INT32_MIN || num >= -((float4)PG_INT32_MIN))
@@ -1378,6 +1412,12 @@ Datum ftoi2(PG_FUNCTION_ARGS)
     if (isnan(num))
         ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("smallint out of range")));
 
+    /* keyword IGNORE has priority than sql mode */
+    if (fcinfo->can_ignore && (num < (float4)PG_INT16_MIN || num >= -((float4)PG_INT16_MIN))) {
+        ereport(WARNING, (errmsg("smallint out of range")));
+        PG_RETURN_INT16(num < (float8)PG_INT16_MIN ? PG_INT16_MIN : PG_INT16_MAX);
+    }
+    
     if (SQL_MODE_STRICT()) {
         if (num < (float4)PG_INT16_MIN || num >= -((float4)PG_INT16_MIN))
             ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("smallint out of range")));

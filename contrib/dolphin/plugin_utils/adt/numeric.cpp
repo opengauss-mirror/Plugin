@@ -187,7 +187,7 @@ static char* get_str_from_var_sci(NumericVar* var, int rscale);
 
 static void apply_typmod(NumericVar* var, int32 typmod);
 
-static int32 numericvar_to_int32(const NumericVar* var);
+static int32 numericvar_to_int32(const NumericVar* var, bool can_ignore = false);
 static double numeric_to_double_no_overflow(Numeric num);
 static double numericvar_to_double_no_overflow(NumericVar* var);
 
@@ -2959,7 +2959,7 @@ Datum numeric_int4(PG_FUNCTION_ARGS)
 
     /* Convert to variable format, then convert to int4 */
     init_var_from_num(num, &x);
-    result = numericvar_to_int32(&x);
+    result = numericvar_to_int32(&x, fcinfo->can_ignore);
     PG_RETURN_INT32(result);
 }
 
@@ -2968,17 +2968,22 @@ Datum numeric_int4(PG_FUNCTION_ARGS)
  * exceeds the range of an int32, raise the appropriate error via
  * ereport(). The input NumericVar is *not* free'd.
  */
-static int32 numericvar_to_int32(const NumericVar* var)
+static int32 numericvar_to_int32(const NumericVar* var, bool can_ignore)
 {
     int32 result;
     int64 val;
 
     if (!numericvar_to_int64(var, &val)) {
-        if (!SQL_MODE_STRICT()) {
-            if (NUMERIC_POS == var->sign)
+        /* keyword IGNORE has higher precedent than sql mode */
+        if (can_ignore || !SQL_MODE_STRICT()) {
+            if (can_ignore) {
+                ereport(WARNING, (errmsg("integer out of range")));
+            }
+            if (NUMERIC_POS == var->sign) {
                 return INT32_MAX;
-            else
+            } else {
                 return INT32_MIN;
+            }
         } else {
             ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("integer out of range")));
         }
@@ -3037,7 +3042,10 @@ Datum numeric_int8(PG_FUNCTION_ARGS)
     init_var_from_num(num, &x);
 
     if (!numericvar_to_int64(&x, &result)) {
-        if (!SQL_MODE_STRICT()) {
+        if (fcinfo->can_ignore || !SQL_MODE_STRICT()) {
+            if (fcinfo->can_ignore) {
+                ereport(WARNING, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("bigint out of range")));
+            }
             if (NUMERIC_POS == x.sign)
                 PG_RETURN_INT64(INT64_MAX);
             else
@@ -3088,7 +3096,10 @@ Datum numeric_int2(PG_FUNCTION_ARGS)
     init_var_from_num(num, &x);
 
     if (!numericvar_to_int64(&x, &val)) {
-        if (!SQL_MODE_STRICT()) {
+        if (fcinfo->can_ignore || !SQL_MODE_STRICT()) {
+            if (fcinfo->can_ignore) {
+                ereport(WARNING, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("smallint out of range")));
+            }
             if (NUMERIC_POS == x.sign)
                 PG_RETURN_INT16(INT16_MAX);
             else
@@ -3154,13 +3165,19 @@ Datum numeric_int1(PG_FUNCTION_ARGS)
     /* Convert to variable format and thence to uint8 */
     init_var_from_num(num, &x);
 
-    if (x.sign == NUMERIC_NEG) {
+    if (x.sign == NUMERIC_NEG && !fcinfo->can_ignore) {
         ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("tinyint out of range")));
     }
 
-    if (!numericvar_to_int64(&x, &val))
-        ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("tinyint out of range")));
-
+    if (!numericvar_to_int64(&x, &val)) {
+        if (fcinfo->can_ignore) {
+            ereport(WARNING, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("tinyint out of range")));
+            if (NUMERIC_POS == x.sign)
+                PG_RETURN_INT64(INT64_MAX);
+            else
+                PG_RETURN_INT64(INT64_MIN);
+        }
+    }
     /* Down-convert to int1 */
     result = (uint8)val;
 
@@ -3295,9 +3312,13 @@ Datum numeric_float4(PG_FUNCTION_ARGS)
     }
 
     tmp = DatumGetCString(DirectFunctionCall1(numeric_out, NumericGetDatum(num)));
-
-    result = DirectFunctionCall1(float4in, CStringGetDatum(tmp));
-
+    
+    if (fcinfo->can_ignore) {
+        result = DirectFunctionCall1Coll(float4in, InvalidOid, CStringGetDatum(tmp), true);
+    } else {
+        result = DirectFunctionCall1(float4in, CStringGetDatum(tmp));
+    }
+    
     pfree_ext(tmp);
 
     PG_RETURN_DATUM(result);
@@ -4681,7 +4702,7 @@ static void apply_typmod(NumericVar* var, int32 typmod)
  *
  * If overflow, return false (no error is raised).  Return true if okay.
  */
-bool numericvar_to_int64(const NumericVar* var, int64* result)
+bool numericvar_to_int64(const NumericVar* var, int64* result, bool can_ignore)
 {
     NumericDigit* digits = NULL;
     int ndigits;

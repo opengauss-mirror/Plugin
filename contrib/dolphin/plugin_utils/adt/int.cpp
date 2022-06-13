@@ -352,6 +352,12 @@ Datum i4toi2(PG_FUNCTION_ARGS)
 {
     int32 arg1 = PG_GETARG_INT32(0);
 
+    // keyword IGNORE has higher priority than sql mode
+    if (fcinfo->can_ignore && (unlikely(arg1 < SHRT_MIN) || unlikely(arg1 > SHRT_MAX))) {
+        ereport(WARNING, (errmsg("smallint out of range")));
+        PG_RETURN_INT16((int16)(arg1 < SHRT_MIN ? SHRT_MIN : SHRT_MAX));
+    }
+    
     if (SQL_MODE_STRICT()) {
         if (unlikely(arg1 < SHRT_MIN) || unlikely(arg1 > SHRT_MAX))
             ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("smallint out of range")));
@@ -1390,8 +1396,13 @@ Datum i2toi1(PG_FUNCTION_ARGS)
 {
     int16 arg1 = PG_GETARG_INT16(0);
 
-    if (arg1 < 0 || arg1 > UCHAR_MAX)
+    if (arg1 < 0 || arg1 > UCHAR_MAX) {
+        if (fcinfo->can_ignore) {
+            ereport(WARNING, (errmsg("tinyint out of range")));
+            PG_RETURN_UINT8((uint8)(arg1 < 0 ? 0 : UCHAR_MAX));
+        }
         ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("tinyint out of range")));
+    }
 
     PG_RETURN_UINT8((uint8)arg1);
 }
@@ -1407,8 +1418,13 @@ Datum i4toi1(PG_FUNCTION_ARGS)
 {
     int32 arg1 = PG_GETARG_INT32(0);
 
-    if (arg1 < 0 || arg1 > UCHAR_MAX)
+    if (arg1 < 0 || arg1 > UCHAR_MAX) {
+        if (fcinfo->can_ignore) {
+            ereport(WARNING, (errmsg("tinyint out of range")));
+            PG_RETURN_UINT8((uint8)(arg1 < 0 ? 0 : UCHAR_MAX));
+        }
         ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("tinyint out of range")));
+    }
 
     PG_RETURN_UINT8((uint8)arg1);
 }
@@ -1424,8 +1440,13 @@ Datum i8toi1(PG_FUNCTION_ARGS)
 {
     int64 arg1 = PG_GETARG_INT64(0);
 
-    if (arg1 < 0 || arg1 > UCHAR_MAX)
+    if (arg1 < 0 || arg1 > UCHAR_MAX) {
+        if (fcinfo->can_ignore) {
+            ereport(WARNING, (errmsg("tinyint out of range")));
+            PG_RETURN_UINT8((uint8)(arg1 < 0 ? 0 : UCHAR_MAX));
+        }
         ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("tinyint out of range")));
+    }
 
     PG_RETURN_UINT8((uint8)arg1);
 }
@@ -1448,8 +1469,13 @@ Datum f4toi1(PG_FUNCTION_ARGS)
 {
     float4 arg1 = PG_GETARG_FLOAT4(0);
 
-    if (arg1 < 0 || arg1 > UCHAR_MAX)
+    if (arg1 < 0 || arg1 > UCHAR_MAX) {
+        if (fcinfo->can_ignore) {
+            ereport(WARNING, (errmsg("tinyint out of range")));
+            PG_RETURN_UINT8(arg1 < 0 ? 0 : UCHAR_MAX);
+        }
         ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("tinyint out of range")));
+    }
 
     PG_RETURN_UINT8((uint8)arg1);
 }
@@ -1458,8 +1484,13 @@ Datum f8toi1(PG_FUNCTION_ARGS)
 {
     float8 arg1 = PG_GETARG_FLOAT8(0);
 
-    if (arg1 < 0 || arg1 > UCHAR_MAX)
+    if (arg1 < 0 || arg1 > UCHAR_MAX) {
+        if (fcinfo->can_ignore) {
+            ereport(WARNING, (errmsg("tinyint out of range")));
+            PG_RETURN_UINT8(arg1 < 0 ? 0 : UCHAR_MAX);
+        }
         ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("tinyint out of range")));
+    }
 
     PG_RETURN_UINT8((uint8)arg1);
 }
