@@ -59,6 +59,9 @@ pg_builtin_proc.o: pg_builtin_proc.cpp utils
 OBJS += plugin_utility.o
 plugin_utility.o: plugin_utility.cpp
 
+OBJS += tablecmds.o
+tablecmds.o: tablecmds.cpp
+
 EXTENSION = dolphin
 REGRESS:=$(shell find ./sql -maxdepth 2 -type f)
 REGRESS:=$(basename $(patsubst ./sql/%,%,$(REGRESS)) .sql)
@@ -71,7 +74,7 @@ PG_CONFIG = pg_config
 PGXS := $(shell $(PG_CONFIG) --pgxs)
 include $(PGXS)
 else
-subdir = contrib/chkpass
+subdir = contrib/dolphin
 top_builddir = ../..
 include $(top_builddir)/src/Makefile.global
 include $(top_srcdir)/contrib/contrib-global.mk
