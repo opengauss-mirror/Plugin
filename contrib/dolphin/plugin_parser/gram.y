@@ -604,7 +604,7 @@ static int errstate;
 				CharacterWithLength CharacterWithoutLength
 				ConstDatetime ConstInterval
 				Bit ConstBit BitWithLength BitWithoutLength client_logic_type
-				datatypecl OptCopyColTypename Binary
+				datatypecl OptCopyColTypename Binary EnumType
 %type <str>		character
 %type <str>		extract_arg
 %type <str>		timestamp_units
@@ -20688,6 +20688,12 @@ SimpleTypename:
 						ReleaseSysCache(typtup);
 					}
 				}
+			| EnumType  '(' opt_enum_val_list ')'
+				{
+					$$ = $1;
+					$$->typmods = $3;
+				}
+
 		;
 
 /* We have a separate ConstTypename to allow defaulting fixed-length
@@ -20737,6 +20743,17 @@ GenericType:
 				{
 					$$ = makeTypeNameFromNameList(lcons(makeString($1), $2));
 					$$->typmods = $3;
+					$$->location = @1;
+				}
+		;
+
+/*
+	enum type
+*/
+EnumType:
+			ENUM_P
+				{
+					$$ = makeTypeName("enum");
 					$$->location = @1;
 				}
 		;
@@ -24642,7 +24659,6 @@ unreserved_keyword:
             | ENCRYPTION_TYPE
 			| ENGINE_P
 			| ENFORCED
-			| ENUM_P
 			| EOL
 			| ERRORS
 			| ESCAPE
@@ -25138,6 +25154,7 @@ reserved_keyword:
 			| DO
 			| ELSE
 			| END_P
+			| ENUM_P
 			| EXCEPT
 			| EXCLUDED
 			| FALSE_P
