@@ -23135,6 +23135,13 @@ func_expr_common_subexpr:
 					c->isnvl = false;
 					$$ = (Node *)c;
 				}
+			| ISNULL '(' a_expr ')'
+				{
+					NullTest *n = makeNode(NullTest);
+					n->arg = (Expr *)$3;
+					n->nulltesttype = IS_NULL;
+					$$ = (Node *)n;
+				}
 			| GREATEST '(' expr_list ')'
 				{
 					MinMaxExpr *v = makeNode(MinMaxExpr);

@@ -115,32 +115,32 @@ select locate('test','11testgood',3);
 
 --测试点：IFNULL
 SELECT IFNULL(NULL, 'test');
- nvl  
-------
+ ifnull 
+--------
  test
 (1 row)
 
 SELECT IFNULL('test', NULL);
- nvl  
-------
+ ifnull 
+--------
  test
 (1 row)
 
 SELECT IFNULL(NULL, NULL);
- nvl 
------
+ ifnull 
+--------
  
 (1 row)
 
 SELECT IFNULL('test', '');
- nvl  
-------
+ ifnull 
+--------
  test
 (1 row)
 
 SELECT IFNULL('', 'test');
- nvl 
------
+ ifnull 
+--------
  
 (1 row)
 

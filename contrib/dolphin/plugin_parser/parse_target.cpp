@@ -1674,7 +1674,7 @@ static int FigureColnameInternal(Node* node, char** name)
             /* make coalesce() act like a regular function */
             // modify NVL display to A db's style "NVL" instead of "COALESCE"
             if (((CoalesceExpr*)node)->isnvl) {
-                *name = "nvl";
+                *name = "ifnull";
             } else {
                 *name = "coalesce";
             }
