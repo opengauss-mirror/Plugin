@@ -22649,50 +22649,29 @@ func_expr_common_subexpr:
 					n->call_func = false;
 					$$ = (Node *)n;
 				}
-            | DB_B_FORMAT '(' a_expr ',' a_expr ')'
-                {
-                    FuncCall *n = makeNode(FuncCall);
-                    if (u_sess->attr.attr_sql.sql_compatibility == B_FORMAT && GetSessionContext()->enableBFormatMode)
-                    {
-                        n->funcname = SystemFuncName("db_b_format");
-                        n->colname = "format";
-                    }
-                    else
-                    {
-                        n->funcname = SystemFuncName("format");
-                    }
-                    n->args = list_make2($3, $5);
-                    n->agg_order = NIL;
-                    n->agg_star = FALSE;
-                    n->agg_distinct = FALSE;
-                    n->func_variadic = FALSE;
-                    n->over = NULL;
-                    n->location = @1;
-                    n->call_func = false;
-                    $$ = (Node *)n;
-                }
-            | DB_B_FORMAT '(' a_expr ',' a_expr ',' a_expr ')'
-                {
-                    FuncCall *n = makeNode(FuncCall);
-                    if (u_sess->attr.attr_sql.sql_compatibility == B_FORMAT && GetSessionContext()->enableBFormatMode)
-                    {
-                        n->funcname = SystemFuncName("db_b_format");
-                        n->colname = "format";
-                    }
-                    else
-                    {
-                        n->funcname = SystemFuncName("format");
-                    }
-                    n->args = list_make3($3, $5, $7);
-                    n->agg_order = NIL;
-                    n->agg_star = FALSE;
-                    n->agg_distinct = FALSE;
-                    n->func_variadic = FALSE;
-                    n->over = NULL;
-                    n->location = @1;
-                    n->call_func = false;
-                    $$ = (Node *)n;
-                }
+			| DB_B_FORMAT '(' expr_list ')'
+				{
+					FuncCall *n = makeNode(FuncCall);
+					if (u_sess->attr.attr_sql.sql_compatibility == B_FORMAT && GetSessionContext()->enableBFormatMode
+						&& (list_length($3) == 2 || list_length($3) == 3))
+					{
+						n->funcname = SystemFuncName("db_b_format");
+						n->colname = "format";
+					}
+					else
+					{
+						n->funcname = SystemFuncName("format");
+					}
+					n->args = $3;
+					n->agg_order = NIL;
+					n->agg_star = FALSE;
+					n->agg_distinct = FALSE;
+					n->func_variadic = FALSE;
+					n->over = NULL;
+					n->location = @1;
+					n->call_func = false;
+					$$ = (Node *)n;
+				}
 			| SESSION_USER
 				{
 					FuncCall *n = makeNode(FuncCall);

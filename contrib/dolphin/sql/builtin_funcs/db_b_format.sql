@@ -123,6 +123,12 @@ select format(1234.456, 2, 'en_US');
 select format('%1s!', 'Hello');
 select format('%1s %1s!', 'Hello', 'world');
 
+-- test for function calls that parameters are more than 3.
+select format('%s, %s, %s', 1, 1, 1);
+select format('%s, %s, %s, %s',1, 1, 1, 1);
+select format('%s, %s, %s, %s, %s',1 ,1 ,1 ,1, 1);
+select format('%s, %s, %s, %s, %s, %s',1 ,1 ,1 ,1, 1, 1);
+
 \c postgres
 drop database format_test;
 
