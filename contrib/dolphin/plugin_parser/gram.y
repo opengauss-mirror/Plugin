@@ -21064,21 +21064,16 @@ opt_charset:
  * SQL92 date/time types
  */
 ConstDatetime:
-			TIMESTAMP '(' Iconst ')' opt_timezone
+			TIMESTAMP '(' Iconst ')'
 				{
-					if ($5)
-						$$ = SystemTypeName("timestamptz");
-					else
-						$$ = SystemTypeName("timestamp");
+					// b format database: timestamp -> timestamptz
+					$$ = SystemTypeName("timestamptz"); 
 					$$->typmods = list_make1(makeIntConst($3, @3));
 					$$->location = @1;
 				}
-			| TIMESTAMP opt_timezone
+			| TIMESTAMP
 				{
-					if ($2)
-						$$ = SystemTypeName("timestamptz");
-					else
-						$$ = SystemTypeName("timestamp");
+					$$ = SystemTypeName("timestamptz");
 					$$->location = @1;
 				}
 			| TIME '(' Iconst ')' opt_timezone
@@ -22875,20 +22870,6 @@ func_expr_common_subexpr:
 					FuncCall *n = makeNode(FuncCall);
 					n->funcname = SystemFuncName("date_part");
 					n->args = list_make2(makeStringConst("week", -1), $3);
-					n->agg_order = NIL;
-					n->agg_star = FALSE;
-					n->agg_distinct = FALSE;
-					n->func_variadic = FALSE;
-					n->over = NULL;
-					n->location = @1;
-					n->call_func = false;
-					$$ = (Node *)n;
-				}
-			| YEAR_P '(' a_expr ')'
-				{
-					FuncCall *n = makeNode(FuncCall);
-					n->funcname = SystemFuncName("date_part");
-					n->args = list_make2(makeStringConst("year", -1), $3);
 					n->agg_order = NIL;
 					n->agg_star = FALSE;
 					n->agg_distinct = FALSE;
@@ -24933,6 +24914,7 @@ unreserved_keyword:
 			| WRAPPER
 			| WRITE
 			| XML_P
+			| YEAR_P
 			| YES_P
 			| ZONE
 		;
@@ -25031,7 +25013,6 @@ col_name_keyword:
 			| XMLPI
 			| XMLROOT
 			| XMLSERIALIZE
-			| YEAR_P
 		;
 
 /* Type/function identifier --- keywords that can be type or function names.

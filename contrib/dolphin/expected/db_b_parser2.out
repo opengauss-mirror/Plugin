@@ -3,70 +3,70 @@ NOTICE:  database "mysql_test" does not exist, skipping
 create database mysql_test dbcompatibility 'b';
 \c mysql_test
 --验证DAYOFMONTH() DAYOFWEEK() DAYOFYEAR() HOUR() MICROSECOND() MINUTE() QUARTER() SECOND() WEEKDAY() WEEKOFYEAR() YEAR()
-select DAYOFMONTH(timestamp '2021-11-4 16:30:44.341191');
+select DAYOFMONTH(datetime '2021-11-4 16:30:44.341191');
  date_part 
 -----------
          4
 (1 row)
 
-select DAYOFWEEK(timestamp '2021-11-4 16:30:44.341191');
+select DAYOFWEEK(datetime '2021-11-4 16:30:44.341191');
  ?column? 
 ----------
         5
 (1 row)
 
-select DAYOFYEAR(timestamp '2021-12-31 16:30:44.341191');
+select DAYOFYEAR(datetime '2021-12-31 16:30:44.341191');
  date_part 
 -----------
        365
 (1 row)
 
-select HOUR(timestamp '2021-11-4 16:30:44.341191');
+select HOUR(datetime '2021-11-4 16:30:44.341191');
  date_part 
 -----------
         16
 (1 row)
 
-select MICROSECOND(timestamp '2021-11-4 16:30:44.341191');
+select MICROSECOND(datetime '2021-11-4 16:30:44.341191');
  date_part 
 -----------
     341191
 (1 row)
 
-select MINUTE(timestamp '2021-11-4 16:30:44.341191');
+select MINUTE(datetime '2021-11-4 16:30:44.341191');
  date_part 
 -----------
         30
 (1 row)
 
-select QUARTER(timestamp '2021-11-4 16:30:44.341191');
+select QUARTER(datetime '2021-11-4 16:30:44.341191');
  date_part 
 -----------
          4
 (1 row)
 
-select SECOND(timestamp '2021-11-4 16:30:44.341191');
+select SECOND(datetime '2021-11-4 16:30:44.341191');
  date_part 
 -----------
         44
 (1 row)
 
-select WEEKDAY(timestamp '2021-11-4 16:30:44.341191');
+select WEEKDAY(datetime '2021-11-4 16:30:44.341191');
  ?column? 
 ----------
         3
 (1 row)
 
-select WEEKOFYEAR(timestamp '2021-11-4 16:30:44.341191');
+select WEEKOFYEAR(datetime '2021-11-4 16:30:44.341191');
  date_part 
 -----------
         44
 (1 row)
 
-select YEAR(timestamp '2021-11-4 16:30:44.341191');
- date_part 
------------
-      2021
+select YEAR(datetime '2021-11-4 16:30:44.341191');
+ year 
+------
+ 2021
 (1 row)
 
 --测试点：LOCATE(substr,str)

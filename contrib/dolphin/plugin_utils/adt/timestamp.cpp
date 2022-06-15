@@ -21,7 +21,9 @@
 #include <float.h>
 #include <limits.h>
 #include <sys/time.h>
+#include <algorithm> 
 
+#include "utils/numeric.h"
 #include "access/hash.h"
 #include "access/xact.h"
 #include "catalog/pg_type.h"
@@ -33,8 +35,10 @@
 #include "plugin_parser/scansup.h"
 #include "utils/array.h"
 #include "utils/builtins.h"
-#include "utils/datetime.h"
 #include "utils/formatting.h"
+#include "plugin_utils/timestamp.h"
+#include "plugin_utils/datetime.h"
+#include "plugin_utils/date.h"
 
 #ifdef PGXC
 #include "pgxc/pgxc.h"
@@ -150,6 +154,69 @@ static int daydiff_timestamp(const struct pg_tm* tm, const struct pg_tm* tm1, co
 void timestamp_FilpSign(pg_tm* tm);
 void timestamp_CalculateFields(TimestampTz* dt1, TimestampTz* dt2, fsec_t* fsec, pg_tm* tm, pg_tm* tm1, pg_tm* tm2);
 
+/* compatible with b format datetime and timestamp */
+PG_FUNCTION_INFO_V1_PUBLIC(int64_b_format_timestamp);
+extern "C" DLL_PUBLIC Datum int64_b_format_timestamp(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(int32_b_format_timestamp);
+extern "C" DLL_PUBLIC Datum int32_b_format_timestamp(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(int64_b_format_datetime);
+extern "C" DLL_PUBLIC Datum int64_b_format_datetime(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(int32_b_format_datetime);
+extern "C" DLL_PUBLIC Datum int32_b_format_datetime(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(numeric_b_format_datetime);
+extern "C" DLL_PUBLIC Datum numeric_b_format_datetime(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(numeric_b_format_timestamp);
+extern "C" DLL_PUBLIC Datum numeric_b_format_timestamp(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1_PUBLIC(datetime_in);
+extern "C" DLL_PUBLIC Datum datetime_in(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(datetime_out);
+extern "C" DLL_PUBLIC Datum datetime_out(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(datetime_recv);
+extern "C" DLL_PUBLIC Datum datetime_recv(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(datetime_send);
+extern "C" DLL_PUBLIC Datum datetime_send(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(datetimetypmodin);
+extern "C" DLL_PUBLIC Datum datetimetypmodin(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(datetimetypmodout);
+extern "C" DLL_PUBLIC Datum datetimetypmodout(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1_PUBLIC(datetime_eq);
+extern "C" DLL_PUBLIC Datum datetime_eq(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(datetime_ne);
+extern "C" DLL_PUBLIC Datum datetime_ne(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(datetime_le);
+extern "C" DLL_PUBLIC Datum datetime_le(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(datetime_lt);
+extern "C" DLL_PUBLIC Datum datetime_lt(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(datetime_ge);
+extern "C" DLL_PUBLIC Datum datetime_ge(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(datetime_gt);
+extern "C" DLL_PUBLIC Datum datetime_gt(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1_PUBLIC(datetime_cmp);
+extern "C" DLL_PUBLIC Datum datetime_cmp(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(datetime_sortsupport);
+extern "C" DLL_PUBLIC Datum datetime_sortsupport(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1_PUBLIC(datetime_larger);
+extern "C" DLL_PUBLIC Datum datetime_larger(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(datetime_smaller);
+extern "C" DLL_PUBLIC Datum datetime_smaller(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1_PUBLIC(datetime_scale);
+extern "C" DLL_PUBLIC Datum datetime_scale(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(datetime_part);
+extern "C" DLL_PUBLIC Datum datetime_part(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(datetime_year_part);
+extern "C" DLL_PUBLIC Datum datetime_year_part(PG_FUNCTION_ARGS);
+
+/* b format datetime and timestamp type */
+static Timestamp int64_b_format_timestamp_internal(bool hasTz, int64 ts, fsec_t fsec);
+static int64 integer_b_format_timestamp(bool hasTz, int64 ts);
+static int NumberTimestamp(char *str, pg_tm *tm, fsec_t *fsec);
+static void fillZeroBeforeNumericTimestamp(char *str, char *buf);
+
 /* common code for timestamptypmodin and timestamptztypmodin */
 static int32 anytimestamp_typmodin(bool istz, ArrayType* ta)
 {
@@ -205,10 +272,10 @@ static char* anytimestamp_typmodout(bool istz, int32 typmod)
  *	 USER I/O ROUTINES														 *
  *****************************************************************************/
 
-/* timestamp_in()
+/* datetime_in()
  * Convert a string to internal form.
  */
-Datum timestamp_in(PG_FUNCTION_ARGS)
+Datum datetime_in(PG_FUNCTION_ARGS)
 {
     char* str = PG_GETARG_CSTRING(0);
 
@@ -249,11 +316,19 @@ Datum timestamp_in(PG_FUNCTION_ARGS)
          * default pg date formatting parsing.
          */
         dterr = ParseDateTime(str, workbuf, sizeof(workbuf), field, ftype, MAXDATEFIELDS, &nf);
-        if (dterr == 0)
-            dterr = DecodeDateTime(field, ftype, nf, &dtype, tm, &fsec, &tz);
         if (dterr != 0)
-            DateTimeParseError(dterr, str, "timestamp");
-
+            DateTimeParseError(dterr, str, "datetime");
+        if (dterr == 0) {
+            if (nf == 1 && ftype[0] == DTK_NUMBER) {
+                /* for example, str = "301210054523", "301210054523.123" */
+                dterr = NumberTimestamp(field[0], tm, &fsec);
+                dtype = DTK_DATE;
+            } else {
+                dterr = DecodeDateTime(field, ftype, nf, &dtype, tm, &fsec, &tz);
+            }
+        }
+        if (dterr != 0)
+            DateTimeParseError(dterr, str, "datetime");
         switch (dtype) {
             case DTK_DATE:
                 if (tm2timestamp(tm, fsec, NULL, &result) != 0)
@@ -296,10 +371,214 @@ Datum timestamp_in(PG_FUNCTION_ARGS)
     PG_RETURN_TIMESTAMP(result);
 }
 
+static void fillZeroBeforeNumericTimestamp(char *str, char *buf)
+{
+    int len = 0;
+    char *cp = str;
+    error_t rc = EOK;
+    while (!(*cp == '\0' || *cp == '.')) {
+        ++len;
+        ++cp;
+    }
+    int zeros = 0;
+    if (len <= TIMESTAMP_YYMMDD_LEN) {
+        zeros = TIMESTAMP_YYMMDD_LEN - len;
+    } else if (len <= TIMESTAMP_YYYYMMDD_LEN) {
+        zeros = TIMESTAMP_YYYYMMDD_LEN - len;
+    } else if (len <= TIMESTAMP_YYMMDDhhmmss_LEN) {
+        zeros = TIMESTAMP_YYMMDDhhmmss_LEN - len;
+    } else if (len <= TIMESTAMP_YYYYMMDDhhmmss_LEN){
+        zeros = TIMESTAMP_YYYYMMDDhhmmss_LEN - len;
+    } else {
+        ereport(ERROR,
+            (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE), errmsg("datetime/timestamp out of range")));
+    }
+    for (int i = 0; i < zeros; ++i) {
+        buf[i] = '0';
+    }
+    rc = strncpy_s(buf + zeros, MAXDATELEN + 1 - zeros, str, MAXDATELEN + 1 - zeros);
+    securec_check_c(rc, "\0", "\0")
+}
+
+Datum numeric_b_format_datetime(PG_FUNCTION_ARGS)
+{
+    Numeric n = PG_GETARG_NUMERIC(0);
+    char *str = DatumGetCString(DirectFunctionCall1(numeric_out, NumericGetDatum(n)));
+    char buf[MAXDATELEN + 1];
+    fillZeroBeforeNumericTimestamp(str, buf);
+    return DirectFunctionCall3(timestamp_in, CStringGetDatum(buf), ObjectIdGetDatum(InvalidOid), Int32GetDatum(-1));
+}
+
+Datum numeric_b_format_timestamp(PG_FUNCTION_ARGS)
+{
+    Numeric n = PG_GETARG_NUMERIC(0);
+    char *str = DatumGetCString(DirectFunctionCall1(numeric_out, NumericGetDatum(n)));
+    char buf[MAXDATELEN + 1];
+    fillZeroBeforeNumericTimestamp(str, buf);
+    return DirectFunctionCall3(timestamptz_in, CStringGetDatum(buf), ObjectIdGetDatum(InvalidOid), Int32GetDatum(-1));
+}
+
+static int NumberTimestamp(char *str, pg_tm *tm, fsec_t *fsec)
+{
+    char *cp = str;
+    int len = 0;
+    int dterr;
+    /* validate number str */
+    while (*cp != '\0' && *cp != '.') {
+        ++len;
+        ++cp;
+    }
+    /*YYMMDD or YYYYMMDD or YYMMDDhhmmss or YYYYMMDDhhmmss*/
+    if (len < TIMESTAMP_YYMMDD_LEN || len > TIMESTAMP_YYYYMMDDhhmmss_LEN) {
+        ereport(ERROR,
+                (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE), errmsg("timestamp out of range: \"%s\"", str)));
+    }
+    /* 4-digit year, skip date part first
+     * update len which now stands for how many digits should appear in time field
+     * otherwise zeros would be filled after time_str
+     */
+    if (len == TIMESTAMP_YYYYMMDD_LEN || len == TIMESTAMP_YYYYMMDDhhmmss_LEN) {
+        cp = str + TIMESTAMP_YYYYMMDD_LEN;
+    } else {
+        cp = str + TIMESTAMP_YYMMDD_LEN;
+    }
+    char time_str[MAXDATELEN + 1];
+    char *tcp = time_str;
+    if (*cp == '.') {
+        /* treat as a time part, ingore '.'
+         * example : 201010.121045 -> 2020-10-10 12:10:45 
+         */
+        ++cp;
+    } 
+    /* two characters are grouped together and 3 = TIMESTAMP_YYMMDD_LEN / 2 */
+    int cnt = 3;
+    /* extract time field first: '101' -> '1001' */
+    while (!(*cp == '\0' || *cp == '.')) {
+        char next = *(cp + 1);
+        if (next == '\0' || next == '.') {
+            *tcp = '0';
+            *(tcp + 1) = *cp;
+            ++cp;
+        } else {
+            *tcp = *cp;
+            *(tcp + 1) = *(cp + 1);
+            cp += 2;
+        }
+        tcp += 2;
+        --cnt;
+    }
+    /* fill zeros after time_str: '1001' -> '100100' */
+    for (int i = 0; i < cnt; ++i) {
+        *tcp = '0';
+        *(tcp + 1) = '0';
+        tcp += 2;
+    }
+    /* has fsec */
+    while (*cp != '\0') {
+        *tcp = *cp;
+        ++tcp;
+        ++cp;
+    }
+    *tcp = '\0';
+    dterr = NumberTime(true, time_str, tm, fsec);
+    if (dterr) {
+        ereport(ERROR,
+                (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE), errmsg("timestamp out of range: \"%s\"", str)));
+    }
+    /* extract date field */
+    if (len == TIMESTAMP_YYYYMMDD_LEN || len == TIMESTAMP_YYYYMMDDhhmmss_LEN) {
+        tcp = str + TIMESTAMP_YYYYMMDD_LEN;
+    } else {
+        tcp = str + TIMESTAMP_YYMMDD_LEN;
+    }
+    *tcp = '\0';
+    dterr = NumberDate(str, tm);
+    return dterr;
+}
+
+static Timestamp int64_b_format_timestamp_internal(bool hasTz, int64 ts, fsec_t fsec)
+{
+    Timestamp result;
+    struct pg_tm tt, *tm = &tt;
+    int tz;
+    if (ts < B_FORMAT_DATE_INT_MIN) {
+        ereport(ERROR,
+            (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE), errmsg("timestamp out of range")));
+    }
+    /* find out how many digits in ts */
+    int cnt = 0;                                                                                                                                                        
+    int64 date = ts;
+    int time = 0;
+    int64 tmp = ts;
+    while (tmp) {
+        ++cnt;
+        tmp /= 10;
+    }
+    if (cnt > TIMESTAMP_YYYYMMDDhhmmss_LEN) {
+        ereport(ERROR,
+            (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE), errmsg("timestamp out of range")));
+    }
+    /* has time field : YYYYMMDDhhmmss or YYMMDDhhmmss */
+    if (cnt > TIMESTAMP_YYYYMMDD_LEN) {
+        time = ts % 1000000; /* extract time: hhmmss */
+        date = ts / 1000000; /* extract date: YYMMDD or YYYYMMDD */
+    } 
+    if (int32_b_format_time_internal(tm, true, time, &fsec) || int32_b_format_date_internal(tm, date)){
+        ereport(ERROR,
+            (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE), errmsg("timestamp out of range")));
+    }
+
+    if (hasTz) {
+        /* b format timestamp type */
+        tz = DetermineTimeZoneOffset(tm, session_timezone);
+        if (tm2timestamp(tm, fsec, &tz, &result) != 0) {
+            ereport(ERROR,
+                (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE), errmsg("timestamp out of range")));
+        }  
+    } else {
+        if (tm2timestamp(tm, fsec, NULL, &result) != 0) {
+            ereport(ERROR,
+                (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE), errmsg("timestamp out of range")));
+        }  
+    }
+    return result;
+}
+
+static int64 integer_b_format_timestamp(bool hasTz, int64 ts)
+{
+    TimestampTz result;
+    result = int64_b_format_timestamp_internal(hasTz, ts, 0);
+    PG_RETURN_TIMESTAMP(result);
+}
+
+Datum int32_b_format_datetime(PG_FUNCTION_ARGS) 
+{
+    int64 ts = PG_GETARG_INT64(0);
+    PG_RETURN_TIMESTAMP(integer_b_format_timestamp(false, ts));
+}
+
+Datum int32_b_format_timestamp(PG_FUNCTION_ARGS)
+{
+    int64 ts = PG_GETARG_INT64(0);
+    PG_RETURN_TIMESTAMP(integer_b_format_timestamp(true, ts));
+}
+
+Datum int64_b_format_datetime(PG_FUNCTION_ARGS)
+{
+    int64 ts = PG_GETARG_INT64(0);
+    PG_RETURN_TIMESTAMP(integer_b_format_timestamp(false, ts));
+}
+
+Datum int64_b_format_timestamp(PG_FUNCTION_ARGS)
+{
+    int64 ts = PG_GETARG_INT64(0);
+    PG_RETURN_TIMESTAMP(integer_b_format_timestamp(true, ts));
+}
+
 /* timestamp_out()
  * Convert a timestamp to external form.
  */
-Datum timestamp_out(PG_FUNCTION_ARGS)
+Datum datetime_out(PG_FUNCTION_ARGS)
 {
     Timestamp timestamp = PG_GETARG_TIMESTAMP(0);
     char* result = NULL;
@@ -324,7 +603,7 @@ Datum timestamp_out(PG_FUNCTION_ARGS)
  * We make no attempt to provide compatibility between int and float
  * timestamp representations ...
  */
-Datum timestamp_recv(PG_FUNCTION_ARGS)
+Datum datetime_recv(PG_FUNCTION_ARGS)
 {
     StringInfo buf = (StringInfo)PG_GETARG_POINTER(0);
 
@@ -359,7 +638,7 @@ Datum timestamp_recv(PG_FUNCTION_ARGS)
 /*
  *		timestamp_send			- converts timestamp to binary format
  */
-Datum timestamp_send(PG_FUNCTION_ARGS)
+Datum datetime_send(PG_FUNCTION_ARGS)
 {
     Timestamp timestamp = PG_GETARG_TIMESTAMP(0);
     StringInfoData buf;
@@ -655,14 +934,14 @@ Datum smalldatetime_hash(PG_FUNCTION_ARGS)
 #endif
 }
 
-Datum timestamptypmodin(PG_FUNCTION_ARGS)
+Datum datetimetypmodin(PG_FUNCTION_ARGS)
 {
     ArrayType* ta = PG_GETARG_ARRAYTYPE_P(0);
 
     PG_RETURN_INT32(anytimestamp_typmodin(false, ta));
 }
 
-Datum timestamptypmodout(PG_FUNCTION_ARGS)
+Datum datetimetypmodout(PG_FUNCTION_ARGS)
 {
     int32 typmod = PG_GETARG_INT32(0);
 
@@ -682,7 +961,7 @@ Datum timestamp_transform(PG_FUNCTION_ARGS)
  * Adjust time type for specified scale factor.
  * Used by openGauss type system to stuff columns.
  */
-Datum timestamp_scale(PG_FUNCTION_ARGS)
+Datum datetime_scale(PG_FUNCTION_ARGS)
 {
     Timestamp timestamp = PG_GETARG_TIMESTAMP(0);
     int32 typmod = PG_GETARG_INT32(1);
@@ -765,11 +1044,20 @@ Datum timestamptz_in(PG_FUNCTION_ARGS)
     char workbuf[MAXDATELEN + MAXDATEFIELDS];
 
     dterr = ParseDateTime(str, workbuf, sizeof(workbuf), field, ftype, MAXDATEFIELDS, &nf);
-    if (dterr == 0)
-        dterr = DecodeDateTime(field, ftype, nf, &dtype, tm, &fsec, &tz);
     if (dterr != 0)
-        DateTimeParseError(dterr, str, "timestamp with time zone");
-
+        DateTimeParseError(dterr, str, "timestamp");
+    if (dterr == 0) {
+        if (nf == 1 && ftype[0] == DTK_NUMBER) {
+            /* for example, str = "301210054523", "301210054523.123" */
+            dterr = NumberTimestamp(field[0], tm, &fsec);
+            tz = DetermineTimeZoneOffset(tm, session_timezone);
+            dtype = DTK_DATE;
+        } else {
+            dterr = DecodeDateTime(field, ftype, nf, &dtype, tm, &fsec, &tz);
+        }
+    }
+    if (dterr != 0)
+        DateTimeParseError(dterr, str, "timestamp");
     switch (dtype) {
         case DTK_DATE:
             if (tm2timestamp(tm, fsec, &tz, &result) != 0)
@@ -2025,7 +2313,7 @@ int timestamp_cmp_internal(Timestamp dt1, Timestamp dt2)
 #endif
 }
 
-Datum timestamp_eq(PG_FUNCTION_ARGS)
+Datum datetime_eq(PG_FUNCTION_ARGS)
 {
     Timestamp dt1 = PG_GETARG_TIMESTAMP(0);
     Timestamp dt2 = PG_GETARG_TIMESTAMP(1);
@@ -2033,7 +2321,7 @@ Datum timestamp_eq(PG_FUNCTION_ARGS)
     PG_RETURN_BOOL(timestamp_cmp_internal(dt1, dt2) == 0);
 }
 
-Datum timestamp_ne(PG_FUNCTION_ARGS)
+Datum datetime_ne(PG_FUNCTION_ARGS)
 {
     Timestamp dt1 = PG_GETARG_TIMESTAMP(0);
     Timestamp dt2 = PG_GETARG_TIMESTAMP(1);
@@ -2041,7 +2329,7 @@ Datum timestamp_ne(PG_FUNCTION_ARGS)
     PG_RETURN_BOOL(timestamp_cmp_internal(dt1, dt2) != 0);
 }
 
-Datum timestamp_lt(PG_FUNCTION_ARGS)
+Datum datetime_lt(PG_FUNCTION_ARGS)
 {
     Timestamp dt1 = PG_GETARG_TIMESTAMP(0);
     Timestamp dt2 = PG_GETARG_TIMESTAMP(1);
@@ -2049,7 +2337,7 @@ Datum timestamp_lt(PG_FUNCTION_ARGS)
     PG_RETURN_BOOL(timestamp_cmp_internal(dt1, dt2) < 0);
 }
 
-Datum timestamp_gt(PG_FUNCTION_ARGS)
+Datum datetime_gt(PG_FUNCTION_ARGS)
 {
     Timestamp dt1 = PG_GETARG_TIMESTAMP(0);
     Timestamp dt2 = PG_GETARG_TIMESTAMP(1);
@@ -2057,7 +2345,7 @@ Datum timestamp_gt(PG_FUNCTION_ARGS)
     PG_RETURN_BOOL(timestamp_cmp_internal(dt1, dt2) > 0);
 }
 
-Datum timestamp_le(PG_FUNCTION_ARGS)
+Datum datetime_le(PG_FUNCTION_ARGS)
 {
     Timestamp dt1 = PG_GETARG_TIMESTAMP(0);
     Timestamp dt2 = PG_GETARG_TIMESTAMP(1);
@@ -2065,7 +2353,7 @@ Datum timestamp_le(PG_FUNCTION_ARGS)
     PG_RETURN_BOOL(timestamp_cmp_internal(dt1, dt2) <= 0);
 }
 
-Datum timestamp_ge(PG_FUNCTION_ARGS)
+Datum datetime_ge(PG_FUNCTION_ARGS)
 {
     Timestamp dt1 = PG_GETARG_TIMESTAMP(0);
     Timestamp dt2 = PG_GETARG_TIMESTAMP(1);
@@ -2073,7 +2361,7 @@ Datum timestamp_ge(PG_FUNCTION_ARGS)
     PG_RETURN_BOOL(timestamp_cmp_internal(dt1, dt2) >= 0);
 }
 
-Datum timestamp_cmp(PG_FUNCTION_ARGS)
+Datum datetime_cmp(PG_FUNCTION_ARGS)
 {
     Timestamp dt1 = PG_GETARG_TIMESTAMP(0);
     Timestamp dt2 = PG_GETARG_TIMESTAMP(1);
@@ -2090,7 +2378,7 @@ static int timestamp_fastcmp(Datum x, Datum y, SortSupport ssup)
     return timestamp_cmp_internal(a, b);
 }
 
-Datum timestamp_sortsupport(PG_FUNCTION_ARGS)
+Datum datetime_sortsupport(PG_FUNCTION_ARGS)
 {
     SortSupport ssup = (SortSupport)PG_GETARG_POINTER(0);
 
@@ -2493,7 +2781,7 @@ Datum overlaps_timestamp(PG_FUNCTION_ARGS)
  *	"Arithmetic" operators on date/times.
  * --------------------------------------------------------- */
 
-Datum timestamp_smaller(PG_FUNCTION_ARGS)
+Datum datetime_smaller(PG_FUNCTION_ARGS)
 {
     Timestamp dt1 = PG_GETARG_TIMESTAMP(0);
     Timestamp dt2 = PG_GETARG_TIMESTAMP(1);
@@ -2507,7 +2795,7 @@ Datum timestamp_smaller(PG_FUNCTION_ARGS)
     PG_RETURN_TIMESTAMP(result);
 }
 
-Datum timestamp_larger(PG_FUNCTION_ARGS)
+Datum datetime_larger(PG_FUNCTION_ARGS)
 {
     Timestamp dt1 = PG_GETARG_TIMESTAMP(0);
     Timestamp dt2 = PG_GETARG_TIMESTAMP(1);
@@ -4049,7 +4337,7 @@ int date2isoyearday(int year, int mon, int mday)
 /* timestamp_part()
  * Extract specified field from timestamp.
  */
-Datum timestamp_part(PG_FUNCTION_ARGS)
+Datum datetime_part(PG_FUNCTION_ARGS)
 {
     text* units = PG_GETARG_TEXT_PP(0);
     Timestamp timestamp = PG_GETARG_TIMESTAMP(1);
@@ -4227,6 +4515,23 @@ Datum timestamp_part(PG_FUNCTION_ARGS)
         result = 0;
     }
 
+    PG_RETURN_FLOAT8(result);
+}
+
+/* datetime_year_part()
+ * Extract year from b datebase datetime
+ */
+Datum datetime_year_part(PG_FUNCTION_ARGS)
+{
+    Timestamp timestamp = PG_GETARG_TIMESTAMP(0);
+    float8 result;
+    fsec_t fsec;
+    struct pg_tm tt, *tm = &tt;
+    if (timestamp2tm(timestamp, NULL, tm, &fsec, NULL, NULL) == 0)
+        result = tm->tm_year;
+    else {
+        ereport(ERROR, (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE), errmsg("timestamp out of range")));
+    }
     PG_RETURN_FLOAT8(result);
 }
 

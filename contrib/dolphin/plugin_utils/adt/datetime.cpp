@@ -27,8 +27,8 @@
 #include "miscadmin.h"
 #include "nodes/nodeFuncs.h"
 #include "utils/builtins.h"
-#include "utils/date.h"
-#include "utils/datetime.h"
+#include "plugin_utils/date.h"
+#include "plugin_utils/datetime.h"
 #include "utils/memutils.h"
 #include "utils/tzparser.h"
 #include "plugin_parser/scansup.h"
@@ -38,7 +38,7 @@ static int DecodeNumber(int flen, char* field, bool haveTextMonth, unsigned int 
 static int DecodeNumberField(
     int len, char* str, unsigned int fmask, unsigned int* tmask, struct pg_tm* tm, fsec_t* fsec, bool* is2digits);
 static int DecodeTime(
-    const char* str, unsigned int fmask, int range, unsigned int* tmask, struct pg_tm* tm, fsec_t* fsec);
+    const char* str, unsigned int fmask, int range, unsigned int* tmask, struct pg_tm* tm, fsec_t* fsec, bool timeIn24 = true);
 static int DecodeTimezone(const char* str, int* tzp);
 static const datetkn* datebsearch(const char* key, const datetkn* base, int nel);
 static int DecodeDate(char* str, unsigned int fmask, unsigned int* tmask, bool* is2digits, struct pg_tm* tm);
@@ -863,8 +863,7 @@ int DecodeDateTime(char** field, int* ftype, int nf, int* dtype, struct pg_tm* t
                  * DecodeTime()
                  */
                 /* test for > 24:00:00 */
-                if (tm->tm_hour > HOURS_PER_DAY ||
-                    (tm->tm_hour == HOURS_PER_DAY && (tm->tm_min > 0 || tm->tm_sec > 0 || *fsec > 0)))
+                if (INVALID_DAY_TIME(tm->tm_hour, tm->tm_min, tm->tm_sec, *fsec))
                     return DTERR_FIELD_OVERFLOW;
                 break;
 
@@ -1401,7 +1400,7 @@ overflow:
  * Allow specifying date to get a better time zone,
  * if time zones are allowed. - thomas 2001-12-26
  */
-int DecodeTimeOnly(char** field, int* ftype, int nf, int* dtype, struct pg_tm* tm, fsec_t* fsec, int* tzp)
+int DecodeTimeOnly_(char** field, int* ftype, int nf, int* dtype, struct pg_tm* tm, fsec_t* fsec, int* tzp, int D)
 {
     unsigned int fmask = 0, tmask;
     int type;
@@ -1498,7 +1497,7 @@ int DecodeTimeOnly(char** field, int* ftype, int nf, int* dtype, struct pg_tm* t
                 break;
 
             case DTK_TIME:
-                dterr = DecodeTime(field[i], (fmask | DTK_DATE_M), INTERVAL_FULL_RANGE, &tmask, tm, fsec);
+                dterr = DecodeTime(field[i], (fmask | DTK_DATE_M), INTERVAL_FULL_RANGE, &tmask, tm, fsec, false);
                 if (dterr)
                     return dterr;
                 break;
@@ -1840,6 +1839,7 @@ int DecodeTimeOnly(char** field, int* ftype, int nf, int* dtype, struct pg_tm* t
         fmask |= tmask;
     } /* end loop over fields */
 
+    tm->tm_hour += D * 24;
     /* do final checking/adjustment of Y/M/D fields */
     dterr = ValidateDate(fmask, isjulian, is2digits, bc, tm);
     if (dterr)
@@ -1853,16 +1853,8 @@ int DecodeTimeOnly(char** field, int* ftype, int nf, int* dtype, struct pg_tm* t
     else if (mer == PM && tm->tm_hour != HOURS_PER_DAY / 2)
         tm->tm_hour += HOURS_PER_DAY / 2;
 
-    if (tm->tm_hour < 0 || tm->tm_min < 0 || tm->tm_min > MINS_PER_HOUR - 1 || tm->tm_sec < 0 ||
-        tm->tm_sec > SECS_PER_MINUTE || tm->tm_hour > HOURS_PER_DAY ||
-        /* test for > 24:00:00 */
-        (tm->tm_hour == HOURS_PER_DAY && (tm->tm_min > 0 || tm->tm_sec > 0 || *fsec > 0)) ||
-#ifdef HAVE_INT64_TIMESTAMP
-        *fsec < INT64CONST(0) || *fsec > USECS_PER_SEC
-#else
-        *fsec < 0 || *fsec > 1
-#endif
-    )
+    /* validate time value */
+    if (ValidateTimeForBDatabase(false, tm, fsec))
         return DTERR_FIELD_OVERFLOW;
 
     if ((fmask & DTK_TIME_M) != DTK_TIME_M)
@@ -2049,6 +2041,37 @@ static int DecodeDate(char* str, unsigned int fmask, unsigned int* tmask, bool* 
     return 0;
 }
 
+int ValidateTimeForBDatabase(bool timeIn24, struct pg_tm* tm, fsec_t* fsec)
+{
+    /* validate min, sec, fsec */
+    if (tm->tm_min < 0 || tm->tm_min >= MINS_PER_HOUR || tm->tm_sec < 0 ||
+        tm->tm_sec >= SECS_PER_MINUTE ||
+#ifdef HAVE_INT64_TIMESTAMP
+        *fsec < INT64CONST(0) || *fsec > USECS_PER_SEC
+#else
+        *fsec < 0 || *fsec > 1
+#endif
+        )
+        return DTERR_FIELD_OVERFLOW;
+
+    /* validate hour */
+    if (timeIn24) {
+        if (tm->tm_hour < 0 || tm->tm_hour > HOURS_PER_DAY ||  
+            (tm->tm_hour == HOURS_PER_DAY && (tm->tm_min > 0 || tm->tm_sec > 0 || *fsec > 0)))
+            return DTERR_FIELD_OVERFLOW;
+    } else {
+        /* b format time type validation: range is in[-838, 838] */
+        if (tm->tm_hour >= B_FORMAT_TIME_BOUND)
+            return DTERR_FIELD_OVERFLOW;
+    }
+    return 0;
+}
+
+int ValidateDateForBDatabase(bool is2digits, struct pg_tm* tm) 
+{
+    return ValidateDate(DTK_DATE_M, false, is2digits, false, tm);
+}
+
 /* ValidateDate()
  * Check valid year/month/day values, handle BC and DOY cases
  * Return 0 if okay, a DTERR code if not.
@@ -2120,7 +2143,7 @@ static int ValidateDate(unsigned int fmask, bool isjulian, bool is2digits, bool 
  * A db, there may need some adjustments.
  */
 static int DecodeTime(
-    const char* str, unsigned int fmask, int range, unsigned int* tmask, struct pg_tm* tm, fsec_t* fsec)
+    const char* str, unsigned int fmask, int range, unsigned int* tmask, struct pg_tm* tm, fsec_t* fsec, bool timeIn24)
 {
     char* cp = NULL;
     int dterr;
@@ -2148,14 +2171,13 @@ static int DecodeTime(
             tm->tm_min -= tm->tm_hour * MINS_PER_HOUR;
         }
     } else if (*cp == '.') {
-        /* always assume mm:ss.sss is MINUTE TO SECOND */
+        /* opengauss: always assume mm:ss.sss is MINUTE TO SECOND 
+         * b database : always assume hh:mm:00.sss 
+         */
         dterr = ParseFractionalSecond(cp, fsec);
         if (dterr)
             return dterr;
-        tm->tm_sec = tm->tm_min;
-        tm->tm_min = tm->tm_hour;
-        tm->tm_hour = tm->tm_min / MINS_PER_HOUR;
-        tm->tm_min -= tm->tm_hour * MINS_PER_HOUR;
+        tm->tm_sec = 0;
     } else if (*cp == ':') {
         errno = 0;
         tm->tm_sec = strtoi(cp + 1, &cp, 10);
@@ -2172,18 +2194,9 @@ static int DecodeTime(
     } else
         return DTERR_BAD_FORMAT;
 
-        /* do a sanity check */
-#ifdef HAVE_INT64_TIMESTAMP
-    if (tm->tm_hour < 0 || tm->tm_min < 0 || tm->tm_min > MINS_PER_HOUR - 1 || tm->tm_sec < 0 ||
-        tm->tm_sec > SECS_PER_MINUTE || *fsec < INT64CONST(0) || *fsec > USECS_PER_SEC)
-        return DTERR_FIELD_OVERFLOW;
-#else
-    if (tm->tm_hour < 0 || tm->tm_min < 0 || tm->tm_min > MINS_PER_HOUR - 1 || tm->tm_sec < 0 ||
-        tm->tm_sec > SECS_PER_MINUTE || *fsec < 0 || *fsec > 1)
-        return DTERR_FIELD_OVERFLOW;
-#endif
+    /* do a sanity check */
+    return ValidateTimeForBDatabase(timeIn24, tm, fsec);
 
-    return 0;
 }
 
 /* DecodeNumber()
@@ -2236,23 +2249,9 @@ static int DecodeNumber(int flen, char* str, bool haveTextMonth, unsigned int fm
     switch (fmask & DTK_DATE_M) {
         case 0:
 
-            /*
-             * Nothing so far; make a decision about what we think the input
-             * is.	There used to be lots of heuristics here, but the
-             * consensus now is to be paranoid.  It *must* be either
-             * YYYY-MM-DD (with a more-than-two-digit year field), or the
-             * field order defined by u_sess->time_cxt.DateOrder.
-             */
-            if (flen >= 3 || u_sess->time_cxt.DateOrder == DATEORDER_YMD) {
-                *tmask = DTK_M(YEAR);
-                tm->tm_year = val;
-            } else if (u_sess->time_cxt.DateOrder == DATEORDER_DMY) {
-                *tmask = DTK_M(DAY);
-                tm->tm_mday = val;
-            } else {
-                *tmask = DTK_M(MONTH);
-                tm->tm_mon = val;
-            }
+            /* b format date: default format is YMD */
+            *tmask = DTK_M(YEAR);
+            tm->tm_year = val;
             break;
 
         case (DTK_M(YEAR)):
@@ -2333,7 +2332,7 @@ static int DecodeNumber(int flen, char* str, bool haveTextMonth, unsigned int fm
      * or two digits.
      */
     if (*tmask == DTK_M(YEAR))
-        *is2digits = (flen <= 2);
+        *is2digits = (flen == 2);
 
     return 0;
 }
