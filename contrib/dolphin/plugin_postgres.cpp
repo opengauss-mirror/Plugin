@@ -179,6 +179,7 @@ void set_default_guc()
 void init_plugin_object()
 {
     u_sess->hook_cxt.transformStmtHook = (void*)transformStmt;
+    u_sess->hook_cxt.execInitExprHook = (void*)ExecInitExpr;
     set_processutility_prehook();
     set_default_guc();
 }
