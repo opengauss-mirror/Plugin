@@ -145,10 +145,9 @@ void InstallPlugins(OpenGaussConnection* conn)
             }
         } else if (result.compare("t") == 0) {
             g_assessmentSettings.plugin = true;
-            // do nothing
         } else {
             fprintf(stdout, _("%s: %s is recommendeded in database %s.\n"), pset.progname,
-                    g_dbPlugins[g_assessmentSettings.database], conn->GetDB());
+                    g_dbPlugins[g_globalDatabaseType], conn->GetDB());
         }
     }
     string extensionSql = "select installed_version is not null from pg_available_extensions where name = 'assessment'";

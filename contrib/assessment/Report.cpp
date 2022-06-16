@@ -56,7 +56,7 @@ bool CompatibilityTable::GenerateSQLCompatibilityStatistic()
 {
     stringstream ss;
     ss << "<a class=\"wdr\" name=\"top\"></a>"
-          "<h2 class=\"wdr\">SQL Compatibility Statistics</h2>"
+          "<h2 class=\"wdr\">SQL 兼容总览</h2>"
           "<table border=\"1\" class=\"tdiff\" summary=\"This table displays SQL Assessment Data\"><tr>\n"
           "<th class=\"wdrbg\" scope=\"col\">总数</th>"
           "<th class=\"wdrbg\" scope=\"col\">"
@@ -108,7 +108,7 @@ bool CompatibilityTable::GenerateSQLCompatibilityStatistic()
     }
     stringstream data;
     data << "<tr>"
-         << "<td class=\"wdrnc\"><a class=\"wdr\" name=\"\">"
+         << "<td class=\"wdrnc\" align=\"left\" >"
          << to_string(total)
          << "</td>\n"
          << "<td class=\"wdrnc\" align=\"left\" >"
@@ -137,11 +137,11 @@ bool CompatibilityTable::GenerateSQLCompatibilityStatistic()
 
 bool CompatibilityTable::GenerateReport()
 {
-    string str = "<a class=\"wdr\" name=\"top\"></a><h2 class=\"wdr\">SQL Compatibility Details</h2>"
-                 "<table border=\"1\" class=\"tdiff\" summary=\"This table displays SQL Assessment Data\"><tr>\n"
-                 "<th class=\"wdrbg\" scope=\"col\">SQL</th>"
-                 "<th class=\"wdrbg\" scope=\"col\">compatibility</th>"
-                 "<th class=\"wdrbg\" scope=\"col\">Detail</th>"
+    string str = "<a class=\"wdr\" name=\"top\"></a><h2 class=\"wdr\">SQL 兼容详情</h2>"
+                 "<table border=\"1\" class=\"tdiff\" summary=\"This table displays SQL Assessment Data\" width=100%><tr>\n"
+                 "<th class=\"wdrbg\" scope=\"col\">SQL语句</th>"
+                 "<th class=\"wdrbg\" scope=\"col\">兼容性</th>"
+                 "<th class=\"wdrbg\" scope=\"col\">兼容性详情</th>"
                  "</tr>\n";
     if (fwrite(str.c_str(), 1, str.length(), fd) != str.length()) {
         return false;
@@ -179,7 +179,7 @@ bool CompatibilityTable::GenerateReportHeader(char* fileName, char* output, cons
     }
     stringstream ss;
     ss << "<meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\" />\n"
-          "<head><title>openGauss Compatibility Report</title>\n"
+          "<head><title>openGauss 兼容性评估报告</title>\n"
           "<style type=\"text/css\">\n"
           "a.wdr {font:bold 8pt Arial,Helvetica,sans-serif;color:#663300;vertical-align:top;"
           "margin-top:0pt; margin-bottom:0pt;}\n"
@@ -205,7 +205,7 @@ bool CompatibilityTable::GenerateReportHeader(char* fileName, char* output, cons
           "td.wdrc_err {font:8pt fangsong;color:black; white-space:pre;"
           "background:White; vertical-align:top;word-break: break-word; width: 13%;}\n"
           "td.wdrtext {font:8pt Arial,Helvetica,Geneva,sans-serif;color:black;background:White;vertical-align:top;"
-          "white-space:pre-wrap;word-break: break-word;width: 83%;}"
+          "white-space:pre-wrap;word-break: break-word;width: 90%;}"
           "</style>";
 
     ss << "<script type=\"text/javascript\">function msg(titlename, inputname, objname) {\n"
@@ -220,7 +220,7 @@ bool CompatibilityTable::GenerateReportHeader(char* fileName, char* output, cons
           "}}</script>\n"
           "</head><body class=\"wdr\"\n>";
 
-    ss << "<h1 class=\"wdr\">" << dbName << " Compatibility Assessment</h1>\n";
+    ss << "<h1 class=\"wdr\">" << dbName << " 兼容性评估报告</h1>\n";
     auto str = ss.str();
     if (fwrite(str.c_str(), 1, str.length(), fd) != str.length()) {
         return false;

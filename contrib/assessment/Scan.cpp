@@ -179,7 +179,7 @@ vector <std::string> Scan::GetNextSql()
             if (scan_result == PSCAN_SEMICOLON) {
                 result.emplace_back(query_buf->data);
                 resetPQExpBuffer(query_buf);
-                break;
+                continue;
             } else if (scan_result == PSCAN_BACKSLASH) {
                 /* skip backslash command */
                 resetPQExpBuffer(query_buf);
