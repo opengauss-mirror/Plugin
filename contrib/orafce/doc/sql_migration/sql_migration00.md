@@ -1,4 +1,4 @@
-Oracle to PostgreSQL Migration Guide
+Oracle to OpenGauss Migration Guide
 ===
 
 Preface
@@ -6,14 +6,14 @@ Preface
 
 **Purpose of This Document**
 
-This document explains the actions required for migrating an Oracle database to PostgreSQL and provides notes on migration.
+This document explains the actions required for migrating an Oracle database to OpenGauss and provides notes on migration.
 
 **Intended Readers**
 
-This guide is intended for persons engaged in migrating an Oracle database to PostgreSQL. 
+This guide is intended for persons engaged in migrating an Oracle database to OpenGauss. 
 The reader is assumed to have general knowledge of the following:
 
- - PostgreSQL
+ - OpenGauss
  - Oracle database
  - SQL
  - Linux
@@ -26,7 +26,7 @@ The organization and contents of this guide are as follows:
 
 **Chapter 1 Pre-Migration Configuration**
 
-Explains the PostgreSQL settings that must be configured before migration.
+Explains the OpenGauss settings that must be configured before migration.
 
 
 **Chapter 2 Migrating Syntax Elements**
@@ -56,7 +56,7 @@ Provides notes on using Oracle database compatibility features added by orafce.
 
 **Appendix A Correspondence with Oracle Databases**
 
-Explains the correspondence between PostgreSQL and Oracle databases.
+Explains the correspondence between OpenGauss and Oracle databases.
 
 
 **Version**

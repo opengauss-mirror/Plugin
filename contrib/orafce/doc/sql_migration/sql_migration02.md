@@ -17,7 +17,7 @@ A literal with the TIMESTAMP prefix is treated as TIMESTAMP type data.
 
  - **Oracle database**
      - The TIMESTAMP prefix can signify a time zone literal.
- - **PostgreSQL**
+ - **OpenGauss**
      - The TIMESTAMP WITH TIME ZONE prefix signifies a time zone literal. If the prefix is TIMESTAMP only, the time zone value is discarded. No warning, error, or other notification is output.
 
 **Migration procedure**
@@ -36,7 +36,7 @@ The example below shows how to migrate a TIMESTAMP literal with time zone.
 <thead>
 <tr>
 <th align="center">Oracle database</th>
-<th align="center">PostgreSQL</th>
+<th align="center">OpenGauss</th>
 </tr>
 </thead>
 <tbody>
@@ -68,7 +68,7 @@ Using alternate quotation enables a delimiter to be used for a text string.
 
  - **Oracle database**
      - The alternate quotation marks q'x and x' are used. The letter x represents the alternate character.
- - **PostgreSQL**
+ - **OpenGauss**
      - The alternate quotation marks $q$ and $q$ are used.
 
 **Migration procedure**
@@ -86,7 +86,7 @@ The example below shows how to migrate alternate quotation.
 <thead>
 <tr>
 <th align="center">Oracle database</th>
-<th align="center">PostgreSQL</th>
+<th align="center">OpenGauss</th>
 </tr>
 </thead>
 <tbody>
@@ -109,7 +109,7 @@ The example below shows how to migrate alternate quotation.
 
 ----
 
-Refer to "The SQL Language" > "Lexical Structure" > "Dollar-quoted String Constants" in the PostgreSQL Documentation for information on alternate quotation marks.
+Refer to "The SQL Language" > "Lexical Structure" > "Dollar-quoted String Constants" in the OpenGauss Documentation for information on alternate quotation marks.
 
 ----
 
@@ -119,13 +119,13 @@ This section explains data types.
 
 #### 2.2.1 Migrating Data Types
 
-The table below lists the PostgreSQL data types that correspond to Oracle database data types.
+The table below lists the OpenGauss data types that correspond to Oracle database data types.
 
 **Data type correspondence**
 
  - **Character**
 
-|Oracle database Data type	|Remarks	|Migratability	|PostgreSQL Data type	|Remarks	|
+|Oracle database Data type	|Remarks	|Migratability	|OpenGauss Data type	|Remarks	|
 |	:---	|	:---	|	:---:	|	:---	|	:---	|
 |	CHAR <br> CHARACTER	|	Specifies the number of bytes or number of characters.	|	YR	|	char <br> character	|	Only the number of characters can be specified.	|
 |	CLOB <br> CHAR LARGE OBJECT <br> CHARACTER LARGE OBJECT	|		|	MR	|	text <br> Large object	|	Up to 1 GB(text) <br> Up to 4 TB(Large object)	|
@@ -136,7 +136,7 @@ The table below lists the PostgreSQL data types that correspond to Oracle databa
 
  - **Numeric**
 
-|Oracle database Data type	|Remarks	|Migratability	|PostgreSQL Data type	|Remarks	|
+|Oracle database Data type	|Remarks	|Migratability	|OpenGauss Data type	|Remarks	|
 |	:---	|	:---	|	:---:	|	:---	|	:---	|
 |	BINARY_DOUBLE	|		|	M	|	double precision	|		|
 |	BINARY_FLOAT	|		|	M	|	real	|		|
@@ -149,7 +149,7 @@ The table below lists the PostgreSQL data types that correspond to Oracle databa
 
  - **Date and time**
 
-|Oracle database Data type	|Remarks	|Migratability	|PostgreSQL Data type	|Remarks	|
+|Oracle database Data type	|Remarks	|Migratability	|OpenGauss Data type	|Remarks	|
 |	:---	|	:---	|	:---:	|	:---	|	:---	|
 |	INTERVAL DAY TO SECOND	|		|	Y	|	interval day to second	|		|
 |	INTERVAL YEAR TO MONTH	|		|	Y	|	interval year to month	|		|
@@ -159,7 +159,7 @@ The table below lists the PostgreSQL data types that correspond to Oracle databa
 
  - **Binary**
 
-|Oracle database Data type	|Remarks	|Migratability	|PostgreSQL Data type	|Remarks	|
+|Oracle database Data type	|Remarks	|Migratability	|OpenGauss Data type	|Remarks	|
 |	:---	|	:---	|	:---:	|	:---	|	:---	|
 |	BFILE	|		|	MR	|	bytea <br> Large object	|	Up to 1 GB (bytea) <br>  Up to 4 TB(Large object)	|
 |	BLOB <br> BINARY LARGE OBJECT	|		|	MR	|	bytea <br> Large object	|	Up to 1 GB (bytea) <br>  Up to 4 TB(Large object)	|
@@ -170,7 +170,7 @@ The table below lists the PostgreSQL data types that correspond to Oracle databa
 
  - **Other**
 
-|Oracle database Data type	|Remarks	|Migratability	|PostgreSQL Data type	|Remarks	|
+|Oracle database Data type	|Remarks	|Migratability	|OpenGauss Data type	|Remarks	|
 |	:---	|	:---	|	:---:	|	:---	|	:---	|
 |	ANYDATA	|		|	N	|		|		|
 |	ANYDATASET	|		|	N	|		|		|
@@ -218,7 +218,7 @@ MR: Modified data type can be migrated with restrictions
 
 **Description of migration**
 
-Refer to "Data type correspondence" and change Oracle database data types to PostgreSQL data types.
+Refer to "Data type correspondence" and change Oracle database data types to OpenGauss data types.
 
 **Migration example**
 
@@ -226,7 +226,7 @@ Refer to "Data type correspondence" and change Oracle database data types to Pos
 <thead>
 <tr>
 <th align="center">Oracle database</th>
-<th align="center">PostgreSQL</th>
+<th align="center">OpenGauss</th>
 </tr>
 </thead>
 <tbody>
@@ -261,7 +261,7 @@ Refer to "Data type correspondence" and change Oracle database data types to Pos
 
  - **Oracle database**
      - A negative value can be specified in a NUMBER type scale. <br>Any value that is specified in a scale beyond the number of significant digits is rounded off.
- - **PostgreSQL**
+ - **OpenGauss**
      - A negative value cannot be specified in a NUMERIC type scale. <br> Any value that is specified in a scale beyond the number of significant digits is discarded.
 
 **Migration procedure**
@@ -281,7 +281,7 @@ The example below shows how to migrate the NUMBER type.
 <thead>
 <tr>
 <th align="center">Oracle database</th>
-<th align="center">PostgreSQL</th>
+<th align="center">OpenGauss</th>
 </tr>
 </thead>
 <tbody>
@@ -342,7 +342,7 @@ CURRVAL returns the value nearest to that obtained by NEXTVAL from the sequence 
 
  - **Oracle database**
      - The sequence name is specified as sequenceName.CURRVAL.
- - **PostgreSQL**
+ - **OpenGauss**
      - The sequence name is specified as CURRVAL('sequenceName').
 
 **Migration procedure**
@@ -360,7 +360,7 @@ The example below shows how to migrate CURRVAL.
 <thead>
 <tr>
 <th align="center">Oracle database</th>
-<th align="center">PostgreSQL</th>
+<th align="center">OpenGauss</th>
 </tr>
 </thead>
 <tbody>
@@ -388,7 +388,7 @@ NEXTVAL returns the next number in the sequence.
 
  - **Oracle database**
      - The sequence name is specified as sequenceName.NEXTVAL.
- - **PostgreSQL**
+ - **OpenGauss**
      - The sequence name is specified as NEXTVAL('sequenceName').
 
 **Migration procedure**
@@ -406,7 +406,7 @@ The example below shows how to migrate NEXTVAL.
 <thead>
 <tr>
 <th align="center">Oracle database</th>
-<th align="center">PostgreSQL</th>
+<th align="center">OpenGauss</th>
 </tr>
 </thead>
 <tbody>
@@ -434,7 +434,7 @@ ROWID obtains information for uniquely identifying data.
 
  - **Oracle database**
      - ROWID is created automatically when a table is created.
- - **PostgreSQL**
+ - **OpenGauss**
      - ROWID cannot be used. Use OID instead. However, WITH OIDS must be specified when a table is created.
 
 **Migration procedure**
@@ -450,7 +450,7 @@ Use the following procedure to perform migration:
 <thead>
 <tr>
 <th align="center">Oracle database</th>
-<th align="center">PostgreSQL</th>
+<th align="center">OpenGauss</th>
 </tr>
 </thead>
 <tbody>
@@ -486,7 +486,7 @@ ROWNUM obtains the number of the current row.
 
  - **Oracle database**
      - ROWNUM obtains the number of the current row.
- - **PostgreSQL**
+ - **OpenGauss**
      - ROWNUM cannot be used. Use ROW_NUMBER() OVER() instead.
 
 **Migration procedure**
@@ -504,7 +504,7 @@ The example below shows migration when a line number is obtained.
 <thead>
 <tr>
 <th align="center">Oracle database</th>
-<th align="center">PostgreSQL</th>
+<th align="center">OpenGauss</th>
 </tr>
 </thead>
 <tbody>
@@ -537,7 +537,7 @@ This migration example cannot be used with the UPDATE statement.
 
  - **Oracle database**
      - If a subquery that contains an ORDER BY clause is specified in the FROM clause and a ROWNUM condition is defined in the WHERE clause, the records are sorted and then the first N records are obtained.
- - **PostgreSQL**
+ - **OpenGauss**
      - ROWNUM cannot be used. Using the LIMIT clause instead, sort the records and obtain the first N records.
 
 **Migration procedure**
@@ -557,7 +557,7 @@ The example below shows migration when records are sorted and then the first N r
 <thead>
 <tr>
 <th align="center">Oracle database</th>
-<th align="center">PostgreSQL</th>
+<th align="center">OpenGauss</th>
 </tr>
 </thead>
 <tbody>
@@ -578,182 +578,4 @@ The example below shows migration when records are sorted and then the first N r
 </tr>
 </tbody>
 </table>
-
-
-### 2.4 Treatment of NULL and Zero-Length Strings
-
-This section explains how NULL and zero-length strings are treated.
-
-Oracle databases treat zero-length strings as NULL. In contrast, PostgreSQL treats zero-length strings and NULL as two different values.
-
-The table below lists the advantages and disadvantages of using zero-length strings and NULL when performing migration.
-
-
-**Advantages and disadvantages of retaining or migrating Oracle database zero-length strings**
-
-|Oracle database zero-length strings	|Advantages	|Disadvantages	|
-|:---|:---|:---|
-|Treated as zero-length strings <br>without being migrated to NULL	|	String concatenation (&#124;&#124;) can be used as is.	|	The target data has fewer hits than with IS NULL. <br>Conditional expressions must be changed.	|
-|	Migrated to NULL	|	IS NULL can be used as is.	|	The result of string concatenation (&#124;&#124;) is NULL. <br>String concatenation must be changed.	|
-
-The following sections explain how to make changes if zero-length strings and NULL values are used together.
-
-
-#### 2.4.1 Search Conditions (IS NULL Predicate)
-
-**Functional differences**
-
- - **Oracle database**
-     - Even zero-length strings hit the IS NULL condition.
- - **PostgreSQL**
-     - Zero-length strings do not hit the IS NULL condition.
-
-**Migration procedure**
-
-Use the following procedure to perform migration:
-
- 1. Search for the keyword IS NULL and identify where a NULL search is used.
- 2. Change the portions found by the IS NULL search to IS NULL OR strName = ''.
-
-**Migration example**
-
-The example below shows migration when a search for zero-length strings and NULL values is performed.
-
-<table>
-<thead>
-<tr>
-<th align="center">Oracle database</th>
-<th align="center">PostgreSQL</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td align="left">
-<pre><code>SELECT * FROM staff_table 
- WHERE <b>job IS NULL</b>;</code></pre>
-</td>
-
-<td align="left">
-<pre><code>SELECT * FROM staff_table 
- WHERE <b>job IS NULL OR job = ''</b>;</code></pre>
-</td>
-</tr>
-</tbody>
-</table>
-
-
-The example below shows migration when a search for values other than zero-length strings and NULL values is performed.
-
-<table>
-<thead>
-<tr>
-<th align="center">Oracle database</th>
-<th align="center">PostgreSQL</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td align="left">
-<pre><code>SELECT * FROM staff_table 
- WHERE <b>job IS NOT NULL</b>;</code></pre>
-</td>
-
-<td align="left">
-<pre><code>SELECT * FROM staff_table 
- WHERE <b>job IS NOT NULL AND job != ''</b>;
-</code></pre>
-</td>
-</tr>
-</tbody>
-</table>
-
-
-
-#### 2.4.2 Search Conditions (Comparison Predicate)
-
-**Functional differences**
-
- - **Oracle database**
-     - Zero-length strings are treated as NULL, so they do not match search conditions.
- - **PostgreSQL**
-     - Zero-length strings are not treated as NULL, so they can match search conditions.
-
-**Migration procedure**
-
-Use the following procedure to perform migration:
-
- 1. Search for the name of the column where the zero-length string is stored, and identify where a string comparison is used.
- 2. Add AND columnName != '' to the search condition.
-
-**Migration example**
-
-The example below shows migration when a zero-length string comparison is specified as the search condition.
-
-<table>
-<thead>
-<tr>
-<th align="center">Oracle database</th>
-<th align="center">PostgreSQL</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td align="left">
-<pre><code>SELECT * FROM staff_table 
- WHERE job < 'A00';</code></pre>
-</td>
-
-<td align="left">
-<pre><code>SELECT * FROM staff_table 
- WHERE job < 'A00' <b>AND job != ''</b>;
-</code></pre>
-</td>
-</tr>
-</tbody>
-</table>
-
-
-#### 2.4.3 String Concatenation (||)
-
-**Functional differences**
-
- - **Oracle database**
-     - Concatenation with NULL returns strings other than NULL.
- - **PostgreSQL**
-     - Concatenation with NULL returns NULL.
-
-**Migration procedure**
-
-Use the following procedure to perform migration:
-
- 1. Search for the keyword || and identify where string concatenation is used.
- 2. If the values to be concatenated are likely to become NULL, use the NVL function to return a zero-length string instead of NULL.
-
-**Migration example**
-
-The example below shows migration when NULL is returned by string concatenation (||) in Oracle databases.
-
-<table>
-<thead>
-<tr>
-<th align="center">Oracle database</th>
-<th align="center">PostgreSQL</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td align="left">
-<pre><code>SELECT 'NAME:' &#124;&#124; <b>name</b> 
- FROM staff_table;</code></pre>
-</td>
-
-<td align="left">
-<pre><code> SELECT 'NAME:' &#124;&#124; <b>NVL( name, '' )</b> 
-  FROM staff_table;
-</code></pre>
-</td>
-</tr>
-</tbody>
-</table>
-
 
