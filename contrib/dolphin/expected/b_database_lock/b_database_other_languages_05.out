@@ -1,0 +1,106 @@
+drop database if exists b_databaselock;
+NOTICE:  database "b_databaselock" does not exist, skipping
+create database b_databaselock dbcompatibility 'b';
+\c b_databaselock
+select get_lock('데이터베이스입니다');
+ get_lock 
+----------
+        1
+(1 row)
+
+select get_lock('경찰');
+ get_lock 
+----------
+        1
+(1 row)
+
+select get_lock('빛의 화신');
+ get_lock 
+----------
+        1
+(1 row)
+
+select get_lock('산자나무 주스');
+ get_lock 
+----------
+        1
+(1 row)
+
+select get_lock('용혼이 빙의하다');
+ get_lock 
+----------
+        1
+(1 row)
+
+select lockname from get_all_locks() order by lockname;
+      lockname      
+--------------------
+ 경찰
+ 빛의 화신
+ 용혼이 빙의하다
+ 산자나무 주스
+ 데이터베이스입니다
+(5 rows)
+
+select is_free_lock('데이터베이스입니다');
+ is_free_lock 
+--------------
+            0
+(1 row)
+
+select is_free_lock('경찰');
+ is_free_lock 
+--------------
+            0
+(1 row)
+
+select is_free_lock('빛의 화신');
+ is_free_lock 
+--------------
+            0
+(1 row)
+
+select is_free_lock('산자나무 주스');
+ is_free_lock 
+--------------
+            0
+(1 row)
+
+select is_free_lock('용혼이 빙의하다');
+ is_free_lock 
+--------------
+            0
+(1 row)
+
+select release_lock('데이터베이스입니다');
+ release_lock 
+--------------
+            1
+(1 row)
+
+select release_lock('경찰');
+ release_lock 
+--------------
+            1
+(1 row)
+
+select release_lock('빛의 화신');
+ release_lock 
+--------------
+            1
+(1 row)
+
+select release_lock('산자나무 주스');
+ release_lock 
+--------------
+            1
+(1 row)
+
+select release_lock('용혼이 빙의하다');
+ release_lock 
+--------------
+            1
+(1 row)
+
+\c postgres
+drop database if exists b_databaselock;

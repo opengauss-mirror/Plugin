@@ -1,0 +1,39 @@
+drop database if exists b_databaselock;
+NOTICE:  database "b_databaselock" does not exist, skipping
+create database b_databaselock dbcompatibility 'b';
+\c b_databaselock
+--failed
+select get_lock('slock',a);
+ERROR:  column "a" does not exist
+LINE 1: select get_lock('slock',a);
+                                ^
+CONTEXT:  referenced column: get_lock
+select get_lock('slock','a');
+WARNING:  truncated incorrect value: a
+CONTEXT:  referenced column: get_lock
+ get_lock 
+----------
+        1
+(1 row)
+
+select get_lock('slock','1');
+ get_lock 
+----------
+        1
+(1 row)
+
+--failed
+select get_lock('slock',!);
+ERROR:  syntax error at or near ")"
+LINE 1: select get_lock('slock',!);
+                                 ^
+select get_lock('slock','!');
+WARNING:  truncated incorrect value: !
+CONTEXT:  referenced column: get_lock
+ get_lock 
+----------
+        1
+(1 row)
+
+\c postgres
+drop database if exists b_databaselock;

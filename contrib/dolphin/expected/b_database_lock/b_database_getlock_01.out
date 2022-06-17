@@ -1,0 +1,128 @@
+drop database if exists b_databaselock;
+NOTICE:  database "b_databaselock" does not exist, skipping
+create database b_databaselock dbcompatibility 'b';
+\c b_databaselock
+select get_lock('aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',1);
+ get_lock 
+----------
+        1
+(1 row)
+
+select get_lock('aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',1);
+ get_lock 
+----------
+        1
+(1 row)
+
+--failed
+select get_lock('aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',1);
+ERROR:  max length of advisory lock is 64
+CONTEXT:  referenced column: get_lock
+select get_lock('aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa');
+ get_lock 
+----------
+        1
+(1 row)
+
+select get_lock('aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa');
+ get_lock 
+----------
+        1
+(1 row)
+
+--failed
+select get_lock('aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa');
+ERROR:  max length of advisory lock is 64
+CONTEXT:  referenced column: get_lock
+select get_lock('获取一个锁2022',1);
+ get_lock 
+----------
+        1
+(1 row)
+
+select get_lock('获取一个锁2022');
+ get_lock 
+----------
+        1
+(1 row)
+
+select get_lock('1234567890',1);
+ get_lock 
+----------
+        1
+(1 row)
+
+select get_lock('1234567890');
+ get_lock 
+----------
+        1
+(1 row)
+
+select get_lock(1);
+ get_lock 
+----------
+        1
+(1 row)
+
+select get_lock(1,1);
+ get_lock 
+----------
+        1
+(1 row)
+
+select get_lock(1234567890);
+ get_lock 
+----------
+        1
+(1 row)
+
+select get_lock(1234567890,1);
+ get_lock 
+----------
+        1
+(1 row)
+
+--failed
+select get_lock(a);
+ERROR:  column "a" does not exist
+LINE 1: select get_lock(a);
+                        ^
+CONTEXT:  referenced column: get_lock
+--failed
+select get_lock(a,1);
+ERROR:  column "a" does not exist
+LINE 1: select get_lock(a,1);
+                        ^
+CONTEXT:  referenced column: get_lock
+--failed
+select get_lock(`);
+ERROR:  syntax error at or near ")"
+LINE 1: select get_lock(`);
+                         ^
+--failed
+select get_lock(!);
+ERROR:  syntax error at or near ")"
+LINE 1: select get_lock(!);
+                         ^
+--failed
+select get_lock(@);
+ERROR:  syntax error at or near ")"
+LINE 1: select get_lock(@);
+                         ^
+--failed
+select get_lock(`,1);
+ERROR:  syntax error at or near ","
+LINE 1: select get_lock(`,1);
+                         ^
+--failed
+select get_lock(!,1);
+ERROR:  syntax error at or near ","
+LINE 1: select get_lock(!,1);
+                         ^
+--failed
+select get_lock(@,1);
+ERROR:  syntax error at or near ","
+LINE 1: select get_lock(@,1);
+                         ^
+\c postgres
+drop database if exists b_databaselock;

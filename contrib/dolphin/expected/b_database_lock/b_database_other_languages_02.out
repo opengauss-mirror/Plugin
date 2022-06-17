@@ -1,0 +1,106 @@
+drop database if exists b_databaselock;
+NOTICE:  database "b_databaselock" does not exist, skipping
+create database b_databaselock dbcompatibility 'b';
+\c b_databaselock
+select get_lock('データベース');
+ get_lock 
+----------
+        1
+(1 row)
+
+select get_lock('警察だ');
+ get_lock 
+----------
+        1
+(1 row)
+
+select get_lock('光の化身');
+ get_lock 
+----------
+        1
+(1 row)
+
+select get_lock('砂のラチェットジュース');
+ get_lock 
+----------
+        1
+(1 row)
+
+select get_lock('ドラゴンソウルアタッチ');
+ get_lock 
+----------
+        1
+(1 row)
+
+select lockname from get_all_locks() order by lockname;
+        lockname        
+------------------------
+ データベース
+ ドラゴンソウルアタッチ
+ 光の化身
+ 砂のラチェットジュース
+ 警察だ
+(5 rows)
+
+select is_free_lock('データベース');
+ is_free_lock 
+--------------
+            0
+(1 row)
+
+select is_free_lock('警察だ');
+ is_free_lock 
+--------------
+            0
+(1 row)
+
+select is_free_lock('光の化身');
+ is_free_lock 
+--------------
+            0
+(1 row)
+
+select is_free_lock('砂のラチェットジュース');
+ is_free_lock 
+--------------
+            0
+(1 row)
+
+select is_free_lock('ドラゴンソウルアタッチ');
+ is_free_lock 
+--------------
+            0
+(1 row)
+
+select release_lock('データベース');
+ release_lock 
+--------------
+            1
+(1 row)
+
+select release_lock('警察だ');
+ release_lock 
+--------------
+            1
+(1 row)
+
+select release_lock('光の化身');
+ release_lock 
+--------------
+            1
+(1 row)
+
+select release_lock('砂のラチェットジュース');
+ release_lock 
+--------------
+            1
+(1 row)
+
+select release_lock('ドラゴンソウルアタッチ');
+ release_lock 
+--------------
+            1
+(1 row)
+
+\c postgres
+drop database if exists b_databaselock;

@@ -1,0 +1,89 @@
+drop database if exists b_databaselock;
+NOTICE:  database "b_databaselock" does not exist, skipping
+create database b_databaselock dbcompatibility 'b';
+\c b_databaselock
+\parallel on 2
+declare
+i int;
+begin
+select get_lock('slock1',1) into i;
+raise notice 'session1:%',i;
+select get_lock('slock1',1) into i;
+raise notice 'session1:%',i;
+select get_lock('slock1',1) into i;
+raise notice 'session1:%',i;
+select get_lock('slock2',1) into i;
+raise notice 'session1:%',i;
+select get_lock('slock2',1) into i;
+raise notice 'session1:%',i;
+select get_lock('slock2',1) into i;
+raise notice 'session1:%',i;
+
+perform pg_sleep(3);
+
+select is_free_lock('slock1') into i;
+raise notice 'session1:%',i;
+select 1 into i where exists (select is_free_lock('slock3'));
+raise notice 'session1:%',i;
+select is_used_lock('slock3') into i;
+raise notice 'session1:%',i;
+
+select release_lock('slock1') into i;
+raise notice 'session1:%',i;
+select release_lock('slock3') into i;
+raise notice 'session1:%',i;
+select release_all_locks() into i;
+raise notice 'session1:%',i;
+end;
+/
+declare
+i int;
+begin
+perform pg_sleep(1);
+select is_free_lock('slock1') into i;
+raise notice 'session2:%',i;
+select is_free_lock('slock3') into i;
+raise notice 'session2:%',i;
+select is_used_lock('slock3') into i;
+raise notice 'session2:%',i;
+
+select release_lock('slock1') into i;
+raise notice 'session2:%',i;
+select release_lock('slock2') into i;
+raise notice 'session2:%',i;
+select release_lock('slock3') into i;
+raise notice 'session2:%',i;
+select release_all_locks() into i;
+raise notice 'session2:%',i;
+end;
+/
+\parallel off
+NOTICE:  session1:1
+NOTICE:  session1:1
+NOTICE:  session1:1
+NOTICE:  session1:1
+NOTICE:  session1:1
+NOTICE:  session1:1
+NOTICE:  session2:0
+NOTICE:  session2:1
+NOTICE:  session2:<NULL>
+WARNING:  you don't own a lock of type ExclusiveLock
+CONTEXT:  referenced column: release_lock
+SQL statement "select release_lock('slock1')"
+PL/pgSQL function inline_code_block line 12 at SQL statement
+NOTICE:  session2:0
+WARNING:  you don't own a lock of type ExclusiveLock
+CONTEXT:  referenced column: release_lock
+SQL statement "select release_lock('slock2')"
+PL/pgSQL function inline_code_block line 14 at SQL statement
+NOTICE:  session2:0
+NOTICE:  session2:<NULL>
+NOTICE:  session2:0
+NOTICE:  session1:0
+NOTICE:  session1:1
+NOTICE:  session1:<NULL>
+NOTICE:  session1:1
+NOTICE:  session1:<NULL>
+NOTICE:  session1:5
+\c postgres
+drop database if exists b_databaselock;

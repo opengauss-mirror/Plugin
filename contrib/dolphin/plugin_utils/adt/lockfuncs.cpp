@@ -42,7 +42,7 @@
 #include "libpq/md5.h"
 
 /*
- * user advisory lock like MySQL.
+ * user advisory lock like b_database.
  * different from openGauss:
  * 1. lock using string, not int.
  * 2. lokc allow timeout

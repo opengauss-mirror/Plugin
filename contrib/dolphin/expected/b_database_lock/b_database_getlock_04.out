@@ -1,0 +1,86 @@
+drop database if exists b_databaselock;
+NOTICE:  database "b_databaselock" does not exist, skipping
+create database b_databaselock dbcompatibility 'b';
+\c b_databaselock
+select get_lock('slock',0);
+ get_lock 
+----------
+        1
+(1 row)
+
+select get_lock('slock',1);
+ get_lock 
+----------
+        1
+(1 row)
+
+select get_lock('slock',-1);
+ get_lock 
+----------
+        1
+(1 row)
+
+select get_lock('slock',-32768);
+ get_lock 
+----------
+        1
+(1 row)
+
+select get_lock('slock',32767);
+ get_lock 
+----------
+        1
+(1 row)
+
+select get_lock('slock',-2147483648);
+ get_lock 
+----------
+        1
+(1 row)
+
+select get_lock('slock',2147483647);
+ get_lock 
+----------
+        1
+(1 row)
+
+select get_lock('slock',-9223372036854775808);
+ get_lock 
+----------
+        1
+(1 row)
+
+select get_lock('slock',-9223372036854775807);
+ get_lock 
+----------
+        1
+(1 row)
+
+select get_lock('slock',9223372036854775807);
+ get_lock 
+----------
+        1
+(1 row)
+
+select get_lock('slock',9223372036854775806);
+ get_lock 
+----------
+        1
+(1 row)
+
+--failed
+select get_lock('slock',-9223372036854775809);
+ get_lock 
+----------
+        1
+(1 row)
+
+--failed
+select get_lock('slock',9223372036854775808);
+ get_lock 
+----------
+        1
+(1 row)
+
+\c postgres
+drop database if exists b_databaselock;
