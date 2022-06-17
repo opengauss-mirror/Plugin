@@ -47,7 +47,6 @@ The table below lists features compatible with Oracle databases.
 |LENGTHB|Returns the length of a string in number of bytes|
 |LPAD|Left-pads a string to a specified length with a sequence of characters|
 |LTRIM|Removes the specified characters from the beginning of a string|
-|NLSSORT|Returns a byte string used to sort strings in linguistic sort sequence based on locale|
 |REGEXP_COUNT|searches a string for a regular expression, and returns a count of the matches|
 |REGEXP_INSTR|returns the beginning or ending position within the string where the match for a pattern was located|
 |REGEXP_LIKE|condition in the WHERE clause of a query, causing the query to return rows that match the given pattern|

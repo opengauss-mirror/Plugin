@@ -8,6 +8,11 @@
   https://gitee.com/opengauss/openGauss-server.git
   `
 
++ 下载opengauss社区master分支源码，假设源码文件名为openGauss-server，并设计环境变量CODE_BASE
+``` bash
+  export CODE_BASE='绝对路径'/openGauss-server
+```
+
 + 编译、并安装opengauss，并生成安装目录，此处假设安装目录为OpenGauss_install（绝对路径）。
 
 + 设置环境变量

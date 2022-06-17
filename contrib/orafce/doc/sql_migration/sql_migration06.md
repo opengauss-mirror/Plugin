@@ -3,84 +3,14 @@ Chapter 6 Notes on Using orafce
 
 This chapter provides notes on using Oracle database compatibility features added by orafce.
 
-### 6.1 Data Types
-This section explains how to migrate data types added by orafce.
-
-#### 6.1.1 Notes on VARCHAR2
-This section provides notes on VARCHAR2.
-
-##### 6.1.1.1 Specifying the Maximum Number of Bytes and Maximum Number of Characters
-
-**Functional differences**
-
- - **Oracle database**
-     - Specifying the keyword BYTE or CHAR after a size enables the size to be indicated in terms of the maximum number of bytes or the maximum number of characters.
- - **OpenGauss**
-     - The keyword BYTE or CHAR cannot be set after the size.
-
-**Migration procedure**
-
-Use the following procedure to perform migration:
-
- 1. Search for the keyword VARCHAR2 and check if the keyword BYTE or CHAR is specified after the size.
- 2. If the BYTE keyword is specified, delete it.
- 3. If the CHAR keyword is specified, delete it and convert the data type to VARCHAR.
-
-**Migration example**
-
-The example below shows migration when the maximum number of bytes or the maximum number of characters for the VARCHAR2 type is specified.
-
-<table>
-<thead>
-<tr>
-<th align="center">Oracle database</th>
-<th align="center">OpenGauss</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td align="left">
-<pre><code>CREATE TABLE t1( 
-  col1 VARCHAR2<b>(5 BYTE)</b>, 
-  col2 <b>VARCHAR2(5 CHAR)</b> 
- );</code></pre>
-</td>
-
-<td align="left">
-<pre><code>CREATE TABLE t1( 
-  col1 VARCHAR2<b>(5)</b>, 
-  col2 <b>VARCHAR(5)</b> 
- );</code></pre>
-</td>
-</tr>
-</tbody>
-</table>
-
-
-**Note**
-
-----
-
-The VARCHAR2 type does not support collating sequences. Therefore, the following error occurs when a collating sequence like that of an ORDER BY clause is required. At this time, the following HINT will prompt to use a COLLATE clause, however, because collating sequences are not supported, it is not possible to use this clause.
-
-~~~
-ERROR:  could not determine which collation to use for string comparison
-HINT:  Use the COLLATE clause to set the collation explicitly.
-
-~~~
-
-If the error shown above is displayed, explicitly cast the column to VARCHAR or TEXT type.
-
-----
-
-### 6.2 Functions
+### 6.1 Functions
 This section explains how to migrate functions added by orafce.
 
-#### 6.2.1 INSTRB
+#### 6.1.1 INSTRB
 **Description**
 
 INSTRB searches for a substring in a string and returns the start position (in bytes) of the first occurrence of the substring.
-##### 6.2.1.1 Obtaining the Start Position of a Substring (in Bytes)
+##### 6.1.1.1 Obtaining the Start Position of a Substring (in Bytes)
 **Functional differences**
 
  - **Oracle database**
@@ -153,7 +83,7 @@ INSTRB returns the start position (in bytes) of a substring within a string.
  - If *str2* is not found, 0 is returned.
  - The data type of the return value is INTEGER.
 
-##### 6.2.1.2 Obtaining the Start Position of a Substring from a Specified Search Start Position (in Bytes)
+##### 6.1.1.2 Obtaining the Start Position of a Substring from a Specified Search Start Position (in Bytes)
 
 **Functional differences**
 
@@ -209,7 +139,7 @@ The example below shows migration when a search start position is specified and 
 
 
 
-#### 6.2.2 INSTRC, INSTR2, and INSTR4
+#### 6.1.2 INSTRC, INSTR2, and INSTR4
 
 **Description**
 
@@ -269,7 +199,7 @@ The example below shows migration from INSTRC, INSTR2, and INSTR4.
 </table>
 
 
-#### 6.2.3 LENGTHC, LENGTH2, and LENGTH4
+#### 6.1.3 LENGTHC, LENGTH2, and LENGTH4
 
 **Description**
 
@@ -335,163 +265,7 @@ The example below shows migration from LENGTHC, LENGTH2, and LENGTH4.
 </table>
 
 
-#### 6.2.4 NLSSORT
-**Description**
-
-NLSSORT returns a binary value that denotes the lexical order of the locale (COLLATE).
-
-##### 6.2.4.1 Sorting by the Specified Locale
-
-**Functional differences**
-
- - **Oracle database**
-     - The locale is specified by NLS_SORT=locale.<br> The specifiable locales are provided by the Oracle database.
- - **OpenGauss**
-     - The locale is specified by locale. <br> The specifiable locales depend on the operating system.
-
-**Migration procedure**
-
-Use the following procedure to perform migration:
-
- 1. Search for the keyword NLSSORT and identify where it is used.
- 2. Delete NLS_SORT= and change the locale to the locale used by the operating system corresponding to the specified collating sequence.
-
-**Migration example**
-
-The example below shows migration when the specified locale is used for sorting. Note that the example locale in OpenGauss would be the value specified for Linux.
-
-<table>
-<thead>
-<tr>
-<th align="center">Oracle database</th>
-<th align="center">OpenGauss</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td align="left">
-<pre><code> SELECT c_code, c_name 
-  FROM company_table 
-  ORDER BY NLSSORT( c_name, 
-                    <b>'NLS_SORT = xDanish'</b> ); 
-<br>
- SELECT c_code, c_name 
-  FROM company_table 
-  ORDER BY NLSSORT( c_name, 
-                    <b>'NLS_SORT = JAPANESE_M'</b> );</code></pre>
-</td>
-
-<td align="left">
-<pre><code> SELECT c_code, c_name 
-  FROM company_table 
-  ORDER BY NLSSORT( c_name, <b>'danish'</b> ); 
-<br>
-<br>
- SELECT c_code, c_name 
-  FROM company_table 
-  ORDER BY NLSSORT( c_name, <b>'ja_JP.UTF8'</b> ); 
- </code></pre>
-</td>
-</tr>
-</tbody>
-</table>
-
-
-
-##### 6.2.4.2 Sorting by Character Set
-
-**Functional differences**
-
- - **Oracle database**
-     - NLS_SORT=BINARY is specified in the locale specification for sorting by character set.
- - **OpenGauss**
-     - C is specified in the locale specification for sorting by character set.
-
-**Migration procedure**
-
-Use the following procedure to perform migration:
-
- 1. Search for the keyword NLSSORT and identify where it is used.
- 2. If NLS_SORT=BINARY is specified for the locale, change it to C.
-
-**Migration example**
-
-The example below shows migration when the character set is used for sorting.
-
-<table>
-<thead>
-<tr>
-<th align="center">Oracle database</th>
-<th align="center">OpenGauss</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td align="left">
-<pre><code> SELECT c_code, c_name 
-  FROM company_table 
-  ORDER BY <b>NLSSORT( c_name, 'NLS_SORT = BINARY' );</b></code></pre>
-</td>
-
-<td align="left">
-<pre><code> SELECT c_code, c_name 
-  FROM company_table 
-  ORDER BY <b>NLSSORT( c_name, 'C' );</b></code></pre>
-</td>
-</tr>
-</tbody>
-</table>
-
-
-
-##### 6.2.4.3 Case-Insensitive Sorting
-
-**Functional differences**
-
- - **Oracle database**
-     - Specifying _CI at the end of the locale sets case-insensitive sorting.
- - **OpenGauss**
-     - _CI cannot be specified at the end of the locale.
-
-**Migration procedure**
-
-There are no features that perform case-insensitive sorting, so make all characters either uppercase or lowercase before starting sorting so that the same result is returned. Use the following procedure to perform migration:
-
- 1. Search for the keyword NLSSORT and identify where it is used.
- 2. If _CI is specified at the end of the specified locale, put the sort column inside the parentheses of LOWER (or UPPER).
-
-**Migration example**
-
-The example below shows migration when case-insensitive sorting is used.
-
-<table>
-<thead>
-<tr>
-<th align="center">Oracle database</th>
-<th align="center">OpenGauss</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td align="left">
-<pre><code> SELECT c_code, c_name 
-  FROM company_table 
- ORDER BY NLSSORT( c_name, 
-                   <b>'NLS_SORT = JAPANESE_M_CI'</b> );</code></pre>
-</td>
-
-<td align="left">
-<pre><code> SELECT c_code, c_name 
-  FROM company_table 
-  ORDER BY NLSSORT( <b>LOWER</b>( c_name ), 
-                    <b>'ja_JP.UTF8'</b> ); 
- </code></pre>
-</td>
-</tr>
-</tbody>
-</table>
-
-#### 6.2.5 SUBSTRC, SUBSTR2, and SUBSTR4
+#### 6.1.4 SUBSTRC, SUBSTR2, and SUBSTR4
 
 **Description**
 
@@ -552,12 +326,12 @@ The example below shows migration when part of a string is extracted in the char
 
 
 
-#### 6.2.6 SUBSTRB
+#### 6.1.5 SUBSTRB
 **Description**
 
 SUBSTRB extracts part of a string in bytes.
 
-##### 6.2.6.1 Specifying Zero as the Start Position
+##### 6.1.5.1 Specifying Zero as the Start Position
 **Functional differences**
 
  - **Oracle database**
@@ -599,7 +373,7 @@ The example below shows migration when 0 is specified as the start position for 
 </table>
 
 
-##### 6.2.6.2 Specifying a Negative Value as the Start Position
+##### 6.1.5.2 Specifying a Negative Value as the Start Position
 **Functional differences**
 
  - **Oracle database**
@@ -651,7 +425,7 @@ The example below shows migration when a negative value is specified as the star
 </tbody>
 </table>
 
-##### 6.2.6.3 Specifying a Value Less Than One as the String Length
+##### 6.1.5.3 Specifying a Value Less Than One as the String Length
 **Functional differences**
 
  - **Oracle database**
@@ -698,7 +472,7 @@ The example below shows migration when a value less than 1 is specified as the s
 </tbody>
 </table>
 
-#### 6.2.7 Functions Requiring Parentheses
+#### 6.1.6 Functions Requiring Parentheses
 
 Some functions added by orafce do not have arguments. Parentheses must be added to these functions when they are called. The functions to which parentheses must be added are listed below.
 Functions requiring parentheses:
@@ -731,232 +505,11 @@ The example below shows migration when a function that has no arguments is calle
 </tbody>
 </table>
 
-### 6.3 Standard Packages
+### 6.2 Standard Packages
 
 This section explains how to migrate the standard packages added by orafce.
 
-#### 6.3.1 DBMS_ALERT
-
-**Description**
-
-The DBMS_ALERT package sends alerts from a PL/pgSQL execution session to multiple other PL/pgSQL execution sessions.
-
-##### 6.3.1.1 Set Value of DBMS_ALERT.REGISTER
-
-**Functional differences**
-
- - **Oracle database**
-     - The second argument of DBMS_ALERT.REGISTER can be specified. The second argument specifies whether to perform a cleanup of the pipe to be used. <br> The default is TRUE, which causes a cleanup to be performed.
- - **OpenGauss**
-     - The second argument cannot be specified.
-
-**Migration procedure**
-
-Use the following procedure to perform migration:
-
- 1. Search for the keyword DBMS_ALERT.REGISTER and identify where it is used.
- 2. If the second argument is specified, delete it.
-
-**Migration example**
-
-The example below shows migration when the second argument is specified in DBMS_ALERT.REGISTER.
-
-<table>
-<thead>
-<tr>
-<th align="center">Oracle database</th>
-<th align="center">OpenGauss</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td align="left">
-<pre><code> DBMS_ALERT.REGISTER( 'SAMPLEALERT', <b>TRUE</b> );</code></pre>
-</td>
-
-<td align="left">
-<pre><code> PERFORM DBMS_ALERT.REGISTER( 'SAMPLEALERT' );</code></pre>
-</td>
-</tr>
-</tbody>
-</table>
-
-##### 6.3.1.2 Case Sensitivity of Alert Names
-
-**Functional differences**
-
- - **Oracle database**
-     - Alert names are case-insensitive.
- - **OpenGauss**
-     - Alert names are case-sensitive.
-
-**Migration procedure**
-
-Use the following procedure to perform migration:
-
- 1. Search for the keywords DBMS_ALERT.REGISTER, DBMS_ALERT.SIGNAL, DBMS_ALERT.WAITONE, and DBMS_ALERT.REMOVE, and identify where they are used.
- 2. If there are alert names in different cases (uppercase and lowercase characters), change them to the same case.
-
-**Migration example**
-
-The example below shows migration when there is an alert name in uppercase characters and an alert name in lowercase characters. In this example, the alert names are aligned in uppercase.
-
-<table>
-<thead>
-<tr>
-<th align="center">Oracle database</th>
-<th align="center">OpenGauss</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td align="left">
-<pre><code> DBMS_ALERT.REGISTER( 'SAMPLEALERT', <b>TRUE</b> ); 
- ~ 
- DBMS_ALERT.SIGNAL( <b>'samplealert'</b>, 
-                    'TEST MESSAGE 1' );</code></pre>
-</td>
-
-<td align="left">
-<pre><code> PERFORM DBMS_ALERT.REGISTER( 'SAMPLEALERT' ); 
- ~ 
- PERFORM DBMS_ALERT.SIGNAL( <b>'SAMPLEALERT'</b>, 
-                            'TEST MESSAGE 1' );</code></pre>
-</td>
-</tr>
-</tbody>
-</table>
-
-##### 6.3.1.3 Other Notes on Using DBMS_ALERT
-
-This section explains the functional differences to be noted when DBMS_ALERT is used. Note that PL/pgSQL features cannot migrate these functional differences. Consider, for example, changing the application logic.
-
-###### 6.3.1.3.1 Executing DBMS_ALERT.SIGNAL from Multiple PL/pgSQL Sessions
-
-**Functional differences**
-
- - **Oracle database**
-     - DBMS_ALERT.SIGNAL is serialized according to the execution sequence. <br> Therefore, when DBMS_ALERT.SIGNAL is sent from multiple PL/SQL execution sessions to the same alert, <br> each DBMS_ALERT.SIGNAL remains in wait state until the preceding DBMS_ALERT.SIGNAL is committed.
- - **OpenGauss**
-     - DBMS_ALERT.SIGNAL is not serialized according to the execution sequence. <br> Therefore, even if the preceding DBMS_ALERT.SIGNAL is not yet committed, <br> the following DBMS_ALERT.SIGNAL does not enter wait state and the alert that is committed first is reported.
-
-###### 6.3.1.3.2 Message Received when Alert is Reported Multiple Times
-
-**Functional differences**
-
- - **Oracle database**
-     - If multiple DBMS_ALERT.SIGNAL procedures are executed between the time that DBMS_ALERT.REGISTER is executed and DBMS_ALERT.WAITANY/WAITONE is executed, the message from the DBMS_ALERT.SIGNAL executed last is received. All earlier alert messages are discarded.
- - **OpenGauss**
-     - If multiple DBMS_ALERT.SIGNAL procedures are executed between the time that DBMS_ALERT.REGISTER is executed and DBMS_ALERT.WAITANY/WAITONE is executed, the message from the DBMS_ALERT.SIGNAL executed first is received. Subsequent alert messages are not discarded but retained.
-
-**Note**
-
-----
-
-If alerts with the same name are used in multiple sessions, ensure that all alert messages are received or delete alerts from the PL/pgSQL sessions by using DBMS_ALERT.REMOVE/REMOVEALL at the point where alerts no longer need to be received. If alerts remain when the session is closed, other sessions may no longer be able to receive alerts properly.
-
-----
-
-##### 6.3.1.4 Example of Migrating DBMS_ALERT
-
-The example below shows migration to PL/pgSQL when DBMS_ALERT is used.
-
-<table>
-<thead>
-<tr>
-<th align="center">Oracle database</th>
-<th align="center">OpenGauss</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td align="left">
-<pre><code>(Receiving side) 
- BEGIN 
-  <b>DBMS_ALERT.REGISTER( 'SAMPLEALERT', TRUE );</b> 
- END; 
- / 
-<br>
-<br>
- ------------------------------------------------- 
- (Sending side) 
-<br>
- BEGIN 
-   DBMS_ALERT.SIGNAL( <b>'samplealert'</b>, 
-                      'TEST MESSAGE 1' ); 
-   COMMIT; 
-   DBMS_ALERT.SIGNAL( <b>'samplealert'</b>, 
-                      'TEST MESSAGE 2' ); 
-   COMMIT; 
- END; 
- / 
- ------------------------------------------------- 
- (Receiving side) 
- SET SERVEROUTPUT ON 
- DECLARE 
-  alname VARCHAR2(100) := 'SAMPLEALERT'; 
-  almess VARCHAR2(1000); 
-  alst   NUMBER; 
- BEGIN 
-  DBMS_ALERT.WAITONE( alname, almess, alst, 60 ); 
-  DBMS_OUTPUT.PUT_LINE( alname ); 
-  DBMS_OUTPUT.PUT_LINE( almess ); 
-  DBMS_OUTPUT.PUT_LINE( 'alst =' &#124;&#124; alst ); 
-  DBMS_ALERT.REMOVE( alname ); 
- END; 
- / 
-<br>
-<br>
-  </code></pre>
-</td>
-
-<td align="left">
-<pre><code> (Receiving side) 
- DO $$ 
- BEGIN 
-  <b>PERFORM DBMS_ALERT.REGISTER( 'SAMPLEALERT' );</b> 
- END; 
- $$ 
- ; 
- ------------------------------------------------- 
- (Sending side) 
- DO $$ 
- BEGIN 
-  PERFORM DBMS_ALERT.SIGNAL( <b>'SAMPLEALERT'</b>, 
-                             'TEST MESSAGE 1' ); 
-  PERFORM DBMS_ALERT.SIGNAL( <b>'SAMPLEALERT'</b>, 
-                             'TEST MESSAGE 2' ); 
- END; 
- $$ 
- ; 
-<br>
- ------------------------------------------------- 
- (Receiving side) 
- DO $$ 
- DECLARE 
-  alname VARCHAR2(100) := 'SAMPLEALERT'; 
-  almess VARCHAR2(1000); 
-  alst   int; 
- BEGIN 
-  PERFORM DBMS_OUTPUT.SERVEROUTPUT( TRUE ); 
-  SELECT message, status INTO almess, alst 
-   FROM DBMS_ALERT.WAITONE( alname, 60 ); 
-  PERFORM DBMS_OUTPUT.PUT_LINE( alname ); 
-  PERFORM DBMS_OUTPUT.PUT_LINE( almess ); 
-  PERFORM DBMS_OUTPUT.PUT_LINE( 'alst =' &#124;&#124; alst ); 
-  PERFORM DBMS_ALERT.REMOVE( alname ); 
- END; 
- $$ 
- ; 
- </code></pre>
-</td>
-</tr>
-</tbody>
-</table>
-
-
-
-#### 6.3.2 DBMS_ASSERT
+#### 6.2.1 DBMS_ASSERT
 
 **Description**
 
@@ -1269,7 +822,7 @@ The example below shows migration to PL/pgSQL when DBMS_ASSERT is used.
 </tbody>
 </table>
 
-#### 6.3.3 DBMS_OUTPUT
+#### 6.2.2 DBMS_OUTPUT
 **Description**
 
 The DBMS_OUTPUT package sends messages from PL/pgSQL to clients such as psql.
@@ -1411,7 +964,7 @@ The example below shows migration to PL/pgSQL when DBMS_OUTPUT is used.
 </tbody>
 </table>
 
-#### 6.3.4 DBMS_PIPE
+#### 6.2.3 DBMS_PIPE
 **Description**
 
 The DBMS_PIPE package performs one-to-one communication between PL/pgSQL sessions.
@@ -1806,7 +1359,7 @@ The example below shows migration when the maximum pipe size is specified.
 </tbody>
 </table>
 
-### 6.3.4.8 Example of Migrating DBMS_PIPE
+### 6.2.3.8 Example of Migrating DBMS_PIPE
 The example below shows migration when one-to-one communication is performed between PL/pgSQL sessions.
 
 <table>
