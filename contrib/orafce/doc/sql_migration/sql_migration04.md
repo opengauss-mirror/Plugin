@@ -7,138 +7,7 @@ This chapter explains how to migrate SQL statements.
 
 This section provides examples of migrating partitions.
 
-#### 4.1.1 Partition Tables
-
-**Description**
-
-Partitions split tables and indexes into smaller units for management.
-
-The following example shows conversion of an Oracle database partition to child tables in OpenGauss. All migration examples provided here are based on this table.
-
-**Example of tables created by partitioning inventory_table**
-
-|	i_number <br> (product code)	|	i_name <br> (category)	|	i_quantity <br> (inventory quantity)	|	i_warehouse <br> (warehouse code)	|
-|	:---:	|	:---	|	:---:	|	:---:	|
-|	SMALLINT <br> PRIMARY KEY	|	VARCHAR(20) <br> NOT NULL	|	INTEGER	|	SMALLINT	|
-|	123	|	refrigerator	|	60	|	1	|
-|	124	|	refrigerator	|	75	|	1	|
-|	226	|	refrigerator	|	8	|	1	|
-|	227	|	refrigerator	|	15	|	1	|
-|	110	|	television	|	85	|	2	|
-|	111	|	television	|	90	|	2	|
-|	140	|	cd player	|	120	|	2	|
-|	212	|	television	|	0	|	2	|
-|	215	|	Video	|	5	|	2	|
-|	240	|	cd player	|	25	|	2	|
-|	243	|	cd player	|	14	|	2	|
-|	351	|	Cd	|	2500	|	2	|
-
-
-**Functional differences**
-
- - **Oracle database**
-     - Partition tables can be created.
- - **OpenGauss**
-     - Partition tables cannot be created.
-
-**Migration procedure**
-
-Use the following procedure to perform migration:
-
- 1. Search for the keyword PARTITION and identify where CREATE TABLE is used to create a partition.
- 2. Delete the PARTITION clause and following lines from the CREATE TABLE statement and create a table.
- 3. Create a child table that inherits the table defined in step 1, and add table constraints to the split table for defining partition constraints.
- 4. Define a trigger or rule so that data inserted to the table is assigned to the appropriate child table.
-
-**Migration example**
-
-The example below shows migration when partitions are created in inventory_table.
-
-<table>
-<thead>
-<tr>
-<th align="center">Oracle database</th>
-<th align="center">OpenGauss</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td align="left">
-<pre><code>CREATE TABLE inventory_table( 
- i_number SMALLINT PRIMARY KEY, 
- i_name VARCHAR2(20) NOT NULL, 
- i_quantity INTEGER, 
- i_warehouse SMALLINT ) 
- <b>PARTITION BY LIST ( i_warehouse ) 
- ( PARTITION inventory_table_1 VALUES (1), 
- PARTITION inventory_table_2 VALUES (2) );</b> 
-<br>
-<br>
-<br>
-<br>
-<br>
-<br>
-<br>
-<br>
-<br>
-<br>
-<br>
-<br>
-<br>
-<br>
-<br>
-<br>
-<br>
-<br>
-<br>
-<br>
-<br>
-<br>
-<br>
-<br>
-</code></pre>
-</td>
-
-<td align="left">
- <pre><code>CREATE TABLE inventory_table( 
- i_number SMALLINT PRIMARY KEY, 
- i_name VARCHAR(20) NOT NULL, 
- i_quantity INTEGER, 
- i_warehouse SMALLINT ); 
- <b>CREATE TABLE inventory_table_1 
- (CHECK ( i_warehouse = 1 )) 
- INHERITS( inventory_table ); 
- CREATE TABLE inventory_table_2 
- (CHECK ( i_warehouse = 2 )) 
- INHERITS( inventory_table ); 
- ------------------------------------------------- 
- CREATE FUNCTION TABLE_INSERT_TRIGGER() 
- RETURNS TRIGGER AS $$ 
- BEGIN 
-   IF ( NEW.i_warehouse = 1 ) THEN 
-     INSERT INTO inventory_table_1 
- VALUES( NEW.*); 
-   ELSIF ( NEW.i_warehouse = 2 ) THEN 
-     INSERT INTO inventory_table_2 
- VALUES( NEW.*); 
- ELSE 
-   RAISE EXCEPTION 'Data out of range.  Fix the TABLE_INSERT_TRIGGER() function!'; 
-   END IF; 
-   RETURN NULL; 
- END; 
- $$ LANGUAGE plpgsql; 
- ------------------------------------------------- 
- CREATE TRIGGER TABLE_INSERT_TRIGGER 
- BEFORE INSERT ON inventory_table 
- FOR EACH ROW 
- EXECUTE PROCEDURE TABLE_INSERT_TRIGGER();</b></code></pre>
-</td>
-</tr>
-</tbody>
-</table>
-
-
-#### 4.1.2 PARTITION Clause in a SELECT Statement
+#### 4.1.1 PARTITION Clause in a SELECT Statement
 
 Before a PARTITION clause in a SELECT statement can be migrated, the Oracle database partition must have been converted to child tables for OpenGauss.
 
@@ -146,7 +15,7 @@ Before a PARTITION clause in a SELECT statement can be migrated, the Oracle data
 
 A PARTITION clause treats only some partitions of the table (partition table) specified in the FROM clause as the targets of a query.
 
-#### 4.1.2.1 Queries Where a PARTITION Clause is Specified
+#### 4.1.1.1 Queries Where a PARTITION Clause is Specified
 
 **Functional differences**
 
@@ -191,7 +60,7 @@ The example below shows migration of a query that uses PARTITION.
 </tbody>
 </table>
 
-#### 4.1.2. Queries when FOR is Specified in a PARTITION Clause
+#### 4.1.1.2 Queries when FOR is Specified in a PARTITION Clause
 
 **Functional differences**
 
