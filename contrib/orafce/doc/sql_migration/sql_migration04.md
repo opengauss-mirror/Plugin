@@ -13,7 +13,7 @@ This section provides examples of migrating partitions.
 
 Partitions split tables and indexes into smaller units for management.
 
-The following example shows conversion of an Oracle database partition to child tables in PostgreSQL. All migration examples provided here are based on this table.
+The following example shows conversion of an Oracle database partition to child tables in OpenGauss. All migration examples provided here are based on this table.
 
 **Example of tables created by partitioning inventory_table**
 
@@ -38,7 +38,7 @@ The following example shows conversion of an Oracle database partition to child 
 
  - **Oracle database**
      - Partition tables can be created.
- - **PostgreSQL**
+ - **OpenGauss**
      - Partition tables cannot be created.
 
 **Migration procedure**
@@ -58,7 +58,7 @@ The example below shows migration when partitions are created in inventory_table
 <thead>
 <tr>
 <th align="center">Oracle database</th>
-<th align="center">PostgreSQL</th>
+<th align="center">OpenGauss</th>
 </tr>
 </thead>
 <tbody>
@@ -140,7 +140,7 @@ The example below shows migration when partitions are created in inventory_table
 
 #### 4.1.2 PARTITION Clause in a SELECT Statement
 
-Before a PARTITION clause in a SELECT statement can be migrated, the Oracle database partition must have been converted to child tables for PostgreSQL.
+Before a PARTITION clause in a SELECT statement can be migrated, the Oracle database partition must have been converted to child tables for OpenGauss.
 
 **Description**
 
@@ -152,7 +152,7 @@ A PARTITION clause treats only some partitions of the table (partition table) sp
 
  - **Oracle database**
      - A PARTITION clause can be specified.
- - **PostgreSQL**
+ - **OpenGauss**
      - A PARTITION clause cannot be specified.
 
 **Migration procedure**
@@ -171,7 +171,7 @@ The example below shows migration of a query that uses PARTITION.
 <thead>
 <tr>
 <th align="center">Oracle database</th>
-<th align="center">PostgreSQL</th>
+<th align="center">OpenGauss</th>
 </tr>
 </thead>
 <tbody>
@@ -197,7 +197,7 @@ The example below shows migration of a query that uses PARTITION.
 
  - **Oracle database**
      - FOR can be specified in a PARTITION clause.
- - **PostgreSQL**
+ - **OpenGauss**
      - A PARTITION clause cannot be specified.
 
 **Migration procedure**
@@ -216,7 +216,7 @@ The example below shows migration when a PARTITION FOR clause is used to execute
 <thead>
 <tr>
 <th align="center">Oracle database</th>
-<th align="center">PostgreSQL</th>
+<th align="center">OpenGauss</th>
 </tr>
 </thead>
 <tbody>
@@ -248,7 +248,7 @@ UNIQUE deletes duplicate rows from the selected list and displays the result.
 
  - **Oracle database**
      - UNIQUE can be specified in a select list.
- - **PostgreSQL**
+ - **OpenGauss**
      - UNIQUE cannot be specified in a select list. Specify DISTINCT instead.
 
 **Migration procedure**
@@ -266,7 +266,7 @@ The example below shows migration when UNIQUE is specified in a select list.
 <thead>
 <tr>
 <th align="center">Oracle database</th>
-<th align="center">PostgreSQL</th>
+<th align="center">OpenGauss</th>
 </tr>
 </thead>
 <tbody>
@@ -295,7 +295,7 @@ A subquery specifies a sub SELECT statement in the main SQL statement.
 
  - **Oracle database**
      - A subquery specified in a FROM clause can be executed even without an alias being specified for it.
- - **PostgreSQL**
+ - **OpenGauss**
      - A subquery specified in a FROM clause cannot be executed unless an alias is specified for it.
 
 **Migration procedure**
@@ -313,7 +313,7 @@ The example below shows migration when a SELECT statement that uses a subquery i
 <thead>
 <tr>
 <th align="center">Oracle database</th>
-<th align="center">PostgreSQL</th>
+<th align="center">OpenGauss</th>
 </tr>
 </thead>
 <tbody>
@@ -348,7 +348,7 @@ If a table contains data that can associate its own records, a hierarchical quer
 
  - **Oracle database**
      - Hierarchical queries can be used.
- - **PostgreSQL**
+ - **OpenGauss**
      - Hierarchical queries cannot be used.
 
 **Migration procedure**
@@ -383,7 +383,7 @@ The example below shows migration when a hierarchical query is executed.
 <thead>
 <tr>
 <th align="center">Oracle database</th>
-<th align="center">PostgreSQL</th>
+<th align="center">OpenGauss</th>
 </tr>
 </thead>
 <tbody>
@@ -425,7 +425,7 @@ The example below shows migration when a hierarchical query is executed.
 
  - **Oracle database**
      - A START WITH clause can be specified in a hierarchical query to set start row conditions.
- - **PostgreSQL**
+ - **OpenGauss**
      - A START WITH clause cannot be specified.
 
 **Migration procedure**
@@ -444,7 +444,7 @@ The example below shows migration when the start row is specified using a hierar
 <thead>
 <tr>
 <th align="center">Oracle database</th>
-<th align="center">PostgreSQL</th>
+<th align="center">OpenGauss</th>
 </tr>
 </thead>
 <tbody>
@@ -488,7 +488,7 @@ The example below shows migration when the start row is specified using a hierar
 
  - **Oracle database**
      - Specifying a LEVEL pseudocolumn in the select list of a hierarchical query displays the hierarchical position of each row.
- - **PostgreSQL**
+ - **OpenGauss**
      - A LEVEL pseudocolumn cannot be specified.
 
 **Migration procedure**
@@ -527,7 +527,7 @@ The example below shows migration when a hierarchical query is used for displayi
 <thead>
 <tr>
 <th align="center">Oracle database</th>
-<th align="center">PostgreSQL</th>
+<th align="center">OpenGauss</th>
 </tr>
 </thead>
 <tbody>
@@ -579,7 +579,7 @@ The example below shows migration when a hierarchical query is used for displayi
 
  - **Oracle database**
      - Specifying SYS_CONNECT_BY_PATH in the select list of a hierarchical query displays the hierarchical structure.
- - **PostgreSQL**
+ - **OpenGauss**
      - SYS_CONNECT_BY_PATH cannot be specified.
 
 **Migration procedure**
@@ -618,7 +618,7 @@ The example below shows migration when the hierarchical structure is displayed.
 <thead>
 <tr>
 <th align="center">Oracle database</th>
-<th align="center">PostgreSQL</th>
+<th align="center">OpenGauss</th>
 </tr>
 </thead>
 <tbody>
@@ -671,7 +671,7 @@ The example below shows migration when the hierarchical structure is displayed.
 
  - **Oracle database**
      - Specifying an ORDER SIBLINGS BY clause in a hierarchical query enables sorting of each hierarchical level.
- - **PostgreSQL**
+ - **OpenGauss**
      - An ORDER SIBLINGS BY clause cannot be specified.
 
 **Migration procedure**
@@ -716,7 +716,7 @@ The example below shows migration when a hierarchical query is used to perform a
 <thead>
 <tr>
 <th align="center">Oracle database</th>
-<th align="center">PostgreSQL</th>
+<th align="center">OpenGauss</th>
 </tr>
 </thead>
 <tbody>
@@ -799,7 +799,7 @@ MINUS finds the difference between two query results, that is, it returns rows t
 
  - **Oracle database**
      - MINUS is specified to find the difference between two query results.
- - **PostgreSQL**
+ - **OpenGauss**
      - MINUS cannot be specified to find the difference between two query results. Specify EXCEPT instead.
 
 **Migration procedure**
@@ -817,7 +817,7 @@ The example below shows migration when the set difference of query results is to
 <thead>
 <tr>
 <th align="center">Oracle database</th>
-<th align="center">PostgreSQL</th>
+<th align="center">OpenGauss</th>
 </tr>
 </thead>
 <tbody>
@@ -851,7 +851,7 @@ This section explains DELETE statements.
 
  - **Oracle database**
      - The FROM keyword can be omitted from a DELETE statement.
- - **PostgreSQL**
+ - **OpenGauss**
      - The FROM keyword cannot be omitted from a DELETE statement.
 
 **Migration procedure**
@@ -869,7 +869,7 @@ The example below shows migration when the FROM keyword is omitted from a DELETE
 <thead>
 <tr>
 <th align="center">Oracle database</th>
-<th align="center">PostgreSQL</th>
+<th align="center">OpenGauss</th>
 </tr>
 </thead>
 <tbody>
@@ -898,7 +898,7 @@ This section explains MERGE statements.
 
  - **Oracle database**
      - MERGE statements can be used.
- - **PostgreSQL**
+ - **OpenGauss**
      - MERGE statements cannot be used.
 
 **Migration procedure**
@@ -917,7 +917,7 @@ The example below shows how to migrate the MERGE statement.
 <thead>
 <tr>
 <th align="center">Oracle database</th>
-<th align="center">PostgreSQL</th>
+<th align="center">OpenGauss</th>
 </tr>
 </thead>
 <tbody>
@@ -998,7 +998,7 @@ The example below shows migration of a MERGE statement in which no primary key o
 <thead>
 <tr>
 <th align="center">Oracle database</th>
-<th align="center">PostgreSQL</th>
+<th align="center">OpenGauss</th>
 </tr>
 </thead>
 <tbody>
@@ -1062,7 +1062,7 @@ An ALTER INDEX statement changes an index definition.
 
  - **Oracle database**
      - A REBUILD clause can be specified in the ALTER INDEX statement to restructure an index.
- - **PostgreSQL**
+ - **OpenGauss**
      - A REBUILD clause cannot be specified in the ALTER INDEX statement. Use a REINDEX statement instead.
 
 **Migration procedure**
@@ -1080,7 +1080,7 @@ The example below shows migration when an index is restructured.
 <thead>
 <tr>
 <th align="center">Oracle database</th>
-<th align="center">PostgreSQL</th>
+<th align="center">OpenGauss</th>
 </tr>
 </thead>
 <tbody>
@@ -1102,7 +1102,7 @@ The example below shows migration when an index is restructured.
 
  - **Oracle database**
      - A tablespace can be specified in a REBUILD clause.
- - **PostgreSQL**
+ - **OpenGauss**
      - A REBUILD clause cannot be used.
 
 **Migration procedure**
@@ -1121,7 +1121,7 @@ The example below shows migration when a tablespace is specified for restructuri
 <thead>
 <tr>
 <th align="center">Oracle database</th>
-<th align="center">PostgreSQL</th>
+<th align="center">OpenGauss</th>
 </tr>
 </thead>
 <tbody>
@@ -1146,7 +1146,7 @@ The example below shows migration when a tablespace is specified for restructuri
 
  - **Oracle database**
      - PCTFREE can be specified in a REBUILD clause to specify a free space percentage for an index.
- - **PostgreSQL**
+ - **OpenGauss**
      - A REBUILD clause cannot be used.
 
 **Migration procedure**
@@ -1165,7 +1165,7 @@ The example below shows migration when a fill factor is specified for restructur
 <thead>
 <tr>
 <th align="center">Oracle database</th>
-<th align="center">PostgreSQL</th>
+<th align="center">OpenGauss</th>
 </tr>
 </thead>
 <tbody>
@@ -1194,7 +1194,7 @@ An ALTER SESSION statement specifies and changes parameters per session.
 
  - **Oracle database**
      - An ALTER SESSION statement is used to close dblink.
- - **PostgreSQL**
+ - **OpenGauss**
      - ALTER SESSION statements cannot be used. Use DBLINK_CLOSE instead.
 
 **Migration procedure**
@@ -1212,7 +1212,7 @@ The example below shows migration when dblink is closed.
 <thead>
 <tr>
 <th align="center">Oracle database</th>
-<th align="center">PostgreSQL</th>
+<th align="center">OpenGauss</th>
 </tr>
 </thead>
 <tbody>
@@ -1234,7 +1234,7 @@ The example below shows migration when dblink is closed.
 
  - **Oracle database**
      - An ALTER SESSION statement is used to change the initialization parameters.
- - **PostgreSQL**
+ - **OpenGauss**
      - ALTER SESSION statements cannot be used. Use a SET statement instead to change the server parameters.
 
 **Migration procedure**
@@ -1246,7 +1246,7 @@ Use the following procedure to perform migration:
 
 **Corresponding initialization parameters and server parameters**
 
-|Initialization parameter|Runtime configuration parameters of PostgreSQL|
+|Initialization parameter|Runtime configuration parameters of OpenGauss|
 |:---|:---|
 |	ENABLE_DDL_LOGGING	|	log_statement	|
 |	NLS_CURRENCY	|	lc_monetary	|
@@ -1266,7 +1266,7 @@ The example below shows migration when the initialization parameters are changed
 <thead>
 <tr>
 <th align="center">Oracle database</th>
-<th align="center">PostgreSQL</th>
+<th align="center">OpenGauss</th>
 </tr>
 </thead>
 <tbody>
@@ -1294,7 +1294,7 @@ The values that can be specified for server parameters may differ from those tha
 
 ----
 
-Refer to "Server Configuration" in "Server Administration" in the PostgreSQL Documentation for information on server parameters.
+Refer to "Server Configuration" in "Server Administration" in the OpenGauss Documentation for information on server parameters.
 
 ----
 
@@ -1305,7 +1305,7 @@ Refer to "Server Configuration" in "Server Administration" in the PostgreSQL Doc
 
  - **Oracle database**
      - An ALTER SESSION statement is used to set transaction characteristics.
- - **PostgreSQL**
+ - **OpenGauss**
      - ALTER SESSION statements cannot be used. Use a SET TRANSACTION statement instead.
 
 **Migration procedure**
@@ -1323,7 +1323,7 @@ The example below shows migration when transaction characteristics are set.
 <thead>
 <tr>
 <th align="center">Oracle database</th>
-<th align="center">PostgreSQL</th>
+<th align="center">OpenGauss</th>
 </tr>
 </thead>
 <tbody>
@@ -1347,7 +1347,7 @@ The example below shows migration when transaction characteristics are set.
 
  - **Oracle database**
      - An ALTER SESSION statement is used to set the time zone.
- - **PostgreSQL**
+ - **OpenGauss**
      - ALTER SESSION statements cannot be used. Use a SET statement instead.
 
 **Migration procedure**
@@ -1365,7 +1365,7 @@ The example below shows migration when the time zone is set.
 <thead>
 <tr>
 <th align="center">Oracle database</th>
-<th align="center">PostgreSQL</th>
+<th align="center">OpenGauss</th>
 </tr>
 </thead>
 <tbody>
@@ -1386,7 +1386,7 @@ The example below shows migration when the time zone is set.
 
 ----
 
-Be sure to use the full time zone name when specifying the time zone in the TimeZone parameter of PostgreSQL.
+Be sure to use the full time zone name when specifying the time zone in the TimeZone parameter of OpenGauss.
 
 ----
 
@@ -1398,7 +1398,7 @@ A GRANT statement defines access privileges.
 
 #### 4.7.1 Migratability of GRANT Statement Features
 
-The following table indicates the migratability of the GRANT statement features provided by Oracle databases to PostgreSQL.
+The following table indicates the migratability of the GRANT statement features provided by Oracle databases to OpenGauss.
 
 **System privileges**
 
@@ -1445,7 +1445,7 @@ N: Cannot be migrated
 
  - **Oracle database**
      - A GRANT statement is used to grant privileges for creating and changing users and roles.
- - **PostgreSQL**
+ - **OpenGauss**
      - A GRANT statement cannot be used to grant privileges for creating and changing users and roles. Use an ALTER ROLE statement instead.
 
 **Migration procedure**
@@ -1459,13 +1459,13 @@ Use the following procedure to perform migration:
 
  - **ROLES**
 
-|GRANT statement in Oracle database|Corresponding ALTER ROLE statement in PostgreSQL|
+|GRANT statement in Oracle database|Corresponding ALTER ROLE statement in OpenGauss|
 |:---|:---:|
 |GRANT CREATE ROLE TO *roleName* <br> GRANT ALTER ANY ROLE TO *roleName* <br> GRANT DROP ANY ROLE TO *roleName* <br> GRANT ANY ROLE TO *roleName* | ALTER ROLE *roleName* CREATEROLE;|
 
  - **USERS**
 
-|GRANT statement in Oracle database|Corresponding ALTER ROLE statement in PostgreSQL|
+|GRANT statement in Oracle database|Corresponding ALTER ROLE statement in OpenGauss|
 |:---|:---:|
 |GRANT CREATE USER TO *userName* <br> GRANT ALTER USER TO *userName* <br> GRANT DROP USER TO *userName*|ALTER ROLE *userName* CREATEUSER|
 
@@ -1478,7 +1478,7 @@ The example below shows migration when role creation privileges are granted.
 <thead>
 <tr>
 <th align="center">Oracle database</th>
-<th align="center">PostgreSQL</th>
+<th align="center">OpenGauss</th>
 </tr>
 </thead>
 <tbody>
@@ -1500,7 +1500,7 @@ The example below shows migration when role creation privileges are granted.
 
  - **Oracle database**
      - A GRANT statement is used to grant creation privileges per object.
- - **PostgreSQL**
+ - **OpenGauss**
      - A GRANT statement is used to grant object creation privileges per schema or database.
 
 **Migration procedure**
@@ -1512,7 +1512,7 @@ Use the following procedure to perform migration:
 
 **Migratable object creation privileges**
 
-|Object|GRANT statement in Oracle database|Corresponding ALTER ROLE statement in PostgreSQL|
+|Object|GRANT statement in Oracle database|Corresponding ALTER ROLE statement in OpenGauss|
 |:---|:---|:---|
 |	MATERIALIZED VIEWS	|	GRANT CREATE MATERIALIZED VIEW TO *userName*	|	GRANT CREATE ON SCHEMA *schemaName* TO *userName*	|
 |	OPERATORS	|	GRANT CREATE OPERATOR TO *userName*	|	GRANT CREATE ON SCHEMA *schemaName* TO *userName*	|
@@ -1532,7 +1532,7 @@ The example below shows migration when table creation privileges are granted.
 <thead>
 <tr>
 <th align="center">Oracle database</th>
-<th align="center">PostgreSQL</th>
+<th align="center">OpenGauss</th>
 </tr>
 </thead>
 <tbody>
@@ -1554,7 +1554,7 @@ The example below shows migration when table creation privileges are granted.
 
  - **Oracle database**
      - When a GRANT statement is used to assign a user to a role, a password can be set at the same time.
- - **PostgreSQL**
+ - **OpenGauss**
      - When a GRANT statement is used to assign a user to a role, a password cannot be set at the same time.
 
 **Migration procedure**
@@ -1575,7 +1575,7 @@ The example below shows migration when role1 is granted to user1.
 <thead>
 <tr>
 <th align="center">Oracle database</th>
-<th align="center">PostgreSQL</th>
+<th align="center">OpenGauss</th>
 </tr>
 </thead>
 <tbody>
@@ -1594,9 +1594,9 @@ The example below shows migration when role1 is granted to user1.
 
 #### 4.7.3 Granting Object Privileges
 
-There is no difference in the syntax of GRANT statements with regard to object privileges that are migratable from an Oracle database. However, some object privileges cannot be used in PostgreSQL, so they must be changed to supported object privileges.
+There is no difference in the syntax of GRANT statements with regard to object privileges that are migratable from an Oracle database. However, some object privileges cannot be used in OpenGauss, so they must be changed to supported object privileges.
 
-The table below lists the object privileges that can be migrated from an Oracle database to PostgreSQL.
+The table below lists the object privileges that can be migrated from an Oracle database to OpenGauss.
 
 **Migratable object privileges**
 
@@ -1611,7 +1611,7 @@ The table below lists the object privileges that can be migrated from an Oracle 
 
 |Name of object privilege|Change required|Remarks|
 |:---|:---:|:---|
-EXECUTE	|	Yes	|	In PostgreSQL, EXECUTE privileges must be granted to a function that implements operators.|
+EXECUTE	|	Yes	|	In OpenGauss, EXECUTE privileges must be granted to a function that implements operators.|
 
  - **Procedure, function, and package privileges**
 
