@@ -2,72 +2,71 @@ drop database if exists mysql_test;
 NOTICE:  database "mysql_test" does not exist, skipping
 create database mysql_test dbcompatibility 'b';
 \c mysql_test
-create extension dolphin;
 --验证DAYOFMONTH() DAYOFWEEK() DAYOFYEAR() HOUR() MICROSECOND() MINUTE() QUARTER() SECOND() WEEKDAY() WEEKOFYEAR() YEAR()
-select DAYOFMONTH(timestamp '2021-11-4 16:30:44.341191');
+select DAYOFMONTH(datetime '2021-11-4 16:30:44.341191');
  date_part 
 -----------
          4
 (1 row)
 
-select DAYOFWEEK(timestamp '2021-11-4 16:30:44.341191');
+select DAYOFWEEK(datetime '2021-11-4 16:30:44.341191');
  ?column? 
 ----------
         5
 (1 row)
 
-select DAYOFYEAR(timestamp '2021-12-31 16:30:44.341191');
+select DAYOFYEAR(datetime '2021-12-31 16:30:44.341191');
  date_part 
 -----------
        365
 (1 row)
 
-select HOUR(timestamp '2021-11-4 16:30:44.341191');
+select HOUR(datetime '2021-11-4 16:30:44.341191');
  date_part 
 -----------
         16
 (1 row)
 
-select MICROSECOND(timestamp '2021-11-4 16:30:44.341191');
+select MICROSECOND(datetime '2021-11-4 16:30:44.341191');
  date_part 
 -----------
     341191
 (1 row)
 
-select MINUTE(timestamp '2021-11-4 16:30:44.341191');
+select MINUTE(datetime '2021-11-4 16:30:44.341191');
  date_part 
 -----------
         30
 (1 row)
 
-select QUARTER(timestamp '2021-11-4 16:30:44.341191');
+select QUARTER(datetime '2021-11-4 16:30:44.341191');
  date_part 
 -----------
          4
 (1 row)
 
-select SECOND(timestamp '2021-11-4 16:30:44.341191');
+select SECOND(datetime '2021-11-4 16:30:44.341191');
  date_part 
 -----------
         44
 (1 row)
 
-select WEEKDAY(timestamp '2021-11-4 16:30:44.341191');
+select WEEKDAY(datetime '2021-11-4 16:30:44.341191');
  ?column? 
 ----------
         3
 (1 row)
 
-select WEEKOFYEAR(timestamp '2021-11-4 16:30:44.341191');
+select WEEKOFYEAR(datetime '2021-11-4 16:30:44.341191');
  date_part 
 -----------
         44
 (1 row)
 
-select YEAR(timestamp '2021-11-4 16:30:44.341191');
- date_part 
------------
-      2021
+select YEAR(datetime '2021-11-4 16:30:44.341191');
+ year 
+------
+ 2021
 (1 row)
 
 --测试点：LOCATE(substr,str)
@@ -116,32 +115,32 @@ select locate('test','11testgood',3);
 
 --测试点：IFNULL
 SELECT IFNULL(NULL, 'test');
- nvl  
-------
+ ifnull 
+--------
  test
 (1 row)
 
 SELECT IFNULL('test', NULL);
- nvl  
-------
+ ifnull 
+--------
  test
 (1 row)
 
 SELECT IFNULL(NULL, NULL);
- nvl 
------
+ ifnull 
+--------
  
 (1 row)
 
 SELECT IFNULL('test', '');
- nvl  
-------
+ ifnull 
+--------
  test
 (1 row)
 
 SELECT IFNULL('', 'test');
- nvl 
------
+ ifnull 
+--------
  
 (1 row)
 
@@ -288,11 +287,11 @@ select * from pg_proc where proname in ('db_b_parser_length');
 ---------+--------------+----------+---------+---------+---------+-------------+--------------+----------+-------------+-----------+--------------+-------------+-----------+-------------+----------+-----------------+------------+-------------+----------------+-------------+-------------+----------------+--------+--------+-----------+--------+------------------+------------+--------------+------------+---------+-----------+--------------+--------------+----------------+---------------------+-------------+----------------
 (0 rows)
 
---返回1、3、10
+--返回1、1、2
 select length(b'1'), length(b'101'), length(b'1011111111');
  length | length | length 
 --------+--------+--------
-      1 |      3 |     10
+      1 |      1 |      2
 (1 row)
 
 --返回1、3、10
@@ -302,11 +301,11 @@ select length('1'), length('101'), length('1011111111');
       1 |      3 |     10
 (1 row)
 
---返回5、2、3
-select length('哈1哈\n'),length('\n'),length('\\n');
+--返回8、1、2
+select length(E'哈1哈\n'),length(E'\n'),length(E'\\n');
  length | length | length 
 --------+--------+--------
-      5 |      2 |      3
+      8 |      1 |      2
 (1 row)
 
 --返回0、1、空

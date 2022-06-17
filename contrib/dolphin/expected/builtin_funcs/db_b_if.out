@@ -1,0 +1,197 @@
+drop database if exists format_test;
+NOTICE:  database "format_test" does not exist, skipping
+create database format_test dbcompatibility 'B';
+\c format_test
+select if(TRUE, 1, 2);
+ case 
+------
+    1
+(1 row)
+
+select if(FALSE, 1, 2);
+ case 
+------
+    2
+(1 row)
+
+-- wrong type for first param
+select if('abc', 1, 2);
+ERROR:  invalid input syntax for type boolean: "abc"
+LINE 1: select if('abc', 1, 2);
+                  ^
+CONTEXT:  referenced column: case
+-- '2022-01-30' is text, date '2022-01-30' is date
+CREATE VIEW test_view as select '2022-01-30' as text_type, date '2022-01-30' as date_type;
+\d+ test_view
+                View "public.test_view"
+  Column   | Type | Modifiers | Storage  | Description 
+-----------+------+-----------+----------+-------------
+ text_type | text |           | extended | 
+ date_type | date |           | plain    | 
+View definition:
+ SELECT '2022-01-30'::text AS text_type, '01-30-2022'::date AS date_type;
+
+-- string to date
+select if (true, '2022-01-30', date '2022-01-30') as a, if (false, '2022-01-30', date '2022-01-30') as b;
+     a      |     b      
+------------+------------
+ 2022-01-30 | 01-30-2022
+(1 row)
+
+-- string to numeric
+select if (true, '2022-01-30', 1.1::numeric(10, 2)) as a, if (false, '2022-01-30', 1.1::numeric(10, 2)) as b;
+     a      |  b   
+------------+------
+ 2022-01-30 | 1.10
+(1 row)
+
+-- string to float
+select if (true, '2022-01-30', 1.1::float8) as a, if (false, '2022-01-30', 1.1::float8) as b;
+     a      |  b  
+------------+-----
+ 2022-01-30 | 1.1
+(1 row)
+
+-- string to integer
+select if (true, '2022-01-30', 1::int4) as a, if (false, '2022-01-30', 1::int4) as b;
+     a      | b 
+------------+---
+ 2022-01-30 | 1
+(1 row)
+
+-- date to numeric
+select if (true, date '2022-01-30', 1.1::numeric(10, 2)) as a, if (false, date '2022-01-30', 1.1::numeric(10, 2)) as b;
+     a      |  b   
+------------+------
+ 01-30-2022 | 1.10
+(1 row)
+
+-- date to float
+select if (true, date '2022-01-30', 1.1::float8) as a, if (false, date '2022-01-30', 1.1::float8) as b;
+     a      |  b  
+------------+-----
+ 01-30-2022 | 1.1
+(1 row)
+
+-- date to integer
+select if (true, date '2022-01-30', 1::int4) as a, if (false, date '2022-01-30', 1::int4) as b;
+     a      | b 
+------------+---
+ 01-30-2022 | 1
+(1 row)
+
+-- numeric to float
+select if (true, 2.2::numeric(10, 2), 1.1::float8) as a, if (false, 2.2::numeric(10, 2), 1.1::float8) as b;
+  a   |  b  
+------+-----
+ 2.20 | 1.1
+(1 row)
+
+-- numeric to integer
+select if (true, 2.2::numeric(10, 2), 1::int4) as a, if (false, 2.2::numeric(10, 2), 1::int4) as b;
+  a   | b 
+------+---
+ 2.20 | 1
+(1 row)
+
+-- float to integer
+select if (true, 2.2::float8, 1::int4) as a, if (false, 2.2::float8, 1::int4) as b;
+  a  | b 
+-----+---
+ 2.2 | 1
+(1 row)
+
+-- TODO
+-- binary to date
+select if (true, 'aaa'::binary(5), date '2022-01-30') as a, if (false, 'aaa'::binary(5), date '2022-01-30') as b;
+ERROR:  CASE/ELSE could not convert type date to "binary"
+LINE 1: select if (true, 'aaa'::binary(5), date '2022-01-30') as a, ...
+                                                ^
+CONTEXT:  referenced column: a
+-- binary to numeric
+select if (true, 'aaa'::binary(5), 1.1::numeric(10, 2)) as a, if (false, 'aaa'::binary(5), 1.1::numeric(10, 2)) as b;
+ERROR:  CASE/ELSE could not convert type numeric to "binary"
+LINE 1: select if (true, 'aaa'::binary(5), 1.1::numeric(10, 2)) as a...
+                                           ^
+CONTEXT:  referenced column: a
+-- binary to float
+select if (true, 'aaa'::binary(5), 1.1::float8) as a, if (false, 'aaa'::binary(5), 1.1::float8) as b;
+ERROR:  CASE/ELSE could not convert type double precision to "binary"
+LINE 1: select if (true, 'aaa'::binary(5), 1.1::float8) as a, if (fa...
+                                           ^
+CONTEXT:  referenced column: a
+-- binary to integer
+select if (true, 'aaa'::binary(5), 1::int4) as a, if (false, 'aaa'::binary(5), 1::int4) as b;
+ERROR:  CASE/ELSE could not convert type integer to "binary"
+LINE 1: select if (true, 'aaa'::binary(5), 1::int4) as a, if (false,...
+                                           ^
+CONTEXT:  referenced column: a
+-- varbinary to date
+select if (true, 'aaa'::varbinary(5), date '2022-01-30') as a, if (false, 'aaa'::varbinary(5), date '2022-01-30') as b;
+ERROR:  CASE/ELSE could not convert type date to "varbinary"
+LINE 1: select if (true, 'aaa'::varbinary(5), date '2022-01-30') as ...
+                                                   ^
+CONTEXT:  referenced column: a
+-- varbinary to numeric
+select if (true, 'aaa'::varbinary(5), 1.1::numeric(10, 2)) as a, if (false, 'aaa'::varbinary(5), 1.1::numeric(10, 2)) as b;
+ERROR:  CASE/ELSE could not convert type numeric to "varbinary"
+LINE 1: select if (true, 'aaa'::varbinary(5), 1.1::numeric(10, 2)) a...
+                                              ^
+CONTEXT:  referenced column: a
+-- varbinary to float
+select if (true, 'aaa'::varbinary(5), 1.1::float8) as a, if (false, 'aaa'::varbinary(5), 1.1::float8) as b;
+ERROR:  CASE/ELSE could not convert type double precision to "varbinary"
+LINE 1: select if (true, 'aaa'::varbinary(5), 1.1::float8) as a, if ...
+                                              ^
+CONTEXT:  referenced column: a
+-- varbinary to integer
+select if (true, 'aaa'::varbinary(5), 1::int4) as a, if (false, 'aaa'::varbinary(5), 1::int4) as b;
+ERROR:  CASE/ELSE could not convert type integer to "varbinary"
+LINE 1: select if (true, 'aaa'::varbinary(5), 1::int4) as a, if (fal...
+                                              ^
+CONTEXT:  referenced column: a
+-- blob to date
+select if (true, 'aaa'::blob, date '2022-01-30') as a, if (false, 'aaa'::blob, date '2022-01-30') as b;
+ERROR:  CASE types date and blob cannot be matched
+LINE 1: select if (true, 'aaa'::blob, date '2022-01-30') as a, if (f...
+                         ^
+CONTEXT:  referenced column: a
+-- blob to numeric
+select if (true, 'aaa'::blob, 1.1::numeric(10, 2)) as a, if (false, 'aaa'::blob, 1.1::numeric(10, 2)) as b;
+ERROR:  CASE types numeric and blob cannot be matched
+LINE 1: select if (true, 'aaa'::blob, 1.1::numeric(10, 2)) as a, if ...
+                         ^
+CONTEXT:  referenced column: a
+-- blob to float
+select if (true, 'aaa'::blob, 1.1::float8) as a, if (false, 'aaa'::blob, 1.1::float8) as b;
+ERROR:  CASE types double precision and blob cannot be matched
+LINE 1: select if (true, 'aaa'::blob, 1.1::float8) as a, if (false, ...
+                         ^
+CONTEXT:  referenced column: a
+-- blob to integer
+select if (true, 'aaa'::blob, 1::int4) as a, if (false, 'aaa'::blob, 1::int4) as b;
+ERROR:  CASE types integer and blob cannot be matched
+LINE 1: select if (true, 'aaa'::blob, 1::int4) as a, if (false, 'aaa...
+                         ^
+CONTEXT:  referenced column: a
+-- ERROR
+-- string to boolean
+select if (true, '2022-01-30', true) as a, if (false, '2022-01-30', true) as b;
+ERROR:  CASE types boolean and text cannot be matched
+LINE 1: select if (true, '2022-01-30', true) as a, if (false, '2022-...
+                         ^
+CONTEXT:  referenced column: a
+-- float to boolean
+select if (true, 1.1::float8, true) as a, if (false, 1.1::float8, true) as b;
+ERROR:  CASE types boolean and double precision cannot be matched
+LINE 1: select if (true, 1.1::float8, true) as a, if (false, 1.1::fl...
+                         ^
+CONTEXT:  referenced column: a
+-- numeric to boolean
+select if (true, 2.2::numeric(10, 2), true) as a, if (false, 2.2::numeric(10, 2), true) as b;
+ERROR:  CASE types boolean and numeric cannot be matched
+LINE 1: select if (true, 2.2::numeric(10, 2), true) as a, if (false,...
+                         ^
+CONTEXT:  referenced column: a
+\c postgres
+drop database if exists format_test;

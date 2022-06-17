@@ -589,6 +589,7 @@ static int errstate;
 %type <defelt>	generic_option_elem alter_generic_option_elem
 %type <list>	generic_option_list alter_generic_option_list
 %type <str>		explain_option_name
+%type <keyword>	describe_command
 %type <node>	explain_option_arg
 %type <defelt>	explain_option_elem
 %type <list>	explain_option_list
@@ -804,7 +805,7 @@ static int errstate;
 	CURRENT_TIME CURRENT_TIMESTAMP CURRENT_USER CURSOR CYCLE
 
 	DATA_P DATABASE DATAFILE DATANODE DATANODES DATATYPE_CL DATE_P DATE_FORMAT_P DAY_P  DAYOFMONTH DAYOFWEEK DAYOFYEAR DBCOMPATIBILITY_P DB_B_FORMAT DEALLOCATE DEC DECIMAL_P DECLARE DECODE DEFAULT DEFAULTS
-	DEFERRABLE DEFERRED DEFINER DELETE_P DELIMITER DELIMITERS DELTA DELTAMERGE DESC DETERMINISTIC DIV
+	DEFERRABLE DEFERRED DEFINER DELETE_P DELIMITER DELIMITERS DELTA DELTAMERGE DESC DESCRIBE DETERMINISTIC DIV
 /* PGXC_BEGIN */
 	DICTIONARY DIRECT DIRECTORY DISABLE_P DISCARD DISTINCT DISTINCTROW DISTRIBUTE DISTRIBUTION DO DOCUMENT_P DOMAIN_P DOUBLE_P
 /* PGXC_END */
@@ -835,7 +836,7 @@ static int errstate;
 	LABEL LANGUAGE LARGE_P LAST_P LC_COLLATE_P LC_CTYPE_P LEADING LEAKPROOF
 	LEAST LESS LEFT LEVEL LIKE LIMIT LIST LISTEN LOAD LOCAL LOCALTIME LOCALTIMESTAMP
 	LOCATE LOCATION LOCK_P LOG_P LOGGING LOGIN_ANY LOGIN_FAILURE LOGIN_SUCCESS LOGOUT LOOP
-	MAPPING MASKING MASTER MATCH MATERIALIZED MATCHED MAXEXTENTS MAXSIZE MAXTRANS MAXVALUE MEDIUMINT MERGE MICROSECOND_P MINUS_P MINUTE_P MINVALUE MINEXTENTS MOD MODE MODIFY_P MONTH_P MOVE MOVEMENT
+	MAPPING MASKING MASTER MATCH MATERIALIZED MATCHED MAXEXTENTS MAXSIZE MAXTRANS MAXVALUE MEDIUMINT MERGE MICROSECOND_P MID MINUS_P MINUTE_P MINVALUE MINEXTENTS MOD MODE MODIFY_P MONTH_P MOVE MOVEMENT
 	MODEL // DB4AI
 	NAME_P NAMES NATIONAL NATURAL NCHAR NEXT NO NOCOMPRESS NOCYCLE NODE NOLOGGING NOMAXVALUE NOMINVALUE NONE
 	NOT NOTHING NOTIFY NOTNULL NOWAIT NULL_P NULLCOLS NULLIF NULLS_P NUMBER_P NUMERIC NUMSTR NVARCHAR NVARCHAR2 NVL
@@ -851,7 +852,7 @@ static int errstate;
 /* PGXC_BEGIN */
 	PREFERRED PREFIX PRESERVE PREPARE PREPARED PRIMARY
 /* PGXC_END */
-	PRIVATE PRIOR PRIORER PRIVILEGES PRIVILEGE PROCEDURAL PROCEDURE PROFILE PUBLICATION PUBLISH PURGE
+	PRIVATE PRIOR PRIORER PRIVILEGES PRIVILEGE PROCEDURAL PROCEDURE PROCESSLIST PROFILE PUBLICATION PUBLISH PURGE
 
 	QUARTER QUERY QUOTE
 
@@ -863,7 +864,7 @@ static int errstate;
 	SAMPLE SAVEPOINT SCHEMA SCROLL SEARCH SECOND_P SECURITY SELECT SEQUENCE SEQUENCES
 	SERIALIZABLE SERVER SESSION SESSION_USER SET SETS SETOF SHARE SHIPPABLE SHOW SHUTDOWN SIBLINGS
 	SIMILAR SIMPLE SIZE SKIP SLICE SMALLDATETIME SMALLDATETIME_FORMAT_P SMALLINT SNAPSHOT SOME SOURCE_P SPACE SPILL SPLIT STABLE STANDALONE_P START STARTWITH
-	STATEMENT STATEMENT_ID STATISTICS STDIN STDOUT STORAGE STORE_P STORED STRATIFY STREAM STRICT_P STRIP_P SUBPARTITION SUBSCRIPTION SUBSTRING
+	STATEMENT STATEMENT_ID STATISTICS STDIN STDOUT STORAGE STORE_P STORED STRATIFY STREAM STRICT_P STRIP_P SUBPARTITION SUBSCRIPTION SUBSTR SUBSTRING
 	SYMMETRIC SYNONYM SYSDATE SYSID SYSTEM_P SYS_REFCURSOR
 
 	TABLE TABLES TABLESAMPLE TABLESPACE TARGET TEMP TEMPLATE TEMPORARY TERMINATED TEXT_P THAN THEN TIME TIME_FORMAT_P TIMECAPSULE TIMESTAMP TIMESTAMP_FORMAT_P TIMESTAMPDIFF TINYINT
@@ -2376,10 +2377,20 @@ FunctionSetResetClause:
 VariableShowStmt:
 			SHOW var_name
 				{
-					VariableShowStmt *n = makeNode(VariableShowStmt);
-					n->name = $2;
-					$$ = (Node *) n;
+					if (pg_strcasecmp($2, "processlist") == 0) {
+						SelectStmt *n = makeProcesslistQuery(FALSE);
+                       				$$ = (Node *) n;
+					} else {
+						VariableShowStmt *n = makeNode(VariableShowStmt);
+						n->name = $2;
+						$$ = (Node *) n;
+					}
 				}
+			| SHOW FULL PROCESSLIST
+				{
+					SelectStmt *n = makeProcesslistQuery(TRUE);
+                    			$$ = (Node *) n;
+                		}
 			| SHOW CURRENT_SCHEMA
 				{
 					VariableShowStmt *n = makeNode(VariableShowStmt);
@@ -18120,6 +18131,11 @@ ExplainStmt:
 					n->options = list_make1(makeDefElem("plan", NULL));
 					$$ = (Node *) n;
 				}
+		| describe_command qualified_name
+				{
+					SelectStmt *n = makeDescribeQuery($2->schemaname, $2->relname);
+					$$ = (Node *) n;
+				}
 		;
 
 ExplainableStmt:
@@ -18164,6 +18180,11 @@ explain_option_arg:
 			| NumericOnly			{ $$ = (Node *) $1; }
 			| /* EMPTY */			{ $$ = NULL; }
 		;
+
+describe_command:
+          		DESC
+       			| DESCRIBE
+        	;
 
 /*****************************************************************************
  *
@@ -21043,21 +21064,16 @@ opt_charset:
  * SQL92 date/time types
  */
 ConstDatetime:
-			TIMESTAMP '(' Iconst ')' opt_timezone
+			TIMESTAMP '(' Iconst ')'
 				{
-					if ($5)
-						$$ = SystemTypeName("timestamptz");
-					else
-						$$ = SystemTypeName("timestamp");
+					// b format database: timestamp -> timestamptz
+					$$ = SystemTypeName("timestamptz"); 
 					$$->typmods = list_make1(makeIntConst($3, @3));
 					$$->location = @1;
 				}
-			| TIMESTAMP opt_timezone
+			| TIMESTAMP
 				{
-					if ($2)
-						$$ = SystemTypeName("timestamptz");
-					else
-						$$ = SystemTypeName("timestamp");
+					$$ = SystemTypeName("timestamptz");
 					$$->location = @1;
 				}
 			| TIME '(' Iconst ')' opt_timezone
@@ -22628,50 +22644,29 @@ func_expr_common_subexpr:
 					n->call_func = false;
 					$$ = (Node *)n;
 				}
-            | DB_B_FORMAT '(' a_expr ',' a_expr ')'
-                {
-                    FuncCall *n = makeNode(FuncCall);
-                    if (u_sess->attr.attr_sql.sql_compatibility == B_FORMAT && GetSessionContext()->enableBFormatMode)
-                    {
-                        n->funcname = SystemFuncName("db_b_format");
-                        n->colname = "format";
-                    }
-                    else
-                    {
-                        n->funcname = SystemFuncName("format");
-                    }
-                    n->args = list_make2($3, $5);
-                    n->agg_order = NIL;
-                    n->agg_star = FALSE;
-                    n->agg_distinct = FALSE;
-                    n->func_variadic = FALSE;
-                    n->over = NULL;
-                    n->location = @1;
-                    n->call_func = false;
-                    $$ = (Node *)n;
-                }
-            | DB_B_FORMAT '(' a_expr ',' a_expr ',' a_expr ')'
-                {
-                    FuncCall *n = makeNode(FuncCall);
-                    if (u_sess->attr.attr_sql.sql_compatibility == B_FORMAT && GetSessionContext()->enableBFormatMode)
-                    {
-                        n->funcname = SystemFuncName("db_b_format");
-                        n->colname = "format";
-                    }
-                    else
-                    {
-                        n->funcname = SystemFuncName("format");
-                    }
-                    n->args = list_make3($3, $5, $7);
-                    n->agg_order = NIL;
-                    n->agg_star = FALSE;
-                    n->agg_distinct = FALSE;
-                    n->func_variadic = FALSE;
-                    n->over = NULL;
-                    n->location = @1;
-                    n->call_func = false;
-                    $$ = (Node *)n;
-                }
+			| DB_B_FORMAT '(' expr_list ')'
+				{
+					FuncCall *n = makeNode(FuncCall);
+					if (u_sess->attr.attr_sql.sql_compatibility == B_FORMAT && GetSessionContext()->enableBFormatMode
+						&& (list_length($3) == 2 || list_length($3) == 3))
+					{
+						n->funcname = SystemFuncName("db_b_format");
+						n->colname = "format";
+					}
+					else
+					{
+						n->funcname = SystemFuncName("format");
+					}
+					n->args = $3;
+					n->agg_order = NIL;
+					n->agg_star = FALSE;
+					n->agg_distinct = FALSE;
+					n->func_variadic = FALSE;
+					n->over = NULL;
+					n->location = @1;
+					n->call_func = false;
+					$$ = (Node *)n;
+				}
 			| SESSION_USER
 				{
 					FuncCall *n = makeNode(FuncCall);
@@ -22884,20 +22879,6 @@ func_expr_common_subexpr:
 					n->call_func = false;
 					$$ = (Node *)n;
 				}
-			| YEAR_P '(' a_expr ')'
-				{
-					FuncCall *n = makeNode(FuncCall);
-					n->funcname = SystemFuncName("date_part");
-					n->args = list_make2(makeStringConst("year", -1), $3);
-					n->agg_order = NIL;
-					n->agg_star = FALSE;
-					n->agg_distinct = FALSE;
-					n->func_variadic = FALSE;
-					n->over = NULL;
-					n->location = @1;
-					n->call_func = false;
-					$$ = (Node *)n;
-				}
 			| TIMESTAMPDIFF '(' timestamp_arg_list ')'
 				{
 					if (u_sess->attr.attr_sql.sql_compatibility == B_FORMAT)
@@ -23005,6 +22986,40 @@ func_expr_common_subexpr:
 					n->call_func = false;
 					$$ = (Node *)n;
 				}
+			| SUBSTR '(' substr_list ')'
+				{
+					/* substr(A from B for C) is converted to
+					 * substr(A, B, C)
+					 */
+					FuncCall *n = makeNode(FuncCall);
+					n->funcname = SystemFuncName("substr");
+					n->args = $3;
+					n->agg_order = NIL;
+					n->agg_star = FALSE;
+					n->agg_distinct = FALSE;
+					n->func_variadic = FALSE;
+					n->over = NULL;
+					n->location = @1;
+					n->call_func = false;
+					$$ = (Node *)n;
+				}
+			| MID '(' substr_list ')'
+				{
+					/* mid(A from B for C) is converted to
+					 * mid(A, B, C)
+					 */
+					FuncCall *n = makeNode(FuncCall);
+					n->funcname = SystemFuncName("mid");
+					n->args = $3;
+					n->agg_order = NIL;
+					n->agg_star = FALSE;
+					n->agg_distinct = FALSE;
+					n->func_variadic = FALSE;
+					n->over = NULL;
+					n->location = @1;
+					n->call_func = false;
+					$$ = (Node *)n;
+				}
 			| TREAT '(' a_expr AS Typename ')'
 				{
 					/* TREAT(expr AS target) converts expr of a particular type to target,
@@ -23035,6 +23050,7 @@ func_expr_common_subexpr:
 					 */
 					FuncCall *n = makeNode(FuncCall);
 					n->funcname = SystemFuncName("btrim");
+					n->colname = "trim";
 					n->args = $4;
 					n->agg_order = NIL;
 					n->agg_star = FALSE;
@@ -23049,6 +23065,7 @@ func_expr_common_subexpr:
 				{
 					FuncCall *n = makeNode(FuncCall);
 					n->funcname = SystemFuncName("ltrim");
+					n->colname = "trim";
 					n->args = $4;
 					n->agg_order = NIL;
 					n->agg_star = FALSE;
@@ -23063,6 +23080,7 @@ func_expr_common_subexpr:
 				{
 					FuncCall *n = makeNode(FuncCall);
 					n->funcname = SystemFuncName("rtrim");
+					n->colname = "trim";
 					n->args = $4;
 					n->agg_order = NIL;
 					n->agg_star = FALSE;
@@ -23077,6 +23095,7 @@ func_expr_common_subexpr:
 				{
 					FuncCall *n = makeNode(FuncCall);
 					n->funcname = SystemFuncName("btrim");
+					n->colname = "trim";
 					n->args = $3;
 					n->agg_order = NIL;
 					n->agg_star = FALSE;
@@ -23115,6 +23134,13 @@ func_expr_common_subexpr:
 					// modify NVL display to A db's style "NVL" instead of "COALESCE"
 					c->isnvl = false;
 					$$ = (Node *)c;
+				}
+			| ISNULL '(' a_expr ')'
+				{
+					NullTest *n = makeNode(NullTest);
+					n->arg = (Expr *)$3;
+					n->nulltesttype = IS_NULL;
+					$$ = (Node *)n;
 				}
 			| GREATEST '(' expr_list ')'
 				{
@@ -24556,6 +24582,7 @@ unreserved_keyword:
 			| DELIMITER
 			| DELIMITERS
 			| DELTA
+			| DESCRIBE
 			| DETERMINISTIC
 			| DICTIONARY
 			| DIRECT
@@ -24745,6 +24772,7 @@ unreserved_keyword:
 			| PRIVILEGE
 			| PRIVILEGES
 			| PROCEDURAL
+			| PROCESSLIST
 			| PROFILE
 			| PUBLICATION
 			| PUBLISH
@@ -24893,6 +24921,7 @@ unreserved_keyword:
 			| WRAPPER
 			| WRITE
 			| XML_P
+			| YEAR_P
 			| YES_P
 			| ZONE
 		;
@@ -24946,6 +24975,7 @@ col_name_keyword:
 			| LOCATE
 			| MEDIUMINT
 			| MICROSECOND_P
+			| MID
 			| MINUTE_P
 			| NATIONAL
 			| NCHAR
@@ -24967,6 +24997,7 @@ col_name_keyword:
 			| SETOF
 			| SMALLDATETIME
 			| SMALLINT
+			| SUBSTR
 			| SUBSTRING
 			| TIME
 			| TIMESTAMP
@@ -24989,7 +25020,6 @@ col_name_keyword:
 			| XMLPI
 			| XMLROOT
 			| XMLSERIALIZE
-			| YEAR_P
 		;
 
 /* Type/function identifier --- keywords that can be type or function names.

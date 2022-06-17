@@ -3,7 +3,6 @@ drop database if exists b;
 create database b dbcompatibility 'b';
 
 \c b
-create extension dolphin;
 
 create table test1(num int);
 create table test2(num int default 3);
@@ -177,7 +176,7 @@ select *from test41;
 
 --multiple type test
 create table m1(a int not null, b int, c int default 3, d int default 3 not null);
-create table m2(a date not null, b timestamp, c timestamp default '2020-01-01', d timestamp default '2020-01-01' not null);
+create table m2(a date not null, b datetime, c datetime default '2020-01-01', d datetime default '2020-01-01' not null);
 create table m3(a box not null, b path, c circle default '0,0,3', d box default '1,2,3,4' not null);
 create table m4(a text not null, b char, c nvarchar2 default 'abc', d bpchar default 'bcd' not null);
 insert into m1 values(),();

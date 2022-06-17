@@ -49,6 +49,8 @@
 #include "parser/parse_coerce.h"
 #include "catalog/pg_type.h"
 #include "workload/cpwlm.h"
+#include "utils/varbit.h"
+#include "plugin_utils/vecfunc_plugin.h"
 
 #define JUDGE_INPUT_VALID(X, Y) ((NULL == (X)) || (NULL == (Y)))
 #define GET_POSITIVE(X) ((X) > 0 ? (X) : ((-1) * (X)))
@@ -194,6 +196,12 @@ extern "C" DLL_PUBLIC Datum longblob2tinyblob(PG_FUNCTION_ARGS);
 
 PG_FUNCTION_INFO_V1_PUBLIC(longblob2mediumblob);
 extern "C" DLL_PUBLIC Datum longblob2mediumblob(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1_PUBLIC(gs_interval);
+extern "C" DLL_PUBLIC Datum gs_interval(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1_PUBLIC(gs_strcmp);
+extern "C" DLL_PUBLIC Datum gs_strcmp(PG_FUNCTION_ARGS);
 
 /*****************************************************************************
  *	 CONVERSION ROUTINES EXPORTED FOR USE BY C CODE							 *
@@ -812,7 +820,7 @@ Datum textlen(PG_FUNCTION_ARGS)
         return text_length_huge(str);
     } else {
         /* try to avoid decompressing argument */
-        PG_RETURN_INT32(text_length(str));
+        PG_RETURN_INT64(toast_raw_datum_size(str) - VARHDRSZ);
     }
 }
 
@@ -1076,10 +1084,14 @@ Datum text_substr_null(PG_FUNCTION_ARGS)
     fun_mblen = *pg_wchar_table[GetDatabaseEncoding()].mblen;
 
     is_compress = (VARATT_IS_COMPRESSED(DatumGetPointer(str)) || VARATT_IS_EXTERNAL(DatumGetPointer(str)));
-    // orclcompat is false withlen is true
-    baseIdx = 2 + (int)is_compress + (eml - 1) * 8;
 
-    result = (*substr_Array[baseIdx])(str, start, length, &is_null, fun_mblen);
+    /*
+     * To ensure M* compatibility, replace the function template
+     * with the function template whose orclcompat is true.
+     */
+    baseIdx = 6 + (int)is_compress + (eml - 1) * 8;
+
+    result = (*substr_Array_Plugin[baseIdx])(str, start, length, &is_null, fun_mblen);
 
     if (is_null == true)
         PG_RETURN_NULL();
@@ -1101,9 +1113,8 @@ Datum text_substr_no_len_null(PG_FUNCTION_ARGS)
 
     is_compress = (VARATT_IS_COMPRESSED(DatumGetPointer(str)) || VARATT_IS_EXTERNAL(DatumGetPointer(str)));
     // orclcompat is false withlen is false
-    baseIdx = (int)is_compress + (eml - 1) * 8;
-
-    result = (*substr_Array[baseIdx])(str, start, 0, &is_null, fun_mblen);
+    baseIdx = 4 + (int)is_compress + (eml - 1) * 8;
+    result = (*substr_Array_Plugin[baseIdx])(str, start, 0, &is_null, fun_mblen);
 
     if (is_null == true)
         PG_RETURN_NULL();
@@ -1339,8 +1350,7 @@ Datum text_substr_orclcompat(PG_FUNCTION_ARGS)
     is_compress = (VARATT_IS_COMPRESSED(DatumGetPointer(str)) || VARATT_IS_EXTERNAL(DatumGetPointer(str)));
     // orclcompat is true, withlen is true
     baseIdx = 6 + (int)is_compress + (eml - 1) * 8;
-
-    result = (*substr_Array[baseIdx])(str, start, length, &is_null, fun_mblen);
+    result = (*substr_Array_Plugin[baseIdx])(str, start, length, &is_null, fun_mblen);
 
     if (is_null == true)
         PG_RETURN_NULL();
@@ -1371,8 +1381,7 @@ Datum text_substr_no_len_orclcompat(PG_FUNCTION_ARGS)
     is_compress = (VARATT_IS_COMPRESSED(DatumGetPointer(str)) || VARATT_IS_EXTERNAL(DatumGetPointer(str)));
     // orclcompat is true, withlen is false
     baseIdx = 4 + (int)is_compress + (eml - 1) * 8;
-
-    result = (*substr_Array[baseIdx])(str, start, 0, &is_null, fun_mblen);
+    result = (*substr_Array_Plugin[baseIdx])(str, start, 0, &is_null, fun_mblen);
 
     if (is_null == true)
         PG_RETURN_NULL();
@@ -3174,14 +3183,12 @@ Datum bytea_substr_orclcompat(PG_FUNCTION_ARGS)
     int32 total = 0;
 
     total = toast_raw_datum_size(str) - VARHDRSZ;
-    if ((length < 0) || (start > total) || (start + total < 0)) {
-        if (u_sess->attr.attr_sql.sql_compatibility == A_FORMAT ||
-            u_sess->attr.attr_sql.sql_compatibility == B_FORMAT)
-            PG_RETURN_NULL();
-        else {
-            result = PG_STR_GET_BYTEA("");
-            PG_RETURN_BYTEA_P(result);
-        }
+
+    /* 
+     * Set length to 0 so that an empty bytea can be returned later.
+     */
+    if ((length < 0) || (start > total) || (start + total < 0) || (start == 0)) {
+        length = 0;
     }
     /*
      * the param length_not_specified is false,
@@ -3206,7 +3213,7 @@ Datum bytea_substr_no_len_orclcompat(PG_FUNCTION_ARGS)
     int32 total = 0;
 
     total = toast_raw_datum_size(str) - VARHDRSZ;
-    if ((start > total) || (start + total < 0)) {
+    if ((start > total) || (start + total < 0) || start == 0) {
         if (u_sess->attr.attr_sql.sql_compatibility == A_FORMAT)
             PG_RETURN_NULL();
         else {
@@ -3242,13 +3249,10 @@ static bytea* bytea_substring_orclcompat(Datum str, int S, int L, bool length_no
 
     /*
      * amend the start position. when S < 0,
-     * amend the sartPosition to abs(start) from last char,
-     * when s==0, the start position is set 1
+     * amend the sartPosition to abs(start) from last char
      */
     if (S < 0) {
         S = total + S + 1;
-    } else if (0 == S) {
-        S = 1;
     }
 
     S1 = Max(S, 1);
@@ -5061,12 +5065,13 @@ Datum bytea_to_hex(PG_FUNCTION_ARGS)
 {
     bytea* in = PG_GETARG_BYTEA_PP(0);
     char* str = VARDATA_ANY(in);
+    auto* unsigned_str = (unsigned char*) str;
     int len = VARSIZE_ANY_EXHDR(in);
     if (len == 0) {
         PG_RETURN_TEXT_P(cstring_to_text(""));
     }
 
-    char* str_ptr = str + len - 1;
+    unsigned char* str_ptr = unsigned_str + len - 1;
 
     char buf[2 * len + 1];
     char* result_ptr = buf + sizeof(buf) - 1;
@@ -5079,6 +5084,20 @@ Datum bytea_to_hex(PG_FUNCTION_ARGS)
     } while (result_ptr > buf);
 
     PG_RETURN_TEXT_P(cstring_to_text(result_ptr));
+}
+
+Datum bit_to_hex(PG_FUNCTION_ARGS)
+{
+    int64 arg_int = DatumGetInt64(DirectFunctionCall1(bittoint8, PG_GETARG_DATUM(0)));
+    int len = VARBITBYTES(PG_GETARG_VARBIT_P(0)) * 2;
+
+    char* result = (char*)palloc(len + 1);
+    result[len] = '\0';
+    do {
+        result[--len] = HEX_CHARS[arg_int & 15];
+        arg_int >>= 4;
+    } while (len > 0);
+    PG_RETURN_TEXT_P(cstring_to_text(result));
 }
 
 /*
@@ -6076,7 +6095,7 @@ Datum text_left(PG_FUNCTION_ARGS)
     text* part_str = NULL;
 
     if (n < 0) {
-        n = pg_mbstrlen_with_len(p, len) + n;
+        PG_RETURN_TEXT_P(cstring_to_text(""));
     }
 
     if (n >= 0) {
@@ -6113,7 +6132,7 @@ Datum text_right(PG_FUNCTION_ARGS)
     text* part_str = NULL;
 
     if (n < 0)
-        n = -n;
+        PG_RETURN_TEXT_P(cstring_to_text(""));
     else
         n = pg_mbstrlen_with_len(p, len) - n;
 
@@ -6646,17 +6665,26 @@ static char* db_b_format_get_cstring(Datum param, Oid param_oid)
 
 Datum db_b_format_locale(PG_FUNCTION_ARGS)
 {
+    if (PG_ARGISNULL(0) || PG_ARGISNULL(1)) {
+        PG_RETURN_NULL();
+    }
     Oid first_param_oid = get_fn_expr_argtype(fcinfo->flinfo, 0);
     char* ch_value = db_b_format_get_cstring(PG_GETARG_DATUM(0), first_param_oid);
     int precision = PG_GETARG_INT32(1);
 
     Oid third_param_oid = get_fn_expr_argtype(fcinfo->flinfo, 2);
+    if (PG_ARGISNULL(2)) {
+        PG_RETURN_TEXT_P(cstring_to_text(db_b_format_transfer(ch_value, precision, "en_US")));
+    }
     char* ch_locale = to_cstring_type(PG_GETARG_DATUM(2), third_param_oid);
     PG_RETURN_TEXT_P(cstring_to_text(db_b_format_transfer(ch_value, precision, ch_locale)));
 }
 
 Datum db_b_format(PG_FUNCTION_ARGS)
 {
+    if (PG_ARGISNULL(0) || PG_ARGISNULL(1)) {
+        PG_RETURN_NULL();
+    }
     Oid first_oid = get_fn_expr_argtype(fcinfo->flinfo, 0);
     char* ch_value = db_b_format_get_cstring(PG_GETARG_DATUM(0), first_oid);
     int precision = PG_GETARG_INT32(1);
@@ -7354,4 +7382,161 @@ Datum longblob2mediumblob(PG_FUNCTION_ARGS)
 {
     bytea* source = PG_GETARG_BYTEA_P(0);
     PG_RETURN_BYTEA_P(copy_blob(source, (int64)MediumBlobMaxAllocSize));
+}
+
+// return the first non ' ' index or the '\0' index
+static size_t truncate_front_space(char* str)
+{
+    size_t cursor = 0;
+    size_t len = strlen(str);
+    while (cursor < len && str[cursor] == ' ')
+        cursor++;
+    return cursor;
+}
+
+// truncate a cstring to be a valid numeric cstring(could be 0 length cstring)
+static void truncate_numeric_cstring(char* str)
+{
+    bool dot = false;
+    bool power = false;
+    bool digit = false;
+    bool sign = false;
+    size_t begin = truncate_front_space(str);
+    size_t len = strlen(str);
+    for (size_t i=begin; i<len; i++) {
+        if (!sign && (str[i] == '+' || str[i] == '-')) {
+            sign = true;
+        } else if (str[i] == '.' && !dot) {
+            dot = true;
+        } else if ((str[i] == 'e' || str[i] == 'E') && !power) {
+            if (!digit) {
+                str[i] = '\0';
+                break;
+            } else {
+                power = true;
+            }
+        } else if (str[i] >= '0' && str[i] <= '9') {
+            digit = true;
+        } else {
+            if (begin == i) {
+                str[0] = '\0';
+            } else {
+                str[i] = '\0';
+            }
+            break;
+        }
+    }
+    return;
+}
+
+Datum gs_interval(PG_FUNCTION_ARGS)
+{
+    // early return
+    if (PG_NARGS() == 0)
+        PG_RETURN_INT32(0);
+
+    if (PG_ARGISNULL(0))
+        PG_RETURN_INT32(-1);
+
+    Datum dt = PG_GETARG_DATUM(0);
+    Oid valtype = get_fn_expr_argtype(fcinfo->flinfo, 0);
+    bool typIsVarlena = false;
+    Oid typOutput;
+
+    check_huge_toast_pointer(dt, valtype);
+    if (!OidIsValid(valtype))
+        ereport(ERROR, (errcode(ERRCODE_INDETERMINATE_DATATYPE),
+            errmsg("could not determine data type of gs_interval() input")));
+
+    getTypeOutputInfo(valtype, &typOutput, &typIsVarlena);
+    char* str0 = OidOutputFunctionCall(typOutput, dt);
+
+    truncate_numeric_cstring(str0);
+
+    float8 first_value=0;
+
+    if (strlen(str0)!=0) {
+        first_value = DatumGetFloat8(DirectFunctionCall1(float8in, CStringGetDatum(str0)));
+    }
+
+    pfree_ext(str0);
+
+    int count=0;
+
+    // traverse arguments after the first one
+    for (int i=1; i < PG_NARGS(); i++) {
+        if (PG_ARGISNULL(i)) {
+            ++count;
+            continue;
+        }
+
+        dt = PG_GETARG_DATUM(i);
+        valtype = get_fn_expr_argtype(fcinfo->flinfo, i);
+        check_huge_toast_pointer(dt, valtype);
+
+        if (!OidIsValid(valtype))
+            ereport(ERROR, (errcode(ERRCODE_INDETERMINATE_DATATYPE),
+                errmsg("could not determine data type of gs_interval() input")));
+
+        getTypeOutputInfo(valtype, &typOutput, &typIsVarlena);
+
+        char* str = OidOutputFunctionCall(typOutput, dt);
+
+        truncate_numeric_cstring(str);
+
+        float8 value = 0;
+
+        if (strlen(str)!=0) {
+            value = DatumGetFloat8(DirectFunctionCall1(float8in, CStringGetDatum(str)));
+        }
+
+        pfree_ext(str);
+
+        if (value > first_value) {
+            break;
+        }
+        ++count;
+    }
+
+    PG_RETURN_INT32(count);
+}
+
+Datum gs_strcmp(PG_FUNCTION_ARGS)
+{
+    bool typIsVarlena = false;
+    Oid typOutput;
+    Datum dt = 0;
+    Oid valtype = 0;
+
+    dt = PG_GETARG_DATUM(0);
+    valtype = get_fn_expr_argtype(fcinfo->flinfo, 0);
+    check_huge_toast_pointer(dt, valtype);
+    if (!OidIsValid(valtype))
+        ereport(ERROR, (errcode(ERRCODE_INDETERMINATE_DATATYPE),
+            errmsg("could not determine data type of strcmp() input")));
+    getTypeOutputInfo(valtype, &typOutput, &typIsVarlena);
+    char* str0 = OidOutputFunctionCall(typOutput, dt);
+
+    dt = PG_GETARG_DATUM(1);
+    valtype = get_fn_expr_argtype(fcinfo->flinfo, 1);
+    check_huge_toast_pointer(dt, valtype);
+    if (!OidIsValid(valtype))
+        ereport(ERROR, (errcode(ERRCODE_INDETERMINATE_DATATYPE),
+            errmsg("could not determine data type of strcmp() input")));
+    getTypeOutputInfo(valtype, &typOutput, &typIsVarlena);
+    char* str1 = OidOutputFunctionCall(typOutput, dt);
+
+    int32 ret = strcmp(str0, str1);
+
+    if (ret>0) {
+        ret = 1;
+    } else if (ret<0) {
+        ret = -1;
+    } else {
+        ret = 0;
+    } 
+
+    pfree_ext(str0);
+    pfree_ext(str1);
+    PG_RETURN_INT32(ret);
 }

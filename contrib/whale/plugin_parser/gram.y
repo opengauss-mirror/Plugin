@@ -880,6 +880,8 @@ static int errstate;
 
 	ZONE
 
+	AST
+
 /*
  * The grammar thinks these are keywords, but they are not in the kwlist.h
  * list and so can never be entered directly.  The filter in parser.c
@@ -1028,6 +1030,11 @@ stmtmulti:	stmtmulti ';' stmt
 					else
 						$$ = NIL;
 				}
+			|
+			AST stmt
+			    {
+			        $$ = NIL;
+			    }
 		;
 stmt :
 			AlterAppWorkloadGroupMappingStmt

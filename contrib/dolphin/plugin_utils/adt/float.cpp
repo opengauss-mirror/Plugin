@@ -28,6 +28,7 @@
 #include "optimizer/pgxcship.h"
 #include "miscadmin.h"
 #include "plugin_commands/mysqlmode.h"
+#include "plugin_postgres.h"
 
 #ifndef M_PI
 /* from my RH5.2 gcc math.h file - thomas 2000-04-03 */
@@ -81,6 +82,13 @@ double float8in_internal(char* str, char** s, bool* hasError);
 #define cbrt my_cbrt
 static double cbrt(double x);
 #endif /* HAVE_CBRT */
+
+const float8 ConstLog2 = log10(2);
+
+PG_FUNCTION_INFO_V1_PUBLIC(dlog2);
+extern "C" DLL_PUBLIC Datum dlog2(PG_FUNCTION_ARGS);
+
+static float8 get_log_result(float8 arg, bool is_log10);
 
 /*
  * Routines to provide reasonably platform-independent handling of
@@ -305,10 +313,17 @@ Datum float4in(PG_FUNCTION_ARGS)
              * detect whether it's a "real" out-of-range condition by checking
              * to see if the result is zero or huge.
              */
-            if (val == 0.0 || val >= HUGE_VAL || val <= -HUGE_VAL)
-                ereport(ERROR,
-                    (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE),
-                        errmsg("\"%s\" is out of range for type real", orig_num)));
+            if (val == 0.0 || val >= HUGE_VAL || val <= -HUGE_VAL) {
+                if (SQL_MODE_STRICT() || val == 0.0) {
+                    ereport(ERROR,
+                        (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE),
+                            errmsg("\"%s\" is out of range for type real", orig_num)));
+                } else if (val >= HUGE_VAL) {
+                    val = __FLT_MAX__;
+                } else if (val <= -HUGE_VAL) {
+                    val = -__FLT_MAX__;
+                }
+            }
         } else if (SQL_MODE_STRICT())
             ereport(ERROR,
                 (errcode(ERRCODE_INVALID_TEXT_REPRESENTATION),
@@ -531,10 +546,17 @@ Datum float8in(PG_FUNCTION_ARGS)
              * detect whether it's a "real" out-of-range condition by checking
              * to see if the result is zero or huge.
              */
-            if (val == 0.0 || val >= HUGE_VAL || val <= -HUGE_VAL)
-                ereport(ERROR,
-                    (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE),
-                        errmsg("\"%s\" is out of range for type double precision", orig_num)));
+            if (val == 0.0 || val >= HUGE_VAL || val <= -HUGE_VAL) {
+                if (SQL_MODE_STRICT() || val == 0.0) {
+                    ereport(ERROR,
+                        (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE),
+                            errmsg("\"%s\" is out of range for type double precision", orig_num)));
+                } else if (val >= HUGE_VAL) {
+                    val = __DBL_MAX__;
+                } else if (val <= -HUGE_VAL) {
+                    val = -__DBL_MAX__;
+                }
+            }
         } else if (SQL_MODE_STRICT())
             ereport(ERROR,
                 (errcode(ERRCODE_INVALID_TEXT_REPRESENTATION),
@@ -582,6 +604,13 @@ Datum float8in(PG_FUNCTION_ARGS)
         ereport(ERROR,
             (errcode(ERRCODE_INVALID_TEXT_REPRESENTATION),
                 errmsg("invalid input syntax for type double precision: \"%s\"", orig_num)));
+    }
+
+    if (!SQL_MODE_STRICT()) {
+        if (val > __DBL_MAX__)
+            val = __DBL_MAX__;
+        else if(val < -__DBL_MAX__)
+            val = -__DBL_MAX__;
     }
 
     CHECKFLOATVAL(val, true, true);
@@ -1467,10 +1496,9 @@ Datum dsqrt(PG_FUNCTION_ARGS)
     float8 arg1 = PG_GETARG_FLOAT8(0);
     float8 result;
 
-    if (arg1 < 0)
-        ereport(ERROR,
-            (errcode(ERRCODE_INVALID_ARGUMENT_FOR_POWER_FUNCTION),
-                errmsg("cannot take square root of a negative number")));
+    if (arg1 < 0) {
+        PG_RETURN_NULL();
+    }
 
     result = sqrt(arg1);
 
@@ -1570,11 +1598,9 @@ Datum dlog1(PG_FUNCTION_ARGS)
      * Emit particular SQLSTATE error codes for ln(). This is required by the
      * SQL standard.
      */
-    if (arg1 == 0.0)
-        ereport(ERROR, (errcode(ERRCODE_INVALID_ARGUMENT_FOR_LOG), errmsg("cannot take logarithm of zero")));
-    if (arg1 < 0)
-        ereport(
-            ERROR, (errcode(ERRCODE_INVALID_ARGUMENT_FOR_LOG), errmsg("cannot take logarithm of a negative number")));
+    if (arg1 <= 0) {
+        PG_RETURN_NULL();
+    }
 
     result = log(arg1);
 
@@ -1582,12 +1608,8 @@ Datum dlog1(PG_FUNCTION_ARGS)
     PG_RETURN_FLOAT8(result);
 }
 
-/*
- *		dlog10			- returns the base 10 logarithm of arg1
- */
-Datum dlog10(PG_FUNCTION_ARGS)
+static float8 get_log_result(float8 arg, bool is_log10)
 {
-    float8 arg1 = PG_GETARG_FLOAT8(0);
     float8 result;
 
     /*
@@ -1595,16 +1617,43 @@ Datum dlog10(PG_FUNCTION_ARGS)
      * define log(), but it does define ln(), so it makes sense to emit the
      * same error code for an analogous error condition.
      */
-    if (arg1 == 0.0)
+    if (arg == 0.0) {
         ereport(ERROR, (errcode(ERRCODE_INVALID_ARGUMENT_FOR_LOG), errmsg("cannot take logarithm of zero")));
-    if (arg1 < 0)
+    }    
+    if (arg < 0) {
         ereport(
             ERROR, (errcode(ERRCODE_INVALID_ARGUMENT_FOR_LOG), errmsg("cannot take logarithm of a negative number")));
+    }
 
-    result = log10(arg1);
+    if (is_log10) {
+        result = log10(arg);
+    } else {
+        result = log10(arg) / ConstLog2;
+    }
 
-    CHECKFLOATVAL(result, isinf(arg1), arg1 == 1);
-    PG_RETURN_FLOAT8(result);
+    CHECKFLOATVAL(result, isinf(arg), arg == 1);
+    return result;
+}
+
+/*
+ *		dlog2			- returns the base 2 logarithm of arg
+ */
+Datum dlog2(PG_FUNCTION_ARGS)
+{
+    float8 arg = PG_GETARG_FLOAT8(0);
+    if (arg <= 0) {
+        PG_RETURN_NULL();
+    }
+    PG_RETURN_FLOAT8(get_log_result(arg, false));
+}
+
+/*
+ *		dlog10			- returns the base 10 logarithm of arg
+ */
+Datum dlog10(PG_FUNCTION_ARGS)
+{
+    float8 arg = PG_GETARG_FLOAT8(0);
+    PG_RETURN_FLOAT8(get_log_result(arg, true));
 }
 
 /*
@@ -1785,7 +1834,7 @@ Datum degrees(PG_FUNCTION_ARGS)
  */
 Datum dpi(PG_FUNCTION_ARGS)
 {
-    PG_RETURN_FLOAT8(S_PI);
+    PG_RETURN_FLOAT8(M_PI);
 }
 
 /*

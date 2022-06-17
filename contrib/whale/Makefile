@@ -53,7 +53,9 @@ parser:
 	make -C $(parser)
 
 utils:
-	make -C $(utils)REGRESS:=$(shell find ./sql -maxdepth 2 -type f)
+	make -C $(utils)
+
+REGRESS:=$(shell find ./sql -maxdepth 2 -type f)
 REGRESS:=$(basename $(patsubst ./sql/%,%,$(REGRESS)) .sql)
 
 REGRESS_OPTS = --dlpath=$(top_builddir)/src/test/regress -c 0 -d 1 --single_node -p ${p}

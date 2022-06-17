@@ -34,6 +34,25 @@ typedef struct {
     int64 step;
 } generate_series_fctx;
 
+void CheckSpaceAndDotInternal(bool errorOK, int c, char* digitAfterDot, const char** ptr)
+{
+    bool isFirstDot = true;
+    if (!errorOK) {
+        while (*(*ptr) && *(*ptr) != c && ((isspace((unsigned char)*(*ptr))) || (*(*ptr) == '.' && isFirstDot) || (isdigit((unsigned char)*(*ptr))))) {
+            if (*(*ptr) == '.') {
+                isFirstDot = false;
+                *digitAfterDot = *((*ptr) + 1);
+            }
+            (*ptr)++;
+        }
+        if (!isFirstDot && *digitAfterDot == '\0')
+            (*ptr)--;
+    } else {
+        while (*(*ptr) != '\0' && (isspace((unsigned char)*(*ptr)))) {
+            (*ptr)++;
+        }
+    }
+}
 /***********************************************************************
  **
  **		Routines for 64-bit integers.
@@ -94,10 +113,6 @@ bool Scanint8Internal(const char* str, bool errorOK, int64* result, bool sqlMode
                 (errmodule(MOD_FUNCTION),
                     errcode(ERRCODE_INVALID_TEXT_REPRESENTATION),
                     errmsg("invalid input syntax for type %s: \"%s\"", "bigint", str)));
-        else if (u_sess->attr.attr_sql.sql_compatibility == B_FORMAT) {
-            *result = tmp;
-            return true;
-        }
     }
 
     /* process digits */
@@ -122,10 +137,9 @@ bool Scanint8Internal(const char* str, bool errorOK, int64* result, bool sqlMode
         }
     }
 
-    /* allow trailing whitespace, but not other trailing chars */
-    while (*ptr != '\0' && isspace((unsigned char)*ptr)) {
-        ptr++;
-    }
+    /* allow trailing whitespace and dot, but not other trailing chars */
+    char digitAfterDot = '\0';
+    CheckSpaceAndDotInternal(errorOK, '\0', &digitAfterDot, &ptr);
 
     if (unlikely(*ptr != '\0')) {
         if (errorOK)
@@ -149,6 +163,13 @@ bool Scanint8Internal(const char* str, bool errorOK, int64* result, bool sqlMode
                         errmsg("value \"%s\" is out of range for type %s", str, "bigint")));
         }
         tmp = -tmp;
+    }
+
+    if ((isdigit(digitAfterDot)) && digitAfterDot >= '5') {
+        if (!neg && tmp < PG_INT64_MAX)
+            tmp++;
+        if (neg && tmp > PG_INT64_MIN)
+            tmp--;
     }
 
     *result = tmp;

@@ -1,0 +1,24 @@
+drop database if exists test;
+NOTICE:  database "test" does not exist, skipping
+create database test dbcompatibility 'B';
+\c test
+SELECT QUOTE(E'Don\'t!');
+   quote   
+-----------
+ 'Don''t!'
+(1 row)
+
+SELECT QUOTE(E'O\'hello');
+   quote    
+------------
+ 'O''hello'
+(1 row)
+
+SELECT QUOTE('O\hello');
+    quote    
+-------------
+ E'O\\hello'
+(1 row)
+
+\c postgres
+drop database test;

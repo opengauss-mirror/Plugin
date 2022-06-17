@@ -1,0 +1,135 @@
+drop database if exists mysql;
+NOTICE:  database "mysql" does not exist, skipping
+create database mysql dbcompatibility 'b';
+\c mysql
+CREATE TABLE test2
+(
+id int PRIMARY KEY
+);
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "test2_pkey" for table "test2"
+create table test
+(
+a SERIAL,
+b varchar(10),
+c varchar(10),
+d varchar(10),
+e varchar(10),
+f varchar(10),
+g varchar(10) DEFAULT 'g',
+h varchar(10) NOT NULL,
+i int DEFAULT 0,
+j int DEFAULT 0,
+k int GENERATED ALWAYS AS (i + j) STORED,
+l int DEFAULT 0,
+m int CHECK (m < 50),
+PRIMARY KEY (a, b),
+FOREIGN KEY(l) REFERENCES test2(id)
+);
+NOTICE:  CREATE TABLE will create implicit sequence "test_a_seq" for serial column "test.a"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "test_pkey" for table "test"
+CREATE UNIQUE INDEX idx_c on test (c);
+CREATE UNIQUE INDEX idx_d_e on test (d, e);
+CREATE INDEX idx_f on test (f);
+desc test;
+ Field |         Type          | Null | Key |             Default             | Extra 
+-------+-----------------------+------+-----+---------------------------------+-------
+ a     | integer               | NO   | PRI | nextval('test_a_seq'::regclass) | 
+ b     | character varying(10) | NO   | PRI | NULL                            | 
+ c     | character varying(10) | YES  | UNI | NULL                            | 
+ d     | character varying(10) | YES  | UNI | NULL                            | 
+ e     | character varying(10) | YES  | UNI | NULL                            | 
+ f     | character varying(10) | YES  | MUL | NULL                            | 
+ g     | character varying(10) | YES  |     | 'g'::character varying          | 
+ h     | character varying(10) | NO   |     | NULL                            | 
+ i     | integer               | YES  |     | 0                               | 
+ j     | integer               | YES  |     | 0                               | 
+ k     | integer               | YES  |     | (i + j)                         | 
+ l     | integer               | YES  | MUL | 0                               | 
+ m     | integer               | YES  |     | NULL                            | 
+(13 rows)
+
+describe test;
+ Field |         Type          | Null | Key |             Default             | Extra 
+-------+-----------------------+------+-----+---------------------------------+-------
+ a     | integer               | NO   | PRI | nextval('test_a_seq'::regclass) | 
+ b     | character varying(10) | NO   | PRI | NULL                            | 
+ c     | character varying(10) | YES  | UNI | NULL                            | 
+ d     | character varying(10) | YES  | UNI | NULL                            | 
+ e     | character varying(10) | YES  | UNI | NULL                            | 
+ f     | character varying(10) | YES  | MUL | NULL                            | 
+ g     | character varying(10) | YES  |     | 'g'::character varying          | 
+ h     | character varying(10) | NO   |     | NULL                            | 
+ i     | integer               | YES  |     | 0                               | 
+ j     | integer               | YES  |     | 0                               | 
+ k     | integer               | YES  |     | (i + j)                         | 
+ l     | integer               | YES  | MUL | 0                               | 
+ m     | integer               | YES  |     | NULL                            | 
+(13 rows)
+
+create schema sc;
+set search_path to 'sc';
+drop table if exists test;
+NOTICE:  table "test" does not exist, skipping
+create table test
+(
+a SERIAL,
+b varchar(10) DEFAULT 'b',
+c varchar(10) NOT NULL,
+primary key (a)
+);
+NOTICE:  CREATE TABLE will create implicit sequence "test_a_seq" for serial column "test.a"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "test_pkey" for table "test"
+desc test;
+ Field |         Type          | Null | Key |             Default             | Extra 
+-------+-----------------------+------+-----+---------------------------------+-------
+ a     | integer               | NO   | PRI | nextval('test_a_seq'::regclass) | 
+ b     | character varying(10) | YES  |     | 'b'::character varying          | 
+ c     | character varying(10) | NO   |     | NULL                            | 
+(3 rows)
+
+describe test;
+ Field |         Type          | Null | Key |             Default             | Extra 
+-------+-----------------------+------+-----+---------------------------------+-------
+ a     | integer               | NO   | PRI | nextval('test_a_seq'::regclass) | 
+ b     | character varying(10) | YES  |     | 'b'::character varying          | 
+ c     | character varying(10) | NO   |     | NULL                            | 
+(3 rows)
+
+desc public.test;
+ Field |         Type          | Null | Key |             Default             | Extra 
+-------+-----------------------+------+-----+---------------------------------+-------
+ a     | integer               | NO   | PRI | nextval('test_a_seq'::regclass) | 
+ b     | character varying(10) | NO   | PRI | NULL                            | 
+ c     | character varying(10) | YES  | UNI | NULL                            | 
+ d     | character varying(10) | YES  | UNI | NULL                            | 
+ e     | character varying(10) | YES  | UNI | NULL                            | 
+ f     | character varying(10) | YES  | MUL | NULL                            | 
+ g     | character varying(10) | YES  |     | 'g'::character varying          | 
+ h     | character varying(10) | NO   |     | NULL                            | 
+ i     | integer               | YES  |     | 0                               | 
+ j     | integer               | YES  |     | 0                               | 
+ k     | integer               | YES  |     | (i + j)                         | 
+ l     | integer               | YES  | MUL | 0                               | 
+ m     | integer               | YES  |     | NULL                            | 
+(13 rows)
+
+desc sc.test;
+ Field |         Type          | Null | Key |             Default             | Extra 
+-------+-----------------------+------+-----+---------------------------------+-------
+ a     | integer               | NO   | PRI | nextval('test_a_seq'::regclass) | 
+ b     | character varying(10) | YES  |     | 'b'::character varying          | 
+ c     | character varying(10) | NO   |     | NULL                            | 
+(3 rows)
+
+desc public.test3;
+ Field | Type | Null | Key | Default | Extra 
+-------+------+------+-----+---------+-------
+(0 rows)
+
+desc sc.test3;
+ Field | Type | Null | Key | Default | Extra 
+-------+------+------+-----+---------+-------
+(0 rows)
+
+\c postgres
+drop database if exists mysql;

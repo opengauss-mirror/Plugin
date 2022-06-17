@@ -49,7 +49,7 @@ static_assert(sizeof(false) == sizeof(char), "illegal bool size");
 #endif
 extern struct HTAB* a_nameHash;
 extern struct HTAB* a_oidHash;
-const int b_nfuncgroups = sizeof(a_func_groups) / sizeof(FuncGroup);
+const int a_nfuncgroups = sizeof(a_func_groups) / sizeof(FuncGroup);
 
 static const int MAX_PROC_NAME_LEN = NAMEDATALEN;
 
@@ -79,7 +79,7 @@ static int FuncGroupCmp(const void* a, const void* b)
 
 static void SortBuiltinFuncGroups(FuncGroup* funcGroups)
 {
-    qsort(funcGroups, b_nfuncgroups, sizeof(FuncGroup), FuncGroupCmp);
+    qsort(funcGroups, a_nfuncgroups, sizeof(FuncGroup), FuncGroupCmp);
 }
 
 const Builtin_func* g_sorted_funcs[nBuiltinFuncs];
@@ -157,12 +157,12 @@ static void CheckNameLength(const char* name)
     }
 }
 
-void initBSQLBuiltinFuncs()
+void initASQLBuiltinFuncs()
 {
-    InitHashTable(b_nfuncgroups);
+    InitHashTable(a_nfuncgroups);
     SortBuiltinFuncGroups(a_func_groups);
     int nfunc = 0;
-    for (int i = 0; i < b_nfuncgroups; i++) {
+    for (int i = 0; i < a_nfuncgroups; i++) {
         const FuncGroup* fg = &a_func_groups[i];
         CheckNameLength(fg->funcName);
         NameHashTableAccess(HASH_ENTER, fg->funcName, fg);

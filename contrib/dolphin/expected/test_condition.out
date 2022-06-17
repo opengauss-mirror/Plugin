@@ -1,0 +1,6597 @@
+-- b compatibility case
+drop database if exists b;
+NOTICE:  database "b" does not exist, skipping
+-- create database b dbcompatibility 'b';
+create database b with DBCOMPATIBILITY = 'B';
+\c b
+create table test_bccf (t1 int ,t2 float, t3 char, t4 text);
+insert into test_bccf values(1,3,null,null);
+insert into test_bccf values(null,null,'c',null);
+insert into test_bccf values(1,null,'b','asdf');
+insert into test_bccf values(3,2.0,'b','sdf');
+insert into test_bccf values(4,6.1,null,null);
+insert into test_bccf values(null,null,'c',null);
+insert into test_bccf values(5,null,'b','asdf');
+insert into test_bccf values(6,6.0,'b','sdf');
+insert into test_bccf values(7,9,null,null);
+insert into test_bccf values(null,null,'c',null);
+insert into test_bccf values(1,null,'b','asdf');
+insert into test_bccf values(1,4.0,'b','sdf');
+insert into test_bccf values(1,7.1,null,null);
+insert into test_bccf values(null,null,'c',null);
+insert into test_bccf values(11,null,'b','asdf');
+insert into test_bccf values(10,6.0,'b','sdf');
+insert into test_bccf values(11,14.6,null,null);
+insert into test_bccf values(null,null,'c',null);
+insert into test_bccf values(13,null,'b','asdf');
+insert into test_bccf values(12,2.0,'b','sdf');
+insert into test_bccf values(9,2.2,null,null);
+insert into test_bccf values(null,null,'c',null);
+insert into test_bccf values(8,null,'b','asdf');
+insert into test_bccf values(7,2.3,'b','sdf');
+insert into test_bccf values(123,3,null,null);
+insert into test_bccf values(null,null,'c',null);
+insert into test_bccf values(51,null,'b','asdf');
+insert into test_bccf values(73,72.0,'b','sdf');
+insert into test_bccf values(84,96.1,null,null);
+insert into test_bccf values(null,null,'c',null);
+insert into test_bccf values(5,null,'b','asdf');
+insert into test_bccf values(6,6.7,'b','sdf');
+insert into test_bccf values(7,null,null,null);
+insert into test_bccf values(null,null,'c',null);
+insert into test_bccf values(1,null,'b','asdf');
+insert into test_bccf values(2,4.0,'b','sdf');
+insert into test_bccf values(1,7.1,null,null);
+insert into test_bccf values(null,null,'c',null);
+insert into test_bccf values(13,null,'b','asdf');
+insert into test_bccf values(10,6.7,'b','sdf');
+insert into test_bccf values(11,24.6,null,null);
+insert into test_bccf values(null,null,'c',null);
+insert into test_bccf values(13,null,'b','asdf');
+insert into test_bccf values(12,2.7,'b','sdf');
+insert into test_bccf values(9,12.2,null,null);
+insert into test_bccf values(null,null,'c',null);
+insert into test_bccf values(8,null,'b','asdf');
+insert into test_bccf values(7,42.3,'b','sdf');
+----------------Coalesce function----------------------
+select coalesce(null, null);
+ coalesce 
+----------
+ 
+(1 row)
+
+select coalesce(null, 'other');
+ coalesce 
+----------
+ other
+(1 row)
+
+select coalesce('something','other');
+ coalesce  
+-----------
+ something
+(1 row)
+
+select coalesce(null,321);
+ coalesce 
+----------
+      321
+(1 row)
+
+select coalesce(null, null,123,'321');
+ coalesce 
+----------
+      123
+(1 row)
+
+select coalesce(null, null,123::int2,321::int2);
+ coalesce 
+----------
+      123
+(1 row)
+
+select coalesce(null, null,123::int4,321::int4);
+ coalesce 
+----------
+      123
+(1 row)
+
+select coalesce(null, null,123::int8,321::int8);
+ coalesce 
+----------
+      123
+(1 row)
+
+select coalesce(null, null,123::float4,321::float4);
+ coalesce 
+----------
+      123
+(1 row)
+
+select coalesce(null, null,null,123::float8,321::float8);
+ coalesce 
+----------
+      123
+(1 row)
+
+select coalesce(null, null,null,''::text,'hello!'::text);
+ coalesce 
+----------
+ 
+(1 row)
+
+select coalesce(null, null,null,'100.001'::number,134);
+ coalesce 
+----------
+      100
+(1 row)
+
+select coalesce(null, null,null,'2001-01-01 01:01:01.3654'::date,'2012-08-02 15:57:54.6365'::date);
+  coalesce  
+------------
+ 01-01-2001
+(1 row)
+
+select coalesce(null, null,null,'2001-01-01 01:01:01.3654'::timestamp,'2012-08-02 15:57:54.6365'::timestamp);
+           coalesce            
+-------------------------------
+ Mon Jan 01 01:01:01.3654 2001
+(1 row)
+
+select coalesce(null, null);
+ coalesce 
+----------
+ 
+(1 row)
+
+select coalesce(null, 'other');
+ coalesce 
+----------
+ other
+(1 row)
+
+select coalesce('something','other');
+ coalesce  
+-----------
+ something
+(1 row)
+
+select coalesce(null,321);
+ coalesce 
+----------
+      321
+(1 row)
+
+select coalesce(123,'321');
+ coalesce 
+----------
+      123
+(1 row)
+
+select coalesce(123::int2,null, null,321::int2);
+ coalesce 
+----------
+      123
+(1 row)
+
+select coalesce(123::int4,null, null,321::int4);
+ coalesce 
+----------
+      123
+(1 row)
+
+select coalesce(123::int8,null, null,321::int8);
+ coalesce 
+----------
+      123
+(1 row)
+
+select coalesce(123::float4,null, null,321::float4);
+ coalesce 
+----------
+      123
+(1 row)
+
+select coalesce(123::float8,null, null,321::float8);
+ coalesce 
+----------
+      123
+(1 row)
+
+select coalesce(null, null,'2001-01-01 01:01:01.3654'::date,'2012-08-02 15:57:54.6365'::date);
+  coalesce  
+------------
+ 01-01-2001
+(1 row)
+
+select coalesce('2001-01-01 01:01:01.3654'::timestamp,null, null,'2012-08-02 15:57:54.6365'::timestamp);
+           coalesce            
+-------------------------------
+ Mon Jan 01 01:01:01.3654 2001
+(1 row)
+
+SELECT coalesce(null,1, 'k');
+ coalesce 
+----------
+        1
+(1 row)
+
+SELECT coalesce(null,1, '6');
+ coalesce 
+----------
+        1
+(1 row)
+
+SELECT coalesce(null,'j', '');
+ coalesce 
+----------
+ j
+(1 row)
+
+SELECT coalesce(null,'j', null);
+ coalesce 
+----------
+ j
+(1 row)
+
+SELECT coalesce(null,'', 'k');
+ coalesce 
+----------
+ 
+(1 row)
+
+SELECT coalesce(null, 'k');
+ coalesce 
+----------
+ k
+(1 row)
+
+SELECT coalesce(null,t1, 12) from test_bccf;
+ coalesce 
+----------
+        1
+       12
+        1
+        3
+        4
+       12
+        5
+        6
+        7
+       12
+        1
+        1
+        1
+       12
+       11
+       10
+       11
+       12
+       13
+       12
+        9
+       12
+        8
+        7
+      123
+       12
+       51
+       73
+       84
+       12
+        5
+        6
+        7
+       12
+        1
+        2
+        1
+       12
+       13
+       10
+       11
+       12
+       13
+       12
+        9
+       12
+        8
+        7
+(48 rows)
+
+SELECT coalesce(null,t2, 213.4) from test_bccf;
+ coalesce 
+----------
+        3
+    213.4
+    213.4
+        2
+      6.1
+    213.4
+    213.4
+        6
+        9
+    213.4
+    213.4
+        4
+      7.1
+    213.4
+    213.4
+        6
+     14.6
+    213.4
+    213.4
+        2
+      2.2
+    213.4
+    213.4
+      2.3
+        3
+    213.4
+    213.4
+       72
+     96.1
+    213.4
+    213.4
+      6.7
+    213.4
+    213.4
+    213.4
+        4
+      7.1
+    213.4
+    213.4
+      6.7
+     24.6
+    213.4
+    213.4
+      2.7
+     12.2
+    213.4
+    213.4
+     42.3
+(48 rows)
+
+SELECT coalesce(null,t3, 'c') from test_bccf;
+ coalesce 
+----------
+ c
+ c
+ b
+ b
+ c
+ c
+ b
+ b
+ c
+ c
+ b
+ b
+ c
+ c
+ b
+ b
+ c
+ c
+ b
+ b
+ c
+ c
+ b
+ b
+ c
+ c
+ b
+ b
+ c
+ c
+ b
+ b
+ c
+ c
+ b
+ b
+ c
+ c
+ b
+ b
+ c
+ c
+ b
+ b
+ c
+ c
+ b
+ b
+(48 rows)
+
+SELECT coalesce(null,t4, 'hello') from test_bccf;
+ coalesce 
+----------
+ hello
+ hello
+ asdf
+ sdf
+ hello
+ hello
+ asdf
+ sdf
+ hello
+ hello
+ asdf
+ sdf
+ hello
+ hello
+ asdf
+ sdf
+ hello
+ hello
+ asdf
+ sdf
+ hello
+ hello
+ asdf
+ sdf
+ hello
+ hello
+ asdf
+ sdf
+ hello
+ hello
+ asdf
+ sdf
+ hello
+ hello
+ asdf
+ sdf
+ hello
+ hello
+ asdf
+ sdf
+ hello
+ hello
+ asdf
+ sdf
+ hello
+ hello
+ asdf
+ sdf
+(48 rows)
+
+SELECT coalesce(null,t1,t2) from test_bccf;
+ coalesce 
+----------
+        1
+         
+        1
+        3
+        4
+         
+        5
+        6
+        7
+         
+        1
+        1
+        1
+         
+       11
+       10
+       11
+         
+       13
+       12
+        9
+         
+        8
+        7
+      123
+         
+       51
+       73
+       84
+         
+        5
+        6
+        7
+         
+        1
+        2
+        1
+         
+       13
+       10
+       11
+         
+       13
+       12
+        9
+         
+        8
+        7
+(48 rows)
+
+SELECT coalesce(null,t2,t1) from test_bccf;
+ coalesce 
+----------
+        3
+         
+        1
+        2
+      6.1
+         
+        5
+        6
+        9
+         
+        1
+        4
+      7.1
+         
+       11
+        6
+     14.6
+         
+       13
+        2
+      2.2
+         
+        8
+      2.3
+        3
+         
+       51
+       72
+     96.1
+         
+        5
+      6.7
+        7
+         
+        1
+        4
+      7.1
+         
+       13
+      6.7
+     24.6
+         
+       13
+      2.7
+     12.2
+         
+        8
+     42.3
+(48 rows)
+
+----------------IfNULL function------------------------
+select ifnull(null, null);
+ ifnull 
+--------
+ 
+(1 row)
+
+select ifnull(null, 'other');
+ ifnull 
+--------
+ other
+(1 row)
+
+select ifnull('something','other');
+  ifnull   
+-----------
+ something
+(1 row)
+
+select ifnull(null,321);
+ ifnull 
+--------
+ 321
+(1 row)
+
+select ifnull(123,'321');
+ ifnull 
+--------
+    123
+(1 row)
+
+select ifnull(123::int2,321::int2);
+ ifnull 
+--------
+    123
+(1 row)
+
+select ifnull(123::int4,321::int4);
+ ifnull 
+--------
+    123
+(1 row)
+
+select ifnull(123::int8,321::int8);
+ ifnull 
+--------
+    123
+(1 row)
+
+select ifnull(123::float4,321::float4);
+ ifnull 
+--------
+    123
+(1 row)
+
+select ifnull(123::float8,321::float8);
+ ifnull 
+--------
+    123
+(1 row)
+
+select ifnull('2001-01-01 01:01:01.3654'::date,'2012-08-02 15:57:54.6365'::date);
+   ifnull   
+------------
+ 01-01-2001
+(1 row)
+
+select ifnull('2001-01-01 01:01:01.3654'::timestamp,'2012-08-02 15:57:54.6365'::timestamp);
+            ifnull             
+-------------------------------
+ Mon Jan 01 01:01:01.3654 2001
+(1 row)
+
+--ifnull(unknown, int)
+SELECT ifnull('j', 1);
+ ifnull 
+--------
+ j
+(1 row)
+
+--ifnull(int, unknown)
+SELECT ifnull(1, 'k');
+ ifnull 
+--------
+      1
+(1 row)
+
+SELECT ifnull(1, '6');
+ ifnull 
+--------
+      1
+(1 row)
+
+--ifnull(char, int)
+SELECT ifnull('o'::char, 1);
+ ifnull 
+--------
+ o
+(1 row)
+
+--ifnull(int, char)
+SELECT ifnull(1, 'o'::char);
+ ifnull 
+--------
+      1
+(1 row)
+
+--ifnull(text, int2)
+SELECT ifnull('hello!'::text, '100'::int2);
+ ifnull 
+--------
+ hello!
+(1 row)
+
+SELECT ifnull('100'::int2, 'hello!'::text);
+ ifnull 
+--------
+    100
+(1 row)
+
+--ifnull(text, int4)
+SELECT ifnull('hello!'::text, '100'::int4);
+ ifnull 
+--------
+ hello!
+(1 row)
+
+SELECT ifnull('100'::int4, 'hello!'::text);
+ ifnull 
+--------
+    100
+(1 row)
+
+--ifnull(text, int8)
+SELECT ifnull('hello!'::text, '100'::int8);
+ ifnull 
+--------
+ hello!
+(1 row)
+
+SELECT ifnull('100'::int8, 'hello!'::text);
+ ifnull 
+--------
+    100
+(1 row)
+
+--ifnull(text, float4)
+SELECT ifnull('hello!'::text, '100.001'::float4);
+ ifnull 
+--------
+ hello!
+(1 row)
+
+SELECT ifnull('100.001'::float4, 'hello!'::text);
+ ifnull  
+---------
+ 100.001
+(1 row)
+
+--ifnull(text, float8)
+SELECT ifnull('hello!'::text, '100.001'::float8);
+ ifnull 
+--------
+ hello!
+(1 row)
+
+SELECT ifnull('100.001'::float8, 'hello!'::text);
+ ifnull  
+---------
+ 100.001
+(1 row)
+
+--ifnull(text, number)
+SELECT ifnull('hello!'::text, '100.001'::number);
+ ifnull 
+--------
+ hello!
+(1 row)
+
+SELECT ifnull('100.001'::number, 'hello!'::text);
+ ifnull 
+--------
+    100
+(1 row)
+
+--null
+SELECT ifnull('j', '');
+ ifnull 
+--------
+ j
+(1 row)
+
+SELECT ifnull('j', null);
+ ifnull 
+--------
+ j
+(1 row)
+
+SELECT ifnull('', 'k');
+ ifnull 
+--------
+ 
+(1 row)
+
+SELECT ifnull(null, 'k');
+ ifnull 
+--------
+ k
+(1 row)
+
+SELECT ifnull(''::text, '100'::int2);
+ ifnull 
+--------
+ 
+(1 row)
+
+SELECT ifnull(''::int2, 'hello!'::text)L;
+ l 
+---
+ 0
+(1 row)
+
+SELECT ifnull('hello!'::text, ''::int2);
+ ifnull 
+--------
+ hello!
+(1 row)
+
+SELECT ifnull('100'::int2, ''::text);
+ ifnull 
+--------
+    100
+(1 row)
+
+SELECT ifnull(''::text, '100.001'::float8);
+ ifnull 
+--------
+ 
+(1 row)
+
+SELECT ifnull('100.001'::float8, ''::text);
+ ifnull  
+---------
+ 100.001
+(1 row)
+
+SELECT ifnull(''::text, '100.001'::number);
+ ifnull 
+--------
+ 
+(1 row)
+
+SELECT ifnull(''::number, 'hello!'::text);
+ ifnull 
+--------
+      0
+(1 row)
+
+SELECT ifnull('hello!'::text, ''::number);
+ ifnull 
+--------
+ hello!
+(1 row)
+
+SELECT ifnull('100.001'::number, ''::text);
+ ifnull 
+--------
+    100
+(1 row)
+
+select ifnull(t1,t2) from test_bccf;
+ ifnull 
+--------
+      1
+       
+      1
+      3
+      4
+       
+      5
+      6
+      7
+       
+      1
+      1
+      1
+       
+     11
+     10
+     11
+       
+     13
+     12
+      9
+       
+      8
+      7
+    123
+       
+     51
+     73
+     84
+       
+      5
+      6
+      7
+       
+      1
+      2
+      1
+       
+     13
+     10
+     11
+       
+     13
+     12
+      9
+       
+      8
+      7
+(48 rows)
+
+select ifnull(t1,t3) from test_bccf;
+ ifnull 
+--------
+      1
+      0
+      1
+      3
+      4
+      0
+      5
+      6
+      7
+      0
+      1
+      1
+      1
+      0
+     11
+     10
+     11
+      0
+     13
+     12
+      9
+      0
+      8
+      7
+    123
+      0
+     51
+     73
+     84
+      0
+      5
+      6
+      7
+      0
+      1
+      2
+      1
+      0
+     13
+     10
+     11
+      0
+     13
+     12
+      9
+      0
+      8
+      7
+(48 rows)
+
+select ifnull(t1,t4) from test_bccf;
+ ifnull 
+--------
+      1
+       
+      1
+      3
+      4
+       
+      5
+      6
+      7
+       
+      1
+      1
+      1
+       
+     11
+     10
+     11
+       
+     13
+     12
+      9
+       
+      8
+      7
+    123
+       
+     51
+     73
+     84
+       
+      5
+      6
+      7
+       
+      1
+      2
+      1
+       
+     13
+     10
+     11
+       
+     13
+     12
+      9
+       
+      8
+      7
+(48 rows)
+
+select ifnull(t3,t4) from test_bccf;
+ ifnull 
+--------
+ 
+ c
+ b
+ b
+ 
+ c
+ b
+ b
+ 
+ c
+ b
+ b
+ 
+ c
+ b
+ b
+ 
+ c
+ b
+ b
+ 
+ c
+ b
+ b
+ 
+ c
+ b
+ b
+ 
+ c
+ b
+ b
+ 
+ c
+ b
+ b
+ 
+ c
+ b
+ b
+ 
+ c
+ b
+ b
+ 
+ c
+ b
+ b
+(48 rows)
+
+----------------ISNULL expression------------------------
+--null
+SELECT isnull(null);
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT isnull('');
+ ?column? 
+----------
+ f
+(1 row)
+
+SELECT isnull(''::text);
+ ?column? 
+----------
+ f
+(1 row)
+
+SELECT isnull(''::char);
+ ?column? 
+----------
+ f
+(1 row)
+
+SELECT isnull(''::int2);
+ ?column? 
+----------
+ f
+(1 row)
+
+SELECT isnull(''::int4);
+ ?column? 
+----------
+ f
+(1 row)
+
+SELECT isnull(''::int8);
+ ?column? 
+----------
+ f
+(1 row)
+
+SELECT isnull(''::number);
+ ?column? 
+----------
+ f
+(1 row)
+
+SELECT isnull('j');
+ ?column? 
+----------
+ f
+(1 row)
+
+SELECT isnull('hello!'::text);
+ ?column? 
+----------
+ f
+(1 row)
+
+SELECT isnull('100'::int2);
+ ?column? 
+----------
+ f
+(1 row)
+
+SELECT isnull('100.001'::float8);
+ ?column? 
+----------
+ f
+(1 row)
+
+SELECT isnull('100.001'::number);
+ ?column? 
+----------
+ f
+(1 row)
+
+select * from test_bccf where isnull(t1) order by 1, 2;
+ t1 | t2 | t3 | t4 
+----+----+----+----
+    |    | c  | 
+    |    | c  | 
+    |    | c  | 
+    |    | c  | 
+    |    | c  | 
+    |    | c  | 
+    |    | c  | 
+    |    | c  | 
+    |    | c  | 
+    |    | c  | 
+    |    | c  | 
+    |    | c  | 
+(12 rows)
+
+select * from test_bccf where isnull(t2) order by 1, 2;
+ t1 | t2 | t3 |  t4  
+----+----+----+------
+  1 |    | b  | asdf
+  1 |    | b  | asdf
+  1 |    | b  | asdf
+  5 |    | b  | asdf
+  5 |    | b  | asdf
+  7 |    |    | 
+  8 |    | b  | asdf
+  8 |    | b  | asdf
+ 11 |    | b  | asdf
+ 13 |    | b  | asdf
+ 13 |    | b  | asdf
+ 13 |    | b  | asdf
+ 51 |    | b  | asdf
+    |    | c  | 
+    |    | c  | 
+    |    | c  | 
+    |    | c  | 
+    |    | c  | 
+    |    | c  | 
+    |    | c  | 
+    |    | c  | 
+    |    | c  | 
+    |    | c  | 
+    |    | c  | 
+    |    | c  | 
+(25 rows)
+
+select * from test_bccf where isnull(t3) order by 1, 2;
+ t1  |  t2  | t3 | t4 
+-----+------+----+----
+   1 |    3 |    | 
+   1 |  7.1 |    | 
+   1 |  7.1 |    | 
+   4 |  6.1 |    | 
+   7 |    9 |    | 
+   7 |      |    | 
+   9 |  2.2 |    | 
+   9 | 12.2 |    | 
+  11 | 14.6 |    | 
+  11 | 24.6 |    | 
+  84 | 96.1 |    | 
+ 123 |    3 |    | 
+(12 rows)
+
+select * from test_bccf where isnull(t4) order by 1, 2;
+ t1  |  t2  | t3 | t4 
+-----+------+----+----
+   1 |    3 |    | 
+   1 |  7.1 |    | 
+   1 |  7.1 |    | 
+   4 |  6.1 |    | 
+   7 |    9 |    | 
+   7 |      |    | 
+   9 |  2.2 |    | 
+   9 | 12.2 |    | 
+  11 | 14.6 |    | 
+  11 | 24.6 |    | 
+  84 | 96.1 |    | 
+ 123 |    3 |    | 
+     |      | c  | 
+     |      | c  | 
+     |      | c  | 
+     |      | c  | 
+     |      | c  | 
+     |      | c  | 
+     |      | c  | 
+     |      | c  | 
+     |      | c  | 
+     |      | c  | 
+     |      | c  | 
+     |      | c  | 
+(24 rows)
+
+select * from test_bccf where isnull(t1) and t2 is not NULL order by 1, 2;
+ t1 | t2 | t3 | t4 
+----+----+----+----
+(0 rows)
+
+select * from test_bccf where isnull(t2) and t3 is not NULL order by 1, 2;
+ t1 | t2 | t3 |  t4  
+----+----+----+------
+  1 |    | b  | asdf
+  1 |    | b  | asdf
+  1 |    | b  | asdf
+  5 |    | b  | asdf
+  5 |    | b  | asdf
+  8 |    | b  | asdf
+  8 |    | b  | asdf
+ 11 |    | b  | asdf
+ 13 |    | b  | asdf
+ 13 |    | b  | asdf
+ 13 |    | b  | asdf
+ 51 |    | b  | asdf
+    |    | c  | 
+    |    | c  | 
+    |    | c  | 
+    |    | c  | 
+    |    | c  | 
+    |    | c  | 
+    |    | c  | 
+    |    | c  | 
+    |    | c  | 
+    |    | c  | 
+    |    | c  | 
+    |    | c  | 
+(24 rows)
+
+select * from test_bccf where isnull(t3) and t4 is not NULL order by 1, 2;
+ t1 | t2 | t3 | t4 
+----+----+----+----
+(0 rows)
+
+select * from test_bccf where isnull(t4) and t1 is not NULL order by 1, 2;
+ t1  |  t2  | t3 | t4 
+-----+------+----+----
+   1 |    3 |    | 
+   1 |  7.1 |    | 
+   1 |  7.1 |    | 
+   4 |  6.1 |    | 
+   7 |    9 |    | 
+   7 |      |    | 
+   9 |  2.2 |    | 
+   9 | 12.2 |    | 
+  11 | 14.6 |    | 
+  11 | 24.6 |    | 
+  84 | 96.1 |    | 
+ 123 |    3 |    | 
+(12 rows)
+
+----------------STRCMP expression------------------------
+select strcmp(null, null);
+ strcmp 
+--------
+       
+(1 row)
+
+select strcmp(null, 'other');
+ strcmp 
+--------
+       
+(1 row)
+
+select strcmp('other', null);
+ strcmp 
+--------
+       
+(1 row)
+
+select strcmp('something','other');
+ strcmp 
+--------
+      1
+(1 row)
+
+select strcmp('something','something');
+ strcmp 
+--------
+      0
+(1 row)
+
+select strcmp(null, 321);
+ strcmp 
+--------
+       
+(1 row)
+
+select strcmp(321, null);
+ strcmp 
+--------
+       
+(1 row)
+
+select strcmp(321, 321);
+ strcmp 
+--------
+      0
+(1 row)
+
+select strcmp(321, 123);
+ strcmp 
+--------
+      1
+(1 row)
+
+select strcmp(null, 321::int2);
+ strcmp 
+--------
+       
+(1 row)
+
+select strcmp(321::int2, null);
+ strcmp 
+--------
+       
+(1 row)
+
+select strcmp(321::int2, 321::int2);
+ strcmp 
+--------
+      0
+(1 row)
+
+select strcmp(321::int2, 123::int2);
+ strcmp 
+--------
+      1
+(1 row)
+
+select strcmp(null, 321::int4);
+ strcmp 
+--------
+       
+(1 row)
+
+select strcmp(321::int4, null);
+ strcmp 
+--------
+       
+(1 row)
+
+select strcmp(321::int4, 321::int4);
+ strcmp 
+--------
+      0
+(1 row)
+
+select strcmp(321::int4, 123::int4);
+ strcmp 
+--------
+      1
+(1 row)
+
+select strcmp(null, 321::int8);
+ strcmp 
+--------
+       
+(1 row)
+
+select strcmp(321::int8, null);
+ strcmp 
+--------
+       
+(1 row)
+
+select strcmp(321::int8, 321::int8);
+ strcmp 
+--------
+      0
+(1 row)
+
+select strcmp(321::int8, 123::int8);
+ strcmp 
+--------
+      1
+(1 row)
+
+select strcmp(null, 321::float4);
+ strcmp 
+--------
+       
+(1 row)
+
+select strcmp(321::float4, null);
+ strcmp 
+--------
+       
+(1 row)
+
+select strcmp(321::float4, 321::float4);
+ strcmp 
+--------
+      0
+(1 row)
+
+select strcmp(321::float4, 123::float4);
+ strcmp 
+--------
+      1
+(1 row)
+
+select strcmp(null, 321::float8);
+ strcmp 
+--------
+       
+(1 row)
+
+select strcmp(321::float8, null);
+ strcmp 
+--------
+       
+(1 row)
+
+select strcmp(321::float8, 321::float8);
+ strcmp 
+--------
+      0
+(1 row)
+
+select strcmp(321::float8, 123::float8);
+ strcmp 
+--------
+      1
+(1 row)
+
+select strcmp(null,'something'::text);
+ strcmp 
+--------
+       
+(1 row)
+
+select strcmp('something'::text,null);
+ strcmp 
+--------
+       
+(1 row)
+
+select strcmp('something'::text,'something'::text);
+ strcmp 
+--------
+      0
+(1 row)
+
+select strcmp('something'::text,'other'::text);
+ strcmp 
+--------
+      1
+(1 row)
+
+select strcmp(null, '2001-01-01 01:01:01.3654'::date);
+ strcmp 
+--------
+       
+(1 row)
+
+select strcmp('2001-01-01 01:01:01.3654'::date, null);
+ strcmp 
+--------
+       
+(1 row)
+
+select strcmp('2001-01-01 01:01:01.3654'::date, '2001-01-01 01:01:01.3654'::date);
+ strcmp 
+--------
+      0
+(1 row)
+
+select strcmp('2001-01-01 01:01:01.3654'::date, '1999-01-01 01:01:01.3654'::date);
+ strcmp 
+--------
+      1
+(1 row)
+
+SELECT strcmp(t1, 12) from test_bccf;
+ strcmp 
+--------
+     -1
+       
+     -1
+      1
+      1
+       
+      1
+      1
+      1
+       
+     -1
+     -1
+     -1
+       
+     -1
+     -1
+     -1
+       
+      1
+      0
+      1
+       
+      1
+      1
+      1
+       
+      1
+      1
+      1
+       
+      1
+      1
+      1
+       
+     -1
+      1
+     -1
+       
+      1
+     -1
+     -1
+       
+      1
+      0
+      1
+       
+      1
+      1
+(48 rows)
+
+SELECT strcmp(t2, 213.4) from test_bccf;
+ strcmp 
+--------
+      1
+       
+       
+     -1
+      1
+       
+       
+      1
+      1
+       
+       
+      1
+      1
+       
+       
+      1
+     -1
+       
+       
+     -1
+     -1
+       
+       
+     -1
+      1
+       
+       
+      1
+      1
+       
+       
+      1
+       
+       
+       
+      1
+      1
+       
+       
+      1
+      1
+       
+       
+     -1
+     -1
+       
+       
+      1
+(48 rows)
+
+SELECT strcmp(t3, 'c') from test_bccf;
+ strcmp 
+--------
+       
+      0
+     -1
+     -1
+       
+      0
+     -1
+     -1
+       
+      0
+     -1
+     -1
+       
+      0
+     -1
+     -1
+       
+      0
+     -1
+     -1
+       
+      0
+     -1
+     -1
+       
+      0
+     -1
+     -1
+       
+      0
+     -1
+     -1
+       
+      0
+     -1
+     -1
+       
+      0
+     -1
+     -1
+       
+      0
+     -1
+     -1
+       
+      0
+     -1
+     -1
+(48 rows)
+
+SELECT strcmp(t4, 'hello') from test_bccf;
+ strcmp 
+--------
+       
+       
+     -1
+      1
+       
+       
+     -1
+      1
+       
+       
+     -1
+      1
+       
+       
+     -1
+      1
+       
+       
+     -1
+      1
+       
+       
+     -1
+      1
+       
+       
+     -1
+      1
+       
+       
+     -1
+      1
+       
+       
+     -1
+      1
+       
+       
+     -1
+      1
+       
+       
+     -1
+      1
+       
+       
+     -1
+      1
+(48 rows)
+
+SELECT strcmp(t1,t2) from test_bccf;
+ strcmp 
+--------
+     -1
+       
+       
+      1
+     -1
+       
+       
+      0
+     -1
+       
+       
+     -1
+     -1
+       
+       
+     -1
+     -1
+       
+       
+     -1
+      1
+       
+       
+      1
+     -1
+       
+       
+      1
+     -1
+       
+       
+     -1
+       
+       
+       
+     -1
+     -1
+       
+       
+     -1
+     -1
+       
+       
+     -1
+      1
+       
+       
+      1
+(48 rows)
+
+SELECT strcmp(t2,t1) from test_bccf;
+ strcmp 
+--------
+      1
+       
+       
+     -1
+      1
+       
+       
+      0
+      1
+       
+       
+      1
+      1
+       
+       
+      1
+      1
+       
+       
+      1
+     -1
+       
+       
+     -1
+      1
+       
+       
+     -1
+      1
+       
+       
+      1
+       
+       
+       
+      1
+      1
+       
+       
+      1
+      1
+       
+       
+      1
+     -1
+       
+       
+     -1
+(48 rows)
+
+----------------GS_INTERVAL expression------------------------
+select gs_interval(null);
+ gs_interval 
+-------------
+          -1
+(1 row)
+
+select gs_interval(null, 123);
+ gs_interval 
+-------------
+          -1
+(1 row)
+
+select gs_interval(null, 123.45);
+ gs_interval 
+-------------
+          -1
+(1 row)
+
+select gs_interval(123,null);
+ gs_interval 
+-------------
+           1
+(1 row)
+
+select gs_interval(123,null,17,43.123);
+ gs_interval 
+-------------
+           3
+(1 row)
+
+select gs_interval(123.213,null,17,43.123);
+ gs_interval 
+-------------
+           3
+(1 row)
+
+select gs_interval(100, '10e2');
+ gs_interval 
+-------------
+           0
+(1 row)
+
+select gs_interval(100, '   10e1');
+ gs_interval 
+-------------
+           1
+(1 row)
+
+select gs_interval(100, '   10e1', '      10Eeasd');
+ERROR:  invalid input syntax for type double precision: "      10E"
+CONTEXT:  referenced column: gs_interval
+select gs_interval(10e3, '   10e1', '      10E1easd    ', '2e10');
+ gs_interval 
+-------------
+           2
+(1 row)
+
+select gs_interval(0, '   wa');
+ gs_interval 
+-------------
+           1
+(1 row)
+
+select gs_interval(0, '   wa', '  e1212');
+ERROR:  invalid input syntax for type double precision: "  "
+CONTEXT:  referenced column: gs_interval
+select gs_interval(0, '   abiusdhiw');
+ gs_interval 
+-------------
+           1
+(1 row)
+
+select gs_interval(0, '   abiusdhiw', '   kqiwjoiqh  ');
+ gs_interval 
+-------------
+           2
+(1 row)
+
+select gs_interval(0, '   1e12abiusdhiw');
+ gs_interval 
+-------------
+           0
+(1 row)
+
+select gs_interval(0, '   e13fsdsda');
+ERROR:  invalid input syntax for type double precision: "   "
+CONTEXT:  referenced column: gs_interval
+select gs_interval(0, '1e13fsdsda');
+ gs_interval 
+-------------
+           0
+(1 row)
+
+select gs_interval(100, '1e1fsdsda');
+ gs_interval 
+-------------
+           1
+(1 row)
+
+select gs_interval('+12', 121);
+ gs_interval 
+-------------
+           0
+(1 row)
+
+select gs_interval('+12', 12);
+ gs_interval 
+-------------
+           1
+(1 row)
+
+select gs_interval('+12', 0);
+ gs_interval 
+-------------
+           1
+(1 row)
+
+select gs_interval('-12', 0);
+ gs_interval 
+-------------
+           0
+(1 row)
+
+select gs_interval('-12.2', 0);
+ gs_interval 
+-------------
+           0
+(1 row)
+
+select gs_interval('-.2', 0);
+ gs_interval 
+-------------
+           0
+(1 row)
+
+select gs_interval('-.2', -100);
+ gs_interval 
+-------------
+           1
+(1 row)
+
+select gs_interval('-.2E2', -100);
+ gs_interval 
+-------------
+           1
+(1 row)
+
+select gs_interval('-.2E4', -100);
+ gs_interval 
+-------------
+           0
+(1 row)
+
+select gs_interval('..', 21);
+ERROR:  invalid input syntax for type double precision: "."
+CONTEXT:  referenced column: gs_interval
+select gs_interval('.21.', 21);
+ gs_interval 
+-------------
+           0
+(1 row)
+
+select gs_interval('.21.', 0);
+ gs_interval 
+-------------
+           1
+(1 row)
+
+select gs_interval('+.21.', 0);
+ gs_interval 
+-------------
+           1
+(1 row)
+
+select gs_interval('-.21.', 0);
+ gs_interval 
+-------------
+           0
+(1 row)
+
+select gs_interval('-.21.', -1);
+ gs_interval 
+-------------
+           1
+(1 row)
+
+select gs_interval('-..21.', -1);
+ERROR:  invalid input syntax for type double precision: "-."
+CONTEXT:  referenced column: gs_interval
+select gs_interval('...', -1);
+ERROR:  invalid input syntax for type double precision: "."
+CONTEXT:  referenced column: gs_interval
+select gs_interval('...', -1);
+ERROR:  invalid input syntax for type double precision: "."
+CONTEXT:  referenced column: gs_interval
+select gs_interval(123::int2,null);
+ gs_interval 
+-------------
+           1
+(1 row)
+
+select gs_interval(123::int4,null);
+ gs_interval 
+-------------
+           1
+(1 row)
+
+select gs_interval(123::int8,null);
+ gs_interval 
+-------------
+           1
+(1 row)
+
+select gs_interval(123,123.23);
+ gs_interval 
+-------------
+           0
+(1 row)
+
+select gs_interval(123,123.23::int);
+ gs_interval 
+-------------
+           1
+(1 row)
+
+select gs_interval(null, '2001-01-01 01:01:01.3654'::date);
+ gs_interval 
+-------------
+          -1
+(1 row)
+
+select gs_interval('2001-01-01 01:01:01.3654'::date, null);
+ERROR:  invalid input syntax for type double precision: "01-01"
+CONTEXT:  referenced column: gs_interval
+select gs_interval('2001-01-01 01:01:01.3654'::date, '2001-01-01 01:01:01.3654'::date);
+ERROR:  invalid input syntax for type double precision: "01-01"
+CONTEXT:  referenced column: gs_interval
+select gs_interval('2001-01-01 01:01:01.3654'::date, '1999-01-01 01:01:01.3654'::date);
+ERROR:  invalid input syntax for type double precision: "01-01"
+CONTEXT:  referenced column: gs_interval
+select gs_interval(t1, t2) from test_bccf;
+ gs_interval 
+-------------
+           0
+          -1
+           1
+           1
+           0
+          -1
+           1
+           1
+           0
+          -1
+           1
+           0
+           0
+          -1
+           1
+           1
+           0
+          -1
+           1
+           1
+           1
+          -1
+           1
+           1
+           1
+          -1
+           1
+           1
+           0
+          -1
+           1
+           0
+           1
+          -1
+           1
+           0
+           0
+          -1
+           1
+           1
+           0
+          -1
+           1
+           1
+           0
+          -1
+           1
+           0
+(48 rows)
+
+select gs_interval(t2, t1) from test_bccf;
+ gs_interval 
+-------------
+           1
+          -1
+          -1
+           0
+           1
+          -1
+          -1
+           1
+           1
+          -1
+          -1
+           1
+           1
+          -1
+          -1
+           0
+           1
+          -1
+          -1
+           0
+           0
+          -1
+          -1
+           0
+           0
+          -1
+          -1
+           0
+           1
+          -1
+          -1
+           1
+          -1
+          -1
+          -1
+           1
+           1
+          -1
+          -1
+           0
+           1
+          -1
+          -1
+           0
+           1
+          -1
+          -1
+           1
+(48 rows)
+
+drop table test_bccf;
+create table test_bccf (t1 int ,t2 float, t3 char, t4 text) WITH (ORIENTATION = COLUMN);
+insert into test_bccf values(1,3,null,null);
+insert into test_bccf values(null,null,'c',null);
+insert into test_bccf values(1,null,'b','asdf');
+insert into test_bccf values(3,2.0,'b','sdf');
+insert into test_bccf values(4,6.1,null,null);
+insert into test_bccf values(null,null,'c',null);
+insert into test_bccf values(5,null,'b','asdf');
+insert into test_bccf values(6,6.0,'b','sdf');
+insert into test_bccf values(7,9,null,null);
+insert into test_bccf values(null,null,'c',null);
+insert into test_bccf values(1,null,'b','asdf');
+insert into test_bccf values(1,4.0,'b','sdf');
+insert into test_bccf values(1,7.1,null,null);
+insert into test_bccf values(null,null,'c',null);
+insert into test_bccf values(11,null,'b','asdf');
+insert into test_bccf values(10,6.0,'b','sdf');
+insert into test_bccf values(11,14.6,null,null);
+insert into test_bccf values(null,null,'c',null);
+insert into test_bccf values(13,null,'b','asdf');
+insert into test_bccf values(12,2.0,'b','sdf');
+insert into test_bccf values(9,2.2,null,null);
+insert into test_bccf values(null,null,'c',null);
+insert into test_bccf values(8,null,'b','asdf');
+insert into test_bccf values(7,2.3,'b','sdf');
+insert into test_bccf values(123,3,null,null);
+insert into test_bccf values(null,null,'c',null);
+insert into test_bccf values(51,null,'b','asdf');
+insert into test_bccf values(73,72.0,'b','sdf');
+insert into test_bccf values(84,96.1,null,null);
+insert into test_bccf values(null,null,'c',null);
+insert into test_bccf values(5,null,'b','asdf');
+insert into test_bccf values(6,6.7,'b','sdf');
+insert into test_bccf values(7,null,null,null);
+insert into test_bccf values(null,null,'c',null);
+insert into test_bccf values(1,null,'b','asdf');
+insert into test_bccf values(2,4.0,'b','sdf');
+insert into test_bccf values(1,7.1,null,null);
+insert into test_bccf values(null,null,'c',null);
+insert into test_bccf values(13,null,'b','asdf');
+insert into test_bccf values(10,6.7,'b','sdf');
+insert into test_bccf values(11,24.6,null,null);
+insert into test_bccf values(null,null,'c',null);
+insert into test_bccf values(13,null,'b','asdf');
+insert into test_bccf values(12,2.7,'b','sdf');
+insert into test_bccf values(9,12.2,null,null);
+insert into test_bccf values(null,null,'c',null);
+insert into test_bccf values(8,null,'b','asdf');
+insert into test_bccf values(7,42.3,'b','sdf');
+----------------Coalesce function----------------------
+select coalesce(null, null);
+ coalesce 
+----------
+ 
+(1 row)
+
+select coalesce(null, 'other');
+ coalesce 
+----------
+ other
+(1 row)
+
+select coalesce('something','other');
+ coalesce  
+-----------
+ something
+(1 row)
+
+select coalesce(null,321);
+ coalesce 
+----------
+      321
+(1 row)
+
+select coalesce(null, null,123,'321');
+ coalesce 
+----------
+      123
+(1 row)
+
+select coalesce(null, null,123::int2,321::int2);
+ coalesce 
+----------
+      123
+(1 row)
+
+select coalesce(null, null,123::int4,321::int4);
+ coalesce 
+----------
+      123
+(1 row)
+
+select coalesce(null, null,123::int8,321::int8);
+ coalesce 
+----------
+      123
+(1 row)
+
+select coalesce(null, null,123::float4,321::float4);
+ coalesce 
+----------
+      123
+(1 row)
+
+select coalesce(null, null,null,123::float8,321::float8);
+ coalesce 
+----------
+      123
+(1 row)
+
+select coalesce(null, null,null,''::text,'hello!'::text);
+ coalesce 
+----------
+ 
+(1 row)
+
+select coalesce(null, null,null,'100.001'::number,134);
+ coalesce 
+----------
+      100
+(1 row)
+
+select coalesce(null, null,null,'2001-01-01 01:01:01.3654'::date,'2012-08-02 15:57:54.6365'::date);
+  coalesce  
+------------
+ 01-01-2001
+(1 row)
+
+select coalesce(null, null,null,'2001-01-01 01:01:01.3654'::timestamp,'2012-08-02 15:57:54.6365'::timestamp);
+           coalesce            
+-------------------------------
+ Mon Jan 01 01:01:01.3654 2001
+(1 row)
+
+select coalesce(null, null);
+ coalesce 
+----------
+ 
+(1 row)
+
+select coalesce(null, 'other');
+ coalesce 
+----------
+ other
+(1 row)
+
+select coalesce('something','other');
+ coalesce  
+-----------
+ something
+(1 row)
+
+select coalesce(null,321);
+ coalesce 
+----------
+      321
+(1 row)
+
+select coalesce(123,'321');
+ coalesce 
+----------
+      123
+(1 row)
+
+select coalesce(123::int2,null, null,321::int2);
+ coalesce 
+----------
+      123
+(1 row)
+
+select coalesce(123::int4,null, null,321::int4);
+ coalesce 
+----------
+      123
+(1 row)
+
+select coalesce(123::int8,null, null,321::int8);
+ coalesce 
+----------
+      123
+(1 row)
+
+select coalesce(123::float4,null, null,321::float4);
+ coalesce 
+----------
+      123
+(1 row)
+
+select coalesce(123::float8,null, null,321::float8);
+ coalesce 
+----------
+      123
+(1 row)
+
+select coalesce(null, null,'2001-01-01 01:01:01.3654'::date,'2012-08-02 15:57:54.6365'::date);
+  coalesce  
+------------
+ 01-01-2001
+(1 row)
+
+select coalesce('2001-01-01 01:01:01.3654'::timestamp,null, null,'2012-08-02 15:57:54.6365'::timestamp);
+           coalesce            
+-------------------------------
+ Mon Jan 01 01:01:01.3654 2001
+(1 row)
+
+SELECT coalesce(null,1, 'k');
+ coalesce 
+----------
+        1
+(1 row)
+
+SELECT coalesce(null,1, '6');
+ coalesce 
+----------
+        1
+(1 row)
+
+SELECT coalesce(null,'j', '');
+ coalesce 
+----------
+ j
+(1 row)
+
+SELECT coalesce(null,'j', null);
+ coalesce 
+----------
+ j
+(1 row)
+
+SELECT coalesce(null,'', 'k');
+ coalesce 
+----------
+ 
+(1 row)
+
+SELECT coalesce(null, 'k');
+ coalesce 
+----------
+ k
+(1 row)
+
+SELECT coalesce(null,t1, 12) from test_bccf;
+ coalesce 
+----------
+        1
+       12
+        1
+        3
+        4
+       12
+        5
+        6
+        7
+       12
+        1
+        1
+        1
+       12
+       11
+       10
+       11
+       12
+       13
+       12
+        9
+       12
+        8
+        7
+      123
+       12
+       51
+       73
+       84
+       12
+        5
+        6
+        7
+       12
+        1
+        2
+        1
+       12
+       13
+       10
+       11
+       12
+       13
+       12
+        9
+       12
+        8
+        7
+(48 rows)
+
+SELECT coalesce(null,t2, 213.4) from test_bccf;
+ coalesce 
+----------
+        3
+    213.4
+    213.4
+        2
+      6.1
+    213.4
+    213.4
+        6
+        9
+    213.4
+    213.4
+        4
+      7.1
+    213.4
+    213.4
+        6
+     14.6
+    213.4
+    213.4
+        2
+      2.2
+    213.4
+    213.4
+      2.3
+        3
+    213.4
+    213.4
+       72
+     96.1
+    213.4
+    213.4
+      6.7
+    213.4
+    213.4
+    213.4
+        4
+      7.1
+    213.4
+    213.4
+      6.7
+     24.6
+    213.4
+    213.4
+      2.7
+     12.2
+    213.4
+    213.4
+     42.3
+(48 rows)
+
+SELECT coalesce(null,t3, 'c') from test_bccf;
+ coalesce 
+----------
+ c
+ c
+ b
+ b
+ c
+ c
+ b
+ b
+ c
+ c
+ b
+ b
+ c
+ c
+ b
+ b
+ c
+ c
+ b
+ b
+ c
+ c
+ b
+ b
+ c
+ c
+ b
+ b
+ c
+ c
+ b
+ b
+ c
+ c
+ b
+ b
+ c
+ c
+ b
+ b
+ c
+ c
+ b
+ b
+ c
+ c
+ b
+ b
+(48 rows)
+
+SELECT coalesce(null,t4, 'hello') from test_bccf;
+ coalesce 
+----------
+ hello
+ hello
+ asdf
+ sdf
+ hello
+ hello
+ asdf
+ sdf
+ hello
+ hello
+ asdf
+ sdf
+ hello
+ hello
+ asdf
+ sdf
+ hello
+ hello
+ asdf
+ sdf
+ hello
+ hello
+ asdf
+ sdf
+ hello
+ hello
+ asdf
+ sdf
+ hello
+ hello
+ asdf
+ sdf
+ hello
+ hello
+ asdf
+ sdf
+ hello
+ hello
+ asdf
+ sdf
+ hello
+ hello
+ asdf
+ sdf
+ hello
+ hello
+ asdf
+ sdf
+(48 rows)
+
+SELECT coalesce(null,t1,t2) from test_bccf;
+ coalesce 
+----------
+        1
+         
+        1
+        3
+        4
+         
+        5
+        6
+        7
+         
+        1
+        1
+        1
+         
+       11
+       10
+       11
+         
+       13
+       12
+        9
+         
+        8
+        7
+      123
+         
+       51
+       73
+       84
+         
+        5
+        6
+        7
+         
+        1
+        2
+        1
+         
+       13
+       10
+       11
+         
+       13
+       12
+        9
+         
+        8
+        7
+(48 rows)
+
+SELECT coalesce(null,t2,t1) from test_bccf;
+ coalesce 
+----------
+        3
+         
+        1
+        2
+      6.1
+         
+        5
+        6
+        9
+         
+        1
+        4
+      7.1
+         
+       11
+        6
+     14.6
+         
+       13
+        2
+      2.2
+         
+        8
+      2.3
+        3
+         
+       51
+       72
+     96.1
+         
+        5
+      6.7
+        7
+         
+        1
+        4
+      7.1
+         
+       13
+      6.7
+     24.6
+         
+       13
+      2.7
+     12.2
+         
+        8
+     42.3
+(48 rows)
+
+----------------IfNULL function------------------------
+select ifnull(null, null);
+ ifnull 
+--------
+ 
+(1 row)
+
+select ifnull(null, 'other');
+ ifnull 
+--------
+ other
+(1 row)
+
+select ifnull('something','other');
+  ifnull   
+-----------
+ something
+(1 row)
+
+select ifnull(null,321);
+ ifnull 
+--------
+ 321
+(1 row)
+
+select ifnull(123,'321');
+ ifnull 
+--------
+    123
+(1 row)
+
+select ifnull(123::int2,321::int2);
+ ifnull 
+--------
+    123
+(1 row)
+
+select ifnull(123::int4,321::int4);
+ ifnull 
+--------
+    123
+(1 row)
+
+select ifnull(123::int8,321::int8);
+ ifnull 
+--------
+    123
+(1 row)
+
+select ifnull(123::float4,321::float4);
+ ifnull 
+--------
+    123
+(1 row)
+
+select ifnull(123::float8,321::float8);
+ ifnull 
+--------
+    123
+(1 row)
+
+select ifnull('2001-01-01 01:01:01.3654'::date,'2012-08-02 15:57:54.6365'::date);
+   ifnull   
+------------
+ 01-01-2001
+(1 row)
+
+select ifnull('2001-01-01 01:01:01.3654'::timestamp,'2012-08-02 15:57:54.6365'::timestamp);
+            ifnull             
+-------------------------------
+ Mon Jan 01 01:01:01.3654 2001
+(1 row)
+
+--ifnull(unknown, int)
+SELECT ifnull('j', 1);
+ ifnull 
+--------
+ j
+(1 row)
+
+--ifnull(int, unknown)
+SELECT ifnull(1, 'k');
+ ifnull 
+--------
+      1
+(1 row)
+
+SELECT ifnull(1, '6');
+ ifnull 
+--------
+      1
+(1 row)
+
+--ifnull(char, int)
+SELECT ifnull('o'::char, 1);
+ ifnull 
+--------
+ o
+(1 row)
+
+--ifnull(int, char)
+SELECT ifnull(1, 'o'::char);
+ ifnull 
+--------
+      1
+(1 row)
+
+--ifnull(text, int2)
+SELECT ifnull('hello!'::text, '100'::int2);
+ ifnull 
+--------
+ hello!
+(1 row)
+
+SELECT ifnull('100'::int2, 'hello!'::text);
+ ifnull 
+--------
+    100
+(1 row)
+
+--ifnull(text, int4)
+SELECT ifnull('hello!'::text, '100'::int4);
+ ifnull 
+--------
+ hello!
+(1 row)
+
+SELECT ifnull('100'::int4, 'hello!'::text);
+ ifnull 
+--------
+    100
+(1 row)
+
+--ifnull(text, int8)
+SELECT ifnull('hello!'::text, '100'::int8);
+ ifnull 
+--------
+ hello!
+(1 row)
+
+SELECT ifnull('100'::int8, 'hello!'::text);
+ ifnull 
+--------
+    100
+(1 row)
+
+--ifnull(text, float4)
+SELECT ifnull('hello!'::text, '100.001'::float4);
+ ifnull 
+--------
+ hello!
+(1 row)
+
+SELECT ifnull('100.001'::float4, 'hello!'::text);
+ ifnull  
+---------
+ 100.001
+(1 row)
+
+--ifnull(text, float8)
+SELECT ifnull('hello!'::text, '100.001'::float8);
+ ifnull 
+--------
+ hello!
+(1 row)
+
+SELECT ifnull('100.001'::float8, 'hello!'::text);
+ ifnull  
+---------
+ 100.001
+(1 row)
+
+--ifnull(text, number)
+SELECT ifnull('hello!'::text, '100.001'::number);
+ ifnull 
+--------
+ hello!
+(1 row)
+
+SELECT ifnull('100.001'::number, 'hello!'::text);
+ ifnull 
+--------
+    100
+(1 row)
+
+--null
+SELECT ifnull('j', '');
+ ifnull 
+--------
+ j
+(1 row)
+
+SELECT ifnull('j', null);
+ ifnull 
+--------
+ j
+(1 row)
+
+SELECT ifnull('', 'k');
+ ifnull 
+--------
+ 
+(1 row)
+
+SELECT ifnull(null, 'k');
+ ifnull 
+--------
+ k
+(1 row)
+
+SELECT ifnull(''::text, '100'::int2);
+ ifnull 
+--------
+ 
+(1 row)
+
+SELECT ifnull(''::int2, 'hello!'::text)L;
+ l 
+---
+ 0
+(1 row)
+
+SELECT ifnull('hello!'::text, ''::int2);
+ ifnull 
+--------
+ hello!
+(1 row)
+
+SELECT ifnull('100'::int2, ''::text);
+ ifnull 
+--------
+    100
+(1 row)
+
+SELECT ifnull(''::text, '100.001'::float8);
+ ifnull 
+--------
+ 
+(1 row)
+
+SELECT ifnull('100.001'::float8, ''::text);
+ ifnull  
+---------
+ 100.001
+(1 row)
+
+SELECT ifnull(''::text, '100.001'::number);
+ ifnull 
+--------
+ 
+(1 row)
+
+SELECT ifnull(''::number, 'hello!'::text);
+ ifnull 
+--------
+      0
+(1 row)
+
+SELECT ifnull('hello!'::text, ''::number);
+ ifnull 
+--------
+ hello!
+(1 row)
+
+SELECT ifnull('100.001'::number, ''::text);
+ ifnull 
+--------
+    100
+(1 row)
+
+select ifnull(t1,t2) from test_bccf;
+ ifnull 
+--------
+      1
+       
+      1
+      3
+      4
+       
+      5
+      6
+      7
+       
+      1
+      1
+      1
+       
+     11
+     10
+     11
+       
+     13
+     12
+      9
+       
+      8
+      7
+    123
+       
+     51
+     73
+     84
+       
+      5
+      6
+      7
+       
+      1
+      2
+      1
+       
+     13
+     10
+     11
+       
+     13
+     12
+      9
+       
+      8
+      7
+(48 rows)
+
+select ifnull(t1,t3) from test_bccf;
+ ifnull 
+--------
+      1
+      0
+      1
+      3
+      4
+      0
+      5
+      6
+      7
+      0
+      1
+      1
+      1
+      0
+     11
+     10
+     11
+      0
+     13
+     12
+      9
+      0
+      8
+      7
+    123
+      0
+     51
+     73
+     84
+      0
+      5
+      6
+      7
+      0
+      1
+      2
+      1
+      0
+     13
+     10
+     11
+      0
+     13
+     12
+      9
+      0
+      8
+      7
+(48 rows)
+
+select ifnull(t1,t4) from test_bccf;
+ ifnull 
+--------
+      1
+       
+      1
+      3
+      4
+       
+      5
+      6
+      7
+       
+      1
+      1
+      1
+       
+     11
+     10
+     11
+       
+     13
+     12
+      9
+       
+      8
+      7
+    123
+       
+     51
+     73
+     84
+       
+      5
+      6
+      7
+       
+      1
+      2
+      1
+       
+     13
+     10
+     11
+       
+     13
+     12
+      9
+       
+      8
+      7
+(48 rows)
+
+select ifnull(t3,t4) from test_bccf;
+ ifnull 
+--------
+ 
+ c
+ b
+ b
+ 
+ c
+ b
+ b
+ 
+ c
+ b
+ b
+ 
+ c
+ b
+ b
+ 
+ c
+ b
+ b
+ 
+ c
+ b
+ b
+ 
+ c
+ b
+ b
+ 
+ c
+ b
+ b
+ 
+ c
+ b
+ b
+ 
+ c
+ b
+ b
+ 
+ c
+ b
+ b
+ 
+ c
+ b
+ b
+(48 rows)
+
+----------------ISNULL expression------------------------
+--null
+SELECT isnull(null);
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT isnull('');
+ ?column? 
+----------
+ f
+(1 row)
+
+SELECT isnull(''::text);
+ ?column? 
+----------
+ f
+(1 row)
+
+SELECT isnull(''::char);
+ ?column? 
+----------
+ f
+(1 row)
+
+SELECT isnull(''::int2);
+ ?column? 
+----------
+ f
+(1 row)
+
+SELECT isnull(''::int4);
+ ?column? 
+----------
+ f
+(1 row)
+
+SELECT isnull(''::int8);
+ ?column? 
+----------
+ f
+(1 row)
+
+SELECT isnull(''::number);
+ ?column? 
+----------
+ f
+(1 row)
+
+SELECT isnull('j');
+ ?column? 
+----------
+ f
+(1 row)
+
+SELECT isnull('hello!'::text);
+ ?column? 
+----------
+ f
+(1 row)
+
+SELECT isnull('100'::int2);
+ ?column? 
+----------
+ f
+(1 row)
+
+SELECT isnull('100.001'::float8);
+ ?column? 
+----------
+ f
+(1 row)
+
+SELECT isnull('100.001'::number);
+ ?column? 
+----------
+ f
+(1 row)
+
+select * from test_bccf where isnull(t1) order by 1, 2;
+ t1 | t2 | t3 | t4 
+----+----+----+----
+    |    | c  | 
+    |    | c  | 
+    |    | c  | 
+    |    | c  | 
+    |    | c  | 
+    |    | c  | 
+    |    | c  | 
+    |    | c  | 
+    |    | c  | 
+    |    | c  | 
+    |    | c  | 
+    |    | c  | 
+(12 rows)
+
+select * from test_bccf where isnull(t2) order by 1, 2;
+ t1 | t2 | t3 |  t4  
+----+----+----+------
+  1 |    | b  | asdf
+  1 |    | b  | asdf
+  1 |    | b  | asdf
+  5 |    | b  | asdf
+  5 |    | b  | asdf
+  7 |    |    | 
+  8 |    | b  | asdf
+  8 |    | b  | asdf
+ 11 |    | b  | asdf
+ 13 |    | b  | asdf
+ 13 |    | b  | asdf
+ 13 |    | b  | asdf
+ 51 |    | b  | asdf
+    |    | c  | 
+    |    | c  | 
+    |    | c  | 
+    |    | c  | 
+    |    | c  | 
+    |    | c  | 
+    |    | c  | 
+    |    | c  | 
+    |    | c  | 
+    |    | c  | 
+    |    | c  | 
+    |    | c  | 
+(25 rows)
+
+select * from test_bccf where isnull(t3) order by 1, 2;
+ t1  |  t2  | t3 | t4 
+-----+------+----+----
+   1 |    3 |    | 
+   1 |  7.1 |    | 
+   1 |  7.1 |    | 
+   4 |  6.1 |    | 
+   7 |    9 |    | 
+   7 |      |    | 
+   9 |  2.2 |    | 
+   9 | 12.2 |    | 
+  11 | 14.6 |    | 
+  11 | 24.6 |    | 
+  84 | 96.1 |    | 
+ 123 |    3 |    | 
+(12 rows)
+
+select * from test_bccf where isnull(t4) order by 1, 2;
+ t1  |  t2  | t3 | t4 
+-----+------+----+----
+   1 |    3 |    | 
+   1 |  7.1 |    | 
+   1 |  7.1 |    | 
+   4 |  6.1 |    | 
+   7 |    9 |    | 
+   7 |      |    | 
+   9 |  2.2 |    | 
+   9 | 12.2 |    | 
+  11 | 14.6 |    | 
+  11 | 24.6 |    | 
+  84 | 96.1 |    | 
+ 123 |    3 |    | 
+     |      | c  | 
+     |      | c  | 
+     |      | c  | 
+     |      | c  | 
+     |      | c  | 
+     |      | c  | 
+     |      | c  | 
+     |      | c  | 
+     |      | c  | 
+     |      | c  | 
+     |      | c  | 
+     |      | c  | 
+(24 rows)
+
+select * from test_bccf where isnull(t1) and t2 is not NULL order by 1, 2;
+ t1 | t2 | t3 | t4 
+----+----+----+----
+(0 rows)
+
+select * from test_bccf where isnull(t2) and t3 is not NULL order by 1, 2;
+ t1 | t2 | t3 |  t4  
+----+----+----+------
+  1 |    | b  | asdf
+  1 |    | b  | asdf
+  1 |    | b  | asdf
+  5 |    | b  | asdf
+  5 |    | b  | asdf
+  8 |    | b  | asdf
+  8 |    | b  | asdf
+ 11 |    | b  | asdf
+ 13 |    | b  | asdf
+ 13 |    | b  | asdf
+ 13 |    | b  | asdf
+ 51 |    | b  | asdf
+    |    | c  | 
+    |    | c  | 
+    |    | c  | 
+    |    | c  | 
+    |    | c  | 
+    |    | c  | 
+    |    | c  | 
+    |    | c  | 
+    |    | c  | 
+    |    | c  | 
+    |    | c  | 
+    |    | c  | 
+(24 rows)
+
+select * from test_bccf where isnull(t3) and t4 is not NULL order by 1, 2;
+ t1 | t2 | t3 | t4 
+----+----+----+----
+(0 rows)
+
+select * from test_bccf where isnull(t4) and t1 is not NULL order by 1, 2;
+ t1  |  t2  | t3 | t4 
+-----+------+----+----
+   1 |    3 |    | 
+   1 |  7.1 |    | 
+   1 |  7.1 |    | 
+   4 |  6.1 |    | 
+   7 |    9 |    | 
+   7 |      |    | 
+   9 |  2.2 |    | 
+   9 | 12.2 |    | 
+  11 | 14.6 |    | 
+  11 | 24.6 |    | 
+  84 | 96.1 |    | 
+ 123 |    3 |    | 
+(12 rows)
+
+----------------STRCMP expression------------------------
+select strcmp(null, null);
+ strcmp 
+--------
+       
+(1 row)
+
+select strcmp(null, 'other');
+ strcmp 
+--------
+       
+(1 row)
+
+select strcmp('other', null);
+ strcmp 
+--------
+       
+(1 row)
+
+select strcmp('something','other');
+ strcmp 
+--------
+      1
+(1 row)
+
+select strcmp('something','something');
+ strcmp 
+--------
+      0
+(1 row)
+
+select strcmp(null, 321);
+ strcmp 
+--------
+       
+(1 row)
+
+select strcmp(321, null);
+ strcmp 
+--------
+       
+(1 row)
+
+select strcmp(321, 321);
+ strcmp 
+--------
+      0
+(1 row)
+
+select strcmp(321, 123);
+ strcmp 
+--------
+      1
+(1 row)
+
+select strcmp(null, 321::int2);
+ strcmp 
+--------
+       
+(1 row)
+
+select strcmp(321::int2, null);
+ strcmp 
+--------
+       
+(1 row)
+
+select strcmp(321::int2, 321::int2);
+ strcmp 
+--------
+      0
+(1 row)
+
+select strcmp(321::int2, 123::int2);
+ strcmp 
+--------
+      1
+(1 row)
+
+select strcmp(null, 321::int4);
+ strcmp 
+--------
+       
+(1 row)
+
+select strcmp(321::int4, null);
+ strcmp 
+--------
+       
+(1 row)
+
+select strcmp(321::int4, 321::int4);
+ strcmp 
+--------
+      0
+(1 row)
+
+select strcmp(321::int4, 123::int4);
+ strcmp 
+--------
+      1
+(1 row)
+
+select strcmp(null, 321::int8);
+ strcmp 
+--------
+       
+(1 row)
+
+select strcmp(321::int8, null);
+ strcmp 
+--------
+       
+(1 row)
+
+select strcmp(321::int8, 321::int8);
+ strcmp 
+--------
+      0
+(1 row)
+
+select strcmp(321::int8, 123::int8);
+ strcmp 
+--------
+      1
+(1 row)
+
+select strcmp(null, 321::float4);
+ strcmp 
+--------
+       
+(1 row)
+
+select strcmp(321::float4, null);
+ strcmp 
+--------
+       
+(1 row)
+
+select strcmp(321::float4, 321::float4);
+ strcmp 
+--------
+      0
+(1 row)
+
+select strcmp(321::float4, 123::float4);
+ strcmp 
+--------
+      1
+(1 row)
+
+select strcmp(null, 321::float8);
+ strcmp 
+--------
+       
+(1 row)
+
+select strcmp(321::float8, null);
+ strcmp 
+--------
+       
+(1 row)
+
+select strcmp(321::float8, 321::float8);
+ strcmp 
+--------
+      0
+(1 row)
+
+select strcmp(321::float8, 123::float8);
+ strcmp 
+--------
+      1
+(1 row)
+
+select strcmp(null,'something'::text);
+ strcmp 
+--------
+       
+(1 row)
+
+select strcmp('something'::text,null);
+ strcmp 
+--------
+       
+(1 row)
+
+select strcmp('something'::text,'something'::text);
+ strcmp 
+--------
+      0
+(1 row)
+
+select strcmp('something'::text,'other'::text);
+ strcmp 
+--------
+      1
+(1 row)
+
+select strcmp(null, '2001-01-01 01:01:01.3654'::date);
+ strcmp 
+--------
+       
+(1 row)
+
+select strcmp('2001-01-01 01:01:01.3654'::date, null);
+ strcmp 
+--------
+       
+(1 row)
+
+select strcmp('2001-01-01 01:01:01.3654'::date, '2001-01-01 01:01:01.3654'::date);
+ strcmp 
+--------
+      0
+(1 row)
+
+select strcmp('2001-01-01 01:01:01.3654'::date, '1999-01-01 01:01:01.3654'::date);
+ strcmp 
+--------
+      1
+(1 row)
+
+SELECT strcmp(t1, 12) from test_bccf;
+ strcmp 
+--------
+     -1
+       
+     -1
+      1
+      1
+       
+      1
+      1
+      1
+       
+     -1
+     -1
+     -1
+       
+     -1
+     -1
+     -1
+       
+      1
+      0
+      1
+       
+      1
+      1
+      1
+       
+      1
+      1
+      1
+       
+      1
+      1
+      1
+       
+     -1
+      1
+     -1
+       
+      1
+     -1
+     -1
+       
+      1
+      0
+      1
+       
+      1
+      1
+(48 rows)
+
+SELECT strcmp(t2, 213.4) from test_bccf;
+ strcmp 
+--------
+      1
+       
+       
+     -1
+      1
+       
+       
+      1
+      1
+       
+       
+      1
+      1
+       
+       
+      1
+     -1
+       
+       
+     -1
+     -1
+       
+       
+     -1
+      1
+       
+       
+      1
+      1
+       
+       
+      1
+       
+       
+       
+      1
+      1
+       
+       
+      1
+      1
+       
+       
+     -1
+     -1
+       
+       
+      1
+(48 rows)
+
+SELECT strcmp(t3, 'c') from test_bccf;
+ strcmp 
+--------
+       
+      0
+     -1
+     -1
+       
+      0
+     -1
+     -1
+       
+      0
+     -1
+     -1
+       
+      0
+     -1
+     -1
+       
+      0
+     -1
+     -1
+       
+      0
+     -1
+     -1
+       
+      0
+     -1
+     -1
+       
+      0
+     -1
+     -1
+       
+      0
+     -1
+     -1
+       
+      0
+     -1
+     -1
+       
+      0
+     -1
+     -1
+       
+      0
+     -1
+     -1
+(48 rows)
+
+SELECT strcmp(t4, 'hello') from test_bccf;
+ strcmp 
+--------
+       
+       
+     -1
+      1
+       
+       
+     -1
+      1
+       
+       
+     -1
+      1
+       
+       
+     -1
+      1
+       
+       
+     -1
+      1
+       
+       
+     -1
+      1
+       
+       
+     -1
+      1
+       
+       
+     -1
+      1
+       
+       
+     -1
+      1
+       
+       
+     -1
+      1
+       
+       
+     -1
+      1
+       
+       
+     -1
+      1
+(48 rows)
+
+SELECT strcmp(t1,t2) from test_bccf;
+ strcmp 
+--------
+     -1
+       
+       
+      1
+     -1
+       
+       
+      0
+     -1
+       
+       
+     -1
+     -1
+       
+       
+     -1
+     -1
+       
+       
+     -1
+      1
+       
+       
+      1
+     -1
+       
+       
+      1
+     -1
+       
+       
+     -1
+       
+       
+       
+     -1
+     -1
+       
+       
+     -1
+     -1
+       
+       
+     -1
+      1
+       
+       
+      1
+(48 rows)
+
+SELECT strcmp(t2,t1) from test_bccf;
+ strcmp 
+--------
+      1
+       
+       
+     -1
+      1
+       
+       
+      0
+      1
+       
+       
+      1
+      1
+       
+       
+      1
+      1
+       
+       
+      1
+     -1
+       
+       
+     -1
+      1
+       
+       
+     -1
+      1
+       
+       
+      1
+       
+       
+       
+      1
+      1
+       
+       
+      1
+      1
+       
+       
+      1
+     -1
+       
+       
+     -1
+(48 rows)
+
+----------------GS_INTERVAL expression------------------------
+select gs_interval(null);
+ gs_interval 
+-------------
+          -1
+(1 row)
+
+select gs_interval(null, 123);
+ gs_interval 
+-------------
+          -1
+(1 row)
+
+select gs_interval(null, 123.45);
+ gs_interval 
+-------------
+          -1
+(1 row)
+
+select gs_interval(123,null);
+ gs_interval 
+-------------
+           1
+(1 row)
+
+select gs_interval(123,null,17,43.123);
+ gs_interval 
+-------------
+           3
+(1 row)
+
+select gs_interval(123.213,null,17,43.123);
+ gs_interval 
+-------------
+           3
+(1 row)
+
+select gs_interval(100, '10e2');
+ gs_interval 
+-------------
+           0
+(1 row)
+
+select gs_interval(100, '   10e1');
+ gs_interval 
+-------------
+           1
+(1 row)
+
+select gs_interval(100, '   10e1', '      10Eeasd');
+ERROR:  invalid input syntax for type double precision: "      10E"
+CONTEXT:  referenced column: gs_interval
+select gs_interval(10e3, '   10e1', '      10E1easd    ', '2e10');
+ gs_interval 
+-------------
+           2
+(1 row)
+
+select gs_interval(0, '   wa');
+ gs_interval 
+-------------
+           1
+(1 row)
+
+select gs_interval(0, '   wa', '  e1212');
+ERROR:  invalid input syntax for type double precision: "  "
+CONTEXT:  referenced column: gs_interval
+select gs_interval(0, '   abiusdhiw');
+ gs_interval 
+-------------
+           1
+(1 row)
+
+select gs_interval(0, '   abiusdhiw', '   kqiwjoiqh  ');
+ gs_interval 
+-------------
+           2
+(1 row)
+
+select gs_interval(0, '   1e12abiusdhiw');
+ gs_interval 
+-------------
+           0
+(1 row)
+
+select gs_interval(0, '   e13fsdsda');
+ERROR:  invalid input syntax for type double precision: "   "
+CONTEXT:  referenced column: gs_interval
+select gs_interval(0, '1e13fsdsda');
+ gs_interval 
+-------------
+           0
+(1 row)
+
+select gs_interval(100, '1e1fsdsda');
+ gs_interval 
+-------------
+           1
+(1 row)
+
+select gs_interval('+12', 121);
+ gs_interval 
+-------------
+           0
+(1 row)
+
+select gs_interval('+12', 12);
+ gs_interval 
+-------------
+           1
+(1 row)
+
+select gs_interval('+12', 0);
+ gs_interval 
+-------------
+           1
+(1 row)
+
+select gs_interval('-12', 0);
+ gs_interval 
+-------------
+           0
+(1 row)
+
+select gs_interval('-12.2', 0);
+ gs_interval 
+-------------
+           0
+(1 row)
+
+select gs_interval('-.2', 0);
+ gs_interval 
+-------------
+           0
+(1 row)
+
+select gs_interval('-.2', -100);
+ gs_interval 
+-------------
+           1
+(1 row)
+
+select gs_interval('-.2E2', -100);
+ gs_interval 
+-------------
+           1
+(1 row)
+
+select gs_interval('-.2E4', -100);
+ gs_interval 
+-------------
+           0
+(1 row)
+
+select gs_interval('..', 21);
+ERROR:  invalid input syntax for type double precision: "."
+CONTEXT:  referenced column: gs_interval
+select gs_interval('.21.', 21);
+ gs_interval 
+-------------
+           0
+(1 row)
+
+select gs_interval('.21.', 0);
+ gs_interval 
+-------------
+           1
+(1 row)
+
+select gs_interval('+.21.', 0);
+ gs_interval 
+-------------
+           1
+(1 row)
+
+select gs_interval('-.21.', 0);
+ gs_interval 
+-------------
+           0
+(1 row)
+
+select gs_interval('-.21.', -1);
+ gs_interval 
+-------------
+           1
+(1 row)
+
+select gs_interval('-..21.', -1);
+ERROR:  invalid input syntax for type double precision: "-."
+CONTEXT:  referenced column: gs_interval
+select gs_interval('...', -1);
+ERROR:  invalid input syntax for type double precision: "."
+CONTEXT:  referenced column: gs_interval
+select gs_interval('...', -1);
+ERROR:  invalid input syntax for type double precision: "."
+CONTEXT:  referenced column: gs_interval
+select gs_interval(123::int2,null);
+ gs_interval 
+-------------
+           1
+(1 row)
+
+select gs_interval(123::int4,null);
+ gs_interval 
+-------------
+           1
+(1 row)
+
+select gs_interval(123::int8,null);
+ gs_interval 
+-------------
+           1
+(1 row)
+
+select gs_interval(123,123.23);
+ gs_interval 
+-------------
+           0
+(1 row)
+
+select gs_interval(123,123.23::int);
+ gs_interval 
+-------------
+           1
+(1 row)
+
+select gs_interval(null, '2001-01-01 01:01:01.3654'::date);
+ gs_interval 
+-------------
+          -1
+(1 row)
+
+select gs_interval('2001-01-01 01:01:01.3654'::date, null);
+ERROR:  invalid input syntax for type double precision: "01-01"
+CONTEXT:  referenced column: gs_interval
+select gs_interval('2001-01-01 01:01:01.3654'::date, '2001-01-01 01:01:01.3654'::date);
+ERROR:  invalid input syntax for type double precision: "01-01"
+CONTEXT:  referenced column: gs_interval
+select gs_interval('2001-01-01 01:01:01.3654'::date, '1999-01-01 01:01:01.3654'::date);
+ERROR:  invalid input syntax for type double precision: "01-01"
+CONTEXT:  referenced column: gs_interval
+select gs_interval(t1, t2) from test_bccf;
+ gs_interval 
+-------------
+           0
+          -1
+           1
+           1
+           0
+          -1
+           1
+           1
+           0
+          -1
+           1
+           0
+           0
+          -1
+           1
+           1
+           0
+          -1
+           1
+           1
+           1
+          -1
+           1
+           1
+           1
+          -1
+           1
+           1
+           0
+          -1
+           1
+           0
+           1
+          -1
+           1
+           0
+           0
+          -1
+           1
+           1
+           0
+          -1
+           1
+           1
+           0
+          -1
+           1
+           0
+(48 rows)
+
+select gs_interval(t2, t1) from test_bccf;
+ gs_interval 
+-------------
+           1
+          -1
+          -1
+           0
+           1
+          -1
+          -1
+           1
+           1
+          -1
+          -1
+           1
+           1
+          -1
+          -1
+           0
+           1
+          -1
+          -1
+           0
+           0
+          -1
+          -1
+           0
+           0
+          -1
+          -1
+           0
+           1
+          -1
+          -1
+           1
+          -1
+          -1
+          -1
+           1
+           1
+          -1
+          -1
+           0
+           1
+          -1
+          -1
+           0
+           1
+          -1
+          -1
+           1
+(48 rows)
+
+drop table test_bccf;
+--Type Conversion Test--
+drop table if exists typeset;
+NOTICE:  table "typeset" does not exist, skipping
+create table typeset (
+	tyint TINYINT not null,
+	smint SMALLINT not null,
+	anint INT not null,
+	bgint BIGINT not null,
+	dcmal DECIMAL not null,
+	nmric NUMERIC not null,
+	flt   FLOAT not null,
+	bt    BIT(8) not null,
+	dt    DATE not null,
+	tmstp TIMESTAMP not null,
+	tm    TIME not null,
+	ch    CHAR(30) not null,
+	vch   VARCHAR(30) not null,
+	blb   BLOB not null,
+	txt   TEXT not null
+);
+insert into typeset (
+tyint,smint,anint,bgint,dcmal,nmric,flt,
+bt,dt,tmstp,tm,
+ch,vch,blb,
+txt 
+) values (
+127, 127, 127, 127, 127.234, 127.32, 127.213,
+b'01111111', '2001-04-19','2001-04-19', '22:23:44',
+'2001-04-19 22:23:44', '2001-04-19 22:23:44', '1233454212',
+'2001-04-19 22:23:44'
+);
+select coalesce(tyint, smint) from typeset;
+ coalesce 
+----------
+      127
+(1 row)
+
+select coalesce(tyint, anint) from typeset;
+ coalesce 
+----------
+      127
+(1 row)
+
+select coalesce(tyint, bgint) from typeset;
+ coalesce 
+----------
+      127
+(1 row)
+
+select coalesce(tyint, dcmal) from typeset;
+ coalesce 
+----------
+      127
+(1 row)
+
+select coalesce(tyint, nmric) from typeset;
+ coalesce 
+----------
+      127
+(1 row)
+
+select coalesce(tyint, flt) from typeset;
+ coalesce 
+----------
+      127
+(1 row)
+
+select coalesce(tyint, bt) from typeset;
+ERROR:  COALESCE types tinyint and bit cannot be matched
+LINE 1: select coalesce(tyint, bt) from typeset;
+                               ^
+CONTEXT:  referenced column: coalesce
+select coalesce(tyint, dt) from typeset;
+ERROR:  COALESCE types tinyint and date cannot be matched
+LINE 1: select coalesce(tyint, dt) from typeset;
+                               ^
+CONTEXT:  referenced column: coalesce
+select coalesce(tyint, tmstp) from typeset;
+ERROR:  COALESCE types tinyint and timestamp without time zone cannot be matched
+LINE 1: select coalesce(tyint, tmstp) from typeset;
+                               ^
+CONTEXT:  referenced column: coalesce
+select coalesce(tyint, tm) from typeset;
+ERROR:  COALESCE types tinyint and time without time zone cannot be matched
+LINE 1: select coalesce(tyint, tm) from typeset;
+                               ^
+CONTEXT:  referenced column: coalesce
+select coalesce(tyint, ch) from typeset;
+ERROR:  COALESCE types tinyint and character cannot be matched
+LINE 1: select coalesce(tyint, ch) from typeset;
+                               ^
+CONTEXT:  referenced column: coalesce
+select coalesce(tyint, vch) from typeset;
+ERROR:  COALESCE types tinyint and character varying cannot be matched
+LINE 1: select coalesce(tyint, vch) from typeset;
+                               ^
+CONTEXT:  referenced column: coalesce
+select coalesce(tyint, blb) from typeset;
+ERROR:  COALESCE types tinyint and blob cannot be matched
+LINE 1: select coalesce(tyint, blb) from typeset;
+                               ^
+CONTEXT:  referenced column: coalesce
+select coalesce(tyint, txt) from typeset;
+ERROR:  COALESCE types tinyint and text cannot be matched
+LINE 1: select coalesce(tyint, txt) from typeset;
+                               ^
+CONTEXT:  referenced column: coalesce
+select coalesce(smint, anint) from typeset;
+ coalesce 
+----------
+      127
+(1 row)
+
+select coalesce(smint, bgint) from typeset;
+ coalesce 
+----------
+      127
+(1 row)
+
+select coalesce(smint, dcmal) from typeset;
+ coalesce 
+----------
+      127
+(1 row)
+
+select coalesce(smint, nmric) from typeset;
+ coalesce 
+----------
+      127
+(1 row)
+
+select coalesce(smint, flt) from typeset;
+ coalesce 
+----------
+      127
+(1 row)
+
+select coalesce(smint, bt) from typeset;
+ERROR:  COALESCE types smallint and bit cannot be matched
+LINE 1: select coalesce(smint, bt) from typeset;
+                               ^
+CONTEXT:  referenced column: coalesce
+select coalesce(smint, dt) from typeset;
+ERROR:  COALESCE types smallint and date cannot be matched
+LINE 1: select coalesce(smint, dt) from typeset;
+                               ^
+CONTEXT:  referenced column: coalesce
+select coalesce(smint, tmstp) from typeset;
+ERROR:  COALESCE types smallint and timestamp without time zone cannot be matched
+LINE 1: select coalesce(smint, tmstp) from typeset;
+                               ^
+CONTEXT:  referenced column: coalesce
+select coalesce(smint, tm) from typeset;
+ERROR:  COALESCE types smallint and time without time zone cannot be matched
+LINE 1: select coalesce(smint, tm) from typeset;
+                               ^
+CONTEXT:  referenced column: coalesce
+select coalesce(smint, ch) from typeset;
+ERROR:  COALESCE types smallint and character cannot be matched
+LINE 1: select coalesce(smint, ch) from typeset;
+                               ^
+CONTEXT:  referenced column: coalesce
+select coalesce(smint, vch) from typeset;
+ERROR:  COALESCE types smallint and character varying cannot be matched
+LINE 1: select coalesce(smint, vch) from typeset;
+                               ^
+CONTEXT:  referenced column: coalesce
+select coalesce(smint, blb) from typeset;
+ERROR:  COALESCE types smallint and blob cannot be matched
+LINE 1: select coalesce(smint, blb) from typeset;
+                               ^
+CONTEXT:  referenced column: coalesce
+select coalesce(smint, txt) from typeset;
+ERROR:  COALESCE types smallint and text cannot be matched
+LINE 1: select coalesce(smint, txt) from typeset;
+                               ^
+CONTEXT:  referenced column: coalesce
+select coalesce(anint, bgint) from typeset;
+ coalesce 
+----------
+      127
+(1 row)
+
+select coalesce(anint, dcmal) from typeset;
+ coalesce 
+----------
+      127
+(1 row)
+
+select coalesce(anint, nmric) from typeset;
+ coalesce 
+----------
+      127
+(1 row)
+
+select coalesce(anint, flt) from typeset;
+ coalesce 
+----------
+      127
+(1 row)
+
+select coalesce(anint, bt) from typeset;
+ERROR:  COALESCE types integer and bit cannot be matched
+LINE 1: select coalesce(anint, bt) from typeset;
+                               ^
+CONTEXT:  referenced column: coalesce
+select coalesce(anint, dt) from typeset;
+ERROR:  COALESCE types integer and date cannot be matched
+LINE 1: select coalesce(anint, dt) from typeset;
+                               ^
+CONTEXT:  referenced column: coalesce
+select coalesce(anint, tmstp) from typeset;
+ERROR:  COALESCE types integer and timestamp without time zone cannot be matched
+LINE 1: select coalesce(anint, tmstp) from typeset;
+                               ^
+CONTEXT:  referenced column: coalesce
+select coalesce(anint, tm) from typeset;
+ERROR:  COALESCE types integer and time without time zone cannot be matched
+LINE 1: select coalesce(anint, tm) from typeset;
+                               ^
+CONTEXT:  referenced column: coalesce
+select coalesce(anint, ch) from typeset;
+ERROR:  COALESCE types integer and character cannot be matched
+LINE 1: select coalesce(anint, ch) from typeset;
+                               ^
+CONTEXT:  referenced column: coalesce
+select coalesce(anint, vch) from typeset;
+ERROR:  COALESCE types integer and character varying cannot be matched
+LINE 1: select coalesce(anint, vch) from typeset;
+                               ^
+CONTEXT:  referenced column: coalesce
+select coalesce(anint, blb) from typeset;
+ERROR:  COALESCE types integer and blob cannot be matched
+LINE 1: select coalesce(anint, blb) from typeset;
+                               ^
+CONTEXT:  referenced column: coalesce
+select coalesce(anint, txt) from typeset;
+ERROR:  COALESCE types integer and text cannot be matched
+LINE 1: select coalesce(anint, txt) from typeset;
+                               ^
+CONTEXT:  referenced column: coalesce
+select coalesce(bgint, dcmal) from typeset;
+ coalesce 
+----------
+      127
+(1 row)
+
+select coalesce(bgint, nmric) from typeset;
+ coalesce 
+----------
+      127
+(1 row)
+
+select coalesce(bgint, flt) from typeset;
+ coalesce 
+----------
+      127
+(1 row)
+
+select coalesce(bgint, bt) from typeset;
+ERROR:  COALESCE types bigint and bit cannot be matched
+LINE 1: select coalesce(bgint, bt) from typeset;
+                               ^
+CONTEXT:  referenced column: coalesce
+select coalesce(bgint, dt) from typeset;
+ERROR:  COALESCE types bigint and date cannot be matched
+LINE 1: select coalesce(bgint, dt) from typeset;
+                               ^
+CONTEXT:  referenced column: coalesce
+select coalesce(bgint, tmstp) from typeset;
+ERROR:  COALESCE types bigint and timestamp without time zone cannot be matched
+LINE 1: select coalesce(bgint, tmstp) from typeset;
+                               ^
+CONTEXT:  referenced column: coalesce
+select coalesce(bgint, tm) from typeset;
+ERROR:  COALESCE types bigint and time without time zone cannot be matched
+LINE 1: select coalesce(bgint, tm) from typeset;
+                               ^
+CONTEXT:  referenced column: coalesce
+select coalesce(bgint, ch) from typeset;
+ERROR:  COALESCE types bigint and character cannot be matched
+LINE 1: select coalesce(bgint, ch) from typeset;
+                               ^
+CONTEXT:  referenced column: coalesce
+select coalesce(bgint, vch) from typeset;
+ERROR:  COALESCE types bigint and character varying cannot be matched
+LINE 1: select coalesce(bgint, vch) from typeset;
+                               ^
+CONTEXT:  referenced column: coalesce
+select coalesce(bgint, blb) from typeset;
+ERROR:  COALESCE types bigint and blob cannot be matched
+LINE 1: select coalesce(bgint, blb) from typeset;
+                               ^
+CONTEXT:  referenced column: coalesce
+select coalesce(bgint, txt) from typeset;
+ERROR:  COALESCE types bigint and text cannot be matched
+LINE 1: select coalesce(bgint, txt) from typeset;
+                               ^
+CONTEXT:  referenced column: coalesce
+select coalesce(dcmal, nmric) from typeset;
+ coalesce 
+----------
+      127
+(1 row)
+
+select coalesce(dcmal, flt) from typeset;
+ coalesce 
+----------
+      127
+(1 row)
+
+select coalesce(dcmal, bt) from typeset;
+ERROR:  COALESCE types numeric and bit cannot be matched
+LINE 1: select coalesce(dcmal, bt) from typeset;
+                               ^
+CONTEXT:  referenced column: coalesce
+select coalesce(dcmal, dt) from typeset;
+ERROR:  COALESCE types numeric and date cannot be matched
+LINE 1: select coalesce(dcmal, dt) from typeset;
+                               ^
+CONTEXT:  referenced column: coalesce
+select coalesce(dcmal, tmstp) from typeset;
+ERROR:  COALESCE types numeric and timestamp without time zone cannot be matched
+LINE 1: select coalesce(dcmal, tmstp) from typeset;
+                               ^
+CONTEXT:  referenced column: coalesce
+select coalesce(dcmal, tm) from typeset;
+ERROR:  COALESCE types numeric and time without time zone cannot be matched
+LINE 1: select coalesce(dcmal, tm) from typeset;
+                               ^
+CONTEXT:  referenced column: coalesce
+select coalesce(dcmal, ch) from typeset;
+ERROR:  COALESCE types numeric and character cannot be matched
+LINE 1: select coalesce(dcmal, ch) from typeset;
+                               ^
+CONTEXT:  referenced column: coalesce
+select coalesce(dcmal, vch) from typeset;
+ERROR:  COALESCE types numeric and character varying cannot be matched
+LINE 1: select coalesce(dcmal, vch) from typeset;
+                               ^
+CONTEXT:  referenced column: coalesce
+select coalesce(dcmal, blb) from typeset;
+ERROR:  COALESCE types numeric and blob cannot be matched
+LINE 1: select coalesce(dcmal, blb) from typeset;
+                               ^
+CONTEXT:  referenced column: coalesce
+select coalesce(dcmal, txt) from typeset;
+ERROR:  COALESCE types numeric and text cannot be matched
+LINE 1: select coalesce(dcmal, txt) from typeset;
+                               ^
+CONTEXT:  referenced column: coalesce
+select coalesce(nmric, flt) from typeset;
+ coalesce 
+----------
+      127
+(1 row)
+
+select coalesce(nmric, bt) from typeset;
+ERROR:  COALESCE types numeric and bit cannot be matched
+LINE 1: select coalesce(nmric, bt) from typeset;
+                               ^
+CONTEXT:  referenced column: coalesce
+select coalesce(nmric, dt) from typeset;
+ERROR:  COALESCE types numeric and date cannot be matched
+LINE 1: select coalesce(nmric, dt) from typeset;
+                               ^
+CONTEXT:  referenced column: coalesce
+select coalesce(nmric, tmstp) from typeset;
+ERROR:  COALESCE types numeric and timestamp without time zone cannot be matched
+LINE 1: select coalesce(nmric, tmstp) from typeset;
+                               ^
+CONTEXT:  referenced column: coalesce
+select coalesce(nmric, tm) from typeset;
+ERROR:  COALESCE types numeric and time without time zone cannot be matched
+LINE 1: select coalesce(nmric, tm) from typeset;
+                               ^
+CONTEXT:  referenced column: coalesce
+select coalesce(nmric, ch) from typeset;
+ERROR:  COALESCE types numeric and character cannot be matched
+LINE 1: select coalesce(nmric, ch) from typeset;
+                               ^
+CONTEXT:  referenced column: coalesce
+select coalesce(nmric, vch) from typeset;
+ERROR:  COALESCE types numeric and character varying cannot be matched
+LINE 1: select coalesce(nmric, vch) from typeset;
+                               ^
+CONTEXT:  referenced column: coalesce
+select coalesce(nmric, blb) from typeset;
+ERROR:  COALESCE types numeric and blob cannot be matched
+LINE 1: select coalesce(nmric, blb) from typeset;
+                               ^
+CONTEXT:  referenced column: coalesce
+select coalesce(nmric, txt) from typeset;
+ERROR:  COALESCE types numeric and text cannot be matched
+LINE 1: select coalesce(nmric, txt) from typeset;
+                               ^
+CONTEXT:  referenced column: coalesce
+select coalesce(flt, bt) from typeset;
+ERROR:  COALESCE types real and bit cannot be matched
+LINE 1: select coalesce(flt, bt) from typeset;
+                             ^
+CONTEXT:  referenced column: coalesce
+select coalesce(flt, dt) from typeset;
+ERROR:  COALESCE types real and date cannot be matched
+LINE 1: select coalesce(flt, dt) from typeset;
+                             ^
+CONTEXT:  referenced column: coalesce
+select coalesce(flt, tmstp) from typeset;
+ERROR:  COALESCE types real and timestamp without time zone cannot be matched
+LINE 1: select coalesce(flt, tmstp) from typeset;
+                             ^
+CONTEXT:  referenced column: coalesce
+select coalesce(flt, tm) from typeset;
+ERROR:  COALESCE types real and time without time zone cannot be matched
+LINE 1: select coalesce(flt, tm) from typeset;
+                             ^
+CONTEXT:  referenced column: coalesce
+select coalesce(flt, ch) from typeset;
+ERROR:  COALESCE types real and character cannot be matched
+LINE 1: select coalesce(flt, ch) from typeset;
+                             ^
+CONTEXT:  referenced column: coalesce
+select coalesce(flt, vch) from typeset;
+ERROR:  COALESCE types real and character varying cannot be matched
+LINE 1: select coalesce(flt, vch) from typeset;
+                             ^
+CONTEXT:  referenced column: coalesce
+select coalesce(flt, blb) from typeset;
+ERROR:  COALESCE types real and blob cannot be matched
+LINE 1: select coalesce(flt, blb) from typeset;
+                             ^
+CONTEXT:  referenced column: coalesce
+select coalesce(flt, txt) from typeset;
+ERROR:  COALESCE types real and text cannot be matched
+LINE 1: select coalesce(flt, txt) from typeset;
+                             ^
+CONTEXT:  referenced column: coalesce
+select coalesce(bt, dt) from typeset;
+ERROR:  COALESCE types bit and date cannot be matched
+LINE 1: select coalesce(bt, dt) from typeset;
+                            ^
+CONTEXT:  referenced column: coalesce
+select coalesce(bt, tmstp) from typeset;
+ERROR:  COALESCE types bit and timestamp without time zone cannot be matched
+LINE 1: select coalesce(bt, tmstp) from typeset;
+                            ^
+CONTEXT:  referenced column: coalesce
+select coalesce(bt, tm) from typeset;
+ERROR:  COALESCE types bit and time without time zone cannot be matched
+LINE 1: select coalesce(bt, tm) from typeset;
+                            ^
+CONTEXT:  referenced column: coalesce
+select coalesce(bt, ch) from typeset;
+ERROR:  COALESCE types bit and character cannot be matched
+LINE 1: select coalesce(bt, ch) from typeset;
+                            ^
+CONTEXT:  referenced column: coalesce
+select coalesce(bt, vch) from typeset;
+ERROR:  COALESCE types bit and character varying cannot be matched
+LINE 1: select coalesce(bt, vch) from typeset;
+                            ^
+CONTEXT:  referenced column: coalesce
+select coalesce(bt, blb) from typeset;
+ERROR:  COALESCE types bit and blob cannot be matched
+LINE 1: select coalesce(bt, blb) from typeset;
+                            ^
+CONTEXT:  referenced column: coalesce
+select coalesce(bt, txt) from typeset;
+ERROR:  COALESCE types bit and text cannot be matched
+LINE 1: select coalesce(bt, txt) from typeset;
+                            ^
+CONTEXT:  referenced column: coalesce
+select coalesce(dt, tmstp) from typeset;
+         coalesce         
+--------------------------
+ Thu Apr 19 00:00:00 2001
+(1 row)
+
+select coalesce(dt, tm) from typeset;
+ERROR:  COALESCE could not convert type time without time zone to date
+LINE 1: select coalesce(dt, tm) from typeset;
+                            ^
+CONTEXT:  referenced column: coalesce
+select coalesce(dt, ch) from typeset;
+ERROR:  COALESCE types date and character cannot be matched
+LINE 1: select coalesce(dt, ch) from typeset;
+                            ^
+CONTEXT:  referenced column: coalesce
+select coalesce(dt, vch) from typeset;
+ERROR:  COALESCE types date and character varying cannot be matched
+LINE 1: select coalesce(dt, vch) from typeset;
+                            ^
+CONTEXT:  referenced column: coalesce
+select coalesce(dt, blb) from typeset;
+ERROR:  COALESCE types date and blob cannot be matched
+LINE 1: select coalesce(dt, blb) from typeset;
+                            ^
+CONTEXT:  referenced column: coalesce
+select coalesce(dt, txt) from typeset;
+ERROR:  COALESCE types date and text cannot be matched
+LINE 1: select coalesce(dt, txt) from typeset;
+                            ^
+CONTEXT:  referenced column: coalesce
+select coalesce(tmstp, tm) from typeset;
+ERROR:  COALESCE could not convert type time without time zone to timestamp without time zone
+LINE 1: select coalesce(tmstp, tm) from typeset;
+                               ^
+CONTEXT:  referenced column: coalesce
+select coalesce(tmstp, ch) from typeset;
+ERROR:  COALESCE types timestamp without time zone and character cannot be matched
+LINE 1: select coalesce(tmstp, ch) from typeset;
+                               ^
+CONTEXT:  referenced column: coalesce
+select coalesce(tmstp, vch) from typeset;
+ERROR:  COALESCE types timestamp without time zone and character varying cannot be matched
+LINE 1: select coalesce(tmstp, vch) from typeset;
+                               ^
+CONTEXT:  referenced column: coalesce
+select coalesce(tmstp, blb) from typeset;
+ERROR:  COALESCE types timestamp without time zone and blob cannot be matched
+LINE 1: select coalesce(tmstp, blb) from typeset;
+                               ^
+CONTEXT:  referenced column: coalesce
+select coalesce(tmstp, txt) from typeset;
+ERROR:  COALESCE types timestamp without time zone and text cannot be matched
+LINE 1: select coalesce(tmstp, txt) from typeset;
+                               ^
+CONTEXT:  referenced column: coalesce
+select coalesce(tm, ch) from typeset;
+ERROR:  COALESCE types time without time zone and character cannot be matched
+LINE 1: select coalesce(tm, ch) from typeset;
+                            ^
+CONTEXT:  referenced column: coalesce
+select coalesce(tm, vch) from typeset;
+ERROR:  COALESCE types time without time zone and character varying cannot be matched
+LINE 1: select coalesce(tm, vch) from typeset;
+                            ^
+CONTEXT:  referenced column: coalesce
+select coalesce(tm, blb) from typeset;
+ERROR:  COALESCE types time without time zone and blob cannot be matched
+LINE 1: select coalesce(tm, blb) from typeset;
+                            ^
+CONTEXT:  referenced column: coalesce
+select coalesce(tm, txt) from typeset;
+ERROR:  COALESCE types time without time zone and text cannot be matched
+LINE 1: select coalesce(tm, txt) from typeset;
+                            ^
+CONTEXT:  referenced column: coalesce
+select coalesce(ch, vch) from typeset;
+            coalesce            
+--------------------------------
+ 2001-04-19 22:23:44           
+(1 row)
+
+select coalesce(ch, blb) from typeset;
+ERROR:  COALESCE types character and blob cannot be matched
+LINE 1: select coalesce(ch, blb) from typeset;
+                            ^
+CONTEXT:  referenced column: coalesce
+select coalesce(ch, txt) from typeset;
+            coalesce            
+--------------------------------
+ 2001-04-19 22:23:44           
+(1 row)
+
+select coalesce(vch, blb) from typeset;
+ERROR:  COALESCE types character varying and blob cannot be matched
+LINE 1: select coalesce(vch, blb) from typeset;
+                             ^
+CONTEXT:  referenced column: coalesce
+select coalesce(vch, txt) from typeset;
+      coalesce       
+---------------------
+ 2001-04-19 22:23:44
+(1 row)
+
+select coalesce(blb, txt) from typeset;
+ERROR:  COALESCE types blob and text cannot be matched
+LINE 1: select coalesce(blb, txt) from typeset;
+                             ^
+CONTEXT:  referenced column: coalesce
+select ifnull(tyint, smint) from typeset;
+ ifnull 
+--------
+    127
+(1 row)
+
+select ifnull(tyint, anint) from typeset;
+ ifnull 
+--------
+    127
+(1 row)
+
+select ifnull(tyint, bgint) from typeset;
+ ifnull 
+--------
+    127
+(1 row)
+
+select ifnull(tyint, dcmal) from typeset;
+ ifnull 
+--------
+    127
+(1 row)
+
+select ifnull(tyint, nmric) from typeset;
+ ifnull 
+--------
+    127
+(1 row)
+
+select ifnull(tyint, flt) from typeset;
+ ifnull 
+--------
+    127
+(1 row)
+
+select ifnull(tyint, bt) from typeset;
+ERROR:  NVL types tinyint and bit cannot be matched
+LINE 1: select ifnull(tyint, bt) from typeset;
+                             ^
+CONTEXT:  referenced column: ifnull
+select ifnull(tyint, dt) from typeset;
+ERROR:  NVL types tinyint and date cannot be matched
+LINE 1: select ifnull(tyint, dt) from typeset;
+                             ^
+CONTEXT:  referenced column: ifnull
+select ifnull(tyint, tmstp) from typeset;
+ERROR:  NVL types tinyint and timestamp without time zone cannot be matched
+LINE 1: select ifnull(tyint, tmstp) from typeset;
+                             ^
+CONTEXT:  referenced column: ifnull
+select ifnull(tyint, tm) from typeset;
+ERROR:  NVL types tinyint and time without time zone cannot be matched
+LINE 1: select ifnull(tyint, tm) from typeset;
+                             ^
+CONTEXT:  referenced column: ifnull
+select ifnull(tyint, ch) from typeset;
+ ifnull 
+--------
+ 127
+(1 row)
+
+select ifnull(tyint, vch) from typeset;
+ ifnull 
+--------
+ 127
+(1 row)
+
+select ifnull(tyint, blb) from typeset;
+ERROR:  NVL types tinyint and blob cannot be matched
+LINE 1: select ifnull(tyint, blb) from typeset;
+                             ^
+CONTEXT:  referenced column: ifnull
+select ifnull(tyint, txt) from typeset;
+ ifnull 
+--------
+ 127
+(1 row)
+
+select ifnull(smint, anint) from typeset;
+ ifnull 
+--------
+    127
+(1 row)
+
+select ifnull(smint, bgint) from typeset;
+ ifnull 
+--------
+    127
+(1 row)
+
+select ifnull(smint, dcmal) from typeset;
+ ifnull 
+--------
+    127
+(1 row)
+
+select ifnull(smint, nmric) from typeset;
+ ifnull 
+--------
+    127
+(1 row)
+
+select ifnull(smint, flt) from typeset;
+ ifnull 
+--------
+    127
+(1 row)
+
+select ifnull(smint, bt) from typeset;
+ERROR:  NVL types smallint and bit cannot be matched
+LINE 1: select ifnull(smint, bt) from typeset;
+                             ^
+CONTEXT:  referenced column: ifnull
+select ifnull(smint, dt) from typeset;
+ERROR:  NVL types smallint and date cannot be matched
+LINE 1: select ifnull(smint, dt) from typeset;
+                             ^
+CONTEXT:  referenced column: ifnull
+select ifnull(smint, tmstp) from typeset;
+ERROR:  NVL types smallint and timestamp without time zone cannot be matched
+LINE 1: select ifnull(smint, tmstp) from typeset;
+                             ^
+CONTEXT:  referenced column: ifnull
+select ifnull(smint, tm) from typeset;
+ERROR:  NVL types smallint and time without time zone cannot be matched
+LINE 1: select ifnull(smint, tm) from typeset;
+                             ^
+CONTEXT:  referenced column: ifnull
+select ifnull(smint, ch) from typeset;
+ ifnull 
+--------
+    127
+(1 row)
+
+select ifnull(smint, vch) from typeset;
+ ifnull 
+--------
+    127
+(1 row)
+
+select ifnull(smint, blb) from typeset;
+ERROR:  NVL types smallint and blob cannot be matched
+LINE 1: select ifnull(smint, blb) from typeset;
+                             ^
+CONTEXT:  referenced column: ifnull
+select ifnull(smint, txt) from typeset;
+ ifnull 
+--------
+    127
+(1 row)
+
+select ifnull(anint, bgint) from typeset;
+ ifnull 
+--------
+    127
+(1 row)
+
+select ifnull(anint, dcmal) from typeset;
+ ifnull 
+--------
+    127
+(1 row)
+
+select ifnull(anint, nmric) from typeset;
+ ifnull 
+--------
+    127
+(1 row)
+
+select ifnull(anint, flt) from typeset;
+ ifnull 
+--------
+    127
+(1 row)
+
+select ifnull(anint, bt) from typeset;
+ERROR:  NVL types integer and bit cannot be matched
+LINE 1: select ifnull(anint, bt) from typeset;
+                             ^
+CONTEXT:  referenced column: ifnull
+select ifnull(anint, dt) from typeset;
+ERROR:  NVL types integer and date cannot be matched
+LINE 1: select ifnull(anint, dt) from typeset;
+                             ^
+CONTEXT:  referenced column: ifnull
+select ifnull(anint, tmstp) from typeset;
+ERROR:  NVL types integer and timestamp without time zone cannot be matched
+LINE 1: select ifnull(anint, tmstp) from typeset;
+                             ^
+CONTEXT:  referenced column: ifnull
+select ifnull(anint, tm) from typeset;
+ERROR:  NVL types integer and time without time zone cannot be matched
+LINE 1: select ifnull(anint, tm) from typeset;
+                             ^
+CONTEXT:  referenced column: ifnull
+select ifnull(anint, ch) from typeset;
+ ifnull 
+--------
+    127
+(1 row)
+
+select ifnull(anint, vch) from typeset;
+ ifnull 
+--------
+    127
+(1 row)
+
+select ifnull(anint, blb) from typeset;
+ERROR:  NVL types integer and blob cannot be matched
+LINE 1: select ifnull(anint, blb) from typeset;
+                             ^
+CONTEXT:  referenced column: ifnull
+select ifnull(anint, txt) from typeset;
+ ifnull 
+--------
+    127
+(1 row)
+
+select ifnull(bgint, dcmal) from typeset;
+ ifnull 
+--------
+    127
+(1 row)
+
+select ifnull(bgint, nmric) from typeset;
+ ifnull 
+--------
+    127
+(1 row)
+
+select ifnull(bgint, flt) from typeset;
+ ifnull 
+--------
+    127
+(1 row)
+
+select ifnull(bgint, bt) from typeset;
+ERROR:  NVL types bigint and bit cannot be matched
+LINE 1: select ifnull(bgint, bt) from typeset;
+                             ^
+CONTEXT:  referenced column: ifnull
+select ifnull(bgint, dt) from typeset;
+ERROR:  NVL types bigint and date cannot be matched
+LINE 1: select ifnull(bgint, dt) from typeset;
+                             ^
+CONTEXT:  referenced column: ifnull
+select ifnull(bgint, tmstp) from typeset;
+ERROR:  NVL types bigint and timestamp without time zone cannot be matched
+LINE 1: select ifnull(bgint, tmstp) from typeset;
+                             ^
+CONTEXT:  referenced column: ifnull
+select ifnull(bgint, tm) from typeset;
+ERROR:  NVL types bigint and time without time zone cannot be matched
+LINE 1: select ifnull(bgint, tm) from typeset;
+                             ^
+CONTEXT:  referenced column: ifnull
+select ifnull(bgint, ch) from typeset;
+ ifnull 
+--------
+    127
+(1 row)
+
+select ifnull(bgint, vch) from typeset;
+ ifnull 
+--------
+    127
+(1 row)
+
+select ifnull(bgint, blb) from typeset;
+ERROR:  NVL types bigint and blob cannot be matched
+LINE 1: select ifnull(bgint, blb) from typeset;
+                             ^
+CONTEXT:  referenced column: ifnull
+select ifnull(bgint, txt) from typeset;
+ ifnull 
+--------
+    127
+(1 row)
+
+select ifnull(dcmal, nmric) from typeset;
+ ifnull 
+--------
+    127
+(1 row)
+
+select ifnull(dcmal, flt) from typeset;
+ ifnull 
+--------
+    127
+(1 row)
+
+select ifnull(dcmal, bt) from typeset;
+ERROR:  NVL types numeric and bit cannot be matched
+LINE 1: select ifnull(dcmal, bt) from typeset;
+                             ^
+CONTEXT:  referenced column: ifnull
+select ifnull(dcmal, dt) from typeset;
+ERROR:  NVL types numeric and date cannot be matched
+LINE 1: select ifnull(dcmal, dt) from typeset;
+                             ^
+CONTEXT:  referenced column: ifnull
+select ifnull(dcmal, tmstp) from typeset;
+ERROR:  NVL types numeric and timestamp without time zone cannot be matched
+LINE 1: select ifnull(dcmal, tmstp) from typeset;
+                             ^
+CONTEXT:  referenced column: ifnull
+select ifnull(dcmal, tm) from typeset;
+ERROR:  NVL types numeric and time without time zone cannot be matched
+LINE 1: select ifnull(dcmal, tm) from typeset;
+                             ^
+CONTEXT:  referenced column: ifnull
+select ifnull(dcmal, ch) from typeset;
+ ifnull 
+--------
+    127
+(1 row)
+
+select ifnull(dcmal, vch) from typeset;
+ ifnull 
+--------
+    127
+(1 row)
+
+select ifnull(dcmal, blb) from typeset;
+ERROR:  NVL types numeric and blob cannot be matched
+LINE 1: select ifnull(dcmal, blb) from typeset;
+                             ^
+CONTEXT:  referenced column: ifnull
+select ifnull(dcmal, txt) from typeset;
+ ifnull 
+--------
+    127
+(1 row)
+
+select ifnull(nmric, flt) from typeset;
+ ifnull 
+--------
+    127
+(1 row)
+
+select ifnull(nmric, bt) from typeset;
+ERROR:  NVL types numeric and bit cannot be matched
+LINE 1: select ifnull(nmric, bt) from typeset;
+                             ^
+CONTEXT:  referenced column: ifnull
+select ifnull(nmric, dt) from typeset;
+ERROR:  NVL types numeric and date cannot be matched
+LINE 1: select ifnull(nmric, dt) from typeset;
+                             ^
+CONTEXT:  referenced column: ifnull
+select ifnull(nmric, tmstp) from typeset;
+ERROR:  NVL types numeric and timestamp without time zone cannot be matched
+LINE 1: select ifnull(nmric, tmstp) from typeset;
+                             ^
+CONTEXT:  referenced column: ifnull
+select ifnull(nmric, tm) from typeset;
+ERROR:  NVL types numeric and time without time zone cannot be matched
+LINE 1: select ifnull(nmric, tm) from typeset;
+                             ^
+CONTEXT:  referenced column: ifnull
+select ifnull(nmric, ch) from typeset;
+ ifnull 
+--------
+    127
+(1 row)
+
+select ifnull(nmric, vch) from typeset;
+ ifnull 
+--------
+    127
+(1 row)
+
+select ifnull(nmric, blb) from typeset;
+ERROR:  NVL types numeric and blob cannot be matched
+LINE 1: select ifnull(nmric, blb) from typeset;
+                             ^
+CONTEXT:  referenced column: ifnull
+select ifnull(nmric, txt) from typeset;
+ ifnull 
+--------
+    127
+(1 row)
+
+select ifnull(flt, bt) from typeset;
+ERROR:  NVL types real and bit cannot be matched
+LINE 1: select ifnull(flt, bt) from typeset;
+                           ^
+CONTEXT:  referenced column: ifnull
+select ifnull(flt, dt) from typeset;
+ERROR:  NVL types real and date cannot be matched
+LINE 1: select ifnull(flt, dt) from typeset;
+                           ^
+CONTEXT:  referenced column: ifnull
+select ifnull(flt, tmstp) from typeset;
+ERROR:  NVL types real and timestamp without time zone cannot be matched
+LINE 1: select ifnull(flt, tmstp) from typeset;
+                           ^
+CONTEXT:  referenced column: ifnull
+select ifnull(flt, tm) from typeset;
+ERROR:  NVL types real and time without time zone cannot be matched
+LINE 1: select ifnull(flt, tm) from typeset;
+                           ^
+CONTEXT:  referenced column: ifnull
+select ifnull(flt, ch) from typeset;
+ ifnull  
+---------
+ 127.213
+(1 row)
+
+select ifnull(flt, vch) from typeset;
+ ifnull  
+---------
+ 127.213
+(1 row)
+
+select ifnull(flt, blb) from typeset;
+ERROR:  NVL types real and blob cannot be matched
+LINE 1: select ifnull(flt, blb) from typeset;
+                           ^
+CONTEXT:  referenced column: ifnull
+select ifnull(flt, txt) from typeset;
+ ifnull  
+---------
+ 127.213
+(1 row)
+
+select ifnull(bt, dt) from typeset;
+ERROR:  NVL types bit and date cannot be matched
+LINE 1: select ifnull(bt, dt) from typeset;
+                          ^
+CONTEXT:  referenced column: ifnull
+select ifnull(bt, tmstp) from typeset;
+ERROR:  NVL types bit and timestamp without time zone cannot be matched
+LINE 1: select ifnull(bt, tmstp) from typeset;
+                          ^
+CONTEXT:  referenced column: ifnull
+select ifnull(bt, tm) from typeset;
+ERROR:  NVL types bit and time without time zone cannot be matched
+LINE 1: select ifnull(bt, tm) from typeset;
+                          ^
+CONTEXT:  referenced column: ifnull
+select ifnull(bt, ch) from typeset;
+ERROR:  NVL types bit and character cannot be matched
+LINE 1: select ifnull(bt, ch) from typeset;
+                          ^
+CONTEXT:  referenced column: ifnull
+select ifnull(bt, vch) from typeset;
+ERROR:  NVL types bit and character varying cannot be matched
+LINE 1: select ifnull(bt, vch) from typeset;
+                          ^
+CONTEXT:  referenced column: ifnull
+select ifnull(bt, blb) from typeset;
+ERROR:  NVL types bit and blob cannot be matched
+LINE 1: select ifnull(bt, blb) from typeset;
+                          ^
+CONTEXT:  referenced column: ifnull
+select ifnull(bt, txt) from typeset;
+ERROR:  NVL types bit and text cannot be matched
+LINE 1: select ifnull(bt, txt) from typeset;
+                          ^
+CONTEXT:  referenced column: ifnull
+select ifnull(dt, tmstp) from typeset;
+          ifnull          
+--------------------------
+ Thu Apr 19 00:00:00 2001
+(1 row)
+
+select ifnull(dt, tm) from typeset;
+ERROR:  COALESCE could not convert type time without time zone to date
+LINE 1: select ifnull(dt, tm) from typeset;
+                          ^
+CONTEXT:  referenced column: ifnull
+select ifnull(dt, ch) from typeset;
+   ifnull   
+------------
+ 04-19-2001
+(1 row)
+
+select ifnull(dt, vch) from typeset;
+   ifnull   
+------------
+ 04-19-2001
+(1 row)
+
+select ifnull(dt, blb) from typeset;
+ERROR:  NVL types date and blob cannot be matched
+LINE 1: select ifnull(dt, blb) from typeset;
+                          ^
+CONTEXT:  referenced column: ifnull
+select ifnull(dt, txt) from typeset;
+   ifnull   
+------------
+ 04-19-2001
+(1 row)
+
+select ifnull(tmstp, tm) from typeset;
+ERROR:  COALESCE could not convert type time without time zone to timestamp without time zone
+LINE 1: select ifnull(tmstp, tm) from typeset;
+                             ^
+CONTEXT:  referenced column: ifnull
+select ifnull(tmstp, ch) from typeset;
+          ifnull          
+--------------------------
+ Thu Apr 19 00:00:00 2001
+(1 row)
+
+select ifnull(tmstp, vch) from typeset;
+          ifnull          
+--------------------------
+ Thu Apr 19 00:00:00 2001
+(1 row)
+
+select ifnull(tmstp, blb) from typeset;
+ERROR:  NVL types timestamp without time zone and blob cannot be matched
+LINE 1: select ifnull(tmstp, blb) from typeset;
+                             ^
+CONTEXT:  referenced column: ifnull
+select ifnull(tmstp, txt) from typeset;
+          ifnull          
+--------------------------
+ Thu Apr 19 00:00:00 2001
+(1 row)
+
+select ifnull(tm, ch) from typeset;
+ERROR:  NVL types time without time zone and character cannot be matched
+LINE 1: select ifnull(tm, ch) from typeset;
+                          ^
+CONTEXT:  referenced column: ifnull
+select ifnull(tm, vch) from typeset;
+ERROR:  NVL types time without time zone and character varying cannot be matched
+LINE 1: select ifnull(tm, vch) from typeset;
+                          ^
+CONTEXT:  referenced column: ifnull
+select ifnull(tm, blb) from typeset;
+ERROR:  NVL types time without time zone and blob cannot be matched
+LINE 1: select ifnull(tm, blb) from typeset;
+                          ^
+CONTEXT:  referenced column: ifnull
+select ifnull(tm, txt) from typeset;
+  ifnull  
+----------
+ 22:23:44
+(1 row)
+
+select ifnull(ch, vch) from typeset;
+             ifnull             
+--------------------------------
+ 2001-04-19 22:23:44           
+(1 row)
+
+select ifnull(ch, blb) from typeset;
+ERROR:  NVL types character and blob cannot be matched
+LINE 1: select ifnull(ch, blb) from typeset;
+                          ^
+CONTEXT:  referenced column: ifnull
+select ifnull(ch, txt) from typeset;
+             ifnull             
+--------------------------------
+ 2001-04-19 22:23:44           
+(1 row)
+
+select ifnull(vch, blb) from typeset;
+ERROR:  NVL types character varying and blob cannot be matched
+LINE 1: select ifnull(vch, blb) from typeset;
+                           ^
+CONTEXT:  referenced column: ifnull
+select ifnull(vch, txt) from typeset;
+       ifnull        
+---------------------
+ 2001-04-19 22:23:44
+(1 row)
+
+select ifnull(blb, txt) from typeset;
+ERROR:  NVL types blob and text cannot be matched
+LINE 1: select ifnull(blb, txt) from typeset;
+                           ^
+CONTEXT:  referenced column: ifnull
+select gs_interval(tyint, smint) from typeset;
+ gs_interval 
+-------------
+           1
+(1 row)
+
+select gs_interval(tyint, anint) from typeset;
+ gs_interval 
+-------------
+           1
+(1 row)
+
+select gs_interval(tyint, bgint) from typeset;
+ gs_interval 
+-------------
+           1
+(1 row)
+
+select gs_interval(tyint, dcmal) from typeset;
+ gs_interval 
+-------------
+           1
+(1 row)
+
+select gs_interval(tyint, nmric) from typeset;
+ gs_interval 
+-------------
+           1
+(1 row)
+
+select gs_interval(tyint, flt) from typeset;
+ gs_interval 
+-------------
+           0
+(1 row)
+
+select gs_interval(tyint, bt) from typeset;
+ gs_interval 
+-------------
+           0
+(1 row)
+
+select gs_interval(tyint, dt) from typeset;
+ERROR:  invalid input syntax for type double precision: "04-19"
+CONTEXT:  referenced column: gs_interval
+select gs_interval(tyint, tmstp) from typeset;
+ gs_interval 
+-------------
+           1
+(1 row)
+
+select gs_interval(tyint, tm) from typeset;
+ gs_interval 
+-------------
+           1
+(1 row)
+
+select gs_interval(tyint, ch) from typeset;
+ERROR:  invalid input syntax for type double precision: "2001-04"
+CONTEXT:  referenced column: gs_interval
+select gs_interval(tyint, vch) from typeset;
+ERROR:  invalid input syntax for type double precision: "2001-04"
+CONTEXT:  referenced column: gs_interval
+select gs_interval(tyint, blb) from typeset;
+ gs_interval 
+-------------
+           0
+(1 row)
+
+select gs_interval(tyint, txt) from typeset;
+ERROR:  invalid input syntax for type double precision: "2001-04"
+CONTEXT:  referenced column: gs_interval
+select gs_interval(smint, anint) from typeset;
+ gs_interval 
+-------------
+           1
+(1 row)
+
+select gs_interval(smint, bgint) from typeset;
+ gs_interval 
+-------------
+           1
+(1 row)
+
+select gs_interval(smint, dcmal) from typeset;
+ gs_interval 
+-------------
+           1
+(1 row)
+
+select gs_interval(smint, nmric) from typeset;
+ gs_interval 
+-------------
+           1
+(1 row)
+
+select gs_interval(smint, flt) from typeset;
+ gs_interval 
+-------------
+           0
+(1 row)
+
+select gs_interval(smint, bt) from typeset;
+ gs_interval 
+-------------
+           0
+(1 row)
+
+select gs_interval(smint, dt) from typeset;
+ERROR:  invalid input syntax for type double precision: "04-19"
+CONTEXT:  referenced column: gs_interval
+select gs_interval(smint, tmstp) from typeset;
+ gs_interval 
+-------------
+           1
+(1 row)
+
+select gs_interval(smint, tm) from typeset;
+ gs_interval 
+-------------
+           1
+(1 row)
+
+select gs_interval(smint, ch) from typeset;
+ERROR:  invalid input syntax for type double precision: "2001-04"
+CONTEXT:  referenced column: gs_interval
+select gs_interval(smint, vch) from typeset;
+ERROR:  invalid input syntax for type double precision: "2001-04"
+CONTEXT:  referenced column: gs_interval
+select gs_interval(smint, blb) from typeset;
+ gs_interval 
+-------------
+           0
+(1 row)
+
+select gs_interval(smint, txt) from typeset;
+ERROR:  invalid input syntax for type double precision: "2001-04"
+CONTEXT:  referenced column: gs_interval
+select gs_interval(anint, bgint) from typeset;
+ gs_interval 
+-------------
+           1
+(1 row)
+
+select gs_interval(anint, dcmal) from typeset;
+ gs_interval 
+-------------
+           1
+(1 row)
+
+select gs_interval(anint, nmric) from typeset;
+ gs_interval 
+-------------
+           1
+(1 row)
+
+select gs_interval(anint, flt) from typeset;
+ gs_interval 
+-------------
+           0
+(1 row)
+
+select gs_interval(anint, bt) from typeset;
+ gs_interval 
+-------------
+           0
+(1 row)
+
+select gs_interval(anint, dt) from typeset;
+ERROR:  invalid input syntax for type double precision: "04-19"
+CONTEXT:  referenced column: gs_interval
+select gs_interval(anint, tmstp) from typeset;
+ gs_interval 
+-------------
+           1
+(1 row)
+
+select gs_interval(anint, tm) from typeset;
+ gs_interval 
+-------------
+           1
+(1 row)
+
+select gs_interval(anint, ch) from typeset;
+ERROR:  invalid input syntax for type double precision: "2001-04"
+CONTEXT:  referenced column: gs_interval
+select gs_interval(anint, vch) from typeset;
+ERROR:  invalid input syntax for type double precision: "2001-04"
+CONTEXT:  referenced column: gs_interval
+select gs_interval(anint, blb) from typeset;
+ gs_interval 
+-------------
+           0
+(1 row)
+
+select gs_interval(anint, txt) from typeset;
+ERROR:  invalid input syntax for type double precision: "2001-04"
+CONTEXT:  referenced column: gs_interval
+select gs_interval(bgint, dcmal) from typeset;
+ gs_interval 
+-------------
+           1
+(1 row)
+
+select gs_interval(bgint, nmric) from typeset;
+ gs_interval 
+-------------
+           1
+(1 row)
+
+select gs_interval(bgint, flt) from typeset;
+ gs_interval 
+-------------
+           0
+(1 row)
+
+select gs_interval(bgint, bt) from typeset;
+ gs_interval 
+-------------
+           0
+(1 row)
+
+select gs_interval(bgint, dt) from typeset;
+ERROR:  invalid input syntax for type double precision: "04-19"
+CONTEXT:  referenced column: gs_interval
+select gs_interval(bgint, tmstp) from typeset;
+ gs_interval 
+-------------
+           1
+(1 row)
+
+select gs_interval(bgint, tm) from typeset;
+ gs_interval 
+-------------
+           1
+(1 row)
+
+select gs_interval(bgint, ch) from typeset;
+ERROR:  invalid input syntax for type double precision: "2001-04"
+CONTEXT:  referenced column: gs_interval
+select gs_interval(bgint, vch) from typeset;
+ERROR:  invalid input syntax for type double precision: "2001-04"
+CONTEXT:  referenced column: gs_interval
+select gs_interval(bgint, blb) from typeset;
+ gs_interval 
+-------------
+           0
+(1 row)
+
+select gs_interval(bgint, txt) from typeset;
+ERROR:  invalid input syntax for type double precision: "2001-04"
+CONTEXT:  referenced column: gs_interval
+select gs_interval(dcmal, nmric) from typeset;
+ gs_interval 
+-------------
+           1
+(1 row)
+
+select gs_interval(dcmal, flt) from typeset;
+ gs_interval 
+-------------
+           0
+(1 row)
+
+select gs_interval(dcmal, bt) from typeset;
+ gs_interval 
+-------------
+           0
+(1 row)
+
+select gs_interval(dcmal, dt) from typeset;
+ERROR:  invalid input syntax for type double precision: "04-19"
+CONTEXT:  referenced column: gs_interval
+select gs_interval(dcmal, tmstp) from typeset;
+ gs_interval 
+-------------
+           1
+(1 row)
+
+select gs_interval(dcmal, tm) from typeset;
+ gs_interval 
+-------------
+           1
+(1 row)
+
+select gs_interval(dcmal, ch) from typeset;
+ERROR:  invalid input syntax for type double precision: "2001-04"
+CONTEXT:  referenced column: gs_interval
+select gs_interval(dcmal, vch) from typeset;
+ERROR:  invalid input syntax for type double precision: "2001-04"
+CONTEXT:  referenced column: gs_interval
+select gs_interval(dcmal, blb) from typeset;
+ gs_interval 
+-------------
+           0
+(1 row)
+
+select gs_interval(dcmal, txt) from typeset;
+ERROR:  invalid input syntax for type double precision: "2001-04"
+CONTEXT:  referenced column: gs_interval
+select gs_interval(nmric, flt) from typeset;
+ gs_interval 
+-------------
+           0
+(1 row)
+
+select gs_interval(nmric, bt) from typeset;
+ gs_interval 
+-------------
+           0
+(1 row)
+
+select gs_interval(nmric, dt) from typeset;
+ERROR:  invalid input syntax for type double precision: "04-19"
+CONTEXT:  referenced column: gs_interval
+select gs_interval(nmric, tmstp) from typeset;
+ gs_interval 
+-------------
+           1
+(1 row)
+
+select gs_interval(nmric, tm) from typeset;
+ gs_interval 
+-------------
+           1
+(1 row)
+
+select gs_interval(nmric, ch) from typeset;
+ERROR:  invalid input syntax for type double precision: "2001-04"
+CONTEXT:  referenced column: gs_interval
+select gs_interval(nmric, vch) from typeset;
+ERROR:  invalid input syntax for type double precision: "2001-04"
+CONTEXT:  referenced column: gs_interval
+select gs_interval(nmric, blb) from typeset;
+ gs_interval 
+-------------
+           0
+(1 row)
+
+select gs_interval(nmric, txt) from typeset;
+ERROR:  invalid input syntax for type double precision: "2001-04"
+CONTEXT:  referenced column: gs_interval
+select gs_interval(flt, bt) from typeset;
+ gs_interval 
+-------------
+           0
+(1 row)
+
+select gs_interval(flt, dt) from typeset;
+ERROR:  invalid input syntax for type double precision: "04-19"
+CONTEXT:  referenced column: gs_interval
+select gs_interval(flt, tmstp) from typeset;
+ gs_interval 
+-------------
+           1
+(1 row)
+
+select gs_interval(flt, tm) from typeset;
+ gs_interval 
+-------------
+           1
+(1 row)
+
+select gs_interval(flt, ch) from typeset;
+ERROR:  invalid input syntax for type double precision: "2001-04"
+CONTEXT:  referenced column: gs_interval
+select gs_interval(flt, vch) from typeset;
+ERROR:  invalid input syntax for type double precision: "2001-04"
+CONTEXT:  referenced column: gs_interval
+select gs_interval(flt, blb) from typeset;
+ gs_interval 
+-------------
+           0
+(1 row)
+
+select gs_interval(flt, txt) from typeset;
+ERROR:  invalid input syntax for type double precision: "2001-04"
+CONTEXT:  referenced column: gs_interval
+select gs_interval(bt, dt) from typeset;
+ERROR:  invalid input syntax for type double precision: "04-19"
+CONTEXT:  referenced column: gs_interval
+select gs_interval(bt, tmstp) from typeset;
+ gs_interval 
+-------------
+           1
+(1 row)
+
+select gs_interval(bt, tm) from typeset;
+ gs_interval 
+-------------
+           1
+(1 row)
+
+select gs_interval(bt, ch) from typeset;
+ERROR:  invalid input syntax for type double precision: "2001-04"
+CONTEXT:  referenced column: gs_interval
+select gs_interval(bt, vch) from typeset;
+ERROR:  invalid input syntax for type double precision: "2001-04"
+CONTEXT:  referenced column: gs_interval
+select gs_interval(bt, blb) from typeset;
+ gs_interval 
+-------------
+           0
+(1 row)
+
+select gs_interval(bt, txt) from typeset;
+ERROR:  invalid input syntax for type double precision: "2001-04"
+CONTEXT:  referenced column: gs_interval
+select gs_interval(dt, tmstp) from typeset;
+ERROR:  invalid input syntax for type double precision: "04-19"
+CONTEXT:  referenced column: gs_interval
+select gs_interval(dt, tm) from typeset;
+ERROR:  invalid input syntax for type double precision: "04-19"
+CONTEXT:  referenced column: gs_interval
+select gs_interval(dt, ch) from typeset;
+ERROR:  invalid input syntax for type double precision: "04-19"
+CONTEXT:  referenced column: gs_interval
+select gs_interval(dt, vch) from typeset;
+ERROR:  invalid input syntax for type double precision: "04-19"
+CONTEXT:  referenced column: gs_interval
+select gs_interval(dt, blb) from typeset;
+ERROR:  invalid input syntax for type double precision: "04-19"
+CONTEXT:  referenced column: gs_interval
+select gs_interval(dt, txt) from typeset;
+ERROR:  invalid input syntax for type double precision: "04-19"
+CONTEXT:  referenced column: gs_interval
+select gs_interval(tmstp, tm) from typeset;
+ gs_interval 
+-------------
+           0
+(1 row)
+
+select gs_interval(tmstp, ch) from typeset;
+ERROR:  invalid input syntax for type double precision: "2001-04"
+CONTEXT:  referenced column: gs_interval
+select gs_interval(tmstp, vch) from typeset;
+ERROR:  invalid input syntax for type double precision: "2001-04"
+CONTEXT:  referenced column: gs_interval
+select gs_interval(tmstp, blb) from typeset;
+ gs_interval 
+-------------
+           0
+(1 row)
+
+select gs_interval(tmstp, txt) from typeset;
+ERROR:  invalid input syntax for type double precision: "2001-04"
+CONTEXT:  referenced column: gs_interval
+select gs_interval(tm, ch) from typeset;
+ERROR:  invalid input syntax for type double precision: "2001-04"
+CONTEXT:  referenced column: gs_interval
+select gs_interval(tm, vch) from typeset;
+ERROR:  invalid input syntax for type double precision: "2001-04"
+CONTEXT:  referenced column: gs_interval
+select gs_interval(tm, blb) from typeset;
+ gs_interval 
+-------------
+           0
+(1 row)
+
+select gs_interval(tm, txt) from typeset;
+ERROR:  invalid input syntax for type double precision: "2001-04"
+CONTEXT:  referenced column: gs_interval
+select gs_interval(ch, vch) from typeset;
+ERROR:  invalid input syntax for type double precision: "2001-04"
+CONTEXT:  referenced column: gs_interval
+select gs_interval(ch, blb) from typeset;
+ERROR:  invalid input syntax for type double precision: "2001-04"
+CONTEXT:  referenced column: gs_interval
+select gs_interval(ch, txt) from typeset;
+ERROR:  invalid input syntax for type double precision: "2001-04"
+CONTEXT:  referenced column: gs_interval
+select gs_interval(vch, blb) from typeset;
+ERROR:  invalid input syntax for type double precision: "2001-04"
+CONTEXT:  referenced column: gs_interval
+select gs_interval(vch, txt) from typeset;
+ERROR:  invalid input syntax for type double precision: "2001-04"
+CONTEXT:  referenced column: gs_interval
+select gs_interval(blb, txt) from typeset;
+ERROR:  invalid input syntax for type double precision: "2001-04"
+CONTEXT:  referenced column: gs_interval
+select strcmp(tyint, smint) from typeset;
+ strcmp 
+--------
+      0
+(1 row)
+
+select strcmp(tyint, anint) from typeset;
+ strcmp 
+--------
+      0
+(1 row)
+
+select strcmp(tyint, bgint) from typeset;
+ strcmp 
+--------
+      0
+(1 row)
+
+select strcmp(tyint, dcmal) from typeset;
+ strcmp 
+--------
+      0
+(1 row)
+
+select strcmp(tyint, nmric) from typeset;
+ strcmp 
+--------
+      0
+(1 row)
+
+select strcmp(tyint, flt) from typeset;
+ strcmp 
+--------
+     -1
+(1 row)
+
+select strcmp(tyint, bt) from typeset;
+ strcmp 
+--------
+      1
+(1 row)
+
+select strcmp(tyint, dt) from typeset;
+ strcmp 
+--------
+      1
+(1 row)
+
+select strcmp(tyint, tmstp) from typeset;
+ strcmp 
+--------
+     -1
+(1 row)
+
+select strcmp(tyint, tm) from typeset;
+ strcmp 
+--------
+     -1
+(1 row)
+
+select strcmp(tyint, ch) from typeset;
+ strcmp 
+--------
+     -1
+(1 row)
+
+select strcmp(tyint, vch) from typeset;
+ strcmp 
+--------
+     -1
+(1 row)
+
+select strcmp(tyint, blb) from typeset;
+ strcmp 
+--------
+      1
+(1 row)
+
+select strcmp(tyint, txt) from typeset;
+ strcmp 
+--------
+     -1
+(1 row)
+
+select strcmp(smint, anint) from typeset;
+ strcmp 
+--------
+      0
+(1 row)
+
+select strcmp(smint, bgint) from typeset;
+ strcmp 
+--------
+      0
+(1 row)
+
+select strcmp(smint, dcmal) from typeset;
+ strcmp 
+--------
+      0
+(1 row)
+
+select strcmp(smint, nmric) from typeset;
+ strcmp 
+--------
+      0
+(1 row)
+
+select strcmp(smint, flt) from typeset;
+ strcmp 
+--------
+     -1
+(1 row)
+
+select strcmp(smint, bt) from typeset;
+ strcmp 
+--------
+      1
+(1 row)
+
+select strcmp(smint, dt) from typeset;
+ strcmp 
+--------
+      1
+(1 row)
+
+select strcmp(smint, tmstp) from typeset;
+ strcmp 
+--------
+     -1
+(1 row)
+
+select strcmp(smint, tm) from typeset;
+ strcmp 
+--------
+     -1
+(1 row)
+
+select strcmp(smint, ch) from typeset;
+ strcmp 
+--------
+     -1
+(1 row)
+
+select strcmp(smint, vch) from typeset;
+ strcmp 
+--------
+     -1
+(1 row)
+
+select strcmp(smint, blb) from typeset;
+ strcmp 
+--------
+      1
+(1 row)
+
+select strcmp(smint, txt) from typeset;
+ strcmp 
+--------
+     -1
+(1 row)
+
+select strcmp(anint, bgint) from typeset;
+ strcmp 
+--------
+      0
+(1 row)
+
+select strcmp(anint, dcmal) from typeset;
+ strcmp 
+--------
+      0
+(1 row)
+
+select strcmp(anint, nmric) from typeset;
+ strcmp 
+--------
+      0
+(1 row)
+
+select strcmp(anint, flt) from typeset;
+ strcmp 
+--------
+     -1
+(1 row)
+
+select strcmp(anint, bt) from typeset;
+ strcmp 
+--------
+      1
+(1 row)
+
+select strcmp(anint, dt) from typeset;
+ strcmp 
+--------
+      1
+(1 row)
+
+select strcmp(anint, tmstp) from typeset;
+ strcmp 
+--------
+     -1
+(1 row)
+
+select strcmp(anint, tm) from typeset;
+ strcmp 
+--------
+     -1
+(1 row)
+
+select strcmp(anint, ch) from typeset;
+ strcmp 
+--------
+     -1
+(1 row)
+
+select strcmp(anint, vch) from typeset;
+ strcmp 
+--------
+     -1
+(1 row)
+
+select strcmp(anint, blb) from typeset;
+ strcmp 
+--------
+      1
+(1 row)
+
+select strcmp(anint, txt) from typeset;
+ strcmp 
+--------
+     -1
+(1 row)
+
+select strcmp(bgint, dcmal) from typeset;
+ strcmp 
+--------
+      0
+(1 row)
+
+select strcmp(bgint, nmric) from typeset;
+ strcmp 
+--------
+      0
+(1 row)
+
+select strcmp(bgint, flt) from typeset;
+ strcmp 
+--------
+     -1
+(1 row)
+
+select strcmp(bgint, bt) from typeset;
+ strcmp 
+--------
+      1
+(1 row)
+
+select strcmp(bgint, dt) from typeset;
+ strcmp 
+--------
+      1
+(1 row)
+
+select strcmp(bgint, tmstp) from typeset;
+ strcmp 
+--------
+     -1
+(1 row)
+
+select strcmp(bgint, tm) from typeset;
+ strcmp 
+--------
+     -1
+(1 row)
+
+select strcmp(bgint, ch) from typeset;
+ strcmp 
+--------
+     -1
+(1 row)
+
+select strcmp(bgint, vch) from typeset;
+ strcmp 
+--------
+     -1
+(1 row)
+
+select strcmp(bgint, blb) from typeset;
+ strcmp 
+--------
+      1
+(1 row)
+
+select strcmp(bgint, txt) from typeset;
+ strcmp 
+--------
+     -1
+(1 row)
+
+select strcmp(dcmal, nmric) from typeset;
+ strcmp 
+--------
+      0
+(1 row)
+
+select strcmp(dcmal, flt) from typeset;
+ strcmp 
+--------
+     -1
+(1 row)
+
+select strcmp(dcmal, bt) from typeset;
+ strcmp 
+--------
+      1
+(1 row)
+
+select strcmp(dcmal, dt) from typeset;
+ strcmp 
+--------
+      1
+(1 row)
+
+select strcmp(dcmal, tmstp) from typeset;
+ strcmp 
+--------
+     -1
+(1 row)
+
+select strcmp(dcmal, tm) from typeset;
+ strcmp 
+--------
+     -1
+(1 row)
+
+select strcmp(dcmal, ch) from typeset;
+ strcmp 
+--------
+     -1
+(1 row)
+
+select strcmp(dcmal, vch) from typeset;
+ strcmp 
+--------
+     -1
+(1 row)
+
+select strcmp(dcmal, blb) from typeset;
+ strcmp 
+--------
+      1
+(1 row)
+
+select strcmp(dcmal, txt) from typeset;
+ strcmp 
+--------
+     -1
+(1 row)
+
+select strcmp(nmric, flt) from typeset;
+ strcmp 
+--------
+     -1
+(1 row)
+
+select strcmp(nmric, bt) from typeset;
+ strcmp 
+--------
+      1
+(1 row)
+
+select strcmp(nmric, dt) from typeset;
+ strcmp 
+--------
+      1
+(1 row)
+
+select strcmp(nmric, tmstp) from typeset;
+ strcmp 
+--------
+     -1
+(1 row)
+
+select strcmp(nmric, tm) from typeset;
+ strcmp 
+--------
+     -1
+(1 row)
+
+select strcmp(nmric, ch) from typeset;
+ strcmp 
+--------
+     -1
+(1 row)
+
+select strcmp(nmric, vch) from typeset;
+ strcmp 
+--------
+     -1
+(1 row)
+
+select strcmp(nmric, blb) from typeset;
+ strcmp 
+--------
+      1
+(1 row)
+
+select strcmp(nmric, txt) from typeset;
+ strcmp 
+--------
+     -1
+(1 row)
+
+select strcmp(flt, bt) from typeset;
+ strcmp 
+--------
+      1
+(1 row)
+
+select strcmp(flt, dt) from typeset;
+ strcmp 
+--------
+      1
+(1 row)
+
+select strcmp(flt, tmstp) from typeset;
+ strcmp 
+--------
+     -1
+(1 row)
+
+select strcmp(flt, tm) from typeset;
+ strcmp 
+--------
+     -1
+(1 row)
+
+select strcmp(flt, ch) from typeset;
+ strcmp 
+--------
+     -1
+(1 row)
+
+select strcmp(flt, vch) from typeset;
+ strcmp 
+--------
+     -1
+(1 row)
+
+select strcmp(flt, blb) from typeset;
+ strcmp 
+--------
+      1
+(1 row)
+
+select strcmp(flt, txt) from typeset;
+ strcmp 
+--------
+     -1
+(1 row)
+
+select strcmp(bt, dt) from typeset;
+ strcmp 
+--------
+     -1
+(1 row)
+
+select strcmp(bt, tmstp) from typeset;
+ strcmp 
+--------
+     -1
+(1 row)
+
+select strcmp(bt, tm) from typeset;
+ strcmp 
+--------
+     -1
+(1 row)
+
+select strcmp(bt, ch) from typeset;
+ strcmp 
+--------
+     -1
+(1 row)
+
+select strcmp(bt, vch) from typeset;
+ strcmp 
+--------
+     -1
+(1 row)
+
+select strcmp(bt, blb) from typeset;
+ strcmp 
+--------
+     -1
+(1 row)
+
+select strcmp(bt, txt) from typeset;
+ strcmp 
+--------
+     -1
+(1 row)
+
+select strcmp(dt, tmstp) from typeset;
+ strcmp 
+--------
+     -1
+(1 row)
+
+select strcmp(dt, tm) from typeset;
+ strcmp 
+--------
+     -1
+(1 row)
+
+select strcmp(dt, ch) from typeset;
+ strcmp 
+--------
+     -1
+(1 row)
+
+select strcmp(dt, vch) from typeset;
+ strcmp 
+--------
+     -1
+(1 row)
+
+select strcmp(dt, blb) from typeset;
+ strcmp 
+--------
+     -1
+(1 row)
+
+select strcmp(dt, txt) from typeset;
+ strcmp 
+--------
+     -1
+(1 row)
+
+select strcmp(tmstp, tm) from typeset;
+ strcmp 
+--------
+      1
+(1 row)
+
+select strcmp(tmstp, ch) from typeset;
+ strcmp 
+--------
+      1
+(1 row)
+
+select strcmp(tmstp, vch) from typeset;
+ strcmp 
+--------
+      1
+(1 row)
+
+select strcmp(tmstp, blb) from typeset;
+ strcmp 
+--------
+      1
+(1 row)
+
+select strcmp(tmstp, txt) from typeset;
+ strcmp 
+--------
+      1
+(1 row)
+
+select strcmp(tm, ch) from typeset;
+ strcmp 
+--------
+      1
+(1 row)
+
+select strcmp(tm, vch) from typeset;
+ strcmp 
+--------
+      1
+(1 row)
+
+select strcmp(tm, blb) from typeset;
+ strcmp 
+--------
+      1
+(1 row)
+
+select strcmp(tm, txt) from typeset;
+ strcmp 
+--------
+      1
+(1 row)
+
+select strcmp(ch, vch) from typeset;
+ strcmp 
+--------
+      1
+(1 row)
+
+select strcmp(ch, blb) from typeset;
+ strcmp 
+--------
+      1
+(1 row)
+
+select strcmp(ch, txt) from typeset;
+ strcmp 
+--------
+      1
+(1 row)
+
+select strcmp(vch, blb) from typeset;
+ strcmp 
+--------
+      1
+(1 row)
+
+select strcmp(vch, txt) from typeset;
+ strcmp 
+--------
+      0
+(1 row)
+
+select strcmp(blb, txt) from typeset;
+ strcmp 
+--------
+     -1
+(1 row)
+
+\c postgres
+drop database b;

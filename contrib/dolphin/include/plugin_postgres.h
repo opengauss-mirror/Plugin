@@ -53,6 +53,7 @@ extern "C" DLL_PUBLIC void _PG_fini(void);
 extern "C" DLL_PUBLIC void dolphin_invoke(void);
 extern "C" DLL_PUBLIC void init_plugin_object();
 extern "C" DLL_PUBLIC void init_session_vars(void);
+extern "C" DLL_PUBLIC void create_dolphin_extension();
 
 typedef struct BSqlPluginContext {
     bool enableBFormatMode;

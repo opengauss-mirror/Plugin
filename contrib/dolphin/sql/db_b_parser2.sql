@@ -1,29 +1,28 @@
 drop database if exists mysql_test;
 create database mysql_test dbcompatibility 'b';
 \c mysql_test
-create extension dolphin;
 --验证DAYOFMONTH() DAYOFWEEK() DAYOFYEAR() HOUR() MICROSECOND() MINUTE() QUARTER() SECOND() WEEKDAY() WEEKOFYEAR() YEAR()
-select DAYOFMONTH(timestamp '2021-11-4 16:30:44.341191');
+select DAYOFMONTH(datetime '2021-11-4 16:30:44.341191');
 
-select DAYOFWEEK(timestamp '2021-11-4 16:30:44.341191');
+select DAYOFWEEK(datetime '2021-11-4 16:30:44.341191');
 
-select DAYOFYEAR(timestamp '2021-12-31 16:30:44.341191');
+select DAYOFYEAR(datetime '2021-12-31 16:30:44.341191');
 
-select HOUR(timestamp '2021-11-4 16:30:44.341191');
+select HOUR(datetime '2021-11-4 16:30:44.341191');
 
-select MICROSECOND(timestamp '2021-11-4 16:30:44.341191');
+select MICROSECOND(datetime '2021-11-4 16:30:44.341191');
 
-select MINUTE(timestamp '2021-11-4 16:30:44.341191');
+select MINUTE(datetime '2021-11-4 16:30:44.341191');
 
-select QUARTER(timestamp '2021-11-4 16:30:44.341191');
+select QUARTER(datetime '2021-11-4 16:30:44.341191');
 
-select SECOND(timestamp '2021-11-4 16:30:44.341191');
+select SECOND(datetime '2021-11-4 16:30:44.341191');
 
-select WEEKDAY(timestamp '2021-11-4 16:30:44.341191');
+select WEEKDAY(datetime '2021-11-4 16:30:44.341191');
 
-select WEEKOFYEAR(timestamp '2021-11-4 16:30:44.341191');
+select WEEKOFYEAR(datetime '2021-11-4 16:30:44.341191');
 
-select YEAR(timestamp '2021-11-4 16:30:44.341191');
+select YEAR(datetime '2021-11-4 16:30:44.341191');
 
 
 --测试点：LOCATE(substr,str)
@@ -85,12 +84,12 @@ select octet_length(''),bit_length(' '),bit_length(NULL);
 
 --测试点：验证length（返回字符数）
 select * from pg_proc where proname in ('db_b_parser_length');
---返回1、3、10
+--返回1、1、2
 select length(b'1'), length(b'101'), length(b'1011111111');
 --返回1、3、10
 select length('1'), length('101'), length('1011111111');
---返回5、2、3
-select length('哈1哈\n'),length('\n'),length('\\n');
+--返回8、1、2
+select length(E'哈1哈\n'),length(E'\n'),length(E'\\n');
 --返回0、1、空
 select length(''),length(' '),length(NULL);
 

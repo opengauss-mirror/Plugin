@@ -13,6 +13,7 @@ OBJS = $(parser)/analyze.o $(parser)/gram.o $(parser)/hint_gram.o $(parser)/keyw
 $(parser)/parse_agg.o $(parser)/parse_clause.o $(parser)/parse_coerce.o $(parser)/parse_collate.o $(parser)/parse_cte.o \
 $(parser)/parse_expr.o $(parser)/parse_func.o $(parser)/parse_hint.o $(parser)/parse_merge.o $(parser)/parse_node.o $(parser)/parse_oper.o $(parser)/parse_param.o \
 $(parser)/parse_relation.o $(parser)/parse_target.o $(parser)/parse_type.o $(parser)/parse_utilcmd.o $(parser)/scansup.o $(parser)/parse_compatibility.o \
+$(parser)/parse_describe.o $(parser)/parse_show.o
 
 OBJS += $(adt)/acl.o $(adt)/arrayfuncs.o $(adt)/array_selfuncs.o $(adt)/array_typanalyze.o\
 $(adt)/array_userfuncs.o $(adt)/arrayutils.o $(adt)/bool.o\
@@ -28,11 +29,11 @@ $(adt)/network.o $(adt)/mac.o $(adt)/inet_cidr_ntop.o $(adt)/inet_net_pton.o\
 $(adt)/ri_triggers.o $(adt)/pg_locale.o $(adt)/formatting.o\
 $(adt)/ascii.o $(adt)/quote.o $(adt)/pgstatfuncs.o $(adt)/encode.o $(adt)/dbsize.o $(adt)/trigfuncs.o\
 $(adt)/uuid.o $(adt)/windowfuncs.o $(adt)/extended_statistics.o $(adt)/clientlogic_bytea.o $(adt)/clientlogicsettings.o\
-$(adt)/median_aggs.o $(adt)/expr_distinct.o $(adt)/nlssort.o $(adt)/first_last_agg.o $(adt)/my_locale.o
+$(adt)/median_aggs.o $(adt)/expr_distinct.o $(adt)/nlssort.o $(adt)/first_last_agg.o $(adt)/my_locale.o $(adt)/vecfunc_plugin.o $(adt)/year.o
 
 OBJS += $(mb)/mbutils.o
 
-all $(OBJS): parser utils
+all $(OBJS): parser utils;
 
 parser:
 	make -C $(parser)
@@ -41,7 +42,6 @@ utils:
 	make -C $(utils)
 
 extra_clean:
-	make clean -C $(optimizer)
 	make clean -C $(parser)
 	make clean -C $(utils)
 clean: extra_clean
@@ -55,6 +55,13 @@ plugin_postgres.o: plugin_postgres.cpp
 
 OBJS += pg_builtin_proc.o
 pg_builtin_proc.o: pg_builtin_proc.cpp utils
+
+OBJS += plugin_utility.o
+plugin_utility.o: plugin_utility.cpp
+
+OBJS += tablecmds.o
+tablecmds.o: tablecmds.cpp
+
 EXTENSION = dolphin
 REGRESS:=$(shell find ./sql -maxdepth 2 -type f)
 REGRESS:=$(basename $(patsubst ./sql/%,%,$(REGRESS)) .sql)
@@ -67,7 +74,7 @@ PG_CONFIG = pg_config
 PGXS := $(shell $(PG_CONFIG) --pgxs)
 include $(PGXS)
 else
-subdir = contrib/chkpass
+subdir = contrib/dolphin
 top_builddir = ../..
 include $(top_builddir)/src/Makefile.global
 include $(top_srcdir)/contrib/contrib-global.mk

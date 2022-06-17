@@ -360,131 +360,23 @@ Datum btrim1(PG_FUNCTION_ARGS)
  */
 static text* dotrim(const char* string, int stringlen, const char* set, int setlen, bool doltrim, bool dortrim)
 {
-    int i;
-
     /* Nothing to do if either string or set is empty */
     if (stringlen > 0 && setlen > 0) {
-        if (pg_database_encoding_max_length() > 1) {
-            /*
-             * In the multibyte-encoding case, build arrays of pointers to
-             * character starts, so that we can avoid inefficient checks in
-             * the inner loops.
-             */
-            const char** stringchars;
-            const char** setchars;
-            int* stringmblen = NULL;
-            int* setmblen = NULL;
-            int stringnchars;
-            int setnchars;
-            int resultndx;
-            int resultnchars;
-            const char* p = NULL;
-            int len;
-            int mblen;
-            const char* str_pos = NULL;
-            int str_len;
-
-            stringchars = (const char**)palloc(stringlen * sizeof(char*));
-            stringmblen = (int*)palloc(stringlen * sizeof(int));
-            stringnchars = 0;
-            p = string;
-            len = stringlen;
-            while (len > 0) {
-                stringchars[stringnchars] = p;
-                stringmblen[stringnchars] = mblen = pg_mblen(p);
-                stringnchars++;
-                p += mblen;
-                len -= mblen;
+        if (doltrim) {
+            while (stringlen > 0 && stringlen >= setlen && memcmp(string, set, setlen) == 0) {
+                string += setlen;
+                stringlen -= setlen;
             }
-
-            setchars = (const char**)palloc(setlen * sizeof(char*));
-            setmblen = (int*)palloc(setlen * sizeof(int));
-            setnchars = 0;
-            p = set;
-            len = setlen;
-            while (len > 0) {
-                setchars[setnchars] = p;
-                setmblen[setnchars] = mblen = pg_mblen(p);
-                setnchars++;
-                p += mblen;
-                len -= mblen;
-            }
-
-            resultndx = 0; /* index in stringchars[] */
-            resultnchars = stringnchars;
-
-            if (doltrim) {
-                while (resultnchars > 0) {
-                    str_pos = stringchars[resultndx];
-                    str_len = stringmblen[resultndx];
-                    for (i = 0; i < setnchars; i++) {
-                        if (str_len == setmblen[i] && memcmp(str_pos, setchars[i], str_len) == 0)
-                            break;
-                    }
-                    if (i >= setnchars)
-                        break; /* no match here */
-                    string += str_len;
-                    stringlen -= str_len;
-                    resultndx++;
-                    resultnchars--;
-                }
-            }
-
-            if (dortrim) {
-                while (resultnchars > 0) {
-                    str_pos = stringchars[resultndx + resultnchars - 1];
-                    str_len = stringmblen[resultndx + resultnchars - 1];
-                    for (i = 0; i < setnchars; i++) {
-                        if (str_len == setmblen[i] && memcmp(str_pos, setchars[i], str_len) == 0)
-                            break;
-                    }
-                    if (i >= setnchars)
-                        break; /* no match here */
-                    stringlen -= str_len;
-                    resultnchars--;
-                }
-            }
-
-            pfree_ext(stringchars);
-            pfree_ext(stringmblen);
-            pfree_ext(setchars);
-            pfree_ext(setmblen);
-        } else {
-            /*
-             * In the single-byte-encoding case, we don't need such overhead.
-             */
-            if (doltrim) {
-                while (stringlen > 0) {
-                    char str_ch = *string;
-
-                    for (i = 0; i < setlen; i++) {
-                        if (str_ch == set[i])
-                            break;
-                    }
-                    if (i >= setlen)
-                        break; /* no match here */
-                    string++;
-                    stringlen--;
-                }
-            }
-
-            if (dortrim) {
-                while (stringlen > 0) {
-                    char str_ch = string[stringlen - 1];
-
-                    for (i = 0; i < setlen; i++) {
-                        if (str_ch == set[i])
-                            break;
-                    }
-                    if (i >= setlen)
-                        break; /* no match here */
-                    stringlen--;
-                }
+        }
+ 
+        if (dortrim) {
+            const char* tail = string + stringlen - setlen;
+            while (stringlen > 0 && tail >= string && memcmp(tail, set, setlen) == 0) {
+                tail -= setlen;
+                stringlen -= setlen;
             }
         }
     }
-
-    /* Return selected portion of string */
     return cstring_to_text_with_len(string, stringlen);
 }
 
@@ -802,7 +694,6 @@ Datum translate(PG_FUNCTION_ARGS)
 Datum ascii(PG_FUNCTION_ARGS)
 {
     text* string = PG_GETARG_TEXT_PP(0);
-    int encoding = GetDatabaseEncoding();
     unsigned char* data = NULL;
 
     if (VARSIZE_ANY_EXHDR(string) <= 0)
@@ -810,40 +701,7 @@ Datum ascii(PG_FUNCTION_ARGS)
 
     data = (unsigned char*)VARDATA_ANY(string);
 
-    if (encoding == PG_UTF8 && *data > 127) {
-        /* return the code point for Unicode */
-
-        int result = 0, tbytes = 0, i;
-
-        if (*data >= 0xF0) {
-            result = *data & 0x07;
-            tbytes = 3;
-        } else if (*data >= 0xE0) {
-            result = *data & 0x0F;
-            tbytes = 2;
-        } else {
-            Assert(*data > 0xC0);
-            result = *data & 0x1f;
-            tbytes = 1;
-        }
-
-        Assert(tbytes > 0);
-
-        for (i = 1; i <= tbytes; i++) {
-            if ((data[i] & 0xC0) != 0x80) {
-                report_invalid_encoding(PG_UTF8, (const char*)data, tbytes);
-            } else {
-                result = (result << 6) + (data[i] & 0x3f);
-            }
-        }
-
-        PG_RETURN_INT32(result);
-    } else {
-        if (pg_encoding_max_length(encoding) > 1 && *data > 127)
-            ereport(ERROR, (errcode(ERRCODE_PROGRAM_LIMIT_EXCEEDED), errmsg("requested character too large")));
-
-        PG_RETURN_INT32((int32)*data);
-    }
+    PG_RETURN_INT32((int32)*data);
 }
 
 /********************************************************************

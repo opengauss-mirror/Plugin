@@ -1,7 +1,6 @@
 drop database if exists mysql_test;
 create database mysql_test dbcompatibility 'b';
 \c mysql_test
-create extension dolphin;
 
 CREATE TABLE J1_TBL (
   i integer,

@@ -960,7 +960,7 @@ List* AppendNotNullCols(ParseState* pstate, List* cols, List** attrnos)
             if(!findFlag) {
                 ResTarget* col = NULL;
 
-                if (attr[i]->attisdropped) {
+                if (attr[i]->attisdropped || attr[i]->atthasdef) {
                     continue;
                 }
                 /* If the hidden column in timeseries relation, skip it */
@@ -1674,7 +1674,7 @@ static int FigureColnameInternal(Node* node, char** name)
             /* make coalesce() act like a regular function */
             // modify NVL display to A db's style "NVL" instead of "COALESCE"
             if (((CoalesceExpr*)node)->isnvl) {
-                *name = "nvl";
+                *name = "ifnull";
             } else {
                 *name = "coalesce";
             }

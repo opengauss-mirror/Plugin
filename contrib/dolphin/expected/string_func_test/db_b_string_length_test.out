@@ -1,0 +1,54 @@
+SELECT length('jose');
+ length 
+--------
+      4
+(1 row)
+
+SELECT length('你好呀');
+ length 
+--------
+      3
+(1 row)
+
+SELECT LENGTH(B'101');
+ length 
+--------
+      3
+(1 row)
+
+SELECT length('你好呀jose');
+ length 
+--------
+      7
+(1 row)
+
+drop database if exists test;
+NOTICE:  database "test" does not exist, skipping
+create database test dbcompatibility 'B';
+\c test
+SELECT length('jose');
+ length 
+--------
+      4
+(1 row)
+
+SELECT length('你好呀');
+ length 
+--------
+      9
+(1 row)
+
+SELECT LENGTH(B'101');
+ length 
+--------
+      1
+(1 row)
+
+SELECT length('你好呀jose');
+ length 
+--------
+     13
+(1 row)
+
+\c postgres
+drop database test;

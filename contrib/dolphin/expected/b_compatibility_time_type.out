@@ -1,0 +1,1056 @@
+--
+-- Test All Time type under 'b' compatibility
+--
+drop database if exists b_time_type;
+NOTICE:  database "b_time_type" does not exist, skipping
+create database b_time_type dbcompatibility 'b';
+\c b_time_type
+-- test date
+-- 'YYYY-MM-DD' 'YY-MM-DD'
+SELECT date'2001-01-01';
+    date    
+------------
+ 01-01-2001
+(1 row)
+
+SELECT date'999-01-01';
+    date    
+------------
+ 01-01-0999
+(1 row)
+
+SELECT date'1-01-01';
+    date    
+------------
+ 01-01-0001
+(1 row)
+
+SELECT date'10120-01-01';
+    date     
+-------------
+ 01-01-10120
+(1 row)
+
+SELECT date'2000-2-29';
+    date    
+------------
+ 02-29-2000
+(1 row)
+
+SELECT date'2001-2-29';
+ERROR:  date/time field value out of range: "2001-2-29"
+LINE 1: SELECT date'2001-2-29';
+                   ^
+CONTEXT:  referenced column: date
+SELECT date'2100-2-29';
+ERROR:  date/time field value out of range: "2100-2-29"
+LINE 1: SELECT date'2100-2-29';
+                   ^
+CONTEXT:  referenced column: date
+SELECT date'0000-2-29';
+ERROR:  date/time field value out of range: "0000-2-29"
+LINE 1: SELECT date'0000-2-29';
+                   ^
+CONTEXT:  referenced column: date
+SELECT date'01-01';
+ERROR:  invalid input syntax for type date: "01-01"
+LINE 1: SELECT date'01-01';
+                   ^
+CONTEXT:  referenced column: date
+SELECT date'9-01-01';
+    date    
+------------
+ 01-01-0009
+(1 row)
+
+SELECT date'99-01-01';
+    date    
+------------
+ 01-01-1999
+(1 row)
+
+SELECT date'999-01-01';
+    date    
+------------
+ 01-01-0999
+(1 row)
+
+SELECT date'1000-01-1';
+    date    
+------------
+ 01-01-1000
+(1 row)
+
+-- 'YYYYMMDD' or 'YYMMDD'
+SELECT date'99991231';
+    date    
+------------
+ 12-31-9999
+(1 row)
+
+SELECT date'100000101';
+ERROR:  invalid input syntax for type date: "100000101"
+LINE 1: SELECT date'100000101';
+                   ^
+CONTEXT:  referenced column: date
+SELECT date'10000101';
+    date    
+------------
+ 01-01-1000
+(1 row)
+
+SELECT date'9990101';
+WARNING:  Incorrect date value: "9990101". "YYYYMMDD" or "YYMMDD" format is recommended.
+LINE 1: SELECT date'9990101';
+                   ^
+CONTEXT:  referenced column: date
+ERROR:  date/time field value out of range: "9990101"
+LINE 1: SELECT date'9990101';
+                   ^
+HINT:  Perhaps you need a different "datestyle" setting.
+CONTEXT:  referenced column: date
+SELECT date'701010';
+    date    
+------------
+ 10-10-1970
+(1 row)
+
+SELECT date'691010';
+    date    
+------------
+ 10-10-2069
+(1 row)
+
+SELECT date'691310';
+ERROR:  date/time field value out of range: "691310"
+LINE 1: SELECT date'691310';
+                   ^
+HINT:  Perhaps you need a different "datestyle" setting.
+CONTEXT:  referenced column: date
+SELECT date'691131';
+ERROR:  date/time field value out of range: "691131"
+LINE 1: SELECT date'691131';
+                   ^
+CONTEXT:  referenced column: date
+SELECT date'10101';
+    date    
+------------
+ 10-01-2010
+(1 row)
+
+SELECT date'10130';
+ERROR:  date/time field value out of range: "10130"
+LINE 1: SELECT date'10130';
+                   ^
+HINT:  Perhaps you need a different "datestyle" setting.
+CONTEXT:  referenced column: date
+-- YYYYMMDD or YYYYMMDD
+SELECT 99990101::date;
+    date    
+------------
+ 01-01-9999
+(1 row)
+
+SELECT 990101::date;
+    date    
+------------
+ 01-01-1999
+(1 row)
+
+SELECT 100::date;
+ERROR:  Out of range value for date
+CONTEXT:  referenced column: date
+SELECT 101::date;
+    date    
+------------
+ 01-01-2000
+(1 row)
+
+SELECT 10228::date;
+    date    
+------------
+ 02-28-2001
+(1 row)
+
+SELECT 10229::date;
+ERROR:  Out of range value for date
+CONTEXT:  referenced column: date
+SELECT 991231::date;
+    date    
+------------
+ 12-31-1999
+(1 row)
+
+SELECT 99991231::date;
+    date    
+------------
+ 12-31-9999
+(1 row)
+
+SELECT 21000228::date;
+    date    
+------------
+ 02-28-2100
+(1 row)
+
+SELECT 21000229::date;
+ERROR:  Out of range value for date
+CONTEXT:  referenced column: date
+SELECT 100000000::date;
+ERROR:  Out of range value for date
+CONTEXT:  referenced column: date
+-- test time
+CREATE TABLE time_tbl (v time);
+-- '[-][D] hh:mm:ss.fsec'
+SELECT time(7)'12:12:12.123456';
+WARNING:  TIME(7) precision reduced to maximum allowed, 6
+LINE 1: SELECT time(7)'12:12:12.123456';
+               ^
+CONTEXT:  referenced column: time
+      time       
+-----------------
+ 12:12:12.123456
+(1 row)
+
+SELECT time(6)'12:12:12.123456';
+      time       
+-----------------
+ 12:12:12.123456
+(1 row)
+
+SELECT time(5)'12:12:12.123456';
+      time      
+----------------
+ 12:12:12.12346
+(1 row)
+
+SELECT time(4)'12:12:12.123456';
+     time      
+---------------
+ 12:12:12.1235
+(1 row)
+
+SELECT time(3)'12:12:12.123456';
+     time     
+--------------
+ 12:12:12.123
+(1 row)
+
+SELECT time(2)'12:12:12.123456';
+    time     
+-------------
+ 12:12:12.12
+(1 row)
+
+SELECT time(1)'12:12:12.123456';
+    time    
+------------
+ 12:12:12.1
+(1 row)
+
+SELECT time(0)'12:12:12.123456';
+   time   
+----------
+ 12:12:12
+(1 row)
+
+SELECT time'12:12:12.123456';
+      time       
+-----------------
+ 12:12:12.123456
+(1 row)
+
+SELECT time'34 22:59:59.999999';
+       time       
+------------------
+ 838:59:59.999999
+(1 row)
+
+SELECT time'12:60:12.123456';
+ERROR:  date/time field value out of range: "12:60:12.123456"
+LINE 1: SELECT time'12:60:12.123456';
+                   ^
+CONTEXT:  referenced column: time
+SELECT time'12:12:60.123456';
+ERROR:  date/time field value out of range: "12:12:60.123456"
+LINE 1: SELECT time'12:12:60.123456';
+                   ^
+CONTEXT:  referenced column: time
+SELECT time'34 23:00:00';
+ERROR:  date/time field value out of range: "34 23:00:00"
+LINE 1: SELECT time'34 23:00:00';
+                   ^
+CONTEXT:  referenced column: time
+SELECT time'-34 23:00:00';
+ERROR:  date/time field value out of range: "-34 23:00:00"
+LINE 1: SELECT time'-34 23:00:00';
+                   ^
+CONTEXT:  referenced column: time
+SELECT time'34 22:59:59';
+   time    
+-----------
+ 838:59:59
+(1 row)
+
+SELECT time'-34 22:59:59';
+    time    
+------------
+ -838:59:59
+(1 row)
+
+SELECT time'34 22:59:59.999999';
+       time       
+------------------
+ 838:59:59.999999
+(1 row)
+
+SELECT time'34 22:59:59.9999999999999999999999';
+   time    
+-----------
+ 839:00:00
+(1 row)
+
+SELECT time'-34 22:59:59.9999999999999999999999';
+    time    
+------------
+ -839:00:00
+(1 row)
+
+SELECT time'-34 22:59:59.9999999999999999999999';
+    time    
+------------
+ -839:00:00
+(1 row)
+
+SELECT time'838:59:59';
+   time    
+-----------
+ 838:59:59
+(1 row)
+
+SELECT time'839:00:00';
+ERROR:  date/time field value out of range: "839:00:00"
+LINE 1: SELECT time'839:00:00';
+                   ^
+CONTEXT:  referenced column: time
+SELECT time'59:59';
+   time   
+----------
+ 59:59:00
+(1 row)
+
+SELECT time'59:59.123';
+     time     
+--------------
+ 59:59:00.123
+(1 row)
+
+SELECT time'59';
+   time   
+----------
+ 00:00:59
+(1 row)
+
+SELECT time'59.12';
+    time     
+-------------
+ 00:00:59.12
+(1 row)
+
+-- 'hhmmss.fsec'
+SELECT time(1)'1.123456';
+    time    
+------------
+ 00:00:01.1
+(1 row)
+
+SELECT time(2)'12.123456';
+    time     
+-------------
+ 00:00:12.12
+(1 row)
+
+SELECT time(3)'123.123456';
+     time     
+--------------
+ 00:01:23.123
+(1 row)
+
+SELECT time(4)'1234.123456';
+     time      
+---------------
+ 00:12:34.1235
+(1 row)
+
+SELECT time(5)'12345.123456';
+      time      
+----------------
+ 01:23:45.12346
+(1 row)
+
+SELECT time'123456.123456';
+      time       
+-----------------
+ 12:34:56.123456
+(1 row)
+
+-- hhmmss.fsec
+SELECT 2::time;
+   time   
+----------
+ 00:00:02
+(1 row)
+
+SELECT 20::time;
+   time   
+----------
+ 00:00:20
+(1 row)
+
+SELECT 201::time;
+   time   
+----------
+ 00:02:01
+(1 row)
+
+SELECT 2011::time;
+   time   
+----------
+ 00:20:11
+(1 row)
+
+SELECT 2115.12::time;
+    time     
+-------------
+ 00:21:15.12
+(1 row)
+
+SELECT 20115.23::time;
+    time     
+-------------
+ 02:01:15.23
+(1 row)
+
+SELECT 233445.123::time;
+     time     
+--------------
+ 23:34:45.123
+(1 row)
+
+SELECT 233445.123::time;
+     time     
+--------------
+ 23:34:45.123
+(1 row)
+
+SELECT 8385959.999999::time;
+       time       
+------------------
+ 838:59:59.999999
+(1 row)
+
+SELECT 8385959.9999999::time;
+   time    
+-----------
+ 839:00:00
+(1 row)
+
+-- test datetime
+-- 'YYYY-MM-DD hh:mm:ss.fsec' or 'YY-MM-DD hh:mm:ss.fsec'
+SELECT datetime(2)'2001-01-01  23:59:59.999999';
+         datetime         
+--------------------------
+ Tue Jan 02 00:00:00 2001
+(1 row)
+
+SELECT datetime(3)'2001-01-01  23:59:59.9999999';
+         datetime         
+--------------------------
+ Tue Jan 02 00:00:00 2001
+(1 row)
+
+SELECT datetime(4)'9999-12-31  23:59:59.9999999';
+         datetime          
+---------------------------
+ Sat Jan 01 00:00:00 10000
+(1 row)
+
+SELECT datetime(5)'999-12-31  23:59:59.9999999';
+         datetime         
+--------------------------
+ Wed Jan 01 00:00:00 1000
+(1 row)
+
+SELECT datetime'99-01-01  23:59:59.123';
+           datetime           
+------------------------------
+ Fri Jan 01 23:59:59.123 1999
+(1 row)
+
+SELECT datetime'2001-2-28  23:59:59.123';
+           datetime           
+------------------------------
+ Wed Feb 28 23:59:59.123 2001
+(1 row)
+
+SELECT datetime'2000-2-28  23:59:59.123';
+           datetime           
+------------------------------
+ Mon Feb 28 23:59:59.123 2000
+(1 row)
+
+-- 'YYYYMMDDhhmmss.fsec' or 'YYMMDDhhmmss.fsec'
+SELECT datetime(1)'20010101010101.1278';
+          datetime          
+----------------------------
+ Mon Jan 01 01:01:01.1 2001
+(1 row)
+
+SELECT datetime(1)'010101010101.1234';
+          datetime          
+----------------------------
+ Mon Jan 01 01:01:01.1 2001
+(1 row)
+
+SELECT datetime(2)'0101010101';
+         datetime         
+--------------------------
+ Mon Jan 01 01:01:00 2001
+(1 row)
+
+SELECT datetime(1)'01010101';
+         datetime         
+--------------------------
+ Sat Jan 01 00:00:00 0101
+(1 row)
+
+SELECT datetime(3)'0101017';
+         datetime         
+--------------------------
+ Mon Jan 01 07:00:00 2001
+(1 row)
+
+SELECT datetime(1)'010101';
+         datetime         
+--------------------------
+ Mon Jan 01 00:00:00 2001
+(1 row)
+
+SELECT datetime(1)'0101';
+ERROR:  timestamp out of range: "0101"
+LINE 1: SELECT datetime(1)'0101';
+                          ^
+CONTEXT:  referenced column: datetime
+-- YYYYMMDDhhmmss or YYMMDDhhmmss
+SELECT 11::datetime;
+ERROR:  timestamp out of range
+CONTEXT:  referenced column: datetime
+SELECT 111::datetime;
+         datetime         
+--------------------------
+ Tue Jan 11 00:00:00 2000
+(1 row)
+
+SELECT 1111::datetime;
+         datetime         
+--------------------------
+ Sat Nov 11 00:00:00 2000
+(1 row)
+
+SELECT 11111::datetime;
+         datetime         
+--------------------------
+ Sun Nov 11 00:00:00 2001
+(1 row)
+
+SELECT 111111::datetime;
+         datetime         
+--------------------------
+ Fri Nov 11 00:00:00 2011
+(1 row)
+
+SELECT 1111111::datetime;
+         datetime         
+--------------------------
+ Wed Nov 11 00:00:00 0111
+(1 row)
+
+SELECT 11111111::datetime;
+         datetime         
+--------------------------
+ Sat Nov 11 00:00:00 1111
+(1 row)
+
+SELECT 111111111::datetime;
+         datetime         
+--------------------------
+ Tue Jan 11 11:11:11 2000
+(1 row)
+
+SELECT 1111111111::datetime;
+         datetime         
+--------------------------
+ Sat Nov 11 11:11:11 2000
+(1 row)
+
+SELECT 11111111111::datetime;
+         datetime         
+--------------------------
+ Sun Nov 11 11:11:11 2001
+(1 row)
+
+SELECT 111111111111::datetime;
+         datetime         
+--------------------------
+ Fri Nov 11 11:11:11 2011
+(1 row)
+
+SELECT 1111111111111::datetime;
+         datetime         
+--------------------------
+ Wed Nov 11 11:11:11 0111
+(1 row)
+
+SELECT 11111111111111::datetime;
+         datetime         
+--------------------------
+ Sat Nov 11 11:11:11 1111
+(1 row)
+
+-- test datetime operation
+create table test_dt(dt datetime);
+insert into test_dt values('1997-11-10');
+insert into test_dt values('2000-11-10');
+insert into test_dt values('1997-11-10');
+insert into test_dt values('2012-11-10');
+insert into test_dt values('2008-11-10');
+insert into test_dt values('1994-11-10');
+select max(dt) from test_dt;
+           max            
+--------------------------
+ Sat Nov 10 00:00:00 2012
+(1 row)
+
+select min(dt) from test_dt;
+           min            
+--------------------------
+ Thu Nov 10 00:00:00 1994
+(1 row)
+
+select distinct(dt) from test_dt;
+            dt            
+--------------------------
+ Thu Nov 10 00:00:00 1994
+ Mon Nov 10 00:00:00 1997
+ Fri Nov 10 00:00:00 2000
+ Mon Nov 10 00:00:00 2008
+ Sat Nov 10 00:00:00 2012
+(5 rows)
+
+select * from test_dt;
+            dt            
+--------------------------
+ Mon Nov 10 00:00:00 1997
+ Fri Nov 10 00:00:00 2000
+ Mon Nov 10 00:00:00 1997
+ Sat Nov 10 00:00:00 2012
+ Mon Nov 10 00:00:00 2008
+ Thu Nov 10 00:00:00 1994
+(6 rows)
+
+create index on test_dt(dt);
+select * from test_dt where dt > '2007-01-01';
+            dt            
+--------------------------
+ Sat Nov 10 00:00:00 2012
+ Mon Nov 10 00:00:00 2008
+(2 rows)
+
+select * from test_dt where dt = '1997-11-10';
+            dt            
+--------------------------
+ Mon Nov 10 00:00:00 1997
+ Mon Nov 10 00:00:00 1997
+(2 rows)
+
+select * from test_dt where dt < '1997-11-10';
+            dt            
+--------------------------
+ Thu Nov 10 00:00:00 1994
+(1 row)
+
+-- test timestamp
+set time zone 'PRC';
+CREATE TABLE timestamp_tbl (v timestamp(2));
+-- 'YYYY-MM-DD hh:mm:ss.fsec' or 'YY-MM-DD hh:mm:ss.fsec'
+INSERT INTO timestamp_tbl VALUES ('2001-01-01  23:59:59.999999');
+INSERT INTO timestamp_tbl VALUES ('2001-01-01  23:59:59.9999999');
+INSERT INTO timestamp_tbl VALUES ('9999-12-31  23:59:59.9999999');
+INSERT INTO timestamp_tbl VALUES ('999-12-31  23:59:59.9999999');
+INSERT INTO timestamp_tbl VALUES ('99-01-01  23:59:59.123');
+INSERT INTO timestamp_tbl VALUES ('2001-2-28  23:59:59.123');
+INSERT INTO timestamp_tbl VALUES ('2000-2-28  23:59:59.123');
+-- 'YYYYMMDDhhmmss.fsec' or 'YYMMDDhhmmss.fsec'
+INSERT INTO timestamp_tbl VALUES ('20010101010101.1278');
+INSERT INTO timestamp_tbl VALUES ('010101010101.1234');
+INSERT INTO timestamp_tbl VALUES ('0101010101');
+INSERT INTO timestamp_tbl VALUES ('01010101');
+INSERT INTO timestamp_tbl VALUES ('0101017');
+INSERT INTO timestamp_tbl VALUES ('010101');
+INSERT INTO timestamp_tbl VALUES ('0101');
+ERROR:  timestamp out of range: "0101"
+LINE 1: INSERT INTO timestamp_tbl VALUES ('0101');
+                                          ^
+CONTEXT:  referenced column: v
+-- YYYYMMDDhhmmss or YYMMDDhhmmss
+INSERT INTO timestamp_tbl VALUES (11::timestamp);
+ERROR:  timestamp out of range
+CONTEXT:  referenced column: v
+INSERT INTO timestamp_tbl VALUES (111::timestamp);
+INSERT INTO timestamp_tbl VALUES (1111::timestamp);
+INSERT INTO timestamp_tbl VALUES (11111::timestamp);
+INSERT INTO timestamp_tbl VALUES (111111::timestamp);
+INSERT INTO timestamp_tbl VALUES (1111111::timestamp);
+INSERT INTO timestamp_tbl VALUES (11111111::timestamp);
+INSERT INTO timestamp_tbl VALUES (111111111::timestamp);
+INSERT INTO timestamp_tbl VALUES (1111111111::timestamp);
+INSERT INTO timestamp_tbl VALUES (11111111111::timestamp);
+INSERT INTO timestamp_tbl VALUES (111111111111::timestamp);
+INSERT INTO timestamp_tbl VALUES (1111111111111::timestamp);
+INSERT INTO timestamp_tbl VALUES (11111111111111::timestamp);
+SELECT * FROM timestamp_tbl;
+                v                
+---------------------------------
+ Tue Jan 02 00:00:00 2001 CST
+ Tue Jan 02 00:00:00 2001 CST
+ Sat Jan 01 00:00:00 10000 CST
+ Wed Jan 01 00:00:00 1000 LMT
+ Fri Jan 01 23:59:59.12 1999 CST
+ Wed Feb 28 23:59:59.12 2001 CST
+ Mon Feb 28 23:59:59.12 2000 CST
+ Mon Jan 01 01:01:01.13 2001 CST
+ Mon Jan 01 01:01:01.12 2001 CST
+ Mon Jan 01 01:01:00 2001 CST
+ Sat Jan 01 00:00:00 0101 LMT
+ Mon Jan 01 07:00:00 2001 CST
+ Mon Jan 01 00:00:00 2001 CST
+ Tue Jan 11 00:00:00 2000 CST
+ Sat Nov 11 00:00:00 2000 CST
+ Sun Nov 11 00:00:00 2001 CST
+ Fri Nov 11 00:00:00 2011 CST
+ Wed Nov 11 00:00:00 0111 LMT
+ Sat Nov 11 00:00:00 1111 LMT
+ Tue Jan 11 11:11:11 2000 CST
+ Sat Nov 11 11:11:11 2000 CST
+ Sun Nov 11 11:11:11 2001 CST
+ Fri Nov 11 11:11:11 2011 CST
+ Wed Nov 11 11:11:11 0111 LMT
+ Sat Nov 11 11:11:11 1111 LMT
+(25 rows)
+
+set time zone 'UTC';
+SELECT * FROM timestamp_tbl;
+                v                
+---------------------------------
+ Mon Jan 01 16:00:00 2001 UTC
+ Mon Jan 01 16:00:00 2001 UTC
+ Fri Dec 31 16:00:00 9999 UTC
+ Tue Dec 31 15:54:17 0999 UTC
+ Fri Jan 01 15:59:59.12 1999 UTC
+ Wed Feb 28 15:59:59.12 2001 UTC
+ Mon Feb 28 15:59:59.12 2000 UTC
+ Sun Dec 31 17:01:01.13 2000 UTC
+ Sun Dec 31 17:01:01.12 2000 UTC
+ Sun Dec 31 17:01:00 2000 UTC
+ Fri Dec 31 15:54:17 0100 UTC
+ Sun Dec 31 23:00:00 2000 UTC
+ Sun Dec 31 16:00:00 2000 UTC
+ Mon Jan 10 16:00:00 2000 UTC
+ Fri Nov 10 16:00:00 2000 UTC
+ Sat Nov 10 16:00:00 2001 UTC
+ Thu Nov 10 16:00:00 2011 UTC
+ Tue Nov 10 15:54:17 0111 UTC
+ Fri Nov 10 15:54:17 1111 UTC
+ Tue Jan 11 03:11:11 2000 UTC
+ Sat Nov 11 03:11:11 2000 UTC
+ Sun Nov 11 03:11:11 2001 UTC
+ Fri Nov 11 03:11:11 2011 UTC
+ Wed Nov 11 03:05:28 0111 UTC
+ Sat Nov 11 03:05:28 1111 UTC
+(25 rows)
+
+set time zone 'PRC';
+DROP TABLE timestamp_tbl;
+-- test YEAR
+DROP TABLE IF EXISTS year_tbl;
+NOTICE:  table "year_tbl" does not exist, skipping
+-- test invalid display width
+CREATE TABLE year_tbl (y YEAR(-1));
+ERROR:  invalid display width and use YEAR instead
+CREATE TABLE year_tbl (y YEAR(0));
+ERROR:  invalid display width and use YEAR instead
+CREATE TABLE year_tbl (y YEAR(1));
+ERROR:  invalid display width and use YEAR instead
+CREATE TABLE year_tbl (y YEAR(3));
+ERROR:  invalid display width and use YEAR instead
+CREATE TABLE year_tbl (y YEAR(5));
+ERROR:  invalid display width and use YEAR instead
+CREATE TABLE year_tbl (y YEAR(4294967297));
+ERROR:  value "4294967297" is out of range for type integer
+-- test YEAR YEAR(2) YEAR(4)
+CREATE TABLE year_tbl (y YEAR, y4 YEAR(4), y2 YEAR(2));
+INSERT INTO year_tbl VALUES (1900, 1900, 1900);
+ERROR:  Out of range value for year date type!
+CONTEXT:  referenced column: y
+INSERT INTO year_tbl VALUES ('1900', '1900', '1900');
+ERROR:  Out of range value for year date type!
+LINE 1: INSERT INTO year_tbl VALUES ('1900', '1900', '1900');
+                                     ^
+CONTEXT:  referenced column: y
+INSERT INTO year_tbl VALUES (2156, 2156, 2156);
+ERROR:  Out of range value for year date type!
+CONTEXT:  referenced column: y
+INSERT INTO year_tbl VALUES ('2156', '2156', '2156');
+ERROR:  Out of range value for year date type!
+LINE 1: INSERT INTO year_tbl VALUES ('2156', '2156', '2156');
+                                     ^
+CONTEXT:  referenced column: y
+INSERT INTO year_tbl VALUES (1901, 1901, 1901);
+INSERT INTO year_tbl VALUES ('1901', '1901', '1901');
+INSERT INTO year_tbl VALUES (2155, 2155, 2155);
+INSERT INTO year_tbl VALUES ('2155', '2155', '2155');
+INSERT INTO year_tbl VALUES (70, 70, 70);
+INSERT INTO year_tbl VALUES ('70', '70', '70');
+INSERT INTO year_tbl VALUES (69, 69, 69);
+INSERT INTO year_tbl VALUES ('69', '69', '69');
+INSERT INTO year_tbl VALUES (2156, 2156, 2156);
+ERROR:  Out of range value for year date type!
+CONTEXT:  referenced column: y
+INSERT INTO year_tbl VALUES ('2156', '2156', '2156');
+ERROR:  Out of range value for year date type!
+LINE 1: INSERT INTO year_tbl VALUES ('2156', '2156', '2156');
+                                     ^
+CONTEXT:  referenced column: y
+INSERT INTO year_tbl VALUES (-1, -1, -1);
+ERROR:  Out of range value for year date type!
+CONTEXT:  referenced column: y
+INSERT INTO year_tbl VALUES ('-1', '-1', '-1');
+ERROR:  Out of range value for year date type!
+LINE 1: INSERT INTO year_tbl VALUES ('-1', '-1', '-1');
+                                     ^
+CONTEXT:  referenced column: y
+INSERT INTO year_tbl VALUES (0, 0, 0);
+INSERT INTO year_tbl VALUES ('0', '0', '0');
+INSERT INTO year_tbl VALUES ('00', '00', '00');
+INSERT INTO year_tbl VALUES ('000', '000', '000');
+INSERT INTO year_tbl VALUES ('0000', '0000', '0000');
+INSERT INTO year_tbl VALUES (1, 1, 1);
+INSERT INTO year_tbl VALUES ('1', '1', '1');
+SELECT * FROM year_tbl;
+  y   |  y4  | y2 
+------+------+----
+ 1901 | 1901 | 01
+ 1901 | 1901 | 01
+ 2155 | 2155 | 55
+ 2155 | 2155 | 55
+ 1970 | 1970 | 70
+ 1970 | 1970 | 70
+ 2069 | 2069 | 69
+ 2069 | 2069 | 69
+ 0    | 0    | 0
+ 2000 | 2000 | 00
+ 2000 | 2000 | 00
+ 2000 | 2000 | 00
+ 0    | 0    | 0
+ 2001 | 2001 | 01
+ 2001 | 2001 | 01
+(15 rows)
+
+-- test order by
+SELECT * FROM year_tbl ORDER BY y ASC;
+  y   |  y4  | y2 
+------+------+----
+ 0    | 0    | 0
+ 0    | 0    | 0
+ 1901 | 1901 | 01
+ 1901 | 1901 | 01
+ 1970 | 1970 | 70
+ 1970 | 1970 | 70
+ 2000 | 2000 | 00
+ 2000 | 2000 | 00
+ 2000 | 2000 | 00
+ 2001 | 2001 | 01
+ 2001 | 2001 | 01
+ 2069 | 2069 | 69
+ 2069 | 2069 | 69
+ 2155 | 2155 | 55
+ 2155 | 2155 | 55
+(15 rows)
+
+-- test max, min, distinct
+SELECT max(y), min(y4) FROM year_tbl;
+ max  | min 
+------+-----
+ 2155 | 0
+(1 row)
+
+SELECT distinct(y) FROM year_tbl;
+  y   
+------
+ 0
+ 1901
+ 1970
+ 2000
+ 2001
+ 2069
+ 2155
+(7 rows)
+
+-- test index
+CREATE INDEX test_b_tree_idx ON year_tbl(y);
+DROP INDEX test_b_tree_idx;
+DROP TABLE year_tbl;
+-- test operation of YEAR and YEAR(2)
+SELECT ('2010')::YEAR(2)<(2001)::YEAR;
+ ?column? 
+----------
+ f
+(1 row)
+
+SELECT ('2010')::YEAR(2)>(2001)::YEAR;
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT ('2010')::YEAR(2)>(2001);
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT (2010)>(2001)::YEAR;
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT (2001)=(2001)::YEAR;
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT (2001)=(2001)::YEAR(2);
+ ?column? 
+----------
+ t
+(1 row)
+
+-- test operation of year and YEAR(2)
+SELECT (2010)::YEAR-(2001)::YEAR;
+ ?column?  
+-----------
+ @ 9 years
+(1 row)
+
+SELECT (2010)::YEAR-(2111)::YEAR;
+    ?column?     
+-----------------
+ @ 101 years ago
+(1 row)
+
+SELECT (2010)::YEAR-(2111)::YEAR;
+    ?column?     
+-----------------
+ @ 101 years ago
+(1 row)
+
+SELECT (2010)::YEAR-(interval '2' year);
+ ?column? 
+----------
+ 2008
+(1 row)
+
+SELECT (2010)::YEAR+(interval '2' year);
+ ?column? 
+----------
+ 2012
+(1 row)
+
+SELECT (1970)::YEAR-(interval '69' year);
+ ?column? 
+----------
+ 1901
+(1 row)
+
+SELECT (1970)::YEAR-(interval '70' year);
+ERROR:  Out of range value for year date type!
+SELECT (2069)::YEAR+(interval '86' year);
+ ?column? 
+----------
+ 2155
+(1 row)
+
+SELECT (2069)::YEAR+(interval '87' year);
+ERROR:  Out of range value for year date type!
+SELECT (2069)::YEAR+(interval'366day');
+ ?column? 
+----------
+ 2070
+(1 row)
+
+SELECT (2010)::YEAR(2)-(2001)::YEAR(2);
+ ?column?  
+-----------
+ @ 9 years
+(1 row)
+
+SELECT (2010)::YEAR(2)-(2111)::YEAR;
+    ?column?     
+-----------------
+ @ 101 years ago
+(1 row)
+
+SELECT (2010)::YEAR-(2111)::YEAR(2);
+    ?column?     
+-----------------
+ @ 101 years ago
+(1 row)
+
+SELECT (2010)::YEAR(2)-(interval '2' year);
+ ?column? 
+----------
+ 2008
+(1 row)
+
+SELECT (2010)::YEAR(2)+(interval '2' year);
+ ?column? 
+----------
+ 2012
+(1 row)
+
+SELECT (1970)::YEAR(2)-(interval '69' year);
+ ?column? 
+----------
+ 1901
+(1 row)
+
+SELECT (1970)::YEAR(2)-(interval '70' year);
+ERROR:  Out of range value for year date type!
+SELECT (2069)::YEAR(2)+(interval '86' year);
+ ?column? 
+----------
+ 2155
+(1 row)
+
+SELECT (2069)::YEAR(2)+(interval '87' year);
+ERROR:  Out of range value for year date type!
+SELECT (2069)::YEAR(2)+(interval'366day');
+ ?column? 
+----------
+ 2070
+(1 row)
+
+\c postgres
+DROP DATABASE b_time_type;

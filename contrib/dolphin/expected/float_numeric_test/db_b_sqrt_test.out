@@ -1,0 +1,39 @@
+SELECT SQRT(64);
+ sqrt 
+------
+    8
+(1 row)
+
+SELECT SQRT(-64);
+ERROR:  cannot take square root of a negative number
+CONTEXT:  referenced column: sqrt
+drop database if exists test;
+NOTICE:  database "test" does not exist, skipping
+create database test dbcompatibility 'B';
+\c test
+SELECT SQRT(64);
+ sqrt 
+------
+    8
+(1 row)
+
+SELECT SQRT(-64);
+ sqrt 
+------
+     
+(1 row)
+
+SELECT SQRT(64::numeric);
+       sqrt        
+-------------------
+ 8.000000000000000
+(1 row)
+
+SELECT SQRT(-64::numeric);
+ sqrt 
+------
+     
+(1 row)
+
+\c postgres
+drop database test;

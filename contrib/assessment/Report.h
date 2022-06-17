@@ -26,33 +26,36 @@
 #define OPENGAUSS_REPORT_H
 
 #include "string"
+#include "assessment.h"
 #include <vector>
 
 class SQLCompatibility {
 public:
-    SQLCompatibility(std::string sql, std::string compatibility, std::string errDetail) : sql(std::move(sql)),
-                                                                                          compatibility(std::move(
-                                                                                              
-                                                                                              compatibility)),
-                                                                                          errDetail(std::move(
-                                                                                              errDetail)) {}
+    SQLCompatibility(const std::string &sql, const AssessmentType &sqlType, const CompatibilityType &compatibility,
+            const std::string &errDetail) : sql(sql), sqlType(sqlType), compatibility(compatibility), errDetail(errDetail) {}
 
+public:
     std::string sql;
-    std::string compatibility;
+    AssessmentType sqlType;
+    CompatibilityType compatibility;
     std::string errDetail;
 };
 
 class CompatibilityTable {
 public:
-    void AppendOneSQL(std::string sql, std::string compatibility, std::string errDetail);
+    void AppendOneSQL(std::string sql, AssessmentType assessmentType, CompatibilityType compatibilityType,
+            std::string errDetail);
 
     bool GenerateReport();
-
+    
+    bool GenerateSQLCompatibilityStatistic();
+    
     bool GenerateReportHeader(char* fileName, char* output, const char* dbType);
 
     bool GenerateReportEnd();
 
     ~CompatibilityTable();
+
 private:
     FILE* fd;
     std::vector <SQLCompatibility> sqlCompatibilities;
