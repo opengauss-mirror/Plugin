@@ -18,5 +18,18 @@ SELECT TRIM(LEADING 'xyz' FROM 'xyzxbarxxyz');
 SELECT TRIM(BOTH 'xyz' FROM 'xyzxbarxxyz');
 SELECT TRIM(TRAILING 'xyz' FROM 'xyzxbarxxyz');
 
+set bytea_output to escape;
+
+SELECT TRIM(LEADING 'x'::bytea FROM 'xxxbarxxx'::bytea);
+SELECT TRIM(BOTH 'x'::bytea FROM 'xxxbarxxx'::bytea);
+SELECT TRIM(TRAILING 'x'::bytea FROM 'xxxbarxxx'::bytea);
+SELECT TRIM(LEADING 'xyz'::bytea FROM 'xyzxbarxxyz'::bytea);
+SELECT TRIM(BOTH 'xyz'::bytea FROM 'xyzxbarxxyz'::bytea);
+SELECT TRIM(TRAILING 'xyz'::bytea FROM 'xyzxbarxxyz'::bytea);
+
+SELECT TRIM('   X  '::bytea);
+SELECT TRIM(LEADING '   X  '::bytea);
+SELECT TRIM(TRAILING '   X  '::bytea);
+
 \c postgres
 drop database test;

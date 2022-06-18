@@ -18,9 +18,16 @@
 #include "utils/formatting.h"
 #include "plugin_mb/pg_wchar.h"
 #include "plugin_parser/parser.h"
+#include "plugin_postgres.h"
 #include "miscadmin.h"
 
 static text* dotrim(const char* string, int stringlen, const char* set, int setlen, bool doltrim, bool dortrim);
+
+PG_FUNCTION_INFO_V1_PUBLIC(byteatrim_leading);
+extern "C" DLL_PUBLIC Datum byteatrim_leading(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1_PUBLIC(byteatrim_trailing);
+extern "C" DLL_PUBLIC Datum byteatrim_trailing(PG_FUNCTION_ARGS);
 
 /********************************************************************
  *
@@ -380,6 +387,32 @@ static text* dotrim(const char* string, int stringlen, const char* set, int setl
     return cstring_to_text_with_len(string, stringlen);
 }
 
+/*
+ * Common implementation for btrim, ltrim, rtrim
+ */
+static bytea* byteatrim_internal(const char* string, int stringlen, const char* set, int setlen, bool doltrim,
+                                bool dortrim)
+{
+    /* Nothing to do if either string or set is empty */
+    if (stringlen > 0 && setlen > 0) {
+        if (doltrim) {
+            while (stringlen > 0 && stringlen >= setlen && memcmp(string, set, setlen) == 0) {
+                string += setlen;
+                stringlen -= setlen;
+            }
+        }
+ 
+        if (dortrim) {
+            const char* tail = string + stringlen - setlen;
+            while (stringlen > 0 && tail >= string && memcmp(tail, set, setlen) == 0) {
+                tail -= setlen;
+                stringlen -= setlen;
+            }
+        }
+    }
+    return cstring_to_bytea_with_len(string, stringlen);
+}
+
 /********************************************************************
  *
  * byteatrim
@@ -401,53 +434,31 @@ Datum byteatrim(PG_FUNCTION_ARGS)
     bytea* string = PG_GETARG_BYTEA_PP(0);
     bytea* set = PG_GETARG_BYTEA_PP(1);
     bytea* ret = NULL;
-    char *ptr = NULL, *end = NULL, *ptr2 = NULL, *ptr2start = NULL, *end2 = NULL;
-    int m, stringlen, setlen;
 
-    stringlen = VARSIZE_ANY_EXHDR(string);
-    setlen = VARSIZE_ANY_EXHDR(set);
+    ret = byteatrim_internal(VARDATA_ANY(string), VARSIZE_ANY_EXHDR(string), VARDATA_ANY(set),
+                                VARSIZE_ANY_EXHDR(set), true, true);
+    PG_RETURN_BYTEA_P(ret);
+}
 
-    if (stringlen <= 0 || setlen <= 0)
-        PG_RETURN_BYTEA_P(string);
+Datum byteatrim_leading(PG_FUNCTION_ARGS)
+{
+    bytea* string = PG_GETARG_BYTEA_PP(0);
+    bytea* set = PG_GETARG_BYTEA_PP(1);
+    bytea* ret = NULL;
 
-    m = stringlen;
-    ptr = VARDATA_ANY(string);
-    end = ptr + stringlen - 1;
-    ptr2start = VARDATA_ANY(set);
-    end2 = ptr2start + setlen - 1;
+    ret = byteatrim_internal(VARDATA_ANY(string), VARSIZE_ANY_EXHDR(string), VARDATA_ANY(set),
+                                VARSIZE_ANY_EXHDR(set), true, false);
+    PG_RETURN_BYTEA_P(ret);
+}
 
-    while (m > 0) {
-        ptr2 = ptr2start;
-        while (ptr2 <= end2) {
-            if (*ptr == *ptr2)
-                break;
-            ++ptr2;
-        }
-        if (ptr2 > end2)
-            break;
-        ptr++;
-        m--;
-    }
+Datum byteatrim_trailing(PG_FUNCTION_ARGS)
+{
+    bytea* string = PG_GETARG_BYTEA_PP(0);
+    bytea* set = PG_GETARG_BYTEA_PP(1);
+    bytea* ret = NULL;
 
-    while (m > 0) {
-        ptr2 = ptr2start;
-        while (ptr2 <= end2) {
-            if (*end == *ptr2)
-                break;
-            ++ptr2;
-        }
-        if (ptr2 > end2)
-            break;
-        end--;
-        m--;
-    }
-
-    ret = (bytea*)palloc(VARHDRSZ + m);
-    SET_VARSIZE(ret, VARHDRSZ + m);
-    if (m > 0) {
-        errno_t ss_rc = memcpy_s(VARDATA(ret), m, ptr, m);
-        securec_check(ss_rc, "\0", "\0");
-    }
+    ret = byteatrim_internal(VARDATA_ANY(string), VARSIZE_ANY_EXHDR(string), VARDATA_ANY(set),
+                                VARSIZE_ANY_EXHDR(set), false, true);
     PG_RETURN_BYTEA_P(ret);
 }
 
