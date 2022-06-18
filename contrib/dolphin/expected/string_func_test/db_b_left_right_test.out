@@ -26,6 +26,7 @@ drop database if exists test;
 NOTICE:  database "test" does not exist, skipping
 create database test dbcompatibility 'B';
 \c test
+set bytea_output to escape;
 SELECT left('abcdefg', 3);
  left 
 ------
@@ -87,27 +88,75 @@ SELECT right('abcdefg', 0), right('abcdefg', 0) is null;
 (1 row)
 
 SELECT left('abcdefg'::bytea, 3);
-   left   
-----------
- \x616263
+ left 
+------
+ abc
+(1 row)
+
+SELECT left(E'jo\\000se'::bytea, 3);
+  left  
+--------
+ jo\000
+(1 row)
+
+SELECT left(E'jo\nse'::bytea, 3);
+  left  
+--------
+ jo\012
+(1 row)
+
+SELECT left('abcdefg'::bytea, 100);
+  left   
+---------
+ abcdefg
+(1 row)
+
+SELECT left('abcdefg'::bytea, 0), left('abcdefg'::bytea, 0) is null ;
+ left | ?column? 
+------+----------
+      | f
 (1 row)
 
 SELECT left('abcdefg'::bytea, -3), left('abcdefg'::bytea, -3) is null ;
-    left    | ?column? 
-------------+----------
- \x61626364 | f
+ left | ?column? 
+------+----------
+      | f
 (1 row)
 
 SELECT right('abcdefg'::bytea, 3);
-  right   
-----------
- \x656667
+ right 
+-------
+ efg
+(1 row)
+
+SELECT right('abcdefg'::bytea, 100);
+  right  
+---------
+ abcdefg
+(1 row)
+
+SELECT right(E'jo\\000se'::bytea, 3);
+ right  
+--------
+ \000se
+(1 row)
+
+SELECT right(E'jo\nse'::bytea, 3);
+ right  
+--------
+ \012se
+(1 row)
+
+SELECT right('abcdefg'::bytea, 0), right('abcdefg'::bytea, 0) is null;
+ right | ?column? 
+-------+----------
+       | f
 (1 row)
 
 SELECT right('abcdefg'::bytea, -3), right('abcdefg'::bytea, -3) is null;
-   right    | ?column? 
-------------+----------
- \x64656667 | f
+ right | ?column? 
+-------+----------
+       | f
 (1 row)
 
 SELECT left('你是我的好兄弟', 3);
@@ -146,28 +195,64 @@ SELECT right('你是我的好兄弟', 0), right('你是我的好兄弟', 0) is n
        | f
 (1 row)
 
+SELECT left('你是我的好兄弟'::bytea, 3);
+     left     
+--------------
+ \344\275\240
+(1 row)
+
+SELECT left('你是我的好兄弟'::bytea, -3), left('你是我的好兄弟'::bytea, -3) is null ;
+ left | ?column? 
+------+----------
+      | f
+(1 row)
+
+SELECT right('你是我的好兄弟'::bytea, 3);
+    right     
+--------------
+ \345\274\237
+(1 row)
+
+SELECT right('你是我的好兄弟'::bytea, -3), right('你是我的好兄弟'::bytea, -3) is null;
+ right | ?column? 
+-------+----------
+       | f
+(1 row)
+
+SELECT left('你是我的好兄弟'::bytea, 0), left('你是我的好兄弟'::bytea, 0) is null;
+ left | ?column? 
+------+----------
+      | f
+(1 row)
+
+SELECT right('你是我的好兄弟'::bytea, 0), right('你是我的好兄弟'::bytea, 0) is null;
+ right | ?column? 
+-------+----------
+       | f
+(1 row)
+
 SELECT left(''::bytea, 3), left(''::bytea, 3) is null;
  left | ?column? 
 ------+----------
- \x   | f
+      | f
 (1 row)
 
 SELECT left(''::bytea, -3), left(''::bytea, -3) is null;
  left | ?column? 
 ------+----------
- \x   | f
+      | f
 (1 row)
 
 SELECT right(''::bytea, 3), right(''::bytea, 3) is null;
  right | ?column? 
 -------+----------
- \x    | f
+       | f
 (1 row)
 
 SELECT right(''::bytea, -3), right(''::bytea, -3) is null;
  right | ?column? 
 -------+----------
- \x    | f
+       | f
 (1 row)
 
 SELECT left('abcdefg', 0), left('abcdefg', 0) is null;
