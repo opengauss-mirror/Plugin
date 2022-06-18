@@ -938,6 +938,14 @@ select * from test_notnull_numeric;
  2.00 | 0.00
 (2 rows)
 
+create table test_multi_default(a numeric not null,b decimal not null,c real not null,d double precision not null, e float not null, f varchar(20) not null);
+insert into test_multi_default values(default,default,default,default,default,default);
+select * from test_multi_default;
+ a | b | c | d | e | f 
+---+---+---+---+---+---
+ 0 | 0 | 0 | 0 | 0 | 
+(1 row)
+
 --insert into table values(...),(...)
 insert into test_notnull_tint(a) values(3),(4),(5);
 select * from test_notnull_tint;

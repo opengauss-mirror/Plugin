@@ -375,7 +375,9 @@ select * from test_notnull_double;
 insert into test_notnull_numeric values(2,default);
 select * from test_notnull_numeric;
 
-
+create table test_multi_default(a numeric not null,b decimal not null,c real not null,d double precision not null, e float not null, f varchar(20) not null);
+insert into test_multi_default values(default,default,default,default,default,default);
+select * from test_multi_default;
 
 --insert into table values(...),(...)
 insert into test_notnull_tint(a) values(3),(4),(5);

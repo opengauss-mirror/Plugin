@@ -2412,9 +2412,8 @@ void CheckDefaultForNotnullCols(ParseState* pstate, List* exprlist, List* attrno
         if (IsA(expr, SetToDefault) && attr->attnotnull && !attr->atthasdef) {
             lfirst(exprCell) = makeConstByType(attr);
             pfree(expr);
-        } else {
-            attrn = attrn->next;
         }
+        attrn = attrn->next;
     }
 }
 
