@@ -18,6 +18,7 @@
 
 #include "catalog/pg_cast.h"
 #include "catalog/pg_class.h"
+#include "catalog/pg_enum.h"
 #include "catalog/pg_inherits_fn.h"
 #include "catalog/pg_proc.h"
 #include "catalog/pg_type.h"
@@ -471,6 +472,48 @@ Node* coerce_type(ParseState* pstate, Node* node, Oid inputTypeId, Oid targetTyp
         r->location = location;
         return (Node*)r;
     }
+    if (inputTypeId == INT4OID && IsA(node, Const) && type_is_enum(targetTypeId)) {
+        /* Input type is int and the target type is enum type */
+        Const* con = (Const*)node;
+        Const* newcon = makeNode(Const);
+        Oid baseTypeId;
+        int32 baseTypeMod;
+        float8 enumOrder;
+
+        char *targetEnumLable = NULL;
+        Type targetType;
+        ParseCallbackState pcbstate;
+
+        baseTypeMod = targetTypeMod;
+        baseTypeId = getBaseTypeAndTypmod(targetTypeId, &baseTypeMod);
+        targetType = typeidType(baseTypeId);
+
+        newcon->consttype = baseTypeId;
+        newcon->consttypmod = -1;
+        newcon->constcollid = InvalidOid;
+        newcon->constlen = -2;
+        newcon->constbyval = false;
+        newcon->constisnull = false;
+        newcon->cursor_data.cur_dno = -1;
+        newcon->location = con->location;
+
+        setup_parser_errposition_callback(&pcbstate, pstate, con->location);
+        enumOrder = DatumGetInt32(con->constvalue);
+
+        // 0 is accpet here as a NULL value
+        if (enumOrder == 0) {
+            newcon->constvalue = stringTypeDatum(targetType, NULL, -1);
+            newcon->constisnull = true;
+        } else {
+            targetEnumLable = getEnumLableByOrder(targetTypeId, enumOrder);
+            newcon->constvalue = stringTypeDatum(targetType, targetEnumLable, -1);
+            cancel_parser_errposition_callback(&pcbstate);
+        }
+
+        result = (Node*)newcon;
+        ReleaseSysCache(targetType);
+        return result;
+    }
     /* If we get here, caller blew it */
     ereport(ERROR,
         (errcode(ERRCODE_UNDEFINED_FUNCTION),
@@ -478,6 +521,51 @@ Node* coerce_type(ParseState* pstate, Node* node, Oid inputTypeId, Oid targetTyp
                 format_type_be(inputTypeId),
                 format_type_be(targetTypeId))));
     return NULL; /* keep compiler quiet */
+}
+
+/*
+get the enum label by the order of the label
+*/
+char* getEnumLableByOrder(Oid enumOid, int order)
+{
+    char *targetEnumLable = NULL;
+    HeapTuple enumTup = NULL;
+    CatCList* list = NULL;
+    int nelems = 0;
+    int i;
+    Relation pg_enum = NULL;
+    Form_pg_enum en = NULL;
+    pg_enum = heap_open(EnumRelationId, AccessShareLock);
+    list = SearchSysCacheList1(ENUMTYPOIDNAME, ObjectIdGetDatum(enumOid));
+    nelems = list->n_members;
+    /* 
+    * enumOrder here is not 0
+    */
+    if (nelems == 0) {
+        ReleaseSysCacheList(list);
+        ereport(
+            ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("empty enum value only accept NULL or 0 to insert")));
+    }
+    if (order > nelems||order < 0) {
+        ReleaseSysCacheList(list);
+        ereport(ERROR,
+            (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+                errmsg("enum order %d out of the enum value size: %d",
+                    int(order),
+                    nelems)));
+    }
+    for (i = 0; i < nelems; i++) {
+        enumTup = t_thrd.lsc_cxt.FetchTupleFromCatCList(list, i);
+        en = (Form_pg_enum)GETSTRUCT(enumTup);
+        if(order ==  en->enumsortorder) {
+            targetEnumLable = NameStr(en->enumlabel);
+            break;
+        }
+    }
+    ReleaseSysCacheList(list);
+    heap_close(pg_enum, AccessShareLock);
+
+    return targetEnumLable;
 }
 
 /*
@@ -569,6 +657,13 @@ bool can_coerce_type(int nargs, Oid* input_typeids, Oid* target_typeids, Coercio
          * If input is a class type that inherits from target, accept
          */
         if (typeInheritsFrom(inputTypeId, targetTypeId) || typeIsOfTypedTable(inputTypeId, targetTypeId)) {
+            continue;
+        }
+
+        /*
+         * if input is int4 and target type is enum, accept
+         */
+        if (type_is_enum(targetTypeId) && inputTypeId == INT4OID) {
             continue;
         }
 

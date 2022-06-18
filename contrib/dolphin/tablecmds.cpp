@@ -3156,6 +3156,37 @@ ObjectAddresses* PreCheckforRemoveRelation(DropStmt* drop, StringInfo tmp_queryS
             relation_close(delrel, NoLock);
         }
 
+        /* 
+        * check if the relation column type is enum
+        */
+        Oid typId;
+        char* relName;
+        char* nsName;
+        char* colTypename;
+        int attNumber = RelationGetNumberOfAttributes(delrel);
+        for (int i = 0; i < attNumber; i++) {
+            if (delrel->rd_att->attrs[i]->attisdropped)
+                continue;
+
+            typId = attnumTypeId(delrel, i+1);
+            relName = RelationGetRelationName(delrel);
+            HeapTuple tuple;
+            Form_pg_type typeForm;
+
+            tuple = SearchSysCache1(TYPEOID, ObjectIdGetDatum(typId));
+            if (!HeapTupleIsValid(tuple)) {
+                ereport(ERROR, (errcode(ERRCODE_CACHE_LOOKUP_FAILED), errmsg("cache lookup failed for type %u", typId)));
+            }
+            typeForm = (Form_pg_type)GETSTRUCT(tuple);
+            nsName = get_namespace_name(typeForm->typnamespace);
+            colTypename = NameStr(typeForm->typname);
+            
+            if (type_is_enum(typId) && strstr(colTypename, "anonymous_enum"))  {
+                RemoveTypeById(typId);
+            }
+            ReleaseSysCache(tuple);
+        }
+
         /* OK, we're ready to delete this one */
         obj.classId = RelationRelationId;
         obj.objectId = relOid;
@@ -3468,6 +3499,36 @@ void RemoveRelations(DropStmt* drop, StringInfo tmp_queryString, RemoteQueryExec
                  errmsg("column store table does not support concurrent INDEX yet"),
                  errdetail("The feature is not currently supported")));
          }
+
+        /* 
+        * check if the relation column type is enum
+        */
+        if (delrel != NULL) {
+            Oid typId;
+            char* relName = NULL;
+            char* nsName = NULL;
+            char* colTypename = NULL;
+            int attNumber = RelationGetNumberOfAttributes(delrel);
+            for (int i = 0; i < attNumber; i++) {
+                if (delrel->rd_att->attrs[i]->attisdropped)
+                    continue;
+
+                typId = attnumTypeId(delrel, i+1);
+                relName = RelationGetRelationName(delrel);
+                HeapTuple tuple;
+                Form_pg_type typeForm;
+
+                tuple = SearchSysCache1(TYPEOID, ObjectIdGetDatum(typId));
+                if (!HeapTupleIsValid(tuple)) 
+                    ereport(ERROR, (errcode(ERRCODE_CACHE_LOOKUP_FAILED), errmsg("cache lookup failed for type %u", typId)));
+                typeForm = (Form_pg_type)GETSTRUCT(tuple);
+                nsName = get_namespace_name(typeForm->typnamespace);
+                colTypename = NameStr(typeForm->typname);
+                if (type_is_enum(typId)&&strstr(colTypename, "anonymous_enum")) 
+                    RemoveTypeById(typId);
+                ReleaseSysCache(tuple);
+            }
+        }
 
         if (delrel != NULL) {
             relation_close(delrel, NoLock);
@@ -6936,6 +6997,48 @@ void AlterTable(Oid relid, LOCKMODE lockmode, AlterTableStmt* stmt)
         }
     }
 
+    /*
+     *    Here, we check if the alter column type cmd, 
+     *    if the original column type is enum type,
+     *    we store it and drop it after all finished
+     */
+    
+    ListCell* lc = NULL;
+    HeapTuple tuple;
+    Form_pg_attribute targetAtt;
+    List* enumOidList = NIL;
+    foreach (lc, stmt->cmds) {
+        AlterTableCmd* cmd = (AlterTableCmd*)lfirst(lc);
+        if (AT_AlterColumnType == cmd->subtype) {
+            tuple = SearchSysCacheAttName(RelationGetRelid(rel), cmd->name);
+            if (!HeapTupleIsValid(tuple)) {
+                ereport(NOTICE,
+                    (errmsg("column \"%s\" of relation \"%s\" does not exist, skipping",
+                        cmd->name,
+                        RelationGetRelationName(rel))));
+                continue;
+            }
+            targetAtt = (Form_pg_attribute)GETSTRUCT(tuple);
+            HeapTuple typeTuple;
+            Form_pg_type typeForm;
+
+            typeTuple = SearchSysCache1(TYPEOID, ObjectIdGetDatum(targetAtt->atttypid));
+            if (!HeapTupleIsValid(typeTuple)) {
+                ereport(ERROR, (errcode(ERRCODE_CACHE_LOOKUP_FAILED), errmsg("cache lookup failed for type %u", targetAtt->atttypid)));
+            }
+            typeForm = (Form_pg_type)GETSTRUCT(typeTuple);
+            char* colTypename = NameStr(typeForm->typname);
+            /*check if the type is enum type*/
+            if (type_is_enum(targetAtt->atttypid) && strstr(colTypename, "anonymous_enum")) {
+                if (enumOidList == NIL)
+                    enumOidList = list_make1_oid(targetAtt->atttypid);
+                else
+                    enumOidList = lappend_oid(enumOidList, targetAtt->atttypid);
+            }
+            ReleaseSysCache(typeTuple);
+        }
+    }
+
     // Next version remove hack patch for 'ALTER FOREIGN TABLE ... ADD NODE'
     if (stmt->cmds != NIL) {
         /* process 'ALTER TABLE' cmd */
@@ -6972,6 +7075,16 @@ void AlterTable(Oid relid, LOCKMODE lockmode, AlterTableStmt* stmt)
         }
         list_free_ext(addNodeCmds);
     }
+
+    if (enumOidList != NIL) {
+        foreach (lc, enumOidList) {
+            Oid type_to_drop = lfirst_oid(lc);
+            RemoveTypeById(type_to_drop);
+        }
+        list_free_ext(enumOidList);
+        enumOidList = NIL;
+    }
+
 }
 
 /*
@@ -10465,6 +10578,23 @@ static void ATExecDropColumn(List** wqueue, Relation rel, const char* colName, D
     if (targetatt->attinhcount > 0 && !recursing)
         ereport(
             ERROR, (errcode(ERRCODE_INVALID_TABLE_DEFINITION), errmsg("cannot drop inherited column \"%s\"", colName)));
+
+    /* drop tye enum column type  */
+    HeapTuple typeTuple;
+    Form_pg_type typeForm;
+
+    typeTuple = SearchSysCache1(TYPEOID, ObjectIdGetDatum(targetatt->atttypid));
+    if (!HeapTupleIsValid(typeTuple)) {
+        ereport(ERROR, (errcode(ERRCODE_CACHE_LOOKUP_FAILED), errmsg("cache lookup failed for type %u", targetatt->atttypid)));
+    }
+    typeForm = (Form_pg_type)GETSTRUCT(typeTuple);
+    char* colTypename = NameStr(typeForm->typname);
+
+    /*check if the type is enum type*/
+    if (type_is_enum(targetatt->atttypid)&&strstr(colTypename, "anonymous_enum")) {
+        RemoveTypeById(targetatt->atttypid);
+    }
+    ReleaseSysCache(typeTuple);
 
     ReleaseSysCache(tuple);
 

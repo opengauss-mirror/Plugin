@@ -54,6 +54,7 @@
 #include "nodes/makefuncs.h"
 #include "nodes/nodeFuncs.h"
 #include "nodes/primnodes.h"
+#include "nodes/value.h"
 #include "optimizer/clauses.h"
 #include "plugin_parser/analyze.h"
 #include "plugin_parser/parse_clause.h"
@@ -4633,6 +4634,34 @@ static void transformColumnType(CreateStmtContext* cxt, ColumnDef* column)
      * All we really need to do here is verify that the type is valid,
      * including any collation spec that might be present.
      */
+
+    if (column->typname->names != NULL) {
+        /* if the column type is 'enum' the we define an anonymous enum type */
+        char * colTypeName = strVal(llast(column->typname->names));
+        if (strcmp(colTypeName, "enum") == 0) {
+            char* enumName = NULL;
+            char* schemaname = NULL;
+            Oid enumNamespace;
+            enumNamespace = QualifiedNameGetCreationNamespace(column->typname->names, &enumName);
+            if (cxt->relation->schemaname == NULL) {
+                schemaname = get_namespace_name(enumNamespace);
+            } else {
+                schemaname = cxt->relation->schemaname;
+            }
+            char* enumTypeName = makeEnumTypeName(cxt->relation->relname, column->colname, schemaname);
+            column->typname->names = lcons(makeString(schemaname), column->typname->names);
+            // free the allocated memory
+            char** nameToModify = &(strVal(llast(column->typname->names)));
+
+            pfree_ext(*nameToModify);
+            *nameToModify = enumTypeName;
+
+            DefineAnonymousEnum(column->typname);
+        }
+        if (strstr(colTypeName, "anonymous_enum"))
+            ereport(ERROR, (errcode(ERRCODE_DUPLICATE_OBJECT), errmsg("anonymous enum type can't be used elsewhere.")));
+    }
+
     Type ctype = typenameType(cxt->pstate, column->typname, NULL);
 
     if (column->collClause) {

@@ -69,5 +69,6 @@ extern CoercionPathType find_coercion_pathway(
 extern CoercionPathType find_typmod_coercion_function(Oid typeId, Oid* funcid);
 
 extern void expression_error_callback(void* arg);
+extern char *getEnumLableByOrder(Oid enumOid, int order);
 
 #endif /* PARSE_COERCE_H */
