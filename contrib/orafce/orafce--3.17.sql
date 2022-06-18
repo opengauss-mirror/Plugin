@@ -3,11 +3,11 @@
 -- complain if script is sourced in psql, rather than via CREATE EXTENSION
 \echo Use "CREATE EXTENSION orafce" to load this file. \quit
 
- CREATE FUNCTION pg_catalog.months_between(date1 date, date2 date)
- RETURNS numeric
- AS 'MODULE_PATHNAME', 'months_between'
- LANGUAGE C IMMUTABLE STRICT;
- COMMENT ON FUNCTION pg_catalog.months_between(date, date) IS 'returns the number of months between date1 and date2';
+CREATE FUNCTION pg_catalog.months_between(date1 date, date2 date)
+RETURNS numeric
+AS 'MODULE_PATHNAME', 'months_between'
+LANGUAGE C IMMUTABLE STRICT;
+COMMENT ON FUNCTION pg_catalog.months_between(date, date) IS 'returns the number of months between date1 and date2';
 
 CREATE FUNCTION pg_catalog.round(value timestamp with time zone, fmt text)
 RETURNS timestamp with time zone
@@ -235,7 +235,9 @@ AS 'MODULE_PATHNAME','dbms_output_get_lines'
 LANGUAGE C VOLATILE STRICT;
 COMMENT ON FUNCTION dbms_output.get_lines(OUT text[], INOUT int4) IS 'Get lines from output buffer';
 
+
 -- others functions
+
 
 CREATE FUNCTION nvl2(anyelement, anyelement, anyelement)
 RETURNS anyelement
@@ -691,6 +693,8 @@ REVOKE ALL ON utl_file.utl_file_dir FROM PUBLIC;
 /* allow only read on utl_file.utl_file_dir to unprivileged users */
 GRANT SELECT ON TABLE utl_file.utl_file_dir TO PUBLIC;
 
+
+
 -- dbms_random
 CREATE SCHEMA dbms_random;
 
@@ -826,11 +830,14 @@ CREATE AGGREGATE pg_catalog.median(real) (
   FINALFUNC=pg_catalog.median4_finalfn
 );
 
+
+
 CREATE OR REPLACE FUNCTION pg_catalog.strposb(varchar2, varchar2) RETURNS integer
 AS 'byteapos'
 LANGUAGE internal
 STRICT IMMUTABLE;
 COMMENT ON FUNCTION pg_catalog.strposb(varchar2, varchar2) IS 'returns the byte position of a specified string in the input varchar2 string';
+
 
 /* PAD */
 
@@ -1579,13 +1586,11 @@ LANGUAGE 'c'
 STRICT IMMUTABLE
 ;
 
-
 GRANT USAGE ON SCHEMA dbms_output TO PUBLIC;
 GRANT USAGE ON SCHEMA dbms_utility TO PUBLIC;
 GRANT USAGE ON SCHEMA utl_file TO PUBLIC;
 GRANT USAGE ON SCHEMA dbms_random TO PUBLIC;
 GRANT USAGE ON SCHEMA oracle TO PUBLIC;
-
 
 CREATE FUNCTION pg_catalog.round(value timestamp without time zone, fmt text)
 RETURNS timestamp without time zone
@@ -3737,24 +3742,6 @@ GRANT SELECT ON dbms_pipe.db_pipes to PUBLIC;
 ALTER FUNCTION dbms_assert.enquote_name ( character varying ) STRICT;
 ALTER FUNCTION dbms_assert.enquote_name ( character varying, boolean ) STRICT;
 ALTER FUNCTION dbms_assert.noop ( character varying ) STRICT;
-
-CREATE SCHEMA orafce;
-CREATE FUNCTION orafce.to_date(str text)
-RETURNS timestamp
-AS 'MODULE_PATHNAME','ora_to_date'
-LANGUAGE C STABLE STRICT;
-COMMENT ON FUNCTION orafce.to_date(text) IS 'Convert string to timestamp';
-
-CREATE FUNCTION oracle.to_date(TEXT)
-RETURNS oracle.date
-AS $$ SELECT orafce.to_date($1)::oracle.date; $$
-LANGUAGE SQL STABLE STRICT;
-
-CREATE OR REPLACE FUNCTION oracle.to_date(TEXT,TEXT)
-RETURNS oracle.date
-AS $$ SELECT TO_TIMESTAMP($1,$2)::oracle.date; $$
-LANGUAGE SQL IMMUTABLE STRICT;
-
 
 CREATE OR REPLACE FUNCTION pg_catalog.to_number(numeric)
 RETURNS numeric AS $$
