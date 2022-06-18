@@ -20,9 +20,9 @@
 
 ```
 [ WITH [ RECURSIVE ] with_query [, ...] ]
-INSERT [/*+ plan_hint */] INTO table_name [partition_clause] [ AS alias ] [ ( column_name [, ...] ) ]
+INSERT [/*+ plan_hint */] [INTO] table_name [partition_clause] [ AS alias ] [ ( column_name [, ...] ) ]
     { DEFAULT VALUES
-    | VALUES [{( { expression | DEFAULT } [, ...] ) }][, ...]
+    | [ VALUES | VALUE ] [{( { expression | DEFAULT } [, ...] ) }][, ...]
     | query }
     [ ON DUPLICATE KEY UPDATE { NOTHING | { column_name = { expression | DEFAULT } } [, ...] [ WHERE condition ] }]
     [ RETURNING {* | {output_expression [ [ AS ] output_name ] }[, ...]} ];
