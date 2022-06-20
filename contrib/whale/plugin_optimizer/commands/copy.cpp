@@ -244,7 +244,7 @@ uint64 DoCopyTo(CopyState cstate);
 static uint64 CopyTo(CopyState cstate, bool isFirst, bool isLast);
 static uint64 CopyToCompatiblePartions(CopyState cstate);
 void CopyOneRowTo(CopyState cstate, Oid tupleOid, Datum* values, const bool* nulls);
-static uint64 CopyFrom(CopyState cstate);
+uint64 CopyFrom(CopyState cstate);
 static void EstCopyMemInfo(Relation rel, UtilityDesc* desc);
 
 static int CopyFromCompressAndInsertBatch(PageCompress* pcState, EState* estate, CommandId mycid, int hi_options,
@@ -3878,7 +3878,7 @@ void HeapAddToBulk(CopyFromBulk bulk, Tuple tup, bool needCopy)
 /*
  * Copy FROM file to relation.
  */
-static uint64 CopyFrom(CopyState cstate)
+uint64 CopyFrom(CopyState cstate)
 {
     Tuple tuple;
     TupleDesc tupDesc;
