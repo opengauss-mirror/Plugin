@@ -6906,7 +6906,7 @@ void asql_ProcessUtility(Node* parse_tree, const char* query_string, ParamListIn
                     errmsg("openGauss does not support SUBSCRIPTION yet"),
                     errdetail("The feature is not currently supported")));
 #endif
-            AlterSubscription((AlterSubscriptionStmt *) parse_tree);
+            AlterSubscription((AlterSubscriptionStmt *) parse_tree, is_top_level);
             break;
         case T_DropSubscriptionStmt:
 #if defined(ENABLE_MULTIPLE_NODES) || defined(ENABLE_LITE_MODE)
