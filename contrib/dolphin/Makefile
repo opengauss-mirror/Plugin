@@ -1,6 +1,7 @@
 # contrib/dolphin/Makefile
 parser = plugin_parser
 utils = plugin_utils
+executor = plugin_executor
 adt = $(utils)/adt
 mb = $(utils)/mb
 subdir = contrib/dolphin
@@ -33,7 +34,9 @@ $(adt)/median_aggs.o $(adt)/expr_distinct.o $(adt)/nlssort.o $(adt)/first_last_a
 
 OBJS += $(mb)/mbutils.o
 
-all $(OBJS): parser utils;
+OBJS += $(executor)/execQual.o
+
+all $(OBJS): parser utils executor;
 
 parser:
 	make -C $(parser)
@@ -41,9 +44,13 @@ parser:
 utils:
 	make -C $(utils)
 
+executor:
+	make -C $(executor)
+
 extra_clean:
 	make clean -C $(parser)
 	make clean -C $(utils)
+	make clean -C $(executor)
 clean: extra_clean
 
 dolphin--1.0.sql: sql_script/*
