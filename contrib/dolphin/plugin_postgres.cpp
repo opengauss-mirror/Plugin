@@ -64,7 +64,7 @@
 #include "storage/tcap.h"
 #include "plugin_parser/parse_func.h"
 #include "plugin_parser/parse_utilcmd.h"
-#include "plugin_utils/vecfunc_plugin.h"
+#include "plugin_vector/vecfunc.h"
 #include "replication/archive_walreceiver.h"
 #include "plugin_commands/mysqlmode.h"
 #ifndef WIN32_ONLY_COMPILER
@@ -192,9 +192,11 @@ void _PG_init(void)
     if (b_oidHash == NULL || b_nameHash == NULL) {
         initBSQLBuiltinFuncs();
     }
+    if (g_instance.plugin_vec_func_cxt.vec_func_plugin[DOLPHIN_VEC] == NULL) {
+        InitGlobalVecFuncMap();
+    }
     g_instance.raw_parser_hook[DB_CMPT_B] = (void*)raw_parser;
     init_plugin_object();
-    InitVecsubarrayPlugin();
 }
 
 void _PG_fini(void)

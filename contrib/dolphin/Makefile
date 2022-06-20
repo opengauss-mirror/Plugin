@@ -4,6 +4,7 @@ utils = plugin_utils
 executor = plugin_executor
 adt = $(utils)/adt
 mb = $(utils)/mb
+vector = plugin_vector
 subdir = contrib/dolphin
 top_builddir = ../..
 base_dir = contrib/dolphin
@@ -30,13 +31,15 @@ $(adt)/network.o $(adt)/mac.o $(adt)/inet_cidr_ntop.o $(adt)/inet_net_pton.o\
 $(adt)/ri_triggers.o $(adt)/pg_locale.o $(adt)/formatting.o\
 $(adt)/ascii.o $(adt)/quote.o $(adt)/pgstatfuncs.o $(adt)/encode.o $(adt)/dbsize.o $(adt)/trigfuncs.o\
 $(adt)/uuid.o $(adt)/windowfuncs.o $(adt)/extended_statistics.o $(adt)/clientlogic_bytea.o $(adt)/clientlogicsettings.o\
-$(adt)/median_aggs.o $(adt)/expr_distinct.o $(adt)/nlssort.o $(adt)/first_last_agg.o $(adt)/my_locale.o $(adt)/vecfunc_plugin.o $(adt)/year.o
+$(adt)/median_aggs.o $(adt)/expr_distinct.o $(adt)/nlssort.o $(adt)/first_last_agg.o $(adt)/my_locale.o $(adt)/year.o
+
+OBJS += $(vector)/vecfuncache.o
 
 OBJS += $(mb)/mbutils.o
 
 OBJS += $(executor)/execQual.o
 
-all $(OBJS): parser utils executor;
+all $(OBJS): parser utils executor vector;
 
 parser:
 	make -C $(parser)
@@ -44,12 +47,16 @@ parser:
 utils:
 	make -C $(utils)
 
+vector:
+	make -C $(vector)
+
 executor:
 	make -C $(executor)
 
 extra_clean:
 	make clean -C $(parser)
 	make clean -C $(utils)
+	make clean -C $(vector)
 	make clean -C $(executor)
 clean: extra_clean
 

@@ -498,5 +498,74 @@ select mid(E'\\xDEADBEEF'::bytea,2,-1);
  
 (1 row)
 
+-- test column table
+create table test_column (c1 text, c2 int) with (orientation = column);
+create table test_row (c1 text, c2 int);
+insert into test_column values('abcdefg', 2), ('abcdefg', 0), ('abcdefg', -2);
+insert into test_row(c1, c2) select c1, c2 from test_column;
+select c1, c2, substring(c1 from c2) from test_column order by c1;
+   c1    | c2 | substring 
+---------+----+-----------
+ abcdefg |  2 | bcdefg
+ abcdefg |  0 | 
+ abcdefg | -2 | fg
+(3 rows)
+
+select c1, c2, substring(c1 from c2) from test_row order by c1;
+   c1    | c2 | substring 
+---------+----+-----------
+ abcdefg |  2 | bcdefg
+ abcdefg |  0 | 
+ abcdefg | -2 | fg
+(3 rows)
+
+select c1, c2, substring(c1 for c2) from test_column order by c1;
+   c1    | c2 | substring 
+---------+----+-----------
+ abcdefg |  2 | ab
+ abcdefg |  0 | 
+ abcdefg | -2 | 
+(3 rows)
+
+select c1, c2, substring(c1 for c2) from test_row order by c1;
+   c1    | c2 | substring 
+---------+----+-----------
+ abcdefg |  2 | ab
+ abcdefg |  0 | 
+ abcdefg | -2 | 
+(3 rows)
+
+select c1, c2, substr(c1 from c2) from test_column order by c1;
+   c1    | c2 | substr 
+---------+----+--------
+ abcdefg |  2 | bcdefg
+ abcdefg |  0 | 
+ abcdefg | -2 | fg
+(3 rows)
+
+select c1, c2, substr(c1 from c2) from test_row order by c1;
+   c1    | c2 | substr 
+---------+----+--------
+ abcdefg |  2 | bcdefg
+ abcdefg |  0 | 
+ abcdefg | -2 | fg
+(3 rows)
+
+select c1, c2, substr(c1 for c2) from test_column order by c1;
+   c1    | c2 | substr 
+---------+----+--------
+ abcdefg |  2 | ab
+ abcdefg |  0 | 
+ abcdefg | -2 | 
+(3 rows)
+
+select c1, c2, substr(c1 for c2) from test_row order by c1;
+   c1    | c2 | substr 
+---------+----+--------
+ abcdefg |  2 | ab
+ abcdefg |  0 | 
+ abcdefg | -2 | 
+(3 rows)
+
 \c postgres
 drop database test;
