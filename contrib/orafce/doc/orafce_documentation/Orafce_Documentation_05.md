@@ -155,7 +155,6 @@ The following string functions are supported:
  - LENGTHB
  - LPAD
  - LTRIM
- - NLSSORT
  - REGEXP_COUNT
  - REGEXP_INSTR
  - REGEXP_LIKE
@@ -186,7 +185,7 @@ Removes the specified characters from the beginning and end of a string.
 ----
 
  - BTRIM does not exist for Oracle databases.
- - The CHAR type specification for BTRIM uses orafce for its behavior, which is different to that of BTRIM of PostgreSQL. The search_path parameter must be modified for it to behave the same as the specification described above.
+ - The CHAR type specification for BTRIM uses orafce for its behavior, which is different to that of BTRIM of OpenGauss. The search_path parameter must be modified for it to behave the same as the specification described above.
 
 ----
 
@@ -195,7 +194,7 @@ Removes the specified characters from the beginning and end of a string.
 
 ----
 
-The general rule for BTRIM of PostgreSQL is as follows:
+The general rule for BTRIM of OpenGauss is as follows:
 
  - If the string is CHAR type, trailing spaces are removed and then the trim characters are removed.
 
@@ -207,7 +206,7 @@ The general rule for BTRIM of PostgreSQL is as follows:
 ----
 
  - Refer to "Notes on Using orafce" for information on how to edit search_path.
- - Refer to "The SQL Language" > "Functions and Operators" > "String Functions and Operators" in the PostgreSQL Documentation for information on BTRIM.
+ - Refer to "The SQL Language" > "Functions and Operators" > "String Functions and Operators" in the OpenGauss Documentation for information on BTRIM.
 
 ----
 
@@ -295,7 +294,7 @@ Returns the length of a string in number of characters.
 
 ----
 
-The LENGTH specification above uses orafce for its behavior, which is different to that of LENGTH of PostgreSQL. The search_path parameter must be modified for it to behave according to the orafce specification.
+The LENGTH specification above uses orafce for its behavior, which is different to that of LENGTH of OpenGauss. The search_path parameter must be modified for it to behave according to the orafce specification.
 
 ----
 
@@ -304,7 +303,7 @@ The LENGTH specification above uses orafce for its behavior, which is different 
 
 ----
 
-The general rule for LENGTH of PostgreSQL is as follows:
+The general rule for LENGTH of OpenGauss is as follows:
 
  - If the string is CHAR type, trailing spaces are not included in the length.
 
@@ -316,7 +315,7 @@ The general rule for LENGTH of PostgreSQL is as follows:
 ----
 
  - Refer to "Notes on Using orafce" for information on how to edit search_path.
- - Refer to "The SQL Language" > "Functions and Operators" > "String Functions and Operators" in the PostgreSQL Documentation for information on LENGTH.
+ - Refer to "The SQL Language" > "Functions and Operators" > "String Functions and Operators" in the OpenGauss Documentation for information on LENGTH.
 
 ----
 
@@ -400,7 +399,7 @@ Left-pads a string to a specified length with a sequence of characters.
 
 ----
 
-The LPAD specification above uses orafce for its behavior, which is different to that of LPAD of PostgreSQL. The search_path parameter must be modified for it to behave according to the orafce specification.
+The LPAD specification above uses orafce for its behavior, which is different to that of LPAD of OpenGauss. The search_path parameter must be modified for it to behave according to the orafce specification.
 
 ----
 
@@ -409,7 +408,7 @@ The LPAD specification above uses orafce for its behavior, which is different to
 
 ----
 
-The general rules for LPAD of PostgreSQL are as follows:
+The general rules for LPAD of OpenGauss are as follows:
 
  - If the string is CHAR type, trailing spaces are removed and then the padding characters are added to the string.
  - The result length is the number of characters.
@@ -422,7 +421,7 @@ The general rules for LPAD of PostgreSQL are as follows:
 ----
 
  - Refer to "Notes on Using orafce" for information on how to edit search_path.
- - Refer to "The SQL Language" > "Functions and Operators" > "String Functions and Operators" in the PostgreSQL Documentation for information on LPAD.
+ - Refer to "The SQL Language" > "Functions and Operators" > "String Functions and Operators" in the OpenGauss Documentation for information on LPAD.
 
 ----
 
@@ -463,7 +462,7 @@ Removes the specified characters from the beginning of a string.
 
 ----
 
-The LTRIM specification above uses orafce for its behavior, which is different to that of LTRIM of PostgreSQL. The search_path parameter must be modified for it to behave according to the orafce specification.
+The LTRIM specification above uses orafce for its behavior, which is different to that of LTRIM of OpenGauss. The search_path parameter must be modified for it to behave according to the orafce specification.
 
 ----
 
@@ -472,7 +471,7 @@ The LTRIM specification above uses orafce for its behavior, which is different t
 
 ----
 
-The general rule for LTRIM of PostgreSQL is as follows:
+The general rule for LTRIM of OpenGauss is as follows:
 
  - If the string is CHAR type, trailing spaces are removed and then the trim characters are removed.
 
@@ -483,7 +482,7 @@ The general rule for LTRIM of PostgreSQL is as follows:
 ----
 
  - Refer to "Notes on Using orafce" for information on how to edit search_path.
- - Refer to "The SQL Language" > "Functions and Operators" > "String Functions and Operators" in the PostgreSQL Documentation for information on LTRIM.
+ - Refer to "The SQL Language" > "Functions and Operators" > "String Functions and Operators" in the OpenGauss Documentation for information on LTRIM.
 
 ----
 
@@ -503,77 +502,10 @@ SELECT LTRIM('aabcab','ab') FROM DUAL;
 (1 row)
 ~~~
 
-----
-
-
-#### 5.2.7 NLSSORT
-
-**Description**
-
-Returns a byte string that denotes the lexical order of the locale (COLLATE).
-
-**Syntax**
-
-![NLSSORT]( gif/NLSSORT.gif) 
-
-**General rules**
-
- - NLSSORT is used for comparing and sorting in the collating sequence of a locale (COLLATE) that differs from the default locale.
- - Values that can be specified for the locale differ according to the operating system of the database server.
- - If the locale is omitted, it is necessary to use set_nls_sort to set the locale in advance. To set the locale using set_nls_sort, execute a SELECT statement.
-
-**Example of setting set_nls_sort using a SELECT statement**
-
-~~~
-SELECT set_nls_sort('en_US.UTF8');
-~~~
-
- - The data type of the return value is BYTEA.
-
-**Note**
 
 ----
 
-If specifying locale encoding, ensure it matches the database encoding.
-
-----
-
-
-**See**
-
-----
-
-Refer to "Server Administration" > "Localization" > "Locale Support" in the PostgreSQL Documentation for information on the locales that can be specified.
-
-----
-
-**Example**
-
-----
-
-[Composition of table (t3)]
-
-|col1 | col2|
-|:--- |:--- |
-|1001 |aabcababc|
-|2001 |abcdef|
-|3001 |aacbaab|
-
-In the following example, the result of sorting column col2 in table t3 by "da_DK.UTF8" is returned.
-
-~~~
-SELECT col1,col2 FROM t3 ORDER BY NLSSORT(col2,'da_DK.UTF8');
- col1 |    col2
-------+------------
- 2001 | abcdef
- 1001 | aabcababc
- 3001 | aacbaab
-(3 row)
-~~~
-
-----
-
-#### 5.2.8 REGEXP_COUNT
+#### 5.2.7 REGEXP_COUNT
 
 **Description**
 
@@ -630,7 +562,7 @@ SELECT REGEXP_COUNT('a'||CHR(10)||'d', '^d$', 1, 'm') FROM DUAL;
 
 ----
 
-#### 5.2.9 REGEXP_INSTR
+#### 5.2.8 REGEXP_INSTR
 
 **Description**
 
@@ -683,7 +615,7 @@ SELECT REGEXP_INSTR('199 Oretax Prayers, Riffles Stream, CA', '[S|R|P][[:alpha:]
 
 ----
 
-#### 5.2.10 REGEXP_LIKE
+#### 5.2.9 REGEXP_LIKE
 
 **Description**
 
@@ -717,7 +649,7 @@ SELECT REGEXP_LIKE('a'||CHR(10)||'d', 'a.d', 'n') FROM DUAL;
 
 ----
 
-#### 5.2.11 REGEXP_SUBSTR
+#### 5.2.10 REGEXP_SUBSTR
 
 **Description**
 
@@ -766,7 +698,7 @@ SELECT regexp_substr('1234567890 1234567890', '(123)(4(56)(78))', 1, 1, 'i', 0) 
 
 ----
 
-#### 5.2.12 REGEXP_REPLACE
+#### 5.2.11 REGEXP_REPLACE
 
 **Description**
 
@@ -808,7 +740,7 @@ SELECT oracle.REGEXP_REPLACE('number   your     street,    zipcode  town, FR', '
 
 ----
 
-#### 5.2.13 RPAD
+#### 5.2.12 RPAD
 
 **Description**
 
@@ -829,7 +761,7 @@ Right-pads a string to a specified length with a sequence of characters.
 
 ----
 
-The RPAD specification above uses orafce for its behavior, which is different to that of RPAD of PostgreSQL. The search_path parameter must be modified for it to behave according to the orafce specification.
+The RPAD specification above uses orafce for its behavior, which is different to that of RPAD of OpenGauss. The search_path parameter must be modified for it to behave according to the orafce specification.
 
 ----
 
@@ -838,7 +770,7 @@ The RPAD specification above uses orafce for its behavior, which is different to
 
 ----
 
-The general rules for RPAD of PostgreSQL are as follows:
+The general rules for RPAD of OpenGauss are as follows:
 
  - If the string is CHAR type, trailing spaces are removed and then the padding characters are added to the string.
  - The result length is the number of characters.
@@ -850,7 +782,7 @@ The general rules for RPAD of PostgreSQL are as follows:
 ----
 
  - Refer to "Notes on Using orafce" for information on how to edit search_path.
- - Refer to "The SQL Language" > "Functions and Operators" > "String Functions and Operators" in the PostgreSQL Documentation for information on RPAD.
+ - Refer to "The SQL Language" > "Functions and Operators" > "String Functions and Operators" in the OpenGauss Documentation for information on RPAD.
 
 ----
 
@@ -870,7 +802,7 @@ SELECT RPAD('abc',10,'a') FROM DUAL;
 
 ----
 
-#### 5.2.14 RTRIM
+#### 5.2.13 RTRIM
 
 **Description**
 
@@ -892,7 +824,7 @@ Removes the specified characters from the end of a string.
 
 ----
 
-The RTRIM specification above uses orafce for its behavior, which is different to that of RTRIM of PostgreSQL. The search_path parameter must be modified for it to behave the same as the orafce specification.
+The RTRIM specification above uses orafce for its behavior, which is different to that of RTRIM of OpenGauss. The search_path parameter must be modified for it to behave the same as the orafce specification.
 
 ----
 
@@ -900,7 +832,7 @@ The RTRIM specification above uses orafce for its behavior, which is different t
 
 ----
 
-The general rule for RTRIM of PostgreSQL is as follows:
+The general rule for RTRIM of OpenGauss is as follows:
 
  - If the string is CHAR type, trailing spaces are removed and then the trim characters are removed.
 
@@ -912,7 +844,7 @@ The general rule for RTRIM of PostgreSQL is as follows:
 ----
 
  - Refer to "Notes on Using orafce" for information on how to edit search_path.
- - Refer to "The SQL Language" > "Functions and Operators" > "String Functions and Operators" in the PostgreSQL Documentation for information on RTRIM.
+ - Refer to "The SQL Language" > "Functions and Operators" > "String Functions and Operators" in the OpenGauss Documentation for information on RTRIM.
 
 ----
 
@@ -932,7 +864,7 @@ SELECT RTRIM('aabcab','ab') FROM DUAL;
 
 ----
 
-#### 5.2.15 SUBSTR
+#### 5.2.14 SUBSTR
 
 **Description**
 
@@ -980,7 +912,7 @@ The general rules for SUBSTRING are as follows:
 
 ----
 
-Refer to "The SQL Language" > "Functions and Operators" > "String Functions and Operators" in the PostgreSQL Documentation for information on SUBSTRING.
+Refer to "The SQL Language" > "Functions and Operators" > "String Functions and Operators" in the OpenGauss Documentation for information on SUBSTRING.
 
 ----
 
@@ -1010,7 +942,7 @@ SELECT SUBSTR('ABCDEFG',-5,4) "Substring" FROM DUAL;
 ----
 
 
-#### 5.2.16 SUBSTRB
+#### 5.2.15 SUBSTRB
 
 **Description**
 
@@ -1033,7 +965,7 @@ Extracts part of a string using bytes to specify position and length.
 
 ----
 
-The external specification of SUBSTRB is different to that of SUBSTR added by orafce, conforming with SUBSTRING of PostgreSQL.
+The external specification of SUBSTRB is different to that of SUBSTR added by orafce, conforming with SUBSTRING of OpenGauss.
 
 ----
 
@@ -1078,7 +1010,7 @@ The following date/time functions are supported:
 
 ----
 
-If the DATE type only is shown in the date/time functions, these functions can be used in both orafce and PostgreSQL.
+If the DATE type only is shown in the date/time functions, these functions can be used in both orafce and OpenGauss.
 
 ----
 
@@ -1177,7 +1109,7 @@ WARNING:   unrecognized configuration parameter "orafce.timezone"
 ----
 
  - Refer to "Notes on Using orafce" for information on how to edit search_path.
- - Refer to "The SQL Language" > "Data Types" > "Date/Time Types" in the PostgreSQL Documentation for information on the time zone.
+ - Refer to "The SQL Language" > "Data Types" > "Date/Time Types" in the OpenGauss Documentation for information on the time zone.
 
 ----
 
@@ -1391,7 +1323,7 @@ Rounds a date.
 
  - If decimal places are rounded: for year, the boundary for rounding is July 1; for month, the day is 16; and for week, the weekday is Thursday.
  - If *fmt* is omitted, the date is rounded by day.
- - If the DATE type of PostgreSQL is specified for the date, that DATE type will be the data type of the return value. If the TIMESTAMP type is specified for the date, the data type will be TIMESTAMP WITH TIME ZONE, irrespective of whether a time zone is used.
+ - If the DATE type of OpenGauss is specified for the date, that DATE type will be the data type of the return value. If the TIMESTAMP type is specified for the date, the data type will be TIMESTAMP WITH TIME ZONE, irrespective of whether a time zone is used.
 
 **Example**
 
@@ -1490,7 +1422,7 @@ Returns the system date.
 
  - Refer to "Notes on Using orafce" for information on how to edit search_path.
  - Refer to "DBTIMEZONE" for information on the time zone values of the database.
- - Refer to "The SQL Language" > "Data Types" > "Date/Time Types" in the PostgreSQL Documentation for information on the time zone.
+ - Refer to "The SQL Language" > "Data Types" > "Date/Time Types" in the OpenGauss Documentation for information on the time zone.
 
 ----
 
@@ -1527,7 +1459,7 @@ Truncates a date.
  - For *date*, specify a DATE or TIMESTAMP type. 
  - Specify the format model as a string. The values that can be specified are the same as for ROUND.
  - If *fmt* is omitted, the date is truncated by day.
- - If the DATE type of PostgreSQL is specified for the date, that DATE type will be the data type of the return value. If the TIMESTAMP type is specified for the date, the data type will be TIMESTAMP WITH TIME ZONE, irrespective of whether a time zone is used.
+ - If the DATE type of OpenGauss is specified for the date, that DATE type will be the data type of the return value. If the TIMESTAMP type is specified for the date, the data type will be TIMESTAMP WITH TIME ZONE, irrespective of whether a time zone is used.
 
 **See**
 
@@ -1558,7 +1490,6 @@ SELECT TRUNC(TIMESTAMP'2016/08/10 15:30:00','DDD') FROM DUAL;
 The following data type formatting functions are supported:
 
 - TO_CHAR
-- TO_DATE
 - TO_MULTI_BYTE
 - TO_NUMBER
 - TO_SINGLE_BYTE
@@ -1605,7 +1536,7 @@ WARNING:  unrecognized configuration parameter "orafce.nls_date_format"
 ----
 
  - Refer to "Notes on Using orafce" for information on how to edit search_path.
- - Refer to "Server Administration" > "Server Configuration" > "Setting Parameters" in the PostgreSQL Documentation for information on how to set the server parameters.
+ - Refer to "Server Administration" > "Server Configuration" > "Setting Parameters" in the OpenGauss Documentation for information on how to set the server parameters.
 
 ----
 
@@ -1625,83 +1556,7 @@ SELECT TO_CHAR(123.45) FROM DUAL;
 
 ----
 
-#### 5.4.2 TO_DATE
-
-**Description**
-
-Converts a string to a date in accordance with the specified format.
-
-**Syntax**
-
-![TO_DATE]( gif/TO_DATE.gif) 
-
-**General rules**
-
- - TO_DATE converts string *str* to a date in accordance with the specified format *fmt*.
- - Specify a string indicating the date/time.
- - Specify the required date/time format. If omitted, the format specified in the oracle.nls_date_format variable is used. If the oracle.nls_date_format variable has not been set, the existing date/time input interpretation is used. A setting example using the SET statement is shown below.
-
-**Setting example of orafce.nls_date_format using a SET statement**
-
-~~~
-SET orafce.nls_date_format = 'YYYY/MM/DD HH24:MI:SS';
-~~~
-
- - The data type of the return value is TIMESTAMP.
-
-**Note**
-
-----
-
- - The above TO_DATE specification uses orafce for its behavior, which is different to that of TO_DATE of PostgreSQL. The search_path parameter must be modified for it to behave according to the orafce specification.
- - The orafce.nls_date_format settings can be set using any of the methods for setting server parameters.
- - If orafce.nls_date_format is set, the following message may be displayed when an SQL statement is executed, however, the parameter settings are enabled, so you can ignore this.
-
-~~~
-WARNING:   unrecognized configuration parameter "orafce.nls_date_format"
-~~~
-
-----
-
-**Information**
-
-----
-
-The general rule for TO_DATE for specifying the data type format of PostgreSQL is as follows:
-
- - The data type of the return value is the DATE type of PostgreSQL.
-
-----
-
-
-**See**
-
-----
-
- - Refer to "Notes on Using orafce" for information on how to edit search_path.
- - Refer to "The SQL Language" > "Functions and Operators" > "Data Type Formatting Functions" in the PostgreSQL Documentation for information on TO_DATE of PostgreSQL.
- - Refer to "Server Administration" > "Server Configuration" > "Setting Parameters" in the PostgreSQL Documentation for information on how to set the server parameters.
- - Refer to "Date/Time Support" > "Date/Time Input Interpretation" in the PostgreSQL Documentation for information on the interpretation of existing date/time input.
-
-----
-
-**Example**
-
-----
-
-In the following example, the string "2016/12/31" is converted to a date and returned.
-
-~~~
-SELECT TO_DATE('2016/12/31','YYYY/MM/DD') FROM DUAL;
-       to_date
----------------------
- 2016-12-31 00:00:00
-(1 row)
-~~~
-
-----
-
-#### 5.4.3 TO_MULTI_BYTE
+#### 5.4.2 TO_MULTI_BYTE
 
 **Description**
 
@@ -1735,7 +1590,7 @@ SELECT TO_MULTI_BYTE('abc123') FROM DUAL;
 
 ----
 
-#### 5.4.4 TO_NUMBER
+#### 5.4.3 TO_NUMBER
 
 **Description**
 
@@ -1757,7 +1612,7 @@ Converts a value to a number in accordance with the specified format.
 
 ----
 
-Refer to "The SQL Language" > "Functions and Operators" > "Data Type Formatting Functions" in the PostgreSQL Documentation for information on numeric value formats.
+Refer to "The SQL Language" > "Functions and Operators" > "Data Type Formatting Functions" in the OpenGauss Documentation for information on numeric value formats.
 
 ----
 
@@ -1777,7 +1632,7 @@ SELECT TO_NUMBER(-130.5) FROM DUAL;
 
 ----
 
-#### 5.4.5 TO_SINGLE_BYTE
+#### 5.4.4 TO_SINGLE_BYTE
 
 **Description**
 
@@ -1836,10 +1691,8 @@ Compares values and if they match, returns a corresponding value.
  - The following data types can be used in result values and in the default value:
      - CHAR
      - VARCHAR
-     - VARCHAR2
      - NCHAR
      - NCHAR VARYING
-     - NVARCHAR2
      - TEXT
      - INTEGER
      - BIGINT
@@ -2112,42 +1965,9 @@ SELECT col2, NVL2(col1,'IS NOT NULL','IS NULL') FROM t1;
 
 The following aggregation functions are supported:
 
- - LISTAGG
  - MEDIAN
 
-#### 5.6.1 LISTAGG
-
-**Description**
-
-Returns a concatenated, delimited list of string values.
-
-**Syntax**
-
-![LISTAGG]( gif/LISTAGG.gif) 
-
-**General rules**
-
- - LISTAGG concatenates and delimits a set of string values and returns the result.
- - For *delimiter*, specify a string. If the delimiter is omitted, a list of strings without a delimiter is returned.
- - The data type of the return value is TEXT.
-
-**Example**
-
-----
-
-In the following example, the result with values of column col2 in table t1 delimited by ':' is returned.
-
-~~~
-SELECT LISTAGG(col2,':') FROM t1;
-      listagg
--------------------
- AAAAA:BBBBB:CCCCC
-(1 row)
-~~~
-
-----
-
-#### 5.6.2 MEDIAN
+#### 5.6.1 MEDIAN
 
 **Description**
 

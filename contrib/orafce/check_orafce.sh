@@ -52,7 +52,7 @@ function run_check()
     # done
 
     username=$(whoami)
-    sed -i "s/USER_NAME/$username/g" expected/dbcompatibility_pg_test.out
+#    sed -i "s/USER_NAME/$username/g" expected/dbcompatibility_pg_test.out
     sed -i "s/USER_NAME/$username/g" expected/nlssort.out
 
     gsql -d regression -p 25632 -a <  sql/init.sql > result/init.out 2>&1
@@ -67,7 +67,7 @@ function run_check()
     gsql -d regression -p 25632 -a <  sql/orafce.sql > result/orafce.out 2>&1
     gsql -d regression -p 25632 -a <  sql/orafce2.sql > result/orafce2.out 2>&1
     gsql -d regression -p 25632 -a <  sql/regexp_func.sql > result/regexp_func.out 2>&1
-    gsql -d regression -p 25632 -a <  sql/dbcompatibility_pg_test.sql > result/dbcompatibility_pg_test.out 2>&1
+#    gsql -d regression -p 25632 -a <  sql/dbcompatibility_pg_test.sql > result/dbcompatibility_pg_test.out 2>&1
     gsql -d regression -p 25632 -a <  sql/charlen.sql > result/charlen.out 2>&1
     gsql -d regression -p 25632 -a <  sql/to_date_with_timezone.sql > result/to_date_with_timezone.out 2>&1
     gsql -d regression -p 25632 -a <  sql/dbms_pipe.sql > result/dbms_pipe.out 2>&1
@@ -88,7 +88,7 @@ function run_check()
     # done
 
     user=$(whoami)
-    sed -i "s/hlv/$user/g" expected/dbcompatibility_pg_test.out
+#    sed -i "s/hlv/$user/g" expected/dbcompatibility_pg_test.out
     sed -i "s/hlv/$user/g" expected/nlssort.out
 
     diff -u expected/init.out result/init.out >> diff.log
@@ -103,7 +103,7 @@ function run_check()
     diff -u expected/orafce.out result/orafce.out >> diff.log
     diff -u expected/orafce2.out result/orafce2.out >> diff.log
     diff -u expected/regexp_func.out result/regexp_func.out >> diff.log
-    diff -u expected/dbcompatibility_pg_test.out result/dbcompatibility_pg_test.out >> diff.log
+#    diff -u expected/dbcompatibility_pg_test.out result/dbcompatibility_pg_test.out >> diff.log
     diff -u expected/dbms_pipe.out result/dbms_pipe.out >> diff.log
     diff -u expected/dbms_pipe_session_A.out result/dbms_pipe_session_A.out >> diff.log
     diff -u expected/dbms_pipe_session_B.out result/dbms_pipe_session_B.out >> diff.log

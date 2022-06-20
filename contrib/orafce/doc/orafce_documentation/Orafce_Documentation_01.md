@@ -11,21 +11,13 @@ Chapter 1 Overview
 ---
 
 Features compatible with Oracle databases are provided. 
-These features enable you to easily migrate to PostgreSQL and reduce the costs of reconfiguring applications.
+These features enable you to easily migrate to OpenGauss and reduce the costs of reconfiguring applications.
 
 The table below lists features compatible with Oracle databases.
 
 
 
 ### 1.1 Features compatible with Oracle databases
-
-**Data type**
-
-|Item|Overview|
-|:---|:---|
-|VARCHAR2|Variable-length character data type|
-|NVARCHAR2|Variable-length national character data type|
-|DATE|Data type that stores date and time|
 
 **SQL Queries**
 
@@ -55,7 +47,6 @@ The table below lists features compatible with Oracle databases.
 |LENGTHB|Returns the length of a string in number of bytes|
 |LPAD|Left-pads a string to a specified length with a sequence of characters|
 |LTRIM|Removes the specified characters from the beginning of a string|
-|NLSSORT|Returns a byte string used to sort strings in linguistic sort sequence based on locale|
 |REGEXP_COUNT|searches a string for a regular expression, and returns a count of the matches|
 |REGEXP_INSTR|returns the beginning or ending position within the string where the match for a pattern was located|
 |REGEXP_LIKE|condition in the WHERE clause of a query, causing the query to return rows that match the given pattern|
@@ -87,7 +78,6 @@ The table below lists features compatible with Oracle databases.
 |Item|Overview|
 |:---|:---|
 |TO_CHAR|Converts a value to a string|
-|TO_DATE|Converts a string to a date in accordance with the specified format|
 |TO_MULTI_BYTE|Converts a single-byte string to a multibyte string|
 |TO_NUMBER|Converts a value to a number in accordance with the specified format|
 |TO_SINGLE_BYTE|Converts a multibyte string to a single-byte string|
@@ -108,7 +98,6 @@ The table below lists features compatible with Oracle databases.
 
 |Item|Overview|
 |:---|:---|
-|LISTAGG|Returns a concatenated, delimited list of string values|
 |MEDIAN|Calculates the median of a set of values|
 
  - Functions that return internal information
@@ -130,7 +119,6 @@ The table below lists features compatible with Oracle databases.
 
 |Item|Overview|
 |:---|:---|
-|DBMS_ALERT|Sends alerts to multiple sessions|
 |DBMS_ASSERT|Validates the properties of an input value|
 |DBMS_OUTPUT|Sends messages to clients|
 |DBMS_PIPE|Creates a pipe for inter-session communication|

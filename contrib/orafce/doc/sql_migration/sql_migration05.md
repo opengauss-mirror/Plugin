@@ -1,7 +1,7 @@
 Chapter 5	Migrating PL/SQL
 ---
 
-This chapter explains how to migrate Oracle database PL/SQL. Note that in this document, PL/SQL refers to the language to be migrated to PostgreSQL PL/pgSQL.
+This chapter explains how to migrate Oracle database PL/SQL. Note that in this document, PL/SQL refers to the language to be migrated to OpenGauss PL/pgSQL.
 
 ### 5.1 Notes on Migrating from PL/SQL to PL/pgSQL
 This section provides notes on migration from PL/SQL to PL/pgSQL.
@@ -14,19 +14,19 @@ PL/pgSQL does not allow transaction control within a process. Terminate a proced
 This section explains how to migrate the basic elements of PL/SQL.
 
 #### 5.2.1 Migrating Data Types
-The table below lists the PostgreSQL data types that correspond to data types unique to PL/SQL.
+The table below lists the OpenGauss data types that correspond to data types unique to PL/SQL.
 
 Data type correspondence with PL/SQL
 
  - **Character**
 
-|Oracle database Data type|Remarks|Migratability|PostgreSQL Data type|Remarks|
+|Oracle database Data type|Remarks|Migratability|OpenGauss Data type|Remarks|
 |:---|:---|:---:|:---|:---|
 |	STRING	|	The number of bytes or number of characters can be specified.	|	MR	|	varchar	|	Only the number of characters can be specified.	|
 
  - **Numeric**
 
-|Oracle database Data type|Remarks|Migratability|PostgreSQL Data type|Remarks|
+|Oracle database Data type|Remarks|Migratability|OpenGauss Data type|Remarks|
 |:---|:---|:---:|:---|:---|
 |	BINARY_INTEGER	|		|	M	|	integer	|		|
 |	NATURAL	|		|	M	|	integer	|		|
@@ -41,7 +41,7 @@ Data type correspondence with PL/SQL
 
  - **Date and time**
 
-|Oracle database Data type|Remarks|Migratability|PostgreSQL Data type|Remarks|
+|Oracle database Data type|Remarks|Migratability|OpenGauss Data type|Remarks|
 |:---|:---|:---:|:---|:---|
 |	DSINTERVAL_UNCONSTRAINED	|		|	N	|		|		|
 |	TIME_TZ_UNCONSTRAINED	|		|	N	|		|		|
@@ -53,7 +53,7 @@ Data type correspondence with PL/SQL
 
  - **Other**
 
-|Oracle database Data type|Remarks|Migratability|PostgreSQL Data type|Remarks|
+|Oracle database Data type|Remarks|Migratability|OpenGauss Data type|Remarks|
 |:---|:---|:---:|:---|:---|
 |	BOOLEAN	|		|	Y	|	boolean	|		|
 |	RECORD	|		|	M	|	Complex type	|		|
@@ -93,17 +93,17 @@ A predefined exception is an error defined beforehand in an Oracle database.
 
  - **Oracle database**
      - Predefined exceptions can be used.
- - **PostgreSQL**
-     - Predefined exceptions cannot be used. Use PostgreSQL error codes instead.
+ - **OpenGauss**
+     - Predefined exceptions cannot be used. Use OpenGauss error codes instead.
 
 **Migration procedure**
 
 Use the following procedure to perform migration:
 
  1. Identify where predefined exceptions are used.
- 2. Refer to the table below and replace the values of predefined exceptions with PostgreSQL error codes.
+ 2. Refer to the table below and replace the values of predefined exceptions with OpenGauss error codes.
 
-|Predefined exception <br> (Oracle database)|Migratability|Corresponding PostgreSQL error code|
+|Predefined exception <br> (Oracle database)|Migratability|Corresponding OpenGauss error code|
 |:---|:---:|:---|
 |	ACCESS_INTO_NULL	|	N	|	Not generated	|
 |	CASE_NOT_FOUND	|	Y	|	case_not_found	|
@@ -136,13 +136,13 @@ N: Cannot be migrated
 
 **Migration example**
 
-The example below shows how to migrate the VALUE_ERROR exception. Note that OR is used in the migration example to group error codes so that VALUE_ERROR corresponds to multiple PostgreSQL error codes.
+The example below shows how to migrate the VALUE_ERROR exception. Note that OR is used in the migration example to group error codes so that VALUE_ERROR corresponds to multiple OpenGauss error codes.
 
 <table>
 <thead>
 <tr>
 <th align="center">Oracle database</th>
-<th align="center">PostgreSQL</th>
+<th align="center">OpenGauss</th>
 </tr>
 </thead>
 <tbody>
@@ -203,7 +203,7 @@ SQLCODE returns the error code of an error.
 
  - **Oracle database**
      - SQLCODE can be specified to obtain an error code.
- - **PostgreSQL**
+ - **OpenGauss**
      - SQLCODE cannot be specified to obtain an error code.
 
 **Migration procedure**
@@ -221,7 +221,7 @@ The example below shows migration when the code of an error is displayed.
 <thead>
 <tr>
 <th align="center">Oracle database</th>
-<th align="center">PostgreSQL</th>
+<th align="center">OpenGauss</th>
 </tr>
 </thead>
 <tbody>
@@ -281,7 +281,7 @@ The example below shows migration when the code of an error is displayed.
 
 ----
 
-Oracle databases and PostgreSQL have different error codes, so the set SQLCODE values and SQLSTATE values are different. Refer to "Appendix A. PostgreSQL Error Codes" in the PostgreSQL Documentation for information on the error codes to be defined in PostgreSQL.
+Oracle databases and OpenGauss have different error codes, so the set SQLCODE values and SQLSTATE values are different. Refer to "Appendix A. OpenGauss Error Codes" in the OpenGauss Documentation for information on the error codes to be defined in OpenGauss.
 
 ----
 
@@ -295,7 +295,7 @@ An EXCEPTION declaration defines an error.
 
  - **Oracle database**
      - EXCEPTION declarations can be used to define errors.
- - **PostgreSQL**
+ - **OpenGauss**
      - EXCEPTION declarations cannot be used.
 
 **Migration procedure**
@@ -316,7 +316,7 @@ The example below shows migration when a user-defined error is generated.
 <thead>
 <tr>
 <th align="center">Oracle database</th>
-<th align="center">PostgreSQL</th>
+<th align="center">OpenGauss</th>
 </tr>
 </thead>
 <tbody>
@@ -390,7 +390,7 @@ An EXCEPTION_INIT pragma associates a user-defined error name with an Oracle dat
 
  - **Oracle database**
      - EXCEPTION_INIT pragmas and RAISE_APPLICATION_ERROR statements can be used.
- - **PostgreSQL**
+ - **OpenGauss**
      - EXCEPTION_INIT pragmas and RAISE_APPLICATION_ERROR statements cannot be used.
 
 **Migration procedure**
@@ -411,7 +411,7 @@ The example below shows migration when an EXCEPTION INIT pragma and RAISE APPLIC
 <thead>
 <tr>
 <th align="center">Oracle database</th>
-<th align="center">PostgreSQL</th>
+<th align="center">OpenGauss</th>
 </tr>
 </thead>
 <tbody>
@@ -483,7 +483,7 @@ The example below shows migration when an EXCEPTION INIT pragma and RAISE APPLIC
 
 ----
 
-SQLERRM provided by PostgreSQL cannot specify an error code in its argument.
+SQLERRM provided by OpenGauss cannot specify an error code in its argument.
 
 ----
 
@@ -498,7 +498,7 @@ WHENEVER OSERROR predefines the processing to be run when an operating system er
 
  - **Oracle database**
      - WHENEVER can be used to predefine the processing to be run when an error occurs.
- - **PostgreSQL**
+ - **OpenGauss**
      - WHENEVER cannot be used.
 
 **Migration procedure**
@@ -516,7 +516,7 @@ The example below shows migration when an active script that encounters an error
 <thead>
 <tr>
 <th align="center">Oracle database</th>
-<th align="center">PostgreSQL</th>
+<th align="center">OpenGauss</th>
 </tr>
 </thead>
 <tbody>
@@ -567,7 +567,7 @@ The example below shows migration when an active script that encounters an error
 
 ----
 
- - WHENEVER SQLERROR and WHENEVER OSERROR are SQL*Plus features. Migrate them to the psql feature in PostgreSQL.
+ - WHENEVER SQLERROR and WHENEVER OSERROR are SQL*Plus features. Migrate them to the psql feature in OpenGauss.
  - Of the values that can be specified in WHENEVER, only EXIT FAILURE and CONTINUE NONE can be migrated. If CONTINUE NONE is specified, replace it with \set ON_ERROR_ROLLBACK ON.
 
 ----
@@ -586,7 +586,7 @@ This section explains elements related to PL/SQL cursors.
 
  - **Oracle database**
      - %FOUND can be used.
- - **PostgreSQL**
+ - **OpenGauss**
      - %FOUND cannot be used. Use FOUND instead.
 
 **Migration procedure**
@@ -610,7 +610,7 @@ The example below shows migration when update of a row by an implicit cursor is 
 <thead>
 <tr>
 <th align="center">Oracle database</th>
-<th align="center">PostgreSQL</th>
+<th align="center">OpenGauss</th>
 </tr>
 </thead>
 <tbody>
@@ -668,7 +668,7 @@ Statements in which %FOUND is determined to be NULL cannot be migrated. If SQL h
 
  - **Oracle database**
      - %NOTFOUND can be used.
- - **PostgreSQL**
+ - **OpenGauss**
      - %NOTFOUND cannot be used. Use NOT FOUND instead.
 
 **Migration procedure**
@@ -692,7 +692,7 @@ The example below shows migration when multiple explicit cursors are used to rep
 <thead>
 <tr>
 <th align="center">Oracle database</th>
-<th align="center">PostgreSQL</th>
+<th align="center">OpenGauss</th>
 </tr>
 </thead>
 <tbody>
@@ -796,7 +796,7 @@ Statements in which %NOTFOUND is determined to be NULL cannot be migrated. If SQ
 
  - **Oracle database**
      - %ROWCOUNT can be used.
- - **PostgreSQL**
+ - **OpenGauss**
      - %ROWCOUNT cannot be used. Use ROW_COUNT instead.
 
 **Migration procedure**
@@ -816,7 +816,7 @@ The example below shows migration when the number of deleted rows is obtained.
 <thead>
 <tr>
 <th align="center">Oracle database</th>
-<th align="center">PostgreSQL</th>
+<th align="center">OpenGauss</th>
 </tr>
 </thead>
 <tbody>
@@ -870,7 +870,7 @@ REF CURSOR is a data type that represents the cursor in Oracle databases.
 
  - **Oracle database**
      - REF CURSOR type variables can be defined.
- - **PostgreSQL**
+ - **OpenGauss**
      - REF CURSOR type variables cannot be defined. Use refcursor type variables instead.
 
 **Migration procedure**
@@ -889,7 +889,7 @@ The example below shows migration when the cursor variable is used to FETCH a ro
 <thead>
 <tr>
 <th align="center">Oracle database</th>
-<th align="center">PostgreSQL</th>
+<th align="center">OpenGauss</th>
 </tr>
 </thead>
 <tbody>
@@ -955,7 +955,7 @@ The example below shows migration when the cursor variable is used to FETCH a ro
 
 -----
 
-The RETURN clause (specifies the return type of the cursor itself) cannot be specified in the refcursor type provided by PostgreSQL.
+The RETURN clause (specifies the return type of the cursor itself) cannot be specified in the refcursor type provided by OpenGauss.
 
 -----
 
@@ -969,7 +969,7 @@ FORALL uses the changing value of the VALUES clause or WHERE clause to execute a
 
  - **Oracle database**
      - FORALL statements can be used.
- - **PostgreSQL**
+ - **OpenGauss**
      - FORALL statements cannot be used.
 
 **Migration procedure**
@@ -992,7 +992,7 @@ The example below shows migration when FORALL is used to execute INSERT.
 <thead>
 <tr>
 <th align="center">Oracle database</th>
-<th align="center">PostgreSQL</th>
+<th align="center">OpenGauss</th>
 </tr>
 </thead>
 <tbody>
@@ -1052,7 +1052,7 @@ A stored function is a user-defined function that returns a value.
 
  - **Oracle database**
      - A RETURN clause within a function prototype is specified as RETURN. <br> DECLARE does not need to be specified as the definition portion of a variable used within a function.
- - **PostgreSQL**
+ - **OpenGauss**
      - Use RETURNS to specify a RETURN clause within a function prototype. <br> DECLARE must be specified as the definition portion of a variable to be used within a function.
 
 **Migration procedure**
@@ -1074,7 +1074,7 @@ The example below shows migration when CREATE FUNCTION is used to define a funct
 <thead>
 <tr>
 <th align="center">Oracle database</th>
-<th align="center">PostgreSQL</th>
+<th align="center">OpenGauss</th>
 </tr>
 </thead>
 <tbody>
@@ -1126,12 +1126,12 @@ A stored procedure is a single procedure into which multiple processes have been
 
  - **Oracle database**
      - Procedures can be created.
- - **PostgreSQL**
+ - **OpenGauss**
      - Procedures cannot be created.
 
 **Migration procedure**
 
-Procedures cannot be created in PostgreSQL. Therefore, replace them with functions. Use the following procedure to perform migration:
+Procedures cannot be created in OpenGauss. Therefore, replace them with functions. Use the following procedure to perform migration:
 
  1. Search for the keywords CREATE and PROCEDURE, and identify where a procedure is defined.
  2. Replace the CREATE PROCEDURE statement with the CREATE FUNCTION statement.
@@ -1155,7 +1155,7 @@ The example below shows migration when a procedure is defined.
 <thead>
 <tr>
 <th align="center">Oracle database</th>
-<th align="center">PostgreSQL</th>
+<th align="center">OpenGauss</th>
 </tr>
 </thead>
 <tbody>
@@ -1215,7 +1215,7 @@ The example below shows migration when a procedure is defined.
 
  - **Oracle database**
      - A procedure can be called as a statement.
- - **PostgreSQL**
+ - **OpenGauss**
      - Procedures cannot be used. Instead, call the procedure as a function that does not return a value.
 
 **Migration procedure**
@@ -1233,7 +1233,7 @@ The example below shows migration when a procedure is called.
 <thead>
 <tr>
 <th align="center">Oracle database</th>
-<th align="center">PostgreSQL</th>
+<th align="center">OpenGauss</th>
 </tr>
 </thead>
 <tbody>
@@ -1267,7 +1267,7 @@ The example below shows migration when a procedure is called.
 
  - **Oracle database**
      - Procedures that return a value can be created.
- - **PostgreSQL**
+ - **OpenGauss**
       - Procedures that return a value cannot be created.
 
 **Migration procedure**
@@ -1291,7 +1291,7 @@ The example below shows migration when the OUT parameter of CREATE PROCEDURE is 
 <thead>
 <tr>
 <th align="center">Oracle database</th>
-<th align="center">PostgreSQL</th>
+<th align="center">OpenGauss</th>
 </tr>
 </thead>
 <tbody>
@@ -1366,12 +1366,12 @@ Refer to "Defining Nested Procedures" for examples of migrating a call portion t
 
  - **Oracle database**
      - Nested procedures can be defined.
- - **PostgreSQL**
+ - **OpenGauss**
      - Nested procedures cannot be defined.
 
 **Migration procedure**
 
-Procedures must be replaced with functions, but functions cannot be nested in PostgreSQL. Therefore, define and call the functions separately. Use the following procedure to perform migration:
+Procedures must be replaced with functions, but functions cannot be nested in OpenGauss. Therefore, define and call the functions separately. Use the following procedure to perform migration:
 
  1. Search for the CREATE and PROCEDURE keywords, and identify where a procedure is defined.
  2. If a PROCEDURE statement is defined in a DECLARE clause, regard it as a nested procedure.
@@ -1387,7 +1387,7 @@ The example below shows migration when nested procedures are used and a variable
 <thead>
 <tr>
 <th align="center">Oracle database</th>
-<th align="center">PostgreSQL</th>
+<th align="center">OpenGauss</th>
 </tr>
 </thead>
 <tbody>
@@ -1505,7 +1505,7 @@ An anonymous code block generates and executes a temporary function within a pro
 
  - **Oracle database**
      - Anonymous code blocks that are enclosed with (DECLARE) BEGIN to END can be executed.
- - **PostgreSQL**
+ - **OpenGauss**
      - PL/pgSQL blocks ((DECLARE) BEGIN to END) that are enclosed with DO $$ to $$ can be executed.
 
 **Migration procedure**
@@ -1524,7 +1524,7 @@ The example below shows migration when an anonymous code block is defined.
 <thead>
 <tr>
 <th align="center">Oracle database</th>
-<th align="center">PostgreSQL</th>
+<th align="center">OpenGauss</th>
 </tr>
 </thead>
 <tbody>
@@ -1564,10 +1564,10 @@ A package defines and contains procedures and functions as a single relationship
 
  - **Oracle database**
      - Packages can be created.
- - **PostgreSQL**
+ - **OpenGauss**
      - Packages cannot be created.
 
-Packages cannot be created in PostgreSQL, so define a schema with the same name as the package and define functions that have a relationship in the schema so that they are treated as a single group.
+Packages cannot be created in OpenGauss, so define a schema with the same name as the package and define functions that have a relationship in the schema so that they are treated as a single group.
 In the following sections, the migration procedure is explained for each feature to be defined in a package.
 
 #### 5.5.1 Defining Functions Within a Package
@@ -1576,7 +1576,7 @@ In the following sections, the migration procedure is explained for each feature
 
  - **Oracle database**
      - Functions can be created within a package.
- - **PostgreSQL**
+ - **OpenGauss**
      - The package itself cannot be created.
 
 **Migration procedure**
@@ -1595,7 +1595,7 @@ The example below shows migration when a package is defined and functions are cr
 <thead>
 <tr>
 <th align="center">Oracle database</th>
-<th align="center">PostgreSQL</th>
+<th align="center">OpenGauss</th>
 </tr>
 </thead>
 <tbody>
@@ -1659,7 +1659,7 @@ Refer to "Defining Functions" for information on migrating FUNCTION statements w
 
  - **Oracle database**
      - Procedures can be created within a package.
- - **PostgreSQL**
+ - **OpenGauss**
      - The package itself cannot be created.
 
 **Migration procedure**
@@ -1678,7 +1678,7 @@ The example below shows migration when a package is defined and procedures are c
 <thead>
 <tr>
 <th align="center">Oracle database</th>
-<th align="center">PostgreSQL</th>
+<th align="center">OpenGauss</th>
 </tr>
 </thead>
 <tbody>
@@ -1756,7 +1756,7 @@ Refer to "Defining Procedures" for information on migrating PROCEDURE statements
 
  - **Oracle database**
      - Variables can be shared within a package.
- - **PostgreSQL**
+ - **OpenGauss**
      - A package cannot be created, so variables cannot be shared.
 
 **Migration procedure**
@@ -1779,7 +1779,7 @@ The example below shows migration when a package is defined and variables within
 <thead>
 <tr>
 <th align="center">Oracle database</th>
-<th align="center">PostgreSQL</th>
+<th align="center">OpenGauss</th>
 </tr>
 </thead>
 <tbody>

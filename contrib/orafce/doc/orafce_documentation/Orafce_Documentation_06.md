@@ -5,7 +5,6 @@ A "package" is a group of features, brought together by schemas, that have a sin
 
 The following packages are supported:
 
- - DBMS_ALERT
  - DBMS_ASSERT
  - DBMS_OUTPUT
  - DBMS_PIPE
@@ -16,222 +15,7 @@ The following packages are supported:
 To call the different functionalities from PL/pgSQL, use the PERFORM statement or SELECT statement, using the package name to qualify the name of the functionality. Refer to the explanations for each of the package functionalities for information on the format for calling.
 
 
-### 6.1 DBMS_ALERT
-
-**Overview**
-
-The DBMS_ALERT package sends alerts from a PL/pgSQL session to multiple other PL/pgSQL sessions.
-
-This package can be used when processing 1:N, such as when notifying alerts from a given PL/pgSQL session to another PL/pgSQL session at the same time.
-
-**Features**
-
-| Feature | Description |
-|:--- |:--- |
-|REGISTER | Registers the specified alert.|
-|REMOVE | Removes the specified alert.|
-|REMOVEALL | Removes all alerts from a session.|
-|SIGNAL|Notifies alerts.|
-|WAITANY|Waits for notification of any alerts for which a session is registered.|
-|WAITONE|Waits for notification of a specific alert for which a session is registered.|
-
-
-
-**Syntax**
-
-![DBMS_ALERT](gif/DBMS_ALERT.gif)
-
-
-#### 6.1.1 Description of Features
-
-This section explains each feature of DBMS_ALERT.
-
-
-**REGISTER**
-
- - REGISTER registers the specified alert to a session. By registering alerts to a session, SIGNAL notifications can be received.
- - Specify the name of the alert.
- - Alerts are case-sensitive.
- - Multiple alerts can be registered within a single session. If registering multiple alerts, call REGISTER for each alert.
-
-**Example**
-
-----
-
-~~~
-PERFORM DBMS_ALERT.REGISTER('sample_alert');
-~~~
-
-----
-
-
-**REMOVE**
-
- - REMOVE removes the specified alert from a session.
- - Specify the name of the alert.
- - Alerts are case-sensitive.
- - The message left by the alert will be removed.
-
-**Example**
-
-----
-
-~~~
-PERFORM DBMS_ALERT.REMOVE('sample_alert');
-~~~
-
-----
-
-
-**REMOVEALL**
-
- - REMOVEALL removes all alerts registered within a session.
- - All messages left by the alerts will be removed.
-
-**Example**
-
-----
-
-~~~
-PERFORM DBMS_ALERT.REMOVEALL();
-~~~
-
-----
-
-
-**SIGNAL**
-
- - SIGNAL sends a message notification for the specified alert.
- - Specify the name of the alert for which message notifications are sent.
- - Alerts are case-sensitive.
- - In the message, specify the alert message for notifications.
- - Message notifications are not complete at the stage when SIGNAL is executed. Message notifications are sent upon committing the transaction. Message notifications are discarded if a rollback is performed after SIGNAL is executed.
- - If message notifications are sent for the same alert from multiple sessions, the messages will be accumulated without being removed.
-
-**Example**
-
-----
-
-~~~
-PERFORM DBMS_ALERT.SIGNAL('ALERT001','message001');
-~~~
-
-----
-
-**Note**
-
-----
-
-If SIGNAL is issued continuously and the accumulated messages exceed a certain amount, an insufficient memory error may be output. If the memory becomes insufficient, call AITANY or WAITONE to receive an alert, and reduce the accumulated messages.
-
-----
-
-**WAITANY**
-
- - WAITANY waits for notification of any alerts registered for a session.
- - Specify the maximum wait time *timeout* in seconds to wait for an alert.
- - Use a SELECT statement to obtain the notified information, which is stored in the name, message and status columns.
- - The name column stores the alert names. The data type of name is TEXT.
- - The message column stores the messages of notified alerts. The data type of message is TEXT.
- - The status column stores the status code returned by the operation: 0-an alert occurred; 1-a timeout occurred. The data type of status is INTEGER.
-
-
-**Example**
-
-----
-
-~~~
-DECLARE
-    alert_name         TEXT := 'sample_alert';
-    alert_message      TEXT;
-    alert_status       INTEGER;
-BEGIN
-    SELECT name,message,status INTO alert_name,alert_message,alert_status FROM DBMS_ALERT.WAITANY(60);
-~~~
-
-----
-
-
-**WAITONE**
-
- - WAITONE waits for notification of the specified alert.
- - Specify the name of the alert to wait for.
- - Alerts are case-sensitive.
- - Specify the maximum wait time *timeout* in seconds to wait for the alert.
- - Use a SELECT statement to obtain the notified information, which is stored in the message and status columns.
- - The message column stores the messages of notified alerts. The data type of message is TEXT.
- - The status column stores the status code returned by the operation: 0-an alert occurred; 1-a timeout occurred. The data type of status is INTEGER.
-
-
-**Example**
-
-----
-
-~~~
-DECLARE
-    alert_message   TEXT;
-    alert_status    INTEGER;
-BEGIN
-    SELECT message,status INTO alert_message,alert_status FROM DBMS_ALERT.WAITONE('sample_alert', 60);
-~~~
-
-----
-
-
-#### 6.1.2 Usage Example
-Below is a usage example of the processing flow of DBMS_ALERT.
-
-**DBMS_ALERT flow**
-
-![DBMS_ALERT_flow](gif/DBMS_ALERT_flow.gif)
-
-
-**Note**
-
-----
-
- - The target of message notifications by SIGNAL is sessions for which REGISTER is executed at the time of executing SIGNAL.
- - On the receiving side, always ensure that REMOVE or REMOVEALL is used to remove alerts as soon as the alerts are no longer needed. If a session is closed without removing the alerts, it may no longer be possible to receive a SIGNAL for alerts of the same name in another session.
- - DBMS_ALERT and DBMS_PIPE use the same memory environment. Therefore, when insufficient memory is detected for DBMS_PIPE, it is possible that insufficient memory will also be detected for DBMS_ALERT.
-
-----
-
-**Usage example**
-
- - Sending side
-
-~~~
-CREATE FUNCTION send_dbms_alert_exe() RETURNS VOID AS $$
-BEGIN
-	PERFORM DBMS_ALERT.SIGNAL('sample_alert','SIGNAL ALERT');
-END;
-$$ LANGUAGE plpgsql;
-SELECT send_dbms_alert_exe();
-DROP FUNCTION send_dbms_alert_exe();
-~~~
-
-
- - Receiving side
-
-~~~
-CREATE FUNCTION receive_dbms_alert_exe() RETURNS VOID AS $$
-DECLARE
-	alert_name    TEXT := 'sample_alert';
-	alert_message TEXT;
-	alert_status  INTEGER;
-BEGIN
-	PERFORM DBMS_ALERT.REGISTER(alert_name);
-	SELECT message,status INTO alert_message,alert_status FROM DBMS_ALERT.WAITONE(alert_name,300);
-	RAISE NOTICE 'Message : %', alert_message;
-	RAISE NOTICE 'Status  : %', alert_status;
-	PERFORM DBMS_ALERT.REMOVE(alert_name);
-END;
-$$ LANGUAGE plpgsql;
-SELECT receive_dbms_alert_exe();
-DROP FUNCTION receive_dbms_alert_exe();
-~~~
-
-### 6.2 DBMS_ASSERT
+### 6.1 DBMS_ASSERT
 
 **Overview**
 
@@ -290,7 +74,7 @@ BEGIN
 
 ----
 
-Refer to "The SQL Language" > "Data Types" > "Boolean Type" in the PostgreSQL Documentation for information on boolean type (TRUE/FALSE) values.
+Refer to "The SQL Language" > "Data Types" > "Boolean Type" in the OpenGauss Documentation for information on boolean type (TRUE/FALSE) values.
 
 ----
 
@@ -369,7 +153,7 @@ ERROR:  string is not qualified SQL name
 
 ----
 
-Refer to "The SQL Language" > "Lexical Structure" > "Identifiers and Key Words" in the PostgreSQL Documentation for information on the formats that can be used as identifiers.
+Refer to "The SQL Language" > "Lexical Structure" > "Identifiers and Key Words" in the OpenGauss Documentation for information on the formats that can be used as identifiers.
 
 ----
 
@@ -428,7 +212,7 @@ ERROR:  string is not qualified SQL name
 
 ----
 
-Refer to "The SQL Language" > "Lexical Structure" > "Identifiers and Key Words" in the PostgreSQL Documentation for information on the formats that can be used as identifiers. Note that an error will occur if an identifier using fullwidth characters is specified. If fullwidth characters are included, specify a quoted identifier.
+Refer to "The SQL Language" > "Lexical Structure" > "Identifiers and Key Words" in the OpenGauss Documentation for information on the formats that can be used as identifiers. Note that an error will occur if an identifier using fullwidth characters is specified. If fullwidth characters are included, specify a quoted identifier.
 
 ----
 
@@ -471,7 +255,7 @@ DROP FUNCTION dbms_assert_exe();
 
 
 
-### 6.3 DBMS_OUTPUT
+### 6.2 DBMS_OUTPUT
 
 **Overview**
 
@@ -546,7 +330,7 @@ PERFORM DBMS_OUTPUT.DISABLE();
 
 ----
 
-Refer to "The SQL Language" > "Data Types" > "Boolean Type" in the PostgreSQL Documentation for information on boolean type (TRUE/FALSE) values.
+Refer to "The SQL Language" > "Data Types" > "Boolean Type" in the OpenGauss Documentation for information on boolean type (TRUE/FALSE) values.
 
 ----
 
@@ -695,7 +479,7 @@ DROP FUNCTION dbms_output_exe();
 ~~~
 
 
-### 6.4 DBMS_PIPE
+### 6.3 DBMS_PIPE
 
 **Overview**
 
@@ -767,7 +551,7 @@ This section explains each feature of DBMS_PIPE.
 
 ----
 
-Refer to "The SQL Language" > "Data Types" > "Boolean Type" in the PostgreSQL Documentation for information on boolean type (TRUE/FALSE) values.
+Refer to "The SQL Language" > "Data Types" > "Boolean Type" in the OpenGauss Documentation for information on boolean type (TRUE/FALSE) values.
 
 ---
 
@@ -1034,7 +818,7 @@ BEGIN
 
 ----
 
-If the "oracle" schema is set in search_path, the DATE type of orafce will be used, so for receiving data, use UNPACK_MESSAGE_TIMESTAMP. UNPACK_MESSAGE_DATE is the interface for the DATE type of PostgreSQL.
+If the "oracle" schema is set in search_path, the DATE type of orafce will be used, so for receiving data, use UNPACK_MESSAGE_TIMESTAMP. UNPACK_MESSAGE_DATE is the interface for the DATE type of OpenGauss.
 
 ----
 
@@ -1169,7 +953,6 @@ Below is a usage example of the processing flow of DBMS_PIPE.
  - When CREATE_PIPE is used to explicitly create a pipe, ensure to use REMOVE_PIPE to remove the pipe. If a pipe is not removed explicitly, once created, it will remain until the instance is stopped.
  - In the flow diagram, CREATE_PIPE and REMOVE_PIPE are described on the receiving side, however, these can be executed on the sending side. In order to maintain consistency, it is recommended to create and remove pipes on one side.
  - An error will occur for CREATE_PIPE if a pipe of the same name already exists. Implicitly created pipes are also the target of SEND_MESSAGE and RECEIVE_MESSAGE, so when executing CREATE_PIPE, ensure that SEND_MESSAGE and RECEIVE_MESSAGE are not called beforehand.
- - DBMS_ALERT and DBMS_PIPE use the same memory environment. Therefore, when insufficient memory is detected for DBMS_ALERT, it is possible that insufficient memory will also be detected for DBMS_PIPE.
 
 ----
 
@@ -1268,7 +1051,7 @@ DROP FUNCTION receive_dbms_pipe_exe();
 ~~~
 
 
-### 6.5 DBMS_RANDOM
+### 6.4 DBMS_RANDOM
 
 **Overview**
 
@@ -1471,7 +1254,7 @@ SELECT dbms_random_exe();
 DROP FUNCTION dbms_random_exe();
 ~~~
 
-### 6.6 DBMS_UTILITY
+### 6.5 DBMS_UTILITY
 
 **Overview**
 
@@ -1590,7 +1373,7 @@ The function is called twice, the first time at the beginning of some procedural
 ----
 
 
-### 6.7 UTL_FILE
+### 6.6 UTL_FILE
 
 **Overview**
 
@@ -1810,7 +1593,7 @@ PERFORM UTL_FILE.FREMOVE('/home/pgsql', 'regress_pgsql.txt');
 
 ----
 
-Refer to "The SQL Language" > "Data Types" > "Boolean Type" in the PostgreSQL Documentation for information on boolean type (TRUE/FALSE) values.
+Refer to "The SQL Language" > "Data Types" > "Boolean Type" in the OpenGauss Documentation for information on boolean type (TRUE/FALSE) values.
 
 ----
 
@@ -1859,7 +1642,7 @@ buff := UTL_FILE.GET_LINE(f);
 
 ----
 
-Refer to "The SQL Language" > "Data Types" > "Boolean Type" in the PostgreSQL Documentation for information on boolean type (TRUE/FALSE) values.
+Refer to "The SQL Language" > "Data Types" > "Boolean Type" in the OpenGauss Documentation for information on boolean type (TRUE/FALSE) values.
 
 ----
 
