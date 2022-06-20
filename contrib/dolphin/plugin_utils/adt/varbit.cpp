@@ -30,6 +30,7 @@
 static VarBit* bit_catenate(VarBit* arg1, VarBit* arg2);
 static VarBit* bitsubstring(VarBit* arg, int32 s, int32 l, bool length_not_specified);
 static VarBit* bit_overlay(VarBit* t1, VarBit* t2, int sp, int sl);
+static int32 bit_cmp(VarBit* arg1, VarBit* arg2, int leadingZeroLen1 = -1, int leadingZeroLen2 = -1);
 extern Datum mp_bit_length_bit(PG_FUNCTION_ARGS); 
 extern Datum mp_bit_length_text(PG_FUNCTION_ARGS);
 extern Datum mp_bit_length_bytea(PG_FUNCTION_ARGS);
@@ -273,7 +274,6 @@ Datum bit_recv(PG_FUNCTION_ARGS)
     VarBit* result = NULL;
     int len, bitlen;
     int ipad;
-    bits8 mask;
 
     bitlen = pq_getmsgint(buf, sizeof(int32));
     if (bitlen < 0 || bitlen > VARBITMAXLEN)
@@ -296,11 +296,12 @@ Datum bit_recv(PG_FUNCTION_ARGS)
 
     pq_copymsgbytes(buf, (char*)VARBITS(result), VARBITBYTES(result));
 
-    /* Make sure last byte is zero-padded if needed */
+    /*
+     * do left padding, just call shift right to pad 0
+     */
     ipad = VARBITPAD(result);
     if (ipad > 0) {
-        mask = BITMASK << ipad;
-        *(VARBITS(result) + VARBITBYTES(result) - 1) &= mask;
+        PG_RETURN_DATUM(DirectFunctionCall2(bitshiftright, VarBitPGetDatum(result), Int32GetDatum(ipad)));
     }
 
     PG_RETURN_VARBIT_P(result);
@@ -330,18 +331,17 @@ Datum bit(PG_FUNCTION_ARGS)
     bool isExplicit = PG_GETARG_BOOL(2);
     VarBit* result = NULL;
     int rlen;
-    int ipad;
-    bits8 mask;
     errno_t ss_rc = 0;
 
     /* No work if typmod is invalid or supplied data matches it already */
-    if (len <= 0 || len > VARBITMAXLEN || len >= VARBITLEN(arg))
+    if (len <= 0 || len > VARBITMAXLEN || len == VARBITLEN(arg))
         PG_RETURN_VARBIT_P(arg);
 
-    if (!isExplicit)
+    if (!isExplicit && VARBITLEN(arg) > len) {
         ereport(ERROR,
             (errcode(ERRCODE_STRING_DATA_LENGTH_MISMATCH),
                 errmsg("bit string length %d does not match type bit(%d)", VARBITLEN(arg), len)));
+    }
 
     rlen = VARBITTOTALLEN(len);
     /* set to 0 so that string is zero-padded */
@@ -356,16 +356,12 @@ Datum bit(PG_FUNCTION_ARGS)
     }
 
     /*
-     * Make sure last byte is zero-padded if needed.  This is useless but safe
-     * if source data was shorter than target length (we assume the last byte
-     * of the source data was itself correctly zero-padded).
+     * do left padding, just call shift right to pad 0
      */
-    ipad = VARBITPAD(result);
-    if (ipad > 0) {
-        mask = BITMASK << ipad;
-        *(VARBITS(result) + VARBITBYTES(result) - 1) &= mask;
+    int shift = VARBITLEN(result) - VARBITLEN(arg);
+    if (shift > 0) {
+        PG_RETURN_DATUM(DirectFunctionCall2(bitshiftright, VarBitPGetDatum(result), Int32GetDatum(shift)));
     }
-
     PG_RETURN_VARBIT_P(result);
 }
 
@@ -714,28 +710,75 @@ Datum varbittypmodout(PG_FUNCTION_ARGS)
  * need to be so careful.
  */
 
+/* Get leading zero length of a varbit */
+static inline int GetLeadingZeroLen(VarBit* arg)
+{
+    int leadingZeroLen = 0;
+    int i;
+    /*
+     * example: for a value b'1' in bit(5), it will be b'00001000', the first 4 zero is left padding,
+     * the last 3 zero are not the real value, should be ignored. So we get the leading zero by:
+     * 1. traverse the all bytes
+     * 2. for every single byte, loop from the highest bit, check whether it's 0, end loop when meet 1
+     */
+    for (bits8* r = VARBITS(arg); r < VARBITEND(arg) && leadingZeroLen < VARBITLEN(arg); r++) {
+        for (i = BITS_PER_BYTE - 1; i >= 0 && leadingZeroLen < VARBITLEN(arg); i--) {
+            if (*r >> i == 1) {
+                break;
+            }
+            leadingZeroLen++;
+        }
+        if (i != -1) {
+            break;
+        }
+    }
+
+    return leadingZeroLen;
+}
+
 /*
  * bit_cmp
  *
  * Compares two bitstrings and returns <0, 0, >0 depending on whether the first
  * string is smaller, equal, or bigger than the second. All bits are considered
- * and additional zero bits may make one string smaller/larger than the other,
- * even if their zero-padded values would be the same.
+ * but additional zero bits won't affect the result.
  */
-static int32 bit_cmp(VarBit* arg1, VarBit* arg2)
+static int32 bit_cmp(VarBit* arg1, VarBit* arg2, int leadingZeroLen1, int leadingZeroLen2)
 {
-    int bitlen1, bytelen1, bitlen2, bytelen2;
-    int32 cmp;
+    leadingZeroLen1 = (leadingZeroLen1 == -1 ? GetLeadingZeroLen(arg1) : leadingZeroLen1);
+    leadingZeroLen2 = (leadingZeroLen2 == -1 ? GetLeadingZeroLen(arg2) : leadingZeroLen2);
+    VarBit* newArg1 = arg1;
+    VarBit* newArg2 = arg2;
+    /* do shit left to remove leading zero */
+    if (leadingZeroLen1 > 0) {
+        newArg1 = DatumGetVarBitP(
+            DirectFunctionCall2(bitshiftleft, VarBitPGetDatum(arg1), Int32GetDatum(leadingZeroLen1)));
+    }
+    if (leadingZeroLen2 > 0) {
+        newArg2 = DatumGetVarBitP(
+            DirectFunctionCall2(bitshiftleft, VarBitPGetDatum(arg2), Int32GetDatum(leadingZeroLen2)));
+    }
+    int bytelen1 = VARBITBYTES(newArg1);
+    int bytelen2 = VARBITBYTES(newArg2);
 
-    bytelen1 = VARBITBYTES(arg1);
-    bytelen2 = VARBITBYTES(arg2);
-
-    cmp = memcmp(VARBITS(arg1), VARBITS(arg2), Min(bytelen1, bytelen2));
+    int cmp = memcmp(VARBITS(newArg1), VARBITS(newArg2), Min(bytelen1, bytelen2));
+    /*
+     * cmp == 0 doesn't mean they are equal, for example b'1' for bit(1) and b'10' for bit(2).
+     * we should check bitlen to get the final result.
+     * */
     if (cmp == 0) {
-        bitlen1 = VARBITLEN(arg1);
-        bitlen2 = VARBITLEN(arg2);
-        if (bitlen1 != bitlen2)
+        int bitlen1 = VARBITLEN(newArg1) - leadingZeroLen1;
+        int bitlen2 = VARBITLEN(newArg2) - leadingZeroLen2;
+        if (bitlen1 != bitlen2) {
             cmp = (bitlen1 < bitlen2) ? -1 : 1;
+        }
+    }
+    /* free mem if newArg is palloced by shiftleft */
+    if (newArg1 != arg1) {
+        pfree(newArg1);
+    }
+    if (newArg2 != arg2) {
+        pfree(newArg2);
     }
     return cmp;
 }
@@ -746,15 +789,17 @@ Datum biteq(PG_FUNCTION_ARGS)
     VarBit* arg2 = PG_GETARG_VARBIT_P(1);
     bool result = false;
     int bitlen1, bitlen2;
+    int leadingZeroLen1 = GetLeadingZeroLen(arg1);
+    int leadingZeroLen2 = GetLeadingZeroLen(arg2);
 
-    bitlen1 = VARBITLEN(arg1);
-    bitlen2 = VARBITLEN(arg2);
+    bitlen1 = VARBITLEN(arg1) - leadingZeroLen1;
+    bitlen2 = VARBITLEN(arg2) - leadingZeroLen2;
 
     /* fast path for different-length inputs */
     if (bitlen1 != bitlen2)
         result = false;
     else
-        result = (bit_cmp(arg1, arg2) == 0);
+        result = (bit_cmp(arg1, arg2, leadingZeroLen1, leadingZeroLen2) == 0);
 
     PG_FREE_IF_COPY(arg1, 0);
     PG_FREE_IF_COPY(arg2, 1);
@@ -768,15 +813,17 @@ Datum bitne(PG_FUNCTION_ARGS)
     VarBit* arg2 = PG_GETARG_VARBIT_P(1);
     bool result = false;
     int bitlen1, bitlen2;
+    int leadingZeroLen1 = GetLeadingZeroLen(arg1);
+    int leadingZeroLen2 = GetLeadingZeroLen(arg2);
 
-    bitlen1 = VARBITLEN(arg1);
-    bitlen2 = VARBITLEN(arg2);
+    bitlen1 = VARBITLEN(arg1) - leadingZeroLen1;
+    bitlen2 = VARBITLEN(arg2) - leadingZeroLen2;
 
     /* fast path for different-length inputs */
     if (bitlen1 != bitlen2)
         result = true;
     else
-        result = (bit_cmp(arg1, arg2) != 0);
+        result = (bit_cmp(arg1, arg2, leadingZeroLen1, leadingZeroLen2) != 0);
 
     PG_FREE_IF_COPY(arg1, 0);
     PG_FREE_IF_COPY(arg2, 1);
