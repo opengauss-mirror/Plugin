@@ -24,6 +24,8 @@
 #include "utils/array.h"
 #include "utils/varbit.h"
 #include "access/tuptoaster.h"
+#include "plugin_postgres.h"
+
 
 #define HEXDIG(z) ((z) < 10 ? ((z) + '0') : ((z)-10 + 'A'))
 
@@ -1113,6 +1115,13 @@ Datum bitlength(PG_FUNCTION_ARGS)
 }
 
 Datum bitoctetlength(PG_FUNCTION_ARGS)
+{
+    VarBit* arg = PG_GETARG_VARBIT_P(0);
+
+    PG_RETURN_INT32(VARBITBYTES(arg));
+}
+
+Datum c_bitoctetlength(PG_FUNCTION_ARGS)
 {
     VarBit* arg = PG_GETARG_VARBIT_P(0);
 

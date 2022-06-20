@@ -1,0 +1,84 @@
+drop database if exists format_test;
+NOTICE:  database "format_test" does not exist, skipping
+create database format_test dbcompatibility 'B';
+\c format_test
+select elt(1,1);
+ elt 
+-----
+ 1
+(1 row)
+
+select elt(-1,1);
+ elt 
+-----
+ 
+(1 row)
+
+select elt(1.2,'a');
+ elt 
+-----
+ a
+(1 row)
+
+select elt(1,1.2);
+ elt 
+-----
+ 1.2
+(1 row)
+
+select elt(1,'1.2');
+ elt 
+-----
+ 1.2
+(1 row)
+
+select elt('1',1);
+ elt 
+-----
+ 1
+(1 row)
+
+select elt('1',1.2);
+ elt 
+-----
+ 1.2
+(1 row)
+
+select elt('1','a');
+ elt 
+-----
+ a
+(1 row)
+
+select elt('1','a');
+ elt 
+-----
+ a
+(1 row)
+
+select elt(1,'a');
+ elt 
+-----
+ a
+(1 row)
+
+select elt(1,'a','b');
+ elt 
+-----
+ a
+(1 row)
+
+select elt(1,'a',2);
+ elt 
+-----
+ a
+(1 row)
+
+select elt(2,'a',2);
+ elt 
+-----
+ 2
+(1 row)
+
+\c postgres
+drop database if exists format_test;

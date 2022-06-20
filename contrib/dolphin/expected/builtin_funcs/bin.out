@@ -1,0 +1,54 @@
+drop database if exists format_test;
+NOTICE:  database "format_test" does not exist, skipping
+create database format_test dbcompatibility 'B';
+\c format_test
+select bin(1);
+ bin 
+-----
+ 1
+(1 row)
+
+select bin(0);
+ bin 
+-----
+ 0
+(1 row)
+
+select bin('0');
+ bin 
+-----
+ 0
+(1 row)
+
+select bin('a');
+ bin 
+-----
+ 0
+(1 row)
+
+select bin(1.1);
+ bin 
+-----
+ 1
+(1 row)
+
+select bin(null);
+ bin 
+-----
+ 
+(1 row)
+
+select bin(true);
+ bin 
+-----
+ 1
+(1 row)
+
+select bin(false);
+ bin 
+-----
+ 0
+(1 row)
+
+\c postgres
+drop database if exists format_test;

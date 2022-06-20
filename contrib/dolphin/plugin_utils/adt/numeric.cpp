@@ -98,6 +98,15 @@ typedef struct {
 #define NUMERIC_ABBREV_NAN Int32GetDatum(PG_INT32_MIN)
 #endif
 
+PG_FUNCTION_INFO_V1_PUBLIC(bin_string);
+extern "C" DLL_PUBLIC Datum bin_string(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1_PUBLIC(bin_integer);
+extern "C" DLL_PUBLIC Datum bin_integer(PG_FUNCTION_ARGS);
+
+
+PG_FUNCTION_INFO_V1_PUBLIC(bin_bool);
+extern "C" DLL_PUBLIC Datum bin_bool(PG_FUNCTION_ARGS);
 /* ----------
  * Some preinitialized constants
  * ----------
@@ -19507,4 +19516,50 @@ Datum conv_num(PG_FUNCTION_ARGS)
         PG_RETURN_NULL();
     }
     PG_RETURN_TEXT_P(cstring_to_text(result));
+}
+
+
+Datum bin_integer(PG_FUNCTION_ARGS)
+{
+    int64 num = PG_GETARG_INT64(0);
+    int from_base = 10;
+    int to_base = 2;
+    char result[CONV_MAX_CHAR_LEN + 1] = "";
+    if (num == 0) {
+        result[0] = '0';
+    } else {
+        if (conv_n(result, num, from_base, to_base) != 0) {
+            result[0] = '0';
+        }
+    }
+    PG_RETURN_TEXT_P(cstring_to_text(result));
+}
+
+Datum bin_string(PG_FUNCTION_ARGS)
+{
+    text* string = PG_GETARG_TEXT_PP(0);
+    int from_base = 10;
+    int to_base = 2;
+    char* data = VARDATA_ANY(string);
+    char result[CONV_MAX_CHAR_LEN + 1] = "";
+    int len = VARSIZE_ANY_EXHDR(string);
+    if (len <= 0) {
+        PG_RETURN_NULL();
+    }
+    double value_double = atof(data);
+    int64 num = floor(value_double);
+    if (num == 0) {
+        PG_RETURN_TEXT_P(cstring_to_text("0"));
+    } else {
+        if (conv_n(result, num, from_base, to_base) != 0) {
+            PG_RETURN_NULL();
+        }
+    }
+    PG_RETURN_TEXT_P(cstring_to_text(result));
+}
+
+Datum bin_bool(PG_FUNCTION_ARGS)
+{
+    const char* res = PG_GETARG_BOOL(0) ? "1" : "0";
+    PG_RETURN_TEXT_P(cstring_to_text(res));
 }

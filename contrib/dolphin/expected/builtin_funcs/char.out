@@ -1,0 +1,101 @@
+drop database if exists format_test;
+NOTICE:  database "format_test" does not exist, skipping
+create database format_test dbcompatibility 'B';
+\c format_test
+select chara(67,66,67);
+ chara 
+-------
+ CBC
+(1 row)
+
+select chara('65','66','67');
+ chara 
+-------
+ ABC
+(1 row)
+
+select chara('A','B','C');
+ chara 
+-------
+    
+(1 row)
+
+select chara(65.4,66.3,67.3);
+ chara 
+-------
+ ABC
+(1 row)
+
+select chara(null);
+ chara 
+-------
+ 
+(1 row)
+
+select chara(65);
+ chara 
+-------
+ A
+(1 row)
+
+select chara(67,66,67);
+ chara 
+-------
+ CBC
+(1 row)
+
+select chara(65,66.4);
+ chara 
+-------
+ AB
+(1 row)
+
+select chara(65,'66');
+ chara 
+-------
+ AB
+(1 row)
+
+select chara(65,'66.4');
+ chara 
+-------
+ AB
+(1 row)
+
+select chara(65,nul,66);
+ERROR:  column "nul" does not exist
+LINE 1: select chara(65,nul,66);
+                        ^
+CONTEXT:  referenced column: chara
+select chara(-18446744073709551616);
+ chara 
+-------
+ 
+(1 row)
+
+select chara(18446744073709551615);
+ chara 
+-------
+ 
+(1 row)
+
+select chara(0);
+ chara 
+-------
+ 
+(1 row)
+
+select chara(18446744073709551615);
+ chara 
+-------
+ 
+(1 row)
+
+select chara(65);
+ chara 
+-------
+ A
+(1 row)
+
+\c postgres
+drop database if exists format_test;
