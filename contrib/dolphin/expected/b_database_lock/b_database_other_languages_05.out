@@ -32,15 +32,11 @@ select get_lock('용혼이 빙의하다');
         1
 (1 row)
 
-select lockname from get_all_locks() order by lockname;
-      lockname      
---------------------
- 경찰
- 빛의 화신
- 용혼이 빙의하다
- 산자나무 주스
- 데이터베이스입니다
-(5 rows)
+select count(lockname) from get_all_locks();
+ count 
+-------
+     5
+(1 row)
 
 select is_free_lock('데이터베이스입니다');
  is_free_lock 

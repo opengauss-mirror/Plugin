@@ -7,7 +7,7 @@ select get_lock('경찰');
 select get_lock('빛의 화신');
 select get_lock('산자나무 주스');
 select get_lock('용혼이 빙의하다');
-select lockname from get_all_locks() order by lockname;
+select count(lockname) from get_all_locks();
 
 select is_free_lock('데이터베이스입니다');
 select is_free_lock('경찰');
