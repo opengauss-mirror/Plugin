@@ -50,7 +50,6 @@
 #include "catalog/pg_type.h"
 #include "workload/cpwlm.h"
 #include "utils/varbit.h"
-#include "plugin_utils/vecfunc_plugin.h"
 
 #define JUDGE_INPUT_VALID(X, Y) ((NULL == (X)) || (NULL == (Y)))
 #define GET_POSITIVE(X) ((X) > 0 ? (X) : ((-1) * (X)))
@@ -1097,7 +1096,7 @@ Datum text_substr_null(PG_FUNCTION_ARGS)
      */
     baseIdx = 6 + (int)is_compress + (eml - 1) * 8;
 
-    result = (*substr_Array_Plugin[baseIdx])(str, start, length, &is_null, fun_mblen);
+    result = (*substr_Array[baseIdx])(str, start, length, &is_null, fun_mblen);
 
     if (is_null == true)
         PG_RETURN_NULL();
@@ -1120,7 +1119,7 @@ Datum text_substr_no_len_null(PG_FUNCTION_ARGS)
     is_compress = (VARATT_IS_COMPRESSED(DatumGetPointer(str)) || VARATT_IS_EXTERNAL(DatumGetPointer(str)));
     // orclcompat is false withlen is false
     baseIdx = 4 + (int)is_compress + (eml - 1) * 8;
-    result = (*substr_Array_Plugin[baseIdx])(str, start, 0, &is_null, fun_mblen);
+    result = (*substr_Array[baseIdx])(str, start, 0, &is_null, fun_mblen);
 
     if (is_null == true)
         PG_RETURN_NULL();
@@ -1356,7 +1355,7 @@ Datum text_substr_orclcompat(PG_FUNCTION_ARGS)
     is_compress = (VARATT_IS_COMPRESSED(DatumGetPointer(str)) || VARATT_IS_EXTERNAL(DatumGetPointer(str)));
     // orclcompat is true, withlen is true
     baseIdx = 6 + (int)is_compress + (eml - 1) * 8;
-    result = (*substr_Array_Plugin[baseIdx])(str, start, length, &is_null, fun_mblen);
+    result = (*substr_Array[baseIdx])(str, start, length, &is_null, fun_mblen);
 
     if (is_null == true)
         PG_RETURN_NULL();
@@ -1387,7 +1386,7 @@ Datum text_substr_no_len_orclcompat(PG_FUNCTION_ARGS)
     is_compress = (VARATT_IS_COMPRESSED(DatumGetPointer(str)) || VARATT_IS_EXTERNAL(DatumGetPointer(str)));
     // orclcompat is true, withlen is false
     baseIdx = 4 + (int)is_compress + (eml - 1) * 8;
-    result = (*substr_Array_Plugin[baseIdx])(str, start, 0, &is_null, fun_mblen);
+    result = (*substr_Array[baseIdx])(str, start, 0, &is_null, fun_mblen);
 
     if (is_null == true)
         PG_RETURN_NULL();
