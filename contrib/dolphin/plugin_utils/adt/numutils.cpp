@@ -275,7 +275,7 @@ int32 PgStrtoint32Internal(const char* s, bool sqlModeStrict)
     /* allow trailing whitespace, but not other trailing chars */
     CheckSpaceAndDotInternal(false, '\0', &digitAfterDot, &ptr);
 
-    if (sqlModeStrict && unlikely(*ptr != '\0') && u_sess->attr.attr_sql.sql_compatibility != B_FORMAT)
+    if (sqlModeStrict && unlikely(*ptr != '\0'))
         goto invalid_syntax;
 
     if (!neg) {
