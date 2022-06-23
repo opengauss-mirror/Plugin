@@ -1132,6 +1132,12 @@ Datum int84(PG_FUNCTION_ARGS)
 
     /* Test for overflow by reverse-conversion. */
     if ((int64)result != arg) {
+        /* keyword IGNORE has higher priority than sql mode */
+        if (fcinfo->can_ignore) {
+            ereport(WARNING, (errmsg("integer out of range")));
+            PG_RETURN_INT32(arg < INT_MIN ? INT_MIN : INT_MAX);
+        }
+        
         if (!SQL_MODE_STRICT()) {
             if (result < 0) {
                 result = INT32_MIN;
@@ -1161,6 +1167,12 @@ Datum int82(PG_FUNCTION_ARGS)
 
     /* Test for overflow by reverse-conversion. */
     if ((int64)result != arg) {
+        /* keyword IGNORE has higher priority than sql mode */
+        if (fcinfo->can_ignore) {
+            ereport(WARNING, (errmsg("smallint out of range")));
+            PG_RETURN_INT16(arg < SHRT_MIN ? SHRT_MIN : SHRT_MAX);
+        }
+        
         if (!SQL_MODE_STRICT()) {
             if (result < 0) {
                 result = INT16_MIN;
@@ -1208,6 +1220,12 @@ Datum dtoi8(PG_FUNCTION_ARGS)
     if (isnan(num))
         ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("bigint out of range")));
 
+    /* keyword IGNORE has priority than sql mode */
+    if (fcinfo->can_ignore && (num < (float8)PG_INT64_MIN || num >= -((float8)PG_INT64_MIN))) {
+        ereport(WARNING, (errmsg("bigint out of range")));
+        PG_RETURN_INT64(num < (float8)PG_INT64_MIN ? LONG_MIN : LONG_MAX);
+    }
+    
     if (SQL_MODE_STRICT()) {
         if (num < (float8)PG_INT64_MIN || num >= -((float8)PG_INT64_MIN))
             ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("bigint out of range")));
@@ -1253,6 +1271,12 @@ Datum ftoi8(PG_FUNCTION_ARGS)
     if (isnan(num))
         ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("bigint out of range")));
 
+    /* keyword IGNORE has higher priority than sql mode */
+    if (fcinfo->can_ignore && (num < (float4)PG_INT64_MIN || num >= -((float4)PG_INT64_MIN))) {
+        ereport(WARNING, (errmsg("bigint out of range")));
+        PG_RETURN_INT64(num < (float4)PG_INT64_MIN ? LONG_MIN : LONG_MAX);
+    }
+    
     if (SQL_MODE_STRICT()) {
         if (num < (float4)PG_INT64_MIN || num >= -((float4)PG_INT64_MIN))
             ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("bigint out of range")));
