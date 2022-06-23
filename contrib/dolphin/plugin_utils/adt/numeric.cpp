@@ -4655,7 +4655,7 @@ static void apply_typmod(NumericVar* var, int32 typmod)
  *
  * If overflow, return false (no error is raised).  Return true if okay.
  */
-bool numericvar_to_int64(const NumericVar* var, int64* result)
+bool numericvar_to_int64(const NumericVar* var, int64* result, bool can_ignore)
 {
     NumericDigit* digits = NULL;
     int ndigits;
