@@ -1,0 +1,32 @@
+drop database if exists b;
+NOTICE:  database "b" does not exist, skipping
+create database b dbcompatibility 'b';
+\c b
+--return null if input include null
+select GREATEST(null,1,2), GREATEST(null,1,2) is null;
+ greatest | ?column? 
+----------+----------
+          | t
+(1 row)
+
+select GREATEST(1,2);
+ greatest 
+----------
+        2
+(1 row)
+
+--return null if input include null
+select LEAST(null,1,2), LEAST(null,1,2) is null;
+ least | ?column? 
+-------+----------
+       | t
+(1 row)
+
+select LEAST(1,2);
+ least 
+-------
+     1
+(1 row)
+
+\c postgres
+drop database if exists b;
