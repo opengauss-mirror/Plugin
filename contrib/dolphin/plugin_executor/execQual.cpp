@@ -4185,8 +4185,10 @@ static Datum ExecEvalMinMax(MinMaxExprState* minmaxExpr, ExprContext* econtext, 
         int32 cmpresult;
 
         value = ExecEvalExpr(e, econtext, &valueIsNull, NULL);
-        if (valueIsNull)
-            continue; /* ignore NULL inputs */
+        if (valueIsNull) {
+            *isNull = true;
+            return (Datum)0; /* return NULL if inputs include NULL for B format*/
+        }
 
         if (*isNull) {
             /* first nonnull input, adopt value */
