@@ -324,7 +324,7 @@ Datum datetime_in(PG_FUNCTION_ARGS)
                 dterr = NumberTimestamp(field[0], tm, &fsec);
                 dtype = DTK_DATE;
             } else {
-                dterr = DecodeDateTime(field, ftype, nf, &dtype, tm, &fsec, &tz);
+                dterr = DecodeDateTimeForBDatabase(field, ftype, nf, &dtype, tm, &fsec, &tz);
             }
         }
         if (dterr != 0)
@@ -422,16 +422,24 @@ static int NumberTimestamp(char *str, pg_tm *tm, fsec_t *fsec)
 {
     char *cp = str;
     int len = 0;
-    int dterr;
+    int dterr = 0;
     /* validate number str */
     while (*cp != '\0' && *cp != '.') {
         ++len;
         ++cp;
     }
-    /*YYMMDD or YYYYMMDD or YYMMDDhhmmss or YYYYMMDDhhmmss*/
-    if (len < TIMESTAMP_YYMMDD_LEN || len > TIMESTAMP_YYYYMMDDhhmmss_LEN) {
+    /* validate len */
+    if (len > TIMESTAMP_YYYYMMDDhhmmss_LEN) {
         ereport(ERROR,
                 (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE), errmsg("timestamp out of range: \"%s\"", str)));
+    }
+    /* treat as date */
+    if (len < TIMESTAMP_YYMMDD_LEN) {
+        errno_t rc = memset_s(tm, sizeof(*tm), 0, sizeof(*tm));
+        securec_check(rc, "\0", "\0");
+        *fsec = 0;
+        dterr = NumberDate(str, tm);
+        return dterr;
     }
     /* 4-digit year, skip date part first
      * update len which now stands for how many digits should appear in time field
@@ -523,7 +531,7 @@ static Timestamp int64_b_format_timestamp_internal(bool hasTz, int64 ts, fsec_t 
         time = ts % 1000000; /* extract time: hhmmss */
         date = ts / 1000000; /* extract date: YYMMDD or YYYYMMDD */
     } 
-    if (int32_b_format_time_internal(tm, true, time, &fsec) || int32_b_format_date_internal(tm, date)){
+    if (int32_b_format_time_internal(tm, true, time, &fsec) || int32_b_format_date_internal(tm, date, true)){
         ereport(ERROR,
             (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE), errmsg("timestamp out of range")));
     }
@@ -589,7 +597,7 @@ Datum datetime_out(PG_FUNCTION_ARGS)
     if (TIMESTAMP_NOT_FINITE(timestamp))
         EncodeSpecialTimestamp(timestamp, buf);
     else if (timestamp2tm(timestamp, NULL, tm, &fsec, NULL, NULL) == 0)
-        EncodeDateTime(tm, fsec, false, 0, NULL, u_sess->time_cxt.DateStyle, buf);
+        EncodeDateTimeForBDatabase(tm, fsec, false, 0, NULL, u_sess->time_cxt.DateStyle, buf);
     else
         ereport(ERROR, (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE), errmsg("timestamp out of range")));
 
@@ -731,7 +739,7 @@ Datum smalldatetime_in(PG_FUNCTION_ARGS)
          */
         dterr = ParseDateTime(str, workbuf, sizeof(workbuf), field, ftype, MAXDATEFIELDS, &nf);
         if (dterr == 0) {
-            dterr = DecodeDateTime(field, ftype, nf, &dtype, tm, &fsec, &tz);
+            dterr = DecodeDateTimeForBDatabase(field, ftype, nf, &dtype, tm, &fsec, &tz);
             fsec = 0;
         }
         if (dterr != 0)
@@ -1053,7 +1061,7 @@ Datum timestamptz_in(PG_FUNCTION_ARGS)
             tz = DetermineTimeZoneOffset(tm, session_timezone);
             dtype = DTK_DATE;
         } else {
-            dterr = DecodeDateTime(field, ftype, nf, &dtype, tm, &fsec, &tz);
+            dterr = DecodeDateTimeForBDatabase(field, ftype, nf, &dtype, tm, &fsec, &tz);
         }
     }
     if (dterr != 0)
@@ -1110,7 +1118,7 @@ Datum timestamptz_out(PG_FUNCTION_ARGS)
     if (TIMESTAMP_NOT_FINITE(dt))
         EncodeSpecialTimestamp(dt, buf);
     else if (timestamp2tm(dt, &tz, tm, &fsec, &tzn, NULL) == 0)
-        EncodeDateTime(tm, fsec, true, tz, tzn, u_sess->time_cxt.DateStyle, buf);
+        EncodeDateTimeForBDatabase(tm, fsec, true, tz, tzn, u_sess->time_cxt.DateStyle, buf);
     else
         ereport(ERROR, (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE), errmsg("timestamp out of range")));
 

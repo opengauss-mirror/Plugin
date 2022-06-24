@@ -29,12 +29,12 @@
 #define B_FORMAT_TIME_NUMBER_MAX_LEN 7
 #define B_FORMAT_DATE_INT_MIN 101
 #define B_FORMAT_MAX_DATE 99991231
-#define B_FORMAT_MAX_TIME_USECS INT64CONST(72489599999999)
+#define B_FORMAT_MAX_TIME_USECS INT64CONST(3020400000000)
 
 /* for b compatibility type*/
-extern int int32_b_format_date_internal(struct pg_tm *tm, int4 date);
+extern int int32_b_format_date_internal(struct pg_tm *tm, int4 date, bool mayBe2Digit);
 extern int int32_b_format_time_internal(struct pg_tm *tm, bool timeIn24, int4 time, fsec_t *fsec);
 extern int NumberDate(char *str, pg_tm *tm);
-extern int NumberTime(bool timeIn24, char *str, pg_tm *tm, fsec_t *fsec);
+extern int NumberTime(bool timeIn24, char *str, pg_tm *tm, fsec_t *fsec, int D = 0, bool hasD = false);
 
 #endif /* DATE_H */
