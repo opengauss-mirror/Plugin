@@ -336,11 +336,5 @@ insert into t_text values(123456789123456789);
 insert ignore into t_nvarchar2 select cont from t_text;
 select * from t_nvarchar2;
 
--- test for integer-string-mixed value in
-drop table if exists t_int;
-create table t_int(num int);
-insert ignore into t_int values('12a34');
-select * from t_int;
-
 \c postgres
 drop database if exists sql_ignore_type_transform_test;

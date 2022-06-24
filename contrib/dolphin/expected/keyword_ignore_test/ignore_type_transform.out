@@ -767,15 +767,5 @@ select * from t_nvarchar2;
  123456789123456789
 (3 rows)
 
--- test for integer-string-mixed value in
-drop table if exists t_int;
-create table t_int(num int);
-insert ignore into t_int values('12a34');
-select * from t_int;
- num 
------
-  12
-(1 row)
-
 \c postgres
 drop database if exists sql_ignore_type_transform_test;
