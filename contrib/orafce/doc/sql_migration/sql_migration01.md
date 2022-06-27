@@ -7,9 +7,9 @@ This chapter explains the environment settings that must be configured before mi
 
 ----
 
- - In this migration guide, the migration source Oracle database and the migration target PostgreSQL are targeted to be the versions listed below.
+ - In this migration guide, the migration source Oracle database and the migration target OpenGauss are targeted to be the versions listed below.
      - Oracle Database 12c
-     - PostgreSQL 9.5
+     - OpenGauss 3.0
  - After migration, verify operation and confirm that the data was migrated successfully by checking if the intended result is obtained.
 
 ----
@@ -17,7 +17,7 @@ This chapter explains the environment settings that must be configured before mi
 
 ### 1.1 Setting the Server Parameter
 
-This section explains the server parameter required for matching the behavior of PostgreSQL with the behavior of the Oracle database. 
+This section explains the server parameter required for matching the behavior of OpenGauss with the behavior of the Oracle database. 
 Set the parameter in postgresql.conf so that the database always operates in the same way from all clients.
 
 The following table shows the server parameter explained here.
@@ -42,8 +42,8 @@ Functions added by orafce, which provides features for Oracle database compatibi
 This enables all users to be able to use these functions without having to configure any particular settings. 
 Therefore, when using the search_path parameter to specify a schema search path, you must include "public".
 
-Some data types and functions added by orafce are implemented with different external specifications in PostgreSQL and orafce. 
-By default, the PostgreSQL external specifications have priority.
+Some data types and functions added by orafce are implemented with different external specifications in OpenGauss and orafce. 
+By default, the OpenGauss external specifications have priority.
 
 To implement these data types and functions in line with the orafce external specifications, specify "oracle" and "pg_catalog" in the search_path parameter of postgresql.conf. 
 You must place "oracle" before "pg_catalog".
@@ -65,7 +65,7 @@ search_path = '"$user", public, oracle, pg_catalog'
 
 ----
 
-Refer to Orafce Docmentation for information on features implemented with different external specifications in PostgreSQL and orafce.
+Refer to Orafce Docmentation for information on features implemented with different external specifications in OpenGauss and orafce.
 
 ----
 

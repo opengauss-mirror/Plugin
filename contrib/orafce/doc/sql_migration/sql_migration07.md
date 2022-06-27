@@ -1,7 +1,7 @@
 Appendix A  Correspondence with Oracle Databases
 ----
 
-This appendix explains the correspondence between PostgreSQL and Oracle databases.
+This appendix explains the correspondence between OpenGauss and Oracle databases.
 
 ### A.1 Hint Clauses
 
@@ -15,7 +15,7 @@ The table below lists the pg_hint_plan hints that correspond to Oracle database 
 
 **Correspondence between Oracle database hints and pg_hint_plan**
 
-|Hint (Oracle database)|Hint (PostgreSQL)|
+|Hint (Oracle database)|Hint (OpenGauss)|
 |:---|:---|
 |FIRST_ROWS hint	|Rows	|
 |FULL hint	|Seqscan	|
@@ -46,7 +46,7 @@ The example below shows migration of a hint clause (INDEX hint).
 <thead>
 <tr>
 <th align="center">Oracle database</th>
-<th align="center">PostgreSQL</th>
+<th align="center">OpenGauss</th>
 </tr>
 </thead>
 <tbody>
@@ -70,7 +70,7 @@ Note: The string idx1 is the index name defined for the i_number row of inventor
 
 ----
 
-The pg_hint_plan hint, which is an extended feature of PostgreSQL, cannot be used to specify a column name or set a query block before the table name specification.
+The pg_hint_plan hint, which is an extended feature of OpenGauss, cannot be used to specify a column name or set a query block before the table name specification.
 
 ----
 
@@ -82,13 +82,13 @@ Dynamic performance views are views that can reference information mainly relati
 
 #### A.2.1 Alternatives for Dynamic Performance Views
 
-PostgreSQL does not contain any dynamic performance views. Consider using the PostgreSQL system catalogs or statistics views instead.
+OpenGauss does not contain any dynamic performance views. Consider using the OpenGauss system catalogs or statistics views instead.
 
 The table below lists the alternative system catalogs and statistics views that correspond to the dynamic performance views.
 
 Alternatives for dynamic performance views
 
-|Dynamic performance view<br> (Oracle database)	|System catalog or statistics view <br>(PostgreSQL)|
+|Dynamic performance view<br> (Oracle database)	|System catalog or statistics view <br>(OpenGauss)|
 |:---|:---|
 |V$ACCESS	|	pg_locks	|
 |V$ACTIVE_SERVICES	|	pg_stat_activity	|
@@ -148,7 +148,7 @@ Specifying formats in data type formatting functions makes it possible to conver
 
 #### A.3.1 Number Format Correspondence
 
-The table below indicates which Oracle database number formats are available in PostgreSQL.
+The table below indicates which Oracle database number formats are available in OpenGauss.
 
 **Number format correspondence**
 
@@ -184,82 +184,3 @@ N: Cannot be migrated
 
 -: Does not need to be migrated (because it is not available in Oracle databases)
 
-#### A.3.2 Datetime Format Correspondence
-
-The table below indicates which Oracle database datetime formats are available in PostgreSQL.
-
-Datetime format correspondence
-
-|Datetime format|TO_CHAR|TO_DATE|TO_TIMESTAMP|Remarks|
-|:---|:---|:---|:---|:---|
-|	- <br> / <br> , <br> . <br> ; <br> : <br> "text"	|	Y	|	Y	|	Y	|		|
-|	AD	|	Y	|	Y	|	Y	|		|
-|	A.D.	|	Y	|	Y	|	Y	|		|
-|	AM	|	Y	|	Y	|	Y	|		|
-|	A.M.	|	Y	|	Y	|	Y	|		|
-|	BC	|	Y	|	Y	|	Y	|		|
-|	B.C.	|	Y	|	Y	|	Y	|		|
-|	CC	|	Y	|	-	|	-	|		|
-|	SCC	|	Y	|	-	|	-	|		|
-|	D	|	Y	|	Y	|	Y	|		|
-|	DAY	|	Y	|	Y	|	Y	|		|
-|	DD	|	Y	|	Y	|	Y	|		|
-|	DDD	|	Y	|	YR	|	YR	|	The year must also be specified. (This format is used together with other formats such as YYYY.)	|
-|	DL	|	N	|	N	|	N	|		|
-|	DS	|	N	|	N	|	N	|		|
-|	DY	|	Y	|	Y	|	Y	|		|
-|	E	|	N	|	N	|	N	|		|
-|	EE	|	N	|	N	|	N	|		|
-|	FF1 to FF9	|	MR	|	-	|	MR	|	Change to MS.<br>However, the number of digits is fixed at three.	|
-|	FM	|	YR	|	YR	|	YR	|	Applies only to the format specified immediately after FM.	|
-|	FX	|	Y	|	Y	|	Y	|		|
-|	HH	|	Y	|	Y	|	Y	|		|
-|	HH12	|	Y	|	Y	|	Y	|		|
-|	HH24	|	Y	|	Y	|	Y	|		|
-|	IW	|	Y	|	-	|	-	|		|
-|	IYYY	|	Y	|	-	|	-	|		|
-|	IYY	|	Y	|	-	|	-	|		|
-|	IY	|	Y	|	-	|	-	|		|
-|	I	|	Y	|	-	|	-	|		|
-|	J	|	Y	|	Y	|	Y	|		|
-|	MI	|	Y	|	Y	|	Y	|		|
-|	MM	|	Y	|	Y	|	Y	|		|
-|	MON	|	Y	|	Y	|	Y	|		|
-|	MONTH	|	Y	|	Y	|	Y	|		|
-|	PM	|	Y	|	Y	|	Y	|		|
-|	P.M.	|	Y	|	Y	|	Y	|		|
-|	Q	|	Y	|	-	|	-	|		|
-|	RM	|	Y	|	Y	|	Y	|		|
-|	RR	|	Y	|	Y	|	Y	|		|
-|	RRRR	|	Y	|	Y	|	Y	|		|
-|	SS	|	Y	|	Y	|	Y	|		|
-|	SSSSS	|	M	|	M	|	M	|	Change to SSSS.	|
-|	TS	|	N	|	N	|	N	|		|
-|	TZD	|	M	|	-	|	-	|	Change to TZ.	|
-|	TZH	|	N	|	-	|	-	|		|
-|	TZM	|	N	|	-	|	-	|		|
-|	TZR	|	M	|	-	|	-	|	Change to TZ.	|
-|	WW	|	Y	|	Y	|	Y	|		|
-|	W	|	Y	|	Y	|	Y	|		|
-|	X	|	Y	|	-	|	Y	|		|
-|	Y,YYY	|	Y	|	Y	|	Y	|		|
-|	YEAR	|	N	|	-	|	-	|		|
-|	SYEAR	|	N	|	-	|	-	|		|
-|	YYYY	|	Y	|	Y	|	Y	|		|
-|	SYYYY	|	N	|	N	|	N	|		|
-|	YYY	|	Y	|	Y	|	Y	|		|
-|	YY	|	Y	|	Y	|	Y	|		|
-|	Y	|	Y	|	Y	|	Y	|		|
-
-
-Y: Available
-
-M: Can be migrated
-
-N: Cannot be migrated
-
-YR: Available with restrictions
-
-MR: Can be migrated with restrictions
-
--: Does not need to be migrated (because it is not available in Oracle databases)

@@ -83,6 +83,7 @@
 #include "utils/acl.h"
 #include "commands/explain.h"
 #include "commands/sec_rls_cmds.h"
+#include "commands/typecmds.h"
 #include "streaming/streaming_catalog.h"
 #include "instruments/instr_unique_sql.h"
 #include "streaming/init.h"
@@ -383,6 +384,7 @@ Query* transformStmt(ParseState* pstate, Node* parseTree, bool isFirstNode, bool
     
     Query* result = NULL;
     AnalyzerRoutine *analyzerRoutineHook = (AnalyzerRoutine*)u_sess->hook_cxt.analyzerRoutineHook;
+    char* enumName = NULL;
 
     switch (nodeTag(parseTree)) {
             /*
@@ -444,6 +446,23 @@ Query* transformStmt(ParseState* pstate, Node* parseTree, bool isFirstNode, bool
             result = transformCreateModelStmt(pstate, (CreateModelStmt*) parseTree);
             break;
 
+        case T_CreateEnumStmt:
+            enumName = strVal(llast(((CreateEnumStmt*)parseTree)->typname));
+            if (strstr(enumName, "anonymous_enum"))
+                ereport(ERROR, (errcode(ERRCODE_DUPLICATE_OBJECT), errmsg("enum type name \"%s\" can't contain \"anonymous_enum\"", enumName)));
+            result = makeNode(Query);
+            result->commandType = CMD_UTILITY;
+            result->utilityStmt = (Node*)parseTree;
+            break;
+        
+        case T_RenameStmt:
+            enumName = ((RenameStmt*) parseTree)->newname;
+            if (((RenameStmt*) parseTree)->renameType == OBJECT_TYPE && strstr(enumName, "anonymous_enum"))
+                ereport(ERROR, (errcode(ERRCODE_DUPLICATE_OBJECT), errmsg("type name \"%s\" can't contain \"anonymous_enum\"", enumName)));
+            result = makeNode(Query);
+            result->commandType = CMD_UTILITY;
+            result->utilityStmt = (Node*)parseTree;
+            break;
 
         default:
 
@@ -1904,6 +1923,7 @@ static Query* transformInsertStmt(ParseState* pstate, InsertStmt* stmt)
     /* Set query tdTruncCastStatus to recored if auto truncation enabled or not. */
     qry->tdTruncCastStatus = pstate->tdTruncCastStatus;
     qry->hintState = stmt->hintState;
+    qry->hasIgnore = stmt->hasIgnore;
 
     return qry;
 }
@@ -2393,9 +2413,8 @@ void CheckDefaultForNotnullCols(ParseState* pstate, List* exprlist, List* attrno
         if (IsA(expr, SetToDefault) && attr->attnotnull && !attr->atthasdef) {
             lfirst(exprCell) = makeConstByType(attr);
             pfree(expr);
-        } else {
-            attrn = attrn->next;
         }
+        attrn = attrn->next;
     }
 }
 
@@ -3783,6 +3802,7 @@ static Query* transformUpdateStmt(ParseState* pstate, UpdateStmt* stmt)
 
     assign_query_collations(pstate, qry);
     qry->hintState = stmt->hintState;
+    qry->hasIgnore = stmt->hasIgnore;
 
     return qry;
 }

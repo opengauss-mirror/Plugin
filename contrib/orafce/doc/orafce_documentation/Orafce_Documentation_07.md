@@ -15,7 +15,7 @@ commit;
 
 Oracle : commit can succeed. t has 1 row after that.
 
-PostgreSQL: commit failed due to the 2nd insert failed. so t has 0 row.
+OpenGauss: commit failed due to the 2nd insert failed. so t has 0 row.
 
 
 ### 7.2 DML with Subquery
@@ -60,7 +60,7 @@ select * from su where a in (select a from su where b = 1) for update;
 commit;
 ```
 
-In oracle, 0 row is selected. In PostgreSQL, 1 row (1, 2) is selected.
+In oracle, 0 row is selected. In OpenGauss, 1 row (1, 2) is selected.
 
 
 A best practice would be never use subquery in DML & SLEECT ... FOR UPDATE. Even in Oracle, the behavior is inconsistent as well. Oracle between 11.2.0.1 and 11.2.0.3 probably behavior same as Postgres, but other versions not.

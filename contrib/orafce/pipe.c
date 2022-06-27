@@ -819,7 +819,11 @@ dbms_pipe_unpack_message_text(PG_FUNCTION_ARGS)
 Datum
 dbms_pipe_unpack_message_date(PG_FUNCTION_ARGS)
 {
-	return dbms_pipe_unpack_message(fcinfo, IT_DATE);
+	if (DB_IS_CMPT(A_FORMAT)) {
+		return dbms_pipe_unpack_message(fcinfo, IT_TIMESTAMPTZ);
+	} else {
+		return dbms_pipe_unpack_message(fcinfo, IT_DATE);
+	}
 }
 
 Datum

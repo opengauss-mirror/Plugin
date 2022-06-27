@@ -43,6 +43,8 @@ extern char* typeTypeName(Type t);
 extern Oid typeTypeRelid(Type typ);
 extern Oid typeTypeCollation(Type typ);
 extern Datum stringTypeDatum(Type tp, char* string, int32 atttypmod);
+char* makeEnumTypeName(const char* relname, const char *colname, const char* schemaname);
+void DefineAnonymousEnum(TypeName * typname);
 
 extern Oid typeidTypeRelid(Oid type_id);
 extern bool IsTypeSupportedByCStore(_in_ Oid typeOid);

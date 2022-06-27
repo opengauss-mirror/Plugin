@@ -50,7 +50,6 @@
 #include "catalog/pg_type.h"
 #include "workload/cpwlm.h"
 #include "utils/varbit.h"
-#include "plugin_utils/vecfunc_plugin.h"
 
 #define JUDGE_INPUT_VALID(X, Y) ((NULL == (X)) || (NULL == (Y)))
 #define GET_POSITIVE(X) ((X) > 0 ? (X) : ((-1) * (X)))
@@ -202,6 +201,12 @@ extern "C" DLL_PUBLIC Datum gs_interval(PG_FUNCTION_ARGS);
 
 PG_FUNCTION_INFO_V1_PUBLIC(gs_strcmp);
 extern "C" DLL_PUBLIC Datum gs_strcmp(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1_PUBLIC(bytea_left);
+extern "C" DLL_PUBLIC Datum bytea_left(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1_PUBLIC(bytea_right);
+extern "C" DLL_PUBLIC Datum bytea_right(PG_FUNCTION_ARGS);
 
 /*****************************************************************************
  *	 CONVERSION ROUTINES EXPORTED FOR USE BY C CODE							 *
@@ -1091,7 +1096,7 @@ Datum text_substr_null(PG_FUNCTION_ARGS)
      */
     baseIdx = 6 + (int)is_compress + (eml - 1) * 8;
 
-    result = (*substr_Array_Plugin[baseIdx])(str, start, length, &is_null, fun_mblen);
+    result = (*substr_Array[baseIdx])(str, start, length, &is_null, fun_mblen);
 
     if (is_null == true)
         PG_RETURN_NULL();
@@ -1114,7 +1119,7 @@ Datum text_substr_no_len_null(PG_FUNCTION_ARGS)
     is_compress = (VARATT_IS_COMPRESSED(DatumGetPointer(str)) || VARATT_IS_EXTERNAL(DatumGetPointer(str)));
     // orclcompat is false withlen is false
     baseIdx = 4 + (int)is_compress + (eml - 1) * 8;
-    result = (*substr_Array_Plugin[baseIdx])(str, start, 0, &is_null, fun_mblen);
+    result = (*substr_Array[baseIdx])(str, start, 0, &is_null, fun_mblen);
 
     if (is_null == true)
         PG_RETURN_NULL();
@@ -1350,7 +1355,7 @@ Datum text_substr_orclcompat(PG_FUNCTION_ARGS)
     is_compress = (VARATT_IS_COMPRESSED(DatumGetPointer(str)) || VARATT_IS_EXTERNAL(DatumGetPointer(str)));
     // orclcompat is true, withlen is true
     baseIdx = 6 + (int)is_compress + (eml - 1) * 8;
-    result = (*substr_Array_Plugin[baseIdx])(str, start, length, &is_null, fun_mblen);
+    result = (*substr_Array[baseIdx])(str, start, length, &is_null, fun_mblen);
 
     if (is_null == true)
         PG_RETURN_NULL();
@@ -1381,7 +1386,7 @@ Datum text_substr_no_len_orclcompat(PG_FUNCTION_ARGS)
     is_compress = (VARATT_IS_COMPRESSED(DatumGetPointer(str)) || VARATT_IS_EXTERNAL(DatumGetPointer(str)));
     // orclcompat is true, withlen is false
     baseIdx = 4 + (int)is_compress + (eml - 1) * 8;
-    result = (*substr_Array_Plugin[baseIdx])(str, start, 0, &is_null, fun_mblen);
+    result = (*substr_Array[baseIdx])(str, start, 0, &is_null, fun_mblen);
 
     if (is_null == true)
         PG_RETURN_NULL();
@@ -7539,4 +7544,61 @@ Datum gs_strcmp(PG_FUNCTION_ARGS)
     pfree_ext(str0);
     pfree_ext(str1);
     PG_RETURN_INT32(ret);
+}
+
+Datum bytea_left(PG_FUNCTION_ARGS)
+{
+    bytea* str = (bytea*)PG_GETARG_DATUM(0);
+    if (VARATT_IS_HUGE_TOAST_POINTER((varlena *)str)) {
+        ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+                errmsg("bytea_right could not support more than 1GB clob/blob data")));
+    }
+    const char* p = VARDATA_ANY(str);
+    int len = VARSIZE_ANY_EXHDR(str);
+    int n = PG_GETARG_INT32(1);
+
+    if (n <= 0) {
+        return get_empty_blob(fcinfo);
+    }
+
+    if (n > len) {
+        PG_RETURN_BYTEA_P(str);
+    } else {
+        bytea* result = (bytea*)palloc0(n + VARHDRSZ);
+        SET_VARSIZE(result, n + VARHDRSZ);
+        char* rp = VARDATA(result);
+        errno_t errorno = memcpy_s(rp, n, p, n);
+        securec_check(errorno, "\0", "\0");
+        PG_RETURN_BYTEA_P(result);
+    }
+}
+
+Datum bytea_right(PG_FUNCTION_ARGS)
+{
+    bytea* str = (bytea*)PG_GETARG_DATUM(0);
+    if (VARATT_IS_HUGE_TOAST_POINTER((varlena *)str)) {
+        ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+                errmsg("bytea_right could not support more than 1GB clob/blob data")));
+    }
+    const char* p = VARDATA_ANY(str);
+    int len = VARSIZE_ANY_EXHDR(str);
+    int n = PG_GETARG_INT32(1);
+    int off = 0;
+
+    if (n <= 0) {
+        return get_empty_blob(fcinfo);
+    } else {
+        off = len - n;
+    }
+
+    if (off <= 0) {
+        PG_RETURN_BYTEA_P(str);
+    } else {
+        bytea* result = (bytea*)palloc0(n + VARHDRSZ);
+        SET_VARSIZE(result, n + VARHDRSZ);
+        char* rp = VARDATA(result);
+        errno_t errorno = memcpy_s(rp, n, p + off, n);
+        securec_check(errorno, "\0", "\0");
+        PG_RETURN_BYTEA_P(result);
+    }
 }

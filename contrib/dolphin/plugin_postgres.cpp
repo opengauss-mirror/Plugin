@@ -64,7 +64,7 @@
 #include "storage/tcap.h"
 #include "plugin_parser/parse_func.h"
 #include "plugin_parser/parse_utilcmd.h"
-#include "plugin_utils/vecfunc_plugin.h"
+#include "plugin_vector/vecfunc.h"
 #include "replication/archive_walreceiver.h"
 #include "plugin_commands/mysqlmode.h"
 #ifndef WIN32_ONLY_COMPILER
@@ -182,6 +182,7 @@ void set_default_guc()
 void init_plugin_object()
 {
     u_sess->hook_cxt.transformStmtHook = (void*)transformStmt;
+    u_sess->hook_cxt.execInitExprHook = (void*)ExecInitExpr;
     set_processutility_prehook();
     set_default_guc();
 }
@@ -201,9 +202,11 @@ void _PG_init(void)
         InitLockNameHash();
     nameHashLock.unLock();
 
+    if (g_instance.plugin_vec_func_cxt.vec_func_plugin[DOLPHIN_VEC] == NULL) {
+        InitGlobalVecFuncMap();
+    }
     g_instance.raw_parser_hook[DB_CMPT_B] = (void*)raw_parser;
     init_plugin_object();
-    InitVecsubarrayPlugin();
 }
 
 void _PG_fini(void)

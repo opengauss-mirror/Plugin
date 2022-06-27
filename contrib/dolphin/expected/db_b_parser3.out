@@ -346,58 +346,49 @@ select 1 xor 0;
 (1 row)
 
 select '-12.3abc' xor null;
- xor 
------
-    
-(1 row)
-
+ERROR:  invalid input syntax for integer: "-12.3abc"
+LINE 1: select '-12.3abc' xor null;
+               ^
+CONTEXT:  referenced column: xor
 select '-12.3abc' xor -100.1;
- xor 
------
-   0
-(1 row)
-
+ERROR:  invalid input syntax for integer: "-12.3abc"
+LINE 1: select '-12.3abc' xor -100.1;
+               ^
+CONTEXT:  referenced column: xor
 select '-12.3abc' xor 0;
- xor 
------
-   1
-(1 row)
-
+ERROR:  invalid input syntax for integer: "-12.3abc"
+LINE 1: select '-12.3abc' xor 0;
+               ^
+CONTEXT:  referenced column: xor
 select '-12.3abc' xor 5;
- xor 
------
-   0
-(1 row)
-
+ERROR:  invalid input syntax for integer: "-12.3abc"
+LINE 1: select '-12.3abc' xor 5;
+               ^
+CONTEXT:  referenced column: xor
 select '-12.3abc' xor 158.3;
- xor 
------
-   0
-(1 row)
-
+ERROR:  invalid input syntax for integer: "-12.3abc"
+LINE 1: select '-12.3abc' xor 158.3;
+               ^
+CONTEXT:  referenced column: xor
 select '-12.3abc' xor -8.222e4;
- xor 
------
-   0
-(1 row)
-
+ERROR:  invalid input syntax for integer: "-12.3abc"
+LINE 1: select '-12.3abc' xor -8.222e4;
+               ^
+CONTEXT:  referenced column: xor
 select '-12.3abc' xor true;
- xor 
------
-   0
-(1 row)
-
+ERROR:  invalid input syntax for integer: "-12.3abc"
+LINE 1: select '-12.3abc' xor true;
+               ^
+CONTEXT:  referenced column: xor
 select '-12.3abc' xor false;
- xor 
------
-   1
-(1 row)
-
+ERROR:  invalid input syntax for integer: "-12.3abc"
+LINE 1: select '-12.3abc' xor false;
+               ^
+CONTEXT:  referenced column: xor
 select '-12.3abc' xor 'null';
- xor 
------
-   1
-(1 row)
-
+ERROR:  invalid input syntax for integer: "-12.3abc"
+LINE 1: select '-12.3abc' xor 'null';
+               ^
+CONTEXT:  referenced column: xor
 \c postgres
 drop database if exists mysql_test;
