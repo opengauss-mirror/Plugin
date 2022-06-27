@@ -166,8 +166,6 @@ int16 PgStrtoint16Internal(const char* s, bool sqlModeStrict)
     if (unlikely(!isdigit((unsigned char)*ptr))) {
         if (!sqlModeStrict)
             return tmp;
-        if (DB_IS_CMPT(A_FORMAT | PG_FORMAT))
-            goto invalid_syntax;
     }
 
     /* process digits */
@@ -256,8 +254,6 @@ int32 PgStrtoint32Internal(const char* s, bool sqlModeStrict)
     if (unlikely(!isdigit((unsigned char)*ptr))) {
         if (!sqlModeStrict)
             return tmp;
-        if (DB_IS_CMPT(A_FORMAT | PG_FORMAT))
-            goto invalid_syntax;
     }
 
     /* process digits */
