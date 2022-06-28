@@ -609,7 +609,7 @@ static int errstate;
 %type <str>		extract_arg
 %type <str>		timestamp_units
 %type <str>		opt_charset
-%type <boolean> opt_varying opt_timezone opt_no_inherit
+%type <boolean> opt_varying opt_timezone opt_no_inherit selected_timezone
 
 %type <ival>	Iconst SignedIconst
 %type <str>		Sconst comment_text notify_payload
@@ -21096,16 +21096,21 @@ opt_charset:
  * SQL92 date/time types
  */
 ConstDatetime:
-			TIMESTAMP '(' Iconst ')'
+			TIMESTAMP '(' Iconst ')' selected_timezone
 				{
-					// b format database: timestamp -> timestamptz
-					$$ = SystemTypeName("timestamptz"); 
+					if ($5)
+						$$ = SystemTypeName("timestamptz");
+					else
+						$$ = SystemTypeName("timestamp");
 					$$->typmods = list_make1(makeIntConst($3, @3));
 					$$->location = @1;
 				}
-			| TIMESTAMP
+			| TIMESTAMP selected_timezone
 				{
-					$$ = SystemTypeName("timestamptz");
+					if ($2)
+						$$ = SystemTypeName("timestamptz");
+					else
+						$$ = SystemTypeName("timestamp");
 					$$->location = @1;
 				}
 			| TIME '(' Iconst ')' opt_timezone
@@ -21157,6 +21162,13 @@ opt_timezone:
 			| WITHOUT TIME ZONE						{ $$ = FALSE; }
 			| /*EMPTY*/								{ $$ = FALSE; }
 		;
+
+selected_timezone:
+			WITH_TIME ZONE							{ $$ = TRUE; }
+			| WITHOUT TIME ZONE						{ $$ = FALSE; }
+			| /*EMPTY*/								{ $$ = TRUE; }
+		;
+
 
 opt_interval:
 			YEAR_P

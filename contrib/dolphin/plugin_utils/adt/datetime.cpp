@@ -42,7 +42,7 @@ static int DecodeTime(
 static int DecodeTimezone(const char* str, int* tzp);
 static const datetkn* datebsearch(const char* key, const datetkn* base, int nel);
 static int DecodeDate(char* str, unsigned int fmask, unsigned int* tmask, bool* is2digits, struct pg_tm* tm);
-static int ValidateDate(unsigned int fmask, bool isjulian, bool is2digits, bool bc, struct pg_tm* tm);
+static int ValidateDate(unsigned int fmask, bool isjulian, bool is2digits, bool bc, bool ad, struct pg_tm* tm);
 static void TrimTrailingZeros(char* str);
 static void AppendTrailingZeros(char* str);
 static void AppendSeconds(char* cp, int sec, fsec_t fsec, int precision, bool fillzeros);
@@ -714,7 +714,7 @@ int ParseDateTime(
  * happen if pg_time_t is just 32 bits), then assume UTC time zone - thomas
  * 1997-05-27
  */
-int DecodeDateTime(char** field, int* ftype, int nf, int* dtype, struct pg_tm* tm, fsec_t* fsec, int* tzp)
+int DecodeDateTimeForBDatabase(char** field, int* ftype, int nf, int* dtype, struct pg_tm* tm, fsec_t* fsec, int* tzp)
 {
     unsigned int fmask = 0, tmask;
     int type;
@@ -727,6 +727,7 @@ int DecodeDateTime(char** field, int* ftype, int nf, int* dtype, struct pg_tm* t
     bool isjulian = FALSE;
     bool is2digits = FALSE;
     bool bc = FALSE;
+    bool ad = FALSE;
     pg_tz* namedTz = NULL;
     struct pg_tm cur_tm;
 
@@ -1174,6 +1175,7 @@ int DecodeDateTime(char** field, int* ftype, int nf, int* dtype, struct pg_tm* t
 
                     case ADBC:
                         bc = (val == BC);
+                        ad = (val == AD);
                         break;
 
                     case DOW:
@@ -1238,7 +1240,7 @@ int DecodeDateTime(char** field, int* ftype, int nf, int* dtype, struct pg_tm* t
     } /* end loop over fields */
 
     /* do final checking/adjustment of Y/M/D fields */
-    dterr = ValidateDate(fmask, isjulian, is2digits, bc, tm);
+    dterr = ValidateDate(fmask, isjulian, is2digits, bc, ad, tm);
     if (dterr)
         return dterr;
 
@@ -1400,7 +1402,7 @@ overflow:
  * Allow specifying date to get a better time zone,
  * if time zones are allowed. - thomas 2001-12-26
  */
-int DecodeTimeOnly_(char** field, int* ftype, int nf, int* dtype, struct pg_tm* tm, fsec_t* fsec, int* tzp, int D)
+int DecodeTimeOnlyForBDatabase(char** field, int* ftype, int nf, int* dtype, struct pg_tm* tm, fsec_t* fsec, int* tzp, int D)
 {
     unsigned int fmask = 0, tmask;
     int type;
@@ -1411,6 +1413,7 @@ int DecodeTimeOnly_(char** field, int* ftype, int nf, int* dtype, struct pg_tm* 
     bool isjulian = FALSE;
     bool is2digits = FALSE;
     bool bc = FALSE;
+    bool ad = FALSE;
     int mer = HR24;
     pg_tz* namedTz = NULL;
 
@@ -1789,6 +1792,7 @@ int DecodeTimeOnly_(char** field, int* ftype, int nf, int* dtype, struct pg_tm* 
 
                     case ADBC:
                         bc = (val == BC);
+                        ad = (val == AD);
                         break;
 
                     case UNITS:
@@ -1841,7 +1845,7 @@ int DecodeTimeOnly_(char** field, int* ftype, int nf, int* dtype, struct pg_tm* 
 
     tm->tm_hour += D * 24;
     /* do final checking/adjustment of Y/M/D fields */
-    dterr = ValidateDate(fmask, isjulian, is2digits, bc, tm);
+    dterr = ValidateDate(fmask, isjulian, is2digits, bc, ad, tm);
     if (dterr)
         return dterr;
 
@@ -2069,14 +2073,14 @@ int ValidateTimeForBDatabase(bool timeIn24, struct pg_tm* tm, fsec_t* fsec)
 
 int ValidateDateForBDatabase(bool is2digits, struct pg_tm* tm) 
 {
-    return ValidateDate(DTK_DATE_M, false, is2digits, false, tm);
+    return ValidateDate(DTK_DATE_M, false, is2digits, false, false, tm);
 }
 
 /* ValidateDate()
  * Check valid year/month/day values, handle BC and DOY cases
  * Return 0 if okay, a DTERR code if not.
  */
-static int ValidateDate(unsigned int fmask, bool isjulian, bool is2digits, bool bc, struct pg_tm* tm)
+static int ValidateDate(unsigned int fmask, bool isjulian, bool is2digits, bool bc, bool ad, struct pg_tm* tm)
 {
     if (fmask & DTK_M(YEAR)) {
         if (isjulian) {
@@ -2097,7 +2101,7 @@ static int ValidateDate(unsigned int fmask, bool isjulian, bool is2digits, bool 
                 tm->tm_year += 1900;
         } else {
             /* there is no year zero in AD/BC notation */
-            if (tm->tm_year <= 0)
+            if (tm->tm_year < 0 || (ad && tm->tm_year == 0))
                 return DTERR_FIELD_OVERFLOW;
         }
     }
@@ -3290,7 +3294,7 @@ static void EncodeTimezone(char* str, int tz, int style)
 /* EncodeDateOnly()
  * Encode date as local time.
  */
-void EncodeDateOnly(struct pg_tm* tm, int style, char* str)
+void EncodeDateOnlyForBDatabase(struct pg_tm* tm, int style, char* str)
 {
     errno_t rc;
     Assert(tm->tm_mon >= 1 && tm->tm_mon <= MONTHS_PER_YEAR);
@@ -3300,7 +3304,7 @@ void EncodeDateOnly(struct pg_tm* tm, int style, char* str)
         case USE_ISO_DATES:
         case USE_XSD_DATES:
             /* compatible with ISO date formats */
-            if (tm->tm_year > 0)
+            if (tm->tm_year >= 0)
                 rc = sprintf_s(str, MAXDATELEN + 1, "%04d-%02d-%02d", tm->tm_year, tm->tm_mon, tm->tm_mday);
             else
                 rc = sprintf_s(
@@ -3318,7 +3322,7 @@ void EncodeDateOnly(struct pg_tm* tm, int style, char* str)
 
             str_len = strlen(str);
 
-            if (tm->tm_year > 0)
+            if (tm->tm_year >= 0)
                 rc = sprintf_s(str + str_len, MAXDATELEN + 1 - str_len, "/%04d", tm->tm_year);
             else
                 rc = sprintf_s(str + str_len, MAXDATELEN + 1 - str_len, "/%04d %s", -(tm->tm_year - 1), "BC");
@@ -3332,7 +3336,7 @@ void EncodeDateOnly(struct pg_tm* tm, int style, char* str)
 
             str_len = strlen(str);
 
-            if (tm->tm_year > 0)
+            if (tm->tm_year >= 0)
                 rc = sprintf_s(str + str_len, MAXDATELEN + 1 - str_len, ".%04d", tm->tm_year);
             else
                 rc = sprintf_s(str + str_len, MAXDATELEN + 1 - str_len, ".%04d %s", -(tm->tm_year - 1), "BC");
@@ -3350,7 +3354,7 @@ void EncodeDateOnly(struct pg_tm* tm, int style, char* str)
 
             str_len = strlen(str);
 
-            if (tm->tm_year > 0)
+            if (tm->tm_year >= 0)
                 rc = sprintf_s(str + str_len, MAXDATELEN + 1 - str_len, "-%04d", tm->tm_year);
             else
                 rc = sprintf_s(str + str_len, MAXDATELEN + 1 - str_len, "-%04d %s", -(tm->tm_year - 1), "BC");
@@ -3398,7 +3402,7 @@ void EncodeTimeOnly(struct pg_tm* tm, fsec_t fsec, bool print_tz, int tz, int st
  *	German - dd.mm.yyyy hh:mm:ss tz
  *	XSD - yyyy-mm-ddThh:mm:ss.ss+/-tz
  */
-void EncodeDateTime(struct pg_tm* tm, fsec_t fsec, bool print_tz, int tz, const char* tzn, int style, char* str)
+void EncodeDateTimeForBDatabase(struct pg_tm* tm, fsec_t fsec, bool print_tz, int tz, const char* tzn, int style, char* str)
 {
     int day;
     errno_t rc = EOK;
@@ -3419,7 +3423,7 @@ void EncodeDateTime(struct pg_tm* tm, fsec_t fsec, bool print_tz, int tz, const 
                 rc = sprintf_s(str,
                     MAXDATELEN + 1,
                     "%04d-%02d-%02d %02d:%02d:",
-                    (tm->tm_year > 0) ? tm->tm_year : -(tm->tm_year - 1),
+                    (tm->tm_year >= 0) ? tm->tm_year : -(tm->tm_year - 1),
                     tm->tm_mon,
                     tm->tm_mday,
                     tm->tm_hour,
@@ -3429,7 +3433,7 @@ void EncodeDateTime(struct pg_tm* tm, fsec_t fsec, bool print_tz, int tz, const 
                 rc = sprintf_s(str,
                     MAXDATELEN + 1,
                     "%04d-%02d-%02dT%02d:%02d:",
-                    (tm->tm_year > 0) ? tm->tm_year : -(tm->tm_year - 1),
+                    (tm->tm_year >= 0) ? tm->tm_year : -(tm->tm_year - 1),
                     tm->tm_mon,
                     tm->tm_mday,
                     tm->tm_hour,
@@ -3441,7 +3445,7 @@ void EncodeDateTime(struct pg_tm* tm, fsec_t fsec, bool print_tz, int tz, const 
             if (print_tz)
                 EncodeTimezone(str, tz, style);
 
-            if (tm->tm_year <= 0) {
+            if (tm->tm_year < 0) {
                 rc = sprintf_s(str + strlen(str), MAXDATELEN + 1 - strlen(str), " BC");
                 securec_check_ss(rc, "\0", "\0");
             }
@@ -3458,7 +3462,7 @@ void EncodeDateTime(struct pg_tm* tm, fsec_t fsec, bool print_tz, int tz, const 
             rc = sprintf_s(str + 5,
                 MAXDATELEN - 4,
                 "/%04d %02d:%02d:",
-                (tm->tm_year > 0) ? tm->tm_year : -(tm->tm_year - 1),
+                (tm->tm_year >= 0) ? tm->tm_year : -(tm->tm_year - 1),
                 tm->tm_hour,
                 tm->tm_min);
             securec_check_ss(rc, "\0", "\0");
@@ -3479,7 +3483,7 @@ void EncodeDateTime(struct pg_tm* tm, fsec_t fsec, bool print_tz, int tz, const 
                     EncodeTimezone(str, tz, style);
             }
 
-            if (tm->tm_year <= 0) {
+            if (tm->tm_year < 0) {
                 rc = sprintf_s(str + strlen(str), MAXDATELEN + 1 - strlen(str), " BC");
                 securec_check_ss(rc, "\0", "\0");
             }
@@ -3493,7 +3497,7 @@ void EncodeDateTime(struct pg_tm* tm, fsec_t fsec, bool print_tz, int tz, const 
             rc = sprintf_s(str + 5,
                 MAXDATELEN - 4,
                 ".%04d %02d:%02d:",
-                (tm->tm_year > 0) ? tm->tm_year : -(tm->tm_year - 1),
+                (tm->tm_year >= 0) ? tm->tm_year : -(tm->tm_year - 1),
                 tm->tm_hour,
                 tm->tm_min);
             securec_check_ss(rc, "\0", "\0");
@@ -3508,7 +3512,7 @@ void EncodeDateTime(struct pg_tm* tm, fsec_t fsec, bool print_tz, int tz, const 
                     EncodeTimezone(str, tz, style);
             }
 
-            if (tm->tm_year <= 0) {
+            if (tm->tm_year < 0) {
                 rc = sprintf_s(str + strlen(str), MAXDATELEN + 1 - strlen(str), " BC");
                 securec_check_ss(rc, "\0", "\0");
             }
@@ -3538,7 +3542,7 @@ void EncodeDateTime(struct pg_tm* tm, fsec_t fsec, bool print_tz, int tz, const 
             rc = sprintf_s(str + strlen(str),
                 MAXDATELEN + 1 - strlen(str),
                 " %04d",
-                (tm->tm_year > 0) ? tm->tm_year : -(tm->tm_year - 1));
+                (tm->tm_year >= 0) ? tm->tm_year : -(tm->tm_year - 1));
             securec_check_ss(rc, "\0", "\0");
 
             if (print_tz) {
@@ -3558,7 +3562,7 @@ void EncodeDateTime(struct pg_tm* tm, fsec_t fsec, bool print_tz, int tz, const 
                 }
             }
 
-            if (tm->tm_year <= 0) {
+            if (tm->tm_year < 0) {
                 rc = sprintf_s(str + strlen(str), MAXDATELEN + 1 - strlen(str), " BC");
                 securec_check_ss(rc, "\0", "\0");
             }

@@ -45,6 +45,10 @@ CREATE OR REPLACE FUNCTION pg_catalog.year_mi_interval (year, interval) RETURNS 
 
 CREATE OR REPLACE FUNCTION pg_catalog.year_mi (year, year) RETURNS interval LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'year_mi';
 
+CREATE OR REPLACE FUNCTION pg_catalog.year_pl_integer (year, integer) RETURNS integer LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'year_pl_integer';
+
+CREATE OR REPLACE FUNCTION pg_catalog.year_mi_integer (year, integer) RETURNS integer LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'year_mi_integer';
+
 CREATE OPERATOR + (
    leftarg = year,
    rightarg = interval,
@@ -75,6 +79,31 @@ CREATE OPERATOR + (
    commutator = +
 );
 
+CREATE OPERATOR + (
+   leftarg = year,
+   rightarg = integer,
+   procedure = year_pl_integer,
+   commutator = +
+);
+
+CREATE OR REPLACE FUNCTION pg_catalog.integer_pl_year (integer, year) RETURNS integer AS $$ SELECT $2 + $1  $$ LANGUAGE SQL;
+
+CREATE OPERATOR + (
+   leftarg = integer,
+   rightarg = year,
+   procedure = integer_pl_year,
+   commutator = +
+);
+
+CREATE OPERATOR - (
+   leftarg = year,
+   rightarg = integer,
+   procedure = year_mi_integer,
+   commutator = -
+);
+
+
+
 --CREATE YEAR'S B-TREE SUPPORT FUNCTION
 
 CREATE OR REPLACE FUNCTION pg_catalog.year_cmp (year, year) RETURNS integer LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'year_cmp';
@@ -83,7 +112,7 @@ CREATE OR REPLACE FUNCTION pg_catalog.year_sortsupport (internal) RETURNS void L
 
 --CREATE YEAR'S CAST FUNCTION
 
-CREATE OR REPLACE FUNCTION pg_catalog.int32_year (int4) RETURNS year LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'int32_year';
+CREATE OR REPLACE FUNCTION pg_catalog.int32_year (integer) RETURNS year LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'int32_year';
 
 CREATE FUNCTION pg_catalog.year (year, integer) RETURNS year LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'year_scale';
 
@@ -93,7 +122,7 @@ CREATE CAST(year AS year) WITH FUNCTION year(year, integer) AS IMPLICIT;
 
 DROP CAST IF EXISTS (integer AS year) CASCADE;
 
-CREATE CAST(integer AS year) WITH FUNCTION int32_year(int4) AS IMPLICIT;
+CREATE CAST(integer AS year) WITH FUNCTION int32_year(integer) AS IMPLICIT;
 
 --CREATE OPERATOR
 
