@@ -211,6 +211,11 @@ extern "C" DLL_PUBLIC Datum datetime_part(PG_FUNCTION_ARGS);
 PG_FUNCTION_INFO_V1_PUBLIC(datetime_year_part);
 extern "C" DLL_PUBLIC Datum datetime_year_part(PG_FUNCTION_ARGS);
 
+PG_FUNCTION_INFO_V1_PUBLIC(timestamptz_datetime);
+extern "C" DLL_PUBLIC Datum timestamptz_datetime(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(timestamp_datetime);
+extern "C" DLL_PUBLIC Datum timestamp_datetime(PG_FUNCTION_ARGS);
+
 /* b format datetime and timestamp type */
 static Timestamp int64_b_format_timestamp_internal(bool hasTz, int64 ts, fsec_t fsec);
 static int64 integer_b_format_timestamp(bool hasTz, int64 ts);
@@ -4956,6 +4961,13 @@ Datum timestamp_timestamptz(PG_FUNCTION_ARGS)
     PG_RETURN_TIMESTAMPTZ(timestamp2timestamptz(timestamp));
 }
 
+/* for better compability, a cast between origin opegnGauss timestamp type and b database datetime type is provided */
+Datum timestamp_datetime(PG_FUNCTION_ARGS)
+{
+    /* there is no storage difference between origin opegnGauss timestamp type and b database datetime type */
+    PG_RETURN_TIMESTAMP(PG_GETARG_TIMESTAMP(0));
+}
+
 TimestampTz timestamp2timestamptz(Timestamp timestamp)
 {
     TimestampTz result;
@@ -4978,10 +4990,10 @@ TimestampTz timestamp2timestamptz(Timestamp timestamp)
     return result;
 }
 
-/* timestamptz_timestamp()
- * Convert timestamp at GMT to local timestamp
+/* timestamptz_datetime()
+ * Convert timestamp at GMT to datetime type
  */
-Datum timestamptz_timestamp(PG_FUNCTION_ARGS)
+Datum timestamptz_datetime(PG_FUNCTION_ARGS)
 {
     TimestampTz timestamp = PG_GETARG_TIMESTAMPTZ(0);
     Timestamp result;

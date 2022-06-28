@@ -169,6 +169,12 @@ select * from test_dt where dt > '2007-01-01';
 select * from test_dt where dt = '1997-11-10';
 select * from test_dt where dt < '1997-11-10';
 
+-- test now() and current_timestamp
+create table test_datetime(c1 datetime);
+insert into test_datetime values(now());
+insert into test_datetime values(current_timestamp);
+drop table test_datetime;
+
 -- test timestamp with[out] timezone
 select timestamp with time zone'1994-11-10 23:12:34';
 select timestamp without time zone'1994-11-10 23:12:34';
@@ -310,11 +316,16 @@ SELECT (2069)::YEAR(2)+(interval'366day');
 create table t_year0035(ts1 year(4) ,ts2 integer);
 insert into t_year0035 values('1904','1');
 insert into t_year0035 values('1902','2');
-insert into t_year0035 values('1902','2');
 insert into t_year0035 values('1907','5');
 select ts1 + ts2 from t_year0035;
+select ts2 + ts1 from t_year0035;
 select ts1 - ts2 from t_year0035;
+select ts2 - ts1 from t_year0035;
 drop table t_year0035;
+-- test overflow
+select integer'2147481650' + year'1998';
+select year'1998' + integer'2147481650';
+select integer'-2147481651' - year'1997';
 
 -- test year input
 select year '20$#12';

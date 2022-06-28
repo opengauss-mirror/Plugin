@@ -777,6 +777,11 @@ select * from test_dt where dt < '1997-11-10';
  Thu Nov 10 00:00:00 1994
 (1 row)
 
+-- test now() and current_timestamp
+create table test_datetime(c1 datetime);
+insert into test_datetime values(now());
+insert into test_datetime values(current_timestamp);
+drop table test_datetime;
 -- test timestamp with[out] timezone
 select timestamp with time zone'1994-11-10 23:12:34';
          timestamptz          
@@ -1167,27 +1172,51 @@ SELECT (2069)::YEAR(2)+(interval'366day');
 create table t_year0035(ts1 year(4) ,ts2 integer);
 insert into t_year0035 values('1904','1');
 insert into t_year0035 values('1902','2');
-insert into t_year0035 values('1902','2');
 insert into t_year0035 values('1907','5');
 select ts1 + ts2 from t_year0035;
  ?column? 
 ----------
      1905
      1904
+     1912
+(3 rows)
+
+select ts2 + ts1 from t_year0035;
+ ?column? 
+----------
+     1905
      1904
      1912
-(4 rows)
+(3 rows)
 
 select ts1 - ts2 from t_year0035;
  ?column? 
 ----------
      1903
      1900
-     1900
      1902
-(4 rows)
+(3 rows)
+
+select ts2 - ts1 from t_year0035;
+ ?column? 
+----------
+    -1903
+    -1900
+    -1902
+(3 rows)
 
 drop table t_year0035;
+-- test overflow
+select integer'2147481650' + year'1998';
+ERROR:  integer out of range
+select year'1998' + integer'2147481650';
+ERROR:  integer out of range
+select integer'-2147481651' - year'1997';
+  ?column?   
+-------------
+ -2147483648
+(1 row)
+
 -- test year input
 select year '20$#12';
 ERROR:  Incorrect integer value: "20$#12"
