@@ -707,9 +707,7 @@ Expr* make_op(ParseState* pstate, List* opname, Node* ltree, Node* rtree, int lo
     Form_pg_enum en = NULL;
     HeapTuple enumTup = NULL;
     CatCList* list = NULL;
-    char *enumLable = NULL;
-    int nelems;
-    int i = 0;
+    Type targetType;
 
     /* Select the operator */
     if (rtree == NULL) {
@@ -728,13 +726,18 @@ Expr* make_op(ParseState* pstate, List* opname, Node* ltree, Node* rtree, int lo
         rtypeId = exprType(rtree);
         /* transform from int to enum label */
         if(u_sess->attr.attr_sql.sql_compatibility == B_FORMAT && type_is_enum(ltypeId) && rtypeId==INT4OID) {
+            char *enumLable = NULL;
+            int nElems;
+            int i = 0;
             Const* con = makeNode(Const);;
             baseTypeId = getBaseTypeAndTypmod(ltypeId, &baseTypeMod);
+            targetType = typeidType(baseTypeId);
+
             con->consttype = UNKNOWNOID;
             con->consttypmod = -1;
             con->constcollid = InvalidOid;
-            con->constlen = -2;
-            con->constbyval = false;
+            con->constlen = typeLen(targetType);
+            con->constbyval = typeByVal(targetType);
             con->constisnull = false;
             con->cursor_data.cur_dno = -1;
             enumOrder = DatumGetInt32(((Const*) rtree)->constvalue);
@@ -744,25 +747,26 @@ Expr* make_op(ParseState* pstate, List* opname, Node* ltree, Node* rtree, int lo
                 con->constisnull = true;
             } else {
                 list = SearchSysCacheList1(ENUMTYPOIDNAME, ObjectIdGetDatum(ltypeId));
-                nelems = list->n_members;
-                if (nelems == 0) {
+                nElems = list->n_members;
+                if (nElems == 0) {
                     con->constvalue = ((Datum)NULL);
                     con->constisnull = true;
                 }
-                if (enumOrder > nelems||enumOrder < 0) {
+                if (enumOrder > nElems||enumOrder < 0) {
                     con->constvalue = ((Datum)NULL);
                     con->constisnull = true;
-                }
-                for (i = 0; i < nelems; i++) {
-                    enumTup = t_thrd.lsc_cxt.FetchTupleFromCatCList(list, i);
-                    en = (Form_pg_enum)GETSTRUCT(enumTup);
-                    if(enumOrder ==  en->enumsortorder) {
-                        enumLable = NameStr(en->enumlabel);
-                        break;
+                } else {
+                    // const is not null.
+                    for (i = 0; i < nElems; i++) {
+                        enumTup = t_thrd.lsc_cxt.FetchTupleFromCatCList(list, i);
+                        en = (Form_pg_enum)GETSTRUCT(enumTup);
+                        if(enumOrder ==  en->enumsortorder) {
+                            enumLable = NameStr(en->enumlabel);
+                            break;
+                        }
                     }
+                    con->constvalue = (Datum)enumLable;
                 }
-               // const is not null.
-                con->constvalue = (Datum)enumLable;
                 ReleaseSysCacheList(list);
             }
             ReleaseSysCache(colType);
