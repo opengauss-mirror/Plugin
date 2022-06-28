@@ -1,0 +1,36 @@
+drop database if exists format_test;
+NOTICE:  database "format_test" does not exist, skipping
+create database format_test dbcompatibility 'B';
+\c format_test
+select space('a');
+ space 
+-------
+ 
+(1 row)
+
+select space(10);
+   space    
+------------
+           
+(1 row)
+
+select space(-1);
+ space 
+-------
+ 
+(1 row)
+
+select space('0');
+ space 
+-------
+ 
+(1 row)
+
+select space('-1');
+ space 
+-------
+ 
+(1 row)
+
+\c postgres
+drop database if exists format_test;

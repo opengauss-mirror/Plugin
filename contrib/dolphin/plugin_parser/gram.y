@@ -519,6 +519,8 @@ static int errstate;
 %type <jtype>	join_type
 
 %type <list>	extract_list timestamp_arg_list overlay_list position_list
+
+%type <list>	convert_list
 %type <list>	substr_list trim_list
 %type <list>	opt_interval interval_second
 %type <node>	overlay_placing substr_from substr_for
@@ -800,7 +802,7 @@ static int errstate;
 	CHARACTER CHARACTERISTICS CHARACTERSET CHECK CHECKPOINT CLASS CLEAN CLIENT CLIENT_MASTER_KEY CLIENT_MASTER_KEYS CLOB CLOSE
 	CLUSTER COALESCE COLLATE COLLATION COLUMN COLUMN_ENCRYPTION_KEY COLUMN_ENCRYPTION_KEYS COMMENT COMMENTS COMMIT
 	COMMITTED COMPACT COMPATIBLE_ILLEGAL_CHARS COMPLETE COMPRESS COMPRESSION CONCURRENTLY CONDITION CONFIGURATION CONNECTION CONSTANT CONSTRAINT CONSTRAINTS
-	CONTENT_P CONTINUE_P CONTVIEW CONVERSION_P CONNECT COORDINATOR COORDINATORS COPY COST CREATE
+	CONTENT_P CONTINUE_P CONTVIEW CONVERSION_P CONVERT CONNECT COORDINATOR COORDINATORS COPY COST CREATE
 	CROSS CSN CSV CUBE CURRENT_P
 	CURRENT_CATALOG CURRENT_DATE CURRENT_ROLE CURRENT_SCHEMA
 	CURRENT_TIME CURRENT_TIMESTAMP CURRENT_USER CURSOR CYCLE
@@ -22474,6 +22476,8 @@ func_expr_windowless:
             func_application            { $$ = $1; }
             | func_expr_common_subexpr  { $$ = $1; }
         ;
+convert_list:
+            a_expr USING a_expr   {$$ = list_make2($1, $3);}
 
 /*
  * Special expressions that are considered to be functions;
@@ -22534,6 +22538,20 @@ func_expr_common_subexpr:
 					n->call_func = false;
 					$$ = (Node *)n;
 				}
+			| CONVERT '(' convert_list ')'
+            {
+                    FuncCall *n = makeNode(FuncCall);
+                    n->funcname = SystemFuncName("convert");
+                    n->args = $3;
+                    n->agg_order = NIL;
+                    n->agg_star = FALSE;
+                    n->agg_distinct = FALSE;
+                    n->func_variadic = FALSE;
+                    n->over = NULL;
+                    n->location = @1;
+                    n->call_func = false;
+                    $$ = (Node *)n;
+            }
 			| CURRENT_TIME
 				{
 					/*
@@ -24993,6 +25011,7 @@ col_name_keyword:
 			| CHAR_P
 			| CHARACTER
 			| COALESCE
+			| CONVERT
 			| DATE_P
 			| DAYOFMONTH
 			| DAYOFWEEK

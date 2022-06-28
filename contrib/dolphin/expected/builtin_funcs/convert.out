@@ -1,0 +1,58 @@
+drop database if exists format_test;
+NOTICE:  database "format_test" does not exist, skipping
+create database format_test dbcompatibility 'B';
+\c format_test
+select convert(1 using 'utf8');
+ convert 
+---------
+ 1
+(1 row)
+
+select convert('1' using 'utf8');
+ convert 
+---------
+ 1
+(1 row)
+
+select convert('a' using 'utf8');
+ convert 
+---------
+ a
+(1 row)
+
+select convert(1.1 using 'utf8');
+ convert 
+---------
+ 1.1
+(1 row)
+
+select convert(null using 'utf8');
+ convert 
+---------
+ 
+(1 row)
+
+select convert(1);
+ERROR:  syntax error at or near ")"
+LINE 1: select convert(1);
+                        ^
+select convert(1 using 'utf8');
+ convert 
+---------
+ 1
+(1 row)
+
+select convert(1 using 'gbk');
+ convert 
+---------
+ 1
+(1 row)
+
+select convert(1 using 'utf8');
+ convert 
+---------
+ 1
+(1 row)
+
+\c postgres
+drop database if exists format_test;
