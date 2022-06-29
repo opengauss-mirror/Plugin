@@ -346,21 +346,17 @@ Datum pg_convert_to_text(PG_FUNCTION_ARGS)
     char* string = PG_GETARG_CSTRING(0);
     char* dest_encoding_name = NameStr(*PG_GETARG_NAME(1));
     int dest_encoding = pg_char_to_encoding(dest_encoding_name);
-    int src_encoding = GetDatabaseEncoding();
-    const char* src_str = NULL;
-    char* dest_str = NULL;
-    int len_src;
-    int len_dest;
     if (dest_encoding < 0) {
         ereport(ERROR,
             (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
                 errmsg("invalid destination encoding name \"%s\"", dest_encoding_name)));
     }
-    /* make sure that source string is valid */
-    len_src = VARSIZE_ANY_EXHDR(string);
-    src_str = VARDATA_ANY(string);
-    dest_str = (char*)pg_do_encoding_conversion((unsigned char*)src_str, len_src, src_encoding, dest_encoding);
-    len_dest = strlen(dest_str);
+
+    int src_encoding = GetDatabaseEncoding();
+    const char* src_str = VARDATA_ANY(string);
+    int len_src = VARSIZE_ANY_EXHDR(string);;
+
+    char* dest_str = (char*)pg_do_encoding_conversion((unsigned char*)src_str, len_src, src_encoding, dest_encoding);
     char* result = (char*)palloc(len_src + 1);
     int rc = memcpy_s(result, len_src + 1, dest_str, len_src);
     securec_check_c(rc, "\0", "\0");

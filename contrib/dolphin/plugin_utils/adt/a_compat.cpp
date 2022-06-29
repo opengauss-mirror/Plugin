@@ -797,10 +797,9 @@ text* _chr(uint32 value, bool flag)
 
 Datum chr(PG_FUNCTION_ARGS)
 {
-    uint32 cvalue = PG_GETARG_UINT32(0);
     text*  result = NULL;
 
-    if (NULL != (result = _chr(cvalue, true))) {
+    if (NULL != (result = _chr(PG_GETARG_UINT32(0), true))) {
         PG_RETURN_TEXT_P(result);
     } else {
         PG_RETURN_NULL();

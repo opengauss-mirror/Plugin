@@ -19540,14 +19540,11 @@ Datum bin_string(PG_FUNCTION_ARGS)
     text* string = PG_GETARG_TEXT_PP(0);
     int from_base = 10;
     int to_base = 2;
-    char* data = VARDATA_ANY(string);
     char result[CONV_MAX_CHAR_LEN + 1] = "";
-    int len = VARSIZE_ANY_EXHDR(string);
-    if (len <= 0) {
+    if (VARSIZE_ANY_EXHDR(string) <= 0) {
         PG_RETURN_NULL();
     }
-    double value_double = atof(data);
-    int64 num = floor(value_double);
+    int64 num = floor(atof(VARDATA_ANY(string)));
     if (num == 0) {
         PG_RETURN_TEXT_P(cstring_to_text("0"));
     } else {
