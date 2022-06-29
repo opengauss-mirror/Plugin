@@ -53,10 +53,6 @@ PG_FUNCTION_INFO_V1_PUBLIC(year_pl_interval);
 extern "C" DLL_PUBLIC Datum year_pl_interval(PG_FUNCTION_ARGS);
 PG_FUNCTION_INFO_V1_PUBLIC(year_mi_interval);
 extern "C" DLL_PUBLIC Datum year_mi_interval(PG_FUNCTION_ARGS);
-PG_FUNCTION_INFO_V1_PUBLIC(year_pl_integer);
-extern "C" DLL_PUBLIC Datum year_pl_integer(PG_FUNCTION_ARGS);
-PG_FUNCTION_INFO_V1_PUBLIC(year_mi_integer);
-extern "C" DLL_PUBLIC Datum year_mi_integer(PG_FUNCTION_ARGS);
 PG_FUNCTION_INFO_V1_PUBLIC(year_mi);
 extern "C" DLL_PUBLIC Datum year_mi(PG_FUNCTION_ARGS);
 PG_FUNCTION_INFO_V1_PUBLIC(year_cmp);
@@ -65,6 +61,8 @@ PG_FUNCTION_INFO_V1_PUBLIC(year_sortsupport);
 extern "C" DLL_PUBLIC Datum year_sortsupport(PG_FUNCTION_ARGS);
 PG_FUNCTION_INFO_V1_PUBLIC(int32_year);
 extern "C" DLL_PUBLIC Datum int32_year(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(year_integer);
+extern "C" DLL_PUBLIC Datum year_integer(PG_FUNCTION_ARGS);
 PG_FUNCTION_INFO_V1_PUBLIC(year_scale);
 extern "C" DLL_PUBLIC Datum year_scale(PG_FUNCTION_ARGS);
 
@@ -324,6 +322,14 @@ Datum int32_year(PG_FUNCTION_ARGS)
     PG_RETURN_YEARADT(int32_to_YearADT(year));
 }
 
+Datum year_integer(PG_FUNCTION_ARGS) {
+    YearADT year = PG_GETARG_YEARADT(0);
+    if (IS_YEAR2(year))
+        YEAR_CONVERT(year);
+    year = YearADT_to_Year(year);
+    PG_RETURN_INT32(year);
+}
+
 Datum year_cmp(PG_FUNCTION_ARGS)
 {
     YearADT y1 = PG_GETARG_YEARADT(0);
@@ -367,56 +373,6 @@ Datum year_mi_interval(PG_FUNCTION_ARGS)
     YearADT year = PG_GETARG_YEARADT(0);
     Interval* span = PG_GETARG_INTERVAL_P(1);
     return year_mi_interval(year, span);
-}
-
-static bool checkIfAdditionOverflow(int a, int b) 
-{
-    if (b > 0 && a > INT_MAX - b) {
-        return true;
-    }
-    if (b < 0 && a < INT_MIN - b) {
-        return true;
-    }
-    return false;
-}
-
-static bool checkIfSubstractionOverflow(int a, int b) 
-{
-    if (b < 0 && a > INT_MAX + b) {
-        return true;
-    }
-    if (b > 0 && a < INT_MIN + b) {
-        return true;
-    }
-    return false;
-}
-
-Datum year_pl_integer(PG_FUNCTION_ARGS)
-{
-    YearADT year = PG_GETARG_YEARADT(0);
-    if (IS_YEAR2(year)) {
-        YEAR_CONVERT(year);
-    }
-    year = YearADT_to_Year(year);
-    int delta = PG_GETARG_INT32(1);
-    if (checkIfAdditionOverflow(year, delta)) {
-        ereport(ERROR, (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE), errmsg("Result is out of int32 range!")));
-    }
-    PG_RETURN_INT32(year + delta);
-}
-
-Datum year_mi_integer(PG_FUNCTION_ARGS)
-{
-    YearADT year = PG_GETARG_YEARADT(0);
-    if (IS_YEAR2(year)) {
-        YEAR_CONVERT(year);
-    }
-    year = YearADT_to_Year(year);
-    int delta = PG_GETARG_INT32(1);
-    if (checkIfSubstractionOverflow(year, delta)) {
-        ereport(ERROR, (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE), errmsg("Result is out of int32 range!")));
-    }
-    PG_RETURN_INT32(year - delta);
 }
 
 Datum year_mi_interval(YearADT year, const Interval* span)
