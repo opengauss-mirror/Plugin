@@ -161,8 +161,11 @@ bool Scanint8Internal(const char* str, bool errorOK, int64* result, bool sqlMode
                 ereport(ERROR,
                     (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE),
                         errmsg("value \"%s\" is out of range for type %s", str, "bigint")));
+            else
+                tmp = -(tmp + 1);
+        } else {
+            tmp = -tmp;
         }
-        tmp = -tmp;
     }
 
     if ((isdigit(digitAfterDot)) && digitAfterDot >= '5') {
@@ -1139,7 +1142,7 @@ Datum int84(PG_FUNCTION_ARGS)
         }
         
         if (!SQL_MODE_STRICT()) {
-            if (result < 0) {
+            if (arg < 0) {
                 result = INT32_MIN;
             } else {
                 result = INT32_MAX;
@@ -1174,7 +1177,7 @@ Datum int82(PG_FUNCTION_ARGS)
         }
         
         if (!SQL_MODE_STRICT()) {
-            if (result < 0) {
+            if (arg < 0) {
                 result = INT16_MIN;
             } else {
                 result = INT16_MAX;
