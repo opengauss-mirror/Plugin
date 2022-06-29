@@ -105,6 +105,11 @@ void SanityCheck()
         fprintf(stderr, _("%s: -d or -c must be specified\n"), pset.progname);
         exit(EXIT_FAILURE);
     }
+    
+    if (g_assessmentSettings.dbname && g_assessmentSettings.database >= 0) {
+        fprintf(stderr, _("%s: -d and -c cannot be used at the same time\n"), pset.progname);
+        exit(EXIT_FAILURE);
+    }
 
     if (!g_assessmentSettings.dbname) {
         g_assessmentSettings.needCreateDatabase = true;
@@ -203,7 +208,7 @@ int main(int argc, char* argv[])
 
     /* connect to openGauss assessment database */
     if (!conn->ConnectDB()) {
-        fprintf(stderr, "%s", conn->GetExecError().c_str());
+        fprintf(stderr, "%s: %sConnection parameter error\n", pset.progname, conn->GetExecError().c_str());
         exit(EXIT_FAILURE);
     }
 
@@ -308,7 +313,7 @@ void PrintProcess(size_t sqlSize, size_t i)
 {
     auto curIndex = i + 1;
     auto value = curIndex * 100.0 / (sqlSize - 1);
-    fprintf(stdout, _("%s: 解析[%.2lf%%]:%lu/%lu"), pset.progname, value > 100 ? 100 : value, curIndex, sqlSize);
+    fprintf(stdout, _("%s: Analysing[%.2lf%%]:%lu/%lu"), pset.progname, value > 100 ? 100 : value, curIndex, sqlSize);
     if (curIndex < sqlSize) {
         fprintf(stdout, "%s", "\r");
     }
@@ -336,7 +341,7 @@ void CreateAssessmentDatabase()
     createDbConn->SetPassword(g_assessmentSettings.password);
     createDbConn->SetUsername(g_assessmentSettings.username);
     if (!createDbConn->ConnectDB()) {
-        fprintf(stderr, "%s", createDbConn->GetExecError().c_str());
+        fprintf(stderr, "%s: %sConnection parameter error\n", pset.progname, createDbConn->GetExecError().c_str());
         exit(EXIT_FAILURE);
     }
     if (!createDbConn->CreateAssessmentDB(g_dbCompatArray[g_assessmentSettings.database].name)) {
