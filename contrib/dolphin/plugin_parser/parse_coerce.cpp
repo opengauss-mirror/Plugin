@@ -489,10 +489,10 @@ Node* coerce_type(ParseState* pstate, Node* node, Oid inputTypeId, Oid targetTyp
         targetType = typeidType(baseTypeId);
 
         newcon->consttype = baseTypeId;
-        newcon->consttypmod = -1;
+        newcon->consttypmod = 0;
         newcon->constcollid = InvalidOid;
-        newcon->constlen = -2;
-        newcon->constbyval = false;
+        newcon->constlen = typeLen(targetType);
+        newcon->constbyval = typeByVal(targetType);
         newcon->constisnull = false;
         newcon->cursor_data.cur_dno = -1;
         newcon->location = con->location;
@@ -507,8 +507,8 @@ Node* coerce_type(ParseState* pstate, Node* node, Oid inputTypeId, Oid targetTyp
         } else {
             targetEnumLable = getEnumLableByOrder(targetTypeId, enumOrder);
             newcon->constvalue = stringTypeDatum(targetType, targetEnumLable, -1);
-            cancel_parser_errposition_callback(&pcbstate);
         }
+        cancel_parser_errposition_callback(&pcbstate);
 
         result = (Node*)newcon;
         ReleaseSysCache(targetType);
