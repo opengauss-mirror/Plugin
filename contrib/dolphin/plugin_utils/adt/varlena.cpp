@@ -7650,14 +7650,10 @@ bool isNumeric(const char* str)
 
 static double numeric_to_double_no_overflow(Numeric num)
 {
-    char* tmp = NULL;
-    double val;
     char* endptr = NULL;
-    tmp = DatumGetCString(DirectFunctionCall1(numeric_out, NumericGetDatum(num)));
-    /* unlike float8in, we ignore ERANGE from strtod */
-    val = strtod(tmp, &endptr);
+    char* tmp = DatumGetCString(DirectFunctionCall1(numeric_out, NumericGetDatum(num)));
+    double val = strtod(tmp, &endptr);
     if (*endptr != '\0') {
-        /* shouldn't happen ... */
         ereport(ERROR,
                 (errcode(ERRCODE_INVALID_TEXT_REPRESENTATION),
                  errmsg("invalid input syntax for type double precision: \"%s\"", tmp)));
@@ -7676,20 +7672,13 @@ static text* _m_char(FunctionCallInfo fcinfo)
         if (!PG_ARGISNULL(i)) {
             Datum value = PG_GETARG_DATUM(i);
             Oid valtype;
-            Numeric value2;
-            double value3;
-            double value_double;
             valtype = get_fn_expr_argtype(fcinfo->flinfo, i);
             switch (valtype) {
                 case INT4OID:
-                    result = _chr((uint32)value, false);
-                    appendStringInfoString(&str, text_to_cstring(result));
+                    appendStringInfoString(&str, text_to_cstring(_chr((uint32)value, false)));
                     break;
                 case NUMERICOID:
-                    value2 = (Numeric)value;
-                    value3 = numeric_to_double_no_overflow(value2);
-                    value = round(value3);
-                    result = _chr((uint32)value, false);
+                    result = _chr((uint32)(round(numeric_to_double_no_overflow( (Numeric)value))), false);
                     appendStringInfoString(&str, text_to_cstring(result));
                     break;
                 case BOOLOID:
@@ -7697,12 +7686,9 @@ static text* _m_char(FunctionCallInfo fcinfo)
                     break;
                 default:
                     if (isNumeric((char*)value)) {
-                        result = _chr((uint32)atoi((char*)value), false);
-                        appendStringInfoString(&str, text_to_cstring(result));
+                        appendStringInfoString(&str, text_to_cstring(_chr((uint32)atoi((char*)value), false)));
                     } else {
-                        value_double = atof((char*)value);
-                        value = floor(value_double);
-                        result = _chr((uint32)value, false);
+                        value = floor(atof((char*)value));
                         if ((uint32)value == 0) {
                             appendStringInfoString(&str, " ");
                         } else {
@@ -7729,9 +7715,11 @@ text* _elt(int idx, PG_FUNCTION_ARGS)
     text* result = NULL;
     Oid typeOutput;
     bool typIsVarlena;
+
     getTypeOutputInfo(fcinfo->argTypes[idx], &typeOutput, &typIsVarlena);
     char* str_value = OidOutputFunctionCall(typeOutput, fcinfo->arg[idx]);
     result = cstring_to_text(str_value);
+
     return result;
 }
 
@@ -7749,16 +7737,12 @@ Datum elt_integer(PG_FUNCTION_ARGS)
 
 Datum elt_string(PG_FUNCTION_ARGS)
 {
-    text* string = PG_GETARG_TEXT_PP(0);
-    char* data = VARDATA_ANY(string);
-    double value_double = atof(data);
-    int64 num = floor(value_double);
-    text* result = NULL;
+    int64 num = floor(atof(VARDATA_ANY(PG_GETARG_TEXT_PP(0))));
     if (num <= 0 || num >= PG_NARGS()) {
         PG_RETURN_NULL();
     }
 
-    result = _elt(num, fcinfo);
+    text* result = _elt(num, fcinfo);
     PG_RETURN_TEXT_P(result);
 }
 
@@ -7767,17 +7751,12 @@ int64 _field(FunctionCallInfo fcinfo, text* first_txt_arg)
     int64 result = 0;
     Oid typeOutput;
     bool typIsVarlena;
-    char* other_str_arg = NULL;
-    text* other_txt_arg = NULL;
-
-    getTypeOutputInfo(fcinfo->argTypes[0], &typeOutput, &typIsVarlena);
 
     for (int i = 1; i < PG_NARGS(); i++) {
         if (!PG_ARGISNULL(i)) {
             getTypeOutputInfo(fcinfo->argTypes[i], &typeOutput, &typIsVarlena);
-            other_str_arg = OidOutputFunctionCall(typeOutput, fcinfo->arg[i]);
-            other_txt_arg = cstring_to_text(other_str_arg);
-            if (0 == internal_text_pattern_compare(first_txt_arg, other_txt_arg)) {
+            if (0 == internal_text_pattern_compare(first_txt_arg,
+                                                                     cstring_to_text(OidOutputFunctionCall(typeOutput, fcinfo->arg[i])))) {
                 result = i;
                 break;
             }
@@ -7789,24 +7768,19 @@ int64 _field(FunctionCallInfo fcinfo, text* first_txt_arg)
 
 static char* numeric_to_cstring(Numeric n)
 {
-    Datum d = NumericGetDatum(n);
-
-    return DatumGetCString(DirectFunctionCall1(numeric_out, d));
+    return DatumGetCString(DirectFunctionCall1(numeric_out, NumericGetDatum(n)));
 }
 
 Datum field_integer(PG_FUNCTION_ARGS)
 {
-    Numeric first_str_arg = PG_GETARG_NUMERIC(0);
-    text* first_txt_arg = cstring_to_text(numeric_to_cstring(first_str_arg));
-    int64 result = _field(fcinfo, first_txt_arg);
+    int64 result = _field(fcinfo, cstring_to_text(numeric_to_cstring(PG_GETARG_NUMERIC(0))));
 
     PG_RETURN_INT64(result);
 }
 
 Datum field_string(PG_FUNCTION_ARGS)
 {
-    text* first_txt_arg = PG_GETARG_TEXT_PP(0);
-    int64 result = _field(fcinfo, first_txt_arg);
+    int64 result = _field(fcinfo, PG_GETARG_TEXT_PP(0));
 
     PG_RETURN_INT64(result);
 }
@@ -7866,8 +7840,7 @@ static char code_letter(char letter)
 
 Datum soundex(PG_FUNCTION_ARGS)
 {
-    char* arg = NULL;
-    arg = text_to_cstring(PG_GETARG_TEXT_P(0));
+    char* arg = text_to_cstring(PG_GETARG_TEXT_P(0));
     int str_len = strlen(arg) + 1;
     int min_sound_len = 5;
 
@@ -7933,12 +7906,11 @@ char* set_space(int32 num)
 Datum space_integer(PG_FUNCTION_ARGS)
 {
     int32 num = (int32)PG_GETARG_INT32(0);
-    char* result = NULL;
     if (num <= 0) {
         PG_RETURN_NULL();
     }
 
-    result = set_space(num);
+    char* result = set_space(num);
 
     if (NULL != result) {
         PG_RETURN_TEXT_P(cstring_to_text(result));
@@ -7950,14 +7922,12 @@ Datum space_integer(PG_FUNCTION_ARGS)
 
 Datum space_string(PG_FUNCTION_ARGS)
 {
-    text* string = PG_GETARG_TEXT_PP(0);
-    int32 num = floor(atof(VARDATA_ANY(string)));
-    char* result = NULL;
+    int32 num = floor(atof(VARDATA_ANY(PG_GETARG_TEXT_PP(0))));
     if (num <= 0) {
         PG_RETURN_NULL();
     }
 
-    result = set_space(num);
+    char* result = set_space(num);
 
     if (NULL != result) {
         PG_RETURN_TEXT_P(cstring_to_text(result));
