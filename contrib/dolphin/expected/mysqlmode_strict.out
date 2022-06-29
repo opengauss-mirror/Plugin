@@ -1155,6 +1155,10 @@ insert into test_sint_strict(a) values(-3553434343434343432434);
 ERROR:  smallint out of range
 CONTEXT:  referenced column: a
 insert into test_sint_strict(a) values('a888');
+ERROR:  invalid input syntax for integer: "a888"
+LINE 1: insert into test_sint_strict(a) values('a888');
+                                               ^
+CONTEXT:  referenced column: a
 insert into test_sint_strict(a) values('88123423433834343423434aa');
 ERROR:  value "88123423433834343423434aa" is out of range for type smallint
 LINE 1: insert into test_sint_strict(a) values('88123423433834343423...
@@ -1184,10 +1188,9 @@ select * from test_sint_strict;
 -----
  -55
   55
-   0
   13
  -13
-(5 rows)
+(4 rows)
 
     
 insert into test_int_strict(a) values(-55);
@@ -1199,6 +1202,10 @@ insert into test_int_strict(a) values(-3553434343434343432434);
 ERROR:  integer out of range
 CONTEXT:  referenced column: a
 insert into test_int_strict(a) values('a888');
+ERROR:  invalid input syntax for integer: "a888"
+LINE 1: insert into test_int_strict(a) values('a888');
+                                              ^
+CONTEXT:  referenced column: a
 insert into test_int_strict(a) values('88123423433834343423434aa');
 ERROR:  value "88123423433834343423434aa" is out of range for type integer
 LINE 1: insert into test_int_strict(a) values('881234234338343434234...
@@ -1228,10 +1235,9 @@ select * from test_int_strict;
 -----
  -55
   55
-   0
   13
  -13
-(5 rows)
+(4 rows)
 
     
 insert into test_bint_strict(a) values(-55);
@@ -1430,10 +1436,9 @@ select * from test_sint_strict1;
 -----
  -55
   55
-   0
   13
  -13
-(5 rows)
+(4 rows)
 
     
 delete from test_sint_strict1;
@@ -1502,10 +1507,9 @@ select * from test_int_strict1;
 -----
  -55
   55
-   0
   13
  -13
-(5 rows)
+(4 rows)
 
     
 delete from test_int_strict1;
@@ -1574,10 +1578,9 @@ select * from test_bint_strict1;
 -----
  -55
   55
-   0
   13
  -13
-(5 rows)
+(4 rows)
 
     
 delete from test_bint_strict1;
@@ -1587,10 +1590,9 @@ select * from test_bint_strict1;
 -----
  -55
   55
-   0
   13
  -13
-(5 rows)
+(4 rows)
 
     
 delete from test_bint_strict1;
@@ -1697,10 +1699,9 @@ select * from test_varchar7_strict_1;
 -----
  -55
  55
- 0
  13
  -13
-(5 rows)
+(4 rows)
 
     
 delete from test_varchar7_strict_1;
@@ -1710,10 +1711,9 @@ select * from test_varchar7_strict_1;
 -----
  -55
  55
- 0
  13
  -13
-(5 rows)
+(4 rows)
 
     
 delete from test_varchar7_strict_1;
