@@ -63,5 +63,10 @@ SELECT right('abcdefg', 0), right('abcdefg', 0) is null;
 SELECT left(null, 3), left(null, 3) is null;
 SELECT right(null, 3), right(null, 3) is null;
 
+select left('abc',2.5);
+select left('abc',5/2);
+select right('abc',2.5);
+select right('abc',5/2);
+
 \c postgres
 drop database test;
