@@ -4,10 +4,10 @@ SELECT LOG(10);
    1
 (1 row)
 
-drop database if exists test;
-NOTICE:  database "test" does not exist, skipping
-create database test dbcompatibility 'B';
-\c test
+drop database if exists db_b_log_test;
+NOTICE:  database "db_b_log_test" does not exist, skipping
+create database db_b_log_test dbcompatibility 'B';
+\c db_b_log_test
 SELECT LOG(10);
        log        
 ------------------
@@ -147,4 +147,4 @@ SELECT LOG(2, 0) IS NULL;
 (1 row)
 
 \c postgres
-drop database test;
+drop database db_b_log_test;

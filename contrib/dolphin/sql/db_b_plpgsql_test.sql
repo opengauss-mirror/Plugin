@@ -1,6 +1,6 @@
-drop database if exists test;
-create database test dbcompatibility 'b';
-\c test
+drop database if exists db_b_plpgsql_test;
+create database db_b_plpgsql_test dbcompatibility 'b';
+\c db_b_plpgsql_test
 
 create table tb_b_grammar_0038(a text(10)) engine = 表1;
 
@@ -45,4 +45,4 @@ SELECT * from proc_01();
 SELECT * from tb_b_grammar_0038;
 
 \c postgres
-drop database if exists test;
+drop database if exists db_b_plpgsql_test;

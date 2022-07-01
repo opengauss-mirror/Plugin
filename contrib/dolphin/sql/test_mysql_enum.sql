@@ -1,6 +1,6 @@
-drop database if exists test_db;
-CREATE DATABASE test_db with dbcompatibility='B';
-\c test_db
+drop database if exists test_enum;
+CREATE DATABASE test_enum with dbcompatibility='B';
+\c test_enum
 -- create extension dolphin;
 show sql_compatibility;
 -- when drop a column using an auto created enum type, the created enum type will also be dropped.
@@ -133,4 +133,4 @@ DELETE FROM test WHERE myname=4;
 DROP TABLE test;
 
 \c postgres
-DROP DATABASE test_db;
+DROP DATABASE test_enum;

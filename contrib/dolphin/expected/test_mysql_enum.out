@@ -1,7 +1,7 @@
-drop database if exists test_db;
-NOTICE:  database "test_db" does not exist, skipping
-CREATE DATABASE test_db with dbcompatibility='B';
-\c test_db
+drop database if exists test_enum;
+NOTICE:  database "test_enum" does not exist, skipping
+CREATE DATABASE test_enum with dbcompatibility='B';
+\c test_enum
 -- create extension dolphin;
 show sql_compatibility;
  sql_compatibility 
@@ -199,4 +199,4 @@ DELETE FROM test WHERE myname=0;
 DELETE FROM test WHERE myname=4;
 DROP TABLE test;
 \c postgres
-DROP DATABASE test_db;
+DROP DATABASE test_enum;

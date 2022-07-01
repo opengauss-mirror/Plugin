@@ -22,10 +22,10 @@ SELECT right('abcdefg', -3);
  defg
 (1 row)
 
-drop database if exists test;
-NOTICE:  database "test" does not exist, skipping
-create database test dbcompatibility 'B';
-\c test
+drop database if exists db_b_left_right_test;
+NOTICE:  database "db_b_left_right_test" does not exist, skipping
+create database db_b_left_right_test dbcompatibility 'B';
+\c db_b_left_right_test
 set bytea_output to escape;
 SELECT left('abcdefg', 3);
  left 
@@ -304,4 +304,4 @@ select right('abc',5/2);
 (1 row)
 
 \c postgres
-drop database test;
+drop database db_b_left_right_test;

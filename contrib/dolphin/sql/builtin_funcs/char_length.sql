@@ -1,6 +1,6 @@
-drop database if exists format_test;
-create database format_test dbcompatibility 'B';
-\c format_test
+drop database if exists db_char_length;
+create database db_char_length dbcompatibility 'B';
+\c db_char_length
 
 select char_length(1234);
 select char_length( '1234');
@@ -15,4 +15,4 @@ select 1.1+char_length(1);
 select char_length(111111111111111111111111111111111111111111111111111111111111111111111111111111111);
 
 \c postgres
-drop database if exists format_test;
+drop database if exists db_char_length;

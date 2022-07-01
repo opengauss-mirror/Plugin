@@ -6,9 +6,9 @@ SELECT TRIM(LEADING 'xyz' FROM 'xyzxbarxxyz');
 SELECT TRIM(BOTH 'xyz' FROM 'xyzxbarxxyz');
 SELECT TRIM(TRAILING 'xyz' FROM 'xyzxbarxxyz');
 
-drop database if exists test;
-create database test dbcompatibility 'B';
-\c test
+drop database if exists db_b_trim_test;
+create database db_b_trim_test dbcompatibility 'B';
+\c db_b_trim_test
 
 SELECT TRIM('  bar   ');
 SELECT TRIM(LEADING 'x' FROM 'xxxbarxxx');
@@ -32,4 +32,4 @@ SELECT TRIM(LEADING '   X  '::bytea);
 SELECT TRIM(TRAILING '   X  '::bytea);
 
 \c postgres
-drop database test;
+drop database db_b_trim_test;

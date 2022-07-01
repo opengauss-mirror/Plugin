@@ -1,7 +1,7 @@
-drop database if exists mysql;
-NOTICE:  database "mysql" does not exist, skipping
-create database mysql dbcompatibility 'b';
-\c mysql
+drop database if exists db_regexp;
+NOTICE:  database "db_regexp" does not exist, skipping
+create database db_regexp dbcompatibility 'b';
+\c db_regexp
 select regexp('a', true);
  regexp 
 --------
@@ -9,4 +9,4 @@ select regexp('a', true);
 (1 row)
 
 \c postgres
-drop database if exists mysql;
+drop database if exists db_regexp;

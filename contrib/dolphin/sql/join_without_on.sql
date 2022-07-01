@@ -1,6 +1,6 @@
-drop database if exists mysql_test;
-create database mysql_test dbcompatibility 'b';
-\c mysql_test
+drop database if exists join_without_on;
+create database join_without_on dbcompatibility 'b';
+\c join_without_on
 
 CREATE TABLE J1_TBL (
   i integer,
@@ -62,4 +62,4 @@ SELECT  * FROM J1_TBL  JOIN J2_TBL JOIN J3_TBL JOIN J4_TBL ON J1_TBL.i = J4_TBL.
 SELECT  * FROM J1_TBL  JOIN J2_TBL INNER JOIN J3_TBL INNER JOIN J4_TBL ON J1_TBL.i = J4_TBL.i;
 
 \c postgres
-drop database if exists mysql_test;
+drop database if exists join_without_on;

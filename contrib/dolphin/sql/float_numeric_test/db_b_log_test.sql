@@ -1,7 +1,7 @@
 SELECT LOG(10);
-drop database if exists test;
-create database test dbcompatibility 'B';
-\c test
+drop database if exists db_b_log_test;
+create database db_b_log_test dbcompatibility 'B';
+\c db_b_log_test
 
 SELECT LOG(10);
 SELECT LOG10(100);
@@ -34,4 +34,4 @@ SELECT LOG(0, 64) IS NULL;
 SELECT LOG(2, 0) IS NULL;
 
 \c postgres
-drop database test;
+drop database db_b_log_test;

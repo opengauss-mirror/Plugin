@@ -1,0 +1,26 @@
+test: float_numeric_test/db_b_log_test float_numeric_test/db_b_sqrt_test
+
+test: keyword_ignore_test/ignore_no_matched_partition keyword_ignore_test/ignore_not_null_constraints keyword_ignore_test/ignore_type_transform keyword_ignore_test/ignore_unique_constraints
+
+test: string_func_test/db_b_ascii_test string_func_test/db_b_left_right_test string_func_test/db_b_quote_test string_func_test/db_b_string_length_test string_func_test/db_b_substr_test string_func_test/db_b_trim_test
+
+test: ast b_compatibility_time_type db_b_new_gram_test
+
+test: db_b_parser1 db_b_parser2 db_b_parser3 db_b_parser4
+
+test: db_b_plpgsql_test default_guc describe
+
+test: empty_value_list empty_value_lists empty_value_support_value
+
+test: greatest_least join_without_on mysqlmode_fullgroup mysqlmode_strict
+
+# must be single test group, cause other connection will affect the result
+test: show
+
+test: nvarchar regexp
+
+test: test_binary test_blob test_datatype test_fixed test_mysql_enum
+
+test: builtin_funcs/bin builtin_funcs/char builtin_funcs/char_length builtin_funcs/character_length builtin_funcs/conv builtin_funcs/convert builtin_funcs/crc32 builtin_funcs/db_b_format
+
+test: builtin_funcs/db_b_hex builtin_funcs/db_b_if builtin_funcs/elt builtin_funcs/field builtin_funcs/find_in_set builtin_funcs/soundex builtin_funcs/space

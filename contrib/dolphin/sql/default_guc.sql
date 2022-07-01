@@ -1,6 +1,6 @@
-drop database if exists test;
-create database test dbcompatibility 'b';
-\c test
+drop database if exists default_guc;
+create database default_guc dbcompatibility 'b';
+\c default_guc
 
 show behavior_compat_options;
 select 0.123;
@@ -14,4 +14,4 @@ select md5(0.123);
 select md5('0.123');
 
 \c postgres
-drop database if exists test;
+drop database if exists default_guc;

@@ -1,6 +1,6 @@
-drop database if exists mysql_test;
-create database mysql_test dbcompatibility 'b';
-\c mysql_test
+drop database if exists db_b_parser3;
+create database db_b_parser3 dbcompatibility 'b';
+\c db_b_parser3
 
 --测试点一：验证lcase函数
 select lcase('ABc'), lcase('哈哈'), lcase('123456'),lcase('哈市&%%￥#'),lcase(null);
@@ -111,4 +111,4 @@ select '-12.3abc' xor 'null';
 
 
 \c postgres
-drop database if exists mysql_test;
+drop database if exists db_b_parser3;

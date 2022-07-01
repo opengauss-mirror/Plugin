@@ -1,7 +1,7 @@
-drop database if exists b;
-NOTICE:  database "b" does not exist, skipping
-create database b dbcompatibility 'b';
-\c b
+drop database if exists empty_value_support_value;
+NOTICE:  database "empty_value_support_value" does not exist, skipping
+create database empty_value_support_value dbcompatibility 'b';
+\c empty_value_support_value
 create table test1(num int not null);
 insert into test1 value();
 ERROR:  null value in column "num" violates not-null constraint
@@ -27,4 +27,4 @@ select * from test1;
 (3 rows)
 
 \c postgres
-drop database if exists b;
+drop database if exists empty_value_support_value;

@@ -1,8 +1,8 @@
 -- b compatibility case
-drop database if exists b;
-create database b dbcompatibility 'b';
+drop database if exists db_nvarchar;
+create database db_nvarchar dbcompatibility 'b';
 
-\c b
+\c db_nvarchar
 --
 -- VARCHAR
 --
@@ -70,4 +70,4 @@ INSERT INTO NVARCHAR_TBL (f1) VALUES ('abcd    ');
 
 SELECT '' AS four, * FROM NVARCHAR_TBL;
 \c postgres
-drop database if exists b;
+drop database if exists db_nvarchar;

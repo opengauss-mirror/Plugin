@@ -1,6 +1,6 @@
-drop database if exists dolphin;
-create database dolphin dbcompatibility 'b';
-\c dolphin
+drop database if exists db_describe;
+create database db_describe dbcompatibility 'b';
+\c db_describe
 CREATE TABLE test2
 (
 id int PRIMARY KEY
@@ -52,4 +52,4 @@ desc sc.test;
 desc public.test4;
 desc sc.test4;
 \c postgres
-drop database if exists dolphin;
+drop database if exists db_describe;

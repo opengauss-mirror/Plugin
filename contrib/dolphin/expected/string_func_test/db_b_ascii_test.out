@@ -10,10 +10,10 @@ SELECT ASCII('你');
  20320
 (1 row)
 
-drop database if exists test;
-NOTICE:  database "test" does not exist, skipping
-create database test dbcompatibility 'B';
-\c test
+drop database if exists db_b_ascii_test;
+NOTICE:  database "db_b_ascii_test" does not exist, skipping
+create database db_b_ascii_test dbcompatibility 'B';
+\c db_b_ascii_test
 SELECT ASCII('a');
  ascii 
 -------
@@ -27,4 +27,4 @@ SELECT ASCII('你');
 (1 row)
 
 \c postgres
-drop database test;
+drop database db_b_ascii_test;
