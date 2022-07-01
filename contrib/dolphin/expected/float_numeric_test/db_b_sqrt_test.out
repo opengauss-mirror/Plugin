@@ -7,10 +7,10 @@ SELECT SQRT(64);
 SELECT SQRT(-64);
 ERROR:  cannot take square root of a negative number
 CONTEXT:  referenced column: sqrt
-drop database if exists test;
-NOTICE:  database "test" does not exist, skipping
-create database test dbcompatibility 'B';
-\c test
+drop database if exists db_b_sqrt_test;
+NOTICE:  database "db_b_sqrt_test" does not exist, skipping
+create database db_b_sqrt_test dbcompatibility 'B';
+\c db_b_sqrt_test
 SELECT SQRT(64);
  sqrt 
 ------
@@ -36,4 +36,4 @@ SELECT SQRT(-64::numeric);
 (1 row)
 
 \c postgres
-drop database test;
+drop database db_b_sqrt_test;

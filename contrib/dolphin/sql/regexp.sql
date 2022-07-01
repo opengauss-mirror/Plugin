@@ -1,7 +1,7 @@
-drop database if exists mysql;
-create database mysql dbcompatibility 'b';
-\c mysql
+drop database if exists db_regexp;
+create database db_regexp dbcompatibility 'b';
+\c db_regexp
 select regexp('a', true);
 
 \c postgres
-drop database if exists mysql;
+drop database if exists db_regexp;

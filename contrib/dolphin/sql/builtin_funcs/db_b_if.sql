@@ -1,6 +1,6 @@
-drop database if exists format_test;
-create database format_test dbcompatibility 'B';
-\c format_test
+drop database if exists db_b_if;
+create database db_b_if dbcompatibility 'B';
+\c db_b_if
 
 select if(TRUE, 1, 2);
 select if(FALSE, 1, 2);
@@ -78,4 +78,4 @@ select if (true, 1.1::float8, true) as a, if (false, 1.1::float8, true) as b;
 select if (true, 2.2::numeric(10, 2), true) as a, if (false, 2.2::numeric(10, 2), true) as b;
 
 \c postgres
-drop database if exists format_test;
+drop database if exists db_b_if;

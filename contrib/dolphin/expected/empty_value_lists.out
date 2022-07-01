@@ -1,8 +1,8 @@
 -- b compatibility case
-drop database if exists b;
-NOTICE:  database "b" does not exist, skipping
-create database b dbcompatibility 'b';
-\c b
+drop database if exists empty_value_lists;
+NOTICE:  database "empty_value_lists" does not exist, skipping
+create database empty_value_lists dbcompatibility 'b';
+\c empty_value_lists
 create table test1(num int);
 create table test2(num int default 3);
 create table test3(num int not null);
@@ -536,4 +536,4 @@ select * from m4;
 (2 rows)
 
 \c postgres
-drop database if exists b;
+drop database if exists empty_value_lists;

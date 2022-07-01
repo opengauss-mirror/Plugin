@@ -1,6 +1,6 @@
-drop database if exists format_test;
-create database format_test dbcompatibility 'B';
-\c format_test
+drop database if exists db_char;
+create database db_char dbcompatibility 'B';
+\c db_char
 
 select chara(67,66,67);
 select chara('65','66','67');
@@ -20,4 +20,4 @@ select chara(18446744073709551615);
 select chara(65);
 
 \c postgres
-drop database if exists format_test;
+drop database if exists db_char;
