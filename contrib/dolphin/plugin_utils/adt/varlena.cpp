@@ -240,6 +240,31 @@ extern "C" DLL_PUBLIC Datum space_string(PG_FUNCTION_ARGS);
 PG_FUNCTION_INFO_V1_PUBLIC(m_char);
 extern "C" DLL_PUBLIC Datum m_char(PG_FUNCTION_ARGS);
 
+PG_FUNCTION_INFO_V1_PUBLIC(uint1_list_agg_transfn);
+extern "C" DLL_PUBLIC Datum uint1_list_agg_transfn(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(uint2_list_agg_transfn);
+extern "C" DLL_PUBLIC Datum uint2_list_agg_transfn(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(uint4_list_agg_transfn);
+extern "C" DLL_PUBLIC Datum uint4_list_agg_transfn(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(uint8_list_agg_transfn);
+extern "C" DLL_PUBLIC Datum uint8_list_agg_transfn(PG_FUNCTION_ARGS);
+
+
+PG_FUNCTION_INFO_V1_PUBLIC(uint1_list_agg_noarg2_transfn);
+extern "C" DLL_PUBLIC Datum uint1_list_agg_noarg2_transfn(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1_PUBLIC(uint2_list_agg_noarg2_transfn);
+extern "C" DLL_PUBLIC Datum uint2_list_agg_noarg2_transfn(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1_PUBLIC(uint4_list_agg_noarg2_transfn);
+extern "C" DLL_PUBLIC Datum uint4_list_agg_noarg2_transfn(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1_PUBLIC(uint8_list_agg_noarg2_transfn);
+extern "C" DLL_PUBLIC Datum uint8_list_agg_noarg2_transfn(PG_FUNCTION_ARGS);
+
+
+
+
 /*****************************************************************************
  *	 CONVERSION ROUTINES EXPORTED FOR USE BY C CODE							 *
  *****************************************************************************/
@@ -591,7 +616,7 @@ Datum rawout(PG_FUNCTION_ARGS)
             ereport(FATAL, (errcode(ERRCODE_DATA_CORRUPTED), errmsg("overflow - encode estimate too small")));
 
         SET_VARSIZE(ans, VARHDRSZ + ans_len);
-
+        
         out_string = str_toupper_for_raw(VARDATA_ANY(ans), VARSIZE_ANY_EXHDR(ans), PG_GET_COLLATION());
     } else {
         ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("blob length: %d ,out of memory", resultlen)));
@@ -1042,7 +1067,7 @@ void text_to_bktmap(text* gbucket, uint2* bktmap, int *bktlen)
     } else {
         ereport(ERROR, (errcode(ERRCODE_DATA_CORRUPTED), errmsg("bucket map string is invalid")));
     }
-
+    
     pfree_ext(s);
 }
 /*
@@ -3221,7 +3246,7 @@ Datum bytea_substr_orclcompat(PG_FUNCTION_ARGS)
 
     total = toast_raw_datum_size(str) - VARHDRSZ;
 
-    /*
+    /* 
      * Set length to 0 so that an empty bytea can be returned later.
      */
     if ((length < 0) || (start > total) || (start + total < 0) || (start == 0)) {
@@ -5600,6 +5625,197 @@ Datum int8_list_agg_noarg2_transfn(PG_FUNCTION_ARGS)
      */
     PG_RETURN_POINTER(state);
 }
+Datum uint1_list_agg_transfn(PG_FUNCTION_ARGS)
+{
+    StringInfo state;
+
+    state = PG_ARGISNULL(0) ? NULL : (StringInfo)PG_GETARG_POINTER(0);
+
+    /* Append the value unless null. */
+    if (!PG_ARGISNULL(1)) {
+        /* On the first time through, we ignore the delimiter. */
+        if (state == NULL)
+            state = makeStringAggState(fcinfo);
+        else if (!PG_ARGISNULL(2))
+            appendStringInfoText(state, PG_GETARG_TEXT_PP(2)); /* delimiter */
+
+        appendStringInfo(state, "%hd", PG_GETARG_UINT8(1)); /* value */
+    }
+
+    /*
+     * The transition type for list_agg() is declared to be "internal",
+     * which is a pass-by-value type the same size as a pointer.
+     */
+    PG_RETURN_POINTER(state);
+}
+
+Datum uint1_list_agg_noarg2_transfn(PG_FUNCTION_ARGS)
+{
+    StringInfo state;
+
+    state = PG_ARGISNULL(0) ? NULL : (StringInfo)PG_GETARG_POINTER(0);
+
+    /* Append the value unless null. */
+    if (!PG_ARGISNULL(1)) {
+        /* On the first time through, we ignore the delimiter. */
+        if (state == NULL)
+            state = makeStringAggState(fcinfo);
+        else if (!PG_ARGISNULL(2))
+            appendStringInfoText(state, cstring_to_text("")); /* delimiter */
+
+        appendStringInfo(state, "%hd", PG_GETARG_UINT8(1)); /* value */
+    }
+
+    /*
+     * The transition type for list_agg() is declared to be "internal",
+     * which is a pass-by-value type the same size as a pointer.
+     */
+    PG_RETURN_POINTER(state);
+}
+
+Datum uint2_list_agg_transfn(PG_FUNCTION_ARGS)
+{
+    StringInfo state;
+
+    state = PG_ARGISNULL(0) ? NULL : (StringInfo)PG_GETARG_POINTER(0);
+
+    /* Append the value unless null. */
+    if (!PG_ARGISNULL(1)) {
+        /* On the first time through, we ignore the delimiter. */
+        if (state == NULL)
+            state = makeStringAggState(fcinfo);
+        else if (!PG_ARGISNULL(2))
+            appendStringInfoText(state, PG_GETARG_TEXT_PP(2)); /* delimiter */
+
+        appendStringInfo(state, "%hd", PG_GETARG_UINT16(1)); /* value */
+    }
+
+    /*
+     * The transition type for list_agg() is declared to be "internal",
+     * which is a pass-by-value type the same size as a pointer.
+     */
+    PG_RETURN_POINTER(state);
+}
+
+Datum uint2_list_agg_noarg2_transfn(PG_FUNCTION_ARGS)
+{
+    StringInfo state;
+
+    state = PG_ARGISNULL(0) ? NULL : (StringInfo)PG_GETARG_POINTER(0);
+
+    /* Append the value unless null. */
+    if (!PG_ARGISNULL(1)) {
+        /* On the first time through, we ignore the delimiter. */
+        if (state == NULL)
+            state = makeStringAggState(fcinfo);
+        else if (!PG_ARGISNULL(2))
+            appendStringInfoText(state, cstring_to_text("")); /* delimiter */
+
+        appendStringInfo(state, "%hd", PG_GETARG_UINT16(1)); /* value */
+    }
+
+    /*
+     * The transition type for list_agg() is declared to be "internal",
+     * which is a pass-by-value type the same size as a pointer.
+     */
+    PG_RETURN_POINTER(state);
+}
+
+Datum uint4_list_agg_transfn(PG_FUNCTION_ARGS)
+{
+    StringInfo state;
+
+    state = PG_ARGISNULL(0) ? NULL : (StringInfo)PG_GETARG_POINTER(0);
+
+    /* Append the value unless null. */
+    if (!PG_ARGISNULL(1)) {
+        /* On the first time through, we ignore the delimiter. */
+        if (state == NULL)
+            state = makeStringAggState(fcinfo);
+        else if (!PG_ARGISNULL(2))
+            appendStringInfoText(state, PG_GETARG_TEXT_PP(2)); /* delimiter */
+
+        appendStringInfo(state, "%d", PG_GETARG_UINT32(1)); /* value */
+    }
+
+    /*
+     * The transition type for list_agg() is declared to be "internal",
+     * which is a pass-by-value type the same size as a pointer.
+     */
+    PG_RETURN_POINTER(state);
+}
+
+Datum uint4_list_agg_noarg2_transfn(PG_FUNCTION_ARGS)
+{
+    StringInfo state;
+
+    state = PG_ARGISNULL(0) ? NULL : (StringInfo)PG_GETARG_POINTER(0);
+
+    /* Append the value unless null. */
+    if (!PG_ARGISNULL(1)) {
+        /* On the first time through, we ignore the delimiter. */
+        if (state == NULL)
+            state = makeStringAggState(fcinfo);
+        else if (!PG_ARGISNULL(2))
+            appendStringInfoText(state, cstring_to_text("")); /* delimiter */
+
+        appendStringInfo(state, "%d", PG_GETARG_UINT32(1)); /* value */
+    }
+
+    /*
+     * The transition type for list_agg() is declared to be "internal",
+     * which is a pass-by-value type the same size as a pointer.
+     */
+    PG_RETURN_POINTER(state);
+}
+
+Datum uint8_list_agg_transfn(PG_FUNCTION_ARGS)
+{
+    StringInfo state;
+
+    state = PG_ARGISNULL(0) ? NULL : (StringInfo)PG_GETARG_POINTER(0);
+
+    /* Append the value unless null. */
+    if (!PG_ARGISNULL(1)) {
+        /* On the first time through, we ignore the delimiter. */
+        if (state == NULL)
+            state = makeStringAggState(fcinfo);
+        else if (!PG_ARGISNULL(2))
+            appendStringInfoText(state, PG_GETARG_TEXT_PP(2)); /* delimiter */
+
+        appendStringInfo(state, "%ld", PG_GETARG_UINT64(1)); /* value */
+    }
+
+    /*
+     * The transition type for list_agg() is declared to be "internal",
+     * which is a pass-by-value type the same size as a pointer.
+     */
+    PG_RETURN_POINTER(state);
+}
+
+Datum uint8_list_agg_noarg2_transfn(PG_FUNCTION_ARGS)
+{
+    StringInfo state;
+
+    state = PG_ARGISNULL(0) ? NULL : (StringInfo)PG_GETARG_POINTER(0);
+
+    /* Append the value unless null. */
+    if (!PG_ARGISNULL(1)) {
+        /* On the first time through, we ignore the delimiter. */
+        if (state == NULL)
+            state = makeStringAggState(fcinfo);
+        else if (!PG_ARGISNULL(2))
+            appendStringInfoText(state, cstring_to_text("")); /* delimiter */
+
+        appendStringInfo(state, "%ld", PG_GETARG_UINT64(1)); /* value */
+    }
+
+    /*
+     * The transition type for list_agg() is declared to be "internal",
+     * which is a pass-by-value type the same size as a pointer.
+     */
+    PG_RETURN_POINTER(state);
+}
 
 Datum float4_list_agg_transfn(PG_FUNCTION_ARGS)
 {
@@ -7571,7 +7787,7 @@ Datum gs_strcmp(PG_FUNCTION_ARGS)
         ret = -1;
     } else {
         ret = 0;
-    }
+    } 
 
     pfree_ext(str0);
     pfree_ext(str1);

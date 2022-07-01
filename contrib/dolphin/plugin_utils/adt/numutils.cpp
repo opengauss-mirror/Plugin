@@ -511,3 +511,137 @@ uint64 pg_strtouint64(const char* str, char** endptr, int base)
     return strtoul(str, endptr, base);
 #endif
 }
+
+void
+pg_uctoa(uint32 i, char *a)
+{
+	pg_ltoa((int32) i, a);
+}
+
+int32
+pg_atoui(char *str, int size, int ch)
+{
+    unsigned	long		tmp;
+	char	   *badp;
+    long tmp_int;
+
+	/*
+	 * Some versions of strtol treat the empty string as an error, but some
+	 * seem not to.  Make an explicit test to be sure we catch it.
+	 */
+	if (str == NULL)
+		elog(ERROR, "NULL pointer");
+	if (*str == 0)
+		ereport(ERROR,
+				(errcode(ERRCODE_INVALID_TEXT_REPRESENTATION),
+				 errmsg("invalid input syntax for integer: \"%s\"",
+						str)));
+
+	errno = 0;
+	tmp_int = strtol(str, &badp, 10);
+
+	if (tmp_int < 0)
+	{
+
+		switch (size)
+		{
+			case sizeof(uint32):
+				ereport(ERROR,
+						(errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE),
+						 errmsg("value \"%s\" is out of range for type integer unsigned", str)));
+				break;
+			case sizeof(uint16):
+				ereport(ERROR,
+						(errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE),
+						 errmsg("value \"%s\" is out of range for type smallint unsigned", str)));
+				break;
+			case sizeof(uint8):
+				ereport(ERROR,
+						(errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE),
+						 errmsg("value \"%s\" is out of range for 8-bit integer", str)));
+				break;
+			default:
+				elog(ERROR, "unsupported result size: %d", size);
+		}
+	}
+	errno = 0;	
+	tmp = strtoul(str, &badp, 10);
+	/* We made no progress parsing the string, so bail out */
+	if (str == badp)
+		ereport(ERROR,
+				(errcode(ERRCODE_INVALID_TEXT_REPRESENTATION),
+				 errmsg("invalid input syntax for integer: \"%s\"",
+						str)));
+
+	switch (size)
+	{
+		/* BEGIN <l00219320> : clear the coverity warning */
+		case sizeof(uint32):
+			if (errno == ERANGE || tmp > UINT_MAX)
+				ereport(ERROR,
+						(errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE),
+				errmsg("value \"%s\" is out of range for type integer unsigned", str)));
+			break;
+		case sizeof(uint16):
+			if (errno == ERANGE || tmp > USHRT_MAX)
+				ereport(ERROR,
+						(errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE),
+				errmsg("value \"%s\" is out of range for type smallint unsigned", str)));
+			break;
+		case sizeof(uint8):
+			if (errno == ERANGE  || tmp > UCHAR_MAX)
+				ereport(ERROR,
+						(errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE),
+				errmsg("value \"%s\" is out of range for 8-bit integer", str)));
+			break;
+	/* END <l00219320> */
+		default:
+			elog(ERROR, "unsupported result size: %d", size);
+	}
+
+	/*
+	 * Skip any trailing whitespace; if anything but whitespace remains before
+	 * the terminating character, bail out
+	 */
+	while (*badp && *badp != ch && isspace((unsigned char) *badp))
+		badp++;
+
+	if (*badp && *badp != ch)
+		ereport(ERROR,
+				(errcode(ERRCODE_INVALID_TEXT_REPRESENTATION),
+				 errmsg("invalid input syntax for integer: \"%s\"",
+						str)));
+
+	return (int32) tmp;
+}
+
+void
+pg_copymsgbytes(StringInfo msg, char *buf, int datalen)
+{
+	if (datalen < 0 || datalen > (msg->len - msg->cursor))
+		ereport(ERROR,
+				(errcode(ERRCODE_PROTOCOL_VIOLATION),
+				 errmsg("insufficient data left in message")));
+	memcpy(buf, &msg->data[msg->cursor], datalen);
+	msg->cursor += datalen;
+}
+
+uint64
+pg_getmsguint64(StringInfo msg)
+{
+	uint64		result;
+	uint32		h32;
+	uint32		l32;
+
+	pg_copymsgbytes(msg, (char *) &h32, 4);
+	pg_copymsgbytes(msg, (char *) &l32, 4);
+	h32 = ntohl(h32);
+	l32 = ntohl(l32);
+
+	result = h32;
+	result <<= 32;
+	result |= l32;
+
+	return result;
+}
+

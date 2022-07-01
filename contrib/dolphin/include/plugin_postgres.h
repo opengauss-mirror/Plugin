@@ -63,4 +63,10 @@ typedef struct BSqlPluginContext {
 
 BSqlPluginContext* GetSessionContext();
 
+
+#define PG_RETURN_UINT64(x)	 return UInt64GetDatum(x)
+#define PG_GETARG_UINT64(n)	 DatumGetUInt64(PG_GETARG_DATUM(n))
+#define PG_RETURN_INT8(x)   return Int8GetDatum(x)
+#define PG_GETARG_UINT32(n) DatumGetUInt32(PG_GETARG_DATUM(n))
+#define PG_GETARG_UINT64(n)	 DatumGetUInt64(PG_GETARG_DATUM(n))
 #endif

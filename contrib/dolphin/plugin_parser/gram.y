@@ -874,7 +874,7 @@ static int errstate;
 	TO TRAILING TRANSACTION TRANSFORM TREAT TRIGGER TRIM TRUE_P
 	TRUNCATE TRUSTED TSFIELD TSTAG TSTIME TYPE_P TYPES_P
 
-	UNBOUNDED UNCOMMITTED UNENCRYPTED UNION UNIQUE UNKNOWN UNLIMITED UNLISTEN UNLOCK UNLOGGED
+	UNBOUNDED UNCOMMITTED UNENCRYPTED UNION UNIQUE UNKNOWN UNLIMITED UNLISTEN UNLOCK UNLOGGED UNSIGNED
 	UNTIL UNUSABLE UPDATE USEEOF USER USING
 
 	VACUUM VALID VALIDATE VALIDATION VALIDATOR VALUE_P VALUES VARBINARY VARCHAR VARCHAR2 VARIABLES VARIADIC VARRAY VARYING VCGROUP
@@ -20812,11 +20812,42 @@ Numeric:	INT_P opt_type_modifiers
 					$$->location = @1;
 				}
 				}
+			| INTEGER opt_type_modifiers UNSIGNED
+				{
+					if ($2 != NULL)
+					{
+						$$ = SystemTypeName("numeric");
+						$$->typmods = $2;
+						$$->location = @1;
+					}
+					else
+				{
+					$$ = SystemTypeName("uint4");
+					$$->location = @1;
+				}
+				}
+			| TINYINT opt_type_modifiers UNSIGNED 
+				{
+					$$ = SystemTypeName("uint1");
+					$$->location = @2;
+				}
+
+			| SMALLINT opt_type_modifiers  UNSIGNED
+				{
+					$$ = SystemTypeName("uint2");
+					$$->location = @1;
+				}
 			| SMALLINT opt_type_modifiers
 				{
 					$$ = SystemTypeName("int2");
 					$$->location = @1;
 				}
+			| INT_P opt_type_modifiers  UNSIGNED
+				{
+					$$ = SystemTypeName("uint4");
+					$$->location = @1;
+				}
+
 			| TINYINT opt_type_modifiers
 				{
 					$$ = SystemTypeName("int1");
@@ -20827,9 +20858,19 @@ Numeric:	INT_P opt_type_modifiers
 					$$ = SystemTypeName("int4");
 					$$->location = @1;
 				}
+			| MEDIUMINT opt_type_modifiers UNSIGNED
+				{
+					$$ = SystemTypeName("uint4");
+					$$->location = @1;
+				}
 			| BIGINT opt_type_modifiers
 				{
 					$$ = SystemTypeName("int8");
+					$$->location = @1;
+				}
+			| BIGINT opt_type_modifiers UNSIGNED
+				{
+					$$ = SystemTypeName("uint8");
 					$$->location = @1;
 				}
 			| REAL
@@ -25067,6 +25108,7 @@ col_name_keyword:
 			| TINYINT
 			| TREAT
 			| TRIM
+			| UNSIGNED
 			| VALUES
 			| VARBINARY
 			| VARCHAR
