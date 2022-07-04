@@ -33,5 +33,19 @@ SELECT LOG(2, -64) IS NULL;
 SELECT LOG(0, 64) IS NULL;
 SELECT LOG(2, 0) IS NULL;
 
+select log(111);
+select log(b'111');
+select log(7);
+select log2(111);
+select log2(b'111');
+select log2(7);
+select log10(111);
+select log10(b'111');
+select log10(7);
+
+select log(b'111'::int);
+select log2(b'111'::int);
+select log10(b'111'::int);
+
 \c postgres
 drop database db_b_log_test;

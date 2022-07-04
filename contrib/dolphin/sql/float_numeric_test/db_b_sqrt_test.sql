@@ -11,5 +11,10 @@ SELECT SQRT(-64);
 SELECT SQRT(64::numeric);
 SELECT SQRT(-64::numeric);
 
+select sqrt(111);
+select sqrt(b'111');
+select sqrt(7);
+select sqrt(b'111'::int);
+
 \c postgres
 drop database db_b_sqrt_test;
