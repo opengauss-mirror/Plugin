@@ -302,7 +302,7 @@ ADD [ COLUMN ] column_name data_type [ compress_mode ] [ COLLATE collation ] [ c
 
     ```
     ALTER TABLE [ IF EXISTS ] table_name 
-        RENAME TO new_table_name;
+        RENAME [ TO | AS ] new_table_name;
     ```
 
 -   重命名表中指定的列。

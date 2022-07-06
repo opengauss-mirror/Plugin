@@ -651,7 +651,7 @@ Oid LookupCollation(ParseState* pstate, List* collnames, int location)
         setup_parser_errposition_callback(&pcbstate, pstate, location);
     }
 
-    colloid = get_collation_oid(collnames, false);
+    colloid = get_collation_oid(collnames, true);
 
     if (pstate != NULL) {
         cancel_parser_errposition_callback(&pcbstate);
@@ -670,6 +670,9 @@ Oid LookupCollation(ParseState* pstate, List* collnames, int location)
  */
 Oid GetColumnDefCollation(ParseState* pstate, ColumnDef* coldef, Oid typeOid)
 {
+    if (OidIsValid(coldef->collOid)) {
+        return coldef->collOid;
+    }
     Oid result;
     Oid typcollation = get_typcollation(typeOid);
     int location = -1;

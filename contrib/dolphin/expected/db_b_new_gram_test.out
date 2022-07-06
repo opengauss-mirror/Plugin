@@ -319,5 +319,368 @@ ANALYZE TABLE t_not_exist, t_new_analyze;
  public.t_new_analyze | analyze | status   | OK
 (3 rows)
 
+-- new grammar test for CREATE TABLESPACE
+CREATE TABLESPACE test_tbspace ADD DATAFILE 'test_tbspace1';
+CREATE TABLE t_tbspace(num int) TABLESPACE test_tbspace;
+\d t_tbspace
+   Table "public.t_tbspace"
+ Column |  Type   | Modifiers 
+--------+---------+-----------
+ num    | integer | 
+Tablespace: "test_tbspace"
+
+DROP TABLE t_tbspace;
+DROP TABLESPACE test_tbspace;
+-- new grammar test for RENAME [TO | AS]
+CREATE TABLE t_rename(c int);
+\d t_rename
+   Table "public.t_rename"
+ Column |  Type   | Modifiers 
+--------+---------+-----------
+ c      | integer | 
+
+ALTER TABLE t_rename RENAME TO t_rename_to;
+\d t_rename_to
+  Table "public.t_rename_to"
+ Column |  Type   | Modifiers 
+--------+---------+-----------
+ c      | integer | 
+
+ALTER TABLE t_rename_to RENAME AS t_rename_as;
+\d t_rename_as
+  Table "public.t_rename_as"
+ Column |  Type   | Modifiers 
+--------+---------+-----------
+ c      | integer | 
+
+DROP TABLE t_rename_as;
+-- new grammar test for CREATE INDEX
+DROP TABLE IF EXISTS t_index_new_grammar;
+NOTICE:  table "t_index_new_grammar" does not exist, skipping
+CREATE TABLE t_index_new_grammar(c1 int, c2 int);
+CREATE INDEX test_index_btree_1 ON t_index_new_grammar USING btree(c1);
+CREATE INDEX test_index_btree_2 USING btree ON t_index_new_grammar(c2);
+\d t_index_new_grammar
+Table "public.t_index_new_grammar"
+ Column |  Type   | Modifiers 
+--------+---------+-----------
+ c1     | integer | 
+ c2     | integer | 
+Indexes:
+    "test_index_btree_1" btree (c1) TABLESPACE pg_default
+    "test_index_btree_2" btree (c2) TABLESPACE pg_default
+
+DROP INDEX test_index_btree_1;
+DROP INDEX test_index_btree_2;
+DROP TABLE t_index_new_grammar;
+-- new grammar test for COLLATE, CHARSET, ROW_FORMAT in column and table level
+CREATE TABLE t_column_collate(c text COLLATE test_collate);
+WARNING:  Invalid collation for column c detected. default value set
+DROP TABLE t_column_collate;
+CREATE TABLE t_column_collate(c text COLLATE "en_US");
+DROP TABLE t_column_collate;
+CREATE TABLE t_column_collate(c text COLLATE en_US);
+WARNING:  Invalid collation for column c detected. default value set
+DROP TABLE t_column_collate;
+CREATE TABLE t_column_charset(c text CHARSET test_charset);
+WARNING:  character set "test_charset" for type text is not supported yet. default value set
+DROP TABLE t_column_charset;
+CREATE TABLE t_column_charset(c text CHARSET "test_charset");
+WARNING:  character set "test_charset" for type text is not supported yet. default value set
+DROP TABLE t_column_charset;
+CREATE TABLE t_table_collate(c text) COLLATE test_collate;
+WARNING:  COLLATE for TABLE is not supported for current version. skipped
+DROP TABLE t_table_collate;
+CREATE TABLE t_table_charset(c text) CHARSET test_charset;
+WARNING:  CHARSET for TABLE is not supported for current version. skipped
+DROP TABLE t_table_charset;
+CREATE TABLE t_table_charset(c text) CHARACTER SET test_charset;
+WARNING:  CHARACTER SET for TABLE is not supported for current version. skipped
+DROP TABLE t_table_charset;
+CREATE TABLE t_table_row_format(c text) ROW_FORMAT test_row_format;
+WARNING:  ROW_FORMAT for TABLE is not supported for current version. skipped
+DROP TABLE t_table_row_format;
+CREATE TABLE t_mixed_table_option(c text) ROW_FORMAT test_row_format CHARSET test_charset COLLATE test_collate;
+WARNING:  ROW_FORMAT for TABLE is not supported for current version. skipped
+WARNING:  CHARSET for TABLE is not supported for current version. skipped
+WARNING:  COLLATE for TABLE is not supported for current version. skipped
+DROP TABLE t_mixed_table_option;
+CREATE TABLE t_character_set_column(c text CHARACTER SET test_character_set);
+WARNING:  character set "test_character_set" for type text is not supported yet. default value set
+DROP TABLE t_character_set_column;
+CREATE TABLE t_charset_column(c text CHARSET test_character_set);
+WARNING:  character set "test_character_set" for type text is not supported yet. default value set
+DROP TABLE t_charset_column;
+CREATE TABLE t_charset_column(c text(10) CHARSET test_character_set);
+WARNING:  character set "test_character_set" for type text is not supported yet. default value set
+DROP TABLE t_charset_column;
+CREATE TABLE t_charset_enum_column(c ENUM('a', 'b', 'c') CHARSET test_character_set);
+WARNING:  character set "test_character_set" for type ENUM is not supported yet. default value set
+DROP TABLE t_charset_enum_column;
+-- test for integrity of function text
+SELECT text(10);
+ text 
+------
+ 10
+(1 row)
+
+SELECT text(true);
+ text 
+------
+ true
+(1 row)
+
+SELECT text('jack'::name);
+ text 
+------
+ jack
+(1 row)
+
+SELECT text('hank');
+ text 
+------
+ hank
+(1 row)
+
+-- new grammar test for group by xxx with rollup
+CREATE TABLE t_with_rollup(id int, name varchar(20), area varchar(50), count int);
+INSERT INTO t_with_rollup values(1, 'a', 'A', 10);
+INSERT INTO t_with_rollup values(2, 'b', 'B', 15);
+INSERT INTO t_with_rollup values(2, 'b', 'B', 20);
+INSERT INTO t_with_rollup values(3, 'c', 'C', 50);
+INSERT INTO t_with_rollup values(3, 'c', 'C', 15);
+SELECT name, sum(count) FROM t_with_rollup GROUP BY ROLLUP(name);
+ name | sum 
+------+-----
+ a    |  10
+ b    |  35
+ c    |  65
+      | 110
+(4 rows)
+
+SELECT name, sum(count) FROM t_with_rollup GROUP BY (name) WITH ROLLUP;
+ name | sum 
+------+-----
+ a    |  10
+ b    |  35
+ c    |  65
+      | 110
+(4 rows)
+
+SELECT name, sum(count) FROM t_with_rollup GROUP BY id, name;
+ name | sum 
+------+-----
+ c    |  65
+ b    |  35
+ a    |  10
+(3 rows)
+
+SELECT name, sum(count) FROM t_with_rollup GROUP BY (id, name);
+ name | sum 
+------+-----
+ c    |  65
+ b    |  35
+ a    |  10
+(3 rows)
+
+SELECT name, sum(count) FROM t_with_rollup GROUP BY ROLLUP (id, name);
+ name | sum 
+------+-----
+ a    |  10
+      |  10
+ b    |  35
+      |  35
+ c    |  65
+      |  65
+      | 110
+(7 rows)
+
+SELECT name, sum(count) FROM t_with_rollup GROUP BY (id, name) WITH ROLLUP;
+ERROR:  Operand should contain 1 column(s) fro WITH ROLLUP
+SELECT id, sum(count) FROM t_with_rollup GROUP BY id, CUBE(area), ROLLUP(area);
+ id | sum 
+----+-----
+  1 |  10
+  1 |  10
+  1 |  10
+  1 |  10
+  2 |  35
+  2 |  35
+  2 |  35
+  2 |  35
+  3 |  65
+  3 |  65
+  3 |  65
+  3 |  65
+(12 rows)
+
+SELECT id, sum(count) FROM t_with_rollup GROUP BY id, CUBE(area), area WITH ROLLUP;
+ id | sum 
+----+-----
+  1 |  10
+  1 |  10
+  1 |  10
+  1 |  10
+  2 |  35
+  2 |  35
+  2 |  35
+  2 |  35
+  3 |  65
+  3 |  65
+  3 |  65
+  3 |  65
+(12 rows)
+
+SELECT id, name, area, sum(count) FROM t_with_rollup GROUP BY id, name, CUBE(name), ROLLUP(id, name, area);
+ id | name | area | sum 
+----+------+------+-----
+  1 | a    | A    |  10
+  1 | a    | A    |  10
+  1 | a    |      |  10
+  1 | a    |      |  10
+  1 | a    |      |  10
+  1 | a    |      |  10
+  1 | a    |      |  10
+  1 | a    |      |  10
+  2 | b    | B    |  35
+  2 | b    | B    |  35
+  2 | b    |      |  35
+  2 | b    |      |  35
+  2 | b    |      |  35
+  2 | b    |      |  35
+  2 | b    |      |  35
+  2 | b    |      |  35
+  3 | c    | C    |  65
+  3 | c    | C    |  65
+  3 | c    |      |  65
+  3 | c    |      |  65
+  3 | c    |      |  65
+  3 | c    |      |  65
+  3 | c    |      |  65
+  3 | c    |      |  65
+(24 rows)
+
+SELECT id, name, area, sum(count) FROM t_with_rollup GROUP BY id, name, CUBE(name), id, name, area WITH ROLLUP;
+ id | name | area | sum 
+----+------+------+-----
+  1 | a    | A    |  10
+  1 | a    | A    |  10
+  1 | a    |      |  10
+  1 | a    |      |  10
+  1 | a    |      |  10
+  1 | a    |      |  10
+  1 | a    |      |  10
+  1 | a    |      |  10
+  2 | b    | B    |  35
+  2 | b    | B    |  35
+  2 | b    |      |  35
+  2 | b    |      |  35
+  2 | b    |      |  35
+  2 | b    |      |  35
+  2 | b    |      |  35
+  2 | b    |      |  35
+  3 | c    | C    |  65
+  3 | c    | C    |  65
+  3 | c    |      |  65
+  3 | c    |      |  65
+  3 | c    |      |  65
+  3 | c    |      |  65
+  3 | c    |      |  65
+  3 | c    |      |  65
+(24 rows)
+
+SELECT id, name, area, sum(count) FROM t_with_rollup GROUP BY id, name, CUBE(name), (id, name, area) WITH ROLLUP;
+ERROR:  Operand should contain 1 column(s) fro WITH ROLLUP
+-- test for integrity of grammar WITH DATA since we revised parser.
+CREATE TABLE t_with_data AS SELECT id, name, sum(count) FROM t_with_rollup GROUP BY id, name WITH DATA;
+SELECT * FROM t_with_data;
+ id | name | sum 
+----+------+-----
+  3 | c    |  65
+  2 | b    |  35
+  1 | a    |  10
+(3 rows)
+
+DROP TABLE t_with_rollup;
+DROP TABLE t_with_data;
+-- new grammar test for CREATE TABLE [AS] SELECT...
+CREATE TABLE t_ctas(a int, b text);
+INSERT INTO t_ctas VALUES(1, '1'), (2, '2'), (3, '3'), (4, '4');
+CREATE TABLE t_ctas_new SELECT * FROM t_ctas;
+SELECT COUNT(*) FROM t_ctas_new;
+ count 
+-------
+     4
+(1 row)
+
+DROP TABLE t_ctas_new;
+CREATE TABLE t_ctas_new SELECT * FROM t_ctas LIMIT 0, 2;
+SELECT COUNT(*) FROM t_ctas_new;
+ count 
+-------
+     2
+(1 row)
+
+DROP TABLE t_ctas_new;
+CREATE TABLE t_ctas_new (SELECT * FROM t_ctas LIMIT 0, 2);
+SELECT COUNT(*) FROM t_ctas_new;
+ count 
+-------
+     2
+(1 row)
+
+DROP TABLE t_ctas_new;
+CREATE TABLE t_ctas_new(new_c_a) (SELECT * FROM t_ctas LIMIT 0, 2);
+SELECT COUNT(*) FROM t_ctas_new;
+ count 
+-------
+     2
+(1 row)
+
+\d t_ctas_new
+   Table "public.t_ctas_new"
+ Column  |  Type   | Modifiers 
+---------+---------+-----------
+ new_c_a | integer | 
+ b       | text    | 
+
+DROP TABLE t_ctas_new;
+CREATE TABLE t_ctas_new(new_c_a, new_c_b) SELECT * FROM t_ctas LIMIT 0, 2;
+SELECT COUNT(*) FROM t_ctas_new;
+ count 
+-------
+     2
+(1 row)
+
+\d t_ctas_new
+   Table "public.t_ctas_new"
+ Column  |  Type   | Modifiers 
+---------+---------+-----------
+ new_c_a | integer | 
+ new_c_b | text    | 
+
+DROP TABLE t_ctas_new;
+-- FAILED
+CREATE TABLE t_ctas_new WITH temp_t(a, b) AS (SELECT a, b FROM t_ctas) SELECT * FROM temp_t;
+ERROR:  syntax error at or near "temp_t"
+LINE 1: CREATE TABLE t_ctas_new WITH temp_t(a, b) AS (SELECT a, b FR...
+                                     ^
+CREATE TABLE t_ctas_new AS WITH temp_t(a, b) AS (SELECT a, b FROM t_ctas) SELECT * FROM temp_t;
+SELECT COUNT(*) FROM t_ctas_new;
+ count 
+-------
+     4
+(1 row)
+
+DROP TABLE t_ctas_new;
+CREATE TABLE t_ctas_new (WITH temp_t(a, b) AS (SELECT a, b FROM t_ctas) SELECT * FROM temp_t);
+SELECT COUNT(*) FROM t_ctas_new;
+ count 
+-------
+     4
+(1 row)
+
+DROP TABLE t_ctas_new;
+DROP TABLE t_ctas;
 \c postgres
 drop database db_b_new_gram_test;

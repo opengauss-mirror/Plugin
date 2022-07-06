@@ -4702,7 +4702,12 @@ static void transformColumnType(CreateStmtContext* cxt, ColumnDef* column)
     if (column->collClause) {
         Form_pg_type typtup = (Form_pg_type)GETSTRUCT(ctype);
 
-        LookupCollation(cxt->pstate, column->collClause->collname, column->collClause->location);
+        column->collOid = LookupCollation(cxt->pstate, column->collClause->collname, column->collClause->location);
+        if (!OidIsValid(column->collOid)) {
+            ereport(WARNING, (errmsg("Invalid collation for column %s detected. default value set", column->colname)));
+            column->collOid = DEFAULT_COLLATION_OID;
+            column->collClause->collname = list_make1(makeString("default"));
+        }
         /* Complain if COLLATE is applied to an uncollatable type */
         if (!OidIsValid(typtup->typcollation))
             ereport(ERROR,

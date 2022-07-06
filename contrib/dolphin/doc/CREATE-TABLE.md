@@ -39,6 +39,9 @@ CREATE [ [ GLOBAL | LOCAL ] [ TEMPORARY | TEMP ] | UNLOGGED ] TABLE [ IF NOT EXI
         [ TABLESPACE tablespace_name ]
         [ COMPRESSION [=] compression_arg ]
         [ ENGINE [=] engine_name ]
+        [ COLLATE [=] collation_name ]
+        [ CHARSET [=] charset_name ]
+        [ ROW_FORMAT [=] row_format_name ]
 
     除了WITH选项外允许输入多次同一种create_option，以最后一次的输入为准。
 ```
@@ -151,6 +154,8 @@ CREATE [ [ GLOBAL | LOCAL ] [ TEMPORARY | TEMP ] | UNLOGGED ] TABLE [ IF NOT EXI
 
     字段的数据类型。
 
+    对枚举类型ENUM，以及CHAR, CHARACTER, VARCHAR, TEXT等字符类型，创建表格时可使用关键字CHARSET或CHARACTER SET声明列字符集。目前该特性仅做语法支持，不实现功能。
+
 -   **compress\_mode**
 
     表字段的压缩选项。该选项指定表字段优先使用的压缩算法。行存表不支持压缩。
@@ -160,6 +165,8 @@ CREATE [ [ GLOBAL | LOCAL ] [ TEMPORARY | TEMP ] | UNLOGGED ] TABLE [ IF NOT EXI
 -   **COLLATE collation**
 
     COLLATE子句指定列的排序规则（该列必须是可排列的数据类型）。如果没有指定，则使用默认的排序规则。排序规则可以使用“select \* from pg\_collation;”命令从pg\_collation系统表中查询，默认的排序规则为查询结果中以default开始的行。
+
+    对未被支持的排序规则，数据库将发出警告，并将该列设置为默认的排序规则。
 
 -   **LIKE source\_table \[ like\_option ... \]**
 
@@ -366,6 +373,18 @@ CREATE [ [ GLOBAL | LOCAL ] [ TEMPORARY | TEMP ] | UNLOGGED ] TABLE [ IF NOT EXI
 -   **ENGINE \[=\] engine_name**
 
     用于选择表所使用的存储引擎；目前该特性只有语法没有功能。
+
+-   **{ CHARSET | CHARACTER SET } \[=\] charset_name**
+
+    用于选择表所使用的字符集；目前该特性仅有语法支持，不实现功能。
+
+-   **COLLATE \[=\] collation_name**
+
+    用于选择表所使用的排序规则；目前该特性仅有语法支持，不实现功能。
+
+-   **ROW_FORMAT \[=\] row_format_name**
+
+    用于选择表所使用的行存储格式；目前该特性仅有语法支持，不实现功能。
 
 -   **CONSTRAINT constraint\_name**
 
