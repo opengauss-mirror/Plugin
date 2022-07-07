@@ -210,6 +210,12 @@ IndexOptionType option_type;
     } option;
 } SingleIndexOption;
 
+typedef struct OptLikeWhere
+{
+    bool is_like;
+    Node *like_or_where;
+} OptLikeWhere;
+
 /* ConstraintAttributeSpec yields an integer bitmask of these flags: */
 #define CAS_NOT_DEFERRABLE			0x01
 #define CAS_DEFERRABLE				0x02
@@ -373,6 +379,7 @@ static int errstate;
 	A_Indices			*aind;
 	ResTarget			*target;
 	struct PrivTarget	*privtarget;
+	struct OptLikeWhere	*optlikewhere;
 	AccessPriv			*accesspriv;
 	DbPriv				*dbpriv;
 	InsertStmt			*istmt;
@@ -518,7 +525,7 @@ static int errstate;
 
 %type <range>	qualified_name insert_target OptConstrFromTable opt_index_name insert_partition_clause update_delete_partition_clause
 
-%type <str>		all_Op MathOp
+%type <str>		all_Op MathOp OptDbName
 
 %type <str>		RowLevelSecurityPolicyName row_level_security_cmd RLSDefaultForCmd row_level_security_role
 %type <boolean>	RLSDefaultPermissive
@@ -534,6 +541,7 @@ static int errstate;
 %type <dbpriv>  db_privilege
 %type <str>		privilege_str
 %type <privtarget> privilege_target routine_target temporary_target
+%type <optlikewhere> OptLikeOrWhere LikeOrWhere
 %type <funwithargs> function_with_argtypes
 %type <list>	function_with_argtypes_list
 %type <ival>	defacl_privilege_target
@@ -614,6 +622,7 @@ static int errstate;
 %type <defelt>	OptCopyLogError OptCopyRejectLimit opt_load
 
 %type <boolean> opt_processed
+%type <boolean> opt_full_fields
 %type <defelt> opt_useeof
 
 %type <str>		DirectStmt CleanConnDbName CleanConnUserName
@@ -882,7 +891,7 @@ static int errstate;
 
 	CACHE CALL CALLED CANCELABLE CASCADE CASCADED CASE CAST CATALOG_P CHAIN CHAR_P
 	CHARACTER CHARACTERISTICS CHARACTERSET CHECK CHECKPOINT CLASS CLEAN CLIENT CLIENT_MASTER_KEY CLIENT_MASTER_KEYS CLOB CLOSE
-	CLUSTER COALESCE COLLATE COLLATION COLUMN COLUMN_ENCRYPTION_KEY COLUMN_ENCRYPTION_KEYS COMMENT COMMENTS COMMIT
+	CLUSTER COALESCE COLLATE COLLATION COLUMN COLUMNS COLUMN_ENCRYPTION_KEY COLUMN_ENCRYPTION_KEYS COMMENT COMMENTS COMMIT
 	COMMITTED COMPACT COMPATIBLE_ILLEGAL_CHARS COMPLETE COMPRESS COMPRESSION CONCURRENTLY CONDITION CONFIGURATION CONNECTION CONSTANT CONSTRAINT CONSTRAINTS
 	CONTENT_P CONTINUE_P CONTVIEW CONVERSION_P CONVERT CONNECT COORDINATOR COORDINATORS COPY COST CREATE
 	CROSS CSN CSV CUBE CURRENT_P
@@ -2465,11 +2474,37 @@ VariableShowStmt:
 					if (pg_strcasecmp($2, "processlist") == 0) {
 						SelectStmt *n = makeProcesslistQuery(FALSE);
                        				$$ = (Node *) n;
+					} else if (pg_strcasecmp($2, "tables") == 0) {
+						SelectStmt *n = makeShowTablesQuery(FALSE, NULL, NULL, FALSE);
+						$$ = (Node *) n;
+					} else if (pg_strcasecmp($2, "plugins") == 0) {
+						SelectStmt *n = makeShowPluginsQuery();
+						$$ = (Node *) n;
 					} else {
 						VariableShowStmt *n = makeNode(VariableShowStmt);
 						n->name = $2;
 						$$ = (Node *) n;
 					}
+				}
+			| SHOW TABLES LikeOrWhere
+                                {
+                                        SelectStmt *n = makeShowTablesQuery(FALSE, NULL, $3->like_or_where, $3->is_like);
+					$$ = (Node *) n;
+                                }
+                        | SHOW TABLES from_in ColId OptLikeOrWhere
+                                {
+					SelectStmt *n = makeShowTablesQuery(FALSE, $4, $5->like_or_where, $5->is_like);
+					$$ = (Node *) n;
+                                }
+                        | SHOW FULL TABLES OptDbName OptLikeOrWhere
+                                {
+                                        SelectStmt *n = makeShowTablesQuery(TRUE, $4, $5->like_or_where, $5->is_like);
+					$$ = (Node *) n;
+                                }
+			| SHOW opt_full_fields from_in qualified_name OptDbName OptLikeOrWhere
+				{
+					SelectStmt *n = makeShowColumnsQuery($4->schemaname, $4->relname, $5, $2, $6->is_like, $6->like_or_where);
+					$$ = (Node *)n;
 				}
 			| SHOW FULL PROCESSLIST
 				{
@@ -2515,6 +2550,35 @@ VariableShowStmt:
 				}
 		;
 
+OptLikeOrWhere:
+				{
+					OptLikeWhere *n = (OptLikeWhere *)palloc(sizeof(OptLikeWhere));
+					n->is_like = FALSE;
+					n->like_or_where = NULL;
+					$$ = n;
+				}
+			| LikeOrWhere
+				{
+					$$ = $1;
+				}
+                ;
+
+LikeOrWhere:
+			WHERE a_expr 
+                                {
+                                        OptLikeWhere *n = (OptLikeWhere *)palloc(sizeof(OptLikeWhere));
+                                        n->is_like = FALSE;
+                                        n->like_or_where = $2;
+                                        $$ = n;
+                                }
+                        | LIKE Sconst
+                                {
+                                        OptLikeWhere *n = (OptLikeWhere *)palloc(sizeof(OptLikeWhere));
+                                        n->is_like = TRUE;
+                                        n->like_or_where = makeStringConst($2, -1);
+                                        $$ = n;
+                                }
+                ;
 
 ConstraintsSetStmt:
 			SET CONSTRAINTS constraints_set_list constraints_set_mode
@@ -2534,6 +2598,21 @@ constraints_set_list:
 constraints_set_mode:
 			DEFERRED								{ $$ = TRUE; }
 			| IMMEDIATE								{ $$ = FALSE; }
+		;
+
+opt_full_fields:
+			FULL columns_or_fields					{ $$ = TRUE; }
+			| columns_or_fields					{ $$ = FALSE; }
+		;
+
+OptDbName:
+			/* EMPTY*/						{ $$ = NULL; }
+			| from_in ColId				    { $$ = $2; }
+		;
+
+columns_or_fields:
+			COLUMNS
+			| FIELDS
 		;
 
 /*****************************************************************************
@@ -25355,6 +25434,7 @@ unreserved_keyword:
 			| CLUSTER
             | COLUMN_ENCRYPTION_KEY
             | COLUMN_ENCRYPTION_KEYS
+			| COLUMNS
 			| COMMENT
 			| COMMENTS
 			| COMMIT

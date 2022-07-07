@@ -1,0 +1,216 @@
+drop database if exists db_show;
+NOTICE:  database "db_show" does not exist, skipping
+create database db_show dbcompatibility 'b';
+\c db_show
+-- create tables/views in tst_schema1 namespace
+CREATE SCHEMA tst_schema1;
+SET SEARCH_PATH TO tst_schema1;
+CREATE TABLE tst_t1
+(
+id int,
+name varchar(20),
+addr text COLLATE "de_DE",
+phone text COLLATE "es_ES",
+addr_code text
+);
+CREATE TABLE t_t2
+(
+id int
+);
+CREATE VIEW tst_v1 AS SELECT * FROM tst_t1;
+COMMENT ON COLUMN tst_t1.id IS 'identity';
+-- create tables in tst_schema2 namespace
+CREATE SCHEMA tst_schema2;
+SET SEARCH_PATH TO tst_schema2;
+CREATE TABLE tst_t3
+(
+id int
+);
+-- show plugins
+show plugins;
+--?   Name       |  Status  | Type | Library | License |                      Comment                       
+--?.*
+--?.*
+--?.*
+--?.*
+--?.*
+--?.*
+--?.*
+--?.*
+--?.*
+--?.*
+--?.*
+--?.*
+(11 rows)
+
+-- show tables test
+show tables;
+ Tables_in_tst_schema2 
+-----------------------
+ tst_t3
+(1 row)
+
+show full tables;
+ Tables_in_tst_schema2 | Table_type 
+-----------------------+------------
+ tst_t3                | BASE TABLE
+(1 row)
+
+show tables from tst_schema1;
+ Tables_in_tst_schema1 
+-----------------------
+ tst_t1
+ t_t2
+ tst_v1
+(3 rows)
+
+show tables from tst_schema2;
+ Tables_in_tst_schema2 
+-----------------------
+ tst_t3
+(1 row)
+
+show tables from tst_schema3;
+ERROR:  Unkown Schema 'tst_schema3'.
+show full tables from tst_schema1 like '%tst_%';
+ Tables_in_tst_schema1 (%tst_%) | Table_type 
+--------------------------------+------------
+ tst_t1                         | BASE TABLE
+ tst_v1                         | VIEW
+(2 rows)
+
+show full tables from tst_schema1 where Table_type = 'VIEW';
+ Tables_in_tst_schema1 | Table_type 
+-----------------------+------------
+ tst_v1                | VIEW
+(1 row)
+
+show full tables from tst_schema1 where table_type like '%VIEW%';
+ Tables_in_tst_schema1 | Table_type 
+-----------------------+------------
+ tst_v1                | VIEW
+(1 row)
+
+-- show columns
+SET SEARCH_PATH TO tst_schema1;
+show columns from tst_t1;
+   Field   |         Type          | Null | Key | Default | Extra 
+-----------+-----------------------+------+-----+---------+-------
+ id        | integer               | YES  |     | NULL    | 
+ name      | character varying(20) | YES  |     | NULL    | 
+ addr      | text                  | YES  |     | NULL    | 
+ phone     | text                  | YES  |     | NULL    | 
+ addr_code | text                  | YES  |     | NULL    | 
+(5 rows)
+
+show columns from tst_t1 in tst_schema1;
+   Field   |         Type          | Null | Key | Default | Extra 
+-----------+-----------------------+------+-----+---------+-------
+ id        | integer               | YES  |     | NULL    | 
+ name      | character varying(20) | YES  |     | NULL    | 
+ addr      | text                  | YES  |     | NULL    | 
+ phone     | text                  | YES  |     | NULL    | 
+ addr_code | text                  | YES  |     | NULL    | 
+(5 rows)
+
+show columns from tst_schema1.tst_t1;
+   Field   |         Type          | Null | Key | Default | Extra 
+-----------+-----------------------+------+-----+---------+-------
+ id        | integer               | YES  |     | NULL    | 
+ name      | character varying(20) | YES  |     | NULL    | 
+ addr      | text                  | YES  |     | NULL    | 
+ phone     | text                  | YES  |     | NULL    | 
+ addr_code | text                  | YES  |     | NULL    | 
+(5 rows)
+
+show columns from tst_schema2.tst_t1;
+ERROR:  Table 'tst_schema2.tst_t1' doesn't exist.
+show columns from tst_schema3.tst_t1;
+ERROR:  Table 'tst_schema3.tst_t1' doesn't exist.
+show columns from tst_schema1.tst_t1 in tst_schema2;
+ERROR:  Table 'tst_schema2.tst_t1' doesn't exist.
+show columns from tst_schema2.tst_t1 in tst_schema1;
+   Field   |         Type          | Null | Key | Default | Extra 
+-----------+-----------------------+------+-----+---------+-------
+ id        | integer               | YES  |     | NULL    | 
+ name      | character varying(20) | YES  |     | NULL    | 
+ addr      | text                  | YES  |     | NULL    | 
+ phone     | text                  | YES  |     | NULL    | 
+ addr_code | text                  | YES  |     | NULL    | 
+(5 rows)
+
+show fields from tst_t1;
+   Field   |         Type          | Null | Key | Default | Extra 
+-----------+-----------------------+------+-----+---------+-------
+ id        | integer               | YES  |     | NULL    | 
+ name      | character varying(20) | YES  |     | NULL    | 
+ addr      | text                  | YES  |     | NULL    | 
+ phone     | text                  | YES  |     | NULL    | 
+ addr_code | text                  | YES  |     | NULL    | 
+(5 rows)
+
+show full columns from tst_t1;
+   Field   |         Type          | Collation | Null | Key | Default | Extra |               Privileges                | Comment  
+-----------+-----------------------+-----------+------+-----+---------+-------+-----------------------------------------+----------
+ id        | integer               | NULL      | YES  |     | NULL    |       | UPDATE,SELECT,REFERENCES,INSERT,COMMENT | identity
+ name      | character varying(20) | NULL      | YES  |     | NULL    |       | UPDATE,SELECT,REFERENCES,INSERT,COMMENT | 
+ addr      | text                  | de_DE     | YES  |     | NULL    |       | UPDATE,SELECT,REFERENCES,INSERT,COMMENT | 
+ phone     | text                  | es_ES     | YES  |     | NULL    |       | UPDATE,SELECT,REFERENCES,INSERT,COMMENT | 
+ addr_code | text                  | NULL      | YES  |     | NULL    |       | UPDATE,SELECT,REFERENCES,INSERT,COMMENT | 
+(5 rows)
+
+show full columns from tst_t1 like '%addr%';
+   Field   | Type | Collation | Null | Key | Default | Extra |               Privileges                | Comment 
+-----------+------+-----------+------+-----+---------+-------+-----------------------------------------+---------
+ addr      | text | de_DE     | YES  |     | NULL    |       | UPDATE,SELECT,REFERENCES,INSERT,COMMENT | 
+ addr_code | text | NULL      | YES  |     | NULL    |       | UPDATE,SELECT,REFERENCES,INSERT,COMMENT | 
+(2 rows)
+
+show full columns from tst_t1 where Type = 'text';
+   Field   | Type | Collation | Null | Key | Default | Extra |               Privileges                | Comment 
+-----------+------+-----------+------+-----+---------+-------+-----------------------------------------+---------
+ addr      | text | de_DE     | YES  |     | NULL    |       | UPDATE,SELECT,REFERENCES,INSERT,COMMENT | 
+ phone     | text | es_ES     | YES  |     | NULL    |       | UPDATE,SELECT,REFERENCES,INSERT,COMMENT | 
+ addr_code | text | NULL      | YES  |     | NULL    |       | UPDATE,SELECT,REFERENCES,INSERT,COMMENT | 
+(3 rows)
+
+-- test with normal role
+DROP ROLE if EXISTS tst_shows_u1;
+NOTICE:  role "tst_shows_u1" does not exist, skipping
+CREATE ROLE tst_shows_u1 IDENTIFIED BY 'tst_shows_u1@123';
+SET ROLE tst_shows_u1 PASSWORD 'tst_shows_u1@123';
+SELECT CURRENT_USER;
+ current_user 
+--------------
+ tst_shows_u1
+(1 row)
+
+show full columns from tst_t1 in tst_schema1;
+ Field | Type | Collation | Null | Key | Default | Extra | Privileges | Comment 
+-------+------+-----------+------+-----+---------+-------+------------+---------
+(0 rows)
+
+RESET role;
+GRANT SELECT on tst_t1 to tst_shows_u1;
+SET ROLE tst_shows_u1 PASSWORD 'tst_shows_u1@123';
+SELECT CURRENT_USER;
+ current_user 
+--------------
+ tst_shows_u1
+(1 row)
+
+show full columns from tst_t1 in tst_schema1;
+   Field   |         Type          | Collation | Null | Key | Default | Extra | Privileges | Comment  
+-----------+-----------------------+-----------+------+-----+---------+-------+------------+----------
+ id        | integer               | NULL      | YES  |     | NULL    |       | SELECT     | identity
+ name      | character varying(20) | NULL      | YES  |     | NULL    |       | SELECT     | 
+ addr      | text                  | de_DE     | YES  |     | NULL    |       | SELECT     | 
+ phone     | text                  | es_ES     | YES  |     | NULL    |       | SELECT     | 
+ addr_code | text                  | NULL      | YES  |     | NULL    |       | SELECT     | 
+(5 rows)
+
+RESET ROLE;
+REVOKE all on tst_t1 from tst_shows_u1;
+DROP USER tst_shows_u1;
+\c postgres
+drop database if exists db_show;
