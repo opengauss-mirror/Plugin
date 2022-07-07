@@ -715,6 +715,64 @@ Datum ascii(PG_FUNCTION_ARGS)
     PG_RETURN_INT32((int32)*data);
 }
 
+text* _chr(uint32 value, bool flag)
+{
+    text* result = NULL;
+    int encoding = GetDatabaseEncoding();
+    if (encoding == PG_UTF8 && value > 127) {
+        /* for Unicode we treat the argument as a code point */
+        int bytes;
+        char* wch = NULL;
+        /* We only allow valid Unicode code points */
+        if (value > 0x001fffff)
+            ereport(ERROR,
+                    (errcode(ERRCODE_PROGRAM_LIMIT_EXCEEDED),
+                     errmsg("requested character too large for encoding: %u", value)));
+        if (value > 0xffff){
+            bytes = 4;
+        } else if (value > 0x07ff) {
+            bytes = 3;
+        } else {
+            bytes = 2;
+        }
+        result = (text*)palloc(VARHDRSZ + bytes);
+        SET_VARSIZE(result, VARHDRSZ + bytes);
+        wch = VARDATA(result);
+
+        if (bytes == 2) {
+            wch[0] = 0xC0 | ((value >> 6) & 0x1F);
+            wch[1] = 0x80 | (value & 0x3F);
+        } else if (bytes == 3) {
+            wch[0] = 0xE0 | ((value >> 12) & 0x0F);
+            wch[1] = 0x80 | ((value >> 6) & 0x3F);
+            wch[2] = 0x80 | (value & 0x3F);
+        } else {
+            wch[0] = 0xF0 | ((value >> 18) & 0x07);
+            wch[1] = 0x80 | ((value >> 12) & 0x3F);
+            wch[2] = 0x80 | ((value >> 6) & 0x3F);
+            wch[3] = 0x80 | (value & 0x3F);
+        }
+    }
+    else {
+        bool is_mb = false;
+        if (flag) {
+            if (value == 0) {
+                return NULL;
+            }
+        }
+
+        is_mb = pg_encoding_max_length(encoding) > 1;
+        if ((is_mb && (value > 127)) || (!is_mb && (value > 255)))
+            ereport(ERROR,
+                    (errcode(ERRCODE_PROGRAM_LIMIT_EXCEEDED),
+                     errmsg("requested character too large for encoding: %u", value)));
+        result = (text*)palloc(VARHDRSZ + 1);
+        SET_VARSIZE(result, VARHDRSZ + 1);
+        *VARDATA(result) = (char)value;
+    }
+    return result;
+}
+
 /********************************************************************
  *
  * chr
@@ -739,72 +797,13 @@ Datum ascii(PG_FUNCTION_ARGS)
 
 Datum chr(PG_FUNCTION_ARGS)
 {
-    uint32 cvalue = PG_GETARG_UINT32(0);
-    text* result = NULL;
-    int encoding = GetDatabaseEncoding();
+    text*  result = NULL;
 
-    if (encoding == PG_UTF8 && cvalue > 127) {
-        /* for Unicode we treat the argument as a code point */
-        int bytes;
-        char* wch = NULL;
-
-        /* We only allow valid Unicode code points */
-        if (cvalue > 0x001fffff)
-            ereport(ERROR,
-                (errcode(ERRCODE_PROGRAM_LIMIT_EXCEEDED),
-                    errmsg("requested character too large for encoding: %u", cvalue)));
-
-        if (cvalue > 0xffff)
-            bytes = 4;
-        else if (cvalue > 0x07ff)
-            bytes = 3;
-        else
-            bytes = 2;
-
-        result = (text*)palloc(VARHDRSZ + bytes);
-        SET_VARSIZE(result, VARHDRSZ + bytes);
-        wch = VARDATA(result);
-
-        if (bytes == 2) {
-            wch[0] = 0xC0 | ((cvalue >> 6) & 0x1F);
-            wch[1] = 0x80 | (cvalue & 0x3F);
-        } else if (bytes == 3) {
-            wch[0] = 0xE0 | ((cvalue >> 12) & 0x0F);
-            wch[1] = 0x80 | ((cvalue >> 6) & 0x3F);
-            wch[2] = 0x80 | (cvalue & 0x3F);
-        } else {
-            wch[0] = 0xF0 | ((cvalue >> 18) & 0x07);
-            wch[1] = 0x80 | ((cvalue >> 12) & 0x3F);
-            wch[2] = 0x80 | ((cvalue >> 6) & 0x3F);
-            wch[3] = 0x80 | (cvalue & 0x3F);
-        }
-
+    if (NULL != (result = _chr(PG_GETARG_UINT32(0), true))) {
+        PG_RETURN_TEXT_P(result);
+    } else {
+        PG_RETURN_NULL();
     }
-
-    else {
-        bool is_mb = false;
-
-        /*
-         * Error out on arguments that make no sense or that we can't validly
-         * represent in the encoding.
-         */
-
-        if (cvalue == 0)
-            PG_RETURN_NULL();
-
-        is_mb = pg_encoding_max_length(encoding) > 1;
-
-        if ((is_mb && (cvalue > 127)) || (!is_mb && (cvalue > 255)))
-            ereport(ERROR,
-                (errcode(ERRCODE_PROGRAM_LIMIT_EXCEEDED),
-                    errmsg("requested character too large for encoding: %u", cvalue)));
-
-        result = (text*)palloc(VARHDRSZ + 1);
-        SET_VARSIZE(result, VARHDRSZ + 1);
-        *VARDATA(result) = (char)cvalue;
-    }
-
-    PG_RETURN_TEXT_P(result);
 }
 
 /********************************************************************

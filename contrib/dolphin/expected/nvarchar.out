@@ -1,8 +1,8 @@
 -- b compatibility case
-drop database if exists b;
-NOTICE:  database "b" does not exist, skipping
-create database b dbcompatibility 'b';
-\c b
+drop database if exists db_nvarchar;
+NOTICE:  database "db_nvarchar" does not exist, skipping
+create database db_nvarchar dbcompatibility 'b';
+\c db_nvarchar
 --
 -- VARCHAR
 --
@@ -117,4 +117,4 @@ SELECT '' AS four, * FROM NVARCHAR_TBL;
 (4 rows)
 
 \c postgres
-drop database if exists b;
+drop database if exists db_nvarchar;

@@ -1,6 +1,6 @@
-drop database if exists test;
-create database test dbcompatibility 'B';
-\c test
+drop database if exists db_b_new_gram_test;
+create database db_b_new_gram_test dbcompatibility 'B';
+\c db_b_new_gram_test
 
 -- CREATE TABLE engine test
 CREATE TABLE test_engine_1 (a int) engine = InnoDB;
@@ -126,4 +126,4 @@ SELECT count(*) FROM PG_PREPARED_STATEMENTS WHERE name LIKE '%instr_test%';
 DROP TEMPORARY TABLE test_engine_1 CASCADE;
 
 \c postgres
-drop database test;
+drop database db_b_new_gram_test;

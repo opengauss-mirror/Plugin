@@ -1,6 +1,6 @@
-drop database if exists format_test;
-create database format_test dbcompatibility 'B';
-\c format_test
+drop database if exists db_b_hex;
+create database db_b_hex dbcompatibility 'B';
+\c db_b_hex
 
 select hex(int1(255));
 select hex(int1(256));
@@ -57,4 +57,4 @@ insert into bytea_to_hex_test values (E'\\xDEADBEEF');
 select hex(c1) from bytea_to_hex_test;
 
 \c postgres
-drop database if exists format_test;
+drop database if exists db_b_hex;

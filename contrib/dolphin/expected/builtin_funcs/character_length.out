@@ -1,0 +1,72 @@
+drop database if exists db_character_length;
+NOTICE:  database "db_character_length" does not exist, skipping
+create database db_character_length dbcompatibility 'B';
+\c db_character_length
+select character_length(1234);
+ character_length 
+------------------
+                4
+(1 row)
+
+select character_length( '1234');
+ character_length 
+------------------
+                4
+(1 row)
+
+select character_length( 'abcd');
+ character_length 
+------------------
+                4
+(1 row)
+
+select character_length(1.1);
+ character_length 
+------------------
+                3
+(1 row)
+
+select character_length(null);
+ character_length 
+------------------
+                 
+(1 row)
+
+select character_length(1);
+ character_length 
+------------------
+                1
+(1 row)
+
+select character_length(B'101010101');
+ character_length 
+------------------
+                2
+(1 row)
+
+select character_length(1,1);
+ERROR:  function character_length(integer, integer) does not exist
+LINE 1: select character_length(1,1);
+               ^
+HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
+CONTEXT:  referenced column: character_length
+select 1+character_length(1);
+ ?column? 
+----------
+        2
+(1 row)
+
+select 1.1+character_length(1);
+ ?column? 
+----------
+      2.1
+(1 row)
+
+select character_length(111111111111111111111111111111111111111111111111111111111111111111111111111111111);
+ character_length 
+------------------
+               81
+(1 row)
+
+\c postgres
+drop database if exists db_character_length;

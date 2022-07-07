@@ -33,6 +33,7 @@ SELECT date'691310';
 SELECT date'691131';
 SELECT date'10101';
 SELECT date'10130';
+SELECT date'00120101';
 
 -- YYYYMMDD or YYYYMMDD
 SELECT 99990101::date;
@@ -76,7 +77,13 @@ SELECT time'839:00:00';
 SELECT time'59:59';
 SELECT time'59:59.123';
 SELECT time'59';
+SELECT time'24 24';
+SELECT time'24 12:13';
 SELECT time'59.12';
+SELECT time'';
+SELECT time'1 09';
+SELECT time'0 099';
+SELECT time'-2 00000009';
 
 -- 'hhmmss.fsec'
 SELECT time(1)'1.123456';
@@ -98,6 +105,17 @@ SELECT 233445.123::time;
 SELECT 8385959.999999::time;
 SELECT 8385959.9999999::time;
 
+-- test function
+SELECT time '830:12:34' + interval '3 hours';
+SELECT time '830:12:34' + interval '3 minutes';
+SELECT time '830:12:34' + interval '3 seconds';
+SELECT time '830:12:34' + interval '26 seconds';
+SELECT time '830:12:34' - interval '3 hours';
+SELECT time '837:00:00' + interval '2 hours';
+SELECT time '838:59:59' + interval '1 second';
+SELECT time '-837:00:00' - interval '3 hours';
+SELECT time '1:00:00' - interval '3 hours';
+
 -- test datetime
 -- 'YYYY-MM-DD hh:mm:ss.fsec' or 'YY-MM-DD hh:mm:ss.fsec'
 SELECT datetime(2)'2001-01-01  23:59:59.999999';
@@ -115,6 +133,8 @@ SELECT datetime(2)'0101010101';
 SELECT datetime(1)'01010101';
 SELECT datetime(3)'0101017';
 SELECT datetime(1)'010101';
+SELECT datetime(1)'10101';
+SELECT datetime(1)'71101';
 SELECT datetime(1)'0101';
 
 -- YYYYMMDDhhmmss or YYMMDDhhmmss
@@ -149,6 +169,15 @@ select * from test_dt where dt > '2007-01-01';
 select * from test_dt where dt = '1997-11-10';
 select * from test_dt where dt < '1997-11-10';
 
+-- test now() and current_timestamp
+create table test_datetime(c1 datetime);
+insert into test_datetime values(now());
+insert into test_datetime values(current_timestamp);
+drop table test_datetime;
+
+-- test timestamp with[out] timezone
+select timestamp with time zone'1994-11-10 23:12:34';
+select timestamp without time zone'1994-11-10 23:12:34';
 
 -- test timestamp
 set time zone 'PRC';
@@ -282,6 +311,32 @@ SELECT (2069)::YEAR(2)+(interval '86' year);
 SELECT (2069)::YEAR(2)+(interval '87' year);
 
 SELECT (2069)::YEAR(2)+(interval'366day');
+
+-- test year +/- integer
+create table t_year0035(ts1 year(4) ,ts2 integer);
+insert into t_year0035 values('1904','1');
+insert into t_year0035 values('1902','2');
+insert into t_year0035 values('1907','5');
+select ts1 + ts2 from t_year0035;
+select ts2 + ts1 from t_year0035;
+select ts1 - ts2 from t_year0035;
+select ts2 - ts1 from t_year0035;
+drop table t_year0035;
+-- test overflow
+select integer'2147481650' + year'1998';
+select year'1998' + integer'2147481650';
+select integer'-2147481651' - year'1997';
+
+-- test year input
+select year '20$#12';
+select year '20中文12';
+select year '    1997    ';
+select year '  1997';
+select year '1997  ';
+select year ' 1997  89';
+select year ' 1997  #@#';
+select year '&%2122';
+select year '中文2122';
 
 \c postgres
 DROP DATABASE b_time_type;

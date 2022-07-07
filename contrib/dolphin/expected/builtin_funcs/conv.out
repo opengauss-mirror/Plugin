@@ -1,7 +1,7 @@
-drop database if exists format_test;
-NOTICE:  database "format_test" does not exist, skipping
-create database format_test dbcompatibility 'B';
-\c format_test
+drop database if exists db_conv;
+NOTICE:  database "db_conv" does not exist, skipping
+create database db_conv dbcompatibility 'B';
+\c db_conv
 select conv('a',16,2);
  conv 
 ------
@@ -423,17 +423,15 @@ select conv(10,1,27),conv('zzzz',0,5),conv('xy57',37,8),conv(10,-1,27),conv('xy5
 (1 row)
 
 select conv(10,1/2,23),conv(10,1.333,23),conv('xy57',pi(),8),conv(10,'Asc',27),conv(321,'',8),conv(321,'张三',8);
- conv | conv | conv | conv | conv | conv 
-------+------+------+------+------+------
-      |      | 0    |      |      | 
-(1 row)
-
+ERROR:  invalid input syntax for integer: "Asc"
+LINE 1: ...23),conv(10,1.333,23),conv('xy57',pi(),8),conv(10,'Asc',27),...
+                                                             ^
+CONTEXT:  referenced column: conv
 select conv(10,27,1/2),conv(10,16,'AscY'),conv(321,7,''),conv(321,10,'张三');
- conv | conv | conv | conv 
-------+------+------+------
-      |      |      | 
-(1 row)
-
+ERROR:  invalid input syntax for integer: "AscY"
+LINE 1: select conv(10,27,1/2),conv(10,16,'AscY'),conv(321,7,''),con...
+                                          ^
+CONTEXT:  referenced column: conv
 select conv(10,27,1),conv('zzzz',0,0),conv('xy57',-8,37);
  conv | conv | conv 
 ------+------+------
@@ -507,4 +505,4 @@ select conv(-9544646155975628532428411,-10,-10);
 (1 row)
 
 \c postgres
-drop database if exists format_test;
+drop database if exists db_conv;

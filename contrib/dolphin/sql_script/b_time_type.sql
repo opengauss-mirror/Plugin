@@ -45,6 +45,15 @@ CREATE OR REPLACE FUNCTION pg_catalog.year_mi_interval (year, interval) RETURNS 
 
 CREATE OR REPLACE FUNCTION pg_catalog.year_mi (year, year) RETURNS interval LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'year_mi';
 
+CREATE OPERATOR - (
+   leftarg = year,
+   rightarg = year,
+   procedure = year_mi,
+   commutator = -
+);
+
+-- YEAR AND INTERVAL 
+
 CREATE OPERATOR + (
    leftarg = year,
    rightarg = interval,
@@ -56,13 +65,6 @@ CREATE OPERATOR - (
    leftarg = year,
    rightarg = interval,
    procedure = year_mi_interval,
-   commutator = -
-);
-
-CREATE OPERATOR - (
-   leftarg = year,
-   rightarg = year,
-   procedure = year_mi,
    commutator = -
 );
 
@@ -83,7 +85,9 @@ CREATE OR REPLACE FUNCTION pg_catalog.year_sortsupport (internal) RETURNS void L
 
 --CREATE YEAR'S CAST FUNCTION
 
-CREATE OR REPLACE FUNCTION pg_catalog.int32_year (int4) RETURNS year LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'int32_year';
+CREATE OR REPLACE FUNCTION pg_catalog.int32_year (integer) RETURNS year LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'int32_year';
+
+CREATE OR REPLACE FUNCTION pg_catalog.year_integer (year) RETURNS integer LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'year_integer';
 
 CREATE FUNCTION pg_catalog.year (year, integer) RETURNS year LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'year_scale';
 
@@ -93,7 +97,11 @@ CREATE CAST(year AS year) WITH FUNCTION year(year, integer) AS IMPLICIT;
 
 DROP CAST IF EXISTS (integer AS year) CASCADE;
 
-CREATE CAST(integer AS year) WITH FUNCTION int32_year(int4) AS IMPLICIT;
+CREATE CAST(integer AS year) WITH FUNCTION int32_year(integer) AS IMPLICIT;
+
+DROP CAST IF EXISTS (year AS integer) CASCADE;
+
+CREATE CAST(year AS integer) WITH FUNCTION year_integer(year) AS IMPLICIT;
 
 --CREATE OPERATOR
 
@@ -199,7 +207,7 @@ CREATE OR REPLACE FUNCTION pg_catalog.datetime_ge (datetime, datetime) RETURNS b
 
 CREATE OR REPLACE FUNCTION pg_catalog.datetime_gt (datetime, datetime) RETURNS boolean LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'datetime_gt';
 
---CREATE datetime'S B-TREE SUPPORT FUNCTION
+--CREATE DATETIME'S B-TREE SUPPORT FUNCTION
 
 CREATE OR REPLACE FUNCTION pg_catalog.datetime_cmp (datetime, datetime) RETURNS integer LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'datetime_cmp';
 
@@ -229,7 +237,7 @@ CREATE OPERATOR CLASS datetime_ops
         FUNCTION        1       datetime_cmp(datetime, datetime),
         FUNCTION        2       datetime_sortsupport(internal);
 
---CREATE datetime'S MAX,MIN FUNCTION
+--CREATE DATETIME'S MAX,MIN FUNCTION
 
 CREATE OR REPLACE FUNCTION pg_catalog.datetime_larger (datetime, datetime) RETURNS datetime LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'datetime_larger';
 
@@ -269,6 +277,10 @@ CREATE OR REPLACE FUNCTION pg_catalog.int64_b_format_datetime (int8) RETURNS dat
 
 CREATE OR REPLACE FUNCTION pg_catalog.numeric_b_format_datetime (numeric) RETURNS datetime LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'numeric_b_format_datetime';
 
+CREATE OR REPLACE FUNCTION pg_catalog.timestamptz_datetime (timestamptz) RETURNS datetime LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'timestamptz_datetime';
+
+CREATE OR REPLACE FUNCTION pg_catalog.timestamp_datetime (timestamp) RETURNS datetime LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'timestamp_datetime';
+
 DROP CAST IF EXISTS (int4 AS datetime) CASCADE;
 
 CREATE CAST(int4 AS datetime) WITH FUNCTION int32_b_format_datetime(int4);
@@ -280,6 +292,15 @@ CREATE CAST(int8 AS datetime) WITH FUNCTION int64_b_format_datetime(int8);
 DROP CAST IF EXISTS (numeric AS datetime) CASCADE;
 
 CREATE CAST(numeric AS datetime) WITH FUNCTION numeric_b_format_datetime(numeric);
+
+DROP CAST IF EXISTS (timestamptz AS datetime) CASCADE;
+
+CREATE CAST(timestamptz AS datetime) WITH FUNCTION timestamptz_datetime(timestamptz) AS IMPLICIT;
+
+DROP CAST IF EXISTS (timestamp AS datetime) CASCADE;
+
+CREATE CAST(timestamp AS datetime) WITH FUNCTION timestamp_datetime(timestamp) AS IMPLICIT;
+
 
 --CREATE DATETIME'S DATE_PART FUNCTION
 
@@ -308,3 +329,4 @@ CREATE CAST(int8 AS timestamptz) WITH FUNCTION int64_b_format_timestamp(int8);
 DROP CAST IF EXISTS (numeric AS timestamptz) CASCADE;
 
 CREATE CAST(numeric AS timestamptz) WITH FUNCTION numeric_b_format_timestamp(numeric);
+

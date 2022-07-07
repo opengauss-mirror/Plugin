@@ -18,7 +18,6 @@
 #include "utils/syscache.h"
 #include "storage/ipc.h"
 #include "executor/executor.h"
-
 /*
  * We maintain a simple linked list caching the fmgr lookup info for the
  * currently selected conversion functions, as well as any that have been
@@ -342,6 +341,35 @@ Datum pg_convert_to(PG_FUNCTION_ARGS)
     PG_RETURN_DATUM(result);
 }
 
+Datum pg_convert_to_text(PG_FUNCTION_ARGS)
+{
+    char* string = PG_GETARG_CSTRING(0);
+    char* dest_encoding_name = NameStr(*PG_GETARG_NAME(1));
+    int dest_encoding = pg_char_to_encoding(dest_encoding_name);
+    if (dest_encoding < 0) {
+        ereport(ERROR,
+            (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+                errmsg("invalid destination encoding name \"%s\"", dest_encoding_name)));
+    }
+
+    int src_encoding = GetDatabaseEncoding();
+    const char* src_str = VARDATA_ANY(string);
+    int len_src = VARSIZE_ANY_EXHDR(string);;
+
+    char* dest_str = (char*)pg_do_encoding_conversion((unsigned char*)src_str, len_src, src_encoding, dest_encoding);
+    char* result = (char*)palloc(len_src + 1);
+    int rc = memcpy_s(result, len_src + 1, dest_str, len_src);
+    securec_check_c(rc, "\0", "\0");
+    result[len_src] = '\0';
+    text* ret = cstring_to_text(result);
+    if (NULL != ret) {
+        PG_RETURN_TEXT_P(ret);
+    }
+    else {
+        PG_RETURN_NULL();
+    }
+}
+
 /* for GBK order */
 Datum pg_convert_to_nocase(PG_FUNCTION_ARGS)
 {
@@ -439,6 +467,8 @@ Datum pg_convert(PG_FUNCTION_ARGS)
 
     PG_RETURN_BYTEA_P(retval);
 }
+
+
 
 Datum pg_convert_nocase(PG_FUNCTION_ARGS)
 {

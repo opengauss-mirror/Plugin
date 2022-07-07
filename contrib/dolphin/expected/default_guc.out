@@ -1,7 +1,7 @@
-drop database if exists test;
-NOTICE:  database "test" does not exist, skipping
-create database test dbcompatibility 'b';
-\c test
+drop database if exists default_guc;
+NOTICE:  database "default_guc" does not exist, skipping
+create database default_guc dbcompatibility 'b';
+\c default_guc
 show behavior_compat_options;
  behavior_compat_options 
 -------------------------
@@ -52,4 +52,4 @@ select md5('0.123');
 (1 row)
 
 \c postgres
-drop database if exists test;
+drop database if exists default_guc;

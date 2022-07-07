@@ -1,6 +1,6 @@
-drop database if exists test;
-create database test dbcompatibility 'B';
-\c test
+drop database if exists test_binary;
+create database test_binary dbcompatibility 'B';
+\c test_binary
 create table binary_templates (a bytea, b binary(5), c varbinary(5));
 
 -- invalid typmod
@@ -84,4 +84,4 @@ drop table if exists t_binary_061;
 drop table if exists t_varbinary_061;
 
 \c postgres
-drop database test;
+drop database test_binary;

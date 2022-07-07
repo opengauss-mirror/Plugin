@@ -1,7 +1,11 @@
-drop database if exists mysql;
-create database mysql dbcompatibility 'b';
-\c mysql
+drop database if exists db_describe;
+create database db_describe dbcompatibility 'b';
+\c db_describe
 CREATE TABLE test2
+(
+id int PRIMARY KEY
+);
+CREATE TABLE test3
 (
 id int PRIMARY KEY
 );
@@ -21,11 +25,14 @@ k int GENERATED ALWAYS AS (i + j) STORED,
 l int DEFAULT 0,
 m int CHECK (m < 50),
 PRIMARY KEY (a, b),
-FOREIGN KEY(l) REFERENCES test2(id)
+FOREIGN KEY(l) REFERENCES test2(id),
+FOREIGN KEY(l) REFERENCES test3(id)
 );
+CREATE INDEX idx_b on test (b);
 CREATE UNIQUE INDEX idx_c on test (c);
 CREATE UNIQUE INDEX idx_d_e on test (d, e);
 CREATE INDEX idx_f on test (f);
+CREATE INDEX idx_e_f on test (e, f);
 desc test;
 describe test;
 create schema sc;
@@ -42,7 +49,7 @@ desc test;
 describe test;
 desc public.test;
 desc sc.test;
-desc public.test3;
-desc sc.test3;
+desc public.test4;
+desc sc.test4;
 \c postgres
-drop database if exists mysql;
+drop database if exists db_describe;

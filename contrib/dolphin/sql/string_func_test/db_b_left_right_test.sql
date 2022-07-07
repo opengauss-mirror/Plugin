@@ -3,9 +3,9 @@ SELECT left('abcdefg', -3);
 SELECT right('abcdefg', 3);
 SELECT right('abcdefg', -3);
 
-drop database if exists test;
-create database test dbcompatibility 'B';
-\c test
+drop database if exists db_b_left_right_test;
+create database db_b_left_right_test dbcompatibility 'B';
+\c db_b_left_right_test
 
 set bytea_output to escape;
 
@@ -63,5 +63,10 @@ SELECT right('abcdefg', 0), right('abcdefg', 0) is null;
 SELECT left(null, 3), left(null, 3) is null;
 SELECT right(null, 3), right(null, 3) is null;
 
+select left('abc',2.5);
+select left('abc',5/2);
+select right('abc',2.5);
+select right('abc',5/2);
+
 \c postgres
-drop database test;
+drop database db_b_left_right_test;

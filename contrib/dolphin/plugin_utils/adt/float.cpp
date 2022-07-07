@@ -1256,9 +1256,9 @@ Datum dtoi4(PG_FUNCTION_ARGS)
     /*
      * Get rid of any fractional part in the input.  This is so we don't fail
      * on just-out-of-range values that would round into range.  Note
-     * assumption that rint() will pass through a NaN or Inf unchanged.
+     * assumption that round() will pass through a NaN or Inf unchanged.
      */
-    num = rint(num);
+    num = round(num);
 
     /*
      * Range check.  We must be careful here that the boundary values are
@@ -1297,9 +1297,9 @@ Datum dtoi2(PG_FUNCTION_ARGS)
     /*
      * Get rid of any fractional part in the input.  This is so we don't fail
      * on just-out-of-range values that would round into range.  Note
-     * assumption that rint() will pass through a NaN or Inf unchanged.
+     * assumption that round() will pass through a NaN or Inf unchanged.
      */
-    num = rint(num);
+    num = round(num);
 
     /*
      * Range check.  We must be careful here that the boundary values are
@@ -1358,9 +1358,9 @@ Datum ftoi4(PG_FUNCTION_ARGS)
     /*
      * Get rid of any fractional part in the input.  This is so we don't fail
      * on just-out-of-range values that would round into range.  Note
-     * assumption that rint() will pass through a NaN or Inf unchanged.
+     * assumption that round() will pass through a NaN or Inf unchanged.
      */
-    num = rint(num);
+    num = round(num);
 
     /*
      * Range check.  We must be careful here that the boundary values are
@@ -1399,9 +1399,9 @@ Datum ftoi2(PG_FUNCTION_ARGS)
     /*
      * Get rid of any fractional part in the input.  This is so we don't fail
      * on just-out-of-range values that would round into range.  Note
-     * assumption that rint() will pass through a NaN or Inf unchanged.
+     * assumption that round() will pass through a NaN or Inf unchanged.
      */
-    num = rint(num);
+    num = round(num);
 
     /*
      * Range check.  We must be careful here that the boundary values are
@@ -1463,7 +1463,7 @@ Datum dround(PG_FUNCTION_ARGS)
 {
     float8 arg1 = PG_GETARG_FLOAT8(0);
 
-    PG_RETURN_FLOAT8(rint(arg1));
+    PG_RETURN_FLOAT8(round(arg1));
 }
 
 /*

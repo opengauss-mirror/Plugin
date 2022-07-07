@@ -1,0 +1,320 @@
+-- the test case of A format
+SELECT 2.5::float4::int1;
+ int1 
+------
+ 2
+(1 row)
+
+SELECT 2.5::float8::int1;
+ int1 
+------
+ 2
+(1 row)
+
+SELECT 2.5::int1;
+ int1 
+------
+ 3
+(1 row)
+
+SELECT 2.5::float4::int2;
+ int2 
+------
+    2
+(1 row)
+
+SELECT 2.5::float8::int2;
+ int2 
+------
+    2
+(1 row)
+
+SELECT 2.5::int2;
+ int2 
+------
+    3
+(1 row)
+
+SELECT 2.5::float4::int4;
+ int4 
+------
+    2
+(1 row)
+
+SELECT 2.5::float8::int4;
+ int4 
+------
+    2
+(1 row)
+
+SELECT 2.5::int4;
+ int4 
+------
+    3
+(1 row)
+
+SELECT 2.5::float4::int8;
+ int8 
+------
+    2
+(1 row)
+
+SELECT 2.5::float8::int8;
+ int8 
+------
+    2
+(1 row)
+
+SELECT 2.5::int8;
+ int8 
+------
+    3
+(1 row)
+
+SELECT 3.5::float4::int1;
+ int1 
+------
+ 3
+(1 row)
+
+SELECT 3.5::float8::int1;
+ int1 
+------
+ 3
+(1 row)
+
+SELECT 3.5::int1;
+ int1 
+------
+ 4
+(1 row)
+
+SELECT 3.5::float4::int2;
+ int2 
+------
+    4
+(1 row)
+
+SELECT 3.5::float8::int2;
+ int2 
+------
+    4
+(1 row)
+
+SELECT 3.5::int2;
+ int2 
+------
+    4
+(1 row)
+
+SELECT 3.5::float4::int4;
+ int4 
+------
+    4
+(1 row)
+
+SELECT 3.5::float8::int4;
+ int4 
+------
+    4
+(1 row)
+
+SELECT 3.5::int4;
+ int4 
+------
+    4
+(1 row)
+
+SELECT 3.5::float4::int8;
+ int8 
+------
+    4
+(1 row)
+
+SELECT 3.5::float8::int8;
+ int8 
+------
+    4
+(1 row)
+
+SELECT 3.5::int8;
+ int8 
+------
+    4
+(1 row)
+
+SELECT dround(2.5);
+ dround 
+--------
+      2
+(1 row)
+
+SELECT dround(3.5);
+ dround 
+--------
+      4
+(1 row)
+
+-- the test case of dolphin plugin
+drop database if exists test;
+NOTICE:  database "test" does not exist, skipping
+create database test dbcompatibility 'B';
+\c test
+SELECT 2.5::float4::int1;
+ int1 
+------
+ 3
+(1 row)
+
+SELECT 2.5::float8::int1;
+ int1 
+------
+ 3
+(1 row)
+
+SELECT 2.5::int1;
+ int1 
+------
+ 3
+(1 row)
+
+SELECT 2.5::float4::int2;
+ int2 
+------
+    3
+(1 row)
+
+SELECT 2.5::float8::int2;
+ int2 
+------
+    3
+(1 row)
+
+SELECT 2.5::int2;
+ int2 
+------
+    3
+(1 row)
+
+SELECT 2.5::float4::int4;
+ int4 
+------
+    3
+(1 row)
+
+SELECT 2.5::float8::int4;
+ int4 
+------
+    3
+(1 row)
+
+SELECT 2.5::int4;
+ int4 
+------
+    3
+(1 row)
+
+SELECT 2.5::float4::int8;
+ int8 
+------
+    3
+(1 row)
+
+SELECT 2.5::float8::int8;
+ int8 
+------
+    3
+(1 row)
+
+SELECT 2.5::int8;
+ int8 
+------
+    3
+(1 row)
+
+SELECT 3.5::float4::int1;
+ int1 
+------
+ 4
+(1 row)
+
+SELECT 3.5::float8::int1;
+ int1 
+------
+ 4
+(1 row)
+
+SELECT 3.5::int1;
+ int1 
+------
+ 4
+(1 row)
+
+SELECT 3.5::float4::int2;
+ int2 
+------
+    4
+(1 row)
+
+SELECT 3.5::float8::int2;
+ int2 
+------
+    4
+(1 row)
+
+SELECT 3.5::int2;
+ int2 
+------
+    4
+(1 row)
+
+SELECT 3.5::float4::int4;
+ int4 
+------
+    4
+(1 row)
+
+SELECT 3.5::float8::int4;
+ int4 
+------
+    4
+(1 row)
+
+SELECT 3.5::int4;
+ int4 
+------
+    4
+(1 row)
+
+SELECT 3.5::float4::int8;
+ int8 
+------
+    4
+(1 row)
+
+SELECT 3.5::float8::int8;
+ int8 
+------
+    4
+(1 row)
+
+SELECT 3.5::int8;
+ int8 
+------
+    4
+(1 row)
+
+SELECT dround(2.5);
+ dround 
+--------
+      3
+(1 row)
+
+SELECT dround(3.5);
+ dround 
+--------
+      4
+(1 row)
+
+\c postgres
+drop database test;

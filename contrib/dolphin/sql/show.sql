@@ -1,7 +1,7 @@
-drop database if exists mysql;
-create database mysql dbcompatibility 'b';
-\c mysql
+drop database if exists db_show;
+create database db_show dbcompatibility 'b';
+\c db_show
 show processlist;
 show full processlist;
 \c postgres
-drop database if exists mysql;
+drop database if exists db_show;

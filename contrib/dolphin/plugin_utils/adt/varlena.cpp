@@ -56,10 +56,11 @@
 
 #define MAX_BINARY_LENGTH 255
 #define MAX_VARBINARY_LENGTH 65535
-
+#define isDigital(_ch) (((_ch) >= '0') && ((_ch) <= '9'))
 #define TinyBlobMaxAllocSize ((Size)255) /* 255B */
 #define MediumBlobMaxAllocSize ((Size)(16 * 1024 * 1024 - 1)) /* 16MB - 1 */
 #define LongBlobMaxAllocSize (((Size)4 * 1024 * 1024 * 1024 - 1)) /* 4GB - 1 */
+#define SOUND_THRESHOLD 4
 static int getResultPostionReverse(text* textStr, text* textStrToSearch, int32 beginIndex, int occurTimes);
 static int getResultPostion(text* textStr, text* textStrToSearch, int32 beginIndex, int occurTimes);
 
@@ -156,6 +157,7 @@ static int32 anybinary_typmodin(ArrayType* ta, const char* typname, uint32 max);
 static char* anybinary_typmodout(int32 typmod);
 static Datum copy_binary(Datum source, int typmod, bool target_is_var);
 static bytea* copy_blob(bytea* source, int64 max_size);
+extern text* _chr(uint32 value, bool flag);
 
 PG_FUNCTION_INFO_V1_PUBLIC(binary_typmodin);
 extern "C" DLL_PUBLIC Datum binary_typmodin(PG_FUNCTION_ARGS);
@@ -207,6 +209,36 @@ extern "C" DLL_PUBLIC Datum bytea_left(PG_FUNCTION_ARGS);
 
 PG_FUNCTION_INFO_V1_PUBLIC(bytea_right);
 extern "C" DLL_PUBLIC Datum bytea_right(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1_PUBLIC(elt_integer);
+extern "C" DLL_PUBLIC Datum elt_integer(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1_PUBLIC(elt_string);
+extern "C" DLL_PUBLIC Datum elt_string(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1_PUBLIC(field_integer);
+extern "C" DLL_PUBLIC Datum field_integer(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1_PUBLIC(field_string);
+extern "C" DLL_PUBLIC Datum field_string(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1_PUBLIC(find_in_set_integer);
+extern "C" DLL_PUBLIC Datum find_in_set_integer(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1_PUBLIC(find_in_set_string);
+extern "C" DLL_PUBLIC Datum find_in_set_string(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1_PUBLIC(soundex);
+extern "C" DLL_PUBLIC Datum soundex(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1_PUBLIC(space_integer);
+extern "C" DLL_PUBLIC Datum space_integer(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1_PUBLIC(space_string);
+extern "C" DLL_PUBLIC Datum space_string(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1_PUBLIC(m_char);
+extern "C" DLL_PUBLIC Datum m_char(PG_FUNCTION_ARGS);
 
 /*****************************************************************************
  *	 CONVERSION ROUTINES EXPORTED FOR USE BY C CODE							 *
@@ -559,7 +591,7 @@ Datum rawout(PG_FUNCTION_ARGS)
             ereport(FATAL, (errcode(ERRCODE_DATA_CORRUPTED), errmsg("overflow - encode estimate too small")));
 
         SET_VARSIZE(ans, VARHDRSZ + ans_len);
-        
+
         out_string = str_toupper_for_raw(VARDATA_ANY(ans), VARSIZE_ANY_EXHDR(ans), PG_GET_COLLATION());
     } else {
         ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("blob length: %d ,out of memory", resultlen)));
@@ -1010,7 +1042,7 @@ void text_to_bktmap(text* gbucket, uint2* bktmap, int *bktlen)
     } else {
         ereport(ERROR, (errcode(ERRCODE_DATA_CORRUPTED), errmsg("bucket map string is invalid")));
     }
-    
+
     pfree_ext(s);
 }
 /*
@@ -3189,7 +3221,7 @@ Datum bytea_substr_orclcompat(PG_FUNCTION_ARGS)
 
     total = toast_raw_datum_size(str) - VARHDRSZ;
 
-    /* 
+    /*
      * Set length to 0 so that an empty bytea can be returned later.
      */
     if ((length < 0) || (start > total) || (start + total < 0) || (start == 0)) {
@@ -7539,7 +7571,7 @@ Datum gs_strcmp(PG_FUNCTION_ARGS)
         ret = -1;
     } else {
         ret = 0;
-    } 
+    }
 
     pfree_ext(str0);
     pfree_ext(str1);
@@ -7600,5 +7632,306 @@ Datum bytea_right(PG_FUNCTION_ARGS)
         errno_t errorno = memcpy_s(rp, n, p + off, n);
         securec_check(errorno, "\0", "\0");
         PG_RETURN_BYTEA_P(result);
+    }
+}
+
+
+bool isNumeric(const char* str)
+{
+    size_t i = 0;
+    while (str[i] != '\0') {
+        if (0 == isDigital(str[i])) {
+            return false;
+        }
+        i++;
+    }
+    return true;
+}
+
+static double numeric_to_double_no_overflow(Numeric num)
+{
+    char* endptr = NULL;
+    char* tmp = DatumGetCString(DirectFunctionCall1(numeric_out, NumericGetDatum(num)));
+    double val = strtod(tmp, &endptr);
+    if (*endptr != '\0') {
+        ereport(ERROR,
+                (errcode(ERRCODE_INVALID_TEXT_REPRESENTATION),
+                 errmsg("invalid input syntax for type double precision: \"%s\"", tmp)));
+    }
+    pfree_ext(tmp);
+    return val;
+}
+
+static text* _m_char(FunctionCallInfo fcinfo)
+{
+    text* result = NULL;
+    StringInfoData str;
+    initStringInfo(&str);
+    appendBinaryStringInfo(&str, "", 0);
+    for (int i = 0; i < PG_NARGS(); i++) {
+        if (!PG_ARGISNULL(i)) {
+            Datum value = PG_GETARG_DATUM(i);
+            Oid valtype;
+            valtype = get_fn_expr_argtype(fcinfo->flinfo, i);
+            switch (valtype) {
+                case INT4OID:
+                    appendStringInfoString(&str, text_to_cstring(_chr((uint32)value, false)));
+                    break;
+                case NUMERICOID:
+                    result = _chr((uint32)(round(numeric_to_double_no_overflow( (Numeric)value))), false);
+                    appendStringInfoString(&str, text_to_cstring(result));
+                    break;
+                case BOOLOID:
+                    appendStringInfoString(&str, "");
+                    break;
+                default:
+                    if (isNumeric((char*)value)) {
+                        appendStringInfoString(&str, text_to_cstring(_chr((uint32)atoi((char*)value), false)));
+                    } else {
+                        value = floor(atof((char*)value));
+                        if ((uint32)value == 0) {
+                            appendStringInfoString(&str, " ");
+                        } else {
+                            result = _chr((uint32)value, false);
+                            appendStringInfoString(&str, text_to_cstring(result));
+                        }
+                    }
+                    break;
+            }
+        }
+    }
+    result = cstring_to_text(str.data);
+    pfree_ext(str.data);
+    return result;
+}
+
+Datum m_char(PG_FUNCTION_ARGS)
+{
+    PG_RETURN_TEXT_P(_m_char(fcinfo));
+}
+
+text* _elt(int idx, PG_FUNCTION_ARGS)
+{
+    text* result = NULL;
+    Oid typeOutput;
+    bool typIsVarlena;
+
+    getTypeOutputInfo(fcinfo->argTypes[idx], &typeOutput, &typIsVarlena);
+    char* str_value = OidOutputFunctionCall(typeOutput, fcinfo->arg[idx]);
+    result = cstring_to_text(str_value);
+
+    return result;
+}
+
+Datum elt_integer(PG_FUNCTION_ARGS)
+{
+    int64 num = PG_GETARG_INT64(0);
+    text* result = NULL;
+    if (num <= 0 || num >= PG_NARGS()) {
+        PG_RETURN_NULL();
+    }
+
+    result = _elt(num, fcinfo);
+    PG_RETURN_TEXT_P(result);
+}
+
+Datum elt_string(PG_FUNCTION_ARGS)
+{
+    int64 num = floor(atof(VARDATA_ANY(PG_GETARG_TEXT_PP(0))));
+    if (num <= 0 || num >= PG_NARGS()) {
+        PG_RETURN_NULL();
+    }
+
+    text* result = _elt(num, fcinfo);
+    PG_RETURN_TEXT_P(result);
+}
+
+int64 _field(FunctionCallInfo fcinfo, text* first_txt_arg)
+{
+    int64 result = 0;
+    Oid typeOutput;
+    bool typIsVarlena;
+
+    for (int i = 1; i < PG_NARGS(); i++) {
+        if (!PG_ARGISNULL(i)) {
+            getTypeOutputInfo(fcinfo->argTypes[i], &typeOutput, &typIsVarlena);
+            if (0 == internal_text_pattern_compare(first_txt_arg,
+                                                                     cstring_to_text(OidOutputFunctionCall(typeOutput, fcinfo->arg[i])))) {
+                result = i;
+                break;
+            }
+        }
+    }
+
+    return result;
+}
+
+static char* numeric_to_cstring(Numeric n)
+{
+    return DatumGetCString(DirectFunctionCall1(numeric_out, NumericGetDatum(n)));
+}
+
+Datum field_integer(PG_FUNCTION_ARGS)
+{
+    int64 result = _field(fcinfo, cstring_to_text(numeric_to_cstring(PG_GETARG_NUMERIC(0))));
+
+    PG_RETURN_INT64(result);
+}
+
+Datum field_string(PG_FUNCTION_ARGS)
+{
+    int64 result = _field(fcinfo, PG_GETARG_TEXT_PP(0));
+
+    PG_RETURN_INT64(result);
+}
+
+Datum find_in_set_integer(PG_FUNCTION_ARGS)
+{
+    text* first_txt_arg = cstring_to_text(numeric_to_cstring(PG_GETARG_NUMERIC(0)));
+    char* second_str_arg = text_to_cstring(PG_GETARG_TEXT_PP(1));
+    const char* split = ",";
+    text* _result = NULL;
+    int64 result = 0;
+    char* p = strtok(second_str_arg, split);
+    while (p)
+    {
+        ++result;
+        _result = cstring_to_text(p);
+        if (0 == internal_text_pattern_compare(first_txt_arg, _result)) {
+            PG_RETURN_INT64(result);
+        }
+        p = strtok(NULL, split);
+    }
+    PG_RETURN_INT64(0);
+}
+
+Datum find_in_set_string(PG_FUNCTION_ARGS)
+{
+    const char* split = ",";
+    int64 result = 0;
+    char* p = strtok(text_to_cstring(PG_GETARG_TEXT_PP(1)), split);
+    while (p)
+    {
+        ++result;
+        if (0 == internal_text_pattern_compare(PG_GETARG_TEXT_PP(0), cstring_to_text(p))) {
+            PG_RETURN_INT64(result);
+        }
+        p = strtok(NULL, split);
+    }
+    PG_RETURN_INT64(0);
+}
+
+
+
+/*
+ * Soundex
+ */
+static void set_sound(const char* arg, char* result, int size);
+
+/* ABCDEFGHIJKLMNOPQRSTUVWXYZ */
+static const char* code_table = "01230120022455012623010202";
+static char code_letter(char letter)
+{
+    letter = toupper((unsigned char)letter);
+    if (letter >= 'A' && letter <= 'Z')
+        return code_table[letter - 'A'];
+    return letter;
+}
+
+Datum soundex(PG_FUNCTION_ARGS)
+{
+    char* arg = text_to_cstring(PG_GETARG_TEXT_P(0));
+    int str_len = strlen(arg) + 1;
+    int min_sound_len = 5;
+
+    char* result = (char*)palloc(Max(str_len, min_sound_len));
+    set_sound(arg, result, strlen(arg));
+    PG_RETURN_TEXT_P(cstring_to_text(result));
+}
+
+static void set_sound(const char* arg, char* result, int size)
+{
+    int cnt = 1;
+    result[size] = '\0';
+    while (!isalpha((unsigned char)arg[0]) && arg[0]) {
+        ++arg;
+    }
+    if (!arg[0]) {
+        result[0] = (char)0;
+        return;
+    }
+    *result++ = (char)toupper((unsigned char)*arg++);
+    while (*arg) {
+        if (isalpha((unsigned char)*arg) &&
+            code_letter(*arg) != code_letter(*(arg - 1)) &&
+            code_letter(*arg) != code_letter(*(result-1))) {
+            if (code_letter(arg[0]) != '0') {
+                *result = code_letter(arg[0]);
+                ++result;
+                ++cnt;
+            }
+        }
+        ++arg;
+    }
+    while (cnt < SOUND_THRESHOLD) {
+        *result = '0';
+        ++result;
+        ++cnt;
+    }
+    result[0] = '\0';
+
+    if (cnt <= size && cnt >= SOUND_THRESHOLD) {
+        result[0] = '\0';
+    }
+
+}
+
+
+char* set_space(int32 num)
+{
+    char* result = NULL;
+
+    if ((num + 1) <= MaxAllocSize) {
+        result = (char*)palloc(num + 1);
+        int rc = memset_s(result, num + 1, ' ', num);
+        securec_check(rc, "", "");
+        result[num] = '\0';
+    } else {
+        ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("\"char\" out of range")));
+    }
+
+    return result;
+}
+
+Datum space_integer(PG_FUNCTION_ARGS)
+{
+    int32 num = (int32)PG_GETARG_INT32(0);
+    if (num <= 0) {
+        PG_RETURN_NULL();
+    }
+
+    char* result = set_space(num);
+
+    if (NULL != result) {
+        PG_RETURN_TEXT_P(cstring_to_text(result));
+    } else {
+        PG_RETURN_NULL();
+    }
+
+}
+
+Datum space_string(PG_FUNCTION_ARGS)
+{
+    int32 num = floor(atof(VARDATA_ANY(PG_GETARG_TEXT_PP(0))));
+    if (num <= 0) {
+        PG_RETURN_NULL();
+    }
+
+    char* result = set_space(num);
+
+    if (NULL != result) {
+        PG_RETURN_TEXT_P(cstring_to_text(result));
+    } else {
+        PG_RETURN_NULL();
     }
 }

@@ -1,0 +1,42 @@
+drop database if exists db_soundex;
+NOTICE:  database "db_soundex" does not exist, skipping
+create database db_soundex dbcompatibility 'B';
+\c db_soundex
+select soundex('abc');
+ soundex 
+---------
+ A120
+(1 row)
+
+select soundex(10);
+ soundex 
+---------
+ 
+(1 row)
+
+select soundex('afdsbfdlsafs');
+  soundex   
+------------
+ A132134212
+(1 row)
+
+select soundex('dslfaalskf222122');
+ soundex 
+---------
+ D241421
+(1 row)
+
+select soundex('dadfa353dadf333ff');
+ soundex 
+---------
+ D131
+(1 row)
+
+select soundex('hell');
+ soundex 
+---------
+ H400
+(1 row)
+
+\c postgres
+drop database if exists db_soundex;

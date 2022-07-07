@@ -27,7 +27,10 @@
 /* validate b database date and time type */
 extern int ValidateDateForBDatabase(bool is2digits, struct pg_tm* tm);
 extern int ValidateTimeForBDatabase(bool timeIn24, struct pg_tm* tm, fsec_t* fsec);
-extern int DecodeTimeOnly_(char** field, int* ftype, int nf, int* dtype, struct pg_tm* tm, fsec_t* fsec, int* tzp, int D);
+extern int DecodeTimeOnlyForBDatabase(char** field, int* ftype, int nf, int* dtype, struct pg_tm* tm, fsec_t* fsec, int* tzp, int D);
+extern int DecodeDateTimeForBDatabase(char** field, int* ftype, int nf, int* dtype, struct pg_tm* tm, fsec_t* fsec, int* tzp);
+extern void EncodeDateOnlyForBDatabase(struct pg_tm* tm, int style, char* str);
+extern void EncodeDateTimeForBDatabase(struct pg_tm* tm, fsec_t fsec, bool print_tz, int tz, const char* tzn, int style, char* str);
 
 #endif // !FRONTEND_PARSER
 

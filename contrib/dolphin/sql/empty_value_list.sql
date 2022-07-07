@@ -1,8 +1,8 @@
 -- b compatibility case
-drop database if exists b;
-create database b dbcompatibility 'b';
+drop database if exists empty_value_list;
+create database empty_value_list dbcompatibility 'b';
 
-\c b
+\c empty_value_list
 
 create table test1(num int);
 create table test2(num int default 3);
@@ -201,4 +201,4 @@ select * from pg_type_nonstrict_basic_value where typename = 'point';
 select * from pg_type_nonstrict_basic_value where typename = 'tinterval';
 
 \c postgres
-drop database if exists b;
+drop database if exists empty_value_list;

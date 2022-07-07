@@ -1,10 +1,10 @@
-drop database if exists test;
-create database test dbcompatibility 'B';
-\c test
+drop database if exists db_b_quote_test;
+create database db_b_quote_test dbcompatibility 'B';
+\c db_b_quote_test
 
 SELECT QUOTE(E'Don\'t!');
 SELECT QUOTE(E'O\'hello');
 SELECT QUOTE('O\hello');
 
 \c postgres
-drop database test;
+drop database db_b_quote_test;

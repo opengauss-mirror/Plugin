@@ -1,12 +1,17 @@
-drop database if exists mysql;
-NOTICE:  database "mysql" does not exist, skipping
-create database mysql dbcompatibility 'b';
-\c mysql
+drop database if exists db_describe;
+NOTICE:  database "db_describe" does not exist, skipping
+create database db_describe dbcompatibility 'b';
+\c db_describe
 CREATE TABLE test2
 (
 id int PRIMARY KEY
 );
 NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "test2_pkey" for table "test2"
+CREATE TABLE test3
+(
+id int PRIMARY KEY
+);
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "test3_pkey" for table "test3"
 create table test
 (
 a SERIAL,
@@ -23,13 +28,16 @@ k int GENERATED ALWAYS AS (i + j) STORED,
 l int DEFAULT 0,
 m int CHECK (m < 50),
 PRIMARY KEY (a, b),
-FOREIGN KEY(l) REFERENCES test2(id)
+FOREIGN KEY(l) REFERENCES test2(id),
+FOREIGN KEY(l) REFERENCES test3(id)
 );
 NOTICE:  CREATE TABLE will create implicit sequence "test_a_seq" for serial column "test.a"
 NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "test_pkey" for table "test"
+CREATE INDEX idx_b on test (b);
 CREATE UNIQUE INDEX idx_c on test (c);
 CREATE UNIQUE INDEX idx_d_e on test (d, e);
 CREATE INDEX idx_f on test (f);
+CREATE INDEX idx_e_f on test (e, f);
 desc test;
  Field |         Type          | Null | Key |             Default             | Extra 
 -------+-----------------------+------+-----+---------------------------------+-------
@@ -121,15 +129,15 @@ desc sc.test;
  c     | character varying(10) | NO   |     | NULL                            | 
 (3 rows)
 
-desc public.test3;
+desc public.test4;
  Field | Type | Null | Key | Default | Extra 
 -------+------+------+-----+---------+-------
 (0 rows)
 
-desc sc.test3;
+desc sc.test4;
  Field | Type | Null | Key | Default | Extra 
 -------+------+------+-----+---------+-------
 (0 rows)
 
 \c postgres
-drop database if exists mysql;
+drop database if exists db_describe;

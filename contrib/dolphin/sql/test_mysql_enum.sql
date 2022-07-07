@@ -1,6 +1,6 @@
-drop database if exists test_db;
-CREATE DATABASE test_db with dbcompatibility='B';
-\c test_db
+drop database if exists test_enum;
+CREATE DATABASE test_enum with dbcompatibility='B';
+\c test_enum
 -- create extension dolphin;
 show sql_compatibility;
 -- when drop a column using an auto created enum type, the created enum type will also be dropped.
@@ -78,6 +78,25 @@ DROP TABLE test;
 SELECT typname FROM pg_type WHERE typname = 'job';
 DROP TYPE job;
 
+-- test function
+drop table if exists t1;
+create table t1(c_id int, c_name varchar(20), c_age enum('20', '30'));
+--插入1条数据
+insert into t1 values(1, 'name+' || 1, 2);
+--创建存储过程，插入10条数据
+create or replace procedure p_enum1 
+as 
+begin 
+    for i in 1..3 loop
+        insert into t1 values(i, 'name+' || i, 1);
+    end loop;
+end;
+/
+
+--调用
+call p_enum1();
+select * from t1;
+
 -- not allowed to create a type with type name contained 'anonymous_enum'
 CREATE TYPE country_anonymous_enum_1 AS enum('CHINA','USA');
 
@@ -114,4 +133,4 @@ DELETE FROM test WHERE myname=4;
 DROP TABLE test;
 
 \c postgres
-DROP DATABASE test_db;
+DROP DATABASE test_enum;

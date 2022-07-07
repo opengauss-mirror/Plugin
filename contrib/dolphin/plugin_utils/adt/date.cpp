@@ -51,7 +51,7 @@ static int timetz2tm(TimeTzADT* time, struct pg_tm* tm, fsec_t* fsec, int* tzp);
 static int tm2time(struct pg_tm* tm, fsec_t fsec, TimeADT* result);
 static int tm2timetz(struct pg_tm* tm, fsec_t fsec, int tz, TimeTzADT* result);
 static void AdjustTimeForTypmod(TimeADT* time, int32 typmod);
-static char* adjust_b_format_time(char *str, int *timeSign, int *D);
+static char* adjust_b_format_time(char *str, int *timeSign, int *D, bool *hasD);
 
 PG_FUNCTION_INFO_V1_PUBLIC(int32_b_format_time);
 extern "C" DLL_PUBLIC Datum int32_b_format_time(PG_FUNCTION_ARGS);
@@ -160,7 +160,7 @@ Datum date_in(PG_FUNCTION_ARGS)
                 dterr = NumberDate(field[0], tm);
                 dtype = DTK_DATE;
             } else {
-                dterr = DecodeDateTime(field, ftype, nf, &dtype, tm, &fsec, &tzp);
+                dterr = DecodeDateTimeForBDatabase(field, ftype, nf, &dtype, tm, &fsec, &tzp);
             }
         }
         if (dterr != 0)
@@ -242,17 +242,17 @@ int NumberDate(char *str, pg_tm *tm)
         }
     }
     int date = atoi(adjusted);
-    return int32_b_format_date_internal(tm, date);
+    return int32_b_format_date_internal(tm, date, strlen(adjusted) != DATE_YYYYMMDD_LEN);
 }
 
-int int32_b_format_date_internal(struct pg_tm *tm, int4 date) 
+int int32_b_format_date_internal(struct pg_tm *tm, int4 date, bool mayBe2Digit) 
 {
     int dterr;
     /* YYYYMMDD or YYMMDD*/
     tm->tm_mday = date % 100; /* DD */
     tm->tm_mon = date / 100 % 100; /* MM */
     tm->tm_year = date / 10000; /* YY or YYYY*/
-    bool is2digits = (tm->tm_year >= 0 && tm->tm_year <= 99);
+    bool is2digits = mayBe2Digit && (tm->tm_year >= 0 && tm->tm_year <= 99);
     /* validate b format date */
     dterr = ValidateDateForBDatabase(is2digits, tm);
     return dterr;
@@ -264,7 +264,7 @@ Datum int32_b_format_date(PG_FUNCTION_ARGS)
     int4 date = PG_GETARG_INT32(0);
     DateADT result;
     struct pg_tm tt, *tm = &tt;
-    if (int32_b_format_date_internal(tm, date)) {
+    if (int32_b_format_date_internal(tm, date, true)) {
         ereport(ERROR,
                 (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE),
                             errmsg("Out of range value for date")));
@@ -296,7 +296,7 @@ Datum date_out(PG_FUNCTION_ARGS)
                     errmsg("input julian date is overflow")));
         }
         j2date(date + POSTGRES_EPOCH_JDATE, &(tm->tm_year), &(tm->tm_mon), &(tm->tm_mday));
-        EncodeDateOnly(tm, u_sess->time_cxt.DateStyle, buf);
+        EncodeDateOnlyForBDatabase(tm, u_sess->time_cxt.DateStyle, buf);
     }
 
     result = pstrdup(buf);
@@ -1174,7 +1174,7 @@ Datum time_in(PG_FUNCTION_ARGS)
     int ftype[MAXDATEFIELDS];
     char* time_fmt = NULL;
     int timeSign;
-    int D;
+    int D = 0;
 
     /*
      * this case is used for time format is specified.
@@ -1188,23 +1188,25 @@ Datum time_in(PG_FUNCTION_ARGS)
         /* the following logic shared from to_timestamp(). */
         to_timestamp_from_format(tm, &fsec, str, (void*)time_fmt);
     } else {
-        /*
-         * original pg time format parsing
-         */
-        char *adjusted = adjust_b_format_time(str, &timeSign, &D);
+        /* check if empty */
+        if (strlen(str) == 0) {
+            PG_RETURN_TIMEADT(0);
+        }
+        bool hasD = false;
+        char *adjusted = adjust_b_format_time(str, &timeSign, &D, &hasD);
         dterr = ParseDateTime(adjusted, workbuf, sizeof(workbuf), field, ftype, MAXDATEFIELDS, &nf);
         if (dterr != 0)
             DateTimeParseError(dterr, str, "time");
         if (dterr == 0) {
             if (ftype[0] == DTK_NUMBER && nf == 1) {
-                if (D != 0 || NumberTime(false, field[0], tm, &fsec)) {
-                    /* for example: str = "2 121212" , "231034.1234" */
+                /* for example: str = "2 121212" , "231034.1234" */
+                if (NumberTime(false, field[0], tm, &fsec, D, hasD)) {
                     ereport(ERROR,
                         (errcode(ERRCODE_INVALID_DATETIME_FORMAT),
                             errmsg("invalid input syntax for type %s: \"%s\"", "time", str)));
                 }
             } else {
-                dterr = DecodeTimeOnly_(field, ftype, nf, &dtype, tm, &fsec, &tz, D);
+                dterr = DecodeTimeOnlyForBDatabase(field, ftype, nf, &dtype, tm, &fsec, &tz, D);
                 if (dterr != 0)
                     DateTimeParseError(dterr, str, "time");
             }
@@ -1220,7 +1222,7 @@ Datum time_in(PG_FUNCTION_ARGS)
     PG_RETURN_TIMEADT(result);
 }
 
-int NumberTime(bool timeIn24, char *str, pg_tm *tm, fsec_t *fsec)
+int NumberTime(bool timeIn24, char *str, pg_tm *tm, fsec_t *fsec, int D, bool hasD)
 {
     *fsec = 0;
     int len = 0;
@@ -1248,12 +1250,29 @@ int NumberTime(bool timeIn24, char *str, pg_tm *tm, fsec_t *fsec)
         *fsec = frac;
 #endif
     }
-    /* extract time field or fsec field */
-    if (len > B_FORMAT_TIME_NUMBER_MAX_LEN) {
+    /* for example, '10001212' */
+    if (!hasD && len > B_FORMAT_TIME_NUMBER_MAX_LEN) {
         return ERRCODE_DATETIME_VALUE_OUT_OF_RANGE;
     }
+    /* must be 'D hhh' format */
+    if (hasD) {
+        /* for example, 'D 0001234', idx = 3 pointing to '1' */
+        int idx;
+        for (idx = 0; idx < len; ++idx) {
+            if (tmp[idx] != '0') break;
+        }
+        /* validate 'D hhh' format, 3 = # of h */
+        if (len - idx > 3) {
+            return ERRCODE_DATETIME_VALUE_OUT_OF_RANGE;
+        }
+    }
+
     tmp[len] = '\0';
     time = atoi(tmp);
+    /* validate D hhh format */
+    if (hasD && time < B_FORMAT_TIME_BOUND) {
+        time = (time + D * 24) * 10000; // convert to hours, 10000 stands for mmss
+    }
     return int32_b_format_time_internal(tm, timeIn24, time, fsec);
 }
 
@@ -1297,40 +1316,41 @@ Datum int32_b_format_time(PG_FUNCTION_ARGS)
     PG_RETURN_TIMEADT(result * sign);
 }
 
-static char* adjust_b_format_time(char *str, int *timeSign, int *D)
+static char* adjust_b_format_time(char *str, int *timeSign, int *D, bool *hasD)
 {
-   *timeSign = 1;
-   *D = 0;
+    *timeSign = 1;
+    *D = 0;
     /* Ignore spaces fields */
-   while (isspace((unsigned char)*str)) {
+    while (isspace((unsigned char)*str)) {
         str++;
-   }
-   /* negetive time */
-   if (*str == '-') {
-       *timeSign = -1;
-       str++;
-   } 
+    }
+    /* negetive time */
+    if (*str == '-') {
+        *timeSign = -1;
+        str++;
+    } 
     /* try to extract D value for format 'D hh:mm:ss.ss' */
-   if (isdigit((unsigned char)*str)) {
+    int tmp = 0;
+    if (isdigit((unsigned char)*str)) {
         char *cp = str;
-        char tmp[3];
-        tmp[0] = *cp;
+        tmp = (*cp) - '0';
         cp++;
         if (*cp == ' ') {
-            *D = tmp[0] - '0';
+            *D = tmp;
+            *hasD = true;
             str = cp + 1;
         } else if (isdigit((unsigned char)*cp)) {
-            tmp[1] = *cp;
+            tmp = tmp * 10 + (*cp) - '0';
             cp++;
             /* if *cp != ' ', do nothing because D value does not appear. */
             if (*cp == ' ') {
-                tmp[2] = '\0';
-                *D = atoi(tmp);
+                *hasD = true;
+                *D = tmp;
                 str = cp + 1;
             }
         }
-   }
-   return str;
+    }
+    return str;
 }
 
 /* tm2time()
@@ -1425,12 +1445,12 @@ Datum time_recv(PG_FUNCTION_ARGS)
 #ifdef HAVE_INT64_TIMESTAMP
     result = pq_getmsgint64(buf);
 
-    if (result < -B_FORMAT_MAX_TIME_USECS || result > B_FORMAT_MAX_TIME_USECS)
+    if (result <= -B_FORMAT_MAX_TIME_USECS || result >= B_FORMAT_MAX_TIME_USECS)
         ereport(ERROR, (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE), errmsg("time out of range")));
 #else
     result = pq_getmsgfloat8(buf);
 
-    if (result < (double)(-B_FORMAT_MAX_TIME_USECS) || result > (double)B_FORMAT_MAX_TIME_USECS)
+    if (result <= (double)(-B_FORMAT_MAX_TIME_USECS) || result >= (double)B_FORMAT_MAX_TIME_USECS)
         ereport(ERROR, (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE), errmsg("time out of range")));
 #endif
 
@@ -1890,18 +1910,14 @@ Datum time_pl_interval(PG_FUNCTION_ARGS)
     Interval* span = PG_GETARG_INTERVAL_P(1);
     TimeADT result;
 
-#ifdef HAVE_INT64_TIMESTAMP
     result = time + span->time;
-    result -= result / USECS_PER_DAY * USECS_PER_DAY;
-    if (result < INT64CONST(0))
-        result += USECS_PER_DAY;
-#else
-    TimeADT time1;
 
-    result = time + span->time;
-    TMODULO(result, time1, (double)SECS_PER_DAY);
-    if (result < 0)
-        result += SECS_PER_DAY;
+#ifdef HAVE_INT64_TIMESTAMP
+    if (result <= -B_FORMAT_MAX_TIME_USECS || result >= B_FORMAT_MAX_TIME_USECS)
+        ereport(ERROR, (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE), errmsg("time out of range")));
+#else
+    if (result <= (double)(-B_FORMAT_MAX_TIME_USECS) || result >= (double)B_FORMAT_MAX_TIME_USECS)
+        ereport(ERROR, (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE), errmsg("time out of range")));
 #endif
 
     PG_RETURN_TIMEADT(result);
@@ -1916,18 +1932,14 @@ Datum time_mi_interval(PG_FUNCTION_ARGS)
     Interval* span = PG_GETARG_INTERVAL_P(1);
     TimeADT result;
 
-#ifdef HAVE_INT64_TIMESTAMP
     result = time - span->time;
-    result -= result / USECS_PER_DAY * USECS_PER_DAY;
-    if (result < INT64CONST(0))
-        result += USECS_PER_DAY;
-#else
-    TimeADT time1;
 
-    result = time - span->time;
-    TMODULO(result, time1, (double)SECS_PER_DAY);
-    if (result < 0)
-        result += SECS_PER_DAY;
+#ifdef HAVE_INT64_TIMESTAMP
+    if (result <= -B_FORMAT_MAX_TIME_USECS || result >= B_FORMAT_MAX_TIME_USECS)
+        ereport(ERROR, (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE), errmsg("time out of range")));
+#else
+    if (result <= (double)(-B_FORMAT_MAX_TIME_USECS) || result >= (double)B_FORMAT_MAX_TIME_USECS)
+        ereport(ERROR, (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE), errmsg("time out of range")));
 #endif
 
     PG_RETURN_TIMEADT(result);

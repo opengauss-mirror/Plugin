@@ -4,10 +4,10 @@ SELECT LOG(10);
    1
 (1 row)
 
-drop database if exists test;
-NOTICE:  database "test" does not exist, skipping
-create database test dbcompatibility 'B';
-\c test
+drop database if exists db_b_log_test;
+NOTICE:  database "db_b_log_test" does not exist, skipping
+create database db_b_log_test dbcompatibility 'B';
+\c db_b_log_test
 SELECT LOG(10);
        log        
 ------------------
@@ -146,5 +146,77 @@ SELECT LOG(2, 0) IS NULL;
  t
 (1 row)
 
+select log(111);
+       log        
+------------------
+ 4.70953020131233
+(1 row)
+
+select log(b'111');
+        log         
+--------------------
+ 1.9459101490553133
+(1 row)
+
+select log(7);
+       log        
+------------------
+ 1.94591014905531
+(1 row)
+
+select log2(111);
+       log2       
+------------------
+ 6.79441586635011
+(1 row)
+
+select log2(b'111');
+        log2        
+--------------------
+ 2.8073549220576041
+(1 row)
+
+select log2(7);
+      log2       
+-----------------
+ 2.8073549220576
+(1 row)
+
+select log10(111);
+      log10       
+------------------
+ 2.04532297878666
+(1 row)
+
+select log10(b'111');
+       log10        
+--------------------
+ 0.8450980400142568
+(1 row)
+
+select log10(7);
+       log10       
+-------------------
+ 0.845098040014257
+(1 row)
+
+select log(b'111'::int);
+       log        
+------------------
+ 1.94591014905531
+(1 row)
+
+select log2(b'111'::int);
+      log2       
+-----------------
+ 2.8073549220576
+(1 row)
+
+select log10(b'111'::int);
+       log10       
+-------------------
+ 0.845098040014257
+(1 row)
+
 \c postgres
-drop database test;
+drop database db_b_log_test;

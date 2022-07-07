@@ -1,7 +1,7 @@
-drop database if exists mysql_test;
-NOTICE:  database "mysql_test" does not exist, skipping
-create database mysql_test dbcompatibility 'b';
-\c mysql_test
+drop database if exists db_b_parser1;
+NOTICE:  database "db_b_parser1" does not exist, skipping
+create database db_b_parser1 dbcompatibility 'b';
+\c db_b_parser1
 select 'bbbbb' regexp '^([bc])\1*$' as t, 'bbbbb' not regexp '^([bc])\1*$' as t2, 'bbbbb' rlike '^([bc])\1*$' as t;
  t | t2 | t 
 ---+----+---
@@ -357,4 +357,4 @@ select '-12.3abc' rlike 'null';
 (1 row)
 
 \c postgres
-drop database if exists mysql_test;
+drop database if exists db_b_parser1;

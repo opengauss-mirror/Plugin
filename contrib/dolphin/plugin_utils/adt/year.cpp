@@ -61,6 +61,8 @@ PG_FUNCTION_INFO_V1_PUBLIC(year_sortsupport);
 extern "C" DLL_PUBLIC Datum year_sortsupport(PG_FUNCTION_ARGS);
 PG_FUNCTION_INFO_V1_PUBLIC(int32_year);
 extern "C" DLL_PUBLIC Datum int32_year(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(year_integer);
+extern "C" DLL_PUBLIC Datum year_integer(PG_FUNCTION_ARGS);
 PG_FUNCTION_INFO_V1_PUBLIC(year_scale);
 extern "C" DLL_PUBLIC Datum year_scale(PG_FUNCTION_ARGS);
 
@@ -74,14 +76,63 @@ extern "C" DLL_PUBLIC Datum year_scale(PG_FUNCTION_ARGS);
 Datum year_in(PG_FUNCTION_ARGS)
 {
     char *str_in = PG_GETARG_CSTRING(0);
-    int32 tmp = pg_strtoint32(str_in);
+    /*
+     * parse str_in
+     * status flag's meaning :
+     * 1: begin field  : only allow for space
+     * 2: number field : only allow for numbers
+     * 4: end field    : only allow for space
+     * for example     : ' 1997  '
+     */
+    int len = strlen(str_in);
+    int status = 1;
+    int32 tmp = 0;
+    int year_len = 0;
+    for (int i = 0; i < len; ++i) {
+        switch (status)
+        {
+        case 1:
+            if (isdigit(str_in[i])) {
+                status <<= 1;
+                ++year_len;
+                tmp = str_in[i] - '0';
+            } else if (str_in[i] != ' ') {
+                ereport(ERROR, (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE), errmsg("Invalid integer value: \"%s\"", str_in)));
+            }
+            break;
+        case 2:
+            if (isdigit(str_in[i])) {
+                ++year_len;
+                if (year_len > YEAR4_LEN) {
+                    ereport(ERROR, (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE), errmsg("Incorrect integer value: \"%s\"", str_in)));
+                }
+                tmp = tmp * 10 + str_in[i] - '0';
+            } else if (str_in[i] == ' ') {
+                status <<= 1;
+            } else {
+                ereport(ERROR, (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE), errmsg("Incorrect integer value: \"%s\"", str_in)));
+            }
+            break;
+        case 4:
+            if (str_in[i] != ' ') {
+                ereport(ERROR, (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE), errmsg("Incorrect integer value: \"%s\"", str_in)));
+            }
+            break;
+        default:
+            break;
+        }
+    }
+    /* empty str_in */
+    if (status == 1) {
+        ereport(ERROR, (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE), errmsg("Incorrect integer value: \"%s\"", str_in)));
+    }
     /* 
      * "0000" -> 0 
      * "000"  -> 2000
      * "00"   -> 2000
      * "0"    -> 2000
      */
-    if (tmp == 0 && strlen(str_in) != 4) {
+    if (tmp == 0 && year_len != YEAR4_LEN) {
         tmp = 2000;
     }
     PG_RETURN_YEARADT(int32_to_YearADT(tmp));
@@ -162,7 +213,7 @@ Datum year_scale(PG_FUNCTION_ARGS)
     }
     /* Mark the year(2) type as negative */
     if (typmod == 2) {
-        result = -result;
+        YEAR_CONVERT(result);
     }
     PG_RETURN_YEARADT(result);
 }
@@ -191,7 +242,7 @@ static YearADT int32_to_YearADT(int4 year)
                 year = year + (year >= YEAR2_BOUND_BETWEEN_20C_21C ? 1900 : 2000);
             year = year - MIN_YEAR_NUM + 1;
         } else {
-            ereport(ERROR, (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE), errmsg("Out of range value for year date type!")));
+            ereport(ERROR, (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE), errmsg("Out of range value for year data type!")));
         }
     }
     return year;
@@ -271,6 +322,14 @@ Datum int32_year(PG_FUNCTION_ARGS)
     PG_RETURN_YEARADT(int32_to_YearADT(year));
 }
 
+Datum year_integer(PG_FUNCTION_ARGS) {
+    YearADT year = PG_GETARG_YEARADT(0);
+    if (IS_YEAR2(year))
+        YEAR_CONVERT(year);
+    year = YearADT_to_Year(year);
+    PG_RETURN_INT32(year);
+}
+
 Datum year_cmp(PG_FUNCTION_ARGS)
 {
     YearADT y1 = PG_GETARG_YEARADT(0);
@@ -295,10 +354,10 @@ Datum year_sortsupport(PG_FUNCTION_ARGS)
 
 int year_cmp_internal(YearADT y1, YearADT y2)
 {
-    if (y1 < 0)
-        y1 = -y1;
-    if (y2 < 0) 
-        y2 = -y2;
+    if (IS_YEAR2(y1))
+        YEAR_CONVERT(y1);
+    if (IS_YEAR2(y2)) 
+        YEAR_CONVERT(y2);
     return (y1 < y2) ? -1 : ((y1 > y2) ? 1 : 0);
 }
 
@@ -327,8 +386,11 @@ Datum year_mi_interval(YearADT year, const Interval* span)
 
 Datum year_pl_interval(YearADT year, const Interval* span)
 {
-    if (year < 0) 
-        year = -year;
+    bool isYear2 = false;
+    if (IS_YEAR2(year)) {
+        YEAR_CONVERT(year);
+        isYear2 = true;
+    }
     // year -> timestamp
     Timestamp timestamp;
     fsec_t fsec = 0;
@@ -350,9 +412,12 @@ Datum year_pl_interval(YearADT year, const Interval* span)
     }
     // check if res is valid
     if (!YEAR_VALID(tm->tm_year)) {
-         ereport(ERROR, (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE), errmsg("Out of range value for year date type!")));
+         ereport(ERROR, (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE), errmsg("Out of range value for year data type!")));
     }
     year = Year_to_YearADT(tm->tm_year);
+    if (isYear2) {
+        YEAR_CONVERT(year);
+    }
     PG_RETURN_YEARADT(year);
 }
 
@@ -365,10 +430,10 @@ Datum year_mi(PG_FUNCTION_ARGS)
 
 Datum year_mi(YearADT y1, YearADT y2)
 {
-    if (y1 < 0)
-        y1 = -y1;
-    if (y2 < 0) 
-        y2 = -y2;
+    if (IS_YEAR2(y1))
+        YEAR_CONVERT(y1);
+    if (IS_YEAR2(y2)) 
+        YEAR_CONVERT(y2);
     Interval* result = NULL;
     result = (Interval*)palloc(sizeof(Interval));
     result->time = 0;

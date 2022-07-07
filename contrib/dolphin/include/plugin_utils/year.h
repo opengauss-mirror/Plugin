@@ -2,6 +2,7 @@
 #define PLUGIN_YEAR_H
 
 #include <math.h>
+#include <ctype.h>
 
 #include "plugin_postgres.h"
 #include "fmgr.h"
@@ -19,6 +20,7 @@ typedef int16 YearADT;
 
 #define MAX_YEAR_NUM 2155
 #define MIN_YEAR_NUM 1901
+#define YEAR4_LEN 4
 
 #define YEAR2_BOUND_BETWEEN_20C_21C 70
 /* 2-digit year >= YEAR2_BOUND_BETWEEN_20C_21C will be treat as 20 century year
@@ -36,7 +38,11 @@ typedef int16 YearADT;
 #define YEAR4_IN_RANGE(x) ((x) >= MIN_YEAR_NUM && (x) <= MAX_YEAR_NUM)
 #define YEAR2_IN_RANGE(x) ((x) >= 0 && (x) <= 99)
 #define YEAR_VALID(x) (YEAR4_IN_RANGE(x) || YEAR2_IN_RANGE(x))
-#define YEAR4_to_YEAR2_VALID(x) ((x) == 0 || (MIN_YEAR2_NUM <= (x) && (x) <= MAX_YEAR2_NUM) )
+
+/* YEAR(2) -> YEAR(4) or YEAR(4) -> YEAR(2) */
+#define YEAR_CONVERT(x) ((x) = (-x))
+#define IS_YEAR2(x) ((x) < 0)
+#define IS_YEAR4(x) ((x) >= 0)
 
 extern Datum year_mi_interval(YearADT year, const Interval* span);
 extern Datum year_pl_interval(YearADT year, const Interval* span);

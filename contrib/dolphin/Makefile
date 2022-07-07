@@ -77,10 +77,10 @@ OBJS += tablecmds.o
 tablecmds.o: tablecmds.cpp
 
 EXTENSION = dolphin
-REGRESS:=$(shell find ./sql -maxdepth 2 -type f)
-REGRESS:=$(basename $(patsubst ./sql/%,%,$(REGRESS)) .sql)
+#a dummy testcase to let 'make check' can run, currently I have no idea how to fix this...
+REGRESS:=dummy
 
-REGRESS_OPTS = --dlpath=$(top_builddir)/src/test/regress -c 0 -d 1 --single_node -p ${p}
+REGRESS_OPTS = --dlpath=$(top_builddir)/src/test/regress -c 0 -d 1 --single_node -p ${p} --schedule=./parallel_schedule_dolphin --regconf=regress.conf -r 1 -n --keep_last_data=false --temp-config=./make_check_postgresql.conf
 
 include $(top_builddir)/$(base_dir)/configure.mk
 ifdef USE_PGXS

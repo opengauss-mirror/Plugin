@@ -50,7 +50,7 @@ extern TypeName* SystemTypeName(char* name);
  *            pg_index
  *        WHERE
  *            c.oid = pg_index.indrelid
- *            AND a.attnum = any(pg_index.indkey)),
+ *            AND a.attnum = any(pg_index.indkey) LIMIT 1),
  *        (SELECT
  *            'MUL'
  *        FROM
@@ -58,7 +58,7 @@ extern TypeName* SystemTypeName(char* name);
  *        WHERE
  *            pg_constraint.contype = 'f'
  *            AND pg_constraint.conrelid = c.oid
- *            AND a.attnum = any(pg_constraint.conkey))
+ *            AND a.attnum = any(pg_constraint.conkey) LIMIT 1)
  *    ) AS "Key",
  *    coalesce(
  *        (SELECT
@@ -67,7 +67,7 @@ extern TypeName* SystemTypeName(char* name);
  *            pg_attrdef
  *        WHERE
  *            c.oid = pg_attrdef.adrelid
- *            AND a.attnum = pg_attrdef.adnum),
+ *            AND a.attnum = pg_attrdef.adnum LIMIT 1),
  *    'NULL') AS "Default",
  *    '' AS "Extra"
  * FROM pg_catalog.pg_namespace n,
@@ -296,6 +296,7 @@ static Node* makeIndexSelect()
                                                                     makeColumnRef("a", "attnum"),
                                                                     makeColumnRef("pg_index", "indkey"),
                                                                     -1), -1);
+    stmt->limitCount = makeIntConst(1);
     stmt->groupClause = NIL;
     stmt->havingClause = NULL;
     stmt->windowClause = NIL;
@@ -358,6 +359,7 @@ static Node* makeConstantSelect()
                                                                                        makeColumnRef("a", "attnum"),
                                                                                        makeColumnRef("pg_constraint", "conkey"),
                                                                                        -1), -1), -1);
+    stmt->limitCount = makeIntConst(1);
     stmt->groupClause = NIL;
     stmt->havingClause = NULL;
     stmt->windowClause = NIL;
@@ -415,6 +417,7 @@ static Node* makeDefaultSelect()
                                                                     makeColumnRef("a", "attnum"),
                                                                     makeColumnRef("pg_attrdef", "adnum"),
                                                                     -1), -1);
+    stmt->limitCount = makeIntConst(1);
     stmt->groupClause = NIL;
     stmt->havingClause = NULL;
     stmt->windowClause = NIL;

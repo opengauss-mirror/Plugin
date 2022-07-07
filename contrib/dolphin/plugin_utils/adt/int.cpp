@@ -1477,7 +1477,7 @@ Datum f4toi1(PG_FUNCTION_ARGS)
         ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("tinyint out of range")));
     }
 
-    PG_RETURN_UINT8((uint8)arg1);
+    PG_RETURN_UINT8((uint8)round(arg1));
 }
 
 Datum f8toi1(PG_FUNCTION_ARGS)
@@ -1492,7 +1492,7 @@ Datum f8toi1(PG_FUNCTION_ARGS)
         ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("tinyint out of range")));
     }
 
-    PG_RETURN_UINT8((uint8)arg1);
+    PG_RETURN_UINT8((uint8)round(arg1));
 }
 
 /* Cast int1 -> bool */

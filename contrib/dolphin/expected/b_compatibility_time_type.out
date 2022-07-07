@@ -48,10 +48,11 @@ LINE 1: SELECT date'2100-2-29';
                    ^
 CONTEXT:  referenced column: date
 SELECT date'0000-2-29';
-ERROR:  date/time field value out of range: "0000-2-29"
-LINE 1: SELECT date'0000-2-29';
-                   ^
-CONTEXT:  referenced column: date
+    date    
+------------
+ 02-29-0000
+(1 row)
+
 SELECT date'01-01';
 ERROR:  invalid input syntax for type date: "01-01"
 LINE 1: SELECT date'01-01';
@@ -144,6 +145,12 @@ LINE 1: SELECT date'10130';
                    ^
 HINT:  Perhaps you need a different "datestyle" setting.
 CONTEXT:  referenced column: date
+SELECT date'00120101';
+    date    
+------------
+ 01-01-0012
+(1 row)
+
 -- YYYYMMDD or YYYYMMDD
 SELECT 99990101::date;
     date    
@@ -351,10 +358,46 @@ SELECT time'59';
  00:00:59
 (1 row)
 
+SELECT time'24 24';
+   time    
+-----------
+ 600:00:00
+(1 row)
+
+SELECT time'24 12:13';
+   time    
+-----------
+ 588:13:00
+(1 row)
+
 SELECT time'59.12';
     time     
 -------------
  00:00:59.12
+(1 row)
+
+SELECT time'';
+   time   
+----------
+ 00:00:00
+(1 row)
+
+SELECT time'1 09';
+   time   
+----------
+ 33:00:00
+(1 row)
+
+SELECT time'0 099';
+   time   
+----------
+ 99:00:00
+(1 row)
+
+SELECT time'-2 00000009';
+   time    
+-----------
+ -57:00:00
 (1 row)
 
 -- 'hhmmss.fsec'
@@ -455,6 +498,49 @@ SELECT 8385959.9999999::time;
  839:00:00
 (1 row)
 
+-- test function
+SELECT time '830:12:34' + interval '3 hours';
+ ?column?  
+-----------
+ 833:12:34
+(1 row)
+
+SELECT time '830:12:34' + interval '3 minutes';
+ ?column?  
+-----------
+ 830:15:34
+(1 row)
+
+SELECT time '830:12:34' + interval '3 seconds';
+ ?column?  
+-----------
+ 830:12:37
+(1 row)
+
+SELECT time '830:12:34' + interval '26 seconds';
+ ?column?  
+-----------
+ 830:13:00
+(1 row)
+
+SELECT time '830:12:34' - interval '3 hours';
+ ?column?  
+-----------
+ 827:12:34
+(1 row)
+
+SELECT time '837:00:00' + interval '2 hours';
+ERROR:  time out of range
+SELECT time '838:59:59' + interval '1 second';
+ERROR:  time out of range
+SELECT time '-837:00:00' - interval '3 hours';
+ERROR:  time out of range
+SELECT time '1:00:00' - interval '3 hours';
+ ?column?  
+-----------
+ -02:00:00
+(1 row)
+
 -- test datetime
 -- 'YYYY-MM-DD hh:mm:ss.fsec' or 'YY-MM-DD hh:mm:ss.fsec'
 SELECT datetime(2)'2001-01-01  23:59:59.999999';
@@ -536,8 +622,20 @@ SELECT datetime(1)'010101';
  Mon Jan 01 00:00:00 2001
 (1 row)
 
+SELECT datetime(1)'10101';
+         datetime         
+--------------------------
+ Fri Oct 01 00:00:00 2010
+(1 row)
+
+SELECT datetime(1)'71101';
+         datetime         
+--------------------------
+ Fri Oct 01 00:00:00 1971
+(1 row)
+
 SELECT datetime(1)'0101';
-ERROR:  timestamp out of range: "0101"
+ERROR:  invalid input syntax for type datetime: "0101"
 LINE 1: SELECT datetime(1)'0101';
                           ^
 CONTEXT:  referenced column: datetime
@@ -679,6 +777,24 @@ select * from test_dt where dt < '1997-11-10';
  Thu Nov 10 00:00:00 1994
 (1 row)
 
+-- test now() and current_timestamp
+create table test_datetime(c1 datetime);
+insert into test_datetime values(now());
+insert into test_datetime values(current_timestamp);
+drop table test_datetime;
+-- test timestamp with[out] timezone
+select timestamp with time zone'1994-11-10 23:12:34';
+         timestamptz          
+------------------------------
+ Thu Nov 10 23:12:34 1994 PST
+(1 row)
+
+select timestamp without time zone'1994-11-10 23:12:34';
+        timestamp         
+--------------------------
+ Thu Nov 10 23:12:34 1994
+(1 row)
+
 -- test timestamp
 set time zone 'PRC';
 CREATE TABLE timestamp_tbl (v timestamp(2));
@@ -698,7 +814,7 @@ INSERT INTO timestamp_tbl VALUES ('01010101');
 INSERT INTO timestamp_tbl VALUES ('0101017');
 INSERT INTO timestamp_tbl VALUES ('010101');
 INSERT INTO timestamp_tbl VALUES ('0101');
-ERROR:  timestamp out of range: "0101"
+ERROR:  invalid input syntax for type timestamp: "0101"
 LINE 1: INSERT INTO timestamp_tbl VALUES ('0101');
                                           ^
 CONTEXT:  referenced column: v
@@ -800,18 +916,18 @@ ERROR:  value "4294967297" is out of range for type integer
 -- test YEAR YEAR(2) YEAR(4)
 CREATE TABLE year_tbl (y YEAR, y4 YEAR(4), y2 YEAR(2));
 INSERT INTO year_tbl VALUES (1900, 1900, 1900);
-ERROR:  Out of range value for year date type!
+ERROR:  Out of range value for year data type!
 CONTEXT:  referenced column: y
 INSERT INTO year_tbl VALUES ('1900', '1900', '1900');
-ERROR:  Out of range value for year date type!
+ERROR:  Out of range value for year data type!
 LINE 1: INSERT INTO year_tbl VALUES ('1900', '1900', '1900');
                                      ^
 CONTEXT:  referenced column: y
 INSERT INTO year_tbl VALUES (2156, 2156, 2156);
-ERROR:  Out of range value for year date type!
+ERROR:  Out of range value for year data type!
 CONTEXT:  referenced column: y
 INSERT INTO year_tbl VALUES ('2156', '2156', '2156');
-ERROR:  Out of range value for year date type!
+ERROR:  Out of range value for year data type!
 LINE 1: INSERT INTO year_tbl VALUES ('2156', '2156', '2156');
                                      ^
 CONTEXT:  referenced column: y
@@ -824,18 +940,18 @@ INSERT INTO year_tbl VALUES ('70', '70', '70');
 INSERT INTO year_tbl VALUES (69, 69, 69);
 INSERT INTO year_tbl VALUES ('69', '69', '69');
 INSERT INTO year_tbl VALUES (2156, 2156, 2156);
-ERROR:  Out of range value for year date type!
+ERROR:  Out of range value for year data type!
 CONTEXT:  referenced column: y
 INSERT INTO year_tbl VALUES ('2156', '2156', '2156');
-ERROR:  Out of range value for year date type!
+ERROR:  Out of range value for year data type!
 LINE 1: INSERT INTO year_tbl VALUES ('2156', '2156', '2156');
                                      ^
 CONTEXT:  referenced column: y
 INSERT INTO year_tbl VALUES (-1, -1, -1);
-ERROR:  Out of range value for year date type!
+ERROR:  Out of range value for year data type!
 CONTEXT:  referenced column: y
 INSERT INTO year_tbl VALUES ('-1', '-1', '-1');
-ERROR:  Out of range value for year date type!
+ERROR:  Invalid integer value: "-1"
 LINE 1: INSERT INTO year_tbl VALUES ('-1', '-1', '-1');
                                      ^
 CONTEXT:  referenced column: y
@@ -985,7 +1101,7 @@ SELECT (1970)::YEAR-(interval '69' year);
 (1 row)
 
 SELECT (1970)::YEAR-(interval '70' year);
-ERROR:  Out of range value for year date type!
+ERROR:  Out of range value for year data type!
 SELECT (2069)::YEAR+(interval '86' year);
  ?column? 
 ----------
@@ -993,7 +1109,7 @@ SELECT (2069)::YEAR+(interval '86' year);
 (1 row)
 
 SELECT (2069)::YEAR+(interval '87' year);
-ERROR:  Out of range value for year date type!
+ERROR:  Out of range value for year data type!
 SELECT (2069)::YEAR+(interval'366day');
  ?column? 
 ----------
@@ -1021,36 +1137,134 @@ SELECT (2010)::YEAR-(2111)::YEAR(2);
 SELECT (2010)::YEAR(2)-(interval '2' year);
  ?column? 
 ----------
- 2008
+ 08
 (1 row)
 
 SELECT (2010)::YEAR(2)+(interval '2' year);
  ?column? 
 ----------
- 2012
+ 12
 (1 row)
 
 SELECT (1970)::YEAR(2)-(interval '69' year);
  ?column? 
 ----------
- 1901
+ 01
 (1 row)
 
 SELECT (1970)::YEAR(2)-(interval '70' year);
-ERROR:  Out of range value for year date type!
+ERROR:  Out of range value for year data type!
 SELECT (2069)::YEAR(2)+(interval '86' year);
  ?column? 
 ----------
- 2155
+ 55
 (1 row)
 
 SELECT (2069)::YEAR(2)+(interval '87' year);
-ERROR:  Out of range value for year date type!
+ERROR:  Out of range value for year data type!
 SELECT (2069)::YEAR(2)+(interval'366day');
  ?column? 
 ----------
- 2070
+ 70
 (1 row)
 
+-- test year +/- integer
+create table t_year0035(ts1 year(4) ,ts2 integer);
+insert into t_year0035 values('1904','1');
+insert into t_year0035 values('1902','2');
+insert into t_year0035 values('1907','5');
+select ts1 + ts2 from t_year0035;
+ ?column? 
+----------
+     1905
+     1904
+     1912
+(3 rows)
+
+select ts2 + ts1 from t_year0035;
+ ?column? 
+----------
+     1905
+     1904
+     1912
+(3 rows)
+
+select ts1 - ts2 from t_year0035;
+ ?column? 
+----------
+     1903
+     1900
+     1902
+(3 rows)
+
+select ts2 - ts1 from t_year0035;
+ ?column? 
+----------
+    -1903
+    -1900
+    -1902
+(3 rows)
+
+drop table t_year0035;
+-- test overflow
+select integer'2147481650' + year'1998';
+ERROR:  integer out of range
+select year'1998' + integer'2147481650';
+ERROR:  integer out of range
+select integer'-2147481651' - year'1997';
+  ?column?   
+-------------
+ -2147483648
+(1 row)
+
+-- test year input
+select year '20$#12';
+ERROR:  Incorrect integer value: "20$#12"
+LINE 1: select year '20$#12';
+                    ^
+CONTEXT:  referenced column: year
+select year '20中文12';
+ERROR:  Incorrect integer value: "20中文12"
+LINE 1: select year '20中文12';
+                    ^
+CONTEXT:  referenced column: year
+select year '    1997    ';
+ year 
+------
+ 1997
+(1 row)
+
+select year '  1997';
+ year 
+------
+ 1997
+(1 row)
+
+select year '1997  ';
+ year 
+------
+ 1997
+(1 row)
+
+select year ' 1997  89';
+ERROR:  Incorrect integer value: " 1997  89"
+LINE 1: select year ' 1997  89';
+                    ^
+CONTEXT:  referenced column: year
+select year ' 1997  #@#';
+ERROR:  Incorrect integer value: " 1997  #@#"
+LINE 1: select year ' 1997  #@#';
+                    ^
+CONTEXT:  referenced column: year
+select year '&%2122';
+ERROR:  Invalid integer value: "&%2122"
+LINE 1: select year '&%2122';
+                    ^
+CONTEXT:  referenced column: year
+select year '中文2122';
+ERROR:  Invalid integer value: "中文2122"
+LINE 1: select year '中文2122';
+                    ^
+CONTEXT:  referenced column: year
 \c postgres
 DROP DATABASE b_time_type;

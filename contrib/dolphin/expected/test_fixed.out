@@ -1,7 +1,7 @@
-drop database if exists test;
-NOTICE:  database "test" does not exist, skipping
-create database test dbcompatibility 'B';
-\c test
+drop database if exists test_fixed;
+NOTICE:  database "test_fixed" does not exist, skipping
+create database test_fixed dbcompatibility 'B';
+\c test_fixed
 DROP TABLE IF EXISTS fixed_test;
 NOTICE:  table "fixed_test" does not exist, skipping
 CREATE TABLE fixed_test (a fixed(10, 5));
@@ -13,4 +13,4 @@ CREATE TABLE fixed_test (a fixed(10, 5));
 
 DROP TABLE fixed_test;
 \c postgres
-drop database test;
+drop database test_fixed;
