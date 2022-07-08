@@ -25,66 +25,22 @@ test: builtin_funcs/bin builtin_funcs/char builtin_funcs/char_length builtin_fun
 
 test: builtin_funcs/db_b_hex builtin_funcs/db_b_if builtin_funcs/elt builtin_funcs/field builtin_funcs/find_in_set builtin_funcs/soundex builtin_funcs/space
 
-test: b_database_lock/b_database_deadlock
+test: disable_thread_pool
 
-test: b_database_lock/b_database_diff_session
+test: b_database_deadlock
 
-test: b_database_lock/b_database_getlock
+test: b_database_diff_session
 
-test: b_database_lock/b_database_getlock_01
+test: b_database_getlock b_database_getlock_01 b_database_getlock_02 b_database_getlock_03 b_database_getlock_04 b_database_getlock_05 b_database_getlock_06 b_database_getlock_07
 
-test: b_database_lock/b_database_getlock_02
+test: b_database_isfreelock_01 b_database_isfreelock_02 b_database_isfreelock_03 b_database_isfreelock_04
 
-test: b_database_lock/b_database_getlock_03
+test: b_database_isusedlock_01 b_database_isusedlock_02 b_database_isusedlock_03 b_database_isusedlock_04
 
-test: b_database_lock/b_database_getlock_04
+test: b_database_lock_other_01 b_database_lock_other_02 b_database_lock_other_03
 
-test: b_database_lock/b_database_getlock_05
+test: b_database_other_languages_01 b_database_other_languages_02 b_database_other_languages_03 b_database_other_languages_04 b_database_other_languages_05 b_database_other_languages_06
 
-test: b_database_lock/b_database_getlock_06
+test: b_database_releasealllocks_01
 
-test: b_database_lock/b_database_getlock_07
-
-test: b_database_lock/b_database_isfreelock_01
-
-test: b_database_lock/b_database_isfreelock_02
-
-test: b_database_lock/b_database_isfreelock_03
-
-test: b_database_lock/b_database_isfreelock_04
-
-test: b_database_lock/b_database_isusedlock_01
-
-test: b_database_lock/b_database_isusedlock_02
-
-test: b_database_lock/b_database_isusedlock_03
-
-test: b_database_lock/b_database_isusedlock_04
-
-test: b_database_lock/b_database_lock_other_01
-
-test: b_database_lock/b_database_lock_other_03
-
-test: b_database_lock/b_database_lock_other_02
-
-test: b_database_lock/b_database_other_languages_01
-
-test: b_database_lock/b_database_other_languages_02
-
-test: b_database_lock/b_database_other_languages_03
-
-test: b_database_lock/b_database_other_languages_04
-
-test: b_database_lock/b_database_other_languages_05
-
-test: b_database_lock/b_database_other_languages_06
-
-test: b_database_lock/b_database_releasealllocks_01
-
-test: b_database_lock/b_database_releaselock_01
-
-test: b_database_lock/b_database_releaselock_02
-
-test: b_database_lock/b_database_releaselock_03
-
-test: b_database_lock/b_database_releaselock_04
+test: b_database_releaselock_01 b_database_releaselock_02 b_database_releaselock_03 b_database_releaselock_04

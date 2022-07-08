@@ -1,0 +1,37 @@
+drop database if exists b_databaselock7;
+NOTICE:  database "b_databaselock7" does not exist, skipping
+create database b_databaselock7 dbcompatibility 'b';
+\c b_databaselock7
+create table table_b_database_01(c1 int,c2 text);
+insert into table_b_database_01 values(1,'a');
+begin;
+select get_lock('slock1',1);
+ get_lock 
+----------
+        1
+(1 row)
+
+insert into table_b_database_01 values(2,'b');
+select get_lock('slock2',1);
+ get_lock 
+----------
+        1
+(1 row)
+
+rollback;
+select * from table_b_database_01;
+ c1 | c2 
+----+----
+  1 | a
+(1 row)
+
+select a.lockname from get_all_locks() a where a.lockname like 'slock%' order by lockname;
+ lockname 
+----------
+ slock1
+ slock2
+(2 rows)
+
+drop table table_b_database_01;
+\c postgres
+drop database if exists b_databaselock7;
