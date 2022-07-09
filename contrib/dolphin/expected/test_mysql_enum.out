@@ -9,6 +9,21 @@ show sql_compatibility;
  B
 (1 row)
 
+CREATE TABLE test (
+    age INT,
+    myname anonymous_enum('a','b')
+);
+ERROR:  anonymous enum type can't be used elsewhere.
+CREATE TABLE test (
+    age INT,
+    myname ttanonymous_enum('a','b')
+);
+ERROR:  anonymous enum type can't be used elsewhere.
+CREATE TABLE test (
+    age INT,
+    myname ttanonymous_enumtt('a','b')
+);
+ERROR:  anonymous enum type can't be used elsewhere.
 -- when drop a column using an auto created enum type, the created enum type will also be dropped.
 CREATE TABLE test (
     age INT,
