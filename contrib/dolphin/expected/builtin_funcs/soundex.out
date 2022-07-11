@@ -38,5 +38,47 @@ select soundex('hell');
  H400
 (1 row)
 
+select 'ibc' sounds like 'abc';
+ soundex_difference 
+--------------------
+                  0
+(1 row)
+
+select 'aws' sounds like '10';
+ soundex_difference 
+--------------------
+                  0
+(1 row)
+
+select 'aftcbtlxpz' sounds like 'afdsbfdlsafs';
+ soundex_difference 
+--------------------
+                  1
+(1 row)
+
+select 'zie' sounds like 'dslfaalskf222122';
+ soundex_difference 
+--------------------
+                  0
+(1 row)
+
+select 'adfidf' sounds like 'dadfa353dadf333ff';
+ soundex_difference 
+--------------------
+                  0
+(1 row)
+
+select 'hill' sounds like 'hell';
+ soundex_difference 
+--------------------
+                  1
+(1 row)
+
+select '中Adfab' sounds like '@adp';
+ soundex_difference 
+--------------------
+                  1
+(1 row)
+
 \c postgres
 drop database if exists db_soundex;

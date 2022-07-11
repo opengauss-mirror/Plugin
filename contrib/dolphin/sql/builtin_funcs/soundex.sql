@@ -9,6 +9,13 @@ select soundex('dslfaalskf222122');
 select soundex('dadfa353dadf333ff');
 select soundex('hell');
 
+select 'ibc' sounds like 'abc';
+select 'aws' sounds like '10';
+select 'aftcbtlxpz' sounds like 'afdsbfdlsafs';
+select 'zie' sounds like 'dslfaalskf222122';
+select 'adfidf' sounds like 'dadfa353dadf333ff';
+select 'hill' sounds like 'hell';
+select '中Adfab' sounds like '@adp';
 
 \c postgres
 drop database if exists db_soundex;

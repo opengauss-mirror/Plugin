@@ -1025,7 +1025,7 @@ static int errstate;
 
 	SAMPLE SAVEPOINT SCHEMA SCHEMAS SCROLL SEARCH SECOND_P SECURITY SELECT SEQUENCE SEQUENCES
 	SERIALIZABLE SERVER SESSION SESSION_USER SET SETS SETOF SHARE SHIPPABLE SHOW SHUTDOWN SIBLINGS
-	SIMILAR SIMPLE SIZE SKIP SLAVE SLICE SMALLDATETIME SMALLDATETIME_FORMAT_P SMALLINT SNAPSHOT SOME SOURCE_P SPACE SPILL SPLIT SQL STABLE STANDALONE_P START STARTWITH
+	SIMILAR SIMPLE SIZE SKIP SLAVE SLICE SMALLDATETIME SMALLDATETIME_FORMAT_P SMALLINT SNAPSHOT SOME SOUNDS SOURCE_P SPACE SPILL SPLIT SQL STABLE STANDALONE_P START STARTWITH
 	STATEMENT STATEMENT_ID STATISTICS STATUS STDIN STDOUT STORAGE STORE_P STORED STRATIFY STREAM STRICT_P STRIP_P SUBPARTITION SUBSCRIPTION SUBSTR SUBSTRING
 	SYMMETRIC SYNONYM SYSDATE SYSID SYSTEM_P SYS_REFCURSOR
 
@@ -1091,7 +1091,7 @@ static int errstate;
 %right		NOT
 %right		'='
 %nonassoc	'<' '>' CmpOp
-%nonassoc	LIKE ILIKE SIMILAR
+%nonassoc	LIKE ILIKE SIMILAR SOUNDS
 %nonassoc	ESCAPE
 %nonassoc	OVERLAPS
 %nonassoc	BETWEEN
@@ -24006,6 +24006,20 @@ a_expr:		c_expr									{ $$ = $1; }
 					n->model_args = $6;	
 					n->model_args_location = @6;
 					$$ = (Node*) n;				
+				}
+			| a_expr SOUNDS LIKE a_expr
+				{
+					FuncCall *n = makeNode(FuncCall);
+					n->funcname = SystemFuncName("soundex_difference");
+					n->args = list_make2($1, $4);
+					n->agg_order = NIL;
+					n->agg_star = FALSE;
+					n->agg_distinct = FALSE;
+					n->func_variadic = FALSE;
+					n->over = NULL;
+					n->location = @2;
+					n->call_func = false;
+					$$ = (Node *) n;
 				}
 		;
 
