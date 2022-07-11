@@ -1,0 +1,67 @@
+drop database if exists b_databaselock;
+NOTICE:  database "b_databaselock" does not exist, skipping
+create database b_databaselock dbcompatibility 'b';
+\c b_databaselock
+select release_lock('aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa');
+ release_lock 
+--------------
+             
+(1 row)
+
+select release_lock('aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa');
+ release_lock 
+--------------
+             
+(1 row)
+
+--failed
+select release_lock('aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa');
+ERROR:  max length of advisory lock is 64
+CONTEXT:  referenced column: release_lock
+select release_lock('获取一个锁2022');
+ release_lock 
+--------------
+             
+(1 row)
+
+select release_lock('1234567890');
+ release_lock 
+--------------
+             
+(1 row)
+
+select release_lock(1);
+ release_lock 
+--------------
+             
+(1 row)
+
+select release_lock(1234567890);
+ release_lock 
+--------------
+             
+(1 row)
+
+--failed
+select release_lock(a);
+ERROR:  column "a" does not exist
+LINE 1: select release_lock(a);
+                            ^
+CONTEXT:  referenced column: release_lock
+--failed
+select release_lock(`);
+ERROR:  syntax error at or near ")"
+LINE 1: select release_lock(`);
+                             ^
+--failed
+select release_lock(!);
+ERROR:  syntax error at or near ")"
+LINE 1: select release_lock(!);
+                             ^
+--failed
+select release_lock(@);
+ERROR:  syntax error at or near ")"
+LINE 1: select release_lock(@);
+                             ^
+\c postgres
+drop database if exists b_databaselock;

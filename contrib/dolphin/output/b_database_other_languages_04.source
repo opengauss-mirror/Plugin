@@ -1,0 +1,106 @@
+drop database if exists b_databaselock4;
+NOTICE:  database "b_databaselock4" does not exist, skipping
+create database b_databaselock4 dbcompatibility 'b';
+\c b_databaselock4
+select get_lock('βάση δεδομένων');
+ get_lock 
+----------
+        1
+(1 row)
+
+select get_lock('Η αστυνομία');
+ get_lock 
+----------
+        1
+(1 row)
+
+select get_lock('Η ενσάρκωση του φωτός');
+ get_lock 
+----------
+        1
+(1 row)
+
+select get_lock('Χυμός μπακαλάρου θάλασσας');
+ get_lock 
+----------
+        1
+(1 row)
+
+select get_lock('Δαιμονισμένος από ψυχές δράκων');
+ get_lock 
+----------
+        1
+(1 row)
+
+select lockname from get_all_locks() order by lockname;
+            lockname            
+--------------------------------
+ βάση δεδομένων
+ Δαιμονισμένος από ψυχές δράκων
+ Η αστυνομία
+ Η ενσάρκωση του φωτός
+ Χυμός μπακαλάρου θάλασσας
+(5 rows)
+
+select is_free_lock('βάση δεδομένων');
+ is_free_lock 
+--------------
+            0
+(1 row)
+
+select is_free_lock('Η αστυνομία');
+ is_free_lock 
+--------------
+            0
+(1 row)
+
+select is_free_lock('Η ενσάρκωση του φωτός');
+ is_free_lock 
+--------------
+            0
+(1 row)
+
+select is_free_lock('Χυμός μπακαλάρου θάλασσας');
+ is_free_lock 
+--------------
+            0
+(1 row)
+
+select is_free_lock('Δαιμονισμένος από ψυχές δράκων');
+ is_free_lock 
+--------------
+            0
+(1 row)
+
+select release_lock('βάση δεδομένων');
+ release_lock 
+--------------
+            1
+(1 row)
+
+select release_lock('Η αστυνομία');
+ release_lock 
+--------------
+            1
+(1 row)
+
+select release_lock('Η ενσάρκωση του φωτός');
+ release_lock 
+--------------
+            1
+(1 row)
+
+select release_lock('Χυμός μπακαλάρου θάλασσας');
+ release_lock 
+--------------
+            1
+(1 row)
+
+select release_lock('Δαιμονισμένος από ψυχές δράκων');
+ release_lock 
+--------------
+            1
+(1 row)
+
+\c postgres
+drop database if exists b_databaselock4;
