@@ -5332,42 +5332,6 @@ void int64_to_numericvar(int64 val, NumericVar* var)
     var->weight = ndigits - 1;
 }
 
-
-void int128_to_numericvar(int128 val, NumericVar* var)
-{
-    uint128 uval, newuval;
-    NumericDigit* ptr = NULL;
-    int ndigits;
-
-    /* int64 can require at most 19 decimal digits; add one for safety */
-    alloc_var(var, 20 / DEC_DIGITS);
-    if (val < 0) {
-        var->sign = NUMERIC_NEG;
-        uval = -val;
-    } else {
-        var->sign = NUMERIC_POS;
-        uval = val;
-    }
-    var->dscale = 0;
-    if (val == 0) {
-        var->ndigits = 0;
-        var->weight = 0;
-        return;
-    }
-    ptr = var->digits + var->ndigits;
-    ndigits = 0;
-    do {
-        ptr--;
-        ndigits++;
-        newuval = uval / NBASE;
-        *ptr = uval - newuval * NBASE;
-        uval = newuval;
-    } while (uval);
-    var->digits = ptr;
-    var->ndigits = ndigits;
-    var->weight = ndigits - 1;
-}
-
 /*
  * Convert numeric to float8; if out of range, return +/- HUGE_VAL
  */

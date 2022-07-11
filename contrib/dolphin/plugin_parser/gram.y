@@ -767,7 +767,7 @@ static int errstate;
 %type <node>	on_table opt_engine opt_compression set_compress_type
 %type <keyword>	into_empty opt_temporary opt_values_in
 %type <str>	compression_args
-%type <boolean> opt_ignore
+%type <boolean> opt_ignore opt_unsigned
 
 /*
  * Non-keyword token types.  These are hard-wired into the "flex" lexer.
@@ -20790,88 +20790,69 @@ Binary:	BINARY
 			$$->location = @1;
 		}
 
+opt_unsigned:
+		UNSIGNED								{  $$ = TRUE; }
+		| /*EMPTY*/								{  $$ = FALSE; }
+		;
+
 /*
  * SQL92 numeric data types
  */
-Numeric:	INT_P opt_type_modifiers
+Numeric:	INT_P opt_type_modifiers opt_unsigned
 				{
-					$$ = SystemTypeName("int4");
-					$$->location = @1;
-				}
-			| INTEGER opt_type_modifiers
-				{
-					if ($2 != NULL)
-					{
-						$$ = SystemTypeName("numeric");
-						$$->typmods = $2;
+					if ($3) {
+						$$ = SystemTypeName("uint4");
+						$$->location = @1;
+					} else {
+						$$ = SystemTypeName("int4");
 						$$->location = @1;
 					}
-					else
-				{
-					$$ = SystemTypeName("int4");
-					$$->location = @1;
 				}
-				}
-			| INTEGER opt_type_modifiers UNSIGNED
+			| INTEGER opt_type_modifiers opt_unsigned
 				{
-					if ($2 != NULL)
-					{
-						$$ = SystemTypeName("numeric");
-						$$->typmods = $2;
+					if ($3) {
+						$$ = SystemTypeName("uint4");
+						$$->location = @1;
+					} else {
+						$$ = SystemTypeName("int4");
 						$$->location = @1;
 					}
-					else
-				{
-					$$ = SystemTypeName("uint4");
-					$$->location = @1;
 				}
-				}
-			| TINYINT opt_type_modifiers UNSIGNED 
+			| TINYINT opt_type_modifiers opt_unsigned 
 				{
-					$$ = SystemTypeName("uint1");
-					$$->location = @2;
-				}
-
-			| SMALLINT opt_type_modifiers  UNSIGNED
-				{
-					$$ = SystemTypeName("uint2");
-					$$->location = @1;
-				}
-			| SMALLINT opt_type_modifiers
-				{
-					$$ = SystemTypeName("int2");
-					$$->location = @1;
-				}
-			| INT_P opt_type_modifiers  UNSIGNED
-				{
-					$$ = SystemTypeName("uint4");
-					$$->location = @1;
+					if ($3) {
+						$$ = SystemTypeName("uint1");
+						$$->location = @2;
+					} else {
+						$$ = SystemTypeName("int1");
+						$$->location = @1;
+					}
 				}
 
-			| TINYINT opt_type_modifiers
+			| SMALLINT opt_type_modifiers opt_unsigned
 				{
-					$$ = SystemTypeName("int1");
-					$$->location = @1;
+					if ($3) {
+						$$ = SystemTypeName("uint2");
+						$$->location = @1;
+					} else {
+						$$ = SystemTypeName("int2");
+						$$->location = @1;
+					}
 				}
 			| MEDIUMINT opt_type_modifiers
 				{
 					$$ = SystemTypeName("int4");
 					$$->location = @1;
 				}
-			| MEDIUMINT opt_type_modifiers UNSIGNED
+			| BIGINT opt_type_modifiers opt_unsigned
 				{
-					$$ = SystemTypeName("uint4");
-					$$->location = @1;
-				}
-			| BIGINT opt_type_modifiers
-				{
-					$$ = SystemTypeName("int8");
-					$$->location = @1;
-				}
-			| BIGINT opt_type_modifiers UNSIGNED
-				{
-					$$ = SystemTypeName("uint8");
-					$$->location = @1;
+					if ($3) {
+						$$ = SystemTypeName("uint8");
+						$$->location = @1;
+					} else {
+						$$ = SystemTypeName("int8");
+						$$->location = @1;
+					}
 				}
 			| REAL
 				{
