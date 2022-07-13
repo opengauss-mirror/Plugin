@@ -21,6 +21,8 @@ test: nvarchar regexp
 
 test: test_binary test_blob test_datatype test_fixed test_mysql_enum
 
+test: test_char_tail_blank test_char_tail_blank_2 test_char_tail_blank_3
+
 test: builtin_funcs/bin builtin_funcs/char builtin_funcs/char_length builtin_funcs/character_length builtin_funcs/conv builtin_funcs/convert builtin_funcs/crc32 builtin_funcs/db_b_format
 
 test: builtin_funcs/db_b_hex builtin_funcs/db_b_if builtin_funcs/elt builtin_funcs/field builtin_funcs/find_in_set builtin_funcs/soundex builtin_funcs/space

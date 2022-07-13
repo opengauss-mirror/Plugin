@@ -62,7 +62,7 @@ clean: extra_clean
 
 dolphin--1.0.sql: sql_script/*
 	cat $^ > $@
-DATA_built = dolphin--1.0.sql
+DATA_built = dolphin--1.0.sql openGauss_expr_dolphin.ir
 
 OBJS += plugin_postgres.o 
 plugin_postgres.o: plugin_postgres.cpp
@@ -93,3 +93,6 @@ top_builddir = ../..
 include $(top_builddir)/src/Makefile.global
 include $(top_srcdir)/contrib/contrib-global.mk
 endif
+
+openGauss_expr_dolphin.ir:
+	cp llvmir/openGauss_expr_dolphin_$(host_cpu).ir $@

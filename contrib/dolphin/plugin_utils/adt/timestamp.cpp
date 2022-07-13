@@ -4537,7 +4537,7 @@ Datum datetime_part(PG_FUNCTION_ARGS)
 Datum datetime_year_part(PG_FUNCTION_ARGS)
 {
     Timestamp timestamp = PG_GETARG_TIMESTAMP(0);
-    float8 result;
+    float8 result = 0;
     fsec_t fsec;
     struct pg_tm tt, *tm = &tt;
     if (timestamp2tm(timestamp, NULL, tm, &fsec, NULL, NULL) == 0)
