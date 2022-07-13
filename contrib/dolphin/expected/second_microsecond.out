@@ -1,0 +1,52 @@
+create database second_microsecond dbcompatibility = 'b';
+\c second_microsecond
+select microsecond(timestamp '2021-11-4 16:30:44.3411');
+ date_part 
+-----------
+    341100
+(1 row)
+
+select second(timestamp '2021-11-4 16:30:44.3411');
+ date_part 
+-----------
+        44
+(1 row)
+
+select microsecond(timestamptz '2021-11-4 16:30:44.3411');
+ date_part 
+-----------
+    341100
+(1 row)
+
+select second(timestamptz '2021-11-4 16:30:44.3411');
+ date_part 
+-----------
+        44
+(1 row)
+
+select microsecond(time '2021-11-4 16:30:44.3411');
+ date_part 
+-----------
+    341100
+(1 row)
+
+select second(time '2021-11-4 16:30:44.3411');
+ date_part 
+-----------
+        44
+(1 row)
+
+select microsecond(timetz '2021-11-4 16:30:44.3411');
+ date_part 
+-----------
+    341100
+(1 row)
+
+select second(timetz '2021-11-4 16:30:44.3411');
+ date_part 
+-----------
+        44
+(1 row)
+
+\c postgres
+drop database second_microsecond;
