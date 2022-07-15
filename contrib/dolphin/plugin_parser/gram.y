@@ -487,7 +487,10 @@ static int errstate;
 %type <node>	alter_table_cmd alter_partition_cmd alter_type_cmd opt_collate_clause exchange_partition_cmd move_partition_cmd
 				modify_column_cmd
 				replica_identity
-%type <list>	alter_table_cmds alter_partition_cmds alter_table_or_partition alter_type_cmds add_column_cmds modify_column_cmds
+%type <list>	alter_table_cmds alter_partition_cmds alter_table_or_partition alter_index_or_partition alter_type_cmds add_column_cmds modify_column_cmds alter_index_rebuild_partition
+
+%type <node>	AlterPartitionRebuildStmt AlterPartitionRemoveStmt AlterPartitionCheckStmt AlterPartitionRepairStmt AlterPartitionOptimizeStmt
+%type <list>	partition_name_list
 
 %type <dbehavior>	opt_drop_behavior
 
@@ -946,10 +949,10 @@ static int errstate;
 	NAME_P NAMES NATIONAL NATURAL NCHAR NEXT NO NOCOMPRESS NOCYCLE NODE NOLOGGING NOMAXVALUE NOMINVALUE NONE
 	NOT NOTHING NOTIFY NOTNULL NOWAIT NULL_P NULLCOLS NULLIF NULLS_P NUMBER_P NUMERIC NUMSTR NVARCHAR NVARCHAR2 NVL
 
-	OBJECT_P OF OFF OFFSET OIDS ON ONLY OPERATOR OPTIMIZATION OPTION OPTIONALLY OPTIONS OR
+	OBJECT_P OF OFF OFFSET OIDS ON ONLY OPERATOR OPTIMIZATION OPTIMIZE OPTION OPTIONALLY OPTIONS OR
 	ORDER OUT_P OUTER_P OVER OVERLAPS OVERLAY OWNED OWNER
 
-	PACKAGE PACKAGES PARSER PARTIAL PARTITION PARTITIONS PASSING PASSWORD PCTFREE PER_P PERCENT PERFORMANCE PERM PLACING PLAN PLANS POLICY POSITION
+	PACKAGE PACKAGES PARSER PARTIAL PARTITION PARTITIONING PARTITIONS PASSING PASSWORD PCTFREE PER_P PERCENT PERFORMANCE PERM PLACING PLAN PLANS POLICY POSITION
 /* PGXC_BEGIN */
 	POOL PRECEDING PRECISION
 /* PGXC_END */
@@ -962,7 +965,7 @@ static int errstate;
 	QUARTER QUERY QUOTE
 
 	RANDOMIZED RANGE RATIO RAW READ REAL REASSIGN REBUILD RECHECK RECURSIVE RECYCLEBIN REDISANYVALUE REF REFERENCES REFRESH REINDEX REJECT_P
-	RELATIVE_P RELEASE RELOPTIONS REMOTE_P REMOVE RENAME REPEATABLE REPLACE REPLICA REGEXP
+	RELATIVE_P RELEASE RELOPTIONS REMOTE_P REMOVE RENAME REPEATABLE REPLACE REPLICA REGEXP REPAIR
 	RESET RESIZE RESOURCE RESTART RESTRICT RETURN RETURNING RETURNS REUSE REVOKE RIGHT RLIKE ROLE ROLES ROLLBACK ROLLUP
 	ROTATION ROUTINE ROW ROWNUM ROWS ROWTYPE_P RULE
 
@@ -1339,6 +1342,11 @@ stmt :
 			| VariableShowStmt
 			| VerifyStmt
 			| ViewStmt
+			| AlterPartitionCheckStmt
+			| AlterPartitionRebuildStmt
+			| AlterPartitionRemoveStmt
+			| AlterPartitionOptimizeStmt
+			| AlterPartitionRepairStmt
 			| /*EMPTY*/
 				{ $$ = NULL; }
 		;
@@ -2790,7 +2798,7 @@ AlterTableStmt:
 						$$ = (Node *)n;
 					}
 				}
-		|	ALTER INDEX qualified_name alter_table_or_partition
+		|	ALTER INDEX qualified_name alter_index_or_partition
 				{
 					if ($4->length == 1 && ((AlterTableCmd*)lfirst($4->head))->subtype == AT_RebuildIndex)
 					{
@@ -2832,7 +2840,7 @@ AlterTableStmt:
 						$$ = (Node *)n;
 					}
 				}
-		|	ALTER INDEX IF_P EXISTS qualified_name alter_table_or_partition
+		|	ALTER INDEX IF_P EXISTS qualified_name alter_index_or_partition
 				{
 					ListCell   *cell;
 					foreach(cell, $6)
@@ -3020,6 +3028,22 @@ add_column_cmds:
 				}
 			;
 
+alter_index_or_partition:
+		alter_table_or_partition        { $$ = ($1); }
+		| alter_index_rebuild_partition { $$ = ($1); }
+		;
+
+/* ALTER INDEX index_name REBUILD PARTITION partition_name */
+alter_index_rebuild_partition:
+		REBUILD_PARTITION ColId
+			{
+				AlterTableCmd *n = makeNode(AlterTableCmd);
+				n->subtype = AT_RebuildIndexPartition;
+				n->name = $2;
+				$$ = list_make1((Node *)n);
+			}
+		;
+
 /* ALTER TABLE sql clause both for PARTITION and ordinary table */
 alter_table_or_partition:
 			alter_table_cmds        { $$ = ($1); }
@@ -3054,14 +3078,6 @@ alter_partition_cmd:
 			{
 				AlterTableCmd *n = makeNode(AlterTableCmd);
 				n->subtype = AT_UnusableAllIndexOnPartition;
-				n->name = $2;
-				$$ = (Node *)n;
-			}
-		/* ALTER INDEX index_name REBUILD PARTITION partition_name */
-		| REBUILD_PARTITION ColId
-			{
-				AlterTableCmd *n = makeNode(AlterTableCmd);
-				n->subtype = AT_RebuildIndexPartition;
 				n->name = $2;
 				$$ = (Node *)n;
 			}
@@ -4335,6 +4351,97 @@ split_dest_rangesubpartition_define_list:
 			$$ = result;
 		}
 	;
+
+/*support b_database syntax related with partition*/
+AlterPartitionRebuildStmt:
+			ALTER TABLE name REBUILD_PARTITION partition_name_list
+				{
+					FuncCall *n = makeNode(FuncCall);
+					n->funcname = list_make1(makeString("rebuild_partition"));
+					n->args = list_make1(makeAArrayExpr(lcons(makeStringConst($3, @3), $5), @5));
+					n->agg_star = FALSE;
+					n->agg_distinct = FALSE;
+					n->func_variadic = FALSE;
+					n->location = @4;
+					n->call_func = false;
+					ResTarget* rtg = makeNode(ResTarget);
+					rtg->name = NULL;
+					rtg->indirection = NIL;
+					rtg->val = (Node *)n;
+					rtg->location = @3;
+					SelectStmt *sel = makeNode(SelectStmt);
+					sel->targetList = list_make1(rtg);
+					$$ = (Node *)sel;
+				}
+			| ALTER TABLE name REBUILD_PARTITION ALL
+				{
+					FuncCall *n = makeNode(FuncCall);
+					n->funcname = list_make1(makeString("rebuild_partition"));
+					n->args = list_make1(makeAArrayExpr(list_make1(makeStringConst($3, @3)), @3));
+					n->agg_star = FALSE;
+					n->agg_distinct = FALSE;
+					n->func_variadic = FALSE;
+					n->location = @4;
+					n->call_func = false;
+					ResTarget* rtg = makeNode(ResTarget);
+					rtg->name = NULL;
+					rtg->indirection = NIL;
+					rtg->val = (Node *)n;
+					rtg->location = @3;
+					SelectStmt *sel = makeNode(SelectStmt);
+					sel->targetList = list_make1(rtg);
+					$$ = (Node *)sel;
+				}
+		;
+
+AlterPartitionRemoveStmt:
+			ALTER TABLE name REMOVE PARTITIONING
+				{
+					FuncCall *n = makeNode(FuncCall);
+					n->funcname = list_make1(makeString("remove_partitioning"));
+					n->args = list_make1(makeStringConst($3, @3));
+					n->agg_star = FALSE;
+					n->agg_distinct = FALSE;
+					n->func_variadic = FALSE;
+					n->location = @4;
+					n->call_func = false;
+					ResTarget* rtg = makeNode(ResTarget);
+					rtg->name = NULL;
+					rtg->indirection = NIL;
+					rtg->val = (Node *)n;
+					rtg->location = @3;
+					SelectStmt *sel = makeNode(SelectStmt);
+					sel->targetList = list_make1(rtg);
+					$$ = (Node *)sel;
+				}
+		;
+
+AlterPartitionCheckStmt:
+			ALTER TABLE name CHECK PARTITION partition_name_list { $$=NULL; }
+			| ALTER TABLE name CHECK PARTITION ALL { $$=NULL; }
+		;
+
+AlterPartitionRepairStmt:
+			ALTER TABLE name REPAIR PARTITION partition_name_list { $$=NULL; }
+			| ALTER TABLE name REPAIR PARTITION ALL { $$=NULL; }
+		;
+
+AlterPartitionOptimizeStmt:
+			ALTER TABLE name OPTIMIZE PARTITION partition_name_list { $$=NULL; }
+			| ALTER TABLE name OPTIMIZE PARTITION ALL { $$=NULL; }
+		;
+
+partition_name_list:
+			name
+				{
+					$$ = list_make1(makeStringConst($1, @1));
+				}
+			| partition_name_list ',' name
+				{
+					$$ = lappend($1, makeStringConst($3, @3));
+				}
+		;
+/*support b_database syntax related with partition*/
 
 /*****************************************************************************
  *
