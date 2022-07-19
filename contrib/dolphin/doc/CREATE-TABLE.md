@@ -29,12 +29,18 @@ CREATE [ [ GLOBAL | LOCAL ] [ TEMPORARY | TEMP ] | UNLOGGED ] TABLE [ IF NOT EXI
         | table_constraint
         | LIKE source_table [ like_option [...] ] }
         [, ... ])
-    [ WITH ( {storage_parameter = value} [, ... ] ) ]
-    [ ON COMMIT { PRESERVE ROWS | DELETE ROWS | DROP } ]
-    [ COMPRESS | NOCOMPRESS ]
-    [ TABLESPACE tablespace_name ]
-    [ COMPRESSION [=] compression_arg ]
-    [ ENGINE [=] engine_name ];
+    [create_option]
+
+其中create_option为：
+
+        [ WITH ( {storage_parameter = value} [, ... ] ) ]
+        [ ON COMMIT { PRESERVE ROWS | DELETE ROWS | DROP } ]
+        [ COMPRESS | NOCOMPRESS ]
+        [ TABLESPACE tablespace_name ]
+        [ COMPRESSION [=] compression_arg ]
+        [ ENGINE [=] engine_name ]
+
+    允许输入多次同一种create_option，以最后一次的输入为准。
 ```
 
 -   其中列约束column\_constraint为：
