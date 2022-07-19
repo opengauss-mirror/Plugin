@@ -1,0 +1,775 @@
+drop database if exists b_databaselock2;
+NOTICE:  database "b_databaselock2" does not exist, skipping
+create database b_databaselock2 dbcompatibility 'b';
+\c b_databaselock2
+--all succeed
+select get_lock('`');
+ get_lock 
+----------
+        1
+(1 row)
+
+select get_lock('~');
+ get_lock 
+----------
+        1
+(1 row)
+
+select get_lock('!');
+ get_lock 
+----------
+        1
+(1 row)
+
+select get_lock('@');
+ get_lock 
+----------
+        1
+(1 row)
+
+select get_lock('#');
+ get_lock 
+----------
+        1
+(1 row)
+
+select get_lock('$');
+ get_lock 
+----------
+        1
+(1 row)
+
+select get_lock('%');
+ get_lock 
+----------
+        1
+(1 row)
+
+select get_lock('^');
+ get_lock 
+----------
+        1
+(1 row)
+
+select get_lock('&');
+ get_lock 
+----------
+        1
+(1 row)
+
+select get_lock('*');
+ get_lock 
+----------
+        1
+(1 row)
+
+select get_lock('(');
+ get_lock 
+----------
+        1
+(1 row)
+
+select get_lock(')');
+ get_lock 
+----------
+        1
+(1 row)
+
+select get_lock('[');
+ get_lock 
+----------
+        1
+(1 row)
+
+select get_lock(']');
+ get_lock 
+----------
+        1
+(1 row)
+
+select get_lock('{');
+ get_lock 
+----------
+        1
+(1 row)
+
+select get_lock('}');
+ get_lock 
+----------
+        1
+(1 row)
+
+select get_lock('-');
+ get_lock 
+----------
+        1
+(1 row)
+
+select get_lock('_');
+ get_lock 
+----------
+        1
+(1 row)
+
+select get_lock('=');
+ get_lock 
+----------
+        1
+(1 row)
+
+select get_lock('+');
+ get_lock 
+----------
+        1
+(1 row)
+
+select get_lock('\');
+ get_lock 
+----------
+        1
+(1 row)
+
+select get_lock('|');
+ get_lock 
+----------
+        1
+(1 row)
+
+select get_lock(';');
+ get_lock 
+----------
+        1
+(1 row)
+
+select get_lock(':');
+ get_lock 
+----------
+        1
+(1 row)
+
+select get_lock('""""');
+ get_lock 
+----------
+        1
+(1 row)
+
+select get_lock(',');
+ get_lock 
+----------
+        1
+(1 row)
+
+select get_lock('.');
+ get_lock 
+----------
+        1
+(1 row)
+
+select get_lock('/');
+ get_lock 
+----------
+        1
+(1 row)
+
+select get_lock('<');
+ get_lock 
+----------
+        1
+(1 row)
+
+select get_lock('>');
+ get_lock 
+----------
+        1
+(1 row)
+
+select get_lock('?');
+ get_lock 
+----------
+        1
+(1 row)
+
+select get_lock('`',1);
+ get_lock 
+----------
+        1
+(1 row)
+
+select get_lock('~',1);
+ get_lock 
+----------
+        1
+(1 row)
+
+select get_lock('!',1);
+ get_lock 
+----------
+        1
+(1 row)
+
+select get_lock('@',1);
+ get_lock 
+----------
+        1
+(1 row)
+
+select get_lock('#',1);
+ get_lock 
+----------
+        1
+(1 row)
+
+select get_lock('$',1);
+ get_lock 
+----------
+        1
+(1 row)
+
+select get_lock('%',1);
+ get_lock 
+----------
+        1
+(1 row)
+
+select get_lock('^',1);
+ get_lock 
+----------
+        1
+(1 row)
+
+select get_lock('&',1);
+ get_lock 
+----------
+        1
+(1 row)
+
+select get_lock('*',1);
+ get_lock 
+----------
+        1
+(1 row)
+
+select get_lock('(',1);
+ get_lock 
+----------
+        1
+(1 row)
+
+select get_lock(')',1);
+ get_lock 
+----------
+        1
+(1 row)
+
+select get_lock('[',1);
+ get_lock 
+----------
+        1
+(1 row)
+
+select get_lock(']',1);
+ get_lock 
+----------
+        1
+(1 row)
+
+select get_lock('{',1);
+ get_lock 
+----------
+        1
+(1 row)
+
+select get_lock('}',1);
+ get_lock 
+----------
+        1
+(1 row)
+
+select get_lock('-',1);
+ get_lock 
+----------
+        1
+(1 row)
+
+select get_lock('_',1);
+ get_lock 
+----------
+        1
+(1 row)
+
+select get_lock('=',1);
+ get_lock 
+----------
+        1
+(1 row)
+
+select get_lock('+',1);
+ get_lock 
+----------
+        1
+(1 row)
+
+select get_lock('\',1);
+ get_lock 
+----------
+        1
+(1 row)
+
+select get_lock('|',1);
+ get_lock 
+----------
+        1
+(1 row)
+
+select get_lock(';',1);
+ get_lock 
+----------
+        1
+(1 row)
+
+select get_lock(':',1);
+ get_lock 
+----------
+        1
+(1 row)
+
+select get_lock('""""',1);
+ get_lock 
+----------
+        1
+(1 row)
+
+select get_lock(',',1);
+ get_lock 
+----------
+        1
+(1 row)
+
+select get_lock('.',1);
+ get_lock 
+----------
+        1
+(1 row)
+
+select get_lock('/',1);
+ get_lock 
+----------
+        1
+(1 row)
+
+select get_lock('<',1);
+ get_lock 
+----------
+        1
+(1 row)
+
+select get_lock('>',1);
+ get_lock 
+----------
+        1
+(1 row)
+
+select get_lock('?',1);
+ get_lock 
+----------
+        1
+(1 row)
+
+select get_lock('·');
+ get_lock 
+----------
+        1
+(1 row)
+
+select get_lock('~');
+ get_lock 
+----------
+        1
+(1 row)
+
+select get_lock('！');
+ get_lock 
+----------
+        1
+(1 row)
+
+select get_lock('@');
+ get_lock 
+----------
+        1
+(1 row)
+
+select get_lock('#');
+ get_lock 
+----------
+        1
+(1 row)
+
+select get_lock('￥');
+ get_lock 
+----------
+        1
+(1 row)
+
+select get_lock('%');
+ get_lock 
+----------
+        1
+(1 row)
+
+select get_lock('……');
+ get_lock 
+----------
+        1
+(1 row)
+
+select get_lock('&');
+ get_lock 
+----------
+        1
+(1 row)
+
+select get_lock('*');
+ get_lock 
+----------
+        1
+(1 row)
+
+select get_lock('（');
+ get_lock 
+----------
+        1
+(1 row)
+
+select get_lock('）');
+ get_lock 
+----------
+        1
+(1 row)
+
+select get_lock('-');
+ get_lock 
+----------
+        1
+(1 row)
+
+select get_lock('——');
+ get_lock 
+----------
+        1
+(1 row)
+
+select get_lock('=');
+ get_lock 
+----------
+        1
+(1 row)
+
+select get_lock('+');
+ get_lock 
+----------
+        1
+(1 row)
+
+select get_lock('【');
+ get_lock 
+----------
+        1
+(1 row)
+
+select get_lock('】');
+ get_lock 
+----------
+        1
+(1 row)
+
+select get_lock('{');
+ get_lock 
+----------
+        1
+(1 row)
+
+select get_lock('}');
+ get_lock 
+----------
+        1
+(1 row)
+
+select get_lock('、');
+ get_lock 
+----------
+        1
+(1 row)
+
+select get_lock('|');
+ get_lock 
+----------
+        1
+(1 row)
+
+select get_lock('；');
+ get_lock 
+----------
+        1
+(1 row)
+
+select get_lock('：');
+ get_lock 
+----------
+        1
+(1 row)
+
+select get_lock('‘');
+ get_lock 
+----------
+        1
+(1 row)
+
+select get_lock('“');
+ get_lock 
+----------
+        1
+(1 row)
+
+select get_lock('”');
+ get_lock 
+----------
+        1
+(1 row)
+
+select get_lock('，');
+ get_lock 
+----------
+        1
+(1 row)
+
+select get_lock('《');
+ get_lock 
+----------
+        1
+(1 row)
+
+select get_lock('。');
+ get_lock 
+----------
+        1
+(1 row)
+
+select get_lock('》');
+ get_lock 
+----------
+        1
+(1 row)
+
+select get_lock('/');
+ get_lock 
+----------
+        1
+(1 row)
+
+select get_lock('？');
+ get_lock 
+----------
+        1
+(1 row)
+
+select get_lock('·',1);
+ get_lock 
+----------
+        1
+(1 row)
+
+select get_lock('~',1);
+ get_lock 
+----------
+        1
+(1 row)
+
+select get_lock('！',1);
+ get_lock 
+----------
+        1
+(1 row)
+
+select get_lock('@',1);
+ get_lock 
+----------
+        1
+(1 row)
+
+select get_lock('#',1);
+ get_lock 
+----------
+        1
+(1 row)
+
+select get_lock('￥',1);
+ get_lock 
+----------
+        1
+(1 row)
+
+select get_lock('%',1);
+ get_lock 
+----------
+        1
+(1 row)
+
+select get_lock('……',1);
+ get_lock 
+----------
+        1
+(1 row)
+
+select get_lock('&',1);
+ get_lock 
+----------
+        1
+(1 row)
+
+select get_lock('*',1);
+ get_lock 
+----------
+        1
+(1 row)
+
+select get_lock('（',1);
+ get_lock 
+----------
+        1
+(1 row)
+
+select get_lock('）',1);
+ get_lock 
+----------
+        1
+(1 row)
+
+select get_lock('-',1);
+ get_lock 
+----------
+        1
+(1 row)
+
+select get_lock('——',1);
+ get_lock 
+----------
+        1
+(1 row)
+
+select get_lock('=',1);
+ get_lock 
+----------
+        1
+(1 row)
+
+select get_lock('+',1);
+ get_lock 
+----------
+        1
+(1 row)
+
+select get_lock('【',1);
+ get_lock 
+----------
+        1
+(1 row)
+
+select get_lock('】',1);
+ get_lock 
+----------
+        1
+(1 row)
+
+select get_lock('{',1);
+ get_lock 
+----------
+        1
+(1 row)
+
+select get_lock('}',1);
+ get_lock 
+----------
+        1
+(1 row)
+
+select get_lock('、',1);
+ get_lock 
+----------
+        1
+(1 row)
+
+select get_lock('|',1);
+ get_lock 
+----------
+        1
+(1 row)
+
+select get_lock('；',1);
+ get_lock 
+----------
+        1
+(1 row)
+
+select get_lock('：',1);
+ get_lock 
+----------
+        1
+(1 row)
+
+select get_lock('‘',1);
+ get_lock 
+----------
+        1
+(1 row)
+
+select get_lock('“',1);
+ get_lock 
+----------
+        1
+(1 row)
+
+select get_lock('”',1);
+ get_lock 
+----------
+        1
+(1 row)
+
+select get_lock('，',1);
+ get_lock 
+----------
+        1
+(1 row)
+
+select get_lock('《',1);
+ get_lock 
+----------
+        1
+(1 row)
+
+select get_lock('。',1);
+ get_lock 
+----------
+        1
+(1 row)
+
+select get_lock('》',1);
+ get_lock 
+----------
+        1
+(1 row)
+
+select get_lock('/',1);
+ get_lock 
+----------
+        1
+(1 row)
+
+select get_lock('？',1);
+ get_lock 
+----------
+        1
+(1 row)
+
+\c postgres
+drop database if exists b_databaselock2;

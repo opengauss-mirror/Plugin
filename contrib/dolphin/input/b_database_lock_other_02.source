@@ -1,0 +1,14 @@
+drop database if exists b_databaselock2;
+create database b_databaselock2 dbcompatibility 'b';
+\c b_databaselock2
+
+select get_lock('slock','1');
+select get_lock('slock','1a');
+select get_lock('slock','a');
+--failed
+select get_lock('slock',a);
+select get_lock('slock','.');
+--failed
+select get_lock('slock',.);
+\c postgres
+drop database if exists b_databaselock2;

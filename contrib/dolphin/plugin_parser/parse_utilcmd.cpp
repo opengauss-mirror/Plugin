@@ -4636,9 +4636,11 @@ static void transformColumnType(CreateStmtContext* cxt, ColumnDef* column)
      */
 
     if (column->typname->names != NULL) {
+        if (strstr(strVal(llast(column->typname->names)), "anonymous_enum") != NULL) {
+            ereport(ERROR, (errcode(ERRCODE_DUPLICATE_OBJECT), errmsg("anonymous enum type can't be used elsewhere.")));
+        }
         /* if the column type is 'enum' the we define an anonymous enum type */
-        char * colTypeName = strVal(llast(column->typname->names));
-        if (strcmp(colTypeName, "enum") == 0) {
+        if (strcmp(strVal(llast(column->typname->names)), "enum") == 0) {
             char* enumName = NULL;
             char* schemaname = NULL;
             Oid enumNamespace;
@@ -4651,15 +4653,11 @@ static void transformColumnType(CreateStmtContext* cxt, ColumnDef* column)
             char* enumTypeName = makeEnumTypeName(cxt->relation->relname, column->colname, schemaname);
             column->typname->names = lcons(makeString(schemaname), column->typname->names);
             // free the allocated memory
-            char** nameToModify = &(strVal(llast(column->typname->names)));
-
-            pfree_ext(*nameToModify);
-            *nameToModify = enumTypeName;
+            pfree(strVal(llast(column->typname->names)));
+            strVal(llast(column->typname->names)) = enumTypeName;
 
             DefineAnonymousEnum(column->typname);
         }
-        if (strstr(colTypeName, "anonymous_enum"))
-            ereport(ERROR, (errcode(ERRCODE_DUPLICATE_OBJECT), errmsg("anonymous enum type can't be used elsewhere.")));
     }
 
     Type ctype = typenameType(cxt->pstate, column->typname, NULL);

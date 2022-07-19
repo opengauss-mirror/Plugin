@@ -1,0 +1,106 @@
+drop database if exists b_databaselock6;
+NOTICE:  database "b_databaselock6" does not exist, skipping
+create database b_databaselock6 dbcompatibility 'b';
+\c b_databaselock6
+select get_lock('database');
+ get_lock 
+----------
+        1
+(1 row)
+
+select get_lock('The police');
+ get_lock 
+----------
+        1
+(1 row)
+
+select get_lock('The embodiment of light');
+ get_lock 
+----------
+        1
+(1 row)
+
+select get_lock('Sea buckthorn juice');
+ get_lock 
+----------
+        1
+(1 row)
+
+select get_lock('Possessed by dragon souls');
+ get_lock 
+----------
+        1
+(1 row)
+
+select lockname from get_all_locks() order by lockname;
+         lockname          
+---------------------------
+ database
+ Possessed by dragon souls
+ Sea buckthorn juice
+ The embodiment of light
+ The police
+(5 rows)
+
+select is_free_lock('database');
+ is_free_lock 
+--------------
+            0
+(1 row)
+
+select is_free_lock('The police');
+ is_free_lock 
+--------------
+            0
+(1 row)
+
+select is_free_lock('The embodiment of light');
+ is_free_lock 
+--------------
+            0
+(1 row)
+
+select is_free_lock('Sea buckthorn juice');
+ is_free_lock 
+--------------
+            0
+(1 row)
+
+select is_free_lock('Possessed by dragon souls');
+ is_free_lock 
+--------------
+            0
+(1 row)
+
+select release_lock('database');
+ release_lock 
+--------------
+            1
+(1 row)
+
+select release_lock('The police');
+ release_lock 
+--------------
+            1
+(1 row)
+
+select release_lock('The embodiment of light');
+ release_lock 
+--------------
+            1
+(1 row)
+
+select release_lock('Sea buckthorn juice');
+ release_lock 
+--------------
+            1
+(1 row)
+
+select release_lock('Possessed by dragon souls');
+ release_lock 
+--------------
+            1
+(1 row)
+
+\c postgres
+drop database if exists b_databaselock6;

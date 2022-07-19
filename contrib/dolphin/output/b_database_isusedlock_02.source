@@ -1,0 +1,390 @@
+drop database if exists b_databaselock2;
+NOTICE:  database "b_databaselock2" does not exist, skipping
+create database b_databaselock2 dbcompatibility 'b';
+\c b_databaselock2
+select is_used_lock('`');
+ is_used_lock 
+--------------
+             
+(1 row)
+
+select is_used_lock('~');
+ is_used_lock 
+--------------
+             
+(1 row)
+
+select is_used_lock('!');
+ is_used_lock 
+--------------
+             
+(1 row)
+
+select is_used_lock('@');
+ is_used_lock 
+--------------
+             
+(1 row)
+
+select is_used_lock('#');
+ is_used_lock 
+--------------
+             
+(1 row)
+
+select is_used_lock('$');
+ is_used_lock 
+--------------
+             
+(1 row)
+
+select is_used_lock('%');
+ is_used_lock 
+--------------
+             
+(1 row)
+
+select is_used_lock('^');
+ is_used_lock 
+--------------
+             
+(1 row)
+
+select is_used_lock('&');
+ is_used_lock 
+--------------
+             
+(1 row)
+
+select is_used_lock('*');
+ is_used_lock 
+--------------
+             
+(1 row)
+
+select is_used_lock('(');
+ is_used_lock 
+--------------
+             
+(1 row)
+
+select is_used_lock(')');
+ is_used_lock 
+--------------
+             
+(1 row)
+
+select is_used_lock('[');
+ is_used_lock 
+--------------
+             
+(1 row)
+
+select is_used_lock(']');
+ is_used_lock 
+--------------
+             
+(1 row)
+
+select is_used_lock('{');
+ is_used_lock 
+--------------
+             
+(1 row)
+
+select is_used_lock('}');
+ is_used_lock 
+--------------
+             
+(1 row)
+
+select is_used_lock('-');
+ is_used_lock 
+--------------
+             
+(1 row)
+
+select is_used_lock('_');
+ is_used_lock 
+--------------
+             
+(1 row)
+
+select is_used_lock('=');
+ is_used_lock 
+--------------
+             
+(1 row)
+
+select is_used_lock('+');
+ is_used_lock 
+--------------
+             
+(1 row)
+
+select is_used_lock('\');
+ is_used_lock 
+--------------
+             
+(1 row)
+
+select is_used_lock('|');
+ is_used_lock 
+--------------
+             
+(1 row)
+
+select is_used_lock(';');
+ is_used_lock 
+--------------
+             
+(1 row)
+
+select is_used_lock(':');
+ is_used_lock 
+--------------
+             
+(1 row)
+
+select is_used_lock('""""');
+ is_used_lock 
+--------------
+             
+(1 row)
+
+select is_used_lock(',');
+ is_used_lock 
+--------------
+             
+(1 row)
+
+select is_used_lock('.');
+ is_used_lock 
+--------------
+             
+(1 row)
+
+select is_used_lock('/');
+ is_used_lock 
+--------------
+             
+(1 row)
+
+select is_used_lock('<');
+ is_used_lock 
+--------------
+             
+(1 row)
+
+select is_used_lock('>');
+ is_used_lock 
+--------------
+             
+(1 row)
+
+select is_used_lock('?');
+ is_used_lock 
+--------------
+             
+(1 row)
+
+select is_used_lock('·');
+ is_used_lock 
+--------------
+             
+(1 row)
+
+select is_used_lock('~');
+ is_used_lock 
+--------------
+             
+(1 row)
+
+select is_used_lock('！');
+ is_used_lock 
+--------------
+             
+(1 row)
+
+select is_used_lock('@');
+ is_used_lock 
+--------------
+             
+(1 row)
+
+select is_used_lock('#');
+ is_used_lock 
+--------------
+             
+(1 row)
+
+select is_used_lock('￥');
+ is_used_lock 
+--------------
+             
+(1 row)
+
+select is_used_lock('%');
+ is_used_lock 
+--------------
+             
+(1 row)
+
+select is_used_lock('……');
+ is_used_lock 
+--------------
+             
+(1 row)
+
+select is_used_lock('&');
+ is_used_lock 
+--------------
+             
+(1 row)
+
+select is_used_lock('*');
+ is_used_lock 
+--------------
+             
+(1 row)
+
+select is_used_lock('（');
+ is_used_lock 
+--------------
+             
+(1 row)
+
+select is_used_lock('）');
+ is_used_lock 
+--------------
+             
+(1 row)
+
+select is_used_lock('-');
+ is_used_lock 
+--------------
+             
+(1 row)
+
+select is_used_lock('——');
+ is_used_lock 
+--------------
+             
+(1 row)
+
+select is_used_lock('=');
+ is_used_lock 
+--------------
+             
+(1 row)
+
+select is_used_lock('+');
+ is_used_lock 
+--------------
+             
+(1 row)
+
+select is_used_lock('【');
+ is_used_lock 
+--------------
+             
+(1 row)
+
+select is_used_lock('】');
+ is_used_lock 
+--------------
+             
+(1 row)
+
+select is_used_lock('{');
+ is_used_lock 
+--------------
+             
+(1 row)
+
+select is_used_lock('}');
+ is_used_lock 
+--------------
+             
+(1 row)
+
+select is_used_lock('、');
+ is_used_lock 
+--------------
+             
+(1 row)
+
+select is_used_lock('|');
+ is_used_lock 
+--------------
+             
+(1 row)
+
+select is_used_lock('；');
+ is_used_lock 
+--------------
+             
+(1 row)
+
+select is_used_lock('：');
+ is_used_lock 
+--------------
+             
+(1 row)
+
+select is_used_lock('‘');
+ is_used_lock 
+--------------
+             
+(1 row)
+
+select is_used_lock('“');
+ is_used_lock 
+--------------
+             
+(1 row)
+
+select is_used_lock('”');
+ is_used_lock 
+--------------
+             
+(1 row)
+
+select is_used_lock('，');
+ is_used_lock 
+--------------
+             
+(1 row)
+
+select is_used_lock('《');
+ is_used_lock 
+--------------
+             
+(1 row)
+
+select is_used_lock('。');
+ is_used_lock 
+--------------
+             
+(1 row)
+
+select is_used_lock('》');
+ is_used_lock 
+--------------
+             
+(1 row)
+
+select is_used_lock('/');
+ is_used_lock 
+--------------
+             
+(1 row)
+
+select is_used_lock('？');
+ is_used_lock 
+--------------
+             
+(1 row)
+
+\c postgres
+drop database if exists b_databaselock2;
