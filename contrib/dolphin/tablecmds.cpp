@@ -11390,6 +11390,11 @@ static void ATAddForeignKeyConstraint(AlteredTableInfo* tab, Relation rel, Const
         int16 eqstrategy;
         Oid pfeqop_right;
 
+        /* anonymous enum type is not allowed as foreigh key */
+        if (type_is_enum(fktype) && strstr(format_type_be(fktype), "anonymous_enum")) {
+            ereport(ERROR,
+                (errcode(ERRCODE_DATATYPE_MISMATCH), errmsg("anoymous enum type does not support foreign key")));
+        }
         /* We need several fields out of the pg_opclass entry */
         cla_ht = SearchSysCache1(CLAOID, ObjectIdGetDatum(opclasses[i]));
         if (!HeapTupleIsValid(cla_ht)) {
