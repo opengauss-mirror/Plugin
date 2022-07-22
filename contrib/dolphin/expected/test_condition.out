@@ -133,9 +133,9 @@ select coalesce(null, null,null,'2001-01-01 01:01:01.3654'::date,'2012-08-02 15:
 (1 row)
 
 select coalesce(null, null,null,'2001-01-01 01:01:01.3654'::timestamp,'2012-08-02 15:57:54.6365'::timestamp);
-             coalesce              
------------------------------------
- Mon Jan 01 01:01:01.3654 2001 PST
+           coalesce           
+------------------------------
+ Mon Jan 01 01:01:01 2001 PST
 (1 row)
 
 select coalesce(null, null);
@@ -205,9 +205,9 @@ select coalesce(null, null,'2001-01-01 01:01:01.3654'::date,'2012-08-02 15:57:54
 (1 row)
 
 select coalesce('2001-01-01 01:01:01.3654'::timestamp,null, null,'2012-08-02 15:57:54.6365'::timestamp);
-             coalesce              
------------------------------------
- Mon Jan 01 01:01:01.3654 2001 PST
+           coalesce           
+------------------------------
+ Mon Jan 01 01:01:01 2001 PST
 (1 row)
 
 SELECT coalesce(null,1, 'k');
@@ -631,9 +631,9 @@ select ifnull('2001-01-01 01:01:01.3654'::date,'2012-08-02 15:57:54.6365'::date)
 (1 row)
 
 select ifnull('2001-01-01 01:01:01.3654'::timestamp,'2012-08-02 15:57:54.6365'::timestamp);
-              ifnull               
------------------------------------
- Mon Jan 01 01:01:01.3654 2001 PST
+            ifnull            
+------------------------------
+ Mon Jan 01 01:01:01 2001 PST
 (1 row)
 
 --ifnull(unknown, int)
@@ -2337,9 +2337,9 @@ select coalesce(null, null,null,'2001-01-01 01:01:01.3654'::date,'2012-08-02 15:
 (1 row)
 
 select coalesce(null, null,null,'2001-01-01 01:01:01.3654'::timestamp,'2012-08-02 15:57:54.6365'::timestamp);
-             coalesce              
------------------------------------
- Mon Jan 01 01:01:01.3654 2001 PST
+           coalesce           
+------------------------------
+ Mon Jan 01 01:01:01 2001 PST
 (1 row)
 
 select coalesce(null, null);
@@ -2409,9 +2409,9 @@ select coalesce(null, null,'2001-01-01 01:01:01.3654'::date,'2012-08-02 15:57:54
 (1 row)
 
 select coalesce('2001-01-01 01:01:01.3654'::timestamp,null, null,'2012-08-02 15:57:54.6365'::timestamp);
-             coalesce              
------------------------------------
- Mon Jan 01 01:01:01.3654 2001 PST
+           coalesce           
+------------------------------
+ Mon Jan 01 01:01:01 2001 PST
 (1 row)
 
 SELECT coalesce(null,1, 'k');
@@ -2835,9 +2835,9 @@ select ifnull('2001-01-01 01:01:01.3654'::date,'2012-08-02 15:57:54.6365'::date)
 (1 row)
 
 select ifnull('2001-01-01 01:01:01.3654'::timestamp,'2012-08-02 15:57:54.6365'::timestamp);
-              ifnull               
------------------------------------
- Mon Jan 01 01:01:01.3654 2001 PST
+            ifnull            
+------------------------------
+ Mon Jan 01 01:01:01 2001 PST
 (1 row)
 
 --ifnull(unknown, int)
