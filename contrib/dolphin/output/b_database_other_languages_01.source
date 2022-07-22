@@ -1,0 +1,106 @@
+drop database if exists b_databaselock;
+NOTICE:  database "b_databaselock" does not exist, skipping
+create database b_databaselock dbcompatibility 'b';
+\c b_databaselock
+select get_lock('號驛爾叁');
+ get_lock 
+----------
+        1
+(1 row)
+
+select get_lock('數據庫');
+ get_lock 
+----------
+        1
+(1 row)
+
+select get_lock('計算機');
+ get_lock 
+----------
+        1
+(1 row)
+
+select get_lock('奧特曼');
+ get_lock 
+----------
+        1
+(1 row)
+
+select get_lock('葫蘆娃');
+ get_lock 
+----------
+        1
+(1 row)
+
+select lockname from get_all_locks() order by lockname;
+ lockname 
+----------
+ 奧特曼
+ 數據庫
+ 葫蘆娃
+ 號驛爾叁
+ 計算機
+(5 rows)
+
+select is_free_lock('號驛爾叁');
+ is_free_lock 
+--------------
+            0
+(1 row)
+
+select is_free_lock('數據庫');
+ is_free_lock 
+--------------
+            0
+(1 row)
+
+select is_free_lock('計算機');
+ is_free_lock 
+--------------
+            0
+(1 row)
+
+select is_free_lock('奧特曼');
+ is_free_lock 
+--------------
+            0
+(1 row)
+
+select is_free_lock('葫蘆娃');
+ is_free_lock 
+--------------
+            0
+(1 row)
+
+select release_lock('號驛爾叁');
+ release_lock 
+--------------
+            1
+(1 row)
+
+select release_lock('數據庫');
+ release_lock 
+--------------
+            1
+(1 row)
+
+select release_lock('計算機');
+ release_lock 
+--------------
+            1
+(1 row)
+
+select release_lock('奧特曼');
+ release_lock 
+--------------
+            1
+(1 row)
+
+select release_lock('葫蘆娃');
+ release_lock 
+--------------
+            1
+(1 row)
+
+\c postgres
+drop database if exists b_databaselock;

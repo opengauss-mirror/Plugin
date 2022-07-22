@@ -1,0 +1,45 @@
+drop database if exists b_databaselock3;
+NOTICE:  database "b_databaselock3" does not exist, skipping
+create database b_databaselock3 dbcompatibility 'b';
+\c b_databaselock3
+select release_lock('a                                                             a');
+ release_lock 
+--------------
+             
+(1 row)
+
+select release_lock('a                                                              a');
+ release_lock 
+--------------
+             
+(1 row)
+
+--failed
+select release_lock('a                                                               a');
+ERROR:  max length of advisory lock is 64
+CONTEXT:  referenced column: release_lock
+--failed
+select release_lock(1                                                              1);
+ERROR:  syntax error at or near "1"
+LINE 1: ...                                                         1);
+                                                                    ^
+select release_lock('1                                                              1');
+ release_lock 
+--------------
+             
+(1 row)
+
+select release_lock('a                                                              1');
+ release_lock 
+--------------
+             
+(1 row)
+
+select release_lock(' ');
+ release_lock 
+--------------
+             
+(1 row)
+
+\c postgres
+drop database if exists b_databaselock3;

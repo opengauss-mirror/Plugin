@@ -176,6 +176,8 @@ void DDLTagInit()
     BitMapSetIndex(ddlSet, T_CompositeTypeStmt);
     BitMapSetIndex(ddlSet, T_DefineStmt);
     BitMapSetIndex(ddlSet, T_AlterTSConfigurationStmt);
+    BitMapSetIndex(ddlSet, T_AlterTableStmt);
+    BitMapSetIndex(ddlSet, T_VacuumStmt);
     BitMapSetIndex(ddlSet, T_CreateDomainStmt);
     BitMapSetIndex(ddlSet, T_ViewStmt);
     BitMapSetIndex(ddlSet, T_DoStmt);

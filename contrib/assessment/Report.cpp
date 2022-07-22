@@ -52,12 +52,16 @@ static string GetCompatibilityString(CompatibilityType compatibilityType)
     }
 }
 
+bool SQLCompatibilityCompareFunction(const SQLCompatibility before, const SQLCompatibility after) {
+    return before.compatibility > after.compatibility;
+}
+
 bool CompatibilityTable::GenerateSQLCompatibilityStatistic()
 {
     stringstream ss;
     ss << "<a class=\"wdr\" name=\"top\"></a>"
           "<h2 class=\"wdr\">SQL 兼容总览</h2>"
-          "<table border=\"1\" class=\"tdiff\" summary=\"This table displays SQL Assessment Data\"><tr>\n"
+          "<table class=\"tdiff\" summary=\"This table displays SQL Assessment Data\"><tr>\n"
           "<th class=\"wdrbg\" scope=\"col\">总数</th>"
           "<th class=\"wdrbg\" scope=\"col\">"
        << GetCompatibilityString(COMPATIBLE)
@@ -85,6 +89,7 @@ bool CompatibilityTable::GenerateSQLCompatibilityStatistic()
     auto incompatible = 0;
     auto unsupportedCompatible = 0;
     auto skipCommand = 0;
+    std::stable_sort(this->sqlCompatibilities.begin(), this->sqlCompatibilities.end(), SQLCompatibilityCompareFunction);
     for (auto &compatibility: this->sqlCompatibilities) {
         switch (compatibility.compatibility) {
             case COMPATIBLE:
@@ -108,22 +113,22 @@ bool CompatibilityTable::GenerateSQLCompatibilityStatistic()
     }
     stringstream data;
     data << "<tr>"
-         << "<td class=\"wdrnc\" align=\"left\" >"
+        << "<td class=\"wdrnc\" style=\"text-align: center;font-size: 16px;\">"
          << to_string(total)
          << "</td>\n"
-         << "<td class=\"wdrnc\" align=\"left\" >"
+         << "<td class=\"wdrnc\" style=\"text-align: center;font-size: 16px;\">"
          << to_string(compatible)
          << "</td>\n"
-         << "<td class=\"wdrnc\"align=\"left\" >"
+         << "<td class=\"wdrnc\" style=\"text-align: center;font-size: 16px;\">"
          << to_string(astCompatible)
          << "</td>\n"
-         << "<td class=\"wdrnc\"align=\"left\" >"
+         << "<td class=\"wdrnc\" style=\"text-align: center;font-size: 16px;\">"
          << to_string(incompatible)
          << "</td>\n"
-         << "<td class=\"wdrnc\"align=\"left\" >"
+         << "<td class=\"wdrnc\" style=\"text-align: center;font-size: 16px;\">"
          << to_string(unsupportedCompatible)
          << "</td>\n"
-         << "<td class=\"wdrnc\"align=\"left\" >"
+         << "<td class=\"wdrnc\" style=\"text-align: center;font-size: 16px;\">"
          << to_string(skipCommand)
          << "</td>\n"
          << "</tr>\n"
@@ -138,7 +143,7 @@ bool CompatibilityTable::GenerateSQLCompatibilityStatistic()
 bool CompatibilityTable::GenerateReport()
 {
     string str = "<a class=\"wdr\" name=\"top\"></a><h2 class=\"wdr\">SQL 兼容详情</h2>"
-                 "<table border=\"1\" class=\"tdiff\" summary=\"This table displays SQL Assessment Data\" width=100%><tr>\n"
+                 "<table class=\"tdiff\" summary=\"This table displays SQL Assessment Data\" width=100%><tr>\n"
                  "<th class=\"wdrbg\" scope=\"col\">SQL语句</th>"
                  "<th class=\"wdrbg\" scope=\"col\">兼容性</th>"
                  "<th class=\"wdrbg\" scope=\"col\">兼容性详情</th>"
@@ -146,6 +151,8 @@ bool CompatibilityTable::GenerateReport()
     if (fwrite(str.c_str(), 1, str.length(), fd) != str.length()) {
         return false;
     }
+    
+    CompatibilityType compatibilityType = COMPATIBLE;
     for (size_t index = 0; index < this->sqlCompatibilities.size(); index++) {
         string type;
         if ((index & 1) == 0) {
@@ -153,11 +160,19 @@ bool CompatibilityTable::GenerateReport()
         } else {
             type = "wdrc";
         }
+        string style = "";
         auto &sqlCompatibility = this->sqlCompatibilities[index];
-
+        if (index == 0) {
+            compatibilityType = sqlCompatibility.compatibility;
+        } else if (compatibilityType == sqlCompatibility.compatibility) {
+            /* do nothing */
+        } else {
+            compatibilityType = sqlCompatibility.compatibility;
+            style = "style=\"border-top-style: groove;\"";
+        }
         string sqlDetail =
-                "<tr><td class=\"wdrtext\"><a class=\"wdr\" name=\"\">" + sqlCompatibility.sql + "\n</td>\n<td class=\"" +
-                type + "\" align=\"left\" >" + GetCompatibilityString(sqlCompatibility.compatibility) + "</td>\n<td class=\"" + type +
+                "<tr style=\"border-top-width: 2px;\"><td " + style + "class=\"" + type + "\"><a class=\"wdr;\" name=\"\">" + sqlCompatibility.sql + "\n</td>\n<td " + style + " class=\"" +
+                type + "\" align=\"left\" >" + GetCompatibilityString(sqlCompatibility.compatibility) + "</td>\n<td " + style + "class=\"" + type +
                 "_err\" align=\"left\" >" + sqlCompatibility.errDetail + "</td>\n</tr>\n";
 
         if (fwrite(sqlDetail.c_str(), 1, sqlDetail.length(), fd) != sqlDetail.length()) {

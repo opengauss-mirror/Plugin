@@ -3,6 +3,19 @@ CREATE DATABASE test_enum with dbcompatibility='B';
 \c test_enum
 -- create extension dolphin;
 show sql_compatibility;
+CREATE TABLE test (
+    age INT,
+    myname anonymous_enum('a','b')
+);
+CREATE TABLE test (
+    age INT,
+    myname ttanonymous_enum('a','b')
+);
+CREATE TABLE test (
+    age INT,
+    myname ttanonymous_enumtt('a','b')
+);
+
 -- when drop a column using an auto created enum type, the created enum type will also be dropped.
 CREATE TABLE test (
     age INT,

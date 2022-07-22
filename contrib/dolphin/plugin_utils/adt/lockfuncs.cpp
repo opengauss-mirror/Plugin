@@ -38,6 +38,267 @@
 #include "utils/syscache.h"
 #include "utils/snapmgr.h"
 #include "pgstat.h"
+#include "plugin_postgres.h"
+#include "libpq/md5.h"
+
+/*
+ * user advisory lock like b_database.
+ * different from openGauss:
+ * 1. lock using string, not int.
+ * 2. lokc allow timeout
+ * using md5sum parse string as int8*16, then cast to int32*4,using locktag_field2-5
+ */
+/*
+ * get_lock get advisory lock using string.
+ * arg1: string length < 64
+ * arg2: int timeout ,seconds,default 0 ,waiting forever
+ * return: 1 if success, 0 if timeout, null if other error
+ */
+#define SET_LOCKTAG_ADVISORY_5(locktag, id1, id2, id3, id4, id5)                                                    \
+    ((locktag).locktag_field1 = (id1), (locktag).locktag_field2 = (id2), (locktag).locktag_field3 = (id3),          \
+     (locktag).locktag_field4 = (id4), (locktag).locktag_field5 = (id5), (locktag).locktag_type = LOCKTAG_ADVISORY, \
+     (locktag).locktag_lockmethodid = USER_LOCKMETHOD)
+#define MAX_ADVISORY_LOCK_NAME_LENTH 64
+
+struct HTAB* lockNameHash = NULL;
+
+pthread_mutex_t gNameHashLock;
+
+typedef struct LockName {
+    char name[MAX_ADVISORY_LOCK_NAME_LENTH+1];
+    int64 nlocks;
+} LockName;
+
+PG_FUNCTION_INFO_V1_PUBLIC(GetAdvisoryLockWithtimeTextFormat);
+extern "C" DLL_PUBLIC Datum GetAdvisoryLockWithtimeTextFormat(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1_PUBLIC(GetAdvisoryLockWithtime);
+extern "C" DLL_PUBLIC Datum GetAdvisoryLockWithtime(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1_PUBLIC(GetAdvisoryLock);
+extern "C" DLL_PUBLIC Datum GetAdvisoryLock(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1_PUBLIC(ReleaseAdvisoryLock);
+extern "C" DLL_PUBLIC Datum ReleaseAdvisoryLock(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1_PUBLIC(IsFreeAdvisoryLock);
+extern "C" DLL_PUBLIC Datum IsFreeAdvisoryLock(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1_PUBLIC(IsUsedAdvisoryLock);
+extern "C" DLL_PUBLIC Datum IsUsedAdvisoryLock(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1_PUBLIC(ReleaseAllAdvisoryLock);
+extern "C" DLL_PUBLIC Datum ReleaseAllAdvisoryLock(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1_PUBLIC(GetAllAdvisoryLock);
+extern "C" DLL_PUBLIC Datum GetAllAdvisoryLock(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1_PUBLIC(ClearInvalidLockName);
+extern "C" DLL_PUBLIC Datum ClearInvalidLockName(PG_FUNCTION_ARGS);
+
+void InitLockNameHash()
+{
+    HASHCTL info = {0};
+    info.keysize = MAX_ADVISORY_LOCK_NAME_LENTH+1;
+    info.entrysize = sizeof(LockName);
+    info.hash = string_hash;
+    info.hcxt = g_instance.builtin_proc_context;
+
+    lockNameHash = hash_create("Lock Name Hash", 100, &info, HASH_ELEM | HASH_FUNCTION | HASH_CONTEXT);
+}
+
+uint32 *AdvisoryLockGetIdFromName(char *name, uint32 *lockid)
+{
+    uint8 sum[16];
+    if (strlen(name) > MAX_ADVISORY_LOCK_NAME_LENTH) {
+        ereport(ERROR, (errcode(ERRCODE_NAME_TOO_LONG), errmsg("max length of advisory lock is 64")));
+    }
+    if (strlen(name) == 0) {
+        ereport(ERROR, (errcode(ERRCODE_INVALID_NAME), errmsg("Incorrect user-level lock name '%s'", name)));
+    }
+
+    pg_md5_binary(name, strlen(name), sum);
+
+    // merge  uint8 sum[16] into uint32 lockid[4]
+    for (int i = 0; i < 4; i++) {
+        int index = i * 4;
+        for (int j = 0; j < 4; j++) {
+            uint32 t = sum[index + j];
+            lockid[i] = lockid[i] << 8;
+            lockid[i] |= t;
+        }
+    }
+    return lockid;
+}
+
+bool IsFreeAdvisoryLockInner(char *lockname)
+{
+    LOCKTAG tag;
+    uint32 lockid[4] = {0};
+    AdvisoryLockGetIdFromName(lockname, lockid);
+    SET_LOCKTAG_ADVISORY_5(tag, u_sess->proc_cxt.MyDatabaseId, lockid[0], lockid[1], lockid[2], lockid[3]);
+    uint32 hashcode = LockTagHashCode(&tag);
+    LWLock *partitionLock = NULL;
+    partitionLock = LockHashPartitionLock(hashcode);
+    LWLockAcquire(partitionLock, LW_SHARED);
+    bool foundCachedEntry = false;
+    hash_search_with_hash_value(t_thrd.storage_cxt.LockMethodLockHash, &tag, hashcode, HASH_FIND, &foundCachedEntry);
+    LWLockRelease(partitionLock);
+    return !foundCachedEntry;
+}
+
+Datum ClearInvalidLockNameInner()
+{
+    HASH_SEQ_STATUS status;
+    LockName *lockName = NULL;
+    int64 sumLocks = 0;
+
+    AutoMutexLock nameHashLock(&gNameHashLock);
+    nameHashLock.lock();
+    hash_seq_init(&status, lockNameHash);
+
+    while ((lockName = (LockName *)hash_seq_search(&status)) != NULL) {
+        if (IsFreeAdvisoryLockInner(lockName->name)) {
+            sumLocks += lockName->nlocks;
+            lockName->nlocks = 0;
+            hash_search(lockNameHash, (void *)&(lockName->name), HASH_REMOVE, NULL);
+        }
+    }
+    nameHashLock.unLock();
+
+    PG_RETURN_INT64(sumLocks);
+}
+
+void SetLockNameHash(const char* name, bool nlockInitialFlag = false, bool releaseFlag = false)
+{
+    char tempName[MAX_ADVISORY_LOCK_NAME_LENTH+1] = {0};
+    int rc = strncpy_s((char*)tempName, MAX_ADVISORY_LOCK_NAME_LENTH+1, name, strlen(name));
+    securec_check(rc, "\0", "\0");
+    LockName *result = NULL;
+    bool found = false;
+
+    Assert(name != NULL);
+
+    AutoMutexLock nameHashLock(&gNameHashLock);
+    nameHashLock.lock();
+    result = (LockName *)hash_search(lockNameHash, (void *)&tempName, HASH_ENTER, &found);
+    if (releaseFlag && found) {
+        result->nlocks--;
+        if (result->nlocks == 0)
+            hash_search(lockNameHash, (void *)&(result->name), HASH_REMOVE, NULL);
+    } else if (!releaseFlag) {
+        auto oldcxt = MemoryContextSwitchTo(u_sess->self_mem_cxt);
+        GetSessionContext()->lockNameList = lappend(GetSessionContext()->lockNameList, result);
+        MemoryContextSwitchTo(oldcxt);
+        if (found && !nlockInitialFlag)
+            result->nlocks++;
+        else
+            result->nlocks = 1;
+    }
+    nameHashLock.unLock();
+}
+
+Datum IsUsedAdvisoryLockInner(char *lockname)
+{
+    LOCKTAG tag;
+    uint32 lockid[4] = {0};
+    if (g_instance.attr.attr_common.enable_thread_pool) {
+        ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("Unsupport using advisory lock in threadpool")));
+    }
+    AdvisoryLockGetIdFromName(lockname, lockid);
+    SET_LOCKTAG_ADVISORY_5(tag, u_sess->proc_cxt.MyDatabaseId, lockid[0], lockid[1], lockid[2], lockid[3]);
+    uint32 hashcode = LockTagHashCode(&tag);
+    LWLock *partitionLock = NULL;
+    partitionLock = LockHashPartitionLock(hashcode);
+    LWLockAcquire(partitionLock, LW_SHARED);
+    bool foundCachedEntry = false;
+    LOCK *lock =
+        (LOCK *)hash_search_with_hash_value(t_thrd.storage_cxt.LockMethodLockHash, &tag, hashcode, HASH_FIND, &foundCachedEntry);
+
+    if (!foundCachedEntry) {
+        LWLockRelease(partitionLock);
+        return (Datum)0;
+    }
+    PROCLOCK *proclock;
+    SHM_QUEUE *procLocks;
+    PGPROC *proc;
+    uint64 sessionId = 0;
+    procLocks = &(lock->procLocks);
+    proclock = (PROCLOCK *)SHMQueueNext(procLocks, procLocks, offsetof(PROCLOCK, lockLink));
+    while (proclock != NULL) {
+        proc = proclock->tag.myProc;
+        sessionId = proc->sessionid;
+        proclock = (PROCLOCK *)SHMQueueNext(procLocks, &proclock->lockLink, offsetof(PROCLOCK, lockLink));
+        break;
+    }
+    LWLockRelease(partitionLock);
+    if (sessionId == 0)
+        return (Datum)0;
+    return UInt64GetDatum(sessionId);
+}
+
+int GetAdvisoryLockWithTimeInner(char *lockname, double timeout)
+{
+
+    TimestampTz startTime;
+    LOCKTAG tag;
+    uint32 lockid[4] = {0};
+    uint64 currentSessionId = IS_THREAD_POOL_WORKER ? u_sess->session_id : t_thrd.proc_cxt.MyProcPid;
+    if (g_instance.attr.attr_common.enable_thread_pool) {
+        ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("Unsupport using advisory lock in threadpool")));
+    }
+    AdvisoryLockGetIdFromName(lockname, lockid);
+    SET_LOCKTAG_ADVISORY_5(tag, u_sess->proc_cxt.MyDatabaseId, lockid[0], lockid[1], lockid[2], lockid[3]);
+    if (t_thrd.shemem_ptr_cxt.mySessionTimeEntry) {
+        startTime = GetCurrentTimestamp();
+    } else {
+        ereport(WARNING, (errmsg("TimeEntry not inited")));
+        return -1;
+    }
+    ClearInvalidLockNameInner();
+    bool nlockInitialFlag = (DatumGetUInt64(IsUsedAdvisoryLockInner(lockname)) != currentSessionId);
+    if (timeout <= 0) {
+        LockAcquireResult res = LockAcquire(&tag, ExclusiveLock, true, false, false);
+        if (res == LOCKACQUIRE_NOT_AVAIL) {
+            return 0;
+        } else {
+            SetLockNameHash(lockname, nlockInitialFlag);
+            return 1;
+        }
+    } else {
+        do {
+            LockAcquireResult res = LockAcquire(&tag, ExclusiveLock, true, true, false);
+            if (res == LOCKACQUIRE_NOT_AVAIL) {
+                pg_usleep(USECS_PER_MSEC);
+                ProcessInterrupts();
+            } else {
+                SetLockNameHash(lockname, nlockInitialFlag);
+                return 1;
+            }
+        } while (ComputeTimeStamp(startTime) / MSECS_PER_SEC < timeout);
+    }
+    return 0;
+}
+
+int64 LockNameHashRelease()
+{
+    LockName *lockName = NULL;
+    int64 sumLocks = 0;
+    ListCell* lc = NULL;
+
+    AutoMutexLock nameHashLock(&gNameHashLock);
+    nameHashLock.lock();
+
+    foreach (lc, GetSessionContext()->lockNameList) {
+        lockName = (LockName*)lfirst(lc);
+        sumLocks += lockName->nlocks;
+        lockName->nlocks = 0;
+        hash_search(lockNameHash, (void *)&(lockName->name), HASH_REMOVE, NULL);
+    }
+    nameHashLock.unLock();
+
+    return sumLocks;
+}
 
 #define NUM_LOCKTAG_ID 17
 /* This must match enum LockTagType! */
@@ -1282,6 +1543,177 @@ Datum pg_advisory_unlock_all(PG_FUNCTION_ARGS)
     LockReleaseSession(USER_LOCKMETHOD);
 
     PG_RETURN_VOID();
+}
+
+Datum GetAdvisoryLockWithtimeTextFormat(PG_FUNCTION_ARGS)
+{
+    char *lockname = text_to_cstring(PG_GETARG_TEXT_PP(0));
+    char *timeoutStr = text_to_cstring(PG_GETARG_TEXT_PP(1));
+    char *ptr = NULL;
+    double timeout = strtod(timeoutStr, &ptr);
+    if (strlen(ptr) > 0) {
+        ereport(WARNING, (errmsg("truncated incorrect value: %s", ptr)));
+    }
+    int ret = GetAdvisoryLockWithTimeInner(lockname, timeout);
+    if (ret == -1) {
+        PG_RETURN_NULL();
+    }
+    PG_RETURN_INT64(ret);
+}
+
+Datum GetAdvisoryLockWithtime(PG_FUNCTION_ARGS)
+{
+    char *lockname = text_to_cstring(PG_GETARG_TEXT_PP(0));
+    double timeout = PG_GETARG_FLOAT8(1);
+    int ret = GetAdvisoryLockWithTimeInner(lockname, timeout);
+    if (ret == -1) {
+        PG_RETURN_NULL();
+    }
+    PG_RETURN_INT32(ret);
+}
+
+Datum GetAdvisoryLock(PG_FUNCTION_ARGS)
+{
+    char *lockname = text_to_cstring(PG_GETARG_TEXT_PP(0));
+    LOCKTAG tag;
+    uint32 lockid[4] = {0};
+    uint64 currentSessionId = IS_THREAD_POOL_WORKER ? u_sess->session_id : t_thrd.proc_cxt.MyProcPid;
+    if (g_instance.attr.attr_common.enable_thread_pool) {
+        ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("Unsupport using advisory lock in threadpool")));
+    }
+    AdvisoryLockGetIdFromName(lockname, lockid);
+    SET_LOCKTAG_ADVISORY_5(tag, u_sess->proc_cxt.MyDatabaseId, lockid[0], lockid[1], lockid[2], lockid[3]);
+
+    ClearInvalidLockNameInner();
+    bool nlockInitialFlag = (DatumGetUInt64(IsUsedAdvisoryLockInner(lockname)) != currentSessionId);
+    LockAcquireResult res = LockAcquire(&tag, ExclusiveLock, true, false, false);
+    if (res == LOCKACQUIRE_NOT_AVAIL) {
+        PG_RETURN_INT32(0);
+    } else {
+        SetLockNameHash(lockname, nlockInitialFlag);
+        PG_RETURN_INT32(1);
+    }
+}
+
+Datum ReleaseAdvisoryLock(PG_FUNCTION_ARGS)
+{
+    char *lockname = text_to_cstring(PG_GETARG_TEXT_PP(0));
+    LOCKTAG tag;
+    if (g_instance.attr.attr_common.enable_thread_pool) {
+        ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("Unsupport using advisory lock in threadpool")));
+    }
+    if (IsFreeAdvisoryLockInner(lockname))
+        PG_RETURN_NULL();
+    uint32 lockid[4] = {0};
+    AdvisoryLockGetIdFromName(lockname, lockid);
+    SET_LOCKTAG_ADVISORY_5(tag, u_sess->proc_cxt.MyDatabaseId, lockid[0], lockid[1], lockid[2], lockid[3]);
+    bool res = LockRelease(&tag, ExclusiveLock, true);
+    if (res) {
+        SetLockNameHash(lockname, false, true);
+        PG_RETURN_INT32(1);
+    }  
+    else
+        PG_RETURN_INT32(0);
+}
+
+Datum IsFreeAdvisoryLock(PG_FUNCTION_ARGS)
+{
+    char *lockname = text_to_cstring(PG_GETARG_TEXT_PP(0));
+    if (g_instance.attr.attr_common.enable_thread_pool) {
+        ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("Unsupport using advisory lock in threadpool")));
+    }
+    if (IsFreeAdvisoryLockInner(lockname))
+        PG_RETURN_INT32(1);
+    PG_RETURN_INT32(0);
+}
+
+Datum IsUsedAdvisoryLock(PG_FUNCTION_ARGS)
+{
+    char *lockname = text_to_cstring(PG_GETARG_TEXT_PP(0));
+    Datum sessionid = IsUsedAdvisoryLockInner(lockname);
+    if (sessionid == 0)
+        PG_RETURN_NULL();
+    else
+        return sessionid;
+}
+
+Datum ReleaseAllAdvisoryLock(PG_FUNCTION_ARGS)
+{
+    if (g_instance.attr.attr_common.enable_thread_pool) {
+        ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("Unsupport using advisory lock in threadpool")));
+    }
+    ClearInvalidLockNameInner();
+    LockReleaseSession(USER_LOCKMETHOD);
+    auto ret = LockNameHashRelease();
+    PG_RETURN_INT64(ret);
+}
+
+Datum GetAllAdvisoryLock(PG_FUNCTION_ARGS)
+{
+    FuncCallContext* funcctx = NULL;
+    HASH_SEQ_STATUS* status = NULL;
+    if (SRF_IS_FIRSTCALL()) {
+        TupleDesc tupdesc;
+        MemoryContext oldcontext;
+
+        /* create a function context for cross-call persistence */
+        funcctx = SRF_FIRSTCALL_INIT();
+
+        /*
+         * switch to memory context appropriate for multiple function calls
+         */
+        oldcontext = MemoryContextSwitchTo(funcctx->multi_call_memory_ctx);
+
+        /* build tupdesc for result tuples */
+        tupdesc = CreateTemplateTupleDesc(2, false, TAM_HEAP);
+        TupleDescInitEntry(tupdesc, (AttrNumber)1, "lockname", TEXTOID, -1, 0);
+        TupleDescInitEntry(tupdesc, (AttrNumber)2, "sessionid", INT8OID, -1, 0);
+        funcctx->tuple_desc = BlessTupleDesc(tupdesc);
+        status = (HASH_SEQ_STATUS*)palloc0(sizeof(HASH_SEQ_STATUS));
+        hash_seq_init(status, lockNameHash);
+        funcctx->user_fctx = (void*)status;
+        MemoryContextSwitchTo(oldcontext);
+    }
+
+    funcctx = SRF_PERCALL_SETUP();
+    LockName *lockName = NULL;
+    status = (HASH_SEQ_STATUS*)(funcctx->user_fctx);
+
+    while ((lockName = (LockName *)hash_seq_search(status)) != NULL) {
+        Datum values[2];
+        bool nulls[2];
+        HeapTuple tuple;
+        Datum result;
+        /*
+         * Form tuple with appropriate data.
+         */
+        errno_t rc = memset_s(values, sizeof(values), 0, sizeof(values));
+        securec_check(rc, "\0", "\0");
+        rc = memset_s(nulls, sizeof(nulls), false, sizeof(nulls));
+        securec_check(rc, "\0", "\0");
+        values[0] = CStringGetTextDatum(lockName->name);
+        fcinfo->arg[0] = values[0];
+        Datum datum1 = IsUsedAdvisoryLock(fcinfo);
+        if (datum1 == 0) {
+            fcinfo->isnull = false;
+            AutoMutexLock nameHashLock(&gNameHashLock);
+            nameHashLock.lock();
+            hash_search(lockNameHash, (void *)&(lockName->name), HASH_REMOVE, NULL);
+            nameHashLock.unLock();
+            continue;
+        }
+        values[1] = datum1;
+        tuple = heap_form_tuple(funcctx->tuple_desc, values, nulls);
+        result = HeapTupleGetDatum(tuple);
+        SRF_RETURN_NEXT(funcctx, result);
+    }
+
+    SRF_RETURN_DONE(funcctx);
+}
+
+Datum ClearInvalidLockName(PG_FUNCTION_ARGS)
+{
+    return ClearInvalidLockNameInner();
 }
 
 #ifdef PGXC

@@ -407,7 +407,11 @@ void InitParam(char* argv[], int argc)
             case 'o':
                 g_assessmentSettings.outputFile = strdup(optarg);
                 break;
-            case 'p':
+            case 'p': 
+                if (atoi(optarg) <= 0) {
+                    fprintf(stderr, _("%s: invalid port: %s\n"), pset.progname, optarg);
+                    exit(EXIT_FAILURE);
+                }
                 g_assessmentSettings.port = strdup(optarg);
                 break;
             case 'U':
