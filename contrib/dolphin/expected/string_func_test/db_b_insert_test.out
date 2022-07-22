@@ -8,6 +8,12 @@ select insert('abcdefg', 2, 4, 'yyy');
  ayyyfg
 (1 row)
 
+select insert(1234567, 2, 4, 'yyy');
+ insert 
+--------
+ 1yyy67
+(1 row)
+
 select insert('abcdefg', -100, 4, 'yyy');
  insert  
 ---------
@@ -15,6 +21,37 @@ select insert('abcdefg', -100, 4, 'yyy');
 (1 row)
 
 select insert('abcdefg', 100, 4, 'yyy');
+ insert  
+---------
+ abcdefg
+(1 row)
+
+select insert('abcdefg', 2, 200, 'yyy');
+ insert 
+--------
+ ayyy
+(1 row)
+
+select insert('abcdefg', -100, 200, 'yyy');
+ insert  
+---------
+ abcdefg
+(1 row)
+
+select insert('abcdefg', 100, 200, 'yyy');
+ insert  
+---------
+ abcdefg
+(1 row)
+
+set sql_mode='';
+select insert('abcdefg', '2aa', 4, 'yyy');
+ insert 
+--------
+ ayyyfg
+(1 row)
+
+select insert('abcdefg', 'aa2', 4, 'yyy');
  insert  
 ---------
  abcdefg
