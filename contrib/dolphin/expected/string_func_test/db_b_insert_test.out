@@ -1,0 +1,24 @@
+drop database if exists db_b_insert_test;
+NOTICE:  database "db_b_insert_test" does not exist, skipping
+create database db_b_insert_test dbcompatibility 'B';
+\c db_b_insert_test
+select insert('abcdefg', 2, 4, 'yyy');
+ insert 
+--------
+ ayyyfg
+(1 row)
+
+select insert('abcdefg', -100, 4, 'yyy');
+ insert  
+---------
+ abcdefg
+(1 row)
+
+select insert('abcdefg', 100, 4, 'yyy');
+ insert  
+---------
+ abcdefg
+(1 row)
+
+\c postgres
+drop database db_b_insert_test;

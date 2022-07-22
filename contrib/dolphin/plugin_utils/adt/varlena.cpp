@@ -240,6 +240,9 @@ extern "C" DLL_PUBLIC Datum space_string(PG_FUNCTION_ARGS);
 PG_FUNCTION_INFO_V1_PUBLIC(m_char);
 extern "C" DLL_PUBLIC Datum m_char(PG_FUNCTION_ARGS);
 
+PG_FUNCTION_INFO_V1_PUBLIC(text_insert);
+extern "C" DLL_PUBLIC Datum text_insert(PG_FUNCTION_ARGS);
+
 /*****************************************************************************
  *	 CONVERSION ROUTINES EXPORTED FOR USE BY C CODE							 *
  *****************************************************************************/
@@ -1424,6 +1427,41 @@ Datum text_substr_no_len_orclcompat(PG_FUNCTION_ARGS)
         PG_RETURN_NULL();
     else
         return result;
+}
+
+/*
+ * text_insert
+ */
+static text* text_insert_func(text* t1, text* t2, int sp, int sl)
+{
+    text* result = NULL;
+    text* s1 = NULL;
+    text* s2 = NULL;
+    int sp_pl_sl;
+    int len_t1;
+
+    len_t1 = text_length((Datum)t1);
+    if (sp <= 0 || sp > len_t1)
+        return t1;
+    if (pg_add_s32_overflow(sp, sl, &sp_pl_sl))
+        ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("integer out of range")));
+
+    s1 = text_substring(PointerGetDatum(t1), 1, sp - 1, false);
+    s2 = text_substring(PointerGetDatum(t1), sp_pl_sl, -1, true);
+    result = text_catenate(s1, t2);
+    if (sl >= 0)
+        result = text_catenate(result, s2);
+
+    return result;
+}
+
+Datum text_insert(PG_FUNCTION_ARGS)
+{
+    text *str = PG_GETARG_TEXT_PP(0);
+    int position = PG_GETARG_INT32(1);
+    int length = PG_GETARG_INT32(2);
+    text *newstr = PG_GETARG_TEXT_PP(3);
+    PG_RETURN_TEXT_P(text_insert_func(str, newstr, position, length));
 }
 
 /*
