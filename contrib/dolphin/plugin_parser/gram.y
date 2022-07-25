@@ -138,6 +138,78 @@ typedef struct PrivTarget
 	List	   *objs;
 } PrivTarget;
 
+typedef struct CreateTableOptions {
+  List *inhRelations;             /* relations to inherit from (list of
+                                    * inhRelation) */
+  List *options;                  /* options from WITH clause */
+  OnCommitAction oncommit;        /* what do we do at COMMIT? */
+  char *tablespacename;           /* table space to use, or NULL */
+  int8 row_compress;              /* row compression flag */
+  PartitionState *partTableState; /* the PartitionState */
+  Node *compress_type;
+#ifdef PGXC
+  DistributeBy *distributeby; /* distribution to use, or NULL */
+  PGXCSubCluster *subcluster; /* subcluster of table */
+#endif
+  char *internalData; /* Used for create table like */
+  char relkind;       /* type of object */
+} CreateTableOptions;
+
+typedef enum {
+    OPT_INHERIT,
+    OPT_WITH, 
+    OPT_ONCOMMIT, 
+    OPT_COMPRESS,
+    OPT_DISTRIBUTEBY,
+    OPT_SUBCLUSTER,
+    OPT_TABLE_PARTITIONING_CLAUSE,
+    OPT_INTERNAL_DATA,
+    OPT_KIND,
+    OPT_COMPRESSION,
+    OPT_TABLESPACE,
+    OPT_ENGINE,
+    OPT_PARTITIONELEMENT
+} TableOptionType;
+
+typedef struct SingleTableOption {
+    TableOptionType option_type;
+    union {
+        char relkind;
+        List *list_content;
+        OnCommitAction oncommit;  /* what do we do at COMMIT? */
+        char *char_content;
+        int8 row_compress;  /* row compression flag */
+        PartitionState *partTableState;
+        Node *compress_type;
+#ifdef PGXC
+        DistributeBy *distributeby; /* distribution to use, or NULL */
+        PGXCSubCluster *subcluster; /* subcluster of table */
+#endif
+    } option;
+}SingleTableOption;
+
+typedef enum {
+    OPT_INCLUDE,
+    OPT_RELOPTIONS,
+    OPT_TABLESPACE_INDEX,
+    OPT_PARTITIONELEMENT_INDEX,
+} IndexOptionType;
+
+typedef struct CreateIndexOptions {
+    char *tableSpace;           /* tablespace, or NULL for default */ 
+    List *indexParams;          /* columns to index: a list of IndexElem */
+    List *indexIncludingParams; /* additional columns to index: a list of IndexElem */ 
+    List *options;              /* WITH clause options: a list of DefElem */ 
+} CreateIndexOptions;
+
+typedef struct SingleIndexOption {
+IndexOptionType option_type;
+    union {
+        List *list_content;
+        char *char_content;
+    } option;
+} SingleIndexOption;
+
 /* ConstraintAttributeSpec yields an integer bitmask of these flags: */
 #define CAS_NOT_DEFERRABLE			0x01
 #define CAS_DEFERRABLE				0x02
@@ -205,6 +277,8 @@ static List *get_func_args(char *sid);
 static char *pg_strsep(char **stringp, const char *delim);
 static long long get_pid(const char *strsid);
 static Node *MakeAnonyBlockFuncStmt(int flag, const char * str);
+static CreateTableOptions* MakeCreateTableOptions(CreateTableOptions *tableOptions, SingleTableOption *tableOption);
+static CreateIndexOptions* MakeCreateIndexOptions(CreateIndexOptions *indexOptions, SingleIndexOption *indexOption);
 #define  TYPE_LEN     4 /* strlen("TYPE") */
 #define  DATE_LEN     4 /* strlen("DATE") */
 #define  DECLARE_LEN     9 /* strlen(" DECLARE ") */
@@ -312,8 +386,15 @@ static int errstate;
 	UpsertClause *upsert;
 	EncryptionType algtype;
 	LockClauseStrength lockstrength;
+	struct CreateTableOptions	*createtableoptions;
+	struct SingleTableOption	*singletableoption;
+	struct CreateIndexOptions	*createindexoptions;
+	struct SingleIndexOption	*singleindexoption;
 }
-
+%type <singletableoption> CreateOption CreateIfNotExistsOption CreateAsOption
+%type <createtableoptions> CreateOptionList CreateIfNotExistsOptionList CreateAsOptionList
+%type <singleindexoption> TableIndexOption PartitionTableIndexOption
+%type <createindexoptions> TableIndexOptionList PartitionTableIndexOptionList
 %type <node>	stmt schema_stmt
 		AlterDatabaseStmt AlterDatabaseSetStmt AlterDataSourceStmt AlterDomainStmt AlterEnumStmt
 		AlterFdwStmt AlterForeignServerStmt AlterGroupStmt AlterSchemaStmt
@@ -459,17 +540,17 @@ static int errstate;
 %type <list>	DefACLOptionList
 
 %type <list>	stmtblock stmtmulti
-				OptTableElementList TableElementList OptInherit definition tsconf_definition
+				OptTableElementList TableElementList OptInherit_without_empty definition tsconf_definition
 				OptTypedTableElementList TypedTableElementList
 				OptForeignTableElementList ForeignTableElementList
-				reloptions opt_reloptions opt_tblspc_options tblspc_options opt_cfoptions cfoptions
-				OptWith opt_distinct opt_definition func_args func_args_list
+				reloptions opt_reloptions opt_reloptions_without_empty opt_tblspc_options tblspc_options opt_cfoptions cfoptions
+				OptWith OptWith_without_empty opt_distinct opt_definition func_args func_args_list
 				func_args_with_defaults func_args_with_defaults_list proc_args
 				func_as createfunc_opt_list opt_createproc_opt_list alterfunc_opt_list
 				aggr_args old_aggr_definition old_aggr_list
 				oper_argtypes RuleActionList RuleActionMulti
 				opt_column_list columnList opt_name_list opt_analyze_column_define opt_multi_name_list
-				opt_include opt_c_include index_including_params
+				opt_include_without_empty opt_c_include index_including_params
 				sort_clause opt_sort_clause sortby_list index_params
 				name_list from_clause from_list opt_array_bounds
 				qualified_name_list any_name any_name_list
@@ -506,8 +587,8 @@ static int errstate;
 %type <typnam>	func_return func_type
 
 %type <boolean>  opt_trusted opt_restart_seqs opt_purge invoker_rights
-%type <ival>	 OptTemp OptKind
-%type <oncommit> OnCommitOption
+%type <ival>	 OptTemp OptKind_without_empty
+%type <oncommit> OnCommitOption OnCommitOption_without_empty
 
 %type <lockstrength> for_locking_strength
 %type <node>	for_locking_item
@@ -635,7 +716,7 @@ static int errstate;
 %type <boolean> constraints_set_mode
 %type <boolean> OptRelative
 %type <boolean> OptGPI
-%type <str>		OptTableSpace OptConsTableSpace OptTableSpaceOwner LoggingStr size_clause OptMaxSize OptDatafileSize OptReuse OptAuto OptNextStr OptDatanodeName
+%type <str>		OptTableSpace OptTableSpace_without_empty OptConsTableSpace OptTableSpaceOwner LoggingStr size_clause OptMaxSize OptDatafileSize OptReuse OptAuto OptNextStr OptDatanodeName
 %type <list>	opt_check_option
 
 %type <str>		opt_provider security_label
@@ -659,12 +740,12 @@ static int errstate;
 				opt_frame_clause frame_extent frame_bound
 %type <str>		opt_existing_window_name
 %type <boolean>	opt_if_not_exists
-%type <chr>		OptCompress
+%type <chr>		OptCompress OptCompress_without_empty
 %type <ival>	KVType
 %type <ival>		ColCmprsMode
 %type <fun_src>		subprogram_body
 %type <keyword> as_is as_empty
-%type <node>	column_item opt_table_partitioning_clause
+%type <node>	column_item opt_table_partitioning_clause_without_empty
 				opt_partition_index_def  range_partition_index_item  range_partition_index_list
 				range_partitioning_clause value_partitioning_clause opt_interval_partition_clause
 				interval_expr maxValueItem list_partitioning_clause hash_partitioning_clause
@@ -681,14 +762,14 @@ static int errstate;
 %type <ival> opt_row_movement_clause
 /* PGXC_BEGIN */
 %type <str>		opt_barrier_id OptDistributeType SliceReferenceClause
-%type <distby>	OptDistributeBy OptDistributeByInternal distribute_by_range_clause
+%type <distby>	OptDistributeBy OptDistributeBy_without_empty OptDistributeByInternal distribute_by_range_clause
 				distribute_by_list_clause
 %type <list>	range_slice_definition_list range_slice_less_than_list range_slice_start_end_list
 				list_distribution_rules_list list_distribution_rule_row list_distribution_rule_single
 %type <node>	range_slice_less_than_item range_slice_start_end_item
 				list_dist_state OptListDistribution list_dist_value
 
-%type <subclus> OptSubCluster OptSubClusterInternal
+%type <subclus> OptSubCluster OptSubCluster_without_empty OptSubClusterInternal
 /* PGXC_END */
 
 %type <str>		OptPartitionElement
@@ -705,7 +786,7 @@ static int errstate;
 /* NODE GROUP */
 %type <boolean> opt_vcgroup opt_to_elastic_group
 %type <ival>	opt_set_vcgroup
-%type <str>	opt_redistributed opt_internal_data internal_data_body
+%type <str>	opt_redistributed opt_internal_data_without_empty internal_data_body
 %type <ival>	bucket_cnt
 %type <str>	pgxcgroup_parent
 
@@ -764,7 +845,7 @@ static int errstate;
 %type <list>    load_column_expr_list copy_column_sequence_list copy_column_filler_list copy_column_constant_list 
 %type <typnam>  load_col_data_type
 %type <ival64>  load_col_sequence_item_sart column_sequence_item_step column_sequence_item_sart
-%type <node>	on_table opt_engine opt_compression set_compress_type
+%type <node>	on_table opt_engine opt_engine_without_empty opt_compression opt_compression_without_empty set_compress_type
 %type <keyword>	into_empty opt_temporary opt_values_in
 %type <str>	compression_args
 %type <boolean> opt_ignore
@@ -4075,6 +4156,9 @@ opt_reloptions:		WITH reloptions					{ $$ = $2; }
 			 |		/* EMPTY */						{ $$ = NIL; }
 		;
 
+opt_reloptions_without_empty:		WITH reloptions					{ $$ = $2; }
+		;
+
 reloption_list:
 			reloption_elem							{ $$ = list_make1($1); }
 			| reloption_list ',' reloption_elem		{ $$ = lappend($1, $3); }
@@ -4965,66 +5049,260 @@ opt_rename:
  *
  *****************************************************************************/
 
-CreateStmt:	CREATE OptTemp TABLE qualified_name '(' OptTableElementList ')'
-			OptInherit OptWith OnCommitOption OptCompress OptPartitionElement
+CreateOptionList:	CreateOption
+					{
+						$$ = MakeCreateTableOptions(NULL, $1);
+					}
+				| CreateOptionList CreateOption
+					{	
+						$$ = MakeCreateTableOptions($1, $2); 
+					}
+			;
+
+CreateOption:
+			CreateIfNotExistsOption
+				{
+					$$ = $1;
+				}
+			| OptKind_without_empty
+				{
+					SingleTableOption *n = (SingleTableOption*)palloc0(sizeof(SingleTableOption));
+					n->option_type = OPT_KIND;
+					n->option.relkind = $1;
+					$$ = n;
+				} 
+		;
+
+CreateIfNotExistsOptionList:	CreateIfNotExistsOption
+					{
+						$$ = MakeCreateTableOptions(NULL, $1);
+					}
+				| CreateIfNotExistsOptionList CreateIfNotExistsOption
+					{	
+						$$ = MakeCreateTableOptions($1, $2); 
+					}
+
+			;
+
+CreateIfNotExistsOption:
+			OptInherit_without_empty
+				{
+					SingleTableOption *n = (SingleTableOption*)palloc0(sizeof(SingleTableOption));
+					n->option_type = OPT_INHERIT;
+					n->option.list_content = $1;
+					$$ = n;
+				}
+			| OptInitRans_without_empty
+				{
+					SingleTableOption *n = (SingleTableOption*)palloc0(sizeof(SingleTableOption));
+					n->option_type = OPT_PARTITIONELEMENT;
+					$$ = n;
+				}
+			| OptMaxTrans_without_empty
+				{
+					SingleTableOption *n = (SingleTableOption*)palloc0(sizeof(SingleTableOption));
+					n->option_type = OPT_PARTITIONELEMENT;
+					$$ = n;
+				}
+			| OptStorage_without_empty
+				{
+					SingleTableOption *n = (SingleTableOption*)palloc0(sizeof(SingleTableOption));
+					n->option_type = OPT_PARTITIONELEMENT;
+					$$ = n;
+				}
+			| OptPctFree_without_empty
+				{
+					SingleTableOption *n = (SingleTableOption*)palloc0(sizeof(SingleTableOption));
+					n->option_type = OPT_PARTITIONELEMENT;
+					$$ = n;
+				}			
+			| opt_internal_data_without_empty
+				{
+					SingleTableOption *n = (SingleTableOption*)palloc0(sizeof(SingleTableOption));
+					n->option_type = OPT_INTERNAL_DATA;
+					n->option.char_content = $1;
+					$$ = n;
+				}
+			| opt_table_partitioning_clause_without_empty
+				{
+					SingleTableOption *n = (SingleTableOption*)palloc0(sizeof(SingleTableOption));
+					n->option_type = OPT_TABLE_PARTITIONING_CLAUSE;
+					n->option.partTableState = (PartitionState *)$1;
+					$$ = n;					
+				}
+			| CreateAsOption
+				{
+					$$ = $1;
+				}
+		;
+
+CreateAsOptionList:	CreateAsOption
+					{
+						$$ = MakeCreateTableOptions(NULL, $1);
+					}
+				| CreateAsOptionList CreateAsOption
+					{	
+						$$ = MakeCreateTableOptions($1, $2); 
+					}
+			;
+
+CreateAsOption:
+			OptTableSpace_without_empty
+				{
+					SingleTableOption *n = (SingleTableOption*)palloc0(sizeof(SingleTableOption));
+					n->option_type = OPT_TABLESPACE;
+					n->option.char_content = $1;
+					$$ = n;
+				}
+			| OptWith_without_empty
+				{
+					SingleTableOption *n = (SingleTableOption*)palloc0(sizeof(SingleTableOption));
+					n->option_type = OPT_WITH;
+					n->option.list_content = $1;
+					$$ = n;
+				}
+			| OnCommitOption_without_empty
+				{
+					SingleTableOption *n = (SingleTableOption*)palloc0(sizeof(SingleTableOption));
+					n->option_type = OPT_ONCOMMIT;
+					n->option.oncommit = $1;
+					$$ = n;
+				} 
+			| OptCompress_without_empty
+				{
+					SingleTableOption *n = (SingleTableOption*)palloc0(sizeof(SingleTableOption));
+					n->option_type = OPT_COMPRESS;
+					n->option.row_compress = $1;
+					$$ = n;
+				}
 /* PGXC_BEGIN */
-			OptDistributeBy OptSubCluster
+			| OptDistributeBy_without_empty
+				{
+					SingleTableOption *n = (SingleTableOption*)palloc0(sizeof(SingleTableOption));
+					n->option_type = OPT_DISTRIBUTEBY;
+					n->option.distributeby = $1;
+					$$ = n;
+				}
+			| OptSubCluster_without_empty
+				{
+					SingleTableOption *n = (SingleTableOption*)palloc0(sizeof(SingleTableOption));
+					n->option_type = OPT_SUBCLUSTER;
+					n->option.subcluster = $1;
+					$$ = n;
+				}
 /* PGXC_END */
-			opt_table_partitioning_clause
-			opt_internal_data OptKind opt_compression opt_engine
+			| opt_compression_without_empty
+				{
+					SingleTableOption *n = (SingleTableOption*)palloc0(sizeof(SingleTableOption));
+					n->option_type = OPT_COMPRESSION;
+					n->option.compress_type = $1;
+					$$ = n;
+				} 
+			| opt_engine_without_empty
+				{
+					SingleTableOption *n = (SingleTableOption*)palloc0(sizeof(SingleTableOption));
+					n->option_type = OPT_ENGINE;
+					$$ = n;
+				}
+		;
+
+CreateStmt:	CREATE OptTemp TABLE qualified_name '(' OptTableElementList ')'
+			CreateOptionList
 				{
 					CreateStmt *n = makeNode(CreateStmt);
 					$4->relpersistence = $2;
-					n->relkind = $17;
 					n->relation = $4;
 					n->tableElts = $6;
-					n->inhRelations = $8;
 					n->constraints = NIL;
-					n->options = $9;
-					n->oncommit = $10;
-					n->row_compress = $11;
-					n->tablespacename = $12;
 					n->if_not_exists = false;
+					if ($8 != NULL) {
+						n->relkind = $8->relkind;
+						n->inhRelations = $8->inhRelations;
+						n->options = $8->options;
+						n->oncommit = $8->oncommit;
+						n->row_compress = $8->row_compress;
+						n->tablespacename = $8->tablespacename;
 /* PGXC_BEGIN */
-					n->distributeby = $13;
-					n->subcluster = $14;
+						n->distributeby = $8->distributeby;
+						n->subcluster = $8->subcluster;
 /* PGXC_END */
-					n->partTableState = (PartitionState *)$15;
-					n->internalData = $16;
-					if ($18 != NULL) {
-						n->options = lappend(n->options, $18);
+						n->partTableState = (PartitionState *)$8->partTableState;
+						n->internalData = $8->internalData;
+						if ($8->compress_type != NULL) {
+							n->options = lappend(n->options, $8->compress_type);
+						}
 					}
 					$$ = (Node *)n;
 				}
-		| CREATE OptTemp TABLE IF_P NOT EXISTS qualified_name '('
-			OptTableElementList ')' OptInherit OptWith OnCommitOption
-			OptCompress OptPartitionElement
+		| CREATE OptTemp TABLE qualified_name '(' OptTableElementList ')'
+				{
+					CreateStmt *n = makeNode(CreateStmt);
+					$4->relpersistence = $2;
+					n->relation = $4;
+					n->tableElts = $6;
+					n->constraints = NIL;
+					n->if_not_exists = false;
+					n->relkind = OBJECT_TABLE;
+					n->inhRelations = NIL;
+					n->options = NIL;
+					n->oncommit = ONCOMMIT_NOOP;
+					n->row_compress = REL_CMPRS_PAGE_PLAIN;
+					n->tablespacename = NULL;
 /* PGXC_BEGIN */
-			OptDistributeBy OptSubCluster
+					n->distributeby = NULL;
+					n->subcluster = NULL;
 /* PGXC_END */
-			opt_table_partitioning_clause
-			opt_internal_data opt_compression opt_engine
+					n->partTableState = NULL;
+					n->internalData = NULL;
+					$$ = (Node *)n;
+				}
+		| CREATE OptTemp TABLE IF_P NOT EXISTS qualified_name '('
+			OptTableElementList ')' CreateIfNotExistsOptionList
 				{
 					CreateStmt *n = makeNode(CreateStmt);
 					$7->relpersistence = $2;
 					n->relation = $7;
 					n->tableElts = $9;
-					n->inhRelations = $11;
 					n->constraints = NIL;
-					n->options = $12;
-					n->oncommit = $13;
-					n->row_compress = $14;
-					n->tablespacename = $15;
 					n->if_not_exists = true;
+					if ($11 != NULL) {
+						n->inhRelations = $11->inhRelations;
+						n->options = $11->options;
+						n->oncommit = $11->oncommit;
+						n->row_compress = $11->row_compress;
+						n->tablespacename = $11->tablespacename;
 /* PGXC_BEGIN */
-					n->distributeby = $16;
-					n->subcluster = $17;
+						n->distributeby = $11->distributeby;
+						n->subcluster = $11->subcluster;
 /* PGXC_END */
-					n->partTableState = (PartitionState *)$18;
-					n->internalData = $19;
-					if ($20 != NULL) {
-						n->options = lappend(n->options, $20);
+						n->partTableState = (PartitionState *)$11->partTableState;
+						n->internalData = $11->internalData;
+						if ($11->compress_type != NULL) {
+							n->options = lappend(n->options, $11->compress_type);
+						}
 					}
+					$$ = (Node *)n;
+				}
+		| CREATE OptTemp TABLE IF_P NOT EXISTS qualified_name '('
+			OptTableElementList ')'
+				{
+					CreateStmt *n = makeNode(CreateStmt);
+					$7->relpersistence = $2;
+					n->relation = $7;
+					n->tableElts = $9;
+					n->constraints = NIL;
+					n->if_not_exists = true;
+					n->inhRelations = NIL;
+					n->options = NIL;
+					n->oncommit = ONCOMMIT_NOOP;
+					n->row_compress = REL_CMPRS_PAGE_PLAIN;
+					n->tablespacename = NULL;
+/* PGXC_BEGIN */
+					n->distributeby = NULL;
+					n->subcluster = NULL;
+/* PGXC_END */
+					n->partTableState = NULL;
+					n->internalData = NULL;
 					$$ = (Node *)n;
 				}
 		| CREATE OptTemp TABLE qualified_name OF any_name
@@ -5104,6 +5382,17 @@ opt_engine:
 		}
 	;
 
+opt_engine_without_empty:
+	ENGINE_P opt_equal IDENT
+		{
+			$$ = NULL;
+		}
+	| ENGINE_P opt_equal Sconst
+		{
+			$$ = NULL;
+		}
+	;
+
 compression_args:	IDENT		{ $$ = $1; }
 					| Sconst	{ $$ = $1; }
 					| NONE		{ $$ = "none"; }
@@ -5139,18 +5428,21 @@ opt_compression:
 		}
 	;
 
-OptKind:
+opt_compression_without_empty:
+	set_compress_type
+		{
+			$$ = $1;
+		}
+	;
+
+OptKind_without_empty:
 	FOR MATERIALIZED VIEW
 		{
 			$$ = OBJECT_MATVIEW;
 		}
-	| /* empty */
-		{
-			$$ = OBJECT_TABLE;
-		}
 	;
 
-opt_table_partitioning_clause:
+opt_table_partitioning_clause_without_empty:
 		range_partitioning_clause
 			{
 				$$ = $1;
@@ -5167,7 +5459,6 @@ opt_table_partitioning_clause:
 			{
 				$$ = $1;
 			}
-		| /* empty */			{ $$ = NULL; }
 		;
 
 range_partitioning_clause:
@@ -6468,9 +6759,8 @@ TableLikeExcludingOption:
 				| ALL				{ $$ = CREATE_TABLE_LIKE_ALL; }
 		;
 
-opt_internal_data: 
+opt_internal_data_without_empty: 
             INTERNAL DATA_P 	internal_data_body		{$$ = $3;}
-			| /* EMPTY */      	{$$ = NULL;}
 		;
 
 internal_data_body: 	{
@@ -6771,7 +7061,7 @@ key_action:
 			| SET DEFAULT				{ $$ = FKCONSTR_ACTION_SETDEFAULT; }
 		;
 
-OptInherit: INHERITS '(' qualified_name_list ')'
+OptInherit_without_empty: INHERITS '(' qualified_name_list ')'
 			{
         		const char* message = "CREATE TABLE ... INHERITS is not yet supported.";
     			InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);
@@ -6780,7 +7070,6 @@ OptInherit: INHERITS '(' qualified_name_list ')'
 					errmsg("CREATE TABLE ... INHERITS is not yet supported.")));
 				$$ = $3;
 			}
-			| /*EMPTY*/								{ $$ = NIL; }
 		;
 
 /* WITH (options) is preferred, WITH OIDS and WITHOUT OIDS are legacy forms */
@@ -6801,15 +7090,40 @@ OptWith:
 			| /*EMPTY*/					{ $$ = NIL; }
 		;
 
+OptWith_without_empty:
+			WITH reloptions				{ $$ = $2; }
+			| WITH OIDS
+			{
+				if (!u_sess->attr.attr_common.IsInplaceUpgrade) {
+        			const char* message = "CREATE TABLE ... WITH OIDS is not yet supported.";
+    				InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);
+					ereport(errstate,
+						(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+						errmsg("CREATE TABLE ... WITH OIDS is not yet supported.")));
+				}
+				$$ = list_make1(defWithOids(true));
+			}
+			| WITHOUT OIDS				{ $$ = list_make1(defWithOids(false)); }
+		;
+
 OnCommitOption:  ON COMMIT DROP				{ $$ = ONCOMMIT_DROP; }
 			| ON COMMIT DELETE_P ROWS		{ $$ = ONCOMMIT_DELETE_ROWS; }
 			| ON COMMIT PRESERVE ROWS		{ $$ = ONCOMMIT_PRESERVE_ROWS; }
 			| /*EMPTY*/						{ $$ = ONCOMMIT_NOOP; }
 		;
 
+OnCommitOption_without_empty:  ON COMMIT DROP				{ $$ = ONCOMMIT_DROP; }
+			| ON COMMIT DELETE_P ROWS		{ $$ = ONCOMMIT_DELETE_ROWS; }
+			| ON COMMIT PRESERVE ROWS		{ $$ = ONCOMMIT_PRESERVE_ROWS; }
+		;
+
 OptTableSpace:   TABLESPACE name					{ $$ = $2; }
 			| /*EMPTY*/								{ $$ = NULL; }
 		;
+
+OptTableSpace_without_empty:   TABLESPACE name					{ $$ = $2; }
+		;
+
 OptGPI: 	UPDATE GLOBAL INDEX 	{ $$ = TRUE; }
 			| /*EMPTY*/				{ $$ = FALSE; }
 		;
@@ -6817,11 +7131,19 @@ OptCompress: COMPRESS	{ $$ = REL_CMPRS_FIELDS_EXTRACT; }
 			| NOCOMPRESS { $$ = REL_CMPRS_PAGE_PLAIN; }
 			| /* EMPTY */ { $$ = REL_CMPRS_PAGE_PLAIN; }
 		;
+		
+OptCompress_without_empty: COMPRESS	{ $$ = REL_CMPRS_FIELDS_EXTRACT; }
+			| NOCOMPRESS { $$ = REL_CMPRS_PAGE_PLAIN; }
+			;
 
 /* PGXC_BEGIN */
 OptDistributeBy: OptDistributeByInternal			{ $$ = $1; }
 			| /* EMPTY */							{ $$ = NULL; }
 		;
+
+OptDistributeBy_without_empty: OptDistributeByInternal			{ $$ = $1; }
+		;
+
 OptDatanodeName:    DATANODE name					{ $$ = $2; }
 			| /*EMPTY*/								{ $$ = NULL; }
 		;
@@ -7175,6 +7497,13 @@ OptSubCluster:
 			| /* EMPTY */							{ $$ = NULL; }
 		;
 
+OptSubCluster_without_empty:
+			OptSubClusterInternal
+				{
+					$$ = $1;
+				}
+		;
+
 OptSubClusterInternal:
 			TO NODE pgxcnodes
 				{
@@ -7209,9 +7538,17 @@ OptPctFree:
 			| /* empty */
 		;
 
+OptPctFree_without_empty:
+			PCTFREE Iconst
+		;
+
 OptInitRans:
 			INITRANS Iconst
 			| /* empty */
+		;
+
+OptInitRans_without_empty:
+			INITRANS Iconst
 		;
 
 OptMaxTrans:
@@ -7219,10 +7556,19 @@ OptMaxTrans:
 			| /* empty */
 		;
 
+OptMaxTrans_without_empty:
+			MAXTRANS Iconst
+		;
+
 OptStorage:
 		STORAGE '(' OptInitial OptNext OptMinextents OptMaxextents ')'
 		| /* empty */
 		;
+
+OptStorage_without_empty:
+		STORAGE '(' OptInitial OptNext OptMinextents OptMaxextents ')'
+		;
+		
 OptInitial:
 		INITIAL_P Iconst IDENT
 		| /* empty */
@@ -7274,28 +7620,47 @@ CreateAsStmt:
 		;
 
 create_as_target:
-			qualified_name opt_column_list OptWith OnCommitOption OptCompress OptTableSpace
-/* PGXC_BEGIN */
-			OptDistributeBy OptSubCluster
-/* PGXC_END */
-			opt_compression opt_engine
+			qualified_name opt_column_list CreateAsOptionList
 				{
 					$$ = makeNode(IntoClause);
 					$$->rel = $1;
-					$$->colNames = $2;
-					$$->options = $3;
-					$$->onCommit = $4;
-					$$->row_compress = $5;
-					$$->tableSpaceName = $6;
 					$$->skipData = false;		/* might get changed later */
+					$$->colNames = $2;
 /* PGXC_BEGIN */
-					$$->distributeby = $7;
-					$$->subcluster = $8;
 					$$->relkind = INTO_CLAUSE_RELKIND_DEFAULT;
 /* PGXC_END */
-					if ($9 != NULL) {
-						$$->options = lappend($$->options, $9);
+					if ($3 != NULL) {
+						$$->options = $3->options;
+						$$->onCommit = $3->oncommit;
+						$$->row_compress = $3->row_compress;
+						$$->tableSpaceName = $3->tablespacename;
+/* PGXC_BEGIN */
+						$$->distributeby = $3->distributeby;
+						$$->subcluster = $3->subcluster;
+/* PGXC_END */
+						if ($3->compress_type != NULL) {
+							$$->options = lappend($$->options, $3->compress_type);
+						}
 					}
+				}
+			| qualified_name opt_column_list
+				{
+					$$ = makeNode(IntoClause);
+					$$->rel = $1;
+					$$->skipData = false;		/* might get changed later */
+					$$->colNames = $2;
+/* PGXC_BEGIN */
+					$$->relkind = INTO_CLAUSE_RELKIND_DEFAULT;
+/* PGXC_END */
+					$$->options = NIL;
+					$$->onCommit = ONCOMMIT_NOOP;
+					$$->row_compress = REL_CMPRS_PAGE_PLAIN;
+					$$->tableSpaceName = NULL;
+/* PGXC_BEGIN */
+					$$->distributeby = NULL;
+					$$->subcluster = NULL;
+/* PGXC_END */
+					 
 				}
 		;
 
@@ -11860,7 +12225,7 @@ defacl_privilege_target:
 
 IndexStmt:	CREATE opt_unique INDEX opt_concurrently opt_index_name
 			ON qualified_name access_method_clause '(' index_params ')'
-			opt_include opt_reloptions OptPartitionElement where_clause
+			TableIndexOptionList where_clause
 				{
 					IndexStmt *n = makeNode(IndexStmt);
 					n->unique = $2;
@@ -11870,10 +12235,6 @@ IndexStmt:	CREATE opt_unique INDEX opt_concurrently opt_index_name
 					n->relation = $7;
 					n->accessMethod = $8;
 					n->indexParams = $10;
-					n->indexIncludingParams = $12;
-					n->options = $13;
-					n->tableSpace = $14;
-					n->whereClause = $15;
 					n->excludeOpNames = NIL;
 					n->idxcomment = NULL;
 					n->indexOid = InvalidOid;
@@ -11885,11 +12246,46 @@ IndexStmt:	CREATE opt_unique INDEX opt_concurrently opt_index_name
 					n->isconstraint = false;
 					n->deferrable = false;
 					n->initdeferred = false;
+					n->whereClause = $13;
+					if ($12 != NULL) {
+						n->indexIncludingParams = $12->indexIncludingParams;
+						n->options = $12->options;
+						n->tableSpace = $12->tableSpace;
+					}
+					$$ = (Node *)n;
+				}
+				| CREATE opt_unique INDEX opt_concurrently opt_index_name
+			ON qualified_name access_method_clause '(' index_params ')'
+			where_clause
+				{
+					IndexStmt *n = makeNode(IndexStmt);
+					n->unique = $2;
+					n->concurrent = $4;
+                    n->schemaname = $5->schemaname;
+					n->idxname = $5->relname;
+					n->relation = $7;
+					n->accessMethod = $8;
+					n->indexParams = $10;
+					n->excludeOpNames = NIL;
+					n->idxcomment = NULL;
+					n->indexOid = InvalidOid;
+					n->oldNode = InvalidOid;
+					n->partClause = NULL;
+					n->isPartitioned = false;
+					n->isGlobal = false;
+					n->primary = false;
+					n->isconstraint = false;
+					n->deferrable = false;
+					n->initdeferred = false;
+					n->whereClause = $12;
+					n->indexIncludingParams = NIL;
+					n->options = NIL;
+					n->tableSpace = NULL;
 					$$ = (Node *)n;
 				}
 				| CREATE opt_unique INDEX opt_concurrently opt_index_name
 					ON qualified_name access_method_clause '(' index_params ')'
-					LOCAL opt_partition_index_def opt_include opt_reloptions OptTableSpace
+					LOCAL opt_partition_index_def PartitionTableIndexOptionList
 				{
 
 					IndexStmt *n = makeNode(IndexStmt);
@@ -11900,10 +12296,6 @@ IndexStmt:	CREATE opt_unique INDEX opt_concurrently opt_index_name
 					n->relation = $7;
 					n->accessMethod = $8;
 					n->indexParams = $10;
-					n->partClause  = $13;
-					n->indexIncludingParams = $14;
-					n->options = $15;
-					n->tableSpace = $16;
 					n->isPartitioned = true;
 					n->isGlobal = false;
 					n->excludeOpNames = NIL;
@@ -11914,12 +12306,17 @@ IndexStmt:	CREATE opt_unique INDEX opt_concurrently opt_index_name
 					n->isconstraint = false;
 					n->deferrable = false;
 					n->initdeferred = false;
+					n->partClause  = $13;
+					if ($14 != NULL) {
+						n->indexIncludingParams = $14->indexIncludingParams;
+						n->options = $14->options;
+						n->tableSpace = $14->tableSpace;
+					}
 					$$ = (Node *)n;
-
 				}
 				| CREATE opt_unique INDEX opt_concurrently opt_index_name
 					ON qualified_name access_method_clause '(' index_params ')'
-					GLOBAL opt_include opt_reloptions OptTableSpace
+					LOCAL opt_partition_index_def
 				{
 
 					IndexStmt *n = makeNode(IndexStmt);
@@ -11930,10 +12327,35 @@ IndexStmt:	CREATE opt_unique INDEX opt_concurrently opt_index_name
 					n->relation = $7;
 					n->accessMethod = $8;
 					n->indexParams = $10;
+					n->isPartitioned = true;
+					n->isGlobal = false;
+					n->excludeOpNames = NIL;
+					n->idxcomment = NULL;
+					n->indexOid = InvalidOid;
+					n->oldNode = InvalidOid;
+					n->primary = false;
+					n->isconstraint = false;
+					n->deferrable = false;
+					n->initdeferred = false;
+					n->partClause  = $13;
+					n->indexIncludingParams = NIL;
+					n->options = NIL;
+					n->tableSpace = NULL;
+					$$ = (Node *)n;
+				}
+				| CREATE opt_unique INDEX opt_concurrently opt_index_name
+					ON qualified_name access_method_clause '(' index_params ')'
+					GLOBAL PartitionTableIndexOptionList
+				{
+					IndexStmt *n = makeNode(IndexStmt);
+					n->unique = $2;
+					n->concurrent = $4;
+                    n->schemaname = $5->schemaname;
+					n->idxname = $5->relname;
+					n->relation = $7;
+					n->accessMethod = $8;
+					n->indexParams = $10;
 					n->partClause  = NULL;
-					n->indexIncludingParams = $13;
-					n->options = $14;
-					n->tableSpace = $15;
 					n->isPartitioned = true;
 					n->isGlobal = true;
 					n->excludeOpNames = NIL;
@@ -11944,10 +12366,117 @@ IndexStmt:	CREATE opt_unique INDEX opt_concurrently opt_index_name
 					n->isconstraint = false;
 					n->deferrable = false;
 					n->initdeferred = false;
+					if ($13 != NULL) {
+						n->indexIncludingParams = $13->indexIncludingParams;
+						n->options = $13->options;
+						n->tableSpace = $13->tableSpace;
+					}
 					$$ = (Node *)n;
-
+				}
+				| CREATE opt_unique INDEX opt_concurrently opt_index_name
+					ON qualified_name access_method_clause '(' index_params ')'
+					GLOBAL
+				{
+					IndexStmt *n = makeNode(IndexStmt);
+					n->unique = $2;
+					n->concurrent = $4;
+                    n->schemaname = $5->schemaname;
+					n->idxname = $5->relname;
+					n->relation = $7;
+					n->accessMethod = $8;
+					n->indexParams = $10;
+					n->partClause  = NULL;
+					n->isPartitioned = true;
+					n->isGlobal = true;
+					n->excludeOpNames = NIL;
+					n->idxcomment = NULL;
+					n->indexOid = InvalidOid;
+					n->oldNode = InvalidOid;
+					n->primary = false;
+					n->isconstraint = false;
+					n->deferrable = false;
+					n->initdeferred = false;
+					n->indexIncludingParams = NIL;
+					n->options = NIL;
+					n->tableSpace = NULL;
+					$$ = (Node *)n;
 				}
 		;
+
+TableIndexOptionList:	TableIndexOption
+					{
+						$$ = MakeCreateIndexOptions(NULL, $1);
+					}
+				| TableIndexOptionList TableIndexOption
+					{
+						$$ = MakeCreateIndexOptions($1, $2);
+					}
+			;
+
+PartitionTableIndexOptionList:	PartitionTableIndexOption
+					{
+						$$ = MakeCreateIndexOptions(NULL, $1);
+					}
+				| PartitionTableIndexOptionList PartitionTableIndexOption
+					{
+						$$ = MakeCreateIndexOptions($1, $2);
+					}
+			;
+
+TableIndexOption:
+			PartitionTableIndexOption
+				{
+					$$ = $1;
+				}
+			| OptInitRans_without_empty
+				{
+					SingleIndexOption *n = (SingleIndexOption*)palloc(sizeof(SingleIndexOption));
+					n->option_type = OPT_PARTITIONELEMENT_INDEX;
+					$$ = n;
+				}
+			| OptMaxTrans_without_empty
+				{
+					SingleIndexOption *n = (SingleIndexOption*)palloc(sizeof(SingleIndexOption));
+					n->option_type = OPT_PARTITIONELEMENT_INDEX;
+					$$ = n;
+				}
+			| OptStorage_without_empty
+				{
+					SingleIndexOption *n = (SingleIndexOption*)palloc(sizeof(SingleIndexOption));
+					n->option_type = OPT_PARTITIONELEMENT_INDEX;
+					$$ = n;
+				}
+			| OptPctFree_without_empty
+				{
+					SingleIndexOption *n = (SingleIndexOption*)palloc(sizeof(SingleIndexOption));
+					n->option_type = OPT_PARTITIONELEMENT_INDEX;
+					$$ = n;
+				}			
+			;
+
+PartitionTableIndexOption:	
+			opt_include_without_empty
+				{
+					SingleIndexOption *n = (SingleIndexOption*)palloc(sizeof(SingleIndexOption));
+					n->option_type = OPT_INCLUDE;
+					n->option.list_content = $1;
+					$$ = n;
+				}
+			|	opt_reloptions_without_empty
+				{
+					SingleIndexOption *n = (SingleIndexOption*)palloc(sizeof(SingleIndexOption));
+					n->option_type = OPT_RELOPTIONS;
+					n->option.list_content = $1;
+					$$ = n;
+				}
+			|	OptTableSpace_without_empty
+				{
+					SingleIndexOption *n = (SingleIndexOption*)palloc(sizeof(SingleIndexOption));
+					n->option_type = OPT_TABLESPACE_INDEX;
+					n->option.char_content = $1;
+					$$ = n;
+				}
+			;
 
 opt_unique:
 			UNIQUE									{ $$ = TRUE; }
@@ -12038,8 +12567,7 @@ index_elem:	ColId opt_collate opt_class opt_asc_desc opt_nulls_order
 				}
 		;
 
-opt_include:		INCLUDE '(' index_including_params ')'			{ $$ = $3; }
-			 |		/* EMPTY */						{ $$ = NIL; }
+opt_include_without_empty:		INCLUDE '(' index_including_params ')'			{ $$ = $3; }
 		;
 
 index_including_params:	index_elem						{ $$ = list_make1($1); }
@@ -27273,6 +27801,79 @@ static FuncCall* MakePriorAsFunc()
     n->over = NULL;
     n->call_func = false;
     return n;
+}
+
+static CreateTableOptions* MakeCreateTableOptions(CreateTableOptions *tableOptions, SingleTableOption *tableOption)
+{
+	if (tableOptions == NULL) {
+		/* Initialize struct*/
+		tableOptions = (CreateTableOptions*)palloc0(sizeof(CreateTableOptions));
+		tableOptions->oncommit = ONCOMMIT_NOOP;
+		tableOptions->row_compress = REL_CMPRS_PAGE_PLAIN;
+		tableOptions->relkind = OBJECT_TABLE;
+	}
+	switch (tableOption->option_type) {
+	case OPT_INHERIT:
+		tableOptions->inhRelations = tableOption->option.list_content;
+		break;
+	case OPT_WITH:
+		tableOptions->options = tableOption->option.list_content;
+		break;
+	case OPT_ONCOMMIT:
+		tableOptions->oncommit = tableOption->option.oncommit;
+		break;
+	case OPT_COMPRESS:
+		tableOptions->row_compress = tableOption->option.row_compress;
+		break;
+	/* PGXC_BEGIN */
+	case OPT_DISTRIBUTEBY:
+		tableOptions->distributeby = tableOption->option.distributeby;
+		break;
+	case OPT_SUBCLUSTER:
+		tableOptions->subcluster = tableOption->option.subcluster;
+		break;
+	/* PGXC_END */
+	case OPT_TABLE_PARTITIONING_CLAUSE:
+		tableOptions->partTableState = (PartitionState *)(tableOption)->option.partTableState;
+		break;
+	case OPT_INTERNAL_DATA:
+		tableOptions->internalData = tableOption->option.char_content;
+		break;
+	case OPT_KIND:
+		tableOptions->relkind = tableOption->option.relkind;
+		break;
+	case OPT_COMPRESSION:
+		tableOptions->compress_type = tableOption->option.compress_type;
+		break;
+	case OPT_TABLESPACE:
+		tableOptions->tablespacename = tableOption->option.char_content;
+		break;
+	default:
+		break;
+	}
+	return tableOptions;
+} 
+
+static CreateIndexOptions* MakeCreateIndexOptions(CreateIndexOptions *indexOptions, SingleIndexOption *indexOption)
+{
+	if (indexOptions == NULL) {
+		/* Initialize struct*/
+		indexOptions = (CreateIndexOptions*)palloc0(sizeof(CreateIndexOptions));
+	}
+	switch (indexOption->option_type) {
+	case OPT_INCLUDE:
+		indexOptions->indexIncludingParams = indexOption->option.list_content;
+		break;
+	case OPT_RELOPTIONS:
+		indexOptions->options = indexOption->option.list_content;
+		break;
+	case OPT_TABLESPACE_INDEX:
+		indexOptions->tableSpace = indexOption->option.char_content;
+		break;
+	default:
+		break;
+	}
+	return indexOptions;
 }
 
 /*

@@ -50,14 +50,22 @@ CREATE TABLE [ IF NOT EXISTS ] partition_table_name
     | table_constraint
     | LIKE source_table [ like_option [...] ] }[, ... ]
 ] )
-    [ WITH ( {storage_parameter = value} [, ... ] ) ]
-    [ COMPRESS | NOCOMPRESS ]
-    [ TABLESPACE tablespace_name ]
+    [create_option]
+
      PARTITION BY { 
         {RANGE (partition_key) [ INTERVAL ('interval_expr') [ STORE IN (tablespace_name [, ... ] ) ] ] ( partition_less_than_item [, ... ] )} |
         {RANGE (partition_key) [ INTERVAL ('interval_expr') [ STORE IN (tablespace_name [, ... ] ) ] ] ( partition_start_end_item [, ... ] )} |
         {LIST | HASH (partition_key) (PARTITION partition_name [VALUES [IN] (list_values_clause)] opt_table_space )}
     } [ { ENABLE | DISABLE } ROW MOVEMENT ]; 
+    [create_option]
+
+其中create_option为：
+    [ WITH ( {storage_parameter = value} [, ... ] ) ]
+    [ COMPRESS | NOCOMPRESS ]
+    [ TABLESPACE tablespace_name ]
+    [ COMPRESSION [=] compression_arg ]
+    [ ENGINE [=] engine_name ]
+	允许输入多次同一种create_option，以最后一次的输入为准。
 ```
 
 -   列约束column\_constraint：
