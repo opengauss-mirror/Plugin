@@ -528,11 +528,12 @@ static int errstate;
 %type <str>		iso_level opt_encoding
 %type <node>	grantee
 %type <list>	grantee_list
-%type <accesspriv> privilege
+%type <accesspriv> privilege routine_privilege temporary_privilege
 %type <list>	privileges privilege_list db_privileges db_privilege_list
+%type <list>    routine_privilege_list routine_privileges temporary_privilege_list temporary_privileges
 %type <dbpriv>  db_privilege
 %type <str>		privilege_str
-%type <privtarget> privilege_target
+%type <privtarget> privilege_target routine_target temporary_target
 %type <funwithargs> function_with_argtypes
 %type <list>	function_with_argtypes_list
 %type <ival>	defacl_privilege_target
@@ -943,7 +944,7 @@ static int errstate;
 	RANDOMIZED RANGE RATIO RAW READ REAL REASSIGN REBUILD RECHECK RECURSIVE RECYCLEBIN REDISANYVALUE REF REFERENCES REFRESH REINDEX REJECT_P
 	RELATIVE_P RELEASE RELOPTIONS REMOTE_P REMOVE RENAME REPEATABLE REPLACE REPLICA REGEXP
 	RESET RESIZE RESOURCE RESTART RESTRICT RETURN RETURNING RETURNS REUSE REVOKE RIGHT RLIKE ROLE ROLES ROLLBACK ROLLUP
-	ROTATION ROW ROWNUM ROWS ROWTYPE_P RULE
+	ROTATION ROUTINE ROW ROWNUM ROWS ROWTYPE_P RULE
 
 	SAMPLE SAVEPOINT SCHEMA SCROLL SEARCH SECOND_P SECURITY SELECT SEQUENCE SEQUENCES
 	SERIALIZABLE SERVER SESSION SESSION_USER SET SETS SETOF SHARE SHIPPABLE SHOW SHUTDOWN SIBLINGS
@@ -11551,6 +11552,55 @@ GrantStmt:	GRANT privileges ON privilege_target TO grantee_list
 					n->grant_option = $7;
 					$$ = (Node*)n;
 				}
+			| GRANT routine_privileges ON routine_target
+			TO grantee_list opt_grant_grant_option
+				{
+					GrantStmt *n = makeNode(GrantStmt);
+					n->is_grant = true;
+					n->privileges = $2;
+					n->targtype = ($4)->targtype;
+					n->objtype = ($4)->objtype;
+					n->objects = ($4)->objs;
+					n->grantees = $6;
+					n->grant_option = $7;
+					$$ = (Node*)n;
+				}
+			| GRANT temporary_privileges ON temporary_target
+			TO grantee_list opt_grant_grant_option
+				{
+					GrantStmt *n = makeNode(GrantStmt);
+					n->is_grant = true;
+					n->privileges = $2;
+					n->targtype = ($4)->targtype;
+					n->objtype = ($4)->objtype;
+					n->objects = ($4)->objs;
+					n->grantees = $6;
+					n->grant_option = $7;
+					$$ = (Node*)n;
+				}
+			| GRANT CREATE USER ON '*' '.' '*'
+			TO RoleId
+				{
+					AlterRoleStmt *n = makeNode(AlterRoleStmt);
+					n->role = $9;
+					n->action = +1;	/* add, if there are members */
+					n->options = list_make1(makeDefElem("createrole", (Node *)makeInteger((TRUE))));
+					n->lockstatus = DO_NOTHING;
+					$$ = (Node *)n;
+				}
+			| GRANT CREATE TABLESPACE ON '*' '.' '*'
+			TO RoleId
+				{
+					GrantRoleStmt *n = makeNode(GrantRoleStmt);
+					n->is_grant = true;
+					n->admin_opt = false;
+					AccessPriv *n2 = makeNode(AccessPriv);
+					n2->priv_name = "gs_role_tablespace";
+					n2->cols = NULL;
+					n->granted_roles = list_make1(n2);
+					n->grantee_roles = list_make1(makeString($9));
+					$$ = (Node*)n;
+				}
 			| GRANT ALL privilege_str TO RoleId
 				{
 					AlterRoleStmt *n = makeNode(AlterRoleStmt);
@@ -11575,6 +11625,57 @@ RevokeStmt:
 					n->grantees = $6;
 					n->behavior = $7;
 					$$ = (Node *)n;
+				}
+			| REVOKE routine_privileges ON routine_target
+			FROM grantee_list opt_drop_behavior
+				{
+					GrantStmt *n = makeNode(GrantStmt);
+					n->is_grant = false;
+					n->grant_option = false;
+					n->privileges = $2;
+					n->targtype = ($4)->targtype;
+					n->objtype = ($4)->objtype;
+					n->objects = ($4)->objs;
+					n->grantees = $6;
+					n->behavior = $7;
+					$$ = (Node *)n;
+				}
+			| REVOKE temporary_privileges ON temporary_target
+			FROM grantee_list opt_drop_behavior
+				{
+					GrantStmt *n = makeNode(GrantStmt);
+					n->is_grant = false;
+					n->grant_option = false;
+					n->privileges = $2;
+					n->targtype = ($4)->targtype;
+					n->objtype = ($4)->objtype;
+					n->objects = ($4)->objs;
+					n->grantees = $6;
+					n->behavior = $7;
+					$$ = (Node *)n;
+				}
+			| REVOKE CREATE USER ON '*' '.' '*'
+			FROM RoleId
+				{
+					AlterRoleStmt *n = makeNode(AlterRoleStmt);
+					n->role = $9;
+					n->action = +1;	/* add, if there are members */
+					n->options = lappend(NULL, makeDefElem("createrole", (Node *)makeInteger(FALSE)));
+					n->lockstatus = DO_NOTHING;
+					$$ = (Node *)n;
+				}
+			| REVOKE CREATE TABLESPACE ON '*' '.' '*'
+			FROM RoleId
+				{
+					GrantRoleStmt *n = makeNode(GrantRoleStmt);
+					n->is_grant = false;
+					n->admin_opt = false;
+					AccessPriv *n2 = makeNode(AccessPriv);
+					n2->priv_name = "gs_role_tablespace";
+					n2->cols = NULL;
+					n->granted_roles = list_make1(n2);
+					n->grantee_roles = list_make1(makeString($9));
+					$$ = (Node*)n;
 				}
 			| REVOKE GRANT OPTION FOR privileges ON privilege_target
 			FROM grantee_list opt_drop_behavior
@@ -11669,6 +11770,102 @@ privilege:	SELECT opt_column_list
 			}
 		;
 
+routine_privileges: routine_privilege_list
+				{ $$ = $1; }
+		;
+
+routine_privilege_list: 
+		routine_privilege					{ $$ = list_make1($1); }
+		| routine_privilege_list ',' routine_privilege		{ $$ = lappend($1, $3); }
+		| privilege_list ',' routine_privilege		{ $$ = lappend($1, $3); }
+		| routine_privilege_list ',' privilege		{ $$ = lappend($1, $3); }
+	;
+
+routine_privilege:
+		ALTER ROUTINE
+				{
+					AccessPriv *n = makeNode(AccessPriv);
+					n->priv_name = pstrdup($1);
+					n->cols = NULL;
+					$$ = n;
+				}
+		;
+
+routine_target:
+			FUNCTION function_with_argtypes_list
+				{
+					PrivTarget *n = (PrivTarget *) palloc(sizeof(PrivTarget));
+					n->targtype = ACL_TARGET_OBJECT;
+					n->objtype = ACL_OBJECT_FUNCTION;
+					n->objs = $2;
+					$$ = n;
+				}
+			| PROCEDURE function_with_argtypes_list
+				{
+					PrivTarget *n = (PrivTarget *) palloc(sizeof(PrivTarget));
+					n->targtype = ACL_TARGET_OBJECT;
+					n->objtype = ACL_OBJECT_FUNCTION;
+					n->objs = $2;
+					$$ = n;
+				}
+			| ALL FUNCTIONS IN_P SCHEMA name_list
+				{
+					PrivTarget *n = (PrivTarget *) palloc(sizeof(PrivTarget));
+					n->targtype = ACL_TARGET_ALL_IN_SCHEMA;
+					n->objtype = ACL_OBJECT_FUNCTION;
+					n->objs = $5;
+					$$ = n;
+				}
+			| name '.' '*'
+				{
+					PrivTarget *n = (PrivTarget *) palloc(sizeof(PrivTarget));
+					n->targtype = ACL_TARGET_ALL_IN_SCHEMA;
+					n->objtype = ACL_OBJECT_FUNCTION;
+					n->objs = list_make1(makeString($1));
+					$$ = n;
+				}
+			;
+
+temporary_privileges: temporary_privilege_list
+				{ $$ = $1; }
+		;
+
+temporary_privilege_list: 
+		temporary_privilege					{ $$ = list_make1($1); }
+		| temporary_privilege_list ',' temporary_privilege		{ $$ = lappend($1, $3); }
+		| privilege_list ',' temporary_privilege		{ $$ = lappend($1, $3); }
+		| temporary_privilege_list ',' privilege		{ $$ = lappend($1, $3); }
+	;
+
+temporary_privilege:
+		CREATE TEMPORARY TABLES
+			{
+				AccessPriv *n = makeNode(AccessPriv);
+				n->priv_name = pstrdup($2);
+				n->cols = NULL;
+				$$ = n;
+			}
+		;
+
+		
+temporary_target:
+			DATABASE name_list
+				{
+					PrivTarget *n = (PrivTarget *) palloc(sizeof(PrivTarget));
+					n->targtype = ACL_TARGET_OBJECT;
+					n->objtype = ACL_OBJECT_DATABASE;
+					n->objs = $2;
+					$$ = n;
+				}
+			| name '.' '*'
+				{
+					PrivTarget *n = (PrivTarget *) palloc(sizeof(PrivTarget));
+					n->targtype = ACL_TARGET_OBJECT;
+					n->objtype = ACL_OBJECT_DATABASE;
+					n->objs = list_make1(makeString($1));
+					$$ = n;				
+				}
+			;
 
 /* Don't bother trying to fold the first two rules into one using
  * opt_table.  You're going to get conflicts.
@@ -12004,6 +12201,15 @@ GrantDbStmt:
                     n->admin_opt = $5;
                     $$ = (Node*)n;
                 }
+            | GRANT db_privileges ON '*' '.' '*' TO grantee_list opt_grant_admin_option
+                {
+                    GrantDbStmt *n = makeNode(GrantDbStmt);
+                    n->is_grant = true;
+                    n->privileges = $2;
+                    n->grantees = $8;
+                    n->admin_opt = $9;
+                    $$ = (Node*)n;
+                }
             ;
 
 RevokeDbStmt:
@@ -12013,6 +12219,15 @@ RevokeDbStmt:
                     n->is_grant = false;
                     n->privileges = $2;
                     n->grantees = $4;
+                    n->admin_opt = false;
+                    $$ = (Node*)n;
+                }
+            | REVOKE db_privileges ON '*' '.' '*' FROM grantee_list
+                {
+                    GrantDbStmt *n = makeNode(GrantDbStmt);
+                    n->is_grant = false;
+                    n->privileges = $2;
+                    n->grantees = $8;
                     n->admin_opt = false;
                     $$ = (Node*)n;
                 }
@@ -12092,6 +12307,18 @@ db_privilege: CREATE ANY TABLE
             {
                 DbPriv *n = makeNode(DbPriv);
                 n->db_priv_name = pstrdup("create any function");
+                $$ = n;
+            }
+            | CREATE ROUTINE
+            {
+                DbPriv *n = makeNode(DbPriv);
+                n->db_priv_name = pstrdup("create any function");
+                $$ = n;				
+            }
+            | INDEX
+            {
+                DbPriv *n = makeNode(DbPriv);
+                n->db_priv_name = pstrdup("create any index");
                 $$ = n;
             }
             | EXECUTE ANY FUNCTION
@@ -25244,7 +25471,6 @@ unreserved_keyword:
 			| INCLUDING
 			| INCREMENT
 			| INCREMENTAL
-			| INDEX
 			| INDEXES
 			| INFILE
 			| INHERIT
@@ -25405,6 +25631,7 @@ unreserved_keyword:
 			| ROLLBACK
 			| ROLLUP
 			| ROTATION
+			| ROUTINE
 			| ROWS
 			| RULE
 			| SAMPLE
@@ -25637,6 +25864,7 @@ type_func_name_keyword:
 			| HDFSDIRECTORY
 			| IGNORE
 			| ILIKE
+			| INDEX
 			| INNER_P
 			| JOIN
 			| LEFT

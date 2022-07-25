@@ -25,6 +25,8 @@ test: builtin_funcs/bin builtin_funcs/char builtin_funcs/char_length builtin_fun
 
 test: builtin_funcs/db_b_hex builtin_funcs/db_b_if builtin_funcs/elt builtin_funcs/field builtin_funcs/find_in_set builtin_funcs/soundex builtin_funcs/space
 
+test: revoke
+
 test: option
 
 test: disable_thread_pool
