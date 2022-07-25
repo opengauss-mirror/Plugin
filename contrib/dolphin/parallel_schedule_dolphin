@@ -27,6 +27,8 @@ test: builtin_funcs/db_b_hex builtin_funcs/db_b_if builtin_funcs/elt builtin_fun
 
 test: revoke
 
+test: option
+
 test: disable_thread_pool
 
 test: b_database_deadlock
