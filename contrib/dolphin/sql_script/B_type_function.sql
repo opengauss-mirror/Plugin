@@ -30,4 +30,4 @@ DROP FUNCTION IF EXISTS pg_catalog.chara(variadic arr "any") cascade;
 CREATE OR REPLACE FUNCTION pg_catalog.chara(variadic arr "any") returns text LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'm_char';
 
 DROP FUNCTION IF EXISTS pg_catalog.insert(text, integer, integer, text) CASCADE;
-CREATE FUNCTION pg_catalog.insert (text, integer, integer, text) RETURNS text LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'text_insert';
+CREATE FUNCTION pg_catalog.insert (text, bigint, bigint, text) RETURNS text LANGUAGE C IMMUTABLE  as '$libdir/dolphin',  'text_insert';

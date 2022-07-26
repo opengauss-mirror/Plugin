@@ -44,6 +44,12 @@ select insert('abcdefg', 100, 200, 'yyy');
  abcdefg
 (1 row)
 
+select insert('abcdefg', 412321321421, 4, 'yyy');
+ERROR:  integer out of range
+CONTEXT:  referenced column: insert
+select insert('abcdefg', -412321321421, 4, 'yyy');
+ERROR:  integer out of range
+CONTEXT:  referenced column: insert
 set sql_mode='';
 select insert('abcdefg', '2aa', 4, 'yyy');
  insert 
@@ -52,6 +58,36 @@ select insert('abcdefg', '2aa', 4, 'yyy');
 (1 row)
 
 select insert('abcdefg', 'aa2', 4, 'yyy');
+ insert  
+---------
+ abcdefg
+(1 row)
+
+select insert('abcdefg', 4123213214212123123123123, 4, 'yyy');
+ insert  
+---------
+ abcdefg
+(1 row)
+
+select insert('abcdefg', -4123213214212123123123123, 4, 'yyy');
+ insert  
+---------
+ abcdefg
+(1 row)
+
+select insert('abcdefg', 412321321421, 4, 'yyy');
+ insert  
+---------
+ abcdefg
+(1 row)
+
+select insert('abcdefg', -412321321421, 4, 'yyy');
+ insert  
+---------
+ abcdefg
+(1 row)
+
+select insert('abcdefg', 1147483640, 1147483640, 'yyy');
  insert  
 ---------
  abcdefg

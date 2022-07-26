@@ -1441,10 +1441,8 @@ static text* text_insert_func(text* t1, text* t2, int sp, int sl)
     int len_t1;
 
     len_t1 = text_length((Datum)t1);
-    if (sp <= 0 || sp > len_t1)
+    if (sp <= 0 || sp > len_t1 || pg_add_s32_overflow(sp, sl, &sp_pl_sl))
         return t1;
-    if (pg_add_s32_overflow(sp, sl, &sp_pl_sl))
-        ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("integer out of range")));
 
     s1 = text_substring(PointerGetDatum(t1), 1, sp - 1, false);
     s2 = text_substring(PointerGetDatum(t1), sp_pl_sl, -1, true);
@@ -1455,13 +1453,37 @@ static text* text_insert_func(text* t1, text* t2, int sp, int sl)
     return result;
 }
 
+int longlong_to_int(long long l_num)
+{
+    int i_num;
+    if (l_num > PG_INT32_MAX) {
+        if (!SQL_MODE_STRICT())
+            i_num = PG_INT32_MAX;
+        else
+            ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("integer out of range")));
+    }
+    else if (l_num <= PG_INT32_MIN) { /* PG_INT32_MIN is a special one during the longlong conversion int, so exclude it */
+        if (!SQL_MODE_STRICT())
+            i_num = PG_INT32_MIN;
+        else
+            ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("integer out of range")));
+    }
+    else
+        i_num = l_num;
+    return i_num;
+}
+
 Datum text_insert(PG_FUNCTION_ARGS)
 {
     text *str = PG_GETARG_TEXT_PP(0);
-    int position = PG_GETARG_INT32(1);
-    int length = PG_GETARG_INT32(2);
+    long long position = PG_GETARG_INT64(1); /* substring start position */
+    long long length = PG_GETARG_INT64(2); /* substring length */
     text *newstr = PG_GETARG_TEXT_PP(3);
-    PG_RETURN_TEXT_P(text_insert_func(str, newstr, position, length));
+
+    int sp = longlong_to_int(position);
+    int sl = longlong_to_int(length);
+
+    PG_RETURN_TEXT_P(text_insert_func(str, newstr, sp, sl));
 }
 
 /*
