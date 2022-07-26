@@ -50,6 +50,7 @@
 #include "catalog/pg_type.h"
 #include "workload/cpwlm.h"
 #include "utils/varbit.h"
+#include "plugin_commands/mysqlmode.h"
 
 #define JUDGE_INPUT_VALID(X, Y) ((NULL == (X)) || (NULL == (Y)))
 #define GET_POSITIVE(X) ((X) > 0 ? (X) : ((-1) * (X)))
