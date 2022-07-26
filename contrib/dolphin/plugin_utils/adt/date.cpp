@@ -1173,7 +1173,7 @@ Datum time_in(PG_FUNCTION_ARGS)
     int dtype;
     int ftype[MAXDATEFIELDS];
     char* time_fmt = NULL;
-    int timeSign;
+    int timeSign = 1;
     int D = 0;
 
     /*

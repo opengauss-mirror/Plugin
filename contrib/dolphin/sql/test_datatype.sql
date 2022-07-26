@@ -66,11 +66,11 @@ insert into bit_test2 values(b'');
 insert into bit_test2 values(b'001');
 select * from bit_test2 order by 1;
 
-explain select * from bit_test2 a left join bit_test3 b on a.a=b.a;
+explain(costs off) select * from bit_test2 a left join bit_test3 b on a.a=b.a;
 select * from bit_test2 a left join bit_test3 b on a.a=b.a order by 1;
 
 set enable_mergejoin to off;
-explain select * from bit_test2 a left join bit_test3 b on a.a=b.a;
+explain(costs off) select * from bit_test2 a left join bit_test3 b on a.a=b.a;
 select * from bit_test2 a left join bit_test3 b on a.a=b.a order by 1;
 
 drop table bit_test;
@@ -91,6 +91,5 @@ create table all_int_test(a tinyint(9999999999), b smallint(9999999999), c mediu
 \d all_int_test
 
 drop table all_int_test;
-
 \c postgres
 drop database b_datatype_test;

@@ -206,6 +206,7 @@ void _PG_init(void)
         InitGlobalVecFuncMap();
     }
     g_instance.raw_parser_hook[DB_CMPT_B] = (void*)raw_parser;
+    g_instance.llvmIrFilePath[DB_CMPT_B] = "share/postgresql/extension/openGauss_expr_dolphin.ir";
     init_plugin_object();
 }
 
@@ -214,6 +215,7 @@ void _PG_fini(void)
     hash_destroy(b_nameHash);
     hash_destroy(b_oidHash);
     g_instance.raw_parser_hook[DB_CMPT_B] = NULL;
+    g_instance.llvmIrFilePath[DB_CMPT_B] = NULL;
 }
 
 /*

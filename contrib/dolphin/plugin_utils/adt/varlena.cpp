@@ -1952,8 +1952,8 @@ int text_cmp(text* arg1, text* arg2, Oid collid)
     a1p = VARDATA_ANY(arg1);
     a2p = VARDATA_ANY(arg2);
 
-    len1 = VARSIZE_ANY_EXHDR(arg1);
-    len2 = VARSIZE_ANY_EXHDR(arg2);
+    len1 = bcTruelen(arg1);
+    len2 = bcTruelen(arg2);
 
     return varstr_cmp(a1p, len1, a2p, len2, collid);
 }
@@ -1984,15 +1984,16 @@ Datum texteq(PG_FUNCTION_ARGS)
      * of the strings are unequal; which might save us from having to detoast
      * one or both values.
      */
-    len1 = toast_raw_datum_size(arg1);
-    len2 = toast_raw_datum_size(arg2);
-    if (len1 != len2)
-        result = false;
-    else {
-        text* targ1 = DatumGetTextPP(arg1);
-        text* targ2 = DatumGetTextPP(arg2);
+    text *targ1 = DatumGetTextPP(arg1);
+    text *targ2 = DatumGetTextPP(arg2);
+ 
+    len1 = bcTruelen(targ1);
+    len2 = bcTruelen(targ2);
 
-        result = (memcmp(VARDATA_ANY(targ1), VARDATA_ANY(targ2), len1 - VARHDRSZ) == 0);
+    if (len1 != len2) {
+        result = false;
+    } else {
+        result = (memcmp(VARDATA_ANY(targ1), VARDATA_ANY(targ2), len1) == 0);
 
         PG_FREE_IF_COPY(targ1, 0);
         PG_FREE_IF_COPY(targ2, 1);
@@ -2013,15 +2014,15 @@ Datum textne(PG_FUNCTION_ARGS)
     Size len1, len2;
 
     /* See comment in texteq() */
-    len1 = toast_raw_datum_size(arg1);
-    len2 = toast_raw_datum_size(arg2);
-    if (len1 != len2)
+    text *targ1 = DatumGetTextPP(arg1);
+    text *targ2 = DatumGetTextPP(arg2);
+ 
+    len1 = bcTruelen(targ1);
+    len2 = bcTruelen(targ2);
+    if (len1 != len2) {
         result = true;
-    else {
-        text* targ1 = DatumGetTextPP(arg1);
-        text* targ2 = DatumGetTextPP(arg2);
-
-        result = (memcmp(VARDATA_ANY(targ1), VARDATA_ANY(targ2), len1 - VARHDRSZ) != 0);
+    } else {
+        result = (memcmp(VARDATA_ANY(targ1), VARDATA_ANY(targ2), len1) != 0);
 
         PG_FREE_IF_COPY(targ1, 0);
         PG_FREE_IF_COPY(targ2, 1);
@@ -2038,14 +2039,28 @@ static void vtextne_internal(ScalarVector* arg1, uint8* pflags1, ScalarVector* a
     ScalarVector* vresult, uint8* pflagRes, Size len, text* targ, int idx)
 {
     if (BOTH_NOT_NULL(pflags1[idx], pflags2[idx])) {
-        Size len1 = m_const1 ? len : toast_raw_datum_size(arg1->m_vals[idx]);
-        Size len2 = m_const2 ? len : toast_raw_datum_size(arg2->m_vals[idx]);
-        if (len1 != len2)
+        Size len1;
+        Size len2;
+        text* targ1 = NULL;
+        text* targ2 = NULL;
+        if (m_const1) {
+            targ1 = targ;
+            len1 = len;
+        } else {
+            targ1 = DatumGetTextPP(arg1->m_vals[idx]);
+            len1 = bcTruelen(targ1);
+        }
+        if (m_const2) {
+            targ2 = targ;
+            len2 = len;
+        } else {
+            targ2 = DatumGetTextPP(arg2->m_vals[idx]);
+            len2 = bcTruelen(targ2);
+        }
+        if (len1 != len2) {
             vresult->m_vals[idx] = BoolGetDatum(true);
-        else {
-            text* targ1 = m_const1 ? targ : DatumGetTextPP(arg1->m_vals[idx]);
-            text* targ2 = m_const2 ? targ : DatumGetTextPP(arg2->m_vals[idx]);
-            bool result = memcmp(VARDATA_ANY(targ1), VARDATA_ANY(targ2), len1 - VARHDRSZ) != 0;
+        } else {
+            bool result = memcmp(VARDATA_ANY(targ1), VARDATA_ANY(targ2), len1) != 0;
             vresult->m_vals[idx] = BoolGetDatum(result);
         }
 
@@ -2073,12 +2088,12 @@ ScalarVector* vtextne(PG_FUNCTION_ARGS)
     text* targ = NULL;
 
     if (arg1->m_const && NOT_NULL(pflags1[0])) {
-        len = toast_raw_datum_size(arg1->m_vals[0]);
         targ = DatumGetTextPP(arg1->m_vals[0]);
+        len = bcTruelen(targ);
     }
     if (arg2->m_const && NOT_NULL(pflags2[0])) {
-        len = toast_raw_datum_size(arg2->m_vals[0]);
         targ = DatumGetTextPP(arg2->m_vals[0]);
+        len = bcTruelen(targ);
     }
 
     /*
@@ -2210,7 +2225,7 @@ Datum bttextsortsupport(PG_FUNCTION_ARGS)
     oldcontext = MemoryContextSwitchTo(ssup->ssup_cxt);
 
     /* Use generic string SortSupport */
-    varstr_sortsupport(ssup, collid, false);
+    varstr_sortsupport(ssup, collid, true);
 
     MemoryContextSwitchTo(oldcontext);
 
@@ -2933,8 +2948,8 @@ static int internal_text_pattern_compare(text* arg1, text* arg2)
     int result;
     int len1, len2;
 
-    len1 = VARSIZE_ANY_EXHDR(arg1);
-    len2 = VARSIZE_ANY_EXHDR(arg2);
+    len1 = bcTruelen(arg1);
+    len2 = bcTruelen(arg2);
 
     result = memcmp(VARDATA_ANY(arg1), VARDATA_ANY(arg2), Min(len1, len2));
     if (result != 0)
@@ -7870,7 +7885,7 @@ char* set_space(int32 num)
 {
     char* result = NULL;
 
-    if ((num + 1) <= MaxAllocSize) {
+    if ((Size)num <= MaxAllocSize - 1) {
         result = (char*)palloc(num + 1);
         int rc = memset_s(result, num + 1, ' ', num);
         securec_check(rc, "", "");
