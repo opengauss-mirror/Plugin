@@ -7437,104 +7437,83 @@ static void truncate_numeric_cstring(char* str)
     bool dot = false;
     bool power = false;
     bool digit = false;
-    bool sign = false;
+    size_t breakpoint = 0;
     size_t begin = truncate_front_space(str);
     size_t len = strlen(str);
-    for (size_t i=begin; i<len; i++) {
-        if (!sign && (str[i] == '+' || str[i] == '-')) {
-            sign = true;
-        } else if (str[i] == '.' && !dot) {
+    size_t sign_location = begin;
+
+    for (size_t i = begin; i < len; i++) {
+        if ((str[i] == '+' || str[i] == '-') && i == sign_location) {
+            continue;
+        } else if (str[i] == '.' && dot == false) {
             dot = true;
-        } else if ((str[i] == 'e' || str[i] == 'E') && !power) {
-            if (!digit) {
-                str[i] = '\0';
-                break;
-            } else {
-                power = true;
-            }
+        } else if ((str[i] == 'e' || str[i] == 'E') && power == false && digit == true) {
+            power = true;
+            dot = true;
+            sign_location = i + 1;
         } else if (str[i] >= '0' && str[i] <= '9') {
             digit = true;
+            breakpoint = i + 1;
         } else {
-            if (begin == i) {
-                str[0] = '\0';
-            } else {
-                str[i] = '\0';
-            }
             break;
         }
     }
-    return;
+    str[breakpoint] = '\0';
+}
+
+//Get float8 value for parameters of gs_interval
+static float8 GetValueFromArg(Oid valtype, Datum arg)
+{
+    switch (valtype) {
+        case INT4OID:
+            return DatumGetInt32(arg);
+        case FLOAT8OID:
+            return DatumGetFloat8(arg);
+        case BOOLOID:
+            return DatumGetBool(arg);
+        default:
+            bool typIsVarlena = false;
+            Oid typOutput;
+            check_huge_toast_pointer(arg, valtype);
+            if (!OidIsValid(valtype))
+                ereport(ERROR, (errcode(ERRCODE_INDETERMINATE_DATATYPE),
+                    errmsg("could not determine data type of gs_interval() input")));
+
+            float8 temp = 0;
+            getTypeOutputInfo(valtype, &typOutput, &typIsVarlena);
+            char* str0 = OidOutputFunctionCall(typOutput, arg);
+            truncate_numeric_cstring(str0);
+            if (strlen(str0) != 0) {
+                temp = DatumGetFloat8(DirectFunctionCall1(float8in, CStringGetDatum(str0)));
+            }
+            pfree_ext(str0);
+            return temp;
+    }
 }
 
 Datum gs_interval(PG_FUNCTION_ARGS)
 {
-    // early return
     if (PG_NARGS() == 0)
         PG_RETURN_INT32(0);
-
     if (PG_ARGISNULL(0))
         PG_RETURN_INT32(-1);
-
     Datum dt = PG_GETARG_DATUM(0);
     Oid valtype = get_fn_expr_argtype(fcinfo->flinfo, 0);
-    bool typIsVarlena = false;
-    Oid typOutput;
-
-    check_huge_toast_pointer(dt, valtype);
-    if (!OidIsValid(valtype))
-        ereport(ERROR, (errcode(ERRCODE_INDETERMINATE_DATATYPE),
-            errmsg("could not determine data type of gs_interval() input")));
-
-    getTypeOutputInfo(valtype, &typOutput, &typIsVarlena);
-    char* str0 = OidOutputFunctionCall(typOutput, dt);
-
-    truncate_numeric_cstring(str0);
-
-    float8 first_value=0;
-
-    if (strlen(str0)!=0) {
-        first_value = DatumGetFloat8(DirectFunctionCall1(float8in, CStringGetDatum(str0)));
-    }
-
-    pfree_ext(str0);
-
+    float8 first_value = GetValueFromArg(valtype, dt);
     int count=0;
-
-    // traverse arguments after the first one
-    for (int i=1; i < PG_NARGS(); i++) {
+    for (int i = 1; i < PG_NARGS(); i++) {
         if (PG_ARGISNULL(i)) {
             ++count;
             continue;
         }
-
         dt = PG_GETARG_DATUM(i);
         valtype = get_fn_expr_argtype(fcinfo->flinfo, i);
-        check_huge_toast_pointer(dt, valtype);
-
-        if (!OidIsValid(valtype))
-            ereport(ERROR, (errcode(ERRCODE_INDETERMINATE_DATATYPE),
-                errmsg("could not determine data type of gs_interval() input")));
-
-        getTypeOutputInfo(valtype, &typOutput, &typIsVarlena);
-
-        char* str = OidOutputFunctionCall(typOutput, dt);
-
-        truncate_numeric_cstring(str);
-
-        float8 value = 0;
-
-        if (strlen(str)!=0) {
-            value = DatumGetFloat8(DirectFunctionCall1(float8in, CStringGetDatum(str)));
-        }
-
-        pfree_ext(str);
-
+        float8 value = GetValueFromArg(valtype, dt);
         if (value > first_value) {
             break;
         }
         ++count;
     }
-
     PG_RETURN_INT32(count);
 }
 
