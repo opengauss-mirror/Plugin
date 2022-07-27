@@ -321,6 +321,8 @@ static Node* MakeConnectByRootNode(ColumnRef* cr, int location);
 static char* MakeConnectByRootColName(char* tabname, char* colname);
 static void FilterStartWithUseCases(SelectStmt* stmt, List* locking_clause, core_yyscan_t yyscanner, int location);
 static FuncCall* MakePriorAsFunc();
+static Node* MakeSetPasswdStmt(char* user, char* passwd, char* replace_passwd);
+static Node* MakeKillStmt(int kill_opt, Node *expr);
 
 #ifndef ENABLE_MULTIPLE_NODES
 static bool CheckWhetherInColList(char *colname, List *col_list);
@@ -418,7 +420,7 @@ static int errstate;
 		DropAssertStmt DropSynonymStmt DropTrigStmt DropRuleStmt DropCastStmt DropRoleStmt DropRlsPolicyStmt
 		DropUserStmt DropdbStmt DropTableSpaceStmt DropDataSourceStmt DropDirectoryStmt DropFdwStmt
 		DropForeignServerStmt DropUserMappingStmt ExplainStmt ExecDirectStmt FetchStmt
-		GrantStmt GrantRoleStmt GrantDbStmt IndexStmt InsertStmt ListenStmt LoadStmt
+		GrantStmt GrantRoleStmt GrantDbStmt IndexStmt InsertStmt KillStmt ListenStmt LoadStmt
 		LockStmt NotifyStmt ExplainableStmt PreparableStmt
 		CreateFunctionStmt CreateProcedureStmt CreatePackageStmt CreatePackageBodyStmt AlterFunctionStmt AlterProcedureStmt ReindexStmt RemoveAggrStmt
 		RemoveFuncStmt RemoveOperStmt RemovePackageStmt RenameStmt RevokeStmt RevokeRoleStmt RevokeDbStmt
@@ -481,7 +483,7 @@ static int errstate;
 				transaction_mode_item
 				create_extension_opt_item alter_extension_opt_item
 
-%type <ival>	opt_lock lock_type cast_context opt_wait
+%type <ival>	opt_lock lock_type cast_context opt_wait kill_opt
 %type <ival>	vacuum_option_list vacuum_option_elem opt_verify_options
 %type <boolean>	opt_check opt_force opt_or_replace
 				opt_grant_grant_option opt_grant_admin_option
@@ -699,7 +701,7 @@ static int errstate;
 %type <str>		Sconst comment_text notify_payload
 %type <str>		RoleId TypeOwner opt_granted_by opt_boolean_or_string ColId_or_Sconst
 %type <list>	var_list
-%type <str>		ColId ColLabel var_name type_function_name param_name
+%type <str>		ColId ColLabel var_name type_function_name param_name user opt_password opt_replace
 %type <node>	var_value zone_value
 
 %type <keyword> unreserved_keyword type_func_name_keyword
@@ -997,6 +999,9 @@ static int errstate;
 %nonassoc lower_than_row
 %nonassoc lower_than_on
 %left ON USING
+%nonassoc   KILL_OPT_EMPTY
+%nonassoc   CONNECTION QUERY
+%nonassoc   PASSWORD
 %nonassoc   PARTIAL_EMPTY_PREC
 %nonassoc   CLUSTER
 %nonassoc	SET				/* see relation_expr_opt_alias */
@@ -1280,6 +1285,7 @@ stmt :
 			| GrantDbStmt
 			| IndexStmt
 			| InsertStmt
+			| KillStmt
 			| ListenStmt
 			| RefreshMatViewStmt
 			| LoadStmt
@@ -1933,6 +1939,23 @@ altersys_option:
 
 /*****************************************************************************
  *
+ * Kill a session or cancel all queries from a session
+ *
+ *****************************************************************************/
+
+KillStmt:	KILL kill_opt a_expr
+			{
+				$$ = (Node *)MakeKillStmt($2, $3);
+			}
+		;
+
+kill_opt: 	CONNECTION { $$ = 1; }
+		| QUERY { $$ = 0; }
+		| /* empty */ %prec KILL_OPT_EMPTY { $$ = 1; }
+		;
+
+/*****************************************************************************
+ *
  * Drop a postgresql group
  *
  * XXX see above notes about cascading DROP USER; groups have same problem.
@@ -2048,6 +2071,23 @@ schema_stmt:
  *
  *****************************************************************************/
 
+user:
+			ColId_or_Sconst { $$ = $1; }
+			| ColId_or_Sconst '@' load_quote_str { $$ = $1; }
+			| CURRENT_USER { $$ = GetUserNameFromId(GetUserId()); }
+			| CURRENT_USER '(' ')' { $$ = GetUserNameFromId(GetUserId()); }
+			;
+
+opt_password:
+			password_string { $$ = pstrdup($1); }
+			| PASSWORD '(' password_string ')' { $$ = pstrdup($3); }
+			;
+
+opt_replace:
+			REPLACE opt_password { $$ = $2; }
+			| /* empty */ { $$ = NULL; }
+			;
+
 VariableSetStmt:
 			SET set_rest
 				{
@@ -2067,6 +2107,14 @@ VariableSetStmt:
 					n->is_local = false;
 					$$ = (Node *) n;
 				}
+			| SET PASSWORD '=' opt_password opt_replace
+                        	{
+                        		$$ = MakeSetPasswdStmt(GetUserNameFromId(GetUserId()), $4, $5);
+                        	}
+                        | SET PASSWORD FOR user '=' opt_password opt_replace
+                        	{
+                        		$$ = MakeSetPasswdStmt($4, $6, $7);
+                        	}
 		;
 
 set_rest:
@@ -28102,6 +28150,105 @@ static CreateIndexOptions* MakeCreateIndexOptions(CreateIndexOptions *indexOptio
 		break;
 	}
 	return indexOptions;
+}
+
+static Node* MakeSetPasswdStmt(char* user, char* passwd, char* replace_passwd)
+{
+	List *list = NULL;
+
+	AlterRoleStmt *n = makeNode(AlterRoleStmt);
+	n->role = user;
+	n->action = +1;
+	if (replace_passwd) {
+		list = list_make2(makeStringConst(passwd, -1), makeStringConst(replace_passwd, -1));
+	} else {
+		list = list_make1(makeStringConst(passwd, -1));
+	}
+	n->options = list_make1(makeDefElem("password", (Node *)list));
+	n->lockstatus = DO_NOTHING;
+	return (Node *)n;
+}
+
+/*
+ * Under thread pool mode, Use this SQL statement to process internal threads,
+ * such as WorkloadMonitor, statement flush thread, JobScheduler etc.
+ *
+ * SELECT pg_terminate_session(coalesce((select pid from pg_stat_activity where sessionid = pid and sessionid = expr limit 1), 0), expr);
+ *
+ * Under non thread pool mode:
+ *
+ * SELECT pg_terminate_session(expr, expr);
+ */
+static Node* MakeKillStmt(int kill_opt, Node *expr)
+{
+	FuncCall* func = (FuncCall*)makeNode(FuncCall);
+	func->funcname = list_make1(makeString((char *)(kill_opt ? "pg_terminate_session" : "pg_cancel_session")));
+	func->agg_star = FALSE;
+	func->agg_distinct = FALSE;
+	func->location = -1;
+	func->call_func = false;
+
+	if (ENABLE_THREAD_POOL) {
+    		RangeVar* rv = makeRangeVar(NULL, "pg_stat_activity", -1);
+    		List* fl = (List*)list_make1(rv);
+
+    		ColumnRef* cr = makeNode(ColumnRef);
+    		cr->fields = lcons(makeString("pid"), NIL);
+    		cr->location = -1;
+
+    		ResTarget* rt = makeNode(ResTarget);
+    		rt->name = NULL;
+    		rt->indirection = NIL;
+    		rt->val = (Node*)cr;
+    		rt->location = -1;
+
+		Node* cond1 = (Node*)makeSimpleA_Expr(AEXPR_OP, "=", makeColumnRef("sessionid", NIL, -1, NULL), expr, -1);
+		Node* cond2 = (Node*)makeSimpleA_Expr(AEXPR_OP, "=", makeColumnRef("sessionid", NIL, -1, NULL), makeColumnRef("pid", NIL, -1, NULL), -1);
+    		Node* wc = (Node*)makeA_Expr(AEXPR_AND, NIL, cond1, cond2, -1);
+
+    		SelectStmt* stmt = makeNode(SelectStmt);
+    		stmt->distinctClause = NIL;
+    		stmt->targetList = list_make1(rt);
+    		stmt->intoClause = NULL;
+    		stmt->fromClause = fl;
+    		stmt->whereClause = wc;
+    		stmt->groupClause = NIL;
+    		stmt->havingClause = NULL;
+    		stmt->windowClause = NIL;
+		stmt->limitCount = makeIntConst(1, -1);
+
+    		SubLink* sublink = makeNode(SubLink);
+		sublink->subLinkType = EXPR_SUBLINK;
+		sublink->testexpr = NULL;
+		sublink->operName = NIL;
+		sublink->subselect = (Node*)stmt;
+		sublink->location = -1;
+
+		CoalesceExpr* cexpr = makeNode(CoalesceExpr);
+        	cexpr->args = list_make2(sublink, makeIntConst(0, -1));
+        	cexpr->isnvl = true;
+
+       		func->args = list_make2((Node*)cexpr, expr);
+	} else {
+		func->args = list_make2(expr, expr);
+	}
+
+    	ResTarget* rt = makeNode(ResTarget);
+    	rt->name = "result";
+    	rt->indirection = NIL;
+   	rt->val = (Node*)func;
+   	rt->location = -1;
+
+	SelectStmt* n = makeNode(SelectStmt);
+	n->distinctClause = NIL;
+	n->targetList = list_make1(rt);
+	n->intoClause = NULL;
+	n->fromClause = NIL;
+	n->whereClause = NULL;
+	n->groupClause = NIL;
+	n->havingClause = NULL;
+	n->windowClause = NIL;
+	return (Node*)n;
 }
 
 /*

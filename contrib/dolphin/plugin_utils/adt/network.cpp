@@ -21,6 +21,7 @@
 #include "miscadmin.h"
 #include "utils/builtins.h"
 #include "utils/inet.h"
+#include "plugin_postgres.h"
 
 static int32 network_cmp_internal(inet* a1, inet* a2);
 static int bitncmp(const void* l, const void* r, int n);
@@ -657,6 +658,60 @@ Datum network_family(PG_FUNCTION_ARGS)
             PG_RETURN_INT32(0);
             break;
     }
+}
+
+static int check_ip(char *src, bool is_check_v4)
+{
+    int bits;
+    inet* dst = (inet*)palloc0(sizeof(inet));
+
+    ip_family(dst) = is_check_v4 ? PGSQL_AF_INET : PGSQL_AF_INET6;
+
+    bits = inet_net_pton(ip_family(dst), src, ip_addr(dst), -1);
+    if ((bits < 0) || (bits > ip_maxbits(dst))) {
+        pfree(dst);
+        return 0;
+    }
+
+    pfree(dst);
+    return 1;
+}
+
+static int is_ipvx(FunctionCallInfo fcinfo, bool is_check_v4)
+{
+    if PG_ARGISNULL(0)
+        return 0;
+
+    Oid argtypeid = get_fn_expr_argtype(fcinfo->flinfo, 0);
+    if (!OidIsValid(argtypeid))
+        return 0;
+
+    int result = 0;
+    if (argtypeid == TEXTOID) {
+        result = check_ip(text_to_cstring(PG_GETARG_TEXT_PP(0)), is_check_v4);
+    } else if (argtypeid == INETOID) {
+        result = (ip_family(PG_GETARG_INET_PP(0)) == (is_check_v4 ? PGSQL_AF_INET : PGSQL_AF_INET6));
+    } else if (argtypeid == CSTRINGOID) {
+        result = check_ip(PG_GETARG_CSTRING(0), is_check_v4);
+    }
+
+    return result;
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(network_is_ipv4);
+extern "C" DLL_PUBLIC Datum network_is_ipv4(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1_PUBLIC(network_is_ipv6);
+extern "C" DLL_PUBLIC Datum network_is_ipv6(PG_FUNCTION_ARGS);
+
+Datum network_is_ipv4(PG_FUNCTION_ARGS)
+{
+    PG_RETURN_INT32(is_ipvx(fcinfo, true));
+}
+
+Datum network_is_ipv6(PG_FUNCTION_ARGS)
+{
+    PG_RETURN_INT32(is_ipvx(fcinfo, false));
 }
 
 Datum network_broadcast(PG_FUNCTION_ARGS)
