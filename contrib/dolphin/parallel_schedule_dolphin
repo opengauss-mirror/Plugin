@@ -19,7 +19,7 @@ test: greatest_least join_without_on mysqlmode_fullgroup mysqlmode_strict
 # must be single test group, cause other connection will affect the result
 test: show
 
-test: nvarchar regexp
+test: nvarchar regexp upsert
 
 test: test_binary test_blob test_datatype test_fixed test_mysql_enum
 

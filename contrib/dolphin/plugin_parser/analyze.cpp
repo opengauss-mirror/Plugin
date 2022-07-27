@@ -2384,8 +2384,6 @@ static UpsertExpr* transformUpsertClause(ParseState* pstate, UpsertClause* upser
         if (IS_PGXC_COORDINATOR && !u_sess->attr.attr_sql.enable_upsert_to_merge) {
             checkUpsertTargetlist(pstate->p_target_relation, updateTlist);
         }
-#else
-        checkUpsertTargetlist(pstate->p_target_relation, updateTlist);
 #endif
     }
 
