@@ -87,6 +87,7 @@
 #include "utils/xml.h"
 #include "utils/pl_package.h"
 #include "catalog/pg_streaming_fn.h"
+#include "utils/varbit.h"
 
 #pragma GCC diagnostic ignored "-Wsign-compare"
 #pragma GCC diagnostic ignored "-Wunused-variable"
@@ -113,6 +114,17 @@ IntervalStylePack g_interStyleVal = {"a"};
 		else \
 			(Current) = (Rhs)[0]; \
 	} while (0)
+
+#define RESET_ACONST_STRING(Arg, T, V) \
+    if (T == T_String && NULL != V) { \
+        Arg->val.val.str = V; \
+    }
+
+#define RESET_ACONST_INTEGER(Arg, T) \
+    if (T == T_BitString) { \
+        Arg->val.type = T_Integer; \
+        Arg->val.val.ival = conv_bit_to_int(Arg); \
+    }
 
 /*
  * Bison doesn't allocate anything that needs to live across parser calls,
@@ -228,6 +240,10 @@ IndexOptionType option_type;
 
 #define parser_yyerror(msg)  scanner_yyerror(msg, yyscanner)
 #define parser_errposition(pos)  scanner_errposition(pos, yyscanner)
+
+static long conv_bit_to_int(A_Const* bit_str);
+static void fix_bw_type(A_Const* bw_arg1, A_Const* bw_arg2, A_Const* bw_arg3);
+static char* extract_numericstr(const char* str);
 
 static void base_yyerror(YYLTYPE *yylloc, core_yyscan_t yyscanner,
 						 const char *msg);
@@ -22559,6 +22575,7 @@ a_expr:		c_expr									{ $$ = $1; }
 			 */
 			| a_expr BETWEEN opt_asymmetric b_expr AND b_expr		%prec BETWEEN
 				{
+					fix_bw_type((A_Const *)$1, (A_Const *)$4, (A_Const *)$6);
 					$$ = (Node *) makeA_Expr(AEXPR_AND, NIL,
 						(Node *) makeSimpleA_Expr(AEXPR_OP, ">=", $1, $4, @2),
 						(Node *) makeSimpleA_Expr(AEXPR_OP, "<=", $1, $6, @2),
@@ -22566,6 +22583,7 @@ a_expr:		c_expr									{ $$ = $1; }
 				}
 			| a_expr NOT BETWEEN opt_asymmetric b_expr AND b_expr	%prec BETWEEN
 				{
+					fix_bw_type((A_Const *)$1, (A_Const *)$5, (A_Const *)$7);
 					$$ = (Node *) makeA_Expr(AEXPR_OR, NIL,
 						(Node *) makeSimpleA_Expr(AEXPR_OP, "<", $1, $5, @2),
 						(Node *) makeSimpleA_Expr(AEXPR_OP, ">", $1, $7, @2),
@@ -22573,6 +22591,7 @@ a_expr:		c_expr									{ $$ = $1; }
 				}
 			| a_expr BETWEEN SYMMETRIC b_expr AND b_expr			%prec BETWEEN
 				{
+					fix_bw_type((A_Const *)$1, (A_Const *)$4, (A_Const *)$6);
 					$$ = (Node *) makeA_Expr(AEXPR_OR, NIL,
 						(Node *) makeA_Expr(AEXPR_AND, NIL,
 							(Node *) makeSimpleA_Expr(AEXPR_OP, ">=", $1, $4, @2),
@@ -22586,6 +22605,7 @@ a_expr:		c_expr									{ $$ = $1; }
 				}
 			| a_expr NOT BETWEEN SYMMETRIC b_expr AND b_expr		%prec BETWEEN
 				{
+					fix_bw_type((A_Const *)$1, (A_Const *)$5, (A_Const *)$7);
 					$$ = (Node *) makeA_Expr(AEXPR_AND, NIL,
 						(Node *) makeA_Expr(AEXPR_OR, NIL,
 							(Node *) makeSimpleA_Expr(AEXPR_OP, "<", $1, $5, @2),
@@ -28169,6 +28189,85 @@ static Node* MakeSetPasswdStmt(char* user, char* passwd, char* replace_passwd)
 	return (Node *)n;
 }
 
+static void fix_bw_type(A_Const* bw_arg1, A_Const* bw_arg2, A_Const* bw_arg3)
+{
+    int t1 = bw_arg1->val.type;
+    int t2 = bw_arg2->val.type;
+    int t3 = bw_arg3->val.type;
+    
+    if (((t1 == T_String) ^ (t2 == T_String)) ||  ((t1 == T_String) ^ (t3 == T_String))) {
+        RESET_ACONST_STRING(bw_arg1, t1, extract_numericstr(bw_arg1->val.val.str));
+        RESET_ACONST_STRING(bw_arg2, t2, extract_numericstr(bw_arg2->val.val.str));
+        RESET_ACONST_STRING(bw_arg3, t3, extract_numericstr(bw_arg3->val.val.str));
+    }
+
+    if (((t1 == T_BitString) ^ (t2 == T_BitString)) ||  ((t1 == T_BitString) ^ (t3 == T_BitString))) {
+        RESET_ACONST_INTEGER(bw_arg1, t1);
+        RESET_ACONST_INTEGER(bw_arg2, t2);
+        RESET_ACONST_INTEGER(bw_arg3, t3);
+    }
+}
+
+static long conv_bit_to_int(A_Const* bit_str)
+{
+    long result = 0;    /* The resulting bit string     */
+    long bit_one_mask = 0x01;
+
+    char* sp = bit_str->val.val.str + strlen(bit_str->val.val.str) - 1;
+    for (; *sp != 'B' && *sp != 'b'; sp--) {
+        if (*sp == '1') {
+            result |= bit_one_mask;
+        } else if (*sp != '0')
+            ereport(ERROR,
+                    (errcode(ERRCODE_INVALID_TEXT_REPRESENTATION), errmsg("\"%c\" is not a valid binary digit", *sp)));
+
+        bit_one_mask <<= 1;
+        if (bit_one_mask == 0) {
+            ereport(ERROR, (errcode(ERRCODE_PROGRAM_LIMIT_EXCEEDED), errmsg("bit length too large")));
+        }
+    }
+    return result;
+}
+
+static char* extract_numericstr(const char* str)
+{
+    const char* cp = NULL;
+    bool have_digit = false;
+    bool have_post_char = false;
+    char* dest = NULL;
+    int len_of_numericstr = 0;
+    int digit_begin_index = 0;
+
+    cp = str;
+    while (*cp) {
+        if (!isdigit((unsigned char)*cp) && (*cp != '.')) {
+            digit_begin_index++;
+        } else {
+            break;
+        }
+        cp++;
+    }
+    while (*cp) {
+        if (isdigit((unsigned char)*cp)) {
+            have_digit = true;
+        } else if (have_digit && *cp != '.') {
+            have_post_char = true;
+            break;
+        }
+        cp++;
+        len_of_numericstr ++;
+    }
+    if (have_digit && have_post_char){
+        dest = (char*)palloc0((len_of_numericstr+1)*sizeof(char));
+        for (int i = 0; i < len_of_numericstr; i++) {
+            dest[i] = str[digit_begin_index++];
+        }
+        dest[len_of_numericstr] = '\0';
+        return dest;
+    }
+    return NULL;
+}
+
 /*
  * Under thread pool mode, Use this SQL statement to process internal threads,
  * such as WorkloadMonitor, statement flush thread, JobScheduler etc.
@@ -28195,7 +28294,6 @@ static Node* MakeKillStmt(int kill_opt, Node *expr)
     		ColumnRef* cr = makeNode(ColumnRef);
     		cr->fields = lcons(makeString("pid"), NIL);
     		cr->location = -1;
-
     		ResTarget* rt = makeNode(ResTarget);
     		rt->name = NULL;
     		rt->indirection = NIL;
