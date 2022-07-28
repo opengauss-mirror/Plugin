@@ -695,7 +695,8 @@ static int errstate;
 %type <str>		extract_arg
 %type <str>		timestamp_units
 %type <str>		opt_charset
-%type <boolean> opt_varying opt_timezone opt_no_inherit selected_timezone
+%type <str>		selected_timezone
+%type <boolean> opt_varying opt_timezone opt_no_inherit
 
 %type <ival>	Iconst SignedIconst
 %type <str>		Sconst comment_text notify_payload
@@ -891,7 +892,7 @@ static int errstate;
 	CURRENT_CATALOG CURRENT_DATE CURRENT_ROLE CURRENT_SCHEMA
 	CURRENT_TIME CURRENT_TIMESTAMP CURRENT_USER CURSOR CYCLE
 
-	DATA_P DATABASE DATAFILE DATANODE DATANODES DATATYPE_CL DATE_P DATE_FORMAT_P DAY_P  DAYOFMONTH DAYOFWEEK DAYOFYEAR DBCOMPATIBILITY_P DB_B_FORMAT DEALLOCATE DEC DECIMAL_P DECLARE DECODE DEFAULT DEFAULTS
+	DATA_P DATABASE DATAFILE DATANODE DATANODES DATATYPE_CL DATE_P DATETIME DATE_FORMAT_P DAY_P  DAYOFMONTH DAYOFWEEK DAYOFYEAR DBCOMPATIBILITY_P DB_B_FORMAT DEALLOCATE DEC DECIMAL_P DECLARE DECODE DEFAULT DEFAULTS
 	DEFERRABLE DEFERRED DEFINER DELETE_P DELIMITER DELIMITERS DELTA DELTAMERGE DESC DESCRIBE DETERMINISTIC DIV
 /* PGXC_BEGIN */
 	DICTIONARY DIRECT DIRECTORY DISABLE_P DISCARD DISTINCT DISTINCTROW DISTRIBUTE DISTRIBUTION DO DOCUMENT_P DOMAIN_P DOUBLE_P
@@ -21903,19 +21904,28 @@ opt_charset:
 ConstDatetime:
 			TIMESTAMP '(' Iconst ')' selected_timezone
 				{
-					if ($5)
+					if ($5 == NULL) {
 						$$ = SystemTypeName("timestamptz");
-					else
-						$$ = SystemTypeName("timestamp");
+					} else {
+						if (strcmp($5, "TRUE") == 0)
+							$$ = SystemTypeName("timestamptz");
+						else
+							$$ = SystemTypeName("timestamp");
+					}
 					$$->typmods = list_make1(makeIntConst($3, @3));
 					$$->location = @1;
 				}
 			| TIMESTAMP selected_timezone
 				{
-					if ($2)
+					if ($2 == NULL) {
 						$$ = SystemTypeName("timestamptz");
-					else
-						$$ = SystemTypeName("timestamp");
+						$$->typmods = list_make1(makeIntConst(0, -1));
+					} else {
+						if (strcmp($2, "TRUE") == 0)
+							$$ = SystemTypeName("timestamptz");
+						else
+							$$ = SystemTypeName("timestamp");
+					}
 					$$->location = @1;
 				}
 			| TIME '(' Iconst ')' opt_timezone
@@ -21927,12 +21937,17 @@ ConstDatetime:
 					$$->typmods = list_make1(makeIntConst($3, @3));
 					$$->location = @1;
 				}
-			| TIME opt_timezone
+			| TIME selected_timezone
 				{
-					if ($2)
-						$$ = SystemTypeName("timetz");
-					else
+					if ($2 == NULL) {
 						$$ = SystemTypeName("time");
+						$$->typmods = list_make1(makeIntConst(0, -1));
+					} else {
+						if (strcmp($2, "TRUE") == 0)
+							$$ = SystemTypeName("timetz");
+						else 
+							$$ = SystemTypeName("time");
+					}
 					$$->location = @1;
 				}
 			| DATE_P
@@ -21952,6 +21967,18 @@ ConstDatetime:
 					$$ = SystemTypeName("smalldatetime");
 					$$->location = @1;
 				}
+			| DATETIME '(' Iconst ')'
+			    {
+					$$ = SystemTypeName("timestamp");
+					$$->typmods = list_make1(makeIntConst($3,@3));
+					$$->location = @1;
+			    }
+			| DATETIME
+			    {
+					$$ = SystemTypeName("timestamp");
+					$$->typmods = list_make1(makeIntConst(0,-1));
+					$$->location = @1;
+			    }
 		;
 
 ConstInterval:
@@ -21969,9 +21996,9 @@ opt_timezone:
 		;
 
 selected_timezone:
-			WITH_TIME ZONE							{ $$ = TRUE; }
-			| WITHOUT TIME ZONE						{ $$ = FALSE; }
-			| /*EMPTY*/								{ $$ = TRUE; }
+			WITH_TIME ZONE							{ $$ = "TRUE"; }
+			| WITHOUT TIME ZONE						{ $$ = "FALSE"; }
+			| /*EMPTY*/								{ $$ = NULL; }
 		;
 
 
@@ -25816,6 +25843,7 @@ col_name_keyword:
 			| COALESCE
 			| CONVERT
 			| DATE_P
+			| DATETIME
 			| DAYOFMONTH
 			| DAYOFWEEK
 			| DAYOFYEAR

@@ -15,7 +15,7 @@ SELECT date'10120-01-01';
 SELECT date'2000-2-29';
 SELECT date'2001-2-29';
 SELECT date'2100-2-29';
-SELECT date'0000-2-29';
+SELECT date'0000-1-1';
 SELECT date'01-01';
 SELECT date'9-01-01';
 SELECT date'99-01-01';
@@ -125,6 +125,7 @@ SELECT datetime(5)'999-12-31  23:59:59.9999999';
 SELECT datetime'99-01-01  23:59:59.123';
 SELECT datetime'2001-2-28  23:59:59.123';
 SELECT datetime'2000-2-28  23:59:59.123';
+SELECT datetime'2000-2-28  12:23:34.5678';
 
 -- 'YYYYMMDDhhmmss.fsec' or 'YYMMDDhhmmss.fsec'
 SELECT datetime(1)'20010101010101.1278';
@@ -176,8 +177,9 @@ insert into test_datetime values(current_timestamp);
 drop table test_datetime;
 
 -- test timestamp with[out] timezone
-select timestamp with time zone'1994-11-10 23:12:34';
-select timestamp without time zone'1994-11-10 23:12:34';
+select timestamp with time zone'1994-11-10 23:12:34.5678';
+select timestamp without time zone'1994-11-10 23:12:34.5678';
+select timestamp'1994-11-10 23:12:34.5678';
 
 -- test timestamp
 set time zone 'PRC';
