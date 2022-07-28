@@ -16,6 +16,8 @@ test: empty_value_list empty_value_lists empty_value_support_value
 
 test: greatest_least join_without_on mysqlmode_fullgroup mysqlmode_strict
 
+test: kill set_password network
+
 # must be single test group, cause other connection will affect the result
 test: show
 
