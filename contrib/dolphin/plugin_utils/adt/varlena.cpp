@@ -1454,7 +1454,7 @@ static text* text_insert_func(text* t1, text* t2, int sp, int sl)
     return result;
 }
 
-int longlong_to_int(long long l_num)
+int int64_to_int(int64 l_num)
 {
     int i_num;
     if (l_num > PG_INT32_MAX) {
@@ -1462,14 +1462,12 @@ int longlong_to_int(long long l_num)
             i_num = PG_INT32_MAX;
         else
             ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("integer out of range")));
-    }
-    else if (l_num <= PG_INT32_MIN) { /* PG_INT32_MIN is a special one during the longlong conversion int, so exclude it */
+    } else if (l_num <= PG_INT32_MIN) { /* PG_INT32_MIN is a special one during the longlong conversion int, so exclude it */
         if (!SQL_MODE_STRICT())
             i_num = PG_INT32_MIN;
         else
             ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("integer out of range")));
-    }
-    else
+    } else
         i_num = l_num;
     return i_num;
 }
@@ -1477,12 +1475,12 @@ int longlong_to_int(long long l_num)
 Datum text_insert(PG_FUNCTION_ARGS)
 {
     text *str = PG_GETARG_TEXT_PP(0);
-    long long position = PG_GETARG_INT64(1); /* substring start position */
-    long long length = PG_GETARG_INT64(2); /* substring length */
+    int64 position = PG_GETARG_INT64(1); /* substring start position */
+    int64 length = PG_GETARG_INT64(2); /* substring length */
     text *newstr = PG_GETARG_TEXT_PP(3);
 
-    int sp = longlong_to_int(position);
-    int sl = longlong_to_int(length);
+    int sp = int64_to_int(position);
+    int sl = int64_to_int(length);
 
     PG_RETURN_TEXT_P(text_insert_func(str, newstr, sp, sl));
 }
