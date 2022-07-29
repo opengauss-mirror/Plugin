@@ -12,7 +12,7 @@ select chara(67,66,67);
 select chara(65,66.4);
 select chara(65,'66');
 select chara(65,'66.4');
-select chara(65,nul,66);
+select chara(65,null,66);
 select chara(-18446744073709551616);
 select chara(18446744073709551615);
 select chara(0);

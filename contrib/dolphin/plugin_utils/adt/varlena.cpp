@@ -112,6 +112,7 @@ typedef struct {
  * that we feel comfortable putting it on the stack
  */
 #define TEXTBUFLEN 1024
+#define MAX_UINT32_STR "0xffffffff"
 
 #define DatumGetUnknownP(X) ((unknown*)PG_DETOAST_DATUM(X))
 #define DatumGetUnknownPCopy(X) ((unknown*)PG_DETOAST_DATUM_COPY(X))
@@ -7665,6 +7666,7 @@ static text* _m_char(FunctionCallInfo fcinfo)
     for (int i = 0; i < PG_NARGS(); i++) {
         if (!PG_ARGISNULL(i)) {
             Datum value = PG_GETARG_DATUM(i);
+            int128 ret_round;
             Oid valtype;
             valtype = get_fn_expr_argtype(fcinfo->flinfo, i);
             switch (valtype) {
@@ -7672,8 +7674,13 @@ static text* _m_char(FunctionCallInfo fcinfo)
                     appendStringInfoString(&str, text_to_cstring(_chr((uint32)value, false)));
                     break;
                 case NUMERICOID:
-                    result = _chr((uint32)(round(numeric_to_double_no_overflow( (Numeric)value))), false);
-                    appendStringInfoString(&str, text_to_cstring(result));
+                    ret_round = (int128)round(numeric_to_double_no_overflow((Numeric)PG_GETARG_DATUM(i)));
+                    if ((*((int128 *)DatumGetPointer((Datum)(&ret_round)))) >= PG_UINT64_MAX) {
+                        appendStringInfoString(&str, MAX_UINT32_STR);
+                    } else {
+                        result = _chr((uint32)(round(numeric_to_double_no_overflow((Numeric)value))), false);
+                        appendStringInfoString(&str, text_to_cstring(result));
+                    }
                     break;
                 case BOOLOID:
                     appendStringInfoString(&str, "");
