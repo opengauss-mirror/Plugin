@@ -901,10 +901,10 @@ get_safe_path(text *location_or_dirname, text *filename)
 	NON_EMPTY_TEXT(location_or_dirname);
 	NON_EMPTY_TEXT(filename);
 
-	if (filename == NULL || (filename != NULL && strlen(text_to_cstring(filename)) == 0)) {
-	    ereport(ERROR, \
-	        (errcode(ERRCODE_INVALID_PARAMETER_VALUE), \
-	        errmsg("invalid parameter"), \
+	if (filename == NULL || strlen(text_to_cstring(filename)) == 0) {
+	    ereport(ERROR,
+	        (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+	        errmsg("invalid parameter"),
 	        errdetail("Empty string isn't allowed in filename.")));
 	}
 
