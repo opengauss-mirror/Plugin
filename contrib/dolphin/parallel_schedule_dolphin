@@ -54,3 +54,5 @@ test: b_database_other_languages_01 b_database_other_languages_02 b_database_oth
 test: b_database_releasealllocks_01
 
 test: b_database_releaselock_01 b_database_releaselock_02 b_database_releaselock_03 b_database_releaselock_04
+
+test: network2 use_dbname

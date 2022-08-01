@@ -444,6 +444,7 @@ static int errstate;
 		SecLabelStmt SelectStmt TimeCapsuleStmt TransactionStmt TruncateStmt CallFuncStmt
 		UnlistenStmt UpdateStmt VacuumStmt
 		VariableResetStmt VariableSetStmt VariableShowStmt VerifyStmt ShutdownStmt
+		UseStmt
 		ViewStmt CheckPointStmt CreateConversionStmt
 		DeallocateStmt PrepareStmt ExecuteStmt
 		DropOwnedStmt ReassignOwnedStmt
@@ -976,7 +977,7 @@ static int errstate;
 	TRUNCATE TRUSTED TSFIELD TSTAG TSTIME TYPE_P TYPES_P
 
 	UNBOUNDED UNCOMMITTED UNENCRYPTED UNION UNIQUE UNKNOWN UNLIMITED UNLISTEN UNLOCK UNLOGGED
-	UNTIL UNUSABLE UPDATE USEEOF USER USING
+	UNTIL UNUSABLE UPDATE USE USEEOF USER USING
 
 	VACUUM VALID VALIDATE VALIDATION VALIDATOR VALUE_P VALUES VARBINARY VARCHAR VARCHAR2 VARIABLES VARIADIC VARRAY VARYING VCGROUP
 	VERBOSE VERIFY VERSION_P VIEW VOLATILE
@@ -1331,6 +1332,7 @@ stmt :
 			| TruncateStmt
 			| UnlistenStmt
 			| UpdateStmt
+			| UseStmt
 			| VacuumStmt
 			| VariableResetStmt
 			| VariableSetStmt
@@ -2347,6 +2349,19 @@ set_rest_more:  /* Generic SET syntaxes: */
 					$$ = n;
 				}
 		;
+
+UseStmt:
+			USE ColId
+				{
+					core_yy_extra_type yyextra = pg_yyget_extra(yyscanner)->core_yy_extra;
+					VariableSetStmt *n = makeNode(VariableSetStmt);
+					n->kind = VAR_SET_VALUE;
+					n->name = "search_path";
+					n->args = list_make1(makeStringConst($2, -1));
+					n->is_local = false;
+					$$ = (Node *) n;
+				}
+			;
 
 var_name:	ColId								{ $$ = $1; }
 			| var_name '.' ColId
@@ -25810,7 +25825,8 @@ unreserved_keyword:
 			| UNTIL
 			| UNUSABLE
 			| UPDATE
-                        | USEEOF
+            		| USE
+            		| USEEOF
 			| VACUUM
 			| VALID
 			| VALIDATE
