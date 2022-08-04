@@ -6,7 +6,7 @@ test: string_func_test/db_b_ascii_test string_func_test/db_b_left_right_test str
 
 test: ast b_compatibility_time_type db_b_new_gram_test
 
-test: test_condition
+test: test_condition vec_engine
 
 test: db_b_parser1 db_b_parser2 db_b_parser3 db_b_parser4 second_microsecond
 
