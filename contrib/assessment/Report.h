@@ -31,10 +31,13 @@
 
 class SQLCompatibility {
 public:
-    SQLCompatibility(const std::string &sql, const AssessmentType &sqlType, const CompatibilityType &compatibility,
-            const std::string &errDetail) : sql(sql), sqlType(sqlType), compatibility(compatibility), errDetail(errDetail) {}
+    SQLCompatibility(int line, const std::string &sql, const AssessmentType &sqlType,
+                     const CompatibilityType &compatibility,
+                     const std::string &errDetail) : line(line), sql(sql), sqlType(sqlType),
+                                                     compatibility(compatibility), errDetail(errDetail) {}
 
 public:
+    int line;
     std::string sql;
     AssessmentType sqlType;
     CompatibilityType compatibility;
@@ -43,21 +46,21 @@ public:
 
 class CompatibilityTable {
 public:
-    void AppendOneSQL(std::string sql, AssessmentType assessmentType, CompatibilityType compatibilityType,
-            std::string errDetail);
+    void AppendOneSQL(int line, std::string sql, AssessmentType assessmentType, CompatibilityType compatibilityType,
+                      std::string errDetail);
 
     bool GenerateReport();
-    
+
     bool GenerateSQLCompatibilityStatistic();
-    
-    bool GenerateReportHeader(char* fileName, char* output, const char* dbType);
+
+    bool GenerateReportHeader(char *fileName, char *output, const char *dbType);
 
     bool GenerateReportEnd();
 
     ~CompatibilityTable();
 
 private:
-    FILE* fd;
+    FILE *fd;
     std::vector <SQLCompatibility> sqlCompatibilities;
 };
 

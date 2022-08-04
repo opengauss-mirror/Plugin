@@ -39,18 +39,25 @@ extern void PSqlPostInit(void);
 
 extern PsqlSettings pset;
 
+struct ScanSingleSql {
+    std::string sql;
+    int line;
+public:
+    ScanSingleSql(std::string sql, int line) : sql(sql), line(line) {};
+};
+
+
 class Scan {
 public:
-    explicit Scan(FILE* fd);
+    explicit Scan(FILE *fd);
 
-    vector <std::string> GetNextSql();
+    vector <ScanSingleSql> GetNextSql();
 
     void FreeScan();
 
 private:
     PsqlScanState scanState = nullptr;
-    FILE* fd = nullptr;
+    FILE *fd = nullptr;
 };
-
 
 #endif //OPENGAUSS_SCAN_H

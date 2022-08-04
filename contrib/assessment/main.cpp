@@ -65,7 +65,7 @@ int g_globalDatabaseType = -1;
 
 static AssessmentSettings g_assessmentSettings{};
 
-vector <string> SplitSQLFile(FILE* file);
+vector <ScanSingleSql> SplitSQLFile(FILE* file);
 
 void InitParam(char* argv[], int argc);
 
@@ -74,8 +74,6 @@ void CheckOutputPrivilege();
 FILE* CheckAndOpenFile(char* path, const char* mode);
 
 void CreateAssessmentDatabase();
-
-vector <string> SplitSQLFile(const FILE* file);
 
 void PrintProcess(size_t sqlSize, size_t i);
 
@@ -221,7 +219,7 @@ int main(int argc, char* argv[])
         exit(EXIT_FAILURE);
     }
 
-    vector <string> allSql = SplitSQLFile(file);
+    vector <ScanSingleSql> allSql = SplitSQLFile(file);
 
     CompatibilityTable* compatibilityTable = new CompatibilityTable();
     if (!compatibilityTable->GenerateReportHeader(g_assessmentSettings.inputFile, g_assessmentSettings.outputFile,
@@ -231,7 +229,7 @@ int main(int argc, char* argv[])
         exit(EXIT_FAILURE);
     }
     for (size_t i = 0; i < allSql.size(); i++) {
-        auto &str = allSql[i];
+        auto &str = allSql[i].sql;
         bool gramTest = true;
         AssessmentType assessmentType = UNSUPPORTED;
         CompatibilityType compatibilityType = UNSUPPORTED_COMPATIBLE;
@@ -290,7 +288,7 @@ int main(int argc, char* argv[])
                 }
             }
         }
-        compatibilityTable->AppendOneSQL(str, assessmentType, compatibilityType, errorResult);
+        compatibilityTable->AppendOneSQL(allSql[i].line, str, assessmentType, compatibilityType, errorResult);
         PrintProcess(allSql.size(), i);
     }
     fprintf(stdout, _("%s"), "\n");
@@ -319,11 +317,11 @@ void PrintProcess(size_t sqlSize, size_t i)
     }
 }
 
-vector <string> SplitSQLFile(FILE* file)
+vector <ScanSingleSql> SplitSQLFile(FILE* file)
 {
     Scan* scan = new Scan(file);
-    vector <string> vec;
-    vector <string> allSql;
+    vector <ScanSingleSql> vec;
+    vector <ScanSingleSql> allSql;
     while ((vec = scan->GetNextSql()).size() != 0) {
         allSql.insert(allSql.end(), vec.begin(), vec.end());
     }
