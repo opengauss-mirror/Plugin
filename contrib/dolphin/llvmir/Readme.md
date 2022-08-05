@@ -19,13 +19,13 @@ include $(top_builddir)/src/Makefile.global
 GCC_TOOLCHAIN=$(with_3rd)/$(BUILD_TOOLS_PATH)/gcc7.3/gcc
 
 ifeq ("$(host_cpu)", "aarch64")
-    arch_opt = -march=armv8-a+crc+lse -D__USE_NUMA -D__ARM_LSE
+    arch_opt = -march=armv8-a -D__USE_NUMA
 endif
 
 CLANGFLAGS = ${CPPFLAGS}
 
 CLANGFLAGS += -pipe -pthread -Wall -Wpointer-arith -Wno-write-strings -fnon-call-exceptions -fno-common -Wendif-labels -Wmissing-format-attribute -Wformat-security -fno-strict-aliasing -fwrapv
-CLANGFLAGS += -Wno-attributes -fno-omit-frame-pointer -fstack-protector -fsigned-char -std=c++14 $(arch_opt)  -DENABLE_GSTRACE -D_GNU_SOURCE -D_REENTRANT -D_THREAD_SAFE -D_POSIX_PTHREAD_SEMANTICS
+CLANGFLAGS += -Wno-attributes -fno-omit-frame-pointer -fsigned-char -fstrict-aliasing -fdiscard-value-names -std=c++14 $(arch_opt)  -DENABLE_GSTRACE -D_GNU_SOURCE -D_REENTRANT -D_THREAD_SAFE -D_POSIX_PTHREAD_SEMANTICS
 CLANGFLAGS += -D_GLIBCXX_USE_CXX11_ABI=0 -DSTREAMPLAN -DPGXC
 CLANGFLAGS += --gcc-toolchain=$(GCC_TOOLCHAIN)
 
