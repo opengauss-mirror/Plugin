@@ -152,14 +152,21 @@ void PSqlPostInit(void)
     pset.encoding = 0;
 }
 
-vector <std::string> Scan::GetNextSql()
+vector <ScanSingleSql> Scan::GetNextSql()
 {
     volatile PQExpBuffer query_buf = createPQExpBuffer();
-    vector <std::string> result{};
+    vector <ScanSingleSql> result{};
+    bool continueSearch = false;
+    long errLine = 1;
+    long currentLine = 0;
     while (true) {
         auto line = gets_fromFile(this->fd);
+        currentLine++;
         /* incomplete sql at the end of file will not be processed */
         if (line == nullptr) {
+            if (continueSearch) {
+                fprintf(stdout, "%s: SQL in line %ld is incomplete\n", pset.progname, errLine);
+            }
             destroyPQExpBuffer(query_buf);
             return result;
         }
@@ -177,11 +184,14 @@ vector <std::string> Scan::GetNextSql()
             }
 
             if (scan_result == PSCAN_SEMICOLON) {
-                result.emplace_back(query_buf->data);
+                continueSearch = false;
+                result.emplace_back(query_buf->data, errLine);
+                errLine = currentLine + 1;
                 resetPQExpBuffer(query_buf);
                 continue;
             } else if (scan_result == PSCAN_BACKSLASH) {
                 /* skip backslash command */
+                continueSearch = false;
                 resetPQExpBuffer(query_buf);
                 break;
             }
@@ -192,6 +202,7 @@ vector <std::string> Scan::GetNextSql()
 
             /* fall out of loop if lexer reached EOL */
             if (scan_result == PSCAN_INCOMPLETE || scan_result == PSCAN_EOL) {
+                continueSearch = true;
                 break;
             }
         }
