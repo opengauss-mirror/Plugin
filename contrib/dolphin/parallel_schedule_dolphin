@@ -19,7 +19,9 @@ test: greatest_least join_without_on mysqlmode_fullgroup mysqlmode_strict
 test: kill set_password network
 
 # must be single test group, cause other connection will affect the result
-test: show
+test: test_shows
+
+test: test_shows_1
 
 test: nvarchar regexp upsert
 
