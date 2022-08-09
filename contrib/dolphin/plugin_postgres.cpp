@@ -1,6 +1,7 @@
 #include "postgres.h"
 #include "plugin_parser/parser.h"
 #include "plugin_parser/analyze.h"
+#include "plugin_storage/hash.h"
 #include "plugin_postgres.h"
 #include "commands/extension.h"
 #include "commands/dbcommands.h"
@@ -183,6 +184,7 @@ void init_plugin_object()
 {
     u_sess->hook_cxt.transformStmtHook = (void*)transformStmt;
     u_sess->hook_cxt.execInitExprHook = (void*)ExecInitExpr;
+    u_sess->hook_cxt.computeHashHook  = (void*)compute_hash_default;
     set_processutility_prehook();
     set_default_guc();
 }

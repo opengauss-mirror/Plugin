@@ -47,6 +47,7 @@ typedef int16 YearADT;
 extern Datum year_mi_interval(YearADT year, const Interval* span);
 extern Datum year_pl_interval(YearADT year, const Interval* span);
 extern Datum year_mi(YearADT y1, YearADT y2);
+extern Datum year_hash(PG_FUNCTION_ARGS);
 extern int year_cmp_internal(YearADT y1, YearADT y2);
 
 

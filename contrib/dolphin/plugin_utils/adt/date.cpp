@@ -59,6 +59,8 @@ PG_FUNCTION_INFO_V1_PUBLIC(numeric_b_format_time);
 extern "C" DLL_PUBLIC Datum numeric_b_format_time(PG_FUNCTION_ARGS);
 PG_FUNCTION_INFO_V1_PUBLIC(int32_b_format_date);
 extern "C" DLL_PUBLIC Datum int32_b_format_date(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(negetive_time);
+extern "C" DLL_PUBLIC Datum negetive_time(PG_FUNCTION_ARGS);
 
 /* common code for timetypmodin and timetztypmodin */
 static int32 anytime_typmodin(bool istz, ArrayType* ta)
@@ -1351,6 +1353,11 @@ static char* adjust_b_format_time(char *str, int *timeSign, int *D, bool *hasD)
         }
     }
     return str;
+}
+
+Datum negetive_time(PG_FUNCTION_ARGS) {
+    TimeADT time = PG_GETARG_TIMEADT(0);
+    PG_RETURN_TIMEADT(-time);
 }
 
 /* tm2time()

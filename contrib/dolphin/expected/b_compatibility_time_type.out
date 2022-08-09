@@ -207,7 +207,6 @@ SELECT 100000000::date;
 ERROR:  Out of range value for date
 CONTEXT:  referenced column: date
 -- test time
-CREATE TABLE time_tbl (v time);
 -- '[-][D] hh:mm:ss.fsec'
 SELECT time(7)'12:12:12.123456';
 WARNING:  TIME(7) precision reduced to maximum allowed, 6
@@ -498,6 +497,29 @@ SELECT 8385959.9999999::time;
  839:00:00
 (1 row)
 
+SELECT -232323::time;
+ ?column?  
+-----------
+ -23:23:23
+(1 row)
+
+SELECT -8385959::time;
+  ?column?  
+------------
+ -838:59:59
+(1 row)
+
+CREATE TABLE time_tbl (v time);
+INSERT INTO time_tbl VALUES(-561234);
+INSERT INTO time_tbl VALUES(-1202334);
+SELECT * FROM time_tbl;
+     v      
+------------
+ -56:12:34
+ -120:23:34
+(2 rows)
+
+DROP TABLE time_tbl;
 -- test function
 SELECT time '830:12:34' + interval '3 hours';
  ?column?  
@@ -831,21 +853,21 @@ LINE 1: INSERT INTO timestamp_tbl VALUES ('0101');
                                           ^
 CONTEXT:  referenced column: v
 -- YYYYMMDDhhmmss or YYMMDDhhmmss
-INSERT INTO timestamp_tbl VALUES (11::timestamp);
+INSERT INTO timestamp_tbl VALUES (11);
 ERROR:  timestamp out of range
 CONTEXT:  referenced column: v
-INSERT INTO timestamp_tbl VALUES (111::timestamp);
-INSERT INTO timestamp_tbl VALUES (1111::timestamp);
-INSERT INTO timestamp_tbl VALUES (11111::timestamp);
-INSERT INTO timestamp_tbl VALUES (111111::timestamp);
-INSERT INTO timestamp_tbl VALUES (1111111::timestamp);
-INSERT INTO timestamp_tbl VALUES (11111111::timestamp);
-INSERT INTO timestamp_tbl VALUES (111111111::timestamp);
-INSERT INTO timestamp_tbl VALUES (1111111111::timestamp);
-INSERT INTO timestamp_tbl VALUES (11111111111::timestamp);
-INSERT INTO timestamp_tbl VALUES (111111111111::timestamp);
-INSERT INTO timestamp_tbl VALUES (1111111111111::timestamp);
-INSERT INTO timestamp_tbl VALUES (11111111111111::timestamp);
+INSERT INTO timestamp_tbl VALUES (111);
+INSERT INTO timestamp_tbl VALUES (1111);
+INSERT INTO timestamp_tbl VALUES (11111);
+INSERT INTO timestamp_tbl VALUES (111111);
+INSERT INTO timestamp_tbl VALUES (1111111);
+INSERT INTO timestamp_tbl VALUES (11111111);
+INSERT INTO timestamp_tbl VALUES (111111111);
+INSERT INTO timestamp_tbl VALUES (1111111111);
+INSERT INTO timestamp_tbl VALUES (11111111111);
+INSERT INTO timestamp_tbl VALUES (111111111111);
+INSERT INTO timestamp_tbl VALUES (1111111111111);
+INSERT INTO timestamp_tbl VALUES (11111111111111);
 SELECT * FROM timestamp_tbl;
                 v                
 ---------------------------------
@@ -1278,5 +1300,292 @@ ERROR:  Invalid integer value: "中文2122"
 LINE 1: select year '中文2122';
                     ^
 CONTEXT:  referenced column: year
+-- test partition key
+CREATE TABLESPACE b_time_type_example RELATIVE LOCATION 'tablespace1/tablespace_1';
+-- year range key
+CREATE TABLE y_range
+(
+    y year
+)
+TABLESPACE b_time_type_example
+PARTITION BY RANGE(y)
+(
+    PARTITION P1 VALUES LESS THAN(2000),
+    PARTITION P2 VALUES LESS THAN(2050)
+)
+ENABLE ROW MOVEMENT;
+INSERT INTO y_range VALUES(1997);
+INSERT INTO y_range VALUES(2030);
+INSERT INTO y_range VALUES(2060);
+ERROR:  inserted partition key does not map to any table partition
+SELECT * FROM y_range;
+  y   
+------
+ 1997
+ 2030
+(2 rows)
+
+SELECT * FROM y_range PARTITION(P1);
+  y   
+------
+ 1997
+(1 row)
+
+SELECT * FROM y_range PARTITION(P2);
+  y   
+------
+ 2030
+(1 row)
+
+DROP TABLE y_range;
+-- time range key
+CREATE TABLE ti_range
+(
+    t time
+)
+TABLESPACE b_time_type_example
+PARTITION BY RANGE(t)
+(
+        PARTITION P1 VALUES LESS THAN('-12:00:00'),
+        PARTITION P2 VALUES LESS THAN('48:00:00')
+)
+ENABLE ROW MOVEMENT;
+INSERT INTO ti_range VALUES('-20:00:00');
+INSERT INTO ti_range VALUES('20:00:00');
+INSERT INTO ti_range VALUES('120:00:00');
+ERROR:  inserted partition key does not map to any table partition
+SELECT * FROM ti_range;
+     t     
+-----------
+ -20:00:00
+ 20:00:00
+(2 rows)
+
+SELECT * FROM ti_range PARTITION(P1);
+     t     
+-----------
+ -20:00:00
+(1 row)
+
+SELECT * FROM ti_range PARTITION(P2);
+    t     
+----------
+ 20:00:00
+(1 row)
+
+DROP TABLE ti_range;
+-- year list key
+CREATE TABLE y_list
+(
+    y year
+)
+TABLESPACE b_time_type_example
+PARTITION BY LIST(y)
+(
+    PARTITION P1 VALUES IN(1991, 1997, 2000),
+    PARTITION P2 VALUES IN(1992, 1998, 2010)
+)
+ENABLE ROW MOVEMENT;
+INSERT INTO y_list VALUES(1991);
+INSERT INTO y_list VALUES(1997);
+INSERT INTO y_list VALUES(2000);
+INSERT INTO y_list VALUES(1992);
+INSERT INTO y_list VALUES(1998);
+INSERT INTO y_list VALUES(2010);
+INSERT INTO y_list VALUES(2011);
+ERROR:  inserted partition key does not map to any table partition
+INSERT INTO y_list VALUES(1990);
+ERROR:  inserted partition key does not map to any table partition
+SELECT * FROM y_list;
+  y   
+------
+ 1992
+ 1998
+ 2010
+ 1991
+ 1997
+ 2000
+(6 rows)
+
+SELECT * FROM y_list PARTITION(P1);
+  y   
+------
+ 1991
+ 1997
+ 2000
+(3 rows)
+
+SELECT * FROM y_list PARTITION(P2);
+  y   
+------
+ 1992
+ 1998
+ 2010
+(3 rows)
+
+DROP TABLE y_list;
+-- time list key
+CREATE TABLE ti_list
+(
+    t time
+)
+TABLESPACE b_time_type_example
+PARTITION BY LIST(t)
+(
+        PARTITION P1 VALUES IN('12:00:00', '60000', '-3:0:0'),
+        PARTITION P2 VALUES IN('2:0:0', '-5:0:0')
+)
+ENABLE ROW MOVEMENT;
+INSERT INTO ti_list VALUES('12:00:00');
+INSERT INTO ti_list VALUES('02:00:00');
+INSERT INTO ti_list VALUES('6:00:00');
+INSERT INTO ti_list VALUES('-30000');
+INSERT INTO ti_list VALUES('-50000');
+INSERT INTO ti_list VALUES('3:12:12');
+ERROR:  inserted partition key does not map to any table partition
+SELECT * FROM ti_list;
+     t     
+-----------
+ 02:00:00
+ -05:00:00
+ 12:00:00
+ 06:00:00
+ -03:00:00
+(5 rows)
+
+SELECT * FROM ti_list PARTITION(P1);
+     t     
+-----------
+ 12:00:00
+ 06:00:00
+ -03:00:00
+(3 rows)
+
+SELECT * FROM ti_list PARTITION(P2);
+     t     
+-----------
+ 02:00:00
+ -05:00:00
+(2 rows)
+
+DROP TABLE ti_list;
+-- year hash key
+CREATE TABLE y_hash
+(
+    y year
+)
+TABLESPACE b_time_type_example
+PARTITION BY HASH(y)
+(
+    PARTITION P1,
+    PARTITION P2,
+    PARTITION P3,
+    PARTITION P4
+);
+INSERT INTO y_hash VALUES(1991);
+INSERT INTO y_hash VALUES(2010);
+INSERT INTO y_hash VALUES(2054);
+INSERT INTO y_hash VALUES(2056);
+INSERT INTO y_hash VALUES(2000);
+INSERT INTO y_hash VALUES(1992);
+INSERT INTO y_hash VALUES(1998);
+INSERT INTO y_hash VALUES(1970);
+INSERT INTO y_hash VALUES(1980);
+INSERT INTO y_hash VALUES(2133);
+INSERT INTO y_hash VALUES(2100);
+INSERT INTO y_hash VALUES(2122);
+SELECT * FROM y_hash;
+  y   
+------
+ 1970
+ 2133
+ 2122
+ 2054
+ 2056
+ 2000
+ 1998
+ 1980
+ 2100
+ 1991
+ 2010
+ 1992
+(12 rows)
+
+SELECT * FROM y_hash PARTITION(P1);
+  y   
+------
+ 1991
+ 2010
+ 1992
+(3 rows)
+
+SELECT * FROM y_hash PARTITION(P2);
+  y   
+------
+ 1980
+ 2100
+(2 rows)
+
+SELECT * FROM y_hash PARTITION(P3);
+  y   
+------
+ 2054
+ 2056
+ 2000
+ 1998
+(4 rows)
+
+SELECT * FROM y_hash PARTITION(P4);
+  y   
+------
+ 1970
+ 2133
+ 2122
+(3 rows)
+
+DROP TABLE y_hash;
+-- time hash key
+CREATE TABLE ti_hash
+(
+    ti time
+)
+TABLESPACE b_time_type_example
+PARTITION BY HASH(ti)
+(
+    PARTITION P1,
+    PARTITION P2
+);
+INSERT INTO ti_hash VALUES('12:1:1');
+INSERT INTO ti_hash VALUES('12:1:2');
+INSERT INTO ti_hash VALUES('12:1:3');
+INSERT INTO ti_hash VALUES('12:1:4');
+INSERT INTO ti_hash VALUES('12:1:5');
+SELECT * FROM ti_hash;
+    ti    
+----------
+ 12:01:01
+ 12:01:03
+ 12:01:04
+ 12:01:05
+ 12:01:02
+(5 rows)
+
+SELECT * FROM ti_hash PARTITION(P1);
+    ti    
+----------
+ 12:01:02
+(1 row)
+
+SELECT * FROM ti_hash PARTITION(P2);
+    ti    
+----------
+ 12:01:01
+ 12:01:03
+ 12:01:04
+ 12:01:05
+(4 rows)
+
+DROP TABLE ti_hash;
 \c postgres
 DROP DATABASE b_time_type;
+DROP TABLESPACE b_time_type_example;
