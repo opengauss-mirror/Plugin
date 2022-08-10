@@ -2232,12 +2232,12 @@ void ReindexCommand(ReindexStmt* stmt, bool is_top_level)
     switch (stmt->kind) {
         case OBJECT_INDEX:
         case OBJECT_INDEX_PARTITION:
-            ReindexIndex(stmt->relation, (const char*)stmt->name, &stmt->memUsage);
+            ReindexIndex(stmt->relation, (const char*)stmt->name, &stmt->memUsage, stmt->concurrent);
             break;
         case OBJECT_TABLE:
         case OBJECT_MATVIEW:
         case OBJECT_TABLE_PARTITION:
-            ReindexTable(stmt->relation, (const char*)stmt->name, &stmt->memUsage);
+            ReindexTable(stmt->relation, (const char*)stmt->name, &stmt->memUsage, stmt->concurrent);
             break;
         case OBJECT_INTERNAL:
         case OBJECT_INTERNAL_PARTITION:
@@ -2252,7 +2252,7 @@ void ReindexCommand(ReindexStmt* stmt, bool is_top_level)
              * intended effect!
              */
             PreventTransactionChain(is_top_level, "REINDEX DATABASE");
-            ReindexDatabase(stmt->name, stmt->do_system, stmt->do_user, &stmt->memUsage);
+            ReindexDatabase(stmt->name, stmt->do_system, stmt->do_user, &stmt->memUsage, stmt->concurrent);
             break;
         default: {
             ereport(ERROR,
@@ -2267,8 +2267,11 @@ static void set_item_arg_according_to_def_name(DefElem* item)
     if (strcmp(item->defname, "transaction_isolation") == 0) {
         SetPGVariable("transaction_isolation", list_make1(item->arg), true);
     } else if (strcmp(item->defname, "transaction_read_only") == 0) {
+#ifdef ENABLE_MULTIPLE_NODES
         /* Set read only state from CN when this DN is not read only. */
-        if (u_sess->attr.attr_storage.DefaultXactReadOnly == false) {
+        if (u_sess->attr.attr_storage.DefaultXactReadOnly == false)
+#endif
+        {
             SetPGVariable("transaction_read_only", list_make1(item->arg), true);
         }
     } else if (strcmp(item->defname, "transaction_deferrable") == 0) {
@@ -6732,6 +6735,11 @@ void standard_ProcessUtility(Node* parse_tree, const char* query_string, ParamLi
             ReindexStmt* stmt = (ReindexStmt*)parse_tree;
             RemoteQueryExecType exec_type;
             bool is_temp = false;
+
+            /* use for reindex concurrent */
+            if(stmt->concurrent)
+                PreventTransactionChain(is_top_level,"REINDEX CONCURRENTLY");
+                
             pgstat_set_io_state(IOSTATE_WRITE);
 #ifdef PGXC
             if (IS_PGXC_COORDINATOR) {
