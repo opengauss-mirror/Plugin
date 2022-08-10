@@ -530,6 +530,43 @@ select format('%s, %s, %s, %s, %s, %s',1 ,1 ,1 ,1, 1, 1);
  1, 1, 1, 1, 1, 1
 (1 row)
 
+-- test for original function format with variadic array grammar.
+select format('%s, %s', variadic array['Hello','World']);
+    format    
+--------------
+ Hello, World
+(1 row)
+
+select format('%s, %s', variadic array[1, 2]);
+ format 
+--------
+ 1, 2
+(1 row)
+
+select format('%s, %s', variadic array[true, false]);
+ format 
+--------
+ t, f
+(1 row)
+
+select format('%s, %s', variadic array[true, false]::text[]);
+   format    
+-------------
+ true, false
+(1 row)
+
+select format('%2$s, %1$s', variadic array['first', 'second']);
+    format     
+---------------
+ second, first
+(1 row)
+
+select format('%2$s, %1$s', variadic array[1, 2]);
+ format 
+--------
+ 2, 1
+(1 row)
+
 \c postgres
 drop database db_db_b_format;
 -- test for A compatibility to ensure the original functionality is good.
