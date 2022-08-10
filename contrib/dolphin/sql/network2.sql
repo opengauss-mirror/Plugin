@@ -2,7 +2,7 @@ drop database if exists network2;
 create database network2 dbcompatibility 'b';
 \c network2
 select inet_ntoa(inet_aton('255.255.255.255.255.255.255.255'));
-select inet_ntoa(1099511627775),inet_ntoa(4294902271),inet_ntoa(511);
+select inet_ntoa(1099511627775),inet_ntoa(4294902271),inet_ntoa(4294967295),inet_ntoa(511);
 select inet_aton('255.255.255.255.255'),inet_aton('255.255.1.255'),inet_aton('0.1.255');
 select hex(inet_aton('127'));
 select hex(inet_aton('127.1'));

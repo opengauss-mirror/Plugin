@@ -1632,7 +1632,7 @@ Datum inetntoa(PG_FUNCTION_ARGS)
     if (n > UINT32_MAX) {
         PG_RETURN_NULL();
     }
-    char res[IPV4_LEN_MAX + 1] = {0};
+    char res[IPV4_LEN_MAX + 2] = {0};
     errno_t rc = EOK;
 
     unsigned char buf[INADDRSZ];
