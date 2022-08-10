@@ -977,6 +977,73 @@ CREATE TABLE [ IF NOT EXISTS ] partition_table_name
     
     -- 删除分区表
     openGauss=# drop table test_hash;
+
+
+
+    --rebuild,remove,check,repair,optimize语法示例
+    --创建分区表test_part
+    CREATE TABLE IF NOT EXISTS test_part
+    (
+    a int primary key not null default 5,
+    b int,
+    c int,
+    d int
+    ) 
+    PARTITION BY RANGE(a)
+    (
+        PARTITION p0 VALUES LESS THAN (100000),
+        PARTITION p1 VALUES LESS THAN (200000),
+        PARTITION p2 VALUES LESS THAN (300000)
+    );
+    create unique index idx_c on test_part (c);
+    create index idx_b on test_part using btree(b) local;
+    alter table test_part add constraint uidx_d unique(d);
+    alter table test_part add constraint uidx_c unique using index idx_c;
+    --向分区表插入数据
+    insert into test_part (with RECURSIVE t_r(i,j,k,m) as(values(0,1,2,3) union all select i+1,j+2,k+3,m+4 from t_r where i < 250000) select * from t_r);
+    --检查分区表系统信息
+    select relname from pg_partition where (parentid in (select oid from pg_class where relname = 'test_part')) and parttype = 'p' and oid != relfilenode order by relname;
+    --通过索引从分区表select数据
+    explain select * from test_part where ((99990 < c and c < 100000) or (219990 < c and c < 220000));
+    select * from test_part where ((99990 < c and c < 100000) or (219990 < c and c < 220000));
+    select * from test_part where ((99990 < d and d < 100000) or (219990 < d and d < 220000));
+    select * from test_part where ((99990 < b and b < 100000) or (219990 < b and b < 220000));
+
+    --测试rebuild分区表语法
+    ALTER TABLE test_part REBUILD PARTITION p0, p1;
+    --检查分区表系统信息和真实数据
+    select relname from pg_partition where (parentid in (select oid from pg_class where relname = 'test_part')) and parttype = 'p' and oid != relfilenode order by relname;
+    explain select * from test_part where ((99990 < c and c < 100000) or (219990 < c and c < 220000));
+    select * from test_part where ((99990 < c and c < 100000) or (219990 < c and c < 220000));
+    select * from test_part where ((99990 < d and d < 100000) or (219990 < d and d < 220000));
+    select * from test_part where ((99990 < b and b < 100000) or (219990 < b and b < 220000));
+
+    --测试rebuild partition all分区表语法
+    ALTER TABLE test_part REBUILD PARTITION all;
+    --检查分区表系统信息和真实数据
+    select relname from pg_partition where (parentid in (select oid from pg_class where relname = 'test_part')) and parttype = 'p' and oid != relfilenode order by relname;
+    explain select * from test_part where ((99990 < c and c < 100000) or (219990 < c and c < 220000));
+    select * from test_part where ((99990 < c and c < 100000) or (219990 < c and c < 220000));
+    select * from test_part where ((99990 < d and d < 100000) or (219990 < d and d < 220000));
+    select * from test_part where ((99990 < b and b < 100000) or (219990 < b and b < 220000));
+
+    --测试 repair check optimize 分区表语法
+    ALTER TABLE test_part repair PARTITION p0,p1;
+    ALTER TABLE test_part check PARTITION p0,p1;
+    ALTER TABLE test_part optimize PARTITION p0,p1;
+    ALTER TABLE test_part repair PARTITION all;
+    ALTER TABLE test_part check PARTITION all;
+    ALTER TABLE test_part optimize PARTITION all;
+
+    --测试 remove partitioning 语法
+    select relname, boundaries from pg_partition where parentid in (select parentid from pg_partition where relname = 'test_part') order by relname;
+    select parttype,relname from pg_class where relname = 'test_part' and relfilenode != oid;
+    ALTER TABLE test_part remove PARTITIONING;
+    --检查分区表移除分区信息后的系统信息和真实数据
+    explain select * from test_part where ((99990 < c and c < 100000) or (219990 < c and c < 220000));
+    select * from test_part where ((99990 < c and c < 100000) or (219990 < c and c < 220000));
+    select relname, boundaries from pg_partition where parentid in (select parentid from pg_partition where relname = 'test_part') order by relname;
+    select parttype,relname from pg_class where relname = 'test_part' and relfilenode != oid;
     ```
 
 
