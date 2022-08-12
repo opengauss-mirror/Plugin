@@ -60,8 +60,12 @@ typedef struct BSqlPluginContext {
     char* sqlModeString;
     unsigned int sqlModeFlags;
     List* lockNameList;
+    double b_db_timestamp;
 } bSqlPluginContext;
 
 BSqlPluginContext* GetSessionContext();
+
+#define DEFAULT_GUC_B_DB_TIMESTAMP 0.0
+#define MAX_GUC_B_DB_TIMESTAMP 2147483647.0
 
 #endif

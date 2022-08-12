@@ -32,6 +32,8 @@ extern int DecodeDateTimeForBDatabase(char** field, int* ftype, int nf, int* dty
 extern void EncodeDateOnlyForBDatabase(struct pg_tm* tm, int style, char* str);
 extern void EncodeDateTimeForBDatabase(struct pg_tm* tm, fsec_t fsec, bool print_tz, int tz, const char* tzn, int style, char* str);
 
+extern void Unixtimestamp2tm(double unixtimestamp, struct pg_tm* tm, fsec_t* fsec);
+
 #endif // !FRONTEND_PARSER
 
 #endif /* DATETIME_H */
