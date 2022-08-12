@@ -518,11 +518,16 @@ static int errstate;
 %type <list>	alter_table_cmds alter_partition_cmds alter_table_or_partition alter_index_or_partition alter_type_cmds add_column_cmds modify_column_cmds alter_index_rebuild_partition
 
 %type <node>	AlterPartitionRebuildStmt AlterPartitionRemoveStmt AlterPartitionCheckStmt AlterPartitionRepairStmt AlterPartitionOptimizeStmt
+
+%type <node>	drop_partition_cmd_for_bdatabase drop_subpartition_cmd_for_bdatabase drop_partition_cmd drop_subpartition_cmd add_partition_cmd
+
+%type <list>	alter_partition_cmds_for_bdatabase alter_subpartition_cmds_for_bdatabase drop_partition_cmds_for_bdatabase drop_subpartition_cmds_for_bdatabase drop_partition_cmds drop_subpartition_cmds add_partition_cmds_for_bdatabase
+
 %type <list>	partition_name_list
 
 %type <node>	exchange_partition_cmd_for_bdatabase truncate_partition_cmd truncate_partition_cmd_for_bdatabase
 
-%type <list>	alter_partition_cmds_for_bdatabase truncate_partition_cmds truncate_partition_cmds_for_bdatabase
+%type <list>	truncate_partition_cmds truncate_partition_cmds_for_bdatabase
 
 %type <dbehavior>	opt_drop_behavior
 
@@ -3172,6 +3177,8 @@ alter_table_or_partition:
 			alter_table_cmds        { $$ = ($1); }
 			| alter_partition_cmds  { $$ = ($1); }
 			| alter_partition_cmds_for_bdatabase  { $$ = ($1); }
+			| alter_subpartition_cmds_for_bdatabase  { $$ = ($1); }
+			| ADD_PARTITION '(' add_partition_cmds_for_bdatabase ')' { $$ = ($3); }
 		;
 
 /* ALTER TABLE sql clauses for ordinary table */
@@ -3215,182 +3222,9 @@ alter_partition_cmd:
 				$$ = (Node *)n;
 			}
 		/* ALTER TABLE ADD PARTITION: use less/than */
-		| ADD_PARTITION name VALUES LESS THAN
-		'(' maxValueList ')' OptTableSpace
+		| ADD_PARTITION add_partition_cmd
 			{
-				RangePartitionDefState *p = makeNode(RangePartitionDefState);
-				AlterTableCmd *n = makeNode(AlterTableCmd);
-				AddPartitionState *s = makeNode(AddPartitionState);
-				p->partitionName = $2;
-				p->boundary = $7;
-				p->tablespacename = $9;
-				s->partitionList = list_make1(p);
-				s->isStartEnd = false;
-				n->subtype = AT_AddPartition;
-				n->def = (Node*)s;
-				$$ = (Node *)n;
-			}
-		/* ALTER TABLE ADD PARTITION: use START/END */
-		| ADD_PARTITION name START '(' maxValueList ')'  END_P '(' maxValueList ')' opt_range_every_list OptTableSpace
-			{
-				RangePartitionStartEndDefState *p = makeNode(RangePartitionStartEndDefState);
-				AlterTableCmd *n = makeNode(AlterTableCmd);
-				AddPartitionState *s = makeNode(AddPartitionState);
-				p->partitionName = $2;
-				p->startValue = $5;
-				p->endValue = $9;
-				p->everyValue = $11;
-				p->tableSpaceName = $12;
-				s->partitionList = list_make1(p);
-				s->isStartEnd = true;
-				n->subtype = AT_AddPartition;
-				n->def = (Node*)s;
-				$$ = (Node *)n;
-			}
-		| ADD_PARTITION name END_P '(' maxValueList ')' OptTableSpace
-			{
-				RangePartitionStartEndDefState *p = makeNode(RangePartitionStartEndDefState);
-				AlterTableCmd *n = makeNode(AlterTableCmd);
-				AddPartitionState *s = makeNode(AddPartitionState);
-				p->partitionName = $2;
-				p->startValue = NIL;
-				p->endValue = $5;
-				p->everyValue = NIL;
-				p->tableSpaceName = $7;
-				s->partitionList = list_make1(p);
-				s->isStartEnd = true;
-				n->subtype = AT_AddPartition;
-				n->def = (Node*)s;
-				$$ = (Node *)n;
-			}
-		| ADD_PARTITION name START '(' maxValueList ')' OptTableSpace
-			{
-				RangePartitionStartEndDefState *p = makeNode(RangePartitionStartEndDefState);
-				AlterTableCmd *n = makeNode(AlterTableCmd);
-				AddPartitionState *s = makeNode(AddPartitionState);
-				p->partitionName = $2;
-				p->startValue = $5;
-				p->endValue = NIL;
-				p->everyValue = NIL;
-				p->tableSpaceName = $7;
-				s->partitionList = list_make1(p);
-				s->isStartEnd = true;
-				n->subtype = AT_AddPartition;
-				n->def = (Node*)s;
-				$$ = (Node *)n;
-			}
-		| ADD_PARTITION name VALUES '(' expr_list ')' OptTableSpace
-			{
-				ListPartitionDefState *p = makeNode(ListPartitionDefState);
-				AlterTableCmd *n = makeNode(AlterTableCmd);
-				AddPartitionState *s = makeNode(AddPartitionState);
-				p->partitionName = $2;
-				p->boundary = $5;
-				p->tablespacename = $7;
-				s->partitionList = list_make1(p);
-				s->isStartEnd = false;
-				n->subtype = AT_AddPartition;
-				n->def = (Node*)s;
-				$$ = (Node *)n;
-			}
-		| ADD_PARTITION name VALUES '(' DEFAULT ')' OptTableSpace
-			{
-				ListPartitionDefState *p = makeNode(ListPartitionDefState);
-				AlterTableCmd *n = makeNode(AlterTableCmd);
-				AddPartitionState *s = makeNode(AddPartitionState);
-				p->partitionName = $2;
-				Const *n_default = makeNode(Const);
-				n_default->ismaxvalue = true;
-				n_default->location = -1;
-				p->boundary = list_make1(n_default);
-				p->tablespacename = $7;
-				s->partitionList = list_make1(p);
-				s->isStartEnd = false;
-				n->subtype = AT_AddPartition;
-				n->def = (Node*)s;
-				$$ = (Node *)n;
-			}
-		| ADD_PARTITION name VALUES LESS THAN
-		'(' maxValueList ')' OptTableSpace '(' subpartition_definition_list ')'
-			{
-				RangePartitionDefState *p = makeNode(RangePartitionDefState);
-				AlterTableCmd *n = makeNode(AlterTableCmd);
-				AddPartitionState *s = makeNode(AddPartitionState);
-				p->partitionName = $2;
-				p->boundary = $7;
-				p->tablespacename = $9;
-				p->subPartitionDefState = $11;
-				int i = 0;
-				ListCell *elem = NULL;
-				List *parts = p->subPartitionDefState;
-				foreach(elem, parts) {
-					if (!IsA((Node*)lfirst(elem), HashPartitionDefState)) {
-						break;
-					}
-					HashPartitionDefState *hashPart = (HashPartitionDefState*)lfirst(elem);
-					hashPart->boundary = list_make1(makeIntConst(i, -1));
-					i++;
-				}
-				s->partitionList = list_make1(p);
-				s->isStartEnd = false;
-				n->subtype = AT_AddPartition;
-				n->def = (Node*)s;
-				$$ = (Node *)n;
-			}
-		| ADD_PARTITION name VALUES '(' expr_list ')' OptTableSpace '(' subpartition_definition_list ')'
-			{
-				ListPartitionDefState *p = makeNode(ListPartitionDefState);
-				AlterTableCmd *n = makeNode(AlterTableCmd);
-				AddPartitionState *s = makeNode(AddPartitionState);
-				p->partitionName = $2;
-				p->boundary = $5;
-				p->tablespacename = $7;
-				p->subPartitionDefState = $9;
-			    int i = 0;
-				ListCell *elem = NULL;
-				List *parts = p->subPartitionDefState;
-				foreach(elem, parts) {
-					if (!IsA((Node*)lfirst(elem), HashPartitionDefState)) {
-						break;
-					}
-					HashPartitionDefState *hashPart = (HashPartitionDefState*)lfirst(elem);
-					hashPart->boundary = list_make1(makeIntConst(i, -1));
-					i++;
-				}
-				s->partitionList = list_make1(p);
-				s->isStartEnd = false;
-				n->subtype = AT_AddPartition;
-				n->def = (Node*)s;
-				$$ = (Node *)n;
-			}
-		| ADD_PARTITION name VALUES '(' DEFAULT ')' OptTableSpace '(' subpartition_definition_list ')'
-			{
-				ListPartitionDefState *p = makeNode(ListPartitionDefState);
-				AlterTableCmd *n = makeNode(AlterTableCmd);
-				AddPartitionState *s = makeNode(AddPartitionState);
-				p->partitionName = $2;
-				Const *n_default = makeNode(Const);
-				n_default->ismaxvalue = true;
-				n_default->location = -1;
-				p->boundary = list_make1(n_default);
-				p->tablespacename = $7;
-				p->subPartitionDefState = $9;
-			    int i = 0;
-				ListCell *elem = NULL;
-				List *parts = p->subPartitionDefState;
-				foreach(elem, parts) {
-					if (!IsA((Node*)lfirst(elem), HashPartitionDefState)) {
-						break;
-					}
-					HashPartitionDefState *hashPart = (HashPartitionDefState*)lfirst(elem);
-					hashPart->boundary = list_make1(makeIntConst(i, -1));
-					i++;
-				}
-				s->partitionList = list_make1(p);
-				s->isStartEnd = false;
-				n->subtype = AT_AddPartition;
-				n->def = (Node*)s;
-				$$ = (Node *)n;
+				$$ = $2;
 			}
 		/* ALTER TABLE MODIFY PARTITION ADD SUBPARTITION */
 		| MODIFY_PARTITION name ADD_SUBPARTITION name VALUES LESS THAN '(' maxValueList ')' OptTableSpace
@@ -3439,17 +3273,6 @@ alter_partition_cmd:
 				$$ = (Node *)n;
 			}
 		/* ALTER TABLE DROP PARTITION */
-		| DROP_PARTITION ColId OptGPI
-			{
-				AlterTableCmd *n = makeNode(AlterTableCmd);
-				n->subtype = AT_DropPartition;
-				n->name = $2;
-				n->behavior = DROP_CASCADE;
-				n->missing_ok = FALSE;
-				n->alterGPI = $3;
-				$$ = (Node *)n;
-			}
-		/* ALTER TABLE DROP PARTITION */
 		| DROP_PARTITION FOR '(' maxValueList ')' OptGPI
 			{
 				RangePartitionDefState *p = makeNode(RangePartitionDefState);
@@ -3464,16 +3287,6 @@ alter_partition_cmd:
 				$$ = (Node *)n;
 			}
 		/* ALTER TABLE DROP SUBPARTITION */
-		| DROP_SUBPARTITION ColId OptGPI
-			{
-				AlterTableCmd *n = makeNode(AlterTableCmd);
-				n->subtype = AT_DropSubPartition;
-				n->name = $2;
-				n->behavior = DROP_CASCADE;
-				n->missing_ok = FALSE;
-				n->alterGPI = $3;
-				$$ = (Node *)n;
-			}
 		| DROP_SUBPARTITION FOR '(' expr_list ')' OptGPI
 			{
 				RangePartitionDefState *p = makeNode(RangePartitionDefState);
@@ -4673,6 +4486,36 @@ alter_partition_cmds_for_bdatabase:
 				n->name = "all";
 				$$ = list_make1((Node *)n);
 			}
+		| DROP_PARTITION ColId OptGPI
+			{
+				AlterTableCmd *n = makeNode(AlterTableCmd);
+				n->name = $2;
+				n->behavior = DROP_CASCADE;
+				n->missing_ok = FALSE;
+				n->alterGPI = $3;
+				n->subtype = AT_DropPartition;
+				$$ = list_make1((Node *)n);
+			}
+		| DROP_PARTITION ColId OptGPI ',' drop_partition_cmds_for_bdatabase
+			{
+				AlterTableCmd *n = makeNode(AlterTableCmd);
+				n->name = $2;
+				n->behavior = DROP_CASCADE;
+				n->missing_ok = FALSE;
+				n->alterGPI = $3;
+				n->subtype = AT_DropPartition;
+				$$ = lappend($5, (Node *)n);
+			}
+		| DROP_PARTITION ColId OptGPI ',' drop_partition_cmds
+			{
+				AlterTableCmd *n = makeNode(AlterTableCmd);
+				n->name = $2;
+				n->behavior = DROP_CASCADE;
+				n->missing_ok = FALSE;
+				n->alterGPI = $3;
+				n->subtype = AT_DropPartition;
+				$$ = lappend($5, (Node *)n);
+			}
 		;
 
 truncate_partition_cmds:
@@ -4772,6 +4615,325 @@ partition_name_list:
 				{
 					$$ = lappend($1, makeStringConst($3, @3));
 				}
+		;
+
+drop_partition_cmds:
+ 			drop_partition_cmd
+ 				{
+ 					$$ = list_make1($1);
+ 				}
+ 			| drop_partition_cmds ',' drop_partition_cmd
+ 				{
+ 					$$ = lappend($1, $3);
+ 				}
+ 			;
+ 	
+drop_partition_cmd:
+		DROP_PARTITION ColId OptGPI
+			{
+				AlterTableCmd *n = makeNode(AlterTableCmd);
+				n->name = $2;
+				n->behavior = DROP_CASCADE;
+				n->missing_ok = FALSE;
+				n->alterGPI = $3;
+				n->subtype = AT_DropPartition;
+				$$ = (Node *)n;
+			}
+		;
+
+drop_partition_cmds_for_bdatabase:
+		drop_partition_cmd_for_bdatabase
+			{
+				$$ = list_make1($1);
+			}
+		| drop_partition_cmds_for_bdatabase ',' drop_partition_cmd_for_bdatabase
+			{
+				$$ = lappend($1, $3);
+			}
+		;
+
+drop_partition_cmd_for_bdatabase:
+		ColId OptGPI
+			{
+				AlterTableCmd *n = makeNode(AlterTableCmd);
+				n->name = $1;
+				n->behavior = DROP_CASCADE;
+				n->missing_ok = FALSE;
+				n->alterGPI = $2;
+				n->subtype = AT_DropPartition;
+				$$ = (Node *)n;
+			}
+		;
+
+alter_subpartition_cmds_for_bdatabase:
+		DROP_SUBPARTITION ColId OptGPI
+			{
+				AlterTableCmd *n = makeNode(AlterTableCmd);
+				n->name = $2;
+				n->behavior = DROP_CASCADE;
+				n->missing_ok = FALSE;
+				n->alterGPI = $3;
+				n->subtype = AT_DropSubPartition;
+				$$ = list_make1((Node *)n);
+			}
+		| DROP_SUBPARTITION ColId OptGPI ',' drop_subpartition_cmds_for_bdatabase
+			{
+				AlterTableCmd *n = makeNode(AlterTableCmd);
+				n->name = $2;
+				n->behavior = DROP_CASCADE;
+				n->missing_ok = FALSE;
+				n->alterGPI = $3;
+				n->subtype = AT_DropSubPartition;
+				$$ = lappend($5, (Node *)n);
+			}
+		| DROP_SUBPARTITION ColId OptGPI ',' drop_subpartition_cmds
+			{
+				AlterTableCmd *n = makeNode(AlterTableCmd);
+				n->name = $2;
+				n->behavior = DROP_CASCADE;
+				n->missing_ok = FALSE;
+				n->alterGPI = $3;
+				n->subtype = AT_DropSubPartition;
+				$$ = lappend($5, (Node *)n);
+			}
+		;
+
+drop_subpartition_cmds:
+		drop_subpartition_cmd
+			{
+				$$ = list_make1($1);
+			}
+		| drop_subpartition_cmds ',' drop_subpartition_cmd
+			{
+				$$ = lappend($1, $3);
+			}
+		;
+
+drop_subpartition_cmd:
+		DROP_SUBPARTITION ColId OptGPI
+			{
+				AlterTableCmd *n = makeNode(AlterTableCmd);
+				n->name = $2;
+				n->behavior = DROP_CASCADE;
+				n->missing_ok = FALSE;
+				n->alterGPI = $3;
+				n->subtype = AT_DropSubPartition;
+				$$ = (Node *)n;
+			}
+		;
+
+drop_subpartition_cmds_for_bdatabase:
+		drop_subpartition_cmd_for_bdatabase
+			{
+				$$ = list_make1($1);
+			}
+		| drop_subpartition_cmds_for_bdatabase ',' drop_subpartition_cmd_for_bdatabase
+			{
+				$$ = lappend($1, $3);
+			}
+		;
+
+drop_subpartition_cmd_for_bdatabase:
+		ColId OptGPI
+			{
+				AlterTableCmd *n = makeNode(AlterTableCmd);
+				n->name = $1;
+				n->behavior = DROP_CASCADE;
+				n->missing_ok = FALSE;
+				n->alterGPI = $2;
+				n->subtype = AT_DropSubPartition;
+				$$ = (Node *)n;
+			}
+		;
+
+add_partition_cmds_for_bdatabase:
+ 			PARTITION add_partition_cmd
+ 				{
+ 					$$ = list_make1($2);
+ 				}
+ 			| add_partition_cmds_for_bdatabase ',' PARTITION add_partition_cmd
+ 				{
+ 					$$ = lappend($1, $4);
+ 				}
+ 			;
+
+add_partition_cmd:
+		name VALUES LESS THAN '(' maxValueList ')' OptTableSpace
+			{
+				RangePartitionDefState *p = makeNode(RangePartitionDefState);
+				AlterTableCmd *n = makeNode(AlterTableCmd);
+				AddPartitionState *s = makeNode(AddPartitionState);
+				p->partitionName = $1;
+				p->boundary = $6;
+				p->tablespacename = $8;
+				s->partitionList = list_make1(p);
+				s->isStartEnd = false;
+				n->subtype = AT_AddPartition;
+				n->def = (Node*)s;
+				$$ = (Node *)n;
+			}
+		/* ALTER TABLE ADD PARTITION: use START/END */
+		| name START '(' maxValueList ')'  END_P '(' maxValueList ')' opt_range_every_list OptTableSpace
+			{
+				RangePartitionStartEndDefState *p = makeNode(RangePartitionStartEndDefState);
+				AlterTableCmd *n = makeNode(AlterTableCmd);
+				AddPartitionState *s = makeNode(AddPartitionState);
+				p->partitionName = $1;
+				p->startValue = $4;
+				p->endValue = $8;
+				p->everyValue = $10;
+				p->tableSpaceName = $11;
+				s->partitionList = list_make1(p);
+				s->isStartEnd = true;
+				n->subtype = AT_AddPartition;
+				n->def = (Node*)s;
+				$$ = (Node *)n;
+			}
+		| name END_P '(' maxValueList ')' OptTableSpace
+			{
+				RangePartitionStartEndDefState *p = makeNode(RangePartitionStartEndDefState);
+				AlterTableCmd *n = makeNode(AlterTableCmd);
+				AddPartitionState *s = makeNode(AddPartitionState);
+				p->partitionName = $1;
+				p->startValue = NIL;
+				p->endValue = $4;
+				p->everyValue = NIL;
+				p->tableSpaceName = $6;
+				s->partitionList = list_make1(p);
+				s->isStartEnd = true;
+				n->subtype = AT_AddPartition;
+				n->def = (Node*)s;
+				$$ = (Node *)n;
+			}
+		| name START '(' maxValueList ')' OptTableSpace
+			{
+				RangePartitionStartEndDefState *p = makeNode(RangePartitionStartEndDefState);
+				AlterTableCmd *n = makeNode(AlterTableCmd);
+				AddPartitionState *s = makeNode(AddPartitionState);
+				p->partitionName = $1;
+				p->startValue = $4;
+				p->endValue = NIL;
+				p->everyValue = NIL;
+				p->tableSpaceName = $6;
+				s->partitionList = list_make1(p);
+				s->isStartEnd = true;
+				n->subtype = AT_AddPartition;
+				n->def = (Node*)s;
+				$$ = (Node *)n;
+			}
+		| name VALUES '(' expr_list ')' OptTableSpace
+			{
+				ListPartitionDefState *p = makeNode(ListPartitionDefState);
+				AlterTableCmd *n = makeNode(AlterTableCmd);
+				AddPartitionState *s = makeNode(AddPartitionState);
+				p->partitionName = $1;
+				p->boundary = $4;
+				p->tablespacename = $6;
+				s->partitionList = list_make1(p);
+				s->isStartEnd = false;
+				n->subtype = AT_AddPartition;
+				n->def = (Node*)s;
+				$$ = (Node *)n;
+			}
+		| name VALUES '(' DEFAULT ')' OptTableSpace
+			{
+				ListPartitionDefState *p = makeNode(ListPartitionDefState);
+				AlterTableCmd *n = makeNode(AlterTableCmd);
+				AddPartitionState *s = makeNode(AddPartitionState);
+				p->partitionName = $1;
+				Const *n_default = makeNode(Const);
+				n_default->ismaxvalue = true;
+				n_default->location = -1;
+				p->boundary = list_make1(n_default);
+				p->tablespacename = $6;
+				s->partitionList = list_make1(p);
+				s->isStartEnd = false;
+				n->subtype = AT_AddPartition;
+				n->def = (Node*)s;
+				$$ = (Node *)n;
+			}
+		| name VALUES LESS THAN
+		'(' maxValueList ')' OptTableSpace '(' subpartition_definition_list ')'
+			{
+				RangePartitionDefState *p = makeNode(RangePartitionDefState);
+				AlterTableCmd *n = makeNode(AlterTableCmd);
+				AddPartitionState *s = makeNode(AddPartitionState);
+				p->partitionName = $1;
+				p->boundary = $6;
+				p->tablespacename = $8;
+				p->subPartitionDefState = $10;
+				int i = 0;
+				ListCell *elem = NULL;
+				List *parts = p->subPartitionDefState;
+				foreach(elem, parts) {
+					if (!IsA((Node*)lfirst(elem), HashPartitionDefState)) {
+						break;
+					}
+					HashPartitionDefState *hashPart = (HashPartitionDefState*)lfirst(elem);
+					hashPart->boundary = list_make1(makeIntConst(i, -1));
+					i++;
+				}
+				s->partitionList = list_make1(p);
+				s->isStartEnd = false;
+				n->subtype = AT_AddPartition;
+				n->def = (Node*)s;
+				$$ = (Node *)n;
+			}
+		| name VALUES '(' expr_list ')' OptTableSpace '(' subpartition_definition_list ')'
+			{
+				ListPartitionDefState *p = makeNode(ListPartitionDefState);
+				AlterTableCmd *n = makeNode(AlterTableCmd);
+				AddPartitionState *s = makeNode(AddPartitionState);
+				p->partitionName = $1;
+				p->boundary = $4;
+				p->tablespacename = $6;
+				p->subPartitionDefState = $8;
+				int i = 0;
+				ListCell *elem = NULL;
+				List *parts = p->subPartitionDefState;
+				foreach(elem, parts) {
+					if (!IsA((Node*)lfirst(elem), HashPartitionDefState)) {
+						break;
+					}
+					HashPartitionDefState *hashPart = (HashPartitionDefState*)lfirst(elem);
+					hashPart->boundary = list_make1(makeIntConst(i, -1));
+					i++;
+				}
+				s->partitionList = list_make1(p);
+				s->isStartEnd = false;
+				n->subtype = AT_AddPartition;
+				n->def = (Node*)s;
+				$$ = (Node *)n;
+			}
+		| name VALUES '(' DEFAULT ')' OptTableSpace '(' subpartition_definition_list ')'
+			{
+				ListPartitionDefState *p = makeNode(ListPartitionDefState);
+				AlterTableCmd *n = makeNode(AlterTableCmd);
+				AddPartitionState *s = makeNode(AddPartitionState);
+				p->partitionName = $1;
+				Const *n_default = makeNode(Const);
+				n_default->ismaxvalue = true;
+				n_default->location = -1;
+				p->boundary = list_make1(n_default);
+				p->tablespacename = $6;
+				p->subPartitionDefState = $8;
+				int i = 0;
+				ListCell *elem = NULL;
+				List *parts = p->subPartitionDefState;
+				foreach(elem, parts) {
+					if (!IsA((Node*)lfirst(elem), HashPartitionDefState)) {
+						break;
+					}
+					HashPartitionDefState *hashPart = (HashPartitionDefState*)lfirst(elem);
+					hashPart->boundary = list_make1(makeIntConst(i, -1));
+					i++;
+				}
+				s->partitionList = list_make1(p);
+				s->isStartEnd = false;
+				n->subtype = AT_AddPartition;
+				n->def = (Node*)s;
+				$$ = (Node *)n;
+			}
 		;
 /*support b_database syntax related with partition*/
 

@@ -228,11 +228,22 @@
     ```
     exchange partition partition_name with table table_name (without/with validation);
     ```
+
 -   兼容b database analyze分区语法对齐
     用于收集与表内容相关的统计信息。执行计划生成器会使用这些统计数据，以确定最有效的执行计划。
     ```
     analyze partition { partition_name } [, ...]
     analyze partition all;
+    ```
+
+-   兼容b database add分区语法。
+    ```
+    ADD {partition_less_than_item | partition_start_end_item| partition_list_item } [, ...]
+    ```
+
+-   兼容b database drop分区语法。
+    ```
+    DROP PARTITION { { partition_name } [ UPDATE GLOBAL INDEX ] } [, ...]
     ```
 
 ## 参数说明<a name="zh-cn_topic_0283137443_zh-cn_topic_0237122077_zh-cn_topic_0059778761_sff7a5cc103ab41709c6f7249e8d47808"></a>
