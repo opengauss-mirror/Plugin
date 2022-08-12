@@ -901,7 +901,7 @@ get_safe_path(text *location_or_dirname, text *filename)
 	NON_EMPTY_TEXT(location_or_dirname);
 	NON_EMPTY_TEXT(filename);
 
-	if (filename == NULL || strlen(text_to_cstring(filename)) == 0) {
+	if (filename == NULL || 0 == VARSIZE_ANY_EXHDR(filename)) {
 	    ereport(ERROR,
 	        (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
 	        errmsg("invalid parameter"),
