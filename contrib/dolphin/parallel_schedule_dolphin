@@ -79,6 +79,8 @@ test: test_table_index
 
 test: db_b_date_time_functions
 
+test: prefixkey_index
+
 test: builtin_funcs/b_compatibility_time_funcs builtin_funcs/b_compatibility_time_funcs2
 
 # case sensitive test, do not insert test case */
