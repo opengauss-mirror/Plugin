@@ -1,6 +1,6 @@
-drop database if exists mysql_test;
-create database mysql_test dbcompatibility 'b';
-\c mysql_test
+drop database if exists db_b_parser4;
+create database db_b_parser4 dbcompatibility 'b';
+\c db_b_parser4
 --验证text类型
 drop table if exists tb_db_b_parser_0001;
 create table tb_db_b_parser_0001(a text(10),b tinytext,c mediumtext,d longtext);
@@ -31,4 +31,4 @@ drop table if exists tb_real_float;
 
 
 \c postgres
-drop database if exists mysql_test;
+drop database if exists db_b_parser4;

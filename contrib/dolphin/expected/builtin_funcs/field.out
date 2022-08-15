@@ -1,7 +1,7 @@
-drop database if exists format_test;
-NOTICE:  database "format_test" does not exist, skipping
-create database format_test dbcompatibility 'B';
-\c format_test
+drop database if exists db_field;
+NOTICE:  database "db_field" does not exist, skipping
+create database db_field dbcompatibility 'B';
+\c db_field
 select field(4,1,2,3,4);
  field 
 -------
@@ -81,4 +81,4 @@ select field(1,2,1.2);
 (1 row)
 
 \c postgres
-drop database if exists format_test;
+drop database if exists db_field;

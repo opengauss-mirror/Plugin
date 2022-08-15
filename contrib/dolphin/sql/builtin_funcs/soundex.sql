@@ -1,6 +1,6 @@
-drop database if exists format_test;
-create database format_test dbcompatibility 'B';
-\c format_test
+drop database if exists db_soundex;
+create database db_soundex dbcompatibility 'B';
+\c db_soundex
 
 select soundex('abc');
 select soundex(10);
@@ -11,4 +11,4 @@ select soundex('hell');
 
 
 \c postgres
-drop database if exists format_test;
+drop database if exists db_soundex;

@@ -108,7 +108,6 @@ static const int MILLISECONDS_PER_SECONDS = 1000;
 
 static Query* transformDeleteStmt(ParseState* pstate, DeleteStmt* stmt);
 static Query* transformInsertStmt(ParseState* pstate, InsertStmt* stmt);
-static void checkUpsertTargetlist(Relation targetTable, List* updateTlist);
 static UpsertExpr* transformUpsertClause(ParseState* pstate, UpsertClause* upsertClause, RangeVar* relation);
 static int count_rowexpr_columns(ParseState* pstate, Node* expr);
 static Query* transformSelectStmt(
@@ -140,6 +139,7 @@ static bool include_groupingset(Node* groupClause);
 static void transformGroupConstToColumn(ParseState* pstate, Node* groupClause, List* targetList);
 static bool checkAllowedTableCombination(ParseState* pstate);
 #ifdef ENABLE_MULTIPLE_NODES
+static void checkUpsertTargetlist(Relation targetTable, List* updateTlist);
 static bool ContainSubLinkWalker(Node* node, void* context);
 static bool ContainSubLink(Node* clause);
 #endif /* ENABLE_MULTIPLE_NODES */
@@ -2185,6 +2185,7 @@ static Node* makeConstByType(Form_pg_attribute att_tup)
     return new_expr;
 }
 
+#ifdef ENABLE_MULTIPLE_NODES
 static void checkUpsertTargetlist(Relation targetTable, List* updateTlist)
 {
     List* index_list = RelationGetIndexInfoList(targetTable);
@@ -2217,6 +2218,7 @@ static void checkUpsertTargetlist(Relation targetTable, List* updateTlist)
         }
     }
 }
+#endif
 
 List* BuildExcludedTargetlist(Relation targetrel, Index exclRelIndex)
 {
@@ -2384,8 +2386,6 @@ static UpsertExpr* transformUpsertClause(ParseState* pstate, UpsertClause* upser
         if (IS_PGXC_COORDINATOR && !u_sess->attr.attr_sql.enable_upsert_to_merge) {
             checkUpsertTargetlist(pstate->p_target_relation, updateTlist);
         }
-#else
-        checkUpsertTargetlist(pstate->p_target_relation, updateTlist);
 #endif
     }
 

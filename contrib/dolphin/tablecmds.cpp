@@ -115,6 +115,7 @@
 #include "plugin_parser/parse_type.h"
 #include "plugin_parser/parse_utilcmd.h"
 #include "plugin_parser/parser.h"
+#include "plugin_utils/partitionfuncs.h"
 #include "pgxc/route.h"
 #include "rewrite/rewriteDefine.h"
 #include "rewrite/rewriteHandler.h"
@@ -11390,6 +11391,11 @@ static void ATAddForeignKeyConstraint(AlteredTableInfo* tab, Relation rel, Const
         int16 eqstrategy;
         Oid pfeqop_right;
 
+        /* anonymous enum type is not allowed as foreigh key */
+        if (type_is_enum(fktype) && strstr(format_type_be(fktype), "anonymous_enum")) {
+            ereport(ERROR,
+                (errcode(ERRCODE_DATATYPE_MISMATCH), errmsg("anoymous enum type does not support foreign key")));
+        }
         /* We need several fields out of the pg_opclass entry */
         cla_ht = SearchSysCache1(CLAOID, ObjectIdGetDatum(opclasses[i]));
         if (!HeapTupleIsValid(cla_ht)) {
@@ -25249,20 +25255,24 @@ static void readTuplesAndInsertInternal(Relation tempTableRel, Relation partTabl
 
         /* tableam_tops_copy_tuple is not ready so we add UStore hack path */
         copyTuple = tableam_tops_copy_tuple(tuple);
-        targetPartOid = heapTupleGetPartitionId(partTableRel, (void *)tuple, true);
-        searchFakeReationForPartitionOid(
-            partRelHTAB, CurrentMemoryContext, partTableRel, targetPartOid, partRel, part, RowExclusiveLock);
-        if (RelationIsSubPartitioned(partTableRel)) {
-            targetPartOid = heapTupleGetPartitionId(partRel, (void *)tuple, true);
-            searchFakeReationForPartitionOid(partRelHTAB, CurrentMemoryContext, partRel, targetPartOid, subPartRel,
-                                             subPart, RowExclusiveLock);
-            partRel = subPartRel;
-        }
-        if (bucketId != InvalidBktId) {
-            searchHBucketFakeRelation(partRelHTAB, CurrentMemoryContext, partRel, bucketId, partRel);
-        }
+        if (RelationIsPartitioned(partTableRel)) {
+            targetPartOid = heapTupleGetPartitionId(partTableRel, (void *)tuple, true);
+            searchFakeReationForPartitionOid(
+                partRelHTAB, CurrentMemoryContext, partTableRel, targetPartOid, partRel, part, RowExclusiveLock);
+            if (RelationIsSubPartitioned(partTableRel)) {
+                targetPartOid = heapTupleGetPartitionId(partRel, (void *)tuple, true);
+                searchFakeReationForPartitionOid(partRelHTAB, CurrentMemoryContext, partRel, targetPartOid, subPartRel,
+                                                subPart, RowExclusiveLock);
+                partRel = subPartRel;
+            }
+            if (bucketId != InvalidBktId) {
+                searchHBucketFakeRelation(partRelHTAB, CurrentMemoryContext, partRel, bucketId, partRel);
+            }
 
-        AlterPartitionedSetWaitCleanGPI(true, partTableRel, targetPartOid);
+            AlterPartitionedSetWaitCleanGPI(true, partTableRel, targetPartOid);
+        } else {
+            partRel = partTableRel;
+        }
 
         if (relisustore) {
             Oid reloid = RelationGetRelid(partRel);
@@ -27619,3 +27629,97 @@ static bool IsViewAndRuleDependReltion(Oid relId)
     return result;
 }
 
+/*
+ * Functions for partition table, used in partitionfuncs.cpp
+ */
+void ExecRemovePartition(Oid relid, char* tableName)
+{
+    List* partList = NIL;
+    List* tempTableOidList = NIL;
+    ListCell* cell = NULL;
+    Relation rel = relation_open(relid, AccessExclusiveLock);
+    if (rel->rd_rel->relkind != RELKIND_RELATION)
+        ereport(ERROR, (errcode(ERRCODE_PARTITION_ERROR), errmsg("The table %s is not an ordinary table", tableName)));
+    if (!RelationIsPartitioned(rel))
+        ereport(ERROR, (errcode(ERRCODE_PARTITION_ERROR), errmsg("The table %s is not partition table", tableName)));
+    if (RelationIsSubPartitioned(rel)) {
+        partList = RelationGetSubPartitionList(rel, ExclusiveLock);
+    } else {
+        partList = relationGetPartitionList(rel, ExclusiveLock);
+    }
+    foreach (cell, partList) {
+        Partition part = (Partition)lfirst(cell);
+        // creat temp table and swap relfilenode with src partition
+        Oid tempTableOid = createTempTableForPartition(rel, part);
+        finishPartitionHeapSwap(PartitionGetPartid(part), tempTableOid, false, u_sess->utils_cxt.RecentXmin, GetOldestMultiXactId());
+        tempTableOidList = lappend_oid(tempTableOidList, tempTableOid);
+    }
+    CommandCounterIncrement();
+    releasePartitionList(rel, &partList, ExclusiveLock);
+    drop_partition_info(rel);
+
+    ObjectAddress tmpTableObject;
+    Oid tempTableOid = make_new_heap(relid, rel->rd_rel->reltablespace, ExclusiveLock);
+    Relation tempTableRel = relation_open(tempTableOid, AccessExclusiveLock);
+    Relation tempPartTableRel = NULL;
+    foreach (cell, tempTableOidList) {
+        tempPartTableRel = relation_open(lfirst_oid(cell), AccessExclusiveLock);
+        // read temp table tuples and insert into partitioned table
+        readTuplesAndInsert(tempPartTableRel, tempTableRel);
+        relation_close(tempPartTableRel, AccessExclusiveLock);
+
+        // delete temp parttable
+        tmpTableObject.classId = RelationRelationId;
+        tmpTableObject.objectId = lfirst_oid(cell);
+        tmpTableObject.objectSubId = 0;
+        performDeletion(&tmpTableObject, DROP_RESTRICT, PERFORM_DELETION_INTERNAL);
+    }
+    relation_close(tempTableRel, AccessExclusiveLock);
+    updatePGClass(relid, tempTableOid, false);
+
+    // delete temp table
+    RelationDestroyPartitionMap(rel->partMap);
+    rel->partMap = NULL;
+    tmpTableObject.classId = RelationRelationId;
+    tmpTableObject.objectId = tempTableOid;
+    tmpTableObject.objectSubId = 0;
+    performDeletion(&tmpTableObject, DROP_RESTRICT, PERFORM_DELETION_INTERNAL);
+    List* indexOidList = RelationGetIndexList(rel);
+    foreach (cell, indexOidList) {
+        updatePGClass(lfirst_oid(cell), InvalidOid, true);
+    }
+    CommandCounterIncrement();
+    if (!ReindexRelation(relid,
+        REINDEX_REL_PROCESS_TOAST | REINDEX_REL_SUPPRESS_INDEX_USE | REINDEX_REL_CHECK_CONSTRAINTS,
+        REINDEX_ALL_INDEX, NULL, NULL))
+        ereport(NOTICE, (errmsg("The table has no indexes")));
+    relation_close(rel, AccessExclusiveLock);
+    RelationForgetRelation(relid);
+    list_free_ext(tempTableOidList);
+    list_free_ext(indexOidList);
+}
+
+void ExecRebuildPartition(List* partList, Relation rel) {
+    ListCell* cell = NULL;
+    List* tempTableOidList = NIL;
+    foreach (cell, partList) {
+        Partition part = (Partition)lfirst(cell);
+        // creat temp table and swap relfilenode with src partition
+        Oid tempTableOid = createTempTableForPartition(rel, part);
+        finishPartitionHeapSwap(PartitionGetPartid(part), tempTableOid, false, u_sess->utils_cxt.RecentXmin, GetOldestMultiXactId());
+        tempTableOidList = lappend_oid(tempTableOidList, tempTableOid);
+    }
+    CommandCounterIncrement();
+    ObjectAddress tmpTableObject;
+    foreach (cell, tempTableOidList) {
+        Relation tempTableRel = relation_open(lfirst_oid(cell), AccessExclusiveLock);
+        readTuplesAndInsert(tempTableRel, rel);
+        relation_close(tempTableRel, AccessExclusiveLock);
+        // delete temp parttable
+        tmpTableObject.classId = RelationRelationId;
+        tmpTableObject.objectId = lfirst_oid(cell);
+        tmpTableObject.objectSubId = 0;
+        performDeletion(&tmpTableObject, DROP_RESTRICT, PERFORM_DELETION_INTERNAL);
+    }
+    list_free_ext(tempTableOidList);
+}

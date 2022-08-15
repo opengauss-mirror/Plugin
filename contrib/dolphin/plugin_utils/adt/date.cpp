@@ -1173,7 +1173,7 @@ Datum time_in(PG_FUNCTION_ARGS)
     int dtype;
     int ftype[MAXDATEFIELDS];
     char* time_fmt = NULL;
-    int timeSign;
+    int timeSign = 1;
     int D = 0;
 
     /*
@@ -1971,9 +1971,9 @@ Datum time_part(PG_FUNCTION_ARGS)
         switch (val) {
             case DTK_MICROSEC:
 #ifdef HAVE_INT64_TIMESTAMP
-                result = tm->tm_sec * 1000000.0 + fsec;
+                result = fsec;
 #else
-                result = (tm->tm_sec + fsec) * 1000000;
+                result = fsec * 1000000;
 #endif
                 break;
 
@@ -1986,11 +1986,7 @@ Datum time_part(PG_FUNCTION_ARGS)
                 break;
 
             case DTK_SECOND:
-#ifdef HAVE_INT64_TIMESTAMP
-                result = tm->tm_sec + fsec / 1000000.0;
-#else
-                result = tm->tm_sec + fsec;
-#endif
+                result = tm->tm_sec;
                 break;
 
             case DTK_MINUTE:
@@ -2642,9 +2638,9 @@ Datum timetz_part(PG_FUNCTION_ARGS)
 
             case DTK_MICROSEC:
 #ifdef HAVE_INT64_TIMESTAMP
-                result = tm->tm_sec * 1000000.0 + fsec;
+                result = fsec;
 #else
-                result = (tm->tm_sec + fsec) * 1000000;
+                result = fsec * 1000000;
 #endif
                 break;
 
@@ -2657,11 +2653,7 @@ Datum timetz_part(PG_FUNCTION_ARGS)
                 break;
 
             case DTK_SECOND:
-#ifdef HAVE_INT64_TIMESTAMP
-                result = tm->tm_sec + fsec / 1000000.0;
-#else
-                result = tm->tm_sec + fsec;
-#endif
+                result = tm->tm_sec;
                 break;
 
             case DTK_MINUTE:

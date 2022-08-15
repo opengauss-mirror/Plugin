@@ -1,0 +1,3239 @@
+drop database if exists b_char_blank_test;
+NOTICE:  database "b_char_blank_test" does not exist, skipping
+create database b_char_blank_test encoding 'UTF-8' lc_collate 'en_US.UTF-8' lc_ctype 'en_US.UTF-8' dbcompatibility 'B';
+\c b_char_blank_test
+---------------------------
+----- row table
+--------------------------
+create table t_char1(a char(10), b varchar(10), c text);
+insert into t_char1 values('1','1','1');
+insert into t_char1 values(' 1 ',' 1 ',' 1 ');
+insert into t_char1 values('1 ','1 ','1 ');
+insert into t_char1 values('1  ','1  ','1  ');
+insert into t_char1 values(' 1',' 1',' 1');
+create table t_char2(a char(10), b varchar(10), c text);
+insert into t_char2 values('1','1','1');
+insert into t_char2 values(' 1 ',' 1 ',' 1 ');
+insert into t_char2 values('1 ','1 ','1 ');
+insert into t_char2 values('1  ','1  ','1  ');
+insert into t_char2 values(' 1',' 1',' 1');
+select * from t_char1 where a='1 ';
+     a      |  b  |  c  
+------------+-----+-----
+ 1          | 1   | 1
+ 1          | 1   | 1 
+ 1          | 1   | 1  
+(3 rows)
+
+select * from t_char1 where a='1                                        ';
+     a      |  b  |  c  
+------------+-----+-----
+ 1          | 1   | 1
+ 1          | 1   | 1 
+ 1          | 1   | 1  
+(3 rows)
+
+select * from t_char1 where a=' 1 ';
+     a      |  b  |  c  
+------------+-----+-----
+  1         |  1  |  1 
+  1         |  1  |  1
+(2 rows)
+
+select * from t_char1 where a=' 1';
+     a      |  b  |  c  
+------------+-----+-----
+  1         |  1  |  1 
+  1         |  1  |  1
+(2 rows)
+
+select * from t_char1 where a='1';
+     a      |  b  |  c  
+------------+-----+-----
+ 1          | 1   | 1
+ 1          | 1   | 1 
+ 1          | 1   | 1  
+(3 rows)
+
+select * from t_char1 where b='1 ';
+     a      |  b  |  c  
+------------+-----+-----
+ 1          | 1   | 1
+ 1          | 1   | 1 
+ 1          | 1   | 1  
+(3 rows)
+
+select * from t_char1 where b='1                                       ';
+     a      |  b  |  c  
+------------+-----+-----
+ 1          | 1   | 1
+ 1          | 1   | 1 
+ 1          | 1   | 1  
+(3 rows)
+
+select * from t_char1 where b=' 1 ';
+     a      |  b  |  c  
+------------+-----+-----
+  1         |  1  |  1 
+  1         |  1  |  1
+(2 rows)
+
+select * from t_char1 where b=' 1';
+     a      |  b  |  c  
+------------+-----+-----
+  1         |  1  |  1 
+  1         |  1  |  1
+(2 rows)
+
+select * from t_char1 where b='1';
+     a      |  b  |  c  
+------------+-----+-----
+ 1          | 1   | 1
+ 1          | 1   | 1 
+ 1          | 1   | 1  
+(3 rows)
+
+select * from t_char1 where c='1 ';
+     a      |  b  |  c  
+------------+-----+-----
+ 1          | 1   | 1
+ 1          | 1   | 1 
+ 1          | 1   | 1  
+(3 rows)
+
+select * from t_char1 where c='1                                       ';
+     a      |  b  |  c  
+------------+-----+-----
+ 1          | 1   | 1
+ 1          | 1   | 1 
+ 1          | 1   | 1  
+(3 rows)
+
+select * from t_char1 where c=' 1 ';
+     a      |  b  |  c  
+------------+-----+-----
+  1         |  1  |  1 
+  1         |  1  |  1
+(2 rows)
+
+select * from t_char1 where c=' 1';
+     a      |  b  |  c  
+------------+-----+-----
+  1         |  1  |  1 
+  1         |  1  |  1
+(2 rows)
+
+select * from t_char1 where c='1';
+     a      |  b  |  c  
+------------+-----+-----
+ 1          | 1   | 1
+ 1          | 1   | 1 
+ 1          | 1   | 1  
+(3 rows)
+
+select * from t_char1 where a!='1 ';
+     a      |  b  |  c  
+------------+-----+-----
+  1         |  1  |  1 
+  1         |  1  |  1
+(2 rows)
+
+select * from t_char1 where a!='1                                        ';
+     a      |  b  |  c  
+------------+-----+-----
+  1         |  1  |  1 
+  1         |  1  |  1
+(2 rows)
+
+select * from t_char1 where a!=' 1 ';
+     a      |  b  |  c  
+------------+-----+-----
+ 1          | 1   | 1
+ 1          | 1   | 1 
+ 1          | 1   | 1  
+(3 rows)
+
+select * from t_char1 where a!=' 1';
+     a      |  b  |  c  
+------------+-----+-----
+ 1          | 1   | 1
+ 1          | 1   | 1 
+ 1          | 1   | 1  
+(3 rows)
+
+select * from t_char1 where a!='1';
+     a      |  b  |  c  
+------------+-----+-----
+  1         |  1  |  1 
+  1         |  1  |  1
+(2 rows)
+
+select * from t_char1 where b!='1 ';
+     a      |  b  |  c  
+------------+-----+-----
+  1         |  1  |  1 
+  1         |  1  |  1
+(2 rows)
+
+select * from t_char1 where b!='1                                       ';
+     a      |  b  |  c  
+------------+-----+-----
+  1         |  1  |  1 
+  1         |  1  |  1
+(2 rows)
+
+select * from t_char1 where b!=' 1 ';
+     a      |  b  |  c  
+------------+-----+-----
+ 1          | 1   | 1
+ 1          | 1   | 1 
+ 1          | 1   | 1  
+(3 rows)
+
+select * from t_char1 where b!=' 1';
+     a      |  b  |  c  
+------------+-----+-----
+ 1          | 1   | 1
+ 1          | 1   | 1 
+ 1          | 1   | 1  
+(3 rows)
+
+select * from t_char1 where b!='1';
+     a      |  b  |  c  
+------------+-----+-----
+  1         |  1  |  1 
+  1         |  1  |  1
+(2 rows)
+
+select * from t_char1 where c!='1 ';
+     a      |  b  |  c  
+------------+-----+-----
+  1         |  1  |  1 
+  1         |  1  |  1
+(2 rows)
+
+select * from t_char1 where c!='1                                       ';
+     a      |  b  |  c  
+------------+-----+-----
+  1         |  1  |  1 
+  1         |  1  |  1
+(2 rows)
+
+select * from t_char1 where c!=' 1 ';
+     a      |  b  |  c  
+------------+-----+-----
+ 1          | 1   | 1
+ 1          | 1   | 1 
+ 1          | 1   | 1  
+(3 rows)
+
+select * from t_char1 where c!=' 1';
+     a      |  b  |  c  
+------------+-----+-----
+ 1          | 1   | 1
+ 1          | 1   | 1 
+ 1          | 1   | 1  
+(3 rows)
+
+select * from t_char1 where c!='1';
+     a      |  b  |  c  
+------------+-----+-----
+  1         |  1  |  1 
+  1         |  1  |  1
+(2 rows)
+
+select * from t_char1 where a>='1 ';
+     a      |  b  |  c  
+------------+-----+-----
+ 1          | 1   | 1
+ 1          | 1   | 1 
+ 1          | 1   | 1  
+(3 rows)
+
+select * from t_char1 where a>='1                                        ';
+     a      |  b  |  c  
+------------+-----+-----
+ 1          | 1   | 1
+ 1          | 1   | 1 
+ 1          | 1   | 1  
+(3 rows)
+
+select * from t_char1 where a>=' 1 ';
+     a      |  b  |  c  
+------------+-----+-----
+ 1          | 1   | 1
+  1         |  1  |  1 
+ 1          | 1   | 1 
+ 1          | 1   | 1  
+  1         |  1  |  1
+(5 rows)
+
+select * from t_char1 where a>=' 1';
+     a      |  b  |  c  
+------------+-----+-----
+ 1          | 1   | 1
+  1         |  1  |  1 
+ 1          | 1   | 1 
+ 1          | 1   | 1  
+  1         |  1  |  1
+(5 rows)
+
+select * from t_char1 where a>='1';
+     a      |  b  |  c  
+------------+-----+-----
+ 1          | 1   | 1
+ 1          | 1   | 1 
+ 1          | 1   | 1  
+(3 rows)
+
+select * from t_char1 where b>='1 ';
+     a      |  b  |  c  
+------------+-----+-----
+ 1          | 1   | 1
+ 1          | 1   | 1 
+ 1          | 1   | 1  
+(3 rows)
+
+select * from t_char1 where b>='1                                       ';
+     a      |  b  |  c  
+------------+-----+-----
+ 1          | 1   | 1
+ 1          | 1   | 1 
+ 1          | 1   | 1  
+(3 rows)
+
+select * from t_char1 where b>=' 1 ';
+     a      |  b  |  c  
+------------+-----+-----
+ 1          | 1   | 1
+  1         |  1  |  1 
+ 1          | 1   | 1 
+ 1          | 1   | 1  
+  1         |  1  |  1
+(5 rows)
+
+select * from t_char1 where b>=' 1';
+     a      |  b  |  c  
+------------+-----+-----
+ 1          | 1   | 1
+  1         |  1  |  1 
+ 1          | 1   | 1 
+ 1          | 1   | 1  
+  1         |  1  |  1
+(5 rows)
+
+select * from t_char1 where b>='1';
+     a      |  b  |  c  
+------------+-----+-----
+ 1          | 1   | 1
+ 1          | 1   | 1 
+ 1          | 1   | 1  
+(3 rows)
+
+select * from t_char1 where c>='1 ';
+     a      |  b  |  c  
+------------+-----+-----
+ 1          | 1   | 1
+ 1          | 1   | 1 
+ 1          | 1   | 1  
+(3 rows)
+
+select * from t_char1 where c>='1                                       ';
+     a      |  b  |  c  
+------------+-----+-----
+ 1          | 1   | 1
+ 1          | 1   | 1 
+ 1          | 1   | 1  
+(3 rows)
+
+select * from t_char1 where c>=' 1 ';
+     a      |  b  |  c  
+------------+-----+-----
+ 1          | 1   | 1
+  1         |  1  |  1 
+ 1          | 1   | 1 
+ 1          | 1   | 1  
+  1         |  1  |  1
+(5 rows)
+
+select * from t_char1 where c>=' 1';
+     a      |  b  |  c  
+------------+-----+-----
+ 1          | 1   | 1
+  1         |  1  |  1 
+ 1          | 1   | 1 
+ 1          | 1   | 1  
+  1         |  1  |  1
+(5 rows)
+
+select * from t_char1 where c>='1';
+     a      |  b  |  c  
+------------+-----+-----
+ 1          | 1   | 1
+ 1          | 1   | 1 
+ 1          | 1   | 1  
+(3 rows)
+
+select * from t_char1 where a<='1 ';
+     a      |  b  |  c  
+------------+-----+-----
+ 1          | 1   | 1
+  1         |  1  |  1 
+ 1          | 1   | 1 
+ 1          | 1   | 1  
+  1         |  1  |  1
+(5 rows)
+
+select * from t_char1 where a<='1                                        ';
+     a      |  b  |  c  
+------------+-----+-----
+ 1          | 1   | 1
+  1         |  1  |  1 
+ 1          | 1   | 1 
+ 1          | 1   | 1  
+  1         |  1  |  1
+(5 rows)
+
+select * from t_char1 where a<=' 1 ';
+     a      |  b  |  c  
+------------+-----+-----
+  1         |  1  |  1 
+  1         |  1  |  1
+(2 rows)
+
+select * from t_char1 where a<=' 1';
+     a      |  b  |  c  
+------------+-----+-----
+  1         |  1  |  1 
+  1         |  1  |  1
+(2 rows)
+
+select * from t_char1 where a<='1';
+     a      |  b  |  c  
+------------+-----+-----
+ 1          | 1   | 1
+  1         |  1  |  1 
+ 1          | 1   | 1 
+ 1          | 1   | 1  
+  1         |  1  |  1
+(5 rows)
+
+select * from t_char1 where b<='1 ';
+     a      |  b  |  c  
+------------+-----+-----
+ 1          | 1   | 1
+  1         |  1  |  1 
+ 1          | 1   | 1 
+ 1          | 1   | 1  
+  1         |  1  |  1
+(5 rows)
+
+select * from t_char1 where b<='1                                       ';
+     a      |  b  |  c  
+------------+-----+-----
+ 1          | 1   | 1
+  1         |  1  |  1 
+ 1          | 1   | 1 
+ 1          | 1   | 1  
+  1         |  1  |  1
+(5 rows)
+
+select * from t_char1 where b<=' 1 ';
+     a      |  b  |  c  
+------------+-----+-----
+  1         |  1  |  1 
+  1         |  1  |  1
+(2 rows)
+
+select * from t_char1 where b<=' 1';
+     a      |  b  |  c  
+------------+-----+-----
+  1         |  1  |  1 
+  1         |  1  |  1
+(2 rows)
+
+select * from t_char1 where b<='1';
+     a      |  b  |  c  
+------------+-----+-----
+ 1          | 1   | 1
+  1         |  1  |  1 
+ 1          | 1   | 1 
+ 1          | 1   | 1  
+  1         |  1  |  1
+(5 rows)
+
+select * from t_char1 where c<='1 ';
+     a      |  b  |  c  
+------------+-----+-----
+ 1          | 1   | 1
+  1         |  1  |  1 
+ 1          | 1   | 1 
+ 1          | 1   | 1  
+  1         |  1  |  1
+(5 rows)
+
+select * from t_char1 where c<='1                                       ';
+     a      |  b  |  c  
+------------+-----+-----
+ 1          | 1   | 1
+  1         |  1  |  1 
+ 1          | 1   | 1 
+ 1          | 1   | 1  
+  1         |  1  |  1
+(5 rows)
+
+select * from t_char1 where c<=' 1 ';
+     a      |  b  |  c  
+------------+-----+-----
+  1         |  1  |  1 
+  1         |  1  |  1
+(2 rows)
+
+select * from t_char1 where c<=' 1';
+     a      |  b  |  c  
+------------+-----+-----
+  1         |  1  |  1 
+  1         |  1  |  1
+(2 rows)
+
+select * from t_char1 where c<='1';
+     a      |  b  |  c  
+------------+-----+-----
+ 1          | 1   | 1
+  1         |  1  |  1 
+ 1          | 1   | 1 
+ 1          | 1   | 1  
+  1         |  1  |  1
+(5 rows)
+
+select * from t_char1 where a<'1 ';
+     a      |  b  |  c  
+------------+-----+-----
+  1         |  1  |  1 
+  1         |  1  |  1
+(2 rows)
+
+select * from t_char1 where a<'1                                        ';
+     a      |  b  |  c  
+------------+-----+-----
+  1         |  1  |  1 
+  1         |  1  |  1
+(2 rows)
+
+select * from t_char1 where a<' 1 ';
+ a | b | c 
+---+---+---
+(0 rows)
+
+select * from t_char1 where a<' 1';
+ a | b | c 
+---+---+---
+(0 rows)
+
+select * from t_char1 where a<'1';
+     a      |  b  |  c  
+------------+-----+-----
+  1         |  1  |  1 
+  1         |  1  |  1
+(2 rows)
+
+select * from t_char1 where b<'1 ';
+     a      |  b  |  c  
+------------+-----+-----
+  1         |  1  |  1 
+  1         |  1  |  1
+(2 rows)
+
+select * from t_char1 where b<'1                                       ';
+     a      |  b  |  c  
+------------+-----+-----
+  1         |  1  |  1 
+  1         |  1  |  1
+(2 rows)
+
+select * from t_char1 where b<' 1 ';
+ a | b | c 
+---+---+---
+(0 rows)
+
+select * from t_char1 where b<' 1';
+ a | b | c 
+---+---+---
+(0 rows)
+
+select * from t_char1 where b<'1';
+     a      |  b  |  c  
+------------+-----+-----
+  1         |  1  |  1 
+  1         |  1  |  1
+(2 rows)
+
+select * from t_char1 where c<'1 ';
+     a      |  b  |  c  
+------------+-----+-----
+  1         |  1  |  1 
+  1         |  1  |  1
+(2 rows)
+
+select * from t_char1 where c<'1                                       ';
+     a      |  b  |  c  
+------------+-----+-----
+  1         |  1  |  1 
+  1         |  1  |  1
+(2 rows)
+
+select * from t_char1 where c<' 1 ';
+ a | b | c 
+---+---+---
+(0 rows)
+
+select * from t_char1 where c<' 1';
+ a | b | c 
+---+---+---
+(0 rows)
+
+select * from t_char1 where c<'1';
+     a      |  b  |  c  
+------------+-----+-----
+  1         |  1  |  1 
+  1         |  1  |  1
+(2 rows)
+
+select * from t_char1 where a>'1 ';
+ a | b | c 
+---+---+---
+(0 rows)
+
+select * from t_char1 where a>'1                                        ';
+ a | b | c 
+---+---+---
+(0 rows)
+
+select * from t_char1 where a>' 1 ';
+     a      |  b  |  c  
+------------+-----+-----
+ 1          | 1   | 1
+ 1          | 1   | 1 
+ 1          | 1   | 1  
+(3 rows)
+
+select * from t_char1 where a>' 1';
+     a      |  b  |  c  
+------------+-----+-----
+ 1          | 1   | 1
+ 1          | 1   | 1 
+ 1          | 1   | 1  
+(3 rows)
+
+select * from t_char1 where a>'1';
+ a | b | c 
+---+---+---
+(0 rows)
+
+select * from t_char1 where b>'1 ';
+ a | b | c 
+---+---+---
+(0 rows)
+
+select * from t_char1 where b>'1                                       ';
+ a | b | c 
+---+---+---
+(0 rows)
+
+select * from t_char1 where b>' 1 ';
+     a      |  b  |  c  
+------------+-----+-----
+ 1          | 1   | 1
+ 1          | 1   | 1 
+ 1          | 1   | 1  
+(3 rows)
+
+select * from t_char1 where b>' 1';
+     a      |  b  |  c  
+------------+-----+-----
+ 1          | 1   | 1
+ 1          | 1   | 1 
+ 1          | 1   | 1  
+(3 rows)
+
+select * from t_char1 where b>'1';
+ a | b | c 
+---+---+---
+(0 rows)
+
+select * from t_char1 where c>'1 ';
+ a | b | c 
+---+---+---
+(0 rows)
+
+select * from t_char1 where c>'1                                       ';
+ a | b | c 
+---+---+---
+(0 rows)
+
+select * from t_char1 where c>' 1 ';
+     a      |  b  |  c  
+------------+-----+-----
+ 1          | 1   | 1
+ 1          | 1   | 1 
+ 1          | 1   | 1  
+(3 rows)
+
+select * from t_char1 where c>' 1';
+     a      |  b  |  c  
+------------+-----+-----
+ 1          | 1   | 1
+ 1          | 1   | 1 
+ 1          | 1   | 1  
+(3 rows)
+
+select * from t_char1 where c>'1';
+ a | b | c 
+---+---+---
+(0 rows)
+
+--only when string_hash_compatible is on, then hash join will ignore tail blank
+show string_hash_compatible;
+ string_hash_compatible 
+------------------------
+ on
+(1 row)
+
+explain(costs off) select a.a,length(a.a),a.b,length(a.b),a.c,length(a.c),b.a,length(b.a),b.b,length(b.b),b.c,length(b.c) from t_char1 a left join t_char2 b on a.a=b.a order by 1,2,3,4,5,6,7,8,9,10,11,12;
+                                                                     QUERY PLAN                                                                     
+----------------------------------------------------------------------------------------------------------------------------------------------------
+ Sort
+   Sort Key: a.a, (length(a.a)), a.b, (length((a.b)::text)), a.c, (length(a.c)), b.a, (length(b.a)), b.b, (length((b.b)::text)), b.c, (length(b.c))
+   ->  Hash Left Join
+         Hash Cond: (a.a = b.a)
+         ->  Seq Scan on t_char1 a
+         ->  Hash
+               ->  Seq Scan on t_char2 b
+(7 rows)
+
+select a.a,length(a.a),a.b,length(a.b),a.c,length(a.c),b.a,length(b.a),b.b,length(b.b),b.c,length(b.c) from t_char1 a left join t_char2 b on a.a=b.a order by 1,2,3,4,5,6,7,8,9,10,11,12;
+     a      | length |  b  | length |  c  | length |     a      | length |  b  | length |  c  | length 
+------------+--------+-----+--------+-----+--------+------------+--------+-----+--------+-----+--------
+  1         |      2 |  1  |      2 |  1  |      2 |  1         |      2 |  1  |      2 |  1  |      2
+  1         |      2 |  1  |      2 |  1  |      2 |  1         |      2 |  1  |      3 |  1  |      3
+  1         |      2 |  1  |      3 |  1  |      3 |  1         |      2 |  1  |      2 |  1  |      2
+  1         |      2 |  1  |      3 |  1  |      3 |  1         |      2 |  1  |      3 |  1  |      3
+ 1          |      1 | 1   |      1 | 1   |      1 | 1          |      1 | 1   |      1 | 1   |      1
+ 1          |      1 | 1   |      1 | 1   |      1 | 1          |      1 | 1   |      2 | 1   |      2
+ 1          |      1 | 1   |      1 | 1   |      1 | 1          |      1 | 1   |      3 | 1   |      3
+ 1          |      1 | 1   |      2 | 1   |      2 | 1          |      1 | 1   |      1 | 1   |      1
+ 1          |      1 | 1   |      2 | 1   |      2 | 1          |      1 | 1   |      2 | 1   |      2
+ 1          |      1 | 1   |      2 | 1   |      2 | 1          |      1 | 1   |      3 | 1   |      3
+ 1          |      1 | 1   |      3 | 1   |      3 | 1          |      1 | 1   |      1 | 1   |      1
+ 1          |      1 | 1   |      3 | 1   |      3 | 1          |      1 | 1   |      2 | 1   |      2
+ 1          |      1 | 1   |      3 | 1   |      3 | 1          |      1 | 1   |      3 | 1   |      3
+(13 rows)
+
+explain(costs off) select a.a,length(a.a),a.b,length(a.b),a.c,length(a.c),b.a,length(b.a),b.b,length(b.b),b.c,length(b.c) from t_char1 a left join t_char2 b on a.a=b.b order by 1,2,3,4,5,6,7,8,9,10,11,12;
+                                                                     QUERY PLAN                                                                     
+----------------------------------------------------------------------------------------------------------------------------------------------------
+ Sort
+   Sort Key: a.a, (length(a.a)), a.b, (length((a.b)::text)), a.c, (length(a.c)), b.a, (length(b.a)), b.b, (length((b.b)::text)), b.c, (length(b.c))
+   ->  Hash Left Join
+         Hash Cond: (a.a = (b.b)::bpchar)
+         ->  Seq Scan on t_char1 a
+         ->  Hash
+               ->  Seq Scan on t_char2 b
+(7 rows)
+
+select a.a,length(a.a),a.b,length(a.b),a.c,length(a.c),b.a,length(b.a),b.b,length(b.b),b.c,length(b.c) from t_char1 a left join t_char2 b on a.a=b.b order by 1,2,3,4,5,6,7,8,9,10,11,12;
+     a      | length |  b  | length |  c  | length |     a      | length |  b  | length |  c  | length 
+------------+--------+-----+--------+-----+--------+------------+--------+-----+--------+-----+--------
+  1         |      2 |  1  |      2 |  1  |      2 |  1         |      2 |  1  |      2 |  1  |      2
+  1         |      2 |  1  |      2 |  1  |      2 |  1         |      2 |  1  |      3 |  1  |      3
+  1         |      2 |  1  |      3 |  1  |      3 |  1         |      2 |  1  |      2 |  1  |      2
+  1         |      2 |  1  |      3 |  1  |      3 |  1         |      2 |  1  |      3 |  1  |      3
+ 1          |      1 | 1   |      1 | 1   |      1 | 1          |      1 | 1   |      1 | 1   |      1
+ 1          |      1 | 1   |      1 | 1   |      1 | 1          |      1 | 1   |      2 | 1   |      2
+ 1          |      1 | 1   |      1 | 1   |      1 | 1          |      1 | 1   |      3 | 1   |      3
+ 1          |      1 | 1   |      2 | 1   |      2 | 1          |      1 | 1   |      1 | 1   |      1
+ 1          |      1 | 1   |      2 | 1   |      2 | 1          |      1 | 1   |      2 | 1   |      2
+ 1          |      1 | 1   |      2 | 1   |      2 | 1          |      1 | 1   |      3 | 1   |      3
+ 1          |      1 | 1   |      3 | 1   |      3 | 1          |      1 | 1   |      1 | 1   |      1
+ 1          |      1 | 1   |      3 | 1   |      3 | 1          |      1 | 1   |      2 | 1   |      2
+ 1          |      1 | 1   |      3 | 1   |      3 | 1          |      1 | 1   |      3 | 1   |      3
+(13 rows)
+
+explain(costs off) select a.a,length(a.a),a.b,length(a.b),a.c,length(a.c),b.a,length(b.a),b.b,length(b.b),b.c,length(b.c) from t_char1 a left join t_char2 b on a.a=b.c order by 1,2,3,4,5,6,7,8,9,10,11,12;
+                                                                     QUERY PLAN                                                                     
+----------------------------------------------------------------------------------------------------------------------------------------------------
+ Sort
+   Sort Key: a.a, (length(a.a)), a.b, (length((a.b)::text)), a.c, (length(a.c)), b.a, (length(b.a)), b.b, (length((b.b)::text)), b.c, (length(b.c))
+   ->  Hash Left Join
+         Hash Cond: ((a.a)::text = b.c)
+         ->  Seq Scan on t_char1 a
+         ->  Hash
+               ->  Seq Scan on t_char2 b
+(7 rows)
+
+select a.a,length(a.a),a.b,length(a.b),a.c,length(a.c),b.a,length(b.a),b.b,length(b.b),b.c,length(b.c) from t_char1 a left join t_char2 b on a.a=b.c order by 1,2,3,4,5,6,7,8,9,10,11,12;
+     a      | length |  b  | length |  c  | length |     a      | length |  b  | length |  c  | length 
+------------+--------+-----+--------+-----+--------+------------+--------+-----+--------+-----+--------
+  1         |      2 |  1  |      2 |  1  |      2 |  1         |      2 |  1  |      2 |  1  |      2
+  1         |      2 |  1  |      2 |  1  |      2 |  1         |      2 |  1  |      3 |  1  |      3
+  1         |      2 |  1  |      3 |  1  |      3 |  1         |      2 |  1  |      2 |  1  |      2
+  1         |      2 |  1  |      3 |  1  |      3 |  1         |      2 |  1  |      3 |  1  |      3
+ 1          |      1 | 1   |      1 | 1   |      1 | 1          |      1 | 1   |      1 | 1   |      1
+ 1          |      1 | 1   |      1 | 1   |      1 | 1          |      1 | 1   |      2 | 1   |      2
+ 1          |      1 | 1   |      1 | 1   |      1 | 1          |      1 | 1   |      3 | 1   |      3
+ 1          |      1 | 1   |      2 | 1   |      2 | 1          |      1 | 1   |      1 | 1   |      1
+ 1          |      1 | 1   |      2 | 1   |      2 | 1          |      1 | 1   |      2 | 1   |      2
+ 1          |      1 | 1   |      2 | 1   |      2 | 1          |      1 | 1   |      3 | 1   |      3
+ 1          |      1 | 1   |      3 | 1   |      3 | 1          |      1 | 1   |      1 | 1   |      1
+ 1          |      1 | 1   |      3 | 1   |      3 | 1          |      1 | 1   |      2 | 1   |      2
+ 1          |      1 | 1   |      3 | 1   |      3 | 1          |      1 | 1   |      3 | 1   |      3
+(13 rows)
+
+explain(costs off) select a.a,length(a.a),a.b,length(a.b),a.c,length(a.c),b.a,length(b.a),b.b,length(b.b),b.c,length(b.c) from t_char1 a left join t_char2 b on a.b=b.a order by 1,2,3,4,5,6,7,8,9,10,11,12;
+                                                                     QUERY PLAN                                                                     
+----------------------------------------------------------------------------------------------------------------------------------------------------
+ Sort
+   Sort Key: a.a, (length(a.a)), a.b, (length((a.b)::text)), a.c, (length(a.c)), b.a, (length(b.a)), b.b, (length((b.b)::text)), b.c, (length(b.c))
+   ->  Hash Left Join
+         Hash Cond: ((a.b)::bpchar = b.a)
+         ->  Seq Scan on t_char1 a
+         ->  Hash
+               ->  Seq Scan on t_char2 b
+(7 rows)
+
+select a.a,length(a.a),a.b,length(a.b),a.c,length(a.c),b.a,length(b.a),b.b,length(b.b),b.c,length(b.c) from t_char1 a left join t_char2 b on a.b=b.a order by 1,2,3,4,5,6,7,8,9,10,11,12;
+     a      | length |  b  | length |  c  | length |     a      | length |  b  | length |  c  | length 
+------------+--------+-----+--------+-----+--------+------------+--------+-----+--------+-----+--------
+  1         |      2 |  1  |      2 |  1  |      2 |  1         |      2 |  1  |      2 |  1  |      2
+  1         |      2 |  1  |      2 |  1  |      2 |  1         |      2 |  1  |      3 |  1  |      3
+  1         |      2 |  1  |      3 |  1  |      3 |  1         |      2 |  1  |      2 |  1  |      2
+  1         |      2 |  1  |      3 |  1  |      3 |  1         |      2 |  1  |      3 |  1  |      3
+ 1          |      1 | 1   |      1 | 1   |      1 | 1          |      1 | 1   |      1 | 1   |      1
+ 1          |      1 | 1   |      1 | 1   |      1 | 1          |      1 | 1   |      2 | 1   |      2
+ 1          |      1 | 1   |      1 | 1   |      1 | 1          |      1 | 1   |      3 | 1   |      3
+ 1          |      1 | 1   |      2 | 1   |      2 | 1          |      1 | 1   |      1 | 1   |      1
+ 1          |      1 | 1   |      2 | 1   |      2 | 1          |      1 | 1   |      2 | 1   |      2
+ 1          |      1 | 1   |      2 | 1   |      2 | 1          |      1 | 1   |      3 | 1   |      3
+ 1          |      1 | 1   |      3 | 1   |      3 | 1          |      1 | 1   |      1 | 1   |      1
+ 1          |      1 | 1   |      3 | 1   |      3 | 1          |      1 | 1   |      2 | 1   |      2
+ 1          |      1 | 1   |      3 | 1   |      3 | 1          |      1 | 1   |      3 | 1   |      3
+(13 rows)
+
+explain(costs off) select a.a,length(a.a),a.b,length(a.b),a.c,length(a.c),b.a,length(b.a),b.b,length(b.b),b.c,length(b.c) from t_char1 a left join t_char2 b on a.b=b.b order by 1,2,3,4,5,6,7,8,9,10,11,12;
+                                                                     QUERY PLAN                                                                     
+----------------------------------------------------------------------------------------------------------------------------------------------------
+ Sort
+   Sort Key: a.a, (length(a.a)), a.b, (length((a.b)::text)), a.c, (length(a.c)), b.a, (length(b.a)), b.b, (length((b.b)::text)), b.c, (length(b.c))
+   ->  Hash Left Join
+         Hash Cond: ((a.b)::text = (b.b)::text)
+         ->  Seq Scan on t_char1 a
+         ->  Hash
+               ->  Seq Scan on t_char2 b
+(7 rows)
+
+select a.a,length(a.a),a.b,length(a.b),a.c,length(a.c),b.a,length(b.a),b.b,length(b.b),b.c,length(b.c) from t_char1 a left join t_char2 b on a.b=b.b order by 1,2,3,4,5,6,7,8,9,10,11,12;
+     a      | length |  b  | length |  c  | length |     a      | length |  b  | length |  c  | length 
+------------+--------+-----+--------+-----+--------+------------+--------+-----+--------+-----+--------
+  1         |      2 |  1  |      2 |  1  |      2 |  1         |      2 |  1  |      2 |  1  |      2
+  1         |      2 |  1  |      2 |  1  |      2 |  1         |      2 |  1  |      3 |  1  |      3
+  1         |      2 |  1  |      3 |  1  |      3 |  1         |      2 |  1  |      2 |  1  |      2
+  1         |      2 |  1  |      3 |  1  |      3 |  1         |      2 |  1  |      3 |  1  |      3
+ 1          |      1 | 1   |      1 | 1   |      1 | 1          |      1 | 1   |      1 | 1   |      1
+ 1          |      1 | 1   |      1 | 1   |      1 | 1          |      1 | 1   |      2 | 1   |      2
+ 1          |      1 | 1   |      1 | 1   |      1 | 1          |      1 | 1   |      3 | 1   |      3
+ 1          |      1 | 1   |      2 | 1   |      2 | 1          |      1 | 1   |      1 | 1   |      1
+ 1          |      1 | 1   |      2 | 1   |      2 | 1          |      1 | 1   |      2 | 1   |      2
+ 1          |      1 | 1   |      2 | 1   |      2 | 1          |      1 | 1   |      3 | 1   |      3
+ 1          |      1 | 1   |      3 | 1   |      3 | 1          |      1 | 1   |      1 | 1   |      1
+ 1          |      1 | 1   |      3 | 1   |      3 | 1          |      1 | 1   |      2 | 1   |      2
+ 1          |      1 | 1   |      3 | 1   |      3 | 1          |      1 | 1   |      3 | 1   |      3
+(13 rows)
+
+explain(costs off) select a.a,length(a.a),a.b,length(a.b),a.c,length(a.c),b.a,length(b.a),b.b,length(b.b),b.c,length(b.c) from t_char1 a left join t_char2 b on a.b=b.c order by 1,2,3,4,5,6,7,8,9,10,11,12;
+                                                                     QUERY PLAN                                                                     
+----------------------------------------------------------------------------------------------------------------------------------------------------
+ Sort
+   Sort Key: a.a, (length(a.a)), a.b, (length((a.b)::text)), a.c, (length(a.c)), b.a, (length(b.a)), b.b, (length((b.b)::text)), b.c, (length(b.c))
+   ->  Hash Left Join
+         Hash Cond: ((a.b)::text = b.c)
+         ->  Seq Scan on t_char1 a
+         ->  Hash
+               ->  Seq Scan on t_char2 b
+(7 rows)
+
+select a.a,length(a.a),a.b,length(a.b),a.c,length(a.c),b.a,length(b.a),b.b,length(b.b),b.c,length(b.c) from t_char1 a left join t_char2 b on a.b=b.c order by 1,2,3,4,5,6,7,8,9,10,11,12;
+     a      | length |  b  | length |  c  | length |     a      | length |  b  | length |  c  | length 
+------------+--------+-----+--------+-----+--------+------------+--------+-----+--------+-----+--------
+  1         |      2 |  1  |      2 |  1  |      2 |  1         |      2 |  1  |      2 |  1  |      2
+  1         |      2 |  1  |      2 |  1  |      2 |  1         |      2 |  1  |      3 |  1  |      3
+  1         |      2 |  1  |      3 |  1  |      3 |  1         |      2 |  1  |      2 |  1  |      2
+  1         |      2 |  1  |      3 |  1  |      3 |  1         |      2 |  1  |      3 |  1  |      3
+ 1          |      1 | 1   |      1 | 1   |      1 | 1          |      1 | 1   |      1 | 1   |      1
+ 1          |      1 | 1   |      1 | 1   |      1 | 1          |      1 | 1   |      2 | 1   |      2
+ 1          |      1 | 1   |      1 | 1   |      1 | 1          |      1 | 1   |      3 | 1   |      3
+ 1          |      1 | 1   |      2 | 1   |      2 | 1          |      1 | 1   |      1 | 1   |      1
+ 1          |      1 | 1   |      2 | 1   |      2 | 1          |      1 | 1   |      2 | 1   |      2
+ 1          |      1 | 1   |      2 | 1   |      2 | 1          |      1 | 1   |      3 | 1   |      3
+ 1          |      1 | 1   |      3 | 1   |      3 | 1          |      1 | 1   |      1 | 1   |      1
+ 1          |      1 | 1   |      3 | 1   |      3 | 1          |      1 | 1   |      2 | 1   |      2
+ 1          |      1 | 1   |      3 | 1   |      3 | 1          |      1 | 1   |      3 | 1   |      3
+(13 rows)
+
+explain(costs off) select a.a,length(a.a),a.b,length(a.b),a.c,length(a.c),b.a,length(b.a),b.b,length(b.b),b.c,length(b.c) from t_char1 a left join t_char2 b on a.c=b.a order by 1,2,3,4,5,6,7,8,9,10,11,12;
+                                                                     QUERY PLAN                                                                     
+----------------------------------------------------------------------------------------------------------------------------------------------------
+ Sort
+   Sort Key: a.a, (length(a.a)), a.b, (length((a.b)::text)), a.c, (length(a.c)), b.a, (length(b.a)), b.b, (length((b.b)::text)), b.c, (length(b.c))
+   ->  Hash Left Join
+         Hash Cond: (a.c = (b.a)::text)
+         ->  Seq Scan on t_char1 a
+         ->  Hash
+               ->  Seq Scan on t_char2 b
+(7 rows)
+
+select a.a,length(a.a),a.b,length(a.b),a.c,length(a.c),b.a,length(b.a),b.b,length(b.b),b.c,length(b.c) from t_char1 a left join t_char2 b on a.c=b.a order by 1,2,3,4,5,6,7,8,9,10,11,12;
+     a      | length |  b  | length |  c  | length |     a      | length |  b  | length |  c  | length 
+------------+--------+-----+--------+-----+--------+------------+--------+-----+--------+-----+--------
+  1         |      2 |  1  |      2 |  1  |      2 |  1         |      2 |  1  |      2 |  1  |      2
+  1         |      2 |  1  |      2 |  1  |      2 |  1         |      2 |  1  |      3 |  1  |      3
+  1         |      2 |  1  |      3 |  1  |      3 |  1         |      2 |  1  |      2 |  1  |      2
+  1         |      2 |  1  |      3 |  1  |      3 |  1         |      2 |  1  |      3 |  1  |      3
+ 1          |      1 | 1   |      1 | 1   |      1 | 1          |      1 | 1   |      1 | 1   |      1
+ 1          |      1 | 1   |      1 | 1   |      1 | 1          |      1 | 1   |      2 | 1   |      2
+ 1          |      1 | 1   |      1 | 1   |      1 | 1          |      1 | 1   |      3 | 1   |      3
+ 1          |      1 | 1   |      2 | 1   |      2 | 1          |      1 | 1   |      1 | 1   |      1
+ 1          |      1 | 1   |      2 | 1   |      2 | 1          |      1 | 1   |      2 | 1   |      2
+ 1          |      1 | 1   |      2 | 1   |      2 | 1          |      1 | 1   |      3 | 1   |      3
+ 1          |      1 | 1   |      3 | 1   |      3 | 1          |      1 | 1   |      1 | 1   |      1
+ 1          |      1 | 1   |      3 | 1   |      3 | 1          |      1 | 1   |      2 | 1   |      2
+ 1          |      1 | 1   |      3 | 1   |      3 | 1          |      1 | 1   |      3 | 1   |      3
+(13 rows)
+
+explain(costs off) select a.a,length(a.a),a.b,length(a.b),a.c,length(a.c),b.a,length(b.a),b.b,length(b.b),b.c,length(b.c) from t_char1 a left join t_char2 b on a.c=b.b order by 1,2,3,4,5,6,7,8,9,10,11,12;
+                                                                     QUERY PLAN                                                                     
+----------------------------------------------------------------------------------------------------------------------------------------------------
+ Sort
+   Sort Key: a.a, (length(a.a)), a.b, (length((a.b)::text)), a.c, (length(a.c)), b.a, (length(b.a)), b.b, (length((b.b)::text)), b.c, (length(b.c))
+   ->  Hash Left Join
+         Hash Cond: (a.c = (b.b)::text)
+         ->  Seq Scan on t_char1 a
+         ->  Hash
+               ->  Seq Scan on t_char2 b
+(7 rows)
+
+select a.a,length(a.a),a.b,length(a.b),a.c,length(a.c),b.a,length(b.a),b.b,length(b.b),b.c,length(b.c) from t_char1 a left join t_char2 b on a.c=b.b order by 1,2,3,4,5,6,7,8,9,10,11,12;
+     a      | length |  b  | length |  c  | length |     a      | length |  b  | length |  c  | length 
+------------+--------+-----+--------+-----+--------+------------+--------+-----+--------+-----+--------
+  1         |      2 |  1  |      2 |  1  |      2 |  1         |      2 |  1  |      2 |  1  |      2
+  1         |      2 |  1  |      2 |  1  |      2 |  1         |      2 |  1  |      3 |  1  |      3
+  1         |      2 |  1  |      3 |  1  |      3 |  1         |      2 |  1  |      2 |  1  |      2
+  1         |      2 |  1  |      3 |  1  |      3 |  1         |      2 |  1  |      3 |  1  |      3
+ 1          |      1 | 1   |      1 | 1   |      1 | 1          |      1 | 1   |      1 | 1   |      1
+ 1          |      1 | 1   |      1 | 1   |      1 | 1          |      1 | 1   |      2 | 1   |      2
+ 1          |      1 | 1   |      1 | 1   |      1 | 1          |      1 | 1   |      3 | 1   |      3
+ 1          |      1 | 1   |      2 | 1   |      2 | 1          |      1 | 1   |      1 | 1   |      1
+ 1          |      1 | 1   |      2 | 1   |      2 | 1          |      1 | 1   |      2 | 1   |      2
+ 1          |      1 | 1   |      2 | 1   |      2 | 1          |      1 | 1   |      3 | 1   |      3
+ 1          |      1 | 1   |      3 | 1   |      3 | 1          |      1 | 1   |      1 | 1   |      1
+ 1          |      1 | 1   |      3 | 1   |      3 | 1          |      1 | 1   |      2 | 1   |      2
+ 1          |      1 | 1   |      3 | 1   |      3 | 1          |      1 | 1   |      3 | 1   |      3
+(13 rows)
+
+explain(costs off) select a.a,length(a.a),a.b,length(a.b),a.c,length(a.c),b.a,length(b.a),b.b,length(b.b),b.c,length(b.c) from t_char1 a left join t_char2 b on a.c=b.c order by 1,2,3,4,5,6,7,8,9,10,11,12;
+                                                                     QUERY PLAN                                                                     
+----------------------------------------------------------------------------------------------------------------------------------------------------
+ Sort
+   Sort Key: a.a, (length(a.a)), a.b, (length((a.b)::text)), a.c, (length(a.c)), b.a, (length(b.a)), b.b, (length((b.b)::text)), b.c, (length(b.c))
+   ->  Hash Left Join
+         Hash Cond: (a.c = b.c)
+         ->  Seq Scan on t_char1 a
+         ->  Hash
+               ->  Seq Scan on t_char2 b
+(7 rows)
+
+select a.a,length(a.a),a.b,length(a.b),a.c,length(a.c),b.a,length(b.a),b.b,length(b.b),b.c,length(b.c) from t_char1 a left join t_char2 b on a.c=b.c order by 1,2,3,4,5,6,7,8,9,10,11,12;
+     a      | length |  b  | length |  c  | length |     a      | length |  b  | length |  c  | length 
+------------+--------+-----+--------+-----+--------+------------+--------+-----+--------+-----+--------
+  1         |      2 |  1  |      2 |  1  |      2 |  1         |      2 |  1  |      2 |  1  |      2
+  1         |      2 |  1  |      2 |  1  |      2 |  1         |      2 |  1  |      3 |  1  |      3
+  1         |      2 |  1  |      3 |  1  |      3 |  1         |      2 |  1  |      2 |  1  |      2
+  1         |      2 |  1  |      3 |  1  |      3 |  1         |      2 |  1  |      3 |  1  |      3
+ 1          |      1 | 1   |      1 | 1   |      1 | 1          |      1 | 1   |      1 | 1   |      1
+ 1          |      1 | 1   |      1 | 1   |      1 | 1          |      1 | 1   |      2 | 1   |      2
+ 1          |      1 | 1   |      1 | 1   |      1 | 1          |      1 | 1   |      3 | 1   |      3
+ 1          |      1 | 1   |      2 | 1   |      2 | 1          |      1 | 1   |      1 | 1   |      1
+ 1          |      1 | 1   |      2 | 1   |      2 | 1          |      1 | 1   |      2 | 1   |      2
+ 1          |      1 | 1   |      2 | 1   |      2 | 1          |      1 | 1   |      3 | 1   |      3
+ 1          |      1 | 1   |      3 | 1   |      3 | 1          |      1 | 1   |      1 | 1   |      1
+ 1          |      1 | 1   |      3 | 1   |      3 | 1          |      1 | 1   |      2 | 1   |      2
+ 1          |      1 | 1   |      3 | 1   |      3 | 1          |      1 | 1   |      3 | 1   |      3
+(13 rows)
+
+set enable_hashjoin to off;
+set enable_mergejoin to on;
+explain(costs off) select a.a,length(a.a),a.b,length(a.b),a.c,length(a.c),b.a,length(b.a),b.b,length(b.b),b.c,length(b.c) from t_char1 a left join t_char2 b on a.a=b.a order by 1,2,3,4,5,6,7,8,9,10,11,12;
+                                                                     QUERY PLAN                                                                     
+----------------------------------------------------------------------------------------------------------------------------------------------------
+ Sort
+   Sort Key: a.a, (length(a.a)), a.b, (length((a.b)::text)), a.c, (length(a.c)), b.a, (length(b.a)), b.b, (length((b.b)::text)), b.c, (length(b.c))
+   ->  Merge Left Join
+         Merge Cond: (a.a = b.a)
+         ->  Sort
+               Sort Key: a.a
+               ->  Seq Scan on t_char1 a
+         ->  Sort
+               Sort Key: b.a
+               ->  Seq Scan on t_char2 b
+(10 rows)
+
+select a.a,length(a.a),a.b,length(a.b),a.c,length(a.c),b.a,length(b.a),b.b,length(b.b),b.c,length(b.c) from t_char1 a left join t_char2 b on a.a=b.a order by 1,2,3,4,5,6,7,8,9,10,11,12;
+     a      | length |  b  | length |  c  | length |     a      | length |  b  | length |  c  | length 
+------------+--------+-----+--------+-----+--------+------------+--------+-----+--------+-----+--------
+  1         |      2 |  1  |      2 |  1  |      2 |  1         |      2 |  1  |      2 |  1  |      2
+  1         |      2 |  1  |      2 |  1  |      2 |  1         |      2 |  1  |      3 |  1  |      3
+  1         |      2 |  1  |      3 |  1  |      3 |  1         |      2 |  1  |      2 |  1  |      2
+  1         |      2 |  1  |      3 |  1  |      3 |  1         |      2 |  1  |      3 |  1  |      3
+ 1          |      1 | 1   |      1 | 1   |      1 | 1          |      1 | 1   |      1 | 1   |      1
+ 1          |      1 | 1   |      1 | 1   |      1 | 1          |      1 | 1   |      2 | 1   |      2
+ 1          |      1 | 1   |      1 | 1   |      1 | 1          |      1 | 1   |      3 | 1   |      3
+ 1          |      1 | 1   |      2 | 1   |      2 | 1          |      1 | 1   |      1 | 1   |      1
+ 1          |      1 | 1   |      2 | 1   |      2 | 1          |      1 | 1   |      2 | 1   |      2
+ 1          |      1 | 1   |      2 | 1   |      2 | 1          |      1 | 1   |      3 | 1   |      3
+ 1          |      1 | 1   |      3 | 1   |      3 | 1          |      1 | 1   |      1 | 1   |      1
+ 1          |      1 | 1   |      3 | 1   |      3 | 1          |      1 | 1   |      2 | 1   |      2
+ 1          |      1 | 1   |      3 | 1   |      3 | 1          |      1 | 1   |      3 | 1   |      3
+(13 rows)
+
+explain(costs off) select a.a,length(a.a),a.b,length(a.b),a.c,length(a.c),b.a,length(b.a),b.b,length(b.b),b.c,length(b.c) from t_char1 a left join t_char2 b on a.a=b.b order by 1,2,3,4,5,6,7,8,9,10,11,12;
+                                                                     QUERY PLAN                                                                     
+----------------------------------------------------------------------------------------------------------------------------------------------------
+ Sort
+   Sort Key: a.a, (length(a.a)), a.b, (length((a.b)::text)), a.c, (length(a.c)), b.a, (length(b.a)), b.b, (length((b.b)::text)), b.c, (length(b.c))
+   ->  Merge Left Join
+         Merge Cond: (a.a = (b.b)::bpchar)
+         ->  Sort
+               Sort Key: a.a
+               ->  Seq Scan on t_char1 a
+         ->  Sort
+               Sort Key: b.b USING <
+               ->  Seq Scan on t_char2 b
+(10 rows)
+
+select a.a,length(a.a),a.b,length(a.b),a.c,length(a.c),b.a,length(b.a),b.b,length(b.b),b.c,length(b.c) from t_char1 a left join t_char2 b on a.a=b.b order by 1,2,3,4,5,6,7,8,9,10,11,12;
+     a      | length |  b  | length |  c  | length |     a      | length |  b  | length |  c  | length 
+------------+--------+-----+--------+-----+--------+------------+--------+-----+--------+-----+--------
+  1         |      2 |  1  |      2 |  1  |      2 |  1         |      2 |  1  |      2 |  1  |      2
+  1         |      2 |  1  |      2 |  1  |      2 |  1         |      2 |  1  |      3 |  1  |      3
+  1         |      2 |  1  |      3 |  1  |      3 |  1         |      2 |  1  |      2 |  1  |      2
+  1         |      2 |  1  |      3 |  1  |      3 |  1         |      2 |  1  |      3 |  1  |      3
+ 1          |      1 | 1   |      1 | 1   |      1 | 1          |      1 | 1   |      1 | 1   |      1
+ 1          |      1 | 1   |      1 | 1   |      1 | 1          |      1 | 1   |      2 | 1   |      2
+ 1          |      1 | 1   |      1 | 1   |      1 | 1          |      1 | 1   |      3 | 1   |      3
+ 1          |      1 | 1   |      2 | 1   |      2 | 1          |      1 | 1   |      1 | 1   |      1
+ 1          |      1 | 1   |      2 | 1   |      2 | 1          |      1 | 1   |      2 | 1   |      2
+ 1          |      1 | 1   |      2 | 1   |      2 | 1          |      1 | 1   |      3 | 1   |      3
+ 1          |      1 | 1   |      3 | 1   |      3 | 1          |      1 | 1   |      1 | 1   |      1
+ 1          |      1 | 1   |      3 | 1   |      3 | 1          |      1 | 1   |      2 | 1   |      2
+ 1          |      1 | 1   |      3 | 1   |      3 | 1          |      1 | 1   |      3 | 1   |      3
+(13 rows)
+
+explain(costs off) select a.a,length(a.a),a.b,length(a.b),a.c,length(a.c),b.a,length(b.a),b.b,length(b.b),b.c,length(b.c) from t_char1 a left join t_char2 b on a.a=b.c order by 1,2,3,4,5,6,7,8,9,10,11,12;
+                                                                     QUERY PLAN                                                                     
+----------------------------------------------------------------------------------------------------------------------------------------------------
+ Sort
+   Sort Key: a.a, (length(a.a)), a.b, (length((a.b)::text)), a.c, (length(a.c)), b.a, (length(b.a)), b.b, (length((b.b)::text)), b.c, (length(b.c))
+   ->  Merge Left Join
+         Merge Cond: (((a.a)::text) = b.c)
+         ->  Sort
+               Sort Key: ((a.a)::text)
+               ->  Seq Scan on t_char1 a
+         ->  Sort
+               Sort Key: b.c
+               ->  Seq Scan on t_char2 b
+(10 rows)
+
+select a.a,length(a.a),a.b,length(a.b),a.c,length(a.c),b.a,length(b.a),b.b,length(b.b),b.c,length(b.c) from t_char1 a left join t_char2 b on a.a=b.c order by 1,2,3,4,5,6,7,8,9,10,11,12;
+     a      | length |  b  | length |  c  | length |     a      | length |  b  | length |  c  | length 
+------------+--------+-----+--------+-----+--------+------------+--------+-----+--------+-----+--------
+  1         |      2 |  1  |      2 |  1  |      2 |  1         |      2 |  1  |      2 |  1  |      2
+  1         |      2 |  1  |      2 |  1  |      2 |  1         |      2 |  1  |      3 |  1  |      3
+  1         |      2 |  1  |      3 |  1  |      3 |  1         |      2 |  1  |      2 |  1  |      2
+  1         |      2 |  1  |      3 |  1  |      3 |  1         |      2 |  1  |      3 |  1  |      3
+ 1          |      1 | 1   |      1 | 1   |      1 | 1          |      1 | 1   |      1 | 1   |      1
+ 1          |      1 | 1   |      1 | 1   |      1 | 1          |      1 | 1   |      2 | 1   |      2
+ 1          |      1 | 1   |      1 | 1   |      1 | 1          |      1 | 1   |      3 | 1   |      3
+ 1          |      1 | 1   |      2 | 1   |      2 | 1          |      1 | 1   |      1 | 1   |      1
+ 1          |      1 | 1   |      2 | 1   |      2 | 1          |      1 | 1   |      2 | 1   |      2
+ 1          |      1 | 1   |      2 | 1   |      2 | 1          |      1 | 1   |      3 | 1   |      3
+ 1          |      1 | 1   |      3 | 1   |      3 | 1          |      1 | 1   |      1 | 1   |      1
+ 1          |      1 | 1   |      3 | 1   |      3 | 1          |      1 | 1   |      2 | 1   |      2
+ 1          |      1 | 1   |      3 | 1   |      3 | 1          |      1 | 1   |      3 | 1   |      3
+(13 rows)
+
+explain(costs off) select a.a,length(a.a),a.b,length(a.b),a.c,length(a.c),b.a,length(b.a),b.b,length(b.b),b.c,length(b.c) from t_char1 a left join t_char2 b on a.b=b.a order by 1,2,3,4,5,6,7,8,9,10,11,12;
+                                                                     QUERY PLAN                                                                     
+----------------------------------------------------------------------------------------------------------------------------------------------------
+ Sort
+   Sort Key: a.a, (length(a.a)), a.b, (length((a.b)::text)), a.c, (length(a.c)), b.a, (length(b.a)), b.b, (length((b.b)::text)), b.c, (length(b.c))
+   ->  Merge Left Join
+         Merge Cond: ((a.b)::bpchar = b.a)
+         ->  Sort
+               Sort Key: a.b USING <
+               ->  Seq Scan on t_char1 a
+         ->  Sort
+               Sort Key: b.a
+               ->  Seq Scan on t_char2 b
+(10 rows)
+
+select a.a,length(a.a),a.b,length(a.b),a.c,length(a.c),b.a,length(b.a),b.b,length(b.b),b.c,length(b.c) from t_char1 a left join t_char2 b on a.b=b.a order by 1,2,3,4,5,6,7,8,9,10,11,12;
+     a      | length |  b  | length |  c  | length |     a      | length |  b  | length |  c  | length 
+------------+--------+-----+--------+-----+--------+------------+--------+-----+--------+-----+--------
+  1         |      2 |  1  |      2 |  1  |      2 |  1         |      2 |  1  |      2 |  1  |      2
+  1         |      2 |  1  |      2 |  1  |      2 |  1         |      2 |  1  |      3 |  1  |      3
+  1         |      2 |  1  |      3 |  1  |      3 |  1         |      2 |  1  |      2 |  1  |      2
+  1         |      2 |  1  |      3 |  1  |      3 |  1         |      2 |  1  |      3 |  1  |      3
+ 1          |      1 | 1   |      1 | 1   |      1 | 1          |      1 | 1   |      1 | 1   |      1
+ 1          |      1 | 1   |      1 | 1   |      1 | 1          |      1 | 1   |      2 | 1   |      2
+ 1          |      1 | 1   |      1 | 1   |      1 | 1          |      1 | 1   |      3 | 1   |      3
+ 1          |      1 | 1   |      2 | 1   |      2 | 1          |      1 | 1   |      1 | 1   |      1
+ 1          |      1 | 1   |      2 | 1   |      2 | 1          |      1 | 1   |      2 | 1   |      2
+ 1          |      1 | 1   |      2 | 1   |      2 | 1          |      1 | 1   |      3 | 1   |      3
+ 1          |      1 | 1   |      3 | 1   |      3 | 1          |      1 | 1   |      1 | 1   |      1
+ 1          |      1 | 1   |      3 | 1   |      3 | 1          |      1 | 1   |      2 | 1   |      2
+ 1          |      1 | 1   |      3 | 1   |      3 | 1          |      1 | 1   |      3 | 1   |      3
+(13 rows)
+
+explain(costs off) select a.a,length(a.a),a.b,length(a.b),a.c,length(a.c),b.a,length(b.a),b.b,length(b.b),b.c,length(b.c) from t_char1 a left join t_char2 b on a.b=b.b order by 1,2,3,4,5,6,7,8,9,10,11,12;
+                                                                     QUERY PLAN                                                                     
+----------------------------------------------------------------------------------------------------------------------------------------------------
+ Sort
+   Sort Key: a.a, (length(a.a)), a.b, (length((a.b)::text)), a.c, (length(a.c)), b.a, (length(b.a)), b.b, (length((b.b)::text)), b.c, (length(b.c))
+   ->  Merge Left Join
+         Merge Cond: ((a.b)::text = (b.b)::text)
+         ->  Sort
+               Sort Key: a.b
+               ->  Seq Scan on t_char1 a
+         ->  Sort
+               Sort Key: b.b
+               ->  Seq Scan on t_char2 b
+(10 rows)
+
+select a.a,length(a.a),a.b,length(a.b),a.c,length(a.c),b.a,length(b.a),b.b,length(b.b),b.c,length(b.c) from t_char1 a left join t_char2 b on a.b=b.b order by 1,2,3,4,5,6,7,8,9,10,11,12;
+     a      | length |  b  | length |  c  | length |     a      | length |  b  | length |  c  | length 
+------------+--------+-----+--------+-----+--------+------------+--------+-----+--------+-----+--------
+  1         |      2 |  1  |      2 |  1  |      2 |  1         |      2 |  1  |      2 |  1  |      2
+  1         |      2 |  1  |      2 |  1  |      2 |  1         |      2 |  1  |      3 |  1  |      3
+  1         |      2 |  1  |      3 |  1  |      3 |  1         |      2 |  1  |      2 |  1  |      2
+  1         |      2 |  1  |      3 |  1  |      3 |  1         |      2 |  1  |      3 |  1  |      3
+ 1          |      1 | 1   |      1 | 1   |      1 | 1          |      1 | 1   |      1 | 1   |      1
+ 1          |      1 | 1   |      1 | 1   |      1 | 1          |      1 | 1   |      2 | 1   |      2
+ 1          |      1 | 1   |      1 | 1   |      1 | 1          |      1 | 1   |      3 | 1   |      3
+ 1          |      1 | 1   |      2 | 1   |      2 | 1          |      1 | 1   |      1 | 1   |      1
+ 1          |      1 | 1   |      2 | 1   |      2 | 1          |      1 | 1   |      2 | 1   |      2
+ 1          |      1 | 1   |      2 | 1   |      2 | 1          |      1 | 1   |      3 | 1   |      3
+ 1          |      1 | 1   |      3 | 1   |      3 | 1          |      1 | 1   |      1 | 1   |      1
+ 1          |      1 | 1   |      3 | 1   |      3 | 1          |      1 | 1   |      2 | 1   |      2
+ 1          |      1 | 1   |      3 | 1   |      3 | 1          |      1 | 1   |      3 | 1   |      3
+(13 rows)
+
+explain(costs off) select a.a,length(a.a),a.b,length(a.b),a.c,length(a.c),b.a,length(b.a),b.b,length(b.b),b.c,length(b.c) from t_char1 a left join t_char2 b on a.b=b.c order by 1,2,3,4,5,6,7,8,9,10,11,12;
+                                                                     QUERY PLAN                                                                     
+----------------------------------------------------------------------------------------------------------------------------------------------------
+ Sort
+   Sort Key: a.a, (length(a.a)), a.b, (length((a.b)::text)), a.c, (length(a.c)), b.a, (length(b.a)), b.b, (length((b.b)::text)), b.c, (length(b.c))
+   ->  Merge Left Join
+         Merge Cond: ((a.b)::text = b.c)
+         ->  Sort
+               Sort Key: a.b
+               ->  Seq Scan on t_char1 a
+         ->  Sort
+               Sort Key: b.c
+               ->  Seq Scan on t_char2 b
+(10 rows)
+
+select a.a,length(a.a),a.b,length(a.b),a.c,length(a.c),b.a,length(b.a),b.b,length(b.b),b.c,length(b.c) from t_char1 a left join t_char2 b on a.b=b.c order by 1,2,3,4,5,6,7,8,9,10,11,12;
+     a      | length |  b  | length |  c  | length |     a      | length |  b  | length |  c  | length 
+------------+--------+-----+--------+-----+--------+------------+--------+-----+--------+-----+--------
+  1         |      2 |  1  |      2 |  1  |      2 |  1         |      2 |  1  |      2 |  1  |      2
+  1         |      2 |  1  |      2 |  1  |      2 |  1         |      2 |  1  |      3 |  1  |      3
+  1         |      2 |  1  |      3 |  1  |      3 |  1         |      2 |  1  |      2 |  1  |      2
+  1         |      2 |  1  |      3 |  1  |      3 |  1         |      2 |  1  |      3 |  1  |      3
+ 1          |      1 | 1   |      1 | 1   |      1 | 1          |      1 | 1   |      1 | 1   |      1
+ 1          |      1 | 1   |      1 | 1   |      1 | 1          |      1 | 1   |      2 | 1   |      2
+ 1          |      1 | 1   |      1 | 1   |      1 | 1          |      1 | 1   |      3 | 1   |      3
+ 1          |      1 | 1   |      2 | 1   |      2 | 1          |      1 | 1   |      1 | 1   |      1
+ 1          |      1 | 1   |      2 | 1   |      2 | 1          |      1 | 1   |      2 | 1   |      2
+ 1          |      1 | 1   |      2 | 1   |      2 | 1          |      1 | 1   |      3 | 1   |      3
+ 1          |      1 | 1   |      3 | 1   |      3 | 1          |      1 | 1   |      1 | 1   |      1
+ 1          |      1 | 1   |      3 | 1   |      3 | 1          |      1 | 1   |      2 | 1   |      2
+ 1          |      1 | 1   |      3 | 1   |      3 | 1          |      1 | 1   |      3 | 1   |      3
+(13 rows)
+
+explain(costs off) select a.a,length(a.a),a.b,length(a.b),a.c,length(a.c),b.a,length(b.a),b.b,length(b.b),b.c,length(b.c) from t_char1 a left join t_char2 b on a.c=b.a order by 1,2,3,4,5,6,7,8,9,10,11,12;
+                                                                     QUERY PLAN                                                                     
+----------------------------------------------------------------------------------------------------------------------------------------------------
+ Sort
+   Sort Key: a.a, (length(a.a)), a.b, (length((a.b)::text)), a.c, (length(a.c)), b.a, (length(b.a)), b.b, (length((b.b)::text)), b.c, (length(b.c))
+   ->  Merge Left Join
+         Merge Cond: (a.c = (b.a)::text)
+         ->  Sort
+               Sort Key: a.c
+               ->  Seq Scan on t_char1 a
+         ->  Sort
+               Sort Key: ((b.a)::text)
+               ->  Seq Scan on t_char2 b
+(10 rows)
+
+select a.a,length(a.a),a.b,length(a.b),a.c,length(a.c),b.a,length(b.a),b.b,length(b.b),b.c,length(b.c) from t_char1 a left join t_char2 b on a.c=b.a order by 1,2,3,4,5,6,7,8,9,10,11,12;
+     a      | length |  b  | length |  c  | length |     a      | length |  b  | length |  c  | length 
+------------+--------+-----+--------+-----+--------+------------+--------+-----+--------+-----+--------
+  1         |      2 |  1  |      2 |  1  |      2 |  1         |      2 |  1  |      2 |  1  |      2
+  1         |      2 |  1  |      2 |  1  |      2 |  1         |      2 |  1  |      3 |  1  |      3
+  1         |      2 |  1  |      3 |  1  |      3 |  1         |      2 |  1  |      2 |  1  |      2
+  1         |      2 |  1  |      3 |  1  |      3 |  1         |      2 |  1  |      3 |  1  |      3
+ 1          |      1 | 1   |      1 | 1   |      1 | 1          |      1 | 1   |      1 | 1   |      1
+ 1          |      1 | 1   |      1 | 1   |      1 | 1          |      1 | 1   |      2 | 1   |      2
+ 1          |      1 | 1   |      1 | 1   |      1 | 1          |      1 | 1   |      3 | 1   |      3
+ 1          |      1 | 1   |      2 | 1   |      2 | 1          |      1 | 1   |      1 | 1   |      1
+ 1          |      1 | 1   |      2 | 1   |      2 | 1          |      1 | 1   |      2 | 1   |      2
+ 1          |      1 | 1   |      2 | 1   |      2 | 1          |      1 | 1   |      3 | 1   |      3
+ 1          |      1 | 1   |      3 | 1   |      3 | 1          |      1 | 1   |      1 | 1   |      1
+ 1          |      1 | 1   |      3 | 1   |      3 | 1          |      1 | 1   |      2 | 1   |      2
+ 1          |      1 | 1   |      3 | 1   |      3 | 1          |      1 | 1   |      3 | 1   |      3
+(13 rows)
+
+explain(costs off) select a.a,length(a.a),a.b,length(a.b),a.c,length(a.c),b.a,length(b.a),b.b,length(b.b),b.c,length(b.c) from t_char1 a left join t_char2 b on a.c=b.b order by 1,2,3,4,5,6,7,8,9,10,11,12;
+                                                                     QUERY PLAN                                                                     
+----------------------------------------------------------------------------------------------------------------------------------------------------
+ Sort
+   Sort Key: a.a, (length(a.a)), a.b, (length((a.b)::text)), a.c, (length(a.c)), b.a, (length(b.a)), b.b, (length((b.b)::text)), b.c, (length(b.c))
+   ->  Merge Left Join
+         Merge Cond: (a.c = (b.b)::text)
+         ->  Sort
+               Sort Key: a.c
+               ->  Seq Scan on t_char1 a
+         ->  Sort
+               Sort Key: b.b
+               ->  Seq Scan on t_char2 b
+(10 rows)
+
+select a.a,length(a.a),a.b,length(a.b),a.c,length(a.c),b.a,length(b.a),b.b,length(b.b),b.c,length(b.c) from t_char1 a left join t_char2 b on a.c=b.b order by 1,2,3,4,5,6,7,8,9,10,11,12;
+     a      | length |  b  | length |  c  | length |     a      | length |  b  | length |  c  | length 
+------------+--------+-----+--------+-----+--------+------------+--------+-----+--------+-----+--------
+  1         |      2 |  1  |      2 |  1  |      2 |  1         |      2 |  1  |      2 |  1  |      2
+  1         |      2 |  1  |      2 |  1  |      2 |  1         |      2 |  1  |      3 |  1  |      3
+  1         |      2 |  1  |      3 |  1  |      3 |  1         |      2 |  1  |      2 |  1  |      2
+  1         |      2 |  1  |      3 |  1  |      3 |  1         |      2 |  1  |      3 |  1  |      3
+ 1          |      1 | 1   |      1 | 1   |      1 | 1          |      1 | 1   |      1 | 1   |      1
+ 1          |      1 | 1   |      1 | 1   |      1 | 1          |      1 | 1   |      2 | 1   |      2
+ 1          |      1 | 1   |      1 | 1   |      1 | 1          |      1 | 1   |      3 | 1   |      3
+ 1          |      1 | 1   |      2 | 1   |      2 | 1          |      1 | 1   |      1 | 1   |      1
+ 1          |      1 | 1   |      2 | 1   |      2 | 1          |      1 | 1   |      2 | 1   |      2
+ 1          |      1 | 1   |      2 | 1   |      2 | 1          |      1 | 1   |      3 | 1   |      3
+ 1          |      1 | 1   |      3 | 1   |      3 | 1          |      1 | 1   |      1 | 1   |      1
+ 1          |      1 | 1   |      3 | 1   |      3 | 1          |      1 | 1   |      2 | 1   |      2
+ 1          |      1 | 1   |      3 | 1   |      3 | 1          |      1 | 1   |      3 | 1   |      3
+(13 rows)
+
+explain(costs off) select a.a,length(a.a),a.b,length(a.b),a.c,length(a.c),b.a,length(b.a),b.b,length(b.b),b.c,length(b.c) from t_char1 a left join t_char2 b on a.c=b.c order by 1,2,3,4,5,6,7,8,9,10,11,12;
+                                                                     QUERY PLAN                                                                     
+----------------------------------------------------------------------------------------------------------------------------------------------------
+ Sort
+   Sort Key: a.a, (length(a.a)), a.b, (length((a.b)::text)), a.c, (length(a.c)), b.a, (length(b.a)), b.b, (length((b.b)::text)), b.c, (length(b.c))
+   ->  Merge Left Join
+         Merge Cond: (a.c = b.c)
+         ->  Sort
+               Sort Key: a.c
+               ->  Seq Scan on t_char1 a
+         ->  Sort
+               Sort Key: b.c
+               ->  Seq Scan on t_char2 b
+(10 rows)
+
+select a.a,length(a.a),a.b,length(a.b),a.c,length(a.c),b.a,length(b.a),b.b,length(b.b),b.c,length(b.c) from t_char1 a left join t_char2 b on a.c=b.c order by 1,2,3,4,5,6,7,8,9,10,11,12;
+     a      | length |  b  | length |  c  | length |     a      | length |  b  | length |  c  | length 
+------------+--------+-----+--------+-----+--------+------------+--------+-----+--------+-----+--------
+  1         |      2 |  1  |      2 |  1  |      2 |  1         |      2 |  1  |      2 |  1  |      2
+  1         |      2 |  1  |      2 |  1  |      2 |  1         |      2 |  1  |      3 |  1  |      3
+  1         |      2 |  1  |      3 |  1  |      3 |  1         |      2 |  1  |      2 |  1  |      2
+  1         |      2 |  1  |      3 |  1  |      3 |  1         |      2 |  1  |      3 |  1  |      3
+ 1          |      1 | 1   |      1 | 1   |      1 | 1          |      1 | 1   |      1 | 1   |      1
+ 1          |      1 | 1   |      1 | 1   |      1 | 1          |      1 | 1   |      2 | 1   |      2
+ 1          |      1 | 1   |      1 | 1   |      1 | 1          |      1 | 1   |      3 | 1   |      3
+ 1          |      1 | 1   |      2 | 1   |      2 | 1          |      1 | 1   |      1 | 1   |      1
+ 1          |      1 | 1   |      2 | 1   |      2 | 1          |      1 | 1   |      2 | 1   |      2
+ 1          |      1 | 1   |      2 | 1   |      2 | 1          |      1 | 1   |      3 | 1   |      3
+ 1          |      1 | 1   |      3 | 1   |      3 | 1          |      1 | 1   |      1 | 1   |      1
+ 1          |      1 | 1   |      3 | 1   |      3 | 1          |      1 | 1   |      2 | 1   |      2
+ 1          |      1 | 1   |      3 | 1   |      3 | 1          |      1 | 1   |      3 | 1   |      3
+(13 rows)
+
+set enable_mergejoin to off;
+explain(costs off) select a.a,length(a.a),a.b,length(a.b),a.c,length(a.c),b.a,length(b.a),b.b,length(b.b),b.c,length(b.c) from t_char1 a left join t_char2 b on a.a=b.a order by 1,2,3,4,5,6,7,8,9,10,11,12;
+                                                                     QUERY PLAN                                                                     
+----------------------------------------------------------------------------------------------------------------------------------------------------
+ Sort
+   Sort Key: a.a, (length(a.a)), a.b, (length((a.b)::text)), a.c, (length(a.c)), b.a, (length(b.a)), b.b, (length((b.b)::text)), b.c, (length(b.c))
+   ->  Nested Loop Left Join
+         Join Filter: (a.a = b.a)
+         ->  Seq Scan on t_char1 a
+         ->  Materialize
+               ->  Seq Scan on t_char2 b
+(7 rows)
+
+select a.a,length(a.a),a.b,length(a.b),a.c,length(a.c),b.a,length(b.a),b.b,length(b.b),b.c,length(b.c) from t_char1 a left join t_char2 b on a.a=b.a order by 1,2,3,4,5,6,7,8,9,10,11,12;
+     a      | length |  b  | length |  c  | length |     a      | length |  b  | length |  c  | length 
+------------+--------+-----+--------+-----+--------+------------+--------+-----+--------+-----+--------
+  1         |      2 |  1  |      2 |  1  |      2 |  1         |      2 |  1  |      2 |  1  |      2
+  1         |      2 |  1  |      2 |  1  |      2 |  1         |      2 |  1  |      3 |  1  |      3
+  1         |      2 |  1  |      3 |  1  |      3 |  1         |      2 |  1  |      2 |  1  |      2
+  1         |      2 |  1  |      3 |  1  |      3 |  1         |      2 |  1  |      3 |  1  |      3
+ 1          |      1 | 1   |      1 | 1   |      1 | 1          |      1 | 1   |      1 | 1   |      1
+ 1          |      1 | 1   |      1 | 1   |      1 | 1          |      1 | 1   |      2 | 1   |      2
+ 1          |      1 | 1   |      1 | 1   |      1 | 1          |      1 | 1   |      3 | 1   |      3
+ 1          |      1 | 1   |      2 | 1   |      2 | 1          |      1 | 1   |      1 | 1   |      1
+ 1          |      1 | 1   |      2 | 1   |      2 | 1          |      1 | 1   |      2 | 1   |      2
+ 1          |      1 | 1   |      2 | 1   |      2 | 1          |      1 | 1   |      3 | 1   |      3
+ 1          |      1 | 1   |      3 | 1   |      3 | 1          |      1 | 1   |      1 | 1   |      1
+ 1          |      1 | 1   |      3 | 1   |      3 | 1          |      1 | 1   |      2 | 1   |      2
+ 1          |      1 | 1   |      3 | 1   |      3 | 1          |      1 | 1   |      3 | 1   |      3
+(13 rows)
+
+explain(costs off) select a.a,length(a.a),a.b,length(a.b),a.c,length(a.c),b.a,length(b.a),b.b,length(b.b),b.c,length(b.c) from t_char1 a left join t_char2 b on a.a=b.b order by 1,2,3,4,5,6,7,8,9,10,11,12;
+                                                                     QUERY PLAN                                                                     
+----------------------------------------------------------------------------------------------------------------------------------------------------
+ Sort
+   Sort Key: a.a, (length(a.a)), a.b, (length((a.b)::text)), a.c, (length(a.c)), b.a, (length(b.a)), b.b, (length((b.b)::text)), b.c, (length(b.c))
+   ->  Nested Loop Left Join
+         Join Filter: (a.a = (b.b)::bpchar)
+         ->  Seq Scan on t_char1 a
+         ->  Materialize
+               ->  Seq Scan on t_char2 b
+(7 rows)
+
+select a.a,length(a.a),a.b,length(a.b),a.c,length(a.c),b.a,length(b.a),b.b,length(b.b),b.c,length(b.c) from t_char1 a left join t_char2 b on a.a=b.b order by 1,2,3,4,5,6,7,8,9,10,11,12;
+     a      | length |  b  | length |  c  | length |     a      | length |  b  | length |  c  | length 
+------------+--------+-----+--------+-----+--------+------------+--------+-----+--------+-----+--------
+  1         |      2 |  1  |      2 |  1  |      2 |  1         |      2 |  1  |      2 |  1  |      2
+  1         |      2 |  1  |      2 |  1  |      2 |  1         |      2 |  1  |      3 |  1  |      3
+  1         |      2 |  1  |      3 |  1  |      3 |  1         |      2 |  1  |      2 |  1  |      2
+  1         |      2 |  1  |      3 |  1  |      3 |  1         |      2 |  1  |      3 |  1  |      3
+ 1          |      1 | 1   |      1 | 1   |      1 | 1          |      1 | 1   |      1 | 1   |      1
+ 1          |      1 | 1   |      1 | 1   |      1 | 1          |      1 | 1   |      2 | 1   |      2
+ 1          |      1 | 1   |      1 | 1   |      1 | 1          |      1 | 1   |      3 | 1   |      3
+ 1          |      1 | 1   |      2 | 1   |      2 | 1          |      1 | 1   |      1 | 1   |      1
+ 1          |      1 | 1   |      2 | 1   |      2 | 1          |      1 | 1   |      2 | 1   |      2
+ 1          |      1 | 1   |      2 | 1   |      2 | 1          |      1 | 1   |      3 | 1   |      3
+ 1          |      1 | 1   |      3 | 1   |      3 | 1          |      1 | 1   |      1 | 1   |      1
+ 1          |      1 | 1   |      3 | 1   |      3 | 1          |      1 | 1   |      2 | 1   |      2
+ 1          |      1 | 1   |      3 | 1   |      3 | 1          |      1 | 1   |      3 | 1   |      3
+(13 rows)
+
+explain(costs off) select a.a,length(a.a),a.b,length(a.b),a.c,length(a.c),b.a,length(b.a),b.b,length(b.b),b.c,length(b.c) from t_char1 a left join t_char2 b on a.a=b.c order by 1,2,3,4,5,6,7,8,9,10,11,12;
+                                                                     QUERY PLAN                                                                     
+----------------------------------------------------------------------------------------------------------------------------------------------------
+ Sort
+   Sort Key: a.a, (length(a.a)), a.b, (length((a.b)::text)), a.c, (length(a.c)), b.a, (length(b.a)), b.b, (length((b.b)::text)), b.c, (length(b.c))
+   ->  Nested Loop Left Join
+         Join Filter: ((a.a)::text = b.c)
+         ->  Seq Scan on t_char1 a
+         ->  Materialize
+               ->  Seq Scan on t_char2 b
+(7 rows)
+
+select a.a,length(a.a),a.b,length(a.b),a.c,length(a.c),b.a,length(b.a),b.b,length(b.b),b.c,length(b.c) from t_char1 a left join t_char2 b on a.a=b.c order by 1,2,3,4,5,6,7,8,9,10,11,12;
+     a      | length |  b  | length |  c  | length |     a      | length |  b  | length |  c  | length 
+------------+--------+-----+--------+-----+--------+------------+--------+-----+--------+-----+--------
+  1         |      2 |  1  |      2 |  1  |      2 |  1         |      2 |  1  |      2 |  1  |      2
+  1         |      2 |  1  |      2 |  1  |      2 |  1         |      2 |  1  |      3 |  1  |      3
+  1         |      2 |  1  |      3 |  1  |      3 |  1         |      2 |  1  |      2 |  1  |      2
+  1         |      2 |  1  |      3 |  1  |      3 |  1         |      2 |  1  |      3 |  1  |      3
+ 1          |      1 | 1   |      1 | 1   |      1 | 1          |      1 | 1   |      1 | 1   |      1
+ 1          |      1 | 1   |      1 | 1   |      1 | 1          |      1 | 1   |      2 | 1   |      2
+ 1          |      1 | 1   |      1 | 1   |      1 | 1          |      1 | 1   |      3 | 1   |      3
+ 1          |      1 | 1   |      2 | 1   |      2 | 1          |      1 | 1   |      1 | 1   |      1
+ 1          |      1 | 1   |      2 | 1   |      2 | 1          |      1 | 1   |      2 | 1   |      2
+ 1          |      1 | 1   |      2 | 1   |      2 | 1          |      1 | 1   |      3 | 1   |      3
+ 1          |      1 | 1   |      3 | 1   |      3 | 1          |      1 | 1   |      1 | 1   |      1
+ 1          |      1 | 1   |      3 | 1   |      3 | 1          |      1 | 1   |      2 | 1   |      2
+ 1          |      1 | 1   |      3 | 1   |      3 | 1          |      1 | 1   |      3 | 1   |      3
+(13 rows)
+
+explain(costs off) select a.a,length(a.a),a.b,length(a.b),a.c,length(a.c),b.a,length(b.a),b.b,length(b.b),b.c,length(b.c) from t_char1 a left join t_char2 b on a.b=b.a order by 1,2,3,4,5,6,7,8,9,10,11,12;
+                                                                     QUERY PLAN                                                                     
+----------------------------------------------------------------------------------------------------------------------------------------------------
+ Sort
+   Sort Key: a.a, (length(a.a)), a.b, (length((a.b)::text)), a.c, (length(a.c)), b.a, (length(b.a)), b.b, (length((b.b)::text)), b.c, (length(b.c))
+   ->  Nested Loop Left Join
+         Join Filter: ((a.b)::bpchar = b.a)
+         ->  Seq Scan on t_char1 a
+         ->  Materialize
+               ->  Seq Scan on t_char2 b
+(7 rows)
+
+select a.a,length(a.a),a.b,length(a.b),a.c,length(a.c),b.a,length(b.a),b.b,length(b.b),b.c,length(b.c) from t_char1 a left join t_char2 b on a.b=b.a order by 1,2,3,4,5,6,7,8,9,10,11,12;
+     a      | length |  b  | length |  c  | length |     a      | length |  b  | length |  c  | length 
+------------+--------+-----+--------+-----+--------+------------+--------+-----+--------+-----+--------
+  1         |      2 |  1  |      2 |  1  |      2 |  1         |      2 |  1  |      2 |  1  |      2
+  1         |      2 |  1  |      2 |  1  |      2 |  1         |      2 |  1  |      3 |  1  |      3
+  1         |      2 |  1  |      3 |  1  |      3 |  1         |      2 |  1  |      2 |  1  |      2
+  1         |      2 |  1  |      3 |  1  |      3 |  1         |      2 |  1  |      3 |  1  |      3
+ 1          |      1 | 1   |      1 | 1   |      1 | 1          |      1 | 1   |      1 | 1   |      1
+ 1          |      1 | 1   |      1 | 1   |      1 | 1          |      1 | 1   |      2 | 1   |      2
+ 1          |      1 | 1   |      1 | 1   |      1 | 1          |      1 | 1   |      3 | 1   |      3
+ 1          |      1 | 1   |      2 | 1   |      2 | 1          |      1 | 1   |      1 | 1   |      1
+ 1          |      1 | 1   |      2 | 1   |      2 | 1          |      1 | 1   |      2 | 1   |      2
+ 1          |      1 | 1   |      2 | 1   |      2 | 1          |      1 | 1   |      3 | 1   |      3
+ 1          |      1 | 1   |      3 | 1   |      3 | 1          |      1 | 1   |      1 | 1   |      1
+ 1          |      1 | 1   |      3 | 1   |      3 | 1          |      1 | 1   |      2 | 1   |      2
+ 1          |      1 | 1   |      3 | 1   |      3 | 1          |      1 | 1   |      3 | 1   |      3
+(13 rows)
+
+explain(costs off) select a.a,length(a.a),a.b,length(a.b),a.c,length(a.c),b.a,length(b.a),b.b,length(b.b),b.c,length(b.c) from t_char1 a left join t_char2 b on a.b=b.b order by 1,2,3,4,5,6,7,8,9,10,11,12;
+                                                                     QUERY PLAN                                                                     
+----------------------------------------------------------------------------------------------------------------------------------------------------
+ Sort
+   Sort Key: a.a, (length(a.a)), a.b, (length((a.b)::text)), a.c, (length(a.c)), b.a, (length(b.a)), b.b, (length((b.b)::text)), b.c, (length(b.c))
+   ->  Nested Loop Left Join
+         Join Filter: ((a.b)::text = (b.b)::text)
+         ->  Seq Scan on t_char1 a
+         ->  Materialize
+               ->  Seq Scan on t_char2 b
+(7 rows)
+
+select a.a,length(a.a),a.b,length(a.b),a.c,length(a.c),b.a,length(b.a),b.b,length(b.b),b.c,length(b.c) from t_char1 a left join t_char2 b on a.b=b.b order by 1,2,3,4,5,6,7,8,9,10,11,12;
+     a      | length |  b  | length |  c  | length |     a      | length |  b  | length |  c  | length 
+------------+--------+-----+--------+-----+--------+------------+--------+-----+--------+-----+--------
+  1         |      2 |  1  |      2 |  1  |      2 |  1         |      2 |  1  |      2 |  1  |      2
+  1         |      2 |  1  |      2 |  1  |      2 |  1         |      2 |  1  |      3 |  1  |      3
+  1         |      2 |  1  |      3 |  1  |      3 |  1         |      2 |  1  |      2 |  1  |      2
+  1         |      2 |  1  |      3 |  1  |      3 |  1         |      2 |  1  |      3 |  1  |      3
+ 1          |      1 | 1   |      1 | 1   |      1 | 1          |      1 | 1   |      1 | 1   |      1
+ 1          |      1 | 1   |      1 | 1   |      1 | 1          |      1 | 1   |      2 | 1   |      2
+ 1          |      1 | 1   |      1 | 1   |      1 | 1          |      1 | 1   |      3 | 1   |      3
+ 1          |      1 | 1   |      2 | 1   |      2 | 1          |      1 | 1   |      1 | 1   |      1
+ 1          |      1 | 1   |      2 | 1   |      2 | 1          |      1 | 1   |      2 | 1   |      2
+ 1          |      1 | 1   |      2 | 1   |      2 | 1          |      1 | 1   |      3 | 1   |      3
+ 1          |      1 | 1   |      3 | 1   |      3 | 1          |      1 | 1   |      1 | 1   |      1
+ 1          |      1 | 1   |      3 | 1   |      3 | 1          |      1 | 1   |      2 | 1   |      2
+ 1          |      1 | 1   |      3 | 1   |      3 | 1          |      1 | 1   |      3 | 1   |      3
+(13 rows)
+
+explain(costs off) select a.a,length(a.a),a.b,length(a.b),a.c,length(a.c),b.a,length(b.a),b.b,length(b.b),b.c,length(b.c) from t_char1 a left join t_char2 b on a.b=b.c order by 1,2,3,4,5,6,7,8,9,10,11,12;
+                                                                     QUERY PLAN                                                                     
+----------------------------------------------------------------------------------------------------------------------------------------------------
+ Sort
+   Sort Key: a.a, (length(a.a)), a.b, (length((a.b)::text)), a.c, (length(a.c)), b.a, (length(b.a)), b.b, (length((b.b)::text)), b.c, (length(b.c))
+   ->  Nested Loop Left Join
+         Join Filter: ((a.b)::text = b.c)
+         ->  Seq Scan on t_char1 a
+         ->  Materialize
+               ->  Seq Scan on t_char2 b
+(7 rows)
+
+select a.a,length(a.a),a.b,length(a.b),a.c,length(a.c),b.a,length(b.a),b.b,length(b.b),b.c,length(b.c) from t_char1 a left join t_char2 b on a.b=b.c order by 1,2,3,4,5,6,7,8,9,10,11,12;
+     a      | length |  b  | length |  c  | length |     a      | length |  b  | length |  c  | length 
+------------+--------+-----+--------+-----+--------+------------+--------+-----+--------+-----+--------
+  1         |      2 |  1  |      2 |  1  |      2 |  1         |      2 |  1  |      2 |  1  |      2
+  1         |      2 |  1  |      2 |  1  |      2 |  1         |      2 |  1  |      3 |  1  |      3
+  1         |      2 |  1  |      3 |  1  |      3 |  1         |      2 |  1  |      2 |  1  |      2
+  1         |      2 |  1  |      3 |  1  |      3 |  1         |      2 |  1  |      3 |  1  |      3
+ 1          |      1 | 1   |      1 | 1   |      1 | 1          |      1 | 1   |      1 | 1   |      1
+ 1          |      1 | 1   |      1 | 1   |      1 | 1          |      1 | 1   |      2 | 1   |      2
+ 1          |      1 | 1   |      1 | 1   |      1 | 1          |      1 | 1   |      3 | 1   |      3
+ 1          |      1 | 1   |      2 | 1   |      2 | 1          |      1 | 1   |      1 | 1   |      1
+ 1          |      1 | 1   |      2 | 1   |      2 | 1          |      1 | 1   |      2 | 1   |      2
+ 1          |      1 | 1   |      2 | 1   |      2 | 1          |      1 | 1   |      3 | 1   |      3
+ 1          |      1 | 1   |      3 | 1   |      3 | 1          |      1 | 1   |      1 | 1   |      1
+ 1          |      1 | 1   |      3 | 1   |      3 | 1          |      1 | 1   |      2 | 1   |      2
+ 1          |      1 | 1   |      3 | 1   |      3 | 1          |      1 | 1   |      3 | 1   |      3
+(13 rows)
+
+explain(costs off) select a.a,length(a.a),a.b,length(a.b),a.c,length(a.c),b.a,length(b.a),b.b,length(b.b),b.c,length(b.c) from t_char1 a left join t_char2 b on a.c=b.a order by 1,2,3,4,5,6,7,8,9,10,11,12;
+                                                                     QUERY PLAN                                                                     
+----------------------------------------------------------------------------------------------------------------------------------------------------
+ Sort
+   Sort Key: a.a, (length(a.a)), a.b, (length((a.b)::text)), a.c, (length(a.c)), b.a, (length(b.a)), b.b, (length((b.b)::text)), b.c, (length(b.c))
+   ->  Nested Loop Left Join
+         Join Filter: (a.c = (b.a)::text)
+         ->  Seq Scan on t_char1 a
+         ->  Materialize
+               ->  Seq Scan on t_char2 b
+(7 rows)
+
+select a.a,length(a.a),a.b,length(a.b),a.c,length(a.c),b.a,length(b.a),b.b,length(b.b),b.c,length(b.c) from t_char1 a left join t_char2 b on a.c=b.a order by 1,2,3,4,5,6,7,8,9,10,11,12;
+     a      | length |  b  | length |  c  | length |     a      | length |  b  | length |  c  | length 
+------------+--------+-----+--------+-----+--------+------------+--------+-----+--------+-----+--------
+  1         |      2 |  1  |      2 |  1  |      2 |  1         |      2 |  1  |      2 |  1  |      2
+  1         |      2 |  1  |      2 |  1  |      2 |  1         |      2 |  1  |      3 |  1  |      3
+  1         |      2 |  1  |      3 |  1  |      3 |  1         |      2 |  1  |      2 |  1  |      2
+  1         |      2 |  1  |      3 |  1  |      3 |  1         |      2 |  1  |      3 |  1  |      3
+ 1          |      1 | 1   |      1 | 1   |      1 | 1          |      1 | 1   |      1 | 1   |      1
+ 1          |      1 | 1   |      1 | 1   |      1 | 1          |      1 | 1   |      2 | 1   |      2
+ 1          |      1 | 1   |      1 | 1   |      1 | 1          |      1 | 1   |      3 | 1   |      3
+ 1          |      1 | 1   |      2 | 1   |      2 | 1          |      1 | 1   |      1 | 1   |      1
+ 1          |      1 | 1   |      2 | 1   |      2 | 1          |      1 | 1   |      2 | 1   |      2
+ 1          |      1 | 1   |      2 | 1   |      2 | 1          |      1 | 1   |      3 | 1   |      3
+ 1          |      1 | 1   |      3 | 1   |      3 | 1          |      1 | 1   |      1 | 1   |      1
+ 1          |      1 | 1   |      3 | 1   |      3 | 1          |      1 | 1   |      2 | 1   |      2
+ 1          |      1 | 1   |      3 | 1   |      3 | 1          |      1 | 1   |      3 | 1   |      3
+(13 rows)
+
+explain(costs off) select a.a,length(a.a),a.b,length(a.b),a.c,length(a.c),b.a,length(b.a),b.b,length(b.b),b.c,length(b.c) from t_char1 a left join t_char2 b on a.c=b.b order by 1,2,3,4,5,6,7,8,9,10,11,12;
+                                                                     QUERY PLAN                                                                     
+----------------------------------------------------------------------------------------------------------------------------------------------------
+ Sort
+   Sort Key: a.a, (length(a.a)), a.b, (length((a.b)::text)), a.c, (length(a.c)), b.a, (length(b.a)), b.b, (length((b.b)::text)), b.c, (length(b.c))
+   ->  Nested Loop Left Join
+         Join Filter: (a.c = (b.b)::text)
+         ->  Seq Scan on t_char1 a
+         ->  Materialize
+               ->  Seq Scan on t_char2 b
+(7 rows)
+
+select a.a,length(a.a),a.b,length(a.b),a.c,length(a.c),b.a,length(b.a),b.b,length(b.b),b.c,length(b.c) from t_char1 a left join t_char2 b on a.c=b.b order by 1,2,3,4,5,6,7,8,9,10,11,12;
+     a      | length |  b  | length |  c  | length |     a      | length |  b  | length |  c  | length 
+------------+--------+-----+--------+-----+--------+------------+--------+-----+--------+-----+--------
+  1         |      2 |  1  |      2 |  1  |      2 |  1         |      2 |  1  |      2 |  1  |      2
+  1         |      2 |  1  |      2 |  1  |      2 |  1         |      2 |  1  |      3 |  1  |      3
+  1         |      2 |  1  |      3 |  1  |      3 |  1         |      2 |  1  |      2 |  1  |      2
+  1         |      2 |  1  |      3 |  1  |      3 |  1         |      2 |  1  |      3 |  1  |      3
+ 1          |      1 | 1   |      1 | 1   |      1 | 1          |      1 | 1   |      1 | 1   |      1
+ 1          |      1 | 1   |      1 | 1   |      1 | 1          |      1 | 1   |      2 | 1   |      2
+ 1          |      1 | 1   |      1 | 1   |      1 | 1          |      1 | 1   |      3 | 1   |      3
+ 1          |      1 | 1   |      2 | 1   |      2 | 1          |      1 | 1   |      1 | 1   |      1
+ 1          |      1 | 1   |      2 | 1   |      2 | 1          |      1 | 1   |      2 | 1   |      2
+ 1          |      1 | 1   |      2 | 1   |      2 | 1          |      1 | 1   |      3 | 1   |      3
+ 1          |      1 | 1   |      3 | 1   |      3 | 1          |      1 | 1   |      1 | 1   |      1
+ 1          |      1 | 1   |      3 | 1   |      3 | 1          |      1 | 1   |      2 | 1   |      2
+ 1          |      1 | 1   |      3 | 1   |      3 | 1          |      1 | 1   |      3 | 1   |      3
+(13 rows)
+
+explain(costs off) select a.a,length(a.a),a.b,length(a.b),a.c,length(a.c),b.a,length(b.a),b.b,length(b.b),b.c,length(b.c) from t_char1 a left join t_char2 b on a.c=b.c order by 1,2,3,4,5,6,7,8,9,10,11,12;
+                                                                     QUERY PLAN                                                                     
+----------------------------------------------------------------------------------------------------------------------------------------------------
+ Sort
+   Sort Key: a.a, (length(a.a)), a.b, (length((a.b)::text)), a.c, (length(a.c)), b.a, (length(b.a)), b.b, (length((b.b)::text)), b.c, (length(b.c))
+   ->  Nested Loop Left Join
+         Join Filter: (a.c = b.c)
+         ->  Seq Scan on t_char1 a
+         ->  Materialize
+               ->  Seq Scan on t_char2 b
+(7 rows)
+
+select a.a,length(a.a),a.b,length(a.b),a.c,length(a.c),b.a,length(b.a),b.b,length(b.b),b.c,length(b.c) from t_char1 a left join t_char2 b on a.c=b.c order by 1,2,3,4,5,6,7,8,9,10,11,12;
+     a      | length |  b  | length |  c  | length |     a      | length |  b  | length |  c  | length 
+------------+--------+-----+--------+-----+--------+------------+--------+-----+--------+-----+--------
+  1         |      2 |  1  |      2 |  1  |      2 |  1         |      2 |  1  |      2 |  1  |      2
+  1         |      2 |  1  |      2 |  1  |      2 |  1         |      2 |  1  |      3 |  1  |      3
+  1         |      2 |  1  |      3 |  1  |      3 |  1         |      2 |  1  |      2 |  1  |      2
+  1         |      2 |  1  |      3 |  1  |      3 |  1         |      2 |  1  |      3 |  1  |      3
+ 1          |      1 | 1   |      1 | 1   |      1 | 1          |      1 | 1   |      1 | 1   |      1
+ 1          |      1 | 1   |      1 | 1   |      1 | 1          |      1 | 1   |      2 | 1   |      2
+ 1          |      1 | 1   |      1 | 1   |      1 | 1          |      1 | 1   |      3 | 1   |      3
+ 1          |      1 | 1   |      2 | 1   |      2 | 1          |      1 | 1   |      1 | 1   |      1
+ 1          |      1 | 1   |      2 | 1   |      2 | 1          |      1 | 1   |      2 | 1   |      2
+ 1          |      1 | 1   |      2 | 1   |      2 | 1          |      1 | 1   |      3 | 1   |      3
+ 1          |      1 | 1   |      3 | 1   |      3 | 1          |      1 | 1   |      1 | 1   |      1
+ 1          |      1 | 1   |      3 | 1   |      3 | 1          |      1 | 1   |      2 | 1   |      2
+ 1          |      1 | 1   |      3 | 1   |      3 | 1          |      1 | 1   |      3 | 1   |      3
+(13 rows)
+
+select length(text_larger('1', '1 ')), length(text_larger('1', '1   ')), length(text_larger('1', ' 1 ')), length(text_larger('1', ' 1'));
+ length | length | length | length 
+--------+--------+--------+--------
+      2 |      4 |      1 |      1
+(1 row)
+
+select length(text_smaller('1', '1 ')), length(text_smaller('1', '1   ')), length(text_smaller('1', ' 1 ')), length(text_smaller('1', ' 1'));
+ length | length | length | length 
+--------+--------+--------+--------
+      2 |      4 |      3 |      2
+(1 row)
+
+select text_pattern_lt('1', '1 '), text_pattern_lt('1', '1   '), text_pattern_lt('1', ' 1 '), text_pattern_lt('1', ' 1');
+ text_pattern_lt | text_pattern_lt | text_pattern_lt | text_pattern_lt 
+-----------------+-----------------+-----------------+-----------------
+ f               | f               | f               | f
+(1 row)
+
+select text_pattern_le('1', '1 '), text_pattern_le('1', '1   '), text_pattern_le('1', ' 1 '), text_pattern_le('1', ' 1');
+ text_pattern_le | text_pattern_le | text_pattern_le | text_pattern_le 
+-----------------+-----------------+-----------------+-----------------
+ t               | t               | f               | f
+(1 row)
+
+select text_pattern_ge('1', '1 '), text_pattern_ge('1', '1   '), text_pattern_ge('1', ' 1 '), text_pattern_ge('1', ' 1');
+ text_pattern_ge | text_pattern_ge | text_pattern_ge | text_pattern_ge 
+-----------------+-----------------+-----------------+-----------------
+ t               | t               | t               | t
+(1 row)
+
+select text_pattern_gt('1', '1 '), text_pattern_gt('1', '1   '), text_pattern_gt('1', ' 1 '), text_pattern_gt('1', ' 1');
+ text_pattern_gt | text_pattern_gt | text_pattern_gt | text_pattern_gt 
+-----------------+-----------------+-----------------+-----------------
+ f               | f               | t               | t
+(1 row)
+
+select bttext_pattern_cmp('1', '1 '), bttext_pattern_cmp('1', '1   '), bttext_pattern_cmp('1', ' 1 '), bttext_pattern_cmp('1', ' 1');
+ bttext_pattern_cmp | bttext_pattern_cmp | bttext_pattern_cmp | bttext_pattern_cmp 
+--------------------+--------------------+--------------------+--------------------
+                  0 |                  0 |                 17 |                 17
+(1 row)
+
+select bttextcmp('1', '1 '), bttextcmp('1', '1   '), bttextcmp('1', ' 1 '), bttextcmp('1', ' 1');
+ bttextcmp | bttextcmp | bttextcmp | bttextcmp 
+-----------+-----------+-----------+-----------
+         0 |         0 |        27 |        27
+(1 row)
+
+--- row table + vec engine
+set try_vector_engine_strategy to force;
+select * from t_char1 where a='1 ';
+     a      |  b  |  c  
+------------+-----+-----
+ 1          | 1   | 1
+ 1          | 1   | 1 
+ 1          | 1   | 1  
+(3 rows)
+
+select * from t_char1 where a='1                                        ';
+     a      |  b  |  c  
+------------+-----+-----
+ 1          | 1   | 1
+ 1          | 1   | 1 
+ 1          | 1   | 1  
+(3 rows)
+
+select * from t_char1 where a=' 1 ';
+     a      |  b  |  c  
+------------+-----+-----
+  1         |  1  |  1 
+  1         |  1  |  1
+(2 rows)
+
+select * from t_char1 where a=' 1';
+     a      |  b  |  c  
+------------+-----+-----
+  1         |  1  |  1 
+  1         |  1  |  1
+(2 rows)
+
+select * from t_char1 where a='1';
+     a      |  b  |  c  
+------------+-----+-----
+ 1          | 1   | 1
+ 1          | 1   | 1 
+ 1          | 1   | 1  
+(3 rows)
+
+select * from t_char1 where b='1 ';
+     a      |  b  |  c  
+------------+-----+-----
+ 1          | 1   | 1
+ 1          | 1   | 1 
+ 1          | 1   | 1  
+(3 rows)
+
+select * from t_char1 where b='1                                       ';
+     a      |  b  |  c  
+------------+-----+-----
+ 1          | 1   | 1
+ 1          | 1   | 1 
+ 1          | 1   | 1  
+(3 rows)
+
+select * from t_char1 where b=' 1 ';
+     a      |  b  |  c  
+------------+-----+-----
+  1         |  1  |  1 
+  1         |  1  |  1
+(2 rows)
+
+select * from t_char1 where b=' 1';
+     a      |  b  |  c  
+------------+-----+-----
+  1         |  1  |  1 
+  1         |  1  |  1
+(2 rows)
+
+select * from t_char1 where b='1';
+     a      |  b  |  c  
+------------+-----+-----
+ 1          | 1   | 1
+ 1          | 1   | 1 
+ 1          | 1   | 1  
+(3 rows)
+
+select * from t_char1 where c='1 ';
+     a      |  b  |  c  
+------------+-----+-----
+ 1          | 1   | 1
+ 1          | 1   | 1 
+ 1          | 1   | 1  
+(3 rows)
+
+select * from t_char1 where c='1                                       ';
+     a      |  b  |  c  
+------------+-----+-----
+ 1          | 1   | 1
+ 1          | 1   | 1 
+ 1          | 1   | 1  
+(3 rows)
+
+select * from t_char1 where c=' 1 ';
+     a      |  b  |  c  
+------------+-----+-----
+  1         |  1  |  1 
+  1         |  1  |  1
+(2 rows)
+
+select * from t_char1 where c=' 1';
+     a      |  b  |  c  
+------------+-----+-----
+  1         |  1  |  1 
+  1         |  1  |  1
+(2 rows)
+
+select * from t_char1 where c='1';
+     a      |  b  |  c  
+------------+-----+-----
+ 1          | 1   | 1
+ 1          | 1   | 1 
+ 1          | 1   | 1  
+(3 rows)
+
+select * from t_char1 where a!='1 ';
+     a      |  b  |  c  
+------------+-----+-----
+  1         |  1  |  1 
+  1         |  1  |  1
+(2 rows)
+
+select * from t_char1 where a!='1                                        ';
+     a      |  b  |  c  
+------------+-----+-----
+  1         |  1  |  1 
+  1         |  1  |  1
+(2 rows)
+
+select * from t_char1 where a!=' 1 ';
+     a      |  b  |  c  
+------------+-----+-----
+ 1          | 1   | 1
+ 1          | 1   | 1 
+ 1          | 1   | 1  
+(3 rows)
+
+select * from t_char1 where a!=' 1';
+     a      |  b  |  c  
+------------+-----+-----
+ 1          | 1   | 1
+ 1          | 1   | 1 
+ 1          | 1   | 1  
+(3 rows)
+
+select * from t_char1 where a!='1';
+     a      |  b  |  c  
+------------+-----+-----
+  1         |  1  |  1 
+  1         |  1  |  1
+(2 rows)
+
+select * from t_char1 where b!='1 ';
+     a      |  b  |  c  
+------------+-----+-----
+  1         |  1  |  1 
+  1         |  1  |  1
+(2 rows)
+
+select * from t_char1 where b!='1                                       ';
+     a      |  b  |  c  
+------------+-----+-----
+  1         |  1  |  1 
+  1         |  1  |  1
+(2 rows)
+
+select * from t_char1 where b!=' 1 ';
+     a      |  b  |  c  
+------------+-----+-----
+ 1          | 1   | 1
+ 1          | 1   | 1 
+ 1          | 1   | 1  
+(3 rows)
+
+select * from t_char1 where b!=' 1';
+     a      |  b  |  c  
+------------+-----+-----
+ 1          | 1   | 1
+ 1          | 1   | 1 
+ 1          | 1   | 1  
+(3 rows)
+
+select * from t_char1 where b!='1';
+     a      |  b  |  c  
+------------+-----+-----
+  1         |  1  |  1 
+  1         |  1  |  1
+(2 rows)
+
+select * from t_char1 where c!='1 ';
+     a      |  b  |  c  
+------------+-----+-----
+  1         |  1  |  1 
+  1         |  1  |  1
+(2 rows)
+
+select * from t_char1 where c!='1                                       ';
+     a      |  b  |  c  
+------------+-----+-----
+  1         |  1  |  1 
+  1         |  1  |  1
+(2 rows)
+
+select * from t_char1 where c!=' 1 ';
+     a      |  b  |  c  
+------------+-----+-----
+ 1          | 1   | 1
+ 1          | 1   | 1 
+ 1          | 1   | 1  
+(3 rows)
+
+select * from t_char1 where c!=' 1';
+     a      |  b  |  c  
+------------+-----+-----
+ 1          | 1   | 1
+ 1          | 1   | 1 
+ 1          | 1   | 1  
+(3 rows)
+
+select * from t_char1 where c!='1';
+     a      |  b  |  c  
+------------+-----+-----
+  1         |  1  |  1 
+  1         |  1  |  1
+(2 rows)
+
+select * from t_char1 where a>='1 ';
+     a      |  b  |  c  
+------------+-----+-----
+ 1          | 1   | 1
+ 1          | 1   | 1 
+ 1          | 1   | 1  
+(3 rows)
+
+select * from t_char1 where a>='1                                        ';
+     a      |  b  |  c  
+------------+-----+-----
+ 1          | 1   | 1
+ 1          | 1   | 1 
+ 1          | 1   | 1  
+(3 rows)
+
+select * from t_char1 where a>=' 1 ';
+     a      |  b  |  c  
+------------+-----+-----
+ 1          | 1   | 1
+  1         |  1  |  1 
+ 1          | 1   | 1 
+ 1          | 1   | 1  
+  1         |  1  |  1
+(5 rows)
+
+select * from t_char1 where a>=' 1';
+     a      |  b  |  c  
+------------+-----+-----
+ 1          | 1   | 1
+  1         |  1  |  1 
+ 1          | 1   | 1 
+ 1          | 1   | 1  
+  1         |  1  |  1
+(5 rows)
+
+select * from t_char1 where a>='1';
+     a      |  b  |  c  
+------------+-----+-----
+ 1          | 1   | 1
+ 1          | 1   | 1 
+ 1          | 1   | 1  
+(3 rows)
+
+select * from t_char1 where b>='1 ';
+     a      |  b  |  c  
+------------+-----+-----
+ 1          | 1   | 1
+ 1          | 1   | 1 
+ 1          | 1   | 1  
+(3 rows)
+
+select * from t_char1 where b>='1                                       ';
+     a      |  b  |  c  
+------------+-----+-----
+ 1          | 1   | 1
+ 1          | 1   | 1 
+ 1          | 1   | 1  
+(3 rows)
+
+select * from t_char1 where b>=' 1 ';
+     a      |  b  |  c  
+------------+-----+-----
+ 1          | 1   | 1
+  1         |  1  |  1 
+ 1          | 1   | 1 
+ 1          | 1   | 1  
+  1         |  1  |  1
+(5 rows)
+
+select * from t_char1 where b>=' 1';
+     a      |  b  |  c  
+------------+-----+-----
+ 1          | 1   | 1
+  1         |  1  |  1 
+ 1          | 1   | 1 
+ 1          | 1   | 1  
+  1         |  1  |  1
+(5 rows)
+
+select * from t_char1 where b>='1';
+     a      |  b  |  c  
+------------+-----+-----
+ 1          | 1   | 1
+ 1          | 1   | 1 
+ 1          | 1   | 1  
+(3 rows)
+
+select * from t_char1 where c>='1 ';
+     a      |  b  |  c  
+------------+-----+-----
+ 1          | 1   | 1
+ 1          | 1   | 1 
+ 1          | 1   | 1  
+(3 rows)
+
+select * from t_char1 where c>='1                                       ';
+     a      |  b  |  c  
+------------+-----+-----
+ 1          | 1   | 1
+ 1          | 1   | 1 
+ 1          | 1   | 1  
+(3 rows)
+
+select * from t_char1 where c>=' 1 ';
+     a      |  b  |  c  
+------------+-----+-----
+ 1          | 1   | 1
+  1         |  1  |  1 
+ 1          | 1   | 1 
+ 1          | 1   | 1  
+  1         |  1  |  1
+(5 rows)
+
+select * from t_char1 where c>=' 1';
+     a      |  b  |  c  
+------------+-----+-----
+ 1          | 1   | 1
+  1         |  1  |  1 
+ 1          | 1   | 1 
+ 1          | 1   | 1  
+  1         |  1  |  1
+(5 rows)
+
+select * from t_char1 where c>='1';
+     a      |  b  |  c  
+------------+-----+-----
+ 1          | 1   | 1
+ 1          | 1   | 1 
+ 1          | 1   | 1  
+(3 rows)
+
+select * from t_char1 where a<='1 ';
+     a      |  b  |  c  
+------------+-----+-----
+ 1          | 1   | 1
+  1         |  1  |  1 
+ 1          | 1   | 1 
+ 1          | 1   | 1  
+  1         |  1  |  1
+(5 rows)
+
+select * from t_char1 where a<='1                                        ';
+     a      |  b  |  c  
+------------+-----+-----
+ 1          | 1   | 1
+  1         |  1  |  1 
+ 1          | 1   | 1 
+ 1          | 1   | 1  
+  1         |  1  |  1
+(5 rows)
+
+select * from t_char1 where a<=' 1 ';
+     a      |  b  |  c  
+------------+-----+-----
+  1         |  1  |  1 
+  1         |  1  |  1
+(2 rows)
+
+select * from t_char1 where a<=' 1';
+     a      |  b  |  c  
+------------+-----+-----
+  1         |  1  |  1 
+  1         |  1  |  1
+(2 rows)
+
+select * from t_char1 where a<='1';
+     a      |  b  |  c  
+------------+-----+-----
+ 1          | 1   | 1
+  1         |  1  |  1 
+ 1          | 1   | 1 
+ 1          | 1   | 1  
+  1         |  1  |  1
+(5 rows)
+
+select * from t_char1 where b<='1 ';
+     a      |  b  |  c  
+------------+-----+-----
+ 1          | 1   | 1
+  1         |  1  |  1 
+ 1          | 1   | 1 
+ 1          | 1   | 1  
+  1         |  1  |  1
+(5 rows)
+
+select * from t_char1 where b<='1                                       ';
+     a      |  b  |  c  
+------------+-----+-----
+ 1          | 1   | 1
+  1         |  1  |  1 
+ 1          | 1   | 1 
+ 1          | 1   | 1  
+  1         |  1  |  1
+(5 rows)
+
+select * from t_char1 where b<=' 1 ';
+     a      |  b  |  c  
+------------+-----+-----
+  1         |  1  |  1 
+  1         |  1  |  1
+(2 rows)
+
+select * from t_char1 where b<=' 1';
+     a      |  b  |  c  
+------------+-----+-----
+  1         |  1  |  1 
+  1         |  1  |  1
+(2 rows)
+
+select * from t_char1 where b<='1';
+     a      |  b  |  c  
+------------+-----+-----
+ 1          | 1   | 1
+  1         |  1  |  1 
+ 1          | 1   | 1 
+ 1          | 1   | 1  
+  1         |  1  |  1
+(5 rows)
+
+select * from t_char1 where c<='1 ';
+     a      |  b  |  c  
+------------+-----+-----
+ 1          | 1   | 1
+  1         |  1  |  1 
+ 1          | 1   | 1 
+ 1          | 1   | 1  
+  1         |  1  |  1
+(5 rows)
+
+select * from t_char1 where c<='1                                       ';
+     a      |  b  |  c  
+------------+-----+-----
+ 1          | 1   | 1
+  1         |  1  |  1 
+ 1          | 1   | 1 
+ 1          | 1   | 1  
+  1         |  1  |  1
+(5 rows)
+
+select * from t_char1 where c<=' 1 ';
+     a      |  b  |  c  
+------------+-----+-----
+  1         |  1  |  1 
+  1         |  1  |  1
+(2 rows)
+
+select * from t_char1 where c<=' 1';
+     a      |  b  |  c  
+------------+-----+-----
+  1         |  1  |  1 
+  1         |  1  |  1
+(2 rows)
+
+select * from t_char1 where c<='1';
+     a      |  b  |  c  
+------------+-----+-----
+ 1          | 1   | 1
+  1         |  1  |  1 
+ 1          | 1   | 1 
+ 1          | 1   | 1  
+  1         |  1  |  1
+(5 rows)
+
+select * from t_char1 where a<'1 ';
+     a      |  b  |  c  
+------------+-----+-----
+  1         |  1  |  1 
+  1         |  1  |  1
+(2 rows)
+
+select * from t_char1 where a<'1                                        ';
+     a      |  b  |  c  
+------------+-----+-----
+  1         |  1  |  1 
+  1         |  1  |  1
+(2 rows)
+
+select * from t_char1 where a<' 1 ';
+ a | b | c 
+---+---+---
+(0 rows)
+
+select * from t_char1 where a<' 1';
+ a | b | c 
+---+---+---
+(0 rows)
+
+select * from t_char1 where a<'1';
+     a      |  b  |  c  
+------------+-----+-----
+  1         |  1  |  1 
+  1         |  1  |  1
+(2 rows)
+
+select * from t_char1 where b<'1 ';
+     a      |  b  |  c  
+------------+-----+-----
+  1         |  1  |  1 
+  1         |  1  |  1
+(2 rows)
+
+select * from t_char1 where b<'1                                       ';
+     a      |  b  |  c  
+------------+-----+-----
+  1         |  1  |  1 
+  1         |  1  |  1
+(2 rows)
+
+select * from t_char1 where b<' 1 ';
+ a | b | c 
+---+---+---
+(0 rows)
+
+select * from t_char1 where b<' 1';
+ a | b | c 
+---+---+---
+(0 rows)
+
+select * from t_char1 where b<'1';
+     a      |  b  |  c  
+------------+-----+-----
+  1         |  1  |  1 
+  1         |  1  |  1
+(2 rows)
+
+select * from t_char1 where c<'1 ';
+     a      |  b  |  c  
+------------+-----+-----
+  1         |  1  |  1 
+  1         |  1  |  1
+(2 rows)
+
+select * from t_char1 where c<'1                                       ';
+     a      |  b  |  c  
+------------+-----+-----
+  1         |  1  |  1 
+  1         |  1  |  1
+(2 rows)
+
+select * from t_char1 where c<' 1 ';
+ a | b | c 
+---+---+---
+(0 rows)
+
+select * from t_char1 where c<' 1';
+ a | b | c 
+---+---+---
+(0 rows)
+
+select * from t_char1 where c<'1';
+     a      |  b  |  c  
+------------+-----+-----
+  1         |  1  |  1 
+  1         |  1  |  1
+(2 rows)
+
+select * from t_char1 where a>'1 ';
+ a | b | c 
+---+---+---
+(0 rows)
+
+select * from t_char1 where a>'1                                        ';
+ a | b | c 
+---+---+---
+(0 rows)
+
+select * from t_char1 where a>' 1 ';
+     a      |  b  |  c  
+------------+-----+-----
+ 1          | 1   | 1
+ 1          | 1   | 1 
+ 1          | 1   | 1  
+(3 rows)
+
+select * from t_char1 where a>' 1';
+     a      |  b  |  c  
+------------+-----+-----
+ 1          | 1   | 1
+ 1          | 1   | 1 
+ 1          | 1   | 1  
+(3 rows)
+
+select * from t_char1 where a>'1';
+ a | b | c 
+---+---+---
+(0 rows)
+
+select * from t_char1 where b>'1 ';
+ a | b | c 
+---+---+---
+(0 rows)
+
+select * from t_char1 where b>'1                                       ';
+ a | b | c 
+---+---+---
+(0 rows)
+
+select * from t_char1 where b>' 1 ';
+     a      |  b  |  c  
+------------+-----+-----
+ 1          | 1   | 1
+ 1          | 1   | 1 
+ 1          | 1   | 1  
+(3 rows)
+
+select * from t_char1 where b>' 1';
+     a      |  b  |  c  
+------------+-----+-----
+ 1          | 1   | 1
+ 1          | 1   | 1 
+ 1          | 1   | 1  
+(3 rows)
+
+select * from t_char1 where b>'1';
+ a | b | c 
+---+---+---
+(0 rows)
+
+select * from t_char1 where c>'1 ';
+ a | b | c 
+---+---+---
+(0 rows)
+
+select * from t_char1 where c>'1                                       ';
+ a | b | c 
+---+---+---
+(0 rows)
+
+select * from t_char1 where c>' 1 ';
+     a      |  b  |  c  
+------------+-----+-----
+ 1          | 1   | 1
+ 1          | 1   | 1 
+ 1          | 1   | 1  
+(3 rows)
+
+select * from t_char1 where c>' 1';
+     a      |  b  |  c  
+------------+-----+-----
+ 1          | 1   | 1
+ 1          | 1   | 1 
+ 1          | 1   | 1  
+(3 rows)
+
+select * from t_char1 where c>'1';
+ a | b | c 
+---+---+---
+(0 rows)
+
+--only when string_hash_compatible is on, then hash join will ignore tail blank
+show string_hash_compatible;
+ string_hash_compatible 
+------------------------
+ on
+(1 row)
+
+set enable_hashjoin to on;
+set enable_mergejoin to off;
+explain(costs off) select a.a,length(a.a),a.b,length(a.b),a.c,length(a.c),b.a,length(b.a),b.b,length(b.b),b.c,length(b.c) from t_char1 a left join t_char2 b on a.a=b.a order by 1,2,3,4,5,6,7,8,9,10,11,12;
+                                                                        QUERY PLAN                                                                        
+----------------------------------------------------------------------------------------------------------------------------------------------------------
+ Row Adapter
+   ->  Vector Sort
+         Sort Key: a.a, (length(a.a)), a.b, (length((a.b)::text)), a.c, (length(a.c)), b.a, (length(b.a)), b.b, (length((b.b)::text)), b.c, (length(b.c))
+         ->  Vector Hash Left Join
+               Hash Cond: (a.a = b.a)
+               ->  Vector Adapter(type: BATCH MODE)
+                     ->  Seq Scan on t_char1 a
+               ->  Vector Adapter(type: BATCH MODE)
+                     ->  Seq Scan on t_char2 b
+(9 rows)
+
+select a.a,length(a.a),a.b,length(a.b),a.c,length(a.c),b.a,length(b.a),b.b,length(b.b),b.c,length(b.c) from t_char1 a left join t_char2 b on a.a=b.a order by 1,2,3,4,5,6,7,8,9,10,11,12;
+     a      | length |  b  | length |  c  | length |     a      | length |  b  | length |  c  | length 
+------------+--------+-----+--------+-----+--------+------------+--------+-----+--------+-----+--------
+  1         |      2 |  1  |      2 |  1  |      2 |  1         |      2 |  1  |      2 |  1  |      2
+  1         |      2 |  1  |      2 |  1  |      2 |  1         |      2 |  1  |      3 |  1  |      3
+  1         |      2 |  1  |      3 |  1  |      3 |  1         |      2 |  1  |      2 |  1  |      2
+  1         |      2 |  1  |      3 |  1  |      3 |  1         |      2 |  1  |      3 |  1  |      3
+ 1          |      1 | 1   |      1 | 1   |      1 | 1          |      1 | 1   |      1 | 1   |      1
+ 1          |      1 | 1   |      1 | 1   |      1 | 1          |      1 | 1   |      2 | 1   |      2
+ 1          |      1 | 1   |      1 | 1   |      1 | 1          |      1 | 1   |      3 | 1   |      3
+ 1          |      1 | 1   |      2 | 1   |      2 | 1          |      1 | 1   |      1 | 1   |      1
+ 1          |      1 | 1   |      2 | 1   |      2 | 1          |      1 | 1   |      2 | 1   |      2
+ 1          |      1 | 1   |      2 | 1   |      2 | 1          |      1 | 1   |      3 | 1   |      3
+ 1          |      1 | 1   |      3 | 1   |      3 | 1          |      1 | 1   |      1 | 1   |      1
+ 1          |      1 | 1   |      3 | 1   |      3 | 1          |      1 | 1   |      2 | 1   |      2
+ 1          |      1 | 1   |      3 | 1   |      3 | 1          |      1 | 1   |      3 | 1   |      3
+(13 rows)
+
+explain(costs off) select a.a,length(a.a),a.b,length(a.b),a.c,length(a.c),b.a,length(b.a),b.b,length(b.b),b.c,length(b.c) from t_char1 a left join t_char2 b on a.a=b.b order by 1,2,3,4,5,6,7,8,9,10,11,12;
+                                                                        QUERY PLAN                                                                        
+----------------------------------------------------------------------------------------------------------------------------------------------------------
+ Row Adapter
+   ->  Vector Sort
+         Sort Key: a.a, (length(a.a)), a.b, (length((a.b)::text)), a.c, (length(a.c)), b.a, (length(b.a)), b.b, (length((b.b)::text)), b.c, (length(b.c))
+         ->  Vector Hash Left Join
+               Hash Cond: (a.a = (b.b)::bpchar)
+               ->  Vector Adapter(type: BATCH MODE)
+                     ->  Seq Scan on t_char1 a
+               ->  Vector Adapter(type: BATCH MODE)
+                     ->  Seq Scan on t_char2 b
+(9 rows)
+
+select a.a,length(a.a),a.b,length(a.b),a.c,length(a.c),b.a,length(b.a),b.b,length(b.b),b.c,length(b.c) from t_char1 a left join t_char2 b on a.a=b.b order by 1,2,3,4,5,6,7,8,9,10,11,12;
+     a      | length |  b  | length |  c  | length |     a      | length |  b  | length |  c  | length 
+------------+--------+-----+--------+-----+--------+------------+--------+-----+--------+-----+--------
+  1         |      2 |  1  |      2 |  1  |      2 |  1         |      2 |  1  |      2 |  1  |      2
+  1         |      2 |  1  |      2 |  1  |      2 |  1         |      2 |  1  |      3 |  1  |      3
+  1         |      2 |  1  |      3 |  1  |      3 |  1         |      2 |  1  |      2 |  1  |      2
+  1         |      2 |  1  |      3 |  1  |      3 |  1         |      2 |  1  |      3 |  1  |      3
+ 1          |      1 | 1   |      1 | 1   |      1 | 1          |      1 | 1   |      1 | 1   |      1
+ 1          |      1 | 1   |      1 | 1   |      1 | 1          |      1 | 1   |      2 | 1   |      2
+ 1          |      1 | 1   |      1 | 1   |      1 | 1          |      1 | 1   |      3 | 1   |      3
+ 1          |      1 | 1   |      2 | 1   |      2 | 1          |      1 | 1   |      1 | 1   |      1
+ 1          |      1 | 1   |      2 | 1   |      2 | 1          |      1 | 1   |      2 | 1   |      2
+ 1          |      1 | 1   |      2 | 1   |      2 | 1          |      1 | 1   |      3 | 1   |      3
+ 1          |      1 | 1   |      3 | 1   |      3 | 1          |      1 | 1   |      1 | 1   |      1
+ 1          |      1 | 1   |      3 | 1   |      3 | 1          |      1 | 1   |      2 | 1   |      2
+ 1          |      1 | 1   |      3 | 1   |      3 | 1          |      1 | 1   |      3 | 1   |      3
+(13 rows)
+
+explain(costs off) select a.a,length(a.a),a.b,length(a.b),a.c,length(a.c),b.a,length(b.a),b.b,length(b.b),b.c,length(b.c) from t_char1 a left join t_char2 b on a.a=b.c order by 1,2,3,4,5,6,7,8,9,10,11,12;
+                                                                        QUERY PLAN                                                                        
+----------------------------------------------------------------------------------------------------------------------------------------------------------
+ Row Adapter
+   ->  Vector Sort
+         Sort Key: a.a, (length(a.a)), a.b, (length((a.b)::text)), a.c, (length(a.c)), b.a, (length(b.a)), b.b, (length((b.b)::text)), b.c, (length(b.c))
+         ->  Vector Hash Left Join
+               Hash Cond: ((a.a)::text = b.c)
+               ->  Vector Adapter(type: BATCH MODE)
+                     ->  Seq Scan on t_char1 a
+               ->  Vector Adapter(type: BATCH MODE)
+                     ->  Seq Scan on t_char2 b
+(9 rows)
+
+select a.a,length(a.a),a.b,length(a.b),a.c,length(a.c),b.a,length(b.a),b.b,length(b.b),b.c,length(b.c) from t_char1 a left join t_char2 b on a.a=b.c order by 1,2,3,4,5,6,7,8,9,10,11,12;
+     a      | length |  b  | length |  c  | length |     a      | length |  b  | length |  c  | length 
+------------+--------+-----+--------+-----+--------+------------+--------+-----+--------+-----+--------
+  1         |      2 |  1  |      2 |  1  |      2 |  1         |      2 |  1  |      2 |  1  |      2
+  1         |      2 |  1  |      2 |  1  |      2 |  1         |      2 |  1  |      3 |  1  |      3
+  1         |      2 |  1  |      3 |  1  |      3 |  1         |      2 |  1  |      2 |  1  |      2
+  1         |      2 |  1  |      3 |  1  |      3 |  1         |      2 |  1  |      3 |  1  |      3
+ 1          |      1 | 1   |      1 | 1   |      1 | 1          |      1 | 1   |      1 | 1   |      1
+ 1          |      1 | 1   |      1 | 1   |      1 | 1          |      1 | 1   |      2 | 1   |      2
+ 1          |      1 | 1   |      1 | 1   |      1 | 1          |      1 | 1   |      3 | 1   |      3
+ 1          |      1 | 1   |      2 | 1   |      2 | 1          |      1 | 1   |      1 | 1   |      1
+ 1          |      1 | 1   |      2 | 1   |      2 | 1          |      1 | 1   |      2 | 1   |      2
+ 1          |      1 | 1   |      2 | 1   |      2 | 1          |      1 | 1   |      3 | 1   |      3
+ 1          |      1 | 1   |      3 | 1   |      3 | 1          |      1 | 1   |      1 | 1   |      1
+ 1          |      1 | 1   |      3 | 1   |      3 | 1          |      1 | 1   |      2 | 1   |      2
+ 1          |      1 | 1   |      3 | 1   |      3 | 1          |      1 | 1   |      3 | 1   |      3
+(13 rows)
+
+explain(costs off) select a.a,length(a.a),a.b,length(a.b),a.c,length(a.c),b.a,length(b.a),b.b,length(b.b),b.c,length(b.c) from t_char1 a left join t_char2 b on a.b=b.a order by 1,2,3,4,5,6,7,8,9,10,11,12;
+                                                                        QUERY PLAN                                                                        
+----------------------------------------------------------------------------------------------------------------------------------------------------------
+ Row Adapter
+   ->  Vector Sort
+         Sort Key: a.a, (length(a.a)), a.b, (length((a.b)::text)), a.c, (length(a.c)), b.a, (length(b.a)), b.b, (length((b.b)::text)), b.c, (length(b.c))
+         ->  Vector Hash Left Join
+               Hash Cond: ((a.b)::bpchar = b.a)
+               ->  Vector Adapter(type: BATCH MODE)
+                     ->  Seq Scan on t_char1 a
+               ->  Vector Adapter(type: BATCH MODE)
+                     ->  Seq Scan on t_char2 b
+(9 rows)
+
+select a.a,length(a.a),a.b,length(a.b),a.c,length(a.c),b.a,length(b.a),b.b,length(b.b),b.c,length(b.c) from t_char1 a left join t_char2 b on a.b=b.a order by 1,2,3,4,5,6,7,8,9,10,11,12;
+     a      | length |  b  | length |  c  | length |     a      | length |  b  | length |  c  | length 
+------------+--------+-----+--------+-----+--------+------------+--------+-----+--------+-----+--------
+  1         |      2 |  1  |      2 |  1  |      2 |  1         |      2 |  1  |      2 |  1  |      2
+  1         |      2 |  1  |      2 |  1  |      2 |  1         |      2 |  1  |      3 |  1  |      3
+  1         |      2 |  1  |      3 |  1  |      3 |  1         |      2 |  1  |      2 |  1  |      2
+  1         |      2 |  1  |      3 |  1  |      3 |  1         |      2 |  1  |      3 |  1  |      3
+ 1          |      1 | 1   |      1 | 1   |      1 | 1          |      1 | 1   |      1 | 1   |      1
+ 1          |      1 | 1   |      1 | 1   |      1 | 1          |      1 | 1   |      2 | 1   |      2
+ 1          |      1 | 1   |      1 | 1   |      1 | 1          |      1 | 1   |      3 | 1   |      3
+ 1          |      1 | 1   |      2 | 1   |      2 | 1          |      1 | 1   |      1 | 1   |      1
+ 1          |      1 | 1   |      2 | 1   |      2 | 1          |      1 | 1   |      2 | 1   |      2
+ 1          |      1 | 1   |      2 | 1   |      2 | 1          |      1 | 1   |      3 | 1   |      3
+ 1          |      1 | 1   |      3 | 1   |      3 | 1          |      1 | 1   |      1 | 1   |      1
+ 1          |      1 | 1   |      3 | 1   |      3 | 1          |      1 | 1   |      2 | 1   |      2
+ 1          |      1 | 1   |      3 | 1   |      3 | 1          |      1 | 1   |      3 | 1   |      3
+(13 rows)
+
+explain(costs off) select a.a,length(a.a),a.b,length(a.b),a.c,length(a.c),b.a,length(b.a),b.b,length(b.b),b.c,length(b.c) from t_char1 a left join t_char2 b on a.b=b.b order by 1,2,3,4,5,6,7,8,9,10,11,12;
+                                                                        QUERY PLAN                                                                        
+----------------------------------------------------------------------------------------------------------------------------------------------------------
+ Row Adapter
+   ->  Vector Sort
+         Sort Key: a.a, (length(a.a)), a.b, (length((a.b)::text)), a.c, (length(a.c)), b.a, (length(b.a)), b.b, (length((b.b)::text)), b.c, (length(b.c))
+         ->  Vector Hash Left Join
+               Hash Cond: ((a.b)::text = (b.b)::text)
+               ->  Vector Adapter(type: BATCH MODE)
+                     ->  Seq Scan on t_char1 a
+               ->  Vector Adapter(type: BATCH MODE)
+                     ->  Seq Scan on t_char2 b
+(9 rows)
+
+select a.a,length(a.a),a.b,length(a.b),a.c,length(a.c),b.a,length(b.a),b.b,length(b.b),b.c,length(b.c) from t_char1 a left join t_char2 b on a.b=b.b order by 1,2,3,4,5,6,7,8,9,10,11,12;
+     a      | length |  b  | length |  c  | length |     a      | length |  b  | length |  c  | length 
+------------+--------+-----+--------+-----+--------+------------+--------+-----+--------+-----+--------
+  1         |      2 |  1  |      2 |  1  |      2 |  1         |      2 |  1  |      2 |  1  |      2
+  1         |      2 |  1  |      2 |  1  |      2 |  1         |      2 |  1  |      3 |  1  |      3
+  1         |      2 |  1  |      3 |  1  |      3 |  1         |      2 |  1  |      2 |  1  |      2
+  1         |      2 |  1  |      3 |  1  |      3 |  1         |      2 |  1  |      3 |  1  |      3
+ 1          |      1 | 1   |      1 | 1   |      1 | 1          |      1 | 1   |      1 | 1   |      1
+ 1          |      1 | 1   |      1 | 1   |      1 | 1          |      1 | 1   |      2 | 1   |      2
+ 1          |      1 | 1   |      1 | 1   |      1 | 1          |      1 | 1   |      3 | 1   |      3
+ 1          |      1 | 1   |      2 | 1   |      2 | 1          |      1 | 1   |      1 | 1   |      1
+ 1          |      1 | 1   |      2 | 1   |      2 | 1          |      1 | 1   |      2 | 1   |      2
+ 1          |      1 | 1   |      2 | 1   |      2 | 1          |      1 | 1   |      3 | 1   |      3
+ 1          |      1 | 1   |      3 | 1   |      3 | 1          |      1 | 1   |      1 | 1   |      1
+ 1          |      1 | 1   |      3 | 1   |      3 | 1          |      1 | 1   |      2 | 1   |      2
+ 1          |      1 | 1   |      3 | 1   |      3 | 1          |      1 | 1   |      3 | 1   |      3
+(13 rows)
+
+explain(costs off) select a.a,length(a.a),a.b,length(a.b),a.c,length(a.c),b.a,length(b.a),b.b,length(b.b),b.c,length(b.c) from t_char1 a left join t_char2 b on a.b=b.c order by 1,2,3,4,5,6,7,8,9,10,11,12;
+                                                                        QUERY PLAN                                                                        
+----------------------------------------------------------------------------------------------------------------------------------------------------------
+ Row Adapter
+   ->  Vector Sort
+         Sort Key: a.a, (length(a.a)), a.b, (length((a.b)::text)), a.c, (length(a.c)), b.a, (length(b.a)), b.b, (length((b.b)::text)), b.c, (length(b.c))
+         ->  Vector Hash Left Join
+               Hash Cond: ((a.b)::text = b.c)
+               ->  Vector Adapter(type: BATCH MODE)
+                     ->  Seq Scan on t_char1 a
+               ->  Vector Adapter(type: BATCH MODE)
+                     ->  Seq Scan on t_char2 b
+(9 rows)
+
+select a.a,length(a.a),a.b,length(a.b),a.c,length(a.c),b.a,length(b.a),b.b,length(b.b),b.c,length(b.c) from t_char1 a left join t_char2 b on a.b=b.c order by 1,2,3,4,5,6,7,8,9,10,11,12;
+     a      | length |  b  | length |  c  | length |     a      | length |  b  | length |  c  | length 
+------------+--------+-----+--------+-----+--------+------------+--------+-----+--------+-----+--------
+  1         |      2 |  1  |      2 |  1  |      2 |  1         |      2 |  1  |      2 |  1  |      2
+  1         |      2 |  1  |      2 |  1  |      2 |  1         |      2 |  1  |      3 |  1  |      3
+  1         |      2 |  1  |      3 |  1  |      3 |  1         |      2 |  1  |      2 |  1  |      2
+  1         |      2 |  1  |      3 |  1  |      3 |  1         |      2 |  1  |      3 |  1  |      3
+ 1          |      1 | 1   |      1 | 1   |      1 | 1          |      1 | 1   |      1 | 1   |      1
+ 1          |      1 | 1   |      1 | 1   |      1 | 1          |      1 | 1   |      2 | 1   |      2
+ 1          |      1 | 1   |      1 | 1   |      1 | 1          |      1 | 1   |      3 | 1   |      3
+ 1          |      1 | 1   |      2 | 1   |      2 | 1          |      1 | 1   |      1 | 1   |      1
+ 1          |      1 | 1   |      2 | 1   |      2 | 1          |      1 | 1   |      2 | 1   |      2
+ 1          |      1 | 1   |      2 | 1   |      2 | 1          |      1 | 1   |      3 | 1   |      3
+ 1          |      1 | 1   |      3 | 1   |      3 | 1          |      1 | 1   |      1 | 1   |      1
+ 1          |      1 | 1   |      3 | 1   |      3 | 1          |      1 | 1   |      2 | 1   |      2
+ 1          |      1 | 1   |      3 | 1   |      3 | 1          |      1 | 1   |      3 | 1   |      3
+(13 rows)
+
+explain(costs off) select a.a,length(a.a),a.b,length(a.b),a.c,length(a.c),b.a,length(b.a),b.b,length(b.b),b.c,length(b.c) from t_char1 a left join t_char2 b on a.c=b.a order by 1,2,3,4,5,6,7,8,9,10,11,12;
+                                                                        QUERY PLAN                                                                        
+----------------------------------------------------------------------------------------------------------------------------------------------------------
+ Row Adapter
+   ->  Vector Sort
+         Sort Key: a.a, (length(a.a)), a.b, (length((a.b)::text)), a.c, (length(a.c)), b.a, (length(b.a)), b.b, (length((b.b)::text)), b.c, (length(b.c))
+         ->  Vector Hash Left Join
+               Hash Cond: (a.c = (b.a)::text)
+               ->  Vector Adapter(type: BATCH MODE)
+                     ->  Seq Scan on t_char1 a
+               ->  Vector Adapter(type: BATCH MODE)
+                     ->  Seq Scan on t_char2 b
+(9 rows)
+
+select a.a,length(a.a),a.b,length(a.b),a.c,length(a.c),b.a,length(b.a),b.b,length(b.b),b.c,length(b.c) from t_char1 a left join t_char2 b on a.c=b.a order by 1,2,3,4,5,6,7,8,9,10,11,12;
+     a      | length |  b  | length |  c  | length |     a      | length |  b  | length |  c  | length 
+------------+--------+-----+--------+-----+--------+------------+--------+-----+--------+-----+--------
+  1         |      2 |  1  |      2 |  1  |      2 |  1         |      2 |  1  |      2 |  1  |      2
+  1         |      2 |  1  |      2 |  1  |      2 |  1         |      2 |  1  |      3 |  1  |      3
+  1         |      2 |  1  |      3 |  1  |      3 |  1         |      2 |  1  |      2 |  1  |      2
+  1         |      2 |  1  |      3 |  1  |      3 |  1         |      2 |  1  |      3 |  1  |      3
+ 1          |      1 | 1   |      1 | 1   |      1 | 1          |      1 | 1   |      1 | 1   |      1
+ 1          |      1 | 1   |      1 | 1   |      1 | 1          |      1 | 1   |      2 | 1   |      2
+ 1          |      1 | 1   |      1 | 1   |      1 | 1          |      1 | 1   |      3 | 1   |      3
+ 1          |      1 | 1   |      2 | 1   |      2 | 1          |      1 | 1   |      1 | 1   |      1
+ 1          |      1 | 1   |      2 | 1   |      2 | 1          |      1 | 1   |      2 | 1   |      2
+ 1          |      1 | 1   |      2 | 1   |      2 | 1          |      1 | 1   |      3 | 1   |      3
+ 1          |      1 | 1   |      3 | 1   |      3 | 1          |      1 | 1   |      1 | 1   |      1
+ 1          |      1 | 1   |      3 | 1   |      3 | 1          |      1 | 1   |      2 | 1   |      2
+ 1          |      1 | 1   |      3 | 1   |      3 | 1          |      1 | 1   |      3 | 1   |      3
+(13 rows)
+
+explain(costs off) select a.a,length(a.a),a.b,length(a.b),a.c,length(a.c),b.a,length(b.a),b.b,length(b.b),b.c,length(b.c) from t_char1 a left join t_char2 b on a.c=b.b order by 1,2,3,4,5,6,7,8,9,10,11,12;
+                                                                        QUERY PLAN                                                                        
+----------------------------------------------------------------------------------------------------------------------------------------------------------
+ Row Adapter
+   ->  Vector Sort
+         Sort Key: a.a, (length(a.a)), a.b, (length((a.b)::text)), a.c, (length(a.c)), b.a, (length(b.a)), b.b, (length((b.b)::text)), b.c, (length(b.c))
+         ->  Vector Hash Left Join
+               Hash Cond: (a.c = (b.b)::text)
+               ->  Vector Adapter(type: BATCH MODE)
+                     ->  Seq Scan on t_char1 a
+               ->  Vector Adapter(type: BATCH MODE)
+                     ->  Seq Scan on t_char2 b
+(9 rows)
+
+select a.a,length(a.a),a.b,length(a.b),a.c,length(a.c),b.a,length(b.a),b.b,length(b.b),b.c,length(b.c) from t_char1 a left join t_char2 b on a.c=b.b order by 1,2,3,4,5,6,7,8,9,10,11,12;
+     a      | length |  b  | length |  c  | length |     a      | length |  b  | length |  c  | length 
+------------+--------+-----+--------+-----+--------+------------+--------+-----+--------+-----+--------
+  1         |      2 |  1  |      2 |  1  |      2 |  1         |      2 |  1  |      2 |  1  |      2
+  1         |      2 |  1  |      2 |  1  |      2 |  1         |      2 |  1  |      3 |  1  |      3
+  1         |      2 |  1  |      3 |  1  |      3 |  1         |      2 |  1  |      2 |  1  |      2
+  1         |      2 |  1  |      3 |  1  |      3 |  1         |      2 |  1  |      3 |  1  |      3
+ 1          |      1 | 1   |      1 | 1   |      1 | 1          |      1 | 1   |      1 | 1   |      1
+ 1          |      1 | 1   |      1 | 1   |      1 | 1          |      1 | 1   |      2 | 1   |      2
+ 1          |      1 | 1   |      1 | 1   |      1 | 1          |      1 | 1   |      3 | 1   |      3
+ 1          |      1 | 1   |      2 | 1   |      2 | 1          |      1 | 1   |      1 | 1   |      1
+ 1          |      1 | 1   |      2 | 1   |      2 | 1          |      1 | 1   |      2 | 1   |      2
+ 1          |      1 | 1   |      2 | 1   |      2 | 1          |      1 | 1   |      3 | 1   |      3
+ 1          |      1 | 1   |      3 | 1   |      3 | 1          |      1 | 1   |      1 | 1   |      1
+ 1          |      1 | 1   |      3 | 1   |      3 | 1          |      1 | 1   |      2 | 1   |      2
+ 1          |      1 | 1   |      3 | 1   |      3 | 1          |      1 | 1   |      3 | 1   |      3
+(13 rows)
+
+explain(costs off) select a.a,length(a.a),a.b,length(a.b),a.c,length(a.c),b.a,length(b.a),b.b,length(b.b),b.c,length(b.c) from t_char1 a left join t_char2 b on a.c=b.c order by 1,2,3,4,5,6,7,8,9,10,11,12;
+                                                                        QUERY PLAN                                                                        
+----------------------------------------------------------------------------------------------------------------------------------------------------------
+ Row Adapter
+   ->  Vector Sort
+         Sort Key: a.a, (length(a.a)), a.b, (length((a.b)::text)), a.c, (length(a.c)), b.a, (length(b.a)), b.b, (length((b.b)::text)), b.c, (length(b.c))
+         ->  Vector Hash Left Join
+               Hash Cond: (a.c = b.c)
+               ->  Vector Adapter(type: BATCH MODE)
+                     ->  Seq Scan on t_char1 a
+               ->  Vector Adapter(type: BATCH MODE)
+                     ->  Seq Scan on t_char2 b
+(9 rows)
+
+select a.a,length(a.a),a.b,length(a.b),a.c,length(a.c),b.a,length(b.a),b.b,length(b.b),b.c,length(b.c) from t_char1 a left join t_char2 b on a.c=b.c order by 1,2,3,4,5,6,7,8,9,10,11,12;
+     a      | length |  b  | length |  c  | length |     a      | length |  b  | length |  c  | length 
+------------+--------+-----+--------+-----+--------+------------+--------+-----+--------+-----+--------
+  1         |      2 |  1  |      2 |  1  |      2 |  1         |      2 |  1  |      2 |  1  |      2
+  1         |      2 |  1  |      2 |  1  |      2 |  1         |      2 |  1  |      3 |  1  |      3
+  1         |      2 |  1  |      3 |  1  |      3 |  1         |      2 |  1  |      2 |  1  |      2
+  1         |      2 |  1  |      3 |  1  |      3 |  1         |      2 |  1  |      3 |  1  |      3
+ 1          |      1 | 1   |      1 | 1   |      1 | 1          |      1 | 1   |      1 | 1   |      1
+ 1          |      1 | 1   |      1 | 1   |      1 | 1          |      1 | 1   |      2 | 1   |      2
+ 1          |      1 | 1   |      1 | 1   |      1 | 1          |      1 | 1   |      3 | 1   |      3
+ 1          |      1 | 1   |      2 | 1   |      2 | 1          |      1 | 1   |      1 | 1   |      1
+ 1          |      1 | 1   |      2 | 1   |      2 | 1          |      1 | 1   |      2 | 1   |      2
+ 1          |      1 | 1   |      2 | 1   |      2 | 1          |      1 | 1   |      3 | 1   |      3
+ 1          |      1 | 1   |      3 | 1   |      3 | 1          |      1 | 1   |      1 | 1   |      1
+ 1          |      1 | 1   |      3 | 1   |      3 | 1          |      1 | 1   |      2 | 1   |      2
+ 1          |      1 | 1   |      3 | 1   |      3 | 1          |      1 | 1   |      3 | 1   |      3
+(13 rows)
+
+set enable_hashjoin to off;
+set enable_mergejoin to on;
+explain(costs off) select a.a,length(a.a),a.b,length(a.b),a.c,length(a.c),b.a,length(b.a),b.b,length(b.b),b.c,length(b.c) from t_char1 a left join t_char2 b on a.a=b.a order by 1,2,3,4,5,6,7,8,9,10,11,12;
+                                                                        QUERY PLAN                                                                        
+----------------------------------------------------------------------------------------------------------------------------------------------------------
+ Row Adapter
+   ->  Vector Sort
+         Sort Key: a.a, (length(a.a)), a.b, (length((a.b)::text)), a.c, (length(a.c)), b.a, (length(b.a)), b.b, (length((b.b)::text)), b.c, (length(b.c))
+         ->  Vector Merge Left Join
+               Merge Cond: (a.a = b.a)
+               ->  Vector Sort
+                     Sort Key: a.a
+                     ->  Vector Adapter(type: BATCH MODE)
+                           ->  Seq Scan on t_char1 a
+               ->  Vector Sort
+                     Sort Key: b.a
+                     ->  Vector Adapter(type: BATCH MODE)
+                           ->  Seq Scan on t_char2 b
+(13 rows)
+
+select a.a,length(a.a),a.b,length(a.b),a.c,length(a.c),b.a,length(b.a),b.b,length(b.b),b.c,length(b.c) from t_char1 a left join t_char2 b on a.a=b.a order by 1,2,3,4,5,6,7,8,9,10,11,12;
+     a      | length |  b  | length |  c  | length |     a      | length |  b  | length |  c  | length 
+------------+--------+-----+--------+-----+--------+------------+--------+-----+--------+-----+--------
+  1         |      2 |  1  |      2 |  1  |      2 |  1         |      2 |  1  |      2 |  1  |      2
+  1         |      2 |  1  |      2 |  1  |      2 |  1         |      2 |  1  |      3 |  1  |      3
+  1         |      2 |  1  |      3 |  1  |      3 |  1         |      2 |  1  |      2 |  1  |      2
+  1         |      2 |  1  |      3 |  1  |      3 |  1         |      2 |  1  |      3 |  1  |      3
+ 1          |      1 | 1   |      1 | 1   |      1 | 1          |      1 | 1   |      1 | 1   |      1
+ 1          |      1 | 1   |      1 | 1   |      1 | 1          |      1 | 1   |      2 | 1   |      2
+ 1          |      1 | 1   |      1 | 1   |      1 | 1          |      1 | 1   |      3 | 1   |      3
+ 1          |      1 | 1   |      2 | 1   |      2 | 1          |      1 | 1   |      1 | 1   |      1
+ 1          |      1 | 1   |      2 | 1   |      2 | 1          |      1 | 1   |      2 | 1   |      2
+ 1          |      1 | 1   |      2 | 1   |      2 | 1          |      1 | 1   |      3 | 1   |      3
+ 1          |      1 | 1   |      3 | 1   |      3 | 1          |      1 | 1   |      1 | 1   |      1
+ 1          |      1 | 1   |      3 | 1   |      3 | 1          |      1 | 1   |      2 | 1   |      2
+ 1          |      1 | 1   |      3 | 1   |      3 | 1          |      1 | 1   |      3 | 1   |      3
+(13 rows)
+
+explain(costs off) select a.a,length(a.a),a.b,length(a.b),a.c,length(a.c),b.a,length(b.a),b.b,length(b.b),b.c,length(b.c) from t_char1 a left join t_char2 b on a.a=b.b order by 1,2,3,4,5,6,7,8,9,10,11,12;
+                                                                        QUERY PLAN                                                                        
+----------------------------------------------------------------------------------------------------------------------------------------------------------
+ Row Adapter
+   ->  Vector Sort
+         Sort Key: a.a, (length(a.a)), a.b, (length((a.b)::text)), a.c, (length(a.c)), b.a, (length(b.a)), b.b, (length((b.b)::text)), b.c, (length(b.c))
+         ->  Vector Merge Left Join
+               Merge Cond: (a.a = (b.b)::bpchar)
+               ->  Vector Sort
+                     Sort Key: a.a
+                     ->  Vector Adapter(type: BATCH MODE)
+                           ->  Seq Scan on t_char1 a
+               ->  Vector Sort
+                     Sort Key: b.b USING <
+                     ->  Vector Adapter(type: BATCH MODE)
+                           ->  Seq Scan on t_char2 b
+(13 rows)
+
+select a.a,length(a.a),a.b,length(a.b),a.c,length(a.c),b.a,length(b.a),b.b,length(b.b),b.c,length(b.c) from t_char1 a left join t_char2 b on a.a=b.b order by 1,2,3,4,5,6,7,8,9,10,11,12;
+     a      | length |  b  | length |  c  | length |     a      | length |  b  | length |  c  | length 
+------------+--------+-----+--------+-----+--------+------------+--------+-----+--------+-----+--------
+  1         |      2 |  1  |      2 |  1  |      2 |  1         |      2 |  1  |      2 |  1  |      2
+  1         |      2 |  1  |      2 |  1  |      2 |  1         |      2 |  1  |      3 |  1  |      3
+  1         |      2 |  1  |      3 |  1  |      3 |  1         |      2 |  1  |      2 |  1  |      2
+  1         |      2 |  1  |      3 |  1  |      3 |  1         |      2 |  1  |      3 |  1  |      3
+ 1          |      1 | 1   |      1 | 1   |      1 | 1          |      1 | 1   |      1 | 1   |      1
+ 1          |      1 | 1   |      1 | 1   |      1 | 1          |      1 | 1   |      2 | 1   |      2
+ 1          |      1 | 1   |      1 | 1   |      1 | 1          |      1 | 1   |      3 | 1   |      3
+ 1          |      1 | 1   |      2 | 1   |      2 | 1          |      1 | 1   |      1 | 1   |      1
+ 1          |      1 | 1   |      2 | 1   |      2 | 1          |      1 | 1   |      2 | 1   |      2
+ 1          |      1 | 1   |      2 | 1   |      2 | 1          |      1 | 1   |      3 | 1   |      3
+ 1          |      1 | 1   |      3 | 1   |      3 | 1          |      1 | 1   |      1 | 1   |      1
+ 1          |      1 | 1   |      3 | 1   |      3 | 1          |      1 | 1   |      2 | 1   |      2
+ 1          |      1 | 1   |      3 | 1   |      3 | 1          |      1 | 1   |      3 | 1   |      3
+(13 rows)
+
+explain(costs off) select a.a,length(a.a),a.b,length(a.b),a.c,length(a.c),b.a,length(b.a),b.b,length(b.b),b.c,length(b.c) from t_char1 a left join t_char2 b on a.a=b.c order by 1,2,3,4,5,6,7,8,9,10,11,12;
+                                                                        QUERY PLAN                                                                        
+----------------------------------------------------------------------------------------------------------------------------------------------------------
+ Row Adapter
+   ->  Vector Sort
+         Sort Key: a.a, (length(a.a)), a.b, (length((a.b)::text)), a.c, (length(a.c)), b.a, (length(b.a)), b.b, (length((b.b)::text)), b.c, (length(b.c))
+         ->  Vector Merge Left Join
+               Merge Cond: (((a.a)::text) = b.c)
+               ->  Vector Sort
+                     Sort Key: ((a.a)::text)
+                     ->  Vector Adapter(type: BATCH MODE)
+                           ->  Seq Scan on t_char1 a
+               ->  Vector Sort
+                     Sort Key: b.c
+                     ->  Vector Adapter(type: BATCH MODE)
+                           ->  Seq Scan on t_char2 b
+(13 rows)
+
+select a.a,length(a.a),a.b,length(a.b),a.c,length(a.c),b.a,length(b.a),b.b,length(b.b),b.c,length(b.c) from t_char1 a left join t_char2 b on a.a=b.c order by 1,2,3,4,5,6,7,8,9,10,11,12;
+     a      | length |  b  | length |  c  | length |     a      | length |  b  | length |  c  | length 
+------------+--------+-----+--------+-----+--------+------------+--------+-----+--------+-----+--------
+  1         |      2 |  1  |      2 |  1  |      2 |  1         |      2 |  1  |      2 |  1  |      2
+  1         |      2 |  1  |      2 |  1  |      2 |  1         |      2 |  1  |      3 |  1  |      3
+  1         |      2 |  1  |      3 |  1  |      3 |  1         |      2 |  1  |      2 |  1  |      2
+  1         |      2 |  1  |      3 |  1  |      3 |  1         |      2 |  1  |      3 |  1  |      3
+ 1          |      1 | 1   |      1 | 1   |      1 | 1          |      1 | 1   |      1 | 1   |      1
+ 1          |      1 | 1   |      1 | 1   |      1 | 1          |      1 | 1   |      2 | 1   |      2
+ 1          |      1 | 1   |      1 | 1   |      1 | 1          |      1 | 1   |      3 | 1   |      3
+ 1          |      1 | 1   |      2 | 1   |      2 | 1          |      1 | 1   |      1 | 1   |      1
+ 1          |      1 | 1   |      2 | 1   |      2 | 1          |      1 | 1   |      2 | 1   |      2
+ 1          |      1 | 1   |      2 | 1   |      2 | 1          |      1 | 1   |      3 | 1   |      3
+ 1          |      1 | 1   |      3 | 1   |      3 | 1          |      1 | 1   |      1 | 1   |      1
+ 1          |      1 | 1   |      3 | 1   |      3 | 1          |      1 | 1   |      2 | 1   |      2
+ 1          |      1 | 1   |      3 | 1   |      3 | 1          |      1 | 1   |      3 | 1   |      3
+(13 rows)
+
+explain(costs off) select a.a,length(a.a),a.b,length(a.b),a.c,length(a.c),b.a,length(b.a),b.b,length(b.b),b.c,length(b.c) from t_char1 a left join t_char2 b on a.b=b.a order by 1,2,3,4,5,6,7,8,9,10,11,12;
+                                                                        QUERY PLAN                                                                        
+----------------------------------------------------------------------------------------------------------------------------------------------------------
+ Row Adapter
+   ->  Vector Sort
+         Sort Key: a.a, (length(a.a)), a.b, (length((a.b)::text)), a.c, (length(a.c)), b.a, (length(b.a)), b.b, (length((b.b)::text)), b.c, (length(b.c))
+         ->  Vector Merge Left Join
+               Merge Cond: ((a.b)::bpchar = b.a)
+               ->  Vector Sort
+                     Sort Key: a.b USING <
+                     ->  Vector Adapter(type: BATCH MODE)
+                           ->  Seq Scan on t_char1 a
+               ->  Vector Sort
+                     Sort Key: b.a
+                     ->  Vector Adapter(type: BATCH MODE)
+                           ->  Seq Scan on t_char2 b
+(13 rows)
+
+select a.a,length(a.a),a.b,length(a.b),a.c,length(a.c),b.a,length(b.a),b.b,length(b.b),b.c,length(b.c) from t_char1 a left join t_char2 b on a.b=b.a order by 1,2,3,4,5,6,7,8,9,10,11,12;
+     a      | length |  b  | length |  c  | length |     a      | length |  b  | length |  c  | length 
+------------+--------+-----+--------+-----+--------+------------+--------+-----+--------+-----+--------
+  1         |      2 |  1  |      2 |  1  |      2 |  1         |      2 |  1  |      2 |  1  |      2
+  1         |      2 |  1  |      2 |  1  |      2 |  1         |      2 |  1  |      3 |  1  |      3
+  1         |      2 |  1  |      3 |  1  |      3 |  1         |      2 |  1  |      2 |  1  |      2
+  1         |      2 |  1  |      3 |  1  |      3 |  1         |      2 |  1  |      3 |  1  |      3
+ 1          |      1 | 1   |      1 | 1   |      1 | 1          |      1 | 1   |      1 | 1   |      1
+ 1          |      1 | 1   |      1 | 1   |      1 | 1          |      1 | 1   |      2 | 1   |      2
+ 1          |      1 | 1   |      1 | 1   |      1 | 1          |      1 | 1   |      3 | 1   |      3
+ 1          |      1 | 1   |      2 | 1   |      2 | 1          |      1 | 1   |      1 | 1   |      1
+ 1          |      1 | 1   |      2 | 1   |      2 | 1          |      1 | 1   |      2 | 1   |      2
+ 1          |      1 | 1   |      2 | 1   |      2 | 1          |      1 | 1   |      3 | 1   |      3
+ 1          |      1 | 1   |      3 | 1   |      3 | 1          |      1 | 1   |      1 | 1   |      1
+ 1          |      1 | 1   |      3 | 1   |      3 | 1          |      1 | 1   |      2 | 1   |      2
+ 1          |      1 | 1   |      3 | 1   |      3 | 1          |      1 | 1   |      3 | 1   |      3
+(13 rows)
+
+explain(costs off) select a.a,length(a.a),a.b,length(a.b),a.c,length(a.c),b.a,length(b.a),b.b,length(b.b),b.c,length(b.c) from t_char1 a left join t_char2 b on a.b=b.b order by 1,2,3,4,5,6,7,8,9,10,11,12;
+                                                                        QUERY PLAN                                                                        
+----------------------------------------------------------------------------------------------------------------------------------------------------------
+ Row Adapter
+   ->  Vector Sort
+         Sort Key: a.a, (length(a.a)), a.b, (length((a.b)::text)), a.c, (length(a.c)), b.a, (length(b.a)), b.b, (length((b.b)::text)), b.c, (length(b.c))
+         ->  Vector Merge Left Join
+               Merge Cond: ((a.b)::text = (b.b)::text)
+               ->  Vector Sort
+                     Sort Key: a.b
+                     ->  Vector Adapter(type: BATCH MODE)
+                           ->  Seq Scan on t_char1 a
+               ->  Vector Sort
+                     Sort Key: b.b
+                     ->  Vector Adapter(type: BATCH MODE)
+                           ->  Seq Scan on t_char2 b
+(13 rows)
+
+select a.a,length(a.a),a.b,length(a.b),a.c,length(a.c),b.a,length(b.a),b.b,length(b.b),b.c,length(b.c) from t_char1 a left join t_char2 b on a.b=b.b order by 1,2,3,4,5,6,7,8,9,10,11,12;
+     a      | length |  b  | length |  c  | length |     a      | length |  b  | length |  c  | length 
+------------+--------+-----+--------+-----+--------+------------+--------+-----+--------+-----+--------
+  1         |      2 |  1  |      2 |  1  |      2 |  1         |      2 |  1  |      2 |  1  |      2
+  1         |      2 |  1  |      2 |  1  |      2 |  1         |      2 |  1  |      3 |  1  |      3
+  1         |      2 |  1  |      3 |  1  |      3 |  1         |      2 |  1  |      2 |  1  |      2
+  1         |      2 |  1  |      3 |  1  |      3 |  1         |      2 |  1  |      3 |  1  |      3
+ 1          |      1 | 1   |      1 | 1   |      1 | 1          |      1 | 1   |      1 | 1   |      1
+ 1          |      1 | 1   |      1 | 1   |      1 | 1          |      1 | 1   |      2 | 1   |      2
+ 1          |      1 | 1   |      1 | 1   |      1 | 1          |      1 | 1   |      3 | 1   |      3
+ 1          |      1 | 1   |      2 | 1   |      2 | 1          |      1 | 1   |      1 | 1   |      1
+ 1          |      1 | 1   |      2 | 1   |      2 | 1          |      1 | 1   |      2 | 1   |      2
+ 1          |      1 | 1   |      2 | 1   |      2 | 1          |      1 | 1   |      3 | 1   |      3
+ 1          |      1 | 1   |      3 | 1   |      3 | 1          |      1 | 1   |      1 | 1   |      1
+ 1          |      1 | 1   |      3 | 1   |      3 | 1          |      1 | 1   |      2 | 1   |      2
+ 1          |      1 | 1   |      3 | 1   |      3 | 1          |      1 | 1   |      3 | 1   |      3
+(13 rows)
+
+explain(costs off) select a.a,length(a.a),a.b,length(a.b),a.c,length(a.c),b.a,length(b.a),b.b,length(b.b),b.c,length(b.c) from t_char1 a left join t_char2 b on a.b=b.c order by 1,2,3,4,5,6,7,8,9,10,11,12;
+                                                                        QUERY PLAN                                                                        
+----------------------------------------------------------------------------------------------------------------------------------------------------------
+ Row Adapter
+   ->  Vector Sort
+         Sort Key: a.a, (length(a.a)), a.b, (length((a.b)::text)), a.c, (length(a.c)), b.a, (length(b.a)), b.b, (length((b.b)::text)), b.c, (length(b.c))
+         ->  Vector Merge Left Join
+               Merge Cond: ((a.b)::text = b.c)
+               ->  Vector Sort
+                     Sort Key: a.b
+                     ->  Vector Adapter(type: BATCH MODE)
+                           ->  Seq Scan on t_char1 a
+               ->  Vector Sort
+                     Sort Key: b.c
+                     ->  Vector Adapter(type: BATCH MODE)
+                           ->  Seq Scan on t_char2 b
+(13 rows)
+
+select a.a,length(a.a),a.b,length(a.b),a.c,length(a.c),b.a,length(b.a),b.b,length(b.b),b.c,length(b.c) from t_char1 a left join t_char2 b on a.b=b.c order by 1,2,3,4,5,6,7,8,9,10,11,12;
+     a      | length |  b  | length |  c  | length |     a      | length |  b  | length |  c  | length 
+------------+--------+-----+--------+-----+--------+------------+--------+-----+--------+-----+--------
+  1         |      2 |  1  |      2 |  1  |      2 |  1         |      2 |  1  |      2 |  1  |      2
+  1         |      2 |  1  |      2 |  1  |      2 |  1         |      2 |  1  |      3 |  1  |      3
+  1         |      2 |  1  |      3 |  1  |      3 |  1         |      2 |  1  |      2 |  1  |      2
+  1         |      2 |  1  |      3 |  1  |      3 |  1         |      2 |  1  |      3 |  1  |      3
+ 1          |      1 | 1   |      1 | 1   |      1 | 1          |      1 | 1   |      1 | 1   |      1
+ 1          |      1 | 1   |      1 | 1   |      1 | 1          |      1 | 1   |      2 | 1   |      2
+ 1          |      1 | 1   |      1 | 1   |      1 | 1          |      1 | 1   |      3 | 1   |      3
+ 1          |      1 | 1   |      2 | 1   |      2 | 1          |      1 | 1   |      1 | 1   |      1
+ 1          |      1 | 1   |      2 | 1   |      2 | 1          |      1 | 1   |      2 | 1   |      2
+ 1          |      1 | 1   |      2 | 1   |      2 | 1          |      1 | 1   |      3 | 1   |      3
+ 1          |      1 | 1   |      3 | 1   |      3 | 1          |      1 | 1   |      1 | 1   |      1
+ 1          |      1 | 1   |      3 | 1   |      3 | 1          |      1 | 1   |      2 | 1   |      2
+ 1          |      1 | 1   |      3 | 1   |      3 | 1          |      1 | 1   |      3 | 1   |      3
+(13 rows)
+
+explain(costs off) select a.a,length(a.a),a.b,length(a.b),a.c,length(a.c),b.a,length(b.a),b.b,length(b.b),b.c,length(b.c) from t_char1 a left join t_char2 b on a.c=b.a order by 1,2,3,4,5,6,7,8,9,10,11,12;
+                                                                        QUERY PLAN                                                                        
+----------------------------------------------------------------------------------------------------------------------------------------------------------
+ Row Adapter
+   ->  Vector Sort
+         Sort Key: a.a, (length(a.a)), a.b, (length((a.b)::text)), a.c, (length(a.c)), b.a, (length(b.a)), b.b, (length((b.b)::text)), b.c, (length(b.c))
+         ->  Vector Merge Left Join
+               Merge Cond: (a.c = (b.a)::text)
+               ->  Vector Sort
+                     Sort Key: a.c
+                     ->  Vector Adapter(type: BATCH MODE)
+                           ->  Seq Scan on t_char1 a
+               ->  Vector Sort
+                     Sort Key: ((b.a)::text)
+                     ->  Vector Adapter(type: BATCH MODE)
+                           ->  Seq Scan on t_char2 b
+(13 rows)
+
+select a.a,length(a.a),a.b,length(a.b),a.c,length(a.c),b.a,length(b.a),b.b,length(b.b),b.c,length(b.c) from t_char1 a left join t_char2 b on a.c=b.a order by 1,2,3,4,5,6,7,8,9,10,11,12;
+     a      | length |  b  | length |  c  | length |     a      | length |  b  | length |  c  | length 
+------------+--------+-----+--------+-----+--------+------------+--------+-----+--------+-----+--------
+  1         |      2 |  1  |      2 |  1  |      2 |  1         |      2 |  1  |      2 |  1  |      2
+  1         |      2 |  1  |      2 |  1  |      2 |  1         |      2 |  1  |      3 |  1  |      3
+  1         |      2 |  1  |      3 |  1  |      3 |  1         |      2 |  1  |      2 |  1  |      2
+  1         |      2 |  1  |      3 |  1  |      3 |  1         |      2 |  1  |      3 |  1  |      3
+ 1          |      1 | 1   |      1 | 1   |      1 | 1          |      1 | 1   |      1 | 1   |      1
+ 1          |      1 | 1   |      1 | 1   |      1 | 1          |      1 | 1   |      2 | 1   |      2
+ 1          |      1 | 1   |      1 | 1   |      1 | 1          |      1 | 1   |      3 | 1   |      3
+ 1          |      1 | 1   |      2 | 1   |      2 | 1          |      1 | 1   |      1 | 1   |      1
+ 1          |      1 | 1   |      2 | 1   |      2 | 1          |      1 | 1   |      2 | 1   |      2
+ 1          |      1 | 1   |      2 | 1   |      2 | 1          |      1 | 1   |      3 | 1   |      3
+ 1          |      1 | 1   |      3 | 1   |      3 | 1          |      1 | 1   |      1 | 1   |      1
+ 1          |      1 | 1   |      3 | 1   |      3 | 1          |      1 | 1   |      2 | 1   |      2
+ 1          |      1 | 1   |      3 | 1   |      3 | 1          |      1 | 1   |      3 | 1   |      3
+(13 rows)
+
+explain(costs off) select a.a,length(a.a),a.b,length(a.b),a.c,length(a.c),b.a,length(b.a),b.b,length(b.b),b.c,length(b.c) from t_char1 a left join t_char2 b on a.c=b.b order by 1,2,3,4,5,6,7,8,9,10,11,12;
+                                                                        QUERY PLAN                                                                        
+----------------------------------------------------------------------------------------------------------------------------------------------------------
+ Row Adapter
+   ->  Vector Sort
+         Sort Key: a.a, (length(a.a)), a.b, (length((a.b)::text)), a.c, (length(a.c)), b.a, (length(b.a)), b.b, (length((b.b)::text)), b.c, (length(b.c))
+         ->  Vector Merge Left Join
+               Merge Cond: (a.c = (b.b)::text)
+               ->  Vector Sort
+                     Sort Key: a.c
+                     ->  Vector Adapter(type: BATCH MODE)
+                           ->  Seq Scan on t_char1 a
+               ->  Vector Sort
+                     Sort Key: b.b
+                     ->  Vector Adapter(type: BATCH MODE)
+                           ->  Seq Scan on t_char2 b
+(13 rows)
+
+select a.a,length(a.a),a.b,length(a.b),a.c,length(a.c),b.a,length(b.a),b.b,length(b.b),b.c,length(b.c) from t_char1 a left join t_char2 b on a.c=b.b order by 1,2,3,4,5,6,7,8,9,10,11,12;
+     a      | length |  b  | length |  c  | length |     a      | length |  b  | length |  c  | length 
+------------+--------+-----+--------+-----+--------+------------+--------+-----+--------+-----+--------
+  1         |      2 |  1  |      2 |  1  |      2 |  1         |      2 |  1  |      2 |  1  |      2
+  1         |      2 |  1  |      2 |  1  |      2 |  1         |      2 |  1  |      3 |  1  |      3
+  1         |      2 |  1  |      3 |  1  |      3 |  1         |      2 |  1  |      2 |  1  |      2
+  1         |      2 |  1  |      3 |  1  |      3 |  1         |      2 |  1  |      3 |  1  |      3
+ 1          |      1 | 1   |      1 | 1   |      1 | 1          |      1 | 1   |      1 | 1   |      1
+ 1          |      1 | 1   |      1 | 1   |      1 | 1          |      1 | 1   |      2 | 1   |      2
+ 1          |      1 | 1   |      1 | 1   |      1 | 1          |      1 | 1   |      3 | 1   |      3
+ 1          |      1 | 1   |      2 | 1   |      2 | 1          |      1 | 1   |      1 | 1   |      1
+ 1          |      1 | 1   |      2 | 1   |      2 | 1          |      1 | 1   |      2 | 1   |      2
+ 1          |      1 | 1   |      2 | 1   |      2 | 1          |      1 | 1   |      3 | 1   |      3
+ 1          |      1 | 1   |      3 | 1   |      3 | 1          |      1 | 1   |      1 | 1   |      1
+ 1          |      1 | 1   |      3 | 1   |      3 | 1          |      1 | 1   |      2 | 1   |      2
+ 1          |      1 | 1   |      3 | 1   |      3 | 1          |      1 | 1   |      3 | 1   |      3
+(13 rows)
+
+explain(costs off) select a.a,length(a.a),a.b,length(a.b),a.c,length(a.c),b.a,length(b.a),b.b,length(b.b),b.c,length(b.c) from t_char1 a left join t_char2 b on a.c=b.c order by 1,2,3,4,5,6,7,8,9,10,11,12;
+                                                                        QUERY PLAN                                                                        
+----------------------------------------------------------------------------------------------------------------------------------------------------------
+ Row Adapter
+   ->  Vector Sort
+         Sort Key: a.a, (length(a.a)), a.b, (length((a.b)::text)), a.c, (length(a.c)), b.a, (length(b.a)), b.b, (length((b.b)::text)), b.c, (length(b.c))
+         ->  Vector Merge Left Join
+               Merge Cond: (a.c = b.c)
+               ->  Vector Sort
+                     Sort Key: a.c
+                     ->  Vector Adapter(type: BATCH MODE)
+                           ->  Seq Scan on t_char1 a
+               ->  Vector Sort
+                     Sort Key: b.c
+                     ->  Vector Adapter(type: BATCH MODE)
+                           ->  Seq Scan on t_char2 b
+(13 rows)
+
+select a.a,length(a.a),a.b,length(a.b),a.c,length(a.c),b.a,length(b.a),b.b,length(b.b),b.c,length(b.c) from t_char1 a left join t_char2 b on a.c=b.c order by 1,2,3,4,5,6,7,8,9,10,11,12;
+     a      | length |  b  | length |  c  | length |     a      | length |  b  | length |  c  | length 
+------------+--------+-----+--------+-----+--------+------------+--------+-----+--------+-----+--------
+  1         |      2 |  1  |      2 |  1  |      2 |  1         |      2 |  1  |      2 |  1  |      2
+  1         |      2 |  1  |      2 |  1  |      2 |  1         |      2 |  1  |      3 |  1  |      3
+  1         |      2 |  1  |      3 |  1  |      3 |  1         |      2 |  1  |      2 |  1  |      2
+  1         |      2 |  1  |      3 |  1  |      3 |  1         |      2 |  1  |      3 |  1  |      3
+ 1          |      1 | 1   |      1 | 1   |      1 | 1          |      1 | 1   |      1 | 1   |      1
+ 1          |      1 | 1   |      1 | 1   |      1 | 1          |      1 | 1   |      2 | 1   |      2
+ 1          |      1 | 1   |      1 | 1   |      1 | 1          |      1 | 1   |      3 | 1   |      3
+ 1          |      1 | 1   |      2 | 1   |      2 | 1          |      1 | 1   |      1 | 1   |      1
+ 1          |      1 | 1   |      2 | 1   |      2 | 1          |      1 | 1   |      2 | 1   |      2
+ 1          |      1 | 1   |      2 | 1   |      2 | 1          |      1 | 1   |      3 | 1   |      3
+ 1          |      1 | 1   |      3 | 1   |      3 | 1          |      1 | 1   |      1 | 1   |      1
+ 1          |      1 | 1   |      3 | 1   |      3 | 1          |      1 | 1   |      2 | 1   |      2
+ 1          |      1 | 1   |      3 | 1   |      3 | 1          |      1 | 1   |      3 | 1   |      3
+(13 rows)
+
+set enable_mergejoin to off;
+explain(costs off) select a.a,length(a.a),a.b,length(a.b),a.c,length(a.c),b.a,length(b.a),b.b,length(b.b),b.c,length(b.c) from t_char1 a left join t_char2 b on a.a=b.a order by 1,2,3,4,5,6,7,8,9,10,11,12;
+                                                                        QUERY PLAN                                                                        
+----------------------------------------------------------------------------------------------------------------------------------------------------------
+ Row Adapter
+   ->  Vector Sort
+         Sort Key: a.a, (length(a.a)), a.b, (length((a.b)::text)), a.c, (length(a.c)), b.a, (length(b.a)), b.b, (length((b.b)::text)), b.c, (length(b.c))
+         ->  Vector Nest Loop Left Join
+               Join Filter: (a.a = b.a)
+               ->  Vector Adapter(type: BATCH MODE)
+                     ->  Seq Scan on t_char1 a
+               ->  Vector Materialize
+                     ->  Vector Adapter(type: BATCH MODE)
+                           ->  Seq Scan on t_char2 b
+(10 rows)
+
+select a.a,length(a.a),a.b,length(a.b),a.c,length(a.c),b.a,length(b.a),b.b,length(b.b),b.c,length(b.c) from t_char1 a left join t_char2 b on a.a=b.a order by 1,2,3,4,5,6,7,8,9,10,11,12;
+     a      | length |  b  | length |  c  | length |     a      | length |  b  | length |  c  | length 
+------------+--------+-----+--------+-----+--------+------------+--------+-----+--------+-----+--------
+  1         |     10 |  1  |      2 |  1  |      2 |  1         |     10 |  1  |      2 |  1  |      2
+  1         |     10 |  1  |      2 |  1  |      2 |  1         |     10 |  1  |      3 |  1  |      3
+  1         |     10 |  1  |      3 |  1  |      3 |  1         |     10 |  1  |      2 |  1  |      2
+  1         |     10 |  1  |      3 |  1  |      3 |  1         |     10 |  1  |      3 |  1  |      3
+ 1          |     10 | 1   |      1 | 1   |      1 | 1          |     10 | 1   |      1 | 1   |      1
+ 1          |     10 | 1   |      1 | 1   |      1 | 1          |     10 | 1   |      2 | 1   |      2
+ 1          |     10 | 1   |      1 | 1   |      1 | 1          |     10 | 1   |      3 | 1   |      3
+ 1          |     10 | 1   |      2 | 1   |      2 | 1          |     10 | 1   |      1 | 1   |      1
+ 1          |     10 | 1   |      2 | 1   |      2 | 1          |     10 | 1   |      2 | 1   |      2
+ 1          |     10 | 1   |      2 | 1   |      2 | 1          |     10 | 1   |      3 | 1   |      3
+ 1          |     10 | 1   |      3 | 1   |      3 | 1          |     10 | 1   |      1 | 1   |      1
+ 1          |     10 | 1   |      3 | 1   |      3 | 1          |     10 | 1   |      2 | 1   |      2
+ 1          |     10 | 1   |      3 | 1   |      3 | 1          |     10 | 1   |      3 | 1   |      3
+(13 rows)
+
+explain(costs off) select a.a,length(a.a),a.b,length(a.b),a.c,length(a.c),b.a,length(b.a),b.b,length(b.b),b.c,length(b.c) from t_char1 a left join t_char2 b on a.a=b.b order by 1,2,3,4,5,6,7,8,9,10,11,12;
+                                                                        QUERY PLAN                                                                        
+----------------------------------------------------------------------------------------------------------------------------------------------------------
+ Row Adapter
+   ->  Vector Sort
+         Sort Key: a.a, (length(a.a)), a.b, (length((a.b)::text)), a.c, (length(a.c)), b.a, (length(b.a)), b.b, (length((b.b)::text)), b.c, (length(b.c))
+         ->  Vector Nest Loop Left Join
+               Join Filter: (a.a = (b.b)::bpchar)
+               ->  Vector Adapter(type: BATCH MODE)
+                     ->  Seq Scan on t_char1 a
+               ->  Vector Materialize
+                     ->  Vector Adapter(type: BATCH MODE)
+                           ->  Seq Scan on t_char2 b
+(10 rows)
+
+select a.a,length(a.a),a.b,length(a.b),a.c,length(a.c),b.a,length(b.a),b.b,length(b.b),b.c,length(b.c) from t_char1 a left join t_char2 b on a.a=b.b order by 1,2,3,4,5,6,7,8,9,10,11,12;
+     a      | length |  b  | length |  c  | length |     a      | length |  b  | length |  c  | length 
+------------+--------+-----+--------+-----+--------+------------+--------+-----+--------+-----+--------
+  1         |     10 |  1  |      2 |  1  |      2 |  1         |     10 |  1  |      2 |  1  |      2
+  1         |     10 |  1  |      2 |  1  |      2 |  1         |     10 |  1  |      3 |  1  |      3
+  1         |     10 |  1  |      3 |  1  |      3 |  1         |     10 |  1  |      2 |  1  |      2
+  1         |     10 |  1  |      3 |  1  |      3 |  1         |     10 |  1  |      3 |  1  |      3
+ 1          |     10 | 1   |      1 | 1   |      1 | 1          |     10 | 1   |      1 | 1   |      1
+ 1          |     10 | 1   |      1 | 1   |      1 | 1          |     10 | 1   |      2 | 1   |      2
+ 1          |     10 | 1   |      1 | 1   |      1 | 1          |     10 | 1   |      3 | 1   |      3
+ 1          |     10 | 1   |      2 | 1   |      2 | 1          |     10 | 1   |      1 | 1   |      1
+ 1          |     10 | 1   |      2 | 1   |      2 | 1          |     10 | 1   |      2 | 1   |      2
+ 1          |     10 | 1   |      2 | 1   |      2 | 1          |     10 | 1   |      3 | 1   |      3
+ 1          |     10 | 1   |      3 | 1   |      3 | 1          |     10 | 1   |      1 | 1   |      1
+ 1          |     10 | 1   |      3 | 1   |      3 | 1          |     10 | 1   |      2 | 1   |      2
+ 1          |     10 | 1   |      3 | 1   |      3 | 1          |     10 | 1   |      3 | 1   |      3
+(13 rows)
+
+explain(costs off) select a.a,length(a.a),a.b,length(a.b),a.c,length(a.c),b.a,length(b.a),b.b,length(b.b),b.c,length(b.c) from t_char1 a left join t_char2 b on a.a=b.c order by 1,2,3,4,5,6,7,8,9,10,11,12;
+                                                                        QUERY PLAN                                                                        
+----------------------------------------------------------------------------------------------------------------------------------------------------------
+ Row Adapter
+   ->  Vector Sort
+         Sort Key: a.a, (length(a.a)), a.b, (length((a.b)::text)), a.c, (length(a.c)), b.a, (length(b.a)), b.b, (length((b.b)::text)), b.c, (length(b.c))
+         ->  Vector Nest Loop Left Join
+               Join Filter: ((a.a)::text = b.c)
+               ->  Vector Adapter(type: BATCH MODE)
+                     ->  Seq Scan on t_char1 a
+               ->  Vector Materialize
+                     ->  Vector Adapter(type: BATCH MODE)
+                           ->  Seq Scan on t_char2 b
+(10 rows)
+
+select a.a,length(a.a),a.b,length(a.b),a.c,length(a.c),b.a,length(b.a),b.b,length(b.b),b.c,length(b.c) from t_char1 a left join t_char2 b on a.a=b.c order by 1,2,3,4,5,6,7,8,9,10,11,12;
+     a      | length |  b  | length |  c  | length |     a      | length |  b  | length |  c  | length 
+------------+--------+-----+--------+-----+--------+------------+--------+-----+--------+-----+--------
+  1         |     10 |  1  |      2 |  1  |      2 |  1         |     10 |  1  |      2 |  1  |      2
+  1         |     10 |  1  |      2 |  1  |      2 |  1         |     10 |  1  |      3 |  1  |      3
+  1         |     10 |  1  |      3 |  1  |      3 |  1         |     10 |  1  |      2 |  1  |      2
+  1         |     10 |  1  |      3 |  1  |      3 |  1         |     10 |  1  |      3 |  1  |      3
+ 1          |     10 | 1   |      1 | 1   |      1 | 1          |     10 | 1   |      1 | 1   |      1
+ 1          |     10 | 1   |      1 | 1   |      1 | 1          |     10 | 1   |      2 | 1   |      2
+ 1          |     10 | 1   |      1 | 1   |      1 | 1          |     10 | 1   |      3 | 1   |      3
+ 1          |     10 | 1   |      2 | 1   |      2 | 1          |     10 | 1   |      1 | 1   |      1
+ 1          |     10 | 1   |      2 | 1   |      2 | 1          |     10 | 1   |      2 | 1   |      2
+ 1          |     10 | 1   |      2 | 1   |      2 | 1          |     10 | 1   |      3 | 1   |      3
+ 1          |     10 | 1   |      3 | 1   |      3 | 1          |     10 | 1   |      1 | 1   |      1
+ 1          |     10 | 1   |      3 | 1   |      3 | 1          |     10 | 1   |      2 | 1   |      2
+ 1          |     10 | 1   |      3 | 1   |      3 | 1          |     10 | 1   |      3 | 1   |      3
+(13 rows)
+
+explain(costs off) select a.a,length(a.a),a.b,length(a.b),a.c,length(a.c),b.a,length(b.a),b.b,length(b.b),b.c,length(b.c) from t_char1 a left join t_char2 b on a.b=b.a order by 1,2,3,4,5,6,7,8,9,10,11,12;
+                                                                        QUERY PLAN                                                                        
+----------------------------------------------------------------------------------------------------------------------------------------------------------
+ Row Adapter
+   ->  Vector Sort
+         Sort Key: a.a, (length(a.a)), a.b, (length((a.b)::text)), a.c, (length(a.c)), b.a, (length(b.a)), b.b, (length((b.b)::text)), b.c, (length(b.c))
+         ->  Vector Nest Loop Left Join
+               Join Filter: ((a.b)::bpchar = b.a)
+               ->  Vector Adapter(type: BATCH MODE)
+                     ->  Seq Scan on t_char1 a
+               ->  Vector Materialize
+                     ->  Vector Adapter(type: BATCH MODE)
+                           ->  Seq Scan on t_char2 b
+(10 rows)
+
+select a.a,length(a.a),a.b,length(a.b),a.c,length(a.c),b.a,length(b.a),b.b,length(b.b),b.c,length(b.c) from t_char1 a left join t_char2 b on a.b=b.a order by 1,2,3,4,5,6,7,8,9,10,11,12;
+     a      | length |  b  | length |  c  | length |     a      | length |  b  | length |  c  | length 
+------------+--------+-----+--------+-----+--------+------------+--------+-----+--------+-----+--------
+  1         |     10 |  1  |      2 |  1  |      2 |  1         |     10 |  1  |      2 |  1  |      2
+  1         |     10 |  1  |      2 |  1  |      2 |  1         |     10 |  1  |      3 |  1  |      3
+  1         |     10 |  1  |      3 |  1  |      3 |  1         |     10 |  1  |      2 |  1  |      2
+  1         |     10 |  1  |      3 |  1  |      3 |  1         |     10 |  1  |      3 |  1  |      3
+ 1          |     10 | 1   |      1 | 1   |      1 | 1          |     10 | 1   |      1 | 1   |      1
+ 1          |     10 | 1   |      1 | 1   |      1 | 1          |     10 | 1   |      2 | 1   |      2
+ 1          |     10 | 1   |      1 | 1   |      1 | 1          |     10 | 1   |      3 | 1   |      3
+ 1          |     10 | 1   |      2 | 1   |      2 | 1          |     10 | 1   |      1 | 1   |      1
+ 1          |     10 | 1   |      2 | 1   |      2 | 1          |     10 | 1   |      2 | 1   |      2
+ 1          |     10 | 1   |      2 | 1   |      2 | 1          |     10 | 1   |      3 | 1   |      3
+ 1          |     10 | 1   |      3 | 1   |      3 | 1          |     10 | 1   |      1 | 1   |      1
+ 1          |     10 | 1   |      3 | 1   |      3 | 1          |     10 | 1   |      2 | 1   |      2
+ 1          |     10 | 1   |      3 | 1   |      3 | 1          |     10 | 1   |      3 | 1   |      3
+(13 rows)
+
+explain(costs off) select a.a,length(a.a),a.b,length(a.b),a.c,length(a.c),b.a,length(b.a),b.b,length(b.b),b.c,length(b.c) from t_char1 a left join t_char2 b on a.b=b.b order by 1,2,3,4,5,6,7,8,9,10,11,12;
+                                                                        QUERY PLAN                                                                        
+----------------------------------------------------------------------------------------------------------------------------------------------------------
+ Row Adapter
+   ->  Vector Sort
+         Sort Key: a.a, (length(a.a)), a.b, (length((a.b)::text)), a.c, (length(a.c)), b.a, (length(b.a)), b.b, (length((b.b)::text)), b.c, (length(b.c))
+         ->  Vector Nest Loop Left Join
+               Join Filter: ((a.b)::text = (b.b)::text)
+               ->  Vector Adapter(type: BATCH MODE)
+                     ->  Seq Scan on t_char1 a
+               ->  Vector Materialize
+                     ->  Vector Adapter(type: BATCH MODE)
+                           ->  Seq Scan on t_char2 b
+(10 rows)
+
+select a.a,length(a.a),a.b,length(a.b),a.c,length(a.c),b.a,length(b.a),b.b,length(b.b),b.c,length(b.c) from t_char1 a left join t_char2 b on a.b=b.b order by 1,2,3,4,5,6,7,8,9,10,11,12;
+     a      | length |  b  | length |  c  | length |     a      | length |  b  | length |  c  | length 
+------------+--------+-----+--------+-----+--------+------------+--------+-----+--------+-----+--------
+  1         |     10 |  1  |      2 |  1  |      2 |  1         |     10 |  1  |      2 |  1  |      2
+  1         |     10 |  1  |      2 |  1  |      2 |  1         |     10 |  1  |      3 |  1  |      3
+  1         |     10 |  1  |      3 |  1  |      3 |  1         |     10 |  1  |      2 |  1  |      2
+  1         |     10 |  1  |      3 |  1  |      3 |  1         |     10 |  1  |      3 |  1  |      3
+ 1          |     10 | 1   |      1 | 1   |      1 | 1          |     10 | 1   |      1 | 1   |      1
+ 1          |     10 | 1   |      1 | 1   |      1 | 1          |     10 | 1   |      2 | 1   |      2
+ 1          |     10 | 1   |      1 | 1   |      1 | 1          |     10 | 1   |      3 | 1   |      3
+ 1          |     10 | 1   |      2 | 1   |      2 | 1          |     10 | 1   |      1 | 1   |      1
+ 1          |     10 | 1   |      2 | 1   |      2 | 1          |     10 | 1   |      2 | 1   |      2
+ 1          |     10 | 1   |      2 | 1   |      2 | 1          |     10 | 1   |      3 | 1   |      3
+ 1          |     10 | 1   |      3 | 1   |      3 | 1          |     10 | 1   |      1 | 1   |      1
+ 1          |     10 | 1   |      3 | 1   |      3 | 1          |     10 | 1   |      2 | 1   |      2
+ 1          |     10 | 1   |      3 | 1   |      3 | 1          |     10 | 1   |      3 | 1   |      3
+(13 rows)
+
+explain(costs off) select a.a,length(a.a),a.b,length(a.b),a.c,length(a.c),b.a,length(b.a),b.b,length(b.b),b.c,length(b.c) from t_char1 a left join t_char2 b on a.b=b.c order by 1,2,3,4,5,6,7,8,9,10,11,12;
+                                                                        QUERY PLAN                                                                        
+----------------------------------------------------------------------------------------------------------------------------------------------------------
+ Row Adapter
+   ->  Vector Sort
+         Sort Key: a.a, (length(a.a)), a.b, (length((a.b)::text)), a.c, (length(a.c)), b.a, (length(b.a)), b.b, (length((b.b)::text)), b.c, (length(b.c))
+         ->  Vector Nest Loop Left Join
+               Join Filter: ((a.b)::text = b.c)
+               ->  Vector Adapter(type: BATCH MODE)
+                     ->  Seq Scan on t_char1 a
+               ->  Vector Materialize
+                     ->  Vector Adapter(type: BATCH MODE)
+                           ->  Seq Scan on t_char2 b
+(10 rows)
+
+select a.a,length(a.a),a.b,length(a.b),a.c,length(a.c),b.a,length(b.a),b.b,length(b.b),b.c,length(b.c) from t_char1 a left join t_char2 b on a.b=b.c order by 1,2,3,4,5,6,7,8,9,10,11,12;
+     a      | length |  b  | length |  c  | length |     a      | length |  b  | length |  c  | length 
+------------+--------+-----+--------+-----+--------+------------+--------+-----+--------+-----+--------
+  1         |     10 |  1  |      2 |  1  |      2 |  1         |     10 |  1  |      2 |  1  |      2
+  1         |     10 |  1  |      2 |  1  |      2 |  1         |     10 |  1  |      3 |  1  |      3
+  1         |     10 |  1  |      3 |  1  |      3 |  1         |     10 |  1  |      2 |  1  |      2
+  1         |     10 |  1  |      3 |  1  |      3 |  1         |     10 |  1  |      3 |  1  |      3
+ 1          |     10 | 1   |      1 | 1   |      1 | 1          |     10 | 1   |      1 | 1   |      1
+ 1          |     10 | 1   |      1 | 1   |      1 | 1          |     10 | 1   |      2 | 1   |      2
+ 1          |     10 | 1   |      1 | 1   |      1 | 1          |     10 | 1   |      3 | 1   |      3
+ 1          |     10 | 1   |      2 | 1   |      2 | 1          |     10 | 1   |      1 | 1   |      1
+ 1          |     10 | 1   |      2 | 1   |      2 | 1          |     10 | 1   |      2 | 1   |      2
+ 1          |     10 | 1   |      2 | 1   |      2 | 1          |     10 | 1   |      3 | 1   |      3
+ 1          |     10 | 1   |      3 | 1   |      3 | 1          |     10 | 1   |      1 | 1   |      1
+ 1          |     10 | 1   |      3 | 1   |      3 | 1          |     10 | 1   |      2 | 1   |      2
+ 1          |     10 | 1   |      3 | 1   |      3 | 1          |     10 | 1   |      3 | 1   |      3
+(13 rows)
+
+explain(costs off) select a.a,length(a.a),a.b,length(a.b),a.c,length(a.c),b.a,length(b.a),b.b,length(b.b),b.c,length(b.c) from t_char1 a left join t_char2 b on a.c=b.a order by 1,2,3,4,5,6,7,8,9,10,11,12;
+                                                                        QUERY PLAN                                                                        
+----------------------------------------------------------------------------------------------------------------------------------------------------------
+ Row Adapter
+   ->  Vector Sort
+         Sort Key: a.a, (length(a.a)), a.b, (length((a.b)::text)), a.c, (length(a.c)), b.a, (length(b.a)), b.b, (length((b.b)::text)), b.c, (length(b.c))
+         ->  Vector Nest Loop Left Join
+               Join Filter: (a.c = (b.a)::text)
+               ->  Vector Adapter(type: BATCH MODE)
+                     ->  Seq Scan on t_char1 a
+               ->  Vector Materialize
+                     ->  Vector Adapter(type: BATCH MODE)
+                           ->  Seq Scan on t_char2 b
+(10 rows)
+
+select a.a,length(a.a),a.b,length(a.b),a.c,length(a.c),b.a,length(b.a),b.b,length(b.b),b.c,length(b.c) from t_char1 a left join t_char2 b on a.c=b.a order by 1,2,3,4,5,6,7,8,9,10,11,12;
+     a      | length |  b  | length |  c  | length |     a      | length |  b  | length |  c  | length 
+------------+--------+-----+--------+-----+--------+------------+--------+-----+--------+-----+--------
+  1         |     10 |  1  |      2 |  1  |      2 |  1         |     10 |  1  |      2 |  1  |      2
+  1         |     10 |  1  |      2 |  1  |      2 |  1         |     10 |  1  |      3 |  1  |      3
+  1         |     10 |  1  |      3 |  1  |      3 |  1         |     10 |  1  |      2 |  1  |      2
+  1         |     10 |  1  |      3 |  1  |      3 |  1         |     10 |  1  |      3 |  1  |      3
+ 1          |     10 | 1   |      1 | 1   |      1 | 1          |     10 | 1   |      1 | 1   |      1
+ 1          |     10 | 1   |      1 | 1   |      1 | 1          |     10 | 1   |      2 | 1   |      2
+ 1          |     10 | 1   |      1 | 1   |      1 | 1          |     10 | 1   |      3 | 1   |      3
+ 1          |     10 | 1   |      2 | 1   |      2 | 1          |     10 | 1   |      1 | 1   |      1
+ 1          |     10 | 1   |      2 | 1   |      2 | 1          |     10 | 1   |      2 | 1   |      2
+ 1          |     10 | 1   |      2 | 1   |      2 | 1          |     10 | 1   |      3 | 1   |      3
+ 1          |     10 | 1   |      3 | 1   |      3 | 1          |     10 | 1   |      1 | 1   |      1
+ 1          |     10 | 1   |      3 | 1   |      3 | 1          |     10 | 1   |      2 | 1   |      2
+ 1          |     10 | 1   |      3 | 1   |      3 | 1          |     10 | 1   |      3 | 1   |      3
+(13 rows)
+
+explain(costs off) select a.a,length(a.a),a.b,length(a.b),a.c,length(a.c),b.a,length(b.a),b.b,length(b.b),b.c,length(b.c) from t_char1 a left join t_char2 b on a.c=b.b order by 1,2,3,4,5,6,7,8,9,10,11,12;
+                                                                        QUERY PLAN                                                                        
+----------------------------------------------------------------------------------------------------------------------------------------------------------
+ Row Adapter
+   ->  Vector Sort
+         Sort Key: a.a, (length(a.a)), a.b, (length((a.b)::text)), a.c, (length(a.c)), b.a, (length(b.a)), b.b, (length((b.b)::text)), b.c, (length(b.c))
+         ->  Vector Nest Loop Left Join
+               Join Filter: (a.c = (b.b)::text)
+               ->  Vector Adapter(type: BATCH MODE)
+                     ->  Seq Scan on t_char1 a
+               ->  Vector Materialize
+                     ->  Vector Adapter(type: BATCH MODE)
+                           ->  Seq Scan on t_char2 b
+(10 rows)
+
+select a.a,length(a.a),a.b,length(a.b),a.c,length(a.c),b.a,length(b.a),b.b,length(b.b),b.c,length(b.c) from t_char1 a left join t_char2 b on a.c=b.b order by 1,2,3,4,5,6,7,8,9,10,11,12;
+     a      | length |  b  | length |  c  | length |     a      | length |  b  | length |  c  | length 
+------------+--------+-----+--------+-----+--------+------------+--------+-----+--------+-----+--------
+  1         |     10 |  1  |      2 |  1  |      2 |  1         |     10 |  1  |      2 |  1  |      2
+  1         |     10 |  1  |      2 |  1  |      2 |  1         |     10 |  1  |      3 |  1  |      3
+  1         |     10 |  1  |      3 |  1  |      3 |  1         |     10 |  1  |      2 |  1  |      2
+  1         |     10 |  1  |      3 |  1  |      3 |  1         |     10 |  1  |      3 |  1  |      3
+ 1          |     10 | 1   |      1 | 1   |      1 | 1          |     10 | 1   |      1 | 1   |      1
+ 1          |     10 | 1   |      1 | 1   |      1 | 1          |     10 | 1   |      2 | 1   |      2
+ 1          |     10 | 1   |      1 | 1   |      1 | 1          |     10 | 1   |      3 | 1   |      3
+ 1          |     10 | 1   |      2 | 1   |      2 | 1          |     10 | 1   |      1 | 1   |      1
+ 1          |     10 | 1   |      2 | 1   |      2 | 1          |     10 | 1   |      2 | 1   |      2
+ 1          |     10 | 1   |      2 | 1   |      2 | 1          |     10 | 1   |      3 | 1   |      3
+ 1          |     10 | 1   |      3 | 1   |      3 | 1          |     10 | 1   |      1 | 1   |      1
+ 1          |     10 | 1   |      3 | 1   |      3 | 1          |     10 | 1   |      2 | 1   |      2
+ 1          |     10 | 1   |      3 | 1   |      3 | 1          |     10 | 1   |      3 | 1   |      3
+(13 rows)
+
+explain(costs off) select a.a,length(a.a),a.b,length(a.b),a.c,length(a.c),b.a,length(b.a),b.b,length(b.b),b.c,length(b.c) from t_char1 a left join t_char2 b on a.c=b.c order by 1,2,3,4,5,6,7,8,9,10,11,12;
+                                                                        QUERY PLAN                                                                        
+----------------------------------------------------------------------------------------------------------------------------------------------------------
+ Row Adapter
+   ->  Vector Sort
+         Sort Key: a.a, (length(a.a)), a.b, (length((a.b)::text)), a.c, (length(a.c)), b.a, (length(b.a)), b.b, (length((b.b)::text)), b.c, (length(b.c))
+         ->  Vector Nest Loop Left Join
+               Join Filter: (a.c = b.c)
+               ->  Vector Adapter(type: BATCH MODE)
+                     ->  Seq Scan on t_char1 a
+               ->  Vector Materialize
+                     ->  Vector Adapter(type: BATCH MODE)
+                           ->  Seq Scan on t_char2 b
+(10 rows)
+
+select a.a,length(a.a),a.b,length(a.b),a.c,length(a.c),b.a,length(b.a),b.b,length(b.b),b.c,length(b.c) from t_char1 a left join t_char2 b on a.c=b.c order by 1,2,3,4,5,6,7,8,9,10,11,12;
+     a      | length |  b  | length |  c  | length |     a      | length |  b  | length |  c  | length 
+------------+--------+-----+--------+-----+--------+------------+--------+-----+--------+-----+--------
+  1         |     10 |  1  |      2 |  1  |      2 |  1         |     10 |  1  |      2 |  1  |      2
+  1         |     10 |  1  |      2 |  1  |      2 |  1         |     10 |  1  |      3 |  1  |      3
+  1         |     10 |  1  |      3 |  1  |      3 |  1         |     10 |  1  |      2 |  1  |      2
+  1         |     10 |  1  |      3 |  1  |      3 |  1         |     10 |  1  |      3 |  1  |      3
+ 1          |     10 | 1   |      1 | 1   |      1 | 1          |     10 | 1   |      1 | 1   |      1
+ 1          |     10 | 1   |      1 | 1   |      1 | 1          |     10 | 1   |      2 | 1   |      2
+ 1          |     10 | 1   |      1 | 1   |      1 | 1          |     10 | 1   |      3 | 1   |      3
+ 1          |     10 | 1   |      2 | 1   |      2 | 1          |     10 | 1   |      1 | 1   |      1
+ 1          |     10 | 1   |      2 | 1   |      2 | 1          |     10 | 1   |      2 | 1   |      2
+ 1          |     10 | 1   |      2 | 1   |      2 | 1          |     10 | 1   |      3 | 1   |      3
+ 1          |     10 | 1   |      3 | 1   |      3 | 1          |     10 | 1   |      1 | 1   |      1
+ 1          |     10 | 1   |      3 | 1   |      3 | 1          |     10 | 1   |      2 | 1   |      2
+ 1          |     10 | 1   |      3 | 1   |      3 | 1          |     10 | 1   |      3 | 1   |      3
+(13 rows)
+
+select length(text_larger('1', '1 ')), length(text_larger('1', '1   ')), length(text_larger('1', ' 1 ')), length(text_larger('1', ' 1'));
+ length | length | length | length 
+--------+--------+--------+--------
+      2 |      4 |      1 |      1
+(1 row)
+
+select length(text_smaller('1', '1 ')), length(text_smaller('1', '1   ')), length(text_smaller('1', ' 1 ')), length(text_smaller('1', ' 1'));
+ length | length | length | length 
+--------+--------+--------+--------
+      2 |      4 |      3 |      2
+(1 row)
+
+select text_pattern_lt('1', '1 '), text_pattern_lt('1', '1   '), text_pattern_lt('1', ' 1 '), text_pattern_lt('1', ' 1');
+ text_pattern_lt | text_pattern_lt | text_pattern_lt | text_pattern_lt 
+-----------------+-----------------+-----------------+-----------------
+ f               | f               | f               | f
+(1 row)
+
+select text_pattern_le('1', '1 '), text_pattern_le('1', '1   '), text_pattern_le('1', ' 1 '), text_pattern_le('1', ' 1');
+ text_pattern_le | text_pattern_le | text_pattern_le | text_pattern_le 
+-----------------+-----------------+-----------------+-----------------
+ t               | t               | f               | f
+(1 row)
+
+select text_pattern_ge('1', '1 '), text_pattern_ge('1', '1   '), text_pattern_ge('1', ' 1 '), text_pattern_ge('1', ' 1');
+ text_pattern_ge | text_pattern_ge | text_pattern_ge | text_pattern_ge 
+-----------------+-----------------+-----------------+-----------------
+ t               | t               | t               | t
+(1 row)
+
+select text_pattern_gt('1', '1 '), text_pattern_gt('1', '1   '), text_pattern_gt('1', ' 1 '), text_pattern_gt('1', ' 1');
+ text_pattern_gt | text_pattern_gt | text_pattern_gt | text_pattern_gt 
+-----------------+-----------------+-----------------+-----------------
+ f               | f               | t               | t
+(1 row)
+
+select bttext_pattern_cmp('1', '1 '), bttext_pattern_cmp('1', '1   '), bttext_pattern_cmp('1', ' 1 '), bttext_pattern_cmp('1', ' 1');
+ bttext_pattern_cmp | bttext_pattern_cmp | bttext_pattern_cmp | bttext_pattern_cmp 
+--------------------+--------------------+--------------------+--------------------
+                  0 |                  0 |                 17 |                 17
+(1 row)
+
+select bttextcmp('1', '1 '), bttextcmp('1', '1   '), bttextcmp('1', ' 1 '), bttextcmp('1', ' 1');
+ bttextcmp | bttextcmp | bttextcmp | bttextcmp 
+-----------+-----------+-----------+-----------
+         0 |         0 |        27 |        27
+(1 row)
+
+drop table t_char1;
+drop table t_char2;
+\c postgres
+drop database b_char_blank_test;

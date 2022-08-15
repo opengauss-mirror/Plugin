@@ -1,0 +1,804 @@
+drop database if exists network2;
+NOTICE:  database "network2" does not exist, skipping
+create database network2 dbcompatibility 'b';
+\c network2
+select inet_ntoa(inet_aton('255.255.255.255.255.255.255.255'));
+ inet_ntoa 
+-----------
+ 
+(1 row)
+
+select inet_ntoa(1099511627775),inet_ntoa(4294902271),inet_ntoa(4294967295),inet_ntoa(511);
+ inet_ntoa |   inet_ntoa   |    inet_ntoa    | inet_ntoa 
+-----------+---------------+-----------------+-----------
+           | 255.255.1.255 | 255.255.255.255 | 0.0.1.255
+(1 row)
+
+select inet_aton('255.255.255.255.255'),inet_aton('255.255.1.255'),inet_aton('0.1.255');
+ inet_aton | inet_aton  | inet_aton 
+-----------+------------+-----------
+           | 4294902271 |     65791
+(1 row)
+
+select hex(inet_aton('127'));
+ hex 
+-----
+ 7f
+(1 row)
+
+select hex(inet_aton('127.1'));
+   hex    
+----------
+ 7f000001
+(1 row)
+
+select hex(inet_aton('127.1.1'));
+   hex    
+----------
+ 7f010001
+(1 row)
+
+select inet_aton('');
+ inet_aton 
+-----------
+          
+(1 row)
+
+select inet_aton('122.256');
+ inet_aton 
+-----------
+          
+(1 row)
+
+select inet_aton('122.226.');
+ inet_aton 
+-----------
+          
+(1 row)
+
+SELECT INET6_ATON('1.2.3') IS NULL;
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT INET6_ATON('1.2.3.') IS NULL;
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT INET6_ATON('1..3.4') IS NULL;
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT INET6_ATON('-1.2.3.4') IS NULL;
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT INET6_ATON('1.2.3.256') IS NULL;
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT INET6_ATON('1.2.3.4.5') IS NULL;
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT INET6_ATON('0001.2.3.4') IS NULL;
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT INET6_ATON('0x1.2.3.4') IS NULL;
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT INET6_ATON('a.2.3.4') IS NULL;
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT INET6_ATON('1.2.3.4:80') IS NULL;
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT INET6_ATON('1.2.3.4/32') IS NULL;
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT INET6_ATON('mysql.com') IS NULL;
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT INET6_ATON(':::') IS NULL;
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT INET6_ATON(':1:2:3') IS NULL;
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT INET6_ATON('1:2:3:') IS NULL;
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT INET6_ATON(':1::2:3') IS NULL;
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT INET6_ATON('1::2:3:') IS NULL;
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT INET6_ATON('::00001') IS NULL;
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT INET6_ATON('::00001:2') IS NULL;
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT INET6_ATON('::12345') IS NULL;
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT INET6_ATON('1020::3040::5060') IS NULL;
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT INET6_ATON('::abcz') IS NULL;
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT INET6_ATON('::0x1.2.3.4') IS NULL;
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT INET6_ATON('::1.0x2.3.4') IS NULL;
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT INET6_ATON('::a.b.c.d') IS NULL;
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT INET6_ATON('::ffff:0x1.2.3.4') IS NULL;
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT INET6_ATON('::ffff:1.0x2.3.4') IS NULL;
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT INET6_ATON('::ffff:a.b.c.d') IS NULL;
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT INET6_ATON('::1.2.3.4:abcd') IS NULL;
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT HEX(INET6_ATON('::abcd:1.2.3.4'));
+               hex                
+----------------------------------
+ 00000000000000000000abcd01020304
+(1 row)
+
+SELECT HEX(INET6_ATON('0.0.0.0'));
+   hex    
+----------
+ 00000000
+(1 row)
+
+SELECT HEX(INET6_ATON('00.00.00.00'));
+   hex    
+----------
+ 00000000
+(1 row)
+
+SELECT HEX(INET6_ATON('000.000.000.000'));
+   hex    
+----------
+ 00000000
+(1 row)
+
+SELECT HEX(INET6_ATON('1.2.3.4'));
+   hex    
+----------
+ 01020304
+(1 row)
+
+SELECT HEX(INET6_ATON('01.02.03.04'));
+   hex    
+----------
+ 01020304
+(1 row)
+
+SELECT HEX(INET6_ATON('001.002.003.004'));
+   hex    
+----------
+ 01020304
+(1 row)
+
+SELECT HEX(INET6_ATON('255.255.255.255'));
+   hex    
+----------
+ ffffffff
+(1 row)
+
+SELECT HEX(INET6_ATON('::'));
+               hex                
+----------------------------------
+ 00000000000000000000000000000000
+(1 row)
+
+SELECT HEX(INET6_ATON('0::0'));
+               hex                
+----------------------------------
+ 00000000000000000000000000000000
+(1 row)
+
+SELECT HEX(INET6_ATON('1::2'));
+               hex                
+----------------------------------
+ 00010000000000000000000000000002
+(1 row)
+
+SELECT HEX(INET6_ATON('0::'));
+               hex                
+----------------------------------
+ 00000000000000000000000000000000
+(1 row)
+
+SELECT HEX(INET6_ATON('1::'));
+               hex                
+----------------------------------
+ 00010000000000000000000000000000
+(1 row)
+
+SELECT HEX(INET6_ATON('::0'));
+               hex                
+----------------------------------
+ 00000000000000000000000000000000
+(1 row)
+
+SELECT HEX(INET6_ATON('::1'));
+               hex                
+----------------------------------
+ 00000000000000000000000000000001
+(1 row)
+
+SELECT HEX(INET6_ATON('1:2:3:4:5:6:7:8'));
+               hex                
+----------------------------------
+ 00010002000300040005000600070008
+(1 row)
+
+SELECT HEX(INET6_ATON('::2:3:4:5:6:7:8'));
+               hex                
+----------------------------------
+ 00000002000300040005000600070008
+(1 row)
+
+SELECT HEX(INET6_ATON('1::3:4:5:6:7:8'));
+               hex                
+----------------------------------
+ 00010000000300040005000600070008
+(1 row)
+
+SELECT HEX(INET6_ATON('1:2::4:5:6:7:8'));
+               hex                
+----------------------------------
+ 00010002000000040005000600070008
+(1 row)
+
+SELECT HEX(INET6_ATON('1:2:3::5:6:7:8'));
+               hex                
+----------------------------------
+ 00010002000300000005000600070008
+(1 row)
+
+SELECT HEX(INET6_ATON('1:2:3:4::6:7:8'));
+               hex                
+----------------------------------
+ 00010002000300040000000600070008
+(1 row)
+
+SELECT HEX(INET6_ATON('1:2:3:4:5::7:8'));
+               hex                
+----------------------------------
+ 00010002000300040005000000070008
+(1 row)
+
+SELECT HEX(INET6_ATON('1:2:3:4:5:6::8'));
+               hex                
+----------------------------------
+ 00010002000300040005000600000008
+(1 row)
+
+SELECT HEX(INET6_ATON('1:2:3:4:5:6:7::'));
+               hex                
+----------------------------------
+ 00010002000300040005000600070000
+(1 row)
+
+SELECT HEX(INET6_ATON('0000:0000::0000:0001'));
+               hex                
+----------------------------------
+ 00000000000000000000000000000001
+(1 row)
+
+SELECT HEX(INET6_ATON('1234:5678:9abc:def0:4321:8765:cba9:0fed'));
+               hex                
+----------------------------------
+ 123456789abcdef043218765cba90fed
+(1 row)
+
+SELECT HEX(INET6_ATON('0000:0000:0000:0000:0000:0000:0000:0001'));
+               hex                
+----------------------------------
+ 00000000000000000000000000000001
+(1 row)
+
+SELECT HEX(INET6_ATON('::c0a8:0102'));
+               hex                
+----------------------------------
+ 000000000000000000000000c0a80102
+(1 row)
+
+SELECT HEX(INET6_ATON('::192.168.1.2'));
+               hex                
+----------------------------------
+ 000000000000000000000000c0a80102
+(1 row)
+
+SELECT HEX(INET6_ATON('::ffff:c0a8:0102'));
+               hex                
+----------------------------------
+ 00000000000000000000ffffc0a80102
+(1 row)
+
+SELECT HEX(INET6_ATON('::ffff:192.168.1.2'));
+               hex                
+----------------------------------
+ 00000000000000000000ffffc0a80102
+(1 row)
+
+SELECT HEX(INET6_ATON('::01.2.3.4'));
+               hex                
+----------------------------------
+ 00000000000000000000000001020304
+(1 row)
+
+SELECT HEX(INET6_ATON('::1.02.3.4'));
+               hex                
+----------------------------------
+ 00000000000000000000000001020304
+(1 row)
+
+SELECT HEX(INET6_ATON('::1.2.03.4'));
+               hex                
+----------------------------------
+ 00000000000000000000000001020304
+(1 row)
+
+SELECT HEX(INET6_ATON('::1.2.3.04'));
+               hex                
+----------------------------------
+ 00000000000000000000000001020304
+(1 row)
+
+SELECT HEX(INET6_ATON('::1.2.3.00'));
+               hex                
+----------------------------------
+ 00000000000000000000000001020300
+(1 row)
+
+SELECT HEX(INET6_ATON('::ffff:01.2.3.4'));
+               hex                
+----------------------------------
+ 00000000000000000000ffff01020304
+(1 row)
+
+SELECT HEX(INET6_ATON('::ffff:1.02.3.4'));
+               hex                
+----------------------------------
+ 00000000000000000000ffff01020304
+(1 row)
+
+SELECT HEX(INET6_ATON('::ffff:1.2.03.4'));
+               hex                
+----------------------------------
+ 00000000000000000000ffff01020304
+(1 row)
+
+SELECT HEX(INET6_ATON('::ffff:1.2.3.04'));
+               hex                
+----------------------------------
+ 00000000000000000000ffff01020304
+(1 row)
+
+SELECT HEX(INET6_ATON('::ffff:1.2.3.00'));
+               hex                
+----------------------------------
+ 00000000000000000000ffff01020300
+(1 row)
+
+SELECT INET6_NTOA(NULL);
+ inet6_ntoa 
+------------
+ 
+(1 row)
+
+SELECT INET6_NTOA(123);
+ inet6_ntoa 
+------------
+ 
+(1 row)
+
+SELECT INET6_NTOA(123.456);
+ inet6_ntoa 
+------------
+ 
+(1 row)
+
+SELECT INET6_NTOA(INET6_ATON('::'));
+ inet6_ntoa 
+------------
+ ::
+(1 row)
+
+SELECT INET6_NTOA(INET6_ATON('0::0'));
+ inet6_ntoa 
+------------
+ ::
+(1 row)
+
+SELECT INET6_NTOA(INET6_ATON('1::2'));
+ inet6_ntoa 
+------------
+ 1::2
+(1 row)
+
+SELECT INET6_NTOA(INET6_ATON('0::'));
+ inet6_ntoa 
+------------
+ ::
+(1 row)
+
+SELECT INET6_NTOA(INET6_ATON('1::'));
+ inet6_ntoa 
+------------
+ 1::
+(1 row)
+
+SELECT INET6_NTOA(INET6_ATON('::0'));
+ inet6_ntoa 
+------------
+ ::
+(1 row)
+
+SELECT INET6_NTOA(INET6_ATON('::1'));
+ inet6_ntoa 
+------------
+ ::1
+(1 row)
+
+SELECT INET6_NTOA(INET6_ATON('1:2:3:4:5:6:7:8'));
+   inet6_ntoa    
+-----------------
+ 1:2:3:4:5:6:7:8
+(1 row)
+
+SELECT INET6_NTOA(INET6_ATON('::2:3:4:5:6:7:8'));
+   inet6_ntoa    
+-----------------
+ ::2:3:4:5:6:7:8
+(1 row)
+
+SELECT INET6_NTOA(INET6_ATON('1::3:4:5:6:7:8'));
+   inet6_ntoa   
+----------------
+ 1::3:4:5:6:7:8
+(1 row)
+
+SELECT INET6_NTOA(INET6_ATON('1:2::4:5:6:7:8'));
+   inet6_ntoa   
+----------------
+ 1:2::4:5:6:7:8
+(1 row)
+
+SELECT INET6_NTOA(INET6_ATON('1:2:3::5:6:7:8'));
+   inet6_ntoa   
+----------------
+ 1:2:3::5:6:7:8
+(1 row)
+
+SELECT INET6_NTOA(INET6_ATON('1:2:3:4::6:7:8'));
+   inet6_ntoa   
+----------------
+ 1:2:3:4::6:7:8
+(1 row)
+
+SELECT INET6_NTOA(INET6_ATON('1:2:3:4:5::7:8'));
+   inet6_ntoa   
+----------------
+ 1:2:3:4:5::7:8
+(1 row)
+
+SELECT INET6_NTOA(INET6_ATON('1:2:3:4:5:6::8'));
+   inet6_ntoa   
+----------------
+ 1:2:3:4:5:6::8
+(1 row)
+
+SELECT INET6_NTOA(INET6_ATON('1:2:3:4:5:6:7::'));
+   inet6_ntoa    
+-----------------
+ 1:2:3:4:5:6:7::
+(1 row)
+
+SELECT INET6_NTOA(INET6_ATON('0000:0000::0000:0001'));
+ inet6_ntoa 
+------------
+ ::1
+(1 row)
+
+SELECT INET6_NTOA(INET6_ATON('1234:5678:9abc:def0:4321:8765:cba9:0fed'));
+               inet6_ntoa               
+----------------------------------------
+ 1234:5678:9abc:def0:4321:8765:cba9:fed
+(1 row)
+
+SELECT INET6_NTOA(INET6_ATON('0000:0000:0000:0000:0000:0000:0000:0001'));
+ inet6_ntoa 
+------------
+ ::1
+(1 row)
+
+SELECT INET6_NTOA(INET6_ATON('::c0a8:0102'));
+  inet6_ntoa   
+---------------
+ ::192.168.1.2
+(1 row)
+
+SELECT INET6_NTOA(INET6_ATON('::192.168.1.2'));
+  inet6_ntoa   
+---------------
+ ::192.168.1.2
+(1 row)
+
+SELECT INET6_NTOA(INET6_ATON('::ffff:c0a8:0102'));
+     inet6_ntoa     
+--------------------
+ ::ffff:192.168.1.2
+(1 row)
+
+SELECT INET6_NTOA(INET6_ATON('::ffff:192.168.1.2'));
+     inet6_ntoa     
+--------------------
+ ::ffff:192.168.1.2
+(1 row)
+
+SELECT INET6_NTOA(INET6_ATON('::01.2.3.4'));
+ inet6_ntoa 
+------------
+ ::1.2.3.4
+(1 row)
+
+SELECT INET6_NTOA(INET6_ATON('::1.02.3.4'));
+ inet6_ntoa 
+------------
+ ::1.2.3.4
+(1 row)
+
+SELECT INET6_NTOA(INET6_ATON('::1.2.03.4'));
+ inet6_ntoa 
+------------
+ ::1.2.3.4
+(1 row)
+
+SELECT INET6_NTOA(INET6_ATON('::1.2.3.04'));
+ inet6_ntoa 
+------------
+ ::1.2.3.4
+(1 row)
+
+SELECT INET6_NTOA(INET6_ATON('::1.2.3.00'));
+ inet6_ntoa 
+------------
+ ::1.2.3.0
+(1 row)
+
+SELECT INET6_NTOA(INET6_ATON('::ffff:01.2.3.4'));
+   inet6_ntoa   
+----------------
+ ::ffff:1.2.3.4
+(1 row)
+
+SELECT INET6_NTOA(INET6_ATON('::ffff:1.02.3.4'));
+   inet6_ntoa   
+----------------
+ ::ffff:1.2.3.4
+(1 row)
+
+SELECT INET6_NTOA(INET6_ATON('::ffff:1.2.03.4'));
+   inet6_ntoa   
+----------------
+ ::ffff:1.2.3.4
+(1 row)
+
+SELECT INET6_NTOA(INET6_ATON('::ffff:1.2.3.04'));
+   inet6_ntoa   
+----------------
+ ::ffff:1.2.3.4
+(1 row)
+
+SELECT INET6_NTOA(INET6_ATON('::ffff:1.2.3.00'));
+   inet6_ntoa   
+----------------
+ ::ffff:1.2.3.0
+(1 row)
+
+SELECT INET6_NTOA(INET6_ATON('192.168.1.2'));
+ inet6_ntoa  
+-------------
+ 192.168.1.2
+(1 row)
+
+SELECT HEX(INET_ATON('192.168.1.2'));
+   hex    
+----------
+ c0a80102
+(1 row)
+
+SELECT HEX(INET6_ATON('192.168.1.2'));
+   hex    
+----------
+ c0a80102
+(1 row)
+
+SELECT HEX(INET_ATON('255.255.255.255'));
+   hex    
+----------
+ ffffffff
+(1 row)
+
+SELECT HEX(INET6_ATON('255.255.255.255'));
+   hex    
+----------
+ ffffffff
+(1 row)
+
+SELECT HEX(INET_ATON('192.168.08.2'));
+   hex    
+----------
+ c0a80802
+(1 row)
+
+SELECT HEX(INET6_ATON('192.168.08.2'));
+   hex    
+----------
+ c0a80802
+(1 row)
+
+SELECT HEX(INET_ATON('192.168.0x8.2'));
+ hex 
+-----
+ 
+(1 row)
+
+SELECT HEX(INET6_ATON('192.168.0x8.2'));
+ hex 
+-----
+ 
+(1 row)
+
+SELECT HEX(INET_ATON('1.2.255'));
+   hex   
+---------
+ 10200ff
+(1 row)
+
+SELECT HEX(INET6_ATON('1.2.255'));
+ hex 
+-----
+ 
+(1 row)
+
+SELECT HEX(INET_ATON('1.2.256'));
+ hex 
+-----
+ 
+(1 row)
+
+SELECT HEX(INET6_ATON('1.2.256'));
+ hex 
+-----
+ 
+(1 row)
+
+SELECT HEX(INET_ATON('1.0002.3.4'));
+   hex   
+---------
+ 1020304
+(1 row)
+
+SELECT HEX(INET6_ATON('1.0002.3.4'));
+ hex 
+-----
+ 
+(1 row)
+
+SELECT HEX(INET_ATON('1.2.3.4.5'));
+ hex 
+-----
+ 
+(1 row)
+
+SELECT HEX(INET6_ATON('1.2.3.4.5'));
+ hex 
+-----
+ 
+(1 row)
+
+SELECT HEX(INET6_ATON(INET_NTOA(INET_ATON('1.2.3.4')))) AS x;
+    x     
+----------
+ 01020304
+(1 row)
+
+\c postgres
+drop database if exists network2;

@@ -1,6 +1,6 @@
-drop database if exists format_test;
-create database format_test dbcompatibility 'B';
-\c format_test
+drop database if exists db_db_b_format;
+create database db_db_b_format dbcompatibility 'B';
+\c db_db_b_format
 -- test for b_format_mode = false
 select format(1234.456, 2);
 select format(1234.456, 2, 'en_US');
@@ -130,12 +130,12 @@ select format('%s, %s, %s, %s, %s',1 ,1 ,1 ,1, 1);
 select format('%s, %s, %s, %s, %s, %s',1 ,1 ,1 ,1, 1, 1);
 
 \c postgres
-drop database format_test;
+drop database db_db_b_format;
 
 -- test for A compatibility to ensure the original functionality is good.
-create database db_a_format_test dbcompatibility 'A';
-\c db_a_format_test
+create database db_db_b_format dbcompatibility 'A';
+\c db_db_b_format
 select format(1234.456, 2);
 select format(1234.456, 2, 'en_US');
 \c postgres
-drop database db_a_format_test;
+drop database db_db_b_format;

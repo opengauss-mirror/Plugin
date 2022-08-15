@@ -1,7 +1,7 @@
-drop database if exists format_test;
-NOTICE:  database "format_test" does not exist, skipping
-create database format_test dbcompatibility 'B';
-\c format_test
+drop database if exists db_char;
+NOTICE:  database "db_char" does not exist, skipping
+create database db_char dbcompatibility 'B';
+\c db_char
 select chara(67,66,67);
  chara 
 -------
@@ -62,11 +62,12 @@ select chara(65,'66.4');
  AB
 (1 row)
 
-select chara(65,nul,66);
-ERROR:  column "nul" does not exist
-LINE 1: select chara(65,nul,66);
-                        ^
-CONTEXT:  referenced column: chara
+select chara(65,null,66);
+ chara 
+-------
+ 
+(1 row)
+
 select chara(-18446744073709551616);
  chara 
 -------
@@ -74,9 +75,9 @@ select chara(-18446744073709551616);
 (1 row)
 
 select chara(18446744073709551615);
- chara 
--------
- 
+   chara    
+------------
+ 0xffffffff
 (1 row)
 
 select chara(0);
@@ -86,9 +87,9 @@ select chara(0);
 (1 row)
 
 select chara(18446744073709551615);
- chara 
--------
- 
+   chara    
+------------
+ 0xffffffff
 (1 row)
 
 select chara(65);
@@ -98,4 +99,4 @@ select chara(65);
 (1 row)
 
 \c postgres
-drop database if exists format_test;
+drop database if exists db_char;

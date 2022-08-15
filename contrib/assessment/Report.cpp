@@ -28,10 +28,10 @@
 
 using namespace std;
 
-void CompatibilityTable::AppendOneSQL(std::string sql, AssessmentType assessmentType,
+void CompatibilityTable::AppendOneSQL(int line, std::string sql, AssessmentType assessmentType,
         CompatibilityType compatibilityType, std::string errDetail)
 {
-    this->sqlCompatibilities.emplace_back(sql, assessmentType, compatibilityType, errDetail);
+    this->sqlCompatibilities.emplace_back(line, sql, assessmentType, compatibilityType, errDetail);
 }
 
 static string GetCompatibilityString(CompatibilityType compatibilityType)
@@ -57,7 +57,7 @@ bool CompatibilityTable::GenerateSQLCompatibilityStatistic()
     stringstream ss;
     ss << "<a class=\"wdr\" name=\"top\"></a>"
           "<h2 class=\"wdr\">SQL 兼容总览</h2>"
-          "<table border=\"1\" class=\"tdiff\" summary=\"This table displays SQL Assessment Data\"><tr>\n"
+          "<table class=\"tdiff\" summary=\"This table displays SQL Assessment Data\"><tr>\n"
           "<th class=\"wdrbg\" scope=\"col\">总数</th>"
           "<th class=\"wdrbg\" scope=\"col\">"
        << GetCompatibilityString(COMPATIBLE)
@@ -108,22 +108,22 @@ bool CompatibilityTable::GenerateSQLCompatibilityStatistic()
     }
     stringstream data;
     data << "<tr>"
-         << "<td class=\"wdrnc\" align=\"left\" >"
+        << "<td class=\"wdrnc\" style=\"text-align: center;font-size: 16px;\">"
          << to_string(total)
          << "</td>\n"
-         << "<td class=\"wdrnc\" align=\"left\" >"
+         << "<td class=\"wdrnc\" style=\"text-align: center;font-size: 16px;\">"
          << to_string(compatible)
          << "</td>\n"
-         << "<td class=\"wdrnc\"align=\"left\" >"
+         << "<td class=\"wdrnc\" style=\"text-align: center;font-size: 16px;\">"
          << to_string(astCompatible)
          << "</td>\n"
-         << "<td class=\"wdrnc\"align=\"left\" >"
+         << "<td class=\"wdrnc\" style=\"text-align: center;font-size: 16px;\">"
          << to_string(incompatible)
          << "</td>\n"
-         << "<td class=\"wdrnc\"align=\"left\" >"
+         << "<td class=\"wdrnc\" style=\"text-align: center;font-size: 16px;\">"
          << to_string(unsupportedCompatible)
          << "</td>\n"
-         << "<td class=\"wdrnc\"align=\"left\" >"
+         << "<td class=\"wdrnc\" style=\"text-align: center;font-size: 16px;\">"
          << to_string(skipCommand)
          << "</td>\n"
          << "</tr>\n"
@@ -138,7 +138,8 @@ bool CompatibilityTable::GenerateSQLCompatibilityStatistic()
 bool CompatibilityTable::GenerateReport()
 {
     string str = "<a class=\"wdr\" name=\"top\"></a><h2 class=\"wdr\">SQL 兼容详情</h2>"
-                 "<table border=\"1\" class=\"tdiff\" summary=\"This table displays SQL Assessment Data\" width=100%><tr>\n"
+                 "<table class=\"tdiff\" summary=\"This table displays SQL Assessment Data\" width=100%><tr>\n"
+                 "<th class=\"wdrbg\" scope=\"col\">行号</th>"
                  "<th class=\"wdrbg\" scope=\"col\">SQL语句</th>"
                  "<th class=\"wdrbg\" scope=\"col\">兼容性</th>"
                  "<th class=\"wdrbg\" scope=\"col\">兼容性详情</th>"
@@ -146,6 +147,7 @@ bool CompatibilityTable::GenerateReport()
     if (fwrite(str.c_str(), 1, str.length(), fd) != str.length()) {
         return false;
     }
+    
     for (size_t index = 0; index < this->sqlCompatibilities.size(); index++) {
         string type;
         if ((index & 1) == 0) {
@@ -154,11 +156,12 @@ bool CompatibilityTable::GenerateReport()
             type = "wdrc";
         }
         auto &sqlCompatibility = this->sqlCompatibilities[index];
-
-        string sqlDetail =
-                "<tr><td class=\"wdrtext\"><a class=\"wdr\" name=\"\">" + sqlCompatibility.sql + "\n</td>\n<td class=\"" +
-                type + "\" align=\"left\" >" + GetCompatibilityString(sqlCompatibility.compatibility) + "</td>\n<td class=\"" + type +
-                "_err\" align=\"left\" >" + sqlCompatibility.errDetail + "</td>\n</tr>\n";
+        string sqlDetail =  "<tr style=\"border-top-width: 2px;\">"
+                "<td style=\"width:3%\" class=\"" + type + "\">" + to_string(sqlCompatibility.line) + "\n</td>\n"
+                "<td style=\"width:76%\" class=\"" + type + "\">" + sqlCompatibility.sql + "\n</td>\n"
+                "<td class=\"" + type + "\" align=\"left\" >" + GetCompatibilityString(sqlCompatibility.compatibility) + "</td>\n"
+                "<td class=\"" + type + "_err\" align=\"left\" >" + sqlCompatibility.errDetail + "</td>\n"
+                "</tr>\n";
 
         if (fwrite(sqlDetail.c_str(), 1, sqlDetail.length(), fd) != sqlDetail.length()) {
             return false;
@@ -196,16 +199,16 @@ bool CompatibilityTable::GenerateReportHeader(char* fileName, char* output, cons
           "background:White;padding-left:4px; padding-right:4px;padding-bottom:2px}\n"
           "th.wdrbg {font:bold 8pt Arial,Helvetica,Geneva,sans-serif; color:White; "
           "background:#8F170B;padding-left:4px; padding-right:4px;padding-bottom:2px}\n"
-          "td.wdrnc {font:8pt Arial,Helvetica,Geneva,sans-serif;color:black; white-space:pre;;"
+          "td.wdrnc {font:8pt Arial,Helvetica,Geneva,sans-serif;color:black; white-space:pre-wrap;word-break;;"
           "background:#F4F6F6; vertical-align:top;word-break: break-word; width: 4%;}\n"
-          "td.wdrc {font:8pt Arial,Helvetica,Geneva,sans-serif;color:black; white-space:pre;"
+          "td.wdrc {font:8pt Arial,Helvetica,Geneva,sans-serif;color:black; white-space:pre-wrap;word-break;"
           "background:White; vertical-align:top;word-break: break-word; width: 4%;}\n"
-          "td.wdrnc_err {font:8pt fangsong;color:black; white-space:pre;;"
-          "background:#F4F6F6; vertical-align:top;word-break: break-word; width: 13%;}\n"
-          "td.wdrc_err {font:8pt fangsong;color:black; white-space:pre;"
-          "background:White; vertical-align:top;word-break: break-word; width: 13%;}\n"
+          "td.wdrnc_err {font:8pt fangsong;color:black; white-space:pre-wrap;word-break;;"
+          "background:#F4F6F6; vertical-align:top;word-break: break-word; width: 20%;}\n"
+          "td.wdrc_err {font:8pt fangsong;color:black; white-space:pre-wrap;word-break;"
+          "background:White; vertical-align:top;word-break: break-word; width: 20%;}\n"
           "td.wdrtext {font:8pt Arial,Helvetica,Geneva,sans-serif;color:black;background:White;vertical-align:top;"
-          "white-space:pre-wrap;word-break: break-word;width: 90%;}"
+          "white-space:pre-wrap;word-break: break-word;}"
           "</style>";
 
     ss << "<script type=\"text/javascript\">function msg(titlename, inputname, objname) {\n"

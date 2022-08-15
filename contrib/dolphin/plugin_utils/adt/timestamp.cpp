@@ -167,54 +167,8 @@ PG_FUNCTION_INFO_V1_PUBLIC(numeric_b_format_datetime);
 extern "C" DLL_PUBLIC Datum numeric_b_format_datetime(PG_FUNCTION_ARGS);
 PG_FUNCTION_INFO_V1_PUBLIC(numeric_b_format_timestamp);
 extern "C" DLL_PUBLIC Datum numeric_b_format_timestamp(PG_FUNCTION_ARGS);
-
-PG_FUNCTION_INFO_V1_PUBLIC(datetime_in);
-extern "C" DLL_PUBLIC Datum datetime_in(PG_FUNCTION_ARGS);
-PG_FUNCTION_INFO_V1_PUBLIC(datetime_out);
-extern "C" DLL_PUBLIC Datum datetime_out(PG_FUNCTION_ARGS);
-PG_FUNCTION_INFO_V1_PUBLIC(datetime_recv);
-extern "C" DLL_PUBLIC Datum datetime_recv(PG_FUNCTION_ARGS);
-PG_FUNCTION_INFO_V1_PUBLIC(datetime_send);
-extern "C" DLL_PUBLIC Datum datetime_send(PG_FUNCTION_ARGS);
-PG_FUNCTION_INFO_V1_PUBLIC(datetimetypmodin);
-extern "C" DLL_PUBLIC Datum datetimetypmodin(PG_FUNCTION_ARGS);
-PG_FUNCTION_INFO_V1_PUBLIC(datetimetypmodout);
-extern "C" DLL_PUBLIC Datum datetimetypmodout(PG_FUNCTION_ARGS);
-
-PG_FUNCTION_INFO_V1_PUBLIC(datetime_eq);
-extern "C" DLL_PUBLIC Datum datetime_eq(PG_FUNCTION_ARGS);
-PG_FUNCTION_INFO_V1_PUBLIC(datetime_ne);
-extern "C" DLL_PUBLIC Datum datetime_ne(PG_FUNCTION_ARGS);
-PG_FUNCTION_INFO_V1_PUBLIC(datetime_le);
-extern "C" DLL_PUBLIC Datum datetime_le(PG_FUNCTION_ARGS);
-PG_FUNCTION_INFO_V1_PUBLIC(datetime_lt);
-extern "C" DLL_PUBLIC Datum datetime_lt(PG_FUNCTION_ARGS);
-PG_FUNCTION_INFO_V1_PUBLIC(datetime_ge);
-extern "C" DLL_PUBLIC Datum datetime_ge(PG_FUNCTION_ARGS);
-PG_FUNCTION_INFO_V1_PUBLIC(datetime_gt);
-extern "C" DLL_PUBLIC Datum datetime_gt(PG_FUNCTION_ARGS);
-
-PG_FUNCTION_INFO_V1_PUBLIC(datetime_cmp);
-extern "C" DLL_PUBLIC Datum datetime_cmp(PG_FUNCTION_ARGS);
-PG_FUNCTION_INFO_V1_PUBLIC(datetime_sortsupport);
-extern "C" DLL_PUBLIC Datum datetime_sortsupport(PG_FUNCTION_ARGS);
-
-PG_FUNCTION_INFO_V1_PUBLIC(datetime_larger);
-extern "C" DLL_PUBLIC Datum datetime_larger(PG_FUNCTION_ARGS);
-PG_FUNCTION_INFO_V1_PUBLIC(datetime_smaller);
-extern "C" DLL_PUBLIC Datum datetime_smaller(PG_FUNCTION_ARGS);
-
-PG_FUNCTION_INFO_V1_PUBLIC(datetime_scale);
-extern "C" DLL_PUBLIC Datum datetime_scale(PG_FUNCTION_ARGS);
-PG_FUNCTION_INFO_V1_PUBLIC(datetime_part);
-extern "C" DLL_PUBLIC Datum datetime_part(PG_FUNCTION_ARGS);
 PG_FUNCTION_INFO_V1_PUBLIC(datetime_year_part);
 extern "C" DLL_PUBLIC Datum datetime_year_part(PG_FUNCTION_ARGS);
-
-PG_FUNCTION_INFO_V1_PUBLIC(timestamptz_datetime);
-extern "C" DLL_PUBLIC Datum timestamptz_datetime(PG_FUNCTION_ARGS);
-PG_FUNCTION_INFO_V1_PUBLIC(timestamp_datetime);
-extern "C" DLL_PUBLIC Datum timestamp_datetime(PG_FUNCTION_ARGS);
 
 /* b format datetime and timestamp type */
 static Timestamp int64_b_format_timestamp_internal(bool hasTz, int64 ts, fsec_t fsec);
@@ -277,10 +231,10 @@ static char* anytimestamp_typmodout(bool istz, int32 typmod)
  *	 USER I/O ROUTINES														 *
  *****************************************************************************/
 
-/* datetime_in()
+/* timestamp_in()
  * Convert a string to internal form.
  */
-Datum datetime_in(PG_FUNCTION_ARGS)
+Datum timestamp_in(PG_FUNCTION_ARGS)
 {
     char* str = PG_GETARG_CSTRING(0);
 
@@ -322,7 +276,7 @@ Datum datetime_in(PG_FUNCTION_ARGS)
          */
         dterr = ParseDateTime(str, workbuf, sizeof(workbuf), field, ftype, MAXDATEFIELDS, &nf);
         if (dterr != 0)
-            DateTimeParseError(dterr, str, "datetime");
+            DateTimeParseError(dterr, str, "timestamp");
         if (dterr == 0) {
             if (nf == 1 && ftype[0] == DTK_NUMBER) {
                 /* for example, str = "301210054523", "301210054523.123" */
@@ -333,7 +287,7 @@ Datum datetime_in(PG_FUNCTION_ARGS)
             }
         }
         if (dterr != 0)
-            DateTimeParseError(dterr, str, "datetime");
+            DateTimeParseError(dterr, str, "timestamp");
         switch (dtype) {
             case DTK_DATE:
                 if (tm2timestamp(tm, fsec, NULL, &result) != 0)
@@ -396,7 +350,7 @@ static void fillZeroBeforeNumericTimestamp(char *str, char *buf)
         zeros = TIMESTAMP_YYYYMMDDhhmmss_LEN - len;
     } else {
         ereport(ERROR,
-            (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE), errmsg("datetime/timestamp out of range")));
+            (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE), errmsg("timestamp out of range: \"%s\"", str)));
     }
     for (int i = 0; i < zeros; ++i) {
         buf[i] = '0';
@@ -591,7 +545,7 @@ Datum int64_b_format_timestamp(PG_FUNCTION_ARGS)
 /* timestamp_out()
  * Convert a timestamp to external form.
  */
-Datum datetime_out(PG_FUNCTION_ARGS)
+Datum timestamp_out(PG_FUNCTION_ARGS)
 {
     Timestamp timestamp = PG_GETARG_TIMESTAMP(0);
     char* result = NULL;
@@ -616,7 +570,7 @@ Datum datetime_out(PG_FUNCTION_ARGS)
  * We make no attempt to provide compatibility between int and float
  * timestamp representations ...
  */
-Datum datetime_recv(PG_FUNCTION_ARGS)
+Datum timestamp_recv(PG_FUNCTION_ARGS)
 {
     StringInfo buf = (StringInfo)PG_GETARG_POINTER(0);
 
@@ -651,7 +605,7 @@ Datum datetime_recv(PG_FUNCTION_ARGS)
 /*
  *		timestamp_send			- converts timestamp to binary format
  */
-Datum datetime_send(PG_FUNCTION_ARGS)
+Datum timestamp_send(PG_FUNCTION_ARGS)
 {
     Timestamp timestamp = PG_GETARG_TIMESTAMP(0);
     StringInfoData buf;
@@ -947,14 +901,14 @@ Datum smalldatetime_hash(PG_FUNCTION_ARGS)
 #endif
 }
 
-Datum datetimetypmodin(PG_FUNCTION_ARGS)
+Datum timestamptypmodin(PG_FUNCTION_ARGS)
 {
     ArrayType* ta = PG_GETARG_ARRAYTYPE_P(0);
 
     PG_RETURN_INT32(anytimestamp_typmodin(false, ta));
 }
 
-Datum datetimetypmodout(PG_FUNCTION_ARGS)
+Datum timestamptypmodout(PG_FUNCTION_ARGS)
 {
     int32 typmod = PG_GETARG_INT32(0);
 
@@ -974,7 +928,7 @@ Datum timestamp_transform(PG_FUNCTION_ARGS)
  * Adjust time type for specified scale factor.
  * Used by openGauss type system to stuff columns.
  */
-Datum datetime_scale(PG_FUNCTION_ARGS)
+Datum timestamp_scale(PG_FUNCTION_ARGS)
 {
     Timestamp timestamp = PG_GETARG_TIMESTAMP(0);
     int32 typmod = PG_GETARG_INT32(1);
@@ -2326,79 +2280,6 @@ int timestamp_cmp_internal(Timestamp dt1, Timestamp dt2)
 #endif
 }
 
-Datum datetime_eq(PG_FUNCTION_ARGS)
-{
-    Timestamp dt1 = PG_GETARG_TIMESTAMP(0);
-    Timestamp dt2 = PG_GETARG_TIMESTAMP(1);
-
-    PG_RETURN_BOOL(timestamp_cmp_internal(dt1, dt2) == 0);
-}
-
-Datum datetime_ne(PG_FUNCTION_ARGS)
-{
-    Timestamp dt1 = PG_GETARG_TIMESTAMP(0);
-    Timestamp dt2 = PG_GETARG_TIMESTAMP(1);
-
-    PG_RETURN_BOOL(timestamp_cmp_internal(dt1, dt2) != 0);
-}
-
-Datum datetime_lt(PG_FUNCTION_ARGS)
-{
-    Timestamp dt1 = PG_GETARG_TIMESTAMP(0);
-    Timestamp dt2 = PG_GETARG_TIMESTAMP(1);
-
-    PG_RETURN_BOOL(timestamp_cmp_internal(dt1, dt2) < 0);
-}
-
-Datum datetime_gt(PG_FUNCTION_ARGS)
-{
-    Timestamp dt1 = PG_GETARG_TIMESTAMP(0);
-    Timestamp dt2 = PG_GETARG_TIMESTAMP(1);
-
-    PG_RETURN_BOOL(timestamp_cmp_internal(dt1, dt2) > 0);
-}
-
-Datum datetime_le(PG_FUNCTION_ARGS)
-{
-    Timestamp dt1 = PG_GETARG_TIMESTAMP(0);
-    Timestamp dt2 = PG_GETARG_TIMESTAMP(1);
-
-    PG_RETURN_BOOL(timestamp_cmp_internal(dt1, dt2) <= 0);
-}
-
-Datum datetime_ge(PG_FUNCTION_ARGS)
-{
-    Timestamp dt1 = PG_GETARG_TIMESTAMP(0);
-    Timestamp dt2 = PG_GETARG_TIMESTAMP(1);
-
-    PG_RETURN_BOOL(timestamp_cmp_internal(dt1, dt2) >= 0);
-}
-
-Datum datetime_cmp(PG_FUNCTION_ARGS)
-{
-    Timestamp dt1 = PG_GETARG_TIMESTAMP(0);
-    Timestamp dt2 = PG_GETARG_TIMESTAMP(1);
-
-    PG_RETURN_INT32(timestamp_cmp_internal(dt1, dt2));
-}
-
-/* note: this is used for timestamptz also */
-static int timestamp_fastcmp(Datum x, Datum y, SortSupport ssup)
-{
-    Timestamp a = DatumGetTimestamp(x);
-    Timestamp b = DatumGetTimestamp(y);
-
-    return timestamp_cmp_internal(a, b);
-}
-
-Datum datetime_sortsupport(PG_FUNCTION_ARGS)
-{
-    SortSupport ssup = (SortSupport)PG_GETARG_POINTER(0);
-
-    ssup->comparator = timestamp_fastcmp;
-    PG_RETURN_VOID();
-}
-
 Datum timestamp_hash(PG_FUNCTION_ARGS)
 {
     /* We can use either hashint8 or hashfloat8 directly */
@@ -2793,33 +2674,6 @@ Datum overlaps_timestamp(PG_FUNCTION_ARGS)
 /* ----------------------------------------------------------
  *	"Arithmetic" operators on date/times.
  * --------------------------------------------------------- */
-
-Datum datetime_smaller(PG_FUNCTION_ARGS)
-{
-    Timestamp dt1 = PG_GETARG_TIMESTAMP(0);
-    Timestamp dt2 = PG_GETARG_TIMESTAMP(1);
-    Timestamp result;
-
-    /* use timestamp_cmp_internal to be sure this agrees with comparisons */
-    if (timestamp_cmp_internal(dt1, dt2) < 0)
-        result = dt1;
-    else
-        result = dt2;
-    PG_RETURN_TIMESTAMP(result);
-}
-
-Datum datetime_larger(PG_FUNCTION_ARGS)
-{
-    Timestamp dt1 = PG_GETARG_TIMESTAMP(0);
-    Timestamp dt2 = PG_GETARG_TIMESTAMP(1);
-    Timestamp result;
-
-    if (timestamp_cmp_internal(dt1, dt2) > 0)
-        result = dt1;
-    else
-        result = dt2;
-    PG_RETURN_TIMESTAMP(result);
-}
 
 Datum timestamp_mi(Timestamp dt1, Timestamp dt2)
 {
@@ -4350,7 +4204,7 @@ int date2isoyearday(int year, int mon, int mday)
 /* timestamp_part()
  * Extract specified field from timestamp.
  */
-Datum datetime_part(PG_FUNCTION_ARGS)
+Datum timestamp_part(PG_FUNCTION_ARGS)
 {
     text* units = PG_GETARG_TEXT_PP(0);
     Timestamp timestamp = PG_GETARG_TIMESTAMP(1);
@@ -4537,7 +4391,7 @@ Datum datetime_part(PG_FUNCTION_ARGS)
 Datum datetime_year_part(PG_FUNCTION_ARGS)
 {
     Timestamp timestamp = PG_GETARG_TIMESTAMP(0);
-    float8 result;
+    float8 result = 0;
     fsec_t fsec;
     struct pg_tm tt, *tm = &tt;
     if (timestamp2tm(timestamp, NULL, tm, &fsec, NULL, NULL) == 0)
@@ -4596,9 +4450,9 @@ Datum timestamptz_part(PG_FUNCTION_ARGS)
 
             case DTK_MICROSEC:
 #ifdef HAVE_INT64_TIMESTAMP
-                result = tm->tm_sec * 1000000.0 + fsec;
+                result = fsec;
 #else
-                result = (tm->tm_sec + fsec) * 1000000;
+                result = fsec * 1000000;
 #endif
                 break;
 
@@ -4611,11 +4465,7 @@ Datum timestamptz_part(PG_FUNCTION_ARGS)
                 break;
 
             case DTK_SECOND:
-#ifdef HAVE_INT64_TIMESTAMP
-                result = tm->tm_sec + fsec / 1000000.0;
-#else
-                result = tm->tm_sec + fsec;
-#endif
+                result = tm->tm_sec;
                 break;
 
             case DTK_MINUTE:
@@ -4959,13 +4809,6 @@ Datum timestamp_timestamptz(PG_FUNCTION_ARGS)
     Timestamp timestamp = PG_GETARG_TIMESTAMP(0);
 
     PG_RETURN_TIMESTAMPTZ(timestamp2timestamptz(timestamp));
-}
-
-/* for better compability, a cast between origin opegnGauss timestamp type and b database datetime type is provided */
-Datum timestamp_datetime(PG_FUNCTION_ARGS)
-{
-    /* there is no storage difference between origin opegnGauss timestamp type and b database datetime type */
-    PG_RETURN_TIMESTAMP(PG_GETARG_TIMESTAMP(0));
 }
 
 TimestampTz timestamp2timestamptz(Timestamp timestamp)

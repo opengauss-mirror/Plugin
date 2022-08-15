@@ -170,17 +170,17 @@ select * from bit_test2 order by 1;
  00001
 (2 rows)
 
-explain select * from bit_test2 a left join bit_test3 b on a.a=b.a;
-                                 QUERY PLAN                                 
-----------------------------------------------------------------------------
- Merge Right Join  (cost=278.92..586.81 rows=19893 width=22)
+explain(costs off) select * from bit_test2 a left join bit_test3 b on a.a=b.a;
+             QUERY PLAN              
+-------------------------------------
+ Merge Right Join
    Merge Cond: (b.a = a.a)
-   ->  Sort  (cost=132.47..137.22 rows=1900 width=13)
+   ->  Sort
          Sort Key: b.a
-         ->  Seq Scan on bit_test3 b  (cost=0.00..29.00 rows=1900 width=13)
-   ->  Sort  (cost=146.45..151.68 rows=2094 width=9)
+         ->  Seq Scan on bit_test3 b
+   ->  Sort
          Sort Key: a.a
-         ->  Seq Scan on bit_test2 a  (cost=0.00..30.94 rows=2094 width=9)
+         ->  Seq Scan on bit_test2 a
 (8 rows)
 
 select * from bit_test2 a left join bit_test3 b on a.a=b.a order by 1;
@@ -191,14 +191,14 @@ select * from bit_test2 a left join bit_test3 b on a.a=b.a order by 1;
 (2 rows)
 
 set enable_mergejoin to off;
-explain select * from bit_test2 a left join bit_test3 b on a.a=b.a;
-                                 QUERY PLAN                                 
-----------------------------------------------------------------------------
- Nested Loop Left Join  (cost=0.00..59743.69 rows=19893 width=22)
+explain(costs off) select * from bit_test2 a left join bit_test3 b on a.a=b.a;
+             QUERY PLAN              
+-------------------------------------
+ Nested Loop Left Join
    Join Filter: (a.a = b.a)
-   ->  Seq Scan on bit_test2 a  (cost=0.00..30.94 rows=2094 width=9)
-   ->  Materialize  (cost=0.00..38.50 rows=1900 width=13)
-         ->  Seq Scan on bit_test3 b  (cost=0.00..29.00 rows=1900 width=13)
+   ->  Seq Scan on bit_test2 a
+   ->  Materialize
+         ->  Seq Scan on bit_test3 b
 (5 rows)
 
 select * from bit_test2 a left join bit_test3 b on a.a=b.a order by 1;

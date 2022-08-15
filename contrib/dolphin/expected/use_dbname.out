@@ -1,0 +1,39 @@
+drop database if exists use_dbname;
+NOTICE:  database "use_dbname" does not exist, skipping
+create database use_dbname dbcompatibility 'b';
+\c use_dbname
+CREATE schema db1;
+CREATE schema db2;
+USE db1;
+CREATE TABLE test(a text);
+INSERT INTO test VALUES('db1');
+USE db2;
+CREATE TABLE test(a text);
+INSERT INTO test VALUES('db2');
+select a from db1.test;
+  a  
+-----
+ db1
+(1 row)
+
+select a from db2.test;
+  a  
+-----
+ db2
+(1 row)
+
+select a from test;
+  a  
+-----
+ db2
+(1 row)
+
+USE db1;
+select a from test;
+  a  
+-----
+ db1
+(1 row)
+
+\c postgres
+drop database if exists use_dbname;

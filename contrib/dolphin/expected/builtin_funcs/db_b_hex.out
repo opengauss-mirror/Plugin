@@ -1,7 +1,7 @@
-drop database if exists format_test;
-NOTICE:  database "format_test" does not exist, skipping
-create database format_test dbcompatibility 'B';
-\c format_test
+drop database if exists db_b_hex;
+NOTICE:  database "db_b_hex" does not exist, skipping
+create database db_b_hex dbcompatibility 'B';
+\c db_b_hex
 select hex(int1(255));
  hex 
 -----
@@ -205,4 +205,4 @@ select hex(c1) from bytea_to_hex_test;
 (1 row)
 
 \c postgres
-drop database if exists format_test;
+drop database if exists db_b_hex;

@@ -174,13 +174,6 @@ static void dump_var(const char* str, NumericVar* var);
 #define dump_var(s, v)
 #endif
 
-#define digitbuf_alloc(ndigits) ((NumericDigit*)palloc((ndigits) * sizeof(NumericDigit)))
-#define digitbuf_free(buf)  \
-    do {                    \
-        if ((buf) != NULL)  \
-            pfree_ext(buf); \
-    } while (0)
-
 #define NUMERIC_CAN_BE_SHORT(scale, weight)                                         \
     ((scale) <= NUMERIC_SHORT_DSCALE_MAX && (weight) <= NUMERIC_SHORT_WEIGHT_MAX && \
         (weight) >= NUMERIC_SHORT_WEIGHT_MIN)
@@ -594,7 +587,7 @@ Datum numeric_recv(PG_FUNCTION_ARGS)
         ereport(ERROR,
             (errcode(ERRCODE_INVALID_BINARY_REPRESENTATION), errmsg("invalid length in external \"numeric\" value")));
 
-    alloc_var(&value, len);
+    init_alloc_var(&value, len);
 
     value.weight = (int16)pq_getmsgint(buf, sizeof(int16));
     value.sign = (uint16)pq_getmsgint(buf, sizeof(uint16));
@@ -3250,6 +3243,8 @@ Datum numeric_int1(PG_FUNCTION_ARGS)
                 PG_RETURN_INT64(INT64_MAX);
             else
                 PG_RETURN_INT64(INT64_MIN);
+        } else {
+            ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("tinyint out of range")));
         }
     }
     /* Down-convert to int1 */
@@ -4090,24 +4085,8 @@ static void dump_var(const char* str, NumericVar* var)
  */
 static void alloc_var(NumericVar* var, int ndigits)
 {
-    digitbuf_free(var->buf);
-    var->buf = digitbuf_alloc(ndigits + 1);
-    var->buf[0] = 0; /* spare digit for rounding */
-    var->digits = var->buf + 1;
-    var->ndigits = ndigits;
-}
-
-/*
- * free_var() -
- *
- *	Return the digit buffer of a variable to the free pool
- */
-void free_var(NumericVar* var)
-{
-    digitbuf_free(var->buf);
-    var->buf = NULL;
-    var->digits = NULL;
-    var->sign = NUMERIC_NAN;
+    digitbuf_free(var);
+    init_alloc_var(var, ndigits);
 }
 
 /*
@@ -4118,9 +4097,8 @@ void free_var(NumericVar* var)
  */
 static void zero_var(NumericVar* var)
 {
-    digitbuf_free(var->buf);
-    var->buf = NULL;
-    var->digits = NULL;
+    digitbuf_free(var);
+    quick_init_var(var);
     var->ndigits = 0;
     var->weight = 0;         /* by convention; doesn't really matter */
     var->sign = NUMERIC_POS; /* anything but NAN... */
@@ -4324,7 +4302,7 @@ void init_var_from_num(Numeric num, NumericVar* dest)
     dest->sign = NUMERIC_SIGN(num);
     dest->dscale = NUMERIC_DSCALE(num);
     dest->digits = NUMERIC_DIGITS(num);
-    dest->buf = NULL; /* digits array is not palloc'd */
+    dest->buf = dest->ndb;
 }
 
 /*
@@ -4344,7 +4322,7 @@ static void set_var_from_var(const NumericVar* value, NumericVar* dest)
             newbuf + 1, value->ndigits * sizeof(NumericDigit), value->digits, value->ndigits * sizeof(NumericDigit));
         securec_check(rc, "\0", "\0");
     }
-    digitbuf_free(dest->buf);
+    digitbuf_free(dest);
 
     rc = memmove_s(dest, sizeof(NumericVar), value, sizeof(NumericVar));
     securec_check(rc, "\0", "\0");
@@ -4594,10 +4572,8 @@ static char* get_str_from_var_sci(NumericVar* var, int rscale)
     else
         denom_scale = 0;
 
-    ret = memset_s(&denominator, sizeof(NumericVar), 0, sizeof(NumericVar));
-    securec_check(ret, "", "");
-    ret = memset_s(&significand, sizeof(NumericVar), 0, sizeof(NumericVar));
-    securec_check(ret, "", "");
+    init_var(&denominator);
+    init_var(&significand);
 
     power_var_int(&const_ten, exponent, &denominator, denom_scale);
     div_var(var, &denominator, &significand, rscale, true);
@@ -6819,7 +6795,7 @@ static void add_abs(NumericVar* var1, NumericVar* var2, NumericVar* result)
 
     Assert(carry == 0); /* else we failed to allow for carry out */
 
-    digitbuf_free(result->buf);
+    digitbuf_free(result);
     result->ndigits = res_ndigits;
     result->buf = res_buf;
     result->digits = res_digits;
@@ -6895,7 +6871,7 @@ static void sub_abs(NumericVar* var1, NumericVar* var2, NumericVar* result)
 
     Assert(borrow == 0); /* else caller gave us var1 < var2 */
 
-    digitbuf_free(result->buf);
+    digitbuf_free(result);
     result->ndigits = res_ndigits;
     result->buf = res_buf;
     result->digits = res_digits;

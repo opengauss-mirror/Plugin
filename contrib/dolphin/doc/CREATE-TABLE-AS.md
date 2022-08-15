@@ -18,14 +18,19 @@ CREATE TABLE AS对源表进行一次查询，然后将数据写入新表中，�
 ```
 CREATE [ [ GLOBAL | LOCAL ] [ TEMPORARY | TEMP ] | UNLOGGED ] TABLE table_name
     [ (column_name [, ...] ) ]
+    [create_option]
+    AS query
+    [ WITH [ NO ] DATA ];
+
+	其中create_option为：
     [ WITH ( {storage_parameter = value} [, ... ] ) ]
     [ ON COMMIT { PRESERVE ROWS | DELETE ROWS | DROP } ]
     [ COMPRESS | NOCOMPRESS ]
     [ TABLESPACE tablespace_name ]
     [ COMPRESSION [=] compression_arg ]
     [ ENGINE [=] engine_name ]
-    AS query
-    [ WITH [ NO ] DATA ];
+
+	允许输入多次同一种create_option，以最后一次的输入为准。
 ```
 
 ## 参数说明<a name="zh-cn_topic_0283136662_zh-cn_topic_0237122118_zh-cn_topic_0059777601_sb8ea2c52307445c9934740862f4ecc85"></a>

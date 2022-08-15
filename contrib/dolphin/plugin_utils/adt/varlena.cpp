@@ -112,6 +112,7 @@ typedef struct {
  * that we feel comfortable putting it on the stack
  */
 #define TEXTBUFLEN 1024
+#define MAX_UINT32_STR "0xffffffff"
 
 #define DatumGetUnknownP(X) ((unknown*)PG_DETOAST_DATUM(X))
 #define DatumGetUnknownPCopy(X) ((unknown*)PG_DETOAST_DATUM_COPY(X))
@@ -1979,8 +1980,8 @@ int text_cmp(text* arg1, text* arg2, Oid collid)
     a1p = VARDATA_ANY(arg1);
     a2p = VARDATA_ANY(arg2);
 
-    len1 = VARSIZE_ANY_EXHDR(arg1);
-    len2 = VARSIZE_ANY_EXHDR(arg2);
+    len1 = bcTruelen(arg1);
+    len2 = bcTruelen(arg2);
 
     return varstr_cmp(a1p, len1, a2p, len2, collid);
 }
@@ -2011,15 +2012,16 @@ Datum texteq(PG_FUNCTION_ARGS)
      * of the strings are unequal; which might save us from having to detoast
      * one or both values.
      */
-    len1 = toast_raw_datum_size(arg1);
-    len2 = toast_raw_datum_size(arg2);
-    if (len1 != len2)
-        result = false;
-    else {
-        text* targ1 = DatumGetTextPP(arg1);
-        text* targ2 = DatumGetTextPP(arg2);
+    text *targ1 = DatumGetTextPP(arg1);
+    text *targ2 = DatumGetTextPP(arg2);
+ 
+    len1 = bcTruelen(targ1);
+    len2 = bcTruelen(targ2);
 
-        result = (memcmp(VARDATA_ANY(targ1), VARDATA_ANY(targ2), len1 - VARHDRSZ) == 0);
+    if (len1 != len2) {
+        result = false;
+    } else {
+        result = (memcmp(VARDATA_ANY(targ1), VARDATA_ANY(targ2), len1) == 0);
 
         PG_FREE_IF_COPY(targ1, 0);
         PG_FREE_IF_COPY(targ2, 1);
@@ -2040,15 +2042,15 @@ Datum textne(PG_FUNCTION_ARGS)
     Size len1, len2;
 
     /* See comment in texteq() */
-    len1 = toast_raw_datum_size(arg1);
-    len2 = toast_raw_datum_size(arg2);
-    if (len1 != len2)
+    text *targ1 = DatumGetTextPP(arg1);
+    text *targ2 = DatumGetTextPP(arg2);
+ 
+    len1 = bcTruelen(targ1);
+    len2 = bcTruelen(targ2);
+    if (len1 != len2) {
         result = true;
-    else {
-        text* targ1 = DatumGetTextPP(arg1);
-        text* targ2 = DatumGetTextPP(arg2);
-
-        result = (memcmp(VARDATA_ANY(targ1), VARDATA_ANY(targ2), len1 - VARHDRSZ) != 0);
+    } else {
+        result = (memcmp(VARDATA_ANY(targ1), VARDATA_ANY(targ2), len1) != 0);
 
         PG_FREE_IF_COPY(targ1, 0);
         PG_FREE_IF_COPY(targ2, 1);
@@ -2065,14 +2067,28 @@ static void vtextne_internal(ScalarVector* arg1, uint8* pflags1, ScalarVector* a
     ScalarVector* vresult, uint8* pflagRes, Size len, text* targ, int idx)
 {
     if (BOTH_NOT_NULL(pflags1[idx], pflags2[idx])) {
-        Size len1 = m_const1 ? len : toast_raw_datum_size(arg1->m_vals[idx]);
-        Size len2 = m_const2 ? len : toast_raw_datum_size(arg2->m_vals[idx]);
-        if (len1 != len2)
+        Size len1;
+        Size len2;
+        text* targ1 = NULL;
+        text* targ2 = NULL;
+        if (m_const1) {
+            targ1 = targ;
+            len1 = len;
+        } else {
+            targ1 = DatumGetTextPP(arg1->m_vals[idx]);
+            len1 = bcTruelen(targ1);
+        }
+        if (m_const2) {
+            targ2 = targ;
+            len2 = len;
+        } else {
+            targ2 = DatumGetTextPP(arg2->m_vals[idx]);
+            len2 = bcTruelen(targ2);
+        }
+        if (len1 != len2) {
             vresult->m_vals[idx] = BoolGetDatum(true);
-        else {
-            text* targ1 = m_const1 ? targ : DatumGetTextPP(arg1->m_vals[idx]);
-            text* targ2 = m_const2 ? targ : DatumGetTextPP(arg2->m_vals[idx]);
-            bool result = memcmp(VARDATA_ANY(targ1), VARDATA_ANY(targ2), len1 - VARHDRSZ) != 0;
+        } else {
+            bool result = memcmp(VARDATA_ANY(targ1), VARDATA_ANY(targ2), len1) != 0;
             vresult->m_vals[idx] = BoolGetDatum(result);
         }
 
@@ -2100,12 +2116,12 @@ ScalarVector* vtextne(PG_FUNCTION_ARGS)
     text* targ = NULL;
 
     if (arg1->m_const && NOT_NULL(pflags1[0])) {
-        len = toast_raw_datum_size(arg1->m_vals[0]);
         targ = DatumGetTextPP(arg1->m_vals[0]);
+        len = bcTruelen(targ);
     }
     if (arg2->m_const && NOT_NULL(pflags2[0])) {
-        len = toast_raw_datum_size(arg2->m_vals[0]);
         targ = DatumGetTextPP(arg2->m_vals[0]);
+        len = bcTruelen(targ);
     }
 
     /*
@@ -2237,7 +2253,7 @@ Datum bttextsortsupport(PG_FUNCTION_ARGS)
     oldcontext = MemoryContextSwitchTo(ssup->ssup_cxt);
 
     /* Use generic string SortSupport */
-    varstr_sortsupport(ssup, collid, false);
+    varstr_sortsupport(ssup, collid, true);
 
     MemoryContextSwitchTo(oldcontext);
 
@@ -2960,8 +2976,8 @@ static int internal_text_pattern_compare(text* arg1, text* arg2)
     int result;
     int len1, len2;
 
-    len1 = VARSIZE_ANY_EXHDR(arg1);
-    len2 = VARSIZE_ANY_EXHDR(arg2);
+    len1 = bcTruelen(arg1);
+    len2 = bcTruelen(arg2);
 
     result = memcmp(VARDATA_ANY(arg1), VARDATA_ANY(arg2), Min(len1, len2));
     if (result != 0)
@@ -7464,104 +7480,83 @@ static void truncate_numeric_cstring(char* str)
     bool dot = false;
     bool power = false;
     bool digit = false;
-    bool sign = false;
+    size_t breakpoint = 0;
     size_t begin = truncate_front_space(str);
     size_t len = strlen(str);
-    for (size_t i=begin; i<len; i++) {
-        if (!sign && (str[i] == '+' || str[i] == '-')) {
-            sign = true;
-        } else if (str[i] == '.' && !dot) {
+    size_t sign_location = begin;
+
+    for (size_t i = begin; i < len; i++) {
+        if ((str[i] == '+' || str[i] == '-') && i == sign_location) {
+            continue;
+        } else if (str[i] == '.' && dot == false) {
             dot = true;
-        } else if ((str[i] == 'e' || str[i] == 'E') && !power) {
-            if (!digit) {
-                str[i] = '\0';
-                break;
-            } else {
-                power = true;
-            }
+        } else if ((str[i] == 'e' || str[i] == 'E') && power == false && digit == true) {
+            power = true;
+            dot = true;
+            sign_location = i + 1;
         } else if (str[i] >= '0' && str[i] <= '9') {
             digit = true;
+            breakpoint = i + 1;
         } else {
-            if (begin == i) {
-                str[0] = '\0';
-            } else {
-                str[i] = '\0';
-            }
             break;
         }
     }
-    return;
+    str[breakpoint] = '\0';
+}
+
+//Get float8 value for parameters of gs_interval
+static float8 GetValueFromArg(Oid valtype, Datum arg)
+{
+    switch (valtype) {
+        case INT4OID:
+            return DatumGetInt32(arg);
+        case FLOAT8OID:
+            return DatumGetFloat8(arg);
+        case BOOLOID:
+            return DatumGetBool(arg);
+        default:
+            bool typIsVarlena = false;
+            Oid typOutput;
+            check_huge_toast_pointer(arg, valtype);
+            if (!OidIsValid(valtype))
+                ereport(ERROR, (errcode(ERRCODE_INDETERMINATE_DATATYPE),
+                    errmsg("could not determine data type of gs_interval() input")));
+
+            float8 temp = 0;
+            getTypeOutputInfo(valtype, &typOutput, &typIsVarlena);
+            char* str0 = OidOutputFunctionCall(typOutput, arg);
+            truncate_numeric_cstring(str0);
+            if (strlen(str0) != 0) {
+                temp = DatumGetFloat8(DirectFunctionCall1(float8in, CStringGetDatum(str0)));
+            }
+            pfree_ext(str0);
+            return temp;
+    }
 }
 
 Datum gs_interval(PG_FUNCTION_ARGS)
 {
-    // early return
     if (PG_NARGS() == 0)
         PG_RETURN_INT32(0);
-
     if (PG_ARGISNULL(0))
         PG_RETURN_INT32(-1);
-
     Datum dt = PG_GETARG_DATUM(0);
     Oid valtype = get_fn_expr_argtype(fcinfo->flinfo, 0);
-    bool typIsVarlena = false;
-    Oid typOutput;
-
-    check_huge_toast_pointer(dt, valtype);
-    if (!OidIsValid(valtype))
-        ereport(ERROR, (errcode(ERRCODE_INDETERMINATE_DATATYPE),
-            errmsg("could not determine data type of gs_interval() input")));
-
-    getTypeOutputInfo(valtype, &typOutput, &typIsVarlena);
-    char* str0 = OidOutputFunctionCall(typOutput, dt);
-
-    truncate_numeric_cstring(str0);
-
-    float8 first_value=0;
-
-    if (strlen(str0)!=0) {
-        first_value = DatumGetFloat8(DirectFunctionCall1(float8in, CStringGetDatum(str0)));
-    }
-
-    pfree_ext(str0);
-
+    float8 first_value = GetValueFromArg(valtype, dt);
     int count=0;
-
-    // traverse arguments after the first one
-    for (int i=1; i < PG_NARGS(); i++) {
+    for (int i = 1; i < PG_NARGS(); i++) {
         if (PG_ARGISNULL(i)) {
             ++count;
             continue;
         }
-
         dt = PG_GETARG_DATUM(i);
         valtype = get_fn_expr_argtype(fcinfo->flinfo, i);
-        check_huge_toast_pointer(dt, valtype);
-
-        if (!OidIsValid(valtype))
-            ereport(ERROR, (errcode(ERRCODE_INDETERMINATE_DATATYPE),
-                errmsg("could not determine data type of gs_interval() input")));
-
-        getTypeOutputInfo(valtype, &typOutput, &typIsVarlena);
-
-        char* str = OidOutputFunctionCall(typOutput, dt);
-
-        truncate_numeric_cstring(str);
-
-        float8 value = 0;
-
-        if (strlen(str)!=0) {
-            value = DatumGetFloat8(DirectFunctionCall1(float8in, CStringGetDatum(str)));
-        }
-
-        pfree_ext(str);
-
+        float8 value = GetValueFromArg(valtype, dt);
         if (value > first_value) {
             break;
         }
         ++count;
     }
-
     PG_RETURN_INT32(count);
 }
 
@@ -7698,6 +7693,7 @@ static text* _m_char(FunctionCallInfo fcinfo)
     for (int i = 0; i < PG_NARGS(); i++) {
         if (!PG_ARGISNULL(i)) {
             Datum value = PG_GETARG_DATUM(i);
+            int128 ret_round;
             Oid valtype;
             valtype = get_fn_expr_argtype(fcinfo->flinfo, i);
             switch (valtype) {
@@ -7705,8 +7701,13 @@ static text* _m_char(FunctionCallInfo fcinfo)
                     appendStringInfoString(&str, text_to_cstring(_chr((uint32)value, false)));
                     break;
                 case NUMERICOID:
-                    result = _chr((uint32)(round(numeric_to_double_no_overflow( (Numeric)value))), false);
-                    appendStringInfoString(&str, text_to_cstring(result));
+                    ret_round = (int128)round(numeric_to_double_no_overflow((Numeric)PG_GETARG_DATUM(i)));
+                    if ((*((int128 *)DatumGetPointer((Datum)(&ret_round)))) >= PG_UINT64_MAX) {
+                        appendStringInfoString(&str, MAX_UINT32_STR);
+                    } else {
+                        result = _chr((uint32)(round(numeric_to_double_no_overflow((Numeric)value))), false);
+                        appendStringInfoString(&str, text_to_cstring(result));
+                    }
                     break;
                 case BOOLOID:
                     appendStringInfoString(&str, "");
@@ -7915,7 +7916,7 @@ char* set_space(int32 num)
 {
     char* result = NULL;
 
-    if ((num + 1) <= MaxAllocSize) {
+    if ((Size)num <= MaxAllocSize - 1) {
         result = (char*)palloc(num + 1);
         int rc = memset_s(result, num + 1, ' ', num);
         securec_check(rc, "", "");

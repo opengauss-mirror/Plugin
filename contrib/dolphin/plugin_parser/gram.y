@@ -87,6 +87,7 @@
 #include "utils/xml.h"
 #include "utils/pl_package.h"
 #include "catalog/pg_streaming_fn.h"
+#include "utils/varbit.h"
 
 #pragma GCC diagnostic ignored "-Wsign-compare"
 #pragma GCC diagnostic ignored "-Wunused-variable"
@@ -114,6 +115,17 @@ IntervalStylePack g_interStyleVal = {"a"};
 			(Current) = (Rhs)[0]; \
 	} while (0)
 
+#define RESET_ACONST_STRING(Arg, T, V) \
+    if (T == T_String && NULL != V) { \
+        Arg->val.val.str = V; \
+    }
+
+#define RESET_ACONST_INTEGER(Arg, T) \
+    if (T == T_BitString) { \
+        Arg->val.type = T_Integer; \
+        Arg->val.val.ival = conv_bit_to_int(Arg); \
+    }
+
 /*
  * Bison doesn't allocate anything that needs to live across parser calls,
  * so we can easily have it use palloc instead of malloc.  This prevents
@@ -138,6 +150,84 @@ typedef struct PrivTarget
 	List	   *objs;
 } PrivTarget;
 
+typedef struct CreateTableOptions {
+  List *inhRelations;             /* relations to inherit from (list of
+                                    * inhRelation) */
+  List *options;                  /* options from WITH clause */
+  OnCommitAction oncommit;        /* what do we do at COMMIT? */
+  char *tablespacename;           /* table space to use, or NULL */
+  int8 row_compress;              /* row compression flag */
+  PartitionState *partTableState; /* the PartitionState */
+  Node *compress_type;
+#ifdef PGXC
+  DistributeBy *distributeby; /* distribution to use, or NULL */
+  PGXCSubCluster *subcluster; /* subcluster of table */
+#endif
+  char *internalData; /* Used for create table like */
+  char relkind;       /* type of object */
+} CreateTableOptions;
+
+typedef enum {
+    OPT_INHERIT,
+    OPT_WITH, 
+    OPT_ONCOMMIT, 
+    OPT_COMPRESS,
+    OPT_DISTRIBUTEBY,
+    OPT_SUBCLUSTER,
+    OPT_TABLE_PARTITIONING_CLAUSE,
+    OPT_INTERNAL_DATA,
+    OPT_KIND,
+    OPT_COMPRESSION,
+    OPT_TABLESPACE,
+    OPT_ENGINE,
+    OPT_PARTITIONELEMENT
+} TableOptionType;
+
+typedef struct SingleTableOption {
+    TableOptionType option_type;
+    union {
+        char relkind;
+        List *list_content;
+        OnCommitAction oncommit;  /* what do we do at COMMIT? */
+        char *char_content;
+        int8 row_compress;  /* row compression flag */
+        PartitionState *partTableState;
+        Node *compress_type;
+#ifdef PGXC
+        DistributeBy *distributeby; /* distribution to use, or NULL */
+        PGXCSubCluster *subcluster; /* subcluster of table */
+#endif
+    } option;
+}SingleTableOption;
+
+typedef enum {
+    OPT_INCLUDE,
+    OPT_RELOPTIONS,
+    OPT_TABLESPACE_INDEX,
+    OPT_PARTITIONELEMENT_INDEX,
+} IndexOptionType;
+
+typedef struct CreateIndexOptions {
+    char *tableSpace;           /* tablespace, or NULL for default */ 
+    List *indexParams;          /* columns to index: a list of IndexElem */
+    List *indexIncludingParams; /* additional columns to index: a list of IndexElem */ 
+    List *options;              /* WITH clause options: a list of DefElem */ 
+} CreateIndexOptions;
+
+typedef struct SingleIndexOption {
+IndexOptionType option_type;
+    union {
+        List *list_content;
+        char *char_content;
+    } option;
+} SingleIndexOption;
+
+typedef struct OptLikeWhere
+{
+    bool is_like;
+    Node *like_or_where;
+} OptLikeWhere;
+
 /* ConstraintAttributeSpec yields an integer bitmask of these flags: */
 #define CAS_NOT_DEFERRABLE			0x01
 #define CAS_DEFERRABLE				0x02
@@ -156,6 +246,10 @@ typedef struct PrivTarget
 
 #define parser_yyerror(msg)  scanner_yyerror(msg, yyscanner)
 #define parser_errposition(pos)  scanner_errposition(pos, yyscanner)
+
+static long conv_bit_to_int(A_Const* bit_str);
+static void fix_bw_type(A_Const* bw_arg1, A_Const* bw_arg2, A_Const* bw_arg3);
+static char* extract_numericstr(const char* str);
 
 static void base_yyerror(YYLTYPE *yylloc, core_yyscan_t yyscanner,
 						 const char *msg);
@@ -205,6 +299,8 @@ static List *get_func_args(char *sid);
 static char *pg_strsep(char **stringp, const char *delim);
 static long long get_pid(const char *strsid);
 static Node *MakeAnonyBlockFuncStmt(int flag, const char * str);
+static CreateTableOptions* MakeCreateTableOptions(CreateTableOptions *tableOptions, SingleTableOption *tableOption);
+static CreateIndexOptions* MakeCreateIndexOptions(CreateIndexOptions *indexOptions, SingleIndexOption *indexOption);
 #define  TYPE_LEN     4 /* strlen("TYPE") */
 #define  DATE_LEN     4 /* strlen("DATE") */
 #define  DECLARE_LEN     9 /* strlen(" DECLARE ") */
@@ -247,6 +343,8 @@ static Node* MakeConnectByRootNode(ColumnRef* cr, int location);
 static char* MakeConnectByRootColName(char* tabname, char* colname);
 static void FilterStartWithUseCases(SelectStmt* stmt, List* locking_clause, core_yyscan_t yyscanner, int location);
 static FuncCall* MakePriorAsFunc();
+static Node* MakeSetPasswdStmt(char* user, char* passwd, char* replace_passwd);
+static Node* MakeKillStmt(int kill_opt, Node *expr);
 
 #ifndef ENABLE_MULTIPLE_NODES
 static bool CheckWhetherInColList(char *colname, List *col_list);
@@ -299,6 +397,7 @@ static int errstate;
 	A_Indices			*aind;
 	ResTarget			*target;
 	struct PrivTarget	*privtarget;
+	struct OptLikeWhere	*optlikewhere;
 	AccessPriv			*accesspriv;
 	DbPriv				*dbpriv;
 	InsertStmt			*istmt;
@@ -312,8 +411,15 @@ static int errstate;
 	UpsertClause *upsert;
 	EncryptionType algtype;
 	LockClauseStrength lockstrength;
+	struct CreateTableOptions	*createtableoptions;
+	struct SingleTableOption	*singletableoption;
+	struct CreateIndexOptions	*createindexoptions;
+	struct SingleIndexOption	*singleindexoption;
 }
-
+%type <singletableoption> CreateOption CreateIfNotExistsOption CreateAsOption
+%type <createtableoptions> CreateOptionList CreateIfNotExistsOptionList CreateAsOptionList
+%type <singleindexoption> TableIndexOption PartitionTableIndexOption
+%type <createindexoptions> TableIndexOptionList PartitionTableIndexOptionList
 %type <node>	stmt schema_stmt
 		AlterDatabaseStmt AlterDatabaseSetStmt AlterDataSourceStmt AlterDomainStmt AlterEnumStmt
 		AlterFdwStmt AlterForeignServerStmt AlterGroupStmt AlterSchemaStmt
@@ -337,7 +443,7 @@ static int errstate;
 		DropAssertStmt DropSynonymStmt DropTrigStmt DropRuleStmt DropCastStmt DropRoleStmt DropRlsPolicyStmt
 		DropUserStmt DropdbStmt DropTableSpaceStmt DropDataSourceStmt DropDirectoryStmt DropFdwStmt
 		DropForeignServerStmt DropUserMappingStmt ExplainStmt ExecDirectStmt FetchStmt
-		GrantStmt GrantRoleStmt GrantDbStmt IndexStmt InsertStmt ListenStmt LoadStmt
+		GrantStmt GrantRoleStmt GrantDbStmt IndexStmt InsertStmt KillStmt ListenStmt LoadStmt
 		LockStmt NotifyStmt ExplainableStmt PreparableStmt
 		CreateFunctionStmt CreateProcedureStmt CreatePackageStmt CreatePackageBodyStmt AlterFunctionStmt AlterProcedureStmt ReindexStmt RemoveAggrStmt
 		RemoveFuncStmt RemoveOperStmt RemovePackageStmt RenameStmt RevokeStmt RevokeRoleStmt RevokeDbStmt
@@ -345,6 +451,7 @@ static int errstate;
 		SecLabelStmt SelectStmt TimeCapsuleStmt TransactionStmt TruncateStmt CallFuncStmt
 		UnlistenStmt UpdateStmt VacuumStmt
 		VariableResetStmt VariableSetStmt VariableShowStmt VerifyStmt ShutdownStmt
+		UseStmt
 		ViewStmt CheckPointStmt CreateConversionStmt
 		DeallocateStmt PrepareStmt ExecuteStmt
 		DropOwnedStmt ReassignOwnedStmt
@@ -387,7 +494,10 @@ static int errstate;
 %type <node>	alter_table_cmd alter_partition_cmd alter_type_cmd opt_collate_clause exchange_partition_cmd move_partition_cmd
 				modify_column_cmd
 				replica_identity
-%type <list>	alter_table_cmds alter_partition_cmds alter_table_or_partition alter_type_cmds add_column_cmds modify_column_cmds
+%type <list>	alter_table_cmds alter_partition_cmds alter_table_or_partition alter_index_or_partition alter_type_cmds add_column_cmds modify_column_cmds alter_index_rebuild_partition
+
+%type <node>	AlterPartitionRebuildStmt AlterPartitionRemoveStmt AlterPartitionCheckStmt AlterPartitionRepairStmt AlterPartitionOptimizeStmt
+%type <list>	partition_name_list
 
 %type <dbehavior>	opt_drop_behavior
 
@@ -400,7 +510,7 @@ static int errstate;
 				transaction_mode_item
 				create_extension_opt_item alter_extension_opt_item
 
-%type <ival>	opt_lock lock_type cast_context opt_wait
+%type <ival>	opt_lock lock_type cast_context opt_wait kill_opt
 %type <ival>	vacuum_option_list vacuum_option_elem opt_verify_options
 %type <boolean>	opt_check opt_force opt_or_replace
 				opt_grant_grant_option opt_grant_admin_option
@@ -437,7 +547,7 @@ static int errstate;
 
 %type <range>	qualified_name insert_target OptConstrFromTable opt_index_name insert_partition_clause update_delete_partition_clause
 
-%type <str>		all_Op MathOp
+%type <str>		all_Op MathOp OptDbName
 
 %type <str>		RowLevelSecurityPolicyName row_level_security_cmd RLSDefaultForCmd row_level_security_role
 %type <boolean>	RLSDefaultPermissive
@@ -447,11 +557,13 @@ static int errstate;
 %type <str>		iso_level opt_encoding
 %type <node>	grantee
 %type <list>	grantee_list
-%type <accesspriv> privilege
+%type <accesspriv> privilege routine_privilege temporary_privilege
 %type <list>	privileges privilege_list db_privileges db_privilege_list
+%type <list>    routine_privilege_list routine_privileges temporary_privilege_list temporary_privileges
 %type <dbpriv>  db_privilege
 %type <str>		privilege_str
-%type <privtarget> privilege_target
+%type <privtarget> privilege_target routine_target temporary_target
+%type <optlikewhere> OptLikeOrWhere LikeOrWhere
 %type <funwithargs> function_with_argtypes
 %type <list>	function_with_argtypes_list
 %type <ival>	defacl_privilege_target
@@ -459,17 +571,17 @@ static int errstate;
 %type <list>	DefACLOptionList
 
 %type <list>	stmtblock stmtmulti
-				OptTableElementList TableElementList OptInherit definition tsconf_definition
+				OptTableElementList TableElementList OptInherit_without_empty definition tsconf_definition
 				OptTypedTableElementList TypedTableElementList
 				OptForeignTableElementList ForeignTableElementList
-				reloptions opt_reloptions opt_tblspc_options tblspc_options opt_cfoptions cfoptions
-				OptWith opt_distinct opt_definition func_args func_args_list
+				reloptions opt_reloptions opt_reloptions_without_empty opt_tblspc_options tblspc_options opt_cfoptions cfoptions
+				OptWith OptWith_without_empty opt_distinct opt_definition func_args func_args_list
 				func_args_with_defaults func_args_with_defaults_list proc_args
 				func_as createfunc_opt_list opt_createproc_opt_list alterfunc_opt_list
 				aggr_args old_aggr_definition old_aggr_list
 				oper_argtypes RuleActionList RuleActionMulti
 				opt_column_list columnList opt_name_list opt_analyze_column_define opt_multi_name_list
-				opt_include opt_c_include index_including_params
+				opt_include_without_empty opt_c_include index_including_params
 				sort_clause opt_sort_clause sortby_list index_params
 				name_list from_clause from_list opt_array_bounds
 				qualified_name_list any_name any_name_list
@@ -506,8 +618,8 @@ static int errstate;
 %type <typnam>	func_return func_type
 
 %type <boolean>  opt_trusted opt_restart_seqs opt_purge invoker_rights
-%type <ival>	 OptTemp OptKind
-%type <oncommit> OnCommitOption
+%type <ival>	 OptTemp OptKind_without_empty
+%type <oncommit> OnCommitOption OnCommitOption_without_empty
 
 %type <lockstrength> for_locking_strength
 %type <node>	for_locking_item
@@ -532,6 +644,7 @@ static int errstate;
 %type <defelt>	OptCopyLogError OptCopyRejectLimit opt_load
 
 %type <boolean> opt_processed
+%type <boolean> opt_full_fields
 %type <defelt> opt_useeof
 
 %type <str>		DirectStmt CleanConnDbName CleanConnUserName
@@ -611,13 +724,14 @@ static int errstate;
 %type <str>		extract_arg
 %type <str>		timestamp_units
 %type <str>		opt_charset
-%type <boolean> opt_varying opt_timezone opt_no_inherit selected_timezone
+%type <str>		selected_timezone
+%type <boolean> opt_varying opt_timezone opt_no_inherit
 
 %type <ival>	Iconst SignedIconst
 %type <str>		Sconst comment_text notify_payload
 %type <str>		RoleId TypeOwner opt_granted_by opt_boolean_or_string ColId_or_Sconst
 %type <list>	var_list
-%type <str>		ColId ColLabel var_name type_function_name param_name
+%type <str>		ColId ColLabel var_name type_function_name param_name user opt_password opt_replace
 %type <node>	var_value zone_value
 
 %type <keyword> unreserved_keyword type_func_name_keyword
@@ -635,7 +749,7 @@ static int errstate;
 %type <boolean> constraints_set_mode
 %type <boolean> OptRelative
 %type <boolean> OptGPI
-%type <str>		OptTableSpace OptConsTableSpace OptTableSpaceOwner LoggingStr size_clause OptMaxSize OptDatafileSize OptReuse OptAuto OptNextStr OptDatanodeName
+%type <str>		OptTableSpace OptTableSpace_without_empty OptConsTableSpace OptTableSpaceOwner LoggingStr size_clause OptMaxSize OptDatafileSize OptReuse OptAuto OptNextStr OptDatanodeName
 %type <list>	opt_check_option
 
 %type <str>		opt_provider security_label
@@ -659,12 +773,12 @@ static int errstate;
 				opt_frame_clause frame_extent frame_bound
 %type <str>		opt_existing_window_name
 %type <boolean>	opt_if_not_exists
-%type <chr>		OptCompress
+%type <chr>		OptCompress OptCompress_without_empty
 %type <ival>	KVType
 %type <ival>		ColCmprsMode
 %type <fun_src>		subprogram_body
 %type <keyword> as_is as_empty
-%type <node>	column_item opt_table_partitioning_clause
+%type <node>	column_item opt_table_partitioning_clause_without_empty
 				opt_partition_index_def  range_partition_index_item  range_partition_index_list
 				range_partitioning_clause value_partitioning_clause opt_interval_partition_clause
 				interval_expr maxValueItem list_partitioning_clause hash_partitioning_clause
@@ -681,14 +795,14 @@ static int errstate;
 %type <ival> opt_row_movement_clause
 /* PGXC_BEGIN */
 %type <str>		opt_barrier_id OptDistributeType SliceReferenceClause
-%type <distby>	OptDistributeBy OptDistributeByInternal distribute_by_range_clause
+%type <distby>	OptDistributeBy OptDistributeBy_without_empty OptDistributeByInternal distribute_by_range_clause
 				distribute_by_list_clause
 %type <list>	range_slice_definition_list range_slice_less_than_list range_slice_start_end_list
 				list_distribution_rules_list list_distribution_rule_row list_distribution_rule_single
 %type <node>	range_slice_less_than_item range_slice_start_end_item
 				list_dist_state OptListDistribution list_dist_value
 
-%type <subclus> OptSubCluster OptSubClusterInternal
+%type <subclus> OptSubCluster OptSubCluster_without_empty OptSubClusterInternal
 /* PGXC_END */
 
 %type <str>		OptPartitionElement
@@ -705,7 +819,7 @@ static int errstate;
 /* NODE GROUP */
 %type <boolean> opt_vcgroup opt_to_elastic_group
 %type <ival>	opt_set_vcgroup
-%type <str>	opt_redistributed opt_internal_data internal_data_body
+%type <str>	opt_redistributed opt_internal_data_without_empty internal_data_body
 %type <ival>	bucket_cnt
 %type <str>	pgxcgroup_parent
 
@@ -764,7 +878,7 @@ static int errstate;
 %type <list>    load_column_expr_list copy_column_sequence_list copy_column_filler_list copy_column_constant_list 
 %type <typnam>  load_col_data_type
 %type <ival64>  load_col_sequence_item_sart column_sequence_item_step column_sequence_item_sart
-%type <node>	on_table opt_engine opt_compression set_compress_type
+%type <node>	on_table opt_engine opt_engine_without_empty opt_compression opt_compression_without_empty set_compress_type
 %type <keyword>	into_empty opt_temporary opt_values_in
 %type <str>	compression_args
 %type <boolean> opt_ignore opt_unsigned
@@ -800,14 +914,14 @@ static int errstate;
 
 	CACHE CALL CALLED CANCELABLE CASCADE CASCADED CASE CAST CATALOG_P CHAIN CHAR_P
 	CHARACTER CHARACTERISTICS CHARACTERSET CHECK CHECKPOINT CLASS CLEAN CLIENT CLIENT_MASTER_KEY CLIENT_MASTER_KEYS CLOB CLOSE
-	CLUSTER COALESCE COLLATE COLLATION COLUMN COLUMN_ENCRYPTION_KEY COLUMN_ENCRYPTION_KEYS COMMENT COMMENTS COMMIT
+	CLUSTER COALESCE COLLATE COLLATION COLUMN COLUMNS COLUMN_ENCRYPTION_KEY COLUMN_ENCRYPTION_KEYS COMMENT COMMENTS COMMIT
 	COMMITTED COMPACT COMPATIBLE_ILLEGAL_CHARS COMPLETE COMPRESS COMPRESSION CONCURRENTLY CONDITION CONFIGURATION CONNECTION CONSTANT CONSTRAINT CONSTRAINTS
 	CONTENT_P CONTINUE_P CONTVIEW CONVERSION_P CONVERT CONNECT COORDINATOR COORDINATORS COPY COST CREATE
 	CROSS CSN CSV CUBE CURRENT_P
 	CURRENT_CATALOG CURRENT_DATE CURRENT_ROLE CURRENT_SCHEMA
 	CURRENT_TIME CURRENT_TIMESTAMP CURRENT_USER CURSOR CYCLE
 
-	DATA_P DATABASE DATAFILE DATANODE DATANODES DATATYPE_CL DATE_P DATE_FORMAT_P DAY_P  DAYOFMONTH DAYOFWEEK DAYOFYEAR DBCOMPATIBILITY_P DB_B_FORMAT DEALLOCATE DEC DECIMAL_P DECLARE DECODE DEFAULT DEFAULTS
+	DATA_P DATABASE DATAFILE DATANODE DATANODES DATATYPE_CL DATE_P DATETIME DATE_FORMAT_P DAY_P  DAYOFMONTH DAYOFWEEK DAYOFYEAR DBCOMPATIBILITY_P DB_B_FORMAT DEALLOCATE DEC DECIMAL_P DECLARE DECODE DEFAULT DEFAULTS
 	DEFERRABLE DEFERRED DEFINER DELETE_P DELIMITER DELIMITERS DELTA DELTAMERGE DESC DESCRIBE DETERMINISTIC DIV
 /* PGXC_BEGIN */
 	DICTIONARY DIRECT DIRECTORY DISABLE_P DISCARD DISTINCT DISTINCTROW DISTRIBUTE DISTRIBUTION DO DOCUMENT_P DOMAIN_P DOUBLE_P
@@ -844,10 +958,10 @@ static int errstate;
 	NAME_P NAMES NATIONAL NATURAL NCHAR NEXT NO NOCOMPRESS NOCYCLE NODE NOLOGGING NOMAXVALUE NOMINVALUE NONE
 	NOT NOTHING NOTIFY NOTNULL NOWAIT NULL_P NULLCOLS NULLIF NULLS_P NUMBER_P NUMERIC NUMSTR NVARCHAR NVARCHAR2 NVL
 
-	OBJECT_P OF OFF OFFSET OIDS ON ONLY OPERATOR OPTIMIZATION OPTION OPTIONALLY OPTIONS OR
+	OBJECT_P OF OFF OFFSET OIDS ON ONLY OPERATOR OPTIMIZATION OPTIMIZE OPTION OPTIONALLY OPTIONS OR
 	ORDER OUT_P OUTER_P OVER OVERLAPS OVERLAY OWNED OWNER
 
-	PACKAGE PACKAGES PARSER PARTIAL PARTITION PARTITIONS PASSING PASSWORD PCTFREE PER_P PERCENT PERFORMANCE PERM PLACING PLAN PLANS POLICY POSITION
+	PACKAGE PACKAGES PARSER PARTIAL PARTITION PARTITIONING PARTITIONS PASSING PASSWORD PCTFREE PER_P PERCENT PERFORMANCE PERM PLACING PLAN PLANS POLICY POSITION
 /* PGXC_BEGIN */
 	POOL PRECEDING PRECISION
 /* PGXC_END */
@@ -860,9 +974,9 @@ static int errstate;
 	QUARTER QUERY QUOTE
 
 	RANDOMIZED RANGE RATIO RAW READ REAL REASSIGN REBUILD RECHECK RECURSIVE RECYCLEBIN REDISANYVALUE REF REFERENCES REFRESH REINDEX REJECT_P
-	RELATIVE_P RELEASE RELOPTIONS REMOTE_P REMOVE RENAME REPEATABLE REPLACE REPLICA REGEXP
+	RELATIVE_P RELEASE RELOPTIONS REMOTE_P REMOVE RENAME REPEATABLE REPLACE REPLICA REGEXP REPAIR
 	RESET RESIZE RESOURCE RESTART RESTRICT RETURN RETURNING RETURNS REUSE REVOKE RIGHT RLIKE ROLE ROLES ROLLBACK ROLLUP
-	ROTATION ROW ROWNUM ROWS ROWTYPE_P RULE
+	ROTATION ROUTINE ROW ROWNUM ROWS ROWTYPE_P RULE
 
 	SAMPLE SAVEPOINT SCHEMA SCROLL SEARCH SECOND_P SECURITY SELECT SEQUENCE SEQUENCES
 	SERIALIZABLE SERVER SESSION SESSION_USER SET SETS SETOF SHARE SHIPPABLE SHOW SHUTDOWN SIBLINGS
@@ -875,7 +989,7 @@ static int errstate;
 	TRUNCATE TRUSTED TSFIELD TSTAG TSTIME TYPE_P TYPES_P
 
 	UNBOUNDED UNCOMMITTED UNENCRYPTED UNION UNIQUE UNKNOWN UNLIMITED UNLISTEN UNLOCK UNLOGGED UNSIGNED
-	UNTIL UNUSABLE UPDATE USEEOF USER USING
+	UNTIL UNUSABLE UPDATE USE USEEOF USER USING
 
 	VACUUM VALID VALIDATE VALIDATION VALIDATOR VALUE_P VALUES VARBINARY VARCHAR VARCHAR2 VARIABLES VARIADIC VARRAY VARYING VCGROUP
 	VERBOSE VERIFY VERSION_P VIEW VOLATILE
@@ -915,6 +1029,9 @@ static int errstate;
 %nonassoc lower_than_row
 %nonassoc lower_than_on
 %left ON USING
+%nonassoc   KILL_OPT_EMPTY
+%nonassoc   CONNECTION QUERY
+%nonassoc   PASSWORD
 %nonassoc   PARTIAL_EMPTY_PREC
 %nonassoc   CLUSTER
 %nonassoc	SET				/* see relation_expr_opt_alias */
@@ -1198,6 +1315,7 @@ stmt :
 			| GrantDbStmt
 			| IndexStmt
 			| InsertStmt
+			| KillStmt
 			| ListenStmt
 			| RefreshMatViewStmt
 			| LoadStmt
@@ -1226,12 +1344,18 @@ stmt :
 			| TruncateStmt
 			| UnlistenStmt
 			| UpdateStmt
+			| UseStmt
 			| VacuumStmt
 			| VariableResetStmt
 			| VariableSetStmt
 			| VariableShowStmt
 			| VerifyStmt
 			| ViewStmt
+			| AlterPartitionCheckStmt
+			| AlterPartitionRebuildStmt
+			| AlterPartitionRemoveStmt
+			| AlterPartitionOptimizeStmt
+			| AlterPartitionRepairStmt
 			| /*EMPTY*/
 				{ $$ = NULL; }
 		;
@@ -1851,6 +1975,23 @@ altersys_option:
 
 /*****************************************************************************
  *
+ * Kill a session or cancel all queries from a session
+ *
+ *****************************************************************************/
+
+KillStmt:	KILL kill_opt a_expr
+			{
+				$$ = (Node *)MakeKillStmt($2, $3);
+			}
+		;
+
+kill_opt: 	CONNECTION { $$ = 1; }
+		| QUERY { $$ = 0; }
+		| /* empty */ %prec KILL_OPT_EMPTY { $$ = 1; }
+		;
+
+/*****************************************************************************
+ *
  * Drop a postgresql group
  *
  * XXX see above notes about cascading DROP USER; groups have same problem.
@@ -1966,6 +2107,23 @@ schema_stmt:
  *
  *****************************************************************************/
 
+user:
+			ColId_or_Sconst { $$ = $1; }
+			| ColId_or_Sconst '@' load_quote_str { $$ = $1; }
+			| CURRENT_USER { $$ = GetUserNameFromId(GetUserId()); }
+			| CURRENT_USER '(' ')' { $$ = GetUserNameFromId(GetUserId()); }
+			;
+
+opt_password:
+			password_string { $$ = pstrdup($1); }
+			| PASSWORD '(' password_string ')' { $$ = pstrdup($3); }
+			;
+
+opt_replace:
+			REPLACE opt_password { $$ = $2; }
+			| /* empty */ { $$ = NULL; }
+			;
+
 VariableSetStmt:
 			SET set_rest
 				{
@@ -1985,6 +2143,14 @@ VariableSetStmt:
 					n->is_local = false;
 					$$ = (Node *) n;
 				}
+			| SET PASSWORD '=' opt_password opt_replace
+                        	{
+                        		$$ = MakeSetPasswdStmt(GetUserNameFromId(GetUserId()), $4, $5);
+                        	}
+                        | SET PASSWORD FOR user '=' opt_password opt_replace
+                        	{
+                        		$$ = MakeSetPasswdStmt($4, $6, $7);
+                        	}
 		;
 
 set_rest:
@@ -2201,6 +2367,19 @@ set_rest_more:  /* Generic SET syntaxes: */
 				}
 		;
 
+UseStmt:
+			USE ColId
+				{
+					core_yy_extra_type yyextra = pg_yyget_extra(yyscanner)->core_yy_extra;
+					VariableSetStmt *n = makeNode(VariableSetStmt);
+					n->kind = VAR_SET_VALUE;
+					n->name = "search_path";
+					n->args = list_make1(makeStringConst($2, -1));
+					n->is_local = false;
+					$$ = (Node *) n;
+				}
+			;
+
 var_name:	ColId								{ $$ = $1; }
 			| var_name '.' ColId
 				{
@@ -2383,11 +2562,37 @@ VariableShowStmt:
 					if (pg_strcasecmp($2, "processlist") == 0) {
 						SelectStmt *n = makeProcesslistQuery(FALSE);
                        				$$ = (Node *) n;
+					} else if (pg_strcasecmp($2, "tables") == 0) {
+						SelectStmt *n = makeShowTablesQuery(FALSE, NULL, NULL, FALSE);
+						$$ = (Node *) n;
+					} else if (pg_strcasecmp($2, "plugins") == 0) {
+						SelectStmt *n = makeShowPluginsQuery();
+						$$ = (Node *) n;
 					} else {
 						VariableShowStmt *n = makeNode(VariableShowStmt);
 						n->name = $2;
 						$$ = (Node *) n;
 					}
+				}
+			| SHOW TABLES LikeOrWhere
+                                {
+                                        SelectStmt *n = makeShowTablesQuery(FALSE, NULL, $3->like_or_where, $3->is_like);
+					$$ = (Node *) n;
+                                }
+                        | SHOW TABLES from_in ColId OptLikeOrWhere
+                                {
+					SelectStmt *n = makeShowTablesQuery(FALSE, $4, $5->like_or_where, $5->is_like);
+					$$ = (Node *) n;
+                                }
+                        | SHOW FULL TABLES OptDbName OptLikeOrWhere
+                                {
+                                        SelectStmt *n = makeShowTablesQuery(TRUE, $4, $5->like_or_where, $5->is_like);
+					$$ = (Node *) n;
+                                }
+			| SHOW opt_full_fields from_in qualified_name OptDbName OptLikeOrWhere
+				{
+					SelectStmt *n = makeShowColumnsQuery($4->schemaname, $4->relname, $5, $2, $6->is_like, $6->like_or_where);
+					$$ = (Node *)n;
 				}
 			| SHOW FULL PROCESSLIST
 				{
@@ -2433,6 +2638,35 @@ VariableShowStmt:
 				}
 		;
 
+OptLikeOrWhere:
+				{
+					OptLikeWhere *n = (OptLikeWhere *)palloc(sizeof(OptLikeWhere));
+					n->is_like = FALSE;
+					n->like_or_where = NULL;
+					$$ = n;
+				}
+			| LikeOrWhere
+				{
+					$$ = $1;
+				}
+                ;
+
+LikeOrWhere:
+			WHERE a_expr 
+                                {
+                                        OptLikeWhere *n = (OptLikeWhere *)palloc(sizeof(OptLikeWhere));
+                                        n->is_like = FALSE;
+                                        n->like_or_where = $2;
+                                        $$ = n;
+                                }
+                        | LIKE Sconst
+                                {
+                                        OptLikeWhere *n = (OptLikeWhere *)palloc(sizeof(OptLikeWhere));
+                                        n->is_like = TRUE;
+                                        n->like_or_where = makeStringConst($2, -1);
+                                        $$ = n;
+                                }
+                ;
 
 ConstraintsSetStmt:
 			SET CONSTRAINTS constraints_set_list constraints_set_mode
@@ -2452,6 +2686,21 @@ constraints_set_list:
 constraints_set_mode:
 			DEFERRED								{ $$ = TRUE; }
 			| IMMEDIATE								{ $$ = FALSE; }
+		;
+
+opt_full_fields:
+			FULL columns_or_fields					{ $$ = TRUE; }
+			| columns_or_fields					{ $$ = FALSE; }
+		;
+
+OptDbName:
+			/* EMPTY*/						{ $$ = NULL; }
+			| from_in ColId				    { $$ = $2; }
+		;
+
+columns_or_fields:
+			COLUMNS
+			| FIELDS
 		;
 
 /*****************************************************************************
@@ -2628,7 +2877,7 @@ AlterTableStmt:
 						$$ = (Node *)n;
 					}
 				}
-		|	ALTER INDEX qualified_name alter_table_or_partition
+		|	ALTER INDEX qualified_name alter_index_or_partition
 				{
 					if ($4->length == 1 && ((AlterTableCmd*)lfirst($4->head))->subtype == AT_RebuildIndex)
 					{
@@ -2670,7 +2919,7 @@ AlterTableStmt:
 						$$ = (Node *)n;
 					}
 				}
-		|	ALTER INDEX IF_P EXISTS qualified_name alter_table_or_partition
+		|	ALTER INDEX IF_P EXISTS qualified_name alter_index_or_partition
 				{
 					ListCell   *cell;
 					foreach(cell, $6)
@@ -2858,6 +3107,22 @@ add_column_cmds:
 				}
 			;
 
+alter_index_or_partition:
+		alter_table_or_partition        { $$ = ($1); }
+		| alter_index_rebuild_partition { $$ = ($1); }
+		;
+
+/* ALTER INDEX index_name REBUILD PARTITION partition_name */
+alter_index_rebuild_partition:
+		REBUILD_PARTITION ColId
+			{
+				AlterTableCmd *n = makeNode(AlterTableCmd);
+				n->subtype = AT_RebuildIndexPartition;
+				n->name = $2;
+				$$ = list_make1((Node *)n);
+			}
+		;
+
 /* ALTER TABLE sql clause both for PARTITION and ordinary table */
 alter_table_or_partition:
 			alter_table_cmds        { $$ = ($1); }
@@ -2892,14 +3157,6 @@ alter_partition_cmd:
 			{
 				AlterTableCmd *n = makeNode(AlterTableCmd);
 				n->subtype = AT_UnusableAllIndexOnPartition;
-				n->name = $2;
-				$$ = (Node *)n;
-			}
-		/* ALTER INDEX index_name REBUILD PARTITION partition_name */
-		| REBUILD_PARTITION ColId
-			{
-				AlterTableCmd *n = makeNode(AlterTableCmd);
-				n->subtype = AT_RebuildIndexPartition;
 				n->name = $2;
 				$$ = (Node *)n;
 			}
@@ -4075,6 +4332,9 @@ opt_reloptions:		WITH reloptions					{ $$ = $2; }
 			 |		/* EMPTY */						{ $$ = NIL; }
 		;
 
+opt_reloptions_without_empty:		WITH reloptions					{ $$ = $2; }
+		;
+
 reloption_list:
 			reloption_elem							{ $$ = list_make1($1); }
 			| reloption_list ',' reloption_elem		{ $$ = lappend($1, $3); }
@@ -4170,6 +4430,97 @@ split_dest_rangesubpartition_define_list:
 			$$ = result;
 		}
 	;
+
+/*support b_database syntax related with partition*/
+AlterPartitionRebuildStmt:
+			ALTER TABLE name REBUILD_PARTITION partition_name_list
+				{
+					FuncCall *n = makeNode(FuncCall);
+					n->funcname = list_make1(makeString("rebuild_partition"));
+					n->args = list_make1(makeAArrayExpr(lcons(makeStringConst($3, @3), $5), @5));
+					n->agg_star = FALSE;
+					n->agg_distinct = FALSE;
+					n->func_variadic = FALSE;
+					n->location = @4;
+					n->call_func = false;
+					ResTarget* rtg = makeNode(ResTarget);
+					rtg->name = NULL;
+					rtg->indirection = NIL;
+					rtg->val = (Node *)n;
+					rtg->location = @3;
+					SelectStmt *sel = makeNode(SelectStmt);
+					sel->targetList = list_make1(rtg);
+					$$ = (Node *)sel;
+				}
+			| ALTER TABLE name REBUILD_PARTITION ALL
+				{
+					FuncCall *n = makeNode(FuncCall);
+					n->funcname = list_make1(makeString("rebuild_partition"));
+					n->args = list_make1(makeAArrayExpr(list_make1(makeStringConst($3, @3)), @3));
+					n->agg_star = FALSE;
+					n->agg_distinct = FALSE;
+					n->func_variadic = FALSE;
+					n->location = @4;
+					n->call_func = false;
+					ResTarget* rtg = makeNode(ResTarget);
+					rtg->name = NULL;
+					rtg->indirection = NIL;
+					rtg->val = (Node *)n;
+					rtg->location = @3;
+					SelectStmt *sel = makeNode(SelectStmt);
+					sel->targetList = list_make1(rtg);
+					$$ = (Node *)sel;
+				}
+		;
+
+AlterPartitionRemoveStmt:
+			ALTER TABLE name REMOVE PARTITIONING
+				{
+					FuncCall *n = makeNode(FuncCall);
+					n->funcname = list_make1(makeString("remove_partitioning"));
+					n->args = list_make1(makeStringConst($3, @3));
+					n->agg_star = FALSE;
+					n->agg_distinct = FALSE;
+					n->func_variadic = FALSE;
+					n->location = @4;
+					n->call_func = false;
+					ResTarget* rtg = makeNode(ResTarget);
+					rtg->name = NULL;
+					rtg->indirection = NIL;
+					rtg->val = (Node *)n;
+					rtg->location = @3;
+					SelectStmt *sel = makeNode(SelectStmt);
+					sel->targetList = list_make1(rtg);
+					$$ = (Node *)sel;
+				}
+		;
+
+AlterPartitionCheckStmt:
+			ALTER TABLE name CHECK PARTITION partition_name_list { $$=NULL; }
+			| ALTER TABLE name CHECK PARTITION ALL { $$=NULL; }
+		;
+
+AlterPartitionRepairStmt:
+			ALTER TABLE name REPAIR PARTITION partition_name_list { $$=NULL; }
+			| ALTER TABLE name REPAIR PARTITION ALL { $$=NULL; }
+		;
+
+AlterPartitionOptimizeStmt:
+			ALTER TABLE name OPTIMIZE PARTITION partition_name_list { $$=NULL; }
+			| ALTER TABLE name OPTIMIZE PARTITION ALL { $$=NULL; }
+		;
+
+partition_name_list:
+			name
+				{
+					$$ = list_make1(makeStringConst($1, @1));
+				}
+			| partition_name_list ',' name
+				{
+					$$ = lappend($1, makeStringConst($3, @3));
+				}
+		;
+/*support b_database syntax related with partition*/
 
 /*****************************************************************************
  *
@@ -4965,66 +5316,260 @@ opt_rename:
  *
  *****************************************************************************/
 
-CreateStmt:	CREATE OptTemp TABLE qualified_name '(' OptTableElementList ')'
-			OptInherit OptWith OnCommitOption OptCompress OptPartitionElement
+CreateOptionList:	CreateOption
+					{
+						$$ = MakeCreateTableOptions(NULL, $1);
+					}
+				| CreateOptionList CreateOption
+					{	
+						$$ = MakeCreateTableOptions($1, $2); 
+					}
+			;
+
+CreateOption:
+			CreateIfNotExistsOption
+				{
+					$$ = $1;
+				}
+			| OptKind_without_empty
+				{
+					SingleTableOption *n = (SingleTableOption*)palloc0(sizeof(SingleTableOption));
+					n->option_type = OPT_KIND;
+					n->option.relkind = $1;
+					$$ = n;
+				} 
+		;
+
+CreateIfNotExistsOptionList:	CreateIfNotExistsOption
+					{
+						$$ = MakeCreateTableOptions(NULL, $1);
+					}
+				| CreateIfNotExistsOptionList CreateIfNotExistsOption
+					{	
+						$$ = MakeCreateTableOptions($1, $2); 
+					}
+
+			;
+
+CreateIfNotExistsOption:
+			OptInherit_without_empty
+				{
+					SingleTableOption *n = (SingleTableOption*)palloc0(sizeof(SingleTableOption));
+					n->option_type = OPT_INHERIT;
+					n->option.list_content = $1;
+					$$ = n;
+				}
+			| OptInitRans_without_empty
+				{
+					SingleTableOption *n = (SingleTableOption*)palloc0(sizeof(SingleTableOption));
+					n->option_type = OPT_PARTITIONELEMENT;
+					$$ = n;
+				}
+			| OptMaxTrans_without_empty
+				{
+					SingleTableOption *n = (SingleTableOption*)palloc0(sizeof(SingleTableOption));
+					n->option_type = OPT_PARTITIONELEMENT;
+					$$ = n;
+				}
+			| OptStorage_without_empty
+				{
+					SingleTableOption *n = (SingleTableOption*)palloc0(sizeof(SingleTableOption));
+					n->option_type = OPT_PARTITIONELEMENT;
+					$$ = n;
+				}
+			| OptPctFree_without_empty
+				{
+					SingleTableOption *n = (SingleTableOption*)palloc0(sizeof(SingleTableOption));
+					n->option_type = OPT_PARTITIONELEMENT;
+					$$ = n;
+				}			
+			| opt_internal_data_without_empty
+				{
+					SingleTableOption *n = (SingleTableOption*)palloc0(sizeof(SingleTableOption));
+					n->option_type = OPT_INTERNAL_DATA;
+					n->option.char_content = $1;
+					$$ = n;
+				}
+			| opt_table_partitioning_clause_without_empty
+				{
+					SingleTableOption *n = (SingleTableOption*)palloc0(sizeof(SingleTableOption));
+					n->option_type = OPT_TABLE_PARTITIONING_CLAUSE;
+					n->option.partTableState = (PartitionState *)$1;
+					$$ = n;					
+				}
+			| CreateAsOption
+				{
+					$$ = $1;
+				}
+		;
+
+CreateAsOptionList:	CreateAsOption
+					{
+						$$ = MakeCreateTableOptions(NULL, $1);
+					}
+				| CreateAsOptionList CreateAsOption
+					{	
+						$$ = MakeCreateTableOptions($1, $2); 
+					}
+			;
+
+CreateAsOption:
+			OptTableSpace_without_empty
+				{
+					SingleTableOption *n = (SingleTableOption*)palloc0(sizeof(SingleTableOption));
+					n->option_type = OPT_TABLESPACE;
+					n->option.char_content = $1;
+					$$ = n;
+				}
+			| OptWith_without_empty
+				{
+					SingleTableOption *n = (SingleTableOption*)palloc0(sizeof(SingleTableOption));
+					n->option_type = OPT_WITH;
+					n->option.list_content = $1;
+					$$ = n;
+				}
+			| OnCommitOption_without_empty
+				{
+					SingleTableOption *n = (SingleTableOption*)palloc0(sizeof(SingleTableOption));
+					n->option_type = OPT_ONCOMMIT;
+					n->option.oncommit = $1;
+					$$ = n;
+				} 
+			| OptCompress_without_empty
+				{
+					SingleTableOption *n = (SingleTableOption*)palloc0(sizeof(SingleTableOption));
+					n->option_type = OPT_COMPRESS;
+					n->option.row_compress = $1;
+					$$ = n;
+				}
 /* PGXC_BEGIN */
-			OptDistributeBy OptSubCluster
+			| OptDistributeBy_without_empty
+				{
+					SingleTableOption *n = (SingleTableOption*)palloc0(sizeof(SingleTableOption));
+					n->option_type = OPT_DISTRIBUTEBY;
+					n->option.distributeby = $1;
+					$$ = n;
+				}
+			| OptSubCluster_without_empty
+				{
+					SingleTableOption *n = (SingleTableOption*)palloc0(sizeof(SingleTableOption));
+					n->option_type = OPT_SUBCLUSTER;
+					n->option.subcluster = $1;
+					$$ = n;
+				}
 /* PGXC_END */
-			opt_table_partitioning_clause
-			opt_internal_data OptKind opt_compression opt_engine
+			| opt_compression_without_empty
+				{
+					SingleTableOption *n = (SingleTableOption*)palloc0(sizeof(SingleTableOption));
+					n->option_type = OPT_COMPRESSION;
+					n->option.compress_type = $1;
+					$$ = n;
+				} 
+			| opt_engine_without_empty
+				{
+					SingleTableOption *n = (SingleTableOption*)palloc0(sizeof(SingleTableOption));
+					n->option_type = OPT_ENGINE;
+					$$ = n;
+				}
+		;
+
+CreateStmt:	CREATE OptTemp TABLE qualified_name '(' OptTableElementList ')'
+			CreateOptionList
 				{
 					CreateStmt *n = makeNode(CreateStmt);
 					$4->relpersistence = $2;
-					n->relkind = $17;
 					n->relation = $4;
 					n->tableElts = $6;
-					n->inhRelations = $8;
 					n->constraints = NIL;
-					n->options = $9;
-					n->oncommit = $10;
-					n->row_compress = $11;
-					n->tablespacename = $12;
 					n->if_not_exists = false;
+					if ($8 != NULL) {
+						n->relkind = $8->relkind;
+						n->inhRelations = $8->inhRelations;
+						n->options = $8->options;
+						n->oncommit = $8->oncommit;
+						n->row_compress = $8->row_compress;
+						n->tablespacename = $8->tablespacename;
 /* PGXC_BEGIN */
-					n->distributeby = $13;
-					n->subcluster = $14;
+						n->distributeby = $8->distributeby;
+						n->subcluster = $8->subcluster;
 /* PGXC_END */
-					n->partTableState = (PartitionState *)$15;
-					n->internalData = $16;
-					if ($18 != NULL) {
-						n->options = lappend(n->options, $18);
+						n->partTableState = (PartitionState *)$8->partTableState;
+						n->internalData = $8->internalData;
+						if ($8->compress_type != NULL) {
+							n->options = lappend(n->options, $8->compress_type);
+						}
 					}
 					$$ = (Node *)n;
 				}
-		| CREATE OptTemp TABLE IF_P NOT EXISTS qualified_name '('
-			OptTableElementList ')' OptInherit OptWith OnCommitOption
-			OptCompress OptPartitionElement
+		| CREATE OptTemp TABLE qualified_name '(' OptTableElementList ')'
+				{
+					CreateStmt *n = makeNode(CreateStmt);
+					$4->relpersistence = $2;
+					n->relation = $4;
+					n->tableElts = $6;
+					n->constraints = NIL;
+					n->if_not_exists = false;
+					n->relkind = OBJECT_TABLE;
+					n->inhRelations = NIL;
+					n->options = NIL;
+					n->oncommit = ONCOMMIT_NOOP;
+					n->row_compress = REL_CMPRS_PAGE_PLAIN;
+					n->tablespacename = NULL;
 /* PGXC_BEGIN */
-			OptDistributeBy OptSubCluster
+					n->distributeby = NULL;
+					n->subcluster = NULL;
 /* PGXC_END */
-			opt_table_partitioning_clause
-			opt_internal_data opt_compression opt_engine
+					n->partTableState = NULL;
+					n->internalData = NULL;
+					$$ = (Node *)n;
+				}
+		| CREATE OptTemp TABLE IF_P NOT EXISTS qualified_name '('
+			OptTableElementList ')' CreateIfNotExistsOptionList
 				{
 					CreateStmt *n = makeNode(CreateStmt);
 					$7->relpersistence = $2;
 					n->relation = $7;
 					n->tableElts = $9;
-					n->inhRelations = $11;
 					n->constraints = NIL;
-					n->options = $12;
-					n->oncommit = $13;
-					n->row_compress = $14;
-					n->tablespacename = $15;
 					n->if_not_exists = true;
+					if ($11 != NULL) {
+						n->inhRelations = $11->inhRelations;
+						n->options = $11->options;
+						n->oncommit = $11->oncommit;
+						n->row_compress = $11->row_compress;
+						n->tablespacename = $11->tablespacename;
 /* PGXC_BEGIN */
-					n->distributeby = $16;
-					n->subcluster = $17;
+						n->distributeby = $11->distributeby;
+						n->subcluster = $11->subcluster;
 /* PGXC_END */
-					n->partTableState = (PartitionState *)$18;
-					n->internalData = $19;
-					if ($20 != NULL) {
-						n->options = lappend(n->options, $20);
+						n->partTableState = (PartitionState *)$11->partTableState;
+						n->internalData = $11->internalData;
+						if ($11->compress_type != NULL) {
+							n->options = lappend(n->options, $11->compress_type);
+						}
 					}
+					$$ = (Node *)n;
+				}
+		| CREATE OptTemp TABLE IF_P NOT EXISTS qualified_name '('
+			OptTableElementList ')'
+				{
+					CreateStmt *n = makeNode(CreateStmt);
+					$7->relpersistence = $2;
+					n->relation = $7;
+					n->tableElts = $9;
+					n->constraints = NIL;
+					n->if_not_exists = true;
+					n->inhRelations = NIL;
+					n->options = NIL;
+					n->oncommit = ONCOMMIT_NOOP;
+					n->row_compress = REL_CMPRS_PAGE_PLAIN;
+					n->tablespacename = NULL;
+/* PGXC_BEGIN */
+					n->distributeby = NULL;
+					n->subcluster = NULL;
+/* PGXC_END */
+					n->partTableState = NULL;
+					n->internalData = NULL;
 					$$ = (Node *)n;
 				}
 		| CREATE OptTemp TABLE qualified_name OF any_name
@@ -5104,6 +5649,17 @@ opt_engine:
 		}
 	;
 
+opt_engine_without_empty:
+	ENGINE_P opt_equal IDENT
+		{
+			$$ = NULL;
+		}
+	| ENGINE_P opt_equal Sconst
+		{
+			$$ = NULL;
+		}
+	;
+
 compression_args:	IDENT		{ $$ = $1; }
 					| Sconst	{ $$ = $1; }
 					| NONE		{ $$ = "none"; }
@@ -5139,18 +5695,21 @@ opt_compression:
 		}
 	;
 
-OptKind:
+opt_compression_without_empty:
+	set_compress_type
+		{
+			$$ = $1;
+		}
+	;
+
+OptKind_without_empty:
 	FOR MATERIALIZED VIEW
 		{
 			$$ = OBJECT_MATVIEW;
 		}
-	| /* empty */
-		{
-			$$ = OBJECT_TABLE;
-		}
 	;
 
-opt_table_partitioning_clause:
+opt_table_partitioning_clause_without_empty:
 		range_partitioning_clause
 			{
 				$$ = $1;
@@ -5167,7 +5726,6 @@ opt_table_partitioning_clause:
 			{
 				$$ = $1;
 			}
-		| /* empty */			{ $$ = NULL; }
 		;
 
 range_partitioning_clause:
@@ -6468,9 +7026,8 @@ TableLikeExcludingOption:
 				| ALL				{ $$ = CREATE_TABLE_LIKE_ALL; }
 		;
 
-opt_internal_data: 
+opt_internal_data_without_empty: 
             INTERNAL DATA_P 	internal_data_body		{$$ = $3;}
-			| /* EMPTY */      	{$$ = NULL;}
 		;
 
 internal_data_body: 	{
@@ -6771,7 +7328,7 @@ key_action:
 			| SET DEFAULT				{ $$ = FKCONSTR_ACTION_SETDEFAULT; }
 		;
 
-OptInherit: INHERITS '(' qualified_name_list ')'
+OptInherit_without_empty: INHERITS '(' qualified_name_list ')'
 			{
         		const char* message = "CREATE TABLE ... INHERITS is not yet supported.";
     			InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);
@@ -6780,7 +7337,6 @@ OptInherit: INHERITS '(' qualified_name_list ')'
 					errmsg("CREATE TABLE ... INHERITS is not yet supported.")));
 				$$ = $3;
 			}
-			| /*EMPTY*/								{ $$ = NIL; }
 		;
 
 /* WITH (options) is preferred, WITH OIDS and WITHOUT OIDS are legacy forms */
@@ -6801,15 +7357,40 @@ OptWith:
 			| /*EMPTY*/					{ $$ = NIL; }
 		;
 
+OptWith_without_empty:
+			WITH reloptions				{ $$ = $2; }
+			| WITH OIDS
+			{
+				if (!u_sess->attr.attr_common.IsInplaceUpgrade) {
+        			const char* message = "CREATE TABLE ... WITH OIDS is not yet supported.";
+    				InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);
+					ereport(errstate,
+						(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+						errmsg("CREATE TABLE ... WITH OIDS is not yet supported.")));
+				}
+				$$ = list_make1(defWithOids(true));
+			}
+			| WITHOUT OIDS				{ $$ = list_make1(defWithOids(false)); }
+		;
+
 OnCommitOption:  ON COMMIT DROP				{ $$ = ONCOMMIT_DROP; }
 			| ON COMMIT DELETE_P ROWS		{ $$ = ONCOMMIT_DELETE_ROWS; }
 			| ON COMMIT PRESERVE ROWS		{ $$ = ONCOMMIT_PRESERVE_ROWS; }
 			| /*EMPTY*/						{ $$ = ONCOMMIT_NOOP; }
 		;
 
+OnCommitOption_without_empty:  ON COMMIT DROP				{ $$ = ONCOMMIT_DROP; }
+			| ON COMMIT DELETE_P ROWS		{ $$ = ONCOMMIT_DELETE_ROWS; }
+			| ON COMMIT PRESERVE ROWS		{ $$ = ONCOMMIT_PRESERVE_ROWS; }
+		;
+
 OptTableSpace:   TABLESPACE name					{ $$ = $2; }
 			| /*EMPTY*/								{ $$ = NULL; }
 		;
+
+OptTableSpace_without_empty:   TABLESPACE name					{ $$ = $2; }
+		;
+
 OptGPI: 	UPDATE GLOBAL INDEX 	{ $$ = TRUE; }
 			| /*EMPTY*/				{ $$ = FALSE; }
 		;
@@ -6817,11 +7398,19 @@ OptCompress: COMPRESS	{ $$ = REL_CMPRS_FIELDS_EXTRACT; }
 			| NOCOMPRESS { $$ = REL_CMPRS_PAGE_PLAIN; }
 			| /* EMPTY */ { $$ = REL_CMPRS_PAGE_PLAIN; }
 		;
+		
+OptCompress_without_empty: COMPRESS	{ $$ = REL_CMPRS_FIELDS_EXTRACT; }
+			| NOCOMPRESS { $$ = REL_CMPRS_PAGE_PLAIN; }
+			;
 
 /* PGXC_BEGIN */
 OptDistributeBy: OptDistributeByInternal			{ $$ = $1; }
 			| /* EMPTY */							{ $$ = NULL; }
 		;
+
+OptDistributeBy_without_empty: OptDistributeByInternal			{ $$ = $1; }
+		;
+
 OptDatanodeName:    DATANODE name					{ $$ = $2; }
 			| /*EMPTY*/								{ $$ = NULL; }
 		;
@@ -7175,6 +7764,13 @@ OptSubCluster:
 			| /* EMPTY */							{ $$ = NULL; }
 		;
 
+OptSubCluster_without_empty:
+			OptSubClusterInternal
+				{
+					$$ = $1;
+				}
+		;
+
 OptSubClusterInternal:
 			TO NODE pgxcnodes
 				{
@@ -7209,9 +7805,17 @@ OptPctFree:
 			| /* empty */
 		;
 
+OptPctFree_without_empty:
+			PCTFREE Iconst
+		;
+
 OptInitRans:
 			INITRANS Iconst
 			| /* empty */
+		;
+
+OptInitRans_without_empty:
+			INITRANS Iconst
 		;
 
 OptMaxTrans:
@@ -7219,10 +7823,19 @@ OptMaxTrans:
 			| /* empty */
 		;
 
+OptMaxTrans_without_empty:
+			MAXTRANS Iconst
+		;
+
 OptStorage:
 		STORAGE '(' OptInitial OptNext OptMinextents OptMaxextents ')'
 		| /* empty */
 		;
+
+OptStorage_without_empty:
+		STORAGE '(' OptInitial OptNext OptMinextents OptMaxextents ')'
+		;
+		
 OptInitial:
 		INITIAL_P Iconst IDENT
 		| /* empty */
@@ -7274,28 +7887,47 @@ CreateAsStmt:
 		;
 
 create_as_target:
-			qualified_name opt_column_list OptWith OnCommitOption OptCompress OptTableSpace
-/* PGXC_BEGIN */
-			OptDistributeBy OptSubCluster
-/* PGXC_END */
-			opt_compression opt_engine
+			qualified_name opt_column_list CreateAsOptionList
 				{
 					$$ = makeNode(IntoClause);
 					$$->rel = $1;
-					$$->colNames = $2;
-					$$->options = $3;
-					$$->onCommit = $4;
-					$$->row_compress = $5;
-					$$->tableSpaceName = $6;
 					$$->skipData = false;		/* might get changed later */
+					$$->colNames = $2;
 /* PGXC_BEGIN */
-					$$->distributeby = $7;
-					$$->subcluster = $8;
 					$$->relkind = INTO_CLAUSE_RELKIND_DEFAULT;
 /* PGXC_END */
-					if ($9 != NULL) {
-						$$->options = lappend($$->options, $9);
+					if ($3 != NULL) {
+						$$->options = $3->options;
+						$$->onCommit = $3->oncommit;
+						$$->row_compress = $3->row_compress;
+						$$->tableSpaceName = $3->tablespacename;
+/* PGXC_BEGIN */
+						$$->distributeby = $3->distributeby;
+						$$->subcluster = $3->subcluster;
+/* PGXC_END */
+						if ($3->compress_type != NULL) {
+							$$->options = lappend($$->options, $3->compress_type);
+						}
 					}
+				}
+			| qualified_name opt_column_list
+				{
+					$$ = makeNode(IntoClause);
+					$$->rel = $1;
+					$$->skipData = false;		/* might get changed later */
+					$$->colNames = $2;
+/* PGXC_BEGIN */
+					$$->relkind = INTO_CLAUSE_RELKIND_DEFAULT;
+/* PGXC_END */
+					$$->options = NIL;
+					$$->onCommit = ONCOMMIT_NOOP;
+					$$->row_compress = REL_CMPRS_PAGE_PLAIN;
+					$$->tableSpaceName = NULL;
+/* PGXC_BEGIN */
+					$$->distributeby = NULL;
+					$$->subcluster = NULL;
+/* PGXC_END */
+					 
 				}
 		;
 
@@ -11186,6 +11818,55 @@ GrantStmt:	GRANT privileges ON privilege_target TO grantee_list
 					n->grant_option = $7;
 					$$ = (Node*)n;
 				}
+			| GRANT routine_privileges ON routine_target
+			TO grantee_list opt_grant_grant_option
+				{
+					GrantStmt *n = makeNode(GrantStmt);
+					n->is_grant = true;
+					n->privileges = $2;
+					n->targtype = ($4)->targtype;
+					n->objtype = ($4)->objtype;
+					n->objects = ($4)->objs;
+					n->grantees = $6;
+					n->grant_option = $7;
+					$$ = (Node*)n;
+				}
+			| GRANT temporary_privileges ON temporary_target
+			TO grantee_list opt_grant_grant_option
+				{
+					GrantStmt *n = makeNode(GrantStmt);
+					n->is_grant = true;
+					n->privileges = $2;
+					n->targtype = ($4)->targtype;
+					n->objtype = ($4)->objtype;
+					n->objects = ($4)->objs;
+					n->grantees = $6;
+					n->grant_option = $7;
+					$$ = (Node*)n;
+				}
+			| GRANT CREATE USER ON '*' '.' '*'
+			TO RoleId
+				{
+					AlterRoleStmt *n = makeNode(AlterRoleStmt);
+					n->role = $9;
+					n->action = +1;	/* add, if there are members */
+					n->options = list_make1(makeDefElem("createrole", (Node *)makeInteger((TRUE))));
+					n->lockstatus = DO_NOTHING;
+					$$ = (Node *)n;
+				}
+			| GRANT CREATE TABLESPACE ON '*' '.' '*'
+			TO RoleId
+				{
+					GrantRoleStmt *n = makeNode(GrantRoleStmt);
+					n->is_grant = true;
+					n->admin_opt = false;
+					AccessPriv *n2 = makeNode(AccessPriv);
+					n2->priv_name = "gs_role_tablespace";
+					n2->cols = NULL;
+					n->granted_roles = list_make1(n2);
+					n->grantee_roles = list_make1(makeString($9));
+					$$ = (Node*)n;
+				}
 			| GRANT ALL privilege_str TO RoleId
 				{
 					AlterRoleStmt *n = makeNode(AlterRoleStmt);
@@ -11210,6 +11891,57 @@ RevokeStmt:
 					n->grantees = $6;
 					n->behavior = $7;
 					$$ = (Node *)n;
+				}
+			| REVOKE routine_privileges ON routine_target
+			FROM grantee_list opt_drop_behavior
+				{
+					GrantStmt *n = makeNode(GrantStmt);
+					n->is_grant = false;
+					n->grant_option = false;
+					n->privileges = $2;
+					n->targtype = ($4)->targtype;
+					n->objtype = ($4)->objtype;
+					n->objects = ($4)->objs;
+					n->grantees = $6;
+					n->behavior = $7;
+					$$ = (Node *)n;
+				}
+			| REVOKE temporary_privileges ON temporary_target
+			FROM grantee_list opt_drop_behavior
+				{
+					GrantStmt *n = makeNode(GrantStmt);
+					n->is_grant = false;
+					n->grant_option = false;
+					n->privileges = $2;
+					n->targtype = ($4)->targtype;
+					n->objtype = ($4)->objtype;
+					n->objects = ($4)->objs;
+					n->grantees = $6;
+					n->behavior = $7;
+					$$ = (Node *)n;
+				}
+			| REVOKE CREATE USER ON '*' '.' '*'
+			FROM RoleId
+				{
+					AlterRoleStmt *n = makeNode(AlterRoleStmt);
+					n->role = $9;
+					n->action = +1;	/* add, if there are members */
+					n->options = lappend(NULL, makeDefElem("createrole", (Node *)makeInteger(FALSE)));
+					n->lockstatus = DO_NOTHING;
+					$$ = (Node *)n;
+				}
+			| REVOKE CREATE TABLESPACE ON '*' '.' '*'
+			FROM RoleId
+				{
+					GrantRoleStmt *n = makeNode(GrantRoleStmt);
+					n->is_grant = false;
+					n->admin_opt = false;
+					AccessPriv *n2 = makeNode(AccessPriv);
+					n2->priv_name = "gs_role_tablespace";
+					n2->cols = NULL;
+					n->granted_roles = list_make1(n2);
+					n->grantee_roles = list_make1(makeString($9));
+					$$ = (Node*)n;
 				}
 			| REVOKE GRANT OPTION FOR privileges ON privilege_target
 			FROM grantee_list opt_drop_behavior
@@ -11304,6 +12036,102 @@ privilege:	SELECT opt_column_list
 			}
 		;
 
+routine_privileges: routine_privilege_list
+				{ $$ = $1; }
+		;
+
+routine_privilege_list: 
+		routine_privilege					{ $$ = list_make1($1); }
+		| routine_privilege_list ',' routine_privilege		{ $$ = lappend($1, $3); }
+		| privilege_list ',' routine_privilege		{ $$ = lappend($1, $3); }
+		| routine_privilege_list ',' privilege		{ $$ = lappend($1, $3); }
+	;
+
+routine_privilege:
+		ALTER ROUTINE
+				{
+					AccessPriv *n = makeNode(AccessPriv);
+					n->priv_name = pstrdup($1);
+					n->cols = NULL;
+					$$ = n;
+				}
+		;
+
+routine_target:
+			FUNCTION function_with_argtypes_list
+				{
+					PrivTarget *n = (PrivTarget *) palloc(sizeof(PrivTarget));
+					n->targtype = ACL_TARGET_OBJECT;
+					n->objtype = ACL_OBJECT_FUNCTION;
+					n->objs = $2;
+					$$ = n;
+				}
+			| PROCEDURE function_with_argtypes_list
+				{
+					PrivTarget *n = (PrivTarget *) palloc(sizeof(PrivTarget));
+					n->targtype = ACL_TARGET_OBJECT;
+					n->objtype = ACL_OBJECT_FUNCTION;
+					n->objs = $2;
+					$$ = n;
+				}
+			| ALL FUNCTIONS IN_P SCHEMA name_list
+				{
+					PrivTarget *n = (PrivTarget *) palloc(sizeof(PrivTarget));
+					n->targtype = ACL_TARGET_ALL_IN_SCHEMA;
+					n->objtype = ACL_OBJECT_FUNCTION;
+					n->objs = $5;
+					$$ = n;
+				}
+			| name '.' '*'
+				{
+					PrivTarget *n = (PrivTarget *) palloc(sizeof(PrivTarget));
+					n->targtype = ACL_TARGET_ALL_IN_SCHEMA;
+					n->objtype = ACL_OBJECT_FUNCTION;
+					n->objs = list_make1(makeString($1));
+					$$ = n;
+				}
+			;
+
+temporary_privileges: temporary_privilege_list
+				{ $$ = $1; }
+		;
+
+temporary_privilege_list: 
+		temporary_privilege					{ $$ = list_make1($1); }
+		| temporary_privilege_list ',' temporary_privilege		{ $$ = lappend($1, $3); }
+		| privilege_list ',' temporary_privilege		{ $$ = lappend($1, $3); }
+		| temporary_privilege_list ',' privilege		{ $$ = lappend($1, $3); }
+	;
+
+temporary_privilege:
+		CREATE TEMPORARY TABLES
+			{
+				AccessPriv *n = makeNode(AccessPriv);
+				n->priv_name = pstrdup($2);
+				n->cols = NULL;
+				$$ = n;
+			}
+		;
+
+		
+temporary_target:
+			DATABASE name_list
+				{
+					PrivTarget *n = (PrivTarget *) palloc(sizeof(PrivTarget));
+					n->targtype = ACL_TARGET_OBJECT;
+					n->objtype = ACL_OBJECT_DATABASE;
+					n->objs = $2;
+					$$ = n;
+				}
+			| name '.' '*'
+				{
+					PrivTarget *n = (PrivTarget *) palloc(sizeof(PrivTarget));
+					n->targtype = ACL_TARGET_OBJECT;
+					n->objtype = ACL_OBJECT_DATABASE;
+					n->objs = list_make1(makeString($1));
+					$$ = n;				
+				}
+			;
 
 /* Don't bother trying to fold the first two rules into one using
  * opt_table.  You're going to get conflicts.
@@ -11639,6 +12467,15 @@ GrantDbStmt:
                     n->admin_opt = $5;
                     $$ = (Node*)n;
                 }
+            | GRANT db_privileges ON '*' '.' '*' TO grantee_list opt_grant_admin_option
+                {
+                    GrantDbStmt *n = makeNode(GrantDbStmt);
+                    n->is_grant = true;
+                    n->privileges = $2;
+                    n->grantees = $8;
+                    n->admin_opt = $9;
+                    $$ = (Node*)n;
+                }
             ;
 
 RevokeDbStmt:
@@ -11648,6 +12485,15 @@ RevokeDbStmt:
                     n->is_grant = false;
                     n->privileges = $2;
                     n->grantees = $4;
+                    n->admin_opt = false;
+                    $$ = (Node*)n;
+                }
+            | REVOKE db_privileges ON '*' '.' '*' FROM grantee_list
+                {
+                    GrantDbStmt *n = makeNode(GrantDbStmt);
+                    n->is_grant = false;
+                    n->privileges = $2;
+                    n->grantees = $8;
                     n->admin_opt = false;
                     $$ = (Node*)n;
                 }
@@ -11727,6 +12573,18 @@ db_privilege: CREATE ANY TABLE
             {
                 DbPriv *n = makeNode(DbPriv);
                 n->db_priv_name = pstrdup("create any function");
+                $$ = n;
+            }
+            | CREATE ROUTINE
+            {
+                DbPriv *n = makeNode(DbPriv);
+                n->db_priv_name = pstrdup("create any function");
+                $$ = n;				
+            }
+            | INDEX
+            {
+                DbPriv *n = makeNode(DbPriv);
+                n->db_priv_name = pstrdup("create any index");
                 $$ = n;
             }
             | EXECUTE ANY FUNCTION
@@ -11860,7 +12718,7 @@ defacl_privilege_target:
 
 IndexStmt:	CREATE opt_unique INDEX opt_concurrently opt_index_name
 			ON qualified_name access_method_clause '(' index_params ')'
-			opt_include opt_reloptions OptPartitionElement where_clause
+			TableIndexOptionList where_clause
 				{
 					IndexStmt *n = makeNode(IndexStmt);
 					n->unique = $2;
@@ -11870,10 +12728,6 @@ IndexStmt:	CREATE opt_unique INDEX opt_concurrently opt_index_name
 					n->relation = $7;
 					n->accessMethod = $8;
 					n->indexParams = $10;
-					n->indexIncludingParams = $12;
-					n->options = $13;
-					n->tableSpace = $14;
-					n->whereClause = $15;
 					n->excludeOpNames = NIL;
 					n->idxcomment = NULL;
 					n->indexOid = InvalidOid;
@@ -11885,11 +12739,46 @@ IndexStmt:	CREATE opt_unique INDEX opt_concurrently opt_index_name
 					n->isconstraint = false;
 					n->deferrable = false;
 					n->initdeferred = false;
+					n->whereClause = $13;
+					if ($12 != NULL) {
+						n->indexIncludingParams = $12->indexIncludingParams;
+						n->options = $12->options;
+						n->tableSpace = $12->tableSpace;
+					}
+					$$ = (Node *)n;
+				}
+				| CREATE opt_unique INDEX opt_concurrently opt_index_name
+			ON qualified_name access_method_clause '(' index_params ')'
+			where_clause
+				{
+					IndexStmt *n = makeNode(IndexStmt);
+					n->unique = $2;
+					n->concurrent = $4;
+                    n->schemaname = $5->schemaname;
+					n->idxname = $5->relname;
+					n->relation = $7;
+					n->accessMethod = $8;
+					n->indexParams = $10;
+					n->excludeOpNames = NIL;
+					n->idxcomment = NULL;
+					n->indexOid = InvalidOid;
+					n->oldNode = InvalidOid;
+					n->partClause = NULL;
+					n->isPartitioned = false;
+					n->isGlobal = false;
+					n->primary = false;
+					n->isconstraint = false;
+					n->deferrable = false;
+					n->initdeferred = false;
+					n->whereClause = $12;
+					n->indexIncludingParams = NIL;
+					n->options = NIL;
+					n->tableSpace = NULL;
 					$$ = (Node *)n;
 				}
 				| CREATE opt_unique INDEX opt_concurrently opt_index_name
 					ON qualified_name access_method_clause '(' index_params ')'
-					LOCAL opt_partition_index_def opt_include opt_reloptions OptTableSpace
+					LOCAL opt_partition_index_def PartitionTableIndexOptionList
 				{
 
 					IndexStmt *n = makeNode(IndexStmt);
@@ -11900,10 +12789,6 @@ IndexStmt:	CREATE opt_unique INDEX opt_concurrently opt_index_name
 					n->relation = $7;
 					n->accessMethod = $8;
 					n->indexParams = $10;
-					n->partClause  = $13;
-					n->indexIncludingParams = $14;
-					n->options = $15;
-					n->tableSpace = $16;
 					n->isPartitioned = true;
 					n->isGlobal = false;
 					n->excludeOpNames = NIL;
@@ -11914,12 +12799,17 @@ IndexStmt:	CREATE opt_unique INDEX opt_concurrently opt_index_name
 					n->isconstraint = false;
 					n->deferrable = false;
 					n->initdeferred = false;
+					n->partClause  = $13;
+					if ($14 != NULL) {
+						n->indexIncludingParams = $14->indexIncludingParams;
+						n->options = $14->options;
+						n->tableSpace = $14->tableSpace;
+					}
 					$$ = (Node *)n;
-
 				}
 				| CREATE opt_unique INDEX opt_concurrently opt_index_name
 					ON qualified_name access_method_clause '(' index_params ')'
-					GLOBAL opt_include opt_reloptions OptTableSpace
+					LOCAL opt_partition_index_def
 				{
 
 					IndexStmt *n = makeNode(IndexStmt);
@@ -11930,10 +12820,35 @@ IndexStmt:	CREATE opt_unique INDEX opt_concurrently opt_index_name
 					n->relation = $7;
 					n->accessMethod = $8;
 					n->indexParams = $10;
+					n->isPartitioned = true;
+					n->isGlobal = false;
+					n->excludeOpNames = NIL;
+					n->idxcomment = NULL;
+					n->indexOid = InvalidOid;
+					n->oldNode = InvalidOid;
+					n->primary = false;
+					n->isconstraint = false;
+					n->deferrable = false;
+					n->initdeferred = false;
+					n->partClause  = $13;
+					n->indexIncludingParams = NIL;
+					n->options = NIL;
+					n->tableSpace = NULL;
+					$$ = (Node *)n;
+				}
+				| CREATE opt_unique INDEX opt_concurrently opt_index_name
+					ON qualified_name access_method_clause '(' index_params ')'
+					GLOBAL PartitionTableIndexOptionList
+				{
+					IndexStmt *n = makeNode(IndexStmt);
+					n->unique = $2;
+					n->concurrent = $4;
+                    n->schemaname = $5->schemaname;
+					n->idxname = $5->relname;
+					n->relation = $7;
+					n->accessMethod = $8;
+					n->indexParams = $10;
 					n->partClause  = NULL;
-					n->indexIncludingParams = $13;
-					n->options = $14;
-					n->tableSpace = $15;
 					n->isPartitioned = true;
 					n->isGlobal = true;
 					n->excludeOpNames = NIL;
@@ -11944,10 +12859,117 @@ IndexStmt:	CREATE opt_unique INDEX opt_concurrently opt_index_name
 					n->isconstraint = false;
 					n->deferrable = false;
 					n->initdeferred = false;
+					if ($13 != NULL) {
+						n->indexIncludingParams = $13->indexIncludingParams;
+						n->options = $13->options;
+						n->tableSpace = $13->tableSpace;
+					}
 					$$ = (Node *)n;
-
+				}
+				| CREATE opt_unique INDEX opt_concurrently opt_index_name
+					ON qualified_name access_method_clause '(' index_params ')'
+					GLOBAL
+				{
+					IndexStmt *n = makeNode(IndexStmt);
+					n->unique = $2;
+					n->concurrent = $4;
+                    n->schemaname = $5->schemaname;
+					n->idxname = $5->relname;
+					n->relation = $7;
+					n->accessMethod = $8;
+					n->indexParams = $10;
+					n->partClause  = NULL;
+					n->isPartitioned = true;
+					n->isGlobal = true;
+					n->excludeOpNames = NIL;
+					n->idxcomment = NULL;
+					n->indexOid = InvalidOid;
+					n->oldNode = InvalidOid;
+					n->primary = false;
+					n->isconstraint = false;
+					n->deferrable = false;
+					n->initdeferred = false;
+					n->indexIncludingParams = NIL;
+					n->options = NIL;
+					n->tableSpace = NULL;
+					$$ = (Node *)n;
 				}
 		;
+
+TableIndexOptionList:	TableIndexOption
+					{
+						$$ = MakeCreateIndexOptions(NULL, $1);
+					}
+				| TableIndexOptionList TableIndexOption
+					{
+						$$ = MakeCreateIndexOptions($1, $2);
+					}
+			;
+
+PartitionTableIndexOptionList:	PartitionTableIndexOption
+					{
+						$$ = MakeCreateIndexOptions(NULL, $1);
+					}
+				| PartitionTableIndexOptionList PartitionTableIndexOption
+					{
+						$$ = MakeCreateIndexOptions($1, $2);
+					}
+			;
+
+TableIndexOption:
+			PartitionTableIndexOption
+				{
+					$$ = $1;
+				}
+			| OptInitRans_without_empty
+				{
+					SingleIndexOption *n = (SingleIndexOption*)palloc(sizeof(SingleIndexOption));
+					n->option_type = OPT_PARTITIONELEMENT_INDEX;
+					$$ = n;
+				}
+			| OptMaxTrans_without_empty
+				{
+					SingleIndexOption *n = (SingleIndexOption*)palloc(sizeof(SingleIndexOption));
+					n->option_type = OPT_PARTITIONELEMENT_INDEX;
+					$$ = n;
+				}
+			| OptStorage_without_empty
+				{
+					SingleIndexOption *n = (SingleIndexOption*)palloc(sizeof(SingleIndexOption));
+					n->option_type = OPT_PARTITIONELEMENT_INDEX;
+					$$ = n;
+				}
+			| OptPctFree_without_empty
+				{
+					SingleIndexOption *n = (SingleIndexOption*)palloc(sizeof(SingleIndexOption));
+					n->option_type = OPT_PARTITIONELEMENT_INDEX;
+					$$ = n;
+				}			
+			;
+
+PartitionTableIndexOption:	
+			opt_include_without_empty
+				{
+					SingleIndexOption *n = (SingleIndexOption*)palloc(sizeof(SingleIndexOption));
+					n->option_type = OPT_INCLUDE;
+					n->option.list_content = $1;
+					$$ = n;
+				}
+			|	opt_reloptions_without_empty
+				{
+					SingleIndexOption *n = (SingleIndexOption*)palloc(sizeof(SingleIndexOption));
+					n->option_type = OPT_RELOPTIONS;
+					n->option.list_content = $1;
+					$$ = n;
+				}
+			|	OptTableSpace_without_empty
+				{
+					SingleIndexOption *n = (SingleIndexOption*)palloc(sizeof(SingleIndexOption));
+					n->option_type = OPT_TABLESPACE_INDEX;
+					n->option.char_content = $1;
+					$$ = n;
+				}
+			;
 
 opt_unique:
 			UNIQUE									{ $$ = TRUE; }
@@ -12038,8 +13060,7 @@ index_elem:	ColId opt_collate opt_class opt_asc_desc opt_nulls_order
 				}
 		;
 
-opt_include:		INCLUDE '(' index_including_params ')'			{ $$ = $3; }
-			 |		/* EMPTY */						{ $$ = NIL; }
+opt_include_without_empty:		INCLUDE '(' index_including_params ')'			{ $$ = $3; }
 		;
 
 index_including_params:	index_elem						{ $$ = list_make1($1); }
@@ -21148,19 +22169,28 @@ opt_charset:
 ConstDatetime:
 			TIMESTAMP '(' Iconst ')' selected_timezone
 				{
-					if ($5)
+					if ($5 == NULL) {
 						$$ = SystemTypeName("timestamptz");
-					else
-						$$ = SystemTypeName("timestamp");
+					} else {
+						if (strcmp($5, "TRUE") == 0)
+							$$ = SystemTypeName("timestamptz");
+						else
+							$$ = SystemTypeName("timestamp");
+					}
 					$$->typmods = list_make1(makeIntConst($3, @3));
 					$$->location = @1;
 				}
 			| TIMESTAMP selected_timezone
 				{
-					if ($2)
+					if ($2 == NULL) {
 						$$ = SystemTypeName("timestamptz");
-					else
-						$$ = SystemTypeName("timestamp");
+						$$->typmods = list_make1(makeIntConst(0, -1));
+					} else {
+						if (strcmp($2, "TRUE") == 0)
+							$$ = SystemTypeName("timestamptz");
+						else
+							$$ = SystemTypeName("timestamp");
+					}
 					$$->location = @1;
 				}
 			| TIME '(' Iconst ')' opt_timezone
@@ -21172,12 +22202,17 @@ ConstDatetime:
 					$$->typmods = list_make1(makeIntConst($3, @3));
 					$$->location = @1;
 				}
-			| TIME opt_timezone
+			| TIME selected_timezone
 				{
-					if ($2)
-						$$ = SystemTypeName("timetz");
-					else
+					if ($2 == NULL) {
 						$$ = SystemTypeName("time");
+						$$->typmods = list_make1(makeIntConst(0, -1));
+					} else {
+						if (strcmp($2, "TRUE") == 0)
+							$$ = SystemTypeName("timetz");
+						else 
+							$$ = SystemTypeName("time");
+					}
 					$$->location = @1;
 				}
 			| DATE_P
@@ -21197,6 +22232,18 @@ ConstDatetime:
 					$$ = SystemTypeName("smalldatetime");
 					$$->location = @1;
 				}
+			| DATETIME '(' Iconst ')'
+			    {
+					$$ = SystemTypeName("timestamp");
+					$$->typmods = list_make1(makeIntConst($3,@3));
+					$$->location = @1;
+			    }
+			| DATETIME
+			    {
+					$$ = SystemTypeName("timestamp");
+					$$->typmods = list_make1(makeIntConst(0,-1));
+					$$->location = @1;
+			    }
 		;
 
 ConstInterval:
@@ -21214,9 +22261,9 @@ opt_timezone:
 		;
 
 selected_timezone:
-			WITH_TIME ZONE							{ $$ = TRUE; }
-			| WITHOUT TIME ZONE						{ $$ = FALSE; }
-			| /*EMPTY*/								{ $$ = TRUE; }
+			WITH_TIME ZONE							{ $$ = "TRUE"; }
+			| WITHOUT TIME ZONE						{ $$ = "FALSE"; }
+			| /*EMPTY*/								{ $$ = NULL; }
 		;
 
 
@@ -21804,6 +22851,7 @@ a_expr:		c_expr									{ $$ = $1; }
 			 */
 			| a_expr BETWEEN opt_asymmetric b_expr AND b_expr		%prec BETWEEN
 				{
+					fix_bw_type((A_Const *)$1, (A_Const *)$4, (A_Const *)$6);
 					$$ = (Node *) makeA_Expr(AEXPR_AND, NIL,
 						(Node *) makeSimpleA_Expr(AEXPR_OP, ">=", $1, $4, @2),
 						(Node *) makeSimpleA_Expr(AEXPR_OP, "<=", $1, $6, @2),
@@ -21811,6 +22859,7 @@ a_expr:		c_expr									{ $$ = $1; }
 				}
 			| a_expr NOT BETWEEN opt_asymmetric b_expr AND b_expr	%prec BETWEEN
 				{
+					fix_bw_type((A_Const *)$1, (A_Const *)$5, (A_Const *)$7);
 					$$ = (Node *) makeA_Expr(AEXPR_OR, NIL,
 						(Node *) makeSimpleA_Expr(AEXPR_OP, "<", $1, $5, @2),
 						(Node *) makeSimpleA_Expr(AEXPR_OP, ">", $1, $7, @2),
@@ -21818,6 +22867,7 @@ a_expr:		c_expr									{ $$ = $1; }
 				}
 			| a_expr BETWEEN SYMMETRIC b_expr AND b_expr			%prec BETWEEN
 				{
+					fix_bw_type((A_Const *)$1, (A_Const *)$4, (A_Const *)$6);
 					$$ = (Node *) makeA_Expr(AEXPR_OR, NIL,
 						(Node *) makeA_Expr(AEXPR_AND, NIL,
 							(Node *) makeSimpleA_Expr(AEXPR_OP, ">=", $1, $4, @2),
@@ -21831,6 +22881,7 @@ a_expr:		c_expr									{ $$ = $1; }
 				}
 			| a_expr NOT BETWEEN SYMMETRIC b_expr AND b_expr		%prec BETWEEN
 				{
+					fix_bw_type((A_Const *)$1, (A_Const *)$5, (A_Const *)$7);
 					$$ = (Node *) makeA_Expr(AEXPR_AND, NIL,
 						(Node *) makeA_Expr(AEXPR_OR, NIL,
 							(Node *) makeSimpleA_Expr(AEXPR_OP, "<", $1, $5, @2),
@@ -24648,6 +25699,7 @@ unreserved_keyword:
 			| CLUSTER
             | COLUMN_ENCRYPTION_KEY
             | COLUMN_ENCRYPTION_KEYS
+			| COLUMNS
 			| COMMENT
 			| COMMENTS
 			| COMMIT
@@ -24764,7 +25816,6 @@ unreserved_keyword:
 			| INCLUDING
 			| INCREMENT
 			| INCREMENTAL
-			| INDEX
 			| INDEXES
 			| INFILE
 			| INHERIT
@@ -24925,6 +25976,7 @@ unreserved_keyword:
 			| ROLLBACK
 			| ROLLUP
 			| ROTATION
+			| ROUTINE
 			| ROWS
 			| RULE
 			| SAMPLE
@@ -25008,7 +26060,8 @@ unreserved_keyword:
 			| UNTIL
 			| UNUSABLE
 			| UPDATE
-                        | USEEOF
+            		| USE
+            		| USEEOF
 			| VACUUM
 			| VALID
 			| VALIDATE
@@ -25061,6 +26114,7 @@ col_name_keyword:
 			| COALESCE
 			| CONVERT
 			| DATE_P
+			| DATETIME
 			| DAYOFMONTH
 			| DAYOFWEEK
 			| DAYOFYEAR
@@ -25158,6 +26212,7 @@ type_func_name_keyword:
 			| HDFSDIRECTORY
 			| IGNORE
 			| ILIKE
+			| INDEX
 			| INNER_P
 			| JOIN
 			| LEFT
@@ -27322,6 +28377,256 @@ static FuncCall* MakePriorAsFunc()
     n->over = NULL;
     n->call_func = false;
     return n;
+}
+
+static CreateTableOptions* MakeCreateTableOptions(CreateTableOptions *tableOptions, SingleTableOption *tableOption)
+{
+	if (tableOptions == NULL) {
+		/* Initialize struct*/
+		tableOptions = (CreateTableOptions*)palloc0(sizeof(CreateTableOptions));
+		tableOptions->oncommit = ONCOMMIT_NOOP;
+		tableOptions->row_compress = REL_CMPRS_PAGE_PLAIN;
+		tableOptions->relkind = OBJECT_TABLE;
+	}
+	switch (tableOption->option_type) {
+	case OPT_INHERIT:
+		tableOptions->inhRelations = tableOption->option.list_content;
+		break;
+	case OPT_WITH:
+		tableOptions->options = tableOption->option.list_content;
+		break;
+	case OPT_ONCOMMIT:
+		tableOptions->oncommit = tableOption->option.oncommit;
+		break;
+	case OPT_COMPRESS:
+		tableOptions->row_compress = tableOption->option.row_compress;
+		break;
+	/* PGXC_BEGIN */
+	case OPT_DISTRIBUTEBY:
+		tableOptions->distributeby = tableOption->option.distributeby;
+		break;
+	case OPT_SUBCLUSTER:
+		tableOptions->subcluster = tableOption->option.subcluster;
+		break;
+	/* PGXC_END */
+	case OPT_TABLE_PARTITIONING_CLAUSE:
+		tableOptions->partTableState = (PartitionState *)(tableOption)->option.partTableState;
+		break;
+	case OPT_INTERNAL_DATA:
+		tableOptions->internalData = tableOption->option.char_content;
+		break;
+	case OPT_KIND:
+		tableOptions->relkind = tableOption->option.relkind;
+		break;
+	case OPT_COMPRESSION:
+		tableOptions->compress_type = tableOption->option.compress_type;
+		break;
+	case OPT_TABLESPACE:
+		tableOptions->tablespacename = tableOption->option.char_content;
+		break;
+	default:
+		break;
+	}
+	return tableOptions;
+} 
+
+static CreateIndexOptions* MakeCreateIndexOptions(CreateIndexOptions *indexOptions, SingleIndexOption *indexOption)
+{
+	if (indexOptions == NULL) {
+		/* Initialize struct*/
+		indexOptions = (CreateIndexOptions*)palloc0(sizeof(CreateIndexOptions));
+	}
+	switch (indexOption->option_type) {
+	case OPT_INCLUDE:
+		indexOptions->indexIncludingParams = indexOption->option.list_content;
+		break;
+	case OPT_RELOPTIONS:
+		indexOptions->options = indexOption->option.list_content;
+		break;
+	case OPT_TABLESPACE_INDEX:
+		indexOptions->tableSpace = indexOption->option.char_content;
+		break;
+	default:
+		break;
+	}
+	return indexOptions;
+}
+
+static Node* MakeSetPasswdStmt(char* user, char* passwd, char* replace_passwd)
+{
+	List *list = NULL;
+
+	AlterRoleStmt *n = makeNode(AlterRoleStmt);
+	n->role = user;
+	n->action = +1;
+	if (replace_passwd) {
+		list = list_make2(makeStringConst(passwd, -1), makeStringConst(replace_passwd, -1));
+	} else {
+		list = list_make1(makeStringConst(passwd, -1));
+	}
+	n->options = list_make1(makeDefElem("password", (Node *)list));
+	n->lockstatus = DO_NOTHING;
+	return (Node *)n;
+}
+
+static void fix_bw_type(A_Const* bw_arg1, A_Const* bw_arg2, A_Const* bw_arg3)
+{
+    int t1 = bw_arg1->val.type;
+    int t2 = bw_arg2->val.type;
+    int t3 = bw_arg3->val.type;
+    
+    if (((t1 == T_String) ^ (t2 == T_String)) ||  ((t1 == T_String) ^ (t3 == T_String))) {
+        RESET_ACONST_STRING(bw_arg1, t1, extract_numericstr(bw_arg1->val.val.str));
+        RESET_ACONST_STRING(bw_arg2, t2, extract_numericstr(bw_arg2->val.val.str));
+        RESET_ACONST_STRING(bw_arg3, t3, extract_numericstr(bw_arg3->val.val.str));
+    }
+
+    if (((t1 == T_BitString) ^ (t2 == T_BitString)) ||  ((t1 == T_BitString) ^ (t3 == T_BitString))) {
+        RESET_ACONST_INTEGER(bw_arg1, t1);
+        RESET_ACONST_INTEGER(bw_arg2, t2);
+        RESET_ACONST_INTEGER(bw_arg3, t3);
+    }
+}
+
+static long conv_bit_to_int(A_Const* bit_str)
+{
+    long result = 0;    /* The resulting bit string     */
+    long bit_one_mask = 0x01;
+
+    char* sp = bit_str->val.val.str + strlen(bit_str->val.val.str) - 1;
+    for (; *sp != 'B' && *sp != 'b'; sp--) {
+        if (*sp == '1') {
+            result |= bit_one_mask;
+        } else if (*sp != '0')
+            ereport(ERROR,
+                    (errcode(ERRCODE_INVALID_TEXT_REPRESENTATION), errmsg("\"%c\" is not a valid binary digit", *sp)));
+
+        bit_one_mask <<= 1;
+        if (bit_one_mask == 0) {
+            ereport(ERROR, (errcode(ERRCODE_PROGRAM_LIMIT_EXCEEDED), errmsg("bit length too large")));
+        }
+    }
+    return result;
+}
+
+static char* extract_numericstr(const char* str)
+{
+    const char* cp = NULL;
+    bool have_digit = false;
+    bool have_post_char = false;
+    char* dest = NULL;
+    int len_of_numericstr = 0;
+    int digit_begin_index = 0;
+
+    cp = str;
+    while (*cp) {
+        if (!isdigit((unsigned char)*cp) && (*cp != '.')) {
+            digit_begin_index++;
+        } else {
+            break;
+        }
+        cp++;
+    }
+    while (*cp) {
+        if (isdigit((unsigned char)*cp)) {
+            have_digit = true;
+        } else if (have_digit && *cp != '.') {
+            have_post_char = true;
+            break;
+        }
+        cp++;
+        len_of_numericstr ++;
+    }
+    if (have_digit && have_post_char){
+        dest = (char*)palloc0((len_of_numericstr+1)*sizeof(char));
+        for (int i = 0; i < len_of_numericstr; i++) {
+            dest[i] = str[digit_begin_index++];
+        }
+        dest[len_of_numericstr] = '\0';
+        return dest;
+    }
+    return NULL;
+}
+
+/*
+ * Under thread pool mode, Use this SQL statement to process internal threads,
+ * such as WorkloadMonitor, statement flush thread, JobScheduler etc.
+ *
+ * SELECT pg_terminate_session(coalesce((select pid from pg_stat_activity where sessionid = pid and sessionid = expr limit 1), 0), expr);
+ *
+ * Under non thread pool mode:
+ *
+ * SELECT pg_terminate_session(expr, expr);
+ */
+static Node* MakeKillStmt(int kill_opt, Node *expr)
+{
+	FuncCall* func = (FuncCall*)makeNode(FuncCall);
+	func->funcname = list_make1(makeString((char *)(kill_opt ? "pg_terminate_session" : "pg_cancel_session")));
+	func->agg_star = FALSE;
+	func->agg_distinct = FALSE;
+	func->location = -1;
+	func->call_func = false;
+
+	if (ENABLE_THREAD_POOL) {
+    		RangeVar* rv = makeRangeVar(NULL, "pg_stat_activity", -1);
+    		List* fl = (List*)list_make1(rv);
+
+    		ColumnRef* cr = makeNode(ColumnRef);
+    		cr->fields = lcons(makeString("pid"), NIL);
+    		cr->location = -1;
+    		ResTarget* rt = makeNode(ResTarget);
+    		rt->name = NULL;
+    		rt->indirection = NIL;
+    		rt->val = (Node*)cr;
+    		rt->location = -1;
+
+		Node* cond1 = (Node*)makeSimpleA_Expr(AEXPR_OP, "=", makeColumnRef("sessionid", NIL, -1, NULL), expr, -1);
+		Node* cond2 = (Node*)makeSimpleA_Expr(AEXPR_OP, "=", makeColumnRef("sessionid", NIL, -1, NULL), makeColumnRef("pid", NIL, -1, NULL), -1);
+    		Node* wc = (Node*)makeA_Expr(AEXPR_AND, NIL, cond1, cond2, -1);
+
+    		SelectStmt* stmt = makeNode(SelectStmt);
+    		stmt->distinctClause = NIL;
+    		stmt->targetList = list_make1(rt);
+    		stmt->intoClause = NULL;
+    		stmt->fromClause = fl;
+    		stmt->whereClause = wc;
+    		stmt->groupClause = NIL;
+    		stmt->havingClause = NULL;
+    		stmt->windowClause = NIL;
+		stmt->limitCount = makeIntConst(1, -1);
+
+    		SubLink* sublink = makeNode(SubLink);
+		sublink->subLinkType = EXPR_SUBLINK;
+		sublink->testexpr = NULL;
+		sublink->operName = NIL;
+		sublink->subselect = (Node*)stmt;
+		sublink->location = -1;
+
+		CoalesceExpr* cexpr = makeNode(CoalesceExpr);
+        	cexpr->args = list_make2(sublink, makeIntConst(0, -1));
+        	cexpr->isnvl = true;
+
+       		func->args = list_make2((Node*)cexpr, expr);
+	} else {
+		func->args = list_make2(expr, expr);
+	}
+
+    	ResTarget* rt = makeNode(ResTarget);
+    	rt->name = "result";
+    	rt->indirection = NIL;
+   	rt->val = (Node*)func;
+   	rt->location = -1;
+
+	SelectStmt* n = makeNode(SelectStmt);
+	n->distinctClause = NIL;
+	n->targetList = list_make1(rt);
+	n->intoClause = NULL;
+	n->fromClause = NIL;
+	n->whereClause = NULL;
+	n->groupClause = NIL;
+	n->havingClause = NULL;
+	n->windowClause = NIL;
+	return (Node*)n;
 }
 
 /*

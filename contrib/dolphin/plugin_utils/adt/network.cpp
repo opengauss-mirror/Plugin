@@ -21,6 +21,7 @@
 #include "miscadmin.h"
 #include "utils/builtins.h"
 #include "utils/inet.h"
+#include "plugin_postgres.h"
 
 static int32 network_cmp_internal(inet* a1, inet* a2);
 static int bitncmp(const void* l, const void* r, int n);
@@ -657,6 +658,60 @@ Datum network_family(PG_FUNCTION_ARGS)
             PG_RETURN_INT32(0);
             break;
     }
+}
+
+static int check_ip(char *src, bool is_check_v4)
+{
+    int bits;
+    inet* dst = (inet*)palloc0(sizeof(inet));
+
+    ip_family(dst) = is_check_v4 ? PGSQL_AF_INET : PGSQL_AF_INET6;
+
+    bits = inet_net_pton(ip_family(dst), src, ip_addr(dst), -1);
+    if ((bits < 0) || (bits > ip_maxbits(dst))) {
+        pfree(dst);
+        return 0;
+    }
+
+    pfree(dst);
+    return 1;
+}
+
+static int is_ipvx(FunctionCallInfo fcinfo, bool is_check_v4)
+{
+    if PG_ARGISNULL(0)
+        return 0;
+
+    Oid argtypeid = get_fn_expr_argtype(fcinfo->flinfo, 0);
+    if (!OidIsValid(argtypeid))
+        return 0;
+
+    int result = 0;
+    if (argtypeid == TEXTOID) {
+        result = check_ip(text_to_cstring(PG_GETARG_TEXT_PP(0)), is_check_v4);
+    } else if (argtypeid == INETOID) {
+        result = (ip_family(PG_GETARG_INET_PP(0)) == (is_check_v4 ? PGSQL_AF_INET : PGSQL_AF_INET6));
+    } else if (argtypeid == CSTRINGOID) {
+        result = check_ip(PG_GETARG_CSTRING(0), is_check_v4);
+    }
+
+    return result;
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(network_is_ipv4);
+extern "C" DLL_PUBLIC Datum network_is_ipv4(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1_PUBLIC(network_is_ipv6);
+extern "C" DLL_PUBLIC Datum network_is_ipv6(PG_FUNCTION_ARGS);
+
+Datum network_is_ipv4(PG_FUNCTION_ARGS)
+{
+    PG_RETURN_INT32(is_ipvx(fcinfo, true));
+}
+
+Datum network_is_ipv6(PG_FUNCTION_ARGS)
+{
+    PG_RETURN_INT32(is_ipvx(fcinfo, false));
 }
 
 Datum network_broadcast(PG_FUNCTION_ARGS)
@@ -1306,6 +1361,401 @@ Datum inetmi(PG_FUNCTION_ARGS)
     }
 
     PG_RETURN_INT64(res);
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(inetaton);
+extern "C" DLL_PUBLIC Datum inetaton(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1_PUBLIC(inetpton);
+extern "C" DLL_PUBLIC Datum inetpton(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1_PUBLIC(inetntoa);
+extern "C" DLL_PUBLIC Datum inetntoa(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1_PUBLIC(inetntop);
+extern "C" DLL_PUBLIC Datum inetntop(PG_FUNCTION_ARGS);
+
+static const int IN6ADDRSZ = sizeof(in6_addr);
+static const int INADDRSZ = sizeof(in_addr);
+static const int IN6ADDRNWS = IN6ADDRSZ / 2;
+static const char HEXDIGS[] = "0123456789abcdef";
+static const int IPV4_LEN_MIN = 7;
+static const int IPV4_LEN_MAX = 15;
+static const int IN6_SEP_MAX = 7;
+static const int IN6_SEP_MIN = 2;
+static const int INADDPARTNUM = 4;
+
+Datum inetaton(PG_FUNCTION_ARGS)
+{
+    if (PG_ARGISNULL(0))
+        PG_RETURN_NULL();
+
+    char *cp = text_to_cstring(PG_GETARG_TEXT_PP(0));
+    if (*cp == '\0')
+        PG_RETURN_NULL();
+    uint64 val;
+    int n;
+    char c;
+    u_int parts[INADDRSZ];
+    u_int *pp = parts;
+
+    for (;;) {
+        val = 0;
+        while ((c = *cp) != '\0') {
+            if (isdigit((unsigned char)c)) {
+                val = (val * 10) + (c - '0');
+                if (val > 255)
+                    PG_RETURN_NULL();
+                cp++;
+                continue;
+            }
+            break;
+        }
+        if (*cp == '.') {
+            if (pp >= parts + INADDRSZ - 1 || val > 0xff) {
+                PG_RETURN_NULL();
+            }
+            *pp++ = val;
+            cp++;
+            if (!isdigit((unsigned char)*cp))
+                PG_RETURN_NULL();
+        } else {
+            break;
+        }
+    }
+
+    while (*cp) {
+        if (!isspace((unsigned char)*cp++)) {
+            PG_RETURN_NULL();
+        }
+    }
+
+    n = pp - parts + 1;
+    switch (n) {
+        case 1: /* a -- 32 bits */
+            break;
+        case 2: /* a.b -- 8.24 bits */
+            if (val > 0xffffff) {
+                PG_RETURN_NULL();
+            }
+            val |= parts[0] << 24;
+            break;
+        case 3: /* a.b.c -- 8.8.16 bits */
+            if (val > 0xffff) {
+                PG_RETURN_NULL();
+            }
+            val |= (parts[0] << 24) | (parts[1] << 16);
+            break;
+        case 4: /* a.b.c.d -- 8.8.8.8 bits */
+            if (val > 0xff) {
+                PG_RETURN_NULL();
+            }
+            val |= (parts[0] << 24) | (parts[1] << 16) | (parts[2] << 8);
+            break;
+        default:
+            break;
+    }
+    PG_RETURN_INT64(val);
+}
+
+static bool ptonipv4(const char *src, int length, unsigned char *address)
+{
+    if (length < IPV4_LEN_MIN || length > IPV4_LEN_MAX) {
+        return false;
+    }
+
+    unsigned char *bytes = address;
+    int value = 0;
+    int part_len = 0;
+    int dot_num = 0;
+    char c = 0;
+
+    for (const char *p = src; (p - src) < length; p++) {
+        c = *p;
+        if (isdigit(c)) {
+            ++part_len;
+            if (part_len > INADDPARTNUM - 1) {
+                return false;
+            }
+            value = value * 10 + (c - '0');
+            if (value > 255) {
+                return false;
+            }
+        } else if (c == '.') {
+            if (part_len == 0) {
+                return false;
+            }
+            bytes[dot_num++] = (unsigned char)value;
+            value = 0;
+            part_len = 0;
+            if (dot_num > INADDPARTNUM - 1) {
+                return false;
+            }
+        } else {
+            return false;
+        }
+    }
+    if (c == '.' || dot_num != INADDPARTNUM - 1) {
+        return false;
+    }
+    bytes[INADDPARTNUM - 1] = (unsigned char)value;
+    return true;
+}
+
+static bool ptonipv6(const char *src, int length, char *address)
+{
+    if (length < IN6_SEP_MIN || length > IN6ADDRNWS * 4 + IN6_SEP_MAX) {
+        return false;
+    }
+
+    const char *p = src;
+    if (*p == ':') {
+        ++p;
+        if (*p != ':') {
+            return false;
+        }
+    }
+    char *bytes = address;
+    char *bytes_end = bytes + IN6ADDRSZ;
+    char *dst = bytes;
+    char *blank = NULL;
+    const char *part_begin = p;
+    int part_len = 0;
+    int part_digit = 0;
+    for (; ((p - src) < length); p++) {
+        if (!*p)
+            break;
+        char c = *p;
+        if (c == ':') {
+            part_begin = p + 1;
+
+            if (!part_len) {
+                if (blank) {
+                    return false;
+                }
+
+                blank = dst;
+                continue;
+            }
+
+            if (((part_begin - src) >= length) || !*(part_begin)) {
+                return false;
+            }
+
+            if (dst + 2 > bytes_end) {
+                return false;
+            }
+
+            dst[0] = (unsigned char)(part_digit >> 8) & 0xff;
+            dst[1] = (unsigned char)part_digit & 0xff;
+            dst += 2;
+            part_len = 0;
+            part_digit = 0;
+        } else if (c == '.') {
+            if (dst + INADDRSZ > bytes_end) {
+                return false;
+            }
+            int v4_start = part_begin - src;
+            if (!ptonipv4(part_begin, length - v4_start, (unsigned char *)dst)) {
+                return false;
+            }
+
+            dst += INADDRSZ;
+            part_len = 0;
+
+            break;
+        } else {
+            const char *hdp = strchr(HEXDIGS, tolower(c));
+
+            if (!hdp || part_len >= 4) {
+                return false;
+            }
+
+            part_digit <<= 4;
+            part_digit |= hdp - HEXDIGS;
+            Assert(part_digit <= 0xffff);
+            part_len++;
+        }
+    }
+    if (part_len > 0) {
+        if (dst + 2 > bytes_end) {
+            return false;
+        }
+
+        dst[0] = (unsigned char)(part_digit >> 8) & 0xff;
+        dst[1] = (unsigned char)part_digit & 0xff;
+        dst += 2;
+    }
+    if (blank) {
+        if (dst == bytes_end) {
+            return false;
+        }
+
+        size_t bytes_to_move = dst - blank;
+
+        for (size_t i = 1; i <= bytes_to_move; ++i) {
+            bytes_end[-(static_cast<ssize_t>(i))] = blank[bytes_to_move - i];
+            blank[bytes_to_move - i] = 0;
+        }
+        dst = bytes_end;
+    }
+    if (dst < bytes_end) {
+        return false;
+    }
+    return true;
+}
+
+Datum inetpton(PG_FUNCTION_ARGS)
+{
+    if (PG_ARGISNULL(0))
+        PG_RETURN_NULL();
+
+    char *ip = text_to_cstring(PG_GETARG_TEXT_PP(0));
+    char res_ipv4[INADDRSZ] = {0};
+    char res_ipv6[IN6ADDRSZ] = {0};
+
+    if (ptonipv4(ip, strlen(ip), (unsigned char *)res_ipv4)) {
+        PG_RETURN_TEXT_P(cstring_to_text_with_len(res_ipv4, INADDRSZ));
+    }
+    if (ptonipv6(ip, strlen(ip), res_ipv6)) {
+        PG_RETURN_TEXT_P(cstring_to_text_with_len(res_ipv6, IN6ADDRSZ));
+    }
+    PG_RETURN_NULL();
+}
+
+Datum inetntoa(PG_FUNCTION_ARGS)
+{
+    if (PG_ARGISNULL(0))
+        PG_RETURN_NULL();
+
+    uint64 n = PG_GETARG_INT64(0);
+    if (n > UINT32_MAX) {
+        PG_RETURN_NULL();
+    }
+    char res[IPV4_LEN_MAX + 2] = {0};
+    errno_t rc = EOK;
+
+    unsigned char buf[INADDRSZ];
+    *((unsigned int *)buf) = n;
+
+    for (unsigned char *p = buf + INADDRSZ - 1; p >= buf; p--) {
+        unsigned int c = *p;
+        char digit[INADDRSZ + 1] = {0};
+
+        rc = sprintf_s(digit, sizeof(digit), "%u.", c);
+        securec_check_ss(rc, "\0", "\0");
+
+        rc = strcat_s(res, sizeof(res), digit);
+        securec_check(rc, "\0", "\0");
+    }
+    res[strlen(res) - 1] = '\0';
+    PG_RETURN_TEXT_P(cstring_to_text(res));
+}
+
+static void find_gap(unsigned short *src, int *pos, int *length)
+{
+    int tmplen = -1;
+    int tmppos = -1;
+    for (int i = 0; i < IN6ADDRNWS; i++) {
+        if (src[i] != 0) {
+            if (tmppos >= 0) {
+                if (tmplen > *length) {
+                    *pos = tmppos;
+                    *length = tmplen;
+                }
+                tmppos = -1;
+                tmplen = -1;
+            }
+        } else {
+            if (tmppos >= 0) {
+                tmplen++;
+            } else {
+                tmppos = i;
+                tmplen = 1;
+            }
+        }
+    }
+    if (tmppos >= 0) {
+        if (tmplen > *length)
+            *pos = tmppos;
+        *length = tmplen;
+    }
+    return;
+}
+
+static void ntopipv4(const in_addr *src, char *str)
+{
+    const unsigned char *bytes = (const unsigned char *)src;
+    errno_t rc = 0;
+    rc = sprintf_s(str, INET_ADDRSTRLEN, "%u.%u.%u.%u", bytes[0], bytes[1], bytes[2], bytes[3]);
+    securec_check_ss(rc, "\0", "\0");
+    return;
+}
+
+static void ntopipv6(const in6_addr *src, char *str)
+{
+    int pos = -1;
+    int length = -1;
+    const unsigned char *bytes = (const unsigned char *)src;
+    uint16 words[IN6ADDRNWS];
+
+    for (int i = 0; i < IN6ADDRNWS; ++i)
+        words[i] = (bytes[2 * i] << 8) + bytes[2 * i + 1];
+    find_gap(words, &pos, &length);
+    char *p = str;
+
+    for (int i = 0; i < IN6ADDRNWS; ++i) {
+        if (i == pos) {
+            if (i == 0) {
+                *p = ':';
+                ++p;
+            }
+
+            *p = ':';
+            ++p;
+
+            i += length - 1;
+        } else if (i == IN6ADDRNWS - 2 && pos == 0 &&
+                   (length == IN6ADDRNWS - 2 || (length == IN6ADDRNWS - 3 && words[IN6ADDRNWS - 3] == 0xffff))) {
+            ntopipv4((const in_addr *)(bytes + 12), p);
+            return;
+        } else {
+            errno_t rc = 0;
+            rc = sprintf_s(p, INET_ADDRSTRLEN, "%x", words[i]);
+            securec_check_ss(rc, "\0", "\0");
+            if (rc < 0)
+                return;
+            p += rc;
+
+            if (i != IN6ADDRNWS - 1) {
+                *p = ':';
+                ++p;
+            }
+        }
+    }
+    *p = 0;
+    return;
+}
+
+Datum inetntop(PG_FUNCTION_ARGS)
+{
+    if (PG_ARGISNULL(0))
+        PG_RETURN_NULL();
+
+    bytea *in = PG_GETARG_BYTEA_PP(0);
+    char *ip = VARDATA_ANY(in);
+    int len = VARSIZE_ANY_EXHDR(in);
+
+    if (len == INADDRSZ) {
+        char res_address[INET_ADDRSTRLEN] = {0};
+        ntopipv4((const in_addr *)ip, res_address);
+        PG_RETURN_TEXT_P(cstring_to_text(res_address));
+    } else if (len == IN6ADDRSZ) {
+        char res_address[INET6_ADDRSTRLEN] = {0};
+        ntopipv6((const in6_addr *)ip, res_address);
+        PG_RETURN_TEXT_P(cstring_to_text(res_address));
+    }
+    PG_RETURN_NULL();
 }
 
 /*

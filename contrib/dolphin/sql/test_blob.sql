@@ -1,6 +1,6 @@
-drop database if exists test;
-create database test dbcompatibility 'B';
-\c test
+drop database if exists test_blob;
+create database test_blob dbcompatibility 'B';
+\c test_blob
 create table test_template (t tinyblob, b blob, m mediumblob, l longblob);
 insert into test_template values('aaaaaaaaa', 'aaaaaaaaa', 'aaaaaaaaa', 'aaaaaaaaa');
 create table test_tiny (t tinyblob);
@@ -39,4 +39,4 @@ drop table test_blob;
 drop table test_medium;
 drop table test_long;
 \c postgres
-drop database test;
+drop database test_blob;

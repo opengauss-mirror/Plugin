@@ -175,111 +175,13 @@ DROP CAST IF EXISTS (numeric AS time) CASCADE;
 
 CREATE CAST(numeric AS time) WITH FUNCTION numeric_b_format_time(numeric);
 
-CREATE TYPE pg_catalog.datetime;
-
---CREATE datetime'S BASIC FUNCTION
-
-CREATE OR REPLACE FUNCTION pg_catalog.datetime_in (cstring) RETURNS datetime LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'datetime_in';
-
-CREATE OR REPLACE FUNCTION pg_catalog.datetime_out (datetime) RETURNS cstring LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'datetime_out';
-
-CREATE OR REPLACE FUNCTION pg_catalog.datetime_send (datetime) RETURNS bytea LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'datetime_send';
-
-CREATE OR REPLACE FUNCTION pg_catalog.datetime_recv (bytea) RETURNS datetime LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'datetime_recv';
-
-CREATE OR REPLACE FUNCTION pg_catalog.datetimetypmodin (cstring[]) RETURNS integer LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'datetimetypmodin';
-
-CREATE OR REPLACE FUNCTION pg_catalog.datetimetypmodout (integer) RETURNS cstring LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'datetimetypmodout';
-
-CREATE TYPE pg_catalog.datetime (input=datetime_in, output=datetime_out, internallength=8, passedbyvalue, alignment=double, TYPMOD_IN=datetimetypmodin, TYPMOD_OUT=datetimetypmodout);
-
---CREATE DATETIME'S COMPARATION FUNCTION
-
-CREATE OR REPLACE FUNCTION pg_catalog.datetime_eq (datetime, datetime) RETURNS boolean LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'datetime_eq';
-
-CREATE OR REPLACE FUNCTION pg_catalog.datetime_ne (datetime, datetime) RETURNS boolean LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'datetime_ne';
-
-CREATE OR REPLACE FUNCTION pg_catalog.datetime_le (datetime, datetime) RETURNS boolean LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'datetime_le';
-
-CREATE OR REPLACE FUNCTION pg_catalog.datetime_lt (datetime, datetime) RETURNS boolean LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'datetime_lt';
-
-CREATE OR REPLACE FUNCTION pg_catalog.datetime_ge (datetime, datetime) RETURNS boolean LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'datetime_ge';
-
-CREATE OR REPLACE FUNCTION pg_catalog.datetime_gt (datetime, datetime) RETURNS boolean LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'datetime_gt';
-
---CREATE DATETIME'S B-TREE SUPPORT FUNCTION
-
-CREATE OR REPLACE FUNCTION pg_catalog.datetime_cmp (datetime, datetime) RETURNS integer LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'datetime_cmp';
-
-CREATE OR REPLACE FUNCTION pg_catalog.datetime_sortsupport (internal) RETURNS void LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'datetime_sortsupport';
-
---CREATE OPERATOR
-
-CREATE OPERATOR pg_catalog.=(leftarg = datetime, rightarg = datetime, procedure = datetime_eq, restrict = eqsel, join = eqjoinsel, MERGES);
-
-CREATE OPERATOR pg_catalog.<>(leftarg = datetime, rightarg = datetime, procedure = datetime_ne, restrict = neqsel, join = neqjoinsel);
-
-CREATE OPERATOR pg_catalog.<=(leftarg = datetime, rightarg = datetime, procedure = datetime_le, COMMUTATOR  = >=, NEGATOR  = >, restrict = scalarltsel, join = scalarltjoinsel);
-
-CREATE OPERATOR pg_catalog.<(leftarg = datetime, rightarg = datetime, procedure = datetime_lt, COMMUTATOR  = >, NEGATOR  = >=, restrict = scalarltsel, join = scalarltjoinsel);
-
-CREATE OPERATOR pg_catalog.>=(leftarg = datetime, rightarg = datetime, procedure = datetime_ge, COMMUTATOR  = <=, NEGATOR  = <, restrict = scalarltsel, join = scalarltjoinsel);
-
-CREATE OPERATOR pg_catalog.>(leftarg = datetime, rightarg = datetime, procedure = datetime_gt, COMMUTATOR  = <, NEGATOR  = <=, restrict = scalarltsel, join = scalarltjoinsel);
-
-CREATE OPERATOR CLASS datetime_ops
-    DEFAULT FOR TYPE datetime USING btree AS
-        OPERATOR        1       < ,
-        OPERATOR        2       <= ,
-        OPERATOR        3       = ,
-        OPERATOR        4       >= ,
-        OPERATOR        5       > ,
-        FUNCTION        1       datetime_cmp(datetime, datetime),
-        FUNCTION        2       datetime_sortsupport(internal);
-
---CREATE DATETIME'S MAX,MIN FUNCTION
-
-CREATE OR REPLACE FUNCTION pg_catalog.datetime_larger (datetime, datetime) RETURNS datetime LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'datetime_larger';
-
-CREATE OR REPLACE FUNCTION pg_catalog.datetime_smaller (datetime, datetime) RETURNS datetime LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'datetime_smaller';
-
-CREATE AGGREGATE pg_catalog.max(datetime) (
-
-SFUNC = datetime_larger,
-
-STYPE = datetime,
-
-SORTOP = >
-
-);
-
-CREATE AGGREGATE pg_catalog.min(datetime) (
-
-SFUNC = datetime_smaller,
-
-STYPE = datetime,
-
-SORTOP = <
-
-);
-
 --CREATE DATETIME'S CAST FUNCTION
-
-CREATE OR REPLACE FUNCTION pg_catalog.datetime (datetime, integer) RETURNS datetime LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'datetime_scale';
-
-DROP CAST IF EXISTS (datetime AS datetime) CASCADE;
-
-CREATE CAST(datetime AS datetime) WITH FUNCTION datetime(datetime, integer) AS IMPLICIT;
 
 CREATE OR REPLACE FUNCTION pg_catalog.int32_b_format_datetime (int4) RETURNS datetime LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'int32_b_format_datetime';
 
 CREATE OR REPLACE FUNCTION pg_catalog.int64_b_format_datetime (int8) RETURNS datetime LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'int64_b_format_datetime';
 
 CREATE OR REPLACE FUNCTION pg_catalog.numeric_b_format_datetime (numeric) RETURNS datetime LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'numeric_b_format_datetime';
-
-CREATE OR REPLACE FUNCTION pg_catalog.timestamptz_datetime (timestamptz) RETURNS datetime LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'timestamptz_datetime';
-
-CREATE OR REPLACE FUNCTION pg_catalog.timestamp_datetime (timestamp) RETURNS datetime LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'timestamp_datetime';
 
 DROP CAST IF EXISTS (int4 AS datetime) CASCADE;
 
@@ -293,20 +195,7 @@ DROP CAST IF EXISTS (numeric AS datetime) CASCADE;
 
 CREATE CAST(numeric AS datetime) WITH FUNCTION numeric_b_format_datetime(numeric);
 
-DROP CAST IF EXISTS (timestamptz AS datetime) CASCADE;
-
-CREATE CAST(timestamptz AS datetime) WITH FUNCTION timestamptz_datetime(timestamptz) AS IMPLICIT;
-
-DROP CAST IF EXISTS (timestamp AS datetime) CASCADE;
-
-CREATE CAST(timestamp AS datetime) WITH FUNCTION timestamp_datetime(timestamp) AS IMPLICIT;
-
-
---CREATE DATETIME'S DATE_PART FUNCTION
-
-CREATE FUNCTION pg_catalog.date_part (text, datetime) RETURNS float8 LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'datetime_part';
-
---CREATE YEAR'S DATE_PART FUNCTION
+--CREATE DATETIME'S YEAR PART FUNCTION
 
 CREATE FUNCTION pg_catalog.year (datetime) RETURNS float8 LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'datetime_year_part';
 

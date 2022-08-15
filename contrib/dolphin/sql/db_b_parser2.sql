@@ -1,6 +1,6 @@
-drop database if exists mysql_test;
-create database mysql_test dbcompatibility 'b';
-\c mysql_test
+drop database if exists db_b_parser2;
+create database db_b_parser2 dbcompatibility 'b';
+\c db_b_parser2
 --验证DAYOFMONTH() DAYOFWEEK() DAYOFYEAR() HOUR() MICROSECOND() MINUTE() QUARTER() SECOND() WEEKDAY() WEEKOFYEAR() YEAR()
 select DAYOFMONTH(datetime '2021-11-4 16:30:44.341191');
 
@@ -10,7 +10,7 @@ select DAYOFYEAR(datetime '2021-12-31 16:30:44.341191');
 
 select HOUR(datetime '2021-11-4 16:30:44.341191');
 
-select MICROSECOND(datetime '2021-11-4 16:30:44.341191');
+select MICROSECOND(datetime(6) '2021-11-4 16:30:44.341191');
 
 select MINUTE(datetime '2021-11-4 16:30:44.341191');
 
@@ -94,4 +94,4 @@ select length(E'哈1哈\n'),length(E'\n'),length(E'\\n');
 select length(''),length(' '),length(NULL);
 
 \c postgres
-drop database if exists mysql_test;
+drop database if exists db_b_parser2;

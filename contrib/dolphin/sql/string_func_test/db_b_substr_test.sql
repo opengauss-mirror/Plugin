@@ -39,9 +39,9 @@ FROM template_string;
 
 DROP TABLE IF EXISTS template_string;
 
-drop database if exists test;
-create database test dbcompatibility 'B';
-\c test
+drop database if exists db_b_substr_test;
+create database db_b_substr_test dbcompatibility 'B';
+\c db_b_substr_test
 
 set bytea_output to escape;
 
@@ -194,4 +194,4 @@ select c1, c2, substr(c1 for c2) from test_column order by c1;
 select c1, c2, substr(c1 for c2) from test_row order by c1;
 
 \c postgres
-drop database test;
+drop database db_b_substr_test;

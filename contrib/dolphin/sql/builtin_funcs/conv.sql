@@ -1,6 +1,6 @@
-drop database if exists format_test;
-create database format_test dbcompatibility 'B';
-\c format_test
+drop database if exists db_conv;
+create database db_conv dbcompatibility 'B';
+\c db_conv
 
 select conv('a',16,2);
 select conv('6e',18,8);
@@ -98,4 +98,4 @@ select conv(-9544646155975628532428411,-10,10);
 select conv(-9544646155975628532428411,-10,-10);
 
 \c postgres
-drop database if exists format_test;
+drop database if exists db_conv;

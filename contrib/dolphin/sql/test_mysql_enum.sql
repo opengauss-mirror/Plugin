@@ -1,8 +1,21 @@
-drop database if exists test_db;
-CREATE DATABASE test_db with dbcompatibility='B';
-\c test_db
+drop database if exists test_enum;
+CREATE DATABASE test_enum with dbcompatibility='B';
+\c test_enum
 -- create extension dolphin;
 show sql_compatibility;
+CREATE TABLE test (
+    age INT,
+    myname anonymous_enum('a','b')
+);
+CREATE TABLE test (
+    age INT,
+    myname ttanonymous_enum('a','b')
+);
+CREATE TABLE test (
+    age INT,
+    myname ttanonymous_enumtt('a','b')
+);
+
 -- when drop a column using an auto created enum type, the created enum type will also be dropped.
 CREATE TABLE test (
     age INT,
@@ -132,5 +145,31 @@ DELETE FROM test WHERE myname=0;
 DELETE FROM test WHERE myname=4;
 DROP TABLE test;
 
+-- foreigh key is not allowed
+drop table if exists t_enum_0011_01;
+CREATE TABLE t_enum_0011_01
+(
+W_CITY varchar(60) PRIMARY KEY,
+W_ADDRESS TEXT
+);
+
+ CREATE TABLE t_enum_0011_02
+(
+W_WAREHOUSE_SK INTEGER NOT NULL,
+W_WAREHOUSE_ID CHAR(16) NOT NULL,
+W_WAREHOUSE_NAME VARCHAR(20) ,
+W_WAREHOUSE_SQ_FT INTEGER ,
+W_STREET_NUMBER CHAR(10) ,
+W_STREET_NAME VARCHAR(60) ,
+W_STREET_TYPE CHAR(15) ,
+W_SUITE_NUMBER CHAR(10) ,
+W_CITY ENUM('xian','gansu','yanan') REFERENCES t_enum_0011_01(W_CITY),
+W_COUNTY VARCHAR(30) ,
+W_STATE CHAR(2) ,
+W_ZIP CHAR(10) ,
+W_COUNTRY VARCHAR(20) ,
+W_GMT_OFFSET DECIMAL(5,2)
+);
+
 \c postgres
-DROP DATABASE test_db;
+DROP DATABASE test_enum;

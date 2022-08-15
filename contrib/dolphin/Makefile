@@ -28,7 +28,7 @@ $(adt)/a_compat.o $(adt)/orderedsetaggs.o $(adt)/pseudotypes.o $(adt)/rangetypes
 $(adt)/rowtypes.o $(adt)/regexp.o $(adt)/regproc.o $(adt)/ruleutils.o $(adt)/selfuncs.o\
 $(adt)/timestamp.o $(adt)/varbit.o $(adt)/varchar.o $(adt)/varlena.o $(adt)/version.o \
 $(adt)/network.o $(adt)/mac.o $(adt)/inet_cidr_ntop.o $(adt)/inet_net_pton.o\
-$(adt)/ri_triggers.o $(adt)/pg_locale.o $(adt)/formatting.o\
+$(adt)/ri_triggers.o $(adt)/partitionfuncs.o $(adt)/pg_locale.o $(adt)/formatting.o\
 $(adt)/ascii.o $(adt)/quote.o $(adt)/pgstatfuncs.o $(adt)/encode.o $(adt)/dbsize.o $(adt)/trigfuncs.o\
 $(adt)/uuid.o $(adt)/windowfuncs.o $(adt)/extended_statistics.o $(adt)/clientlogic_bytea.o $(adt)/clientlogicsettings.o\
 $(adt)/median_aggs.o $(adt)/expr_distinct.o $(adt)/nlssort.o $(adt)/first_last_agg.o $(adt)/my_locale.o $(adt)/unsighed_int.o $(adt)/year.o
@@ -62,7 +62,7 @@ clean: extra_clean
 
 dolphin--1.0.sql: sql_script/*
 	cat $^ > $@
-DATA_built = dolphin--1.0.sql
+DATA_built = dolphin--1.0.sql openGauss_expr_dolphin.ir
 
 OBJS += plugin_postgres.o 
 plugin_postgres.o: plugin_postgres.cpp
@@ -77,10 +77,10 @@ OBJS += tablecmds.o
 tablecmds.o: tablecmds.cpp
 
 EXTENSION = dolphin
-REGRESS:=$(shell find ./sql -maxdepth 2 -type f)
-REGRESS:=$(basename $(patsubst ./sql/%,%,$(REGRESS)) .sql)
+#a dummy testcase to let 'make check' can run, currently I have no idea how to fix this...
+REGRESS:=dummy
 
-REGRESS_OPTS = --dlpath=$(top_builddir)/src/test/regress -c 0 -d 1 --single_node -p ${p}
+REGRESS_OPTS = --dlpath=$(top_builddir)/src/test/regress -c 0 -d 1 --single_node -p ${p} --schedule=./parallel_schedule_dolphin --regconf=regress.conf -r 1 -n --keep_last_data=false --temp-config=./make_check_postgresql.conf
 
 include $(top_builddir)/$(base_dir)/configure.mk
 ifdef USE_PGXS
@@ -93,3 +93,6 @@ top_builddir = ../..
 include $(top_builddir)/src/Makefile.global
 include $(top_srcdir)/contrib/contrib-global.mk
 endif
+
+openGauss_expr_dolphin.ir:
+	cp llvmir/openGauss_expr_dolphin_$(host_cpu).ir $@

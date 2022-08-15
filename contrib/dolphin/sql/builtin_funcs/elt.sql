@@ -1,6 +1,6 @@
-drop database if exists format_test;
-create database format_test dbcompatibility 'B';
-\c format_test
+drop database if exists db_elt;
+create database db_elt dbcompatibility 'B';
+\c db_elt
 select elt(1,1);
 select elt(-1,1);
 select elt(1.2,'a');
@@ -16,4 +16,4 @@ select elt(1,'a',2);
 select elt(2,'a',2);
 
 \c postgres
-drop database if exists format_test;
+drop database if exists db_elt;

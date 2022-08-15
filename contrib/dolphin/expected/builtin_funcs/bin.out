@@ -1,7 +1,7 @@
-drop database if exists format_test;
-NOTICE:  database "format_test" does not exist, skipping
-create database format_test dbcompatibility 'B';
-\c format_test
+drop database if exists db_bin;
+NOTICE:  database "db_bin" does not exist, skipping
+create database db_bin dbcompatibility 'B';
+\c db_bin
 select bin(1);
  bin 
 -----
@@ -51,4 +51,4 @@ select bin(false);
 (1 row)
 
 \c postgres
-drop database if exists format_test;
+drop database if exists db_bin;

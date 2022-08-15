@@ -1,7 +1,7 @@
-drop database if exists format_test;
-NOTICE:  database "format_test" does not exist, skipping
-create database format_test dbcompatibility 'B';
-\c format_test
+drop database if exists db_b_if;
+NOTICE:  database "db_b_if" does not exist, skipping
+create database db_b_if dbcompatibility 'B';
+\c db_b_if
 select if(TRUE, 1, 2);
  case 
 ------
@@ -194,4 +194,4 @@ LINE 1: select if (true, 2.2::numeric(10, 2), true) as a, if (false,...
                          ^
 CONTEXT:  referenced column: a
 \c postgres
-drop database if exists format_test;
+drop database if exists db_b_if;

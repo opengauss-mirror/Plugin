@@ -86,6 +86,9 @@ static const struct sql_mode_entry sql_mode_options[OPT_SQL_MODE_MAX] = {
 
 PG_MODULE_MAGIC_PUBLIC;
 
+extern void InitLockNameHash();
+extern struct HTAB* lockNameHash;
+extern pthread_mutex_t gNameHashLock;
 extern void initBSQLBuiltinFuncs();
 extern struct HTAB* b_nameHash;
 extern struct HTAB* b_oidHash;
@@ -192,10 +195,18 @@ void _PG_init(void)
     if (b_oidHash == NULL || b_nameHash == NULL) {
         initBSQLBuiltinFuncs();
     }
+
+    AutoMutexLock nameHashLock(&gNameHashLock);
+    nameHashLock.lock();
+    if (lockNameHash == NULL)
+        InitLockNameHash();
+    nameHashLock.unLock();
+
     if (g_instance.plugin_vec_func_cxt.vec_func_plugin[DOLPHIN_VEC] == NULL) {
         InitGlobalVecFuncMap();
     }
     g_instance.raw_parser_hook[DB_CMPT_B] = (void*)raw_parser;
+    g_instance.llvmIrFilePath[DB_CMPT_B] = "share/postgresql/extension/openGauss_expr_dolphin.ir";
     init_plugin_object();
 }
 
@@ -204,6 +215,7 @@ void _PG_fini(void)
     hash_destroy(b_nameHash);
     hash_destroy(b_oidHash);
     g_instance.raw_parser_hook[DB_CMPT_B] = NULL;
+    g_instance.llvmIrFilePath[DB_CMPT_B] = NULL;
 }
 
 /*
@@ -303,6 +315,7 @@ void init_session_vars(void)
     BSqlPluginContext *cxt = (BSqlPluginContext *) MemoryContextAlloc(u_sess->self_mem_cxt, sizeof(bSqlPluginContext));
     u_sess->attr.attr_common.extension_session_vars_array[dolphin_index] = cxt;
     cxt->enableBFormatMode = false;
+    cxt->lockNameList = NIL;
 
     DefineCustomBoolVariable("b_format_mode",
                              "Enable mysql functions override opengauss's when collision happens.",

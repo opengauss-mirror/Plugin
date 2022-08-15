@@ -1,6 +1,6 @@
-drop database if exists format_test;
-create database format_test dbcompatibility 'B';
-\c format_test
+drop database if exists db_bin;
+create database db_bin dbcompatibility 'B';
+\c db_bin
 
 select bin(1);
 select bin(0);
@@ -12,4 +12,4 @@ select bin(true);
 select bin(false);
 
 \c postgres
-drop database if exists format_test;
+drop database if exists db_bin;

@@ -245,3 +245,13 @@ CREATE CAST (varchar AS tinyint) WITH FUNCTION varchar_int1(varchar) AS IMPLICIT
 CREATE CAST (char AS tinyint) WITH FUNCTION bpchar_int1(char) AS IMPLICIT;
 CREATE CAST (varchar AS smallint) WITH FUNCTION varchar_int2(varchar) AS IMPLICIT;
 CREATE CAST (char AS smallint) WITH FUNCTION bpchar_int2(char) AS IMPLICIT;
+
+DROP FUNCTION IF EXISTS pg_catalog.rebuild_partition(text[]) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.remove_partitioning(text) CASCADE;
+
+CREATE FUNCTION pg_catalog.remove_partitioning (
+text
+) RETURNS text LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'RemovePartitioning';
+
+CREATE FUNCTION pg_catalog.rebuild_partition(text[])
+RETURNS text LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'RebuildPartition';

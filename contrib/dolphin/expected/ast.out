@@ -6,9 +6,6 @@ ast select * from test;
 ast create table test(id int);
 ast create table test(id int(5));
 ast USE "custcomcenter";
-ERROR:  syntax error at or near "USE"
-LINE 1: ast USE "custcomcenter";
-            ^
 ast select 1;select 1;
  ?column? 
 ----------

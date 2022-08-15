@@ -1,7 +1,7 @@
-drop database if exists format_test;
-NOTICE:  database "format_test" does not exist, skipping
-create database format_test dbcompatibility 'B';
-\c format_test
+drop database if exists db_conv;
+NOTICE:  database "db_conv" does not exist, skipping
+create database db_conv dbcompatibility 'B';
+\c db_conv
 select conv('a',16,2);
  conv 
 ------
@@ -505,4 +505,4 @@ select conv(-9544646155975628532428411,-10,-10);
 (1 row)
 
 \c postgres
-drop database if exists format_test;
+drop database if exists db_conv;
