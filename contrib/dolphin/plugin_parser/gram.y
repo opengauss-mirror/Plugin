@@ -951,7 +951,7 @@ static char* GetDolphinObjName(const char* string, bool is_quoted);
 %type <keyword>	into_empty opt_temporary opt_values_in replace_empty
 %type <str>	compression_args
 %type <str> normal_ident
-%type <boolean> opt_ignore opt_unsigned
+%type <boolean> opt_ignore field_unsigned
 
 /*
  * Non-keyword token types.  These are hard-wired into the "flex" lexer.
@@ -1073,7 +1073,7 @@ static char* GetDolphinObjName(const char* string, bool is_quoted);
 
 	YEAR_P YES_P
 
-	ZONE
+	ZEROFILL ZONE
 
 	AST
 
@@ -1126,6 +1126,8 @@ static char* GetDolphinObjName(const char* string, bool is_quoted);
 %left		DIV MOD XOR
 %nonassoc	REGEXP RLIKE
 %left		POSTFIXOP		/* dummy for postfix Op rules */
+%nonassoc	lower_than_zerofill
+%nonassoc	ZEROFILL
 /*
  * To support target_el without AS, we must give IDENT an explicit priority
  * between POSTFIXOP and Op.  We can safely assign the same priority to
@@ -14766,7 +14768,7 @@ arg_class:	IN_P								{ $$ = FUNC_PARAM_IN; }
 /*
  * Ideally param_name should be ColId, but that causes too many conflicts.
  */
-param_name:	type_function_name
+param_name:	type_function_name %prec lower_than_zerofill
 		;
 
 func_return:
@@ -22952,7 +22954,7 @@ GenericType:
 					$$->typmods = $3;
 					$$->location = @1;
 				}
-			| type_function_name UNSIGNED
+			| type_function_name unsigned_list
 			{
 				if (($1 != NULL) && (strcmp($1, "int1") == 0)) {
 					$$ = SystemTypeName("uint1");
@@ -23001,15 +23003,25 @@ Binary:	BINARY
 			$$->location = @1;
 		}
 
+field_unsigned:
+		unsigned_list							{ $$ = TRUE; }
+		| /* empty */							{ $$ = FALSE; }
+		;
+
+unsigned_list:
+		opt_unsigned
+		| unsigned_list opt_unsigned
+		;
+
 opt_unsigned:
-		UNSIGNED								{  $$ = TRUE; }
-		| /*EMPTY*/								{  $$ = FALSE; }
+		UNSIGNED
+		| ZEROFILL
 		;
 
 /*
  * SQL92 numeric data types
  */
-Numeric:	INT_P opt_type_modifiers opt_unsigned
+Numeric:	INT_P opt_type_modifiers field_unsigned
 				{
 					if ($3) {
 						$$ = SystemTypeName("uint4");
@@ -23019,7 +23031,7 @@ Numeric:	INT_P opt_type_modifiers opt_unsigned
 						$$->location = @1;
 					}
 				}
-			| INTEGER opt_type_modifiers opt_unsigned
+			| INTEGER opt_type_modifiers field_unsigned
 				{
 					if ($3) {
 						$$ = SystemTypeName("uint4");
@@ -23029,7 +23041,7 @@ Numeric:	INT_P opt_type_modifiers opt_unsigned
 						$$->location = @1;
 					}
 				}
-			| TINYINT opt_type_modifiers opt_unsigned 
+			| TINYINT opt_type_modifiers field_unsigned 
 				{
 					if ($3) {
 						$$ = SystemTypeName("uint1");
@@ -23040,7 +23052,7 @@ Numeric:	INT_P opt_type_modifiers opt_unsigned
 					}
 				}
 
-			| SMALLINT opt_type_modifiers opt_unsigned
+			| SMALLINT opt_type_modifiers field_unsigned
 				{
 					if ($3) {
 						$$ = SystemTypeName("uint2");
@@ -23050,7 +23062,7 @@ Numeric:	INT_P opt_type_modifiers opt_unsigned
 						$$->location = @1;
 					}
 				}
-			| MEDIUMINT opt_type_modifiers opt_unsigned
+			| MEDIUMINT opt_type_modifiers field_unsigned
 				{
 					if ($3) {
 						$$ = SystemTypeName("uint4");
@@ -23060,7 +23072,7 @@ Numeric:	INT_P opt_type_modifiers opt_unsigned
 						$$->location = @1;
 					}
 				}
-			| BIGINT opt_type_modifiers opt_unsigned
+			| BIGINT opt_type_modifiers field_unsigned
 				{
 					if ($3) {
 						$$ = SystemTypeName("uint8");
@@ -27700,6 +27712,7 @@ unreserved_keyword_without_key:
 			| XML_P
 			| YEAR_P
 			| YES_P
+			| ZEROFILL
 			| ZONE
 		;
 

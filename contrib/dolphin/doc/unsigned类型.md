@@ -2,6 +2,8 @@
 
 UNSIGNED整型即无符号整型，与普通整形相比，其最高位是数字位而非符号位。要实现兼容mysql的UNSIGNED整型，首先保证数据库是'B'类型：`CREATE DATABASE test_db with dbcompatibility='B';`
 
+此外，还兼容了mysql的zerofill属性，只是语法上的支持，实际并没有填充零的效果。与UNSIGNED的作用等价。
+
 ### 创建和使用UNSIGNED整型
 
 * 实现了tinyint unsigned、smallint unsigned、 int unsigned、 bigint unsigned四种类型，分别也可以用uin1、uint2、uint4、uint8表示。例如，您可以创建一个具有UNSIGNED整型列的表，如下所示：
