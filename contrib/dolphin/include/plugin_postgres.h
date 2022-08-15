@@ -1,6 +1,9 @@
 #ifndef PLUGIN_POSTGRES_H
 #define PLUGIN_POSTGRES_H
 
+#include "nodes/pg_list.h"
+#include "fmgr.h"
+
 #define ENABLE_B_CMPT_MODE (GetSessionContext()->enableBCmptMode)
 
 #if defined _WIN32 || defined __CYGWIN__

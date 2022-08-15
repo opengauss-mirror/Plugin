@@ -291,5 +291,33 @@ SELECT count(*) FROM PG_PREPARED_STATEMENTS WHERE name LIKE '%instr_test%';
 (1 row)
 
 DROP TEMPORARY TABLE test_engine_1 CASCADE;
+-- new grammar test for analyze table
+CREATE TABLE t_new_analyze(c1 int, c2 text);
+ANALYZE NO_WRITE_TO_BINLOG TABLE t_new_analyze;
+        Table         |   Op    | Msg_type | Msg_text 
+----------------------+---------+----------+----------
+ public.t_new_analyze | analyze | status   | OK
+(1 row)
+
+ANALYZE LOCAL TABLE t_new_analyze;
+        Table         |   Op    | Msg_type | Msg_text 
+----------------------+---------+----------+----------
+ public.t_new_analyze | analyze | status   | OK
+(1 row)
+
+ANALYZE TABLE t_new_analyze;
+        Table         |   Op    | Msg_type | Msg_text 
+----------------------+---------+----------+----------
+ public.t_new_analyze | analyze | status   | OK
+(1 row)
+
+ANALYZE TABLE t_not_exist, t_new_analyze;
+        Table         |   Op    | Msg_type |                   Msg_text                   
+----------------------+---------+----------+----------------------------------------------
+ public.t_not_exist   | analyze | Error    | relation "public.t_not_exist" does not exist
+ public.t_not_exist   | analyze | status   | Operation failed
+ public.t_new_analyze | analyze | status   | OK
+(3 rows)
+
 \c postgres
 drop database db_b_new_gram_test;

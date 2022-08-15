@@ -37,7 +37,8 @@ OBJS = acl.o arrayfuncs.o array_selfuncs.o array_typanalyze.o \
 	ri_triggers.o partitionfuncs.o pg_locale.o formatting.o \
 	ascii.o quote.o pgstatfuncs.o encode.o dbsize.o trigfuncs.o \
 	uuid.o windowfuncs.o extended_statistics.o clientlogic_bytea.o clientlogicsettings.o \
-	median_aggs.o expr_distinct.o nlssort.o first_last_agg.o my_locale.o year.o
+	median_aggs.o expr_distinct.o nlssort.o first_last_agg.o my_locale.o year.o\
+	vacuumfuncs.o
 
 like.o: like.cpp like_match.cpp
 

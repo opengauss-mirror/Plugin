@@ -332,3 +332,7 @@ RETURNS text LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'RebuildPartitio
 
 CREATE FUNCTION pg_catalog.analyze_partition(text[],text,text)
 RETURNS text LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'AnalyzePartitions';
+
+CREATE OR REPLACE FUNCTION pg_catalog.analyze_tables (
+IN tableName cstring[], OUT "Table" text, OUT "Op" text, OUT "Msg_type" text, OUT "Msg_text" text
+) RETURNS setof record LANGUAGE C VOLATILE STRICT as '$libdir/dolphin',  'analyze_tables';

@@ -366,6 +366,7 @@ static void FilterStartWithUseCases(SelectStmt* stmt, List* locking_clause, core
 static FuncCall* MakePriorAsFunc();
 static Node* MakeSetPasswdStmt(char* user, char* passwd, char* replace_passwd);
 static Node* MakeKillStmt(int kill_opt, Node *expr);
+static Node* makeAnalyzeTableList(List *rangeVars);
 
 #ifndef ENABLE_MULTIPLE_NODES
 static bool CheckWhetherInColList(char *colname, List *col_list);
@@ -987,6 +988,7 @@ static int errstate;
 	MODEL // DB4AI
 	NAME_P NAMES NATIONAL NATURAL NCHAR NEXT NO NOCOMPRESS NOCYCLE NODE NOLOGGING NOMAXVALUE NOMINVALUE NONE
 	NOT NOTHING NOTIFY NOTNULL NOWAIT NULL_P NULLCOLS NULLIF NULLS_P NUMBER_P NUMERIC NUMSTR NVARCHAR NVARCHAR2 NVL
+	NO_WRITE_TO_BINLOG
 
 	OBJECT_P OF OFF OFFSET OIDS ON ONLY OPERATOR OPTIMIZATION OPTIMIZE OPTION OPTIONALLY OPTIONS OR
 	ORDER OUT_P OUTER_P OVER OVERLAPS OVERLAY OWNED OWNER
@@ -17948,7 +17950,35 @@ AnalyzeStmt:
 					$$ = (Node *)n;
 
 				}
+			| analyze_keyword opt_verbose opt_no_write_to_binlog TABLE qualified_name_list
+				{
+					SelectStmt *n = makeNode(SelectStmt);
+
+					FuncCall *func = makeNode(FuncCall);
+					func->funcname = SystemFuncName("analyze_tables");
+					func->args = list_make1(makeAnalyzeTableList($5));
+
+					RangeFunction *rangeFunc = makeNode(RangeFunction);
+					rangeFunc->funccallnode = (Node*)func;
+
+					ColumnRef *col = makeNode(ColumnRef);
+					col->fields = list_make1(makeNode(A_Star));
+
+					ResTarget *resTar = makeNode(ResTarget);
+					resTar->val = (Node*)col;
+
+					n->targetList = list_make1(resTar);
+					n->fromClause = list_make1(rangeFunc);
+
+					$$ = (Node*)n;
+				}
 		;
+
+opt_no_write_to_binlog:
+			NO_WRITE_TO_BINLOG
+			| LOCAL
+			| /* EMPTY */
+			;
 
 VerifyStmt:
             /* analyse verify fast|complete*/
@@ -26444,6 +26474,7 @@ unreserved_keyword:
 			| NAMES
 			| NEXT
 			| NO
+			| NO_WRITE_TO_BINLOG
 			| NOCOMPRESS
 			| NODE
 			| NOLOGGING
@@ -29205,6 +29236,33 @@ static Node* MakeKillStmt(int kill_opt, Node *expr)
 	n->havingClause = NULL;
 	n->windowClause = NIL;
 	return (Node*)n;
+}
+
+static Node* makeAnalyzeTableList(List *rangeVars)
+{
+	Datum* datums = NULL;
+	ListCell *cell = NULL;
+	StringInfoData res;
+	bool first = true;
+
+	initStringInfo(&res);
+	appendStringInfoChar(&res, '{');
+
+	foreach (cell, rangeVars) {
+		RangeVar* rangeVar = (RangeVar*)lfirst(cell);
+		char* schemaName = rangeVar->schemaname ? rangeVar->schemaname :
+			DatumGetCString(DirectFunctionCall1(current_schema, PointerGetDatum(NULL)));
+
+		if (first) {
+			appendStringInfo(&res, "%s.%s", schemaName, rangeVar->relname);
+			first = false;
+		} else {
+			appendStringInfo(&res, ", %s.%s", schemaName, rangeVar->relname);
+		}
+	}
+	appendStringInfoChar(&res, '}');
+
+	return makeStringConst(res.data, -1);
 }
 
 /*

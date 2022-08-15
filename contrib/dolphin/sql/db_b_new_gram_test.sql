@@ -125,5 +125,12 @@ SELECT count(*) FROM PG_PREPARED_STATEMENTS WHERE name LIKE '%instr_test%';
 
 DROP TEMPORARY TABLE test_engine_1 CASCADE;
 
+-- new grammar test for analyze table
+CREATE TABLE t_new_analyze(c1 int, c2 text);
+ANALYZE NO_WRITE_TO_BINLOG TABLE t_new_analyze;
+ANALYZE LOCAL TABLE t_new_analyze;
+ANALYZE TABLE t_new_analyze;
+ANALYZE TABLE t_not_exist, t_new_analyze;
+
 \c postgres
 drop database db_b_new_gram_test;
