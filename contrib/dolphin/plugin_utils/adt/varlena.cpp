@@ -263,6 +263,8 @@ PG_FUNCTION_INFO_V1_PUBLIC(uint8_list_agg_noarg2_transfn);
 extern "C" DLL_PUBLIC Datum uint8_list_agg_noarg2_transfn(PG_FUNCTION_ARGS);
 
 
+PG_FUNCTION_INFO_V1_PUBLIC(group_concat_transfn);
+extern "C" DLL_PUBLIC Datum group_concat_transfn(PG_FUNCTION_ARGS);
 
 
 /*****************************************************************************
@@ -5625,197 +5627,6 @@ Datum int8_list_agg_noarg2_transfn(PG_FUNCTION_ARGS)
      */
     PG_RETURN_POINTER(state);
 }
-Datum uint1_list_agg_transfn(PG_FUNCTION_ARGS)
-{
-    StringInfo state;
-
-    state = PG_ARGISNULL(0) ? NULL : (StringInfo)PG_GETARG_POINTER(0);
-
-    /* Append the value unless null. */
-    if (!PG_ARGISNULL(1)) {
-        /* On the first time through, we ignore the delimiter. */
-        if (state == NULL)
-            state = makeStringAggState(fcinfo);
-        else if (!PG_ARGISNULL(2))
-            appendStringInfoText(state, PG_GETARG_TEXT_PP(2)); /* delimiter */
-
-        appendStringInfo(state, "%hd", PG_GETARG_UINT8(1)); /* value */
-    }
-
-    /*
-     * The transition type for list_agg() is declared to be "internal",
-     * which is a pass-by-value type the same size as a pointer.
-     */
-    PG_RETURN_POINTER(state);
-}
-
-Datum uint1_list_agg_noarg2_transfn(PG_FUNCTION_ARGS)
-{
-    StringInfo state;
-
-    state = PG_ARGISNULL(0) ? NULL : (StringInfo)PG_GETARG_POINTER(0);
-
-    /* Append the value unless null. */
-    if (!PG_ARGISNULL(1)) {
-        /* On the first time through, we ignore the delimiter. */
-        if (state == NULL)
-            state = makeStringAggState(fcinfo);
-        else if (!PG_ARGISNULL(2))
-            appendStringInfoText(state, cstring_to_text("")); /* delimiter */
-
-        appendStringInfo(state, "%hd", PG_GETARG_UINT8(1)); /* value */
-    }
-
-    /*
-     * The transition type for list_agg() is declared to be "internal",
-     * which is a pass-by-value type the same size as a pointer.
-     */
-    PG_RETURN_POINTER(state);
-}
-
-Datum uint2_list_agg_transfn(PG_FUNCTION_ARGS)
-{
-    StringInfo state;
-
-    state = PG_ARGISNULL(0) ? NULL : (StringInfo)PG_GETARG_POINTER(0);
-
-    /* Append the value unless null. */
-    if (!PG_ARGISNULL(1)) {
-        /* On the first time through, we ignore the delimiter. */
-        if (state == NULL)
-            state = makeStringAggState(fcinfo);
-        else if (!PG_ARGISNULL(2))
-            appendStringInfoText(state, PG_GETARG_TEXT_PP(2)); /* delimiter */
-
-        appendStringInfo(state, "%hd", PG_GETARG_UINT16(1)); /* value */
-    }
-
-    /*
-     * The transition type for list_agg() is declared to be "internal",
-     * which is a pass-by-value type the same size as a pointer.
-     */
-    PG_RETURN_POINTER(state);
-}
-
-Datum uint2_list_agg_noarg2_transfn(PG_FUNCTION_ARGS)
-{
-    StringInfo state;
-
-    state = PG_ARGISNULL(0) ? NULL : (StringInfo)PG_GETARG_POINTER(0);
-
-    /* Append the value unless null. */
-    if (!PG_ARGISNULL(1)) {
-        /* On the first time through, we ignore the delimiter. */
-        if (state == NULL)
-            state = makeStringAggState(fcinfo);
-        else if (!PG_ARGISNULL(2))
-            appendStringInfoText(state, cstring_to_text("")); /* delimiter */
-
-        appendStringInfo(state, "%hd", PG_GETARG_UINT16(1)); /* value */
-    }
-
-    /*
-     * The transition type for list_agg() is declared to be "internal",
-     * which is a pass-by-value type the same size as a pointer.
-     */
-    PG_RETURN_POINTER(state);
-}
-
-Datum uint4_list_agg_transfn(PG_FUNCTION_ARGS)
-{
-    StringInfo state;
-
-    state = PG_ARGISNULL(0) ? NULL : (StringInfo)PG_GETARG_POINTER(0);
-
-    /* Append the value unless null. */
-    if (!PG_ARGISNULL(1)) {
-        /* On the first time through, we ignore the delimiter. */
-        if (state == NULL)
-            state = makeStringAggState(fcinfo);
-        else if (!PG_ARGISNULL(2))
-            appendStringInfoText(state, PG_GETARG_TEXT_PP(2)); /* delimiter */
-
-        appendStringInfo(state, "%d", PG_GETARG_UINT32(1)); /* value */
-    }
-
-    /*
-     * The transition type for list_agg() is declared to be "internal",
-     * which is a pass-by-value type the same size as a pointer.
-     */
-    PG_RETURN_POINTER(state);
-}
-
-Datum uint4_list_agg_noarg2_transfn(PG_FUNCTION_ARGS)
-{
-    StringInfo state;
-
-    state = PG_ARGISNULL(0) ? NULL : (StringInfo)PG_GETARG_POINTER(0);
-
-    /* Append the value unless null. */
-    if (!PG_ARGISNULL(1)) {
-        /* On the first time through, we ignore the delimiter. */
-        if (state == NULL)
-            state = makeStringAggState(fcinfo);
-        else if (!PG_ARGISNULL(2))
-            appendStringInfoText(state, cstring_to_text("")); /* delimiter */
-
-        appendStringInfo(state, "%d", PG_GETARG_UINT32(1)); /* value */
-    }
-
-    /*
-     * The transition type for list_agg() is declared to be "internal",
-     * which is a pass-by-value type the same size as a pointer.
-     */
-    PG_RETURN_POINTER(state);
-}
-
-Datum uint8_list_agg_transfn(PG_FUNCTION_ARGS)
-{
-    StringInfo state;
-
-    state = PG_ARGISNULL(0) ? NULL : (StringInfo)PG_GETARG_POINTER(0);
-
-    /* Append the value unless null. */
-    if (!PG_ARGISNULL(1)) {
-        /* On the first time through, we ignore the delimiter. */
-        if (state == NULL)
-            state = makeStringAggState(fcinfo);
-        else if (!PG_ARGISNULL(2))
-            appendStringInfoText(state, PG_GETARG_TEXT_PP(2)); /* delimiter */
-
-        appendStringInfo(state, "%ld", PG_GETARG_UINT64(1)); /* value */
-    }
-
-    /*
-     * The transition type for list_agg() is declared to be "internal",
-     * which is a pass-by-value type the same size as a pointer.
-     */
-    PG_RETURN_POINTER(state);
-}
-
-Datum uint8_list_agg_noarg2_transfn(PG_FUNCTION_ARGS)
-{
-    StringInfo state;
-
-    state = PG_ARGISNULL(0) ? NULL : (StringInfo)PG_GETARG_POINTER(0);
-
-    /* Append the value unless null. */
-    if (!PG_ARGISNULL(1)) {
-        /* On the first time through, we ignore the delimiter. */
-        if (state == NULL)
-            state = makeStringAggState(fcinfo);
-        else if (!PG_ARGISNULL(2))
-            appendStringInfoText(state, cstring_to_text("")); /* delimiter */
-
-        appendStringInfo(state, "%ld", PG_GETARG_UINT64(1)); /* value */
-    }
-
-    /*
-     * The transition type for list_agg() is declared to be "internal",
-     * which is a pass-by-value type the same size as a pointer.
-     */
-    PG_RETURN_POINTER(state);
-}
 
 Datum float4_list_agg_transfn(PG_FUNCTION_ARGS)
 {
@@ -8037,8 +7848,6 @@ Datum find_in_set_string(PG_FUNCTION_ARGS)
     PG_RETURN_INT64(0);
 }
 
-
-
 /*
  * Soundex
  */
@@ -8102,7 +7911,6 @@ static void set_sound(const char* arg, char* result, int size)
 
 }
 
-
 char* set_space(int32 num)
 {
     char* result = NULL;
@@ -8150,4 +7958,222 @@ Datum space_string(PG_FUNCTION_ARGS)
     } else {
         PG_RETURN_NULL();
     }
+}
+
+Datum uint1_list_agg_transfn(PG_FUNCTION_ARGS)
+{
+    StringInfo state;
+
+    state = PG_ARGISNULL(0) ? NULL : (StringInfo)PG_GETARG_POINTER(0);
+
+    /* Append the value unless null. */
+    if (!PG_ARGISNULL(1)) {
+        /* On the first time through, we ignore the delimiter. */
+        if (state == NULL)
+            state = makeStringAggState(fcinfo);
+        else if (!PG_ARGISNULL(2))
+            appendStringInfoText(state, PG_GETARG_TEXT_PP(2)); /* delimiter */
+
+        appendStringInfo(state, "%hd", PG_GETARG_UINT8(1)); /* value */
+    }
+
+    /*
+     * The transition type for list_agg() is declared to be "internal",
+     * which is a pass-by-value type the same size as a pointer.
+     */
+    PG_RETURN_POINTER(state);
+}
+
+Datum uint1_list_agg_noarg2_transfn(PG_FUNCTION_ARGS)
+{
+    StringInfo state;
+
+    state = PG_ARGISNULL(0) ? NULL : (StringInfo)PG_GETARG_POINTER(0);
+
+    /* Append the value unless null. */
+    if (!PG_ARGISNULL(1)) {
+        /* On the first time through, we ignore the delimiter. */
+        if (state == NULL)
+            state = makeStringAggState(fcinfo);
+        else if (!PG_ARGISNULL(2))
+            appendStringInfoText(state, cstring_to_text("")); /* delimiter */
+
+        appendStringInfo(state, "%hd", PG_GETARG_UINT8(1)); /* value */
+    }
+
+    /*
+     * The transition type for list_agg() is declared to be "internal",
+     * which is a pass-by-value type the same size as a pointer.
+     */
+    PG_RETURN_POINTER(state);
+}
+
+Datum uint2_list_agg_transfn(PG_FUNCTION_ARGS)
+{
+    StringInfo state;
+
+    state = PG_ARGISNULL(0) ? NULL : (StringInfo)PG_GETARG_POINTER(0);
+
+    /* Append the value unless null. */
+    if (!PG_ARGISNULL(1)) {
+        /* On the first time through, we ignore the delimiter. */
+        if (state == NULL)
+            state = makeStringAggState(fcinfo);
+        else if (!PG_ARGISNULL(2))
+            appendStringInfoText(state, PG_GETARG_TEXT_PP(2)); /* delimiter */
+
+        appendStringInfo(state, "%hd", PG_GETARG_UINT16(1)); /* value */
+    }
+
+    /*
+     * The transition type for list_agg() is declared to be "internal",
+     * which is a pass-by-value type the same size as a pointer.
+     */
+    PG_RETURN_POINTER(state);
+}
+
+Datum uint2_list_agg_noarg2_transfn(PG_FUNCTION_ARGS)
+{
+    StringInfo state;
+
+    state = PG_ARGISNULL(0) ? NULL : (StringInfo)PG_GETARG_POINTER(0);
+
+    /* Append the value unless null. */
+    if (!PG_ARGISNULL(1)) {
+        /* On the first time through, we ignore the delimiter. */
+        if (state == NULL)
+            state = makeStringAggState(fcinfo);
+        else if (!PG_ARGISNULL(2))
+            appendStringInfoText(state, cstring_to_text("")); /* delimiter */
+
+        appendStringInfo(state, "%hd", PG_GETARG_UINT16(1)); /* value */
+    }
+
+    /*
+     * The transition type for list_agg() is declared to be "internal",
+     * which is a pass-by-value type the same size as a pointer.
+     */
+    PG_RETURN_POINTER(state);
+}
+
+Datum uint4_list_agg_transfn(PG_FUNCTION_ARGS)
+{
+    StringInfo state;
+
+    state = PG_ARGISNULL(0) ? NULL : (StringInfo)PG_GETARG_POINTER(0);
+
+    /* Append the value unless null. */
+    if (!PG_ARGISNULL(1)) {
+        /* On the first time through, we ignore the delimiter. */
+        if (state == NULL)
+            state = makeStringAggState(fcinfo);
+        else if (!PG_ARGISNULL(2))
+            appendStringInfoText(state, PG_GETARG_TEXT_PP(2)); /* delimiter */
+
+        appendStringInfo(state, "%d", PG_GETARG_UINT32(1)); /* value */
+    }
+
+    /*
+     * The transition type for list_agg() is declared to be "internal",
+     * which is a pass-by-value type the same size as a pointer.
+     */
+    PG_RETURN_POINTER(state);
+}
+
+Datum uint4_list_agg_noarg2_transfn(PG_FUNCTION_ARGS)
+{
+    StringInfo state;
+
+    state = PG_ARGISNULL(0) ? NULL : (StringInfo)PG_GETARG_POINTER(0);
+
+    /* Append the value unless null. */
+    if (!PG_ARGISNULL(1)) {
+        /* On the first time through, we ignore the delimiter. */
+        if (state == NULL)
+            state = makeStringAggState(fcinfo);
+        else if (!PG_ARGISNULL(2))
+            appendStringInfoText(state, cstring_to_text("")); /* delimiter */
+
+        appendStringInfo(state, "%d", PG_GETARG_UINT32(1)); /* value */
+    }
+
+    /*
+     * The transition type for list_agg() is declared to be "internal",
+     * which is a pass-by-value type the same size as a pointer.
+     */
+    PG_RETURN_POINTER(state);
+}
+
+Datum uint8_list_agg_transfn(PG_FUNCTION_ARGS)
+{
+    StringInfo state;
+
+    state = PG_ARGISNULL(0) ? NULL : (StringInfo)PG_GETARG_POINTER(0);
+
+    /* Append the value unless null. */
+    if (!PG_ARGISNULL(1)) {
+        /* On the first time through, we ignore the delimiter. */
+        if (state == NULL)
+            state = makeStringAggState(fcinfo);
+        else if (!PG_ARGISNULL(2))
+            appendStringInfoText(state, PG_GETARG_TEXT_PP(2)); /* delimiter */
+
+        appendStringInfo(state, "%ld", PG_GETARG_UINT64(1)); /* value */
+    }
+
+    /*
+     * The transition type for list_agg() is declared to be "internal",
+     * which is a pass-by-value type the same size as a pointer.
+     */
+    PG_RETURN_POINTER(state);
+}
+
+Datum uint8_list_agg_noarg2_transfn(PG_FUNCTION_ARGS)
+{
+    StringInfo state;
+
+    state = PG_ARGISNULL(0) ? NULL : (StringInfo)PG_GETARG_POINTER(0);
+
+    /* Append the value unless null. */
+    if (!PG_ARGISNULL(1)) {
+        /* On the first time through, we ignore the delimiter. */
+        if (state == NULL)
+            state = makeStringAggState(fcinfo);
+        else if (!PG_ARGISNULL(2))
+            appendStringInfoText(state, cstring_to_text("")); /* delimiter */
+
+        appendStringInfo(state, "%ld", PG_GETARG_UINT64(1)); /* value */
+    }
+
+    /*
+     * The transition type for list_agg() is declared to be "internal",
+     * which is a pass-by-value type the same size as a pointer.
+     */
+    PG_RETURN_POINTER(state);
+}
+Datum group_concat_transfn(PG_FUNCTION_ARGS)
+{
+    StringInfo group_str;
+    text *delimiter;
+    char *tmp_del = ",";
+
+    delimiter = cstring_to_text(tmp_del);
+
+    group_str = PG_ARGISNULL(0) ? NULL : (StringInfo)PG_GETARG_POINTER(0);
+
+    if (!PG_ARGISNULL(1)) {
+        if (group_str == NULL)
+            group_str = makeStringAggState(fcinfo);
+        else
+            appendStringInfoText(group_str, delimiter);
+
+        appendStringInfoText(group_str, PG_GETARG_TEXT_PP(1));
+    }
+
+    /*
+     * The transition type for string_agg() is declared to be "internal",
+     * which is a pass-by-value type the same size as a pointer.
+     */
+    pfree(delimiter);
+    PG_RETURN_POINTER(group_str);
 }

@@ -891,9 +891,24 @@ int GetPriority(Oid typeoid)
             result = 0;
             break;
 
-        default:
-            result = 0;
+        default: {
+            Oid uint1Oid = get_typeoid(PG_CATALOG_NAMESPACE, "uint1");
+            Oid uint2Oid = get_typeoid(PG_CATALOG_NAMESPACE, "uint2");
+            Oid uint4Oid = get_typeoid(PG_CATALOG_NAMESPACE, "uint4");
+            Oid uint8Oid = get_typeoid(PG_CATALOG_NAMESPACE, "uint8");
+            if (typeoid == uint1Oid) {
+                result = 1;
+            } else if (typeoid == uint2Oid) {
+                result = 2;
+            } else if (typeoid == uint4Oid) {
+                result = 3;
+            } else if (typeoid == uint8Oid) {
+                result = 4;
+            } else {
+                result = 0;
+            }
             break;
+        }
     }
     return result;
 }

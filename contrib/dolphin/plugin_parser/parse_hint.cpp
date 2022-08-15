@@ -185,7 +185,7 @@ static void append_value(StringInfo buf, Value* value, Node* node)
     }
 }
 
-#define HINT_NUM 16
+#define HINT_NUM 17
 #define HINT_KEYWORD_NUM 21
 
 typedef struct {

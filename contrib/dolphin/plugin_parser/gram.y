@@ -20762,6 +20762,27 @@ GenericType:
 					$$->typmods = $3;
 					$$->location = @1;
 				}
+			| type_function_name UNSIGNED
+			{
+				if (($1 != NULL) && (strcmp($1, "int1") == 0)) {
+					$$ = SystemTypeName("uint1");
+					$$->location = @1;
+				} else if (($1 != NULL) && (strcmp($1, "int2") == 0)) {
+					$$ = SystemTypeName("uint2");
+					$$->location = @1;
+				} else if (($1 != NULL) && (strcmp($1, "int4") == 0)) {
+					$$ = SystemTypeName("uint4");
+					$$->location = @1;
+				} else if (($1 != NULL) && (strcmp($1, "int8") == 0)) {
+					$$ = SystemTypeName("uint8");
+					$$->location = @1;
+				} else {
+					ereport(errstate,
+					(errcode(ERRCODE_SYNTAX_ERROR),
+						errmsg("syntax error"),
+						parser_errposition(@2)));
+				}
+			}
 		;
 
 /*
@@ -20839,10 +20860,15 @@ Numeric:	INT_P opt_type_modifiers opt_unsigned
 						$$->location = @1;
 					}
 				}
-			| MEDIUMINT opt_type_modifiers
+			| MEDIUMINT opt_type_modifiers opt_unsigned
 				{
-					$$ = SystemTypeName("int4");
-					$$->location = @1;
+					if ($3) {
+						$$ = SystemTypeName("uint4");
+						$$->location = @1;
+					} else {
+						$$ = SystemTypeName("int4");
+						$$->location = @1;
+					}
 				}
 			| BIGINT opt_type_modifiers opt_unsigned
 				{
