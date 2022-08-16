@@ -110,15 +110,11 @@ drop index idx3;
 
 create index idx4 on test8(user_no) with(fillfactor = 30) with(fillfactor = 30);
 
-drop index idx4;
-
-create index idx5 on test9(user_no) LOCAL with(fillfactor = 30) include(dept_code) with(fillfactor = 30) include(month_code);
+create index idx5 on test9(user_no) LOCAL include(dept_code) with(fillfactor = 30);
 
 drop index idx5;
 
 create index idx6 on test8(user_no) GLOBAL with(fillfactor = 30) with(fillfactor = 30);
-
-drop index idx6;
 
 CREATE UNIQUE INDEX idx7 ON test10 (I_INDEX DESC, I_STATUS)
   PCTFREE 10
@@ -133,12 +129,13 @@ CREATE UNIQUE INDEX idx7 ON test10 (I_INDEX DESC, I_STATUS)
 
 drop index idx7;
 
+create index idx8 on test1 using ubtree(a) INCLUDE(b) with(fillfactor = 30) INCLUDE(b);
+
 drop table test1;
 drop table test2;
 drop table test3;
 drop table test4;
 drop table test5;
-drop table test6;
 drop table test7;
 drop table test8;
 drop table test9;
