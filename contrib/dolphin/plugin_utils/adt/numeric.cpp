@@ -20242,26 +20242,6 @@ Datum uint4_avg_accum(PG_FUNCTION_ARGS)
     PG_RETURN_ARRAYTYPE_P(transarray);
 }
 
-Datum uint8_avg(PG_FUNCTION_ARGS)
-{
-    ArrayType *transarray = PG_GETARG_ARRAYTYPE_P(0);
-    Int8TransTypeData *transdata = NULL;
-    Datum countd, sumd;
-
-    if (ARR_HASNULL(transarray) || ARR_SIZE(transarray) != ARR_OVERHEAD_NONULLS(1) + sizeof(Int8TransTypeData))
-        ereport(ERROR, (errcode(ERRCODE_ARRAY_ELEMENT_ERROR), errmsg("expected 2-element int8 array")));
-    transdata = (Int8TransTypeData *)ARR_DATA_PTR(transarray);
-
-    /* SQL92 defines AVG of no values to be NULL */
-    if (transdata->count == 0)
-        PG_RETURN_NULL();
-
-    countd = DirectFunctionCall1(uint8_numeric, Int64GetDatumFast(transdata->count));
-    sumd = DirectFunctionCall1(uint8_numeric, Int64GetDatumFast(transdata->sum));
-
-    PG_RETURN_DATUM(DirectFunctionCall2(numeric_div, sumd, countd));
-}
-
 Datum numeric_cast_uint1(PG_FUNCTION_ARGS)
 {
     Numeric num = PG_GETARG_NUMERIC(0);

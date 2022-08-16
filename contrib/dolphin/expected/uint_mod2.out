@@ -1,0 +1,1004 @@
+drop database if exists uint_mod2;
+NOTICE:  database "uint_mod2" does not exist, skipping
+create database uint_mod2 dbcompatibility 'b';
+\c uint_mod2
+--uint8
+select 18446744073709551615::uint8 mod 0::int1;
+ b_mod 
+-------
+      
+(1 row)
+
+select 18446744073709551615::uint8 mod 0::int2;
+ b_mod 
+-------
+      
+(1 row)
+
+select 18446744073709551615::uint8 mod 0::int4;
+ b_mod 
+-------
+      
+(1 row)
+
+select 18446744073709551615::uint8 mod 0::int8;
+ b_mod 
+-------
+      
+(1 row)
+
+select 18446744073709551615::uint8 mod 0::uint1;
+ b_mod 
+-------
+      
+(1 row)
+
+select 18446744073709551615::uint8 mod 0::uint2;
+ b_mod 
+-------
+      
+(1 row)
+
+select 18446744073709551615::uint8 mod 0::uint4;
+ b_mod 
+-------
+      
+(1 row)
+
+select 18446744073709551615::uint8 mod 0::uint8;
+ b_mod 
+-------
+      
+(1 row)
+
+select 18446744073709551615::uint8 mod null::int1;
+ b_mod 
+-------
+      
+(1 row)
+
+select 18446744073709551615::uint8 mod null::int2;
+ b_mod 
+-------
+      
+(1 row)
+
+select 18446744073709551615::uint8 mod null::int4;
+ b_mod 
+-------
+      
+(1 row)
+
+select 18446744073709551615::uint8 mod null::int8;
+ b_mod 
+-------
+      
+(1 row)
+
+select 18446744073709551615::uint8 mod null::uint1;
+ b_mod 
+-------
+      
+(1 row)
+
+select 18446744073709551615::uint8 mod null::uint2;
+ b_mod 
+-------
+      
+(1 row)
+
+select 18446744073709551615::uint8 mod null::uint4;
+ b_mod 
+-------
+      
+(1 row)
+
+select 18446744073709551615::uint8 mod null::uint8;
+ b_mod 
+-------
+      
+(1 row)
+
+select 18446744073709551615::uint8 mod 2::int1;
+ b_mod 
+-------
+     1
+(1 row)
+
+select 18446744073709551615::uint8 mod 2::int2;
+ b_mod 
+-------
+     1
+(1 row)
+
+select 18446744073709551615::uint8 mod 2::int4;
+ b_mod 
+-------
+     1
+(1 row)
+
+select 18446744073709551615::uint8 mod 2::int8;
+ b_mod 
+-------
+     1
+(1 row)
+
+select 18446744073709551615::uint8 mod 2::uint1;
+ b_mod 
+-------
+     1
+(1 row)
+
+select 18446744073709551615::uint8 mod 2::uint2;
+ b_mod 
+-------
+     1
+(1 row)
+
+select 18446744073709551615::uint8 mod 2::uint4;
+ b_mod 
+-------
+     1
+(1 row)
+
+select 18446744073709551615::uint8 mod 2::uint8;
+ b_mod 
+-------
+     1
+(1 row)
+
+select 18446744073709551615::uint8 mod (-1)::int2;
+ b_mod 
+-------
+     0
+(1 row)
+
+select 18446744073709551615::uint8 mod (-1)::int4;
+ b_mod 
+-------
+     0
+(1 row)
+
+select 18446744073709551615::uint8 mod (-1)::int8;
+ b_mod 
+-------
+     0
+(1 row)
+
+--uint4
+select 4294967295::uint4 mod 0::int1;
+ b_mod 
+-------
+      
+(1 row)
+
+select 4294967295::uint4 mod 0::int2;
+ b_mod 
+-------
+      
+(1 row)
+
+select 4294967295::uint4 mod 0::int4;
+ b_mod 
+-------
+      
+(1 row)
+
+select 4294967295::uint4 mod 0::int8;
+ b_mod 
+-------
+      
+(1 row)
+
+select 4294967295::uint4 mod 0::uint1;
+ b_mod 
+-------
+      
+(1 row)
+
+select 4294967295::uint4 mod 0::uint2;
+ b_mod 
+-------
+      
+(1 row)
+
+select 4294967295::uint4 mod 0::uint4;
+ b_mod 
+-------
+      
+(1 row)
+
+select 4294967295::uint4 mod 0::uint8;
+ b_mod 
+-------
+      
+(1 row)
+
+select 4294967295::uint4 mod null::int1;
+ b_mod 
+-------
+      
+(1 row)
+
+select 4294967295::uint4 mod null::int2;
+ b_mod 
+-------
+      
+(1 row)
+
+select 4294967295::uint4 mod null::int4;
+ b_mod 
+-------
+      
+(1 row)
+
+select 4294967295::uint4 mod null::int8;
+ b_mod 
+-------
+      
+(1 row)
+
+select 4294967295::uint4 mod null::uint1;
+ b_mod 
+-------
+      
+(1 row)
+
+select 4294967295::uint4 mod null::uint2;
+ b_mod 
+-------
+      
+(1 row)
+
+select 4294967295::uint4 mod null::uint4;
+ b_mod 
+-------
+      
+(1 row)
+
+select 4294967295::uint4 mod null::uint8;
+ b_mod 
+-------
+      
+(1 row)
+
+select 4294967295::uint4 mod (-1)::int2;
+ b_mod 
+-------
+     0
+(1 row)
+
+select 4294967295::uint4 mod (-1)::int4;
+ b_mod 
+-------
+     0
+(1 row)
+
+select 4294967295::uint4 mod (-1)::int8;
+ b_mod 
+-------
+     0
+(1 row)
+
+select 4294967295::uint4 mod 9223372036854775807::int8;
+   b_mod    
+------------
+ 4294967295
+(1 row)
+
+select 4294967295::uint4 mod 18446744073709551615::uint8;
+   b_mod    
+------------
+ 4294967295
+(1 row)
+
+--uint2
+select 65535::uint2 mod 0::int1;
+ b_mod 
+-------
+      
+(1 row)
+
+select 65535::uint2 mod 0::int2;
+ b_mod 
+-------
+      
+(1 row)
+
+select 65535::uint2 mod 0::int4;
+ b_mod 
+-------
+      
+(1 row)
+
+select 65535::uint2 mod 0::int8;
+ b_mod 
+-------
+      
+(1 row)
+
+select 65535::uint2 mod 0::uint1;
+ b_mod 
+-------
+      
+(1 row)
+
+select 65535::uint2 mod 0::uint2;
+ b_mod 
+-------
+      
+(1 row)
+
+select 65535::uint2 mod 0::uint4;
+ b_mod 
+-------
+      
+(1 row)
+
+select 65535::uint2 mod 0::uint8;
+ b_mod 
+-------
+      
+(1 row)
+
+select 65535::uint2 mod null::int1;
+ b_mod 
+-------
+      
+(1 row)
+
+select 65535::uint2 mod null::int2;
+ b_mod 
+-------
+      
+(1 row)
+
+select 65535::uint2 mod null::int4;
+ b_mod 
+-------
+      
+(1 row)
+
+select 65535::uint2 mod null::int8;
+ b_mod 
+-------
+      
+(1 row)
+
+select 65535::uint2 mod null::uint1;
+ b_mod 
+-------
+      
+(1 row)
+
+select 65535::uint2 mod null::uint2;
+ b_mod 
+-------
+      
+(1 row)
+
+select 65535::uint2 mod null::uint4;
+ b_mod 
+-------
+      
+(1 row)
+
+select 65535::uint2 mod null::uint8;
+ b_mod 
+-------
+      
+(1 row)
+
+select 65535::uint2 mod (-1)::int2;
+ b_mod 
+-------
+     0
+(1 row)
+
+select 65535::uint2 mod (-1)::int4;
+ b_mod 
+-------
+     0
+(1 row)
+
+select 65535::uint2 mod (-1)::int8;
+ b_mod 
+-------
+     0
+(1 row)
+
+select 65535::uint2 mod 2147483647::int4;
+ b_mod 
+-------
+ 65535
+(1 row)
+
+select 65535::uint2 mod 9223372036854775807::int8;
+ b_mod 
+-------
+ 65535
+(1 row)
+
+select 65535::uint2 mod 4294967295::uint4;
+ b_mod 
+-------
+ 65535
+(1 row)
+
+select 65535::uint2 mod 18446744073709551615::uint8;
+ b_mod 
+-------
+ 65535
+(1 row)
+
+--uint1
+select 255::uint1 mod 0::int1;
+ b_mod 
+-------
+      
+(1 row)
+
+select 255::uint1 mod 0::int2;
+ b_mod 
+-------
+      
+(1 row)
+
+select 255::uint1 mod 0::int4;
+ b_mod 
+-------
+      
+(1 row)
+
+select 255::uint1 mod 0::int8;
+ b_mod 
+-------
+      
+(1 row)
+
+select 255::uint1 mod 0::uint1;
+ b_mod 
+-------
+      
+(1 row)
+
+select 255::uint1 mod 0::uint2;
+ b_mod 
+-------
+      
+(1 row)
+
+select 255::uint1 mod 0::uint4;
+ b_mod 
+-------
+      
+(1 row)
+
+select 255::uint1 mod 0::uint8;
+ b_mod 
+-------
+      
+(1 row)
+
+select 255::uint1 mod null::int1;
+ b_mod 
+-------
+      
+(1 row)
+
+select 255::uint1 mod null::int2;
+ b_mod 
+-------
+      
+(1 row)
+
+select 255::uint1 mod null::int4;
+ b_mod 
+-------
+      
+(1 row)
+
+select 255::uint1 mod null::int8;
+ b_mod 
+-------
+      
+(1 row)
+
+select 255::uint1 mod null::uint1;
+ b_mod 
+-------
+      
+(1 row)
+
+select 255::uint1 mod null::uint2;
+ b_mod 
+-------
+      
+(1 row)
+
+select 255::uint1 mod null::uint4;
+ b_mod 
+-------
+      
+(1 row)
+
+select 255::uint1 mod null::uint8;
+ b_mod 
+-------
+      
+(1 row)
+
+select 255::uint1 mod (-1)::int2;
+ b_mod 
+-------
+     0
+(1 row)
+
+select 255::uint1 mod (-1)::int4;
+ b_mod 
+-------
+     0
+(1 row)
+
+select 255::uint1 mod (-1)::int8;
+ b_mod 
+-------
+     0
+(1 row)
+
+select 255::uint1 mod 32767::int2;
+ b_mod 
+-------
+   255
+(1 row)
+
+select 255::uint1 mod 2147483647::int4;
+ b_mod 
+-------
+   255
+(1 row)
+
+select 255::uint1 mod 9223372036854775807::int8;
+ b_mod 
+-------
+   255
+(1 row)
+
+select 255::uint1 mod 65535::uint2;
+ b_mod 
+-------
+   255
+(1 row)
+
+select 255::uint1 mod 4294967295::uint4;
+ b_mod 
+-------
+   255
+(1 row)
+
+select 255::uint1 mod 18446744073709551615::uint8;
+ b_mod 
+-------
+   255
+(1 row)
+
+--int8
+select 9223372036854775807::int8 mod 0::uint1;
+ b_mod 
+-------
+      
+(1 row)
+
+select 9223372036854775807::int8 mod 0::uint2;
+ b_mod 
+-------
+      
+(1 row)
+
+select 9223372036854775807::int8 mod 0::uint4;
+ b_mod 
+-------
+      
+(1 row)
+
+select 9223372036854775807::int8 mod 0::uint8;
+ b_mod 
+-------
+      
+(1 row)
+
+select 9223372036854775807::int8 mod null::uint1;
+ b_mod 
+-------
+      
+(1 row)
+
+select 9223372036854775807::int8 mod null::uint2;
+ b_mod 
+-------
+      
+(1 row)
+
+select 9223372036854775807::int8 mod null::uint4;
+ b_mod 
+-------
+      
+(1 row)
+
+select 9223372036854775807::int8 mod null::uint8;
+ b_mod 
+-------
+      
+(1 row)
+
+select 9223372036854775807::int8 mod 18446744073709551615::uint8;
+        b_mod        
+---------------------
+ 9223372036854775807
+(1 row)
+
+select 9223372036854775807::int8 mod 1::uint1;
+ b_mod 
+-------
+     0
+(1 row)
+
+select 9223372036854775807::int8 mod 1::uint2;
+ b_mod 
+-------
+     0
+(1 row)
+
+select 9223372036854775807::int8 mod 1::uint4;
+ b_mod 
+-------
+     0
+(1 row)
+
+select 9223372036854775807::int8 mod 1::uint8;
+ b_mod 
+-------
+     0
+(1 row)
+
+select (-9223372036854775808)::int8 mod 255::uint1;
+ b_mod 
+-------
+  -128
+(1 row)
+
+select (-9223372036854775808)::int8 mod 65535::uint2;
+ b_mod  
+--------
+ -32768
+(1 row)
+
+select (-9223372036854775808)::int8 mod 4294967295::uint4;
+    b_mod    
+-------------
+ -2147483648
+(1 row)
+
+select (-9223372036854775808)::int8 mod 18446744073709551615::uint8;
+        b_mod         
+----------------------
+ -9223372036854775808
+(1 row)
+
+--int4
+select 2147483647::int4 mod 0::uint1;
+ b_mod 
+-------
+      
+(1 row)
+
+select 2147483647::int4 mod 0::uint2;
+ b_mod 
+-------
+      
+(1 row)
+
+select 2147483647::int4 mod 0::uint4;
+ b_mod 
+-------
+      
+(1 row)
+
+select 2147483647::int4 mod 0::uint8;
+ b_mod 
+-------
+      
+(1 row)
+
+select 2147483647::int4 mod null::uint1;
+ b_mod 
+-------
+      
+(1 row)
+
+select 2147483647::int4 mod null::uint2;
+ b_mod 
+-------
+      
+(1 row)
+
+select 2147483647::int4 mod null::uint4;
+ b_mod 
+-------
+      
+(1 row)
+
+select 2147483647::int4 mod null::uint8;
+ b_mod 
+-------
+      
+(1 row)
+
+select 2147483647::int4 mod 4294967295::uint4;
+   b_mod    
+------------
+ 2147483647
+(1 row)
+
+select 2147483647::int4 mod 18446744073709551615::uint8;
+   b_mod    
+------------
+ 2147483647
+(1 row)
+
+select 2147483647::int4 mod 1::uint1;
+ b_mod 
+-------
+     0
+(1 row)
+
+select 2147483647::int4 mod 1::uint2;
+ b_mod 
+-------
+     0
+(1 row)
+
+select 2147483647::int4 mod 1::uint4;
+ b_mod 
+-------
+     0
+(1 row)
+
+select 2147483647::int4 mod 1::uint8;
+ b_mod 
+-------
+     0
+(1 row)
+
+select (-2147483648)::int4 mod 255::uint1;
+ b_mod 
+-------
+  -128
+(1 row)
+
+select (-2147483648)::int4 mod 65535::uint2;
+ b_mod  
+--------
+ -32768
+(1 row)
+
+select (-2147483648)::int4 mod 4294967295::uint4;
+    b_mod    
+-------------
+ -2147483648
+(1 row)
+
+select (-2147483648)::int4 mod 18446744073709551615::uint8;
+    b_mod    
+-------------
+ -2147483648
+(1 row)
+
+--int2
+select 32767::int2 mod 0::uint1;
+ b_mod 
+-------
+      
+(1 row)
+
+select 32767::int2 mod 0::uint2;
+ b_mod 
+-------
+      
+(1 row)
+
+select 32767::int2 mod 0::uint4;
+ b_mod 
+-------
+      
+(1 row)
+
+select 32767::int2 mod 0::uint8;
+ b_mod 
+-------
+      
+(1 row)
+
+select 32767::int2 mod null::uint1;
+ b_mod 
+-------
+      
+(1 row)
+
+select 32767::int2 mod null::uint2;
+ b_mod 
+-------
+      
+(1 row)
+
+select 32767::int2 mod null::uint4;
+ b_mod 
+-------
+      
+(1 row)
+
+select 32767::int2 mod null::uint8;
+ b_mod 
+-------
+      
+(1 row)
+
+select 32767::int2 mod 65535::uint2;
+ b_mod 
+-------
+ 32767
+(1 row)
+
+select 32767::int2 mod 4294967295::uint4;
+ b_mod 
+-------
+ 32767
+(1 row)
+
+select 32767::int2 mod 18446744073709551615::uint8;
+ b_mod 
+-------
+ 32767
+(1 row)
+
+select 32767::int2 mod 1::uint1;
+ b_mod 
+-------
+     0
+(1 row)
+
+select 32767::int2 mod 1::uint2;
+ b_mod 
+-------
+     0
+(1 row)
+
+select 32767::int2 mod 1::uint4;
+ b_mod 
+-------
+     0
+(1 row)
+
+select 32767::int2 mod 1::uint8;
+ b_mod 
+-------
+     0
+(1 row)
+
+select (-32768)::int2 mod 255::uint1;
+ b_mod 
+-------
+  -128
+(1 row)
+
+select (-32768)::int2 mod 65535::uint2;
+ b_mod  
+--------
+ -32768
+(1 row)
+
+select (-32768)::int2 mod 4294967295::uint4;
+ b_mod  
+--------
+ -32768
+(1 row)
+
+select (-32768)::int2 mod 18446744073709551615::uint8;
+ b_mod  
+--------
+ -32768
+(1 row)
+
+--int1
+select 255::int1 mod 0::uint1;
+ b_mod 
+-------
+      
+(1 row)
+
+select 255::int1 mod 0::uint2;
+ b_mod 
+-------
+      
+(1 row)
+
+select 255::int1 mod 0::uint4;
+ b_mod 
+-------
+      
+(1 row)
+
+select 255::int1 mod 0::uint8;
+ b_mod 
+-------
+      
+(1 row)
+
+select 255::int1 mod null::uint1;
+ b_mod 
+-------
+      
+(1 row)
+
+select 255::int1 mod null::uint2;
+ b_mod 
+-------
+      
+(1 row)
+
+select 255::int1 mod null::uint4;
+ b_mod 
+-------
+      
+(1 row)
+
+select 255::int1 mod null::uint8;
+ b_mod 
+-------
+      
+(1 row)
+
+select 255::int1 mod 65535::uint2;
+ b_mod 
+-------
+   255
+(1 row)
+
+select 255::int1 mod 4294967295::uint4;
+ b_mod 
+-------
+   255
+(1 row)
+
+select 255::int1 mod 18446744073709551615::uint8;
+ b_mod 
+-------
+   255
+(1 row)
+
+select 255::int1 mod 1::uint1;
+ b_mod 
+-------
+     0
+(1 row)
+
+select 255::int1 mod 1::uint2;
+ b_mod 
+-------
+     0
+(1 row)
+
+select 255::int1 mod 1::uint4;
+ b_mod 
+-------
+     0
+(1 row)
+
+select 255::int1 mod 1::uint8;
+ b_mod 
+-------
+     0
+(1 row)
+
+\c postgres
+drop database uint_mod2

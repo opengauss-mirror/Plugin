@@ -7975,7 +7975,7 @@ Datum uint1_list_agg_transfn(PG_FUNCTION_ARGS)
         else if (!PG_ARGISNULL(2))
             appendStringInfoText(state, PG_GETARG_TEXT_PP(2)); /* delimiter */
 
-        appendStringInfo(state, "%hd", PG_GETARG_UINT8(1)); /* value */
+        appendStringInfo(state, "%hu", PG_GETARG_UINT8(1)); /* value */
     }
 
     /*
@@ -7999,7 +7999,7 @@ Datum uint1_list_agg_noarg2_transfn(PG_FUNCTION_ARGS)
         else if (!PG_ARGISNULL(2))
             appendStringInfoText(state, cstring_to_text("")); /* delimiter */
 
-        appendStringInfo(state, "%hd", PG_GETARG_UINT8(1)); /* value */
+        appendStringInfo(state, "%hu", PG_GETARG_UINT8(1)); /* value */
     }
 
     /*
@@ -8023,7 +8023,7 @@ Datum uint2_list_agg_transfn(PG_FUNCTION_ARGS)
         else if (!PG_ARGISNULL(2))
             appendStringInfoText(state, PG_GETARG_TEXT_PP(2)); /* delimiter */
 
-        appendStringInfo(state, "%hd", PG_GETARG_UINT16(1)); /* value */
+        appendStringInfo(state, "%hu", PG_GETARG_UINT16(1)); /* value */
     }
 
     /*
@@ -8047,7 +8047,7 @@ Datum uint2_list_agg_noarg2_transfn(PG_FUNCTION_ARGS)
         else if (!PG_ARGISNULL(2))
             appendStringInfoText(state, cstring_to_text("")); /* delimiter */
 
-        appendStringInfo(state, "%hd", PG_GETARG_UINT16(1)); /* value */
+        appendStringInfo(state, "%hu", PG_GETARG_UINT16(1)); /* value */
     }
 
     /*
@@ -8071,7 +8071,7 @@ Datum uint4_list_agg_transfn(PG_FUNCTION_ARGS)
         else if (!PG_ARGISNULL(2))
             appendStringInfoText(state, PG_GETARG_TEXT_PP(2)); /* delimiter */
 
-        appendStringInfo(state, "%d", PG_GETARG_UINT32(1)); /* value */
+        appendStringInfo(state, "%u", PG_GETARG_UINT32(1)); /* value */
     }
 
     /*
@@ -8095,7 +8095,7 @@ Datum uint4_list_agg_noarg2_transfn(PG_FUNCTION_ARGS)
         else if (!PG_ARGISNULL(2))
             appendStringInfoText(state, cstring_to_text("")); /* delimiter */
 
-        appendStringInfo(state, "%d", PG_GETARG_UINT32(1)); /* value */
+        appendStringInfo(state, "%u", PG_GETARG_UINT32(1)); /* value */
     }
 
     /*
@@ -8119,7 +8119,7 @@ Datum uint8_list_agg_transfn(PG_FUNCTION_ARGS)
         else if (!PG_ARGISNULL(2))
             appendStringInfoText(state, PG_GETARG_TEXT_PP(2)); /* delimiter */
 
-        appendStringInfo(state, "%ld", PG_GETARG_UINT64(1)); /* value */
+        appendStringInfo(state, "%lu", PG_GETARG_UINT64(1)); /* value */
     }
 
     /*
@@ -8143,7 +8143,7 @@ Datum uint8_list_agg_noarg2_transfn(PG_FUNCTION_ARGS)
         else if (!PG_ARGISNULL(2))
             appendStringInfoText(state, cstring_to_text("")); /* delimiter */
 
-        appendStringInfo(state, "%ld", PG_GETARG_UINT64(1)); /* value */
+        appendStringInfo(state, "%lu", PG_GETARG_UINT64(1)); /* value */
     }
 
     /*

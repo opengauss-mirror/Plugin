@@ -1,0 +1,392 @@
+drop database if exists uint_agg;
+NOTICE:  database "uint_agg" does not exist, skipping
+create database uint_agg dbcompatibility 'b';
+\c uint_agg
+--uint1
+create table u1(a uint1, b int1);
+insert into u1 values(null, null),(255, 255),(0, 0),(255, 255),(null, null);
+select avg(a), avg(b) from u1;
+         avg          |         avg          
+----------------------+----------------------
+ 170.0000000000000000 | 170.0000000000000000
+(1 row)
+
+select bit_and(a), bit_and(b) from u1;
+ bit_and | bit_and 
+---------+---------
+ 0       | 0
+(1 row)
+
+select bit_or(a), bit_or(b) from u1;
+ bit_or | bit_or 
+--------+--------
+ 255    | 255
+(1 row)
+
+select count(a), count(b) from u1;
+ count | count 
+-------+-------
+     3 |     3
+(1 row)
+
+select count(distinct a), count(distinct b) from u1;
+ count | count 
+-------+-------
+     2 |     2
+(1 row)
+
+select max(a), max(b) from u1;
+ max | max 
+-----+-----
+ 255 | 255
+(1 row)
+
+select min(a), min(b) from u1;
+ min | min 
+-----+-----
+ 0   |   0
+(1 row)
+
+select stddev(a), stddev(b) from u1;
+      stddev      |      stddev      
+------------------+------------------
+ 147.224318643355 | 147.224318643355
+(1 row)
+
+select stddev_pop(a), stddev_pop(b) from u1;
+    stddev_pop    |    stddev_pop    
+------------------+------------------
+ 120.208152801713 | 120.208152801713
+(1 row)
+
+select stddev_samp(a), stddev_samp(b) from u1;
+   stddev_samp    |   stddev_samp    
+------------------+------------------
+ 147.224318643355 | 147.224318643355
+(1 row)
+
+select sum(a), sum(b) from u1;
+ sum | sum 
+-----+-----
+ 510 | 510
+(1 row)
+
+select var_pop(a), var_pop(b) from u1;
+      var_pop       | var_pop 
+--------------------+---------
+ 14450.000000000000 |   14450
+(1 row)
+
+select var_samp(a), var_samp(b) from u1;
+      var_samp      | var_samp 
+--------------------+----------
+ 21675.000000000000 |    21675
+(1 row)
+
+select variance(a), variance(b) from u1;
+      variance      | variance 
+--------------------+----------
+ 21675.000000000000 |    21675
+(1 row)
+
+select listagg(a) within group(order by a) from u1;
+ listagg 
+---------
+ 0255255
+(1 row)
+
+select listagg(a, ',') within group(order by a) from u1;
+  listagg  
+-----------
+ 0,255,255
+(1 row)
+
+--uint2
+create table u2(a uint2, b int4);
+insert into u2 values(null, null),(65535, 65535),(0, 0),(65535, 65535),(null, null);
+select avg(a), avg(b) from u2;
+        avg         |        avg         
+--------------------+--------------------
+ 43690.000000000000 | 43690.000000000000
+(1 row)
+
+select bit_and(a), bit_and(b) from u2;
+ bit_and | bit_and 
+---------+---------
+ 0       |       0
+(1 row)
+
+select bit_or(a), bit_or(b) from u2;
+ bit_or | bit_or 
+--------+--------
+ 65535  |  65535
+(1 row)
+
+select count(a), count(b) from u2;
+ count | count 
+-------+-------
+     3 |     3
+(1 row)
+
+select count(distinct a), count(distinct b) from u2;
+ count | count 
+-------+-------
+     2 |     2
+(1 row)
+
+select max(a), max(b) from u2;
+  max  |  max  
+-------+-------
+ 65535 | 65535
+(1 row)
+
+select min(a), min(b) from u2;
+ min | min 
+-----+-----
+ 0   |   0
+(1 row)
+
+select stddev(a), stddev(b) from u2;
+     stddev     |     stddev     
+----------------+----------------
+ 37836.64989134 | 37836.64989134
+(1 row)
+
+select stddev_pop(a), stddev_pop(b) from u2;
+   stddev_pop   |   stddev_pop   
+----------------+----------------
+ 30893.49527004 | 30893.49527004
+(1 row)
+
+select stddev_samp(a), stddev_samp(b) from u2;
+  stddev_samp   |  stddev_samp   
+----------------+----------------
+ 37836.64989134 | 37836.64989134
+(1 row)
+
+select sum(a), sum(b) from u2;
+  sum   |  sum   
+--------+--------
+ 131070 | 131070
+(1 row)
+
+select var_pop(a), var_pop(b) from u2;
+      var_pop       |      var_pop       
+--------------------+--------------------
+ 954408050.00000000 | 954408050.00000000
+(1 row)
+
+select var_samp(a), var_samp(b) from u2;
+      var_samp       |      var_samp       
+---------------------+---------------------
+ 1431612075.00000000 | 1431612075.00000000
+(1 row)
+
+select variance(a), variance(b) from u2;
+      variance       |      variance       
+---------------------+---------------------
+ 1431612075.00000000 | 1431612075.00000000
+(1 row)
+
+select listagg(a) within group(order by a) from u2;
+   listagg   
+-------------
+ 06553565535
+(1 row)
+
+select listagg(a, ',') within group(order by a) from u2;
+    listagg    
+---------------
+ 0,65535,65535
+(1 row)
+
+--uint4
+create table u4(a uint4, b int8);
+insert into u4 values(null, null),(4294967295, 4294967295),(0, 0),(4294967295, 4294967295),(null, null);
+select avg(a), avg(b) from u4;
+         avg         |         avg         
+---------------------+---------------------
+ 2863311530.00000000 | 2863311530.00000000
+(1 row)
+
+select bit_and(a), bit_and(b) from u4;
+ bit_and | bit_and 
+---------+---------
+ 0       |       0
+(1 row)
+
+select bit_or(a), bit_or(b) from u4;
+   bit_or   |   bit_or   
+------------+------------
+ 4294967295 | 4294967295
+(1 row)
+
+select count(a), count(b) from u4;
+ count | count 
+-------+-------
+     3 |     3
+(1 row)
+
+select count(distinct a), count(distinct b) from u4;
+ count | count 
+-------+-------
+     2 |     2
+(1 row)
+
+select max(a), max(b) from u4;
+    max     |    max     
+------------+------------
+ 4294967295 | 4294967295
+(1 row)
+
+select min(a), min(b) from u4;
+ min | min 
+-----+-----
+ 0   |   0
+(1 row)
+
+select stddev(a), stddev(b) from u4;
+   stddev   |   stddev   
+------------+------------
+ 2479700524 | 2479700524
+(1 row)
+
+select stddev_pop(a), stddev_pop(b) from u4;
+ stddev_pop | stddev_pop 
+------------+------------
+ 2024667000 | 2024667000
+(1 row)
+
+select stddev_samp(a), stddev_samp(b) from u4;
+ stddev_samp | stddev_samp 
+-------------+-------------
+  2479700524 |  2479700524
+(1 row)
+
+select sum(a), sum(b) from u4;
+    sum     |    sum     
+------------+------------
+ 8589934590 | 8589934590
+(1 row)
+
+select var_pop(a), var_pop(b) from u4;
+       var_pop       |       var_pop       
+---------------------+---------------------
+ 4099276458915470450 | 4099276458915470450
+(1 row)
+
+select var_samp(a), var_samp(b) from u4;
+      var_samp       |      var_samp       
+---------------------+---------------------
+ 6148914688373205675 | 6148914688373205675
+(1 row)
+
+select variance(a), variance(b) from u4;
+      variance       |      variance       
+---------------------+---------------------
+ 6148914688373205675 | 6148914688373205675
+(1 row)
+
+select listagg(a) within group(order by a) from u4;
+        listagg        
+-----------------------
+ 042949672954294967295
+(1 row)
+
+select listagg(a, ',') within group(order by a) from u4;
+         listagg         
+-------------------------
+ 0,4294967295,4294967295
+(1 row)
+
+--uint8
+create table u8(a uint8, b numeric(64, 0));
+insert into u8 values(null, null),(18446744073709551615, 18446744073709551615),(0, 0),(18446744073709551615, 18446744073709551615),(null, null);
+select avg(a), avg(b) from u8;
+         avg          |         avg          
+----------------------+----------------------
+ 12297829382473034410 | 12297829382473034410
+(1 row)
+
+select bit_and(a), bit_and(b) from u8;
+ERROR:  bigint out of range
+select bit_or(a), bit_or(b) from u8;
+ERROR:  bigint out of range
+select count(a), count(b) from u8;
+ count | count 
+-------+-------
+     3 |     3
+(1 row)
+
+select count(distinct a), count(distinct b) from u8;
+ count | count 
+-------+-------
+     2 |     2
+(1 row)
+
+select max(a), max(b) from u8;
+         max          |         max          
+----------------------+----------------------
+ 18446744073709551615 | 18446744073709551615
+(1 row)
+
+select min(a), min(b) from u8;
+ min | min 
+-----+-----
+ 0   |   0
+(1 row)
+
+select stddev(a), stddev(b) from u8;
+        stddev        |        stddev        
+----------------------+----------------------
+ 10650232656628343400 | 10650232656628343400
+(1 row)
+
+select stddev_pop(a), stddev_pop(b) from u8;
+     stddev_pop      |     stddev_pop      
+---------------------+---------------------
+ 8695878550221854808 | 8695878550221854808
+(1 row)
+
+select stddev_samp(a), stddev_samp(b) from u8;
+     stddev_samp      |     stddev_samp      
+----------------------+----------------------
+ 10650232656628343400 | 10650232656628343400
+(1 row)
+
+select sum(a), sum(b) from u8;
+         sum          |         sum          
+----------------------+----------------------
+ 36893488147419103230 | 36893488147419103230
+(1 row)
+
+select var_pop(a), var_pop(b) from u8;
+                var_pop                 |                var_pop                 
+----------------------------------------+----------------------------------------
+ 75618303760208547428106915396522024050 | 75618303760208547428106915396522024050
+(1 row)
+
+select var_samp(a), var_samp(b) from u8;
+                var_samp                 |                var_samp                 
+-----------------------------------------+-----------------------------------------
+ 113427455640312821142160373094783036075 | 113427455640312821142160373094783036075
+(1 row)
+
+select variance(a), variance(b) from u8;
+                variance                 |                variance                 
+-----------------------------------------+-----------------------------------------
+ 113427455640312821142160373094783036075 | 113427455640312821142160373094783036075
+(1 row)
+
+select listagg(a) within group(order by a) from u8;
+                  listagg                  
+-------------------------------------------
+ 01844674407370955161518446744073709551615
+(1 row)
+
+select listagg(a, ',') within group(order by a) from u8;
+                   listagg                   
+---------------------------------------------
+ 0,18446744073709551615,18446744073709551615
+(1 row)
+
