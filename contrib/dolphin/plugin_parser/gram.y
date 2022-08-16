@@ -23757,7 +23757,7 @@ func_expr_common_subexpr:
 					n->call_func = false;
 					$$ = (Node *)n;
 				}
-			| DB_B_FORMAT '(' expr_list ')'
+			| DB_B_FORMAT '(' func_arg_list ')'
 				{
 					FuncCall *n = makeNode(FuncCall);
 					if (u_sess->attr.attr_sql.sql_compatibility == B_FORMAT && GetSessionContext()->enableBFormatMode
@@ -23775,6 +23775,20 @@ func_expr_common_subexpr:
 					n->agg_star = FALSE;
 					n->agg_distinct = FALSE;
 					n->func_variadic = FALSE;
+					n->over = NULL;
+					n->location = @1;
+					n->call_func = false;
+					$$ = (Node *)n;
+				}
+			| DB_B_FORMAT '(' func_arg_list ',' VARIADIC func_arg_expr opt_sort_clause ')'
+				{
+					FuncCall *n = makeNode(FuncCall);
+					n->funcname = SystemFuncName("format");;
+					n->args = lappend($3, $6);
+					n->agg_order = $7;
+					n->agg_star = FALSE;
+					n->agg_distinct = FALSE;
+					n->func_variadic = TRUE;
 					n->over = NULL;
 					n->location = @1;
 					n->call_func = false;

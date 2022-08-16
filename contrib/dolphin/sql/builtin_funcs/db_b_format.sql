@@ -129,6 +129,14 @@ select format('%s, %s, %s, %s',1, 1, 1, 1);
 select format('%s, %s, %s, %s, %s',1 ,1 ,1 ,1, 1);
 select format('%s, %s, %s, %s, %s, %s',1 ,1 ,1 ,1, 1, 1);
 
+-- test for original function format with variadic array grammar.
+select format('%s, %s', variadic array['Hello','World']);
+select format('%s, %s', variadic array[1, 2]);
+select format('%s, %s', variadic array[true, false]);
+select format('%s, %s', variadic array[true, false]::text[]);
+select format('%2$s, %1$s', variadic array['first', 'second']);
+select format('%2$s, %1$s', variadic array[1, 2]);
+
 \c postgres
 drop database db_db_b_format;
 
