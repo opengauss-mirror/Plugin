@@ -8,6 +8,12 @@ select find_in_set(1,'a,1,c');
            2
 (1 row)
 
+select find_in_set(1,'true,1,c');
+ find_in_set 
+-------------
+           2
+(1 row)
+
 select find_in_set(1.2,'a,1.2,c');
  find_in_set 
 -------------
@@ -44,10 +50,22 @@ select find_in_set('qw','a,1.2,c,qwee,1212,1.1,12,qw');
            8
 (1 row)
 
-select find_in_set('a','a,1.2,c,qwee,1212,1.1,12,qw');
+select find_in_set('qw','a,1.2,null,c,qwee,1212,1.1,12,qw');
  find_in_set 
 -------------
-           1
+           9
+(1 row)
+
+select find_in_set(1,'true,1,a,1.2,null,c,qwee,1212,1.1,12,qw');
+ find_in_set 
+-------------
+           2
+(1 row)
+
+select find_in_set('测试','a,测试,1.2,c,qwee,1212,1.1');
+ find_in_set 
+-------------
+           2
 (1 row)
 
 select find_in_set('1','1,1.2,c,qwee,1212,1.1,12,qw');

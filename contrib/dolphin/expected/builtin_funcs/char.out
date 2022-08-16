@@ -38,19 +38,13 @@ select chara(65);
  A
 (1 row)
 
-select chara(67,66,67);
+SELECT chara(77,77.3,'77.3','78.8',78.8);
  chara 
 -------
- CBC
+ MMMNO
 (1 row)
 
 select chara(65,66.4);
- chara 
--------
- AB
-(1 row)
-
-select chara(65,'66');
  chara 
 -------
  AB
@@ -62,10 +56,16 @@ select chara(65,'66.4');
  AB
 (1 row)
 
+SELECT chara(77,77.3,'77.3a','78.8',78.8);
+ chara 
+-------
+ MMMNO
+(1 row)
+
 select chara(65,null,66);
  chara 
 -------
- 
+ AB
 (1 row)
 
 select chara(-18446744073709551616);
@@ -92,10 +92,10 @@ select chara(18446744073709551615);
  0xffffffff
 (1 row)
 
-select chara(65);
+select chara(true);
  chara 
 -------
- A
+ \x01
 (1 row)
 
 \c postgres

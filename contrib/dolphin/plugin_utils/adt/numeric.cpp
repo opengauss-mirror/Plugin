@@ -232,6 +232,8 @@ static void strip_var(NumericVar* var);
 static void compute_bucket(
     Numeric operand, Numeric bound1, Numeric bound2, NumericVar* count_var, NumericVar* result_var);
 
+extern Numeric int64_to_numeric(int64 v);
+extern const char* use_extract_numericstr(const char* str);
 /*
  * @Description: call corresponding big integer operator functions.
  *
@@ -19515,10 +19517,35 @@ Datum conv_num(PG_FUNCTION_ARGS)
     PG_RETURN_TEXT_P(cstring_to_text(result));
 }
 
+int128 conv_numeric_int128(Numeric num)
+{
+    int128 result = 0;
+    NumericVar x;
+    uint16 numFlags = NUMERIC_NB_FLAGBITS(num);
+
+    if (NUMERIC_FLAG_IS_NANORBI(numFlags)) {
+        /* Handle Big Integer */
+        if (NUMERIC_FLAG_IS_BI(numFlags))
+            num = makeNumericNormal(num);
+        /* XXX would it be better to return NULL? */
+        else
+            ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("cannot convert NaN to int128")));
+    }
+
+    /* Convert to variable format and thence to int8 */
+    init_var_from_num(num, &x);
+    floor_var(&x, &x);
+    /* if int128 out of range , returns int128_max */
+    if (!numericvar_to_int128(&x, &result))
+        result = PG_INT128_MAX;
+
+    return result;
+}
 
 Datum bin_integer(PG_FUNCTION_ARGS)
 {
-    int64 num = PG_GETARG_INT64(0);
+    int128 num;
+    num = conv_numeric_int128(PG_GETARG_NUMERIC(0));
     int from_base = 10;
     int to_base = 2;
     char result[CONV_MAX_CHAR_LEN + 1] = "";
@@ -19532,8 +19559,12 @@ Datum bin_integer(PG_FUNCTION_ARGS)
     PG_RETURN_TEXT_P(cstring_to_text(result));
 }
 
+extern const char* use_extract_numericstr(const char* str);
+
 Datum bin_string(PG_FUNCTION_ARGS)
 {
+    Oid typeOutput;
+    bool typIsVarlena;
     text* string = PG_GETARG_TEXT_PP(0);
     int from_base = 10;
     int to_base = 2;
@@ -19541,7 +19572,14 @@ Datum bin_string(PG_FUNCTION_ARGS)
     if (VARSIZE_ANY_EXHDR(string) <= 0) {
         PG_RETURN_NULL();
     }
-    int64 num = floor(atof(VARDATA_ANY(string)));
+    int128 num;
+    Datum txt = PG_GETARG_DATUM(0);
+    char* tmp = NULL;
+    tmp = DatumGetCString(DirectFunctionCall1(textout, txt));
+    getTypeOutputInfo(fcinfo->argTypes[0], &typeOutput, &typIsVarlena);
+    tmp = (char*)use_extract_numericstr(OidOutputFunctionCall(typeOutput, fcinfo->arg[0]));
+    num = conv_numeric_int128(DatumGetNumeric(DirectFunctionCall3(numeric_in, CStringGetDatum(tmp), ObjectIdGetDatum(0), Int32GetDatum(-1))));
+    pfree_ext(tmp);
     if (num == 0) {
         PG_RETURN_TEXT_P(cstring_to_text("0"));
     } else {
@@ -19556,4 +19594,14 @@ Datum bin_bool(PG_FUNCTION_ARGS)
 {
     const char* res = PG_GETARG_BOOL(0) ? "1" : "0";
     PG_RETURN_TEXT_P(cstring_to_text(res));
+}
+
+char* conv_binary_to_int(char* result, int128 data)
+{
+    
+    int from_base = 2;
+    int to_base = 10;
+    int ret;
+    ret = conv_n(result, data, from_base, to_base);
+    return result;
 }
