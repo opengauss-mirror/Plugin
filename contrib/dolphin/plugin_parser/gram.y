@@ -28344,6 +28344,10 @@ static CreateTableOptions* MakeCreateTableOptions(CreateTableOptions *tableOptio
 		tableOptions->inhRelations = tableOption->option.list_content;
 		break;
 	case OPT_WITH:
+		if (tableOptions->options != NIL) {
+			ereport(ERROR,
+				(errcode(ERRCODE_INVALID_TEXT_REPRESENTATION), errmsg("can't use \"option\" with more than once")));			
+		}
 		tableOptions->options = tableOption->option.list_content;
 		break;
 	case OPT_ONCOMMIT:
@@ -28389,9 +28393,17 @@ static CreateIndexOptions* MakeCreateIndexOptions(CreateIndexOptions *indexOptio
 	}
 	switch (indexOption->option_type) {
 	case OPT_INCLUDE:
+		if (indexOptions->indexIncludingParams != NIL) {
+			ereport(ERROR,
+				(errcode(ERRCODE_INVALID_TEXT_REPRESENTATION), errmsg("can't use option \"include\" more than once")));			
+		}
 		indexOptions->indexIncludingParams = indexOption->option.list_content;
 		break;
 	case OPT_RELOPTIONS:
+		if (indexOptions->options != NIL) {
+			ereport(ERROR,
+				(errcode(ERRCODE_INVALID_TEXT_REPRESENTATION), errmsg("can't use option \"with\" more than once")));			
+		}
 		indexOptions->options = indexOption->option.list_content;
 		break;
 	case OPT_TABLESPACE_INDEX:
