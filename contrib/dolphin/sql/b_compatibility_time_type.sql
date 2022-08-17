@@ -49,8 +49,6 @@ SELECT 21000229::date;
 SELECT 100000000::date;
 
 -- test time
-CREATE TABLE time_tbl (v time);
-
 -- '[-][D] hh:mm:ss.fsec'
 SELECT time(7)'12:12:12.123456';
 SELECT time(6)'12:12:12.123456';
@@ -104,6 +102,13 @@ SELECT 233445.123::time;
 SELECT 233445.123::time;
 SELECT 8385959.999999::time;
 SELECT 8385959.9999999::time;
+SELECT -232323::time;
+SELECT -8385959::time;
+CREATE TABLE time_tbl (v time);
+INSERT INTO time_tbl VALUES(-561234);
+INSERT INTO time_tbl VALUES(-1202334);
+SELECT * FROM time_tbl;
+DROP TABLE time_tbl;
 
 -- test function
 SELECT time '830:12:34' + interval '3 hours';
@@ -204,19 +209,19 @@ INSERT INTO timestamp_tbl VALUES ('010101');
 INSERT INTO timestamp_tbl VALUES ('0101');
 
 -- YYYYMMDDhhmmss or YYMMDDhhmmss
-INSERT INTO timestamp_tbl VALUES (11::timestamp);
-INSERT INTO timestamp_tbl VALUES (111::timestamp);
-INSERT INTO timestamp_tbl VALUES (1111::timestamp);
-INSERT INTO timestamp_tbl VALUES (11111::timestamp);
-INSERT INTO timestamp_tbl VALUES (111111::timestamp);
-INSERT INTO timestamp_tbl VALUES (1111111::timestamp);
-INSERT INTO timestamp_tbl VALUES (11111111::timestamp);
-INSERT INTO timestamp_tbl VALUES (111111111::timestamp);
-INSERT INTO timestamp_tbl VALUES (1111111111::timestamp);
-INSERT INTO timestamp_tbl VALUES (11111111111::timestamp);
-INSERT INTO timestamp_tbl VALUES (111111111111::timestamp);
-INSERT INTO timestamp_tbl VALUES (1111111111111::timestamp);
-INSERT INTO timestamp_tbl VALUES (11111111111111::timestamp);
+INSERT INTO timestamp_tbl VALUES (11);
+INSERT INTO timestamp_tbl VALUES (111);
+INSERT INTO timestamp_tbl VALUES (1111);
+INSERT INTO timestamp_tbl VALUES (11111);
+INSERT INTO timestamp_tbl VALUES (111111);
+INSERT INTO timestamp_tbl VALUES (1111111);
+INSERT INTO timestamp_tbl VALUES (11111111);
+INSERT INTO timestamp_tbl VALUES (111111111);
+INSERT INTO timestamp_tbl VALUES (1111111111);
+INSERT INTO timestamp_tbl VALUES (11111111111);
+INSERT INTO timestamp_tbl VALUES (111111111111);
+INSERT INTO timestamp_tbl VALUES (1111111111111);
+INSERT INTO timestamp_tbl VALUES (11111111111111);
 
 SELECT * FROM timestamp_tbl;
 set time zone 'UTC';
@@ -340,5 +345,145 @@ select year ' 1997  #@#';
 select year '&%2122';
 select year '中文2122';
 
+-- test partition key
+CREATE TABLESPACE b_time_type_example RELATIVE LOCATION 'tablespace1/tablespace_1';
+-- year range key
+CREATE TABLE y_range
+(
+    y year
+)
+TABLESPACE b_time_type_example
+PARTITION BY RANGE(y)
+(
+    PARTITION P1 VALUES LESS THAN(2000),
+    PARTITION P2 VALUES LESS THAN(2050)
+)
+ENABLE ROW MOVEMENT;
+INSERT INTO y_range VALUES(1997);
+INSERT INTO y_range VALUES(2030);
+INSERT INTO y_range VALUES(2060);
+SELECT * FROM y_range;
+SELECT * FROM y_range PARTITION(P1);
+SELECT * FROM y_range PARTITION(P2);
+DROP TABLE y_range;
+-- time range key
+CREATE TABLE ti_range
+(
+    t time
+)
+TABLESPACE b_time_type_example
+PARTITION BY RANGE(t)
+(
+        PARTITION P1 VALUES LESS THAN('-12:00:00'),
+        PARTITION P2 VALUES LESS THAN('48:00:00')
+)
+ENABLE ROW MOVEMENT;
+INSERT INTO ti_range VALUES('-20:00:00');
+INSERT INTO ti_range VALUES('20:00:00');
+INSERT INTO ti_range VALUES('120:00:00');
+SELECT * FROM ti_range;
+SELECT * FROM ti_range PARTITION(P1);
+SELECT * FROM ti_range PARTITION(P2);
+DROP TABLE ti_range;
+-- year list key
+CREATE TABLE y_list
+(
+    y year
+)
+TABLESPACE b_time_type_example
+PARTITION BY LIST(y)
+(
+    PARTITION P1 VALUES IN(1991, 1997, 2000),
+    PARTITION P2 VALUES IN(1992, 1998, 2010)
+)
+ENABLE ROW MOVEMENT;
+INSERT INTO y_list VALUES(1991);
+INSERT INTO y_list VALUES(1997);
+INSERT INTO y_list VALUES(2000);
+INSERT INTO y_list VALUES(1992);
+INSERT INTO y_list VALUES(1998);
+INSERT INTO y_list VALUES(2010);
+INSERT INTO y_list VALUES(2011);
+INSERT INTO y_list VALUES(1990);
+SELECT * FROM y_list;
+SELECT * FROM y_list PARTITION(P1);
+SELECT * FROM y_list PARTITION(P2);
+DROP TABLE y_list;
+-- time list key
+CREATE TABLE ti_list
+(
+    t time
+)
+TABLESPACE b_time_type_example
+PARTITION BY LIST(t)
+(
+        PARTITION P1 VALUES IN('12:00:00', '60000', '-3:0:0'),
+        PARTITION P2 VALUES IN('2:0:0', '-5:0:0')
+)
+ENABLE ROW MOVEMENT;
+INSERT INTO ti_list VALUES('12:00:00');
+INSERT INTO ti_list VALUES('02:00:00');
+INSERT INTO ti_list VALUES('6:00:00');
+INSERT INTO ti_list VALUES('-30000');
+INSERT INTO ti_list VALUES('-50000');
+INSERT INTO ti_list VALUES('3:12:12');
+SELECT * FROM ti_list;
+SELECT * FROM ti_list PARTITION(P1);
+SELECT * FROM ti_list PARTITION(P2);
+DROP TABLE ti_list;
+
+-- year hash key
+CREATE TABLE y_hash
+(
+    y year
+)
+TABLESPACE b_time_type_example
+PARTITION BY HASH(y)
+(
+    PARTITION P1,
+    PARTITION P2,
+    PARTITION P3,
+    PARTITION P4
+);
+INSERT INTO y_hash VALUES(1991);
+INSERT INTO y_hash VALUES(2010);
+INSERT INTO y_hash VALUES(2054);
+INSERT INTO y_hash VALUES(2056);
+INSERT INTO y_hash VALUES(2000);
+INSERT INTO y_hash VALUES(1992);
+INSERT INTO y_hash VALUES(1998);
+INSERT INTO y_hash VALUES(1970);
+INSERT INTO y_hash VALUES(1980);
+INSERT INTO y_hash VALUES(2133);
+INSERT INTO y_hash VALUES(2100);
+INSERT INTO y_hash VALUES(2122);
+SELECT * FROM y_hash;
+SELECT * FROM y_hash PARTITION(P1);
+SELECT * FROM y_hash PARTITION(P2);
+SELECT * FROM y_hash PARTITION(P3);
+SELECT * FROM y_hash PARTITION(P4);
+DROP TABLE y_hash;
+-- time hash key
+CREATE TABLE ti_hash
+(
+    ti time
+)
+TABLESPACE b_time_type_example
+PARTITION BY HASH(ti)
+(
+    PARTITION P1,
+    PARTITION P2
+);
+INSERT INTO ti_hash VALUES('12:1:1');
+INSERT INTO ti_hash VALUES('12:1:2');
+INSERT INTO ti_hash VALUES('12:1:3');
+INSERT INTO ti_hash VALUES('12:1:4');
+INSERT INTO ti_hash VALUES('12:1:5');
+SELECT * FROM ti_hash;
+SELECT * FROM ti_hash PARTITION(P1);
+SELECT * FROM ti_hash PARTITION(P2);
+DROP TABLE ti_hash;
+
 \c postgres
 DROP DATABASE b_time_type;
+DROP TABLESPACE b_time_type_example;

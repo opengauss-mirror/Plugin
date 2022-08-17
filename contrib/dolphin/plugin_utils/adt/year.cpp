@@ -1,6 +1,7 @@
 
 #include "postgres.h"
 #include "knl/knl_variable.h"
+#include "access/hash.h"
 
 #include "funcapi.h"
 #include "utils/array.h"
@@ -65,6 +66,7 @@ PG_FUNCTION_INFO_V1_PUBLIC(year_integer);
 extern "C" DLL_PUBLIC Datum year_integer(PG_FUNCTION_ARGS);
 PG_FUNCTION_INFO_V1_PUBLIC(year_scale);
 extern "C" DLL_PUBLIC Datum year_scale(PG_FUNCTION_ARGS);
+
 
 /*****************************************************************************
  *	 Year4 
@@ -440,4 +442,9 @@ Datum year_mi(YearADT y1, YearADT y2)
     result->day = 0;
     result->month = (y1-y2) * MONTHS_PER_YEAR;
     PG_RETURN_INTERVAL_P(result);
+}
+
+Datum year_hash(PG_FUNCTION_ARGS)
+{
+    return hashint8(fcinfo);
 }

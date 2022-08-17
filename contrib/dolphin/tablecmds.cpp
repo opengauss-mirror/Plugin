@@ -18789,6 +18789,10 @@ static bool CheckRangePartitionKeyType(Oid typoid)
             result = true;
             break;
 
+        case TIMEOID:
+            result = true;
+            break;
+
         case NUMERICOID:
             result = true;
             break;
@@ -18830,10 +18834,14 @@ static bool CheckRangePartitionKeyType(Oid typoid)
             break;
 
         default:
-            result = false;
+            Oid yearoid = get_typeoid(PG_CATALOG_NAMESPACE, "year");
+            if (typoid == yearoid) {
+                result = true;
+            } else {
+                result = false;
+            }
             break;
     }
-
     return result;
 }
 
@@ -18852,8 +18860,13 @@ static bool CheckListPartitionKeyType(Oid typoid)
         case DATEOID:
         case TIMESTAMPOID:
         case TIMESTAMPTZOID:
+        case TIMEOID:
             return true;
         default:
+            Oid yearoid = get_typeoid(PG_CATALOG_NAMESPACE, "year");
+            if (typoid == yearoid) {
+                return true;
+            }
             return false;
     }
 }
@@ -18877,6 +18890,10 @@ static bool CheckHashPartitionKeyType(Oid typoid)
         case TIMESTAMPTZOID:
             return true;
         default:
+            Oid yearoid = get_typeoid(PG_CATALOG_NAMESPACE, "year");
+            if (typoid == yearoid) {
+                return true;
+            }
             return false;
     }
 }
