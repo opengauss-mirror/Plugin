@@ -24121,7 +24121,7 @@ func_expr_common_subexpr:
 			| DB_B_FORMAT '(' func_arg_list ')'
 				{
 					FuncCall *n = makeNode(FuncCall);
-					if (u_sess->attr.attr_sql.sql_compatibility == B_FORMAT && GetSessionContext()->enableBFormatMode
+					if (u_sess->attr.attr_sql.sql_compatibility == B_FORMAT && GetSessionContext()->enableBCmptMode
 						&& (list_length($3) == 2 || list_length($3) == 3))
 					{
 						n->funcname = SystemFuncName("db_b_format");
