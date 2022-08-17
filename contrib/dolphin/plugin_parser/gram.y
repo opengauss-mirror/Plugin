@@ -49,6 +49,7 @@
  * -------------------------------------------------------------------------
  */
 #include "postgres.h"
+#include "plugin_nodes/parsenodes_common.h"
 #include "knl/knl_variable.h"
 #include "utils/builtins.h"
 #include <ctype.h>
@@ -731,7 +732,7 @@ static int errstate;
 %type <str>		Sconst comment_text notify_payload
 %type <str>		RoleId TypeOwner opt_granted_by opt_boolean_or_string ColId_or_Sconst
 %type <list>	var_list
-%type <str>		ColId ColLabel var_name type_function_name param_name user opt_password opt_replace
+%type <str>		ColId ColLabel var_name type_function_name param_name user opt_password opt_replace show_index_schema_opt
 %type <node>	var_value zone_value
 
 %type <keyword> unreserved_keyword type_func_name_keyword
@@ -948,7 +949,7 @@ static int errstate;
 
 	JOIN
 
-	KEY KILL KEY_PATH KEY_STORE
+	KEY KEYS KILL KEY_PATH KEY_STORE
 
 	LABEL LANGUAGE LARGE_P LAST_P LC_COLLATE_P LC_CTYPE_P LEADING LEAKPROOF
 	LEAST LESS LEFT LEVEL LIKE LIMIT LIST LISTEN LOAD LOCAL LOCALTIME LOCALTIMESTAMP
@@ -1026,6 +1027,8 @@ static int errstate;
 			START_WITH CONNECT_BY
 
 /* Precedence: lowest to highest */
+%nonassoc lower_than_key
+%nonassoc KEY
 %nonassoc lower_than_row
 %nonassoc lower_than_on
 %left ON USING
@@ -2636,6 +2639,22 @@ VariableShowStmt:
 					n->name = "all";
 					$$ = (Node *) n;
 				}
+			| SHOW show_index_opt from_in qualified_name show_index_schema_opt where_clause
+				{
+					SelectStmt *s = makeShowIndexQuery($5 ? $5 : $4->schemaname, $4->relname, $6);
+					$$ = (Node*)s;
+				}
+		;
+
+show_index_schema_opt:
+			from_in ColId							{ $$ = $2; }
+			| /* empty */							{ $$ = NULL; }
+		;
+
+show_index_opt:
+			INDEX
+			| INDEXES
+			| KEYS
 		;
 
 OptLikeOrWhere:
@@ -3760,6 +3779,22 @@ alter_table_cmd:
 					$$ = (Node *)n;
 				}
 			|
+			/* ALTER TABLE <name> DISABLE KEYS */
+			DISABLE_P KEYS
+				{
+					AlterTableCmd *n = makeNode(AlterTableCmd);
+					n->subtype = AT_UnusableIndex;
+					$$ = (Node *)n;
+				}
+			|
+			/* ALTER TABLE <name> ENABLE KEYS */
+			ENABLE_P KEYS
+				{
+					AlterTableCmd *n = makeNode(AlterTableCmd);
+					n->subtype = AT_RebuildIndex;
+					$$ = (Node *)n;
+				}
+			|
 			/*ALTER INDEX index_name REBUILD*/
 			REBUILD
 				{
@@ -3961,6 +3996,41 @@ alter_table_cmd:
 					n->name = $3;
 					n->behavior = $4;
 					n->missing_ok = FALSE;
+					$$ = (Node *)n;
+				}
+			| DROP PRIMARY KEY opt_drop_behavior
+				{
+					AlterTableCmd *n = makeNode(AlterTableCmd);
+					n->subtype = AT_DropConstraint;
+					n->name = NULL;
+					n->behavior = $4;
+					n->missing_ok = FALSE;
+					$$ = (Node *)n;
+				}
+			| DROP index_key_opt name opt_drop_behavior
+				{
+					AlterTableCmd *n = makeNode(AlterTableCmd);
+					n->subtype = AT_DropIndex;
+					n->name = $3;
+					n->behavior = $4;
+					n->missing_ok = FALSE;
+					$$ = (Node *)n;
+				}
+			| DROP FOREIGN KEY name opt_drop_behavior
+				{
+					AlterTableCmd *n = makeNode(AlterTableCmd);
+					n->subtype = AT_DropForeignKey;
+					n->name = $4;
+					n->behavior = $5;
+					n->missing_ok = FALSE;
+					$$ = (Node *)n;
+				}
+			| RENAME index_key_opt name TO name
+				{
+					AlterTableCmd *n = makeNode(AlterTableCmd);
+					n->subtype = AT_RenameIndex;
+					n->name = $3;
+					n->def = (Node *)makeString($5);
 					$$ = (Node *)n;
 				}
 			| MODIFY_P modify_column_cmd
@@ -4262,6 +4332,11 @@ alter_table_cmd:
 					$$ = (Node *)n;
 				}
 /* PGXC_END */
+		;
+
+index_key_opt:
+			INDEX
+			| KEY
 		;
 
 alter_column_default:
@@ -15213,6 +15288,14 @@ RenameStmt: ALTER AGGREGATE func_name aggr_args RENAME TO name
 			        $$ = (Node *)n;
 			    }
 
+			| ALTER TABLE relation_expr FORCE
+				{
+					VacuumStmt *n = makeNode(VacuumStmt);
+					n->options = VACOPT_VACUUM | VACOPT_FULL;
+					n->relation = $3;
+					$$ = (Node *)n;
+				}
+
 			| ALTER FOREIGN TABLE relation_expr RENAME opt_column name TO name
 				{
 					RenameStmt *n = makeNode(RenameStmt);
@@ -15362,7 +15445,7 @@ RenameStmt: ALTER AGGREGATE func_name aggr_args RENAME TO name
 		;
 
 opt_column: COLUMN									{ $$ = COLUMN; }
-			| /*EMPTY*/								{ $$ = 0; }
+			| /*EMPTY*/		%prec lower_than_key	{ $$ = 0; }			
 		;
 
 opt_set_data: SET DATA_P							{ $$ = 1; }
@@ -25785,6 +25868,7 @@ unreserved_keyword:
 			| ISNULL
 			| ISOLATION
 			| KEY
+			| KEYS
 			| KEY_PATH
 			| KEY_STORE
 			| KILL

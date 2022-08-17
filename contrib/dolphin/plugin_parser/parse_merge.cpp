@@ -13,7 +13,7 @@
 
 
 #ifdef FRONTEND_PARSER
-#include "nodes/parsenodes_common.h"
+#include "plugin_nodes/parsenodes_common.h"
 #include "nodes/feparser_memutils.h"
 #else
 #include "postgres.h"

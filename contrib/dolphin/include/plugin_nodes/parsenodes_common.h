@@ -824,7 +824,10 @@ typedef enum AlterTableType {
     AT_SplitSubPartition,
     /* this will be in a more natural position in 9.3: */
     AT_ReAddConstraint, /* internal to commands/tablecmds.c */
-    AT_AddIntoCBI
+    AT_AddIntoCBI,
+    AT_DropIndex,
+    AT_DropForeignKey,
+    AT_RenameIndex
 } AlterTableType;
 
 typedef enum AlterTableStatProperty { /* Additional Property for AlterTableCmd */

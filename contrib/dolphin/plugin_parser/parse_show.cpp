@@ -541,3 +541,50 @@ SelectStmt* makeShowTablesQuery(bool fullmode, char *optDbName, Node *likeWhereO
     return stmt;
 }
 
+SelectStmt* makeShowIndexQuery(char *schemaName, char *tableName, Node* whereClause)
+{
+    if (schemaName == NULL) {
+        schemaName = DatumGetCString(DirectFunctionCall1(current_schema, PointerGetDatum(NULL)));
+    }
+    (void)plps_check_schema_or_table_valid(schemaName, tableName, false);
+
+    List* tl = (List*)list_make1(plpsMakeNormalColumn(NULL, "table", "table"));
+    tl = lappend(tl, plpsMakeNormalColumn(NULL, "non_unique", "non_unique"));
+    tl = lappend(tl, plpsMakeNormalColumn(NULL, "key_name", "key_name"));
+    tl = lappend(tl, plpsMakeNormalColumn(NULL, "seq_in_index", "seq_in_index"));
+    tl = lappend(tl, plpsMakeNormalColumn(NULL, "column_name", "column_name"));
+    tl = lappend(tl, plpsMakeNormalColumn(NULL, "collation", "collation"));
+    tl = lappend(tl, plpsMakeNormalColumn(NULL, "cardinality", "cardinality"));
+    tl = lappend(tl, plpsMakeNormalColumn(NULL, "sub_part", "sub_part"));
+    tl = lappend(tl, plpsMakeNormalColumn(NULL, "packed", "packed"));
+    tl = lappend(tl, plpsMakeNormalColumn(NULL, "null", "null"));
+    tl = lappend(tl, plpsMakeNormalColumn(NULL, "index_type", "index_type"));
+    tl = lappend(tl, plpsMakeNormalColumn(NULL, "comment", "comment"));
+    tl = lappend(tl, plpsMakeNormalColumn(NULL, "index_comment", "index_comment"));
+
+    RangeVar* rv = makeRangeVar(NULL, "index_statistic", -1);
+    List* fl = (List*)list_make1(rv);
+
+    Node* condSchema = (Node*)makeSimpleA_Expr(AEXPR_OP, "=", makeColumnRef("namespace"),
+                                               makeStringConst(schemaName), -1);
+    Node* condTable = (Node*)makeSimpleA_Expr(AEXPR_OP, "=", makeColumnRef("table"), makeStringConst(tableName), -1);
+    Node* condST = plpsAddCond(condSchema, condTable);
+
+    SelectStmt* stmt = makeNode(SelectStmt);
+    stmt->distinctClause = NIL;
+    stmt->targetList = tl;
+    stmt->intoClause = NULL;
+    stmt->fromClause = fl;
+    if (whereClause) {
+        stmt->whereClause = plpsAddCond(condST, whereClause);
+    } else {
+        stmt->whereClause = condST;
+    }
+    stmt->sortClause = NIL;
+    stmt->groupClause = NIL;
+    stmt->havingClause = NULL;
+    stmt->windowClause = NIL;
+    stmt->hintState = NULL;
+    stmt->hasPlus = false;
+    return stmt;
+}

@@ -19,7 +19,7 @@
 #ifndef SCANNER_H
 #define SCANNER_H
 
-#include "nodes/parsenodes_common.h"
+#include "plugin_nodes/parsenodes_common.h"
 #include "plugin_parser/keywords.h"
 
 #ifdef FRONTEND_PARSER
