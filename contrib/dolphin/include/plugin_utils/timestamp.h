@@ -23,6 +23,7 @@
 #define TIMESTAMP_YYYYMMDD_LEN 8
 #define TIMESTAMP_YYMMDDhhmmss_LEN 12
 #define TIMESTAMP_YYYYMMDDhhmmss_LEN 14
+#define TIMESTAMP_MAX_PRECISION 6
 
 /* compatible with b format datetime and timestamp */
 extern void tm2datetime(struct pg_tm* tm, const fsec_t fsec, Timestamp* result);

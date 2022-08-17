@@ -170,6 +170,11 @@ extern "C" DLL_PUBLIC Datum numeric_b_format_timestamp(PG_FUNCTION_ARGS);
 PG_FUNCTION_INFO_V1_PUBLIC(datetime_year_part);
 extern "C" DLL_PUBLIC Datum datetime_year_part(PG_FUNCTION_ARGS);
 
+PG_FUNCTION_INFO_V1_PUBLIC(b_db_sys_real_timestamp);
+extern "C" DLL_PUBLIC Datum b_db_sys_real_timestamp(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(b_db_statement_start_timestamp);
+extern "C" DLL_PUBLIC Datum b_db_statement_start_timestamp(PG_FUNCTION_ARGS);
+
 /* b format datetime and timestamp type */
 static Timestamp int64_b_format_timestamp_internal(bool hasTz, int64 ts, fsec_t fsec);
 static int64 integer_b_format_timestamp(bool hasTz, int64 ts);
@@ -225,6 +230,72 @@ static char* anytimestamp_typmodout(bool istz, int32 typmod)
     }
 
     return res;
+}
+
+/* b_db_sys_real_timestamp()
+ * return sys real timestamp in b compatibility
+ */
+Datum b_db_sys_real_timestamp(PG_FUNCTION_ARGS)
+{
+    int32 typmod = PG_GETARG_INT32(0);
+
+        /*lexical analyzer can only recognize positive integers for token ICONST in gram.y*/
+    if (typmod > TIMESTAMP_MAX_PRECISION) {
+        ereport(ERROR,
+            (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+                errmsg("Too-big precision %d specified for \'sysdate\'. Maximum is 6.", typmod)));
+    }
+
+    TimestampTz sys_timestamp = GetCurrentTimestamp();
+    Timestamp result = (Timestamp)DirectFunctionCall1(timestamptz_timestamp, sys_timestamp);
+    AdjustTimestampForTypmod(&result, typmod);
+    PG_RETURN_TIMESTAMP(result);
+}
+
+/* b_db_statement_start_timestamp()
+ * return current timestamp in b compatibility
+ */
+Datum b_db_statement_start_timestamp(PG_FUNCTION_ARGS)
+{
+    int32 typmod = PG_GETARG_INT32(0);
+    Timestamp result;
+    TimestampTz state_start_timestamp;
+    fsec_t fsec;
+    struct pg_tm tt, *tm = &tt;
+    double timestamp_guc = DEFAULT_GUC_B_DB_TIMESTAMP;
+    int tzp = 0;
+
+    /* lexical analyzer can only recognize positive integers for token ICONST in gram.y */
+    if (typmod > TIMESTAMP_MAX_PRECISION) {
+        ereport(ERROR,
+            (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+                errmsg("Too-big precision %d specified for \'now\'. Maximum is 6.", typmod)));
+    }
+
+    timestamp_guc = GetSessionContext()->b_db_timestamp;
+
+    /* return current timestamp */
+    if (timestamp_guc == DEFAULT_GUC_B_DB_TIMESTAMP) {
+
+        state_start_timestamp = GetCurrentStatementStartTimestamp();
+        result = (Timestamp)DirectFunctionCall1(timestamptz_timestamp, state_start_timestamp);
+
+    } else {
+    
+    /* get the pg_tm struct of b_db_timestamp based on 1970-01-01 00:00:00 UTC, at time zone 0. */
+        Unixtimestamp2tm(timestamp_guc, tm, &fsec);
+        
+        /* find the current session time zone offset. */
+        tzp = -DetermineTimeZoneOffset(tm, session_timezone);
+
+        /* Convert the pg_tm structure into timestamp in current timezone. */
+        tm2timestamp(tm, fsec, &tzp, &result);
+
+    }
+
+    AdjustTimestampForTypmod(&result, typmod);
+
+    PG_RETURN_TIMESTAMP(result);
 }
 
 /*****************************************************************************

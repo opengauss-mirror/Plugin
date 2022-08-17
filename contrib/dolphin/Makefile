@@ -5,6 +5,7 @@ executor = plugin_executor
 adt = $(utils)/adt
 mb = $(utils)/mb
 vector = plugin_vector
+storage = plugin_storage
 subdir = contrib/dolphin
 top_builddir = ../..
 base_dir = contrib/dolphin
@@ -39,7 +40,9 @@ OBJS += $(mb)/mbutils.o
 
 OBJS += $(executor)/execQual.o
 
-all $(OBJS): parser utils executor vector;
+OBJS += $(storage)/hashfunc.o
+
+all $(OBJS): parser utils executor vector storage;
 
 parser:
 	make -C $(parser)
@@ -53,11 +56,15 @@ vector:
 executor:
 	make -C $(executor)
 
+storage:
+	make -C $(storage)
+
 extra_clean:
 	make clean -C $(parser)
 	make clean -C $(utils)
 	make clean -C $(vector)
 	make clean -C $(executor)
+	make clean -C $(storage)
 clean: extra_clean
 
 dolphin--1.0.sql: sql_script/*

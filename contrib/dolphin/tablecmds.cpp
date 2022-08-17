@@ -18753,6 +18753,21 @@ void CheckValuePartitionKeyType(Form_pg_attribute* attrs, List* pos)
     }
 }
 
+static bool CheckAddedType(Oid typoid) {
+    if (typoid == get_typeoid(PG_CATALOG_NAMESPACE, "uint1")){
+        return true;
+    } else if (typoid == get_typeoid(PG_CATALOG_NAMESPACE, "uint2")){
+        return true;
+    } else if (typoid == get_typeoid(PG_CATALOG_NAMESPACE, "uint4")){
+        return true;
+    } else if (typoid == get_typeoid(PG_CATALOG_NAMESPACE, "uint8")){
+        return true;
+    } else if (typoid == get_typeoid(PG_CATALOG_NAMESPACE, "year")){
+        return true;
+    }
+    return false;
+}
+
 /*
  * @@GaussDB@@
  * Target		: data partition
@@ -18785,6 +18800,10 @@ static bool CheckRangePartitionKeyType(Oid typoid)
             break;
 
         case TIMESTAMPTZOID:
+            result = true;
+            break;
+
+        case TIMEOID:
             result = true;
             break;
 
@@ -18827,20 +18846,10 @@ static bool CheckRangePartitionKeyType(Oid typoid)
         case NAMEOID:
             result = true;
             break;
-
-        default: {
-            result = false;
-            Oid uint1Oid = get_typeoid(PG_CATALOG_NAMESPACE, "uint1");
-            Oid uint2Oid = get_typeoid(PG_CATALOG_NAMESPACE, "uint2");
-            Oid uint4Oid = get_typeoid(PG_CATALOG_NAMESPACE, "uint4");
-            Oid uint8Oid = get_typeoid(PG_CATALOG_NAMESPACE, "uint8");
-            if (typoid == uint1Oid || typoid == uint2Oid || typoid == uint4Oid || typoid == uint8Oid) {
-                result = true;
-            }
+        default:
+            result = CheckAddedType(typoid);
             break;
-        }
     }
-
     return result;
 }
 
@@ -18859,17 +18868,10 @@ static bool CheckListPartitionKeyType(Oid typoid)
         case DATEOID:
         case TIMESTAMPOID:
         case TIMESTAMPTZOID:
+        case TIMEOID:
             return true;
-        default: {
-            Oid uint1Oid = get_typeoid(PG_CATALOG_NAMESPACE, "uint1");
-            Oid uint2Oid = get_typeoid(PG_CATALOG_NAMESPACE, "uint2");
-            Oid uint4Oid = get_typeoid(PG_CATALOG_NAMESPACE, "uint4");
-            Oid uint8Oid = get_typeoid(PG_CATALOG_NAMESPACE, "uint8");
-            if (typoid == uint1Oid || typoid == uint2Oid || typoid == uint4Oid || typoid == uint8Oid) {
-                return true;
-            }
-            return false;
-        }
+        default:
+            return CheckAddedType(typoid);
     }
 }
 
@@ -18891,16 +18893,8 @@ static bool CheckHashPartitionKeyType(Oid typoid)
         case TIMESTAMPOID:
         case TIMESTAMPTZOID:
             return true;
-        default: {
-            Oid uint1Oid = get_typeoid(PG_CATALOG_NAMESPACE, "uint1");
-            Oid uint2Oid = get_typeoid(PG_CATALOG_NAMESPACE, "uint2");
-            Oid uint4Oid = get_typeoid(PG_CATALOG_NAMESPACE, "uint4");
-            Oid uint8Oid = get_typeoid(PG_CATALOG_NAMESPACE, "uint8");
-            if (typoid == uint1Oid || typoid == uint2Oid || typoid == uint4Oid || typoid == uint8Oid) {
-                return true;
-            }
-            return false;
-        }
+        default:
+            return CheckAddedType(typoid);
     }
 }
 

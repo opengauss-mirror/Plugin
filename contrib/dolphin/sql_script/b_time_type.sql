@@ -159,7 +159,7 @@ CREATE OR REPLACE FUNCTION pg_catalog.int32_b_format_date (int4) RETURNS date LA
 
 DROP CAST IF EXISTS (int4 AS date) CASCADE;
 
-CREATE CAST(int4 AS date) WITH FUNCTION int32_b_format_date(int4);
+CREATE CAST(int4 AS date) WITH FUNCTION int32_b_format_date(int4) AS IMPLICIT;
 
 --CREATE TIME'S CAST FUNCTION
 
@@ -169,11 +169,11 @@ CREATE OR REPLACE FUNCTION pg_catalog.numeric_b_format_time (numeric) RETURNS ti
 
 DROP CAST IF EXISTS (int4 AS time) CASCADE;
 
-CREATE CAST(int4 AS time) WITH FUNCTION int32_b_format_time(int4);
+CREATE CAST(int4 AS time) WITH FUNCTION int32_b_format_time(int4) AS IMPLICIT;
 
 DROP CAST IF EXISTS (numeric AS time) CASCADE;
 
-CREATE CAST(numeric AS time) WITH FUNCTION numeric_b_format_time(numeric);
+CREATE CAST(numeric AS time) WITH FUNCTION numeric_b_format_time(numeric) AS IMPLICIT;
 
 --CREATE DATETIME'S CAST FUNCTION
 
@@ -185,15 +185,15 @@ CREATE OR REPLACE FUNCTION pg_catalog.numeric_b_format_datetime (numeric) RETURN
 
 DROP CAST IF EXISTS (int4 AS datetime) CASCADE;
 
-CREATE CAST(int4 AS datetime) WITH FUNCTION int32_b_format_datetime(int4);
+CREATE CAST(int4 AS datetime) WITH FUNCTION int32_b_format_datetime(int4) AS IMPLICIT;
 
 DROP CAST IF EXISTS (int8 AS datetime) CASCADE;
 
-CREATE CAST(int8 AS datetime) WITH FUNCTION int64_b_format_datetime(int8);
+CREATE CAST(int8 AS datetime) WITH FUNCTION int64_b_format_datetime(int8) AS IMPLICIT;
 
 DROP CAST IF EXISTS (numeric AS datetime) CASCADE;
 
-CREATE CAST(numeric AS datetime) WITH FUNCTION numeric_b_format_datetime(numeric);
+CREATE CAST(numeric AS datetime) WITH FUNCTION numeric_b_format_datetime(numeric) AS IMPLICIT;
 
 --CREATE DATETIME'S YEAR PART FUNCTION
 
@@ -209,13 +209,21 @@ CREATE OR REPLACE FUNCTION pg_catalog.numeric_b_format_timestamp (numeric) RETUR
 
 DROP CAST IF EXISTS (int4 AS timestamptz) CASCADE;
 
-CREATE CAST(int4 AS timestamptz) WITH FUNCTION int32_b_format_timestamp(int4);
+CREATE CAST(int4 AS timestamptz) WITH FUNCTION int32_b_format_timestamp(int4) AS IMPLICIT;
 
 DROP CAST IF EXISTS (int8 AS timestamptz) CASCADE;
 
-CREATE CAST(int8 AS timestamptz) WITH FUNCTION int64_b_format_timestamp(int8);
+CREATE CAST(int8 AS timestamptz) WITH FUNCTION int64_b_format_timestamp(int8) AS IMPLICIT;
 
 DROP CAST IF EXISTS (numeric AS timestamptz) CASCADE;
 
-CREATE CAST(numeric AS timestamptz) WITH FUNCTION numeric_b_format_timestamp(numeric);
+CREATE CAST(numeric AS timestamptz) WITH FUNCTION numeric_b_format_timestamp(numeric) AS IMPLICIT;
 
+--CREATE TIME'S NEGETIVE UNRAY OPERATOR
+
+CREATE OR REPLACE FUNCTION pg_catalog.negetive_time (time) RETURNS time LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'negetive_time';
+
+CREATE OPERATOR pg_catalog.- (
+   rightarg = time,
+   procedure = negetive_time
+);

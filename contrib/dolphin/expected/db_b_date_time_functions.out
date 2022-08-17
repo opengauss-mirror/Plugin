@@ -1,0 +1,582 @@
+---- b compatibility case
+drop database if exists b_datetime_func_test;
+NOTICE:  database "b_datetime_func_test" does not exist, skipping
+create database b_datetime_func_test dbcompatibility 'b';
+\c b_datetime_func_test
+set datestyle = 'ISO,ymd';
+set time zone "Asia/Shanghai";
+-- test part-one function
+-- test curdate()
+select curdate();
+  curdate   
+------------
+--?.*
+(1 row)
+
+-- test current_time(precision)
+select current_time;
+ current_time 
+--------------
+--?.*
+(1 row)
+
+select current_time();
+ current_time() 
+----------------
+--?.*
+(1 row)
+
+select current_time(0);
+ current_time(0) 
+-----------------
+--?.*
+(1 row)
+
+select current_time(1);
+--?.*
+--?.*
+--?.*
+(1 row)
+
+select current_time(2);
+--?.*
+--?.*
+--?.*
+(1 row)
+
+select current_time(3);
+--?.*
+--?.*
+--?.*
+(1 row)
+
+select current_time(4);
+--?.*
+--?.*
+--?.*
+(1 row)
+
+select current_time(5);
+--?.*
+--?.*
+--?.*
+(1 row)
+
+select current_time(6);
+--?.*
+--?.*
+--?.*
+(1 row)
+
+select current_time(7);
+ERROR:  Too-big precision 7 specified for 'curtime'. Maximum is 6.
+CONTEXT:  referenced column: current_time(7)
+-- test curtime(precision)
+select curtime;
+ERROR:  syntax error at or near ";"
+LINE 1: select curtime;
+                      ^
+select curtime();
+ curtime() 
+-----------
+--?.*
+(1 row)
+
+select curtime(0);
+ curtime(0) 
+------------
+--?.*
+(1 row)
+
+select curtime(1);
+--?.*
+--?.*
+--?.*
+(1 row)
+
+select curtime(2);
+--?.*
+--?.*
+--?.*
+(1 row)
+
+select curtime(3);
+--?.*
+--?.*
+--?.*
+(1 row)
+
+select curtime(4);
+--?.*
+--?.*
+--?.*
+(1 row)
+
+select curtime(5);
+--?.*
+--?.*
+--?.*
+(1 row)
+
+select curtime(6);
+--?.*
+--?.*
+--?.*
+(1 row)
+
+select curtime(7);
+ERROR:  Too-big precision 7 specified for 'curtime'. Maximum is 6.
+CONTEXT:  referenced column: curtime(7)
+-- test current_timestamp(precision)
+select current_timestamp;
+  current_timestamp  
+---------------------
+--?.*
+(1 row)
+
+select current_timestamp();
+ current_timestamp() 
+---------------------
+--?.*
+(1 row)
+
+select current_timestamp(0);
+ current_timestamp(0) 
+----------------------
+--?.*
+(1 row)
+
+select current_timestamp(1);
+--?.*
+--?.*
+--?.*
+(1 row)
+
+select current_timestamp(2);
+--?.*
+--?.*
+--?.*
+(1 row)
+
+select current_timestamp(3);
+--?.*
+--?.*
+--?.*
+(1 row)
+
+select current_timestamp(4);
+--?.*
+--?.*
+--?.*
+(1 row)
+
+select current_timestamp(5);
+--?.*
+--?.*
+--?.*
+(1 row)
+
+select current_timestamp(6);
+--?.*
+--?.*
+--?.*
+(1 row)
+
+select current_timestamp(7);
+ERROR:  Too-big precision 7 specified for 'now'. Maximum is 6.
+CONTEXT:  referenced column: current_timestamp(7)
+-- test localtime(precision)
+select localtime;
+      localtime      
+---------------------
+--?.*
+(1 row)
+
+select localtime();
+     localtime()     
+---------------------
+--?.*
+(1 row)
+
+select localtime(0);
+    localtime(0)     
+---------------------
+--?.*
+(1 row)
+
+select localtime(1);
+--?.*
+--?.*
+--?.*
+(1 row)
+
+select localtime(2);
+--?.*
+--?.*
+--?.*
+(1 row)
+
+select localtime(3);
+--?.*
+--?.*
+--?.*
+(1 row)
+
+select localtime(4);
+--?.*
+--?.*
+--?.*
+(1 row)
+
+select localtime(5);
+--?.*
+--?.*
+--?.*
+(1 row)
+
+select localtime(6);
+--?.*
+--?.*
+--?.*
+(1 row)
+
+select localtime(7);
+ERROR:  Too-big precision 7 specified for 'now'. Maximum is 6.
+CONTEXT:  referenced column: localtime(7)
+-- test localtimestamp(precision)
+select localtimestamp;
+   localtimestamp    
+---------------------
+--?.*
+(1 row)
+
+select localtimestamp();
+  localtimestamp()   
+---------------------
+--?.*
+(1 row)
+
+select localtimestamp(0);
+  localtimestamp(0)  
+---------------------
+--?.*
+(1 row)
+
+select localtimestamp(1);
+--?.*
+--?.*
+--?.*
+(1 row)
+
+select localtimestamp(2);
+--?.*
+--?.*
+--?.*
+(1 row)
+
+select localtimestamp(3);
+--?.*
+--?.*
+--?.*
+(1 row)
+
+select localtimestamp(4);
+--?.*
+--?.*
+--?.*
+(1 row)
+
+select localtimestamp(5);
+--?.*
+--?.*
+--?.*
+(1 row)
+
+select localtimestamp(6);
+--?.*
+--?.*
+--?.*
+(1 row)
+
+select localtimestamp(7);
+ERROR:  Too-big precision 7 specified for 'now'. Maximum is 6.
+CONTEXT:  referenced column: localtimestamp(7)
+-- test now(precision)
+-- when the GUC variable b_db_timestamp = 0, now returns the current date and time
+show b_db_timestamp;
+ b_db_timestamp 
+----------------
+ 0
+(1 row)
+
+select now();
+        now()        
+---------------------
+--?.*
+(1 row)
+
+select now(0);
+       now(0)        
+---------------------
+--?.*
+(1 row)
+
+select now(1);
+--?.*
+--?.*
+--?.*
+(1 row)
+
+select now(2);
+--?.*
+--?.*
+--?.*
+(1 row)
+
+select now(3);
+--?.*
+--?.*
+--?.*
+(1 row)
+
+select now(4);
+--?.*
+--?.*
+--?.*
+(1 row)
+
+select now(5);
+--?.*
+--?.*
+--?.*
+(1 row)
+
+select now(6);
+--?.*
+--?.*
+--?.*
+(1 row)
+
+select now(7);
+ERROR:  Too-big precision 7 specified for 'now'. Maximum is 6.
+CONTEXT:  referenced column: now(7)
+-- when the GUC variable b_db_timestamp != 0, now returns the timestamp according to b_db_timestamp
+set b_db_timestamp = 0.1;
+ERROR:  Variable 'b_db_timestamp' can not be set to the value of '0.100000'
+set b_db_timestamp = 2147483647.1;
+ERROR:  2.14748e+09 is outside the valid range for parameter "b_db_timestamp" (0 .. 2.14748e+09)
+set b_db_timestamp = 1.1234;
+select now();
+        now()        
+---------------------
+ 1970-01-01 08:00:01
+(1 row)
+
+select now(0);
+       now(0)        
+---------------------
+ 1970-01-01 08:00:01
+(1 row)
+
+select now(1);
+        now(1)         
+-----------------------
+ 1970-01-01 08:00:01.1
+(1 row)
+
+select now(2);
+         now(2)         
+------------------------
+ 1970-01-01 08:00:01.12
+(1 row)
+
+select now(3);
+         now(3)          
+-------------------------
+ 1970-01-01 08:00:01.123
+(1 row)
+
+select now(4);
+          now(4)          
+--------------------------
+ 1970-01-01 08:00:01.1234
+(1 row)
+
+select now(5);
+          now(5)          
+--------------------------
+ 1970-01-01 08:00:01.1234
+(1 row)
+
+select now(6);
+          now(6)          
+--------------------------
+ 1970-01-01 08:00:01.1234
+(1 row)
+
+select now(7);
+ERROR:  Too-big precision 7 specified for 'now'. Maximum is 6.
+CONTEXT:  referenced column: now(7)
+set b_db_timestamp = 0.0;
+-- test sysdate(precision)
+select sysdate;
+ERROR:  syntax error at or near ";"
+LINE 1: select sysdate;
+                      ^
+select sysdate();
+      sysdate()      
+---------------------
+--?.*
+(1 row)
+
+select sysdate(0);
+     sysdate(0)      
+---------------------
+--?.*
+(1 row)
+
+select sysdate(1);
+--?.*      
+--?.*
+--?.*
+(1 row)
+
+select sysdate(2);
+--?.*      
+--?.*
+--?.*
+(1 row)
+
+select sysdate(3);
+--?.*      
+--?.*
+--?.*
+(1 row)
+
+select sysdate(4);
+--?.*      
+--?.*
+--?.*
+(1 row)
+
+select sysdate(5);
+--?.*      
+--?.*
+--?.*
+(1 row)
+
+select sysdate(6);
+--?.*      
+--?.*
+--?.*
+(1 row)
+
+select sysdate(7);
+ERROR:  Too-big precision 7 specified for 'sysdate'. Maximum is 6.
+CONTEXT:  referenced column: sysdate(7)
+-- test insert
+create table test_date(col date);
+insert into test_date values(curdate());
+select * from test_date;
+    col     
+------------
+--?.*
+(1 row)
+
+drop table test_date;
+create table test_time(col time);
+insert into test_time values(current_time);
+insert into test_time values(current_time());
+insert into test_time values(current_time(0));
+insert into test_time values(current_time(6));
+select * from test_time;
+--?.*
+--?.*
+--?.*
+--?.*
+--?.*
+--?.*
+(4 rows)
+
+delete from test_time;
+insert into test_time values(curtime());
+insert into test_time values(curtime(0));
+insert into test_time values(curtime(6));
+select * from test_time;
+--?.*
+--?.*
+--?.*
+--?.*
+--?.*
+(3 rows)
+
+drop table test_time;
+create table test_datetime(col datetime);
+insert into test_datetime values(current_timestamp);
+insert into test_datetime values(current_timestamp());
+insert into test_datetime values(current_timestamp(0));
+insert into test_datetime values(current_timestamp(6));
+select * from test_datetime;
+--?.*
+--?.*
+--?.*
+--?.*
+--?.*
+--?.*
+(4 rows)
+
+delete from test_datetime;
+insert into test_datetime values(localtime);
+insert into test_datetime values(localtime());
+insert into test_datetime values(localtime(0));
+insert into test_datetime values(localtime(6));
+select * from test_datetime;
+--?.*
+--?.*
+--?.*
+--?.*
+--?.*
+--?.*
+(4 rows)
+
+delete from test_datetime;
+insert into test_datetime values(localtimestamp);
+insert into test_datetime values(localtimestamp());
+insert into test_datetime values(localtimestamp(0));
+insert into test_datetime values(localtimestamp(6));
+select * from test_datetime;
+--?.*
+--?.*
+--?.*
+--?.*
+--?.*
+--?.*
+(4 rows)
+
+delete from test_datetime;
+insert into test_datetime values(now());
+insert into test_datetime values(now(0));
+insert into test_datetime values(now(6));
+select * from test_datetime;
+--?.*
+--?.*
+--?.*
+--?.*
+--?.*
+(3 rows)
+
+delete from test_datetime;
+insert into test_datetime values(sysdate());
+insert into test_datetime values(sysdate(0));
+insert into test_datetime values(sysdate(6));
+select * from test_datetime;
+--?.*
+--?.*
+--?.*
+--?.*
+--?.*
+(3 rows)
+
+drop table test_datetime;
+\c contrib_regression
+DROP DATABASE b_datetime_func_test;

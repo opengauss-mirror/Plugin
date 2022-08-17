@@ -1,6 +1,7 @@
 #include "postgres.h"
 #include "plugin_parser/parser.h"
 #include "plugin_parser/analyze.h"
+#include "plugin_storage/hash.h"
 #include "plugin_postgres.h"
 #include "commands/extension.h"
 #include "commands/dbcommands.h"
@@ -100,6 +101,8 @@ extern bool IsVariableinBlackList(const char* name);
 extern void ExecAlterRoleSetStmt(Node* parse_tree, const char* query_string, bool sent_to_remote);
 static bool CheckSqlMode(char** newval, void** extra, GucSource source);
 static void AssignSqlMode(const char* newval, void* extra);
+static bool check_b_db_timestamp(double* newval, void** extra, GucSource source);
+static void assign_b_db_timestamp(double newval, void* extra);
 static const int LOADER_COL_BUF_CNT = 5;
 static uint32 dolphin_index;
 extern void set_hypopg_prehook(ProcessUtility_hook_type func);
@@ -183,6 +186,7 @@ void init_plugin_object()
 {
     u_sess->hook_cxt.transformStmtHook = (void*)transformStmt;
     u_sess->hook_cxt.execInitExprHook = (void*)ExecInitExpr;
+    u_sess->hook_cxt.computeHashHook  = (void*)compute_hash_default;
     set_processutility_prehook();
     set_default_guc();
 }
@@ -295,6 +299,21 @@ static void AssignSqlMode(const char* newval, void* extra)
     GetSessionContext()->sqlModeFlags = result;
 }
 
+static bool check_b_db_timestamp(double* newval, void** extra, GucSource source)
+{
+    double newval_interval = *newval;
+    if ((newval_interval < DEFAULT_GUC_B_DB_TIMESTAMP) || (newval_interval > DEFAULT_GUC_B_DB_TIMESTAMP && newval_interval < 1.0) || (newval_interval > MAX_GUC_B_DB_TIMESTAMP)) {
+            GUC_check_errmsg("Variable \'b_db_timestamp\' can not be set to the value of \'%lf\'", newval_interval);
+            return false;
+    }
+    return true;
+}
+
+static void assign_b_db_timestamp(double newval, void* extra)
+{
+    GetSessionContext()->b_db_timestamp = newval;
+}
+
 BSqlPluginContext* GetSessionContext()
 {
     if (u_sess->attr.attr_common.extension_session_vars_array[dolphin_index] == NULL) {
@@ -336,6 +355,21 @@ void init_session_vars(void)
                                CheckSqlMode,
                                AssignSqlMode,
                                NULL);
+    DefineCustomRealVariable("b_db_timestamp",
+                             "A flag influces function now(n) in B compatibility.",
+                             "If b_db_timestamp is 0, now(n) will return current timestamp. "
+                             "If b_db_timestamp is between 1 and 2147483647, the b_db_timestamp "
+                             "will be considered as the seconds offset, and now(n) will return the "
+                             "timestamp based on 1970-01-01 00:00:00 UTC + seconds offset + current time zone offset.",
+                             &GetSessionContext()->b_db_timestamp,
+                             DEFAULT_GUC_B_DB_TIMESTAMP,
+                             DEFAULT_GUC_B_DB_TIMESTAMP,
+                             MAX_GUC_B_DB_TIMESTAMP,
+                             PGC_USERSET,
+                             0,
+                             check_b_db_timestamp,
+                             assign_b_db_timestamp,
+                             NULL);
 }
 
 static void execute_sql_file()

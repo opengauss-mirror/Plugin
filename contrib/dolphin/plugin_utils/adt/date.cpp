@@ -59,6 +59,13 @@ PG_FUNCTION_INFO_V1_PUBLIC(numeric_b_format_time);
 extern "C" DLL_PUBLIC Datum numeric_b_format_time(PG_FUNCTION_ARGS);
 PG_FUNCTION_INFO_V1_PUBLIC(int32_b_format_date);
 extern "C" DLL_PUBLIC Datum int32_b_format_date(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(negetive_time);
+extern "C" DLL_PUBLIC Datum negetive_time(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1_PUBLIC(curdate);
+extern "C" DLL_PUBLIC Datum curdate(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(b_db_statement_start_time);
+extern "C" DLL_PUBLIC Datum b_db_statement_start_time(PG_FUNCTION_ARGS);
 
 /* common code for timetypmodin and timetztypmodin */
 static int32 anytime_typmodin(bool istz, ArrayType* ta)
@@ -109,6 +116,114 @@ static char* anytime_typmodout(bool istz, int32 typmod)
     }
     securec_check_ss(rc, "", "");
     return res;
+}
+
+/* curdate()
+ * @reruen  current date in b compatibility,    date
+ */
+Datum curdate(PG_FUNCTION_ARGS)
+{
+    TimestampTz state_start_timestamp;
+    Timestamp result;
+    double timestamp_guc = 0.0;
+    struct pg_tm tt, *tm = &tt;
+    DateADT date;
+    fsec_t fsec;
+    int tz;
+
+    timestamp_guc = GetSessionContext()->b_db_timestamp;
+
+    if (timestamp_guc == DEFAULT_GUC_B_DB_TIMESTAMP) {
+
+        state_start_timestamp = GetCurrentStatementStartTimestamp();
+        if (timestamp2tm(state_start_timestamp, &tz, tm, &fsec, NULL, NULL) != 0) {
+            ereport(ERROR, (
+                errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE), 
+                    errmsg("date out of range")));
+        }
+
+    } else {
+
+        /* get the pg_tm struct of b_db_timestamp based on 1970-01-01 00:00:00 UTC, at time zone 0. */
+        Unixtimestamp2tm(timestamp_guc, tm, &fsec);
+
+        /* find the current session time zone offset. */
+        tz = -DetermineTimeZoneOffset(tm, session_timezone);
+
+        /* Convert the tm into timestamp in current timezone.
+            Because date may change after adding the timezone offset. 
+        */
+        tm2timestamp(tm, fsec, &tz, &result);
+
+        if (timestamp2tm(result, NULL, tm, &fsec, NULL, NULL) != 0) {
+            ereport(ERROR, (
+                errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE), 
+                    errmsg("date out of range")));
+        }
+        
+    }
+
+    date = date2j(tm->tm_year, tm->tm_mon, tm->tm_mday) - POSTGRES_EPOCH_JDATE;
+
+    PG_RETURN_DATEADT(date);
+}
+
+/* b_db_statement_start_time()
+ * @param1 precision,                          int32
+ * @reruen current time in b compatibility,    time 
+ */
+Datum b_db_statement_start_time(PG_FUNCTION_ARGS)
+{
+    int32 typmod = PG_GETARG_INT32(0);
+
+    TimestampTz state_start_timestamp;
+    Timestamp timestamp_val;
+    TimeADT time_val;
+    double timestamp_guc = DEFAULT_GUC_B_DB_TIMESTAMP;
+    struct pg_tm tt, *tm = &tt;
+    fsec_t fsec;
+    int tz = 0;
+
+    /*lexical analyzer can only recognize positive integers for token ICONST in gram.y*/
+    if (typmod > TIMESTAMP_MAX_PRECISION) {
+        ereport(ERROR,
+            (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+                errmsg("Too-big precision %d specified for \'curtime\'. Maximum is 6.", typmod)));
+    }
+
+
+    timestamp_guc = GetSessionContext()->b_db_timestamp;
+    
+    if (timestamp_guc == DEFAULT_GUC_B_DB_TIMESTAMP) {
+
+        state_start_timestamp = GetCurrentStatementStartTimestamp();
+        time_val = (TimeADT)DirectFunctionCall1(timestamptz_time, state_start_timestamp);
+
+    } else {
+        
+        /* get the pg_tm struct of b_db_timestamp based on 1970-01-01 00:00:00 UTC, at time zone 0. */
+        Unixtimestamp2tm(timestamp_guc, tm, &fsec);
+
+        /* find the current session time zone offset. */
+        tz = -DetermineTimeZoneOffset(tm, session_timezone);
+
+        /* Convert the tm into timestamp in current timezone.
+            Because date may change after adding the timezone offset. 
+        */
+        tm2timestamp(tm, fsec, &tz, &timestamp_val);
+
+        if (timestamp2tm(timestamp_val, NULL, tm, &fsec, NULL, NULL) != 0) {
+            ereport(ERROR, (
+                errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE), 
+                    errmsg("date or time out of range")));
+        }
+
+        tm2time(tm, fsec, &time_val);
+    }
+
+    AdjustTimeForTypmod(&time_val, typmod);
+
+    PG_RETURN_TIMEADT(time_val);
 }
 
 /*****************************************************************************
@@ -1351,6 +1466,11 @@ static char* adjust_b_format_time(char *str, int *timeSign, int *D, bool *hasD)
         }
     }
     return str;
+}
+
+Datum negetive_time(PG_FUNCTION_ARGS) {
+    TimeADT time = PG_GETARG_TIMEADT(0);
+    PG_RETURN_TIMEADT(-time);
 }
 
 /* tm2time()
