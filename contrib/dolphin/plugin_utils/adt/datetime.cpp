@@ -4326,3 +4326,43 @@ Interval *char_to_interval(char *str, int32 typmod) {
     check_dtype (dtype, tm, fsec, result, str);
     return result;
 }
+
+/* Convert a double value into pg_tm based on 1970-01-01 00:00:00 UTC, in timezone 0.
+ * Therefore, you may need to add the timezone offset outside.
+ * @param unixtimestamp seconds from 1970-01-01 00:00:00
+ */
+void Unixtimestamp2tm(double unixtimestamp, struct pg_tm* tm, fsec_t* fsec)
+{
+    DateADT date = 0;
+    int hour = 0;
+    int min = 0;
+    int sec = 0;
+    int days = 0;
+    double int_val = 0.0;
+    double frac_val = 0.0;
+    long sec_time = 0L;
+    long frac_time = 0L;
+
+    frac_val = modf(unixtimestamp, &int_val);
+    sec_time = lrint(int_val);
+    long temp = lrint(frac_val * 1000000.0);
+    frac_time = temp < 999999L ? temp : 999999L;
+#ifdef HAVE_INT64_TIMESTAMP
+    *fsec = frac_time;
+#else
+    *fsec = frac_time / 1000000.0;
+#endif
+    days = sec_time / SECS_PER_DAY;
+    date = date2j(1970, 1, 1);
+    date += days;
+    j2date(date, &(tm->tm_year), &(tm->tm_mon), &(tm->tm_mday));
+
+    sec_time -= days * SECS_PER_DAY;
+    hour = sec_time / SECS_PER_HOUR;
+    min = (sec_time - hour * SECS_PER_HOUR) / SECS_PER_MINUTE;
+    sec = sec_time - hour * SECS_PER_HOUR - min * SECS_PER_MINUTE;
+
+    tm->tm_hour = hour;
+    tm->tm_min = min;
+    tm->tm_sec = sec;
+}

@@ -142,6 +142,26 @@ IntervalStylePack g_interStyleVal = {"a"};
 # define YYLEX yylex (&yylval, &yylloc, yyscanner)
 #endif
 
+#define b_db_ColnameWithoutPrecision(func_colname) \
+	do { \
+		char b_db_colname[64] = func_colname"()"; \
+		n->colname = pstrdup(b_db_colname); \
+	} while (0)
+
+
+#define b_db_ColnameWithPrecision(func_colname, int_node) \
+	do { \
+		char b_db_colname[64] = func_colname; \
+		char precision_char[64]; \
+		int precision_int = ((A_Const *)(int_node))->val.val.ival; \
+		int rc = EOK; \
+		rc = sprintf_s(precision_char, 64, "(%d)", precision_int); \
+		securec_check_ss(rc, "\0", "\0"); \
+		rc = strcat_s(b_db_colname, 64, precision_char); \
+		securec_check(rc, "\0", "\0"); \
+		n->colname = pstrdup(b_db_colname); \
+	} while (0)
+
 /* Private struct for the result of privilege_target production */
 typedef struct PrivTarget
 {
@@ -635,7 +655,7 @@ static int errstate;
 %type <list>	convert_list
 %type <list>	substr_list trim_list
 %type <list>	opt_interval interval_second
-%type <node>	overlay_placing substr_from substr_for
+%type <node>	overlay_placing substr_from substr_for optional_precision
 
 %type <boolean> opt_instead opt_incremental
 %type <boolean> opt_unique opt_concurrently opt_verbose opt_full opt_deltamerge opt_compact opt_hdfsdirectory opt_verify
@@ -919,7 +939,7 @@ static int errstate;
 	CONTENT_P CONTINUE_P CONTVIEW CONVERSION_P CONVERT CONNECT COORDINATOR COORDINATORS COPY COST CREATE
 	CROSS CSN CSV CUBE CURRENT_P
 	CURRENT_CATALOG CURRENT_DATE CURRENT_ROLE CURRENT_SCHEMA
-	CURRENT_TIME CURRENT_TIMESTAMP CURRENT_USER CURSOR CYCLE
+	CURRENT_TIME CURTIME CURRENT_TIMESTAMP CURRENT_USER CURSOR CYCLE NOW_FUNC
 
 	DATA_P DATABASE DATAFILE DATANODE DATANODES DATATYPE_CL DATE_P DATETIME DATE_FORMAT_P DAY_P  DAYOFMONTH DAYOFWEEK DAYOFYEAR DBCOMPATIBILITY_P DB_B_FORMAT DEALLOCATE DEC DECIMAL_P DECLARE DECODE DEFAULT DEFAULTS
 	DEFERRABLE DEFERRED DEFINER DELETE_P DELIMITER DELIMITERS DELTA DELTAMERGE DESC DESCRIBE DETERMINISTIC DIV
@@ -23605,113 +23625,213 @@ func_expr_common_subexpr:
             }
 			| CURRENT_TIME
 				{
-					/*
-					 * Translate as "'now'::text::timetz".
-					 * See comments for CURRENT_DATE.
-					 */
-					Node *n;
-					n = makeStringConstCast("now", -1, SystemTypeName("text"));
-					$$ = makeTypeCast(n, SystemTypeName("timetz"), @1);
-				}
-			| CURRENT_TIME '(' Iconst ')'
-				{
-					/*
-					 * Translate as "'now'::text::timetz(n)".
-					 * See comments for CURRENT_DATE.
-					 */
-					Node *n;
-					TypeName *d;
-					n = makeStringConstCast("now", -1, SystemTypeName("text"));
-					d = SystemTypeName("timetz");
-					d->typmods = list_make1(makeIntConst($3, @3));
-					$$ = makeTypeCast(n, d, @1);
-				}
-			| CURRENT_TIMESTAMP
-				{
-					/*
-					 * Translate as "now()", since we have a function that
-					 * does exactly what is needed.
-					 */
 					FuncCall *n = makeNode(FuncCall);
-					n->funcname = SystemFuncName("pg_systimestamp");
-					n->args = NIL;
+					n->funcname = SystemFuncName("b_db_statement_start_time");
+					n->colname = pstrdup("current_time");
+					n->args = list_make1(makeIntConst(0, -1));
 					n->agg_order = NIL;
-					n->agg_star = FALSE;
-					n->agg_distinct = FALSE;
-					n->func_variadic = FALSE;
+					n->agg_star = false;
+					n->agg_distinct = false;
+					n->func_variadic = false;
 					n->over = NULL;
 					n->location = @1;
 					n->call_func = false;
 					$$ = (Node *)n;
 				}
-			| CURRENT_TIMESTAMP '(' Iconst ')'
+			| CURRENT_TIME '(' optional_precision ')'
 				{
-					/*
-					 * Translate as "'now'::text::timestamptz(n)".
-					 * See comments for CURRENT_DATE.
-					 */
-					Node *n;
-					TypeName *d;
-					n = makeStringConstCast("now", -1, SystemTypeName("text"));
-					d = SystemTypeName("timestamptz");
-					d->typmods = list_make1(makeIntConst($3, @3));
-					$$ = makeTypeCast(n, d, @1);
+					FuncCall *n = makeNode(FuncCall);
+					n->funcname = SystemFuncName("b_db_statement_start_time");
+
+					if (!$3) {
+						b_db_ColnameWithoutPrecision("current_time");
+						n->args = list_make1(makeIntConst(0, -1));
+					} else {
+						b_db_ColnameWithPrecision("current_time", $3);
+						n->args = list_make1($3);
+					}
+					
+					n->agg_order = NIL;
+					n->agg_star = false;
+					n->agg_distinct = false;
+					n->func_variadic = false;
+					n->over = NULL;
+					n->location = @1;
+					n->call_func = false;
+					$$ = (Node *)n;
+				}
+			| CURTIME '(' optional_precision ')'
+				{
+					FuncCall *n = makeNode(FuncCall);
+					n->funcname = SystemFuncName("b_db_statement_start_time");
+					
+					if (!$3) {
+						b_db_ColnameWithoutPrecision("curtime");
+						n->args = list_make1(makeIntConst(0, -1));
+					} else {
+						b_db_ColnameWithPrecision("curtime", $3);
+						n->args = list_make1($3);
+					}
+					
+					n->agg_order = NIL;
+					n->agg_star = false;
+					n->agg_distinct = false;
+					n->func_variadic = false;
+					n->over = NULL;
+					n->location = @1;
+					n->call_func = false;
+					$$ = (Node *)n;
+				}
+			| CURRENT_TIMESTAMP
+				{
+					FuncCall *n = makeNode(FuncCall);
+					n->funcname = SystemFuncName("b_db_statement_start_timestamp");
+					n->colname = pstrdup("current_timestamp");
+					n->args = list_make1(makeIntConst(0, -1));
+					n->agg_order = NIL;
+					n->agg_star = false;
+					n->agg_distinct = false;
+					n->func_variadic = false;
+					n->over = NULL;
+					n->location = @1;
+					n->call_func = false;
+					$$ = (Node *)n;
+				}
+			| CURRENT_TIMESTAMP '(' optional_precision ')'
+				{
+					FuncCall *n = makeNode(FuncCall);
+					n->funcname = SystemFuncName("b_db_statement_start_timestamp");
+					
+					if (!$3) {
+						b_db_ColnameWithoutPrecision("current_timestamp");
+						n->args = list_make1(makeIntConst(0, -1));
+					} else {
+						b_db_ColnameWithPrecision("current_timestamp", $3);
+						n->args = list_make1($3);
+					}
+
+					n->agg_order = NIL;
+					n->agg_star = false;
+					n->agg_distinct = false;
+					n->func_variadic = false;
+					n->over = NULL;
+					n->location = @1;
+					n->call_func = false;
+					$$ = (Node *)n;
 				}
 			| LOCALTIME
 				{
-					/*
-					 * Translate as "'now'::text::time".
-					 * See comments for CURRENT_DATE.
-					 */
-					Node *n;
-					n = makeStringConstCast("now", -1, SystemTypeName("text"));
-					$$ = makeTypeCast((Node *)n, SystemTypeName("time"), @1);
+					FuncCall *n = makeNode(FuncCall);
+					n->funcname = SystemFuncName("b_db_statement_start_timestamp");
+					n->colname = pstrdup("localtime");
+					n->args = list_make1(makeIntConst(0, -1));
+					n->agg_order = NIL;
+					n->agg_star = false;
+					n->agg_distinct = false;
+					n->func_variadic = false;
+					n->over = NULL;
+					n->location = @1;
+					n->call_func = false;
+					$$ = (Node *)n;	
 				}
-			| LOCALTIME '(' Iconst ')'
+			| LOCALTIME '(' optional_precision ')'
 				{
-					/*
-					 * Translate as "'now'::text::time(n)".
-					 * See comments for CURRENT_DATE.
-					 */
-					Node *n;
-					TypeName *d;
-					n = makeStringConstCast("now", -1, SystemTypeName("text"));
-					d = SystemTypeName("time");
-					d->typmods = list_make1(makeIntConst($3, @3));
-					$$ = makeTypeCast((Node *)n, d, @1);
+					FuncCall *n = makeNode(FuncCall);
+					n->funcname = SystemFuncName("b_db_statement_start_timestamp");
+					
+					if (!$3) {
+						b_db_ColnameWithoutPrecision("localtime");
+						n->args = list_make1(makeIntConst(0, -1));
+					} else {
+						b_db_ColnameWithPrecision("localtime", $3);
+						n->args = list_make1($3);
+					}
+					
+					n->agg_order = NIL;
+					n->agg_star = false;
+					n->agg_distinct = false;
+					n->func_variadic = false;
+					n->over = NULL;
+					n->location = @1;
+					n->call_func = false;
+					$$ = (Node *)n;
 				}
 			| LOCALTIMESTAMP
 				{
-					/*
-					 * Translate as "'now'::text::timestamp".
-					 * See comments for CURRENT_DATE.
-					 */
-					Node *n;
-					n = makeStringConstCast("now", -1, SystemTypeName("text"));
-					$$ = makeTypeCast(n, SystemTypeName("timestamp"), @1);
+					FuncCall *n = makeNode(FuncCall);
+					n->funcname = SystemFuncName("b_db_statement_start_timestamp");
+					n->colname = pstrdup("localtimestamp");
+					n->args = list_make1(makeIntConst(0, -1));
+					n->agg_order = NIL;
+					n->agg_star = false;
+					n->agg_distinct = false;
+					n->func_variadic = false;
+					n->over = NULL;
+					n->location = @1;
+					n->call_func = false;
+					$$ = (Node *)n;
 				}
-			| LOCALTIMESTAMP '(' Iconst ')'
-				{
-					/*
-					 * Translate as "'now'::text::timestamp(n)".
-					 * See comments for CURRENT_DATE.
-					 */
-					Node *n;
-					TypeName *d;
-					n = makeStringConstCast("now", -1, SystemTypeName("text"));
-					d = SystemTypeName("timestamp");
-					d->typmods = list_make1(makeIntConst($3, @3));
-					$$ = makeTypeCast(n, d, @1);
-				}
-			| SYSDATE
+			| LOCALTIMESTAMP '(' optional_precision ')'
 				{
 					FuncCall *n = makeNode(FuncCall);
-					n->funcname = SystemFuncName("sysdate");
-					n->args = NIL;
+					n->funcname = SystemFuncName("b_db_statement_start_timestamp");
+					
+					if (!$3) {
+						b_db_ColnameWithoutPrecision("localtimestamp");
+						n->args = list_make1(makeIntConst(0, -1));
+					} else {
+						b_db_ColnameWithPrecision("localtimestamp", $3);
+						n->args = list_make1($3);
+					}
+					
 					n->agg_order = NIL;
-					n->agg_star = FALSE;
-					n->agg_distinct = FALSE;
-					n->func_variadic = FALSE;
+					n->agg_star = false;
+					n->agg_distinct = false;
+					n->func_variadic = false;
+					n->over = NULL;
+					n->location = @1;
+					n->call_func = false;
+					$$ = (Node *)n;
+				}
+			| NOW_FUNC '(' optional_precision ')'
+				{
+					FuncCall *n = makeNode(FuncCall);
+					n->funcname = SystemFuncName("b_db_statement_start_timestamp");
+					
+					if(!$3) {
+						b_db_ColnameWithoutPrecision("now");
+						n->args = list_make1(makeIntConst(0, -1));
+					} else {
+						b_db_ColnameWithPrecision("now", $3);
+						n->args = list_make1($3);
+					}
+					
+					n->agg_order = NIL;
+					n->agg_star = false;
+					n->agg_distinct = false;
+					n->func_variadic = false;
+					n->over = NULL;
+					n->location = @1;
+					n->call_func = false;
+					$$ = (Node *)n;
+				}
+			| SYSDATE '(' optional_precision ')'
+				{
+					FuncCall *n = makeNode(FuncCall);
+					n->funcname = SystemFuncName("b_db_sys_real_timestamp");
+					
+					if (!$3) {
+						b_db_ColnameWithoutPrecision("sysdate");
+						n->args = list_make1(makeIntConst(0, -1));
+					} else {
+						b_db_ColnameWithPrecision("sysdate", $3);
+						n->args = list_make1($3);
+					}
+					
+					n->agg_order = NIL;
+					n->agg_star = false;
+					n->agg_distinct = false;
+					n->func_variadic = false;
 					n->over = NULL;
 					n->location = @1;
 					n->call_func = false;
@@ -24886,6 +25006,12 @@ timestamp_units:
 			| Sconst								{ $$ = $1; }
 		;
 
+optional_precision:
+    		Iconst  
+				{ 
+					$$ = makeIntConst($1, @1);
+				}
+			|/*EMPTY*/								{ $$ = NULL; }
 
 /* OVERLAY() arguments
  * SQL99 defines the OVERLAY() function:
@@ -26229,6 +26355,7 @@ reserved_keyword:
 			| CURRENT_TIME
 			| CURRENT_TIMESTAMP
 			| CURRENT_USER
+			| CURTIME
 			| DEFAULT
 			| DEFERRABLE
 			| DESC
@@ -26264,6 +26391,7 @@ reserved_keyword:
 			| MODIFY_P
 			| NOT
                         | NOCYCLE
+			| NOW_FUNC
 			| NULL_P
 			| OFFSET
 			| ON
