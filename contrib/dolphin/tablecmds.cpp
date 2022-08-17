@@ -7221,6 +7221,29 @@ static void ATController(Relation rel, List* cmds, bool recurse, LOCKMODE lockmo
     bool doRedistribute = false;
 #endif
 
+    /* spread out truncate partition all */
+    if (RelationIsPartitioned(rel) && list_length(cmds) == 1) {
+        AlterTableCmd* cmd = (AlterTableCmd*)lfirst(list_head(cmds));
+        if (cmd->name && strcmp(cmd->name, "all") == 0 && cmd->subtype == AT_TruncatePartition) {
+            List *partTupleList = NIL;
+            partTupleList = searchPgPartitionByParentId(PART_OBJ_TYPE_TABLE_PARTITION, rel->rd_id);
+            if (partTupleList) {
+                ListCell *partCell = NULL;
+                Form_pg_partition partitionTuple = NULL;
+                foreach (partCell, partTupleList) {
+                    partitionTuple = (Form_pg_partition)GETSTRUCT((HeapTuple)lfirst(partCell));
+                    AlterTableCmd *n = makeNode(AlterTableCmd);
+                    n->subtype = AT_TruncatePartition;
+                    n->missing_ok = FALSE;
+                    n->name = pstrdup(partitionTuple->relname.data);
+                    lappend(cmds, n);
+                }
+                list_delete_first(cmds);
+                list_free_deep(partTupleList);
+            }
+        }
+    }
+
     /* Phase 1: preliminary examination of commands, create work queue */
     foreach (lcmd, cmds) {
         AlterTableCmd* cmd = (AlterTableCmd*)lfirst(lcmd);

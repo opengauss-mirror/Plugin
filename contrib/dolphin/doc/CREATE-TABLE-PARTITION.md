@@ -1044,8 +1044,56 @@ CREATE TABLE [ IF NOT EXISTS ] partition_table_name
     select * from test_part where ((99990 < c and c < 100000) or (219990 < c and c < 220000));
     select relname, boundaries from pg_partition where parentid in (select parentid from pg_partition where relname = 'test_part') order by relname;
     select parttype,relname from pg_class where relname = 'test_part' and relfilenode != oid;
-    ```
 
+
+    --truncate,analyze,exchange语法示例
+    CREATE TABLE IF NOT EXISTS test_part1
+    (
+    a int,
+    b int
+    ) 
+    PARTITION BY RANGE(a)
+    (
+        PARTITION p0 VALUES LESS THAN (100),
+        PARTITION p1 VALUES LESS THAN (200),
+        PARTITION p2 VALUES LESS THAN (300)
+    );
+    create table test_no_part1(a int, b int);
+    insert into test_part1 values(99,1),(199,1),(299,1);
+    select * from test_part1;
+    --测试b database truncate partition语法
+    ALTER TABLE test_part1 truncate PARTITION p0, p1;
+    select * from test_part1;
+    insert into test_part1 (with RECURSIVE t_r(i,j) as(values(0,1) union all select i+1,j+2 from t_r where i < 20) select * from t_r);
+    select * from test_part1;
+    ALTER TABLE test_part1 truncate PARTITION all;
+    select * from test_part1;
+    --测试opengauss truncate partition语法
+    insert into test_part1 values(99,1),(199,1);
+    select * from test_part1;
+    ALTER TABLE test_part1 truncate PARTITION p0, truncate PARTITION p1;
+    select * from test_part1;
+    --测试b database exchange partition语法
+    insert into test_part1 values(99,1),(199,1),(299,1);
+    alter table test_part1 exchange partition p2 with table test_no_part1 without validation;
+    select * from test_part1;
+    select * from test_no_part1;
+    alter table test_part1 exchange partition p2 with table test_no_part1 without validation;
+    select * from test_part1;
+    select * from test_no_part1;
+    --测试opengauss exchange partition语法
+    alter table test_part1 exchange partition (p2) with table test_no_part1 without validation;
+    select * from test_part1;
+    select * from test_no_part1;
+    alter table test_part1 exchange partition (p2) with table test_no_part1 without validation;
+    select * from test_part1;
+    select * from test_no_part1;
+    --测试b database analyze partition语法
+    alter table test_part1 analyze partition p0,p1;
+    alter table test_part1 analyze partition all;
+    --测试opengauss analyze partition语法
+    analyze test_part1 partition (p1);
+    ```
 
 ## 相关链接<a name="zh-cn_topic_0283136653_zh-cn_topic_0237122119_zh-cn_topic_0059777586_s4e5ff679edd643b5a6cd6679fd1055a1"></a>
 

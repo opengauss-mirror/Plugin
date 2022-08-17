@@ -329,3 +329,6 @@ text
 
 CREATE FUNCTION pg_catalog.rebuild_partition(text[])
 RETURNS text LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'RebuildPartition';
+
+CREATE FUNCTION pg_catalog.analyze_partition(text[],text,text)
+RETURNS text LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'AnalyzePartitions';
