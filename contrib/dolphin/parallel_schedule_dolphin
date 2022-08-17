@@ -14,14 +14,14 @@ test: db_b_plpgsql_test default_guc describe
 
 test: empty_value_list empty_value_lists empty_value_support_value
 
-test: greatest_least join_without_on mysqlmode_fullgroup mysqlmode_strict
+test: greatest_least join_without_on mysqlmode_fullgroup mysqlmode_strict test_alter_table
 
 test: kill set_password network
 
 # must be single test group, cause other connection will affect the result
 test: test_shows
 
-test: test_shows_1
+test: test_shows_1 test_shows_2
 
 test: nvarchar regexp upsert
 

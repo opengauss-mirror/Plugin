@@ -18,7 +18,7 @@
 #ifndef FRONTEND_PARSER
 #include "nodes/parsenodes.h"
 #else
-#include "nodes/parsenodes_common.h"
+#include "plugin_nodes/parsenodes_common.h"
 #endif /* FRONTEND_PARSER */
 
 #include "plugin_parser/backslash_quotes.h"
@@ -53,5 +53,7 @@ SelectStmt* makeShowColumnsQuery(char *schemaName, char *tableName, char *dbname
 				 bool fullMode, bool isLikeExpr, Node* likeWhereOpt = NULL);
 SelectStmt* makeShowTablesQuery(bool fullmode, char *optDbName, Node *likeWhereOpt, bool isLikeExpr);
 SelectStmt* makeShowPluginsQuery(void);
+
+SelectStmt* makeShowIndexQuery(char *schemaName, char *tableName, Node *whereClause);
 
 #endif /* PARSER_H */

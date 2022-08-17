@@ -27,6 +27,7 @@
 #include <string.h>
 #include "postgres.h"
 #include "knl/knl_variable.h"
+#include "plugin_nodes/parsenodes_common.h"
 
 #include "access/reloptions.h"
 #include "access/gtm.h"
@@ -4107,6 +4108,33 @@ void transformRuleStmt(RuleStmt* stmt, const char* queryString, List** actions, 
     heap_close(rel, NoLock);
 }
 
+static void TransfromAlterTableDropIndexStmt(CreateStmtContext* cxt, AlterTableCmd* cmd)
+{
+    DropStmt* dropStmt = makeNode(DropStmt);
+
+    dropStmt->removeType = OBJECT_INDEX;
+    dropStmt->objects = list_make1(list_make1(makeString(cmd->name)));
+    dropStmt->missing_ok = FALSE;
+    dropStmt->arguments = NIL;
+    dropStmt->behavior = DROP_RESTRICT;
+    dropStmt->concurrent = false;
+
+    cxt->blist = lappend(cxt->blist, dropStmt);
+}
+
+static void TransfromAlterTableRenameIndexStmt(CreateStmtContext* cxt, AlterTableCmd* cmd)
+{
+    RenameStmt *renameStmt = makeNode(RenameStmt);
+
+    renameStmt->renameType = OBJECT_INDEX;
+    renameStmt->relation = makeRangeVar(NULL, cmd->name, -1);
+    renameStmt->subname = NULL;
+    renameStmt->newname = strVal(cmd->def);
+    renameStmt->missing_ok = false;
+
+    cxt->blist = lappend(cxt->blist, renameStmt);
+}
+
 /*
  * transformAlterTableStmt -
  *		parse analysis for ALTER TABLE
@@ -4417,6 +4445,15 @@ List* transformAlterTableStmt(Oid relid, AlterTableStmt* stmt, const char* query
                     newcmds = lappend(newcmds, cmd);
                 }
                 break;
+
+            case AT_DropIndex:
+                TransfromAlterTableDropIndexStmt(&cxt, cmd);
+                break;
+
+            case AT_RenameIndex:
+                TransfromAlterTableRenameIndexStmt(&cxt, cmd);
+                break;
+
             default:
                 newcmds = lappend(newcmds, cmd);
                 break;

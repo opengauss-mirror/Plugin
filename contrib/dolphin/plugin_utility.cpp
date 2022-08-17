@@ -18,6 +18,7 @@
 #include "postgres.h"
 #include "knl/knl_variable.h"
 
+#include "plugin_nodes/parsenodes_common.h"
 #include "nodes/print.h"
 
 #include "access/cstore_delta.h"
@@ -9187,6 +9188,15 @@ const char* CreateAlterTableCommandTag(const AlterTableType subtype)
             break;
         case AT_ReAddConstraint:
             tag = "RE ADD CONSTRAINT";
+            break;
+        case AT_DropIndex:
+            tag = "DROP INDEX";
+            break;
+        case AT_DropForeignKey:
+            tag = "DROP FOREIGN KEY";
+            break;
+        case AT_RenameIndex:
+            tag = "RENAME INDEX";
             break;
 
         default:
