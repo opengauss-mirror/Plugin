@@ -59,6 +59,6 @@ test: b_database_releaselock_01 b_database_releaselock_02 b_database_releaselock
 
 test: network2 use_dbname
 
-test: partition_test1 partition_test2
+test: partition_test1 partition_test2 partition_test3
 
 test: db_b_date_time_functions
