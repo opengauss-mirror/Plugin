@@ -30,7 +30,6 @@
 
 #include "plugin_storage/hash.h"
 #include "utils/lsyscache.h"
-
 #ifdef PGXC
 #include "catalog/pg_type.h"
 #include "utils/builtins.h"
@@ -50,6 +49,12 @@
 #define EREPORT_UNSUPPORTED_FEATURE_IN_SINGLE_MODE \
     ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("unsupported proc in single node mode.")))
 #endif
+
+extern int CheckAddedType(Oid typoid);
+extern "C" Datum hashuint1(PG_FUNCTION_ARGS);
+extern "C" Datum hashuint2(PG_FUNCTION_ARGS);
+extern "C" Datum hashuint4(PG_FUNCTION_ARGS);
+extern "C" Datum hashuint8(PG_FUNCTION_ARGS);
 
 /* Note: this is used for both "char" and boolean datatypes */
 Datum hashchar(PG_FUNCTION_ARGS)
@@ -599,12 +604,17 @@ Datum hash_uint32(uint32 k)
 
 #ifdef PGXC
 
+#define HASH_FUNCTION_LENGTH 5
+static const PGFunction hashFunction[HASH_FUNCTION_LENGTH] = {hashuint1, hashuint2, hashuint4, hashuint8, year_hash};
+
 Datum compute_hash_default(Oid type, Datum value, char locator)
 {
-    Oid yearoid = get_typeoid(PG_CATALOG_NAMESPACE, "year");
-    if (type == yearoid) {
-        return DirectFunctionCall1(year_hash, value);
+    int addedType = CheckAddedType(type);
+
+    if (addedType > INVALID_OID) {
+        return DirectFunctionCall1(hashFunction[addedType], value);
     }
+
     ereport(ERROR,
             (errcode(ERRCODE_WRONG_OBJECT_TYPE), errmsg("Unhandled datatype for modulo or hash distribution\n")));
     /* Keep compiler silent */

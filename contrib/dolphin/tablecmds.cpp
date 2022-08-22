@@ -18753,19 +18753,19 @@ void CheckValuePartitionKeyType(Form_pg_attribute* attrs, List* pos)
     }
 }
 
-static bool CheckAddedType(Oid typoid) {
+int CheckAddedType(Oid typoid) {
     if (typoid == get_typeoid(PG_CATALOG_NAMESPACE, "uint1")){
-        return true;
+        return UINT1_OID;
     } else if (typoid == get_typeoid(PG_CATALOG_NAMESPACE, "uint2")){
-        return true;
+        return UINT2_OID;
     } else if (typoid == get_typeoid(PG_CATALOG_NAMESPACE, "uint4")){
-        return true;
+        return UINT4_OID;
     } else if (typoid == get_typeoid(PG_CATALOG_NAMESPACE, "uint8")){
-        return true;
+        return UINT8_OID;
     } else if (typoid == get_typeoid(PG_CATALOG_NAMESPACE, "year")){
-        return true;
+        return YEAR_OID;
     }
-    return false;
+    return INVALID_OID;
 }
 
 /*
@@ -18847,7 +18847,7 @@ static bool CheckRangePartitionKeyType(Oid typoid)
             result = true;
             break;
         default:
-            result = CheckAddedType(typoid);
+            result = CheckAddedType(typoid) > INVALID_OID;
             break;
     }
     return result;
@@ -18871,7 +18871,7 @@ static bool CheckListPartitionKeyType(Oid typoid)
         case TIMEOID:
             return true;
         default:
-            return CheckAddedType(typoid);
+            return CheckAddedType(typoid) > INVALID_OID;
     }
 }
 
@@ -18894,7 +18894,7 @@ static bool CheckHashPartitionKeyType(Oid typoid)
         case TIMESTAMPTZOID:
             return true;
         default:
-            return CheckAddedType(typoid);
+            return CheckAddedType(typoid) > INVALID_OID;
     }
 }
 

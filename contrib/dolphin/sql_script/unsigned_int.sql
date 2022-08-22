@@ -1734,7 +1734,7 @@ uint4
 DROP FUNCTION IF EXISTS pg_catalog.uint4_avg_accum(bigint[], uint4) CASCADE;
 
 CREATE OR REPLACE FUNCTION pg_catalog.uint4_avg_accum(bigint[], uint4)
- RETURNS bigint[] LANGUAGE C STRICT AS  '$libdir/dolphin',  'uint4_avg_accum';
+ RETURNS bigint[] LANGUAGE C IMMUTABLE STRICT AS  '$libdir/dolphin',  'uint4_avg_accum';
 
 DROP FUNCTION IF EXISTS pg_catalog.uint4_accum(numeric[], uint4) CASCADE;
 CREATE OR REPLACE FUNCTION pg_catalog.uint4_accum(numeric[], uint4)
@@ -2404,7 +2404,7 @@ uint8
 DROP FUNCTION IF EXISTS pg_catalog.uint8_avg_accum(numeric[], uint8) CASCADE;
 
 CREATE OR REPLACE FUNCTION pg_catalog.uint8_avg_accum(numeric[], uint8)
- RETURNS numeric[] LANGUAGE C STRICT AS  '$libdir/dolphin',  'uint8_avg_accum';
+ RETURNS numeric[] LANGUAGE C STRICT IMMUTABLE AS  '$libdir/dolphin',  'uint8_avg_accum';
 
 DROP FUNCTION IF EXISTS pg_catalog.uint8_accum(numeric[], uint8) CASCADE;
 

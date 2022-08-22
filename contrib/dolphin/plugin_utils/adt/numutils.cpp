@@ -531,35 +531,30 @@ int32 pg_atoui(char *str, int size, int ch)
         elog(ERROR, "NULL pointer");
     if (*str == 0)
         ereport(ERROR,
-                (errcode(ERRCODE_INVALID_TEXT_REPRESENTATION),
-                 errmsg("invalid input syntax for integer: \"%s\"",
-                        str)));
+            (errcode(ERRCODE_INVALID_TEXT_REPRESENTATION),errmsg("invalid input syntax for integer: \"%s\"",str)));
 
     errno = 0;
     tmp_int = strtol(str, &badp, 10);
 
-    if (tmp_int < 0)
-    {
-
-        switch (size)
-        {
-        case sizeof(uint32):
-            ereport(ERROR,
+    if (tmp_int < 0) {
+        switch (size) {
+            case sizeof(uint32):
+                ereport(ERROR,
                     (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE),
                      errmsg("value \"%s\" is out of range for type integer unsigned", str)));
-            break;
-        case sizeof(uint16):
-            ereport(ERROR,
-                    (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE),
-                     errmsg("value \"%s\" is out of range for type smallint unsigned", str)));
-            break;
-        case sizeof(uint8):
-            ereport(ERROR,
-                    (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE),
-                     errmsg("value \"%s\" is out of range for 8-bit integer", str)));
-            break;
-        default:
-            elog(ERROR, "unsupported result size: %d", size);
+                break;
+            case sizeof(uint16):
+                ereport(ERROR,
+                        (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE),
+                        errmsg("value \"%s\" is out of range for type smallint unsigned", str)));
+                break;
+            case sizeof(uint8):
+                ereport(ERROR,
+                        (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE),
+                        errmsg("value \"%s\" is out of range for 8-bit integer", str)));
+                break;
+            default:
+                elog(ERROR, "unsupported result size: %d", size);
         }
     }
     errno = 0;
@@ -567,32 +562,29 @@ int32 pg_atoui(char *str, int size, int ch)
     /* We made no progress parsing the string, so bail out */
     if (str == badp)
         ereport(ERROR,
-                (errcode(ERRCODE_INVALID_TEXT_REPRESENTATION),
-                 errmsg("invalid input syntax for integer: \"%s\"",
-                        str)));
+            (errcode(ERRCODE_INVALID_TEXT_REPRESENTATION),errmsg("invalid input syntax for integer: \"%s\"",str)));
 
-    switch (size)
-    {
-    case sizeof(uint32):
-        if (errno == ERANGE || tmp > UINT_MAX)
-            ereport(ERROR,
-                    (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE),
-                     errmsg("value \"%s\" is out of range for type integer unsigned", str)));
-        break;
-    case sizeof(uint16):
-        if (errno == ERANGE || tmp > USHRT_MAX)
-            ereport(ERROR,
-                    (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE),
-                     errmsg("value \"%s\" is out of range for type smallint unsigned", str)));
-        break;
-    case sizeof(uint8):
-        if (errno == ERANGE || tmp > UCHAR_MAX)
-            ereport(ERROR,
-                    (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE),
-                     errmsg("value \"%s\" is out of range for 8-bit integer", str)));
-        break;
-    default:
-        elog(ERROR, "unsupported result size: %d", size);
+    switch (size) {
+        case sizeof(uint32):
+            if (errno == ERANGE || tmp > UINT_MAX)
+                ereport(ERROR,
+                        (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE),
+                        errmsg("value \"%s\" is out of range for type integer unsigned", str)));
+            break;
+        case sizeof(uint16):
+            if (errno == ERANGE || tmp > USHRT_MAX)
+                ereport(ERROR,
+                        (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE),
+                        errmsg("value \"%s\" is out of range for type smallint unsigned", str)));
+            break;
+        case sizeof(uint8):
+            if (errno == ERANGE || tmp > UCHAR_MAX)
+                ereport(ERROR,
+                        (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE),
+                        errmsg("value \"%s\" is out of range for 8-bit integer", str)));
+            break;
+        default:
+            elog(ERROR, "unsupported result size: %d", size);
     }
 
     /*
@@ -604,9 +596,7 @@ int32 pg_atoui(char *str, int size, int ch)
 
     if (*badp && *badp != ch)
         ereport(ERROR,
-                (errcode(ERRCODE_INVALID_TEXT_REPRESENTATION),
-                 errmsg("invalid input syntax for integer: \"%s\"",
-                        str)));
+            (errcode(ERRCODE_INVALID_TEXT_REPRESENTATION),errmsg("invalid input syntax for integer: \"%s\"",str)));
 
     return (int32)tmp;
 }
@@ -614,9 +604,7 @@ int32 pg_atoui(char *str, int size, int ch)
 void pg_copymsgbytes(StringInfo msg, char *buf, int datalen)
 {
     if (datalen < 0 || datalen > (msg->len - msg->cursor))
-        ereport(ERROR,
-                (errcode(ERRCODE_PROTOCOL_VIOLATION),
-                 errmsg("insufficient data left in message")));
+        ereport(ERROR,(errcode(ERRCODE_PROTOCOL_VIOLATION),errmsg("insufficient data left in message")));
     memcpy(buf, &msg->data[msg->cursor], datalen);
     msg->cursor += datalen;
 }

@@ -81,3 +81,28 @@ select var_samp(a), var_samp(b) from u8;
 select variance(a), variance(b) from u8;
 select listagg(a) within group(order by a) from u8;
 select listagg(a, ',') within group(order by a) from u8;
+
+create table smp_test(a uint4, b uint8);
+insert into smp_test select generate_series(1, 100000), generate_series(2, 100001);
+insert into smp_test select a + 100000, b from smp_test;
+
+set query_dop = 2;
+explain(costs off, verbose) select avg(a), avg(b) from smp_test;
+explain(costs off, verbose) select bit_and(a), bit_and(b) from smp_test;
+explain(costs off, verbose) select bit_or(a), bit_or(b) from smp_test;
+explain(costs off, verbose) select count(a), count(b) from smp_test;
+explain(costs off, verbose) select count(distinct a), count(distinct b) from smp_test;
+explain(costs off, verbose) select max(a), max(b) from smp_test;
+explain(costs off, verbose) select min(a), min(b) from smp_test;
+explain(costs off, verbose) select stddev(a), stddev(b) from smp_test;
+explain(costs off, verbose) select stddev_pop(a), stddev_pop(b) from smp_test;
+explain(costs off, verbose) select stddev_samp(a), stddev_samp(b) from smp_test;
+explain(costs off, verbose) select sum(a), sum(b) from smp_test;
+explain(costs off, verbose) select var_pop(a), var_pop(b) from smp_test;
+explain(costs off, verbose) select var_samp(a), var_samp(b) from smp_test;
+explain(costs off, verbose) select variance(a), variance(b) from smp_test;
+explain(costs off, verbose) select listagg(a) within group(order by a) from smp_test;
+explain(costs off, verbose) select listagg(a, ',') within group(order by a) from smp_test;
+
+\c postgres
+drop database uint_agg;

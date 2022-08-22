@@ -1,0 +1,81 @@
+drop database if exists uint_procedure_col;
+NOTICE:  database "uint_procedure_col" does not exist, skipping
+create database uint_procedure_col dbcompatibility 'b';
+\c uint_procedure_col
+ create procedure test_p1(uint2, uint4)
+SHIPPABLE VOLATILE
+as
+begin
+    insert into test1 values($1 + $2);
+end;
+/
+create table test1(a uint4);
+select test_p1(1, 3);
+ test_p1 
+---------
+ 
+(1 row)
+
+select * from test1;
+ a 
+---
+ 4
+(1 row)
+
+create table test2(a uint1) with(orientation = column);
+ERROR:  type "uint1" is not supported in column store
+create table test2(a int1, b uint1) with(orientation = column);
+ERROR:  type "uint1" is not supported in column store
+create table test2(a uint2) with(orientation = column);
+ERROR:  type "uint2" is not supported in column store
+create table test2(a int2, b uint2) with(orientation = column);
+ERROR:  type "uint2" is not supported in column store
+create table test2(a uint4) with(orientation = column);
+ERROR:  type "uint4" is not supported in column store
+create table test2(a int4, b uint4) with(orientation = column);
+ERROR:  type "uint4" is not supported in column store
+create table test2(a uint8) with(orientation = column);
+ERROR:  type "uint8" is not supported in column store
+create table test2(a int8, b uint8) with(orientation = column);
+ERROR:  type "uint8" is not supported in column store
+set enable_opfusion = on;
+create table bypass(a uint2, b uint4);
+insert into bypass values(1, 10);
+insert into bypass values(1, 2);
+explain(costs off, verbose) insert into bypass values(1, 10);
+               QUERY PLAN                
+-----------------------------------------
+ [Bypass]
+ Insert on public.bypass
+   ->  Result
+         Output: '1'::uint2, '10'::uint4
+(4 rows)
+
+explain(costs off, verbose) select b from bypass where a = 1;
+            QUERY PLAN             
+-----------------------------------
+ Seq Scan on public.bypass
+   Output: b
+   Filter: ((bypass.a)::uint4 = 1)
+(3 rows)
+
+explain(costs off, verbose) delete from bypass where b = 10;
+           QUERY PLAN            
+---------------------------------
+ Delete on public.bypass
+   ->  Seq Scan on public.bypass
+         Output: ctid
+         Filter: (bypass.b = 10)
+(4 rows)
+
+explain(costs off, verbose) update bypass set b = b + 1 where a = 1;
+               QUERY PLAN                
+-----------------------------------------
+ Update on public.bypass
+   ->  Seq Scan on public.bypass
+         Output: a, (b + 1), ctid
+         Filter: ((bypass.a)::uint4 = 1)
+(4 rows)
+
+\c postgres
+drop database uint_procedure_col;
