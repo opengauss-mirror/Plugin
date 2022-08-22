@@ -10,7 +10,7 @@ select DAYOFYEAR(datetime '2021-12-31 16:30:44.341191');
 
 select HOUR(datetime '2021-11-4 16:30:44.341191');
 
-select MICROSECOND(datetime(6) '2021-11-4 16:30:44.341191');
+select MICROSECOND(datetime '2021-11-4 16:30:44.341191');
 
 select MINUTE(datetime '2021-11-4 16:30:44.341191');
 

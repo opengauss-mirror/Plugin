@@ -261,15 +261,15 @@ SELECT time(0)'12:12:12.123456';
 (1 row)
 
 SELECT time'12:12:12.123456';
-   time   
-----------
- 12:12:12
+      time       
+-----------------
+ 12:12:12.123456
 (1 row)
 
 SELECT time'34 22:59:59.999999';
-   time    
------------
- 839:00:00
+       time       
+------------------
+ 838:59:59.999999
 (1 row)
 
 SELECT time'12:60:12.123456';
@@ -305,9 +305,9 @@ SELECT time'-34 22:59:59';
 (1 row)
 
 SELECT time'34 22:59:59.999999';
-   time    
------------
- 839:00:00
+       time       
+------------------
+ 838:59:59.999999
 (1 row)
 
 SELECT time'34 22:59:59.9999999999999999999999';
@@ -346,9 +346,9 @@ SELECT time'59:59';
 (1 row)
 
 SELECT time'59:59.123';
-   time   
-----------
- 59:59:00
+     time     
+--------------
+ 59:59:00.123
 (1 row)
 
 SELECT time'59';
@@ -370,9 +370,9 @@ SELECT time'24 12:13';
 (1 row)
 
 SELECT time'59.12';
-   time   
-----------
- 00:00:59
+    time     
+-------------
+ 00:00:59.12
 (1 row)
 
 SELECT time'';
@@ -431,9 +431,9 @@ SELECT time(5)'12345.123456';
 (1 row)
 
 SELECT time'123456.123456';
-   time   
-----------
- 12:34:56
+      time       
+-----------------
+ 12:34:56.123456
 (1 row)
 
 -- hhmmss.fsec
@@ -512,12 +512,45 @@ SELECT -8385959::time;
 CREATE TABLE time_tbl (v time);
 INSERT INTO time_tbl VALUES(-561234);
 INSERT INTO time_tbl VALUES(-1202334);
+-- test table's dafault typmod
+INSERT INTO time_tbl VALUES(232323.123);
 SELECT * FROM time_tbl;
      v      
 ------------
  -56:12:34
  -120:23:34
-(2 rows)
+ 23:23:23
+(3 rows)
+
+-- test alter table add [column]
+ALTER TABLE time_tbl ADD COLUMN dt datetime;
+ALTER TABLE time_tbl ADD ts timestamp;
+INSERT INTO time_tbl VALUES(232323.555, 20201212101010.555, 20201212101010.555);
+SELECT * FROM time_tbl;
+     v      |            dt            |              ts              
+------------+--------------------------+------------------------------
+ -56:12:34  |                          | 
+ -120:23:34 |                          | 
+ 23:23:23   |                          | 
+ 23:23:24   | Sat Dec 12 10:10:11 2020 | Sat Dec 12 10:10:11 2020 PST
+(4 rows)
+
+DROP TABLE time_tbl;
+-- test alter table modify column
+CREATE TABLE time_tbl (v time(2));
+INSERT INTO time_tbl VALUES(232323.555);
+SELECT * FROM time_tbl;
+      v      
+-------------
+ 23:23:23.56
+(1 row)
+
+ALTER TABLE time_tbl MODIFY v time;
+SELECT * FROM time_tbl;
+    v     
+----------
+ 23:23:24
+(1 row)
 
 DROP TABLE time_tbl;
 -- test function
@@ -590,27 +623,27 @@ SELECT datetime(5)'999-12-31  23:59:59.9999999';
 (1 row)
 
 SELECT datetime'99-01-01  23:59:59.123';
-        timestamp         
---------------------------
- Fri Jan 01 23:59:59 1999
+          timestamp           
+------------------------------
+ Fri Jan 01 23:59:59.123 1999
 (1 row)
 
 SELECT datetime'2001-2-28  23:59:59.123';
-        timestamp         
---------------------------
- Wed Feb 28 23:59:59 2001
+          timestamp           
+------------------------------
+ Wed Feb 28 23:59:59.123 2001
 (1 row)
 
 SELECT datetime'2000-2-28  23:59:59.123';
-        timestamp         
---------------------------
- Mon Feb 28 23:59:59 2000
+          timestamp           
+------------------------------
+ Mon Feb 28 23:59:59.123 2000
 (1 row)
 
 SELECT datetime'2000-2-28  12:23:34.5678';
-        timestamp         
---------------------------
- Mon Feb 28 12:23:35 2000
+           timestamp           
+-------------------------------
+ Mon Feb 28 12:23:34.5678 2000
 (1 row)
 
 -- 'YYYYMMDDhhmmss.fsec' or 'YYMMDDhhmmss.fsec'
@@ -824,9 +857,9 @@ select timestamp without time zone'1994-11-10 23:12:34.5678';
 (1 row)
 
 select timestamp'1994-11-10 23:12:34.5678';
-         timestamptz          
-------------------------------
- Thu Nov 10 23:12:35 1994 PST
+           timestamp           
+-------------------------------
+ Thu Nov 10 23:12:34.5678 1994
 (1 row)
 
 -- test timestamp
@@ -1586,6 +1619,19 @@ SELECT * FROM ti_hash PARTITION(P2);
 (4 rows)
 
 DROP TABLE ti_hash;
+-- test cast function
+select cast(-232323.555 as time);
+   time    
+-----------
+ -23:23:24
+(1 row)
+
+select cast('20121010101010.555' as datetime);
+        timestamp         
+--------------------------
+ Wed Oct 10 10:10:11 2012
+(1 row)
+
 \c postgres
 DROP DATABASE b_time_type;
 DROP TABLESPACE b_time_type_example;

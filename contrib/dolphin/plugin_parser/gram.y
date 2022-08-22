@@ -747,7 +747,7 @@ static int errstate;
 				GenericType Numeric opt_float
 				Character ConstCharacter
 				CharacterWithLength CharacterWithoutLength
-				ConstDatetime ConstInterval
+				PreciseConstDatetime ConstDatetime ConstInterval
 				Bit ConstBit BitWithLength BitWithoutLength client_logic_type
 				datatypecl OptCopyColTypename Binary EnumType
 %type <str>		character
@@ -22172,7 +22172,7 @@ ConstTypename:
 			Numeric									{ $$ = $1; }
 			| ConstBit								{ $$ = $1; }
 			| ConstCharacter						{ $$ = $1; }
-			| ConstDatetime							{ $$ = $1; }
+			| PreciseConstDatetime					{ $$ = $1; }
 		;
 
 /*
@@ -22539,7 +22539,7 @@ opt_charset:
 		;
 
 /*
- * SQL92 date/time types
+ * SQL92 date/time types: compatiable for b format database(default typmod set to zero)
  */
 ConstDatetime:
 			TIMESTAMP '(' Iconst ')' selected_timezone
@@ -22620,6 +22620,75 @@ ConstDatetime:
 					$$->location = @1;
 			    }
 		;
+
+/*
+ * SQL92 date/time types: default typmod set to six
+ */
+PreciseConstDatetime: 
+			TIMESTAMP '(' Iconst ')' opt_timezone
+				{
+					if ($5)
+						$$ = SystemTypeName("timestamptz");
+					else
+						$$ = SystemTypeName("timestamp");
+					$$->typmods = list_make1(makeIntConst($3, @3));
+					$$->location = @1;
+				}
+			| TIMESTAMP opt_timezone
+				{
+					if ($2)
+						$$ = SystemTypeName("timestamptz");
+					else
+						$$ = SystemTypeName("timestamp");
+					$$->location = @1;
+				}
+			| TIME '(' Iconst ')' opt_timezone
+				{
+					if ($5)
+						$$ = SystemTypeName("timetz");
+					else
+						$$ = SystemTypeName("time");
+					$$->typmods = list_make1(makeIntConst($3, @3));
+					$$->location = @1;
+				}
+			| TIME opt_timezone
+				{
+					if ($2)
+						$$ = SystemTypeName("timetz");
+					else
+						$$ = SystemTypeName("time");
+					$$->location = @1;
+				}
+			| DATE_P
+				{
+					if (u_sess->attr.attr_sql.sql_compatibility == A_FORMAT)
+					{
+						$$ = SystemTypeName("timestamp");
+						$$->typmods = list_make1(makeIntConst(0,-1));
+					}
+					else
+						$$ = SystemTypeName("date");
+					$$->location = @1;
+					$$->end_location = @1 + DATE_LEN;
+				}
+			| SMALLDATETIME
+				{
+					$$ = SystemTypeName("smalldatetime");
+					$$->location = @1;
+				}
+			| DATETIME '(' Iconst ')'
+			    {
+					$$ = SystemTypeName("timestamp");
+					$$->typmods = list_make1(makeIntConst($3,@3));
+					$$->location = @1;
+			    }
+			| DATETIME
+			    {
+					$$ = SystemTypeName("timestamp");
+					$$->location = @1;
+			    }
+		;
+
 
 ConstInterval:
 			INTERVAL
