@@ -147,7 +147,11 @@ insert ignore into t1 values((-1.0)::float4);
 WARNING:  integer unsigned out of range
 CONTEXT:  referenced column: a
 insert ignore into t1 values(4294967295::float4);
+WARNING:  integer unsigned out of range
+CONTEXT:  referenced column: a
 insert ignore into t1 values(4294967296::float4);
+WARNING:  integer unsigned out of range
+CONTEXT:  referenced column: a
 insert ignore into t1 values(1.0::float8);
 insert ignore into t1 values(0.0::float8);
 insert ignore into t1 values((-1.0)::float8);

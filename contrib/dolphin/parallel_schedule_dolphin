@@ -37,7 +37,7 @@ test: revoke
 
 test: option
 
-test: uint_agg uint_and uint_cast uint_cast2 uint_div uint_mi uint_mod uint_mod2 uint_mul uint_numeric uint_operator uint_or uint_partition uint_pl uint_xor uint_sql_mode uint_ignore uint_join uint_procedure_col_bypass
+test: uint_agg uint_and uint_cast uint_cast2 uint_div uint_mi uint_mod uint_mod2 uint_mul uint_numeric uint_operator uint_or uint_partition uint_pl uint_xor uint_sql_mode uint_ignore uint_join uint_procedure_col_bypass uint_smp
 
 test: disable_thread_pool
 
