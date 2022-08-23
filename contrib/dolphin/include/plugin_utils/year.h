@@ -21,6 +21,7 @@ typedef int16 YearADT;
 #define MAX_YEAR_NUM 2155
 #define MIN_YEAR_NUM 1901
 #define YEAR4_LEN 4
+#define YEAR2_LEN 2
 
 #define YEAR2_BOUND_BETWEEN_20C_21C 70
 /* 2-digit year >= YEAR2_BOUND_BETWEEN_20C_21C will be treat as 20 century year

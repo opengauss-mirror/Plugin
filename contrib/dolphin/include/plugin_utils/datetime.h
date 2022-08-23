@@ -33,6 +33,12 @@ extern void EncodeDateOnlyForBDatabase(struct pg_tm* tm, int style, char* str);
 extern void EncodeDateTimeForBDatabase(struct pg_tm* tm, fsec_t fsec, bool print_tz, int tz, const char* tzn, int style, char* str);
 
 extern void Unixtimestamp2tm(double unixtimestamp, struct pg_tm* tm, fsec_t* fsec);
+extern bool numeric_to_lldiv_t(NumericVar *from, lldiv_t *to);
+
+/* Limits for the TIME data type */
+#define TIME_MAX_HOUR 838
+#define TIME_MAX_MINUTE 59
+#define TIME_MAX_SECOND 59
 
 #endif // !FRONTEND_PARSER
 

@@ -231,6 +231,15 @@ static datetkn deltatktbl[] = {
 
 static int szdeltatktbl = sizeof deltatktbl / sizeof deltatktbl[0];
 
+unsigned long long pow_of_10[20]=
+{
+  1, 10, 100, 1000, 10000UL, 100000UL, 1000000UL, 10000000UL,
+  100000000ULL, 1000000000ULL, 10000000000ULL, 100000000000ULL,
+  1000000000000ULL, 10000000000000ULL, 100000000000000ULL,
+  1000000000000000ULL, 10000000000000000ULL, 100000000000000000ULL,
+  1000000000000000000ULL, 10000000000000000000ULL
+};
+
 /*
  * strtoi --- just like strtol, but returns int not long
  */
@@ -1421,6 +1430,9 @@ int DecodeTimeOnlyForBDatabase(char** field, int* ftype, int nf, int* dtype, str
     tm->tm_hour = 0;
     tm->tm_min = 0;
     tm->tm_sec = 0;
+    tm->tm_year = 0;
+    tm->tm_mon = 0;
+    tm->tm_mday = 0;
     *fsec = 0;
     /* don't know daylight savings time status apriori */
     tm->tm_isdst = -1;
@@ -1856,6 +1868,10 @@ int DecodeTimeOnlyForBDatabase(char** field, int* ftype, int nf, int* dtype, str
         tm->tm_hour = 0;
     else if (mer == PM && tm->tm_hour != HOURS_PER_DAY / 2)
         tm->tm_hour += HOURS_PER_DAY / 2;
+
+    /* check validation when contain date, like '2001-10-10 30:00:1' */
+    if (tm->tm_year && (tm->tm_sec >= SECS_PER_MINUTE || tm->tm_min >= MINS_PER_HOUR || tm->tm_hour >= HOURS_PER_DAY))
+        return DTERR_FIELD_OVERFLOW;
 
     /* validate time value */
     if (ValidateTimeForBDatabase(false, tm, fsec))
@@ -4365,4 +4381,50 @@ void Unixtimestamp2tm(double unixtimestamp, struct pg_tm* tm, fsec_t* fsec)
     tm->tm_hour = hour;
     tm->tm_min = min;
     tm->tm_sec = sec;
+}
+
+/*
+ * @Description: Convert NumericVar value to lldiv_t value.
+ * @return: true: Success to convert.
+ *          false: Overflow
+ */
+bool numeric_to_lldiv_t(NumericVar *from, lldiv_t *to)
+{
+    if (!from->ndigits) {
+        /* from == 0 */
+        to->quot = 0;
+        to->rem = 0;
+        return true;
+    }
+
+    to->quot = to->rem = 0;
+    int int_end_pos = (from->weight < 0 ? -1 : from->weight);
+    int frac_start_pos = int_end_pos + 1;
+    /* Avoid to overflow. */
+    if (int_end_pos > (DEC_DIGITS + 1) ||
+        from->weight > 0 && from->digits[0] > LONG_LONG_MAX / pow_of_10[from->weight]) {
+        to->quot = LONG_LONG_MAX;
+        to->rem = 0;
+        return false;
+    }
+
+    for (int i = from->weight, j = 0; i >= 0; i--, j++) {
+        to->quot += from->digits[j] * pow_of_10[i * DEC_DIGITS];
+    }
+
+    int frac_group = from->dscale / DEC_DIGITS + 1;
+    if (from->dscale > 0 && from->weight >= -2) {
+        if (frac_group == 1) {
+            to->rem = from->digits[frac_start_pos] * NBASE * pow_of_10[1];
+        } else {
+            to->rem = (from->digits[frac_start_pos] * NBASE + from->digits[frac_start_pos + 1]) * pow_of_10[1];
+        }
+    }
+
+    if (from->sign) {
+        to->quot = -to->quot;
+        to->rem = -to->rem;
+    }
+
+    return true;
 }

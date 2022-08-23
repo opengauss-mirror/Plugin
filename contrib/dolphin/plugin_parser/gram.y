@@ -396,6 +396,7 @@ static Node* MakeSetPasswdStmt(char* user, char* passwd, char* replace_passwd);
 static Node* MakeKillStmt(int kill_opt, Node *expr);
 static Node* makeAnalyzeTableList(List *rangeVars);
 static void with_rollup_check_elems_count(Node* expr);
+static void CheckIconstType(Node* node);
 
 #ifndef ENABLE_MULTIPLE_NODES
 static bool CheckWhetherInColList(char *colname, List *col_list);
@@ -1056,7 +1057,7 @@ static char* GetDolphinObjName(const char* string, bool is_quoted);
 	STATEMENT STATEMENT_ID STATISTICS STATUS STDIN STDOUT STORAGE STORE_P STORED STRATIFY STREAM STRICT_P STRIP_P SUBPARTITION SUBSCRIPTION SUBSTR SUBSTRING
 	SYMMETRIC SYNONYM SYSDATE SYSID SYSTEM_P SYS_REFCURSOR
 
-	TABLE TABLES TABLESAMPLE TABLESPACE TARGET TEMP TEMPLATE TEMPORARY TERMINATED TEXT_P THAN THEN TIME TIME_FORMAT_P TIMECAPSULE TIMESTAMP TIMESTAMP_FORMAT_P TIMESTAMPDIFF TINYINT
+	TABLE TABLES TABLESAMPLE TABLESPACE TARGET TEMP TEMPLATE TEMPORARY TERMINATED TEXT_P THAN THEN TIME TIME_FORMAT_P TIMECAPSULE TIMESTAMP TIMESTAMP_FORMAT_P TIMESTAMPADD TIMESTAMPDIFF TINYINT
 	TO TRAILING TRANSACTION TRANSFORM TREAT TRIGGER TRIM TRUE_P
 	TRUNCATE TRUSTED TSFIELD TSTAG TSTIME TYPE_P TYPES_P
 
@@ -23295,8 +23296,11 @@ opt_charset:
  * SQL92 date/time types: compatiable for b format database(default typmod set to zero)
  */
 ConstDatetime:
-			TIMESTAMP '(' Iconst ')' selected_timezone
-				{
+			TIMESTAMP '(' a_expr ')' selected_timezone
+				{		
+					// If the type of $3 is not Iconst, an error is reported
+					CheckIconstType($3);
+
 					if ($5 == NULL) {
 						$$ = SystemTypeName("timestamptz");
 					} else {
@@ -23305,7 +23309,7 @@ ConstDatetime:
 						else
 							$$ = SystemTypeName("timestamp");
 					}
-					$$->typmods = list_make1(makeIntConst($3, @3));
+					$$->typmods = list_make1($3);
 					$$->location = @1;
 				}
 			| TIMESTAMP selected_timezone
@@ -23321,13 +23325,16 @@ ConstDatetime:
 					}
 					$$->location = @1;
 				}
-			| TIME '(' Iconst ')' opt_timezone
+			| TIME '(' a_expr ')' opt_timezone
 				{
+					// If the type of $3 is not Iconst, an error is reported
+					CheckIconstType($3);
+
 					if ($5)
 						$$ = SystemTypeName("timetz");
 					else
 						$$ = SystemTypeName("time");
-					$$->typmods = list_make1(makeIntConst($3, @3));
+					$$->typmods = list_make1($3);
 					$$->location = @1;
 				}
 			| TIME selected_timezone
@@ -23377,14 +23384,17 @@ ConstDatetime:
 /*
  * SQL92 date/time types: default typmod set to six
  */
-PreciseConstDatetime:
-			TIMESTAMP '(' Iconst ')' opt_timezone
+PreciseConstDatetime: 
+			TIMESTAMP '(' a_expr ')' opt_timezone
 				{
+					// If the type of $3 is not Iconst, an error is reported
+					CheckIconstType($3);
+
 					if ($5)
 						$$ = SystemTypeName("timestamptz");
 					else
 						$$ = SystemTypeName("timestamp");
-					$$->typmods = list_make1(makeIntConst($3, @3));
+					$$->typmods = list_make1($3);
 					$$->location = @1;
 				}
 			| TIMESTAMP opt_timezone
@@ -23395,13 +23405,16 @@ PreciseConstDatetime:
 						$$ = SystemTypeName("timestamp");
 					$$->location = @1;
 				}
-			| TIME '(' Iconst ')' opt_timezone
+			| TIME '(' a_expr ')' opt_timezone
 				{
+					// If the type of $3 is not Iconst, an error is reported
+					CheckIconstType($3);
+					
 					if ($5)
 						$$ = SystemTypeName("timetz");
 					else
 						$$ = SystemTypeName("time");
-					$$->typmods = list_make1(makeIntConst($3, @3));
+					$$->typmods = list_make1($3);
 					$$->location = @1;
 				}
 			| TIME opt_timezone
@@ -25360,6 +25373,66 @@ func_expr_common_subexpr:
 					FuncCall *n = makeNode(FuncCall);
 					n->funcname = SystemFuncName("date_part");
 					n->args = list_make2(makeStringConst("week", -1), $3);
+					n->agg_order = NIL;
+					n->agg_star = FALSE;
+					n->agg_distinct = FALSE;
+					n->func_variadic = FALSE;
+					n->over = NULL;
+					n->location = @1;
+					n->call_func = false;
+					$$ = (Node *)n;
+				}
+			| TIMESTAMP '(' a_expr ')'
+				{
+					FuncCall *n = makeNode(FuncCall);
+					n->funcname = SystemFuncName("timestamp_mysql");
+					n->colname = "timestamp";
+					n->args = list_make1($3);
+					n->agg_order = NIL;
+					n->agg_star = FALSE;
+					n->agg_distinct = FALSE;
+					n->func_variadic = FALSE;
+					n->over = NULL;
+					n->location = @1;
+					n->call_func = false;
+					$$ = (Node *)n;
+				}
+			| TIMESTAMP '(' a_expr ',' a_expr ')'
+				{
+					FuncCall *n = makeNode(FuncCall);
+					n->funcname = SystemFuncName("timestamp_mysql");
+					n->colname = "timestamp";
+					n->args = list_make2($3, $5);
+					n->agg_order = NIL;
+					n->agg_star = FALSE;
+					n->agg_distinct = FALSE;
+					n->func_variadic = FALSE;
+					n->over = NULL;
+					n->location = @1;
+					n->call_func = false;
+					$$ = (Node *)n;
+				}
+			| TIME '(' a_expr ')'
+				{
+					FuncCall *n = makeNode(FuncCall);
+					n->funcname = SystemFuncName("time_mysql");
+					n->colname = "time";
+					n->args = list_make1($3);
+					n->agg_order = NIL;
+					n->agg_star = FALSE;
+					n->agg_distinct = FALSE;
+					n->func_variadic = FALSE;
+					n->over = NULL;
+					n->location = @1;
+					n->call_func = false;
+					$$ = (Node *)n;
+				}
+			| TIMESTAMPADD '(' timestamp_arg_list ')'
+				{
+					FuncCall *n = makeNode(FuncCall);
+					n->funcname = SystemFuncName("timestamp_add");
+					n->colname = "timestampadd";
+					n->args = $3;
 					n->agg_order = NIL;
 					n->agg_star = FALSE;
 					n->agg_distinct = FALSE;
@@ -30328,6 +30401,17 @@ static void with_rollup_check_elems_count(Node* expr)
 static inline char* GetDolphinObjName(const char* string, bool is_quoted)
 {
     return (GetSessionContext()->lower_case_table_names == 0) ? (char*)string : downcase_str(string, is_quoted);
+}
+
+static void CheckIconstType(Node* node) 
+{
+	// Check whether the input parameter is of type Iconst. If not, report an error.
+	if (!IsA(node, A_Const) || ((A_Const*)node)->val.type != T_Integer) {
+		ereport(ERROR,
+			(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+			errmsg("Un-support feature"),
+			errdetail("The parameter type should be an integer constant")));
+	}
 }
 
 /*
