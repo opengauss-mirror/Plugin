@@ -107,6 +107,20 @@ SELECT -8385959::time;
 CREATE TABLE time_tbl (v time);
 INSERT INTO time_tbl VALUES(-561234);
 INSERT INTO time_tbl VALUES(-1202334);
+-- test table's dafault typmod
+INSERT INTO time_tbl VALUES(232323.123);
+SELECT * FROM time_tbl;
+-- test alter table add [column]
+ALTER TABLE time_tbl ADD COLUMN dt datetime;
+ALTER TABLE time_tbl ADD ts timestamp;
+INSERT INTO time_tbl VALUES(232323.555, 20201212101010.555, 20201212101010.555);
+SELECT * FROM time_tbl;
+DROP TABLE time_tbl;
+-- test alter table modify column
+CREATE TABLE time_tbl (v time(2));
+INSERT INTO time_tbl VALUES(232323.555);
+SELECT * FROM time_tbl;
+ALTER TABLE time_tbl MODIFY v time;
 SELECT * FROM time_tbl;
 DROP TABLE time_tbl;
 
@@ -483,6 +497,10 @@ SELECT * FROM ti_hash;
 SELECT * FROM ti_hash PARTITION(P1);
 SELECT * FROM ti_hash PARTITION(P2);
 DROP TABLE ti_hash;
+
+-- test cast function
+select cast(-232323.555 as time);
+select cast('20121010101010.555' as datetime);
 
 \c postgres
 DROP DATABASE b_time_type;
