@@ -9240,6 +9240,11 @@ const char* CreateAlterTableCommandTag(const AlterTableType subtype)
         case AT_SplitPartition:
             tag = "SPLIT PARTITION";
             break;
+        #ifdef DOLPHIN
+        case AT_ReorganizePartition:
+            tag = "REORGANIZE PARTITION";
+            break;
+        #endif
         case AT_ReAddConstraint:
             tag = "RE ADD CONSTRAINT";
             break;

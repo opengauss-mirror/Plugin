@@ -21,10 +21,12 @@
 #include "catalog/pg_partition_fn.h"
 #include "plugin_parser/parse_utilcmd.h"
 
+#ifdef DOLPHIN
 extern void ExecRemovePartition(Oid relid, char* tableName);
 extern void ExecRebuildPartition(List* partList, Relation rel);
 void dropPartitionTableInfo(Relation relation);
 void drop_partition_info(Relation rel);
 void updatePGClass(Oid relid, Oid tempTableOid, bool isIndex);
+#endif
 
 #endif /* PARTITIONFUNCS_H */

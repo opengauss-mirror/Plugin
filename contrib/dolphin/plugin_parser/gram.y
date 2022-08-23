@@ -1080,7 +1080,7 @@ static bool DolphinObjNameCmp(const char* s1, const char* s2, bool is_quoted);
 	QUARTER QUERY QUOTE
 
 	RANDOMIZED RANGE RATIO RAW READ READS REAL REASSIGN REBUILD RECHECK RECURSIVE RECYCLEBIN REDISANYVALUE REF REFERENCES REFRESH REINDEX REJECT_P
-	RELATIVE_P RELEASE RELOPTIONS REMOTE_P REMOVE RENAME REPEATABLE REPLACE REPLICA REGEXP REPAIR
+	RELATIVE_P RELEASE RELOPTIONS REMOTE_P REMOVE RENAME REPEATABLE REPLACE REPLICA REGEXP REORGANIZE REPAIR
 	RESET RESIZE RESOURCE RESTART RESTRICT RETURN RETURNING RETURNS REUSE REVOKE RIGHT RLIKE ROLE ROLES ROLLBACK ROLLUP
 	ROTATION ROUTINE ROW ROWNUM ROWS ROWTYPE_P ROW_FORMAT RULE
 
@@ -3734,6 +3734,32 @@ alter_partition_cmd:
 				n->def = (Node*)s;
 				n->subtype = AT_SplitSubPartition;
 				n->alterGPI = $12;
+				$$ = (Node*)n;
+			}
+		| REORGANIZE PARTITION name_list INTO '(' range_partition_definition_list ')'
+			{
+				AlterTableCmd* n = makeNode(AlterTableCmd);
+				SplitPartitionState* r = makeNode(SplitPartitionState);
+
+				/* use the split_point of SplitPartitionState to save name_list*/
+				r->split_point = $3;
+				r->dest_partition_define_list = $6;
+
+				n->def = (Node*)r;
+				n->subtype = AT_ReorganizePartition;
+				$$ = (Node*)n;
+			}
+		| REORGANIZE PARTITION name_list INTO '(' list_partition_definition_list ')'
+			{
+				AlterTableCmd* n = makeNode(AlterTableCmd);
+				SplitPartitionState* r = makeNode(SplitPartitionState);
+
+				/* use the split_point of SplitPartitionState to save name_list*/
+				r->split_point = $3;
+				r->dest_partition_define_list = $6;
+
+				n->def = (Node*)r;
+				n->subtype = AT_ReorganizePartition;
 				$$ = (Node*)n;
 			}
 		/* truncate partition */
@@ -29001,6 +29027,7 @@ unreserved_keyword_without_key:
 			| REMOTE_P
 			| REMOVE
 			| RENAME
+			| REORGANIZE
 			| REPEATABLE
 			| REPLACE
 			| REPLICA

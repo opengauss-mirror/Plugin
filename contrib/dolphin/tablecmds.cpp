@@ -706,6 +706,10 @@ static void checkValidationForExchange(Relation partTableRel, Relation ordTableR
 
 static void finishIndexSwap(List* partIndexList, List* ordIndexList);
 static Oid getPartitionOid(Relation partTableRel, const char* partName, Node* rangePartDef);
+#ifdef DOLPHIN
+static void AddNewPartitionForTable(Relation rel, List* destPartDefList);
+static void ATExecReorganizePartition(Relation partTableRel, AlterTableCmd* cmd);
+#endif
 static void ATExecSplitPartition(Relation partTableRel, AlterTableCmd* cmd);
 static void ATExecSplitSubPartition(Relation partTableRel, AlterTableCmd* cmd);
 static void checkSplitPointForSplit(SplitPartitionState* splitPart, Relation partTableRel, int srcPartIndex);
@@ -733,6 +737,9 @@ static void ATPrepTruncatePartition(Relation rel);
 static void ATPrepTruncateSubPartition(Relation rel);
 static void ATPrepExchangePartition(Relation rel);
 static void ATPrepMergePartition(Relation rel);
+#ifdef DOLPHIN
+static void ATPrepReorganizePartition(Relation rel);
+#endif
 static void ATPrepSplitPartition(Relation rel);
 static void ATPrepSplitSubPartition(Relation rel);
 static void replaceRepeatChunkId(HTAB* chunkIdHashTable, List* srcPartToastRels);
@@ -7807,6 +7814,13 @@ static void ATPrepCmd(List** wqueue, Relation rel, AlterTableCmd* cmd, bool recu
             ATPrepSplitPartition(rel);
             pass = AT_PASS_MISC;
             break;
+        #ifdef DOLPHIN
+        case AT_ReorganizePartition:
+            ATSimplePermissions(rel, ATT_TABLE);
+            ATPrepReorganizePartition(rel);
+            pass = AT_PASS_MISC;
+            break;
+        #endif
         case AT_AddIntoCBI:
             ATSimplePermissions(rel, ATT_INDEX);
             pass = AT_PASS_MISC;
@@ -8294,6 +8308,11 @@ static void ATExecCmd(List** wqueue, AlteredTableInfo* tab, Relation rel, AlterT
         case AT_SplitPartition:
             ATExecSplitPartition(rel, cmd);
             break;
+        #ifdef DOLPHIN
+        case AT_ReorganizePartition:
+            ATExecReorganizePartition(rel, cmd);
+            break;
+        #endif
         case AT_AddIntoCBI:
             ATExecAddTblIntoCBI(rel, (AddTableIntoCBIState *)cmd->def);
             break;
@@ -20041,6 +20060,21 @@ static void ATPrepMergePartition(Relation rel)
     }
 }
 
+#ifdef DOLPHIN
+static void ATPrepReorganizePartition(Relation rel)
+{
+    if (!RELATION_IS_PARTITIONED(rel)) {
+        ereport(ERROR,
+            (errcode(ERRCODE_WRONG_OBJECT_TYPE), errmsg("can not Reorganize partition against NON-PARTITIONED table")));
+    }
+
+    if (rel->partMap->type == PART_TYPE_HASH) {
+        ereport(ERROR,
+            (errcode(ERRCODE_WRONG_OBJECT_TYPE), errmsg("can not Reorganize HASH partition table")));
+    }
+}
+#endif
+
 static void ATPrepSplitPartition(Relation rel)
 {
     if (!RELATION_IS_PARTITIONED(rel)) {
@@ -24378,6 +24412,390 @@ static void finishIndexSwap(List* partIndexList, List* ordIndexList)
     }
 }
 
+#ifdef DOLPHIN
+static void SetPartitionState(Relation rel, Node* partDef, PartitionState *partitionState, char subparttype, char partitionStrategy, List** subPartitionDefState) {
+    partitionState->partitionStrategy = partitionStrategy;
+    if (RelationIsSubPartitioned(rel)) {
+        partitionState->subPartitionState = makeNode(PartitionState);
+        partitionState->subPartitionState->partitionStrategy = subparttype;
+        if (*subPartitionDefState == NIL) {
+            Node *subPartDefState = MakeDefaultSubpartition(partitionState, partDef);
+            *subPartitionDefState = lappend(*subPartitionDefState, subPartDefState);
+        }
+    }
+}
+
+static void AddNewPartitionForTable(Relation rel, List* destPartDefList)
+{
+    Relation pgPartRel = NULL;
+    Oid newPartOid = InvalidOid;
+    List *newSubpartOidList = NIL;
+    Datum new_reloptions;
+    Datum rel_reloptions;
+    HeapTuple tuple;
+    bool isnull = false;
+    List* old_reloptions = NIL;
+    Oid bucketOid;
+    char subparttype = PART_STRATEGY_INVALID;
+    List *subpartKeyPosList = NIL;
+    int2vector *subpartitionKey = NULL;
+    ListCell* cell = NULL;
+    Node* partDef = NULL;
+
+    bool* isTimestamptz = CheckPartkeyHasTimestampwithzone(rel);
+    bool *isTimestamptzForSubPartKey = NULL;
+    if (RelationIsSubPartitioned(rel)) {
+        RelationGetSubpartitionInfo(rel, &subparttype, &subpartKeyPosList, &subpartitionKey);
+
+        int subPartKeyNum = list_length(subpartKeyPosList);
+        isTimestamptzForSubPartKey = (bool *)palloc0(sizeof(bool) * subPartKeyNum);
+        ListCell *subpartKeyCell = NULL;
+        int partKeyIdx = 0;
+        foreach (subpartKeyCell, subpartKeyPosList) {
+            int pos = lfirst_int(subpartKeyCell);
+            if ((RelationGetDescr(rel))->attrs[pos]->atttypid == TIMESTAMPTZOID) {
+                isTimestamptzForSubPartKey[partKeyIdx] = true;
+            }
+            partKeyIdx++;
+        }
+        list_free_ext(subpartKeyPosList);
+    }
+
+    pgPartRel = relation_open(PartitionRelationId, RowExclusiveLock);
+
+    /* add new partition entry in pg_partition */
+    Oid relOid = ObjectIdGetDatum(rel->rd_id);
+    tuple = SearchSysCache1(RELOID, relOid);
+    if (!HeapTupleIsValid(tuple))
+        ereport(ERROR, (errmodule(MOD_COMMAND), errcode(ERRCODE_CACHE_LOOKUP_FAILED),
+            errmsg("cache lookup failed for relation %u", relOid), errdetail("N/A"),
+                errcause("System error."), erraction("Contact engineer to support.")));
+    rel_reloptions = SysCacheGetAttr(RELOID, tuple, Anum_pg_class_reloptions, &isnull);
+
+    old_reloptions = untransformRelOptions(rel_reloptions);
+    RemoveRedisRelOptionsFromList(&old_reloptions);
+    new_reloptions = transformRelOptions((Datum)0, old_reloptions, NULL, NULL, false, false);
+    ReleaseSysCache(tuple);
+
+    if (old_reloptions != NIL)
+        list_free_ext(old_reloptions);
+
+    bucketOid = RelationGetBucketOid(rel);
+
+    List *partitionNameList = list_concat(list_make1(destPartDefList), RelationGetPartitionNameList(rel));
+    foreach (cell, destPartDefList) {
+        partDef = (Node*)lfirst(cell);
+        PartitionState *partitionState = makeNode(PartitionState);
+        partitionState->partitionNameList = partitionNameList;
+        Oid partTablespaceOid;
+        if (rel->partMap->type == PART_TYPE_RANGE) {
+            RangePartitionDefState* partRangeDef = (RangePartitionDefState*)(partDef);
+            SetPartitionState(rel, partDef, partitionState, subparttype, PART_STRATEGY_RANGE, &(partRangeDef->subPartitionDefState));
+            newPartOid = heapAddRangePartition(pgPartRel,
+                rel->rd_id,
+                rel->rd_rel->reltablespace,
+                bucketOid,
+                partRangeDef,
+                rel->rd_rel->relowner,
+                (Datum)new_reloptions,
+                isTimestamptz,
+                RelationGetStorageType(rel),
+                AccessExclusiveLock,
+                subpartitionKey,
+                RelationIsPartitionOfSubPartitionTable(rel));
+            partTablespaceOid =
+                GetPartTablespaceOidForSubpartition(rel->rd_rel->reltablespace, partRangeDef->tablespacename);
+        } else if (rel->partMap->type == PART_TYPE_LIST) {
+            ListPartitionDefState* partListDef = (ListPartitionDefState*)(partDef);
+            SetPartitionState(rel, partDef, partitionState, subparttype, PART_STRATEGY_LIST, &(partListDef->subPartitionDefState));
+            newPartOid = HeapAddListPartition(pgPartRel,
+                rel->rd_id,
+                rel->rd_rel->reltablespace,
+                bucketOid,
+                partListDef,
+                rel->rd_rel->relowner,
+                (Datum)new_reloptions,
+                isTimestamptz,
+                RelationGetStorageType(rel),
+                subpartitionKey,
+                RelationIsPartitionOfSubPartitionTable(rel));
+            partTablespaceOid =
+                GetPartTablespaceOidForSubpartition(rel->rd_rel->reltablespace, partListDef->tablespacename);
+        }
+
+        newSubpartOidList = addNewSubPartitionTuplesForPartition(pgPartRel,
+            newPartOid,
+            partTablespaceOid,
+            bucketOid,
+            rel->rd_rel->relowner,
+            (Datum)new_reloptions,
+            isTimestamptzForSubPartKey,
+            RelationGetStorageType(rel),
+            partitionState,
+            partDef,
+            AccessExclusiveLock);
+
+        CommandCounterIncrement();
+
+        if (RelationIsSubPartitioned(rel)) {
+            Assert(newSubpartOidList != NIL);
+            Partition part = partitionOpen(rel, newPartOid, AccessExclusiveLock);
+            Relation partrel = partitionGetRelation(rel, part);
+            ListCell* lc = NULL;
+            foreach (lc, newSubpartOidList) {
+                Oid subpartOid = lfirst_oid(lc);
+                addIndexForPartition(rel, subpartOid);
+                addToastTableForNewPartition(partrel, subpartOid, true);
+            }
+            releaseDummyRelation(&partrel);
+            partitionClose(rel, part, NoLock);
+        } else {
+            addIndexForPartition(rel, newPartOid);
+            addToastTableForNewPartition(rel, newPartOid);
+        }
+
+        /* invalidate relation */
+        CacheInvalidateRelcache(rel);
+        pfree_ext(partitionState->subPartitionState);
+        pfree_ext(partitionState);
+    }
+
+    /* close relation, done */
+    relation_close(pgPartRel, NoLock);
+    pfree_ext(isTimestamptz);
+    pfree_ext(isTimestamptzForSubPartKey);
+    list_free_ext(partitionNameList);
+
+    CommandCounterIncrement();
+}
+
+static void ATExecReorganizePartition(Relation partTableRel, AlterTableCmd* cmd)
+{
+    SplitPartitionState* reorgPart = NULL;
+    List* destPartDefList = NIL;
+    List* srcPartitionNameList = NIL;
+    Oid partTableOid = InvalidOid;
+    RangePartitionMap* partMap = NULL;
+    int partKeyNum = 0;
+
+    reorgPart = (SplitPartitionState*)(cmd->def);
+    destPartDefList = reorgPart->dest_partition_define_list;
+    srcPartitionNameList = reorgPart->split_point;
+    partMap = (RangePartitionMap*)partTableRel->partMap;
+    partKeyNum = partMap->partitionKey->dim1;
+    partTableOid = RelationGetRelid(partTableRel);
+    // check final partition num
+    int targetPartNum = 0;
+    targetPartNum = getNumberOfPartitions(partTableRel) + list_length(destPartDefList) - list_length(srcPartitionNameList);
+    if (targetPartNum > MAX_PARTITION_NUM) {
+        ereport(ERROR,
+            (errcode(ERRCODE_INVALID_TABLE_DEFINITION),
+                errmsg("too many partitions for partitioned table"),
+                errhint("Number of partitions can not be more than %d", MAX_PARTITION_NUM)));
+    }
+    ListCell* cell = NULL;
+    Oid srcPartOid = InvalidOid;
+    List* srcPartOidList = NIL;
+    int firstPartIndex = -1;
+    int curPartIndex = -1;
+    int prevPartIndex = -1;
+    int iterator = 0;
+    char* partName = NULL;
+    // get src partition oid
+    foreach (cell, srcPartitionNameList) {
+        iterator++;
+        partName = strVal(lfirst(cell));
+        srcPartOid = partitionNameGetPartitionOid(RelationGetRelid(partTableRel),
+            partName,
+            PART_OBJ_TYPE_TABLE_PARTITION,
+            AccessExclusiveLock,
+            true,
+            false,
+            NULL,
+            NULL,
+            NoLock);
+        if (!OidIsValid(srcPartOid)) {
+            ereport(ERROR,
+                (errcode(ERRCODE_UNDEFINED_TABLE),
+                    lfirst(cell) != NULL
+                        ? errmsg("reorganize partition \"%s\" does not exist.", partName)
+                        : errmsg("reorganize partition does not exist.")));            
+        }
+        /* check local index 'usable' state */
+        if (!checkPartitionLocalIndexesUsable(srcPartOid)) {
+            ereport(ERROR,
+                (errcode(ERRCODE_INVALID_OBJECT_DEFINITION),
+                    errmsg("can't reorganize partition bacause partition %s has unusable local index", (char*)lfirst(cell)),
+                    errhint("please reindex the unusable index first.")));
+        }
+
+        if (partTableRel->partMap->type == PART_TYPE_RANGE) {
+            /* from partitionoid to partition sequence */
+            curPartIndex = partOidGetPartSequence(partTableRel, srcPartOid) - 1;
+            /* check the continuity of sequence, not the first round loop */
+            if (iterator != 1) {
+                if (curPartIndex - prevPartIndex != 1)
+                    ereport(ERROR,
+                        (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+                            errmsg("source partitions must be continuous and in ascending order of boundary")));
+            } else {
+                firstPartIndex = curPartIndex;
+            }
+            prevPartIndex = curPartIndex;
+        }
+
+        /* save oid of src partition */
+        srcPartOidList = lappend_oid(srcPartOidList, srcPartOid);
+    }
+
+    // check dest partition tablespace
+    foreach (cell, destPartDefList) {
+        char* tablespacename = NULL;
+        if (partTableRel->partMap->type == PART_TYPE_RANGE) {
+            RangePartitionDefState* rangePartDef = (RangePartitionDefState*)lfirst(cell);
+            tablespacename = rangePartDef->tablespacename;
+        } else if (partTableRel->partMap->type == PART_TYPE_LIST) {
+            ListPartitionDefState* listPartDef = (ListPartitionDefState*)lfirst(cell);
+            tablespacename = listPartDef->tablespacename;
+        }
+        CheckPartitionTablespace(tablespacename, partTableRel->rd_rel->relowner);
+    }
+
+    ListCell* otherCell = NULL;
+    List* destPartBoundaryList = NIL;
+    List* listForFree = NIL;
+    if (partTableRel->partMap->type == PART_TYPE_RANGE) {
+        int compare = 0;
+        // transform partition key type
+        destPartBoundaryList = getDestPartBoundaryList(partTableRel, destPartDefList, &listForFree);
+        // check the first dest partition boundary
+        if (firstPartIndex != 0) {
+            compare = comparePartitionKey(partMap, partMap->rangeElements[firstPartIndex - 1].boundary,
+                                            (Const**)lfirst(list_head(destPartBoundaryList)), partKeyNum);
+            if (compare >= 0) {
+                ereport(ERROR,
+                    (errcode(ERRCODE_INVALID_OPERATION),
+                        errmsg("the bound of the first resulting partition is too low")));
+            }
+        }
+        // check the dest partitions boundary
+        forboth(cell, destPartBoundaryList, otherCell, destPartDefList)
+        {
+            Const** currentBoundary = (Const**)lfirst(cell);
+            RangePartitionDefState* rangePartDef = (RangePartitionDefState*)lfirst(otherCell);
+            Const** nextBoudary = NULL;
+            if (!PointerIsValid(cell->next)) {
+                break;
+            }
+            nextBoudary = (Const**)lfirst(cell->next);
+            rangePartDef = (RangePartitionDefState*)lfirst(otherCell->next);
+            compare = comparePartitionKey(partMap, currentBoundary, nextBoudary, partKeyNum);
+            if (compare >= 0) {
+                ereport(ERROR,
+                    (errcode(ERRCODE_INVALID_OPERATION),
+                        errmsg("the bound of resulting partition \"%s\" is too low", rangePartDef->partitionName)));
+            }
+        }
+        // check the last dest partition boundary equal the src partition boundary
+        compare = comparePartitionKey(partMap,
+            (Const**)lfirst(list_tail(destPartBoundaryList)),
+            partMap->rangeElements[curPartIndex].boundary,
+            partKeyNum);
+        if (compare != 0) {
+            ereport(ERROR,
+                (errcode(ERRCODE_INVALID_OPERATION),
+                    errmsg("the bound of the last resulting partition is not equal with specified partition bound")));
+        }
+    }
+
+    // create temp table based on partition
+    Partition part = NULL;
+    Oid tempTableOid = InvalidOid;
+    List* tempTableOidList = NIL;
+    Relation tempTableRel = NULL;
+    ObjectAddress object;
+    if (!RelationIsSubPartitioned(partTableRel)) {
+        foreach (cell, srcPartOidList) {
+            srcPartOid = lfirst_oid(cell);
+            part = partitionOpen(partTableRel, srcPartOid, AccessExclusiveLock);
+            // creat temp table and swap relfilenode with src partition
+            tempTableOid = createTempTableForPartition(partTableRel, part);
+            finishPartitionHeapSwap(srcPartOid, tempTableOid, false, u_sess->utils_cxt.RecentXmin, GetOldestMultiXactId());
+            CommandCounterIncrement();
+            partitionClose(partTableRel, part, AccessExclusiveLock);
+            tempTableOidList = lappend_oid(tempTableOidList, tempTableOid);
+            // drop src partition
+            fastDropPartition(partTableRel, srcPartOid, "REORGANIZE PARTITION");
+        }
+    } else {
+        Relation partRel = NULL;
+        Partition subPart = NULL;
+        List* srcSubPartOidList = NIL;
+        ListCell* subCell = NULL;
+        Oid srcSubPartOid = InvalidOid;
+        foreach (cell, srcPartOidList) {
+            srcPartOid = lfirst_oid(cell);
+            part = partitionOpen(partTableRel, srcPartOid, AccessExclusiveLock);
+            partRel = partitionGetRelation(partTableRel, part);
+            srcSubPartOidList = relationGetPartitionOidList(partRel);
+            foreach (subCell, srcSubPartOidList) {
+                srcSubPartOid = lfirst_oid(subCell);
+                subPart = partitionOpen(partRel, srcSubPartOid, AccessExclusiveLock);
+                tempTableOid = createTempTableForPartition(partTableRel, subPart);
+                tempTableOidList = lappend_oid(tempTableOidList, tempTableOid);
+                finishPartitionHeapSwap(srcSubPartOid, tempTableOid, false, u_sess->utils_cxt.RecentXmin, GetOldestMultiXactId());
+                CommandCounterIncrement();
+                partitionClose(partRel, subPart, AccessExclusiveLock);
+            }
+            list_free_ext(srcSubPartOidList);
+            CacheInvalidatePartcache(part);
+            releaseDummyRelation(&partRel);
+            partitionClose(partTableRel, part, AccessExclusiveLock);
+            // drop src partition
+            fastDropPartition(partTableRel, srcPartOid, "REORGANIZE PARTITION");
+        }
+    }
+
+    if (partTableRel->partMap->type == PART_TYPE_LIST) {
+        int2vector *partitionKey = GetPartitionKey(partTableRel->partMap);
+        List *partKeyPosList = NIL;
+        for (int i = 0; i < partitionKey->dim1; i++) {
+            partKeyPosList = lappend_int(partKeyPosList, partitionKey->values[i] - 1);
+        }
+        CompareListValue(partKeyPosList, (RelationGetDescr(partTableRel))->attrs, destPartDefList);
+        list_free_ext(partKeyPosList);
+        foreach (cell, destPartDefList) {
+            /* check new adding partitions behind the last partition */
+            CheckPartitionValueConflictForAddPartition(partTableRel, (Node*)lfirst(cell));
+            /* check constraint for subpartition */
+            CheckSubpartitionForAddPartition(partTableRel, (Node*)lfirst(cell));
+        } 
+    }
+
+    // check dest partitions name not existing
+    checkDestPartitionNameForSplit(partTableOid, destPartDefList);
+    // add dest partitions
+    AddNewPartitionForTable(partTableRel, destPartDefList);
+    freeDestPartBoundaryList(destPartBoundaryList, listForFree);
+    foreach (cell, tempTableOidList) {
+        tempTableOid = lfirst_oid(cell);
+        // read temp table tuples and insert into partitioned table
+        tempTableRel = relation_open(tempTableOid, AccessExclusiveLock);
+        readTuplesAndInsert(tempTableRel, partTableRel);
+        relation_close(tempTableRel, AccessExclusiveLock);
+        // delete temp table
+        object.classId = RelationRelationId;
+        object.objectId = tempTableOid;
+        object.objectSubId = 0;
+        performDeletion(&object, DROP_RESTRICT, PERFORM_DELETION_INTERNAL);
+    }
+    list_free_ext(tempTableOidList);
+    // reindex dest partitions
+    ReindexRelation(RelationGetRelid(partTableRel), REINDEX_REL_PROCESS_TOAST | REINDEX_REL_SUPPRESS_INDEX_USE | REINDEX_REL_CHECK_CONSTRAINTS,
+        REINDEX_ALL_INDEX, NULL, NULL);
+}
+#endif
+
 static void ATExecSplitPartition(Relation partTableRel, AlterTableCmd* cmd)
 {
     SplitPartitionState* splitPart = NULL;
@@ -28241,6 +28659,7 @@ static char* ATGetPKName(Relation rel)
     return get_rel_name(pkoid);
 }
 
+#ifdef DOLPHIN
 /*
  * Functions for partition table, used in partitionfuncs.cpp
  */
@@ -28335,3 +28754,5 @@ void ExecRebuildPartition(List* partList, Relation rel) {
     }
     list_free_ext(tempTableOidList);
 }
+
+#endif
