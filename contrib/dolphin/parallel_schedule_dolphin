@@ -61,4 +61,6 @@ test: network2 use_dbname  view_definer_test
 
 test: partition_test1 partition_test2 partition_test3
 
+test: test_table_index
+
 test: db_b_date_time_functions

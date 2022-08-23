@@ -52,6 +52,7 @@ typedef struct {
     List* uuids;     /* used for create sequence */
     bool isResizing; /* true if the table is resizing */
     bool ofType;         /* true if statement contains OF typename */
+    List* tableindex;            /* index-creating */
 } CreateStmtContext;
 
 typedef enum TransformTableType { TRANSFORM_INVALID = 0, TRANSFORM_TO_HASHBUCKET, TRANSFORM_TO_NONHASHBUCKET} TransformTableType;

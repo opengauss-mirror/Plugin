@@ -613,7 +613,7 @@ static int errstate;
 				oper_argtypes RuleActionList RuleActionMulti
 				opt_column_list columnList opt_name_list opt_analyze_column_define opt_multi_name_list
 				opt_include_without_empty opt_c_include index_including_params
-				sort_clause opt_sort_clause sortby_list index_params
+				sort_clause opt_sort_clause sortby_list index_params table_index_elems index_options
 				name_list from_clause from_list opt_array_bounds
 				qualified_name_list any_name any_name_list
 				any_operator expr_list attrs callfunc_args
@@ -704,7 +704,7 @@ static int errstate;
 
 %type <node>	TableElement TypedTableElement ConstraintElem TableFuncElement
 				ForeignTableElement
-%type <node>	columnDef columnOptions
+%type <node>	columnDef columnOptions columnDefForTableElement
 %type <defelt>	def_elem tsconf_def_elem reloption_elem tblspc_option_elem old_aggr_elem cfoption_elem
 %type <node>	def_arg columnElem where_clause where_or_current_clause start_with_expr connect_by_expr
                                 a_expr b_expr c_expr c_expr_noparen AexprConst indirection_el siblings_clause
@@ -722,7 +722,7 @@ static int errstate;
 %type <list>	NumericOnly_list
 %type <alias>	alias_clause opt_alias_clause
 %type <sortby>	sortby
-%type <ielem>	index_elem
+%type <ielem>	index_elem table_index_elem
 %type <node>	table_ref
 %type <jexpr>	joined_table
 %type <range>	relation_expr
@@ -762,13 +762,13 @@ static int errstate;
 %type <str>		Sconst comment_text notify_payload
 %type <str>		RoleId TypeOwner opt_granted_by opt_boolean_or_string ColId_or_Sconst definer_user definer_expression
 %type <list>	var_list
-%type <str>		ColId ColLabel var_name type_function_name param_name user opt_password opt_replace show_index_schema_opt
+%type <str>		ColId ColLabel var_name type_function_name param_name user opt_password opt_replace show_index_schema_opt ColIdForTableElement
 %type <node>	var_value zone_value
 
-%type <keyword> unreserved_keyword type_func_name_keyword
+%type <keyword> unreserved_keyword type_func_name_keyword unreserved_keyword_without_key
 %type <keyword> col_name_keyword reserved_keyword
 
-%type <node>	TableConstraint TableLikeClause ForeignTableLikeClause
+%type <node>	TableConstraint TableIndexClause TableLikeClause ForeignTableLikeClause
 %type <ival>	excluding_option_list TableLikeOptionList TableLikeIncludingOption TableLikeExcludingOption
 %type <list>	ColQualList
 %type <node>	ColConstraint ColConstraintElem ConstraintAttr InformationalConstraintElem
@@ -3635,7 +3635,7 @@ alter_table_cmd:
 
 			|
 			/* ALTER TABLE <name> ADD <coldef> */
-			ADD_P columnDef
+			ADD_P columnDefForTableElement
 				{
 					AlterTableCmd *n = makeNode(AlterTableCmd);
 					n->subtype = AT_AddColumn;
@@ -3800,6 +3800,14 @@ alter_table_cmd:
 					n->def = $2;
 					$$ = (Node *)n;
 				}
+			/* ALTER TABLE <name> ADD INDEX ... */
+			| ADD_P TableIndexClause
+			{
+				AlterTableCmd *n = makeNode(AlterTableCmd);
+				n->subtype = AT_AddIndex;
+				n->def = $2;
+				$$ = (Node *)n;
+			}
 			/* ALTER TABLE <name> VALIDATE CONSTRAINT ... */
 			| VALIDATE CONSTRAINT name
 				{
@@ -6842,15 +6850,138 @@ TypedTableElementList:
 				}
 		;
 
+table_index_elems:
+					table_index_elem									{ $$ = list_make1($1); }
+					| table_index_elems ',' table_index_elem			{ $$ = lappend($1, $3); }
+		;
+ 
+table_index_elem:	ColId opt_asc_desc
+						{
+							$$ = makeNode(IndexElem);
+							$$->name = $1;
+							$$->expr = NULL;
+							$$->indexcolname = NULL;
+							$$->collation = NULL;
+							$$->opclass = NULL;
+							$$->ordering = (SortByDir)$2;
+						}
+					| '(' a_expr ')' opt_asc_desc
+						{
+							$$ = makeNode(IndexElem);
+							$$->name = NULL;
+							$$->expr = $2;
+							$$->indexcolname = NULL;
+							$$->collation = NULL;
+							$$->opclass = NULL;
+							$$->ordering = (SortByDir)$4;
+						}
+		;
+ 
+index_options:	/*EMPTY*/							{ $$ = NIL; }
+		;
+ 
+TableIndexClause:
+			index_key_opt index_name access_method_clause '(' table_index_elems ')' index_options
+			{
+					IndexStmt *n = makeNode(IndexStmt);
+					n->unique = false;
+					n->concurrent = false;
+					n->idxname = $2;
+					n->relation = NULL;
+					n->accessMethod = $3;
+					n->indexParams = $5;
+					n->indexIncludingParams = NULL;
+					n->options = NULL;
+					n->tableSpace = NULL;
+					/* n->indexOptions = $7; */
+					n->whereClause = NULL;
+					n->excludeOpNames = NIL;
+					n->idxcomment = NULL;
+					n->indexOid = InvalidOid;
+					n->oldNode = InvalidOid;
+					n->partClause = NULL;
+					n->isPartitioned = false;
+					n->isGlobal = false;
+					n->primary = false;
+					n->isconstraint = false;
+					n->deferrable = false;
+					n->initdeferred = false;
+					/* n->internal_index_flag = true; */
+					$$ = (Node *)n;
+			}
+			| index_key_opt access_method_clause '(' table_index_elems ')' index_options
+			{
+					IndexStmt *n = makeNode(IndexStmt);
+					n->unique = false;
+					n->concurrent = false;
+					n->idxname = NULL;
+					n->relation = NULL;
+					n->accessMethod = $2;
+					n->indexParams = $4;
+					n->indexIncludingParams = NULL;
+					n->options = NULL;
+					n->tableSpace = NULL;
+					/* n->indexOptions = $6; */
+					n->whereClause = NULL;
+					n->excludeOpNames = NIL;
+					n->idxcomment = NULL;
+					n->indexOid = InvalidOid;
+					n->oldNode = InvalidOid;
+					n->partClause = NULL;
+					n->isPartitioned = false;
+					n->isGlobal = false;
+					n->primary = false;
+					n->isconstraint = false;
+					n->deferrable = false;
+					n->initdeferred = false;
+					/* n->internal_index_flag = true; */
+					$$ = (Node *)n;	
+			}
+		;
+
+
 TableElement:
-			columnDef							{ $$ = $1; }
+			columnDefForTableElement			{ $$ = $1; }
 			| TableLikeClause					{ $$ = $1; }
 			| TableConstraint					{ $$ = $1; }
+			| TableIndexClause					{ $$ = $1; }
 		;
 
 TypedTableElement:
 			columnOptions						{ $$ = $1; }
 			| TableConstraint	 				{ $$ = $1; }
+		;
+
+ColIdForTableElement:	IDENT						{ $$ = $1; }
+			| unreserved_keyword_without_key		{ $$ = pstrdup($1); }
+			| col_name_keyword						{ $$ = pstrdup($1); }
+		;
+
+columnDefForTableElement:	ColIdForTableElement Typename KVType ColCmprsMode create_generic_options ColQualList
+				{
+					ColumnDef *n = makeNode(ColumnDef);
+					n->colname = $1;
+					n->typname = $2;
+					n->kvtype = $3;
+					n->inhcount = 0;
+					n->is_local = true;
+					n->is_not_null = false;
+					n->is_from_type = false;
+					n->storage = 0;
+					n->cmprs_mode = $4;
+					n->raw_default = NULL;
+					n->cooked_default = NULL;
+					n->collOid = InvalidOid;
+					n->fdwoptions = $5;
+					if ($3 == ATT_KV_UNDEFINED) {
+						SplitColQualList($6, &n->constraints, &n->collClause, &n->clientLogicColumnRef,
+									 yyscanner);
+					} else {
+						SplitColQualList($6, &n->constraints, &n->collClause,
+										yyscanner);
+					}
+					$$ = (Node *)n;
+				}
 		;
 
 columnDef:	ColId Typename KVType ColCmprsMode create_generic_options ColQualList
@@ -26309,6 +26440,11 @@ ColLabel:	IDENT									{ $$ = $1; }
  */
 /* PGXC - added DISTRIBUTE, DIRECT, COORDINATOR, DATANODES, CLEAN, NODE, BARRIER, SLICE, DATANODE */
 unreserved_keyword:
+			unreserved_keyword_without_key
+			| KEY
+			;
+
+unreserved_keyword_without_key:
 			  ABORT_P
 			| ABSOLUTE_P
 			| ACCESS
@@ -26498,7 +26634,6 @@ unreserved_keyword:
 			| IP
 			| ISNULL
 			| ISOLATION
-			| KEY
 			| KEYS
 			| KEY_PATH
 			| KEY_STORE
