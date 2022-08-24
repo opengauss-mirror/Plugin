@@ -68,6 +68,7 @@ typedef struct BSqlPluginContext {
     int default_week_format;
     char* lc_time_names;
     bool scan_from_pl;
+    char* default_database_name;
 } bSqlPluginContext;
 
 BSqlPluginContext* GetSessionContext();

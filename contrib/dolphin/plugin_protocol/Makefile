@@ -1,0 +1,39 @@
+#
+#Copyright (c) 2020 China Unicom.
+#
+#openGauss is licensed under Mulan PSL v2.
+#You can use this software according to the terms and conditions of the Mulan PSL v2.
+#You may obtain a copy of Mulan PSL v2 at:
+#
+#          http://license.coscl.org.cn/MulanPSL2
+#
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+# EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+# MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+# See the Mulan PSL v2 for more details.
+#-------------------------------------------------------------------------
+#
+# Makefile
+#    Makefile for protocol
+#
+#-------------------------------------------------------------------------
+
+subdir = contrib/dolphin/plugin_protocol
+top_builddir = ../../../
+base_dir = contrib/dolphin
+include $(top_builddir)/src/Makefile.global
+include $(top_builddir)/$(base_dir)/configure.mk
+override CPPFLAGS:=-std=c++14 $(CPPFLAGS)
+ifneq "$(MAKECMDGOALS)" "clean"
+  ifneq "$(MAKECMDGOALS)" "distclean"
+    ifneq "$(shell which g++ |grep hutaf_llt |wc -l)" "1"
+      -include $(DEPEND)
+    endif
+  endif
+endif
+
+OBJS = password.o server_startup.o auth.o handler.o dqformat.o bytestream.o printtup.o
+
+override CPPFLAGS += -D__STDC_FORMAT_MACROS
+
+include $(top_srcdir)/src/gausskernel/common.mk

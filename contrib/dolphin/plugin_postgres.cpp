@@ -68,6 +68,7 @@
 #include "plugin_vector/vecfunc.h"
 #include "replication/archive_walreceiver.h"
 #include "plugin_commands/mysqlmode.h"
+#include "plugin_protocol/startup.h"
 #ifdef DOLPHIN
 #include "plugin_utils/my_locale.h"
 #endif
@@ -118,6 +119,7 @@ static uint32 dolphin_index;
 extern void set_hypopg_prehook(ProcessUtility_hook_type func);
 extern void set_pgaudit_prehook(ProcessUtility_hook_type func);
 extern bool check_plugin_function(Oid funcId);
+static bool protocol_inited;
 
 PG_FUNCTION_INFO_V1_PUBLIC(dolphin_invoke);
 void dolphin_invoke(void)
@@ -147,6 +149,7 @@ void _PG_init(void)
     if (!u_sess->misc_cxt.process_shared_preload_libraries_in_progress && !DB_IS_CMPT(B_FORMAT)) {
         ereport(ERROR, (errmsg("Can't create dolphin extension since current database compatibility is not 'B'")));
     }
+
     if (b_oidHash == NULL || b_nameHash == NULL) {
         initBSQLBuiltinFuncs();
     }
@@ -163,6 +166,18 @@ void _PG_init(void)
     g_instance.raw_parser_hook[DB_CMPT_B] = (void*)raw_parser;
     g_instance.plsql_parser_hook[DB_CMPT_B] = (void*)plpgsql_yyparse;
     g_instance.llvmIrFilePath[DB_CMPT_B] = "share/postgresql/extension/openGauss_expr_dolphin.ir";
+
+    if (!protocol_inited) {
+        int ret = strcpy_s(g_proto_ctx.database_name.data, NAMEDATALEN, u_sess->proc_cxt.MyProcPort->database_name);
+        securec_check(ret, "\0", "\0");
+
+        define_dolphin_server_guc();
+        server_listen_init();
+        protocol_inited = true;
+        g_instance.listen_cxt.reload_fds = true;
+    } else {
+        define_dolphin_server_guc();
+    }
 }
 
 void _PG_fini(void)
@@ -319,6 +334,7 @@ void init_session_vars(void)
     cxt->enableBCmptMode = false;
     cxt->lockNameList = NIL;
     cxt->scan_from_pl = false;
+    cxt->default_database_name = NULL;
 
     DefineCustomBoolVariable("b_compatibility_mode",
                              "Enable mysql behavior override opengauss's when collision happens.",

@@ -1,4 +1,5 @@
 # contrib/dolphin/Makefile
+protocol = plugin_protocol
 parser = plugin_parser
 utils = plugin_utils
 executor = plugin_executor
@@ -15,7 +16,10 @@ base_dir = contrib/dolphin
 MODULE_big = dolphin
 p=25432
 
-OBJS = $(parser)/analyze.o $(parser)/gram.o $(parser)/hint_gram.o $(parser)/keywords.o $(parser)/kwlookup.o $(parser)/parser.o \
+OBJS = $(protocol)/password.o $(protocol)/server_startup.o $(protocol)/auth.o $(protocol)/handler.o \
+$(protocol)/dqformat.o $(protocol)/bytestream.o $(protocol)/printtup.o
+
+OBJS += $(parser)/analyze.o $(parser)/gram.o $(parser)/hint_gram.o $(parser)/keywords.o $(parser)/kwlookup.o $(parser)/parser.o \
 $(parser)/parse_agg.o $(parser)/parse_clause.o $(parser)/parse_coerce.o $(parser)/parse_collate.o $(parser)/parse_cte.o \
 $(parser)/parse_expr.o $(parser)/parse_func.o $(parser)/parse_hint.o $(parser)/parse_merge.o $(parser)/parse_node.o $(parser)/parse_oper.o $(parser)/parse_param.o \
 $(parser)/parse_relation.o $(parser)/parse_target.o $(parser)/parse_type.o $(parser)/parse_utilcmd.o $(parser)/scansup.o $(parser)/parse_compatibility.o \
@@ -53,8 +57,10 @@ OBJS += $(commands)/functioncmds.o
 
 OBJS += $(pl)/pl_gram.o $(pl)/pl_scanner.o
 
-all $(OBJS): parser utils executor vector commands storage optimizer pl;
+all $(OBJS): protocol parser utils executor vector commands storage optimizer pl;
 
+protocol:
+	make -C $(protocol)
 
 parser:
 	make -C $(parser)
@@ -81,6 +87,7 @@ pl:
 	make -C $(pl)
 
 extra_clean:
+	make clean -C $(protocol)
 	make clean -C $(parser)
 	make clean -C $(utils)
 	make clean -C $(vector)
@@ -109,6 +116,10 @@ tablecmds.o: tablecmds.cpp
 EXTENSION = dolphin
 #a dummy testcase to let 'make check' can run, currently I have no idea how to fix this...
 REGRESS:=dummy
+
+ifdef MJDBC_TEST
+	REGRESS+=b_proto_jdbc
+endif
 
 REGRESS_OPTS = --dlpath=$(top_builddir)/src/test/regress -c 0 -d 1 --single_node -p ${p} --schedule=./parallel_schedule_dolphin --regconf=regress.conf -r 1 -n --keep_last_data=false --temp-config=./make_check_postgresql.conf
 
