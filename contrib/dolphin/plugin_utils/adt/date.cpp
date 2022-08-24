@@ -28,6 +28,7 @@
 #include "utils/numeric.h"
 #include "utils/builtins.h"
 #include "plugin_utils/date.h"
+#include "plugin_utils/year.h"
 #include "plugin_utils/datetime.h"
 #include "utils/formatting.h"
 #include "utils/nabstime.h"
@@ -66,6 +67,22 @@ PG_FUNCTION_INFO_V1_PUBLIC(curdate);
 extern "C" DLL_PUBLIC Datum curdate(PG_FUNCTION_ARGS);
 PG_FUNCTION_INFO_V1_PUBLIC(b_db_statement_start_time);
 extern "C" DLL_PUBLIC Datum b_db_statement_start_time(PG_FUNCTION_ARGS);
+
+/* b compatibility time function */
+PG_FUNCTION_INFO_V1_PUBLIC(makedate);
+extern "C" DLL_PUBLIC Datum makedate(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(maketime);
+extern "C" DLL_PUBLIC Datum maketime(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(sec_to_time);
+extern "C" DLL_PUBLIC Datum sec_to_time(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(subdate_datetime_days_text);
+extern "C" DLL_PUBLIC Datum subdate_datetime_days_text(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(subdate_datetime_interval_text);
+extern "C" DLL_PUBLIC Datum subdate_datetime_interval_text(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(subdate_time_days);
+extern "C" DLL_PUBLIC Datum subdate_time_days(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(subdate_time_interval);
+extern "C" DLL_PUBLIC Datum subdate_time_interval(PG_FUNCTION_ARGS);
 
 /* common code for timetypmodin and timetztypmodin */
 static int32 anytime_typmodin(bool istz, ArrayType* ta)
@@ -3158,4 +3175,384 @@ ScalarVector* vtimestamp_part(PG_FUNCTION_ARGS)
     presult->m_desc.encoded = false;
 
     return presult;
+}
+
+/* makedate()
+ * @Description: Convert yyyy.ddd into date type
+ * @return: Convert result, date type.
+ */
+Datum makedate(PG_FUNCTION_ARGS)
+{
+    int64 year = PG_GETARG_INT64(0);
+    int64 dayofyear = PG_GETARG_INT64(1);
+    DateADT date;
+
+    if (year < B_FORMAT_MIN_YEAR_OF_DATE || year > B_FORMAT_MAX_YEAR_OF_DATE || dayofyear <= 0)
+        PG_RETURN_NULL();
+
+    if (YEAR2_IN_RANGE(year))
+        year = YEAR2_ADJUST_VALUE_20C_21C(year);
+
+    date = date2j(year, 1, 0) + dayofyear;
+    date -= POSTGRES_EPOCH_JDATE;
+    /* Limit day number from year 0001-12-31 to 9999-12-31 */
+    if (date < B_FORMAT_DATEADT_MIN_VALUE || date > B_FORMAT_DATEADT_MAX_VALUE)
+        PG_RETURN_NULL();
+
+    PG_RETURN_DATEADT(date);
+}
+
+/*
+ * @Description: Convert nanoseconds to microseconds and round up, Require: nanoseconds < 1000000000。
+ * @return: int32 in microseconds
+ */
+fsec_t nano2microsecond(uint nanoseconds)
+{
+    fsec_t microseconds;
+    int32 remain;
+    microseconds = nanoseconds / 1000;
+    remain = nanoseconds % 1000;
+    /* round up */
+    if (remain >= 500)
+        microseconds += 1;
+
+    return microseconds;
+}
+
+/*
+ * @Description: Convert NumericVar second value to NumericSec value. Keep 8 digits after the decimal point.
+ * @return: void.
+ */
+void sec_to_numericsec(NumericVar *from, NumericSec *to)
+{
+    if (!from->ndigits) {
+        /* from == 0 */
+        to->int_val = 0;
+        to->frac_val = 0;
+        return;
+    }
+    int int_part = from->weight + 1;
+    int frac_part = from->ndigits - int_part;
+    if (int_part > 2) {
+        to->int_val = NBASE * NBASE;
+        to->frac_val = 0;
+        return;
+    }
+    if (int_part == 2) {
+        to->int_val = from->digits[0] * NBASE + (from->ndigits > 1 ? from->digits[1] : 0);
+    } else if (int_part == 1) {
+        to->int_val = from->digits[0];
+    } else {
+        to->int_val = 0;
+    }
+
+    if (frac_part >= 2) {
+        to->frac_val = from->digits[int_part] * NBASE + from->digits[int_part + 1];
+    } else if (frac_part == 1) {
+        to->frac_val = from->digits[int_part] * NBASE;
+    } else {
+        to->frac_val = 0;
+    }
+
+    if (from->sign) {
+        to->int_val = -to->int_val;
+    }
+}
+
+/* maketime()
+ * @Description: Convert hh, min, sec into time type
+ * @return: Convert result, time type.
+ */
+Datum maketime(PG_FUNCTION_ARGS)
+{
+    int64 hour = PG_GETARG_INT64(0);
+    int64 minute = PG_GETARG_INT64(1);
+    NumericVar tmp;
+    NumericSec second;
+    init_var_from_num(PG_GETARG_NUMERIC(2), &tmp);
+    sec_to_numericsec(&tmp, &second);
+
+    struct pg_tm tt;
+    TimeADT time;
+    bool overflow = 0;
+    bool neg = 0;
+
+    if (minute < 0 || minute >= MINS_PER_HOUR || second.int_val < 0 || second.int_val >= SECS_PER_MINUTE)
+        PG_RETURN_NULL();
+
+    if (hour < 0)
+        neg = 1;
+    if (-hour > UINT_MAX || hour > UINT_MAX)
+        overflow = 1;
+
+    if (!overflow) {
+        tt.tm_hour = (uint)((hour < 0 ? -hour : hour));
+        tt.tm_min = (uint)minute;
+        tt.tm_sec = (uint)second.int_val;
+        fsec_t fsec = nano2microsecond(second.frac_val * 10);
+        tm2time(&tt, fsec, &time);
+        if (neg)
+            time = -time;
+        if (time >= -B_FORMAT_TIME_MAX_VALUE && time <= B_FORMAT_TIME_MAX_VALUE)
+            PG_RETURN_TIMEADT(time);
+    }
+
+    time = neg ? -B_FORMAT_TIME_MAX_VALUE : B_FORMAT_TIME_MAX_VALUE;
+    PG_RETURN_TIMEADT(time);
+}
+
+/* sec_to_time()
+ * @Description: Convert seconds into time type
+ * @return: Convert result, time type.
+ */
+Datum sec_to_time(PG_FUNCTION_ARGS)
+{
+    NumericVar tmp;
+    NumericSec second;
+    init_var_from_num(PG_GETARG_NUMERIC(0), &tmp);
+    sec_to_numericsec(&tmp, &second);
+    struct pg_tm tt;
+    TimeADT time;
+    bool neg = 0;
+    bool overflow = 0;
+    if (second.int_val < 0) {
+        neg = 1;
+        second.int_val = -second.int_val;
+    }
+
+    if (second.int_val >= B_FORMAT_TIME_BOUND * 3600)
+        overflow = 1;
+
+    if (!overflow) {
+        tt.tm_hour = 0;
+        tt.tm_min = 0;
+        tt.tm_sec = (uint) second.int_val; // keep only the integer part
+        fsec_t fsec = nano2microsecond(second.frac_val * 10);
+        tm2time(&tt, fsec, &time);
+        if (neg)
+            time = -time;
+    }
+
+    if (overflow || time < -B_FORMAT_TIME_MAX_VALUE || time > B_FORMAT_TIME_MAX_VALUE)
+        time = neg ? -B_FORMAT_TIME_MAX_VALUE : B_FORMAT_TIME_MAX_VALUE;
+    PG_RETURN_TIMEADT(time);
+}
+
+/*
+ * @Description: Check if a string is in date format.
+ * @return true if input string is in date format, otherwise false
+ */
+bool is_date_format(const char *str)
+{
+    int first_part_len;
+    int number_of_parts;
+    const char *pos = NULL;
+    /* Skip space at start */
+    for (; *str != '\0' && isspace((unsigned char)*str); str++)
+        ;
+
+    /*  Calculate number of digits in first part. */
+    for (pos = str;
+         *pos != '\0' && (isdigit((unsigned char)*pos));
+         pos++)
+        ;
+    first_part_len = (uint)(pos - str);
+
+    for (number_of_parts = 0;
+         *str != '\0' && isdigit((unsigned char)*str);
+         ++number_of_parts) {
+        if (number_of_parts >= 3)
+            return false;
+
+        while (*str != '\0' && isdigit((unsigned char)*str++))
+            ;
+
+        while (*str != '\0') {
+            if (isspace((unsigned char)*str)) {
+                if (number_of_parts != 2)
+                    return false; /* wrong format */
+                str++;
+                continue;
+            }
+            if (!ispunct((unsigned char)*str))
+                break;
+            str++;
+        }
+    }
+
+    if (number_of_parts == 3 ||
+        (number_of_parts == 1 && (first_part_len == 6 || first_part_len == 8)))
+        return true;
+
+    return false;
+}
+
+/*
+ * @Description: Subtract days from a date, giving a new date and assign it to result.
+ * @return: false if parameter date or result out of range, otherwise true
+ */
+bool date_sub_days(DateADT date, int days, DateADT *result)
+{
+    if (date < B_FORMAT_DATEADT_MIN_VALUE || date > B_FORMAT_DATEADT_MAX_VALUE)
+        return false;
+    *result = date - days;
+    if (*result < B_FORMAT_DATEADT_FIRST_YEAR || *result > B_FORMAT_DATEADT_MAX_VALUE)
+        return false;
+    return true;
+}
+
+/*
+ * @Description: Subtract an interval from a date, giving a new date and assign it to result.
+ * @return: false if parameter date or result out of range, otherwise true
+ */
+bool date_sub_interval(DateADT date, Interval *span, DateADT *result)
+{
+    if (date < B_FORMAT_DATEADT_MIN_VALUE || date > B_FORMAT_DATEADT_MAX_VALUE)
+        return false;
+    Timestamp temp =
+        DatumGetTimestamp(DirectFunctionCall2(date_mi_interval, DateADTGetDatum(date), PointerGetDatum(span)));
+    *result = DatumGetDateADT(timestamp2date(temp));
+    if (*result < B_FORMAT_DATEADT_MIN_VALUE || *result > B_FORMAT_DATEADT_MAX_VALUE)
+        return false;
+
+    if (span->time == 0 && span->day == 0)
+        return true;
+
+    if (*result < B_FORMAT_DATEADT_FIRST_YEAR)
+        return false;
+    return true;
+}
+
+/* subdate(Text, int64)
+ * @Description: Subtract days from a date/datetime converted from text, giving a new date/datetime.
+ * The return type is the same as the type of the first parameter (date/datetime). (The actual return
+ * type is CString, and the return type is distinguished by a string in date or datetime format)
+ */
+Datum subdate_datetime_days_text(PG_FUNCTION_ARGS)
+{
+    text* tmp = PG_GETARG_TEXT_PP(0);
+    int64 days = PG_GETARG_INT64(1);
+    char *expr;
+
+    expr = text_to_cstring(tmp);
+
+    if (is_date_format(expr)) {
+        DateADT date, result;
+        date = DatumGetDateADT(DirectFunctionCall1(date_in, CStringGetDatum(expr)));
+        if (date_sub_days(date, days, &result)) {
+            /* The variable datetime or result does not exceed the specified range*/
+            return DirectFunctionCall1(date_text, result);
+        }
+        ereport(ERROR,
+                (errcode(ERRCODE_DATETIME_FIELD_OVERFLOW),
+                 errmsg("date/time field value out of range")));
+        PG_RETURN_NULL();
+    } else {
+        Timestamp datetime, result;
+        datetime = DatumGetTimestamp(
+            DirectFunctionCall3(timestamp_in, CStringGetDatum(expr), ObjectIdGetDatum(InvalidOid), Int32GetDatum(-1)));
+        if (datetime_sub_days(datetime, days, &result)) {
+            /* The variable datetime or result does not exceed the specified range*/
+            return DirectFunctionCall1(datetime_text, result);
+        }
+        ereport(ERROR,
+                (errcode(ERRCODE_DATETIME_FIELD_OVERFLOW),
+                 errmsg("date/time field value out of range")));
+        PG_RETURN_NULL();
+    }
+}
+
+/* subdate(Text, Interval expr unit)
+ * @Description: Subtract days from a date/datetime converted from text, giving a new date/datetime.
+ * The return type is generally the same as the type of the first parameter (date/datetime).An exception
+ * is when the first parameter is of type date and interval contains hours, minutes or seconds,
+ * then the return type is datetime. (The actual return type is CString, and the return type is
+ * distinguished by a string in dete or datetime format)
+ */
+Datum subdate_datetime_interval_text(PG_FUNCTION_ARGS)
+{
+    text* tmp = PG_GETARG_TEXT_PP(0);
+    Interval *span = PG_GETARG_INTERVAL_P(1);
+    char *expr;
+
+    expr = text_to_cstring(tmp);
+
+    if (is_date_format(expr) && span->time == 0) {
+        DateADT date, result;
+        date = DatumGetDateADT(DirectFunctionCall1(date_in, CStringGetDatum(expr)));
+        if (date_sub_interval(date, span, &result))
+            return DirectFunctionCall1(date_text, result);
+        ereport(ERROR,
+                (errcode(ERRCODE_DATETIME_FIELD_OVERFLOW),
+                 errmsg("date/time field value out of range")));
+        PG_RETURN_NULL();
+    } else {
+        Timestamp datetime, result;
+        datetime = DatumGetTimestamp(
+            DirectFunctionCall3(timestamp_in, CStringGetDatum(expr), ObjectIdGetDatum(InvalidOid), Int32GetDatum(-1)));
+        if (datetime_sub_interval(datetime, span, &result))
+            /* The variable datetime or result does not exceed the specified range*/
+            return DirectFunctionCall1(datetime_text, result);
+        ereport(ERROR,
+                (errcode(ERRCODE_DATETIME_FIELD_OVERFLOW),
+                 errmsg("date/time field value out of range")));
+        PG_RETURN_NULL();
+    }
+}
+
+/* subdate(time, int64)
+ * @Description: Subtract days from a time value, giving a new time.The time
+ * value must be a primitive time type and not automatically implicitly converted
+ * from a string).
+ */
+Datum subdate_time_days(PG_FUNCTION_ARGS)
+{
+    TimeADT time = PG_GETARG_TIMEADT(0);
+    int64 days = PG_GETARG_INT64(1);
+    TimeADT time2;
+
+#ifdef HAVE_INT64_TIMESTAMP
+    time2 = days * HOURS_PER_DAY * MINS_PER_HOUR * SECS_PER_MINUTE * USECS_PER_SEC;
+#else
+    time2 = days * HOURS_PER_DAY * MINS_PER_HOUR * SECS_PER_MINUTE;
+#endif
+    time -= time2;
+    if (time >= -B_FORMAT_TIME_MAX_VALUE && time <= B_FORMAT_TIME_MAX_VALUE) {
+        PG_RETURN_TIMEADT(time);
+    }
+    ereport(ERROR,
+            (errcode(ERRCODE_DATETIME_FIELD_OVERFLOW),
+             errmsg("time field value out of range")));
+    PG_RETURN_NULL();
+}
+
+/* subdate(time, interval)
+ * @Description: Subtract interval from a time value, giving a new time. The time
+ * value must be a primitive time type and not automatically implicitly converted
+ * from a string).
+ */
+Datum subdate_time_interval(PG_FUNCTION_ARGS)
+{
+    TimeADT time = PG_GETARG_TIMEADT(0);
+    Interval *span = PG_GETARG_INTERVAL_P(1);
+    TimeADT time2 = span->time;
+    if (span->month != 0) {
+        ereport(ERROR,
+                (errcode(ERRCODE_DATETIME_FIELD_OVERFLOW),
+                 errmsg("time field value out of range")));
+        PG_RETURN_NULL();
+    }
+#ifdef HAVE_INT64_TIMESTAMP
+    time2 += (span->day * HOURS_PER_DAY * MINS_PER_HOUR * SECS_PER_MINUTE * USECS_PER_SEC);
+#else
+    time2 += (span->day * HOURS_PER_DAY * MINS_PER_HOUR * SECS_PER_MINUTE);
+#endif
+    time -= time2;
+    if (time >= -B_FORMAT_TIME_MAX_VALUE && time <= B_FORMAT_TIME_MAX_VALUE) {
+        PG_RETURN_TIMEADT(time);
+    }
+    ereport(ERROR,
+            (errcode(ERRCODE_DATETIME_FIELD_OVERFLOW),
+             errmsg("time field value out of range")));
+    PG_RETURN_NULL();
 }

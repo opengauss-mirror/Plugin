@@ -6079,3 +6079,80 @@ void WalReplicationTimestampToString(WalReplicationTimestampInfo *timeStampInfo,
                   MAXTIMESTAMPLEN + 1);
     securec_check(rc, "\0", "\0");
 }
+
+/*
+ * @Description: Subtract days from a datetime, giving a new datetime and assign it to result.
+ * @return: false if parameter datetime or result out of range, otherwise true
+ */
+bool datetime_sub_days(Timestamp datetime, int days, Timestamp *result)
+{
+    Interval span;
+    if (datetime < B_FORMAT_TIMESTAMP_MIN_VALUE || datetime > B_FORMAT_TIMESTAMP_MAX_VALUE)
+        return false;
+    span.time = 0;
+    span.month = 0;
+    span.day = days;
+    *result = timestamp_mi_interval(datetime, &span);
+    if (*result < B_FORMAT_TIMESTAMP_FIRST_YEAR || *result > B_FORMAT_TIMESTAMP_MAX_VALUE)
+        return false;
+    return true;
+}
+
+/*
+ * @Description: Subtract an interval from a datetime, giving a new datetime and assign it to result.
+ * @return: false if parameter datetime or result out of range, otherwise true
+ */
+bool datetime_sub_interval(Timestamp datetime, Interval *span, Timestamp *result)
+{
+    if (datetime < B_FORMAT_TIMESTAMP_MIN_VALUE || datetime > B_FORMAT_TIMESTAMP_MAX_VALUE)
+        return false;
+    *result = timestamp_mi_interval(datetime, span);
+
+    if (*result < B_FORMAT_TIMESTAMP_MIN_VALUE || *result > B_FORMAT_TIMESTAMP_MAX_VALUE)
+        return false;
+
+    if (span->time == 0 && span->day == 0)
+        return true;
+
+    if (*result < B_FORMAT_TIMESTAMP_FIRST_YEAR)
+        return false;
+    return true;
+}
+
+/* 
+ * @Description: Subtract time from a datetime, giving a new datetime and assign it to result.
+ * @return: false if parameter date or result out of range, otherwise true
+ */
+bool datetime_sub_time(Timestamp datetime, TimeADT time_sub, Timestamp* result)
+{
+    if (datetime < B_FORMAT_TIMESTAMP_MIN_VALUE || datetime > B_FORMAT_TIMESTAMP_MAX_VALUE)
+        return false;
+    // *result = *result - time_sub;
+
+    Interval span;
+    span.month = 0;
+    span.day = 0;
+    span.time = -time_sub;
+
+    *result = DirectFunctionCall2(timestamp_pl_interval, TimestampGetDatum(datetime), PointerGetDatum(&span));
+
+    if (*result < B_FORMAT_TIMESTAMP_MIN_VALUE || *result > B_FORMAT_TIMESTAMP_MAX_VALUE)
+        return false;
+    return true;
+}
+
+/* datetime_to_text()
+ * Convert datetime to text data type.
+ */
+Datum datetime_text(PG_FUNCTION_ARGS)
+{
+    Timestamp timestamp = PG_GETARG_TIMESTAMP(0);
+    char* tmp = NULL;
+    Datum result;
+    tmp = DatumGetCString(DirectFunctionCall1(timestamp_out, timestamp));
+
+    result = DirectFunctionCall1(textin, CStringGetDatum(tmp));
+    pfree_ext(tmp);
+
+    PG_RETURN_DATUM(result);
+}

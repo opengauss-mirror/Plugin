@@ -23,11 +23,17 @@
 #define TIMESTAMP_YYYYMMDD_LEN 8
 #define TIMESTAMP_YYMMDDhhmmss_LEN 12
 #define TIMESTAMP_YYYYMMDDhhmmss_LEN 14
+#define B_FORMAT_TIMESTAMP_MAX_VALUE INT64CONST(252455615999999999) /* datetime 9999-12-31 23:59:59.999999 */
+#define B_FORMAT_TIMESTAMP_MIN_VALUE INT64CONST(-63113904000000000) /* datetime 0000-01-01 00:00:00.000000 */
+#define B_FORMAT_TIMESTAMP_FIRST_YEAR INT64CONST(-63082281600000000) /* datetime 0001-01-01 00:00:00.000000 */
 #define TIMESTAMP_MAX_PRECISION 6
 
 /* compatible with b format datetime and timestamp */
 extern void tm2datetime(struct pg_tm* tm, const fsec_t fsec, Timestamp* result);
 extern void datetime2tm(Timestamp dt, struct pg_tm* tm, fsec_t* fsec);
+bool datetime_sub_days(Timestamp datetime, int days, Timestamp *result);
+bool datetime_sub_interval(Timestamp datetime, Interval *span, Timestamp *result);
+extern Datum datetime_text(PG_FUNCTION_ARGS);
 
 #endif // !FRONTEND_PARSER
 #endif /* TIMESTAMP_H */
