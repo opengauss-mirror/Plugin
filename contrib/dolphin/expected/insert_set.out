@@ -1,0 +1,99 @@
+drop database if exists insert_set;
+NOTICE:  database "insert_set" does not exist, skipping
+create database insert_set dbcompatibility 'B';
+\c insert_set
+create table test_figure(tinyint tinyint, smallint smallint, integer integer, binary_integer binary_integer, bigint bigint);
+insert into test_figure set bigint = 7234134, binary_integer = 1011101, integer = 10000, smallint = 1, tinyint = 3;
+select * from test_figure;
+ tinyint | smallint | integer | binary_integer | bigint  
+---------+----------+---------+----------------+---------
+ 3       |        1 |   10000 |        1011101 | 7234134
+(1 row)
+
+create table test_money(money money);
+insert into test_money set money = 43241;
+select * from test_money;
+   money    
+------------
+ $43,241.00
+(1 row)
+
+create table test_boolean(boolean boolean);
+insert into test_boolean set boolean = true;
+select * from test_boolean;
+ boolean 
+---------
+ t
+(1 row)
+
+create table test_char(char char, varchar varchar, varchar2 varchar2, nvarchar2 nvarchar2, text text, clob clob);
+insert into test_char set clob = 'asfdasdfa', text = 'adfafasdfwrq', nvarchar2 = 'aaaaa', varchar2 = 'test', varchar = 'toowtest', char = 'A';
+select * from test_char;
+ char | varchar  | varchar2 | nvarchar2 |     text     |   clob    
+------+----------+----------+-----------+--------------+-----------
+ A    | toowtest | test     | aaaaa     | adfafasdfwrq | asfdasdfa
+(1 row)
+
+create table test_binary(blob blob, raw raw, bytea bytea);
+insert into test_binary set bytea = '01101', raw = 'AF0189DBE', blob = '1001111101';
+select * from test_binary;
+    blob    |    raw     |    bytea     
+------------+------------+--------------
+ 1001111101 | 0AF0189DBE | \x3031313031
+(1 row)
+
+create table test_time(date date, timestamp timestamp, timestamptz timestamptz, smalldatetime smalldatetime, interval interval, reltime reltime);
+insert into test_time set reltime = '15:38:32', interval = now() - current_timestamp, smalldatetime = '2022-08-15 14:32:43', timestamptz = now(), timestamp = current_timestamp, date=current_date;
+select * from test_time;
+--?.*
+--?.*
+--?.*
+(1 row)
+
+create table test_netid(cidr cidr, inet inet, macaddr macaddr);
+insert into test_netid set macaddr = '08002b:010203', inet = '192.168.12.234', cidr = '10';
+select * from test_netid;
+    cidr    |      inet      |      macaddr      
+------------+----------------+-------------------
+ 10.0.0.0/8 | 192.168.12.234 | 08:00:2b:01:02:03
+(1 row)
+
+insert into test_netid set macaddr = 18023b:2323, inet = 192.168.122.1;
+ERROR:  syntax error at or near "b"
+LINE 1: insert into test_netid set macaddr = 18023b:2323, inet = 192...
+                                                  ^
+select * from test_netid;
+    cidr    |      inet      |      macaddr      
+------------+----------------+-------------------
+ 10.0.0.0/8 | 192.168.12.234 | 08:00:2b:01:02:03
+(1 row)
+
+create table test_error(id int, name varchar);
+insert into test_error set name = 'test', id=1, name='ttttt';
+ERROR:  column "name" specified more than once
+LINE 1: insert into test_error set name = 'test', id=1, name='ttttt'...
+                                                        ^
+select * from test_error;
+ id | name 
+----+------
+(0 rows)
+
+insert into test_error set name = 1, id='@';
+ERROR:  invalid input syntax for integer: "@"
+LINE 1: insert into test_error set name = 1, id='@';
+                                                ^
+CONTEXT:  referenced column: id
+select * from test_error;
+ id | name 
+----+------
+(0 rows)
+
+insert into test_error set name = 23;
+select * from test_error;
+ id | name 
+----+------
+    | 23
+(1 row)
+
+\c postgres
+drop database insert_set;
