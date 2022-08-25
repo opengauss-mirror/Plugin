@@ -6,6 +6,7 @@ adt = $(utils)/adt
 mb = $(utils)/mb
 vector = plugin_vector
 storage = plugin_storage
+optimizer = plugin_optimizer
 subdir = contrib/dolphin
 top_builddir = ../..
 base_dir = contrib/dolphin
@@ -42,7 +43,9 @@ OBJS += $(executor)/execQual.o
 
 OBJS += $(storage)/hashfunc.o
 
-all $(OBJS): parser utils executor vector storage;
+OBJS += $(optimizer)/streamwalker.o
+
+all $(OBJS): parser utils executor vector storage optimizer;
 
 parser:
 	make -C $(parser)
@@ -59,12 +62,16 @@ executor:
 storage:
 	make -C $(storage)
 
+optimizer:
+	make -C $(optimizer)
+
 extra_clean:
 	make clean -C $(parser)
 	make clean -C $(utils)
 	make clean -C $(vector)
 	make clean -C $(executor)
 	make clean -C $(storage)
+	make clean -C $(optimizer)
 clean: extra_clean
 
 dolphin--1.0.sql: sql_script/*

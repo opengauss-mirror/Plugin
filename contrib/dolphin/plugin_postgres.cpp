@@ -107,7 +107,7 @@ static const int LOADER_COL_BUF_CNT = 5;
 static uint32 dolphin_index;
 extern void set_hypopg_prehook(ProcessUtility_hook_type func);
 extern void set_pgaudit_prehook(ProcessUtility_hook_type func);
-
+extern bool check_plugin_function(Oid funcId);
 void ProcessUtilityMain(Node* parse_tree, const char* query_string, ParamListInfo params, bool is_top_level,
     DestReceiver* dest,
 #ifdef PGXC
@@ -187,6 +187,7 @@ void init_plugin_object()
     u_sess->hook_cxt.transformStmtHook = (void*)transformStmt;
     u_sess->hook_cxt.execInitExprHook = (void*)ExecInitExpr;
     u_sess->hook_cxt.computeHashHook  = (void*)compute_hash_default;
+    u_sess->hook_cxt.aggSmpHook = (void*)check_plugin_function;
     set_processutility_prehook();
     set_default_guc();
 }

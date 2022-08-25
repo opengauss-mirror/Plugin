@@ -703,6 +703,7 @@ static int GetCategoryPriority(TYPCATEGORY categoryoid)
 
     if (u_sess->attr.attr_sql.convert_string_to_digit) {
         switch (categoryoid) {
+            case ('C'):
             case ('N'): /*Numeric*/
                 result = 4;
                 break;
@@ -727,6 +728,7 @@ static int GetCategoryPriority(TYPCATEGORY categoryoid)
             case ('T'): /*Timespan*/
                 result = 2;
                 break;
+            case ('C'):
             case ('N'): /*Numeric*/
                 result = 3;
                 break;

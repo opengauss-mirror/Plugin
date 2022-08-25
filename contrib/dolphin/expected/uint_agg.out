@@ -290,13 +290,13 @@ select variance(a), variance(b) from u4;
 select listagg(a) within group(order by a) from u4;
         listagg        
 -----------------------
- 042949672954294967295
+ 429496729542949672950
 (1 row)
 
 select listagg(a, ',') within group(order by a) from u4;
          listagg         
 -------------------------
- 0,4294967295,4294967295
+ 4294967295,4294967295,0
 (1 row)
 
 --uint8
@@ -308,10 +308,18 @@ select avg(a), avg(b) from u8;
  12297829382473034410 | 12297829382473034410
 (1 row)
 
-select bit_and(a), bit_and(b) from u8;
-ERROR:  bigint out of range
-select bit_or(a), bit_or(b) from u8;
-ERROR:  bigint out of range
+select bit_and(a) from u8;
+ bit_and 
+---------
+ 0
+(1 row)
+
+select bit_or(a) from u8;
+        bit_or        
+----------------------
+ 18446744073709551615
+(1 row)
+
 select count(a), count(b) from u8;
  count | count 
 -------+-------
@@ -381,13 +389,13 @@ select variance(a), variance(b) from u8;
 select listagg(a) within group(order by a) from u8;
                   listagg                  
 -------------------------------------------
- 01844674407370955161518446744073709551615
+ 18446744073709551615184467440737095516150
 (1 row)
 
 select listagg(a, ',') within group(order by a) from u8;
                    listagg                   
 ---------------------------------------------
- 0,18446744073709551615,18446744073709551615
+ 18446744073709551615,18446744073709551615,0
 (1 row)
 
 create table smp_test(a uint4, b uint8);
@@ -395,31 +403,43 @@ insert into smp_test select generate_series(1, 100000), generate_series(2, 10000
 insert into smp_test select a + 100000, b from smp_test;
 set query_dop = 2;
 explain(costs off, verbose) select avg(a), avg(b) from smp_test;
-            QUERY PLAN             
------------------------------------
+                          QUERY PLAN                          
+--------------------------------------------------------------
  Aggregate
-   Output: avg(a), avg(b)
-   ->  Seq Scan on public.smp_test
-         Output: a, b
-(4 rows)
+   Output: pg_catalog.avg((avg(a))), pg_catalog.avg((avg(b)))
+   ->  Streaming(type: LOCAL GATHER dop: 1/2)
+         Output: (avg(a)), (avg(b))
+         ->  Aggregate
+               Output: avg(a), avg(b)
+               ->  Seq Scan on public.smp_test
+                     Output: a, b
+(8 rows)
 
 explain(costs off, verbose) select bit_and(a), bit_and(b) from smp_test;
-            QUERY PLAN             
------------------------------------
+                       QUERY PLAN                       
+--------------------------------------------------------
  Aggregate
-   Output: bit_and(a), bit_and(b)
-   ->  Seq Scan on public.smp_test
-         Output: a, b
-(4 rows)
+   Output: bit_and((bit_and(a))), bit_and((bit_and(b)))
+   ->  Streaming(type: LOCAL GATHER dop: 1/2)
+         Output: (bit_and(a)), (bit_and(b))
+         ->  Aggregate
+               Output: bit_and(a), bit_and(b)
+               ->  Seq Scan on public.smp_test
+                     Output: a, b
+(8 rows)
 
 explain(costs off, verbose) select bit_or(a), bit_or(b) from smp_test;
-            QUERY PLAN             
------------------------------------
+                     QUERY PLAN                     
+----------------------------------------------------
  Aggregate
-   Output: bit_or(a), bit_or(b)
-   ->  Seq Scan on public.smp_test
-         Output: a, b
-(4 rows)
+   Output: bit_or((bit_or(a))), bit_or((bit_or(b)))
+   ->  Streaming(type: LOCAL GATHER dop: 1/2)
+         Output: (bit_or(a)), (bit_or(b))
+         ->  Aggregate
+               Output: bit_or(a), bit_or(b)
+               ->  Seq Scan on public.smp_test
+                     Output: a, b
+(8 rows)
 
 explain(costs off, verbose) select count(a), count(b) from smp_test;
                    QUERY PLAN                   
@@ -444,85 +464,121 @@ explain(costs off, verbose) select count(distinct a), count(distinct b) from smp
 (4 rows)
 
 explain(costs off, verbose) select max(a), max(b) from smp_test;
-            QUERY PLAN             
------------------------------------
+                  QUERY PLAN                   
+-----------------------------------------------
  Aggregate
-   Output: max(a), max(b)
-   ->  Seq Scan on public.smp_test
-         Output: a, b
-(4 rows)
+   Output: max((max(a))), max((max(b)))
+   ->  Streaming(type: LOCAL GATHER dop: 1/2)
+         Output: (max(a)), (max(b))
+         ->  Aggregate
+               Output: max(a), max(b)
+               ->  Seq Scan on public.smp_test
+                     Output: a, b
+(8 rows)
 
 explain(costs off, verbose) select min(a), min(b) from smp_test;
-            QUERY PLAN             
------------------------------------
+                  QUERY PLAN                   
+-----------------------------------------------
  Aggregate
-   Output: min(a), min(b)
-   ->  Seq Scan on public.smp_test
-         Output: a, b
-(4 rows)
+   Output: min((min(a))), min((min(b)))
+   ->  Streaming(type: LOCAL GATHER dop: 1/2)
+         Output: (min(a)), (min(b))
+         ->  Aggregate
+               Output: min(a), min(b)
+               ->  Seq Scan on public.smp_test
+                     Output: a, b
+(8 rows)
 
 explain(costs off, verbose) select stddev(a), stddev(b) from smp_test;
-            QUERY PLAN             
------------------------------------
+                                QUERY PLAN                                
+--------------------------------------------------------------------------
  Aggregate
-   Output: stddev(a), stddev(b)
-   ->  Seq Scan on public.smp_test
-         Output: a, b
-(4 rows)
+   Output: pg_catalog.stddev((stddev(a))), pg_catalog.stddev((stddev(b)))
+   ->  Streaming(type: LOCAL GATHER dop: 1/2)
+         Output: (stddev(a)), (stddev(b))
+         ->  Aggregate
+               Output: stddev(a), stddev(b)
+               ->  Seq Scan on public.smp_test
+                     Output: a, b
+(8 rows)
 
 explain(costs off, verbose) select stddev_pop(a), stddev_pop(b) from smp_test;
-               QUERY PLAN               
-----------------------------------------
+                                        QUERY PLAN                                        
+------------------------------------------------------------------------------------------
  Aggregate
-   Output: stddev_pop(a), stddev_pop(b)
-   ->  Seq Scan on public.smp_test
-         Output: a, b
-(4 rows)
+   Output: pg_catalog.stddev_pop((stddev_pop(a))), pg_catalog.stddev_pop((stddev_pop(b)))
+   ->  Streaming(type: LOCAL GATHER dop: 1/2)
+         Output: (stddev_pop(a)), (stddev_pop(b))
+         ->  Aggregate
+               Output: stddev_pop(a), stddev_pop(b)
+               ->  Seq Scan on public.smp_test
+                     Output: a, b
+(8 rows)
 
 explain(costs off, verbose) select stddev_samp(a), stddev_samp(b) from smp_test;
-                QUERY PLAN                
-------------------------------------------
+                                          QUERY PLAN                                          
+----------------------------------------------------------------------------------------------
  Aggregate
-   Output: stddev_samp(a), stddev_samp(b)
-   ->  Seq Scan on public.smp_test
-         Output: a, b
-(4 rows)
+   Output: pg_catalog.stddev_samp((stddev_samp(a))), pg_catalog.stddev_samp((stddev_samp(b)))
+   ->  Streaming(type: LOCAL GATHER dop: 1/2)
+         Output: (stddev_samp(a)), (stddev_samp(b))
+         ->  Aggregate
+               Output: stddev_samp(a), stddev_samp(b)
+               ->  Seq Scan on public.smp_test
+                     Output: a, b
+(8 rows)
 
 explain(costs off, verbose) select sum(a), sum(b) from smp_test;
-            QUERY PLAN             
------------------------------------
+                          QUERY PLAN                          
+--------------------------------------------------------------
  Aggregate
-   Output: sum(a), sum(b)
-   ->  Seq Scan on public.smp_test
-         Output: a, b
-(4 rows)
+   Output: pg_catalog.sum((sum(a))), pg_catalog.sum((sum(b)))
+   ->  Streaming(type: LOCAL GATHER dop: 1/2)
+         Output: (sum(a)), (sum(b))
+         ->  Aggregate
+               Output: sum(a), sum(b)
+               ->  Seq Scan on public.smp_test
+                     Output: a, b
+(8 rows)
 
 explain(costs off, verbose) select var_pop(a), var_pop(b) from smp_test;
-            QUERY PLAN             
------------------------------------
+                                  QUERY PLAN                                  
+------------------------------------------------------------------------------
  Aggregate
-   Output: var_pop(a), var_pop(b)
-   ->  Seq Scan on public.smp_test
-         Output: a, b
-(4 rows)
+   Output: pg_catalog.var_pop((var_pop(a))), pg_catalog.var_pop((var_pop(b)))
+   ->  Streaming(type: LOCAL GATHER dop: 1/2)
+         Output: (var_pop(a)), (var_pop(b))
+         ->  Aggregate
+               Output: var_pop(a), var_pop(b)
+               ->  Seq Scan on public.smp_test
+                     Output: a, b
+(8 rows)
 
 explain(costs off, verbose) select var_samp(a), var_samp(b) from smp_test;
-             QUERY PLAN             
-------------------------------------
+                                    QUERY PLAN                                    
+----------------------------------------------------------------------------------
  Aggregate
-   Output: var_samp(a), var_samp(b)
-   ->  Seq Scan on public.smp_test
-         Output: a, b
-(4 rows)
+   Output: pg_catalog.var_samp((var_samp(a))), pg_catalog.var_samp((var_samp(b)))
+   ->  Streaming(type: LOCAL GATHER dop: 1/2)
+         Output: (var_samp(a)), (var_samp(b))
+         ->  Aggregate
+               Output: var_samp(a), var_samp(b)
+               ->  Seq Scan on public.smp_test
+                     Output: a, b
+(8 rows)
 
 explain(costs off, verbose) select variance(a), variance(b) from smp_test;
-             QUERY PLAN             
-------------------------------------
+                                    QUERY PLAN                                    
+----------------------------------------------------------------------------------
  Aggregate
-   Output: variance(a), variance(b)
-   ->  Seq Scan on public.smp_test
-         Output: a, b
-(4 rows)
+   Output: pg_catalog.variance((variance(a))), pg_catalog.variance((variance(b)))
+   ->  Streaming(type: LOCAL GATHER dop: 1/2)
+         Output: (variance(a)), (variance(b))
+         ->  Aggregate
+               Output: variance(a), variance(b)
+               ->  Seq Scan on public.smp_test
+                     Output: a, b
+(8 rows)
 
 explain(costs off, verbose) select listagg(a) within group(order by a) from smp_test;
                     QUERY PLAN                    

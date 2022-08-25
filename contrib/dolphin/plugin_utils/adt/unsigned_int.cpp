@@ -226,6 +226,97 @@ Datum uint1cmp(PG_FUNCTION_ARGS)
         PG_RETURN_INT32(-1);
 }
 
+Datum uint12cmp(PG_FUNCTION_ARGS)
+{
+    uint8 arg1 = PG_GETARG_UINT8(0);
+    uint16 arg2 = PG_GETARG_UINT16(1);
+
+    if (arg1 > arg2)
+        PG_RETURN_INT32(1);
+    else if (arg1 == arg2)
+        PG_RETURN_INT32(0);
+    else
+        PG_RETURN_INT32(-1);
+}
+
+Datum uint14cmp(PG_FUNCTION_ARGS)
+{
+    uint8 arg1 = PG_GETARG_UINT8(0);
+    uint32 arg2 = PG_GETARG_UINT32(1);
+
+    if (arg1 > arg2)
+        PG_RETURN_INT32(1);
+    else if (arg1 == arg2)
+        PG_RETURN_INT32(0);
+    else
+        PG_RETURN_INT32(-1);
+}
+
+Datum uint18cmp(PG_FUNCTION_ARGS)
+{
+    uint8 arg1 = PG_GETARG_UINT8(0);
+    uint64 arg2 = PG_GETARG_UINT64(1);
+
+    if (arg1 > arg2)
+        PG_RETURN_INT32(1);
+    else if (arg1 == arg2)
+        PG_RETURN_INT32(0);
+    else
+        PG_RETURN_INT32(-1);
+}
+
+Datum uint1_int1cmp(PG_FUNCTION_ARGS)
+{
+    uint8 arg1 = PG_GETARG_UINT8(0);
+    uint8 arg2 = PG_GETARG_UINT8(1);
+
+    if (arg1 > arg2)
+        PG_RETURN_INT32(1);
+    else if (arg1 == arg2)
+        PG_RETURN_INT32(0);
+    else
+        PG_RETURN_INT32(-1);
+}
+
+Datum uint1_int2cmp(PG_FUNCTION_ARGS)
+{
+    uint8 arg1 = PG_GETARG_UINT8(0);
+    int16 arg2 = PG_GETARG_INT16(1);
+
+    if ((int16)arg1 > arg2)
+        PG_RETURN_INT32(1);
+    else if ((int16)arg1 == arg2)
+        PG_RETURN_INT32(0);
+    else
+        PG_RETURN_INT32(-1);
+}
+
+Datum uint1_int4cmp(PG_FUNCTION_ARGS)
+{
+    uint8 arg1 = PG_GETARG_UINT8(0);
+    int32 arg2 = PG_GETARG_INT32(1);
+
+    if ((int32)arg1 > arg2)
+        PG_RETURN_INT32(1);
+    else if ((int32)arg1 == arg2)
+        PG_RETURN_INT32(0);
+    else
+        PG_RETURN_INT32(-1);
+}
+
+Datum uint1_int8cmp(PG_FUNCTION_ARGS)
+{
+    uint8 arg1 = PG_GETARG_UINT8(0);
+    int64 arg2 = PG_GETARG_INT64(1);
+
+    if ((int64)arg1 > arg2)
+        PG_RETURN_INT32(1);
+    else if ((int64)arg1 == arg2)
+        PG_RETURN_INT32(0);
+    else
+        PG_RETURN_INT32(-1);
+}
+
 /*
  * 		===================
  * 		CONVERSION ROUTINES
@@ -644,6 +735,71 @@ Datum uint2cmp(PG_FUNCTION_ARGS)
     if (arg1 > arg2)
         PG_RETURN_INT32(1);
     else if (arg1 == arg2)
+        PG_RETURN_INT32(0);
+    else
+        PG_RETURN_INT32(-1);
+}
+
+Datum uint24cmp(PG_FUNCTION_ARGS)
+{
+    uint16 arg1 = PG_GETARG_UINT16(0);
+    uint32 arg2 = PG_GETARG_UINT32(1);
+
+    if (arg1 > arg2)
+        PG_RETURN_INT32(1);
+    else if (arg1 == arg2)
+        PG_RETURN_INT32(0);
+    else
+        PG_RETURN_INT32(-1);
+}
+
+Datum uint28cmp(PG_FUNCTION_ARGS)
+{
+    uint16 arg1 = PG_GETARG_UINT16(0);
+    uint64 arg2 = PG_GETARG_UINT64(1);
+
+    if (arg1 > arg2)
+        PG_RETURN_INT32(1);
+    else if (arg1 == arg2)
+        PG_RETURN_INT32(0);
+    else
+        PG_RETURN_INT32(-1);
+}
+
+Datum uint2_int2cmp(PG_FUNCTION_ARGS)
+{
+    uint16 arg1 = PG_GETARG_UINT16(0);
+    int16 arg2 = PG_GETARG_INT16(1);
+
+    if ((int32)arg1 > (int32)arg2)
+        PG_RETURN_INT32(1);
+    else if ((int32)arg1 == (int32)arg2)
+        PG_RETURN_INT32(0);
+    else
+        PG_RETURN_INT32(-1);
+}
+
+Datum uint2_int4cmp(PG_FUNCTION_ARGS)
+{
+    uint16 arg1 = PG_GETARG_UINT16(0);
+    int32 arg2 = PG_GETARG_INT32(1);
+
+    if ((int32)arg1 > (int32)arg2)
+        PG_RETURN_INT32(1);
+    else if ((int32)arg1 == (int32)arg2)
+        PG_RETURN_INT32(0);
+    else
+        PG_RETURN_INT32(-1);
+}
+
+Datum uint2_int8cmp(PG_FUNCTION_ARGS)
+{
+    uint16 arg1 = PG_GETARG_UINT16(0);
+    int64 arg2 = PG_GETARG_INT64(1);
+
+    if ((int64)arg1 > arg2)
+        PG_RETURN_INT32(1);
+    else if ((int64)arg1 == arg2)
         PG_RETURN_INT32(0);
     else
         PG_RETURN_INT32(-1);
@@ -1104,6 +1260,45 @@ Datum uint4cmp(PG_FUNCTION_ARGS)
     if (arg1 > arg2)
         PG_RETURN_INT32(1);
     else if (arg1 == arg2)
+        PG_RETURN_INT32(0);
+    else
+        PG_RETURN_INT32(-1);
+}
+
+Datum uint48cmp(PG_FUNCTION_ARGS)
+{
+    uint32 arg1 = PG_GETARG_UINT32(0);
+    uint64 arg2 = PG_GETARG_UINT64(1);
+
+    if (arg1 > arg2)
+        PG_RETURN_INT32(1);
+    else if (arg1 == arg2)
+        PG_RETURN_INT32(0);
+    else
+        PG_RETURN_INT32(-1);
+}
+
+Datum uint4_int4cmp(PG_FUNCTION_ARGS)
+{
+    uint32 arg1 = PG_GETARG_UINT32(0);
+    int32 arg2 = PG_GETARG_INT32(1);
+
+    if ((int64)arg1 > (int64)arg2)
+        PG_RETURN_INT32(1);
+    else if ((int64)arg1 == (int64)arg2)
+        PG_RETURN_INT32(0);
+    else
+        PG_RETURN_INT32(-1);
+}
+
+Datum uint4_int8cmp(PG_FUNCTION_ARGS)
+{
+    uint32 arg1 = PG_GETARG_UINT32(0);
+    int64 arg2 = PG_GETARG_INT64(1);
+
+    if ((int64)arg1 > arg2)
+        PG_RETURN_INT32(1);
+    else if ((int64)arg1 == arg2)
         PG_RETURN_INT32(0);
     else
         PG_RETURN_INT32(-1);
@@ -2267,6 +2462,19 @@ Datum uint8cmp(PG_FUNCTION_ARGS)
     if (arg1 > arg2)
         PG_RETURN_INT32(1);
     else if (arg1 == arg2)
+        PG_RETURN_INT32(0);
+    else
+        PG_RETURN_INT32(-1);
+}
+
+Datum uint8_int8cmp(PG_FUNCTION_ARGS)
+{
+    uint64 arg1 = PG_GETARG_UINT64(0);
+    int64 arg2 = PG_GETARG_INT64(1);
+
+    if ((int128)arg1 > (int128)arg2)
+        PG_RETURN_INT32(1);
+    else if ((int128)arg1 == (int128)arg2)
         PG_RETURN_INT32(0);
     else
         PG_RETURN_INT32(-1);
@@ -3499,4 +3707,548 @@ Datum int8_and_uint8(PG_FUNCTION_ARGS)
     uint64 arg2 = PG_GETARG_UINT64(1);
 
     PG_RETURN_UINT64(arg1 & arg2);
+}
+
+Datum uint1_uint2_eq(PG_FUNCTION_ARGS)
+{
+    uint8 arg1 = PG_GETARG_UINT8(0);
+    uint16 arg2 = PG_GETARG_UINT16(1);
+
+    PG_RETURN_BOOL(arg1 == arg2);
+}
+
+Datum uint1_uint2_lt(PG_FUNCTION_ARGS)
+{
+    uint8 arg1 = PG_GETARG_UINT8(0);
+    uint16 arg2 = PG_GETARG_UINT16(1);
+
+    PG_RETURN_BOOL(arg1 < arg2);
+}
+
+Datum uint1_uint2_le(PG_FUNCTION_ARGS)
+{
+    uint8 arg1 = PG_GETARG_UINT8(0);
+    uint16 arg2 = PG_GETARG_UINT16(1);
+
+    PG_RETURN_BOOL(arg1 <= arg2);
+}
+
+Datum uint1_uint2_gt(PG_FUNCTION_ARGS)
+{
+    uint8 arg1 = PG_GETARG_UINT8(0);
+    uint16 arg2 = PG_GETARG_UINT16(1);
+
+    PG_RETURN_BOOL(arg1 > arg2);
+}
+
+Datum uint1_uint2_ge(PG_FUNCTION_ARGS)
+{
+    uint8 arg1 = PG_GETARG_UINT8(0);
+    uint16 arg2 = PG_GETARG_UINT16(1);
+
+    PG_RETURN_BOOL(arg1 >= arg2);
+}
+
+Datum uint1_uint4_eq(PG_FUNCTION_ARGS)
+{
+    uint8 arg1 = PG_GETARG_UINT8(0);
+    uint32 arg2 = PG_GETARG_UINT32(1);
+
+    PG_RETURN_BOOL(arg1 == arg2);
+}
+
+Datum uint1_uint4_lt(PG_FUNCTION_ARGS)
+{
+    uint8 arg1 = PG_GETARG_UINT8(0);
+    uint32 arg2 = PG_GETARG_UINT32(1);
+
+    PG_RETURN_BOOL(arg1 < arg2);
+}
+
+Datum uint1_uint4_le(PG_FUNCTION_ARGS)
+{
+    uint8 arg1 = PG_GETARG_UINT8(0);
+    uint32 arg2 = PG_GETARG_UINT32(1);
+
+    PG_RETURN_BOOL(arg1 <= arg2);
+}
+
+Datum uint1_uint4_gt(PG_FUNCTION_ARGS)
+{
+    uint8 arg1 = PG_GETARG_UINT8(0);
+    uint32 arg2 = PG_GETARG_UINT32(1);
+
+    PG_RETURN_BOOL(arg1 > arg2);
+}
+
+Datum uint1_uint4_ge(PG_FUNCTION_ARGS)
+{
+    uint8 arg1 = PG_GETARG_UINT8(0);
+    uint32 arg2 = PG_GETARG_UINT32(1);
+
+    PG_RETURN_BOOL(arg1 >= arg2);
+}
+ 
+Datum uint1_uint8_eq(PG_FUNCTION_ARGS)
+{
+    uint8 arg1 = PG_GETARG_UINT8(0);
+    uint64 arg2 = PG_GETARG_UINT64(1);
+
+    PG_RETURN_BOOL(arg1 == arg2);
+}
+
+Datum uint1_uint8_lt(PG_FUNCTION_ARGS)
+{
+    uint8 arg1 = PG_GETARG_UINT8(0);
+    uint64 arg2 = PG_GETARG_UINT64(1);
+
+    PG_RETURN_BOOL(arg1 < arg2);
+}
+
+Datum uint1_uint8_le(PG_FUNCTION_ARGS)
+{
+    uint8 arg1 = PG_GETARG_UINT8(0);
+    uint64 arg2 = PG_GETARG_UINT64(1);
+
+    PG_RETURN_BOOL(arg1 <= arg2);
+}
+
+Datum uint1_uint8_gt(PG_FUNCTION_ARGS)
+{
+    uint8 arg1 = PG_GETARG_UINT8(0);
+    uint64 arg2 = PG_GETARG_UINT64(1);
+
+    PG_RETURN_BOOL(arg1 > arg2);
+}
+
+Datum uint1_uint8_ge(PG_FUNCTION_ARGS)
+{
+    uint8 arg1 = PG_GETARG_UINT8(0);
+    uint64 arg2 = PG_GETARG_UINT64(1);
+
+    PG_RETURN_BOOL(arg1 >= arg2);
+}
+
+Datum uint2_uint4_eq(PG_FUNCTION_ARGS)
+{
+    uint16 arg1 = PG_GETARG_UINT16(0);
+    uint32 arg2 = PG_GETARG_UINT32(1);
+
+    PG_RETURN_BOOL(arg1 == arg2);
+}
+
+Datum uint2_uint4_lt(PG_FUNCTION_ARGS)
+{
+    uint16 arg1 = PG_GETARG_UINT16(0);
+    uint32 arg2 = PG_GETARG_UINT32(1);
+
+    PG_RETURN_BOOL(arg1 < arg2);
+}
+
+Datum uint2_uint4_le(PG_FUNCTION_ARGS)
+{
+    uint16 arg1 = PG_GETARG_UINT16(0);
+    uint32 arg2 = PG_GETARG_UINT32(1);
+
+    PG_RETURN_BOOL(arg1 <= arg2);
+}
+
+Datum uint2_uint4_gt(PG_FUNCTION_ARGS)
+{
+    uint16 arg1 = PG_GETARG_UINT16(0);
+    uint32 arg2 = PG_GETARG_UINT32(1);
+
+    PG_RETURN_BOOL(arg1 > arg2);
+}
+
+Datum uint2_uint4_ge(PG_FUNCTION_ARGS)
+{
+    uint16 arg1 = PG_GETARG_UINT16(0);
+    uint32 arg2 = PG_GETARG_UINT32(1);
+
+    PG_RETURN_BOOL(arg1 >= arg2);
+}
+ 
+Datum uint2_uint8_eq(PG_FUNCTION_ARGS)
+{
+    uint16 arg1 = PG_GETARG_UINT16(0);
+    uint64 arg2 = PG_GETARG_UINT64(1);
+
+    PG_RETURN_BOOL(arg1 == arg2);
+}
+
+Datum uint2_uint8_lt(PG_FUNCTION_ARGS)
+{
+    uint16 arg1 = PG_GETARG_UINT16(0);
+    uint64 arg2 = PG_GETARG_UINT64(1);
+
+    PG_RETURN_BOOL(arg1 < arg2);
+}
+
+Datum uint2_uint8_le(PG_FUNCTION_ARGS)
+{
+    uint16 arg1 = PG_GETARG_UINT16(0);
+    uint64 arg2 = PG_GETARG_UINT64(1);
+
+    PG_RETURN_BOOL(arg1 <= arg2);
+}
+
+Datum uint2_uint8_gt(PG_FUNCTION_ARGS)
+{
+    uint16 arg1 = PG_GETARG_UINT16(0);
+    uint64 arg2 = PG_GETARG_UINT64(1);
+
+    PG_RETURN_BOOL(arg1 > arg2);
+}
+
+Datum uint2_uint8_ge(PG_FUNCTION_ARGS)
+{
+    uint16 arg1 = PG_GETARG_UINT16(0);
+    uint64 arg2 = PG_GETARG_UINT64(1);
+
+    PG_RETURN_BOOL(arg1 >= arg2);
+}
+
+Datum uint4_uint8_eq(PG_FUNCTION_ARGS)
+{
+    uint32 arg1 = PG_GETARG_UINT32(0);
+    uint64 arg2 = PG_GETARG_UINT64(1);
+
+    PG_RETURN_BOOL(arg1 == arg2);
+}
+
+Datum uint4_uint8_lt(PG_FUNCTION_ARGS)
+{
+    uint32 arg1 = PG_GETARG_UINT32(0);
+    uint64 arg2 = PG_GETARG_UINT64(1);
+
+    PG_RETURN_BOOL(arg1 < arg2);
+}
+
+Datum uint4_uint8_le(PG_FUNCTION_ARGS)
+{
+    uint32 arg1 = PG_GETARG_UINT32(0);
+    uint64 arg2 = PG_GETARG_UINT64(1);
+
+    PG_RETURN_BOOL(arg1 <= arg2);
+}
+
+Datum uint4_uint8_gt(PG_FUNCTION_ARGS)
+{
+    uint32 arg1 = PG_GETARG_UINT32(0);
+    uint64 arg2 = PG_GETARG_UINT64(1);
+
+    PG_RETURN_BOOL(arg1 > arg2);
+}
+
+Datum uint4_uint8_ge(PG_FUNCTION_ARGS)
+{
+    uint32 arg1 = PG_GETARG_UINT32(0);
+    uint64 arg2 = PG_GETARG_UINT64(1);
+
+    PG_RETURN_BOOL(arg1 >= arg2);
+}
+
+Datum uint1_int2_eq(PG_FUNCTION_ARGS)
+{
+    uint8 arg1 = PG_GETARG_UINT8(0);
+    int16 arg2 = PG_GETARG_INT16(1);
+
+    PG_RETURN_BOOL(arg1 == arg2);
+}
+
+Datum uint1_int2_lt(PG_FUNCTION_ARGS)
+{
+    uint8 arg1 = PG_GETARG_UINT8(0);
+    int16 arg2 = PG_GETARG_INT16(1);
+
+    PG_RETURN_BOOL(arg1 < arg2);
+}
+
+Datum uint1_int2_le(PG_FUNCTION_ARGS)
+{
+    uint8 arg1 = PG_GETARG_UINT8(0);
+    int16 arg2 = PG_GETARG_INT16(1);
+
+    PG_RETURN_BOOL(arg1 <= arg2);
+}
+
+Datum uint1_int2_gt(PG_FUNCTION_ARGS)
+{
+    uint8 arg1 = PG_GETARG_UINT8(0);
+    int16 arg2 = PG_GETARG_INT16(1);
+
+    PG_RETURN_BOOL(arg1 > arg2);
+}
+
+Datum uint1_int2_ge(PG_FUNCTION_ARGS)
+{
+    uint8 arg1 = PG_GETARG_UINT8(0);
+    int16 arg2 = PG_GETARG_INT16(1);
+
+    PG_RETURN_BOOL(arg1 >= arg2);
+}
+
+Datum uint1_int4_eq(PG_FUNCTION_ARGS)
+{
+    uint8 arg1 = PG_GETARG_UINT8(0);
+    int32 arg2 = PG_GETARG_INT32(1);
+
+    PG_RETURN_BOOL(arg1 == arg2);
+}
+
+Datum uint1_int4_lt(PG_FUNCTION_ARGS)
+{
+    uint8 arg1 = PG_GETARG_UINT8(0);
+    int32 arg2 = PG_GETARG_INT32(1);
+
+    PG_RETURN_BOOL(arg1 < arg2);
+}
+
+Datum uint1_int4_le(PG_FUNCTION_ARGS)
+{
+    uint8 arg1 = PG_GETARG_UINT8(0);
+    int32 arg2 = PG_GETARG_INT32(1);
+
+    PG_RETURN_BOOL(arg1 <= arg2);
+}
+
+Datum uint1_int4_gt(PG_FUNCTION_ARGS)
+{
+    uint8 arg1 = PG_GETARG_UINT8(0);
+    int32 arg2 = PG_GETARG_INT32(1);
+
+    PG_RETURN_BOOL(arg1 > arg2);
+}
+
+Datum uint1_int4_ge(PG_FUNCTION_ARGS)
+{
+    uint8 arg1 = PG_GETARG_UINT8(0);
+    int32 arg2 = PG_GETARG_INT32(1);
+
+    PG_RETURN_BOOL(arg1 >= arg2);
+}
+ 
+Datum uint1_int8_eq(PG_FUNCTION_ARGS)
+{
+    uint8 arg1 = PG_GETARG_UINT8(0);
+    int64 arg2 = PG_GETARG_INT64(1);
+
+    PG_RETURN_BOOL(arg1 == arg2);
+}
+
+Datum uint1_int8_lt(PG_FUNCTION_ARGS)
+{
+    uint8 arg1 = PG_GETARG_UINT8(0);
+    int64 arg2 = PG_GETARG_INT64(1);
+
+    PG_RETURN_BOOL(arg1 < arg2);
+}
+
+Datum uint1_int8_le(PG_FUNCTION_ARGS)
+{
+    uint8 arg1 = PG_GETARG_UINT8(0);
+    int64 arg2 = PG_GETARG_INT64(1);
+
+    PG_RETURN_BOOL(arg1 <= arg2);
+}
+
+Datum uint1_int8_gt(PG_FUNCTION_ARGS)
+{
+    uint8 arg1 = PG_GETARG_UINT8(0);
+    int64 arg2 = PG_GETARG_INT64(1);
+
+    PG_RETURN_BOOL(arg1 > arg2);
+}
+
+Datum uint1_int8_ge(PG_FUNCTION_ARGS)
+{
+    uint8 arg1 = PG_GETARG_UINT8(0);
+    int64 arg2 = PG_GETARG_INT64(1);
+
+    PG_RETURN_BOOL(arg1 >= arg2);
+}
+
+Datum uint2_int4_eq(PG_FUNCTION_ARGS)
+{
+    uint16 arg1 = PG_GETARG_UINT16(0);
+    int32 arg2 = PG_GETARG_INT32(1);
+
+    PG_RETURN_BOOL(arg1 == arg2);
+}
+
+Datum uint2_int4_lt(PG_FUNCTION_ARGS)
+{
+    uint16 arg1 = PG_GETARG_UINT16(0);
+    int32 arg2 = PG_GETARG_INT32(1);
+
+    PG_RETURN_BOOL(arg1 < arg2);
+}
+
+Datum uint2_int4_le(PG_FUNCTION_ARGS)
+{
+    uint16 arg1 = PG_GETARG_UINT16(0);
+    int32 arg2 = PG_GETARG_INT32(1);
+
+    PG_RETURN_BOOL(arg1 <= arg2);
+}
+
+Datum uint2_int4_gt(PG_FUNCTION_ARGS)
+{
+    uint16 arg1 = PG_GETARG_UINT16(0);
+    int32 arg2 = PG_GETARG_INT32(1);
+
+    PG_RETURN_BOOL(arg1 > arg2);
+}
+
+Datum uint2_int4_ge(PG_FUNCTION_ARGS)
+{
+    uint16 arg1 = PG_GETARG_UINT16(0);
+    int32 arg2 = PG_GETARG_INT32(1);
+
+    PG_RETURN_BOOL(arg1 >= arg2);
+}
+ 
+Datum uint2_int8_eq(PG_FUNCTION_ARGS)
+{
+    uint16 arg1 = PG_GETARG_UINT16(0);
+    int64 arg2 = PG_GETARG_INT64(1);
+
+    PG_RETURN_BOOL(arg1 == arg2);
+}
+
+Datum uint2_int8_lt(PG_FUNCTION_ARGS)
+{
+    uint16 arg1 = PG_GETARG_UINT16(0);
+    int64 arg2 = PG_GETARG_INT64(1);
+
+    PG_RETURN_BOOL(arg1 < arg2);
+}
+
+Datum uint2_int8_le(PG_FUNCTION_ARGS)
+{
+    uint16 arg1 = PG_GETARG_UINT16(0);
+    int64 arg2 = PG_GETARG_INT64(1);
+
+    PG_RETURN_BOOL(arg1 <= arg2);
+}
+
+Datum uint2_int8_gt(PG_FUNCTION_ARGS)
+{
+    uint16 arg1 = PG_GETARG_UINT16(0);
+    int64 arg2 = PG_GETARG_INT64(1);
+
+    PG_RETURN_BOOL(arg1 > arg2);
+}
+
+Datum uint2_int8_ge(PG_FUNCTION_ARGS)
+{
+    uint16 arg1 = PG_GETARG_UINT16(0);
+    int64 arg2 = PG_GETARG_INT64(1);
+
+    PG_RETURN_BOOL(arg1 >= arg2);
+}
+
+Datum uint4_int8_eq(PG_FUNCTION_ARGS)
+{
+    uint32 arg1 = PG_GETARG_UINT32(0);
+    int64 arg2 = PG_GETARG_INT64(1);
+
+    PG_RETURN_BOOL(arg1 == arg2);
+}
+
+Datum uint4_int8_lt(PG_FUNCTION_ARGS)
+{
+    uint32 arg1 = PG_GETARG_UINT32(0);
+    int64 arg2 = PG_GETARG_INT64(1);
+
+    PG_RETURN_BOOL(arg1 < arg2);
+}
+
+Datum uint4_int8_le(PG_FUNCTION_ARGS)
+{
+    uint32 arg1 = PG_GETARG_UINT32(0);
+    int64 arg2 = PG_GETARG_INT64(1);
+
+    PG_RETURN_BOOL(arg1 <= arg2);
+}
+
+Datum uint4_int8_gt(PG_FUNCTION_ARGS)
+{
+    uint32 arg1 = PG_GETARG_UINT32(0);
+    int64 arg2 = PG_GETARG_INT64(1);
+
+    PG_RETURN_BOOL(arg1 > arg2);
+}
+
+Datum uint4_int8_ge(PG_FUNCTION_ARGS)
+{
+    uint32 arg1 = PG_GETARG_UINT32(0);
+    int64 arg2 = PG_GETARG_INT64(1);
+
+    PG_RETURN_BOOL(arg1 >= arg2);
+}
+
+static int uint1_fastcmp(Datum x, Datum y, SortSupport ssup)
+{
+    uint8 a = DatumGetUInt8(x);
+    uint8 b = DatumGetUInt8(y);
+
+    return (int)a - (int)b;
+}
+
+Datum uint1_sortsupport(PG_FUNCTION_ARGS)
+{
+    SortSupport ssup = (SortSupport)PG_GETARG_POINTER(0);
+
+    ssup->comparator = uint1_fastcmp;
+    PG_RETURN_VOID();
+}
+
+static int uint2_fastcmp(Datum x, Datum y, SortSupport ssup)
+{
+    uint16 a = DatumGetUInt16(x);
+    uint16 b = DatumGetUInt16(y);
+
+    return (int)a - (int)b;
+}
+
+Datum uint2_sortsupport(PG_FUNCTION_ARGS)
+{
+    SortSupport ssup = (SortSupport)PG_GETARG_POINTER(0);
+
+    ssup->comparator = uint2_fastcmp;
+    PG_RETURN_VOID();
+}
+
+static int uint4_fastcmp(Datum x, Datum y, SortSupport ssup)
+{
+    uint32 a = DatumGetUInt32(x);
+    uint32 b = DatumGetUInt32(y);
+
+    return (int64)a - (int64)b;
+}
+
+Datum uint4_sortsupport(PG_FUNCTION_ARGS)
+{
+    SortSupport ssup = (SortSupport)PG_GETARG_POINTER(0);
+
+    ssup->comparator = uint4_fastcmp;
+    PG_RETURN_VOID();
+}
+
+static int uint8_fastcmp(Datum x, Datum y, SortSupport ssup)
+{
+    uint64 a = DatumGetUInt64(x);
+    uint64 b = DatumGetUInt64(y);
+
+    return (int128)a - (int128)b;
+}
+
+Datum uint8_sortsupport(PG_FUNCTION_ARGS)
+{
+    SortSupport ssup = (SortSupport)PG_GETARG_POINTER(0);
+
+    ssup->comparator = uint8_fastcmp;
+    PG_RETURN_VOID();
 }
