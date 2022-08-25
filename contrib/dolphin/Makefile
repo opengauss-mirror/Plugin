@@ -2,6 +2,7 @@
 parser = plugin_parser
 utils = plugin_utils
 executor = plugin_executor
+commands = plugin_optimizer/commands
 adt = $(utils)/adt
 mb = $(utils)/mb
 vector = plugin_vector
@@ -43,7 +44,10 @@ OBJS += $(executor)/execQual.o
 
 OBJS += $(storage)/hashfunc.o
 
-all $(OBJS): parser utils executor vector storage;
+OBJS += $(commands)/functioncmds.o
+
+all $(OBJS): parser utils executor vector commands storage;
+
 
 parser:
 	make -C $(parser)
@@ -60,12 +64,16 @@ executor:
 storage:
 	make -C $(storage)
 
+commands:
+	make -C $(commands)
+
 extra_clean:
 	make clean -C $(parser)
 	make clean -C $(utils)
 	make clean -C $(vector)
 	make clean -C $(executor)
 	make clean -C $(storage)
+	make clean -C $(commands)
 clean: extra_clean
 
 dolphin--1.0.sql: sql_script/*
