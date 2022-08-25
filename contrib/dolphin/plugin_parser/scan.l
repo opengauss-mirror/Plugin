@@ -101,6 +101,7 @@ static void addunicode(pg_wchar c, yyscan_t yyscanner);
 static void check_string_escape_warning(unsigned char ychar, core_yyscan_t yyscanner);
 static void check_escape_warning(core_yyscan_t yyscanner);
 static bool is_trans_stmt(const char *haystack, int haystack_len);
+static void dealSahrpComment(core_yyscan_t yyscanner);
 /*
  * Work around a bug in flex 2.5.35: it emits a couple of functions that
  * it forgets to emit declarations for.  Since we use -Wmissing-prototypes,
@@ -884,6 +885,21 @@ other			.
 					if (slashstar)
 						nchars = slashstar - yytext;
 
+					if(nchars >= 1 &&  GetSessionContext()->enableBCmptMode)
+                                         {
+                                                char   *sharpchar = strstr(yytext, "#");
+                                                if(sharpchar)
+                                                {
+                                                        nchars = sharpchar - yytext;
+                                                        if (nchars == 0)
+                                                        {
+                                                                yyless(nchars);
+                                                                dealSahrpComment(yyscanner);
+                                                                goto end;
+                                                        }
+                                                }
+                                         }
+
 					/*
 					 * For SQL compatibility, '+' and '-' cannot be the
 					 * last char of a multi-char operator unless the operator
@@ -954,6 +970,8 @@ other			.
 						yylval->str = pstrdup(yytext);
 					yyextra->is_hint_str = false;
 					return Op;
+					end:
+						nchars = nchars;
 				}
 {newArray}		{
 					yyless(1);
@@ -1095,6 +1113,15 @@ other			.
 					 * No.  Convert the identifier to lower case, and truncate
 					 * if necessary.
 					 */
+					char* sharpcomment = strstr(yytext,"#");
+					if(sharpcomment && GetSessionContext()->enableBCmptMode)
+					{
+						int nchars = sharpcomment - yytext;
+						yyless(nchars);
+						dealSahrpComment(yyscanner);
+						yyleng = nchars;
+						
+					}
 					ident = downcase_truncate_identifier(yytext, yyleng, yyextra->warnOnTruncateIdent);
 					yylval->str = ident;
 					yyextra->ident_quoted = false;
@@ -1264,12 +1291,24 @@ scanner_init(const char *str,
 	/*
 	 * Make a scan buffer with special termination needed by flex.
 	 */
-	yyext->scanbuf = (char *) palloc(slen + 2);
-	yyext->scanbuflen = slen;
-	memcpy(yyext->scanbuf, str, slen);
-	yyext->scanbuf[slen] = yyext->scanbuf[slen + 1] = YY_END_OF_BUFFER_CHAR;
-	yy_scan_buffer(yyext->scanbuf, slen + 2, scanner);
-
+	if( str[0] == '#' &&  GetSessionContext()->enableBCmptMode)
+        {
+                yyext->scanbuf = (char *) palloc(slen + 3);
+                ++yyext->scanbuf;
+                yyext->scanbuflen = slen;
+                memcpy(yyext->scanbuf, str, slen);
+                yyext->scanbuf[slen] = yyext->scanbuf[slen + 1] = YY_END_OF_BUFFER_CHAR;
+                *(--yyext->scanbuf) = ' ';
+                yy_scan_buffer(yyext->scanbuf, slen + 3, scanner);
+        }
+	else
+	{
+		yyext->scanbuf = (char *) palloc(slen + 2);
+		yyext->scanbuflen = slen;
+		memcpy(yyext->scanbuf, str, slen);
+		yyext->scanbuf[slen] = yyext->scanbuf[slen + 1] = YY_END_OF_BUFFER_CHAR;
+		yy_scan_buffer(yyext->scanbuf, slen + 2, scanner);
+	}
 	/* initialize literal buffer to a reasonable but expansible size */
 	yyext->literalalloc = 1024;
 	yyext->literalbuf = (char *) palloc(yyext->literalalloc);
@@ -1854,3 +1893,28 @@ void addErrorList(const char* message, int lines)
     u_sess->plsql_cxt.errorList = lappend(u_sess->plsql_cxt.errorList, erritem);
     MemoryContextSwitchTo(oldcxt);
 }
+
+static void
+dealSahrpComment(core_yyscan_t yyscanner)
+{
+        /* append new data */
+        char * tmp_yy_cp;
+        tmp_yy_cp =  ((struct yyguts_t *)yyscanner)->yy_c_buf_p;
+        *tmp_yy_cp = ((struct yyguts_t *)yyscanner)->yy_hold_char;
+        char* wellpoint = strchr(tmp_yy_cp,'#');
+        //here # shoule be at 0,to ensure it, we make a double check
+        for(size_t i = 0;i < strlen(tmp_yy_cp); ++i )
+        {
+                if(&tmp_yy_cp[i] == wellpoint)
+                {
+                        ((struct yyguts_t *)yyscanner)->yy_hold_char = '-';
+                        tmp_yy_cp[i] = '-';
+                        //reset # to -
+                        ((struct yyguts_t *)yyscanner)->yy_c_buf_p--;
+                        //move forward pointer
+                        break;
+                }
+
+        }
+}
+

@@ -1,0 +1,38 @@
+drop database if exists db_alter_func_2;
+create database db_alter_func_2 dbcompatibility 'B';
+\c db_alter_func_2
+
+CREATE OR REPLACE PROCEDURE proc1() 
+AS
+BEGIN
+RAISE NOTICE '%','aaa';
+END; 
+/
+
+call proc1();
+
+ALTER PROCEDURE proc1() NO SQL;
+
+ALTER PROCEDURE proc1() CONTAINS SQL;
+	 
+ALTER PROCEDURE proc1() NO SQL CONTAINS SQL ;
+	  
+ALTER PROCEDURE proc1() CONTAINS SQL LANGUAGE SQL ;
+	  
+ALTER PROCEDURE proc1() CONTAINS SQL MODIFIES SQL DATA;
+	 
+ALTER PROCEDURE proc1() READS SQL DATA;
+	  
+ALTER PROCEDURE proc1() SQL SECURITY INVOKER;
+	 
+ALTER  PROCEDURE proc1() SQL SECURITY DEFINER;
+
+-- error 
+ALTER PROCEDURE proc1() DETERMINISTIC;
+
+ALTER PROCEDURE proc1() NOT DETERMINISTIC;
+
+ALTER PROCEDURE proc1  READS SQL DATA;
+
+\c postgres
+drop database db_alter_func_2;

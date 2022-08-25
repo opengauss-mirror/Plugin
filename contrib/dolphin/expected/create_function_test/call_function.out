@@ -1,0 +1,28 @@
+drop database if exists db_func_call1;
+NOTICE:  database "db_func_call1" does not exist, skipping
+create database db_func_call1 dbcompatibility 'B';
+\c db_func_call1
+CREATE FUNCTION f1 (s CHAR(20)) RETURNS int  CONTAINS SQL AS $$ select 1 $$ ;
+call f1('a');
+ f1 
+----
+  1
+(1 row)
+
+drop function f1; 
+CREATE FUNCTION f1 () RETURNS int  no SQL AS $$ select 1 $$ ;
+call f1;
+ f1 
+----
+  1
+(1 row)
+
+call f1; 
+ f1 
+----
+  1
+(1 row)
+
+drop function f1;
+\c postgres
+drop database if exists db_func_call1;

@@ -616,7 +616,7 @@ static int errstate;
 				sort_clause opt_sort_clause sortby_list index_params
 				name_list from_clause from_list opt_array_bounds
 				qualified_name_list any_name any_name_list
-				any_operator expr_list attrs callfunc_args
+				any_operator expr_list attrs callfunc_args callfunc_args_or_empty
 				target_list insert_column_list set_target_list
 				set_clause_list set_clause multiple_set_clause
 				ctext_expr_list ctext_row def_list tsconf_def_list indirection opt_indirection
@@ -910,7 +910,7 @@ static int errstate;
 %type <typnam>  load_col_data_type
 %type <ival64>  load_col_sequence_item_sart column_sequence_item_step column_sequence_item_sart
 %type <node>	on_table opt_engine opt_engine_without_empty opt_compression opt_compression_without_empty set_compress_type
-%type <keyword>	into_empty opt_temporary opt_values_in
+%type <keyword>	into_empty opt_temporary opt_values_in replace_empty
 %type <str>	compression_args
 %type <boolean> opt_ignore
 
@@ -947,13 +947,13 @@ static int errstate;
 	CHARACTER CHARACTERISTICS CHARACTERSET CHECK CHECKPOINT CLASS CLEAN CLIENT CLIENT_MASTER_KEY CLIENT_MASTER_KEYS CLOB CLOSE
 	CLUSTER COALESCE COLLATE COLLATION COLUMN COLUMNS COLUMN_ENCRYPTION_KEY COLUMN_ENCRYPTION_KEYS COMMENT COMMENTS COMMIT
 	COMMITTED COMPACT COMPATIBLE_ILLEGAL_CHARS COMPLETE COMPRESS COMPRESSION CONCURRENTLY CONDITION CONFIGURATION CONNECTION CONSTANT CONSTRAINT CONSTRAINTS
-	CONTENT_P CONTINUE_P CONTVIEW CONVERSION_P CONVERT CONNECT COORDINATOR COORDINATORS COPY COST CREATE
+	CONTAINS CONTENT_P CONTINUE_P CONTVIEW CONVERSION_P CONVERT CONNECT COORDINATOR COORDINATORS COPY COST CREATE
 	CROSS CSN CSV CUBE CURRENT_P
 	CURRENT_CATALOG CURRENT_DATE CURRENT_ROLE CURRENT_SCHEMA
 	CURRENT_TIME CURTIME CURRENT_TIMESTAMP CURRENT_USER CURSOR CYCLE NOW_FUNC
 
 	DATA_P DATABASE DATAFILE DATANODE DATANODES DATATYPE_CL DATE_P DATETIME DATE_FORMAT_P DAY_P  DAYOFMONTH DAYOFWEEK DAYOFYEAR DBCOMPATIBILITY_P DB_B_FORMAT DEALLOCATE DEC DECIMAL_P DECLARE DECODE DEFAULT DEFAULTS
-	DEFERRABLE DEFERRED DEFINER DELETE_P DELIMITER DELIMITERS DELTA DELTAMERGE DESC DESCRIBE DETERMINISTIC DIV
+	DEFERRABLE DEFERRED DEFINER DELAYED DELETE_P DELIMITER DELIMITERS DELTA DELTAMERGE DESC DESCRIBE DETERMINISTIC DIV
 /* PGXC_BEGIN */
 	DICTIONARY DIRECT DIRECTORY DISABLE_P DISCARD DISTINCT DISTINCTROW DISTRIBUTE DISTRIBUTION DO DOCUMENT_P DOMAIN_P DOUBLE_P
 /* PGXC_END */
@@ -983,9 +983,10 @@ static int errstate;
 
 	LABEL LANGUAGE LARGE_P LAST_P LC_COLLATE_P LC_CTYPE_P LEADING LEAKPROOF
 	LEAST LESS LEFT LEVEL LIKE LIMIT LIST LISTEN LOAD LOCAL LOCALTIME LOCALTIMESTAMP
-	LOCATE LOCATION LOCK_P LOG_P LOGGING LOGIN_ANY LOGIN_FAILURE LOGIN_SUCCESS LOGOUT LOOP
+	LOCATE LOCATION LOCK_P LOG_P LOGGING LOGIN_ANY LOGIN_FAILURE LOGIN_SUCCESS LOGOUT LOOP LOW_PRIORITY
 	MAPPING MASKING MASTER MATCH MATERIALIZED MATCHED MAXEXTENTS MAXSIZE MAXTRANS MAXVALUE MEDIUMINT MERGE MICROSECOND_P MID MINUS_P MINUTE_P MINVALUE MINEXTENTS MOD MODE MODIFY_P MONTH_P MOVE MOVEMENT
 	MODEL // DB4AI
+	MODIFIES
 	NAME_P NAMES NATIONAL NATURAL NCHAR NEXT NO NOCOMPRESS NOCYCLE NODE NOLOGGING NOMAXVALUE NOMINVALUE NONE
 	NOT NOTHING NOTIFY NOTNULL NOWAIT NULL_P NULLCOLS NULLIF NULLS_P NUMBER_P NUMERIC NUMSTR NVARCHAR NVARCHAR2 NVL
 	NO_WRITE_TO_BINLOG
@@ -1005,14 +1006,14 @@ static int errstate;
 
 	QUARTER QUERY QUOTE
 
-	RANDOMIZED RANGE RATIO RAW READ REAL REASSIGN REBUILD RECHECK RECURSIVE RECYCLEBIN REDISANYVALUE REF REFERENCES REFRESH REINDEX REJECT_P
+	RANDOMIZED RANGE RATIO RAW READ READS REAL REASSIGN REBUILD RECHECK RECURSIVE RECYCLEBIN REDISANYVALUE REF REFERENCES REFRESH REINDEX REJECT_P
 	RELATIVE_P RELEASE RELOPTIONS REMOTE_P REMOVE RENAME REPEATABLE REPLACE REPLICA REGEXP REPAIR
 	RESET RESIZE RESOURCE RESTART RESTRICT RETURN RETURNING RETURNS REUSE REVOKE RIGHT RLIKE ROLE ROLES ROLLBACK ROLLUP
 	ROTATION ROUTINE ROW ROWNUM ROWS ROWTYPE_P RULE
 
 	SAMPLE SAVEPOINT SCHEMA SCROLL SEARCH SECOND_P SECURITY SELECT SEQUENCE SEQUENCES
 	SERIALIZABLE SERVER SESSION SESSION_USER SET SETS SETOF SHARE SHIPPABLE SHOW SHUTDOWN SIBLINGS
-	SIMILAR SIMPLE SIZE SKIP SLICE SMALLDATETIME SMALLDATETIME_FORMAT_P SMALLINT SNAPSHOT SOME SOURCE_P SPACE SPILL SPLIT STABLE STANDALONE_P START STARTWITH
+	SIMILAR SIMPLE SIZE SKIP SLICE SMALLDATETIME SMALLDATETIME_FORMAT_P SMALLINT SNAPSHOT SOME SOURCE_P SPACE SPILL SPLIT SQL STABLE STANDALONE_P START STARTWITH
 	STATEMENT STATEMENT_ID STATISTICS STDIN STDOUT STORAGE STORE_P STORED STRATIFY STREAM STRICT_P STRIP_P SUBPARTITION SUBSCRIPTION SUBSTR SUBSTRING
 	SYMMETRIC SYNONYM SYSDATE SYSID SYSTEM_P SYS_REFCURSOR
 
@@ -13682,23 +13683,24 @@ CreateFunctionStmt:
 					$$ = (Node *)n;
 				}
 		;
-CallFuncStmt:    CALL func_name '(' ')'
+
+CallFuncStmt:    CALL func_name_opt_arg callfunc_args_or_empty
 					{
 #ifndef ENABLE_MULTIPLE_NODES
-						$$ = makeCallFuncStmt($2, NULL, enable_out_param_override());
+						$$ = makeCallFuncStmt($2, $3, enable_out_param_override());
 #else
-						$$ = makeCallFuncStmt($2, NULL, false);
-#endif
-					}
-				|	CALL func_name '(' callfunc_args ')'
-					{
-#ifndef ENABLE_MULTIPLE_NODES
-						$$ = makeCallFuncStmt($2, $4, enable_out_param_override());
-#else
-						$$ = makeCallFuncStmt($2, $4, false);
+						$$ = makeCallFuncStmt($2, $3, false);
 #endif
 					}
 				;
+
+callfunc_args_or_empty:  {$$ = NULL;}
+			|'(' callfunc_args ')'
+				{
+					$$ = $2;
+				}
+			;
+
 callfunc_args:   func_arg_expr
 				{
 					$$ = list_make1($1);
@@ -13706,6 +13708,10 @@ callfunc_args:   func_arg_expr
 			| callfunc_args ',' func_arg_expr
 				{
 					$$ = lappend($1, $3);
+				}
+			|
+				{
+					$$ = NULL;
 				}
 			;
 CreateProcedureStmt:
@@ -14334,10 +14340,7 @@ func_return:
 					 */
 					$$ = $1;
 				}
-			| func_type DETERMINISTIC
-				{
-					$$ = $1;
-				}
+			
 		;
 
 /*
@@ -14462,6 +14465,14 @@ common_func_opt_item:
 				{
 					$$ = makeDefElem("shippable", (Node*)makeInteger(FALSE));
 				}
+			| DETERMINISTIC
+				{
+					$$ = makeDefElem("deterministic", (Node*)makeInteger(TRUE));
+				}
+			| NOT DETERMINISTIC
+				{
+					$$ = makeDefElem("deterministic", (Node*)makeInteger(FALSE));
+				}
 			| EXTERNAL SECURITY DEFINER
 				{
 					$$ = makeDefElem("security", (Node *)makeInteger(TRUE));
@@ -14519,16 +14530,40 @@ common_func_opt_item:
 				{
 					$$ = makeDefElem("package", (Node *)makeInteger(true));
 				}
+			| NO SQL
+				{
+					$$ = makeDefElem("sql_opt", (Node *)makeString("nosql"));
+				}
+			| CONTAINS SQL
+				{
+					$$ = makeDefElem("sql_opt", (Node *)makeString("contains"));
+				}
+			| READS SQL DATA_P
+				{
+					$$ = makeDefElem("sql_opt", (Node *)makeString("reads"));
+				}
+			| MODIFIES SQL DATA_P
+				{
+					$$ = makeDefElem("sql_opt", (Node *)makeString("modify"));
+				}
+			| SQL SECURITY DEFINER
+				{
+                                        $$ = makeDefElem("security", (Node *)makeInteger(TRUE));
+                                }
+			| SQL SECURITY INVOKER
+				{
+                                        $$ = makeDefElem("security", (Node *)makeInteger(FALSE));
+                                }
+			| LANGUAGE ColId_or_Sconst
+				{
+					$$ = makeDefElem("language", (Node *)makeString($2));
+				}
 		;
 
 createfunc_opt_item:
 			AS func_as
 				{
 					$$ = makeDefElem("as", (Node *)$2);
-				}
-			| LANGUAGE ColId_or_Sconst
-				{
-					$$ = makeDefElem("language", (Node *)makeString($2));
 				}
 			| WINDOW
 				{
@@ -20128,7 +20163,38 @@ InsertStmt: opt_with_clause INSERT hint_string opt_ignore into_empty insert_targ
 						$$ = (Node *) $7;
 					}
 				}
+			|opt_with_clause REPLACE hint_string replace_empty insert_target insert_rest
+				{
+					$6->relation = $5;
+					$6->withClause = $1;
+					$6->hintState = create_hintstate($3);
+					$$ = (Node *) $6;
+				}
+			|opt_with_clause REPLACE hint_string replace_empty insert_target SET set_clause_list
+				{
+					InsertStmt* n = makeNode(InsertStmt);
+					n->relation = $5;
+					/*need add info*/
+					n->withClause = $1;
+					n->hintState = create_hintstate($3);
+					$$ = (Node*)n;
+				}
+
 		;
+
+replace_empty:DELAYED into_empty	
+				{
+					$$ = $1;
+				}
+			| LOW_PRIORITY into_empty
+				{
+					$$ = $1;
+				}
+			| into_empty
+				{
+					$$ = $1;
+				}
+;
 
 into_empty: INTO
 			| /*EMPTY*/		{ $$ = NULL; }
@@ -26394,6 +26460,7 @@ unreserved_keyword:
 			| CONNECTION
 			| CONSTANT
 			| CONSTRAINTS
+			| CONTAINS
 			| CONTENT_P
 			| CONTINUE_P
 			| CONVERSION_P
@@ -26553,6 +26620,7 @@ unreserved_keyword:
 			| MOD
 			| MODE
 			| MODEL      // DB4AI
+			| MODIFIES
 			| MONTH_P
 			| MOVE
 			| MOVEMENT
@@ -26627,6 +26695,7 @@ unreserved_keyword:
 			| RAW  '(' Iconst ')'				{	$$ = "raw";}
 			| RAW  %prec UNION				{	$$ = "raw";}
 			| READ
+			| READS
 			| REASSIGN
 			| REBUILD
 			| RECHECK
@@ -26689,6 +26758,7 @@ unreserved_keyword:
 			| SPACE
 			| SPILL
 			| SPLIT
+			| SQL
 			| STABLE
 			| STANDALONE_P
                         | START
@@ -26948,6 +27018,7 @@ reserved_keyword:
 			| CURTIME
 			| DEFAULT
 			| DEFERRABLE
+			| DELAYED
 			| DESC
 			| DISTINCT
 			| DISTINCTROW
@@ -26976,6 +27047,7 @@ reserved_keyword:
 			| LIMIT
 			| LOCALTIME
 			| LOCALTIMESTAMP
+			| LOW_PRIORITY
 			| MAXVALUE
 			| MINUS_P
 			| MODIFY_P
