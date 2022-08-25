@@ -6159,7 +6159,7 @@ Datum text_left(PG_FUNCTION_ARGS)
         }
     }
 
-    rlen = pg_mbcharcliplen(p, len, part_off);
+    rlen = pg_mbcliplen(p, len, part_off);
     if (0 == rlen && u_sess->attr.attr_sql.sql_compatibility == A_FORMAT) {
         PG_RETURN_NULL();
     }
@@ -6196,7 +6196,7 @@ Datum text_right(PG_FUNCTION_ARGS)
             pfree_ext(part_str);
         }
     }
-    off = pg_mbcharcliplen(p, len, part_off);
+    off = pg_mbcliplen(p, len, part_off);
     if (0 == (len - off) && u_sess->attr.attr_sql.sql_compatibility == A_FORMAT) {
         PG_RETURN_NULL();
     }

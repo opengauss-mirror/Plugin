@@ -93,5 +93,12 @@ select length(E'哈1哈\n'),length(E'\n'),length(E'\\n');
 --返回0、1、空
 select length(''),length(' '),length(NULL);
 
+create table fchar_test(fchar char(10));
+insert into fchar_test values('零一二三四五六七八九');
+insert into fchar_test values('零一二三四五六七八九0');
+insert into fchar_test values('零一二三四五六七八九十');
+select fchar,length(fchar) from fchar_test order by 1,2;
+drop table fchar_test;
+
 \c postgres
 drop database if exists db_b_parser2;

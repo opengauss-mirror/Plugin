@@ -315,5 +315,20 @@ select length(''),length(' '),length(NULL);
       0 |      1 |       
 (1 row)
 
+create table fchar_test(fchar char(10));
+insert into fchar_test values('零一二三四五六七八九');
+insert into fchar_test values('零一二三四五六七八九0');
+ERROR:  value too long for type character(10)
+CONTEXT:  referenced column: fchar
+insert into fchar_test values('零一二三四五六七八九十');
+ERROR:  value too long for type character(10)
+CONTEXT:  referenced column: fchar
+select fchar,length(fchar) from fchar_test order by 1,2;
+        fchar         | length 
+----------------------+--------
+ 零一二三四五六七八九 |     10
+(1 row)
+
+drop table fchar_test;
 \c postgres
 drop database if exists db_b_parser2;
