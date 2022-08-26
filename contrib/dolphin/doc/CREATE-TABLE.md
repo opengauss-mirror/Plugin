@@ -40,7 +40,7 @@ CREATE [ [ GLOBAL | LOCAL ] [ TEMPORARY | TEMP ] | UNLOGGED ] TABLE [ IF NOT EXI
         [ COMPRESSION [=] compression_arg ]
         [ ENGINE [=] engine_name ]
 
-    允许输入多次同一种create_option，以最后一次的输入为准。
+    除了WITH选项外允许输入多次同一种create_option，以最后一次的输入为准。
 ```
 
 -   其中列约束column\_constraint为：

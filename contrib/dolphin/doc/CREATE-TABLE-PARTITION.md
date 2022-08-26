@@ -65,7 +65,7 @@ CREATE TABLE [ IF NOT EXISTS ] partition_table_name
     [ TABLESPACE tablespace_name ]
     [ COMPRESSION [=] compression_arg ]
     [ ENGINE [=] engine_name ]
-	允许输入多次同一种create_option，以最后一次的输入为准。
+	除了WITH选项外允许输入多次同一种create_option，以最后一次的输入为准。
 ```
 
 -   列约束column\_constraint：

@@ -30,7 +30,7 @@ CREATE [ [ GLOBAL | LOCAL ] [ TEMPORARY | TEMP ] | UNLOGGED ] TABLE table_name
     [ COMPRESSION [=] compression_arg ]
     [ ENGINE [=] engine_name ]
 
-	允许输入多次同一种create_option，以最后一次的输入为准。
+	除了WITH选项外允许输入多次同一种create_option，以最后一次的输入为准。
 ```
 
 ## 参数说明<a name="zh-cn_topic_0283136662_zh-cn_topic_0237122118_zh-cn_topic_0059777601_sb8ea2c52307445c9934740862f4ecc85"></a>
