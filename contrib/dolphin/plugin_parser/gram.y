@@ -491,7 +491,7 @@ static int errstate;
                 AlterGlobalConfigStmt DropGlobalConfigStmt
 		CreatePublicationStmt AlterPublicationStmt
 		CreateSubscriptionStmt AlterSubscriptionStmt DropSubscriptionStmt
-
+		OptimizeStmt
 /* <DB4AI> */
 /* SNAPSHOTS */
 %type <node>	SnapshotStmt
@@ -585,7 +585,7 @@ static int errstate;
 %type <node>	RLSOptionalUsingExpr
 %type <list>	row_level_security_role_list RLSDefaultToRole RLSOptionalToRole
 
-%type <str>		iso_level opt_encoding
+%type <str>		iso_level opt_encoding opt_encoding2
 %type <node>	grantee
 %type <list>	grantee_list
 %type <accesspriv> privilege routine_privilege temporary_privilege
@@ -944,7 +944,7 @@ static int errstate;
 	BLOB_P BLOCKCHAIN BODY_P BOGUS BOOLEAN_P BOTH BUCKETCNT BUCKETS BY BYTEAWITHOUTORDER BYTEAWITHOUTORDERWITHEQUAL
 
 	CACHE CALL CALLED CANCELABLE CASCADE CASCADED CASE CAST CATALOG_P CHAIN CHAR_P
-	CHARACTER CHARACTERISTICS CHARACTERSET CHECK CHECKPOINT CLASS CLEAN CLIENT CLIENT_MASTER_KEY CLIENT_MASTER_KEYS CLOB CLOSE
+	CHARACTER CHARACTERISTICS CHARACTERSET CHARSET CHECK CHECKPOINT CLASS CLEAN CLIENT CLIENT_MASTER_KEY CLIENT_MASTER_KEYS CLOB CLOSE
 	CLUSTER COALESCE COLLATE COLLATION COLUMN COLUMNS COLUMN_ENCRYPTION_KEY COLUMN_ENCRYPTION_KEYS COMMENT COMMENTS COMMIT
 	COMMITTED COMPACT COMPATIBLE_ILLEGAL_CHARS COMPLETE COMPRESS COMPRESSION CONCURRENTLY CONDITION CONFIGURATION CONNECTION CONSTANT CONSTRAINT CONSTRAINTS
 	CONTAINS CONTENT_P CONTINUE_P CONTVIEW CONVERSION_P CONVERT CONNECT COORDINATOR COORDINATORS COPY COST CREATE
@@ -952,7 +952,7 @@ static int errstate;
 	CURRENT_CATALOG CURRENT_DATE CURRENT_ROLE CURRENT_SCHEMA
 	CURRENT_TIME CURTIME CURRENT_TIMESTAMP CURRENT_USER CURSOR CYCLE NOW_FUNC
 
-	DATA_P DATABASE DATAFILE DATANODE DATANODES DATATYPE_CL DATE_P DATETIME DATE_FORMAT_P DAY_P  DAYOFMONTH DAYOFWEEK DAYOFYEAR DBCOMPATIBILITY_P DB_B_FORMAT DEALLOCATE DEC DECIMAL_P DECLARE DECODE DEFAULT DEFAULTS
+	DATA_P DATABASE DATABASES DATAFILE DATANODE DATANODES DATATYPE_CL DATE_P DATETIME DATE_FORMAT_P DAY_P  DAYOFMONTH DAYOFWEEK DAYOFYEAR DBCOMPATIBILITY_P DB_B_FORMAT DEALLOCATE DEC DECIMAL_P DECLARE DECODE DEFAULT DEFAULTS
 	DEFERRABLE DEFERRED DEFINER DELAYED DELETE_P DELIMITER DELIMITERS DELTA DELTAMERGE DESC DESCRIBE DETERMINISTIC DIV
 /* PGXC_BEGIN */
 	DICTIONARY DIRECT DIRECTORY DISABLE_P DISCARD DISTINCT DISTINCTROW DISTRIBUTE DISTRIBUTION DO DOCUMENT_P DOMAIN_P DOUBLE_P
@@ -969,7 +969,7 @@ static int errstate;
 
 	GENERATED GLOBAL GRANT GRANTED GREATEST GROUP_P GROUPING_P GROUPPARENT
 
-	HANDLER HAVING HDFSDIRECTORY HEADER_P HOLD HOUR_P
+	HANDLER HAVING HDFSDIRECTORY HEADER_P HOLD HOSTS HOUR_P
 
 	IDENTIFIED IDENTITY_P IF_P IFNULL IGNORE IGNORE_EXTRA_DATA ILIKE IMMEDIATE IMMUTABLE IMPLICIT_P IN_P INCLUDE
 	INCLUDING INCREMENT INCREMENTAL INDEX INDEXES INFILE INHERIT INHERITS INITIAL_P INITIALLY INITRANS INLINE_P
@@ -1011,10 +1011,10 @@ static int errstate;
 	RESET RESIZE RESOURCE RESTART RESTRICT RETURN RETURNING RETURNS REUSE REVOKE RIGHT RLIKE ROLE ROLES ROLLBACK ROLLUP
 	ROTATION ROUTINE ROW ROWNUM ROWS ROWTYPE_P RULE
 
-	SAMPLE SAVEPOINT SCHEMA SCROLL SEARCH SECOND_P SECURITY SELECT SEQUENCE SEQUENCES
+	SAMPLE SAVEPOINT SCHEMA SCHEMAS SCROLL SEARCH SECOND_P SECURITY SELECT SEQUENCE SEQUENCES
 	SERIALIZABLE SERVER SESSION SESSION_USER SET SETS SETOF SHARE SHIPPABLE SHOW SHUTDOWN SIBLINGS
-	SIMILAR SIMPLE SIZE SKIP SLICE SMALLDATETIME SMALLDATETIME_FORMAT_P SMALLINT SNAPSHOT SOME SOURCE_P SPACE SPILL SPLIT SQL STABLE STANDALONE_P START STARTWITH
-	STATEMENT STATEMENT_ID STATISTICS STDIN STDOUT STORAGE STORE_P STORED STRATIFY STREAM STRICT_P STRIP_P SUBPARTITION SUBSCRIPTION SUBSTR SUBSTRING
+	SIMILAR SIMPLE SIZE SKIP SLAVE SLICE SMALLDATETIME SMALLDATETIME_FORMAT_P SMALLINT SNAPSHOT SOME SOURCE_P SPACE SPILL SPLIT SQL STABLE STANDALONE_P START STARTWITH
+	STATEMENT STATEMENT_ID STATISTICS STATUS STDIN STDOUT STORAGE STORE_P STORED STRATIFY STREAM STRICT_P STRIP_P SUBPARTITION SUBSCRIPTION SUBSTR SUBSTRING
 	SYMMETRIC SYNONYM SYSDATE SYSID SYSTEM_P SYS_REFCURSOR
 
 	TABLE TABLES TABLESAMPLE TABLESPACE TARGET TEMP TEMPLATE TEMPORARY TERMINATED TEXT_P THAN THEN TIME TIME_FORMAT_P TIMECAPSULE TIMESTAMP TIMESTAMP_FORMAT_P TIMESTAMPDIFF TINYINT
@@ -1392,6 +1392,7 @@ stmt :
 			| AlterPartitionRemoveStmt
 			| AlterPartitionOptimizeStmt
 			| AlterPartitionRepairStmt
+			| OptimizeStmt
 			| /*EMPTY*/
 				{ $$ = NULL; }
 		;
@@ -2159,6 +2160,15 @@ opt_replace:
 			REPLACE opt_password { $$ = $2; }
 			| /* empty */ { $$ = NULL; }
 			;
+opt_charset2:
+			CHARACTER SET { /* EMTPY */ }
+			| CHARSET { /* EMTPY */ }
+			;
+
+opt_encoding2:
+			ColId_or_Sconst { $$ = $1; }
+			| DEFAULT { $$ = NULL; }
+			;
 
 VariableSetStmt:
 			SET set_rest
@@ -2187,6 +2197,17 @@ VariableSetStmt:
                         	{
                         		$$ = MakeSetPasswdStmt($4, $6, $7);
                         	}
+			| SET opt_charset2 opt_encoding2
+				{
+					VariableSetStmt *n = makeNode(VariableSetStmt);
+					n->kind = VAR_SET_VALUE;
+					n->name = "client_encoding";
+					if ($3 != NULL)
+						n->args = list_make1(makeStringConst($3, @3));
+					else
+						n->kind = VAR_SET_DEFAULT;
+					$$ = (Node *)n;
+				}
 		;
 
 set_rest:
@@ -2591,18 +2612,20 @@ FunctionSetResetClause:
 			| VariableResetStmt				{ $$ = (VariableSetStmt *) $1; }
 		;
 
-
 VariableShowStmt:
 			SHOW var_name
 				{
 					if (pg_strcasecmp($2, "processlist") == 0) {
-						SelectStmt *n = makeProcesslistQuery(FALSE);
-                       				$$ = (Node *) n;
+						SelectStmt *n = makeShowProcesslistQuery(FALSE);
+						$$ = (Node *) n;
 					} else if (pg_strcasecmp($2, "tables") == 0) {
 						SelectStmt *n = makeShowTablesQuery(FALSE, NULL, NULL, FALSE);
 						$$ = (Node *) n;
 					} else if (pg_strcasecmp($2, "plugins") == 0) {
 						SelectStmt *n = makeShowPluginsQuery();
+						$$ = (Node *) n;
+					} else if (pg_strcasecmp($2, "databases") == 0 || pg_strcasecmp($2, "schemas") == 0) {
+						SelectStmt *n = makeShowDatabasesQuery(NULL, NULL);
 						$$ = (Node *) n;
 					} else {
 						VariableShowStmt *n = makeNode(VariableShowStmt);
@@ -2611,20 +2634,20 @@ VariableShowStmt:
 					}
 				}
 			| SHOW TABLES LikeOrWhere
-                                {
-                                        SelectStmt *n = makeShowTablesQuery(FALSE, NULL, $3->like_or_where, $3->is_like);
+				{
+					SelectStmt *n = makeShowTablesQuery(FALSE, NULL, $3->like_or_where, $3->is_like);
 					$$ = (Node *) n;
-                                }
-                        | SHOW TABLES from_in ColId OptLikeOrWhere
-                                {
+				}
+			| SHOW TABLES from_in ColId OptLikeOrWhere
+				{
 					SelectStmt *n = makeShowTablesQuery(FALSE, $4, $5->like_or_where, $5->is_like);
 					$$ = (Node *) n;
-                                }
-                        | SHOW FULL TABLES OptDbName OptLikeOrWhere
-                                {
-                                        SelectStmt *n = makeShowTablesQuery(TRUE, $4, $5->like_or_where, $5->is_like);
+				}
+			| SHOW FULL TABLES OptDbName OptLikeOrWhere
+				{
+					SelectStmt *n = makeShowTablesQuery(TRUE, $4, $5->like_or_where, $5->is_like);
 					$$ = (Node *) n;
-                                }
+				}
 			| SHOW opt_full_fields from_in qualified_name OptDbName OptLikeOrWhere
 				{
 					SelectStmt *n = makeShowColumnsQuery($4->schemaname, $4->relname, $5, $2, $6->is_like, $6->like_or_where);
@@ -2632,9 +2655,9 @@ VariableShowStmt:
 				}
 			| SHOW FULL PROCESSLIST
 				{
-					SelectStmt *n = makeProcesslistQuery(TRUE);
-                    			$$ = (Node *) n;
-                		}
+					SelectStmt *n = makeShowProcesslistQuery(TRUE);
+					$$ = (Node *) n;
+				}
 			| SHOW CURRENT_SCHEMA
 				{
 					VariableShowStmt *n = makeNode(VariableShowStmt);
@@ -2677,6 +2700,22 @@ VariableShowStmt:
 					SelectStmt *s = makeShowIndexQuery($5 ? $5 : $4->schemaname, $4->relname, $6);
 					$$ = (Node*)s;
 				}
+			| SHOW opt_databases LikeOrWhere
+				{
+					if ($3->is_like) {
+						$$ = (Node *)makeShowDatabasesQuery($3->like_or_where, NULL);
+					} else {
+						$$ = (Node *)makeShowDatabasesQuery(NULL, $3->like_or_where);
+					}
+				}
+			| SHOW MASTER STATUS
+				{
+					$$ = (Node *)makeShowMasterStatusQuery();
+				}
+			| SHOW SLAVE HOSTS
+				{
+					$$ = (Node *)makeShowSlaveHostsQuery();
+				}
 		;
 
 show_index_schema_opt:
@@ -2688,6 +2727,11 @@ show_index_opt:
 			INDEX
 			| INDEXES
 			| KEYS
+		;
+
+opt_databases:
+			DATABASES { /* EMTPY */ }
+			| SCHEMAS { /* EMTPY */ }
 		;
 
 OptLikeOrWhere:
@@ -4630,7 +4674,7 @@ drop_partition_cmds:
  					$$ = lappend($1, $3);
  				}
  			;
- 	
+
 drop_partition_cmd:
 		DROP_PARTITION ColId OptGPI
 			{
@@ -14340,7 +14384,7 @@ func_return:
 					 */
 					$$ = $1;
 				}
-			
+
 		;
 
 /*
@@ -15152,6 +15196,21 @@ opt_if_exists: IF_P EXISTS						{ $$ = TRUE; }
 		| /*EMPTY*/								{ $$ = FALSE; }
 		;
 
+OptimizeStmt:
+			OPTIMIZE opt_verbose opt_no_write_to_binlog TABLE qualified_name
+				{
+					VacuumStmt *n = makeNode(VacuumStmt);
+					n->options = VACOPT_VACUUM | VACOPT_FULL | VACOPT_ANALYZE;
+					if ($2) {
+						n->options |= VACOPT_VERBOSE;
+					}
+					n->freeze_min_age = -1;
+					n->freeze_table_age = -1;
+					n->relation = $5;
+					n->va_cols = NIL;
+					$$ = (Node *)n;
+				}
+			;
 
 /*****************************************************************************
  *
@@ -15880,7 +15939,7 @@ RenameStmt: ALTER AGGREGATE func_name aggr_args RENAME TO name
 		;
 
 opt_column: COLUMN									{ $$ = COLUMN; }
-			| /*EMPTY*/		%prec lower_than_key	{ $$ = 0; }			
+			| /*EMPTY*/		%prec lower_than_key	{ $$ = 0; }
 		;
 
 opt_set_data: SET DATA_P							{ $$ = 1; }
@@ -20182,7 +20241,7 @@ InsertStmt: opt_with_clause INSERT hint_string opt_ignore into_empty insert_targ
 
 		;
 
-replace_empty:DELAYED into_empty	
+replace_empty:DELAYED into_empty
 				{
 					$$ = $1;
 				}
@@ -22792,7 +22851,7 @@ ConstDatetime:
 /*
  * SQL92 date/time types: default typmod set to six
  */
-PreciseConstDatetime: 
+PreciseConstDatetime:
 			TIMESTAMP '(' Iconst ')' opt_timezone
 				{
 					if ($5)
@@ -24290,7 +24349,7 @@ func_expr_common_subexpr:
 						b_db_ColnameWithPrecision("current_time", $3);
 						n->args = list_make1($3);
 					}
-					
+
 					n->agg_order = NIL;
 					n->agg_star = false;
 					n->agg_distinct = false;
@@ -24304,7 +24363,7 @@ func_expr_common_subexpr:
 				{
 					FuncCall *n = makeNode(FuncCall);
 					n->funcname = SystemFuncName("b_db_statement_start_time");
-					
+
 					if (!$3) {
 						b_db_ColnameWithoutPrecision("curtime");
 						n->args = list_make1(makeIntConst(0, -1));
@@ -24312,7 +24371,7 @@ func_expr_common_subexpr:
 						b_db_ColnameWithPrecision("curtime", $3);
 						n->args = list_make1($3);
 					}
-					
+
 					n->agg_order = NIL;
 					n->agg_star = false;
 					n->agg_distinct = false;
@@ -24341,7 +24400,7 @@ func_expr_common_subexpr:
 				{
 					FuncCall *n = makeNode(FuncCall);
 					n->funcname = SystemFuncName("b_db_statement_start_timestamp");
-					
+
 					if (!$3) {
 						b_db_ColnameWithoutPrecision("current_timestamp");
 						n->args = list_make1(makeIntConst(0, -1));
@@ -24372,13 +24431,13 @@ func_expr_common_subexpr:
 					n->over = NULL;
 					n->location = @1;
 					n->call_func = false;
-					$$ = (Node *)n;	
+					$$ = (Node *)n;
 				}
 			| LOCALTIME '(' optional_precision ')'
 				{
 					FuncCall *n = makeNode(FuncCall);
 					n->funcname = SystemFuncName("b_db_statement_start_timestamp");
-					
+
 					if (!$3) {
 						b_db_ColnameWithoutPrecision("localtime");
 						n->args = list_make1(makeIntConst(0, -1));
@@ -24386,7 +24445,7 @@ func_expr_common_subexpr:
 						b_db_ColnameWithPrecision("localtime", $3);
 						n->args = list_make1($3);
 					}
-					
+
 					n->agg_order = NIL;
 					n->agg_star = false;
 					n->agg_distinct = false;
@@ -24415,7 +24474,7 @@ func_expr_common_subexpr:
 				{
 					FuncCall *n = makeNode(FuncCall);
 					n->funcname = SystemFuncName("b_db_statement_start_timestamp");
-					
+
 					if (!$3) {
 						b_db_ColnameWithoutPrecision("localtimestamp");
 						n->args = list_make1(makeIntConst(0, -1));
@@ -24423,7 +24482,7 @@ func_expr_common_subexpr:
 						b_db_ColnameWithPrecision("localtimestamp", $3);
 						n->args = list_make1($3);
 					}
-					
+
 					n->agg_order = NIL;
 					n->agg_star = false;
 					n->agg_distinct = false;
@@ -24437,7 +24496,7 @@ func_expr_common_subexpr:
 				{
 					FuncCall *n = makeNode(FuncCall);
 					n->funcname = SystemFuncName("b_db_statement_start_timestamp");
-					
+
 					if(!$3) {
 						b_db_ColnameWithoutPrecision("now");
 						n->args = list_make1(makeIntConst(0, -1));
@@ -24445,7 +24504,7 @@ func_expr_common_subexpr:
 						b_db_ColnameWithPrecision("now", $3);
 						n->args = list_make1($3);
 					}
-					
+
 					n->agg_order = NIL;
 					n->agg_star = false;
 					n->agg_distinct = false;
@@ -24459,7 +24518,7 @@ func_expr_common_subexpr:
 				{
 					FuncCall *n = makeNode(FuncCall);
 					n->funcname = SystemFuncName("b_db_sys_real_timestamp");
-					
+
 					if (!$3) {
 						b_db_ColnameWithoutPrecision("sysdate");
 						n->args = list_make1(makeIntConst(0, -1));
@@ -24467,7 +24526,7 @@ func_expr_common_subexpr:
 						b_db_ColnameWithPrecision("sysdate", $3);
 						n->args = list_make1($3);
 					}
-					
+
 					n->agg_order = NIL;
 					n->agg_star = false;
 					n->agg_distinct = false;
@@ -25647,8 +25706,8 @@ timestamp_units:
 		;
 
 optional_precision:
-    		Iconst  
-				{ 
+    		Iconst
+				{
 					$$ = makeIntConst($1, @1);
 				}
 			|/*EMPTY*/								{ $$ = NULL; }
@@ -26434,6 +26493,7 @@ unreserved_keyword:
 			| CHAIN
 			| CHARACTERISTICS
 			| CHARACTERSET
+			| CHARSET
 			| CHECKPOINT
 			| CLASS
 			| CLEAN
@@ -26475,6 +26535,7 @@ unreserved_keyword:
 			| CYCLE
 			| DATA_P
 			| DATABASE
+			| DATABASES
 			| DATAFILE
 			| DATANODE
 			| DATANODES
@@ -26552,6 +26613,7 @@ unreserved_keyword:
 			| GRANTED
 			| HANDLER
 			| HEADER_P
+			| HOSTS
 			| HOLD
 			| IDENTIFIED
 			| IDENTITY_P
@@ -26646,6 +26708,7 @@ unreserved_keyword:
 			| OIDS
 			| OPERATOR
 			| OPTIMIZATION
+			| OPTIMIZE
 			| OPTION
 			| OPTIONALLY
 			| OPTIONS
@@ -26733,6 +26796,7 @@ unreserved_keyword:
 			| SAMPLE
 			| SAVEPOINT
 			| SCHEMA
+			| SCHEMAS
 			| SCROLL
 			| SEARCH
 			| SECURITY
@@ -26751,6 +26815,7 @@ unreserved_keyword:
 			| SIMPLE
 			| SIZE
 			| SKIP
+			| SLAVE
 			| SLICE
 			| SMALLDATETIME_FORMAT_P
 			| SNAPSHOT
@@ -26765,6 +26830,7 @@ unreserved_keyword:
 			| STATEMENT
 			| STATEMENT_ID
 			| STATISTICS
+			| STATUS
 			| STDIN
 			| STDOUT
 			| STORAGE
@@ -29150,7 +29216,7 @@ static CreateTableOptions* MakeCreateTableOptions(CreateTableOptions *tableOptio
 	case OPT_WITH:
 		if (tableOptions->options != NIL) {
 			ereport(ERROR,
-				(errcode(ERRCODE_INVALID_TEXT_REPRESENTATION), errmsg("can't use \"option\" with more than once")));			
+				(errcode(ERRCODE_INVALID_TEXT_REPRESENTATION), errmsg("can't use \"option\" with more than once")));
 		}
 		tableOptions->options = tableOption->option.list_content;
 		break;
@@ -29199,14 +29265,14 @@ static CreateIndexOptions* MakeCreateIndexOptions(CreateIndexOptions *indexOptio
 	case OPT_INCLUDE:
 		if (indexOptions->indexIncludingParams != NIL) {
 			ereport(ERROR,
-				(errcode(ERRCODE_INVALID_TEXT_REPRESENTATION), errmsg("can't use option \"include\" more than once")));			
+				(errcode(ERRCODE_INVALID_TEXT_REPRESENTATION), errmsg("can't use option \"include\" more than once")));
 		}
 		indexOptions->indexIncludingParams = indexOption->option.list_content;
 		break;
 	case OPT_RELOPTIONS:
 		if (indexOptions->options != NIL) {
 			ereport(ERROR,
-				(errcode(ERRCODE_INVALID_TEXT_REPRESENTATION), errmsg("can't use option \"with\" more than once")));			
+				(errcode(ERRCODE_INVALID_TEXT_REPRESENTATION), errmsg("can't use option \"with\" more than once")));
 		}
 		indexOptions->options = indexOption->option.list_content;
 		break;
@@ -29335,34 +29401,34 @@ static Node* MakeKillStmt(int kill_opt, Node *expr)
 	func->call_func = false;
 
 	if (ENABLE_THREAD_POOL) {
-    		RangeVar* rv = makeRangeVar(NULL, "pg_stat_activity", -1);
-    		List* fl = (List*)list_make1(rv);
+		RangeVar* rv = makeRangeVar(NULL, "pg_stat_activity", -1);
+		List* fl = (List*)list_make1(rv);
 
-    		ColumnRef* cr = makeNode(ColumnRef);
-    		cr->fields = lcons(makeString("pid"), NIL);
-    		cr->location = -1;
-    		ResTarget* rt = makeNode(ResTarget);
-    		rt->name = NULL;
-    		rt->indirection = NIL;
-    		rt->val = (Node*)cr;
-    		rt->location = -1;
+		ColumnRef* cr = makeNode(ColumnRef);
+		cr->fields = lcons(makeString("pid"), NIL);
+		cr->location = -1;
+		ResTarget* rt = makeNode(ResTarget);
+		rt->name = NULL;
+		rt->indirection = NIL;
+		rt->val = (Node*)cr;
+		rt->location = -1;
 
 		Node* cond1 = (Node*)makeSimpleA_Expr(AEXPR_OP, "=", makeColumnRef("sessionid", NIL, -1, NULL), expr, -1);
 		Node* cond2 = (Node*)makeSimpleA_Expr(AEXPR_OP, "=", makeColumnRef("sessionid", NIL, -1, NULL), makeColumnRef("pid", NIL, -1, NULL), -1);
-    		Node* wc = (Node*)makeA_Expr(AEXPR_AND, NIL, cond1, cond2, -1);
+		Node* wc = (Node*)makeA_Expr(AEXPR_AND, NIL, cond1, cond2, -1);
 
-    		SelectStmt* stmt = makeNode(SelectStmt);
-    		stmt->distinctClause = NIL;
-    		stmt->targetList = list_make1(rt);
-    		stmt->intoClause = NULL;
-    		stmt->fromClause = fl;
-    		stmt->whereClause = wc;
-    		stmt->groupClause = NIL;
-    		stmt->havingClause = NULL;
-    		stmt->windowClause = NIL;
+		SelectStmt* stmt = makeNode(SelectStmt);
+		stmt->distinctClause = NIL;
+		stmt->targetList = list_make1(rt);
+		stmt->intoClause = NULL;
+		stmt->fromClause = fl;
+		stmt->whereClause = wc;
+		stmt->groupClause = NIL;
+		stmt->havingClause = NULL;
+		stmt->windowClause = NIL;
 		stmt->limitCount = makeIntConst(1, -1);
 
-    		SubLink* sublink = makeNode(SubLink);
+		SubLink* sublink = makeNode(SubLink);
 		sublink->subLinkType = EXPR_SUBLINK;
 		sublink->testexpr = NULL;
 		sublink->operName = NIL;
@@ -29370,19 +29436,19 @@ static Node* MakeKillStmt(int kill_opt, Node *expr)
 		sublink->location = -1;
 
 		CoalesceExpr* cexpr = makeNode(CoalesceExpr);
-        	cexpr->args = list_make2(sublink, makeIntConst(0, -1));
-        	cexpr->isnvl = true;
+		cexpr->args = list_make2(sublink, makeIntConst(0, -1));
+		cexpr->isnvl = true;
 
-       		func->args = list_make2((Node*)cexpr, expr);
+		func->args = list_make2((Node*)cexpr, expr);
 	} else {
 		func->args = list_make2(expr, expr);
 	}
 
-    	ResTarget* rt = makeNode(ResTarget);
-    	rt->name = "result";
-    	rt->indirection = NIL;
-   	rt->val = (Node*)func;
-   	rt->location = -1;
+	ResTarget* rt = makeNode(ResTarget);
+	rt->name = "result";
+	rt->indirection = NIL;
+	rt->val = (Node*)func;
+	rt->location = -1;
 
 	SelectStmt* n = makeNode(SelectStmt);
 	n->distinctClause = NIL;

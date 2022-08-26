@@ -6,13 +6,14 @@
 #include "utils/builtins.h"
 #include "plugin_parser/parse_show.h"
 
-static Node* makeIntConst(int val);
-static Node* makeStringConst(char* str);
+static Node* makeColumnRef(char* colName, int loc = PLPS_LOC_UNKNOWN);
 static Node* makeHostColumn();
 static List* makeStateChangeIntervalFunc();
 static Node* makeTimeColumn();
 static Node* makeInfoColumn(bool isFull);
-static List* makeSortList();
+static Node* makeRangeSubselect(SelectStmt* stmt);
+static Node* makeMsRangeFunction();
+static Node* makeStarColumn();
 
 static Node* makePluginsStatusColumn(bool smallcase = FALSE);
 static Node* makePluginsTypeColumn(bool smallcase = FALSE);
@@ -48,7 +49,7 @@ extern TypeName* SystemTypeName(char* name);
  * @param isFull The Info field length is default by 100, otherwise 1024 for FULL.
  * @return The parsed tree for 'SHOW [FULL] PROCESSLIST'.
  */
-SelectStmt* makeProcesslistQuery(bool isFull)
+SelectStmt* makeShowProcesslistQuery(bool isFull)
 {
     List* tl = (List*)list_make1(plpsMakeNormalColumn(NULL, "sessionid", "Id"));
     tl = lappend(tl, plpsMakeNormalColumn(NULL, "pid", "Pid"));
@@ -64,40 +65,105 @@ SelectStmt* makeProcesslistQuery(bool isFull)
     tl = lappend(tl, plpsMakeNormalColumn(NULL, "state", "State"));
     tl = lappend(tl, makeInfoColumn(isFull));
 
-    RangeVar* rv = makeRangeVar(NULL, "pg_stat_activity", -1);
-    List* fl = (List*)list_make1(rv);
+    List* fl = list_make1(makeRangeVar(NULL, "pg_stat_activity", -1));
+    List* sl = plpsMakeSortList(plpsMakeColumnRef(NULL, "backend_start"));
 
-    SelectStmt* stmt = makeNode(SelectStmt);
-    stmt->distinctClause = NIL;
-    stmt->targetList = tl;
-    stmt->intoClause = NULL;
-    stmt->fromClause = fl;
-    stmt->whereClause = NULL;
-    stmt->sortClause = makeSortList();
-    stmt->groupClause = NIL;
-    stmt->havingClause = NULL;
-    stmt->windowClause = NIL;
-    stmt->hintState = NULL;
-    stmt->hasPlus = false;
+    SelectStmt* stmt = plpsMakeSelectStmt(tl, fl, NULL, sl);
     return stmt;
 }
 
-static Node* makeIntConst(int val)
+/**
+ * Build a parsed tree for 'SHOW {DATABASES | SCHEMAS} [LIKE 'pattern' | WHERE expr]'.
+ * This is actually a parse of the following statement:
+ *
+ * SELECT
+ *    database AS "Database"
+ * FROM
+ *    (select nspname as "database" from pg_catalog.pg_namespace where expr)
+ * ORDER BY
+ *    1;
+ *
+ * @param likeNode
+ * @param whereExpr
+ * @return The parsed tree for 'SHOW {DATABASES | SCHEMAS} [LIKE 'pattern' | WHERE expr]'.
+ */
+SelectStmt* makeShowDatabasesQuery(Node* likeNode, Node* whereExpr)
 {
-    A_Const* n = makeNode(A_Const);
-    n->val.type = T_Integer;
-    n->val.val.ival = val;
-    n->location = -1;
-    return (Node*)n;
+    List* tl = list_make1(plpsMakeNormalColumn(NULL, "nspname", "database"));
+    List* fl = list_make1(makeRangeVar(NULL, "pg_namespace", -1));
+    Node* wc = NULL;
+    if (likeNode) {
+        wc = (Node*)makeSimpleA_Expr(AEXPR_OP, "~~", plpsMakeColumnRef(NULL, "database"), likeNode, -1);
+    } else if (whereExpr) {
+        wc = whereExpr;
+    }
+
+    SelectStmt* substmt = plpsMakeSelectStmt(tl, fl, wc, NULL);
+
+    List* tl2 = list_make1(plpsMakeNormalColumn(NULL, "database", "Database"));
+    List* fl2 = list_make1(makeRangeSubselect(substmt));
+    List* sl2 = plpsMakeSortList(plpsMakeIntConst(1));
+
+    SelectStmt* stmt = plpsMakeSelectStmt(tl2, fl2, NULL, sl2);
+    return stmt;
 }
 
-static Node* makeStringConst(char* str)
+/**
+ * Build a parsed tree for 'SHOW MASTER STATUS'.
+ * This is actually a parse of the following statement:
+ *
+ * SELECT
+ *    *
+ * FROM
+ *    gs_master_status();
+ *
+ * @param void
+ * @return The parsed tree for 'SHOW MASTER STATUS'.
+ */
+SelectStmt* makeShowMasterStatusQuery(void)
 {
-    A_Const* n = makeNode(A_Const);
-    n->val.type = T_String;
-    n->val.val.str = str;
-    n->location = -1;
-    return (Node*)n;
+    List* tl = (List*)list_make1(makeStarColumn());
+    List* fl = list_make1(makeMsRangeFunction());
+
+    SelectStmt* stmt = plpsMakeSelectStmt(tl,  fl, NULL, NULL);
+    return stmt;
+}
+
+/**
+ * Build a parsed tree for 'SHOW SLAVE HOSTS'.
+ * This is actually a parse of the following statement:
+ *
+ * SELECT
+ *    *
+ * FROM
+ *    pg_stat_replication;
+ *
+ * @param void
+ * @return The parsed tree for 'SHOW SLAVE HOSTS'.
+ */
+SelectStmt* makeShowSlaveHostsQuery(void)
+{
+    List* tl = (List*)list_make1(makeStarColumn());
+    List* fl = list_make1(makeRangeVar(NULL, "pg_stat_replication", -1));
+
+    SelectStmt* stmt = plpsMakeSelectStmt(tl, fl, NULL, NULL);
+    return stmt;
+}
+
+SelectStmt* plpsMakeSelectStmt(List* targetList, List* fromList, Node* whereClause, List* sortClause, Node* limitCount)
+{
+    SelectStmt* n = makeNode(SelectStmt);
+    n->distinctClause = NIL;
+    n->targetList = targetList;
+    n->intoClause = NULL;
+    n->fromClause = fromList;
+    n->whereClause = whereClause;
+    n->sortClause = sortClause;
+    n->groupClause = NIL;
+    n->havingClause = NULL;
+    n->windowClause = NIL;
+    n->limitCount = limitCount;
+    return n;
 }
 
 Node* plpsMakeFunc(char* funcname, List* args, int location)
@@ -105,20 +171,12 @@ Node* plpsMakeFunc(char* funcname, List* args, int location)
     return (Node*)makeFuncCall(list_make1(makeString(funcname)), args, location);
 }
 
-static Node* makeColumnRef(char* colName, int loc = PLPS_LOC_UNKNOWN)
-{
-    ColumnRef* cr = makeNode(ColumnRef);
-    cr->fields = lcons(makeString(colName), NIL);
-    cr->location = loc;
-    return (Node*)cr;
-}
-
 Node* plpsMakeColumnRef(char* relname, char *colname, int location)
 {
     if (relname == NULL) {
-    	return makeColumnRef(colname, location);
+        return makeColumnRef(colname, location);
     }
-    
+
     return (Node*)makeColumnRef(relname, colname, location);
 }
 
@@ -133,6 +191,80 @@ Node* plpsMakeNormalColumn(char *relname, char* colname, char* aliasname, int lo
     return (Node*)rt;
 }
 
+List* plpsMakeSortList(Node *sortExpr)
+{
+    SortBy* n = makeNode(SortBy);
+    n->node = sortExpr;
+    n->sortby_dir = SORTBY_DEFAULT;
+    n->sortby_nulls = SORTBY_NULLS_DEFAULT;
+    n->useOp = NIL;
+    n->location = -1;
+    List* sl = (List*)list_make1(n);
+    return sl;
+}
+
+Node* plpsMakeIntConst(int val)
+{
+    A_Const* n = makeNode(A_Const);
+    n->val.type = T_Integer;
+    n->val.val.ival = val;
+    n->location = -1;
+    return (Node*)n;
+}
+
+Node* plpsMakeStringConst(char* str)
+{
+    A_Const* n = makeNode(A_Const);
+    n->val.type = T_String;
+    n->val.val.str = str;
+    n->location = -1;
+    return (Node*)n;
+}
+
+static Node* makeStarColumn()
+{
+    ColumnRef *n = makeNode(ColumnRef);
+    n->fields = list_make1(makeNode(A_Star));
+    n->location = -1;
+    n->indnum = 0;
+
+    ResTarget* rt = makeNode(ResTarget);
+    rt->name = NULL;
+    rt->indirection = NIL;
+    rt->val = (Node*)n;
+    rt->location = -1;
+    return (Node*)rt;
+}
+
+static Node* makeMsRangeFunction()
+{
+    Node* func = plpsMakeFunc("gs_master_status", NULL);
+
+    RangeFunction *n = makeNode(RangeFunction);
+    n->funccallnode = func;
+    n->coldeflist = NIL;
+    return (Node*)n;
+}
+
+static Node* makeRangeSubselect(SelectStmt* stmt)
+{
+    Alias* a = makeNode(Alias);
+    a->aliasname = pstrdup("__unnamed_subquery__");
+    RangeSubselect* rs = makeNode(RangeSubselect);
+    rs->subquery = (Node*)stmt;
+    rs->alias = NULL;
+    rs->alias = a;
+    return (Node*)rs;
+}
+
+static Node* makeColumnRef(char* colName, int loc)
+{
+    ColumnRef* cr = makeNode(ColumnRef);
+    cr->fields = lcons(makeString(colName), NIL);
+    cr->location = loc;
+    return (Node*)cr;
+}
+
 static Node* makeHostColumn()
 {
     Node* first = plpsMakeColumnRef(NULL, "client_hostname");
@@ -142,7 +274,7 @@ static Node* makeHostColumn()
     expr->args = list_make2(first, plpsMakeFunc("host", list_make1(second)));
     expr->isnvl = true;
 
-    List* l = list_make3(makeStringConst(":"), expr, plpsMakeColumnRef(NULL, "client_port"));
+    List* l = list_make3(plpsMakeStringConst(":"), expr, plpsMakeColumnRef(NULL, "client_port"));
 
     ResTarget* rt = makeNode(ResTarget);
     rt->name = "Host";
@@ -157,7 +289,7 @@ static List* makeStateChangeIntervalFunc()
     Node* left = plpsMakeFunc("now", NULL);
     Node* right = plpsMakeColumnRef(NULL, "state_change");
     Node* expr = (Node*)makeSimpleA_Expr(AEXPR_OP, "-", left, right, -1);
-    List* args = list_make2(makeStringConst("epoch"), expr);
+    List* args = list_make2(plpsMakeStringConst("epoch"), expr);
 
     FuncCall* n = makeNode(FuncCall);
     n->funcname = SystemFuncName("date_part");
@@ -187,48 +319,36 @@ static Node* makeInfoColumn(bool isFull)
     ResTarget* rt = makeNode(ResTarget);
     rt->name = "Info";
     rt->indirection = NIL;
-    rt->val = plpsMakeFunc("left", list_make2(plpsMakeColumnRef(NULL, "query"), makeIntConst(isFull ? 1024 : 100)));
+    rt->val = plpsMakeFunc("left", list_make2(plpsMakeColumnRef(NULL, "query"), plpsMakeIntConst(isFull ? 1024 : 100)));
     rt->location = -1;
     return (Node*)rt;
-}
-
-static List* makeSortList()
-{
-    SortBy* n = makeNode(SortBy);
-    n->node = plpsMakeColumnRef(NULL, "backend_start");
-    n->sortby_dir = SORTBY_DEFAULT;
-    n->sortby_nulls = SORTBY_NULLS_DEFAULT;
-    n->useOp = NIL;
-    n->location = -1;
-    List* sl = (List*)list_make1(n);
-    return sl;
 }
 
 static Node* makePluginsStatusColumn(bool smallcase)
 {
     Node* cargnode = (Node*)makeSimpleA_Expr(AEXPR_OP, ">",
- 					     plpsMakeFunc("length", list_make1(plpsMakeColumnRef(NULL, "installed_version"))),
-    					     makeIntConst(0), -1);
+        plpsMakeFunc("length", list_make1(plpsMakeColumnRef(NULL, "installed_version"))),
+        plpsMakeIntConst(0), -1);
     CaseExpr *c = makeNode(CaseExpr);
     c->casetype = InvalidOid;
     c->arg = (Expr *)cargnode;
-    
+
     CaseWhen *w = makeNode(CaseWhen);
-    w->expr = (Expr *)makeStringConst("t");
-    w->result = (Expr *)makeStringConst("ACTIVE");
+    w->expr = (Expr *)plpsMakeStringConst("t");
+    w->result = (Expr *)plpsMakeStringConst("ACTIVE");
     c->args = list_make1(w);
-    c->defresult = (Expr *)makeStringConst("DISABLED");
-    
+    c->defresult = (Expr *)plpsMakeStringConst("DISABLED");
+
     ResTarget *rt = makeNode(ResTarget);
     if (!smallcase) {
-    	rt->name = SHOW_STATUS_COL;
+        rt->name = SHOW_STATUS_COL;
     } else {
-    	rt->name = SHOW_STATUS_COL_S;
+        rt->name = SHOW_STATUS_COL_S;
     }
     rt->indirection = NIL;
     rt->val = (Node*)c;
     rt->location = PLPS_LOC_UNKNOWN;
-    
+
     return (Node*)rt;
 }
 
@@ -236,14 +356,14 @@ static Node* makePluginsTypeColumn(bool smallcase)
 {
     ResTarget *rt = makeNode(ResTarget);
     if (!smallcase) {
-    	rt->name = SHOW_TYPE_COL;
+        rt->name = SHOW_TYPE_COL;
     } else {
-    	rt->name = SHOW_TYPE_COL_S;
+        rt->name = SHOW_TYPE_COL_S;
     }
     rt->indirection = NIL;
-    rt->val = makeStringConst("");
+    rt->val = plpsMakeStringConst("");
     rt->location = PLPS_LOC_UNKNOWN;
-    
+
     return (Node*)rt;
 }
 
@@ -251,14 +371,14 @@ static Node* makePluginsLibraryColumn(bool smallcase)
 {
     ResTarget *rt = makeNode(ResTarget);
     if (!smallcase) {
-    	rt->name = SHOW_LIBRARY_COL;
+        rt->name = SHOW_LIBRARY_COL;
     } else {
-    	rt->name = SHOW_LIBRARY_COL_S;
+        rt->name = SHOW_LIBRARY_COL_S;
     }
     rt->indirection = NIL;
-    rt->val = makeStringConst("NULL");
+    rt->val = plpsMakeStringConst("NULL");
     rt->location = PLPS_LOC_UNKNOWN;
-    
+
     return (Node*)rt;
 }
 
@@ -266,14 +386,14 @@ static Node* makePluginsLicenseColumn(bool smallcase)
 {
     ResTarget *rt = makeNode(ResTarget);
     if (!smallcase) {
-    	rt->name = SHOW_LICENSE_COL;
+        rt->name = SHOW_LICENSE_COL;
     } else {
-    	rt->name = SHOW_LICENSE_COL_S;
+        rt->name = SHOW_LICENSE_COL_S;
     }
     rt->indirection = NIL;
-    rt->val = makeStringConst("");
+    rt->val = plpsMakeStringConst("");
     rt->location = PLPS_LOC_UNKNOWN;
-    
+
     return (Node*)rt;
 }
 
@@ -282,16 +402,16 @@ static Node* makePluginsLicenseColumn(bool smallcase)
  * This is actually a parse of the following statement:
  *
  * SELECT name AS "Name",
- *   CASE length(installed_version) > 0
- *     WHEN 't' then 'ACTIVE'
- *     ELSE 'DISABLED'
- *   END AS "Status",
- *   '' AS "Type",
- *   'NULL' AS "Library",
- *   '' AS "License",
- *   comment AS "Comment"
+ *    CASE length(installed_version) > 0
+ *        WHEN 't' then 'ACTIVE'
+ *        ELSE 'DISABLED'
+ *    END AS "Status",
+ *    '' AS "Type",
+ *    'NULL' AS "Library",
+ *    '' AS "License",
+ *    comment AS "Comment"
  * FROM
- *   pg_available_extensions
+ *    pg_available_extensions
  *
  * @return The parsed tree for 'SHOW PLUGINS'
  */
@@ -303,21 +423,10 @@ SelectStmt* makeShowPluginsQuery(void)
     tl = lappend(tl, makePluginsLibraryColumn());
     tl = lappend(tl, makePluginsLicenseColumn());
     tl = lappend(tl, plpsMakeNormalColumn(NULL, SHOW_COMMENT_COL_S, SHOW_COMMENT_COL));
-    
-    SelectStmt *stmt = makeNode(SelectStmt);
-    stmt->distinctClause = NIL;
-    stmt->targetList = tl;
-    stmt->intoClause = NULL;
-    stmt->fromClause = list_make1(makeRangeVar(PG_CATALOG_NAME, "pg_available_extensions", -1));
-    stmt->whereClause = NULL;
-    stmt->sortClause = NIL;
-    stmt->groupClause = NIL;
-    stmt->havingClause = NULL;
-    stmt->windowClause = NIL;
-    stmt->hintState = NULL;
-    stmt->hasPlus = false;
+    List* fl = list_make1(makeRangeVar(PG_CATALOG_NAME, "pg_available_extensions", -1));
 
-    return stmt;	
+    SelectStmt* stmt = plpsMakeSelectStmt(tl, fl, NULL, NULL);
+    return stmt;
 }
 
 static Node* makeShowTablesTypeColumn(bool smallcase)
@@ -325,56 +434,56 @@ static Node* makeShowTablesTypeColumn(bool smallcase)
     CaseExpr *c = makeNode(CaseExpr);
     c->casetype = InvalidOid;
     c->arg = (Expr*)plpsMakeColumnRef(NULL, "relkind");
-    
+
     CaseWhen *w = makeNode(CaseWhen);
-    w->expr = (Expr*)makeStringConst("r");
-    w->result = (Expr *)makeStringConst("BASE TABLE");
-    
+    w->expr = (Expr*)plpsMakeStringConst("r");
+    w->result = (Expr *)plpsMakeStringConst("BASE TABLE");
+
     List *cl = list_make1(w);
     w = makeNode(CaseWhen);
-    w->expr = (Expr*)makeStringConst("v");
-    w->result = (Expr*)makeStringConst("VIEW");
+    w->expr = (Expr*)plpsMakeStringConst("v");
+    w->result = (Expr*)plpsMakeStringConst("VIEW");
     cl = lappend(cl, w);
-    
+
     c->args = cl;
-    c->defresult = (Expr*)makeStringConst("UNKNOWN");
-    
+    c->defresult = (Expr*)plpsMakeStringConst("UNKNOWN");
+
     ResTarget *rt = makeNode(ResTarget);
     if (!smallcase) {
-    	rt->name = SHOW_TBL_TYPE_COL;
+        rt->name = SHOW_TBL_TYPE_COL;
     } else {
-    	rt->name = SHOW_TBL_TYPE_COL_S;
+        rt->name = SHOW_TBL_TYPE_COL_S;
     }
-    
+
     rt->indirection = NIL;
     rt->val = (Node*)c;
     rt->location = PLPS_LOC_UNKNOWN;
-    
+
     return (Node *)rt;
 }
 
 static Node* makeShowTablesWhereTarget(char *schemaname, Node *likeWhereOpt)
 {
-    List *rkl = list_make2(makeStringConst("r"), makeStringConst("v"));
+    List *rkl = list_make2(plpsMakeStringConst("r"), plpsMakeStringConst("v"));
     Node *cond = NULL;
     Node *cond1 = NULL;
     Node *cond2 = NULL;
-    
+
     cond1 = (Node*)makeA_Expr(AEXPR_AND, NIL,
-    		    	      (Node*)makeSimpleA_Expr(AEXPR_OP, "=",
-    		    	  			      plpsMakeColumnRef(PG_CLASS_NAME, "relnamespace"),
-    		    	    			      plpsMakeColumnRef(PG_NAMESPACE_NAME, "oid"), -1),
-    		    	      (Node*)makeSimpleA_Expr(AEXPR_IN, "=",
-    						      plpsMakeColumnRef(PG_CLASS_NAME, "relkind"), (Node*)rkl, -1), -1);
-    
+                              (Node*)makeSimpleA_Expr(AEXPR_OP, "=",
+                                                      plpsMakeColumnRef(PG_CLASS_NAME, "relnamespace"),
+                                                      plpsMakeColumnRef(PG_NAMESPACE_NAME, "oid"), -1),
+                              (Node*)makeSimpleA_Expr(AEXPR_IN, "=",
+                                                      plpsMakeColumnRef(PG_CLASS_NAME, "relkind"), (Node*)rkl, -1), -1);
+
     cond2 = (Node*)makeSimpleA_Expr(AEXPR_OP, "=", plpsMakeColumnRef(PG_NAMESPACE_NAME, "nspname"),
-				    makeStringConst(schemaname), -1);  
+                                    plpsMakeStringConst(schemaname), -1);
     cond = (Node*)makeA_Expr(AEXPR_AND, NIL, cond1, cond2, -1);
-    
+
     if (likeWhereOpt != NULL) {
-    	cond = (Node*)makeA_Expr(AEXPR_AND, NIL, cond, likeWhereOpt, -1);
+        cond = (Node*)makeA_Expr(AEXPR_AND, NIL, cond, likeWhereOpt, -1);
     }
-    
+
     return cond;
 }
 
@@ -383,43 +492,41 @@ bool plps_check_schema_or_table_valid(char *schemaname, char *tablename, bool is
     Oid nspid = InvalidOid;
     Oid relid = InvalidOid;
     bool ret = TRUE;
-    
+
     if (schemaname == NULL) {
         if (!is_missingok) {
-	    ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("schemaname NULL!!!!")));
-	}
+            ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("schemaname NULL!!!!")));
+        }
+        return ret;
+    }
 
-	return ret;
-    }
-    
     do {
-    	nspid = get_namespace_oid(schemaname, TRUE);
-    	if (!OidIsValid(nspid)) {
-    	    ret = FALSE;
-    	    break;
-    	}
-    
-    	if (tablename == NULL) {
-    	    break;
-    	}
-    
-    	relid = get_relname_relid(tablename, nspid);
-    	if (!OidIsValid(relid)) {
-    	    ret = FALSE;
-    	}
+        nspid = get_namespace_oid(schemaname, TRUE);
+        if (!OidIsValid(nspid)) {
+            ret = FALSE;
+            break;
+        }
+
+        if (tablename == NULL) {
+            break;
+        }
+
+        relid = get_relname_relid(tablename, nspid);
+        if (!OidIsValid(relid)) {
+            ret = FALSE;
+        }
     } while(0);
-    
+
     if (!ret && !is_missingok) {
-    	if (tablename == NULL) {
-    	    ereport(ERROR,
-    		(errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("Unkown Schema '%s'.", schemaname)));
-    	} else {
-    	    ereport(ERROR,
-    		(errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("Table '%s.%s' doesn't exist.", schemaname, tablename)));
-    	}
-    	
+        if (tablename == NULL) {
+            ereport(ERROR,
+                    (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("Unkown Schema '%s'.", schemaname)));
+        } else {
+            ereport(ERROR,
+                    (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("Table '%s.%s' doesn't exist.", schemaname, tablename)));
+        }
     }
-    
+
     return ret;
 }
 
@@ -427,23 +534,12 @@ SelectStmt* makeShowTablesDirectQuery(char *colTbl, char *schemaname, bool fullm
 {
     List* tl = list_make1(plpsMakeNormalColumn(NULL, "relname", colTbl));
     if (fullmode) {
-    	tl = lappend(tl, makeShowTablesTypeColumn(smallcase));
+        tl = lappend(tl, makeShowTablesTypeColumn(smallcase));
     }
-    
-    SelectStmt *stmt = makeNode(SelectStmt);
-    stmt->distinctClause = NIL;
-    stmt->targetList = tl;
-    stmt->intoClause = NULL;
-    stmt->fromClause = list_make2(makeRangeVar(NULL, PG_CLASS_NAME, -1),
-				  makeRangeVar(NULL, PG_NAMESPACE_NAME, -1));
-    stmt->whereClause = makeShowTablesWhereTarget(schemaname, likeWhereOpt);
-    stmt->sortClause = NIL;
-    stmt->groupClause = NIL;
-    stmt->havingClause = NULL;
-    stmt->windowClause = NIL;
-    stmt->hintState = NULL;
-    stmt->hasPlus = false;
+    List* fl = list_make2(makeRangeVar(NULL, PG_CLASS_NAME, -1), makeRangeVar(NULL, PG_NAMESPACE_NAME, -1));
+    Node* wc = makeShowTablesWhereTarget(schemaname, likeWhereOpt);
 
+    SelectStmt* stmt = plpsMakeSelectStmt(tl, fl, wc, NULL);
     return stmt;
 }
 
@@ -451,22 +547,23 @@ SelectStmt* makeShowTablesDirectQuery(char *colTbl, char *schemaname, bool fullm
  * Build a parsed tree for 'SHOW [FULL] TABLES [{FROM|IN} dbname] [LIKE 'pattern' | WHERE expr]'.
  * This is actually a parse of the following statement:
  *
- * SELECT "table_in_dbname(like_pattern)" AS "Table_in_dbname(like_pattern)",
- *        "type" AS "Type"
+ * SELECT
+ *    "table_in_dbname(like_pattern)" AS "Table_in_dbname(like_pattern)",
+ *    "type" AS "Type"
  * FROM
  * (
- *   SELECT c.relname AS "tables_in_dbname (like_pattern)",
- *     CASE c.relkind
- *       WHEN 'r' THEN 'NORMAL TABLE'
- *       WHEN 'v' then 'VIEW'
- *       ELSE 'UNKNOWN'
- *     END AS "type"
- *   FROM
- *     pg_class c, pg_namespace n
- *   WHERE c.relnamespace = n.oid
- *     AND c.relkind in ('r', 'v')
- *     AND n.nspname = `current_schema or input schemaname` // the input parameter, not valid sql
- *     AND a_expr // where clause or like 'pattern' converted
+ *    SELECT c.relname AS "tables_in_dbname (like_pattern)",
+ *        CASE c.relkind
+ *            WHEN 'r' THEN 'NORMAL TABLE'
+ *            WHEN 'v' then 'VIEW'
+ *            ELSE 'UNKNOWN'
+ *        END AS "type"
+ *    FROM
+ *        pg_class c, pg_namespace n
+ *    WHERE c.relnamespace = n.oid
+ *        AND c.relkind in ('r', 'v')
+ *        AND n.nspname = `current_schema or input schemaname` // the input parameter, not valid sql
+ *        AND a_expr // where clause or like 'pattern' converted
  * )
  *
  * @param fullmode
@@ -481,7 +578,7 @@ SelectStmt* makeShowTablesQuery(bool fullmode, char *optDbName, Node *likeWhereO
     int rc;
 
     if (optDbName != NULL) {
-    	schemaname = optDbName;
+        schemaname = optDbName;
     }
 
     if (schemaname == NULL) {
@@ -489,55 +586,39 @@ SelectStmt* makeShowTablesQuery(bool fullmode, char *optDbName, Node *likeWhereO
     }
 
     (void)plps_check_schema_or_table_valid(schemaname, NULL, FALSE); // check error exit
- 
+
     char *retColTbl = NULL;
     char *colTbl = NULL; // inner table
     int len;
-    
+
     if (isLikeExpr && likeWhereOpt != NULL) {
-    	char *likeStr = ((A_Const*)likeWhereOpt)->val.val.str; // LIKE restrict Sconst
-    	len = strlen("Tables_in_") + strlen(schemaname) + strlen(" (") + strlen(likeStr) + 2; //2 for ')' and '\0'
-    	retColTbl = (char *)palloc0(len);
-    	colTbl = (char *)palloc0(len);
-    	rc = sprintf_s(retColTbl, len, "Tables_in_%s (%s)", schemaname, likeStr);
-    	securec_check_ss(rc, "", "");
-	rc = sprintf_s(colTbl, len, "tables_in_%s (%s)", schemaname, likeStr);
-    	securec_check_ss(rc, "", "");
-    
-    	likeWhereOpt = (Node*)makeSimpleA_Expr(AEXPR_OP, "~~", plpsMakeColumnRef(NULL, colTbl), likeWhereOpt, -1);
+        char *likeStr = ((A_Const*)likeWhereOpt)->val.val.str; // LIKE restrict Sconst
+        len = strlen("Tables_in_") + strlen(schemaname) + strlen(" (") + strlen(likeStr) + 2; //2 for ')' and '\0'
+        retColTbl = (char *)palloc0(len);
+        colTbl = (char *)palloc0(len);
+        rc = sprintf_s(retColTbl, len, "Tables_in_%s (%s)", schemaname, likeStr);
+        securec_check_ss(rc, "", "");
+        rc = sprintf_s(colTbl, len, "tables_in_%s (%s)", schemaname, likeStr);
+        securec_check_ss(rc, "", "");
+
+        likeWhereOpt = (Node*)makeSimpleA_Expr(AEXPR_OP, "~~", plpsMakeColumnRef(NULL, colTbl), likeWhereOpt, -1);
     } else {
-    	len = strlen("Tables_in_") + strlen(schemaname) + 1;
-    	retColTbl = (char *)palloc0(len);
-    	colTbl = (char *)palloc0(len);
-    	rc = sprintf_s(retColTbl, len, "Tables_in_%s", schemaname);
-    	securec_check_ss(rc, "", "");
-    	rc = sprintf_s(colTbl, len, "tables_in_%s", schemaname);
-    	securec_check_ss(rc, "", "");
+        len = strlen("Tables_in_") + strlen(schemaname) + 1;
+        retColTbl = (char *)palloc0(len);
+        colTbl = (char *)palloc0(len);
+        rc = sprintf_s(retColTbl, len, "Tables_in_%s", schemaname);
+        securec_check_ss(rc, "", "");
+        rc = sprintf_s(colTbl, len, "tables_in_%s", schemaname);
+        securec_check_ss(rc, "", "");
     }
-    
-    RangeSubselect *rsubselect = makeNode(RangeSubselect);
-    Alias *alias = makeNode(Alias);
-    bool smallcase_beneath = TRUE; 
-    
-    alias->aliasname = pstrdup("__unnamed_subquery__");
-    rsubselect->subquery = (Node*)makeShowTablesDirectQuery(colTbl, schemaname, fullmode, smallcase_beneath, likeWhereOpt);
-    rsubselect->alias = alias;
 
-    List *tl = list_make1(plpsMakeNormalColumn(NULL, colTbl, retColTbl));
-    if (fullmode) {
-    	tl = lappend(tl, plpsMakeNormalColumn(NULL, SHOW_TBL_TYPE_COL_S, SHOW_TBL_TYPE_COL));
-    }
-    
-    SelectStmt *stmt = makeNode(SelectStmt);
-    stmt->targetList = tl;
-    stmt->fromClause = list_make1(rsubselect);
-    stmt->whereClause = NULL;
-    stmt->sortClause = NIL;
-    stmt->havingClause = NULL;
-    stmt->windowClause = NULL;
-    stmt->hintState = NULL;
-    stmt->hasPlus = FALSE;
+    bool smallcase_beneath = TRUE;
+    List* tl = list_make1(plpsMakeNormalColumn(NULL, colTbl, retColTbl));
+    if (fullmode) tl = lappend(tl, plpsMakeNormalColumn(NULL, SHOW_TBL_TYPE_COL_S, SHOW_TBL_TYPE_COL));
+    List* fl = list_make1(makeRangeSubselect(
+            makeShowTablesDirectQuery(colTbl, schemaname, fullmode, smallcase_beneath, likeWhereOpt)));
 
+    SelectStmt* stmt = plpsMakeSelectStmt(tl, fl, NULL, NULL);
     return stmt;
 }
 
@@ -566,25 +647,11 @@ SelectStmt* makeShowIndexQuery(char *schemaName, char *tableName, Node* whereCla
     List* fl = (List*)list_make1(rv);
 
     Node* condSchema = (Node*)makeSimpleA_Expr(AEXPR_OP, "=", makeColumnRef("namespace"),
-                                               makeStringConst(schemaName), -1);
-    Node* condTable = (Node*)makeSimpleA_Expr(AEXPR_OP, "=", makeColumnRef("table"), makeStringConst(tableName), -1);
+                                               plpsMakeStringConst(schemaName), -1);
+    Node* condTable = (Node*)makeSimpleA_Expr(AEXPR_OP, "=", makeColumnRef("table"), plpsMakeStringConst(tableName), -1);
     Node* condST = plpsAddCond(condSchema, condTable);
+    Node* wc = whereClause ? plpsAddCond(condST, whereClause) : condST;
 
-    SelectStmt* stmt = makeNode(SelectStmt);
-    stmt->distinctClause = NIL;
-    stmt->targetList = tl;
-    stmt->intoClause = NULL;
-    stmt->fromClause = fl;
-    if (whereClause) {
-        stmt->whereClause = plpsAddCond(condST, whereClause);
-    } else {
-        stmt->whereClause = condST;
-    }
-    stmt->sortClause = NIL;
-    stmt->groupClause = NIL;
-    stmt->havingClause = NULL;
-    stmt->windowClause = NIL;
-    stmt->hintState = NULL;
-    stmt->hasPlus = false;
+    SelectStmt* stmt = plpsMakeSelectStmt(tl, fl, wc, NULL);
     return stmt;
 }

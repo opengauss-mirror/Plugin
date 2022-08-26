@@ -1,0 +1,58 @@
+drop database if exists db_show_3;
+NOTICE:  database "db_show_3" does not exist, skipping
+create database db_show_3 dbcompatibility 'b';
+\c db_show_3
+show databases;
+      Database      
+--------------------
+ blockchain
+ cstore
+ db4ai
+ dbe_perf
+ dbe_pldebugger
+ dbe_pldeveloper
+ information_schema
+ pg_catalog
+ pg_toast
+ pkg_service
+ public
+ snapshot
+ sqladvisor
+(13 rows)
+
+create schema aa1;
+create schema aa2;
+create schema aa3;
+show databases like 'aa%';
+ Database 
+----------
+ aa1
+ aa2
+ aa3
+(3 rows)
+
+create schema abb1;
+create schema abb2;
+create schema abb3;
+show databases like '%ab%';
+ Database 
+----------
+ abb1
+ abb2
+ abb3
+(3 rows)
+
+show databases where database = 'abb2';
+ Database 
+----------
+ abb2
+(1 row)
+
+show schemas where Database = 'abb2';
+ Database 
+----------
+ abb2
+(1 row)
+
+\c postgres
+drop database if exists db_show_3;

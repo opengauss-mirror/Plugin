@@ -77,6 +77,7 @@
 #include "replication/rto_statistic.h"
 #include "storage/lock/lock.h"
 #include "nodes/makefuncs.h"
+#include "plugin_postgres.h"
 
 #define UINT32_ACCESS_ONCE(var) ((uint32)(*((volatile uint32*)&(var))))
 #define NUM_PG_LOCKTAG_ID 12
@@ -286,6 +287,7 @@ extern List* parse_autovacuum_coordinators();
 extern Datum pg_autovac_timeout(PG_FUNCTION_ARGS);
 static int64 pgxc_exec_autoanalyze_timeout(Oid relOid, int32 coordnum, char* funcname);
 extern bool allow_autoanalyze(HeapTuple tuple);
+extern void validate_xlog_location(char *str);
 
 int g_stat_file_id = -1;
 
@@ -14858,3 +14860,82 @@ Datum gs_get_index_status(PG_FUNCTION_ARGS)
 }
 
 #endif
+
+PG_FUNCTION_INFO_V1_PUBLIC(gs_master_status);
+extern "C" DLL_PUBLIC Datum gs_master_status(PG_FUNCTION_ARGS);
+
+#define MASTER_STATUS_COLS 3
+
+Datum gs_master_status(PG_FUNCTION_ARGS)
+{
+    char location[MAXFNAMELEN];
+    errno_t errorno = EOK;
+    XLogRecPtr xlog_ptr = InvalidXLogRecPtr;
+    TimeLineID this_tli;
+
+    uint32 hi = 0;
+    uint32 lo = 0;
+    XLogSegNo xlogsegno;
+    XLogRecPtr locationpoint;
+    char xlogfilename[MAXFNAMELEN];
+
+    Datum values[MASTER_STATUS_COLS];
+    bool nulls[MASTER_STATUS_COLS];
+    TupleDesc resultTupleDesc;
+    HeapTuple resultHeapTuple;
+
+    if (!RecoveryInProgress()) {
+        /* use volatile pointer to prevent code rearrangement */
+        XLogCtlData *xlogctl = t_thrd.shemem_ptr_cxt.XLogCtl;
+
+        SpinLockAcquire(&xlogctl->info_lck);
+        *t_thrd.xlog_cxt.LogwrtResult = xlogctl->LogwrtResult;
+        SpinLockRelease(&xlogctl->info_lck);
+
+        xlog_ptr = t_thrd.xlog_cxt.LogwrtResult->Flush;
+        this_tli = t_thrd.xlog_cxt.ThisTimeLineID;
+    } else {
+        xlog_ptr = GetXLogReplayRecPtr(&this_tli);
+    }
+
+    resultTupleDesc = CreateTemplateTupleDesc(MASTER_STATUS_COLS, false, TAM_HEAP);
+    TupleDescInitEntry(resultTupleDesc, (AttrNumber)1, "Xlog_File_Name", TEXTOID, -1, 0);
+    TupleDescInitEntry(resultTupleDesc, (AttrNumber)2, "Xlog_File_Offset", INT4OID, -1, 0);
+    TupleDescInitEntry(resultTupleDesc, (AttrNumber)3, "Xlog_Lsn", TEXTOID, -1, 0);
+    resultTupleDesc = BlessTupleDesc(resultTupleDesc);
+
+    bool valid_lsn = (!XLByteEQ(xlog_ptr, InvalidXLogRecPtr));
+    if (valid_lsn) {
+        errorno = snprintf_s(location, sizeof(location), sizeof(location) - 1, 
+            "%X/%X", (uint32)(xlog_ptr >> 32), (uint32)xlog_ptr);
+        securec_check_ss(errorno, "", "");
+    
+        validate_xlog_location(location);
+    
+        if (sscanf_s(location, "%X/%X", &hi, &lo) != 2) {
+            ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+                            errmsg("could not parse transaction log location \"%s\"", location)));
+        }
+    
+        locationpoint = (((uint64)hi) << 32) | lo;
+    
+        XLByteToPrevSeg(locationpoint, xlogsegno);
+        errorno = snprintf_s(xlogfilename, MAXFNAMELEN, MAXFNAMELEN - 1, "%08X%08X%08X", 
+            this_tli, 
+            (uint32)((xlogsegno) / XLogSegmentsPerXLogId),
+             (uint32)((xlogsegno) % XLogSegmentsPerXLogId));
+        securec_check_ss(errorno, "", "");
+
+        values[0] = CStringGetTextDatum(xlogfilename);
+        values[1] = UInt32GetDatum(locationpoint % XLogSegSize);
+        values[2] = CStringGetTextDatum(location);
+    }
+    nulls[0] = !valid_lsn;
+    nulls[1] = !valid_lsn;
+    nulls[2] = !valid_lsn;
+
+    resultHeapTuple = heap_form_tuple(resultTupleDesc, values, nulls);
+    
+    PG_RETURN_DATUM(PointerGetDatum(resultHeapTuple->t_data));
+}
+
