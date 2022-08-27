@@ -10,7 +10,7 @@ select DAYOFYEAR(datetime '2021-12-31 16:30:44.341191');
 
 select HOUR(datetime '2021-11-4 16:30:44.341191');
 
-select MICROSECOND(datetime(6) '2021-11-4 16:30:44.341191');
+select MICROSECOND(datetime '2021-11-4 16:30:44.341191');
 
 select MINUTE(datetime '2021-11-4 16:30:44.341191');
 
@@ -92,6 +92,13 @@ select length('1'), length('101'), length('1011111111');
 select length(E'哈1哈\n'),length(E'\n'),length(E'\\n');
 --返回0、1、空
 select length(''),length(' '),length(NULL);
+
+create table fchar_test(fchar char(10));
+insert into fchar_test values('零一二三四五六七八九');
+insert into fchar_test values('零一二三四五六七八九0');
+insert into fchar_test values('零一二三四五六七八九十');
+select fchar,length(fchar) from fchar_test order by 1,2;
+drop table fchar_test;
 
 \c postgres
 drop database if exists db_b_parser2;

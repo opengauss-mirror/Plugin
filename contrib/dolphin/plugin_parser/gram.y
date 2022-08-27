@@ -49,6 +49,7 @@
  * -------------------------------------------------------------------------
  */
 #include "postgres.h"
+#include "plugin_nodes/parsenodes_common.h"
 #include "knl/knl_variable.h"
 #include "utils/builtins.h"
 #include <ctype.h>
@@ -365,6 +366,7 @@ static void FilterStartWithUseCases(SelectStmt* stmt, List* locking_clause, core
 static FuncCall* MakePriorAsFunc();
 static Node* MakeSetPasswdStmt(char* user, char* passwd, char* replace_passwd);
 static Node* MakeKillStmt(int kill_opt, Node *expr);
+static Node* makeAnalyzeTableList(List *rangeVars);
 
 #ifndef ENABLE_MULTIPLE_NODES
 static bool CheckWhetherInColList(char *colname, List *col_list);
@@ -449,7 +451,7 @@ static int errstate;
 		AlterSystemStmt
 		AlterRoleStmt AlterRoleSetStmt AlterRlsPolicyStmt
 		AlterDefaultPrivilegesStmt DefACLAction AlterSessionStmt
-		AnalyzeStmt CleanConnStmt ClosePortalStmt ClusterStmt CommentStmt
+		AnalyzeStmt AnalyzePartitionStmt CleanConnStmt ClosePortalStmt ClusterStmt CommentStmt
 		ConstraintsSetStmt CopyStmt CreateAsStmt CreateCastStmt CreateContQueryStmt CreateDirectoryStmt 
 		CreateDomainStmt CreateExtensionStmt CreateGroupStmt CreateKeyStmt CreateOpClassStmt
 		CreateOpFamilyStmt AlterOpFamilyStmt CreatePLangStmt
@@ -517,7 +519,16 @@ static int errstate;
 %type <list>	alter_table_cmds alter_partition_cmds alter_table_or_partition alter_index_or_partition alter_type_cmds add_column_cmds modify_column_cmds alter_index_rebuild_partition
 
 %type <node>	AlterPartitionRebuildStmt AlterPartitionRemoveStmt AlterPartitionCheckStmt AlterPartitionRepairStmt AlterPartitionOptimizeStmt
+
+%type <node>	drop_partition_cmd_for_bdatabase drop_subpartition_cmd_for_bdatabase drop_partition_cmd drop_subpartition_cmd add_partition_cmd
+
+%type <list>	alter_partition_cmds_for_bdatabase alter_subpartition_cmds_for_bdatabase drop_partition_cmds_for_bdatabase drop_subpartition_cmds_for_bdatabase drop_partition_cmds drop_subpartition_cmds add_partition_cmds_for_bdatabase
+
 %type <list>	partition_name_list
+
+%type <node>	exchange_partition_cmd_for_bdatabase truncate_partition_cmd truncate_partition_cmd_for_bdatabase
+
+%type <list>	truncate_partition_cmds truncate_partition_cmds_for_bdatabase
 
 %type <dbehavior>	opt_drop_behavior
 
@@ -605,7 +616,7 @@ static int errstate;
 				sort_clause opt_sort_clause sortby_list index_params
 				name_list from_clause from_list opt_array_bounds
 				qualified_name_list any_name any_name_list
-				any_operator expr_list attrs callfunc_args
+				any_operator expr_list attrs callfunc_args callfunc_args_or_empty
 				target_list insert_column_list set_target_list
 				set_clause_list set_clause multiple_set_clause
 				ctext_expr_list ctext_row def_list tsconf_def_list indirection opt_indirection
@@ -737,7 +748,7 @@ static int errstate;
 				GenericType Numeric opt_float
 				Character ConstCharacter
 				CharacterWithLength CharacterWithoutLength
-				ConstDatetime ConstInterval
+				PreciseConstDatetime ConstDatetime ConstInterval
 				Bit ConstBit BitWithLength BitWithoutLength client_logic_type
 				datatypecl OptCopyColTypename Binary EnumType
 %type <str>		character
@@ -749,9 +760,9 @@ static int errstate;
 
 %type <ival>	Iconst SignedIconst
 %type <str>		Sconst comment_text notify_payload
-%type <str>		RoleId TypeOwner opt_granted_by opt_boolean_or_string ColId_or_Sconst
+%type <str>		RoleId TypeOwner opt_granted_by opt_boolean_or_string ColId_or_Sconst definer_user definer_expression
 %type <list>	var_list
-%type <str>		ColId ColLabel var_name type_function_name param_name user opt_password opt_replace
+%type <str>		ColId ColLabel var_name type_function_name param_name user opt_password opt_replace show_index_schema_opt
 %type <node>	var_value zone_value
 
 %type <keyword> unreserved_keyword type_func_name_keyword
@@ -899,7 +910,7 @@ static int errstate;
 %type <typnam>  load_col_data_type
 %type <ival64>  load_col_sequence_item_sart column_sequence_item_step column_sequence_item_sart
 %type <node>	on_table opt_engine opt_engine_without_empty opt_compression opt_compression_without_empty set_compress_type
-%type <keyword>	into_empty opt_temporary opt_values_in
+%type <keyword>	into_empty opt_temporary opt_values_in replace_empty
 %type <str>	compression_args
 %type <boolean> opt_ignore opt_unsigned
 
@@ -936,13 +947,13 @@ static int errstate;
 	CHARACTER CHARACTERISTICS CHARACTERSET CHECK CHECKPOINT CLASS CLEAN CLIENT CLIENT_MASTER_KEY CLIENT_MASTER_KEYS CLOB CLOSE
 	CLUSTER COALESCE COLLATE COLLATION COLUMN COLUMNS COLUMN_ENCRYPTION_KEY COLUMN_ENCRYPTION_KEYS COMMENT COMMENTS COMMIT
 	COMMITTED COMPACT COMPATIBLE_ILLEGAL_CHARS COMPLETE COMPRESS COMPRESSION CONCURRENTLY CONDITION CONFIGURATION CONNECTION CONSTANT CONSTRAINT CONSTRAINTS
-	CONTENT_P CONTINUE_P CONTVIEW CONVERSION_P CONVERT CONNECT COORDINATOR COORDINATORS COPY COST CREATE
+	CONTAINS CONTENT_P CONTINUE_P CONTVIEW CONVERSION_P CONVERT CONNECT COORDINATOR COORDINATORS COPY COST CREATE
 	CROSS CSN CSV CUBE CURRENT_P
 	CURRENT_CATALOG CURRENT_DATE CURRENT_ROLE CURRENT_SCHEMA
 	CURRENT_TIME CURTIME CURRENT_TIMESTAMP CURRENT_USER CURSOR CYCLE NOW_FUNC
 
 	DATA_P DATABASE DATAFILE DATANODE DATANODES DATATYPE_CL DATE_P DATETIME DATE_FORMAT_P DAY_P  DAYOFMONTH DAYOFWEEK DAYOFYEAR DBCOMPATIBILITY_P DB_B_FORMAT DEALLOCATE DEC DECIMAL_P DECLARE DECODE DEFAULT DEFAULTS
-	DEFERRABLE DEFERRED DEFINER DELETE_P DELIMITER DELIMITERS DELTA DELTAMERGE DESC DESCRIBE DETERMINISTIC DIV
+	DEFERRABLE DEFERRED DEFINER DELAYED DELETE_P DELIMITER DELIMITERS DELTA DELTAMERGE DESC DESCRIBE DETERMINISTIC DIV
 /* PGXC_BEGIN */
 	DICTIONARY DIRECT DIRECTORY DISABLE_P DISCARD DISTINCT DISTINCTROW DISTRIBUTE DISTRIBUTION DO DOCUMENT_P DOMAIN_P DOUBLE_P
 /* PGXC_END */
@@ -968,15 +979,17 @@ static int errstate;
 
 	JOIN
 
-	KEY KILL KEY_PATH KEY_STORE
+	KEY KEYS KILL KEY_PATH KEY_STORE
 
 	LABEL LANGUAGE LARGE_P LAST_P LC_COLLATE_P LC_CTYPE_P LEADING LEAKPROOF
 	LEAST LESS LEFT LEVEL LIKE LIMIT LIST LISTEN LOAD LOCAL LOCALTIME LOCALTIMESTAMP
-	LOCATE LOCATION LOCK_P LOG_P LOGGING LOGIN_ANY LOGIN_FAILURE LOGIN_SUCCESS LOGOUT LOOP
+	LOCATE LOCATION LOCK_P LOG_P LOGGING LOGIN_ANY LOGIN_FAILURE LOGIN_SUCCESS LOGOUT LOOP LOW_PRIORITY
 	MAPPING MASKING MASTER MATCH MATERIALIZED MATCHED MAXEXTENTS MAXSIZE MAXTRANS MAXVALUE MEDIUMINT MERGE MICROSECOND_P MID MINUS_P MINUTE_P MINVALUE MINEXTENTS MOD MODE MODIFY_P MONTH_P MOVE MOVEMENT
 	MODEL // DB4AI
+	MODIFIES
 	NAME_P NAMES NATIONAL NATURAL NCHAR NEXT NO NOCOMPRESS NOCYCLE NODE NOLOGGING NOMAXVALUE NOMINVALUE NONE
 	NOT NOTHING NOTIFY NOTNULL NOWAIT NULL_P NULLCOLS NULLIF NULLS_P NUMBER_P NUMERIC NUMSTR NVARCHAR NVARCHAR2 NVL
+	NO_WRITE_TO_BINLOG
 
 	OBJECT_P OF OFF OFFSET OIDS ON ONLY OPERATOR OPTIMIZATION OPTIMIZE OPTION OPTIONALLY OPTIONS OR
 	ORDER OUT_P OUTER_P OVER OVERLAPS OVERLAY OWNED OWNER
@@ -993,14 +1006,14 @@ static int errstate;
 
 	QUARTER QUERY QUOTE
 
-	RANDOMIZED RANGE RATIO RAW READ REAL REASSIGN REBUILD RECHECK RECURSIVE RECYCLEBIN REDISANYVALUE REF REFERENCES REFRESH REINDEX REJECT_P
+	RANDOMIZED RANGE RATIO RAW READ READS REAL REASSIGN REBUILD RECHECK RECURSIVE RECYCLEBIN REDISANYVALUE REF REFERENCES REFRESH REINDEX REJECT_P
 	RELATIVE_P RELEASE RELOPTIONS REMOTE_P REMOVE RENAME REPEATABLE REPLACE REPLICA REGEXP REPAIR
 	RESET RESIZE RESOURCE RESTART RESTRICT RETURN RETURNING RETURNS REUSE REVOKE RIGHT RLIKE ROLE ROLES ROLLBACK ROLLUP
 	ROTATION ROUTINE ROW ROWNUM ROWS ROWTYPE_P RULE
 
 	SAMPLE SAVEPOINT SCHEMA SCROLL SEARCH SECOND_P SECURITY SELECT SEQUENCE SEQUENCES
 	SERIALIZABLE SERVER SESSION SESSION_USER SET SETS SETOF SHARE SHIPPABLE SHOW SHUTDOWN SIBLINGS
-	SIMILAR SIMPLE SIZE SKIP SLICE SMALLDATETIME SMALLDATETIME_FORMAT_P SMALLINT SNAPSHOT SOME SOURCE_P SPACE SPILL SPLIT STABLE STANDALONE_P START STARTWITH
+	SIMILAR SIMPLE SIZE SKIP SLICE SMALLDATETIME SMALLDATETIME_FORMAT_P SMALLINT SNAPSHOT SOME SOURCE_P SPACE SPILL SPLIT SQL STABLE STANDALONE_P START STARTWITH
 	STATEMENT STATEMENT_ID STATISTICS STDIN STDOUT STORAGE STORE_P STORED STRATIFY STREAM STRICT_P STRIP_P SUBPARTITION SUBSCRIPTION SUBSTR SUBSTRING
 	SYMMETRIC SYNONYM SYSDATE SYSID SYSTEM_P SYS_REFCURSOR
 
@@ -1046,6 +1059,8 @@ static int errstate;
 			START_WITH CONNECT_BY
 
 /* Precedence: lowest to highest */
+%nonassoc lower_than_key
+%nonassoc KEY
 %nonassoc lower_than_row
 %nonassoc lower_than_on
 %left ON USING
@@ -1227,6 +1242,7 @@ stmt :
 			| AlterUserStmt
 			| AlterWorkloadGroupStmt
 			| AnalyzeStmt
+			| AnalyzePartitionStmt
 			| AnonyBlockStmt
 			| BarrierStmt
 			| CreateAppWorkloadGroupMappingStmt
@@ -2656,6 +2672,22 @@ VariableShowStmt:
 					n->name = "all";
 					$$ = (Node *) n;
 				}
+			| SHOW show_index_opt from_in qualified_name show_index_schema_opt where_clause
+				{
+					SelectStmt *s = makeShowIndexQuery($5 ? $5 : $4->schemaname, $4->relname, $6);
+					$$ = (Node*)s;
+				}
+		;
+
+show_index_schema_opt:
+			from_in ColId							{ $$ = $2; }
+			| /* empty */							{ $$ = NULL; }
+		;
+
+show_index_opt:
+			INDEX
+			| INDEXES
+			| KEYS
 		;
 
 OptLikeOrWhere:
@@ -3147,6 +3179,9 @@ alter_index_rebuild_partition:
 alter_table_or_partition:
 			alter_table_cmds        { $$ = ($1); }
 			| alter_partition_cmds  { $$ = ($1); }
+			| alter_partition_cmds_for_bdatabase  { $$ = ($1); }
+			| alter_subpartition_cmds_for_bdatabase  { $$ = ($1); }
+			| ADD_PARTITION '(' add_partition_cmds_for_bdatabase ')' { $$ = ($3); }
 		;
 
 /* ALTER TABLE sql clauses for ordinary table */
@@ -3161,6 +3196,7 @@ alter_partition_cmds:
 			| alter_partition_cmds ',' alter_partition_cmd { $$ = lappend($1, $3); }
 			| move_partition_cmd                           { $$ = list_make1($1); }
 			| exchange_partition_cmd                       { $$ = list_make1($1); }
+			| exchange_partition_cmd_for_bdatabase             { $$ = list_make1($1); }
 		;
 
 alter_partition_cmd:
@@ -3189,182 +3225,9 @@ alter_partition_cmd:
 				$$ = (Node *)n;
 			}
 		/* ALTER TABLE ADD PARTITION: use less/than */
-		| ADD_PARTITION name VALUES LESS THAN
-		'(' maxValueList ')' OptTableSpace
+		| ADD_PARTITION add_partition_cmd
 			{
-				RangePartitionDefState *p = makeNode(RangePartitionDefState);
-				AlterTableCmd *n = makeNode(AlterTableCmd);
-				AddPartitionState *s = makeNode(AddPartitionState);
-				p->partitionName = $2;
-				p->boundary = $7;
-				p->tablespacename = $9;
-				s->partitionList = list_make1(p);
-				s->isStartEnd = false;
-				n->subtype = AT_AddPartition;
-				n->def = (Node*)s;
-				$$ = (Node *)n;
-			}
-		/* ALTER TABLE ADD PARTITION: use START/END */
-		| ADD_PARTITION name START '(' maxValueList ')'  END_P '(' maxValueList ')' opt_range_every_list OptTableSpace
-			{
-				RangePartitionStartEndDefState *p = makeNode(RangePartitionStartEndDefState);
-				AlterTableCmd *n = makeNode(AlterTableCmd);
-				AddPartitionState *s = makeNode(AddPartitionState);
-				p->partitionName = $2;
-				p->startValue = $5;
-				p->endValue = $9;
-				p->everyValue = $11;
-				p->tableSpaceName = $12;
-				s->partitionList = list_make1(p);
-				s->isStartEnd = true;
-				n->subtype = AT_AddPartition;
-				n->def = (Node*)s;
-				$$ = (Node *)n;
-			}
-		| ADD_PARTITION name END_P '(' maxValueList ')' OptTableSpace
-			{
-				RangePartitionStartEndDefState *p = makeNode(RangePartitionStartEndDefState);
-				AlterTableCmd *n = makeNode(AlterTableCmd);
-				AddPartitionState *s = makeNode(AddPartitionState);
-				p->partitionName = $2;
-				p->startValue = NIL;
-				p->endValue = $5;
-				p->everyValue = NIL;
-				p->tableSpaceName = $7;
-				s->partitionList = list_make1(p);
-				s->isStartEnd = true;
-				n->subtype = AT_AddPartition;
-				n->def = (Node*)s;
-				$$ = (Node *)n;
-			}
-		| ADD_PARTITION name START '(' maxValueList ')' OptTableSpace
-			{
-				RangePartitionStartEndDefState *p = makeNode(RangePartitionStartEndDefState);
-				AlterTableCmd *n = makeNode(AlterTableCmd);
-				AddPartitionState *s = makeNode(AddPartitionState);
-				p->partitionName = $2;
-				p->startValue = $5;
-				p->endValue = NIL;
-				p->everyValue = NIL;
-				p->tableSpaceName = $7;
-				s->partitionList = list_make1(p);
-				s->isStartEnd = true;
-				n->subtype = AT_AddPartition;
-				n->def = (Node*)s;
-				$$ = (Node *)n;
-			}
-		| ADD_PARTITION name VALUES '(' expr_list ')' OptTableSpace
-			{
-				ListPartitionDefState *p = makeNode(ListPartitionDefState);
-				AlterTableCmd *n = makeNode(AlterTableCmd);
-				AddPartitionState *s = makeNode(AddPartitionState);
-				p->partitionName = $2;
-				p->boundary = $5;
-				p->tablespacename = $7;
-				s->partitionList = list_make1(p);
-				s->isStartEnd = false;
-				n->subtype = AT_AddPartition;
-				n->def = (Node*)s;
-				$$ = (Node *)n;
-			}
-		| ADD_PARTITION name VALUES '(' DEFAULT ')' OptTableSpace
-			{
-				ListPartitionDefState *p = makeNode(ListPartitionDefState);
-				AlterTableCmd *n = makeNode(AlterTableCmd);
-				AddPartitionState *s = makeNode(AddPartitionState);
-				p->partitionName = $2;
-				Const *n_default = makeNode(Const);
-				n_default->ismaxvalue = true;
-				n_default->location = -1;
-				p->boundary = list_make1(n_default);
-				p->tablespacename = $7;
-				s->partitionList = list_make1(p);
-				s->isStartEnd = false;
-				n->subtype = AT_AddPartition;
-				n->def = (Node*)s;
-				$$ = (Node *)n;
-			}
-		| ADD_PARTITION name VALUES LESS THAN
-		'(' maxValueList ')' OptTableSpace '(' subpartition_definition_list ')'
-			{
-				RangePartitionDefState *p = makeNode(RangePartitionDefState);
-				AlterTableCmd *n = makeNode(AlterTableCmd);
-				AddPartitionState *s = makeNode(AddPartitionState);
-				p->partitionName = $2;
-				p->boundary = $7;
-				p->tablespacename = $9;
-				p->subPartitionDefState = $11;
-				int i = 0;
-				ListCell *elem = NULL;
-				List *parts = p->subPartitionDefState;
-				foreach(elem, parts) {
-					if (!IsA((Node*)lfirst(elem), HashPartitionDefState)) {
-						break;
-					}
-					HashPartitionDefState *hashPart = (HashPartitionDefState*)lfirst(elem);
-					hashPart->boundary = list_make1(makeIntConst(i, -1));
-					i++;
-				}
-				s->partitionList = list_make1(p);
-				s->isStartEnd = false;
-				n->subtype = AT_AddPartition;
-				n->def = (Node*)s;
-				$$ = (Node *)n;
-			}
-		| ADD_PARTITION name VALUES '(' expr_list ')' OptTableSpace '(' subpartition_definition_list ')'
-			{
-				ListPartitionDefState *p = makeNode(ListPartitionDefState);
-				AlterTableCmd *n = makeNode(AlterTableCmd);
-				AddPartitionState *s = makeNode(AddPartitionState);
-				p->partitionName = $2;
-				p->boundary = $5;
-				p->tablespacename = $7;
-				p->subPartitionDefState = $9;
-			    int i = 0;
-				ListCell *elem = NULL;
-				List *parts = p->subPartitionDefState;
-				foreach(elem, parts) {
-					if (!IsA((Node*)lfirst(elem), HashPartitionDefState)) {
-						break;
-					}
-					HashPartitionDefState *hashPart = (HashPartitionDefState*)lfirst(elem);
-					hashPart->boundary = list_make1(makeIntConst(i, -1));
-					i++;
-				}
-				s->partitionList = list_make1(p);
-				s->isStartEnd = false;
-				n->subtype = AT_AddPartition;
-				n->def = (Node*)s;
-				$$ = (Node *)n;
-			}
-		| ADD_PARTITION name VALUES '(' DEFAULT ')' OptTableSpace '(' subpartition_definition_list ')'
-			{
-				ListPartitionDefState *p = makeNode(ListPartitionDefState);
-				AlterTableCmd *n = makeNode(AlterTableCmd);
-				AddPartitionState *s = makeNode(AddPartitionState);
-				p->partitionName = $2;
-				Const *n_default = makeNode(Const);
-				n_default->ismaxvalue = true;
-				n_default->location = -1;
-				p->boundary = list_make1(n_default);
-				p->tablespacename = $7;
-				p->subPartitionDefState = $9;
-			    int i = 0;
-				ListCell *elem = NULL;
-				List *parts = p->subPartitionDefState;
-				foreach(elem, parts) {
-					if (!IsA((Node*)lfirst(elem), HashPartitionDefState)) {
-						break;
-					}
-					HashPartitionDefState *hashPart = (HashPartitionDefState*)lfirst(elem);
-					hashPart->boundary = list_make1(makeIntConst(i, -1));
-					i++;
-				}
-				s->partitionList = list_make1(p);
-				s->isStartEnd = false;
-				n->subtype = AT_AddPartition;
-				n->def = (Node*)s;
-				$$ = (Node *)n;
+				$$ = $2;
 			}
 		/* ALTER TABLE MODIFY PARTITION ADD SUBPARTITION */
 		| MODIFY_PARTITION name ADD_SUBPARTITION name VALUES LESS THAN '(' maxValueList ')' OptTableSpace
@@ -3413,17 +3276,6 @@ alter_partition_cmd:
 				$$ = (Node *)n;
 			}
 		/* ALTER TABLE DROP PARTITION */
-		| DROP_PARTITION ColId OptGPI
-			{
-				AlterTableCmd *n = makeNode(AlterTableCmd);
-				n->subtype = AT_DropPartition;
-				n->name = $2;
-				n->behavior = DROP_CASCADE;
-				n->missing_ok = FALSE;
-				n->alterGPI = $3;
-				$$ = (Node *)n;
-			}
-		/* ALTER TABLE DROP PARTITION */
 		| DROP_PARTITION FOR '(' maxValueList ')' OptGPI
 			{
 				RangePartitionDefState *p = makeNode(RangePartitionDefState);
@@ -3438,16 +3290,6 @@ alter_partition_cmd:
 				$$ = (Node *)n;
 			}
 		/* ALTER TABLE DROP SUBPARTITION */
-		| DROP_SUBPARTITION ColId OptGPI
-			{
-				AlterTableCmd *n = makeNode(AlterTableCmd);
-				n->subtype = AT_DropSubPartition;
-				n->name = $2;
-				n->behavior = DROP_CASCADE;
-				n->missing_ok = FALSE;
-				n->alterGPI = $3;
-				$$ = (Node *)n;
-			}
 		| DROP_SUBPARTITION FOR '(' expr_list ')' OptGPI
 			{
 				RangePartitionDefState *p = makeNode(RangePartitionDefState);
@@ -3584,18 +3426,6 @@ alter_partition_cmd:
 				n->subtype = AT_SplitSubPartition;
 				n->alterGPI = $12;
 				$$ = (Node*)n;
-			}
-		/* truncate partition */
-		| TRUNCATE PARTITION ColId OptGPI
-			{
-				AlterTableCmd *n = makeNode(AlterTableCmd);
-				n->subtype = AT_TruncatePartition;
-				n->missing_ok = FALSE;
-				n->alterGPI = $4;
-				$$ = (Node *)n;
-
-				n->name = $3;
-
 			}
 		/* truncate partition */
 		| TRUNCATE PARTITION_FOR '(' maxValueList ')' OptGPI
@@ -3777,6 +3607,22 @@ alter_table_cmd:
 				{
 					AlterTableCmd *n = makeNode(AlterTableCmd);
 					n->subtype = AT_UnusableIndex;
+					$$ = (Node *)n;
+				}
+			|
+			/* ALTER TABLE <name> DISABLE KEYS */
+			DISABLE_P KEYS
+				{
+					AlterTableCmd *n = makeNode(AlterTableCmd);
+					n->subtype = AT_UnusableIndex;
+					$$ = (Node *)n;
+				}
+			|
+			/* ALTER TABLE <name> ENABLE KEYS */
+			ENABLE_P KEYS
+				{
+					AlterTableCmd *n = makeNode(AlterTableCmd);
+					n->subtype = AT_RebuildIndex;
 					$$ = (Node *)n;
 				}
 			|
@@ -3981,6 +3827,41 @@ alter_table_cmd:
 					n->name = $3;
 					n->behavior = $4;
 					n->missing_ok = FALSE;
+					$$ = (Node *)n;
+				}
+			| DROP PRIMARY KEY opt_drop_behavior
+				{
+					AlterTableCmd *n = makeNode(AlterTableCmd);
+					n->subtype = AT_DropConstraint;
+					n->name = NULL;
+					n->behavior = $4;
+					n->missing_ok = FALSE;
+					$$ = (Node *)n;
+				}
+			| DROP index_key_opt name opt_drop_behavior
+				{
+					AlterTableCmd *n = makeNode(AlterTableCmd);
+					n->subtype = AT_DropIndex;
+					n->name = $3;
+					n->behavior = $4;
+					n->missing_ok = FALSE;
+					$$ = (Node *)n;
+				}
+			| DROP FOREIGN KEY name opt_drop_behavior
+				{
+					AlterTableCmd *n = makeNode(AlterTableCmd);
+					n->subtype = AT_DropForeignKey;
+					n->name = $4;
+					n->behavior = $5;
+					n->missing_ok = FALSE;
+					$$ = (Node *)n;
+				}
+			| RENAME index_key_opt name TO name
+				{
+					AlterTableCmd *n = makeNode(AlterTableCmd);
+					n->subtype = AT_RenameIndex;
+					n->name = $3;
+					n->def = (Node *)makeString($5);
 					$$ = (Node *)n;
 				}
 			| MODIFY_P modify_column_cmd
@@ -4284,6 +4165,11 @@ alter_table_cmd:
 /* PGXC_END */
 		;
 
+index_key_opt:
+			INDEX
+			| KEY
+		;
+
 alter_column_default:
 			SET DEFAULT a_expr			{ $$ = $3; }
 			| DROP DEFAULT				{ $$ = NULL; }
@@ -4453,11 +4339,11 @@ split_dest_rangesubpartition_define_list:
 
 /*support b_database syntax related with partition*/
 AlterPartitionRebuildStmt:
-			ALTER TABLE name REBUILD_PARTITION partition_name_list
+			ALTER TABLE qualified_name REBUILD_PARTITION partition_name_list
 				{
 					FuncCall *n = makeNode(FuncCall);
 					n->funcname = list_make1(makeString("rebuild_partition"));
-					n->args = list_make1(makeAArrayExpr(lcons(makeStringConst($3, @3), $5), @5));
+					n->args = list_make1(makeAArrayExpr(lcons(makeStringConst($3->relname, @3), $5), @5));
 					n->agg_star = FALSE;
 					n->agg_distinct = FALSE;
 					n->func_variadic = FALSE;
@@ -4472,11 +4358,11 @@ AlterPartitionRebuildStmt:
 					sel->targetList = list_make1(rtg);
 					$$ = (Node *)sel;
 				}
-			| ALTER TABLE name REBUILD_PARTITION ALL
+			| ALTER TABLE qualified_name REBUILD_PARTITION ALL
 				{
 					FuncCall *n = makeNode(FuncCall);
 					n->funcname = list_make1(makeString("rebuild_partition"));
-					n->args = list_make1(makeAArrayExpr(list_make1(makeStringConst($3, @3)), @3));
+					n->args = list_make1(makeAArrayExpr(list_make1(makeStringConst($3->relname, @3)), @3));
 					n->agg_star = FALSE;
 					n->agg_distinct = FALSE;
 					n->func_variadic = FALSE;
@@ -4494,11 +4380,11 @@ AlterPartitionRebuildStmt:
 		;
 
 AlterPartitionRemoveStmt:
-			ALTER TABLE name REMOVE PARTITIONING
+			ALTER TABLE qualified_name REMOVE PARTITIONING
 				{
 					FuncCall *n = makeNode(FuncCall);
 					n->funcname = list_make1(makeString("remove_partitioning"));
-					n->args = list_make1(makeStringConst($3, @3));
+					n->args = list_make1(makeStringConst($3->relname, @3));
 					n->agg_star = FALSE;
 					n->agg_distinct = FALSE;
 					n->func_variadic = FALSE;
@@ -4516,19 +4402,212 @@ AlterPartitionRemoveStmt:
 		;
 
 AlterPartitionCheckStmt:
-			ALTER TABLE name CHECK PARTITION partition_name_list { $$=NULL; }
-			| ALTER TABLE name CHECK PARTITION ALL { $$=NULL; }
+			ALTER TABLE qualified_name CHECK PARTITION partition_name_list { $$=NULL; }
+			| ALTER TABLE qualified_name CHECK PARTITION ALL { $$=NULL; }
 		;
 
 AlterPartitionRepairStmt:
-			ALTER TABLE name REPAIR PARTITION partition_name_list { $$=NULL; }
-			| ALTER TABLE name REPAIR PARTITION ALL { $$=NULL; }
+			ALTER TABLE qualified_name REPAIR PARTITION partition_name_list { $$=NULL; }
+			| ALTER TABLE qualified_name REPAIR PARTITION ALL { $$=NULL; }
 		;
 
 AlterPartitionOptimizeStmt:
-			ALTER TABLE name OPTIMIZE PARTITION partition_name_list { $$=NULL; }
-			| ALTER TABLE name OPTIMIZE PARTITION ALL { $$=NULL; }
+			ALTER TABLE qualified_name OPTIMIZE PARTITION partition_name_list { $$=NULL; }
+			| ALTER TABLE qualified_name OPTIMIZE PARTITION ALL { $$=NULL; }
 		;
+
+AnalyzePartitionStmt:
+		ALTER TABLE qualified_name analyze_keyword opt_verbose opt_name_list PARTITION partition_name_list
+			{
+				List* arglist = NIL;
+				arglist = lcons(makeStringConst($3->relname, @3), $8);
+				FuncCall *n = makeNode(FuncCall);
+				n->funcname = list_make1(makeString("analyze_partition"));
+				n->args = list_make1(makeAArrayExpr(arglist, @8));
+				n->args = lappend(n->args, makeStringConst($3->catalogname, -1));
+				n->args = lappend(n->args, makeStringConst($3->schemaname, -1));
+				n->agg_star = FALSE;
+				n->agg_distinct = FALSE;
+				n->func_variadic = FALSE;
+				n->location = @4;
+				n->call_func = false;
+				ResTarget* rtg = makeNode(ResTarget);
+				rtg->name = NULL;
+				rtg->indirection = NIL;
+				rtg->val = (Node *)n;
+				rtg->location = @3;
+				SelectStmt *sel = makeNode(SelectStmt);
+				sel->targetList = list_make1(rtg);
+				$$ = (Node *)sel;
+			}
+		| ALTER TABLE qualified_name analyze_keyword opt_verbose opt_name_list PARTITION ALL
+			{
+				VacuumStmt *n = makeNode(VacuumStmt);
+				n->options = VACOPT_ANALYZE;
+				if ($5)
+					n->options |= VACOPT_VERBOSE;
+				n->freeze_min_age = -1;
+				n->freeze_table_age = -1;
+				n->relation = $3;
+				n->va_cols = $6;
+				$$ = (Node *)n;
+			}
+
+alter_partition_cmds_for_bdatabase:
+		TRUNCATE PARTITION ColId OptGPI
+			{
+				AlterTableCmd *n = makeNode(AlterTableCmd);
+				n->subtype = AT_TruncatePartition;
+				n->missing_ok = FALSE;
+				n->alterGPI = $4;
+				n->name = $3;
+				$$ = list_make1((Node *)n);
+			}
+		| TRUNCATE PARTITION ColId OptGPI ',' truncate_partition_cmds_for_bdatabase
+			{
+				AlterTableCmd *n = makeNode(AlterTableCmd);
+				n->subtype = AT_TruncatePartition;
+				n->missing_ok = FALSE;
+				n->alterGPI = $4;
+				n->name = $3;
+				$$ = lappend($6, (Node *)n);
+			}
+		| TRUNCATE PARTITION ColId OptGPI ',' truncate_partition_cmds
+			{
+				AlterTableCmd *n = makeNode(AlterTableCmd);
+				n->subtype = AT_TruncatePartition;
+				n->missing_ok = FALSE;
+				n->alterGPI = $4;
+				n->name = $3;
+				$$ = lappend($6, (Node *)n);
+			}
+		| TRUNCATE PARTITION ALL
+			{
+				AlterTableCmd *n = makeNode(AlterTableCmd);
+				n->subtype = AT_TruncatePartition;
+				n->missing_ok = FALSE;
+				n->name = "all";
+				$$ = list_make1((Node *)n);
+			}
+		| DROP_PARTITION ColId OptGPI
+			{
+				AlterTableCmd *n = makeNode(AlterTableCmd);
+				n->name = $2;
+				n->behavior = DROP_CASCADE;
+				n->missing_ok = FALSE;
+				n->alterGPI = $3;
+				n->subtype = AT_DropPartition;
+				$$ = list_make1((Node *)n);
+			}
+		| DROP_PARTITION ColId OptGPI ',' drop_partition_cmds_for_bdatabase
+			{
+				AlterTableCmd *n = makeNode(AlterTableCmd);
+				n->name = $2;
+				n->behavior = DROP_CASCADE;
+				n->missing_ok = FALSE;
+				n->alterGPI = $3;
+				n->subtype = AT_DropPartition;
+				$$ = lappend($5, (Node *)n);
+			}
+		| DROP_PARTITION ColId OptGPI ',' drop_partition_cmds
+			{
+				AlterTableCmd *n = makeNode(AlterTableCmd);
+				n->name = $2;
+				n->behavior = DROP_CASCADE;
+				n->missing_ok = FALSE;
+				n->alterGPI = $3;
+				n->subtype = AT_DropPartition;
+				$$ = lappend($5, (Node *)n);
+			}
+		;
+
+truncate_partition_cmds:
+		truncate_partition_cmd
+			{
+				$$ = list_make1($1);
+			}
+		| truncate_partition_cmds ',' truncate_partition_cmd
+			{
+				$$ = lappend($1, $3);
+			}
+		;
+
+truncate_partition_cmd:
+		TRUNCATE PARTITION ColId OptGPI
+			{
+				AlterTableCmd *n = makeNode(AlterTableCmd);
+				n->subtype = AT_TruncatePartition;
+				n->missing_ok = FALSE;
+				n->alterGPI = $4;
+				$$ = (Node *)n;
+
+				n->name = $3;
+			}
+		;
+
+truncate_partition_cmds_for_bdatabase:
+		truncate_partition_cmd_for_bdatabase
+			{
+				$$ = list_make1($1);
+			}
+		| truncate_partition_cmds_for_bdatabase ',' truncate_partition_cmd_for_bdatabase
+			{
+				$$ = lappend($1, $3);
+			}
+		;
+
+truncate_partition_cmd_for_bdatabase:
+		ColId OptGPI
+			{
+				AlterTableCmd *n = makeNode(AlterTableCmd);
+				n->subtype = AT_TruncatePartition;
+				n->missing_ok = FALSE;
+				n->alterGPI = $2;
+				$$ = (Node *)n;
+
+				n->name = $1;
+			}
+		;
+
+exchange_partition_cmd_for_bdatabase:
+		EXCHANGE PARTITION ColId
+			WITH TABLE relation_expr opt_verbose OptGPI
+			{
+				AlterTableCmd *n = makeNode(AlterTableCmd);
+				n->subtype = AT_ExchangePartition;
+				n->name = $3;
+				n->exchange_with_rel = $6;
+				n->check_validation = TRUE;
+				n->exchange_verbose = $7;
+				n->missing_ok = FALSE;
+				n->alterGPI = $8;
+				$$ = (Node *)n;
+			}
+		| EXCHANGE PARTITION ColId
+			WITH TABLE relation_expr WITH VALIDATION opt_verbose OptGPI
+			{
+				AlterTableCmd *n = makeNode(AlterTableCmd);
+				n->subtype = AT_ExchangePartition;
+				n->name = $3;
+				n->exchange_with_rel = $6;
+				n->check_validation = TRUE;
+				n->exchange_verbose = $9;
+				n->missing_ok = FALSE;
+				n->alterGPI = $10;
+				$$ = (Node *)n;
+			}
+		| EXCHANGE PARTITION ColId
+			WITH TABLE relation_expr WITHOUT VALIDATION OptGPI
+			{
+				AlterTableCmd *n = makeNode(AlterTableCmd);
+				n->subtype = AT_ExchangePartition;
+				n->name = $3;
+				n->exchange_with_rel = $6;
+				n->check_validation = FALSE;
+				n->missing_ok = FALSE;
+				n->alterGPI = $9;
+				$$ = (Node *)n;
+			}
 
 partition_name_list:
 			name
@@ -4539,6 +4618,325 @@ partition_name_list:
 				{
 					$$ = lappend($1, makeStringConst($3, @3));
 				}
+		;
+
+drop_partition_cmds:
+ 			drop_partition_cmd
+ 				{
+ 					$$ = list_make1($1);
+ 				}
+ 			| drop_partition_cmds ',' drop_partition_cmd
+ 				{
+ 					$$ = lappend($1, $3);
+ 				}
+ 			;
+ 	
+drop_partition_cmd:
+		DROP_PARTITION ColId OptGPI
+			{
+				AlterTableCmd *n = makeNode(AlterTableCmd);
+				n->name = $2;
+				n->behavior = DROP_CASCADE;
+				n->missing_ok = FALSE;
+				n->alterGPI = $3;
+				n->subtype = AT_DropPartition;
+				$$ = (Node *)n;
+			}
+		;
+
+drop_partition_cmds_for_bdatabase:
+		drop_partition_cmd_for_bdatabase
+			{
+				$$ = list_make1($1);
+			}
+		| drop_partition_cmds_for_bdatabase ',' drop_partition_cmd_for_bdatabase
+			{
+				$$ = lappend($1, $3);
+			}
+		;
+
+drop_partition_cmd_for_bdatabase:
+		ColId OptGPI
+			{
+				AlterTableCmd *n = makeNode(AlterTableCmd);
+				n->name = $1;
+				n->behavior = DROP_CASCADE;
+				n->missing_ok = FALSE;
+				n->alterGPI = $2;
+				n->subtype = AT_DropPartition;
+				$$ = (Node *)n;
+			}
+		;
+
+alter_subpartition_cmds_for_bdatabase:
+		DROP_SUBPARTITION ColId OptGPI
+			{
+				AlterTableCmd *n = makeNode(AlterTableCmd);
+				n->name = $2;
+				n->behavior = DROP_CASCADE;
+				n->missing_ok = FALSE;
+				n->alterGPI = $3;
+				n->subtype = AT_DropSubPartition;
+				$$ = list_make1((Node *)n);
+			}
+		| DROP_SUBPARTITION ColId OptGPI ',' drop_subpartition_cmds_for_bdatabase
+			{
+				AlterTableCmd *n = makeNode(AlterTableCmd);
+				n->name = $2;
+				n->behavior = DROP_CASCADE;
+				n->missing_ok = FALSE;
+				n->alterGPI = $3;
+				n->subtype = AT_DropSubPartition;
+				$$ = lappend($5, (Node *)n);
+			}
+		| DROP_SUBPARTITION ColId OptGPI ',' drop_subpartition_cmds
+			{
+				AlterTableCmd *n = makeNode(AlterTableCmd);
+				n->name = $2;
+				n->behavior = DROP_CASCADE;
+				n->missing_ok = FALSE;
+				n->alterGPI = $3;
+				n->subtype = AT_DropSubPartition;
+				$$ = lappend($5, (Node *)n);
+			}
+		;
+
+drop_subpartition_cmds:
+		drop_subpartition_cmd
+			{
+				$$ = list_make1($1);
+			}
+		| drop_subpartition_cmds ',' drop_subpartition_cmd
+			{
+				$$ = lappend($1, $3);
+			}
+		;
+
+drop_subpartition_cmd:
+		DROP_SUBPARTITION ColId OptGPI
+			{
+				AlterTableCmd *n = makeNode(AlterTableCmd);
+				n->name = $2;
+				n->behavior = DROP_CASCADE;
+				n->missing_ok = FALSE;
+				n->alterGPI = $3;
+				n->subtype = AT_DropSubPartition;
+				$$ = (Node *)n;
+			}
+		;
+
+drop_subpartition_cmds_for_bdatabase:
+		drop_subpartition_cmd_for_bdatabase
+			{
+				$$ = list_make1($1);
+			}
+		| drop_subpartition_cmds_for_bdatabase ',' drop_subpartition_cmd_for_bdatabase
+			{
+				$$ = lappend($1, $3);
+			}
+		;
+
+drop_subpartition_cmd_for_bdatabase:
+		ColId OptGPI
+			{
+				AlterTableCmd *n = makeNode(AlterTableCmd);
+				n->name = $1;
+				n->behavior = DROP_CASCADE;
+				n->missing_ok = FALSE;
+				n->alterGPI = $2;
+				n->subtype = AT_DropSubPartition;
+				$$ = (Node *)n;
+			}
+		;
+
+add_partition_cmds_for_bdatabase:
+ 			PARTITION add_partition_cmd
+ 				{
+ 					$$ = list_make1($2);
+ 				}
+ 			| add_partition_cmds_for_bdatabase ',' PARTITION add_partition_cmd
+ 				{
+ 					$$ = lappend($1, $4);
+ 				}
+ 			;
+
+add_partition_cmd:
+		name VALUES LESS THAN '(' maxValueList ')' OptTableSpace
+			{
+				RangePartitionDefState *p = makeNode(RangePartitionDefState);
+				AlterTableCmd *n = makeNode(AlterTableCmd);
+				AddPartitionState *s = makeNode(AddPartitionState);
+				p->partitionName = $1;
+				p->boundary = $6;
+				p->tablespacename = $8;
+				s->partitionList = list_make1(p);
+				s->isStartEnd = false;
+				n->subtype = AT_AddPartition;
+				n->def = (Node*)s;
+				$$ = (Node *)n;
+			}
+		/* ALTER TABLE ADD PARTITION: use START/END */
+		| name START '(' maxValueList ')'  END_P '(' maxValueList ')' opt_range_every_list OptTableSpace
+			{
+				RangePartitionStartEndDefState *p = makeNode(RangePartitionStartEndDefState);
+				AlterTableCmd *n = makeNode(AlterTableCmd);
+				AddPartitionState *s = makeNode(AddPartitionState);
+				p->partitionName = $1;
+				p->startValue = $4;
+				p->endValue = $8;
+				p->everyValue = $10;
+				p->tableSpaceName = $11;
+				s->partitionList = list_make1(p);
+				s->isStartEnd = true;
+				n->subtype = AT_AddPartition;
+				n->def = (Node*)s;
+				$$ = (Node *)n;
+			}
+		| name END_P '(' maxValueList ')' OptTableSpace
+			{
+				RangePartitionStartEndDefState *p = makeNode(RangePartitionStartEndDefState);
+				AlterTableCmd *n = makeNode(AlterTableCmd);
+				AddPartitionState *s = makeNode(AddPartitionState);
+				p->partitionName = $1;
+				p->startValue = NIL;
+				p->endValue = $4;
+				p->everyValue = NIL;
+				p->tableSpaceName = $6;
+				s->partitionList = list_make1(p);
+				s->isStartEnd = true;
+				n->subtype = AT_AddPartition;
+				n->def = (Node*)s;
+				$$ = (Node *)n;
+			}
+		| name START '(' maxValueList ')' OptTableSpace
+			{
+				RangePartitionStartEndDefState *p = makeNode(RangePartitionStartEndDefState);
+				AlterTableCmd *n = makeNode(AlterTableCmd);
+				AddPartitionState *s = makeNode(AddPartitionState);
+				p->partitionName = $1;
+				p->startValue = $4;
+				p->endValue = NIL;
+				p->everyValue = NIL;
+				p->tableSpaceName = $6;
+				s->partitionList = list_make1(p);
+				s->isStartEnd = true;
+				n->subtype = AT_AddPartition;
+				n->def = (Node*)s;
+				$$ = (Node *)n;
+			}
+		| name VALUES '(' expr_list ')' OptTableSpace
+			{
+				ListPartitionDefState *p = makeNode(ListPartitionDefState);
+				AlterTableCmd *n = makeNode(AlterTableCmd);
+				AddPartitionState *s = makeNode(AddPartitionState);
+				p->partitionName = $1;
+				p->boundary = $4;
+				p->tablespacename = $6;
+				s->partitionList = list_make1(p);
+				s->isStartEnd = false;
+				n->subtype = AT_AddPartition;
+				n->def = (Node*)s;
+				$$ = (Node *)n;
+			}
+		| name VALUES '(' DEFAULT ')' OptTableSpace
+			{
+				ListPartitionDefState *p = makeNode(ListPartitionDefState);
+				AlterTableCmd *n = makeNode(AlterTableCmd);
+				AddPartitionState *s = makeNode(AddPartitionState);
+				p->partitionName = $1;
+				Const *n_default = makeNode(Const);
+				n_default->ismaxvalue = true;
+				n_default->location = -1;
+				p->boundary = list_make1(n_default);
+				p->tablespacename = $6;
+				s->partitionList = list_make1(p);
+				s->isStartEnd = false;
+				n->subtype = AT_AddPartition;
+				n->def = (Node*)s;
+				$$ = (Node *)n;
+			}
+		| name VALUES LESS THAN
+		'(' maxValueList ')' OptTableSpace '(' subpartition_definition_list ')'
+			{
+				RangePartitionDefState *p = makeNode(RangePartitionDefState);
+				AlterTableCmd *n = makeNode(AlterTableCmd);
+				AddPartitionState *s = makeNode(AddPartitionState);
+				p->partitionName = $1;
+				p->boundary = $6;
+				p->tablespacename = $8;
+				p->subPartitionDefState = $10;
+				int i = 0;
+				ListCell *elem = NULL;
+				List *parts = p->subPartitionDefState;
+				foreach(elem, parts) {
+					if (!IsA((Node*)lfirst(elem), HashPartitionDefState)) {
+						break;
+					}
+					HashPartitionDefState *hashPart = (HashPartitionDefState*)lfirst(elem);
+					hashPart->boundary = list_make1(makeIntConst(i, -1));
+					i++;
+				}
+				s->partitionList = list_make1(p);
+				s->isStartEnd = false;
+				n->subtype = AT_AddPartition;
+				n->def = (Node*)s;
+				$$ = (Node *)n;
+			}
+		| name VALUES '(' expr_list ')' OptTableSpace '(' subpartition_definition_list ')'
+			{
+				ListPartitionDefState *p = makeNode(ListPartitionDefState);
+				AlterTableCmd *n = makeNode(AlterTableCmd);
+				AddPartitionState *s = makeNode(AddPartitionState);
+				p->partitionName = $1;
+				p->boundary = $4;
+				p->tablespacename = $6;
+				p->subPartitionDefState = $8;
+				int i = 0;
+				ListCell *elem = NULL;
+				List *parts = p->subPartitionDefState;
+				foreach(elem, parts) {
+					if (!IsA((Node*)lfirst(elem), HashPartitionDefState)) {
+						break;
+					}
+					HashPartitionDefState *hashPart = (HashPartitionDefState*)lfirst(elem);
+					hashPart->boundary = list_make1(makeIntConst(i, -1));
+					i++;
+				}
+				s->partitionList = list_make1(p);
+				s->isStartEnd = false;
+				n->subtype = AT_AddPartition;
+				n->def = (Node*)s;
+				$$ = (Node *)n;
+			}
+		| name VALUES '(' DEFAULT ')' OptTableSpace '(' subpartition_definition_list ')'
+			{
+				ListPartitionDefState *p = makeNode(ListPartitionDefState);
+				AlterTableCmd *n = makeNode(AlterTableCmd);
+				AddPartitionState *s = makeNode(AddPartitionState);
+				p->partitionName = $1;
+				Const *n_default = makeNode(Const);
+				n_default->ismaxvalue = true;
+				n_default->location = -1;
+				p->boundary = list_make1(n_default);
+				p->tablespacename = $6;
+				p->subPartitionDefState = $8;
+				int i = 0;
+				ListCell *elem = NULL;
+				List *parts = p->subPartitionDefState;
+				foreach(elem, parts) {
+					if (!IsA((Node*)lfirst(elem), HashPartitionDefState)) {
+						break;
+					}
+					HashPartitionDefState *hashPart = (HashPartitionDefState*)lfirst(elem);
+					hashPart->boundary = list_make1(makeIntConst(i, -1));
+					i++;
+				}
+				s->partitionList = list_make1(p);
+				s->isStartEnd = false;
+				n->subtype = AT_AddPartition;
+				n->def = (Node*)s;
+				$$ = (Node *)n;
+			}
 		;
 /*support b_database syntax related with partition*/
 
@@ -11990,6 +12388,25 @@ privilege_str: PRIVILEGES { $$ = NULL;}
 	| PRIVILEGE { $$ = NULL;}
 		;
 
+definer_expression: DEFINER '=' RoleId
+				{
+					if (u_sess->attr.attr_sql.sql_compatibility ==  B_FORMAT) {
+						$$ = $3;
+					} else {
+						parser_yyerror("not support DEFINER function");
+					}
+				}
+			;
+
+definer_user: definer_expression
+				{
+					$$ = $1;
+				}
+			| /* EMPTY */
+				{
+					$$ = NULL;
+				}
+			;
 
 /*
  * Privilege names are represented as strings; the validity of the privilege
@@ -13266,23 +13683,24 @@ CreateFunctionStmt:
 					$$ = (Node *)n;
 				}
 		;
-CallFuncStmt:    CALL func_name '(' ')'
+
+CallFuncStmt:    CALL func_name_opt_arg callfunc_args_or_empty
 					{
 #ifndef ENABLE_MULTIPLE_NODES
-						$$ = makeCallFuncStmt($2, NULL, enable_out_param_override());
+						$$ = makeCallFuncStmt($2, $3, enable_out_param_override());
 #else
-						$$ = makeCallFuncStmt($2, NULL, false);
-#endif
-					}
-				|	CALL func_name '(' callfunc_args ')'
-					{
-#ifndef ENABLE_MULTIPLE_NODES
-						$$ = makeCallFuncStmt($2, $4, enable_out_param_override());
-#else
-						$$ = makeCallFuncStmt($2, $4, false);
+						$$ = makeCallFuncStmt($2, $3, false);
 #endif
 					}
 				;
+
+callfunc_args_or_empty:  {$$ = NULL;}
+			|'(' callfunc_args ')'
+				{
+					$$ = $2;
+				}
+			;
+
 callfunc_args:   func_arg_expr
 				{
 					$$ = list_make1($1);
@@ -13290,6 +13708,10 @@ callfunc_args:   func_arg_expr
 			| callfunc_args ',' func_arg_expr
 				{
 					$$ = lappend($1, $3);
+				}
+			|
+				{
+					$$ = NULL;
 				}
 			;
 CreateProcedureStmt:
@@ -13918,10 +14340,7 @@ func_return:
 					 */
 					$$ = $1;
 				}
-			| func_type DETERMINISTIC
-				{
-					$$ = $1;
-				}
+			
 		;
 
 /*
@@ -14046,6 +14465,14 @@ common_func_opt_item:
 				{
 					$$ = makeDefElem("shippable", (Node*)makeInteger(FALSE));
 				}
+			| DETERMINISTIC
+				{
+					$$ = makeDefElem("deterministic", (Node*)makeInteger(TRUE));
+				}
+			| NOT DETERMINISTIC
+				{
+					$$ = makeDefElem("deterministic", (Node*)makeInteger(FALSE));
+				}
 			| EXTERNAL SECURITY DEFINER
 				{
 					$$ = makeDefElem("security", (Node *)makeInteger(TRUE));
@@ -14103,16 +14530,40 @@ common_func_opt_item:
 				{
 					$$ = makeDefElem("package", (Node *)makeInteger(true));
 				}
+			| NO SQL
+				{
+					$$ = makeDefElem("sql_opt", (Node *)makeString("nosql"));
+				}
+			| CONTAINS SQL
+				{
+					$$ = makeDefElem("sql_opt", (Node *)makeString("contains"));
+				}
+			| READS SQL DATA_P
+				{
+					$$ = makeDefElem("sql_opt", (Node *)makeString("reads"));
+				}
+			| MODIFIES SQL DATA_P
+				{
+					$$ = makeDefElem("sql_opt", (Node *)makeString("modify"));
+				}
+			| SQL SECURITY DEFINER
+				{
+                                        $$ = makeDefElem("security", (Node *)makeInteger(TRUE));
+                                }
+			| SQL SECURITY INVOKER
+				{
+                                        $$ = makeDefElem("security", (Node *)makeInteger(FALSE));
+                                }
+			| LANGUAGE ColId_or_Sconst
+				{
+					$$ = makeDefElem("language", (Node *)makeString($2));
+				}
 		;
 
 createfunc_opt_item:
 			AS func_as
 				{
 					$$ = makeDefElem("as", (Node *)$2);
-				}
-			| LANGUAGE ColId_or_Sconst
-				{
-					$$ = makeDefElem("language", (Node *)makeString($2));
 				}
 			| WINDOW
 				{
@@ -15055,6 +15506,45 @@ RenameStmt: ALTER AGGREGATE func_name aggr_args RENAME TO name
 					n->missing_ok = true;
 					$$ = (Node *)n;
 				}
+			| ALTER VIEW qualified_name opt_column_list AS SelectStmt opt_check_option
+				{
+#ifndef ENABLE_MULTIPLE_NODES
+					if (u_sess->attr.attr_sql.sql_compatibility !=  B_FORMAT)
+#endif
+					{
+						ereport(errstate,
+								(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+								 errmsg("ALTER VIEW AS is not supported.")));
+					}
+					ViewStmt *n = makeNode(ViewStmt);
+					n->view = $3;
+					n->aliases = $4;
+					n->query = $6;
+					n->replace = true;
+					n->sql_statement = NULL;
+					n->is_alter = true;
+					$$ = (Node *) n;
+				}
+			| ALTER definer_expression VIEW qualified_name opt_column_list AS SelectStmt opt_check_option
+				{
+#ifndef ENABLE_MULTIPLE_NODES
+					if (u_sess->attr.attr_sql.sql_compatibility !=  B_FORMAT)
+#endif
+					{
+						ereport(errstate,
+								(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+								 errmsg("ALTER VIEW AS is not supported.")));
+					}
+					ViewStmt *n = makeNode(ViewStmt);
+					n->definer = $2;
+					n->view = $4;
+					n->aliases = $5;
+					n->query = $7;
+					n->replace = true;
+					n->sql_statement = NULL;
+					n->is_alter = true;
+					$$ = (Node *) n;
+				}
 			| ALTER MATERIALIZED VIEW qualified_name RENAME TO name
 				{
 					RenameStmt *n = makeNode(RenameStmt);
@@ -15233,6 +15723,14 @@ RenameStmt: ALTER AGGREGATE func_name aggr_args RENAME TO name
 			        $$ = (Node *)n;
 			    }
 
+			| ALTER TABLE relation_expr FORCE
+				{
+					VacuumStmt *n = makeNode(VacuumStmt);
+					n->options = VACOPT_VACUUM | VACOPT_FULL;
+					n->relation = $3;
+					$$ = (Node *)n;
+				}
+
 			| ALTER FOREIGN TABLE relation_expr RENAME opt_column name TO name
 				{
 					RenameStmt *n = makeNode(RenameStmt);
@@ -15382,7 +15880,7 @@ RenameStmt: ALTER AGGREGATE func_name aggr_args RENAME TO name
 		;
 
 opt_column: COLUMN									{ $$ = COLUMN; }
-			| /*EMPTY*/								{ $$ = 0; }
+			| /*EMPTY*/		%prec lower_than_key	{ $$ = 0; }			
 		;
 
 opt_set_data: SET DATA_P							{ $$ = 1; }
@@ -16431,6 +16929,20 @@ ViewStmt: CREATE OptTemp VIEW qualified_name opt_column_list opt_reloptions
 					n->replace = true;
 					n->options = $8;
                                                                                 n->sql_statement = NULL;
+					$$ = (Node *) n;
+				}
+		| CREATE opt_or_replace definer_expression OptTemp VIEW qualified_name opt_column_list opt_reloptions
+				AS SelectStmt opt_check_option
+				{
+					ViewStmt *n = makeNode(ViewStmt);
+					n->definer = $3;
+					n->view = $6;
+					n->view->relpersistence = $4;
+					n->aliases = $7;
+					n->query = $10;
+					n->replace = $2;
+					n->options = $8;
+					n->sql_statement = NULL;
 					$$ = (Node *) n;
 				}
 		;
@@ -17545,7 +18057,35 @@ AnalyzeStmt:
 					$$ = (Node *)n;
 
 				}
+			| analyze_keyword opt_verbose opt_no_write_to_binlog TABLE qualified_name_list
+				{
+					SelectStmt *n = makeNode(SelectStmt);
+
+					FuncCall *func = makeNode(FuncCall);
+					func->funcname = SystemFuncName("analyze_tables");
+					func->args = list_make1(makeAnalyzeTableList($5));
+
+					RangeFunction *rangeFunc = makeNode(RangeFunction);
+					rangeFunc->funccallnode = (Node*)func;
+
+					ColumnRef *col = makeNode(ColumnRef);
+					col->fields = list_make1(makeNode(A_Star));
+
+					ResTarget *resTar = makeNode(ResTarget);
+					resTar->val = (Node*)col;
+
+					n->targetList = list_make1(resTar);
+					n->fromClause = list_make1(rangeFunc);
+
+					$$ = (Node*)n;
+				}
 		;
+
+opt_no_write_to_binlog:
+			NO_WRITE_TO_BINLOG
+			| LOCAL
+			| /* EMPTY */
+			;
 
 VerifyStmt:
             /* analyse verify fast|complete*/
@@ -19623,7 +20163,38 @@ InsertStmt: opt_with_clause INSERT hint_string opt_ignore into_empty insert_targ
 						$$ = (Node *) $7;
 					}
 				}
+			|opt_with_clause REPLACE hint_string replace_empty insert_target insert_rest
+				{
+					$6->relation = $5;
+					$6->withClause = $1;
+					$6->hintState = create_hintstate($3);
+					$$ = (Node *) $6;
+				}
+			|opt_with_clause REPLACE hint_string replace_empty insert_target SET set_clause_list
+				{
+					InsertStmt* n = makeNode(InsertStmt);
+					n->relation = $5;
+					/*need add info*/
+					n->withClause = $1;
+					n->hintState = create_hintstate($3);
+					$$ = (Node*)n;
+				}
+
 		;
+
+replace_empty:DELAYED into_empty	
+				{
+					$$ = $1;
+				}
+			| LOW_PRIORITY into_empty
+				{
+					$$ = $1;
+				}
+			| into_empty
+				{
+					$$ = $1;
+				}
+;
 
 into_empty: INTO
 			| /*EMPTY*/		{ $$ = NULL; }
@@ -21769,7 +22340,7 @@ ConstTypename:
 			Numeric									{ $$ = $1; }
 			| ConstBit								{ $$ = $1; }
 			| ConstCharacter						{ $$ = $1; }
-			| ConstDatetime							{ $$ = $1; }
+			| PreciseConstDatetime					{ $$ = $1; }
 		;
 
 /*
@@ -22184,7 +22755,7 @@ opt_charset:
 		;
 
 /*
- * SQL92 date/time types
+ * SQL92 date/time types: compatiable for b format database(default typmod set to zero)
  */
 ConstDatetime:
 			TIMESTAMP '(' Iconst ')' selected_timezone
@@ -22265,6 +22836,75 @@ ConstDatetime:
 					$$->location = @1;
 			    }
 		;
+
+/*
+ * SQL92 date/time types: default typmod set to six
+ */
+PreciseConstDatetime: 
+			TIMESTAMP '(' Iconst ')' opt_timezone
+				{
+					if ($5)
+						$$ = SystemTypeName("timestamptz");
+					else
+						$$ = SystemTypeName("timestamp");
+					$$->typmods = list_make1(makeIntConst($3, @3));
+					$$->location = @1;
+				}
+			| TIMESTAMP opt_timezone
+				{
+					if ($2)
+						$$ = SystemTypeName("timestamptz");
+					else
+						$$ = SystemTypeName("timestamp");
+					$$->location = @1;
+				}
+			| TIME '(' Iconst ')' opt_timezone
+				{
+					if ($5)
+						$$ = SystemTypeName("timetz");
+					else
+						$$ = SystemTypeName("time");
+					$$->typmods = list_make1(makeIntConst($3, @3));
+					$$->location = @1;
+				}
+			| TIME opt_timezone
+				{
+					if ($2)
+						$$ = SystemTypeName("timetz");
+					else
+						$$ = SystemTypeName("time");
+					$$->location = @1;
+				}
+			| DATE_P
+				{
+					if (u_sess->attr.attr_sql.sql_compatibility == A_FORMAT)
+					{
+						$$ = SystemTypeName("timestamp");
+						$$->typmods = list_make1(makeIntConst(0,-1));
+					}
+					else
+						$$ = SystemTypeName("date");
+					$$->location = @1;
+					$$->end_location = @1 + DATE_LEN;
+				}
+			| SMALLDATETIME
+				{
+					$$ = SystemTypeName("smalldatetime");
+					$$->location = @1;
+				}
+			| DATETIME '(' Iconst ')'
+			    {
+					$$ = SystemTypeName("timestamp");
+					$$->typmods = list_make1(makeIntConst($3,@3));
+					$$->location = @1;
+			    }
+			| DATETIME
+			    {
+					$$ = SystemTypeName("timestamp");
+					$$->location = @1;
+			    }
+		;
+
 
 ConstInterval:
 			INTERVAL
@@ -23928,7 +24568,7 @@ func_expr_common_subexpr:
 			| DB_B_FORMAT '(' func_arg_list ')'
 				{
 					FuncCall *n = makeNode(FuncCall);
-					if (u_sess->attr.attr_sql.sql_compatibility == B_FORMAT && GetSessionContext()->enableBFormatMode
+					if (u_sess->attr.attr_sql.sql_compatibility == B_FORMAT && GetSessionContext()->enableBCmptMode
 						&& (list_length($3) == 2 || list_length($3) == 3))
 					{
 						n->funcname = SystemFuncName("db_b_format");
@@ -25675,6 +26315,20 @@ AexprConst: Iconst
 					t->typmods = $3;
 					$$ = makeStringConstCast($2, @2, t);
 				}
+			| ConstInterval ICONST opt_interval
+				{
+					TypeName *t = $1;
+					t->typmods = $3;
+					char buf[64];
+					snprintf(buf, sizeof(buf), "%d", $2);
+					$$ = makeStringConstCast(pstrdup(buf), @2, t);
+				}
+			| ConstInterval FCONST opt_interval
+				{
+					TypeName *t = $1;
+					t->typmods = $3;
+					$$ = makeStringConstCast($2, @2, t);
+				}
 			| ConstInterval '(' Iconst ')' Sconst opt_interval
 				{
 					TypeName *t = $1;
@@ -25854,6 +26508,7 @@ unreserved_keyword:
 			| CONNECTION
 			| CONSTANT
 			| CONSTRAINTS
+			| CONTAINS
 			| CONTENT_P
 			| CONTINUE_P
 			| CONVERSION_P
@@ -25973,6 +26628,7 @@ unreserved_keyword:
 			| ISNULL
 			| ISOLATION
 			| KEY
+			| KEYS
 			| KEY_PATH
 			| KEY_STORE
 			| KILL
@@ -26012,6 +26668,7 @@ unreserved_keyword:
 			| MOD
 			| MODE
 			| MODEL      // DB4AI
+			| MODIFIES
 			| MONTH_P
 			| MOVE
 			| MOVEMENT
@@ -26019,6 +26676,7 @@ unreserved_keyword:
 			| NAMES
 			| NEXT
 			| NO
+			| NO_WRITE_TO_BINLOG
 			| NOCOMPRESS
 			| NODE
 			| NOLOGGING
@@ -26085,6 +26743,7 @@ unreserved_keyword:
 			| RAW  '(' Iconst ')'				{	$$ = "raw";}
 			| RAW  %prec UNION				{	$$ = "raw";}
 			| READ
+			| READS
 			| REASSIGN
 			| REBUILD
 			| RECHECK
@@ -26147,6 +26806,7 @@ unreserved_keyword:
 			| SPACE
 			| SPILL
 			| SPLIT
+			| SQL
 			| STABLE
 			| STANDALONE_P
                         | START
@@ -26407,6 +27067,7 @@ reserved_keyword:
 			| CURTIME
 			| DEFAULT
 			| DEFERRABLE
+			| DELAYED
 			| DESC
 			| DISTINCT
 			| DISTINCTROW
@@ -26435,6 +27096,7 @@ reserved_keyword:
 			| LIMIT
 			| LOCALTIME
 			| LOCALTIMESTAMP
+			| LOW_PRIORITY
 			| MAXVALUE
 			| MINUS_P
 			| MODIFY_P
@@ -28781,6 +29443,33 @@ static Node* MakeKillStmt(int kill_opt, Node *expr)
 	n->havingClause = NULL;
 	n->windowClause = NIL;
 	return (Node*)n;
+}
+
+static Node* makeAnalyzeTableList(List *rangeVars)
+{
+	Datum* datums = NULL;
+	ListCell *cell = NULL;
+	StringInfoData res;
+	bool first = true;
+
+	initStringInfo(&res);
+	appendStringInfoChar(&res, '{');
+
+	foreach (cell, rangeVars) {
+		RangeVar* rangeVar = (RangeVar*)lfirst(cell);
+		char* schemaName = rangeVar->schemaname ? rangeVar->schemaname :
+			DatumGetCString(DirectFunctionCall1(current_schema, PointerGetDatum(NULL)));
+
+		if (first) {
+			appendStringInfo(&res, "%s.%s", schemaName, rangeVar->relname);
+			first = false;
+		} else {
+			appendStringInfo(&res, ", %s.%s", schemaName, rangeVar->relname);
+		}
+	}
+	appendStringInfoChar(&res, '}');
+
+	return makeStringConst(res.data, -1);
 }
 
 /*

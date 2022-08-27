@@ -1,0 +1,1507 @@
+drop DATABASE if exists partition_test1;
+NOTICE:  database "partition_test1" does not exist, skipping
+CREATE DATABASE partition_test1 dbcompatibility 'B';
+\c partition_test1;
+-------test range partition tables
+----test partition table
+CREATE TABLE IF NOT EXISTS test_part
+(
+a int primary key not null default 5,
+b int,
+c int,
+d int
+) 
+PARTITION BY RANGE(a)
+(
+    PARTITION p0 VALUES LESS THAN (1000),
+    PARTITION p1 VALUES LESS THAN (2000),
+    PARTITION p2 VALUES LESS THAN (3000)
+);
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "test_part_pkey" for table "test_part"
+create unique index idx_c on test_part (c);
+create index idx_b on test_part using btree(b) local;
+alter table test_part add constraint uidx_d unique(d);
+NOTICE:  ALTER TABLE / ADD UNIQUE will create implicit index "uidx_d" for table "test_part"
+alter table test_part add constraint uidx_c unique using index idx_c;
+NOTICE:  ALTER TABLE / ADD CONSTRAINT USING INDEX will rename index "idx_c" to "uidx_c"
+insert into test_part (with RECURSIVE t_r(i,j,k,m) as(values(0,1,2,3) union all select i+1,j+2,k+3,m+4 from t_r where i < 2500) select * from t_r);
+select relname from pg_partition where (parentid in (select oid from pg_class where relname = 'test_part')) and parttype = 'p' and oid != relfilenode order by relname;
+ relname 
+---------
+(0 rows)
+
+explain select * from test_part where ((980 < c and c < 1000) or (2180 < c and c < 2200));
+                                 QUERY PLAN                                  
+-----------------------------------------------------------------------------
+ Bitmap Heap Scan on test_part  (cost=8.77..24.31 rows=27 width=16)
+   Recheck Cond: (((980 < c) AND (c < 1000)) OR ((2180 < c) AND (c < 2200)))
+   ->  BitmapOr  (cost=8.77..8.77 rows=27 width=0)
+         ->  Bitmap Index Scan on uidx_c  (cost=0.00..4.38 rows=13 width=0)
+               Index Cond: ((980 < c) AND (c < 1000))
+         ->  Bitmap Index Scan on uidx_c  (cost=0.00..4.38 rows=13 width=0)
+               Index Cond: ((2180 < c) AND (c < 2200))
+(7 rows)
+
+select * from test_part where ((980 < c and c < 1000) or (2180 < c and c < 2200));
+  a  |  b   |  c   |  d   
+-----+------+------+------
+ 327 |  655 |  983 | 1311
+ 328 |  657 |  986 | 1315
+ 329 |  659 |  989 | 1319
+ 330 |  661 |  992 | 1323
+ 331 |  663 |  995 | 1327
+ 332 |  665 |  998 | 1331
+ 727 | 1455 | 2183 | 2911
+ 728 | 1457 | 2186 | 2915
+ 729 | 1459 | 2189 | 2919
+ 730 | 1461 | 2192 | 2923
+ 731 | 1463 | 2195 | 2927
+ 732 | 1465 | 2198 | 2931
+(12 rows)
+
+select * from test_part where ((980 < d and d < 1000) or (2180 < d and d < 2200));
+  a  |  b   |  c   |  d   
+-----+------+------+------
+ 245 |  491 |  737 |  983
+ 246 |  493 |  740 |  987
+ 247 |  495 |  743 |  991
+ 248 |  497 |  746 |  995
+ 249 |  499 |  749 |  999
+ 545 | 1091 | 1637 | 2183
+ 546 | 1093 | 1640 | 2187
+ 547 | 1095 | 1643 | 2191
+ 548 | 1097 | 1646 | 2195
+ 549 | 1099 | 1649 | 2199
+(10 rows)
+
+select * from test_part where ((980 < b and b < 1000) or (2180 < b and b < 2200));
+  a   |  b   |  c   |  d   
+------+------+------+------
+  490 |  981 | 1472 | 1963
+  491 |  983 | 1475 | 1967
+  492 |  985 | 1478 | 1971
+  493 |  987 | 1481 | 1975
+  494 |  989 | 1484 | 1979
+  495 |  991 | 1487 | 1983
+  496 |  993 | 1490 | 1987
+  497 |  995 | 1493 | 1991
+  498 |  997 | 1496 | 1995
+  499 |  999 | 1499 | 1999
+ 1090 | 2181 | 3272 | 4363
+ 1091 | 2183 | 3275 | 4367
+ 1092 | 2185 | 3278 | 4371
+ 1093 | 2187 | 3281 | 4375
+ 1094 | 2189 | 3284 | 4379
+ 1095 | 2191 | 3287 | 4383
+ 1096 | 2193 | 3290 | 4387
+ 1097 | 2195 | 3293 | 4391
+ 1098 | 2197 | 3296 | 4395
+ 1099 | 2199 | 3299 | 4399
+(20 rows)
+
+--test rebuild partition syntax
+ALTER TABLE test_part REBUILD PARTITION p0, p1;
+ rebuild_partition 
+-------------------
+ test_part
+(1 row)
+
+select relname from pg_partition where (parentid in (select oid from pg_class where relname = 'test_part')) and parttype = 'p' and oid != relfilenode order by relname;
+ relname 
+---------
+ p0
+ p1
+(2 rows)
+
+explain select * from test_part where ((980 < c and c < 1000) or (2180 < c and c < 2200));
+                                 QUERY PLAN                                  
+-----------------------------------------------------------------------------
+ Bitmap Heap Scan on test_part  (cost=8.77..24.31 rows=27 width=16)
+   Recheck Cond: (((980 < c) AND (c < 1000)) OR ((2180 < c) AND (c < 2200)))
+   ->  BitmapOr  (cost=8.77..8.77 rows=27 width=0)
+         ->  Bitmap Index Scan on uidx_c  (cost=0.00..4.38 rows=13 width=0)
+               Index Cond: ((980 < c) AND (c < 1000))
+         ->  Bitmap Index Scan on uidx_c  (cost=0.00..4.38 rows=13 width=0)
+               Index Cond: ((2180 < c) AND (c < 2200))
+(7 rows)
+
+select * from test_part where ((980 < c and c < 1000) or (2180 < c and c < 2200));
+  a  |  b   |  c   |  d   
+-----+------+------+------
+ 327 |  655 |  983 | 1311
+ 328 |  657 |  986 | 1315
+ 329 |  659 |  989 | 1319
+ 330 |  661 |  992 | 1323
+ 331 |  663 |  995 | 1327
+ 332 |  665 |  998 | 1331
+ 727 | 1455 | 2183 | 2911
+ 728 | 1457 | 2186 | 2915
+ 729 | 1459 | 2189 | 2919
+ 730 | 1461 | 2192 | 2923
+ 731 | 1463 | 2195 | 2927
+ 732 | 1465 | 2198 | 2931
+(12 rows)
+
+select * from test_part where ((980 < d and d < 1000) or (2180 < d and d < 2200));
+  a  |  b   |  c   |  d   
+-----+------+------+------
+ 245 |  491 |  737 |  983
+ 246 |  493 |  740 |  987
+ 247 |  495 |  743 |  991
+ 248 |  497 |  746 |  995
+ 249 |  499 |  749 |  999
+ 545 | 1091 | 1637 | 2183
+ 546 | 1093 | 1640 | 2187
+ 547 | 1095 | 1643 | 2191
+ 548 | 1097 | 1646 | 2195
+ 549 | 1099 | 1649 | 2199
+(10 rows)
+
+select * from test_part where ((980 < b and b < 1000) or (2180 < b and b < 2200));
+  a   |  b   |  c   |  d   
+------+------+------+------
+  490 |  981 | 1472 | 1963
+  491 |  983 | 1475 | 1967
+  492 |  985 | 1478 | 1971
+  493 |  987 | 1481 | 1975
+  494 |  989 | 1484 | 1979
+  495 |  991 | 1487 | 1983
+  496 |  993 | 1490 | 1987
+  497 |  995 | 1493 | 1991
+  498 |  997 | 1496 | 1995
+  499 |  999 | 1499 | 1999
+ 1090 | 2181 | 3272 | 4363
+ 1091 | 2183 | 3275 | 4367
+ 1092 | 2185 | 3278 | 4371
+ 1093 | 2187 | 3281 | 4375
+ 1094 | 2189 | 3284 | 4379
+ 1095 | 2191 | 3287 | 4383
+ 1096 | 2193 | 3290 | 4387
+ 1097 | 2195 | 3293 | 4391
+ 1098 | 2197 | 3296 | 4395
+ 1099 | 2199 | 3299 | 4399
+(20 rows)
+
+ALTER TABLE test_part REBUILD PARTITION all;
+ rebuild_partition 
+-------------------
+ test_part
+(1 row)
+
+select relname from pg_partition where (parentid in (select oid from pg_class where relname = 'test_part')) and parttype = 'p' and oid != relfilenode order by relname;
+ relname 
+---------
+ p0
+ p1
+ p2
+(3 rows)
+
+explain select * from test_part where ((980 < c and c < 1000) or (2180 < c and c < 2200));
+                                 QUERY PLAN                                  
+-----------------------------------------------------------------------------
+ Bitmap Heap Scan on test_part  (cost=8.77..24.31 rows=27 width=16)
+   Recheck Cond: (((980 < c) AND (c < 1000)) OR ((2180 < c) AND (c < 2200)))
+   ->  BitmapOr  (cost=8.77..8.77 rows=27 width=0)
+         ->  Bitmap Index Scan on uidx_c  (cost=0.00..4.38 rows=13 width=0)
+               Index Cond: ((980 < c) AND (c < 1000))
+         ->  Bitmap Index Scan on uidx_c  (cost=0.00..4.38 rows=13 width=0)
+               Index Cond: ((2180 < c) AND (c < 2200))
+(7 rows)
+
+select * from test_part where ((980 < c and c < 1000) or (2180 < c and c < 2200));
+  a  |  b   |  c   |  d   
+-----+------+------+------
+ 327 |  655 |  983 | 1311
+ 328 |  657 |  986 | 1315
+ 329 |  659 |  989 | 1319
+ 330 |  661 |  992 | 1323
+ 331 |  663 |  995 | 1327
+ 332 |  665 |  998 | 1331
+ 727 | 1455 | 2183 | 2911
+ 728 | 1457 | 2186 | 2915
+ 729 | 1459 | 2189 | 2919
+ 730 | 1461 | 2192 | 2923
+ 731 | 1463 | 2195 | 2927
+ 732 | 1465 | 2198 | 2931
+(12 rows)
+
+select * from test_part where ((980 < d and d < 1000) or (2180 < d and d < 2200));
+  a  |  b   |  c   |  d   
+-----+------+------+------
+ 245 |  491 |  737 |  983
+ 246 |  493 |  740 |  987
+ 247 |  495 |  743 |  991
+ 248 |  497 |  746 |  995
+ 249 |  499 |  749 |  999
+ 545 | 1091 | 1637 | 2183
+ 546 | 1093 | 1640 | 2187
+ 547 | 1095 | 1643 | 2191
+ 548 | 1097 | 1646 | 2195
+ 549 | 1099 | 1649 | 2199
+(10 rows)
+
+select * from test_part where ((980 < b and b < 1000) or (2180 < b and b < 2200));
+  a   |  b   |  c   |  d   
+------+------+------+------
+  490 |  981 | 1472 | 1963
+  491 |  983 | 1475 | 1967
+  492 |  985 | 1478 | 1971
+  493 |  987 | 1481 | 1975
+  494 |  989 | 1484 | 1979
+  495 |  991 | 1487 | 1983
+  496 |  993 | 1490 | 1987
+  497 |  995 | 1493 | 1991
+  498 |  997 | 1496 | 1995
+  499 |  999 | 1499 | 1999
+ 1090 | 2181 | 3272 | 4363
+ 1091 | 2183 | 3275 | 4367
+ 1092 | 2185 | 3278 | 4371
+ 1093 | 2187 | 3281 | 4375
+ 1094 | 2189 | 3284 | 4379
+ 1095 | 2191 | 3287 | 4383
+ 1096 | 2193 | 3290 | 4387
+ 1097 | 2195 | 3293 | 4391
+ 1098 | 2197 | 3296 | 4395
+ 1099 | 2199 | 3299 | 4399
+(20 rows)
+
+--test repair check optimize partition syntax
+ALTER TABLE test_part repair PARTITION p0,p1;
+ALTER TABLE test_part check PARTITION p0,p1;
+ALTER TABLE test_part optimize PARTITION p0,p1;
+ALTER TABLE test_part repair PARTITION all;
+ALTER TABLE test_part check PARTITION all;
+ALTER TABLE test_part optimize PARTITION all;
+--test remove partitioning syntax
+select relname, boundaries from pg_partition where parentid in (select parentid from pg_partition where relname = 'test_part') order by relname;
+  relname  | boundaries 
+-----------+------------
+ p0        | {1000}
+ p1        | {2000}
+ p2        | {3000}
+ test_part | 
+(4 rows)
+
+select parttype,relname from pg_class where relname = 'test_part' and relfilenode != oid;
+ parttype | relname 
+----------+---------
+(0 rows)
+
+ALTER TABLE test_part remove PARTITIONING;
+ remove_partitioning 
+---------------------
+ test_part
+(1 row)
+
+explain select * from test_part where ((980 < c and c < 1000) or (2180 < c and c < 2200));
+                                 QUERY PLAN                                  
+-----------------------------------------------------------------------------
+ Bitmap Heap Scan on test_part  (cost=8.77..23.27 rows=25 width=16)
+   Recheck Cond: (((980 < c) AND (c < 1000)) OR ((2180 < c) AND (c < 2200)))
+   ->  BitmapOr  (cost=8.77..8.77 rows=25 width=0)
+         ->  Bitmap Index Scan on uidx_c  (cost=0.00..4.38 rows=13 width=0)
+               Index Cond: ((980 < c) AND (c < 1000))
+         ->  Bitmap Index Scan on uidx_c  (cost=0.00..4.38 rows=13 width=0)
+               Index Cond: ((2180 < c) AND (c < 2200))
+(7 rows)
+
+select * from test_part where ((980 < c and c < 1000) or (2180 < c and c < 2200));
+  a  |  b   |  c   |  d   
+-----+------+------+------
+ 327 |  655 |  983 | 1311
+ 328 |  657 |  986 | 1315
+ 329 |  659 |  989 | 1319
+ 330 |  661 |  992 | 1323
+ 331 |  663 |  995 | 1327
+ 332 |  665 |  998 | 1331
+ 727 | 1455 | 2183 | 2911
+ 728 | 1457 | 2186 | 2915
+ 729 | 1459 | 2189 | 2919
+ 730 | 1461 | 2192 | 2923
+ 731 | 1463 | 2195 | 2927
+ 732 | 1465 | 2198 | 2931
+(12 rows)
+
+select relname, boundaries from pg_partition where parentid in (select parentid from pg_partition where relname = 'test_part') order by relname;
+ relname | boundaries 
+---------+------------
+(0 rows)
+
+select parttype,relname from pg_class where relname = 'test_part' and relfilenode != oid;
+ parttype |  relname  
+----------+-----------
+ n        | test_part
+(1 row)
+
+drop table test_part cascade;
+----test subpartition table
+CREATE TABLE IF NOT EXISTS test_subpart
+(
+a int primary key not null default 5,
+b int,
+c int,
+d int
+) 
+PARTITION BY RANGE(a) SUBPARTITION BY RANGE(b)
+(
+		PARTITION P_2021 VALUES LESS THAN (1000)
+		(
+			SUBPARTITION P_2021_1XXXX VALUES LESS THAN (1000),
+			SUBPARTITION P_2021_2XXXX VALUES LESS THAN (2000),
+			SUBPARTITION P_2021_3XXXX VALUES LESS THAN (10000)
+		),
+		PARTITION P_2022 VALUES LESS THAN (2000)
+		(
+			SUBPARTITION P_2022_1XXXX VALUES LESS THAN (1000),
+			SUBPARTITION P_2022_2XXXX VALUES LESS THAN (2000),
+			SUBPARTITION P_2022_3XXXX VALUES LESS THAN (10000)
+		),
+		PARTITION P_2023 VALUES LESS THAN (3000)
+		(
+			SUBPARTITION P_2023_1XXXX VALUES LESS THAN (1000),
+			SUBPARTITION P_2023_2XXXX VALUES LESS THAN (2000),
+			SUBPARTITION P_2023_3XXXX VALUES LESS THAN (10000)
+		)
+);
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "test_subpart_pkey" for table "test_subpart"
+create index sidx_c on test_subpart (c) local;
+create index sidx_b on test_subpart using btree(b);
+alter table test_subpart add constraint sidx_d unique(d);
+NOTICE:  ALTER TABLE / ADD UNIQUE will create implicit index "sidx_d" for table "test_subpart"
+insert into test_subpart (with RECURSIVE t_r(i,j,k,m) as(values(0,1,2,3) union all select i+1,j+2,k+3,m+4 from t_r where i < 2500) select * from t_r);
+explain select * from test_subpart where ((980 < c and ((980 < c and c < 1000) or (2180 < c and c < 2200))) or (2180 < c and c < 2200));
+                                                                   QUERY PLAN                                                                   
+------------------------------------------------------------------------------------------------------------------------------------------------
+ Partition Iterator  (cost=13.22..29.32 rows=22 width=16)
+   Iterations: 3, Sub Iterations: 9
+   ->  Partitioned Bitmap Heap Scan on test_subpart  (cost=13.22..29.32 rows=22 width=16)
+         Recheck Cond: ((((980 < c) AND (c < 1000) AND (980 < c)) OR ((2180 < c) AND (c < 2200) AND (980 < c))) OR ((2180 < c) AND (c < 2200)))
+         Selected Partitions:  1..3
+         Selected Subpartitions:  ALL
+         ->  BitmapOr  (cost=13.22..13.22 rows=40 width=0)
+               ->  BitmapOr  (cost=8.84..8.84 rows=27 width=0)
+                     ->  Partitioned Bitmap Index Scan on sidx_c  (cost=0.00..4.41 rows=13 width=0)
+                           Index Cond: ((980 < c) AND (c < 1000) AND (980 < c))
+                           Selected Partitions:  1..3
+                           Selected Subpartitions:  ALL
+                     ->  Partitioned Bitmap Index Scan on sidx_c  (cost=0.00..4.41 rows=13 width=0)
+                           Index Cond: ((2180 < c) AND (c < 2200) AND (980 < c))
+                           Selected Partitions:  1..3
+                           Selected Subpartitions:  ALL
+               ->  Partitioned Bitmap Index Scan on sidx_c  (cost=0.00..4.38 rows=13 width=0)
+                     Index Cond: ((2180 < c) AND (c < 2200))
+                     Selected Partitions:  1..3
+                     Selected Subpartitions:  ALL
+(20 rows)
+
+select * from test_subpart where ((980 < c and c < 1000) or (2180 < c and c < 2200));
+  a  |  b   |  c   |  d   
+-----+------+------+------
+ 327 |  655 |  983 | 1311
+ 328 |  657 |  986 | 1315
+ 329 |  659 |  989 | 1319
+ 330 |  661 |  992 | 1323
+ 331 |  663 |  995 | 1327
+ 332 |  665 |  998 | 1331
+ 727 | 1455 | 2183 | 2911
+ 728 | 1457 | 2186 | 2915
+ 729 | 1459 | 2189 | 2919
+ 730 | 1461 | 2192 | 2923
+ 731 | 1463 | 2195 | 2927
+ 732 | 1465 | 2198 | 2931
+(12 rows)
+
+--test rebuild partition syntax
+select relname, parttype from pg_partition where (parentid in (select oid from pg_class where relname = 'test_subpart')) order by relname;
+   relname    | parttype 
+--------------+----------
+ p_2021       | p
+ p_2022       | p
+ p_2023       | p
+ test_subpart | r
+(4 rows)
+
+ALTER TABLE test_subpart REBUILD PARTITION P_2021, P_2022;
+ rebuild_partition 
+-------------------
+ test_subpart
+(1 row)
+
+select relname, parttype from pg_partition where (parentid in (select oid from pg_class where relname = 'test_subpart')) order by relname;
+   relname    | parttype 
+--------------+----------
+ p_2021       | p
+ p_2022       | p
+ p_2023       | p
+ test_subpart | r
+(4 rows)
+
+select relname, parttype from pg_partition where parentid in (select oid from pg_partition where parentid in (select oid from pg_class where relname = 'test_subpart')) and oid != relfilenode order by relname;
+   relname    | parttype 
+--------------+----------
+ p_2021_1xxxx | s
+ p_2021_2xxxx | s
+ p_2021_3xxxx | s
+ p_2022_1xxxx | s
+ p_2022_2xxxx | s
+ p_2022_3xxxx | s
+(6 rows)
+
+explain select * from test_subpart where ((980 < c and c < 1000) or (2180 < c and c < 2200));
+                                          QUERY PLAN                                          
+----------------------------------------------------------------------------------------------
+ Partition Iterator  (cost=8.77..24.31 rows=27 width=16)
+   Iterations: 3, Sub Iterations: 9
+   ->  Partitioned Bitmap Heap Scan on test_subpart  (cost=8.77..24.31 rows=27 width=16)
+         Recheck Cond: (((980 < c) AND (c < 1000)) OR ((2180 < c) AND (c < 2200)))
+         Selected Partitions:  1..3
+         Selected Subpartitions:  ALL
+         ->  BitmapOr  (cost=8.77..8.77 rows=27 width=0)
+               ->  Partitioned Bitmap Index Scan on sidx_c  (cost=0.00..4.38 rows=13 width=0)
+                     Index Cond: ((980 < c) AND (c < 1000))
+                     Selected Partitions:  1..3
+                     Selected Subpartitions:  ALL
+               ->  Partitioned Bitmap Index Scan on sidx_c  (cost=0.00..4.38 rows=13 width=0)
+                     Index Cond: ((2180 < c) AND (c < 2200))
+                     Selected Partitions:  1..3
+                     Selected Subpartitions:  ALL
+(15 rows)
+
+select * from test_subpart where ((980 < c and c < 1000) or (2180 < c and c < 2200));
+  a  |  b   |  c   |  d   
+-----+------+------+------
+ 327 |  655 |  983 | 1311
+ 328 |  657 |  986 | 1315
+ 329 |  659 |  989 | 1319
+ 330 |  661 |  992 | 1323
+ 331 |  663 |  995 | 1327
+ 332 |  665 |  998 | 1331
+ 727 | 1455 | 2183 | 2911
+ 728 | 1457 | 2186 | 2915
+ 729 | 1459 | 2189 | 2919
+ 730 | 1461 | 2192 | 2923
+ 731 | 1463 | 2195 | 2927
+ 732 | 1465 | 2198 | 2931
+(12 rows)
+
+select * from test_subpart where ((980 < d and d < 1000) or (2180 < d and d < 2200));
+  a  |  b   |  c   |  d   
+-----+------+------+------
+ 245 |  491 |  737 |  983
+ 246 |  493 |  740 |  987
+ 247 |  495 |  743 |  991
+ 248 |  497 |  746 |  995
+ 249 |  499 |  749 |  999
+ 545 | 1091 | 1637 | 2183
+ 546 | 1093 | 1640 | 2187
+ 547 | 1095 | 1643 | 2191
+ 548 | 1097 | 1646 | 2195
+ 549 | 1099 | 1649 | 2199
+(10 rows)
+
+select * from test_subpart where ((980 < b and b < 1000) or (2180 < b and b < 2200));
+  a   |  b   |  c   |  d   
+------+------+------+------
+  490 |  981 | 1472 | 1963
+  491 |  983 | 1475 | 1967
+  492 |  985 | 1478 | 1971
+  493 |  987 | 1481 | 1975
+  494 |  989 | 1484 | 1979
+  495 |  991 | 1487 | 1983
+  496 |  993 | 1490 | 1987
+  497 |  995 | 1493 | 1991
+  498 |  997 | 1496 | 1995
+  499 |  999 | 1499 | 1999
+ 1090 | 2181 | 3272 | 4363
+ 1091 | 2183 | 3275 | 4367
+ 1092 | 2185 | 3278 | 4371
+ 1093 | 2187 | 3281 | 4375
+ 1094 | 2189 | 3284 | 4379
+ 1095 | 2191 | 3287 | 4383
+ 1096 | 2193 | 3290 | 4387
+ 1097 | 2195 | 3293 | 4391
+ 1098 | 2197 | 3296 | 4395
+ 1099 | 2199 | 3299 | 4399
+(20 rows)
+
+ALTER TABLE test_subpart REBUILD PARTITION all;
+ rebuild_partition 
+-------------------
+ test_subpart
+(1 row)
+
+select relname, parttype from pg_partition where (parentid in (select oid from pg_class where relname = 'test_subpart')) and oid = relfilenode order by relname;
+ relname | parttype 
+---------+----------
+(0 rows)
+
+select relname, parttype from pg_partition where parentid in (select oid from pg_partition where parentid in (select oid from pg_class where relname = 'test_subpart')) and oid != relfilenode order by relname;
+   relname    | parttype 
+--------------+----------
+ p_2021_1xxxx | s
+ p_2021_2xxxx | s
+ p_2021_3xxxx | s
+ p_2022_1xxxx | s
+ p_2022_2xxxx | s
+ p_2022_3xxxx | s
+ p_2023_1xxxx | s
+ p_2023_2xxxx | s
+ p_2023_3xxxx | s
+(9 rows)
+
+explain select * from test_subpart where ((980 < c and c < 1000) or (2180 < c and c < 2200));
+                                          QUERY PLAN                                          
+----------------------------------------------------------------------------------------------
+ Partition Iterator  (cost=8.77..24.31 rows=27 width=16)
+   Iterations: 3, Sub Iterations: 9
+   ->  Partitioned Bitmap Heap Scan on test_subpart  (cost=8.77..24.31 rows=27 width=16)
+         Recheck Cond: (((980 < c) AND (c < 1000)) OR ((2180 < c) AND (c < 2200)))
+         Selected Partitions:  1..3
+         Selected Subpartitions:  ALL
+         ->  BitmapOr  (cost=8.77..8.77 rows=27 width=0)
+               ->  Partitioned Bitmap Index Scan on sidx_c  (cost=0.00..4.38 rows=13 width=0)
+                     Index Cond: ((980 < c) AND (c < 1000))
+                     Selected Partitions:  1..3
+                     Selected Subpartitions:  ALL
+               ->  Partitioned Bitmap Index Scan on sidx_c  (cost=0.00..4.38 rows=13 width=0)
+                     Index Cond: ((2180 < c) AND (c < 2200))
+                     Selected Partitions:  1..3
+                     Selected Subpartitions:  ALL
+(15 rows)
+
+select * from test_subpart where ((980 < c and c < 1000) or (2180 < c and c < 2200));
+  a  |  b   |  c   |  d   
+-----+------+------+------
+ 327 |  655 |  983 | 1311
+ 328 |  657 |  986 | 1315
+ 329 |  659 |  989 | 1319
+ 330 |  661 |  992 | 1323
+ 331 |  663 |  995 | 1327
+ 332 |  665 |  998 | 1331
+ 727 | 1455 | 2183 | 2911
+ 728 | 1457 | 2186 | 2915
+ 729 | 1459 | 2189 | 2919
+ 730 | 1461 | 2192 | 2923
+ 731 | 1463 | 2195 | 2927
+ 732 | 1465 | 2198 | 2931
+(12 rows)
+
+select * from test_subpart where ((980 < d and d < 1000) or (2180 < d and d < 2200));
+  a  |  b   |  c   |  d   
+-----+------+------+------
+ 245 |  491 |  737 |  983
+ 246 |  493 |  740 |  987
+ 247 |  495 |  743 |  991
+ 248 |  497 |  746 |  995
+ 249 |  499 |  749 |  999
+ 545 | 1091 | 1637 | 2183
+ 546 | 1093 | 1640 | 2187
+ 547 | 1095 | 1643 | 2191
+ 548 | 1097 | 1646 | 2195
+ 549 | 1099 | 1649 | 2199
+(10 rows)
+
+select * from test_subpart where ((980 < b and b < 1000) or (2180 < b and b < 2200));
+  a   |  b   |  c   |  d   
+------+------+------+------
+  490 |  981 | 1472 | 1963
+  491 |  983 | 1475 | 1967
+  492 |  985 | 1478 | 1971
+  493 |  987 | 1481 | 1975
+  494 |  989 | 1484 | 1979
+  495 |  991 | 1487 | 1983
+  496 |  993 | 1490 | 1987
+  497 |  995 | 1493 | 1991
+  498 |  997 | 1496 | 1995
+  499 |  999 | 1499 | 1999
+ 1090 | 2181 | 3272 | 4363
+ 1091 | 2183 | 3275 | 4367
+ 1092 | 2185 | 3278 | 4371
+ 1093 | 2187 | 3281 | 4375
+ 1094 | 2189 | 3284 | 4379
+ 1095 | 2191 | 3287 | 4383
+ 1096 | 2193 | 3290 | 4387
+ 1097 | 2195 | 3293 | 4391
+ 1098 | 2197 | 3296 | 4395
+ 1099 | 2199 | 3299 | 4399
+(20 rows)
+
+--test repair check optimize partition syntax
+ALTER TABLE test_subpart repair PARTITION P_2021,P_2022;
+ALTER TABLE test_subpart check PARTITION P_2021,P_2022;
+ALTER TABLE test_subpart optimize PARTITION P_2021,P_2022;
+ALTER TABLE test_subpart repair PARTITION all;
+ALTER TABLE test_subpart check PARTITION all;
+ALTER TABLE test_subpart optimize PARTITION all;
+--test remove partitioning syntax
+select relname, boundaries from pg_partition where parentid in (select parentid from pg_partition where relname = 'test_subpart') order by relname;
+   relname    | boundaries 
+--------------+------------
+ p_2021       | {1000}
+ p_2022       | {2000}
+ p_2023       | {3000}
+ test_subpart | 
+(4 rows)
+
+select parttype,relname from pg_class where relname = 'test_subpart' and relfilenode != oid;
+ parttype | relname 
+----------+---------
+(0 rows)
+
+ALTER TABLE test_subpart remove PARTITIONING;
+ remove_partitioning 
+---------------------
+ test_subpart
+(1 row)
+
+explain select * from test_subpart where ((980 < c and c < 1000) or (2180 < c and c < 2200));
+                                 QUERY PLAN                                  
+-----------------------------------------------------------------------------
+ Bitmap Heap Scan on test_subpart  (cost=8.77..23.27 rows=25 width=16)
+   Recheck Cond: (((980 < c) AND (c < 1000)) OR ((2180 < c) AND (c < 2200)))
+   ->  BitmapOr  (cost=8.77..8.77 rows=25 width=0)
+         ->  Bitmap Index Scan on sidx_c  (cost=0.00..4.38 rows=13 width=0)
+               Index Cond: ((980 < c) AND (c < 1000))
+         ->  Bitmap Index Scan on sidx_c  (cost=0.00..4.38 rows=13 width=0)
+               Index Cond: ((2180 < c) AND (c < 2200))
+(7 rows)
+
+select * from test_subpart where ((980 < c and c < 1000) or (2180 < c and c < 2200));
+  a  |  b   |  c   |  d   
+-----+------+------+------
+ 327 |  655 |  983 | 1311
+ 328 |  657 |  986 | 1315
+ 329 |  659 |  989 | 1319
+ 330 |  661 |  992 | 1323
+ 331 |  663 |  995 | 1327
+ 332 |  665 |  998 | 1331
+ 727 | 1455 | 2183 | 2911
+ 728 | 1457 | 2186 | 2915
+ 729 | 1459 | 2189 | 2919
+ 730 | 1461 | 2192 | 2923
+ 731 | 1463 | 2195 | 2927
+ 732 | 1465 | 2198 | 2931
+(12 rows)
+
+select relname, boundaries from pg_partition where parentid in (select parentid from pg_partition where relname = 'test_subpart') order by relname;
+ relname | boundaries 
+---------+------------
+(0 rows)
+
+select parttype,relname from pg_class where relname = 'test_subpart' and relfilenode != oid;
+ parttype |   relname    
+----------+--------------
+ n        | test_subpart
+(1 row)
+
+drop table test_subpart cascade;
+-------test list partition tables
+CREATE TABLE test_part_list (a int, b int, c int, d int)
+PARTITION BY list(a)
+(
+PARTITION p1 VALUES (2000,2001,2002,2003),
+PARTITION p2 VALUES (3000,3001,3002,3003),
+PARTITION p3 VALUES (4000,4001,4002,4003),
+PARTITION p4 VALUES (5000,5001,5002,5003)
+);
+create unique index idx_c on test_part_list (c);
+create index idx_b on test_part_list using btree(b) local;
+alter table test_part_list add constraint uidx_d unique(d);
+NOTICE:  ALTER TABLE / ADD UNIQUE will create implicit index "uidx_d" for table "test_part_list"
+alter table test_part_list add constraint uidx_c unique using index idx_c;
+NOTICE:  ALTER TABLE / ADD CONSTRAINT USING INDEX will rename index "idx_c" to "uidx_c"
+insert into test_part_list values(2000,1,2,3),(3000,2,3,4),(4000,3,4,5),(5000,4,5,6);
+select * from test_part_list;
+  a   | b | c | d 
+------+---+---+---
+ 5000 | 4 | 5 | 6
+ 4000 | 3 | 4 | 5
+ 3000 | 2 | 3 | 4
+ 2000 | 1 | 2 | 3
+(4 rows)
+
+select relname, parttype from pg_partition where (parentid in (select oid from pg_class where relname = 'test_part_list')) and oid != relfilenode order by relname;
+    relname     | parttype 
+----------------+----------
+ test_part_list | r
+(1 row)
+
+ALTER TABLE test_part_list REBUILD PARTITION p1, p2;
+ rebuild_partition 
+-------------------
+ test_part_list
+(1 row)
+
+select * from test_part_list;
+  a   | b | c | d 
+------+---+---+---
+ 5000 | 4 | 5 | 6
+ 4000 | 3 | 4 | 5
+ 3000 | 2 | 3 | 4
+ 2000 | 1 | 2 | 3
+(4 rows)
+
+select relname, parttype from pg_partition where (parentid in (select oid from pg_class where relname = 'test_part_list')) and oid != relfilenode order by relname;
+    relname     | parttype 
+----------------+----------
+ p1             | p
+ p2             | p
+ test_part_list | r
+(3 rows)
+
+ALTER TABLE test_part_list REBUILD PARTITION all;
+ rebuild_partition 
+-------------------
+ test_part_list
+(1 row)
+
+select * from test_part_list;
+  a   | b | c | d 
+------+---+---+---
+ 5000 | 4 | 5 | 6
+ 4000 | 3 | 4 | 5
+ 3000 | 2 | 3 | 4
+ 2000 | 1 | 2 | 3
+(4 rows)
+
+select relname, parttype from pg_partition where (parentid in (select oid from pg_class where relname = 'test_part_list')) and oid != relfilenode order by relname;
+    relname     | parttype 
+----------------+----------
+ p1             | p
+ p2             | p
+ p3             | p
+ p4             | p
+ test_part_list | r
+(5 rows)
+
+-------test hash partition tables
+CREATE TABLE IF NOT EXISTS test_part_hash
+(
+a int primary key not null,
+b int,
+c int,
+d int
+) 
+PARTITION BY HASH(a)
+(
+    PARTITION p0,
+    PARTITION p1,
+    PARTITION p2
+);
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "test_part_hash_pkey" for table "test_part_hash"
+insert into test_part_hash (with RECURSIVE t_r(i,j,k,m) as(values(0,1,2,3) union all select i+1,j+2,k+3,m+4 from t_r where i < 2500) select * from t_r);
+explain select * from test_part_hash where ((980 < c and c < 1000) or (2180 < c and c < 2200));
+                                    QUERY PLAN                                     
+-----------------------------------------------------------------------------------
+ Partition Iterator  (cost=0.00..68.26 rows=27 width=16)
+   Iterations: 3
+   ->  Partitioned Seq Scan on test_part_hash  (cost=0.00..68.26 rows=27 width=16)
+         Filter: (((980 < c) AND (c < 1000)) OR ((2180 < c) AND (c < 2200)))
+         Selected Partitions:  1..3
+(5 rows)
+
+select * from test_part_hash where ((980 < c and c < 1000) or (2180 < c and c < 2200));
+  a  |  b   |  c   |  d   
+-----+------+------+------
+ 727 | 1455 | 2183 | 2911
+ 731 | 1463 | 2195 | 2927
+ 327 |  655 |  983 | 1311
+ 331 |  663 |  995 | 1327
+ 728 | 1457 | 2186 | 2915
+ 729 | 1459 | 2189 | 2919
+ 730 | 1461 | 2192 | 2923
+ 328 |  657 |  986 | 1315
+ 329 |  659 |  989 | 1319
+ 330 |  661 |  992 | 1323
+ 332 |  665 |  998 | 1331
+ 732 | 1465 | 2198 | 2931
+(12 rows)
+
+select relname, parttype from pg_partition where (parentid in (select oid from pg_class where relname = 'test_part_hash')) and oid != relfilenode order by relname;
+    relname     | parttype 
+----------------+----------
+ test_part_hash | r
+(1 row)
+
+ALTER TABLE test_part_hash REBUILD PARTITION p0, p1;
+ rebuild_partition 
+-------------------
+ test_part_hash
+(1 row)
+
+explain select * from test_part_hash where ((980 < c and c < 1000) or (2180 < c and c < 2200));
+                                    QUERY PLAN                                     
+-----------------------------------------------------------------------------------
+ Partition Iterator  (cost=0.00..68.26 rows=27 width=16)
+   Iterations: 3
+   ->  Partitioned Seq Scan on test_part_hash  (cost=0.00..68.26 rows=27 width=16)
+         Filter: (((980 < c) AND (c < 1000)) OR ((2180 < c) AND (c < 2200)))
+         Selected Partitions:  1..3
+(5 rows)
+
+select * from test_part_hash where ((980 < c and c < 1000) or (2180 < c and c < 2200));
+  a  |  b   |  c   |  d   
+-----+------+------+------
+ 727 | 1455 | 2183 | 2911
+ 731 | 1463 | 2195 | 2927
+ 327 |  655 |  983 | 1311
+ 331 |  663 |  995 | 1327
+ 728 | 1457 | 2186 | 2915
+ 729 | 1459 | 2189 | 2919
+ 730 | 1461 | 2192 | 2923
+ 328 |  657 |  986 | 1315
+ 329 |  659 |  989 | 1319
+ 330 |  661 |  992 | 1323
+ 332 |  665 |  998 | 1331
+ 732 | 1465 | 2198 | 2931
+(12 rows)
+
+select relname, parttype from pg_partition where (parentid in (select oid from pg_class where relname = 'test_part_hash')) and oid != relfilenode order by relname;
+    relname     | parttype 
+----------------+----------
+ p0             | p
+ p1             | p
+ test_part_hash | r
+(3 rows)
+
+ALTER TABLE test_part_hash REBUILD PARTITION all;
+ rebuild_partition 
+-------------------
+ test_part_hash
+(1 row)
+
+explain select * from test_part_hash where ((980 < c and c < 1000) or (2180 < c and c < 2200));
+                                    QUERY PLAN                                     
+-----------------------------------------------------------------------------------
+ Partition Iterator  (cost=0.00..68.26 rows=27 width=16)
+   Iterations: 3
+   ->  Partitioned Seq Scan on test_part_hash  (cost=0.00..68.26 rows=27 width=16)
+         Filter: (((980 < c) AND (c < 1000)) OR ((2180 < c) AND (c < 2200)))
+         Selected Partitions:  1..3
+(5 rows)
+
+select * from test_part_hash where ((980 < c and c < 1000) or (2180 < c and c < 2200));
+  a  |  b   |  c   |  d   
+-----+------+------+------
+ 727 | 1455 | 2183 | 2911
+ 731 | 1463 | 2195 | 2927
+ 327 |  655 |  983 | 1311
+ 331 |  663 |  995 | 1327
+ 728 | 1457 | 2186 | 2915
+ 729 | 1459 | 2189 | 2919
+ 730 | 1461 | 2192 | 2923
+ 328 |  657 |  986 | 1315
+ 329 |  659 |  989 | 1319
+ 330 |  661 |  992 | 1323
+ 332 |  665 |  998 | 1331
+ 732 | 1465 | 2198 | 2931
+(12 rows)
+
+select relname, parttype from pg_partition where (parentid in (select oid from pg_class where relname = 'test_part_hash')) and oid != relfilenode order by relname;
+    relname     | parttype 
+----------------+----------
+ p0             | p
+ p1             | p
+ p2             | p
+ test_part_hash | r
+(4 rows)
+
+-------test the nonpartition tables
+create table IF NOT EXISTS test_nopart(a int);
+ALTER TABLE test_nopart REBUILD PARTITION all;
+ERROR:  The table test_nopart is not partition table
+CONTEXT:  referenced column: rebuild_partition
+ALTER TABLE test_nopart remove partitioning;
+ERROR:  The table test_nopart is not partition table
+CONTEXT:  referenced column: remove_partitioning
+-------test the tables whose relkind are not 'r'
+CREATE UNLOGGED TABLE IF NOT EXISTS test_part_unlog
+(
+a int primary key not null default 5,
+b int,
+c int,
+d int
+) 
+PARTITION BY RANGE(a)
+(
+    PARTITION p0 VALUES LESS THAN (1000),
+    PARTITION p1 VALUES LESS THAN (2000),
+    PARTITION p2 VALUES LESS THAN (3000)
+);
+ERROR:  unsupported feature with temporary/unlogged table for partitioned table
+CREATE LOCAL TEMPORARY TABLE IF NOT EXISTS test_part_local
+(
+a int primary key not null default 5,
+b int,
+c int,
+d int
+) 
+PARTITION BY RANGE(a)
+(
+    PARTITION p0 VALUES LESS THAN (1000),
+    PARTITION p1 VALUES LESS THAN (2000),
+    PARTITION p2 VALUES LESS THAN (3000)
+);
+ERROR:  unsupported feature with temporary/unlogged table for partitioned table
+CREATE GLOBAL TEMPORARY TABLE IF NOT EXISTS test_part_global
+(
+a int primary key not null default 5,
+b int,
+c int,
+d int
+) 
+PARTITION BY RANGE(a)
+(
+    PARTITION p0 VALUES LESS THAN (1000),
+    PARTITION p1 VALUES LESS THAN (2000),
+    PARTITION p2 VALUES LESS THAN (3000)
+);
+ERROR:  unsupported feature with temporary/unlogged table for partitioned table
+ALTER TABLE test_part_unlog REBUILD PARTITION all;
+ERROR:  The table test_part_unlog can't be found
+CONTEXT:  referenced column: rebuild_partition
+ALTER TABLE test_part_local REBUILD PARTITION all;
+ERROR:  The table test_part_local can't be found
+CONTEXT:  referenced column: rebuild_partition
+ALTER TABLE test_part_global REBUILD PARTITION all;
+ERROR:  The table test_part_global can't be found
+CONTEXT:  referenced column: rebuild_partition
+ALTER TABLE test_part_unlog remove partitioning;
+ERROR:  The table test_part_unlog can't be found
+CONTEXT:  referenced column: remove_partitioning
+ALTER TABLE test_part_local remove partitioning;
+ERROR:  The table test_part_local can't be found
+CONTEXT:  referenced column: remove_partitioning
+ALTER TABLE test_part_global remove partitioning;
+ERROR:  The table test_part_global can't be found
+CONTEXT:  referenced column: remove_partitioning
+-------test USTORE table
+CREATE TABLE IF NOT EXISTS test_part_ustore
+(
+a int primary key not null default 5,
+b int,
+c int,
+d int
+) 
+PARTITION BY RANGE(a)
+(
+    PARTITION p0 VALUES LESS THAN (1000),
+    PARTITION p1 VALUES LESS THAN (2000),
+    PARTITION p2 VALUES LESS THAN (3000)
+) with(STORAGE_TYPE = USTORE);
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "test_part_ustore_pkey" for table "test_part_ustore"
+create unique index idx_c1 on test_part_ustore (c);
+create index idx_b1 on test_part_ustore using ubtree(b) local;
+alter table test_part_ustore add constraint uidx_d1 unique(d);
+NOTICE:  ALTER TABLE / ADD UNIQUE will create implicit index "uidx_d1" for table "test_part_ustore"
+alter table test_part_ustore add constraint uidx_c1 unique using index idx_c1;
+NOTICE:  ALTER TABLE / ADD CONSTRAINT USING INDEX will rename index "idx_c1" to "uidx_c1"
+insert into test_part_ustore (with RECURSIVE t_r(i,j,k,m) as(values(0,1,2,3) union all select i+1,j+2,k+3,m+4 from t_r where i < 2500) select * from t_r);
+select relname from pg_partition where (parentid in (select oid from pg_class where relname = 'test_part_ustore')) and parttype = 'p' and oid != relfilenode order by relname;
+ relname 
+---------
+(0 rows)
+
+explain select * from test_part_ustore where ((980 < c and c < 1000) or (2180 < c and c < 2200));
+                                 QUERY PLAN                                  
+-----------------------------------------------------------------------------
+ Bitmap Heap Scan on test_part_ustore  (cost=8.69..19.05 rows=18 width=16)
+   Recheck Cond: (((980 < c) AND (c < 1000)) OR ((2180 < c) AND (c < 2200)))
+   ->  BitmapOr  (cost=8.69..8.69 rows=18 width=0)
+         ->  Bitmap Index Scan on uidx_c1  (cost=0.00..4.34 rows=9 width=0)
+               Index Cond: ((980 < c) AND (c < 1000))
+         ->  Bitmap Index Scan on uidx_c1  (cost=0.00..4.34 rows=9 width=0)
+               Index Cond: ((2180 < c) AND (c < 2200))
+(7 rows)
+
+select * from test_part_ustore where ((980 < c and c < 1000) or (2180 < c and c < 2200));
+  a  |  b   |  c   |  d   
+-----+------+------+------
+ 327 |  655 |  983 | 1311
+ 328 |  657 |  986 | 1315
+ 329 |  659 |  989 | 1319
+ 330 |  661 |  992 | 1323
+ 331 |  663 |  995 | 1327
+ 332 |  665 |  998 | 1331
+ 727 | 1455 | 2183 | 2911
+ 728 | 1457 | 2186 | 2915
+ 729 | 1459 | 2189 | 2919
+ 730 | 1461 | 2192 | 2923
+ 731 | 1463 | 2195 | 2927
+ 732 | 1465 | 2198 | 2931
+(12 rows)
+
+select * from test_part_ustore where ((980 < d and d < 1000) or (2180 < d and d < 2200));
+  a  |  b   |  c   |  d   
+-----+------+------+------
+ 245 |  491 |  737 |  983
+ 246 |  493 |  740 |  987
+ 247 |  495 |  743 |  991
+ 248 |  497 |  746 |  995
+ 249 |  499 |  749 |  999
+ 545 | 1091 | 1637 | 2183
+ 546 | 1093 | 1640 | 2187
+ 547 | 1095 | 1643 | 2191
+ 548 | 1097 | 1646 | 2195
+ 549 | 1099 | 1649 | 2199
+(10 rows)
+
+select * from test_part_ustore where ((980 < b and b < 1000) or (2180 < b and b < 2200));
+  a   |  b   |  c   |  d   
+------+------+------+------
+  490 |  981 | 1472 | 1963
+  491 |  983 | 1475 | 1967
+  492 |  985 | 1478 | 1971
+  493 |  987 | 1481 | 1975
+  494 |  989 | 1484 | 1979
+  495 |  991 | 1487 | 1983
+  496 |  993 | 1490 | 1987
+  497 |  995 | 1493 | 1991
+  498 |  997 | 1496 | 1995
+  499 |  999 | 1499 | 1999
+ 1090 | 2181 | 3272 | 4363
+ 1091 | 2183 | 3275 | 4367
+ 1092 | 2185 | 3278 | 4371
+ 1093 | 2187 | 3281 | 4375
+ 1094 | 2189 | 3284 | 4379
+ 1095 | 2191 | 3287 | 4383
+ 1096 | 2193 | 3290 | 4387
+ 1097 | 2195 | 3293 | 4391
+ 1098 | 2197 | 3296 | 4395
+ 1099 | 2199 | 3299 | 4399
+(20 rows)
+
+--test rebuild partition syntax
+ALTER TABLE test_part_ustore REBUILD PARTITION p0, p1;
+ rebuild_partition 
+-------------------
+ test_part_ustore
+(1 row)
+
+select relname from pg_partition where (parentid in (select oid from pg_class where relname = 'test_part_ustore')) and parttype = 'p' and oid != relfilenode order by relname;
+ relname 
+---------
+ p0
+ p1
+(2 rows)
+
+explain select * from test_part_ustore where ((980 < c and c < 1000) or (2180 < c and c < 2200));
+                                 QUERY PLAN                                  
+-----------------------------------------------------------------------------
+ Bitmap Heap Scan on test_part_ustore  (cost=8.69..19.05 rows=18 width=16)
+   Recheck Cond: (((980 < c) AND (c < 1000)) OR ((2180 < c) AND (c < 2200)))
+   ->  BitmapOr  (cost=8.69..8.69 rows=18 width=0)
+         ->  Bitmap Index Scan on uidx_c1  (cost=0.00..4.34 rows=9 width=0)
+               Index Cond: ((980 < c) AND (c < 1000))
+         ->  Bitmap Index Scan on uidx_c1  (cost=0.00..4.34 rows=9 width=0)
+               Index Cond: ((2180 < c) AND (c < 2200))
+(7 rows)
+
+select * from test_part_ustore where ((980 < c and c < 1000) or (2180 < c and c < 2200));
+  a  |  b   |  c   |  d   
+-----+------+------+------
+ 327 |  655 |  983 | 1311
+ 328 |  657 |  986 | 1315
+ 329 |  659 |  989 | 1319
+ 330 |  661 |  992 | 1323
+ 331 |  663 |  995 | 1327
+ 332 |  665 |  998 | 1331
+ 727 | 1455 | 2183 | 2911
+ 728 | 1457 | 2186 | 2915
+ 729 | 1459 | 2189 | 2919
+ 730 | 1461 | 2192 | 2923
+ 731 | 1463 | 2195 | 2927
+ 732 | 1465 | 2198 | 2931
+(12 rows)
+
+select * from test_part_ustore where ((980 < d and d < 1000) or (2180 < d and d < 2200));
+  a  |  b   |  c   |  d   
+-----+------+------+------
+ 245 |  491 |  737 |  983
+ 246 |  493 |  740 |  987
+ 247 |  495 |  743 |  991
+ 248 |  497 |  746 |  995
+ 249 |  499 |  749 |  999
+ 545 | 1091 | 1637 | 2183
+ 546 | 1093 | 1640 | 2187
+ 547 | 1095 | 1643 | 2191
+ 548 | 1097 | 1646 | 2195
+ 549 | 1099 | 1649 | 2199
+(10 rows)
+
+select * from test_part_ustore where ((980 < b and b < 1000) or (2180 < b and b < 2200));
+  a   |  b   |  c   |  d   
+------+------+------+------
+  490 |  981 | 1472 | 1963
+  491 |  983 | 1475 | 1967
+  492 |  985 | 1478 | 1971
+  493 |  987 | 1481 | 1975
+  494 |  989 | 1484 | 1979
+  495 |  991 | 1487 | 1983
+  496 |  993 | 1490 | 1987
+  497 |  995 | 1493 | 1991
+  498 |  997 | 1496 | 1995
+  499 |  999 | 1499 | 1999
+ 1090 | 2181 | 3272 | 4363
+ 1091 | 2183 | 3275 | 4367
+ 1092 | 2185 | 3278 | 4371
+ 1093 | 2187 | 3281 | 4375
+ 1094 | 2189 | 3284 | 4379
+ 1095 | 2191 | 3287 | 4383
+ 1096 | 2193 | 3290 | 4387
+ 1097 | 2195 | 3293 | 4391
+ 1098 | 2197 | 3296 | 4395
+ 1099 | 2199 | 3299 | 4399
+(20 rows)
+
+ALTER TABLE test_part_ustore REBUILD PARTITION all;
+ rebuild_partition 
+-------------------
+ test_part_ustore
+(1 row)
+
+select relname from pg_partition where (parentid in (select oid from pg_class where relname = 'test_part_ustore')) and parttype = 'p' and oid != relfilenode order by relname;
+ relname 
+---------
+ p0
+ p1
+ p2
+(3 rows)
+
+explain select * from test_part_ustore where ((980 < c and c < 1000) or (2180 < c and c < 2200));
+                                 QUERY PLAN                                  
+-----------------------------------------------------------------------------
+ Bitmap Heap Scan on test_part_ustore  (cost=8.69..19.05 rows=18 width=16)
+   Recheck Cond: (((980 < c) AND (c < 1000)) OR ((2180 < c) AND (c < 2200)))
+   ->  BitmapOr  (cost=8.69..8.69 rows=18 width=0)
+         ->  Bitmap Index Scan on uidx_c1  (cost=0.00..4.34 rows=9 width=0)
+               Index Cond: ((980 < c) AND (c < 1000))
+         ->  Bitmap Index Scan on uidx_c1  (cost=0.00..4.34 rows=9 width=0)
+               Index Cond: ((2180 < c) AND (c < 2200))
+(7 rows)
+
+select * from test_part_ustore where ((980 < c and c < 1000) or (2180 < c and c < 2200));
+  a  |  b   |  c   |  d   
+-----+------+------+------
+ 327 |  655 |  983 | 1311
+ 328 |  657 |  986 | 1315
+ 329 |  659 |  989 | 1319
+ 330 |  661 |  992 | 1323
+ 331 |  663 |  995 | 1327
+ 332 |  665 |  998 | 1331
+ 727 | 1455 | 2183 | 2911
+ 728 | 1457 | 2186 | 2915
+ 729 | 1459 | 2189 | 2919
+ 730 | 1461 | 2192 | 2923
+ 731 | 1463 | 2195 | 2927
+ 732 | 1465 | 2198 | 2931
+(12 rows)
+
+select * from test_part_ustore where ((980 < d and d < 1000) or (2180 < d and d < 2200));
+  a  |  b   |  c   |  d   
+-----+------+------+------
+ 245 |  491 |  737 |  983
+ 246 |  493 |  740 |  987
+ 247 |  495 |  743 |  991
+ 248 |  497 |  746 |  995
+ 249 |  499 |  749 |  999
+ 545 | 1091 | 1637 | 2183
+ 546 | 1093 | 1640 | 2187
+ 547 | 1095 | 1643 | 2191
+ 548 | 1097 | 1646 | 2195
+ 549 | 1099 | 1649 | 2199
+(10 rows)
+
+select * from test_part_ustore where ((980 < b and b < 1000) or (2180 < b and b < 2200));
+  a   |  b   |  c   |  d   
+------+------+------+------
+  490 |  981 | 1472 | 1963
+  491 |  983 | 1475 | 1967
+  492 |  985 | 1478 | 1971
+  493 |  987 | 1481 | 1975
+  494 |  989 | 1484 | 1979
+  495 |  991 | 1487 | 1983
+  496 |  993 | 1490 | 1987
+  497 |  995 | 1493 | 1991
+  498 |  997 | 1496 | 1995
+  499 |  999 | 1499 | 1999
+ 1090 | 2181 | 3272 | 4363
+ 1091 | 2183 | 3275 | 4367
+ 1092 | 2185 | 3278 | 4371
+ 1093 | 2187 | 3281 | 4375
+ 1094 | 2189 | 3284 | 4379
+ 1095 | 2191 | 3287 | 4383
+ 1096 | 2193 | 3290 | 4387
+ 1097 | 2195 | 3293 | 4391
+ 1098 | 2197 | 3296 | 4395
+ 1099 | 2199 | 3299 | 4399
+(20 rows)
+
+-------test segment table
+CREATE TABLE IF NOT EXISTS test_part_segment
+(
+a int primary key not null default 5,
+b int,
+c int,
+d int
+) 
+PARTITION BY RANGE(a)
+(
+    PARTITION p0 VALUES LESS THAN (1000),
+    PARTITION p1 VALUES LESS THAN (2000),
+    PARTITION p2 VALUES LESS THAN (3000)
+) with(segment = on);
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "test_part_segment_pkey" for table "test_part_segment"
+create unique index idx_c2 on test_part_segment (c);
+create index idx_b2 on test_part_segment using btree(b) local;
+alter table test_part_segment add constraint uidx_d2 unique(d);
+NOTICE:  ALTER TABLE / ADD UNIQUE will create implicit index "uidx_d2" for table "test_part_segment"
+alter table test_part_segment add constraint uidx_c2 unique using index idx_c2;
+NOTICE:  ALTER TABLE / ADD CONSTRAINT USING INDEX will rename index "idx_c2" to "uidx_c2"
+insert into test_part_segment (with RECURSIVE t_r(i,j,k,m) as(values(0,1,2,3) union all select i+1,j+2,k+3,m+4 from t_r where i < 2500) select * from t_r);
+select relname from pg_partition where (parentid in (select oid from pg_class where relname = 'test_part_segment')) and parttype = 'p' and oid != relfilenode order by relname;
+ relname 
+---------
+ p0
+ p1
+ p2
+(3 rows)
+
+explain select * from test_part_segment where ((980 < c and c < 1000) or (2180 < c and c < 2200));
+                                 QUERY PLAN                                  
+-----------------------------------------------------------------------------
+ Bitmap Heap Scan on test_part_segment  (cost=8.77..24.31 rows=27 width=16)
+   Recheck Cond: (((980 < c) AND (c < 1000)) OR ((2180 < c) AND (c < 2200)))
+   ->  BitmapOr  (cost=8.77..8.77 rows=27 width=0)
+         ->  Bitmap Index Scan on uidx_c2  (cost=0.00..4.38 rows=13 width=0)
+               Index Cond: ((980 < c) AND (c < 1000))
+         ->  Bitmap Index Scan on uidx_c2  (cost=0.00..4.38 rows=13 width=0)
+               Index Cond: ((2180 < c) AND (c < 2200))
+(7 rows)
+
+select * from test_part_segment where ((980 < c and c < 1000) or (2180 < c and c < 2200));
+  a  |  b   |  c   |  d   
+-----+------+------+------
+ 327 |  655 |  983 | 1311
+ 328 |  657 |  986 | 1315
+ 329 |  659 |  989 | 1319
+ 330 |  661 |  992 | 1323
+ 331 |  663 |  995 | 1327
+ 332 |  665 |  998 | 1331
+ 727 | 1455 | 2183 | 2911
+ 728 | 1457 | 2186 | 2915
+ 729 | 1459 | 2189 | 2919
+ 730 | 1461 | 2192 | 2923
+ 731 | 1463 | 2195 | 2927
+ 732 | 1465 | 2198 | 2931
+(12 rows)
+
+select * from test_part_segment where ((980 < d and d < 1000) or (2180 < d and d < 2200));
+  a  |  b   |  c   |  d   
+-----+------+------+------
+ 245 |  491 |  737 |  983
+ 246 |  493 |  740 |  987
+ 247 |  495 |  743 |  991
+ 248 |  497 |  746 |  995
+ 249 |  499 |  749 |  999
+ 545 | 1091 | 1637 | 2183
+ 546 | 1093 | 1640 | 2187
+ 547 | 1095 | 1643 | 2191
+ 548 | 1097 | 1646 | 2195
+ 549 | 1099 | 1649 | 2199
+(10 rows)
+
+select * from test_part_segment where ((980 < b and b < 1000) or (2180 < b and b < 2200));
+  a   |  b   |  c   |  d   
+------+------+------+------
+  490 |  981 | 1472 | 1963
+  491 |  983 | 1475 | 1967
+  492 |  985 | 1478 | 1971
+  493 |  987 | 1481 | 1975
+  494 |  989 | 1484 | 1979
+  495 |  991 | 1487 | 1983
+  496 |  993 | 1490 | 1987
+  497 |  995 | 1493 | 1991
+  498 |  997 | 1496 | 1995
+  499 |  999 | 1499 | 1999
+ 1090 | 2181 | 3272 | 4363
+ 1091 | 2183 | 3275 | 4367
+ 1092 | 2185 | 3278 | 4371
+ 1093 | 2187 | 3281 | 4375
+ 1094 | 2189 | 3284 | 4379
+ 1095 | 2191 | 3287 | 4383
+ 1096 | 2193 | 3290 | 4387
+ 1097 | 2195 | 3293 | 4391
+ 1098 | 2197 | 3296 | 4395
+ 1099 | 2199 | 3299 | 4399
+(20 rows)
+
+--test rebuild partition syntax
+ALTER TABLE test_part_segment REBUILD PARTITION p0, p1;
+ rebuild_partition 
+-------------------
+ test_part_segment
+(1 row)
+
+select relname from pg_partition where (parentid in (select oid from pg_class where relname = 'test_part_segment')) and parttype = 'p' and oid != relfilenode order by relname;
+ relname 
+---------
+ p0
+ p1
+ p2
+(3 rows)
+
+explain select * from test_part_segment where ((980 < c and c < 1000) or (2180 < c and c < 2200));
+                                 QUERY PLAN                                  
+-----------------------------------------------------------------------------
+ Bitmap Heap Scan on test_part_segment  (cost=8.77..24.31 rows=27 width=16)
+   Recheck Cond: (((980 < c) AND (c < 1000)) OR ((2180 < c) AND (c < 2200)))
+   ->  BitmapOr  (cost=8.77..8.77 rows=27 width=0)
+         ->  Bitmap Index Scan on uidx_c2  (cost=0.00..4.38 rows=13 width=0)
+               Index Cond: ((980 < c) AND (c < 1000))
+         ->  Bitmap Index Scan on uidx_c2  (cost=0.00..4.38 rows=13 width=0)
+               Index Cond: ((2180 < c) AND (c < 2200))
+(7 rows)
+
+select * from test_part_segment where ((980 < c and c < 1000) or (2180 < c and c < 2200));
+  a  |  b   |  c   |  d   
+-----+------+------+------
+ 327 |  655 |  983 | 1311
+ 328 |  657 |  986 | 1315
+ 329 |  659 |  989 | 1319
+ 330 |  661 |  992 | 1323
+ 331 |  663 |  995 | 1327
+ 332 |  665 |  998 | 1331
+ 727 | 1455 | 2183 | 2911
+ 728 | 1457 | 2186 | 2915
+ 729 | 1459 | 2189 | 2919
+ 730 | 1461 | 2192 | 2923
+ 731 | 1463 | 2195 | 2927
+ 732 | 1465 | 2198 | 2931
+(12 rows)
+
+select * from test_part_segment where ((980 < d and d < 1000) or (2180 < d and d < 2200));
+  a  |  b   |  c   |  d   
+-----+------+------+------
+ 245 |  491 |  737 |  983
+ 246 |  493 |  740 |  987
+ 247 |  495 |  743 |  991
+ 248 |  497 |  746 |  995
+ 249 |  499 |  749 |  999
+ 545 | 1091 | 1637 | 2183
+ 546 | 1093 | 1640 | 2187
+ 547 | 1095 | 1643 | 2191
+ 548 | 1097 | 1646 | 2195
+ 549 | 1099 | 1649 | 2199
+(10 rows)
+
+select * from test_part_segment where ((980 < b and b < 1000) or (2180 < b and b < 2200));
+  a   |  b   |  c   |  d   
+------+------+------+------
+  490 |  981 | 1472 | 1963
+  491 |  983 | 1475 | 1967
+  492 |  985 | 1478 | 1971
+  493 |  987 | 1481 | 1975
+  494 |  989 | 1484 | 1979
+  495 |  991 | 1487 | 1983
+  496 |  993 | 1490 | 1987
+  497 |  995 | 1493 | 1991
+  498 |  997 | 1496 | 1995
+  499 |  999 | 1499 | 1999
+ 1090 | 2181 | 3272 | 4363
+ 1091 | 2183 | 3275 | 4367
+ 1092 | 2185 | 3278 | 4371
+ 1093 | 2187 | 3281 | 4375
+ 1094 | 2189 | 3284 | 4379
+ 1095 | 2191 | 3287 | 4383
+ 1096 | 2193 | 3290 | 4387
+ 1097 | 2195 | 3293 | 4391
+ 1098 | 2197 | 3296 | 4395
+ 1099 | 2199 | 3299 | 4399
+(20 rows)
+
+ALTER TABLE test_part_segment REBUILD PARTITION all;
+ rebuild_partition 
+-------------------
+ test_part_segment
+(1 row)
+
+select relname from pg_partition where (parentid in (select oid from pg_class where relname = 'test_part_segment')) and parttype = 'p' and oid != relfilenode order by relname;
+ relname 
+---------
+ p0
+ p1
+ p2
+(3 rows)
+
+explain select * from test_part_segment where ((980 < c and c < 1000) or (2180 < c and c < 2200));
+                                 QUERY PLAN                                  
+-----------------------------------------------------------------------------
+ Bitmap Heap Scan on test_part_segment  (cost=8.77..24.31 rows=27 width=16)
+   Recheck Cond: (((980 < c) AND (c < 1000)) OR ((2180 < c) AND (c < 2200)))
+   ->  BitmapOr  (cost=8.77..8.77 rows=27 width=0)
+         ->  Bitmap Index Scan on uidx_c2  (cost=0.00..4.38 rows=13 width=0)
+               Index Cond: ((980 < c) AND (c < 1000))
+         ->  Bitmap Index Scan on uidx_c2  (cost=0.00..4.38 rows=13 width=0)
+               Index Cond: ((2180 < c) AND (c < 2200))
+(7 rows)
+
+select * from test_part_segment where ((980 < c and c < 1000) or (2180 < c and c < 2200));
+  a  |  b   |  c   |  d   
+-----+------+------+------
+ 327 |  655 |  983 | 1311
+ 328 |  657 |  986 | 1315
+ 329 |  659 |  989 | 1319
+ 330 |  661 |  992 | 1323
+ 331 |  663 |  995 | 1327
+ 332 |  665 |  998 | 1331
+ 727 | 1455 | 2183 | 2911
+ 728 | 1457 | 2186 | 2915
+ 729 | 1459 | 2189 | 2919
+ 730 | 1461 | 2192 | 2923
+ 731 | 1463 | 2195 | 2927
+ 732 | 1465 | 2198 | 2931
+(12 rows)
+
+select * from test_part_segment where ((980 < d and d < 1000) or (2180 < d and d < 2200));
+  a  |  b   |  c   |  d   
+-----+------+------+------
+ 245 |  491 |  737 |  983
+ 246 |  493 |  740 |  987
+ 247 |  495 |  743 |  991
+ 248 |  497 |  746 |  995
+ 249 |  499 |  749 |  999
+ 545 | 1091 | 1637 | 2183
+ 546 | 1093 | 1640 | 2187
+ 547 | 1095 | 1643 | 2191
+ 548 | 1097 | 1646 | 2195
+ 549 | 1099 | 1649 | 2199
+(10 rows)
+
+select * from test_part_segment where ((980 < b and b < 1000) or (2180 < b and b < 2200));
+  a   |  b   |  c   |  d   
+------+------+------+------
+  490 |  981 | 1472 | 1963
+  491 |  983 | 1475 | 1967
+  492 |  985 | 1478 | 1971
+  493 |  987 | 1481 | 1975
+  494 |  989 | 1484 | 1979
+  495 |  991 | 1487 | 1983
+  496 |  993 | 1490 | 1987
+  497 |  995 | 1493 | 1991
+  498 |  997 | 1496 | 1995
+  499 |  999 | 1499 | 1999
+ 1090 | 2181 | 3272 | 4363
+ 1091 | 2183 | 3275 | 4367
+ 1092 | 2185 | 3278 | 4371
+ 1093 | 2187 | 3281 | 4375
+ 1094 | 2189 | 3284 | 4379
+ 1095 | 2191 | 3287 | 4383
+ 1096 | 2193 | 3290 | 4387
+ 1097 | 2195 | 3293 | 4391
+ 1098 | 2197 | 3296 | 4395
+ 1099 | 2199 | 3299 | 4399
+(20 rows)
+
+\c postgres;
+drop DATABASE if exists partition_test1;

@@ -14,14 +14,14 @@ test: db_b_plpgsql_test default_guc describe
 
 test: empty_value_list empty_value_lists empty_value_support_value
 
-test: greatest_least join_without_on mysqlmode_fullgroup mysqlmode_strict
+test: greatest_least join_without_on mysqlmode_fullgroup mysqlmode_strict test_alter_table
 
 test: kill set_password network
 
 # must be single test group, cause other connection will affect the result
 test: test_shows
 
-test: test_shows_1
+test: test_shows_1 test_shows_2
 
 test: nvarchar regexp upsert
 
@@ -61,8 +61,14 @@ test: b_database_releasealllocks_01
 
 test: b_database_releaselock_01 b_database_releaselock_02 b_database_releaselock_03 b_database_releaselock_04
 
-test: network2 use_dbname
+test: create_function_test/deterministic create_function_test/language_sql create_function_test/sql_options create_function_test/sql_security create_function_test/call_function create_function_test/commentsharp
 
-test: partition
+test: alter_function_test/alter_function  alter_function_test/alter_procedure replace_test/replace
+
+test: network2 use_dbname  view_definer_test
+
+test: partition_test1 partition_test2 partition_test3
 
 test: db_b_date_time_functions
+
+test: builtin_funcs/b_compatibility_time_funcs

@@ -65,7 +65,7 @@ CREATE TABLE [ IF NOT EXISTS ] partition_table_name
     [ TABLESPACE tablespace_name ]
     [ COMPRESSION [=] compression_arg ]
     [ ENGINE [=] engine_name ]
-	允许输入多次同一种create_option，以最后一次的输入为准。
+	除了WITH选项外允许输入多次同一种create_option，以最后一次的输入为准。
 ```
 
 -   列约束column\_constraint：
@@ -980,7 +980,7 @@ CREATE TABLE [ IF NOT EXISTS ] partition_table_name
 
 
 
-    --rebuild,remove,check,repair,optimize语法示例
+    --兼容b database rebuild,remove,check,repair,optimize语法示例
     --创建分区表test_part
     CREATE TABLE IF NOT EXISTS test_part
     (
@@ -1044,8 +1044,119 @@ CREATE TABLE [ IF NOT EXISTS ] partition_table_name
     select * from test_part where ((99990 < c and c < 100000) or (219990 < c and c < 220000));
     select relname, boundaries from pg_partition where parentid in (select parentid from pg_partition where relname = 'test_part') order by relname;
     select parttype,relname from pg_class where relname = 'test_part' and relfilenode != oid;
+
+
+    --兼容b database truncate,analyze,exchange语法示例
+    CREATE TABLE IF NOT EXISTS test_part1
+    (
+    a int,
+    b int
+    ) 
+    PARTITION BY RANGE(a)
+    (
+        PARTITION p0 VALUES LESS THAN (100),
+        PARTITION p1 VALUES LESS THAN (200),
+        PARTITION p2 VALUES LESS THAN (300)
+    );
+    create table test_no_part1(a int, b int);
+    insert into test_part1 values(99,1),(199,1),(299,1);
+    select * from test_part1;
+    --测试b database truncate partition语法
+    ALTER TABLE test_part1 truncate PARTITION p0, p1;
+    select * from test_part1;
+    insert into test_part1 (with RECURSIVE t_r(i,j) as(values(0,1) union all select i+1,j+2 from t_r where i < 20) select * from t_r);
+    select * from test_part1;
+    ALTER TABLE test_part1 truncate PARTITION all;
+    select * from test_part1;
+    --测试opengauss truncate partition语法
+    insert into test_part1 values(99,1),(199,1);
+    select * from test_part1;
+    ALTER TABLE test_part1 truncate PARTITION p0, truncate PARTITION p1;
+    select * from test_part1;
+    --测试b database exchange partition语法
+    insert into test_part1 values(99,1),(199,1),(299,1);
+    alter table test_part1 exchange partition p2 with table test_no_part1 without validation;
+    select * from test_part1;
+    select * from test_no_part1;
+    alter table test_part1 exchange partition p2 with table test_no_part1 without validation;
+    select * from test_part1;
+    select * from test_no_part1;
+    --测试opengauss exchange partition语法
+    alter table test_part1 exchange partition (p2) with table test_no_part1 without validation;
+    select * from test_part1;
+    select * from test_no_part1;
+    alter table test_part1 exchange partition (p2) with table test_no_part1 without validation;
+    select * from test_part1;
+    select * from test_no_part1;
+    --测试b database analyze partition语法
+    alter table test_part1 analyze partition p0,p1;
+    alter table test_part1 analyze partition all;
+    --测试opengauss analyze partition语法
+    analyze test_part1 partition (p1);
     ```
 
+    --兼容b database add, drop语法示例
+    ```
+    CREATE TABLE IF NOT EXISTS test_part2
+    (
+    a int,
+    b int
+    ) 
+    PARTITION BY RANGE(a)
+    (
+        PARTITION p0 VALUES LESS THAN (100),
+        PARTITION p1 VALUES LESS THAN (200),
+        PARTITION p2 VALUES LESS THAN (300),
+        PARTITION p3 VALUES LESS THAN (400)
+    );
+
+    CREATE TABLE IF NOT EXISTS test_subpart2
+    (
+    a int,
+    b int
+    ) 
+    PARTITION BY RANGE(a) SUBPARTITION BY RANGE(b)
+    (
+        PARTITION p0 VALUES LESS THAN (100)
+        (
+            SUBPARTITION p0_0 VALUES LESS THAN (100),
+            SUBPARTITION p0_1 VALUES LESS THAN (200),
+            SUBPARTITION p0_2 VALUES LESS THAN (300)
+        ),
+        PARTITION p1 VALUES LESS THAN (200)
+        (
+            SUBPARTITION p1_0 VALUES LESS THAN (100),
+            SUBPARTITION p1_1 VALUES LESS THAN (200),
+            SUBPARTITION p1_2 VALUES LESS THAN (300)
+        ),
+        PARTITION p2 VALUES LESS THAN (300)
+        (
+            SUBPARTITION p2_0 VALUES LESS THAN (100),
+            SUBPARTITION p2_1 VALUES LESS THAN (200),
+            SUBPARTITION p2_2 VALUES LESS THAN (300)
+        ),
+        PARTITION p3 VALUES LESS THAN (400)
+        (
+            SUBPARTITION p3_0 VALUES LESS THAN (100),
+            SUBPARTITION p3_1 VALUES LESS THAN (200),
+            SUBPARTITION p3_2 VALUES LESS THAN (300)
+        )
+    );
+    --test b_compatibility drop and add partition syntax
+    select relname, boundaries from pg_partition where parentid in (select parentid from pg_partition where relname = 'test_part2');
+    ALTER TABLE test_part2 DROP PARTITION p3;
+    select relname, boundaries from pg_partition where parentid in (select parentid from pg_partition where relname = 'test_part2');
+    ALTER TABLE test_part2 add PARTITION (PARTITION p3 VALUES LESS THAN (400),PARTITION p4 VALUES LESS THAN (500),PARTITION p5 VALUES LESS THAN (600));
+    select relname, boundaries from pg_partition where parentid in (select parentid from pg_partition where relname = 'test_part2');
+    ALTER TABLE test_part2 add PARTITION (PARTITION p6 VALUES LESS THAN (700),PARTITION p7 VALUES LESS THAN (800));
+    ALTER TABLE test_part2 DROP PARTITION p4,p5,p6;
+    select relname, boundaries from pg_partition where parentid in (select parentid from pg_partition where relname = 'test_part2');
+    ALTER TABLE test_part2 add PARTITION (PARTITION p4 VALUES LESS THAN (500));
+    select relname, boundaries from pg_partition where parentid in (select oid from pg_partition where parentid in (select parentid from pg_partition where relname = 'test_subpart2'));
+    ALTER TABLE test_subpart2 DROP SUBPARTITION p0_0;
+    ALTER TABLE test_subpart2 DROP SUBPARTITION p0_2, p1_0, p1_2;
+    select relname, boundaries from pg_partition where parentid in (select oid from pg_partition where parentid in (select parentid from pg_partition where relname = 'test_subpart2'));
+    ```
 
 ## 相关链接<a name="zh-cn_topic_0283136653_zh-cn_topic_0237122119_zh-cn_topic_0059777586_s4e5ff679edd643b5a6cd6679fd1055a1"></a>
 

@@ -17,6 +17,7 @@
 #include "postgres.h"
 #include "knl/knl_variable.h"
 
+#include "plugin_nodes/parsenodes_common.h"
 #include "access/cstore_delete.h"
 #include "access/cstore_delta.h"
 #include "access/cstore_insert.h"
@@ -552,7 +553,7 @@ static void ATAddCheckConstraint(List** wqueue, AlteredTableInfo* tab, Relation 
     bool recursing, bool is_readd, LOCKMODE lockmode);
 static void ATAddForeignKeyConstraint(AlteredTableInfo* tab, Relation rel, Constraint* fkconstraint, LOCKMODE lockmode);
 static void ATExecDropConstraint(Relation rel, const char* constrName, DropBehavior behavior, bool recurse,
-    bool recursing, bool missing_ok, LOCKMODE lockmode);
+    bool recursing, bool missing_ok, LOCKMODE lockmode, bool dropFk = false);
 static void ATPrepAlterColumnType(List** wqueue, AlteredTableInfo* tab, Relation rel, bool recurse, bool recursing,
     AlterTableCmd* cmd, LOCKMODE lockmode);
 static bool ATColumnChangeRequiresRewrite(Node* expr, AttrNumber varattno);
@@ -756,6 +757,8 @@ static void ATCheckNotNullConstr(const AlterTableCmd* cmd, const AlteredTableInf
 static void DelDependencONDataType(Relation rel, Relation depRel, const Form_pg_attribute attTup);
 static void ATExecEncryptionKeyRotation(Relation rel, LOCKMODE lockmode);
 static bool IsViewAndRuleDependReltion(Oid relId);
+static List* ATGetNonUniqueKeyList(Relation rel);
+static char* ATGetPKName(Relation rel);
 
 inline static bool CStoreSupportATCmd(AlterTableType cmdtype)
 {
@@ -796,6 +799,7 @@ inline static bool CStoreSupportATCmd(AlterTableType cmdtype)
         case AT_AddIndex:
         case AT_AddIndexConstraint:
 #endif
+        case AT_RebuildIndex:
             ret = true;
             break;
         default:
@@ -7217,6 +7221,29 @@ static void ATController(Relation rel, List* cmds, bool recurse, LOCKMODE lockmo
     bool doRedistribute = false;
 #endif
 
+    /* spread out truncate partition all */
+    if (RelationIsPartitioned(rel) && list_length(cmds) == 1) {
+        AlterTableCmd* cmd = (AlterTableCmd*)lfirst(list_head(cmds));
+        if (cmd->name && strcmp(cmd->name, "all") == 0 && cmd->subtype == AT_TruncatePartition) {
+            List *partTupleList = NIL;
+            partTupleList = searchPgPartitionByParentId(PART_OBJ_TYPE_TABLE_PARTITION, rel->rd_id);
+            if (partTupleList) {
+                ListCell *partCell = NULL;
+                Form_pg_partition partitionTuple = NULL;
+                foreach (partCell, partTupleList) {
+                    partitionTuple = (Form_pg_partition)GETSTRUCT((HeapTuple)lfirst(partCell));
+                    AlterTableCmd *n = makeNode(AlterTableCmd);
+                    n->subtype = AT_TruncatePartition;
+                    n->missing_ok = FALSE;
+                    n->name = pstrdup(partitionTuple->relname.data);
+                    lappend(cmds, n);
+                }
+                list_delete_first(cmds);
+                list_free_deep(partTupleList);
+            }
+        }
+    }
+
     /* Phase 1: preliminary examination of commands, create work queue */
     foreach (lcmd, cmds) {
         AlterTableCmd* cmd = (AlterTableCmd*)lfirst(lcmd);
@@ -7507,6 +7534,10 @@ static void ATPrepCmd(List** wqueue, Relation rel, AlterTableCmd* cmd, bool recu
                 cmd->subtype = AT_DropConstraintRecurse;
             pass = AT_PASS_DROP;
             break;
+        case AT_DropForeignKey:
+            ATSimplePermissions(rel, ATT_TABLE | ATT_FOREIGN_TABLE);
+            pass = AT_PASS_DROP;
+            break;
         case AT_AlterColumnType: /* ALTER COLUMN TYPE */
             ATSimplePermissions(rel, ATT_TABLE | ATT_COMPOSITE_TYPE | ATT_FOREIGN_TABLE);
             /* Performs own recursion */
@@ -7577,6 +7608,7 @@ static void ATPrepCmd(List** wqueue, Relation rel, AlterTableCmd* cmd, bool recu
             ATPrepSetTableSpace(tab, rel, cmd->name, lockmode);
             pass = AT_PASS_MISC; /* doesn't actually matter */
             break;
+        case AT_RebuildIndex:
         case AT_UnusableIndex:
         case AT_SetRelOptions:     /* SET (...) */
         case AT_ResetRelOptions:   /* RESET (...) */
@@ -7904,8 +7936,31 @@ static void ATExecCmd(List** wqueue, AlteredTableInfo* tab, Relation rel, AlterT
         case AT_UnusableAllIndexOnPartition: /* unusable all index on partition */
             ATExecUnusableAllIndexOnPartition(rel, cmd->name);
             break;
+        case AT_RebuildIndex: /* reindex all non-unique indexes of table. */
+        {
+            ListCell* index = NULL;
+            foreach (index, ATGetNonUniqueKeyList(rel)) {
+                Oid indexId = lfirst_oid(index);
+                reindex_index(indexId, InvalidOid, false, NULL, false);
+            }
+            break;
+        }
         case AT_UnusableIndex:
-            ATExecUnusableIndex(rel);
+            /* if rel is a table, unusable all non-unique indexes of it */
+            if (RelationIsRelation(rel)) {
+                ListCell* index = NULL;
+                foreach (index, ATGetNonUniqueKeyList(rel)) {
+                    Oid indexId = lfirst_oid(index);
+
+                    List* atcmds = NIL;
+                    AlterTableCmd* atcmd = makeNode(AlterTableCmd);
+                    atcmd->subtype = AT_UnusableIndex;
+                    atcmds = lappend(atcmds, atcmd);
+                    AlterTableInternal(indexId, atcmds, false);
+                }
+            } else {
+                ATExecUnusableIndex(rel);
+            }
             break;
         case AT_AddIndex: /* ADD INDEX */
             ATExecAddIndex(tab, rel, (IndexStmt*)cmd->def, false, lockmode);
@@ -7932,11 +7987,18 @@ static void ATExecCmd(List** wqueue, AlteredTableInfo* tab, Relation rel, AlterT
                                             * recursion */
             ATExecValidateConstraint(rel, cmd->name, true, false, lockmode);
             break;
+        case AT_DropForeignKey:
+            ATExecDropConstraint(rel, cmd->name, cmd->behavior, false, false, cmd->missing_ok, lockmode, true);
+            break;
         case AT_DropConstraint: /* DROP CONSTRAINT */
-            ATExecDropConstraint(rel, cmd->name, cmd->behavior, false, false, cmd->missing_ok, lockmode);
+            /* if cmd->name is NULL, drop the primary key */
+            ATExecDropConstraint(rel, cmd->name ? cmd->name : ATGetPKName(rel), cmd->behavior, false, false,
+                                 cmd->missing_ok, lockmode);
             break;
         case AT_DropConstraintRecurse: /* DROP CONSTRAINT with recursion */
-            ATExecDropConstraint(rel, cmd->name, cmd->behavior, true, false, cmd->missing_ok, lockmode);
+            /* if cmd->name is NULL, drop the primary key */
+            ATExecDropConstraint(rel, cmd->name ? cmd->name : ATGetPKName(rel), cmd->behavior, true, false,
+                                 cmd->missing_ok, lockmode);
             break;
         case AT_AlterColumnType: /* ALTER COLUMN TYPE */
             ATExecAlterColumnType(tab, rel, cmd, lockmode);
@@ -12465,7 +12527,7 @@ static void createForeignKeyTriggers(
  * Like DROP COLUMN, we can't use the normal ALTER TABLE recursion mechanism.
  */
 static void ATExecDropConstraint(Relation rel, const char* constrName, DropBehavior behavior, bool recurse,
-    bool recursing, bool missing_ok, LOCKMODE lockmode)
+    bool recursing, bool missing_ok, LOCKMODE lockmode, bool dropFk)
 {
     List* children = NIL;
     ListCell* child = NULL;
@@ -12495,7 +12557,7 @@ static void ATExecDropConstraint(Relation rel, const char* constrName, DropBehav
 
         con = (Form_pg_constraint)GETSTRUCT(tuple);
 
-        if (strcmp(NameStr(con->conname), constrName) != 0)
+        if (strcmp(NameStr(con->conname), constrName) != 0 || (dropFk && con->contype != CONSTRAINT_FOREIGN))
             continue;
 
         /* Don't drop inherited constraints */
@@ -12562,11 +12624,19 @@ static void ATExecDropConstraint(Relation rel, const char* constrName, DropBehav
 
     if (!found) {
         if (!missing_ok) {
-            ereport(ERROR,
-                (errcode(ERRCODE_UNDEFINED_OBJECT),
-                    errmsg("constraint \"%s\" of relation \"%s\" does not exist",
-                        constrName,
-                        RelationGetRelationName(rel))));
+            if (dropFk) {
+                ereport(ERROR,
+                    (errcode(ERRCODE_UNDEFINED_OBJECT),
+                        errmsg("foreign key \"%s\" of relation \"%s\" does not exist",
+                            constrName,
+                            RelationGetRelationName(rel))));
+            } else {
+                ereport(ERROR,
+                    (errcode(ERRCODE_UNDEFINED_OBJECT),
+                        errmsg("constraint \"%s\" of relation \"%s\" does not exist",
+                            constrName,
+                            RelationGetRelationName(rel))));
+            }
         } else {
             ereport(NOTICE,
                 (errmsg("constraint \"%s\" of relation \"%s\" does not exist, skipping",
@@ -27624,6 +27694,37 @@ static bool IsViewAndRuleDependReltion(Oid relId)
     relation_close(depRel, AccessShareLock);
 
     return result;
+}
+
+static List* ATGetNonUniqueKeyList(Relation rel)
+{
+    List* result = NIL;
+    ListCell* index = NULL;
+
+    foreach (index, RelationGetIndexList(rel, true)) {
+        Oid indexId = lfirst_oid(index);
+        Relation indexRel = index_open(indexId, AccessShareLock);
+        if (indexRel->rd_index->indisunique) {
+            index_close(indexRel, AccessShareLock);
+            continue;
+        }
+        index_close(indexRel, AccessShareLock);
+
+        result = lappend_oid(result, indexId);
+    }
+
+    return result;
+}
+
+static char* ATGetPKName(Relation rel)
+{
+    Oid pkoid = RelationGetPrimaryKeyIndex(rel);
+
+    if (pkoid == InvalidOid) {
+        ereport(ERROR, (errmsg("Relation \"%s\" has not any primary key.", RelationGetRelationName(rel))));
+    }
+
+    return get_rel_name(pkoid);
 }
 
 /*

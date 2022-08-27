@@ -334,13 +334,13 @@ void init_session_vars(void)
 
     BSqlPluginContext *cxt = (BSqlPluginContext *) MemoryContextAlloc(u_sess->self_mem_cxt, sizeof(bSqlPluginContext));
     u_sess->attr.attr_common.extension_session_vars_array[dolphin_index] = cxt;
-    cxt->enableBFormatMode = false;
+    cxt->enableBCmptMode = false;
     cxt->lockNameList = NIL;
 
-    DefineCustomBoolVariable("b_format_mode",
-                             "Enable mysql functions override opengauss's when collision happens.",
+    DefineCustomBoolVariable("b_compatibility_mode",
+                             "Enable mysql behavior override opengauss's when collision happens.",
                              NULL,
-                             &ENABLE_B_FORMAT_MODE,
+                             &ENABLE_B_CMPT_MODE,
                              false,
                              PGC_USERSET,
                              0,

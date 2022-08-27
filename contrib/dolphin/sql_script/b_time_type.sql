@@ -223,6 +223,40 @@ CREATE CAST(numeric AS timestamptz) WITH FUNCTION numeric_b_format_timestamp(num
 
 CREATE OR REPLACE FUNCTION pg_catalog.negetive_time (time) RETURNS time LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'negetive_time';
 
+--OTHER TIME FUNCTIONS
+
+-- CREATE b compatibility time function
+CREATE OR REPLACE FUNCTION pg_catalog.makedate (int8, int8) RETURNS date LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'makedate';
+CREATE OR REPLACE FUNCTION pg_catalog.makedate (bit, bit) RETURNS date AS $$ SELECT pg_catalog.makedate(cast($1 as int8), cast($2 as int8)) $$ LANGUAGE SQL;
+CREATE OR REPLACE FUNCTION pg_catalog.makedate (bit, int8) RETURNS date AS $$ SELECT pg_catalog.makedate(cast($1 as int8), cast($2 as int8)) $$ LANGUAGE SQL;
+CREATE OR REPLACE FUNCTION pg_catalog.makedate (int8, bit) RETURNS date AS $$ SELECT pg_catalog.makedate(cast($1 as int8), cast($2 as int8)) $$ LANGUAGE SQL;
+
+CREATE OR REPLACE FUNCTION pg_catalog.maketime (int8, int8, numeric) RETURNS time LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'maketime';
+CREATE OR REPLACE FUNCTION pg_catalog.maketime (bit, bit, numeric) RETURNS time AS $$ SELECT pg_catalog.maketime(cast($1 as int8), cast($2 as int8), $3) $$ LANGUAGE SQL;
+CREATE OR REPLACE FUNCTION pg_catalog.maketime (bit, int8, numeric) RETURNS time AS $$ SELECT pg_catalog.maketime(cast($1 as int8), cast($2 as int8), $3) $$ LANGUAGE SQL;
+CREATE OR REPLACE FUNCTION pg_catalog.maketime (int8, bit, numeric) RETURNS time AS $$ SELECT pg_catalog.maketime(cast($1 as int8), cast($2 as int8), $3) $$ LANGUAGE SQL;
+
+CREATE OR REPLACE FUNCTION pg_catalog.sec_to_time (numeric) RETURNS time LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'sec_to_time';
+
+CREATE OR REPLACE FUNCTION pg_catalog.subdate (text, int8) RETURNS text LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'subdate_datetime_days_text';
+CREATE OR REPLACE FUNCTION pg_catalog.subdate (text, text) RETURNS text AS $$ SELECT pg_catalog.subdate($1, cast($2 as int8))  $$ LANGUAGE SQL;
+CREATE OR REPLACE FUNCTION pg_catalog.subdate (text, bit) RETURNS text AS $$ SELECT pg_catalog.subdate($1, cast($2 as int8))  $$ LANGUAGE SQL;
+CREATE OR REPLACE FUNCTION pg_catalog.subdate (text, interval) RETURNS text LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'subdate_datetime_interval_text';
+CREATE OR REPLACE FUNCTION pg_catalog.subdate (numeric(24,6), int8) RETURNS text AS $$ SELECT pg_catalog.subdate(cast($1 as text), cast($2 as int8))  $$ LANGUAGE SQL;
+CREATE OR REPLACE FUNCTION pg_catalog.subdate (numeric(24,6), interval) RETURNS text AS $$ SELECT pg_catalog.subdate(cast($1 as text), $2)  $$ LANGUAGE SQL;
+CREATE OR REPLACE FUNCTION pg_catalog.subdate (time, int8) RETURNS time LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'subdate_time_days';
+CREATE OR REPLACE FUNCTION pg_catalog.subdate (time, interval) RETURNS time LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'subdate_time_interval';
+
+CREATE OR REPLACE FUNCTION pg_catalog.period_add (int8, int8) RETURNS int8 LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'period_add';
+CREATE OR REPLACE FUNCTION pg_catalog.period_add (bit, bit) RETURNS int8 AS $$ SELECT pg_catalog.period_add(cast($1 as int8), cast($2 as int8)) $$ LANGUAGE SQL;
+CREATE OR REPLACE FUNCTION pg_catalog.period_add (bit, int8) RETURNS int8 AS $$ SELECT pg_catalog.period_add(cast($1 as int8), cast($2 as int8)) $$ LANGUAGE SQL;
+CREATE OR REPLACE FUNCTION pg_catalog.period_add (int8, bit) RETURNS int8 AS $$ SELECT pg_catalog.period_add(cast($1 as int8), cast($2 as int8)) $$ LANGUAGE SQL;
+
+CREATE OR REPLACE FUNCTION pg_catalog.period_diff (int8, int8) RETURNS int8 LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'period_diff';
+CREATE OR REPLACE FUNCTION pg_catalog.period_diff (bit, bit) RETURNS int8 AS $$ SELECT pg_catalog.period_diff(cast($1 as int8), cast($2 as int8)) $$ LANGUAGE SQL;
+CREATE OR REPLACE FUNCTION pg_catalog.period_diff (bit, int8) RETURNS int8 AS $$ SELECT pg_catalog.period_diff(cast($1 as int8), cast($2 as int8)) $$ LANGUAGE SQL;
+CREATE OR REPLACE FUNCTION pg_catalog.period_diff (int8, bit) RETURNS int8 AS $$ SELECT pg_catalog.period_diff(cast($1 as int8), cast($2 as int8)) $$ LANGUAGE SQL;
+
 CREATE OPERATOR pg_catalog.- (
    rightarg = time,
    procedure = negetive_time

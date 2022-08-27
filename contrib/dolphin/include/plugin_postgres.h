@@ -1,7 +1,10 @@
 #ifndef PLUGIN_POSTGRES_H
 #define PLUGIN_POSTGRES_H
 
-#define ENABLE_B_FORMAT_MODE (GetSessionContext()->enableBFormatMode)
+#include "nodes/pg_list.h"
+#include "fmgr.h"
+
+#define ENABLE_B_CMPT_MODE (GetSessionContext()->enableBCmptMode)
 
 #if defined _WIN32 || defined __CYGWIN__
   #ifdef BUILDING_DLL
@@ -56,7 +59,7 @@ extern "C" DLL_PUBLIC void init_session_vars(void);
 extern "C" DLL_PUBLIC void create_dolphin_extension();
 
 typedef struct BSqlPluginContext {
-    bool enableBFormatMode;
+    bool enableBCmptMode;
     char* sqlModeString;
     unsigned int sqlModeFlags;
     List* lockNameList;

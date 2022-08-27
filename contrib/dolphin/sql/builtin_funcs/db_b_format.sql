@@ -1,14 +1,14 @@
 drop database if exists db_db_b_format;
 create database db_db_b_format dbcompatibility 'B';
 \c db_db_b_format
--- test for b_format_mode = false
+-- test for b_compatibility_mode = false
 select format(1234.456, 2);
 select format(1234.456, 2, 'en_US');
 select format('%1s!', 'Hello');
 select format('%1s %1s!', 'Hello', 'world');
 
--- test for b_format_mode = true
-set b_format_mode = 1;
+-- test for b_compatibility_mode = true
+set b_compatibility_mode = 1;
 
 -- test for basic functionality of FORMAT
 select format(234.567, 3);
@@ -116,8 +116,8 @@ select format(1, 1, null);
 select format(null, null, 1);
 select format(null, null, null);
 
--- test for setting b_format_mode back to false
-set b_format_mode = 0;
+-- test for setting b_compatibility_mode back to false
+set b_compatibility_mode = 0;
 select format(1234.456, 2);
 select format(1234.456, 2, 'en_US');
 select format('%1s!', 'Hello');

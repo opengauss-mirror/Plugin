@@ -36,7 +36,7 @@
         [ INCLUDE ( column_name [, ...] )]
         [ WITH ( {storage_parameter = value} [, ... ] ) ]
         [ TABLESPACE tablespace_name ]
-        允许输入多次同一种index_option，以最后一次的输入为准。
+        TABLESPACE允许输入多次，以最后一次的输入为准。
     ```
 
 -   在分区表上创建索引。
@@ -51,7 +51,7 @@
         [ INCLUDE ( column_name [, ...] )]
         [ WITH ( { storage_parameter = value } [, ...] ) ]
         [ TABLESPACE tablespace_name ];
-        允许输入多次同一种index_option，以最后一次的输入为准。
+        TABLESPACE允许输入多次，以最后一次的输入为准。
     ```
 
 

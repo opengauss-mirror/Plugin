@@ -246,6 +246,80 @@ CREATE CAST (char AS tinyint) WITH FUNCTION bpchar_int1(char) AS IMPLICIT;
 CREATE CAST (varchar AS smallint) WITH FUNCTION varchar_int2(varchar) AS IMPLICIT;
 CREATE CAST (char AS smallint) WITH FUNCTION bpchar_int2(char) AS IMPLICIT;
 
+create or replace function pg_catalog.get_index_columns(OUT namespace name, OUT indexrelid oid, OUT indrelid oid, OUT indisunique bool, OUT indisusable bool, OUT seq_in_index int2, OUT attrnum int2, OUT collation int2) returns setof record
+as $$
+declare
+query_str text;
+item int2;
+row_data record;
+begin
+query_str := 'select n.nspname, i.indexrelid, i.indrelid, i.indisunique, i.indisusable, i.indkey, i.indoption
+              from pg_catalog.pg_index i
+                left join pg_class c on c.oid = i.indexrelid
+                left join pg_catalog.pg_namespace n on n.oid = c.relnamespace
+              where n.nspname <> ''pg_catalog''
+                and n.nspname <> ''db4ai''
+                and n.nspname <> ''information_schema''
+                and n.nspname !~ ''^pg_toast''';
+for row_data in EXECUTE(query_str) LOOP
+    for item in 0..array_length(row_data.indkey, 1) - 1 loop
+        namespace := row_data.nspname;
+        indexrelid := row_data.indexrelid;
+        indrelid := row_data.indrelid;
+        indisunique := row_data.indisunique;
+        indisusable := row_data.indisusable;
+        seq_in_index := item + 1;
+        attrnum := row_data.indkey[item];
+        collation := row_data.indoption[item];
+        return next;
+    end loop;
+end loop;
+end; $$
+LANGUAGE 'plpgsql';
+
+create view public.index_statistic as
+select
+  i.namespace as "namespace",
+  (select relname from pg_class tc where tc.oid = i.indrelid) as "table",
+  not i.indisunique as "non_unique",
+  c.relname as "key_name",
+  i.seq_in_index as "seq_in_index",
+  a.attname as "column_name",
+  (case when m.amcanorder
+    then (
+      case when i.collation & 1 then 'D' else 'A' END
+    ) else null end
+  ) as "collation",
+  (select
+      (case when ts.stadistinct = 0
+        then NULL else (
+          case when ts.stadistinct > 0 then ts.stadistinct else ts.stadistinct * tc.reltuples * -1 end
+        ) end
+      ) 
+    from pg_class tc
+      left join pg_statistic ts on tc.oid = ts.starelid
+    where
+      tc.oid = i.indrelid
+      and ts.staattnum = i.attrnum
+  ) as "cardinality",
+  null as "sub_part",
+  null as "packed",
+  (case when a.attnotnull then '' else 'YES' end) as "null",
+  m.amname as "index_type",
+  (case when i.indisusable then '' else 'disabled' end) as "comment",
+  (select description from pg_description where objoid = i.indexrelid) as "index_comment"
+from
+  (select * from get_index_columns()) i
+  left join pg_class c on c.oid = i.indexrelid
+  left join pg_attribute a on a.attrelid = i.indrelid
+  and a.attnum = i.attrnum
+  left join pg_am m on m.oid = c.relam
+order by
+  c.relname;
+
+REVOKE ALL ON public.index_statistic FROM PUBLIC;
+GRANT SELECT, REFERENCES ON public.index_statistic TO PUBLIC;
+
 DROP FUNCTION IF EXISTS pg_catalog.rebuild_partition(text[]) CASCADE;
 DROP FUNCTION IF EXISTS pg_catalog.remove_partitioning(text) CASCADE;
 
@@ -255,3 +329,10 @@ text
 
 CREATE FUNCTION pg_catalog.rebuild_partition(text[])
 RETURNS text LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'RebuildPartition';
+
+CREATE FUNCTION pg_catalog.analyze_partition(text[],text,text)
+RETURNS text LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'AnalyzePartitions';
+
+CREATE OR REPLACE FUNCTION pg_catalog.analyze_tables (
+IN tableName cstring[], OUT "Table" text, OUT "Op" text, OUT "Msg_type" text, OUT "Msg_text" text
+) RETURNS setof record LANGUAGE C VOLATILE STRICT as '$libdir/dolphin',  'analyze_tables';
