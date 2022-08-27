@@ -814,28 +814,43 @@ static bool table_contain_unsupport_feature(Oid relid, Query* query)
     return false;
 }
 
+/*
+ * !!WARNING!!: This list must be sorted by ASCII name, because binary
+ *		 search is used to locate entries.
+ */
 static const char* support_plugin_func[] = {
     "avg",
-    "sum",
-    "min",
-    "max",
-    "var_samp",
-    "var_pop",
-    "variance",
-    "stddev_pop",
-    "stddev_samp",
-    "stddev",
-    "std",
     "bit_and",
     "bit_or",
-    "bit_xor"
+    "bit_xor",
+    "max",
+    "min",
+    "std",
+    "stddev",
+    "stddev_pop",
+    "stddev_samp",
+    "sum",
+    "var_pop",
+    "var_samp",
+    "variance"
 };
 
 bool check_plugin_function(Oid funcId)
 {
-    for (uint i = 0; i < lengthof(support_plugin_func); i++) {
-        if (strcmp(get_func_name(funcId), support_plugin_func[i]) == 0) {
+    int low = 0;
+    int high = lengthof(support_plugin_func) - 1;
+    while (low <= high) {
+        int middle;
+        int difference;
+
+        middle = low + (high - low) / 2;
+        difference = strcmp(support_plugin_func[middle], get_func_name(funcId));
+        if (difference == 0) {
             return false;
+        } else if (difference < 0) {
+            low = middle + 1;
+        } else {
+            high = middle - 1;
         }
     }
     return true;

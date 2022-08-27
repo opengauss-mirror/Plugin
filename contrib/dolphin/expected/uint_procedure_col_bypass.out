@@ -52,11 +52,11 @@ explain(costs off, verbose) insert into bypass values(1, 10);
 (4 rows)
 
 explain(costs off, verbose) select b from bypass where a = 1;
-            QUERY PLAN             
------------------------------------
+        QUERY PLAN         
+---------------------------
  Seq Scan on public.bypass
    Output: b
-   Filter: ((bypass.a)::uint4 = 1)
+   Filter: (bypass.a = 1)
 (3 rows)
 
 explain(costs off, verbose) delete from bypass where b = 10;
@@ -69,12 +69,12 @@ explain(costs off, verbose) delete from bypass where b = 10;
 (4 rows)
 
 explain(costs off, verbose) update bypass set b = b + 1 where a = 1;
-               QUERY PLAN                
------------------------------------------
+            QUERY PLAN            
+----------------------------------
  Update on public.bypass
    ->  Seq Scan on public.bypass
          Output: a, (b + 1), ctid
-         Filter: ((bypass.a)::uint4 = 1)
+         Filter: (bypass.a = 1)
 (4 rows)
 
 \c postgres

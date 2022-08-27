@@ -3677,6 +3677,7 @@ CREATE OPERATOR CLASS uint1_ops
         OPERATOR        1       =(uint1, int2),
         OPERATOR        1       =(uint1, int4),
         OPERATOR        1       =(uint1, int8),
+        OPERATOR        1       =(int1, uint1),
         FUNCTION        1       hashint1(int1),
         FUNCTION        1       hashuint1(uint1);
 
@@ -3688,6 +3689,7 @@ CREATE OPERATOR CLASS uint2_ops
         OPERATOR        1       =(uint2, int2),
         OPERATOR        1       =(uint2, int4),
         OPERATOR        1       =(uint2, int8),
+        OPERATOR        1       =(int2, uint2),
         FUNCTION        1       hashuint2(uint2);
 
 CREATE OPERATOR CLASS uint4_ops
@@ -3696,12 +3698,14 @@ CREATE OPERATOR CLASS uint4_ops
         OPERATOR        1       =(uint4, uint8),
         OPERATOR        1       =(uint4, int4),
         OPERATOR        1       =(uint4, int8),
+        OPERATOR        1       =(int4, uint4),
         FUNCTION        1       hashuint4(uint4);
 
 CREATE OPERATOR CLASS uint8_ops
     DEFAULT FOR TYPE uint8 USING hash family integer_ops AS
         OPERATOR        1       = ,
         OPERATOR        1       =(uint8, int8),
+        OPERATOR        1       =(int8, uint8),
         FUNCTION        1       hashuint8(uint8);    
 
 -- << and >> operator

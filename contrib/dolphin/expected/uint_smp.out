@@ -25,28 +25,24 @@ explain(costs off, verbose) select * from t2 where a = 2;
  [No Bypass]reason: Bypass not executed because query's scan operator is not index.
  Seq Scan on public.t2
    Output: a
-   Filter: ((t2.a)::uint4 = 2)
+   Filter: (t2.a = 2)
 (4 rows)
 
 explain(costs off, verbose) select * from t2 where a = 2 and t2.a in (select a from t2 where a > 500);
-                                        QUERY PLAN                                         
--------------------------------------------------------------------------------------------
+                                     QUERY PLAN                                     
+------------------------------------------------------------------------------------
  [No Bypass]reason: Bypass not executed because query's scan operator is not index.
- Hash Join
+ Nested Loop Semi Join
    Output: public.t2.a
-   Hash Cond: (public.t2.a = public.t2.a)
    ->  Seq Scan on public.t2
          Output: public.t2.a
-         Filter: (((public.t2.a)::uint4 = 2) AND ((public.t2.a)::uint4 > 500))
-   ->  Hash
+         Filter: ((public.t2.a = 2) AND (public.t2.a > 500))
+   ->  Materialize
          Output: public.t2.a
-         ->  HashAggregate
+         ->  Seq Scan on public.t2
                Output: public.t2.a
-               Group By Key: public.t2.a
-               ->  Seq Scan on public.t2
-                     Output: public.t2.a
-                     Filter: (((public.t2.a)::uint4 > 500) AND ((public.t2.a)::uint4 = 2))
-(15 rows)
+               Filter: ((public.t2.a > 500) AND (public.t2.a = 2))
+(11 rows)
 
  set query_dop = 4;
 explain(costs off, verbose)  select * from t2 where a = 2;
@@ -55,28 +51,24 @@ explain(costs off, verbose)  select * from t2 where a = 2;
  [No Bypass]reason: Bypass not executed because query's scan operator is not index.
  Seq Scan on public.t2
    Output: a
-   Filter: ((t2.a)::uint4 = 2)
+   Filter: (t2.a = 2)
 (4 rows)
 
 explain(costs off, verbose) select * from t2 where a = 2 and t2.a in (select a from t2 where a > 500);
-                                        QUERY PLAN                                         
--------------------------------------------------------------------------------------------
+                                     QUERY PLAN                                     
+------------------------------------------------------------------------------------
  [No Bypass]reason: Bypass not executed because query's scan operator is not index.
- Hash Join
+ Nested Loop Semi Join
    Output: public.t2.a
-   Hash Cond: (public.t2.a = public.t2.a)
    ->  Seq Scan on public.t2
          Output: public.t2.a
-         Filter: (((public.t2.a)::uint4 = 2) AND ((public.t2.a)::uint4 > 500))
-   ->  Hash
+         Filter: ((public.t2.a = 2) AND (public.t2.a > 500))
+   ->  Materialize
          Output: public.t2.a
-         ->  HashAggregate
+         ->  Seq Scan on public.t2
                Output: public.t2.a
-               Group By Key: public.t2.a
-               ->  Seq Scan on public.t2
-                     Output: public.t2.a
-                     Filter: (((public.t2.a)::uint4 > 500) AND ((public.t2.a)::uint4 = 2))
-(15 rows)
+               Filter: ((public.t2.a > 500) AND (public.t2.a = 2))
+(11 rows)
 
  set query_dop = 1;
 drop table if exists t2 ;
@@ -95,67 +87,54 @@ explain(costs off, verbose) select * from t2 where a = 2;
  [No Bypass]reason: Bypass not executed because query's scan operator is not index.
  Seq Scan on public.t2
    Output: a
-   Filter: ((t2.a)::uint4 = 2)
+   Filter: (t2.a = 2)
 (4 rows)
 
 explain(costs off, verbose) select * from t2 where a = 2 and t2.a in (select a from t2 where a > 500);
-                                        QUERY PLAN                                         
--------------------------------------------------------------------------------------------
+                                     QUERY PLAN                                     
+------------------------------------------------------------------------------------
  [No Bypass]reason: Bypass not executed because query's scan operator is not index.
- Hash Join
+ Nested Loop Semi Join
    Output: public.t2.a
-   Hash Cond: (public.t2.a = public.t2.a)
    ->  Seq Scan on public.t2
          Output: public.t2.a
-         Filter: (((public.t2.a)::uint4 = 2) AND ((public.t2.a)::uint4 > 500))
-   ->  Hash
+         Filter: ((public.t2.a = 2) AND (public.t2.a > 500))
+   ->  Materialize
          Output: public.t2.a
-         ->  HashAggregate
+         ->  Seq Scan on public.t2
                Output: public.t2.a
-               Group By Key: public.t2.a
-               ->  Seq Scan on public.t2
-                     Output: public.t2.a
-                     Filter: (((public.t2.a)::uint4 > 500) AND ((public.t2.a)::uint4 = 2))
-(15 rows)
+               Filter: ((public.t2.a > 500) AND (public.t2.a = 2))
+(11 rows)
 
 set query_dop = 4;
 explain(costs off, verbose)  select * from t2 where a = 2;
                                      QUERY PLAN                                     
 ------------------------------------------------------------------------------------
  [No Bypass]reason: Bypass not executed because query's scan operator is not index.
- Streaming(type: LOCAL GATHER dop: 1/4)
+ Seq Scan on public.t2
    Output: a
-   ->  Seq Scan on public.t2
-         Output: a
-         Filter: ((t2.a)::uint4 = 2)
-(6 rows)
+   Filter: (t2.a = 2)
+(4 rows)
 
 explain(costs off, verbose) select * from t2 where a = 2 and t2.a in (select a from t2 where a > 500);
-                                              QUERY PLAN                                               
--------------------------------------------------------------------------------------------------------
+                                     QUERY PLAN                                     
+------------------------------------------------------------------------------------
  [No Bypass]reason: Bypass not executed because query's scan operator is not index.
- Hash Join
+ Nested Loop Semi Join
    Output: public.t2.a
-   Hash Cond: (public.t2.a = public.t2.a)
    ->  Streaming(type: LOCAL GATHER dop: 1/4)
          Output: public.t2.a
          ->  Seq Scan on public.t2
                Output: public.t2.a
-               Filter: (((public.t2.a)::uint4 = 2) AND ((public.t2.a)::uint4 > 500))
-   ->  Hash
+               Filter: ((public.t2.a = 2) AND (public.t2.a > 500))
+   ->  Materialize
          Output: public.t2.a
-         ->  HashAggregate
+         ->  Streaming(type: LOCAL GATHER dop: 1/4)
                Output: public.t2.a
-               Group By Key: public.t2.a
-               ->  Streaming(type: LOCAL GATHER dop: 1/4)
+               ->  Seq Scan on public.t2
                      Output: public.t2.a
-                     ->  HashAggregate
-                           Output: public.t2.a
-                           Group By Key: public.t2.a
-                           ->  Seq Scan on public.t2
-                                 Output: public.t2.a
-                                 Filter: (((public.t2.a)::uint4 > 500) AND ((public.t2.a)::uint4 = 2))
-(22 rows)
+                     Filter: ((public.t2.a > 500) AND (public.t2.a = 2))
+(15 rows)
 
 set query_dop = 1;
 drop table if exists t2 ;
@@ -175,21 +154,17 @@ explain(costs off, verbose) select * from t2 where a = 2 and t2.a in (select a f
                                      QUERY PLAN                                     
 ------------------------------------------------------------------------------------
  [No Bypass]reason: Bypass not executed because query's scan operator is not index.
- Hash Join
+ Nested Loop Semi Join
    Output: public.t2.a
-   Hash Cond: (public.t2.a = public.t2.a)
    ->  Seq Scan on public.t2
          Output: public.t2.a
          Filter: ((public.t2.a = 2) AND (public.t2.a > 500))
-   ->  Hash
+   ->  Materialize
          Output: public.t2.a
-         ->  HashAggregate
+         ->  Seq Scan on public.t2
                Output: public.t2.a
-               Group By Key: public.t2.a
-               ->  Seq Scan on public.t2
-                     Output: public.t2.a
-                     Filter: ((public.t2.a > 500) AND (public.t2.a = 2))
-(15 rows)
+               Filter: ((public.t2.a > 500) AND (public.t2.a = 2))
+(11 rows)
 
  set query_dop = 4;
 explain(costs off, verbose)  select * from t2 where a = 2;
@@ -204,31 +179,30 @@ explain(costs off, verbose)  select * from t2 where a = 2;
 (6 rows)
 
 explain(costs off, verbose) select * from t2 where a = 2 and t2.a in (select a from t2 where a > 500);
-                                     QUERY PLAN                                      
--------------------------------------------------------------------------------------
+                                     QUERY PLAN                                     
+------------------------------------------------------------------------------------
  [No Bypass]reason: Bypass not executed because query's scan operator is not index.
- Hash Join
+ Nested Loop
    Output: public.t2.a
-   Hash Cond: (public.t2.a = public.t2.a)
-   ->  Streaming(type: LOCAL GATHER dop: 1/4)
+   ->  HashAggregate
          Output: public.t2.a
-         ->  Seq Scan on public.t2
+         Group By Key: public.t2.a
+         ->  Streaming(type: LOCAL GATHER dop: 1/4)
                Output: public.t2.a
-               Filter: ((public.t2.a = 2) AND (public.t2.a > 500))
-   ->  Hash
-         Output: public.t2.a
-         ->  HashAggregate
-               Output: public.t2.a
-               Group By Key: public.t2.a
-               ->  Streaming(type: LOCAL GATHER dop: 1/4)
+               ->  HashAggregate
                      Output: public.t2.a
-                     ->  HashAggregate
+                     Group By Key: public.t2.a
+                     ->  Seq Scan on public.t2
                            Output: public.t2.a
-                           Group By Key: public.t2.a
-                           ->  Seq Scan on public.t2
-                                 Output: public.t2.a
-                                 Filter: ((public.t2.a > 500) AND (public.t2.a = 2))
-(22 rows)
+                           Filter: ((public.t2.a > 500) AND (public.t2.a = 2))
+   ->  Materialize
+         Output: public.t2.a
+         ->  Streaming(type: LOCAL GATHER dop: 1/4)
+               Output: public.t2.a
+               ->  Seq Scan on public.t2
+                     Output: public.t2.a
+                     Filter: ((public.t2.a = 2) AND (public.t2.a > 500))
+(21 rows)
 
  set query_dop = 1;
 drop table if exists t2 ;
@@ -245,24 +219,20 @@ explain(costs off, verbose)   select * from t2 where a = 2;
 (4 rows)
 
 explain(costs off, verbose) select * from t2 where a = 2 and t2.a in (select a from t2 where a > 500);
-                                       QUERY PLAN                                        
------------------------------------------------------------------------------------------
+                                     QUERY PLAN                                     
+------------------------------------------------------------------------------------
  [No Bypass]reason: Bypass not executed because query's scan operator is not index.
- Hash Join
+ Nested Loop Semi Join
    Output: public.t2.a
-   Hash Cond: (public.t2.a = public.t2.a)
    ->  Seq Scan on public.t2
          Output: public.t2.a
          Filter: ((public.t2.a = 2::bigint) AND (public.t2.a > 500::bigint))
-   ->  Hash
+   ->  Materialize
          Output: public.t2.a
-         ->  HashAggregate
+         ->  Seq Scan on public.t2
                Output: public.t2.a
-               Group By Key: public.t2.a
-               ->  Seq Scan on public.t2
-                     Output: public.t2.a
-                     Filter: ((public.t2.a > 500::bigint) AND (public.t2.a = 2::bigint))
-(15 rows)
+               Filter: ((public.t2.a > 500::bigint) AND (public.t2.a = 2::bigint))
+(11 rows)
 
  set query_dop = 4;
 explain(costs off, verbose)  select * from t2 where a = 2;
@@ -277,31 +247,30 @@ explain(costs off, verbose)  select * from t2 where a = 2;
 (6 rows)
 
 explain(costs off, verbose) select * from t2 where a = 2 and t2.a in (select a from t2 where a > 500);
-                                             QUERY PLAN                                              
------------------------------------------------------------------------------------------------------
+                                          QUERY PLAN                                           
+-----------------------------------------------------------------------------------------------
  [No Bypass]reason: Bypass not executed because query's scan operator is not index.
- Hash Join
+ Nested Loop
    Output: public.t2.a
-   Hash Cond: (public.t2.a = public.t2.a)
-   ->  Streaming(type: LOCAL GATHER dop: 1/4)
+   ->  HashAggregate
          Output: public.t2.a
-         ->  Seq Scan on public.t2
+         Group By Key: public.t2.a
+         ->  Streaming(type: LOCAL GATHER dop: 1/4)
                Output: public.t2.a
-               Filter: ((public.t2.a = 2::bigint) AND (public.t2.a > 500::bigint))
-   ->  Hash
-         Output: public.t2.a
-         ->  HashAggregate
-               Output: public.t2.a
-               Group By Key: public.t2.a
-               ->  Streaming(type: LOCAL GATHER dop: 1/4)
+               ->  HashAggregate
                      Output: public.t2.a
-                     ->  HashAggregate
+                     Group By Key: public.t2.a
+                     ->  Seq Scan on public.t2
                            Output: public.t2.a
-                           Group By Key: public.t2.a
-                           ->  Seq Scan on public.t2
-                                 Output: public.t2.a
-                                 Filter: ((public.t2.a > 500::bigint) AND (public.t2.a = 2::bigint))
-(22 rows)
+                           Filter: ((public.t2.a > 500::bigint) AND (public.t2.a = 2::bigint))
+   ->  Materialize
+         Output: public.t2.a
+         ->  Streaming(type: LOCAL GATHER dop: 1/4)
+               Output: public.t2.a
+               ->  Seq Scan on public.t2
+                     Output: public.t2.a
+                     Filter: ((public.t2.a = 2::bigint) AND (public.t2.a > 500::bigint))
+(21 rows)
 
  set query_dop = 1;
 set opfusion_debug_mode = off;
@@ -332,7 +301,7 @@ explain(costs off, verbose) select * from join_1 join join_2 on join_1.a = join_
 ----------------------------------------------------
  Hash Join
    Output: join_1.a, join_2.a
-   Hash Cond: ((join_1.a)::uint8 = join_2.a)
+   Hash Cond: (join_1.a = join_2.a)
    ->  Streaming(type: LOCAL GATHER dop: 1/2)
          Output: join_1.a
          ->  Seq Scan on public.join_1
@@ -350,7 +319,7 @@ explain(costs off, verbose) select * from join_1 left join join_2 on join_1.a = 
 ----------------------------------------------------
  Hash Left Join
    Output: join_1.a, join_2.a
-   Hash Cond: ((join_1.a)::uint8 = join_2.a)
+   Hash Cond: (join_1.a = join_2.a)
    ->  Streaming(type: LOCAL GATHER dop: 1/2)
          Output: join_1.a
          ->  Seq Scan on public.join_1
@@ -368,7 +337,7 @@ explain(costs off, verbose) select * from join_1 right join join_2 on join_1.a =
 ----------------------------------------------------
  Hash Right Join
    Output: join_1.a, join_2.a
-   Hash Cond: ((join_1.a)::uint8 = join_2.a)
+   Hash Cond: (join_1.a = join_2.a)
    ->  Streaming(type: LOCAL GATHER dop: 1/2)
          Output: join_1.a
          ->  Seq Scan on public.join_1
@@ -386,7 +355,7 @@ explain(costs off, verbose) select * from join_1 inner join join_2 on join_1.a =
 ----------------------------------------------------
  Hash Join
    Output: join_1.a, join_2.a
-   Hash Cond: ((join_1.a)::uint8 = join_2.a)
+   Hash Cond: (join_1.a = join_2.a)
    ->  Streaming(type: LOCAL GATHER dop: 1/2)
          Output: join_1.a
          ->  Seq Scan on public.join_1
@@ -404,7 +373,7 @@ explain(costs off, verbose) select /*+ nestloop(join_1 join_2)*/ * from join_1 l
 ----------------------------------------------------
  Nested Loop Left Join
    Output: join_1.a, join_2.a
-   Join Filter: ((join_1.a)::uint8 = join_2.a)
+   Join Filter: (join_1.a = join_2.a)
    ->  Streaming(type: LOCAL GATHER dop: 1/2)
          Output: join_1.a
          ->  Seq Scan on public.join_1
@@ -422,7 +391,7 @@ explain(costs off, verbose) select /*+ hashjoin(join_1 join_2)*/ * from join_1 l
 ----------------------------------------------------
  Hash Left Join
    Output: join_1.a, join_2.a
-   Hash Cond: ((join_1.a)::uint8 = join_2.a)
+   Hash Cond: (join_1.a = join_2.a)
    ->  Streaming(type: LOCAL GATHER dop: 1/2)
          Output: join_1.a
          ->  Seq Scan on public.join_1
@@ -441,7 +410,7 @@ WARNING:  unused hint: MergeJoin(join_1 join_2)
 ----------------------------------------------------
  Hash Left Join
    Output: join_1.a, join_2.a
-   Hash Cond: ((join_1.a)::uint8 = join_2.a)
+   Hash Cond: (join_1.a = join_2.a)
    ->  Streaming(type: LOCAL GATHER dop: 1/2)
          Output: join_1.a
          ->  Seq Scan on public.join_1

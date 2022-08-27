@@ -141,7 +141,7 @@ returns integer
 as
 $$
 begin
-  return (select a::bool # b::bool)::integer;
+  return (select a::bool::integer # b::bool::integer);
 end;
 $$
 language plpgsql;

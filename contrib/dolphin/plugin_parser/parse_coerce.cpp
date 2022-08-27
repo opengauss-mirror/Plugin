@@ -2283,19 +2283,15 @@ bool IsBinaryCoercible(Oid srctype, Oid targettype)
 
 Oid findUnsignedImplicitCastFunction(Oid targetTypeId, Oid sourceTypeId, Oid funcid)
 {
-    Oid uint1Oid = get_typeoid(PG_CATALOG_NAMESPACE, "uint1");
-    Oid uint2Oid = get_typeoid(PG_CATALOG_NAMESPACE, "uint2");
-    Oid uint4Oid = get_typeoid(PG_CATALOG_NAMESPACE, "uint4");
-    Oid uint8Oid = get_typeoid(PG_CATALOG_NAMESPACE, "uint8");
     int row = INVALID_ROW;
     int col = INVALID_COLUMN;
-    if (targetTypeId == uint1Oid) {
-        col = UINT1;
-    } else if (targetTypeId == uint2Oid) {
-        col = UINT2;
-    } else if (targetTypeId == uint4Oid) {
+    if (targetTypeId == get_typeoid(PG_CATALOG_NAMESPACE, "uint4")) {
         col = UINT4;
-    } else if (targetTypeId == uint8Oid) {
+    } else if (targetTypeId == get_typeoid(PG_CATALOG_NAMESPACE, "uint1")) {
+        col = UINT1;
+    } else if (targetTypeId == get_typeoid(PG_CATALOG_NAMESPACE, "uint2")) {
+        col = UINT2;
+    } else if (targetTypeId == get_typeoid(PG_CATALOG_NAMESPACE, "uint8")) {
         col = UINT8;
     }
     switch (sourceTypeId) {
