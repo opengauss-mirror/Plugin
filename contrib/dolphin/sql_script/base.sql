@@ -253,7 +253,7 @@ query_str text;
 item int2;
 row_data record;
 begin
-query_str := 'select n.nspname, i.indexrelid, i.indrelid, i.indisunique, i.indisusable, i.indkey, i.indoption
+query_str := 'select n.nspname, i.indexrelid, i.indrelid, i.indisunique, i.indisusable, i.indkey, i.indoption, i.indnkeyatts
               from pg_catalog.pg_index i
                 left join pg_class c on c.oid = i.indexrelid
                 left join pg_catalog.pg_namespace n on n.oid = c.relnamespace
@@ -262,7 +262,7 @@ query_str := 'select n.nspname, i.indexrelid, i.indrelid, i.indisunique, i.indis
                 and n.nspname <> ''information_schema''
                 and n.nspname !~ ''^pg_toast''';
 for row_data in EXECUTE(query_str) LOOP
-    for item in 0..array_length(row_data.indkey, 1) - 1 loop
+    for item in 0..row_data.indnkeyatts - 1 loop
         namespace := row_data.nspname;
         indexrelid := row_data.indexrelid;
         indrelid := row_data.indrelid;
