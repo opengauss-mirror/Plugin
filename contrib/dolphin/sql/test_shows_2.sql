@@ -75,6 +75,10 @@ show index from show_index_tbl;
 alter index show_index_tbl_a_b_desc unusable;
 show index from show_index_tbl;
 
+-- test index with including column
+create index show_index_tbl_a_inclu_b on show_index_tbl(a) include (b);
+show index from show_index_tbl;
+
 drop table show_index_tbl;
 
 \c postgres

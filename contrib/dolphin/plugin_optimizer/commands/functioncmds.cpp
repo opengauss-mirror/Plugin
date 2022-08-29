@@ -666,7 +666,6 @@ static void compute_attributes_sql_style(const List* options, List** as, char** 
     DefElem* package_item = NULL;
     DefElem* determ_item = NULL;
     DefElem* sql_item = NULL;
-    DefElem* sql_data_item = NULL;
     foreach (option, options) {
         DefElem* defel = (DefElem*)lfirst(option);
 
@@ -1856,7 +1855,6 @@ void AlterFunction(AlterFunctionStmt* stmt)
     DefElem* package_item = NULL;
     DefElem* determ_item = NULL;
     DefElem* sql_item = NULL;
-    DefElem* sql_data_item = NULL;
     bool isNull = false;
     rel = heap_open(ProcedureRelationId, RowExclusiveLock);
 

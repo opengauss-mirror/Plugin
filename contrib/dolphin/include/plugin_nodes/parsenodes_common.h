@@ -1321,6 +1321,7 @@ typedef struct Constraint {
     bool skip_validation; /* skip validation of existing rows? */
     bool initially_valid; /* mark the new constraint as valid? */
 
+    List* constraintOptions; /* opt_index_options from gram.y */
     /*
      * @hdfs
      * Field used for soft constraint, which works on HDFS foreign table.
