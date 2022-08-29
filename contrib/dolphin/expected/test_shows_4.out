@@ -1,0 +1,17 @@
+drop database if exists db_show_4;
+NOTICE:  database "db_show_4" does not exist, skipping
+create database db_show_4 dbcompatibility 'b';
+\c db_show_4
+show master status;
+      Xlog_File_Name      | Xlog_File_Offset | Xlog_Lsn  
+--------------------------+------------------+-----------
+--?.*
+(1 row)
+
+show slave hosts;
+ pid | usesysid | usename | application_name | client_addr | client_hostname | client_port | backend_start | state | sender_sent_location | receiver_write_location | receiver_flush_location | receiver_replay_location | sync_priority | sync_state 
+-----+----------+---------+------------------+-------------+-----------------+-------------+---------------+-------+----------------------+-------------------------+-------------------------+--------------------------+---------------+------------
+(0 rows)
+
+\c postgres
+drop database if exists db_show_4;

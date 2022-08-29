@@ -1,0 +1,40 @@
+drop database if exists db_charset;
+NOTICE:  database "db_charset" does not exist, skipping
+create database db_charset dbcompatibility 'b';
+\c db_charset
+show client_encoding;
+ client_encoding 
+-----------------
+ UTF8
+(1 row)
+
+set charset gbk;
+show client_encoding;
+ client_encoding 
+-----------------
+ GBK
+(1 row)
+
+set charset default;
+show client_encoding;
+ client_encoding 
+-----------------
+ UTF8
+(1 row)
+
+set character set 'gbk';
+show client_encoding;
+ client_encoding 
+-----------------
+ GBK
+(1 row)
+
+set character set default;
+show client_encoding;
+ client_encoding 
+-----------------
+ UTF8
+(1 row)
+
+\c postgres
+drop database if exists db_charset;

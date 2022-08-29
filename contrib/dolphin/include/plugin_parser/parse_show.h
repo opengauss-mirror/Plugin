@@ -50,9 +50,14 @@
 #define PLPS_LOC_UNKNOWN (-1)
 
 extern bool plps_check_schema_or_table_valid(char *schemaname, char *tablename, bool is_missingok);
+extern Node* plpsMakeIntConst(int val);
+extern Node* plpsMakeStringConst(char* str);
 extern Node* plpsAddCond(Node* left, Node* right, int location = PLPS_LOC_UNKNOWN);
 extern Node* plpsMakeColumnRef(char* relName, char* colName, int location = PLPS_LOC_UNKNOWN);
 extern Node* plpsMakeFunc(char* funcname, List* args, int location = PLPS_LOC_UNKNOWN);
 extern Node* plpsMakeNormalColumn(char *relname, char *colname, char* aliasname, int location = PLPS_LOC_UNKNOWN);
+extern List* plpsMakeSortList(Node *sortExpr);
+extern SelectStmt* plpsMakeSelectStmt(List* targetList, List* fromList, Node* whereClause,
+        List* sortClause, Node* limitCount = NULL);
 
 #endif /* PARSE_TARGET_H */

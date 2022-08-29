@@ -44,15 +44,17 @@ extern char** get_next_snippet(
 
 extern void fixResTargetNameWithAlias(List* clause_list, const char* aliasname);
 
-SelectStmt* makeProcesslistQuery(bool isFull);
-SelectStmt* makeDescribeQuery(char *schemaName, char *tableName);
-
-SelectStmt *makeShowColumnsDirectQuery(char *schemaname, char *tablename,
-				       bool fullmode, bool smallcase, Node *likeWhereOpt = NULL);
-SelectStmt* makeShowColumnsQuery(char *schemaName, char *tableName, char *dbname,
-				 bool fullMode, bool isLikeExpr, Node* likeWhereOpt = NULL);
-SelectStmt* makeShowTablesQuery(bool fullmode, char *optDbName, Node *likeWhereOpt, bool isLikeExpr);
+SelectStmt* makeDescribeQuery(char* schemaName, char* tableName);
+SelectStmt* makeShowProcesslistQuery(bool isFull);
+SelectStmt* makeShowColumnsDirectQuery(char* schemaname, char* tablename,
+                                       bool fullmode, bool smallcase, Node* likeWhereOpt = NULL);
+SelectStmt* makeShowColumnsQuery(char* schemaName, char* tableName, char* dbname,
+                                 bool fullMode, bool isLikeExpr, Node* likeWhereOpt = NULL);
+SelectStmt* makeShowTablesQuery(bool fullmode, char* optDbName, Node* likeWhereOpt, bool isLikeExpr);
 SelectStmt* makeShowPluginsQuery(void);
+SelectStmt* makeShowDatabasesQuery(Node* likeNode, Node* whereExpr);
+SelectStmt* makeShowMasterStatusQuery(void);
+SelectStmt* makeShowSlaveHostsQuery(void);
 
 SelectStmt* makeShowIndexQuery(char *schemaName, char *tableName, Node *whereClause);
 

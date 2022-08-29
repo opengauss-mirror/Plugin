@@ -9,9 +9,6 @@ static List* makeFromList();
 static Node* makeWhereTarget(char* schemaName, char* tableName);
 static Node* makeCurrentSchemaFunc();
 
-static Node* makeIntConst(int val);
-static Node* makeStringConst(char* str);
-static List* makeSortList();
 static RangeVar* makeRangeAlias(char* varName, char* aliasName);
 static Node* makeNullColumn(bool smallcase = FALSE);
 static Node* makeCaseNode(char* term, char* result);
@@ -96,19 +93,11 @@ SelectStmt* makeDescribeQuery(char* schemaName, char* tableName)
     tl = lappend(tl, makeKeyColumn());
     tl = lappend(tl, makeDefaultColumn());
     tl = lappend(tl, makeExtraColumn());
+    List* fl = makeFromList();
+    Node* wc = makeWhereTarget(schemaName, tableName);
+    List* sl = plpsMakeSortList(plpsMakeColumnRef("a", "attnum"));
 
-    SelectStmt* stmt = makeNode(SelectStmt);
-    stmt->distinctClause = NIL;
-    stmt->targetList = tl;
-    stmt->intoClause = NULL;
-    stmt->fromClause = makeFromList();
-    stmt->whereClause = makeWhereTarget(schemaName, tableName);
-    stmt->sortClause = makeSortList();
-    stmt->groupClause = NIL;
-    stmt->havingClause = NULL;
-    stmt->windowClause = NIL;
-    stmt->hintState = NULL;
-    stmt->hasPlus = false;
+    SelectStmt* stmt = plpsMakeSelectStmt(tl, fl, wc, sl);
     return stmt;
 }
 
@@ -156,8 +145,8 @@ static Node* makeNullColumn(bool smallcase)
 static Node* makeCaseNode(char* term, char* result)
 {
     CaseWhen* w = makeNode(CaseWhen);
-    w->expr = (Expr*)makeStringConst(term);
-    w->result = (Expr*)makeStringConst(result);
+    w->expr = (Expr*)plpsMakeStringConst(term);
+    w->result = (Expr*)plpsMakeStringConst(result);
     w->location = -1;
     return (Node*)w;
 }
@@ -189,44 +178,14 @@ Node* plpsAddCond(Node* left, Node* right, int location)
 static Node* makeWhereTarget(char* schemaName, char* tableName)
 {
     Node* cond1 = (Node*)makeSimpleA_Expr(AEXPR_OP, "=", plpsMakeColumnRef("n", "nspname"), 
-                    schemaName ? makeStringConst(schemaName) : makeCurrentSchemaFunc(), -1);
-    Node* cond2 = (Node*)makeSimpleA_Expr(AEXPR_OP, "=", plpsMakeColumnRef("c", "relname"), makeStringConst(tableName), -1);
+                    schemaName ? plpsMakeStringConst(schemaName) : makeCurrentSchemaFunc(), -1);
+    Node* cond2 = (Node*)makeSimpleA_Expr(AEXPR_OP, "=", plpsMakeColumnRef("c", "relname"), plpsMakeStringConst(tableName), -1);
     Node* cond3 = (Node*)makeSimpleA_Expr(AEXPR_OP, "=", plpsMakeColumnRef("n", "oid"), plpsMakeColumnRef("c", "relnamespace"), -1);
     Node* cond4 = (Node*)makeSimpleA_Expr(AEXPR_OP, "=", plpsMakeColumnRef("a", "attrelid"), plpsMakeColumnRef("c", "oid"), -1);
     Node* cond5 = (Node*)makeSimpleA_Expr(AEXPR_OP, "=", plpsMakeColumnRef("a", "atttypid"), plpsMakeColumnRef("t", "oid"), -1);
-    Node* cond6 = (Node*)makeSimpleA_Expr(AEXPR_OP, ">", plpsMakeColumnRef("a", "attnum"), makeIntConst(0), -1);
+    Node* cond6 = (Node*)makeSimpleA_Expr(AEXPR_OP, ">", plpsMakeColumnRef("a", "attnum"), plpsMakeIntConst(0), -1);
     Node* wt = plpsAddCond(cond1, plpsAddCond(cond2, plpsAddCond(cond3, plpsAddCond(cond4, plpsAddCond(cond5, cond6)))));
     return wt;
-}
-
-static List* makeSortList()
-{
-    SortBy* n = makeNode(SortBy);
-    n->node = plpsMakeColumnRef("a", "attnum");
-    n->sortby_dir = SORTBY_DEFAULT;
-    n->sortby_nulls = SORTBY_NULLS_DEFAULT;
-    n->useOp = NIL;
-    n->location = -1;
-    List* sl = (List*)list_make1(n);
-    return sl;
-}
-
-static Node* makeIntConst(int val)
-{
-    A_Const* n = makeNode(A_Const);
-    n->val.type = T_Integer;
-    n->val.val.ival = val;
-    n->location = -1;
-    return (Node*)n;
-}
-
-static Node* makeStringConst(char* str)
-{
-    A_Const* n = makeNode(A_Const);
-    n->val.type = T_String;
-    n->val.val.str = str;
-    n->location = -1;
-    return (Node*)n;
 }
 
 static Node* makeCurrentSchemaFunc()
@@ -254,45 +213,39 @@ static Node* makeExtraColumn(bool smallcase)
     }
 
     rt->indirection = NIL;
-    rt->val = makeStringConst("");
+    rt->val = plpsMakeStringConst("");
     rt->location = -1;
     return (Node*)rt;
 }
 
 static Node* makeIndexSelect()
 {
-    SelectStmt* stmt = makeNode(SelectStmt);
-    stmt->distinctClause = NIL;
-    stmt->targetList = list_make1(makeIndexColumn());
-    stmt->intoClause = NULL;
-    stmt->fromClause = list_make1(makeRangeVar(NULL, "pg_index", -1));
-    stmt->whereClause = (Node*)makeA_Expr(AEXPR_AND, NIL,
-                                           (Node*)makeSimpleA_Expr(AEXPR_OP, "=",
-                                                                    plpsMakeColumnRef("c", "oid"),
-                                                                    plpsMakeColumnRef("pg_index", "indrelid"), -1),
-                                           (Node*)makeSimpleA_Expr(AEXPR_OP_ANY, "=",
-                                                                    plpsMakeColumnRef("a", "attnum"),
-                                                                    plpsMakeColumnRef("pg_index", "indkey"),
-                                                                    -1), -1);
-    stmt->limitCount = makeIntConst(1);
-    stmt->groupClause = NIL;
-    stmt->havingClause = NULL;
-    stmt->windowClause = NIL;
-    stmt->hintState = NULL;
-    stmt->hasPlus = false;
+    List* tl = list_make1(makeIndexColumn());
+    List* fl = list_make1(makeRangeVar(NULL, "pg_index", -1));
+    Node* wc = (Node*)makeA_Expr(AEXPR_AND, NIL,
+                                 (Node*)makeSimpleA_Expr(AEXPR_OP, "=",
+                                                         plpsMakeColumnRef("c", "oid"),
+                                                         plpsMakeColumnRef("pg_index", "indrelid"), -1),
+                                 (Node*)makeSimpleA_Expr(AEXPR_OP_ANY, "=",
+                                                         plpsMakeColumnRef("a", "attnum"),
+                                                         plpsMakeColumnRef("pg_index", "indkey"),
+                                                         -1), -1);
+    Node* lc = plpsMakeIntConst(1);
+
+    SelectStmt* stmt = plpsMakeSelectStmt(tl, fl, wc, NULL, lc);
     return (Node*)stmt;
 }
 
 static Node* makeIndexColumn()
 {
     CaseWhen* wf = makeNode(CaseWhen);
-    wf->expr = (Expr*)makeSimpleA_Expr(AEXPR_OP, "=", plpsMakeColumnRef(NULL, "indisprimary"), makeStringConst("t"), -1);
-    wf->result = (Expr*)makeStringConst("PRI");
+    wf->expr = (Expr*)makeSimpleA_Expr(AEXPR_OP, "=", plpsMakeColumnRef(NULL, "indisprimary"), plpsMakeStringConst("t"), -1);
+    wf->result = (Expr*)plpsMakeStringConst("PRI");
     wf->location = -1;
 
     CaseWhen* ws = makeNode(CaseWhen);
-    ws->expr = (Expr*)makeSimpleA_Expr(AEXPR_OP, "=", plpsMakeColumnRef(NULL, "indisunique"), makeStringConst("t"), -1);
-    ws->result = (Expr*)makeStringConst("UNI");
+    ws->expr = (Expr*)makeSimpleA_Expr(AEXPR_OP, "=", plpsMakeColumnRef(NULL, "indisunique"), plpsMakeStringConst("t"), -1);
+    ws->result = (Expr*)plpsMakeStringConst("UNI");
     ws->location = -1;
 
     List* wl = list_make1((Node*)wf);
@@ -302,7 +255,7 @@ static Node* makeIndexColumn()
     c->casetype = InvalidOid;
     c->arg = NULL;
     c->args = wl;
-    c->defresult = (Expr*)makeStringConst("MUL");
+    c->defresult = (Expr*)plpsMakeStringConst("MUL");
     c->location = -1;
 
     ResTarget* rt = makeNode(ResTarget);
@@ -317,32 +270,26 @@ static Node* makeConstantSelect()
 {
     ResTarget* rt = makeNode(ResTarget);
     rt->indirection = NIL;
-    rt->val = makeStringConst("MUL");
+    rt->val = plpsMakeStringConst("MUL");
     rt->location = -1;
 
-    SelectStmt* stmt = makeNode(SelectStmt);
-    stmt->distinctClause = NIL;
-    stmt->targetList = list_make1((Node*)rt);
-    stmt->intoClause = NULL;
-    stmt->fromClause = list_make1(makeRangeVar(NULL, "pg_constraint", -1));
-    stmt->whereClause = (Node*)makeA_Expr(AEXPR_AND, NIL,
-                                           (Node*)makeSimpleA_Expr(AEXPR_OP, "=",
-                                                                    plpsMakeColumnRef("pg_constraint", "contype"),
-                                                                    makeStringConst("f"), -1),
-                                           (Node*)makeA_Expr(AEXPR_AND, NIL,
-                                                              (Node*)makeSimpleA_Expr(AEXPR_OP, "=",
-                                                                                       plpsMakeColumnRef("pg_constraint", "conrelid"),
-                                                                                       plpsMakeColumnRef("c", "oid"), -1),
-                                                              (Node*)makeSimpleA_Expr(AEXPR_OP_ANY, "=",
-                                                                                       plpsMakeColumnRef("a", "attnum"),
-                                                                                       plpsMakeColumnRef("pg_constraint", "conkey"),
-                                                                                       -1), -1), -1);
-    stmt->limitCount = makeIntConst(1);
-    stmt->groupClause = NIL;
-    stmt->havingClause = NULL;
-    stmt->windowClause = NIL;
-    stmt->hintState = NULL;
-    stmt->hasPlus = false;
+    List* tl = list_make1((Node*)rt);
+    List* fl = list_make1(makeRangeVar(NULL, "pg_constraint", -1));
+    Node* wc = (Node*)makeA_Expr(AEXPR_AND, NIL,
+                                 (Node*)makeSimpleA_Expr(AEXPR_OP, "=",
+                                                         plpsMakeColumnRef("pg_constraint", "contype"),
+                                                         plpsMakeStringConst("f"), -1),
+                                 (Node*)makeA_Expr(AEXPR_AND, NIL,
+                                                   (Node*)makeSimpleA_Expr(AEXPR_OP, "=",
+                                                                           plpsMakeColumnRef("pg_constraint", "conrelid"),
+                                                                           plpsMakeColumnRef("c", "oid"), -1),
+                                                   (Node*)makeSimpleA_Expr(AEXPR_OP_ANY, "=",
+                                                                           plpsMakeColumnRef("a", "attnum"),
+                                                                           plpsMakeColumnRef("pg_constraint", "conkey"),
+                                                                           -1), -1), -1);
+    Node* lc = plpsMakeIntConst(1);
+
+    SelectStmt* stmt = plpsMakeSelectStmt(tl, fl, wc, NULL, lc);
     return (Node*)stmt;
 }
 
@@ -387,25 +334,19 @@ static Node* makeDefaultSelect()
     rt->val = plpsMakeColumnRef("pg_attrdef", "adsrc");
     rt->location = -1;
 
-    SelectStmt* stmt = makeNode(SelectStmt);
-    stmt->distinctClause = NIL;
-    stmt->targetList = list_make1((Node*)rt);
-    stmt->intoClause = NULL;
-    stmt->fromClause = list_make1(makeRangeVar(NULL, "pg_attrdef", -1));
-    stmt->whereClause = (Node*)makeA_Expr(AEXPR_AND, NIL,
-                                           (Node*)makeSimpleA_Expr(AEXPR_OP, "=",
-                                                                    plpsMakeColumnRef("c", "oid"),
-                                                                    plpsMakeColumnRef("pg_attrdef", "adrelid"), -1),
-                                           (Node*)makeSimpleA_Expr(AEXPR_OP, "=",
-                                                                    plpsMakeColumnRef("a", "attnum"),
-                                                                    plpsMakeColumnRef("pg_attrdef", "adnum"),
-                                                                    -1), -1);
-    stmt->limitCount = makeIntConst(1);
-    stmt->groupClause = NIL;
-    stmt->havingClause = NULL;
-    stmt->windowClause = NIL;
-    stmt->hintState = NULL;
-    stmt->hasPlus = false;
+    List* tl = list_make1((Node*)rt);
+    List* fl = list_make1(makeRangeVar(NULL, "pg_attrdef", -1));
+    Node* wc = (Node*)makeA_Expr(AEXPR_AND, NIL,
+                                 (Node*)makeSimpleA_Expr(AEXPR_OP, "=",
+                                                         plpsMakeColumnRef("c", "oid"),
+                                                         plpsMakeColumnRef("pg_attrdef", "adrelid"), -1),
+                                 (Node*)makeSimpleA_Expr(AEXPR_OP, "=",
+                                                         plpsMakeColumnRef("a", "attnum"),
+                                                         plpsMakeColumnRef("pg_attrdef", "adnum"),
+                                                         -1), -1);
+    Node* lc = plpsMakeIntConst(1);
+
+    SelectStmt* stmt = plpsMakeSelectStmt(tl, fl, wc, NULL, lc);
     return (Node*)stmt;
 }
 
@@ -419,7 +360,7 @@ static Node* makeDefaultColumn(bool smallcase)
     }
     
     rt->indirection = NIL;
-    rt->val = makeCoalesce(makeSubLink(makeDefaultSelect()), makeStringConst("NULL"));
+    rt->val = makeCoalesce(makeSubLink(makeDefaultSelect()), plpsMakeStringConst("NULL"));
     rt->location = -1;
     return (Node*)rt;
 }
@@ -431,73 +372,61 @@ static Node* makePrivilegeColumn(bool smallcase)
     Node *cond = NULL;
     Node *cond1 = NULL;
     Node *cond2 = NULL;
-    
+
     if (superuser()) {
-    	rt = makeNode(ResTarget);
+        rt = makeNode(ResTarget);
         if (smallcase) {
-    	    rt->name = SHOW_PRIVILEGES_COL_S;
-	} else {
-	    rt->name = SHOW_PRIVILEGES_COL;
-	}
-    	rt->indirection = NIL;
-    	rt->val = makeStringConst("UPDATE,SELECT,REFERENCES,INSERT,COMMENT");
-    	rt->location = PLPS_LOC_UNKNOWN;
-    	return (Node*)rt;
+            rt->name = SHOW_PRIVILEGES_COL_S;
+        } else {
+            rt->name = SHOW_PRIVILEGES_COL;
+        }
+        rt->indirection = NIL;
+        rt->val = plpsMakeStringConst("UPDATE,SELECT,REFERENCES,INSERT,COMMENT");
+        rt->location = PLPS_LOC_UNKNOWN;
+        return (Node*)rt;
     }
 
     rt = makeNode(ResTarget);
     rt->name = NULL;
     rt->indirection = NIL;
-    rt->val = plpsMakeFunc("string_agg", list_make2(plpsMakeColumnRef(NULL, "privilege_type"), makeStringConst(",")));
+    rt->val = plpsMakeFunc("string_agg", list_make2(plpsMakeColumnRef(NULL, "privilege_type"), plpsMakeStringConst(",")));
     rt->location = PLPS_LOC_UNKNOWN;
-    
-    SelectStmt *stmt = makeNode(SelectStmt);
-    stmt->distinctClause = NIL;
-    stmt->targetList = list_make1(rt);
-    stmt->intoClause = NULL;
-    stmt->fromClause = list_make1(makeRangeVar("information_schema", "column_privileges", -1));
 
-    cond1 = (Node*)makeSimpleA_Expr(AEXPR_OP, "=", 
-    				    plpsMakeColumnRef(PG_CLASS_ALIAS, "relname"),
-    				    plpsMakeColumnRef("column_privileges", "table_name"), -1);
+    List* tl = list_make1(rt);
+    List* fl = list_make1(makeRangeVar("information_schema", "column_privileges", -1));
+    cond1 = (Node*)makeSimpleA_Expr(AEXPR_OP, "=",
+                                    plpsMakeColumnRef(PG_CLASS_ALIAS, "relname"),
+                                    plpsMakeColumnRef("column_privileges", "table_name"), -1);
     cond2 = (Node*)makeSimpleA_Expr(AEXPR_OP, "=",
-    				    plpsMakeColumnRef(PG_ATTRIBUTE_ALIAS, "attname"),
-    				    plpsMakeColumnRef("column_privileges", "column_name"), -1);
+                                    plpsMakeColumnRef(PG_ATTRIBUTE_ALIAS, "attname"),
+                                    plpsMakeColumnRef("column_privileges", "column_name"), -1);
     cond = plpsAddCond(cond1, cond2);
     cond1 = (Node*)makeSimpleA_Expr(AEXPR_OP, "=",
-    				    plpsMakeColumnRef("column_privileges", "grantee"),
-    				    makeStringConst(GetUserNameFromId(GetUserId())), -1);
+                                    plpsMakeColumnRef("column_privileges", "grantee"),
+                                    plpsMakeStringConst(GetUserNameFromId(GetUserId())), -1);
     cond2 = (Node*)makeSimpleA_Expr(AEXPR_OP, "=",
-    				    plpsMakeColumnRef("column_privileges", "table_schema"),
-    				    plpsMakeColumnRef("n", "nspname"), -1);
+                                    plpsMakeColumnRef("column_privileges", "table_schema"),
+                                    plpsMakeColumnRef("n", "nspname"), -1);
     cond = plpsAddCond(cond, plpsAddCond(cond1, cond2));
-    stmt->whereClause = cond;
-    stmt->groupClause = NIL;
-    stmt->havingClause = NULL;
-    stmt->windowClause = NIL;
-    stmt->hintState = NULL;
-    stmt->hasPlus = FALSE;
-    
+    SelectStmt* stmt = plpsMakeSelectStmt(tl, fl, cond, NULL);
+
     rt = makeNode(ResTarget);
     if (smallcase) {
-    	rt->name = SHOW_PRIVILEGES_COL_S;
+        rt->name = SHOW_PRIVILEGES_COL_S;
     } else {
-    	rt->name = SHOW_PRIVILEGES_COL;
+        rt->name = SHOW_PRIVILEGES_COL;
     }
-	
+
     rt->indirection = NIL;
-    rt->val = makeCoalesce(makeSubLink((Node*)stmt), makeStringConst("NULL"));;
+    rt->val = makeCoalesce(makeSubLink((Node*)stmt), plpsMakeStringConst("NULL"));;
     rt->location = PLPS_LOC_UNKNOWN; // just set unknown token pos now
-    
-    return (Node*)rt;					
+
+    return (Node*)rt;
 }
 
 static Node *makeCommentColumn(bool smallcase)
 {
     ResTarget *rt = NULL;
-    
-    SelectStmt *stmt = makeNode(SelectStmt);
-    stmt->distinctClause = NIL;
     
     FuncCall *func = makeNode(FuncCall);
     func->funcname = list_make1(makeString("col_description"));
@@ -530,29 +459,23 @@ static Node *makeCollationColumn(bool smallcase)
     rt->val = (Node*)plpsMakeColumnRef("columns", "collation_name");
     rt->indirection = NIL;
     rt->location = PLPS_LOC_UNKNOWN;
-    
-    SelectStmt *stmt = makeNode(SelectStmt);
-    stmt->distinctClause = NIL;
-    stmt->targetList = list_make1(rt);
-    stmt->fromClause = list_make1(makeRangeVar("information_schema", "columns", -1));
-    stmt->whereClause =
-        (Node*)makeA_Expr(AEXPR_AND, NIL,
-		          (Node*)makeA_Expr(AEXPR_AND, NIL,
-			                    (Node*)makeSimpleA_Expr(AEXPR_OP, "=",
-					                            plpsMakeColumnRef(PG_CLASS_ALIAS, "relname"),
-								    plpsMakeColumnRef("columns", "table_name"), -1),
-					    (Node*)makeSimpleA_Expr(AEXPR_OP, "=",
-								    plpsMakeColumnRef(PG_ATTRIBUTE_ALIAS, "attname"),
-								    plpsMakeColumnRef("columns", "column_name"), -1), -1),
-			  (Node*)makeSimpleA_Expr(AEXPR_OP, ">",
-			                          plpsMakeFunc("length",
-							       list_make1(plpsMakeColumnRef(NULL, "collation_name"))),
-						  makeIntConst(0), -1), -1);
-    stmt->groupClause = NIL;
-    stmt->havingClause = NULL;
-    stmt->windowClause = NIL;
-    stmt->hintState = NULL;
-    stmt->hasPlus = FALSE;
+
+    List* tl = list_make1(rt);
+    List* fl = list_make1(makeRangeVar("information_schema", "columns", -1));
+    Node* wc = (Node*)makeA_Expr(AEXPR_AND, NIL,
+                                 (Node*)makeA_Expr(AEXPR_AND, NIL,
+                                                   (Node*)makeSimpleA_Expr(AEXPR_OP, "=",
+                                                                           plpsMakeColumnRef(PG_CLASS_ALIAS, "relname"),
+                                                                           plpsMakeColumnRef("columns", "table_name"), -1),
+                                                   (Node*)makeSimpleA_Expr(AEXPR_OP, "=",
+                                                                           plpsMakeColumnRef(PG_ATTRIBUTE_ALIAS, "attname"),
+                                                                           plpsMakeColumnRef("columns", "column_name"), -1), -1),
+                                 (Node*)makeSimpleA_Expr(AEXPR_OP, ">",
+                                                         plpsMakeFunc("length",
+                                                                      list_make1(plpsMakeColumnRef(NULL, "collation_name"))),
+                                                         plpsMakeIntConst(0), -1), -1);
+
+    SelectStmt* stmt = plpsMakeSelectStmt(tl, fl, wc, NULL);
     
     rt = makeNode(ResTarget);
     if (smallcase) {
@@ -562,7 +485,7 @@ static Node *makeCollationColumn(bool smallcase)
     }
 
     rt->indirection = NIL;
-    rt->val = makeCoalesce(makeSubLink((Node*)stmt), makeStringConst("NULL")); 
+    rt->val = makeCoalesce(makeSubLink((Node*)stmt), plpsMakeStringConst("NULL")); 
     rt->location = -1;
     
     return (Node*)rt;
@@ -572,7 +495,7 @@ SelectStmt *makeShowColumnsDirectQuery(char *schemaname, char *tablename, bool f
                                        bool isLikeExpr, Node *likeWhereOpt = NULL)
 {
     Node* privfilter = (Node*)makeSimpleA_Expr(AEXPR_OP, "~~", plpsMakeColumnRef(NULL, SHOW_PRIVILEGES_COL_S),
-					       makeStringConst("%SELECT%"), -1);
+					       plpsMakeStringConst("%SELECT%"), -1);
 
     if (isLikeExpr && likeWhereOpt != NULL) {
     	likeWhereOpt = (Node *)makeSimpleA_Expr(AEXPR_OP, "~~",
@@ -599,23 +522,16 @@ SelectStmt *makeShowColumnsDirectQuery(char *schemaname, char *tablename, bool f
     if (fullmode) {
     	tl = lappend(tl, makeCommentColumn(smallcase));
     }
-    
-    SelectStmt* stmt = makeNode(SelectStmt);
-    stmt->distinctClause = NIL;
-    stmt->targetList = tl;
-    stmt->intoClause = NULL;
-    stmt->fromClause = makeFromList();
-    stmt->whereClause = makeWhereTarget(schemaname, tablename);
-    stmt->whereClause = plpsAddCond(stmt->whereClause, privfilter);
+
+    List* fl = makeFromList();
+    Node* wc = makeWhereTarget(schemaname, tablename);
+    wc = plpsAddCond(wc, privfilter);
     if (likeWhereOpt != NULL) {
-    	stmt->whereClause = plpsAddCond(stmt->whereClause, likeWhereOpt);
+        wc = plpsAddCond(wc, likeWhereOpt);
     }
-    stmt->sortClause = makeSortList();
-    stmt->groupClause = NIL;
-    stmt->havingClause = NULL;
-    stmt->windowClause = NIL;
-    stmt->hintState = NULL;
-    stmt->hasPlus = false;
+    List* sl = plpsMakeSortList(plpsMakeColumnRef("a", "attnum"));
+
+    SelectStmt* stmt = plpsMakeSelectStmt(tl, fl, wc, sl);
     return stmt;
 }
 
@@ -627,80 +543,80 @@ SelectStmt *makeShowColumnsDirectQuery(char *schemaname, char *tablename, bool f
  *        "extra" AS "Extra", "privileges" AS "Privileges", "comment" AS "Comment"
  * FROM
  * (
- *   SELECT
- *     a.attname AS "field",
- *     format_type(a.atttypid, a.atttypmod) AS "type",
- *     coalesce(
- *       (SELECT
+ *   SELECT
+ *     a.attname AS "field",
+ *     format_type(a.atttypid, a.atttypmod) AS "type",
+ *     coalesce(
+ *       (SELECT
  *          collation_name
- *        FROM
- *          information_schema.columns
- *        WHERE
- *          table_name = c.relname
- *          AND column_name = a.attname
- *          AND length(collation_name) > 0 ),
- *     'NULL' ) AS "collation",
- *     CASE a.attnotnull
- *       WHEN 't' THEN 'NO'
- *       WHEN 'f' THEN 'YES'
- *     END AS "null",
- *     coalesce(
- *       (SELECT
- *          CASE
- *            WHEN indisprimary = 't' THEN 'PRI'
- *            WHEN indisunique = 't' THEN 'UNI'
- *            ELSE 'MUL'
- *          END
- *        FROM
- *          pg_index
- *        WHERE
- *          c.oid = pg_index.indrelid
- *          AND a.attnum = any(pg_index.indkey) LIMIT 1 ),
- *       (SELECT
- *          'MUL'
- *        FROM
- *          pg_constraint
- *        WHERE
- *          pg_constraint.contype = 'f'
- *          AND pg_constraint.conrelid = c.oid
- *          AND a.attnum = any(pg_constraint.conkey)
+ *        FROM
+ *          information_schema.columns
+ *        WHERE
+ *          table_name = c.relname
+ *          AND column_name = a.attname
+ *          AND length(collation_name) > 0 ),
+ *     'NULL' ) AS "collation",
+ *     CASE a.attnotnull
+ *       WHEN 't' THEN 'NO'
+ *       WHEN 'f' THEN 'YES'
+ *     END AS "null",
+ *     coalesce(
+ *       (SELECT
+ *          CASE
+ *            WHEN indisprimary = 't' THEN 'PRI'
+ *            WHEN indisunique = 't' THEN 'UNI'
+ *            ELSE 'MUL'
+ *          END
+ *        FROM
+ *          pg_index
+ *        WHERE
+ *          c.oid = pg_index.indrelid
+ *          AND a.attnum = any(pg_index.indkey) LIMIT 1 ),
+ *       (SELECT
+ *          'MUL'
+ *        FROM
+ *          pg_constraint
+ *        WHERE
+ *          pg_constraint.contype = 'f'
+ *          AND pg_constraint.conrelid = c.oid
+ *          AND a.attnum = any(pg_constraint.conkey)
  *       )
- *     ) AS "key",
- *     coalesce(
- *       (SELECT
- *          pg_attrdef.adsrc
- *        FROM
- *          pg_attrdef
- *        WHERE
- *          c.oid = pg_attrdef.adrelid
- *          AND a.attnum = pg_attrdef.adnum LIMIT 1),
- *     'NULL' ) AS "default",
- *     '' AS "extra",
- *     coalesce(
- *       (SELECT
+ *     ) AS "key",
+ *     coalesce(
+ *       (SELECT
+ *          pg_attrdef.adsrc
+ *        FROM
+ *          pg_attrdef
+ *        WHERE
+ *          c.oid = pg_attrdef.adrelid
+ *          AND a.attnum = pg_attrdef.adnum LIMIT 1),
+ *     'NULL' ) AS "default",
+ *     '' AS "extra",
+ *     coalesce(
+ *       (SELECT
  * 	    string_agg(privilege_type, ',')
- *        FROM
- *          information_schema.column_privileges
- *        WHERE
- *          column_privileges.table_name = c.relname
- *          AND column_privileges.column_name = a.attname
- *          AND column_privileges.grantee = (select current_user)
- *          AND column_privileges.is_grantable = 'YES' ),
- *     'NULL' ) AS "privileges",
- *     pg_catalog.col_description(c.oid, a.attnum) AS "comment"
- *   FROM pg_catalog.pg_namespace n,
- *     pg_catalog.pg_class c,
- *     pg_catalog.pg_attribute a,
- *     pg_catalog.pg_type t
- *   WHERE n.nspname = 'tst_schema'
- *     AND c.relname = 'txx'
- *     AND n.oid = c.relnamespace
- *     AND a.attrelid = c.oid
- *     AND a.atttypid = t.oid
- *     AND a.attnum > 0
- *     AND Privileges like '%SELECT%'
- *     AND [expr] // other option convery from like or where clause, "like" => where Columns = '%pattern%'
- *   ORDER BY a.attnum
+ *        FROM
+ *          information_schema.column_privileges
+ *        WHERE
+ *          column_privileges.table_name = c.relname
+ *          AND column_privileges.column_name = a.attname
+ *          AND column_privileges.grantee = (select current_user)
+ *          AND column_privileges.is_grantable = 'YES' ),
+ *     'NULL' ) AS "privileges",
+ *     pg_catalog.col_description(c.oid, a.attnum) AS "comment"
+ *   FROM pg_catalog.pg_namespace n,
+ *     pg_catalog.pg_class c,
+ *     pg_catalog.pg_attribute a,
+ *     pg_catalog.pg_type t
+ *   WHERE n.nspname = 'tst_schema'
+ *     AND c.relname = 'txx'
+ *     AND n.oid = c.relnamespace
+ *     AND a.attrelid = c.oid
+ *     AND a.atttypid = t.oid
+ *     AND a.attnum > 0
+ *     AND Privileges like '%SELECT%'
+ *     AND [expr] // other option convery from like or where clause, "like" => where Columns = '%pattern%'
+ *   ORDER BY a.attnum
  * )
  *
  * @param schemaName
@@ -713,7 +629,7 @@ SelectStmt *makeShowColumnsDirectQuery(char *schemaname, char *tablename, bool f
  *         'SHOW [FULL] {COLUMNS | FIELDS} {FROM | IN} tbl_name [{FROM | IN} db_name] [LIKE 'pattern' | WHERE expr]'.
  */
 SelectStmt* makeShowColumnsQuery(char *schemaname, char *tablename, char *optDbName,
-	                         bool fullmode, bool isLikeExpr,  Node* likeWhereOpt)
+	                         bool fullmode, bool isLikeExpr, Node* likeWhereOpt)
 {
     // optDbName adapted to used as schemaname
     if (optDbName != NULL) {
@@ -727,7 +643,6 @@ SelectStmt* makeShowColumnsQuery(char *schemaname, char *tablename, char *optDbN
     (void)plps_check_schema_or_table_valid(schemaname, tablename, FALSE); // check error exit
 
     RangeSubselect *rsubselect = makeNode(RangeSubselect);
-    SelectStmt *stmt  = makeNode(SelectStmt);
     Alias *alias = makeNode(Alias);
     /* sub select choose use smallcase column name */
     bool smallcase_beneath = TRUE; 
@@ -751,16 +666,8 @@ SelectStmt* makeShowColumnsQuery(char *schemaname, char *tablename, char *optDbN
     	tl = lappend(tl, plpsMakeNormalColumn(NULL, SHOW_PRIVILEGES_COL_S, SHOW_PRIVILEGES_COL));
     	tl = lappend(tl, plpsMakeNormalColumn(NULL, SHOW_COMMENT_COL_S, SHOW_COMMENT_COL));
     }
+    List* fl = list_make1(rsubselect);
 
-    stmt->targetList = tl;
-    stmt->fromClause = list_make1(rsubselect);
-    stmt->whereClause = NULL;
-    stmt->sortClause = NIL;
-    stmt->havingClause = NULL;
-    stmt->windowClause = NULL;
-    stmt->hintState = NULL;
-    stmt->hasPlus = FALSE;
-    
+    SelectStmt* stmt = plpsMakeSelectStmt(tl, fl, NULL, NULL);
     return stmt;
 }
-
