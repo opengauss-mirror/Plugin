@@ -69,6 +69,7 @@
         | DROP PRIMARY KEY [ RESTRICT | CASCADE ]
         | DROP FOREIGN KEY foreign_key_name [ RESTRICT | CASCADE ]
         | RENAME INDEX index_name to new_index_name
+        | ADD table_indexclause
     ```
     
 
@@ -358,6 +359,27 @@ ADD [ COLUMN ] column_name data_type [ compress_mode ] [ COLLATE collation ] [ c
     ALTER TABLE table_name FORCE;
     ```
 
+- **ADD table_indexclause**
+
+  在表上新增一个索引
+
+  ```
+  {INDEX | KEY} [index_name] [index_type] (key_part,...)
+  ```
+
+  其中参数index_type为：
+
+  ```
+  USING {BTREE | HASH | GIN | GIST | PSORT | UBTREE}
+  ```
+
+  其中参数key_part为：
+
+  ```
+  {col_name | (expr)} [ASC | DESC]
+  ```
+
+  ## 
 
 ## 参数说明<a name="zh-cn_topic_0283137126_zh-cn_topic_0237122076_zh-cn_topic_0059779051_sf4962205ddf84312a5fd888bc662e5cf"></a>
 

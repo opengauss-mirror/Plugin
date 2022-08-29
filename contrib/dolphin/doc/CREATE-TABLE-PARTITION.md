@@ -40,6 +40,7 @@
 -   对于分区表PARTITION FOR \(values\)语法，values只能是常量。
 -   对于分区表PARTITION FOR \(values\)语法，values在需要数据类型转换时，建议使用强制类型转换，以防隐式类型转换结果与预期不符。
 -   分区数最大值为1048575个，一般情况下业务不可能创建这么多分区，这样会导致内存不足。应参照参数local\_syscache\_threshold的值合理创建分区，分区表使用内存大致为（分区数 \* 3 / 1024）MB。理论上分区占用内存不允许大于local\_syscache\_threshold的值，同时还需要预留部分空间以供其他功能使用。
+-   使用table_indexclause创建分区表上的索引为LOCAL索引，不支持选择GLOBAL索引。
 
 ## 语法格式<a name="zh-cn_topic_0283136653_zh-cn_topic_0237122119_zh-cn_topic_0059777586_sa46c661c13834b8389614f75e47a3efa"></a>
 
@@ -48,6 +49,7 @@ CREATE TABLE [ IF NOT EXISTS ] partition_table_name
 ( [ 
     { column_name data_type [ COLLATE collation ] [ column_constraint [ ... ] ]
     | table_constraint
+    | table_indexclause
     | LIKE source_table [ like_option [...] ] }[, ... ]
 ] )
     [create_option]
@@ -96,12 +98,30 @@ CREATE TABLE [ IF NOT EXISTS ] partition_table_name
     [ DEFERRABLE | NOT DEFERRABLE | INITIALLY DEFERRED | INITIALLY IMMEDIATE ]
     ```
 
+- 创建表上索引table_indexclause：
 
--   like选项like\_option：
+  ```
+  {INDEX | KEY} [index_name] [index_type] (key_part,...)
+  ```
 
-    ```
-    { INCLUDING | EXCLUDING } { DEFAULTS | GENERATED | CONSTRAINTS | INDEXES | STORAGE | COMMENTS | RELOPTIONS| ALL }
-    ```
+- 其中参数index_type为：
+
+  ```
+  USING {BTREE | HASH | GIN | GIST | PSORT | UBTREE}
+  ```
+
+- 其中参数key_part为：
+
+  ```
+  {col_name | (expr)} [ASC | DESC]
+  ```
+
+
+- like选项like\_option：
+
+  ```
+  { INCLUDING | EXCLUDING } { DEFAULTS | GENERATED | CONSTRAINTS | INDEXES | STORAGE | COMMENTS | RELOPTIONS| ALL }
+  ```
 
 
 -   索引存储参数index\_parameters：
@@ -1008,7 +1028,7 @@ CREATE TABLE [ IF NOT EXISTS ] partition_table_name
     select * from test_part where ((99990 < c and c < 100000) or (219990 < c and c < 220000));
     select * from test_part where ((99990 < d and d < 100000) or (219990 < d and d < 220000));
     select * from test_part where ((99990 < b and b < 100000) or (219990 < b and b < 220000));
-
+    
     --测试rebuild分区表语法
     ALTER TABLE test_part REBUILD PARTITION p0, p1;
     --检查分区表系统信息和真实数据
@@ -1017,7 +1037,7 @@ CREATE TABLE [ IF NOT EXISTS ] partition_table_name
     select * from test_part where ((99990 < c and c < 100000) or (219990 < c and c < 220000));
     select * from test_part where ((99990 < d and d < 100000) or (219990 < d and d < 220000));
     select * from test_part where ((99990 < b and b < 100000) or (219990 < b and b < 220000));
-
+    
     --测试rebuild partition all分区表语法
     ALTER TABLE test_part REBUILD PARTITION all;
     --检查分区表系统信息和真实数据
@@ -1026,7 +1046,7 @@ CREATE TABLE [ IF NOT EXISTS ] partition_table_name
     select * from test_part where ((99990 < c and c < 100000) or (219990 < c and c < 220000));
     select * from test_part where ((99990 < d and d < 100000) or (219990 < d and d < 220000));
     select * from test_part where ((99990 < b and b < 100000) or (219990 < b and b < 220000));
-
+    
     --测试 repair check optimize 分区表语法
     ALTER TABLE test_part repair PARTITION p0,p1;
     ALTER TABLE test_part check PARTITION p0,p1;
@@ -1034,7 +1054,7 @@ CREATE TABLE [ IF NOT EXISTS ] partition_table_name
     ALTER TABLE test_part repair PARTITION all;
     ALTER TABLE test_part check PARTITION all;
     ALTER TABLE test_part optimize PARTITION all;
-
+    
     --测试 remove partitioning 语法
     select relname, boundaries from pg_partition where parentid in (select parentid from pg_partition where relname = 'test_part') order by relname;
     select parttype,relname from pg_class where relname = 'test_part' and relfilenode != oid;
@@ -1094,7 +1114,7 @@ CREATE TABLE [ IF NOT EXISTS ] partition_table_name
     --测试opengauss analyze partition语法
     analyze test_part1 partition (p1);
     ```
-
+    
     --兼容b database add, drop语法示例
     ```
     CREATE TABLE IF NOT EXISTS test_part2
@@ -1109,7 +1129,7 @@ CREATE TABLE [ IF NOT EXISTS ] partition_table_name
         PARTITION p2 VALUES LESS THAN (300),
         PARTITION p3 VALUES LESS THAN (400)
     );
-
+    
     CREATE TABLE IF NOT EXISTS test_subpart2
     (
     a int,
@@ -1157,6 +1177,74 @@ CREATE TABLE [ IF NOT EXISTS ] partition_table_name
     ALTER TABLE test_subpart2 DROP SUBPARTITION p0_2, p1_0, p1_2;
     select relname, boundaries from pg_partition where parentid in (select oid from pg_partition where parentid in (select parentid from pg_partition where relname = 'test_subpart2'));
     ```
+
+```
+-- 分区表建索引，在create table 中index默认为local,不支持指定global/local
+CREATE TABLE test_partition_btree
+(
+    f1  INTEGER,
+    f2  INTEGER,
+    f3  INTEGER,
+    key part_btree_idx using btree(f1)	
+)
+PARTITION BY RANGE(f1)
+(
+        PARTITION P1 VALUES LESS THAN(2450815),
+        PARTITION P2 VALUES LESS THAN(2451179),
+        PARTITION P3 VALUES LESS THAN(2451544),
+        PARTITION P4 VALUES LESS THAN(MAXVALUE)
+);
+
+-- 分区表建组合索引
+CREATE TABLE test_partition_index
+(
+    f1  INTEGER,
+    f2  INTEGER,
+    f3  INTEGER,
+    key part_btree_idx2 using btree(f1 desc, f2 asc)
+)
+PARTITION BY RANGE(f1)
+(
+        PARTITION P1 VALUES LESS THAN(2450815),
+        PARTITION P2 VALUES LESS THAN(2451179),
+        PARTITION P3 VALUES LESS THAN(2451544),
+        PARTITION P4 VALUES LESS THAN(MAXVALUE)
+);
+
+-- 分区表列存创建索引
+CREATE TABLE test_partition_column
+(
+    f1  INTEGER,
+    f2  INTEGER,
+    f3  INTEGER,
+    key part_column(f1)
+) with (ORIENTATION = COLUMN)
+PARTITION BY RANGE(f1)
+(
+        PARTITION P1 VALUES LESS THAN(2450815),
+        PARTITION P2 VALUES LESS THAN(2451179),
+        PARTITION P3 VALUES LESS THAN(2451544),
+        PARTITION P4 VALUES LESS THAN(MAXVALUE)
+);
+
+-- 分区表创建表达式索引
+CREATE TABLE test_partition_expr
+(
+    f1  INTEGER,
+    f2  INTEGER,
+    f3  INTEGER,
+    key part_expr_idx using btree((abs(f1)+1))
+)
+PARTITION BY RANGE(f1)
+(
+        PARTITION P1 VALUES LESS THAN(2450815),
+        PARTITION P2 VALUES LESS THAN(2451179),
+        PARTITION P3 VALUES LESS THAN(2451544),
+        PARTITION P4 VALUES LESS THAN(MAXVALUE)
+);
+```
+
+
 
 ## 相关链接<a name="zh-cn_topic_0283136653_zh-cn_topic_0237122119_zh-cn_topic_0059777586_s4e5ff679edd643b5a6cd6679fd1055a1"></a>
 

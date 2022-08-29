@@ -27,6 +27,7 @@
 CREATE [ [ GLOBAL | LOCAL ] [ TEMPORARY | TEMP ] | UNLOGGED ] TABLE [ IF NOT EXISTS ] table_name 
     ({ column_name data_type [ compress_mode ] [ COLLATE collation ] [ column_constraint [ ... ] ]
         | table_constraint
+        | table_indexclause
         | LIKE source_table [ like_option [...] ] }
         [, ... ])
     [create_option]
@@ -93,6 +94,23 @@ CREATE [ [ GLOBAL | LOCAL ] [ TEMPORARY | TEMP ] | UNLOGGED ] TABLE [ IF NOT EXI
     [ USING INDEX TABLESPACE tablespace_name ]
     ```
 
+- 创建表上索引table_indexclause：
+
+  ```
+  {INDEX | KEY} [index_name] [index_type] (key_part,...)
+  ```
+
+- 其中参数index_type为：
+
+  ```
+  USING {BTREE | HASH | GIN | GIST | PSORT | UBTREE}
+  ```
+
+- 其中参数key_part为：
+
+  ```
+  {col_name | (expr)} [ASC | DESC]
+  ```
 
 ## 参数说明<a name="zh-cn_topic_0283137629_zh-cn_topic_0237122117_zh-cn_topic_0059778169_s99cf2ac11c79436c93385e4efd7c4428"></a>
 
@@ -1048,6 +1066,53 @@ openGauss=# DROP TABLESPACE DS_TABLESPACE1;
 openGauss=# DROP SCHEMA IF EXISTS joe CASCADE;
 ```
 
+```
+--创建表上索引
+openGauss=# CREATE TABLE tpcds.warehouse_t24
+(
+    W_WAREHOUSE_SK            INTEGER               NOT NULL,
+    W_WAREHOUSE_ID            CHAR(16)              NOT NULL,
+    W_WAREHOUSE_NAME          VARCHAR(20)                   ,
+    W_WAREHOUSE_SQ_FT         INTEGER                       ,
+    W_STREET_NUMBER           CHAR(10)                      ,
+    W_STREET_NAME             VARCHAR(60)                   ,
+    W_STREET_TYPE             CHAR(15)                      ,
+    W_SUITE_NUMBER            CHAR(10)                      ,
+    W_CITY                    VARCHAR(60)                   ,
+    W_COUNTY                  VARCHAR(30)                   ,
+    W_STATE                   CHAR(2)                       ,
+    W_ZIP                     CHAR(10)                      ,
+    W_COUNTRY                 VARCHAR(20)                   ,
+    W_GMT_OFFSET              DECIMAL(5,2)                  ,
+    key (W_WAREHOUSE_SK)                                    ,
+    index idx_ID using btree (W_WAREHOUSE_ID)
+);
+
+--创建表上组合索引、表达式索引、函数索引
+openGauss=# CREATE TABLE tpcds.warehouse_t25
+(
+    W_WAREHOUSE_SK            INTEGER               NOT NULL,
+    W_WAREHOUSE_ID            CHAR(16)              NOT NULL,
+    W_WAREHOUSE_NAME          VARCHAR(20)                   ,
+    W_WAREHOUSE_SQ_FT         INTEGER                       ,
+    W_STREET_NUMBER           CHAR(10)                      ,
+    W_STREET_NAME             VARCHAR(60)                   ,
+    W_STREET_TYPE             CHAR(15)                      ,
+    W_SUITE_NUMBER            CHAR(10)                      ,
+    W_CITY                    VARCHAR(60)                   ,
+    W_COUNTY                  VARCHAR(30)                   ,
+    W_STATE                   CHAR(2)                       ,
+    W_ZIP                     CHAR(10)                      ,
+    W_COUNTRY                 VARCHAR(20)                   ,
+    W_GMT_OFFSET              DECIMAL(5,2)                  ,
+    key using btree (W_WAREHOUSE_SK, W_WAREHOUSE_ID desc)   ,
+    index idx_SQ_FT using btree ((abs(W_WAREHOUSE_SQ_FT)))  ,
+    key idx_SK using btree ((abs(W_WAREHOUSE_SK)+1))
+);
+```
+
+
+
 ## 相关链接<a name="zh-cn_topic_0283137629_zh-cn_topic_0237122117_zh-cn_topic_0059778169_scd5caca899f849f697cb50d76c49de4c"></a>
 
 [ALTER TABLE](ALTER-TABLE.md)，[DROP TABLE](DROP-TABLE.md)，[CREATE TABLESPACE](CREATE-TABLESPACE.md)
@@ -1108,5 +1173,4 @@ openGauss=# DROP SCHEMA IF EXISTS joe CASCADE;
 -   ORIENTATION COLUMN
   
     -   创建列存表，列存储适合于数据仓库业务，此类型的表上会做大量的汇聚计算，且涉及的列操作较少。
-
 

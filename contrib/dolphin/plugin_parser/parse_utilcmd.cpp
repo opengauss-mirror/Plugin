@@ -157,6 +157,8 @@ static void transformFKConstraints(CreateStmtContext* cxt, bool skipValidation, 
 static void transformConstraintAttrs(CreateStmtContext* cxt, List* constraintList);
 static void transformColumnType(CreateStmtContext* cxt, ColumnDef* column);
 static void setSchemaName(char* context_schema, char** stmt_schema_name);
+static void transformTableIndex(CreateStmtContext* cxt);
+static void transformIndexNode(IndexStmt* index, CreateStmtContext* cxt, bool mustGlobal);
 /*
  * @hdfs
  * The following three functions are used for HDFS foreign talbe constraint.
@@ -371,6 +373,7 @@ Oid *namespaceid, bool isFirstNode)
     cxt.fkconstraints = NIL;
     cxt.ixconstraints = NIL;
     cxt.clusterConstraints = NIL;
+    cxt.tableindex = NIL;
     cxt.inh_indexes = NIL;
     cxt.blist = NIL;
     cxt.alist = NIL;
@@ -445,6 +448,10 @@ Oid *namespaceid, bool isFirstNode)
 
             case T_Constraint:
                 transformTableConstraint(&cxt, (Constraint*)element);
+                break;
+
+            case T_IndexStmt:
+                cxt.tableindex = lappend(cxt.tableindex, (IndexStmt*)element);
                 break;
 
             case T_TableLikeClause:
@@ -623,6 +630,7 @@ Oid *namespaceid, bool isFirstNode)
         }
     }
 #endif
+    transformTableIndex(&cxt);
     /*
      * transformIndexConstraints wants cxt.alist to contain only index
      * statements, so transfer anything we already have into saveAlist.
@@ -2816,6 +2824,120 @@ static bool IsPartitionKeyAllInParmaryKeyAndUniqueKey(const List *partitionKey, 
 }
 
 /*
+* For create index in CREATE TABLE/ ALTER TABLE stmt, we just have a list of column names and expressions.
+*
+* Make sure referenced columns exist. (Although we could leave
+* it to DefineIndex to mark the columns NOT NULL, it's more efficient to
+* get it right the first time.)
+*/
+static void transformTableIndex(CreateStmtContext* cxt)
+{
+    IndexStmt* index = NULL;
+    ListCell* lc = NULL;
+    if (cxt->tableindex != NIL) {
+        foreach (lc, cxt->tableindex) {
+            index = (IndexStmt*)lfirst(lc);
+            AssertEreport(IsA(index, IndexStmt), MOD_OPT, "");
+
+            /*
+            * While sql_compatibility is B, only supported create local partition index in CREATE TABLE/ALTER TABLE stmt.
+            * Global partition indexes are not supported expressions index.
+            * The indexes can be expressions.
+            */
+            bool mustGlobal = false;
+            transformIndexNode(index, cxt, mustGlobal);
+	    if (index != NULL) {
+            	cxt->alist = lappend(cxt->alist, index);
+            }
+        }
+    }
+}
+
+static void transformIndexNode(IndexStmt* index, CreateStmtContext* cxt, bool mustGlobal)
+{
+    ListCell* lc = NULL;
+    List* indexElementsColumn = NIL;
+    List* indexElementsExpr = NIL;
+
+    /* DefineIndex will choose name */
+    if (index->idxname != NULL) {
+        index->idxname = pstrdup(index->idxname);
+    }
+
+    index->relation = cxt->relation;
+    index->idxcomment = NULL;
+    index->indexOid = InvalidOid;
+    index->oldNode = InvalidOid;
+    index->oldPSortOid = InvalidOid;
+    index->concurrent = false;
+    index->isPartitioned = cxt->ispartitioned;
+    index->isGlobal = mustGlobal;
+
+    /*
+     * @hdfs
+     * The foreign table dose not have index. the HDFS foreign table has informational
+     * constraint which is not a index.
+     * If the partition foreign table will support real index, the following code must
+     * be modified.
+     */
+    if (0 == pg_strncasecmp(cxt->stmtType, CREATE_FOREIGN_TABLE, strlen(cxt->stmtType)) ||
+        0 == pg_strncasecmp(cxt->stmtType, ALTER_FOREIGN_TABLE, strlen(cxt->stmtType))) {
+        index->isPartitioned = false;
+    } else {
+        index->isPartitioned = cxt->ispartitioned;
+    }
+
+    /* Process the column-or-expression to be indexed.Make sure referenced keys exist. */
+    foreach (lc, index->indexParams) {
+        IndexElem* iparam = (IndexElem*)lfirst(lc);
+
+        /* check index column */
+        if (iparam->name != NULL) {
+            char* columnName = iparam->name;
+            bool found = false;
+            ColumnDef* column = NULL;
+            ListCell* columns = NULL;
+
+            foreach (columns, cxt->columns) {
+                column = (ColumnDef*)lfirst(columns);
+                AssertEreport(IsA(column, ColumnDef), MOD_OPT, "");
+                if (strcmp(column->colname, columnName) == 0) {
+                    found = true;
+                    break;
+                }
+            }
+
+            /*
+            * In the ALTER TABLE case, don't complain about index keys not
+            * created in the command; they may well exist already. DefineIndex
+            * will complain about them if not.
+            */
+            if (!found && !cxt->isalter)
+                ereport(ERROR,
+                    (errcode(ERRCODE_UNDEFINED_COLUMN),
+                        errmsg("column \"%s\" does not exist", columnName)));
+
+            /* check duplicate column name like (foo,foo) */
+            if (IsElementExisted(indexElementsColumn, iparam)) {
+                ereport(ERROR, (errcode(ERRCODE_DUPLICATE_COLUMN), errmsg("duplicate column name")));
+            }
+            indexElementsColumn = lappend(indexElementsColumn, iparam);
+        } else if (iparam->expr != NULL) {
+            /* check index expr */
+
+            /* only check duplicate expr name like (foo,foo), other verification is performed after transformExpr */
+            if (IsElementExisted(indexElementsExpr, iparam)) {
+                ereport(ERROR, (errcode(ERRCODE_DUPLICATE_COLUMN), errmsg("duplicate column name")));
+            }
+            indexElementsExpr = lappend(indexElementsExpr, iparam);
+        }
+    }
+
+    list_free(indexElementsColumn);
+    list_free(indexElementsExpr);
+}
+
+/*
  * transformIndexConstraints
  *		Handle UNIQUE, PRIMARY KEY, EXCLUDE constraints, which create indexes.
  *		We also merge in any index definitions arising from
@@ -4200,6 +4322,7 @@ List* transformAlterTableStmt(Oid relid, AlterTableStmt* stmt, const char* query
     cxt.fkconstraints = NIL;
     cxt.ixconstraints = NIL;
     cxt.clusterConstraints = NIL;
+    cxt.tableindex = NIL;
     cxt.inh_indexes = NIL;
     cxt.blist = NIL;
     cxt.alist = NIL;
@@ -4270,6 +4393,9 @@ List* transformAlterTableStmt(Oid relid, AlterTableStmt* stmt, const char* query
                         (errcode(ERRCODE_UNRECOGNIZED_NODE_TYPE),
                             errmodule(MOD_OPT),
                             errmsg("unrecognized node type: %d", (int)nodeTag(cmd->def))));
+                break;
+            case AT_AddIndex:
+                cxt.tableindex = lappend(cxt.tableindex, (IndexStmt*)cmd->def);
                 break;
 
             case AT_ProcessedConstraint:
@@ -4460,6 +4586,7 @@ List* transformAlterTableStmt(Oid relid, AlterTableStmt* stmt, const char* query
         }
     }
 
+    transformTableIndex(&cxt);
     /*
      * transformIndexConstraints wants cxt.alist to contain only index
      * statements, so transfer anything we already have into save_alist
