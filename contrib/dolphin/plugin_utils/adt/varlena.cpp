@@ -50,6 +50,7 @@
 #include "catalog/pg_type.h"
 #include "workload/cpwlm.h"
 #include "utils/varbit.h"
+#include "plugin_commands/mysqlmode.h"
 
 #define JUDGE_INPUT_VALID(X, Y) ((NULL == (X)) || (NULL == (Y)))
 #define GET_POSITIVE(X) ((X) > 0 ? (X) : ((-1) * (X)))
@@ -240,6 +241,9 @@ extern "C" DLL_PUBLIC Datum space_string(PG_FUNCTION_ARGS);
 
 PG_FUNCTION_INFO_V1_PUBLIC(m_char);
 extern "C" DLL_PUBLIC Datum m_char(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1_PUBLIC(text_insert);
+extern "C" DLL_PUBLIC Datum text_insert(PG_FUNCTION_ARGS);
 
 /*****************************************************************************
  *	 CONVERSION ROUTINES EXPORTED FOR USE BY C CODE							 *
@@ -1425,6 +1429,61 @@ Datum text_substr_no_len_orclcompat(PG_FUNCTION_ARGS)
         PG_RETURN_NULL();
     else
         return result;
+}
+
+/*
+ * text_insert
+ */
+static text* text_insert_func(text* t1, text* t2, int sp, int sl)
+{
+    text* result = NULL;
+    text* s1 = NULL;
+    text* s2 = NULL;
+    int sp_pl_sl;
+    int len_t1;
+
+    len_t1 = text_length((Datum)t1);
+    if (sp <= 0 || sp > len_t1 || pg_add_s32_overflow(sp, sl, &sp_pl_sl))
+        return t1;
+
+    s1 = text_substring(PointerGetDatum(t1), 1, sp - 1, false);
+    s2 = text_substring(PointerGetDatum(t1), sp_pl_sl, -1, true);
+    result = text_catenate(s1, t2);
+    if (sl >= 0)
+        result = text_catenate(result, s2);
+
+    return result;
+}
+
+int int64_to_int(int64 l_num)
+{
+    int i_num;
+    if (l_num > PG_INT32_MAX) {
+        if (!SQL_MODE_STRICT())
+            i_num = PG_INT32_MAX;
+        else
+            ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("integer out of range")));
+    } else if (l_num <= PG_INT32_MIN) { /* PG_INT32_MIN is a special one during the longlong conversion int, so exclude it */
+        if (!SQL_MODE_STRICT())
+            i_num = PG_INT32_MIN;
+        else
+            ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("integer out of range")));
+    } else
+        i_num = l_num;
+    return i_num;
+}
+
+Datum text_insert(PG_FUNCTION_ARGS)
+{
+    text *str = PG_GETARG_TEXT_PP(0);
+    int64 position = PG_GETARG_INT64(1); /* substring start position */
+    int64 length = PG_GETARG_INT64(2); /* substring length */
+    text *newstr = PG_GETARG_TEXT_PP(3);
+
+    int sp = int64_to_int(position);
+    int sl = int64_to_int(length);
+
+    PG_RETURN_TEXT_P(text_insert_func(str, newstr, sp, sl));
 }
 
 /*
