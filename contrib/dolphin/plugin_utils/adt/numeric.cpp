@@ -233,7 +233,7 @@ static void compute_bucket(
     Numeric operand, Numeric bound1, Numeric bound2, NumericVar* count_var, NumericVar* result_var);
 
 extern Numeric int64_to_numeric(int64 v);
-extern const char* use_extract_numericstr(const char* str);
+extern const char* extract_numericstr(const char* str);
 /*
  * @Description: call corresponding big integer operator functions.
  *
@@ -19327,7 +19327,7 @@ Datum crc32(PG_FUNCTION_ARGS)
     PG_RETURN_UINT32(result);
 }
 
-static int conv_n(char *result, int128 data, int from_base_s, int to_base_s)
+int conv_n(char *result, int128 data, int from_base_s, int to_base_s)
 {
     uint64 sum = 0;
     int64 sum_s = 0;
@@ -19559,8 +19559,6 @@ Datum bin_integer(PG_FUNCTION_ARGS)
     PG_RETURN_TEXT_P(cstring_to_text(result));
 }
 
-extern const char* use_extract_numericstr(const char* str);
-
 Datum bin_string(PG_FUNCTION_ARGS)
 {
     Oid typeOutput;
@@ -19577,9 +19575,8 @@ Datum bin_string(PG_FUNCTION_ARGS)
     char* tmp = NULL;
     tmp = DatumGetCString(DirectFunctionCall1(textout, txt));
     getTypeOutputInfo(fcinfo->argTypes[0], &typeOutput, &typIsVarlena);
-    tmp = (char*)use_extract_numericstr(OidOutputFunctionCall(typeOutput, fcinfo->arg[0]));
+    tmp = (char*)extract_numericstr(OidOutputFunctionCall(typeOutput, fcinfo->arg[0]));
     num = conv_numeric_int128(DatumGetNumeric(DirectFunctionCall3(numeric_in, CStringGetDatum(tmp), ObjectIdGetDatum(0), Int32GetDatum(-1))));
-    pfree_ext(tmp);
     if (num == 0) {
         PG_RETURN_TEXT_P(cstring_to_text("0"));
     } else {
@@ -19594,14 +19591,4 @@ Datum bin_bool(PG_FUNCTION_ARGS)
 {
     const char* res = PG_GETARG_BOOL(0) ? "1" : "0";
     PG_RETURN_TEXT_P(cstring_to_text(res));
-}
-
-char* conv_binary_to_int(char* result, int128 data)
-{
-    
-    int from_base = 2;
-    int to_base = 10;
-    int ret;
-    ret = conv_n(result, data, from_base, to_base);
-    return result;
 }

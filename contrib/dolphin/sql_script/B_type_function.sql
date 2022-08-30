@@ -32,3 +32,13 @@ CREATE OR REPLACE FUNCTION pg_catalog.chara(variadic arr "any") returns text LAN
 
 DROP FUNCTION IF EXISTS pg_catalog.insert(text, integer, integer, text) CASCADE;
 CREATE FUNCTION pg_catalog.insert (text, bigint, bigint, text) RETURNS text LANGUAGE C IMMUTABLE  as '$libdir/dolphin',  'text_insert';
+
+DROP FUNCTION IF EXISTS pg_catalog.char_length(bool) cascade;
+CREATE OR REPLACE FUNCTION pg_catalog.char_length(bool) returns int4 LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'boolcharlen';
+DROP FUNCTION IF EXISTS pg_catalog.char_length(bit) cascade;
+CREATE OR REPLACE FUNCTION pg_catalog.char_length(bit) returns int4 LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'c_bitoctetlength';
+
+DROP FUNCTION IF EXISTS pg_catalog.character_length(bool) cascade;
+CREATE OR REPLACE FUNCTION pg_catalog.character_length(bool) returns int4 LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'boolcharlen';
+DROP FUNCTION IF EXISTS pg_catalog.character_length(bit) cascade;
+CREATE OR REPLACE FUNCTION pg_catalog.character_length(bit) returns int4 LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'c_bitoctetlength';

@@ -67,7 +67,7 @@
 #define CONV_MAX_CHAR_LEN 65 //max 64bit and 1 sign bit
 static int getResultPostionReverse(text* textStr, text* textStrToSearch, int32 beginIndex, int occurTimes);
 static int getResultPostion(text* textStr, text* textStrToSearch, int32 beginIndex, int occurTimes);
-extern char* conv_binary_to_int(char* result, int128 data);
+extern int conv_n(char *result, int128 data, int from_base_s, int to_base_s);
 
 extern Numeric int64_to_numeric(int64 v);
 static int get_step_len(unsigned char ch);
@@ -246,6 +246,9 @@ extern "C" DLL_PUBLIC Datum space_string(PG_FUNCTION_ARGS);
 
 PG_FUNCTION_INFO_V1_PUBLIC(m_char);
 extern "C" DLL_PUBLIC Datum m_char(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1_PUBLIC(boolcharlen);
+extern "C" DLL_PUBLIC Datum boolcharlen(PG_FUNCTION_ARGS);
 
 PG_FUNCTION_INFO_V1_PUBLIC(text_insert);
 extern "C" DLL_PUBLIC Datum text_insert(PG_FUNCTION_ARGS);
@@ -7768,7 +7771,8 @@ static double numeric_to_double_no_overflow(Numeric num)
 }
 
 
-static StringInfoData char_deal(StringInfoData str, uint32 quotient, uint32 remainder, uint32 remainders[], uint32 times) {
+static StringInfoData char_deal(StringInfoData str, uint32 quotient, uint32 remainder, uint32 remainders[], uint32 times)
+{
     if (quotient >= MAX_CHARA_THRESHOLD) {
         while (quotient >= MAX_CHARA_THRESHOLD) {
             times++;
@@ -7808,13 +7812,14 @@ static text* _m_char(FunctionCallInfo fcinfo)
     uint32 remainders[MAX_CHARA_REMINDERS_LEN] = { 0 };
     uint32 times = 0;
     initStringInfo(&str);
-    appendBinaryStringInfo(&str, "", 0);
     char* date_string = NULL;
     for (int i = 0; i < PG_NARGS(); i++) {
         if (!PG_ARGISNULL(i)) {
             Datum value = PG_GETARG_DATUM(i);
             int128 ret_round;
             Oid valtype;
+            char* badp = NULL;
+            long result_l;
             valtype = get_fn_expr_argtype(fcinfo->flinfo, i);
             switch (valtype) {
                 case INT4OID:
@@ -7850,8 +7855,11 @@ static text* _m_char(FunctionCallInfo fcinfo)
                 case DATEOID:
                     date_string = DatumGetCString(DirectFunctionCall1(date_out, PG_GETARG_DATEADT(i)));
                     del_char(date_string, '-');
-                    value = atoi(date_string);
-                    quotient = (uint32)value;
+                    result_l = strtol(date_string, &badp, 10);
+                    if (date_string == badp) {
+                        result_l = 0;
+                    }
+                    quotient = (uint32)result_l;
                     str = char_deal(str, quotient, remainder, remainders, times);
                     break;
                 case TIMESTAMPOID:
@@ -7872,8 +7880,11 @@ static text* _m_char(FunctionCallInfo fcinfo)
                     break;
                 default:
                     if (isNumeric((char*)value)) {
-                        value = atoi((char*)value);
-                        quotient = (uint32)value;
+                        result_l = strtol((char*)value, &badp, 10);
+                        if ((char*)value == badp) {
+                            result_l = 0;
+                        }
+                        quotient = (uint32)result_l;
                         str = char_deal(str, quotient, remainder, remainders, times);
                     } else {
                         value = floor(atof((char*)value));
@@ -7905,27 +7916,39 @@ text* _elt(int idx, PG_FUNCTION_ARGS)
     bool typIsVarlena;
     Oid valtype;
     valtype = get_fn_expr_argtype(fcinfo->flinfo, idx);
-    StringInfoData str;
     uint32 remainder = 0;
     uint32 remainders[MAX_CHARA_REMINDERS_LEN] = { 0 };
     uint32 times = 0;
-    initStringInfo(&str);
-    appendBinaryStringInfo(&str, "", 0);
     char result_chr[CONV_MAX_CHAR_LEN + 1] = "";
-    char* ret = NULL;
+    int ret;
     if (NULL == fcinfo->arg[idx]) {
         return NULL;
     } else {
         getTypeOutputInfo(fcinfo->argTypes[idx], &typeOutput, &typIsVarlena);
         char* str_value = OidOutputFunctionCall(typeOutput, fcinfo->arg[idx]);
         result = cstring_to_text(str_value);
-        if (BITOID == valtype) { 
-            ret = conv_binary_to_int(result_chr, (int128)atoi(str_value));
-            str = char_deal(str, (uint32)atoi(ret), remainder, remainders, times);
+        if (BITOID == valtype) {
+            int from_base = 2;
+            int to_base = 10;
+            char* badp = NULL;
+            long result_l;
+            result_l = strtol(str_value, &badp, 10);
+            if (str_value == badp) {
+                result_l = 0;
+            }
+            ret = conv_n(result_chr, (int128)result_l, from_base, to_base);
+            StringInfoData str;
+            initStringInfo(&str);
+            badp = NULL;
+            result_l = strtol(result_chr, &badp, 10);
+            if (result_chr == badp) {
+                result_l = 0;
+            }
+            str = char_deal(str, (uint32)result_l, remainder, remainders, times);
             result = cstring_to_text(str.data);
+            pfree_ext(str.data);
         }
     } 
-    pfree_ext(str.data); 
     return result;
 }
 
@@ -7955,7 +7978,7 @@ Datum elt_string(PG_FUNCTION_ARGS)
     PG_RETURN_TEXT_P(result);
 }
 
-static const char* extract_numericstr(const char* str)
+const char* extract_numericstr(const char* str)
 {
     const char* cp = NULL;
     bool have_digit = false;
@@ -7963,12 +7986,8 @@ static const char* extract_numericstr(const char* str)
     char* dest = NULL;
     int len_of_numericstr = 0;
     cp = str;
-    while (*cp) {
-        if (isdigit((unsigned char)*cp) || (*cp == '.')) {
-            break;
-        } else {
-            return "0";
-        }
+    if (*cp && !isdigit((unsigned char)*cp) && *cp != '.') {
+        return "0";
     }
     while (*cp) {
         if (isdigit((unsigned char)*cp)) {
@@ -7982,19 +8001,45 @@ static const char* extract_numericstr(const char* str)
     }
     if (have_digit && have_post_char) {
         dest = (char*)palloc0((len_of_numericstr+1) * sizeof(char));
-        for (int i = 0; i < len_of_numericstr; i++) {
-            dest[i] = str[i];
-        }
-        dest[len_of_numericstr] = '\0';
+        errno_t rc = strncpy_s(dest, len_of_numericstr + 1, str, len_of_numericstr);
+        securec_check(rc, "\0", "\0");
         return dest;
     } else if (have_digit) {
         return str;
     }
+    return "0";
 }
 
 static char* numeric_to_cstring(Numeric n)
 {
     return DatumGetCString(DirectFunctionCall1(numeric_out, NumericGetDatum(n)));
+}
+
+static double conv_typ_to_double(PG_FUNCTION_ARGS, int i)
+{
+    double result;
+    Oid typeOutput;
+    bool typIsVarlena;
+    Oid valtype;
+    bool tmp;
+
+    switch (fcinfo->argTypes[i]) {
+        case NUMERICOID:
+            result = numeric_to_double_no_overflow(PG_GETARG_NUMERIC(i));
+            break;
+        case INT4OID:
+            result = numeric_to_double_no_overflow(int64_to_numeric(PG_GETARG_DATUM(i)));
+            break;
+        case BOOLOID:
+            tmp = PG_GETARG_BOOL(i);
+            result = tmp ? 1.0 : 0.0;
+            break;
+        default:
+           getTypeOutputInfo(fcinfo->argTypes[i], &typeOutput, &typIsVarlena);
+           result = strtod(extract_numericstr(OidOutputFunctionCall(typeOutput, fcinfo->arg[i])), NULL);
+           break;
+    }
+    return result;
 }
 
 Datum field(PG_FUNCTION_ARGS)
@@ -8003,7 +8048,6 @@ Datum field(PG_FUNCTION_ARGS)
     Oid typeOutput;
     bool typIsVarlena;
     Oid valtype;
-    bool tmp;
     int number_cnt = 0;
     double first_arg;
     double match_arg;
@@ -8020,40 +8064,10 @@ Datum field(PG_FUNCTION_ARGS)
                 }
             }
             if (number_cnt <= PG_NARGS() && number_cnt > 0) {
-                switch (fcinfo->argTypes[0]) {
-                    case NUMERICOID:
-                        first_arg = numeric_to_double_no_overflow(PG_GETARG_NUMERIC(0));
-                        break;
-                    case INT4OID:
-                        first_arg = numeric_to_double_no_overflow(int64_to_numeric(PG_GETARG_DATUM(0)));
-                        break;
-                    case BOOLOID:
-                        tmp = PG_GETARG_BOOL(0);
-                        first_arg = tmp ? 1.0 : 0.0;
-                        break;
-                    default:
-                       getTypeOutputInfo(fcinfo->argTypes[0], &typeOutput, &typIsVarlena);
-                       first_arg = strtod(extract_numericstr(OidOutputFunctionCall(typeOutput, fcinfo->arg[0])), NULL);
-                       break;
-                }
+                first_arg = conv_typ_to_double(fcinfo, 0);
                 for (int i = 1; i < PG_NARGS(); i++) {
                     if (!PG_ARGISNULL(i)) {
-                        switch (fcinfo->argTypes[i]) {
-                            case NUMERICOID:
-                                match_arg = numeric_to_double_no_overflow(PG_GETARG_NUMERIC(i));
-                                break;
-                            case INT4OID:
-                                match_arg = numeric_to_double_no_overflow(int64_to_numeric(PG_GETARG_DATUM(i)));
-                                break;
-                            case BOOLOID:
-                                tmp = PG_GETARG_BOOL(0);
-                                match_arg = tmp ? 1.0 : 0.0;
-                                break;
-                            default:
-                               getTypeOutputInfo(fcinfo->argTypes[i], &typeOutput, &typIsVarlena);
-                               match_arg = strtod(extract_numericstr(OidOutputFunctionCall(typeOutput, fcinfo->arg[i])), NULL);
-                               break;
-                        }
+                        match_arg = conv_typ_to_double(fcinfo, i);
                         if (first_arg == match_arg) {
                             result = i;
                             break;
@@ -8210,6 +8224,31 @@ char* set_space(int32 num)
     return result;
 }
 
+Datum soundex_difference(PG_FUNCTION_ARGS)
+{
+    char* arg1 = text_to_cstring(PG_GETARG_TEXT_P(0));
+    char* arg2 = text_to_cstring(PG_GETARG_TEXT_P(1));
+    int str_len1 = strlen(arg1) +1, str_len2 = strlen(arg2) + 1;
+    int min_sound_len = 5;
+    int i;
+
+    char* result1 = (char*)palloc(Max(str_len1, min_sound_len));
+    char* result2 = (char*)palloc(Max(str_len2, min_sound_len));
+    set_sound(arg1, result1, strlen(arg1));
+    set_sound(arg2, result2, strlen(arg2));
+
+    for (i = 0; i < SOUND_THRESHOLD; i++) {
+        if (result1[i] != result2[i]) {
+            pfree_ext(result1);
+            pfree_ext(result2);
+            PG_RETURN_INT32(0);
+        }
+    }
+    pfree_ext(result1);
+    pfree_ext(result2);
+    PG_RETURN_INT32(1);
+}
+
 Datum space_integer(PG_FUNCTION_ARGS)
 {
     int32 num = (int32)PG_GETARG_INT32(0);
@@ -8241,29 +8280,4 @@ Datum space_string(PG_FUNCTION_ARGS)
     } else {
         PG_RETURN_NULL();
     }
-}
-
-Datum soundex_difference(PG_FUNCTION_ARGS)
-{
-    char* arg1 = text_to_cstring(PG_GETARG_TEXT_P(0));
-    char* arg2 = text_to_cstring(PG_GETARG_TEXT_P(1));
-    int str_len1 = strlen(arg1) +1, str_len2 = strlen(arg2) + 1;
-    int min_sound_len = 5;
-    int i;
-
-    char* result1 = (char*)palloc(Max(str_len1, min_sound_len));
-    char* result2 = (char*)palloc(Max(str_len2, min_sound_len));
-    set_sound(arg1, result1, strlen(arg1));
-    set_sound(arg2, result2, strlen(arg2));
-
-    for (i = 0; i < SOUND_THRESHOLD; i++) {
-        if (result1[i] != result2[i]) {
-            pfree_ext(result1);
-            pfree_ext(result2);
-            PG_RETURN_INT32(0);
-        }
-    }
-    pfree_ext(result1);
-    pfree_ext(result2);
-    PG_RETURN_INT32(1);
 }

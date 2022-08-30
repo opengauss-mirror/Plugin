@@ -65,7 +65,7 @@ select soundex('!!!!!！！jhdgj');
 select soundex(null);
  soundex 
 ---------
-
+ 
 (1 row)
 
 select soundex('12,xa');
@@ -125,7 +125,7 @@ select '中Adfab' sounds like '@adp';
 select 1 sounds like 2;
  soundex_difference 
 --------------------
-                  0
+                  1
 (1 row)
 
 select true sounds like 3;

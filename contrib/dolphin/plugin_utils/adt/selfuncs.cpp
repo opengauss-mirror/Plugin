@@ -8880,6 +8880,7 @@ double get_windowagg_selectivity(PlannerInfo* root, WindowClause* wc, WindowFunc
     return selec;
 }
 
-double use_convert_timevalue_to_scalar(Datum value, Oid typid) {
+double use_convert_timevalue_to_scalar(Datum value, Oid typid)
+{
     return convert_timevalue_to_scalar(value, typid);
 }

@@ -118,9 +118,9 @@ IntervalStylePack g_interStyleVal = {"a"};
 	} while (0)
 
 #define RESET_ACONST_STRING(Arg, T, V) \
-	if (T == T_String && NULL != V) { \
-		Arg->val.val.str = V; \
-	}
+    if (T == T_String && NULL != V) { \
+        Arg->val.val.str = V; \
+    }
 
 #define RESET_ACONST_INTEGER(Arg, T) \
 	if (T == T_BitString) { \
@@ -182,7 +182,7 @@ typedef struct PrivTarget
 } PrivTarget;
 
 typedef struct CreateTableOptions {
-  List *inhRelations;	         /* relations to inherit from (list of
+  List *inhRelations;             /* relations to inherit from (list of
                                     * inhRelation) */
   List *options;                  /* options from WITH clause */
   OnCommitAction oncommit;        /* what do we do at COMMIT? */
@@ -29781,10 +29781,8 @@ static char* extract_numericstr(const char* str)
 	}
 	if (have_digit && have_post_char){
 		dest = (char*)palloc0((len_of_numericstr+1)*sizeof(char));
-		for (int i = 0; i < len_of_numericstr; i++) {
-			dest[i] = str[digit_begin_index++];
-		}
-		dest[len_of_numericstr] = '\0';
+        errno_t rc = strncpy_s(dest, len_of_numericstr + 1, str + digit_begin_index, len_of_numericstr);
+        securec_check(rc, "\0", "\0");
 		return dest;
 	}
 	return NULL;
@@ -29928,4 +29926,3 @@ static void with_rollup_check_elems_count(Node* expr)
 
 #undef yylex
 #include "scan.inc"
-
