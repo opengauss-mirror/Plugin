@@ -54,6 +54,7 @@
 #include "utils/builtins.h"
 #include <ctype.h>
 #include <limits.h>
+#include <port.h>
 
 #include "catalog/index.h"
 #include "catalog/namespace.h"
@@ -201,7 +202,10 @@ typedef enum {
     OPT_COMPRESSION,
     OPT_TABLESPACE,
     OPT_ENGINE,
-    OPT_PARTITIONELEMENT
+    OPT_PARTITIONELEMENT,
+    OPT_COLLATE,
+    OPT_CHARSET,
+    OPT_ROW_FORMAT
 } TableOptionType;
 
 typedef struct SingleTableOption {
@@ -242,6 +246,11 @@ IndexOptionType option_type;
         char *char_content;
     } option;
 } SingleIndexOption;
+
+typedef struct IndexMethodRelationClause {
+	char* accessMethod;
+	RangeVar* relation;
+} IndexMethodTargetClause;
 
 typedef struct OptLikeWhere
 {
@@ -367,6 +376,7 @@ static FuncCall* MakePriorAsFunc();
 static Node* MakeSetPasswdStmt(char* user, char* passwd, char* replace_passwd);
 static Node* MakeKillStmt(int kill_opt, Node *expr);
 static Node* makeAnalyzeTableList(List *rangeVars);
+static void with_rollup_check_elems_count(Node* expr);
 
 #ifndef ENABLE_MULTIPLE_NODES
 static bool CheckWhetherInColList(char *colname, List *col_list);
@@ -437,11 +447,13 @@ static int errstate;
 	struct SingleTableOption	*singletableoption;
 	struct CreateIndexOptions	*createindexoptions;
 	struct SingleIndexOption	*singleindexoption;
+	struct IndexMethodRelationClause *indexmethodrelationclause;
 }
 %type <singletableoption> CreateOption CreateIfNotExistsOption CreateAsOption
 %type <createtableoptions> CreateOptionList CreateIfNotExistsOptionList CreateAsOptionList
 %type <singleindexoption> TableIndexOption PartitionTableIndexOption
 %type <createindexoptions> TableIndexOptionList PartitionTableIndexOptionList
+%type <indexmethodrelationclause> index_method_relation_clause
 %type <node>	stmt schema_stmt
 		AlterDatabaseStmt AlterDatabaseSetStmt AlterDataSourceStmt AlterDomainStmt AlterEnumStmt
 		AlterFdwStmt AlterForeignServerStmt AlterGroupStmt AlterSchemaStmt
@@ -470,7 +482,7 @@ static int errstate;
 		CreateFunctionStmt CreateProcedureStmt CreatePackageStmt CreatePackageBodyStmt AlterFunctionStmt AlterProcedureStmt ReindexStmt RemoveAggrStmt
 		RemoveFuncStmt RemoveOperStmt RemovePackageStmt RenameStmt RevokeStmt RevokeRoleStmt RevokeDbStmt
 		RuleActionStmt RuleActionStmtOrEmpty RuleStmt
-		SecLabelStmt SelectStmt TimeCapsuleStmt TransactionStmt TruncateStmt CallFuncStmt
+		SecLabelStmt SelectStmt SelectStmtWithoutWithClause TimeCapsuleStmt TransactionStmt TruncateStmt CallFuncStmt
 		UnlistenStmt UpdateStmt VacuumStmt
 		VariableResetStmt VariableSetStmt VariableShowStmt VerifyStmt ShutdownStmt
 		UseStmt
@@ -506,7 +518,7 @@ static int errstate;
 %type <list>	features_clause hyperparameter_name_value_list target_clause with_hyperparameters_clause
 /* </DB4AI> */
 
-%type <node>	select_no_parens select_with_parens select_clause
+%type <node>	select_no_parens select_no_parens_without_withclause select_with_parens select_clause
 				simple_select values_clause insert_empty_values
 
 %type <node>	alter_column_default opclass_item opclass_drop alter_using
@@ -641,7 +653,7 @@ static int errstate;
 %type <defelt>	fdw_option
 
 %type <range>	OptTempTableName
-%type <into>	into_clause create_as_target create_mv_target
+%type <into>	into_clause create_as_target create_as_target_dolphin create_mv_target
 
 %type <defelt>	createfunc_opt_item createproc_opt_item common_func_opt_item dostmt_opt_item
 %type <fun_param> func_arg func_arg_with_default table_func_column
@@ -909,7 +921,7 @@ static int errstate;
 %type <list>    load_column_expr_list copy_column_sequence_list copy_column_filler_list copy_column_constant_list 
 %type <typnam>  load_col_data_type
 %type <ival64>  load_col_sequence_item_sart column_sequence_item_step column_sequence_item_sart
-%type <node>	on_table opt_engine opt_engine_without_empty opt_compression opt_compression_without_empty set_compress_type
+%type <node>	on_table opt_engine opt_engine_without_empty opt_compression opt_compression_without_empty set_compress_type opt_row_format
 %type <keyword>	into_empty opt_temporary opt_values_in replace_empty
 %type <str>	compression_args
 %type <boolean> opt_ignore
@@ -1009,7 +1021,7 @@ static int errstate;
 	RANDOMIZED RANGE RATIO RAW READ READS REAL REASSIGN REBUILD RECHECK RECURSIVE RECYCLEBIN REDISANYVALUE REF REFERENCES REFRESH REINDEX REJECT_P
 	RELATIVE_P RELEASE RELOPTIONS REMOTE_P REMOVE RENAME REPEATABLE REPLACE REPLICA REGEXP REPAIR
 	RESET RESIZE RESOURCE RESTART RESTRICT RETURN RETURNING RETURNS REUSE REVOKE RIGHT RLIKE ROLE ROLES ROLLBACK ROLLUP
-	ROTATION ROUTINE ROW ROWNUM ROWS ROWTYPE_P RULE
+	ROTATION ROUTINE ROW ROWNUM ROWS ROWTYPE_P ROW_FORMAT RULE
 
 	SAMPLE SAVEPOINT SCHEMA SCHEMAS SCROLL SEARCH SECOND_P SECURITY SELECT SEQUENCE SEQUENCES
 	SERIALIZABLE SERVER SESSION SESSION_USER SET SETS SETOF SHARE SHIPPABLE SHOW SHUTDOWN SIBLINGS
@@ -1056,7 +1068,7 @@ static int errstate;
 			NOT_ENFORCED
 			VALID_BEGIN
 			DECLARE_CURSOR
-			START_WITH CONNECT_BY
+			START_WITH CONNECT_BY WITH_ROLLUP
 
 /* Precedence: lowest to highest */
 %nonassoc lower_than_key
@@ -5941,6 +5953,34 @@ CreateAsOption:
 					n->option_type = OPT_ENGINE;
 					$$ = n;
 				}
+			| COLLATE opt_equal any_name
+				{
+					ereport(WARNING, (errmsg("COLLATE for TABLE is not supported for current version. skipped")));
+					SingleTableOption *n = (SingleTableOption*)palloc0(sizeof(SingleTableOption));
+					n->option_type = OPT_COLLATE;
+					$$ = n;
+				}
+			| CHARSET opt_equal any_name
+				{
+					ereport(WARNING, (errmsg("CHARSET for TABLE is not supported for current version. skipped")));
+					SingleTableOption *n = (SingleTableOption*)palloc0(sizeof(SingleTableOption));
+					n->option_type = OPT_CHARSET;
+					$$ = n;
+				}
+			| CHARACTER SET opt_equal any_name
+				{
+					ereport(WARNING, (errmsg("CHARACTER SET for TABLE is not supported for current version. skipped")));
+					SingleTableOption *n = (SingleTableOption*)palloc0(sizeof(SingleTableOption));
+					n->option_type = OPT_CHARSET;
+					$$ = n;
+				}
+			| ROW_FORMAT opt_equal any_name
+				{
+					ereport(WARNING, (errmsg("ROW_FORMAT for TABLE is not supported for current version. skipped")));
+					SingleTableOption *n = (SingleTableOption*)palloc0(sizeof(SingleTableOption));
+					n->option_type = OPT_ROW_FORMAT;
+					$$ = n;
+				}
 		;
 
 CreateStmt:	CREATE OptTemp TABLE qualified_name '(' OptTableElementList ')'
@@ -6047,7 +6087,7 @@ CreateStmt:	CREATE OptTemp TABLE qualified_name '(' OptTableElementList ')'
 /* PGXC_BEGIN */
 			OptDistributeBy OptSubCluster
 /* PGXC_END */
-			opt_compression opt_engine
+			opt_compression opt_engine opt_row_format opt_charset opt_collate
 				{
 					CreateStmt *n = makeNode(CreateStmt);
 					$4->relpersistence = $2;
@@ -6077,7 +6117,7 @@ CreateStmt:	CREATE OptTemp TABLE qualified_name '(' OptTableElementList ')'
 /* PGXC_BEGIN */
 			OptDistributeBy OptSubCluster
 /* PGXC_END */
-			opt_compression opt_engine
+			opt_compression opt_engine opt_row_format opt_charset opt_collate
 				{
 					CreateStmt *n = makeNode(CreateStmt);
 					$7->relpersistence = $2;
@@ -6110,6 +6150,21 @@ opt_engine:
 			$$ = NULL;
 		}
 	| ENGINE_P opt_equal Sconst
+		{
+			$$ = NULL;
+		}
+	| /* empty */
+		{
+			$$ = NULL;
+		}
+	;
+
+opt_row_format:
+	ROW_FORMAT opt_equal IDENT
+		{
+			$$ = NULL;
+		}
+	| ROW_FORMAT opt_equal Sconst
 		{
 			$$ = NULL;
 		}
@@ -7090,7 +7145,14 @@ columnOptions:	ColId WITH OPTIONS ColQualList
 		;
 
 ColQualList:
-			ColQualList ColConstraint				{ $$ = lappend($1, $2); }
+			ColQualList ColConstraint
+			{
+				if ($2 != NULL) {
+					$$ = lappend($1, $2);
+				} else {
+					$$ = $1;
+				}
+			}
 			| /*EMPTY*/								{ $$ = NIL; }
 		;
 
@@ -8477,9 +8539,73 @@ CreateAsStmt:
 					$4->skipData = !($7);
 					$$ = (Node *) ctas;
 				}
+		| CREATE OptTemp TABLE create_as_target_dolphin SelectStmtWithoutWithClause opt_with_data
+				{
+					CreateTableAsStmt *ctas = makeNode(CreateTableAsStmt);
+					ctas->query = $5;
+					ctas->into = $4;
+					ctas->relkind = OBJECT_TABLE;
+					ctas->is_select_into = false;
+					/* cram additional flags into the IntoClause */
+					$4->rel->relpersistence = $2;
+					$4->skipData = !($6);
+					$$ = (Node *) ctas;
+				}
+		| CREATE OptTemp TABLE qualified_name SelectStmtWithoutWithClause opt_with_data
+				{
+					CreateTableAsStmt *ctas = makeNode(CreateTableAsStmt);
+					ctas->query = $5;
+
+					IntoClause *into = makeNode(IntoClause);
+					into->rel = $4;
+					into->skipData = false;		/* might get changed later */
+					into->colNames = NULL;
+/* PGXC_BEGIN */
+					into->relkind = INTO_CLAUSE_RELKIND_DEFAULT;
+/* PGXC_END */
+					into->options = NIL;
+					into->onCommit = ONCOMMIT_NOOP;
+					into->row_compress = REL_CMPRS_PAGE_PLAIN;
+					into->tableSpaceName = NULL;
+/* PGXC_BEGIN */
+					into->distributeby = NULL;
+					into->subcluster = NULL;
+/* PGXC_END */
+
+					ctas->into = into;
+					ctas->relkind = OBJECT_TABLE;
+					ctas->is_select_into = false;
+					/* cram additional flags into the IntoClause */
+					into->rel->relpersistence = $2;
+					into->skipData = !($6);
+					$$ = (Node *) ctas;
+				}
 		;
 
 create_as_target:
+			create_as_target_dolphin			{ $$ = $1; }
+			| qualified_name
+				{
+					$$ = makeNode(IntoClause);
+					$$->rel = $1;
+					$$->skipData = false;		/* might get changed later */
+					$$->colNames = NULL;
+/* PGXC_BEGIN */
+					$$->relkind = INTO_CLAUSE_RELKIND_DEFAULT;
+/* PGXC_END */
+					$$->options = NIL;
+					$$->onCommit = ONCOMMIT_NOOP;
+					$$->row_compress = REL_CMPRS_PAGE_PLAIN;
+					$$->tableSpaceName = NULL;
+/* PGXC_BEGIN */
+					$$->distributeby = NULL;
+					$$->subcluster = NULL;
+/* PGXC_END */
+
+				}
+		;
+
+create_as_target_dolphin:
 			qualified_name opt_column_list CreateAsOptionList
 				{
 					$$ = makeNode(IntoClause);
@@ -8503,12 +8629,13 @@ create_as_target:
 						}
 					}
 				}
-			| qualified_name opt_column_list
+			| qualified_name '(' columnList ')'
 				{
 					$$ = makeNode(IntoClause);
 					$$->rel = $1;
 					$$->skipData = false;		/* might get changed later */
-					$$->colNames = $2;
+					u_sess->parser_cxt.col_list = $3;
+					$$->colNames = $3;
 /* PGXC_BEGIN */
 					$$->relkind = INTO_CLAUSE_RELKIND_DEFAULT;
 /* PGXC_END */
@@ -9330,6 +9457,16 @@ CreateTableSpaceStmt: CREATE TABLESPACE name OptTableSpaceOwner OptRelative LOCA
 					n->owner = NULL;
 					n->location = $5;
 					n->maxsize = $6;
+					$$ = (Node *) n;
+				}
+				| CREATE TABLESPACE name ADD_P DATAFILE Sconst opt_engine
+				{
+					CreateTableSpaceStmt *n = makeNode(CreateTableSpaceStmt);
+					n->tablespacename = $3;
+					n->owner = NULL;
+					n->location = $6;
+					n->relative = !is_absolute_path(n->location);
+					n->maxsize = NULL;
 					$$ = (Node *) n;
 				}
 		;
@@ -13329,7 +13466,7 @@ defacl_privilege_target:
  *****************************************************************************/
 
 IndexStmt:	CREATE opt_unique INDEX opt_concurrently opt_index_name
-			ON qualified_name access_method_clause '(' index_params ')'
+			index_method_relation_clause '(' index_params ')'
 			TableIndexOptionList where_clause
 				{
 					IndexStmt *n = makeNode(IndexStmt);
@@ -13337,9 +13474,9 @@ IndexStmt:	CREATE opt_unique INDEX opt_concurrently opt_index_name
 					n->concurrent = $4;
                     n->schemaname = $5->schemaname;
 					n->idxname = $5->relname;
-					n->relation = $7;
-					n->accessMethod = $8;
-					n->indexParams = $10;
+					n->relation = $6->relation;
+					n->accessMethod = $6->accessMethod;
+					n->indexParams = $8;
 					n->excludeOpNames = NIL;
 					n->idxcomment = NULL;
 					n->indexOid = InvalidOid;
@@ -13351,16 +13488,16 @@ IndexStmt:	CREATE opt_unique INDEX opt_concurrently opt_index_name
 					n->isconstraint = false;
 					n->deferrable = false;
 					n->initdeferred = false;
-					n->whereClause = $13;
-					if ($12 != NULL) {
-						n->indexIncludingParams = $12->indexIncludingParams;
-						n->options = $12->options;
-						n->tableSpace = $12->tableSpace;
+					n->whereClause = $11;
+					if ($10 != NULL) {
+						n->indexIncludingParams = $10->indexIncludingParams;
+						n->options = $10->options;
+						n->tableSpace = $10->tableSpace;
 					}
 					$$ = (Node *)n;
 				}
 				| CREATE opt_unique INDEX opt_concurrently opt_index_name
-			ON qualified_name access_method_clause '(' index_params ')'
+			index_method_relation_clause '(' index_params ')'
 			where_clause
 				{
 					IndexStmt *n = makeNode(IndexStmt);
@@ -13368,9 +13505,9 @@ IndexStmt:	CREATE opt_unique INDEX opt_concurrently opt_index_name
 					n->concurrent = $4;
                     n->schemaname = $5->schemaname;
 					n->idxname = $5->relname;
-					n->relation = $7;
-					n->accessMethod = $8;
-					n->indexParams = $10;
+					n->relation = $6->relation;
+					n->accessMethod = $6->accessMethod;
+					n->indexParams = $8;
 					n->excludeOpNames = NIL;
 					n->idxcomment = NULL;
 					n->indexOid = InvalidOid;
@@ -13382,14 +13519,14 @@ IndexStmt:	CREATE opt_unique INDEX opt_concurrently opt_index_name
 					n->isconstraint = false;
 					n->deferrable = false;
 					n->initdeferred = false;
-					n->whereClause = $12;
+					n->whereClause = $10;
 					n->indexIncludingParams = NIL;
 					n->options = NIL;
 					n->tableSpace = NULL;
 					$$ = (Node *)n;
 				}
 				| CREATE opt_unique INDEX opt_concurrently opt_index_name
-					ON qualified_name access_method_clause '(' index_params ')'
+					index_method_relation_clause '(' index_params ')'
 					LOCAL opt_partition_index_def PartitionTableIndexOptionList
 				{
 
@@ -13398,9 +13535,9 @@ IndexStmt:	CREATE opt_unique INDEX opt_concurrently opt_index_name
 					n->concurrent = $4;
                     n->schemaname = $5->schemaname;
 					n->idxname = $5->relname;
-					n->relation = $7;
-					n->accessMethod = $8;
-					n->indexParams = $10;
+					n->relation = $6->relation;
+					n->accessMethod = $6->accessMethod;
+					n->indexParams = $8;
 					n->isPartitioned = true;
 					n->isGlobal = false;
 					n->excludeOpNames = NIL;
@@ -13411,16 +13548,16 @@ IndexStmt:	CREATE opt_unique INDEX opt_concurrently opt_index_name
 					n->isconstraint = false;
 					n->deferrable = false;
 					n->initdeferred = false;
-					n->partClause  = $13;
-					if ($14 != NULL) {
-						n->indexIncludingParams = $14->indexIncludingParams;
-						n->options = $14->options;
-						n->tableSpace = $14->tableSpace;
+					n->partClause  = $11;
+					if ($12 != NULL) {
+						n->indexIncludingParams = $12->indexIncludingParams;
+						n->options = $12->options;
+						n->tableSpace = $12->tableSpace;
 					}
 					$$ = (Node *)n;
 				}
 				| CREATE opt_unique INDEX opt_concurrently opt_index_name
-					ON qualified_name access_method_clause '(' index_params ')'
+					index_method_relation_clause '(' index_params ')'
 					LOCAL opt_partition_index_def
 				{
 
@@ -13429,9 +13566,9 @@ IndexStmt:	CREATE opt_unique INDEX opt_concurrently opt_index_name
 					n->concurrent = $4;
                     n->schemaname = $5->schemaname;
 					n->idxname = $5->relname;
-					n->relation = $7;
-					n->accessMethod = $8;
-					n->indexParams = $10;
+					n->relation = $6->relation;
+					n->accessMethod = $6->accessMethod;
+					n->indexParams = $8;
 					n->isPartitioned = true;
 					n->isGlobal = false;
 					n->excludeOpNames = NIL;
@@ -13442,14 +13579,14 @@ IndexStmt:	CREATE opt_unique INDEX opt_concurrently opt_index_name
 					n->isconstraint = false;
 					n->deferrable = false;
 					n->initdeferred = false;
-					n->partClause  = $13;
+					n->partClause  = $11;
 					n->indexIncludingParams = NIL;
 					n->options = NIL;
 					n->tableSpace = NULL;
 					$$ = (Node *)n;
 				}
 				| CREATE opt_unique INDEX opt_concurrently opt_index_name
-					ON qualified_name access_method_clause '(' index_params ')'
+					index_method_relation_clause '(' index_params ')'
 					GLOBAL PartitionTableIndexOptionList
 				{
 					IndexStmt *n = makeNode(IndexStmt);
@@ -13457,9 +13594,9 @@ IndexStmt:	CREATE opt_unique INDEX opt_concurrently opt_index_name
 					n->concurrent = $4;
                     n->schemaname = $5->schemaname;
 					n->idxname = $5->relname;
-					n->relation = $7;
-					n->accessMethod = $8;
-					n->indexParams = $10;
+					n->relation = $6->relation;
+					n->accessMethod = $6->accessMethod;
+					n->indexParams = $8;
 					n->partClause  = NULL;
 					n->isPartitioned = true;
 					n->isGlobal = true;
@@ -13471,15 +13608,15 @@ IndexStmt:	CREATE opt_unique INDEX opt_concurrently opt_index_name
 					n->isconstraint = false;
 					n->deferrable = false;
 					n->initdeferred = false;
-					if ($13 != NULL) {
-						n->indexIncludingParams = $13->indexIncludingParams;
-						n->options = $13->options;
-						n->tableSpace = $13->tableSpace;
+					if ($11 != NULL) {
+						n->indexIncludingParams = $11->indexIncludingParams;
+						n->options = $11->options;
+						n->tableSpace = $11->tableSpace;
 					}
 					$$ = (Node *)n;
 				}
 				| CREATE opt_unique INDEX opt_concurrently opt_index_name
-					ON qualified_name access_method_clause '(' index_params ')'
+					index_method_relation_clause '(' index_params ')'
 					GLOBAL
 				{
 					IndexStmt *n = makeNode(IndexStmt);
@@ -13487,9 +13624,9 @@ IndexStmt:	CREATE opt_unique INDEX opt_concurrently opt_index_name
 					n->concurrent = $4;
                     n->schemaname = $5->schemaname;
 					n->idxname = $5->relname;
-					n->relation = $7;
-					n->accessMethod = $8;
-					n->indexParams = $10;
+					n->relation = $6->relation;
+					n->accessMethod = $6->accessMethod;
+					n->indexParams = $8;
 					n->partClause  = NULL;
 					n->isPartitioned = true;
 					n->isGlobal = true;
@@ -13632,6 +13769,29 @@ index_params:	index_elem							{ $$ = list_make1($1); }
 			| index_params ',' index_elem			{ $$ = lappend($1, $3); }
 		;
 
+index_method_relation_clause:
+			ON qualified_name USING access_method
+				{
+					 IndexMethodRelationClause* result = (IndexMethodRelationClause*)palloc0(sizeof(IndexMethodRelationClause));
+					 result->relation = $2;
+					 result->accessMethod = $4;
+					 $$ = result;
+				}
+			| ON qualified_name
+				{
+					 IndexMethodRelationClause* result = (IndexMethodRelationClause*)palloc0(sizeof(IndexMethodRelationClause));
+					 result->relation = $2;
+					 result->accessMethod = NULL;
+					 $$ = result;
+				}
+			| USING access_method ON qualified_name
+				{
+					 IndexMethodRelationClause* result = (IndexMethodRelationClause*)palloc0(sizeof(IndexMethodRelationClause));
+					 result->relation = $4;
+					 result->accessMethod = $2;
+					 $$ = result;
+				}
+
 /*
  * Index attributes can be either simple column references, or arbitrary
  * expressions in parens.  For backwards-compatibility reasons, we allow
@@ -13680,7 +13840,7 @@ index_including_params:	index_elem						{ $$ = list_make1($1); }
 		;
 
 
-opt_collate: COLLATE any_name						{ $$ = $2; }
+opt_collate: COLLATE opt_equal any_name						{ $$ = $3; }
 			| /*EMPTY*/								{ $$ = NIL; }
 		;
 
@@ -15407,6 +15567,10 @@ opt_force:	FORCE									{  $$ = TRUE; }
 			| /* EMPTY */							{  $$ = FALSE; }
 		;
 
+to_or_as:		TO									{}
+			| AS								{}
+		;
+
 
 /*****************************************************************************
  *
@@ -15616,7 +15780,7 @@ RenameStmt: ALTER AGGREGATE func_name aggr_args RENAME TO name
 					n->missing_ok = true;
 					$$ = (Node *)n;
 				}
-			| ALTER TABLE relation_expr RENAME TO name
+			| ALTER TABLE relation_expr RENAME to_or_as name
 				{
 					RenameStmt *n = makeNode(RenameStmt);
 					n->renameType = OBJECT_TABLE;
@@ -15626,7 +15790,7 @@ RenameStmt: ALTER AGGREGATE func_name aggr_args RENAME TO name
 					n->missing_ok = false;
 					$$ = (Node *)n;
 				}
-			| ALTER TABLE IF_P EXISTS relation_expr RENAME TO name
+			| ALTER TABLE IF_P EXISTS relation_expr RENAME to_or_as name
 				{
 					RenameStmt *n = makeNode(RenameStmt);
 					n->renameType = OBJECT_TABLE;
@@ -20990,6 +21154,11 @@ opt_hold: /* EMPTY */						{ $$ = 0; }
  * with or without outer parentheses.
  */
 
+SelectStmtWithoutWithClause:
+			select_no_parens_without_withclause
+			| select_with_parens
+		;
+
 SelectStmt: select_no_parens			%prec UMINUS
 			| select_with_parens		%prec UMINUS
 		;
@@ -21009,64 +21178,69 @@ select_with_parens:
  *	We now support both orderings, but prefer LIMIT/OFFSET before the locking clause.
  *	2002-08-28 bjm
  */
-select_no_parens:
-			simple_select						{ $$ = $1; }
-                        | select_clause siblings_clause
-                                {
-                                        SelectStmt* stmt = (SelectStmt *) $1;
-                                        StartWithClause* swc = (StartWithClause*) stmt->startWithClause;
-                                        if (swc == NULL) {
-                                            ereport(errstate,
-                                                    (errcode(ERRCODE_SYNTAX_ERROR),
-                                                     errmsg("order siblings by clause can only be used on start-with qualifed relations"),
-                                                     parser_errposition(@2)));
-                                        } else {
-                                            swc->siblingsOrderBy = $2;
-                                        }
-                                        $$ = $1;
-                                }
-                        | select_clause siblings_clause sort_clause
-                                {
-                                        SelectStmt* stmt = (SelectStmt *) $1;
+
+ select_no_parens_without_withclause:
+ 			simple_select						{ $$ = $1; }
+			| select_clause siblings_clause
+				 {
+					 SelectStmt* stmt = (SelectStmt *) $1;
+					 StartWithClause* swc = (StartWithClause*) stmt->startWithClause;
+					 if (swc == NULL) {
+					     ereport(errstate,
+						     (errcode(ERRCODE_SYNTAX_ERROR),
+						      errmsg("order siblings by clause can only be used on start-with qualifed relations"),
+						      parser_errposition(@2)));
+					 } else {
+					     swc->siblingsOrderBy = $2;
+					 }
+					 $$ = $1;
+				 }
+			 | select_clause siblings_clause sort_clause
+				 {
+					 SelectStmt* stmt = (SelectStmt *) $1;
 					insertSelectOptions((SelectStmt *) $1, $3, NIL,
 										NULL, NULL, NULL,
 										yyscanner);
-                                        StartWithClause* swc = (StartWithClause*) stmt->startWithClause;
-                                        if (swc == NULL) {
-                                            ereport(errstate,
-                                                    (errcode(ERRCODE_SYNTAX_ERROR),
-                                                     errmsg("order siblings by clause can only be used on start-with qualifed relations"),
-                                                     parser_errposition(@2)));
-                                        } else {
-                                            swc->siblingsOrderBy = $2;
-                                        }
-                                        $$ = $1;
-                                }
-			| select_clause sort_clause
-				{
-					insertSelectOptions((SelectStmt *) $1, $2, NIL,
-										NULL, NULL, NULL,
-										yyscanner);
-					$$ = $1;
-				}
-			| select_clause opt_sort_clause for_locking_clause opt_select_limit
-				{
-                                        FilterStartWithUseCases((SelectStmt *) $1, $3, yyscanner, @3);
-					insertSelectOptions((SelectStmt *) $1, $2, $3,
-										(Node*)list_nth($4, 0), (Node*)list_nth($4, 1),
-										NULL,
-										yyscanner);
-					$$ = $1;
-				}
-			| select_clause opt_sort_clause select_limit opt_for_locking_clause
-				{
-                                        FilterStartWithUseCases((SelectStmt *) $1, $4, yyscanner, @4);
-					insertSelectOptions((SelectStmt *) $1, $2, $4,
-										(Node*)list_nth($3, 0), (Node*)list_nth($3, 1),
-										NULL,
-										yyscanner);
-					$$ = $1;
-				}
+					 StartWithClause* swc = (StartWithClause*) stmt->startWithClause;
+					 if (swc == NULL) {
+					     ereport(errstate,
+						     (errcode(ERRCODE_SYNTAX_ERROR),
+						      errmsg("order siblings by clause can only be used on start-with qualifed relations"),
+						      parser_errposition(@2)));
+					 } else {
+					     swc->siblingsOrderBy = $2;
+					 }
+					 $$ = $1;
+				 }
+ 			| select_clause sort_clause
+ 				{
+ 					insertSelectOptions((SelectStmt *) $1, $2, NIL,
+ 										NULL, NULL, NULL,
+ 										yyscanner);
+ 					$$ = $1;
+ 				}
+ 			| select_clause opt_sort_clause for_locking_clause opt_select_limit
+ 				{
+                                         FilterStartWithUseCases((SelectStmt *) $1, $3, yyscanner, @3);
+ 					insertSelectOptions((SelectStmt *) $1, $2, $3,
+ 										(Node*)list_nth($4, 0), (Node*)list_nth($4, 1),
+ 										NULL,
+ 										yyscanner);
+ 					$$ = $1;
+ 				}
+ 			| select_clause opt_sort_clause select_limit opt_for_locking_clause
+ 				{
+                                         FilterStartWithUseCases((SelectStmt *) $1, $4, yyscanner, @4);
+ 					insertSelectOptions((SelectStmt *) $1, $2, $4,
+ 										(Node*)list_nth($3, 0), (Node*)list_nth($3, 1),
+ 										NULL,
+ 										yyscanner);
+ 					$$ = $1;
+ 				}
+ 		;
+
+select_no_parens:
+			select_no_parens_without_withclause			{ $$ = $1; }
 			| with_clause select_clause
 				{
 					insertSelectOptions((SelectStmt *) $2, NULL, NIL,
@@ -21517,11 +21691,43 @@ group_clause:
 group_by_list:
 			group_by_item							{ $$ = list_make1($1); }
 			| group_by_list ',' group_by_item		{ $$ = lappend($1,$3); }
+			| a_expr WITH_ROLLUP
+			{
+				with_rollup_check_elems_count($1);
+				$$ = list_make1((Node *) makeGroupingSet(GROUPING_SET_ROLLUP, list_make1($1), @1));
+			}
+			| a_expr					{ $$ = list_make1($1); }
+			| group_by_list ',' a_expr WITH_ROLLUP
+			{
+				with_rollup_check_elems_count($3);
+				List* whole_list = NIL;
+				ListCell* cell = NULL;
+				List* last_expr_list = NIL;
+				foreach (cell, $1) {
+					if (IsA(lfirst(cell), GroupingSet)) {
+						/* fill up whole_list before clearing last_expr_list */
+						whole_list = list_concat(whole_list, last_expr_list);
+						whole_list = lappend(whole_list, lfirst(cell));
+						last_expr_list = NIL;
+					} else {
+						/* cell is an expr */
+						if (last_expr_list == NIL) {
+							last_expr_list = list_make1(lfirst(cell));
+						} else {
+							last_expr_list = lappend(last_expr_list, lfirst(cell));
+						}
+					}
+				}
+				last_expr_list = lappend(last_expr_list, $3);
+				Node* with_rollup = (Node *) makeGroupingSet(GROUPING_SET_ROLLUP, last_expr_list, @1);
+				whole_list = lappend(whole_list, with_rollup);
+				$$ = whole_list;
+			}
+			| group_by_list ',' a_expr			{ $$ = lappend($1, $3); }
 		;
 
 group_by_item:
-			a_expr									{ $$ = $1; }
-			| empty_grouping_set					{ $$ = $1; }
+			empty_grouping_set					{ $$ = $1; }
 			| cube_clause							{ $$ = $1; }
 			| rollup_clause 						{ $$ = $1; }
 			| grouping_sets_clause					{ $$ = $1; }
@@ -22507,8 +22713,11 @@ SimpleTypename:
 						ReleaseSysCache(typtup);
 					}
 				}
-			| EnumType  '(' opt_enum_val_list ')'
+			| EnumType  '(' opt_enum_val_list ')' opt_charset
 				{
+					if ($5 != NULL) {
+						ereport(WARNING, (errmsg("character set \"%s\" for type ENUM is not supported yet. default value set", $5)));
+					}
 					$$ = $1;
 					$$->typmods = $3;
 				}
@@ -22550,7 +22759,7 @@ GenericType:
 					} else if (($1 != NULL) && ((strcmp($1, "real") == 0 || strcmp($1, "double") == 0))) {
 						$$ = makeTypeName("float8");
 						$$->typmods = $2;
-					} else if ($1 != NULL && (strcmp($1, "text") == 0 || strcmp($1, "tinytext") == 0 || strcmp($1, "mediumtext") == 0 || strcmp($1, "longtext") == 0)) {
+					} else if ($1 != NULL && (strcmp($1, "mediumtext") == 0)) {
 						$$ = SystemTypeName("text");
 						$$->location = @1;
 					} else {
@@ -22828,32 +23037,29 @@ CharacterWithLength:  character '(' Iconst ')' opt_charset
 				{
 					if (($5 != NULL) && (strcmp($5, "sql_text") != 0))
 					{
-						char *type;
-
-						type = (char *)palloc(strlen($1) + 1 + strlen($5) + 1);
-						strcpy(type, $1);
-						strcat(type, "_");
-						strcat(type, $5);
-						$1 = type;
+						ereport(WARNING, (errmsg("character set \"%s\" for type %s is not supported yet. default value set", $5, $1)));
 					}
 
 					$$ = SystemTypeName($1);
 					$$->typmods = list_make1(makeIntConst($3, @3));
 					$$->location = @1;
 				}
+			| TEXT_P '(' a_expr ')' opt_charset
+			{
+				if (($5 != NULL) && (strcmp($5, "sql_text") != 0))
+				{
+					ereport(WARNING, (errmsg("character set \"%s\" for type %s is not supported yet. default value set", $5, $1)));
+				}
+				$$ = SystemTypeName("text");
+				$$->location = @1;
+			}
 		;
 
 CharacterWithoutLength:	 character opt_charset
 				{
 					if (($2 != NULL) && (strcmp($2, "sql_text") != 0))
 					{
-						char *type;
-
-						type = (char *)palloc(strlen($1) + 1 + strlen($2) + 1);
-						strcpy(type, $1);
-						strcat(type, "_");
-						strcat(type, $2);
-						$1 = type;
+						ereport(WARNING, (errmsg("character set \"%s\" for type %s is not supported yet. default value set", $2, $1)));
 					}
 
 					$$ = SystemTypeName($1);
@@ -22862,6 +23068,15 @@ CharacterWithoutLength:	 character opt_charset
 					if (strcmp($1, "bpchar") == 0)
 						$$->typmods = list_make1(makeIntConst(1, -1));
 
+					$$->location = @1;
+				}
+			| TEXT_P opt_charset
+				{
+					if (($2 != NULL) && (strcmp($2, "sql_text") != 0))
+					{
+						ereport(WARNING, (errmsg("character set \"%s\" for type %s is not supported yet. default value set", $2, $1)));
+					}
+					$$ = SystemTypeName("text");
 					$$->location = @1;
 				}
 		;
@@ -22893,6 +23108,7 @@ opt_varying:
 
 opt_charset:
 			CHARACTER SET ColId						{ $$ = $3; }
+			| CHARSET ColId							{ $$ = $2; }
 			| /*EMPTY*/								{ $$ = NULL; }
 		;
 
@@ -25306,6 +25522,20 @@ func_expr_common_subexpr:
 					n->location = @1;
 					$$ = (Node *)n;
 				}
+			| TEXT_P '(' a_expr ')'
+				{
+					FuncCall *n = makeNode(FuncCall);
+					n->funcname = SystemFuncName("text");
+					n->args = list_make1($3);
+					n->agg_order = NIL;
+					n->agg_star = FALSE;
+					n->agg_distinct = FALSE;
+					n->func_variadic = FALSE;
+					n->over = NULL;
+					n->location = @1;
+					n->call_func = false;
+					$$ = (Node *)n;
+				}
 		;
 
 current_date_func:	CURRENT_DATE
@@ -26928,6 +27158,7 @@ unreserved_keyword_without_key:
 			| ROUTINE
 			| ROWS
 			| RULE
+			| ROW_FORMAT
 			| SAMPLE
 			| SAVEPOINT
 			| SCHEMA
@@ -26988,7 +27219,6 @@ unreserved_keyword_without_key:
 			| TEMPLATE
 			| TEMPORARY
 			| TERMINATED
-			| TEXT_P
 			| THAN
 			| TIME_FORMAT_P
 			| TIMESTAMP_FORMAT_P
@@ -27116,6 +27346,7 @@ col_name_keyword:
 			| SMALLINT
 			| SUBSTR
 			| SUBSTRING
+			| TEXT_P
 			| TIME
 			| TIMESTAMP
 			| TIMESTAMPDIFF
@@ -29384,6 +29615,9 @@ static CreateTableOptions* MakeCreateTableOptions(CreateTableOptions *tableOptio
 	case OPT_TABLESPACE:
 		tableOptions->tablespacename = tableOption->option.char_content;
 		break;
+	case OPT_COLLATE:
+	case OPT_CHARSET:
+	case OPT_ROW_FORMAT:
 	default:
 		break;
 	}
@@ -29622,6 +29856,25 @@ static Node* makeAnalyzeTableList(List *rangeVars)
 	appendStringInfoChar(&res, '}');
 
 	return makeStringConst(res.data, -1);
+}
+
+/*
+ * Check numbers of elements in a_expr from WITH ROLLUP clause, which is declared in group_by_list.
+ * If the input expr is valid, directly return. Otherwise raise ERROR.
+ */
+static void with_rollup_check_elems_count(Node* expr)
+{
+	/* check if expr has multiple column with parenthesis */
+	if (!IsA(expr, ColumnRef)) {
+		if (IsA(expr, RowExpr)) {
+			if (((RowExpr *)expr)->args->length > 1) {
+				ereport(ERROR, (errcode(ERRCODE_SYNTAX_ERROR), errmsg("Operand should contain 1 column(s) fro WITH ROLLUP")));
+			}
+		} else {
+			/* Should not be here */
+			ereport(ERROR, (errcode(ERRCODE_SYNTAX_ERROR), errmsg("Unexpected syntax error for WITH ROLLUP.")));
+		}
+	}
 }
 
 /*

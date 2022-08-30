@@ -19,7 +19,7 @@ CREATE TABLE AS对源表进行一次查询，然后将数据写入新表中，�
 CREATE [ [ GLOBAL | LOCAL ] [ TEMPORARY | TEMP ] | UNLOGGED ] TABLE table_name
     [ (column_name [, ...] ) ]
     [create_option]
-    AS query
+    [AS] query
     [ WITH [ NO ] DATA ];
 
 	其中create_option为：
@@ -138,9 +138,15 @@ CREATE [ [ GLOBAL | LOCAL ] [ TEMPORARY | TEMP ] | UNLOGGED ] TABLE table_name
   用于选择表所使用的存储引擎；目前该特性只有语法没有功能。
 
 
--   **AS query**
+- **\[AS\] query**
 
     一个SELECT VALUES命令或者一个运行预备好的SELECT或VALUES查询的EXECUTE命令。
+
+    AS关键字可选，但若query中带有WITH语句，则必须使用括号将query包围，参考语句：
+
+    ```
+    CREATE TABLE t_new (WITH temp_t(a, b) AS (SELECT a, b FROM t_old) SELECT * FROM temp_t);
+    ```
 
 -   **\[ WITH \[ NO \] DATA \]**
 

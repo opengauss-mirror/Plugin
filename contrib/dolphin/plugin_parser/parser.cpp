@@ -198,6 +198,9 @@ int base_yylex(YYSTYPE* lvalp, YYLTYPE* llocp, core_yyscan_t yyscanner)
                 case TIME:
                     cur_token = WITH_TIME;
                     break;
+                case ROLLUP:
+                    cur_token = WITH_ROLLUP;
+                    break;
                 default:
                     /* save the lookahead token for next time */
                     SET_LOOKAHEAD_TOKEN();

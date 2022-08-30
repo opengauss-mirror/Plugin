@@ -27,7 +27,8 @@
 -   在表上创建索引。
 
     ```
-    CREATE [ UNIQUE ] INDEX [ CONCURRENTLY ] [ [schema_name.]index_name ] ON table_name [ USING method ]
+    CREATE [ UNIQUE ] INDEX [ CONCURRENTLY ] [ [schema_name.]index_name ]
+        { ON table_name [ USING method ] | [ USING method ] ON table_name }
         ({ { column_name | ( expression ) } [ COLLATE collation ] [ opclass ] [ ASC | DESC ] [ NULLS { FIRST | LAST } ] }[, ...] )
         [ index_option ]
         [ WHERE predicate ];

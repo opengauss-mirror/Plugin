@@ -77,9 +77,16 @@ SELECT [/*+ plan_hint */] [ ALL | DISTINCT | DISTINCTROW [ ON ( expression [, ..
     ( )
     | expression
     | ( expression [, ...] )
-    | ROLLUP ( { expression | ( expression [, ...] ) } [, ...] )
+    | roll_clause
     | CUBE ( { expression | ( expression [, ...] ) } [, ...] )
     | GROUPING SETS ( grouping_element [, ...] )
+    ```
+
+    rollup_clause子句为：
+
+    ```
+    ROLLUP ( { expression | ( expression [, ...] ) } [, ...] )
+    | { expression | ( expression [, ...] ) } WITH ROLLUP
     ```
 
 -   其中指定分区partition\_clause为：

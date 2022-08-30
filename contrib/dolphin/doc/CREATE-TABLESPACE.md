@@ -17,8 +17,14 @@
 
 ```
 CREATE TABLESPACE tablespace_name
-    [ OWNER user_name ] [RELATIVE] LOCATION 'directory' [ MAXSIZE 'space_size' ]
-    [with_option_clause] [ ENGINE [=] engine_name ];
+    tablespace_details;
+```
+
+创建表空间的详细信息tablespace_details为：
+
+```
+[ OWNER user_name ] [RELATIVE] LOCATION 'directory' [ MAXSIZE 'space_size' ] [with_option_clause] [ ENGINE [=] engine_name ]
+| ADD DATAFILE 'directory' [ ENGINE [=] engine_name ]
 ```
 
 其中普通表空间的with\_option\_clause为：
