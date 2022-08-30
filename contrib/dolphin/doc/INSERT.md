@@ -100,6 +100,8 @@ INSERT [/*+ plan_hint */] [IGNORE] [INTO] table_name [partition_clause] [ AS ali
 
         插入列类型的默认值。
 
+  IGNORE关键字不支持列存，无法在列存表中生效。
+  
 -   **table\_name**
 
     要插入数据的目标表名。
