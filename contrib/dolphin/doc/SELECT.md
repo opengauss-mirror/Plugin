@@ -294,6 +294,7 @@ SELECT [/*+ plan_hint */] [ ALL | DISTINCT | DISTINCTROW [ ON ( expression [, ..
 
     >![](public_sys-resources/icon-notice.gif) **须知：** 
     >对于WHERE子句的LIKE操作符，当LIKE中要查询特殊字符“%”、“\_”、“\\”的时候需要使用反斜杠“\\”来进行转义。
+    11. sounds like是condition的一种语法，用法如：column_name sounds like '字符'; 相当于soundex(column_name) = soundex('字符')的对比结果，是一个boolean的值。用于通过soundex处理来查询满足条件的数据。
 
 -   **START WITH**
 
@@ -531,6 +532,22 @@ UNION
 SELECT r_reason_sk, tpcds.reason.r_reason_desc
     FROM tpcds.reason
     WHERE tpcds.reason.r_reason_desc LIKE 'N%';
+
+--SOUNDS LIKE子句示例：同音字段查询
+openGauss=# CREATE DATABASE TEST DBCOMPATIBILITY 'B';
+CREATE DATABASE
+openGauss=# \c TEST;
+Non-SSL connection (SSL connection is recommended when requiring high-security)
+You are now connected to database "test" as user "hlv".
+test=# CREATE TABLE TEST(id int, name varchar);
+CREATE TABLE
+test=# INSERT INTO TEST VALUES(1, 'too');
+INSERT 0 1
+test=# SELECT * FROM TEST WHERE name SOUNDS LIKE 'two';
+ id | name
+----+------
+  1 | too
+(1 row)
 
 --NLS_SORT子句示例：中文拼音排序。
 openGauss=# SELECT * FROM tpcds.reason ORDER BY NLSSORT( r_reason_desc, 'NLS_SORT = SCHINESE_PINYIN_M');

@@ -21,6 +21,9 @@ CREATE OR REPLACE FUNCTION pg_catalog.find_in_set(numeric, text) returns int8 LA
 DROP FUNCTION IF EXISTS pg_catalog.soundex(text) cascade;
 CREATE OR REPLACE FUNCTION pg_catalog.soundex(text) returns text LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'soundex';
 
+DROP FUNCTION IF EXISTS pg_catalog.soundex_difference(text, text) cascade;
+CREATE OR REPLACE FUNCTION pg_catalog.soundex_difference(text, text) returns integer LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'soundex_difference';
+
 DROP FUNCTION IF EXISTS pg_catalog.space(int4) cascade;
 DROP FUNCTION IF EXISTS pg_catalog.space(text) cascade;
 CREATE OR REPLACE FUNCTION pg_catalog.space(int4) returns text LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'space_integer';

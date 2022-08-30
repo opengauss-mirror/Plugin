@@ -38,5 +38,65 @@ select soundex('hell');
  H400
 (1 row)
 
+select 'ibc' sounds like 'abc';
+ soundex_difference 
+--------------------
+                  0
+(1 row)
+
+select 'aws' sounds like '10';
+ soundex_difference 
+--------------------
+                  0
+(1 row)
+
+select 'aftcbtlxpz' sounds like 'afdsbfdlsafs';
+ soundex_difference 
+--------------------
+                  1
+(1 row)
+
+select 'zie' sounds like 'dslfaalskf222122';
+ soundex_difference 
+--------------------
+                  0
+(1 row)
+
+select 'adfidf' sounds like 'dadfa353dadf333ff';
+ soundex_difference 
+--------------------
+                  0
+(1 row)
+
+select 'hill' sounds like 'hell';
+ soundex_difference 
+--------------------
+                  1
+(1 row)
+
+select '中Adfab' sounds like '@adp';
+ soundex_difference 
+--------------------
+                  1
+(1 row)
+
+select 1 sounds like 2;
+ soundex_difference 
+--------------------
+                  1
+(1 row)
+
+select true sounds like 3;
+ERROR:  function pg_catalog.soundex_difference(boolean, integer) does not exist
+LINE 1: select true sounds like 3;
+                    ^
+HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
+CONTEXT:  referenced column: soundex_difference
+select 2.2 sounds like false;
+ERROR:  function pg_catalog.soundex_difference(numeric, boolean) does not exist
+LINE 1: select 2.2 sounds like false;
+                   ^
+HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
+CONTEXT:  referenced column: soundex_difference
 \c postgres
 drop database if exists db_soundex;

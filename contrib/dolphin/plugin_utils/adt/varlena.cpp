@@ -245,6 +245,9 @@ extern "C" DLL_PUBLIC Datum m_char(PG_FUNCTION_ARGS);
 PG_FUNCTION_INFO_V1_PUBLIC(text_insert);
 extern "C" DLL_PUBLIC Datum text_insert(PG_FUNCTION_ARGS);
 
+PG_FUNCTION_INFO_V1_PUBLIC(soundex_difference);
+extern "C" DLL_PUBLIC Datum soundex_difference(PG_FUNCTION_ARGS);
+
 /*****************************************************************************
  *	 CONVERSION ROUTINES EXPORTED FOR USE BY C CODE							 *
  *****************************************************************************/
@@ -7994,4 +7997,30 @@ Datum space_string(PG_FUNCTION_ARGS)
     } else {
         PG_RETURN_NULL();
     }
+}
+
+Datum soundex_difference(PG_FUNCTION_ARGS)
+{
+    char* arg1 = text_to_cstring(PG_GETARG_TEXT_P(0));
+    char* arg2 = text_to_cstring(PG_GETARG_TEXT_P(1));
+    int str_len1 = strlen(arg1) +1, str_len2 = strlen(arg2) + 1;
+    int min_sound_len = 5;
+    int i, r;
+    bool res = true, temp_res;
+
+    char* result1 = (char*)palloc(Max(str_len1, min_sound_len));
+    char* result2 = (char*)palloc(Max(str_len2, min_sound_len));
+    set_sound(arg1, result1, strlen(arg1));
+    set_sound(arg2, result2, strlen(arg2));
+
+    for (i = 0; i < SOUND_THRESHOLD; i++) {
+        if (result1[i] != result2[i]) {
+            pfree_ext(result1);
+            pfree_ext(result2);
+            PG_RETURN_INT32(0);
+        }
+    }
+    pfree_ext(result1);
+    pfree_ext(result2);
+    PG_RETURN_INT32(1);
 }
