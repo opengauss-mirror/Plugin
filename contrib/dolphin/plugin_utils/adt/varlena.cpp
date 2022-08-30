@@ -248,6 +248,9 @@ extern "C" DLL_PUBLIC Datum text_insert(PG_FUNCTION_ARGS);
 PG_FUNCTION_INFO_V1_PUBLIC(soundex_difference);
 extern "C" DLL_PUBLIC Datum soundex_difference(PG_FUNCTION_ARGS);
 
+PG_FUNCTION_INFO_V1_PUBLIC(make_set);
+extern "C" DLL_PUBLIC Datum make_set(PG_FUNCTION_ARGS);
+
 /*****************************************************************************
  *	 CONVERSION ROUTINES EXPORTED FOR USE BY C CODE							 *
  *****************************************************************************/
@@ -8022,4 +8025,53 @@ Datum soundex_difference(PG_FUNCTION_ARGS)
     pfree_ext(result1);
     pfree_ext(result2);
     PG_RETURN_INT32(1);
+}
+
+Datum make_set(PG_FUNCTION_ARGS)
+{
+    int64 num = PG_GETARG_INT64(0);
+    StringInfoData buf;
+    text* result = NULL;
+    int64 temp_num;
+
+    if (num == 0) {
+        PG_RETURN_NULL();
+    } else if (num < 0) {
+        temp_num = num + 1;
+    } else {
+        temp_num = num;
+    }
+
+    initStringInfo(&buf);
+    int64 flag = temp_num % 2;
+    bool output_flag = false;
+    text* temp_char;
+
+    for (int i = 1; i < PG_NARGS(); i++) {
+        /* when the num is minus, make_set return max string size is 64 in Mysql 8.0
+         * So there add restrict of handling size. */
+        if (i == 65 && num < 0) {
+            break;
+        }
+        if ((flag != 0 || (flag == 0 && num < 0)) && !fcinfo->argnull[i]) {
+            if (output_flag && (flag % 2 == 1 || (flag % 2 == 0 && num < 0))) {
+                appendStringInfoString(&buf, ",");
+                output_flag = false;
+            }
+            if (flag % 2 == 1 || (flag % 2 == 0 && num < 0)) {
+                temp_char = _elt(i, fcinfo);
+                appendStringInfoString(&buf, text_to_cstring(temp_char));
+                output_flag = true;
+            }
+        }
+        if (i == 1) {
+            flag = temp_num / 2;
+        } else {
+            flag = flag / 2;
+        }
+    }
+
+    result = cstring_to_text(buf.data);
+    pfree_ext(buf.data);
+    PG_RETURN_TEXT_P(result);
 }
