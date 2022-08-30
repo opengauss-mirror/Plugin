@@ -16,6 +16,9 @@ select 'zie' sounds like 'dslfaalskf222122';
 select 'adfidf' sounds like 'dadfa353dadf333ff';
 select 'hill' sounds like 'hell';
 select '中Adfab' sounds like '@adp';
+select 1 sounds like 2;
+select true sounds like 3;
+select 2.2 sounds like false;
 
 \c postgres
 drop database if exists db_soundex;
