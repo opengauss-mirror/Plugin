@@ -64,6 +64,7 @@ typedef struct BSqlPluginContext {
     unsigned int sqlModeFlags;
     List* lockNameList;
     double b_db_timestamp;
+    int lower_case_table_names;
 } bSqlPluginContext;
 
 BSqlPluginContext* GetSessionContext();

@@ -267,6 +267,13 @@ typedef struct OptLikeWhere
     Node *like_or_where;
 } OptLikeWhere;
 
+typedef struct DolphinString
+{
+	Node* node;
+	char* str;
+	bool is_quoted;
+} DolphinString;
+
 /* ConstraintAttributeSpec yields an integer bitmask of these flags: */
 #define CAS_NOT_DEFERRABLE			0x01
 #define CAS_DEFERRABLE				0x02
@@ -285,6 +292,7 @@ typedef struct OptLikeWhere
 
 #define parser_yyerror(msg)  scanner_yyerror(msg, yyscanner)
 #define parser_errposition(pos)  scanner_errposition(pos, yyscanner)
+#define is_quoted()  pg_yyget_extra(yyscanner)->core_yy_extra.ident_quoted
 
 static long conv_bit_to_int(A_Const* bit_str);
 static void fix_bw_type(A_Const* bw_arg1, A_Const* bw_arg2, A_Const* bw_arg3);
@@ -304,6 +312,7 @@ static Node *makeBitStringConst(char *str, int location);
 Node *makeAConst(Value *v, int location);
 Node *makeBoolAConst(bool state, int location);
 static void check_qualified_name(List *names, core_yyscan_t yyscanner);
+static void check_dolphin_qualified_name(List *names, core_yyscan_t yyscanner);
 static List *check_func_name(List *names, core_yyscan_t yyscanner);
 static List *check_setting_name(List *names, core_yyscan_t yyscanner);
 static List *check_indirection(List *indirection, core_yyscan_t yyscanner);
@@ -394,6 +403,11 @@ static bool CheckWhetherInColList(char *colname, List *col_list);
 static int GetFillerColIndex(char *filler_col_name, List *col_list);
 static void RemoveFillerCol(List *filler_list, List *col_list);
 static int errstate;
+static char* downcase_str(const char* ident, bool is_quoted);
+static DolphinString* makeDolphinStringByChar(char* str, bool is_quoted);
+static DolphinString* makeDolphinStringByNode(Node* node, bool is_quoted);
+static List* GetNameListFromDolphinString(List* dolphinStringList);
+static char* GetDolphinObjName(const char* string, bool is_quoted);
 %}
 
 %define api.pure
@@ -458,6 +472,7 @@ static int errstate;
 	struct CreateIndexOptions	*createindexoptions;
 	struct SingleIndexOption	*singleindexoption;
 	struct IndexMethodRelationClause *indexmethodrelationclause;
+	struct DolphinString		*dolphinString;
 }
 %type <singletableoption> CreateOption CreateIfNotExistsOption CreateAsOption
 %type <createtableoptions> CreateOptionList CreateIfNotExistsOptionList CreateAsOptionList
@@ -591,14 +606,14 @@ static int errstate;
 %type <str>		copy_file_name
 				database_name access_method_clause access_method attr_name
 				name namedata_string fdwName cursor_name file_name
-				index_name cluster_index_specification
+				index_name cluster_index_specification dolphin_index_name
 				pgxcnode_name pgxcgroup_name resource_pool_name workload_group_name
 				application_name password_string hint_string
-%type <list>	func_name func_name_opt_arg pkg_name  handler_name qual_Op qual_all_Op subquery_Op
+%type <list>	func_name func_name_opt_arg pkg_name  handler_name qual_Op qual_all_Op subquery_Op dolphin_func_name
 				opt_class opt_inline_handler opt_validator validator_clause
 				opt_collate
 
-%type <range>	qualified_name insert_target OptConstrFromTable opt_index_name insert_partition_clause update_delete_partition_clause
+%type <range>	qualified_name insert_target OptConstrFromTable opt_index_name insert_partition_clause update_delete_partition_clause dolphin_qualified_name
 
 %type <str>		all_Op MathOp OptDbName
 
@@ -636,12 +651,12 @@ static int errstate;
 				opt_column_list columnList opt_name_list opt_analyze_column_define opt_multi_name_list
 				opt_include_without_empty opt_c_include index_including_params
 				sort_clause opt_sort_clause sortby_list index_params table_index_elems index_options
-				name_list from_clause from_list opt_array_bounds
-				qualified_name_list any_name any_name_list
-				any_operator expr_list attrs callfunc_args callfunc_args_or_empty
+				name_list from_clause from_list opt_array_bounds dolphin_name_list
+				qualified_name_list any_name any_name_list dolphin_qualified_name_list dolphin_any_name dolphin_any_name_list
+				any_operator expr_list attrs callfunc_args callfunc_args_or_empty dolphin_attrs
 				target_list insert_column_list set_target_list
 				set_clause_list set_clause multiple_set_clause
-				ctext_expr_list ctext_row def_list tsconf_def_list indirection opt_indirection
+				ctext_expr_list ctext_row def_list tsconf_def_list indirection opt_indirection dolphin_indirection opt_dolphin_indirection
 				reloption_list tblspc_option_list cfoption_list group_clause TriggerFuncArgs select_limit
 				opt_select_limit opt_delete_limit opclass_item_list opclass_drop_list
 				opclass_purpose opt_opfamily transaction_mode_list_or_empty
@@ -705,7 +720,7 @@ static int errstate;
 %type <boolean> copy_from
 
 %type <ival>	opt_column event cursor_options opt_hold opt_set_data
-%type <objtype>	reindex_type drop_type comment_type security_label_type
+%type <objtype>	reindex_type drop_type comment_type security_label_type dolphin_comment_type
 
 %type <node>	fetch_args limit_clause select_limit_value
 				offset_clause select_offset_value
@@ -742,7 +757,7 @@ static int errstate;
 %type <node>	ctext_expr
 %type <value>	NumericOnly
 %type <list>	NumericOnly_list
-%type <alias>	alias_clause opt_alias_clause
+%type <alias>	alias_clause opt_alias_clause dolphin_alias_clause opt_dolphin_alias_clause
 %type <sortby>	sortby
 %type <ielem>	index_elem table_index_elem
 %type <node>	table_ref
@@ -786,6 +801,7 @@ static int errstate;
 %type <list>	var_list
 %type <str>		ColId ColLabel var_name type_function_name param_name user opt_password opt_replace show_index_schema_opt ColIdForTableElement
 %type <node>	var_value zone_value
+%type <dolphinString>	DolphinColId DolphinColLabel dolphin_indirection_el
 
 %type <keyword> unreserved_keyword type_func_name_keyword unreserved_keyword_without_key
 %type <keyword> col_name_keyword reserved_keyword
@@ -935,6 +951,7 @@ static int errstate;
 %type <keyword>	into_empty opt_temporary opt_values_in replace_empty
 %type <str>	compression_args
 %type <boolean> opt_ignore
+%type <str> normal_ident
 
 /*
  * Non-keyword token types.  These are hard-wired into the "flex" lexer.
@@ -1626,7 +1643,7 @@ AlterOptRoleElem:
 				{
 					$$ = makeDefElem("rolemembers", (Node *)$2);
 				}
-			| IDENT
+			| normal_ident
 				{
 					/*
 					 * We handle identifiers that aren't parser keywords with
@@ -1895,7 +1912,7 @@ DropRoleStmt:
  *****************************************************************************/
 
 DropUserStmt:
-			DROP USER name_list opt_drop_behavior
+			DROP USER dolphin_name_list opt_drop_behavior
 				{
 					DropRoleStmt *n = makeNode(DropRoleStmt);
 					n->missing_ok = FALSE;
@@ -1904,7 +1921,7 @@ DropUserStmt:
 					n->behavior = $4;
 					$$ = (Node *)n;
 				}
-			| DROP USER IF_P EXISTS name_list opt_drop_behavior
+			| DROP USER IF_P EXISTS dolphin_name_list opt_drop_behavior
 				{
 					DropRoleStmt *n = makeNode(DropRoleStmt);
 					n->roles = $5;
@@ -2511,7 +2528,7 @@ zone_value:
 				{
 					$$ = makeStringConst($1, @1);
 				}
-			| IDENT
+			| normal_ident
 				{
 					$$ = makeStringConst($1, @1);
 				}
@@ -2670,7 +2687,7 @@ VariableShowStmt:
 					SelectStmt *n = makeShowTablesQuery(TRUE, $4, $5->like_or_where, $5->is_like);
 					$$ = (Node *) n;
 				}
-			| SHOW opt_full_fields from_in qualified_name OptDbName OptLikeOrWhere
+			| SHOW opt_full_fields from_in dolphin_qualified_name OptDbName OptLikeOrWhere
 				{
 					SelectStmt *n = makeShowColumnsQuery($4->schemaname, $4->relname, $5, $2, $6->is_like, $6->like_or_where);
 					$$ = (Node *)n;
@@ -2717,7 +2734,7 @@ VariableShowStmt:
 					n->name = "all";
 					$$ = (Node *) n;
 				}
-			| SHOW show_index_opt from_in qualified_name show_index_schema_opt where_clause
+			| SHOW show_index_opt from_in dolphin_qualified_name show_index_schema_opt where_clause
 				{
 					SelectStmt *s = makeShowIndexQuery($5 ? $5 : $4->schemaname, $4->relname, $6);
 					$$ = (Node*)s;
@@ -3717,7 +3734,7 @@ alter_table_cmd:
 					n->def = $3;
 					$$ = (Node *)n;
 				}
-			| ADD_P TABLE qualified_name
+			| ADD_P TABLE dolphin_qualified_name
 				{
 					AlterTableCmd *n = makeNode(AlterTableCmd);
 					AddTableIntoCBIState *s = makeNode(AddTableIntoCBIState);
@@ -4065,7 +4082,7 @@ alter_table_cmd:
 					$$ = (Node *)n;
 				}
 			/* ALTER TABLE <name> INHERIT <parent> */
-			| INHERIT qualified_name
+			| INHERIT dolphin_qualified_name
 				{
 					AlterTableCmd *n = makeNode(AlterTableCmd);
 					n->subtype = AT_AddInherit;
@@ -4073,7 +4090,7 @@ alter_table_cmd:
 					$$ = (Node *)n;
 				}
 			/* ALTER TABLE <name> NO INHERIT <parent> */
-			| NO INHERIT qualified_name
+			| NO INHERIT dolphin_qualified_name
 				{
 					AlterTableCmd *n = makeNode(AlterTableCmd);
 					n->subtype = AT_DropInherit;
@@ -4194,7 +4211,7 @@ alter_table_cmd:
 					$$ = (Node *)n;
 				}
 			/* ALTER TABLE <name> UPDATE SLICE LIKE (reftalbename), only used for redis range/list distribution table */
-			| UPDATE SLICE LIKE qualified_name
+			| UPDATE SLICE LIKE dolphin_qualified_name
 				{
 					AlterTableCmd *n = makeNode(AlterTableCmd);
 					n->subtype = AT_UpdateSliceLike;
@@ -4328,7 +4345,7 @@ reloption_elem:
 				}
 			| ColLabel '=' ROW
 				{
-					$$ = makeDefElem($1, (Node *) makeString(pstrdup($3)));
+					$$ = makeDefElem($1, (Node *) makeString(downcase_str(pstrdup($3), false)));
 				}
 			| ColLabel
 				{
@@ -4413,7 +4430,7 @@ split_dest_rangesubpartition_define_list:
 
 /*support b_database syntax related with partition*/
 AlterPartitionRebuildStmt:
-			ALTER TABLE qualified_name REBUILD_PARTITION partition_name_list
+			ALTER TABLE dolphin_qualified_name REBUILD_PARTITION partition_name_list
 				{
 					FuncCall *n = makeNode(FuncCall);
 					n->funcname = list_make1(makeString("rebuild_partition"));
@@ -4432,7 +4449,7 @@ AlterPartitionRebuildStmt:
 					sel->targetList = list_make1(rtg);
 					$$ = (Node *)sel;
 				}
-			| ALTER TABLE qualified_name REBUILD_PARTITION ALL
+			| ALTER TABLE dolphin_qualified_name REBUILD_PARTITION ALL
 				{
 					FuncCall *n = makeNode(FuncCall);
 					n->funcname = list_make1(makeString("rebuild_partition"));
@@ -4454,7 +4471,7 @@ AlterPartitionRebuildStmt:
 		;
 
 AlterPartitionRemoveStmt:
-			ALTER TABLE qualified_name REMOVE PARTITIONING
+			ALTER TABLE dolphin_qualified_name REMOVE PARTITIONING
 				{
 					FuncCall *n = makeNode(FuncCall);
 					n->funcname = list_make1(makeString("remove_partitioning"));
@@ -4476,22 +4493,22 @@ AlterPartitionRemoveStmt:
 		;
 
 AlterPartitionCheckStmt:
-			ALTER TABLE qualified_name CHECK PARTITION partition_name_list { $$=NULL; }
-			| ALTER TABLE qualified_name CHECK PARTITION ALL { $$=NULL; }
+			ALTER TABLE dolphin_qualified_name CHECK PARTITION partition_name_list { $$=NULL; }
+			| ALTER TABLE dolphin_qualified_name CHECK PARTITION ALL { $$=NULL; }
 		;
 
 AlterPartitionRepairStmt:
-			ALTER TABLE qualified_name REPAIR PARTITION partition_name_list { $$=NULL; }
-			| ALTER TABLE qualified_name REPAIR PARTITION ALL { $$=NULL; }
+			ALTER TABLE dolphin_qualified_name REPAIR PARTITION partition_name_list { $$=NULL; }
+			| ALTER TABLE dolphin_qualified_name REPAIR PARTITION ALL { $$=NULL; }
 		;
 
 AlterPartitionOptimizeStmt:
-			ALTER TABLE qualified_name OPTIMIZE PARTITION partition_name_list { $$=NULL; }
-			| ALTER TABLE qualified_name OPTIMIZE PARTITION ALL { $$=NULL; }
+			ALTER TABLE dolphin_qualified_name OPTIMIZE PARTITION partition_name_list { $$=NULL; }
+			| ALTER TABLE dolphin_qualified_name OPTIMIZE PARTITION ALL { $$=NULL; }
 		;
 
 AnalyzePartitionStmt:
-		ALTER TABLE qualified_name analyze_keyword opt_verbose opt_name_list PARTITION partition_name_list
+		ALTER TABLE dolphin_qualified_name analyze_keyword opt_verbose opt_name_list PARTITION partition_name_list
 			{
 				List* arglist = NIL;
 				arglist = lcons(makeStringConst($3->relname, @3), $8);
@@ -4514,7 +4531,7 @@ AnalyzePartitionStmt:
 				sel->targetList = list_make1(rtg);
 				$$ = (Node *)sel;
 			}
-		| ALTER TABLE qualified_name analyze_keyword opt_verbose opt_name_list PARTITION ALL
+		| ALTER TABLE dolphin_qualified_name analyze_keyword opt_verbose opt_name_list PARTITION ALL
 			{
 				VacuumStmt *n = makeNode(VacuumStmt);
 				n->options = VACOPT_ANALYZE;
@@ -5129,7 +5146,7 @@ ClosePortalStmt:
  *
  *****************************************************************************/
 
-CopyStmt:	COPY BINARY qualified_name opt_column_list opt_oids
+CopyStmt:	COPY BINARY dolphin_qualified_name opt_column_list opt_oids
 			copy_from copy_file_name opt_load opt_useeof copy_delimiter opt_noescaping OptCopyLogError OptCopyRejectLimit opt_with copy_options 
 			opt_processed
 				{
@@ -5171,7 +5188,7 @@ CopyStmt:	COPY BINARY qualified_name opt_column_list opt_oids
 					u_sess->parser_cxt.is_load_copy = false;
 					u_sess->parser_cxt.col_list = NULL;
 				}
-			| COPY qualified_name opt_column_list opt_oids
+			| COPY dolphin_qualified_name opt_column_list opt_oids
 			copy_from copy_file_name opt_load opt_useeof copy_delimiter opt_noescaping OptCopyLogError OptCopyRejectLimit opt_with copy_options 
 			opt_processed
 				{
@@ -5700,7 +5717,7 @@ CreateStreamStmt:
  *
  *****************************************************************************/
 PurgeStmt:
-	PURGE TABLE qualified_name 
+	PURGE TABLE dolphin_qualified_name 
 		{
 			TcapFeatureEnsure();
 			PurgeStmt *n = makeNode(PurgeStmt);
@@ -5752,7 +5769,7 @@ PurgeStmt:
  *****************************************************************************/
  
 TimeCapsuleStmt:
-	TIMECAPSULE TABLE qualified_name TO opt_timecapsule_clause 
+	TIMECAPSULE TABLE dolphin_qualified_name TO opt_timecapsule_clause 
 		{
 			TcapFeatureEnsure();
 			TimeCapsuleStmt *n = makeNode(TimeCapsuleStmt);
@@ -5766,7 +5783,7 @@ TimeCapsuleStmt:
 			$$ = (Node *) n;
 		}
 
-	| TIMECAPSULE TABLE qualified_name TO BEFORE DROP opt_rename
+	| TIMECAPSULE TABLE dolphin_qualified_name TO BEFORE DROP opt_rename
 		{
 			TcapFeatureEnsure();
 			TimeCapsuleStmt *n = makeNode(TimeCapsuleStmt);
@@ -5776,7 +5793,7 @@ TimeCapsuleStmt:
 			$$ = (Node *) n;
 		}
 
-	| TIMECAPSULE TABLE qualified_name TO BEFORE TRUNCATE
+	| TIMECAPSULE TABLE dolphin_qualified_name TO BEFORE TRUNCATE
 		{
 			TcapFeatureEnsure();
 			TimeCapsuleStmt *n = makeNode(TimeCapsuleStmt);
@@ -5993,7 +6010,7 @@ CreateAsOption:
 				}
 		;
 
-CreateStmt:	CREATE OptTemp TABLE qualified_name '(' OptTableElementList ')'
+CreateStmt:	CREATE OptTemp TABLE dolphin_qualified_name '(' OptTableElementList ')'
 			CreateOptionList
 				{
 					CreateStmt *n = makeNode(CreateStmt);
@@ -6021,7 +6038,7 @@ CreateStmt:	CREATE OptTemp TABLE qualified_name '(' OptTableElementList ')'
 					}
 					$$ = (Node *)n;
 				}
-		| CREATE OptTemp TABLE qualified_name '(' OptTableElementList ')'
+		| CREATE OptTemp TABLE dolphin_qualified_name '(' OptTableElementList ')'
 				{
 					CreateStmt *n = makeNode(CreateStmt);
 					$4->relpersistence = $2;
@@ -6043,7 +6060,7 @@ CreateStmt:	CREATE OptTemp TABLE qualified_name '(' OptTableElementList ')'
 					n->internalData = NULL;
 					$$ = (Node *)n;
 				}
-		| CREATE OptTemp TABLE IF_P NOT EXISTS qualified_name '('
+		| CREATE OptTemp TABLE IF_P NOT EXISTS dolphin_qualified_name '('
 			OptTableElementList ')' CreateIfNotExistsOptionList
 				{
 					CreateStmt *n = makeNode(CreateStmt);
@@ -6070,7 +6087,7 @@ CreateStmt:	CREATE OptTemp TABLE qualified_name '(' OptTableElementList ')'
 					}
 					$$ = (Node *)n;
 				}
-		| CREATE OptTemp TABLE IF_P NOT EXISTS qualified_name '('
+		| CREATE OptTemp TABLE IF_P NOT EXISTS dolphin_qualified_name '('
 			OptTableElementList ')'
 				{
 					CreateStmt *n = makeNode(CreateStmt);
@@ -6092,7 +6109,7 @@ CreateStmt:	CREATE OptTemp TABLE qualified_name '(' OptTableElementList ')'
 					n->internalData = NULL;
 					$$ = (Node *)n;
 				}
-		| CREATE OptTemp TABLE qualified_name OF any_name
+		| CREATE OptTemp TABLE dolphin_qualified_name OF any_name
 			OptTypedTableElementList OptWith OnCommitOption OptCompress OptPartitionElement
 /* PGXC_BEGIN */
 			OptDistributeBy OptSubCluster
@@ -6122,7 +6139,7 @@ CreateStmt:	CREATE OptTemp TABLE qualified_name '(' OptTableElementList ')'
 					}
 					$$ = (Node *)n;
 				}
-		| CREATE OptTemp TABLE IF_P NOT EXISTS qualified_name OF any_name
+		| CREATE OptTemp TABLE IF_P NOT EXISTS dolphin_qualified_name OF any_name
 			OptTypedTableElementList OptWith OnCommitOption OptCompress OptPartitionElement
 /* PGXC_BEGIN */
 			OptDistributeBy OptSubCluster
@@ -6195,7 +6212,7 @@ opt_engine_without_empty:
 		}
 	;
 
-compression_args:	IDENT		{ $$ = $1; }
+compression_args:	normal_ident		{ $$ = $1; }
 					| Sconst	{ $$ = $1; }
 					| NONE		{ $$ = "none"; }
 		;
@@ -6333,7 +6350,7 @@ list_partitioning_clause:
 		;
 
 hash_partitioning_clause:
-		PARTITION BY IDENT '(' column_item_list ')' subpartitioning_clause
+		PARTITION BY normal_ident '(' column_item_list ')' subpartitioning_clause
 		'(' hash_partition_definition_list ')' opt_row_movement_clause
 			{
 #ifdef ENABLE_MULTIPLE_NODES
@@ -6463,7 +6480,7 @@ list_subpartitioning_clause:
 		;
 
 hash_subpartitioning_clause:
-		SUBPARTITION BY IDENT '(' column_item_list ')'
+		SUBPARTITION BY normal_ident '(' column_item_list ')'
 			{
 #ifdef ENABLE_MULTIPLE_NODES
             	const char* message = "Un-support feature";
@@ -7062,9 +7079,9 @@ TypedTableElement:
 			| TableConstraint	 				{ $$ = $1; }
 		;
 
-ColIdForTableElement:	IDENT						{ $$ = $1; }
-			| unreserved_keyword_without_key		{ $$ = pstrdup($1); }
-			| col_name_keyword						{ $$ = pstrdup($1); }
+ColIdForTableElement:	IDENT						{ $$ = downcase_str($1, is_quoted()); }
+			| unreserved_keyword_without_key		{ $$ = downcase_str(pstrdup($1), is_quoted()); }
+			| col_name_keyword						{ $$ = downcase_str(pstrdup($1), is_quoted()); }
 		;
 
 columnDefForTableElement:	ColIdForTableElement Typename KVType ColCmprsMode create_generic_options ColQualList
@@ -7528,7 +7545,7 @@ ColConstraintElem:
 					n->location = @1;
 					$$ = (Node *)n;
 				}
-			| REFERENCES qualified_name opt_column_list key_match key_actions
+			| REFERENCES dolphin_qualified_name opt_column_list key_match key_actions
 				{
 #ifdef 			ENABLE_MULTIPLE_NODES
             		const char* message = "REFERENCES constraint is not yet supported.";
@@ -7550,7 +7567,7 @@ ColConstraintElem:
 					n->initially_valid  = true;
 					$$ = (Node *)n;
 				}
-			| REFERENCES qualified_name opt_column_list key_match key_actions ENABLE_P
+			| REFERENCES dolphin_qualified_name opt_column_list key_match key_actions ENABLE_P
 				{
             		const char* message = "REFERENCES constraint is not yet supported.";
             		InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);
@@ -7620,7 +7637,7 @@ ConstraintAttr:
 
 
 TableLikeClause:
-			LIKE qualified_name TableLikeOptionList
+			LIKE dolphin_qualified_name TableLikeOptionList
 				{
 					TableLikeClause *n = makeNode(TableLikeClause);
 					n->relation = $2;
@@ -7638,7 +7655,7 @@ TableLikeClause:
 #endif					
 					$$ = (Node *)n;
 				}
-			| LIKE qualified_name INCLUDING_ALL excluding_option_list
+			| LIKE dolphin_qualified_name INCLUDING_ALL excluding_option_list
 				{
 					TableLikeClause *n = makeNode(TableLikeClause);
 					n->relation = $2;
@@ -7851,7 +7868,7 @@ ConstraintElem:
 								   NULL, yyscanner);
 					$$ = (Node *)n;
 				}
-			| FOREIGN KEY '(' columnList ')' REFERENCES qualified_name
+			| FOREIGN KEY '(' columnList ')' REFERENCES dolphin_qualified_name
 				opt_column_list key_match key_actions ConstraintAttributeSpec
 				{
 #ifdef 			ENABLE_MULTIPLE_NODES	
@@ -7993,7 +8010,7 @@ key_action:
 			| SET DEFAULT				{ $$ = FKCONSTR_ACTION_SETDEFAULT; }
 		;
 
-OptInherit_without_empty: INHERITS '(' qualified_name_list ')'
+OptInherit_without_empty: INHERITS '(' dolphin_qualified_name_list ')'
 			{
         		const char* message = "CREATE TABLE ... INHERITS is not yet supported.";
     			InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);
@@ -8085,7 +8102,7 @@ OptDatanodeName:    DATANODE name					{ $$ = $2; }
  * related to distribution on other commands and to allow extensibility for
  * new distributions.
  */
-OptDistributeType: IDENT							{ $$ = $1; }
+OptDistributeType: normal_ident							{ $$ = $1; }
 		;
 
 OptDistributeByInternal:  DISTRIBUTE BY OptDistributeType '(' name_list ')'
@@ -8561,7 +8578,7 @@ CreateAsStmt:
 					$4->skipData = !($6);
 					$$ = (Node *) ctas;
 				}
-		| CREATE OptTemp TABLE qualified_name SelectStmtWithoutWithClause opt_with_data
+		| CREATE OptTemp TABLE dolphin_qualified_name SelectStmtWithoutWithClause opt_with_data
 				{
 					CreateTableAsStmt *ctas = makeNode(CreateTableAsStmt);
 					ctas->query = $5;
@@ -8594,7 +8611,7 @@ CreateAsStmt:
 
 create_as_target:
 			create_as_target_dolphin			{ $$ = $1; }
-			| qualified_name
+			| dolphin_qualified_name
 				{
 					$$ = makeNode(IntoClause);
 					$$->rel = $1;
@@ -8616,7 +8633,7 @@ create_as_target:
 		;
 
 create_as_target_dolphin:
-			qualified_name opt_column_list CreateAsOptionList
+			dolphin_qualified_name opt_column_list CreateAsOptionList
 				{
 					$$ = makeNode(IntoClause);
 					$$->rel = $1;
@@ -8639,7 +8656,7 @@ create_as_target_dolphin:
 						}
 					}
 				}
-			| qualified_name '(' columnList ')'
+			| dolphin_qualified_name '(' columnList ')'
 				{
 					$$ = makeNode(IntoClause);
 					$$->rel = $1;
@@ -10102,7 +10119,7 @@ generic_option_arg:
  *             CREATE SERVER name [TYPE] [VERSION] [OPTIONS]
  *
  *****************************************************************************/
-fdwName:    IDENT           {$$ = $1;};
+fdwName:    normal_ident           { $$ = $1;};
 
 CreateForeignServerStmt: CREATE SERVER name opt_type opt_foreign_server_version
 						 FOREIGN DATA_P WRAPPER fdwName create_generic_options
@@ -10205,7 +10222,7 @@ AlterForeignServerStmt: ALTER SERVER name foreign_server_version alter_generic_o
  *****************************************************************************/
 
 CreateForeignTableStmt:
-		CREATE FOREIGN TABLE qualified_name
+		CREATE FOREIGN TABLE dolphin_qualified_name
 			OptForeignTableElementList
 			SERVER name create_generic_options ForeignTblWritable
 			OptForeignTableLogError OptForeignTableLogRemote OptPerNodeRejectLimit OptDistributeBy
@@ -10239,7 +10256,7 @@ CreateForeignTableStmt:
 
 					$$ = (Node *) n;
 				}
-		| CREATE FOREIGN TABLE IF_P NOT EXISTS qualified_name
+		| CREATE FOREIGN TABLE IF_P NOT EXISTS dolphin_qualified_name
 			OptForeignTableElementList
 			SERVER name create_generic_options ForeignTblWritable
 			OptForeignTableLogError OptForeignTableLogRemote OptPerNodeRejectLimit OptDistributeBy
@@ -10274,7 +10291,7 @@ CreateForeignTableStmt:
 					$$ = (Node *) n;
 				}
 /* ENABLE_MOT BEGIN */
-                | CREATE FOREIGN TABLE qualified_name
+                | CREATE FOREIGN TABLE dolphin_qualified_name
 			OptForeignTableElementList
 			create_generic_options ForeignTblWritable
 			OptForeignTableLogError OptForeignTableLogRemote OptPerNodeRejectLimit OptDistributeBy
@@ -10316,7 +10333,7 @@ CreateForeignTableStmt:
 
 					$$ = (Node *) n;
 				}
-               | CREATE FOREIGN TABLE IF_P NOT EXISTS qualified_name
+               | CREATE FOREIGN TABLE IF_P NOT EXISTS dolphin_qualified_name
 			OptForeignTableElementList
 			create_generic_options ForeignTblWritable
 			OptForeignTableLogError OptForeignTableLogRemote OptPerNodeRejectLimit OptDistributeBy
@@ -10425,7 +10442,7 @@ ForeignPosition:
 		;
 
 ForeignTableLikeClause:
-			LIKE qualified_name				
+			LIKE dolphin_qualified_name				
 				{					
 					TableLikeClause *n = makeNode(TableLikeClause);
 					n->relation = $2;
@@ -10434,8 +10451,8 @@ ForeignTableLikeClause:
 		;	
 
 OptForeignTableLogError:
-			LOG_P INTO qualified_name 	{ $$ = (Node*)$3; }
-			| WITH  qualified_name 		{ $$ = (Node*)$2; }
+			LOG_P INTO dolphin_qualified_name 	{ $$ = (Node*)$3; }
+			| WITH  dolphin_qualified_name 		{ $$ = (Node*)$2; }
 			| /*EMPTY*/ 				{ $$ = NULL;}
 		;
 
@@ -10563,7 +10580,7 @@ CreateUserMappingStmt: CREATE USER MAPPING FOR auth_ident SERVER name create_gen
 auth_ident:
 			CURRENT_USER	{ $$ = "current_user"; }
 		|	USER			{ $$ = "current_user"; }
-		|	RoleId			{ $$ = (strcmp($1, "public") == 0) ? NULL : $1; }
+		|	RoleId			{ $$ = (strcmp(downcase_str($1, false), "public") == 0) ? NULL : $1; }
 		;
 
 /*****************************************************************************
@@ -10753,7 +10770,7 @@ DropModelStmt:
  *****************************************************************************/
 
 CreateRlsPolicyStmt:
-			CREATE RowLevelSecurityPolicyName ON qualified_name RLSDefaultPermissive
+			CREATE RowLevelSecurityPolicyName ON dolphin_qualified_name RLSDefaultPermissive
 				RLSDefaultForCmd RLSDefaultToRole
 				RLSOptionalUsingExpr
 				{
@@ -10780,7 +10797,7 @@ CreateRlsPolicyStmt:
 		;
 
 AlterRlsPolicyStmt:
-			ALTER RowLevelSecurityPolicyName ON qualified_name RLSOptionalToRole
+			ALTER RowLevelSecurityPolicyName ON dolphin_qualified_name RLSOptionalToRole
 				RLSOptionalUsingExpr
 				{
 					AlterRlsPolicyStmt *n = makeNode(AlterRlsPolicyStmt);
@@ -10860,7 +10877,7 @@ row_level_security_role:
 		;
 
 RLSDefaultPermissive:
-			AS IDENT
+			AS normal_ident
 				{
 					if (strcmp($2, "permissive") == 0)
 						$$ = true;
@@ -11087,7 +11104,7 @@ DropDataSourceStmt: DROP DATA_P SOURCE_P name opt_drop_behavior
 
 CreateTrigStmt:
 			CREATE TRIGGER name TriggerActionTime TriggerEvents ON
-			qualified_name TriggerForSpec TriggerWhen
+			dolphin_qualified_name TriggerForSpec TriggerWhen
 			EXECUTE PROCEDURE func_name '(' TriggerFuncArgs ')'
 				{
 					CreateTrigStmt *n = makeNode(CreateTrigStmt);
@@ -11107,7 +11124,7 @@ CreateTrigStmt:
 					$$ = (Node *)n;
 				}
 			| CREATE CONSTRAINT TRIGGER name AFTER TriggerEvents ON
-			qualified_name OptConstrFromTable ConstraintAttributeSpec
+			dolphin_qualified_name OptConstrFromTable ConstraintAttributeSpec
 			FOR EACH ROW TriggerWhen
 			EXECUTE PROCEDURE func_name '(' TriggerFuncArgs ')'
 				{
@@ -11222,7 +11239,7 @@ TriggerFuncArg:
 		;
 
 OptConstrFromTable:
-			FROM qualified_name						{ $$ = $2; }
+			FROM dolphin_qualified_name						{ $$ = $2; }
 			| /*EMPTY*/								{ $$ = NULL; }
 		;
 
@@ -11534,7 +11551,7 @@ def_elem:	ColLabel '=' def_arg
 
 /* Note: any simple identifier will be returned as a type name! */
 def_arg:	func_type						{ $$ = (Node *)$1; }
-			| reserved_keyword				{ $$ = (Node *)makeString(pstrdup($1)); }
+			| reserved_keyword				{ $$ = (Node *)makeString(downcase_str(pstrdup($1), is_quoted())); }
 			| qual_all_Op					{ $$ = (Node *)$1; }
 			| NumericOnly					{ $$ = (Node *)$1; }
 			| Sconst						{ $$ = (Node *)makeString($1); }
@@ -11567,7 +11584,7 @@ old_aggr_list: old_aggr_elem						{ $$ = list_make1($1); }
  * the item names needed in old aggregate definitions are likely to become
  * SQL keywords.
  */
-old_aggr_elem:  IDENT '=' def_arg
+old_aggr_elem:  normal_ident '=' def_arg
 				{
 					$$ = makeDefElem($1, (Node *)$3);
 				}
@@ -11938,6 +11955,31 @@ DropStmt:	DROP drop_type IF_P EXISTS any_name_list opt_drop_behavior opt_purge
 					}
 					$$ = (Node *)n;
 				}
+			| DROP opt_temporary TABLE IF_P EXISTS dolphin_any_name_list opt_drop_behavior opt_purge
+				{
+					DropStmt *n = makeNode(DropStmt);
+					n->removeType = OBJECT_TABLE;
+					n->missing_ok = TRUE;
+					n->objects = $6;
+					n->arguments = NIL;
+					n->behavior = $7;
+					n->concurrent = false;
+					n->purge = $8;
+
+					$$ = (Node *)n;
+				}
+			| DROP opt_temporary TABLE dolphin_any_name_list opt_drop_behavior opt_purge
+				{
+					DropStmt *n = makeNode(DropStmt);
+					n->removeType = OBJECT_TABLE;
+					n->missing_ok = FALSE;
+					n->objects = $4;
+					n->arguments = NIL;
+					n->behavior = $5;
+					n->concurrent = false;
+					n->purge = $6;
+					$$ = (Node *)n;
+				}
 			| DROP INDEX IF_P EXISTS any_name_list opt_drop_behavior opt_purge on_table
 				{
 					DropStmt *n = makeNode(DropStmt);
@@ -12004,7 +12046,7 @@ DropStmt:	DROP drop_type IF_P EXISTS any_name_list opt_drop_behavior opt_purge
 		;
 
 on_table:
-			ON qualified_name					{ $$ = NULL; }
+			ON dolphin_qualified_name					{ $$ = NULL; }
 			| /* EMPTY */						{ $$ = NULL; }
 		;
 
@@ -12018,8 +12060,7 @@ opt_temporary:
 			| /* EMPTY */							{ $$ = NULL; }
 		;
 
-drop_type:	opt_temporary TABLE						{ $$ = OBJECT_TABLE; }
-            | CONTVIEW                              { $$ = OBJECT_CONTQUERY; }
+drop_type:	 CONTVIEW                              { $$ = OBJECT_CONTQUERY; }
             | STREAM                                { $$ = OBJECT_STREAM; }
 			| SEQUENCE								{ $$ = OBJECT_SEQUENCE; }
 			| LARGE_P SEQUENCE						{ $$ = OBJECT_LARGE_SEQUENCE; }
@@ -12046,14 +12087,54 @@ any_name_list:
 			| any_name_list ',' any_name			{ $$ = lappend($1, $3); }
 		;
 
+dolphin_any_name_list:
+			dolphin_any_name										{ $$ = list_make1($1); }
+			| dolphin_any_name_list ',' dolphin_any_name			{ $$ = lappend($1, $3); }
+		;
+
 any_name:	ColId						{ $$ = list_make1(makeString($1)); }
 			| ColId attrs				{ $$ = lcons(makeString($1), $2); }
+		;
+
+dolphin_any_name:	DolphinColId						{ $$ = list_make1(makeString(GetDolphinObjName($1->str, $1->is_quoted))); }
+			| DolphinColId dolphin_attrs
+			{
+				List* list = $2;
+				List* result = list_make1(makeString(downcase_str($1->str, $1->is_quoted)));
+				ListCell * cell = NULL;
+				int length = list_length($2);
+				int count = 1;
+				foreach (cell, list) {
+					DolphinString* dolphinString = (DolphinString*)lfirst(cell);
+					Value* value = (Value*)(dolphinString->node);
+					char* str = strVal(value);
+					bool is_quoted = dolphinString->is_quoted;
+					if (length == 1 && count == 1) {
+						/* schema_name.table_name */
+						result = lappend(result, makeString(GetDolphinObjName(str, is_quoted)));
+					} else if (count == 2) {
+						/* category_name.schema_name.table_name */
+						result = lappend(result, makeString(GetDolphinObjName(str, is_quoted)));
+					} else {
+						/* other_names */
+						result = lappend(result, makeString(downcase_str(str, is_quoted)));
+					}
+					count++;
+				}
+				$$ = result;
+			}
 		;
 
 attrs:		'.' attr_name
 					{ $$ = list_make1(makeString($2)); }
 			| attrs '.' attr_name
 					{ $$ = lappend($1, makeString($3)); }
+		;
+
+dolphin_attrs:		'.' DolphinColLabel
+						{ $$ = list_make1($2); }
+					| dolphin_attrs '.' DolphinColLabel
+						{ $$ = lappend($1, $3); }
 		;
 
 
@@ -12115,6 +12196,15 @@ CommentStmt:
 					n->comment = $6;
 					$$ = (Node *) n;
 				}
+			| COMMENT ON dolphin_comment_type dolphin_any_name IS comment_text
+				{
+					CommentStmt *n = makeNode(CommentStmt);
+					n->objtype = $3;
+					n->objname = $4;
+					n->objargs = NIL;
+					n->comment = $6;
+					$$ = (Node *) n;
+				}
 			| COMMENT ON AGGREGATE func_name aggr_args IS comment_text
 				{
 					CommentStmt *n = makeNode(CommentStmt);
@@ -12142,7 +12232,7 @@ CommentStmt:
 					n->comment = $7;
 					$$ = (Node *) n;
 				}
-			| COMMENT ON CONSTRAINT name ON any_name IS comment_text
+			| COMMENT ON CONSTRAINT name ON dolphin_any_name IS comment_text
 				{
 					CommentStmt *n = makeNode(CommentStmt);
 					n->objtype = OBJECT_CONSTRAINT;
@@ -12170,7 +12260,7 @@ CommentStmt:
 					n->comment = $6;
 					$$ = (Node *) n;
 				}
-			| COMMENT ON TRIGGER name ON any_name IS comment_text
+			| COMMENT ON TRIGGER name ON dolphin_any_name IS comment_text
 				{
 					CommentStmt *n = makeNode(CommentStmt);
 					n->objtype = OBJECT_TRIGGER;
@@ -12265,7 +12355,6 @@ comment_type:
 			| INDEX								{ $$ = OBJECT_INDEX; }
 			| SEQUENCE							{ $$ = OBJECT_SEQUENCE; }
 			| LARGE_P SEQUENCE					{ $$ = OBJECT_LARGE_SEQUENCE; }
-			| TABLE								{ $$ = OBJECT_TABLE; }
 			| DOMAIN_P							{ $$ = OBJECT_DOMAIN; }
 			| TYPE_P							{ $$ = OBJECT_TYPE; }
 			| VIEW								{ $$ = OBJECT_VIEW; }
@@ -12275,11 +12364,15 @@ comment_type:
 			| CONVERSION_P						{ $$ = OBJECT_CONVERSION; }
 			| TABLESPACE						{ $$ = OBJECT_TABLESPACE; }
 			| EXTENSION							{ $$ = OBJECT_EXTENSION; }
-			| ROLE								{ $$ = OBJECT_ROLE; }
-			| USER								{ $$ = OBJECT_USER; }
-			| FOREIGN TABLE						{ $$ = OBJECT_FOREIGN_TABLE; }
 			| SERVER							{ $$ = OBJECT_FOREIGN_SERVER; }
 			| FOREIGN DATA_P WRAPPER			{ $$ = OBJECT_FDW; }
+		;
+
+dolphin_comment_type:
+			TABLE								{ $$ = OBJECT_TABLE; }
+			| FOREIGN TABLE						{ $$ = OBJECT_FOREIGN_TABLE; }
+			| ROLE								{ $$ = OBJECT_ROLE; }
+			| USER								{ $$ = OBJECT_USER; }
 		;
 
 comment_text:
@@ -12768,21 +12861,21 @@ privilege_list:	privilege							{ $$ = list_make1($1); }
 privilege:	SELECT opt_column_list
 			{
 				AccessPriv *n = makeNode(AccessPriv);
-				n->priv_name = pstrdup($1);
+				n->priv_name = downcase_str(pstrdup($1), false);
 				n->cols = $2;
 				$$ = n;
 			}
 		| REFERENCES opt_column_list
 			{
 				AccessPriv *n = makeNode(AccessPriv);
-				n->priv_name = pstrdup($1);
+				n->priv_name = downcase_str(pstrdup($1), false);
 				n->cols = $2;
 				$$ = n;
 			}
 		| CREATE opt_column_list
 			{
 				AccessPriv *n = makeNode(AccessPriv);
-				n->priv_name = pstrdup($1);
+				n->priv_name = downcase_str(pstrdup($1), false);
 				n->cols = $2;
 				$$ = n;
 			}
@@ -12810,7 +12903,7 @@ routine_privilege:
 		ALTER ROUTINE
 				{
 					AccessPriv *n = makeNode(AccessPriv);
-					n->priv_name = pstrdup($1);
+					n->priv_name = downcase_str(pstrdup($1), false);
 					n->cols = NULL;
 					$$ = n;
 				}
@@ -12866,7 +12959,7 @@ temporary_privilege:
 		CREATE TEMPORARY TABLES
 			{
 				AccessPriv *n = makeNode(AccessPriv);
-				n->priv_name = pstrdup($2);
+				n->priv_name = downcase_str(pstrdup($2), false);
 				n->cols = NULL;
 				$$ = n;
 			}
@@ -12896,7 +12989,7 @@ temporary_target:
  * opt_table.  You're going to get conflicts.
  */
 privilege_target:
-			qualified_name_list
+			dolphin_qualified_name_list
 				{
 					PrivTarget *n = (PrivTarget *) palloc(sizeof(PrivTarget));
 					n->targtype = ACL_TARGET_OBJECT;
@@ -12904,7 +12997,7 @@ privilege_target:
 					n->objs = $1;
 					$$ = n;
 				}
-			| TABLE qualified_name_list
+			| TABLE dolphin_qualified_name_list
 				{
 					PrivTarget *n = (PrivTarget *) palloc(sizeof(PrivTarget));
 					n->targtype = ACL_TARGET_OBJECT;
@@ -13108,7 +13201,7 @@ grantee:	RoleId
 				{
 					PrivGrantee *n = makeNode(PrivGrantee);
 					/* This hack lets us avoid reserving PUBLIC as a keyword*/
-					if (strcmp($1, "public") == 0)
+					if (strcmp(downcase_str($1, false), "public") == 0)
 						n->rolname = NULL;
 					else
 						n->rolname = $1;
@@ -13118,7 +13211,7 @@ grantee:	RoleId
 				{
 					PrivGrantee *n = makeNode(PrivGrantee);
 					/* Treat GROUP PUBLIC as a synonym for PUBLIC */
-					if (strcmp($2, "public") == 0)
+					if (strcmp(downcase_str($2, false), "public") == 0)
 						n->rolname = NULL;
 					else
 						n->rolname = $2;
@@ -13780,21 +13873,21 @@ index_params:	index_elem							{ $$ = list_make1($1); }
 		;
 
 index_method_relation_clause:
-			ON qualified_name USING access_method
+			ON dolphin_qualified_name USING access_method
 				{
 					 IndexMethodRelationClause* result = (IndexMethodRelationClause*)palloc0(sizeof(IndexMethodRelationClause));
 					 result->relation = $2;
 					 result->accessMethod = $4;
 					 $$ = result;
 				}
-			| ON qualified_name
+			| ON dolphin_qualified_name
 				{
 					 IndexMethodRelationClause* result = (IndexMethodRelationClause*)palloc0(sizeof(IndexMethodRelationClause));
 					 result->relation = $2;
 					 result->accessMethod = NULL;
 					 $$ = result;
 				}
-			| USING access_method ON qualified_name
+			| USING access_method ON dolphin_qualified_name
 				{
 					 IndexMethodRelationClause* result = (IndexMethodRelationClause*)palloc0(sizeof(IndexMethodRelationClause));
 					 result->relation = $4;
@@ -15523,7 +15616,7 @@ OptimizeStmt:
  *****************************************************************************/
 
 ReindexStmt:
-			REINDEX reindex_type qualified_name opt_force
+			REINDEX reindex_type dolphin_qualified_name opt_force
 				{
 					ReindexStmt *n = makeNode(ReindexStmt);
 					n->kind = $2;
@@ -15532,15 +15625,29 @@ ReindexStmt:
 					$$ = (Node *)n;
 				}
 			|
-			REINDEX reindex_type qualified_name PARTITION ColId opt_force
+			REINDEX reindex_type dolphin_qualified_name PARTITION ColId opt_force
 				{
 					ReindexStmt *n = makeNode(ReindexStmt);
-					if ($2 == OBJECT_INDEX)
-						n->kind  = OBJECT_INDEX_PARTITION;
-					else if($2 == OBJECT_TABLE)
+					 if($2 == OBJECT_TABLE)
 						n->kind  = OBJECT_TABLE_PARTITION;
 					else
 						n->kind  = OBJECT_INTERNAL_PARTITION;
+					n->relation = $3;
+					n->name = $5;
+					$$ = (Node *)n;
+				}
+			| REINDEX INDEX qualified_name opt_force
+				{
+					ReindexStmt *n = makeNode(ReindexStmt);
+					n->kind = OBJECT_INDEX;
+					n->relation = $3;
+					n->name = NULL;
+					$$ = (Node *)n;
+				}
+			| REINDEX INDEX qualified_name PARTITION ColId opt_force
+				{
+					ReindexStmt *n = makeNode(ReindexStmt);
+					n->kind  = OBJECT_INDEX_PARTITION;
 					n->relation = $3;
 					n->name = $5;
 					$$ = (Node *)n;
@@ -15568,8 +15675,7 @@ ReindexStmt:
 		;
 
 reindex_type:
-			INDEX									{ $$ = OBJECT_INDEX; }
-			| TABLE									{ $$ = OBJECT_TABLE; }
+			TABLE									{ $$ = OBJECT_TABLE; }
 			| INTERNAL TABLE						{ $$ = OBJECT_INTERNAL; }
 		;
 
@@ -15740,7 +15846,7 @@ RenameStmt: ALTER AGGREGATE func_name aggr_args RENAME TO name
 					$$ = (Node *)n;
 				}
 			/* Rename Row Level Security Policy */
-			| ALTER RowLevelSecurityPolicyName ON qualified_name RENAME TO name
+			| ALTER RowLevelSecurityPolicyName ON dolphin_qualified_name RENAME TO name
 				{
 					RenameStmt *n = makeNode(RenameStmt);
 					n->renameType = OBJECT_RLSPOLICY;
@@ -15790,13 +15896,13 @@ RenameStmt: ALTER AGGREGATE func_name aggr_args RENAME TO name
 					n->missing_ok = true;
 					$$ = (Node *)n;
 				}
-			| ALTER TABLE relation_expr RENAME to_or_as name
+			| ALTER TABLE relation_expr RENAME to_or_as DolphinColId
 				{
 					RenameStmt *n = makeNode(RenameStmt);
 					n->renameType = OBJECT_TABLE;
 					n->relation = $3;
 					n->subname = NULL;
-					n->newname = $6;
+					n->newname = $6->str;
 					n->missing_ok = false;
 					$$ = (Node *)n;
 				}
@@ -16086,7 +16192,6 @@ RenameStmt: ALTER AGGREGATE func_name aggr_args RENAME TO name
 			        n->missing_ok = true;
 			        $$ = (Node *)n;
 			    }
-
 			| ALTER TABLE relation_expr FORCE
 				{
 					VacuumStmt *n = makeNode(VacuumStmt);
@@ -16117,7 +16222,7 @@ RenameStmt: ALTER AGGREGATE func_name aggr_args RENAME TO name
 					n->missing_ok = true;
 					$$ = (Node *)n;
 				}
-			| ALTER TRIGGER name ON qualified_name RENAME TO name
+			| ALTER TRIGGER name ON dolphin_qualified_name RENAME TO name
 				{
 					RenameStmt *n = makeNode(RenameStmt);
 					n->renameType = OBJECT_TRIGGER;
@@ -17578,7 +17683,7 @@ load_col_data_type:
 	;
 
 load_col_sql_str:
-		IDENT
+		normal_ident
 		{
 			$$ = makeStringConst($1, @1);
 		}
@@ -17643,7 +17748,7 @@ load_when_option_item:
 	3. "string"
 */
 load_quote_str:
-		IDENT					{ $$ = $1; }
+		normal_ident			{ $$ = $1; }
 		| Sconst                { $$ = $1; }
 
 /*****************************************************************************
@@ -18075,7 +18180,7 @@ CreateConversionStmt:
  *****************************************************************************/
 
 ClusterStmt:
-			CLUSTER opt_verbose qualified_name cluster_index_specification
+			CLUSTER opt_verbose dolphin_qualified_name cluster_index_specification
 				{
 					ClusterStmt *n = makeNode(ClusterStmt);
 					$3->partitionname = NULL;
@@ -18084,7 +18189,7 @@ ClusterStmt:
 					n->verbose = $2;
 					$$ = (Node*)n;
 				}
-			| CLUSTER opt_verbose qualified_name PARTITION '(' name ')' cluster_index_specification
+			| CLUSTER opt_verbose dolphin_qualified_name PARTITION '(' name ')' cluster_index_specification
 				{
 					ClusterStmt *n = makeNode(ClusterStmt);
 					$3->partitionname = $6;
@@ -18101,8 +18206,8 @@ ClusterStmt:
 					n->verbose = $2;
 					$$ = (Node*)n;
 				}
-			/* kept for pre-8.3 compatibility */
-			| CLUSTER opt_verbose index_name ON qualified_name
+			/* kept for pre-8.3 compatibility, dolphin_index_name used to deal with the conflict*/
+			| CLUSTER opt_verbose dolphin_index_name ON dolphin_qualified_name
 				{
 					ClusterStmt *n = makeNode(ClusterStmt);
 					n->relation = $5;
@@ -18134,7 +18239,7 @@ VacuumStmt:
 						n->options |= VACOPT_MERGE;
 					$$ = (Node *)n;
 				}
-			| VACUUM opt_deltamerge qualified_name
+			| VACUUM opt_deltamerge dolphin_qualified_name
 				{
 					VacuumStmt *n = makeNode(VacuumStmt);
 					if ($2)
@@ -18152,7 +18257,7 @@ VacuumStmt:
 					}
 					$$ = (Node *)n;
 				}
-			| VACUUM opt_hdfsdirectory qualified_name
+			| VACUUM opt_hdfsdirectory dolphin_qualified_name
 				{
 					VacuumStmt *n = makeNode(VacuumStmt);
 					n->options = VACOPT_VACUUM;
@@ -18198,7 +18303,7 @@ VacuumStmt:
 					n->va_cols = NIL;
 					$$ = (Node *)n;
 				}
-			| VACUUM opt_full opt_freeze opt_verbose opt_compact qualified_name
+			| VACUUM opt_full opt_freeze opt_verbose opt_compact dolphin_qualified_name
 				{
 					VacuumStmt *n = makeNode(VacuumStmt);
 					n->options = VACOPT_VACUUM;
@@ -18233,7 +18338,7 @@ VacuumStmt:
 					n->va_cols = NIL;
 					$$ = (Node *)n;
 				}
-			| VACUUM opt_full opt_freeze opt_verbose opt_compact qualified_name PARTITION '('name')'
+			| VACUUM opt_full opt_freeze opt_verbose opt_compact dolphin_qualified_name PARTITION '('name')'
 				{
 					VacuumStmt *n = makeNode(VacuumStmt);
 					n->options = VACOPT_VACUUM;
@@ -18255,7 +18360,7 @@ VacuumStmt:
 					$6->partitionname = $9;
 					$$ = (Node *)n;
 				}
-			| VACUUM opt_full opt_freeze opt_verbose opt_compact qualified_name SUBPARTITION '('name')'
+			| VACUUM opt_full opt_freeze opt_verbose opt_compact dolphin_qualified_name SUBPARTITION '('name')'
 				{
 					VacuumStmt *n = makeNode(VacuumStmt);
 					n->options = VACOPT_VACUUM;
@@ -18308,7 +18413,7 @@ VacuumStmt:
 					n->va_cols = NIL;
 					$$ = (Node *) n;
 				}
-			| VACUUM '(' vacuum_option_list ')' qualified_name opt_name_list
+			| VACUUM '(' vacuum_option_list ')' dolphin_qualified_name opt_name_list
 				{
 					VacuumStmt *n = makeNode(VacuumStmt);
 					n->options = VACOPT_VACUUM | $3;
@@ -18322,7 +18427,7 @@ VacuumStmt:
 						n->options |= VACOPT_ANALYZE;
 					$$ = (Node *) n;
 				}
-			| VACUUM '(' vacuum_option_list ')' qualified_name opt_name_list PARTITION '('name')'
+			| VACUUM '(' vacuum_option_list ')' dolphin_qualified_name opt_name_list PARTITION '('name')'
 				{
 					VacuumStmt *n = makeNode(VacuumStmt);
 					n->options = VACOPT_VACUUM | $3;
@@ -18337,7 +18442,7 @@ VacuumStmt:
 					$5->partitionname = $9;
 					$$ = (Node *) n;
 				}
-			| VACUUM '(' vacuum_option_list ')' qualified_name opt_name_list SUBPARTITION '('name')'
+			| VACUUM '(' vacuum_option_list ')' dolphin_qualified_name opt_name_list SUBPARTITION '('name')'
 				{
 					VacuumStmt *n = makeNode(VacuumStmt);
 					n->options = VACOPT_VACUUM | $3;
@@ -18379,7 +18484,7 @@ AnalyzeStmt:
 					n->va_cols = NIL;
 					$$ = (Node *)n;
 				}
-			| analyze_keyword opt_verbose qualified_name opt_analyze_column_define
+			| analyze_keyword opt_verbose dolphin_qualified_name opt_analyze_column_define
 				{
 					VacuumStmt *n = makeNode(VacuumStmt);
 					n->options = VACOPT_ANALYZE;
@@ -18391,7 +18496,7 @@ AnalyzeStmt:
 					n->va_cols = $4;
 					$$ = (Node *)n;
 				}
-			| analyze_keyword opt_verbose qualified_name opt_name_list PARTITION '('name')'
+			| analyze_keyword opt_verbose dolphin_qualified_name opt_name_list PARTITION '('name')'
 				{
 					VacuumStmt *n = makeNode(VacuumStmt);
 					n->options = VACOPT_ANALYZE;
@@ -18463,7 +18568,7 @@ VerifyStmt:
                 }
 
             /* analyse verify fast|complete index_name/table_name*/
-            | analyze_keyword opt_verify opt_verify_options qualified_name opt_cascade
+            | analyze_keyword opt_verify opt_verify_options dolphin_qualified_name opt_cascade
                 {
                     VacuumStmt *n = makeNode(VacuumStmt);
                     n->options = VACOPT_VERIFY | $3;
@@ -18476,7 +18581,7 @@ VerifyStmt:
                 }
 
             /* analyse verify fast|complete table_name partition (partition_name) cascade*/
-            | analyze_keyword opt_verify opt_verify_options qualified_name PARTITION '('name')' opt_cascade
+            | analyze_keyword opt_verify opt_verify_options dolphin_qualified_name PARTITION '('name')' opt_cascade
                 {
                     VacuumStmt *n = makeNode(VacuumStmt);
                     n->options = VACOPT_VERIFY | $3;
@@ -20079,7 +20184,7 @@ ExplainStmt:
 					n->options = list_make1(makeDefElem("plan", NULL));
 					$$ = (Node *) n;
 				}
-		| describe_command qualified_name
+		| describe_command dolphin_qualified_name
 				{
 					SelectStmt *n = makeDescribeQuery($2->schemaname, $2->relname);
 					$$ = (Node *) n;
@@ -20572,7 +20677,7 @@ into_empty: INTO
  * So AS is required for now.
  */
 insert_target:
-			qualified_name insert_partition_clause
+			dolphin_qualified_name insert_partition_clause
 				{
 					if ($2 != NULL) {
 						$1->partitionname = $2->partitionname;
@@ -20583,7 +20688,7 @@ insert_target:
 					}
 					$$ = $1;
 				}
-			| qualified_name insert_partition_clause AS ColId
+			| dolphin_qualified_name insert_partition_clause AS ColId
 				{
 					if ($2 != NULL) {
 						$1->partitionname = $2->partitionname;
@@ -20950,11 +21055,11 @@ multiple_set_clause:
 		;
 
 set_target:
-			ColId opt_indirection
+			DolphinColId opt_dolphin_indirection
 				{
 					$$ = makeNode(ResTarget);
-					$$->name = $1;
-					$$->indirection = check_indirection($2, yyscanner);
+					$$->name = $1->str;
+					$$->indirection = check_indirection(GetNameListFromDolphinString($2), yyscanner);
 					$$->val = NULL;	/* upper production sets this */
 					$$->location = @1;
 				}
@@ -21465,27 +21570,27 @@ into_clause:
  * since TEMP is not a reserved word.  See also OptTemp.
  */
 OptTempTableName:
-			TEMPORARY opt_table qualified_name
+			TEMPORARY opt_table dolphin_qualified_name
 				{
 					$$ = $3;
 					$$->relpersistence = RELPERSISTENCE_TEMP;
 				}
-			| TEMP opt_table qualified_name
+			| TEMP opt_table dolphin_qualified_name
 				{
 					$$ = $3;
 					$$->relpersistence = RELPERSISTENCE_TEMP;
 				}
-			| LOCAL TEMPORARY opt_table qualified_name
+			| LOCAL TEMPORARY opt_table dolphin_qualified_name
 				{
 					$$ = $4;
 					$$->relpersistence = RELPERSISTENCE_TEMP;
 				}
-			| LOCAL TEMP opt_table qualified_name
+			| LOCAL TEMP opt_table dolphin_qualified_name
 				{
 					$$ = $4;
 					$$->relpersistence = RELPERSISTENCE_TEMP;
 				}
-			| GLOBAL TEMPORARY opt_table qualified_name
+			| GLOBAL TEMPORARY opt_table dolphin_qualified_name
 				{
 					$$ = $4;
 #ifdef ENABLE_MULTIPLE_NODES
@@ -21499,7 +21604,7 @@ OptTempTableName:
 					$$->relpersistence = RELPERSISTENCE_GLOBAL_TEMP;
 #endif
 				}
-			| GLOBAL TEMP opt_table qualified_name
+			| GLOBAL TEMP opt_table dolphin_qualified_name
 				{
 					$$ = $4;
 #ifdef ENABLE_MULTIPLE_NODES
@@ -21513,17 +21618,17 @@ OptTempTableName:
 					$$->relpersistence = RELPERSISTENCE_GLOBAL_TEMP;
 #endif
 				}
-			| UNLOGGED opt_table qualified_name
+			| UNLOGGED opt_table dolphin_qualified_name
 				{
 					$$ = $3;
 					$$->relpersistence = RELPERSISTENCE_UNLOGGED;
 				}
-			| TABLE qualified_name
+			| TABLE dolphin_qualified_name
 				{
 					$$ = $2;
 					$$->relpersistence = RELPERSISTENCE_PERMANENT;
 				}
-			| qualified_name
+			| dolphin_qualified_name
 				{
 					$$ = $1;
 					$$->relpersistence = RELPERSISTENCE_PERMANENT;
@@ -21931,7 +22036,7 @@ for_locking_strength:
  		;
 
 locked_rels_list:
-			OF qualified_name_list					{ $$ = $2; }
+			OF dolphin_qualified_name_list					{ $$ = $2; }
 			| /* EMPTY */							{ $$ = NIL; }
 		;
 
@@ -22015,12 +22120,12 @@ table_ref:	relation_expr
 #endif
 					$$ = (Node *) $1;
 				}
-			| relation_expr alias_clause
+			| relation_expr dolphin_alias_clause
 				{
 					$1->alias = $2;
 					$$ = (Node *) $1;
 				}
-			| relation_expr opt_alias_clause tablesample_clause
+			| relation_expr opt_dolphin_alias_clause tablesample_clause
 				{
 					RangeTableSample *n = (RangeTableSample *) $3;
 					$1->alias = $2;
@@ -22028,7 +22133,7 @@ table_ref:	relation_expr
 					n->relation = (Node *) $1;
 					$$ = (Node *) n;
 				}
-			| relation_expr opt_alias_clause timecapsule_clause
+			| relation_expr opt_dolphin_alias_clause timecapsule_clause
 				{
 					RangeTimeCapsule *n = (RangeTimeCapsule *) $3;
 					$1->alias = $2;
@@ -22072,28 +22177,28 @@ table_ref:	relation_expr
 					$1->issubpartition = true;
 					$$ = (Node *)$1;
 				}
-			| relation_expr PARTITION '(' name ')' alias_clause
+			| relation_expr PARTITION '(' name ')' dolphin_alias_clause
 				{
 					$1->partitionname = $4;
 					$1->alias = $6;
 					$1->ispartition = true;
 					$$ = (Node *)$1;
 				}
-			| relation_expr SUBPARTITION '(' name ')' alias_clause
+			| relation_expr SUBPARTITION '(' name ')' dolphin_alias_clause
 				{
 					$1->subpartitionname = $4;
 					$1->alias = $6;
 					$1->issubpartition = true;
 					$$ = (Node *)$1;
 				}
-			| relation_expr PARTITION_FOR '(' expr_list ')' alias_clause
+			| relation_expr PARTITION_FOR '(' expr_list ')' dolphin_alias_clause
 				{
 					$1->partitionKeyValuesList = $4;
 					$1->alias = $6;
 					$1->ispartition = true;
 					$$ = (Node *)$1;
 				}
-			| relation_expr SUBPARTITION_FOR '(' expr_list ')' alias_clause
+			| relation_expr SUBPARTITION_FOR '(' expr_list ')' dolphin_alias_clause
 				{
 					$1->partitionKeyValuesList = $4;
 					$1->alias = $6;
@@ -22194,7 +22299,7 @@ table_ref:	relation_expr
 				{
 					$$ = (Node *) $1;
 				}
-			| '(' joined_table ')' alias_clause
+			| '(' joined_table ')' dolphin_alias_clause
 				{
 					$2->alias = $4;
 					$$ = (Node *) $2;
@@ -22377,7 +22482,36 @@ alias_clause:
 				}
 		;
 
+dolphin_alias_clause:
+			AS DolphinColId '(' name_list ')'
+				{
+					$$ = makeNode(Alias);
+					$$->aliasname = GetDolphinObjName($2->str, $2->is_quoted);
+					$$->colnames = $4;
+				}
+			| AS DolphinColId
+				{
+					$$ = makeNode(Alias);
+					$$->aliasname = GetDolphinObjName($2->str, $2->is_quoted);
+				}
+			| DolphinColId '(' name_list ')'
+				{
+					$$ = makeNode(Alias);
+					$$->aliasname = GetDolphinObjName($1->str, $1->is_quoted);
+					$$->colnames = $3;
+				}
+			| DolphinColId
+				{
+					$$ = makeNode(Alias);
+					$$->aliasname = GetDolphinObjName($1->str, $1->is_quoted);
+				}
+		;
+
 opt_alias_clause: alias_clause		{ $$ = $1; }
+			| /*EMPTY*/	{ $$ = NULL; }
+		;
+
+opt_dolphin_alias_clause: dolphin_alias_clause		{ $$ = $1; }
 			| /*EMPTY*/	{ $$ = NULL; }
 		;
 
@@ -22406,7 +22540,7 @@ join_qual:	USING '(' name_list ')'					{ $$ = (Node *) $3; }
 
 
 relation_expr:
-			qualified_name OptSnapshotVersion
+			dolphin_qualified_name OptSnapshotVersion
 				{
 					/* default inheritance */
 					$$ = $1;
@@ -22419,21 +22553,21 @@ relation_expr:
 					$$->inhOpt = INH_DEFAULT;
 					$$->alias = NULL;
 				}
-			| qualified_name '*'
+			| dolphin_qualified_name '*'
 				{
 					/* inheritance query */
 					$$ = $1;
 					$$->inhOpt = INH_YES;
 					$$->alias = NULL;
 				}
-			| ONLY qualified_name
+			| ONLY dolphin_qualified_name
 				{
 					/* no inheritance */
 					$$ = $2;
 					$$->inhOpt = INH_NO;
 					$$->alias = NULL;
 				}
-			| ONLY '(' qualified_name ')'
+			| ONLY '(' dolphin_qualified_name ')'
 				{
 					/* no inheritance, SQL99-style syntax */
 					$$ = $3;
@@ -22462,17 +22596,17 @@ relation_expr_opt_alias: relation_expr					%prec UMINUS
 				{
 					$$ = $1;
 				}
-			| relation_expr ColId
+			| relation_expr DolphinColId
 				{
 					Alias *alias = makeNode(Alias);
-					alias->aliasname = $2;
+					alias->aliasname = $2->str;
 					$1->alias = alias;
 					$$ = $1;
 				}
-			| relation_expr AS ColId
+			| relation_expr AS DolphinColId
 				{
 					Alias *alias = makeNode(Alias);
-					alias->aliasname = $3;
+					alias->aliasname = $3->str;
 					$1->alias = alias;
 					$$ = $1;
 				}
@@ -22487,7 +22621,7 @@ relation_expr_opt_alias: relation_expr					%prec UMINUS
 					}
 					$$ = $1;
 				}
-			| relation_expr update_delete_partition_clause ColId
+			| relation_expr update_delete_partition_clause DolphinColId
 				{
 					if ($2 != NULL) {
 						$1->partitionname = $2->partitionname;
@@ -22497,11 +22631,11 @@ relation_expr_opt_alias: relation_expr					%prec UMINUS
 						$1->issubpartition = $2->issubpartition;
 					}
 					Alias *alias = makeNode(Alias);
-					alias->aliasname = $3;
+					alias->aliasname = $3->str;
 					$1->alias = alias;
 					$$ = $1;
 				}
-			| relation_expr update_delete_partition_clause AS ColId
+			| relation_expr update_delete_partition_clause AS DolphinColId
 				{
 					if ($2 != NULL) {
 						$1->partitionname = $2->partitionname;
@@ -22511,7 +22645,7 @@ relation_expr_opt_alias: relation_expr					%prec UMINUS
 						$1->issubpartition = $2->issubpartition;
 					}
 					Alias *alias = makeNode(Alias);
-					alias->aliasname = $4;
+					alias->aliasname = $4->str;
 					$1->alias = alias;
 					$$ = $1;
 				}
@@ -24496,7 +24630,7 @@ func_expr:	func_application within_group_clause over_clause
 				{ $$ = $1; }
 		;
 
-func_application:	func_name '(' ')'
+func_application:	dolphin_func_name '(' ')'
 				{
 					FuncCall *n = makeNode(FuncCall);
 					n->funcname = $1;
@@ -24510,7 +24644,7 @@ func_application:	func_name '(' ')'
 					n->call_func = false;
 					$$ = (Node *)n;
 				}
-			| func_name '(' func_arg_list opt_sort_clause ')'
+			| dolphin_func_name '(' func_arg_list opt_sort_clause ')'
 				{
 					FuncCall *n = makeNode(FuncCall);
 					n->funcname = $1;
@@ -24524,7 +24658,7 @@ func_application:	func_name '(' ')'
 					n->call_func = false;
 					$$ = (Node *)n;
 				}
-			| func_name '(' VARIADIC func_arg_expr opt_sort_clause ')'
+			| dolphin_func_name '(' VARIADIC func_arg_expr opt_sort_clause ')'
 				{
 					FuncCall *n = makeNode(FuncCall);
 					n->funcname = $1;
@@ -24538,7 +24672,7 @@ func_application:	func_name '(' ')'
 					n->call_func = false;
 					$$ = (Node *)n;
 				}
-			| func_name '(' func_arg_list ',' VARIADIC func_arg_expr opt_sort_clause ')'
+			| dolphin_func_name '(' func_arg_list ',' VARIADIC func_arg_expr opt_sort_clause ')'
 				{
 					FuncCall *n = makeNode(FuncCall);
 					n->funcname = $1;
@@ -24552,7 +24686,7 @@ func_application:	func_name '(' ')'
 					n->call_func = false;
 					$$ = (Node *)n;
 				}
-			| func_name '(' ALL func_arg_list opt_sort_clause ')'
+			| dolphin_func_name '(' ALL func_arg_list opt_sort_clause ')'
 				{
 					FuncCall *n = makeNode(FuncCall);
 					n->funcname = $1;
@@ -24570,7 +24704,7 @@ func_application:	func_name '(' ')'
 					n->call_func = false;
 					$$ = (Node *)n;
 				}
-			| func_name '(' DISTINCT func_arg_list opt_sort_clause ')'
+			| dolphin_func_name '(' DISTINCT func_arg_list opt_sort_clause ')'
 				{
 					FuncCall *n = makeNode(FuncCall);
 					n->funcname = $1;
@@ -24584,7 +24718,7 @@ func_application:	func_name '(' ')'
 					n->call_func = false;
 					$$ = (Node *)n;
 				}
-			| func_name '(' '*' ')'
+			| dolphin_func_name '(' '*' ')'
 				{
 					/*
 					 * We consider AGGREGATE(*) to invoke a parameterless
@@ -26063,7 +26197,7 @@ extract_list:
  * - thomas 2001-04-12
  */
 extract_arg:
-			IDENT									{ $$ = $1; }
+			normal_ident							{ $$ = $1; }
 			| YEAR_P								{ $$ = "year"; }
 			| MONTH_P								{ $$ = "month"; }
 			| DAY_P									{ $$ = "day"; }
@@ -26084,7 +26218,7 @@ timestamp_arg_list:
 		;
 
 timestamp_units:
-			IDENT									{ $$ = $1; }
+			normal_ident							{ $$ = $1; }
 			| YEAR_P								{ $$ = "year"; }
 			| MONTH_P								{ $$ = "month"; }
 			| DAY_P									{ $$ = "day"; }
@@ -26305,13 +26439,62 @@ case_arg:	a_expr									{ $$ = $1; }
 			| /*EMPTY*/								{ $$ = NULL; }
 		;
 
-columnref:	ColId
+columnref:	DolphinColId
 				{
-					$$ = makeColumnRef($1, NIL, @1, yyscanner);
+					$$ = makeColumnRef(downcase_str($1->str, $1->is_quoted), NIL, @1, yyscanner);
 				}
-			| ColId indirection
+			| DolphinColId dolphin_indirection
 				{
-					$$ = makeColumnRef($1, $2, @1, yyscanner);
+					List* result = NIL;
+					ListCell* cell = NULL;
+					char* first_word = NULL;
+					int table_index = -1;
+					int count = 0;
+					int indices = 0;
+					foreach (cell, $2) {
+						DolphinString* dolphinString = (DolphinString*)lfirst(cell);
+						if (IsA(dolphinString->node, A_Indices)) {
+							indices++;
+						}
+					}
+					cell = NULL;
+					switch (list_length($2) - indices)
+					{
+						case 0:
+							/* column */
+							first_word = downcase_str($1->str, $1->is_quoted);
+							break;
+						case 1:
+							/* table.column */
+							first_word = GetDolphinObjName($1->str, $1->is_quoted);
+							break;
+						case 2:
+							/* schema.table.column */
+							first_word = downcase_str($1->str, $1->is_quoted);
+							table_index = 0;
+							break;
+						default:
+							/* catalog.schema.table.column. ... */
+							first_word = downcase_str($1->str, $1->is_quoted);
+							table_index = 1;
+							break;
+					}
+					foreach (cell, $2) {
+						DolphinString* dolphinString = (DolphinString*)lfirst(cell);
+						if (IsA(dolphinString->node, String)) {
+							Value* value = (Value*)(dolphinString->node);
+							char* text = strVal(value);
+							bool is_quoted = dolphinString->is_quoted;
+							if (count != table_index || (count == table_index &&
+								GetSessionContext()->lower_case_table_names > 0)) {
+								text = downcase_str(text, is_quoted);
+							}
+							result = lappend(result, (Node*)makeString(text));
+						} else {
+							result = lappend(result, dolphinString->node);
+						}
+					}
+					$$ = makeColumnRef(first_word, result, @1, yyscanner);
 				}
 			| EXCLUDED indirection
 				{
@@ -26360,9 +26543,55 @@ indirection:
 			| indirection indirection_el			{ $$ = lappend($1, $2); }
 		;
 
+dolphin_indirection:
+			dolphin_indirection_el									{ $$ = list_make1($1); }
+			| dolphin_indirection dolphin_indirection_el			{ $$ = lappend($1, $2); }
+		;
+
+dolphin_indirection_el:
+			'.' DolphinColLabel
+				{
+					$$ = $2;
+				}
+			| ORA_JOINOP
+				{
+					$$ = makeDolphinStringByNode((Node *) makeString("(+)"), false);
+				}
+			| '.' '*'
+				{
+					$$ = makeDolphinStringByNode((Node *) makeNode(A_Star), false);
+				}
+			| '[' a_expr ']'
+				{
+					A_Indices *ai = makeNode(A_Indices);
+					ai->lidx = NULL;
+					ai->uidx = $2;
+					$$ = makeDolphinStringByNode((Node *) ai, false);
+				}
+			| '[' a_expr ':' a_expr ']'
+				{
+					A_Indices *ai = makeNode(A_Indices);
+					ai->lidx = $2;
+					ai->uidx = $4;
+					$$ = makeDolphinStringByNode((Node *) ai, false);
+				}
+			| '[' a_expr ',' a_expr ']'
+				{
+					A_Indices *ai = makeNode(A_Indices);
+					ai->lidx = $2;
+					ai->uidx = $4;
+					$$ = makeDolphinStringByNode((Node *) ai, false);
+				}
+		;
+
 opt_indirection:
 			/*EMPTY*/								{ $$ = NIL; }
 			| opt_indirection indirection_el		{ $$ = lappend($1, $2); }
+		;
+
+opt_dolphin_indirection:
+			/*EMPTY*/								{ $$ = NIL; }
+			| opt_dolphin_indirection dolphin_indirection_el		{ $$ = lappend($1, $2); }
 		;
 
 opt_asymmetric: ASYMMETRIC
@@ -26427,7 +26656,7 @@ target_el:	a_expr AS ColLabel
 			 * as an infix expression, which we accomplish by assigning
 			 * IDENT a precedence higher than POSTFIXOP.
 			 */
-			| a_expr IDENT
+			| a_expr normal_ident
 				{
 					$$ = makeNode(ResTarget);
 					$$->name = $2;
@@ -26501,18 +26730,18 @@ target_el:	a_expr AS ColLabel
                                 }
 		;
 
-connect_by_root_expr:   a_expr IDENT '.' IDENT
+connect_by_root_expr:   a_expr normal_ident '.' normal_ident
                                 {
                                        ValidateTripleTuple((Node*)$1, yyscanner, @2, $2);
                                        Node* cr = (Node*) makeColumnRef($2, list_make1(makeString($4)), @1, yyscanner);
                                        Node* n = MakeConnectByRootNode((ColumnRef*) cr, @1);
                                        $$ = makeNode(ResTarget);
                                        $$->name = MakeConnectByRootColName($2, $4);
-                                       $$->val = (Node*) n;
+                                       $$->val = (Node*) n; 
                                        $$->indirection = NIL;
                                        $$->location = @1;
                                 }
-                        | a_expr IDENT '.' IDENT as_empty IDENT
+                        | a_expr normal_ident '.' normal_ident as_empty normal_ident
                                 {
                                        ValidateTripleTuple((Node*)$1, yyscanner, @2, $2);
                                        Node* cr = (Node*) makeColumnRef($2, list_make1(makeString($4)), @1, yyscanner);
@@ -26523,7 +26752,7 @@ connect_by_root_expr:   a_expr IDENT '.' IDENT
                                        $$->indirection = NIL;
                                        $$->location = @1;
                                 }
-                        | a_expr IDENT as_empty IDENT
+                        | a_expr normal_ident as_empty normal_ident
                                 {
                                        ValidateTripleTuple((Node*) $1, yyscanner, @2, $2);
                                        Node* cr = (Node*) makeColumnRef($2, NIL, @1, yyscanner);
@@ -26545,6 +26774,11 @@ connect_by_root_expr:   a_expr IDENT '.' IDENT
 qualified_name_list:
 			qualified_name							{ $$ = list_make1($1); }
 			| qualified_name_list ',' qualified_name { $$ = lappend($1, $3); }
+		;
+
+dolphin_qualified_name_list:
+			dolphin_qualified_name										{ $$ = list_make1($1); }
+			| dolphin_qualified_name_list ',' dolphin_qualified_name	{ $$ = lappend($1, $3); }
 		;
 
 /*
@@ -26588,9 +26822,54 @@ qualified_name:
 				}
 		;
 
+dolphin_qualified_name:
+			DolphinColId
+				{
+					$$ = makeRangeVar(NULL, GetDolphinObjName($1->str, $1->is_quoted), @1);
+				}
+			| DolphinColId dolphin_indirection
+				{
+					check_dolphin_qualified_name($2, yyscanner);
+					$$ = makeRangeVar(NULL, NULL, @1);
+					const char* message = "improper qualified name (too many dotted names)";
+					DolphinString* first = NULL;
+					DolphinString* second = NULL;
+					switch (list_length($2))
+					{
+						case 1:
+							$$->catalogname = NULL;
+							$$->schemaname = downcase_str($1->str, $1->is_quoted);
+							first = (DolphinString*)linitial($2);
+							$$->relname = strVal(first->node);
+							break;
+						case 2:
+							$$->catalogname = downcase_str($1->str, $1->is_quoted);
+							first = (DolphinString*)linitial($2);
+							second = (DolphinString*)lsecond($2);
+							$$->schemaname = downcase_str(strVal(first->node), first->is_quoted);
+							$$->relname = strVal(second->node);
+							break;
+						default:
+							InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);
+							ereport(errstate,
+									(errcode(ERRCODE_SYNTAX_ERROR),
+									 errmsg("improper qualified name (too many dotted names): %s",
+											NameListToString(lcons(makeString($1->str), GetNameListFromDolphinString($2)))),
+									 parser_errposition(@1)));
+							break;
+					}
+				}
+		;
+
 name_list:	name
 					{ $$ = list_make1(makeString($1)); }
 			| name_list ',' name
+					{ $$ = lappend($1, makeString($3)); }
+		;
+
+dolphin_name_list:	RoleId
+					{ $$ = list_make1(makeString($1)); }
+			| dolphin_name_list ',' RoleId
 					{ $$ = lappend($1, makeString($3)); }
 		;
 
@@ -26606,6 +26885,8 @@ access_method:
 attr_name:	ColLabel								{ $$ = $1; };
 
 index_name: ColId									{ $$ = $1; };
+
+dolphin_index_name: DolphinColId					{ $$ = downcase_str($1->str, $1->is_quoted); };
 
 file_name:	Sconst									{ $$ = $1; };
 
@@ -26624,6 +26905,15 @@ func_name:	type_function_name
 						$$ = check_func_name(lcons(makeString($1), $2),
 											 yyscanner);
 					}
+		;
+
+dolphin_func_name:	type_function_name
+						{ $$ = list_make1(makeString($1)); }
+					| DolphinColId dolphin_indirection
+						{
+							$$ = check_func_name(lcons(makeString(downcase_str($1->str, $1->is_quoted)),
+													GetNameListFromDolphinString($2)), yyscanner);
+						}
 		;
 
 func_name_opt_arg:
@@ -26661,14 +26951,14 @@ AexprConst: Iconst
 					 */
 					$$ = makeBitStringConst($1, @1);
 				}
-			| func_name Sconst
+			| dolphin_func_name Sconst
 				{
 					/* generic type 'literal' syntax */
 					TypeName *t = makeTypeNameFromNameList($1);
 					t->location = @1;
 					$$ = makeStringConstCast($2, @2, t);
 				}
-			| func_name '(' func_arg_list opt_sort_clause ')' Sconst
+			| dolphin_func_name '(' func_arg_list opt_sort_clause ')' Sconst
 				{
 					/* generic syntax with a type modifier */
 					TypeName *t = makeTypeNameFromNameList($1);
@@ -26765,7 +27055,11 @@ AexprConst: Iconst
 
 Iconst:		ICONST									{ $$ = $1; };
 Sconst:		SCONST									{ $$ = $1; };
-RoleId:		ColId									{ $$ = $1; };
+
+RoleId:		IDENT									{ $$ = GetDolphinObjName($1, is_quoted()); }
+			| unreserved_keyword					{ $$ = GetDolphinObjName(pstrdup($1), is_quoted()); }
+			| col_name_keyword						{ $$ = GetDolphinObjName(pstrdup($1), is_quoted()); }
+		;
 
 SignedIconst: Iconst								{ $$ = $1; }
 			| '+' Iconst							{ $$ = + $2; }
@@ -26785,29 +27079,34 @@ SignedIconst: Iconst								{ $$ = $1; }
 
 /* Column identifier --- names that can be column, table, etc names.
  */
-ColId:		IDENT									{ $$ = $1; }
-			| unreserved_keyword					{ $$ = pstrdup($1); }
-			| col_name_keyword						{ $$ = pstrdup($1); }
+ColId:		IDENT									{ $$ = downcase_str($1, is_quoted()); }
+			| unreserved_keyword					{ $$ = downcase_str(pstrdup($1), is_quoted()); }
+			| col_name_keyword						{ $$ = downcase_str(pstrdup($1), is_quoted()); }
+		;
+
+DolphinColId:		IDENT							{ $$ = makeDolphinStringByChar($1, is_quoted()); }
+					| unreserved_keyword			{ $$ = makeDolphinStringByChar(pstrdup($1), is_quoted()); }
+					| col_name_keyword				{ $$ = makeDolphinStringByChar(pstrdup($1), is_quoted()); }
 		;
 
 /* Type/function identifier --- names that can be type or function names.
  */
-type_function_name:	IDENT							{ $$ = $1; }
-			| unreserved_keyword					{ $$ = pstrdup($1); }
-			| type_func_name_keyword				{ $$ = pstrdup($1); }
+type_function_name:	IDENT							{ $$ = downcase_str($1, is_quoted()); }
+			| unreserved_keyword					{ $$ = downcase_str(pstrdup($1), is_quoted()); }
+			| type_func_name_keyword				{ $$ = downcase_str(pstrdup($1), is_quoted()); }
 		;
 
 /* Column label --- allowed labels in "AS" clauses.
  * This presently includes *all* Postgres keywords.
  */
-ColLabel:	IDENT									{ $$ = $1; }
-			| unreserved_keyword					{ $$ = pstrdup($1); }
-			| col_name_keyword						{ $$ = pstrdup($1); }
-			| type_func_name_keyword				{ $$ = pstrdup($1); }
+ColLabel:	IDENT									{ $$ = downcase_str($1, is_quoted()); }
+			| unreserved_keyword					{ $$ = downcase_str(pstrdup($1), is_quoted()); }
+			| col_name_keyword						{ $$ = downcase_str(pstrdup($1), is_quoted()); }
+			| type_func_name_keyword				{ $$ = downcase_str(pstrdup($1), is_quoted()); }
 			| reserved_keyword
 				{
 					/* ROWNUM can not be used as alias */
-					if (strcmp($1, "rownum") == 0) {
+					if (strcmp(downcase_str($1, is_quoted()), "rownum") == 0) {
 						const char* message = "ROWNUM cannot be used as an alias";
 						InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);
 						ereport(errstate,
@@ -26817,6 +27116,28 @@ ColLabel:	IDENT									{ $$ = $1; }
 					}
 					$$ = pstrdup($1);
 				}
+		;
+
+/*
+ * Column lable of dolphin type
+ */
+DolphinColLabel:	IDENT									{ $$ = makeDolphinStringByChar($1, is_quoted()); }
+					| unreserved_keyword					{ $$ = makeDolphinStringByChar(pstrdup($1), is_quoted()); }
+					| col_name_keyword						{ $$ = makeDolphinStringByChar(pstrdup($1), is_quoted()); }
+					| type_func_name_keyword				{ $$ = makeDolphinStringByChar(pstrdup($1), is_quoted()); }
+					| reserved_keyword
+						{
+							/* ROWNUM can not be used as alias */
+							if (strcmp($1, "rownum") == 0) {
+								const char* message = "ROWNUM cannot be used as an alias";
+								InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);
+								ereport(errstate,
+									(errcode(ERRCODE_SYNTAX_ERROR),
+										errmsg("ROWNUM cannot be used as an alias"),
+												parser_errposition(@1)));
+							}
+							$$ = makeDolphinStringByChar(pstrdup($1), is_quoted());
+						}
 		;
 
 
@@ -27550,6 +27871,9 @@ reserved_keyword:
 			| WITH
 		;
 
+/* normal_ident */
+normal_ident:		IDENT							{ $$ = downcase_str($1, is_quoted()); };
+
 %%
 
 /*
@@ -27790,6 +28114,18 @@ check_qualified_name(List *names, core_yyscan_t yyscanner)
 	foreach(i, names)
 	{
 		if (!IsA(lfirst(i), String))
+			parser_yyerror("syntax error");
+	}
+}
+
+static void check_dolphin_qualified_name(List *names, core_yyscan_t yyscanner)
+{
+	ListCell   *i;
+
+	foreach(i, names)
+	{
+		DolphinString* elem = (DolphinString*)lfirst(i);
+		if (!IsA(elem->node, String))
 			parser_yyerror("syntax error");
 	}
 }
@@ -29896,6 +30232,45 @@ static Node* makeAnalyzeTableList(List *rangeVars)
 	return makeStringConst(res.data, -1);
 }
 
+static char* downcase_str(const char* ident, bool is_quoted)
+{
+	if (ident == NULL || is_quoted) {
+		return (char*)ident;
+	}
+	return downcase_truncate_identifier(ident, strlen((char*)ident), false);
+}
+
+static DolphinString* makeDolphinString(char* str, Node* node, bool is_quoted)
+{
+	DolphinString* result = (DolphinString*)palloc(sizeof(DolphinString));
+	result->str = str;
+	result->node = node;
+	result->is_quoted = is_quoted;
+	return result;
+}
+
+static DolphinString* makeDolphinStringByChar(char* str, bool is_quoted)
+{
+	return makeDolphinString(str, (Node*)makeString(str), is_quoted);
+}
+
+static DolphinString* makeDolphinStringByNode(Node* node, bool is_quoted)
+{
+	return makeDolphinString(strVal((Value*)node), node, is_quoted);
+}
+
+
+static List* GetNameListFromDolphinString(List* dolphinStringList)
+{
+	List* result = NIL;
+	ListCell* cell = NULL;
+	foreach (cell, dolphinStringList) {
+		DolphinString* element = (DolphinString*)lfirst(cell);
+		result = lappend(result, element->node);
+	}
+	return result;
+}
+
 /*
  * Check numbers of elements in a_expr from WITH ROLLUP clause, which is declared in group_by_list.
  * If the input expr is valid, directly return. Otherwise raise ERROR.
@@ -29913,6 +30288,11 @@ static void with_rollup_check_elems_count(Node* expr)
 			ereport(ERROR, (errcode(ERRCODE_SYNTAX_ERROR), errmsg("Unexpected syntax error for WITH ROLLUP.")));
 		}
 	}
+}
+
+static inline char* GetDolphinObjName(const char* string, bool is_quoted)
+{
+    return (GetSessionContext()->lower_case_table_names == 0) ? (char*)string : downcase_str(string, is_quoted);
 }
 
 /*
