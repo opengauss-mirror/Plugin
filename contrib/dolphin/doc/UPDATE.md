@@ -77,6 +77,8 @@ SELECT [ ALL | DISTINCT [ ON ( expression [, ...] ) ] ]
 
         更新为列类型的默认值。
 
+  IGNORE关键字不支持列存，无法在列存表中生效。
+  
 -   **table\_name**
 
     要更新的表名，可以使用模式修饰。

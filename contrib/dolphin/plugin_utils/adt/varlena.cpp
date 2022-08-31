@@ -65,6 +65,8 @@
 #define MAX_CHARA_THRESHOLD 256
 #define MAX_CHARA_REMINDERS_LEN 10
 #define CONV_MAX_CHAR_LEN 65 //max 64bit and 1 sign bit
+#define MYSQL_SUPPORT_MINUS_MAX_LENGTH 65
+
 static int getResultPostionReverse(text* textStr, text* textStrToSearch, int32 beginIndex, int occurTimes);
 static int getResultPostion(text* textStr, text* textStrToSearch, int32 beginIndex, int occurTimes);
 extern int conv_n(char *result, int128 data, int from_base_s, int to_base_s);
@@ -255,6 +257,9 @@ extern "C" DLL_PUBLIC Datum text_insert(PG_FUNCTION_ARGS);
 
 PG_FUNCTION_INFO_V1_PUBLIC(soundex_difference);
 extern "C" DLL_PUBLIC Datum soundex_difference(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1_PUBLIC(make_set);
+extern "C" DLL_PUBLIC Datum make_set(PG_FUNCTION_ARGS);
 
 /*****************************************************************************
  *	 CONVERSION ROUTINES EXPORTED FOR USE BY C CODE							 *
@@ -8224,31 +8229,6 @@ char* set_space(int32 num)
     return result;
 }
 
-Datum soundex_difference(PG_FUNCTION_ARGS)
-{
-    char* arg1 = text_to_cstring(PG_GETARG_TEXT_P(0));
-    char* arg2 = text_to_cstring(PG_GETARG_TEXT_P(1));
-    int str_len1 = strlen(arg1) +1, str_len2 = strlen(arg2) + 1;
-    int min_sound_len = 5;
-    int i;
-
-    char* result1 = (char*)palloc(Max(str_len1, min_sound_len));
-    char* result2 = (char*)palloc(Max(str_len2, min_sound_len));
-    set_sound(arg1, result1, strlen(arg1));
-    set_sound(arg2, result2, strlen(arg2));
-
-    for (i = 0; i < SOUND_THRESHOLD; i++) {
-        if (result1[i] != result2[i]) {
-            pfree_ext(result1);
-            pfree_ext(result2);
-            PG_RETURN_INT32(0);
-        }
-    }
-    pfree_ext(result1);
-    pfree_ext(result2);
-    PG_RETURN_INT32(1);
-}
-
 Datum space_integer(PG_FUNCTION_ARGS)
 {
     int32 num = (int32)PG_GETARG_INT32(0);
@@ -8280,4 +8260,78 @@ Datum space_string(PG_FUNCTION_ARGS)
     } else {
         PG_RETURN_NULL();
     }
+}
+
+Datum soundex_difference(PG_FUNCTION_ARGS)
+{
+    char* arg1 = text_to_cstring(PG_GETARG_TEXT_P(0));
+    char* arg2 = text_to_cstring(PG_GETARG_TEXT_P(1));
+    int str_len1 = strlen(arg1) +1, str_len2 = strlen(arg2) + 1;
+    int min_sound_len = 5;
+    int i;
+
+    char* result1 = (char*)palloc(Max(str_len1, min_sound_len));
+    char* result2 = (char*)palloc(Max(str_len2, min_sound_len));
+    set_sound(arg1, result1, strlen(arg1));
+    set_sound(arg2, result2, strlen(arg2));
+
+    for (i = 0; i < SOUND_THRESHOLD; i++) {
+        if (result1[i] != result2[i]) {
+            pfree_ext(result1);
+            pfree_ext(result2);
+            PG_RETURN_INT32(0);
+        }
+    }
+    pfree_ext(result1);
+    pfree_ext(result2);
+    PG_RETURN_INT32(1);
+}
+
+Datum make_set(PG_FUNCTION_ARGS)
+{
+    int64 num = PG_GETARG_INT64(0);
+    StringInfoData buf;
+    text* result = NULL;
+    int64 temp_num;
+
+    if (num == 0) {
+        PG_RETURN_NULL();
+    } else if (num < 0) {
+        temp_num = num + 1;
+    } else {
+        temp_num = num;
+    }
+
+    initStringInfo(&buf);
+    int64 flag = temp_num % 2;
+    bool output_flag = false;
+    text* temp_char;
+
+    for (int i = 1; i < PG_NARGS(); i++) {
+        /* when the num is minus, make_set return max string size is 64 in Mysql 8.0
+         * So there add restrict of handling size. */
+        if (i == MYSQL_SUPPORT_MINUS_MAX_LENGTH && num < 0) {
+            break;
+        }
+        if ((flag != 0 || (flag == 0 && num < 0)) && !fcinfo->argnull[i]) {
+            if (output_flag && (flag % 2 == 1 || (flag % 2 == 0 && num < 0))) {
+                appendStringInfoString(&buf, ",");
+                output_flag = false;
+            }
+            if (flag % 2 == 1 || (flag % 2 == 0 && num < 0)) {
+                temp_char = _elt(i, fcinfo);
+                appendStringInfoString(&buf, text_to_cstring(temp_char));
+                output_flag = true;
+            }
+        }
+        if (i == 1) {
+            flag = temp_num / 2;
+        } else {
+            flag = flag / 2;
+        }
+    }
+
+    result = cstring_to_text(buf.data);
+    pfree_ext(buf.data);
+    PG_RETURN_TEXT_P(result);
 }

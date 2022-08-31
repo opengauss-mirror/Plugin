@@ -42,3 +42,5 @@ DROP FUNCTION IF EXISTS pg_catalog.character_length(bool) cascade;
 CREATE OR REPLACE FUNCTION pg_catalog.character_length(bool) returns int4 LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'boolcharlen';
 DROP FUNCTION IF EXISTS pg_catalog.character_length(bit) cascade;
 CREATE OR REPLACE FUNCTION pg_catalog.character_length(bit) returns int4 LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'c_bitoctetlength';
+DROP FUNCTION IF EXISTS pg_catalog.make_set(bigint, VARIADIC ARR "any") cascade;
+CREATE OR REPLACE FUNCTION pg_catalog.make_set(bigint, VARIADIC ARR "any") RETURNS text LANGUAGE C as '$libdir/dolphin', 'make_set';
