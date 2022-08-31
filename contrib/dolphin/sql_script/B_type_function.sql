@@ -34,3 +34,6 @@ CREATE OR REPLACE FUNCTION pg_catalog.chara(variadic arr "any") returns text LAN
 
 DROP FUNCTION IF EXISTS pg_catalog.insert(text, integer, integer, text) CASCADE;
 CREATE FUNCTION pg_catalog.insert (text, bigint, bigint, text) RETURNS text LANGUAGE C IMMUTABLE  as '$libdir/dolphin',  'text_insert';
+
+DROP FUNCTION IF EXISTS pg_catalog.make_set(bigint, VARIADIC ARR "any") cascade;
+CREATE OR REPLACE FUNCTION pg_catalog.make_set(bigint, VARIADIC ARR "any") RETURNS text LANGUAGE C as '$libdir/dolphin', 'make_set';
