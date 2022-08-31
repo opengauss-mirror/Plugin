@@ -370,6 +370,18 @@ void init_session_vars(void)
                              check_b_db_timestamp,
                              assign_b_db_timestamp,
                              NULL);
+    DefineCustomIntVariable("lower_case_table_names",
+                            gettext_noop("used to set the sensitive of identifier"),
+                            NULL,
+                            &GetSessionContext()->lower_case_table_names,
+                            1,
+                            0,
+                            2,
+                            PGC_USERSET,
+                            0,
+                            NULL,
+                            NULL,
+                            NULL);
 }
 
 static void execute_sql_file()

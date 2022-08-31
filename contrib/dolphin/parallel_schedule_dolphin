@@ -76,3 +76,19 @@ test: test_table_index
 test: db_b_date_time_functions
 
 test: builtin_funcs/b_compatibility_time_funcs
+
+# case sensitive test, do not insert test case */
+test: case_sensitive_test/create_env
+
+test: case_sensitive_test/create_table case_sensitive_test/create_table_like case_sensitive_test/create_foreign_table case_sensitive_test/cluster case_sensitive_test/temp case_sensitive_test/rowlevelsecurity
+
+test: case_sensitive_test/single_node_foreign_key case_sensitive_test/create_index case_sensitive_test/insert case_sensitive_test/update case_sensitive_test/delete case_sensitive_test/vacuum case_sensitive_test/analyze_commands case_sensitive_test/single_node_triggers
+
+test:  case_sensitive_test/alter_table case_sensitive_test/reindex_internal
+
+test: case_sensitive_test/drop
+
+test: case_sensitive_test/clean_env
+
+test: case_sensitive_test/role_test 
+# case sensitive test end

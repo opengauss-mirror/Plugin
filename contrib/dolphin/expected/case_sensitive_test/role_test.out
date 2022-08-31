@@ -1,0 +1,33 @@
+DROP DATABASE IF EXISTS role_test_db;
+NOTICE:  database "role_test_db" does not exist, skipping
+CREATE DATABASE role_test_db dbcompatibility 'b';
+\c role_test_db;
+SET lower_case_table_names TO 0;
+CREATE TABLE test_table (a int);
+CREATE USER Test_User WITH PASSWORD 'openGauss@123';
+SELECT rolname FROM pg_roles WHERE rolname LIKE '%Test_%';
+  rolname  
+-----------
+ Test_User
+(1 row)
+
+GRANT ALL PRIVILEGES TO test_user;
+ERROR:  role "test_user" does not exist
+REVOKE ALL PRIVILEGES FROM test_user;
+ERROR:  role "test_user" does not exist
+GRANT ALL PRIVILEGES TO Test_User;
+REVOKE ALL PRIVILEGES FROM Test_User;
+ALTER USER test_user RENAME TO test_USer;
+ERROR:  role "test_user" does not exist
+ALTER USER Test_User RENAME TO test_USer;
+CREATE SCHEMA test_scheam AUTHORIZATION test_user;
+ERROR:  role "test_user" does not exist
+CREATE SCHEMA test_scheam AUTHORIZATION test_USer;
+ALTER TABLE test_table OWNER TO test_user;
+ERROR:  role "test_user" does not exist
+ALTER TABLE test_table OWNER TO test_USer;
+DROP USER test_user CASCADE;
+ERROR:  role "test_user" does not exist
+DROP USER test_USer CASCADE;
+\c postgres
+DROP DATABASE role_test_db;

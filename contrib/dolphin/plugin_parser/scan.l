@@ -110,7 +110,7 @@ static void dealSahrpComment(core_yyscan_t yyscanner);
  */
 extern int	core_yyget_column(yyscan_t yyscanner);
 extern void core_yyset_column(int column_no, yyscan_t yyscanner);
-
+static char* CopyIdentifier(const char* ident, int len, bool warn);
 %}
 
 %option reentrant
@@ -1066,7 +1066,7 @@ other			.
 
 					if (keyword != NULL)
 					{
-						yylval->keyword = keyword->name;
+						yylval->keyword = pstrdup(yytext);
 
 						/* Find the CREATE PROCEDURE syntax and set dolqstart. */
 						if (keyword->value == CREATE)
@@ -1106,6 +1106,7 @@ other			.
 							yyextra->is_hint_str = true;
 						}
 
+						yyextra->ident_quoted = false;
 						return keyword->value;
 					}
 
@@ -1122,7 +1123,7 @@ other			.
 						yyleng = nchars;
 						
 					}
-					ident = downcase_truncate_identifier(yytext, yyleng, yyextra->warnOnTruncateIdent);
+					ident = CopyIdentifier(yytext, yyleng, yyextra->warnOnTruncateIdent);
 					yylval->str = ident;
 					yyextra->ident_quoted = false;
 					return IDENT;
@@ -1918,3 +1919,16 @@ dealSahrpComment(core_yyscan_t yyscanner)
         }
 }
 
+static char* CopyIdentifier(const char* ident, int len, bool warn)
+{
+    char* result = NULL;
+    int i;
+    errno_t ret = 0;
+    result = (char*)palloc(len + 1);
+    ret = strncpy_s(result, len + 1, ident, len);
+    securec_check(ret, "\0", "\0");
+    if (len >= NAMEDATALEN)
+        truncate_identifier(result, len, warn);
+
+    return result;
+}
