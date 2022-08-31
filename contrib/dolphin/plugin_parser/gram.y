@@ -666,7 +666,7 @@ static char* GetDolphinObjName(const char* string, bool is_quoted);
 				opt_enum_val_list enum_val_list table_func_column_list
 				create_generic_options alter_generic_options
 				relation_expr_list dostmt_opt_list
-				merge_values_clause publication_name_list empty_value
+				merge_values_clause publication_name_list empty_value insert_set_list insert_set_clause
 
 %type <list>	group_by_list
 %type <node>	group_by_item empty_grouping_set rollup_clause cube_clause
@@ -732,7 +732,7 @@ static char* GetDolphinObjName(const char* string, bool is_quoted);
 %type <defelt>	SeqOptElem
 
 /* INSERT */
-%type <istmt>	insert_rest
+%type <istmt>	insert_rest insert_mysql_rest
 %type <node>	upsert_clause
 
 %type <mergewhen>	merge_insert merge_update
@@ -20523,7 +20523,7 @@ update_delete_partition_clause: PARTITION '(' name ')'
  *
  *****************************************************************************/
 
-InsertStmt: opt_with_clause INSERT hint_string opt_ignore into_empty insert_target insert_rest returning_clause
+InsertStmt: opt_with_clause INSERT hint_string opt_ignore into_empty insert_target insert_mysql_rest returning_clause
 			{
 				$7->relation = $6;
 				$7->returningList = $8;
@@ -20532,7 +20532,7 @@ InsertStmt: opt_with_clause INSERT hint_string opt_ignore into_empty insert_targ
 				$7->hasIgnore = $4;
 				$$ = (Node *) $7;
 			}
-			| opt_with_clause INSERT hint_string opt_ignore into_empty insert_target insert_rest upsert_clause returning_clause
+			| opt_with_clause INSERT hint_string opt_ignore into_empty insert_target insert_mysql_rest upsert_clause returning_clause
 				{
 					if ($9 != NIL) {
 						const char* message = "RETURNING clause is not yet supported whithin INSERT ON DUPLICATE KEY UPDATE statement.";
@@ -20702,6 +20702,27 @@ insert_target:
 				}
 		;
 
+insert_mysql_rest:
+	insert_rest
+		{ $$ = $1; }
+	| SET insert_set_list
+		{
+			$$ = makeNode(InsertStmt);
+			SelectStmt *n = makeNode(SelectStmt);
+			List *temp_N = NIL;
+			ListCell* cell = NULL;
+			ResTarget* temp_val = NULL;
+			foreach(cell, $2) {
+				temp_val = (ResTarget*)lfirst(cell);
+				temp_N = lappend(temp_N, (Node*)temp_val->val);
+			}
+			n->valuesLists = lappend(n->valuesLists, temp_N);
+			$$->cols = $2;
+			$$->selectStmt = (Node*)n;
+			$$->isRewritten = false;
+		}
+	;
+
 insert_rest:
 			SelectStmt
 				{
@@ -20735,7 +20756,21 @@ insert_rest:
 						}
 						$$->isRewritten = false;
 				}
-			
+		;
+
+insert_set_list:
+			insert_set_clause
+				{ $$ = $1; }
+			| insert_set_list ',' insert_set_clause
+				{ $$ = list_concat($1, $3); }
+		;
+
+insert_set_clause:
+			set_target assign_operator ctext_expr
+				{
+					$1->val = (Node *) $3;
+					$$ = list_make1($1);
+				}
 		;
 
 insert_empty_values:

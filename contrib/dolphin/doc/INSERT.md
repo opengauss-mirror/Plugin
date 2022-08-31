@@ -23,7 +23,8 @@
 INSERT [/*+ plan_hint */] [IGNORE] [INTO] table_name [partition_clause] [ AS alias ] [ ( column_name [, ...] ) ]
     { DEFAULT VALUES
     | [ VALUES | VALUE ] [{( { expression | DEFAULT } [, ...] ) }][, ...]
-    | query }
+    | query
+    | set_clause_values }
     [ ON DUPLICATE KEY UPDATE { NOTHING | { column_name = { expression | DEFAULT } } [, ...] [ WHERE condition ] }]
     [ RETURNING {* | {output_expression [ [ AS ] output_name ] }[, ...]} ];
 ```
@@ -155,6 +156,11 @@ INSERT [/*+ plan_hint */] [IGNORE] [INTO] table_name [partition_clause] [ AS ali
 -   **query**
 
     一个查询语句（SELECT语句），将查询结果作为插入的数据。
+
+-   **set_clause_values**
+
+    一种insert into table_name set column_name = value, column_name = value, ...依次类推。set_clause_values是指set column_name = value，多个列插入值用逗号分隔。
+    该是insert into 的一种扩展语法。为防止insert into 时字段顺序与值顺序混乱造成写入错误。
 
 -   **RETURNING**
 
