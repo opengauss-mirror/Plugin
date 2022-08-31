@@ -62,6 +62,8 @@
 #define MediumBlobMaxAllocSize ((Size)(16 * 1024 * 1024 - 1)) /* 16MB - 1 */
 #define LongBlobMaxAllocSize (((Size)4 * 1024 * 1024 * 1024 - 1)) /* 4GB - 1 */
 #define SOUND_THRESHOLD 4
+#define MYSQL_SUPPORT_MINUS_MAX_LENGTH 65
+
 static int getResultPostionReverse(text* textStr, text* textStrToSearch, int32 beginIndex, int occurTimes);
 static int getResultPostion(text* textStr, text* textStrToSearch, int32 beginIndex, int occurTimes);
 
@@ -8050,7 +8052,7 @@ Datum make_set(PG_FUNCTION_ARGS)
     for (int i = 1; i < PG_NARGS(); i++) {
         /* when the num is minus, make_set return max string size is 64 in Mysql 8.0
          * So there add restrict of handling size. */
-        if (i == 65 && num < 0) {
+        if (i == MYSQL_SUPPORT_MINUS_MAX_LENGTH && num < 0) {
             break;
         }
         if ((flag != 0 || (flag == 0 && num < 0)) && !fcinfo->argnull[i]) {
