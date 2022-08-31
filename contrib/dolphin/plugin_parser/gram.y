@@ -130,9 +130,9 @@ IntervalStylePack g_interStyleVal = {"a"};
 
 #define RESET_BOOL(Arg, T) \
 	if (T == T_TypeCast) { \
-		if (((A_Const *)(((TypeCast*)(Arg))->arg))->val.val.str == "t") { \
+        if (0 == strcmp(((A_Const *)(((TypeCast*)(Arg))->arg))->val.val.str, "t")) { \
 			Arg = makeIntConst(1,-1); \
-		} else if (((A_Const *)(((TypeCast*)(Arg))->arg))->val.val.str == "f") { \
+        } else if (0 == strcmp(((A_Const *)(((TypeCast*)(Arg))->arg))->val.val.str, "f")) { \
 			Arg = makeIntConst(0,-1); \
 		} \
 	}
