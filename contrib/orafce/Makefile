@@ -17,7 +17,8 @@ PG_CPPFLAGS = -fPIC -I $(CODE_BASE)/src/include
 REGRESS_OPTS = --schedule=parallel_schedule --encoding=utf8
 
 #override CFLAGS += -Wextra -Wimplicit-fallthrough=0
-
+exclude_option = fPIE
+override CPPFLAGS := $(filter-out $(exclude_option),$(CPPFLAGS))
 ifdef NO_PGXS
 subdir = contrib/$(MODULE_big)
 top_builddir = ../..
