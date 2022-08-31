@@ -53,7 +53,7 @@ insert into test_part1 (with RECURSIVE t_r(i,j) as(values(0,1) union all select 
 select * from test_part1;
 ALTER TABLE test_part1 truncate PARTITION all;
 select * from test_part1;
-ALTER TABLE test_subpart truncate PARTITION p0, p1;
+ALTER TABLE test_subpart truncate PARTITION p0, p1, p2_2, p2_1;
 select * from test_subpart;
 insert into test_subpart (with RECURSIVE t_r(i,j) as(values(0,1) union all select i+1,j+2 from t_r where i < 20) select * from t_r);
 select * from test_subpart;
