@@ -54,5 +54,11 @@ select convert(1 using 'utf8');
  1
 (1 row)
 
+select convert('测试' using 'utf8');
+ convert 
+---------
+ 测试
+(1 row)
+
 \c postgres
 drop database if exists db_convert;

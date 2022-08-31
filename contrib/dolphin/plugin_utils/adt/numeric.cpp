@@ -232,6 +232,8 @@ static void strip_var(NumericVar* var);
 static void compute_bucket(
     Numeric operand, Numeric bound1, Numeric bound2, NumericVar* count_var, NumericVar* result_var);
 
+extern Numeric int64_to_numeric(int64 v);
+extern const char* extract_numericstr(const char* str);
 /*
  * @Description: call corresponding big integer operator functions.
  *
@@ -19325,7 +19327,7 @@ Datum crc32(PG_FUNCTION_ARGS)
     PG_RETURN_UINT32(result);
 }
 
-static int conv_n(char *result, int128 data, int from_base_s, int to_base_s)
+int conv_n(char *result, int128 data, int from_base_s, int to_base_s)
 {
     uint64 sum = 0;
     int64 sum_s = 0;
@@ -19515,10 +19517,35 @@ Datum conv_num(PG_FUNCTION_ARGS)
     PG_RETURN_TEXT_P(cstring_to_text(result));
 }
 
+int128 conv_numeric_int128(Numeric num)
+{
+    int128 result = 0;
+    NumericVar x;
+    uint16 numFlags = NUMERIC_NB_FLAGBITS(num);
+
+    if (NUMERIC_FLAG_IS_NANORBI(numFlags)) {
+        /* Handle Big Integer */
+        if (NUMERIC_FLAG_IS_BI(numFlags))
+            num = makeNumericNormal(num);
+        /* XXX would it be better to return NULL? */
+        else
+            ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("cannot convert NaN to int128")));
+    }
+
+    /* Convert to variable format and thence to int8 */
+    init_var_from_num(num, &x);
+    floor_var(&x, &x);
+    /* if int128 out of range , returns int128_max */
+    if (!numericvar_to_int128(&x, &result))
+        result = PG_INT128_MAX;
+
+    return result;
+}
 
 Datum bin_integer(PG_FUNCTION_ARGS)
 {
-    int64 num = PG_GETARG_INT64(0);
+    int128 num;
+    num = conv_numeric_int128(PG_GETARG_NUMERIC(0));
     int from_base = 10;
     int to_base = 2;
     char result[CONV_MAX_CHAR_LEN + 1] = "";
@@ -19534,6 +19561,8 @@ Datum bin_integer(PG_FUNCTION_ARGS)
 
 Datum bin_string(PG_FUNCTION_ARGS)
 {
+    Oid typeOutput;
+    bool typIsVarlena;
     text* string = PG_GETARG_TEXT_PP(0);
     int from_base = 10;
     int to_base = 2;
@@ -19541,7 +19570,13 @@ Datum bin_string(PG_FUNCTION_ARGS)
     if (VARSIZE_ANY_EXHDR(string) <= 0) {
         PG_RETURN_NULL();
     }
-    int64 num = floor(atof(VARDATA_ANY(string)));
+    int128 num;
+    Datum txt = PG_GETARG_DATUM(0);
+    char* tmp = NULL;
+    tmp = DatumGetCString(DirectFunctionCall1(textout, txt));
+    getTypeOutputInfo(fcinfo->argTypes[0], &typeOutput, &typIsVarlena);
+    tmp = (char*)extract_numericstr(OidOutputFunctionCall(typeOutput, fcinfo->arg[0]));
+    num = conv_numeric_int128(DatumGetNumeric(DirectFunctionCall3(numeric_in, CStringGetDatum(tmp), ObjectIdGetDatum(0), Int32GetDatum(-1))));
     if (num == 0) {
         PG_RETURN_TEXT_P(cstring_to_text("0"));
     } else {

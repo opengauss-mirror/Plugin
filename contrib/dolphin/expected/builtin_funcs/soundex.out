@@ -38,6 +38,48 @@ select soundex('hell');
  H400
 (1 row)
 
+select soundex('测试');
+ soundex 
+---------
+ 测000
+(1 row)
+
+select soundex('dbakbdasjcbsdk,kdsjbcksd,cnsk');
+      soundex       
+--------------------
+ D12132123232123252
+(1 row)
+
+select soundex('!!!jhdgj');
+ soundex 
+---------
+ J320
+(1 row)
+
+select soundex('!!!!!！！jhdgj');
+ soundex 
+---------
+ ！232
+(1 row)
+
+select soundex(null);
+ soundex 
+---------
+ 
+(1 row)
+
+select soundex('12,xa');
+ soundex 
+---------
+ X000
+(1 row)
+
+select soundex('dkh测试fkdsjs12');
+ soundex 
+---------
+ D21232
+(1 row)
+
 select 'ibc' sounds like 'abc';
  soundex_difference 
 --------------------
@@ -77,7 +119,7 @@ select 'hill' sounds like 'hell';
 select '中Adfab' sounds like '@adp';
  soundex_difference 
 --------------------
-                  1
+                  0
 (1 row)
 
 select 1 sounds like 2;

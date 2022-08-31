@@ -32,6 +32,60 @@ select elt(1,'1.2');
  1.2
 (1 row)
 
+select elt('1a','1.2a');
+ elt  
+------
+ 1.2a
+(1 row)
+
+select elt('1.6a','1.2a',23);
+ elt  
+------
+ 1.2a
+(1 row)
+
+select elt('1.6测','1.2a',23);
+ elt  
+------
+ 1.2a
+(1 row)
+
+select elt('1.6测','1.2a测试',23);
+   elt    
+----------
+ 1.2a测试
+(1 row)
+
+select elt(9,'1.2a测试',23);
+ elt 
+-----
+ 
+(1 row)
+
+select elt(-1,'1.2a测试',23);
+ elt 
+-----
+ 
+(1 row)
+
+select elt(2,null,'1.2a测试',23);
+   elt    
+----------
+ 1.2a测试
+(1 row)
+
+select elt(1,null,'1.2a测试',23);
+ elt 
+-----
+ 
+(1 row)
+
+select elt(true,12,null,'1.2a测试',23);
+ elt 
+-----
+ 12
+(1 row)
+
 select elt('1',1);
  elt 
 -----
@@ -44,24 +98,6 @@ select elt('1',1.2);
  1.2
 (1 row)
 
-select elt('1','a');
- elt 
------
- a
-(1 row)
-
-select elt('1','a');
- elt 
------
- a
-(1 row)
-
-select elt(1,'a');
- elt 
------
- a
-(1 row)
-
 select elt(1,'a','b');
  elt 
 -----
@@ -72,12 +108,6 @@ select elt(1,'a',2);
  elt 
 -----
  a
-(1 row)
-
-select elt(2,'a',2);
- elt 
------
- 2
 (1 row)
 
 \c postgres

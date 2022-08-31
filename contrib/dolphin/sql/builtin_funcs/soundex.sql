@@ -1,13 +1,19 @@
 drop database if exists db_soundex;
 create database db_soundex dbcompatibility 'B';
 \c db_soundex
-
 select soundex('abc');
 select soundex(10);
 select soundex('afdsbfdlsafs');
 select soundex('dslfaalskf222122');
 select soundex('dadfa353dadf333ff');
 select soundex('hell');
+select soundex('测试');
+select soundex('dbakbdasjcbsdk,kdsjbcksd,cnsk');
+select soundex('!!!jhdgj');
+select soundex('!!!!!！！jhdgj');
+select soundex(null);
+select soundex('12,xa');
+select soundex('dkh测试fkdsjs12');
 
 select 'ibc' sounds like 'abc';
 select 'aws' sounds like '10';

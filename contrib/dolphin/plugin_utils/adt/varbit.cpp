@@ -37,6 +37,10 @@ extern Datum mp_bit_length_bit(PG_FUNCTION_ARGS);
 extern Datum mp_bit_length_text(PG_FUNCTION_ARGS);
 extern Datum mp_bit_length_bytea(PG_FUNCTION_ARGS);
 
+
+PG_FUNCTION_INFO_V1_PUBLIC(c_bitoctetlength);
+extern "C" DLL_PUBLIC Datum c_bitoctetlength(PG_FUNCTION_ARGS);
+
 /*
  * common code for bittypmodin and varbittypmodin
  */

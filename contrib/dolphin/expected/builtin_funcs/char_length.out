@@ -8,6 +8,12 @@ select char_length(1234);
            4
 (1 row)
 
+select char_length(1234.5);
+ char_length 
+-------------
+           6
+(1 row)
+
 select char_length( '1234');
  char_length 
 -------------
@@ -66,6 +72,24 @@ select char_length(1111111111111111111111111111111111111111111111111111111111111
  char_length 
 -------------
           81
+(1 row)
+
+select char_length('测试');
+ char_length 
+-------------
+           2
+(1 row)
+
+select char_length('测试123');
+ char_length 
+-------------
+           5
+(1 row)
+
+select char_length(true);
+ char_length 
+-------------
+           1
 (1 row)
 
 \c postgres

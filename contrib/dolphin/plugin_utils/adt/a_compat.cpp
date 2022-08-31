@@ -725,9 +725,9 @@ text* _chr(uint32 value, bool flag)
         char* wch = NULL;
         /* We only allow valid Unicode code points */
         if (value > 0x001fffff)
-            ereport(ERROR,
-                    (errcode(ERRCODE_PROGRAM_LIMIT_EXCEEDED),
-                     errmsg("requested character too large for encoding: %u", value)));
+           ereport(ERROR,
+                   (errcode(ERRCODE_PROGRAM_LIMIT_EXCEEDED),
+                    errmsg("requested character too large for encoding: %u", value)));
         if (value > 0xffff){
             bytes = 4;
         } else if (value > 0x07ff) {

@@ -14,16 +14,22 @@ select bin(0);
  0
 (1 row)
 
-select bin('0');
+select bin('2');
  bin 
 -----
- 0
+ 10
 (1 row)
 
 select bin('a');
  bin 
 -----
  0
+(1 row)
+
+select bin('11a');
+ bin  
+------
+ 1011
 (1 row)
 
 select bin(1.1);
@@ -45,6 +51,12 @@ select bin(true);
 (1 row)
 
 select bin(false);
+ bin 
+-----
+ 0
+(1 row)
+
+select bin('测试');
  bin 
 -----
  0
