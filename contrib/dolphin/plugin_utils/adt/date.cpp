@@ -83,6 +83,8 @@ PG_FUNCTION_INFO_V1_PUBLIC(subdate_time_days);
 extern "C" DLL_PUBLIC Datum subdate_time_days(PG_FUNCTION_ARGS);
 PG_FUNCTION_INFO_V1_PUBLIC(subdate_time_interval);
 extern "C" DLL_PUBLIC Datum subdate_time_interval(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(time_mysql);
+extern "C" DLL_PUBLIC Datum time_mysql(PG_FUNCTION_ARGS);
 
 /* common code for timetypmodin and timetztypmodin */
 static int32 anytime_typmodin(bool istz, ArrayType* ta)
@@ -3210,10 +3212,10 @@ fsec_t nano2microsecond(uint nanoseconds)
 {
     fsec_t microseconds;
     int32 remain;
-    microseconds = nanoseconds / 1000;
-    remain = nanoseconds % 1000;
+    microseconds = nanoseconds / NANO2MICRO_BASE;
+    remain = nanoseconds % NANO2MICRO_BASE;
     /* round up */
-    if (remain >= 500)
+    if (remain >= HALF_NANO2MICRO_BASE)
         microseconds += 1;
 
     return microseconds;
@@ -3257,6 +3259,20 @@ void sec_to_numericsec(NumericVar *from, NumericSec *to)
     if (from->sign) {
         to->int_val = -to->int_val;
     }
+}
+
+/* 
+ * @Description: Keep timeADT in range(-B_FORMAT_TIME_MAX_VALUE, B_FORMAT_TIME_MAX_VALUE)
+ * @return: bool, whether in range
+ */
+bool time_in_range(TimeADT &time)
+{
+    bool ret = (time >= -B_FORMAT_TIME_MAX_VALUE) && (time <= B_FORMAT_TIME_MAX_VALUE);
+    if (time < -B_FORMAT_TIME_MAX_VALUE)
+        time = -B_FORMAT_TIME_MAX_VALUE;
+    if (time > B_FORMAT_TIME_MAX_VALUE)
+        time = B_FORMAT_TIME_MAX_VALUE;
+    return ret;
 }
 
 /* maketime()
@@ -3385,6 +3401,53 @@ bool is_date_format(const char *str)
         return true;
 
     return false;
+}
+
+/*
+ * @Description: The effect is the same as the date_in(). The difference 
+ * is that this function does not report any errors, but instead return 
+ * false. 
+ * @return false if the input string cannot be converted to date, otherwise true.
+*/
+bool date_in_no_ereport(const char* str, DateADT *date)
+{
+    bool ret = true;
+    PG_TRY();
+    {
+        *date = DatumGetDateADT(DirectFunctionCall1(date_in, CStringGetDatum(str)));
+    }
+    PG_CATCH();
+    {
+        // If catch an error, just empty the error stack and set return value to false.
+        FlushErrorState();
+        ret = false;
+    }
+    PG_END_TRY();
+    return ret;
+}
+
+/*
+ * @Description: The effect is the same as the time_in(). The difference
+ * is that this function does not report any errors, but instead return
+ * false.
+ * @return false if the input string cannot be converted to time, otherwise true.
+ */
+bool time_in_no_ereport(const char *str, TimeADT *time)
+{
+    bool ret = true;
+    PG_TRY();
+    {
+        *time = DatumGetTimeADT(
+            DirectFunctionCall3(time_in, CStringGetDatum(str), ObjectIdGetDatum(InvalidOid), Int32GetDatum(-1)));
+    }
+    PG_CATCH();
+    {
+        // If catch an error, just empty the error stack and set return value to false.
+        FlushErrorState();
+        ret = false;
+    }
+    PG_END_TRY();
+    return ret;
 }
 
 /*
@@ -3555,4 +3618,106 @@ Datum subdate_time_interval(PG_FUNCTION_ARGS)
             (errcode(ERRCODE_DATETIME_FIELD_OVERFLOW),
              errmsg("time field value out of range")));
     PG_RETURN_NULL();
+}
+
+/* 
+ * @Description: Determine if a string contains a time type and translate str to 
+ * pg_tm struct. The rules of judgment and decode is the same as time_in() but 
+ * datetime parsing rules for numeric format are additionally added.
+*/
+void str_to_pg_tm(char *str, pg_tm &tt, fsec_t &fsec, int &timeSign) 
+{
+    int tz;
+    int nf;
+    int dterr;
+    char workbuf[MAXDATELEN + 1];
+    char *field[MAXDATEFIELDS];
+    int dtype;
+    int ftype[MAXDATEFIELDS];
+    int D = 0;
+
+    tt.tm_year = 0;
+    tt.tm_mon = 0;
+    tt.tm_mday = 0;
+
+    /* check if empty */
+    if (strlen(str) == 0) {
+        tt.tm_hour = 0;
+        tt.tm_min = 0;
+        tt.tm_sec = 0;
+        fsec = 0;
+        return;
+    }
+    bool hasD = false;
+    char *adjusted = adjust_b_format_time(str, &timeSign, &D, &hasD);
+    dterr = ParseDateTime(adjusted, workbuf, sizeof(workbuf), field, ftype, MAXDATEFIELDS, &nf);
+    if (dterr != 0)
+        DateTimeParseError(dterr, str, "time");
+    if (dterr == 0) {
+        if (ftype[0] == DTK_NUMBER && nf == 1) {
+            /* for example: str = "2 121212" , "231034.1234" */
+            if (NumberTime(false, field[0], &tt, &fsec, D, hasD) && NumberTimestamp(str, &tt, &fsec)){
+                ereport(ERROR,
+                        (errcode(ERRCODE_INVALID_DATETIME_FORMAT),
+                         errmsg("invalid input syntax for type %s: \"%s\"", "time", str)));
+            }
+        } else {
+            dterr = DecodeTimeOnlyForBDatabase(field, ftype, nf, &dtype, &tt, &fsec, &tz, D);
+            if (dterr != 0)
+                DateTimeParseError(dterr, str, "time");
+        }
+    }
+    if (tt.tm_mday > 0) {
+        // If the input string is recognized as datetime
+        // determine whether its date is legal or not
+        if (tt.tm_hour >= HOURS_PER_DAY || tt.tm_year > B_FORMAT_MAX_YEAR_OF_DATE) {
+            ereport(ERROR,
+                    (errcode(ERRCODE_DATETIME_FIELD_OVERFLOW),
+                     errmsg("date/time field value out of range: \"%s\"", str)));
+        }
+    }
+}
+
+/*
+ * @Description: Compatible with function time(expr) in mysql. Extracts the time part
+ * of the time or datetime expression expr and returns it as a string.
+ * @return: formatted string.
+ */
+Datum time_mysql(PG_FUNCTION_ARGS)
+{
+    text *expr = PG_GETARG_TEXT_PP(0);
+    char *str;
+    char buf[MAXDATELEN + 2];
+    char *cp = buf;
+    struct pg_tm tt, *tm = &tt;
+    fsec_t fsec;
+    int timeSign = 1;
+
+    str = text_to_cstring(expr);
+
+    str_to_pg_tm(str, tt, fsec, timeSign);
+
+    if (fsec / USECS_PER_SEC) {
+        tt.tm_sec += fsec / USECS_PER_SEC;
+        tt.tm_min += tt.tm_sec / SECS_PER_MINUTE;
+        tt.tm_sec %= SECS_PER_MINUTE;
+        tt.tm_hour += tt.tm_min / MINS_PER_HOUR;
+        tt.tm_min %= MINS_PER_HOUR;
+        fsec = 0;
+    }
+
+    if (tm->tm_hour == TIME_MAX_HOUR && tm->tm_min == TIME_MAX_MINUTE &&
+        tm->tm_sec == TIME_MAX_SECOND && fsec > 0) {
+        ereport(ERROR,
+                (errcode(ERRCODE_DATETIME_FIELD_OVERFLOW),
+                 errmsg("date/time field value out of range: \"%s\"", str)));
+    }
+
+    if (timeSign == -1) {
+        *cp = '-';
+        ++cp;
+    }
+
+    EncodeTimeOnly(tm, fsec, false, 0, u_sess->time_cxt.DateStyle, cp);
+    PG_RETURN_TEXT_P(cstring_to_text(buf));
 }

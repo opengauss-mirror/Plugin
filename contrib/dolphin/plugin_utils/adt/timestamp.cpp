@@ -39,6 +39,7 @@
 #include "plugin_utils/timestamp.h"
 #include "plugin_utils/datetime.h"
 #include "plugin_utils/date.h"
+#include "plugin_utils/year.h"
 
 #ifdef PGXC
 #include "pgxc/pgxc.h"
@@ -68,6 +69,7 @@
 #define DATESTR_LEN 20
 #define TIMESTR_LEN 20
 #define TYPMODOUT_LEN 64
+#define ROUNDING_BORDER 5
 
 #define JANUARY 1
 #define FEBRUARY 2
@@ -175,10 +177,33 @@ extern "C" DLL_PUBLIC Datum b_db_sys_real_timestamp(PG_FUNCTION_ARGS);
 PG_FUNCTION_INFO_V1_PUBLIC(b_db_statement_start_timestamp);
 extern "C" DLL_PUBLIC Datum b_db_statement_start_timestamp(PG_FUNCTION_ARGS);
 
+/* b compatibility time function */
+PG_FUNCTION_INFO_V1_PUBLIC(subtime_text);
+extern "C" DLL_PUBLIC Datum subtime_text(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(time_format);
+extern "C" DLL_PUBLIC Datum time_format(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(timestamp_param1);
+extern "C" DLL_PUBLIC Datum timestamp_param1(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(timestamp_param2);
+extern "C" DLL_PUBLIC Datum timestamp_param2(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(timediff_text);
+extern "C" DLL_PUBLIC Datum timediff_text(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(timediff_date_text);
+extern "C" DLL_PUBLIC Datum timediff_date_text(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(timediff_datetime_text);
+extern "C" DLL_PUBLIC Datum timediff_datetime_text(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(timediff_time_text);
+extern "C" DLL_PUBLIC Datum timediff_time_text(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(timestamp_add_text);
+extern "C" DLL_PUBLIC Datum timestamp_add_text(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(timestamp_add_time);
+extern "C" DLL_PUBLIC Datum timestamp_add_time(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(func_return_null);
+extern "C" DLL_PUBLIC Datum func_return_null(PG_FUNCTION_ARGS);
+
 /* b format datetime and timestamp type */
 static Timestamp int64_b_format_timestamp_internal(bool hasTz, int64 ts, fsec_t fsec);
 static int64 integer_b_format_timestamp(bool hasTz, int64 ts);
-static int NumberTimestamp(char *str, pg_tm *tm, fsec_t *fsec);
 static void fillZeroBeforeNumericTimestamp(char *str, char *buf);
 
 /* common code for timestamptypmodin and timestamptztypmodin */
@@ -448,7 +473,7 @@ Datum numeric_b_format_timestamp(PG_FUNCTION_ARGS)
     return DirectFunctionCall3(timestamptz_in, CStringGetDatum(buf), ObjectIdGetDatum(InvalidOid), Int32GetDatum(-1));
 }
 
-static int NumberTimestamp(char *str, pg_tm *tm, fsec_t *fsec)
+int NumberTimestamp(char *str, pg_tm *tm, fsec_t *fsec)
 {
     char *cp = str;
     int len = 0;
@@ -6119,6 +6144,30 @@ bool datetime_sub_interval(Timestamp datetime, Interval *span, Timestamp *result
     return true;
 }
 
+/*
+ * @Description: The effect is the same as the timestamp_in(). The difference 
+ * is that this function does not report any errors, but instead return 
+ * false. 
+ * @return false if the input string cannot be converted to datetime, otherwise true.
+*/
+bool datetime_in_no_ereport(const char *str, Timestamp *datetime)
+{
+    bool ret = true;
+    PG_TRY();
+    {
+        *datetime = DatumGetTimestamp(
+            DirectFunctionCall3(timestamp_in, CStringGetDatum(str), ObjectIdGetDatum(InvalidOid), Int32GetDatum(-1)));
+    }
+    PG_CATCH();
+    {
+        // If catch an error, just empty the error stack and set return value to false.
+        FlushErrorState();
+        ret = false;
+    }
+    PG_END_TRY();
+    return ret;
+}
+
 /* 
  * @Description: Subtract time from a datetime, giving a new datetime and assign it to result.
  * @return: false if parameter date or result out of range, otherwise true
@@ -6127,7 +6176,6 @@ bool datetime_sub_time(Timestamp datetime, TimeADT time_sub, Timestamp* result)
 {
     if (datetime < B_FORMAT_TIMESTAMP_MIN_VALUE || datetime > B_FORMAT_TIMESTAMP_MAX_VALUE)
         return false;
-    // *result = *result - time_sub;
 
     Interval span;
     span.month = 0;
@@ -6141,13 +6189,311 @@ bool datetime_sub_time(Timestamp datetime, TimeADT time_sub, Timestamp* result)
     return true;
 }
 
+/* subtime(Text, time)
+ * @Description: Subtract time from a datetime/time converted from text, giving a new datetime/time.
+ * The return type is the same as the type of the first parameter (datetime/time). (The actual return 
+ * type is CString, and the return type is distinguished by a string in datetime or time format)
+ */
+Datum subtime_text(PG_FUNCTION_ARGS)
+{
+    text *expr1 = PG_GETARG_TEXT_PP(0);
+    text *expr2 = PG_GETARG_TEXT_PP(1);
+    TimeADT time1, time2;
+    Timestamp datetime1, datetime2;
+    char *str1, *str2;
+    str1 = text_to_cstring(expr1);
+    str2 = text_to_cstring(expr2);
+    if (!time_in_no_ereport(str2, &time2)) {
+        ereport(ERROR, (errcode(ERRCODE_INVALID_DATETIME_FORMAT),
+                        errmsg("invalid input syntax \"%s\"", str2)));
+    }
+    if (datetime_in_no_ereport(str2, &datetime2)) {
+        PG_RETURN_NULL();
+    }
+    if (!time_in_range(time2)) {
+        ereport(ERROR, (errcode(ERRCODE_DATETIME_FIELD_OVERFLOW),
+                        errmsg("datetime/time field value out of range: \"%s\"",
+                               str2)));
+    }
+
+    if (datetime_in_no_ereport(str1, &datetime1)) {
+        Timestamp result;
+        if (datetime_sub_time(datetime1, time2, &result)) {
+            /* The variable datetime or result does not exceed the specified
+             * range*/
+            if (result >= B_FORMAT_TIMESTAMP_FIRST_YEAR)
+                return DirectFunctionCall1(datetime_text, result);
+            else {
+                PG_RETURN_NULL();
+            }
+        }
+        ereport(ERROR, (errcode(ERRCODE_DATETIME_FIELD_OVERFLOW),
+                        errmsg("date/time field overflow")));
+    } else if (time_in_no_ereport(str1, &time1)) {
+        TimeADT result;
+        if (!time_in_range(time1)) {
+            ereport(ERROR,
+                    (errcode(ERRCODE_DATETIME_FIELD_OVERFLOW),
+                     errmsg("datetime/time field value out of range: \"%s\"",
+                            str1)));
+        }
+        result = time1 - time2;
+        if (!time_in_range(result)) {
+            ereport(ERROR, (errcode(ERRCODE_DATETIME_FIELD_OVERFLOW),
+                            errmsg("date/time field overflow")));
+        }
+        return DirectFunctionCall1(time_text, result);
+    }
+
+    ereport(ERROR, (errcode(ERRCODE_INVALID_DATETIME_FORMAT),
+                    errmsg("invalid input syntax \"%s\"", str1)));
+    PG_RETURN_NULL();
+}
+
+Datum func_return_null(PG_FUNCTION_ARGS)
+{
+    PG_RETURN_NULL();
+}
+
+/* timediff(Text, Text)
+ * @Description: calculate the time different between two time type argument or two datetime type argument, which are all converted from text.
+ * Return time type or NULL if two text has different type
+ */
+Datum timediff_text(PG_FUNCTION_ARGS)
+{
+    text *expr1 = PG_GETARG_TEXT_PP(0);
+    text *expr2 = PG_GETARG_TEXT_PP(1);
+    char *str1, *str2;
+    str1 = text_to_cstring(expr1);
+    str2 = text_to_cstring(expr2);
+
+    TimeADT time1, time2;
+    Timestamp datetime1, datetime2;
+    bool exp1_is_datetime = datetime_in_no_ereport(str1, &datetime1);
+    bool exp1_is_time = time_in_no_ereport(str1, &time1);
+    bool exp2_is_datetime = datetime_in_no_ereport(str2, &datetime2);
+    bool exp2_is_time = time_in_no_ereport(str2, &time2);
+    bool exp1_is_date = exp1_is_datetime && !exp1_is_time;
+    bool exp2_is_date = exp2_is_datetime && !exp2_is_time;
+
+    if (!exp1_is_time) {
+        ereport(ERROR, (errcode(ERRCODE_INVALID_DATETIME_FORMAT),
+                        errmsg("invalid input syntax \"%s\"", str1)));
+    }
+    if (exp1_is_date) {
+        if (exp2_is_date)
+            PG_RETURN_TIMEADT(0);
+        if (exp2_is_time) {
+            ereport(ERROR, (errcode(ERRCODE_INVALID_DATETIME_FORMAT),
+                            errmsg("Incorrect datetime value: \"%s\"", str2)));
+        }
+        PG_RETURN_NULL();
+    }
+    if (exp1_is_datetime) {
+        if (exp2_is_date) {
+            PG_RETURN_NULL();
+        } else if (exp2_is_datetime) {
+            if (exp1_is_time != exp2_is_time) {
+                PG_RETURN_NULL();
+            }
+            TimeADT result;
+            long secs = 0;
+            int usecs = 0;
+            if (datetime1 < datetime2) {
+                TimestampDifference(datetime1, datetime2, &secs, &usecs);
+                secs = -secs;
+                usecs = -usecs;
+            } else {
+                TimestampDifference(datetime2, datetime1, &secs, &usecs);
+            }
+            result = secs * USECS_PER_SEC + usecs;
+            if (!time_in_range(result)) {
+                ereport(ERROR, (errcode(ERRCODE_DATETIME_FIELD_OVERFLOW),
+                                errmsg("date/time field value out of range")));
+            }
+            PG_RETURN_TIMEADT(result);
+        } else if (exp2_is_time) {
+            PG_RETURN_NULL();
+        }
+        ereport(ERROR, (errcode(ERRCODE_INVALID_DATETIME_FORMAT),
+                        errmsg("Incorrect datetime value: \"%s\"", str2)));
+    } else if (exp1_is_time) {
+        if (!time_in_range(time1)) {
+            ereport(ERROR,
+                    (errcode(ERRCODE_DATETIME_FIELD_OVERFLOW),
+                     errmsg("datetime/time field value out of range: \"%s\"",
+                            str1)));
+        }
+        if (!exp2_is_datetime && exp2_is_time) {
+            if (!time_in_range(time2)) {
+                ereport(
+                    ERROR,
+                    (errcode(ERRCODE_DATETIME_FIELD_OVERFLOW),
+                     errmsg("datetime/time field value out of range: \"%s\"",
+                            str2)));
+            }
+            TimeADT result = time1 - time2;
+            if (!time_in_range(result)) {
+                ereport(ERROR, (errcode(ERRCODE_DATETIME_FIELD_OVERFLOW),
+                                errmsg("date/time field overflow")));
+            }
+            PG_RETURN_TIMEADT(result);
+        }
+        if (exp2_is_datetime && !exp2_is_time) {
+            ereport(ERROR, (errcode(ERRCODE_INVALID_DATETIME_FORMAT),
+                            errmsg("Incorrect time value: \"%s\"", str2)));
+        }
+        if (exp2_is_datetime) {
+            PG_RETURN_NULL();
+        }
+        ereport(ERROR, (errcode(ERRCODE_INVALID_DATETIME_FORMAT),
+                        errmsg("Incorrect time value: \"%s\"", str2)));
+    }
+    PG_RETURN_NULL();
+}
+
+/* timediff(datetime, Text)
+ * @Description: calculate the time different between two time type argument or two datetime type argument, which are all converted from text.
+ * Return time type or NULL if two text has different type
+ */
+Datum timediff_datetime_text(PG_FUNCTION_ARGS)
+{
+    Timestamp datetime1 = PG_GETARG_TIMESTAMP(0);
+    text *expr2 = PG_GETARG_TEXT_PP(1);
+    char *str2;
+    str2 = text_to_cstring(expr2);
+
+    TimeADT time2;
+    Timestamp datetime2;
+    bool exp2_is_datetime = datetime_in_no_ereport(str2, &datetime2);
+    bool exp2_is_time = time_in_no_ereport(str2, &time2);
+    bool exp2_is_date = exp2_is_datetime && !exp2_is_time;
+
+    if (exp2_is_date) {
+        PG_RETURN_NULL();
+    }
+    if (exp2_is_datetime) {
+        TimeADT result;
+        long secs = 0;
+        int usecs = 0;
+        if (datetime1 < datetime2) {
+            TimestampDifference(datetime1, datetime2, &secs, &usecs);
+            secs = -secs;
+            usecs = -usecs;
+        } else {
+            TimestampDifference(datetime2, datetime1, &secs, &usecs);
+        }
+        result = secs * USECS_PER_SEC + usecs;
+        if (!time_in_range(result)) {
+            ereport(ERROR, (errcode(ERRCODE_DATETIME_FIELD_OVERFLOW),
+                            errmsg("date/time field overflow")));
+        }
+        PG_RETURN_TIMEADT(result);
+    } else {
+        ereport(ERROR, (errcode(ERRCODE_INVALID_DATETIME_FORMAT),
+                        errmsg("Incorrect datetime value: '%s'", str2)));
+    }
+
+    PG_RETURN_NULL();
+}
+
+
+
+/* timediff(time, Text)
+ * @Description: calculate the time different between two time type argument or two datetime type argument, which are all converted from text.
+ * Return time type or NULL if two text has different type
+ */
+Datum timediff_time_text(PG_FUNCTION_ARGS)
+{
+    TimeADT time1 = PG_GETARG_TIMEADT(0);
+    text *expr2 = PG_GETARG_TEXT_PP(1);
+    char *str2;
+    str2 = text_to_cstring(expr2);
+
+    TimeADT time2;
+    Timestamp datetime2;
+    bool exp2_is_datetime = datetime_in_no_ereport(str2, &datetime2);
+    bool exp2_is_time = time_in_no_ereport(str2, &time2);
+    bool exp2_is_date = exp2_is_datetime && !exp2_is_time;
+
+    if (!time_in_range(time1)) {
+        ereport(ERROR, (errcode(ERRCODE_DATETIME_FIELD_OVERFLOW),
+                        errmsg("datetime/time field value out of range ")));
+    }
+    if (!exp2_is_datetime && exp2_is_time) {
+        if (!time_in_range(time2)) {
+            ereport(ERROR,
+                    (errcode(ERRCODE_DATETIME_FIELD_OVERFLOW),
+                     errmsg("datetime/time field value out of range: \"%s\"",
+                            str2)));
+        }
+        TimeADT result = time1 - time2;
+        if (!time_in_range(result)) {
+            ereport(ERROR, (errcode(ERRCODE_DATETIME_FIELD_OVERFLOW),
+                            errmsg("date/time field overflow")));
+        }
+        PG_RETURN_TIMEADT(result);
+    }
+    if (exp2_is_date) {
+        ereport(ERROR, (errcode(ERRCODE_INVALID_DATETIME_FORMAT),
+                        errmsg("Incorrect time value: '%s'", str2)));
+    }
+
+    PG_RETURN_NULL();
+}
+
+
+/* timediff(date, Text)
+ * @Description: calculate the time different between two time type argument or two datetime type argument, which are all converted from text.
+ * Return time type or NULL if two text has different type
+ */
+Datum timediff_date_text(PG_FUNCTION_ARGS)
+{
+    DateADT date1 = PG_GETARG_DATEADT(0);
+    text *expr2 = PG_GETARG_TEXT_PP(1);
+    char *str2;
+    str2 = text_to_cstring(expr2);
+
+    TimeADT time2;
+    Timestamp datetime2;
+    bool exp2_is_datetime = datetime_in_no_ereport(str2, &datetime2);
+    bool exp2_is_time = time_in_no_ereport(str2, &time2);
+    bool exp2_is_date = exp2_is_datetime && !exp2_is_time;
+
+    if (exp2_is_date) {
+        Timestamp datetime1 = date2timestamp(date1);
+        TimeADT result;
+        long secs = 0;
+        int usecs = 0;
+        if (datetime1 < datetime2) {
+            TimestampDifference(datetime1, datetime2, &secs, &usecs);
+            secs = -secs;
+            usecs = -usecs;
+        } else {
+            TimestampDifference(datetime2, datetime1, &secs, &usecs);
+        }
+        result = secs * USECS_PER_SEC + usecs;
+        if (!time_in_range(result)) {
+            ereport(ERROR, (errcode(ERRCODE_DATETIME_FIELD_OVERFLOW),
+                            errmsg("date/time field overflow")));
+        }
+        PG_RETURN_TIMEADT(result);
+    }
+    if (exp2_is_datetime) {
+        PG_RETURN_NULL();
+    }
+    ereport(ERROR, (errcode(ERRCODE_INVALID_DATETIME_FORMAT),
+                    errmsg("Incorrect time value: '%s'", str2)));
+    PG_RETURN_NULL();
+}
+
 /* datetime_to_text()
  * Convert datetime to text data type.
  */
 Datum datetime_text(PG_FUNCTION_ARGS)
 {
     Timestamp timestamp = PG_GETARG_TIMESTAMP(0);
-    char* tmp = NULL;
+    char *tmp = NULL;
     Datum result;
     tmp = DatumGetCString(DirectFunctionCall1(timestamp_out, timestamp));
 
@@ -6155,4 +6501,421 @@ Datum datetime_text(PG_FUNCTION_ARGS)
     pfree_ext(tmp);
 
     PG_RETURN_DATUM(result);
+}
+
+/* time_to_text()
+ * Convert time to text data type.
+ */
+Datum time_text(PG_FUNCTION_ARGS)
+{
+    TimeADT timein = PG_GETARG_TIMEADT(0);
+    char *tmp = NULL;
+    Datum result;
+    tmp = DatumGetCString(DirectFunctionCall1(time_out, timein));
+
+    result = DirectFunctionCall1(textin, CStringGetDatum(tmp));
+    pfree_ext(tmp);
+
+    PG_RETURN_DATUM(result);
+}
+
+/*
+ * @Description: Create a formated time value in a string.
+ * @return: The formated time value as a string.
+ */
+Datum time_format(PG_FUNCTION_ARGS)
+{
+    text *time_text = PG_GETARG_TEXT_PP(0);
+    text *format_text = PG_GETARG_TEXT_PP(1);
+    char buf[MAXDATELEN];          /* string for temporary storage */
+    char format[MAXDATELEN];       /* format string */
+    char str[MAXDATELEN];          /* return string */
+    char *ptr = NULL, *end = NULL; /* head and tail of format */
+    char temp_ptr[2];
+    int remain = MAXDATELEN;       /* remaining buffer size of variable str */
+    int insert_len = 0;            /* number of characters inserted into str */
+    struct pg_tm tt, *tm = &tt;
+    fsec_t fsec;
+    int32 hours_i;      /* hour in range of 0..12 */
+    int timeSign = 1;
+    bool isNeg = false; /* positive or negative time */
+    errno_t rc = EOK;
+
+    /* convert time_text and format_text into string from text */
+    int len = VARSIZE_ANY_EXHDR(time_text);
+    text_to_cstring_buffer(time_text, buf, sizeof(char) * (len + 1));
+    len = VARSIZE_ANY_EXHDR(format_text);
+    text_to_cstring_buffer(format_text, format, sizeof(char) * (len + 1));
+
+    /* is time_text in datetime or time format? */
+    str_to_pg_tm(buf, tt, fsec, timeSign);
+
+    /* check whether it is a negative time */
+    isNeg = (timeSign == -1);
+
+    /* carry for fsec */
+    if (fsec / USECS_PER_SEC) {
+        tt.tm_sec += fsec / USECS_PER_SEC;
+        tt.tm_min += tt.tm_sec / SECS_PER_MINUTE;
+        tt.tm_sec %= SECS_PER_MINUTE;
+        tt.tm_hour += tt.tm_min / MINS_PER_HOUR;
+        tt.tm_min %= MINS_PER_HOUR;
+        fsec = 0;
+    }
+
+    /* is time out of range? */
+    if (tm->tm_hour == TIME_MAX_HOUR && tm->tm_min == TIME_MAX_MINUTE &&
+        tm->tm_sec == TIME_MAX_SECOND && fsec > 0) {
+        ereport(ERROR,
+                (errcode(ERRCODE_DATETIME_FIELD_OVERFLOW),
+                 errmsg("date/time field value out of range: \"%s\"", str)));
+    }
+
+    str[0] = '\0';
+    ptr = format;
+    end = ptr + strlen(format);
+    for (; ptr != end; ptr++) {
+        if (*ptr != '%' || ptr + 1 == end) {
+            temp_ptr[0] = *ptr;
+            temp_ptr[1] = '\0';
+            insert_len = 1;
+            rc = strcat_s(str, remain, temp_ptr);
+        } else {
+            switch (*++ptr) {
+                case 'a':
+                case 'b':
+                case 'D':
+                case 'j':
+                case 'M':
+                case 'U':
+                case 'u':
+                case 'V':
+                case 'v':
+                case 'W':
+                case 'w':
+                case 'X':
+                case 'x': /* return null */
+                    PG_RETURN_NULL();
+                case 'c':
+                case 'e':
+                    insert_len = 1;
+                    rc = strcat_s(str, remain, "0");
+                    break;
+                case 'd':
+                case 'm':
+                case 'y':
+                    insert_len = YEAR2_LEN;
+                    rc = strcat_s(str, remain, "00");
+                    break;
+                case 'Y':
+                    insert_len = YEAR4_LEN;
+                    rc = strcat_s(str, remain, "0000");
+                    break;
+                case 'f':
+                    insert_len = sprintf_s(buf, MAXDATELEN, "%06d", fsec);
+                    securec_check_ss(insert_len, "", "");
+                    rc = strcat_s(str, remain, buf);
+                    break;
+                case 'H': /* hours in range of 0..24 */
+                    insert_len = sprintf_s(buf, MAXDATELEN, "%02d", tm->tm_hour);
+                    securec_check_ss(insert_len, "", "");
+                    rc = strcat_s(str, remain, buf);
+                    break;
+                case 'k': /* hours in range of 0..24 */
+                    insert_len = sprintf_s(buf, MAXDATELEN, "%d", tm->tm_hour);
+                    securec_check_ss(insert_len, "", "");
+                    rc = strcat_s(str, remain, buf);
+                    break;
+                case 'h':
+                case 'I': /* hours in range of 0..12 */
+                    hours_i = (tm->tm_hour % MAX_VALUE_24_CLOCK + MAX_VALUE_12_CLOCK - 1) % MAX_VALUE_12_CLOCK + MIN_VALUE_12_CLOCK;
+                    insert_len = sprintf_s(buf, MAXDATELEN, "%02d", hours_i);
+                    securec_check_ss(insert_len, "", "");
+                    rc = strcat_s(str, remain, buf);
+                    break;
+                case 'i': /* minutes */
+                    insert_len = sprintf_s(buf, MAXDATELEN, "%02d", tm->tm_min);
+                    securec_check_ss(insert_len, "", "");
+                    rc = strcat_s(str, remain, buf);
+                    break;
+                case 'p':
+                    hours_i = tm->tm_hour % MAX_VALUE_24_CLOCK;
+                    insert_len = AM_PM_LEN;
+                    rc = strcat_s(str, remain,
+                                  (hours_i < MAX_VALUE_12_CLOCK ? "AM" : "PM"));
+                    break;
+                case 'r':
+                    insert_len =
+                        sprintf_s(buf, MAXDATELEN,
+                                  (((tm->tm_hour % MAX_VALUE_24_CLOCK) < MAX_VALUE_12_CLOCK) ? "%02d:%02d:%02d AM" : "%02d:%02d:%02d PM"),
+                                  (tm->tm_hour + MAX_VALUE_12_CLOCK - 1) % MAX_VALUE_12_CLOCK + MIN_VALUE_12_CLOCK,
+                                  tm->tm_min, tm->tm_sec);
+                    securec_check_ss(insert_len, "", "");
+                    rc = strcat_s(str, remain, buf);
+                    break;
+                case 'S':
+                case 's': /* seconds */
+                    insert_len = sprintf_s(buf, MAXDATELEN, "%02d", tm->tm_sec);
+                    securec_check_ss(insert_len, "", "");
+                    rc = strcat_s(str, remain, buf);
+                    break;
+                case 'T':
+                    insert_len = sprintf_s(
+                        buf, MAXDATELEN, (isNeg ? "-%02d:%02d:%02d" : "%02d:%02d:%02d"),
+                        tm->tm_hour, tm->tm_min, tm->tm_sec);
+                    securec_check_ss(insert_len, "", "");
+                    rc = strcat_s(str, remain, buf);
+                    break;
+                default:
+                    temp_ptr[0] = *ptr;
+                    temp_ptr[1] = '\0';
+                    insert_len = 1;
+                    rc = strcat_s(str, remain, temp_ptr);
+                    break;
+                }
+        }
+        remain -= insert_len;
+        securec_check(rc, "", "");
+    }
+    PG_RETURN_TEXT_P(cstring_to_text(str));
+}
+
+/*
+ * @Description: substract an Interval from a TimeADT
+ * @return: if the result time is in the range that can be represented, return the result.
+ * Otherwise return the B_FORMAT_TIME_MAX_VALUE
+ */
+TimeADT time_sub_interval(TimeADT time, Interval *span) 
+{
+    if (span->month || span->day < -B_FORMAT_TIME_MAX_VALUE_TO_DAY ||
+        span->day > B_FORMAT_TIME_MAX_VALUE_TO_DAY) {
+        return B_FORMAT_TIME_MAX_VALUE;
+    } else {
+        TimeADT result = time - (span->day * SECS_PER_DAY * USECS_PER_SEC + span->time);
+        if (result < -B_FORMAT_TIME_MAX_VALUE || result > B_FORMAT_TIME_MAX_VALUE) {
+            return B_FORMAT_TIME_MAX_VALUE;
+        }
+        return result;
+    }
+}
+
+/*
+ * @Description: Calculate the value of interval.
+ * @return true if success, false if fail.
+ */
+bool calc_interval(Interval *span, lldiv_t arg, int dtk)
+{
+    int64 integer_part = arg.quot;
+    int64 frac_part = arg.rem;
+    int64 carry = ((abs(frac_part) / FRAC_PART_LEN_IN_NUMERICSEC >= ROUNDING_BORDER) ? 1 : 0);
+    int64 signal = ((integer_part >= 0 && frac_part >= 0) ? 1 : -1);
+
+    switch (dtk) {
+        case DTK_YEAR:
+            span->month = (integer_part + carry * signal) * MONTHS_PER_YEAR;
+            break;
+        case DTK_MONTH:
+            span->month = (integer_part + carry * signal);
+            break;
+        case DTK_QUARTER:
+            span->month = (integer_part + carry * signal) * MONTHS_PER_QUARTER;
+            break;
+        case DTK_DAY:
+            span->day = (integer_part + carry * signal);
+            break;
+        case DTK_WEEK:
+            span->day = (integer_part + carry * signal) * DAYS_PER_WEEK;
+            break;
+        case DTK_HOUR:
+            span->time = time2t((integer_part + carry * signal), 0, 0, 0);
+            break;
+        case DTK_MINUTE:
+            span->time = time2t(0, (integer_part + carry * signal), 0, 0);
+            break;
+        case DTK_SECOND:
+            frac_part /= NANOSEC_PER_USEC;
+            span->time = time2t(0, 0, integer_part, frac_part);
+            break;
+        case DTK_MICROSEC:
+            span->time = time2t(0, 0, 0, (integer_part + carry * signal));
+            break;
+        default:
+            return false;
+    }
+    return true;
+}
+
+/**
+ * @Description: Determine whether the format of the result should turn to datetime from date.
+ * @result: true if need conversion, false otherwise.
+ */
+bool determine_conversion(int dtk) 
+{
+    switch (dtk) {
+        case DTK_HOUR:
+        case DTK_MINUTE:
+        case DTK_SECOND:
+        case DTK_MICROSEC:
+            return true;
+        default:
+            return false;
+    }
+}
+
+/*
+ * @Description: Compatible with timestampadd(units, interval, expr) function in mysql.
+ * Add a period of time 'interval' in units 'units' to a date/datetime expression expr.
+ * @return: a date or a datetime value.
+ */
+Datum timestamp_add_text(PG_FUNCTION_ARGS)
+{
+    text *units = PG_GETARG_TEXT_PP(0);
+    text *tmp = PG_GETARG_TEXT_PP(2);
+    char *expr = text_to_cstring(tmp);
+    char *lowunits = text_to_cstring(units);
+
+    NumericVar num;
+    lldiv_t delta;
+    init_var_from_num(PG_GETARG_NUMERIC(1), &num);
+    if (!numeric_to_lldiv_t(&num, &delta)) {
+        ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("interval out of range")));
+    }
+
+    Interval sp, *span = &sp;
+    span->time = span->day = span->month = 0;
+
+    int val = 0;
+    int type = DecodeUnits(0, lowunits, &val);
+
+    if (type == UNKNOWN_FIELD) {
+        type = DecodeSpecial(0, lowunits, &val);
+    }
+    if (type == UNITS) {
+        if (!calc_interval(span, delta, val)) {
+            ereport(ERROR, (errcode(ERRCODE_ERROR_IN_ASSIGNMENT), errmsg("failed to calculate interval")));
+        }
+    } else {
+        ereport(ERROR, (errcode(ERRCODE_UNDEFINED_PARAMETER), errmsg("unknown unit: \"%s\"", lowunits)));
+    }
+
+    span->time = -span->time;
+    span->day = -span->day;
+    span->month = -span->month;
+
+    bool conversion = determine_conversion(val);
+    if (!conversion && is_date_format(expr) && span->time == 0) {
+        DateADT date, result_date;
+        date = DirectFunctionCall1(date_in, CStringGetDatum(expr));
+        if (date_sub_interval(date, span, &result_date)) {
+            PG_RETURN_TEXT_P(DirectFunctionCall1(date_text, result_date));
+        }
+        ereport(ERROR, (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE), errmsg("date/time field overflow")));
+    } else {
+        Timestamp datetime, result_datetime;
+        datetime = DirectFunctionCall3(timestamp_in, CStringGetDatum(expr), InvalidOid, -1);
+        if (datetime_sub_interval(datetime, span, &result_datetime)) {
+            PG_RETURN_TEXT_P(DirectFunctionCall1(datetime_text, result_datetime));
+        }
+        ereport(ERROR, (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE), errmsg("date/time field overflow")));
+    }
+    PG_RETURN_NULL();
+}
+
+/*
+ * @Description: Compatible with timestampadd(units, interval, expr) function in mysql.
+ * Add a period of time 'interval' in units 'units' to a time parameter expr.
+ * @return: a time value.
+ */
+Datum timestamp_add_time(PG_FUNCTION_ARGS)
+{
+    text *units = PG_GETARG_TEXT_PP(0);
+    char *lowunits = text_to_cstring(units);
+
+    NumericVar n;
+    lldiv_t div;
+    init_var_from_num(PG_GETARG_NUMERIC(1), &n);
+    if (!numeric_to_lldiv_t(&n, &div)) {
+        ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("interval out of range")));
+    }
+
+    TimeADT time = PG_GETARG_TIMEADT(2);
+
+    Interval sp, *span = &sp;
+    span->time = span->day = span->month = 0;
+
+    int val = 0;
+    int type = DecodeUnits(0, lowunits, &val);
+
+    if (type == UNKNOWN_FIELD) {
+        type = DecodeSpecial(0, lowunits, &val);
+    }
+    if (type == UNITS) {
+        if (!calc_interval(span, div, val)) {
+            ereport(ERROR, (errcode(ERRCODE_ERROR_IN_ASSIGNMENT), errmsg("failed to calculate interval")));
+        }
+    } else {
+        ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("unknown unit: \"%s\"", lowunits)));
+    }
+
+    span->time = -span->time;
+    span->day = -span->day;
+    span->month = -span->month;
+
+    TimeADT result = time_sub_interval(time, span);
+    if (abs(result) <= B_FORMAT_TIME_MAX_VALUE) {
+        PG_RETURN_TIMEADT(result);
+    } else {
+        ereport(ERROR, (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE), errmsg("date/time field overflow")));
+    }
+    PG_RETURN_NULL();
+}
+
+/*
+ * @Description: Compatible with timestamp(expr) function in mysql.
+ * Convert date/datetime expression expr into a datetime value
+ * @return: a datetime value.
+ */
+Datum timestamp_param1(PG_FUNCTION_ARGS)
+{
+    Timestamp datetime = PG_GETARG_TIMESTAMP(0);
+    
+    if (datetime >= B_FORMAT_TIMESTAMP_MIN_VALUE && datetime <= B_FORMAT_TIMESTAMP_MAX_VALUE)
+        PG_RETURN_TIMESTAMP(datetime);
+
+    ereport(ERROR,
+            (errcode(ERRCODE_INVALID_DATETIME_FORMAT),
+             errmsg("date/time field value out of range")));
+    PG_RETURN_NULL();
+}
+
+/* 
+ * @Description: Compatible with timestamp(expr1, expr2) function in mysql. 
+ * Adding the time expression expr2 to the date or datetime expression expr1 
+ * and returns the result as a datetime value.
+ * @return: datetime value.
+ */
+Datum timestamp_param2(PG_FUNCTION_ARGS)
+{
+    Timestamp date = PG_GETARG_TIMESTAMP(0);
+    text *expr2 = PG_GETARG_TEXT_PP(1);
+    char *str2;
+    str2 = text_to_cstring(expr2);
+
+    TimeADT time = 0;
+    if (!time_in_no_ereport(str2, &time)) {
+        Timestamp tmp;
+        if (!datetime_in_no_ereport(str2, &tmp)) {
+            ereport(ERROR,
+                    (errcode(ERRCODE_INVALID_DATETIME_FORMAT),
+                     errmsg("invalid input syntax \"%s\"", str2)));
+        }
+    }
+    time_in_range(time);
+    Timestamp result = date + time;
+    if (result < B_FORMAT_TIMESTAMP_FIRST_YEAR || result > B_FORMAT_TIMESTAMP_MAX_VALUE) {
+        ereport(ERROR, (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE),
+                        errmsg("date/time field overflow")));
+    }
+
+    PG_RETURN_TIMESTAMP(result);
 }

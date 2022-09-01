@@ -19,6 +19,7 @@
 #include "fmgr.h"
 #include "timestamp.h"
 #include "utils/date.h"
+#include "utils/numeric.h"
 #include "plugin_postgres.h"
 
 /* b format date and time type boundaries*/
@@ -37,11 +38,23 @@
 #define B_FORMAT_MAX_YEAR_OF_DATE 9999
 #define B_FORMAT_MIN_YEAR_OF_DATE 0
 
+#define B_FORMAT_TIME_MAX_VALUE_TO_DAY 70
+#define NANO2MICRO_BASE 1000
+#define HALF_NANO2MICRO_BASE 500
+#define FRAC_PART_LEN_IN_NUMERICSEC 100000000
+
 /* for b compatibility type*/
 extern int int32_b_format_date_internal(struct pg_tm *tm, int4 date, bool mayBe2Digit);
 extern int int32_b_format_time_internal(struct pg_tm *tm, bool timeIn24, int4 time, fsec_t *fsec);
 extern int NumberDate(char *str, pg_tm *tm);
 extern int NumberTime(bool timeIn24, char *str, pg_tm *tm, fsec_t *fsec, int D = 0, bool hasD = false);
+/* for b compatibility time function*/
+extern void str_to_pg_tm(char *str, pg_tm &tt, fsec_t &fsec, int &timeSign);
+extern bool time_in_range(TimeADT &time);
+extern bool time_in_no_ereport(const char *str, TimeADT *time);
+extern bool is_date_format(const char *str);
+extern bool date_in_no_ereport(const char *str, DateADT *date);
+extern bool date_sub_interval(DateADT date, Interval *span, DateADT *result);
 
 /* ----------
  * Stores the seconds of type Numeric
@@ -51,5 +64,7 @@ typedef struct {
     int32 int_val; /* Integer value  */
     int32 frac_val; /* Fractional value  */
 } NumericSec;
+
+extern void sec_to_numericsec(NumericVar *from, NumericSec *to);
 
 #endif /* DATE_H */

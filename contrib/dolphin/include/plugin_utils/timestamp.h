@@ -26,14 +26,24 @@
 #define B_FORMAT_TIMESTAMP_MAX_VALUE INT64CONST(252455615999999999) /* datetime 9999-12-31 23:59:59.999999 */
 #define B_FORMAT_TIMESTAMP_MIN_VALUE INT64CONST(-63113904000000000) /* datetime 0000-01-01 00:00:00.000000 */
 #define B_FORMAT_TIMESTAMP_FIRST_YEAR INT64CONST(-63082281600000000) /* datetime 0001-01-01 00:00:00.000000 */
+
+#define MONTHS_PER_QUARTER 3
+#define AM_PM_LEN 2
+#define DAYS_PER_WEEK 7
+#define NANOSEC_PER_USEC 1000
+#define FRAC_PRECISION 6
 #define TIMESTAMP_MAX_PRECISION 6
 
 /* compatible with b format datetime and timestamp */
 extern void tm2datetime(struct pg_tm* tm, const fsec_t fsec, Timestamp* result);
 extern void datetime2tm(Timestamp dt, struct pg_tm* tm, fsec_t* fsec);
-bool datetime_sub_days(Timestamp datetime, int days, Timestamp *result);
-bool datetime_sub_interval(Timestamp datetime, Interval *span, Timestamp *result);
+extern int NumberTimestamp(char *str, pg_tm *tm, fsec_t *fsec);
+extern bool datetime_in_no_ereport(const char *str, Timestamp *datetime);
+extern bool datetime_sub_days(Timestamp datetime, int days, Timestamp *result);
+extern bool datetime_sub_interval(Timestamp datetime, Interval *span, Timestamp *result);
+
 extern Datum datetime_text(PG_FUNCTION_ARGS);
+extern Datum time_text(PG_FUNCTION_ARGS);
 
 #endif // !FRONTEND_PARSER
 #endif /* TIMESTAMP_H */
