@@ -839,12 +839,13 @@ bool check_plugin_function(Oid funcId)
 {
     int low = 0;
     int high = lengthof(support_plugin_func) - 1;
+    char* funcName = get_func_name(funcId);
     while (low <= high) {
         int middle;
         int difference;
 
         middle = low + (high - low) / 2;
-        difference = strcmp(support_plugin_func[middle], get_func_name(funcId));
+        difference = strcmp(support_plugin_func[middle], funcName);
         if (difference == 0) {
             return false;
         } else if (difference < 0) {

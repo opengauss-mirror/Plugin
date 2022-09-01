@@ -309,8 +309,6 @@ insert ignore into t1 values((-1.0)::float8);
 WARNING:  smallint unsigned out of range
 CONTEXT:  referenced column: a
 insert ignore into t1 values(65535::float8);
-ERROR:  smallint unsigned out of range
-CONTEXT:  referenced column: a
 insert ignore into t1 values(65536::float8);
 WARNING:  smallint unsigned out of range
 CONTEXT:  referenced column: a
@@ -421,6 +419,7 @@ select * from t1;
  0
  0
  65535
+ 65535
  1
  0
  0
@@ -467,7 +466,7 @@ select * from t1;
  255
  255
  255
-(58 rows)
+(59 rows)
 
 drop table if exists t1 ;
 create table t1(a uint1);

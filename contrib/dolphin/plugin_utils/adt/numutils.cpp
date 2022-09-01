@@ -22,6 +22,7 @@
 
 #include "common/int.h"
 #include "utils/builtins.h"
+#include "libpq/pqformat.h"
 #include "plugin_commands/mysqlmode.h"
 
 /*
@@ -512,101 +513,156 @@ uint64 pg_strtouint64(const char* str, char** endptr, int base)
 #endif
 }
 
-void pg_uctoa(uint32 i, char *a)
+uint16 PgStrtouint16Internal(const char* s, bool sqlModeStrict)
 {
-    pg_ltoa((int32)i, a);
-}
+    const char* ptr = s;
+    uint32 tmp = 0;
+    bool neg = false;
+    char digitAfterDot = '\0';
 
-int32 pg_atoui(char *str, int size, int ch)
-{
-    unsigned long tmp;
-    char *badp;
-    long tmp_int;
+    /* skip leading spaces */
+    while (likely(*ptr) && isspace((unsigned char)*ptr)) {
+        ptr++;
+    }
 
-    /*
-     * Some versions of strtol treat the empty string as an error, but some
-     * seem not to.  Make an explicit test to be sure we catch it.
-     */
-    if (str == NULL)
-        elog(ERROR, "NULL pointer");
-    if (*str == 0)
-        ereport(ERROR,
-            (errcode(ERRCODE_INVALID_TEXT_REPRESENTATION),errmsg("invalid input syntax for integer: \"%s\"",str)));
+    /* handle sign */
+    if (*ptr == '-') {
+        ptr++;
+        neg = true;
+    } else if (*ptr == '+')
+        ptr++;
 
-    errno = 0;
-    tmp_int = strtol(str, &badp, 10);
+    /* require at least one digit */
+    if (unlikely(!isdigit((unsigned char)*ptr))) {
+        if (!sqlModeStrict)
+            return tmp;
+    }
 
-    if (tmp_int < 0) {
-        switch (size) {
-            case sizeof(uint32):
-                ereport(ERROR,
-                    (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE),
-                     errmsg("value \"%s\" is out of range for type integer unsigned", str)));
-                break;
-            case sizeof(uint16):
-                ereport(ERROR,
-                        (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE),
-                        errmsg("value \"%s\" is out of range for type smallint unsigned", str)));
-                break;
-            case sizeof(uint8):
-                ereport(ERROR,
-                        (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE),
-                        errmsg("value \"%s\" is out of range for 8-bit integer", str)));
-                break;
-            default:
-                elog(ERROR, "unsupported result size: %d", size);
+    /* process digits */
+    while (*ptr && isdigit((unsigned char)*ptr)) {
+        int8 digit = (*ptr++ - '0');
+
+        tmp *= 10;
+        if (tmp > USHRT_MAX) {
+            goto out_of_range;
+        }
+        tmp += digit;
+        if (tmp > USHRT_MAX) {
+            goto out_of_range;
         }
     }
-    errno = 0;
-    tmp = strtoul(str, &badp, 10);
-    /* We made no progress parsing the string, so bail out */
-    if (str == badp)
-        ereport(ERROR,
-            (errcode(ERRCODE_INVALID_TEXT_REPRESENTATION),errmsg("invalid input syntax for integer: \"%s\"",str)));
 
-    switch (size) {
-        case sizeof(uint32):
-            if (errno == ERANGE || tmp > UINT_MAX)
-                ereport(ERROR,
-                        (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE),
-                        errmsg("value \"%s\" is out of range for type integer unsigned", str)));
-            break;
-        case sizeof(uint16):
-            if (errno == ERANGE || tmp > USHRT_MAX)
-                ereport(ERROR,
-                        (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE),
-                        errmsg("value \"%s\" is out of range for type smallint unsigned", str)));
-            break;
-        case sizeof(uint8):
-            if (errno == ERANGE || tmp > UCHAR_MAX)
-                ereport(ERROR,
-                        (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE),
-                        errmsg("value \"%s\" is out of range for 8-bit integer", str)));
-            break;
-        default:
-            elog(ERROR, "unsupported result size: %d", size);
+    /* allow trailing whitespace, but not other trailing chars */
+    CheckSpaceAndDotInternal(false, '\0', &digitAfterDot, &ptr);
+
+    if (sqlModeStrict && unlikely(*ptr != '\0'))
+        goto invalid_syntax;
+
+    if (neg) {
+        /* could fail if input is most negative number */
+        if (unlikely(tmp > 0))
+            goto out_of_range;
     }
 
-    /*
-     * Skip any trailing whitespace; if anything but whitespace remains before
-     * the terminating character, bail out
-     */
-    while (*badp && *badp != ch && isspace((unsigned char)*badp))
-        badp++;
+    if ((isdigit(digitAfterDot)) && digitAfterDot >= '5') {
+        if (!neg && tmp < USHRT_MAX)
+            tmp++;
+    }
 
-    if (*badp && *badp != ch)
+    return tmp;
+
+out_of_range:
+    if (sqlModeStrict) {
         ereport(ERROR,
-            (errcode(ERRCODE_INVALID_TEXT_REPRESENTATION),errmsg("invalid input syntax for integer: \"%s\"",str)));
+            (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE),
+                errmsg("value \"%s\" is out of range for type %s", s, "smallint unsigned")));
+    } else {
+        if (neg)
+            return 0;
+        else
+            return USHRT_MAX;
+    }
 
-    return (int32)tmp;
+invalid_syntax:
+    ereport(ERROR,
+        (errcode(ERRCODE_INVALID_TEXT_REPRESENTATION), errmsg("invalid input syntax for %s: \"%s\"", "integer", s)));
+    return 0;
 }
 
-void pg_copymsgbytes(StringInfo msg, char *buf, int datalen)
+uint32 PgStrtouint32Internal(const char* s, bool sqlModeStrict)
 {
-    if (datalen < 0 || datalen > (msg->len - msg->cursor))
-        ereport(ERROR,(errcode(ERRCODE_PROTOCOL_VIOLATION),errmsg("insufficient data left in message")));
-    memcpy(buf, &msg->data[msg->cursor], datalen);
-    msg->cursor += datalen;
+    const char* ptr = s;
+    uint64 tmp = 0;
+    bool neg = false;
+    char digitAfterDot = '\0';
+
+    /* skip leading spaces */
+    while (likely(*ptr) && isspace((unsigned char)*ptr)) {
+        ptr++;
+    }
+
+    /* handle sign */
+    if (*ptr == '-') {
+        ptr++;
+        neg = true;
+    } else if (*ptr == '+')
+        ptr++;
+
+    /* require at least one digit */
+    if (unlikely(!isdigit((unsigned char)*ptr))) {
+        if (!sqlModeStrict)
+            return tmp;
+    }
+
+    /* process digits */
+    while (*ptr && isdigit((unsigned char)*ptr)) {
+        int8 digit = (*ptr++ - '0');
+
+        tmp *= 10;
+        if (tmp > UINT_MAX) {
+            goto out_of_range;
+        }
+        tmp += digit;
+        if (tmp > UINT_MAX) {
+            goto out_of_range;
+        }
+    }
+
+    /* allow trailing whitespace, but not other trailing chars */
+    CheckSpaceAndDotInternal(false, '\0', &digitAfterDot, &ptr);
+
+    if (sqlModeStrict && unlikely(*ptr != '\0'))
+        goto invalid_syntax;
+
+    if (neg) {
+        /* could fail if input is most negative number */
+        if (unlikely(tmp > 0))
+            goto out_of_range;
+    }
+
+    if ((isdigit(digitAfterDot)) && digitAfterDot >= '5') {
+        if (!neg && tmp < UINT_MAX)
+            tmp++;
+    }
+
+    return tmp;
+
+out_of_range:
+    if (sqlModeStrict) {
+        ereport(ERROR,
+            (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE),
+                errmsg("value \"%s\" is out of range for type %s", s, "int unsigned")));
+    } else {
+        if (neg)
+            return 0;
+        else
+            return UINT_MAX;
+    }
+
+invalid_syntax:
+    ereport(ERROR,
+        (errcode(ERRCODE_INVALID_TEXT_REPRESENTATION), errmsg("invalid input syntax for %s: \"%s\"", "integer", s)));
+    return 0;
 }
 
 uint64 pg_getmsguint64(StringInfo msg)
@@ -615,8 +671,8 @@ uint64 pg_getmsguint64(StringInfo msg)
     uint32 h32;
     uint32 l32;
 
-    pg_copymsgbytes(msg, (char *)&h32, 4);
-    pg_copymsgbytes(msg, (char *)&l32, 4);
+    pq_copymsgbytes(msg, (char *)&h32, 4);
+    pq_copymsgbytes(msg, (char *)&l32, 4);
     h32 = ntohl(h32);
     l32 = ntohl(l32);
 

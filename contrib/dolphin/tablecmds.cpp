@@ -18914,7 +18914,8 @@ void CheckValuePartitionKeyType(Form_pg_attribute* attrs, List* pos)
     }
 }
 
-int CheckAddedType(Oid typoid) {
+int CheckAddedType(Oid typoid)
+{
     if (typoid == get_typeoid(PG_CATALOG_NAMESPACE, "uint1")){
         return UINT1_OID;
     } else if (typoid == get_typeoid(PG_CATALOG_NAMESPACE, "uint2")){

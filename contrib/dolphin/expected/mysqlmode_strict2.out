@@ -1,0 +1,1996 @@
+drop DATABASE if exists sql_mode_strict2;
+NOTICE:  database "sql_mode_strict2" does not exist, skipping
+CREATE DATABASE sql_mode_strict2 dbcompatibility 'B';
+\c sql_mode_strict2;
+set sql_mode = '';
+create table test_tint(a tinyint unsigned);
+create table test_sint(a smallint unsigned);
+create table test_int(a int unsigned);
+create table test_bint(a bigint unsigned);
+create table test_float4(a float4);
+create table test_float8(a float8);
+create table test_char(a char);
+create table test_varchar7(a varchar(7));
+--insert into table values ...
+insert into test_tint(a) values(-55);
+insert into test_tint(a) values(55);
+insert into test_tint(a) values(355);
+insert into test_tint(a) values(-355);
+insert into test_tint(a) values('a888');
+insert into test_tint(a) values('888aa');
+ERROR:  value "888aa" is out of range for 8-bit integer
+LINE 1: insert into test_tint(a) values('888aa');
+                                        ^
+CONTEXT:  referenced column: a
+insert into test_tint(a) values('-88aa');
+ERROR:  value "-88aa" is out of range for 8-bit integer
+LINE 1: insert into test_tint(a) values('-88aa');
+                                        ^
+CONTEXT:  referenced column: a
+insert into test_tint(a) values(123423.55);
+insert into test_tint(a) values(12.55);
+insert into test_tint(a) values(-12.55);
+insert into test_tint(a) values(-12123451.55);
+insert into test_tint(a) values(1.4e300);
+insert into test_tint(a) values(-1.4e300);
+select * from test_tint;
+  a  
+-----
+ 0
+ 55
+ 255
+ 0
+ 0
+ 255
+ 13
+ 0
+ 0
+ 255
+ 0
+(11 rows)
+
+insert into test_sint(a) values(-55);
+insert into test_sint(a) values(55);
+insert into test_sint(a) values(35589898923423423423423423);
+insert into test_sint(a) values(-3553434343434343432434);
+insert into test_sint(a) values('a888');
+insert into test_sint(a) values('88123423433834343423434aa');
+insert into test_sint(a) values('-88aa');
+insert into test_sint(a) values(1234233434343434343434343434343.55);
+insert into test_sint(a) values(12.55);
+insert into test_sint(a) values(-12.55);
+insert into test_sint(a) values(-12123451343434343434343434343434.55);
+insert into test_sint(a) values(1.4e300);
+insert into test_sint(a) values(-1.4e300);
+select * from test_sint;
+   a   
+-------
+ 0
+ 55
+ 65535
+ 0
+ 0
+ 65535
+ 0
+ 65535
+ 13
+ 0
+ 0
+ 65535
+ 0
+(13 rows)
+
+insert into test_int(a) values(-55);
+insert into test_int(a) values(55);
+insert into test_int(a) values(35589898923423423423423423);
+insert into test_int(a) values(-3553434343434343432434);
+insert into test_int(a) values('a888');
+insert into test_int(a) values('88123423433834343423434aa');
+insert into test_int(a) values('-88aa');
+insert into test_int(a) values(1234233434343434343434343434343.55);
+insert into test_int(a) values(12.55);
+insert into test_int(a) values(-12.55);
+insert into test_int(a) values(-12123451343434343434343434343434.55);
+insert into test_int(a) values(1.4e300);
+insert into test_int(a) values(-1.4e300);
+select * from test_int;
+     a      
+------------
+ 0
+ 55
+ 4294967295
+ 0
+ 0
+ 4294967295
+ 0
+ 4294967295
+ 13
+ 0
+ 0
+ 4294967295
+ 0
+(13 rows)
+
+insert into test_bint(a) values(-55);
+insert into test_bint(a) values(55);
+insert into test_bint(a) values(35589898923423423423423423);
+insert into test_bint(a) values(-3553434343434343432434);
+insert into test_bint(a) values('a888');
+insert into test_bint(a) values('88123423433834343423434aa');
+insert into test_bint(a) values('-88aa');
+insert into test_bint(a) values(1234233434343434343434343434343.55);
+insert into test_bint(a) values(12.55);
+insert into test_bint(a) values(-12.55);
+insert into test_bint(a) values(-12123451343434343434343434343434.55);
+insert into test_bint(a) values(1.4e300);
+insert into test_bint(a) values(-1.4e300);
+select * from test_bint;
+          a           
+----------------------
+ 0
+ 55
+ 18446744073709551615
+ 0
+ 0
+ 18446744073709551615
+ 88
+ 18446744073709551615
+ 13
+ 0
+ 0
+ 18446744073709551615
+ 0
+(13 rows)
+
+insert into test_float4(a) values(3.4e37);
+insert into test_float4(a) values(-3.4e37);
+select * from test_float4;
+    a     
+----------
+  3.4e+37
+ -3.4e+37
+(2 rows)
+
+insert into test_float8(a) values(3.4e307);
+insert into test_float8(a) values(-3.4e307);
+select * from test_float8;
+     a     
+-----------
+  3.4e+307
+ -3.4e+307
+(2 rows)
+
+insert into test_char(a) values('adsfsdaf');
+insert into test_char(a) values(-1234998.55);
+insert into test_char(a) values(13434.77);
+insert into test_char(a) values(13);
+select * from test_char;
+ a 
+---
+ a
+ -
+ 1
+ 1
+(4 rows)
+
+insert into test_varchar7(a) values('adsfsdaf');
+insert into test_varchar7(a) values('-1234998.55');
+insert into test_varchar7(a) values(13434.77);
+insert into test_varchar7(a) values(13434.8);
+select * from test_varchar7;
+    a    
+---------
+ adsfsda
+ -123499
+ 13434.7
+ 13434.8
+(4 rows)
+
+--insert into table select ...
+create table test_tint1(a tinyint unsigned);
+create table test_sint1(a smallint unsigned);
+create table test_int1(a int unsigned);
+create table test_bint1(a bigint unsigned);
+create table test_char1(a char);
+create table test_varchar7_1(a varchar(7));
+insert into test_tint1 select * from test_sint;
+select * from test_tint1;
+  a  
+-----
+ 0
+ 55
+ 255
+ 0
+ 0
+ 255
+ 0
+ 255
+ 13
+ 0
+ 0
+ 255
+ 0
+(13 rows)
+
+delete from test_tint1;
+insert into test_tint1 select * from test_int;
+select * from test_tint1;
+  a  
+-----
+ 0
+ 55
+ 255
+ 0
+ 0
+ 255
+ 0
+ 255
+ 13
+ 0
+ 0
+ 255
+ 0
+(13 rows)
+
+delete from test_tint1;
+insert into test_tint1 select * from test_bint;
+select * from test_tint1;
+  a  
+-----
+ 0
+ 55
+ 255
+ 0
+ 0
+ 255
+ 88
+ 255
+ 13
+ 0
+ 0
+ 255
+ 0
+(13 rows)
+
+delete from test_tint1;
+insert into test_tint1 select * from test_float4;
+select * from test_tint1;
+  a  
+-----
+ 255
+ 0
+(2 rows)
+
+delete from test_tint1;
+insert into test_tint1 select * from test_float8;
+select * from test_tint1;
+  a  
+-----
+ 255
+ 0
+(2 rows)
+
+delete from test_tint1;
+insert into test_tint1 select * from test_varchar7;
+ERROR:  column "a" is of type uint1 but expression is of type character varying
+LINE 1: insert into test_tint1 select * from test_varchar7;
+                                      ^
+HINT:  You will need to rewrite or cast the expression.
+CONTEXT:  referenced column: a
+select * from test_tint1;
+ a 
+---
+(0 rows)
+
+delete from test_tint1;
+insert into test_tint1 select * from test_char;
+ERROR:  column "a" is of type uint1 but expression is of type character
+LINE 1: insert into test_tint1 select * from test_char;
+                                      ^
+HINT:  You will need to rewrite or cast the expression.
+CONTEXT:  referenced column: a
+select * from test_tint1;
+ a 
+---
+(0 rows)
+
+insert into test_sint1 select * from test_tint;
+select * from test_sint1;
+  a  
+-----
+ 0
+ 55
+ 255
+ 0
+ 0
+ 255
+ 13
+ 0
+ 0
+ 255
+ 0
+(11 rows)
+
+delete from test_sint1;
+insert into test_sint1 select * from test_int;
+select * from test_sint1;
+   a   
+-------
+ 0
+ 55
+ 65535
+ 0
+ 0
+ 65535
+ 0
+ 65535
+ 13
+ 0
+ 0
+ 65535
+ 0
+(13 rows)
+
+delete from test_sint1;
+insert into test_sint1 select * from test_bint;
+select * from test_sint1;
+   a   
+-------
+ 0
+ 55
+ 65535
+ 0
+ 0
+ 65535
+ 88
+ 65535
+ 13
+ 0
+ 0
+ 65535
+ 0
+(13 rows)
+
+delete from test_sint1;
+insert into test_sint1 select * from test_float4;
+select * from test_sint1;
+   a   
+-------
+ 65535
+ 0
+(2 rows)
+
+delete from test_sint1;
+insert into test_sint1 select * from test_float8;
+select * from test_sint1;
+   a   
+-------
+ 65535
+ 0
+(2 rows)
+
+delete from test_sint1;
+insert into test_sint1 select * from test_varchar7;
+ERROR:  column "a" is of type uint2 but expression is of type character varying
+LINE 1: insert into test_sint1 select * from test_varchar7;
+                                      ^
+HINT:  You will need to rewrite or cast the expression.
+CONTEXT:  referenced column: a
+select * from test_sint1;
+ a 
+---
+(0 rows)
+
+delete from test_sint1;
+insert into test_sint1 select * from test_char;
+ERROR:  column "a" is of type uint2 but expression is of type character
+LINE 1: insert into test_sint1 select * from test_char;
+                                      ^
+HINT:  You will need to rewrite or cast the expression.
+CONTEXT:  referenced column: a
+select * from test_sint1;
+ a 
+---
+(0 rows)
+
+insert into test_int1 select * from test_tint;
+select * from test_int1;
+  a  
+-----
+ 0
+ 55
+ 255
+ 0
+ 0
+ 255
+ 13
+ 0
+ 0
+ 255
+ 0
+(11 rows)
+
+delete from test_int1;
+insert into test_int1 select * from test_sint;
+select * from test_int1;
+   a   
+-------
+ 0
+ 55
+ 65535
+ 0
+ 0
+ 65535
+ 0
+ 65535
+ 13
+ 0
+ 0
+ 65535
+ 0
+(13 rows)
+
+delete from test_int1;
+insert into test_int1 select * from test_bint;
+select * from test_int1;
+     a      
+------------
+ 0
+ 55
+ 4294967295
+ 0
+ 0
+ 4294967295
+ 88
+ 4294967295
+ 13
+ 0
+ 0
+ 4294967295
+ 0
+(13 rows)
+
+delete from test_int1;
+insert into test_int1 select * from test_float4;
+select * from test_int1;
+     a      
+------------
+ 4294967295
+ 0
+(2 rows)
+
+delete from test_int1;
+insert into test_int1 select * from test_float8;
+select * from test_int1;
+     a      
+------------
+ 4294967295
+ 0
+(2 rows)
+
+delete from test_int1;
+insert into test_int1 select * from test_varchar7;
+ERROR:  column "a" is of type uint4 but expression is of type character varying
+LINE 1: insert into test_int1 select * from test_varchar7;
+                                     ^
+HINT:  You will need to rewrite or cast the expression.
+CONTEXT:  referenced column: a
+select * from test_int1;
+ a 
+---
+(0 rows)
+
+delete from test_int1;
+insert into test_int1 select * from test_char;
+ERROR:  column "a" is of type uint4 but expression is of type character
+LINE 1: insert into test_int1 select * from test_char;
+                                     ^
+HINT:  You will need to rewrite or cast the expression.
+CONTEXT:  referenced column: a
+select * from test_int1;
+ a 
+---
+(0 rows)
+
+insert into test_bint1 select * from test_tint;
+select * from test_bint1;
+  a  
+-----
+ 0
+ 55
+ 255
+ 0
+ 0
+ 255
+ 13
+ 0
+ 0
+ 255
+ 0
+(11 rows)
+
+delete from test_bint1;
+insert into test_bint1 select * from test_sint;
+select * from test_bint1;
+   a   
+-------
+ 0
+ 55
+ 65535
+ 0
+ 0
+ 65535
+ 0
+ 65535
+ 13
+ 0
+ 0
+ 65535
+ 0
+(13 rows)
+
+delete from test_bint1;
+insert into test_bint1 select * from test_int;
+select * from test_bint1;
+     a      
+------------
+ 0
+ 55
+ 4294967295
+ 0
+ 0
+ 4294967295
+ 0
+ 4294967295
+ 13
+ 0
+ 0
+ 4294967295
+ 0
+(13 rows)
+
+delete from test_bint1;
+insert into test_bint1 select * from test_float4;
+select * from test_bint1;
+          a           
+----------------------
+ 18446744073709551615
+ 0
+(2 rows)
+
+delete from test_bint1;
+insert into test_bint1 select * from test_float8;
+select * from test_bint1;
+          a           
+----------------------
+ 18446744073709551615
+ 0
+(2 rows)
+
+delete from test_bint1;
+insert into test_bint1 select * from test_varchar7;
+ERROR:  column "a" is of type uint8 but expression is of type character varying
+LINE 1: insert into test_bint1 select * from test_varchar7;
+                                      ^
+HINT:  You will need to rewrite or cast the expression.
+CONTEXT:  referenced column: a
+select * from test_bint1;
+ a 
+---
+(0 rows)
+
+delete from test_bint1;
+insert into test_bint1 select * from test_char;
+ERROR:  column "a" is of type uint8 but expression is of type character
+LINE 1: insert into test_bint1 select * from test_char;
+                                      ^
+HINT:  You will need to rewrite or cast the expression.
+CONTEXT:  referenced column: a
+select * from test_bint1;
+ a 
+---
+(0 rows)
+
+insert into test_char1 select * from test_tint;
+select * from test_char1;
+ a 
+---
+ 0
+ 5
+ 2
+ 0
+ 0
+ 2
+ 1
+ 0
+ 0
+ 2
+ 0
+(11 rows)
+
+delete from test_char1;
+insert into test_char1 select * from test_sint;
+select * from test_char1;
+ a 
+---
+ 0
+ 5
+ 6
+ 0
+ 0
+ 6
+ 0
+ 6
+ 1
+ 0
+ 0
+ 6
+ 0
+(13 rows)
+
+delete from test_char1;
+insert into test_char1 select * from test_int;
+select * from test_char1;
+ a 
+---
+ 0
+ 5
+ 4
+ 0
+ 0
+ 4
+ 0
+ 4
+ 1
+ 0
+ 0
+ 4
+ 0
+(13 rows)
+
+delete from test_char1;
+insert into test_char1 select * from test_bint;
+select * from test_char1;
+ a 
+---
+ 0
+ 5
+ 1
+ 0
+ 0
+ 1
+ 8
+ 1
+ 1
+ 0
+ 0
+ 1
+ 0
+(13 rows)
+
+delete from test_char1;
+insert into test_char1 select * from test_varchar7;
+select * from test_char1;
+ a 
+---
+ a
+ -
+ 1
+ 1
+(4 rows)
+
+insert into test_varchar7_1 select * from test_tint;
+select * from test_varchar7_1;
+  a  
+-----
+ 0
+ 55
+ 255
+ 0
+ 0
+ 255
+ 13
+ 0
+ 0
+ 255
+ 0
+(11 rows)
+
+delete from test_varchar7_1;
+insert into test_varchar7_1 select * from test_sint;
+select * from test_varchar7_1;
+   a   
+-------
+ 0
+ 55
+ 65535
+ 0
+ 0
+ 65535
+ 0
+ 65535
+ 13
+ 0
+ 0
+ 65535
+ 0
+(13 rows)
+
+delete from test_varchar7_1;
+insert into test_varchar7_1 select * from test_int;
+select * from test_varchar7_1;
+    a    
+---------
+ 0
+ 55
+ 4294967
+ 0
+ 0
+ 4294967
+ 0
+ 4294967
+ 13
+ 0
+ 0
+ 4294967
+ 0
+(13 rows)
+
+delete from test_varchar7_1;
+insert into test_varchar7_1 select * from test_bint;
+select * from test_varchar7_1;
+    a    
+---------
+ 0
+ 55
+ 1844674
+ 0
+ 0
+ 1844674
+ 88
+ 1844674
+ 13
+ 0
+ 0
+ 1844674
+ 0
+(13 rows)
+
+delete from test_varchar7_1;
+insert into test_varchar7_1 select * from test_char;
+select * from test_varchar7_1;
+ a 
+---
+ a
+ -
+ 1
+ 1
+(4 rows)
+
+--A non-null column is not inserted when executing insert into clause, and this non-null column has no default value
+create table test_notnull_tint(a tinyint unsigned, b tinyint unsigned not null);
+create table test_notnull_sint(a smallint unsigned, b smallint unsigned not null);
+create table test_notnull_int(a int unsigned, b int unsigned not null);
+create table test_notnull_bint(a bigint unsigned, b bigint unsigned not null);
+create table test_notnull_char(a char, b char not null);
+create table test_notnull_varchar(a varchar(5), b varchar(5) not null);
+create table test_notnull_clob(a clob, b clob not null);
+create table test_notnull_text(a text, b text not null);
+create table test_notnull_real(a real, b real not null);
+create table test_notnull_double(a double, b double not null);
+create table test_notnull_numeric(a numeric(5,2), b numeric(5,2) not null);
+insert into test_notnull_tint(a) values(1);
+select * from test_notnull_tint;
+ a | b 
+---+---
+ 1 | 0
+(1 row)
+
+insert into test_notnull_sint(a) values(1);
+select * from test_notnull_sint;
+ a | b 
+---+---
+ 1 | 0
+(1 row)
+
+insert into test_notnull_int(a) values(1);
+select * from test_notnull_int;
+ a | b 
+---+---
+ 1 | 0
+(1 row)
+
+insert into test_notnull_bint(a) values(1);
+select * from test_notnull_bint;
+ a | b 
+---+---
+ 1 | 0
+(1 row)
+
+insert into test_notnull_char(a) values(1);
+select * from test_notnull_char;
+ a | b 
+---+---
+ 1 |  
+(1 row)
+
+insert into test_notnull_varchar(a) values(1);
+select * from test_notnull_varchar;
+ a | b 
+---+---
+ 1 | 
+(1 row)
+
+insert into test_notnull_clob(a) values(1);
+select * from test_notnull_clob;
+ a | b 
+---+---
+ 1 | 
+(1 row)
+
+insert into test_notnull_text(a) values(1);
+select * from test_notnull_text;
+ a | b 
+---+---
+ 1 | 
+(1 row)
+
+insert into test_notnull_real(a) values(1);
+select * from test_notnull_real;
+ a | b 
+---+---
+ 1 | 0
+(1 row)
+
+insert into test_notnull_double(a) values(1);
+select * from test_notnull_double;
+ a | b 
+---+---
+ 1 | 0
+(1 row)
+
+insert into test_notnull_numeric(a) values(1);
+select * from test_notnull_numeric;
+  a   |  b   
+------+------
+ 1.00 | 0.00
+(1 row)
+
+--insert into table values(null)
+insert into test_notnull_tint(b) values(null);
+ERROR:  null value in column "b" violates not-null constraint
+insert into test_notnull_sint(b) values(null);
+ERROR:  null value in column "b" violates not-null constraint
+insert into test_notnull_int(b) values(null);
+ERROR:  null value in column "b" violates not-null constraint
+insert into test_notnull_bint(b) values(null);
+ERROR:  null value in column "b" violates not-null constraint
+insert into test_notnull_char(b) values(null);
+ERROR:  null value in column "b" violates not-null constraint
+insert into test_notnull_varchar(b) values(null);
+ERROR:  null value in column "b" violates not-null constraint
+insert into test_notnull_clob(b) values(null);
+ERROR:  null value in column "b" violates not-null constraint
+insert into test_notnull_text(b) values(null);
+ERROR:  null value in column "b" violates not-null constraint
+insert into test_notnull_real(b) values(null);
+ERROR:  null value in column "b" violates not-null constraint
+insert into test_notnull_double(b) values(null);
+ERROR:  null value in column "b" violates not-null constraint
+insert into test_notnull_numeric(b) values(null);
+ERROR:  null value in column "b" violates not-null constraint
+--insert into table(a) values(...,...)
+insert into test_notnull_tint(a) values(2,2);
+ERROR:  INSERT has more expressions than target columns
+LINE 1: insert into test_notnull_tint(a) values(2,2);
+                                                  ^
+insert into test_notnull_sint(a) values(2,2);
+ERROR:  INSERT has more expressions than target columns
+LINE 1: insert into test_notnull_sint(a) values(2,2);
+                                                  ^
+insert into test_notnull_int(a) values(2,2);
+ERROR:  INSERT has more expressions than target columns
+LINE 1: insert into test_notnull_int(a) values(2,2);
+                                                 ^
+insert into test_notnull_bint(a) values(2,2);
+ERROR:  INSERT has more expressions than target columns
+LINE 1: insert into test_notnull_bint(a) values(2,2);
+                                                  ^
+insert into test_notnull_char(a) values(2,2);
+ERROR:  INSERT has more expressions than target columns
+LINE 1: insert into test_notnull_char(a) values(2,2);
+                                                  ^
+insert into test_notnull_varchar(a) values(2,2);
+ERROR:  INSERT has more expressions than target columns
+LINE 1: insert into test_notnull_varchar(a) values(2,2);
+                                                     ^
+insert into test_notnull_clob(a) values(2,2);
+ERROR:  INSERT has more expressions than target columns
+LINE 1: insert into test_notnull_clob(a) values(2,2);
+                                                  ^
+insert into test_notnull_text(a) values(2,2);
+ERROR:  INSERT has more expressions than target columns
+LINE 1: insert into test_notnull_text(a) values(2,2);
+                                                  ^
+insert into test_notnull_real(a) values(2,2);
+ERROR:  INSERT has more expressions than target columns
+LINE 1: insert into test_notnull_real(a) values(2,2);
+                                                  ^
+insert into test_notnull_double(a) values(2,2);
+ERROR:  INSERT has more expressions than target columns
+LINE 1: insert into test_notnull_double(a) values(2,2);
+                                                    ^
+insert into test_notnull_numeric(a) values(2,2);
+ERROR:  INSERT has more expressions than target columns
+LINE 1: insert into test_notnull_numeric(a) values(2,2);
+                                                     ^
+--insert into table values(...,default,...)
+insert into test_notnull_tint values(2,default);
+select * from test_notnull_tint;
+ a | b 
+---+---
+ 1 | 0
+ 2 | 0
+(2 rows)
+
+insert into test_notnull_sint values(2,default);
+select * from test_notnull_sint;
+ a | b 
+---+---
+ 1 | 0
+ 2 | 0
+(2 rows)
+
+insert into test_notnull_int values(2,default);
+select * from test_notnull_int;
+ a | b 
+---+---
+ 1 | 0
+ 2 | 0
+(2 rows)
+
+insert into test_notnull_bint values(2,default);
+select * from test_notnull_bint;
+ a | b 
+---+---
+ 1 | 0
+ 2 | 0
+(2 rows)
+
+insert into test_notnull_char values(2,default);
+select * from test_notnull_char;
+ a | b 
+---+---
+ 1 |  
+ 2 |  
+(2 rows)
+
+insert into test_notnull_varchar values(2,default);
+select * from test_notnull_varchar;
+ a | b 
+---+---
+ 1 | 
+ 2 | 
+(2 rows)
+
+insert into test_notnull_clob values(2,default);
+select * from test_notnull_clob;
+ a | b 
+---+---
+ 1 | 
+ 2 | 
+(2 rows)
+
+insert into test_notnull_text values(2,default);
+select * from test_notnull_text;
+ a | b 
+---+---
+ 1 | 
+ 2 | 
+(2 rows)
+
+insert into test_notnull_real values(2,default);
+select * from test_notnull_real;
+ a | b 
+---+---
+ 1 | 0
+ 2 | 0
+(2 rows)
+
+insert into test_notnull_double values(2,default);
+select * from test_notnull_double;
+ a | b 
+---+---
+ 1 | 0
+ 2 | 0
+(2 rows)
+
+insert into test_notnull_numeric values(2,default);
+select * from test_notnull_numeric;
+  a   |  b   
+------+------
+ 1.00 | 0.00
+ 2.00 | 0.00
+(2 rows)
+
+create table test_multi_default(a numeric not null,b decimal not null,c real not null,d double precision not null, e float not null, f varchar(20) not null);
+insert into test_multi_default values(default,default,default,default,default,default);
+select * from test_multi_default;
+ a | b | c | d | e | f 
+---+---+---+---+---+---
+ 0 | 0 | 0 | 0 | 0 | 
+(1 row)
+
+--insert into table values(...),(...)
+insert into test_notnull_tint(a) values(3),(4),(5);
+select * from test_notnull_tint;
+ a | b 
+---+---
+ 1 | 0
+ 2 | 0
+ 3 | 0
+ 4 | 0
+ 5 | 0
+(5 rows)
+
+insert into test_notnull_sint(a) values(3),(4),(5);
+select * from test_notnull_sint;
+ a | b 
+---+---
+ 1 | 0
+ 2 | 0
+ 3 | 0
+ 4 | 0
+ 5 | 0
+(5 rows)
+
+insert into test_notnull_int(a) values(3),(4),(5);
+select * from test_notnull_int;
+ a | b 
+---+---
+ 1 | 0
+ 2 | 0
+ 3 | 0
+ 4 | 0
+ 5 | 0
+(5 rows)
+
+insert into test_notnull_bint(a) values(3),(4),(5);
+select * from test_notnull_bint;
+ a | b 
+---+---
+ 1 | 0
+ 2 | 0
+ 3 | 0
+ 4 | 0
+ 5 | 0
+(5 rows)
+
+insert into test_notnull_char(a) values(3),(4),(5);
+select * from test_notnull_char;
+ a | b 
+---+---
+ 1 |  
+ 2 |  
+ 3 |  
+ 4 |  
+ 5 |  
+(5 rows)
+
+insert into test_notnull_varchar(a) values(3),(4),(5);
+select * from test_notnull_varchar;
+ a | b 
+---+---
+ 1 | 
+ 2 | 
+ 3 | 
+ 4 | 
+ 5 | 
+(5 rows)
+
+insert into test_notnull_clob(a) values(3),(4),(5);
+select * from test_notnull_clob;
+ a | b 
+---+---
+ 1 | 
+ 2 | 
+ 3 | 
+ 4 | 
+ 5 | 
+(5 rows)
+
+insert into test_notnull_text(a) values(3),(4),(5);
+select * from test_notnull_text;
+ a | b 
+---+---
+ 1 | 
+ 2 | 
+ 3 | 
+ 4 | 
+ 5 | 
+(5 rows)
+
+insert into test_notnull_real(a) values(3),(4),(5);
+select * from test_notnull_real;
+ a | b 
+---+---
+ 1 | 0
+ 2 | 0
+ 3 | 0
+ 4 | 0
+ 5 | 0
+(5 rows)
+
+insert into test_notnull_double(a) values(3),(4),(5);
+select * from test_notnull_double;
+ a | b 
+---+---
+ 1 | 0
+ 2 | 0
+ 3 | 0
+ 4 | 0
+ 5 | 0
+(5 rows)
+
+insert into test_notnull_numeric(a) values(3),(4),(5);
+select * from test_notnull_numeric;
+  a   |  b   
+------+------
+ 1.00 | 0.00
+ 2.00 | 0.00
+ 3.00 | 0.00
+ 4.00 | 0.00
+ 5.00 | 0.00
+(5 rows)
+
+create table mysql_strictsqlmode_t1(c1 int unsigned,c2 double precision);
+insert into mysql_strictsqlmode_t1 values(1,0);
+insert into mysql_strictsqlmode_t1 values(2,-99);
+insert into mysql_strictsqlmode_t1 values(3,-999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999);
+insert into mysql_strictsqlmode_t1 values(4,99);
+insert into mysql_strictsqlmode_t1 values(5,999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999);
+select * from mysql_strictsqlmode_t1 order by c1;
+ c1 |           c2           
+----+------------------------
+ 1  |                      0
+ 2  |                    -99
+ 3  | -1.79769313486232e+308
+ 4  |                     99
+ 5  |  1.79769313486232e+308
+(5 rows)
+
+drop table mysql_strictsqlmode_t1;
+--test sql_mode = 'sql_mode_strict'
+set sql_mode = 'sql_mode_strict';
+create table test_tint_strict(a tinyint unsigned);
+create table test_sint_strict(a smallint unsigned);
+create table test_int_strict(a int unsigned);
+create table test_bint_strict(a bigint unsigned);
+create table test_float4_strict(a float4);
+create table test_float8_strict(a float8);
+create table test_char_strict(a char);
+create table test_varchar7_strict(a varchar(7));
+    
+--insert into table values ...
+insert into test_tint_strict(a) values(-55);
+ERROR:  tinyint unsigned out of range
+CONTEXT:  referenced column: a
+insert into test_tint_strict(a) values(55);
+insert into test_tint_strict(a) values(355);
+ERROR:  tinyint unsigned out of range
+CONTEXT:  referenced column: a
+insert into test_tint_strict(a) values(-355);
+ERROR:  tinyint unsigned out of range
+CONTEXT:  referenced column: a
+insert into test_tint_strict(a) values('a888');
+ERROR:  invalid input syntax for integer: "a888"
+LINE 1: insert into test_tint_strict(a) values('a888');
+                                               ^
+CONTEXT:  referenced column: a
+insert into test_tint_strict(a) values('888aa');
+ERROR:  invalid input syntax for integer: "888aa"
+LINE 1: insert into test_tint_strict(a) values('888aa');
+                                               ^
+CONTEXT:  referenced column: a
+insert into test_tint_strict(a) values('-88aa');
+ERROR:  invalid input syntax for integer: "-88aa"
+LINE 1: insert into test_tint_strict(a) values('-88aa');
+                                               ^
+CONTEXT:  referenced column: a
+insert into test_tint_strict(a) values(123423.55);
+ERROR:  tinyint unsigned out of range
+CONTEXT:  referenced column: a
+insert into test_tint_strict(a) values(12.55);
+insert into test_tint_strict(a) values(-12.55);
+ERROR:  tinyint unsigned out of range
+CONTEXT:  referenced column: a
+insert into test_tint_strict(a) values(-12123451.55);
+ERROR:  tinyint unsigned out of range
+CONTEXT:  referenced column: a
+insert into test_tint_strict(a) values(1.4e300);
+ERROR:  tinyint unsigned out of range
+CONTEXT:  referenced column: a
+insert into test_tint_strict(a) values(-1.4e300);
+ERROR:  tinyint unsigned out of range
+CONTEXT:  referenced column: a
+select * from test_tint_strict;
+ a  
+----
+ 55
+ 13
+(2 rows)
+
+    
+insert into test_sint_strict(a) values(-55);
+ERROR:  smallint unsigned out of range
+CONTEXT:  referenced column: a
+insert into test_sint_strict(a) values(55);
+insert into test_sint_strict(a) values(35589898923423423423423423);
+ERROR:  smallint unsigned out of range
+CONTEXT:  referenced column: a
+insert into test_sint_strict(a) values(-3553434343434343432434);
+ERROR:  smallint unsigned out of range
+CONTEXT:  referenced column: a
+insert into test_sint_strict(a) values('a888');
+ERROR:  invalid input syntax for integer: "a888"
+LINE 1: insert into test_sint_strict(a) values('a888');
+                                               ^
+CONTEXT:  referenced column: a
+insert into test_sint_strict(a) values('88123423433834343423434aa');
+ERROR:  value "88123423433834343423434aa" is out of range for type smallint unsigned
+LINE 1: insert into test_sint_strict(a) values('88123423433834343423...
+                                               ^
+CONTEXT:  referenced column: a
+insert into test_sint_strict(a) values('-88aa');
+ERROR:  invalid input syntax for integer: "-88aa"
+LINE 1: insert into test_sint_strict(a) values('-88aa');
+                                               ^
+CONTEXT:  referenced column: a
+insert into test_sint_strict(a) values(1234233434343434343434343434343.55);
+ERROR:  smallint unsigned out of range
+CONTEXT:  referenced column: a
+insert into test_sint_strict(a) values(12.55);
+insert into test_sint_strict(a) values(-12.55);
+ERROR:  smallint unsigned out of range
+CONTEXT:  referenced column: a
+insert into test_sint_strict(a) values(-12123451343434343434343434343434.55);
+ERROR:  smallint unsigned out of range
+CONTEXT:  referenced column: a
+insert into test_sint_strict(a) values(1.4e300);
+ERROR:  smallint unsigned out of range
+CONTEXT:  referenced column: a
+insert into test_sint_strict(a) values(-1.4e300);
+ERROR:  smallint unsigned out of range
+CONTEXT:  referenced column: a
+select * from test_sint_strict;
+ a  
+----
+ 55
+ 13
+(2 rows)
+
+    
+insert into test_int_strict(a) values(-55);
+ERROR:  int unsigned out of range
+CONTEXT:  referenced column: a
+insert into test_int_strict(a) values(55);
+insert into test_int_strict(a) values(35589898923423423423423423);
+ERROR:  unsigned int out of range
+CONTEXT:  referenced column: a
+insert into test_int_strict(a) values(-3553434343434343432434);
+ERROR:  unsigned int out of range
+CONTEXT:  referenced column: a
+insert into test_int_strict(a) values('a888');
+ERROR:  invalid input syntax for integer: "a888"
+LINE 1: insert into test_int_strict(a) values('a888');
+                                              ^
+CONTEXT:  referenced column: a
+insert into test_int_strict(a) values('88123423433834343423434aa');
+ERROR:  value "88123423433834343423434aa" is out of range for type int unsigned
+LINE 1: insert into test_int_strict(a) values('881234234338343434234...
+                                              ^
+CONTEXT:  referenced column: a
+insert into test_int_strict(a) values('-88aa');
+ERROR:  invalid input syntax for integer: "-88aa"
+LINE 1: insert into test_int_strict(a) values('-88aa');
+                                              ^
+CONTEXT:  referenced column: a
+insert into test_int_strict(a) values(1234233434343434343434343434343.55);
+ERROR:  unsigned int out of range
+CONTEXT:  referenced column: a
+insert into test_int_strict(a) values(12.55);
+insert into test_int_strict(a) values(-12.55);
+ERROR:  unsigned int out of range
+CONTEXT:  referenced column: a
+insert into test_int_strict(a) values(-12123451343434343434343434343434.55);
+ERROR:  unsigned int out of range
+CONTEXT:  referenced column: a
+insert into test_int_strict(a) values(1.4e300);
+ERROR:  unsigned int out of range
+CONTEXT:  referenced column: a
+insert into test_int_strict(a) values(-1.4e300);
+ERROR:  unsigned int out of range
+CONTEXT:  referenced column: a
+select * from test_int_strict;
+ a  
+----
+ 55
+ 13
+(2 rows)
+
+    
+insert into test_bint_strict(a) values(-55);
+ERROR:  bigint unsigned out of range
+CONTEXT:  referenced column: a
+insert into test_bint_strict(a) values(55);
+insert into test_bint_strict(a) values(35589898923423423423423423);
+ERROR:  bigint unsigned out of range
+CONTEXT:  referenced column: a
+insert into test_bint_strict(a) values(-3553434343434343432434);
+ERROR:  bigint unsigned out of range
+CONTEXT:  referenced column: a
+insert into test_bint_strict(a) values('a888');
+ERROR:  invalid input syntax for integer: "a888"
+LINE 1: insert into test_bint_strict(a) values('a888');
+                                               ^
+CONTEXT:  referenced column: a
+insert into test_bint_strict(a) values('88123423433834343423434aa');
+ERROR:  value "88123423433834343423434aa" is out of range for type bigint unsigned
+LINE 1: insert into test_bint_strict(a) values('88123423433834343423...
+                                               ^
+CONTEXT:  referenced column: a
+insert into test_bint_strict(a) values('-88aa');
+ERROR:  value "-88aa" is out of range for type bigint unsigned
+LINE 1: insert into test_bint_strict(a) values('-88aa');
+                                               ^
+CONTEXT:  referenced column: a
+insert into test_bint_strict(a) values(1234233434343434343434343434343.55);
+ERROR:  bigint unsigned out of range
+CONTEXT:  referenced column: a
+insert into test_bint_strict(a) values(12.55);
+insert into test_bint_strict(a) values(-12.55);
+ERROR:  bigint unsigned out of range
+CONTEXT:  referenced column: a
+insert into test_bint_strict(a) values(-12123451343434343434343434343434.55);
+ERROR:  bigint unsigned out of range
+CONTEXT:  referenced column: a
+insert into test_bint_strict(a) values(1.4e300);
+ERROR:  bigint unsigned out of range
+CONTEXT:  referenced column: a
+insert into test_bint_strict(a) values(-1.4e300);
+ERROR:  bigint unsigned out of range
+CONTEXT:  referenced column: a
+select * from test_bint_strict;
+ a  
+----
+ 55
+ 13
+(2 rows)
+
+    
+insert into test_float4_strict(a) values(3.4e37);
+insert into test_float4_strict(a) values(-3.4e37);
+select * from test_float4_strict;
+    a     
+----------
+  3.4e+37
+ -3.4e+37
+(2 rows)
+
+    
+insert into test_float8_strict(a) values(3.4e307);
+insert into test_float8_strict(a) values(-3.4e307);
+select * from test_float8_strict;
+     a     
+-----------
+  3.4e+307
+ -3.4e+307
+(2 rows)
+
+    
+insert into test_char_strict(a) values('adsfsdaf');
+ERROR:  value too long for type character(1)
+CONTEXT:  referenced column: a
+insert into test_char_strict(a) values(-1234998.55);
+ERROR:  value too long for type character(1)
+CONTEXT:  referenced column: a
+insert into test_char_strict(a) values(13434.77);
+ERROR:  value too long for type character(1)
+CONTEXT:  referenced column: a
+insert into test_char_strict(a) values(13);
+ERROR:  value too long for type character(1)
+CONTEXT:  referenced column: a
+select * from test_char_strict;
+ a 
+---
+(0 rows)
+
+    
+insert into test_varchar7_strict(a) values('adsfsdaf');
+ERROR:  value too long for type character varying(7)
+CONTEXT:  referenced column: a
+insert into test_varchar7_strict(a) values('-1234998.55');
+ERROR:  value too long for type character varying(7)
+CONTEXT:  referenced column: a
+insert into test_varchar7_strict(a) values(13434.77);
+ERROR:  value too long for type character varying(7)
+CONTEXT:  referenced column: a
+insert into test_varchar7_strict(a) values(13434.8);
+select * from test_varchar7_strict;
+    a    
+---------
+ 13434.8
+(1 row)
+
+    
+    
+    
+--insert into table select ...
+create table test_tint_strict1(a tinyint unsigned);
+create table test_sint_strict1(a smallint unsigned);
+create table test_int_strict1(a int unsigned);
+create table test_bint_strict1(a bigint unsigned);
+create table test_char_strict1(a char);
+create table test_varchar7_strict_1(a varchar(7));
+    
+insert into test_tint_strict1 select * from test_sint_strict;
+select * from test_tint_strict1;
+ a  
+----
+ 55
+ 13
+(2 rows)
+
+    
+delete from test_tint_strict1;
+insert into test_tint_strict1 select * from test_int_strict;
+select * from test_tint_strict1;
+ a  
+----
+ 55
+ 13
+(2 rows)
+
+    
+delete from test_tint_strict1;
+insert into test_tint_strict1 select * from test_bint_strict;
+select * from test_tint_strict1;
+ a  
+----
+ 55
+ 13
+(2 rows)
+
+    
+delete from test_tint_strict1;
+insert into test_tint_strict1 select * from test_float4_strict;
+ERROR:  tinyint unsigned out of range
+CONTEXT:  referenced column: a
+select * from test_tint_strict1;
+ a 
+---
+(0 rows)
+
+    
+delete from test_tint_strict1;
+insert into test_tint_strict1 select * from test_float8_strict;
+ERROR:  tinyint unsignedout of range
+CONTEXT:  referenced column: a
+select * from test_tint_strict1;
+ a 
+---
+(0 rows)
+
+    
+delete from test_tint_strict1;
+insert into test_tint_strict1 select * from test_varchar7_strict;
+ERROR:  column "a" is of type uint1 but expression is of type character varying
+LINE 1: insert into test_tint_strict1 select * from test_varchar7_st...
+                                             ^
+HINT:  You will need to rewrite or cast the expression.
+CONTEXT:  referenced column: a
+select * from test_tint_strict1;
+ a 
+---
+(0 rows)
+
+    
+delete from test_tint_strict1;
+insert into test_tint_strict1 select * from test_char_strict;
+ERROR:  column "a" is of type uint1 but expression is of type character
+LINE 1: insert into test_tint_strict1 select * from test_char_strict...
+                                             ^
+HINT:  You will need to rewrite or cast the expression.
+CONTEXT:  referenced column: a
+select * from test_tint_strict1;
+ a 
+---
+(0 rows)
+
+    
+    
+insert into test_sint_strict1 select * from test_tint_strict;
+select * from test_sint_strict1;
+ a  
+----
+ 55
+ 13
+(2 rows)
+
+    
+delete from test_sint_strict1;
+insert into test_sint_strict1 select * from test_int_strict;
+select * from test_sint_strict1;
+ a  
+----
+ 55
+ 13
+(2 rows)
+
+    
+delete from test_sint_strict1;
+insert into test_sint_strict1 select * from test_bint_strict;
+select * from test_sint_strict1;
+ a  
+----
+ 55
+ 13
+(2 rows)
+
+    
+delete from test_sint_strict1;
+insert into test_sint_strict1 select * from test_float4_strict;
+ERROR:  smallint unsigned out of range
+CONTEXT:  referenced column: a
+select * from test_sint_strict1;
+ a 
+---
+(0 rows)
+
+    
+delete from test_sint_strict1;
+insert into test_sint_strict1 select * from test_float8_strict;
+ERROR:  smallint unsigned out of range
+CONTEXT:  referenced column: a
+select * from test_sint_strict1;
+ a 
+---
+(0 rows)
+
+    
+delete from test_sint_strict1;
+insert into test_sint_strict1 select * from test_varchar7_strict;
+ERROR:  column "a" is of type uint2 but expression is of type character varying
+LINE 1: insert into test_sint_strict1 select * from test_varchar7_st...
+                                             ^
+HINT:  You will need to rewrite or cast the expression.
+CONTEXT:  referenced column: a
+select * from test_sint_strict1;
+ a 
+---
+(0 rows)
+
+    
+delete from test_sint_strict1;
+insert into test_sint_strict1 select * from test_char_strict;
+ERROR:  column "a" is of type uint2 but expression is of type character
+LINE 1: insert into test_sint_strict1 select * from test_char_strict...
+                                             ^
+HINT:  You will need to rewrite or cast the expression.
+CONTEXT:  referenced column: a
+select * from test_sint_strict1;
+ a 
+---
+(0 rows)
+
+    
+    
+insert into test_int_strict1 select * from test_tint_strict;
+select * from test_int_strict1;
+ a  
+----
+ 55
+ 13
+(2 rows)
+
+    
+delete from test_int_strict1;
+insert into test_int_strict1 select * from test_sint_strict;
+select * from test_int_strict1;
+ a  
+----
+ 55
+ 13
+(2 rows)
+
+    
+delete from test_int_strict1;
+insert into test_int_strict1 select * from test_bint_strict;
+select * from test_int_strict1;
+ a  
+----
+ 55
+ 13
+(2 rows)
+
+    
+delete from test_int_strict1;
+insert into test_int_strict1 select * from test_float4_strict;
+ERROR:  integer unsigned out of range
+CONTEXT:  referenced column: a
+select * from test_int_strict1;
+ a 
+---
+(0 rows)
+
+    
+delete from test_int_strict1;
+insert into test_int_strict1 select * from test_float8_strict;
+ERROR:  integer unsigned out of range
+CONTEXT:  referenced column: a
+select * from test_int_strict1;
+ a 
+---
+(0 rows)
+
+    
+delete from test_int_strict1;
+insert into test_int_strict1 select * from test_varchar7_strict;
+ERROR:  column "a" is of type uint4 but expression is of type character varying
+LINE 1: insert into test_int_strict1 select * from test_varchar7_str...
+                                            ^
+HINT:  You will need to rewrite or cast the expression.
+CONTEXT:  referenced column: a
+select * from test_int_strict1;
+ a 
+---
+(0 rows)
+
+    
+delete from test_int_strict1;
+insert into test_int_strict1 select * from test_char_strict;
+ERROR:  column "a" is of type uint4 but expression is of type character
+LINE 1: insert into test_int_strict1 select * from test_char_strict;
+                                            ^
+HINT:  You will need to rewrite or cast the expression.
+CONTEXT:  referenced column: a
+select * from test_int_strict1;
+ a 
+---
+(0 rows)
+
+    
+    
+insert into test_bint_strict1 select * from test_tint_strict;
+select * from test_bint_strict1;
+ a  
+----
+ 55
+ 13
+(2 rows)
+
+    
+delete from test_bint_strict1;
+insert into test_bint_strict1 select * from test_sint_strict;
+select * from test_bint_strict1;
+ a  
+----
+ 55
+ 13
+(2 rows)
+
+    
+delete from test_bint_strict1;
+insert into test_bint_strict1 select * from test_int_strict;
+select * from test_bint_strict1;
+ a  
+----
+ 55
+ 13
+(2 rows)
+
+    
+delete from test_bint_strict1;
+insert into test_bint_strict1 select * from test_float4_strict;
+ERROR:  bigint unsigned out of range
+CONTEXT:  referenced column: a
+select * from test_bint_strict1;
+ a 
+---
+(0 rows)
+
+    
+delete from test_bint_strict1;
+insert into test_bint_strict1 select * from test_float8_strict;
+ERROR:  bigint unsigned out of range
+CONTEXT:  referenced column: a
+select * from test_bint_strict1;
+ a 
+---
+(0 rows)
+
+    
+delete from test_bint_strict1;
+insert into test_bint_strict1 select * from test_varchar7_strict;
+ERROR:  column "a" is of type uint8 but expression is of type character varying
+LINE 1: insert into test_bint_strict1 select * from test_varchar7_st...
+                                             ^
+HINT:  You will need to rewrite or cast the expression.
+CONTEXT:  referenced column: a
+select * from test_bint_strict1;
+ a 
+---
+(0 rows)
+
+    
+delete from test_bint_strict1;
+insert into test_bint_strict1 select * from test_char_strict;
+ERROR:  column "a" is of type uint8 but expression is of type character
+LINE 1: insert into test_bint_strict1 select * from test_char_strict...
+                                             ^
+HINT:  You will need to rewrite or cast the expression.
+CONTEXT:  referenced column: a
+select * from test_bint_strict1;
+ a 
+---
+(0 rows)
+
+    
+    
+insert into test_char_strict1 select * from test_tint_strict;
+ERROR:  value too long for type character(1)
+CONTEXT:  referenced column: a
+select * from test_char_strict1;
+ a 
+---
+(0 rows)
+
+    
+delete from test_char_strict1;
+insert into test_char_strict1 select * from test_sint_strict;
+ERROR:  value too long for type character(1)
+CONTEXT:  referenced column: a
+select * from test_char_strict1;
+ a 
+---
+(0 rows)
+
+    
+delete from test_char_strict1;
+insert into test_char_strict1 select * from test_int_strict;
+ERROR:  value too long for type character(1)
+CONTEXT:  referenced column: a
+select * from test_char_strict1;
+ a 
+---
+(0 rows)
+
+    
+delete from test_char_strict1;
+insert into test_char_strict1 select * from test_bint_strict;
+ERROR:  value too long for type character(1)
+CONTEXT:  referenced column: a
+select * from test_char_strict1;
+ a 
+---
+(0 rows)
+
+    
+delete from test_char_strict1;
+insert into test_char_strict1 select * from test_varchar7_strict;
+ERROR:  value too long for type character(1)
+CONTEXT:  referenced column: a
+select * from test_char_strict1;
+ a 
+---
+(0 rows)
+
+    
+    
+insert into test_varchar7_strict_1 select * from test_tint_strict;
+select * from test_varchar7_strict_1;
+ a  
+----
+ 55
+ 13
+(2 rows)
+
+    
+delete from test_varchar7_strict_1;
+insert into test_varchar7_strict_1 select * from test_sint_strict;
+select * from test_varchar7_strict_1;
+ a  
+----
+ 55
+ 13
+(2 rows)
+
+    
+delete from test_varchar7_strict_1;
+insert into test_varchar7_strict_1 select * from test_int_strict;
+select * from test_varchar7_strict_1;
+ a  
+----
+ 55
+ 13
+(2 rows)
+
+    
+delete from test_varchar7_strict_1;
+insert into test_varchar7_strict_1 select * from test_bint_strict;
+select * from test_varchar7_strict_1;
+ a  
+----
+ 55
+ 13
+(2 rows)
+
+    
+delete from test_varchar7_strict_1;
+insert into test_varchar7_strict_1 select * from test_char_strict;
+select * from test_varchar7_strict_1;
+ a 
+---
+(0 rows)
+
+    
+--A non-null column is not inserted when executing insert into clause, and this non-null column has no default value
+create table test_notnull_tint_strict(a tinyint unsigned, b tinyint unsigned not null);
+create table test_notnull_sint_strict(a smallint unsigned, b smallint unsigned not null);
+create table test_notnull_int_strict(a int unsigned, b int unsigned not null);
+create table test_notnull_bint_strict(a bigint unsigned, b bigint unsigned not null);
+create table test_notnull_char_strict(a char, b char not null);
+create table test_notnull_varchar_strict(a varchar(5), b varchar(5) not null);
+create table test_notnull_clob_strict(a clob, b clob not null);
+create table test_notnull_text_strict(a text, b text not null);
+create table test_notnull_real_strict(a real, b real not null);
+create table test_notnull_double_strict(a double, b double not null);
+create table test_notnull_numeric_strict(a numeric(5,2), b numeric(5,2) not null);
+    
+insert into test_notnull_tint_strict(a) values(1);
+ERROR:  null value in column "b" violates not-null constraint
+DETAIL:  Failing row contains (1, null).
+select * from test_notnull_tint_strict;
+ a | b 
+---+---
+(0 rows)
+
+    
+insert into test_notnull_sint_strict(a) values(1);
+ERROR:  null value in column "b" violates not-null constraint
+DETAIL:  Failing row contains (1, null).
+select * from test_notnull_sint_strict;
+ a | b 
+---+---
+(0 rows)
+
+    
+insert into test_notnull_int_strict(a) values(1);
+ERROR:  null value in column "b" violates not-null constraint
+DETAIL:  Failing row contains (1, null).
+select * from test_notnull_int_strict;
+ a | b 
+---+---
+(0 rows)
+
+    
+insert into test_notnull_bint_strict(a) values(1);
+ERROR:  null value in column "b" violates not-null constraint
+DETAIL:  Failing row contains (1, null).
+select * from test_notnull_bint_strict;
+ a | b 
+---+---
+(0 rows)
+
+    
+insert into test_notnull_char_strict(a) values(1);
+ERROR:  null value in column "b" violates not-null constraint
+DETAIL:  Failing row contains (1, null).
+select * from test_notnull_char_strict;
+ a | b 
+---+---
+(0 rows)
+
+    
+insert into test_notnull_varchar_strict(a) values(1);
+ERROR:  null value in column "b" violates not-null constraint
+DETAIL:  Failing row contains (1, null).
+select * from test_notnull_varchar_strict;
+ a | b 
+---+---
+(0 rows)
+
+    
+insert into test_notnull_clob_strict(a) values(1);
+ERROR:  null value in column "b" violates not-null constraint
+DETAIL:  Failing row contains (1, null).
+select * from test_notnull_clob_strict;
+ a | b 
+---+---
+(0 rows)
+
+    
+insert into test_notnull_text_strict(a) values(1);
+ERROR:  null value in column "b" violates not-null constraint
+DETAIL:  Failing row contains (1, null).
+select * from test_notnull_text_strict;
+ a | b 
+---+---
+(0 rows)
+
+    
+insert into test_notnull_real_strict(a) values(1);
+ERROR:  null value in column "b" violates not-null constraint
+DETAIL:  Failing row contains (1, null).
+select * from test_notnull_real_strict;
+ a | b 
+---+---
+(0 rows)
+
+    
+insert into test_notnull_double_strict(a) values(1);
+ERROR:  null value in column "b" violates not-null constraint
+DETAIL:  Failing row contains (1, null).
+select * from test_notnull_double_strict;
+ a | b 
+---+---
+(0 rows)
+
+    
+insert into test_notnull_numeric_strict(a) values(1);
+ERROR:  null value in column "b" violates not-null constraint
+DETAIL:  Failing row contains (1.00, null).
+select * from test_notnull_numeric_strict;
+ a | b 
+---+---
+(0 rows)
+
+    
+    
+    
+--insert into table values(null)
+insert into test_notnull_tint_strict(b) values(null);
+ERROR:  null value in column "b" violates not-null constraint
+DETAIL:  Failing row contains (null, null).
+    
+insert into test_notnull_sint_strict(b) values(null);
+ERROR:  null value in column "b" violates not-null constraint
+DETAIL:  Failing row contains (null, null).
+    
+insert into test_notnull_int_strict(b) values(null);
+ERROR:  null value in column "b" violates not-null constraint
+DETAIL:  Failing row contains (null, null).
+    
+insert into test_notnull_bint_strict(b) values(null);
+ERROR:  null value in column "b" violates not-null constraint
+DETAIL:  Failing row contains (null, null).
+    
+insert into test_notnull_char_strict(b) values(null);
+ERROR:  null value in column "b" violates not-null constraint
+DETAIL:  Failing row contains (null, null).
+    
+insert into test_notnull_varchar_strict(b) values(null);
+ERROR:  null value in column "b" violates not-null constraint
+DETAIL:  Failing row contains (null, null).
+    
+insert into test_notnull_clob_strict(b) values(null);
+ERROR:  null value in column "b" violates not-null constraint
+DETAIL:  Failing row contains (null, null).
+    
+insert into test_notnull_text_strict(b) values(null);
+ERROR:  null value in column "b" violates not-null constraint
+DETAIL:  Failing row contains (null, null).
+    
+insert into test_notnull_real_strict(b) values(null);
+ERROR:  null value in column "b" violates not-null constraint
+DETAIL:  Failing row contains (null, null).
+    
+insert into test_notnull_double_strict(b) values(null);
+ERROR:  null value in column "b" violates not-null constraint
+DETAIL:  Failing row contains (null, null).
+    
+insert into test_notnull_numeric_strict(b) values(null);
+ERROR:  null value in column "b" violates not-null constraint
+DETAIL:  Failing row contains (null, null).
+\c contrib_regression;
+drop DATABASE if exists sql_mode_strict2;

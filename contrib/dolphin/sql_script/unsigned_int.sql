@@ -2889,13 +2889,6 @@ create aggregate pg_catalog.listagg(uint8,text) (SFUNC=uint8_list_agg_transfn, f
 drop aggregate if exists pg_catalog.listagg(uint8);
 create aggregate pg_catalog.listagg(uint8) (SFUNC=uint8_list_agg_noarg2_transfn, finalfunc = list_agg_finalfn,  STYPE= internal);
 
-DROP FUNCTION IF EXISTS pg_catalog.group_concat_transfn(internal, text) CASCADE;
-CREATE OR REPLACE FUNCTION pg_catalog.group_concat_transfn(internal, text)
- RETURNS internal LANGUAGE C STRICT AS	'$libdir/dolphin',	'group_concat_transfn';
-
---drop aggregate if exists pg_catalog.group_concat(text);
---create aggregate pg_catalog.group_concat(text) (SFUNC=group_concat_transfn, finalfunc = string_agg_finalfn,  STYPE= internal);
-
 ----------------------------------------------------------------
 -- add  opfamily_opclass 
 ----------------------------------------------------------------

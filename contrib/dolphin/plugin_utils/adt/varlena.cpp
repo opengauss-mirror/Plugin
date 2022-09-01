@@ -283,10 +283,6 @@ PG_FUNCTION_INFO_V1_PUBLIC(uint8_list_agg_noarg2_transfn);
 extern "C" DLL_PUBLIC Datum uint8_list_agg_noarg2_transfn(PG_FUNCTION_ARGS);
 
 
-PG_FUNCTION_INFO_V1_PUBLIC(group_concat_transfn);
-extern "C" DLL_PUBLIC Datum group_concat_transfn(PG_FUNCTION_ARGS);
-
-
 /*****************************************************************************
  *	 CONVERSION ROUTINES EXPORTED FOR USE BY C CODE							 *
  *****************************************************************************/
@@ -8360,6 +8356,8 @@ Datum make_set(PG_FUNCTION_ARGS)
     result = cstring_to_text(buf.data);
     pfree_ext(buf.data);
     PG_RETURN_TEXT_P(result);
+}
+
 Datum uint1_list_agg_transfn(PG_FUNCTION_ARGS)
 {
     StringInfo state;
@@ -8550,30 +8548,4 @@ Datum uint8_list_agg_noarg2_transfn(PG_FUNCTION_ARGS)
      * which is a pass-by-value type the same size as a pointer.
      */
     PG_RETURN_POINTER(state);
-}
-Datum group_concat_transfn(PG_FUNCTION_ARGS)
-{
-    StringInfo group_str;
-    text *delimiter;
-    char *tmp_del = ",";
-
-    delimiter = cstring_to_text(tmp_del);
-
-    group_str = PG_ARGISNULL(0) ? NULL : (StringInfo)PG_GETARG_POINTER(0);
-
-    if (!PG_ARGISNULL(1)) {
-        if (group_str == NULL)
-            group_str = makeStringAggState(fcinfo);
-        else
-            appendStringInfoText(group_str, delimiter);
-
-        appendStringInfoText(group_str, PG_GETARG_TEXT_PP(1));
-    }
-
-    /*
-     * The transition type for string_agg() is declared to be "internal",
-     * which is a pass-by-value type the same size as a pointer.
-     */
-    pfree(delimiter);
-    PG_RETURN_POINTER(group_str);
 }
