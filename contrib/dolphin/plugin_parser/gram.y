@@ -986,6 +986,10 @@ static bool DolphinObjNameCmp(const char* s1, const char* s2, bool is_quoted);
 %type <str> normal_ident
 %type <boolean> opt_ignore field_unsigned
 
+/* ALTER TABLESPACE */
+%type <list>	alter_tblspc_option_list
+%type <node>	alter_tblspc_option
+
 /*
  * Non-keyword token types.  These are hard-wired into the "flex" lexer.
  * They must be listed first so that their numeric codes do not depend on
@@ -6584,6 +6588,50 @@ CreateStmt:	CREATE OptTemp TABLE dolphin_qualified_name '(' OptTableElementList 
 					}
 					$$ = (Node *)n;
 				}
+		| CREATE OptTemp TABLE dolphin_qualified_name TableLikeClause
+				{
+					CreateStmt *n = makeNode(CreateStmt);
+					$4->relpersistence = $2;
+					n->relation = $4;
+					n->tableElts = list_make1($5);
+					n->constraints = NIL;
+					n->if_not_exists = false;
+					n->relkind = OBJECT_TABLE;
+					n->inhRelations = NIL;
+					n->options = NIL;
+					n->oncommit = ONCOMMIT_NOOP;
+					n->row_compress = REL_CMPRS_PAGE_PLAIN;
+					n->tablespacename = NULL;
+/* PGXC_BEGIN */
+					n->distributeby = NULL;
+					n->subcluster = NULL;
+/* PGXC_END */
+					n->partTableState = NULL;
+					n->internalData = NULL;
+					$$ = (Node *)n;
+				}
+		|  CREATE OptTemp TABLE IF_P NOT EXISTS dolphin_qualified_name TableLikeClause
+				{
+					CreateStmt *n = makeNode(CreateStmt);
+					$7->relpersistence = $2;
+					n->relation = $7;
+					n->tableElts = list_make1($8);
+					n->constraints = NIL;
+					n->if_not_exists = true;
+					n->relkind = OBJECT_TABLE;
+					n->inhRelations = NIL;
+					n->options = NIL;
+					n->oncommit = ONCOMMIT_NOOP;
+					n->row_compress = REL_CMPRS_PAGE_PLAIN;
+					n->tablespacename = NULL;
+/* PGXC_BEGIN */
+					n->distributeby = NULL;
+					n->subcluster = NULL;
+/* PGXC_END */
+					n->partTableState = NULL;
+					n->internalData = NULL;
+					$$ = (Node *)n;
+				}
 		;
 
 engine_option:
@@ -10238,14 +10286,14 @@ OptTableSpaceOwner: OWNER name			{ $$ = $2; }
  *
  ****************************************************************************/
 
-DropTableSpaceStmt: DROP TABLESPACE name
+DropTableSpaceStmt: DROP TABLESPACE name opt_engine
 				{
 					DropTableSpaceStmt *n = makeNode(DropTableSpaceStmt);
 					n->tablespacename = $3;
 					n->missing_ok = false;
 					$$ = (Node *) n;
 				}
-				|  DROP TABLESPACE IF_P EXISTS name
+				|  DROP TABLESPACE IF_P EXISTS name opt_engine
 				{
 					DropTableSpaceStmt *n = makeNode(DropTableSpaceStmt);
 					n->tablespacename = $5;
@@ -17266,7 +17314,7 @@ RenameStmt: ALTER AGGREGATE func_name aggr_args RENAME TO name
 					n->missing_ok = false;
 					$$ = (Node *)n;
 				}
-			| ALTER TABLESPACE name RENAME TO name
+			| ALTER TABLESPACE name RENAME TO name alter_tblspc_option_list
 				{
 					RenameStmt *n = makeNode(RenameStmt);
 					n->renameType = OBJECT_TABLESPACE;
@@ -17275,7 +17323,7 @@ RenameStmt: ALTER AGGREGATE func_name aggr_args RENAME TO name
 					n->missing_ok = false;
 					$$ = (Node *)n;
 				}
-			| ALTER TABLESPACE name SET reloptions
+			| ALTER TABLESPACE name SET reloptions alter_tblspc_option_list
 				{
 					AlterTableSpaceOptionsStmt *n =
 						makeNode(AlterTableSpaceOptionsStmt);
@@ -17284,7 +17332,7 @@ RenameStmt: ALTER AGGREGATE func_name aggr_args RENAME TO name
 					n->isReset = FALSE;
 					$$ = (Node *)n;
 				}
-			| ALTER TABLESPACE name RESET reloptions
+			| ALTER TABLESPACE name RESET reloptions alter_tblspc_option_list
 				{
 					AlterTableSpaceOptionsStmt *n =
 						makeNode(AlterTableSpaceOptionsStmt);
@@ -17293,7 +17341,7 @@ RenameStmt: ALTER AGGREGATE func_name aggr_args RENAME TO name
 					n->isReset = TRUE;
 					$$ = (Node *)n;
 				}
-			| ALTER TABLESPACE name RESIZE MAXSIZE size_clause
+			| ALTER TABLESPACE name RESIZE MAXSIZE size_clause alter_tblspc_option_list
 				{
 					AlterTableSpaceOptionsStmt *n =
 						makeNode(AlterTableSpaceOptionsStmt);
@@ -17368,6 +17416,22 @@ opt_column: COLUMN									{ $$ = COLUMN; }
 
 opt_set_data: SET DATA_P							{ $$ = 1; }
 			| /*EMPTY*/								{ $$ = 0; }
+		;
+
+alter_tblspc_option_list:
+			alter_tblspc_option_list alter_tblspc_option
+			{
+				$$ = lappend($1, $2);
+			}
+			| /*EMPTY*/
+			{
+				$$ = NULL;
+			}
+		;
+
+alter_tblspc_option:
+			WAIT	{ $$ = NULL; }
+			| opt_engine_without_empty { $$ = $1; }
 		;
 
 /*****************************************************************************
@@ -17769,7 +17833,7 @@ AlterOwnerStmt: ALTER AGGREGATE func_name aggr_args OWNER TO RoleId
 					n->newowner = $6;
 					$$ = (Node *)n;
 				}
-			| ALTER TABLESPACE name OWNER TO RoleId
+			| ALTER TABLESPACE name OWNER TO RoleId alter_tblspc_option_list
 				{
 					AlterOwnerStmt *n = makeNode(AlterOwnerStmt);
 					n->objectType = OBJECT_TABLESPACE;

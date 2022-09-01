@@ -134,6 +134,77 @@ ANALYZE TABLE t_not_exist, t_new_analyze;
 
 -- new grammar test for CREATE TABLESPACE
 CREATE TABLESPACE test_tbspace ADD DATAFILE 'test_tbspace1';
+ALTER TABLESPACE test_tbspace rename to test_tbspace_1 wait;
+select * from pg_tablespace where spcname='test_tbspace_1';
+ALTER TABLESPACE test_tbspace_1 rename to test_tbspace_2 wait engine='xx';
+select * from pg_tablespace where spcname='test_tbspace_2';
+ALTER TABLESPACE test_tbspace_2 rename to test_tbspace_3 engine='xx';
+select * from pg_tablespace where spcname='test_tbspace_3';
+ALTER TABLESPACE test_tbspace_3 rename to test_tbspace_4 engine='xx' wait;
+select * from pg_tablespace where spcname='test_tbspace_4';
+ALTER TABLESPACE test_tbspace_4 rename to test_tbspace_5 engine='xx' wait engine='yy';
+select * from pg_tablespace where spcname='test_tbspace_5';
+ALTER TABLESPACE test_tbspace_5 rename to test_tbspace_6;
+
+ALTER TABLESPACE test_tbspace_6 set (seq_page_cost=111) wait;
+select * from pg_tablespace where spcname='test_tbspace_6';
+ALTER TABLESPACE test_tbspace_6 reset (seq_page_cost) wait engine='xx';
+select * from pg_tablespace where spcname='test_tbspace_6';
+ALTER TABLESPACE test_tbspace_6 set (seq_page_cost=222) wait engine='xx';
+select * from pg_tablespace where spcname='test_tbspace_6';
+ALTER TABLESPACE test_tbspace_6 reset (seq_page_cost) engine='xx';
+select * from pg_tablespace where spcname='test_tbspace_6';
+ALTER TABLESPACE test_tbspace_6 set (seq_page_cost=333) engine='xx';
+select * from pg_tablespace where spcname='test_tbspace_6';
+ALTER TABLESPACE test_tbspace_6 reset (seq_page_cost) engine='xx' wait;
+select * from pg_tablespace where spcname='test_tbspace_6';
+ALTER TABLESPACE test_tbspace_6 set (seq_page_cost=444) engine='xx' wait;
+select * from pg_tablespace where spcname='test_tbspace_6';
+ALTER TABLESPACE test_tbspace_6 reset (seq_page_cost) engine='xx' wait engine='yy';
+select * from pg_tablespace where spcname='test_tbspace_6';
+ALTER TABLESPACE test_tbspace_6 set (seq_page_cost=555) engine='xx' wait engine='yy';
+select * from pg_tablespace where spcname='test_tbspace_6';
+ALTER TABLESPACE test_tbspace_6 reset (seq_page_cost);
+select * from pg_tablespace where spcname='test_tbspace_6';
+ALTER TABLESPACE test_tbspace_6 set (seq_page_cost=666);
+select * from pg_tablespace where spcname='test_tbspace_6';
+ALTER TABLESPACE test_tbspace_6 reset (seq_page_cost) wait;
+select * from pg_tablespace where spcname='test_tbspace_6';
+
+ALTER TABLESPACE test_tbspace_6 RESIZE MAXSIZE '11M' wait;
+select * from pg_tablespace where spcname='test_tbspace_6';
+ALTER TABLESPACE test_tbspace_6 RESIZE MAXSIZE '22M' wait engine='xx';
+select * from pg_tablespace where spcname='test_tbspace_6';
+ALTER TABLESPACE test_tbspace_6 RESIZE MAXSIZE '33M' engine='xx';
+select * from pg_tablespace where spcname='test_tbspace_6';
+ALTER TABLESPACE test_tbspace_6 RESIZE MAXSIZE '44M' engine='xx' wait;
+select * from pg_tablespace where spcname='test_tbspace_6';
+ALTER TABLESPACE test_tbspace_6 RESIZE MAXSIZE '55M' engine='xx' wait engine='yy';
+select * from pg_tablespace where spcname='test_tbspace_6';
+ALTER TABLESPACE test_tbspace_6 RESIZE MAXSIZE '66M';
+select * from pg_tablespace where spcname='test_tbspace_6';
+
+create user u_test_tbspace identified by 'test-1234';
+create user u_test_tbspace2 identified by 'test-1234';
+
+ALTER TABLESPACE test_tbspace_6 owner to u_test_tbspace;
+select usename from pg_tablespace left join pg_user on pg_tablespace.spcowner = pg_user.usesysid where spcname='test_tbspace_6';
+ALTER TABLESPACE test_tbspace_6 owner to u_test_tbspace2 wait engine='xx';
+select usename from pg_tablespace left join pg_user on pg_tablespace.spcowner = pg_user.usesysid where spcname='test_tbspace_6';
+ALTER TABLESPACE test_tbspace_6 owner to u_test_tbspace engine='xx';
+select usename from pg_tablespace left join pg_user on pg_tablespace.spcowner = pg_user.usesysid where spcname='test_tbspace_6';
+ALTER TABLESPACE test_tbspace_6 owner to u_test_tbspace2 engine='xx' wait;
+select usename from pg_tablespace left join pg_user on pg_tablespace.spcowner = pg_user.usesysid where spcname='test_tbspace_6';
+ALTER TABLESPACE test_tbspace_6 owner to u_test_tbspace engine='xx' wait engine='yy';
+select usename from pg_tablespace left join pg_user on pg_tablespace.spcowner = pg_user.usesysid where spcname='test_tbspace_6';
+ALTER TABLESPACE test_tbspace_6 owner to u_test_tbspace2;
+select usename from pg_tablespace left join pg_user on pg_tablespace.spcowner = pg_user.usesysid where spcname='test_tbspace_6';
+
+DROP TABLESPACE test_tbspace_6 engine='zz';
+drop user u_test_tbspace;
+drop user u_test_tbspace2;
+
+CREATE TABLESPACE test_tbspace ADD DATAFILE 'test_tbspace1';
 CREATE TABLE t_tbspace(num int) TABLESPACE test_tbspace;
 \d t_tbspace
 DROP TABLE t_tbspace;
@@ -242,6 +313,24 @@ CREATE TABLE t_ctas_new(new_c_a, new_c_b) SELECT * FROM t_ctas LIMIT 0, 2;
 SELECT COUNT(*) FROM t_ctas_new;
 \d t_ctas_new
 DROP TABLE t_ctas_new;
+
+-- create table like
+CREATE TABLE t_like like t_ctas;
+SELECT COUNT(*) FROM t_like;
+\d t_like
+DROP TABLE t_like;
+
+CREATE TEMPORARY TABLE t_like like t_ctas;
+CREATE TEMPORARY TABLE IF NOT EXISTS t_like like t_ctas;
+SELECT COUNT(*) FROM t_like;
+\d t_like
+
+CREATE TABLE t_like2 like t_like;
+CREATE TABLE IF NOT EXISTS t_like2 like t_ctas;
+SELECT COUNT(*) FROM t_like2;
+\d t_like2
+DROP TABLE t_like;
+DROP TABLE t_like2;
 
 -- FAILED
 CREATE TABLE t_ctas_new WITH temp_t(a, b) AS (SELECT a, b FROM t_ctas) SELECT * FROM temp_t;
