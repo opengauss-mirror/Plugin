@@ -1,0 +1,830 @@
+drop database if exists uint_and;
+NOTICE:  database "uint_and" does not exist, skipping
+create database uint_and dbcompatibility 'b';
+\c uint_and
+--uint8
+select 18446744073709551615::uint8 & 0::int1;
+ ?column? 
+----------
+ 0
+(1 row)
+
+select 18446744073709551615::uint8 & 0::int2;
+ ?column? 
+----------
+ 0
+(1 row)
+
+select 18446744073709551615::uint8 & 0::int4;
+ ?column? 
+----------
+ 0
+(1 row)
+
+select 18446744073709551615::uint8 & 0::int8;
+ ?column? 
+----------
+ 0
+(1 row)
+
+select 18446744073709551615::uint8 & 0::uint1;
+ ?column? 
+----------
+ 0
+(1 row)
+
+select 18446744073709551615::uint8 & 0::uint2;
+ ?column? 
+----------
+ 0
+(1 row)
+
+select 18446744073709551615::uint8 & 0::uint4;
+ ?column? 
+----------
+ 0
+(1 row)
+
+select 18446744073709551615::uint8 & 0::uint8;
+ ?column? 
+----------
+ 0
+(1 row)
+
+select 18446744073709551615::uint8 & 255::int1;
+ ?column? 
+----------
+ 255
+(1 row)
+
+select 18446744073709551615::uint8 & 32767::int2;
+ ?column? 
+----------
+ 32767
+(1 row)
+
+select 18446744073709551615::uint8 & 2147483647::int4;
+  ?column?  
+------------
+ 2147483647
+(1 row)
+
+select 18446744073709551615::uint8 & 9223372036854775807::int8;
+      ?column?       
+---------------------
+ 9223372036854775807
+(1 row)
+
+select 18446744073709551615::uint8 & 255::uint1;
+ ?column? 
+----------
+ 255
+(1 row)
+
+select 18446744073709551615::uint8 & 65535::uint2;
+ ?column? 
+----------
+ 65535
+(1 row)
+
+select 18446744073709551615::uint8 & 4294967295::uint4;
+  ?column?  
+------------
+ 4294967295
+(1 row)
+
+select 18446744073709551615::uint8 & 18446744073709551615::uint8;
+       ?column?       
+----------------------
+ 18446744073709551615
+(1 row)
+
+select 18446744073709551615::uint8 & (-32768)::int2;
+       ?column?       
+----------------------
+ 18446744073709518848
+(1 row)
+
+select 18446744073709551615::uint8 & (-2147483648)::int4;
+       ?column?       
+----------------------
+ 18446744071562067968
+(1 row)
+
+select 18446744073709551615::uint8 & (-9223372036854775808)::int8;
+      ?column?       
+---------------------
+ 9223372036854775808
+(1 row)
+
+--uint4
+select 4294967295::uint4 & 0::int1;
+ ?column? 
+----------
+ 0
+(1 row)
+
+select 4294967295::uint4 & 0::int2;
+ ?column? 
+----------
+ 0
+(1 row)
+
+select 4294967295::uint4 & 0::int4;
+ ?column? 
+----------
+ 0
+(1 row)
+
+select 4294967295::uint4 & 0::int8;
+ ?column? 
+----------
+ 0
+(1 row)
+
+select 4294967295::uint4 & 0::uint1;
+ ?column? 
+----------
+ 0
+(1 row)
+
+select 4294967295::uint4 & 0::uint2;
+ ?column? 
+----------
+ 0
+(1 row)
+
+select 4294967295::uint4 & 0::uint4;
+ ?column? 
+----------
+ 0
+(1 row)
+
+select 4294967295::uint4 & 0::uint8;
+ ?column? 
+----------
+ 0
+(1 row)
+
+select 4294967295::uint4 & 255::int1;
+ ?column? 
+----------
+ 255
+(1 row)
+
+select 4294967295::uint4 & 32767::int2;
+ ?column? 
+----------
+ 32767
+(1 row)
+
+select 4294967295::uint4 & 2147483647::int4;
+  ?column?  
+------------
+ 2147483647
+(1 row)
+
+select 4294967295::uint4 & 9223372036854775807::int8;
+  ?column?  
+------------
+ 4294967295
+(1 row)
+
+select 4294967295::uint4 & 255::uint1;
+ ?column? 
+----------
+ 255
+(1 row)
+
+select 4294967295::uint4 & 65535::uint2;
+ ?column? 
+----------
+ 65535
+(1 row)
+
+select 4294967295::uint4 & 4294967295::uint4;
+  ?column?  
+------------
+ 4294967295
+(1 row)
+
+select 4294967295::uint4 & 18446744073709551615::uint8;
+  ?column?  
+------------
+ 4294967295
+(1 row)
+
+select 4294967295::uint4 & (-32768)::int2;
+  ?column?  
+------------
+ 4294934528
+(1 row)
+
+select 4294967295::uint4 & (-2147483648)::int4;
+  ?column?  
+------------
+ 2147483648
+(1 row)
+
+select 4294967295::uint4 & (-9223372036854775808)::int8;
+ ?column? 
+----------
+ 0
+(1 row)
+
+--uint2
+select 65535::uint2 & 0::int1;
+ ?column? 
+----------
+ 0
+(1 row)
+
+select 65535::uint2 & 0::int2;
+ ?column? 
+----------
+ 0
+(1 row)
+
+select 65535::uint2 & 0::int4;
+ ?column? 
+----------
+ 0
+(1 row)
+
+select 65535::uint2 & 0::int8;
+ ?column? 
+----------
+ 0
+(1 row)
+
+select 65535::uint2 & 0::uint1;
+ ?column? 
+----------
+ 0
+(1 row)
+
+select 65535::uint2 & 0::uint2;
+ ?column? 
+----------
+ 0
+(1 row)
+
+select 65535::uint2 & 0::uint4;
+ ?column? 
+----------
+ 0
+(1 row)
+
+select 65535::uint2 & 0::uint8;
+ ?column? 
+----------
+ 0
+(1 row)
+
+select 65535::uint2 & 255::int1;
+ ?column? 
+----------
+ 255
+(1 row)
+
+select 65535::uint2 & 32767::int2;
+ ?column? 
+----------
+ 32767
+(1 row)
+
+select 65535::uint2 & 2147483647::int4;
+ ?column? 
+----------
+ 65535
+(1 row)
+
+select 65535::uint2 & 9223372036854775807::int8;
+ ?column? 
+----------
+ 65535
+(1 row)
+
+select 65535::uint2 & 255::uint1;
+ ?column? 
+----------
+ 255
+(1 row)
+
+select 65535::uint2 & 65535::uint2;
+ ?column? 
+----------
+ 65535
+(1 row)
+
+select 65535::uint2 & 4294967295::uint4;
+ ?column? 
+----------
+ 65535
+(1 row)
+
+select 65535::uint2 & 18446744073709551615::uint8;
+ ?column? 
+----------
+ 65535
+(1 row)
+
+select 65535::uint2 & (-32768)::int2;
+ ?column? 
+----------
+ 32768
+(1 row)
+
+select 65535::uint2 & (-2147483648)::int4;
+ ?column? 
+----------
+ 0
+(1 row)
+
+select 65535::uint2 & (-9223372036854775808)::int8;
+ ?column? 
+----------
+ 0
+(1 row)
+
+--uint1
+select 255::uint1 & 0::int1;
+ ?column? 
+----------
+ 0
+(1 row)
+
+select 255::uint1 & 0::int2;
+ ?column? 
+----------
+ 0
+(1 row)
+
+select 255::uint1 & 0::int4;
+ ?column? 
+----------
+ 0
+(1 row)
+
+select 255::uint1 & 0::int8;
+ ?column? 
+----------
+ 0
+(1 row)
+
+select 255::uint1 & 0::uint1;
+ ?column? 
+----------
+ 0
+(1 row)
+
+select 255::uint1 & 0::uint2;
+ ?column? 
+----------
+ 0
+(1 row)
+
+select 255::uint1 & 0::uint4;
+ ?column? 
+----------
+ 0
+(1 row)
+
+select 255::uint1 & 0::uint8;
+ ?column? 
+----------
+ 0
+(1 row)
+
+select 255::uint1 & 255::int1;
+ ?column? 
+----------
+ 255
+(1 row)
+
+select 255::uint1 & 32767::int2;
+ ?column? 
+----------
+ 255
+(1 row)
+
+select 255::uint1 & 2147483647::int4;
+ ?column? 
+----------
+ 255
+(1 row)
+
+select 255::uint1 & 9223372036854775807::int8;
+ ?column? 
+----------
+ 255
+(1 row)
+
+select 255::uint1 & 255::uint1;
+ ?column? 
+----------
+ 255
+(1 row)
+
+select 255::uint1 & 65535::uint2;
+ ?column? 
+----------
+ 255
+(1 row)
+
+select 255::uint1 & 4294967295::uint4;
+ ?column? 
+----------
+ 255
+(1 row)
+
+select 255::uint1 & 18446744073709551615::uint8;
+ ?column? 
+----------
+ 255
+(1 row)
+
+select 255::uint1 & (-32768)::int2;
+ ?column? 
+----------
+ 0
+(1 row)
+
+select 255::uint1 & (-2147483648)::int4;
+ ?column? 
+----------
+ 0
+(1 row)
+
+select 255::uint1 & (-9223372036854775808)::int8;
+ ?column? 
+----------
+ 0
+(1 row)
+
+--int8
+select 9223372036854775807::int8 & 0::uint1;
+ ?column? 
+----------
+ 0
+(1 row)
+
+select 9223372036854775807::int8 & 0::uint2;
+ ?column? 
+----------
+ 0
+(1 row)
+
+select 9223372036854775807::int8 & 0::uint4;
+ ?column? 
+----------
+ 0
+(1 row)
+
+select 9223372036854775807::int8 & 0::uint8;
+ ?column? 
+----------
+ 0
+(1 row)
+
+select 9223372036854775807::int8 & 255::uint1;
+ ?column? 
+----------
+ 255
+(1 row)
+
+select 9223372036854775807::int8 & 65535::uint2;
+ ?column? 
+----------
+ 65535
+(1 row)
+
+select 9223372036854775807::int8 & 4294967295::uint4;
+  ?column?  
+------------
+ 4294967295
+(1 row)
+
+select 9223372036854775807::int8 & 18446744073709551615::uint8;
+      ?column?       
+---------------------
+ 9223372036854775807
+(1 row)
+
+select 9223372036854775807::int8 & 1::uint1;
+ ?column? 
+----------
+ 1
+(1 row)
+
+select 9223372036854775807::int8 & 1::uint2;
+ ?column? 
+----------
+ 1
+(1 row)
+
+select 9223372036854775807::int8 & 1::uint4;
+ ?column? 
+----------
+ 1
+(1 row)
+
+select 9223372036854775807::int8 & 1::uint8;
+ ?column? 
+----------
+ 1
+(1 row)
+
+select (-9223372036854775808)::int8 & 255::uint1;
+ ?column? 
+----------
+ 0
+(1 row)
+
+select (-9223372036854775808)::int8 & 65535::uint2;
+ ?column? 
+----------
+ 0
+(1 row)
+
+select (-9223372036854775808)::int8 & 4294967295::uint4;
+ ?column? 
+----------
+ 0
+(1 row)
+
+select (-9223372036854775808)::int8 & 18446744073709551615::uint8;
+      ?column?       
+---------------------
+ 9223372036854775808
+(1 row)
+
+--int4
+select 2147483647::int4 & 0::uint1;
+ ?column? 
+----------
+ 0
+(1 row)
+
+select 2147483647::int4 & 0::uint2;
+ ?column? 
+----------
+ 0
+(1 row)
+
+select 2147483647::int4 & 0::uint4;
+ ?column? 
+----------
+ 0
+(1 row)
+
+select 2147483647::int4 & 0::uint8;
+ ?column? 
+----------
+ 0
+(1 row)
+
+select 2147483647::int4 & 255::uint1;
+ ?column? 
+----------
+ 255
+(1 row)
+
+select 2147483647::int4 & 65535::uint2;
+ ?column? 
+----------
+ 65535
+(1 row)
+
+select 2147483647::int4 & 4294967295::uint4;
+  ?column?  
+------------
+ 2147483647
+(1 row)
+
+select 2147483647::int4 & 18446744073709551615::uint8;
+  ?column?  
+------------
+ 2147483647
+(1 row)
+
+select 2147483647::int4 & 1::uint1;
+ ?column? 
+----------
+ 1
+(1 row)
+
+select 2147483647::int4 & 1::uint2;
+ ?column? 
+----------
+ 1
+(1 row)
+
+select 2147483647::int4 & 1::uint4;
+ ?column? 
+----------
+ 1
+(1 row)
+
+select 2147483647::int4 & 1::uint8;
+ ?column? 
+----------
+ 1
+(1 row)
+
+select (-2147483648)::int4 & 255::uint1;
+ ?column? 
+----------
+ 0
+(1 row)
+
+select (-2147483648)::int4 & 65535::uint2;
+ ?column? 
+----------
+ 0
+(1 row)
+
+select (-2147483648)::int4 & 4294967295::uint4;
+  ?column?  
+------------
+ 2147483648
+(1 row)
+
+select (-2147483648)::int4 & 18446744073709551615::uint8;
+       ?column?       
+----------------------
+ 18446744071562067968
+(1 row)
+
+--int2
+select 32767::int2 & 0::uint1;
+ ?column? 
+----------
+ 0
+(1 row)
+
+select 32767::int2 & 0::uint2;
+ ?column? 
+----------
+ 0
+(1 row)
+
+select 32767::int2 & 0::uint4;
+ ?column? 
+----------
+ 0
+(1 row)
+
+select 32767::int2 & 0::uint8;
+ ?column? 
+----------
+ 0
+(1 row)
+
+select 32767::int2 & 255::uint1;
+ ?column? 
+----------
+ 255
+(1 row)
+
+select 32767::int2 & 65535::uint2;
+ ?column? 
+----------
+ 32767
+(1 row)
+
+select 32767::int2 & 4294967295::uint4;
+ ?column? 
+----------
+ 32767
+(1 row)
+
+select 32767::int2 & 18446744073709551615::uint8;
+ ?column? 
+----------
+ 32767
+(1 row)
+
+select 32767::int2 & 1::uint1;
+ ?column? 
+----------
+ 1
+(1 row)
+
+select 32767::int2 & 1::uint2;
+ ?column? 
+----------
+ 1
+(1 row)
+
+select 32767::int2 & 1::uint4;
+ ?column? 
+----------
+ 1
+(1 row)
+
+select 32767::int2 & 1::uint8;
+ ?column? 
+----------
+ 1
+(1 row)
+
+select (-32768)::int2 & 255::uint1;
+ ?column? 
+----------
+ 0
+(1 row)
+
+select (-32768)::int2 & 65535::uint2;
+ ?column? 
+----------
+ 32768
+(1 row)
+
+select (-32768)::int2 & 4294967295::uint4;
+  ?column?  
+------------
+ 4294934528
+(1 row)
+
+select (-32768)::int2 & 18446744073709551615::uint8;
+       ?column?       
+----------------------
+ 18446744073709518848
+(1 row)
+
+--int1
+select 255::int1 & 0::uint1;
+ ?column? 
+----------
+ 0
+(1 row)
+
+select 255::int1 & 0::uint2;
+ ?column? 
+----------
+ 0
+(1 row)
+
+select 255::int1 & 0::uint4;
+ ?column? 
+----------
+ 0
+(1 row)
+
+select 255::int1 & 0::uint8;
+ ?column? 
+----------
+ 0
+(1 row)
+
+select 255::int1 & 255::uint1;
+ ?column? 
+----------
+ 255
+(1 row)
+
+select 255::int1 & 65535::uint2;
+ ?column? 
+----------
+ 255
+(1 row)
+
+select 255::int1 & 4294967295::uint4;
+ ?column? 
+----------
+ 255
+(1 row)
+
+select 255::int1 & 18446744073709551615::uint8;
+ ?column? 
+----------
+ 255
+(1 row)
+
+select 255::int1 & 1::uint1;
+ ?column? 
+----------
+ 1
+(1 row)
+
+select 255::int1 & 1::uint2;
+ ?column? 
+----------
+ 1
+(1 row)
+
+select 255::int1 & 1::uint4;
+ ?column? 
+----------
+ 1
+(1 row)
+
+select 255::int1 & 1::uint8;
+ ?column? 
+----------
+ 1
+(1 row)
+
+\c postgres
+drop database uint_and

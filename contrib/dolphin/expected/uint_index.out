@@ -1,0 +1,1343 @@
+drop database if exists uint_index;
+NOTICE:  database "uint_index" does not exist, skipping
+create database uint_index dbcompatibility 'b';
+\c uint_index
+create table t1(a uint1);
+insert into t1 select generate_series(1, 255);
+insert into t1 select generate_series(1, 255);
+insert into t1 select generate_series(1, 255);
+insert into t1 select generate_series(1, 255);
+insert into t1 select generate_series(1, 255);
+insert into t1 select generate_series(1, 255);
+insert into t1 select generate_series(1, 255);
+insert into t1 select generate_series(1, 255);
+insert into t1 select generate_series(1, 255);
+insert into t1 select generate_series(1, 255);
+create index idx1 on t1(a);
+analyze t1;
+explain(costs off, verbose)select * from t1 where a = 1::uint1;
+               QUERY PLAN                
+-----------------------------------------
+ Bitmap Heap Scan on public.t1
+   Output: a
+   Recheck Cond: (t1.a = '1'::uint1)
+   ->  Bitmap Index Scan on idx1
+         Index Cond: (t1.a = '1'::uint1)
+(5 rows)
+
+explain(costs off, verbose)select * from t1 where a = 1::uint2;
+               QUERY PLAN                
+-----------------------------------------
+ Bitmap Heap Scan on public.t1
+   Output: a
+   Recheck Cond: (t1.a = '1'::uint2)
+   ->  Bitmap Index Scan on idx1
+         Index Cond: (t1.a = '1'::uint2)
+(5 rows)
+
+explain(costs off, verbose)select * from t1 where a = 1::uint4;
+               QUERY PLAN                
+-----------------------------------------
+ Bitmap Heap Scan on public.t1
+   Output: a
+   Recheck Cond: (t1.a = '1'::uint4)
+   ->  Bitmap Index Scan on idx1
+         Index Cond: (t1.a = '1'::uint4)
+(5 rows)
+
+explain(costs off, verbose)select * from t1 where a = 1::uint8;
+               QUERY PLAN                
+-----------------------------------------
+ Bitmap Heap Scan on public.t1
+   Output: a
+   Recheck Cond: (t1.a = '1'::uint8)
+   ->  Bitmap Index Scan on idx1
+         Index Cond: (t1.a = '1'::uint8)
+(5 rows)
+
+explain(costs off, verbose)select * from t1 where a = 1::int1;
+                QUERY PLAN                 
+-------------------------------------------
+ Bitmap Heap Scan on public.t1
+   Output: a
+   Recheck Cond: (t1.a = '1'::tinyint)
+   ->  Bitmap Index Scan on idx1
+         Index Cond: (t1.a = '1'::tinyint)
+(5 rows)
+
+explain(costs off, verbose)select * from t1 where a = 1::int2;
+                QUERY PLAN                
+------------------------------------------
+ Bitmap Heap Scan on public.t1
+   Output: a
+   Recheck Cond: (t1.a = 1::smallint)
+   ->  Bitmap Index Scan on idx1
+         Index Cond: (t1.a = 1::smallint)
+(5 rows)
+
+explain(costs off, verbose)select * from t1 where a = 1::int4;
+           QUERY PLAN            
+---------------------------------
+ Bitmap Heap Scan on public.t1
+   Output: a
+   Recheck Cond: (t1.a = 1)
+   ->  Bitmap Index Scan on idx1
+         Index Cond: (t1.a = 1)
+(5 rows)
+
+explain(costs off, verbose)select * from t1 where a = 1::int8;
+               QUERY PLAN               
+----------------------------------------
+ Bitmap Heap Scan on public.t1
+   Output: a
+   Recheck Cond: (t1.a = 1::bigint)
+   ->  Bitmap Index Scan on idx1
+         Index Cond: (t1.a = 1::bigint)
+(5 rows)
+
+explain(costs off, verbose)select * from t1 where a > 1::uint1 and a < 3::uint1;
+                         QUERY PLAN                          
+-------------------------------------------------------------
+ [Bypass]
+ Index Only Scan using idx1 on public.t1
+   Output: a
+   Index Cond: ((t1.a > '1'::uint1) AND (t1.a < '3'::uint1))
+(4 rows)
+
+explain(costs off, verbose)select * from t1 where a > 1::uint2 and a < 3::uint2;
+                            QUERY PLAN                             
+-------------------------------------------------------------------
+ Bitmap Heap Scan on public.t1
+   Output: a
+   Recheck Cond: ((t1.a > '1'::uint2) AND (t1.a < '3'::uint2))
+   ->  Bitmap Index Scan on idx1
+         Index Cond: ((t1.a > '1'::uint2) AND (t1.a < '3'::uint2))
+(5 rows)
+
+explain(costs off, verbose)select * from t1 where a > 1::uint4 and a < 3::uint4;
+                            QUERY PLAN                             
+-------------------------------------------------------------------
+ Bitmap Heap Scan on public.t1
+   Output: a
+   Recheck Cond: ((t1.a > '1'::uint4) AND (t1.a < '3'::uint4))
+   ->  Bitmap Index Scan on idx1
+         Index Cond: ((t1.a > '1'::uint4) AND (t1.a < '3'::uint4))
+(5 rows)
+
+explain(costs off, verbose)select * from t1 where a > 1::uint8 and a < 3::uint8;
+                            QUERY PLAN                             
+-------------------------------------------------------------------
+ Bitmap Heap Scan on public.t1
+   Output: a
+   Recheck Cond: ((t1.a > '1'::uint8) AND (t1.a < '3'::uint8))
+   ->  Bitmap Index Scan on idx1
+         Index Cond: ((t1.a > '1'::uint8) AND (t1.a < '3'::uint8))
+(5 rows)
+
+explain(costs off, verbose)select * from t1 where a > 1::int1 and a < 3::int1;
+                              QUERY PLAN                               
+-----------------------------------------------------------------------
+ Bitmap Heap Scan on public.t1
+   Output: a
+   Recheck Cond: ((t1.a > '1'::tinyint) AND (t1.a < '3'::tinyint))
+   ->  Bitmap Index Scan on idx1
+         Index Cond: ((t1.a > '1'::tinyint) AND (t1.a < '3'::tinyint))
+(5 rows)
+
+explain(costs off, verbose)select * from t1 where a > 1::int2 and a < 3::int2;
+                             QUERY PLAN                              
+---------------------------------------------------------------------
+ Bitmap Heap Scan on public.t1
+   Output: a
+   Recheck Cond: ((t1.a > 1::smallint) AND (t1.a < 3::smallint))
+   ->  Bitmap Index Scan on idx1
+         Index Cond: ((t1.a > 1::smallint) AND (t1.a < 3::smallint))
+(5 rows)
+
+explain(costs off, verbose)select * from t1 where a > 1::int4 and a < 3::int4;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Bitmap Heap Scan on public.t1
+   Output: a
+   Recheck Cond: ((t1.a > 1) AND (t1.a < 3))
+   ->  Bitmap Index Scan on idx1
+         Index Cond: ((t1.a > 1) AND (t1.a < 3))
+(5 rows)
+
+explain(costs off, verbose)select * from t1 where a > 1::int8 and a < 3::int8;
+                           QUERY PLAN                            
+-----------------------------------------------------------------
+ Bitmap Heap Scan on public.t1
+   Output: a
+   Recheck Cond: ((t1.a > 1::bigint) AND (t1.a < 3::bigint))
+   ->  Bitmap Index Scan on idx1
+         Index Cond: ((t1.a > 1::bigint) AND (t1.a < 3::bigint))
+(5 rows)
+
+explain(costs off, verbose)select * from t1 where a >= 1::uint1 and a <= 3::uint1;
+                             QUERY PLAN                              
+---------------------------------------------------------------------
+ Bitmap Heap Scan on public.t1
+   Output: a
+   Recheck Cond: ((t1.a >= '1'::uint1) AND (t1.a <= '3'::uint1))
+   ->  Bitmap Index Scan on idx1
+         Index Cond: ((t1.a >= '1'::uint1) AND (t1.a <= '3'::uint1))
+(5 rows)
+
+explain(costs off, verbose)select * from t1 where a >= 1::uint2 and a <= 3::uint2;
+                             QUERY PLAN                              
+---------------------------------------------------------------------
+ Bitmap Heap Scan on public.t1
+   Output: a
+   Recheck Cond: ((t1.a >= '1'::uint2) AND (t1.a <= '3'::uint2))
+   ->  Bitmap Index Scan on idx1
+         Index Cond: ((t1.a >= '1'::uint2) AND (t1.a <= '3'::uint2))
+(5 rows)
+
+explain(costs off, verbose)select * from t1 where a >= 1::uint4 and a <= 3::uint4;
+                             QUERY PLAN                              
+---------------------------------------------------------------------
+ Bitmap Heap Scan on public.t1
+   Output: a
+   Recheck Cond: ((t1.a >= '1'::uint4) AND (t1.a <= '3'::uint4))
+   ->  Bitmap Index Scan on idx1
+         Index Cond: ((t1.a >= '1'::uint4) AND (t1.a <= '3'::uint4))
+(5 rows)
+
+explain(costs off, verbose)select * from t1 where a >= 1::uint8 and a <= 3::uint8;
+                             QUERY PLAN                              
+---------------------------------------------------------------------
+ Bitmap Heap Scan on public.t1
+   Output: a
+   Recheck Cond: ((t1.a >= '1'::uint8) AND (t1.a <= '3'::uint8))
+   ->  Bitmap Index Scan on idx1
+         Index Cond: ((t1.a >= '1'::uint8) AND (t1.a <= '3'::uint8))
+(5 rows)
+
+explain(costs off, verbose)select * from t1 where a >= 1::int1 and a <= 3::int1;
+                               QUERY PLAN                                
+-------------------------------------------------------------------------
+ Bitmap Heap Scan on public.t1
+   Output: a
+   Recheck Cond: ((t1.a >= '1'::tinyint) AND (t1.a <= '3'::tinyint))
+   ->  Bitmap Index Scan on idx1
+         Index Cond: ((t1.a >= '1'::tinyint) AND (t1.a <= '3'::tinyint))
+(5 rows)
+
+explain(costs off, verbose)select * from t1 where a >= 1::int2 and a <= 3::int2;
+                              QUERY PLAN                               
+-----------------------------------------------------------------------
+ Bitmap Heap Scan on public.t1
+   Output: a
+   Recheck Cond: ((t1.a >= 1::smallint) AND (t1.a <= 3::smallint))
+   ->  Bitmap Index Scan on idx1
+         Index Cond: ((t1.a >= 1::smallint) AND (t1.a <= 3::smallint))
+(5 rows)
+
+explain(costs off, verbose)select * from t1 where a >= 1::int4 and a <= 3::int4;
+                    QUERY PLAN                     
+---------------------------------------------------
+ Bitmap Heap Scan on public.t1
+   Output: a
+   Recheck Cond: ((t1.a >= 1) AND (t1.a <= 3))
+   ->  Bitmap Index Scan on idx1
+         Index Cond: ((t1.a >= 1) AND (t1.a <= 3))
+(5 rows)
+
+explain(costs off, verbose)select * from t1 where a >= 1::int8 and a <= 3::int8;
+                            QUERY PLAN                             
+-------------------------------------------------------------------
+ Bitmap Heap Scan on public.t1
+   Output: a
+   Recheck Cond: ((t1.a >= 1::bigint) AND (t1.a <= 3::bigint))
+   ->  Bitmap Index Scan on idx1
+         Index Cond: ((t1.a >= 1::bigint) AND (t1.a <= 3::bigint))
+(5 rows)
+
+drop index idx1;
+create index idx1 on t1 using hash (a);
+analyze t1;
+explain(costs off, verbose)select * from t1 where a = 1::uint1;
+               QUERY PLAN                
+-----------------------------------------
+ Bitmap Heap Scan on public.t1
+   Output: a
+   Recheck Cond: (t1.a = '1'::uint1)
+   ->  Bitmap Index Scan on idx1
+         Index Cond: (t1.a = '1'::uint1)
+(5 rows)
+
+explain(costs off, verbose)select * from t1 where a = 1::uint2;
+               QUERY PLAN                
+-----------------------------------------
+ Bitmap Heap Scan on public.t1
+   Output: a
+   Recheck Cond: (t1.a = '1'::uint2)
+   ->  Bitmap Index Scan on idx1
+         Index Cond: (t1.a = '1'::uint2)
+(5 rows)
+
+explain(costs off, verbose)select * from t1 where a = 1::uint4;
+               QUERY PLAN                
+-----------------------------------------
+ Bitmap Heap Scan on public.t1
+   Output: a
+   Recheck Cond: (t1.a = '1'::uint4)
+   ->  Bitmap Index Scan on idx1
+         Index Cond: (t1.a = '1'::uint4)
+(5 rows)
+
+explain(costs off, verbose)select * from t1 where a = 1::uint8;
+               QUERY PLAN                
+-----------------------------------------
+ Bitmap Heap Scan on public.t1
+   Output: a
+   Recheck Cond: (t1.a = '1'::uint8)
+   ->  Bitmap Index Scan on idx1
+         Index Cond: (t1.a = '1'::uint8)
+(5 rows)
+
+explain(costs off, verbose)select * from t1 where a = 1::int1;
+                QUERY PLAN                 
+-------------------------------------------
+ Bitmap Heap Scan on public.t1
+   Output: a
+   Recheck Cond: (t1.a = '1'::tinyint)
+   ->  Bitmap Index Scan on idx1
+         Index Cond: (t1.a = '1'::tinyint)
+(5 rows)
+
+explain(costs off, verbose)select * from t1 where a = 1::int2;
+                QUERY PLAN                
+------------------------------------------
+ Bitmap Heap Scan on public.t1
+   Output: a
+   Recheck Cond: (t1.a = 1::smallint)
+   ->  Bitmap Index Scan on idx1
+         Index Cond: (t1.a = 1::smallint)
+(5 rows)
+
+explain(costs off, verbose)select * from t1 where a = 1::int4;
+           QUERY PLAN            
+---------------------------------
+ Bitmap Heap Scan on public.t1
+   Output: a
+   Recheck Cond: (t1.a = 1)
+   ->  Bitmap Index Scan on idx1
+         Index Cond: (t1.a = 1)
+(5 rows)
+
+explain(costs off, verbose)select * from t1 where a = 1::int8;
+               QUERY PLAN               
+----------------------------------------
+ Bitmap Heap Scan on public.t1
+   Output: a
+   Recheck Cond: (t1.a = 1::bigint)
+   ->  Bitmap Index Scan on idx1
+         Index Cond: (t1.a = 1::bigint)
+(5 rows)
+
+create table t2(a uint2);
+insert into t2 select generate_series(1, 255);
+insert into t2 select generate_series(1, 255);
+insert into t2 select generate_series(1, 255);
+insert into t2 select generate_series(1, 255);
+insert into t2 select generate_series(1, 255);
+insert into t2 select generate_series(1, 255);
+insert into t2 select generate_series(1, 255);
+insert into t2 select generate_series(1, 255);
+insert into t2 select generate_series(1, 255);
+insert into t2 select generate_series(1, 255);
+create index idx2 on t2(a);
+analyze t2;
+explain(costs off, verbose)select * from t2 where a = 1::uint1;
+               QUERY PLAN                
+-----------------------------------------
+ Bitmap Heap Scan on public.t2
+   Output: a
+   Recheck Cond: (t2.a = '1'::uint8)
+   ->  Bitmap Index Scan on idx2
+         Index Cond: (t2.a = '1'::uint8)
+(5 rows)
+
+explain(costs off, verbose)select * from t2 where a = 1::uint2;
+               QUERY PLAN                
+-----------------------------------------
+ Bitmap Heap Scan on public.t2
+   Output: a
+   Recheck Cond: (t2.a = '1'::uint2)
+   ->  Bitmap Index Scan on idx2
+         Index Cond: (t2.a = '1'::uint2)
+(5 rows)
+
+explain(costs off, verbose)select * from t2 where a = 1::uint4;
+               QUERY PLAN                
+-----------------------------------------
+ Bitmap Heap Scan on public.t2
+   Output: a
+   Recheck Cond: (t2.a = '1'::uint4)
+   ->  Bitmap Index Scan on idx2
+         Index Cond: (t2.a = '1'::uint4)
+(5 rows)
+
+explain(costs off, verbose)select * from t2 where a = 1::uint8;
+               QUERY PLAN                
+-----------------------------------------
+ Bitmap Heap Scan on public.t2
+   Output: a
+   Recheck Cond: (t2.a = '1'::uint8)
+   ->  Bitmap Index Scan on idx2
+         Index Cond: (t2.a = '1'::uint8)
+(5 rows)
+
+explain(costs off, verbose)select * from t2 where a = 1::int1;
+               QUERY PLAN               
+----------------------------------------
+ Bitmap Heap Scan on public.t2
+   Output: a
+   Recheck Cond: (t2.a = 1::bigint)
+   ->  Bitmap Index Scan on idx2
+         Index Cond: (t2.a = 1::bigint)
+(5 rows)
+
+explain(costs off, verbose)select * from t2 where a = 1::int2;
+                QUERY PLAN                
+------------------------------------------
+ Bitmap Heap Scan on public.t2
+   Output: a
+   Recheck Cond: (t2.a = 1::smallint)
+   ->  Bitmap Index Scan on idx2
+         Index Cond: (t2.a = 1::smallint)
+(5 rows)
+
+explain(costs off, verbose)select * from t2 where a = 1::int4;
+           QUERY PLAN            
+---------------------------------
+ Bitmap Heap Scan on public.t2
+   Output: a
+   Recheck Cond: (t2.a = 1)
+   ->  Bitmap Index Scan on idx2
+         Index Cond: (t2.a = 1)
+(5 rows)
+
+explain(costs off, verbose)select * from t2 where a = 1::int8;
+               QUERY PLAN               
+----------------------------------------
+ Bitmap Heap Scan on public.t2
+   Output: a
+   Recheck Cond: (t2.a = 1::bigint)
+   ->  Bitmap Index Scan on idx2
+         Index Cond: (t2.a = 1::bigint)
+(5 rows)
+
+explain(costs off, verbose)select * from t2 where a > 1::uint1 and a < 3::uint1;
+                            QUERY PLAN                             
+-------------------------------------------------------------------
+ Bitmap Heap Scan on public.t2
+   Output: a
+   Recheck Cond: ((t2.a > '1'::uint8) AND (t2.a < '3'::uint8))
+   ->  Bitmap Index Scan on idx2
+         Index Cond: ((t2.a > '1'::uint8) AND (t2.a < '3'::uint8))
+(5 rows)
+
+explain(costs off, verbose)select * from t2 where a > 1::uint2 and a < 3::uint2;
+                         QUERY PLAN                          
+-------------------------------------------------------------
+ [Bypass]
+ Index Only Scan using idx2 on public.t2
+   Output: a
+   Index Cond: ((t2.a > '1'::uint2) AND (t2.a < '3'::uint2))
+(4 rows)
+
+explain(costs off, verbose)select * from t2 where a > 1::uint4 and a < 3::uint4;
+                            QUERY PLAN                             
+-------------------------------------------------------------------
+ Bitmap Heap Scan on public.t2
+   Output: a
+   Recheck Cond: ((t2.a > '1'::uint4) AND (t2.a < '3'::uint4))
+   ->  Bitmap Index Scan on idx2
+         Index Cond: ((t2.a > '1'::uint4) AND (t2.a < '3'::uint4))
+(5 rows)
+
+explain(costs off, verbose)select * from t2 where a > 1::uint8 and a < 3::uint8;
+                            QUERY PLAN                             
+-------------------------------------------------------------------
+ Bitmap Heap Scan on public.t2
+   Output: a
+   Recheck Cond: ((t2.a > '1'::uint8) AND (t2.a < '3'::uint8))
+   ->  Bitmap Index Scan on idx2
+         Index Cond: ((t2.a > '1'::uint8) AND (t2.a < '3'::uint8))
+(5 rows)
+
+explain(costs off, verbose)select * from t2 where a > 1::int1 and a < 3::int1;
+                           QUERY PLAN                            
+-----------------------------------------------------------------
+ Bitmap Heap Scan on public.t2
+   Output: a
+   Recheck Cond: ((t2.a > 1::bigint) AND (t2.a < 3::bigint))
+   ->  Bitmap Index Scan on idx2
+         Index Cond: ((t2.a > 1::bigint) AND (t2.a < 3::bigint))
+(5 rows)
+
+explain(costs off, verbose)select * from t2 where a > 1::int2 and a < 3::int2;
+                             QUERY PLAN                              
+---------------------------------------------------------------------
+ Bitmap Heap Scan on public.t2
+   Output: a
+   Recheck Cond: ((t2.a > 1::smallint) AND (t2.a < 3::smallint))
+   ->  Bitmap Index Scan on idx2
+         Index Cond: ((t2.a > 1::smallint) AND (t2.a < 3::smallint))
+(5 rows)
+
+explain(costs off, verbose)select * from t2 where a > 1::int4 and a < 3::int4;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Bitmap Heap Scan on public.t2
+   Output: a
+   Recheck Cond: ((t2.a > 1) AND (t2.a < 3))
+   ->  Bitmap Index Scan on idx2
+         Index Cond: ((t2.a > 1) AND (t2.a < 3))
+(5 rows)
+
+explain(costs off, verbose)select * from t2 where a > 1::int8 and a < 3::int8;
+                           QUERY PLAN                            
+-----------------------------------------------------------------
+ Bitmap Heap Scan on public.t2
+   Output: a
+   Recheck Cond: ((t2.a > 1::bigint) AND (t2.a < 3::bigint))
+   ->  Bitmap Index Scan on idx2
+         Index Cond: ((t2.a > 1::bigint) AND (t2.a < 3::bigint))
+(5 rows)
+
+explain(costs off, verbose)select * from t2 where a >= 1::uint1 and a <= 3::uint1;
+                             QUERY PLAN                              
+---------------------------------------------------------------------
+ Bitmap Heap Scan on public.t2
+   Output: a
+   Recheck Cond: ((t2.a >= '1'::uint8) AND (t2.a <= '3'::uint8))
+   ->  Bitmap Index Scan on idx2
+         Index Cond: ((t2.a >= '1'::uint8) AND (t2.a <= '3'::uint8))
+(5 rows)
+
+explain(costs off, verbose)select * from t2 where a >= 1::uint2 and a <= 3::uint2;
+                             QUERY PLAN                              
+---------------------------------------------------------------------
+ Bitmap Heap Scan on public.t2
+   Output: a
+   Recheck Cond: ((t2.a >= '1'::uint2) AND (t2.a <= '3'::uint2))
+   ->  Bitmap Index Scan on idx2
+         Index Cond: ((t2.a >= '1'::uint2) AND (t2.a <= '3'::uint2))
+(5 rows)
+
+explain(costs off, verbose)select * from t2 where a >= 1::uint4 and a <= 3::uint4;
+                             QUERY PLAN                              
+---------------------------------------------------------------------
+ Bitmap Heap Scan on public.t2
+   Output: a
+   Recheck Cond: ((t2.a >= '1'::uint4) AND (t2.a <= '3'::uint4))
+   ->  Bitmap Index Scan on idx2
+         Index Cond: ((t2.a >= '1'::uint4) AND (t2.a <= '3'::uint4))
+(5 rows)
+
+explain(costs off, verbose)select * from t2 where a >= 1::uint8 and a <= 3::uint8;
+                             QUERY PLAN                              
+---------------------------------------------------------------------
+ Bitmap Heap Scan on public.t2
+   Output: a
+   Recheck Cond: ((t2.a >= '1'::uint8) AND (t2.a <= '3'::uint8))
+   ->  Bitmap Index Scan on idx2
+         Index Cond: ((t2.a >= '1'::uint8) AND (t2.a <= '3'::uint8))
+(5 rows)
+
+explain(costs off, verbose)select * from t2 where a >= 1::int1 and a <= 3::int1;
+                            QUERY PLAN                             
+-------------------------------------------------------------------
+ Bitmap Heap Scan on public.t2
+   Output: a
+   Recheck Cond: ((t2.a >= 1::bigint) AND (t2.a <= 3::bigint))
+   ->  Bitmap Index Scan on idx2
+         Index Cond: ((t2.a >= 1::bigint) AND (t2.a <= 3::bigint))
+(5 rows)
+
+explain(costs off, verbose)select * from t2 where a >= 1::int2 and a <= 3::int2;
+                              QUERY PLAN                               
+-----------------------------------------------------------------------
+ Bitmap Heap Scan on public.t2
+   Output: a
+   Recheck Cond: ((t2.a >= 1::smallint) AND (t2.a <= 3::smallint))
+   ->  Bitmap Index Scan on idx2
+         Index Cond: ((t2.a >= 1::smallint) AND (t2.a <= 3::smallint))
+(5 rows)
+
+explain(costs off, verbose)select * from t2 where a >= 1::int4 and a <= 3::int4;
+                    QUERY PLAN                     
+---------------------------------------------------
+ Bitmap Heap Scan on public.t2
+   Output: a
+   Recheck Cond: ((t2.a >= 1) AND (t2.a <= 3))
+   ->  Bitmap Index Scan on idx2
+         Index Cond: ((t2.a >= 1) AND (t2.a <= 3))
+(5 rows)
+
+explain(costs off, verbose)select * from t2 where a >= 1::int8 and a <= 3::int8;
+                            QUERY PLAN                             
+-------------------------------------------------------------------
+ Bitmap Heap Scan on public.t2
+   Output: a
+   Recheck Cond: ((t2.a >= 1::bigint) AND (t2.a <= 3::bigint))
+   ->  Bitmap Index Scan on idx2
+         Index Cond: ((t2.a >= 1::bigint) AND (t2.a <= 3::bigint))
+(5 rows)
+
+drop index idx2;
+create index idx2 on t2 using hash (a);
+analyze t2;
+explain(costs off, verbose)select * from t2 where a = 1::uint1;
+               QUERY PLAN                
+-----------------------------------------
+ Bitmap Heap Scan on public.t2
+   Output: a
+   Recheck Cond: (t2.a = '1'::uint8)
+   ->  Bitmap Index Scan on idx2
+         Index Cond: (t2.a = '1'::uint8)
+(5 rows)
+
+explain(costs off, verbose)select * from t2 where a = 1::uint2;
+               QUERY PLAN                
+-----------------------------------------
+ Bitmap Heap Scan on public.t2
+   Output: a
+   Recheck Cond: (t2.a = '1'::uint2)
+   ->  Bitmap Index Scan on idx2
+         Index Cond: (t2.a = '1'::uint2)
+(5 rows)
+
+explain(costs off, verbose)select * from t2 where a = 1::uint4;
+               QUERY PLAN                
+-----------------------------------------
+ Bitmap Heap Scan on public.t2
+   Output: a
+   Recheck Cond: (t2.a = '1'::uint4)
+   ->  Bitmap Index Scan on idx2
+         Index Cond: (t2.a = '1'::uint4)
+(5 rows)
+
+explain(costs off, verbose)select * from t2 where a = 1::uint8;
+               QUERY PLAN                
+-----------------------------------------
+ Bitmap Heap Scan on public.t2
+   Output: a
+   Recheck Cond: (t2.a = '1'::uint8)
+   ->  Bitmap Index Scan on idx2
+         Index Cond: (t2.a = '1'::uint8)
+(5 rows)
+
+explain(costs off, verbose)select * from t2 where a = 1::int1;
+               QUERY PLAN               
+----------------------------------------
+ Bitmap Heap Scan on public.t2
+   Output: a
+   Recheck Cond: (t2.a = 1::bigint)
+   ->  Bitmap Index Scan on idx2
+         Index Cond: (t2.a = 1::bigint)
+(5 rows)
+
+explain(costs off, verbose)select * from t2 where a = 1::int2;
+                QUERY PLAN                
+------------------------------------------
+ Bitmap Heap Scan on public.t2
+   Output: a
+   Recheck Cond: (t2.a = 1::smallint)
+   ->  Bitmap Index Scan on idx2
+         Index Cond: (t2.a = 1::smallint)
+(5 rows)
+
+explain(costs off, verbose)select * from t2 where a = 1::int4;
+           QUERY PLAN            
+---------------------------------
+ Bitmap Heap Scan on public.t2
+   Output: a
+   Recheck Cond: (t2.a = 1)
+   ->  Bitmap Index Scan on idx2
+         Index Cond: (t2.a = 1)
+(5 rows)
+
+explain(costs off, verbose)select * from t2 where a = 1::int8;
+               QUERY PLAN               
+----------------------------------------
+ Bitmap Heap Scan on public.t2
+   Output: a
+   Recheck Cond: (t2.a = 1::bigint)
+   ->  Bitmap Index Scan on idx2
+         Index Cond: (t2.a = 1::bigint)
+(5 rows)
+
+create table t3(a uint4);
+insert into t3 select generate_series(1, 255);
+insert into t3 select generate_series(1, 255);
+insert into t3 select generate_series(1, 255);
+insert into t3 select generate_series(1, 255);
+insert into t3 select generate_series(1, 255);
+insert into t3 select generate_series(1, 255);
+insert into t3 select generate_series(1, 255);
+insert into t3 select generate_series(1, 255);
+insert into t3 select generate_series(1, 255);
+insert into t3 select generate_series(1, 255);
+create index idx3 on t3(a);
+analyze t3;
+explain(costs off, verbose)select * from t3 where a = 1::uint1;
+               QUERY PLAN                
+-----------------------------------------
+ Bitmap Heap Scan on public.t3
+   Output: a
+   Recheck Cond: (t3.a = '1'::uint8)
+   ->  Bitmap Index Scan on idx3
+         Index Cond: (t3.a = '1'::uint8)
+(5 rows)
+
+explain(costs off, verbose)select * from t3 where a = 1::uint2;
+               QUERY PLAN                
+-----------------------------------------
+ Bitmap Heap Scan on public.t3
+   Output: a
+   Recheck Cond: (t3.a = '1'::uint8)
+   ->  Bitmap Index Scan on idx3
+         Index Cond: (t3.a = '1'::uint8)
+(5 rows)
+
+explain(costs off, verbose)select * from t3 where a = 1::uint4;
+               QUERY PLAN                
+-----------------------------------------
+ Bitmap Heap Scan on public.t3
+   Output: a
+   Recheck Cond: (t3.a = '1'::uint4)
+   ->  Bitmap Index Scan on idx3
+         Index Cond: (t3.a = '1'::uint4)
+(5 rows)
+
+explain(costs off, verbose)select * from t3 where a = 1::uint8;
+               QUERY PLAN                
+-----------------------------------------
+ Bitmap Heap Scan on public.t3
+   Output: a
+   Recheck Cond: (t3.a = '1'::uint8)
+   ->  Bitmap Index Scan on idx3
+         Index Cond: (t3.a = '1'::uint8)
+(5 rows)
+
+explain(costs off, verbose)select * from t3 where a = 1::int1;
+               QUERY PLAN               
+----------------------------------------
+ Bitmap Heap Scan on public.t3
+   Output: a
+   Recheck Cond: (t3.a = 1::bigint)
+   ->  Bitmap Index Scan on idx3
+         Index Cond: (t3.a = 1::bigint)
+(5 rows)
+
+explain(costs off, verbose)select * from t3 where a = 1::int2;
+               QUERY PLAN               
+----------------------------------------
+ Bitmap Heap Scan on public.t3
+   Output: a
+   Recheck Cond: (t3.a = 1::bigint)
+   ->  Bitmap Index Scan on idx3
+         Index Cond: (t3.a = 1::bigint)
+(5 rows)
+
+explain(costs off, verbose)select * from t3 where a = 1::int4;
+           QUERY PLAN            
+---------------------------------
+ Bitmap Heap Scan on public.t3
+   Output: a
+   Recheck Cond: (t3.a = 1)
+   ->  Bitmap Index Scan on idx3
+         Index Cond: (t3.a = 1)
+(5 rows)
+
+explain(costs off, verbose)select * from t3 where a = 1::int8;
+               QUERY PLAN               
+----------------------------------------
+ Bitmap Heap Scan on public.t3
+   Output: a
+   Recheck Cond: (t3.a = 1::bigint)
+   ->  Bitmap Index Scan on idx3
+         Index Cond: (t3.a = 1::bigint)
+(5 rows)
+
+explain(costs off, verbose)select * from t3 where a > 1::uint1 and a < 3::uint1;
+                            QUERY PLAN                             
+-------------------------------------------------------------------
+ Bitmap Heap Scan on public.t3
+   Output: a
+   Recheck Cond: ((t3.a > '1'::uint8) AND (t3.a < '3'::uint8))
+   ->  Bitmap Index Scan on idx3
+         Index Cond: ((t3.a > '1'::uint8) AND (t3.a < '3'::uint8))
+(5 rows)
+
+explain(costs off, verbose)select * from t3 where a > 1::uint2 and a < 3::uint2;
+                            QUERY PLAN                             
+-------------------------------------------------------------------
+ Bitmap Heap Scan on public.t3
+   Output: a
+   Recheck Cond: ((t3.a > '1'::uint8) AND (t3.a < '3'::uint8))
+   ->  Bitmap Index Scan on idx3
+         Index Cond: ((t3.a > '1'::uint8) AND (t3.a < '3'::uint8))
+(5 rows)
+
+explain(costs off, verbose)select * from t3 where a > 1::uint4 and a < 3::uint4;
+                         QUERY PLAN                          
+-------------------------------------------------------------
+ [Bypass]
+ Index Only Scan using idx3 on public.t3
+   Output: a
+   Index Cond: ((t3.a > '1'::uint4) AND (t3.a < '3'::uint4))
+(4 rows)
+
+explain(costs off, verbose)select * from t3 where a > 1::uint8 and a < 3::uint8;
+                            QUERY PLAN                             
+-------------------------------------------------------------------
+ Bitmap Heap Scan on public.t3
+   Output: a
+   Recheck Cond: ((t3.a > '1'::uint8) AND (t3.a < '3'::uint8))
+   ->  Bitmap Index Scan on idx3
+         Index Cond: ((t3.a > '1'::uint8) AND (t3.a < '3'::uint8))
+(5 rows)
+
+explain(costs off, verbose)select * from t3 where a > 1::int1 and a < 3::int1;
+                           QUERY PLAN                            
+-----------------------------------------------------------------
+ Bitmap Heap Scan on public.t3
+   Output: a
+   Recheck Cond: ((t3.a > 1::bigint) AND (t3.a < 3::bigint))
+   ->  Bitmap Index Scan on idx3
+         Index Cond: ((t3.a > 1::bigint) AND (t3.a < 3::bigint))
+(5 rows)
+
+explain(costs off, verbose)select * from t3 where a > 1::int2 and a < 3::int2;
+                           QUERY PLAN                            
+-----------------------------------------------------------------
+ Bitmap Heap Scan on public.t3
+   Output: a
+   Recheck Cond: ((t3.a > 1::bigint) AND (t3.a < 3::bigint))
+   ->  Bitmap Index Scan on idx3
+         Index Cond: ((t3.a > 1::bigint) AND (t3.a < 3::bigint))
+(5 rows)
+
+explain(costs off, verbose)select * from t3 where a > 1::int4 and a < 3::int4;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Bitmap Heap Scan on public.t3
+   Output: a
+   Recheck Cond: ((t3.a > 1) AND (t3.a < 3))
+   ->  Bitmap Index Scan on idx3
+         Index Cond: ((t3.a > 1) AND (t3.a < 3))
+(5 rows)
+
+explain(costs off, verbose)select * from t3 where a > 1::int8 and a < 3::int8;
+                           QUERY PLAN                            
+-----------------------------------------------------------------
+ Bitmap Heap Scan on public.t3
+   Output: a
+   Recheck Cond: ((t3.a > 1::bigint) AND (t3.a < 3::bigint))
+   ->  Bitmap Index Scan on idx3
+         Index Cond: ((t3.a > 1::bigint) AND (t3.a < 3::bigint))
+(5 rows)
+
+explain(costs off, verbose)select * from t3 where a >= 1::uint1 and a <= 3::uint1;
+                             QUERY PLAN                              
+---------------------------------------------------------------------
+ Bitmap Heap Scan on public.t3
+   Output: a
+   Recheck Cond: ((t3.a >= '1'::uint8) AND (t3.a <= '3'::uint8))
+   ->  Bitmap Index Scan on idx3
+         Index Cond: ((t3.a >= '1'::uint8) AND (t3.a <= '3'::uint8))
+(5 rows)
+
+explain(costs off, verbose)select * from t3 where a >= 1::uint2 and a <= 3::uint2;
+                             QUERY PLAN                              
+---------------------------------------------------------------------
+ Bitmap Heap Scan on public.t3
+   Output: a
+   Recheck Cond: ((t3.a >= '1'::uint8) AND (t3.a <= '3'::uint8))
+   ->  Bitmap Index Scan on idx3
+         Index Cond: ((t3.a >= '1'::uint8) AND (t3.a <= '3'::uint8))
+(5 rows)
+
+explain(costs off, verbose)select * from t3 where a >= 1::uint4 and a <= 3::uint4;
+                             QUERY PLAN                              
+---------------------------------------------------------------------
+ Bitmap Heap Scan on public.t3
+   Output: a
+   Recheck Cond: ((t3.a >= '1'::uint4) AND (t3.a <= '3'::uint4))
+   ->  Bitmap Index Scan on idx3
+         Index Cond: ((t3.a >= '1'::uint4) AND (t3.a <= '3'::uint4))
+(5 rows)
+
+explain(costs off, verbose)select * from t3 where a >= 1::uint8 and a <= 3::uint8;
+                             QUERY PLAN                              
+---------------------------------------------------------------------
+ Bitmap Heap Scan on public.t3
+   Output: a
+   Recheck Cond: ((t3.a >= '1'::uint8) AND (t3.a <= '3'::uint8))
+   ->  Bitmap Index Scan on idx3
+         Index Cond: ((t3.a >= '1'::uint8) AND (t3.a <= '3'::uint8))
+(5 rows)
+
+explain(costs off, verbose)select * from t3 where a >= 1::int1 and a <= 3::int1;
+                            QUERY PLAN                             
+-------------------------------------------------------------------
+ Bitmap Heap Scan on public.t3
+   Output: a
+   Recheck Cond: ((t3.a >= 1::bigint) AND (t3.a <= 3::bigint))
+   ->  Bitmap Index Scan on idx3
+         Index Cond: ((t3.a >= 1::bigint) AND (t3.a <= 3::bigint))
+(5 rows)
+
+explain(costs off, verbose)select * from t3 where a >= 1::int2 and a <= 3::int2;
+                            QUERY PLAN                             
+-------------------------------------------------------------------
+ Bitmap Heap Scan on public.t3
+   Output: a
+   Recheck Cond: ((t3.a >= 1::bigint) AND (t3.a <= 3::bigint))
+   ->  Bitmap Index Scan on idx3
+         Index Cond: ((t3.a >= 1::bigint) AND (t3.a <= 3::bigint))
+(5 rows)
+
+explain(costs off, verbose)select * from t3 where a >= 1::int4 and a <= 3::int4;
+                    QUERY PLAN                     
+---------------------------------------------------
+ Bitmap Heap Scan on public.t3
+   Output: a
+   Recheck Cond: ((t3.a >= 1) AND (t3.a <= 3))
+   ->  Bitmap Index Scan on idx3
+         Index Cond: ((t3.a >= 1) AND (t3.a <= 3))
+(5 rows)
+
+explain(costs off, verbose)select * from t3 where a >= 1::int8 and a <= 3::int8;
+                            QUERY PLAN                             
+-------------------------------------------------------------------
+ Bitmap Heap Scan on public.t3
+   Output: a
+   Recheck Cond: ((t3.a >= 1::bigint) AND (t3.a <= 3::bigint))
+   ->  Bitmap Index Scan on idx3
+         Index Cond: ((t3.a >= 1::bigint) AND (t3.a <= 3::bigint))
+(5 rows)
+
+drop index idx3;
+create index idx3 on t3 using hash (a);
+analyze t3;
+explain(costs off, verbose)select * from t3 where a = 1::uint1;
+               QUERY PLAN                
+-----------------------------------------
+ Bitmap Heap Scan on public.t3
+   Output: a
+   Recheck Cond: (t3.a = '1'::uint8)
+   ->  Bitmap Index Scan on idx3
+         Index Cond: (t3.a = '1'::uint8)
+(5 rows)
+
+explain(costs off, verbose)select * from t3 where a = 1::uint2;
+               QUERY PLAN                
+-----------------------------------------
+ Bitmap Heap Scan on public.t3
+   Output: a
+   Recheck Cond: (t3.a = '1'::uint8)
+   ->  Bitmap Index Scan on idx3
+         Index Cond: (t3.a = '1'::uint8)
+(5 rows)
+
+explain(costs off, verbose)select * from t3 where a = 1::uint4;
+               QUERY PLAN                
+-----------------------------------------
+ Bitmap Heap Scan on public.t3
+   Output: a
+   Recheck Cond: (t3.a = '1'::uint4)
+   ->  Bitmap Index Scan on idx3
+         Index Cond: (t3.a = '1'::uint4)
+(5 rows)
+
+explain(costs off, verbose)select * from t3 where a = 1::uint8;
+               QUERY PLAN                
+-----------------------------------------
+ Bitmap Heap Scan on public.t3
+   Output: a
+   Recheck Cond: (t3.a = '1'::uint8)
+   ->  Bitmap Index Scan on idx3
+         Index Cond: (t3.a = '1'::uint8)
+(5 rows)
+
+explain(costs off, verbose)select * from t3 where a = 1::int1;
+               QUERY PLAN               
+----------------------------------------
+ Bitmap Heap Scan on public.t3
+   Output: a
+   Recheck Cond: (t3.a = 1::bigint)
+   ->  Bitmap Index Scan on idx3
+         Index Cond: (t3.a = 1::bigint)
+(5 rows)
+
+explain(costs off, verbose)select * from t3 where a = 1::int2;
+               QUERY PLAN               
+----------------------------------------
+ Bitmap Heap Scan on public.t3
+   Output: a
+   Recheck Cond: (t3.a = 1::bigint)
+   ->  Bitmap Index Scan on idx3
+         Index Cond: (t3.a = 1::bigint)
+(5 rows)
+
+explain(costs off, verbose)select * from t3 where a = 1::int4;
+           QUERY PLAN            
+---------------------------------
+ Bitmap Heap Scan on public.t3
+   Output: a
+   Recheck Cond: (t3.a = 1)
+   ->  Bitmap Index Scan on idx3
+         Index Cond: (t3.a = 1)
+(5 rows)
+
+explain(costs off, verbose)select * from t3 where a = 1::int8;
+               QUERY PLAN               
+----------------------------------------
+ Bitmap Heap Scan on public.t3
+   Output: a
+   Recheck Cond: (t3.a = 1::bigint)
+   ->  Bitmap Index Scan on idx3
+         Index Cond: (t3.a = 1::bigint)
+(5 rows)
+
+create table t4(a uint8);
+insert into t4 select generate_series(1, 255);
+insert into t4 select generate_series(1, 255);
+insert into t4 select generate_series(1, 255);
+insert into t4 select generate_series(1, 255);
+insert into t4 select generate_series(1, 255);
+insert into t4 select generate_series(1, 255);
+insert into t4 select generate_series(1, 255);
+insert into t4 select generate_series(1, 255);
+insert into t4 select generate_series(1, 255);
+insert into t4 select generate_series(1, 255);
+create index idx4 on t4(a);
+analyze t4;
+explain(costs off, verbose)select * from t4 where a = 1::uint1;
+               QUERY PLAN                
+-----------------------------------------
+ Bitmap Heap Scan on public.t4
+   Output: a
+   Recheck Cond: (t4.a = '1'::uint8)
+   ->  Bitmap Index Scan on idx4
+         Index Cond: (t4.a = '1'::uint8)
+(5 rows)
+
+explain(costs off, verbose)select * from t4 where a = 1::uint2;
+               QUERY PLAN                
+-----------------------------------------
+ Bitmap Heap Scan on public.t4
+   Output: a
+   Recheck Cond: (t4.a = '1'::uint8)
+   ->  Bitmap Index Scan on idx4
+         Index Cond: (t4.a = '1'::uint8)
+(5 rows)
+
+explain(costs off, verbose)select * from t4 where a = 1::uint4;
+               QUERY PLAN                
+-----------------------------------------
+ Bitmap Heap Scan on public.t4
+   Output: a
+   Recheck Cond: (t4.a = '1'::uint8)
+   ->  Bitmap Index Scan on idx4
+         Index Cond: (t4.a = '1'::uint8)
+(5 rows)
+
+explain(costs off, verbose)select * from t4 where a = 1::uint8;
+               QUERY PLAN                
+-----------------------------------------
+ Bitmap Heap Scan on public.t4
+   Output: a
+   Recheck Cond: (t4.a = '1'::uint8)
+   ->  Bitmap Index Scan on idx4
+         Index Cond: (t4.a = '1'::uint8)
+(5 rows)
+
+explain(costs off, verbose)select * from t4 where a = 1::int1;
+               QUERY PLAN               
+----------------------------------------
+ Bitmap Heap Scan on public.t4
+   Output: a
+   Recheck Cond: (t4.a = 1::bigint)
+   ->  Bitmap Index Scan on idx4
+         Index Cond: (t4.a = 1::bigint)
+(5 rows)
+
+explain(costs off, verbose)select * from t4 where a = 1::int2;
+               QUERY PLAN               
+----------------------------------------
+ Bitmap Heap Scan on public.t4
+   Output: a
+   Recheck Cond: (t4.a = 1::bigint)
+   ->  Bitmap Index Scan on idx4
+         Index Cond: (t4.a = 1::bigint)
+(5 rows)
+
+explain(costs off, verbose)select * from t4 where a = 1::int4;
+               QUERY PLAN               
+----------------------------------------
+ Bitmap Heap Scan on public.t4
+   Output: a
+   Recheck Cond: (t4.a = 1::bigint)
+   ->  Bitmap Index Scan on idx4
+         Index Cond: (t4.a = 1::bigint)
+(5 rows)
+
+explain(costs off, verbose)select * from t4 where a = 1::int8;
+               QUERY PLAN               
+----------------------------------------
+ Bitmap Heap Scan on public.t4
+   Output: a
+   Recheck Cond: (t4.a = 1::bigint)
+   ->  Bitmap Index Scan on idx4
+         Index Cond: (t4.a = 1::bigint)
+(5 rows)
+
+explain(costs off, verbose)select * from t4 where a > 1::uint1 and a < 3::uint1;
+                         QUERY PLAN                          
+-------------------------------------------------------------
+ [Bypass]
+ Index Only Scan using idx4 on public.t4
+   Output: a
+   Index Cond: ((t4.a > '1'::uint8) AND (t4.a < '3'::uint8))
+(4 rows)
+
+explain(costs off, verbose)select * from t4 where a > 1::uint2 and a < 3::uint2;
+                         QUERY PLAN                          
+-------------------------------------------------------------
+ [Bypass]
+ Index Only Scan using idx4 on public.t4
+   Output: a
+   Index Cond: ((t4.a > '1'::uint8) AND (t4.a < '3'::uint8))
+(4 rows)
+
+explain(costs off, verbose)select * from t4 where a > 1::uint4 and a < 3::uint4;
+                         QUERY PLAN                          
+-------------------------------------------------------------
+ [Bypass]
+ Index Only Scan using idx4 on public.t4
+   Output: a
+   Index Cond: ((t4.a > '1'::uint8) AND (t4.a < '3'::uint8))
+(4 rows)
+
+explain(costs off, verbose)select * from t4 where a > 1::uint8 and a < 3::uint8;
+                         QUERY PLAN                          
+-------------------------------------------------------------
+ [Bypass]
+ Index Only Scan using idx4 on public.t4
+   Output: a
+   Index Cond: ((t4.a > '1'::uint8) AND (t4.a < '3'::uint8))
+(4 rows)
+
+explain(costs off, verbose)select * from t4 where a > 1::int1 and a < 3::int1;
+                           QUERY PLAN                            
+-----------------------------------------------------------------
+ Bitmap Heap Scan on public.t4
+   Output: a
+   Recheck Cond: ((t4.a > 1::bigint) AND (t4.a < 3::bigint))
+   ->  Bitmap Index Scan on idx4
+         Index Cond: ((t4.a > 1::bigint) AND (t4.a < 3::bigint))
+(5 rows)
+
+explain(costs off, verbose)select * from t4 where a > 1::int2 and a < 3::int2;
+                           QUERY PLAN                            
+-----------------------------------------------------------------
+ Bitmap Heap Scan on public.t4
+   Output: a
+   Recheck Cond: ((t4.a > 1::bigint) AND (t4.a < 3::bigint))
+   ->  Bitmap Index Scan on idx4
+         Index Cond: ((t4.a > 1::bigint) AND (t4.a < 3::bigint))
+(5 rows)
+
+explain(costs off, verbose)select * from t4 where a > 1::int4 and a < 3::int4;
+                           QUERY PLAN                            
+-----------------------------------------------------------------
+ Bitmap Heap Scan on public.t4
+   Output: a
+   Recheck Cond: ((t4.a > 1::bigint) AND (t4.a < 3::bigint))
+   ->  Bitmap Index Scan on idx4
+         Index Cond: ((t4.a > 1::bigint) AND (t4.a < 3::bigint))
+(5 rows)
+
+explain(costs off, verbose)select * from t4 where a > 1::int8 and a < 3::int8;
+                           QUERY PLAN                            
+-----------------------------------------------------------------
+ Bitmap Heap Scan on public.t4
+   Output: a
+   Recheck Cond: ((t4.a > 1::bigint) AND (t4.a < 3::bigint))
+   ->  Bitmap Index Scan on idx4
+         Index Cond: ((t4.a > 1::bigint) AND (t4.a < 3::bigint))
+(5 rows)
+
+explain(costs off, verbose)select * from t4 where a >= 1::uint1 and a <= 3::uint1;
+                             QUERY PLAN                              
+---------------------------------------------------------------------
+ Bitmap Heap Scan on public.t4
+   Output: a
+   Recheck Cond: ((t4.a >= '1'::uint8) AND (t4.a <= '3'::uint8))
+   ->  Bitmap Index Scan on idx4
+         Index Cond: ((t4.a >= '1'::uint8) AND (t4.a <= '3'::uint8))
+(5 rows)
+
+explain(costs off, verbose)select * from t4 where a >= 1::uint2 and a <= 3::uint2;
+                             QUERY PLAN                              
+---------------------------------------------------------------------
+ Bitmap Heap Scan on public.t4
+   Output: a
+   Recheck Cond: ((t4.a >= '1'::uint8) AND (t4.a <= '3'::uint8))
+   ->  Bitmap Index Scan on idx4
+         Index Cond: ((t4.a >= '1'::uint8) AND (t4.a <= '3'::uint8))
+(5 rows)
+
+explain(costs off, verbose)select * from t4 where a >= 1::uint4 and a <= 3::uint4;
+                             QUERY PLAN                              
+---------------------------------------------------------------------
+ Bitmap Heap Scan on public.t4
+   Output: a
+   Recheck Cond: ((t4.a >= '1'::uint8) AND (t4.a <= '3'::uint8))
+   ->  Bitmap Index Scan on idx4
+         Index Cond: ((t4.a >= '1'::uint8) AND (t4.a <= '3'::uint8))
+(5 rows)
+
+explain(costs off, verbose)select * from t4 where a >= 1::uint8 and a <= 3::uint8;
+                             QUERY PLAN                              
+---------------------------------------------------------------------
+ Bitmap Heap Scan on public.t4
+   Output: a
+   Recheck Cond: ((t4.a >= '1'::uint8) AND (t4.a <= '3'::uint8))
+   ->  Bitmap Index Scan on idx4
+         Index Cond: ((t4.a >= '1'::uint8) AND (t4.a <= '3'::uint8))
+(5 rows)
+
+explain(costs off, verbose)select * from t4 where a >= 1::int1 and a <= 3::int1;
+                            QUERY PLAN                             
+-------------------------------------------------------------------
+ Bitmap Heap Scan on public.t4
+   Output: a
+   Recheck Cond: ((t4.a >= 1::bigint) AND (t4.a <= 3::bigint))
+   ->  Bitmap Index Scan on idx4
+         Index Cond: ((t4.a >= 1::bigint) AND (t4.a <= 3::bigint))
+(5 rows)
+
+explain(costs off, verbose)select * from t4 where a >= 1::int2 and a <= 3::int2;
+                            QUERY PLAN                             
+-------------------------------------------------------------------
+ Bitmap Heap Scan on public.t4
+   Output: a
+   Recheck Cond: ((t4.a >= 1::bigint) AND (t4.a <= 3::bigint))
+   ->  Bitmap Index Scan on idx4
+         Index Cond: ((t4.a >= 1::bigint) AND (t4.a <= 3::bigint))
+(5 rows)
+
+explain(costs off, verbose)select * from t4 where a >= 1::int4 and a <= 3::int4;
+                            QUERY PLAN                             
+-------------------------------------------------------------------
+ Bitmap Heap Scan on public.t4
+   Output: a
+   Recheck Cond: ((t4.a >= 1::bigint) AND (t4.a <= 3::bigint))
+   ->  Bitmap Index Scan on idx4
+         Index Cond: ((t4.a >= 1::bigint) AND (t4.a <= 3::bigint))
+(5 rows)
+
+explain(costs off, verbose)select * from t4 where a >= 1::int8 and a <= 3::int8;
+                            QUERY PLAN                             
+-------------------------------------------------------------------
+ Bitmap Heap Scan on public.t4
+   Output: a
+   Recheck Cond: ((t4.a >= 1::bigint) AND (t4.a <= 3::bigint))
+   ->  Bitmap Index Scan on idx4
+         Index Cond: ((t4.a >= 1::bigint) AND (t4.a <= 3::bigint))
+(5 rows)
+
+drop index idx4;
+create index idx4 on t4 using hash (a);
+analyze t4;
+explain(costs off, verbose)select * from t4 where a = 1::uint1;
+               QUERY PLAN                
+-----------------------------------------
+ Bitmap Heap Scan on public.t4
+   Output: a
+   Recheck Cond: (t4.a = '1'::uint8)
+   ->  Bitmap Index Scan on idx4
+         Index Cond: (t4.a = '1'::uint8)
+(5 rows)
+
+explain(costs off, verbose)select * from t4 where a = 1::uint2;
+               QUERY PLAN                
+-----------------------------------------
+ Bitmap Heap Scan on public.t4
+   Output: a
+   Recheck Cond: (t4.a = '1'::uint8)
+   ->  Bitmap Index Scan on idx4
+         Index Cond: (t4.a = '1'::uint8)
+(5 rows)
+
+explain(costs off, verbose)select * from t4 where a = 1::uint4;
+               QUERY PLAN                
+-----------------------------------------
+ Bitmap Heap Scan on public.t4
+   Output: a
+   Recheck Cond: (t4.a = '1'::uint8)
+   ->  Bitmap Index Scan on idx4
+         Index Cond: (t4.a = '1'::uint8)
+(5 rows)
+
+explain(costs off, verbose)select * from t4 where a = 1::uint8;
+               QUERY PLAN                
+-----------------------------------------
+ Bitmap Heap Scan on public.t4
+   Output: a
+   Recheck Cond: (t4.a = '1'::uint8)
+   ->  Bitmap Index Scan on idx4
+         Index Cond: (t4.a = '1'::uint8)
+(5 rows)
+
+explain(costs off, verbose)select * from t4 where a = 1::int1;
+               QUERY PLAN               
+----------------------------------------
+ Bitmap Heap Scan on public.t4
+   Output: a
+   Recheck Cond: (t4.a = 1::bigint)
+   ->  Bitmap Index Scan on idx4
+         Index Cond: (t4.a = 1::bigint)
+(5 rows)
+
+explain(costs off, verbose)select * from t4 where a = 1::int2;
+               QUERY PLAN               
+----------------------------------------
+ Bitmap Heap Scan on public.t4
+   Output: a
+   Recheck Cond: (t4.a = 1::bigint)
+   ->  Bitmap Index Scan on idx4
+         Index Cond: (t4.a = 1::bigint)
+(5 rows)
+
+explain(costs off, verbose)select * from t4 where a = 1::int4;
+               QUERY PLAN               
+----------------------------------------
+ Bitmap Heap Scan on public.t4
+   Output: a
+   Recheck Cond: (t4.a = 1::bigint)
+   ->  Bitmap Index Scan on idx4
+         Index Cond: (t4.a = 1::bigint)
+(5 rows)
+
+explain(costs off, verbose)select * from t4 where a = 1::int8;
+               QUERY PLAN               
+----------------------------------------
+ Bitmap Heap Scan on public.t4
+   Output: a
+   Recheck Cond: (t4.a = 1::bigint)
+   ->  Bitmap Index Scan on idx4
+         Index Cond: (t4.a = 1::bigint)
+(5 rows)
+
+\c postgres
+drop database uint_index;

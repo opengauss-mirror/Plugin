@@ -1,0 +1,663 @@
+drop database if exists uint_ignore;
+NOTICE:  database "uint_ignore" does not exist, skipping
+create database uint_ignore dbcompatibility 'b';
+\c uint_ignore
+drop table if exists t1 ;
+NOTICE:  table "t1" does not exist, skipping
+create table t1(a uint8);
+insert ignore into t1 values(1::bool);
+insert ignore into t1 values(0::bool);
+insert ignore into t1 values((-1)::bool);
+insert ignore into t1 values(1.0::float4);
+insert ignore into t1 values(0.0::float4);
+insert ignore into t1 values((-1.0)::float4);
+WARNING:  bigint unsigned out of range
+CONTEXT:  referenced column: a
+insert ignore into t1 values(9223372036854775807.0::float4);
+insert ignore into t1 values(9223372036854775808.0::float4);
+insert ignore into t1 values(1.0::float8);
+insert ignore into t1 values(0.0::float8);
+insert ignore into t1 values((-1.0)::float8);
+WARNING:  bigint unsigned out of range
+CONTEXT:  referenced column: a
+insert ignore into t1 values(18446744073709550515.0::float8);
+insert ignore into t1 values(18446744073709550515.0::float8);
+insert ignore into t1 values(1::numeric);
+insert ignore into t1 values(0::numeric);
+insert ignore into t1 values((-1)::numeric);
+WARNING:  bigint unsigned out of range
+CONTEXT:  referenced column: a
+insert ignore into t1 values(18446744073709550515::numeric(30));
+insert ignore into t1 values(18446744073709550516::numeric(30));
+insert ignore into t1 values(1::int8);
+insert ignore into t1 values(0::int8);
+insert ignore into t1 values((-1)::int8);
+WARNING:  bigint unsigned out of range
+CONTEXT:  referenced column: a
+insert ignore into t1 values(9223372036854775807::int8);
+insert ignore into t1 values(9223372036854775808::int8);
+WARNING:  bigint out of range
+CONTEXT:  referenced column: a
+insert ignore into t1 values(1::int4);
+insert ignore into t1 values(0::int4);
+insert ignore into t1 values((-1)::int4);
+WARNING:  bigint unsigned out of range
+CONTEXT:  referenced column: a
+insert ignore into t1 values(2147483647::int4);
+insert ignore into t1 values(2147483648::int4);
+WARNING:  integer out of range
+CONTEXT:  referenced column: a
+insert ignore into t1 values(1::int2);
+insert ignore into t1 values(0::int2);
+insert ignore into t1 values((-1)::int2);
+WARNING:  bigint unsigned out of range
+CONTEXT:  referenced column: a
+insert ignore into t1 values(32767::int2);
+insert ignore into t1 values(32768::int2);
+WARNING:  smallint out of range
+CONTEXT:  referenced column: a
+insert ignore into t1 values(1::int1);
+insert ignore into t1 values(0::int1);
+insert ignore into t1 values(255::int1);
+insert ignore into t1 values(1::uint4);
+insert ignore into t1 values(0::uint4);
+insert ignore into t1 values((-1)::uint4);
+insert ignore into t1 values(4294967295::uint4);
+insert ignore into t1 values(4294967296::uint4);
+WARNING:  unsigned int out of range
+CONTEXT:  referenced column: a
+insert ignore into t1 values(1::uint2);
+insert ignore into t1 values(0::uint2);
+insert ignore into t1 values((-1)::uint2);
+insert ignore into t1 values(65535::uint2);
+insert ignore into t1 values(65536::uint2);
+WARNING:  smallint unsigned out of range
+CONTEXT:  referenced column: a
+insert ignore into t1 values(1::uint1);
+insert ignore into t1 values(0::uint1);
+insert ignore into t1 values((-1)::uint1);
+insert ignore into t1 values(255::uint1);
+insert ignore into t1 values(256::uint1);
+WARNING:  tinyint unsigned out of range
+CONTEXT:  referenced column: a
+select * from t1;
+          a           
+----------------------
+ 1
+ 0
+ 1
+ 1
+ 0
+ 0
+ 9223372036854775808
+ 9223372036854775808
+ 1
+ 0
+ 0
+ 18446744073709549568
+ 18446744073709549568
+ 1
+ 0
+ 0
+ 18446744073709550515
+ 18446744073709550516
+ 1
+ 0
+ 0
+ 9223372036854775807
+ 9223372036854775807
+ 1
+ 0
+ 0
+ 2147483647
+ 2147483647
+ 1
+ 0
+ 0
+ 32767
+ 32767
+ 1
+ 0
+ 255
+ 1
+ 0
+ 4294967295
+ 4294967295
+ 65535
+ 1
+ 0
+ 65535
+ 65535
+ 65535
+ 1
+ 0
+ 255
+ 255
+ 255
+(51 rows)
+
+drop table if exists t1 ;
+create table t1(a uint4);
+insert ignore into t1 values(1::bool);
+insert ignore into t1 values(0::bool);
+insert ignore into t1 values((-1)::bool);
+insert ignore into t1 values(1.0::float4);
+insert ignore into t1 values(0.0::float4);
+insert ignore into t1 values((-1.0)::float4);
+WARNING:  integer unsigned out of range
+CONTEXT:  referenced column: a
+insert ignore into t1 values(4294967295::float4);
+WARNING:  integer unsigned out of range
+CONTEXT:  referenced column: a
+insert ignore into t1 values(4294967296::float4);
+WARNING:  integer unsigned out of range
+CONTEXT:  referenced column: a
+insert ignore into t1 values(1.0::float8);
+insert ignore into t1 values(0.0::float8);
+insert ignore into t1 values((-1.0)::float8);
+WARNING:  integer unsigned out of range
+CONTEXT:  referenced column: a
+insert ignore into t1 values(4294967295::float8);
+insert ignore into t1 values(4294967296::float8);
+WARNING:  integer unsigned out of range
+CONTEXT:  referenced column: a
+insert ignore into t1 values(1::numeric);
+insert ignore into t1 values(0::numeric);
+insert ignore into t1 values((-1)::numeric);
+WARNING:  unsigned int out of range
+CONTEXT:  referenced column: a
+insert ignore into t1 values(4294967295::numeric);
+insert ignore into t1 values(4294967296::numeric);
+WARNING:  unsigned int out of range
+CONTEXT:  referenced column: a
+insert ignore into t1 values(1::int8);
+insert ignore into t1 values(0::int8);
+insert ignore into t1 values((-1)::int8);
+WARNING:  int unsigned out of range
+CONTEXT:  referenced column: a
+insert ignore into t1 values(9223372036854775807::int8);
+WARNING:  int unsigned out of range
+CONTEXT:  referenced column: a
+insert ignore into t1 values(9223372036854775808::int8);
+WARNING:  bigint out of range
+CONTEXT:  referenced column: a
+WARNING:  int unsigned out of range
+CONTEXT:  referenced column: a
+insert ignore into t1 values(4294967295::int8);
+insert ignore into t1 values(4294967296::int8);
+WARNING:  int unsigned out of range
+CONTEXT:  referenced column: a
+insert ignore into t1 values(1::int4);
+insert ignore into t1 values(0::int4);
+insert ignore into t1 values((-1)::int4);
+WARNING:  int unsigned out of range
+CONTEXT:  referenced column: a
+insert ignore into t1 values(2147483647::int4);
+insert ignore into t1 values(2147483648::int4);
+WARNING:  integer out of range
+CONTEXT:  referenced column: a
+insert ignore into t1 values(1::int2);
+insert ignore into t1 values(0::int2);
+insert ignore into t1 values((-1)::int2);
+WARNING:  int unsigned out of range
+CONTEXT:  referenced column: a
+insert ignore into t1 values(32767::int2);
+insert ignore into t1 values(32768::int2);
+WARNING:  smallint out of range
+CONTEXT:  referenced column: a
+insert ignore into t1 values(1::int1);
+insert ignore into t1 values(0::int1);
+insert ignore into t1 values(255::int1);
+insert ignore into t1 values(1::uint8);
+insert ignore into t1 values(0::uint8);
+insert ignore into t1 values((-1)::uint8);
+WARNING:  int unsigned out of range
+CONTEXT:  referenced column: a
+insert ignore into t1 values(4294967295::uint8);
+insert ignore into t1 values(4294967296::uint8);
+WARNING:  int unsigned out of range
+CONTEXT:  referenced column: a
+insert ignore into t1 values(1::uint2);
+insert ignore into t1 values(0::uint2);
+insert ignore into t1 values((-1)::uint2);
+insert ignore into t1 values(65535::uint2);
+insert ignore into t1 values(65536::uint2);
+WARNING:  smallint unsigned out of range
+CONTEXT:  referenced column: a
+insert ignore into t1 values(1::uint1);
+insert ignore into t1 values(0::uint1);
+insert ignore into t1 values((-1)::uint1);
+insert ignore into t1 values(255::uint1);
+insert ignore into t1 values(256::uint1);
+WARNING:  tinyint unsigned out of range
+CONTEXT:  referenced column: a
+select * from t1;
+     a      
+------------
+ 1
+ 0
+ 1
+ 1
+ 0
+ 0
+ 4294967295
+ 4294967295
+ 1
+ 0
+ 0
+ 4294967295
+ 4294967295
+ 1
+ 0
+ 0
+ 4294967295
+ 4294967295
+ 1
+ 0
+ 0
+ 4294967295
+ 4294967295
+ 4294967295
+ 4294967295
+ 1
+ 0
+ 0
+ 2147483647
+ 2147483647
+ 1
+ 0
+ 0
+ 32767
+ 32767
+ 1
+ 0
+ 255
+ 1
+ 0
+ 4294967295
+ 4294967295
+ 4294967295
+ 1
+ 0
+ 65535
+ 65535
+ 65535
+ 1
+ 0
+ 255
+ 255
+ 255
+(53 rows)
+
+drop table if exists t1 ;
+create table t1(a uint2);
+insert ignore into t1 values(1::bool);
+insert ignore into t1 values(0::bool);
+insert ignore into t1 values((-1)::bool);
+insert ignore into t1 values(1.0::float4);
+insert ignore into t1 values(0.0::float4);
+insert ignore into t1 values((-1.0)::float4);
+WARNING:  smallint unsigned out of range
+CONTEXT:  referenced column: a
+insert ignore into t1 values(65535::float4);
+insert ignore into t1 values(65536::float4);
+WARNING:  smallint unsigned out of range
+CONTEXT:  referenced column: a
+insert ignore into t1 values(1.0::float8);
+insert ignore into t1 values(0.0::float8);
+insert ignore into t1 values((-1.0)::float8);
+WARNING:  smallint unsigned out of range
+CONTEXT:  referenced column: a
+insert ignore into t1 values(65535::float8);
+insert ignore into t1 values(65536::float8);
+WARNING:  smallint unsigned out of range
+CONTEXT:  referenced column: a
+insert ignore into t1 values(1::numeric);
+insert ignore into t1 values(0::numeric);
+insert ignore into t1 values((-1)::numeric);
+WARNING:  smallint unsigned out of range
+CONTEXT:  referenced column: a
+insert ignore into t1 values(65535::numeric);
+insert ignore into t1 values(65536::numeric);
+WARNING:  smallint unsigned out of range
+CONTEXT:  referenced column: a
+insert ignore into t1 values(1::int8);
+insert ignore into t1 values(0::int8);
+insert ignore into t1 values((-1)::int8);
+WARNING:  smallint unsigned out of range
+CONTEXT:  referenced column: a
+insert ignore into t1 values(9223372036854775807::int8);
+WARNING:  smallint unsigned out of range
+CONTEXT:  referenced column: a
+insert ignore into t1 values(9223372036854775808::int8);
+WARNING:  bigint out of range
+CONTEXT:  referenced column: a
+WARNING:  smallint unsigned out of range
+CONTEXT:  referenced column: a
+insert ignore into t1 values(65535::int8);
+insert ignore into t1 values(65536::int8);
+WARNING:  smallint unsigned out of range
+CONTEXT:  referenced column: a
+insert ignore into t1 values(1::int4);
+insert ignore into t1 values(0::int4);
+insert ignore into t1 values((-1)::int4);
+WARNING:  smallint unsigned out of range
+CONTEXT:  referenced column: a
+insert ignore into t1 values(2147483647::int4);
+WARNING:  smallint unsigned out of range
+CONTEXT:  referenced column: a
+insert ignore into t1 values(2147483648::int4);
+WARNING:  integer out of range
+CONTEXT:  referenced column: a
+WARNING:  smallint unsigned out of range
+CONTEXT:  referenced column: a
+insert ignore into t1 values(65535::int4);
+insert ignore into t1 values(65536::int4);
+WARNING:  smallint unsigned out of range
+CONTEXT:  referenced column: a
+insert ignore into t1 values(1::int2);
+insert ignore into t1 values(0::int2);
+insert ignore into t1 values((-1)::int2);
+WARNING:  smallint unsigned out of range
+CONTEXT:  referenced column: a
+insert ignore into t1 values(32767::int2);
+insert ignore into t1 values(32768::int2);
+WARNING:  smallint out of range
+CONTEXT:  referenced column: a
+insert ignore into t1 values(1::int1);
+insert ignore into t1 values(0::int1);
+insert ignore into t1 values(255::int1);
+insert ignore into t1 values(1::uint8);
+insert ignore into t1 values(0::uint8);
+insert ignore into t1 values((-1)::uint8);
+WARNING:  smallint unsigned out of range
+CONTEXT:  referenced column: a
+insert ignore into t1 values(4294967295::uint8);
+WARNING:  smallint unsigned out of range
+CONTEXT:  referenced column: a
+insert ignore into t1 values(4294967296::uint8);
+WARNING:  smallint unsigned out of range
+CONTEXT:  referenced column: a
+insert ignore into t1 values(65535::uint8);
+insert ignore into t1 values(65536::uint8);
+WARNING:  smallint unsigned out of range
+CONTEXT:  referenced column: a
+insert ignore into t1 values(1::uint4);
+insert ignore into t1 values(0::uint4);
+insert ignore into t1 values((-1)::uint4);
+WARNING:  smallint unsigned out of range
+CONTEXT:  referenced column: a
+insert ignore into t1 values(4294967295::uint4);
+WARNING:  smallint unsigned out of range
+CONTEXT:  referenced column: a
+insert ignore into t1 values(4294967296::uint4);
+WARNING:  unsigned int out of range
+CONTEXT:  referenced column: a
+insert ignore into t1 values(65535::uint4);
+insert ignore into t1 values(65536::uint4);
+WARNING:  smallint unsigned out of range
+CONTEXT:  referenced column: a
+insert ignore into t1 values(1::uint1);
+insert ignore into t1 values(0::uint1);
+insert ignore into t1 values((-1)::uint1);
+insert ignore into t1 values(255::uint1);
+insert ignore into t1 values(256::uint1);
+WARNING:  tinyint unsigned out of range
+CONTEXT:  referenced column: a
+select * from t1;
+   a   
+-------
+ 1
+ 0
+ 1
+ 1
+ 0
+ 0
+ 65535
+ 65535
+ 1
+ 0
+ 0
+ 65535
+ 65535
+ 1
+ 0
+ 0
+ 65535
+ 65535
+ 1
+ 0
+ 0
+ 65535
+ 65535
+ 65535
+ 65535
+ 1
+ 0
+ 0
+ 65535
+ 65535
+ 65535
+ 65535
+ 1
+ 0
+ 0
+ 32767
+ 32767
+ 1
+ 0
+ 255
+ 1
+ 0
+ 65535
+ 65535
+ 65535
+ 65535
+ 65535
+ 1
+ 0
+ 65535
+ 65535
+ 65535
+ 65535
+ 65535
+ 1
+ 0
+ 255
+ 255
+ 255
+(59 rows)
+
+drop table if exists t1 ;
+create table t1(a uint1);
+insert ignore into t1 values(1::int8);
+insert ignore into t1 values(0::int8);
+insert ignore into t1 values((-1)::int8);
+WARNING:  tinyint unsigned out of range
+CONTEXT:  referenced column: a
+insert ignore into t1 values(9223372036854775807::int8);
+WARNING:  tinyint unsigned out of range
+CONTEXT:  referenced column: a
+insert ignore into t1 values(9223372036854775808::int8);
+WARNING:  bigint out of range
+CONTEXT:  referenced column: a
+WARNING:  tinyint unsigned out of range
+CONTEXT:  referenced column: a
+insert ignore into t1 values(255::int8);
+insert ignore into t1 values(256::int8);
+WARNING:  tinyint unsigned out of range
+CONTEXT:  referenced column: a
+insert ignore into t1 values(1::bool);
+insert ignore into t1 values(0::bool);
+insert ignore into t1 values((-1)::bool);
+insert ignore into t1 values(1.0::float4);
+insert ignore into t1 values(0.0::float4);
+insert ignore into t1 values((-1.0)::float4);
+WARNING:  tinyint unsigned out of range
+CONTEXT:  referenced column: a
+insert ignore into t1 values(255::float4);
+insert ignore into t1 values(256::float4);
+WARNING:  tinyint unsigned out of range
+CONTEXT:  referenced column: a
+insert ignore into t1 values(1.0::float8);
+insert ignore into t1 values(0.0::float8);
+insert ignore into t1 values((-1.0)::float8);
+WARNING:  tinyint unsigned out of range
+CONTEXT:  referenced column: a
+insert ignore into t1 values(255::float8);
+insert ignore into t1 values(256::float8);
+WARNING:  tinyint unsigned out of range
+CONTEXT:  referenced column: a
+insert ignore into t1 values(1::numeric);
+insert ignore into t1 values(0::numeric);
+insert ignore into t1 values((-1)::numeric);
+WARNING:  tinyint unsigned out of range
+CONTEXT:  referenced column: a
+insert ignore into t1 values(255::numeric);
+insert ignore into t1 values(256::numeric);
+WARNING:  tinyint unsigned out of range
+CONTEXT:  referenced column: a
+insert ignore into t1 values(1::int4);
+insert ignore into t1 values(0::int4);
+insert ignore into t1 values((-1)::int4);
+WARNING:  tinyint unsigned out of range
+CONTEXT:  referenced column: a
+insert ignore into t1 values(2147483647::int4);
+WARNING:  tinyint unsigned out of range
+CONTEXT:  referenced column: a
+insert ignore into t1 values(2147483648::int4);
+WARNING:  integer out of range
+CONTEXT:  referenced column: a
+WARNING:  tinyint unsigned out of range
+CONTEXT:  referenced column: a
+insert ignore into t1 values(255::int4);
+insert ignore into t1 values(256::int4);
+WARNING:  tinyint unsigned out of range
+CONTEXT:  referenced column: a
+insert ignore into t1 values(1::int2);
+insert ignore into t1 values(0::int2);
+insert ignore into t1 values((-1)::int2);
+WARNING:  tinyint unsigned out of range
+CONTEXT:  referenced column: a
+insert ignore into t1 values(32767::int2);
+WARNING:  tinyint unsigned out of range
+CONTEXT:  referenced column: a
+insert ignore into t1 values(32768::int2);
+WARNING:  smallint out of range
+CONTEXT:  referenced column: a
+WARNING:  tinyint unsigned out of range
+CONTEXT:  referenced column: a
+insert ignore into t1 values(255::int4);
+insert ignore into t1 values(256::int4);
+WARNING:  tinyint unsigned out of range
+CONTEXT:  referenced column: a
+insert ignore into t1 values(1::int1);
+insert ignore into t1 values(0::int1);
+insert ignore into t1 values(255::int1);
+insert ignore into t1 values(1::uint8);
+insert ignore into t1 values(0::uint8);
+insert ignore into t1 values((-1)::uint8);
+WARNING:  tinyint unsigned out of range
+CONTEXT:  referenced column: a
+insert ignore into t1 values(4294967295::uint8);
+WARNING:  tinyint unsigned out of range
+CONTEXT:  referenced column: a
+insert ignore into t1 values(4294967296::uint8);
+WARNING:  tinyint unsigned out of range
+CONTEXT:  referenced column: a
+insert ignore into t1 values(255::uint8);
+insert ignore into t1 values(256::uint8);
+WARNING:  tinyint unsigned out of range
+CONTEXT:  referenced column: a
+insert ignore into t1 values(1::uint4);
+insert ignore into t1 values(0::uint4);
+insert ignore into t1 values((-1)::uint4);
+WARNING:  tinyint unsigned out of range
+CONTEXT:  referenced column: a
+insert ignore into t1 values(4294967295::uint4);
+WARNING:  tinyint unsigned out of range
+CONTEXT:  referenced column: a
+insert ignore into t1 values(4294967296::uint4);
+WARNING:  unsigned int out of range
+CONTEXT:  referenced column: a
+WARNING:  tinyint unsigned out of range
+CONTEXT:  referenced column: a
+insert ignore into t1 values(255::uint4);
+insert ignore into t1 values(256::uint4);
+WARNING:  tinyint unsigned out of range
+CONTEXT:  referenced column: a
+insert ignore into t1 values(1::uint1);
+insert ignore into t1 values(0::uint1);
+insert ignore into t1 values((-1)::uint1);
+insert ignore into t1 values(255::uint1);
+insert ignore into t1 values(256::uint1);
+WARNING:  tinyint unsigned out of range
+CONTEXT:  referenced column: a
+select * from t1;
+  a  
+-----
+ 1
+ 0
+ 0
+ 255
+ 255
+ 255
+ 255
+ 1
+ 0
+ 1
+ 1
+ 0
+ 0
+ 255
+ 255
+ 1
+ 0
+ 0
+ 255
+ 255
+ 1
+ 0
+ 0
+ 255
+ 255
+ 1
+ 0
+ 0
+ 255
+ 255
+ 255
+ 255
+ 1
+ 0
+ 0
+ 255
+ 255
+ 255
+ 255
+ 1
+ 0
+ 255
+ 1
+ 0
+ 255
+ 255
+ 255
+ 255
+ 255
+ 1
+ 0
+ 255
+ 255
+ 255
+ 255
+ 255
+ 1
+ 0
+ 255
+ 255
+ 255
+(61 rows)
+
+\c postgres
+drop database uint_ignore;

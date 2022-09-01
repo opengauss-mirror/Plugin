@@ -1,0 +1,1626 @@
+drop database if exists uint_operator;
+NOTICE:  database "uint_operator" does not exist, skipping
+create database uint_operator dbcompatibility 'b';
+\c uint_operator
+-- >
+select 1::uint1 > 1::uint1;
+ ?column? 
+----------
+ f
+(1 row)
+
+select 1::uint1 > 2::uint1;
+ ?column? 
+----------
+ f
+(1 row)
+
+select 2::uint1 > 1::uint1;
+ ?column? 
+----------
+ t
+(1 row)
+
+select 1::uint2 > 1::uint2;
+ ?column? 
+----------
+ f
+(1 row)
+
+select 1::uint2 > 2::uint2;
+ ?column? 
+----------
+ f
+(1 row)
+
+select 2::uint2 > 1::uint2;
+ ?column? 
+----------
+ t
+(1 row)
+
+select 1::uint4 > 1::uint4;
+ ?column? 
+----------
+ f
+(1 row)
+
+select 1::uint4 > 2::uint4;
+ ?column? 
+----------
+ f
+(1 row)
+
+select 2::uint4 > 1::uint4;
+ ?column? 
+----------
+ t
+(1 row)
+
+select 1::uint8 > 1::uint8;
+ ?column? 
+----------
+ f
+(1 row)
+
+select 1::uint8 > 2::uint8;
+ ?column? 
+----------
+ f
+(1 row)
+
+select 2::uint8 > 1::uint8;
+ ?column? 
+----------
+ t
+(1 row)
+
+select 1::int1 > 1::uint1;
+ ?column? 
+----------
+ f
+(1 row)
+
+select 1::int1 > 2::uint1;
+ ?column? 
+----------
+ f
+(1 row)
+
+select 2::int1 > 1::uint1;
+ ?column? 
+----------
+ t
+(1 row)
+
+select 1::int2 > 1::uint2;
+ ?column? 
+----------
+ f
+(1 row)
+
+select 1::int2 > 2::uint2;
+ ?column? 
+----------
+ f
+(1 row)
+
+select 2::int2 > 1::uint2;
+ ?column? 
+----------
+ t
+(1 row)
+
+select 1::int4 > 1::uint4;
+ ?column? 
+----------
+ f
+(1 row)
+
+select 1::int4 > 2::uint4;
+ ?column? 
+----------
+ f
+(1 row)
+
+select 2::int4 > 1::uint4;
+ ?column? 
+----------
+ t
+(1 row)
+
+select 1::int8 > 1::uint8;
+ ?column? 
+----------
+ f
+(1 row)
+
+select 1::int8 > 2::uint8;
+ ?column? 
+----------
+ f
+(1 row)
+
+select 2::int8 > 1::uint8;
+ ?column? 
+----------
+ t
+(1 row)
+
+select 1::uint1 > 1::int1;
+ ?column? 
+----------
+ f
+(1 row)
+
+select 1::uint1 > 2::int1;
+ ?column? 
+----------
+ f
+(1 row)
+
+select 2::uint1 > 1::int1;
+ ?column? 
+----------
+ t
+(1 row)
+
+select 1::uint2 > 1::int2;
+ ?column? 
+----------
+ f
+(1 row)
+
+select 1::uint2 > 2::int2;
+ ?column? 
+----------
+ f
+(1 row)
+
+select 2::uint2 > 1::int2;
+ ?column? 
+----------
+ t
+(1 row)
+
+select 1::uint4 > 1::int4;
+ ?column? 
+----------
+ f
+(1 row)
+
+select 1::uint4 > 2::int4;
+ ?column? 
+----------
+ f
+(1 row)
+
+select 2::uint4 > 1::int4;
+ ?column? 
+----------
+ t
+(1 row)
+
+select 1::uint8 > 1::int8;
+ ?column? 
+----------
+ f
+(1 row)
+
+select 1::uint8 > 2::int8;
+ ?column? 
+----------
+ f
+(1 row)
+
+select 2::uint8 > 1::int8;
+ ?column? 
+----------
+ t
+(1 row)
+
+-- <
+select 1::uint1 < 1::uint1;
+ ?column? 
+----------
+ f
+(1 row)
+
+select 1::uint1 < 2::uint1;
+ ?column? 
+----------
+ t
+(1 row)
+
+select 2::uint1 < 1::uint1;
+ ?column? 
+----------
+ f
+(1 row)
+
+select 1::uint2 < 1::uint2;
+ ?column? 
+----------
+ f
+(1 row)
+
+select 1::uint2 < 2::uint2;
+ ?column? 
+----------
+ t
+(1 row)
+
+select 2::uint2 < 1::uint2;
+ ?column? 
+----------
+ f
+(1 row)
+
+select 1::uint4 < 1::uint4;
+ ?column? 
+----------
+ f
+(1 row)
+
+select 1::uint4 < 2::uint4;
+ ?column? 
+----------
+ t
+(1 row)
+
+select 2::uint4 < 1::uint4;
+ ?column? 
+----------
+ f
+(1 row)
+
+select 1::uint8 < 1::uint8;
+ ?column? 
+----------
+ f
+(1 row)
+
+select 1::uint8 < 2::uint8;
+ ?column? 
+----------
+ t
+(1 row)
+
+select 2::uint8 < 1::uint8;
+ ?column? 
+----------
+ f
+(1 row)
+
+select 1::int1 < 1::uint1;
+ ?column? 
+----------
+ f
+(1 row)
+
+select 1::int1 < 2::uint1;
+ ?column? 
+----------
+ t
+(1 row)
+
+select 2::int1 < 1::uint1;
+ ?column? 
+----------
+ f
+(1 row)
+
+select 1::int2 < 1::uint2;
+ ?column? 
+----------
+ f
+(1 row)
+
+select 1::int2 < 2::uint2;
+ ?column? 
+----------
+ t
+(1 row)
+
+select 2::int2 < 1::uint2;
+ ?column? 
+----------
+ f
+(1 row)
+
+select 1::int4 < 1::uint4;
+ ?column? 
+----------
+ f
+(1 row)
+
+select 1::int4 < 2::uint4;
+ ?column? 
+----------
+ t
+(1 row)
+
+select 2::int4 < 1::uint4;
+ ?column? 
+----------
+ f
+(1 row)
+
+select 1::int8 < 1::uint8;
+ ?column? 
+----------
+ f
+(1 row)
+
+select 1::int8 < 2::uint8;
+ ?column? 
+----------
+ t
+(1 row)
+
+select 2::int8 < 1::uint8;
+ ?column? 
+----------
+ f
+(1 row)
+
+select 1::uint1 < 1::int1;
+ ?column? 
+----------
+ f
+(1 row)
+
+select 1::uint1 < 2::int1;
+ ?column? 
+----------
+ t
+(1 row)
+
+select 2::uint1 < 1::int1;
+ ?column? 
+----------
+ f
+(1 row)
+
+select 1::uint2 < 1::int2;
+ ?column? 
+----------
+ f
+(1 row)
+
+select 1::uint2 < 2::int2;
+ ?column? 
+----------
+ t
+(1 row)
+
+select 2::uint2 < 1::int2;
+ ?column? 
+----------
+ f
+(1 row)
+
+select 1::uint4 < 1::int4;
+ ?column? 
+----------
+ f
+(1 row)
+
+select 1::uint4 < 2::int4;
+ ?column? 
+----------
+ t
+(1 row)
+
+select 2::uint4 < 1::int4;
+ ?column? 
+----------
+ f
+(1 row)
+
+select 1::uint8 < 1::int8;
+ ?column? 
+----------
+ f
+(1 row)
+
+select 1::uint8 < 2::int8;
+ ?column? 
+----------
+ t
+(1 row)
+
+select 2::uint8 < 1::int8;
+ ?column? 
+----------
+ f
+(1 row)
+
+-- >=
+select 1::uint1 >= 1::uint1;
+ ?column? 
+----------
+ t
+(1 row)
+
+select 1::uint1 >= 2::uint1;
+ ?column? 
+----------
+ f
+(1 row)
+
+select 2::uint1 >= 1::uint1;
+ ?column? 
+----------
+ t
+(1 row)
+
+select 1::uint2 >= 1::uint2;
+ ?column? 
+----------
+ t
+(1 row)
+
+select 1::uint2 >= 2::uint2;
+ ?column? 
+----------
+ f
+(1 row)
+
+select 2::uint2 >= 1::uint2;
+ ?column? 
+----------
+ t
+(1 row)
+
+select 1::uint4 >= 1::uint4;
+ ?column? 
+----------
+ t
+(1 row)
+
+select 1::uint4 >= 2::uint4;
+ ?column? 
+----------
+ f
+(1 row)
+
+select 2::uint4 >= 1::uint4;
+ ?column? 
+----------
+ t
+(1 row)
+
+select 1::uint8 >= 1::uint8;
+ ?column? 
+----------
+ t
+(1 row)
+
+select 1::uint8 >= 2::uint8;
+ ?column? 
+----------
+ f
+(1 row)
+
+select 2::uint8 >= 1::uint8;
+ ?column? 
+----------
+ t
+(1 row)
+
+select 1::int1 >= 1::uint1;
+ ?column? 
+----------
+ t
+(1 row)
+
+select 1::int1 >= 2::uint1;
+ ?column? 
+----------
+ f
+(1 row)
+
+select 2::int1 >= 1::uint1;
+ ?column? 
+----------
+ t
+(1 row)
+
+select 1::int2 >= 1::uint2;
+ ?column? 
+----------
+ t
+(1 row)
+
+select 1::int2 >= 2::uint2;
+ ?column? 
+----------
+ f
+(1 row)
+
+select 2::int2 >= 1::uint2;
+ ?column? 
+----------
+ t
+(1 row)
+
+select 1::int4 >= 1::uint4;
+ ?column? 
+----------
+ t
+(1 row)
+
+select 1::int4 >= 2::uint4;
+ ?column? 
+----------
+ f
+(1 row)
+
+select 2::int4 >= 1::uint4;
+ ?column? 
+----------
+ t
+(1 row)
+
+select 1::int8 >= 1::uint8;
+ ?column? 
+----------
+ t
+(1 row)
+
+select 1::int8 >= 2::uint8;
+ ?column? 
+----------
+ f
+(1 row)
+
+select 2::int8 >= 1::uint8;
+ ?column? 
+----------
+ t
+(1 row)
+
+select 1::uint1 >= 1::int1;
+ ?column? 
+----------
+ t
+(1 row)
+
+select 1::uint1 >= 2::int1;
+ ?column? 
+----------
+ f
+(1 row)
+
+select 2::uint1 >= 1::int1;
+ ?column? 
+----------
+ t
+(1 row)
+
+select 1::uint2 >= 1::int2;
+ ?column? 
+----------
+ t
+(1 row)
+
+select 1::uint2 >= 2::int2;
+ ?column? 
+----------
+ f
+(1 row)
+
+select 2::uint2 >= 1::int2;
+ ?column? 
+----------
+ t
+(1 row)
+
+select 1::uint4 >= 1::int4;
+ ?column? 
+----------
+ t
+(1 row)
+
+select 1::uint4 >= 2::int4;
+ ?column? 
+----------
+ f
+(1 row)
+
+select 2::uint4 >= 1::int4;
+ ?column? 
+----------
+ t
+(1 row)
+
+select 1::uint8 >= 1::int8;
+ ?column? 
+----------
+ t
+(1 row)
+
+select 1::uint8 >= 2::int8;
+ ?column? 
+----------
+ f
+(1 row)
+
+select 2::uint8 >= 1::int8;
+ ?column? 
+----------
+ t
+(1 row)
+
+-- <=
+select 1::uint1 <= 1::uint1;
+ ?column? 
+----------
+ t
+(1 row)
+
+select 1::uint1 <= 2::uint1;
+ ?column? 
+----------
+ t
+(1 row)
+
+select 2::uint1 <= 1::uint1;
+ ?column? 
+----------
+ f
+(1 row)
+
+select 1::uint2 <= 1::uint2;
+ ?column? 
+----------
+ t
+(1 row)
+
+select 1::uint2 <= 2::uint2;
+ ?column? 
+----------
+ t
+(1 row)
+
+select 2::uint2 <= 1::uint2;
+ ?column? 
+----------
+ f
+(1 row)
+
+select 1::uint4 <= 1::uint4;
+ ?column? 
+----------
+ t
+(1 row)
+
+select 1::uint4 <= 2::uint4;
+ ?column? 
+----------
+ t
+(1 row)
+
+select 2::uint4 <= 1::uint4;
+ ?column? 
+----------
+ f
+(1 row)
+
+select 1::uint8 <= 1::uint8;
+ ?column? 
+----------
+ t
+(1 row)
+
+select 1::uint8 <= 2::uint8;
+ ?column? 
+----------
+ t
+(1 row)
+
+select 2::uint8 <= 1::uint8;
+ ?column? 
+----------
+ f
+(1 row)
+
+select 1::int1 <= 1::uint1;
+ ?column? 
+----------
+ t
+(1 row)
+
+select 1::int1 <= 2::uint1;
+ ?column? 
+----------
+ t
+(1 row)
+
+select 2::int1 <= 1::uint1;
+ ?column? 
+----------
+ f
+(1 row)
+
+select 1::int2 <= 1::uint2;
+ ?column? 
+----------
+ t
+(1 row)
+
+select 1::int2 <= 2::uint2;
+ ?column? 
+----------
+ t
+(1 row)
+
+select 2::int2 <= 1::uint2;
+ ?column? 
+----------
+ f
+(1 row)
+
+select 1::int4 <= 1::uint4;
+ ?column? 
+----------
+ t
+(1 row)
+
+select 1::int4 <= 2::uint4;
+ ?column? 
+----------
+ t
+(1 row)
+
+select 2::int4 <= 1::uint4;
+ ?column? 
+----------
+ f
+(1 row)
+
+select 1::int8 <= 1::uint8;
+ ?column? 
+----------
+ t
+(1 row)
+
+select 1::int8 <= 2::uint8;
+ ?column? 
+----------
+ t
+(1 row)
+
+select 2::int8 <= 1::uint8;
+ ?column? 
+----------
+ f
+(1 row)
+
+select 1::uint1 <= 1::int1;
+ ?column? 
+----------
+ t
+(1 row)
+
+select 1::uint1 <= 2::int1;
+ ?column? 
+----------
+ t
+(1 row)
+
+select 2::uint1 <= 1::int1;
+ ?column? 
+----------
+ f
+(1 row)
+
+select 1::uint2 <= 1::int2;
+ ?column? 
+----------
+ t
+(1 row)
+
+select 1::uint2 <= 2::int2;
+ ?column? 
+----------
+ t
+(1 row)
+
+select 2::uint2 <= 1::int2;
+ ?column? 
+----------
+ f
+(1 row)
+
+select 1::uint4 <= 1::int4;
+ ?column? 
+----------
+ t
+(1 row)
+
+select 1::uint4 <= 2::int4;
+ ?column? 
+----------
+ t
+(1 row)
+
+select 2::uint4 <= 1::int4;
+ ?column? 
+----------
+ f
+(1 row)
+
+select 1::uint8 <= 1::int8;
+ ?column? 
+----------
+ t
+(1 row)
+
+select 1::uint8 <= 2::int8;
+ ?column? 
+----------
+ t
+(1 row)
+
+select 2::uint8 <= 1::int8;
+ ?column? 
+----------
+ f
+(1 row)
+
+-- =
+select 1::uint1 = 1::uint1;
+ ?column? 
+----------
+ t
+(1 row)
+
+select 1::uint1 = 2::uint1;
+ ?column? 
+----------
+ f
+(1 row)
+
+select 2::uint1 = 1::uint1;
+ ?column? 
+----------
+ f
+(1 row)
+
+select 1::uint2 = 1::uint2;
+ ?column? 
+----------
+ t
+(1 row)
+
+select 1::uint2 = 2::uint2;
+ ?column? 
+----------
+ f
+(1 row)
+
+select 2::uint2 = 1::uint2;
+ ?column? 
+----------
+ f
+(1 row)
+
+select 1::uint4 = 1::uint4;
+ ?column? 
+----------
+ t
+(1 row)
+
+select 1::uint4 = 2::uint4;
+ ?column? 
+----------
+ f
+(1 row)
+
+select 2::uint4 = 1::uint4;
+ ?column? 
+----------
+ f
+(1 row)
+
+select 1::uint8 = 1::uint8;
+ ?column? 
+----------
+ t
+(1 row)
+
+select 1::uint8 = 2::uint8;
+ ?column? 
+----------
+ f
+(1 row)
+
+select 2::uint8 = 1::uint8;
+ ?column? 
+----------
+ f
+(1 row)
+
+select 1::int1 = 1::uint1;
+ ?column? 
+----------
+ t
+(1 row)
+
+select 1::int1 = 2::uint1;
+ ?column? 
+----------
+ f
+(1 row)
+
+select 2::int1 = 1::uint1;
+ ?column? 
+----------
+ f
+(1 row)
+
+select 1::int2 = 1::uint2;
+ ?column? 
+----------
+ t
+(1 row)
+
+select 1::int2 = 2::uint2;
+ ?column? 
+----------
+ f
+(1 row)
+
+select 2::int2 = 1::uint2;
+ ?column? 
+----------
+ f
+(1 row)
+
+select 1::int4 = 1::uint4;
+ ?column? 
+----------
+ t
+(1 row)
+
+select 1::int4 = 2::uint4;
+ ?column? 
+----------
+ f
+(1 row)
+
+select 2::int4 = 1::uint4;
+ ?column? 
+----------
+ f
+(1 row)
+
+select 1::int8 = 1::uint8;
+ ?column? 
+----------
+ t
+(1 row)
+
+select 1::int8 = 2::uint8;
+ ?column? 
+----------
+ f
+(1 row)
+
+select 2::int8 = 1::uint8;
+ ?column? 
+----------
+ f
+(1 row)
+
+select 1::uint1 = 1::int1;
+ ?column? 
+----------
+ t
+(1 row)
+
+select 1::uint1 = 2::int1;
+ ?column? 
+----------
+ f
+(1 row)
+
+select 2::uint1 = 1::int1;
+ ?column? 
+----------
+ f
+(1 row)
+
+select 1::uint2 = 1::int2;
+ ?column? 
+----------
+ t
+(1 row)
+
+select 1::uint2 = 2::int2;
+ ?column? 
+----------
+ f
+(1 row)
+
+select 2::uint2 = 1::int2;
+ ?column? 
+----------
+ f
+(1 row)
+
+select 1::uint4 = 1::int4;
+ ?column? 
+----------
+ t
+(1 row)
+
+select 1::uint4 = 2::int4;
+ ?column? 
+----------
+ f
+(1 row)
+
+select 2::uint4 = 1::int4;
+ ?column? 
+----------
+ f
+(1 row)
+
+select 1::uint8 = 1::int8;
+ ?column? 
+----------
+ t
+(1 row)
+
+select 1::uint8 = 2::int8;
+ ?column? 
+----------
+ f
+(1 row)
+
+select 2::uint8 = 1::int8;
+ ?column? 
+----------
+ f
+(1 row)
+
+-- <>
+select 1::uint1 <> 1::uint1;
+ ?column? 
+----------
+ f
+(1 row)
+
+select 1::uint1 <> 2::uint1;
+ ?column? 
+----------
+ t
+(1 row)
+
+select 2::uint1 <> 1::uint1;
+ ?column? 
+----------
+ t
+(1 row)
+
+select 1::uint2 <> 1::uint2;
+ ?column? 
+----------
+ f
+(1 row)
+
+select 1::uint2 <> 2::uint2;
+ ?column? 
+----------
+ t
+(1 row)
+
+select 2::uint2 <> 1::uint2;
+ ?column? 
+----------
+ t
+(1 row)
+
+select 1::uint4 <> 1::uint4;
+ ?column? 
+----------
+ f
+(1 row)
+
+select 1::uint4 <> 2::uint4;
+ ?column? 
+----------
+ t
+(1 row)
+
+select 2::uint4 <> 1::uint4;
+ ?column? 
+----------
+ t
+(1 row)
+
+select 1::uint8 <> 1::uint8;
+ ?column? 
+----------
+ f
+(1 row)
+
+select 1::uint8 <> 2::uint8;
+ ?column? 
+----------
+ t
+(1 row)
+
+select 2::uint8 <> 1::uint8;
+ ?column? 
+----------
+ t
+(1 row)
+
+select 1::int1 <> 1::uint1;
+ ?column? 
+----------
+ f
+(1 row)
+
+select 1::int1 <> 2::uint1;
+ ?column? 
+----------
+ t
+(1 row)
+
+select 2::int1 <> 1::uint1;
+ ?column? 
+----------
+ t
+(1 row)
+
+select 1::int2 <> 1::uint2;
+ ?column? 
+----------
+ f
+(1 row)
+
+select 1::int2 <> 2::uint2;
+ ?column? 
+----------
+ t
+(1 row)
+
+select 2::int2 <> 1::uint2;
+ ?column? 
+----------
+ t
+(1 row)
+
+select 1::int4 <> 1::uint4;
+ ?column? 
+----------
+ f
+(1 row)
+
+select 1::int4 <> 2::uint4;
+ ?column? 
+----------
+ t
+(1 row)
+
+select 2::int4 <> 1::uint4;
+ ?column? 
+----------
+ t
+(1 row)
+
+select 1::int8 <> 1::uint8;
+ ?column? 
+----------
+ f
+(1 row)
+
+select 1::int8 <> 2::uint8;
+ ?column? 
+----------
+ t
+(1 row)
+
+select 2::int8 <> 1::uint8;
+ ?column? 
+----------
+ t
+(1 row)
+
+select 1::uint1 <> 1::int1;
+ ?column? 
+----------
+ f
+(1 row)
+
+select 1::uint1 <> 2::int1;
+ ?column? 
+----------
+ t
+(1 row)
+
+select 2::uint1 <> 1::int1;
+ ?column? 
+----------
+ t
+(1 row)
+
+select 1::uint2 <> 1::int2;
+ ?column? 
+----------
+ f
+(1 row)
+
+select 1::uint2 <> 2::int2;
+ ?column? 
+----------
+ t
+(1 row)
+
+select 2::uint2 <> 1::int2;
+ ?column? 
+----------
+ t
+(1 row)
+
+select 1::uint4 <> 1::int4;
+ ?column? 
+----------
+ f
+(1 row)
+
+select 1::uint4 <> 2::int4;
+ ?column? 
+----------
+ t
+(1 row)
+
+select 2::uint4 <> 1::int4;
+ ?column? 
+----------
+ t
+(1 row)
+
+select 1::uint8 <> 1::int8;
+ ?column? 
+----------
+ f
+(1 row)
+
+select 1::uint8 <> 2::int8;
+ ?column? 
+----------
+ t
+(1 row)
+
+select 2::uint8 <> 1::int8;
+ ?column? 
+----------
+ t
+(1 row)
+
+-- >>
+select 255::uint1 >> 1;
+ ?column? 
+----------
+ 127
+(1 row)
+
+select 255::uint1 >> 5;
+ ?column? 
+----------
+ 7
+(1 row)
+
+select 255::uint1 >> 63;
+ ?column? 
+----------
+ 0
+(1 row)
+
+select 255::uint1 >> 64;
+ ?column? 
+----------
+ 0
+(1 row)
+
+select 65535::uint2 >> 1;
+ ?column? 
+----------
+ 32767
+(1 row)
+
+select 65535::uint2 >> 5;
+ ?column? 
+----------
+ 2047
+(1 row)
+
+select 65535::uint2 >> 63;
+ ?column? 
+----------
+ 0
+(1 row)
+
+select 65535::uint2 >> 64;
+ ?column? 
+----------
+ 0
+(1 row)
+
+select 4294967295::uint4 >> 1;
+  ?column?  
+------------
+ 2147483647
+(1 row)
+
+select 4294967295::uint4 >> 5;
+ ?column?  
+-----------
+ 134217727
+(1 row)
+
+select 4294967295::uint4 >> 63;
+ ?column? 
+----------
+ 0
+(1 row)
+
+select 4294967295::uint4 >> 64;
+ ?column? 
+----------
+ 0
+(1 row)
+
+select 18446744073709551615::uint8 >> 1;
+      ?column?       
+---------------------
+ 9223372036854775807
+(1 row)
+
+select 18446744073709551615::uint8 >> 5;
+      ?column?      
+--------------------
+ 576460752303423487
+(1 row)
+
+select 18446744073709551615::uint8 >> 63;
+ ?column? 
+----------
+ 1
+(1 row)
+
+select 18446744073709551615::uint8 >> 64;
+ ?column? 
+----------
+ 0
+(1 row)
+
+--<<
+select 1::uint1 << 1;
+ ?column? 
+----------
+ 2
+(1 row)
+
+select 1::uint1 << 5;
+ ?column? 
+----------
+ 32
+(1 row)
+
+select 1::uint1 << 63;
+      ?column?       
+---------------------
+ 9223372036854775808
+(1 row)
+
+select 1::uint1 << 64;
+ ?column? 
+----------
+ 0
+(1 row)
+
+select 1::uint2 << 1;
+ ?column? 
+----------
+ 2
+(1 row)
+
+select 1::uint2 << 5;
+ ?column? 
+----------
+ 32
+(1 row)
+
+select 1::uint2 << 63;
+      ?column?       
+---------------------
+ 9223372036854775808
+(1 row)
+
+select 1::uint2 << 64;
+ ?column? 
+----------
+ 0
+(1 row)
+
+select 1::uint4 << 1;
+ ?column? 
+----------
+ 2
+(1 row)
+
+select 1::uint4 << 5;
+ ?column? 
+----------
+ 32
+(1 row)
+
+select 1::uint4 << 63;
+      ?column?       
+---------------------
+ 9223372036854775808
+(1 row)
+
+select 1::uint4 << 64;
+ ?column? 
+----------
+ 0
+(1 row)
+
+select 1::uint8 << 1;
+ ?column? 
+----------
+ 2
+(1 row)
+
+select 1::uint8 << 5;
+ ?column? 
+----------
+ 32
+(1 row)
+
+select 1::uint8 << 63;
+      ?column?       
+---------------------
+ 9223372036854775808
+(1 row)
+
+select 1::uint8 << 64;
+ ?column? 
+----------
+ 0
+(1 row)
+
+-- @
+select @1::uint1;
+ ?column? 
+----------
+ 1
+(1 row)
+
+select @1::uint2;
+ ?column? 
+----------
+ 1
+(1 row)
+
+select @1::uint4;
+ ?column? 
+----------
+ 1
+(1 row)
+
+select @1::uint8;
+ ?column? 
+----------
+ 1
+(1 row)
+
+-- +
+select +1::uint1;
+ ?column? 
+----------
+ 1
+(1 row)
+
+select +1::uint2;
+ ?column? 
+----------
+ 1
+(1 row)
+
+select +1::uint4;
+ ?column? 
+----------
+ 1
+(1 row)
+
+select +1::uint8;
+ ?column? 
+----------
+ 1
+(1 row)
+
+-- -
+select -1::uint1;
+ ?column? 
+----------
+       -1
+(1 row)
+
+select -1::uint2;
+ ?column? 
+----------
+       -1
+(1 row)
+
+select -1::uint4;
+ ?column? 
+----------
+       -1
+(1 row)
+
+select -1::uint8;
+ ?column? 
+----------
+       -1
+(1 row)
+
+-- ~
+select ~1::uint1;
+ ?column? 
+----------
+ 254
+(1 row)
+
+select ~1::uint2;
+ ?column? 
+----------
+ 65534
+(1 row)
+
+select ~1::uint4;
+  ?column?  
+------------
+ 4294967294
+(1 row)
+
+select ~1::uint8;
+       ?column?       
+----------------------
+ 18446744073709551614
+(1 row)
+
+select ~0::uint1;
+ ?column? 
+----------
+ 255
+(1 row)
+
+select ~0::uint2;
+ ?column? 
+----------
+ 65535
+(1 row)
+
+select ~0::uint4;
+  ?column?  
+------------
+ 4294967295
+(1 row)
+
+select ~0::uint8;
+       ?column?       
+----------------------
+ 18446744073709551615
+(1 row)
+
+\c postgres
+drop database uint_operator;

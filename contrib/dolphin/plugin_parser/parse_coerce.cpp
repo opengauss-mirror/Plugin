@@ -58,6 +58,34 @@ static bool Numeric2Others(Oid* ptype, Oid* ntype, TYPCATEGORY* pcategory, TYPCA
 
 static const doConvert convertFunctions[convertFunctionsCount] = {&String2Others, &Date2Others, &Numeric2Others};
 
+#define CAST_FUNCTION_ROW 6
+#define CAST_FUNCTION_COLUMN 4
+
+static const char* castFunction[CAST_FUNCTION_ROW][CAST_FUNCTION_COLUMN] = {{"i2_cast_ui1", "i2_cast_ui2", "i2_cast_ui4", "i2_cast_ui8"},
+                                                                            {"i4_cast_ui1", "i4_cast_ui2", "i4_cast_ui4", "i4_cast_ui8"},
+                                                                            {"i8_cast_ui1", "i8_cast_ui2", "i8_cast_ui4", "i8_cast_ui8"},
+                                                                            {"f4_cast_ui1", "f4_cast_ui2", "f4_cast_ui4", "f4_cast_ui8"},
+                                                                            {"f8_cast_ui1", "f8_cast_ui2", "f8_cast_ui4", "f8_cast_ui8"},
+                                                                            {"numeric_cast_uint1", "numeric_cast_uint2", "numeric_cast_uint4", "numeric_cast_uint8"}};
+
+typedef enum {
+    INVALID_COLUMN = -1,
+    UINT1,
+    UINT2,
+    UINT4,
+    UINT8
+} CastColumn;
+
+typedef enum {
+    INVALID_ROW = -1,
+    INT2,
+    INT4,
+    INT8,
+    FLOAT4,
+    FLOAT8,
+    NUMERIC
+} CastRow;
+
 /*
  * @Description: same as get_element_type() except this reports error
  * when the result is invalid.
@@ -2253,6 +2281,44 @@ bool IsBinaryCoercible(Oid srctype, Oid targettype)
     return result;
 }
 
+Oid findUnsignedImplicitCastFunction(Oid targetTypeId, Oid sourceTypeId, Oid funcid)
+{
+    int row = INVALID_ROW;
+    int col = INVALID_COLUMN;
+    if (targetTypeId == get_typeoid(PG_CATALOG_NAMESPACE, "uint4")) {
+        col = UINT4;
+    } else if (targetTypeId == get_typeoid(PG_CATALOG_NAMESPACE, "uint1")) {
+        col = UINT1;
+    } else if (targetTypeId == get_typeoid(PG_CATALOG_NAMESPACE, "uint2")) {
+        col = UINT2;
+    } else if (targetTypeId == get_typeoid(PG_CATALOG_NAMESPACE, "uint8")) {
+        col = UINT8;
+    }
+    switch (sourceTypeId) {
+        case INT2OID:
+            row = INT2;
+            break;
+        case INT4OID:
+            row = INT4;
+            break;
+        case INT8OID:
+            row = INT8;
+            break;
+        case FLOAT4OID:
+            row = FLOAT4;
+            break;
+        case FLOAT8OID:
+            row = FLOAT8;
+            break;
+        case NUMERICOID:
+            row = NUMERIC;
+            break;
+    }
+    if (row != INVALID_ROW && col != INVALID_COLUMN) {
+        return get_func_oid(castFunction[row][col], PG_CATALOG_NAMESPACE, NULL);
+    }
+    return funcid;
+}
 /*
  * find_coercion_pathway
  *		Look for a coercion pathway between two types.
@@ -2329,10 +2395,15 @@ CoercionPathType find_coercion_pathway(Oid targetTypeId, Oid sourceTypeId, Coerc
         /* Rely on ordering of enum for correct behavior here */
         if (ccontext >= castcontext) {
             switch (castForm->castmethod) {
-                case COERCION_METHOD_FUNCTION:
+                case COERCION_METHOD_FUNCTION: {
                     result = COERCION_PATH_FUNC;
-                    *funcid = castForm->castfunc;
+                    if (ccontext == COERCION_EXPLICIT) {
+                        *funcid = findUnsignedImplicitCastFunction(targetTypeId, sourceTypeId, castForm->castfunc);
+                    } else {
+                        *funcid = castForm->castfunc;
+                    }
                     break;
+                }
                 case COERCION_METHOD_INOUT:
                     result = COERCION_PATH_COERCEVIAIO;
                     break;

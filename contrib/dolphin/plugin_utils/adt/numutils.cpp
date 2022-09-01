@@ -22,6 +22,7 @@
 
 #include "common/int.h"
 #include "utils/builtins.h"
+#include "libpq/pqformat.h"
 #include "plugin_commands/mysqlmode.h"
 
 /*
@@ -510,4 +511,174 @@ uint64 pg_strtouint64(const char* str, char** endptr, int base)
 #else
     return strtoul(str, endptr, base);
 #endif
+}
+
+uint16 PgStrtouint16Internal(const char* s, bool sqlModeStrict)
+{
+    const char* ptr = s;
+    uint32 tmp = 0;
+    bool neg = false;
+    char digitAfterDot = '\0';
+
+    /* skip leading spaces */
+    while (likely(*ptr) && isspace((unsigned char)*ptr)) {
+        ptr++;
+    }
+
+    /* handle sign */
+    if (*ptr == '-') {
+        ptr++;
+        neg = true;
+    } else if (*ptr == '+')
+        ptr++;
+
+    /* require at least one digit */
+    if (unlikely(!isdigit((unsigned char)*ptr))) {
+        if (!sqlModeStrict)
+            return tmp;
+    }
+
+    /* process digits */
+    while (*ptr && isdigit((unsigned char)*ptr)) {
+        int8 digit = (*ptr++ - '0');
+
+        tmp *= 10;
+        if (tmp > USHRT_MAX) {
+            goto out_of_range;
+        }
+        tmp += digit;
+        if (tmp > USHRT_MAX) {
+            goto out_of_range;
+        }
+    }
+
+    /* allow trailing whitespace, but not other trailing chars */
+    CheckSpaceAndDotInternal(false, '\0', &digitAfterDot, &ptr);
+
+    if (sqlModeStrict && unlikely(*ptr != '\0'))
+        goto invalid_syntax;
+
+    if (neg) {
+        /* could fail if input is most negative number */
+        if (unlikely(tmp > 0))
+            goto out_of_range;
+    }
+
+    if ((isdigit(digitAfterDot)) && digitAfterDot >= '5') {
+        if (!neg && tmp < USHRT_MAX)
+            tmp++;
+    }
+
+    return tmp;
+
+out_of_range:
+    if (sqlModeStrict) {
+        ereport(ERROR,
+            (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE),
+                errmsg("value \"%s\" is out of range for type %s", s, "smallint unsigned")));
+    } else {
+        if (neg)
+            return 0;
+        else
+            return USHRT_MAX;
+    }
+
+invalid_syntax:
+    ereport(ERROR,
+        (errcode(ERRCODE_INVALID_TEXT_REPRESENTATION), errmsg("invalid input syntax for %s: \"%s\"", "integer", s)));
+    return 0;
+}
+
+uint32 PgStrtouint32Internal(const char* s, bool sqlModeStrict)
+{
+    const char* ptr = s;
+    uint64 tmp = 0;
+    bool neg = false;
+    char digitAfterDot = '\0';
+
+    /* skip leading spaces */
+    while (likely(*ptr) && isspace((unsigned char)*ptr)) {
+        ptr++;
+    }
+
+    /* handle sign */
+    if (*ptr == '-') {
+        ptr++;
+        neg = true;
+    } else if (*ptr == '+')
+        ptr++;
+
+    /* require at least one digit */
+    if (unlikely(!isdigit((unsigned char)*ptr))) {
+        if (!sqlModeStrict)
+            return tmp;
+    }
+
+    /* process digits */
+    while (*ptr && isdigit((unsigned char)*ptr)) {
+        int8 digit = (*ptr++ - '0');
+
+        tmp *= 10;
+        if (tmp > UINT_MAX) {
+            goto out_of_range;
+        }
+        tmp += digit;
+        if (tmp > UINT_MAX) {
+            goto out_of_range;
+        }
+    }
+
+    /* allow trailing whitespace, but not other trailing chars */
+    CheckSpaceAndDotInternal(false, '\0', &digitAfterDot, &ptr);
+
+    if (sqlModeStrict && unlikely(*ptr != '\0'))
+        goto invalid_syntax;
+
+    if (neg) {
+        /* could fail if input is most negative number */
+        if (unlikely(tmp > 0))
+            goto out_of_range;
+    }
+
+    if ((isdigit(digitAfterDot)) && digitAfterDot >= '5') {
+        if (!neg && tmp < UINT_MAX)
+            tmp++;
+    }
+
+    return tmp;
+
+out_of_range:
+    if (sqlModeStrict) {
+        ereport(ERROR,
+            (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE),
+                errmsg("value \"%s\" is out of range for type %s", s, "int unsigned")));
+    } else {
+        if (neg)
+            return 0;
+        else
+            return UINT_MAX;
+    }
+
+invalid_syntax:
+    ereport(ERROR,
+        (errcode(ERRCODE_INVALID_TEXT_REPRESENTATION), errmsg("invalid input syntax for %s: \"%s\"", "integer", s)));
+    return 0;
+}
+
+uint64 pg_getmsguint64(StringInfo msg)
+{
+    uint64 result;
+    uint32 h32;
+    uint32 l32;
+
+    pq_copymsgbytes(msg, (char *)&h32, 4);
+    pq_copymsgbytes(msg, (char *)&l32, 4);
+    h32 = ntohl(h32);
+    l32 = ntohl(l32);
+
+    result = h32;
+    result <<= 32;
+    result |= l32;
+
+    return result;
 }

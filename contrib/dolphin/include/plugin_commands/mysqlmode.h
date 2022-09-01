@@ -14,7 +14,9 @@
 extern int32 PgAtoiInternal(char* s, int size, int c, bool sqlModeStrict);
 extern int16 PgStrtoint16Internal(const char* s, bool sqlModeStrict);
 extern int32 PgStrtoint32Internal(const char* s, bool sqlModeStrict);
+extern uint16 PgStrtouint16Internal(const char* s, bool sqlModeStrict);
+extern uint32 PgStrtouint32Internal(const char* s, bool sqlModeStrict);
 extern bool Scanint8Internal(const char* str, bool errorOK, int64* result, bool sqlModeStrict);
 extern void CheckSpaceAndDotInternal(bool errorOK, int c, char* digitAfterDot, const char** ptr);
-
+extern uint64 pg_getmsguint64(StringInfo msg);
 #endif /* MYSQLMODE_H */

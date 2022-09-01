@@ -1,0 +1,327 @@
+drop database if exists uint_numeric;
+NOTICE:  database "uint_numeric" does not exist, skipping
+create database uint_numeric dbcompatibility 'b';
+\c uint_numeric
+select (-1)::numeric::uint1;
+ uint1 
+-------
+ 0
+(1 row)
+
+select (-1)::numeric::uint2;
+ uint2 
+-------
+ 0
+(1 row)
+
+select (-1)::numeric::uint4;
+ uint4 
+-------
+ 0
+(1 row)
+
+select (-1)::numeric::uint8;
+ uint8 
+-------
+ 0
+(1 row)
+
+select null::numeric::uint1;
+ uint1 
+-------
+ 
+(1 row)
+
+select null::numeric::uint2;
+ uint2 
+-------
+ 
+(1 row)
+
+select null::numeric::uint4;
+ uint4 
+-------
+ 
+(1 row)
+
+select null::numeric::uint8;
+ uint8 
+-------
+ 
+(1 row)
+
+select 255::numeric::uint1;
+ uint1 
+-------
+ 255
+(1 row)
+
+select 65535::numeric::uint2;
+ uint2 
+-------
+ 65535
+(1 row)
+
+select 4294967295::numeric::uint4;
+   uint4    
+------------
+ 4294967295
+(1 row)
+
+select 18446744073709551615::numeric(30)::uint8;
+        uint8         
+----------------------
+ 18446744073709551615
+(1 row)
+
+select 256::numeric::uint1;
+ERROR:  tinyint unsigned out of range
+CONTEXT:  referenced column: uint1
+select 65536::numeric::uint2;
+ERROR:  smallint unsigned out of range
+CONTEXT:  referenced column: uint2
+select 4294967296::numeric::uint4;
+ERROR:  unsigned int out of range
+CONTEXT:  referenced column: uint4
+select 18446744073709551616::numeric(30)::uint8;
+ERROR:  bigint unsigned out of range
+CONTEXT:  referenced column: uint8
+select (-1)::float4::uint1;
+ uint1 
+-------
+ 255
+(1 row)
+
+select (-1)::float4::uint2;
+ uint2 
+-------
+ 65535
+(1 row)
+
+select (-1)::float4::uint4;
+   uint4    
+------------
+ 4294967295
+(1 row)
+
+select (-1)::float4::uint8;
+        uint8         
+----------------------
+ 18446744073709551615
+(1 row)
+
+select null::float4::uint1;
+ uint1 
+-------
+ 
+(1 row)
+
+select null::float4::uint2;
+ uint2 
+-------
+ 
+(1 row)
+
+select null::float4::uint4;
+ uint4 
+-------
+ 
+(1 row)
+
+select null::float4::uint8;
+ uint8 
+-------
+ 
+(1 row)
+
+select 255::float4::uint1;
+ uint1 
+-------
+ 255
+(1 row)
+
+select 65535::float4::uint2;
+ uint2 
+-------
+ 65535
+(1 row)
+
+select 4294967295::float4::uint4;
+ERROR:  integer unsigned out of range
+CONTEXT:  referenced column: uint4
+select 18446744073709551615::float4::uint8;
+ERROR:  bigint unsigned out of range
+CONTEXT:  referenced column: uint8
+select 256::float4::uint1;
+ERROR:  tinyint unsigned out of range
+CONTEXT:  referenced column: uint1
+select 65536::float4::uint2;
+ERROR:  smallint unsigned out of range
+CONTEXT:  referenced column: uint2
+select 4294967296::float4::uint4;
+ERROR:  integer unsigned out of range
+CONTEXT:  referenced column: uint4
+select 18446744073709551616::float4::uint8;
+ERROR:  bigint unsigned out of range
+CONTEXT:  referenced column: uint8
+select (-1)::float8::uint1;
+ uint1 
+-------
+ 255
+(1 row)
+
+select (-1)::float8::uint2;
+ uint2 
+-------
+ 65535
+(1 row)
+
+select (-1)::float8::uint4;
+   uint4    
+------------
+ 4294967295
+(1 row)
+
+select (-1)::float8::uint8;
+        uint8         
+----------------------
+ 18446744073709551615
+(1 row)
+
+select null::float8::uint1;
+ uint1 
+-------
+ 
+(1 row)
+
+select null::float8::uint2;
+ uint2 
+-------
+ 
+(1 row)
+
+select null::float8::uint4;
+ uint4 
+-------
+ 
+(1 row)
+
+select null::float8::uint8;
+ uint8 
+-------
+ 
+(1 row)
+
+select 255::float8::uint1;
+ uint1 
+-------
+ 255
+(1 row)
+
+select 65535::float8::uint2;
+ uint2 
+-------
+ 65535
+(1 row)
+
+select 4294967295::float8::uint4;
+   uint4    
+------------
+ 4294967295
+(1 row)
+
+select 18446744073709551615::float8::uint8;
+ERROR:  bigint unsigned out of range
+CONTEXT:  referenced column: uint8
+select 256::float8::uint1;
+ERROR:  tinyint unsignedout of range
+CONTEXT:  referenced column: uint1
+select 65536::float8::uint2;
+ERROR:  smallint unsigned out of range
+CONTEXT:  referenced column: uint2
+select 4294967296::float8::uint4;
+ERROR:  integer unsigned out of range
+CONTEXT:  referenced column: uint4
+select 18446744073709551616::float8::uint8;
+ERROR:  bigint unsigned out of range
+CONTEXT:  referenced column: uint8
+create table t1(a uint1);
+create table t2(a uint2);
+create table t3(a uint4);
+create table t4(a uint8);
+create table num(a float4, b float8, c numeric);
+insert into num values(-1, -1, -1);
+insert into t1 values((-1)::float4);
+ERROR:  tinyint unsigned out of range
+CONTEXT:  referenced column: a
+insert into t1 values((-1)::float8);
+ERROR:  tinyint unsignedout of range
+CONTEXT:  referenced column: a
+insert into t1 values((-1)::numeric);
+ERROR:  tinyint unsigned out of range
+CONTEXT:  referenced column: a
+insert into t2 values((-1)::float4);
+ERROR:  smallint unsigned out of range
+CONTEXT:  referenced column: a
+insert into t2 values((-1)::float8);
+ERROR:  smallint unsigned out of range
+CONTEXT:  referenced column: a
+insert into t2 values((-1)::numeric);
+ERROR:  smallint unsigned out of range
+CONTEXT:  referenced column: a
+insert into t3 values((-1)::float4);
+ERROR:  integer unsigned out of range
+CONTEXT:  referenced column: a
+insert into t3 values((-1)::float8);
+ERROR:  integer unsigned out of range
+CONTEXT:  referenced column: a
+insert into t3 values((-1)::numeric);
+ERROR:  unsigned int out of range
+CONTEXT:  referenced column: a
+insert into t4 values((-1)::float4);
+ERROR:  bigint unsigned out of range
+CONTEXT:  referenced column: a
+insert into t4 values((-1)::float8);
+ERROR:  bigint unsigned out of range
+CONTEXT:  referenced column: a
+insert into t4 values((-1)::numeric);
+ERROR:  bigint unsigned out of range
+CONTEXT:  referenced column: a
+insert into t1 select a from num;
+ERROR:  tinyint unsigned out of range
+CONTEXT:  referenced column: a
+insert into t1 select b from num;
+ERROR:  tinyint unsignedout of range
+CONTEXT:  referenced column: a
+insert into t1 select c from num;
+ERROR:  tinyint unsigned out of range
+CONTEXT:  referenced column: a
+insert into t2 select a from num;
+ERROR:  smallint unsigned out of range
+CONTEXT:  referenced column: a
+insert into t2 select b from num;
+ERROR:  smallint unsigned out of range
+CONTEXT:  referenced column: a
+insert into t2 select c from num;
+ERROR:  smallint unsigned out of range
+CONTEXT:  referenced column: a
+insert into t3 select a from num;
+ERROR:  integer unsigned out of range
+CONTEXT:  referenced column: a
+insert into t3 select b from num;
+ERROR:  integer unsigned out of range
+CONTEXT:  referenced column: a
+insert into t3 select c from num;
+ERROR:  unsigned int out of range
+CONTEXT:  referenced column: a
+insert into t4 select a from num;
+ERROR:  bigint unsigned out of range
+CONTEXT:  referenced column: a
+insert into t4 select b from num;
+ERROR:  bigint unsigned out of range
+CONTEXT:  referenced column: a
+insert into t4 select c from num;
+ERROR:  bigint unsigned out of range
+CONTEXT:  referenced column: a
+\c postgres
+drop database uint_numeric;

@@ -7,6 +7,7 @@ adt = $(utils)/adt
 mb = $(utils)/mb
 vector = plugin_vector
 storage = plugin_storage
+optimizer = plugin_optimizer
 subdir = contrib/dolphin
 top_builddir = ../..
 base_dir = contrib/dolphin
@@ -33,7 +34,7 @@ $(adt)/network.o $(adt)/mac.o $(adt)/inet_cidr_ntop.o $(adt)/inet_net_pton.o\
 $(adt)/ri_triggers.o $(adt)/partitionfuncs.o $(adt)/pg_locale.o $(adt)/formatting.o\
 $(adt)/ascii.o $(adt)/quote.o $(adt)/pgstatfuncs.o $(adt)/encode.o $(adt)/dbsize.o $(adt)/trigfuncs.o\
 $(adt)/uuid.o $(adt)/windowfuncs.o $(adt)/extended_statistics.o $(adt)/clientlogic_bytea.o $(adt)/clientlogicsettings.o\
-$(adt)/median_aggs.o $(adt)/expr_distinct.o $(adt)/nlssort.o $(adt)/first_last_agg.o $(adt)/my_locale.o $(adt)/year.o\
+$(adt)/median_aggs.o $(adt)/expr_distinct.o $(adt)/nlssort.o $(adt)/first_last_agg.o $(adt)/my_locale.o $(adt)/unsigned_int.o $(adt)/year.o\
 $(adt)/vacuumfuncs.o
 
 OBJS += $(vector)/vecfuncache.o
@@ -44,9 +45,11 @@ OBJS += $(executor)/execQual.o
 
 OBJS += $(storage)/hashfunc.o
 
+OBJS += $(optimizer)/streamwalker.o
+
 OBJS += $(commands)/functioncmds.o
 
-all $(OBJS): parser utils executor vector commands storage;
+all $(OBJS): parser utils executor vector commands storage optimizer;
 
 
 parser:
@@ -64,6 +67,9 @@ executor:
 storage:
 	make -C $(storage)
 
+optimizer:
+	make -C $(optimizer)
+
 commands:
 	make -C $(commands)
 
@@ -73,6 +79,7 @@ extra_clean:
 	make clean -C $(vector)
 	make clean -C $(executor)
 	make clean -C $(storage)
+	make clean -C $(optimizer)
 	make clean -C $(commands)
 clean: extra_clean
 
