@@ -896,14 +896,14 @@ Datum text_len(PG_FUNCTION_ARGS)
 Datum boolcharlen(PG_FUNCTION_ARGS)
 {
     if (PG_NARGS() < 1) {
-        elog(ERROR, "Incorrect parameter count");
-    } else {
-        if (PG_ARGISNULL(0)) {
-            PG_RETURN_NULL();
-        } else {
-            PG_RETURN_INT64(1);
-        }
+        ereport(ERROR, (errmsg("Incorrect parameter count")));
     }
+
+    if (PG_ARGISNULL(0)) {
+        PG_RETURN_NULL();
+    }
+
+    PG_RETURN_INT64(1);
 }
 
 int get_step_len(unsigned char ch)
@@ -7926,7 +7926,7 @@ text* _elt(int idx, PG_FUNCTION_ARGS)
     uint32 times = 0;
     char result_chr[CONV_MAX_CHAR_LEN + 1] = "";
     int ret;
-    if (NULL == fcinfo->arg[idx]) {
+    if (!fcinfo->arg[idx]) {
         return NULL;
     } else {
         getTypeOutputInfo(fcinfo->argTypes[idx], &typeOutput, &typIsVarlena);
@@ -8025,7 +8025,6 @@ static double conv_typ_to_double(PG_FUNCTION_ARGS, int i)
     double result;
     Oid typeOutput;
     bool typIsVarlena;
-    Oid valtype;
     bool tmp;
 
     switch (fcinfo->argTypes[i]) {
@@ -8052,7 +8051,6 @@ Datum field(PG_FUNCTION_ARGS)
     int64 result = 0;
     Oid typeOutput;
     bool typIsVarlena;
-    Oid valtype;
     int number_cnt = 0;
     double first_arg;
     double match_arg;
