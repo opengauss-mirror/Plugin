@@ -47,6 +47,7 @@ SELECT 99991231::date;
 SELECT 21000228::date;
 SELECT 21000229::date;
 SELECT 100000000::date;
+SELECT 100101231::date;
 
 -- test time
 -- '[-][D] hh:mm:ss.fsec'
