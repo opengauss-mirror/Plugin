@@ -1,0 +1,1221 @@
+drop database if exists uint_cast;
+NOTICE:  database "uint_cast" does not exist, skipping
+create database uint_cast dbcompatibility 'b';
+\c uint_cast
+select (-1)::bool::uint8;
+ uint8 
+-------
+ 1
+(1 row)
+
+select (0)::bool::uint8;
+ uint8 
+-------
+ 0
+(1 row)
+
+select (1)::bool::uint8;
+ uint8 
+-------
+ 1
+(1 row)
+
+select (-1.0)::float4::uint8;
+        uint8         
+----------------------
+ 18446744073709551615
+(1 row)
+
+select (0.0)::float4::uint8;
+ uint8 
+-------
+ 0
+(1 row)
+
+select (1.0)::float4::uint8;
+ uint8 
+-------
+ 1
+(1 row)
+
+select (-1.0)::float8::uint8;
+        uint8         
+----------------------
+ 18446744073709551615
+(1 row)
+
+select (0.0)::float8::uint8;
+ uint8 
+-------
+ 0
+(1 row)
+
+select (1.0)::float8::uint8;
+ uint8 
+-------
+ 1
+(1 row)
+
+select (92233720368547758.0)::float8::uint8;
+       uint8       
+-------------------
+ 92233720368547760
+(1 row)
+
+select (9223372036854775808.0)::float8::uint8;
+        uint8        
+---------------------
+ 9223372036854775808
+(1 row)
+
+select (-9223372036854775808.0)::float8::uint8;
+        uint8        
+---------------------
+ 9223372036854775808
+(1 row)
+
+select (-9223372036854775809.0)::float8::uint8;
+        uint8        
+---------------------
+ 9223372036854775808
+(1 row)
+
+select (18446744073709550515)::float8::uint8;
+        uint8         
+----------------------
+ 18446744073709549568
+(1 row)
+
+select (-18446744073709550515)::float8::uint8;
+ uint8 
+-------
+ 2048
+(1 row)
+
+select (92233720368547758.0)::float4::uint8;
+       uint8       
+-------------------
+ 92233718306963456
+(1 row)
+
+select (9223372036854775808.0)::float4::uint8;
+        uint8        
+---------------------
+ 9223372036854775808
+(1 row)
+
+select (-9223372036854775808.0)::float4::uint8;
+        uint8        
+---------------------
+ 9223372036854775808
+(1 row)
+
+select (-9223372036854775809.0)::float4::uint8;
+        uint8        
+---------------------
+ 9223372036854775808
+(1 row)
+
+select (18446744073709550515)::float4::uint8;
+ERROR:  bigint unsigned out of range
+CONTEXT:  referenced column: uint8
+select (-18446744073709550515)::float4::uint8;
+ uint8 
+-------
+ 0
+(1 row)
+
+select (0)::numeric::uint8;
+ uint8 
+-------
+ 0
+(1 row)
+
+select (-1)::numeric::uint8;
+ uint8 
+-------
+ 0
+(1 row)
+
+select (18446744073709551615)::numeric(20)::uint8;
+        uint8         
+----------------------
+ 18446744073709551615
+(1 row)
+
+select (18446744073709551616)::numeric(20)::uint8;
+ERROR:  bigint unsigned out of range
+CONTEXT:  referenced column: uint8
+select (-1)::int2::uint8;
+        uint8         
+----------------------
+ 18446744073709551615
+(1 row)
+
+select (0)::int2::uint8;
+ uint8 
+-------
+ 0
+(1 row)
+
+select (1)::int2::uint8;
+ uint8 
+-------
+ 1
+(1 row)
+
+select (32767)::int2::uint8;
+ uint8 
+-------
+ 32767
+(1 row)
+
+select (32768)::int2::uint8;
+ERROR:  smallint out of range
+CONTEXT:  referenced column: uint8
+select (-32768)::int2::uint8;
+        uint8         
+----------------------
+ 18446744073709518848
+(1 row)
+
+select (-32769)::int2::uint8;
+ERROR:  smallint out of range
+CONTEXT:  referenced column: uint8
+select (-1)::int4::uint8;
+        uint8         
+----------------------
+ 18446744073709551615
+(1 row)
+
+select (0)::int4::uint8;
+ uint8 
+-------
+ 0
+(1 row)
+
+select (1)::int4::uint8;
+ uint8 
+-------
+ 1
+(1 row)
+
+select (2147483647)::int4::uint8;
+   uint8    
+------------
+ 2147483647
+(1 row)
+
+select (2147483648)::int4::uint8;
+ERROR:  integer out of range
+CONTEXT:  referenced column: uint8
+select (-2147483648)::int4::uint8;
+        uint8         
+----------------------
+ 18446744071562067968
+(1 row)
+
+select (-2147483649)::int4::uint8;
+ERROR:  integer out of range
+CONTEXT:  referenced column: uint8
+select (-1)::int8::uint8;
+        uint8         
+----------------------
+ 18446744073709551615
+(1 row)
+
+select (0)::int8::uint8;
+ uint8 
+-------
+ 0
+(1 row)
+
+select (1)::int8::uint8;
+ uint8 
+-------
+ 1
+(1 row)
+
+select (9223372036854775807)::int8::uint8;
+        uint8        
+---------------------
+ 9223372036854775807
+(1 row)
+
+select (9223372036854775808)::int8::uint8;
+ERROR:  bigint out of range
+CONTEXT:  referenced column: uint8
+select (-9223372036854775808)::int8::uint8;
+        uint8        
+---------------------
+ 9223372036854775808
+(1 row)
+
+select (-9223372036854775809)::int8::uint8;
+ERROR:  bigint out of range
+CONTEXT:  referenced column: uint8
+select (-1)::bool::uint4;
+ uint4 
+-------
+ 1
+(1 row)
+
+select (0)::bool::uint4;
+ uint4 
+-------
+ 0
+(1 row)
+
+select (1)::bool::uint4;
+ uint4 
+-------
+ 1
+(1 row)
+
+select (-1.0)::float4::uint4;
+   uint4    
+------------
+ 4294967295
+(1 row)
+
+select (0.0)::float4::uint4;
+ uint4 
+-------
+ 0
+(1 row)
+
+select (1.0)::float4::uint4;
+ uint4 
+-------
+ 1
+(1 row)
+
+select (-1.0)::float8::uint4;
+   uint4    
+------------
+ 4294967295
+(1 row)
+
+select (0.0)::float8::uint4;
+ uint4 
+-------
+ 0
+(1 row)
+
+select (1.0)::float8::uint4;
+ uint4 
+-------
+ 1
+(1 row)
+
+select (0)::numeric::uint4;
+ uint4 
+-------
+ 0
+(1 row)
+
+select (-1)::numeric::uint4;
+ uint4 
+-------
+ 0
+(1 row)
+
+select (4294967295)::numeric::uint4;
+   uint4    
+------------
+ 4294967295
+(1 row)
+
+select (4294967296)::numeric::uint4;
+ERROR:  unsigned int out of range
+CONTEXT:  referenced column: uint4
+select (-1)::int2::uint4;
+   uint4    
+------------
+ 4294967295
+(1 row)
+
+select (0)::int2::uint4;
+ uint4 
+-------
+ 0
+(1 row)
+
+select (1)::int2::uint4;
+ uint4 
+-------
+ 1
+(1 row)
+
+select (32767)::int2::uint4;
+ uint4 
+-------
+ 32767
+(1 row)
+
+select (32768)::int2::uint4;
+ERROR:  smallint out of range
+CONTEXT:  referenced column: uint4
+select (-32768)::int2::uint4;
+   uint4    
+------------
+ 4294934528
+(1 row)
+
+select (-32769)::int2::uint4;
+ERROR:  smallint out of range
+CONTEXT:  referenced column: uint4
+select (-1)::int4::uint4;
+   uint4    
+------------
+ 4294967295
+(1 row)
+
+select (0)::int4::uint4;
+ uint4 
+-------
+ 0
+(1 row)
+
+select (1)::int4::uint4;
+ uint4 
+-------
+ 1
+(1 row)
+
+select (2147483647)::int4::uint4;
+   uint4    
+------------
+ 2147483647
+(1 row)
+
+select (2147483648)::int4::uint4;
+ERROR:  integer out of range
+CONTEXT:  referenced column: uint4
+select (-2147483648)::int4::uint4;
+   uint4    
+------------
+ 2147483648
+(1 row)
+
+select (-2147483649)::int4::uint4;
+ERROR:  integer out of range
+CONTEXT:  referenced column: uint4
+select (-1)::int8::uint4;
+   uint4    
+------------
+ 4294967295
+(1 row)
+
+select (0)::int8::uint4;
+ uint4 
+-------
+ 0
+(1 row)
+
+select (1)::int8::uint4;
+ uint4 
+-------
+ 1
+(1 row)
+
+select (9223372036854775807)::int8::uint4;
+ERROR:  unsigned int out of range
+CONTEXT:  referenced column: uint4
+select (9223372036854775808)::int8::uint4;
+ERROR:  bigint out of range
+CONTEXT:  referenced column: uint4
+select (-9223372036854775808)::int8::uint4;
+ERROR:  unsigned int out of range
+CONTEXT:  referenced column: uint4
+select (-9223372036854775809)::int8::uint4;
+ERROR:  bigint out of range
+CONTEXT:  referenced column: uint4
+select (4294967295)::int8::uint4;
+   uint4    
+------------
+ 4294967295
+(1 row)
+
+select (4294967296)::int8::uint4;
+ERROR:  unsigned int out of range
+CONTEXT:  referenced column: uint4
+select (-2147483648)::int8::uint4;
+   uint4    
+------------
+ 2147483648
+(1 row)
+
+select (-2147483649)::int8::uint4;
+ERROR:  unsigned int out of range
+CONTEXT:  referenced column: uint4
+select (-1)::bool::uint2;
+ uint2 
+-------
+ 1
+(1 row)
+
+select (0)::bool::uint2;
+ uint2 
+-------
+ 0
+(1 row)
+
+select (1)::bool::uint2;
+ uint2 
+-------
+ 1
+(1 row)
+
+select (-1.0)::float4::uint2;
+ uint2 
+-------
+ 65535
+(1 row)
+
+select (0.0)::float4::uint2;
+ uint2 
+-------
+ 0
+(1 row)
+
+select (1.0)::float4::uint2;
+ uint2 
+-------
+ 1
+(1 row)
+
+select (-1.0)::float8::uint2;
+ uint2 
+-------
+ 65535
+(1 row)
+
+select (0.0)::float8::uint2;
+ uint2 
+-------
+ 0
+(1 row)
+
+select (1.0)::float8::uint2;
+ uint2 
+-------
+ 1
+(1 row)
+
+select (0)::numeric::uint2;
+ uint2 
+-------
+ 0
+(1 row)
+
+select (-1)::numeric::uint2;
+ uint2 
+-------
+ 0
+(1 row)
+
+select (32767)::numeric::uint2;
+ uint2 
+-------
+ 32767
+(1 row)
+
+select (32768)::numeric::uint2;
+ uint2 
+-------
+ 32768
+(1 row)
+
+select (-1)::int2::uint2;
+ uint2 
+-------
+ 65535
+(1 row)
+
+select (0)::int2::uint2;
+ uint2 
+-------
+ 0
+(1 row)
+
+select (1)::int2::uint2;
+ uint2 
+-------
+ 1
+(1 row)
+
+select (32767)::int2::uint2;
+ uint2 
+-------
+ 32767
+(1 row)
+
+select (32768)::int2::uint2;
+ERROR:  smallint out of range
+CONTEXT:  referenced column: uint2
+select (-32768)::int2::uint2;
+ uint2 
+-------
+ 32768
+(1 row)
+
+select (-32769)::int2::uint2;
+ERROR:  smallint out of range
+CONTEXT:  referenced column: uint2
+select (-1)::int4::uint2;
+ uint2 
+-------
+ 65535
+(1 row)
+
+select (0)::int4::uint2;
+ uint2 
+-------
+ 0
+(1 row)
+
+select (1)::int4::uint2;
+ uint2 
+-------
+ 1
+(1 row)
+
+select (2147483647)::int4::uint2;
+ERROR:  smallint unsigned out of range
+CONTEXT:  referenced column: uint2
+select (2147483648)::int4::uint2;
+ERROR:  integer out of range
+CONTEXT:  referenced column: uint2
+select (-2147483648)::int4::uint2;
+ERROR:  smallint unsigned out of range
+CONTEXT:  referenced column: uint2
+select (-2147483649)::int4::uint2;
+ERROR:  integer out of range
+CONTEXT:  referenced column: uint2
+select (65535)::int4::uint2;
+ uint2 
+-------
+ 65535
+(1 row)
+
+select (65536)::int4::uint2;
+ERROR:  smallint unsigned out of range
+CONTEXT:  referenced column: uint2
+select (-32768)::int4::uint2;
+ uint2 
+-------
+ 32768
+(1 row)
+
+select (-32769)::int4::uint2;
+ERROR:  smallint unsigned out of range
+CONTEXT:  referenced column: uint2
+select (-1)::int8::uint2;
+ uint2 
+-------
+ 65535
+(1 row)
+
+select (0)::int8::uint2;
+ uint2 
+-------
+ 0
+(1 row)
+
+select (1)::int8::uint2;
+ uint2 
+-------
+ 1
+(1 row)
+
+select (9223372036854775807)::int8::uint2;
+ERROR:  smallint unsigned out of range
+CONTEXT:  referenced column: uint2
+select (9223372036854775808)::int8::uint2;
+ERROR:  bigint out of range
+CONTEXT:  referenced column: uint2
+select (-9223372036854775808)::int8::uint2;
+ERROR:  smallint unsigned out of range
+CONTEXT:  referenced column: uint2
+select (-9223372036854775809)::int8::uint2;
+ERROR:  bigint out of range
+CONTEXT:  referenced column: uint2
+select (65535)::int8::uint2;
+ uint2 
+-------
+ 65535
+(1 row)
+
+select (65536)::int8::uint2;
+ERROR:  smallint unsigned out of range
+CONTEXT:  referenced column: uint2
+select (-32768)::int8::uint2;
+ uint2 
+-------
+ 32768
+(1 row)
+
+select (-32769)::int8::uint2;
+ERROR:  smallint unsigned out of range
+CONTEXT:  referenced column: uint2
+select (-1)::bool::uint1;
+ uint1 
+-------
+ 1
+(1 row)
+
+select (0)::bool::uint1;
+ uint1 
+-------
+ 0
+(1 row)
+
+select (1)::bool::uint1;
+ uint1 
+-------
+ 1
+(1 row)
+
+select (-1.0)::float4::uint1;
+ uint1 
+-------
+ 255
+(1 row)
+
+select (0.0)::float4::uint1;
+ uint1 
+-------
+ 0
+(1 row)
+
+select (1.0)::float4::uint1;
+ uint1 
+-------
+ 1
+(1 row)
+
+select (-1.0)::float8::uint1;
+ uint1 
+-------
+ 255
+(1 row)
+
+select (0.0)::float8::uint1;
+ uint1 
+-------
+ 0
+(1 row)
+
+select (1.0)::float8::uint1;
+ uint1 
+-------
+ 1
+(1 row)
+
+select (0)::numeric::uint1;
+ uint1 
+-------
+ 0
+(1 row)
+
+select (-1)::numeric::uint1;
+ uint1 
+-------
+ 0
+(1 row)
+
+select (255)::numeric::uint1;
+ uint1 
+-------
+ 255
+(1 row)
+
+select (256)::numeric::uint1;
+ERROR:  tinyint unsigned out of range
+CONTEXT:  referenced column: uint1
+select (-1)::int2::uint1;
+ uint1 
+-------
+ 255
+(1 row)
+
+select (0)::int2::uint1;
+ uint1 
+-------
+ 0
+(1 row)
+
+select (1)::int2::uint1;
+ uint1 
+-------
+ 1
+(1 row)
+
+select (32767)::int2::uint1;
+ERROR:  tinyint unsigned out of range
+CONTEXT:  referenced column: uint1
+select (32768)::int2::uint1;
+ERROR:  smallint out of range
+CONTEXT:  referenced column: uint1
+select (-32768)::int2::uint1;
+ERROR:  tinyint unsigned out of range
+CONTEXT:  referenced column: uint1
+select (-32769)::int2::uint1;
+ERROR:  smallint out of range
+CONTEXT:  referenced column: uint1
+select (255)::int2::uint1;
+ uint1 
+-------
+ 255
+(1 row)
+
+select (256)::int2::uint1;
+ERROR:  tinyint unsigned out of range
+CONTEXT:  referenced column: uint1
+select (-128)::int2::uint1;
+ uint1 
+-------
+ 128
+(1 row)
+
+select (-129)::int2::uint1;
+ERROR:  tinyint unsigned out of range
+CONTEXT:  referenced column: uint1
+select (-1)::int4::uint1;
+ uint1 
+-------
+ 255
+(1 row)
+
+select (0)::int4::uint1;
+ uint1 
+-------
+ 0
+(1 row)
+
+select (1)::int4::uint1;
+ uint1 
+-------
+ 1
+(1 row)
+
+select (2147483647)::int4::uint1;
+ERROR:  tinyint unsigned out of range
+CONTEXT:  referenced column: uint1
+select (2147483648)::int4::uint1;
+ERROR:  integer out of range
+CONTEXT:  referenced column: uint1
+select (-2147483648)::int4::uint1;
+ERROR:  tinyint unsigned out of range
+CONTEXT:  referenced column: uint1
+select (-2147483649)::int4::uint1;
+ERROR:  integer out of range
+CONTEXT:  referenced column: uint1
+select (255)::int4::uint1;
+ uint1 
+-------
+ 255
+(1 row)
+
+select (256)::int4::uint1;
+ERROR:  tinyint unsigned out of range
+CONTEXT:  referenced column: uint1
+select (-128)::int4::uint1;
+ uint1 
+-------
+ 128
+(1 row)
+
+select (-129)::int4::uint1;
+ERROR:  tinyint unsigned out of range
+CONTEXT:  referenced column: uint1
+select (-1)::int8::uint1;
+ uint1 
+-------
+ 255
+(1 row)
+
+select (0)::int8::uint1;
+ uint1 
+-------
+ 0
+(1 row)
+
+select (1)::int8::uint1;
+ uint1 
+-------
+ 1
+(1 row)
+
+select (9223372036854775807)::int8::uint1;
+ERROR:  tinyint unsigned out of range
+CONTEXT:  referenced column: uint1
+select (9223372036854775808)::int8::uint1;
+ERROR:  bigint out of range
+CONTEXT:  referenced column: uint1
+select (-9223372036854775808)::int8::uint1;
+ERROR:  tinyint unsigned out of range
+CONTEXT:  referenced column: uint1
+select (-9223372036854775809)::int8::uint1;
+ERROR:  bigint out of range
+CONTEXT:  referenced column: uint1
+select (255)::int8::uint1;
+ uint1 
+-------
+ 255
+(1 row)
+
+select (256)::int8::uint1;
+ERROR:  tinyint unsigned out of range
+CONTEXT:  referenced column: uint1
+select (-128)::int8::uint1;
+ uint1 
+-------
+ 128
+(1 row)
+
+select (-129)::int8::uint1;
+ERROR:  tinyint unsigned out of range
+CONTEXT:  referenced column: uint1
+select (-1)::int1::uint1;
+ERROR:  tinyint out of range
+CONTEXT:  referenced column: uint1
+select (0)::int1::uint1;
+ uint1 
+-------
+ 0
+(1 row)
+
+select (1)::int1::uint1;
+ uint1 
+-------
+ 1
+(1 row)
+
+select (255)::int1::uint1;
+ uint1 
+-------
+ 255
+(1 row)
+
+select (256)::int1::uint1;
+ERROR:  tinyint out of range
+CONTEXT:  referenced column: uint1
+select (-1)::int1::uint2;
+ERROR:  tinyint out of range
+CONTEXT:  referenced column: uint2
+select (0)::int1::uint2;
+ uint2 
+-------
+ 0
+(1 row)
+
+select (1)::int1::uint2;
+ uint2 
+-------
+ 1
+(1 row)
+
+select (255)::int1::uint2;
+ uint2 
+-------
+ 255
+(1 row)
+
+select (256)::int1::uint2;
+ERROR:  tinyint out of range
+CONTEXT:  referenced column: uint2
+select (-1)::int1::uint4;
+ERROR:  tinyint out of range
+CONTEXT:  referenced column: uint4
+select (0)::int1::uint4;
+ uint4 
+-------
+ 0
+(1 row)
+
+select (1)::int1::uint4;
+ uint4 
+-------
+ 1
+(1 row)
+
+select (255)::int1::uint4;
+ uint4 
+-------
+ 255
+(1 row)
+
+select (256)::int1::uint4;
+ERROR:  tinyint out of range
+CONTEXT:  referenced column: uint4
+select (-1)::int1::uint8;
+ERROR:  tinyint out of range
+CONTEXT:  referenced column: uint8
+select (0)::int1::uint8;
+ uint8 
+-------
+ 0
+(1 row)
+
+select (1)::int1::uint8;
+ uint8 
+-------
+ 1
+(1 row)
+
+select (255)::int1::uint8;
+ uint8 
+-------
+ 255
+(1 row)
+
+select (256)::int1::uint8;
+ERROR:  tinyint out of range
+CONTEXT:  referenced column: uint8
+select 255::uint1::int1;
+ int1 
+------
+ 255
+(1 row)
+
+select 255::uint1::int2;
+ int2 
+------
+  255
+(1 row)
+
+select 255::uint1::int4;
+ int4 
+------
+  255
+(1 row)
+
+select 255::uint1::int8;
+ int8 
+------
+  255
+(1 row)
+
+select 255::uint1::float4;
+ float4 
+--------
+    255
+(1 row)
+
+select 255::uint1::float8;
+ float8 
+--------
+    255
+(1 row)
+
+select 255::uint1::numeric;
+ numeric 
+---------
+     255
+(1 row)
+
+select 255::uint2::int1;
+ int1 
+------
+ 255
+(1 row)
+
+select 65535::uint2::int1;
+ERROR:  tinyint unsigned out of range
+CONTEXT:  referenced column: int1
+select 32767::uint2::int2;
+ int2  
+-------
+ 32767
+(1 row)
+
+select 65535::uint2::int2;
+ERROR:  smallint out of range
+CONTEXT:  referenced column: int2
+select 65535::uint2::int4;
+ int4  
+-------
+ 65535
+(1 row)
+
+select 65535::uint2::int8;
+ int8  
+-------
+ 65535
+(1 row)
+
+select 65535::uint2::float4;
+ float4 
+--------
+  65535
+(1 row)
+
+select 65535::uint2::float8;
+ float8 
+--------
+  65535
+(1 row)
+
+select 65535::uint2::numeric;
+ numeric 
+---------
+   65535
+(1 row)
+
+select 255::uint4::int1;
+ int1 
+------
+ 255
+(1 row)
+
+select 4294967295::uint4::int1;
+ERROR:  tinyint unsigned out of range
+CONTEXT:  referenced column: int1
+select 32767::uint4::int2;
+ int2  
+-------
+ 32767
+(1 row)
+
+select 4294967295::uint4::int2;
+ERROR:  smallint out of range
+CONTEXT:  referenced column: int2
+select 2147483647::uint4::int4;
+    int4    
+------------
+ 2147483647
+(1 row)
+
+select 4294967295::uint4::int4;
+ERROR:  int out of range
+CONTEXT:  referenced column: int4
+select 4294967295::uint4::int8;
+    int8    
+------------
+ 4294967295
+(1 row)
+
+select 4294967295::uint4::float4;
+   float4    
+-------------
+ 4.29497e+09
+(1 row)
+
+select 4294967295::uint4::float8;
+   float8   
+------------
+ 4294967295
+(1 row)
+
+select 4294967295::uint4::numeric;
+  numeric   
+------------
+ 4294967295
+(1 row)
+
+select 255::uint8::int1;
+ int1 
+------
+ 255
+(1 row)
+
+select 18446744073709551615::uint8::int1;
+ERROR:  tinyint out of range
+CONTEXT:  referenced column: int1
+select 32767::uint8::int2;
+ int2  
+-------
+ 32767
+(1 row)
+
+select 18446744073709551615::uint8::int2;
+ERROR:  smallint out of range
+CONTEXT:  referenced column: int2
+select 2147483647::uint8::int4;
+    int4    
+------------
+ 2147483647
+(1 row)
+
+select 18446744073709551615::uint8::int4;
+ERROR:  int out of range
+CONTEXT:  referenced column: int4
+select 9223372036854775807::uint8::int8;
+        int8         
+---------------------
+ 9223372036854775807
+(1 row)
+
+select 18446744073709551615::uint8::int8;
+ERROR:  bigint out of range
+CONTEXT:  referenced column: int8
+select 18446744073709551615::uint8::float4;
+   float4    
+-------------
+ 1.84467e+19
+(1 row)
+
+select 18446744073709551615::uint8::float8;
+        float8        
+----------------------
+ 1.84467440737096e+19
+(1 row)
+
+select 18446744073709551615::uint8::numeric(30);
+       numeric        
+----------------------
+ 18446744073709551615
+(1 row)
+
+select (0)::uint1::bool;
+ bool 
+------
+ f
+(1 row)
+
+select (1)::uint1::bool;
+ bool 
+------
+ t
+(1 row)
+
+select (0)::uint2::bool;
+ bool 
+------
+ f
+(1 row)
+
+select (1)::uint2::bool;
+ bool 
+------
+ t
+(1 row)
+
+select (0)::uint4::bool;
+ bool 
+------
+ f
+(1 row)
+
+select (1)::uint4::bool;
+ bool 
+------
+ t
+(1 row)
+
+select (0)::uint8::bool;
+ bool 
+------
+ f
+(1 row)
+
+select (1)::uint8::bool;
+ bool 
+------
+ t
+(1 row)
+
+\c postgres
+drop database uint_cast;

@@ -1,0 +1,480 @@
+drop database if exists uint_mul;
+NOTICE:  database "uint_mul" does not exist, skipping
+create database uint_mul dbcompatibility 'b';
+\c uint_mul
+--uint8
+select 18446744073709551615::uint8 * 0::int1;
+ ?column? 
+----------
+ 0
+(1 row)
+
+select 18446744073709551615::uint8 * 0::int2;
+ ?column? 
+----------
+ 0
+(1 row)
+
+select 18446744073709551615::uint8 * 0::int4;
+ ?column? 
+----------
+ 0
+(1 row)
+
+select 18446744073709551615::uint8 * 0::int8;
+ ?column? 
+----------
+ 0
+(1 row)
+
+select 18446744073709551615::uint8 * 0::uint1;
+ ?column? 
+----------
+ 0
+(1 row)
+
+select 18446744073709551615::uint8 * 0::uint2;
+ ?column? 
+----------
+ 0
+(1 row)
+
+select 18446744073709551615::uint8 * 0::uint4;
+ ?column? 
+----------
+ 0
+(1 row)
+
+select 18446744073709551615::uint8 * 0::uint8;
+ ?column? 
+----------
+ 0
+(1 row)
+
+select 18446744073709551615::uint8 * 2::int1;
+ERROR:  bigint unsigned out of range
+select 18446744073709551615::uint8 * 2::int2;
+ERROR:  bigint unsigned out of range
+select 18446744073709551615::uint8 * 2::int4;
+ERROR:  bigint unsigned out of range
+select 18446744073709551615::uint8 * 2::int8;
+ERROR:  bigint unsigned out of range
+select 18446744073709551615::uint8 * 2::uint1;
+ERROR:  bigint unsigned out of range
+select 18446744073709551615::uint8 * 2::uint2;
+ERROR:  bigint unsigned out of range
+select 18446744073709551615::uint8 * 2::uint4;
+ERROR:  bigint unsigned out of range
+select 18446744073709551615::uint8 * 2::uint8;
+ERROR:  bigint unsigned out of range
+select 18446744073709551615::uint8 * (-1)::int2;
+ERROR:  bigint unsigned out of range
+select 18446744073709551615::uint8 * (-1)::int4;
+ERROR:  bigint unsigned out of range
+select 18446744073709551615::uint8 * (-1)::int8;
+ERROR:  bigint unsigned out of range
+--uint4
+select 4294967295::uint4 * 0::int1;
+ ?column? 
+----------
+ 0
+(1 row)
+
+select 4294967295::uint4 * 0::int2;
+ ?column? 
+----------
+ 0
+(1 row)
+
+select 4294967295::uint4 * 0::int4;
+ ?column? 
+----------
+ 0
+(1 row)
+
+select 4294967295::uint4 * 0::int8;
+ ?column? 
+----------
+ 0
+(1 row)
+
+select 4294967295::uint4 * 0::uint1;
+ ?column? 
+----------
+ 0
+(1 row)
+
+select 4294967295::uint4 * 0::uint2;
+ ?column? 
+----------
+ 0
+(1 row)
+
+select 4294967295::uint4 * 0::uint4;
+ ?column? 
+----------
+ 0
+(1 row)
+
+select 4294967295::uint4 * 0::uint8;
+ ?column? 
+----------
+ 0
+(1 row)
+
+select 4294967295::uint4 * (-1)::int2;
+ERROR:  unsigned int out of range
+select 4294967295::uint4 * (-1)::int4;
+ERROR:  unsigned int out of range
+select 4294967295::uint4 * (-1)::int8;
+ERROR:  bigint unsigned out of range
+select 4294967295::uint4 * 9223372036854775807::int8;
+ERROR:  bigint unsigned out of range
+select 4294967295::uint4 * 18446744073709551615::uint8;
+ERROR:  bigint unsigned out of range
+--uint2
+select 65535::uint2 * 0::int1;
+ ?column? 
+----------
+ 0
+(1 row)
+
+select 65535::uint2 * 0::int2;
+ ?column? 
+----------
+ 0
+(1 row)
+
+select 65535::uint2 * 0::int4;
+ ?column? 
+----------
+ 0
+(1 row)
+
+select 65535::uint2 * 0::int8;
+ ?column? 
+----------
+ 0
+(1 row)
+
+select 65535::uint2 * 0::uint1;
+ ?column? 
+----------
+ 0
+(1 row)
+
+select 65535::uint2 * 0::uint2;
+ ?column? 
+----------
+ 0
+(1 row)
+
+select 65535::uint2 * 0::uint4;
+ ?column? 
+----------
+ 0
+(1 row)
+
+select 65535::uint2 * 0::uint8;
+ ?column? 
+----------
+ 0
+(1 row)
+
+select 65535::uint2 * (-1)::int2;
+ERROR:  smallint unsigned out of range
+select 65535::uint2 * (-1)::int4;
+ERROR:  unsigned int out of range
+select 65535::uint2 * (-1)::int8;
+ERROR:  bigint unsigned out of range
+select 65535::uint2 * 2147483647::int4;
+ERROR:  unsigned int out of range
+select 65535::uint2 * 9223372036854775807::int8;
+ERROR:  bigint unsigned out of range
+select 65535::uint2 * 4294967295::uint4;
+ERROR:  unsigned int out of range
+select 65535::uint2 * 18446744073709551615::uint8;
+ERROR:  bigint unsigned out of range
+--uint1
+select 255::uint1 * 0::int1;
+ ?column? 
+----------
+ 0
+(1 row)
+
+select 255::uint1 * 0::int2;
+ ?column? 
+----------
+ 0
+(1 row)
+
+select 255::uint1 * 0::int4;
+ ?column? 
+----------
+ 0
+(1 row)
+
+select 255::uint1 * 0::int8;
+ ?column? 
+----------
+ 0
+(1 row)
+
+select 255::uint1 * 0::uint1;
+ ?column? 
+----------
+ 0
+(1 row)
+
+select 255::uint1 * 0::uint2;
+ ?column? 
+----------
+ 0
+(1 row)
+
+select 255::uint1 * 0::uint4;
+ ?column? 
+----------
+ 0
+(1 row)
+
+select 255::uint1 * 0::uint8;
+ ?column? 
+----------
+ 0
+(1 row)
+
+select 255::uint1 * (-1)::int2;
+ERROR:  smallint unsigned out of range
+select 255::uint1 * (-1)::int4;
+ERROR:  unsigned int out of range
+select 255::uint1 * (-1)::int8;
+ERROR:  bigint unsigned out of range
+select 255::uint1 * 32767::int2;
+ERROR:  smallint unsigned out of range
+select 255::uint1 * 2147483647::int4;
+ERROR:  unsigned int out of range
+select 255::uint1 * 9223372036854775807::int8;
+ERROR:  bigint unsigned out of range
+select 255::uint1 * 65535::uint2;
+ERROR:  smallint unsigned out of range
+select 255::uint1 * 4294967295::uint4;
+ERROR:  unsigned int out of range
+select 255::uint1 * 18446744073709551615::uint8;
+ERROR:  bigint unsigned out of range
+--int8
+select 9223372036854775807::int8 * 0::uint1;
+ ?column? 
+----------
+ 0
+(1 row)
+
+select 9223372036854775807::int8 * 0::uint2;
+ ?column? 
+----------
+ 0
+(1 row)
+
+select 9223372036854775807::int8 * 0::uint4;
+ ?column? 
+----------
+ 0
+(1 row)
+
+select 9223372036854775807::int8 * 0::uint8;
+ ?column? 
+----------
+ 0
+(1 row)
+
+select 9223372036854775807::int8 * 18446744073709551615::uint8;
+ERROR:  bigint unsigned out of range
+select 9223372036854775807::int8 * 1::uint1;
+      ?column?       
+---------------------
+ 9223372036854775807
+(1 row)
+
+select 9223372036854775807::int8 * 1::uint2;
+      ?column?       
+---------------------
+ 9223372036854775807
+(1 row)
+
+select 9223372036854775807::int8 * 1::uint4;
+      ?column?       
+---------------------
+ 9223372036854775807
+(1 row)
+
+select 9223372036854775807::int8 * 1::uint8;
+      ?column?       
+---------------------
+ 9223372036854775807
+(1 row)
+
+--int4
+select 2147483647::int4 * 0::uint1;
+ ?column? 
+----------
+ 0
+(1 row)
+
+select 2147483647::int4 * 0::uint2;
+ ?column? 
+----------
+ 0
+(1 row)
+
+select 2147483647::int4 * 0::uint4;
+ ?column? 
+----------
+ 0
+(1 row)
+
+select 2147483647::int4 * 0::uint8;
+ ?column? 
+----------
+ 0
+(1 row)
+
+select 2147483647::int4 * 4294967295::uint4;
+ERROR:  unsigned int out of range
+select 2147483647::int4 * 18446744073709551615::uint8;
+ERROR:  bigint unsigned out of range
+select 2147483647::int4 * 1::uint1;
+  ?column?  
+------------
+ 2147483647
+(1 row)
+
+select 2147483647::int4 * 1::uint2;
+  ?column?  
+------------
+ 2147483647
+(1 row)
+
+select 2147483647::int4 * 1::uint4;
+  ?column?  
+------------
+ 2147483647
+(1 row)
+
+select 2147483647::int4 * 1::uint8;
+  ?column?  
+------------
+ 2147483647
+(1 row)
+
+--int2
+select 32767::int2 * 0::uint1;
+ ?column? 
+----------
+ 0
+(1 row)
+
+select 32767::int2 * 0::uint2;
+ ?column? 
+----------
+ 0
+(1 row)
+
+select 32767::int2 * 0::uint4;
+ ?column? 
+----------
+ 0
+(1 row)
+
+select 32767::int2 * 0::uint8;
+ ?column? 
+----------
+ 0
+(1 row)
+
+select 32767::int2 * 65535::uint2;
+ERROR:  smallint unsigned out of range
+select 32767::int2 * 4294967295::uint4;
+ERROR:  unsigned int out of range
+select 32767::int2 * 18446744073709551615::uint8;
+ERROR:  bigint unsigned out of range
+select 32767::int2 * 1::uint1;
+ ?column? 
+----------
+ 32767
+(1 row)
+
+select 32767::int2 * 1::uint2;
+ ?column? 
+----------
+ 32767
+(1 row)
+
+select 32767::int2 * 1::uint4;
+ ?column? 
+----------
+ 32767
+(1 row)
+
+select 32767::int2 * 1::uint8;
+ ?column? 
+----------
+ 32767
+(1 row)
+
+--int1
+select 255::int1 * 0::uint1;
+ ?column? 
+----------
+ 0
+(1 row)
+
+select 255::int1 * 0::uint2;
+ ?column? 
+----------
+ 0
+(1 row)
+
+select 255::int1 * 0::uint4;
+ ?column? 
+----------
+ 0
+(1 row)
+
+select 255::int1 * 0::uint8;
+ ?column? 
+----------
+ 0
+(1 row)
+
+select 255::int1 * 65535::uint2;
+ERROR:  smallint unsigned out of range
+select 255::int1 * 4294967295::uint4;
+ERROR:  unsigned int out of range
+select 255::int1 * 18446744073709551615::uint8;
+ERROR:  bigint unsigned out of range
+select 255::int1 * 1::uint1;
+ ?column? 
+----------
+ 255
+(1 row)
+
+select 255::int1 * 1::uint2;
+ ?column? 
+----------
+ 255
+(1 row)
+
+select 255::int1 * 1::uint4;
+ ?column? 
+----------
+ 255
+(1 row)
+
+select 255::int1 * 1::uint8;
+ ?column? 
+----------
+ 255
+(1 row)
+
+\c postgres
+drop database uint_mul

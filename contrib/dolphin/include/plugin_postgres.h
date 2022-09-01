@@ -69,7 +69,20 @@ typedef struct BSqlPluginContext {
 
 BSqlPluginContext* GetSessionContext();
 
+#define PG_RETURN_UINT64(x) return UInt64GetDatum(x)
+#define PG_GETARG_UINT64(n) DatumGetUInt64(PG_GETARG_DATUM(n))
+#define PG_GETARG_UINT32(n) DatumGetUInt32(PG_GETARG_DATUM(n))
+#define PG_GETARG_UINT64(n) DatumGetUInt64(PG_GETARG_DATUM(n))
 #define DEFAULT_GUC_B_DB_TIMESTAMP 0.0
 #define MAX_GUC_B_DB_TIMESTAMP 2147483647.0
+
+typedef enum {
+    INVALID_OID = -1,
+    UINT1_OID,
+    UINT2_OID,
+    UINT4_OID,
+    UINT8_OID,
+    YEAR_OID
+} addedType;
 
 #endif

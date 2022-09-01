@@ -18914,6 +18914,21 @@ void CheckValuePartitionKeyType(Form_pg_attribute* attrs, List* pos)
     }
 }
 
+int CheckAddedType(Oid typoid) {
+    if (typoid == get_typeoid(PG_CATALOG_NAMESPACE, "uint1")){
+        return UINT1_OID;
+    } else if (typoid == get_typeoid(PG_CATALOG_NAMESPACE, "uint2")){
+        return UINT2_OID;
+    } else if (typoid == get_typeoid(PG_CATALOG_NAMESPACE, "uint4")){
+        return UINT4_OID;
+    } else if (typoid == get_typeoid(PG_CATALOG_NAMESPACE, "uint8")){
+        return UINT8_OID;
+    } else if (typoid == get_typeoid(PG_CATALOG_NAMESPACE, "year")){
+        return YEAR_OID;
+    }
+    return INVALID_OID;
+}
+
 /*
  * @@GaussDB@@
  * Target		: data partition
@@ -18924,7 +18939,6 @@ void CheckValuePartitionKeyType(Form_pg_attribute* attrs, List* pos)
 static bool CheckRangePartitionKeyType(Oid typoid)
 {
     bool result = true;
-
     switch (typoid) {
         case INT2OID:
             result = true;
@@ -18993,14 +19007,8 @@ static bool CheckRangePartitionKeyType(Oid typoid)
         case NAMEOID:
             result = true;
             break;
-
         default:
-            Oid yearoid = get_typeoid(PG_CATALOG_NAMESPACE, "year");
-            if (typoid == yearoid) {
-                result = true;
-            } else {
-                result = false;
-            }
+            result = CheckAddedType(typoid) > INVALID_OID;
             break;
     }
     return result;
@@ -19024,11 +19032,7 @@ static bool CheckListPartitionKeyType(Oid typoid)
         case TIMEOID:
             return true;
         default:
-            Oid yearoid = get_typeoid(PG_CATALOG_NAMESPACE, "year");
-            if (typoid == yearoid) {
-                return true;
-            }
-            return false;
+            return CheckAddedType(typoid) > INVALID_OID;
     }
 }
 
@@ -19051,11 +19055,7 @@ static bool CheckHashPartitionKeyType(Oid typoid)
         case TIMESTAMPTZOID:
             return true;
         default:
-            Oid yearoid = get_typeoid(PG_CATALOG_NAMESPACE, "year");
-            if (typoid == yearoid) {
-                return true;
-            }
-            return false;
+            return CheckAddedType(typoid) > INVALID_OID;
     }
 }
 

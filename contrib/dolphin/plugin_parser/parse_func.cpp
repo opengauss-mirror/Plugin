@@ -703,6 +703,7 @@ static int GetCategoryPriority(TYPCATEGORY categoryoid)
 
     if (u_sess->attr.attr_sql.convert_string_to_digit) {
         switch (categoryoid) {
+            case ('C'):
             case ('N'): /*Numeric*/
                 result = 4;
                 break;
@@ -727,6 +728,7 @@ static int GetCategoryPriority(TYPCATEGORY categoryoid)
             case ('T'): /*Timespan*/
                 result = 2;
                 break;
+            case ('C'):
             case ('N'): /*Numeric*/
                 result = 3;
                 break;
@@ -891,9 +893,20 @@ int GetPriority(Oid typeoid)
             result = 0;
             break;
 
-        default:
-            result = 0;
+        default: {
+            if (typeoid == get_typeoid(PG_CATALOG_NAMESPACE, "uint4")) {
+                result = 3;
+            } else if (typeoid == get_typeoid(PG_CATALOG_NAMESPACE, "uint1")) {
+                result = 1;
+            } else if (typeoid == get_typeoid(PG_CATALOG_NAMESPACE, "uint2")) {
+                result = 2;
+            } else if (typeoid == get_typeoid(PG_CATALOG_NAMESPACE, "uint8")) {
+                result = 4;
+            } else {
+                result = 0;
+            }
             break;
+        }
     }
     return result;
 }

@@ -950,8 +950,8 @@ static char* GetDolphinObjName(const char* string, bool is_quoted);
 %type <node>	on_table opt_engine opt_engine_without_empty opt_compression opt_compression_without_empty set_compress_type opt_row_format
 %type <keyword>	into_empty opt_temporary opt_values_in replace_empty
 %type <str>	compression_args
-%type <boolean> opt_ignore
 %type <str> normal_ident
+%type <boolean> opt_ignore opt_unsigned
 
 /*
  * Non-keyword token types.  These are hard-wired into the "flex" lexer.
@@ -1060,7 +1060,7 @@ static char* GetDolphinObjName(const char* string, bool is_quoted);
 	TO TRAILING TRANSACTION TRANSFORM TREAT TRIGGER TRIM TRUE_P
 	TRUNCATE TRUSTED TSFIELD TSTAG TSTIME TYPE_P TYPES_P
 
-	UNBOUNDED UNCOMMITTED UNENCRYPTED UNION UNIQUE UNKNOWN UNLIMITED UNLISTEN UNLOCK UNLOGGED
+	UNBOUNDED UNCOMMITTED UNENCRYPTED UNION UNIQUE UNKNOWN UNLIMITED UNLISTEN UNLOCK UNLOGGED UNSIGNED
 	UNTIL UNUSABLE UPDATE USE USEEOF USER USING
 
 	VACUUM VALID VALIDATE VALIDATION VALIDATOR VALUE_P VALUES VARBINARY VARCHAR VARCHAR2 VARIABLES VARIADIC VARRAY VARYING VCGROUP
@@ -22952,6 +22952,27 @@ GenericType:
 					$$->typmods = $3;
 					$$->location = @1;
 				}
+			| type_function_name UNSIGNED
+			{
+				if (($1 != NULL) && (strcmp($1, "int1") == 0)) {
+					$$ = SystemTypeName("uint1");
+					$$->location = @1;
+				} else if (($1 != NULL) && (strcmp($1, "int2") == 0)) {
+					$$ = SystemTypeName("uint2");
+					$$->location = @1;
+				} else if (($1 != NULL) && (strcmp($1, "int4") == 0)) {
+					$$ = SystemTypeName("uint4");
+					$$->location = @1;
+				} else if (($1 != NULL) && (strcmp($1, "int8") == 0)) {
+					$$ = SystemTypeName("uint8");
+					$$->location = @1;
+				} else {
+					ereport(errstate,
+					(errcode(ERRCODE_SYNTAX_ERROR),
+						errmsg("syntax error"),
+						parser_errposition(@2)));
+				}
+			}
 		;
 
 /*
@@ -22980,47 +23001,74 @@ Binary:	BINARY
 			$$->location = @1;
 		}
 
+opt_unsigned:
+		UNSIGNED								{  $$ = TRUE; }
+		| /*EMPTY*/								{  $$ = FALSE; }
+		;
+
 /*
  * SQL92 numeric data types
  */
-Numeric:	INT_P opt_type_modifiers
+Numeric:	INT_P opt_type_modifiers opt_unsigned
 				{
-					$$ = SystemTypeName("int4");
-					$$->location = @1;
-				}
-			| INTEGER opt_type_modifiers
-				{
-					if ($2 != NULL)
-					{
-						$$ = SystemTypeName("numeric");
-						$$->typmods = $2;
+					if ($3) {
+						$$ = SystemTypeName("uint4");
+						$$->location = @1;
+					} else {
+						$$ = SystemTypeName("int4");
 						$$->location = @1;
 					}
-					else
-				{
-					$$ = SystemTypeName("int4");
-					$$->location = @1;
 				}
-				}
-			| SMALLINT opt_type_modifiers
+			| INTEGER opt_type_modifiers opt_unsigned
 				{
-					$$ = SystemTypeName("int2");
-					$$->location = @1;
+					if ($3) {
+						$$ = SystemTypeName("uint4");
+						$$->location = @1;
+					} else {
+						$$ = SystemTypeName("int4");
+						$$->location = @1;
+					}
 				}
-			| TINYINT opt_type_modifiers
+			| TINYINT opt_type_modifiers opt_unsigned 
 				{
-					$$ = SystemTypeName("int1");
-					$$->location = @1;
+					if ($3) {
+						$$ = SystemTypeName("uint1");
+						$$->location = @2;
+					} else {
+						$$ = SystemTypeName("int1");
+						$$->location = @1;
+					}
 				}
-			| MEDIUMINT opt_type_modifiers
+
+			| SMALLINT opt_type_modifiers opt_unsigned
 				{
-					$$ = SystemTypeName("int4");
-					$$->location = @1;
+					if ($3) {
+						$$ = SystemTypeName("uint2");
+						$$->location = @1;
+					} else {
+						$$ = SystemTypeName("int2");
+						$$->location = @1;
+					}
 				}
-			| BIGINT opt_type_modifiers
+			| MEDIUMINT opt_type_modifiers opt_unsigned
 				{
-					$$ = SystemTypeName("int8");
-					$$->location = @1;
+					if ($3) {
+						$$ = SystemTypeName("uint4");
+						$$->location = @1;
+					} else {
+						$$ = SystemTypeName("int4");
+						$$->location = @1;
+					}
+				}
+			| BIGINT opt_type_modifiers opt_unsigned
+				{
+					if ($3) {
+						$$ = SystemTypeName("uint8");
+						$$->location = @1;
+					} else {
+						$$ = SystemTypeName("int8");
+						$$->location = @1;
+					}
 				}
 			| REAL
 				{
@@ -27737,6 +27785,7 @@ col_name_keyword:
 			| TINYINT
 			| TREAT
 			| TRIM
+			| UNSIGNED
 			| VALUES
 			| VARBINARY
 			| VARCHAR

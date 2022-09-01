@@ -234,6 +234,65 @@ static void compute_bucket(
 
 extern Numeric int64_to_numeric(int64 v);
 extern const char* extract_numericstr(const char* str);
+PG_FUNCTION_INFO_V1_PUBLIC(uint1_sum);
+PG_FUNCTION_INFO_V1_PUBLIC(uint2_sum);
+PG_FUNCTION_INFO_V1_PUBLIC(uint4_sum);
+PG_FUNCTION_INFO_V1_PUBLIC(uint8_sum);
+
+PG_FUNCTION_INFO_V1_PUBLIC(uint1_avg_accum);
+PG_FUNCTION_INFO_V1_PUBLIC(uint2_avg_accum);
+PG_FUNCTION_INFO_V1_PUBLIC(uint4_avg_accum);
+PG_FUNCTION_INFO_V1_PUBLIC(uint8_avg_accum);
+
+PG_FUNCTION_INFO_V1_PUBLIC(uint1_accum);
+PG_FUNCTION_INFO_V1_PUBLIC(uint2_accum);
+PG_FUNCTION_INFO_V1_PUBLIC(uint4_accum);
+PG_FUNCTION_INFO_V1_PUBLIC(uint8_accum);
+
+PG_FUNCTION_INFO_V1_PUBLIC(uint1_numeric);
+PG_FUNCTION_INFO_V1_PUBLIC(uint2_numeric);
+PG_FUNCTION_INFO_V1_PUBLIC(uint4_numeric);
+PG_FUNCTION_INFO_V1_PUBLIC(uint8_numeric);
+
+PG_FUNCTION_INFO_V1_PUBLIC(numeric_uint1);
+PG_FUNCTION_INFO_V1_PUBLIC(numeric_uint2);
+PG_FUNCTION_INFO_V1_PUBLIC(numeric_uint4);
+PG_FUNCTION_INFO_V1_PUBLIC(numeric_uint8);
+
+PG_FUNCTION_INFO_V1_PUBLIC(numeric_cast_uint1);
+PG_FUNCTION_INFO_V1_PUBLIC(numeric_cast_uint2);
+PG_FUNCTION_INFO_V1_PUBLIC(numeric_cast_uint4);
+PG_FUNCTION_INFO_V1_PUBLIC(numeric_cast_uint8);
+
+extern "C" DLL_PUBLIC Datum numeric_uint1(PG_FUNCTION_ARGS);
+extern "C" DLL_PUBLIC Datum numeric_uint2(PG_FUNCTION_ARGS);
+extern "C" DLL_PUBLIC Datum numeric_uint4(PG_FUNCTION_ARGS);
+extern "C" DLL_PUBLIC Datum numeric_uint8(PG_FUNCTION_ARGS);
+extern "C" DLL_PUBLIC Datum uint4_numeric(PG_FUNCTION_ARGS);
+extern "C" DLL_PUBLIC Datum uint8_numeric(PG_FUNCTION_ARGS);
+extern "C" DLL_PUBLIC Datum uint2_numeric(PG_FUNCTION_ARGS);
+extern "C" DLL_PUBLIC Datum uint1_numeric(PG_FUNCTION_ARGS);
+
+extern "C" DLL_PUBLIC Datum uint1_sum(PG_FUNCTION_ARGS);
+extern "C" DLL_PUBLIC Datum uint2_sum(PG_FUNCTION_ARGS);
+extern "C" DLL_PUBLIC Datum uint4_sum(PG_FUNCTION_ARGS);
+extern "C" DLL_PUBLIC Datum uint8_sum(PG_FUNCTION_ARGS);
+
+extern "C" DLL_PUBLIC Datum uint1_avg_accum(PG_FUNCTION_ARGS);
+extern "C" DLL_PUBLIC Datum uint2_avg_accum(PG_FUNCTION_ARGS);
+extern "C" DLL_PUBLIC Datum uint4_avg_accum(PG_FUNCTION_ARGS);
+extern "C" DLL_PUBLIC Datum uint8_avg_accum(PG_FUNCTION_ARGS);
+
+extern "C" DLL_PUBLIC Datum uint1_accum(PG_FUNCTION_ARGS);
+extern "C" DLL_PUBLIC Datum uint2_accum(PG_FUNCTION_ARGS);
+extern "C" DLL_PUBLIC Datum uint4_accum(PG_FUNCTION_ARGS);
+extern "C" DLL_PUBLIC Datum uint8_accum(PG_FUNCTION_ARGS);
+
+extern "C" DLL_PUBLIC Datum numeric_cast_uint1(PG_FUNCTION_ARGS);
+extern "C" DLL_PUBLIC Datum numeric_cast_uint2(PG_FUNCTION_ARGS);
+extern "C" DLL_PUBLIC Datum numeric_cast_uint4(PG_FUNCTION_ARGS);
+extern "C" DLL_PUBLIC Datum numeric_cast_uint8(PG_FUNCTION_ARGS);
+
 /*
  * @Description: call corresponding big integer operator functions.
  *
@@ -3788,6 +3847,8 @@ Datum int8_sum(PG_FUNCTION_ARGS)
 
     PG_RETURN_DATUM(DirectFunctionCall2(numeric_add, NumericGetDatum(oldsum), newval));
 }
+
+
 
 #ifdef PGXC
 /*
@@ -19140,7 +19201,6 @@ void int128_to_numericvar(int128 val, NumericVar* var)
     var->ndigits = ndigits;
     var->weight = ndigits - 1;
 }
-
 /*
  * Convert numeric to int16, rounding if needed.
  *
@@ -19591,4 +19651,838 @@ Datum bin_bool(PG_FUNCTION_ARGS)
 {
     const char* res = PG_GETARG_BOOL(0) ? "1" : "0";
     PG_RETURN_TEXT_P(cstring_to_text(res));
+}
+
+Datum uint1_avg_accum(PG_FUNCTION_ARGS)
+{
+    ArrayType *transarray = NULL;
+    uint8 newval = PG_GETARG_UINT8(1);
+    Int8TransTypeData *transdata = NULL;
+
+    /*
+     * If we're invoked as an aggregate, we can cheat and modify our first
+     * parameter in-place to reduce palloc overhead. Otherwise we need to make
+     * a copy of it before scribbling on it.
+     */
+    if (AggCheckCallContext(fcinfo, NULL))
+        transarray = PG_GETARG_ARRAYTYPE_P(0);
+    else
+        transarray = PG_GETARG_ARRAYTYPE_P_COPY(0);
+
+    if (ARR_HASNULL(transarray) || ARR_SIZE(transarray) != ARR_OVERHEAD_NONULLS(1) + sizeof(Int8TransTypeData))
+        ereport(ERROR, (errcode(ERRCODE_ARRAY_ELEMENT_ERROR), errmsg("expected 2-element int8 array")));
+
+    transdata = (Int8TransTypeData *)ARR_DATA_PTR(transarray);
+    transdata->count++;
+    transdata->sum += newval;
+
+    PG_RETURN_ARRAYTYPE_P(transarray);
+}
+
+Datum uint1_sum(PG_FUNCTION_ARGS)
+{
+    int64 newval;
+
+    if (PG_ARGISNULL(0)) {
+        /* No non-null input seen so far... */
+        if (PG_ARGISNULL(1))
+            PG_RETURN_NULL(); /* still no non-null */
+        /* This is the first non-null input. */
+        newval = (int64)PG_GETARG_UINT8(1);
+        PG_RETURN_INT64(newval);
+    }
+
+    /*
+     * If we're invoked as an aggregate, we can cheat and modify our first
+     * parameter in-place to avoid palloc overhead. If not, we need to return
+     * the new value of the transition variable. (If int8 is pass-by-value,
+     * then of course this is useless as well as incorrect, so just ifdef it
+     * out.)
+     */
+#ifndef USE_FLOAT8_BYVAL /* controls int8 too */
+    if (AggCheckCallContext(fcinfo, NULL)) {
+        int64 *oldsum = (int64 *)PG_GETARG_POINTER(0);
+
+        /* Leave the running sum unchanged in the new input is null */
+        if (!PG_ARGISNULL(1))
+            *oldsum = *oldsum + (int64)PG_GETARG_UINT8(1);
+
+        PG_RETURN_POINTER(oldsum);
+    } else
+#endif
+    {
+        int64 oldsum = PG_GETARG_INT64(0);
+
+        /* Leave sum unchanged if new input is null. */
+        if (PG_ARGISNULL(1)) {
+            PG_RETURN_INT64(oldsum);
+        }
+
+        /* OK to do the addition. */
+        newval = oldsum + (int64)PG_GETARG_UINT8(1);
+
+        PG_RETURN_INT64(newval);
+    }
+}
+
+Datum uint2_sum(PG_FUNCTION_ARGS)
+{
+    int64 newval;
+
+    if (PG_ARGISNULL(0)) {
+        /* No non-null input seen so far... */
+        if (PG_ARGISNULL(1))
+            PG_RETURN_NULL(); /* still no non-null */
+        /* This is the first non-null input. */
+        newval = (int64)PG_GETARG_UINT16(1);
+        PG_RETURN_INT64(newval);
+    }
+
+    /*
+     * If we're invoked as an aggregate, we can cheat and modify our first
+     * parameter in-place to avoid palloc overhead. If not, we need to return
+     * the new value of the transition variable. (If int8 is pass-by-value,
+     * then of course this is useless as well as incorrect, so just ifdef it
+     * out.)
+     */
+#ifndef USE_FLOAT8_BYVAL /* controls int8 too */
+    if (AggCheckCallContext(fcinfo, NULL)) {
+        int64 *oldsum = (int64 *)PG_GETARG_POINTER(0);
+
+        /* Leave the running sum unchanged in the new input is null */
+        if (!PG_ARGISNULL(1))
+            *oldsum = *oldsum + (int64)PG_GETARG_UINT16(1);
+
+        PG_RETURN_POINTER(oldsum);
+    } else
+#endif
+    {
+        int64 oldsum = PG_GETARG_INT64(0);
+
+        /* Leave sum unchanged if new input is null. */
+        if (PG_ARGISNULL(1)) {
+            PG_RETURN_INT64(oldsum);
+        }
+
+        /* OK to do the addition. */
+        newval = oldsum + (int64)PG_GETARG_UINT16(1);
+
+        PG_RETURN_INT64(newval);
+    }
+}
+
+Datum uint4_sum(PG_FUNCTION_ARGS)
+{
+    int64 newval;
+
+    if (PG_ARGISNULL(0)) {
+        /* No non-null input seen so far... */
+        if (PG_ARGISNULL(1))
+            PG_RETURN_NULL(); /* still no non-null */
+        /* This is the first non-null input. */
+        newval = (int64)PG_GETARG_UINT32(1);
+        PG_RETURN_INT64(newval);
+    }
+
+    /*
+     * If we're invoked as an aggregate, we can cheat and modify our first
+     * parameter in-place to avoid palloc overhead. If not, we need to return
+     * the new value of the transition variable. (If int8 is pass-by-value,
+     * then of course this is useless as well as incorrect, so just ifdef it
+     * out.)
+     */
+#ifndef USE_FLOAT8_BYVAL /* controls int8 too */
+    if (AggCheckCallContext(fcinfo, NULL)) {
+        int64 *oldsum = (int64 *)PG_GETARG_POINTER(0);
+
+        /* Leave the running sum unchanged in the new input is null */
+        if (!PG_ARGISNULL(1))
+            *oldsum = *oldsum + (int64)PG_GETARG_UINT32(1);
+
+        PG_RETURN_POINTER(oldsum);
+    } else
+#endif
+    {
+        int64 oldsum = PG_GETARG_INT64(0);
+
+        /* Leave sum unchanged if new input is null. */
+        if (PG_ARGISNULL(1)) {
+            PG_RETURN_INT64(oldsum);
+        }
+
+        /* OK to do the addition. */
+        newval = oldsum + (int64)PG_GETARG_UINT32(1);
+
+        PG_RETURN_INT64(newval);
+    }
+}
+
+Datum uint8_sum(PG_FUNCTION_ARGS)
+{
+    Numeric oldsum;
+    Datum newval;
+
+    if (PG_ARGISNULL(0)) {
+        /* No non-null input seen so far... */
+        if (PG_ARGISNULL(1))
+            PG_RETURN_NULL(); /* still no non-null */
+        /* This is the first non-null input. */
+        newval = DirectFunctionCall1(uint8_numeric, PG_GETARG_DATUM(1));
+        PG_RETURN_DATUM(newval);
+    }
+
+    /*
+     * Note that we cannot special-case the aggregate case here, as we do for
+     * int2_sum and int4_sum: numeric is of variable size, so we cannot modify
+     * our first parameter in-place.
+     */
+
+    oldsum = PG_GETARG_NUMERIC(0);
+
+    /* Leave sum unchanged if new input is null. */
+    if (PG_ARGISNULL(1))
+        PG_RETURN_NUMERIC(oldsum);
+
+    /* OK to do the addition. */
+    newval = DirectFunctionCall1(uint8_numeric, PG_GETARG_DATUM(1));
+
+    PG_RETURN_DATUM(DirectFunctionCall2(numeric_add, NumericGetDatum(oldsum), newval));
+}
+
+Datum uint8_avg_accum(PG_FUNCTION_ARGS)
+{
+    ArrayType *transarray = PG_GETARG_ARRAYTYPE_P(0);
+    Datum newval8 = PG_GETARG_DATUM(1);
+    Numeric newval;
+
+    newval = DatumGetNumeric(DirectFunctionCall1(uint8_numeric, newval8));
+
+    PG_RETURN_ARRAYTYPE_P(do_numeric_avg_accum(transarray, newval));
+}
+
+Datum uint1_accum(PG_FUNCTION_ARGS)
+{
+    ArrayType *transarray = PG_GETARG_ARRAYTYPE_P(0);
+    Datum newval2 = PG_GETARG_DATUM(1);
+    Numeric newval;
+
+    newval = DatumGetNumeric(DirectFunctionCall1(uint1_numeric, newval2));
+
+    PG_RETURN_ARRAYTYPE_P(do_numeric_accum(transarray, newval));
+}
+
+Datum uint2_accum(PG_FUNCTION_ARGS)
+{
+    ArrayType *transarray = PG_GETARG_ARRAYTYPE_P(0);
+    Datum newval2 = PG_GETARG_DATUM(1);
+    Numeric newval;
+
+    newval = DatumGetNumeric(DirectFunctionCall1(uint2_numeric, newval2));
+
+    PG_RETURN_ARRAYTYPE_P(do_numeric_accum(transarray, newval));
+}
+
+Datum uint4_accum(PG_FUNCTION_ARGS)
+{
+    ArrayType *transarray = PG_GETARG_ARRAYTYPE_P(0);
+    Datum newval4 = PG_GETARG_DATUM(1);
+    Numeric newval;
+
+    newval = DatumGetNumeric(DirectFunctionCall1(uint4_numeric, newval4));
+
+    PG_RETURN_ARRAYTYPE_P(do_numeric_accum(transarray, newval));
+}
+
+Datum uint8_accum(PG_FUNCTION_ARGS)
+{
+    ArrayType *transarray = PG_GETARG_ARRAYTYPE_P(0);
+    Datum newval8 = PG_GETARG_DATUM(1);
+    Numeric newval;
+
+    newval = DatumGetNumeric(DirectFunctionCall1(uint8_numeric, newval8));
+
+    PG_RETURN_ARRAYTYPE_P(do_numeric_accum(transarray, newval));
+}
+
+Datum uint2_numeric(PG_FUNCTION_ARGS)
+{
+    uint16 val = PG_GETARG_UINT16(0);
+    Numeric res;
+    NumericVar result;
+
+    init_var(&result);
+
+    int64_to_numericvar((int64)val, &result);
+
+    res = make_result(&result);
+
+    free_var(&result);
+
+    PG_RETURN_NUMERIC(res);
+}
+
+Datum numeric_uint2(PG_FUNCTION_ARGS)
+{
+    Numeric num = PG_GETARG_NUMERIC(0);
+    NumericVar x;
+    int64 val;
+    uint16 result;
+    uint16 numFlags = NUMERIC_NB_FLAGBITS(num);
+
+    if (NUMERIC_FLAG_IS_NANORBI(numFlags)) {
+        /* Handle Big Integer */
+        if (NUMERIC_FLAG_IS_BI(numFlags))
+            num = makeNumericNormal(num);
+        /* XXX would it be better to return NULL? */
+        else
+            ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("cannot convert NaN to smallint unsigned")));
+    }
+
+    /* Convert to variable format and thence to int8 */
+    init_var_from_num(num, &x);
+
+    if (!numericvar_to_int64(&x, &val)) {
+        if (fcinfo->can_ignore || !SQL_MODE_STRICT()) {
+            if (fcinfo->can_ignore) {
+                ereport(WARNING, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("smallint unsigned out of range")));
+            }
+            if (NUMERIC_POS == x.sign)
+                PG_RETURN_UINT16(USHRT_MAX);
+            else
+                PG_RETURN_UINT16(0);
+        }
+        ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("smallint unsigned out of range")));
+    }
+
+    /* Down-convert to int2 */
+    result = (uint16)val;
+
+    /* Test for overflow by reverse-conversion. */
+    if ((int64)result != val) {
+        if (fcinfo->can_ignore || !SQL_MODE_STRICT()) {
+            if (fcinfo->can_ignore) {
+                ereport(WARNING, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("smallint unsigned out of range")));
+            }
+            if (NUMERIC_POS == x.sign)
+                PG_RETURN_UINT16(USHRT_MAX);
+            else
+                PG_RETURN_UINT16(0);
+        }
+        ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("smallint unsigned out of range")));
+    }
+
+    PG_RETURN_UINT16(result);
+}
+
+Datum uint1_numeric(PG_FUNCTION_ARGS)
+{
+    uint8 val = PG_GETARG_UINT8(0);
+    Numeric res;
+    NumericVar result;
+
+    init_var(&result);
+
+    int64_to_numericvar((int64)val, &result);
+
+    res = make_result(&result);
+
+    free_var(&result);
+
+    PG_RETURN_NUMERIC(res);
+}
+
+
+Datum numeric_uint1(PG_FUNCTION_ARGS)
+{
+    Numeric num = PG_GETARG_NUMERIC(0);
+    NumericVar x;
+    int64 val;
+    uint8 result;
+
+    if (NUMERIC_IS_NAN(num))
+        ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("cannot convert NaN to tinyint unsigned")));
+
+    init_var(&x);
+    set_var_from_num(num, &x);
+
+    if (!numericvar_to_int64(&x, &val)) {
+        if (fcinfo->can_ignore || !SQL_MODE_STRICT()) {
+            if (fcinfo->can_ignore) {
+                ereport(WARNING, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("tinyint unsigned out of range")));
+            }
+            if (NUMERIC_POS == x.sign)
+                PG_RETURN_UINT8(UCHAR_MAX);
+            else
+                PG_RETURN_UINT8(0);
+        }        
+        ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("tinyint unsigned out of range")));
+    }
+    free_var(&x);
+
+    result = (uint8)val;
+
+    if ((int64)result != val) {
+        if (fcinfo->can_ignore || !SQL_MODE_STRICT()) {
+            if (fcinfo->can_ignore) {
+                ereport(WARNING, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("tinyint unsigned out of range")));
+            }
+            if (NUMERIC_POS == x.sign)
+                PG_RETURN_UINT8(UCHAR_MAX);
+            else
+                PG_RETURN_UINT16(0);
+        }
+        ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("tinyint unsigned out of range")));
+    }
+
+    PG_RETURN_UINT8(result);
+}
+
+void uint8_to_numericvar(uint64 val, NumericVar *var)
+{
+    uint64 uval, newuval;
+    NumericDigit *ptr;
+    int ndigits;
+
+    alloc_var(var, 20 / DEC_DIGITS);
+
+    uval = val;
+    var->dscale = 0;
+    if (val == 0) {
+        var->ndigits = 0;
+        var->weight = 0;
+        return;
+    }
+    ptr = var->digits + var->ndigits;
+    ndigits = 0;
+    do {
+        ptr--;
+        ndigits++;
+        newuval = uval / NBASE;
+        *ptr = uval - newuval * NBASE;
+        uval = newuval;
+    } while (uval);
+    var->digits = ptr;
+    var->ndigits = ndigits;
+    var->weight = ndigits - 1;
+}
+
+static bool numericvar_to_uint8(NumericVar *var, uint64 *result)
+{
+    NumericDigit *digits;
+    int ndigits;
+    int weight;
+    int i;
+    uint64 val, oldval;
+    bool neg;
+
+    /* Round to nearest integer */
+    round_var(var, 0);
+
+    /* Check for zero input */
+    strip_var(var);
+    ndigits = var->ndigits;
+    if (ndigits == 0) {
+        *result = 0;
+        return true;
+    }
+
+    weight = var->weight;
+    Assert(weight >= 0 && ndigits <= weight + 1);
+
+    /* Construct the result */
+    digits = var->digits;
+    neg = (var->sign == NUMERIC_NEG);
+    if (neg) {
+        return false;
+    }
+    val = digits[0];
+    for (i = 1; i <= weight; i++) {
+        oldval = val;
+        val *= NBASE;
+        if (i < ndigits)
+            val += digits[i];
+
+        /*
+         * The overflow check is a bit tricky because we want to accept
+         * INT64_MIN, which will overflow the positive accumulator.  We can
+         * detect this case easily though because INT64_MIN is the only
+         * nonzero value for which -val == val (on a two's complement machine,
+         * anyway).
+         */
+        if ((val / NBASE) != oldval) { /* possible overflow? */
+            if ((-val) != val || val == 0)
+                return false;
+        }
+    }
+
+    *result = val;
+    return true;
+}
+
+Datum numeric_uint8(PG_FUNCTION_ARGS)
+{
+    Numeric num = PG_GETARG_NUMERIC(0);
+    NumericVar x;
+    uint64 result;
+
+    result = 0;
+
+    /* XXX would it be better to return NULL? */
+    if (NUMERIC_IS_NAN(num))
+        ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("cannot convert NaN to bigint unsigned")));
+
+    /* Convert to variable format and thence to int8 */
+    init_var(&x);
+    set_var_from_num(num, &x);
+
+    if (!numericvar_to_uint8(&x, &result)) {
+        if (fcinfo->can_ignore || !SQL_MODE_STRICT()) {
+            if (fcinfo->can_ignore) {
+                ereport(WARNING, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("bigint unsigned out of range")));
+            }
+            if (NUMERIC_POS == x.sign)
+                PG_RETURN_UINT64(ULONG_MAX);
+            else
+                PG_RETURN_UINT64(0);
+        }
+        ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("bigint unsigned out of range")));
+    }
+
+    free_var(&x);
+
+    PG_RETURN_UINT64(result);
+}
+
+Datum uint8_numeric(PG_FUNCTION_ARGS)
+{
+    uint64 val = PG_GETARG_UINT64(0);
+    Numeric res;
+    NumericVar result;
+
+    init_var(&result);
+
+    uint8_to_numericvar(val, &result);
+    res = make_result(&result);
+
+    free_var(&result);
+    PG_RETURN_NUMERIC(res);
+}
+
+Datum uint4_numeric(PG_FUNCTION_ARGS)
+{
+    uint32 val = PG_GETARG_INT32(0);
+    Numeric res;
+    NumericVar result;
+
+    init_var(&result);
+
+    int64_to_numericvar((int64)val, &result);
+
+    res = make_result(&result);
+
+    free_var(&result);
+
+    PG_RETURN_NUMERIC(res);
+}
+
+Datum numeric_uint4(PG_FUNCTION_ARGS)
+{
+    Numeric num = PG_GETARG_NUMERIC(0);
+    NumericVar x;
+    int64 val;
+    uint32 result;
+    uint32 numFlags = NUMERIC_NB_FLAGBITS(num);
+
+    if (NUMERIC_FLAG_IS_NANORBI(numFlags)) {
+        /* Handle Big Integer */
+        if (NUMERIC_FLAG_IS_BI(numFlags))
+            num = makeNumericNormal(num);
+        /* XXX would it be better to return NULL? */
+        else
+            ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("cannot convert NaN to unsigned int")));
+    }
+
+    /* Convert to variable format and thence to int8 */
+    init_var_from_num(num, &x);
+
+    if (!numericvar_to_int64(&x, &val)) {
+        if (fcinfo->can_ignore || !SQL_MODE_STRICT()) {
+            if (fcinfo->can_ignore) {
+                ereport(WARNING, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("unsigned int out of range")));
+            }
+            if (NUMERIC_POS == x.sign)
+                PG_RETURN_UINT32(UINT_MAX);
+            else
+                PG_RETURN_UINT32(0);
+        } else {
+            ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("unsigned int out of range")));
+        }
+    }
+
+    /* Down-convert to int4 */
+    result = (uint32)val;
+
+    /* Test for overflow by reverse-conversion. */
+    if ((int64)result != val) {
+        if (fcinfo->can_ignore || !SQL_MODE_STRICT()) {
+            if (fcinfo->can_ignore) {
+                ereport(WARNING, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("unsigned int out of range")));
+            }
+            if (NUMERIC_POS == x.sign)
+                PG_RETURN_UINT32(UINT_MAX);
+            else
+                PG_RETURN_UINT32(0);
+        } else {
+            ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("unsigned int out of range")));
+        }
+    }
+
+    PG_RETURN_UINT32(result);
+
+}
+
+Datum uint2_avg_accum(PG_FUNCTION_ARGS)
+{
+    ArrayType *transarray = NULL;
+    uint16 newval = PG_GETARG_UINT16(1);
+    Int8TransTypeData *transdata = NULL;
+
+    /*
+     * If we're invoked as an aggregate, we can cheat and modify our first
+     * parameter in-place to reduce palloc overhead. Otherwise we need to make
+     * a copy of it before scribbling on it.
+     */
+    if (AggCheckCallContext(fcinfo, NULL))
+        transarray = PG_GETARG_ARRAYTYPE_P(0);
+    else
+        transarray = PG_GETARG_ARRAYTYPE_P_COPY(0);
+
+    if (ARR_HASNULL(transarray) || ARR_SIZE(transarray) != ARR_OVERHEAD_NONULLS(1) + sizeof(Int8TransTypeData))
+        ereport(ERROR, (errcode(ERRCODE_ARRAY_ELEMENT_ERROR), errmsg("expected 2-element int8 array")));
+
+    transdata = (Int8TransTypeData *)ARR_DATA_PTR(transarray);
+    transdata->count++;
+    transdata->sum += (int64)newval;
+
+    PG_RETURN_ARRAYTYPE_P(transarray);
+}
+
+Datum uint4_avg_accum(PG_FUNCTION_ARGS)
+{
+    ArrayType *transarray = NULL;
+    uint32 newval = PG_GETARG_UINT32(1);
+    Int8TransTypeData *transdata = NULL;
+
+    /*
+     * If we're invoked as an aggregate, we can cheat and modify our first
+     * parameter in-place to reduce palloc overhead. Otherwise we need to make
+     * a copy of it before scribbling on it.
+     */
+    if (AggCheckCallContext(fcinfo, NULL))
+        transarray = PG_GETARG_ARRAYTYPE_P(0);
+    else
+        transarray = PG_GETARG_ARRAYTYPE_P_COPY(0);
+
+    if (ARR_HASNULL(transarray) || ARR_SIZE(transarray) != ARR_OVERHEAD_NONULLS(1) + sizeof(Int8TransTypeData))
+        ereport(ERROR, (errcode(ERRCODE_ARRAY_ELEMENT_ERROR), errmsg("expected 2-element int8 array")));
+
+    transdata = (Int8TransTypeData *)ARR_DATA_PTR(transarray);
+    transdata->count++;
+    transdata->sum += newval;
+
+    PG_RETURN_ARRAYTYPE_P(transarray);
+}
+
+Datum numeric_cast_uint1(PG_FUNCTION_ARGS)
+{
+    Numeric num = PG_GETARG_NUMERIC(0);
+    NumericVar x;
+    int64 val;
+    uint8 result;
+
+    if (NUMERIC_IS_NAN(num))
+        ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("cannot convert NaN to tinyint unsigned")));
+
+    init_var(&x);
+    set_var_from_num(num, &x);
+
+    if (!numericvar_to_int64(&x, &val)) {
+        if (fcinfo->can_ignore || !SQL_MODE_STRICT()) {
+            if (fcinfo->can_ignore) {
+                ereport(WARNING, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("tinyint unsigned out of range")));
+            }
+            if (NUMERIC_POS == x.sign)
+                PG_RETURN_UINT8(UCHAR_MAX);
+            else
+                PG_RETURN_UINT8(0);
+        }
+        ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("tinyint unsigned out of range")));
+    }
+
+    free_var(&x);
+
+    result = (uint8)val;
+
+    if ((int64)result != val) {
+        if (fcinfo->can_ignore || !SQL_MODE_STRICT()) {
+            if (fcinfo->can_ignore) {
+                ereport(WARNING, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("tinyint unsigned out of range")));
+            }
+            if (NUMERIC_POS == x.sign)
+                PG_RETURN_UINT8(UCHAR_MAX);
+        }
+        if (NUMERIC_POS != x.sign)
+            PG_RETURN_UINT8(0);
+        ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("tinyint unsigned out of range")));
+    }
+    PG_RETURN_UINT8(result);
+}
+
+Datum numeric_cast_uint2(PG_FUNCTION_ARGS)
+{
+    Numeric num = PG_GETARG_NUMERIC(0);
+    NumericVar x;
+    int64 val;
+    uint16 result;
+    uint16 numFlags = NUMERIC_NB_FLAGBITS(num);
+
+    if (NUMERIC_FLAG_IS_NANORBI(numFlags)) {
+        /* Handle Big Integer */
+        if (NUMERIC_FLAG_IS_BI(numFlags))
+            num = makeNumericNormal(num);
+        /* XXX would it be better to return NULL? */
+        else
+            ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("cannot convert NaN to smallint unsigned")));
+    }
+
+    /* Convert to variable format and thence to int8 */
+    init_var_from_num(num, &x);
+
+    if (!numericvar_to_int64(&x, &val)) {
+        if (fcinfo->can_ignore || !SQL_MODE_STRICT()) {
+            if (fcinfo->can_ignore) {
+                ereport(WARNING, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("smallint unsigned out of range")));
+            }
+            if (NUMERIC_POS == x.sign)
+                PG_RETURN_UINT16(USHRT_MAX);
+            else
+                PG_RETURN_UINT16(0);
+        } else {
+            ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("smallint unsigned out of range")));
+        }
+    }
+
+    /* Down-convert to int2 */
+    result = (uint16)val;
+
+    /* Test for overflow by reverse-conversion. */
+    if ((int64)result != val) {
+        if (fcinfo->can_ignore || !SQL_MODE_STRICT()) {
+            if (fcinfo->can_ignore) {
+                ereport(WARNING, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("smallint unsigned out of range")));
+            }
+            if (NUMERIC_POS == x.sign)
+                PG_RETURN_UINT16(USHRT_MAX);
+        }
+        if (NUMERIC_POS != x.sign) {
+            PG_RETURN_UINT16(0);
+        }
+        ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("smallint unsigned out of range")));
+    }
+
+    PG_RETURN_UINT16(result);
+}
+
+Datum numeric_cast_uint4(PG_FUNCTION_ARGS)
+{
+    Numeric num = PG_GETARG_NUMERIC(0);
+    NumericVar x;
+    int64 val;
+    uint32 result;
+    uint32 numFlags = NUMERIC_NB_FLAGBITS(num);
+
+    if (NUMERIC_FLAG_IS_NANORBI(numFlags)) {
+        /* Handle Big Integer */
+        if (NUMERIC_FLAG_IS_BI(numFlags))
+            num = makeNumericNormal(num);
+        /* XXX would it be better to return NULL? */
+        else
+            ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("cannot convert NaN to unsigned int")));
+    }
+
+    /* Convert to variable format and thence to int8 */
+    init_var_from_num(num, &x);
+
+    if (!numericvar_to_int64(&x, &val)) {
+        if (fcinfo->can_ignore || !SQL_MODE_STRICT()) {
+            if (fcinfo->can_ignore) {
+                ereport(WARNING, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("unsigned int out of range")));
+            }
+            if (NUMERIC_POS == x.sign)
+                PG_RETURN_UINT32(UINT_MAX);
+            else
+                PG_RETURN_UINT32(0);
+        } else {
+            ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("unsigned int out of range")));
+        }
+    }
+
+    /* Down-convert to int4 */
+    result = (uint32)val;
+
+    /* Test for overflow by reverse-conversion. */
+    if ((int64)result != val) {
+        if (fcinfo->can_ignore || !SQL_MODE_STRICT()) {
+            if (fcinfo->can_ignore) {
+                ereport(WARNING, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("unsigned int out of range")));
+            }
+            if (NUMERIC_POS == x.sign)
+                PG_RETURN_UINT32(UINT_MAX);
+        }
+        if (NUMERIC_POS != x.sign) {
+            PG_RETURN_UINT32(0);
+        }
+        ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("unsigned int out of range")));
+    }
+
+    PG_RETURN_UINT32(result);
+
+}
+
+Datum numeric_cast_uint8(PG_FUNCTION_ARGS)
+{
+    Numeric num = PG_GETARG_NUMERIC(0);
+    NumericVar x;
+    uint64 result;
+
+    result = 0;
+
+    /* XXX would it be better to return NULL? */
+    if (NUMERIC_IS_NAN(num))
+        ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("cannot convert NaN to bigint unsigned")));
+
+    /* Convert to variable format and thence to int8 */
+    init_var(&x);
+    set_var_from_num(num, &x);
+
+    if (!numericvar_to_uint8(&x, &result)) {
+        if (fcinfo->can_ignore || !SQL_MODE_STRICT()) {
+            if (fcinfo->can_ignore) {
+                ereport(WARNING, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("bigint unsigned out of range")));
+            }
+            if (NUMERIC_POS == x.sign) {
+                PG_RETURN_UINT64(ULONG_MAX);
+            } else {
+                PG_RETURN_UINT64(0);
+            }
+        }
+        if (NUMERIC_POS != x.sign){
+            PG_RETURN_UINT64(0);
+        }
+        ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("bigint unsigned out of range")));
+    }
+
+    free_var(&x);
+
+    PG_RETURN_UINT64(result);
 }
