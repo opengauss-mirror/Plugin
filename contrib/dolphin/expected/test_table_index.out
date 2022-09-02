@@ -421,9 +421,9 @@ ERROR:  duplicate column name
 create table t1(a int , b int, index idx_a (a,b,a));
 ERROR:  duplicate column name
 create table t1(a int , index idx_a (abs(a)));
-ERROR:  syntax error at or near "("
+ERROR:  syntax error at or near "a"
 LINE 1: create table t1(a int , index idx_a (abs(a)));
-                                                ^
+                                                 ^
 create table t1(a int , index idx_a ((abs(a)),(abs(a))));
 ERROR:  duplicate column name
 create table t1(a int , index idx_a ((abs(a)+1),(abs(a)+1)));

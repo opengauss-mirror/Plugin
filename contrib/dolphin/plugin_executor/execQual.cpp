@@ -5118,6 +5118,37 @@ static Datum ExecEvalCurrentOfExpr(ExprState* exprstate, ExprContext* econtext, 
     return 0; /* keep compiler quiet */
 }
 
+/* ----------------------------------------------------------------
+ *		ExecEvalPrefixText
+ * ----------------------------------------------------------------
+ */
+static Datum ExecEvalPrefixText(GenericExprState* state, ExprContext* econtext, bool* isNull, ExprDoneCond* isDone)
+{
+    PrefixKey* pkey = (PrefixKey*)state->xprstate.expr;
+    Datum result = ExecEvalExpr(state->arg, econtext, isNull, isDone);
+
+    if (*isNull) {
+        return (Datum)0;
+    }
+
+    return PointerGetDatum(text_substring(result, 1, pkey->length, false));
+}
+/* ----------------------------------------------------------------
+ *		ExecEvalPrefixBytea
+ * ----------------------------------------------------------------
+ */
+static Datum ExecEvalPrefixBytea(GenericExprState* state, ExprContext* econtext, bool* isNull, ExprDoneCond* isDone)
+{
+    PrefixKey* pkey = (PrefixKey*)state->xprstate.expr;
+    Datum result = ExecEvalExpr(state->arg, econtext, isNull, isDone);
+
+    if (*isNull) {
+        return (Datum)0;
+    }
+
+    return PointerGetDatum(bytea_substring(result, 1, pkey->length, false));
+}
+
 /*
  * ExecEvalExprSwitchContext
  *
@@ -5822,6 +5853,19 @@ ExprState* ExecInitExpr(Expr* node, PlanState* parent)
             rnstate->ps = parent;
             state = (ExprState*)rnstate;
             state->evalfunc = (ExprStateEvalFunc)ExecEvalRownum;
+        } break;
+        case T_PrefixKey: {
+            PrefixKey* pkey = (PrefixKey*)node;
+            GenericExprState* gstate = makeNode(GenericExprState);
+            Oid argtype = exprType((Node*)pkey->arg);
+
+            if (argtype == BYTEAOID || argtype == RAWOID || argtype == BLOBOID) {
+                gstate->xprstate.evalfunc = (ExprStateEvalFunc)ExecEvalPrefixBytea;
+            } else {
+                gstate->xprstate.evalfunc = (ExprStateEvalFunc)ExecEvalPrefixText;
+            }
+            gstate->arg = ExecInitExpr(pkey->arg, parent);
+            state = (ExprState*)gstate;
         } break;
         default:
             ereport(ERROR,
