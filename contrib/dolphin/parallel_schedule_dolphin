@@ -29,7 +29,7 @@ test: test_optimize
 
 test: test_set_charset
 
-test: nvarchar regexp upsert
+test: nvarchar regexp upsert zerofill
 
 test: test_binary test_blob test_datatype test_fixed test_mysql_enum
 
