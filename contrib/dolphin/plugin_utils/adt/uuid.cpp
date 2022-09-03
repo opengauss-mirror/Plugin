@@ -30,6 +30,9 @@
 static void string_to_uuid(const char* source, pg_uuid_t* uuid);
 static int uuid_internal_cmp(const pg_uuid_t* arg1, const pg_uuid_t* arg2);
 
+PG_FUNCTION_INFO_V1_PUBLIC(uuid_generate);
+extern "C" DLL_PUBLIC Datum uuid_generate(PG_FUNCTION_ARGS);
+
 Datum uuid_in(PG_FUNCTION_ARGS)
 {
     char* uuid_str = PG_GETARG_CSTRING(0);

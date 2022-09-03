@@ -44,3 +44,20 @@ DROP FUNCTION IF EXISTS pg_catalog.character_length(bit) cascade;
 CREATE OR REPLACE FUNCTION pg_catalog.character_length(bit) returns int4 LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'c_bitoctetlength';
 DROP FUNCTION IF EXISTS pg_catalog.make_set(bigint, VARIADIC ARR "any") cascade;
 CREATE OR REPLACE FUNCTION pg_catalog.make_set(bigint, VARIADIC ARR "any") RETURNS text LANGUAGE C as '$libdir/dolphin', 'make_set';
+
+DROP FUNCTION IF EXISTS pg_catalog.hex(int8) cascade;
+DROP FUNCTION IF EXISTS pg_catalog.hex(text) cascade;
+DROP FUNCTION IF EXISTS pg_catalog.hex(bytea) cascade;
+DROP FUNCTION IF EXISTS pg_catalog.hex(bit) cascade;
+CREATE OR REPLACE FUNCTION pg_catalog.hex(int8) RETURNS text LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'int_to_hex';
+CREATE OR REPLACE FUNCTION pg_catalog.hex(text) RETURNS text LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'text_to_hex';
+CREATE OR REPLACE FUNCTION pg_catalog.hex(bytea) RETURNS text LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'bytea_to_hex';
+CREATE OR REPLACE FUNCTION pg_catalog.hex(bit) RETURNS text LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'bit_to_hex';
+
+DROP FUNCTION IF EXISTS pg_catalog.uuid() cascade;
+CREATE OR REPLACE FUNCTION pg_catalog.uuid() RETURNS varchar LANGUAGE C VOLATILE STRICT as '$libdir/dolphin', 'uuid_generate';
+
+DROP FUNCTION IF EXISTS pg_catalog.db_b_format("any", int4) cascade;
+DROP FUNCTION IF EXISTS pg_catalog.db_b_format("any", int4, "any") cascade;
+CREATE OR REPLACE FUNCTION pg_catalog.db_b_format("any", int4) RETURNS text LANGUAGE C IMMUTABLE as '$libdir/dolphin', 'db_b_format';
+CREATE OR REPLACE FUNCTION pg_catalog.db_b_format("any", int4, "any") RETURNS text LANGUAGE C IMMUTABLE as '$libdir/dolphin', 'db_b_format_locale';
