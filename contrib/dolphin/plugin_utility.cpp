@@ -171,13 +171,6 @@ bool IsVariableinBlackList(const char* name);
 /* @hdfs DoVacuumMppTable process MPP local table for command Vacuum/Analyze */
 void DoVacuumMppTable(VacuumStmt* stmt, const char* query_string, bool is_top_level, bool sent_to_remote);
 
-void ProcessUtilityMain(Node* parse_tree, const char* query_string, ParamListInfo params, bool is_top_level,
-    DestReceiver* dest,
-#ifdef PGXC
-    bool sent_to_remote,
-#endif /* PGXC */
-    char* completion_tag,
-    bool isCTAS);
 /* Hook for plugins to get control in ProcessUtility() */
 THR_LOCAL ProcessUtility_hook_type ProcessUtility_hook = NULL;
 #ifdef ENABLE_MULTIPLE_NODES

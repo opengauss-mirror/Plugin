@@ -108,67 +108,6 @@ static uint32 dolphin_index;
 extern void set_hypopg_prehook(ProcessUtility_hook_type func);
 extern void set_pgaudit_prehook(ProcessUtility_hook_type func);
 extern bool check_plugin_function(Oid funcId);
-void ProcessUtilityMain(Node* parse_tree, const char* query_string, ParamListInfo params, bool is_top_level,
-    DestReceiver* dest,
-#ifdef PGXC
-    bool sent_to_remote,
-#endif /* PGXC */
-    char* completion_tag,
-    bool isCTAS) {
-    if (u_sess->attr.attr_sql.dolphin) {
-        return ProcessUtility(parse_tree,
-            query_string,
-            params,
-            is_top_level,
-            dest,
-#ifdef PGXC
-            sent_to_remote,
-#endif /* PGXC */
-            completion_tag,
-            isCTAS);
-    } else {
-        return standard_ProcessUtility(parse_tree,
-            query_string,
-            params,
-            is_top_level,
-            dest,
-#ifdef PGXC
-            sent_to_remote,
-#endif /* PGXC */
-            completion_tag,
-            isCTAS);
-    }
-}
-
-/* 
- * Set ProcessUtility PreHook of other ProcessUtilityHook Users, so that
- * we can hook standard_ProcessUtility.
- */
-void set_processutility_prehook()
-{
-    DynamicFileList* file_scanner = NULL;
-    void (*set_gsaudit_prehook)(ProcessUtility_hook_type);
-
-    char* securityPluginPath = expand_dynamic_library_name("security_plugin");
-    check_backend_env(securityPluginPath);
-
-    for (file_scanner = file_list; file_scanner != NULL && strcmp(securityPluginPath, file_scanner->filename) != 0;
-         file_scanner = file_scanner->next);
-
-    if (file_scanner != NULL) {
-        set_gsaudit_prehook = (void(*)(ProcessUtility_hook_type))pg_dlsym(file_scanner->handle, "set_gsaudit_prehook");
-        if (set_gsaudit_prehook != NULL) {
-            (*set_gsaudit_prehook)((ProcessUtility_hook_type)ProcessUtilityMain);
-            return;
-        }
-    }
-
-    if (u_sess->attr.attr_security.Audit_enabled) {
-        set_pgaudit_prehook((ProcessUtility_hook_type)ProcessUtilityMain);
-    } else {
-        set_hypopg_prehook((ProcessUtility_hook_type)ProcessUtilityMain);
-    }
-}
 
 PG_FUNCTION_INFO_V1_PUBLIC(dolphin_invoke);
 void dolphin_invoke(void)
@@ -188,7 +127,7 @@ void init_plugin_object()
     u_sess->hook_cxt.execInitExprHook = (void*)ExecInitExpr;
     u_sess->hook_cxt.computeHashHook  = (void*)compute_hash_default;
     u_sess->hook_cxt.aggSmpHook = (void*)check_plugin_function;
-    set_processutility_prehook();
+    u_sess->hook_cxt.standardProcessUtilityHook = (void*)standard_ProcessUtility;
     set_default_guc();
 }
 
@@ -212,7 +151,6 @@ void _PG_init(void)
     }
     g_instance.raw_parser_hook[DB_CMPT_B] = (void*)raw_parser;
     g_instance.llvmIrFilePath[DB_CMPT_B] = "share/postgresql/extension/openGauss_expr_dolphin.ir";
-    init_plugin_object();
 }
 
 void _PG_fini(void)
