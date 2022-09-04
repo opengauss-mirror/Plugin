@@ -3001,3 +3001,17 @@ Datum float8_interval(PG_FUNCTION_ARGS)
     Datum val = PG_GETARG_DATUM(0);
     return DirectFunctionCall1(numeric_interval, DirectFunctionCall1(float8_numeric, val));
 }
+#ifdef DOLPHIN
+PG_FUNCTION_INFO_V1_PUBLIC(float8_bool);
+extern "C" DLL_PUBLIC Datum float8_bool(PG_FUNCTION_ARGS);
+
+Datum float8_bool(PG_FUNCTION_ARGS)
+{
+    float8 num = PG_GETARG_FLOAT8(0);
+    
+    if (num == 0.0)
+        PG_RETURN_BOOL(false);
+    else
+        PG_RETURN_BOOL(true);
+}
+#endif

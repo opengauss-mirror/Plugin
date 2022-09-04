@@ -103,4 +103,9 @@ text,
 name
 ) RETURNS text LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'pg_convert_to_text';
 
+create function pg_catalog.textxor (
+text,
+text
+) RETURNS int LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'textxor';
 
+create operator pg_catalog.^(leftarg = text, rightarg = text, procedure = pg_catalog.textxor);

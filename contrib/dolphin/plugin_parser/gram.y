@@ -1162,7 +1162,7 @@ static bool DolphinObjNameCmp(const char* s1, const char* s2, bool is_quoted);
 %left		AND
 %right		NOT
 %right		'=' CmpNullOp COLON_EQUALS
-%nonassoc	'<' '>' CmpOp
+%nonassoc	'<' '>' CmpOp BINARY
 %nonassoc	LIKE ILIKE SIMILAR SOUNDS
 %nonassoc	ESCAPE
 %nonassoc	OVERLAPS
@@ -25760,7 +25760,12 @@ a_expr:		c_expr									{ $$ = $1; }
 					$$ = (Node *) n;
 				}
 			| a_expr LIKE a_expr
-				{ $$ = (Node *) makeSimpleA_Expr(AEXPR_OP, "~~", $1, $3, @2); }
+				{ 
+					if (GetSessionContext()->enableBCmptMode)
+						$$ = (Node *) makeSimpleA_Expr(AEXPR_OP, "~~*", $1, $3, @2); 
+					else 
+						$$ = (Node *) makeSimpleA_Expr(AEXPR_OP, "~~", $1, $3, @2); 
+				}
 			| a_expr LIKE a_expr ESCAPE a_expr
 				{
 					FuncCall *n = makeNode(FuncCall);
@@ -25773,10 +25778,18 @@ a_expr:		c_expr									{ $$ = $1; }
 					n->over = NULL;
 					n->location = @2;
 					n->call_func = false;
-					$$ = (Node *) makeSimpleA_Expr(AEXPR_OP, "~~", $1, (Node *) n, @2);
+					if (GetSessionContext()->enableBCmptMode)
+						$$ = (Node *) makeSimpleA_Expr(AEXPR_OP, "~~*", $1, (Node *) n, @2);
+					else 
+						$$ = (Node *) makeSimpleA_Expr(AEXPR_OP, "~~", $1, (Node *) n, @2);
 				}
 			| a_expr NOT LIKE a_expr
-				{ $$ = (Node *) makeSimpleA_Expr(AEXPR_OP, "!~~", $1, $4, @2); }
+				{ 
+					if (GetSessionContext()->enableBCmptMode)
+						$$ = (Node *) makeSimpleA_Expr(AEXPR_OP, "!~~*", $1, $4, @2);
+					else 
+						$$ = (Node *) makeSimpleA_Expr(AEXPR_OP, "!~~", $1, $4, @2);
+				}
 			| a_expr NOT LIKE a_expr ESCAPE a_expr
 				{
 					FuncCall *n = makeNode(FuncCall);
@@ -25789,7 +25802,42 @@ a_expr:		c_expr									{ $$ = $1; }
 					n->over = NULL;
 					n->location = @2;
 					n->call_func = false;
-					$$ = (Node *) makeSimpleA_Expr(AEXPR_OP, "!~~", $1, (Node *) n, @2);
+					if (GetSessionContext()->enableBCmptMode)
+						$$ = (Node *) makeSimpleA_Expr(AEXPR_OP, "!~~*", $1, (Node *) n, @2); 
+					else 
+						$$ = (Node *) makeSimpleA_Expr(AEXPR_OP, "!~~", $1, (Node *) n, @2);
+				}
+			| a_expr LIKE BINARY a_expr %prec LIKE
+				{ $$ = (Node *) makeSimpleA_Expr(AEXPR_OP, "~~", $1, $4, @2); }
+			| a_expr LIKE BINARY a_expr ESCAPE a_expr %prec LIKE
+				{
+					FuncCall *n = makeNode(FuncCall);
+					n->funcname = SystemFuncName("like_escape");
+					n->args = list_make2($4, $6);
+					n->agg_order = NIL;
+					n->agg_star = FALSE;
+					n->agg_distinct = FALSE;
+					n->func_variadic = FALSE;
+					n->over = NULL;
+					n->location = @2;
+					n->call_func = false;
+					$$ = (Node *) makeSimpleA_Expr(AEXPR_OP, "~~", $1, (Node *) n, @2);
+				}
+			| a_expr NOT LIKE BINARY a_expr %prec LIKE
+				{ $$ = (Node *) makeSimpleA_Expr(AEXPR_OP, "~~", $1, $5, @2); }
+			| a_expr NOT LIKE BINARY a_expr ESCAPE a_expr %prec LIKE
+				{
+					FuncCall *n = makeNode(FuncCall);
+					n->funcname = SystemFuncName("like_escape");
+					n->args = list_make2($5, $7);
+					n->agg_order = NIL;
+					n->agg_star = FALSE;
+					n->agg_distinct = FALSE;
+					n->func_variadic = FALSE;
+					n->over = NULL;
+					n->location = @2;
+					n->call_func = false;
+					$$ = (Node *) makeSimpleA_Expr(AEXPR_OP, "~~", $1, (Node *) n, @2);
 				}
 			| a_expr ILIKE a_expr
 				{ $$ = (Node *) makeSimpleA_Expr(AEXPR_OP, "~~*", $1, $3, @2); }
@@ -28339,8 +28387,22 @@ subquery_Op:
 			| OPERATOR '(' any_operator ')'
 					{ $$ = $3; }
 			| LIKE
-					{ $$ = list_make1(makeString("~~")); }
+					{ 
+						if (GetSessionContext()->enableBCmptMode)
+							$$ = list_make1(makeString("~~*"));
+						else 
+							$$ = list_make1(makeString("~~"));
+					}
 			| NOT LIKE
+					{ 
+						if (GetSessionContext()->enableBCmptMode)
+							$$ = list_make1(makeString("!~~*"));
+						else 
+							$$ = list_make1(makeString("!~~"));
+					}
+			| LIKE BINARY
+					{ $$ = list_make1(makeString("~~")); }
+			| NOT LIKE BINARY
 					{ $$ = list_make1(makeString("!~~")); }
 			| ILIKE
 					{ $$ = list_make1(makeString("~~*")); }

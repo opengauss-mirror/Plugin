@@ -83,6 +83,7 @@ static const struct sql_mode_entry sql_mode_options[OPT_SQL_MODE_MAX] = {
     {"sql_mode_defaults", OPT_SQL_MODE_DEFAULT},
     {"sql_mode_strict", OPT_SQL_MODE_STRICT},
     {"sql_mode_full_group", OPT_SQL_MODE_FULL_GROUP},
+    {"pipes_as_concat", OPT_SQL_MODE_PIPES_AS_CONCAT},
 };
 
 PG_MODULE_MAGIC_PUBLIC;
@@ -288,7 +289,7 @@ void init_session_vars(void)
                                gettext_noop("CUSTOM_OPTIONS"),
                                NULL,
                                &GetSessionContext()->sqlModeString,
-                               "sql_mode_strict,sql_mode_full_group",
+                               "sql_mode_strict,sql_mode_full_group,pipes_as_concat",
                                PGC_USERSET,
                                GUC_LIST_INPUT | GUC_REPORT,
                                CheckSqlMode,

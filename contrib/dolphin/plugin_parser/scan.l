@@ -36,6 +36,7 @@
 #include <unistd.h>
 
 #include "plugin_parser/parser.h"				/* only needed for GUC variables */
+#include "plugin_commands/mysqlmode.h"          /* only needed for GUC variables */
 #include "plugin_parser/scanner.h"
 #include "plugin_parser/scansup.h"
 #include "plugin_mb/pg_wchar.h"
@@ -966,7 +967,20 @@ other			.
 					 */
 					if (nchars >= NAMEDATALEN)
 						yyerror("operator too long");
-
+#ifdef DOLPHIN
+					if (strcmp(yytext, "&&") == 0 && GetSessionContext()->enableBCmptMode)
+					{
+						yylval->str = pstrdup("AND");
+						yyextra->is_hint_str = false;
+						return (int)AND;
+					}
+					if (strcmp(yytext, "||") == 0 && !SQL_MODE_PIPES_AS_CONCAT())
+					{
+						yylval->str = pstrdup("OR");
+						yyextra->is_hint_str = false;
+						return (int)OR;
+					}
+#endif
 					/* Convert "!=" operator to "<>" for compatibility */
 					if (strcmp(yytext, "!=") == 0 || strcmp(yytext, "^=") == 0)
 					{

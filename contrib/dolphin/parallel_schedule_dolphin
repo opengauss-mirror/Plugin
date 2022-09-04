@@ -87,3 +87,5 @@ test: builtin_funcs/b_compatibility_time_funcs builtin_funcs/b_compatibility_tim
 # case sensitive test end
 
 test: test_mysql_prepare db_b_rename_user_test export_set
+
+test: test_mysql_operator

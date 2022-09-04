@@ -301,6 +301,10 @@ extern "C" DLL_PUBLIC Datum db_b_format(PG_FUNCTION_ARGS);
 
 PG_FUNCTION_INFO_V1_PUBLIC(db_b_format_locale);
 extern "C" DLL_PUBLIC Datum db_b_format_locale(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1_PUBLIC(textxor);
+extern "C" DLL_PUBLIC Datum textxor(PG_FUNCTION_ARGS);
+
 #endif
 
 /*****************************************************************************
@@ -8905,4 +8909,35 @@ Datum uint8_list_agg_noarg2_transfn(PG_FUNCTION_ARGS)
      * which is a pass-by-value type the same size as a pointer.
      */
     PG_RETURN_POINTER(state);
+}
+
+Datum textxor(PG_FUNCTION_ARGS)
+{
+    bool typIsVarlena = false;
+    Oid typOutput = INVALID_OID;
+    Datum dt = 0;
+    Oid valtype = INVALID_OID;
+
+    dt = PG_GETARG_DATUM(0);
+    valtype = get_fn_expr_argtype(fcinfo->flinfo, 0);
+    check_huge_toast_pointer(dt, valtype);
+    if(!OidIsValid(valtype))
+       ereport(ERROR, (errcode(ERRCODE_INDETERMINATE_DATATYPE),
+           errmsg("could not determine data type of binary_string_xor() input")));
+    getTypeOutputInfo(valtype, &typOutput, &typIsVarlena);
+    char* str0 = OidOutputFunctionCall(typOutput, dt);
+
+    dt = PG_GETARG_DATUM(1);
+    valtype = get_fn_expr_argtype(fcinfo->flinfo, 1);
+    check_huge_toast_pointer(dt, valtype);
+    if(!OidIsValid(valtype))
+       ereport(ERROR, (errcode(ERRCODE_INDETERMINATE_DATATYPE),
+           errmsg("could not determine data type of binary_string_xor() input")));
+    getTypeOutputInfo(valtype, &typOutput, &typIsVarlena);
+    char* str1 = OidOutputFunctionCall(typOutput, dt);
+
+    int32 ret = atoi(str0) ^ atoi(str1);
+    pfree_ext(str0);
+    pfree_ext(str1);
+    PG_RETURN_INT32(ret);
 }
