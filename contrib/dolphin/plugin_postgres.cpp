@@ -322,6 +322,7 @@ void init_session_vars(void)
                             NULL,
                             NULL,
                             NULL);
+
 }
 
 static void execute_sql_file()

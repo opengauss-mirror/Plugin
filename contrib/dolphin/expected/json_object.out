@@ -1,0 +1,225 @@
+drop database if exists test_object;
+NOTICE:  database "test_object" does not exist, skipping
+create database test_object dbcompatibility 'B';
+\c test_object
+-- test for json_mysql_mode = false
+select json_object('{a,1,b,2,3,NULL,"d e f","a b c"}');
+                      json_object                      
+-------------------------------------------------------
+ {"a" : "1", "b" : "2", "3" : null, "d e f" : "a b c"}
+(1 row)
+
+select json_object('{a,b,"a b c"}', '{a,1,1}');
+              json_object              
+---------------------------------------
+ {"a" : "a", "b" : "1", "a b c" : "1"}
+(1 row)
+
+-- test for json_mysql_mode = true
+set json_mysql_mode = 1;
+ERROR:  unrecognized configuration parameter "json_mysql_mode"
+-- test for basic functionality of json_object
+select json_object('name', 'Jim', 'age', 20);
+ERROR:  function pg_catalog.json_object(unknown, unknown, unknown, integer) does not exist
+LINE 1: select json_object('name', 'Jim', 'age', 20);
+               ^
+HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
+CONTEXT:  referenced column: json_object
+select json_object('name', 'Jim', 'age', 20, 'name', 'Tim');
+ERROR:  function pg_catalog.json_object(unknown, unknown, unknown, integer, unknown, unknown) does not exist
+LINE 1: select json_object('name', 'Jim', 'age', 20, 'name', 'Tim');
+               ^
+HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
+CONTEXT:  referenced column: json_object
+select json_object('name', 'Tim', 'age', 20, 'friend', json_object('name', 'Jim', 'age', 20), 'hobby', json_build_array('games', 'sports'));
+ERROR:  function pg_catalog.json_object(unknown, unknown, unknown, integer) does not exist
+LINE 1: ...t json_object('name', 'Tim', 'age', 20, 'friend', json_objec...
+                                                             ^
+HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
+CONTEXT:  referenced column: json_object
+select json_object('City', 'Cairns', 'Population', 139693);
+ERROR:  function pg_catalog.json_object(unknown, unknown, unknown, integer) does not exist
+LINE 1: select json_object('City', 'Cairns', 'Population', 139693);
+               ^
+HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
+CONTEXT:  referenced column: json_object
+-- test for empty strings
+select json_object('City', '', 'Population', 139693);
+ERROR:  function pg_catalog.json_object(unknown, unknown, unknown, integer) does not exist
+LINE 1: select json_object('City', '', 'Population', 139693);
+               ^
+HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
+CONTEXT:  referenced column: json_object
+select json_object('', 'Cairns', 'Population', 139693);
+ERROR:  function pg_catalog.json_object(unknown, unknown, unknown, integer) does not exist
+LINE 1: select json_object('', 'Cairns', 'Population', 139693);
+               ^
+HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
+CONTEXT:  referenced column: json_object
+-- test for empty lists
+select json_object();
+ERROR:  function pg_catalog.json_object() does not exist
+LINE 1: select json_object();
+               ^
+HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
+CONTEXT:  referenced column: json_object
+-- test for null values
+select json_object('City', 'Cairns', 'Population', NULL);
+ERROR:  function pg_catalog.json_object(unknown, unknown, unknown, unknown) does not exist
+LINE 1: select json_object('City', 'Cairns', 'Population', NULL);
+               ^
+HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
+CONTEXT:  referenced column: json_object
+select json_object('City', 'Cairns', NULL, 139693);
+ERROR:  function pg_catalog.json_object(unknown, unknown, unknown, integer) does not exist
+LINE 1: select json_object('City', 'Cairns', NULL, 139693);
+               ^
+HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
+CONTEXT:  referenced column: json_object
+-- test for float number
+select json_object('City', '', 'Population', 139693.123);
+ERROR:  function pg_catalog.json_object(unknown, unknown, unknown, numeric) does not exist
+LINE 1: select json_object('City', '', 'Population', 139693.123);
+               ^
+HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
+CONTEXT:  referenced column: json_object
+select json_object('City', '', 'Population', 0.123);
+ERROR:  function pg_catalog.json_object(unknown, unknown, unknown, numeric) does not exist
+LINE 1: select json_object('City', '', 'Population', 0.123);
+               ^
+HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
+CONTEXT:  referenced column: json_object
+select json_object('City', '', 'Population', 5/7);
+ERROR:  function pg_catalog.json_object(unknown, unknown, unknown, double precision) does not exist
+LINE 1: select json_object('City', '', 'Population', 5/7);
+               ^
+HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
+CONTEXT:  referenced column: json_object
+-- test for enormous number
+select json_object('a', 132454676878465464652222238888856744654563565446554798798451344787945.3153);
+ERROR:  function pg_catalog.json_object(unknown, numeric) does not exist
+LINE 1: select json_object('a', 132454676878465464652222238888856744...
+               ^
+HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
+CONTEXT:  referenced column: json_object
+-- test for bool values
+select json_object('Red', true, 'Blue', false);
+ERROR:  function pg_catalog.json_object(unknown, boolean, unknown, boolean) does not exist
+LINE 1: select json_object('Red', true, 'Blue', false);
+               ^
+HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
+CONTEXT:  referenced column: json_object
+-- test for lots of pairs
+select json_object('Region', 'Asia', 'color', 'red', 'City', '', 'Population', 139693.123, 'name', 'Tim', 'age', 20, 'friend', json_object('name', 'Jim', 'age', 20), 'hobby', json_build_array('games', 'sports'), 'name', 'Tim', 'age', 20, 'friend', json_object('name', 'Jim', 'age', 20), 'hobby', json_build_array('games', 'sports'));
+ERROR:  function pg_catalog.json_object(unknown, unknown, unknown, integer) does not exist
+LINE 1: ..., 139693.123, 'name', 'Tim', 'age', 20, 'friend', json_objec...
+                                                             ^
+HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
+CONTEXT:  referenced column: json_object
+-- test for negative input
+select json_object('Number', -123);
+ERROR:  function pg_catalog.json_object(unknown, integer) does not exist
+LINE 1: select json_object('Number', -123);
+               ^
+HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
+CONTEXT:  referenced column: json_object
+select json_object('Number', -123.12134);
+ERROR:  function pg_catalog.json_object(unknown, numeric) does not exist
+LINE 1: select json_object('Number', -123.12134);
+               ^
+HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
+CONTEXT:  referenced column: json_object
+select json_object('Number', -1234564564868789790867567.456);
+ERROR:  function pg_catalog.json_object(unknown, numeric) does not exist
+LINE 1: select json_object('Number', -1234564564868789790867567.456)...
+               ^
+HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
+CONTEXT:  referenced column: json_object
+-- test for numeric input starting with '+'
+select json_object('Number', +123);
+ERROR:  function pg_catalog.json_object(unknown, integer) does not exist
+LINE 1: select json_object('Number', +123);
+               ^
+HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
+CONTEXT:  referenced column: json_object
+select json_object('Number', ++123);
+ERROR:  function pg_catalog.json_object(unknown, integer) does not exist
+LINE 1: select json_object('Number', ++123);
+               ^
+HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
+CONTEXT:  referenced column: json_object
+-- test for type check
+select json_object('Type', abc);
+ERROR:  column "abc" does not exist
+LINE 1: select json_object('Type', abc);
+                                   ^
+CONTEXT:  referenced column: json_object
+select json_object('Type', t);
+ERROR:  column "t" does not exist
+LINE 1: select json_object('Type', t);
+                                   ^
+CONTEXT:  referenced column: json_object
+-- wrong number of param
+select json_object('key');
+ERROR:  array value must start with "{" or dimension information
+LINE 1: select json_object('key');
+                           ^
+CONTEXT:  referenced column: json_object
+select json_object('key', 'abc', 'value');
+ERROR:  function pg_catalog.json_object(unknown, unknown, unknown) does not exist
+LINE 1: select json_object('key', 'abc', 'value');
+               ^
+HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
+CONTEXT:  referenced column: json_object
+-- test for trim
+select json_object( 'City',            'Cairns',          'Population'          , NULL );
+ERROR:  function pg_catalog.json_object(unknown, unknown, unknown, unknown) does not exist
+LINE 1: select json_object( 'City',            'Cairns',          'P...
+               ^
+HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
+CONTEXT:  referenced column: json_object
+-- test for inserting object into tables
+create table tab_json1(data json);
+insert into tab_json1 values (json_object('names','David','address','Beijing','Tel',1324053333,'names','Mike'));
+ERROR:  function pg_catalog.json_object(unknown, unknown, unknown, unknown, unknown, integer, unknown, unknown) does not exist
+LINE 1: insert into tab_json1 values (json_object('names','David','a...
+                                      ^
+HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
+select * from tab_json1;
+ data 
+------
+(0 rows)
+
+-- use the data in tables
+create table info1(name varchar(30),address varchar(20),tel int);
+insert into info1 values ('Jack','Zhongguo',1323394);
+insert into info1 values ('Tobbo','Meiguo',132333394);
+insert into info1 values ('Hnana','Riben',3403234);
+insert into tab_json1 select json_object('name',name,'address',address,'tel',tel) from info1;
+ERROR:  function pg_catalog.json_object(unknown, character varying, unknown, character varying, unknown, integer) does not exist
+LINE 1: insert into tab_json1 select json_object('name',name,'addres...
+                                     ^
+HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
+CONTEXT:  referenced column: json_object
+select * from tab_json1;
+ data 
+------
+(0 rows)
+
+-- test for setting json_mysql_mode back to false
+set json_mysql_mode = 0;
+ERROR:  unrecognized configuration parameter "json_mysql_mode"
+select json_object('{a,1,b,2,3,NULL,"d e f","a b c"}');
+                      json_object                      
+-------------------------------------------------------
+ {"a" : "1", "b" : "2", "3" : null, "d e f" : "a b c"}
+(1 row)
+
+select json_object('{a,b,"a b c"}', '{a,1,1}');
+              json_object              
+---------------------------------------
+ {"a" : "a", "b" : "1", "a b c" : "1"}
+(1 row)
+
+\c postgres
+drop database test_object;

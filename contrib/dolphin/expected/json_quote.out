@@ -1,0 +1,92 @@
+drop database if exists test_quote;
+NOTICE:  database "test_quote" does not exist, skipping
+create database test_quote dbcompatibility'B';
+\c test_quote
+select json_quote(E'a\tb');
+ json_quote 
+------------
+ "a\tb"
+(1 row)
+
+select json_quote('a    b');
+ json_quote 
+------------
+ "a    b"
+(1 row)
+
+select json_quote('"ab"');
+ json_quote 
+------------
+ "\"ab\""
+(1 row)
+
+select json_quote('a
+b');
+ json_quote 
+------------
+ "a\nb"
+(1 row)
+
+select json_quote(null);
+ json_quote 
+------------
+ 
+(1 row)
+
+select json_quote(E'ab\'');
+ json_quote 
+------------
+ "ab'"
+(1 row)
+
+select json_quote(E'\'ab\'');
+ json_quote 
+------------
+ "'ab'"
+(1 row)
+
+select json_quote(''ab'');
+ERROR:  syntax error at or near "ab"
+LINE 1: select json_quote(''ab'');
+                            ^
+select json_quote('\"ab\"');
+  json_quote  
+--------------
+ "\\\"ab\\\""
+(1 row)
+
+select json_quote('');
+ json_quote 
+------------
+ ""
+(1 row)
+
+select json_quote(ab);
+ERROR:  column "ab" does not exist
+LINE 1: select json_quote(ab);
+                          ^
+CONTEXT:  referenced column: json_quote
+select json_quote('~!ada221');
+ json_quote 
+------------
+ "~!ada221"
+(1 row)
+
+select json_quote('null');
+ json_quote 
+------------
+ "null"
+(1 row)
+
+create table student(name VARCHAR(20) PRIMARY KEY);
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "student_pkey" for table "student"
+insert into student (name) value(json_quote('lc'));
+select name from student;
+ name 
+------
+ "lc"
+(1 row)
+
+drop table student;
+\c postgres
+drop database test_quote;

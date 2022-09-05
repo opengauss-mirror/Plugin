@@ -1,0 +1,81 @@
+drop database if exists test_array;
+NOTICE:  database "test_array" does not exist, skipping
+create database test_array dbcompatibility 'B';
+\c test_array
+select json_array(1,2,3,4);
+  json_array  
+--------------
+ [1, 2, 3, 4]
+(1 row)
+
+select json_array(1,3,4);
+ json_array 
+------------
+ [1, 3, 4]
+(1 row)
+
+select json_array(1,4);
+ json_array 
+------------
+ [1, 4]
+(1 row)
+
+select json_array(1);
+ json_array 
+------------
+ [1]
+(1 row)
+
+select json_array(1,'a',2,3,4);
+    json_array     
+-------------------
+ [1, "a", 2, 3, 4]
+(1 row)
+
+select json_array(1,2,3,'abc',4);
+     json_array      
+---------------------
+ [1, 2, 3, "abc", 4]
+(1 row)
+
+select json_array(1,2,3,4,true);
+     json_array     
+--------------------
+ [1, 2, 3, 4, true]
+(1 row)
+
+select json_array(1,2,3,4,null);
+     json_array     
+--------------------
+ [1, 2, 3, 4, null]
+(1 row)
+
+select json_array(1,2,3,4,true,null);
+        json_array        
+--------------------------
+ [1, 2, 3, 4, true, null]
+(1 row)
+
+select json_array(1,255,3,414564);
+     json_array      
+---------------------
+ [1, 255, 3, 414564]
+(1 row)
+
+select json_array(1,2,adjiw,4);
+ERROR:  column "adjiw" does not exist
+LINE 1: select json_array(1,2,adjiw,4);
+                              ^
+CONTEXT:  referenced column: json_array
+create table dataa(name VARCHAR(20) PRIMARY KEY);
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "dataa_pkey" for table "dataa"
+insert into dataa(name) value(json_array('sjy'));
+select name from dataa;
+  name   
+---------
+ ["sjy"]
+(1 row)
+
+drop table dataa;
+\c postgres
+drop database test_array;

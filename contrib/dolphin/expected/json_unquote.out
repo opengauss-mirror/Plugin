@@ -1,0 +1,152 @@
+drop database if exists test_unquote;
+NOTICE:  database "test_unquote" does not exist, skipping
+create database test_unquote dbcompatibility 'B';
+\c test_unquote
+select json_unquote('"abc"');
+ json_unquote 
+--------------
+ abc
+(1 row)
+
+select json_unquote('abc');
+ json_unquote 
+--------------
+ abc
+(1 row)
+
+select json_unquote('"abc');
+ json_unquote 
+--------------
+ "abc
+(1 row)
+
+select json_unquote('"abc\t');
+ json_unquote 
+--------------
+ "abc    
+(1 row)
+
+select json_unquote('"abc\\t');
+ json_unquote 
+--------------
+ "abc\t
+(1 row)
+
+select json_unquote('"abc\\t"');
+ json_unquote 
+--------------
+ abc     
+(1 row)
+
+select json_unquote('"ab\\tc"');
+ json_unquote 
+--------------
+ ab      c
+(1 row)
+
+select json_unquote('"abc"\t');
+ json_unquote 
+--------------
+ "abc"   
+(1 row)
+
+select json_unquote('"abc"\\t');
+ json_unquote 
+--------------
+ "abc"\t
+(1 row)
+
+select json_unquote('"ab"djoada"c"');
+ERROR:  NULL input for detoast datum
+select json_unquote('a"bdw\tc');
+ json_unquote 
+--------------
+ a"bdw   c
+(1 row)
+
+select json_unquote('"abdmad\\tc"');
+ json_unquote 
+--------------
+ abdmad  c
+(1 row)
+
+select json_unquote('abc\\t"dwaj');
+ json_unquote 
+--------------
+ abc\t"dwaj
+(1 row)
+
+select json_unquote('"abcmdw\tmdkw"');
+ERROR:  NULL input for detoast datum
+select json_unquote('"abs""c"\t');
+   json_unquote   
+------------------
+ "abs""c"        
+(1 row)
+
+select json_unquote('abc\\t');
+ json_unquote 
+--------------
+ abc\t
+(1 row)
+
+select json_unquote('abcdw\t');
+ json_unquote 
+--------------
+ abcdw   
+(1 row)
+
+select json_unquote('"ab"c');
+ json_unquote 
+--------------
+ "ab"c
+(1 row)
+
+select json_unquote('a"bc');
+ json_unquote 
+--------------
+ a"bc
+(1 row)
+
+select json_unquote('ab\tc"');
+ json_unquote 
+--------------
+ ab      c"
+(1 row)
+
+select json_unquote('ab\\tc"');
+ json_unquote 
+--------------
+ ab\tc"
+(1 row)
+
+select json_unquote('\t"abc"');
+ json_unquote  
+---------------
+         "abc"
+(1 row)
+
+select json_unquote('\\t"abc"');
+ json_unquote 
+--------------
+ \t"abc"
+(1 row)
+
+select json_unquote('a\\t"bc"');
+ json_unquote 
+--------------
+ a\t"bc"
+(1 row)
+
+create table data(name VARCHAR(20) PRIMARY KEY);
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "data_pkey" for table "data"
+insert into data (name) value(json_unquote('"sjy"'));
+select name from data;
+ name 
+------
+ sjy
+(1 row)
+
+drop table data;
+\c postgres
+drop database test_unquote;
