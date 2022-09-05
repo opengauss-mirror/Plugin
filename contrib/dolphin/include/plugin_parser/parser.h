@@ -60,6 +60,10 @@ SelectStmt* makeShowPluginsQuery(void);
 SelectStmt* makeShowDatabasesQuery(Node* likeNode, Node* whereExpr);
 SelectStmt* makeShowMasterStatusQuery(void);
 SelectStmt* makeShowSlaveHostsQuery(void);
+#ifdef DOLPHIN
+SelectStmt *makeShowTriggersQuery(List *args, Node *likeWhereOpt, bool isLikeExpr);
+SelectStmt *makeShowFuncProQuery(List *args, Node *likeWhereOpt, bool isLikeExpr);
+#endif
 
 SelectStmt* makeShowIndexQuery(char *schemaName, char *tableName, Node *whereClause);
 SelectStmt *makeShowVariablesQuery(bool globalMode, Node *likeWhereOpt, bool isLikeExpr);
