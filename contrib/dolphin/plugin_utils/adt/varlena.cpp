@@ -281,6 +281,24 @@ extern "C" DLL_PUBLIC Datum uint4_list_agg_noarg2_transfn(PG_FUNCTION_ARGS);
 PG_FUNCTION_INFO_V1_PUBLIC(uint8_list_agg_noarg2_transfn);
 extern "C" DLL_PUBLIC Datum uint8_list_agg_noarg2_transfn(PG_FUNCTION_ARGS);
 
+PG_FUNCTION_INFO_V1_PUBLIC(int_to_hex);
+extern "C" DLL_PUBLIC Datum int_to_hex(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1_PUBLIC(text_to_hex);
+extern "C" DLL_PUBLIC Datum text_to_hex(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1_PUBLIC(bytea_to_hex);
+extern "C" DLL_PUBLIC Datum bytea_to_hex(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1_PUBLIC(bit_to_hex);
+extern "C" DLL_PUBLIC Datum bit_to_hex(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1_PUBLIC(db_b_format);
+extern "C" DLL_PUBLIC Datum db_b_format(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1_PUBLIC(db_b_format_locale);
+extern "C" DLL_PUBLIC Datum db_b_format_locale(PG_FUNCTION_ARGS);
+
 
 /*****************************************************************************
  *	 CONVERSION ROUTINES EXPORTED FOR USE BY C CODE							 *
