@@ -1,3 +1,4 @@
+--file
 |文件夹   |文件名   |对应内核文件路径   |
 | :------------ | :------------ | :------------ |
 |plugin_executor|execQual.cpp|src\gausskernel\runtime\executor\execQual.cpp|
@@ -101,7 +102,54 @@
 |plugin_vector|timestamp.inl   |src\gausskernel\runtime\vecexecutor\vecprimitive\timestamp.inl   |
 |plugin_vector|varchar.inl   |src\gausskernel\runtime\vecexecutor\vecprimitive\varchar.inl   |
 |plugin_vector|vecfuncache.cpp   |src\gausskernel\runtime\vecexecutor\vecfuncache.cpp   |
+|plugin_optimizer|streamwalker.cpp   |src\gausskernel\optimizer\plan\streamwalker.cpp  |
+|plugin_optimizer\commands|functioncmds.cpp   |src\gausskernel\optimizer\commands\functioncmds.cpp  |
+|plugin_storage|hashfunc.cpp   |src\gausskernel\storage\access\hash\hashfunc.cpp  |
+|llvmir|openGauss_expr_dolphin_aarch64.ir   |src\gausskernel\runtime\codegen\llvmir\GaussDB_expr_aarch64.ir   |
+|llvmir|openGauss_expr_dolphin_aarch64.ll   |src\gausskernel\runtime\codegen\llvmir\GaussDB_expr_aarch64.ll   |
+|llvmir|openGauss_expr_dolphin_x86_64.ir   |src\gausskernel\runtime\codegen\llvmir\GaussDB_expr.ir   |
+|llvmir|openGauss_expr_dolphin_x86_64.ll   |src\gausskernel\runtime\codegen\llvmir\GaussDB_expr.ll  |
+|llvmir|openGauss_expr_dolphin.cpp   |src\gausskernel\runtime\codegen\llvmir\GaussDB_expr.cpp  |
 |./|pg_builtin_proc.cpp|src\common\backend\catalog\pg_builtin_proc.cpp   |
 |./|plugin_utility.cpp   |src\gausskernel\process\tcop\utility.cpp   |
 |./|tablecmds.cpp   |src\gausskernel\optimizer\commands\tablecmds.cpp   |
 |./|builtin_funcs.ini   |src\common\backend\catalog\builtin_funcs.ini   |
+
+--header
+
+|plugin_mb|pg_wchar.h  |src\include\mb\pg_wchar.h   |
+|plugin_nodes|parsenodes_common.h  |src\include\nodes\parsenodes_common.h   |
+|plugin_parser|analyze.h  |src\include\parser\analyze.h   |
+|plugin_parser|backslash_quotes.h  |src\include\parser\backslash_quotes.h   |
+|plugin_parser|gramparse.h  |src\include\parser\gramparse.h   |
+|plugin_parser|keywords.h  |src\include\parser\keywords.h   |
+|plugin_parser|kwlist.h  |src\include\parser\kwlist.h   |
+|plugin_parser|parse_agg.h  |src\include\parser\parse_agg.h   |
+|plugin_parser|parse_clause.h  |src\include\parser\parse_clause.h   |
+|plugin_parser|parse_coerce.h  |src\include\parser\parse_coerce.h   |
+|plugin_parser|parse_collate.h  |src\include\parser\parse_collate.h   |
+|plugin_parser|parse_cte.h  |src\include\parser\parse_cte.h  |
+|plugin_parser|parse_expr.h  |src\include\parser\parse_expr.h   |
+|plugin_parser|parse_func.h  |src\include\parser\parse_func.h   |
+|plugin_parser|parse_hint.h  |src\include\parser\parse_hint.h   |
+|plugin_parser|parse_merge.h  |src\include\parser\parse_merge.h   |
+|plugin_parser|parse_node.h  |src\include\parser\parse_node.h   |
+|plugin_parser|parse_oper.h  |src\include\parser\parse_oper.h   |
+|plugin_parser|parse_param.h  |src\include\parser\parse_param.h   |
+|plugin_parser|parse_relation.h  |src\include\parser\parse_relation.h   |
+|plugin_parser|parse_target.h  |src\include\parser\parse_target.h   |
+|plugin_parser|parse_type.h  |src\include\parser\parse_type.h  |
+|plugin_parser|parse_utilcmd.h  |src\include\parser\parse_utilcmd.h   |
+|plugin_parser|parser.h  |src\include\mb\src\include\parser\parser.h   |
+|plugin_parser|parsetree.h  |src\include\parser\parsetree.h   |
+|plugin_parser|scanner.h  |src\include\parser\scanner.h   |
+|plugin_parser|scansup.h  |src\include\parser\scansup.h   |
+|plugin_storage|hash.h  |src\include\access\hash.h   |
+|plugin_storage|hash.inl  |src\include\access\hash.inl   |
+|plugin_utils|date.h  |src\include\utils\date.h   |
+|plugin_utils|datetime.h  |src\include\utils\datetime.h  |
+|plugin_utils|timestamp.h  |src\include\utils\timestamp.h   |
+|plugin_vector|vecfunc.h  |src\include\vecexecutor\vecfunc.h   |
+|./|builtin_funcs.ini  |src\common\backend\catalog\builtin_funcs.ini   |
+|./|fmgrtab.h  |src\include\utils\fmgrtab.h   |
+|./|int8.h  |src\include\utils\int8.hh   |
