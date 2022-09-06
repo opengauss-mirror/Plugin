@@ -116,9 +116,7 @@ create table text_column_table(f1 int, index(f1)) with (orientation=column);
 ERROR:  relation "text_column_table" already exists in schema "public"
 DETAIL:  creating new table with existing name in the same schema
 create table text_column_table_expr(f1 int, unique((f1+1))) with (orientation=column);
-ERROR:  syntax error at or near "("
-LINE 1: ...reate table text_column_table_expr(f1 int, unique((f1+1))) w...
-                                                             ^
+ERROR:  access method "cbtree" does not support index expressions
 \d+ test_ubtree
                      Table "public.test_ubtree"
  Column |  Type   | Modifiers | Storage | Stats target | Description 
@@ -194,7 +192,7 @@ PARTITION BY RANGE(f1)
  f2     | integer |           | plain   |              | 
  f3     | integer |           | plain   |              | 
 Indexes:
-    "part_btree_idx" btree (f1) LOCAL(PARTITION p1_f1_idx, PARTITION p2_f1_idx, PARTITION p3_f1_idx, PARTITION p4_f1_idx)  TABLESPACE pg_default
+    "part_btree_idx" btree (f1) LOCAL TABLESPACE pg_default
 Partition By RANGE(f1)
 Number of partitions: 4 (View pg_partition to check each partition range.)
 Has OIDs: no
@@ -223,7 +221,7 @@ PARTITION BY RANGE(f1)
  f2     | integer |           | plain   |              | 
  f3     | integer |           | plain   |              | 
 Indexes:
-    "part_btree_idx2" btree (f1 DESC, f2) LOCAL(PARTITION p1_f1_f2_idx, PARTITION p2_f1_f2_idx, PARTITION p3_f1_f2_idx, PARTITION p4_f1_f2_idx)  TABLESPACE pg_default
+    "part_btree_idx2" btree (f1 DESC, f2) LOCAL TABLESPACE pg_default
 Partition By RANGE(f1)
 Number of partitions: 4 (View pg_partition to check each partition range.)
 Has OIDs: no
@@ -252,7 +250,7 @@ PARTITION BY RANGE(f1)
  f2     | integer |           | plain   |              | 
  f3     | integer |           | plain   |              | 
 Indexes:
-    "part_expr_idx" btree (abs(f1)) LOCAL(PARTITION p1_abs_idx, PARTITION p2_abs_idx, PARTITION p3_abs_idx, PARTITION p4_abs_idx)  TABLESPACE pg_default
+    "part_expr_idx" btree (abs(f1)) LOCAL TABLESPACE pg_default
 Partition By RANGE(f1)
 Number of partitions: 4 (View pg_partition to check each partition range.)
 Has OIDs: no
@@ -281,7 +279,7 @@ PARTITION BY RANGE(f1)
  f2     | integer |           | plain   |              | 
  f3     | integer |           | plain   |              | 
 Indexes:
-    "part_expr_idx" btree ((abs(f1) + 1)) LOCAL(PARTITION p1_expr_idx, PARTITION p2_expr_idx, PARTITION p3_expr_idx, PARTITION p4_expr_idx)  TABLESPACE pg_default
+    "part_expr_idx" btree ((abs(f1) + 1)) LOCAL TABLESPACE pg_default
 Partition By RANGE(f1)
 Number of partitions: 4 (View pg_partition to check each partition range.)
 Has OIDs: no
@@ -310,7 +308,7 @@ PARTITION BY RANGE(f1)
  f2     | integer |           | plain   |              | 
  f3     | integer |           | plain   |              | 
 Indexes:
-    "part_column" psort (f1) LOCAL(PARTITION p1_f1_idx, PARTITION p2_f1_idx, PARTITION p3_f1_idx, PARTITION p4_f1_idx)  TABLESPACE pg_default
+    "part_column" psort (f1) LOCAL TABLESPACE pg_default
 Partition By RANGE(f1)
 Number of partitions: 4 (View pg_partition to check each partition range.)
 Has OIDs: no
@@ -592,9 +590,9 @@ alter table test_partition_btree add key using btree((abs(f1)) desc, (f2 * 2 + 1
  f2     | integer |           | plain   |              | 
  f3     | integer |           | plain   |              | 
 Indexes:
-    "test_partition_btree_abs_expr_f3_idx" btree (abs(f1) DESC, (f2 * 2 + 1), f3) LOCAL(PARTITION p1_abs_expr_f3_idx, PARTITION p2_abs_expr_f3_idx, PARTITION p3_abs_expr_f3_idx, PARTITION p4_abs_expr_f3_idx)  TABLESPACE pg_default
-    "test_partition_btree_f1_f2_f3_idx" btree (f1 DESC, f2, f3) LOCAL(PARTITION p1_f1_f2_f3_idx, PARTITION p2_f1_f2_f3_idx, PARTITION p3_f1_f2_f3_idx, PARTITION p4_f1_f2_f3_idx)  TABLESPACE pg_default
-    "test_partition_btree_f1_idx" btree (f1 DESC) LOCAL(PARTITION p1_f1_idx, PARTITION p2_f1_idx, PARTITION p3_f1_idx, PARTITION p4_f1_idx)  TABLESPACE pg_default
+    "test_partition_btree_abs_expr_f3_idx" btree (abs(f1) DESC, (f2 * 2 + 1), f3) LOCAL TABLESPACE pg_default
+    "test_partition_btree_f1_f2_f3_idx" btree (f1 DESC, f2, f3) LOCAL TABLESPACE pg_default
+    "test_partition_btree_f1_idx" btree (f1 DESC) LOCAL TABLESPACE pg_default
 Partition By RANGE(f1)
 Number of partitions: 4 (View pg_partition to check each partition range.)
 Has OIDs: no

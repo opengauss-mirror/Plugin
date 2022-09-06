@@ -738,6 +738,7 @@ Expr* make_op(ParseState* pstate, List* opname, Node* ltree, Node* rtree, int lo
             con->constcollid = InvalidOid;
             con->constlen = typeLen(targetType);
             con->constbyval = typeByVal(targetType);
+            ReleaseSysCache(targetType);
             con->constisnull = false;
             con->cursor_data.cur_dno = -1;
             enumOrder = DatumGetInt32(((Const*) rtree)->constvalue);

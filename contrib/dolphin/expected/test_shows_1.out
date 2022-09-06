@@ -40,8 +40,7 @@ show plugins;
 --?.*
 --?.*
 --?.*
---?.*
-(11 rows)
+(10 rows)
 
 -- show tables test
 show tables;

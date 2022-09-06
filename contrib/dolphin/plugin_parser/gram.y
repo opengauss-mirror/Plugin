@@ -7443,7 +7443,7 @@ table_index_elem:	ColId opt_asc_desc
 		;
 
 TableIndexClause:
-			index_key_opt index_name access_method_clause '(' table_index_elems ')' index_options
+			index_key_opt index_name access_method_clause '(' table_index_elems ')' opt_index_options
 			{
 					IndexStmt *n = makeNode(IndexStmt);
 					n->unique = false;
@@ -7471,7 +7471,7 @@ TableIndexClause:
 					/* n->internal_index_flag = true; */
 					$$ = (Node *)n;
 			}
-			| index_key_opt access_method_clause '(' table_index_elems ')' index_options
+			| index_key_opt access_method_clause '(' table_index_elems ')' opt_index_options
 			{
 					IndexStmt *n = makeNode(IndexStmt);
 					n->unique = false;

@@ -7178,6 +7178,7 @@ void AlterTable(Oid relid, LOCKMODE lockmode, AlterTableStmt* stmt)
                     enumOidList = lappend_oid(enumOidList, targetAtt->atttypid);
             }
             ReleaseSysCache(typeTuple);
+            ReleaseSysCache(tuple);
         }
     }
 
