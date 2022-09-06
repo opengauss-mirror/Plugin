@@ -423,6 +423,8 @@ Datum textregexeq(PG_FUNCTION_ARGS)
     text* s = PG_GETARG_TEXT_PP(0);
     text* p = PG_GETARG_TEXT_PP(1);
 
+    FUNC_CHECK_HUGE_POINTER(false, s, "textregexeq");
+
     PG_RETURN_BOOL(
         RE_compile_and_execute(p, VARDATA_ANY(s), VARSIZE_ANY_EXHDR(s), REG_ADVANCED, PG_GET_COLLATION(), 0, NULL));
 }
@@ -431,6 +433,8 @@ Datum textregexne(PG_FUNCTION_ARGS)
 {
     text* s = PG_GETARG_TEXT_PP(0);
     text* p = PG_GETARG_TEXT_PP(1);
+
+    FUNC_CHECK_HUGE_POINTER(false, s, "textregexeq");
 
     PG_RETURN_BOOL(
         !RE_compile_and_execute(p, VARDATA_ANY(s), VARSIZE_ANY_EXHDR(s), REG_ADVANCED, PG_GET_COLLATION(), 0, NULL));
@@ -463,6 +467,7 @@ Datum texticregexeq(PG_FUNCTION_ARGS)
 {
     text* s = PG_GETARG_TEXT_PP(0);
     text* p = PG_GETARG_TEXT_PP(1);
+    FUNC_CHECK_HUGE_POINTER(false, s, "textregexsubstr");
 
     PG_RETURN_BOOL(RE_compile_and_execute(
         p, VARDATA_ANY(s), VARSIZE_ANY_EXHDR(s), REG_ADVANCED | REG_ICASE, PG_GET_COLLATION(), 0, NULL));
@@ -472,6 +477,8 @@ Datum texticregexne(PG_FUNCTION_ARGS)
 {
     text* s = PG_GETARG_TEXT_PP(0);
     text* p = PG_GETARG_TEXT_PP(1);
+
+    FUNC_CHECK_HUGE_POINTER(false, s, "textregexsubstr");
 
     PG_RETURN_BOOL(!RE_compile_and_execute(
         p, VARDATA_ANY(s), VARSIZE_ANY_EXHDR(s), REG_ADVANCED | REG_ICASE, PG_GET_COLLATION(), 0, NULL));
@@ -485,6 +492,8 @@ Datum textregexsubstr(PG_FUNCTION_ARGS)
 {
     text* s = PG_GETARG_TEXT_PP(0);
     text* p = PG_GETARG_TEXT_PP(1);
+
+    FUNC_CHECK_HUGE_POINTER(false, s, "textregexsubstr");
     regex_t* re = NULL;
     regmatch_t pmatch[2];
     int so, eo;
@@ -598,6 +607,8 @@ Datum regexp_replace(PG_FUNCTION_ARGS)
 
     if (pattern == NULL)
         PG_RETURN_TEXT_P(src);
+    
+    FUNC_CHECK_HUGE_POINTER(false, src, "to_txvector()");
 
     re = RE_compile_and_cache(pattern, re_flags.cflags, PG_GET_COLLATION());
     result = replace_text_regexp(src, (void*)re, r, position, occurrence);
@@ -651,6 +662,7 @@ Datum textregexreplace_noopt(PG_FUNCTION_ARGS)
     if (PG_ARGISNULL(0))
         PG_RETURN_NULL();
     s = PG_GETARG_TEXT_PP(0);
+    FUNC_CHECK_HUGE_POINTER(false, s, "textregexsubstr");
 
     if (PG_ARGISNULL(1))
         PG_RETURN_TEXT_P(s);
@@ -697,6 +709,7 @@ Datum textregexreplace(PG_FUNCTION_ARGS)
         PG_RETURN_NULL();
 
     s = PG_GETARG_TEXT_PP(ARG_0);
+    FUNC_CHECK_HUGE_POINTER(false, s, "textregexsubstr");
 
     if (PG_ARGISNULL(ARG_1))
         PG_RETURN_TEXT_P(s);
@@ -869,6 +882,8 @@ Datum regexp_count(PG_FUNCTION_ARGS)
     if (!PG_ARGISNULL(ARG_0))
         src = PG_GETARG_TEXT_P_COPY(ARG_0);
 
+    FUNC_CHECK_HUGE_POINTER(PG_ARGISNULL(0), src, "textpos()");
+
     /* pattern string */
     if (!PG_ARGISNULL(ARG_1))
         pattern = PG_GETARG_TEXT_PP(ARG_1);
@@ -879,6 +894,8 @@ Datum regexp_count(PG_FUNCTION_ARGS)
     if (src == NULL || pattern == NULL || has_null) {
         PG_RETURN_NULL();
     }
+
+    FUNC_CHECK_HUGE_POINTER(false, src, "regexp_count()");
 
     re_flags.glob = true;
     regexp_matches_ctx* matchctx = setup_regexp_matches(src, pattern, &re_flags,
@@ -987,6 +1004,8 @@ Datum regexp_instr(PG_FUNCTION_ARGS)
     if (!PG_ARGISNULL(ARG_0))
         src = PG_GETARG_TEXT_PP(ARG_0);
 
+    FUNC_CHECK_HUGE_POINTER(PG_ARGISNULL(ARG_0), src, "textpos()");
+
     if (!PG_ARGISNULL(ARG_1))
         pattern = PG_GETARG_TEXT_PP(ARG_1);
 
@@ -1040,9 +1059,12 @@ Datum regexp_matches(PG_FUNCTION_ARGS)
     FuncCallContext* funcctx = NULL;
     regexp_matches_ctx* matchctx = NULL;
 
+    FUNC_CHECK_HUGE_POINTER(PG_ARGISNULL(0), PG_GETARG_TEXT_PP(0), "regexp_matches()");
+
     if (SRF_IS_FIRSTCALL()) {
         text* pattern = PG_GETARG_TEXT_PP(1);
         text* flags = PG_GETARG_TEXT_PP_IF_EXISTS(2);
+        FUNC_CHECK_HUGE_POINTER(PG_ARGISNULL(0), PG_GETARG_TEXT_PP(0), "regexp_matches()");
         pg_re_flags re_flags;
         MemoryContext oldcontext;
 
@@ -1278,9 +1300,12 @@ Datum regexp_split_to_table(PG_FUNCTION_ARGS)
     FuncCallContext* funcctx = NULL;
     regexp_matches_ctx* splitctx = NULL;
 
+    FUNC_CHECK_HUGE_POINTER(PG_ARGISNULL(0), PG_GETARG_TEXT_PP(0), "regexp_split_to_table()");
+
     if (SRF_IS_FIRSTCALL()) {
         text* pattern = PG_GETARG_TEXT_PP(1);
         text* flags = PG_GETARG_TEXT_PP_IF_EXISTS(2);
+        FUNC_CHECK_HUGE_POINTER(PG_ARGISNULL(0), PG_GETARG_TEXT_PP(0), "regexp_split_to_table()");
         pg_re_flags re_flags;
         MemoryContext oldcontext;
 
@@ -1340,6 +1365,8 @@ Datum regexp_split_to_array(PG_FUNCTION_ARGS)
     regexp_matches_ctx* splitctx = NULL;
     text* flags = PG_GETARG_TEXT_PP_IF_EXISTS(2);
     pg_re_flags re_flags;
+
+    FUNC_CHECK_HUGE_POINTER(PG_ARGISNULL(0), PG_GETARG_TEXT_PP(0), "regexp_split_to_array()");
 
     /* Determine options */
     parse_re_flags(&re_flags, flags);
@@ -1529,7 +1556,7 @@ Datum textregexsubstr_enforce_a(PG_FUNCTION_ARGS)
     regmatch_t pmatch[2];
     int so = 0;
     int eo = 0;
-
+    FUNC_CHECK_HUGE_POINTER(false, s, "textregex()");
     /* Compile RE */
     if (REGEX_COMPAT_MODE) {
         cflags |= REG_NLSTOP;
@@ -1645,6 +1672,8 @@ Datum regexp_substr_core(PG_FUNCTION_ARGS)
 
     if (!PG_ARGISNULL(ARG_0))
         src = PG_GETARG_TEXT_PP(ARG_0);
+
+    FUNC_CHECK_HUGE_POINTER(PG_ARGISNULL(0), src, "regexp()");
 
     if (!PG_ARGISNULL(ARG_1))
         pattern = PG_GETARG_TEXT_PP(ARG_1);

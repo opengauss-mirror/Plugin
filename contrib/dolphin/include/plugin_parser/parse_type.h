@@ -23,7 +23,7 @@ extern Type LookupTypeName(ParseState* pstate, const TypeName* typname, int32* t
 extern Type LookupTypeNameExtended(ParseState* pstate, const TypeName* typname, int32* typmod_p, bool temp_ok,
                             bool print_notice = true);
 extern Oid LookupPctTypeInPackage(RangeVar* rel, Oid pkgOid, const char* field);
-extern Oid LookupTypeInPackage(const char* typeName, Oid pkgOid = InvalidOid, Oid namespaceId = InvalidOid);
+extern Oid LookupTypeInPackage(List* typeNames, const char* typeName, Oid pkgOid = InvalidOid, Oid namespaceId = InvalidOid);
 extern Type typenameType(ParseState* pstate, const TypeName* typname, int32* typmod_p);
 extern Oid typenameTypeId(ParseState* pstate, const TypeName* typname);
 extern void typenameTypeIdAndMod(ParseState* pstate, const TypeName* typname, Oid* typeid_p, int32* typmod_p);
@@ -48,6 +48,7 @@ void DefineAnonymousEnum(TypeName * typname);
 
 extern Oid typeidTypeRelid(Oid type_id);
 extern bool IsTypeSupportedByCStore(_in_ Oid typeOid);
+extern bool IsTypeSupportedByVectorEngine(Oid typeOid);
 extern bool CheckTypeSupportRowToVec(List* targetlist, int errLevel);
 extern bool IsTypeSupportedByORCRelation(_in_ Oid typeOid);
 extern bool IsTypeSupportedByTsStore(_in_ int kvtype, _in_ Oid typeOid);

@@ -1412,6 +1412,30 @@ FuncCandidateList func_select_candidate(int nargs, Oid* input_typeids, FuncCandi
     if (ncandidates == 1)
         return candidates;
 
+#ifndef ENABLE_MULTIPLE_NODES
+    Oid caller_pkg_oid = InvalidOid;
+    if (OidIsValid(u_sess->plsql_cxt.running_pkg_oid)) {
+        caller_pkg_oid = u_sess->plsql_cxt.running_pkg_oid;
+    } else if (u_sess->plsql_cxt.curr_compile_context != NULL &&
+        u_sess->plsql_cxt.curr_compile_context->plpgsql_curr_compile_package != NULL) {
+        caller_pkg_oid = u_sess->plsql_cxt.curr_compile_context->plpgsql_curr_compile_package->pkg_oid;
+    }
+    nbestMatch = 0;
+    ncandidates = 0;
+    last_candidate = NULL;
+    for (current_candidate = candidates; current_candidate != NULL; current_candidate = current_candidate->next) {
+        nmatch = 0;
+        if (current_candidate->packageOid == caller_pkg_oid) {
+            nmatch++;
+        }
+        keep_candidate(nmatch, nbestMatch, current_candidate, last_candidate, candidates, ncandidates);
+    }
+    if (last_candidate) /* terminate rebuilt list */
+        last_candidate->next = NULL;
+    if (ncandidates == 1)
+        return candidates;
+#endif
+
     return NULL; /* failed to select a best candidate */
 } /* func_select_candidate() */
 
@@ -1467,7 +1491,14 @@ FuncCandidateList sort_candidate_func_list(FuncCandidateList oldCandidates)
         }
         candidates[smallestIndex] = NULL;
     }
-
+    
+    for (int i = 0; i < size; i++) {
+        if (candidates[i] != NULL) {
+            lastCandidate->next = candidates[i];
+            lastCandidate = lastCandidate->next;
+        }
+    }
+    lastCandidate->next = NULL;
     pfree(candidates);
     return sortedCandidates;
 }
@@ -1834,6 +1865,18 @@ void make_fn_arguments(ParseState* pstate, List* fargs, Oid* actual_arg_types, O
                     COERCE_IMPLICIT_CAST,
                     -1);
                 na->arg = (Expr*)node;
+            } else if (IsA(node, UserVar)) {
+                UserVar* uvar = (UserVar*)node;
+
+                node = coerce_type(pstate,
+                    (Node*)uvar->value,
+                    actual_arg_types[i],
+                    declared_arg_types[i],
+                    -1,
+                    COERCION_IMPLICIT,
+                    COERCE_IMPLICIT_CAST,
+                    -1);
+                uvar->value = (Expr*)node;
             } else {
                 node = coerce_type(pstate,
                     node,

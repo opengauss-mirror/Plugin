@@ -420,13 +420,10 @@ CREATE TABLE "TEST"."Test_Table"(
     
 select * from "TEST"."Test_Table";
 
-set current_schema=information_schema;
+set current_schema=public;
 create table Test_info(a int, b int);
 insert into Test_info values(1,2),(2,3),(3,4),(4,5);
 \d+ "Test_info"
-\d+ "sql_features"
-explain (verbose on, costs off) select count(*) from sql_features;
-select count(*) from sql_features;
 
 explain (verbose on, costs off) select * from Test_info;
 select count(*) from Test_info;

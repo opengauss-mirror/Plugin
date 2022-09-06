@@ -13,6 +13,7 @@
 #include "postgres.h"
 #include "knl/knl_variable.h"
 
+#include "catalog/pg_proc.h"
 #include "common/int.h"
 #include "utils/builtins.h"
 #include "utils/formatting.h"
@@ -46,11 +47,8 @@ extern "C" DLL_PUBLIC Datum byteatrim_trailing(PG_FUNCTION_ARGS);
 Datum lower(PG_FUNCTION_ARGS)
 {
     text* in_string = PG_GETARG_TEXT_PP(0);
-    if (unlikely(VARATT_IS_HUGE_TOAST_POINTER(in_string))) {
-        ereport(ERROR,
-            (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
-                errmsg("lower() arguments cannot exceed 1GB")));
-    }
+    FUNC_CHECK_HUGE_POINTER(false, in_string, "lower()");
+
     char* out_string = NULL;
     text* result = NULL;
 
@@ -78,11 +76,8 @@ Datum lower(PG_FUNCTION_ARGS)
 Datum upper(PG_FUNCTION_ARGS)
 {
     text* in_string = PG_GETARG_TEXT_PP(0);
-    if (unlikely(VARATT_IS_HUGE_TOAST_POINTER(in_string))) {
-        ereport(ERROR,
-            (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
-                errmsg("upper() arguments cannot exceed 1GB")));
-    }
+    FUNC_CHECK_HUGE_POINTER(false, in_string, "upper()");
+
     char* out_string = NULL;
     text* result = NULL;
 
@@ -115,6 +110,7 @@ Datum initcap(PG_FUNCTION_ARGS)
     text* in_string = PG_GETARG_TEXT_PP(0);
     char* out_string = NULL;
     text* result = NULL;
+    FUNC_CHECK_HUGE_POINTER(false, in_string, "initcap()");
 
     out_string = str_initcap(VARDATA_ANY(in_string), VARSIZE_ANY_EXHDR(in_string), PG_GET_COLLATION());
     result = cstring_to_text(out_string);
@@ -150,6 +146,8 @@ Datum lpad(PG_FUNCTION_ARGS)
 
     int bytelen;
     errno_t ss_rc;
+
+    FUNC_CHECK_HUGE_POINTER(false, string1, "lpad()");
 
     /* Negative len is silently taken as zero */
     if (len < 0)
@@ -243,6 +241,7 @@ Datum rpad(PG_FUNCTION_ARGS)
     text* ret = NULL;
     char *ptr1 = NULL, *ptr2 = NULL, *ptr2start = NULL, *ptr2end = NULL, *ptr_ret = NULL;
     int m, s1len, s2len;
+    FUNC_CHECK_HUGE_POINTER(false, string1, "rpad()");
 
     int bytelen;
     errno_t ss_rc;
@@ -335,6 +334,8 @@ Datum btrim(PG_FUNCTION_ARGS)
     text* set = PG_GETARG_TEXT_PP(1);
     text* ret = NULL;
 
+    FUNC_CHECK_HUGE_POINTER(false, string, "btrim()");
+
     ret = dotrim(VARDATA_ANY(string), VARSIZE_ANY_EXHDR(string), VARDATA_ANY(set), VARSIZE_ANY_EXHDR(set), true, true);
 
     if ((ret == NULL || 0 == VARSIZE_ANY_EXHDR(ret)) && u_sess->attr.attr_sql.sql_compatibility == A_FORMAT)
@@ -353,6 +354,8 @@ Datum btrim1(PG_FUNCTION_ARGS)
 {
     text* string = PG_GETARG_TEXT_PP(0);
     text* ret = NULL;
+
+    FUNC_CHECK_HUGE_POINTER(false, string, "btrim1()");
 
     ret = dotrim(VARDATA_ANY(string), VARSIZE_ANY_EXHDR(string), " ", 1, true, true);
 
@@ -434,6 +437,7 @@ Datum byteatrim(PG_FUNCTION_ARGS)
     bytea* string = PG_GETARG_BYTEA_PP(0);
     bytea* set = PG_GETARG_BYTEA_PP(1);
     bytea* ret = NULL;
+    FUNC_CHECK_HUGE_POINTER(false, string, "byteatrim()");
 
     ret = byteatrim_internal(VARDATA_ANY(string), VARSIZE_ANY_EXHDR(string), VARDATA_ANY(set),
                                 VARSIZE_ANY_EXHDR(set), true, true);
@@ -483,6 +487,8 @@ Datum ltrim(PG_FUNCTION_ARGS)
     text* set = PG_GETARG_TEXT_PP(1);
     text* ret = NULL;
 
+    FUNC_CHECK_HUGE_POINTER(false, string, "ltrim()");
+
     ret = dotrim(VARDATA_ANY(string), VARSIZE_ANY_EXHDR(string), VARDATA_ANY(set), VARSIZE_ANY_EXHDR(set), true, false);
 
     if ((ret == NULL || 0 == VARSIZE_ANY_EXHDR(ret)) && u_sess->attr.attr_sql.sql_compatibility == A_FORMAT)
@@ -501,6 +507,7 @@ Datum ltrim1(PG_FUNCTION_ARGS)
 {
     text* string = PG_GETARG_TEXT_PP(0);
     text* ret = NULL;
+    FUNC_CHECK_HUGE_POINTER(false, string, "ltrim1()");
 
     ret = dotrim(VARDATA_ANY(string), VARSIZE_ANY_EXHDR(string), " ", 1, true, false);
 
@@ -530,6 +537,7 @@ Datum rtrim(PG_FUNCTION_ARGS)
     text* string = PG_GETARG_TEXT_PP(0);
     text* set = PG_GETARG_TEXT_PP(1);
     text* ret = NULL;
+    FUNC_CHECK_HUGE_POINTER(false, string, "rtrim()");
 
     ret = dotrim(VARDATA_ANY(string), VARSIZE_ANY_EXHDR(string), VARDATA_ANY(set), VARSIZE_ANY_EXHDR(set), false, true);
 
@@ -549,8 +557,10 @@ Datum rtrim1(PG_FUNCTION_ARGS)
 {
     text* string = PG_GETARG_TEXT_PP(0);
     text* ret = NULL;
+    FUNC_CHECK_HUGE_POINTER(false, string, "rtrim1");
 
-    if (u_sess->attr.attr_sql.sql_compatibility == A_FORMAT && CHAR_COERCE_COMPAT) {
+    if (u_sess->attr.attr_sql.sql_compatibility == A_FORMAT && CHAR_COERCE_COMPAT
+        && fcinfo->flinfo && fcinfo->flinfo->fn_oid == RTRIM1FUNCOID) {
         /*
          * char(n) will not ignore the tailing blanks in A_FORMAT compatibility.
          * here, we just return original input.
@@ -597,6 +607,8 @@ Datum translate(PG_FUNCTION_ARGS)
     int source_len;
     int from_index;
     errno_t ss_rc;
+
+    FUNC_CHECK_HUGE_POINTER(false, string, "translate()");
 
     m = VARSIZE_ANY_EXHDR(string);
     if (m <= 0)
@@ -706,6 +718,8 @@ Datum ascii(PG_FUNCTION_ARGS)
 {
     text* string = PG_GETARG_TEXT_PP(0);
     unsigned char* data = NULL;
+
+    FUNC_CHECK_HUGE_POINTER(false, string, "ascii()");
 
     if (VARSIZE_ANY_EXHDR(string) <= 0)
         PG_RETURN_INT32(0);
@@ -824,6 +838,9 @@ Datum repeat(PG_FUNCTION_ARGS)
 {
     text* string = PG_GETARG_TEXT_PP(0);
     int32 count = PG_GETARG_INT32(1);
+
+    FUNC_CHECK_HUGE_POINTER(false, string, "repeat()");
+
     text* result = NULL;
     int slen, tlen;
     int i;
