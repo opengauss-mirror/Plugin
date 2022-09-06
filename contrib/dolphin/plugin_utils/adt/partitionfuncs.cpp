@@ -260,6 +260,29 @@ Datum RebuildPartition(PG_FUNCTION_ARGS)
 extern void DoVacuumMppTable(VacuumStmt* stmt, const char* query_string, bool is_top_level, bool sent_to_remote);
 extern RangeVar *makeRangeVar(char *schemaname, char *relname, int location);
 
+List* GetSubpartitionNameList(List* subpartNameList, char* tableName, char* partName)
+{
+    Oid relid = RelnameGetRelid(tableName);
+    Relation rel = relation_open(relid, NoLock);
+    if (RelationIsSubPartitioned(rel)) {
+        char objectType = PART_OBJ_TYPE_TABLE_PARTITION;
+        Oid partOid = partitionNameGetPartitionOid(relid, partName, objectType, AccessExclusiveLock, true, false, NULL, NULL, NoLock);
+        Partition part = partitionOpen(rel, partOid, AccessExclusiveLock);
+        Relation partRel = partitionGetRelation(rel, part);
+        List* subPartOidList = relationGetPartitionOidList(partRel);
+        ListCell* cell = NULL;
+        foreach (cell, subPartOidList) {
+            Oid subPartOid = lfirst_oid(cell);
+            char *srcSubPartName = getPartitionName(subPartOid, false);
+            subpartNameList = lappend(subpartNameList, srcSubPartName);
+        }
+        releaseDummyRelation(&partRel);
+        partitionClose(rel, part, AccessExclusiveLock);
+    }
+    relation_close(rel, NoLock);
+    return subpartNameList;
+}
+
 Datum AnalyzePartitions(PG_FUNCTION_ARGS)
 {
     /* get args */
@@ -291,18 +314,42 @@ Datum AnalyzePartitions(PG_FUNCTION_ARGS)
     vacstmt->freeze_table_age = -1;
     vacstmt->relation = rangevar;
     StringInfoData str;
-    while (count < argnum) 
-    {
+    bool tmp_enable_autoanalyze = u_sess->attr.attr_sql.enable_autoanalyze;
+    /* forbid auto-analyze inside vacuum/analyze */
+    u_sess->attr.attr_sql.enable_autoanalyze = false;
+    List* subpartNameList = NULL;
+    while (count < argnum) {
+        MemoryContext currentContext = CurrentMemoryContext;
         partName = TextDatumGetCString(argText[count]);
-        rangevar->partitionname = partName;
-        initStringInfo(&str);
-        appendStringInfo(&str, "ANALYZE ");
-        appendStringInfo(&str, "%s PARTITION (%s)", tableName, partName);
-        DoVacuumMppTable(vacstmt, str.data, true, false);
-        pfree_ext(partName);
-        pfree_ext(str.data);
+        subpartNameList = GetSubpartitionNameList(subpartNameList, tableName, partName);
+        if (subpartNameList) {
+            ListCell* cell = NULL;
+            foreach (cell, subpartNameList) {
+                char* subpartName = (char*)lfirst(cell);
+                rangevar->subpartitionname = subpartName;
+                initStringInfo(&str);
+                appendStringInfo(&str, "ANALYZE ");
+                appendStringInfo(&str, "%s SUBPARTITION (%s)", tableName, subpartName);
+                DoVacuumMppTable(vacstmt, str.data, true, false);
+                MemoryContextSwitchTo(currentContext);
+                pfree_ext(subpartName);
+                pfree_ext(str.data);
+            }
+            pfree_ext(partName);
+            list_free_ext(subpartNameList);
+        } else {
+            rangevar->partitionname = partName;
+            initStringInfo(&str);
+            appendStringInfo(&str, "ANALYZE ");
+            appendStringInfo(&str, "%s PARTITION (%s)", tableName, partName);
+            DoVacuumMppTable(vacstmt, str.data, true, false);
+            MemoryContextSwitchTo(currentContext);
+            pfree_ext(partName);
+            pfree_ext(str.data);
+        }
         count++;
     }
+    u_sess->attr.attr_sql.enable_autoanalyze = tmp_enable_autoanalyze;
     pfree_ext(rangevar);
     pfree_ext(vacstmt);
     PG_RETURN_TEXT_P(cstring_to_text(tableName));
