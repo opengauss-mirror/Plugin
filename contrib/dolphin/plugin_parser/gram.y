@@ -92,6 +92,7 @@
 #include "utils/pl_package.h"
 #include "catalog/pg_streaming_fn.h"
 #include "utils/varbit.h"
+#include "mb/pg_wchar.h"
 
 #pragma GCC diagnostic ignored "-Wsign-compare"
 #pragma GCC diagnostic ignored "-Wunused-variable"
@@ -419,11 +420,13 @@ static bool CheckWhetherInColList(char *colname, List *col_list);
 static int GetFillerColIndex(char *filler_col_name, List *col_list);
 static void RemoveFillerCol(List *filler_list, List *col_list);
 static int errstate;
-static char* downcase_str(const char* ident, bool is_quoted);
-static DolphinString* makeDolphinStringByChar(char* str, bool is_quoted);
-static DolphinString* makeDolphinStringByNode(Node* node, bool is_quoted);
+static unsigned char GetLowerCaseChar(unsigned char ch, bool enc_is_single_byte);
+static char* downcase_str(char* ident, bool is_quoted);
+static DolphinString* MakeDolphinStringByChar(char* str, bool is_quoted);
+static DolphinString* MakeDolphinStringByNode(Node* node, bool is_quoted);
 static List* GetNameListFromDolphinString(List* dolphinStringList);
-static char* GetDolphinObjName(const char* string, bool is_quoted);
+static char* GetDolphinObjName(char* string, bool is_quoted);
+static bool DolphinObjNameCmp(const char* s1, const char* s2, bool is_quoted);
 %}
 
 %define api.pure
@@ -7515,8 +7518,8 @@ TypedTableElement:
 		;
 
 ColIdForTableElement:	IDENT						{ $$ = downcase_str($1, is_quoted()); }
-			| unreserved_keyword_without_key		{ $$ = downcase_str(pstrdup($1), is_quoted()); }
-			| col_name_keyword						{ $$ = downcase_str(pstrdup($1), is_quoted()); }
+			| unreserved_keyword_without_key		{ $$ = downcase_str(pstrdup($1), false); }
+			| col_name_keyword						{ $$ = downcase_str(pstrdup($1), false); }
 		;
 
 columnDefForTableElement:	ColIdForTableElement Typename KVType ColCmprsMode create_generic_options ColQualList
@@ -11264,7 +11267,7 @@ CreateUserMappingStmt: CREATE USER MAPPING FOR auth_ident SERVER name create_gen
 auth_ident:
 			CURRENT_USER	{ $$ = "current_user"; }
 		|	USER			{ $$ = "current_user"; }
-		|	RoleId			{ $$ = (strcmp(downcase_str($1, false), "public") == 0) ? NULL : $1; }
+		|	RoleId			{ $$ = DolphinObjNameCmp($1, "public", is_quoted()) ? NULL : $1; }
 		;
 
 /*****************************************************************************
@@ -12237,7 +12240,7 @@ def_elem:	ColLabel '=' def_arg
 
 /* Note: any simple identifier will be returned as a type name! */
 def_arg:	func_type						{ $$ = (Node *)$1; }
-			| reserved_keyword				{ $$ = (Node *)makeString(downcase_str(pstrdup($1), is_quoted())); }
+			| reserved_keyword				{ $$ = (Node *)makeString(downcase_str(pstrdup($1), false)); }
 			| qual_all_Op					{ $$ = (Node *)$1; }
 			| NumericOnly					{ $$ = (Node *)$1; }
 			| Sconst						{ $$ = (Node *)makeString($1); }
@@ -13887,7 +13890,7 @@ grantee:	RoleId
 				{
 					PrivGrantee *n = makeNode(PrivGrantee);
 					/* This hack lets us avoid reserving PUBLIC as a keyword*/
-					if (strcmp(downcase_str($1, false), "public") == 0)
+					if (DolphinObjNameCmp($1, "public", is_quoted()))
 						n->rolname = NULL;
 					else
 						n->rolname = $1;
@@ -13897,7 +13900,7 @@ grantee:	RoleId
 				{
 					PrivGrantee *n = makeNode(PrivGrantee);
 					/* Treat GROUP PUBLIC as a synonym for PUBLIC */
-					if (strcmp(downcase_str($2, false), "public") == 0)
+					if (DolphinObjNameCmp($2, "public", is_quoted()))
 						n->rolname = NULL;
 					else
 						n->rolname = $2;
@@ -23379,7 +23382,7 @@ table_ref:	relation_expr		%prec UMINUS
 				{
 					$$ = (Node *) $1;
 				}
-			| '(' joined_table ')' alias_clause
+			| '(' joined_table ')' dolphin_alias_clause
 				{
 					$2->alias = $4;
 					$$ = (Node *) $2;
@@ -28066,32 +28069,32 @@ dolphin_indirection_el:
 				}
 			| ORA_JOINOP
 				{
-					$$ = makeDolphinStringByNode((Node *) makeString("(+)"), false);
+					$$ = MakeDolphinStringByNode((Node *) makeString("(+)"), false);
 				}
 			| '.' '*'
 				{
-					$$ = makeDolphinStringByNode((Node *) makeNode(A_Star), false);
+					$$ = MakeDolphinStringByNode((Node *) makeNode(A_Star), false);
 				}
 			| '[' a_expr ']'
 				{
 					A_Indices *ai = makeNode(A_Indices);
 					ai->lidx = NULL;
 					ai->uidx = $2;
-					$$ = makeDolphinStringByNode((Node *) ai, false);
+					$$ = MakeDolphinStringByNode((Node *) ai, false);
 				}
 			| '[' a_expr ':' a_expr ']'
 				{
 					A_Indices *ai = makeNode(A_Indices);
 					ai->lidx = $2;
 					ai->uidx = $4;
-					$$ = makeDolphinStringByNode((Node *) ai, false);
+					$$ = MakeDolphinStringByNode((Node *) ai, false);
 				}
 			| '[' a_expr ',' a_expr ']'
 				{
 					A_Indices *ai = makeNode(A_Indices);
 					ai->lidx = $2;
 					ai->uidx = $4;
-					$$ = makeDolphinStringByNode((Node *) ai, false);
+					$$ = MakeDolphinStringByNode((Node *) ai, false);
 				}
 		;
 
@@ -28248,7 +28251,7 @@ connect_by_root_expr:   a_expr normal_ident '.' normal_ident
                                        Node* n = MakeConnectByRootNode((ColumnRef*) cr, @1);
                                        $$ = makeNode(ResTarget);
                                        $$->name = MakeConnectByRootColName($2, $4);
-                                       $$->val = (Node*) n;
+                                       $$->val = (Node*) n; 
                                        $$->indirection = NIL;
                                        $$->location = @1;
                                 }
@@ -28595,9 +28598,9 @@ ColId:		IDENT									{ $$ = downcase_str($1, is_quoted()); }
 			| col_name_keyword						{ $$ = downcase_str(pstrdup($1), is_quoted()); }
 		;
 
-DolphinColId:		IDENT							{ $$ = makeDolphinStringByChar($1, is_quoted()); }
-					| unreserved_keyword			{ $$ = makeDolphinStringByChar(pstrdup($1), is_quoted()); }
-					| col_name_keyword				{ $$ = makeDolphinStringByChar(pstrdup($1), is_quoted()); }
+DolphinColId:		IDENT							{ $$ = MakeDolphinStringByChar($1, is_quoted()); }
+					| unreserved_keyword			{ $$ = MakeDolphinStringByChar(pstrdup($1), is_quoted()); }
+					| col_name_keyword				{ $$ = MakeDolphinStringByChar(pstrdup($1), is_quoted()); }
 		;
 
 /* Type/function identifier --- names that can be type or function names.
@@ -28617,7 +28620,7 @@ ColLabel:	IDENT									{ $$ = downcase_str($1, is_quoted()); }
 			| reserved_keyword
 				{
 					/* ROWNUM can not be used as alias */
-					if (strcmp(downcase_str($1, is_quoted()), "rownum") == 0) {
+					if (DolphinObjNameCmp($1, "rownum", is_quoted())) {
 						const char* message = "ROWNUM cannot be used as an alias";
 						InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);
 						ereport(errstate,
@@ -28632,23 +28635,23 @@ ColLabel:	IDENT									{ $$ = downcase_str($1, is_quoted()); }
 /*
  * Column lable of dolphin type
  */
-DolphinColLabel:	IDENT									{ $$ = makeDolphinStringByChar($1, is_quoted()); }
-					| unreserved_keyword					{ $$ = makeDolphinStringByChar(pstrdup($1), is_quoted()); }
-					| col_name_keyword						{ $$ = makeDolphinStringByChar(pstrdup($1), is_quoted()); }
-					| type_func_name_keyword				{ $$ = makeDolphinStringByChar(pstrdup($1), is_quoted()); }
-			| reserved_keyword
-				{
-					/* ROWNUM can not be used as alias */
-					if (strcmp($1, "rownum") == 0) {
-						const char* message = "ROWNUM cannot be used as an alias";
-						InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);
-						ereport(errstate,
-							(errcode(ERRCODE_SYNTAX_ERROR),
-								errmsg("ROWNUM cannot be used as an alias"),
-										parser_errposition(@1)));
-					}
-							$$ = makeDolphinStringByChar(pstrdup($1), is_quoted());
-				}
+DolphinColLabel:	IDENT									{ $$ = MakeDolphinStringByChar($1, is_quoted()); }
+					| unreserved_keyword					{ $$ = MakeDolphinStringByChar(pstrdup($1), is_quoted()); }
+					| col_name_keyword						{ $$ = MakeDolphinStringByChar(pstrdup($1), is_quoted()); }
+					| type_func_name_keyword				{ $$ = MakeDolphinStringByChar(pstrdup($1), is_quoted()); }
+					| reserved_keyword
+						{
+							/* ROWNUM can not be used as alias */
+							if (DolphinObjNameCmp($1, "rownum", is_quoted())) {
+								const char* message = "ROWNUM cannot be used as an alias";
+								InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);
+								ereport(errstate,
+									(errcode(ERRCODE_SYNTAX_ERROR),
+										errmsg("ROWNUM cannot be used as an alias"),
+												parser_errposition(@1)));
+							}
+							$$ = MakeDolphinStringByChar(pstrdup($1), is_quoted());
+						}
 		;
 
 
@@ -31810,15 +31813,22 @@ static Node* makeAnalyzeTableList(List *rangeVars)
 	return makeStringConst(res.data, -1);
 }
 
-static char* downcase_str(const char* ident, bool is_quoted)
+static char* downcase_str(char* ident, bool is_quoted)
 {
 	if (ident == NULL || is_quoted) {
-		return (char*)ident;
+		return ident;
 	}
-	return downcase_truncate_identifier(ident, strlen((char*)ident), false);
+	int i;
+	bool enc_is_single_byte = (pg_database_encoding_max_length() == 1);
+	int len = strlen(ident);
+	for (i = 0; i < len; i++) {
+		ident[i] = (char)GetLowerCaseChar((unsigned char)ident[i], enc_is_single_byte);
+	}
+
+	return ident;
 }
 
-static DolphinString* makeDolphinString(char* str, Node* node, bool is_quoted)
+static DolphinString* MakeDolphinString(char* str, Node* node, bool is_quoted)
 {
 	DolphinString* result = (DolphinString*)palloc(sizeof(DolphinString));
 	result->str = str;
@@ -31827,14 +31837,14 @@ static DolphinString* makeDolphinString(char* str, Node* node, bool is_quoted)
 	return result;
 }
 
-static DolphinString* makeDolphinStringByChar(char* str, bool is_quoted)
+static inline DolphinString* MakeDolphinStringByChar(char* str, bool is_quoted)
 {
-	return makeDolphinString(str, (Node*)makeString(str), is_quoted);
+	return MakeDolphinString(str, (Node*)makeString(str), is_quoted);
 }
 
-static DolphinString* makeDolphinStringByNode(Node* node, bool is_quoted)
+static inline DolphinString* MakeDolphinStringByNode(Node* node, bool is_quoted)
 {
-	return makeDolphinString(strVal((Value*)node), node, is_quoted);
+	return MakeDolphinString(IsA(node, Value) ? strVal(node) : NULL, node, is_quoted);
 }
 
 
@@ -31868,9 +31878,9 @@ static void with_rollup_check_elems_count(Node* expr)
 	}
 }
 
-static inline char* GetDolphinObjName(const char* string, bool is_quoted)
+static inline char* GetDolphinObjName(char* string, bool is_quoted)
 {
-    return (GetSessionContext()->lower_case_table_names == 0) ? (char*)string : downcase_str(string, is_quoted);
+	return (GetSessionContext()->lower_case_table_names == 0) ? string : downcase_str(string, is_quoted);
 }
 
 static void CheckIconstType(Node* node) 
@@ -31882,6 +31892,38 @@ static void CheckIconstType(Node* node)
 			errmsg("Un-support feature"),
 			errdetail("The parameter type should be an integer constant")));
 	}
+}
+
+static unsigned char GetLowerCaseChar(unsigned char ch, bool enc_is_single_byte)
+{
+	unsigned char result = ch;
+	if (result >= 'A' && result <= 'Z') {
+		result += 'a' - 'A';
+	} else if (enc_is_single_byte && IS_HIGHBIT_SET(result) && isupper(result)) {
+		result = tolower(result);
+	}
+	return result;
+}
+
+static bool DolphinObjNameCmp(const char* s1, const char* s2, bool is_quoted)
+{
+	if (strlen(s1) != strlen(s2)) {
+		return false;
+	}
+	if (is_quoted) {
+		return strcmp(s1, s2) == 0;
+	}
+	int i;
+	bool enc_is_single_byte = (pg_database_encoding_max_length() == 1);
+	int len = strlen(s1);
+	for (i = 0; i < len; i++) {
+		unsigned char ch1 = GetLowerCaseChar((unsigned char)s1[i], enc_is_single_byte);
+		unsigned char ch2 = GetLowerCaseChar((unsigned char)s2[i], enc_is_single_byte);
+		if (ch1 != ch2) {
+			return false;
+		}
+	}
+	return true;
 }
 
 /*

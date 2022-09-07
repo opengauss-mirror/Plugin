@@ -1086,7 +1086,7 @@ other			.
 					if (keyword != NULL)
 					{
 #ifdef DOLPHIN
-						yylval->keyword = pstrdup(yytext);
+						yylval->keyword = (GetSessionContext()->lower_case_table_names == 0) ? pstrdup(yytext) : keyword->name;
 #else
 						yylval->keyword = keyword->name;
 #endif

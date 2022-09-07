@@ -271,6 +271,10 @@ PG_FUNCTION_INFO_V1_PUBLIC(numeric_cast_uint2);
 PG_FUNCTION_INFO_V1_PUBLIC(numeric_cast_uint4);
 PG_FUNCTION_INFO_V1_PUBLIC(numeric_cast_uint8);
 
+PG_FUNCTION_INFO_V1_PUBLIC(conv_str);
+PG_FUNCTION_INFO_V1_PUBLIC(conv_num);
+PG_FUNCTION_INFO_V1_PUBLIC(crc32);
+
 extern "C" DLL_PUBLIC Datum numeric_uint1(PG_FUNCTION_ARGS);
 extern "C" DLL_PUBLIC Datum numeric_uint2(PG_FUNCTION_ARGS);
 extern "C" DLL_PUBLIC Datum numeric_uint4(PG_FUNCTION_ARGS);
@@ -299,6 +303,11 @@ extern "C" DLL_PUBLIC Datum numeric_cast_uint1(PG_FUNCTION_ARGS);
 extern "C" DLL_PUBLIC Datum numeric_cast_uint2(PG_FUNCTION_ARGS);
 extern "C" DLL_PUBLIC Datum numeric_cast_uint4(PG_FUNCTION_ARGS);
 extern "C" DLL_PUBLIC Datum numeric_cast_uint8(PG_FUNCTION_ARGS);
+
+extern "C" DLL_PUBLIC Datum conv_str(PG_FUNCTION_ARGS);
+extern "C" DLL_PUBLIC Datum conv_num(PG_FUNCTION_ARGS);
+extern "C" DLL_PUBLIC Datum crc32(PG_FUNCTION_ARGS);
+
 #endif
 /*
  * @Description: call corresponding big integer operator functions.
