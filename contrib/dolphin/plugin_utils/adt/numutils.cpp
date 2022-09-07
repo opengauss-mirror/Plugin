@@ -635,6 +635,7 @@ uint64 pg_strtouint64(const char* str, char** endptr, int base)
 #endif
 }
 
+#ifdef DOLPHIN
 uint16 PgStrtouint16Internal(const char* s, bool sqlModeStrict)
 {
     const char* ptr = s;
@@ -804,3 +805,4 @@ uint64 pg_getmsguint64(StringInfo msg)
 
     return result;
 }
+#endif

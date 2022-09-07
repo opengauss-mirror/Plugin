@@ -826,7 +826,9 @@ static bool check_ungrouped_columns_walker(Node* node, check_ungrouped_columns_c
             attname = (attname != NULL) ? (attname + 1) : orig_attname;
         }
 
+#ifdef DOLPHIN
         if (SQL_MODE_FULL_GROUP()) {
+#endif
             if (context->sublevels_up == 0) {
                 ereport(ERROR,
                     (errcode(ERRCODE_GROUPING_ERROR),
@@ -844,8 +846,9 @@ static bool check_ungrouped_columns_walker(Node* node, check_ungrouped_columns_c
                         errmsg("subquery uses ungrouped column \"%s.%s\" from outer query", rte->eref->aliasname, attname),
                         parser_errposition(context->pstate, var->location)));
             }
+#ifdef DOLPHIN
         }
-
+#endif
         if (attname != NULL) {
             pfree_ext(attname);
         }

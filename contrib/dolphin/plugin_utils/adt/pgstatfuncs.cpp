@@ -14473,6 +14473,7 @@ Datum gs_get_index_status(PG_FUNCTION_ARGS)
 
 #endif
 
+#ifdef DOLPHIN
 PG_FUNCTION_INFO_V1_PUBLIC(gs_master_status);
 extern "C" DLL_PUBLIC Datum gs_master_status(PG_FUNCTION_ARGS);
 
@@ -14550,4 +14551,4 @@ Datum gs_master_status(PG_FUNCTION_ARGS)
     
     PG_RETURN_DATUM(PointerGetDatum(resultHeapTuple->t_data));
 }
-
+#endif

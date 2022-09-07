@@ -8945,10 +8945,12 @@ double get_windowagg_selectivity(PlannerInfo* root, WindowClause* wc, WindowFunc
     return selec;
 }
 
+#ifdef DOLPHIN
 double use_convert_timevalue_to_scalar(Datum value, Oid typid)
 {
     return convert_timevalue_to_scalar(value, typid);
 }
+#endif
 
 #ifndef ENABLE_MULTIPLE_NODES
 static double var_eq_const_selectivity(VariableStatData *vardata, double selec, double otherdistinct, Datum constval)

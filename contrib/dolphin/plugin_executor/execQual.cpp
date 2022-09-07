@@ -4246,8 +4246,12 @@ static Datum ExecEvalMinMax(MinMaxExprState* minmaxExpr, ExprContext* econtext, 
 
         value = ExecEvalExpr(e, econtext, &valueIsNull, NULL);
         if (valueIsNull) {
+#ifdef DOLPHIN
             *isNull = true;
             return (Datum)0; /* return NULL if inputs include NULL for B format*/
+#else
+            continue; /* ignore NULL inputs */
+#endif
         }
 
         if (*isNull) {

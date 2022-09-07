@@ -847,10 +847,13 @@ typedef enum AlterTableType {
     AT_ReAddConstraint, /* internal to commands/tablecmds.c */
     AT_AddIntoCBI,
     AT_SetAutoIncrement,
-    AT_COMMENTS,
+    AT_COMMENTS
+#ifdef DOLPHIN
+    ,
     AT_DropIndex,
     AT_DropForeignKey,
     AT_RenameIndex
+#endif
 } AlterTableType;
 
 typedef enum AlterTableStatProperty { /* Additional Property for AlterTableCmd */

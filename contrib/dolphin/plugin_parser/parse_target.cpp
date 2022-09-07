@@ -209,7 +209,7 @@ List* transformExpressionList(ParseState* pstate, List* exprlist)
 
     return result;
 }
-
+#ifdef DOLPHIN
 /*check if a not-null-attr col is inserted into NULL*/
 void CheckNullValue(Relation relation, Expr* expr, AttrNumber attrNum)
 {
@@ -222,7 +222,7 @@ void CheckNullValue(Relation relation, Expr* expr, AttrNumber attrNum)
         }
     }
 }
-
+#endif
 /*
  * resolveTargetListUnknowns()
  *		Convert any unknown-type targetlist entries to type TEXT.
@@ -945,7 +945,7 @@ List* checkInsertTargets(ParseState* pstate, List* cols, List** attrnos)
 
     return cols;
 }
-
+#ifdef DOLPHIN
 /* If the col with NOT NULL attr is not in the insert clause cols list, append it.*/
 List* AppendNotNullCols(ParseState* pstate, List* cols, List** attrnos)
 {
@@ -993,7 +993,7 @@ List* AppendNotNullCols(ParseState* pstate, List* cols, List** attrnos)
     }
     return cols;
 }
-
+#endif
 /*
  * ExpandColumnRefStar()
  *		Transforms foo.* into a list of expressions or targetlist entries.
@@ -1684,7 +1684,11 @@ static int FigureColnameInternal(Node* node, char** name)
             /* make coalesce() act like a regular function */
             // modify NVL display to A db's style "NVL" instead of "COALESCE"
             if (((CoalesceExpr*)node)->isnvl) {
+#ifdef DOLPHIN
                 *name = "ifnull";
+#else
+                *name = "nvl";
+#endif
             } else {
                 *name = "coalesce";
             }

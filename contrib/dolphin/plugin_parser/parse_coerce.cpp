@@ -18,7 +18,9 @@
 
 #include "catalog/pg_cast.h"
 #include "catalog/pg_class.h"
+#ifdef DOLPHIN
 #include "catalog/pg_enum.h"
+#endif
 #include "catalog/pg_inherits_fn.h"
 #include "catalog/pg_proc.h"
 #include "catalog/pg_type.h"
@@ -28,7 +30,9 @@
 #include "plugin_parser/parse_func.h"
 #include "plugin_parser/parse_relation.h"
 #include "plugin_parser/parse_type.h"
+#ifdef DOLPHIN
 #include "plugin_commands/mysqlmode.h"
+#endif
 #include "utils/builtins.h"
 #include "utils/lsyscache.h"
 #include "utils/syscache.h"
@@ -60,7 +64,7 @@ static bool check_numeric_type_in_blacklist(Oid type);
 static bool meet_decode_compatibility(List* exprs, const char* context);
 static bool meet_c_format_compatibility(List* exprs, const char* context);
 static bool meet_set_type_compatibility(List* exprs, const char* context, Oid *retOid);
-
+#ifdef DOLPHIN
 static const int convertFunctionsCount = 3;
 typedef bool(*doConvert)(Oid*, Oid*, TYPCATEGORY*, TYPCATEGORY*);
 static bool String2Others(Oid* ptype, Oid* ntype, TYPCATEGORY* pcategory, TYPCATEGORY* ncategory);
@@ -96,7 +100,7 @@ typedef enum {
     FLOAT8,
     NUMERIC
 } CastRow;
-
+#endif
 /*
  * @Description: same as get_element_type() except this reports error
  * when the result is invalid.
@@ -576,6 +580,7 @@ Node* coerce_type(ParseState* pstate, Node* node, Oid inputTypeId, Oid targetTyp
         r->location = location;
         return (Node*)r;
     }
+#ifdef DOLPHIN
     if (inputTypeId == INT4OID && IsA(node, Const) && type_is_enum(targetTypeId)) {
         /* Input type is int and the target type is enum type */
         Const* con = (Const*)node;
@@ -618,7 +623,7 @@ Node* coerce_type(ParseState* pstate, Node* node, Oid inputTypeId, Oid targetTyp
         ReleaseSysCache(targetType);
         return result;
     }
-    
+#endif
     if (targetTypeId == ANYSETOID && type_is_set(inputTypeId)) {
         return node;
     }
@@ -635,7 +640,7 @@ Node* coerce_type(ParseState* pstate, Node* node, Oid inputTypeId, Oid targetTyp
                 format_type_be(targetTypeId))));
     return NULL; /* keep compiler quiet */
 }
-
+#ifdef DOLPHIN
 /*
 get the enum label by the order of the label
 */
@@ -680,7 +685,7 @@ char* getEnumLableByOrder(Oid enumOid, int order)
 
     return targetEnumLable;
 }
-
+#endif
 /*
  * can_coerce_type()
  *		Can input_typeids be coerced to target_typeids?
@@ -772,14 +777,14 @@ bool can_coerce_type(int nargs, Oid* input_typeids, Oid* target_typeids, Coercio
         if (typeInheritsFrom(inputTypeId, targetTypeId) || typeIsOfTypedTable(inputTypeId, targetTypeId)) {
             continue;
         }
-
+#ifdef DOLPHIN
         /*
          * if input is int4 and target type is enum, accept
          */
         if (type_is_enum(targetTypeId) && inputTypeId == INT4OID) {
             continue;
         }
-        
+#endif
         /*
          * If input or target type is a actual set type, accept if the other is of number or char type value.
          */
@@ -908,11 +913,11 @@ static Node* coerce_type_typmod(Node* node, Oid targetTypeId, int32 targetTypMod
 {
     CoercionPathType pathtype;
     Oid funcId;
-
+#ifdef DOLPHIN
     if (!SQL_MODE_STRICT() && node->type == T_Const && ((Const*)node)->constisnull) {
         return node;
     }
-
+#endif
     /*
      * A negative typmod is assumed to mean that no coercion is wanted. Also,
      * skip coercion if already done.
@@ -1433,7 +1438,7 @@ static bool type_can_be_matched(Oid preferType, Oid nextType)
 
     return can_be_matched;
 }
-
+#ifdef DOLPHIN
 static bool String2Others(Oid* ptype, Oid* ntype, TYPCATEGORY* pcategory, TYPCATEGORY* ncategory)
 {
     TYPCATEGORY preferCategory = *pcategory;
@@ -1493,7 +1498,7 @@ static bool Date2Others(Oid* ptype, Oid* ntype, TYPCATEGORY* pcategory, TYPCATEG
     }
     return result;
 }
-
+#endif
 /* choose_specific_expr_type
  * Choose case when and coalesce return value type in C_FORMAT.
  */
@@ -1544,12 +1549,26 @@ static Oid choose_specific_expr_type(ParseState* pstate, List* exprs, const char
              * expr will return string type. Here we will treat unknow type as text type.
              */
             if (nextCategory != preferCategory) {
+#ifdef DOLPHIN
                 bool result = false;
                 for (int i = 0; i < convertFunctionsCount && !result; i++) {
                     result = convertFunctions[i](&preferType, &nextType, &preferCategory, &nextCategory);
                 }
 
                 if (!result) {
+#else
+				/* Number and string mix, will return string type*/
+                if (preferCategory == TYPCATEGORY_NUMERIC &&
+                    (nextCategory == TYPCATEGORY_STRING || nextCategory == TYPCATEGORY_UNKNOWN)) {
+                    preferType = nextType;
+                    preferCategory = nextCategory;
+                }
+                /* Unknown and string mix, we will choose unknown type, Finally unknow will be treated as text type*/
+                else if (preferCategory == TYPCATEGORY_STRING && nextCategory == TYPCATEGORY_UNKNOWN) {
+                    preferType = nextType;
+                    preferCategory = nextCategory;
+                } else {
+#endif
                     /* Number and string mix, will return string type.
                      * Unknown and string mix, we will choose unknown type, Finally unknow will be treated as text type.
                      * we nothing to do when othercondition is true, current preferCategory is prefer type.
@@ -1557,9 +1576,12 @@ static Oid choose_specific_expr_type(ParseState* pstate, List* exprs, const char
                     bool othercondition =
                         ((preferCategory == TYPCATEGORY_STRING || preferCategory == TYPCATEGORY_UNKNOWN) &&
                             nextCategory == TYPCATEGORY_NUMERIC) ||
-                        (preferCategory == TYPCATEGORY_UNKNOWN && nextCategory == TYPCATEGORY_STRING) ||
-                        ((preferCategory == TYPCATEGORY_STRING || preferCategory == TYPCATEGORY_UNKNOWN) &&
-                            nextCategory == TYPCATEGORY_DATETIME);
+                        (preferCategory == TYPCATEGORY_UNKNOWN && nextCategory == TYPCATEGORY_STRING)
+#ifdef DOLPHIN
+                        || ((preferCategory == TYPCATEGORY_STRING || preferCategory == TYPCATEGORY_UNKNOWN) &&
+                            nextCategory == TYPCATEGORY_DATETIME)
+#endif
+                            ;
                     /* Not to deal with other categories mix*/
                     if (!othercondition) {
                         ereport(ERROR,
@@ -1875,8 +1897,10 @@ Oid select_common_type(ParseState* pstate, List* exprs, const char* context, Nod
     } else if (context != NULL && 0 == strncmp(context, "NVL", sizeof("NVL"))) {
         /* Follow A db nvl*/
         ptype = choose_nvl_type(pstate, exprs, context);
+#ifdef DOLPHIN
     } else if (context != NULL && 0 == strncmp(context, "CASE", sizeof("CASE"))) {
         ptype = choose_specific_expr_type(pstate, exprs, context);
+#endif
     } else {
         ptype = choose_expr_type(pstate, exprs, context, which_expr);
     }
@@ -2673,7 +2697,7 @@ bool IsBinaryCoercible(Oid srctype, Oid targettype)
 
     return result;
 }
-
+#ifdef DOLPHIN
 Oid findUnsignedImplicitCastFunction(Oid targetTypeId, Oid sourceTypeId, Oid funcid)
 {
     int row = INVALID_ROW;
@@ -2712,6 +2736,7 @@ Oid findUnsignedImplicitCastFunction(Oid targetTypeId, Oid sourceTypeId, Oid fun
     }
     return funcid;
 }
+#endif
 /*
  * find_coercion_pathway
  *		Look for a coercion pathway between two types.
@@ -2799,9 +2824,12 @@ CoercionPathType find_coercion_pathway(Oid targetTypeId, Oid sourceTypeId, Coerc
             switch (castForm->castmethod) {
                 case COERCION_METHOD_FUNCTION: {
                     result = COERCION_PATH_FUNC;
+#ifdef DOLPHIN
                     if (ccontext == COERCION_EXPLICIT) {
                         *funcid = findUnsignedImplicitCastFunction(targetTypeId, sourceTypeId, castForm->castfunc);
-                    } else {
+                    } else
+#endif
+                    {
                         *funcid = castForm->castfunc;
                     }
                     break;

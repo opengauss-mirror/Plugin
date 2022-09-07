@@ -595,6 +595,7 @@ static bool compute_common_attribute(DefElem* defel, DefElem** volatility_item, 
             goto duplicate_error;
 
         *package_item = defel;
+#ifdef DOLPHIN
     } else if (strcmp(defel->defname, "deterministic") == 0) {
 
         *determ_item = defel;
@@ -606,6 +607,7 @@ static bool compute_common_attribute(DefElem* defel, DefElem** volatility_item, 
              goto duplicate_error;
 
         *language_item = defel;
+#endif
     } else
         return false;
 
@@ -692,8 +694,10 @@ static List* compute_attributes_sql_style(const List* options, List** as, char**
     DefElem* shippable_item = NULL;
     DefElem* package_item = NULL;
     List* bCompatibilities = NIL;
+#ifdef DOLPHIN
     DefElem* determ_item = NULL;
     DefElem* sql_item = NULL;
+#endif
     foreach (option, options) {
         DefElem* defel = (DefElem*)lfirst(option);
 
@@ -744,7 +748,12 @@ static List* compute_attributes_sql_style(const List* options, List** as, char**
     if (language_item != NULL)
         *language = strVal(language_item->arg);
     else {
-        *language = "sql"; /* keep compiler quiet */
+#ifdef DOLPHIN
+        *language = "sql";
+#else
+        ereport(ERROR, (errcode(ERRCODE_INVALID_FUNCTION_DEFINITION), errmsg("no language specified")));
+        *language = NULL; /* keep compiler quiet */
+#endif
     }
 
     /* process optional items */
@@ -2030,9 +2039,10 @@ void AlterFunction(AlterFunctionStmt* stmt)
                 (errcode(ERRCODE_WITH_CHECK_OPTION_VIOLATION), errmsg("option \"%s\" not recognized", defel->defname)));
         }
     }
-
+#ifdef DOLPHIN
     if (determ_item != NULL)
         ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("Do not support deterministic for ALTER FUNCTION.")));
+#endif
     if (volatility_item != NULL)
         procForm->provolatile = interpret_func_volatility(volatility_item);
     if (strict_item != NULL)

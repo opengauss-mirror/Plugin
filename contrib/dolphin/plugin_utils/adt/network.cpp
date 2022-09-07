@@ -660,6 +660,7 @@ Datum network_family(PG_FUNCTION_ARGS)
     }
 }
 
+#ifdef DOLPHIN
 static int check_ip(char *src, bool is_check_v4)
 {
     int bits;
@@ -713,6 +714,7 @@ Datum network_is_ipv6(PG_FUNCTION_ARGS)
 {
     PG_RETURN_INT32(is_ipvx(fcinfo, false));
 }
+#endif
 
 Datum network_broadcast(PG_FUNCTION_ARGS)
 {
@@ -1363,6 +1365,7 @@ Datum inetmi(PG_FUNCTION_ARGS)
     PG_RETURN_INT64(res);
 }
 
+#ifdef DOLPHIN
 PG_FUNCTION_INFO_V1_PUBLIC(inetaton);
 extern "C" DLL_PUBLIC Datum inetaton(PG_FUNCTION_ARGS);
 
@@ -1757,6 +1760,7 @@ Datum inetntop(PG_FUNCTION_ARGS)
     }
     PG_RETURN_NULL();
 }
+#endif
 
 /*
  * clean_ipv6_addr --- remove any '%zone' part from an IPv6 address string

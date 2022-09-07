@@ -703,7 +703,9 @@ static int GetCategoryPriority(TYPCATEGORY categoryoid)
 
     if (u_sess->attr.attr_sql.convert_string_to_digit) {
         switch (categoryoid) {
+#ifdef DOLPHIN
             case ('C'):
+#endif
             case ('N'): /*Numeric*/
                 result = 4;
                 break;
@@ -728,7 +730,9 @@ static int GetCategoryPriority(TYPCATEGORY categoryoid)
             case ('T'): /*Timespan*/
                 result = 2;
                 break;
+#ifdef DOLPHIN
             case ('C'):
+#endif
             case ('N'): /*Numeric*/
                 result = 3;
                 break;
@@ -893,7 +897,8 @@ int GetPriority(Oid typeoid)
             result = 0;
             break;
 
-        default: {
+        default:
+#ifdef DOLPHIN
             if (typeoid == get_typeoid(PG_CATALOG_NAMESPACE, "uint4")) {
                 result = 3;
             } else if (typeoid == get_typeoid(PG_CATALOG_NAMESPACE, "uint1")) {
@@ -902,11 +907,12 @@ int GetPriority(Oid typeoid)
                 result = 2;
             } else if (typeoid == get_typeoid(PG_CATALOG_NAMESPACE, "uint8")) {
                 result = 4;
-            } else {
+            } else 
+#endif
+            {
                 result = 0;
             }
             break;
-        }
     }
     return result;
 }

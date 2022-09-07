@@ -82,14 +82,14 @@ double float8in_internal(char* str, char** s, bool* hasError);
 #define cbrt my_cbrt
 static double cbrt(double x);
 #endif /* HAVE_CBRT */
-
+#ifdef DOLPHIN
 const float8 ConstLog2 = log10(2);
 
 PG_FUNCTION_INFO_V1_PUBLIC(dlog2);
 extern "C" DLL_PUBLIC Datum dlog2(PG_FUNCTION_ARGS);
 
 static float8 get_log_result(float8 arg, bool is_log10);
-
+#endif
 /*
  * Routines to provide reasonably platform-independent handling of
  * infinity and NaN.  We assume that isinf() and isnan() are available
@@ -313,6 +313,7 @@ Datum float4in(PG_FUNCTION_ARGS)
              * detect whether it's a "real" out-of-range condition by checking
              * to see if the result is zero or huge.
              */
+#ifdef DOLPHIN
             if (val == 0.0 || val >= HUGE_VAL || val <= -HUGE_VAL) {
                 /* If keyword IGNORE and strict SQL mode are both in effect, IGNORE takes precedence */
                 if (!fcinfo->can_ignore && (SQL_MODE_STRICT() || val == 0.0)) {
@@ -326,6 +327,13 @@ Datum float4in(PG_FUNCTION_ARGS)
                 }
             }
         } else if (!fcinfo->can_ignore && SQL_MODE_STRICT())
+#else
+            if (val == 0.0 || val >= HUGE_VAL || val <= -HUGE_VAL)
+                ereport(ERROR,
+                    (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE),
+                        errmsg("\"%s\" is out of range for type real", orig_num)));
+        } else
+#endif
             ereport(ERROR,
                 (errcode(ERRCODE_INVALID_TEXT_REPRESENTATION),
                     errmsg("invalid input syntax for type real: \"%s\"", orig_num)));
@@ -1258,8 +1266,11 @@ Datum dtoi4(PG_FUNCTION_ARGS)
      * on just-out-of-range values that would round into range.  Note
      * assumption that round() will pass through a NaN or Inf unchanged.
      */
+#ifdef DOLPHIN
     num = round(num);
-
+#else
+    num = rint(num);
+#endif
     /*
      * Range check.  We must be careful here that the boundary values are
      * expressed exactly in the float domain.  We expect PG_INT32_MIN to be an
@@ -1401,8 +1412,11 @@ Datum ftoi2(PG_FUNCTION_ARGS)
      * on just-out-of-range values that would round into range.  Note
      * assumption that round() will pass through a NaN or Inf unchanged.
      */
+#ifdef DOLPHIN
     num = round(num);
-
+#else
+    num = rint(num);
+#endif
     /*
      * Range check.  We must be careful here that the boundary values are
      * expressed exactly in the float domain.  We expect PG_INT16_MIN  to be an
@@ -1462,8 +1476,11 @@ Datum i2tof(PG_FUNCTION_ARGS)
 Datum dround(PG_FUNCTION_ARGS)
 {
     float8 arg1 = PG_GETARG_FLOAT8(0);
-
+#ifdef DOLPHIN
     PG_RETURN_FLOAT8(round(arg1));
+#else
+    PG_RETURN_FLOAT8(rint(arg1));
+#endif
 }
 
 /*
@@ -1537,7 +1554,13 @@ Datum dsqrt(PG_FUNCTION_ARGS)
     float8 result;
 
     if (arg1 < 0) {
+#ifdef DOLPHIN
         PG_RETURN_NULL();
+#else
+        ereport(ERROR,
+            (errcode(ERRCODE_INVALID_ARGUMENT_FOR_POWER_FUNCTION),
+                errmsg("cannot take square root of a negative number")));
+#endif
     }
 
     result = sqrt(arg1);
@@ -1638,16 +1661,23 @@ Datum dlog1(PG_FUNCTION_ARGS)
      * Emit particular SQLSTATE error codes for ln(). This is required by the
      * SQL standard.
      */
+#ifdef DOLPHIN
     if (arg1 <= 0) {
         PG_RETURN_NULL();
     }
-
+#else
+    if (arg1 == 0.0)
+        ereport(ERROR, (errcode(ERRCODE_INVALID_ARGUMENT_FOR_LOG), errmsg("cannot take logarithm of zero")));
+    if (arg1 < 0)
+        ereport(
+            ERROR, (errcode(ERRCODE_INVALID_ARGUMENT_FOR_LOG), errmsg("cannot take logarithm of a negative number")));
+#endif
     result = log(arg1);
 
     CHECKFLOATVAL(result, isinf(arg1), arg1 == 1);
     PG_RETURN_FLOAT8(result);
 }
-
+#ifdef DOLPHIN
 static float8 get_log_result(float8 arg, bool is_log10)
 {
     float8 result;
@@ -1686,7 +1716,7 @@ Datum dlog2(PG_FUNCTION_ARGS)
     }
     PG_RETURN_FLOAT8(get_log_result(arg, false));
 }
-
+#endif
 /*
  *		dlog10			- returns the base 10 logarithm of arg
  */

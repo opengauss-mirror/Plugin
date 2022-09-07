@@ -33,7 +33,7 @@ typedef struct {
     int64 finish;
     int64 step;
 } generate_series_fctx;
-
+#ifdef DOLPHIN
 void CheckSpaceAndDotInternal(bool errorOK, int c, char* digitAfterDot, const char** ptr)
 {
     bool isFirstDot = true;
@@ -53,6 +53,7 @@ void CheckSpaceAndDotInternal(bool errorOK, int c, char* digitAfterDot, const ch
         }
     }
 }
+#endif
 /***********************************************************************
  **
  **		Routines for 64-bit integers.

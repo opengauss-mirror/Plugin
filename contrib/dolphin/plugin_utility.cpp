@@ -9243,6 +9243,7 @@ const char* CreateAlterTableCommandTag(const AlterTableType subtype)
         case AT_ReAddConstraint:
             tag = "RE ADD CONSTRAINT";
             break;
+#ifdef DOLPHIN
         case AT_DropIndex:
             tag = "DROP INDEX";
             break;
@@ -9252,7 +9253,7 @@ const char* CreateAlterTableCommandTag(const AlterTableType subtype)
         case AT_RenameIndex:
             tag = "RENAME INDEX";
             break;
-
+#endif
         default:
             tag = "?\?\?";
             break;
