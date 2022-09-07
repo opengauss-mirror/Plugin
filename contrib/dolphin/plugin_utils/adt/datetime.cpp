@@ -4596,7 +4596,7 @@ bool numeric_to_lldiv_t(NumericVar *from, lldiv_t *to)
         return false;
     }
 
-    for (int i = from->weight, j = 0; i >= 0; i--, j++) {
+    for (int i = from->weight, j = 0; i >= 0 && j < from->ndigits; i--, j++) {
         to->quot += from->digits[j] * pow_of_10[i * DEC_DIGITS];
     }
 
