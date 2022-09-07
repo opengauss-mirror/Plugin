@@ -403,11 +403,11 @@ select * from "TEST"."Test_Table";
 ------+------
 (0 rows)
 
-set current_schema=information_schema;
+set current_schema=public;
 create table Test_info(a int, b int);
 insert into Test_info values(1,2),(2,3),(3,4),(4,5);
 \d+ "Test_info"
-                Table "information_schema.Test_info"
+                      Table "public.Test_info"
  Column |  Type   | Modifiers | Storage | Stats target | Description 
 --------+---------+-----------+---------+--------------+-------------
  a      | integer |           | plain   |              | 
@@ -415,39 +415,10 @@ insert into Test_info values(1,2),(2,3),(3,4),(4,5);
 Has OIDs: no
 Options: orientation=row, compression=no
 
-\d+ "sql_features"
-                        Table "information_schema.sql_features"
-      Column      |      Type      | Modifiers | Storage  | Stats target | Description 
-------------------+----------------+-----------+----------+--------------+-------------
- feature_id       | character_data |           | extended |              | 
- feature_name     | character_data |           | extended |              | 
- sub_feature_id   | character_data |           | extended |              | 
- sub_feature_name | character_data |           | extended |              | 
- is_supported     | yes_or_no      |           | extended |              | 
- is_verified_by   | character_data |           | extended |              | 
- comments         | character_data |           | extended |              | 
-Has OIDs: no
-Options: orientation=row, compression=no
-
-explain (verbose on, costs off) select count(*) from sql_features;
-                                                     QUERY PLAN                                                     
---------------------------------------------------------------------------------------------------------------------
- Aggregate
-   Output: count(*)
-   ->  Seq Scan on information_schema.sql_features
-         Output: feature_id, feature_name, sub_feature_id, sub_feature_name, is_supported, is_verified_by, comments
-(4 rows)
-
-select count(*) from sql_features;
- count 
--------
-   672
-(1 row)
-
 explain (verbose on, costs off) select * from Test_info;
-                 QUERY PLAN                 
---------------------------------------------
- Seq Scan on information_schema."Test_info"
+           QUERY PLAN           
+--------------------------------
+ Seq Scan on public."Test_info"
    Output: a, b
 (2 rows)
 

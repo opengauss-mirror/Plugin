@@ -2,10 +2,12 @@ DROP DATABASE IF EXISTS test_db;
 NOTICE:  database "test_db" does not exist, skipping
 CREATE DATABASE test_db DBCOMPATIBILITY 'B';
 CREATE USER root_test WITH PASSWORD 'openGauss@123';
+NOTICE:  The iteration value of password is not recommended.Setting the iteration value too small reduces the security of the password, and setting it too large results in performance degradation.
 GRANT ALL PRIVILEGES TO root_test;
 \c test_db
 SET ROLE root_test PASSWORD 'openGauss@123';
 CREATE USER test_user with password 'openGauss@123';
+NOTICE:  The iteration value of password is not recommended.Setting the iteration value too small reduces the security of the password, and setting it too large results in performance degradation.
 CREATE VIEW definer_test_view1 AS SELECT log(10, 100);
 CREATE DEFINER=test_user VIEW definer_test_view2 AS SELECT log(10, 100);
 ERROR:  permission denied for schema public
@@ -25,6 +27,7 @@ SELECT c.relname as view_name, u.usename as rolname FROM pg_class c, pg_user u W
 (3 rows)
 
 CREATE USER test_user2 with password 'openGauss@123';
+NOTICE:  The iteration value of password is not recommended.Setting the iteration value too small reduces the security of the password, and setting it too large results in performance degradation.
 SELECT * FROM definer_test_view1;
         log         
 --------------------

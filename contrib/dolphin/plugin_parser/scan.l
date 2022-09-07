@@ -362,7 +362,13 @@ param			\${integer}
 
 newParam		:({identifier}|{integer})
 
-newArray		:({integer}{space}*\])
+newArray		:({identifier}|{integer}){space}*\]
+
+set_user_cont			[A-Za-z\377_0-9\$\.]
+set_user_escape_quote		[^']
+set_user_escape_dquote		[^"]
+set_user_escape_bquote		[^`]	
+setUserIdentifier		@(({set_user_cont}+)|(\'{set_user_escape_quote}+\')|(\"{set_user_escape_dquote}+\")|(\`{set_user_escape_bquote}+\`))
 
 other			.
 
@@ -748,7 +754,7 @@ other			.
 					if (yyextra->literallen == 0)
 						yyerror("zero-length delimited identifier");
 					ident = litbufdup(yyscanner);
-					if (yyextra->literallen >= NAMEDATALEN && u_sess->parser_cxt.is_load_copy == false)
+					if (yyextra->literallen >= NAMEDATALEN && u_sess->parser_cxt.is_load_copy == false && u_sess->parser_cxt.isForbidTruncate == false)
 						truncate_identifier(ident, yyextra->literallen, yyextra->warnOnTruncateIdent);
 					yylval->str = ident;
 					yyextra->ident_quoted = true;
@@ -764,7 +770,7 @@ other			.
 						yyerror("zero-length delimited identifier");
 					ident = litbuf_udeescape('\\', yyscanner);
 					identlen = strlen(ident);
-					if (identlen >= NAMEDATALEN && u_sess->parser_cxt.is_load_copy == false)
+					if (identlen >= NAMEDATALEN && u_sess->parser_cxt.is_load_copy == false && u_sess->parser_cxt.isForbidTruncate == false)
 						truncate_identifier(ident, identlen, yyextra->warnOnTruncateIdent);
 					yylval->str = ident;
 					/* throw back all but the quote */
@@ -782,7 +788,7 @@ other			.
 						yyerror("zero-length delimited identifier");
 					ident = litbuf_udeescape(yytext[yyleng - 2], yyscanner);
 					identlen = strlen(ident);
-					if (identlen >= NAMEDATALEN && u_sess->parser_cxt.is_load_copy == false)
+					if (identlen >= NAMEDATALEN && u_sess->parser_cxt.is_load_copy == false && u_sess->parser_cxt.isForbidTruncate == false)
 						truncate_identifier(ident, identlen, yyextra->warnOnTruncateIdent);
 					yylval->str = ident;
 					yyextra->ident_quoted = false;
@@ -966,6 +972,12 @@ other			.
 						yyextra->is_hint_str = false;
 						return CmpOp;
 					}
+					else if (strcmp(yytext, "<=>") == 0 && (u_sess->attr.attr_sql.sql_compatibility == B_FORMAT))
+					{
+						yylval->str = pstrdup(yytext);
+						yyextra->is_hint_str = false;
+						return CmpNullOp;
+					}
 					else
 						yylval->str = pstrdup(yytext);
 					yyextra->is_hint_str = false;
@@ -975,6 +987,7 @@ other			.
 				}
 {newArray}		{
 					yyless(1);
+					SET_YYLLOC();
 					yyextra->is_hint_str = false;
 					return yytext[0];
 				}
@@ -1127,6 +1140,20 @@ other			.
 					yylval->str = ident;
 					yyextra->ident_quoted = false;
 					return IDENT;
+				}
+
+{setUserIdentifier}	{
+					if (u_sess->attr.attr_sql.sql_compatibility == B_FORMAT && u_sess->attr.attr_common.enable_set_variable_b_format) {
+						SET_YYLLOC();
+						yylval->str = pstrdup(yytext + 1);
+						yyextra->is_hint_str = false;
+						return SET_USER_IDENT;
+					} else {
+						yyless(1);
+						yylval->str = pstrdup(yytext);
+						yyextra->is_hint_str = false;
+						return yytext[0];
+					}
 				}
 
 {other}			{

@@ -11,6 +11,7 @@ show databases;
  dbe_perf
  dbe_pldebugger
  dbe_pldeveloper
+ dbe_sql_util
  information_schema
  pg_catalog
  pg_toast
@@ -18,7 +19,7 @@ show databases;
  public
  snapshot
  sqladvisor
-(13 rows)
+(14 rows)
 
 create schema aa1;
 create schema aa2;

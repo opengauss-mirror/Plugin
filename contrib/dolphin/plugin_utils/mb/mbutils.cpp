@@ -13,6 +13,7 @@
 #include "catalog/namespace.h"
 #include "plugin_mb/pg_wchar.h"
 #include "pgxc/execRemote.h"
+#include "plugin_postgres.h"
 #include "utils/builtins.h"
 #include "utils/memutils.h"
 #include "utils/syscache.h"
@@ -37,6 +38,9 @@ typedef struct ConvProcInfo {
 /* Internal functions */
 static char* perform_default_encoding_conversion(const char* src, int len, bool is_client_to_server);
 static int cliplen(const char* str, int len, int limit);
+
+PG_FUNCTION_INFO_V1_PUBLIC(pg_convert_to_text);
+extern "C" DLL_PUBLIC Datum pg_convert_to_text(PG_FUNCTION_ARGS);
 
 /*
  * Prepare for a future call to SetClientEncoding.	Success should mean
@@ -377,6 +381,7 @@ Datum pg_convert_to_nocase(PG_FUNCTION_ARGS)
     Datum dest_encoding_name = PG_GETARG_DATUM(1);
     Datum src_encoding_name = DirectFunctionCall1(namein, CStringGetDatum(u_sess->mb_cxt.DatabaseEncoding->name));
     Datum result;
+    FUNC_CHECK_HUGE_POINTER(PG_ARGISNULL(0), DatumGetPointer(string), "pg_convert()");
 
     /*
      * pg_convert expects a bytea as its first argument. We're passing it a
@@ -467,8 +472,6 @@ Datum pg_convert(PG_FUNCTION_ARGS)
 
     PG_RETURN_BYTEA_P(retval);
 }
-
-
 
 Datum pg_convert_nocase(PG_FUNCTION_ARGS)
 {
@@ -859,10 +862,6 @@ int pg_mbstrlen_with_len_toast(const char* mbstr, int* limit)
 {
     int len = 0;
 
-    /* optimization for single byte encoding */
-    if (pg_database_encoding_max_length() == 1) {
-        return *limit;
-    }
     while (*limit > 0 && *mbstr) {
         int l = pg_mblen(mbstr);
 
