@@ -369,7 +369,11 @@ vec_text_substr(Datum str, int32 start, int32 length, bool *is_null, mblen_conve
 		}
 		else if (0 == S)
 		{
+#ifdef DOLPHIN
 			return null_return(is_null);
+#else
+			S = 1;
+#endif
 		}	
 	}
 

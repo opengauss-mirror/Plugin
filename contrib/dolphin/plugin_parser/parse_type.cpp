@@ -18,11 +18,15 @@
 #include "gaussdb_version.h"
 
 #include "access/transam.h"
+#ifdef DOLPHIN
 #include "access/xact.h"
+#endif
 #include "catalog/namespace.h"
 #include "catalog/gs_package.h"
+#ifdef DOLPHIN
 #include "catalog/pg_enum.h"
 #include "catalog/pg_type_fn.h"
+#endif
 #include "catalog/pg_type.h"
 #include "lib/stringinfo.h"
 #include "nodes/makefuncs.h"
@@ -31,17 +35,23 @@
 #include "plugin_parser/parse_type.h"
 #include "pgxc/groupmgr.h"
 #include "pgxc/pgxc.h"
+#ifdef DOLPHIN
 #include "utils/acl.h"
+#endif
 #include "utils/array.h"
 #include "utils/builtins.h"
 #include "utils/datum.h"
+#ifdef DOLPHIN
 #include "utils/fmgroids.h"
+#endif
 #include "utils/lsyscache.h"
 #include "utils/syscache.h"
 #include "utils/pl_package.h"
+#ifdef DOLPHIN
 #include "miscadmin.h"
 #include "commands/typecmds.h"
 #include "storage/lock/lock.h"
+#endif
 
 static int32 typenameTypeMod(ParseState* pstate, const TypeName* typname, Type typ);
 
@@ -650,8 +660,11 @@ Oid LookupCollation(ParseState* pstate, List* collnames, int location)
     if (pstate != NULL) {
         setup_parser_errposition_callback(&pcbstate, pstate, location);
     }
-
+#ifdef DOLPHIN
     colloid = get_collation_oid(collnames, true);
+#else
+    colloid = get_collation_oid(collnames, false);
+#endif
 
     if (pstate != NULL) {
         cancel_parser_errposition_callback(&pcbstate);
@@ -1467,7 +1480,7 @@ Oid LookupTypeInPackage(List* typeNames, const char* typeName, Oid pkgOid, Oid n
 
 
 }
-
+#ifdef DOLPHIN
 /*
  * DefineAnonymousEnum
  *		Registers a new anoymous enum without an array type, using the given name.
@@ -1603,3 +1616,4 @@ char* makeEnumTypeName(const char* relname, const char *colname, const char* sch
 
     return arr;
 }
+#endif

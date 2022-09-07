@@ -17,7 +17,9 @@
 #include "knl/knl_variable.h"
 
 #include "catalog/pg_operator.h"
+#ifdef DOLPHIN
 #include "catalog/pg_enum.h"
+#endif
 #include "catalog/pg_type.h"
 #include "lib/stringinfo.h"
 #include "nodes/nodeFuncs.h"
@@ -701,6 +703,7 @@ Expr* make_op(ParseState* pstate, List* opname, Node* ltree, Node* rtree, int lo
     List* args = NIL;
     Oid rettype;
     OpExpr* result = NULL;
+#ifdef DOLPHIN
     int32 baseTypeMod;
     Oid baseTypeId;
     float8 enumOrder;
@@ -708,7 +711,7 @@ Expr* make_op(ParseState* pstate, List* opname, Node* ltree, Node* rtree, int lo
     HeapTuple enumTup = NULL;
     CatCList* list = NULL;
     Type targetType;
-
+#endif
     /* Select the operator */
     if (rtree == NULL) {
         /* right operator */
@@ -724,6 +727,7 @@ Expr* make_op(ParseState* pstate, List* opname, Node* ltree, Node* rtree, int lo
         /* otherwise, binary operator */
         ltypeId = exprType(ltree);
         rtypeId = exprType(rtree);
+#ifdef DOLPHIN
         /* transform from int to enum label */
         if(u_sess->attr.attr_sql.sql_compatibility == B_FORMAT && type_is_enum(ltypeId) && rtypeId==INT4OID) {
             char *enumLable = NULL;
@@ -774,7 +778,7 @@ Expr* make_op(ParseState* pstate, List* opname, Node* ltree, Node* rtree, int lo
             rtypeId = UNKNOWNOID;
             rtree = (Node*)con;
         }
-
+#endif
         /* if one of the types is a encrypted type and we are in a function/procedure creation flow */
         if (IsClientLogicType(ltypeId) || IsClientLogicType(rtypeId)) {
             if(pstate != NULL && pstate->p_create_proc_operator_hook) {

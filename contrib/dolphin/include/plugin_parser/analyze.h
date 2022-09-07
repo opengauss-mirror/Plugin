@@ -33,9 +33,10 @@ extern Query* parse_analyze_varparams(Node* parseTree, const char* sourceText, O
 
 extern Query* parse_sub_analyze(Node* parseTree, ParseState* parentParseState, CommonTableExpr* parentCTE,
     bool locked_from_parent, bool resolve_unknowns);
-
+#ifdef DOLPHIN
 extern void AppendValueForColOfNotnull(ParseState* pstate, List* exprlist, List* icolumns, List* attrnos);
 extern void CheckDefaultForNotnullCols(List* exprlist);
+#endif
 extern List* transformInsertRow(ParseState* pstate, List* exprlist, List* stmtcols, List* icolumns, List* attrnos);
 extern Query* transformTopLevelStmt(
     ParseState* pstate, Node* parseTree, bool isFirstNode = true, bool isCreateView = false);

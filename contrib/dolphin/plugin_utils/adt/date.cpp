@@ -52,6 +52,7 @@ static int timetz2tm(TimeTzADT* time, struct pg_tm* tm, fsec_t* fsec, int* tzp);
 static int tm2time(struct pg_tm* tm, fsec_t fsec, TimeADT* result);
 static int tm2timetz(struct pg_tm* tm, fsec_t fsec, int tz, TimeTzADT* result);
 static void AdjustTimeForTypmod(TimeADT* time, int32 typmod);
+#ifdef DOLPHIN
 static char* adjust_b_format_time(char *str, int *timeSign, int *D, bool *hasD);
 
 PG_FUNCTION_INFO_V1_PUBLIC(int32_b_format_time);
@@ -85,7 +86,7 @@ PG_FUNCTION_INFO_V1_PUBLIC(subdate_time_interval);
 extern "C" DLL_PUBLIC Datum subdate_time_interval(PG_FUNCTION_ARGS);
 PG_FUNCTION_INFO_V1_PUBLIC(time_mysql);
 extern "C" DLL_PUBLIC Datum time_mysql(PG_FUNCTION_ARGS);
-
+#endif
 /* common code for timetypmodin and timetztypmodin */
 static int32 anytime_typmodin(bool istz, ArrayType* ta)
 {
@@ -136,7 +137,7 @@ static char* anytime_typmodout(bool istz, int32 typmod)
     securec_check_ss(rc, "", "");
     return res;
 }
-
+#ifdef DOLPHIN
 /* curdate()
  * @reruen  current date in b compatibility,    date
  */
@@ -244,7 +245,7 @@ Datum b_db_statement_start_time(PG_FUNCTION_ARGS)
 
     PG_RETURN_TIMEADT(time_val);
 }
-
+#endif
 /*****************************************************************************
  *	 Date ADT
  *****************************************************************************/
@@ -266,11 +267,12 @@ Datum date_in(PG_FUNCTION_ARGS)
     int ftype[MAXDATEFIELDS];
     char workbuf[MAXDATELEN + 1];
     char* date_fmt = NULL;
+#ifdef DOLPHIN
     errno_t rc = EOK;
 
     rc = memset_s(&tt, sizeof(tt), 0, sizeof(tt));
     securec_check(rc, "\0", "\0");
-
+#endif
     /*
      * this case is used for date format is specified.
      */
@@ -287,6 +289,10 @@ Datum date_in(PG_FUNCTION_ARGS)
          * default pg date formatting parsing.
          */
         dterr = ParseDateTime(str, workbuf, sizeof(workbuf), field, ftype, MAXDATEFIELDS, &nf);
+#ifndef DOLPHIN
+        if (dterr == 0)
+            dterr = DecodeDateTime(field, ftype, nf, &dtype, tm, &fsec, &tzp);
+#else
         if (dterr != 0)
             DateTimeParseError(dterr, str, "date");
         if (dterr == 0) {
@@ -297,6 +303,7 @@ Datum date_in(PG_FUNCTION_ARGS)
                 dterr = DecodeDateTimeForBDatabase(field, ftype, nf, &dtype, tm, &fsec, &tzp);
             }
         }
+#endif
         if (dterr != 0)
             DateTimeParseError(dterr, str, "date");
         switch (dtype) {
@@ -339,7 +346,7 @@ Datum date_in(PG_FUNCTION_ARGS)
 
     PG_RETURN_DATEADT(date);
 }
-
+#ifdef DOLPHIN
 int NumberDate(char *str, pg_tm *tm) 
 {
     int len = 0;
@@ -410,7 +417,7 @@ Datum int32_b_format_date(PG_FUNCTION_ARGS)
     result = date2j(tm->tm_year, tm->tm_mon, tm->tm_mday) - POSTGRES_EPOCH_JDATE;
     PG_RETURN_DATEADT(result);
 }
-
+#endif
 /* date_out()
  * Given internal format date, convert to text string.
  */
@@ -430,7 +437,11 @@ Datum date_out(PG_FUNCTION_ARGS)
                     errmsg("input julian date is overflow")));
         }
         j2date(date + POSTGRES_EPOCH_JDATE, &(tm->tm_year), &(tm->tm_mon), &(tm->tm_mday));
+#ifdef DOLPHIN
         EncodeDateOnlyForBDatabase(tm, u_sess->time_cxt.DateStyle, buf);
+#else
+        EncodeDateOnly(tm, u_sess->time_cxt.DateStyle, buf);
+#endif
     }
 
     result = pstrdup(buf);
@@ -1307,9 +1318,10 @@ Datum time_in(PG_FUNCTION_ARGS)
     int dtype;
     int ftype[MAXDATEFIELDS];
     char* time_fmt = NULL;
+#ifdef DOLPHIN
     int timeSign = 1;
     int D = 0;
-
+#endif
     /*
      * this case is used for time format is specified.
      */
@@ -1322,6 +1334,7 @@ Datum time_in(PG_FUNCTION_ARGS)
         /* the following logic shared from to_timestamp(). */
         to_timestamp_from_format(tm, &fsec, str, (void*)time_fmt);
     } else {
+#ifdef DOLPHIN
         /* check if empty */
         if (strlen(str) == 0) {
             PG_RETURN_TIMEADT(0);
@@ -1329,8 +1342,17 @@ Datum time_in(PG_FUNCTION_ARGS)
         bool hasD = false;
         char *adjusted = adjust_b_format_time(str, &timeSign, &D, &hasD);
         dterr = ParseDateTime(adjusted, workbuf, sizeof(workbuf), field, ftype, MAXDATEFIELDS, &nf);
+#else
+        /*
+         * original pg time format parsing
+         */
+        dterr = ParseDateTime(str, workbuf, sizeof(workbuf), field, ftype, MAXDATEFIELDS, &nf);
+        if (dterr == 0)
+            dterr = DecodeTimeOnly(field, ftype, nf, &dtype, tm, &fsec, &tz);
+#endif
         if (dterr != 0)
             DateTimeParseError(dterr, str, "time");
+#ifdef DOLPHIN
         if (dterr == 0) {
             if (ftype[0] == DTK_NUMBER && nf == 1) {
                 /* for example: str = "2 121212" , "231034.1234" */
@@ -1345,6 +1367,7 @@ Datum time_in(PG_FUNCTION_ARGS)
                     DateTimeParseError(dterr, str, "time");
             }
         }
+#endif
     }
 
     /*
@@ -1352,10 +1375,12 @@ Datum time_in(PG_FUNCTION_ARGS)
      */
     tm2time(tm, fsec, &result);
     AdjustTimeForTypmod(&result, typmod);
+#ifdef DOLPHIN
     result *= timeSign;
+#endif
     PG_RETURN_TIMEADT(result);
 }
-
+#ifdef DOLPHIN
 int NumberTime(bool timeIn24, char *str, pg_tm *tm, fsec_t *fsec, int D, bool hasD)
 {
     *fsec = 0;
@@ -1491,7 +1516,7 @@ Datum negetive_time(PG_FUNCTION_ARGS) {
     TimeADT time = PG_GETARG_TIMEADT(0);
     PG_RETURN_TIMEADT(-time);
 }
-
+#endif
 /* tm2time()
  * Convert a tm structure to a time data type.
  */
@@ -1548,6 +1573,7 @@ Datum time_out(PG_FUNCTION_ARGS)
     char* result = NULL;
     struct pg_tm tt, *tm = &tt;
     fsec_t fsec;
+#ifdef DOLPHIN
     char buf[MAXDATELEN + 2];
     char *cp = buf;
 
@@ -1560,7 +1586,12 @@ Datum time_out(PG_FUNCTION_ARGS)
         time2tm(time, tm, &fsec);
     }
     EncodeTimeOnly(tm, fsec, false, 0, u_sess->time_cxt.DateStyle, cp);
+#else
+    char buf[MAXDATELEN + 1];
 
+    time2tm(time, tm, &fsec);
+    EncodeTimeOnly(tm, fsec, false, 0, u_sess->time_cxt.DateStyle, buf);
+#endif
     result = pstrdup(buf);
     PG_RETURN_CSTRING(result);
 }
@@ -1583,13 +1614,19 @@ Datum time_recv(PG_FUNCTION_ARGS)
 
 #ifdef HAVE_INT64_TIMESTAMP
     result = pq_getmsgint64(buf);
-
+#ifdef DOLPHIN
     if (result <= -B_FORMAT_MAX_TIME_USECS || result >= B_FORMAT_MAX_TIME_USECS)
+#else
+    if (result < INT64CONST(0) || result > USECS_PER_DAY)
+#endif
         ereport(ERROR, (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE), errmsg("time out of range")));
 #else
     result = pq_getmsgfloat8(buf);
-
+#ifdef DOLPHIN
     if (result <= (double)(-B_FORMAT_MAX_TIME_USECS) || result >= (double)B_FORMAT_MAX_TIME_USECS)
+#else
+    if (result < 0 || result > (double)SECS_PER_DAY)
+#endif
         ereport(ERROR, (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE), errmsg("time out of range")));
 #endif
 
@@ -2110,9 +2147,17 @@ Datum time_part(PG_FUNCTION_ARGS)
         switch (val) {
             case DTK_MICROSEC:
 #ifdef HAVE_INT64_TIMESTAMP
+#ifdef DOLPHIN
                 result = fsec;
 #else
+                result = tm->tm_sec * 1000000.0 + fsec;
+#endif
+#else
+#ifdef DOLPHIN
                 result = fsec * 1000000;
+#else
+                result = (tm->tm_sec + fsec) * 1000000;
+#endif
 #endif
                 break;
 
@@ -2125,7 +2170,15 @@ Datum time_part(PG_FUNCTION_ARGS)
                 break;
 
             case DTK_SECOND:
+#ifdef DOLPHIN
                 result = tm->tm_sec;
+#else
+#ifdef HAVE_INT64_TIMESTAMP
+                result = tm->tm_sec + fsec / 1000000.0;
+#else
+                result = tm->tm_sec + fsec;
+#endif
+#endif
                 break;
 
             case DTK_MINUTE:
@@ -2777,9 +2830,17 @@ Datum timetz_part(PG_FUNCTION_ARGS)
 
             case DTK_MICROSEC:
 #ifdef HAVE_INT64_TIMESTAMP
+#ifdef DOLPHIN
                 result = fsec;
 #else
+                result = tm->tm_sec * 1000000.0 + fsec;
+#endif
+#else
+#ifdef DOLPHIN
                 result = fsec * 1000000;
+#else
+                result = (tm->tm_sec + fsec) * 1000000;
+#endif
 #endif
                 break;
 
@@ -2792,7 +2853,15 @@ Datum timetz_part(PG_FUNCTION_ARGS)
                 break;
 
             case DTK_SECOND:
+#ifdef DOLPHIN
                 result = tm->tm_sec;
+#else
+#ifdef HAVE_INT64_TIMESTAMP
+                result = tm->tm_sec + fsec / 1000000.0;
+#else
+                result = tm->tm_sec + fsec;
+#endif
+#endif
                 break;
 
             case DTK_MINUTE:
@@ -3178,7 +3247,7 @@ ScalarVector* vtimestamp_part(PG_FUNCTION_ARGS)
 
     return presult;
 }
-
+#ifdef DOLPHIN
 /* makedate()
  * @Description: Convert yyyy.ddd into date type
  * @return: Convert result, date type.
@@ -3721,3 +3790,4 @@ Datum time_mysql(PG_FUNCTION_ARGS)
     EncodeTimeOnly(tm, fsec, false, 0, u_sess->time_cxt.DateStyle, cp);
     PG_RETURN_TEXT_P(cstring_to_text(buf));
 }
+#endif

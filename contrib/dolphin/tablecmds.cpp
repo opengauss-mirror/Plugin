@@ -555,7 +555,11 @@ static void ATAddCheckConstraint(List** wqueue, AlteredTableInfo* tab, Relation 
     bool recursing, bool is_readd, LOCKMODE lockmode);
 static void ATAddForeignKeyConstraint(AlteredTableInfo* tab, Relation rel, Constraint* fkconstraint, LOCKMODE lockmode);
 static void ATExecDropConstraint(Relation rel, const char* constrName, DropBehavior behavior, bool recurse,
-    bool recursing, bool missing_ok, LOCKMODE lockmode, bool dropFk = false);
+    bool recursing, bool missing_ok, LOCKMODE lockmode
+#ifdef DOLPHIN
+    , bool dropFk = false
+#endif
+    );
 static void ATPrepAlterColumnType(List** wqueue, AlteredTableInfo* tab, Relation rel, bool recurse, bool recursing,
     AlterTableCmd* cmd, LOCKMODE lockmode);
 static bool ATColumnChangeRequiresRewrite(Node* expr, AttrNumber varattno);
@@ -760,9 +764,10 @@ static void DelDependencONDataType(Relation rel, Relation depRel, const Form_pg_
 static void ATExecEncryptionKeyRotation(Relation rel, LOCKMODE lockmode);
 static Datum GetAutoIncrementDatum(Relation rel, TupleDesc desc);
 static void CopyTempAutoIncrement(Relation oldrel, Relation newrel);
+#ifdef DOLPHIN
 static List* ATGetNonUniqueKeyList(Relation rel);
 static char* ATGetPKName(Relation rel);
-
+#endif
 inline static bool CStoreSupportATCmd(AlterTableType cmdtype)
 {
     bool ret = false;
@@ -803,7 +808,9 @@ inline static bool CStoreSupportATCmd(AlterTableType cmdtype)
         case AT_AddIndex:
         case AT_AddIndexConstraint:
 #endif
+#ifdef DOLPHIN
         case AT_RebuildIndex:
+#endif
             ret = true;
             break;
         default:
@@ -3200,7 +3207,7 @@ ObjectAddresses* PreCheckforRemoveRelation(DropStmt* drop, StringInfo tmp_queryS
         if (delrel != NULL) {
             relation_close(delrel, NoLock);
         }
-
+#ifdef DOLPHIN
         /* 
         * check if the relation column type is enum
         */
@@ -3231,7 +3238,7 @@ ObjectAddresses* PreCheckforRemoveRelation(DropStmt* drop, StringInfo tmp_queryS
             }
             ReleaseSysCache(tuple);
         }
-
+#endif
         /* OK, we're ready to delete this one */
         obj.classId = RelationRelationId;
         obj.objectId = relOid;
@@ -3550,7 +3557,7 @@ void RemoveRelations(DropStmt* drop, StringInfo tmp_queryString, RemoteQueryExec
          }
 
         typlist = TryGetTypeNeedDrop(delrel);
-
+#ifdef DOLPHIN
         /* 
         * check if the relation column type is enum
         */
@@ -3580,7 +3587,7 @@ void RemoveRelations(DropStmt* drop, StringInfo tmp_queryString, RemoteQueryExec
                 ReleaseSysCache(tuple);
             }
         }
-
+#endif
         if (delrel != NULL) {
             relation_close(delrel, NoLock);
         }
@@ -7138,7 +7145,7 @@ void AlterTable(Oid relid, LOCKMODE lockmode, AlterTableStmt* stmt)
             }
         }
     }
-
+#ifdef DOLPHIN
     /*
      *    Here, we check if the alter column type cmd, 
      *    if the original column type is enum type,
@@ -7181,7 +7188,7 @@ void AlterTable(Oid relid, LOCKMODE lockmode, AlterTableStmt* stmt)
             ReleaseSysCache(tuple);
         }
     }
-
+#endif
     // Next version remove hack patch for 'ALTER FOREIGN TABLE ... ADD NODE'
     if (stmt->cmds != NIL) {
         /* process 'ALTER TABLE' cmd */
@@ -7205,7 +7212,7 @@ void AlterTable(Oid relid, LOCKMODE lockmode, AlterTableStmt* stmt)
         }
         list_free_ext(addNodeCmds);
     }
-
+#ifdef DOLPHIN
     if (enumOidList != NIL) {
         foreach (lc, enumOidList) {
             Oid type_to_drop = lfirst_oid(lc);
@@ -7214,7 +7221,7 @@ void AlterTable(Oid relid, LOCKMODE lockmode, AlterTableStmt* stmt)
         list_free_ext(enumOidList);
         enumOidList = NIL;
     }
-
+#endif
 }
 
 /*
@@ -7345,7 +7352,7 @@ static void ATController(Relation rel, List* cmds, bool recurse, LOCKMODE lockmo
     RedistribState* redistribState = NULL;
     bool doRedistribute = false;
 #endif
-
+#ifdef DOLPHIN
     /* spread out truncate partition all */
     if (RelationIsPartitioned(rel) && list_length(cmds) == 1) {
         AlterTableCmd* cmd = (AlterTableCmd*)lfirst(list_head(cmds));
@@ -7368,7 +7375,7 @@ static void ATController(Relation rel, List* cmds, bool recurse, LOCKMODE lockmo
             }
         }
     }
-
+#endif
     /* Phase 1: preliminary examination of commands, create work queue */
     foreach (lcmd, cmds) {
         AlterTableCmd* cmd = (AlterTableCmd*)lfirst(lcmd);
@@ -7624,10 +7631,12 @@ static void ATPrepCmd(List** wqueue, Relation rel, AlterTableCmd* cmd, bool recu
                 cmd->subtype = AT_DropConstraintRecurse;
             pass = AT_PASS_DROP;
             break;
+#ifdef DOLPHIN
         case AT_DropForeignKey:
             ATSimplePermissions(rel, ATT_TABLE | ATT_FOREIGN_TABLE);
             pass = AT_PASS_DROP;
             break;
+#endif
         case AT_AlterColumnType: /* ALTER COLUMN TYPE */
             ATSimplePermissions(rel, ATT_TABLE | ATT_COMPOSITE_TYPE | ATT_FOREIGN_TABLE);
             /* Performs own recursion */
@@ -7698,7 +7707,9 @@ static void ATPrepCmd(List** wqueue, Relation rel, AlterTableCmd* cmd, bool recu
             ATPrepSetTableSpace(tab, rel, cmd->name, lockmode);
             pass = AT_PASS_MISC; /* doesn't actually matter */
             break;
+#ifdef DOLPHIN
         case AT_RebuildIndex:
+#endif
         case AT_UnusableIndex:
         case AT_SetRelOptions:     /* SET (...) */
         case AT_ResetRelOptions:   /* RESET (...) */
@@ -8064,6 +8075,7 @@ static void ATExecCmd(List** wqueue, AlteredTableInfo* tab, Relation rel, AlterT
         case AT_UnusableAllIndexOnPartition: /* unusable all index on partition */
             ATExecUnusableAllIndexOnPartition(rel, cmd->name);
             break;
+#ifdef DOLPHIN
         case AT_RebuildIndex: /* reindex all non-unique indexes of table. */
         {
             ListCell* index = NULL;
@@ -8073,7 +8085,9 @@ static void ATExecCmd(List** wqueue, AlteredTableInfo* tab, Relation rel, AlterT
             }
             break;
         }
+#endif
         case AT_UnusableIndex:
+#ifdef DOLPHIN
             /* if rel is a table, unusable all non-unique indexes of it */
             if (RelationIsRelation(rel)) {
                 ListCell* index = NULL;
@@ -8086,7 +8100,9 @@ static void ATExecCmd(List** wqueue, AlteredTableInfo* tab, Relation rel, AlterT
                     atcmds = lappend(atcmds, atcmd);
                     AlterTableInternal(indexId, atcmds, false);
                 }
-            } else {
+            } else
+#endif
+            {
                 ATExecUnusableIndex(rel);
             }
             break;
@@ -8115,18 +8131,28 @@ static void ATExecCmd(List** wqueue, AlteredTableInfo* tab, Relation rel, AlterT
                                             * recursion */
             ATExecValidateConstraint(rel, cmd->name, true, false, lockmode);
             break;
+#ifdef DOLPHIN
         case AT_DropForeignKey:
             ATExecDropConstraint(rel, cmd->name, cmd->behavior, false, false, cmd->missing_ok, lockmode, true);
             break;
+#endif
         case AT_DropConstraint: /* DROP CONSTRAINT */
+#ifdef DOLPHIN
             /* if cmd->name is NULL, drop the primary key */
             ATExecDropConstraint(rel, cmd->name ? cmd->name : ATGetPKName(rel), cmd->behavior, false, false,
                                  cmd->missing_ok, lockmode);
+#else
+            ATExecDropConstraint(rel, cmd->name, cmd->behavior, true, false, cmd->missing_ok, lockmode);
+#endif
             break;
         case AT_DropConstraintRecurse: /* DROP CONSTRAINT with recursion */
+#ifdef DOLPHIN
             /* if cmd->name is NULL, drop the primary key */
             ATExecDropConstraint(rel, cmd->name ? cmd->name : ATGetPKName(rel), cmd->behavior, true, false,
                                  cmd->missing_ok, lockmode);
+#else
+            ATExecDropConstraint(rel, cmd->name, cmd->behavior, true, false, cmd->missing_ok, lockmode);
+#endif
             break;
         case AT_AlterColumnType: /* ALTER COLUMN TYPE */
             ATExecAlterColumnType(tab, rel, cmd, lockmode);
@@ -10890,7 +10916,7 @@ static void ATExecDropColumn(List** wqueue, Relation rel, const char* colName, D
     if (targetatt->attinhcount > 0 && !recursing)
         ereport(
             ERROR, (errcode(ERRCODE_INVALID_TABLE_DEFINITION), errmsg("cannot drop inherited column \"%s\"", colName)));
-
+#ifdef DOLPHIN
     /* drop tye enum column type  */
     HeapTuple typeTuple;
     Form_pg_type typeForm;
@@ -10907,7 +10933,7 @@ static void ATExecDropColumn(List** wqueue, Relation rel, const char* colName, D
         RemoveTypeById(targetatt->atttypid);
     }
     ReleaseSysCache(typeTuple);
-
+#endif
     ReleaseSysCache(tuple);
 
     /*
@@ -11701,12 +11727,13 @@ static void ATAddForeignKeyConstraint(AlteredTableInfo* tab, Relation rel, Const
         Oid ffeqop;
         int16 eqstrategy;
         Oid pfeqop_right;
-
+#ifdef DOLPHIN
         /* anonymous enum type is not allowed as foreigh key */
         if (type_is_enum(fktype) && strstr(format_type_be(fktype), "anonymous_enum")) {
             ereport(ERROR,
                 (errcode(ERRCODE_DATATYPE_MISMATCH), errmsg("anoymous enum type does not support foreign key")));
         }
+#endif
         /* We need several fields out of the pg_opclass entry */
         cla_ht = SearchSysCache1(CLAOID, ObjectIdGetDatum(opclasses[i]));
         if (!HeapTupleIsValid(cla_ht)) {
@@ -12847,7 +12874,11 @@ static void ATExecDropConstraint(Relation rel, const char* constrName, DropBehav
 
         con = (Form_pg_constraint)GETSTRUCT(tuple);
 
-        if (strcmp(NameStr(con->conname), constrName) != 0 || (dropFk && con->contype != CONSTRAINT_FOREIGN)) {
+        if (strcmp(NameStr(con->conname), constrName) != 0
+#ifdef DOLPHIN
+        || (dropFk && con->contype != CONSTRAINT_FOREIGN)
+#endif
+        ) {
             if (ConstraintSatisfyAutoIncrement(tuple, RelationGetDescr(conrel), autoinc_attnum, con->contype)) {
                 satisfy_autoinc = true;
             }
@@ -19288,11 +19319,11 @@ static bool CheckRangePartitionKeyType(Oid typoid)
         case TIMESTAMPTZOID:
             result = true;
             break;
-
+#ifdef DOLPHIN
         case TIMEOID:
             result = true;
             break;
-
+#endif
         case NUMERICOID:
             result = true;
             break;
@@ -19333,7 +19364,11 @@ static bool CheckRangePartitionKeyType(Oid typoid)
             result = true;
             break;
         default:
+#ifdef DOLPHIN
             result = CheckAddedType(typoid) > INVALID_OID;
+#else
+            result = false;
+#endif
             break;
     }
     return result;
@@ -19354,7 +19389,9 @@ static bool CheckListPartitionKeyType(Oid typoid)
         case DATEOID:
         case TIMESTAMPOID:
         case TIMESTAMPTZOID:
+#ifdef DOLPHIN
         case TIMEOID:
+#endif
             return true;
         default:
             return CheckAddedType(typoid) > INVALID_OID;
@@ -25840,25 +25877,28 @@ static void readTuplesAndInsertInternal(Relation tempTableRel, Relation partTabl
 
         /* tableam_tops_copy_tuple is not ready so we add UStore hack path */
         copyTuple = tableam_tops_copy_tuple(tuple);
+#ifdef DOLPHIN
         if (RelationIsPartitioned(partTableRel)) {
-        targetPartOid = heapTupleGetPartitionId(partTableRel, (void *)tuple, true);
-        searchFakeReationForPartitionOid(
-            partRelHTAB, CurrentMemoryContext, partTableRel, targetPartOid, partRel, part, RowExclusiveLock);
-        if (RelationIsSubPartitioned(partTableRel)) {
-            targetPartOid = heapTupleGetPartitionId(partRel, (void *)tuple, true);
-            searchFakeReationForPartitionOid(partRelHTAB, CurrentMemoryContext, partRel, targetPartOid, subPartRel,
-                                             subPart, RowExclusiveLock);
-            partRel = subPartRel;
-        }
-        if (bucketId != InvalidBktId) {
-            searchHBucketFakeRelation(partRelHTAB, CurrentMemoryContext, partRel, bucketId, partRel);
-        }
+#endif
+            targetPartOid = heapTupleGetPartitionId(partTableRel, (void *)tuple, true);
+            searchFakeReationForPartitionOid(
+                partRelHTAB, CurrentMemoryContext, partTableRel, targetPartOid, partRel, part, RowExclusiveLock);
+            if (RelationIsSubPartitioned(partTableRel)) {
+                targetPartOid = heapTupleGetPartitionId(partRel, (void *)tuple, true);
+                searchFakeReationForPartitionOid(partRelHTAB, CurrentMemoryContext, partRel, targetPartOid, subPartRel,
+                                                 subPart, RowExclusiveLock);
+                partRel = subPartRel;
+            }
+            if (bucketId != InvalidBktId) {
+                searchHBucketFakeRelation(partRelHTAB, CurrentMemoryContext, partRel, bucketId, partRel);
+            }
 
-        AlterPartitionedSetWaitCleanGPI(true, partTableRel, targetPartOid);
+            AlterPartitionedSetWaitCleanGPI(true, partTableRel, targetPartOid);
+#ifdef DOLPHIN
         } else {
             partRel = partTableRel;
         }
-
+#endif
         if (relisustore) {
             Oid reloid = RelationGetRelid(partRel);
             if (reloid != InvalidOid) {

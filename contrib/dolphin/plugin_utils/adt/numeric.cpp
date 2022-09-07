@@ -46,6 +46,7 @@
 #include "vecexecutor/vechashtable.h"
 #include "vecexecutor/vechashagg.h"
 #include "vectorsonic/vsonichashagg.h"
+#ifdef DOLPHIN
 #include "plugin_commands/mysqlmode.h"
 
 #ifndef CRCMASK
@@ -65,6 +66,7 @@
 #ifndef BASE_SCOPE
 #define MAXBASE 36
 #define MINBASE 2
+#endif
 #endif
 
 /* ----------
@@ -97,7 +99,7 @@ typedef struct {
 #define DatumGetNumericAbbrev(d) ((int32)(d))
 #define NUMERIC_ABBREV_NAN Int32GetDatum(PG_INT32_MIN)
 #endif
-
+#ifdef DOLPHIN
 PG_FUNCTION_INFO_V1_PUBLIC(bin_string);
 extern "C" DLL_PUBLIC Datum bin_string(PG_FUNCTION_ARGS);
 
@@ -107,6 +109,7 @@ extern "C" DLL_PUBLIC Datum bin_integer(PG_FUNCTION_ARGS);
 
 PG_FUNCTION_INFO_V1_PUBLIC(bin_bool);
 extern "C" DLL_PUBLIC Datum bin_bool(PG_FUNCTION_ARGS);
+#endif
 /* ----------
  * Some preinitialized constants
  * ----------
@@ -235,7 +238,7 @@ static void strip_var(NumericVar* var);
 static void compute_bucket(
     Numeric operand, Numeric bound1, Numeric bound2, NumericVar* count_var, NumericVar* result_var);
 static void remove_tail_zero(char *ascii);
-
+#ifdef DOLPHIN
 extern Numeric int64_to_numeric(int64 v);
 extern const char* extract_numericstr(const char* str);
 PG_FUNCTION_INFO_V1_PUBLIC(uint1_sum);
@@ -296,7 +299,7 @@ extern "C" DLL_PUBLIC Datum numeric_cast_uint1(PG_FUNCTION_ARGS);
 extern "C" DLL_PUBLIC Datum numeric_cast_uint2(PG_FUNCTION_ARGS);
 extern "C" DLL_PUBLIC Datum numeric_cast_uint4(PG_FUNCTION_ARGS);
 extern "C" DLL_PUBLIC Datum numeric_cast_uint8(PG_FUNCTION_ARGS);
-
+#endif
 /*
  * @Description: call corresponding big integer operator functions.
  *
@@ -2719,12 +2722,15 @@ Datum numeric_sqrt(PG_FUNCTION_ARGS)
     /*
      * Let sqrt_var() do the calculation and return the result.
      */
+#ifdef DOLPHIN
     bool is_null = false;
     sqrt_var(&arg, &result, rscale, true, &is_null);
     if (is_null) {
         PG_RETURN_NULL();
     }
-
+#else
+    sqrt_var(&arg, &result, rscale);
+#endif
     res = make_result(&result);
 
     free_var(&result);
@@ -2814,7 +2820,7 @@ Datum numeric_ln(PG_FUNCTION_ARGS)
     int ln_dweight;
     int rscale;
     uint16 numFlags = NUMERIC_NB_FLAGBITS(num);
-
+#ifdef DOLPHIN
     Numeric zero;
     NumericVar zero_var;
     init_var(&zero_var);
@@ -2824,7 +2830,7 @@ Datum numeric_ln(PG_FUNCTION_ARGS)
     if (cmp_numerics(num, zero) <= 0) {
         PG_RETURN_NULL();
     }
-
+#endif
     if (NUMERIC_FLAG_IS_NANORBI(numFlags)) {
         /*
          * Handle Big Integer
@@ -2874,7 +2880,7 @@ Datum numeric_log(PG_FUNCTION_ARGS)
     NumericVar result;
     uint16 num1Flags = NUMERIC_NB_FLAGBITS(num1);
     uint16 num2Flags = NUMERIC_NB_FLAGBITS(num2);
-
+#ifdef DOLPHIN
     /* create a numeric that value is zero */
     Numeric zero;
     NumericVar zero_var;
@@ -2885,7 +2891,7 @@ Datum numeric_log(PG_FUNCTION_ARGS)
     if (cmp_numerics(num1, zero) <= 0 || cmp_numerics(num2, zero) <= 0) {
         PG_RETURN_NULL();
     }
-
+#endif
     if (NUMERIC_FLAG_IS_NANORBI(num1Flags) || NUMERIC_FLAG_IS_NANORBI(num2Flags)) {
         /*
          * Handle NaN
@@ -19460,7 +19466,7 @@ Datum bool_numeric(PG_FUNCTION_ARGS)
 
     PG_RETURN_NUMERIC(res);
 }
-
+#ifdef DOLPHIN
 static unsigned int crc32_cal(unsigned char *data, int len)
 {
     unsigned int crc = PG_UINT32_MAX;
@@ -20592,3 +20598,4 @@ Datum numeric_cast_uint8(PG_FUNCTION_ARGS)
 
     PG_RETURN_UINT64(result);
 }
+#endif

@@ -38,6 +38,7 @@
 #include "utils/syscache.h"
 #include "utils/snapmgr.h"
 #include "pgstat.h"
+#ifdef DOLPHIN
 #include "plugin_postgres.h"
 #include "libpq/md5.h"
 
@@ -299,6 +300,7 @@ int64 LockNameHashRelease()
 
     return sumLocks;
 }
+#endif
 
 #define NUM_LOCKTAG_ID 17
 /* This must match enum LockTagType! */
@@ -1542,6 +1544,7 @@ Datum pg_advisory_unlock_all(PG_FUNCTION_ARGS)
     PG_RETURN_VOID();
 }
 
+#ifdef DOLPHIN
 Datum GetAdvisoryLockWithtimeTextFormat(PG_FUNCTION_ARGS)
 {
     char *lockname = text_to_cstring(PG_GETARG_TEXT_PP(0));
@@ -1712,6 +1715,7 @@ Datum ClearInvalidLockName(PG_FUNCTION_ARGS)
 {
     return ClearInvalidLockNameInner();
 }
+#endif
 
 #ifdef PGXC
 /*

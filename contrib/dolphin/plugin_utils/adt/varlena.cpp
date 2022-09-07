@@ -57,7 +57,7 @@
 #define SUBSTR_A_CMPT_OFFSET 4
 #define JUDGE_INPUT_VALID(X, Y) ((NULL == (X)) || (NULL == (Y)))
 #define GET_POSITIVE(X) ((X) > 0 ? (X) : ((-1) * (X)))
-
+#ifdef DOLPHIN
 #define MAX_BINARY_LENGTH 255
 #define MAX_VARBINARY_LENGTH 65535
 #define isDigital(_ch) (((_ch) >= '0') && ((_ch) <= '9'))
@@ -69,7 +69,7 @@
 #define MAX_CHARA_REMINDERS_LEN 10
 #define CONV_MAX_CHAR_LEN 65 //max 64bit and 1 sign bit
 #define MYSQL_SUPPORT_MINUS_MAX_LENGTH 65
-
+#endif
 static int getResultPostionReverse(text* textStr, text* textStrToSearch, int32 beginIndex, int occurTimes);
 static int getResultPostion(text* textStr, text* textStrToSearch, int32 beginIndex, int occurTimes);
 extern int conv_n(char *result, int128 data, int from_base_s, int to_base_s);
@@ -165,7 +165,7 @@ static void text_format_append_string(StringInfo buf, const char* str, int flags
 
 // adapt A db's substrb
 static text* get_substring_really(Datum str, int32 start, int32 length, bool length_not_specified);
-
+#ifdef DOLPHIN
 static void check_blob_size(Datum blob, int64 max_size);
 static int32 anybinary_typmodin(ArrayType* ta, const char* typname, uint32 max);
 static char* anybinary_typmodout(int32 typmod);
@@ -301,7 +301,7 @@ extern "C" DLL_PUBLIC Datum db_b_format(PG_FUNCTION_ARGS);
 
 PG_FUNCTION_INFO_V1_PUBLIC(db_b_format_locale);
 extern "C" DLL_PUBLIC Datum db_b_format_locale(PG_FUNCTION_ARGS);
-
+#endif
 
 /*****************************************************************************
  *	 CONVERSION ROUTINES EXPORTED FOR USE BY C CODE							 *
@@ -929,10 +929,15 @@ Datum textlen(PG_FUNCTION_ARGS)
         return text_length_huge(str);
     } else {
         /* try to avoid decompressing argument */
+#ifdef DOLPHIN
         PG_RETURN_INT64(toast_raw_datum_size(str) - VARHDRSZ);
+#else
+        PG_RETURN_INT32(text_length(str));
+#endif
     }
 }
 
+#ifdef DOLPHIN
 Datum text_len(PG_FUNCTION_ARGS)
 {
     char* cp = text_to_cstring(PG_GETARG_TEXT_PP(0));
@@ -974,7 +979,7 @@ int get_step_len(unsigned char ch)
         step_len = 1;
     return step_len;
 }
-
+#endif
 
 /*
  * text_length -
@@ -1545,7 +1550,7 @@ Datum text_substr_no_len_orclcompat(PG_FUNCTION_ARGS)
     else
         return result;
 }
-
+#ifdef DOLPHIN
 /*
  * text_insert
  */
@@ -1600,6 +1605,7 @@ Datum text_insert(PG_FUNCTION_ARGS)
 
     PG_RETURN_TEXT_P(text_insert_func(str, newstr, sp, sl));
 }
+#endif
 
 /*
  * textoverlay
@@ -2394,8 +2400,11 @@ Datum bttextsortsupport(PG_FUNCTION_ARGS)
     oldcontext = MemoryContextSwitchTo(ssup->ssup_cxt);
 
     /* Use generic string SortSupport */
+#ifdef DOLPHIN
     varstr_sortsupport(ssup, collid, true);
-
+#else
+    varstr_sortsupport(ssup, collid, false);
+#endif
     MemoryContextSwitchTo(oldcontext);
 
     PG_RETURN_VOID();
@@ -3463,6 +3472,10 @@ static bytea* bytea_substring_orclcompat(Datum str, int S, int L, bool length_no
      */
     if (S < 0) {
         S = total + S + 1;
+#ifndef DOLPHIN
+    } else if (0 == S) {
+        S = 1;
+#endif
     }
 
     S1 = Max(S, 1);
@@ -5244,7 +5257,7 @@ Datum to_hex64(PG_FUNCTION_ARGS)
 
     PG_RETURN_TEXT_P(cstring_to_text(ptr));
 }
-
+#ifdef DOLPHIN
 #define HEX_BUF_LEN 32
 /*
  * Convert an int64 to a string containing a base 16 (hex) representation of the input.
@@ -5328,7 +5341,7 @@ Datum bit_to_hex(PG_FUNCTION_ARGS)
     } while (len > 0);
     PG_RETURN_TEXT_P(cstring_to_text(result));
 }
-
+#endif
 /*
  * Create an md5 hash of a text string and return it as hex
  *
@@ -6609,7 +6622,11 @@ Datum text_left(PG_FUNCTION_ARGS)
     text* part_str = NULL;
 
     if (n < 0) {
+#ifdef DOLPHIN
         PG_RETURN_TEXT_P(cstring_to_text(""));
+#else
+        n = pg_mbstrlen_with_len(p, len) + n;
+#endif
     }
 
     if (n >= 0) {
@@ -6619,8 +6636,11 @@ Datum text_left(PG_FUNCTION_ARGS)
             pfree_ext(part_str);
         }
     }
-
+#ifdef DOLPHIN
     rlen = pg_mbcliplen(p, len, part_off);
+#else
+    rlen = pg_mbcharcliplen(p, len, part_off);
+#endif
     if (0 == rlen && u_sess->attr.attr_sql.sql_compatibility == A_FORMAT) {
         PG_RETURN_NULL();
     }
@@ -6646,7 +6666,11 @@ Datum text_right(PG_FUNCTION_ARGS)
     text* part_str = NULL;
 
     if (n < 0)
+#ifdef DOLPHIN
         PG_RETURN_TEXT_P(cstring_to_text(""));
+#else
+        n = -n;
+#endif
     else
         n = pg_mbstrlen_with_len(p, len) - n;
 
@@ -6657,7 +6681,11 @@ Datum text_right(PG_FUNCTION_ARGS)
             pfree_ext(part_str);
         }
     }
+#ifdef DOLPHIN
     off = pg_mbcliplen(p, len, part_off);
+#else
+    off = pg_mbcharcliplen(p, len, part_off);
+#endif
     if (0 == (len - off) && u_sess->attr.attr_sql.sql_compatibility == A_FORMAT) {
         PG_RETURN_NULL();
     }
@@ -6718,6 +6746,7 @@ Datum text_reverse(PG_FUNCTION_ARGS)
             ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("unterminated conversion specifier"))); \
     } while (0)
 
+#ifdef DOLPHIN
 #define MAX_PRECISION 32
 #define THOUS_INTERVAL 3
 #define ASCII_9 57
@@ -6867,7 +6896,7 @@ static char *db_b_format_transfer(char *ch_val, int precision, char *ch_locale) 
     pfree(rounded_val);
     return buf;
 }
-
+#endif
 /*
  * Returns a formated string
  */

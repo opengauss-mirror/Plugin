@@ -301,7 +301,7 @@ Datum bit_recv(PG_FUNCTION_ARGS)
     VARBITLEN(result) = bitlen;
 
     pq_copymsgbytes(buf, (char*)VARBITS(result), VARBITBYTES(result));
-
+#ifdef DOLPHIN
     /*
      * do left padding, just call shift right to pad 0
      */
@@ -309,7 +309,14 @@ Datum bit_recv(PG_FUNCTION_ARGS)
     if (ipad > 0) {
         PG_RETURN_DATUM(DirectFunctionCall2(bitshiftright, VarBitPGetDatum(result), Int32GetDatum(ipad)));
     }
-
+#else
+    /* Make sure last byte is zero-padded if needed */
+    ipad = VARBITPAD(result);
+    if (ipad > 0) {
+        mask = BITMASK << ipad;
+        *(VARBITS(result) + VARBITBYTES(result) - 1) &= mask;
+    }
+#endif
     PG_RETURN_VARBIT_P(result);
 }
 
@@ -342,8 +349,12 @@ Datum bit(PG_FUNCTION_ARGS)
     /* No work if typmod is invalid or supplied data matches it already */
     if (len <= 0 || len > VARBITMAXLEN || len == VARBITLEN(arg))
         PG_RETURN_VARBIT_P(arg);
-
-    if (!isExplicit && VARBITLEN(arg) > len) {
+#ifdef DOLPHIN
+    if (!isExplicit && VARBITLEN(arg) > len)
+#else
+    if (!isExplicit)
+#endif
+    {
         ereport(ERROR,
             (errcode(ERRCODE_STRING_DATA_LENGTH_MISMATCH),
                 errmsg("bit string length %d does not match type bit(%d)", VARBITLEN(arg), len)));
@@ -364,10 +375,23 @@ Datum bit(PG_FUNCTION_ARGS)
     /*
      * do left padding, just call shift right to pad 0
      */
+#ifdef DOLPHIN
     int shift = VARBITLEN(result) - VARBITLEN(arg);
     if (shift > 0) {
         PG_RETURN_DATUM(DirectFunctionCall2(bitshiftright, VarBitPGetDatum(result), Int32GetDatum(shift)));
     }
+#else
+    /*
+     * Make sure last byte is zero-padded if needed.  This is useless but safe
+     * if source data was shorter than target length (we assume the last byte
+     * of the source data was itself correctly zero-padded).
+     */
+    ipad = VARBITPAD(result);
+    if (ipad > 0) {
+        mask = BITMASK << ipad;
+        *(VARBITS(result) + VARBITBYTES(result) - 1) &= mask;
+    }
+#endif
     PG_RETURN_VARBIT_P(result);
 }
 
@@ -715,7 +739,7 @@ Datum varbittypmodout(PG_FUNCTION_ARGS)
  * be careful to free working copies of toasted datums.  Most places don't
  * need to be so careful.
  */
-
+#ifdef DOLPHIN
 /* Get leading zero length of a varbit */
 static inline int GetLeadingZeroLen(VarBit* arg)
 {
@@ -741,7 +765,7 @@ static inline int GetLeadingZeroLen(VarBit* arg)
 
     return leadingZeroLen;
 }
-
+#endif
 /*
  * bit_cmp
  *
@@ -751,6 +775,7 @@ static inline int GetLeadingZeroLen(VarBit* arg)
  */
 static int32 bit_cmp(VarBit* arg1, VarBit* arg2, int leadingZeroLen1, int leadingZeroLen2)
 {
+#ifdef DOLPHIN
     leadingZeroLen1 = (leadingZeroLen1 == -1 ? GetLeadingZeroLen(arg1) : leadingZeroLen1);
     leadingZeroLen2 = (leadingZeroLen2 == -1 ? GetLeadingZeroLen(arg2) : leadingZeroLen2);
     VarBit* newArg1 = arg1;
@@ -786,6 +811,21 @@ static int32 bit_cmp(VarBit* arg1, VarBit* arg2, int leadingZeroLen1, int leadin
     if (newArg2 != arg2) {
         pfree(newArg2);
     }
+#else
+    int bitlen1, bytelen1, bitlen2, bytelen2;
+    int32 cmp;
+
+    bytelen1 = VARBITBYTES(arg1);
+    bytelen2 = VARBITBYTES(arg2);
+
+    cmp = memcmp(VARBITS(arg1), VARBITS(arg2), Min(bytelen1, bytelen2));
+    if (cmp == 0) {
+        bitlen1 = VARBITLEN(arg1);
+        bitlen2 = VARBITLEN(arg2);
+        if (bitlen1 != bitlen2)
+            cmp = (bitlen1 < bitlen2) ? -1 : 1;
+    }
+#endif
     return cmp;
 }
 
@@ -1114,8 +1154,11 @@ static VarBit* bit_overlay(VarBit* t1, VarBit* t2, int sp, int sl)
 Datum bitlength(PG_FUNCTION_ARGS)
 {
     VarBit* arg = PG_GETARG_VARBIT_P(0);
-
+#ifdef DOLPHIN
     PG_RETURN_INT32(VARBITBYTES(arg));
+#else
+    PG_RETURN_INT32(VARBITLEN(arg));
+#endif
 }
 
 Datum bitoctetlength(PG_FUNCTION_ARGS)

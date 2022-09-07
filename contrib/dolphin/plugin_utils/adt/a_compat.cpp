@@ -23,13 +23,13 @@
 #include "miscadmin.h"
 
 static text* dotrim(const char* string, int stringlen, const char* set, int setlen, bool doltrim, bool dortrim);
-
+#ifdef DOLPHIN
 PG_FUNCTION_INFO_V1_PUBLIC(byteatrim_leading);
 extern "C" DLL_PUBLIC Datum byteatrim_leading(PG_FUNCTION_ARGS);
 
 PG_FUNCTION_INFO_V1_PUBLIC(byteatrim_trailing);
 extern "C" DLL_PUBLIC Datum byteatrim_trailing(PG_FUNCTION_ARGS);
-
+#endif
 /********************************************************************
  *
  * lower
@@ -370,6 +370,7 @@ Datum btrim1(PG_FUNCTION_ARGS)
  */
 static text* dotrim(const char* string, int stringlen, const char* set, int setlen, bool doltrim, bool dortrim)
 {
+#ifdef DOLPHIN    
     /* Nothing to do if either string or set is empty */
     if (stringlen > 0 && setlen > 0) {
         if (doltrim) {
@@ -388,8 +389,137 @@ static text* dotrim(const char* string, int stringlen, const char* set, int setl
         }
     }
     return cstring_to_text_with_len(string, stringlen);
+#else
+    int i;
+
+    /* Nothing to do if either string or set is empty */
+    if (stringlen > 0 && setlen > 0) {
+        if (pg_database_encoding_max_length() > 1) {
+            /*
+             * In the multibyte-encoding case, build arrays of pointers to
+             * character starts, so that we can avoid inefficient checks in
+             * the inner loops.
+             */
+            const char** stringchars;
+            const char** setchars;
+            int* stringmblen = NULL;
+            int* setmblen = NULL;
+            int stringnchars;
+            int setnchars;
+            int resultndx;
+            int resultnchars;
+            const char* p = NULL;
+            int len;
+            int mblen;
+            const char* str_pos = NULL;
+            int str_len;
+
+            stringchars = (const char**)palloc(stringlen * sizeof(char*));
+            stringmblen = (int*)palloc(stringlen * sizeof(int));
+            stringnchars = 0;
+            p = string;
+            len = stringlen;
+            while (len > 0) {
+                stringchars[stringnchars] = p;
+                stringmblen[stringnchars] = mblen = pg_mblen(p);
+                stringnchars++;
+                p += mblen;
+                len -= mblen;
+            }
+
+            setchars = (const char**)palloc(setlen * sizeof(char*));
+            setmblen = (int*)palloc(setlen * sizeof(int));
+            setnchars = 0;
+            p = set;
+            len = setlen;
+            while (len > 0) {
+                setchars[setnchars] = p;
+                setmblen[setnchars] = mblen = pg_mblen(p);
+                setnchars++;
+                p += mblen;
+                len -= mblen;
+            }
+
+            resultndx = 0; /* index in stringchars[] */
+            resultnchars = stringnchars;
+
+            if (doltrim) {
+                while (resultnchars > 0) {
+                    str_pos = stringchars[resultndx];
+                    str_len = stringmblen[resultndx];
+                    for (i = 0; i < setnchars; i++) {
+                        if (str_len == setmblen[i] && memcmp(str_pos, setchars[i], str_len) == 0)
+                            break;
+                    }
+                    if (i >= setnchars)
+                        break; /* no match here */
+                    string += str_len;
+                    stringlen -= str_len;
+                    resultndx++;
+                    resultnchars--;
+                }
+            }
+
+            if (dortrim) {
+                while (resultnchars > 0) {
+                    str_pos = stringchars[resultndx + resultnchars - 1];
+                    str_len = stringmblen[resultndx + resultnchars - 1];
+                    for (i = 0; i < setnchars; i++) {
+                        if (str_len == setmblen[i] && memcmp(str_pos, setchars[i], str_len) == 0)
+                            break;
+                    }
+                    if (i >= setnchars)
+                        break; /* no match here */
+                    stringlen -= str_len;
+                    resultnchars--;
+                }
+            }
+
+            pfree_ext(stringchars);
+            pfree_ext(stringmblen);
+            pfree_ext(setchars);
+            pfree_ext(setmblen);
+        } else {
+            /*
+             * In the single-byte-encoding case, we don't need such overhead.
+             */
+            if (doltrim) {
+                while (stringlen > 0) {
+                    char str_ch = *string;
+
+                    for (i = 0; i < setlen; i++) {
+                        if (str_ch == set[i])
+                            break;
+                    }
+                    if (i >= setlen)
+                        break; /* no match here */
+                    string++;
+                    stringlen--;
+                }
+            }
+
+            if (dortrim) {
+                while (stringlen > 0) {
+                    char str_ch = string[stringlen - 1];
+
+                    for (i = 0; i < setlen; i++) {
+                        if (str_ch == set[i])
+                            break;
+                    }
+                    if (i >= setlen)
+                        break; /* no match here */
+                    stringlen--;
+                }
+            }
+        }
+    }
+
+    /* Return selected portion of string */
+    return cstring_to_text_with_len(string, stringlen);
+#endif
 }
 
+#ifdef DOLPHIN
 /*
  * Common implementation for btrim, ltrim, rtrim
  */
@@ -415,7 +545,7 @@ static bytea* byteatrim_internal(const char* string, int stringlen, const char* 
     }
     return cstring_to_bytea_with_len(string, stringlen);
 }
-
+#endif
 /********************************************************************
  *
  * byteatrim
@@ -438,12 +568,62 @@ Datum byteatrim(PG_FUNCTION_ARGS)
     bytea* set = PG_GETARG_BYTEA_PP(1);
     bytea* ret = NULL;
     FUNC_CHECK_HUGE_POINTER(false, string, "byteatrim()");
-
+#ifdef DOLPHIN
     ret = byteatrim_internal(VARDATA_ANY(string), VARSIZE_ANY_EXHDR(string), VARDATA_ANY(set),
                                 VARSIZE_ANY_EXHDR(set), true, true);
     PG_RETURN_BYTEA_P(ret);
+#else
+    char *ptr = NULL, *end = NULL, *ptr2 = NULL, *ptr2start = NULL, *end2 = NULL;
+    int m, stringlen, setlen;
+    stringlen = VARSIZE_ANY_EXHDR(string);
+    setlen = VARSIZE_ANY_EXHDR(set);
+
+    if (stringlen <= 0 || setlen <= 0)
+        PG_RETURN_BYTEA_P(string);
+
+    m = stringlen;
+    ptr = VARDATA_ANY(string);
+    end = ptr + stringlen - 1;
+    ptr2start = VARDATA_ANY(set);
+    end2 = ptr2start + setlen - 1;
+
+    while (m > 0) {
+        ptr2 = ptr2start;
+        while (ptr2 <= end2) {
+            if (*ptr == *ptr2)
+                break;
+            ++ptr2;
+        }
+        if (ptr2 > end2)
+            break;
+        ptr++;
+        m--;
+    }
+
+    while (m > 0) {
+        ptr2 = ptr2start;
+        while (ptr2 <= end2) {
+            if (*end == *ptr2)
+                break;
+            ++ptr2;
+        }
+        if (ptr2 > end2)
+            break;
+        end--;
+        m--;
+    }
+
+    ret = (bytea*)palloc(VARHDRSZ + m);
+    SET_VARSIZE(ret, VARHDRSZ + m);
+    if (m > 0) {
+        errno_t ss_rc = memcpy_s(VARDATA(ret), m, ptr, m);
+        securec_check(ss_rc, "\0", "\0");
+    }
+    PG_RETURN_BYTEA_P(ret);
+#endif
 }
 
+#ifdef DOLPHIN
 Datum byteatrim_leading(PG_FUNCTION_ARGS)
 {
     bytea* string = PG_GETARG_BYTEA_PP(0);
@@ -465,6 +645,7 @@ Datum byteatrim_trailing(PG_FUNCTION_ARGS)
                                 VARSIZE_ANY_EXHDR(set), false, true);
     PG_RETURN_BYTEA_P(ret);
 }
+#endif
 
 /********************************************************************
  *
@@ -725,10 +906,48 @@ Datum ascii(PG_FUNCTION_ARGS)
         PG_RETURN_INT32(0);
 
     data = (unsigned char*)VARDATA_ANY(string);
-
+#ifdef DOLPHIN
     PG_RETURN_INT32((int32)*data);
+#else
+    int encoding = GetDatabaseEncoding();
+    if (encoding == PG_UTF8 && *data > 127) {
+        /* return the code point for Unicode */
+
+        int result = 0, tbytes = 0, i;
+
+        if (*data >= 0xF0) {
+            result = *data & 0x07;
+            tbytes = 3;
+        } else if (*data >= 0xE0) {
+            result = *data & 0x0F;
+            tbytes = 2;
+        } else {
+            Assert(*data > 0xC0);
+            result = *data & 0x1f;
+            tbytes = 1;
+        }
+
+        Assert(tbytes > 0);
+
+        for (i = 1; i <= tbytes; i++) {
+            if ((data[i] & 0xC0) != 0x80) {
+                report_invalid_encoding(PG_UTF8, (const char*)data, tbytes);
+            } else {
+                result = (result << 6) + (data[i] & 0x3f);
+            }
+        }
+
+        PG_RETURN_INT32(result);
+    } else {
+        if (pg_encoding_max_length(encoding) > 1 && *data > 127)
+            ereport(ERROR, (errcode(ERRCODE_PROGRAM_LIMIT_EXCEEDED), errmsg("requested character too large")));
+
+        PG_RETURN_INT32((int32)*data);
+    }
+#endif
 }
 
+#ifdef DOLPHIN
 text* _chr(uint32 value, bool flag)
 {
     text* result = NULL;
@@ -786,6 +1005,7 @@ text* _chr(uint32 value, bool flag)
     }
     return result;
 }
+#endif
 
 /********************************************************************
  *

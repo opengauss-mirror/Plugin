@@ -162,8 +162,11 @@ static void setSchemaName(char* context_schema, char** stmt_schema_name);
 static void TrySetAutoIncNotNullConstraint(ColumnDef* column);
 static void TransformTempAutoIncrement(ColumnDef* column, CreateStmt* stmt);
 static int128 TransformAutoIncStart(CreateStmt* stmt);
+#ifdef DOLPHIN
 static void transformTableIndex(CreateStmtContext* cxt);
 static void transformIndexNode(IndexStmt* index, CreateStmtContext* cxt, bool mustGlobal);
+#endif
+
 /*
  * @hdfs
  * The following three functions are used for HDFS foreign talbe constraint.
@@ -398,7 +401,9 @@ Oid *namespaceid, bool isFirstNode)
     cxt.fkconstraints = NIL;
     cxt.ixconstraints = NIL;
     cxt.clusterConstraints = NIL;
+#ifdef DOLPHIN
     cxt.tableindex = NIL;
+#endif
     cxt.inh_indexes = NIL;
     cxt.blist = NIL;
     cxt.alist = NIL;
@@ -488,11 +493,11 @@ Oid *namespaceid, bool isFirstNode)
             case T_Constraint:
                 transformTableConstraint(&cxt, (Constraint*)element);
                 break;
-
+#ifdef DOLPHIN
             case T_IndexStmt:
                 cxt.tableindex = lappend(cxt.tableindex, (IndexStmt*)element);
                 break;
-
+#endif
             case T_TableLikeClause:
                 tbl_like_clause = (TableLikeClause*)element;
 #ifndef ENABLE_MULTIPLE_NODES
@@ -684,7 +689,9 @@ Oid *namespaceid, bool isFirstNode)
         }
     }
 #endif
+#ifdef DOLPHIN
     transformTableIndex(&cxt);
+#endif
     /*
      * transformIndexConstraints wants cxt.alist to contain only index
      * statements, so transfer anything we already have into saveAlist.
@@ -3125,6 +3132,7 @@ static bool IsPartitionKeyAllInParmaryKeyAndUniqueKey(const List *partitionKey, 
     return found;
 }
 
+#ifdef DOLPHIN
 /*
 * For create index in CREATE TABLE/ ALTER TABLE stmt, we just have a list of column names and expressions.
 *
@@ -3238,6 +3246,7 @@ static void transformIndexNode(IndexStmt* index, CreateStmtContext* cxt, bool mu
     list_free(indexElementsColumn);
     list_free(indexElementsExpr);
 }
+#endif
 
 /*
  * transformIndexConstraints
@@ -4679,6 +4688,7 @@ void transformRuleStmt(RuleStmt* stmt, const char* queryString, List** actions, 
     heap_close(rel, NoLock);
 }
 
+#ifdef DOLPHIN
 static void TransfromAlterTableDropIndexStmt(CreateStmtContext* cxt, AlterTableCmd* cmd)
 {
     DropStmt* dropStmt = makeNode(DropStmt);
@@ -4705,6 +4715,7 @@ static void TransfromAlterTableRenameIndexStmt(CreateStmtContext* cxt, AlterTabl
 
     cxt->blist = lappend(cxt->blist, renameStmt);
 }
+#endif
 
 /*
  * transformAlterTableStmt -
@@ -4771,7 +4782,9 @@ List* transformAlterTableStmt(Oid relid, AlterTableStmt* stmt, const char* query
     cxt.fkconstraints = NIL;
     cxt.ixconstraints = NIL;
     cxt.clusterConstraints = NIL;
+#ifdef DOLPHIN
     cxt.tableindex = NIL;
+#endif
     cxt.inh_indexes = NIL;
     cxt.blist = NIL;
     cxt.alist = NIL;
@@ -4843,10 +4856,11 @@ List* transformAlterTableStmt(Oid relid, AlterTableStmt* stmt, const char* query
                             errmodule(MOD_OPT),
                             errmsg("unrecognized node type: %d", (int)nodeTag(cmd->def))));
                 break;
+#ifdef DOLPHIN
             case AT_AddIndex:
                 cxt.tableindex = lappend(cxt.tableindex, (IndexStmt*)cmd->def);
                 break;
-
+#endif
             case AT_ProcessedConstraint:
 
                 /*
@@ -5067,7 +5081,7 @@ List* transformAlterTableStmt(Oid relid, AlterTableStmt* stmt, const char* query
                 newcmds = lappend(newcmds, cmd);
                 break;
             }
-
+#ifdef DOLPHIN
             case AT_DropIndex:
                 TransfromAlterTableDropIndexStmt(&cxt, cmd);
                 break;
@@ -5075,14 +5089,15 @@ List* transformAlterTableStmt(Oid relid, AlterTableStmt* stmt, const char* query
             case AT_RenameIndex:
                 TransfromAlterTableRenameIndexStmt(&cxt, cmd);
                 break;
-
+#endif
             default:
                 newcmds = lappend(newcmds, cmd);
                 break;
         }
     }
-
+#ifdef DOLPHIN
     transformTableIndex(&cxt);
+#endif
     /*
      * transformIndexConstraints wants cxt.alist to contain only index
      * statements, so transfer anything we already have into save_alist
@@ -5294,7 +5309,7 @@ static void transformColumnType(CreateStmtContext* cxt, ColumnDef* column)
      * All we really need to do here is verify that the type is valid,
      * including any collation spec that might be present.
      */
-
+#ifdef DOLPHIN
     if (column->typname->names != NULL) {
         if (strstr(strVal(llast(column->typname->names)), "anonymous_enum") != NULL) {
             ereport(ERROR, (errcode(ERRCODE_DUPLICATE_OBJECT), errmsg("anonymous enum type can't be used elsewhere.")));
@@ -5319,7 +5334,7 @@ static void transformColumnType(CreateStmtContext* cxt, ColumnDef* column)
             DefineAnonymousEnum(column->typname);
         }
     }
-
+#endif
     Type ctype = typenameType(cxt->pstate, column->typname, NULL);
     Form_pg_type typtup = (Form_pg_type)GETSTRUCT(ctype);
 
@@ -5331,6 +5346,7 @@ static void transformColumnType(CreateStmtContext* cxt, ColumnDef* column)
     }
 
     if (column->collClause) {
+#ifdef DOLPHIN
         Form_pg_type typtup = (Form_pg_type)GETSTRUCT(ctype);
 
         column->collOid = LookupCollation(cxt->pstate, column->collClause->collname, column->collClause->location);
@@ -5339,6 +5355,9 @@ static void transformColumnType(CreateStmtContext* cxt, ColumnDef* column)
             column->collOid = DEFAULT_COLLATION_OID;
             column->collClause->collname = list_make1(makeString("default"));
         }
+#else
+        LookupCollation(cxt->pstate, column->collClause->collname, column->collClause->location);
+#endif
         /* Complain if COLLATE is applied to an uncollatable type */
         if (!OidIsValid(typtup->typcollation))
             ereport(ERROR,

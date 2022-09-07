@@ -339,7 +339,7 @@ Datum hash16_eq(PG_FUNCTION_ARGS)
     PG_RETURN_BOOL(arg1 == arg2);
 }
 
-
+#ifdef DOLPHIN
 #define UUID_VERSION 0x1000
 #define FORMATTED_UUID_LEN 36
 #define UUID_FIRST_PART_LEN 8
@@ -553,3 +553,4 @@ Datum uuid_generate(PG_FUNCTION_ARGS)
     VarChar* result = (VarChar*)cstring_to_text_with_len(res, FORMATTED_UUID_LEN);
     PG_RETURN_VARCHAR_P(result);
 }
+#endif
