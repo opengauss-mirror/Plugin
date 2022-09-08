@@ -1439,14 +1439,61 @@ Datum bitshiftright(PG_FUNCTION_ARGS)
     PG_RETURN_VARBIT_P(result);
 }
 
-/*
- * This is not defined in any standard. We retain the natural ordering of
- * bits here, as it just seems more intuitive.
- */
-Datum bitfromint4(PG_FUNCTION_ARGS)
+#ifdef DOLPHIN
+Datum bittoint(VarBit* arg, bool isUnsigned)
 {
-    int32 a = PG_GETARG_INT32(0);
-    int32 typmod = PG_GETARG_INT32(1);
+    uint32 result;
+    bits8* r = NULL;
+
+    /* Check that the bit string is not too long */
+    if ((uint32)VARBITLEN(arg) > sizeof(result) * BITS_PER_BYTE) {
+        if (isUnsigned) {
+            ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("integer unsigned out of range")));
+        } else {
+            ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("integer out of range")));            
+        }
+    }
+
+    result = 0;
+    for (r = VARBITS(arg); r < VARBITEND(arg); r++) {
+        result <<= BITS_PER_BYTE;
+        result |= *r;
+    }
+    /* Now shift the result to take account of the padding at the end */
+    result >>= VARBITPAD(arg);
+    if (isUnsigned)
+        PG_RETURN_UINT32(result);
+    PG_RETURN_INT32(result);
+}
+
+Datum bittobigint(VarBit* arg, bool isUnsigned)
+{
+    uint64 result;
+    bits8* r = NULL;
+
+    /* Check that the bit string is not too long */
+    if ((uint32)VARBITLEN(arg) > sizeof(result) * BITS_PER_BYTE) {
+        if (isUnsigned) {
+            ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("bigint unsigned out of range")));
+        } else {
+            ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("bigint out of range")));
+        }
+    }
+
+    result = 0;
+    for (r = VARBITS(arg); r < VARBITEND(arg); r++) {
+        result <<= BITS_PER_BYTE;
+        result |= *r;
+    }
+    /* Now shift the result to take account of the padding at the end */
+    result >>= VARBITPAD(arg);
+    if (isUnsigned)
+        PG_RETURN_UINT64(result);
+    PG_RETURN_INT64(result);
+}
+
+Datum bitfromint(int64 a, int32 typmod)
+{
     VarBit* result = NULL;
     bits8* r = NULL;
     int rlen;
@@ -1493,31 +1540,8 @@ Datum bitfromint4(PG_FUNCTION_ARGS)
     PG_RETURN_VARBIT_P(result);
 }
 
-Datum bittoint4(PG_FUNCTION_ARGS)
+Datum bitfrombigint(int128 a, int32 typmod)
 {
-    VarBit* arg = PG_GETARG_VARBIT_P(0);
-    uint32 result;
-    bits8* r = NULL;
-
-    /* Check that the bit string is not too long */
-    if ((uint32)VARBITLEN(arg) > sizeof(result) * BITS_PER_BYTE)
-        ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("integer out of range")));
-
-    result = 0;
-    for (r = VARBITS(arg); r < VARBITEND(arg); r++) {
-        result <<= BITS_PER_BYTE;
-        result |= *r;
-    }
-    /* Now shift the result to take account of the padding at the end */
-    result >>= VARBITPAD(arg);
-
-    PG_RETURN_INT32(result);
-}
-
-Datum bitfromint8(PG_FUNCTION_ARGS)
-{
-    int64 a = PG_GETARG_INT64(0);
-    int32 typmod = PG_GETARG_INT32(1);
     VarBit* result = NULL;
     bits8* r = NULL;
     int rlen;
@@ -1564,9 +1588,185 @@ Datum bitfromint8(PG_FUNCTION_ARGS)
     PG_RETURN_VARBIT_P(result);
 }
 
+PG_FUNCTION_INFO_V1_PUBLIC(bitfromuint4);
+PG_FUNCTION_INFO_V1_PUBLIC(bittouint4);
+PG_FUNCTION_INFO_V1_PUBLIC(bitfromuint8);
+PG_FUNCTION_INFO_V1_PUBLIC(bittouint8);
+extern "C" DLL_PUBLIC Datum bitfromuint4(PG_FUNCTION_ARGS);
+extern "C" DLL_PUBLIC Datum bittouint4(PG_FUNCTION_ARGS);
+extern "C" DLL_PUBLIC Datum bitfromuint8(PG_FUNCTION_ARGS);
+extern "C" DLL_PUBLIC Datum bittouint8(PG_FUNCTION_ARGS);
+
+Datum bitfromuint4(PG_FUNCTION_ARGS)
+{
+    uint32 a = PG_GETARG_UINT32(0);
+    int32 typmod = PG_GETARG_INT32(1);
+    return bitfromint(a, typmod);
+}
+
+Datum bittouint4(PG_FUNCTION_ARGS)
+{
+    VarBit* arg = PG_GETARG_VARBIT_P(0);
+    return bittoint(arg, true);
+}
+
+Datum bitfromuint8(PG_FUNCTION_ARGS)
+{
+    uint64 a = PG_GETARG_UINT64(0);
+    int32 typmod = PG_GETARG_INT32(1);
+    return bitfrombigint(a, typmod);
+}
+
+Datum bittouint8(PG_FUNCTION_ARGS)
+{
+    VarBit* arg = PG_GETARG_VARBIT_P(0);
+    return bittobigint(arg, true);
+}
+#endif
+
+/*
+ * This is not defined in any standard. We retain the natural ordering of
+ * bits here, as it just seems more intuitive.
+ */
+Datum bitfromint4(PG_FUNCTION_ARGS)
+{
+    int32 a = PG_GETARG_INT32(0);
+    int32 typmod = PG_GETARG_INT32(1);
+#ifdef DOLPHIN
+    return bitfromint(a, typmod);
+#else
+    VarBit* result = NULL;
+    bits8* r = NULL;
+    int rlen;
+    int destbitsleft, srcbitsleft;
+
+    if (typmod <= 0 || typmod > VARBITMAXLEN)
+        typmod = 1; /* default bit length */
+
+    rlen = VARBITTOTALLEN(typmod);
+    result = (VarBit*)palloc(rlen);
+    SET_VARSIZE(result, rlen);
+    VARBITLEN(result) = typmod;
+
+    r = VARBITS(result);
+    destbitsleft = typmod;
+    srcbitsleft = 32;
+    /* drop any input bits that don't fit */
+    srcbitsleft = Min(srcbitsleft, destbitsleft);
+    /* sign-fill any excess bytes in output */
+    while (destbitsleft >= srcbitsleft + 8) {
+        *r++ = (bits8)((a < 0) ? BITMASK : 0);
+        destbitsleft -= 8;
+    }
+    /* store first fractional byte */
+    if (destbitsleft > srcbitsleft) {
+        int val = (int)(a >> (destbitsleft - 8));
+
+        /* Force sign-fill in case the compiler implements >> as zero-fill */
+        if (a < 0)
+            val |= (-1) << (srcbitsleft + 8 - destbitsleft);
+        *r++ = (bits8)(val & BITMASK);
+        destbitsleft -= 8;
+    }
+    /* Now srcbitsleft and destbitsleft are the same, need not track both */
+    /* store whole bytes */
+    while (destbitsleft >= 8) {
+        *r++ = (bits8)((a >> (destbitsleft - 8)) & BITMASK);
+        destbitsleft -= 8;
+    }
+    /* store last fractional byte */
+    if (destbitsleft > 0)
+        *r = (bits8)((a << (8 - destbitsleft)) & BITMASK);
+
+    PG_RETURN_VARBIT_P(result);
+#endif
+}
+
+Datum bittoint4(PG_FUNCTION_ARGS)
+{
+    VarBit* arg = PG_GETARG_VARBIT_P(0);
+#ifdef DOLPHIN
+    return bittoint(arg, false);
+#else
+    uint32 result;
+    bits8* r = NULL;
+
+    /* Check that the bit string is not too long */
+    if ((uint32)VARBITLEN(arg) > sizeof(result) * BITS_PER_BYTE)
+        ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("integer out of range")));
+
+    result = 0;
+    for (r = VARBITS(arg); r < VARBITEND(arg); r++) {
+        result <<= BITS_PER_BYTE;
+        result |= *r;
+    }
+    /* Now shift the result to take account of the padding at the end */
+    result >>= VARBITPAD(arg);
+
+    PG_RETURN_INT32(result);
+#endif
+}
+
+Datum bitfromint8(PG_FUNCTION_ARGS)
+{
+    int64 a = PG_GETARG_INT64(0);
+    int32 typmod = PG_GETARG_INT32(1);
+#ifdef DOLPHIN
+    return bitfrombigint(a, typmod);
+#else
+    VarBit* result = NULL;
+    bits8* r = NULL;
+    int rlen;
+    int destbitsleft, srcbitsleft;
+
+    if (typmod <= 0 || typmod > VARBITMAXLEN)
+        typmod = 1; /* default bit length */
+
+    rlen = VARBITTOTALLEN(typmod);
+    result = (VarBit*)palloc(rlen);
+    SET_VARSIZE(result, rlen);
+    VARBITLEN(result) = typmod;
+
+    r = VARBITS(result);
+    destbitsleft = typmod;
+    srcbitsleft = 64;
+    /* drop any input bits that don't fit */
+    srcbitsleft = Min(srcbitsleft, destbitsleft);
+    /* sign-fill any excess bytes in output */
+    while (destbitsleft >= srcbitsleft + 8) {
+        *r++ = (bits8)((a < 0) ? BITMASK : 0);
+        destbitsleft -= 8;
+    }
+    /* store first fractional byte */
+    if (destbitsleft > srcbitsleft) {
+        int val = (int)(a >> (destbitsleft - 8));
+
+        /* Force sign-fill in case the compiler implements >> as zero-fill */
+        if (a < 0)
+            val |= (-1) << (srcbitsleft + 8 - destbitsleft);
+        *r++ = (bits8)(val & BITMASK);
+        destbitsleft -= 8;
+    }
+    /* Now srcbitsleft and destbitsleft are the same, need not track both */
+    /* store whole bytes */
+    while (destbitsleft >= 8) {
+        *r++ = (bits8)((a >> (destbitsleft - 8)) & BITMASK);
+        destbitsleft -= 8;
+    }
+    /* store last fractional byte */
+    if (destbitsleft > 0)
+        *r = (bits8)((a << (8 - destbitsleft)) & BITMASK);
+
+    PG_RETURN_VARBIT_P(result);
+#endif
+}
+
 Datum bittoint8(PG_FUNCTION_ARGS)
 {
     VarBit* arg = PG_GETARG_VARBIT_P(0);
+#ifdef DOLPHIN
+    return bittobigint(arg, false);
+#else
     uint64 result;
     bits8* r = NULL;
 
@@ -1583,6 +1783,7 @@ Datum bittoint8(PG_FUNCTION_ARGS)
     result >>= VARBITPAD(arg);
 
     PG_RETURN_INT64(result);
+#endif
 }
 
 /*
