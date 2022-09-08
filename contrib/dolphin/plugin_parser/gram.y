@@ -642,12 +642,12 @@ static char* GetDolphinObjName(const char* string, bool is_quoted);
 %type <str>		iso_level opt_encoding opt_encoding2
 %type <node>	grantee
 %type <list>	grantee_list
-%type <accesspriv> privilege routine_privilege temporary_privilege
+%type <accesspriv> privilege routine_privilege temporary_privilege index_privilege
 %type <list>	privileges privilege_list db_privileges db_privilege_list
-%type <list>    routine_privilege_list routine_privileges temporary_privilege_list temporary_privileges
+%type <list>    routine_privilege_list routine_privileges temporary_privilege_list temporary_privileges index_privilege_list index_privileges
 %type <dbpriv>  db_privilege
 %type <str>		privilege_str
-%type <privtarget> privilege_target routine_target temporary_target
+%type <privtarget> privilege_target routine_target temporary_target index_target
 %type <optlikewhere> OptLikeOrWhere LikeOrWhere
 %type <funwithargs> function_with_argtypes
 %type <list>	function_with_argtypes_list
@@ -13363,6 +13363,19 @@ GrantStmt:	GRANT privileges ON privilege_target TO grantee_list
 					n->grant_option = $7;
 					$$ = (Node*)n;
 				}
+			| GRANT index_privileges ON index_target
+			TO grantee_list opt_grant_grant_option
+				{
+					GrantStmt *n = makeNode(GrantStmt);
+					n->is_grant = true;
+					n->privileges = $2;
+					n->targtype = ($4)->targtype;
+					n->objtype = ($4)->objtype;
+					n->objects = ($4)->objs;
+					n->grantees = $6;
+					n->grant_option = $7;
+					$$ = (Node*)n;
+				}
 			| GRANT CREATE USER ON '*' '.' '*'
 			TO RoleId
 				{
@@ -13426,6 +13439,20 @@ RevokeStmt:
 					$$ = (Node *)n;
 				}
 			| REVOKE temporary_privileges ON temporary_target
+			FROM grantee_list opt_drop_behavior
+				{
+					GrantStmt *n = makeNode(GrantStmt);
+					n->is_grant = false;
+					n->grant_option = false;
+					n->privileges = $2;
+					n->targtype = ($4)->targtype;
+					n->objtype = ($4)->objtype;
+					n->objects = ($4)->objs;
+					n->grantees = $6;
+					n->behavior = $7;
+					$$ = (Node *)n;
+				}
+			| REVOKE index_privileges ON index_target
 			FROM grantee_list opt_drop_behavior
 				{
 					GrantStmt *n = makeNode(GrantStmt);
@@ -13570,6 +13597,45 @@ privilege:	SELECT opt_column_list
 				AccessPriv *n = makeNode(AccessPriv);
 				n->priv_name = $1;
 				n->cols = $2;
+				$$ = n;
+			}
+		;
+
+index_privilege: INDEX opt_column_list
+			{
+				AccessPriv *n = makeNode(AccessPriv);
+				n->priv_name = downcase_str(pstrdup($1), false);
+				n->cols = $2;
+				$$ = n;
+			}
+		;
+
+index_privileges: index_privilege_list
+				{ $$ = $1; }
+		;
+
+index_privilege_list:
+		index_privilege	{ $$ = list_make1($1); }
+		| index_privilege_list ',' index_privilege	{ $$ = lappend($1, $3); }
+		| privilege_list ',' index_privilege	{ $$ = lappend($1, $3); }
+		| index_privilege_list ',' privilege	{ $$ = lappend($1, $3); }
+	;
+
+index_target:
+		TABLE dolphin_qualified_name_list
+			{
+				PrivTarget *n = (PrivTarget *) palloc(sizeof(PrivTarget));
+				n->targtype = ACL_TARGET_OBJECT;
+				n->objtype = ACL_OBJECT_RELATION;
+				n->objs = $2;
+				$$ = n;
+			}
+		| ALL TABLES IN_P SCHEMA name_list
+			{
+				PrivTarget *n = (PrivTarget *) palloc(sizeof(PrivTarget));
+				n->targtype = ACL_TARGET_ALL_IN_SCHEMA;
+				n->objtype = ACL_OBJECT_RELATION;
+				n->objs = $5;
 				$$ = n;
 			}
 		;
@@ -13996,55 +14062,65 @@ opt_granted_by: GRANTED BY RoleId						{ $$ = $3; }
  *****************************************************************************/
 
 GrantDbStmt:
-            GRANT db_privileges TO grantee_list opt_grant_admin_option
-                {
-                    GrantDbStmt *n = makeNode(GrantDbStmt);
-                    n->is_grant = true;
-                    n->privileges = $2;
-                    n->grantees = $4;
-                    n->admin_opt = $5;
-                    $$ = (Node*)n;
-                }
-            | GRANT db_privileges ON '*' '.' '*' TO grantee_list opt_grant_admin_option
-                {
-                    GrantDbStmt *n = makeNode(GrantDbStmt);
-                    n->is_grant = true;
-                    n->privileges = $2;
-                    n->grantees = $8;
-                    n->admin_opt = $9;
-                    $$ = (Node*)n;
-                }
-            ;
+			GRANT db_privileges TO grantee_list opt_grant_admin_option
+				{
+					GrantDbStmt *n = makeNode(GrantDbStmt);
+					n->is_grant = true;
+					n->privileges = $2;
+					n->grantees = $4;
+					n->admin_opt = $5;
+					$$ = (Node*)n;
+				}
+			| GRANT index_privileges ON '*' '.' '*' TO grantee_list opt_grant_admin_option
+				{
+					if (list_length($2) != 1 || strcmp(((AccessPriv *)list_nth($2, 0))->priv_name, "index") != 0) {
+						parser_yyerror("syntax error");
+					}
+					GrantDbStmt *n = makeNode(GrantDbStmt);
+					n->is_grant = true;
+					DbPriv *n2 = makeNode(DbPriv);
+					n2->db_priv_name = pstrdup("create any index");
+					n->privileges = list_make1(n2);
+					n->grantees = $8;
+					n->admin_opt = $9;
+					$$ = (Node*)n;
+				}
+			;
 
 RevokeDbStmt:
-            REVOKE db_privileges FROM grantee_list
-                {
-                    GrantDbStmt *n = makeNode(GrantDbStmt);
-                    n->is_grant = false;
-                    n->privileges = $2;
-                    n->grantees = $4;
-                    n->admin_opt = false;
-                    $$ = (Node*)n;
-                }
-            | REVOKE db_privileges ON '*' '.' '*' FROM grantee_list
-                {
-                    GrantDbStmt *n = makeNode(GrantDbStmt);
-                    n->is_grant = false;
-                    n->privileges = $2;
-                    n->grantees = $8;
-                    n->admin_opt = false;
-                    $$ = (Node*)n;
-                }
-            | REVOKE ADMIN OPTION FOR db_privileges FROM grantee_list
-                {
-                    GrantDbStmt *n = makeNode(GrantDbStmt);
-                    n->is_grant = false;
-                    n->privileges = $5;
-                    n->grantees = $7;
-                    n->admin_opt = true;
-                    $$ = (Node*)n;
-                }
-        ;
+			REVOKE db_privileges FROM grantee_list
+				{
+					GrantDbStmt *n = makeNode(GrantDbStmt);
+					n->is_grant = false;
+					n->privileges = $2;
+					n->grantees = $4;
+					n->admin_opt = false;
+					$$ = (Node*)n;
+				}
+			| REVOKE index_privileges ON '*' '.' '*' FROM grantee_list
+				{
+					if (list_length($2) != 1 || strcmp(((AccessPriv *)list_nth($2, 0))->priv_name, "index") != 0) {
+						parser_yyerror("syntax error");
+					}		
+					GrantDbStmt *n = makeNode(GrantDbStmt);
+					n->is_grant = false;
+					DbPriv *n2 = makeNode(DbPriv);
+					n2->db_priv_name = pstrdup("create any index");
+					n->privileges = list_make1(n2);
+					n->grantees = $8;
+					n->admin_opt = false;
+					$$ = (Node*)n;
+				}
+			| REVOKE ADMIN OPTION FOR db_privileges FROM grantee_list
+				{
+					GrantDbStmt *n = makeNode(GrantDbStmt);
+					n->is_grant = false;
+					n->privileges = $5;
+					n->grantees = $7;
+					n->admin_opt = true;
+					$$ = (Node*)n;
+				}
+		;
 
 db_privileges: db_privilege_list                       { $$ = $1; }
         ;
@@ -14118,12 +14194,6 @@ db_privilege: CREATE ANY TABLE
                 DbPriv *n = makeNode(DbPriv);
                 n->db_priv_name = pstrdup("create any function");
                 $$ = n;				
-            }
-            | INDEX
-            {
-                DbPriv *n = makeNode(DbPriv);
-                n->db_priv_name = pstrdup("create any index");
-                $$ = n;
             }
             | EXECUTE ANY FUNCTION
             {
