@@ -18,6 +18,7 @@
 
 #include "postgres.h"
 #include "knl/knl_variable.h"
+#include "plugin_postgres.h"
 
 #include <limits.h>
 #include <ctype.h>
@@ -34,6 +35,7 @@
 #include "utils/pg_locale.h"
 
 #define CACHE_BUFF_LEN_L 256
+extern "C" DLL_PUBLIC Datum uint8mul(PG_FUNCTION_ARGS);
 
 /*************************************************************************
  * Private routines
@@ -1174,3 +1176,33 @@ Datum int8_cash(PG_FUNCTION_ARGS)
 
     PG_RETURN_CASH(result);
 }
+
+#ifdef DOLPHIN
+PG_FUNCTION_INFO_V1_PUBLIC(uint_cash);
+extern "C" DLL_PUBLIC Datum uint_cash(PG_FUNCTION_ARGS);
+
+Datum uint_cash(PG_FUNCTION_ARGS)
+{
+    uint64 amount = PG_GETARG_UINT64(0);
+    Cash result;
+    int fpoint;
+    uint64 scale;
+    int i;
+    struct lconv* lconvert = PGLC_localeconv();
+
+    /* see comments about frac_digits in cash_in() */
+    fpoint = lconvert->frac_digits;
+    if (fpoint < 0 || fpoint > 10)
+        fpoint = 2;
+
+    /* compute required scale factor */
+    scale = 1;
+    for (i = 0; i < fpoint; i++)
+        scale *= 10;
+
+    /* compute amount * scale, checking for overflow */
+    result = DatumGetInt64(DirectFunctionCall2(uint8mul, UInt64GetDatum(amount), UInt64GetDatum(scale)));
+
+    PG_RETURN_CASH(result);
+}
+#endif

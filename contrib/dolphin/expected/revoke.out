@@ -98,26 +98,27 @@ drop user tester_2;
 CREATE SCHEMA pri_index_schema;
 set search_path=pri_index_schema;
 create table pri_index_schema.t1(i int);
-revoke index from tester;
+revoke index on *.* from tester;
 SET SESSION AUTHORIZATION tester PASSWORD 'Password123';
 create index idx1 on t1(i);
 ERROR:  permission denied for relation t1
 DETAIL:  N/A
 \c b
-grant index to tester;
+grant index on *.* to tester;
 SET SESSION AUTHORIZATION tester PASSWORD 'Password123';
 set search_path=pri_index_schema;
 create index idx1 on t1(i);
 --grammar test
 \c b
 grant EXECUTE,ALTER ROUTINE on tester.* to tester;
-grant CREATE ROUTINE,INDEX,CREATE ANY TABLE on *.* to tester;
 grant CREATE TEMPORARY TABLES,TEMP on b.* to tester;
 grant CREATE TABLESPACE ON *.* to tester;
 revoke create user on *.* from tester;
 revoke create tablespace on *.* from tester;
 revoke index on *.* from tester;
 grant alter routine,alter routine on all functions in schema tester  to tester;
+grant index on all tables in schema tester to tester;
+revoke index on all tables in schema tester from tester;
 \c postgres
 drop database if exists b;
 drop user if exists tester cascade;

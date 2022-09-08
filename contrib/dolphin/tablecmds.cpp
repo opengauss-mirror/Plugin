@@ -8280,7 +8280,32 @@ static void ATExecCmd(List** wqueue, AlteredTableInfo* tab, Relation rel, AlterT
             ATExecModifyRowMovement(rel, false);
             break;
         case AT_TruncatePartition:
+            #ifdef DOLPHIN
+            if (RelationIsSubPartitioned(rel)) {
+                Oid partOid = InvalidOid;
+                Oid subPartOid = InvalidOid;
+                subPartOid = partitionNameGetPartitionOid(rel->rd_id,
+                    cmd->name,
+                    PART_OBJ_TYPE_TABLE_SUB_PARTITION,
+                    AccessExclusiveLock,
+                    true,
+                    false,
+                    NULL,
+                    NULL,
+                    NoLock,
+                    &partOid);
+                if (OidIsValid(subPartOid)) {
+                    cmd->subtype = AT_TruncateSubPartition;
+                    ATExecTruncateSubPartition(rel, cmd);
+                } else {
+                    ATExecTruncatePartition(rel, cmd);
+                }
+            } else {
+                ATExecTruncatePartition(rel, cmd);
+            }
+            #else
             ATExecTruncatePartition(rel, cmd);
+            #endif
             break;
         case AT_TruncateSubPartition:
             ATExecTruncateSubPartition(rel, cmd);

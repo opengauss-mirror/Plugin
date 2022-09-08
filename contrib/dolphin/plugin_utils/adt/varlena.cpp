@@ -8611,7 +8611,7 @@ char* set_space(int32 num)
 Datum space_integer(PG_FUNCTION_ARGS)
 {
     int32 num = (int32)PG_GETARG_INT32(0);
-    if (num <= 0) {
+    if (num < 0) {
         PG_RETURN_NULL();
     }
 
@@ -8628,7 +8628,7 @@ Datum space_integer(PG_FUNCTION_ARGS)
 Datum space_string(PG_FUNCTION_ARGS)
 {
     int32 num = floor(atof(VARDATA_ANY(PG_GETARG_TEXT_PP(0))));
-    if (num <= 0) {
+    if (num < 0) {
         PG_RETURN_NULL();
     }
 

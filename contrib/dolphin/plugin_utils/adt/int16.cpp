@@ -27,6 +27,7 @@
 
 #include "postgres.h"
 #include "knl/knl_variable.h"
+#include "plugin_postgres.h"
 
 #include <ctype.h>
 #include <limits.h>
@@ -317,6 +318,85 @@ Datum int16_8(PG_FUNCTION_ARGS)
 
     PG_RETURN_INT64(result);
 }
+
+#ifdef DOLPHIN
+PG_FUNCTION_INFO_V1_PUBLIC(uint_16);
+PG_FUNCTION_INFO_V1_PUBLIC(int16_u1);
+PG_FUNCTION_INFO_V1_PUBLIC(int16_u2);
+PG_FUNCTION_INFO_V1_PUBLIC(int16_u4);
+PG_FUNCTION_INFO_V1_PUBLIC(int16_u8);
+extern "C" DLL_PUBLIC Datum uint_16(PG_FUNCTION_ARGS);
+extern "C" DLL_PUBLIC Datum int16_u1(PG_FUNCTION_ARGS);
+extern "C" DLL_PUBLIC Datum int16_u2(PG_FUNCTION_ARGS);
+extern "C" DLL_PUBLIC Datum int16_u4(PG_FUNCTION_ARGS);
+extern "C" DLL_PUBLIC Datum int16_u8(PG_FUNCTION_ARGS);
+
+void int16_overflow(int128 arg1, int128 arg2, char* typeName)
+{
+    if (arg1 != arg2) {
+        ereport(ERROR,
+            (errmodule(MOD_FUNCTION), errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE),
+                errmsg("%s out of range", typeName),
+                errdetail("cannot cast value too large for %s", typeName),
+                errcause("invalid cast."),
+                erraction("cast overflow.")));
+    }
+}
+
+Datum uint_16(PG_FUNCTION_ARGS)
+{
+    uint64 arg = PG_GETARG_UINT64(0);
+    PG_RETURN_INT128((int128)arg);
+}
+
+Datum int16_u1(PG_FUNCTION_ARGS)
+{
+    int128 arg = PG_GETARG_INT128(0);
+    uint8 result;
+
+    result = (uint8)arg;
+
+    /* Test for overflow by reverse-conversion. */
+    int16_overflow((int128)result, arg, "tinyint unsigned");
+    PG_RETURN_INT16(result);
+}
+
+Datum int16_u2(PG_FUNCTION_ARGS)
+{
+    int128 arg = PG_GETARG_INT128(0);
+    uint16 result;
+
+    result = (uint16)arg;
+
+    /* Test for overflow by reverse-conversion. */
+    int16_overflow((int128)result, arg, "smallint unsigned");
+    PG_RETURN_INT16(result);
+}
+
+Datum int16_u4(PG_FUNCTION_ARGS)
+{
+    int128 arg = PG_GETARG_INT128(0);
+    uint32 result;
+
+    result = (uint32)arg;
+
+    /* Test for overflow by reverse-conversion. */
+    int16_overflow((int128)result, arg, "integer unsigned");
+    PG_RETURN_INT32(result);
+}
+
+Datum int16_u8(PG_FUNCTION_ARGS)
+{
+    int128 arg = PG_GETARG_INT128(0);
+    uint64 result;
+
+    result = (uint64)arg;
+
+    /* Test for overflow by reverse-conversion. */
+    int16_overflow((int128)result, arg, "bigint unsigned");
+    PG_RETURN_INT64(result);
+}
+#endif
 
 Datum i16tod(PG_FUNCTION_ARGS)
 {

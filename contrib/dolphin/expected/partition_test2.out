@@ -100,40 +100,38 @@ select * from test_part1;
 ---+---
 (0 rows)
 
-ALTER TABLE test_subpart truncate PARTITION p0, p1;
+ALTER TABLE test_subpart truncate PARTITION p0, p1, p2_2, p2_1;
 select * from test_subpart;
-  a  |  b   
------+------
- 299 | 2999
-(1 row)
+ a | b 
+---+---
+(0 rows)
 
 insert into test_subpart (with RECURSIVE t_r(i,j) as(values(0,1) union all select i+1,j+2 from t_r where i < 20) select * from t_r);
 select * from test_subpart;
-  a  |  b   
------+------
-   0 |    1
-   1 |    3
-   2 |    5
-   3 |    7
-   4 |    9
-   5 |   11
-   6 |   13
-   7 |   15
-   8 |   17
-   9 |   19
-  10 |   21
-  11 |   23
-  12 |   25
-  13 |   27
-  14 |   29
-  15 |   31
-  16 |   33
-  17 |   35
-  18 |   37
-  19 |   39
-  20 |   41
- 299 | 2999
-(22 rows)
+ a  | b  
+----+----
+  0 |  1
+  1 |  3
+  2 |  5
+  3 |  7
+  4 |  9
+  5 | 11
+  6 | 13
+  7 | 15
+  8 | 17
+  9 | 19
+ 10 | 21
+ 11 | 23
+ 12 | 25
+ 13 | 27
+ 14 | 29
+ 15 | 31
+ 16 | 33
+ 17 | 35
+ 18 | 37
+ 19 | 39
+ 20 | 41
+(21 rows)
 
 ALTER TABLE test_subpart truncate PARTITION all;
 select * from test_subpart;
