@@ -2359,10 +2359,6 @@ CREATE FUNCTION pg_catalog.hashuint8 (
 uint8
 ) RETURNS int4 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'hashuint8';
 
-CREATE OR REPLACE FUNCTION NUMTODAY(uint8)
-RETURNS INTERVAL
-AS $$ SELECT NUMTODSINTERVAL(uint8_numeric($1),'DAY')$$
-LANGUAGE SQL IMMUTABLE STRICT;
 CREATE OR REPLACE FUNCTION TO_TEXT(uint8)
 RETURNS TEXT
 AS $$ select CAST(uint8out($1) AS VARCHAR2)  $$
@@ -2479,7 +2475,6 @@ drop  CAST IF EXISTS(uint8 AS  int2) CASCADE;
 drop  CAST IF EXISTS(uint8 AS  int1) CASCADE;
 drop  CAST IF EXISTS(uint8 AS  TEXT) CASCADE;
 drop  CAST IF EXISTS(uint8 AS  numeric) CASCADE;
-drop  CAST IF EXISTS(uint8 AS  INTERVAL) CASCADE;
 
 drop  CAST  IF EXISTS (uint8 AS  bool) CASCADE;
 drop  CAST  IF EXISTS (bool AS  uint8) CASCADE;
@@ -2503,8 +2498,6 @@ CREATE CAST (uint8 AS TEXT) WITH FUNCTION TO_TEXT(uint8) AS IMPLICIT;
 
 CREATE CAST (uint8 AS numeric) WITH FUNCTION uint8_numeric(uint8) AS IMPLICIT;
 CREATE CAST (numeric AS uint8) WITH FUNCTION numeric_uint8(Numeric) AS IMPLICIT;
-
-CREATE CAST (uint8 AS INTERVAL) WITH FUNCTION NUMTODAY(uint8) AS IMPLICIT;
 
 CREATE CAST (uint8 AS bool) WITH FUNCTION uint8_bool(uint8) AS IMPLICIT;
 CREATE CAST (bool AS uint8) WITH FUNCTION bool_uint8(bool) AS IMPLICIT;
@@ -4241,3 +4234,182 @@ DROP FUNCTION IF EXISTS pg_catalog.f8_cast_ui8(float8) CASCADE;
 CREATE OR REPLACE FUNCTION pg_catalog.f8_cast_ui8 (
 float8
 ) RETURNS uint8 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'f8_cast_ui8';
+
+-- uint -> cash
+DROP FUNCTION IF EXISTS pg_catalog.uint_cash(uint1) CASCADE;
+CREATE OR REPLACE FUNCTION pg_catalog.uint_cash (
+uint1
+) RETURNS money LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'uint_cash';
+DROP FUNCTION IF EXISTS pg_catalog.uint_cash(uint2) CASCADE;
+CREATE OR REPLACE FUNCTION pg_catalog.uint_cash (
+uint2
+) RETURNS money LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'uint_cash';
+DROP FUNCTION IF EXISTS pg_catalog.uint_cash(uint4) CASCADE;
+CREATE OR REPLACE FUNCTION pg_catalog.uint_cash (
+uint4
+) RETURNS money LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'uint_cash';
+DROP FUNCTION IF EXISTS pg_catalog.uint_cash(uint8) CASCADE;
+CREATE OR REPLACE FUNCTION pg_catalog.uint_cash (
+uint8
+) RETURNS money LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'uint_cash';
+drop CAST IF EXISTS (uint1 AS money) CASCADE;
+CREATE CAST (uint1 AS money) WITH FUNCTION uint_cash(uint1) AS ASSIGNMENT;
+drop CAST IF EXISTS (uint2 AS money) CASCADE;
+CREATE CAST (uint2 AS money) WITH FUNCTION uint_cash(uint2) AS ASSIGNMENT;
+drop CAST IF EXISTS (uint4 AS money) CASCADE;
+CREATE CAST (uint4 AS money) WITH FUNCTION uint_cash(uint4) AS ASSIGNMENT;
+drop CAST IF EXISTS (uint8 AS money) CASCADE;
+CREATE CAST (uint8 AS money) WITH FUNCTION uint_cash(uint8) AS ASSIGNMENT;
+
+-- uint4 <-> time
+drop CAST IF EXISTS (uint4 AS abstime) CASCADE;
+CREATE CAST (uint4 AS abstime) WITHOUT FUNCTION;
+drop CAST IF EXISTS (abstime AS uint4) CASCADE;
+CREATE CAST (abstime as uint4) WITHOUT FUNCTION;
+drop CAST IF EXISTS (uint4 AS reltime) CASCADE;
+CREATE CAST (uint4 AS reltime) WITHOUT FUNCTION;
+drop CAST IF EXISTS (reltime AS uint4) CASCADE;
+CREATE CAST (reltime as uint4) WITHOUT FUNCTION;
+
+DROP FUNCTION IF EXISTS pg_catalog.int32_b_format_date(uint4) CASCADE;
+CREATE OR REPLACE FUNCTION pg_catalog.int32_b_format_date (
+uint4
+) RETURNS date LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'int32_b_format_date';
+drop CAST IF EXISTS (uint4 AS date) CASCADE;
+CREATE CAST (uint4 AS date) WITH FUNCTION int32_b_format_date(uint4);
+
+DROP FUNCTION IF EXISTS pg_catalog.int32_b_format_time(uint4) CASCADE;
+CREATE OR REPLACE FUNCTION pg_catalog.int32_b_format_time (
+uint4
+) RETURNS time LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'int32_b_format_time';
+drop CAST IF EXISTS (uint4 AS time) CASCADE;
+CREATE CAST (uint4 AS time) WITH FUNCTION int32_b_format_time(uint4);
+
+DROP FUNCTION IF EXISTS pg_catalog.int32_b_format_datetime(uint4) CASCADE;
+CREATE OR REPLACE FUNCTION pg_catalog.int32_b_format_datetime (
+uint4
+) RETURNS datetime LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'int32_b_format_datetime';
+drop CAST IF EXISTS (uint4 AS datetime) CASCADE;
+CREATE CAST (uint4 AS datetime) WITH FUNCTION int32_b_format_datetime(uint4);
+
+DROP FUNCTION IF EXISTS pg_catalog.int64_b_format_datetime(uint8) CASCADE;
+CREATE OR REPLACE FUNCTION pg_catalog.int64_b_format_datetime (
+uint8
+) RETURNS datetime LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'int64_b_format_datetime';
+drop CAST IF EXISTS (uint8 AS datetime) CASCADE;
+CREATE CAST (uint8 AS datetime) WITH FUNCTION int64_b_format_datetime(uint8);
+
+DROP FUNCTION IF EXISTS pg_catalog.int32_b_format_timestamp(uint4) CASCADE;
+CREATE OR REPLACE FUNCTION pg_catalog.int32_b_format_timestamp (
+uint4
+) RETURNS timestamptz LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'int32_b_format_timestamp';
+drop CAST IF EXISTS (uint4 AS timestamptz) CASCADE;
+CREATE CAST (uint4 AS timestamptz) WITH FUNCTION int32_b_format_timestamp(uint4);
+
+DROP FUNCTION IF EXISTS pg_catalog.int64_b_format_timestamp(uint8) CASCADE;
+CREATE OR REPLACE FUNCTION pg_catalog.int64_b_format_timestamp (
+uint8
+) RETURNS timestamptz LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'int64_b_format_timestamp';
+drop CAST IF EXISTS (uint8 AS timestamptz) CASCADE;
+CREATE CAST (uint8 AS timestamptz) WITH FUNCTION int64_b_format_timestamp(uint8);
+
+DROP FUNCTION IF EXISTS pg_catalog.int32_year(uint4) CASCADE;
+CREATE OR REPLACE FUNCTION pg_catalog.int32_year (
+uint4
+) RETURNS year LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'int32_year';
+drop CAST IF EXISTS (uint4 AS year) CASCADE;
+CREATE CAST (uint4 AS year) WITH FUNCTION int32_year(uint4);
+
+DROP FUNCTION IF EXISTS pg_catalog.year_uint4(year) CASCADE;
+CREATE OR REPLACE FUNCTION pg_catalog.year_uint4 (
+year
+) RETURNS uint4 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'year_integer';
+drop CAST IF EXISTS (uint4 AS year) CASCADE;
+CREATE CAST (uint4 AS year) WITH FUNCTION int32_year(uint4);
+
+drop CAST IF EXISTS (year AS uint4) CASCADE;
+CREATE CAST (year AS uint4) WITH FUNCTION year_uint4(year);
+
+-- uint <-> bit
+DROP FUNCTION IF EXISTS pg_catalog.bittouint4(bit) CASCADE;
+CREATE OR REPLACE FUNCTION pg_catalog.bittouint4 (
+bit
+) RETURNS uint4 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'bittouint4';
+DROP FUNCTION IF EXISTS pg_catalog.bittouint8(bit) CASCADE;
+CREATE OR REPLACE FUNCTION pg_catalog.bittouint8 (
+bit
+) RETURNS uint8 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'bittouint8';
+DROP FUNCTION IF EXISTS pg_catalog.bitfromuint4(uint4, int4) CASCADE;
+CREATE OR REPLACE FUNCTION pg_catalog.bitfromuint4 (
+uint4, int4
+) RETURNS bit LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'bitfromuint4';
+DROP FUNCTION IF EXISTS pg_catalog.bitfromuint8(uint8, int4) CASCADE;
+CREATE OR REPLACE FUNCTION pg_catalog.bitfromuint8 (
+uint8, int4
+) RETURNS bit LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'bitfromuint8';
+
+drop CAST IF EXISTS (bit AS uint4) CASCADE;
+drop CAST IF EXISTS (bit AS uint8) CASCADE;
+drop CAST IF EXISTS (uint4 AS bit) CASCADE;
+drop CAST IF EXISTS (uint8 AS bit) CASCADE;
+
+CREATE CAST (bit AS uint4) WITH FUNCTION bittouint4(bit);
+CREATE CAST (bit AS uint8) WITH FUNCTION bittouint8(bit);
+CREATE CAST (uint4 AS bit) WITH FUNCTION bitfromuint4(uint4, int4);
+CREATE CAST (uint8 AS bit) WITH FUNCTION bitfromuint8(uint8, int4);
+
+-- uint <-> int16
+DROP FUNCTION IF EXISTS pg_catalog.uint_16(uint1) CASCADE;
+CREATE OR REPLACE FUNCTION pg_catalog.uint_16 (
+uint1
+) RETURNS int16 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'uint_16';
+DROP FUNCTION IF EXISTS pg_catalog.uint_16(uint2) CASCADE;
+CREATE OR REPLACE FUNCTION pg_catalog.uint_16 (
+uint2
+) RETURNS int16 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'uint_16';
+DROP FUNCTION IF EXISTS pg_catalog.uint_16(uint4) CASCADE;
+CREATE OR REPLACE FUNCTION pg_catalog.uint_16 (
+uint4
+) RETURNS int16 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'uint_16';
+DROP FUNCTION IF EXISTS pg_catalog.uint_16(uint8) CASCADE;
+CREATE OR REPLACE FUNCTION pg_catalog.uint_16 (
+uint8
+) RETURNS int16 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'uint_16';
+
+DROP FUNCTION IF EXISTS pg_catalog.int16_u1(int16) CASCADE;
+CREATE OR REPLACE FUNCTION pg_catalog.int16_u1 (
+int16
+) RETURNS uint1 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'int16_u1';
+
+DROP FUNCTION IF EXISTS pg_catalog.int16_u2(int16) CASCADE;
+CREATE OR REPLACE FUNCTION pg_catalog.int16_u2 (
+int16
+) RETURNS uint2 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'int16_u2';
+
+DROP FUNCTION IF EXISTS pg_catalog.int16_u4(int16) CASCADE;
+CREATE OR REPLACE FUNCTION pg_catalog.int16_u4 (
+int16
+) RETURNS uint4 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'int16_u4';
+
+DROP FUNCTION IF EXISTS pg_catalog.int16_u8(int16) CASCADE;
+CREATE OR REPLACE FUNCTION pg_catalog.int16_u8 (
+int16
+) RETURNS uint8 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'int16_u8';
+
+drop CAST IF EXISTS (uint1 AS int16) CASCADE;
+CREATE CAST (uint1 AS int16) WITH FUNCTION uint_16(uint1) AS ASSIGNMENT;
+drop CAST IF EXISTS (uint2 AS int16) CASCADE;
+CREATE CAST (uint2 AS int16) WITH FUNCTION uint_16(uint2) AS ASSIGNMENT;
+drop CAST IF EXISTS (uint4 AS int16) CASCADE;
+CREATE CAST (uint4 AS int16) WITH FUNCTION uint_16(uint4) AS ASSIGNMENT;
+drop CAST IF EXISTS (uint8 AS int16) CASCADE;
+CREATE CAST (uint8 AS int16) WITH FUNCTION uint_16(uint8) AS ASSIGNMENT;
+
+drop CAST IF EXISTS (int16 AS uint1) CASCADE;
+CREATE CAST (int16 AS uint1) WITH FUNCTION int16_u1(int16) AS ASSIGNMENT;
+drop CAST IF EXISTS (int16 AS uint2) CASCADE;
+CREATE CAST (int16 AS uint2) WITH FUNCTION int16_u2(int16) AS ASSIGNMENT;
+drop CAST IF EXISTS (int16 AS uint4) CASCADE;
+CREATE CAST (int16 AS uint4) WITH FUNCTION int16_u4(int16) AS ASSIGNMENT;
+drop CAST IF EXISTS (int16 AS uint8) CASCADE;
+CREATE CAST (int16 AS uint8) WITH FUNCTION int16_u8(int16) AS ASSIGNMENT;
