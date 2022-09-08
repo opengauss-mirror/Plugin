@@ -103,6 +103,9 @@ typedef struct {
 PG_FUNCTION_INFO_V1_PUBLIC(bin_string);
 extern "C" DLL_PUBLIC Datum bin_string(PG_FUNCTION_ARGS);
 
+PG_FUNCTION_INFO_V1_PUBLIC(bin_bit);
+extern "C" DLL_PUBLIC Datum bin_bit(PG_FUNCTION_ARGS);
+
 PG_FUNCTION_INFO_V1_PUBLIC(bin_integer);
 extern "C" DLL_PUBLIC Datum bin_integer(PG_FUNCTION_ARGS);
 
@@ -19721,6 +19724,11 @@ int128 conv_numeric_int128(Numeric num)
         result = PG_INT128_MAX;
 
     return result;
+}
+
+Datum bin_bit(PG_FUNCTION_ARGS)
+{
+    PG_RETURN_TEXT_P(cstring_to_text("0"));
 }
 
 Datum bin_integer(PG_FUNCTION_ARGS)

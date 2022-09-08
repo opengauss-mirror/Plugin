@@ -1,3 +1,5 @@
+DROP FUNCTION IF EXISTS pg_catalog.bin(bit) cascade;
+CREATE OR REPLACE FUNCTION pg_catalog.bin(bit) returns text LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'bin_bit';
 DROP FUNCTION IF EXISTS pg_catalog.bin(text) cascade;
 DROP FUNCTION IF EXISTS pg_catalog.bin(numeric) cascade;
 CREATE OR REPLACE FUNCTION pg_catalog.bin(text) RETURNS text LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'bin_string';
