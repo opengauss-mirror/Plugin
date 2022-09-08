@@ -2,7 +2,7 @@ drop database if exists option;
 create database option dbcompatibility = 'b';
 \c option
 
-create global temp table test1(a int primary key, b text) on commit delete rows engine = InnoDB with(STORAGE_TYPE = USTORE);
+create global temp table test1(a int primary key, b text) on commit delete rows engine = InnoDB with(STORAGE_TYPE = ASTORE);
 
 create global temp table test2(id int,vname varchar(48),remark text) engine = InnoDB on commit PRESERVE rows ;
 

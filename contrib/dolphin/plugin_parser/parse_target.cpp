@@ -33,6 +33,7 @@
 #include "utils/rel.h"
 #include "utils/rel_gs.h"
 #include "utils/typcache.h"
+#include "executor/executor.h"
 #include "gs_ledger/ledger_utils.h"
 
 static void markTargetListOrigin(ParseState* pstate, TargetEntry* tle, Var* var, int levelsup);
@@ -208,7 +209,7 @@ List* transformExpressionList(ParseState* pstate, List* exprlist)
 
     return result;
 }
-
+#ifdef DOLPHIN
 /*check if a not-null-attr col is inserted into NULL*/
 void CheckNullValue(Relation relation, Expr* expr, AttrNumber attrNum)
 {
@@ -221,7 +222,7 @@ void CheckNullValue(Relation relation, Expr* expr, AttrNumber attrNum)
         }
     }
 }
-
+#endif
 /*
  * resolveTargetListUnknowns()
  *		Convert any unknown-type targetlist entries to type TEXT.
@@ -377,14 +378,14 @@ static void markTargetListOrigin(ParseState* pstate, TargetEntry* tle, Var* var,
  * omits the column name list.	So we should usually prefer to use
  * exprLocation(expr) for errors that can happen in a default INSERT.
  */
-Expr* transformAssignedExpr(ParseState* pstate, Expr* expr, char* colname, int attrno, List* indirection, int location)
+Expr* transformAssignedExpr(ParseState* pstate, Expr* expr, char* colname, int attrno, List* indirection, int location,
+                            Relation rd, RangeTblEntry* rte)
 {
     Oid type_id;    /* type of value provided */
     int32 type_mod; /* typmod of value provided */
     Oid attrtype;   /* type of target column */
     int32 attrtypmod;
     Oid attrcollation; /* collation of target column */
-    Relation rd = pstate->p_target_relation;
 
     AssertEreport(rd != NULL, MOD_OPT, "");
     /*
@@ -459,7 +460,7 @@ Expr* transformAssignedExpr(ParseState* pstate, Expr* expr, char* colname, int a
             /*
              * Build a Var for the column to be updated.
              */
-            colVar = (Node*)make_var(pstate, pstate->p_target_rangetblentry, attrno, location);
+            colVar = (Node*)make_var(pstate, rte, attrno, location);
         }
 
         expr = (Expr*)transformAssignmentIndirection(pstate,
@@ -526,17 +527,24 @@ Expr* transformAssignedExpr(ParseState* pstate, Expr* expr, char* colname, int a
                     colname, format_type_be(attrtype), format_type_be(type_id)),
                     errhint("You will need to rewrite or cast the expression."),
                     parser_errposition(pstate, exprLocation(orig_expr))));
+            } else {
+                if (!pstate->p_has_ignore) {
+                    ereport(ERROR, (errcode(ERRCODE_DATATYPE_MISMATCH),
+                        errmsg("column \"%s\" is of type %s"
+                               " but expression is of type %s",
+                               colname, format_type_be(attrtype), format_type_be(type_id)),
+                               errhint("You will need to rewrite or cast the expression."),
+                               parser_errposition(pstate, exprLocation(orig_expr))));
+                }
+                expr = (Expr*)makeConst(attrtype, attrtypmod, attrcollation, rd->rd_att->attrs[attrno - 1]->attlen,
+                                        GetTypeZeroValue(rd->rd_att->attrs[attrno - 1]), false,
+                                        rd->rd_att->attrs[attrno - 1]->attbyval);
+                ereport(WARNING, (errcode(ERRCODE_DATATYPE_MISMATCH),
+                                errmsg("column \"%s\" is of type %s"
+                                       " but expression is of type %s. Data truncated automatically.",
+                                       colname, format_type_be(attrtype), format_type_be(type_id))));
             }
-            ereport(ERROR,
-                (errcode(ERRCODE_DATATYPE_MISMATCH),
-                    errmsg("column \"%s\" is of type %s"
-                           " but expression is of type %s",
-                        colname,
-                        format_type_be(attrtype),
-                        format_type_be(type_id)),
-                    errhint("You will need to rewrite or cast the expression."),
-                    parser_errposition(pstate, exprLocation(orig_expr))));
-		}
+        }
     }
 
     ELOG_FIELD_NAME_END;
@@ -559,11 +567,11 @@ Expr* transformAssignedExpr(ParseState* pstate, Expr* expr, char* colname, int a
  * indirection	subscripts/field names for target column, if any
  * location		error cursor position (should point at column name), or -1
  */
-void updateTargetListEntry(
-    ParseState* pstate, TargetEntry* tle, char* colname, int attrno, List* indirection, int location)
+void updateTargetListEntry(ParseState* pstate, TargetEntry* tle, char* colname, int attrno,
+    List* indirection, int location, Relation rd, RangeTblEntry* rte)
 {
     /* Fix up expression as needed */
-    tle->expr = transformAssignedExpr(pstate, tle->expr, colname, attrno, indirection, location);
+    tle->expr = transformAssignedExpr(pstate, tle->expr, colname, attrno, indirection, location, rd, rte);
 
     /*
      * Set the resno to identify the target column --- the rewriter and
@@ -844,22 +852,23 @@ List* checkInsertTargets(ParseState* pstate, List* cols, List** attrnos)
 {
     *attrnos = NIL;
     bool is_blockchain_rel = false;
+    Relation targetrel = (Relation)linitial(pstate->p_target_relation);
 
     if (cols == NIL) {
         /*
          * Generate default column list for INSERT.
          */
-        if (pstate->p_target_relation == NULL) {
+        if (targetrel == NULL) {
             ereport(ERROR,
                 (errmodule(MOD_OPT),
                     errcode(ERRCODE_NULL_VALUE_NOT_ALLOWED),
-                    errmsg("pstate->p_target_relation is NULL unexpectedly")));
+                    errmsg("targetrel is NULL unexpectedly")));
         }
 
-        Form_pg_attribute* attr = pstate->p_target_relation->rd_att->attrs;
-        int numcol = RelationGetNumberOfAttributes(pstate->p_target_relation);
+        Form_pg_attribute* attr = targetrel->rd_att->attrs;
+        int numcol = RelationGetNumberOfAttributes(targetrel);
         int i;
-        is_blockchain_rel = pstate->p_target_relation->rd_isblockchain;
+        is_blockchain_rel = targetrel->rd_isblockchain;
 
         for (i = 0; i < numcol; i++) {
             ResTarget* col = NULL;
@@ -868,7 +877,7 @@ List* checkInsertTargets(ParseState* pstate, List* cols, List** attrnos)
                 continue;
             }
             /* If the hidden column in timeseries relation, skip it */
-            if (TsRelWithImplDistColumn(attr, i) && RelationIsTsStore(pstate->p_target_relation)) {
+            if (TsRelWithImplDistColumn(attr, i) && RelationIsTsStore(targetrel)) {
                 continue;
             }
 
@@ -897,13 +906,13 @@ List* checkInsertTargets(ParseState* pstate, List* cols, List** attrnos)
             int attrno;
 
             /* Lookup column name, ereport on failure */
-            attrno = attnameAttNum(pstate->p_target_relation, name, false);
+            attrno = attnameAttNum(targetrel, name, false);
             if (attrno == InvalidAttrNumber) {
                 ereport(ERROR,
                     (errcode(ERRCODE_UNDEFINED_COLUMN),
                         errmsg("column \"%s\" of relation \"%s\" does not exist",
                             name,
-                            RelationGetRelationName(pstate->p_target_relation)),
+                            RelationGetRelationName(targetrel)),
                         parser_errposition(pstate, col->location)));
             }
             /*
@@ -936,14 +945,15 @@ List* checkInsertTargets(ParseState* pstate, List* cols, List** attrnos)
 
     return cols;
 }
-
+#ifdef DOLPHIN
 /* If the col with NOT NULL attr is not in the insert clause cols list, append it.*/
 List* AppendNotNullCols(ParseState* pstate, List* cols, List** attrnos)
 {
-    Form_pg_attribute* attr = pstate->p_target_relation->rd_att->attrs;
-    auto numsRelationAttr = RelationGetNumberOfAttributes(pstate->p_target_relation);
+    Relation targetrel = (Relation)linitial(pstate->p_target_relation);
+    Form_pg_attribute* attr = targetrel->rd_att->attrs;
+    auto numsRelationAttr = RelationGetNumberOfAttributes(targetrel);
     bool isBlockchainRel = false;
-    isBlockchainRel = pstate->p_target_relation->rd_isblockchain;
+    isBlockchainRel = targetrel->rd_isblockchain;
     if(cols && attrnos && cols->length < numsRelationAttr) {
         for (int i = 0; i < numsRelationAttr; i++) {
             if(!attr[i]->attnotnull) {
@@ -964,7 +974,7 @@ List* AppendNotNullCols(ParseState* pstate, List* cols, List** attrnos)
                     continue;
                 }
                 /* If the hidden column in timeseries relation, skip it */
-                if (TsRelWithImplDistColumn(attr, i) && RelationIsTsStore(pstate->p_target_relation)) {
+                if (TsRelWithImplDistColumn(attr, i) && RelationIsTsStore(targetrel)) {
                     continue;
                 }
 
@@ -983,7 +993,7 @@ List* AppendNotNullCols(ParseState* pstate, List* cols, List** attrnos)
     }
     return cols;
 }
-
+#endif
 /*
  * ExpandColumnRefStar()
  *		Transforms foo.* into a list of expressions or targetlist entries.
@@ -1301,7 +1311,7 @@ static List* ExpandRowReference(ParseState* pstate, Node* expr, bool targetlist)
 	}
 
     if (unlikely(tupleDesc == NULL)) {
-        ereport(ERROR, 
+        ereport(ERROR,
             (errcode(ERRCODE_UNEXPECTED_NULL_VALUE), 
                 errmsg("tupleDesc should not be null")));
     }
@@ -1674,7 +1684,11 @@ static int FigureColnameInternal(Node* node, char** name)
             /* make coalesce() act like a regular function */
             // modify NVL display to A db's style "NVL" instead of "COALESCE"
             if (((CoalesceExpr*)node)->isnvl) {
+#ifdef DOLPHIN
                 *name = "ifnull";
+#else
+                *name = "nvl";
+#endif
             } else {
                 *name = "coalesce";
             }
@@ -1722,6 +1736,15 @@ static int FigureColnameInternal(Node* node, char** name)
         case T_XmlSerialize:
             *name = "xmlserialize";
             return 2;
+        /* get name of user_defined variables. */
+        case T_UserVar: {
+            size_t len = strlen(((UserVar *)node)->name) + strlen("@") + 1;
+            char *colname = (char *)palloc0(len);
+            errno_t rc = snprintf_s(colname, len, len - 1, "@%s", ((UserVar *)node)->name);
+            securec_check_ss(rc, "\0", "\0");
+            *name = colname;
+            return 1;
+        } break;
         default:
             break;
     }

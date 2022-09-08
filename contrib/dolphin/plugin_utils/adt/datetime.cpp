@@ -38,11 +38,19 @@ static int DecodeNumber(int flen, char* field, bool haveTextMonth, unsigned int 
 static int DecodeNumberField(
     int len, char* str, unsigned int fmask, unsigned int* tmask, struct pg_tm* tm, fsec_t* fsec, bool* is2digits);
 static int DecodeTime(
-    const char* str, unsigned int fmask, int range, unsigned int* tmask, struct pg_tm* tm, fsec_t* fsec, bool timeIn24 = true);
+    const char* str, unsigned int fmask, int range, unsigned int* tmask, struct pg_tm* tm, fsec_t* fsec
+#ifdef DOLPHIN
+    , bool timeIn24 = true
+#endif
+    );
 static int DecodeTimezone(const char* str, int* tzp);
 static const datetkn* datebsearch(const char* key, const datetkn* base, int nel);
 static int DecodeDate(char* str, unsigned int fmask, unsigned int* tmask, bool* is2digits, struct pg_tm* tm);
+#ifdef DOLPHIN
 static int ValidateDate(unsigned int fmask, bool isjulian, bool is2digits, bool bc, bool ad, struct pg_tm* tm);
+#else
+static int ValidateDate(unsigned int fmask, bool isjulian, bool is2digits, bool bc, struct pg_tm* tm);
+#endif
 static void TrimTrailingZeros(char* str);
 static void AppendTrailingZeros(char* str);
 static void AppendSeconds(char* cp, int sec, fsec_t fsec, int precision, bool fillzeros);
@@ -230,7 +238,7 @@ static datetkn deltatktbl[] = {
 };
 
 static int szdeltatktbl = sizeof deltatktbl / sizeof deltatktbl[0];
-
+#ifdef DOLPHIN
 unsigned long long pow_of_10[20]=
 {
   1, 10, 100, 1000, 10000UL, 100000UL, 1000000UL, 10000000UL,
@@ -239,7 +247,7 @@ unsigned long long pow_of_10[20]=
   1000000000000000ULL, 10000000000000000ULL, 100000000000000000ULL,
   1000000000000000000ULL, 10000000000000000000ULL
 };
-
+#endif
 /*
  * strtoi --- just like strtol, but returns int not long
  */
@@ -357,15 +365,52 @@ void GetCurrentDateTime(struct pg_tm* tm)
  *
  * Get the transaction start time ("now()") broken down as a struct pg_tm,
  * including fractional seconds and timezone offset.
+ *
+ * Internally, we cache the result, since this could be called many times
+ * in a transaction, within which now() doesn't change.
  */
 void GetCurrentTimeUsec(struct pg_tm* tm, fsec_t* fsec, int* tzp)
 {
-    int tz;
+    TimestampTz cur_ts = GetCurrentTransactionStartTimestamp();
 
-    timestamp2tm(GetCurrentTransactionStartTimestamp(), &tz, tm, fsec, NULL, NULL);
-    /* Note: don't pass NULL tzp to timestamp2tm; affects behavior */
-    if (tzp != NULL)
-        *tzp = tz;
+    /*
+     * The cache key must include both current time and current timezone.
+     * By representing the timezone by just a pointer, we're assuming that
+     * distinct timezone settings could never have the same pointer value.
+     * This is true by virtue of the hashtable used inside pg_tzset();
+     * however, it might need another look if we ever allow entries in that
+     * hash to be recycled.
+     */
+    if (cur_ts != u_sess->cache_ts || session_timezone != u_sess->cache_timezone) {
+        /*
+         * Make sure cache is marked invalid in case of error after partial
+         * update within timestamp2tm.
+         */
+        u_sess->cache_timezone = NULL;
+
+        /*
+         * Perform the computation, storing results into cache.  We do not
+         * really expect any error here, since current time surely ought to be
+         * within range, but check just for sanity's sake.
+         */
+        if (timestamp2tm(cur_ts,
+                         &u_sess->cache_tz, &u_sess->cache_tm, &u_sess->cache_fsec,
+                         NULL, session_timezone) != 0) {
+            ereport(ERROR,
+                    (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE),
+                     errmsg("timestamp out of range")));
+        }
+
+        /* OK, so mark the cache valid. */
+        u_sess->cache_ts = cur_ts;
+        u_sess->cache_timezone = session_timezone;
+    }
+
+    *tm = u_sess->cache_tm;
+    *fsec = u_sess->cache_fsec;
+    if (tzp != NULL) {
+        *tzp = u_sess->cache_tz;
+    }
 }
 
 /* TrimTrailingZeros()
@@ -736,7 +781,9 @@ int DecodeDateTimeForBDatabase(char** field, int* ftype, int nf, int* dtype, str
     bool isjulian = FALSE;
     bool is2digits = FALSE;
     bool bc = FALSE;
+#ifdef DOLPHIN
     bool ad = FALSE;
+#endif
     pg_tz* namedTz = NULL;
     struct pg_tm cur_tm;
 
@@ -873,7 +920,12 @@ int DecodeDateTimeForBDatabase(char** field, int* ftype, int nf, int* dtype, str
                  * DecodeTime()
                  */
                 /* test for > 24:00:00 */
+#ifdef DOLPHIN
                 if (INVALID_DAY_TIME(tm->tm_hour, tm->tm_min, tm->tm_sec, *fsec))
+#else
+                if (tm->tm_hour > HOURS_PER_DAY ||
+                    (tm->tm_hour == HOURS_PER_DAY && (tm->tm_min > 0 || tm->tm_sec > 0 || *fsec > 0)))
+#endif
                     return DTERR_FIELD_OVERFLOW;
                 break;
 
@@ -1184,7 +1236,9 @@ int DecodeDateTimeForBDatabase(char** field, int* ftype, int nf, int* dtype, str
 
                     case ADBC:
                         bc = (val == BC);
+#ifdef DOLPHIN
                         ad = (val == AD);
+#endif
                         break;
 
                     case DOW:
@@ -1249,7 +1303,11 @@ int DecodeDateTimeForBDatabase(char** field, int* ftype, int nf, int* dtype, str
     } /* end loop over fields */
 
     /* do final checking/adjustment of Y/M/D fields */
+#ifdef DOLPHIN
     dterr = ValidateDate(fmask, isjulian, is2digits, bc, ad, tm);
+#else
+    dterr = ValidateDate(fmask, isjulian, is2digits, bc, tm);
+#endif
     if (dterr)
         return dterr;
 
@@ -1422,7 +1480,9 @@ int DecodeTimeOnlyForBDatabase(char** field, int* ftype, int nf, int* dtype, str
     bool isjulian = FALSE;
     bool is2digits = FALSE;
     bool bc = FALSE;
+#ifdef DOLPHIN
     bool ad = FALSE;
+#endif
     int mer = HR24;
     pg_tz* namedTz = NULL;
 
@@ -1430,9 +1490,11 @@ int DecodeTimeOnlyForBDatabase(char** field, int* ftype, int nf, int* dtype, str
     tm->tm_hour = 0;
     tm->tm_min = 0;
     tm->tm_sec = 0;
+#ifdef DOLPHIN
     tm->tm_year = 0;
     tm->tm_mon = 0;
     tm->tm_mday = 0;
+#endif
     *fsec = 0;
     /* don't know daylight savings time status apriori */
     tm->tm_isdst = -1;
@@ -1512,7 +1574,11 @@ int DecodeTimeOnlyForBDatabase(char** field, int* ftype, int nf, int* dtype, str
                 break;
 
             case DTK_TIME:
-                dterr = DecodeTime(field[i], (fmask | DTK_DATE_M), INTERVAL_FULL_RANGE, &tmask, tm, fsec, false);
+                dterr = DecodeTime(field[i], (fmask | DTK_DATE_M), INTERVAL_FULL_RANGE, &tmask, tm, fsec
+#ifdef DOLPHIN
+                , false
+#endif
+                );
                 if (dterr)
                     return dterr;
                 break;
@@ -1804,7 +1870,9 @@ int DecodeTimeOnlyForBDatabase(char** field, int* ftype, int nf, int* dtype, str
 
                     case ADBC:
                         bc = (val == BC);
+#ifdef DOLPHIN
                         ad = (val == AD);
+#endif
                         break;
 
                     case UNITS:
@@ -1854,10 +1922,13 @@ int DecodeTimeOnlyForBDatabase(char** field, int* ftype, int nf, int* dtype, str
             return DTERR_BAD_FORMAT;
         fmask |= tmask;
     } /* end loop over fields */
-
+#ifdef DOLPHIN
     tm->tm_hour += D * 24;
     /* do final checking/adjustment of Y/M/D fields */
     dterr = ValidateDate(fmask, isjulian, is2digits, bc, ad, tm);
+#else
+    dterr = ValidateDate(fmask, isjulian, is2digits, bc, tm);
+#endif
     if (dterr)
         return dterr;
 
@@ -1868,7 +1939,7 @@ int DecodeTimeOnlyForBDatabase(char** field, int* ftype, int nf, int* dtype, str
         tm->tm_hour = 0;
     else if (mer == PM && tm->tm_hour != HOURS_PER_DAY / 2)
         tm->tm_hour += HOURS_PER_DAY / 2;
-
+#ifdef DOLPHIN
     /* check validation when contain date, like '2001-10-10 30:00:1' */
     if (tm->tm_year && (tm->tm_sec >= SECS_PER_MINUTE || tm->tm_min >= MINS_PER_HOUR || tm->tm_hour >= HOURS_PER_DAY))
         return DTERR_FIELD_OVERFLOW;
@@ -1876,7 +1947,19 @@ int DecodeTimeOnlyForBDatabase(char** field, int* ftype, int nf, int* dtype, str
     /* validate time value */
     if (ValidateTimeForBDatabase(false, tm, fsec))
         return DTERR_FIELD_OVERFLOW;
-
+#else
+    if (tm->tm_hour < 0 || tm->tm_min < 0 || tm->tm_min > MINS_PER_HOUR - 1 || tm->tm_sec < 0 ||
+        tm->tm_sec > SECS_PER_MINUTE || tm->tm_hour > HOURS_PER_DAY ||
+        /* test for > 24:00:00 */
+        (tm->tm_hour == HOURS_PER_DAY && (tm->tm_min > 0 || tm->tm_sec > 0 || *fsec > 0)) ||
+#ifdef HAVE_INT64_TIMESTAMP
+        *fsec < INT64CONST(0) || *fsec > USECS_PER_SEC
+#else
+        *fsec < 0 || *fsec > 1
+#endif
+    )
+        return DTERR_FIELD_OVERFLOW;
+#endif
     if ((fmask & DTK_TIME_M) != DTK_TIME_M)
         return DTERR_BAD_FORMAT;
 
@@ -2060,7 +2143,7 @@ static int DecodeDate(char* str, unsigned int fmask, unsigned int* tmask, bool* 
 
     return 0;
 }
-
+#ifdef DOLPHIN
 int ValidateTimeForBDatabase(bool timeIn24, struct pg_tm* tm, fsec_t* fsec)
 {
     /* validate min, sec, fsec */
@@ -2091,12 +2174,16 @@ int ValidateDateForBDatabase(bool is2digits, struct pg_tm* tm)
 {
     return ValidateDate(DTK_DATE_M, false, is2digits, false, false, tm);
 }
-
+#endif
 /* ValidateDate()
  * Check valid year/month/day values, handle BC and DOY cases
  * Return 0 if okay, a DTERR code if not.
  */
+#ifdef DOLPHIN
 static int ValidateDate(unsigned int fmask, bool isjulian, bool is2digits, bool bc, bool ad, struct pg_tm* tm)
+#else
+static int ValidateDate(unsigned int fmask, bool isjulian, bool is2digits, bool bc, struct pg_tm* tm)
+#endif
 {
     if (fmask & DTK_M(YEAR)) {
         if (isjulian) {
@@ -2117,7 +2204,11 @@ static int ValidateDate(unsigned int fmask, bool isjulian, bool is2digits, bool 
                 tm->tm_year += 1900;
         } else {
             /* there is no year zero in AD/BC notation */
+#ifdef DOLPHIN
             if (tm->tm_year < 0 || (ad && tm->tm_year == 0))
+#else
+            if (tm->tm_year <= 0)
+#endif
                 return DTERR_FIELD_OVERFLOW;
         }
     }
@@ -2163,7 +2254,11 @@ static int ValidateDate(unsigned int fmask, bool isjulian, bool is2digits, bool 
  * A db, there may need some adjustments.
  */
 static int DecodeTime(
-    const char* str, unsigned int fmask, int range, unsigned int* tmask, struct pg_tm* tm, fsec_t* fsec, bool timeIn24)
+    const char* str, unsigned int fmask, int range, unsigned int* tmask, struct pg_tm* tm, fsec_t* fsec
+#ifdef DOLPHIN
+    , bool timeIn24
+#endif
+    )
 {
     char* cp = NULL;
     int dterr;
@@ -2197,7 +2292,14 @@ static int DecodeTime(
         dterr = ParseFractionalSecond(cp, fsec);
         if (dterr)
             return dterr;
+#ifdef DOLPHIN
         tm->tm_sec = 0;
+#else
+        tm->tm_sec = tm->tm_min;
+        tm->tm_min = tm->tm_hour;
+        tm->tm_hour = tm->tm_min / MINS_PER_HOUR;
+        tm->tm_min -= tm->tm_hour * MINS_PER_HOUR;
+#endif
     } else if (*cp == ':') {
         errno = 0;
         tm->tm_sec = strtoi(cp + 1, &cp, 10);
@@ -2213,10 +2315,22 @@ static int DecodeTime(
             return DTERR_BAD_FORMAT;
     } else
         return DTERR_BAD_FORMAT;
-
+#ifdef DOLPHIN
     /* do a sanity check */
     return ValidateTimeForBDatabase(timeIn24, tm, fsec);
+#else
+#ifdef HAVE_INT64_TIMESTAMP
+    if (tm->tm_hour < 0 || tm->tm_min < 0 || tm->tm_min > MINS_PER_HOUR - 1 || tm->tm_sec < 0 ||
+        tm->tm_sec > SECS_PER_MINUTE || *fsec < INT64CONST(0) || *fsec > USECS_PER_SEC)
+        return DTERR_FIELD_OVERFLOW;
+#else
+    if (tm->tm_hour < 0 || tm->tm_min < 0 || tm->tm_min > MINS_PER_HOUR - 1 || tm->tm_sec < 0 ||
+        tm->tm_sec > SECS_PER_MINUTE || *fsec < 0 || *fsec > 1)
+        return DTERR_FIELD_OVERFLOW;
+#endif
 
+    return 0;
+#endif
 }
 
 /* DecodeNumber()
@@ -2268,10 +2382,29 @@ static int DecodeNumber(int flen, char* str, bool haveTextMonth, unsigned int fm
     /* Switch based on what we have so far */
     switch (fmask & DTK_DATE_M) {
         case 0:
-
+#ifdef DOLPHIN
             /* b format date: default format is YMD */
             *tmask = DTK_M(YEAR);
             tm->tm_year = val;
+#else
+            /*
+             * Nothing so far; make a decision about what we think the input
+             * is.	There used to be lots of heuristics here, but the
+             * consensus now is to be paranoid.  It *must* be either
+             * YYYY-MM-DD (with a more-than-two-digit year field), or the
+             * field order defined by u_sess->time_cxt.DateOrder.
+             */
+            if (flen >= 3 || u_sess->time_cxt.DateOrder == DATEORDER_YMD) {
+                *tmask = DTK_M(YEAR);
+                tm->tm_year = val;
+            } else if (u_sess->time_cxt.DateOrder == DATEORDER_DMY) {
+                *tmask = DTK_M(DAY);
+                tm->tm_mday = val;
+            } else {
+                *tmask = DTK_M(MONTH);
+                tm->tm_mon = val;
+            }
+#endif
             break;
 
         case (DTK_M(YEAR)):
@@ -2352,7 +2485,11 @@ static int DecodeNumber(int flen, char* str, bool haveTextMonth, unsigned int fm
      * or two digits.
      */
     if (*tmask == DTK_M(YEAR))
+#ifdef DOLPHIN
         *is2digits = (flen == 2);
+#else
+        *is2digits = (flen <= 2);
+#endif
 
     return 0;
 }
@@ -3320,7 +3457,11 @@ void EncodeDateOnlyForBDatabase(struct pg_tm* tm, int style, char* str)
         case USE_ISO_DATES:
         case USE_XSD_DATES:
             /* compatible with ISO date formats */
+#ifdef DOLPHIN
             if (tm->tm_year >= 0)
+#else
+            if (tm->tm_year > 0)
+#endif
                 rc = sprintf_s(str, MAXDATELEN + 1, "%04d-%02d-%02d", tm->tm_year, tm->tm_mon, tm->tm_mday);
             else
                 rc = sprintf_s(
@@ -3337,8 +3478,11 @@ void EncodeDateOnlyForBDatabase(struct pg_tm* tm, int style, char* str)
             securec_check_ss(rc, "\0", "\0");
 
             str_len = strlen(str);
-
+#ifdef DOLPHIN
             if (tm->tm_year >= 0)
+#else
+            if (tm->tm_year > 0)
+#endif
                 rc = sprintf_s(str + str_len, MAXDATELEN + 1 - str_len, "/%04d", tm->tm_year);
             else
                 rc = sprintf_s(str + str_len, MAXDATELEN + 1 - str_len, "/%04d %s", -(tm->tm_year - 1), "BC");
@@ -3352,7 +3496,11 @@ void EncodeDateOnlyForBDatabase(struct pg_tm* tm, int style, char* str)
 
             str_len = strlen(str);
 
+#ifdef DOLPHIN
             if (tm->tm_year >= 0)
+#else
+            if (tm->tm_year > 0)
+#endif
                 rc = sprintf_s(str + str_len, MAXDATELEN + 1 - str_len, ".%04d", tm->tm_year);
             else
                 rc = sprintf_s(str + str_len, MAXDATELEN + 1 - str_len, ".%04d %s", -(tm->tm_year - 1), "BC");
@@ -3370,7 +3518,11 @@ void EncodeDateOnlyForBDatabase(struct pg_tm* tm, int style, char* str)
 
             str_len = strlen(str);
 
+#ifdef DOLPHIN
             if (tm->tm_year >= 0)
+#else
+            if (tm->tm_year > 0)
+#endif
                 rc = sprintf_s(str + str_len, MAXDATELEN + 1 - str_len, "-%04d", tm->tm_year);
             else
                 rc = sprintf_s(str + str_len, MAXDATELEN + 1 - str_len, "-%04d %s", -(tm->tm_year - 1), "BC");
@@ -3439,7 +3591,11 @@ void EncodeDateTimeForBDatabase(struct pg_tm* tm, fsec_t fsec, bool print_tz, in
                 rc = sprintf_s(str,
                     MAXDATELEN + 1,
                     "%04d-%02d-%02d %02d:%02d:",
+#ifdef DOLPHIN
                     (tm->tm_year >= 0) ? tm->tm_year : -(tm->tm_year - 1),
+#else
+                    (tm->tm_year > 0) ? tm->tm_year : -(tm->tm_year - 1),
+#endif
                     tm->tm_mon,
                     tm->tm_mday,
                     tm->tm_hour,
@@ -3449,7 +3605,11 @@ void EncodeDateTimeForBDatabase(struct pg_tm* tm, fsec_t fsec, bool print_tz, in
                 rc = sprintf_s(str,
                     MAXDATELEN + 1,
                     "%04d-%02d-%02dT%02d:%02d:",
+#ifdef DOLPHIN
                     (tm->tm_year >= 0) ? tm->tm_year : -(tm->tm_year - 1),
+#else
+                    (tm->tm_year > 0) ? tm->tm_year : -(tm->tm_year - 1),
+#endif
                     tm->tm_mon,
                     tm->tm_mday,
                     tm->tm_hour,
@@ -3460,8 +3620,12 @@ void EncodeDateTimeForBDatabase(struct pg_tm* tm, fsec_t fsec, bool print_tz, in
 
             if (print_tz)
                 EncodeTimezone(str, tz, style);
-
-            if (tm->tm_year < 0) {
+#ifdef DOLPHIN
+            if (tm->tm_year < 0)
+#else
+            if (tm->tm_year <= 0)
+#endif
+            {
                 rc = sprintf_s(str + strlen(str), MAXDATELEN + 1 - strlen(str), " BC");
                 securec_check_ss(rc, "\0", "\0");
             }
@@ -3478,7 +3642,11 @@ void EncodeDateTimeForBDatabase(struct pg_tm* tm, fsec_t fsec, bool print_tz, in
             rc = sprintf_s(str + 5,
                 MAXDATELEN - 4,
                 "/%04d %02d:%02d:",
+#ifdef DOLPHIN
                 (tm->tm_year >= 0) ? tm->tm_year : -(tm->tm_year - 1),
+#else
+                (tm->tm_year > 0) ? tm->tm_year : -(tm->tm_year - 1),
+#endif
                 tm->tm_hour,
                 tm->tm_min);
             securec_check_ss(rc, "\0", "\0");
@@ -3498,8 +3666,12 @@ void EncodeDateTimeForBDatabase(struct pg_tm* tm, fsec_t fsec, bool print_tz, in
                 } else
                     EncodeTimezone(str, tz, style);
             }
-
-            if (tm->tm_year < 0) {
+#ifdef DOLPHIN
+            if (tm->tm_year < 0)
+#else
+			if (tm->tm_year <= 0)
+#endif
+            {
                 rc = sprintf_s(str + strlen(str), MAXDATELEN + 1 - strlen(str), " BC");
                 securec_check_ss(rc, "\0", "\0");
             }
@@ -3513,7 +3685,11 @@ void EncodeDateTimeForBDatabase(struct pg_tm* tm, fsec_t fsec, bool print_tz, in
             rc = sprintf_s(str + 5,
                 MAXDATELEN - 4,
                 ".%04d %02d:%02d:",
+#ifdef DOLPHIN
                 (tm->tm_year >= 0) ? tm->tm_year : -(tm->tm_year - 1),
+#else
+                (tm->tm_year > 0) ? tm->tm_year : -(tm->tm_year - 1),
+#endif
                 tm->tm_hour,
                 tm->tm_min);
             securec_check_ss(rc, "\0", "\0");
@@ -3527,8 +3703,12 @@ void EncodeDateTimeForBDatabase(struct pg_tm* tm, fsec_t fsec, bool print_tz, in
                 } else
                     EncodeTimezone(str, tz, style);
             }
-
-            if (tm->tm_year < 0) {
+#ifdef DOLPHIN
+            if (tm->tm_year < 0)
+#else
+            if (tm->tm_year <= 0)
+#endif
+            {
                 rc = sprintf_s(str + strlen(str), MAXDATELEN + 1 - strlen(str), " BC");
                 securec_check_ss(rc, "\0", "\0");
             }
@@ -3558,7 +3738,11 @@ void EncodeDateTimeForBDatabase(struct pg_tm* tm, fsec_t fsec, bool print_tz, in
             rc = sprintf_s(str + strlen(str),
                 MAXDATELEN + 1 - strlen(str),
                 " %04d",
+#ifdef DOLPHIN
                 (tm->tm_year >= 0) ? tm->tm_year : -(tm->tm_year - 1));
+#else
+                (tm->tm_year > 0) ? tm->tm_year : -(tm->tm_year - 1));
+#endif
             securec_check_ss(rc, "\0", "\0");
 
             if (print_tz) {
@@ -3577,8 +3761,12 @@ void EncodeDateTimeForBDatabase(struct pg_tm* tm, fsec_t fsec, bool print_tz, in
                     EncodeTimezone(str, tz, style);
                 }
             }
-
-            if (tm->tm_year < 0) {
+#ifdef DOLPHIN
+            if (tm->tm_year < 0)
+#else
+            if (tm->tm_year <= 0)
+#endif
+            {
                 rc = sprintf_s(str + strlen(str), MAXDATELEN + 1 - strlen(str), " BC");
                 securec_check_ss(rc, "\0", "\0");
             }
@@ -4342,7 +4530,7 @@ Interval *char_to_interval(char *str, int32 typmod) {
     check_dtype (dtype, tm, fsec, result, str);
     return result;
 }
-
+#ifdef DOLPHIN
 /* Convert a double value into pg_tm based on 1970-01-01 00:00:00 UTC, in timezone 0.
  * Therefore, you may need to add the timezone offset outside.
  * @param unixtimestamp seconds from 1970-01-01 00:00:00
@@ -4402,13 +4590,13 @@ bool numeric_to_lldiv_t(NumericVar *from, lldiv_t *to)
     int frac_start_pos = int_end_pos + 1;
     /* Avoid to overflow. */
     if (int_end_pos > (DEC_DIGITS + 1) ||
-        from->weight > 0 && from->digits[0] > LONG_LONG_MAX / pow_of_10[from->weight]) {
+        (from->weight > 0 && from->digits[0] > (int64)(LONG_LONG_MAX / pow_of_10[from->weight]))) {
         to->quot = LONG_LONG_MAX;
         to->rem = 0;
         return false;
     }
 
-    for (int i = from->weight, j = 0; i >= 0; i--, j++) {
+    for (int i = from->weight, j = 0; i >= 0 && j < from->ndigits; i--, j++) {
         to->quot += from->digits[j] * pow_of_10[i * DEC_DIGITS];
     }
 
@@ -4428,3 +4616,4 @@ bool numeric_to_lldiv_t(NumericVar *from, lldiv_t *to)
 
     return true;
 }
+#endif

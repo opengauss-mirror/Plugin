@@ -46,6 +46,7 @@
 #include "vecexecutor/vechashtable.h"
 #include "vecexecutor/vechashagg.h"
 #include "vectorsonic/vsonichashagg.h"
+#ifdef DOLPHIN
 #include "plugin_commands/mysqlmode.h"
 
 #ifndef CRCMASK
@@ -65,6 +66,7 @@
 #ifndef BASE_SCOPE
 #define MAXBASE 36
 #define MINBASE 2
+#endif
 #endif
 
 /* ----------
@@ -97,7 +99,7 @@ typedef struct {
 #define DatumGetNumericAbbrev(d) ((int32)(d))
 #define NUMERIC_ABBREV_NAN Int32GetDatum(PG_INT32_MIN)
 #endif
-
+#ifdef DOLPHIN
 PG_FUNCTION_INFO_V1_PUBLIC(bin_string);
 extern "C" DLL_PUBLIC Datum bin_string(PG_FUNCTION_ARGS);
 
@@ -107,6 +109,7 @@ extern "C" DLL_PUBLIC Datum bin_integer(PG_FUNCTION_ARGS);
 
 PG_FUNCTION_INFO_V1_PUBLIC(bin_bool);
 extern "C" DLL_PUBLIC Datum bin_bool(PG_FUNCTION_ARGS);
+#endif
 /* ----------
  * Some preinitialized constants
  * ----------
@@ -181,9 +184,12 @@ static void dump_var(const char* str, NumericVar* var);
 static void alloc_var(NumericVar* var, int ndigits);
 static void zero_var(NumericVar* var);
 
+static void init_ro_var_from_var(const NumericVar* value, NumericVar* dest);
+
 static const char* set_var_from_str(const char* str, const char* cp, NumericVar* dest);
 static void set_var_from_num(Numeric value, NumericVar* dest);
 static void set_var_from_var(const NumericVar* value, NumericVar* dest);
+static void init_var_from_var(const NumericVar *value, NumericVar *dest);
 static char* get_str_from_var(NumericVar* var);
 static char* get_str_from_var_sci(NumericVar* var, int rscale);
 
@@ -231,7 +237,8 @@ static void trunc_var(NumericVar* var, int rscale);
 static void strip_var(NumericVar* var);
 static void compute_bucket(
     Numeric operand, Numeric bound1, Numeric bound2, NumericVar* count_var, NumericVar* result_var);
-
+static void remove_tail_zero(char *ascii);
+#ifdef DOLPHIN
 extern Numeric int64_to_numeric(int64 v);
 extern const char* extract_numericstr(const char* str);
 PG_FUNCTION_INFO_V1_PUBLIC(uint1_sum);
@@ -264,6 +271,10 @@ PG_FUNCTION_INFO_V1_PUBLIC(numeric_cast_uint2);
 PG_FUNCTION_INFO_V1_PUBLIC(numeric_cast_uint4);
 PG_FUNCTION_INFO_V1_PUBLIC(numeric_cast_uint8);
 
+PG_FUNCTION_INFO_V1_PUBLIC(conv_str);
+PG_FUNCTION_INFO_V1_PUBLIC(conv_num);
+PG_FUNCTION_INFO_V1_PUBLIC(crc32);
+
 extern "C" DLL_PUBLIC Datum numeric_uint1(PG_FUNCTION_ARGS);
 extern "C" DLL_PUBLIC Datum numeric_uint2(PG_FUNCTION_ARGS);
 extern "C" DLL_PUBLIC Datum numeric_uint4(PG_FUNCTION_ARGS);
@@ -293,6 +304,11 @@ extern "C" DLL_PUBLIC Datum numeric_cast_uint2(PG_FUNCTION_ARGS);
 extern "C" DLL_PUBLIC Datum numeric_cast_uint4(PG_FUNCTION_ARGS);
 extern "C" DLL_PUBLIC Datum numeric_cast_uint8(PG_FUNCTION_ARGS);
 
+extern "C" DLL_PUBLIC Datum conv_str(PG_FUNCTION_ARGS);
+extern "C" DLL_PUBLIC Datum conv_num(PG_FUNCTION_ARGS);
+extern "C" DLL_PUBLIC Datum crc32(PG_FUNCTION_ARGS);
+
+#endif
 /*
  * @Description: call corresponding big integer operator functions.
  *
@@ -406,12 +422,12 @@ Datum numeric_in(PG_FUNCTION_ARGS)
 }
 
 /*
- * numeric_out() -
+ * numeric_out_with_zero -
  *
  *	Output function for numeric data type.
  *	include bi64 and bi128 type
  */
-Datum numeric_out(PG_FUNCTION_ARGS)
+Datum numeric_out_with_zero(PG_FUNCTION_ARGS)
 {
     Numeric num = PG_GETARG_NUMERIC(0);
     NumericVar x;
@@ -452,6 +468,24 @@ Datum numeric_out(PG_FUNCTION_ARGS)
     PG_FREE_IF_COPY(num, 0);
 
     PG_RETURN_CSTRING(str);
+}
+
+/*
+ * numeric_out() -
+ *
+ *  Output function for numeric data type.
+ *  include bi64 and bi128 type
+ *  Call function numeric_out_with_zero with pg origin logic, and then check if need trunc tail zero or not.
+ */
+Datum numeric_out(PG_FUNCTION_ARGS)
+{
+    char* ans = DatumGetCString(numeric_out_with_zero(fcinfo));
+
+    if (TRUNC_NUMERIC_TAIL_ZERO) {
+        remove_tail_zero(ans);
+    }
+
+    PG_RETURN_CSTRING(ans);
 }
 
 /*
@@ -950,20 +984,18 @@ Datum numeric_sign(PG_FUNCTION_ARGS)
             PG_RETURN_NUMERIC(make_result(&const_nan));
     }
 
-    init_var(&result);
-
     /*
      * The packed format is known to be totally zero digit trimmed always. So
      * we can identify a ZERO by the fact that there are no digits at all.
      */
     if (NUMERIC_NDIGITS(num) == 0)
-        set_var_from_var(&const_zero, &result);
+        init_ro_var_from_var(&const_zero, &result);
     else {
         /*
          * And if there are some, we return a copy of ONE with the sign of our
          * argument
          */
-        set_var_from_var(&const_one, &result);
+        init_ro_var_from_var(&const_one, &result);
         result.sign = NUMERIC_SIGN(num);
     }
 
@@ -2216,7 +2248,7 @@ Datum numeric_add(PG_FUNCTION_ARGS)
     init_var_from_num(num1, &arg1);
     init_var_from_num(num2, &arg2);
 
-    init_var(&result);
+    quick_init_var(&result);
     add_var(&arg1, &arg2, &result);
 
     res = make_result(&result);
@@ -2265,7 +2297,7 @@ Datum numeric_sub(PG_FUNCTION_ARGS)
     init_var_from_num(num1, &arg1);
     init_var_from_num(num2, &arg2);
 
-    init_var(&result);
+    quick_init_var(&result);
     sub_var(&arg1, &arg2, &result);
 
     res = make_result(&result);
@@ -2686,7 +2718,7 @@ Datum numeric_sqrt(PG_FUNCTION_ARGS)
      */
     init_var_from_num(num, &arg);
 
-    init_var(&result);
+    quick_init_var(&result);
 
     /* Assume the input was normalized, so arg.weight is accurate */
     sweight = (arg.weight + 1) * DEC_DIGITS / 2 - 1;
@@ -2699,12 +2731,15 @@ Datum numeric_sqrt(PG_FUNCTION_ARGS)
     /*
      * Let sqrt_var() do the calculation and return the result.
      */
+#ifdef DOLPHIN
     bool is_null = false;
     sqrt_var(&arg, &result, rscale, true, &is_null);
     if (is_null) {
         PG_RETURN_NULL();
     }
-
+#else
+    sqrt_var(&arg, &result, rscale);
+#endif
     res = make_result(&result);
 
     free_var(&result);
@@ -2794,7 +2829,7 @@ Datum numeric_ln(PG_FUNCTION_ARGS)
     int ln_dweight;
     int rscale;
     uint16 numFlags = NUMERIC_NB_FLAGBITS(num);
-
+#ifdef DOLPHIN
     Numeric zero;
     NumericVar zero_var;
     init_var(&zero_var);
@@ -2804,7 +2839,7 @@ Datum numeric_ln(PG_FUNCTION_ARGS)
     if (cmp_numerics(num, zero) <= 0) {
         PG_RETURN_NULL();
     }
-
+#endif
     if (NUMERIC_FLAG_IS_NANORBI(numFlags)) {
         /*
          * Handle Big Integer
@@ -2854,7 +2889,7 @@ Datum numeric_log(PG_FUNCTION_ARGS)
     NumericVar result;
     uint16 num1Flags = NUMERIC_NB_FLAGBITS(num1);
     uint16 num2Flags = NUMERIC_NB_FLAGBITS(num2);
-
+#ifdef DOLPHIN
     /* create a numeric that value is zero */
     Numeric zero;
     NumericVar zero_var;
@@ -2865,7 +2900,7 @@ Datum numeric_log(PG_FUNCTION_ARGS)
     if (cmp_numerics(num1, zero) <= 0 || cmp_numerics(num2, zero) <= 0) {
         PG_RETURN_NULL();
     }
-
+#endif
     if (NUMERIC_FLAG_IS_NANORBI(num1Flags) || NUMERIC_FLAG_IS_NANORBI(num2Flags)) {
         /*
          * Handle NaN
@@ -3299,7 +3334,7 @@ Datum numeric_float8(PG_FUNCTION_ARGS)
         }
     }
 
-    tmp = DatumGetCString(DirectFunctionCall1(numeric_out, NumericGetDatum(num)));
+    tmp = DatumGetCString(DirectFunctionCall1(numeric_out_with_zero, NumericGetDatum(num)));
 
     result = DirectFunctionCall1(float8in, CStringGetDatum(tmp));
 
@@ -3376,14 +3411,14 @@ Datum numeric_float4(PG_FUNCTION_ARGS)
         }
     }
 
-    tmp = DatumGetCString(DirectFunctionCall1(numeric_out, NumericGetDatum(num)));
-    
+    tmp = DatumGetCString(DirectFunctionCall1(numeric_out_with_zero, NumericGetDatum(num)));
+
     if (fcinfo->can_ignore) {
         result = DirectFunctionCall1Coll(float4in, InvalidOid, CStringGetDatum(tmp), true);
     } else {
         result = DirectFunctionCall1(float4in, CStringGetDatum(tmp));
     }
-    
+
     pfree_ext(tmp);
 
     PG_RETURN_DATUM(result);
@@ -3848,8 +3883,6 @@ Datum int8_sum(PG_FUNCTION_ARGS)
     PG_RETURN_DATUM(DirectFunctionCall2(numeric_add, NumericGetDatum(oldsum), newval));
 }
 
-
-
 #ifdef PGXC
 /*
  * similar to int8_sum, except that the result is casted into int8
@@ -4299,6 +4332,21 @@ void init_var_from_num(Numeric num, NumericVar* dest)
 }
 
 /*
+ * init_ro_var_from_var() -
+ *
+ *	Initialize a variable from another variable
+ */
+static void init_ro_var_from_var(const NumericVar* value, NumericVar* dest)
+{
+    dest->ndigits = value->ndigits;
+    dest->weight = value->weight;
+    dest->sign = value->sign;
+    dest->dscale = value->dscale;
+    dest->digits = value->digits;
+    dest->buf = dest->ndb;
+}
+
+/*
  * set_var_from_var() -
  *
  *	Copy one variable into another
@@ -4323,9 +4371,32 @@ static void set_var_from_var(const NumericVar* value, NumericVar* dest)
     dest->digits = newbuf + 1;
 }
 
+/*
+ * init_var_from_var() -
+ *
+ *	init one variable from another - they must NOT be the same variable
+ */
+static void
+init_var_from_var(const NumericVar *value, NumericVar *dest)
+{
+    init_alloc_var(dest, value->ndigits);
+
+    dest->weight = value->weight;
+    dest->sign = value->sign;
+    dest->dscale = value->dscale;
+
+    if (value->ndigits > 0) {
+        errno_t rc = memcpy_s(dest->digits,
+                              value->ndigits * sizeof(NumericDigit),
+                              value->digits,
+                              value->ndigits * sizeof(NumericDigit));
+        securec_check(rc, "\0", "\0");
+    }
+}
+
 static void remove_tail_zero(char *ascii)
 {
-    if (!HIDE_TAILING_ZERO || ascii == NULL) {
+    if (ascii == NULL) {
         return;
     }
     int len = 0;
@@ -4487,7 +4558,9 @@ static char* get_str_from_var(NumericVar* var)
      * terminate the string and return it
      */
     *cp = '\0';
-    remove_tail_zero(str);
+    if (HIDE_TAILING_ZERO) {
+        remove_tail_zero(str);
+    }
     return str;
 }
 
@@ -4748,6 +4821,10 @@ static void apply_typmod(NumericVar* var, int32 typmod)
 /*
  * Convert numeric to int8, rounding if needed.
  *
+ * Note: param can_ignore controls the function raising ERROR or WARNING. TRUE means overflowing will report WARNING
+ * and set result to INT64_MAX/INT64_MIN instead. FALSE make it raise ERROR directly. FALSE DEFAULTED. It should be only
+ * used for controls of keyword IGNORE.
+ *
  * If overflow, return false (no error is raised).  Return true if okay.
  */
 bool numericvar_to_int64(const NumericVar* var, int64* result, bool can_ignore)
@@ -4792,12 +4869,22 @@ bool numericvar_to_int64(const NumericVar* var, int64* result, bool can_ignore)
     for (i = 1; i <= weight; i++) {
         if (unlikely(pg_mul_s64_overflow(val, NBASE, &val))) {
             free_var(&rounded);
+            if (can_ignore) {
+                *result = neg ? LONG_MIN : LONG_MAX;
+                ereport(WARNING, (errmsg("value out of range")));
+                return true;
+            }
             return false;
         }
 
         if (i < ndigits) {
             if (unlikely(pg_sub_s64_overflow(val, digits[i], &val))) {
                 free_var(&rounded);
+                if (can_ignore) {
+                    *result = neg ? LONG_MIN : LONG_MAX;
+                    ereport(WARNING, (errmsg("value out of range")));
+                    return true;
+                }
                 return false;
             }
         }
@@ -4862,7 +4949,7 @@ static double numeric_to_double_no_overflow(Numeric num)
     double val;
     char* endptr = NULL;
 
-    tmp = DatumGetCString(DirectFunctionCall1(numeric_out, NumericGetDatum(num)));
+    tmp = DatumGetCString(DirectFunctionCall1(numeric_out_with_zero, NumericGetDatum(num)));
 
     /* unlike float8in, we ignore ERANGE from strtod */
     val = strtod(tmp, &endptr);
@@ -5626,6 +5713,7 @@ static void div_var_fast(NumericVar* var1, NumericVar* var2, NumericVar* result,
     int var2ndigits = var2->ndigits;
     NumericDigit* var1digits = var1->digits;
     NumericDigit* var2digits = var2->digits;
+    int tdiv[NUMERIC_LOCAL_NDIG];
 
     /*
      * First of all division by zero check; we must not be handed an
@@ -5673,7 +5761,14 @@ static void div_var_fast(NumericVar* var1, NumericVar* var2, NumericVar* result,
      * position of dividend space.	A final pass of carry propagation takes
      * care of any mistaken quotient digits.
      */
-    div = (int*)palloc0((div_ndigits + 1) * sizeof(int));
+    i = (div_ndigits + 1) * sizeof(int);
+    if (div_ndigits > NUMERIC_LOCAL_NMAX) {
+        div = (int *) palloc0(i);
+    } else {
+        errno_t rc = memset_s(tdiv, i, 0, i);
+        securec_check(rc, "\0", "\0");
+        div = tdiv;
+    }
     for (i = 0; i < var1ndigits; i++)
         div[i + 1] = var1digits[i];
 
@@ -5816,7 +5911,9 @@ static void div_var_fast(NumericVar* var1, NumericVar* var2, NumericVar* result,
     }
     Assert(carry == 0);
 
-    pfree_ext(div);
+    if (div != tdiv) {
+        pfree_ext(div);
+    }
 
     /*
      * Finally, round the result to the requested precision.
@@ -5929,8 +6026,7 @@ static void ceil_var(NumericVar* var, NumericVar* result)
 {
     NumericVar tmp;
 
-    init_var(&tmp);
-    set_var_from_var(var, &tmp);
+    init_var_from_var(var, &tmp);
 
     trunc_var(&tmp, 0);
 
@@ -5951,8 +6047,7 @@ static void floor_var(NumericVar* var, NumericVar* result)
 {
     NumericVar tmp;
 
-    init_var(&tmp);
-    set_var_from_var(var, &tmp);
+    init_var_from_var(var, &tmp);
 
     trunc_var(&tmp, 0);
 
@@ -6000,12 +6095,9 @@ static void sqrt_var(NumericVar* arg, NumericVar* result, int rscale, bool is_ne
         }
     }
 
-    init_var(&tmp_arg);
-    init_var(&tmp_val);
-    init_var(&last_val);
 
     /* Copy arg in case it is the same var as result */
-    set_var_from_var(arg, &tmp_arg);
+    init_var_from_var(arg, &tmp_arg);
 
     /*
      * Initialize the result to the first guess
@@ -6017,7 +6109,8 @@ static void sqrt_var(NumericVar* arg, NumericVar* result, int rscale, bool is_ne
     result->weight = tmp_arg.weight / 2;
     result->sign = NUMERIC_POS;
 
-    set_var_from_var(result, &last_val);
+    init_var_from_var(result, &last_val);
+    quick_init_var(&tmp_val);
 
     for (;;) {
         div_var_fast(&tmp_arg, result, &tmp_val, local_rscale, true);
@@ -6247,14 +6340,14 @@ static void ln_var(NumericVar* arg, NumericVar* result, int rscale)
     init_var(&elem);
     init_var(&fact);
 
-    set_var_from_var(arg, &x);
-    set_var_from_var(&const_two, &fact);
+    init_var_from_var(arg, &x);
+    init_var_from_var(&const_two, &fact);
 
     /*
      * Reduce input into range 0.9 < x < 1.1 with repeated sqrt() operations.
      *
      * The final logarithm will have up to around rscale+6 significant digits.
-     * Each sqrt() will roughly halve the weight of x, so adjust the local
+     * Each sqrt() will roughly have the weight of x, so adjust the local
      * rscale as we work so that we keep this many significant digits at each
      * step (plus a few more for good measure).
      */
@@ -6748,6 +6841,7 @@ static void add_abs(NumericVar* var1, NumericVar* var2, NumericVar* result)
     int var2ndigits = var2->ndigits;
     NumericDigit* var1digits = var1->digits;
     NumericDigit* var2digits = var2->digits;
+    NumericDigit tdig[NUMERIC_LOCAL_NDIG];
 
     res_weight = Max(var1->weight, var2->weight) + 1;
 
@@ -6763,7 +6857,10 @@ static void add_abs(NumericVar* var1, NumericVar* var2, NumericVar* result)
         res_ndigits = 1;
     }
 
-    res_buf = digitbuf_alloc(res_ndigits + 1);
+    res_buf = tdig;
+    if (res_ndigits > NUMERIC_LOCAL_NMAX) {
+        res_buf = digitbuf_alloc(res_ndigits + 1);
+    }
     res_buf[0] = 0; /* spare digit for later rounding */
     res_digits = res_buf + 1;
 
@@ -6790,8 +6887,17 @@ static void add_abs(NumericVar* var1, NumericVar* var2, NumericVar* result)
 
     digitbuf_free(result);
     result->ndigits = res_ndigits;
-    result->buf = res_buf;
-    result->digits = res_digits;
+    if (res_buf != tdig) {
+        result->buf = res_buf;
+        result->digits = res_digits;
+    } else {
+        result->buf = result->ndb;
+        result->digits = result->buf;
+        errno_t rc = memcpy_s(result->buf, sizeof(NumericDigit) * (res_ndigits + 1),
+                              res_buf, sizeof(NumericDigit) * (res_ndigits + 1));
+        securec_check(rc, "\0", "\0");
+        result->digits ++;
+    }
     result->weight = res_weight;
     result->dscale = res_dscale;
 
@@ -6824,6 +6930,7 @@ static void sub_abs(NumericVar* var1, NumericVar* var2, NumericVar* result)
     int var2ndigits = var2->ndigits;
     NumericDigit* var1digits = var1->digits;
     NumericDigit* var2digits = var2->digits;
+    NumericDigit tdig[NUMERIC_LOCAL_NDIG];
 
     res_weight = var1->weight;
 
@@ -6839,7 +6946,10 @@ static void sub_abs(NumericVar* var1, NumericVar* var2, NumericVar* result)
         res_ndigits = 1;
     }
 
-    res_buf = digitbuf_alloc(res_ndigits + 1);
+    res_buf = tdig;
+    if (res_ndigits > NUMERIC_LOCAL_NMAX) {
+        res_buf = digitbuf_alloc(res_ndigits + 1);
+    }
     res_buf[0] = 0; /* spare digit for later rounding */
     res_digits = res_buf + 1;
 
@@ -6866,8 +6976,18 @@ static void sub_abs(NumericVar* var1, NumericVar* var2, NumericVar* result)
 
     digitbuf_free(result);
     result->ndigits = res_ndigits;
-    result->buf = res_buf;
-    result->digits = res_digits;
+    if (res_buf != tdig)
+    {
+        result->buf = res_buf;
+        result->digits = res_digits;
+    } else {
+        result->buf = result->ndb;
+        result->digits = result->buf;
+        errno_t rc = memcpy_s(result->buf, sizeof(NumericDigit) * (res_ndigits + 1),
+                              res_buf, sizeof(NumericDigit) * (res_ndigits + 1));
+        securec_check(rc, "\0", "\0");
+        result->digits ++;
+    }
     result->weight = res_weight;
     result->dscale = res_dscale;
 
@@ -7167,7 +7287,7 @@ Datum numtodsinterval(PG_FUNCTION_ARGS)
 
     StringInfoData str;
     initStringInfo(&str);
-    appendStringInfoString(&str, DatumGetCString(CHECK_RETNULL_CALL1(numeric_out, collation, num)));
+    appendStringInfoString(&str, DatumGetCString(CHECK_RETNULL_CALL1(numeric_out_with_zero, collation, num)));
     appendStringInfoString(&str, " ");
     appendStringInfoString(&str, TextDatumGetCString(fmt));
     cp = str.data;
@@ -7209,7 +7329,7 @@ Datum numeric_interval(PG_FUNCTION_ARGS)
     CHECK_RETNULL_INIT();
 
     initStringInfo(&str);
-    appendStringInfoString(&str, DatumGetCString(CHECK_RETNULL_CALL1(numeric_out, collation, num)));
+    appendStringInfoString(&str, DatumGetCString(CHECK_RETNULL_CALL1(numeric_out_with_zero, collation, num)));
     appendStringInfoString(&str, " ");
     appendStringInfoString(&str, fmt);
     cp = str.data;
@@ -19107,7 +19227,7 @@ int32 get_ndigit_from_numeric(Numeric num)
         if (NUMERIC_IS_BI(num)) {
             num = makeNumericNormal(num);
         }
-        string_from_numeric = DatumGetCString(DirectFunctionCall1(numeric_out, NumericGetDatum(num)));
+        string_from_numeric = DatumGetCString(DirectFunctionCall1(numeric_out_with_zero, NumericGetDatum(num)));
         string_length_from_numeric = strlen(string_from_numeric);
         for (i = 0; i < string_length_from_numeric; i++) {
             if (string_from_numeric[i] == '.') {
@@ -19201,6 +19321,7 @@ void int128_to_numericvar(int128 val, NumericVar* var)
     var->ndigits = ndigits;
     var->weight = ndigits - 1;
 }
+
 /*
  * Convert numeric to int16, rounding if needed.
  *
@@ -19354,7 +19475,7 @@ Datum bool_numeric(PG_FUNCTION_ARGS)
 
     PG_RETURN_NUMERIC(res);
 }
-
+#ifdef DOLPHIN
 static unsigned int crc32_cal(unsigned char *data, int len)
 {
     unsigned int crc = PG_UINT32_MAX;
@@ -20486,3 +20607,4 @@ Datum numeric_cast_uint8(PG_FUNCTION_ARGS)
 
     PG_RETURN_UINT64(result);
 }
+#endif

@@ -753,7 +753,7 @@ static bool check_ungrouped_columns_walker(Node* node, check_ungrouped_columns_c
 
 #ifndef ENABLE_MULTIPLE_NODES
     /* If There is ROWNUM, it must appear in the GROUP BY clause or be used in an aggregate function. */
-    if (IsA(node, Rownum)) {
+    if (IsA(node, Rownum) && context->sublevels_up == 0) {
         find_rownum_in_groupby_clauses((Rownum *)node, context);
     }
 #endif
@@ -826,7 +826,9 @@ static bool check_ungrouped_columns_walker(Node* node, check_ungrouped_columns_c
             attname = (attname != NULL) ? (attname + 1) : orig_attname;
         }
 
+#ifdef DOLPHIN
         if (SQL_MODE_FULL_GROUP()) {
+#endif
             if (context->sublevels_up == 0) {
                 ereport(ERROR,
                     (errcode(ERRCODE_GROUPING_ERROR),
@@ -844,8 +846,9 @@ static bool check_ungrouped_columns_walker(Node* node, check_ungrouped_columns_c
                         errmsg("subquery uses ungrouped column \"%s.%s\" from outer query", rte->eref->aliasname, attname),
                         parser_errposition(context->pstate, var->location)));
             }
+#ifdef DOLPHIN
         }
-
+#endif
         if (attname != NULL) {
             pfree_ext(attname);
         }
@@ -1506,10 +1509,16 @@ Oid resolve_aggregate_transtype(Oid aggfuncid, Oid aggtranstype, Oid* inputTypes
 #ifndef ENABLE_MULTIPLE_NODES
 static void find_rownum_in_groupby_clauses(Rownum *rownumVar, check_ungrouped_columns_context *context)
 {
-    bool haveRownum = false;
-    ListCell *gl = NULL;
-
-    if (!context->have_non_var_grouping || context->sublevels_up != 0) {
+    /*
+     * have_non_var_grouping makes SQL
+     * SELECT a + a FROM t GROUP BY a + a having rownum <= 1;
+     * allowed, but SQL
+     * SELECT a FROM t GROUP BY a having rownum <= 1;
+     * not allowed, which is different from O.
+     */
+    if (!context->have_non_var_grouping) {
+        bool haveRownum = false;
+        ListCell *gl = NULL;
         foreach (gl, context->groupClauses) {
             Node *gnode = (Node *)((TargetEntry *)lfirst(gl))->expr;
             if (IsA(gnode, Rownum)) {

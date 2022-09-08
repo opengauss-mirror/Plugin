@@ -122,8 +122,8 @@ static void transformStartWithClause(StartWithTransformContext *context, SelectS
 
 static List *expandAllTargetList(List *targetRelInfoList);
 
-static List *ExtractColumnRefStartInfo(ParseState *pstate, ColumnRef *column,
-                                            char *relname, char *colname);
+static List *ExtractColumnRefStartInfo(ParseState *pstate, ColumnRef *column, char *relname, char *colname,
+                                       Node *preResult);
 static void HandleSWCBColumnRef(StartWithTransformContext* context, Node *node);
 static void StartWithWalker(StartWithTransformContext *context, Node *expr);
 static void AddWithClauseToBranch(ParseState *pstate, SelectStmt *stmt, List *relInfoList);
@@ -331,6 +331,10 @@ void AddStartWithTargetRelInfo(ParseState* pstate, Node* relNode,
             startInfo->aliasname = sub->alias->aliasname;
         }
 
+        SelectStmt *substmt = (SelectStmt *)sub->subquery;
+        if (substmt->withClause == NULL) {
+            substmt->withClause = (WithClause *)copyObject(pstate->origin_with);
+        }
         startInfo->rte = rte;
         startInfo->rtr = rtr;
         startInfo->rtekind = rte->rtekind;
@@ -529,6 +533,21 @@ static bool preSkipPLSQLParams(ParseState *pstate, ColumnRef *cref)
     return false;
 }
 
+/**
+ * @param preResult Var struct
+ * @return true if is a upper query column
+ */
+static inline bool IsAUpperQueryColumn(Node *preResult)
+{
+    if (IsA(preResult, Var)) {
+        Var *varNode = (Var *)preResult;
+        if (!IS_SPECIAL_VARNO(varNode->varno) && varNode->varlevelsup >= 1) {
+            return true;
+        }
+    }
+    return false;
+}
+
 /*
  * --------------------------------------------------------------------------------------
  * @Brief: to be input
@@ -538,8 +557,8 @@ static bool preSkipPLSQLParams(ParseState *pstate, ColumnRef *cref)
  * @Return: to be input
  * --------------------------------------------------------------------------------------
  */
-static List *ExtractColumnRefStartInfo(ParseState *pstate, ColumnRef *column,
-                                           char *relname, char *colname)
+static List *ExtractColumnRefStartInfo(ParseState *pstate, ColumnRef *column, char *relname, char *colname,
+                                       Node *preResult)
 {
     ListCell *lc1 = NULL;
     ListCell *lc2 = NULL;
@@ -608,7 +627,7 @@ static List *ExtractColumnRefStartInfo(ParseState *pstate, ColumnRef *column,
                 errmsg("column reference \"%s\" is ambiguous.", colname)));
     }
 
-    if (list_length(extract_infos) == 0) {
+    if (list_length(extract_infos) == 0 && !IsAUpperQueryColumn(preResult)) {
         ereport(WARNING,
                (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
                errmsg("Cannot match table with startwith/connectby column %s.%s, maybe it is a upper query column",
@@ -673,19 +692,30 @@ static void HandleSWCBColumnRef(StartWithTransformContext *context, Node *node)
              * which will be helpful for after SWCB rewrite. So here columnref will contain
              * two fields after ExtractColumnRefStartInfo.
              */
-            result = ExtractColumnRefStartInfo(pstate, column, NULL, colname);
+            result = ExtractColumnRefStartInfo(pstate, column, NULL, colname, preResult);
 
-            if (prior) {
-                char *dummy = makeStartWithDummayColname(
-                                            strVal(linitial(column->fields)),
-                                            strVal(lsecond(column->fields)));
-
-                column->fields = list_make2(makeString("tmp_reuslt"), makeString(dummy));
-
-                /* record working table name */
-                context->connectby_prior_name = lappend(context->connectby_prior_name,
-                                                        makeString(dummy));
+            if (!prior) {
+                break;
             }
+
+            if (list_length(column->fields) <= 1) {
+                ereport(ERROR,
+                    (errmodule(MOD_PARSER), errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+                        errmsg("Invalid column reference in START WITH / CONNECT BY clause."),
+                        errdetail("The column referred to may not exist."),
+                        errcause("Usually this happens when the column referred to does not exist."),
+                        erraction("Check and revise your query or contact Huawei engineers.")));
+            }
+
+            char *dummy = makeStartWithDummayColname(
+                                        strVal(linitial(column->fields)),
+                                        strVal(lsecond(column->fields)));
+
+            column->fields = list_make2(makeString("tmp_reuslt"), makeString(dummy));
+
+            /* record working table name */
+            context->connectby_prior_name = lappend(context->connectby_prior_name,
+                                                        makeString(dummy));
 
             break;
         }
@@ -695,7 +725,7 @@ static void HandleSWCBColumnRef(StartWithTransformContext *context, Node *node)
             relname = strVal(field1);
             colname = strVal(field2);
 
-            result = ExtractColumnRefStartInfo(pstate, column, relname, colname);
+            result = ExtractColumnRefStartInfo(pstate, column, relname, colname, preResult);
 
             if (prior) {
                 char *dummy = makeStartWithDummayColname(strVal(linitial(column->fields)),
@@ -880,6 +910,12 @@ static void StartWithWalker(StartWithTransformContext *context, Node *expr)
             break;
         }
 
+        case T_CoalesceExpr: {
+            Node* node = (Node *)(((CoalesceExpr*)expr)->args);
+            StartWithWalker(context, node);
+            break;
+        }
+
         case T_CollateClause: {
             CollateClause *cc = (CollateClause*) expr;
             StartWithWalker(context, cc->arg);
@@ -898,6 +934,10 @@ static void StartWithWalker(StartWithTransformContext *context, Node *expr)
             foreach (lc, l) {
                 StartWithWalker(context, (Node*)lfirst(lc));
             }
+            break;
+        }
+
+        case T_A_ArrayExpr: {
             break;
         }
 
@@ -1091,10 +1131,12 @@ static void transformStartWithClause(StartWithTransformContext *context, SelectS
         raw_expression_tree_walker((Node*)context->connectByExpr,
             (bool (*)())pseudo_level_rownum_walker, (Node*)context->connectByExpr);
         checkConnectByExprValidity((Node*)connectByExpr);
+        StartWithWalker(context, connectByExpr);
         context->relInfoList = context->pstate->p_start_info;
-        context->connect_by_type = CONNECT_BY_LEVEL;
-        context->connectByLevelExpr = connectByExpr;
-        context->connectByOtherExpr = NULL;
+        if (context->connect_by_type != CONNECT_BY_PRIOR) {
+            context->connectByLevelExpr = connectByExpr;
+            context->connectByOtherExpr = NULL;
+        }
     }
 
     /* transform start with ... connect by's expr */
@@ -1103,12 +1145,24 @@ static void transformStartWithClause(StartWithTransformContext *context, SelectS
         StartWithWalker(context, connectByExpr);
     }
 
-    /* now handle where quals which could whole push down */
+    /*
+     * now handle where quals which might need to be pushed down.
+     * 1. this is necessary only for implicitly joined tables
+     *    such as ... FROM t1,t2 WHERE t1.xx = t2.yy ...
+     * 2. note that only join quals should be pushed down while
+     *    non-join quals such as (t1.xx < n) should be kept in the outer loop
+     *    of the CTE scan, otherwise the end-result will be different from
+     *    those produced by the standard swcb syntax.
+     * (the issue here is that implicitly joined tables are difficult to handle
+     *  in our implementation of start with .. connect by .. syntax,
+     *  as we don't have a clear cut of join quals from the non-join quals at this stage.
+     *  users should be encouraged to use explicity joined tables whenever
+     *  possible before a clear-cut solution is implemented.)
+     */
     int lens = list_length(context->pstate->p_start_info);
     if (lens != 1) {
         Node *whereClause = (Node *)copyObject(stmt->whereClause);
         context->whereClause = whereClause;
-        stmt->whereClause = NULL;
     }
 
 
@@ -1256,6 +1310,57 @@ static void AddWithClauseToBranch(ParseState *pstate, SelectStmt *stmt, List *re
     return;
 }
 
+static bool count_columnref_walker(Node *node, int *columnref_count)
+{
+    if (node == NULL) {
+        return false;
+    }
+
+    if (!IsA(node, ColumnRef)) {
+        return raw_expression_tree_walker(node, (bool (*)()) count_columnref_walker, (void*)columnref_count);
+    }
+
+    *columnref_count = *columnref_count + 1;
+
+    return false;
+}
+
+static bool walker_to_exclude_non_join_quals(Node *node, Node *context_node)
+{
+    if (node == NULL) {
+        return false;
+    }
+
+    if (!IsA(node, A_Expr)) {
+        return raw_expression_tree_walker(node, (bool (*)()) walker_to_exclude_non_join_quals, (void*)NULL);
+    }
+
+    A_Expr* expr = (A_Expr*) node;
+    if (expr->kind != AEXPR_OP) {
+        return raw_expression_tree_walker(node, (bool (*)()) walker_to_exclude_non_join_quals, (void*)NULL);
+    }
+
+    /*
+     * this is to achieve consistent result sets with those produced by the original
+     * start with .. connect by syntax, which does not push filter quals down to connect quals.
+     * if no more than one column item appears inside an AEXPR_OP, we guess that it is
+     * not a join qual so should not be filtered in sw op, and force it to be true.
+     * this rule is not always correct but should work fine most of the time.
+     * could be improved later on, e.g. find better ways to extract non-join quals
+     * from the where clause.
+     */
+    int columnref_count = 0;
+    (void) raw_expression_tree_walker(node, (bool (*)()) count_columnref_walker, (void*)&columnref_count);
+
+    if (columnref_count <= 1) {
+        expr->lexpr = makeBoolAConst(true, -1);
+        expr->rexpr = makeBoolAConst(true, -1);
+        expr->kind = AEXPR_OR;
+    }
+
+    return false;
+}
+
 /*
  * --------------------------------------------------------------------------------------
  * @Brief: Create SWCB's conversion CTE's inner branch, normally we add ConnectByExpr to
@@ -1314,6 +1419,10 @@ static SelectStmt *CreateStartWithCTEInnerBranch(ParseState* pstate,
             JoinExpr *final_join = (JoinExpr *)origin_table;
             /* pushdown requires deep copying of the quals */
             Node *whereCopy = (Node *)copyObject(whereClause);
+            /* only join quals can be pushed down */
+            raw_expression_tree_walker((Node *)whereCopy,
+                (bool (*)())walker_to_exclude_non_join_quals, (void*)NULL);
+
             if (final_join->quals == NULL) {
                 final_join->quals = whereCopy;
             } else {
@@ -1420,11 +1529,18 @@ static SelectStmt *CreateStartWithCTEOuterBranch(ParseState *pstate,
 
     /* push whereClause down to init part, taking care to avoid NULL in expr. */
     quals = (Node *)startWithExpr;
+    Node* whereClauseCopy = (Node *)copyObject(whereClause);
+
+    if (whereClause != NULL) {
+        /* only join quals can be pushed down */
+        raw_expression_tree_walker((Node*)whereClauseCopy,
+            (bool (*)())walker_to_exclude_non_join_quals, (void*)NULL);
+    }
+
     if (quals == NULL) {
-        /* pushdown requires deep copying of the quals */
-        quals = (Node *)copyObject(whereClause);
+        quals = whereClauseCopy;
     } else if (whereClause != NULL) {
-        quals = (Node *)makeA_Expr(AEXPR_AND, NULL, (Node *)copyObject(whereClause),
+        quals = (Node *)makeA_Expr(AEXPR_AND, NULL, whereClauseCopy,
             (Node*)startWithExpr, -1);
     }
 

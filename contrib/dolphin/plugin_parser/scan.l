@@ -101,7 +101,9 @@ static void addunicode(pg_wchar c, yyscan_t yyscanner);
 static void check_string_escape_warning(unsigned char ychar, core_yyscan_t yyscanner);
 static void check_escape_warning(core_yyscan_t yyscanner);
 static bool is_trans_stmt(const char *haystack, int haystack_len);
+#ifdef DOLPHIN
 static void dealSahrpComment(core_yyscan_t yyscanner);
+#endif
 /*
  * Work around a bug in flex 2.5.35: it emits a couple of functions that
  * it forgets to emit declarations for.  Since we use -Wmissing-prototypes,
@@ -110,7 +112,9 @@ static void dealSahrpComment(core_yyscan_t yyscanner);
  */
 extern int	core_yyget_column(yyscan_t yyscanner);
 extern void core_yyset_column(int column_no, yyscan_t yyscanner);
+#ifdef DOLPHIN
 static char* CopyIdentifier(const char* ident, int len, bool warn);
+#endif
 %}
 
 %option reentrant
@@ -362,7 +366,13 @@ param			\${integer}
 
 newParam		:({identifier}|{integer})
 
-newArray		:({integer}{space}*\])
+newArray		:({identifier}|{integer}){space}*\]
+
+set_user_cont			[A-Za-z\377_0-9\$\.]
+set_user_escape_quote		[^']
+set_user_escape_dquote		[^"]
+set_user_escape_bquote		[^`]	
+setUserIdentifier		@(({set_user_cont}+)|(\'{set_user_escape_quote}+\')|(\"{set_user_escape_dquote}+\")|(\`{set_user_escape_bquote}+\`))
 
 other			.
 
@@ -748,7 +758,7 @@ other			.
 					if (yyextra->literallen == 0)
 						yyerror("zero-length delimited identifier");
 					ident = litbufdup(yyscanner);
-					if (yyextra->literallen >= NAMEDATALEN && u_sess->parser_cxt.is_load_copy == false)
+					if (yyextra->literallen >= NAMEDATALEN && u_sess->parser_cxt.is_load_copy == false && u_sess->parser_cxt.isForbidTruncate == false)
 						truncate_identifier(ident, yyextra->literallen, yyextra->warnOnTruncateIdent);
 					yylval->str = ident;
 					yyextra->ident_quoted = true;
@@ -764,7 +774,7 @@ other			.
 						yyerror("zero-length delimited identifier");
 					ident = litbuf_udeescape('\\', yyscanner);
 					identlen = strlen(ident);
-					if (identlen >= NAMEDATALEN && u_sess->parser_cxt.is_load_copy == false)
+					if (identlen >= NAMEDATALEN && u_sess->parser_cxt.is_load_copy == false && u_sess->parser_cxt.isForbidTruncate == false)
 						truncate_identifier(ident, identlen, yyextra->warnOnTruncateIdent);
 					yylval->str = ident;
 					/* throw back all but the quote */
@@ -782,7 +792,7 @@ other			.
 						yyerror("zero-length delimited identifier");
 					ident = litbuf_udeescape(yytext[yyleng - 2], yyscanner);
 					identlen = strlen(ident);
-					if (identlen >= NAMEDATALEN && u_sess->parser_cxt.is_load_copy == false)
+					if (identlen >= NAMEDATALEN && u_sess->parser_cxt.is_load_copy == false && u_sess->parser_cxt.isForbidTruncate == false)
 						truncate_identifier(ident, identlen, yyextra->warnOnTruncateIdent);
 					yylval->str = ident;
 					yyextra->ident_quoted = false;
@@ -884,7 +894,7 @@ other			.
 						slashstar = dashdash;
 					if (slashstar)
 						nchars = slashstar - yytext;
-
+#ifdef DOLPHIN
 					if(nchars >= 1 &&  GetSessionContext()->enableBCmptMode)
                                          {
                                                 char   *sharpchar = strstr(yytext, "#");
@@ -899,7 +909,7 @@ other			.
                                                         }
                                                 }
                                          }
-
+#endif
 					/*
 					 * For SQL compatibility, '+' and '-' cannot be the
 					 * last char of a multi-char operator unless the operator
@@ -966,15 +976,24 @@ other			.
 						yyextra->is_hint_str = false;
 						return CmpOp;
 					}
+					else if (strcmp(yytext, "<=>") == 0 && (u_sess->attr.attr_sql.sql_compatibility == B_FORMAT))
+					{
+						yylval->str = pstrdup(yytext);
+						yyextra->is_hint_str = false;
+						return CmpNullOp;
+					}
 					else
 						yylval->str = pstrdup(yytext);
 					yyextra->is_hint_str = false;
 					return Op;
+#ifdef DOLPHIN
 					end:
 						nchars = nchars;
+#endif
 				}
 {newArray}		{
 					yyless(1);
+					SET_YYLLOC();
 					yyextra->is_hint_str = false;
 					return yytext[0];
 				}
@@ -1066,8 +1085,11 @@ other			.
 
 					if (keyword != NULL)
 					{
-						yylval->keyword = pstrdup(yytext);
-
+#ifdef DOLPHIN
+						yylval->keyword = (GetSessionContext()->lower_case_table_names == 0) ? pstrdup(yytext) : keyword->name;
+#else
+						yylval->keyword = keyword->name;
+#endif
 						/* Find the CREATE PROCEDURE syntax and set dolqstart. */
 						if (keyword->value == CREATE)
 						{
@@ -1105,8 +1127,9 @@ other			.
 						{
 							yyextra->is_hint_str = true;
 						}
-
+#ifdef DOLPHIN
 						yyextra->ident_quoted = false;
+#endif
 						return keyword->value;
 					}
 
@@ -1114,6 +1137,7 @@ other			.
 					 * No.  Convert the identifier to lower case, and truncate
 					 * if necessary.
 					 */
+#ifdef DOLPHIN
 					char* sharpcomment = strstr(yytext,"#");
 					if(sharpcomment && GetSessionContext()->enableBCmptMode)
 					{
@@ -1124,9 +1148,26 @@ other			.
 						
 					}
 					ident = CopyIdentifier(yytext, yyleng, yyextra->warnOnTruncateIdent);
+#else
+                    ident = downcase_truncate_identifier(yytext, yyleng, yyextra->warnOnTruncateIdent);
+#endif
 					yylval->str = ident;
 					yyextra->ident_quoted = false;
 					return IDENT;
+				}
+
+{setUserIdentifier}	{
+					if (u_sess->attr.attr_sql.sql_compatibility == B_FORMAT && u_sess->attr.attr_common.enable_set_variable_b_format) {
+						SET_YYLLOC();
+						yylval->str = pstrdup(yytext + 1);
+						yyextra->is_hint_str = false;
+						return SET_USER_IDENT;
+					} else {
+						yyless(1);
+						yylval->str = pstrdup(yytext);
+						yyextra->is_hint_str = false;
+						return yytext[0];
+					}
 				}
 
 {other}			{
@@ -1292,8 +1333,9 @@ scanner_init(const char *str,
 	/*
 	 * Make a scan buffer with special termination needed by flex.
 	 */
+#ifdef DOLPHIN
 	if( str[0] == '#' &&  GetSessionContext()->enableBCmptMode)
-        {
+    {
                 yyext->scanbuf = (char *) palloc(slen + 3);
                 ++yyext->scanbuf;
                 yyext->scanbuflen = slen;
@@ -1301,8 +1343,9 @@ scanner_init(const char *str,
                 yyext->scanbuf[slen] = yyext->scanbuf[slen + 1] = YY_END_OF_BUFFER_CHAR;
                 *(--yyext->scanbuf) = ' ';
                 yy_scan_buffer(yyext->scanbuf, slen + 3, scanner);
-        }
+    }
 	else
+#endif
 	{
 		yyext->scanbuf = (char *) palloc(slen + 2);
 		yyext->scanbuflen = slen;
@@ -1894,7 +1937,7 @@ void addErrorList(const char* message, int lines)
     u_sess->plsql_cxt.errorList = lappend(u_sess->plsql_cxt.errorList, erritem);
     MemoryContextSwitchTo(oldcxt);
 }
-
+#ifdef DOLPHIN
 static void
 dealSahrpComment(core_yyscan_t yyscanner)
 {
@@ -1932,3 +1975,4 @@ static char* CopyIdentifier(const char* ident, int len, bool warn)
 
     return result;
 }
+#endif

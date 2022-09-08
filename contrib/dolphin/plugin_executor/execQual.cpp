@@ -75,7 +75,6 @@
 #include "access/tuptoaster.h"
 
 /* static function decls */
-static Datum ExecEvalArrayRef(ArrayRefExprState* astate, ExprContext* econtext, bool* isNull, ExprDoneCond* isDone);
 static bool isAssignmentIndirectionExpr(ExprState* exprstate);
 static Datum ExecEvalAggref(AggrefExprState* aggref, ExprContext* econtext, bool* isNull, ExprDoneCond* isDone);
 static Datum ExecEvalWindowFunc(WindowFuncExprState* wfunc, ExprContext* econtext, bool* isNull, ExprDoneCond* isDone);
@@ -230,7 +229,7 @@ THR_LOCAL PLpgSQL_execstate* plpgsql_estate = NULL;
  * have to know the difference (that's what they need refattrlength for).
  * ----------
  */
-static Datum ExecEvalArrayRef(ArrayRefExprState* astate, ExprContext* econtext, bool* isNull, ExprDoneCond* isDone)
+Datum ExecEvalArrayRef(ArrayRefExprState* astate, ExprContext* econtext, bool* isNull, ExprDoneCond* isDone)
 {
     ArrayRef* arrayRef = (ArrayRef*)astate->xprstate.expr;
     ArrayType* array_source = NULL;
@@ -255,6 +254,7 @@ static Datum ExecEvalArrayRef(ArrayRefExprState* astate, ExprContext* econtext, 
         if (!isAssignment)
             return (Datum)NULL;
     }
+    int returnNestTableLayer = 0;
     ExecTableOfIndexInfo execTableOfIndexInfo;
     initExecTableOfIndexInfo(&execTableOfIndexInfo, econtext);
     ExecEvalParamExternTableOfIndex((Node*)astate->refexpr->expr, &execTableOfIndexInfo);
@@ -274,8 +274,9 @@ static Datum ExecEvalArrayRef(ArrayRefExprState* astate, ExprContext* econtext, 
         if (OidIsValid(execTableOfIndexInfo.tableOfIndexType) || execTableOfIndexInfo.isnestedtable) {
             bool isTran = false;
             PLpgSQL_execstate* old_estate = plpgsql_estate;
-            Datum exprValue = ExecEvalExpr(eltstate, econtext, &eisnull, NULL);
+            Datum exprValue = (Datum)ExecEvalExpr(eltstate, econtext, &eisnull, NULL);
             plpgsql_estate = old_estate;
+            if (unlikely(execTableOfIndexInfo.tableOfIndexType))
             if (execTableOfIndexInfo.tableOfIndexType == VARCHAROID && !eisnull && VARATT_IS_1B(exprValue)) {
                 exprValue = transVaratt1BTo4B(exprValue);
                 isTran = true;
@@ -299,10 +300,13 @@ static Datum ExecEvalArrayRef(ArrayRefExprState* astate, ExprContext* econtext, 
                     execTableOfIndexInfo.tableOfIndexType = var->datatype->tableOfIndexType;
                     execTableOfIndexInfo.tableOfIndex = var->tableOfIndex;
                     eisnull = var->isnull;
+                    returnNestTableLayer = var->nest_layers;
                     if (plpgsql_estate)
                         plpgsql_estate->curr_nested_table_type = var->datatype->typoid;
                     continue;
                 }
+            } else {
+                returnNestTableLayer = 0;
             }
             if (index == -1) {
                 eisnull = true;
@@ -310,7 +314,10 @@ static Datum ExecEvalArrayRef(ArrayRefExprState* astate, ExprContext* econtext, 
                 upper.indx[i++] = index;
             }
         } else {
+            PLpgSQL_execstate* old_estate = plpgsql_estate;
             upper.indx[i++] = DatumGetInt32(ExecEvalExpr(eltstate, econtext, &eisnull, NULL));
+            plpgsql_estate = old_estate;
+            returnNestTableLayer = 0;
         }
         
         /* If any index expr yields NULL, result is NULL or error */
@@ -338,7 +345,9 @@ static Datum ExecEvalArrayRef(ArrayRefExprState* astate, ExprContext* econtext, 
                         (errcode(ERRCODE_PROGRAM_LIMIT_EXCEEDED),
                             errmsg("index by varchar or nested table don't support two subscripts")));
             } else {
+                PLpgSQL_execstate* old_estate = plpgsql_estate;
                 lower.indx[j++] = DatumGetInt32(ExecEvalExpr(eltstate, econtext, &eisnull, NULL));
+                plpgsql_estate = old_estate;
             }
             /* If any index expr yields NULL, result is NULL or error */
             if (eisnull) {
@@ -475,7 +484,9 @@ static Datum ExecEvalArrayRef(ArrayRefExprState* astate, ExprContext* econtext, 
                                 &astate->refelemalign);
         }
     }
-
+    if (plpgsql_estate) {
+        plpgsql_estate->curr_nested_table_layers = returnNestTableLayer;
+    }
     if (lIndex == NULL) {
         if (unlikely(i == 0)) {
             /* get nested table's inner table */
@@ -720,7 +731,6 @@ static Datum ExecEvalWholeRowVar(
 {
     Var* variable = (Var*)wrvstate->xprstate.expr;
     TupleTableSlot* slot = NULL;
-    TupleDesc slot_tupdesc;
     bool needslow = false;
 
     if (isDone != NULL)
@@ -802,21 +812,13 @@ static Datum ExecEvalWholeRowVar(
     if (wrvstate->wrv_junkFilter != NULL)
         slot = ExecFilterJunk(wrvstate->wrv_junkFilter, slot);
 
-    slot_tupdesc = slot->tts_tupleDescriptor;
-
     /*
-     * If it's a RECORD Var, we'll use the slot's type ID info.  It's likely
-     * that the slot's type is also RECORD; if so, make sure it's been
-     * "blessed", so that the Datum can be interpreted later.
-     *
      * If the Var identifies a named composite type, we must check that the
      * actual tuple type is compatible with it.
      */
-    if (variable->vartype == RECORDOID) {
-        if (slot_tupdesc->tdtypeid == RECORDOID && slot_tupdesc->tdtypmod < 0)
-            assign_record_type_typmod(slot_tupdesc);
-    } else {
+    if (variable->vartype != RECORDOID) {
         TupleDesc var_tupdesc;
+        TupleDesc slot_tupdesc;
         int i;
 
         /*
@@ -832,6 +834,8 @@ static Datum ExecEvalWholeRowVar(
          * ExecEvalWholeRowSlow to check (2) for each row.
          */
         var_tupdesc = lookup_rowtype_tupdesc(variable->vartype, -1);
+
+        slot_tupdesc = slot->tts_tupleDescriptor;
 
         if (var_tupdesc->natts != slot_tupdesc->natts)
             ereport(ERROR,
@@ -886,6 +890,7 @@ static Datum ExecEvalWholeRowFast(
 {
     Var* variable = (Var*)wrvstate->xprstate.expr;
     TupleTableSlot* slot = NULL;
+    TupleDesc slot_tupdesc;
     HeapTuple tuple;
     TupleDesc tupleDesc;
     HeapTupleHeader dtuple;
@@ -915,8 +920,31 @@ static Datum ExecEvalWholeRowFast(
     if (wrvstate->wrv_junkFilter != NULL)
         slot = ExecFilterJunk(wrvstate->wrv_junkFilter, slot);
 
+    /*
+     * If it's a RECORD Var, we'll use the slot's type ID info.  It's likely
+     * that the slot's type is also RECORD; if so, make sure it's been
+     * "blessed", so that the Datum can be interpreted later.
+     */        
+    slot_tupdesc = slot->tts_tupleDescriptor;
+    if (variable->vartype == RECORDOID) {
+        if (slot_tupdesc->tdtypeid == RECORDOID && slot_tupdesc->tdtypmod < 0)
+            assign_record_type_typmod(slot_tupdesc);
+    }
+
     tuple = ExecFetchSlotTuple(slot);
     tupleDesc = slot->tts_tupleDescriptor;
+    /*
+     * If it's a RECORD Var, we'll use the slot's type ID info.  It's likely
+     * that the slot's type is also RECORD; if so, make sure it's been
+     * "blessed", so that the Datum can be interpreted later.  (Note: we must
+     * do this here, not in ExecEvalWholeRowVar, because some plan trees may
+     * return different slots at different times.  We have to be ready to
+     * bless additional slots during the run.)
+     */
+    if (variable->vartype == RECORDOID &&
+        tupleDesc->tdtypeid == RECORDOID &&
+        tupleDesc->tdtypmod < 0)
+        assign_record_type_typmod(tupleDesc);
 
     /*
      * We have to make a copy of the tuple so we can safely insert the Datum
@@ -1036,7 +1064,17 @@ static Datum ExecEvalWholeRowSlow(
  */
 static Datum ExecEvalConst(ExprState* exprstate, ExprContext* econtext, bool* isNull, ExprDoneCond* isDone)
 {
-    Const* con = (Const*)exprstate->expr;
+    Const* con = NULL;
+    if (IsA(exprstate->expr, UserVar)) {
+        bool found = false;
+        UserVar *uservar = (UserVar *)exprstate->expr;
+        GucUserParamsEntry *entry = (GucUserParamsEntry *)hash_search(u_sess->utils_cxt.set_user_params_htab, uservar->name, HASH_FIND, &found);
+
+        /* if not found, return a null const */
+        con = found ? entry->value : makeConst(UNKNOWNOID, -1, InvalidOid, -2, (Datum)0, true, false);
+    } else {
+        con = (Const*)exprstate->expr;
+    }
 
     if (isDone != NULL)
         *isDone = ExprSingleResult;
@@ -1138,7 +1176,10 @@ static Datum ExecEvalParamExtern(ExprState* exprstate, ExprContext* econtext, bo
                             format_type_be(expression->paramtype))));
 
             *isNull = prm->isnull;
-
+            if (prm->tabInfo && prm->tabInfo->isnestedtable && plpgsql_estate) {
+                plpgsql_estate->curr_nested_table_type = prm->ptype;
+                plpgsql_estate->curr_nested_table_layers = prm->tabInfo->tableOfLayers;
+            }
             /* copy cursor option from param to econtext */
             if (econtext->is_cursor && prm->ptype == REFCURSOROID) {
                 CopyCursorInfoData(&econtext->cursor_data, &prm->cursor_data);
@@ -1427,9 +1468,26 @@ static void init_fcache(
 {
     AclResult aclresult;
     MemoryContext oldcontext;
+    Form_pg_proc procStruct;
+    HeapTuple procTup;
+    Oid definer = GetUserId();
+    
+    if (u_sess->attr.attr_sql.sql_compatibility ==  B_FORMAT)
+    {
+        /* Get the function's pg_proc entry */
+        procTup = SearchSysCache1(PROCOID, ObjectIdGetDatum(foid));
+        if (!HeapTupleIsValid(procTup)) {
+            ereport(ERROR, (errmodule(MOD_EXECUTOR), errcode(ERRCODE_CACHE_LOOKUP_FAILED),
+                    errmsg("cache lookup failed for function %u", foid)));
+        }
+        procStruct = (Form_pg_proc)GETSTRUCT(procTup);
+        if (procStruct->prosecdef)
+            definer = procStruct->proowner;
+        ReleaseSysCache(procTup);
+    }
 
     /* Check permission to call function */
-    aclresult = pg_proc_aclcheck(foid, GetUserId(), ACL_EXECUTE);
+    aclresult = pg_proc_aclcheck(foid, definer, ACL_EXECUTE);
     if (aclresult != ACLCHECK_OK)
         aclcheck_error(aclresult, ACL_KIND_PROC, get_func_name(foid));
 
@@ -1929,6 +1987,7 @@ restart:
             ereport(ERROR, (errcode(ERRCODE_NULL_VALUE_NOT_ALLOWED),
                     errmsg("set-valued function called in context that cannot accept a set")));
         }
+        econtext->hasSetResultStore = true;
         if (tuplestore_gettupleslot(fcache->funcResultStore, true, false, fcache->funcResultSlot)) {
             *isDone = ExprMultipleResult;
             if (fcache->funcReturnsTuple) {
@@ -2367,7 +2426,7 @@ static Datum ExecMakeFunctionResultNoSets(
         fcinfo->context = (Node *)node;
     }
 
-    if (econtext != NULL) {
+    if (econtext) {
         fcinfo->can_ignore = econtext->can_ignore;
     }
 
@@ -3441,6 +3500,7 @@ static Datum ExecEvalScalarArrayOp(
             s = (char*)att_align_nominal(s, typalign);
             fcinfo->arg[1] = elt;
             fcinfo->argnull[1] = false;
+            fcinfo->argTypes[1] = ARR_ELEMTYPE(arr);
         }
 
         /* Call comparison function */
@@ -4186,8 +4246,12 @@ static Datum ExecEvalMinMax(MinMaxExprState* minmaxExpr, ExprContext* econtext, 
 
         value = ExecEvalExpr(e, econtext, &valueIsNull, NULL);
         if (valueIsNull) {
+#ifdef DOLPHIN
             *isNull = true;
             return (Datum)0; /* return NULL if inputs include NULL for B format*/
+#else
+            continue; /* ignore NULL inputs */
+#endif
         }
 
         if (*isNull) {
@@ -5226,6 +5290,7 @@ ExprState* ExecInitExpr(Expr* node, PlanState* parent)
             }
             break;
         case T_Const:
+        case T_UserVar:
             state = (ExprState*)makeNode(ExprState);
             state->evalfunc = ExecEvalConst;
             break;
@@ -6155,6 +6220,55 @@ Datum fetch_lob_value_from_tuple(varatt_lob_pointer* lob_pointer, Oid update_oid
 }
 
 /*
+ * Return true if objid is a partition oid, and set relationid to objid's parent relation oid.
+ * Return false if objid is a relation oid.
+ */
+static bool getRelIdForPartition(Oid objid, Oid *relationid)
+{
+    HeapTuple reltuple = SearchSysCache1(RELOID, ObjectIdGetDatum(objid));
+    if (HeapTupleIsValid(reltuple)) {
+        ReleaseSysCache(reltuple);
+        /* is relation oid */
+        return false;
+    } else {
+        HeapTuple partuple = SearchSysCache1(PARTRELID, ObjectIdGetDatum(objid));
+        if (HeapTupleIsValid(partuple)) {
+            /* is partition oid */
+            Form_pg_partition partition = (Form_pg_partition)GETSTRUCT(partuple);
+            Oid relid = InvalidOid;
+            if (partition->parttype == PART_OBJ_TYPE_TABLE_PARTITION) {
+                relid = partition->parentid;
+                ReleaseSysCache(partuple);
+            } else if (partition->parttype == PART_OBJ_TYPE_TABLE_SUB_PARTITION) {
+                Oid partid = partition->parentid;
+                ReleaseSysCache(partuple);
+                HeapTuple partuple_subparent = SearchSysCache1(PARTRELID, ObjectIdGetDatum(partid));
+                if (HeapTupleIsValid(partuple_subparent)) {
+                    relid = ((Form_pg_partition)GETSTRUCT(partuple_subparent))->parentid;
+                    ReleaseSysCache(partuple_subparent);
+                } else {
+                    /* wrong sub partition oid */
+                    ereport(ERROR, (errcode(ERRCODE_RELATION_OPEN_ERROR),
+                                    errmsg("could not fine relation for subpartition OID %u", objid)));
+                }
+            }
+            HeapTuple parenttuple = SearchSysCache1(RELOID, ObjectIdGetDatum(relid));
+            if (HeapTupleIsValid(parenttuple)) {
+                ReleaseSysCache(parenttuple);
+                *relationid = relid;
+                return true;
+            } else {
+                /* wrong partition oid */
+                ereport(ERROR, (errcode(ERRCODE_RELATION_OPEN_ERROR),
+                                errmsg("could not fine relation for partition OID %u", objid)));
+            }
+        }
+    }
+    /* is relation oid */
+    return false;
+}
+
+/*
  * ExecTargetList
  *		Evaluates a targetlist with respect to the given
  *		expression context.  Returns TRUE if we were able to create
@@ -6206,17 +6320,37 @@ static bool ExecTargetList(List* targetlist, ExprContext* econtext, Datum* value
         bool isClobAndNotNull = false;
         isClobAndNotNull = (IsA(tle->expr, Param)) && (!isnull[resind]) && (((Param*)tle->expr)->paramtype == CLOBOID
             || ((Param*)tle->expr)->paramtype == BLOBOID);
-        if (isClobAndNotNull) {
+        if (isClobAndNotNull && econtext->ecxt_scantuple != NULL) {
             /* if is big lob, fetch and copy from toast */
             if (VARATT_IS_HUGE_TOAST_POINTER(values[resind])) {
                 Datum new_attr = (Datum)0;
-                Oid update_oid = econtext->ecxt_scantuple != NULL ?
-                    ((HeapTuple)(econtext->ecxt_scantuple->tts_tuple))->t_tableOid : InvalidOid;
-                Relation update_rel = heap_open(update_oid, RowExclusiveLock);
+                Oid update_oid = ((HeapTuple)(econtext->ecxt_scantuple->tts_tuple))->t_tableOid;
+                Oid parent_oid = InvalidOid;
+                Relation parent_rel = NULL;
+                Relation part_rel = NULL;
+                Partition part = NULL;
+                bool ispartition = getRelIdForPartition(update_oid, &parent_oid);
+                if (ispartition) {
+                    parent_rel = heap_open(parent_oid, RowExclusiveLock);
+                    part = partitionOpen(parent_rel, update_oid, RowExclusiveLock);
+                    part_rel = partitionGetRelation(parent_rel, part);
+                } else {
+                    parent_rel = heap_open(update_oid, RowExclusiveLock);
+                }
                 struct varlena *old_value = (struct varlena *)DatumGetPointer(values[resind]);
-                struct varlena *new_value = heap_tuple_fetch_and_copy(update_rel, old_value,true);
+                struct varlena *new_value = heap_tuple_fetch_and_copy(part_rel == NULL ? parent_rel : part_rel,
+                                                                      old_value, false);
+                if (new_value == NULL) {
+                    isnull[resind] = true;
+                }
                 new_attr = PointerGetDatum(new_value);
-                heap_close(update_rel, NoLock);
+                if (ispartition) {
+                    releaseDummyRelation(&part_rel);
+                    partitionClose(parent_rel, part, NoLock);
+                    heap_close(parent_rel, NoLock);
+                } else {
+                    heap_close(parent_rel, NoLock);
+                }
                 values[resind] = new_attr;
             }
         }

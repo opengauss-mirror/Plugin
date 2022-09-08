@@ -5,13 +5,21 @@ SET lower_case_table_names TO 0;
 --
 -- initial setup
 CREATE USER regress_rls_alice NOLOGIN PASSWORD 'Ttest@123';
+NOTICE:  The iteration value of password is not recommended.Setting the iteration value too small reduces the security of the password, and setting it too large results in performance degradation.
 CREATE USER regress_rls_bob NOLOGIN PASSWORD 'Ttest@123';
+NOTICE:  The iteration value of password is not recommended.Setting the iteration value too small reduces the security of the password, and setting it too large results in performance degradation.
 CREATE USER regress_rls_david NOLOGIN PASSWORD 'Ttest@123';
+NOTICE:  The iteration value of password is not recommended.Setting the iteration value too small reduces the security of the password, and setting it too large results in performance degradation.
 CREATE USER regress_rls_peter NOLOGIN PASSWORD 'Ttest@123';
+NOTICE:  The iteration value of password is not recommended.Setting the iteration value too small reduces the security of the password, and setting it too large results in performance degradation.
 CREATE USER regress_rls_single_user NOLOGIN PASSWORD 'Ttest@123';
+NOTICE:  The iteration value of password is not recommended.Setting the iteration value too small reduces the security of the password, and setting it too large results in performance degradation.
 CREATE USER regress_rls_admin SYSADMIN NOLOGIN PASSWORD "Ttest@123";
+NOTICE:  The iteration value of password is not recommended.Setting the iteration value too small reduces the security of the password, and setting it too large results in performance degradation.
 CREATE ROLE regress_rls_group1 NOLOGIN PASSWORD 'Ttest@123';
+NOTICE:  The iteration value of password is not recommended.Setting the iteration value too small reduces the security of the password, and setting it too large results in performance degradation.
 CREATE ROLE regress_rls_group2 NOLOGIN PASSWORD 'Ttest@123';
+NOTICE:  The iteration value of password is not recommended.Setting the iteration value too small reduces the security of the password, and setting it too large results in performance degradation.
 GRANT ALL on pg_roles to public;
 GRANT ALL on pg_user to public;
 GRANT regress_rls_group1 TO regress_rls_alice, regress_rls_bob, regress_rls_peter;

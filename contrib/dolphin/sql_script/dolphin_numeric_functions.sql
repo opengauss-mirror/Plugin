@@ -48,3 +48,18 @@ BEGIN
 END;
 $$
 LANGUAGE plpgsql;
+
+DROP FUNCTION IF EXISTS pg_catalog.conv(text, int4, int4) CASCADE;
+CREATE OR REPLACE FUNCTION pg_catalog.conv (
+text, int, int
+) RETURNS text LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'conv_str';
+
+DROP FUNCTION IF EXISTS pg_catalog.conv(numeric, int4, int4) CASCADE;
+CREATE OR REPLACE FUNCTION pg_catalog.conv (
+numeric, int4, int4
+) RETURNS text LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'conv_num';
+
+DROP FUNCTION IF EXISTS pg_catalog.crc32(text) CASCADE;
+CREATE OR REPLACE FUNCTION pg_catalog.crc32 (
+text
+) RETURNS int8 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'crc32';

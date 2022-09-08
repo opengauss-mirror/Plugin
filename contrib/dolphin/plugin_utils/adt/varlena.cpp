@@ -45,6 +45,7 @@
 #include "executor/node/nodeSort.h"
 #include "plugin_utils/my_locale.h"
 #include "pgxc/groupmgr.h"
+#include "openssl/evp.h"
 #include "plugin_postgres.h"
 #include "parser/parse_coerce.h"
 #include "catalog/pg_type.h"
@@ -52,9 +53,11 @@
 #include "utils/varbit.h"
 #include "plugin_commands/mysqlmode.h"
 
+#define SUBSTR_WITH_LEN_OFFSET 2
+#define SUBSTR_A_CMPT_OFFSET 4
 #define JUDGE_INPUT_VALID(X, Y) ((NULL == (X)) || (NULL == (Y)))
 #define GET_POSITIVE(X) ((X) > 0 ? (X) : ((-1) * (X)))
-
+#ifdef DOLPHIN
 #define MAX_BINARY_LENGTH 255
 #define MAX_VARBINARY_LENGTH 65535
 #define isDigital(_ch) (((_ch) >= '0') && ((_ch) <= '9'))
@@ -66,7 +69,7 @@
 #define MAX_CHARA_REMINDERS_LEN 10
 #define CONV_MAX_CHAR_LEN 65 //max 64bit and 1 sign bit
 #define MYSQL_SUPPORT_MINUS_MAX_LENGTH 65
-
+#endif
 static int getResultPostionReverse(text* textStr, text* textStrToSearch, int32 beginIndex, int occurTimes);
 static int getResultPostion(text* textStr, text* textStrToSearch, int32 beginIndex, int occurTimes);
 extern int conv_n(char *result, int128 data, int from_base_s, int to_base_s);
@@ -162,7 +165,7 @@ static void text_format_append_string(StringInfo buf, const char* str, int flags
 
 // adapt A db's substrb
 static text* get_substring_really(Datum str, int32 start, int32 length, bool length_not_specified);
-
+#ifdef DOLPHIN
 static void check_blob_size(Datum blob, int64 max_size);
 static int32 anybinary_typmodin(ArrayType* ta, const char* typname, uint32 max);
 static char* anybinary_typmodout(int32 typmod);
@@ -281,6 +284,24 @@ extern "C" DLL_PUBLIC Datum uint4_list_agg_noarg2_transfn(PG_FUNCTION_ARGS);
 PG_FUNCTION_INFO_V1_PUBLIC(uint8_list_agg_noarg2_transfn);
 extern "C" DLL_PUBLIC Datum uint8_list_agg_noarg2_transfn(PG_FUNCTION_ARGS);
 
+PG_FUNCTION_INFO_V1_PUBLIC(int_to_hex);
+extern "C" DLL_PUBLIC Datum int_to_hex(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1_PUBLIC(text_to_hex);
+extern "C" DLL_PUBLIC Datum text_to_hex(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1_PUBLIC(bytea_to_hex);
+extern "C" DLL_PUBLIC Datum bytea_to_hex(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1_PUBLIC(bit_to_hex);
+extern "C" DLL_PUBLIC Datum bit_to_hex(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1_PUBLIC(db_b_format);
+extern "C" DLL_PUBLIC Datum db_b_format(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1_PUBLIC(db_b_format_locale);
+extern "C" DLL_PUBLIC Datum db_b_format_locale(PG_FUNCTION_ARGS);
+#endif
 
 /*****************************************************************************
  *	 CONVERSION ROUTINES EXPORTED FOR USE BY C CODE							 *
@@ -360,6 +381,7 @@ char* text_to_cstring(const text* t)
         ereport(ERROR,
             (errcode(ERRCODE_UNEXPECTED_NULL_VALUE), errmsg("invalid null pointer input for text_to_cstring()")));
     }
+    FUNC_CHECK_HUGE_POINTER(false, t, "text_to_cstring()");
 
     /* must cast away the const, unfortunately */
     text* tunpacked = pg_detoast_datum_packed((struct varlena*)t);
@@ -392,6 +414,9 @@ char* text_to_cstring(const text* t)
 void text_to_cstring_buffer(const text* src, char* dst, size_t dst_len)
 {
     /* must cast away the const, unfortunately */
+
+    FUNC_CHECK_HUGE_POINTER((src == NULL), src, "text_to_cstring_buffer()");
+
     text* srcunpacked = pg_detoast_datum_packed((struct varlena*)src);
     size_t src_len = VARSIZE_ANY_EXHDR(srcunpacked);
 
@@ -646,6 +671,8 @@ Datum rawout(PG_FUNCTION_ARGS)
 Datum rawtotext(PG_FUNCTION_ARGS)
 {
     Datum arg1 = PG_GETARG_DATUM(0);
+
+    FUNC_CHECK_HUGE_POINTER(PG_ARGISNULL(0), DatumGetPointer(arg1), "rawtotext()");
     Datum cstring_result;
     Datum result;
 
@@ -660,10 +687,8 @@ Datum rawtotext(PG_FUNCTION_ARGS)
 Datum texttoraw(PG_FUNCTION_ARGS)
 {
     Datum arg1 = PG_GETARG_DATUM(0);
-    if (VARATT_IS_HUGE_TOAST_POINTER(DatumGetPointer(arg1))) {
-        ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
-                errmsg("texttoraw could not support more than 1GB clob/blob data")));
-    }
+
+    FUNC_CHECK_HUGE_POINTER(PG_ARGISNULL(0), DatumGetPointer(arg1), "rawtotext()");
     Datum result;
     Datum cstring_arg1;
 
@@ -768,7 +793,6 @@ Datum bytea_string_agg_finalfn(PG_FUNCTION_ARGS)
 Datum textin(PG_FUNCTION_ARGS)
 {
     char* inputText = PG_GETARG_CSTRING(0);
-
     PG_RETURN_TEXT_P(cstring_to_text(inputText));
 }
 
@@ -778,12 +802,18 @@ Datum textin(PG_FUNCTION_ARGS)
 Datum textout(PG_FUNCTION_ARGS)
 {
     Datum txt = PG_GETARG_DATUM(0);
-    if (VARATT_IS_HUGE_TOAST_POINTER(DatumGetPointer(txt))) {
-        int len = strlen("<CLOB>") + 1;
-        char *res = (char *)palloc(len);
-        errno_t rc = strcpy_s(res, len, "<CLOB>");
-        securec_check_c(rc, "\0", "\0");
-        PG_RETURN_CSTRING(res);
+    if (unlikely(VARATT_IS_HUGE_TOAST_POINTER(DatumGetPointer(txt)))) {
+        if (t_thrd.xact_cxt.callPrint) {
+            int len = strlen("<CLOB>") + 1;
+            char *res = (char *)palloc(len);
+            errno_t rc = strcpy_s(res, len, "<CLOB>");
+            securec_check_c(rc, "\0", "\0");
+            PG_RETURN_CSTRING(res);
+        } else {
+            ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+                errmsg("textout() could not support larger than 1GB clob/blob data"),
+                    errcause("parameter larger than 1GB"), erraction("parameter must less than 1GB")));
+        }
     }
     PG_RETURN_CSTRING(TextDatumGetCString(txt));
 }
@@ -893,16 +923,21 @@ static Datum text_length_huge(Datum str)
  */
 Datum textlen(PG_FUNCTION_ARGS)
 {
-    Datum str = PG_GETARG_DATUM(0);
+    Datum str = fetch_real_lob_if_need(PG_GETARG_DATUM(0));
 
     if (VARATT_IS_HUGE_TOAST_POINTER((varlena *)DatumGetTextPP(str))) {
         return text_length_huge(str);
     } else {
         /* try to avoid decompressing argument */
+#ifdef DOLPHIN
         PG_RETURN_INT64(toast_raw_datum_size(str) - VARHDRSZ);
+#else
+        PG_RETURN_INT32(text_length(str));
+#endif
     }
 }
 
+#ifdef DOLPHIN
 Datum text_len(PG_FUNCTION_ARGS)
 {
     char* cp = text_to_cstring(PG_GETARG_TEXT_PP(0));
@@ -944,7 +979,7 @@ int get_step_len(unsigned char ch)
         step_len = 1;
     return step_len;
 }
-
+#endif
 
 /*
  * text_length -
@@ -980,6 +1015,8 @@ int32 text_length(Datum str)
 Datum textoctetlen(PG_FUNCTION_ARGS)
 {
     Datum str = PG_GETARG_DATUM(0);
+
+    FUNC_CHECK_HUGE_POINTER(PG_ARGISNULL(0), DatumGetPointer(str), "textoctetlen()");
 
     /* We need not detoast the input at all */
     PG_RETURN_INT32(toast_raw_datum_size(str) - VARHDRSZ);
@@ -1182,7 +1219,11 @@ static int charlen_to_bytelen(const char* p, int n)
 Datum text_substr(PG_FUNCTION_ARGS)
 {
     text* result = NULL;
-
+    
+    if (!PG_ARGISNULL(0)  &&VARATT_IS_HUGE_TOAST_POINTER(PG_GETARG_TEXT_PP(0))) {
+        ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+                errmsg("text_substr could not support more than 1GB clob/blob data")));
+    }
     result = text_substring(PG_GETARG_DATUM(0), PG_GETARG_INT32(1), PG_GETARG_INT32(2), false);
 
     PG_RETURN_TEXT_P(result);
@@ -1463,15 +1504,16 @@ Datum text_substr_orclcompat(PG_FUNCTION_ARGS)
     mblen_converter fun_mblen;
     fun_mblen = *pg_wchar_table[GetDatabaseEncoding()].mblen;
 
-    if (VARATT_IS_HUGE_TOAST_POINTER((varlena *)DatumGetPointer(str))) {
-        struct varlena* dest_ptr = (struct varlena*)DatumGetPointer(str);
-        struct varlena* res_ptr = heap_tuple_untoast_attr_slice(dest_ptr, start, length);
-        return PointerGetDatum(res_ptr);
-    }
+    FUNC_CHECK_HUGE_POINTER(PG_ARGISNULL(0), DatumGetPointer(str), "text_substr()");
 
     is_compress = (VARATT_IS_COMPRESSED(DatumGetPointer(str)) || VARATT_IS_EXTERNAL(DatumGetPointer(str)));
-    // orclcompat is true, withlen is true
-    baseIdx = 6 + (int)is_compress + (eml - 1) * 8;
+    /* withlen is true */
+    baseIdx = SUBSTR_WITH_LEN_OFFSET + (int)is_compress + (eml - 1) * 8;
+    if (!PGFORMAT_SUBSTR || !DB_IS_CMPT(PG_FORMAT)) {
+        /* if pgformat_substr is not on or current database is not pg format, use A cmpt */
+        baseIdx += SUBSTR_A_CMPT_OFFSET;
+    }
+
     result = (*substr_Array[baseIdx])(str, start, length, &is_null, fun_mblen);
 
     if (is_null == true)
@@ -1495,14 +1537,12 @@ Datum text_substr_no_len_orclcompat(PG_FUNCTION_ARGS)
     mblen_converter fun_mblen;
     fun_mblen = *pg_wchar_table[GetDatabaseEncoding()].mblen;
 
-    if (VARATT_IS_HUGE_TOAST_POINTER((varlena *)DatumGetPointer(str))) {
-        ereport(ERROR, (errcode(ERRCODE_UNRECOGNIZED_NODE_TYPE),
-            errmsg("The data is lob that larger than 1GB, you must use a substr with len(substr(str, start, len))")));
-    }
+    FUNC_CHECK_HUGE_POINTER(PG_ARGISNULL(0), DatumGetPointer(str), "text_substr()");
 
     is_compress = (VARATT_IS_COMPRESSED(DatumGetPointer(str)) || VARATT_IS_EXTERNAL(DatumGetPointer(str)));
     // orclcompat is true, withlen is false
     baseIdx = 4 + (int)is_compress + (eml - 1) * 8;
+
     result = (*substr_Array[baseIdx])(str, start, 0, &is_null, fun_mblen);
 
     if (is_null == true)
@@ -1510,7 +1550,7 @@ Datum text_substr_no_len_orclcompat(PG_FUNCTION_ARGS)
     else
         return result;
 }
-
+#ifdef DOLPHIN
 /*
  * text_insert
  */
@@ -1565,6 +1605,7 @@ Datum text_insert(PG_FUNCTION_ARGS)
 
     PG_RETURN_TEXT_P(text_insert_func(str, newstr, sp, sl));
 }
+#endif
 
 /*
  * textoverlay
@@ -1577,6 +1618,8 @@ Datum textoverlay(PG_FUNCTION_ARGS)
 {
     text* t1 = PG_GETARG_TEXT_PP(0);
     text* t2 = PG_GETARG_TEXT_PP(1);
+
+    FUNC_CHECK_HUGE_POINTER(false, t1, "textoverlay()");
     int sp = PG_GETARG_INT32(2); /* substring start position */
     int sl = PG_GETARG_INT32(3); /* substring length */
 
@@ -1587,6 +1630,7 @@ Datum textoverlay_no_len(PG_FUNCTION_ARGS)
 {
     text* t1 = PG_GETARG_TEXT_PP(0);
     text* t2 = PG_GETARG_TEXT_PP(1);
+    FUNC_CHECK_HUGE_POINTER(false, t1, "textoverlay()");
     int sp = PG_GETARG_INT32(2); /* substring start position */
     int sl;
 
@@ -1630,6 +1674,7 @@ Datum textpos(PG_FUNCTION_ARGS)
 {
     text* str = PG_GETARG_TEXT_PP(0);
     text* search_str = PG_GETARG_TEXT_PP(1);
+    FUNC_CHECK_HUGE_POINTER(PG_ARGISNULL(0), str, "textpos()");
 
     PG_RETURN_INT32((int32)text_position(str, search_str));
 }
@@ -2110,7 +2155,8 @@ Datum texteq(PG_FUNCTION_ARGS)
 {
     Datum arg1 = PG_GETARG_DATUM(0);
     Datum arg2 = PG_GETARG_DATUM(1);
-    if (VARATT_IS_HUGE_TOAST_POINTER(DatumGetPointer(arg1)) && VARATT_IS_HUGE_TOAST_POINTER(DatumGetPointer(arg2))) {
+
+    if (VARATT_IS_HUGE_TOAST_POINTER(DatumGetPointer(arg1)) || VARATT_IS_HUGE_TOAST_POINTER(DatumGetPointer(arg2))) {
         ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
                 errmsg("texteq could not support more than 1GB clob/blob data")));
     }
@@ -2270,10 +2316,7 @@ Datum text_lt(PG_FUNCTION_ARGS)
 {
     text* arg1 = PG_GETARG_TEXT_PP(0);
     text* arg2 = PG_GETARG_TEXT_PP(1);
-    if (VARATT_IS_HUGE_TOAST_POINTER((varlena *)arg1) || VARATT_IS_HUGE_TOAST_POINTER((varlena *)arg2)) {
-        ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
-                errmsg("text_lt could not support more than 1GB clob/blob data")));
-    }
+    FUNC_CHECK_HUGE_POINTER(false, arg1, "text_lt()");
     bool result = false;
 
     result = (text_cmp(arg1, arg2, PG_GET_COLLATION()) < 0);
@@ -2288,10 +2331,8 @@ Datum text_le(PG_FUNCTION_ARGS)
 {
     text* arg1 = PG_GETARG_TEXT_PP(0);
     text* arg2 = PG_GETARG_TEXT_PP(1);
-    if (VARATT_IS_HUGE_TOAST_POINTER((varlena *)arg1) || VARATT_IS_HUGE_TOAST_POINTER((varlena *)arg2)) {
-        ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
-                errmsg("text_le could not support more than 1GB clob/blob data")));
-    }
+    FUNC_CHECK_HUGE_POINTER(false, arg1, "text_le()");
+
     bool result = false;
 
     result = (text_cmp(arg1, arg2, PG_GET_COLLATION()) <= 0);
@@ -2306,10 +2347,8 @@ Datum text_gt(PG_FUNCTION_ARGS)
 {
     text* arg1 = PG_GETARG_TEXT_PP(0);
     text* arg2 = PG_GETARG_TEXT_PP(1);
-    if (VARATT_IS_HUGE_TOAST_POINTER((varlena *)arg1) || VARATT_IS_HUGE_TOAST_POINTER((varlena *)arg2)) {
-        ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
-                errmsg("text_gt could not support more than 1GB clob/blob data")));
-    }
+    FUNC_CHECK_HUGE_POINTER(false, arg1, "text_gt()");
+
     bool result = false;
 
     result = (text_cmp(arg1, arg2, PG_GET_COLLATION()) > 0);
@@ -2324,10 +2363,8 @@ Datum text_ge(PG_FUNCTION_ARGS)
 {
     text* arg1 = PG_GETARG_TEXT_PP(0);
     text* arg2 = PG_GETARG_TEXT_PP(1);
-    if (VARATT_IS_HUGE_TOAST_POINTER((varlena *)arg1) || VARATT_IS_HUGE_TOAST_POINTER((varlena *)arg2)) {
-        ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
-                errmsg("text_ge could not support more than 1GB clob/blob data")));
-    }
+    FUNC_CHECK_HUGE_POINTER(false, arg1, "text_ge()");
+
     bool result = false;
 
     result = (text_cmp(arg1, arg2, PG_GET_COLLATION()) >= 0);
@@ -2342,10 +2379,8 @@ Datum bttextcmp(PG_FUNCTION_ARGS)
 {
     text* arg1 = PG_GETARG_TEXT_PP(0);
     text* arg2 = PG_GETARG_TEXT_PP(1);
-    if (VARATT_IS_HUGE_TOAST_POINTER((varlena *)arg1) || VARATT_IS_HUGE_TOAST_POINTER((varlena *)arg2)) {
-        ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
-                errmsg("bttextcmp could not support more than 1GB clob/blob data")));
-    }
+    FUNC_CHECK_HUGE_POINTER(false, arg1, "bttextcmp()");
+
     int32 result;
 
     result = text_cmp(arg1, arg2, PG_GET_COLLATION());
@@ -2365,8 +2400,11 @@ Datum bttextsortsupport(PG_FUNCTION_ARGS)
     oldcontext = MemoryContextSwitchTo(ssup->ssup_cxt);
 
     /* Use generic string SortSupport */
+#ifdef DOLPHIN
     varstr_sortsupport(ssup, collid, true);
-
+#else
+    varstr_sortsupport(ssup, collid, false);
+#endif
     MemoryContextSwitchTo(oldcontext);
 
     PG_RETURN_VOID();
@@ -2597,6 +2635,9 @@ static int varstrfastcmp_locale(Datum x, Datum y, SortSupport ssup)
     bool arg1_match = false;
     VarStringSortSupport* sss = (VarStringSortSupport*)ssup->ssup_extra;
     errno_t rc = EOK;
+
+    FUNC_CHECK_HUGE_POINTER(false, arg1, "sort()");
+    FUNC_CHECK_HUGE_POINTER(false, arg2, "sort()");
 
     /* working state */
     char *a1p = NULL, *a2p = NULL;
@@ -3050,10 +3091,7 @@ Datum text_larger(PG_FUNCTION_ARGS)
 {
     text* arg1 = PG_GETARG_TEXT_PP(0);
     text* arg2 = PG_GETARG_TEXT_PP(1);
-    if (VARATT_IS_HUGE_TOAST_POINTER((varlena *)arg1) || VARATT_IS_HUGE_TOAST_POINTER((varlena *)arg2)) {
-        ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
-                errmsg("text_larger could not support more than 1GB clob/blob data")));
-    }
+    FUNC_CHECK_HUGE_POINTER(false, arg1, "text_larger()");
     text* result = NULL;
 
     result = ((text_cmp(arg1, arg2, PG_GET_COLLATION()) > 0) ? arg1 : arg2);
@@ -3065,10 +3103,7 @@ Datum text_smaller(PG_FUNCTION_ARGS)
 {
     text* arg1 = PG_GETARG_TEXT_PP(0);
     text* arg2 = PG_GETARG_TEXT_PP(1);
-    if (VARATT_IS_HUGE_TOAST_POINTER((varlena *)arg1) || VARATT_IS_HUGE_TOAST_POINTER((varlena *)arg2)) {
-        ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
-                errmsg("text_smaller could not support more than 1GB clob/blob data")));
-    }
+    FUNC_CHECK_HUGE_POINTER(false, arg1, "text_smaller()");
     text* result = NULL;
 
     result = ((text_cmp(arg1, arg2, PG_GET_COLLATION()) < 0) ? arg1 : arg2);
@@ -3106,10 +3141,8 @@ Datum text_pattern_lt(PG_FUNCTION_ARGS)
 {
     text* arg1 = PG_GETARG_TEXT_PP(0);
     text* arg2 = PG_GETARG_TEXT_PP(1);
-    if (VARATT_IS_HUGE_TOAST_POINTER((varlena *)arg1) || VARATT_IS_HUGE_TOAST_POINTER((varlena *)arg2)) {
-        ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
-                errmsg("text_pattern_lt could not support more than 1GB clob/blob data")));
-    }
+
+    FUNC_CHECK_HUGE_POINTER(false, arg1, "text_pattern()");
     int result;
 
     result = internal_text_pattern_compare(arg1, arg2);
@@ -3124,10 +3157,8 @@ Datum text_pattern_le(PG_FUNCTION_ARGS)
 {
     text* arg1 = PG_GETARG_TEXT_PP(0);
     text* arg2 = PG_GETARG_TEXT_PP(1);
-    if (VARATT_IS_HUGE_TOAST_POINTER((varlena *)arg1) || VARATT_IS_HUGE_TOAST_POINTER((varlena *)arg2)) {
-        ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
-                errmsg("text_pattern_le could not support more than 1GB clob/blob data")));
-    }
+
+    FUNC_CHECK_HUGE_POINTER(false, arg1, "text_pattern()");
     int result;
 
     result = internal_text_pattern_compare(arg1, arg2);
@@ -3142,10 +3173,8 @@ Datum text_pattern_ge(PG_FUNCTION_ARGS)
 {
     text* arg1 = PG_GETARG_TEXT_PP(0);
     text* arg2 = PG_GETARG_TEXT_PP(1);
-    if (VARATT_IS_HUGE_TOAST_POINTER((varlena *)arg1) || VARATT_IS_HUGE_TOAST_POINTER((varlena *)arg2)) {
-        ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
-                errmsg("text_pattern_ge could not support more than 1GB clob/blob data")));
-    }
+    FUNC_CHECK_HUGE_POINTER(false, arg1, "text_pattern()");
+
     int result;
 
     result = internal_text_pattern_compare(arg1, arg2);
@@ -3160,10 +3189,8 @@ Datum text_pattern_gt(PG_FUNCTION_ARGS)
 {
     text* arg1 = PG_GETARG_TEXT_PP(0);
     text* arg2 = PG_GETARG_TEXT_PP(1);
-    if (VARATT_IS_HUGE_TOAST_POINTER((varlena *)arg1) || VARATT_IS_HUGE_TOAST_POINTER((varlena *)arg2)) {
-        ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
-                errmsg("text_pattern_gt could not support more than 1GB clob/blob data")));
-    }
+    FUNC_CHECK_HUGE_POINTER(false, arg1, "text_pattern()");
+
     int result;
 
     result = internal_text_pattern_compare(arg1, arg2);
@@ -3178,10 +3205,8 @@ Datum bttext_pattern_cmp(PG_FUNCTION_ARGS)
 {
     text* arg1 = PG_GETARG_TEXT_PP(0);
     text* arg2 = PG_GETARG_TEXT_PP(1);
-    if (VARATT_IS_HUGE_TOAST_POINTER((varlena *)arg1) || VARATT_IS_HUGE_TOAST_POINTER((varlena *)arg2)) {
-        ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
-                errmsg("bttext_pattern_cmp could not support more than 1GB clob/blob data")));
-    }
+    FUNC_CHECK_HUGE_POINTER(false, arg1, "btext_pattern()");
+
     int result;
 
     result = internal_text_pattern_compare(arg1, arg2);
@@ -3201,6 +3226,8 @@ Datum bttext_pattern_cmp(PG_FUNCTION_ARGS)
 Datum byteaoctetlen(PG_FUNCTION_ARGS)
 {
     Datum str = PG_GETARG_DATUM(0);
+
+    FUNC_CHECK_HUGE_POINTER(PG_ARGISNULL(0), PG_GETARG_TEXT_PP(0), "byteaoctetlen()");
 
     /* We need not detoast the input at all */
     PG_RETURN_INT32(toast_raw_datum_size(str) - VARHDRSZ);
@@ -3445,6 +3472,10 @@ static bytea* bytea_substring_orclcompat(Datum str, int S, int L, bool length_no
      */
     if (S < 0) {
         S = total + S + 1;
+#ifndef DOLPHIN
+    } else if (0 == S) {
+        S = 1;
+#endif
     }
 
     S1 = Max(S, 1);
@@ -4032,6 +4063,8 @@ Datum byteane(PG_FUNCTION_ARGS)
     bool result = false;
     Size len1, len2;
 
+    FUNC_CHECK_HUGE_POINTER(PG_ARGISNULL(0), DatumGetPointer(arg1), "byteane()");
+
     /*
      * We can use a fast path for unequal lengths, which might save us from
      * having to detoast one or both values.
@@ -4057,6 +4090,8 @@ Datum bytealt(PG_FUNCTION_ARGS)
 {
     bytea* arg1 = PG_GETARG_BYTEA_PP(0);
     bytea* arg2 = PG_GETARG_BYTEA_PP(1);
+
+    FUNC_CHECK_HUGE_POINTER(false, arg1, "bytealt()");
     int len1, len2;
     int cmp;
 
@@ -4078,6 +4113,8 @@ Datum byteale(PG_FUNCTION_ARGS)
     int len1, len2;
     int cmp;
 
+    FUNC_CHECK_HUGE_POINTER(false, arg1, "bytealt()");
+
     len1 = VARSIZE_ANY_EXHDR(arg1);
     len2 = VARSIZE_ANY_EXHDR(arg2);
 
@@ -4095,6 +4132,7 @@ Datum byteagt(PG_FUNCTION_ARGS)
     bytea* arg2 = PG_GETARG_BYTEA_PP(1);
     int len1, len2;
     int cmp;
+    FUNC_CHECK_HUGE_POINTER(false, arg1, "byteagt()");
 
     len1 = VARSIZE_ANY_EXHDR(arg1);
     len2 = VARSIZE_ANY_EXHDR(arg2);
@@ -4113,6 +4151,7 @@ Datum byteage(PG_FUNCTION_ARGS)
     bytea* arg2 = PG_GETARG_BYTEA_PP(1);
     int len1, len2;
     int cmp;
+    FUNC_CHECK_HUGE_POINTER(false, arg1, "bytealt()");
 
     len1 = VARSIZE_ANY_EXHDR(arg1);
     len2 = VARSIZE_ANY_EXHDR(arg2);
@@ -4129,6 +4168,7 @@ Datum byteacmp(PG_FUNCTION_ARGS)
 {
     bytea* arg1 = PG_GETARG_BYTEA_PP(0);
     bytea* arg2 = PG_GETARG_BYTEA_PP(1);
+    FUNC_CHECK_HUGE_POINTER(false, arg1, "byteacmp()");
     int len1, len2;
     int cmp;
 
@@ -4167,6 +4207,8 @@ Datum raweq(PG_FUNCTION_ARGS)
     int len1, len2;
     bool result = false;
 
+    FUNC_CHECK_HUGE_POINTER(PG_ARGISNULL(0), arg1, "raweq()");
+
     len1 = VARSIZE_ANY_EXHDR(arg1);
     len2 = VARSIZE_ANY_EXHDR(arg2);
 
@@ -4188,6 +4230,7 @@ Datum rawne(PG_FUNCTION_ARGS)
     bytea* arg2 = PG_GETARG_BYTEA_PP(1);
     int len1, len2;
     bool result = false;
+    FUNC_CHECK_HUGE_POINTER(false, arg1, "rawne()");
 
     len1 = VARSIZE_ANY_EXHDR(arg1);
     len2 = VARSIZE_ANY_EXHDR(arg2);
@@ -4210,6 +4253,7 @@ Datum rawlt(PG_FUNCTION_ARGS)
     bytea* arg2 = PG_GETARG_BYTEA_PP(1);
     int len1, len2;
     int cmp;
+    FUNC_CHECK_HUGE_POINTER(false, arg1, "rawlt()");
 
     len1 = VARSIZE_ANY_EXHDR(arg1);
     len2 = VARSIZE_ANY_EXHDR(arg2);
@@ -4228,6 +4272,7 @@ Datum rawle(PG_FUNCTION_ARGS)
     bytea* arg2 = PG_GETARG_BYTEA_PP(1);
     int len1, len2;
     int cmp;
+    FUNC_CHECK_HUGE_POINTER(false, arg1, "rawle()");
 
     len1 = VARSIZE_ANY_EXHDR(arg1);
     len2 = VARSIZE_ANY_EXHDR(arg2);
@@ -4246,6 +4291,7 @@ Datum rawgt(PG_FUNCTION_ARGS)
     bytea* arg2 = PG_GETARG_BYTEA_PP(1);
     int len1, len2;
     int cmp;
+    FUNC_CHECK_HUGE_POINTER(false, arg1, "rawgt()");
 
     len1 = VARSIZE_ANY_EXHDR(arg1);
     len2 = VARSIZE_ANY_EXHDR(arg2);
@@ -4264,6 +4310,7 @@ Datum rawge(PG_FUNCTION_ARGS)
     bytea* arg2 = PG_GETARG_BYTEA_PP(1);
     int len1, len2;
     int cmp;
+    FUNC_CHECK_HUGE_POINTER(false, arg1, "rawge()");
 
     len1 = VARSIZE_ANY_EXHDR(arg1);
     len2 = VARSIZE_ANY_EXHDR(arg2);
@@ -4282,6 +4329,7 @@ Datum rawcmp(PG_FUNCTION_ARGS)
     bytea* arg2 = PG_GETARG_BYTEA_PP(1);
     int len1, len2;
     int cmp;
+    FUNC_CHECK_HUGE_POINTER(false, arg1, "rawcmp()");
 
     len1 = VARSIZE_ANY_EXHDR(arg1);
     len2 = VARSIZE_ANY_EXHDR(arg2);
@@ -4739,6 +4787,8 @@ Datum split_text(PG_FUNCTION_ARGS)
     int start_posn;
     int end_posn;
     text* result_text = NULL;
+
+    FUNC_CHECK_HUGE_POINTER(false, inputstring, "split_part()");
 
     /* field number is 1 based */
     if (fldnum < 1)
@@ -5207,7 +5257,7 @@ Datum to_hex64(PG_FUNCTION_ARGS)
 
     PG_RETURN_TEXT_P(cstring_to_text(ptr));
 }
-
+#ifdef DOLPHIN
 #define HEX_BUF_LEN 32
 /*
  * Convert an int64 to a string containing a base 16 (hex) representation of the input.
@@ -5291,7 +5341,7 @@ Datum bit_to_hex(PG_FUNCTION_ARGS)
     } while (len > 0);
     PG_RETURN_TEXT_P(cstring_to_text(result));
 }
-
+#endif
 /*
  * Create an md5 hash of a text string and return it as hex
  *
@@ -5304,6 +5354,8 @@ Datum md5_text(PG_FUNCTION_ARGS)
     text* in_text = PG_GETARG_TEXT_PP(0);
     size_t len;
     char hexsum[MD5_HASH_LEN + 1];
+
+    FUNC_CHECK_HUGE_POINTER(false, in_text, "md5()");
 
     /* Calculate the length of the buffer using varlena metadata */
     len = VARSIZE_ANY_EXHDR(in_text);
@@ -5331,6 +5383,230 @@ Datum md5_bytea(PG_FUNCTION_ARGS)
         ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("out of memory")));
 
     PG_RETURN_TEXT_P(cstring_to_text(hexsum));
+}
+
+/*
+ * Create an sha/sha1/sha2 hash of a text string and return it as hex
+ */
+
+/* SHA-1 Various Length Definitions */
+#define SHA1_ALG_TYPE 160
+#define SHA1_DIGEST_LENGTH 20
+
+/* SHA-224 / SHA-256 /SHA-384 / SHA-512 Various Length Definitions */
+#define SHA224_ALG_TYPE 224
+#define SHA224_DIGEST_LENGTH 28
+#define SHA256_ALG_TYPE 256
+#define SHA256_DIGEST_LENGTH 32
+#define SHA384_ALG_TYPE 384
+#define SHA384_DIGEST_LENGTH 48
+#define SHA512_ALG_TYPE 512
+#define SHA512_DIGEST_LENGTH 64
+
+#define SHA_ERROR_LENGTH (GS_UINT32)(-1)
+
+const char hex_map[] = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f' };
+
+/* Converts binary character streams to hexadecimal return */
+static void bin2text(GS_UCHAR* bin_val, char* str, GS_UINT32* size)
+{
+    GS_UINT32 bin_size = *size;
+    int pos = 0;
+ 
+    for (GS_UINT32 i = 0; i < bin_size; i++) {
+        str[pos] = hex_map[(bin_val[i] & 0xF0) >> 4];
+        pos++;
+        str[pos] = hex_map[bin_val[i] & 0x0F];
+        pos++;
+    }
+    str[pos] = '\0';
+}
+
+/* get_hash_digest_length: choose the unsigned char sha length by secure hash algorithm */
+static GS_UINT32 get_hash_digest_length(int64 alg_type)
+{
+    GS_UINT32 hash_digest_length;
+    switch (alg_type) {
+        case SHA1_ALG_TYPE:
+            hash_digest_length = SHA1_DIGEST_LENGTH;
+            break;
+        case SHA224_ALG_TYPE:
+            hash_digest_length = SHA224_DIGEST_LENGTH;
+            break;
+        case 0:
+        case SHA256_ALG_TYPE:
+            hash_digest_length = SHA256_DIGEST_LENGTH;
+            break;
+        case SHA384_ALG_TYPE:
+            hash_digest_length = SHA384_DIGEST_LENGTH;
+            break;
+        case SHA512_ALG_TYPE:
+            hash_digest_length = SHA512_DIGEST_LENGTH;
+            break;
+        default:
+            hash_digest_length = SHA_ERROR_LENGTH;
+            break;
+    }
+    return hash_digest_length;
+}
+
+/* get_evp_md: choose EVP_MD value by secure hash algorithm */
+const EVP_MD* get_evp_md(int64 alg_type)
+{
+    const EVP_MD* md = NULL;
+    switch (alg_type) {
+        case SHA1_ALG_TYPE:
+            md = EVP_sha1();
+            break;
+        case SHA224_ALG_TYPE:
+            md = EVP_sha224();
+            break;
+        case 0:
+        case SHA256_ALG_TYPE:
+            md = EVP_sha256();
+            break;
+        case SHA384_ALG_TYPE:
+            md = EVP_sha384();
+            break;
+        case SHA512_ALG_TYPE:
+            md = EVP_sha512();
+            break;
+        default:
+            break;
+    }
+    return md;
+}
+
+/* function to generate sha /sha1 /sha2 */
+static void generate_sha(char* src_str, GS_UINT32 src_len, char* result, int64 alg_type)
+{
+    GS_UINT32 sha_digest_len = get_hash_digest_length(alg_type);
+    GS_UINT32 save_digest_len = sha_digest_len;
+    GS_UCHAR* hash_val = (GS_UCHAR*)palloc((sha_digest_len + 1) * (sizeof(GS_UCHAR)));
+    const EVP_MD *evp_type = get_evp_md(alg_type);
+
+    /*
+     * use openssl to calculate the hash result, hash_val stores the result in binary format.
+     * char_hash_len stores the result length. error occurs will free temp storage.
+     */
+    if (!EVP_Digest(src_str, src_len, hash_val, &sha_digest_len, evp_type, NULL)) {
+        pfree(hash_val);
+        pfree(src_str);
+        pfree(result);
+        ereport(ERROR,
+            (errcode(ERRCODE_INVALID_STATUS),
+             errmsg("generate sha failed")));
+    }
+
+    /* verify sha_digest_len value after EVP_Digest, incorrect free temp storage */
+    if (sha_digest_len != save_digest_len) {
+        pfree(hash_val);
+        pfree(src_str);
+        pfree(result);
+        ereport(ERROR,
+            (errcode(ERRCODE_INVALID_STATUS),
+             errmsg("generate sha failed")));
+    }
+
+    /* convert binary to hexadecimal */
+    bin2text(hash_val, result, &sha_digest_len);
+    pfree(hash_val);
+}
+
+/*
+ * Create an sha1 hash of a bytea field and return it as a hex string:
+ * 20-byte sha1 digest is represented in 40 hex characters.
+ */
+Datum sha1(PG_FUNCTION_ARGS)
+{
+    /* In B format,  characters need to be escaped */
+    if (!DB_IS_CMPT(B_FORMAT)) {
+        ereport(ERROR,
+            (errcode(ERRCODE_INVALID_STATUS),
+             errmsg("sha/sha1 is supported only in B-format database")));
+    }
+
+    if (PG_ARGISNULL(ARG_0)) {
+        PG_RETURN_NULL();
+    }
+
+    text* source_text = NULL;
+    source_text = PG_GETARG_TEXT_PP(ARG_0);
+ 
+    char* text_str = text_to_cstring(source_text);
+    char* source_str = text_str;
+    GS_UINT32 source_len = strlen(source_str);
+ 
+    /* calculate the hash result */
+    char* result = (char*)palloc((SHA1_DIGEST_LENGTH * 2 + 1) * (sizeof(char)));
+    generate_sha(source_str, source_len, result, SHA1_ALG_TYPE);
+    text* ret = cstring_to_text(result);
+
+    /* clean up temp storage */
+    pfree(text_str);
+    pfree(result);
+ 
+    PG_RETURN_TEXT_P(ret);
+}
+
+/*
+ * the calculation of sha and sha1 is the same.
+ */
+
+Datum sha(PG_FUNCTION_ARGS)
+{
+    return sha1(fcinfo);
+}
+
+/*
+ * Create an sha2 hash of a bytea field and return it as a hex string:
+ * 28-byte sha224 digest is represented in 56 hex characters.
+ * 32-byte sha256 or sha0 digest is represented in 64 hex characters.
+ * 48-byte sha384 digest is represented in 96s hex characters.
+ * 64-byte sha512 digest is represented in 96s hex characters.
+ */
+Datum sha2(PG_FUNCTION_ARGS)
+{
+    /* In B format,  characters need to be escaped */
+    if (!DB_IS_CMPT(B_FORMAT)) {
+        ereport(ERROR,
+            (errcode(ERRCODE_INVALID_STATUS),
+             errmsg("sha2 is supported only in B-format database")));
+    }
+ 
+    if (PG_ARGISNULL(ARG_0)) {
+        PG_RETURN_NULL();
+    }
+    
+    text* src_text = NULL;
+    src_text = PG_GETARG_TEXT_PP(ARG_0);
+ 
+    int64 alg_type = -1;
+    if (PG_ARGISNULL(ARG_1)) {
+        PG_RETURN_NULL();
+    }
+    alg_type = PG_GETARG_INT64(ARG_1);
+ 
+    char* text_str = text_to_cstring(src_text);
+    char* source_str = text_str;
+    GS_UINT32 source_len = strlen(source_str);
+ 
+    GS_UINT32 digest_length = get_hash_digest_length(alg_type);
+    if ((digest_length == SHA_ERROR_LENGTH) || (digest_length == SHA1_DIGEST_LENGTH)) {
+        PG_RETURN_NULL();
+    }
+    GS_UINT32 hex_len = digest_length * 2;
+
+    /* calculate the hash result */
+    char* result = (char*)palloc((hex_len + 1) * (sizeof(char)));
+    generate_sha(source_str, source_len, result, alg_type);
+    text* ret = cstring_to_text(result);
+
+    /* clean up temp storage */
+    pfree(text_str);
+    pfree(result);
+
+    PG_RETURN_TEXT_P(ret);
 }
 
 /*
@@ -6242,6 +6518,65 @@ static text* concat_internal(const char* sepstr, int seplen, int argidx, Functio
 }
 
 /*
+ * Concatenate all arguments with separator. NULL arguments are ignored.
+ */
+Datum group_concat_transfn(PG_FUNCTION_ARGS)
+{
+    const int64 maxlength = u_sess->attr.attr_common.group_concat_max_len;
+    StringInfo state = PG_ARGISNULL(0) ? NULL : (StringInfo)PG_GETARG_POINTER(0);
+    /*
+     * The first argument is transValue, and the second is separator.
+     * Concat all the other arguments without separator.
+     */
+    if (state != NULL && state->len == maxlength) {
+        PG_RETURN_POINTER(state);
+    }
+    const text *argsconcat = concat_internal("", 0, 2, fcinfo, false);
+    /* Append the value unless null. */
+    if (argsconcat) {
+        /* On the first time through, we ignore the separator. */
+        if (state == NULL) {
+            state = makeStringAggState(fcinfo);
+        } else if (!PG_ARGISNULL(1)) {
+            appendStringInfoText(state, (const text*)PG_GETARG_TEXT_PP(1)); /* delimiter */
+        }
+        appendStringInfoText(state, argsconcat); /* value */
+        if (state->len > maxlength) {
+            state->len = maxlength;
+            state->data[state->len] = '\0';
+        }
+    } else {
+        /*
+         * When argsconcat is NULL, fcinfo->isnull has been set as true in concat_internal.
+         * The value of fcinfo->isnull should depend on the transValue.
+         */
+        fcinfo->isnull = PG_ARGISNULL(0);
+    }
+
+    /*
+     * The transition type for group_concat() is declared to be "internal",
+     * which is a pass-by-value type the same size as a pointer.
+     */
+    PG_RETURN_POINTER(state);
+}
+/*
+ * Concatenate all arguments with separator. NULL arguments are ignored.
+ */
+Datum group_concat_finalfn(PG_FUNCTION_ARGS)
+{
+    StringInfo state;
+
+    /* cannot be called directly because of internal-type argument */
+    Assert(AggCheckCallContext(fcinfo, NULL));
+
+    if (!PG_ARGISNULL(0)) { /* result not null */
+        state = (StringInfo)PG_GETARG_POINTER(0);
+        PG_RETURN_TEXT_P(cstring_to_text_with_len(state->data, state->len));
+    } else
+        PG_RETURN_NULL();
+}
+
+/*
  * Concatenate all arguments. NULL arguments are ignored.
  */
 Datum text_concat(PG_FUNCTION_ARGS)
@@ -6287,7 +6622,11 @@ Datum text_left(PG_FUNCTION_ARGS)
     text* part_str = NULL;
 
     if (n < 0) {
+#ifdef DOLPHIN
         PG_RETURN_TEXT_P(cstring_to_text(""));
+#else
+        n = pg_mbstrlen_with_len(p, len) + n;
+#endif
     }
 
     if (n >= 0) {
@@ -6297,8 +6636,11 @@ Datum text_left(PG_FUNCTION_ARGS)
             pfree_ext(part_str);
         }
     }
-
+#ifdef DOLPHIN
     rlen = pg_mbcliplen(p, len, part_off);
+#else
+    rlen = pg_mbcharcliplen(p, len, part_off);
+#endif
     if (0 == rlen && u_sess->attr.attr_sql.sql_compatibility == A_FORMAT) {
         PG_RETURN_NULL();
     }
@@ -6324,7 +6666,11 @@ Datum text_right(PG_FUNCTION_ARGS)
     text* part_str = NULL;
 
     if (n < 0)
+#ifdef DOLPHIN
         PG_RETURN_TEXT_P(cstring_to_text(""));
+#else
+        n = -n;
+#endif
     else
         n = pg_mbstrlen_with_len(p, len) - n;
 
@@ -6335,7 +6681,11 @@ Datum text_right(PG_FUNCTION_ARGS)
             pfree_ext(part_str);
         }
     }
+#ifdef DOLPHIN
     off = pg_mbcliplen(p, len, part_off);
+#else
+    off = pg_mbcharcliplen(p, len, part_off);
+#endif
     if (0 == (len - off) && u_sess->attr.attr_sql.sql_compatibility == A_FORMAT) {
         PG_RETURN_NULL();
     }
@@ -6396,6 +6746,7 @@ Datum text_reverse(PG_FUNCTION_ARGS)
             ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("unterminated conversion specifier"))); \
     } while (0)
 
+#ifdef DOLPHIN
 #define MAX_PRECISION 32
 #define THOUS_INTERVAL 3
 #define ASCII_9 57
@@ -6545,7 +6896,7 @@ static char *db_b_format_transfer(char *ch_val, int precision, char *ch_locale) 
     pfree(rounded_val);
     return buf;
 }
-
+#endif
 /*
  * Returns a formated string
  */
@@ -6571,6 +6922,8 @@ Datum text_format(PG_FUNCTION_ARGS)
     /* When format string is null, immediately return null */
     if (PG_ARGISNULL(0))
         PG_RETURN_NULL();
+
+    FUNC_CHECK_HUGE_POINTER(false, PG_GETARG_TEXT_PP(0), "text_format()");
 
     /* If argument is marked VARIADIC, expand array into elements */
     if (get_fn_expr_variadic(fcinfo->flinfo)) {
@@ -6598,6 +6951,7 @@ Datum text_format(PG_FUNCTION_ARGS)
 
             /* OK, safe to fetch the array value */
             arr = PG_GETARG_ARRAYTYPE_P(1);
+            FUNC_CHECK_HUGE_POINTER(false, PG_GETARG_TEXT_PP(1), "text_format()");
 
             /* Get info about array element type */
             element_type = ARR_ELEMTYPE(arr);
@@ -7205,6 +7559,8 @@ Datum instr_3args(PG_FUNCTION_ARGS)
     text* text_str_to_search = PG_GETARG_TEXT_P(1);
     int32 beg_index = PG_GETARG_INT32(2);
 
+    FUNC_CHECK_HUGE_POINTER(false, text_str, "instr()");
+
     return (Int32GetDatum(text_instr_3args(text_str, text_str_to_search, beg_index)));
 }
 Datum instr_4args(PG_FUNCTION_ARGS)
@@ -7236,6 +7592,8 @@ Datum substrb_with_lenth(PG_FUNCTION_ARGS)
     int32 start = PG_GETARG_INT32(1);
     int32 length = PG_GETARG_INT32(2);
 
+    FUNC_CHECK_HUGE_POINTER(PG_ARGISNULL(0), PG_GETARG_TEXT_PP(0), "regexp()");
+
     int32 total = 0;
     total = toast_raw_datum_size(str) - VARHDRSZ;
     if ((length < 0) || (total == 0) || (start > total) || (start + total < 0)) {
@@ -7259,6 +7617,7 @@ Datum substrb_without_lenth(PG_FUNCTION_ARGS)
     text* result = NULL;
     Datum str = PG_GETARG_DATUM(0);
     int32 start = PG_GETARG_INT32(1);
+    FUNC_CHECK_HUGE_POINTER(PG_ARGISNULL(0), PG_GETARG_TEXT_PP(0), "regexp()");
 
     int32 total = 0;
     total = toast_raw_datum_size(str) - VARHDRSZ;

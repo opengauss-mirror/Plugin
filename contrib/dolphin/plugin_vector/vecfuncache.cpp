@@ -894,11 +894,19 @@ static VecFuncCacheEntry vec_func_table_plugin[] = {{1724,
         }},
     {936,
         {
+#ifdef DOLPHIN
             vtext_substr<true, true>,  // text_substr_null
+#else
+            vtext_substr<false, true>,  // text_substr_null
+#endif
         }},
     {937,
         {
+#ifdef DOLPHIN
             vtext_substr<true, false>,  // text_substr_no_len_null
+#else
+            vtext_substr<false, false>,  // text_substr_no_len_null
+#endif
         }},
     {877,
         {

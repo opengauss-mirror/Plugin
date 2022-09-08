@@ -5,6 +5,7 @@ create database b dbcompatibility 'b';
 drop user if exists tester CASCADE;
 NOTICE:  role "tester" does not exist, skipping
 create user tester password 'Password123';
+NOTICE:  The iteration value of password is not recommended.Setting the iteration value too small reduces the security of the password, and setting it too large results in performance degradation.
 -- create temporary tables
 revoke create temporary tables on database b from tester;
 revoke create temporary tables on database b from public;
@@ -90,6 +91,7 @@ ERROR:  Permission denied to create role.
 grant create user on *.* to tester;
 SET SESSION AUTHORIZATION tester PASSWORD 'Password123';
 create user tester_2 PASSWORD 'Password123';
+NOTICE:  The iteration value of password is not recommended.Setting the iteration value too small reduces the security of the password, and setting it too large results in performance degradation.
 -- INDEX
 \c b
 drop user tester_2;
