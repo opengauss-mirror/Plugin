@@ -1,5 +1,5 @@
 #include "plugin_utils/partitionfuncs.h"
-
+#ifdef DOLPHIN
 PG_FUNCTION_INFO_V1_PUBLIC(RemovePartitioning);
 extern "C" DLL_PUBLIC Datum RemovePartitioning(PG_FUNCTION_ARGS);
 
@@ -305,3 +305,4 @@ Datum AnalyzePartitions(PG_FUNCTION_ARGS)
     pfree_ext(vacstmt);
     PG_RETURN_TEXT_P(cstring_to_text(tableName));
 }
+#endif

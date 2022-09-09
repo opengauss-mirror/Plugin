@@ -4958,7 +4958,55 @@ List* transformAlterTableStmt(Oid relid, AlterTableStmt* stmt, const char* query
 
                 newcmds = lappend(newcmds, cmd);
                 break;
+            #ifdef DOLPHIN
+            case AT_ReorganizePartition:
+                /* transform the boundary of range partition: from A_Const into Const */
+                splitDefState = (SplitPartitionState*)cmd->def;
+                foreach (cell, splitDefState->dest_partition_define_list) {
+                    rangePartDef = (Node*)lfirst(cell);
+                    transformPartitionValue(pstate, rangePartDef, true);
+                }
+                if (splitDefState->partition_for_values)
+                    splitDefState->partition_for_values =
+                        transformRangePartitionValueInternal(pstate, splitDefState->partition_for_values, true, true);
 
+                /* transform the start/end into less/than */
+                if (is_start_end_def_list(splitDefState->dest_partition_define_list)) {
+                    List* pos = NIL;
+                    int32 partNum;
+                    Const* lowBound = NULL;
+                    Const* upBound = NULL;
+                    Oid srcPartOid = InvalidOid;
+
+                    /* get partition number */
+                    partNum = getNumberOfPartitions(rel);
+
+                    /* get partition info */
+                    get_rel_partition_info(rel, &pos, NULL);
+
+                    /* get source partition bound */
+                    srcPartOid = get_split_partition_oid(rel, splitDefState);
+                    if (!OidIsValid(srcPartOid)) {
+                        ereport(ERROR,
+                            (errcode(ERRCODE_UNDEFINED_TABLE),
+                                errmsg("split partition \"%s\" does not exist.", splitDefState->src_partition_name)));
+                    }
+                    get_src_partition_bound(rel, srcPartOid, &lowBound, &upBound);
+
+                    /* entry of transform */
+                    splitDefState->dest_partition_define_list = transformRangePartStartEndStmt(pstate,
+                        splitDefState->dest_partition_define_list,
+                        pos,
+                        rel->rd_att->attrs,
+                        partNum - 1,
+                        lowBound,
+                        upBound,
+                        true);
+                }
+
+                newcmds = lappend(newcmds, cmd);
+                break;
+            #endif
             case AT_SplitPartition:
                 if (!RELATION_IS_PARTITIONED(rel)) {
                     ereport(ERROR,

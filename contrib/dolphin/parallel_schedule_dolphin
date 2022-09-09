@@ -73,7 +73,7 @@ test: alter_function_test/alter_function  alter_function_test/alter_procedure re
 
 test: network2 use_dbname  view_definer_test insert_set
 
-test: partition_test1 partition_test2 partition_test3
+test: partition_test1 partition_test2 partition_test3 partition_test4
 
 test: test_table_index
 

@@ -852,7 +852,8 @@ typedef enum AlterTableType {
     ,
     AT_DropIndex,
     AT_DropForeignKey,
-    AT_RenameIndex
+    AT_RenameIndex,
+    AT_ReorganizePartition
 #endif
 } AlterTableType;
 
