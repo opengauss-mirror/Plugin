@@ -2376,6 +2376,79 @@ int timestamp_cmp_internal(Timestamp dt1, Timestamp dt2)
 #endif
 }
 
+Datum timestamp_eq(PG_FUNCTION_ARGS)
+{
+    Timestamp dt1 = PG_GETARG_TIMESTAMP(0);
+    Timestamp dt2 = PG_GETARG_TIMESTAMP(1);
+
+    PG_RETURN_BOOL(timestamp_cmp_internal(dt1, dt2) == 0);
+}
+
+Datum timestamp_ne(PG_FUNCTION_ARGS)
+{
+    Timestamp dt1 = PG_GETARG_TIMESTAMP(0);
+    Timestamp dt2 = PG_GETARG_TIMESTAMP(1);
+
+    PG_RETURN_BOOL(timestamp_cmp_internal(dt1, dt2) != 0);
+}
+
+Datum timestamp_lt(PG_FUNCTION_ARGS)
+{
+    Timestamp dt1 = PG_GETARG_TIMESTAMP(0);
+    Timestamp dt2 = PG_GETARG_TIMESTAMP(1);
+
+    PG_RETURN_BOOL(timestamp_cmp_internal(dt1, dt2) < 0);
+}
+
+Datum timestamp_gt(PG_FUNCTION_ARGS)
+{
+    Timestamp dt1 = PG_GETARG_TIMESTAMP(0);
+    Timestamp dt2 = PG_GETARG_TIMESTAMP(1);
+
+    PG_RETURN_BOOL(timestamp_cmp_internal(dt1, dt2) > 0);
+}
+
+Datum timestamp_le(PG_FUNCTION_ARGS)
+{
+    Timestamp dt1 = PG_GETARG_TIMESTAMP(0);
+    Timestamp dt2 = PG_GETARG_TIMESTAMP(1);
+
+    PG_RETURN_BOOL(timestamp_cmp_internal(dt1, dt2) <= 0);
+}
+
+Datum timestamp_ge(PG_FUNCTION_ARGS)
+{
+    Timestamp dt1 = PG_GETARG_TIMESTAMP(0);
+    Timestamp dt2 = PG_GETARG_TIMESTAMP(1);
+
+    PG_RETURN_BOOL(timestamp_cmp_internal(dt1, dt2) >= 0);
+}
+
+Datum timestamp_cmp(PG_FUNCTION_ARGS)
+{
+    Timestamp dt1 = PG_GETARG_TIMESTAMP(0);
+    Timestamp dt2 = PG_GETARG_TIMESTAMP(1);
+
+    PG_RETURN_INT32(timestamp_cmp_internal(dt1, dt2));
+}
+
+/* note: this is used for timestamptz also */
+static int timestamp_fastcmp(Datum x, Datum y, SortSupport ssup)
+{
+    Timestamp a = DatumGetTimestamp(x);
+    Timestamp b = DatumGetTimestamp(y);
+
+    return timestamp_cmp_internal(a, b);
+}
+
+Datum timestamp_sortsupport(PG_FUNCTION_ARGS)
+{
+    SortSupport ssup = (SortSupport)PG_GETARG_POINTER(0);
+
+    ssup->comparator = timestamp_fastcmp;
+    PG_RETURN_VOID();
+}
+
 Datum timestamp_hash(PG_FUNCTION_ARGS)
 {
     /* We can use either hashint8 or hashfloat8 directly */
@@ -2770,6 +2843,33 @@ Datum overlaps_timestamp(PG_FUNCTION_ARGS)
 /* ----------------------------------------------------------
  *	"Arithmetic" operators on date/times.
  * --------------------------------------------------------- */
+
+Datum timestamp_smaller(PG_FUNCTION_ARGS)
+{
+    Timestamp dt1 = PG_GETARG_TIMESTAMP(0);
+    Timestamp dt2 = PG_GETARG_TIMESTAMP(1);
+    Timestamp result;
+
+    /* use timestamp_cmp_internal to be sure this agrees with comparisons */
+    if (timestamp_cmp_internal(dt1, dt2) < 0)
+        result = dt1;
+    else
+        result = dt2;
+    PG_RETURN_TIMESTAMP(result);
+}
+
+Datum timestamp_larger(PG_FUNCTION_ARGS)
+{
+    Timestamp dt1 = PG_GETARG_TIMESTAMP(0);
+    Timestamp dt2 = PG_GETARG_TIMESTAMP(1);
+    Timestamp result;
+
+    if (timestamp_cmp_internal(dt1, dt2) > 0)
+        result = dt1;
+    else
+        result = dt2;
+    PG_RETURN_TIMESTAMP(result);
+}
 
 Datum timestamp_mi(Timestamp dt1, Timestamp dt2)
 {

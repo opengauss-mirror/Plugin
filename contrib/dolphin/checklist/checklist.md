@@ -113,10 +113,10 @@
 |./|pg_builtin_proc.cpp|src\common\backend\catalog\pg_builtin_proc.cpp   |
 |./|plugin_utility.cpp   |src\gausskernel\process\tcop\utility.cpp   |
 |./|tablecmds.cpp   |src\gausskernel\optimizer\commands\tablecmds.cpp   |
-|./|builtin_funcs.ini   |src\common\backend\catalog\builtin_funcs.ini   |
 
 --header
-
+|文件夹   |文件名   |对应内核文件路径   |
+| :------------ | :------------ | :------------ |
 |plugin_mb|pg_wchar.h  |src\include\mb\pg_wchar.h   |
 |plugin_nodes|parsenodes_common.h  |src\include\nodes\parsenodes_common.h   |
 |plugin_parser|analyze.h  |src\include\parser\analyze.h   |
@@ -152,4 +152,4 @@
 |plugin_vector|vecfunc.h  |src\include\vecexecutor\vecfunc.h   |
 |./|builtin_funcs.ini  |src\common\backend\catalog\builtin_funcs.ini   |
 |./|fmgrtab.h  |src\include\utils\fmgrtab.h   |
-|./|int8.h  |src\include\utils\int8.hh   |
+|./|int8.h  |src\include\utils\int8.h   |

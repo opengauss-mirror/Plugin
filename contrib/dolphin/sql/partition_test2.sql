@@ -173,12 +173,12 @@ PARTITION p3 VALUES (4000,4001,4002,4003),
 PARTITION p4 VALUES (5000,5001,5002,5003)
 );
 insert into test_part_list values(2000,1),(3000,2),(4000,3),(5000,4);
-select * from test_part_list;
+select * from test_part_list order by 1,2;
 ALTER TABLE test_part_list truncate PARTITION all;
-select * from test_part_list;
+select * from test_part_list order by 1,2;
 insert into test_part_list values(2000,1),(3000,2),(4000,3),(5000,4);
 alter table test_part_list exchange partition p2 with table test_no_part1 without validation;
-select * from test_part_list;
+select * from test_part_list order by 1,2;
 select * from test_no_part1;
 alter table test_part_list analyze partition p1,p2;
 alter table test_part_list analyze partition all;

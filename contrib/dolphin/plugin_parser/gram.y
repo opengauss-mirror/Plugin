@@ -82,6 +82,7 @@
 #include "plugin_parser/parser.h"
 #include "storage/lmgr.h"
 #include "storage/tcap.h"
+#include "storage/lock/waitpolicy.h"
 #include "utils/builtins.h"
 #include "utils/date.h"
 #include "utils/datetime.h"
@@ -183,6 +184,11 @@ typedef struct PrivTarget
 	GrantObjectType objtype;
 	List	   *objs;
 } PrivTarget;
+
+typedef struct TrgCharacter {
+	bool is_follows;
+	char* trigger_name;
+} TrgCharacter;
 
 typedef struct CreateTableOptions {
   List *inhRelations;             /* relations to inherit from (list of
@@ -472,6 +478,7 @@ static bool DolphinObjNameCmp(const char* s1, const char* s2, bool is_quoted);
 	A_Indices			*aind;
 	ResTarget			*target;
 	struct PrivTarget	*privtarget;
+	struct TrgCharacter *trgcharacter;
 	struct OptLikeWhere	*optlikewhere;
 	AccessPriv			*accesspriv;
 	DbPriv				*dbpriv;
@@ -603,6 +610,7 @@ static bool DolphinObjNameCmp(const char* s1, const char* s2, bool is_quoted);
 %type <boolean>	opt_check opt_force opt_or_replace
 				opt_grant_grant_option opt_grant_admin_option
 				opt_nowait opt_if_exists opt_with_data opt_large_seq opt_cancelable
+%type <ival>	opt_nowait_or_skip
 
 %type <list>	OptRoleList AlterOptRoleList
 %type <defelt>	CreateOptRoleElem AlterOptRoleElem
@@ -738,7 +746,7 @@ static bool DolphinObjNameCmp(const char* s1, const char* s2, bool is_quoted);
 %type <boolean> opt_instead opt_incremental
 %type <boolean> opt_unique opt_concurrently opt_verbose opt_full opt_deltamerge opt_compact opt_hdfsdirectory opt_verify
 %type <boolean> opt_freeze opt_default opt_recheck opt_cascade
-%type <defelt>	opt_oids copy_delimiter opt_noescaping
+%type <defelt>	opt_binary opt_oids copy_delimiter opt_noescaping
 %type <defelt>	OptCopyLogError OptCopyRejectLimit opt_load
 
 %type <boolean> opt_processed
@@ -767,7 +775,7 @@ static bool DolphinObjNameCmp(const char* s1, const char* s2, bool is_quoted);
 
 %type <mergewhen>	merge_insert merge_update
 
-%type <vsetstmt> generic_set set_rest set_rest_more SetResetClause FunctionSetResetClause
+%type <vsetstmt> generic_set set_rest set_rest_more SetResetClause FunctionSetResetClause set_session_extension set_global_extension guc_variable_set generic_set_extension
 
 %type <node>	TableElement TypedTableElement ConstraintElem TableFuncElement
 				ForeignTableElement
@@ -775,7 +783,7 @@ static bool DolphinObjNameCmp(const char* s1, const char* s2, bool is_quoted);
 %type <defelt>	def_elem tsconf_def_elem reloption_elem tblspc_option_elem old_aggr_elem cfoption_elem
 %type <node>	def_arg columnElem where_clause where_or_current_clause start_with_expr connect_by_expr
                                 a_expr b_expr c_expr c_expr_noparen AexprConst indirection_el siblings_clause
-                                columnref in_expr start_with_clause having_clause func_table array_expr
+                                columnref in_expr start_with_clause having_clause func_table array_expr set_ident_expr set_expr set_expr_extension
 				ExclusionWhereClause
 %type <list>	ExclusionConstraintList ExclusionConstraintElem
 %type <list>	func_arg_list
@@ -827,8 +835,8 @@ static bool DolphinObjNameCmp(const char* s1, const char* s2, bool is_quoted);
 
 %type <ival>	Iconst SignedIconst
 %type <str>		Sconst comment_text notify_payload
-%type <str>		RoleId TypeOwner opt_granted_by opt_boolean_or_string ColId_or_Sconst definer_user definer_expression
-%type <list>	var_list
+%type <str>		RoleId TypeOwner opt_granted_by opt_boolean_or_string ColId_or_Sconst Dolphin_ColId_or_Sconst definer_user definer_expression
+%type <list>	var_list guc_value_list guc_value_extension_list
 %type <str>		ColId ColLabel var_name type_function_name param_name user opt_password opt_replace show_index_schema_opt ColIdForTableElement
 %type <node>	var_value zone_value
 %type <dolphinString>	DolphinColId DolphinColLabel dolphin_indirection_el
@@ -838,7 +846,7 @@ static bool DolphinObjNameCmp(const char* s1, const char* s2, bool is_quoted);
 
 %type <node>	TableConstraint TableIndexClause TableLikeClause ForeignTableLikeClause
 %type <ival>	excluding_option_list TableLikeOptionList TableLikeIncludingOption TableLikeExcludingOption
-%type <list>	ColQualList
+%type <list>	ColQualList WithOptions
 %type <node>	ColConstraint ColConstraintElem ConstraintAttr InformationalConstraintElem
 %type <ival>	key_actions key_delete key_match key_update key_action
 %type <ival>	ConstraintAttributeSpec ConstraintAttributeElem
@@ -980,6 +988,7 @@ static bool DolphinObjNameCmp(const char* s1, const char* s2, bool is_quoted);
 %type <list>    load_column_expr_list copy_column_sequence_list copy_column_filler_list copy_column_constant_list 
 %type <typnam>  load_col_data_type
 %type <ival64>  load_col_sequence_item_sart column_sequence_item_step column_sequence_item_sart
+%type <trgcharacter> trigger_order
 %type <node>	on_table opt_engine engine_option opt_engine_without_empty opt_compression opt_compression_without_empty set_compress_type opt_row_format row_format_option
 %type <keyword>	into_empty opt_temporary opt_values_in replace_empty
 %type <str>	compression_args
@@ -995,9 +1004,9 @@ static bool DolphinObjNameCmp(const char* s1, const char* s2, bool is_quoted);
  * DOT_DOT is unused in the core SQL grammar, and so will always provoke
  * parse errors.  It is needed by PL/pgsql.
  */
-%token <str>	IDENT FCONST SCONST BCONST VCONST XCONST Op CmpOp CmpNullOp COMMENTSTRING SET_USER_IDENT
+%token <str>	IDENT FCONST SCONST BCONST VCONST XCONST Op CmpOp CmpNullOp COMMENTSTRING SET_USER_IDENT SET_IDENT
 %token <ival>	ICONST PARAM
-%token			TYPECAST ORA_JOINOP DOT_DOT COLON_EQUALS PARA_EQUALS
+%token			TYPECAST ORA_JOINOP DOT_DOT COLON_EQUALS PARA_EQUALS SET_IDENT_SESSION SET_IDENT_GLOBAL
 
 /*
  * If you want to make any keyword changes, update the keyword table in
@@ -1036,7 +1045,7 @@ static bool DolphinObjNameCmp(const char* s1, const char* s2, bool is_quoted);
 	EXCLUDE EXCLUDED EXCLUDING EXCLUSIVE EXECUTE EXISTS EXPIRED_P EXPLAIN
 	EXTENSION EXTERNAL EXTRACT
 
-	FALSE_P FAMILY FAST FENCED FETCH FIELDS FILEHEADER_P FILL_MISSING_FIELDS FILLER FILTER FIRST_P FIXED_P FLOAT_P FOLLOWING FOR FORCE FOREIGN FORMATTER FORWARD
+	FALSE_P FAMILY FAST FENCED FETCH FIELDS FILEHEADER_P FILL_MISSING_FIELDS FILLER FILTER FIRST_P FIXED_P FLOAT_P FOLLOWING FOLLOWS_P FOR FORCE FOREIGN FORMATTER FORWARD
 	FEATURES // DB4AI
 	FREEZE FROM FULL FUNCTION FUNCTIONS
 
@@ -1056,7 +1065,7 @@ static bool DolphinObjNameCmp(const char* s1, const char* s2, bool is_quoted);
 
 	LABEL LANGUAGE LARGE_P LAST_P LC_COLLATE_P LC_CTYPE_P LEADING LEAKPROOF
 	LEAST LESS LEFT LEVEL LIKE LIMIT LIST LISTEN LOAD LOCAL LOCALTIME LOCALTIMESTAMP
-	LOCATE LOCATION LOCK_P LOG_P LOGGING LOGIN_ANY LOGIN_FAILURE LOGIN_SUCCESS LOGOUT LOOP LOW_PRIORITY
+	LOCATE LOCATION LOCK_P LOCKED LOG_P LOGGING LOGIN_ANY LOGIN_FAILURE LOGIN_SUCCESS LOGOUT LOOP LOW_PRIORITY
 	MAPPING MASKING MASTER MATCH MATERIALIZED MATCHED MAXEXTENTS MAXSIZE MAXTRANS MAXVALUE MEDIUMINT MERGE MICROSECOND_P MID MINUS_P MINUTE_P MINVALUE MINEXTENTS MOD MODE MODIFY_P MONTH_P MOVE MOVEMENT
 	MODEL // DB4AI
 	MODIFIES
@@ -1075,7 +1084,7 @@ static bool DolphinObjNameCmp(const char* s1, const char* s2, bool is_quoted);
 /* PGXC_BEGIN */
 	PREFERRED PREFIX PRESERVE PREPARE PREPARED PRIMARY
 /* PGXC_END */
-	PRIVATE PRIOR PRIORER PRIVILEGES PRIVILEGE PROCEDURAL PROCEDURE PROCESSLIST PROFILE PUBLICATION PUBLISH PURGE
+	PRECEDES_P PRIVATE PRIOR PRIORER PRIVILEGES PRIVILEGE PROCEDURAL PROCEDURE PROCESSLIST PROFILE PUBLICATION PUBLISH PURGE
 
 	QUARTER QUERY QUOTE
 
@@ -1084,7 +1093,7 @@ static bool DolphinObjNameCmp(const char* s1, const char* s2, bool is_quoted);
 	RESET RESIZE RESOURCE RESTART RESTRICT RETURN RETURNING RETURNS REUSE REVOKE RIGHT RLIKE ROLE ROLES ROLLBACK ROLLUP
 	ROTATION ROUTINE ROW ROWNUM ROWS ROWTYPE_P ROW_FORMAT RULE
 
-	SAMPLE SAVEPOINT SCHEMA SCHEMAS SCROLL SEARCH SECOND_P SECURITY SELECT SEQUENCE SEQUENCES
+	SAMPLE SAVEPOINT SCHEMA SCHEMAS SCROLL SEARCH SECOND_P SECURITY SELECT SEPARATOR_P SEQUENCE SEQUENCES
 	SERIALIZABLE SERVER SESSION SESSION_USER SET SETS SETOF SHARE SHIPPABLE SHOW SHUTDOWN SIBLINGS
 	SIMILAR SIMPLE SIZE SKIP SLAVE SLICE SMALLDATETIME SMALLDATETIME_FORMAT_P SMALLINT SNAPSHOT SOME SOUNDS SOURCE_P SPACE SPILL SPLIT SQL STABLE STANDALONE_P START STARTWITH
 	STATEMENT STATEMENT_ID STATISTICS STATUS STDIN STDOUT STORAGE STORE_P STORED STRATIFY STREAM STRICT_P STRIP_P SUBPARTITION SUBSCRIPTION SUBSTR SUBSTRING
@@ -2203,6 +2212,20 @@ CreateSchemaStmt:
 					n->schemaElts = $8;
 					$$ = (Node *)n;
 				}
+			| CREATE SCHEMA IF_P NOT EXISTS OptSchemaName AUTHORIZATION RoleId OptBlockchainWith OptSchemaEltList
+				{
+					CreateSchemaStmt *n = makeNode(CreateSchemaStmt);
+					n->missing_ok = TRUE;
+					/* One can omit the schema name or the authorization id. */
+					if ($6 != NULL)
+						n->schemaname = $6;
+					else
+						n->schemaname = $8;
+					n->authid = $8;
+					n->hasBlockChain = $9;
+					n->schemaElts = $10;
+					$$ = (Node *)n;
+				}                
 		;
 
 OptSchemaName:
@@ -2355,6 +2378,361 @@ VariableSetStmt:
 								parser_errposition(@1)));
 						$$ = NULL;/* not reached */						
 					}
+				}
+			| SET generic_set_extension
+				{
+#ifdef			ENABLE_MULTIPLE_NODES
+					const char* message = "SET config_parameter = expr is not yet supported in distributed database.";
+					InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);			
+					ereport(errstate,
+						(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+							errmsg("SET config_parameter = expr is not yet supported in distributed database.")));
+#endif
+					if (DB_IS_CMPT(B_FORMAT) && u_sess->attr.attr_common.enable_set_variable_b_format) {
+						VariableSetStmt *n = $2;
+						n->is_local = false;
+						$$ = (Node *) n;
+					} else {
+						const char* message = "SET supported expr value only in B_FORMAT and enable_set_variable_b_format is on";
+						InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);
+						ereport(errstate,
+							(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+								errmsg("SET supported expr value only in B_FORMAT and enable_set_variable_b_format is on.")));
+					}
+				} 
+			| SET SESSION generic_set_extension
+				{
+#ifdef			ENABLE_MULTIPLE_NODES
+					const char* message = "SET config_parameter = expr is not yet supported in distributed database.";
+					InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);			
+					ereport(errstate,
+						(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+							errmsg("SET config_parameter = expr is not yet supported in distributed database.")));
+#endif
+					if (DB_IS_CMPT(B_FORMAT) && u_sess->attr.attr_common.enable_set_variable_b_format) {
+						VariableSetStmt *n = $3;
+						n->is_local = false;
+						$$ = (Node *) n;
+					} else {
+						const char* message = "SET supported expr value only in B_FORMAT and enable_set_variable_b_format is on";
+						InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);
+						ereport(errstate,
+							(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+								errmsg("SET supported expr value only in B_FORMAT and enable_set_variable_b_format is on.")));
+					}
+				}
+			| SET set_session_extension
+ 				{
+#ifdef			ENABLE_MULTIPLE_NODES
+					const char* message = "SET config_parameter = expr is not yet supported in distributed database.";
+					InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);			
+					ereport(errstate,
+						(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+							errmsg("SET config_parameter = expr is not yet supported in distributed database.")));
+#endif
+					VariableSetStmt *n = $2;
+ 					n->is_local = false;
+ 					$$ = (Node *) n;
+ 				}
+			| SET set_global_extension
+ 				{
+ #if defined(ENABLE_MULTIPLE_NODES) || defined (ENABLE_PRIVATEGAUSS)
+					const char* message = "SET GLOBAL is not supported";
+					InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);
+					ereport(errstate,
+						(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+							errmsg("SET GLOBAL is not supported.")));
+#else
+					AlterSystemStmt *n = makeNode(AlterSystemStmt);
+					n->setstmt = $2;
+					$$ = (Node *) n;
+#endif
+ 				}
+		;
+
+set_session_extension:
+			 SET_IDENT_SESSION '.' guc_variable_set
+				{
+					VariableSetStmt *n = $3;
+					n->is_local = false;
+					$$ = n;
+				}
+			| SET_IDENT assign_operator guc_value_list
+				{
+					int len = strlen($1);
+					errno_t rc = EOK;
+ 
+					char *name = (char *)palloc(len - 1);
+					rc = strncpy_s(name, len - 1, $1 + 2, len-2);
+					securec_check(rc, "\0", "\0");
+
+					VariableSetStmt *n = makeNode(VariableSetStmt);
+					n->kind = VAR_SET_VALUE;
+					n->name = pstrdup(name);
+					n->args = $3;
+					pfree(name);
+					$$ = n;
+				}
+			| SET_IDENT assign_operator DEFAULT
+				{
+					int len = strlen($1);
+					errno_t rc = EOK;
+ 
+					char *name = (char *)palloc(len - 1);
+					rc = strncpy_s(name, len - 1, $1 + 2, len-2);
+					securec_check(rc, "\0", "\0");
+	
+					VariableSetStmt *n = makeNode(VariableSetStmt);
+					n->kind = VAR_SET_DEFAULT;
+					n->name = pstrdup(name);
+					pfree(name);
+					$$ = n;
+				}
+			;
+ 
+set_global_extension:
+			GLOBAL guc_variable_set
+				{
+					VariableSetStmt *n = $2;
+					$$ = n;
+				}
+			| SET_IDENT_GLOBAL '.' guc_variable_set
+				{
+					VariableSetStmt *n = $3;
+					$$ = n;
+ 				}
+ 		;
+ 
+guc_variable_set:
+			var_name assign_operator guc_value_list
+				{
+					VariableSetStmt *n = makeNode(VariableSetStmt);
+					n->kind = VAR_SET_VALUE;
+					n->name = $1;
+					n->args = $3;
+					/* if we are setting role, we switch to the new syntax which check the password of role */
+					if(!pg_strcasecmp("role", n->name) || !pg_strcasecmp("session_authorization", n->name))
+					{
+						const char* message = "SET TO rolename\" not yet supported";
+						InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);
+						ereport(errstate,
+							(errcode(ERRCODE_SYNTAX_ERROR),
+								 errmsg("\"SET %s = rolename\" not yet supported", n->name),
+									 errhint("Use \"SET %s rolename\" clauses.", n->name)));
+					}
+					else
+					{
+						n->kind = VAR_SET_VALUE;
+					}
+					$$ = n;
+				}
+			| var_name assign_operator DEFAULT
+				{
+					VariableSetStmt *n = makeNode(VariableSetStmt);
+					n->kind = VAR_SET_DEFAULT;
+					n->name = $1;
+					$$ = n;
+				}
+			| CURRENT_SCHEMA assign_operator var_list
+				{
+					VariableSetStmt *n = makeNode(VariableSetStmt);
+					n->kind = VAR_SET_VALUE;
+					n->name = "current_schema";
+					n->args = $3;
+					$$ = n;
+				}
+			| CURRENT_SCHEMA assign_operator DEFAULT
+				{
+					VariableSetStmt *n = makeNode(VariableSetStmt);
+					n->kind = VAR_SET_DEFAULT;
+					n->name = "current_schema";
+					$$ = n;
+				}
+			;
+ 
+guc_value_list:	set_expr							{ $$ = list_make1($1); }
+				| guc_value_list ',' set_expr		{ $$ = lappend($1, $3); }
+		;
+
+guc_value_extension_list: set_expr_extension		{ $$ = list_make1($1); }
+				| guc_value_extension_list ',' set_expr_extension 	{ $$ = lappend($1, $3); }
+		;
+
+set_ident_expr:
+			SET_IDENT
+				{
+					int len = strlen($1);
+					errno_t rc = EOK;
+ 
+					if (len > 2 && strncmp($1, "@@", 2) == 0) {
+						char *name	= (char *)palloc(len - 1);
+						rc = strncpy_s(name, len - 1, $1 + 2, len-2);
+						securec_check(rc, "\0", "\0");
+ 
+						SetVariableExpr *n = makeNode(SetVariableExpr);
+						n->name = pstrdup(name);
+						n->is_session = true;
+						n->is_global = false;
+						$$ = (Node *) n;
+					} else {
+ 
+					}
+				}
+			| SET_IDENT_SESSION '.' IDENT
+				{
+					SetVariableExpr *n = makeNode(SetVariableExpr);
+					n->name = $3;
+					n->is_session = true;
+					n->is_global = false;
+					$$ = (Node *) n;
+				}
+			| SET_IDENT_GLOBAL '.' IDENT
+				{
+					SetVariableExpr *n = makeNode(SetVariableExpr);
+					n->name = $3;
+					n->is_session = false;
+					n->is_global = true;
+					$$ = (Node *) n;
+				}
+		;
+
+set_expr:	
+			 var_value
+				{ $$ = $1; }
+			| set_expr_extension
+				{ $$ = $1; }
+		;
+
+set_expr_extension:
+			 set_ident_expr
+				{ $$ = $1; }
+			| '(' a_expr ')' opt_indirection
+				{
+					if ($4)
+					{
+						A_Indirection *n = makeNode(A_Indirection);
+						n->arg = $2;
+						n->indirection = check_indirection($4, yyscanner);
+						$$ = (Node *)n;
+					}
+					else
+						$$ = $2;
+				}
+			| case_expr
+				{ $$ = $1; }
+			| func_expr
+				{ $$ = $1; }
+			| select_with_parens			%prec UMINUS
+				{
+					SubLink *n = makeNode(SubLink);
+					n->subLinkType = EXPR_SUBLINK;
+					n->testexpr = NULL;
+					n->operName = NIL;
+					n->subselect = $1;
+					n->location = @1;
+					$$ = (Node *)n;
+				}
+			| select_with_parens indirection
+				{
+					/*
+					 * Because the select_with_parens nonterminal is designed
+					 * to "eat" as many levels of parens as possible, the
+					 * '(' a_expr ')' opt_indirection production above will
+					 * fail to match a sub-SELECT with indirection decoration;
+					 * the sub-SELECT won't be regarded as an a_expr as long
+					 * as there are parens around it.  To support applying
+					 * subscripting or field selection to a sub-SELECT result,
+					 * we need this redundant-looking production.
+					 */
+					SubLink *n = makeNode(SubLink);
+					A_Indirection *a = makeNode(A_Indirection);
+					n->subLinkType = EXPR_SUBLINK;
+					n->testexpr = NULL;
+					n->operName = NIL;
+					n->subselect = $1;
+					n->location = @1;
+					a->arg = (Node *)n;
+					a->indirection = check_indirection($2, yyscanner);
+					$$ = (Node *)a;
+				}
+			| uservar_name           %prec UMINUS
+				{
+#ifdef			ENABLE_MULTIPLE_NODES
+					const char* message = "@var_name is not yet supported in distributed database.";
+					InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);			
+					ereport(errstate,
+						(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+							errmsg("@var_name is not yet supported in distributed database.")));
+#endif
+					if (u_sess->attr.attr_sql.sql_compatibility == B_FORMAT && u_sess->attr.attr_common.enable_set_variable_b_format) {
+						$$ = $1;
+					} else {
+						const char* message = "@var_name is supported only in B-format database, and enable_set_variable_b_format = on.";
+						InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);
+						ereport(errstate,
+							(errmodule(MOD_PARSER),
+								errcode(ERRCODE_SYNTAX_ERROR),
+								errmsg("@var_name is supported only in B-format database, and enable_set_variable_b_format = on."),
+								parser_errposition(@1)));
+						$$ = NULL;/* not reached */
+					}
+				}
+			| b_expr TYPECAST Typename
+				{ $$ = makeTypeCast($1, $3, @2); }
+			| '@' b_expr
+				{ $$ = (Node *) makeSimpleA_Expr(AEXPR_OP, "@", NULL, $2, @1); }
+			| b_expr '+' b_expr
+				{ $$ = (Node *) makeSimpleA_Expr(AEXPR_OP, "+", $1, $3, @2); }
+			| b_expr '-' b_expr
+				{ $$ = (Node *) makeSimpleA_Expr(AEXPR_OP, "-", $1, $3, @2); }
+			| b_expr '*' b_expr
+				{ $$ = (Node *) makeSimpleA_Expr(AEXPR_OP, "*", $1, $3, @2); }
+			| b_expr '/' b_expr
+				{ $$ = (Node *) makeSimpleA_Expr(AEXPR_OP, "/", $1, $3, @2); }
+			| b_expr '%' b_expr
+				{ $$ = (Node *) makeSimpleA_Expr(AEXPR_OP, "%", $1, $3, @2); }
+			| b_expr '^' b_expr
+				{ $$ = (Node *) makeSimpleA_Expr(AEXPR_OP, "^", $1, $3, @2); }
+			| b_expr '<' b_expr
+				{ $$ = (Node *) makeSimpleA_Expr(AEXPR_OP, "<", $1, $3, @2); }
+			| b_expr '>' b_expr
+				{ $$ = (Node *) makeSimpleA_Expr(AEXPR_OP, ">", $1, $3, @2); }
+			| b_expr '=' b_expr
+				{ $$ = (Node *) makeSimpleA_Expr(AEXPR_OP, "=", $1, $3, @2); }
+			| b_expr '@' b_expr
+				{ $$ = (Node *) makeSimpleA_Expr(AEXPR_OP, "@", $1, $3, @2); }
+			| b_expr CmpOp b_expr
+				{ $$ = (Node *) makeSimpleA_Expr(AEXPR_OP, $2, $1, $3, @2); }
+			| b_expr qual_Op b_expr				%prec Op
+				{ $$ = (Node *) makeA_Expr(AEXPR_OP, $2, $1, $3, @2); }
+			| qual_Op b_expr					%prec Op
+				{ $$ = (Node *) makeA_Expr(AEXPR_OP, $1, NULL, $2, @1); }
+			| b_expr qual_Op					%prec POSTFIXOP
+				{ $$ = (Node *) makeA_Expr(AEXPR_OP, $2, $1, NULL, @2); }
+			| b_expr IS DISTINCT FROM b_expr		%prec IS
+				{
+					$$ = (Node *) makeSimpleA_Expr(AEXPR_DISTINCT, "=", $1, $5, @2);
+				}
+			| b_expr IS NOT DISTINCT FROM b_expr	%prec IS
+				{
+					$$ = (Node *) makeA_Expr(AEXPR_NOT, NIL,
+						NULL, (Node *) makeSimpleA_Expr(AEXPR_DISTINCT, "=", $1, $6, @2), @2);
+				}
+			| b_expr IS OF '(' type_list ')'		%prec IS
+				{
+					$$ = (Node *) makeSimpleA_Expr(AEXPR_OF, "=", $1, (Node *) $5, @2);
+				}
+			| b_expr IS NOT OF '(' type_list ')'	%prec IS
+				{
+					$$ = (Node *) makeSimpleA_Expr(AEXPR_OF, "<>", $1, (Node *) $6, @2);
+				}
+			| b_expr IS DOCUMENT_P					%prec IS
+				{
+					$$ = makeXmlExpr(IS_DOCUMENT, NULL, NIL, list_make1($1), @2);
+				}
+			| b_expr IS NOT DOCUMENT_P				%prec IS
+				{
+					$$ = (Node *) makeA_Expr(AEXPR_NOT, NIL, NULL, makeXmlExpr(IS_DOCUMENT, NULL, NIL, list_make1($1), @2),@2);
 				}
 			;
 
@@ -2612,6 +2990,38 @@ user_defined_single:
 				}
 			;
 
+generic_set_extension:
+			 var_name assign_operator guc_value_extension_list
+				{
+					VariableSetStmt *n = makeNode(VariableSetStmt);
+					n->kind = VAR_SET_VALUE;
+					n->name = $1;
+					n->args = $3;
+					/* if we are setting role, we switch to the new syntax which check the password of role */
+					if(!pg_strcasecmp("role", n->name) || !pg_strcasecmp("session_authorization", n->name))
+					{
+						const char* message = "SET TO rolename\" not yet supported";
+						InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);
+						ereport(errstate,
+							(errcode(ERRCODE_SYNTAX_ERROR),
+								 errmsg("\"SET %s = rolename\" not yet supported", n->name),
+									 errhint("Use \"SET %s rolename\" clauses.", n->name)));
+					}
+					else
+					{
+						n->kind = VAR_SET_VALUE;
+					}
+					$$ = n;
+				}
+			| CURRENT_SCHEMA assign_operator guc_value_extension_list
+				{
+					VariableSetStmt *n = makeNode(VariableSetStmt);
+					n->kind = VAR_SET_VALUE;
+					n->name = "current_schema";
+					n->args = $3;
+					$$ = n;
+				}
+		;
 
 uservar_name:
 			SET_USER_IDENT
@@ -2681,7 +3091,7 @@ opt_boolean_or_string:
 			 * by the ColId rule below. The action for booleans and strings
 			 * is the same, so we don't need to distinguish them here.
 			 */
-			| ColId_or_Sconst						{ $$ = $1; }
+			| Dolphin_ColId_or_Sconst				{ $$ = $1; }
 		;
 
 /* Timezone values can be:
@@ -2761,6 +3171,11 @@ opt_encoding:
 
 ColId_or_Sconst:
 			ColId									{ $$ = $1; }
+			| Sconst								{ $$ = $1; }
+		;
+
+Dolphin_ColId_or_Sconst:
+			DolphinColId							{ $$ = downcase_str($1->str, $1->is_quoted); }
 			| Sconst								{ $$ = $1; }
 		;
 
@@ -8702,6 +9117,17 @@ OptWith:
 			| WITHOUT OIDS				{ $$ = list_make1(defWithOids(false)); }
 			| /*EMPTY*/					{ $$ = NIL; }
 		;
+
+OnCommitOption:  ON COMMIT DROP				{ $$ = ONCOMMIT_DROP; }
+			| ON COMMIT DELETE_P ROWS		{ $$ = ONCOMMIT_DELETE_ROWS; }
+			| ON COMMIT PRESERVE ROWS		{ $$ = ONCOMMIT_PRESERVE_ROWS; }
+			| /*EMPTY*/						{ $$ = ONCOMMIT_NOOP; }
+		;
+
+OnCommitOption_without_empty:  ON COMMIT DROP				{ $$ = ONCOMMIT_DROP; }
+			| ON COMMIT DELETE_P ROWS		{ $$ = ONCOMMIT_DELETE_ROWS; }
+			| ON COMMIT PRESERVE ROWS		{ $$ = ONCOMMIT_PRESERVE_ROWS; }
+		;
 AutoIncrementValue: AUTO_INCREMENT Iconst	{ $$ = (Node *)makeInteger($2); }
         | AUTO_INCREMENT '=' Iconst	{ $$ = (Node *)makeInteger($3); }
         | AUTO_INCREMENT FCONST	{ $$ = (Node *)makeFloat($2); }
@@ -8739,17 +9165,6 @@ OptWith_without_empty:
 				$$ = list_make1(defWithOids(true));
 			}
 			| WITHOUT OIDS				{ $$ = list_make1(defWithOids(false)); }
-		;
-
-OnCommitOption:  ON COMMIT DROP				{ $$ = ONCOMMIT_DROP; }
-			| ON COMMIT DELETE_P ROWS		{ $$ = ONCOMMIT_DELETE_ROWS; }
-			| ON COMMIT PRESERVE ROWS		{ $$ = ONCOMMIT_PRESERVE_ROWS; }
-			| /*EMPTY*/						{ $$ = ONCOMMIT_NOOP; }
-		;
-
-OnCommitOption_without_empty:  ON COMMIT DROP				{ $$ = ONCOMMIT_DROP; }
-			| ON COMMIT DELETE_P ROWS		{ $$ = ONCOMMIT_DELETE_ROWS; }
-			| ON COMMIT PRESERVE ROWS		{ $$ = ONCOMMIT_PRESERVE_ROWS; }
 		;
 
 OptTableSpace:   TABLESPACE opt_equal name					{ $$ = $3; }
@@ -11792,24 +12207,37 @@ DropDataSourceStmt: DROP DATA_P SOURCE_P name opt_drop_behavior
  *****************************************************************************/
 
 CreateTrigStmt:
-			CREATE TRIGGER name TriggerActionTime TriggerEvents ON
+			CREATE opt_or_replace definer_user TRIGGER name TriggerActionTime TriggerEvents ON
 			dolphin_qualified_name TriggerForSpec TriggerWhen
 			EXECUTE PROCEDURE func_name '(' TriggerFuncArgs ')'
 				{
+					if ($2 != false)
+					{
+						parser_yyerror("syntax error found");
+					}
+					if (u_sess->attr.attr_sql.sql_compatibility != B_FORMAT && $3 != NULL)
+					{
+						parser_yyerror("only support definer in mysql compatibility database");
+					}
 					CreateTrigStmt *n = makeNode(CreateTrigStmt);
-					n->trigname = $3;
-					n->relation = $7;
-					n->funcname = $12;
-					n->args = $14;
-					n->row = $8;
-					n->timing = $4;
-					n->events = intVal(linitial($5));
-					n->columns = (List *) lsecond($5);
-					n->whenClause = $9;
+					n->definer = $3;
+					n->if_not_exists = false;
+					n->trigname = $5;
+					n->relation = $9;
+					n->funcname = $14;
+					n->args = $16;
+					n->row = $10;
+					n->timing = $6;
+					n->events = intVal(linitial($7));
+					n->columns = (List *) lsecond($7);
+					n->whenClause = $11;
 					n->isconstraint  = FALSE;
 					n->deferrable	 = FALSE;
 					n->initdeferred  = FALSE;
 					n->constrrel = NULL;
+					n->funcSource = NULL;
+					n->trgordername = NULL;
+					n->is_follows = NULL;
 					$$ = (Node *)n;
 				}
 			| CREATE CONSTRAINT TRIGGER name AFTER TriggerEvents ON
@@ -11819,6 +12247,8 @@ CreateTrigStmt:
 				{
 					CreateTrigStmt *n = makeNode(CreateTrigStmt);
 					n->trigname = $4;
+					n->definer = NULL;
+					n->if_not_exists  = false;
 					n->relation = $8;
 					n->funcname = $17;
 					n->args = $19;
@@ -11832,9 +12262,88 @@ CreateTrigStmt:
 								   &n->deferrable, &n->initdeferred, NULL,
 								   NULL, yyscanner);
 					n->constrrel = $9;
+					n->funcSource = NULL;
+					n->trgordername = NULL;
+					n->is_follows = NULL;
 					$$ = (Node *)n;
 				}
-		;
+			| CREATE opt_or_replace definer_user TRIGGER name TriggerActionTime TriggerEvents ON
+			dolphin_qualified_name TriggerForSpec TriggerWhen
+			trigger_order
+			{
+				u_sess->parser_cxt.eaten_declare = false;
+				u_sess->parser_cxt.eaten_begin = false;
+				pg_yyget_extra(yyscanner)->core_yy_extra.include_ora_comment = true;
+				u_sess->parser_cxt.isCreateFuncOrProc = true;
+			} subprogram_body
+				{
+					if (u_sess->attr.attr_sql.sql_compatibility != B_FORMAT || $2 != false)
+					{
+						parser_yyerror("only support definer, trigger_order, subprogram_body in mysql compatibility database");
+					}
+					CreateTrigStmt *n = makeNode(CreateTrigStmt);
+					if ($2 != false)
+					{
+						parser_yyerror("syntax error found");
+					}
+					n->definer = $3;
+					n->if_not_exists = false;
+					n->trigname = $5;
+					n->timing = $6;
+					n->events = intVal(linitial($7));
+					n->columns = (List *) lsecond($7);
+					n->relation = $9;
+					n->row = $10;
+					n->whenClause = $11;
+					n->trgordername = $12->trigger_name;
+					n->is_follows = $12->is_follows;
+					FunctionSources *funSource = (FunctionSources *)$14;
+					n->funcSource = funSource;
+					n->isconstraint  = FALSE;
+					n->deferrable	 = FALSE;
+					n->initdeferred  = FALSE;
+					n->constrrel = NULL;
+					$$ = (Node *)n;
+				}
+			| CREATE opt_or_replace definer_user TRIGGER IF_P NOT EXISTS name TriggerActionTime TriggerEvents ON
+			dolphin_qualified_name TriggerForSpec TriggerWhen
+			trigger_order
+			{
+				u_sess->parser_cxt.eaten_declare = false;
+				u_sess->parser_cxt.eaten_begin = false;
+				pg_yyget_extra(yyscanner)->core_yy_extra.include_ora_comment = true;
+				u_sess->parser_cxt.isCreateFuncOrProc = true;
+			} subprogram_body
+				{
+					if (u_sess->attr.attr_sql.sql_compatibility != B_FORMAT)
+					{
+						parser_yyerror("only support definer, if not exists, trigger_order, subprogram_body in mysql compatibility database");
+					}
+					CreateTrigStmt *n = makeNode(CreateTrigStmt);
+					if ($2 != false)
+					{
+						parser_yyerror("syntax error");
+					}
+					n->definer = $3;
+					n->if_not_exists = true;
+					n->trigname = $8;
+					n->timing = $9;
+					n->events = intVal(linitial($10));
+					n->columns = (List *) lsecond($10);
+					n->relation = $12;
+					n->row = $13;
+					n->whenClause = $14;
+					n->trgordername = $15->trigger_name;
+					n->is_follows = $15->is_follows;
+					FunctionSources *funSource = (FunctionSources *)$17;
+					n->funcSource = funSource;
+					n->isconstraint  = FALSE;
+					n->deferrable	 = FALSE;
+					n->initdeferred  = FALSE;
+					n->constrrel = NULL;
+					$$ = (Node *)n;
+				}
+			;
 
 TriggerActionTime:
 			BEFORE								{ $$ = TRIGGER_TYPE_BEFORE; }
@@ -11925,6 +12434,30 @@ TriggerFuncArg:
 			| FCONST								{ $$ = makeString($1); }
 			| Sconst								{ $$ = makeString($1); }
 			| ColLabel								{ $$ = makeString($1); }
+		;
+
+trigger_order:
+			/* NULL */
+			{
+				TrgCharacter *n = (TrgCharacter *)palloc(sizeof(TrgCharacter));
+				n->is_follows = false;
+				n->trigger_name = NULL;
+				$$ = n;
+			}
+			| FOLLOWS_P ColId
+			{
+				TrgCharacter *n = (TrgCharacter *)palloc(sizeof(TrgCharacter));
+				n->is_follows = true;
+				n->trigger_name = $2;
+				$$ = n;
+			}
+			| PRECEDES_P ColId
+			{
+				TrgCharacter *n = (TrgCharacter *)palloc(sizeof(TrgCharacter));
+				n->is_follows = false;
+				n->trigger_name = $2;
+				$$ = n;
+			}
 		;
 
 OptConstrFromTable:
@@ -16618,7 +17151,7 @@ OptimizeStmt:
  *
  *		QUERY:
  *
- *		REINDEX type <name> [FORCE]
+ *		REINDEX type [CONCURRENTLY] <name> [FORCE]
  *
  * FORCE no longer does anything, but we accept it for backwards compatibility
  *****************************************************************************/
@@ -21599,10 +22132,62 @@ InsertStmt: opt_with_clause INSERT hint_string opt_ignore into_empty insert_targ
 				$7->relation = $6;
 				$7->returningList = $8;
 				$7->withClause = $1;
+				$7->isReplace = false;
 				$7->hintState = create_hintstate($3);
 				$7->hasIgnore = $4;
 				$$ = (Node *) $7;
 			}
+            | REPLACE hint_string replace_empty insert_target insert_rest returning_clause
+            {
+#ifndef ENABLE_MULTIPLE_NODES
+                if (u_sess->attr.attr_sql.sql_compatibility == B_FORMAT)
+                {
+                    $5->relation = $4;
+                    $5->returningList = $6;
+                    $5->hintState = create_hintstate($2);
+                    $5->isReplace = true;
+                    $$ = (Node *) $5;
+                }
+                else
+#endif
+                {
+                    const char* message = "REPLACE INTO syntax is not supported.";
+                    InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);
+                    ereport(errstate,
+                            (errmodule(MOD_PARSER),
+                            errcode(ERRCODE_SYNTAX_ERROR),
+                            errmsg("REPLACE INTO syntax is not supported."),
+                            parser_errposition(@1)));
+                    $$ = NULL;/* not reached */
+                }
+
+            }
+            | REPLACE hint_string replace_empty insert_target SET set_clause_list
+            {
+#ifndef ENABLE_MULTIPLE_NODES
+                if (u_sess->attr.attr_sql.sql_compatibility == B_FORMAT)
+                {
+                     InsertStmt* n = makeNode(InsertStmt);
+                     n->relation = $4;
+                     n->targetList = $6;
+                     n->hintState = create_hintstate($2);
+                     n->isReplace = true;
+                     $$ = (Node*)n;
+                }
+                else
+#endif
+                {
+                    const char* message = "REPLACE INTO syntax is not supported.";
+                    InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);
+                    ereport(errstate,
+                            (errmodule(MOD_PARSER),
+                            errcode(ERRCODE_SYNTAX_ERROR),
+                            errmsg("REPLACE INTO syntax is not supported."),
+                            parser_errposition(@1)));
+                    $$ = NULL;/* not reached */
+                }
+
+            }
 			| opt_with_clause INSERT hint_string opt_ignore into_empty insert_target insert_mysql_rest upsert_clause returning_clause
 				{
 					if ($9 != NIL) {
@@ -21654,6 +22239,7 @@ InsertStmt: opt_with_clause INSERT hint_string opt_ignore into_empty insert_targ
 						/* for UPSERT, keep the INSERT statement as well */
 						$7->relation = $6;
 						$7->returningList = $9;
+						$7->isReplace = false;
 						$7->withClause = $1;
 						$7->hasIgnore = $4;
 #ifdef ENABLE_MULTIPLE_NODES						
@@ -21698,28 +22284,12 @@ InsertStmt: opt_with_clause INSERT hint_string opt_ignore into_empty insert_targ
 						$7->returningList = $9;
 						$7->withClause = $1;
 						$7->upsertClause = (UpsertClause *)$8;
+						$7->isReplace = false;
 						$7->hintState = create_hintstate($3);
 						$7->hasIgnore = $4;
 						$$ = (Node *) $7;
 					}
 				}
-			|opt_with_clause REPLACE hint_string replace_empty insert_target insert_rest
-				{
-						$6->relation = $5;
-						$6->withClause = $1;
-						$6->hintState = create_hintstate($3);
-						$$ = (Node *) $6;
-					}
-			|opt_with_clause REPLACE hint_string replace_empty insert_target SET set_clause_list
-				{
-					InsertStmt* n = makeNode(InsertStmt);
-					n->relation = $5;
-					/*need add info*/
-					n->withClause = $1;
-					n->hintState = create_hintstate($3);
-					$$ = (Node*)n;
-				}
-
 		;
 
 replace_empty:DELAYED into_empty
@@ -22051,6 +22621,10 @@ opt_cancelable: CANCELABLE                                              { $$ = T
                 ;
 
 opt_wait:	WAIT Iconst						{ $$ = $2; }
+opt_nowait_or_skip:
+			NOWAIT							{ $$ = LockWaitError; }
+			| SKIP LOCKED					{ $$ = LockWaitSkip; }
+			| /*EMPTY*/						{ $$ = LockWaitBlock; }
 		;
 
 /*****************************************************************************
@@ -23119,7 +23693,7 @@ for_locking_items:
 		;
 
 for_locking_item:
-			FOR UPDATE hint_string locked_rels_list opt_nowait
+			FOR UPDATE hint_string locked_rels_list opt_nowait_or_skip
 				{
                     if (u_sess->parser_cxt.isTimeCapsule) {
 						u_sess->parser_cxt.isTimeCapsule = false;
@@ -23130,8 +23704,13 @@ for_locking_item:
 					n->lockedRels = $4;
 					n->forUpdate = TRUE;
 					n->strength = LCS_FORUPDATE;
-					n->noWait = $5;
+					n->waitPolicy = (LockWaitPolicy)$5;
 					n->waitSec = 0;
+#ifdef ENABLE_MULTIPLE_NODES
+					if (n->waitPolicy == LockWaitSkip) {
+						DISTRIBUTED_FEATURE_NOT_SUPPORTED();
+					}
+#endif
 					$$ = (Node *) n;
 				}
 			| FOR UPDATE hint_string locked_rels_list opt_wait
@@ -23143,13 +23722,13 @@ for_locking_item:
 					n->waitSec = $5;
 					/* When the delay time is 0, the processing is based on the nowait logic. */
 					if (n->waitSec == 0) {
-						n->noWait = true;
+						n->waitPolicy = LockWaitError;
 					} else {
-						n->noWait = false;
+						n->waitPolicy = LockWaitBlock;
 					}
 					$$ = (Node *) n;
 				}
-			| for_locking_strength locked_rels_list opt_nowait
+			| for_locking_strength locked_rels_list opt_nowait_or_skip
 				{
 					LockingClause *n = makeNode(LockingClause);
 					n->lockedRels = $2;
@@ -23158,8 +23737,13 @@ for_locking_item:
 					if (n->strength == LCS_FORUPDATE) {
 						n->forUpdate = true;
 					}
-					n->noWait = $3;
+					n->waitPolicy = (LockWaitPolicy)$3;
                     n->waitSec = 0;
+#ifdef ENABLE_MULTIPLE_NODES
+					if (n->waitPolicy == LockWaitSkip) {
+						DISTRIBUTED_FEATURE_NOT_SUPPORTED();
+					}
+#endif
 					$$ = (Node *) n;
 				}
 		;
@@ -25831,7 +26415,19 @@ c_expr:		columnref %prec UMINUS						        { $$ = $1; }
 						$$ = NULL;/* not reached */
 					}
 				}
-			;
+			| set_ident_expr
+				{
+#ifdef			ENABLE_MULTIPLE_NODES
+					const char* message = "@@config_parameter is not yet supported in distributed database.";
+					InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);			
+					ereport(errstate,
+						(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+							errmsg("@@config_parameter is not yet supported in distributed database.")));
+#endif
+					$$ = $1;
+				}
+		;
+
 
 /* Used for List Distribution to avoid reduce/reduce conflict. This is unavoidable, since Bison is LALR(1) compiler */
 c_expr_noparen:		columnref								{ $$ = $1; }
@@ -28768,6 +29364,7 @@ unreserved_keyword_without_key:
 			| AT
 			| ATTRIBUTE
 			| AUDIT
+			| AUTO_INCREMENT
 			| AUTOEXTEND
 			| AUTOMAPPED
 			| BACKWARD
@@ -28902,6 +29499,7 @@ unreserved_keyword_without_key:
 			| FILTER
 			| FIRST_P
 			| FOLLOWING
+			| FOLLOWS_P
 			| FORCE
 			| FORMATTER
 			| FORWARD
@@ -28958,6 +29556,7 @@ unreserved_keyword_without_key:
 			| LOCAL
 			| LOCATION
 			| LOCK_P
+			| LOCKED
 			| LOG_P
 			| LOGGING
 			| LOGIN_ANY
@@ -29029,6 +29628,7 @@ unreserved_keyword_without_key:
 			| PLANS
 			| POLICY
 			| POOL
+			| PRECEDES_P
 			| PRECEDING
 			| PREDICT   // DB4AI
 /* PGXC_BEGIN */
@@ -29106,6 +29706,7 @@ unreserved_keyword_without_key:
 			| SESSION
 			| SET
 			| SETS
+			| SEPARATOR_P
 			| SHARE
 			| SHIPPABLE
 			| SHOW
