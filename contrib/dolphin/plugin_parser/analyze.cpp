@@ -125,6 +125,7 @@ static Query* transformExplainStmt(ParseState* pstate, ExplainStmt* stmt);
 static Query* transformCreateTableAsStmt(ParseState* pstate, CreateTableAsStmt* stmt);
 static void CheckDeleteRelation(Relation targetrel);
 static void CheckUpdateRelation(Relation targetrel);
+static Query* transformVariableSetValueStmt(ParseState* pstate, VariableSetStmt* stmt, bool is_alter_sys);
 #ifdef PGXC
 static Query* transformExecDirectStmt(ParseState* pstate, ExecDirectStmt* stmt);
 static bool IsExecDirectUtilityStmt(const Node* node);
@@ -457,17 +458,6 @@ Query* transformStmt(ParseState* pstate, Node* parseTree, bool isFirstNode, bool
             result = transformCreateModelStmt(pstate, (CreateModelStmt*) parseTree);
             break;
 
-        case T_VariableSetStmt: {
-            VariableSetStmt* n = (VariableSetStmt*)parseTree;
-            if (n->kind == VAR_SET_DEFINED) {
-                result = transformVariableSetStmt(pstate, n);
-            } else {
-                result = makeNode(Query);
-                result->commandType = CMD_UTILITY;
-                result->utilityStmt = (Node*)parseTree;
-            }
-        } break;
-
         case T_PrepareStmt: {
             PrepareStmt* n = (PrepareStmt *)parseTree;
             if (IsA(n->query, UserVar)) {
@@ -479,6 +469,30 @@ Query* transformStmt(ParseState* pstate, Node* parseTree, bool isFirstNode, bool
             result->utilityStmt = (Node*)parseTree;
         } break;
 
+        case T_AlterSystemStmt:
+        case T_VariableSetStmt: {
+                VariableSetStmt* stmt;
+                bool is_alter_sys = false;
+
+                if (nodeTag(parseTree) == T_AlterSystemStmt) {
+                    AlterSystemStmt* alter_sys_stmt = (AlterSystemStmt*)parseTree;
+                    stmt = alter_sys_stmt->setstmt;
+                    is_alter_sys = true;
+                } else {
+                    stmt = (VariableSetStmt*)parseTree;
+                }
+
+                if (DB_IS_CMPT(B_FORMAT) && u_sess->attr.attr_common.enable_set_variable_b_format && stmt->kind == VAR_SET_VALUE) {
+                    result = transformVariableSetValueStmt(pstate, stmt, is_alter_sys);
+                } else if (stmt->kind == VAR_SET_DEFINED) {
+                    result = transformVariableSetStmt(pstate, stmt);
+                } else {
+                    result = makeNode(Query);
+                    result->commandType = CMD_UTILITY;
+                    result->utilityStmt = (Node*)parseTree;
+                }
+            } break;
+#ifdef DOLPHIN
         case T_CreateEnumStmt:
             enumName = strVal(llast(((CreateEnumStmt*)parseTree)->typname));
             if (strstr(enumName, "anonymous_enum"))
@@ -496,7 +510,7 @@ Query* transformStmt(ParseState* pstate, Node* parseTree, bool isFirstNode, bool
             result->commandType = CMD_UTILITY;
             result->utilityStmt = (Node*)parseTree;
             break;
-
+#endif
         default:
 
             /*
@@ -1582,6 +1596,32 @@ static Query* transformInsertStmt(ParseState* pstate, InsertStmt* stmt)
     /* set io state for backend status for the thread, we will use it to check user space */
     pgstat_set_io_state(IOSTATE_WRITE);
 
+    qry->isReplace = stmt->isReplace;
+    if (stmt->isReplace) {
+        targetPerms |= ACL_DELETE;
+        /* transform set clause in REPLACE INTO stmt */
+        if (selectStmt == NULL && stmt->cols == NULL && stmt->targetList != NULL) {
+            stmt->selectStmt = (Node *)makeNode(SelectStmt);
+            selectStmt = (SelectStmt *)stmt->selectStmt;
+            ListCell* o_target = NULL;
+            List *ctext_expr_list = NULL;
+            
+            foreach (o_target, stmt->targetList) {
+                ResTarget* res = (ResTarget*)lfirst(o_target);
+
+                ctext_expr_list = lappend(ctext_expr_list, res->val);
+            }
+            selectStmt->valuesLists = list_make1(ctext_expr_list);
+
+            stmt->cols = (List *)copyObject(stmt->targetList);
+            foreach (o_target, stmt->cols) {
+                ResTarget* res = (ResTarget*)lfirst(o_target);
+                res->val = NULL;
+            }
+
+        }
+    }
+
     /*
      * Insert into relation pg_auth_history is not allowed.
      * We update it only when some user's password has been changed.
@@ -1884,7 +1924,11 @@ static Query* transformInsertStmt(ParseState* pstate, InsertStmt* stmt)
                 }
             }
         }
-    } else if (selectStmt && list_length(selectStmt->valuesLists) > 1) {
+    } else if (
+#ifdef DOLPHIN
+        selectStmt &&
+#endif
+        list_length(selectStmt->valuesLists) > 1) {
         /*
          * Process INSERT ... VALUES with multiple VALUES sublists. We
          * generate a VALUES RTE holding the transformed expression lists, and
@@ -1909,9 +1953,11 @@ static Query* transformInsertStmt(ParseState* pstate, InsertStmt* stmt)
          */
         foreach (lc, selectStmt->valuesLists) {
             List* sublist = (List*)lfirst(lc);
+#ifdef DOLPHIN
             if (list_length(sublist) == 0) {
                 sublist = (List*)linitial(makeValueLists(pstate));
             }
+#endif
             /* Do basic expression transformation (same as a ROW() expr) */
             sublist = transformExpressionList(pstate, sublist);
 
@@ -1969,14 +2015,14 @@ static Query* transformInsertStmt(ParseState* pstate, InsertStmt* stmt)
 
             exprsLists = lappend(exprsLists, sublist);
         }
-
+#ifdef DOLPHIN
         /* Update the sublist_length when the sql_mode is not sql_mode_strict to support the multi-rows insert.
          * For example, insert into ... values(...),(...)...
          */
         if (!SQL_MODE_STRICT() && exprsLists) {
             sublist_length = list_length((List*)(linitial(exprsLists)));
         }
-
+#endif
         /*
          * Although we don't really need collation info, let's just make sure
          * we provide a correctly-sized list in the VALUES RTE.
@@ -2020,11 +2066,12 @@ static Query* transformInsertStmt(ParseState* pstate, InsertStmt* stmt)
          * with no VALUES RTE.	So it works just like SELECT without FROM.
          * ----------
          */
+#ifdef DOLPHIN
         if (selectStmt == NULL) {
             selectStmt = makeNode(SelectStmt);
             selectStmt->valuesLists = makeValueLists(pstate);
         }
-
+#endif
         List* valuesLists = selectStmt->valuesLists;
 
         AssertEreport(list_length(valuesLists) == 1, MOD_OPT, "list length is wrong");
@@ -2068,11 +2115,11 @@ static Query* transformInsertStmt(ParseState* pstate, InsertStmt* stmt)
         col = (ResTarget*)lfirst(icols);
         AssertEreport(IsA(col, ResTarget), MOD_OPT, "nodeType inconsistant");
         attr_num = (AttrNumber)lfirst_int(attnos);
-
+#ifdef DOLPHIN
         if (!SQL_MODE_STRICT()) {
             CheckNullValue(targetrel, expr, attr_num);
         }
-
+#endif
         tle = makeTargetEntry(expr, attr_num, col->name, false);
         qry->targetList = lappend(qry->targetList, tle);
 
@@ -2135,7 +2182,7 @@ static Query* transformInsertStmt(ParseState* pstate, InsertStmt* stmt)
 
     return qry;
 }
-
+#ifdef DOLPHIN
 static List* makeValueLists(ParseState* pstate)
 {
     Relation target_relation = (Relation)linitial(pstate->p_target_relation);
@@ -2393,6 +2440,7 @@ static Node* makeConstByType(Form_pg_attribute att_tup)
     }
     return new_expr;
 }
+#endif
 
 #ifdef ENABLE_MULTIPLE_NODES
 static void checkUpsertTargetlist(Relation targetTable, List* updateTlist)
@@ -2607,6 +2655,7 @@ static UpsertExpr* transformUpsertClause(ParseState* pstate, UpsertClause* upser
     return result;
 }
 
+#ifdef DOLPHIN
 /* Check whether the not-null col has a default value when it is assgin a default expr in the values list.
  * If not, then assgin the col a default value here.
  */
@@ -2662,6 +2711,7 @@ void AppendValueForColOfNotnull(ParseState* pstate, List* exprlist, List* icolum
                 parser_errposition(pstate, exprLocation((Node*)list_nth(icolumns, list_length(exprlist))))));
     }
 }
+#endif
 
 /*
  * Prepare an INSERT row for assignment to the target table.
@@ -2689,7 +2739,7 @@ List* transformInsertRow(ParseState* pstate, List* exprlist, List* stmtcols, Lis
                 errmsg("INSERT has more expressions than target columns"),
                 parser_errposition(pstate, exprLocation((Node*)list_nth(exprlist, list_length(icolumns))))));
     }
-
+#ifdef DOLPHIN
     if (!SQL_MODE_STRICT()) {
         CheckDefaultForNotnullCols(pstate, exprlist, attrnos);
         /* Compatible with MySQL, when not in strict sql mode,
@@ -2697,7 +2747,7 @@ List* transformInsertRow(ParseState* pstate, List* exprlist, List* stmtcols, Lis
         */
         icolumns = AppendNotNullCols(pstate, icolumns, &attrnos);
     }
-
+#endif
     if (stmtcols != NIL && list_length(exprlist) < list_length(icolumns)) {
         /*
          * We can get here for cases like INSERT ... SELECT (a,b,c) FROM ...
@@ -2708,9 +2758,12 @@ List* transformInsertRow(ParseState* pstate, List* exprlist, List* stmtcols, Lis
          * mismatch, which is less misleading so we don't worry about giving a
          * hint in that case.)
          */
+#ifdef DOLPHIN
         if (!SQL_MODE_STRICT()) {
             AppendValueForColOfNotnull(pstate, exprlist, icolumns, attrnos);
-        } else {
+        } else
+#endif
+        {
             ereport(ERROR,
                 (errcode(ERRCODE_SYNTAX_ERROR),
                     errmsg("INSERT has more target columns than expressions"),
@@ -2848,6 +2901,48 @@ static Query* transformVariableSetStmt(ParseState* pstate, VariableSetStmt* stmt
 
     query->commandType = CMD_UTILITY;
     query->utilityStmt = (Node*)stmt;
+
+    return query;
+}
+
+/*
+ * transformVariableSetValueStmt - 
+ *    transforms a VariableSetStmt
+ */
+static Query* transformVariableSetValueStmt(ParseState* pstate, VariableSetStmt* stmt, bool is_alter_sys)
+{
+    Query *query = makeNode(Query);
+
+    List *resultlist = NIL;
+    ListCell* l = NULL;
+
+    foreach(l, stmt->args) {
+        Node* expr = (Node*)lfirst(l);
+
+        /* 
+         * The expression will eventually be converted to A_Const, 
+         * so the current A_Const expr does not need to be converted.
+         */
+        Node *node = NULL;
+        if (IsA(expr, A_Const)) {
+            node = expr;
+        } else {
+            node = transformExpr(pstate, expr);
+        }
+
+        resultlist = lappend(resultlist, (Expr *)node);
+    }
+    list_free(stmt->args);
+    stmt->args = resultlist;
+
+    query->commandType = CMD_UTILITY;
+    if (is_alter_sys) {
+        AlterSystemStmt* alter_sys_stmt = makeNode(AlterSystemStmt);
+        alter_sys_stmt->setstmt = stmt;
+        query->utilityStmt = (Node*)alter_sys_stmt;
+    } else {
+        query->utilityStmt = (Node*)stmt;
+    }
 
     return query;
 }
@@ -5142,7 +5237,6 @@ static void transformLockingClause(ParseState* pstate, Query* qry, LockingClause
         lc->strength = lc->forUpdate ? LCS_FORUPDATE : LCS_FORSHARE;
     }
     allrels->strength = lc->strength;
-    allrels->noWait = lc->noWait;
     allrels->waitSec = lc->waitSec;
 
     /* The processing delay of the ProcSleep function is in milliseconds. Set the delay to int_max/1000. */
@@ -5156,6 +5250,7 @@ static void transformLockingClause(ParseState* pstate, Query* qry, LockingClause
                 erraction("Modify SQL statement according to the manual.")));
     }
 
+    allrels->waitPolicy = lc->waitPolicy;
 
     if (lockedRels == NIL) {
         /* all regular tables used in query */
@@ -5171,17 +5266,24 @@ static void transformLockingClause(ParseState* pstate, Query* qry, LockingClause
                         heap_close(rel, AccessShareLock);
                         ereport(ERROR,
                             (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
-                                errmsg("SELECT FOR UPDATE/SHARE%s cannot be used with "
-                                       "column table \"%s\"", NOKEYUPDATE_KEYSHARE_ERRMSG, rte->eref->aliasname)));
+                                errmsg("SELECT FOR UPDATE/SHARE/NO KEY UPDATE/KEY SHARE cannot be used with "
+                                       "column table \"%s\"", rte->eref->aliasname)));
+                    } else {
+                        if (!RelationIsAstoreFormat(rel) && lc->waitPolicy == LockWaitSkip) {
+                            ereport(ERROR,
+                                (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+                                    errmsg("SELECT FOR UPDATE/SHARE/NO KEY UPDATE/KEY SHARE with skip locked "
+                                        "only be used with AStore table \"%s\"", rte->eref->aliasname)));
+                        }
                     }
 
                     heap_close(rel, AccessShareLock);
 
-                    applyLockingClause(qry, i, lc->strength, lc->noWait, pushedDown, lc->waitSec);
+                    applyLockingClause(qry, i, lc->strength, lc->waitPolicy, pushedDown, lc->waitSec);
                     rte->requiredPerms |= ACL_SELECT_FOR_UPDATE;
                     break;
                 case RTE_SUBQUERY:
-                    applyLockingClause(qry, i, lc->strength, lc->noWait, pushedDown, lc->waitSec);
+                    applyLockingClause(qry, i, lc->strength, lc->waitPolicy, pushedDown, lc->waitSec);
 
                     /*
                      * FOR [KEY] UPDATE/SHARE of subquery is propagated to all of
@@ -5232,15 +5334,23 @@ static void transformLockingClause(ParseState* pstate, Query* qry, LockingClause
                                         errmsg("SELECT FOR UPDATE/SHARE%s cannot be used with column table \"%s\"",
                                                NOKEYUPDATE_KEYSHARE_ERRMSG, rte->eref->aliasname),
                                         parser_errposition(pstate, thisrel->location)));
+                            }else {
+                                if (!RelationIsAstoreFormat(rel) && lc->waitPolicy == LockWaitSkip) {
+                                    ereport(ERROR,
+                                        (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+                                            errmsg("SELECT FOR UPDATE/SHARE/NO KEY UPDATE/KEY SHARE with skip locked "
+                                                "only be used with row table \"%s\"", rte->eref->aliasname),
+                                            parser_errposition(pstate, thisrel->location)));
+                                }
                             }
 
                             heap_close(rel, AccessShareLock);
-                            applyLockingClause(qry, i, lc->strength, lc->noWait, pushedDown,
+                            applyLockingClause(qry, i, lc->strength, lc->waitPolicy, pushedDown,
                                                lc->waitSec);
                             rte->requiredPerms |= ACL_SELECT_FOR_UPDATE;
                             break;
                         case RTE_SUBQUERY:
-                            applyLockingClause(qry, i, lc->strength, lc->noWait, pushedDown,
+                            applyLockingClause(qry, i, lc->strength, lc->waitPolicy, pushedDown,
                                                lc->waitSec);
                             /* see comment above */
                             transformLockingClause(pstate, rte->subquery, allrels, true);
@@ -5296,7 +5406,7 @@ static void transformLockingClause(ParseState* pstate, Query* qry, LockingClause
 /*
  * Record locking info for a single rangetable item
  */
-void applyLockingClause(Query* qry, Index rtindex, LockClauseStrength strength, bool noWait, bool pushedDown,
+void applyLockingClause(Query* qry, Index rtindex, LockClauseStrength strength, LockWaitPolicy waitPolicy, bool pushedDown,
                         int waitSec)
 {
     RowMarkClause* rc = NULL;
@@ -5314,16 +5424,21 @@ void applyLockingClause(Query* qry, Index rtindex, LockClauseStrength strength, 
          * shared and exclusive lock at the same time; it'll end up being
          * exclusive anyway.)
          *
-         * We also consider that NOWAIT wins if it's specified both ways. This
-         * is a bit more debatable but raising an error doesn't seem helpful.
-         * (Consider for instance SELECT FOR UPDATE NOWAIT from a view that
-         * internally contains a plain FOR UPDATE spec.)
+         * Similarly, if the same RTE is specified with more than one lock wait
+         * policy, consider that NOWAIT wins over SKIP LOCKED, which in turn
+         * wins over waiting for the lock (the default).  This is a bit more
+         * debatable but raising an error doesn't seem helpful.  (Consider for
+         * instance SELECT FOR UPDATE NOWAIT from a view that internally
+         * contains a plain FOR UPDATE spec.)  Having NOWAIT win over SKIP
+         * LOCKED is reasonable since the former throws an error in case of
+         * coming across a locked tuple, which may be undesirable in some cases
+         * but it seems better than silently returning inconsistent results.
          *
          * And of course pushedDown becomes false if any clause is explicit.
          */
         rc->strength = Max(rc->strength, strength);
         rc->forUpdate = rc->strength == LCS_FORUPDATE;
-        rc->noWait = rc->noWait || noWait;
+        rc->waitPolicy = Max(rc->waitPolicy, waitPolicy);
         rc->waitSec = Max(rc->waitSec, waitSec);
         rc->pushedDown = rc->pushedDown && pushedDown;
         return;
@@ -5334,7 +5449,7 @@ void applyLockingClause(Query* qry, Index rtindex, LockClauseStrength strength, 
     rc->rti = rtindex;
     rc->forUpdate = strength == LCS_FORUPDATE;
     rc->strength = strength;
-    rc->noWait = noWait;
+    rc->waitPolicy = waitPolicy;
     rc->waitSec = waitSec;
     rc->pushedDown = pushedDown;
     qry->rowMarks = lappend(qry->rowMarks, rc);
