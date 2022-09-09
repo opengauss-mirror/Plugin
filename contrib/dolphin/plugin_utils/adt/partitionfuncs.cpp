@@ -224,6 +224,8 @@ Datum RebuildPartition(PG_FUNCTION_ARGS)
             char *partName = TextDatumGetCString(argText[count]);
             char objectType = PART_OBJ_TYPE_TABLE_PARTITION;
             Oid partOid = partitionNameGetPartitionOid(relid, partName, objectType, AccessExclusiveLock, true, false, NULL, NULL, NoLock);
+            if (!OidIsValid(partOid))
+                ereport(ERROR, (errcode(ERRCODE_PARTITION_ERROR), errmsg("The partition %s can't be found in table %s", partName, tableName)));
             Partition part = partitionOpen(rel, partOid, AccessExclusiveLock);
             if (RelationIsSubPartitioned(rel)) {
                 Relation partRel = partitionGetRelation(rel, part);
