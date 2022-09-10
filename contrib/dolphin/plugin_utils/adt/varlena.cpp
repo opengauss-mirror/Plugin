@@ -242,6 +242,9 @@ extern "C" DLL_PUBLIC Datum find_in_set_string(PG_FUNCTION_ARGS);
 PG_FUNCTION_INFO_V1_PUBLIC(soundex);
 extern "C" DLL_PUBLIC Datum soundex(PG_FUNCTION_ARGS);
 
+PG_FUNCTION_INFO_V1_PUBLIC(soundex_bool);
+extern "C" DLL_PUBLIC Datum soundex_bool(PG_FUNCTION_ARGS);
+
 PG_FUNCTION_INFO_V1_PUBLIC(space_integer);
 extern "C" DLL_PUBLIC Datum space_integer(PG_FUNCTION_ARGS);
 
@@ -8516,6 +8519,12 @@ Datum find_in_set_string(PG_FUNCTION_ARGS)
 /*
  * Soundex
  */
+
+Datum soundex_bool(PG_FUNCTION_ARGS)
+{
+    PG_RETURN_TEXT_P(cstring_to_text(""));
+}
+
 static void set_sound(const char* arg, char* result, int size);
 
 /* ABCDEFGHIJKLMNOPQRSTUVWXYZ */
@@ -8531,10 +8540,10 @@ static char code_letter(char letter)
 Datum soundex(PG_FUNCTION_ARGS)
 {
     char* arg = text_to_cstring(PG_GETARG_TEXT_P(0));
-    int str_len = strlen(arg) + 1;
-    int min_sound_len = 5;
+    int strLen = strlen(arg) + 1;
+    int minSoundLen = pg_encoding_max_length(PG_UTF8) + SOUND_THRESHOLD;
 
-    char* result = (char*)palloc(Max(str_len, min_sound_len));
+    char* result = (char*)palloc(Max(strLen, minSoundLen));
     set_sound(arg, result, strlen(arg));
     PG_RETURN_TEXT_P(cstring_to_text(result));
 }
@@ -8544,10 +8553,12 @@ static void set_sound(const char* arg, char* result, int size)
     int cnt = 1;
     result[size] = '\0';
     int count = 0;
+    bool isNullStr = true;
     while ((count++) < size) {
         if (isalpha((unsigned char)arg[0])) {
             result[0] = (char)toupper((unsigned char)*arg++);
             result++;
+            isNullStr = false;
             break;
         } else if ((unsigned char)arg[0] & 0x80) {
             result[0] = arg[0];
@@ -8555,12 +8566,13 @@ static void set_sound(const char* arg, char* result, int size)
             result[2] = arg[2];
             result += 3;
             arg += 3;
+            isNullStr = false;
             break;
         }
         ++arg;
     }
-    if (arg) {
-        if (!arg[0]) {
+    if (!isNullStr) {
+        if (*arg && !arg[0]) {
             result[0] = (char)0;
             return;
         }
@@ -8586,8 +8598,9 @@ static void set_sound(const char* arg, char* result, int size)
         if (cnt <= size && cnt >= SOUND_THRESHOLD) {
             result[0] = '\0';
         }
+
     } else {
-        result = "";
+        result[0] = '\0';
     }
 }
 

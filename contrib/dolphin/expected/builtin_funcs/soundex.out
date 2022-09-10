@@ -80,6 +80,66 @@ select soundex('dkh测试fkdsjs12');
  D21232
 (1 row)
 
+select soundex(false),soundex(true);
+ soundex | soundex 
+---------+---------
+         | 
+(1 row)
+
+select soundex('颜'),soundex('谚');
+ soundex | soundex 
+---------+---------
+ 颜000   | 谚000
+(1 row)
+
+select soundex('颜 '),soundex('谚0');
+ soundex | soundex 
+---------+---------
+ 颜000   | 谚000
+(1 row)
+
+select soundex('遥'),soundex('摇'),soundex('瑶');
+ soundex | soundex | soundex 
+---------+---------+---------
+ 遥000   | 摇000   | 瑶000
+(1 row)
+
+select soundex('遥!@#@$#'),soundex('摇0.00001'),soundex('瑶nhgchgh');
+ soundex | soundex | soundex 
+---------+---------+---------
+ 遥000   | 摇000   | 瑶520
+(1 row)
+
+select soundex('人'),soundex('入');
+ soundex | soundex 
+---------+---------
+ 人000   | 入000
+(1 row)
+
+select soundex('00人'),soundex('a00入'),soundex('baa入'),soundex('0b0入');
+ soundex | soundex | soundex | soundex 
+---------+---------+---------+---------
+ 人000   | A000    | B000    | B000
+(1 row)
+
+select soundex('0000食不果腹'),soundex('食不裹腹');
+ soundex | soundex 
+---------+---------
+ 食000   | 食000
+(1 row)
+
+select soundex('气概'),soundex('气慨');
+ soundex | soundex 
+---------+---------
+ 气000   | 气000
+(1 row)
+
+select soundex('辐射'),soundex('幅射');
+ soundex | soundex 
+---------+---------
+ 辐000   | 幅000
+(1 row)
+
 select 'ibc' sounds like 'abc';
  soundex_difference 
 --------------------
