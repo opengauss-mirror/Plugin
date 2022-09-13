@@ -1986,3 +1986,27 @@ Datum mp_bit_length_bytea(PG_FUNCTION_ARGS)
     /* We need not detoast the input at all */
     PG_RETURN_INT32((toast_raw_datum_size(str) - VARHDRSZ) * 8);
 }
+
+#ifdef DOLPHIN
+PG_FUNCTION_INFO_V1_PUBLIC(bit_bool);
+extern "C" DLL_PUBLIC Datum bit_bool(PG_FUNCTION_ARGS);
+
+Datum bit_bool(PG_FUNCTION_ARGS)
+{
+    VarBit* arg1 = PG_GETARG_VARBIT_P(0);
+    bits8* p = NULL;
+    int bitlen, i;
+    bits8 t = 0;
+
+    bitlen = VARBITLEN(arg1);
+    p = VARBITS(arg1);
+
+    for(i=0; i < bitlen; i++) {
+        if(p[i/BITS_PER_BYTE] == t)
+            continue;
+        else
+            PG_RETURN_BOOL(true);
+    }
+    PG_RETURN_BOOL(false);
+}
+#endif

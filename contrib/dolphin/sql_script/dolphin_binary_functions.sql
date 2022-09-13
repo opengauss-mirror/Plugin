@@ -280,3 +280,8 @@ CREATE CAST (longblob AS raw) WITHOUT FUNCTION AS IMPLICIT;
 CREATE CAST (raw AS longblob) WITHOUT FUNCTION AS IMPLICIT;
 CREATE CAST (raw AS tinyblob) WITH FUNCTION to_tinyblob(longblob) AS IMPLICIT;
 CREATE CAST (raw AS mediumblob) WITH FUNCTION to_mediumblob(longblob) AS IMPLICIT;
+
+create operator pg_catalog.^(leftarg = int2, rightarg = int2, procedure = pg_catalog.int2xor);
+create operator pg_catalog.^(leftarg = int4, rightarg = int4, procedure = pg_catalog.int4xor);
+create operator pg_catalog.^(leftarg = int8, rightarg = int8, procedure = pg_catalog.int8xor);
+create operator pg_catalog.^(leftarg = bit, rightarg = bit, procedure = pg_catalog.bitxor);

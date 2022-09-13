@@ -3794,4 +3794,51 @@ Datum time_mysql(PG_FUNCTION_ARGS)
     EncodeTimeOnly(tm, fsec, false, 0, u_sess->time_cxt.DateStyle, cp);
     PG_RETURN_TEXT_P(cstring_to_text(buf));
 }
+
+PG_FUNCTION_INFO_V1_PUBLIC(date_bool);
+extern "C" DLL_PUBLIC Datum date_bool(PG_FUNCTION_ARGS);
+
+Datum date_bool(PG_FUNCTION_ARGS)
+{
+    DateADT dateVal = PG_GETARG_DATEADT(0);
+    Timestamp timestamp;
+    float8 result = 0;
+    fsec_t fsec;
+    struct pg_tm tt, *tm = &tt;
+
+    timestamp = date2timestamp(dateVal);
+
+    if (timestamp2tm(timestamp, NULL, tm, &fsec, NULL, NULL) == 0) {
+        result = tm->tm_year;
+        if (result > 0)
+            PG_RETURN_BOOL(true);
+        else 
+            PG_RETURN_BOOL(false);
+    } else {
+        ereport(ERROR, (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE), errmsg("timestamp out of range")));
+    }
+    PG_RETURN_BOOL(false);
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(time_bool);
+extern "C" DLL_PUBLIC Datum time_bool(PG_FUNCTION_ARGS);
+
+Datum time_bool(PG_FUNCTION_ARGS)
+{
+    TimeADT timeVal = PG_GETARG_TIMEADT(0);
+    float8 result = 0;
+    fsec_t fsec;
+    struct pg_tm tt, *tm = &tt;
+
+    if(time2tm(timeVal, tm, &fsec) == 0) {
+        result = tm->tm_hour;
+        if(result > 0)
+            PG_RETURN_BOOL(true);
+        else
+            PG_RETURN_BOOL(false);
+    } else {
+        ereport(ERROR, (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE), errmsg("time out of range")));
+    }
+    PG_RETURN_BOOL(false);
+}
 #endif

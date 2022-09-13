@@ -1,0 +1,1699 @@
+drop database if exists test_op_and;
+NOTICE:  database "test_op_and" does not exist, skipping
+CREATE DATABASE test_op_and with dbcompatibility='B';
+\c test_op_and
+set b_compatibility_mode = 1;
+---create extension dolphin;
+---create table
+create table testforboolean(a boolean,b boolean);
+create table testforint(a int,b int);
+create table testforfloat(a float,b float);
+create table testforbit(a bit(4),b bit(4));
+create table testfordate(a date,b date);
+create table testfortime(a time,b time);
+create table testforstring(a varchar,b varchar);
+---create table testforbytea(a bytea ,b bytea );
+--create table testfordate(a date,b date);
+---insert data
+insert into testforboolean values(true,true);
+insert into testforboolean values(true,false);
+insert into testforboolean values(false,true);
+insert into testforboolean values(false,false);
+insert into testforboolean values(true,null);
+insert into testforboolean values(false,null);
+insert into testforboolean values(null,null);
+insert into testforint values(1001,1001);
+insert into testforint values(1001,-1010);
+insert into testforint values(1001,0110);
+insert into testforint values(1001,0);
+insert into testforint values(0,1001);
+insert into testforint values(0,0);
+insert into testforint values(1001,null);
+insert into testforint values(0,null);
+insert into testforint values(null,null);
+insert into testforfloat values(1.27,1.27);
+insert into testforfloat values(1.27,-1.27);
+insert into testforfloat values(1.27,0.01);
+insert into testforfloat values(1.27,0.0);
+insert into testforfloat values(0.0,1.27);
+insert into testforfloat values(0.0,0.0);
+insert into testforfloat values(1.27,null);
+insert into testforfloat values(0.0,null);
+insert into testforfloat values(null,null);
+insert into testforbit values('1111','1111');
+insert into testforbit values('1111','0111');
+insert into testforbit values('1111','1011');
+insert into testforbit values('1111','0000');
+insert into testforbit values('0000','1111');
+insert into testforbit values('0000','0000');
+insert into testforbit values('1111',null);
+insert into testforbit values('0000',null);
+insert into testforbit values(null,null);
+insert into testfordate values('2022-08-20','2022-08-20');
+insert into testfordate values('2022-08-20','2022-08-21');
+insert into testfordate values('2022-08-20','2022-07-20');
+insert into testfordate values('2022-08-20','2021-08-20');
+insert into testfordate values('2022-08-20',null);
+insert into testfordate values(null,null);
+insert into testfortime values('11:11:11','11:11:11');
+insert into testfortime values('11:11:11','11:11:00');
+insert into testfortime values('11:11:11','11:00:11');
+insert into testfortime values('11:11:11','00:11:11');
+insert into testfortime values('11:11:11','00:00:00');
+insert into testfortime values('00:00:00','11:11:11');
+insert into testfortime values('00:00:00','00:00:00');
+insert into testfortime values('11:11:11',null);
+insert into testfortime values('00:00:00',null);
+insert into testfortime values(null,null);
+insert into testforstring values('10','10');
+insert into testforstring values('-10','+01');
+insert into testforstring values('123a','123a');
+---insert into testforstring values('1001','1001a');
+---ERROR:invalid input;
+---select a^b from table
+select a&&b from testforboolean;
+ ?column? 
+----------
+ t
+ f
+ f
+ f
+ 
+ f
+ 
+(7 rows)
+
+select a&&b from testforint;
+ ?column? 
+----------
+ t
+ t
+ t
+ f
+ f
+ f
+ 
+ f
+ 
+(9 rows)
+
+select a&&b from testforfloat;
+ ?column? 
+----------
+ t
+ t
+ t
+ f
+ f
+ f
+ f
+ f
+ f
+(9 rows)
+
+select a&&b from testforbit;
+ERROR:  NULL input for detoast datum
+select a&&b from testfordate;
+ ?column? 
+----------
+ t
+ t
+ t
+ t
+ t
+ t
+(6 rows)
+
+select a&&b from testfortime;
+ ?column? 
+----------
+ t
+ t
+ t
+ f
+ f
+ f
+ f
+ f
+ f
+ f
+(10 rows)
+
+select a&&b from testforstring;
+ERROR:  argument of AND must be type boolean, not type character varying
+LINE 1: select a&&b from testforstring;
+               ^
+---drop table
+drop table testforboolean;
+drop table testforint;
+drop table testforfloat;
+drop table testforbit;
+drop table testfordate;
+drop table testfortime;
+drop table testforstring;
+---create table with (orientation=column)
+create table testforboolean(a boolean,b boolean) with (orientation=column);
+---create temp table
+create local temp table testforint(a int,b int);
+create global temp table testforfloat(a float,b float);
+---create unlogged table
+create unlogged table testforbit(a bit(4),b bit(4));
+---create ustore table
+create table testforboolean_u(a boolean, b boolean) with(storage_type=ustore);
+---create segemnt table
+create table testforboolean_s(a boolean,b boolean) with(segment=on);
+---create table partition
+create table testforint2_p1(a int2,b int2) partition by range(a)(partition p1 values less than(0),partition p2 values less than(2),partition p3 values less than(3));
+create table testforint2_p2(a int2,b int2) with (orientation=column) partition by range(a)(partition p1 values less than(0),partition p2 values less than(2),partition p3 values less than(3));
+create table testforint2_p3(a int2,b int2,c date) partition by range(c) interval('1day')(partition p1 values less than('2022-08-01'),partition p2 values less than('2022-08-02'),partition p3 values less than('2022-08-03'));
+create table testforint2_p4(a int2,b int2) partition by list(a)(partition p1 values(-1),partition p2 values(1),partition p3 values(2));
+create table testforint2_p5(a int2,b int2) partition by hash(a)(partition p1,partition p2,partition p3);
+---insert data
+insert into testforboolean values(true,true);
+insert into testforboolean values(true,false);
+insert into testforboolean values(false,true);
+insert into testforboolean values(false,false);
+insert into testforboolean values(true,null);
+insert into testforboolean values(false,null);
+insert into testforboolean values(null,null);
+insert into testforint values(1001,1001);
+insert into testforint values(1001,-1010);
+insert into testforint values(1001,0110);
+insert into testforint values(1001,0);
+insert into testforint values(0,1001);
+insert into testforint values(0,0);
+insert into testforint values(1001,null);
+insert into testforint values(0,null);
+insert into testforint values(null,null);
+insert into testforfloat values(1.27,1.27);
+insert into testforfloat values(1.27,-1.27);
+insert into testforfloat values(1.27,0.01);
+insert into testforfloat values(1.27,0.0);
+insert into testforfloat values(0.0,1.27);
+insert into testforfloat values(0.0,0.0);
+insert into testforfloat values(1.27,null);
+insert into testforfloat values(0.0,null);
+insert into testforfloat values(null,null);
+insert into testforbit values('1111','1111');
+insert into testforbit values('1111','0111');
+insert into testforbit values('1111','1011');
+insert into testforbit values('1111','0000');
+insert into testforbit values('0000','1111');
+insert into testforbit values('0000','0000');
+insert into testforbit values('1111',null);
+insert into testforbit values('0000',null);
+insert into testforbit values(null,null);
+insert into testforboolean_u values(true,true);
+insert into testforboolean_u values(true,false);
+insert into testforboolean_u values(false,true);
+insert into testforboolean_u values(false,false);
+insert into testforboolean_u values(true,null);
+insert into testforboolean_u values(false,null);
+insert into testforboolean_u values(null,null);
+insert into testforboolean_s values(true,true);
+insert into testforboolean_s values(true,false);
+insert into testforboolean_s values(false,true);
+insert into testforboolean_s values(false,false);
+insert into testforboolean_s values(true,null);
+insert into testforboolean_s values(false,null);
+insert into testforboolean_s values(null,null);
+insert into testforint2_p1 values(-1,-1);
+insert into testforint2_p1 values(1,0);
+insert into testforint2_p1 values(2,123);
+insert into testforint2_p2 values(-1,-1);
+insert into testforint2_p2 values(1,0);
+insert into testforint2_p2 values(2,123);
+insert into testforint2_p3 values(-1,-1,'2022-07-31');
+insert into testforint2_p3 values(1,0,'2022-08-01');
+insert into testforint2_p3 values(2,123,'2022-08-02');
+insert into testforint2_p4 values(-1,-1);
+insert into testforint2_p4 values(1,0);
+insert into testforint2_p4 values(2,123);
+insert into testforint2_p5 values(-1,-1);
+insert into testforint2_p5 values(1,0);
+insert into testforint2_p5 values(2,123);
+---select a^b
+select a&&b from testforboolean;
+ ?column? 
+----------
+ t
+ f
+ f
+ f
+ 
+ f
+ 
+(7 rows)
+
+select a&&b from testforint;
+ ?column? 
+----------
+ t
+ t
+ t
+ f
+ f
+ f
+ 
+ f
+ 
+(9 rows)
+
+select a&&b from testforfloat;
+ ?column? 
+----------
+ t
+ t
+ t
+ f
+ f
+ f
+ f
+ f
+ f
+(9 rows)
+
+select a&&b from testforbit;
+ERROR:  NULL input for detoast datum
+select a&&b from testforboolean_u;
+ ?column? 
+----------
+ t
+ f
+ f
+ f
+ 
+ f
+ 
+(7 rows)
+
+select a&&b from testforboolean_s;
+ ?column? 
+----------
+ t
+ f
+ f
+ f
+ 
+ f
+ 
+(7 rows)
+
+select a&&b from testforint2_p1;
+ ?column? 
+----------
+ t
+ f
+ t
+(3 rows)
+
+select a&&b from testforint2_p2;
+ ?column? 
+----------
+ t
+ f
+ t
+(3 rows)
+
+select a&&b from testforint2_p3;
+ ?column? 
+----------
+ t
+ f
+ t
+(3 rows)
+
+select a&&b from testforint2_p4;
+ ?column? 
+----------
+ t
+ f
+ t
+(3 rows)
+
+select a&&b from testforint2_p5;
+ ?column? 
+----------
+ t
+ t
+ f
+(3 rows)
+
+---create view
+create view testforboolean_v as select * from testforboolean;
+select a^b from testforboolean_v;
+      ?column?      
+--------------------
+ 1.0000000000000000
+ 1.0000000000000000
+ 0.0000000000000000
+ 1.0000000000000000
+                   
+                   
+                   
+(7 rows)
+
+drop view testforboolean_v;
+--- test for function
+select count(tem) from (select a&&b tem from testforboolean);
+ count 
+-------
+     5
+(1 row)
+
+select a&&b,b from testforboolean order by b;
+ ?column? | b 
+----------+---
+ f        | f
+ f        | f
+ f        | t
+ t        | t
+          | 
+ f        | 
+          | 
+(7 rows)
+
+select char_length('asbjhc')&&char_length('askjdhkj');
+ ?column? 
+----------
+ t
+(1 row)
+
+select left('1023jasdzlxc',5)&&left('1023jasdnzxc',5);
+ERROR:  argument of AND must be type boolean, not type text
+LINE 1: select left('1023jasdzlxc',5)&&left('1023jasdnzxc',5);
+               ^
+select substring('as1dz34lcas',3)&&substring('zxcbkj1shd',5);
+ERROR:  argument of AND must be type boolean, not type text
+LINE 1: select substring('as1dz34lcas',3)&&substring('zxcbkj1shd',5)...
+               ^
+select replace('123456789','234','asd')&&replace('123456789','234','asd');
+ERROR:  argument of AND must be type boolean, not type text
+LINE 1: select replace('123456789','234','asd')&&replace('123456789'...
+               ^
+--- test for arithmetic op
+select 1+1 && 1;
+ ?column? 
+----------
+ t
+(1 row)
+
+select 1+1 && 0;
+ ?column? 
+----------
+ f
+(1 row)
+
+select 1-1 && 1;
+ ?column? 
+----------
+ f
+(1 row)
+
+select 0-1 && 1;
+ ?column? 
+----------
+ t
+(1 row)
+
+select 1*2 && 1;
+ ?column? 
+----------
+ t
+(1 row)
+
+select 0*3 && 1;
+ ?column? 
+----------
+ f
+(1 row)
+
+select cast(4/2 as int) && 1;
+ ?column? 
+----------
+ t
+(1 row)
+
+select cast(0/3 as int) && 1;
+ ?column? 
+----------
+ f
+(1 row)
+
+select 6%3 && 1;
+ ?column? 
+----------
+ f
+(1 row)
+
+select 6%4 && 1;
+ ?column? 
+----------
+ t
+(1 row)
+
+--- test for comparison op
+select 1<1 && 1;
+ ?column? 
+----------
+ f
+(1 row)
+
+select 0<1 && 1;
+ ?column? 
+----------
+ t
+(1 row)
+
+select 1>1 && 1;
+ ?column? 
+----------
+ f
+(1 row)
+
+select 1>0 && 1;
+ ?column? 
+----------
+ t
+(1 row)
+
+select 1=1 && 1;
+ ?column? 
+----------
+ t
+(1 row)
+
+select 0=1 && 1;
+ ?column? 
+----------
+ f
+(1 row)
+
+select 1!=1 && 1;
+ ?column? 
+----------
+ f
+(1 row)
+
+select 1!=0 && 1;
+ ?column? 
+----------
+ t
+(1 row)
+
+select 1<>1 && 1;
+ ?column? 
+----------
+ f
+(1 row)
+
+select 1<>0 && 1;
+ ?column? 
+----------
+ t
+(1 row)
+
+select 1>=1 && 1;
+ ?column? 
+----------
+ t
+(1 row)
+
+select 1>=2 && 1;
+ ?column? 
+----------
+ f
+(1 row)
+
+select 1<=1 && 1;
+ ?column? 
+----------
+ t
+(1 row)
+
+select 1<=0 && 1;
+ ?column? 
+----------
+ f
+(1 row)
+
+---create function
+create function test (boolean,boolean) returns boolean
+    as 'select $1&&$2;'
+    language sql
+    returns null on null input;
+select test(true,true);
+ test 
+------
+ t
+(1 row)
+
+select test(true,false);
+ test 
+------
+ f
+(1 row)
+
+drop procedure test;
+---create procedure
+create procedure test1(in a boolean,in b boolean)
+as 
+begin 
+   raise notice '%', a&&b;
+end;
+/
+call test1(true,true);
+NOTICE:  t
+ test1 
+-------
+ 
+(1 row)
+
+call test1(true,false);
+NOTICE:  f
+ test1 
+-------
+ 
+(1 row)
+
+call test1(false,null);
+NOTICE:  f
+ test1 
+-------
+ 
+(1 row)
+
+drop procedure test1;
+---drop table
+drop table testforboolean;
+drop table testforint;
+drop table testforfloat;
+drop table testforbit;
+drop table testforboolean_u;
+drop table testforboolean_s;
+drop table testforint2_p1;
+drop table testforint2_p2;
+drop table testforint2_p3;
+drop table testforint2_p4;
+drop table testforint2_p5;
+---drop database
+set b_compatibility_mode = 0;
+\c postgres
+drop database test_op_and;
+drop database if exists test_op_xor;
+NOTICE:  database "test_op_xor" does not exist, skipping
+CREATE DATABASE test_op_xor with dbcompatibility='B';
+\c test_op_xor
+set b_compatibility_mode = 1;
+select null^1;
+ ?column? 
+----------
+         
+(1 row)
+
+create table testforbit(a bit,b bit);
+insert into testforbit values('1','1');
+insert into testforbit values('1','0');
+select a^b from testforbit where (select 0^1);
+ ?column? 
+----------
+ 0
+ 1
+(2 rows)
+
+drop table testforbit;
+create table testforint2(a int2,b int2);
+insert into testforint2 values(1001,1001);
+insert into testforint2 values(1001,-1010);
+insert into testforint2 values(1001,0110);
+select a^b from testforint2 where (select 0^1);
+ ?column? 
+----------
+        0
+      -25
+      903
+(3 rows)
+
+drop table testforint2;
+create table testforint4(a int4,b int4);
+insert into testforint4 values(1001,1001);
+insert into testforint4 values(1001,-1010);
+insert into testforint4 values(1001,0110);
+select a^b from testforint4 where (select 0^1);
+ ?column? 
+----------
+        0
+      -25
+      903
+(3 rows)
+
+drop table testforint4;
+create table testforint8(a int8,b int8);
+insert into testforint8 values(1001,1001);
+insert into testforint8 values(1001,-1010);
+insert into testforint8 values(1001,0110);
+select a^b from testforint8 where (select 0^1);
+ ?column? 
+----------
+        0
+      -25
+      903
+(3 rows)
+
+drop table testforint8;
+create table testforfloat(a float,b float);
+insert into testforfloat values(1.27,1.27);
+insert into testforfloat values(1.27,0.12);
+insert into testforfloat values(1.27,0.01);
+select a^b from testforfloat;
+     ?column?     
+------------------
+ 1.35466127287848
+ 1.02909731585676
+ 1.00239302753171
+(3 rows)
+
+drop table testforfloat;
+create table testforstring(a varchar,b varchar);
+insert into testforstring values('10','10');
+insert into testforstring values('-10','-01');
+insert into testforstring values('+10','+01');
+insert into testforstring values('123a','123a456');
+select a^b from testforstring where (select 0^1);
+ ?column? 
+----------
+        0
+        9
+       11
+        0
+(4 rows)
+
+drop table testforstring;
+create table testforboolean(a boolean,b boolean);
+insert into testforboolean values(true,true);
+insert into testforboolean values(true,false);
+insert into testforboolean values(false,false);
+select a^b from testforboolean where (select 0^1);
+      ?column?      
+--------------------
+ 1.0000000000000000
+ 1.0000000000000000
+ 1.0000000000000000
+(3 rows)
+
+drop table testforboolean;
+create table testfordate(a date,b date);
+insert into testfordate values('2011-08-13','2011-08-13');
+insert into testfordate values('2022-08-13','2022-08-14');
+select a^b from testfordate;
+ ?column? 
+----------
+        0
+        0
+(2 rows)
+
+drop table testfordate;
+create table testforbit(a bit,b bit) with (orientation=column);
+insert into testforbit values('1','1');
+insert into testforbit values('1','0');
+select a^b from testforbit;
+ ?column? 
+----------
+ 0
+ 1
+(2 rows)
+
+create local temp table testforint2(a int2,b int2);
+insert into testforint2 values(1001,1001);
+insert into testforint2 values(1001,-1010);
+insert into testforint2 values(1001,0110);
+select a^b from testforint2;
+ ?column? 
+----------
+        0
+      -25
+      903
+(3 rows)
+
+create global temp table testforint4(a int4,b int4);
+insert into testforint4 values(1001,1001);
+insert into testforint4 values(1001,-1010);
+insert into testforint4 values(1001,0110);
+select a^b from testforint4;
+ ?column? 
+----------
+        0
+      -25
+      903
+(3 rows)
+
+create unlogged table testforint8(a int8,b int8);
+insert into testforint8 values(1001,1001);
+insert into testforint8 values(1001,-1010);
+insert into testforint8 values(1001,0110);
+select a^b from testforint8;
+ ?column? 
+----------
+        0
+      -25
+      903
+(3 rows)
+
+create table testforbit_u(a bit, b bit) with(storage_type=ustore);
+insert into testforbit_u values(b'1',b'1');
+insert into testforbit_u values(b'1',b'0');
+select a^b from testforbit_u;
+ ?column? 
+----------
+ 0
+ 1
+(2 rows)
+
+create table testforbit_s(a bit,b bit) with(segment=on);
+insert into testforbit_s values(b'1',b'1');
+insert into testforbit_s values(b'1',b'0');
+select a^b from testforbit_s;
+ ?column? 
+----------
+ 0
+ 1
+(2 rows)
+
+create table testforint2_p1(a int2,b int2) partition by range(a)(partition p1 values less than(0),partition p2 values less than(2),partition p3 values less than(3));
+insert into testforint2_p1 values(-1,-1);
+insert into testforint2_p1 values(1,0);
+insert into testforint2_p1 values(2,123);
+select a^b from testforint2_p1;
+ ?column? 
+----------
+        0
+        1
+      121
+(3 rows)
+
+create table testforint2_p2(a int2,b int2) with (orientation=column) partition by range(a)(partition p1 values less than(0),partition p2 values less than(2),partition p3 values less than(3));
+insert into testforint2_p2 values(-1,-1);
+insert into testforint2_p2 values(1,0);
+insert into testforint2_p2 values(2,123);
+select a^b from testforint2_p2;
+ ?column? 
+----------
+        0
+        1
+      121
+(3 rows)
+
+create table testforint2_p3(a int2,b int2,c date) partition by range(c) interval('1day')(partition p1 values less than('2022-08-01'),partition p2 values less than('2022-08-02'),partition p3 values less than('2022-08-03'));
+insert into testforint2_p3 values(-1,-1,'2022-07-31');
+insert into testforint2_p3 values(1,0,'2022-08-01');
+insert into testforint2_p3 values(2,123,'2022-08-02');
+select a^b from testforint2_p3;
+ ?column? 
+----------
+        0
+        1
+      121
+(3 rows)
+
+create table testforint2_p4(a int2,b int2) partition by list(a)(partition p1 values(-1),partition p2 values(1),partition p3 values(2));
+insert into testforint2_p4 values(-1,-1);
+insert into testforint2_p4 values(1,0);
+insert into testforint2_p4 values(2,123);
+select a^b from testforint2_p4;
+ ?column? 
+----------
+      121
+        1
+        0
+(3 rows)
+
+create table testforint2_p5(a int2,b int2) partition by hash(a)(partition p1,partition p2,partition p3);
+insert into testforint2_p5 values(-1,-1);
+insert into testforint2_p5 values(1,0);
+insert into testforint2_p5 values(2,123);
+select a^b from testforint2_p5;
+ ?column? 
+----------
+      121
+        0
+        1
+(3 rows)
+
+create view testforbit_v as select * from testforbit;
+select a^b from testforbit_v;
+ ?column? 
+----------
+ 0
+ 1
+(2 rows)
+
+drop view testforbit_v;
+create function test (bit(4),bit(4)) returns bit(4)
+    as 'select $1^$2;'
+    language sql
+    returns null on null input;
+select test(b'1001',b'1010');
+ test 
+------
+ 0011
+(1 row)
+
+drop function test;
+create procedure test(in a bit,in b bit)
+as
+begin
+   raise notice '%', a^b;
+end;
+/
+call test(b'1',b'1');
+NOTICE:  0
+ test 
+------
+ 
+(1 row)
+
+drop procedure test;
+select abs(1)^abs(1);
+ ?column? 
+----------
+        0
+(1 row)
+
+select abs(1^1);
+ abs 
+-----
+   0
+(1 row)
+
+create table ^;
+ERROR:  syntax error at or near "^"
+LINE 1: create table ^;
+                     ^
+create table test(^ int);
+ERROR:  syntax error at or near "^"
+LINE 1: create table test(^ int);
+                          ^
+create function ^;
+ERROR:  syntax error at or near "^"
+LINE 1: create function ^;
+                        ^
+drop function if exists ^;
+ERROR:  syntax error at or near "^"
+LINE 1: drop function if exists ^;
+                                ^
+create procedure ^;
+ERROR:  syntax error at or near "^"
+LINE 1: create procedure ^;
+                         ^
+create view ^;
+ERROR:  syntax error at or near "^"
+LINE 1: create view ^;
+                    ^
+create database ^;
+ERROR:  syntax error at or near "^"
+LINE 1: create database ^;
+                        ^
+create index ^;
+ERROR:  syntax error at or near "^"
+LINE 1: create index ^;
+                     ^
+create sequence ^ increment by 1 minvalue 1 no maxvalue start with 1;
+ERROR:  syntax error at or near "^"
+LINE 1: create sequence ^ increment by 1 minvalue 1 no maxvalue star...
+                        ^
+create user ^ identified by 'hw123456';
+ERROR:  syntax error at or near "^"
+LINE 1: create user ^ identified by 'hw123456';
+                    ^
+create role ^ identified by 'hw123456';
+ERROR:  syntax error at or near "^"
+LINE 1: create role ^ identified by 'hw123456';
+                    ^
+select * from testforbit;
+ a | b 
+---+---
+ 1 | 1
+ 1 | 0
+(2 rows)
+
+select max(tem) from (select a^b tem from testforbit);
+ max 
+-----
+   1
+(1 row)
+
+select sum(tem) from (select a^b tem from testforbit);
+ sum 
+-----
+   1
+(1 row)
+
+select min(tem) from (select a^b tem from testforbit);
+ min 
+-----
+   0
+(1 row)
+
+select avg(tem) from (select a^b tem from testforbit);
+          avg           
+------------------------
+ 0.50000000000000000000
+(1 row)
+
+select count(tem) from (select a^b tem from testforbit);
+ count 
+-------
+     2
+(1 row)
+
+update testforbit set a=b'1'^b'1' where b=0;
+insert into testforbit values(b'1'^b'1',b'0'^b'1');
+delete testforbit where b=b'1'^b'1';
+select a^b,b from testforbit order by b;
+ ?column? | b 
+----------+---
+ 0        | 1
+ 1        | 1
+(2 rows)
+
+select a^b from testforbit group by a,b having a>0;
+ ?column? 
+----------
+ 0
+(1 row)
+
+select A1.a^A1.b,A2.a^A2.b from testforbit A1 join testforint2 A2 on A1.b>0 and A2.b>0;
+ ?column? | ?column? 
+----------+----------
+ 0        |        0
+ 1        |        0
+ 0        |      903
+ 1        |      903
+(4 rows)
+
+select a^b,
+   (case b when b>0 then 'good'
+    when b<=0 then 'bad' end) as quality
+from testforbit;
+ ?column? | quality 
+----------+---------
+ 0        | good
+ 1        | good
+(2 rows)
+
+select a^b from testforbit where b%a^1=1;
+ ?column? 
+----------
+ 1
+(1 row)
+
+select a^b from testforbit where a/b^1<1;
+ ?column? 
+----------
+ 1
+(1 row)
+
+select a^b from testforbit where a*b^1!=1;
+ ?column? 
+----------
+ 1
+(1 row)
+
+select a^b from testforbit where a+b^1>=1;
+ ?column? 
+----------
+ 0
+ 1
+(2 rows)
+
+select a^b from testforbit where b^1.0^1<=1;
+ ?column? 
+----------
+ 0
+ 1
+(2 rows)
+
+select char_length('asbjhc')^char_length('askjdhkj');
+ ?column? 
+----------
+       14
+(1 row)
+
+select left('1023jasdzlxc',5)^left('1023jasdnzxc',5);
+ ?column? 
+----------
+        0
+(1 row)
+
+select substring('as1dz34lcas',3)^substring('zxcbkj1shd',5);
+ ?column? 
+----------
+        1
+(1 row)
+
+select replace('123456789','234','asd')^replace('123456789','234','asd');
+ ?column? 
+----------
+        0
+(1 row)
+
+---drop table
+drop table testforbit;
+drop table testforint2;
+drop table testforint4;
+drop table testforint8;
+drop table testforint2_p1;
+drop table testforint2_p2;
+---drop database
+set b_compatibility_mode = 0;
+\c postgres
+drop database test_op_xor;
+drop database if exists like_test;
+NOTICE:  database "like_test" does not exist, skipping
+create database like_test DBCOMPATIBILITY 'b';
+\c like_test
+set b_compatibility_mode = 1;
+select 'a' like 'A';
+ ?column? 
+----------
+ t
+(1 row)
+
+select 'a' like;
+ERROR:  syntax error at or near ";"
+LINE 1: select 'a' like;
+                       ^
+select 'a' like 'A' 'a';
+ERROR:  syntax error at or near "'a'"
+LINE 1: select 'a' like 'A' 'a';
+                            ^
+select cast('c' as bytea) like cast('c' as bytea);
+ERROR:  operator does not exist: bytea ~~* bytea
+LINE 1: select cast('c' as bytea) like cast('c' as bytea);
+                                  ^
+HINT:  No operator matches the given name and argument type(s). You might need to add explicit type casts.
+select cast('c' as bytea) like cast('b' as bytea);
+ERROR:  operator does not exist: bytea ~~* bytea
+LINE 1: select cast('c' as bytea) like cast('b' as bytea);
+                                  ^
+HINT:  No operator matches the given name and argument type(s). You might need to add explicit type casts.
+select 100 like 100;
+ ?column? 
+----------
+ t
+(1 row)
+
+select -100 like 100;
+ ?column? 
+----------
+ f
+(1 row)
+
+select -100 like -100;
+ ?column? 
+----------
+ t
+(1 row)
+
+select cast(1.252 as float) like cast(1.252 as float);
+ ?column? 
+----------
+ t
+(1 row)
+
+select cast(1.252 as float) like cast(1.253 as float);
+ ?column? 
+----------
+ f
+(1 row)
+
+select cast('2002-5-16' as date) like cast('2002-5-16' as date);
+ ?column? 
+----------
+ t
+(1 row)
+
+select cast('2002-5-16' as date) like cast('2002-5-17' as date);
+ ?column? 
+----------
+ f
+(1 row)
+
+select 'abc' like 'ABC';
+ ?column? 
+----------
+ t
+(1 row)
+
+select '@Af%' like '@aF%';
+ ?column? 
+----------
+ t
+(1 row)
+
+select 'abc' like binary 'ABC';
+ ?column? 
+----------
+ f
+(1 row)
+
+select '@Af%' like binary '@aF%';
+ ?column? 
+----------
+ f
+(1 row)
+
+select 'abc' like 'ab\%' escape '\' ;
+ ?column? 
+----------
+ f
+(1 row)
+
+select 'abc' like binary 'ab\%' escape '\' ;
+ ?column? 
+----------
+ f
+(1 row)
+
+select true like true;
+ERROR:  operator does not exist: boolean ~~* boolean
+LINE 1: select true like true;
+                    ^
+HINT:  No operator matches the given name and argument type(s). You might need to add explicit type casts.
+select b'101' like b'101';
+ERROR:  operator does not exist: bit ~~* bit
+LINE 1: select b'101' like b'101';
+                      ^
+HINT:  No operator matches the given name and argument type(s). You might need to add explicit type casts.
+select char_length('asbjhc') like char_length('askjdhkj');
+ ?column? 
+----------
+ f
+(1 row)
+
+select left('1023jasdzlxc',5) like left('1023jasdnzxc',5);
+ ?column? 
+----------
+ t
+(1 row)
+
+select substring('as1dz34lcas',3) like substring('zxcbkj1shd',5);
+ ?column? 
+----------
+ f
+(1 row)
+
+select replace('123456789','234','asd') like replace('123456789','234','asd');
+ ?column? 
+----------
+ t
+(1 row)
+
+create table like (id int);
+ERROR:  syntax error at or near "like"
+LINE 1: create table like (id int);
+                     ^
+create table test1 (like char(10));
+ERROR:  syntax error at or near "("
+LINE 1: create table test1 (like char(10));
+                                     ^
+create table test2 (t char(10) default 'a'like 'a');
+ERROR:  syntax error at or near "like"
+LINE 1: create table test2 (t char(10) default 'a'like 'a');
+                                                  ^
+drop table if exists like;
+ERROR:  syntax error at or near "like"
+LINE 1: drop table if exists like;
+                             ^
+drop table if exists test1;
+NOTICE:  table "test1" does not exist, skipping
+drop table if exists test2;
+NOTICE:  table "test2" does not exist, skipping
+create function test (varchar,varchar) returns boolean
+    as 'select $1 like $2;'
+    language sql
+    returns null on null input;
+select test('ab','ab');
+ test 
+------
+ t
+(1 row)
+
+create sequence like increment by 1 minvalue 1 no maxvalue start with 1;
+ERROR:  syntax error at or near "like"
+LINE 1: create sequence like increment by 1 minvalue 1 no maxvalue s...
+                        ^
+create database like;
+ERROR:  syntax error at or near "like"
+LINE 1: create database like;
+                        ^
+create user like identified by 'hw123456';
+ERROR:  syntax error at or near "like"
+LINE 1: create user like identified by 'hw123456';
+                    ^
+create role like identified by 'hw123456';
+ERROR:  syntax error at or near "like"
+LINE 1: create role like identified by 'hw123456';
+                    ^
+create table hotel (id int,name char(10),cin date,cout date,hotel char(10),room int);
+insert into hotel values
+(1,'Alice','2022-5-7','2022-5-8','Vienna',5),
+(2,'Anna','2022-7-9','2022-7-12','Vienna',2),
+(3,'Bob','2022-6-17','2022-6-25','Holiday',1),
+(4,'Claris','2022-5-9','2022-6-1','Holiday',1),
+(5,'Band','2022-3-6','2022-3-9','Vienna',3);
+create index like on hotel(id);
+ERROR:  syntax error at or near "like"
+LINE 1: create index like on hotel(id);
+                     ^
+create view like as select * from hotel;
+ERROR:  syntax error at or near "like"
+LINE 1: create view like as select * from hotel;
+                    ^
+select count(cout like '2022%') from hotel group by hotel ;
+ count 
+-------
+     3
+     2
+(2 rows)
+
+select max(cout like '2022%') from hotel group by hotel ;
+ max 
+-----
+   0
+   0
+(2 rows)
+
+select min(cout like '2021%') from hotel group by hotel ;
+ min 
+-----
+   0
+   0
+(2 rows)
+
+select avg(cout like '2022%') from hotel group by hotel ;
+          avg           
+------------------------
+ 0.00000000000000000000
+ 0.00000000000000000000
+(2 rows)
+
+select sum(cout like '2022%') from hotel group by hotel ;
+ sum 
+-----
+   0
+   0
+(2 rows)
+
+select count(cout like binary '2022%') from hotel group by hotel ;
+ count 
+-------
+     3
+     2
+(2 rows)
+
+select max(cout like binary '2022%') from hotel group by hotel ;
+ max 
+-----
+   0
+   0
+(2 rows)
+
+select min(cout like binary '2021%') from hotel group by hotel ;
+ min 
+-----
+   0
+   0
+(2 rows)
+
+select avg(cout like binary '2022%') from hotel group by hotel ;
+          avg           
+------------------------
+ 0.00000000000000000000
+ 0.00000000000000000000
+(2 rows)
+
+select sum(cout like binary '2022%') from hotel group by hotel ;
+ sum 
+-----
+   0
+   0
+(2 rows)
+
+select * from hotel where name like 'a%';
+ id |    name    |    cin     |    cout    |   hotel    | room 
+----+------------+------------+------------+------------+------
+  1 | Alice      | 05-07-2022 | 05-08-2022 | Vienna     |    5
+  2 | Anna       | 07-09-2022 | 07-12-2022 | Vienna     |    2
+(2 rows)
+
+update hotel set hotel='Holiday' where cin like '2022-3%';
+create table hotel2 (id int,name char(10),cin date,cout date,hotel char(10),room int);
+insert into hotel2 select * from hotel where hotel like 'vienna%';
+select max(cout) from hotel group by hotel having hotel like 'v%';
+    max     
+------------
+ 07-12-2022
+(1 row)
+
+create table price(hotelname char(10),price int);
+insert into price values
+('Vienna',500),
+('Holiday',700);
+select * from hotel natural inner join price where name like 'b%';
+ id |    name    |    cin     |    cout    |   hotel    | room | hotelname  | price 
+----+------------+------------+------------+------------+------+------------+-------
+  3 | Bob        | 06-17-2022 | 06-25-2022 | Holiday    |    1 | Vienna     |   500
+  5 | Band       | 03-06-2022 | 03-09-2022 | Vienna     |    3 | Vienna     |   500
+  3 | Bob        | 06-17-2022 | 06-25-2022 | Holiday    |    1 | Holiday    |   700
+  5 | Band       | 03-06-2022 | 03-09-2022 | Vienna     |    3 | Holiday    |   700
+(4 rows)
+
+select * from hotel natural inner join price where name like binary 'b%';
+ id | name | cin | cout | hotel | room | hotelname | price 
+----+------+-----+------+-------+------+-----------+-------
+(0 rows)
+
+select * from hotel natural inner join price where name like 'b/%' escape '/';
+ id | name | cin | cout | hotel | room | hotelname | price 
+----+------+-----+------+-------+------+-----------+-------
+(0 rows)
+
+select * from hotel natural inner join price where name like binary 'b/%' escape '/';
+ id | name | cin | cout | hotel | room | hotelname | price 
+----+------+-----+------+-------+------+-----------+-------
+(0 rows)
+
+select * from hotel natural inner join price where name not like 'b%';
+ id |    name    |    cin     |    cout    |   hotel    | room | hotelname  | price 
+----+------------+------------+------------+------------+------+------------+-------
+  1 | Alice      | 05-07-2022 | 05-08-2022 | Vienna     |    5 | Vienna     |   500
+  1 | Alice      | 05-07-2022 | 05-08-2022 | Vienna     |    5 | Holiday    |   700
+  2 | Anna       | 07-09-2022 | 07-12-2022 | Vienna     |    2 | Vienna     |   500
+  2 | Anna       | 07-09-2022 | 07-12-2022 | Vienna     |    2 | Holiday    |   700
+  4 | Claris     | 05-09-2022 | 06-01-2022 | Holiday    |    1 | Vienna     |   500
+  4 | Claris     | 05-09-2022 | 06-01-2022 | Holiday    |    1 | Holiday    |   700
+(6 rows)
+
+select * from hotel natural inner join price where name not like binary 'b%';
+ id | name | cin | cout | hotel | room | hotelname | price 
+----+------+-----+------+-------+------+-----------+-------
+(0 rows)
+
+select * from hotel natural inner join price where name not like 'b/%' escape '/';
+ id |    name    |    cin     |    cout    |   hotel    | room | hotelname  | price 
+----+------------+------------+------------+------------+------+------------+-------
+  1 | Alice      | 05-07-2022 | 05-08-2022 | Vienna     |    5 | Vienna     |   500
+  2 | Anna       | 07-09-2022 | 07-12-2022 | Vienna     |    2 | Vienna     |   500
+  3 | Bob        | 06-17-2022 | 06-25-2022 | Holiday    |    1 | Vienna     |   500
+  4 | Claris     | 05-09-2022 | 06-01-2022 | Holiday    |    1 | Vienna     |   500
+  5 | Band       | 03-06-2022 | 03-09-2022 | Vienna     |    3 | Vienna     |   500
+  1 | Alice      | 05-07-2022 | 05-08-2022 | Vienna     |    5 | Holiday    |   700
+  2 | Anna       | 07-09-2022 | 07-12-2022 | Vienna     |    2 | Holiday    |   700
+  3 | Bob        | 06-17-2022 | 06-25-2022 | Holiday    |    1 | Holiday    |   700
+  4 | Claris     | 05-09-2022 | 06-01-2022 | Holiday    |    1 | Holiday    |   700
+  5 | Band       | 03-06-2022 | 03-09-2022 | Vienna     |    3 | Holiday    |   700
+(10 rows)
+
+select * from hotel natural inner join price where name not like binary 'b/%' escape '/';
+ id | name | cin | cout | hotel | room | hotelname | price 
+----+------+-----+------+-------+------+-----------+-------
+(0 rows)
+
+select sum (case name like 'b%' then 1 else 0 end) as bnum from hotel group by hotel;
+ERROR:  syntax error at or near "then"
+LINE 1: select sum (case name like 'b%' then 1 else 0 end) as bnum f...
+                                        ^
+drop table if exists hotel;
+drop table if exists hotel2;
+drop table if exists price;
+create table hotel (id int,name char(10),cin date,cout date,hotel char(10),room int) with (orientation = column);
+insert into hotel values
+(1,'Alice','2022-5-7','2022-5-8','Vienna',5),
+(2,'Anna','2022-7-9','2022-7-12','Vienna',2),
+(3,'Bob','2022-6-17','2022-6-25','Holiday',1),
+(4,'Claris','2022-5-9','2022-6-1','Holiday',1),
+(5,'Band','2022-3-6','2022-3-9','Vienna',3);
+create index like on hotel(id);
+ERROR:  syntax error at or near "like"
+LINE 1: create index like on hotel(id);
+                     ^
+create view like as select * from hotel;
+ERROR:  syntax error at or near "like"
+LINE 1: create view like as select * from hotel;
+                    ^
+select count(cout like '2022%') from hotel group by hotel ;
+ count 
+-------
+     3
+     2
+(2 rows)
+
+select max(cout like '2022%') from hotel group by hotel ;
+ max 
+-----
+   0
+   0
+(2 rows)
+
+select min(cout like '2021%') from hotel group by hotel ;
+ min 
+-----
+   0
+   0
+(2 rows)
+
+select avg(cout like '2022%') from hotel group by hotel ;
+          avg           
+------------------------
+ 0.00000000000000000000
+ 0.00000000000000000000
+(2 rows)
+
+select sum(cout like '2022%') from hotel group by hotel ;
+ sum 
+-----
+   0
+   0
+(2 rows)
+
+select count(cout like binary '2022%') from hotel group by hotel ;
+ count 
+-------
+     3
+     2
+(2 rows)
+
+select max(cout like binary '2022%') from hotel group by hotel ;
+ max 
+-----
+   0
+   0
+(2 rows)
+
+select min(cout like binary '2021%') from hotel group by hotel ;
+ min 
+-----
+   0
+   0
+(2 rows)
+
+select avg(cout like binary '2022%') from hotel group by hotel ;
+          avg           
+------------------------
+ 0.00000000000000000000
+ 0.00000000000000000000
+(2 rows)
+
+select sum(cout like binary '2022%') from hotel group by hotel ;
+ sum 
+-----
+   0
+   0
+(2 rows)
+
+select * from hotel where name like 'a%';
+ id |    name    |    cin     |    cout    |   hotel    | room 
+----+------------+------------+------------+------------+------
+  1 | Alice      | 05-07-2022 | 05-08-2022 | Vienna     |    5
+  2 | Anna       | 07-09-2022 | 07-12-2022 | Vienna     |    2
+(2 rows)
+
+update hotel set hotel='Holiday' where cin like '2022-3%';
+create table hotel2 (id int,name char(10),cin date,cout date,hotel char(10),room int) with (orientation = column);
+insert into hotel2 select * from hotel where hotel like 'vienna%';
+select max(cout) from hotel group by hotel having hotel like 'v%';
+    max     
+------------
+ 07-12-2022
+(1 row)
+
+create table price(hotelname char(10),price int) with (orientation = colume);
+ERROR:  Invalid string for  "ORIENTATION" option
+DETAIL:  Valid string are "column", "row", "timeseries".
+insert into price values
+('Vienna',500),
+('Holiday',700);
+ERROR:  relation "price" does not exist on datanode1
+LINE 1: insert into price values
+                    ^
+select * from hotel natural inner join price where name like 'b%';
+ERROR:  relation "price" does not exist on datanode1
+LINE 1: select * from hotel natural inner join price where name like...
+                                               ^
+select * from hotel natural inner join price where name like binary 'b%';
+ERROR:  relation "price" does not exist on datanode1
+LINE 1: select * from hotel natural inner join price where name like...
+                                               ^
+select * from hotel natural inner join price where name like 'b/%' escape '/';
+ERROR:  relation "price" does not exist on datanode1
+LINE 1: select * from hotel natural inner join price where name like...
+                                               ^
+select * from hotel natural inner join price where name like binary 'b/%' escape '/';
+ERROR:  relation "price" does not exist on datanode1
+LINE 1: select * from hotel natural inner join price where name like...
+                                               ^
+select * from hotel natural inner join price where name not like 'b%';
+ERROR:  relation "price" does not exist on datanode1
+LINE 1: select * from hotel natural inner join price where name not ...
+                                               ^
+select * from hotel natural inner join price where name not like binary 'b%';
+ERROR:  relation "price" does not exist on datanode1
+LINE 1: select * from hotel natural inner join price where name not ...
+                                               ^
+select * from hotel natural inner join price where name not like 'b/%' escape '/';
+ERROR:  relation "price" does not exist on datanode1
+LINE 1: select * from hotel natural inner join price where name not ...
+                                               ^
+select * from hotel natural inner join price where name not like binary 'b/%' escape '/';
+ERROR:  relation "price" does not exist on datanode1
+LINE 1: select * from hotel natural inner join price where name not ...
+                                               ^
+select sum (case name like 'b%' then 1 else 0 end) as bnum from hotel group by hotel;
+ERROR:  syntax error at or near "then"
+LINE 1: select sum (case name like 'b%' then 1 else 0 end) as bnum f...
+                                        ^
+drop table if exists hotel;
+drop table if exists hotel2;
+drop table if exists price;
+NOTICE:  table "price" does not exist, skipping
+create unlogged table testlike1 (a char(10), b char(10));
+create table testlike2 (a char(10), b char(10)) with(storage_type=ustore);
+create table testlike3 (a char(10),b char(10)) with(segment=on);
+insert into testlike1 values ('a','A');
+select * from testlike1 where a like 'A%';
+     a      |     b      
+------------+------------
+ a          | A         
+(1 row)
+
+select * from testlike1 where a like binary 'A%';
+ a | b 
+---+---
+(0 rows)
+
+insert into testlike2 values ('a','A');
+select * from testlike2 where a like 'A%';
+     a      |     b      
+------------+------------
+ a          | A         
+(1 row)
+
+select * from testlike2 where a like binary 'A%';
+ a | b 
+---+---
+(0 rows)
+
+insert into testlike3 values ('A','a');
+select * from testlike3 where a like 'A%';
+     a      |     b      
+------------+------------
+ A          | a         
+(1 row)
+
+select * from testlike3 where a like binary 'A%';
+     a      |     b      
+------------+------------
+ A          | a         
+(1 row)
+
+create table testlike4(a char(10),b char(10)) partition by hash(a)(partition p1,partition p2,partition p3);
+insert into testlike4 values ('A','a');
+select * from testlike4 where a like 'A%';
+     a      |     b      
+------------+------------
+ A          | a         
+(1 row)
+
+select * from testlike4 where a like binary 'A%';
+     a      |     b      
+------------+------------
+ A          | a         
+(1 row)
+
+create table testlike5 (a int,b char(10)) partition by range(a)(partition p1 values less than(0),partition p2 values less than(2),partition p3 values less than(3));
+insert into testlike5 values (1,'a');
+select * from testlike5 where b like 'A%';
+ a |     b      
+---+------------
+ 1 | a         
+(1 row)
+
+select * from testlike5 where b like binary 'A%';
+ a | b 
+---+---
+(0 rows)
+
+create table testlike6(a int,b char(10)) partition by list(a)(partition p1 values(-1),partition p2 values(1),partition p3 values(2));
+insert into testlike6 values (1,'a');
+select * from testlike6 where b like 'A%';
+ a |     b      
+---+------------
+ 1 | a         
+(1 row)
+
+select * from testlike6 where b like binary 'A%';
+ a | b 
+---+---
+(0 rows)
+
+create table testlike7(a int,b char(10)) with (orientation=column) partition by range(a)(partition p1 values less than(0),partition p2 values less than(2),partition p3 values less than(3));
+insert into testlike7 values (1,'a');
+select * from testlike7 where b like 'A%';
+ a |     b      
+---+------------
+ 1 | a         
+(1 row)
+
+select * from testlike7 where b like binary 'A%';
+ a | b 
+---+---
+(0 rows)
+
+create table testlike8(a char(10),b date) partition by range(b) interval('1day')(partition p1 values less than('2022-08-01'),partition p2 values less than('2022-08-02'),partition p3 values less than('2022-08-03'));
+insert into testlike8 values ('a','2022-8-01');
+select * from testlike8 where a like 'A%';
+     a      |     b      
+------------+------------
+ a          | 08-01-2022
+(1 row)
+
+select * from testlike8 where a like binary 'A%';
+ a | b 
+---+---
+(0 rows)
+
+drop table testlike1;
+drop table testlike2;
+drop table testlike3;
+drop table testlike4;
+drop table testlike5;
+drop table testlike6;
+drop table testlike7;
+drop table testlike8;
+set b_compatibility_mode = 0;
+/c postgres
+drop database if exists like_test;
+ERROR:  syntax error at or near "/"
+LINE 1: /c postgres
+        ^
