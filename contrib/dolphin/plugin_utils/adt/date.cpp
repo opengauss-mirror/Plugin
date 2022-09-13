@@ -395,7 +395,11 @@ int int32_b_format_date_internal(struct pg_tm *tm, int4 date, bool mayBe2Digit)
     tm->tm_year = date / 10000; /* YY or YYYY*/
     bool is2digits = mayBe2Digit && (tm->tm_year >= 0 && tm->tm_year <= 99);
     /* validate b format date */
-    dterr = ValidateDateForBDatabase(is2digits, tm);
+    if (tm->tm_year > B_FORMAT_MAX_YEAR_OF_DATE) {
+        dterr = DTERR_FIELD_OVERFLOW;
+    } else {
+        dterr = ValidateDateForBDatabase(is2digits, tm);
+    }
     return dterr;
 }
 
