@@ -14,7 +14,16 @@ select soundex('!!!!!！！jhdgj');
 select soundex(null);
 select soundex('12,xa');
 select soundex('dkh测试fkdsjs12');
-
+select soundex(false),soundex(true);
+select soundex('颜'),soundex('谚');
+select soundex('颜 '),soundex('谚0');
+select soundex('遥'),soundex('摇'),soundex('瑶');
+select soundex('遥!@#@$#'),soundex('摇0.00001'),soundex('瑶nhgchgh');
+select soundex('人'),soundex('入');
+select soundex('00人'),soundex('a00入'),soundex('baa入'),soundex('0b0入');
+select soundex('0000食不果腹'),soundex('食不裹腹');
+select soundex('气概'),soundex('气慨');
+select soundex('辐射'),soundex('幅射');
 select 'ibc' sounds like 'abc';
 select 'aws' sounds like '10';
 select 'aftcbtlxpz' sounds like 'afdsbfdlsafs';
