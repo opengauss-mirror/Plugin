@@ -23,6 +23,7 @@ drop database if exists db_character_length;
 drop database if exists db_character_length_gbk;
 create database db_character_length_gbk dbcompatibility 'B' encoding 'GBK' LC_CTYPE 'zh_CN.gbk' lc_collate 'zh_CN.gbk';
 \c db_character_length_gbk
+\encoding gbk;
 select character_length('测试');
 select character_length('测试123');
 \c postgres
