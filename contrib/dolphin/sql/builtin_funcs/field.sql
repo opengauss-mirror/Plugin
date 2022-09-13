@@ -17,5 +17,6 @@ select field('sdhfgs','dhgf', 2);
 select field('sdhfgs','dhgf', '2');
 select field('sdhfgs',null,1,'dhgf', '2');
 select field('测试',null,1,'dhgf', '2');
+select field(' ','@',null,' ','',' ');
 \c postgres
 drop database if exists db_field;

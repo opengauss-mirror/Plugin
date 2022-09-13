@@ -112,6 +112,16 @@ extern "C" DLL_PUBLIC Datum bin_integer(PG_FUNCTION_ARGS);
 
 PG_FUNCTION_INFO_V1_PUBLIC(bin_bool);
 extern "C" DLL_PUBLIC Datum bin_bool(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1_PUBLIC(export_set_5args);
+extern "C" DLL_PUBLIC Datum export_set_5args(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1_PUBLIC(export_set_4args);
+extern "C" DLL_PUBLIC Datum export_set_4args(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1_PUBLIC(export_set_3args);
+extern "C" DLL_PUBLIC Datum export_set_3args(PG_FUNCTION_ARGS);
+
 #endif
 /* ----------
  * Some preinitialized constants
@@ -20614,4 +20624,129 @@ Datum numeric_cast_uint8(PG_FUNCTION_ARGS)
 
     PG_RETURN_UINT64(result);
 }
+
+text* TextExportSet(uint64 bits, char *on, char* off, char *separator, int numberOfBits)
+{
+    int lenOn = strlen(on);
+    int lenOff = strlen(off);
+    int lenOnOff = lenOn > lenOff ? lenOn: lenOff;
+    int lenSeq = strlen(separator);
+    size_t maxLen = lenSeq * (numberOfBits - 1) + lenOnOff * numberOfBits + 1;
+    int i;
+    char* result = NULL;
+    char* rp = NULL;
+    errno_t rc = EOK;
+    rp = result = (char*)palloc(maxLen);
+
+    for(i = 0; i < numberOfBits; i++) {
+        if((bits & 1) == 1) {
+            rc = strcpy_s(rp, maxLen, on);
+            securec_check(rc, "\0", "\0");
+            rp = rp + lenOn;
+        } else {
+            rc = strcpy_s(rp, maxLen, off);
+            securec_check(rc, "\0", "\0");
+            rp = rp + lenOff;
+        }
+        if(i != numberOfBits-1) {
+            rc = strcpy_s(rp, maxLen, separator);
+            securec_check(rc, "\0", "\0");
+            rp = rp + lenSeq;
+        }
+        bits = bits >> 1;
+    }
+    *rp = '\0';
+    return cstring_to_text(result);
+}
+
+uint64 GetFirstArg(Numeric num)
+{
+    NumericVar x;
+    uint64 value;
+    int128 bits = 0;
+    uint16 numFlags = NUMERIC_NB_FLAGBITS(num);
+
+    if (NUMERIC_FLAG_IS_NANORBI(numFlags)) {
+        /* Handle Big Integer */
+        if (NUMERIC_FLAG_IS_BI(numFlags))
+            num = makeNumericNormal(num);
+        /* XXX would it be better to return NULL? */
+        else
+            ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("cannot deal with NaN")));
+    }
+
+    /* Convert to variable format and thence to int8 */
+    init_var_from_num(num, &x);
+    floor_var(&x, &x);
+
+    if (!numericvar_to_int128(&x, &bits)) {
+        if (cmp_var(&x, &const_zero) < 0)
+            value = PG_INT64_MIN;
+        else
+            value = PG_INT64_MAX;
+    } else {
+        if (bits > PG_UINT64_MAX)
+            value = PG_INT64_MAX;
+        else if(bits < PG_INT64_MIN)
+            value = PG_INT64_MIN;
+        else
+            value = bits;
+    }
+    return value;
+}
+
+Datum export_set_5args(PG_FUNCTION_ARGS)
+{
+    if (PG_ARGISNULL(0) || PG_ARGISNULL(1) || PG_ARGISNULL(2) || PG_ARGISNULL(3) || PG_ARGISNULL(4))
+        PG_RETURN_NULL();
+    
+    Numeric num0 = PG_GETARG_NUMERIC(0);
+    uint64 value = GetFirstArg(num0);
+
+    char* on = text_to_cstring(PG_GETARG_TEXT_PP(1));
+    char* off = text_to_cstring(PG_GETARG_TEXT_PP(2));
+    char* separator = text_to_cstring(PG_GETARG_TEXT_PP(3));
+
+    Numeric num4 = PG_GETARG_NUMERIC(4);
+    uint64 numberOfBits = GetFirstArg(num4);
+
+    if(numberOfBits == 0)
+        PG_RETURN_TEXT_P(cstring_to_text(""));
+    else if(numberOfBits > 64)
+        numberOfBits = 64;
+    
+    PG_RETURN_TEXT_P(TextExportSet(value, on, off, separator, numberOfBits));
+}
+
+Datum export_set_4args(PG_FUNCTION_ARGS)
+{
+    /* return NULL when separator is NULL */
+    if (PG_ARGISNULL(0) || PG_ARGISNULL(1) || PG_ARGISNULL(2) || PG_ARGISNULL(3))
+        PG_RETURN_NULL();
+
+    Numeric num = PG_GETARG_NUMERIC(0);
+    uint64 value = GetFirstArg(num);
+
+    char* on = text_to_cstring(PG_GETARG_TEXT_PP(1));
+    char* off = text_to_cstring(PG_GETARG_TEXT_PP(2));
+    char* separator = text_to_cstring(PG_GETARG_TEXT_PP(3));
+    
+    PG_RETURN_TEXT_P(TextExportSet(value, on, off, separator, 64));
+}
+
+Datum export_set_3args(PG_FUNCTION_ARGS)
+{
+    /* return NULL when separator is NULL */
+    if (PG_ARGISNULL(0) || PG_ARGISNULL(1) || PG_ARGISNULL(2))
+        PG_RETURN_NULL();
+
+    Numeric num = PG_GETARG_NUMERIC(0);
+    uint64 value = GetFirstArg(num);
+
+    char* on = text_to_cstring(PG_GETARG_TEXT_PP(1));
+    char* off = text_to_cstring(PG_GETARG_TEXT_PP(2));
+    
+    PG_RETURN_TEXT_P(TextExportSet(value, on, off, ",", 64));
+}
+
 #endif

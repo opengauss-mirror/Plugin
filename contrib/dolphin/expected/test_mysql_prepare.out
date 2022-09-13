@@ -1,0 +1,75 @@
+drop database if exists test_mysql_prepare;
+NOTICE:  database "test_mysql_prepare" does not exist, skipping
+create database test_mysql_prepare dbcompatibility 'b';
+\c test_mysql_prepare
+create table test(name text, age int);
+insert into test values('a',18);
+prepare s1 as select * from test;
+execute s1;
+ name | age 
+------+-----
+ a    |  18
+(1 row)
+
+DEALLOCATE s1;
+prepare s2(varchar(10)) as select * from test where name=$1;
+execute s2('a');
+ name | age 
+------+-----
+ a    |  18
+(1 row)
+
+execute s2;
+ERROR:  wrong number of parameters for prepared statement "s2"
+DETAIL:  Expected 1 parameters but got 0.
+DEALLOCATE s2;
+prepare s3 as select * from test where name=$1;
+execute s3('a');
+ name | age 
+------+-----
+ a    |  18
+(1 row)
+
+execute s3;
+ERROR:  wrong number of parameters for prepared statement "s3"
+DETAIL:  Expected 1 parameters but got 0.
+DEALLOCATE s3;
+prepare s1_mysql from select * from test;
+execute s1_mysql;
+ name | age 
+------+-----
+ a    |  18
+(1 row)
+
+execute s1_mysql('a');
+ name | age 
+------+-----
+ a    |  18
+(1 row)
+
+DEALLOCATE s1_mysql;
+prepare s2_mysql from select * from test where name=$1;
+execute s2_mysql('a');
+ name | age 
+------+-----
+ a    |  18
+(1 row)
+
+execute s2_mysql;
+ERROR:  wrong number of parameters for prepared statement "s2_mysql"
+DETAIL:  Expected 1 parameters but got 0.
+DEALLOCATE s2_mysql;
+prepare s3_mysql(varchar(10)) as select * from test where name=$1;
+execute s3_mysql('a');
+ name | age 
+------+-----
+ a    |  18
+(1 row)
+
+execute s3_mysql;
+ERROR:  wrong number of parameters for prepared statement "s3_mysql"
+DETAIL:  Expected 1 parameters but got 0.
+DEALLOCATE s3_mysql;
+drop table test;
+\c postgres
+drop database test_mysql_prepare;

@@ -206,6 +206,9 @@ CONTEXT:  referenced column: date
 SELECT 100000000::date;
 ERROR:  Out of range value for date
 CONTEXT:  referenced column: date
+SELECT 100101231::date;
+ERROR:  Out of range value for date
+CONTEXT:  referenced column: date
 -- test time
 -- '[-][D] hh:mm:ss.fsec'
 SELECT time(7)'12:12:12.123456';

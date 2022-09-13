@@ -1,0 +1,31 @@
+drop database if exists test_mysql_prepare;
+create database test_mysql_prepare dbcompatibility 'b';
+\c test_mysql_prepare
+create table test(name text, age int);
+insert into test values('a',18);
+prepare s1 as select * from test;
+execute s1;
+DEALLOCATE s1;
+prepare s2(varchar(10)) as select * from test where name=$1;
+execute s2('a');
+execute s2;
+DEALLOCATE s2;
+prepare s3 as select * from test where name=$1;
+execute s3('a');
+execute s3;
+DEALLOCATE s3;
+prepare s1_mysql from select * from test;
+execute s1_mysql;
+execute s1_mysql('a');
+DEALLOCATE s1_mysql;
+prepare s2_mysql from select * from test where name=$1;
+execute s2_mysql('a');
+execute s2_mysql;
+DEALLOCATE s2_mysql;
+prepare s3_mysql(varchar(10)) as select * from test where name=$1;
+execute s3_mysql('a');
+execute s3_mysql;
+DEALLOCATE s3_mysql;
+drop table test;
+\c postgres
+drop database test_mysql_prepare;

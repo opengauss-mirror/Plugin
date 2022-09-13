@@ -8465,6 +8465,7 @@ Datum field(PG_FUNCTION_ARGS)
                         if (0 == internal_text_pattern_compare(cstring_to_text(OidOutputFunctionCall(typeOutput, fcinfo->arg[0])),
                                                                cstring_to_text(OidOutputFunctionCall(typeOutput, fcinfo->arg[i])))) {
                             result = i;
+                            break;
                         }
                     }
                 }
