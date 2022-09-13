@@ -681,7 +681,7 @@ static bool DolphinObjNameCmp(const char* s1, const char* s2, bool is_quoted);
 				sort_clause opt_sort_clause sortby_list index_params table_index_elems constraint_params
 				name_list from_clause from_list opt_array_bounds dolphin_name_list
 				qualified_name_list any_name any_name_list dolphin_qualified_name_list dolphin_any_name dolphin_any_name_list
-				any_operator expr_list attrs callfunc_args callfunc_args_or_empty dolphin_attrs
+				any_operator expr_list attrs callfunc_args callfunc_args_or_empty dolphin_attrs rename_clause rename_list
 				target_list insert_column_list set_target_list
 				set_clause_list set_clause multiple_set_clause
 				ctext_expr_list ctext_row def_list tsconf_def_list indirection opt_indirection dolphin_indirection opt_dolphin_indirection
@@ -13329,7 +13329,12 @@ drop_type:	 CONTVIEW                              { $$ = OBJECT_CONTQUERY; }
             | COLUMN ENCRYPTION KEY                 { $$ = OBJECT_COLUMN_SETTING; }
             | PUBLICATION                           { $$ = OBJECT_PUBLICATION; }
 		;
+rename_list:
+                       rename_clause                                                   {$$ = list_make1($1);}
+                       | rename_list ',' rename_clause                 {$$ = lappend($1, $3);}
 
+rename_clause:
+                       RoleId TO RoleId                                        {$$ = list_make2($1, $3); }
 any_name_list:
 			any_name								{ $$ = list_make1($1); }
 			| any_name_list ',' any_name			{ $$ = lappend($1, $3); }
@@ -17919,6 +17924,22 @@ RenameStmt: ALTER AGGREGATE func_name aggr_args RENAME TO name
 					n->missing_ok = false;
 					$$ = (Node *)n;
 				}
+			| RENAME USER rename_list
+				{
+					List* renamestmts = NIL;
+					ListCell* lc = NULL;
+					foreach (lc, $3) {
+						List* names = lfirst_node(List, lc);
+						RenameStmt *n = makeNode(RenameStmt);
+						n->renameType = OBJECT_USER;
+						n->subname = linitial_node(char, names);
+						IsValidIdent(lsecond_node(char, names));
+						n->newname = lsecond_node(char, names);
+						n->missing_ok = false;
+						renamestmts = lappend(renamestmts, (Node*)n);
+					}
+					$$ = (Node *)renamestmts;
+				}
 		;
 
 opt_column: COLUMN									{ $$ = COLUMN; }
@@ -21970,7 +21991,7 @@ opt_check:	CHECK								{  $$ = TRUE; }
  *
  *****************************************************************************/
 
-PrepareStmt: PREPARE name prep_type_clause AS PreparableStmt
+PrepareStmt: PREPARE name prep_type_clause as_or_from PreparableStmt
 				{
 					PrepareStmt *n = makeNode(PrepareStmt);
 					n->name = $2;
@@ -21983,6 +22004,11 @@ PrepareStmt: PREPARE name prep_type_clause AS PreparableStmt
 prep_type_clause: '(' type_list ')'			{ $$ = $2; }
 				| /* EMPTY */				{ $$ = NIL; }
 		;
+
+as_or_from:
+		AS
+		|FROM
+	;
 
 PreparableStmt:
 			SelectStmt

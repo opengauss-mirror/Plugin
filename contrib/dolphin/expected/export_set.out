@@ -1,0 +1,126 @@
+drop database if exists export_set;
+NOTICE:  database "export_set" does not exist, skipping
+create database export_set dbcompatibility 'b';
+\c export_set
+-- 测试缺省值
+SELECT EXPORT_SET(5,'Y','N',',',5);
+ export_set 
+------------
+ Y,N,Y,N,N
+(1 row)
+
+SELECT EXPORT_SET(5,'Y','N',',');
+                                                           export_set                                                            
+---------------------------------------------------------------------------------------------------------------------------------
+ Y,N,Y,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N
+(1 row)
+
+SELECT EXPORT_SET(5,'Y','N');
+                                                           export_set                                                            
+---------------------------------------------------------------------------------------------------------------------------------
+ Y,N,Y,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N
+(1 row)
+
+-- 测试上界
+SELECT EXPORT_SET(18446744073709551615,'Y','N',',',64);
+                                                           export_set                                                            
+---------------------------------------------------------------------------------------------------------------------------------
+ Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y
+(1 row)
+
+SELECT EXPORT_SET(18446744073709551616,'Y','N',',',64);
+                                                           export_set                                                            
+---------------------------------------------------------------------------------------------------------------------------------
+ Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,N
+(1 row)
+
+SELECT EXPORT_SET(18446744073709551617,'Y','N',',',64);
+                                                           export_set                                                            
+---------------------------------------------------------------------------------------------------------------------------------
+ Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,N
+(1 row)
+
+-- 测试下界
+SELECT EXPORT_SET(-9223372036854775807,'Y','N',',',64);
+                                                           export_set                                                            
+---------------------------------------------------------------------------------------------------------------------------------
+ Y,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,Y
+(1 row)
+
+SELECT EXPORT_SET(-9223372036854775808,'Y','N',',',64);
+                                                           export_set                                                            
+---------------------------------------------------------------------------------------------------------------------------------
+ N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,Y
+(1 row)
+
+SELECT EXPORT_SET(-9223372036854775809,'Y','N',',',64);
+                                                           export_set                                                            
+---------------------------------------------------------------------------------------------------------------------------------
+ N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,Y
+(1 row)
+
+-- 测试超长参数
+SELECT EXPORT_SET(-111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111,'Y','N',',',64);
+                                                           export_set                                                            
+---------------------------------------------------------------------------------------------------------------------------------
+ N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,Y
+(1 row)
+
+SELECT EXPORT_SET(111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111,'Y','N',',',64);
+                                                           export_set                                                            
+---------------------------------------------------------------------------------------------------------------------------------
+ Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,N
+(1 row)
+
+-- 测试长度参数
+SELECT EXPORT_SET(5,'Y','N',',',64);
+                                                           export_set                                                            
+---------------------------------------------------------------------------------------------------------------------------------
+ Y,N,Y,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N
+(1 row)
+
+SELECT EXPORT_SET(5,'Y','N',',',65);
+                                                           export_set                                                            
+---------------------------------------------------------------------------------------------------------------------------------
+ Y,N,Y,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N
+(1 row)
+
+SELECT EXPORT_SET(5,'Y','N',',',-1);
+                                                           export_set                                                            
+---------------------------------------------------------------------------------------------------------------------------------
+ Y,N,Y,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N
+(1 row)
+
+SELECT EXPORT_SET(5,'Y','N',',',111111111111111111111111111111111111111111111111111111111111111111111111111111111);
+                                                           export_set                                                            
+---------------------------------------------------------------------------------------------------------------------------------
+ Y,N,Y,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N
+(1 row)
+
+SELECT EXPORT_SET(5,'Y','N',',',-111111111111111111111111111111111111111111111111111111111111111111111111111111111);
+                                                           export_set                                                            
+---------------------------------------------------------------------------------------------------------------------------------
+ Y,N,Y,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N
+(1 row)
+
+-- 测试字符串
+SELECT EXPORT_SET(5,'YYYYYYYYYYYYYYYY','N',',',5);
+               export_set                
+-----------------------------------------
+ YYYYYYYYYYYYYYYY,N,YYYYYYYYYYYYYYYY,N,N
+(1 row)
+
+SELECT EXPORT_SET(5,'Y','NNNNNNNNNNNNNNN',',',5);
+                     export_set                      
+-----------------------------------------------------
+ Y,NNNNNNNNNNNNNNN,Y,NNNNNNNNNNNNNNN,NNNNNNNNNNNNNNN
+(1 row)
+
+SELECT EXPORT_SET(5,'Y','N',',,,,,,,,,,,,',5);
+                      export_set                       
+-------------------------------------------------------
+ Y,,,,,,,,,,,,N,,,,,,,,,,,,Y,,,,,,,,,,,,N,,,,,,,,,,,,N
+(1 row)
+
+\c postgres
+drop database if exists export_set;
