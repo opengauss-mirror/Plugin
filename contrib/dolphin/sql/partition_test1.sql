@@ -29,6 +29,7 @@ select * from test_part where ((980 < c and c < 1000) or (2180 < c and c < 2200)
 select * from test_part where ((980 < d and d < 1000) or (2180 < d and d < 2200));
 select * from test_part where ((980 < b and b < 1000) or (2180 < b and b < 2200));
 --test rebuild partition syntax
+ALTER TABLE test_part REBUILD PARTITION perror;
 ALTER TABLE test_part REBUILD PARTITION p0, p1;
 select relname from pg_partition where (parentid in (select oid from pg_class where relname = 'test_part')) and parttype = 'p' and oid != relfilenode order by relname;
 explain select * from test_part where ((980 < c and c < 1000) or (2180 < c and c < 2200));

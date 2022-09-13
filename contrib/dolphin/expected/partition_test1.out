@@ -100,6 +100,9 @@ select * from test_part where ((980 < b and b < 1000) or (2180 < b and b < 2200)
 (20 rows)
 
 --test rebuild partition syntax
+ALTER TABLE test_part REBUILD PARTITION perror;
+ERROR:  The partition perror can't be found in table test_part
+CONTEXT:  referenced column: rebuild_partition
 ALTER TABLE test_part REBUILD PARTITION p0, p1;
  rebuild_partition 
 -------------------
