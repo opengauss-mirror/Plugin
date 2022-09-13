@@ -12537,7 +12537,7 @@ ConstraintAttributeElem:
 
 
 DropTrigStmt:
-			DROP TRIGGER name ON any_name opt_drop_behavior
+			DROP TRIGGER name ON dolphin_any_name opt_drop_behavior
 				{
 					DropStmt *n = makeNode(DropStmt);
 					n->removeType = OBJECT_TRIGGER;
@@ -12548,7 +12548,7 @@ DropTrigStmt:
 					n->concurrent = false;
 					$$ = (Node *) n;
 				}
-			| DROP TRIGGER IF_P EXISTS name ON any_name opt_drop_behavior
+			| DROP TRIGGER IF_P EXISTS name ON dolphin_any_name opt_drop_behavior
 				{
 					DropStmt *n = makeNode(DropStmt);
 					n->removeType = OBJECT_TRIGGER;
@@ -13494,7 +13494,7 @@ CommentStmt:
 					n->comment = $8;
 					$$ = (Node *) n;
 				}
-			| COMMENT ON RULE name ON any_name IS comment_text
+			| COMMENT ON RULE name ON dolphin_any_name IS comment_text
 				{
 					CommentStmt *n = makeNode(CommentStmt);
 					n->objtype = OBJECT_RULE;
@@ -18710,7 +18710,7 @@ opt_instead:
 
 
 DropRuleStmt:
-			DROP RULE name ON any_name opt_drop_behavior
+			DROP RULE name ON dolphin_any_name opt_drop_behavior
 				{
 					DropStmt *n = makeNode(DropStmt);
 					n->removeType = OBJECT_RULE;
@@ -18721,7 +18721,7 @@ DropRuleStmt:
 					n->concurrent = false;
 					$$ = (Node *) n;
 				}
-			| DROP RULE IF_P EXISTS name ON any_name opt_drop_behavior
+			| DROP RULE IF_P EXISTS name ON dolphin_any_name opt_drop_behavior
 				{
 					DropStmt *n = makeNode(DropStmt);
 					n->removeType = OBJECT_RULE;
