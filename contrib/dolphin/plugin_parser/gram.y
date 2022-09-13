@@ -121,16 +121,16 @@ IntervalStylePack g_interStyleVal = {"a"};
 			(Current) = (Rhs)[0]; \
 	} while (0)
 
-#define RESET_ACONST_STRING(Arg, T, V) \
-    if (T == T_String && NULL != V) { \
-        Arg->val.val.str = V; \
-    }
+#define RESET_ACONST_STRING(Arg, T) \
+	if (T == T_String && NULL != extract_numericstr(((A_Const*)Arg)->val.val.str)) { \
+		((A_Const*)Arg)->val.val.str = extract_numericstr(((A_Const*)Arg)->val.val.str); \
+	}
 
 #define RESET_ACONST_INTEGER(Arg, T) \
 	if (T == T_BitString) { \
-		Arg->val.type = T_Integer; \
-		Arg->val.val.ival = conv_bit_to_int(Arg); \
-	}
+		((A_Const*)Arg)->val.type = T_Integer; \
+		((A_Const*)Arg)->val.val.ival = conv_bit_to_int((A_Const*)Arg); \
+    }
 
 #define RESET_BOOL(Arg, T) \
 	if (T == T_TypeCast) { \
@@ -312,8 +312,8 @@ typedef struct DolphinString
 #define parser_errposition(pos)  scanner_errposition(pos, yyscanner)
 #define is_quoted()  pg_yyget_extra(yyscanner)->core_yy_extra.ident_quoted
 
-static long conv_bit_to_int(A_Const* bit_str);
-static void fix_bw_type(A_Const* bw_arg1, A_Const* bw_arg2, A_Const* bw_arg3);
+static long conv_bit_to_int(A_Const* bitStr);
+static void fix_bw_type(Node* bw_arg1, Node* bw_arg2, Node* bw_arg3);
 static void fix_bw_bool(Node** bw_arg1, Node** bw_arg2, Node** bw_arg3);
 static char* extract_numericstr(const char* str);
 
@@ -26019,8 +26019,10 @@ a_expr:		c_expr									{ $$ = $1; }
 			 */
 			| a_expr BETWEEN opt_asymmetric b_expr AND b_expr		%prec BETWEEN
 				{
-					fix_bw_bool(&($1), &($4), &($6));
-					fix_bw_type((A_Const *)$1, (A_Const *)$4, (A_Const *)$6);
+					if ((($1)->type != T_ColumnRef) && (($4)->type != T_ColumnRef) && (($6)->type != T_ColumnRef)) {
+						fix_bw_bool(&($1), &($4), &($6));
+						fix_bw_type($1, $4, $6);
+					}
 					$$ = (Node *) makeA_Expr(AEXPR_AND, NIL,
 						(Node *) makeSimpleA_Expr(AEXPR_OP, ">=", $1, $4, @2),
 						(Node *) makeSimpleA_Expr(AEXPR_OP, "<=", $1, $6, @2),
@@ -26028,8 +26030,10 @@ a_expr:		c_expr									{ $$ = $1; }
 				}
 			| a_expr NOT BETWEEN opt_asymmetric b_expr AND b_expr	%prec BETWEEN
 				{
-					fix_bw_bool(&($1), &($5), &($7));
-					fix_bw_type((A_Const *)$1, (A_Const *)$5, (A_Const *)$7);
+					if ((($1)->type != T_ColumnRef) && (($5)->type != T_ColumnRef) && (($7)->type != T_ColumnRef)) {
+						fix_bw_bool(&($1), &($5), &($7));
+						fix_bw_type($1, $5, $7);
+					}
 					$$ = (Node *) makeA_Expr(AEXPR_OR, NIL,
 						(Node *) makeSimpleA_Expr(AEXPR_OP, "<", $1, $5, @2),
 						(Node *) makeSimpleA_Expr(AEXPR_OP, ">", $1, $7, @2),
@@ -26037,8 +26041,10 @@ a_expr:		c_expr									{ $$ = $1; }
 				}
 			| a_expr BETWEEN SYMMETRIC b_expr AND b_expr			%prec BETWEEN
 				{
-					fix_bw_bool(&($1), &($4), &($6));
-					fix_bw_type((A_Const *)$1, (A_Const *)$4, (A_Const *)$6);
+					if ((($1)->type != T_ColumnRef) && (($4)->type != T_ColumnRef) && (($6)->type != T_ColumnRef)) {
+						fix_bw_bool(&($1), &($4), &($6));
+						fix_bw_type($1, $4, $6);
+					}
 					$$ = (Node *) makeA_Expr(AEXPR_OR, NIL,
 						(Node *) makeA_Expr(AEXPR_AND, NIL,
 							(Node *) makeSimpleA_Expr(AEXPR_OP, ">=", $1, $4, @2),
@@ -26052,8 +26058,10 @@ a_expr:		c_expr									{ $$ = $1; }
 				}
 			| a_expr NOT BETWEEN SYMMETRIC b_expr AND b_expr		%prec BETWEEN
 				{
-					fix_bw_bool(&($1), &($5), &($7));
-					fix_bw_type((A_Const *)$1, (A_Const *)$5, (A_Const *)$7);
+					if ((($1)->type != T_ColumnRef) && (($5)->type != T_ColumnRef) && (($7)->type != T_ColumnRef)) {
+						fix_bw_bool(&($1), &($5), &($7));
+						fix_bw_type($1, $5, $7);
+					}
 					$$ = (Node *) makeA_Expr(AEXPR_AND, NIL,
 						(Node *) makeA_Expr(AEXPR_OR, NIL,
 							(Node *) makeSimpleA_Expr(AEXPR_OP, "<", $1, $5, @2),
@@ -32342,91 +32350,88 @@ static Node* MakeSetPasswdStmt(char* user, char* passwd, char* replace_passwd)
 
 static void fix_bw_bool(Node** bw_arg1, Node** bw_arg2, Node** bw_arg3)
 {
-	int t1 = (*bw_arg1)->type;
-	int t2 = (*bw_arg2)->type;
-	int t3 = (*bw_arg3)->type;
-
-	if (((t1 == T_TypeCast) ^ (t2 == T_TypeCast)) ||  ((t1 == T_TypeCast) ^ (t3 == T_TypeCast))) {
-		RESET_BOOL(*bw_arg1, t1);
-		RESET_BOOL(*bw_arg2, t2);
-		RESET_BOOL(*bw_arg3, t3);
-	}
+    int t1 = (*bw_arg1)->type;
+    int t2 = (*bw_arg2)->type;
+    int t3 = (*bw_arg3)->type;
+    
+    if (((t1 == T_TypeCast) ^ (t2 == T_TypeCast)) ||  ((t1 == T_TypeCast) ^ (t3 == T_TypeCast))) {
+        RESET_BOOL(*bw_arg1, t1);
+        RESET_BOOL(*bw_arg2, t2);
+        RESET_BOOL(*bw_arg3, t3);
+    }
 }
 
-static void fix_bw_type(A_Const* bw_arg1, A_Const* bw_arg2, A_Const* bw_arg3)
+static void fix_bw_type(Node* bw_arg1, Node* bw_arg2, Node* bw_arg3)
 {
-	int t1 = bw_arg1->val.type;
-	int t2 = bw_arg2->val.type;
-	int t3 = bw_arg3->val.type;
+    int t1 = ((A_Const*)bw_arg1)->val.type;
+    int t2 = ((A_Const*)bw_arg2)->val.type;
+    int t3 = ((A_Const*)bw_arg3)->val.type;
 
-	if (((t1 == T_String) ^ (t2 == T_String)) ||  ((t1 == T_String) ^ (t3 == T_String))) {
-		RESET_ACONST_STRING(bw_arg1, t1, extract_numericstr(bw_arg1->val.val.str));
-		RESET_ACONST_STRING(bw_arg2, t2, extract_numericstr(bw_arg2->val.val.str));
-		RESET_ACONST_STRING(bw_arg3, t3, extract_numericstr(bw_arg3->val.val.str));
-	}
+    if (((t1 == T_String) ^ (t2 == T_String)) ||  ((t1 == T_String) ^ (t3 == T_String))) {
+        RESET_ACONST_STRING(bw_arg1, t1);
+        RESET_ACONST_STRING(bw_arg2, t2);
+        RESET_ACONST_STRING(bw_arg3, t3);
+    }
 
-	if (((t1 == T_BitString) ^ (t2 == T_BitString)) ||  ((t1 == T_BitString) ^ (t3 == T_BitString))) {
-		RESET_ACONST_INTEGER(bw_arg1, t1);
-		RESET_ACONST_INTEGER(bw_arg2, t2);
-		RESET_ACONST_INTEGER(bw_arg3, t3);
-	}
+    if (((t1 == T_BitString) ^ (t2 == T_BitString)) ||  ((t1 == T_BitString) ^ (t3 == T_BitString))) {
+        RESET_ACONST_INTEGER(bw_arg1, t1);
+        RESET_ACONST_INTEGER(bw_arg2, t2);
+        RESET_ACONST_INTEGER(bw_arg3, t3);
+    }
 }
 
-static long conv_bit_to_int(A_Const* bit_str)
+static long conv_bit_to_int(A_Const* bitStr)
 {
-	long result = 0;	/* The resulting bit string	 */
-	long bit_one_mask = 0x01;
-
-	char* sp = bit_str->val.val.str + strlen(bit_str->val.val.str) - 1;
-	for (; *sp != 'B' && *sp != 'b'; sp--) {
-		if (*sp == '1') {
-			result |= bit_one_mask;
-		} else if (*sp != '0')
-			ereport(ERROR,
-					(errcode(ERRCODE_INVALID_TEXT_REPRESENTATION), errmsg("\"%c\" is not a valid binary digit", *sp)));
-
-		bit_one_mask <<= 1;
-		if (bit_one_mask == 0) {
-			ereport(ERROR, (errcode(ERRCODE_PROGRAM_LIMIT_EXCEEDED), errmsg("bit length too large")));
-		}
+    long result = 0;	/* The resulting bit string	 */
+    long bitOneMask = 0x01;
+    
+    char* sp = bitStr->val.val.str + strlen(bitStr->val.val.str) - 1;
+    for (; *sp != 'B' && *sp != 'b'; sp--) {
+	if (*sp == '1') {
+	    result |= bitOneMask;
+	} else if (*sp != '0')
+	    ereport(ERROR,
+	            (errcode(ERRCODE_INVALID_TEXT_REPRESENTATION), errmsg("\"%c\" is not a valid binary digit", *sp)));
+	
+	bitOneMask <<= 1;
+	if (bitOneMask == 0) {
+	    ereport(ERROR, (errcode(ERRCODE_PROGRAM_LIMIT_EXCEEDED), errmsg("bit length too large")));
 	}
-	return result;
+    }
+    return result;
 }
 
 static char* extract_numericstr(const char* str)
 {
-	const char* cp = NULL;
-	bool have_digit = false;
-	bool have_post_char = false;
-	char* dest = NULL;
-	int len_of_numericstr = 0;
-	int digit_begin_index = 0;
+    const char* cp = NULL;
+    bool haveDigit = false;
+    bool havePostChar = false;
+    char* dest = NULL;
+    int lenOfNumericstr = 0;
+    int digitBeginIndex = 0;
+    
+    cp = str;
+    if (*cp && !isdigit((unsigned char)*cp) && *cp != '.') {
+        return "0";
+    }
 
-	cp = str;
-	while (*cp) {
-			if (!isdigit((unsigned char)*cp) && (*cp != '.')) {
-				return "0";
-			} else {
-				break;
-			}
-		}
-	while (*cp) {
-		if (isdigit((unsigned char)*cp)) {
-			have_digit = true;
-		} else if (have_digit && *cp != '.') {
-			have_post_char = true;
-			break;
-		}
-		cp++;
-		len_of_numericstr ++;
-	}
-	if (have_digit && have_post_char){
-		dest = (char*)palloc0((len_of_numericstr+1)*sizeof(char));
-        errno_t rc = strncpy_s(dest, len_of_numericstr + 1, str + digit_begin_index, len_of_numericstr);
+    while (*cp) {
+        if (isdigit((unsigned char)*cp)) {
+            haveDigit = true;
+        } else if (haveDigit && *cp != '.') {
+            havePostChar = true;
+            break;
+        }
+        cp++;
+        lenOfNumericstr++;
+    }
+    if (haveDigit && havePostChar){
+        dest = (char*)palloc0((lenOfNumericstr+1)*sizeof(char));
+        errno_t rc = strncpy_s(dest, lenOfNumericstr + 1, str + digitBeginIndex, lenOfNumericstr);
         securec_check(rc, "\0", "\0");
-		return dest;
-	}
-	return NULL;
+        return dest;
+    }
+    return NULL;
 }
 
 /*
