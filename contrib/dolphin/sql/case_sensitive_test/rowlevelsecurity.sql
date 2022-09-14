@@ -20,12 +20,13 @@ GRANT regress_rls_group2 TO regress_rls_david, regress_rls_peter, regress_rls_ad
 CREATE SCHEMA regress_rls_schema;
 GRANT CREATE ON SCHEMA regress_rls_schema to public;
 GRANT USAGE ON SCHEMA regress_rls_schema to public;
-ALTER DATABASE regression ENABLE PRIVATE OBJECT;
+ALTER DATABASE table_name_test_db ENABLE PRIVATE OBJECT;
 -- reconnect
 \c
 SET search_path = regress_rls_schema;
 -- regress_rls_alice is the owner of all schema
 SET ROLE regress_rls_alice PASSWORD 'Ttest@123';
+SET lower_case_table_names TO 0;
 -- setup of malicious function (NOT SHIPPABLE)
 CREATE OR REPLACE FUNCTION regress_rls_schema.rls_fleak1(text) RETURNS bool
 	COST 0.0000001 LANGUAGE plpgsql
@@ -115,15 +116,15 @@ GRANT ALL ON regress_rls_schema.category_col TO public;
 INSERT INTO regress_rls_schema.category_col SELECT * FROM regress_rls_schema.category_row;
 ANALYZE regress_rls_schema.category_col;
 
-CREATE TABLE regress_rls_schema.document_row(
+CREATE TABLE regress_rls_schema.document_Row(
     did     int primary key,
     cid     int,
     dlevel  int not null,
     dauthor name,
     dtitle  text
 );
-GRANT ALL ON regress_rls_schema.document_row TO public;
-INSERT INTO regress_rls_schema.document_row VALUES
+GRANT ALL ON regress_rls_schema.document_Row TO public;
+INSERT INTO regress_rls_schema.document_Row VALUES
     ( 1, 11, 1, 'regress_rls_bob', 'my first novel'),
     ( 2, 11, 5, 'regress_rls_bob', 'my second novel'),
     ( 3, 22, 7, 'regress_rls_bob', 'my science fiction'),
@@ -137,18 +138,18 @@ INSERT INTO regress_rls_schema.document_row VALUES
     (11, 55, 8, 'regress_rls_alice', 'great biography'),
     (12, 33, 10, 'regress_rls_admin', 'physical technology'),
     (13, 55, 5, 'regress_rls_single_user', 'Beethoven biography');
-ANALYZE regress_rls_schema.document_row;
+ANALYZE regress_rls_schema.document_Row;
 
-CREATE TABLE regress_rls_schema.document_col(
+CREATE TABLE regress_rls_schema.document_Col(
     did     int,
     cid     int,
     dlevel  int not null,
     dauthor name,
     dtitle  text
 );
-GRANT ALL ON regress_rls_schema.document_col TO public;
-INSERT INTO regress_rls_schema.document_col SELECT * FROM regress_rls_schema.document_row;
-ANALYZE regress_rls_schema.document_col;
+GRANT ALL ON regress_rls_schema.document_Col TO public;
+INSERT INTO regress_rls_schema.document_Col SELECT * FROM regress_rls_schema.document_Row;
+ANALYZE regress_rls_schema.document_Col;
 
 -- create partition table
 CREATE TABLE par_row_t1 (id int, a int, b text)partition by range (a)
@@ -214,45 +215,45 @@ CREATE ROW LEVEL SECURITY POLICY account_row_rls_101 ON regress_rls_schema.accou
 DROP ROW LEVEL SECURITY POLICY account_row_rls_101 ON regress_rls_schema.account_row;
 SELECT count(*) FROM pg_catalog.pg_rlspolicies where tablename = 'account_row';
 
--- enable row level security for document_row, document_col
-ALTER TABLE regress_rls_schema.document_row ENABLE ROW LEVEL SECURITY;
-ALTER TABLE regress_rls_schema.document_col ENABLE ROW LEVEL SECURITY;
+-- enable row level security for document_Row, document_Col
+ALTER TABLE regress_rls_schema.document_Row ENABLE ROW LEVEL SECURITY;
+ALTER TABLE regress_rls_schema.document_Col ENABLE ROW LEVEL SECURITY;
 -- user's security level must be higher than or equal to document's
-CREATE ROW LEVEL SECURITY POLICY p01 ON document_row AS PERMISSIVE
+CREATE ROW LEVEL SECURITY POLICY p01 ON document_Row AS PERMISSIVE
     USING (dlevel <= (SELECT aid FROM account_row WHERE aname = current_user));
-CREATE ROW LEVEL SECURITY POLICY p01 ON document_col AS PERMISSIVE
+CREATE ROW LEVEL SECURITY POLICY p01 ON document_Col AS PERMISSIVE
     USING (dlevel <= (SELECT aid FROM account_col WHERE aname = current_user));
 
 -- try to create a policy of wrong type
-CREATE ROW LEVEL SECURITY POLICY p02 ON document_row AS WHATEVER
+CREATE ROW LEVEL SECURITY POLICY p02 ON document_Row AS WHATEVER
     USING (dlevel <= (SELECT aid FROM account_row WHERE aname = current_user));
 
 -- regress_rls_david isn't allowed to anything at cid 50 or above
 -- this is to make sure that we sort the policies by name first
-CREATE ROW LEVEL SECURITY POLICY p02 ON document_row AS RESTRICTIVE TO regress_rls_david
+CREATE ROW LEVEL SECURITY POLICY p02 ON document_Row AS RESTRICTIVE TO regress_rls_david
     USING (cid < 50);
-CREATE ROW LEVEL SECURITY POLICY p02 ON document_col AS RESTRICTIVE TO regress_rls_david
+CREATE ROW LEVEL SECURITY POLICY p02 ON document_Col AS RESTRICTIVE TO regress_rls_david
     USING (cid < 50);
 
 -- and regress_rls_david isn't allowed to see manga documents
-CREATE ROW LEVEL SECURITY POLICY p03 ON document_row AS RESTRICTIVE TO regress_rls_david
+CREATE ROW LEVEL SECURITY POLICY p03 ON document_Row AS RESTRICTIVE TO regress_rls_david
     USING (cid <> 44);
-CREATE ROW LEVEL SECURITY POLICY p03 ON document_col AS RESTRICTIVE TO regress_rls_david
+CREATE ROW LEVEL SECURITY POLICY p03 ON document_Col AS RESTRICTIVE TO regress_rls_david
     USING (cid <> 44);
 
 -- policy for update/delete
-CREATE ROW LEVEL SECURITY POLICY p04 ON document_row AS RESTRICTIVE FOR UPDATE TO regress_rls_bob, regress_rls_david USING ((dlevel % 2) = 1);
-CREATE ROW LEVEL SECURITY POLICY p05 ON document_row AS RESTRICTIVE FOR DELETE TO regress_rls_bob, regress_rls_david  USING ((dlevel % 2) = 0);
+CREATE ROW LEVEL SECURITY POLICY p04 ON document_Row AS RESTRICTIVE FOR UPDATE TO regress_rls_bob, regress_rls_david USING ((dlevel % 2) = 1);
+CREATE ROW LEVEL SECURITY POLICY p05 ON document_Row AS RESTRICTIVE FOR DELETE TO regress_rls_bob, regress_rls_david  USING ((dlevel % 2) = 0);
 
 -- policy for regress_rls_bob
-CREATE ROW LEVEL SECURITY POLICY p06 ON document_row AS RESTRICTIVE FOR SELECT TO regress_rls_bob USING ((dlevel % 2) = 1);
+CREATE ROW LEVEL SECURITY POLICY p06 ON document_Row AS RESTRICTIVE FOR SELECT TO regress_rls_bob USING ((dlevel % 2) = 1);
 
 \d
-\d+ "document_row"
-SELECT * FROM pg_rlspolicies WHERE schemaname = 'regress_rls_schema' AND tablename = 'document_row' ORDER BY policyname;
+\d+ "document_Row"
+SELECT * FROM pg_rlspolicies WHERE schemaname = 'regress_rls_schema' AND tablename = 'document_Row' ORDER BY policyname;
 -- prepare statement
-PREPARE one AS SELECT * FROM document_row ORDER BY 1;
-PREPARE two AS SELECT * FROM document_col ORDER BY 1;
+PREPARE one AS SELECT * FROM document_Row ORDER BY 1;
+PREPARE two AS SELECT * FROM document_Col ORDER BY 1;
 EXECUTE one;
 EXECUTE one;
 EXECUTE two;
@@ -260,64 +261,67 @@ EXECUTE two;
 
 -- viewpoint from regress_rls_bob
 SET ROLE regress_rls_bob PASSWORD 'Ttest@123';
+SET lower_case_table_names TO 0;
 EXECUTE one;
 EXECUTE two;
-SELECT * FROM document_row WHERE rls_fleak1(dtitle) ORDER BY did;
-SELECT * FROM document_col WHERE rls_fleak2(dauthor) ORDER BY did;
--- EXPLAIN (COSTS OFF, VERBOSE ON) SELECT * FROM document_row WHERE rls_fleak2(dauthor) ORDER BY did;
-SELECT * FROM document_col INNER JOIN category_col ON document_col.cid=category_col.cid WHERE rls_fleak1(dtitle) ORDER BY did;
+SELECT * FROM document_Row WHERE rls_fleak1(dtitle) ORDER BY did;
+SELECT * FROM document_Col WHERE rls_fleak2(dauthor) ORDER BY did;
+-- EXPLAIN (COSTS OFF, VERBOSE ON) SELECT * FROM document_Row WHERE rls_fleak2(dauthor) ORDER BY did;
+SELECT * FROM document_Col INNER JOIN category_col ON document_Col.cid=category_col.cid WHERE rls_fleak1(dtitle) ORDER BY did;
 SELECT * FROM tt_rep;
-SELECT * FROM document_row INNER JOIN category_row ON document_row.cid=category_row.cid WHERE rls_fleak2(dauthor) ORDER BY did;
--- EXPLAIN (COSTS OFF, VERBOSE ON) SELECT * FROM document_row INNER JOIN category_row ON document_row.cid=category_row.cid WHERE rls_fleak2(dauthor) ORDER BY did;
+SELECT * FROM document_Row INNER JOIN category_row ON document_Row.cid=category_row.cid WHERE rls_fleak2(dauthor) ORDER BY did;
+-- EXPLAIN (COSTS OFF, VERBOSE ON) SELECT * FROM document_Row INNER JOIN category_row ON document_Row.cid=category_row.cid WHERE rls_fleak2(dauthor) ORDER BY did;
 \d
 \df
 -- viewpoint from regress_rls_peter
 SET ROLE regress_rls_peter PASSWORD 'Ttest@123';
+SET lower_case_table_names TO 0;
 EXECUTE one;
 EXECUTE two;
-SELECT * FROM document_row WHERE rls_fleak1(dtitle) ORDER BY did;
-SELECT * FROM document_col WHERE rls_fleak2(dauthor) ORDER BY did;
-EXPLAIN (COSTS OFF, VERBOSE ON) SELECT * FROM document_row WHERE rls_fleak2(dauthor) ORDER BY did;
-SELECT * FROM document_col INNER JOIN category_col ON document_col.cid=category_col.cid WHERE rls_fleak1(dtitle) ORDER BY did;
+SELECT * FROM document_Row WHERE rls_fleak1(dtitle) ORDER BY did;
+SELECT * FROM document_Col WHERE rls_fleak2(dauthor) ORDER BY did;
+EXPLAIN (COSTS OFF, VERBOSE ON) SELECT * FROM document_Row WHERE rls_fleak2(dauthor) ORDER BY did;
+SELECT * FROM document_Col INNER JOIN category_col ON document_Col.cid=category_col.cid WHERE rls_fleak1(dtitle) ORDER BY did;
 SELECT * FROM tt_rep;
-SELECT * FROM document_row INNER JOIN category_row ON document_row.cid=category_row.cid WHERE rls_fleak2(dauthor) ORDER BY did;
-EXPLAIN (COSTS OFF, VERBOSE ON) SELECT * FROM document_row INNER JOIN category_row ON document_row.cid=category_row.cid WHERE rls_fleak2(dauthor) ORDER BY did;
+SELECT * FROM document_Row INNER JOIN category_row ON document_Row.cid=category_row.cid WHERE rls_fleak2(dauthor) ORDER BY did;
+EXPLAIN (COSTS OFF, VERBOSE ON) SELECT * FROM document_Row INNER JOIN category_row ON document_Row.cid=category_row.cid WHERE rls_fleak2(dauthor) ORDER BY did;
 
 -- viewpoint from regress_rls_david
 SET ROLE regress_rls_david PASSWORD 'Ttest@123';
+SET lower_case_table_names TO 0;
 EXECUTE one;
 EXECUTE two;
-SELECT * FROM document_row WHERE rls_fleak1(dtitle) ORDER BY did;
-SELECT * FROM document_col WHERE rls_fleak2(dauthor) ORDER BY did;
-EXPLAIN (COSTS OFF, VERBOSE ON) SELECT * FROM document_row ORDER BY did;
-EXPLAIN (COSTS OFF, VERBOSE ON) SELECT * FROM document_row WHERE rls_fleak2(dauthor) ORDER BY did;
-SELECT * FROM document_col INNER JOIN category_col ON document_col.cid=category_col.cid WHERE rls_fleak1(dtitle) ORDER BY did;
+SELECT * FROM document_Row WHERE rls_fleak1(dtitle) ORDER BY did;
+SELECT * FROM document_Col WHERE rls_fleak2(dauthor) ORDER BY did;
+EXPLAIN (COSTS OFF, VERBOSE ON) SELECT * FROM document_Row ORDER BY did;
+EXPLAIN (COSTS OFF, VERBOSE ON) SELECT * FROM document_Row WHERE rls_fleak2(dauthor) ORDER BY did;
+SELECT * FROM document_Col INNER JOIN category_col ON document_Col.cid=category_col.cid WHERE rls_fleak1(dtitle) ORDER BY did;
 SELECT * FROM tt_rep;
-COPY document_row TO STDOUT;
-COPY document_col TO STDOUT;
-SELECT * FROM document_row INNER JOIN category_row ON document_row.cid=category_row.cid WHERE rls_fleak2(dauthor) ORDER BY did;
-EXPLAIN (COSTS OFF, VERBOSE ON) SELECT * FROM document_row INNER JOIN category_row ON document_row.cid=category_row.cid WHERE rls_fleak2(dauthor) ORDER BY did;
+COPY document_Row TO STDOUT;
+COPY document_Col TO STDOUT;
+SELECT * FROM document_Row INNER JOIN category_row ON document_Row.cid=category_row.cid WHERE rls_fleak2(dauthor) ORDER BY did;
+EXPLAIN (COSTS OFF, VERBOSE ON) SELECT * FROM document_Row INNER JOIN category_row ON document_Row.cid=category_row.cid WHERE rls_fleak2(dauthor) ORDER BY did;
 
 -- update and update returning
-UPDATE document_row SET dlevel = dlevel + 1 - 1 WHERE did > 1;
-UPDATE document_col SET dlevel = dlevel + 1 - 1 WHERE did > 1 RETURNING dauthor, did;
+UPDATE document_Row SET dlevel = dlevel + 1 - 1 WHERE did > 1;
+UPDATE document_Col SET dlevel = dlevel + 1 - 1 WHERE did > 1 RETURNING dauthor, did;
 
 -- delete and delete returning
-INSERT INTO document_row VALUES (100, 49, 1, 'regress_rls_david', 'testing sorting of policies');
-DELETE FROM document_row WHERE did = 100;
-INSERT INTO document_row VALUES (100, 49, 1, 'regress_rls_david', 'testing sorting of policies');
-DELETE FROM document_row WHERE did = 100 RETURNING dauthor, did;
+INSERT INTO document_Row VALUES (100, 49, 1, 'regress_rls_david', 'testing sorting of policies');
+DELETE FROM document_Row WHERE did = 100;
+INSERT INTO document_Row VALUES (100, 49, 1, 'regress_rls_david', 'testing sorting of policies');
+DELETE FROM document_Row WHERE did = 100 RETURNING dauthor, did;
 
 -- only owner can change policies
-ALTER POLICY p01 ON document_row USING (true);    --fail
-DROP POLICY p01 ON document_col;                  --fail
+ALTER POLICY p01 ON document_Row USING (true);    --fail
+DROP POLICY p01 ON document_Col;                  --fail
 
 -- check data from partition table
 SELECT * FROM par_row_t1 WHERE a > 7 ORDER BY 1, 2;
 SELECT * FROM par_col_t1 WHERE a > 7 ORDER BY 1, 2;
 
 -- test create table as
-CREATE TABLE document_row_david AS SELECT * FROM document_row;
+CREATE TABLE document_row_david AS SELECT * FROM document_Row;
 SELECT COUNT(*) FROM document_row_david;
 
 -- check table and functions
@@ -331,10 +335,10 @@ DROP USER regress_rls_bob;
 DROP OWNED BY regress_rls_bob;
 select * from pg_shdepend where classid = 3254 and refclassid = 1260 and refobjid = (select oid from pg_authid where rolname = 'regress_rls_bob');
 DROP USER regress_rls_bob;
-ALTER POLICY p01 ON document_row USING (dauthor = current_user);
-ALTER POLICY p01 ON document_row RENAME TO p12;
-ALTER POLICY p12 ON document_row RENAME TO p13;
-ALTER POLICY p13 ON document_row RENAME TO p01;
+ALTER POLICY p01 ON document_Row USING (dauthor = current_user);
+ALTER POLICY p01 ON document_Row RENAME TO p12;
+ALTER POLICY p12 ON document_Row RENAME TO p13;
+ALTER POLICY p13 ON document_Row RENAME TO p01;
 SELECT * FROM pg_rlspolicies ORDER BY tablename, policyname;
 -- enable private object
 ALTER DATABASE regression DISABLE PRIVATE OBJECT;
@@ -347,20 +351,21 @@ SELECT type, database, object_name, detail_info FROM pg_query_audit('2000-01-01 
 
 -- viewpoint from rls_regres_david again
 SET ROLE regress_rls_david PASSWORD 'Ttest@123';
-SELECT * FROM document_row ORDER BY did;
-SELECT * FROM document_col ORDER BY did;
-SELECT * FROM document_row WHERE rls_fleak1(dtitle) ORDER BY did;
-SELECT * FROM document_row WHERE rls_fleak2(dtitle) ORDER BY did;
-EXPLAIN (COSTS OFF, VERBOSE ON) SELECT * FROM document_row WHERE rls_fleak2(dtitle);
-SELECT * FROM document_row INNER JOIN category_row ON document_row.cid=category_row.cid WHERE rls_fleak2(dtitle) ORDER by did;
+SET lower_case_table_names TO 0;
+SELECT * FROM document_Row ORDER BY did;
+SELECT * FROM document_Col ORDER BY did;
+SELECT * FROM document_Row WHERE rls_fleak1(dtitle) ORDER BY did;
+SELECT * FROM document_Row WHERE rls_fleak2(dtitle) ORDER BY did;
+EXPLAIN (COSTS OFF, VERBOSE ON) SELECT * FROM document_Row WHERE rls_fleak2(dtitle);
+SELECT * FROM document_Row INNER JOIN category_row ON document_Row.cid=category_row.cid WHERE rls_fleak2(dtitle) ORDER by did;
 -- test inlist
 SET qrw_inlist2join_optmode=1;
-CREATE TABLE inlist_t1(c1 int, c2 int, c3 int) /*DISTRIBUTE BY HASH(c1)*/;
-INSERT INTO inlist_t1 SELECT v,v,v FROM generate_series(1,12) as v;
-CREATE ROW LEVEL SECURITY POLICY inlist_t1_rls ON inlist_t1 USING(c3 IN (3,4,7));
-ALTER TABLE inlist_t1 ENABLE ROW LEVEL SECURITY;
-ALTER TABLE inlist_t1 FORCE ROW LEVEL SECURITY;
-SELECT * FROM inlist_t1 ORDER BY c1;
+CREATE TABLE inlist_T1(c1 int, c2 int, c3 int) /*DISTRIBUTE BY HASH(c1)*/;
+INSERT INTO inlist_T1 SELECT v,v,v FROM generate_series(1,12) as v;
+CREATE ROW LEVEL SECURITY POLICY inlist_t1_rls ON inlist_T1 USING(c3 IN (3,4,7));
+ALTER TABLE inlist_T1 ENABLE ROW LEVEL SECURITY;
+ALTER TABLE inlist_T1 FORCE ROW LEVEL SECURITY;
+SELECT * FROM inlist_T1 ORDER BY c1;
 RESET qrw_inlist2join_optmode;
 -- check data from partition table
 SELECT * FROM par_row_t1 WHERE a > 7 ORDER BY 1, 2;
@@ -372,6 +377,7 @@ SELECT * FROM tt_rep;
 
 -- viewpoint from regress_rls_alice again
 SET ROLE regress_rls_alice PASSWORD 'Ttest@123';
+SET lower_case_table_names TO 0;
 ALTER TABLE tt_rep FORCE ROW LEVEL SECURITY;
 ALTER TABLE par_row_t1 FORCE ROW LEVEL SECURITY;
 \d
@@ -414,8 +420,11 @@ explain(costs off) select aa_1 from aa, bb where bb_1 = 1 and aa_1 > (select min
 
 -- clean environment
 RESET ROLE;
-DROP ROW LEVEL SECURITY POLICY t12 ON inlist_t1;
-DROP ROW LEVEL SECURITY POLICY IF EXISTS t12 ON inlist_t1;
+SET lower_case_table_names TO 0;
+DROP ROW LEVEL SECURITY POLICY t12 ON inlist_T1;
+DROP ROW LEVEL SECURITY POLICY IF EXISTS t12 ON inlist_T1;
+DROP ROW LEVEL SECURITY POLICY p01 ON document_Row;
+DROP ROW LEVEL SECURITY POLICY IF EXISTS p01 ON document_Col;
 DROP SCHEMA regress_rls_schema CASCADE;
 DROP USER IF EXISTS regress_rls_alice;
 DROP USER IF EXISTS regress_rls_bob;

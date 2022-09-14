@@ -27,13 +27,13 @@ GRANT regress_rls_group2 TO regress_rls_david, regress_rls_peter, regress_rls_ad
 CREATE SCHEMA regress_rls_schema;
 GRANT CREATE ON SCHEMA regress_rls_schema to public;
 GRANT USAGE ON SCHEMA regress_rls_schema to public;
-ALTER DATABASE regression ENABLE PRIVATE OBJECT;
-ERROR:  database "regression" does not exist
+ALTER DATABASE table_name_test_db ENABLE PRIVATE OBJECT;
 -- reconnect
 \c
 SET search_path = regress_rls_schema;
 -- regress_rls_alice is the owner of all schema
 SET ROLE regress_rls_alice PASSWORD 'Ttest@123';
+SET lower_case_table_names TO 0;
 -- setup of malicious function (NOT SHIPPABLE)
 CREATE OR REPLACE FUNCTION regress_rls_schema.rls_fleak1(text) RETURNS bool
 	COST 0.0000001 LANGUAGE plpgsql
@@ -116,16 +116,16 @@ CREATE TABLE regress_rls_schema.category_col(
 GRANT ALL ON regress_rls_schema.category_col TO public;
 INSERT INTO regress_rls_schema.category_col SELECT * FROM regress_rls_schema.category_row;
 ANALYZE regress_rls_schema.category_col;
-CREATE TABLE regress_rls_schema.document_row(
+CREATE TABLE regress_rls_schema.document_Row(
     did     int primary key,
     cid     int,
     dlevel  int not null,
     dauthor name,
     dtitle  text
 );
-NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "document_row_pkey" for table "document_row"
-GRANT ALL ON regress_rls_schema.document_row TO public;
-INSERT INTO regress_rls_schema.document_row VALUES
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "document_Row_pkey" for table "document_Row"
+GRANT ALL ON regress_rls_schema.document_Row TO public;
+INSERT INTO regress_rls_schema.document_Row VALUES
     ( 1, 11, 1, 'regress_rls_bob', 'my first novel'),
     ( 2, 11, 5, 'regress_rls_bob', 'my second novel'),
     ( 3, 22, 7, 'regress_rls_bob', 'my science fiction'),
@@ -139,17 +139,17 @@ INSERT INTO regress_rls_schema.document_row VALUES
     (11, 55, 8, 'regress_rls_alice', 'great biography'),
     (12, 33, 10, 'regress_rls_admin', 'physical technology'),
     (13, 55, 5, 'regress_rls_single_user', 'Beethoven biography');
-ANALYZE regress_rls_schema.document_row;
-CREATE TABLE regress_rls_schema.document_col(
+ANALYZE regress_rls_schema.document_Row;
+CREATE TABLE regress_rls_schema.document_Col(
     did     int,
     cid     int,
     dlevel  int not null,
     dauthor name,
     dtitle  text
 );
-GRANT ALL ON regress_rls_schema.document_col TO public;
-INSERT INTO regress_rls_schema.document_col SELECT * FROM regress_rls_schema.document_row;
-ANALYZE regress_rls_schema.document_col;
+GRANT ALL ON regress_rls_schema.document_Col TO public;
+INSERT INTO regress_rls_schema.document_Col SELECT * FROM regress_rls_schema.document_Row;
+ANALYZE regress_rls_schema.document_Col;
 -- create partition table
 CREATE TABLE par_row_t1 (id int, a int, b text)partition by range (a)
 (
@@ -222,37 +222,37 @@ SELECT count(*) FROM pg_catalog.pg_rlspolicies where tablename = 'account_row';
      0
 (1 row)
 
--- enable row level security for document_row, document_col
-ALTER TABLE regress_rls_schema.document_row ENABLE ROW LEVEL SECURITY;
-ALTER TABLE regress_rls_schema.document_col ENABLE ROW LEVEL SECURITY;
+-- enable row level security for document_Row, document_Col
+ALTER TABLE regress_rls_schema.document_Row ENABLE ROW LEVEL SECURITY;
+ALTER TABLE regress_rls_schema.document_Col ENABLE ROW LEVEL SECURITY;
 -- user's security level must be higher than or equal to document's
-CREATE ROW LEVEL SECURITY POLICY p01 ON document_row AS PERMISSIVE
+CREATE ROW LEVEL SECURITY POLICY p01 ON document_Row AS PERMISSIVE
     USING (dlevel <= (SELECT aid FROM account_row WHERE aname = current_user));
-CREATE ROW LEVEL SECURITY POLICY p01 ON document_col AS PERMISSIVE
+CREATE ROW LEVEL SECURITY POLICY p01 ON document_Col AS PERMISSIVE
     USING (dlevel <= (SELECT aid FROM account_col WHERE aname = current_user));
 -- try to create a policy of wrong type
-CREATE ROW LEVEL SECURITY POLICY p02 ON document_row AS WHATEVER
+CREATE ROW LEVEL SECURITY POLICY p02 ON document_Row AS WHATEVER
     USING (dlevel <= (SELECT aid FROM account_row WHERE aname = current_user));
 ERROR:  unrecognized row security option "whatever"
-LINE 1: ...TE ROW LEVEL SECURITY POLICY p02 ON document_row AS WHATEVER
+LINE 1: ...TE ROW LEVEL SECURITY POLICY p02 ON document_Row AS WHATEVER
                                                                ^
 HINT:  Only PERMISSIVE or RESTRICTIVE policies are supported currently.
 -- regress_rls_david isn't allowed to anything at cid 50 or above
 -- this is to make sure that we sort the policies by name first
-CREATE ROW LEVEL SECURITY POLICY p02 ON document_row AS RESTRICTIVE TO regress_rls_david
+CREATE ROW LEVEL SECURITY POLICY p02 ON document_Row AS RESTRICTIVE TO regress_rls_david
     USING (cid < 50);
-CREATE ROW LEVEL SECURITY POLICY p02 ON document_col AS RESTRICTIVE TO regress_rls_david
+CREATE ROW LEVEL SECURITY POLICY p02 ON document_Col AS RESTRICTIVE TO regress_rls_david
     USING (cid < 50);
 -- and regress_rls_david isn't allowed to see manga documents
-CREATE ROW LEVEL SECURITY POLICY p03 ON document_row AS RESTRICTIVE TO regress_rls_david
+CREATE ROW LEVEL SECURITY POLICY p03 ON document_Row AS RESTRICTIVE TO regress_rls_david
     USING (cid <> 44);
-CREATE ROW LEVEL SECURITY POLICY p03 ON document_col AS RESTRICTIVE TO regress_rls_david
+CREATE ROW LEVEL SECURITY POLICY p03 ON document_Col AS RESTRICTIVE TO regress_rls_david
     USING (cid <> 44);
 -- policy for update/delete
-CREATE ROW LEVEL SECURITY POLICY p04 ON document_row AS RESTRICTIVE FOR UPDATE TO regress_rls_bob, regress_rls_david USING ((dlevel % 2) = 1);
-CREATE ROW LEVEL SECURITY POLICY p05 ON document_row AS RESTRICTIVE FOR DELETE TO regress_rls_bob, regress_rls_david  USING ((dlevel % 2) = 0);
+CREATE ROW LEVEL SECURITY POLICY p04 ON document_Row AS RESTRICTIVE FOR UPDATE TO regress_rls_bob, regress_rls_david USING ((dlevel % 2) = 1);
+CREATE ROW LEVEL SECURITY POLICY p05 ON document_Row AS RESTRICTIVE FOR DELETE TO regress_rls_bob, regress_rls_david  USING ((dlevel % 2) = 0);
 -- policy for regress_rls_bob
-CREATE ROW LEVEL SECURITY POLICY p06 ON document_row AS RESTRICTIVE FOR SELECT TO regress_rls_bob USING ((dlevel % 2) = 1);
+CREATE ROW LEVEL SECURITY POLICY p06 ON document_Row AS RESTRICTIVE FOR SELECT TO regress_rls_bob USING ((dlevel % 2) = 1);
 \d
                                                        List of relations
        Schema       |      Name      | Type  |       Owner       |                           Storage                            
@@ -264,15 +264,15 @@ CREATE ROW LEVEL SECURITY POLICY p06 ON document_row AS RESTRICTIVE FOR SELECT T
  regress_rls_schema | alice_public_2 | table | regress_rls_alice | {orientation=row,compression=no}
  regress_rls_schema | category_col   | table | regress_rls_alice | {orientation=column,compression=low}
  regress_rls_schema | category_row   | table | regress_rls_alice | {orientation=row,compression=no}
- regress_rls_schema | document_col   | table | regress_rls_alice | {orientation=row,compression=no,enable_rowsecurity=true}
- regress_rls_schema | document_row   | table | regress_rls_alice | {orientation=row,compression=no,enable_rowsecurity=true}
+ regress_rls_schema | document_Col   | table | regress_rls_alice | {orientation=row,compression=no,enable_rowsecurity=true}
+ regress_rls_schema | document_Row   | table | regress_rls_alice | {orientation=row,compression=no,enable_rowsecurity=true}
  regress_rls_schema | par_col_t1     | table | regress_rls_alice | {orientation=column,compression=low,enable_rowsecurity=true}
  regress_rls_schema | par_row_t1     | table | regress_rls_alice | {orientation=row,compression=no,enable_rowsecurity=true}
  regress_rls_schema | tt_rep         | table | regress_rls_alice | {orientation=row,compression=no,enable_rowsecurity=true}
 (12 rows)
 
-\d+ "document_row"
-                Table "regress_rls_schema.document_row"
+\d+ "document_Row"
+                Table "regress_rls_schema.document_Row"
  Column  |  Type   | Modifiers | Storage  | Stats target | Description 
 ---------+---------+-----------+----------+--------------+-------------
  did     | integer | not null  | plain    |              | 
@@ -281,7 +281,7 @@ CREATE ROW LEVEL SECURITY POLICY p06 ON document_row AS RESTRICTIVE FOR SELECT T
  dauthor | name    |           | plain    |              | 
  dtitle  | text    |           | extended |              | 
 Indexes:
-    "document_row_pkey" PRIMARY KEY, btree (did) TABLESPACE pg_default
+    "document_Row_pkey" PRIMARY KEY, btree (did) TABLESPACE pg_default
 Row Level Security Policies:
     POLICY "p01" FOR ALL
       TO {public}
@@ -304,20 +304,20 @@ Row Level Security Policies:
 Has OIDs: no
 Options: orientation=row, compression=no, enable_rowsecurity=true
 
-SELECT * FROM pg_rlspolicies WHERE schemaname = 'regress_rls_schema' AND tablename = 'document_row' ORDER BY policyname;
+SELECT * FROM pg_rlspolicies WHERE schemaname = 'regress_rls_schema' AND tablename = 'document_Row' ORDER BY policyname;
      schemaname     |  tablename   | policyname | policypermissive |             policyroles             | policycmd |                                                 policyqual                                                 
 --------------------+--------------+------------+------------------+-------------------------------------+-----------+------------------------------------------------------------------------------------------------------------
- regress_rls_schema | document_row | p01        | PERMISSIVE       | {public}                            | ALL       | (dlevel <= (SELECT account_row.aid FROM account_row WHERE ((account_row.aname)::name = "current_user"())))
- regress_rls_schema | document_row | p02        | RESTRICTIVE      | {regress_rls_david}                 | ALL       | (cid < 50)
- regress_rls_schema | document_row | p03        | RESTRICTIVE      | {regress_rls_david}                 | ALL       | (cid <> 44)
- regress_rls_schema | document_row | p04        | RESTRICTIVE      | {regress_rls_bob,regress_rls_david} | UPDATE    | ((dlevel % 2) = 1)
- regress_rls_schema | document_row | p05        | RESTRICTIVE      | {regress_rls_bob,regress_rls_david} | DELETE    | ((dlevel % 2) = 0)
- regress_rls_schema | document_row | p06        | RESTRICTIVE      | {regress_rls_bob}                   | SELECT    | ((dlevel % 2) = 1)
+ regress_rls_schema | document_Row | p01        | PERMISSIVE       | {public}                            | ALL       | (dlevel <= (SELECT account_row.aid FROM account_row WHERE ((account_row.aname)::name = "current_user"())))
+ regress_rls_schema | document_Row | p02        | RESTRICTIVE      | {regress_rls_david}                 | ALL       | (cid < 50)
+ regress_rls_schema | document_Row | p03        | RESTRICTIVE      | {regress_rls_david}                 | ALL       | (cid <> 44)
+ regress_rls_schema | document_Row | p04        | RESTRICTIVE      | {regress_rls_bob,regress_rls_david} | UPDATE    | ((dlevel % 2) = 1)
+ regress_rls_schema | document_Row | p05        | RESTRICTIVE      | {regress_rls_bob,regress_rls_david} | DELETE    | ((dlevel % 2) = 0)
+ regress_rls_schema | document_Row | p06        | RESTRICTIVE      | {regress_rls_bob}                   | SELECT    | ((dlevel % 2) = 1)
 (6 rows)
 
 -- prepare statement
-PREPARE one AS SELECT * FROM document_row ORDER BY 1;
-PREPARE two AS SELECT * FROM document_col ORDER BY 1;
+PREPARE one AS SELECT * FROM document_Row ORDER BY 1;
+PREPARE two AS SELECT * FROM document_Col ORDER BY 1;
 EXECUTE one;
  did | cid | dlevel |         dauthor         |         dtitle          
 -----+-----+--------+-------------------------+-------------------------
@@ -392,6 +392,7 @@ EXECUTE two;
 
 -- viewpoint from regress_rls_bob
 SET ROLE regress_rls_bob PASSWORD 'Ttest@123';
+SET lower_case_table_names TO 0;
 EXECUTE one;
  did | cid | dlevel |     dauthor     |     dtitle     
 -----+-----+--------+-----------------+----------------
@@ -405,14 +406,14 @@ EXECUTE two;
    6 |  22 |      2 | regress_rls_peter | great science fiction
 (2 rows)
 
-SELECT * FROM document_row WHERE rls_fleak1(dtitle) ORDER BY did;
+SELECT * FROM document_Row WHERE rls_fleak1(dtitle) ORDER BY did;
 NOTICE:  f_leak => my first novel
  did | cid | dlevel |     dauthor     |     dtitle     
 -----+-----+--------+-----------------+----------------
    1 |  11 |      1 | regress_rls_bob | my first novel
 (1 row)
 
-SELECT * FROM document_col WHERE rls_fleak2(dauthor) ORDER BY did;
+SELECT * FROM document_Col WHERE rls_fleak2(dauthor) ORDER BY did;
 NOTICE:  f_leak => regress_rls_bob
 NOTICE:  f_leak => regress_rls_peter
  did | cid | dlevel |      dauthor      |        dtitle         
@@ -421,8 +422,8 @@ NOTICE:  f_leak => regress_rls_peter
    6 |  22 |      2 | regress_rls_peter | great science fiction
 (2 rows)
 
--- EXPLAIN (COSTS OFF, VERBOSE ON) SELECT * FROM document_row WHERE rls_fleak2(dauthor) ORDER BY did;
-SELECT * FROM document_col INNER JOIN category_col ON document_col.cid=category_col.cid WHERE rls_fleak1(dtitle) ORDER BY did;
+-- EXPLAIN (COSTS OFF, VERBOSE ON) SELECT * FROM document_Row WHERE rls_fleak2(dauthor) ORDER BY did;
+SELECT * FROM document_Col INNER JOIN category_col ON document_Col.cid=category_col.cid WHERE rls_fleak1(dtitle) ORDER BY did;
 NOTICE:  f_leak => my first novel
 NOTICE:  f_leak => great science fiction
  did | cid | dlevel |      dauthor      |        dtitle         | cid |      cname      
@@ -437,44 +438,41 @@ SELECT * FROM tt_rep;
   4 | regress_rls_bob
 (1 row)
 
-SELECT * FROM document_row INNER JOIN category_row ON document_row.cid=category_row.cid WHERE rls_fleak2(dauthor) ORDER BY did;
+SELECT * FROM document_Row INNER JOIN category_row ON document_Row.cid=category_row.cid WHERE rls_fleak2(dauthor) ORDER BY did;
 NOTICE:  f_leak => regress_rls_bob
  did | cid | dlevel |     dauthor     |     dtitle     | cid | cname 
 -----+-----+--------+-----------------+----------------+-----+-------
    1 |  11 |      1 | regress_rls_bob | my first novel |  11 | novel
 (1 row)
 
--- EXPLAIN (COSTS OFF, VERBOSE ON) SELECT * FROM document_row INNER JOIN category_row ON document_row.cid=category_row.cid WHERE rls_fleak2(dauthor) ORDER BY did;
+-- EXPLAIN (COSTS OFF, VERBOSE ON) SELECT * FROM document_Row INNER JOIN category_row ON document_Row.cid=category_row.cid WHERE rls_fleak2(dauthor) ORDER BY did;
 \d
                                                  List of relations
        Schema       |      Name      | Type  | Owner |                           Storage                            
 --------------------+----------------+-------+-------+--------------------------------------------------------------
  regress_rls_schema | account_col    | table |       | {orientation=column,compression=low}
  regress_rls_schema | account_row    | table |       | {orientation=row,compression=no}
- regress_rls_schema | alice_private  | table |       | {orientation=row,compression=no}
  regress_rls_schema | alice_public_1 | table |       | {orientation=row,compression=no}
- regress_rls_schema | alice_public_2 | table |       | {orientation=row,compression=no}
  regress_rls_schema | category_col   | table |       | {orientation=column,compression=low}
  regress_rls_schema | category_row   | table |       | {orientation=row,compression=no}
- regress_rls_schema | document_col   | table |       | {orientation=row,compression=no,enable_rowsecurity=true}
- regress_rls_schema | document_row   | table |       | {orientation=row,compression=no,enable_rowsecurity=true}
+ regress_rls_schema | document_Col   | table |       | {orientation=row,compression=no,enable_rowsecurity=true}
+ regress_rls_schema | document_Row   | table |       | {orientation=row,compression=no,enable_rowsecurity=true}
  regress_rls_schema | par_col_t1     | table |       | {orientation=column,compression=low,enable_rowsecurity=true}
  regress_rls_schema | par_row_t1     | table |       | {orientation=row,compression=no,enable_rowsecurity=true}
  regress_rls_schema | tt_rep         | table |       | {orientation=row,compression=no,enable_rowsecurity=true}
-(12 rows)
+(10 rows)
 
 \df
-                                                            List of functions
-       Schema       |          Name          | Result data type |    Argument data types     |  Type  | fencedmode | propackage | prokind 
---------------------+------------------------+------------------+----------------------------+--------+------------+------------+---------
- regress_rls_schema | rls_auto_create_policy | integer          | t_name text, p_num integer | normal | f          | f          | f
- regress_rls_schema | rls_auto_drop_policy   | integer          | t_name text, p_num integer | normal | f          | f          | f
- regress_rls_schema | rls_fleak1             | boolean          | text                       | normal | f          | f          | f
- regress_rls_schema | rls_fleak2             | boolean          | text                       | normal | f          | f          | f
-(4 rows)
+                                                   List of functions
+       Schema       |    Name    | Result data type | Argument data types |  Type  | fencedmode | propackage | prokind 
+--------------------+------------+------------------+---------------------+--------+------------+------------+---------
+ regress_rls_schema | rls_fleak1 | boolean          | text                | normal | f          | f          | f
+ regress_rls_schema | rls_fleak2 | boolean          | text                | normal | f          | f          | f
+(2 rows)
 
 -- viewpoint from regress_rls_peter
 SET ROLE regress_rls_peter PASSWORD 'Ttest@123';
+SET lower_case_table_names TO 0;
 EXECUTE one;
  did | cid | dlevel |      dauthor      |         dtitle          
 -----+-----+--------+-------------------+-------------------------
@@ -495,7 +493,7 @@ EXECUTE two;
   10 |  33 |      4 | regress_rls_david | awesome technology book
 (5 rows)
 
-SELECT * FROM document_row WHERE rls_fleak1(dtitle) ORDER BY did;
+SELECT * FROM document_Row WHERE rls_fleak1(dtitle) ORDER BY did;
 NOTICE:  f_leak => my first novel
 NOTICE:  f_leak => my second manga
 NOTICE:  f_leak => great science fiction
@@ -510,7 +508,7 @@ NOTICE:  f_leak => awesome technology book
   10 |  33 |      4 | regress_rls_david | awesome technology book
 (5 rows)
 
-SELECT * FROM document_col WHERE rls_fleak2(dauthor) ORDER BY did;
+SELECT * FROM document_Col WHERE rls_fleak2(dauthor) ORDER BY did;
 NOTICE:  f_leak => regress_rls_bob
 NOTICE:  f_leak => regress_rls_bob
 NOTICE:  f_leak => regress_rls_peter
@@ -525,23 +523,23 @@ NOTICE:  f_leak => regress_rls_david
   10 |  33 |      4 | regress_rls_david | awesome technology book
 (5 rows)
 
-EXPLAIN (COSTS OFF, VERBOSE ON) SELECT * FROM document_row WHERE rls_fleak2(dauthor) ORDER BY did;
-                                                     QUERY PLAN                                                     
---------------------------------------------------------------------------------------------------------------------
+EXPLAIN (COSTS OFF, VERBOSE ON) SELECT * FROM document_Row WHERE rls_fleak2(dauthor) ORDER BY did;
+                                                          QUERY PLAN                                                          
+------------------------------------------------------------------------------------------------------------------------------
  Sort
-   Output: document_row.did, document_row.cid, document_row.dlevel, document_row.dauthor, document_row.dtitle
-   Sort Key: document_row.did
+   Output: "document_Row".did, "document_Row".cid, "document_Row".dlevel, "document_Row".dauthor, "document_Row".dtitle
+   Sort Key: "document_Row".did
    InitPlan 1 (returns $0)
      ->  Seq Scan on regress_rls_schema.account_row
            Output: account_row.aid
            Filter: ((account_row.aname)::name = 'regress_rls_peter'::name)
-   ->  Seq Scan on regress_rls_schema.document_row
-         Output: document_row.did, document_row.cid, document_row.dlevel, document_row.dauthor, document_row.dtitle
-         Filter: ((document_row.dlevel <= $0) AND rls_fleak2((document_row.dauthor)::text))
+   ->  Seq Scan on regress_rls_schema."document_Row"
+         Output: "document_Row".did, "document_Row".cid, "document_Row".dlevel, "document_Row".dauthor, "document_Row".dtitle
+         Filter: (("document_Row".dlevel <= $0) AND rls_fleak2(("document_Row".dauthor)::text))
  Notice: This query is influenced by row level security feature
 (11 rows)
 
-SELECT * FROM document_col INNER JOIN category_col ON document_col.cid=category_col.cid WHERE rls_fleak1(dtitle) ORDER BY did;
+SELECT * FROM document_Col INNER JOIN category_col ON document_Col.cid=category_col.cid WHERE rls_fleak1(dtitle) ORDER BY did;
 NOTICE:  f_leak => my first novel
 NOTICE:  f_leak => my second manga
 NOTICE:  f_leak => great science fiction
@@ -563,7 +561,7 @@ SELECT * FROM tt_rep;
   3 | regress_rls_peter
 (2 rows)
 
-SELECT * FROM document_row INNER JOIN category_row ON document_row.cid=category_row.cid WHERE rls_fleak2(dauthor) ORDER BY did;
+SELECT * FROM document_Row INNER JOIN category_row ON document_Row.cid=category_row.cid WHERE rls_fleak2(dauthor) ORDER BY did;
 NOTICE:  f_leak => regress_rls_bob
 NOTICE:  f_leak => regress_rls_bob
 NOTICE:  f_leak => regress_rls_peter
@@ -578,31 +576,32 @@ NOTICE:  f_leak => regress_rls_david
   10 |  33 |      4 | regress_rls_david | awesome technology book |  33 | technology
 (5 rows)
 
-EXPLAIN (COSTS OFF, VERBOSE ON) SELECT * FROM document_row INNER JOIN category_row ON document_row.cid=category_row.cid WHERE rls_fleak2(dauthor) ORDER BY did;
-                                                                        QUERY PLAN                                                                        
-----------------------------------------------------------------------------------------------------------------------------------------------------------
+EXPLAIN (COSTS OFF, VERBOSE ON) SELECT * FROM document_Row INNER JOIN category_row ON document_Row.cid=category_row.cid WHERE rls_fleak2(dauthor) ORDER BY did;
+                                                                             QUERY PLAN                                                                             
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------
  Sort
-   Output: document_row.did, document_row.cid, document_row.dlevel, document_row.dauthor, document_row.dtitle, category_row.cid, category_row.cname
-   Sort Key: document_row.did
+   Output: "document_Row".did, "document_Row".cid, "document_Row".dlevel, "document_Row".dauthor, "document_Row".dtitle, category_row.cid, category_row.cname
+   Sort Key: "document_Row".did
    InitPlan 1 (returns $0)
      ->  Seq Scan on regress_rls_schema.account_row
            Output: account_row.aid
            Filter: ((account_row.aname)::name = 'regress_rls_peter'::name)
    ->  Hash Join
-         Output: document_row.did, document_row.cid, document_row.dlevel, document_row.dauthor, document_row.dtitle, category_row.cid, category_row.cname
-         Hash Cond: (category_row.cid = document_row.cid)
+         Output: "document_Row".did, "document_Row".cid, "document_Row".dlevel, "document_Row".dauthor, "document_Row".dtitle, category_row.cid, category_row.cname
+         Hash Cond: (category_row.cid = "document_Row".cid)
          ->  Seq Scan on regress_rls_schema.category_row
                Output: category_row.cid, category_row.cname
          ->  Hash
-               Output: document_row.did, document_row.cid, document_row.dlevel, document_row.dauthor, document_row.dtitle
-               ->  Seq Scan on regress_rls_schema.document_row
-                     Output: document_row.did, document_row.cid, document_row.dlevel, document_row.dauthor, document_row.dtitle
-                     Filter: ((document_row.dlevel <= $0) AND rls_fleak2((document_row.dauthor)::text))
+               Output: "document_Row".did, "document_Row".cid, "document_Row".dlevel, "document_Row".dauthor, "document_Row".dtitle
+               ->  Seq Scan on regress_rls_schema."document_Row"
+                     Output: "document_Row".did, "document_Row".cid, "document_Row".dlevel, "document_Row".dauthor, "document_Row".dtitle
+                     Filter: (("document_Row".dlevel <= $0) AND rls_fleak2(("document_Row".dauthor)::text))
  Notice: This query is influenced by row level security feature
 (18 rows)
 
 -- viewpoint from regress_rls_david
 SET ROLE regress_rls_david PASSWORD 'Ttest@123';
+SET lower_case_table_names TO 0;
 EXECUTE one;
  did | cid | dlevel |      dauthor      |        dtitle         
 -----+-----+--------+-------------------+-----------------------
@@ -617,7 +616,7 @@ EXECUTE two;
    6 |  22 |      2 | regress_rls_peter | great science fiction
 (2 rows)
 
-SELECT * FROM document_row WHERE rls_fleak1(dtitle) ORDER BY did;
+SELECT * FROM document_Row WHERE rls_fleak1(dtitle) ORDER BY did;
 NOTICE:  f_leak => my first novel
 NOTICE:  f_leak => great science fiction
  did | cid | dlevel |      dauthor      |        dtitle         
@@ -626,7 +625,7 @@ NOTICE:  f_leak => great science fiction
    6 |  22 |      2 | regress_rls_peter | great science fiction
 (2 rows)
 
-SELECT * FROM document_col WHERE rls_fleak2(dauthor) ORDER BY did;
+SELECT * FROM document_Col WHERE rls_fleak2(dauthor) ORDER BY did;
 NOTICE:  f_leak => regress_rls_bob
 NOTICE:  f_leak => regress_rls_peter
  did | cid | dlevel |      dauthor      |        dtitle         
@@ -635,39 +634,39 @@ NOTICE:  f_leak => regress_rls_peter
    6 |  22 |      2 | regress_rls_peter | great science fiction
 (2 rows)
 
-EXPLAIN (COSTS OFF, VERBOSE ON) SELECT * FROM document_row ORDER BY did;
-                                                     QUERY PLAN                                                     
---------------------------------------------------------------------------------------------------------------------
+EXPLAIN (COSTS OFF, VERBOSE ON) SELECT * FROM document_Row ORDER BY did;
+                                                          QUERY PLAN                                                          
+------------------------------------------------------------------------------------------------------------------------------
  Sort
-   Output: document_row.did, document_row.cid, document_row.dlevel, document_row.dauthor, document_row.dtitle
-   Sort Key: document_row.did
+   Output: "document_Row".did, "document_Row".cid, "document_Row".dlevel, "document_Row".dauthor, "document_Row".dtitle
+   Sort Key: "document_Row".did
    InitPlan 1 (returns $0)
      ->  Seq Scan on regress_rls_schema.account_row
            Output: account_row.aid
            Filter: ((account_row.aname)::name = 'regress_rls_david'::name)
-   ->  Seq Scan on regress_rls_schema.document_row
-         Output: document_row.did, document_row.cid, document_row.dlevel, document_row.dauthor, document_row.dtitle
-         Filter: ((document_row.cid < 50) AND (document_row.cid <> 44) AND (document_row.dlevel <= $0))
+   ->  Seq Scan on regress_rls_schema."document_Row"
+         Output: "document_Row".did, "document_Row".cid, "document_Row".dlevel, "document_Row".dauthor, "document_Row".dtitle
+         Filter: (("document_Row".cid < 50) AND ("document_Row".cid <> 44) AND ("document_Row".dlevel <= $0))
  Notice: This query is influenced by row level security feature
 (11 rows)
 
-EXPLAIN (COSTS OFF, VERBOSE ON) SELECT * FROM document_row WHERE rls_fleak2(dauthor) ORDER BY did;
-                                                                     QUERY PLAN                                                                      
------------------------------------------------------------------------------------------------------------------------------------------------------
+EXPLAIN (COSTS OFF, VERBOSE ON) SELECT * FROM document_Row WHERE rls_fleak2(dauthor) ORDER BY did;
+                                                                         QUERY PLAN                                                                          
+-------------------------------------------------------------------------------------------------------------------------------------------------------------
  Sort
-   Output: document_row.did, document_row.cid, document_row.dlevel, document_row.dauthor, document_row.dtitle
-   Sort Key: document_row.did
+   Output: "document_Row".did, "document_Row".cid, "document_Row".dlevel, "document_Row".dauthor, "document_Row".dtitle
+   Sort Key: "document_Row".did
    InitPlan 1 (returns $0)
      ->  Seq Scan on regress_rls_schema.account_row
            Output: account_row.aid
            Filter: ((account_row.aname)::name = 'regress_rls_david'::name)
-   ->  Seq Scan on regress_rls_schema.document_row
-         Output: document_row.did, document_row.cid, document_row.dlevel, document_row.dauthor, document_row.dtitle
-         Filter: ((document_row.cid < 50) AND (document_row.cid <> 44) AND (document_row.dlevel <= $0) AND rls_fleak2((document_row.dauthor)::text))
+   ->  Seq Scan on regress_rls_schema."document_Row"
+         Output: "document_Row".did, "document_Row".cid, "document_Row".dlevel, "document_Row".dauthor, "document_Row".dtitle
+         Filter: (("document_Row".cid < 50) AND ("document_Row".cid <> 44) AND ("document_Row".dlevel <= $0) AND rls_fleak2(("document_Row".dauthor)::text))
  Notice: This query is influenced by row level security feature
 (11 rows)
 
-SELECT * FROM document_col INNER JOIN category_col ON document_col.cid=category_col.cid WHERE rls_fleak1(dtitle) ORDER BY did;
+SELECT * FROM document_Col INNER JOIN category_col ON document_Col.cid=category_col.cid WHERE rls_fleak1(dtitle) ORDER BY did;
 NOTICE:  f_leak => my first novel
 NOTICE:  f_leak => great science fiction
  did | cid | dlevel |      dauthor      |        dtitle         | cid |      cname      
@@ -682,13 +681,13 @@ SELECT * FROM tt_rep;
   1 | regress_rls_alice
 (1 row)
 
-COPY document_row TO STDOUT;
+COPY document_Row TO STDOUT;
 1	11	1	regress_rls_bob	my first novel
 6	22	2	regress_rls_peter	great science fiction
-COPY document_col TO STDOUT;
+COPY document_Col TO STDOUT;
 1	11	1	regress_rls_bob	my first novel
 6	22	2	regress_rls_peter	great science fiction
-SELECT * FROM document_row INNER JOIN category_row ON document_row.cid=category_row.cid WHERE rls_fleak2(dauthor) ORDER BY did;
+SELECT * FROM document_Row INNER JOIN category_row ON document_Row.cid=category_row.cid WHERE rls_fleak2(dauthor) ORDER BY did;
 NOTICE:  f_leak => regress_rls_bob
 NOTICE:  f_leak => regress_rls_peter
  did | cid | dlevel |      dauthor      |        dtitle         | cid |      cname      
@@ -697,22 +696,22 @@ NOTICE:  f_leak => regress_rls_peter
    6 |  22 |      2 | regress_rls_peter | great science fiction |  22 | science fiction
 (2 rows)
 
-EXPLAIN (COSTS OFF, VERBOSE ON) SELECT * FROM document_row INNER JOIN category_row ON document_row.cid=category_row.cid WHERE rls_fleak2(dauthor) ORDER BY did;
-                                                                        QUERY PLAN                                                                         
------------------------------------------------------------------------------------------------------------------------------------------------------------
+EXPLAIN (COSTS OFF, VERBOSE ON) SELECT * FROM document_Row INNER JOIN category_row ON document_Row.cid=category_row.cid WHERE rls_fleak2(dauthor) ORDER BY did;
+                                                                             QUERY PLAN                                                                             
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------
  Sort
-   Output: document_row.did, document_row.cid, document_row.dlevel, document_row.dauthor, document_row.dtitle, category_row.cid, category_row.cname
-   Sort Key: document_row.did
+   Output: "document_Row".did, "document_Row".cid, "document_Row".dlevel, "document_Row".dauthor, "document_Row".dtitle, category_row.cid, category_row.cname
+   Sort Key: "document_Row".did
    InitPlan 1 (returns $0)
      ->  Seq Scan on regress_rls_schema.account_row
            Output: account_row.aid
            Filter: ((account_row.aname)::name = 'regress_rls_david'::name)
    ->  Nested Loop
-         Output: document_row.did, document_row.cid, document_row.dlevel, document_row.dauthor, document_row.dtitle, category_row.cid, category_row.cname
-         Join Filter: (document_row.cid = category_row.cid)
-         ->  Seq Scan on regress_rls_schema.document_row
-               Output: document_row.did, document_row.cid, document_row.dlevel, document_row.dauthor, document_row.dtitle
-               Filter: ((document_row.cid < 50) AND (document_row.cid <> 44) AND (document_row.dlevel <= $0) AND rls_fleak2((document_row.dauthor)::text))
+         Output: "document_Row".did, "document_Row".cid, "document_Row".dlevel, "document_Row".dauthor, "document_Row".dtitle, category_row.cid, category_row.cname
+         Join Filter: ("document_Row".cid = category_row.cid)
+         ->  Seq Scan on regress_rls_schema."document_Row"
+               Output: "document_Row".did, "document_Row".cid, "document_Row".dlevel, "document_Row".dauthor, "document_Row".dtitle
+               Filter: (("document_Row".cid < 50) AND ("document_Row".cid <> 44) AND ("document_Row".dlevel <= $0) AND rls_fleak2(("document_Row".dauthor)::text))
          ->  Seq Scan on regress_rls_schema.category_row
                Output: category_row.cid, category_row.cname
                Filter: ((category_row.cid < 50) AND (category_row.cid <> 44))
@@ -720,30 +719,30 @@ EXPLAIN (COSTS OFF, VERBOSE ON) SELECT * FROM document_row INNER JOIN category_r
 (17 rows)
 
 -- update and update returning
-UPDATE document_row SET dlevel = dlevel + 1 - 1 WHERE did > 1;
-UPDATE document_col SET dlevel = dlevel + 1 - 1 WHERE did > 1 RETURNING dauthor, did;
+UPDATE document_Row SET dlevel = dlevel + 1 - 1 WHERE did > 1;
+UPDATE document_Col SET dlevel = dlevel + 1 - 1 WHERE did > 1 RETURNING dauthor, did;
       dauthor      | did 
 -------------------+-----
  regress_rls_peter |   6
 (1 row)
 
 -- delete and delete returning
-INSERT INTO document_row VALUES (100, 49, 1, 'regress_rls_david', 'testing sorting of policies');
-DELETE FROM document_row WHERE did = 100;
-INSERT INTO document_row VALUES (100, 49, 1, 'regress_rls_david', 'testing sorting of policies');
-ERROR:  duplicate key value violates unique constraint "document_row_pkey"
+INSERT INTO document_Row VALUES (100, 49, 1, 'regress_rls_david', 'testing sorting of policies');
+DELETE FROM document_Row WHERE did = 100;
+INSERT INTO document_Row VALUES (100, 49, 1, 'regress_rls_david', 'testing sorting of policies');
+ERROR:  duplicate key value violates unique constraint "document_Row_pkey"
 DETAIL:  Key (did)=(100) already exists.
-DELETE FROM document_row WHERE did = 100 RETURNING dauthor, did;
+DELETE FROM document_Row WHERE did = 100 RETURNING dauthor, did;
  dauthor | did 
 ---------+-----
 (0 rows)
 
 -- only owner can change policies
-ALTER POLICY p01 ON document_row USING (true);    --fail
-ERROR:  must be owner of relation document_row
+ALTER POLICY p01 ON document_Row USING (true);    --fail
+ERROR:  must be owner of relation document_Row
 DETAIL:  N/A
-DROP POLICY p01 ON document_col;                  --fail
-ERROR:  must be owner of relation document_col
+DROP POLICY p01 ON document_Col;                  --fail
+ERROR:  must be owner of relation document_Col
 DETAIL:  N/A
 -- check data from partition table
 SELECT * FROM par_row_t1 WHERE a > 7 ORDER BY 1, 2;
@@ -783,7 +782,7 @@ SELECT * FROM par_col_t1 WHERE a > 7 ORDER BY 1, 2;
 (13 rows)
 
 -- test create table as
-CREATE TABLE document_row_david AS SELECT * FROM document_row;
+CREATE TABLE document_row_david AS SELECT * FROM document_Row;
 SELECT COUNT(*) FROM document_row_david;
  count 
 -------
@@ -797,37 +796,33 @@ SELECT COUNT(*) FROM document_row_david;
 --------------------+--------------------+-------+-------------------+--------------------------------------------------------------
  regress_rls_schema | account_col        | table |                   | {orientation=column,compression=low}
  regress_rls_schema | account_row        | table |                   | {orientation=row,compression=no}
- regress_rls_schema | alice_private      | table |                   | {orientation=row,compression=no}
- regress_rls_schema | alice_public_1     | table |                   | {orientation=row,compression=no}
  regress_rls_schema | alice_public_2     | table |                   | {orientation=row,compression=no}
  regress_rls_schema | category_col       | table |                   | {orientation=column,compression=low}
  regress_rls_schema | category_row       | table |                   | {orientation=row,compression=no}
- regress_rls_schema | document_col       | table |                   | {orientation=row,compression=no,enable_rowsecurity=true}
- regress_rls_schema | document_row       | table |                   | {orientation=row,compression=no,enable_rowsecurity=true}
+ regress_rls_schema | document_Col       | table |                   | {orientation=row,compression=no,enable_rowsecurity=true}
+ regress_rls_schema | document_Row       | table |                   | {orientation=row,compression=no,enable_rowsecurity=true}
  regress_rls_schema | document_row_david | table | regress_rls_david | {orientation=row,compression=no}
  regress_rls_schema | par_col_t1         | table |                   | {orientation=column,compression=low,enable_rowsecurity=true}
  regress_rls_schema | par_row_t1         | table |                   | {orientation=row,compression=no,enable_rowsecurity=true}
  regress_rls_schema | tt_rep             | table |                   | {orientation=row,compression=no,enable_rowsecurity=true}
-(13 rows)
+(11 rows)
 
 \df
-                                                            List of functions
-       Schema       |          Name          | Result data type |    Argument data types     |  Type  | fencedmode | propackage | prokind 
---------------------+------------------------+------------------+----------------------------+--------+------------+------------+---------
- regress_rls_schema | rls_auto_create_policy | integer          | t_name text, p_num integer | normal | f          | f          | f
- regress_rls_schema | rls_auto_drop_policy   | integer          | t_name text, p_num integer | normal | f          | f          | f
- regress_rls_schema | rls_fleak1             | boolean          | text                       | normal | f          | f          | f
- regress_rls_schema | rls_fleak2             | boolean          | text                       | normal | f          | f          | f
-(4 rows)
+                                                   List of functions
+       Schema       |    Name    | Result data type | Argument data types |  Type  | fencedmode | propackage | prokind 
+--------------------+------------+------------------+---------------------+--------+------------+------------+---------
+ regress_rls_schema | rls_fleak1 | boolean          | text                | normal | f          | f          | f
+ regress_rls_schema | rls_fleak2 | boolean          | text                | normal | f          | f          | f
+(2 rows)
 
 -- change to super user
 RESET ROLE;
 -- DROP USER failed, display dependency
 DROP USER regress_rls_bob;
 ERROR:  role "regress_rls_bob" cannot be dropped because some objects depend on it
-DETAIL:  target of row level security policy p06 on table document_row
-target of row level security policy p05 on table document_row
-target of row level security policy p04 on table document_row
+DETAIL:  target of row level security policy p06 on table "document_Row"
+target of row level security policy p05 on table "document_Row"
+target of row level security policy p04 on table "document_Row"
 DROP OWNED BY regress_rls_bob;
 select * from pg_shdepend where classid = 3254 and refclassid = 1260 and refobjid = (select oid from pg_authid where rolname = 'regress_rls_bob');
  dbid | classid | objid | objsubid | refclassid | refobjid | deptype | objfile 
@@ -835,28 +830,34 @@ select * from pg_shdepend where classid = 3254 and refclassid = 1260 and refobji
 (0 rows)
 
 DROP USER regress_rls_bob;
-ALTER POLICY p01 ON document_row USING (dauthor = current_user);
-ALTER POLICY p01 ON document_row RENAME TO p12;
-ALTER POLICY p12 ON document_row RENAME TO p13;
-ALTER POLICY p13 ON document_row RENAME TO p01;
+ALTER POLICY p01 ON document_Row USING (dauthor = current_user);
+ALTER POLICY p01 ON document_Row RENAME TO p12;
+ALTER POLICY p12 ON document_Row RENAME TO p13;
+ALTER POLICY p13 ON document_Row RENAME TO p01;
 SELECT * FROM pg_rlspolicies ORDER BY tablename, policyname;
-     schemaname     |  tablename   |   policyname    | policypermissive |     policyroles      | policycmd |                                                 policyqual                                                 
---------------------+--------------+-----------------+------------------+----------------------+-----------+------------------------------------------------------------------------------------------------------------
- regress_rls_schema | document_col | p01             | PERMISSIVE       | {public}             | ALL       | (dlevel <= (SELECT account_col.aid FROM account_col WHERE ((account_col.aname)::name = "current_user"())))
- regress_rls_schema | document_col | p02             | RESTRICTIVE      | {regress_rls_david}  | ALL       | (cid < 50)
- regress_rls_schema | document_col | p03             | RESTRICTIVE      | {regress_rls_david}  | ALL       | (cid <> 44)
- regress_rls_schema | document_row | p01             | PERMISSIVE       | {public}             | ALL       | (dauthor = "current_user"())
- regress_rls_schema | document_row | p02             | RESTRICTIVE      | {regress_rls_david}  | ALL       | (cid < 50)
- regress_rls_schema | document_row | p03             | RESTRICTIVE      | {regress_rls_david}  | ALL       | (cid <> 44)
- regress_rls_schema | document_row | p04             | RESTRICTIVE      | {regress_rls_david}  | UPDATE    | ((dlevel % 2) = 1)
- regress_rls_schema | document_row | p05             | RESTRICTIVE      | {regress_rls_david}  | DELETE    | ((dlevel % 2) = 0)
- regress_rls_schema | par_col_t1   | par_col_t1_rls1 | PERMISSIVE       | {public}             | ALL       | (a <= 20)
- regress_rls_schema | par_col_t1   | par_col_t1_rls2 | RESTRICTIVE      | {regress_rls_group2} | ALL       | (id < 30)
- regress_rls_schema | par_row_t1   | par_row_t1_rls1 | PERMISSIVE       | {public}             | ALL       | (a <= 20)
- regress_rls_schema | par_row_t1   | par_row_t1_rls2 | RESTRICTIVE      | {regress_rls_group2} | ALL       | (id < 30)
- regress_rls_schema | tt_rep       | tt_rep_rls1     | PERMISSIVE       | {regress_rls_group1} | SELECT    | ((name)::name = "current_user"())
- regress_rls_schema | tt_rep       | tt_rep_rls2     | PERMISSIVE       | {regress_rls_group2} | SELECT    | (id = 1)
-(14 rows)
+     schemaname     |  tablename   |    policyname    | policypermissive |     policyroles      | policycmd |                                                 policyqual                                                 
+--------------------+--------------+------------------+------------------+----------------------+-----------+------------------------------------------------------------------------------------------------------------
+ regress_rls_schema | document_Col | p01              | PERMISSIVE       | {public}             | ALL       | (dlevel <= (SELECT account_col.aid FROM account_col WHERE ((account_col.aname)::name = "current_user"())))
+ regress_rls_schema | document_Col | p02              | RESTRICTIVE      | {regress_rls_david}  | ALL       | (cid < 50)
+ regress_rls_schema | document_Col | p03              | RESTRICTIVE      | {regress_rls_david}  | ALL       | (cid <> 44)
+ regress_rls_schema | document_Row | p01              | PERMISSIVE       | {public}             | ALL       | (dauthor = "current_user"())
+ regress_rls_schema | document_Row | p02              | RESTRICTIVE      | {regress_rls_david}  | ALL       | (cid < 50)
+ regress_rls_schema | document_Row | p03              | RESTRICTIVE      | {regress_rls_david}  | ALL       | (cid <> 44)
+ regress_rls_schema | document_Row | p04              | RESTRICTIVE      | {regress_rls_david}  | UPDATE    | ((dlevel % 2) = 1)
+ regress_rls_schema | document_Row | p05              | RESTRICTIVE      | {regress_rls_david}  | DELETE    | ((dlevel % 2) = 0)
+ regress_rls_schema | par_col_t1   | par_col_t1_rls1  | PERMISSIVE       | {public}             | ALL       | (a <= 20)
+ regress_rls_schema | par_col_t1   | par_col_t1_rls2  | RESTRICTIVE      | {regress_rls_group2} | ALL       | (id < 30)
+ regress_rls_schema | par_row_t1   | par_row_t1_rls1  | PERMISSIVE       | {public}             | ALL       | (a <= 20)
+ regress_rls_schema | par_row_t1   | par_row_t1_rls2  | RESTRICTIVE      | {regress_rls_group2} | ALL       | (id < 30)
+ pg_catalog         | pg_attribute | pg_attribute_rls | PERMISSIVE       | {public}             | SELECT    | has_table_privilege("current_user"(), attrelid, 'select'::text)
+ pg_catalog         | pg_class     | pg_class_rls     | PERMISSIVE       | {public}             | SELECT    | has_table_privilege("current_user"(), oid, 'select'::text)
+ pg_catalog         | pg_namespace | pg_namespace_rls | PERMISSIVE       | {public}             | SELECT    | has_schema_privilege("current_user"(), oid, 'USAGE'::text)
+ pg_catalog         | pg_partition | pg_partition_rls | PERMISSIVE       | {public}             | SELECT    | has_table_privilege("current_user"(), parentid, 'select'::text)
+ pg_catalog         | pg_proc      | pg_proc_rls      | PERMISSIVE       | {public}             | SELECT    | has_function_privilege("current_user"(), oid, 'execute'::text)
+ pg_catalog         | pgxc_slice   | pgxc_slice_rls   | PERMISSIVE       | {public}             | SELECT    | has_table_privilege("current_user"(), relid, 'select'::text)
+ regress_rls_schema | tt_rep       | tt_rep_rls1      | PERMISSIVE       | {regress_rls_group1} | SELECT    | ((name)::name = "current_user"())
+ regress_rls_schema | tt_rep       | tt_rep_rls2      | PERMISSIVE       | {regress_rls_group2} | SELECT    | (id = 1)
+(20 rows)
 
 -- enable private object
 ALTER DATABASE regression DISABLE PRIVATE OBJECT;
@@ -867,13 +868,15 @@ SET search_path = regress_rls_schema;
 -- check audit logs
 SELECT type, database, object_name, detail_info FROM pg_query_audit('2000-01-01 00:00:00', '2100-01-01 00:00:00')
   WHERE detail_info LIKE '%private object%' OR detail_info LIKE '%PRIVATE OBJECT%' ORDER BY detail_info;
- type | database | object_name | detail_info 
-------+----------+-------------+-------------
-(0 rows)
+     type     |      database      |    object_name     |                       detail_info                        
+--------------+--------------------+--------------------+----------------------------------------------------------
+ ddl_database | table_name_test_db | table_name_test_db | ALTER DATABASE table_name_test_db ENABLE PRIVATE OBJECT;
+(1 row)
 
 -- viewpoint from rls_regres_david again
 SET ROLE regress_rls_david PASSWORD 'Ttest@123';
-SELECT * FROM document_row ORDER BY did;
+SET lower_case_table_names TO 0;
+SELECT * FROM document_Row ORDER BY did;
  did | cid | dlevel |      dauthor      |           dtitle            
 -----+-----+--------+-------------------+-----------------------------
    9 |  22 |      5 | regress_rls_david | awesome science fiction
@@ -881,14 +884,14 @@ SELECT * FROM document_row ORDER BY did;
  100 |  49 |      1 | regress_rls_david | testing sorting of policies
 (3 rows)
 
-SELECT * FROM document_col ORDER BY did;
+SELECT * FROM document_Col ORDER BY did;
  did | cid | dlevel |      dauthor      |        dtitle         
 -----+-----+--------+-------------------+-----------------------
    1 |  11 |      1 | regress_rls_bob   | my first novel
    6 |  22 |      2 | regress_rls_peter | great science fiction
 (2 rows)
 
-SELECT * FROM document_row WHERE rls_fleak1(dtitle) ORDER BY did;
+SELECT * FROM document_Row WHERE rls_fleak1(dtitle) ORDER BY did;
 NOTICE:  f_leak => awesome science fiction
 NOTICE:  f_leak => awesome technology book
 NOTICE:  f_leak => testing sorting of policies
@@ -899,7 +902,7 @@ NOTICE:  f_leak => testing sorting of policies
  100 |  49 |      1 | regress_rls_david | testing sorting of policies
 (3 rows)
 
-SELECT * FROM document_row WHERE rls_fleak2(dtitle) ORDER BY did;
+SELECT * FROM document_Row WHERE rls_fleak2(dtitle) ORDER BY did;
 NOTICE:  f_leak => awesome science fiction
 NOTICE:  f_leak => awesome technology book
 NOTICE:  f_leak => testing sorting of policies
@@ -910,16 +913,16 @@ NOTICE:  f_leak => testing sorting of policies
  100 |  49 |      1 | regress_rls_david | testing sorting of policies
 (3 rows)
 
-EXPLAIN (COSTS OFF, VERBOSE ON) SELECT * FROM document_row WHERE rls_fleak2(dtitle);
-                                                                         QUERY PLAN                                                                          
--------------------------------------------------------------------------------------------------------------------------------------------------------------
- Seq Scan on regress_rls_schema.document_row
+EXPLAIN (COSTS OFF, VERBOSE ON) SELECT * FROM document_Row WHERE rls_fleak2(dtitle);
+                                                                             QUERY PLAN                                                                              
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Seq Scan on regress_rls_schema."document_Row"
    Output: did, cid, dlevel, dauthor, dtitle
-   Filter: ((document_row.cid < 50) AND (document_row.cid <> 44) AND (document_row.dauthor = 'regress_rls_david'::name) AND rls_fleak2(document_row.dtitle))
+   Filter: (("document_Row".cid < 50) AND ("document_Row".cid <> 44) AND ("document_Row".dauthor = 'regress_rls_david'::name) AND rls_fleak2("document_Row".dtitle))
  Notice: This query is influenced by row level security feature
 (4 rows)
 
-SELECT * FROM document_row INNER JOIN category_row ON document_row.cid=category_row.cid WHERE rls_fleak2(dtitle) ORDER by did;
+SELECT * FROM document_Row INNER JOIN category_row ON document_Row.cid=category_row.cid WHERE rls_fleak2(dtitle) ORDER by did;
 NOTICE:  f_leak => awesome science fiction
 NOTICE:  f_leak => awesome technology book
 NOTICE:  f_leak => testing sorting of policies
@@ -931,12 +934,12 @@ NOTICE:  f_leak => testing sorting of policies
 
 -- test inlist
 SET qrw_inlist2join_optmode=1;
-CREATE TABLE inlist_t1(c1 int, c2 int, c3 int) /*DISTRIBUTE BY HASH(c1)*/;
-INSERT INTO inlist_t1 SELECT v,v,v FROM generate_series(1,12) as v;
-CREATE ROW LEVEL SECURITY POLICY inlist_t1_rls ON inlist_t1 USING(c3 IN (3,4,7));
-ALTER TABLE inlist_t1 ENABLE ROW LEVEL SECURITY;
-ALTER TABLE inlist_t1 FORCE ROW LEVEL SECURITY;
-SELECT * FROM inlist_t1 ORDER BY c1;
+CREATE TABLE inlist_T1(c1 int, c2 int, c3 int) /*DISTRIBUTE BY HASH(c1)*/;
+INSERT INTO inlist_T1 SELECT v,v,v FROM generate_series(1,12) as v;
+CREATE ROW LEVEL SECURITY POLICY inlist_t1_rls ON inlist_T1 USING(c3 IN (3,4,7));
+ALTER TABLE inlist_T1 ENABLE ROW LEVEL SECURITY;
+ALTER TABLE inlist_T1 FORCE ROW LEVEL SECURITY;
+SELECT * FROM inlist_T1 ORDER BY c1;
  c1 | c2 | c3 
 ----+----+----
   3 |  3 |  3
@@ -995,53 +998,48 @@ SELECT * FROM tt_rep;
 --------------------+--------------------+-------+-------------------+---------------------------------------------------------------------------------
  regress_rls_schema | account_col        | table |                   | {orientation=column,compression=low}
  regress_rls_schema | account_row        | table |                   | {orientation=row,compression=no}
- regress_rls_schema | alice_private      | table |                   | {orientation=row,compression=no}
- regress_rls_schema | alice_public_1     | table |                   | {orientation=row,compression=no}
  regress_rls_schema | alice_public_2     | table |                   | {orientation=row,compression=no}
  regress_rls_schema | category_col       | table |                   | {orientation=column,compression=low}
  regress_rls_schema | category_row       | table |                   | {orientation=row,compression=no}
- regress_rls_schema | document_col       | table |                   | {orientation=row,compression=no,enable_rowsecurity=true}
- regress_rls_schema | document_row       | table |                   | {orientation=row,compression=no,enable_rowsecurity=true}
+ regress_rls_schema | document_Col       | table |                   | {orientation=row,compression=no,enable_rowsecurity=true}
+ regress_rls_schema | document_Row       | table |                   | {orientation=row,compression=no,enable_rowsecurity=true}
  regress_rls_schema | document_row_david | table | regress_rls_david | {orientation=row,compression=no}
- regress_rls_schema | inlist_t1          | table | regress_rls_david | {orientation=row,compression=no,enable_rowsecurity=true,force_rowsecurity=true}
+ regress_rls_schema | inlist_T1          | table | regress_rls_david | {orientation=row,compression=no,enable_rowsecurity=true,force_rowsecurity=true}
  regress_rls_schema | par_col_t1         | table |                   | {orientation=column,compression=low,enable_rowsecurity=true}
  regress_rls_schema | par_row_t1         | table |                   | {orientation=row,compression=no,enable_rowsecurity=true}
  regress_rls_schema | tt_rep             | table |                   | {orientation=row,compression=no,enable_rowsecurity=true}
-(14 rows)
+(12 rows)
 
 \df
-                                                            List of functions
-       Schema       |          Name          | Result data type |    Argument data types     |  Type  | fencedmode | propackage | prokind 
---------------------+------------------------+------------------+----------------------------+--------+------------+------------+---------
- regress_rls_schema | rls_auto_create_policy | integer          | t_name text, p_num integer | normal | f          | f          | f
- regress_rls_schema | rls_auto_drop_policy   | integer          | t_name text, p_num integer | normal | f          | f          | f
- regress_rls_schema | rls_fleak1             | boolean          | text                       | normal | f          | f          | f
- regress_rls_schema | rls_fleak2             | boolean          | text                       | normal | f          | f          | f
-(4 rows)
+                                                   List of functions
+       Schema       |    Name    | Result data type | Argument data types |  Type  | fencedmode | propackage | prokind 
+--------------------+------------+------------------+---------------------+--------+------------+------------+---------
+ regress_rls_schema | rls_fleak1 | boolean          | text                | normal | f          | f          | f
+ regress_rls_schema | rls_fleak2 | boolean          | text                | normal | f          | f          | f
+(2 rows)
 
 -- viewpoint from regress_rls_alice again
 SET ROLE regress_rls_alice PASSWORD 'Ttest@123';
+SET lower_case_table_names TO 0;
 ALTER TABLE tt_rep FORCE ROW LEVEL SECURITY;
 ALTER TABLE par_row_t1 FORCE ROW LEVEL SECURITY;
 \d
-                                                                   List of relations
-       Schema       |        Name        | Type  |       Owner       |                                     Storage                                     
---------------------+--------------------+-------+-------------------+---------------------------------------------------------------------------------
- regress_rls_schema | account_col        | table | regress_rls_alice | {orientation=column,compression=low}
- regress_rls_schema | account_row        | table | regress_rls_alice | {orientation=row,compression=no}
- regress_rls_schema | alice_private      | table | regress_rls_alice | {orientation=row,compression=no}
- regress_rls_schema | alice_public_1     | table | regress_rls_alice | {orientation=row,compression=no}
- regress_rls_schema | alice_public_2     | table | regress_rls_alice | {orientation=row,compression=no}
- regress_rls_schema | category_col       | table | regress_rls_alice | {orientation=column,compression=low}
- regress_rls_schema | category_row       | table | regress_rls_alice | {orientation=row,compression=no}
- regress_rls_schema | document_col       | table | regress_rls_alice | {orientation=row,compression=no,enable_rowsecurity=true}
- regress_rls_schema | document_row       | table | regress_rls_alice | {orientation=row,compression=no,enable_rowsecurity=true}
- regress_rls_schema | document_row_david | table |                   | {orientation=row,compression=no}
- regress_rls_schema | inlist_t1          | table |                   | {orientation=row,compression=no,enable_rowsecurity=true,force_rowsecurity=true}
- regress_rls_schema | par_col_t1         | table | regress_rls_alice | {orientation=column,compression=low,enable_rowsecurity=true}
- regress_rls_schema | par_row_t1         | table | regress_rls_alice | {orientation=row,compression=no,enable_rowsecurity=true,force_rowsecurity=true}
- regress_rls_schema | tt_rep             | table | regress_rls_alice | {orientation=row,compression=no,enable_rowsecurity=true,force_rowsecurity=true}
-(14 rows)
+                                                                 List of relations
+       Schema       |      Name      | Type  |       Owner       |                                     Storage                                     
+--------------------+----------------+-------+-------------------+---------------------------------------------------------------------------------
+ regress_rls_schema | account_col    | table | regress_rls_alice | {orientation=column,compression=low}
+ regress_rls_schema | account_row    | table | regress_rls_alice | {orientation=row,compression=no}
+ regress_rls_schema | alice_private  | table | regress_rls_alice | {orientation=row,compression=no}
+ regress_rls_schema | alice_public_1 | table | regress_rls_alice | {orientation=row,compression=no}
+ regress_rls_schema | alice_public_2 | table | regress_rls_alice | {orientation=row,compression=no}
+ regress_rls_schema | category_col   | table | regress_rls_alice | {orientation=column,compression=low}
+ regress_rls_schema | category_row   | table | regress_rls_alice | {orientation=row,compression=no}
+ regress_rls_schema | document_Col   | table | regress_rls_alice | {orientation=row,compression=no,enable_rowsecurity=true}
+ regress_rls_schema | document_Row   | table | regress_rls_alice | {orientation=row,compression=no,enable_rowsecurity=true}
+ regress_rls_schema | par_col_t1     | table | regress_rls_alice | {orientation=column,compression=low,enable_rowsecurity=true}
+ regress_rls_schema | par_row_t1     | table | regress_rls_alice | {orientation=row,compression=no,enable_rowsecurity=true,force_rowsecurity=true}
+ regress_rls_schema | tt_rep         | table | regress_rls_alice | {orientation=row,compression=no,enable_rowsecurity=true,force_rowsecurity=true}
+(12 rows)
 
 SELECT * FROM tt_rep ORDER BY id;
  id |       name        
@@ -1133,10 +1131,13 @@ explain(costs off) select aa_1 from aa, bb where bb_1 = 1 and aa_1 > (select min
 
 -- clean environment
 RESET ROLE;
-DROP ROW LEVEL SECURITY POLICY t12 ON inlist_t1;
-ERROR:  row level policy "t12" for table "inlist_t1" does not exists
-DROP ROW LEVEL SECURITY POLICY IF EXISTS t12 ON inlist_t1;
-NOTICE:  row level security policy "t12" for relation "inlist_t1" does not exist, skipping
+SET lower_case_table_names TO 0;
+DROP ROW LEVEL SECURITY POLICY t12 ON inlist_T1;
+ERROR:  row level policy "t12" for table "inlist_T1" does not exists
+DROP ROW LEVEL SECURITY POLICY IF EXISTS t12 ON inlist_T1;
+NOTICE:  row level security policy "t12" for relation "inlist_T1" does not exist, skipping
+DROP ROW LEVEL SECURITY POLICY p01 ON document_Row;
+DROP ROW LEVEL SECURITY POLICY IF EXISTS p01 ON document_Col;
 DROP SCHEMA regress_rls_schema CASCADE;
 NOTICE:  drop cascades to 20 other objects
 DETAIL:  drop cascades to function rls_fleak1(text)
@@ -1147,8 +1148,8 @@ drop cascades to table account_row
 drop cascades to table account_col
 drop cascades to table category_row
 drop cascades to table category_col
-drop cascades to table document_row
-drop cascades to table document_col
+drop cascades to table "document_Row"
+drop cascades to table "document_Col"
 drop cascades to table par_row_t1
 drop cascades to table par_col_t1
 drop cascades to table tt_rep
@@ -1156,7 +1157,7 @@ drop cascades to table alice_private
 drop cascades to table alice_public_1
 drop cascades to table alice_public_2
 drop cascades to table document_row_david
-drop cascades to table inlist_t1
+drop cascades to table "inlist_T1"
 drop cascades to table aa
 drop cascades to table bb
 DROP USER IF EXISTS regress_rls_alice;
@@ -1172,7 +1173,7 @@ DROP ROLE IF EXISTS regress_rls_group2;
 SELECT COUNT(*) FROM pg_rlspolicies;
  count 
 -------
-     0
+     6
 (1 row)
 
 SELECT COUNT(*) FROM pg_depend WHERE classid = 3254 OR refclassid = 3254;

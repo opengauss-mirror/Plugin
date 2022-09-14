@@ -758,7 +758,7 @@ static bool DolphinObjNameCmp(const char* s1, const char* s2, bool is_quoted);
 %type <boolean> copy_from
 
 %type <ival>	opt_column event cursor_options opt_hold opt_set_data
-%type <objtype>	reindex_type drop_type comment_type security_label_type dolphin_comment_type
+%type <objtype>	reindex_type drop_type comment_type security_label_type dolphin_comment_type dolphin_security_label_type
 
 %type <node>	fetch_args limit_clause select_limit_value
 				offset_clause select_offset_value
@@ -10924,7 +10924,7 @@ AlterExtensionContentsStmt:
 					n->objname = list_make1(makeString($6));
 					$$ = (Node *)n;
 				}
-			| ALTER EXTENSION name add_drop TABLE any_name
+			| ALTER EXTENSION name add_drop TABLE dolphin_any_name
 				{
 					AlterExtensionContentsStmt *n = makeNode(AlterExtensionContentsStmt);
 					n->extname = $3;
@@ -10996,7 +10996,7 @@ AlterExtensionContentsStmt:
 					n->objname = $7;
 					$$ = (Node *)n;
 				}
-			| ALTER EXTENSION name add_drop FOREIGN TABLE any_name
+			| ALTER EXTENSION name add_drop FOREIGN TABLE dolphin_any_name
 				{
 					AlterExtensionContentsStmt *n = makeNode(AlterExtensionContentsStmt);
 					n->extname = $3;
@@ -11939,7 +11939,7 @@ AlterRlsPolicyStmt:
 		;
 
 DropRlsPolicyStmt:
-			DROP RowLevelSecurityPolicyName ON any_name opt_drop_behavior
+			DROP RowLevelSecurityPolicyName ON dolphin_any_name opt_drop_behavior
 				{
 					DropStmt *n = makeNode(DropStmt);
 					n->removeType = OBJECT_RLSPOLICY;
@@ -11950,7 +11950,7 @@ DropRlsPolicyStmt:
 					n->concurrent = false;
 					$$ = (Node *) n;
 				}
-			| DROP POLICY IF_P EXISTS name ON any_name opt_drop_behavior
+			| DROP POLICY IF_P EXISTS name ON dolphin_any_name opt_drop_behavior
 				{
 					DropStmt *n = makeNode(DropStmt);
 					n->removeType = OBJECT_RLSPOLICY;
@@ -11961,7 +11961,7 @@ DropRlsPolicyStmt:
 					n->concurrent = false;
 					$$ = (Node *) n;
 				}
-			| DROP ROW LEVEL SECURITY POLICY IF_P EXISTS name ON any_name opt_drop_behavior
+			| DROP ROW LEVEL SECURITY POLICY IF_P EXISTS name ON dolphin_any_name opt_drop_behavior
 				{
 					DropStmt *n = makeNode(DropStmt);
 					n->removeType = OBJECT_RLSPOLICY;
@@ -12001,7 +12001,7 @@ row_level_security_role_list: row_level_security_role
 					;
 
 row_level_security_role:
-			RoleId			{ $$ = $1; }
+			RoleId			{ char* result = "public"; $$ = DolphinObjNameCmp($1, "public", is_quoted()) ? result : $1; }
 		|	CURRENT_USER	{ $$ = pstrdup($1); }
 		|	SESSION_USER	{ $$ = pstrdup($1); }
 		;
@@ -13655,6 +13655,17 @@ SecLabelStmt:
 					n->label = $8;
 					$$ = (Node *) n;
 				}
+			| SECURITY LABEL opt_provider ON dolphin_security_label_type dolphin_any_name
+			IS security_label
+				{
+					SecLabelStmt *n = makeNode(SecLabelStmt);
+					n->provider = $3;
+					n->objtype = $5;
+					n->objname = $6;
+					n->objargs = NIL;
+					n->label = $8;
+					$$ = (Node *) n;
+				}
 			| SECURITY LABEL opt_provider ON AGGREGATE func_name aggr_args
 			  IS security_label
 				{
@@ -13708,17 +13719,19 @@ opt_provider:	FOR ColId_or_Sconst	{ $$ = $2; }
 security_label_type:
 			COLUMN								{ $$ = OBJECT_COLUMN; }
 			| DATABASE							{ $$ = OBJECT_DATABASE; }
-			| FOREIGN TABLE						{ $$ = OBJECT_FOREIGN_TABLE; }
 			| SCHEMA							{ $$ = OBJECT_SCHEMA; }
 			| SEQUENCE							{ $$ = OBJECT_SEQUENCE; }
-			| TABLE								{ $$ = OBJECT_TABLE; }
 			| DOMAIN_P							{ $$ = OBJECT_TYPE; }
-			| ROLE								{ $$ = OBJECT_ROLE; }
-			| USER								{ $$ = OBJECT_USER; }
 			| TABLESPACE						{ $$ = OBJECT_TABLESPACE; }
 			| TYPE_P							{ $$ = OBJECT_TYPE; }
 			| VIEW								{ $$ = OBJECT_VIEW; }
 			| MATERIALIZED VIEW 				{ $$ = OBJECT_MATVIEW; }
+		;
+dolphin_security_label_type:
+			FOREIGN TABLE						{ $$ = OBJECT_FOREIGN_TABLE; }
+			| TABLE								{ $$ = OBJECT_TABLE; }
+			| ROLE								{ $$ = OBJECT_ROLE; }
+			| USER								{ $$ = OBJECT_USER; }
 		;
 
 security_label:	Sconst				{ $$ = $1; }
