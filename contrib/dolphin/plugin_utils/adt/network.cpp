@@ -1760,6 +1760,42 @@ Datum inetntop(PG_FUNCTION_ARGS)
     }
     PG_RETURN_NULL();
 }
+
+PG_FUNCTION_INFO_V1_PUBLIC(is_v4compat);
+extern "C" DLL_PUBLIC Datum is_v4compat(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1_PUBLIC(is_v4mapped);
+extern "C" DLL_PUBLIC Datum is_v4mapped(PG_FUNCTION_ARGS);
+
+Datum is_v4compat(PG_FUNCTION_ARGS)
+{
+    if (PG_ARGISNULL(0))
+        PG_RETURN_NULL();
+
+    bytea *in = PG_GETARG_BYTEA_PP(0);
+    char *ip = VARDATA_ANY(in);
+    int len = VARSIZE_ANY_EXHDR(in);
+
+    if (len != IN6ADDRSZ)
+        PG_RETURN_INT16(0);
+
+    PG_RETURN_INT16(IN6_IS_ADDR_V4COMPAT((const in6_addr *)ip) == true ? 1 : 0);
+}
+
+Datum is_v4mapped(PG_FUNCTION_ARGS)
+{
+    if (PG_ARGISNULL(0))
+        PG_RETURN_NULL();
+
+    bytea *in = PG_GETARG_BYTEA_PP(0);
+    char *ip = VARDATA_ANY(in);
+    int len = VARSIZE_ANY_EXHDR(in);
+
+    if (len != IN6ADDRSZ)
+        PG_RETURN_INT16(0);
+
+    PG_RETURN_INT16(IN6_IS_ADDR_V4MAPPED((const in6_addr *)ip) == true ? 1 : 0);
+}
 #endif
 
 /*

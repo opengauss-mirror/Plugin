@@ -3343,6 +3343,65 @@ VariableShowStmt:
 				{
 					$$ = (Node *)makeShowSlaveHostsQuery();
 				}
+			| SHOW CREATE FUNCTION func_name_opt_arg
+				{
+					SelectStmt *n = NULL;
+					const char* message = "improper func name (too many dotted names)";
+					switch (list_length($4)) {
+						case 1:
+							n = findCreateProc(NULL,strVal(linitial($4)),GS_SHOW_CREATE_FUNCTION);
+							break;
+						case 2:
+							n = findCreateProc(strVal(linitial($4)),strVal(lsecond($4)),GS_SHOW_CREATE_FUNCTION);
+							break;
+						default:
+							InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);
+							ereport(errstate,
+									(errcode(ERRCODE_SYNTAX_ERROR),
+									 errmsg("improper func name (too many dotted names): %s",
+											NameListToString($4)),
+									 parser_errposition(@1)));
+							break;
+					}
+					$$ = (Node *) n;
+				}
+			| SHOW CREATE PROCEDURE func_name_opt_arg
+				{
+					SelectStmt *n = NULL;
+					const char* message = "improper proc name (too many dotted names)";
+					switch (list_length($4)) {
+						case 1:
+							n = findCreateProc(NULL,strVal(linitial($4)),GS_SHOW_CREATE_PROCEDURE);
+							break;
+						case 2:
+							n = findCreateProc(strVal(linitial($4)),strVal(lsecond($4)),GS_SHOW_CREATE_PROCEDURE);
+							break;
+						default:
+							InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);
+							ereport(errstate,
+									(errcode(ERRCODE_SYNTAX_ERROR),
+									 errmsg("improper proc name (too many dotted names): %s",
+											NameListToString($4)),
+									 parser_errposition(@1)));
+							break;
+					}
+					$$ = (Node *) n;
+				}
+			| SHOW CREATE TABLE qualified_name
+				{
+					SelectStmt *n = findCreateClass($4,GS_SHOW_CREATE_TABLE);
+					$$ = (Node *) n;
+				}
+			| SHOW CREATE VIEW qualified_name
+				{
+					SelectStmt *n = findCreateClass($4,GS_SHOW_CREATE_VIEW);
+					$$ = (Node *) n;
+				}
+			| SHOW CREATE TRIGGER qualified_name
+				{
+					SelectStmt *n = findCreateTrigger($4);
+					$$ = (Node *) n;
+				}
 		;
 
 show_index_schema_opt:
