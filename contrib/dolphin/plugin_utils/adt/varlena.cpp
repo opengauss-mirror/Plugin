@@ -947,10 +947,11 @@ Datum text_len(PG_FUNCTION_ARGS)
     int result = 0;
 
     if (pg_database_encoding_max_length() == 1) {
-        int original_encoding = GetDatabaseEncoding();
-        SetDatabaseEncoding(PG_UTF8);
-        result = pg_mbstrlen_with_len(VARDATA_ANY(input), VARSIZE_ANY_EXHDR(input));
-        SetDatabaseEncoding(original_encoding);
+        char* cp = text_to_cstring(input);
+        while (*cp) {
+                cp += get_step_len(*cp);
+                result++;
+        }
     } else {
         result = pg_mbstrlen_with_len(VARDATA_ANY(input), VARSIZE_ANY_EXHDR(input));
     }
