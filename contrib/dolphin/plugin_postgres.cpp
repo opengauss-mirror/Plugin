@@ -360,4 +360,5 @@ void create_dolphin_extension()
     execute_sql_file();
     u_sess->attr.attr_common.enable_full_encryption = pre_enable_full_encryption;
     finish_xact_command();
+    set_default_guc();
 }
