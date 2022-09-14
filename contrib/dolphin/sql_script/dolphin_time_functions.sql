@@ -308,6 +308,22 @@ CREATE OR REPLACE FUNCTION pg_catalog.timestamp_add (text, numeric, text) RETURN
 CREATE OR REPLACE FUNCTION pg_catalog.timestamp_add (text, numeric, time) RETURNS time LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'timestamp_add_time';
 CREATE OR REPLACE FUNCTION pg_catalog.timestamp_add (text, numeric, numeric) RETURNS text AS $$ SELECT pg_catalog.timestamp_add($1, $2, CAST($3 AS text)) $$ LANGUAGE SQL;
 
+CREATE OR REPLACE FUNCTION pg_catalog.to_days (datetime) RETURNS int8 LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'to_days';
+CREATE OR REPLACE FUNCTION pg_catalog.to_days (time) RETURNS int8 AS $$ SELECT pg_catalog.to_days(text_date('now') + $1)  $$ LANGUAGE SQL;
+
+CREATE OR REPLACE FUNCTION pg_catalog.to_seconds (text) RETURNS numeric LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'to_seconds_text';
+CREATE OR REPLACE FUNCTION pg_catalog.to_seconds (time) RETURNS numeric LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'to_seconds_time';
+CREATE OR REPLACE FUNCTION pg_catalog.to_seconds (numeric) RETURNS numeric LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'to_seconds_numeric';
+
+CREATE OR REPLACE FUNCTION pg_catalog.unix_timestamp () RETURNS numeric LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'unix_timestamp_no_args';
+CREATE OR REPLACE FUNCTION pg_catalog.unix_timestamp (text) RETURNS numeric LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'unix_timestamp_text';
+CREATE OR REPLACE FUNCTION pg_catalog.unix_timestamp (time) RETURNS numeric LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'unix_timestamp_time';
+CREATE OR REPLACE FUNCTION pg_catalog.unix_timestamp (numeric) RETURNS numeric LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'unix_timestamp_numeric';
+
+CREATE OR REPLACE FUNCTION pg_catalog.utc_timestamp_func (int4) RETURNS datetime LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'utc_timestamp_func';
+CREATE OR REPLACE FUNCTION pg_catalog.utc_date_func () RETURNS date LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'utc_date_func';
+CREATE OR REPLACE FUNCTION pg_catalog.utc_time_func (int4) RETURNS time LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'utc_time_func';
+
 CREATE OPERATOR pg_catalog.- (
    rightarg = time,
    procedure = negetive_time

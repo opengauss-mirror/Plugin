@@ -86,6 +86,12 @@ PG_FUNCTION_INFO_V1_PUBLIC(subdate_time_interval);
 extern "C" DLL_PUBLIC Datum subdate_time_interval(PG_FUNCTION_ARGS);
 PG_FUNCTION_INFO_V1_PUBLIC(time_mysql);
 extern "C" DLL_PUBLIC Datum time_mysql(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(to_days);
+extern "C" DLL_PUBLIC Datum to_days(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(utc_date_func);
+extern "C" DLL_PUBLIC Datum utc_date_func(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(utc_time_func);
+extern "C" DLL_PUBLIC Datum utc_time_func(PG_FUNCTION_ARGS);
 #endif
 /* common code for timetypmodin and timetztypmodin */
 static int32 anytime_typmodin(bool istz, ArrayType* ta)
@@ -3485,6 +3491,7 @@ bool is_date_format(const char *str)
 bool date_in_no_ereport(const char* str, DateADT *date)
 {
     bool ret = true;
+    MemoryContext current_ctx = CurrentMemoryContext;
     PG_TRY();
     {
         *date = DatumGetDateADT(DirectFunctionCall1(date_in, CStringGetDatum(str)));
@@ -3492,6 +3499,7 @@ bool date_in_no_ereport(const char* str, DateADT *date)
     PG_CATCH();
     {
         // If catch an error, just empty the error stack and set return value to false.
+        (void)MemoryContextSwitchTo(current_ctx);
         FlushErrorState();
         ret = false;
     }
@@ -3508,6 +3516,7 @@ bool date_in_no_ereport(const char* str, DateADT *date)
 bool time_in_no_ereport(const char *str, TimeADT *time)
 {
     bool ret = true;
+    MemoryContext current_ctx = CurrentMemoryContext;
     PG_TRY();
     {
         *time = DatumGetTimeADT(
@@ -3516,6 +3525,7 @@ bool time_in_no_ereport(const char *str, TimeADT *time)
     PG_CATCH();
     {
         // If catch an error, just empty the error stack and set return value to false.
+        (void)MemoryContextSwitchTo(current_ctx);
         FlushErrorState();
         ret = false;
     }
@@ -3793,6 +3803,55 @@ Datum time_mysql(PG_FUNCTION_ARGS)
 
     EncodeTimeOnly(tm, fsec, false, 0, u_sess->time_cxt.DateStyle, cp);
     PG_RETURN_TEXT_P(cstring_to_text(buf));
+}
+
+/**
+ * @Description: Given a parameter of type datetime, calculate the number of days since year 0. 
+ * @return: the number of days since year 0 to the given date.
+ */
+Datum to_days(PG_FUNCTION_ARGS) {
+    Timestamp datetime = PG_GETARG_TIMESTAMP(0);
+    int64 days;
+
+    if (datetime < B_FORMAT_TIMESTAMP_MIN_VALUE || datetime > B_FORMAT_TIMESTAMP_MAX_VALUE) {
+        ereport(ERROR, (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE),
+                        errmsg("datetime value out of range")));
+    }
+    days = (datetime - B_FORMAT_TIMESTAMP_MIN_VALUE) / USECS_PER_DAY;
+
+    if (datetime <= B_FORMAT_TIMESTAMP_ZERO_YEAR_LEAP_DAY) {
+        ++days;
+    }
+
+    PG_RETURN_INT64(days);
+}
+
+/**
+ * utc_date_func()
+ * @return: UTC date
+ */
+Datum utc_date_func(PG_FUNCTION_ARGS)
+{
+    TimestampTz now = GetCurrentStmtsysTimestamp();
+    PG_RETURN_DATEADT(timestamp2date((Timestamp)now));
+}
+
+/**
+ * utc_time_func()
+ * @return: UTC time
+ */
+Datum utc_time_func(PG_FUNCTION_ARGS) 
+{
+    int32 typmod = PG_GETARG_INT32(0);
+    if (typmod < 0 || typmod > MAX_TIME_PRECISION) {
+        ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+                        errmsg("time(%d) precision must be between %d and %d", typmod, 0, MAX_TIMESTAMP_PRECISION)));
+    }
+
+    TimestampTz now = GetCurrentStmtsysTimestamp();
+    TimeADT result = DatumGetTimeADT(DirectFunctionCall1(timestamp_time, (Timestamp)now));
+    AdjustTimeForTypmod(&result, typmod);
+    PG_RETURN_TIMEADT(result);
 }
 
 PG_FUNCTION_INFO_V1_PUBLIC(date_bool);

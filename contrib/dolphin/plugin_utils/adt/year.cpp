@@ -449,6 +449,7 @@ Datum year_mi(YearADT y1, YearADT y2)
     PG_RETURN_INTERVAL_P(result);
 }
 
+#ifdef DOLPHIN
 ulong convert_period_to_month(ulong period)
 {
     ulong a, b;
@@ -498,7 +499,9 @@ Datum period_diff(PG_FUNCTION_ARGS)
     int64 ret = (int64)((int64)convert_period_to_month(input1) - (int64)convert_period_to_month(input2));
     PG_RETURN_INT64(ret);
 }
+
 Datum year_hash(PG_FUNCTION_ARGS)
 {
     return hashint8(fcinfo);
 }
+#endif
