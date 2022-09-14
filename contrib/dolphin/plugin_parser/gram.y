@@ -1104,7 +1104,7 @@ static bool DolphinObjNameCmp(const char* s1, const char* s2, bool is_quoted);
 	TRUNCATE TRUSTED TSFIELD TSTAG TSTIME TYPE_P TYPES_P
 
 	UNBOUNDED UNCOMMITTED UNENCRYPTED UNION UNIQUE UNKNOWN UNLIMITED UNLISTEN UNLOCK UNLOGGED UNSIGNED
-	UNTIL UNUSABLE UPDATE USE USEEOF USER USING
+	UNTIL UNUSABLE UPDATE USE USEEOF USER USING UTC_DATE UTC_TIME UTC_TIMESTAMP
 
 	VACUUM VALID VALIDATE VALIDATION VALIDATOR VALUE_P VALUES VARBINARY VARCHAR VARCHAR2 VARIABLES VARIADIC VARRAY VARYING VCGROUP
 	VERBOSE VERIFY VERSION_P VIEW VOLATILE
@@ -27154,6 +27154,96 @@ func_expr_common_subexpr:
 					n->call_func = false;
 					$$ = (Node *)n;
 				}
+			| utc_date_func
+				{
+					/*
+					 * Translate as "utc_date_func()".
+					 */
+					FuncCall *n = makeNode(FuncCall);
+					n->funcname = SystemFuncName("utc_date_func");
+					n->colname = pstrdup("utc_date");
+					n->args = NIL;
+					n->agg_order = NIL;
+					n->agg_star = FALSE;
+					n->agg_distinct = FALSE;
+					n->func_variadic = FALSE;
+					n->over = NULL;
+					n->location = @1;
+					n->call_func = false;
+					$$ = (Node *)n;
+				}
+			| utc_time_func
+				{
+					/*
+					 * Translate as "utc_time_func(0)".
+					 */
+					FuncCall *n = makeNode(FuncCall);
+					n->funcname = SystemFuncName("utc_time_func");
+					n->colname = pstrdup("utc_time");
+					n->args = list_make1(makeIntConst(0, -1));
+					n->agg_order = NIL;
+					n->agg_star = FALSE;
+					n->agg_distinct = FALSE;
+					n->func_variadic = FALSE;
+					n->over = NULL;
+					n->location = @1;
+					n->call_func = false;
+					$$ = (Node *)n;
+				}
+			| UTC_TIME '(' Iconst ')'
+				{
+					/*
+					 * Translate as "utc_time_func(Iconst)".
+					 */
+					FuncCall *n = makeNode(FuncCall);
+					n->funcname = SystemFuncName("utc_time_func");
+					n->colname = pstrdup("utc_time");
+					n->args = list_make1(makeIntConst($3, @3));
+					n->agg_order = NIL;
+					n->agg_star = FALSE;
+					n->agg_distinct = FALSE;
+					n->func_variadic = FALSE;
+					n->over = NULL;
+					n->location = @1;
+					n->call_func = false;
+					$$ = (Node *)n;
+				}
+			| utc_timestamp_func
+				{
+					/*
+					 * Translate as "utc_timestamp_func(0)".
+					 */
+					FuncCall *n = makeNode(FuncCall);
+					n->funcname = SystemFuncName("utc_timestamp_func");
+					n->colname = pstrdup("utc_timestamp");
+					n->args = list_make1(makeIntConst(0, -1));
+					n->agg_order = NIL;
+					n->agg_star = FALSE;
+					n->agg_distinct = FALSE;
+					n->func_variadic = FALSE;
+					n->over = NULL;
+					n->location = @1;
+					n->call_func = false;
+					$$ = (Node *)n;
+				}
+			| UTC_TIMESTAMP '(' Iconst ')'
+				{
+					/*
+					 * Translate as "utc_timestamp_func(Iconst)".
+					 */
+					FuncCall *n = makeNode(FuncCall);
+					n->funcname = SystemFuncName("utc_timestamp_func");
+					n->colname = pstrdup("utc_timestamp");
+					n->args = list_make1(makeIntConst($3, @3));;
+					n->agg_order = NIL;
+					n->agg_star = FALSE;
+					n->agg_distinct = FALSE;
+					n->func_variadic = FALSE;
+					n->over = NULL;
+					n->location = @1;
+					n->call_func = false;
+					$$ = (Node *)n;
+				}
 			| LOCALTIME
 				{
 					FuncCall *n = makeNode(FuncCall);
@@ -27993,6 +28083,18 @@ func_expr_common_subexpr:
 
 current_date_func:	CURRENT_DATE
 			| CURRENT_DATE '(' ')'
+		;
+
+utc_date_func:	UTC_DATE
+			| UTC_DATE '(' ')'
+		;
+
+utc_time_func:	UTC_TIME
+			| UTC_TIME '(' ')'
+		;
+
+utc_timestamp_func:	UTC_TIMESTAMP
+			| UTC_TIMESTAMP '(' ')'
 		;
 
 /*
@@ -30190,6 +30292,9 @@ reserved_keyword:
 			| UNIQUE
 			| USER
 			| USING
+			| UTC_DATE
+			| UTC_TIME
+			| UTC_TIMESTAMP
 			| VARIADIC
 			| VERIFY
 			| WHEN
