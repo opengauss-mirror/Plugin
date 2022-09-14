@@ -118,7 +118,7 @@ void dolphin_invoke(void)
 
 void set_default_guc()
 {
-    set_config_option("behavior_compat_options", "display_leading_zero", PGC_USERSET, PGC_S_SESSION, GUC_ACTION_SAVE, true, 0, false);
+    set_config_option("behavior_compat_options", "display_leading_zero", PGC_USERSET, PGC_S_SESSION, GUC_ACTION_SET, true, 0, false);
 }
 
 void init_plugin_object()
@@ -359,5 +359,4 @@ void create_dolphin_extension()
     execute_sql_file();
     u_sess->attr.attr_common.enable_full_encryption = pre_enable_full_encryption;
     finish_xact_command();
-    set_default_guc();
 }
