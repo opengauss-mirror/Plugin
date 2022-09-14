@@ -17,5 +17,10 @@ select chara(18446744073709551615);
 select chara(0);
 select chara(18446744073709551615);
 select chara(true);
+select chara('hiu158','-156n测试fjl',155.99,'146');
+select chara('hiu78','-156nfjl',175.99,'测试');
+select chara('侧四',-156,55.99,'ceshi');
+select chara('hi测试u158','ceshi',135.99,146);
+select chara('hiu158','测试',125.99,146);
 \c postgres
 drop database if exists db_char;

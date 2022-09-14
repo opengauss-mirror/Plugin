@@ -17,7 +17,7 @@ select chara('65','66','67');
 select chara('A','B','C');
  chara 
 -------
-    
+ 
 (1 row)
 
 select chara(65.4,66.3,67.3);
@@ -96,6 +96,36 @@ select chara(true);
  chara 
 -------
  \x01
+(1 row)
+
+select chara('hiu158','-156n测试fjl',155.99,'146');
+ chara 
+-------
+ d
+(1 row)
+
+select chara('hiu78','-156nfjl',175.99,'测试');
+ chara 
+-------
+ d
+(1 row)
+
+select chara('侧四',-156,55.99,'ceshi');
+ chara 
+-------
+ d8
+(1 row)
+
+select chara('hi测试u158','ceshi',135.99,146);
+ chara 
+-------
+ 
+(1 row)
+
+select chara('hiu158','测试',125.99,146);
+ chara 
+-------
+ ~
 (1 row)
 
 \c postgres

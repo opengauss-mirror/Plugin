@@ -58,6 +58,9 @@
 #define JUDGE_INPUT_VALID(X, Y) ((NULL == (X)) || (NULL == (Y)))
 #define GET_POSITIVE(X) ((X) > 0 ? (X) : ((-1) * (X)))
 #ifdef DOLPHIN
+#define BYTE_4 0xFF000000L
+#define BYTE_3 0xFF0000L
+#define BYTE_2 0xFF00L
 #define MAX_BINARY_LENGTH 255
 #define MAX_VARBINARY_LENGTH 65535
 #define isDigital(_ch) (((_ch) >= '0') && ((_ch) <= '9'))
@@ -72,11 +75,8 @@
 #endif
 static int getResultPostionReverse(text* textStr, text* textStrToSearch, int32 beginIndex, int occurTimes);
 static int getResultPostion(text* textStr, text* textStrToSearch, int32 beginIndex, int occurTimes);
-extern int conv_n(char *result, int128 data, int from_base_s, int to_base_s);
 
-extern Numeric int64_to_numeric(int64 v);
 static int get_step_len(unsigned char ch);
-extern double use_convert_timevalue_to_scalar(Datum value, Oid typid);
 
 typedef struct varlena unknown;
 typedef struct varlena VarString;
@@ -171,7 +171,6 @@ static int32 anybinary_typmodin(ArrayType* ta, const char* typname, uint32 max);
 static char* anybinary_typmodout(int32 typmod);
 static Datum copy_binary(Datum source, int typmod, bool target_is_var);
 static bytea* copy_blob(bytea* source, int64 max_size);
-extern text* _chr(uint32 value, bool flag);
 
 PG_FUNCTION_INFO_V1_PUBLIC(binary_typmodin);
 extern "C" DLL_PUBLIC Datum binary_typmodin(PG_FUNCTION_ARGS);
@@ -8169,22 +8168,72 @@ static double numeric_to_double_no_overflow(Numeric num)
     return val;
 }
 
+#define storeBytes1(BYTES, T, A) \
+    if (1 == BYTES) { \
+        T[0] = (char)A; \
+    }
+#define storeBytes2(BYTES, T, A) \
+    if (2 == BYTES) { \
+        unsigned int tmpValue = (unsigned int) (A) ; \
+        ((unsigned char*) (T))[1] = (unsigned char)(tmpValue); \
+        ((unsigned char*) (T))[0] = (unsigned char)(tmpValue >> 8); \
+    }
+#define storeBytes3(BYTES, T, A) \
+    if (3 == BYTES) { \
+        unsigned long int tmpValue = (unsigned long int) (A); \
+        ((unsigned char*) (T))[2] = (unsigned char) (tmpValue); \
+        ((unsigned char*) (T))[1] = (unsigned char) (tmpValue >> 8); \
+        ((unsigned char*) (T))[0] = (unsigned char) (tmpValue >> 16); \
+    }
+#define storeBytes4(BYTES, T, A) \
+    if (4 == BYTES) { \
+        unsigned long int tmpValue = (unsigned long int) (A); \
+        ((unsigned char*) (T))[3] = (unsigned char) (tmpValue); \
+        ((unsigned char*) (T))[2] = (unsigned char) (tmpValue >> 8); \
+        ((unsigned char*) (T))[1] = (unsigned char) (tmpValue >> 16); \
+        ((unsigned char*) (T))[0] = (unsigned char) (tmpValue >> 24); \
+    }
+
+text* setChara(uint32 value)
+{
+    int bytes;
+    if (value & BYTE_4) {
+        bytes = 4;
+    } else if (value & BYTE_3) {
+        bytes = 3;
+    } else if (value & BYTE_2) {
+        bytes = 2;
+    } else {
+        bytes = 1;
+    }
+
+    text* result = NULL;
+    result = (text*)palloc(VARHDRSZ + bytes);
+    SET_VARSIZE(result, VARHDRSZ + bytes);
+    char* wch = VARDATA(result);
+    storeBytes1(bytes, wch, value);
+    storeBytes2(bytes, wch, value);
+    storeBytes3(bytes, wch, value);
+    storeBytes4(bytes, wch, value);
+
+    return result;
+}
 
 static StringInfoData char_deal(StringInfoData str, uint32 quotient, uint32 remainder, uint32 remainders[], uint32 times)
 {
     if (quotient >= MAX_CHARA_THRESHOLD) {
         while (quotient >= MAX_CHARA_THRESHOLD) {
             times++;
-            remainder =  quotient % MAX_CHARA_THRESHOLD;
+            remainder = quotient % MAX_CHARA_THRESHOLD;
             quotient = quotient / MAX_CHARA_THRESHOLD;
             remainders[times] = remainder;
         }
-        appendStringInfoString(&str, text_to_cstring(_chr(quotient, false)));
+        appendStringInfoString(&str, text_to_cstring(setChara(quotient)));
         for (int i = times; i > 0; i--) {
-            appendStringInfoString(&str, text_to_cstring(_chr(remainders[i], false)));
+            appendStringInfoString(&str, text_to_cstring(setChara(remainders[i])));
         }
     } else {
-        appendStringInfoString(&str, text_to_cstring(_chr(quotient, false)));
+        appendStringInfoString(&str, text_to_cstring(setChara(quotient)));
     }
     return str;
 }
@@ -8206,9 +8255,9 @@ static text* _m_char(FunctionCallInfo fcinfo)
 {
     text* result = NULL;
     StringInfoData str;
-    uint32 quotient  = 0;
+    uint32 quotient = 0;
     uint32 remainder = 0;
-    uint32 remainders[MAX_CHARA_REMINDERS_LEN] = { 0 };
+    uint32 remainders[MAX_CHARA_REMINDERS_LEN] = {0};
     uint32 times = 0;
     initStringInfo(&str);
     char* date_string = NULL;
@@ -8246,9 +8295,9 @@ static text* _m_char(FunctionCallInfo fcinfo)
                     break;
                 case BOOLOID:
                     if (PG_GETARG_BOOL(i)) {
-                        appendStringInfoString(&str, text_to_cstring(_chr(1, false)));
+                        appendStringInfoString(&str, text_to_cstring(setChara(1)));
                     } else {
-                        appendStringInfoString(&str, text_to_cstring(_chr(0, false)));
+                        appendStringInfoString(&str, text_to_cstring(setChara(0)));
                     }
                     break;
                 case DATEOID:
@@ -8286,13 +8335,9 @@ static text* _m_char(FunctionCallInfo fcinfo)
                         quotient = (uint32)result_l;
                         str = char_deal(str, quotient, remainder, remainders, times);
                     } else {
-                        value = floor(atof((char*)value));
-                        if ((uint32)value == 0) {
-                            appendStringInfoString(&str, " ");
-                        } else {
-                            quotient = (uint32)value;
-                            str = char_deal(str, quotient, remainder, remainders, times);
-                        }
+                        value = floor(strtod((char*)value, NULL));
+                        quotient = (uint32)value;
+                        str = char_deal(str, quotient, remainder, remainders, times);
                     }
                     break;
             }
