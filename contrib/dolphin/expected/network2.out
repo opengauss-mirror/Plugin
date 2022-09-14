@@ -800,5 +800,41 @@ SELECT HEX(INET6_ATON(INET_NTOA(INET_ATON('1.2.3.4')))) AS x;
  01020304
 (1 row)
 
+SELECT IS_IPV4_MAPPED(INET6_ATON('1.2.3.4')),IS_IPV4_COMPAT(INET6_ATON('1.2.3.4'));
+ is_ipv4_mapped | is_ipv4_compat 
+----------------+----------------
+              0 |              0
+(1 row)
+
+SELECT IS_IPV4_MAPPED(INET6_ATON('::1.2.3.4')),IS_IPV4_COMPAT(INET6_ATON('::1.2.3.4'));
+ is_ipv4_mapped | is_ipv4_compat 
+----------------+----------------
+              0 |              1
+(1 row)
+
+SELECT IS_IPV4_MAPPED(INET6_ATON('::FFFF:1.2.3.4')),IS_IPV4_COMPAT(INET6_ATON('::FFFF:1.2.3.4'));
+ is_ipv4_mapped | is_ipv4_compat 
+----------------+----------------
+              1 |              0
+(1 row)
+
+SELECT IS_IPV4_MAPPED(INET6_ATON('::ABCD:1.2.3.4')),IS_IPV4_COMPAT(INET6_ATON('::ABCD:1.2.3.4'));
+ is_ipv4_mapped | is_ipv4_compat 
+----------------+----------------
+              0 |              0
+(1 row)
+
+SELECT IS_IPV4_MAPPED(INET6_ATON('::1')),IS_IPV4_COMPAT(INET6_ATON('::1'));
+ is_ipv4_mapped | is_ipv4_compat 
+----------------+----------------
+              0 |              0
+(1 row)
+
+SELECT IS_IPV4_MAPPED(INET6_ATON('::')),IS_IPV4_COMPAT(INET6_ATON('::'));
+ is_ipv4_mapped | is_ipv4_compat 
+----------------+----------------
+              0 |              0
+(1 row)
+
 \c postgres
 drop database if exists network2;

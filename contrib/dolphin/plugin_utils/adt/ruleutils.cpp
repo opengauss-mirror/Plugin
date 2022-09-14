@@ -16,6 +16,7 @@
  */
 #include "postgres.h"
 #include "knl/knl_variable.h"
+#include "plugin_postgres.h"
 
 #include <fcntl.h>
 
@@ -12546,4 +12547,63 @@ Oid pg_get_serial_sequence_oid(text* tablename, text* columnname)
         return sequenceId;
     }
     return InvalidOid;
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(gs_get_viewdef_name);
+extern "C" DLL_PUBLIC Datum gs_get_viewdef_name(PG_FUNCTION_ARGS);
+
+Datum gs_get_viewdef_name(PG_FUNCTION_ARGS)
+{
+    /* By qualified name */
+    text *viewname = PG_GETARG_TEXT_P(0);
+    RangeVar *viewrel = NULL;
+    Oid viewoid;
+    List *names = NIL;
+    StringInfoData buf;
+    Form_pg_class classForm = NULL;
+    HeapTuple tuple = NULL;
+    bool isnull = false;
+    char *viewoption = NULL;
+    char *viewdef = NULL;
+
+    initStringInfo(&buf);
+    /* Look up view name.  Can't lock it - we might not have privileges. */
+    names = textToQualifiedNameList(viewname);
+    viewrel = makeRangeVarFromNameList(names);
+    viewoid = RangeVarGetRelid(viewrel, NoLock, false);
+    if (!has_schema_privileges_of_viewoid(viewoid)) {
+        PG_RETURN_NULL();
+    }
+    tuple = SearchSysCache1(RELOID, ObjectIdGetDatum(viewoid));
+    if (!HeapTupleIsValid(tuple)) {
+        ereport(ERROR, (errcode(ERRCODE_CACHE_LOOKUP_FAILED), errmsg("cache lookup failed for %u.", viewoid)));
+    }
+    classForm = (Form_pg_class)GETSTRUCT(tuple);
+    appendStringInfo(&buf, "CREATE OR REPLACE ");
+    if (classForm->relpersistence != RELPERSISTENCE_PERMANENT) {
+        appendStringInfo(&buf, "TEMP ");
+    }
+    classForm->relkind == RELKIND_MATVIEW ? appendStringInfo(&buf, "MATERIALIZED VIEW ")
+                                          : appendStringInfo(&buf, "VIEW ");
+    if (classForm->relpersistence == RELPERSISTENCE_PERMANENT) {
+        appendStringInfo(&buf, "%s.", get_namespace_name(classForm->relnamespace));
+    }
+    appendStringInfo(&buf, "%s ", NameStr(classForm->relname));
+
+    Datum reloptions = SysCacheGetAttr(RELOID, tuple, Anum_pg_class_reloptions, &isnull);
+    if (isnull == false) {
+        Datum sep = CStringGetTextDatum(", ");
+        Datum txt = OidFunctionCall2(F_ARRAY_TO_TEXT, reloptions, sep);
+        viewoption = TextDatumGetCString(txt);
+        if (viewoption && strlen(viewoption) > 0) {
+            appendStringInfo(&buf, "\n WITH (%s) ", viewoption);
+        }
+    }
+    viewdef = pg_get_viewdef_worker(viewoid, 0, -1);
+    appendStringInfo(&buf, "AS\n%s", viewdef);
+
+    ReleaseSysCache(tuple);
+    pfree_ext(viewdef);
+    list_free_ext(names);
+    PG_RETURN_TEXT_P(string_to_text(buf.data));
 }

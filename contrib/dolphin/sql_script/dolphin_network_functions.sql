@@ -49,3 +49,14 @@ text
 CREATE OR REPLACE FUNCTION pg_catalog.inet6_ntoa (
 bytea
 ) RETURNS text LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'inetntop';
+
+DROP FUNCTION IF EXISTS pg_catalog.is_ipv4_compat(bytea) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.is_ipv4_mapped(bytea) CASCADE;
+
+CREATE OR REPLACE FUNCTION pg_catalog.is_ipv4_compat (
+bytea
+) RETURNS int LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'is_v4compat';
+
+CREATE OR REPLACE FUNCTION pg_catalog.is_ipv4_mapped (
+bytea
+) RETURNS int LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'is_v4mapped';

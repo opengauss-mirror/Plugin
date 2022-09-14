@@ -24,6 +24,10 @@
 #include "plugin_parser/backslash_quotes.h"
 
 #define UPSERT_TO_MERGE_VERSION_NUM 92022
+#define GS_SHOW_CREATE_TABLE 0
+#define GS_SHOW_CREATE_VIEW 1
+#define GS_SHOW_CREATE_FUNCTION 0
+#define GS_SHOW_CREATE_PROCEDURE 1
 
 /* Primary entry point for the raw parsing functions */
 extern List* raw_parser(const char* str, List** query_string_locationlist = NULL);
@@ -57,5 +61,8 @@ SelectStmt* makeShowMasterStatusQuery(void);
 SelectStmt* makeShowSlaveHostsQuery(void);
 
 SelectStmt* makeShowIndexQuery(char *schemaName, char *tableName, Node *whereClause);
+SelectStmt *findCreateClass(RangeVar *classrel, int mode);
+SelectStmt *findCreateProc(char *schemaName, char *name, int model);
+SelectStmt *findCreateTrigger(RangeVar *trel);
 
 #endif /* PARSER_H */

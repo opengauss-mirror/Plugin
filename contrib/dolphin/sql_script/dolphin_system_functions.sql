@@ -95,3 +95,9 @@ sessionid out bigint
 
 CREATE FUNCTION pg_catalog.clear_all_invalid_locks (
 ) RETURNS bigint LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'ClearInvalidLockName';
+
+DROP FUNCTION IF EXISTS pg_catalog.gs_get_viewdef_name(text) CASCADE;
+
+CREATE OR REPLACE FUNCTION pg_catalog.gs_get_viewdef_name (
+text
+) RETURNS text LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'gs_get_viewdef_name';
