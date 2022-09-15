@@ -106,6 +106,7 @@ alter table test_subpart exchange partition (p2) with table test_no_part1 withou
 --test b database analyze partition syntax
 alter table test_part1 analyze partition p0,p1;
 alter table test_part1 analyze partition all;
+alter table test_subpart analyze partition p0,p1;
 alter table test_subpart analyze partition all;
 --test opengauss analyze partition syntax
 analyze test_part1 partition (p1);

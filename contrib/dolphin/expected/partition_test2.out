@@ -300,6 +300,12 @@ alter table test_part1 analyze partition p0,p1;
 (1 row)
 
 alter table test_part1 analyze partition all;
+alter table test_subpart analyze partition p0,p1;
+ analyze_partition 
+-------------------
+ test_subpart
+(1 row)
+
 alter table test_subpart analyze partition all;
 --test opengauss analyze partition syntax
 analyze test_part1 partition (p1);
