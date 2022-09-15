@@ -321,5 +321,7 @@ explain select * from test_part_segment where ((980 < c and c < 1000) or (2180 <
 select * from test_part_segment where ((980 < c and c < 1000) or (2180 < c and c < 2200));
 select * from test_part_segment where ((980 < d and d < 1000) or (2180 < d and d < 2200));
 select * from test_part_segment where ((980 < b and b < 1000) or (2180 < b and b < 2200));
+--test remove partitioning
+alter table test_part_segment remove partitioning;
 \c postgres;
 drop DATABASE if exists partition_test1;

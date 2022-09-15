@@ -1506,5 +1506,9 @@ select * from test_part_segment where ((980 < b and b < 1000) or (2180 < b and b
  1099 | 2199 | 3299 | 4399
 (20 rows)
 
+--test remove partitioning
+alter table test_part_segment remove partitioning;
+ERROR:  The segment table test_part_segment is not supported
+CONTEXT:  referenced column: remove_partitioning
 \c postgres;
 drop DATABASE if exists partition_test1;
