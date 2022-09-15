@@ -1,0 +1,117 @@
+drop database if exists test_extract;
+NOTICE:  database "test_extract" does not exist, skipping
+create database test_extract dbcompatibility'B';
+\c test_extract
+select json_extract('{"a": "lihua"}', '$.a');
+ json_extract 
+--------------
+ "lihua"
+(1 row)
+
+select json_extract('{"a"}', '$.a');
+ERROR:  invalid input syntax for type json
+LINE 1: select json_extract('{"a"}', '$.a');
+                            ^
+DETAIL:  Expected ":", but found "}".
+CONTEXT:  JSON data, line 1: {"a"}
+referenced column: json_extract
+select json_extract('{"a":[1, true, null]}', '$.a [1]');
+ json_extract 
+--------------
+ true
+(1 row)
+
+select json_extract('{"a":[1, true, null]}', '$.a [*]');
+  json_extract   
+-----------------
+ [null, true, 1]
+(1 row)
+
+select json_extract('{"a":{"b": "hi"}}', '$ .* .b');
+ json_extract 
+--------------
+ ["hi"]
+(1 row)
+
+select json_extract('{"a": 3233}', '$');
+ json_extract 
+--------------
+ {"a": 3233}
+(1 row)
+
+select json_extract('{"a": {"a": true}, "b": [{"a": "lihua"}]}', '$**.a');
+         json_extract         
+------------------------------
+ ["lihua", true, {"a": true}]
+(1 row)
+
+select json_extract('{"a": "true", "b":{"a": 43}}', '$.a');
+ json_extract 
+--------------
+ "true"
+(1 row)
+
+select json_extract('{"a": "true", "b":{"a": 43}}', '$."a"');
+ json_extract 
+--------------
+ "true"
+(1 row)
+
+select json_extract(json_extract_path('{"a":{"b": [43, {"n": "hello"}]}}', 'a'), '$**.n');
+ json_extract 
+--------------
+ ["hello"]
+(1 row)
+
+select json_extract(json_build_object('a',1,'b',1.2,'c',true,'d',null,'e',json '{"x": 3, "y": [1,2,3]}'), '$.a');
+ json_extract 
+--------------
+ 1
+(1 row)
+
+select json_extract(json_build_array('a',1,'b',1.2,'c',true,'d',null,'e',json '{"x": 3, "y": [1,2,3]}'), '$[2]');
+ json_extract 
+--------------
+ "b"
+(1 row)
+
+create temp table test (
+    textjson json
+);
+insert into test values
+('{"a": {"b": 32, "c":"hello"}, "d": 0.3443}'),
+('["dog", "pig", {"a": "here"}]'),
+('["pig", "dog", {"a": "there"}]'),
+('{"a": "abc","b": {"b": "abc", "a": "abc"}}');
+select json_extract(textjson, '$.*.c') from test;
+ json_extract 
+--------------
+ ["hello"]
+ 
+ 
+ 
+(4 rows)
+
+select json_extract(textjson, '$**.a') from test;
+       json_extract        
+---------------------------
+ [{"b": 32, "c": "hello"}]
+ ["here"]
+ ["there"]
+ ["abc", "abc"]
+(4 rows)
+
+insert into test values
+(json_extract('{"a": 43, "b": {"c": true}}', '$.b'));
+select * from test;
+                  textjson                  
+--------------------------------------------
+ {"a": {"b": 32, "c":"hello"}, "d": 0.3443}
+ ["dog", "pig", {"a": "here"}]
+ ["pig", "dog", {"a": "there"}]
+ {"a": "abc","b": {"b": "abc", "a": "abc"}}
+ {"c": true}
+(5 rows)
+
+\c postgres
+drop database if exists test_extract;

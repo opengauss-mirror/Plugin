@@ -1,0 +1,188 @@
+drop database if exists test_cp;
+NOTICE:  database "test_cp" does not exist, skipping
+create database test_cp dbcompatibility 'b';
+\c test_cp
+select json_contains_path(null,'one','$[0]');
+ json_contains_path 
+--------------------
+ 
+(1 row)
+
+select json_contains_path('[1,2,3]',null,'$[0]');
+ json_contains_path 
+--------------------
+ 
+(1 row)
+
+select json_contains_path('[1,2,3]','one','$[0]','$[1]');
+ json_contains_path 
+--------------------
+ t
+(1 row)
+
+select json_contains_path('[1,2,3]','one',null,'$[0]','$[1]');
+ json_contains_path 
+--------------------
+ 
+(1 row)
+
+select json_contains_path('[1,2,3]','one','$[0]',null,'$[1]');
+ json_contains_path 
+--------------------
+ t
+(1 row)
+
+select json_contains_path('[1,2,3]','one','$[3]',null,'$[1]');
+ json_contains_path 
+--------------------
+ 
+(1 row)
+
+select json_contains_path('[1,2,3]','all',null,'$[0]','$[1]');
+ json_contains_path 
+--------------------
+ 
+(1 row)
+
+select json_contains_path('[1,2,3]','all','$[3]',null,'$[1]');
+ json_contains_path 
+--------------------
+ f
+(1 row)
+
+select json_contains_path('[1,2,3]','all','$[0]','$[1]');
+ json_contains_path 
+--------------------
+ t
+(1 row)
+
+select json_contains_path('{"a": 1, "b": 2}', 'one', '$.a' );
+ json_contains_path 
+--------------------
+ t
+(1 row)
+
+select json_contains_path('{"a": 1, "b": 2}', 'one', '$.c' );
+ json_contains_path 
+--------------------
+ f
+(1 row)
+
+select json_contains_path('{"!@#$%^&*() ": 1, "b": 2}', 'one', '$."!@#$%^&*() "' );
+ json_contains_path 
+--------------------
+ t
+(1 row)
+
+select json_contains_path('[0,1,2]','one','$[0]');
+ json_contains_path 
+--------------------
+ t
+(1 row)
+
+select json_contains_path('[0,1,2]','one','$[3]');
+ json_contains_path 
+--------------------
+ f
+(1 row)
+
+select json_contains_path('{"a": 1, "b": 2}', 'all', '$.a' );
+ json_contains_path 
+--------------------
+ t
+(1 row)
+
+select json_contains_path('{"a": 1, "b": 2}', 'all', '$.c' );
+ json_contains_path 
+--------------------
+ f
+(1 row)
+
+select json_contains_path('{"!@#$%^&*() ": 1, "b": 2}', 'all', '$."!@#$%^&*() "' );
+ json_contains_path 
+--------------------
+ t
+(1 row)
+
+select json_contains_path('[0,1,2]','all','$[0]');
+ json_contains_path 
+--------------------
+ t
+(1 row)
+
+select json_contains_path('[0,1,2]','all','$[3]');
+ json_contains_path 
+--------------------
+ f
+(1 row)
+
+select json_contains_path('{"a": 1, "b": 2, "c": {"d": 4}}', 'one', '$.a', '$.e');
+ json_contains_path 
+--------------------
+ t
+(1 row)
+
+select json_contains_path('{"a": 1, "b": 2, "c": {"d": 4}}', 'all', '$.a', '$.b','$."c".d');
+ json_contains_path 
+--------------------
+ t
+(1 row)
+
+select json_contains_path('{"a": 1, "b": 2, "c": {"d": [3,4,5]}}', 'one', '$.c.d[3]');
+ json_contains_path 
+--------------------
+ f
+(1 row)
+
+select json_contains_path('{"a": 1, "b": 2, "c": {"d": 4}}', 'all', '$.a.d');
+ json_contains_path 
+--------------------
+ f
+(1 row)
+
+select json_contains_path('{"a": 1, "b": 2, "c": {"d": 4}}', 'one', '$.');
+ json_contains_path 
+--------------------
+ f
+(1 row)
+
+select json_contains_path('{"a": 1, "b": 2, "c": {"d": 4}}', 'one', '$.a', '$.');
+ json_contains_path 
+--------------------
+ t
+(1 row)
+
+select json_contains_path('{"a": 1, "b": 2, "c": {"d": 4}}', 'one', '$.', '$.a');
+ json_contains_path 
+--------------------
+ t
+(1 row)
+
+select json_contains_path('[0,1,2]', 'one', '$[0]','$1]');
+ json_contains_path 
+--------------------
+ t
+(1 row)
+
+select json_contains_path('[0,1,2]', 'one', '$[0','$[1]');
+ERROR:  Invalid jsonpath expression
+CONTEXT:  referenced column: json_contains_path
+select json_contains_path('{"a": 1, "b": 2, "c": {"d": 4}}', 'all', '$.a', '$.b','$."c.d');
+ERROR:  Invalid jsonpath expression
+CONTEXT:  referenced column: json_contains_path
+create table json_contains_path_test (
+    target json,
+    mode text
+);
+insert into json_contains_path_test values('{"a": 1, "b": 2, "c": {"d": 4}}', 'one');
+insert into json_contains_path_test values('{"a": 1, "b": 2, "c": {"d": 4}}', 'all');
+select *, json_contains_path(target, mode, '$.a.d', '$.c.d') from json_contains_path_test;
+             target              | mode | json_contains_path 
+---------------------------------+------+--------------------
+ {"a": 1, "b": 2, "c": {"d": 4}} | one  | t
+ {"a": 1, "b": 2, "c": {"d": 4}} | all  | f
+(2 rows)
+
+drop table json_contains_path_test;
+\c postgres
+drop database if exists test_cp;

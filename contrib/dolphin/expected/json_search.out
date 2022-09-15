@@ -1,0 +1,821 @@
+drop database if exists test_search;
+NOTICE:  database "test_search" does not exist, skipping
+create database test_search dbcompatibility'B';
+\c test_search
+select json_search(null,null,null,null,null);	
+ json_search 
+-------------
+ 
+(1 row)
+
+select json_search('"null"','one','null',null,'$');	
+ json_search 
+-------------
+ "$"
+(1 row)
+
+select json_search('null','one','null','&','$');	
+ json_search 
+-------------
+ 
+(1 row)
+
+select json_search(null,'one','null','&','$');		
+ json_search 
+-------------
+ 
+(1 row)
+
+select json_search('"null',null,'null','&','$');	
+ERROR:  invalid input syntax for type json
+LINE 1: select json_search('"null',null,'null','&','$');
+                           ^
+DETAIL:  Token ""null" is invalid.
+CONTEXT:  JSON data, line 1: "null
+referenced column: json_search
+select json_search('null','one',null,'&','$');		
+ json_search 
+-------------
+ 
+(1 row)
+
+select json_search('"null"','one','null',null,'$');	
+ json_search 
+-------------
+ "$"
+(1 row)
+
+select json_search('"null"','one','null','&','$',null);
+ json_search 
+-------------
+ 
+(1 row)
+
+select json_search('"null"','one','null','&',null);	
+ json_search 
+-------------
+ 
+(1 row)
+
+select json_search(true,'one','true','&','$');		
+ERROR:  function json_search(boolean, unknown, unknown, unknown, unknown) does not exist
+LINE 1: select json_search(true,'one','true','&','$');
+               ^
+HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
+CONTEXT:  referenced column: json_search
+select json_search('"true"',true,'true','&','$');	
+ERROR:  function json_search(unknown, boolean, unknown, unknown, unknown) does not exist
+LINE 1: select json_search('"true"',true,'true','&','$');
+               ^
+HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
+CONTEXT:  referenced column: json_search
+select json_search('true','one',true,'&','$');
+ json_search 
+-------------
+ 
+(1 row)
+
+select json_search('"true"','one',true,'&','$');	
+ json_search 
+-------------
+ 
+(1 row)
+
+select json_search('"true"','one','true',true,'$');	
+ json_search 
+-------------
+ "$"
+(1 row)
+
+select json_search('"true"','one','true','&',true);	
+ERROR:  function json_search(unknown, unknown, unknown, unknown, boolean) does not exist
+LINE 1: select json_search('"true"','one','true','&',true);
+               ^
+HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
+CONTEXT:  referenced column: json_search
+select json_search('"1"','one',1,'&');
+ json_search 
+-------------
+ "$"
+(1 row)
+
+select json_search('"1.2"','one',1.2);
+ json_search 
+-------------
+ "$"
+(1 row)
+
+select json_search('1.2','one',1.2);
+ json_search 
+-------------
+ 
+(1 row)
+
+select json_search('"*"','one','1*');
+ json_search 
+-------------
+ 
+(1 row)
+
+select json_search('"*"','one','1.2*');	
+ json_search 
+-------------
+ 
+(1 row)
+
+select json_search('"true"','one','true');
+ json_search 
+-------------
+ "$"
+(1 row)
+
+select json_search('"1"','one','1');
+ json_search 
+-------------
+ "$"
+(1 row)
+
+select json_search('"abc"','one','abc');
+ json_search 
+-------------
+ "$"
+(1 row)
+
+select json_search('"abc"','one','"abc"');
+ json_search 
+-------------
+ 
+(1 row)
+
+select json_search('"abc"','one',abc);
+ERROR:  column "abc" does not exist
+LINE 1: select json_search('"abc"','one',abc);
+                                         ^
+CONTEXT:  referenced column: json_search
+select json_search('abc','one',abc);
+ERROR:  column "abc" does not exist
+LINE 1: select json_search('abc','one',abc);
+                                       ^
+CONTEXT:  referenced column: json_search
+select json_search(abc,'one',abc);
+ERROR:  column "abc" does not exist
+LINE 1: select json_search(abc,'one',abc);
+                           ^
+CONTEXT:  referenced column: json_search
+select json_search('"abc"','all','abc');
+ json_search 
+-------------
+ "$"
+(1 row)
+
+select json_search('"*"','all','*');
+ json_search 
+-------------
+ "$"
+(1 row)
+
+select json_search('"&*(%"','all','&*(%');
+ json_search 
+-------------
+ "$"
+(1 row)
+
+select json_search('"、——》。*“”"','all','、——》。*“”');
+ json_search 
+-------------
+ "$"
+(1 row)
+
+select json_search('"华为mate40"','all','华为mate40');
+ json_search 
+-------------
+ "$"
+(1 row)
+
+select json_search('"abc"','all','a_c');
+ json_search 
+-------------
+ "$"
+(1 row)
+
+select json_search('"abdc"','all','a_c');
+ json_search 
+-------------
+ 
+(1 row)
+
+select json_search('"abdc"','all','a__c');
+ json_search 
+-------------
+ "$"
+(1 row)
+
+select json_search('"abdc"','all','a%c');
+ json_search 
+-------------
+ "$"
+(1 row)
+
+select json_search('"*(%"','all','\*(%');
+ json_search 
+-------------
+ "$"
+(1 row)
+
+select json_search('"abc"','all','a\%c');
+ json_search 
+-------------
+ 
+(1 row)
+
+select json_search('"a%c"','all','a\%c');
+ json_search 
+-------------
+ "$"
+(1 row)
+
+select json_search('"a%c"','all','a&%c','&');
+ json_search 
+-------------
+ "$"
+(1 row)
+
+select json_search('"a%c"','all','a1%c','1');
+ json_search 
+-------------
+ "$"
+(1 row)
+
+select json_search('"a%c"','all','a1%c',1);
+ json_search 
+-------------
+ "$"
+(1 row)
+
+select json_search('"a%c"','all','a1%c',1.2);
+ERROR:  invalid escape string
+HINT:  Escape string must be empty or one character.
+CONTEXT:  referenced column: json_search
+select json_search('"a%c"','all','a1.2%c',1.2);
+ERROR:  invalid escape string
+HINT:  Escape string must be empty or one character.
+CONTEXT:  referenced column: json_search
+select json_search('"a%c"','all','aa%c',a);
+ERROR:  column "a" does not exist
+LINE 1: select json_search('"a%c"','all','aa%c',a);
+                                                ^
+CONTEXT:  referenced column: json_search
+select json_search('"a%c"','all','aa%c','a');
+ json_search 
+-------------
+ "$"
+(1 row)
+
+select json_search('"%c"','all','a%c','a');
+ json_search 
+-------------
+ "$"
+(1 row)
+
+select json_search('"a%c"','all','a&@%c','&@');
+ERROR:  invalid escape string
+HINT:  Escape string must be empty or one character.
+CONTEXT:  referenced column: json_search
+select json_search('"a%c"','one','a\%c',true);
+ json_search 
+-------------
+ "$"
+(1 row)
+
+select json_search('"a%c"','one','a\%c',false);
+ json_search 
+-------------
+ "$"
+(1 row)
+
+select json_search('{"a":"abc"}','one','abc');
+ json_search 
+-------------
+ "$.a"
+(1 row)
+
+select json_search('{"[1].a":"abc"}','one','abc');
+ json_search 
+-------------
+ "$.[1].a"
+(1 row)
+
+select json_search('{"a":1}','one',1);
+ json_search 
+-------------
+ 
+(1 row)
+
+select json_search('{"a":"1"}','one',1);
+ json_search 
+-------------
+ "$.a"
+(1 row)
+
+select json_search('{"a":"1"}','one','1');
+ json_search 
+-------------
+ "$.a"
+(1 row)
+
+select json_search('{"a":1}','one','1');
+ json_search 
+-------------
+ 
+(1 row)
+
+select json_search('{"":"abc"}','one','abc');
+ json_search 
+-------------
+ "$."
+(1 row)
+
+select json_search('{" ":"abc"}','one','abc');
+ json_search 
+-------------
+ "$. "
+(1 row)
+
+select json_search('{"a":"abc"}','all','abc');
+ json_search 
+-------------
+ "$.a"
+(1 row)
+
+select json_search('{"a":"abc"}','all','ab');
+ json_search 
+-------------
+ 
+(1 row)
+
+select json_search('{"a":"阿斯蒂芬"}','all','阿斯蒂芬');
+ json_search 
+-------------
+ "$.a"
+(1 row)
+
+select json_search('{"abc":"abc"}','one','abc');
+ json_search 
+-------------
+ "$.abc"
+(1 row)
+
+select json_search('{"a c":"abc"}','one','abc');
+ json_search 
+-------------
+ "$.a c"
+(1 row)
+
+select json_search('{"a.c":"abc"}','one','abc');
+ json_search 
+-------------
+ "$.a.c"
+(1 row)
+
+select json_search('{"a[]c":"abc"}','one','abc');
+ json_search 
+-------------
+ "$.a[]c"
+(1 row)
+
+select json_search('{"0":"abc"}','one','abc');
+ json_search 
+-------------
+ "$.0"
+(1 row)
+
+select json_search('{"a":"abc","b":"bcd"}','all','abc');
+ json_search 
+-------------
+ "$.a"
+(1 row)
+
+select json_search('{"a":"abc","a":"abc"}','all','abc');
+ json_search 
+-------------
+ "$.a"
+(1 row)
+
+select json_search('{"a":"abc","a":"abc"}','one','abc');
+ json_search 
+-------------
+ "$.a"
+(1 row)
+
+select json_search('{"a":"abc","b":"bcd"}','one','bcd');
+ json_search 
+-------------
+ "$.b"
+(1 row)
+
+select json_search('{"a":"abc","b":"abc"}','all','abc');
+  json_search  
+---------------
+ ["$.a","$.b"]
+(1 row)
+
+select json_search('{"a":"abc","b":"abc","c","abc"}','all','abc');
+ERROR:  invalid input syntax for type json
+LINE 1: select json_search('{"a":"abc","b":"abc","c","abc"}','all','...
+                           ^
+DETAIL:  Expected ":", but found ",".
+CONTEXT:  JSON data, line 1: {"a":"abc","b":"abc","c",...
+referenced column: json_search
+select json_search('["a":"abc"]','one','abc');
+ERROR:  invalid input syntax for type json
+LINE 1: select json_search('["a":"abc"]','one','abc');
+                           ^
+DETAIL:  Expected "," or "]", but found ":".
+CONTEXT:  JSON data, line 1: ["a":...
+referenced column: json_search
+select json_search('["a","abc"]','one','abc');
+ json_search 
+-------------
+ "$[1]"
+(1 row)
+
+select json_search('[1,"abc"]','one','1');
+ json_search 
+-------------
+ 
+(1 row)
+
+select json_search('[1,"abc"]','one',1);
+ json_search 
+-------------
+ 
+(1 row)
+
+select json_search('["1","abc"]','one','1');
+ json_search 
+-------------
+ "$[0]"
+(1 row)
+
+select json_search('["1","abc"]','one',1);
+ json_search 
+-------------
+ "$[0]"
+(1 row)
+
+select json_search('[" ","abc"]','one',' ');
+ json_search 
+-------------
+ "$[0]"
+(1 row)
+
+select json_search('[" ","abc"]','one',' ');
+ json_search 
+-------------
+ "$[0]"
+(1 row)
+
+select json_search('[" ","abc"]','one'," ");
+ERROR:  column " " does not exist
+LINE 1: select json_search('[" ","abc"]','one'," ");
+                                               ^
+CONTEXT:  referenced column: json_search
+select json_search('["","abc"]','one','');
+ json_search 
+-------------
+ "$[0]"
+(1 row)
+
+select json_search('["","abc"]','one','');
+ json_search 
+-------------
+ "$[0]"
+(1 row)
+
+select json_search('["abc","abc","abc"]','one','abc');
+ json_search 
+-------------
+ "$[0]"
+(1 row)
+
+select json_search('["abc","abc","abc"]','one','abc');
+ json_search 
+-------------
+ "$[0]"
+(1 row)
+
+select json_search('{"a":["abc","bcd"],"b":"bcd"}','all','bcd');
+   json_search    
+------------------
+ ["$.a[1]","$.b"]
+(1 row)
+
+select json_search('[{"a":"abc"},"bcd"]','one','abc',null);
+ json_search 
+-------------
+ "$[0].a"
+(1 row)
+
+select json_search('[{"a":"abc"},"bcd"]','one','ab',null);
+ json_search 
+-------------
+ 
+(1 row)
+
+select json_search('{"a":{"b":"abc"}}','all','abc',null);
+ json_search 
+-------------
+ "$.a.b"
+(1 row)
+
+select json_search('{"a":{"b":["abc"]}}','all','abc',null);
+ json_search 
+-------------
+ "$.a.b[0]"
+(1 row)
+
+select json_search('{"a":{"b":["abc","abc"]}}','all','abc',null);
+       json_search       
+-------------------------
+ ["$.a.b[0]","$.a.b[1]"]
+(1 row)
+
+select json_search('{"a":[{"b":["abc","abc"]}]}','all','abc',null);
+          json_search          
+-------------------------------
+ ["$.a[0].b[0]","$.a[0].b[1]"]
+(1 row)
+
+select json_search('{"a":[{"b":["abc","abc"]},"ced"]}','all','abc',null);
+          json_search          
+-------------------------------
+ ["$.a[0].b[0]","$.a[0].b[1]"]
+(1 row)
+
+select json_search('{"a":[{"b":["abc","abc"]},"ced"],"c":["efg","hij"]}','all','abc',null);
+          json_search          
+-------------------------------
+ ["$.a[0].b[0]","$.a[0].b[1]"]
+(1 row)
+
+select json_search('{"a":[{"b":["abc","abc"]},"ced"],"c":["efg","hij"]}','all','abc',null);
+          json_search          
+-------------------------------
+ ["$.a[0].b[0]","$.a[0].b[1]"]
+(1 row)
+
+select json_search('abc','one','abc',null,'$');
+ERROR:  invalid input syntax for type json
+LINE 1: select json_search('abc','one','abc',null,'$');
+                           ^
+DETAIL:  Token "abc" is invalid.
+CONTEXT:  JSON data, line 1: abc
+referenced column: json_search
+select json_search('"abc"','one','abc',null,'*');
+ERROR:  invalid JSON path expression
+CONTEXT:  referenced column: json_search
+select json_search('"abc"','one','abc',null,'$.1');
+ERROR:  invalid JSON path expression
+CONTEXT:  referenced column: json_search
+select json_search('{"0":"abc"}','one','abc','$.0');
+ERROR:  invalid escape string
+HINT:  Escape string must be empty or one character.
+CONTEXT:  referenced column: json_search
+select json_search('"abc"','one','abc',null,'$[a]');
+ERROR:  invalid JSON path expression
+CONTEXT:  referenced column: json_search
+select json_search('"abc"','one','abc',null,'$[a');
+ERROR:  invalid JSON path expression
+CONTEXT:  referenced column: json_search
+select json_search('"abc"','one','abc',null,'$[a');
+ERROR:  invalid JSON path expression
+CONTEXT:  referenced column: json_search
+select json_search('"abc"','one','abc',null,'$.');
+ERROR:  cannot call function with empty path elements
+CONTEXT:  referenced column: json_search
+select json_search('{"":"abc"}','one','abc',NULL,'$.');
+ERROR:  cannot call function with empty path elements
+CONTEXT:  referenced column: json_search
+select json_search('{" ":"abc"}','one','abc',NULL,'$. ');
+ERROR:  cannot call function with empty path elements
+CONTEXT:  referenced column: json_search
+select json_search('[{"a":"abc"},"bcd"]','one','abc',null,'$');
+ json_search 
+-------------
+ "$[0].a"
+(1 row)
+
+select json_search('{"a":"abc","b":"abc"}','all','abc',null,'$');
+  json_search  
+---------------
+ ["$.a","$.b"]
+(1 row)
+
+select json_search('{"a":["abc","bcd"],"b":"bcd"}','all','bcd',null,'$.b','$','$.a');
+   json_search    
+------------------
+ ["$.b","$.a[1]"]
+(1 row)
+
+select json_search('{"abc":["abc","bcd"],"abc":"bcd"}','all','bcd',null,'$.abc','$','$[1]');
+ json_search 
+-------------
+ "$.abc"
+(1 row)
+
+select json_search('{"a":["abc","bcd"],"b":"bcd"}','one','bcd',null,'$.*');
+ json_search 
+-------------
+ "$.a[1]"
+(1 row)
+
+select json_search('{"a":["abc","bcd"],"b":"bcd"}','one','bcd',null,'$[*]');
+ERROR:  invalid JSON path expression
+CONTEXT:  referenced column: json_search
+select json_search('{"a":["abc","bcd"],"b":"bcd"}','one','bcd',null,'$.a[*]');
+ERROR:  invalid JSON path expression
+CONTEXT:  referenced column: json_search
+select json_search('{"a":["abc","bcd"],"b":"bcd"}','one','bcd',null,'$.a[**]');
+ERROR:  invalid JSON path expression
+CONTEXT:  referenced column: json_search
+select json_search('["abc","bcd"]','one','bcd',null,'$[*]');
+ERROR:  invalid JSON path expression
+CONTEXT:  referenced column: json_search
+select json_search('["abc","bcd"]','one','bcd',null,'$**[1]');
+ json_search 
+-------------
+ "$[1]"
+(1 row)
+
+select json_search('["abc","bcd"]','one','bcd',null,'$**[2]');
+ json_search 
+-------------
+ 
+(1 row)
+
+select json_search('["abc","bcd"]','one','bcd',null,'$***[2]');
+ERROR:  invalid JSON path expression
+CONTEXT:  referenced column: json_search
+select json_search('[{"a":"abc"},"bcd"]','one','bcd',null,'$**.a');
+ json_search 
+-------------
+ 
+(1 row)
+
+select json_search('[{"a":"abc"},"bcd"]','all','bcd',null,'$**.a');
+ json_search 
+-------------
+ 
+(1 row)
+
+select json_search('[{"a":"abc"},"bcd"]','all','abc',null,'$**.a');
+ json_search 
+-------------
+ "$[0].a"
+(1 row)
+
+select json_search('[{"a":"abc"},"bcd"]','one','bcd',null,'$**.a[*]');
+ERROR:  invalid JSON path expression
+CONTEXT:  referenced column: json_search
+select json_search('[{"a":"abc"},"bcd"]','one','bcd',null,'$**a[*]');
+ERROR:  invalid JSON path expression
+CONTEXT:  referenced column: json_search
+select json_search('{"a":["abc","bcd"],"b":"bcd"}','one','bcd',null,'$**[1]');
+ json_search 
+-------------
+ "$.a[1]"
+(1 row)
+
+select json_search('[{"a":"abc"},{"a":"abc"}]','one','abc',null,'$**.a');
+ json_search 
+-------------
+ "$[0].a"
+(1 row)
+
+select json_search('[{"a":"abc"},{"a":"abc"}]','all','abc',null,'$**.a');
+     json_search     
+---------------------
+ ["$[0].a","$[1].a"]
+(1 row)
+
+select json_search('[{"a":"abc"},{"a":"abc"}]','all','abc',null,'$**.b');
+ json_search 
+-------------
+ 
+(1 row)
+
+select json_search('{"a":[{"b":["abc","bcd"]},"ced"],"c":["efg","hij"]}','all','abc',null,'$');
+  json_search  
+---------------
+ "$.a[0].b[0]"
+(1 row)
+
+select json_search('{"a":[{"b":["abc","bcd"]},"ced"],"c":["efg","hij"]}','all','abc','b','$');
+ json_search 
+-------------
+ 
+(1 row)
+
+select json_search('{"a":[{"b":["abc","abc"]},"ced"],"c":["efg","hij"]}','all','abc',null,'$**[1]');
+  json_search  
+---------------
+ "$.a[0].b[1]"
+(1 row)
+
+select json_search('{"a":[{"b":["abc","abc"]},"ced"],"c":["efg","hij"]}','all','abc',null,'$.*[*]');
+ERROR:  invalid JSON path expression
+CONTEXT:  referenced column: json_search
+select json_search('{"a":[{"b":["abc","abc"]},"ced"],"c":["efg","hij"]}','all','abc',null,'$**.*[*].*[*]');
+ERROR:  invalid JSON path expression
+CONTEXT:  referenced column: json_search
+select json_search('{"a":[{"b":["abc","abc"]},"ced"],"c":["efg","hij"]}','all','abc',null,'$**.*[*].*[*].*');
+ERROR:  invalid JSON path expression
+CONTEXT:  referenced column: json_search
+select json_search('{"a":[{"b":["abc","abc"]},"ced"],"c":["efg","hij"]}','all','abc',null,'$**.*[*].*[*].*','$**.*[*].*[*]');
+ERROR:  invalid JSON path expression
+CONTEXT:  referenced column: json_search
+select json_search('{"a":[{"b":["abc","abc"]},"ced"],"c":["efg","hij"]}','all','abc',null,'$**.*[*].*[*].*','$.');
+ERROR:  invalid JSON path expression
+CONTEXT:  referenced column: json_search
+create table student(name VARCHAR(20) PRIMARY KEY);
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "student_pkey" for table "student"
+insert into student (name) value(json_search('{"a":[{"b":["abc","abc"]},"ced"],"c":["efg","hij"]}','all','abc',null,'$**[1]'));
+select name from student;
+     name      
+---------------
+ "$.a[0].b[1]"
+(1 row)
+
+drop table student;
+create table json_search_test (
+    doc json
+);
+create table c (
+    doc json);
+insert into c values('{"a":"abc"}');
+select json_search(doc,'one','abc') from c;
+ json_search 
+-------------
+ "$.a"
+(1 row)
+
+drop table a;
+ERROR:  table "a" does not exist
+create temp table test (
+    doc json
+);
+insert into test values
+('{"a": {"b": 32, "c":"hello"}, "d": 0.3443}'),
+('["dog", "pig", {"a": "here"}]'),
+('["pig", "dog", {"a": "there"}]'),
+('{"a": "abc","b": {"b": "abc", "a": "abc"}}');
+select *,json_search(doc, 'one','hello',NULL,'$**.c') from test;
+                    doc                     | json_search 
+--------------------------------------------+-------------
+ {"a": {"b": 32, "c":"hello"}, "d": 0.3443} | "$.a.c"
+ ["dog", "pig", {"a": "here"}]              | 
+ ["pig", "dog", {"a": "there"}]             | 
+ {"a": "abc","b": {"b": "abc", "a": "abc"}} | 
+(4 rows)
+
+create temp table test1 (
+    doc json,
+    one_or_all text,
+    path text
+);
+insert into test1 values
+('{"a": {"b": 32, "c":"hello"}, "d": 0.3443}','one','$**.c'),
+('["dog", "pig", {"a": "here"}]','one','$'),
+('["pig", "there", {"a": "there"}]','all','$'),
+('{"a": "abc","b": {"b": "abc", "a": "abc"}}','all','$**.a');
+select *,json_search(doc, one_or_all,'abc',NULL,path) from test1;
+                    doc                     | one_or_all | path  |   json_search   
+--------------------------------------------+------------+-------+-----------------
+ {"a": {"b": 32, "c":"hello"}, "d": 0.3443} | one        | $**.c | 
+ ["dog", "pig", {"a": "here"}]              | one        | $     | 
+ ["pig", "there", {"a": "there"}]           | all        | $     | 
+ {"a": "abc","b": {"b": "abc", "a": "abc"}} | all        | $**.a | ["$.a","$.b.a"]
+(4 rows)
+
+insert into json_search_test values
+('{"a":[{"d":["abc","bcd"]},"ced"],"c":["efg","hij"]}'),
+('["abc","bcd"]'),
+('"abc"'),
+('{"a":"阿斯蒂芬"}'),
+('[" ","abc"]');
+insert into json_search_test values
+(json_search('{"a": 43, "b": {"c": "true"}}', 'one','true',NULL,'$.b'));
+select * from json_search_test;
+                         doc                         
+-----------------------------------------------------
+ {"a":[{"d":["abc","bcd"]},"ced"],"c":["efg","hij"]}
+ ["abc","bcd"]
+ "abc"
+ {"a":"阿斯蒂芬"}
+ [" ","abc"]
+ "$.b.c"
+(6 rows)
+
+drop table json_search_test;
+\c postgres
+drop database test_search;

@@ -1,0 +1,149 @@
+drop database if exists test1;
+NOTICE:  database "test1" does not exist, skipping
+create database test1 dbcompatibility'B';
+\c test1
+SELECT JSON_KEYS('{"a":"t1"}');
+ json_keys 
+-----------
+ ["a"]
+(1 row)
+
+SELECT JSON_KEYS('{"a":"t1","b":"t2"}');
+ json_keys 
+-----------
+ ["a","b"]
+(1 row)
+
+SELECT JSON_KEYS('{"a":12}');
+ json_keys 
+-----------
+ ["a"]
+(1 row)
+
+SELECT JSON_KEYS('{"a":12,"b":34}');
+ json_keys 
+-----------
+ ["a","b"]
+(1 row)
+
+SELECT JSON_KEYS('{"a":123,"b":{"c":"qwe"}}');
+ json_keys 
+-----------
+ ["a","b"]
+(1 row)
+
+SELECT JSON_KEYS('{"电子科技大学":123}');
+    json_keys     
+------------------
+ ["电子科技大学"]
+(1 row)
+
+SELECT JSON_KEYS('{efguewfioegwgf}');
+ERROR:  invalid input syntax for type json
+DETAIL:  Token "efguewfioegwgf" is invalid.
+CONTEXT:  JSON data, line 1: {efguewfioegwgf...
+referenced column: json_keys
+SELECT JSON_KEYS('');
+ERROR:  invalid input syntax for type json
+DETAIL:  The input string ended unexpectedly.
+CONTEXT:  JSON data, line 1: 
+referenced column: json_keys
+SELECT JSON_KEYS();
+ERROR:  function json_keys() does not exist
+LINE 1: SELECT JSON_KEYS();
+               ^
+HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
+CONTEXT:  referenced column: json_keys
+SELECT JSON_KEYS(NULL);
+ json_keys 
+-----------
+ 
+(1 row)
+
+SELECT JSON_KEYS('{"a":123,"b":{"c":"qwe"}}',NULL);
+ json_keys 
+-----------
+ 
+(1 row)
+
+SELECT JSON_KEYS(NULL,'$[0]');
+ json_keys 
+-----------
+ 
+(1 row)
+
+SELECT JSON_KEYS('{}');
+ json_keys 
+-----------
+ []
+(1 row)
+
+SELECT JSON_KEYS('[]');
+ json_keys 
+-----------
+ 
+(1 row)
+
+SELECT JSON_KEYS('[1,2,3,4]');
+ json_keys 
+-----------
+ 
+(1 row)
+
+SELECT JSON_KEYS('[1,2,[114,514],4]','$[2]');
+ json_keys 
+-----------
+ 
+(1 row)
+
+SELECT JSON_KEYS(true);
+ERROR:  function json_keys(boolean) does not exist
+LINE 1: SELECT JSON_KEYS(true);
+               ^
+HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
+CONTEXT:  referenced column: json_keys
+SELECT JSON_KEYS(true,false);
+ERROR:  function json_keys(boolean, boolean) does not exist
+LINE 1: SELECT JSON_KEYS(true,false);
+               ^
+HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
+CONTEXT:  referenced column: json_keys
+SELECT JSON_KEYS('{"a":1,"b":{"c":2}}','$.b');
+ json_keys 
+-----------
+ ["c"]
+(1 row)
+
+SELECT JSON_KEYS('{"a":1,"b":{"c":{"d":114},"d":514}}','$.b.c');
+ json_keys 
+-----------
+ ["d"]
+(1 row)
+
+SELECT JSON_KEYS('[1,2,{"a":1,"b":{"c":2}},4]','$[2]');
+ json_keys 
+-----------
+ ["a","b"]
+(1 row)
+
+SELECT JSON_KEYS('{"a":1,"b":{"c":2}}','$.z');
+ json_keys 
+-----------
+ 
+(1 row)
+
+SELECT JSON_KEYS('[1,2,{"a":1,"b":{"c":2}},4]','$[8]');
+ json_keys 
+-----------
+ 
+(1 row)
+
+create table student(name VARCHAR(20) PRIMARY KEY);
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "student_pkey" for table "student"
+insert into student (name) value(json_keys('{"a":123,"b":{"c":"qwe"}}'));
+select name from student;
+   name    
+-----------
+ ["a","b"]
+(1 row)
+

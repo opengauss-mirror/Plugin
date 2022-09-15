@@ -1038,7 +1038,7 @@ static bool DolphinObjNameCmp(const char* s1, const char* s2, bool is_quoted);
 	CURRENT_TIME CURTIME CURRENT_TIMESTAMP CURRENT_USER CURSOR CYCLE NOW_FUNC
 	SHRINK
 
-	DATA_P DATABASE DATABASES DATAFILE DATANODE DATANODES DATATYPE_CL DATE_P DATETIME DATE_FORMAT_P DAY_P  DAYOFMONTH DAYOFWEEK DAYOFYEAR DBCOMPATIBILITY_P DB_B_FORMAT DEALLOCATE DEC DECIMAL_P DECLARE DECODE DEFAULT DEFAULTS
+	DATA_P DATABASE DATABASES DATAFILE DATANODE DATANODES DATATYPE_CL DATE_P DATETIME DATE_FORMAT_P DAY_P  DAYOFMONTH DAYOFWEEK DAYOFYEAR DBCOMPATIBILITY_P DB_B_FORMAT DB_B_JSOBJ DEALLOCATE DEC DECIMAL_P DECLARE DECODE DEFAULT DEFAULTS
 	DEFERRABLE DEFERRED DEFINER DELAYED DELETE_P DELIMITER DELIMITERS DELTA DELTAMERGE DESC DESCRIBE DETERMINISTIC DIV
 /* PGXC_BEGIN */
 	DICTIONARY DIRECT DIRECTORY DISABLE_P DISCARD DISTINCT DISTINCTROW DISTRIBUTE DISTRIBUTION DO DOCUMENT_P DOMAIN_P DOUBLE_P
@@ -27575,6 +27575,46 @@ func_expr_common_subexpr:
 					n->call_func = false;
 					$$ = (Node *)n;
 				}
+			| DB_B_JSOBJ '(' func_arg_list ')'
+				{
+					FuncCall *n = makeNode(FuncCall);
+					if (GetSessionContext()->enableBCmptMode) {
+						n->funcname = SystemFuncName("json_object_mysql");
+						n->colname = "json_object";
+					}
+					else {
+						n->funcname = SystemFuncName("json_object");
+					}
+					n->args = $3;
+					n->agg_order = NIL;
+					n->agg_star = FALSE;
+					n->agg_distinct = FALSE;
+					n->func_variadic = FALSE;
+					n->over = NULL;
+					n->location = @1;
+					n->call_func = false;
+					$$ = (Node *)n;
+				}
+			| DB_B_JSOBJ '(' ')'
+				{
+					FuncCall *n = makeNode(FuncCall);
+					if (GetSessionContext()->enableBCmptMode) {
+						n->funcname = SystemFuncName("json_object_noarg");
+						n->colname = "json_object";
+					}
+					else {
+						n->funcname = SystemFuncName("json_object");
+					}
+					n->args = NIL;
+					n->agg_order = NIL;
+					n->agg_star = FALSE;
+					n->agg_distinct = FALSE;
+					n->func_variadic = FALSE;
+					n->over = NULL;
+					n->location = @1;
+					n->call_func = false;
+					$$ = (Node *)n;
+				}
 			| SESSION_USER
 				{
 					FuncCall *n = makeNode(FuncCall);
@@ -30192,6 +30232,7 @@ col_name_keyword:
 			| DAYOFWEEK
 			| DAYOFYEAR
 			| DB_B_FORMAT
+			| DB_B_JSOBJ
 			| EXTRACT
 			| GREATEST
 			| HOUR_P

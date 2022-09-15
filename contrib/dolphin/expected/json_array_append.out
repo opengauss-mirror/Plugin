@@ -1,0 +1,188 @@
+drop database if exists test2;
+NOTICE:  database "test2" does not exist, skipping
+create database test2 dbcompatibility'B';
+\c test2
+select JSON_ARRAY_APPEND('[1, [2, 3]]', '$[1]', 4);
+ json_array_append 
+-------------------
+ [1, [2, 3, 4]]
+(1 row)
+
+select JSON_ARRAY_APPEND('[1, [2, 3]]', '$[0]', 4);
+ json_array_append 
+-------------------
+ [[1, 4], [2, 3]]
+(1 row)
+
+select JSON_ARRAY_APPEND('[1, [2, 3]]', '$[1][0]', 4);
+ json_array_append 
+-------------------
+ [1, [[2, 4], 3]]
+(1 row)
+
+select JSON_ARRAY_APPEND('{"name": "Tim", "hobby": ["car"]}', '$.hobby', 'food');
+             json_array_append             
+-------------------------------------------
+ {"name": "Tim", "hobby": ["car", "food"]}
+(1 row)
+
+select JSON_ARRAY_APPEND('{"name": "Tim", "hobby": ["car"]}', '$.name', 'food');
+              json_array_append              
+---------------------------------------------
+ {"name": ["Tim", "food"], "hobby": ["car"]}
+(1 row)
+
+select JSON_ARRAY_APPEND('{"name": "Tim", "hobby": ["car"]}', '$.hobby[0]', 'food');
+              json_array_append              
+---------------------------------------------
+ {"name": "Tim", "hobby": [["car", "food"]]}
+(1 row)
+
+select JSON_ARRAY_APPEND('[1, 2]', '$[1]', 3);
+ json_array_append 
+-------------------
+ [1, [2, 3]]
+(1 row)
+
+select JSON_ARRAY_APPEND('[1, 2]', '$[0]', 3);
+ json_array_append 
+-------------------
+ [[1, 3], 2]
+(1 row)
+
+select JSON_ARRAY_APPEND('[1, 2]', '$[1]', 4);
+ json_array_append 
+-------------------
+ [1, [2, 4]]
+(1 row)
+
+select JSON_ARRAY_APPEND('{"name": "Tim", "hobby": "car"}', '$.hobby', 'food');
+             json_array_append             
+-------------------------------------------
+ {"name": "Tim", "hobby": ["car", "food"]}
+(1 row)
+
+select JSON_ARRAY_APPEND('{"name": "Tim", "hobby": "car"}', '$.name', 'food');
+             json_array_append             
+-------------------------------------------
+ {"name": ["Tim", "food"], "hobby": "car"}
+(1 row)
+
+select JSON_ARRAY_APPEND('{"name": "Tim", "hobby": "car"}', '$.hobby', 'drink');
+             json_array_append              
+--------------------------------------------
+ {"name": "Tim", "hobby": ["car", "drink"]}
+(1 row)
+
+select JSON_ARRAY_APPEND(null, '$[1]', 4);
+ json_array_append 
+-------------------
+ 
+(1 row)
+
+select JSON_ARRAY_APPEND('[1, [2, 3]]', null, 4);
+ json_array_append 
+-------------------
+ 
+(1 row)
+
+select JSON_ARRAY_APPEND('[1, [2, 3]]', '$', 4);
+ json_array_append 
+-------------------
+ [1, [2, 3], 4]
+(1 row)
+
+select JSON_ARRAY_APPEND('[1, [2, 3]]', '$[3]', 4);
+ json_array_append 
+-------------------
+ [1, [2, 3]]
+(1 row)
+
+select JSON_ARRAY_APPEND(null, '$.hobby', 'food');
+ json_array_append 
+-------------------
+ 
+(1 row)
+
+select JSON_ARRAY_APPEND('{"name": "Tim", "hobby": ["car"]}', null, 'food');
+ json_array_append 
+-------------------
+ 
+(1 row)
+
+select JSON_ARRAY_APPEND('{"name": "Tim", "hobby": ["car"]}', '$.car', 'food');
+         json_array_append         
+-----------------------------------
+ {"name": "Tim", "hobby": ["car"]}
+(1 row)
+
+select JSON_ARRAY_APPEND('{"name": "Tim", "hobby": ["car"]}', '$', 'food');
+              json_array_append              
+---------------------------------------------
+ [{"name": "Tim", "hobby": ["car"]}, "food"]
+(1 row)
+
+select JSON_ARRAY_APPEND('[1, [2, 3]]', '$[1]', 4, '$[1]', 5);
+ json_array_append 
+-------------------
+ [1, [2, 3, 4, 5]]
+(1 row)
+
+select JSON_ARRAY_APPEND('[1, [2, 3]]', '$[1]', null);
+ json_array_append 
+-------------------
+ 
+(1 row)
+
+select JSON_ARRAY_APPEND('[1, [2, 3]]', '$[1]', true);
+ json_array_append 
+-------------------
+ [1, [2, 3, true]]
+(1 row)
+
+select JSON_ARRAY_APPEND('[1, [2, 3]]', '$[1]', '');
+ json_array_append 
+-------------------
+ [1, [2, 3, ""]]
+(1 row)
+
+select JSON_ARRAY_APPEND('[1, [2, 3]]', '$[1]', json '{"x": 3, "y": [1,2,3]}');
+          json_array_append          
+-------------------------------------
+ [1, [2, 3, {"x": 3, "y": [1,2,3]}]]
+(1 row)
+
+select JSON_ARRAY_APPEND('[1, [2, 3]]', '$[1]', 1.2);
+ json_array_append 
+-------------------
+ [1, [2, 3, 1.2]]
+(1 row)
+
+select JSON_ARRAY_APPEND('[1, [2, 3]]', '[1]', 4);
+ERROR:  invalid JSON path expression
+CONTEXT:  referenced column: json_array_append
+select JSON_ARRAY_APPEND('[1, [2, 3]]', '$[]', 4);
+ERROR:  invalid JSON path expression
+CONTEXT:  referenced column: json_array_append
+select JSON_ARRAY_APPEND('[1, [2, 3]]', '$[1', 4);
+ERROR:  invalid JSON path expression
+CONTEXT:  referenced column: json_array_append
+select JSON_ARRAY_APPEND('[1, [2, 3]]', '$.1', 4);
+ERROR:  invalid JSON path expression
+CONTEXT:  referenced column: json_array_append
+select JSON_ARRAY_APPEND('[1, [2, 3]]', '$..1', 4);
+ERROR:  invalid JSON path expression
+CONTEXT:  referenced column: json_array_append
+select JSON_ARRAY_APPEND('[1, [2, 3]]', '$[*]', 4);
+ERROR:  invalid JSON path expression
+CONTEXT:  referenced column: json_array_append
+select JSON_ARRAY_APPEND('[1, [2, 3]]', '$[*]', 日);
+ERROR:  column "日" does not exist
+LINE 1: select JSON_ARRAY_APPEND('[1, [2, 3]]', '$[*]', 日);
+                                                        ^
+CONTEXT:  referenced column: json_array_append
+select JSON_ARRAY_APPEND('[1, [2, 3]]', ' ', 4);
+ERROR:  invalid JSON path expression
+CONTEXT:  referenced column: json_array_append
+\c postgres
+DROP DATABASE test2;
