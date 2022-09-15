@@ -108,6 +108,7 @@ alter table test_part1 analyze partition p0,p1;
 alter table test_part1 analyze partition all;
 alter table test_subpart analyze partition p0,p1;
 alter table test_subpart analyze partition all;
+alter table test_subpart analyze partition perror;
 --test opengauss analyze partition syntax
 analyze test_part1 partition (p1);
 analyze test_subpart partition (p1);
