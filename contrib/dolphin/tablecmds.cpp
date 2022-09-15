@@ -28698,6 +28698,8 @@ void ExecRemovePartition(Oid relid, char* tableName)
         ereport(ERROR, (errcode(ERRCODE_PARTITION_ERROR), errmsg("The table %s is not an ordinary table", tableName)));
     if (!RelationIsPartitioned(rel))
         ereport(ERROR, (errcode(ERRCODE_PARTITION_ERROR), errmsg("The table %s is not partition table", tableName)));
+    if (rel->storage_type == SEGMENT_PAGE)
+        ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("The segment table %s is not supported", tableName)));
     if (RelationIsSubPartitioned(rel)) {
         partList = RelationGetSubPartitionList(rel, ExclusiveLock);
     } else {
