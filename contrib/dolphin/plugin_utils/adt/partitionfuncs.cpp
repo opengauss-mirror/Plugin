@@ -267,6 +267,8 @@ List* GetSubpartitionNameList(List* subpartNameList, char* tableName, char* part
     if (RelationIsSubPartitioned(rel)) {
         char objectType = PART_OBJ_TYPE_TABLE_PARTITION;
         Oid partOid = partitionNameGetPartitionOid(relid, partName, objectType, AccessExclusiveLock, true, false, NULL, NULL, NoLock);
+        if (!OidIsValid(partOid))
+            ereport(ERROR, (errcode(ERRCODE_PARTITION_ERROR), errmsg("The partition %s can't be found in table %s", partName, tableName)));
         Partition part = partitionOpen(rel, partOid, AccessExclusiveLock);
         Relation partRel = partitionGetRelation(rel, part);
         List* subPartOidList = relationGetPartitionOidList(partRel);
