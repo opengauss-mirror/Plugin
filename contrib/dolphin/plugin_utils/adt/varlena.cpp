@@ -75,6 +75,7 @@
 #endif
 static int getResultPostionReverse(text* textStr, text* textStrToSearch, int32 beginIndex, int occurTimes);
 static int getResultPostion(text* textStr, text* textStrToSearch, int32 beginIndex, int occurTimes);
+static long convert_bit_to_int (PG_FUNCTION_ARGS, int idx);
 
 static int get_step_len(unsigned char ch);
 
@@ -229,6 +230,9 @@ extern "C" DLL_PUBLIC Datum elt_integer(PG_FUNCTION_ARGS);
 PG_FUNCTION_INFO_V1_PUBLIC(elt_string);
 extern "C" DLL_PUBLIC Datum elt_string(PG_FUNCTION_ARGS);
 
+PG_FUNCTION_INFO_V1_PUBLIC(elt_bit);
+extern "C" DLL_PUBLIC Datum elt_bit(PG_FUNCTION_ARGS);
+
 PG_FUNCTION_INFO_V1_PUBLIC(field);
 extern "C" DLL_PUBLIC Datum field(PG_FUNCTION_ARGS);
 
@@ -244,11 +248,17 @@ extern "C" DLL_PUBLIC Datum soundex(PG_FUNCTION_ARGS);
 PG_FUNCTION_INFO_V1_PUBLIC(soundex_bool);
 extern "C" DLL_PUBLIC Datum soundex_bool(PG_FUNCTION_ARGS);
 
+PG_FUNCTION_INFO_V1_PUBLIC(soundex_bit);
+extern "C" DLL_PUBLIC Datum soundex_bit(PG_FUNCTION_ARGS);
+
 PG_FUNCTION_INFO_V1_PUBLIC(space_integer);
 extern "C" DLL_PUBLIC Datum space_integer(PG_FUNCTION_ARGS);
 
 PG_FUNCTION_INFO_V1_PUBLIC(space_string);
 extern "C" DLL_PUBLIC Datum space_string(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1_PUBLIC(space_bit);
+extern "C" DLL_PUBLIC Datum space_bit(PG_FUNCTION_ARGS);
 
 PG_FUNCTION_INFO_V1_PUBLIC(m_char);
 extern "C" DLL_PUBLIC Datum m_char(PG_FUNCTION_ARGS);
@@ -8268,6 +8278,7 @@ static text* _m_char(FunctionCallInfo fcinfo)
             Oid valtype;
             char* badp = NULL;
             long result_l;
+            char* result_str = NULL;
             valtype = get_fn_expr_argtype(fcinfo->flinfo, i);
             switch (valtype) {
                 case INT4OID:
@@ -8275,6 +8286,10 @@ static text* _m_char(FunctionCallInfo fcinfo)
                     quotient = (uint32)value;
                     str = char_deal(str, quotient, remainder, remainders, times);
                     break;
+                case BITOID:
+                    quotient = convert_bit_to_int(fcinfo, i);
+                    str = char_deal(str, quotient, remainder, remainders, times);
+                    break;                
                 case NUMERICOID:
                     ret_round = (int128)round(numeric_to_double_no_overflow((Numeric)PG_GETARG_DATUM(i)));
                     if ((*((int128 *)DatumGetPointer((Datum)(&ret_round)))) >= PG_UINT64_MAX) {
@@ -8335,7 +8350,16 @@ static text* _m_char(FunctionCallInfo fcinfo)
                         quotient = (uint32)result_l;
                         str = char_deal(str, quotient, remainder, remainders, times);
                     } else {
-                        value = floor(strtod((char*)value, NULL));
+                        result_str = trim((char*)value);
+                        errno = 0;
+                        if (can_transform_to_float8(result_str)) {
+                            value = floor(strtod(result_str, &result_str));
+                            /* check for parse failure */
+                            if (errno != 0)
+                                value = 0;
+                        } else {
+                            value = 0;
+                        }
                         quotient = (uint32)value;
                         str = char_deal(str, quotient, remainder, remainders, times);
                     }
@@ -8396,6 +8420,46 @@ text* _elt(int idx, PG_FUNCTION_ARGS)
     return result;
 }
 
+static long convert_bit_to_int (PG_FUNCTION_ARGS, int idx)
+{
+    int from_base = 2;
+    int to_base = 10;
+    char* badp = NULL;
+    long result_l;
+    Oid typeOutput;
+    bool typIsVarlena;
+    int ret;
+    char result_chr[CONV_MAX_CHAR_LEN + 1] = "";
+    getTypeOutputInfo(fcinfo->argTypes[idx], &typeOutput, &typIsVarlena);
+    char* str_value = OidOutputFunctionCall(typeOutput, fcinfo->arg[idx]);
+    result_l = strtol(str_value, &badp, 10);
+    if (str_value == badp) {
+        result_l = 0;
+    }
+    ret = conv_n(result_chr, (int128)result_l, from_base, to_base);
+    badp = NULL;
+    result_l = strtol(result_chr, &badp, 10);
+    if (result_chr == badp) {
+        result_l = 0;
+    }
+    return result_l;
+}
+
+Datum elt_bit(PG_FUNCTION_ARGS)
+{
+    long num = convert_bit_to_int(fcinfo, 0);
+    text* result = NULL;
+    if (num <= 0 || num >= PG_NARGS()) {
+        PG_RETURN_NULL();
+    }
+
+    result = _elt(num, fcinfo);
+    if (NULL == result) {
+        PG_RETURN_NULL();
+    }
+    PG_RETURN_TEXT_P(result);
+}
+
 Datum elt_integer(PG_FUNCTION_ARGS)
 {
     int64 num = PG_GETARG_INT64(0);
@@ -8413,7 +8477,19 @@ Datum elt_integer(PG_FUNCTION_ARGS)
 
 Datum elt_string(PG_FUNCTION_ARGS)
 {
-    int64 num = floor(atof(VARDATA_ANY(PG_GETARG_TEXT_PP(0))));
+    char* result_str = NULL;
+    result_str = trim((char*)text_to_cstring(PG_GETARG_TEXT_PP(0)));
+    errno = 0;
+    int64 num;
+    if (can_transform_to_float8(result_str)) {
+        num = (int64)floor(strtod(result_str, NULL));
+        /* check for parse failure */
+        if (errno != 0)
+            num = 0;
+    } else {
+            num = 0;
+    }
+
     if (num <= 0 || num >= PG_NARGS()) {
         PG_RETURN_NULL();
     }
@@ -8582,6 +8658,11 @@ Datum soundex_bool(PG_FUNCTION_ARGS)
     PG_RETURN_TEXT_P(cstring_to_text(""));
 }
 
+Datum soundex_bit(PG_FUNCTION_ARGS)
+{
+    PG_RETURN_TEXT_P(cstring_to_text(""));
+}
+
 static void set_sound(const char* arg, char* result, int size);
 
 /* ABCDEFGHIJKLMNOPQRSTUVWXYZ */
@@ -8671,10 +8752,24 @@ char* set_space(int32 num)
         securec_check(rc, "", "");
         result[num] = '\0';
     } else {
-        ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("\"char\" out of range")));
+        result = NULL;
     }
 
     return result;
+}
+
+Datum space_bit(PG_FUNCTION_ARGS)
+{
+    long num = convert_bit_to_int(fcinfo, 0);
+    if (num < 0) {
+        PG_RETURN_NULL();
+    }
+    char* result = set_space(num);
+    if (NULL != result) {
+        PG_RETURN_TEXT_P(cstring_to_text(result));
+    } else {
+        PG_RETURN_NULL();
+    }
 }
 
 Datum space_integer(PG_FUNCTION_ARGS)
@@ -8696,9 +8791,17 @@ Datum space_integer(PG_FUNCTION_ARGS)
 
 Datum space_string(PG_FUNCTION_ARGS)
 {
-    int32 num = floor(atof(VARDATA_ANY(PG_GETARG_TEXT_PP(0))));
-    if (num < 0) {
-        PG_RETURN_NULL();
+    int32 num;
+    char* result_str = NULL;
+    result_str = trim((char*)text_to_cstring(PG_GETARG_TEXT_PP(0)));
+    errno = 0;
+    if (can_transform_to_float8(result_str)) {
+        num = (int32)floor(strtod(result_str, NULL));
+        /* check for parse failure */
+        if (errno != 0)
+            num = 0;
+    } else {
+            num = 0;
     }
 
     char* result = set_space(num);

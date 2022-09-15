@@ -62,5 +62,11 @@ select space(2147483647111);
  
 (1 row)
 
+select space(b'111');
+  space  
+---------
+        
+(1 row)
+
 \c postgres
 drop database if exists db_space;
