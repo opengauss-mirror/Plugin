@@ -81,6 +81,7 @@ SelectStmt* makeShowProcesslistQuery(bool isFull)
  * FROM
  *    (select nspname as "database" from pg_catalog.pg_namespace where expr)
  * ORDER BY
+ *    database = 'information_schema' desc,
  *    1;
  *
  * @param likeNode
@@ -102,7 +103,9 @@ SelectStmt* makeShowDatabasesQuery(Node* likeNode, Node* whereExpr)
 
     List* tl2 = list_make1(plpsMakeNormalColumn(NULL, "database", "Database"));
     List* fl2 = list_make1(makeRangeSubselect(substmt));
-    List* sl2 = plpsMakeSortList(plpsMakeIntConst(1));
+    Node* sn1 = plpsMakeSortByNode((Node*)makeSimpleA_Expr(AEXPR_OP, "=", plpsMakeColumnRef(NULL, "database"), plpsMakeStringConst("information_schema"), -1), SORTBY_DESC);
+    Node* sn2 = plpsMakeSortByNode(plpsMakeIntConst(1));
+    List* sl2 = (List*)list_make2(sn1, sn2);
 
     SelectStmt* stmt = plpsMakeSelectStmt(tl2, fl2, NULL, sl2);
     return stmt;
@@ -180,7 +183,7 @@ Node* plpsMakeColumnRef(char* relname, char *colname, int location)
     return (Node*)makeColumnRef(relname, colname, location);
 }
 
-Node* plpsMakeNormalColumn(char *relname, char* colname, char* aliasname, int location)
+Node* plpsMakeNormalColumn(char* relname, char* colname, char* aliasname, int location)
 {
     Node* n = plpsMakeColumnRef(relname, colname);
     ResTarget* rt = makeNode(ResTarget);
@@ -191,16 +194,20 @@ Node* plpsMakeNormalColumn(char *relname, char* colname, char* aliasname, int lo
     return (Node*)rt;
 }
 
-List* plpsMakeSortList(Node *sortExpr)
+Node* plpsMakeSortByNode(Node* sortExpr, SortByDir sortBd)
 {
     SortBy* n = makeNode(SortBy);
     n->node = sortExpr;
-    n->sortby_dir = SORTBY_DEFAULT;
+    n->sortby_dir = sortBd;
     n->sortby_nulls = SORTBY_NULLS_DEFAULT;
     n->useOp = NIL;
     n->location = -1;
-    List* sl = (List*)list_make1(n);
-    return sl;
+    return (Node*)n;
+}
+
+List* plpsMakeSortList(Node* sortExpr)
+{
+    return (List*)list_make1(plpsMakeSortByNode(sortExpr));
 }
 
 Node* plpsMakeIntConst(int val)
