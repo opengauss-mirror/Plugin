@@ -5,6 +5,7 @@ create database db_show_3 dbcompatibility 'b';
 show databases;
       Database      
 --------------------
+ information_schema
  blockchain
  cstore
  db4ai
@@ -12,7 +13,6 @@ show databases;
  dbe_pldebugger
  dbe_pldeveloper
  dbe_sql_util
- information_schema
  pg_catalog
  pg_toast
  pkg_service
