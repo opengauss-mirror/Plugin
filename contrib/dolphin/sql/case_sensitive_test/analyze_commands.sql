@@ -16,7 +16,6 @@ drop table if exists T1;
 create table T1(a int, b int, c int);
 insert into T1 values(generate_series(1,10),generate_series(1,2),generate_series(1,2));
 set default_statistics_target=100;
-analyze;
 select * from pg_stats where tablename = 'T1' order by attname;
 select * from pg_catalog.pg_ext_stats;
 
@@ -30,7 +29,6 @@ select * from pg_stats where tablename = 'T1' order by attname;
 select * from pg_catalog.pg_ext_stats;
 
 insert into T1 values(generate_series(1,10),generate_series(3,4),generate_series(3,4));
-analyze;
 select * from pg_stats where tablename = 'T1' order by attname;
 select * from pg_catalog.pg_ext_stats;
 
