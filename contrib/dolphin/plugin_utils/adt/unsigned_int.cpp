@@ -2250,15 +2250,12 @@ bool scanuint8(const char *str, bool errorOK, uint64 *result)
         ptr++;
 
     /* require at least one digit */
-    if (!isdigit((unsigned char)*ptr)) {
+    if (unlikely(!isdigit((unsigned char)*ptr))) {
         if (errorOK)
             return false;
         else if (!SQL_MODE_STRICT()) {
             *result = tmp;
             return true;
-        } else {
-            ereport(ERROR, (errcode(ERRCODE_INVALID_TEXT_REPRESENTATION),
-                errmsg("invalid input syntax for integer: \"%s\"", str)));
         }
     }
 
@@ -2283,6 +2280,23 @@ bool scanuint8(const char *str, bool errorOK, uint64 *result)
         tmp = newtmp;
     }
 
+    /* allow trailing whitespace and dot, but not other trailing chars */
+    char digitAfterDot = '\0';
+    CheckSpaceAndDotInternal(errorOK, '\0', &digitAfterDot, &ptr);
+
+    if (unlikely(*ptr != '\0')) {
+        if (errorOK)
+            return false;
+        else if (SQL_MODE_STRICT())
+            ereport(ERROR,
+                (errcode(ERRCODE_INVALID_TEXT_REPRESENTATION),
+                    errmsg("invalid input syntax for type %s: \"%s\"", "bigint unsigned", str)));
+    }
+
+    if ((isdigit(digitAfterDot)) && digitAfterDot >= '5') {
+        if (!neg && tmp < PG_UINT64_MAX)
+            tmp++;
+    }
     *result = tmp;
 
     return true;
