@@ -8278,7 +8278,6 @@ static text* _m_char(FunctionCallInfo fcinfo)
             Oid valtype;
             char* badp = NULL;
             long result_l;
-            char* result_str = NULL;
             valtype = get_fn_expr_argtype(fcinfo->flinfo, i);
             switch (valtype) {
                 case INT4OID:
@@ -8342,27 +8341,12 @@ static text* _m_char(FunctionCallInfo fcinfo)
                     }
                     break;
                 default:
-                    if (isNumeric((char*)value)) {
-                        result_l = strtol((char*)value, &badp, 10);
-                        if ((char*)value == badp) {
-                            result_l = 0;
-                        }
-                        quotient = (uint32)result_l;
-                        str = char_deal(str, quotient, remainder, remainders, times);
-                    } else {
-                        result_str = trim((char*)value);
-                        errno = 0;
-                        if (can_transform_to_float8(result_str)) {
-                            value = floor(strtod(result_str, &result_str));
-                            /* check for parse failure */
-                            if (errno != 0)
-                                value = 0;
-                        } else {
-                            value = 0;
-                        }
-                        quotient = (uint32)value;
-                        str = char_deal(str, quotient, remainder, remainders, times);
+                    result_l = strtol((char*)value, &badp, 10);
+                    if ((char*)value == badp) {
+                        result_l = 0;
                     }
+                    quotient = (uint32)result_l;
+                    str = char_deal(str, quotient, remainder, remainders, times);
                     break;
             }
         }
@@ -8477,17 +8461,12 @@ Datum elt_integer(PG_FUNCTION_ARGS)
 
 Datum elt_string(PG_FUNCTION_ARGS)
 {
-    char* result_str = NULL;
-    result_str = trim((char*)text_to_cstring(PG_GETARG_TEXT_PP(0)));
-    errno = 0;
     int64 num;
-    if (can_transform_to_float8(result_str)) {
-        num = (int64)floor(strtod(result_str, NULL));
-        /* check for parse failure */
-        if (errno != 0)
-            num = 0;
-    } else {
-            num = 0;
+    char* value = text_to_cstring(PG_GETARG_TEXT_PP(0));
+    char* badp = NULL;
+    num = (int64)strtol(value, &badp, 10);
+    if (value == badp) {
+        num = 0;
     }
 
     if (num <= 0 || num >= PG_NARGS()) {
@@ -8792,16 +8771,11 @@ Datum space_integer(PG_FUNCTION_ARGS)
 Datum space_string(PG_FUNCTION_ARGS)
 {
     int32 num;
-    char* result_str = NULL;
-    result_str = trim((char*)text_to_cstring(PG_GETARG_TEXT_PP(0)));
-    errno = 0;
-    if (can_transform_to_float8(result_str)) {
-        num = (int32)floor(strtod(result_str, NULL));
-        /* check for parse failure */
-        if (errno != 0)
-            num = 0;
-    } else {
-            num = 0;
+    char* value = text_to_cstring(PG_GETARG_TEXT_PP(0));
+    char* badp = NULL;
+    num = (int64)strtol(value, &badp, 10);
+    if (value == badp) {
+        num = 0;
     }
 
     char* result = set_space(num);
