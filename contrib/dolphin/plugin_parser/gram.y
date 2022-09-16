@@ -553,7 +553,7 @@ static bool DolphinObjNameCmp(const char* s1, const char* s2, bool is_quoted);
 		CreateWeakPasswordDictionaryStmt DropWeakPasswordDictionaryStmt
 		AlterGlobalConfigStmt DropGlobalConfigStmt
 		CreatePublicationStmt AlterPublicationStmt
-		CreateSubscriptionStmt AlterSubscriptionStmt DropSubscriptionStmt
+		CreateSubscriptionStmt AlterSubscriptionStmt DropSubscriptionStmt CheckSumTableStmt
 		OptimizeStmt ShrinkStmt
 
 /* <DB4AI> */
@@ -695,7 +695,7 @@ static bool DolphinObjNameCmp(const char* s1, const char* s2, bool is_quoted);
 				create_generic_options alter_generic_options
 				relation_expr_list dostmt_opt_list
 				merge_values_clause publication_name_list empty_value insert_set_list insert_set_clause
-				relation_expr_opt_alias_list
+				relation_expr_opt_alias_list user_list
 
 /* b compatibility: comment start */
 %type <list>	opt_index_options index_options opt_table_options table_options opt_column_options column_options
@@ -744,7 +744,7 @@ static bool DolphinObjNameCmp(const char* s1, const char* s2, bool is_quoted);
 %type <node>	overlay_placing substr_from substr_for optional_precision
 
 %type <boolean> opt_instead opt_incremental
-%type <boolean> opt_unique opt_concurrently opt_verbose opt_full opt_deltamerge opt_compact opt_hdfsdirectory opt_verify opt_global
+%type <boolean> opt_unique opt_concurrently opt_verbose opt_full opt_deltamerge opt_compact opt_hdfsdirectory opt_verify opt_global OptQuickExt
 %type <boolean> opt_freeze opt_default opt_recheck opt_cascade
 %type <defelt>	opt_binary opt_oids copy_delimiter opt_noescaping
 %type <defelt>	OptCopyLogError OptCopyRejectLimit opt_load
@@ -839,11 +839,11 @@ static bool DolphinObjNameCmp(const char* s1, const char* s2, bool is_quoted);
 %type <str>		Sconst comment_text notify_payload
 %type <str>		RoleId TypeOwner opt_granted_by opt_boolean_or_string ColId_or_Sconst Dolphin_ColId_or_Sconst definer_user definer_expression
 %type <list>	var_list guc_value_extension_list
-%type <str>		ColId ColLabel var_name type_function_name param_name user opt_password opt_replace show_index_schema_opt ColIdForTableElement
+%type <str>		ColId ColLabel var_name type_function_name param_name user opt_password opt_replace show_index_schema_opt ColIdForTableElement PrivilegeColId
 %type <node>	var_value zone_value
 %type <dolphinString>	DolphinColId DolphinColLabel dolphin_indirection_el
 
-%type <keyword> unreserved_keyword type_func_name_keyword unreserved_keyword_without_key
+%type <keyword> unreserved_keyword type_func_name_keyword unreserved_keyword_without_key unreserved_keyword_without_proxy
 %type <keyword> col_name_keyword reserved_keyword col_name_keyword_nonambiguous
 
 %type <node>	TableConstraint TableIndexClause TableLikeClause ForeignTableLikeClause
@@ -1030,7 +1030,7 @@ static bool DolphinObjNameCmp(const char* s1, const char* s2, bool is_quoted);
 	BLOB_P BLOCKCHAIN BODY_P BOGUS BOOLEAN_P BOTH BUCKETCNT BUCKETS BY BYTEAWITHOUTORDER BYTEAWITHOUTORDERWITHEQUAL
 
 	CACHE CALL CALLED CANCELABLE CASCADE CASCADED CASE CAST CATALOG_P CHAIN CHAR_P
-	CHARACTER CHARACTERISTICS CHARACTERSET CHARSET CHECK CHECKPOINT CLASS CLEAN CLIENT CLIENT_MASTER_KEY CLIENT_MASTER_KEYS CLOB CLOSE
+	CHARACTER CHARACTERISTICS CHARACTERSET CHARSET CHECK CHECKPOINT CHECKSUM CLASS CLEAN CLIENT CLIENT_MASTER_KEY CLIENT_MASTER_KEYS CLOB CLOSE
 	CLUSTER COALESCE COLLATE COLLATION COLUMN COLUMNS COLUMN_ENCRYPTION_KEY COLUMN_ENCRYPTION_KEYS COMMENT COMMENTS COMMIT
 	COMMITTED COMPACT COMPATIBLE_ILLEGAL_CHARS COMPLETE COMPRESS COMPRESSION CONCURRENTLY CONDITION CONFIGURATION CONNECTION CONSTANT CONSTRAINT CONSTRAINTS
 	CONTAINS CONTENT_P CONTINUE_P CONTVIEW CONVERSION_P CONVERT CONNECT COORDINATOR COORDINATORS COPY COST CREATE
@@ -1048,7 +1048,7 @@ static bool DolphinObjNameCmp(const char* s1, const char* s2, bool is_quoted);
 
 	EACH ELASTIC ELSE ENABLE_P ENCLOSED ENCODING ENCRYPTED ENCRYPTED_VALUE ENCRYPTION ENCRYPTION_TYPE END_P ENFORCED ENGINE_P ENUM_P ERRORS ESCAPE EOL ESCAPING EVERY EXCEPT EXCHANGE
 	EXCLUDE EXCLUDED EXCLUDING EXCLUSIVE EXECUTE EXISTS EXPIRED_P EXPLAIN
-	EXTENSION EXTERNAL EXTRACT
+	EXTENDED EXTENSION EXTERNAL EXTRACT
 
 	FALSE_P FAMILY FAST FENCED FETCH FIELDS FILEHEADER_P FILL_MISSING_FIELDS FILLER FILTER FIRST_P FIXED_P FLOAT_P FOLLOWING FOLLOWS_P FOR FORCE FOREIGN FORMATTER FORWARD
 	FEATURES // DB4AI
@@ -1089,9 +1089,9 @@ static bool DolphinObjNameCmp(const char* s1, const char* s2, bool is_quoted);
 /* PGXC_BEGIN */
 	PREFERRED PREFIX PRESERVE PREPARE PREPARED PRIMARY
 /* PGXC_END */
-	PRECEDES_P PRIVATE PRIOR PRIORER PRIVILEGES PRIVILEGE PROCEDURAL PROCEDURE PROCESSLIST PROFILE PUBLICATION PUBLISH PURGE
+	PRECEDES_P PRIVATE PRIOR PRIORER PRIVILEGES PRIVILEGE PROCEDURAL PROCEDURE PROCESSLIST PROFILE PROXY PUBLICATION PUBLISH PURGE
 
-	QUARTER QUERY QUOTE
+	QUARTER QUERY QUICK QUOTE
 
 	RANDOMIZED RANGE RATIO RAW READ READS REAL REASSIGN REBUILD RECHECK RECURSIVE RECYCLEBIN REDISANYVALUE REF REFERENCES REFRESH REINDEX REJECT_P
 	RELATIVE_P RELEASE RELOPTIONS REMOTE_P REMOVE RENAME REPEATABLE REPLACE REPLICA REGEXP REORGANIZE REPAIR
@@ -1339,6 +1339,7 @@ stmt :
 			| CreateAppWorkloadGroupMappingStmt
 			| CallFuncStmt
 			| CheckPointStmt
+                        | CheckSumTableStmt
 			| CleanConnStmt
 			| ClosePortalStmt
 			| ClusterStmt
@@ -2293,6 +2294,10 @@ schema_stmt:
  *	  SET TIME ZONE 'var_value'
  *
  *****************************************************************************/
+user_list:
+               user    { $$ = list_make1(makeString($1)); }
+               | user_list ',' user { $$ = lappend($1, makeString($3)); }
+               ;
 
 user:
 			ColId_or_Sconst { $$ = $1; }
@@ -3570,6 +3575,19 @@ CheckPointStmt:
 				}
 		;
 
+CheckSumTableStmt:
+			CHECKSUM TABLE relation_expr_list OptQuickExt
+				{
+					SelectStmt *n = makeChecksumsTablesQuery($3, $4);
+					$$ = (Node*)n;
+ 				}
+		;
+
+OptQuickExt:
+		        /* empty */	{ $$ = true; }
+		        | QUICK         { $$ = false; }
+		        | EXTENDED      { $$ = true; }
+		;
 
 /*****************************************************************************
  *
@@ -14333,7 +14351,7 @@ privilege:	SELECT opt_column_list
 				n->cols = $2;
 				$$ = n;
 			}
-		| ColId opt_column_list
+		| PrivilegeColId opt_column_list
 			{
 				AccessPriv *n = makeNode(AccessPriv);
 				n->priv_name = $1;
@@ -14763,6 +14781,19 @@ GrantRoleStmt:
 					n->grantor = $6;
 					$$ = (Node*)n;
 				}
+                        | GRANT PROXY ON user TO user_list opt_grant_grant_option
+                                {
+                                        AccessPriv *priv_n = makeNode(AccessPriv);
+                                        priv_n->priv_name = $4;
+                                        priv_n->cols = NIL;
+
+                                        GrantRoleStmt *n = makeNode(GrantRoleStmt);
+                                        n->is_grant = true;
+                                        n->granted_roles = list_make1(priv_n);
+                                        n->grantee_roles = $6;
+                                        n->admin_opt = $7;
+                                        $$ = (Node*)n;
+                                }
 		;
 
 RevokeRoleStmt:
@@ -14786,6 +14817,19 @@ RevokeRoleStmt:
 					n->behavior = $9;
 					$$ = (Node*)n;
 				}
+                       | REVOKE PROXY ON user FROM user_list
+                                {
+                                        AccessPriv *priv_n = makeNode(AccessPriv);
+                                        priv_n->priv_name = $4;
+                                        priv_n->cols = NIL;
+
+                                        GrantRoleStmt *n = makeNode(GrantRoleStmt);
+                                        n->is_grant = false;
+                                        n->admin_opt = false;
+                                        n->granted_roles = list_make1(priv_n);
+                                        n->grantee_roles = $6;
+                                        $$ = (Node*)n;
+                                }
 		;
 
 opt_grant_admin_option: WITH ADMIN OPTION				{ $$ = TRUE; }
@@ -29761,6 +29805,11 @@ DolphinColId:		IDENT							{ $$ = MakeDolphinStringByChar($1, is_quoted()); }
 					| col_name_keyword				{ $$ = MakeDolphinStringByChar(pstrdup($1), is_quoted()); }
 		;
 
+PrivilegeColId:         IDENT                                                           { $$ = downcase_str($1, is_quoted()); }
+                        | unreserved_keyword_without_proxy                              { $$ = downcase_str(pstrdup($1), is_quoted()); }
+                        | col_name_keyword                                              { $$ = downcase_str(pstrdup($1), is_quoted()); }
+		;
+
 /* Type/function identifier --- names that can be type or function names.
  */
 type_function_name:	IDENT							{ $$ = downcase_str($1, is_quoted()); }
@@ -29829,10 +29878,15 @@ DolphinColLabel:	IDENT									{ $$ = MakeDolphinStringByChar($1, is_quoted()); 
 /* "Unreserved" keywords --- available for use as any kind of name.
  */
 /* PGXC - added DISTRIBUTE, DIRECT, COORDINATOR, DATANODES, CLEAN, NODE, BARRIER, SLICE, DATANODE */
-unreserved_keyword:
-			unreserved_keyword_without_key
-			| KEY
-			;
+ unreserved_keyword:
+                        unreserved_keyword_without_proxy
+                        | PROXY
+                        ;
+
+unreserved_keyword_without_proxy:
+                        unreserved_keyword_without_key
+                        | KEY
+                        ;
 
 unreserved_keyword_without_key:
 			  ABORT_P
@@ -29883,6 +29937,7 @@ unreserved_keyword_without_key:
 			| CHARACTERSET
 			| CHARSET
 			| CHECKPOINT
+                        | CHECKSUM
 			| CLASS
 			| CLEAN
 			| CLIENT
@@ -29979,6 +30034,7 @@ unreserved_keyword_without_key:
 			| EXECUTE
 			| EXPIRED_P
 			| EXPLAIN
+			| EXTENDED
 			| EXTENSION
 			| EXTERNAL
 			| FAMILY
@@ -30141,6 +30197,7 @@ unreserved_keyword_without_key:
 			| PUBLISH
 			| PURGE
 			| QUERY
+			| QUICK
 			| QUOTE
 			| RANDOMIZED
 			| RANGE

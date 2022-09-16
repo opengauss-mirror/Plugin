@@ -312,6 +312,11 @@ static Node* makeSubLink(Node* stmt)
     return (Node*)nf;
 }
 
+Node* plpsMakeSubLink(Node* stmt)
+{
+    return makeSubLink(stmt);
+}
+
 static Node* makeKeyColumn(bool smallcase)
 {
     ResTarget* rt = makeNode(ResTarget);
