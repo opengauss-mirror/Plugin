@@ -328,3 +328,35 @@ CREATE OPERATOR pg_catalog.- (
    rightarg = time,
    procedure = negetive_time
 );
+
+CREATE OR REPLACE FUNCTION pg_catalog.dayname(text) RETURNS text LANGUAGE C STABLE RETURNS NULL ON NULL INPUT as '$libdir/dolphin', 'dayname_text';
+CREATE OR REPLACE FUNCTION pg_catalog.dayname(numeric) RETURNS text LANGUAGE C STABLE RETURNS NULL ON NULL INPUT as '$libdir/dolphin', 'dayname_numeric';
+
+CREATE OR REPLACE FUNCTION pg_catalog.monthname(text) RETURNS text LANGUAGE C STABLE RETURNS NULL ON NULL INPUT as '$libdir/dolphin', 'monthname_text';
+CREATE OR REPLACE FUNCTION pg_catalog.monthname(numeric) RETURNS text LANGUAGE C STABLE RETURNS NULL ON NULL INPUT as '$libdir/dolphin', 'monthname_numeric';
+
+CREATE OR REPLACE FUNCTION pg_catalog.time_to_sec(text) RETURNS int4 LANGUAGE C STABLE RETURNS NULL ON NULL INPUT as '$libdir/dolphin', 'time_to_sec';
+CREATE OR REPLACE FUNCTION pg_catalog.time_to_sec(date) RETURNS int4 AS $$ SELECT pg_catalog.time_to_sec(cast('00:00:00' as text)) $$ LANGUAGE SQL;
+CREATE OR REPLACE FUNCTION pg_catalog.time_to_sec(numeric) RETURNS int4 AS $$ SELECT pg_catalog.time_to_sec(cast($1 as text)) $$ LANGUAGE SQL;
+
+CREATE OR REPLACE FUNCTION pg_catalog.month(text) RETURNS int4 LANGUAGE C STABLE RETURNS NULL ON NULL INPUT as '$libdir/dolphin', 'month_text';
+CREATE OR REPLACE FUNCTION pg_catalog.month(numeric) RETURNS int4 LANGUAGE C STABLE RETURNS NULL ON NULL INPUT as '$libdir/dolphin', 'month_numeric';
+
+CREATE OR REPLACE FUNCTION pg_catalog.b_db_last_day(text) RETURNS date LANGUAGE C STABLE RETURNS NULL ON NULL INPUT as '$libdir/dolphin', 'last_day_text';
+CREATE OR REPLACE FUNCTION pg_catalog.b_db_last_day(numeric) RETURNS date LANGUAGE C STABLE RETURNS NULL ON NULL INPUT as '$libdir/dolphin', 'last_day_numeric';
+
+CREATE OR REPLACE FUNCTION pg_catalog.b_db_date(text) RETURNS text LANGUAGE C STABLE RETURNS NULL ON NULL INPUT as '$libdir/dolphin', 'b_db_date_text';
+CREATE OR REPLACE FUNCTION pg_catalog.b_db_date(numeric) RETURNS text LANGUAGE C STABLE RETURNS NULL ON NULL INPUT as '$libdir/dolphin', 'b_db_date_numeric';
+
+CREATE OR REPLACE FUNCTION pg_catalog.day(text) RETURNS int4 LANGUAGE C STABLE RETURNS NULL ON NULL INPUT as '$libdir/dolphin', 'dayofmonth_text';
+CREATE OR REPLACE FUNCTION pg_catalog.day(numeric) RETURNS int4 LANGUAGE C STABLE RETURNS NULL ON NULL INPUT as '$libdir/dolphin', 'dayofmonth_numeric';
+
+CREATE OR REPLACE FUNCTION pg_catalog.week(text, int8) RETURNS int4 LANGUAGE C STABLE CALLED ON NULL INPUT as '$libdir/dolphin', 'week_text';
+CREATE OR REPLACE FUNCTION pg_catalog.week(numeric, int8) RETURNS int4 LANGUAGE C STABLE CALLED ON NULL INPUT as '$libdir/dolphin', 'week_numeric';
+CREATE OR REPLACE FUNCTION pg_catalog.week(text) RETURNS int4 AS $$ SELECT pg_catalog.week($1, null) $$ LANGUAGE SQL;
+CREATE OR REPLACE FUNCTION pg_catalog.week(numeric) RETURNS int4 AS $$ SELECT pg_catalog.week($1, null) $$ LANGUAGE SQL;
+
+CREATE OR REPLACE FUNCTION pg_catalog.yearweek(text, int8) RETURNS int8 LANGUAGE C STABLE CALLED ON NULL INPUT as '$libdir/dolphin', 'yearweek_text';
+CREATE OR REPLACE FUNCTION pg_catalog.yearweek(numeric, int8) RETURNS int8 LANGUAGE C STABLE CALLED ON NULL INPUT as '$libdir/dolphin', 'yearweek_numeric';
+CREATE OR REPLACE FUNCTION pg_catalog.yearweek(text) RETURNS int8 AS $$ SELECT pg_catalog.yearweek($1, null) $$ LANGUAGE SQL;
+CREATE OR REPLACE FUNCTION pg_catalog.yearweek(numeric) RETURNS int8 AS $$ SELECT pg_catalog.yearweek($1, null) $$ LANGUAGE SQL;

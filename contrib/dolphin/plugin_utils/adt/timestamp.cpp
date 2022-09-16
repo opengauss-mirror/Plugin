@@ -41,6 +41,9 @@
 #include "plugin_utils/datetime.h"
 #include "plugin_utils/date.h"
 #include "plugin_utils/year.h"
+#ifdef DOLPHIN
+#include "plugin_utils/my_locale.h"
+#endif
 
 #ifdef PGXC
 #include "pgxc/pgxc.h"
@@ -72,6 +75,7 @@
 #define TYPMODOUT_LEN 64
 #define ROUNDING_BORDER 5
 
+#ifndef DOLPHIN
 #define JANUARY 1
 #define FEBRUARY 2
 #define MARCH 3
@@ -94,6 +98,7 @@
 #define MAXNUM_SEC 60
 #define DAYS_PER_COMMON_YEAR 365
 #define DAYS_PER_LEAP_YEAR 366
+#endif
 
 /* NaN and Infinity Macro used in interval_mul and interval_div*/
 /*
@@ -153,6 +158,12 @@ static int WhetherSmallMon(struct pg_tm* tm);
 static int WhetherBigMon(struct pg_tm* tm);
 static int daydiff_timestamp(const struct pg_tm* tm, const struct pg_tm* tm1, const struct pg_tm* tm2,
                              bool day_fix = false);
+#ifdef DOLPHIN
+static int cal_weekday_interval(struct pg_tm* tm, bool sunday_is_first_day);
+static int b_db_sumdays(int year, int month, int day);
+static int64 b_db_weekmode(int64 mode);
+static int b_db_cal_week(struct pg_tm* tm, int64 mode, uint* year);
+#endif
 
 void timestamp_FilpSign(pg_tm* tm);
 void timestamp_CalculateFields(TimestampTz* dt1, TimestampTz* dt2, fsec_t* fsec, pg_tm* tm, pg_tm* tm1, pg_tm* tm2);
@@ -218,6 +229,39 @@ PG_FUNCTION_INFO_V1_PUBLIC(utc_timestamp_func);
 extern "C" DLL_PUBLIC Datum utc_timestamp_func(PG_FUNCTION_ARGS);
 PG_FUNCTION_INFO_V1_PUBLIC(func_return_null);
 extern "C" DLL_PUBLIC Datum func_return_null(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1_PUBLIC(dayname_text);
+extern "C" DLL_PUBLIC Datum dayname_text(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(dayname_numeric);
+extern "C" DLL_PUBLIC Datum dayname_numeric(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(monthname_text);
+extern "C" DLL_PUBLIC Datum monthname_text(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(monthname_numeric);
+extern "C" DLL_PUBLIC Datum monthname_numeric(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(month_text);
+extern "C" DLL_PUBLIC Datum month_text(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(month_numeric);
+extern "C" DLL_PUBLIC Datum month_numeric(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(last_day_text);
+extern "C" DLL_PUBLIC Datum last_day_text(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(last_day_numeric);
+extern "C" DLL_PUBLIC Datum last_day_numeric(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(b_db_date_text);
+extern "C" DLL_PUBLIC Datum b_db_date_text(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(b_db_date_numeric);
+extern "C" DLL_PUBLIC Datum b_db_date_numeric(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(dayofmonth_text);
+extern "C" DLL_PUBLIC Datum dayofmonth_text(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(dayofmonth_numeric);
+extern "C" DLL_PUBLIC Datum dayofmonth_numeric(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(week_text);
+extern "C" DLL_PUBLIC Datum week_text(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(week_numeric);
+extern "C" DLL_PUBLIC Datum week_numeric(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(yearweek_text);
+extern "C" DLL_PUBLIC Datum yearweek_text(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(yearweek_numeric);
+extern "C" DLL_PUBLIC Datum yearweek_numeric(PG_FUNCTION_ARGS);
 #endif
 
 /* b format datetime and timestamp type */
@@ -492,7 +536,11 @@ Datum numeric_b_format_timestamp(PG_FUNCTION_ARGS)
     return DirectFunctionCall3(timestamptz_in, CStringGetDatum(buf), ObjectIdGetDatum(InvalidOid), Int32GetDatum(-1));
 }
 
+#ifdef DOLPHIN
+int NumberTimestamp(char *str, pg_tm *tm, fsec_t *fsec, unsigned int date_flag)
+#else
 int NumberTimestamp(char *str, pg_tm *tm, fsec_t *fsec)
+#endif
 {
     char *cp = str;
     int len = 0;
@@ -512,7 +560,11 @@ int NumberTimestamp(char *str, pg_tm *tm, fsec_t *fsec)
         errno_t rc = memset_s(tm, sizeof(*tm), 0, sizeof(*tm));
         securec_check(rc, "\0", "\0");
         *fsec = 0;
+#ifdef DOLPHIN
+        dterr = NumberDate(str, tm, date_flag);
+#else
         dterr = NumberDate(str, tm);
+#endif
         return dterr;
     }
     /* 4-digit year, skip date part first
@@ -574,7 +626,11 @@ int NumberTimestamp(char *str, pg_tm *tm, fsec_t *fsec)
         tcp = str + TIMESTAMP_YYMMDD_LEN;
     }
     *tcp = '\0';
+#ifdef DOLPHIN
+    dterr = NumberDate(str, tm, date_flag);
+#else
     dterr = NumberDate(str, tm);
+#endif
     return dterr;
 }
 
@@ -7258,5 +7314,580 @@ Datum utc_timestamp_func(PG_FUNCTION_ARGS)
     Timestamp result = (Timestamp)now;
     AdjustTimestampForTypmod(&result, typmod);
     PG_RETURN_TIMESTAMP(result);
+}
+
+bool MaybeRound(struct pg_tm *tm, fsec_t *fsec)
+{
+    Timestamp result;
+    errno_t rc;
+    if (
+#ifdef HAVE_INT64_TIMESTAMP
+        *fsec != USECS_PER_SEC
+#else
+        *fsec != 1
+#endif
+        ) return true;
+
+    if (tm->tm_mon == 0 || tm->tm_mday == 0)// bad date can't round by fsec
+        return false;
+
+    //fix_bug because of 0000-2-29
+    if (tm->tm_year == B_FORMAT_MIN_YEAR_OF_DATE && tm->tm_mon == FEBRUARY && tm->tm_mday == DAYNUM_FEB_NONLEAPYEAR && 
+        tm->tm_hour == (HOURS_PER_DAY - 1) && tm->tm_min == (MINS_PER_HOUR - 1) && tm->tm_sec == (SECS_PER_MINUTE - 1)) {
+        tm->tm_mday = DAYNUM_FEB_LEAPYEAR;
+    }
+    tm2timestamp(tm, *fsec, NULL, &result);
+#ifdef HAVE_INT64_TIMESTAMP
+    if (result < B_FORMAT_TIMESTAMP_FIRST_YEAR) {
+#else
+    if (result < B_FORMAT_TIMESTAMP_FIRST_YEAR / USECS_PER_SEC) {
+#endif
+        tm->tm_year = tm->tm_mon = tm->tm_mday = 0;
+        return true;
+    }
+    rc = memset_s(tm, sizeof(*tm), 0, sizeof(*tm));
+    securec_check(rc, "\0", "\0");
+    *fsec = 0;
+    timestamp2tm(result, NULL, tm, fsec, NULL, NULL);
+    if (tm->tm_year > B_FORMAT_MAX_YEAR_OF_DATE)
+        return false;
+    return true;
+}
+
+/**
+ *  The function is similar to timestamp_in, but uses date_flag to control the parsing process.
+*/
+void datetime_in_with_flag(const char *str, struct pg_tm *tm, unsigned int date_flag)
+{
+    fsec_t fsec;
+    int tz;
+    int dtype;
+    int nf;
+    int dterr;
+    char* field[MAXDATEFIELDS];
+    int ftype[MAXDATEFIELDS];
+    char workbuf[MAXDATELEN + MAXDATEFIELDS];
+    /*
+        * default pg date formatting parsing.
+        */
+    dterr = ParseDateTime(str, workbuf, sizeof(workbuf), field, ftype, MAXDATEFIELDS, &nf);
+    if (dterr != 0)
+        DateTimeParseError(dterr, str, "timestamp");
+    if (dterr == 0) {
+        if (nf == 1 && ftype[0] == DTK_NUMBER) {
+            /* for example, str = "301210054523", "301210054523.123" */
+            dterr = NumberTimestamp(field[0], tm, &fsec, date_flag);
+            dtype = DTK_DATE;
+        } else {
+            dterr = DecodeDateTimeForBDatabase(field, ftype, nf, &dtype, tm, &fsec, &tz, date_flag);
+        }
+    }
+    if (dterr != 0)
+        DateTimeParseError(dterr, str, "timestamp");
+
+    if (tm->tm_year > B_FORMAT_MAX_YEAR_OF_DATE || (tm->tm_year == B_FORMAT_MIN_YEAR_OF_DATE && tm->tm_mon == FEBRUARY && tm->tm_mday == DAYNUM_FEB_LEAPYEAR)) {
+        ereport(ERROR,
+                (errcode(DTERR_BAD_FORMAT), errmsg("Incorrect datetime value: \"%s\"", str)));
+    }
+
+    if (!MaybeRound(tm, &fsec)) {
+        ereport(ERROR,
+                (errcode(DTERR_BAD_FORMAT), errmsg("Truncated incorrect datetime value: \"%s\"", str)));
+    }
+}
+
+// convert Numeric arg into lldiv_t
+// div.quot is the integer of the Numeric
+// div.rem is the fractional part of the Numeric
+static inline void Numeric_to_lldiv(Numeric num, lldiv_t *div)
+{
+    NumericVar n;
+    init_var_from_num(num, &n);
+    NumericVar2lldiv(&n, div);
+}
+
+static inline void dayname_internal(struct pg_tm *result_tm, Datum *result)
+{
+    int weekday = cal_weekday_interval(result_tm, false);
+    MyLocale *locale = MyLocaleSearch(GetSessionContext()->lc_time_names);
+    *result = DirectFunctionCall1(textin, CStringGetDatum(locale->day_names[weekday]));
+}
+
+static inline bool zero_date_tm(struct pg_tm *result_tm)
+{
+    return (!result_tm->tm_year && !result_tm->tm_mon && !result_tm->tm_mday);
+}
+
+/* dayname()
+ * @param1 specified date,                                     text
+ * @return week name of specified date in b compatibility,     text
+ */
+Datum dayname_text(PG_FUNCTION_ARGS)
+{
+    text *raw_text = PG_GETARG_TEXT_PP(0);
+    struct pg_tm result_tt, *result_tm = &result_tt;
+    Datum result;
+
+    char *date_str = text_to_cstring(raw_text);
+    datetime_in_with_flag(date_str, result_tm, NORMAL_DATE);
+    if (!zero_date_tm(result_tm)) {
+        dayname_internal(result_tm, &result);
+    } else {
+        MyLocale *locale = MyLocaleSearch(GetSessionContext()->lc_time_names);
+        result = DirectFunctionCall1(textin, CStringGetDatum(locale->day_names[5]));    //0000-00-00 is saturday
+    }
+    PG_RETURN_DATUM(result);
+}
+
+//int8, int4 and float8 date input for dayname
+Datum dayname_numeric(PG_FUNCTION_ARGS)
+{
+    Numeric num = PG_GETARG_NUMERIC(0);
+    lldiv_t div;
+    struct pg_tm result_tt, *result_tm = &result_tt;
+    Datum result;
+
+    Numeric_to_lldiv(num, &div);
+    lldiv_decode_tm(num, &div, result_tm, NORMAL_DATE);
+    dayname_internal(result_tm, &result);
+    PG_RETURN_DATUM(result);
+}
+
+/* b_db_cal_weekday_internal()
+ * @param tm                        specified date structure
+ * @param sunday_is_first_day       whether sunday is first day of week, a standard of ODBC
+ * @return weekday of the date, if sunday_is_first_day is true, [0,6] means [Sunday, Saturday]
+ *                              if sunday_is_first_day is false, [0,6] means [Monday, Sunday]
+ */
+static int cal_weekday_interval(struct pg_tm* tm, bool sunday_is_first_day)
+{
+    int weekday;
+    weekday = (j2day(date2j(tm->tm_year, tm->tm_mon, tm->tm_mday))); //[0,6] is [Sunday,Saturday]
+    if (sunday_is_first_day) {
+        weekday = (weekday + 1) % DAYS_PER_WEEK;
+        if ((tm->tm_year == B_FORMAT_MIN_YEAR_OF_DATE && tm->tm_mon >= MARCH) || tm->tm_year > B_FORMAT_MIN_YEAR_OF_DATE) {//fix bug because of 0000-2-29
+            weekday = (weekday - 1 + DAYS_PER_WEEK) % DAYS_PER_WEEK;
+        }
+    } else {
+        weekday = (weekday - 1 + DAYS_PER_WEEK) % DAYS_PER_WEEK;    //[0,6] is [Monday,Sunday]
+        if (tm->tm_year == B_FORMAT_MIN_YEAR_OF_DATE && tm->tm_mon <= FEBRUARY) {   // fix bug because of 0000-2-29
+            weekday = (weekday + 1) % DAYS_PER_WEEK;
+        }
+    }
+    return weekday;
+}
+
+static inline void monthname_internal(struct pg_tm *result_tm, Datum *result)
+{
+    MyLocale *locale = MyLocaleSearch(GetSessionContext()->lc_time_names);
+    *result = DirectFunctionCall1(textin, CStringGetDatum(locale->month_names[result_tm->tm_mon - 1]));
+}
+
+/* monthname()
+ * @param1  specified date,                                     text
+ * @return  month name of specified date in b compatibility,    text
+ */
+Datum monthname_text(PG_FUNCTION_ARGS)
+{
+    text *raw_text = PG_GETARG_TEXT_PP(0);
+    struct pg_tm result_tt, *result_tm = &result_tt;
+    Datum result;
+
+    char *date_str = text_to_cstring(raw_text);
+    
+    datetime_in_with_flag(date_str, result_tm, ENABLE_ZERO_DAY);
+    if (!zero_date_tm(result_tm)) {
+        monthname_internal(result_tm, &result);
+        PG_RETURN_DATUM(result);
+    }
+    
+    PG_RETURN_NULL();   // When date is truncated to '0000-00-00', monthname return NULL
+}
+
+Datum monthname_numeric(PG_FUNCTION_ARGS)
+{
+    Numeric num = PG_GETARG_NUMERIC(0);
+    lldiv_t div;
+    struct pg_tm result_tt, *result_tm = &result_tt;
+    Datum result;
+
+    Numeric_to_lldiv(num, &div);
+    if (IS_ZERO_NUMBER_DATE(div.quot, div.rem)) {   // when number input is 0, monthname return NULL
+        PG_RETURN_NULL();
+    }
+    lldiv_decode_tm(num, &div, result_tm, ENABLE_ZERO_DAY);
+    monthname_internal(result_tm, &result);
+    PG_RETURN_DATUM(result);
+}
+
+/* month()
+ * @param1  specified date,                                       text
+ * @return  month number of specified date in b compatibility,    int32
+ */
+Datum month_text(PG_FUNCTION_ARGS)
+{
+    text *raw_text = PG_GETARG_TEXT_PP(0);
+    struct pg_tm result_tt, *result_tm = &result_tt;
+
+    char *date_str = text_to_cstring(raw_text);
+    datetime_in_with_flag(date_str, result_tm, (ENABLE_ZERO_DAY | ENABLE_ZERO_MONTH));
+    PG_RETURN_INT32(result_tm->tm_mon);
+}
+
+Datum month_numeric(PG_FUNCTION_ARGS)
+{
+    Numeric num = PG_GETARG_NUMERIC(0);
+    lldiv_t div;
+    struct pg_tm result_tt, *result_tm = &result_tt;
+
+    Numeric_to_lldiv(num, &div);
+    if(IS_ZERO_NUMBER_DATE(div.quot, div.rem)) {
+        PG_RETURN_INT32(0);
+    }
+    lldiv_decode_tm(num, &div, result_tm, (ENABLE_ZERO_DAY | ENABLE_ZERO_MONTH));
+    PG_RETURN_INT32(result_tm->tm_mon);
+}
+
+static inline void b_last_day_internal(struct pg_tm *result_tm, DateADT *result)
+{
+    result_tm->tm_mday = day_tab[isleap(result_tm->tm_year)][result_tm->tm_mon - 1];
+    //fix 0000-2-29 bug
+    if (result_tm->tm_year == 0 && result_tm->tm_mon == 2)
+        result_tm->tm_mday = 28;
+    *result = date2j(result_tm->tm_year, result_tm->tm_mon, result_tm->tm_mday) - POSTGRES_EPOCH_JDATE;
+}
+
+/* b_db_last_day()
+ * @param1 specified date,                                 text
+ * @return last day of specified date in b compatibility,  date
+ */
+Datum last_day_text(PG_FUNCTION_ARGS)
+{
+    text *raw_text = PG_GETARG_TEXT_PP(0);
+    struct pg_tm result_tt, *result_tm = &result_tt;
+    DateADT result;
+
+    char *date_str = text_to_cstring(raw_text);
+    datetime_in_with_flag(date_str, result_tm, ENABLE_ZERO_DAY);
+    if (!zero_date_tm(result_tm)) {
+        b_last_day_internal(result_tm, &result);
+        PG_RETURN_DATEADT(result);
+    }
+    ereport(ERROR,(errcode(DTERR_BAD_FORMAT), errmsg("Incorrect datetime value: \'0000-00-00\'")));
+    PG_RETURN_DATEADT(0);
+}
+
+Datum last_day_numeric(PG_FUNCTION_ARGS)
+{
+    Numeric num = PG_GETARG_NUMERIC(0);
+    lldiv_t div;
+    struct pg_tm result_tt, *result_tm = &result_tt;
+    DateADT result;
+
+    Numeric_to_lldiv(num, &div);
+    lldiv_decode_tm(num, &div, result_tm, ENABLE_ZERO_DAY);
+    b_last_day_internal(result_tm, &result);
+    PG_RETURN_DATEADT(result);
+}
+
+//common module for DATE(date)
+static inline void date_internal(struct pg_tm *result_tm, Datum *result)
+{
+    char buf[MAXDATELEN + 1];
+    EncodeDateOnlyForBDatabase(result_tm, u_sess->time_cxt.DateStyle, buf, ENABLE_ZERO_MONTH);
+    *result = DirectFunctionCall1(textin, CStringGetDatum(buf));
+}
+
+/* b_db_date()
+ * @param1 specified date,                                 text
+ * @return extract date part of the argument,              text
+ */
+Datum b_db_date_text(PG_FUNCTION_ARGS)
+{
+    text *raw_text = PG_GETARG_TEXT_PP(0);
+    struct pg_tm result_tt, *result_tm = &result_tt;
+    Datum result;
+
+    char *date_str = text_to_cstring(raw_text);
+    datetime_in_with_flag(date_str, result_tm, (ENABLE_ZERO_DAY | ENABLE_ZERO_MONTH));
+    date_internal(result_tm, &result);
+    PG_RETURN_DATUM(result);
+}
+
+Datum b_db_date_numeric(PG_FUNCTION_ARGS)
+{
+    Numeric num = PG_GETARG_NUMERIC(0);
+    lldiv_t div;
+    struct pg_tm result_tt, *result_tm = &result_tt;
+    Datum result;
+
+    Numeric_to_lldiv(num, &div);
+    if (IS_ZERO_NUMBER_DATE(div.quot, div.rem)) {
+        result_tm->tm_year = 0;
+        result_tm->tm_mon = 0;
+        result_tm->tm_mday = 0;
+        char buf[MAXDATELEN + 1];
+        EncodeDateOnlyForBDatabase(result_tm, u_sess->time_cxt.DateStyle, buf, ENABLE_ZERO_MONTH);
+        result = DirectFunctionCall1(textin, CStringGetDatum(buf));
+        PG_RETURN_DATUM(result);
+    }
+    lldiv_decode_tm(num, &div, result_tm, (ENABLE_ZERO_DAY | ENABLE_ZERO_MONTH));
+    date_internal(result_tm, &result);
+    PG_RETURN_DATUM(result);
+}
+
+/* dayofmonth_text()
+ * @param1 specified date,                                 text
+ * @return extract day part of the argument,               int32
+ */
+Datum dayofmonth_text(PG_FUNCTION_ARGS)
+{
+    text *raw_text = PG_GETARG_TEXT_PP(0);
+    struct pg_tm result_tt, *result_tm = &result_tt;
+
+    char *date_str = text_to_cstring(raw_text);
+    datetime_in_with_flag(date_str, result_tm, (ENABLE_ZERO_DAY | ENABLE_ZERO_MONTH));
+    PG_RETURN_INT32(result_tm->tm_mday);
+}
+
+Datum dayofmonth_numeric(PG_FUNCTION_ARGS)
+{
+    Numeric num = PG_GETARG_NUMERIC(0);
+    lldiv_t div;
+    struct pg_tm result_tt, *result_tm = &result_tt;
+
+    Numeric_to_lldiv(num, &div);
+    if(IS_ZERO_NUMBER_DATE(div.quot, div.rem)) {
+        PG_RETURN_INT32(0);
+    }
+    lldiv_decode_tm(num, &div, result_tm, (ENABLE_ZERO_DAY | ENABLE_ZERO_MONTH));
+    PG_RETURN_INT32(result_tm->tm_mday);
+}
+
+/* b_db_sumdays()
+ * @param year  specified year
+ * @param month specified month
+ * @param day   specified day
+ * @return days from 0000-00-00
+ */
+static int b_db_sumdays(int year, int month, int day)
+{
+     int days =  date2j(year,month,day) - date2j(0,1,1) + 1;
+     if ((year == B_FORMAT_MIN_YEAR_OF_DATE && month >= MARCH) || year > B_FORMAT_MIN_YEAR_OF_DATE)    //fix bug because of 0000-2-29
+        days--;
+    return days;
+}
+
+/*
+There are 8 modes in function week. Each certain mode consists of three features.
+Therefor, we use three bits to represent that three features.
+The meaning of each bit is as follows:
+    Bit(0):
+            0 -> Monday is start day of week
+            1 -> Sunday is start day of week
+
+    Bit(1):
+            0 -> week number is between 0 and 53.
+                0 means last week of the previous year.
+                1 means first week of given year.
+
+            1 -> week number is between 1 and 53
+                One may get week 53 for a date in January (when the week is that last week of previous year)
+                and week 1 for a date in December.
+
+    Bit(2):
+            0 -> If the week contains January 1 has four or more day in the new year, then it is week 1.
+                 Otherwise it is the last week of the previous year, and the next week if week 1.
+
+            1 -> The week that contains the first 'first-day-of-week' is week one.
+
+ *@param mode specified week mode in [0~7]
+ *@return adjusted mode
+*/
+static int64 b_db_weekmode(int64 mode)
+{
+    /* make sure that weekmode is an integer between 0 and 7 */
+    int64 weekmode = (mode & 7);
+
+    /* if Monday is not first weekday, invert bit(3) */
+    if(!(weekmode & MONDAY_IS_FIRST_WEEKDAY)) weekmode ^= FIRST_FULL_WEEK;
+    return weekmode;
+}
+
+/*b_db_cal_week()
+ *@param tm specified date info structure
+ *@param mode specified week mode in [0~7]
+ *@param year this parameter may be used in yearweek()
+ *@return week numbers
+*/
+static int b_db_cal_week(struct pg_tm* tm, int64 mode, uint *year)
+{
+    long days;
+    long weekday;
+    long tm_year = tm->tm_year;
+    long tm_mon = tm->tm_mon;
+    long tm_mday = tm->tm_mday;
+
+    long sum_day = b_db_sumdays(tm_year, tm_mon, tm_mday);
+    long sum_start_day = b_db_sumdays(tm_year, 1, 1);
+
+    bool monday_is_first_day = mode & MONDAY_IS_FIRST_WEEKDAY;
+    bool week_scope = mode & SCOPE_OF_WEEK;
+    bool first_week = mode & FIRST_FULL_WEEK;
+
+    tm->tm_mon = 1;
+    tm->tm_mday = 1;
+    weekday = cal_weekday_interval(tm, !monday_is_first_day);
+    *year = tm_year;
+
+    if (tm_mon == JANUARY && tm_mday <= DAYS_PER_WEEK - weekday) {
+        if (!week_scope && ((first_week && weekday != 0) || (!first_week && weekday >= FOUR_DAYS_IN_YEAR)))
+            return 0;
+        
+        week_scope = true;
+        (*year)--;
+        days = isleap(*year) ? DAYS_PER_LEAP_YEAR : DAYS_PER_COMMON_YEAR;
+        sum_start_day -= days;
+        weekday = (weekday + (WEEKS_PER_YEAR + 1) * DAYS_PER_WEEK - days) % DAYS_PER_WEEK;
+    }
+
+    if ((first_week && weekday != 0) || (!first_week && weekday >= FOUR_DAYS_IN_YEAR))
+        days = sum_day - (sum_start_day + (DAYS_PER_WEEK - weekday));
+    else
+        days = sum_day - (sum_start_day - weekday);
+    
+    if (week_scope && days >= WEEKS_PER_YEAR * DAYS_PER_WEEK) {
+        weekday = (weekday + (isleap(*year) ? DAYS_PER_LEAP_YEAR : DAYS_PER_COMMON_YEAR)) % DAYS_PER_WEEK;
+        if ((first_week && weekday == 0) || (!first_week && weekday < FOUR_DAYS_IN_YEAR)) {
+            (*year)++;
+            return 1;
+        }
+    }
+
+    return days / DAYS_PER_WEEK + 1;
+}
+
+static inline void week_internal(struct pg_tm *result_tm, int32 *week, int64 mode, uint* year)
+{
+    uint tmp_year = 0;
+    int64 final_mode;
+    if (year != NULL) {// yearweek call it, else week call it
+        final_mode = b_db_weekmode(mode) | SCOPE_OF_WEEK;
+    } else {
+        final_mode = b_db_weekmode(mode);
+    }
+
+    *week = b_db_cal_week(result_tm, final_mode, &tmp_year);
+    if (year != NULL) {
+        *year = tmp_year;
+    }
+}
+
+Datum week_text(PG_FUNCTION_ARGS)
+{
+    struct pg_tm result_tt, *result_tm = &result_tt;
+    int32 week;
+    int64 mode;
+
+    if (PG_ARGISNULL(0)) {
+        PG_RETURN_NULL();
+    }
+    text *raw_text = PG_GETARG_TEXT_PP(0);
+
+    if (PG_ARGISNULL(1)) {
+        mode = GetSessionContext()->default_week_format;
+    } else {
+        mode = PG_GETARG_INT64(1);
+    }
+
+    char *date_str = text_to_cstring(raw_text);
+    datetime_in_with_flag(date_str, result_tm, NORMAL_DATE);
+    /* When date is truncated to '0000-00-00', MSQ's week() return an invalid vaulue 613566757.
+       Here we raise an error.
+    */
+    if (zero_date_tm(result_tm)) {
+        ereport(ERROR,(errcode(DTERR_BAD_FORMAT), errmsg("Truncated incorrect datetime value: \"%s\"", date_str)));
+    }
+    week_internal(result_tm, &week, mode, NULL);
+    PG_RETURN_INT32(week);
+}
+
+Datum week_numeric(PG_FUNCTION_ARGS)
+{
+    Numeric num;
+    int64 mode;
+    lldiv_t div;
+    struct pg_tm result_tt, *result_tm = &result_tt;
+    int32 week;
+
+    if (PG_ARGISNULL(0)) {
+        PG_RETURN_NULL();
+    }
+    num = PG_GETARG_NUMERIC(0);
+    Numeric_to_lldiv(num, &div);
+
+    if (PG_ARGISNULL(1)) {
+        mode = GetSessionContext()->default_week_format;
+    } else {
+        mode = PG_GETARG_INT64(1);
+    }
+
+    lldiv_decode_tm(num, &div, result_tm, NORMAL_DATE);
+    week_internal(result_tm, &week, mode, NULL);
+    PG_RETURN_INT32(week);
+}
+
+Datum yearweek_text(PG_FUNCTION_ARGS)
+{
+    struct pg_tm result_tt, *result_tm = &result_tt;
+    int32 week;
+    uint year;
+    int64 mode;
+    if (PG_ARGISNULL(0)) {
+        PG_RETURN_NULL();
+    }
+    if (PG_ARGISNULL(1)) {
+        mode = 0;
+    } else {
+        mode = PG_GETARG_INT64(1);
+    }
+
+    text *raw_text = PG_GETARG_TEXT_PP(0);
+    char *date_str = text_to_cstring(raw_text);
+
+    datetime_in_with_flag(date_str, result_tm, NORMAL_DATE);
+    /* When date is truncated to '0000-00-00', MSQ's yearweek() return an invalid vaulue 613566757.
+       Here we raise an error.
+    */
+    if (zero_date_tm(result_tm)) {
+        ereport(ERROR,(errcode(DTERR_BAD_FORMAT), errmsg("Truncated incorrect datetime value: \"%s\"", date_str)));
+    }
+    week_internal(result_tm, &week, mode, &year);
+    PG_RETURN_INT64(year * 100 + week);
+}
+
+Datum yearweek_numeric(PG_FUNCTION_ARGS)
+{
+    Numeric num;
+    lldiv_t div;
+    int64 mode;
+    struct pg_tm result_tt, *result_tm = &result_tt;
+    int32 week;
+    uint year;
+
+    if (PG_ARGISNULL(0)) {
+        PG_RETURN_NULL();
+    }
+    num = PG_GETARG_NUMERIC(0);
+    Numeric_to_lldiv(num, &div);
+    if (PG_ARGISNULL(1)) {
+        mode = 0;
+    } else {
+        mode = PG_GETARG_INT64(1);
+    }
+
+    lldiv_decode_tm(num, &div, result_tm, NORMAL_DATE);
+    week_internal(result_tm, &week, mode, &year);
+    PG_RETURN_INT64(year * 100 + week);
 }
 #endif

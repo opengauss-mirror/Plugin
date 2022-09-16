@@ -1,0 +1,1467 @@
+---- b compatibility case
+drop database if exists b_datetime_func_test;
+NOTICE:  database "b_datetime_func_test" does not exist, skipping
+create database b_datetime_func_test dbcompatibility 'b';
+\c b_datetime_func_test
+set datestyle = 'ISO,ymd';
+set time zone "Asia/Shanghai";
+-- test part-two function
+-- test dayname
+show lc_time_names;
+ lc_time_names 
+---------------
+ en_US
+(1 row)
+
+-- 边界值,坏值
+select dayname('0000-1-1');
+ dayname 
+---------
+ Sunday
+(1 row)
+
+select dayname('0000-0-1');
+ERROR:  date/time field value out of range: "0000-0-1"
+HINT:  Perhaps you need a different "datestyle" setting.
+CONTEXT:  referenced column: dayname
+select dayname('0000-1-0');
+ERROR:  date/time field value out of range: "0000-1-0"
+HINT:  Perhaps you need a different "datestyle" setting.
+CONTEXT:  referenced column: dayname
+select dayname('0000-2-28');
+ dayname 
+---------
+ Tuesday
+(1 row)
+
+select dayname('0000-2-29');
+ERROR:  Incorrect datetime value: "0000-2-29"
+CONTEXT:  referenced column: dayname
+select dayname('9999-12-31');
+ dayname 
+---------
+ Friday
+(1 row)
+
+select dayname('10000-1-1');
+ERROR:  Incorrect datetime value: "10000-1-1"
+CONTEXT:  referenced column: dayname
+select dayname('0000-1-1 23:59:59.9999995');
+ dayname  
+----------
+ Saturday
+(1 row)
+
+select dayname('0000-12-31 22:59:59.9999995');
+ dayname  
+----------
+ Saturday
+(1 row)
+
+select dayname('0000-12-31 23:59:59.9999995');
+ dayname 
+---------
+ Monday
+(1 row)
+
+-- 进位
+select dayname('0000-2-28 23:59:59.999999');
+ dayname 
+---------
+ Tuesday
+(1 row)
+
+select dayname('0000-2-28 23:59:59.9999999');
+ dayname  
+----------
+ Saturday
+(1 row)
+
+select dayname('9999-12-31 23:59:59.999999');
+ dayname 
+---------
+ Friday
+(1 row)
+
+select dayname('9999-12-31 23:59:59.9999999');
+ERROR:  Truncated incorrect datetime value: "9999-12-31 23:59:59.9999999"
+CONTEXT:  referenced column: dayname
+-- 不同类型输入
+select dayname(date'0000-1-1');
+ dayname 
+---------
+ Sunday
+(1 row)
+
+select dayname(datetime'9999-12-31 12:12:12');
+ dayname 
+---------
+ Friday
+(1 row)
+
+select dayname(0);
+ERROR:  Incorrect datetime value: "0"
+CONTEXT:  referenced column: dayname
+select dayname(101);
+ dayname  
+----------
+ Saturday
+(1 row)
+
+select dayname(99991231);
+ dayname 
+---------
+ Friday
+(1 row)
+
+select dayname(20211112235959.999999);
+ dayname 
+---------
+ Friday
+(1 row)
+
+select dayname(20211112235959.9999999);
+ dayname  
+----------
+ Saturday
+(1 row)
+
+select dayname(20211112.1);
+ERROR:  Truncated incorrect date value: "20211112.1"
+CONTEXT:  referenced column: dayname
+select dayname(20211112.999999);
+ERROR:  Truncated incorrect date value: "20211112.999999"
+CONTEXT:  referenced column: dayname
+select dayname(-1);
+ERROR:  Incorrect datetime value: "-1"
+CONTEXT:  referenced column: dayname
+select dayname(9999999999999999999999999);
+ERROR:  Incorrect datetime value: "9999999999999999999999999"
+CONTEXT:  referenced column: dayname
+-- test monthname
+-- 边界值，坏值
+select monthname('0000-1-1');
+ monthname 
+-----------
+ January
+(1 row)
+
+select monthname('0000-0-1');
+ERROR:  date/time field value out of range: "0000-0-1"
+HINT:  Perhaps you need a different "datestyle" setting.
+CONTEXT:  referenced column: monthname
+select monthname('0000-1-0');
+ monthname 
+-----------
+ January
+(1 row)
+
+select monthname('0000-2-28');
+ monthname 
+-----------
+ February
+(1 row)
+
+select monthname('0000-2-29');
+ERROR:  Incorrect datetime value: "0000-2-29"
+CONTEXT:  referenced column: monthname
+select monthname('9999-12-31');
+ monthname 
+-----------
+ December
+(1 row)
+
+select monthname('10000-1-1');
+ERROR:  Incorrect datetime value: "10000-1-1"
+CONTEXT:  referenced column: monthname
+select monthname('0000-1-1 23:59:59.9999995');
+ monthname 
+-----------
+ 
+(1 row)
+
+select monthname('0000-12-31 22:59:59.9999995');
+ monthname 
+-----------
+ 
+(1 row)
+
+select monthname('0000-12-31 23:59:59.9999995');
+ monthname 
+-----------
+ January
+(1 row)
+
+-- 进位
+select monthname('0001-2-28 23:59:59.999999');
+ monthname 
+-----------
+ February
+(1 row)
+
+select monthname('0001-2-28 23:59:59.9999999');
+ monthname 
+-----------
+ March
+(1 row)
+
+select monthname('9999-12-31 23:59:59.999999');
+ monthname 
+-----------
+ December
+(1 row)
+
+select monthname('9999-12-31 23:59:59.9999999');
+ERROR:  Truncated incorrect datetime value: "9999-12-31 23:59:59.9999999"
+CONTEXT:  referenced column: monthname
+select monthname('2021-11-30 23:59:59.999999');
+ monthname 
+-----------
+ November
+(1 row)
+
+select monthname('2021-11-30 23:59:59.9999999');
+ monthname 
+-----------
+ December
+(1 row)
+
+-- 不同类型输入
+select monthname(date'0000-1-1');
+ monthname 
+-----------
+ January
+(1 row)
+
+select monthname(datetime'9999-12-31 12:12:12');
+ monthname 
+-----------
+ December
+(1 row)
+
+select monthname(-1);
+ERROR:  Incorrect datetime value: "-1"
+CONTEXT:  referenced column: monthname
+select monthname(0);
+ monthname 
+-----------
+ 
+(1 row)
+
+select monthname(101);
+ monthname 
+-----------
+ January
+(1 row)
+
+select monthname(101.1);
+ERROR:  Truncated incorrect date value: "101.1"
+CONTEXT:  referenced column: monthname
+select monthname(99991231);
+ monthname 
+-----------
+ December
+(1 row)
+
+select monthname(99991231.123);
+ERROR:  Truncated incorrect date value: "99991231.123"
+CONTEXT:  referenced column: monthname
+select monthname(20211130235959.999999);
+ monthname 
+-----------
+ November
+(1 row)
+
+select monthname(20211130235959.999999);
+ monthname 
+-----------
+ November
+(1 row)
+
+select monthname(20211130235959.9999999);
+ monthname 
+-----------
+ December
+(1 row)
+
+select monthname(99999999999999999999999);
+ERROR:  Incorrect datetime value: "99999999999999999999999"
+CONTEXT:  referenced column: monthname
+-- GUC参数lc_time_names
+show lc_time_names;
+ lc_time_names 
+---------------
+ en_US
+(1 row)
+
+select dayname('2021-11-12');
+ dayname 
+---------
+ Friday
+(1 row)
+
+select monthname('2021-11-12');
+ monthname 
+-----------
+ November
+(1 row)
+
+alter system set lc_time_names = 'zh_CN';
+select pg_sleep(1);
+ pg_sleep 
+----------
+ 
+(1 row)
+
+select dayname('2021-11-12');
+ dayname 
+---------
+ 星期五
+(1 row)
+
+select monthname('2021-11-12');
+ monthname 
+-----------
+ 十一月
+(1 row)
+
+alter system set lc_time_names = 'aaa';
+ERROR:  Unknown locale:'aaa'
+alter system set lc_time_names = 'en_US';
+select pg_sleep(1);
+ pg_sleep 
+----------
+ 
+(1 row)
+
+-- test time_to_sec
+-- 边界值，坏值
+select time_to_sec('-838:59:59.1');
+ERROR:  Truncated incorrect time value: "-838:59:59.1"
+CONTEXT:  referenced column: time_to_sec
+select time_to_sec('-838:59:59');
+ time_to_sec 
+-------------
+    -3020399
+(1 row)
+
+select time_to_sec('838:59:59.1');
+ERROR:  Truncated incorrect time value: "838:59:59.1"
+CONTEXT:  referenced column: time_to_sec
+select time_to_sec('838:59:59');
+ time_to_sec 
+-------------
+     3020399
+(1 row)
+
+select time_to_sec('-3 838:59:59');
+ERROR:  date/time field value out of range: "-3 838:59:59"
+CONTEXT:  referenced column: time_to_sec
+select time_to_sec('3 838:59:59');
+ERROR:  date/time field value out of range: "3 838:59:59"
+CONTEXT:  referenced column: time_to_sec
+select time_to_sec('839:00:00');
+ERROR:  date/time field value out of range: "839:00:00"
+CONTEXT:  referenced column: time_to_sec
+select time_to_sec('-839:00:00');
+ERROR:  date/time field value out of range: "-839:00:00"
+CONTEXT:  referenced column: time_to_sec
+select time_to_sec('0000-2-28 1:00:00');
+ time_to_sec 
+-------------
+        3600
+(1 row)
+
+select time_to_sec('0000-2-29 1:00:00');
+ERROR:  Truncated incorrect time value: "0000-2-29 1:00:00"
+CONTEXT:  referenced column: time_to_sec
+select time_to_sec('0000-0-28 1:00:00');
+ time_to_sec 
+-------------
+        3600
+(1 row)
+
+select time_to_sec('0000-2-0 1:00:00');
+ time_to_sec 
+-------------
+        3600
+(1 row)
+
+select time_to_sec('9999-12-31 23:59:59');
+ time_to_sec 
+-------------
+       86399
+(1 row)
+
+select time_to_sec('10000-1-1 23:59:59');
+ERROR:  Truncated incorrect time value: "10000-1-1 23:59:59"
+CONTEXT:  referenced column: time_to_sec
+-- 进位
+select time_to_sec('1:0:0.999999');
+ time_to_sec 
+-------------
+        3600
+(1 row)
+
+select time_to_sec('1:0:0.9999999');
+ time_to_sec 
+-------------
+        3601
+(1 row)
+
+select time_to_sec('0000-2-28 1:0:0.999999');
+ time_to_sec 
+-------------
+        3600
+(1 row)
+
+select time_to_sec('0000-2-29 1:0:0.9999999');
+ERROR:  Truncated incorrect time value: "0000-2-29 1:0:0.9999999"
+CONTEXT:  referenced column: time_to_sec
+select time_to_sec('2021-1-31 23:59:59.999999');
+ time_to_sec 
+-------------
+       86399
+(1 row)
+
+select time_to_sec('2021-1-31 23:59:59.9999999');
+ time_to_sec 
+-------------
+       86400
+(1 row)
+
+select time_to_sec('9999-12-31 23:59:59.999999');
+ time_to_sec 
+-------------
+       86399
+(1 row)
+
+select time_to_sec('9999-12-31 23:59:59.9999999');
+ time_to_sec 
+-------------
+       86400
+(1 row)
+
+-- 不同类型输入
+select time_to_sec(date'2021-11-12');
+ time_to_sec 
+-------------
+           0
+(1 row)
+
+select time_to_sec(datetime'2021-11-12 23:59:59.9999994');
+ time_to_sec 
+-------------
+       86399
+(1 row)
+
+select time_to_sec(datetime'2021-11-12 23:59:59.9999995');
+ time_to_sec 
+-------------
+           0
+(1 row)
+
+select time_to_sec(time'838:59:59');
+ time_to_sec 
+-------------
+     3020399
+(1 row)
+
+select time_to_sec(0);
+ time_to_sec 
+-------------
+           0
+(1 row)
+
+select time_to_sec(30);
+ time_to_sec 
+-------------
+          30
+(1 row)
+
+select time_to_sec(59);
+ time_to_sec 
+-------------
+          59
+(1 row)
+
+select time_to_sec(60);
+ERROR:  invalid input syntax for type time: "60"
+CONTEXT:  referenced column: time_to_sec
+select time_to_sec(235959.999999);
+ time_to_sec 
+-------------
+       86399
+(1 row)
+
+select time_to_sec(235959.9999999);
+ time_to_sec 
+-------------
+       86400
+(1 row)
+
+-- test month
+-- 边界值,坏值
+select month('0000-1-1');
+ month 
+-------
+     1
+(1 row)
+
+select month('0000-0-1');
+ month 
+-------
+     0
+(1 row)
+
+select month('0000-1-0');
+ month 
+-------
+     1
+(1 row)
+
+select month('0000-2-28');
+ month 
+-------
+     2
+(1 row)
+
+select month('0000-2-29');
+ERROR:  Incorrect datetime value: "0000-2-29"
+CONTEXT:  referenced column: month
+select month('9999-12-31');
+ month 
+-------
+    12
+(1 row)
+
+select month('10000-1-1');
+ERROR:  Incorrect datetime value: "10000-1-1"
+CONTEXT:  referenced column: month
+-- 进位
+select month('0000-2-28 23:59:59.999999');
+ month 
+-------
+     2
+(1 row)
+
+select month('0000-2-28 23:59:59.9999999');
+ month 
+-------
+     0
+(1 row)
+
+select month('9999-12-31 23:59:59.999999');
+ month 
+-------
+    12
+(1 row)
+
+select month('9999-12-31 23:59:59.9999999');
+ERROR:  Truncated incorrect datetime value: "9999-12-31 23:59:59.9999999"
+CONTEXT:  referenced column: month
+select month('2021-11-30 23:59:59.999999');
+ month 
+-------
+    11
+(1 row)
+
+select month('2021-11-30 23:59:59.9999999');
+ month 
+-------
+    12
+(1 row)
+
+-- 不同类型输入
+select month(date'0000-1-1');
+ month 
+-------
+     1
+(1 row)
+
+select month(datetime'9999-12-31 12:12:12');
+ month 
+-------
+    12
+(1 row)
+
+select month(-1);
+ERROR:  Incorrect datetime value: "-1"
+CONTEXT:  referenced column: month
+select month(0);
+ month 
+-------
+     0
+(1 row)
+
+select month(101);
+ month 
+-------
+     1
+(1 row)
+
+select month(101.1);
+ERROR:  Truncated incorrect date value: "101.1"
+CONTEXT:  referenced column: month
+select month(99991231);
+ month 
+-------
+    12
+(1 row)
+
+select month(99991231.1);
+ERROR:  Truncated incorrect date value: "99991231.1"
+CONTEXT:  referenced column: month
+select month(20211130235959.999999);
+ month 
+-------
+    11
+(1 row)
+
+select month(20211130235959.9999999);
+ month 
+-------
+    12
+(1 row)
+
+-- test last_day
+set b_compatibility_mode = true;
+-- 边界值,坏值
+select last_day('0000-1-1');
+  last_day  
+------------
+ 0000-01-31
+(1 row)
+
+select last_day('0000-0-1');
+ERROR:  date/time field value out of range: "0000-0-1"
+HINT:  Perhaps you need a different "datestyle" setting.
+CONTEXT:  referenced column: last_day
+select last_day('0000-1-0');
+  last_day  
+------------
+ 0000-01-31
+(1 row)
+
+select last_day('0000-2-28');
+  last_day  
+------------
+ 0000-02-28
+(1 row)
+
+select last_day('0000-2-29');
+ERROR:  Incorrect datetime value: "0000-2-29"
+CONTEXT:  referenced column: last_day
+select last_day('9999-12-31');
+  last_day  
+------------
+ 9999-12-31
+(1 row)
+
+select last_day('10000-1-1');
+ERROR:  Incorrect datetime value: "10000-1-1"
+CONTEXT:  referenced column: last_day
+select last_day('0000-1-1 23:59:59.999999');
+  last_day  
+------------
+ 0000-01-31
+(1 row)
+
+select last_day('0000-1-1 23:59:59.9999995');
+ERROR:  Incorrect datetime value: '0000-00-00'
+CONTEXT:  referenced column: last_day
+-- 进位
+select last_day('0000-2-28 23:59:59.999999');
+  last_day  
+------------
+ 0000-02-28
+(1 row)
+
+select last_day('0000-2-28 23:59:59.9999999');
+ERROR:  Incorrect datetime value: '0000-00-00'
+CONTEXT:  referenced column: last_day
+select last_day('9999-12-31 23:59:59.999999');
+  last_day  
+------------
+ 9999-12-31
+(1 row)
+
+select last_day('9999-12-31 23:59:59.9999999');
+ERROR:  Truncated incorrect datetime value: "9999-12-31 23:59:59.9999999"
+CONTEXT:  referenced column: last_day
+select last_day('2021-11-30 23:59:59.999999');
+  last_day  
+------------
+ 2021-11-30
+(1 row)
+
+select last_day('2021-11-30 23:59:59.9999999');
+  last_day  
+------------
+ 2021-12-31
+(1 row)
+
+-- 不同类型输入
+select last_day(date'0000-1-1');
+  last_day  
+------------
+ 0000-01-31
+(1 row)
+
+select last_day(datetime'9999-12-31 12:12:12');
+  last_day  
+------------
+ 9999-12-31
+(1 row)
+
+select last_day(-1);
+ERROR:  Incorrect datetime value: "-1"
+CONTEXT:  referenced column: last_day
+select last_day(0);
+ERROR:  Incorrect datetime value: "0"
+CONTEXT:  referenced column: last_day
+select last_day(101);
+  last_day  
+------------
+ 2000-01-31
+(1 row)
+
+select last_day(101.1);
+ERROR:  Truncated incorrect date value: "101.1"
+CONTEXT:  referenced column: last_day
+select last_day(99991231);
+  last_day  
+------------
+ 9999-12-31
+(1 row)
+
+select last_day(20211130235959.999999);
+  last_day  
+------------
+ 2021-11-30
+(1 row)
+
+select last_day(20211130235959.9999999);
+  last_day  
+------------
+ 2021-12-31
+(1 row)
+
+select last_day(20211112235959.999999);
+  last_day  
+------------
+ 2021-11-30
+(1 row)
+
+select last_day(20211112235959.9999999);
+  last_day  
+------------
+ 2021-11-30
+(1 row)
+
+set b_compatibility_mode = false;
+-- test date
+-- 边界值,坏值
+select date('0000-1-1');
+    date    
+------------
+ 0000-01-01
+(1 row)
+
+select date('0000-0-1');
+    date    
+------------
+ 0000-00-01
+(1 row)
+
+select date('0000-1-0');
+    date    
+------------
+ 0000-01-00
+(1 row)
+
+select date('0000-2-28');
+    date    
+------------
+ 0000-02-28
+(1 row)
+
+select date('0000-2-29');
+ERROR:  Incorrect datetime value: "0000-2-29"
+CONTEXT:  referenced column: date
+select date('9999-12-31');
+    date    
+------------
+ 9999-12-31
+(1 row)
+
+select date('10000-1-1');
+ERROR:  Incorrect datetime value: "10000-1-1"
+CONTEXT:  referenced column: date
+select date('0000-1-1 12:12:12.9999995');
+    date    
+------------
+ 0000-00-00
+(1 row)
+
+select date('0000-12-31 22:59:59.999999');
+    date    
+------------
+ 0000-12-31
+(1 row)
+
+-- 进位
+select date('0000-2-28 23:59:59.999999');
+    date    
+------------
+ 0000-02-28
+(1 row)
+
+select date('0000-2-28 23:59:59.9999999');
+    date    
+------------
+ 0000-00-00
+(1 row)
+
+select date('9999-12-31 23:59:59.999999');
+    date    
+------------
+ 9999-12-31
+(1 row)
+
+select date('9999-12-31 23:59:59.9999999');
+ERROR:  Truncated incorrect datetime value: "9999-12-31 23:59:59.9999999"
+CONTEXT:  referenced column: date
+select date('2021-11-30 23:59:59.999999');
+    date    
+------------
+ 2021-11-30
+(1 row)
+
+select date('2021-11-30 23:59:59.9999999');
+    date    
+------------
+ 2021-12-01
+(1 row)
+
+-- 不同类型输入
+select date(date'0000-1-1');
+    date    
+------------
+ 0000-01-01
+(1 row)
+
+select date(datetime'9999-12-31 12:12:12');
+    date    
+------------
+ 9999-12-31
+(1 row)
+
+select date(0);
+    date    
+------------
+ 0000-00-00
+(1 row)
+
+select date(-1);
+ERROR:  Incorrect datetime value: "-1"
+CONTEXT:  referenced column: date
+select date(101);
+    date    
+------------
+ 2000-01-01
+(1 row)
+
+select date(99991231);
+    date    
+------------
+ 9999-12-31
+(1 row)
+
+select date(20211130235959.999999);
+    date    
+------------
+ 2021-11-30
+(1 row)
+
+select date(20211130235959.9999999);
+    date    
+------------
+ 2021-12-01
+(1 row)
+
+select date(20211112235959.999999);
+    date    
+------------
+ 2021-11-12
+(1 row)
+
+select date(20211112235959.9999999);
+    date    
+------------
+ 2021-11-13
+(1 row)
+
+-- test day
+-- 边界值,坏值
+select day('0000-1-1');
+ day 
+-----
+   1
+(1 row)
+
+select day('0000-0-1');
+ day 
+-----
+   1
+(1 row)
+
+select day('0000-1-0');
+ day 
+-----
+   0
+(1 row)
+
+select day('0000-2-28');
+ day 
+-----
+  28
+(1 row)
+
+select day('0000-2-29');
+ERROR:  Incorrect datetime value: "0000-2-29"
+CONTEXT:  referenced column: day
+select day('9999-12-31');
+ day 
+-----
+  31
+(1 row)
+
+select day('10000-1-1');
+ERROR:  Incorrect datetime value: "10000-1-1"
+CONTEXT:  referenced column: day
+select day('0000-1-1 12:12:12.9999995');
+ day 
+-----
+   0
+(1 row)
+
+select day('0000-12-31 23:59:59.9999995');
+ day 
+-----
+   1
+(1 row)
+
+-- 进位
+select day('0000-2-28 23:59:59.999999');
+ day 
+-----
+  28
+(1 row)
+
+select day('0000-2-28 23:59:59.9999999');
+ day 
+-----
+   0
+(1 row)
+
+select day('9999-12-31 23:59:59.999999');
+ day 
+-----
+  31
+(1 row)
+
+select day('9999-12-31 23:59:59.9999999');
+ERROR:  Truncated incorrect datetime value: "9999-12-31 23:59:59.9999999"
+CONTEXT:  referenced column: day
+select day('2021-11-30 23:59:59.999999');
+ day 
+-----
+  30
+(1 row)
+
+select day('2021-11-30 23:59:59.9999999');
+ day 
+-----
+   1
+(1 row)
+
+-- 不同类型输入
+select day(date'0000-1-1');
+ day 
+-----
+   1
+(1 row)
+
+select day(datetime'9999-12-31 12:12:12');
+ day 
+-----
+  31
+(1 row)
+
+select day(-1);
+ERROR:  Incorrect datetime value: "-1"
+CONTEXT:  referenced column: day
+select day(0);
+ day 
+-----
+   0
+(1 row)
+
+select day(101.1);
+ERROR:  Truncated incorrect date value: "101.1"
+CONTEXT:  referenced column: day
+select day(99991231);
+ day 
+-----
+  31
+(1 row)
+
+select day(20211130235959.999999);
+ day 
+-----
+  30
+(1 row)
+
+select day(20211130235959.9999999);
+ day 
+-----
+   1
+(1 row)
+
+--test week
+-- 单参数
+show default_week_format;
+ default_week_format 
+---------------------
+ 0
+(1 row)
+
+-- 边界值,坏值
+select week('0000-1-1');
+ week 
+------
+    1
+(1 row)
+
+select week('0000-0-1');
+ERROR:  date/time field value out of range: "0000-0-1"
+HINT:  Perhaps you need a different "datestyle" setting.
+CONTEXT:  referenced column: week
+select week('0000-1-0');
+ERROR:  date/time field value out of range: "0000-1-0"
+HINT:  Perhaps you need a different "datestyle" setting.
+CONTEXT:  referenced column: week
+select week('0000-2-28');
+ week 
+------
+    9
+(1 row)
+
+select week('0000-2-29');
+ERROR:  Incorrect datetime value: "0000-2-29"
+CONTEXT:  referenced column: week
+select week('9999-12-31');
+ week 
+------
+   52
+(1 row)
+
+select week('10000-1-1');
+ERROR:  Incorrect datetime value: "10000-1-1"
+CONTEXT:  referenced column: week
+select week('0000-1-1 12:00:00.9999995');
+ERROR:  Truncated incorrect datetime value: "0000-1-1 12:00:00.9999995"
+CONTEXT:  referenced column: week
+select week('0000-12-31 23:59:59.9999995');
+ week 
+------
+    0
+(1 row)
+
+-- 进位
+select week('0000-2-28 23:59:59.999999');
+ week 
+------
+    9
+(1 row)
+
+select week('0000-2-28 23:59:59.9999999');
+ERROR:  Truncated incorrect datetime value: "0000-2-28 23:59:59.9999999"
+CONTEXT:  referenced column: week
+select week('9999-12-31 23:59:59.999999');
+ week 
+------
+   52
+(1 row)
+
+select week('9999-12-31 23:59:59.9999999');
+ERROR:  Truncated incorrect datetime value: "9999-12-31 23:59:59.9999999"
+CONTEXT:  referenced column: week
+select week('2021-11-30 23:59:59.999999');
+ week 
+------
+   48
+(1 row)
+
+select week('2021-11-30 23:59:59.9999999');
+ week 
+------
+   48
+(1 row)
+
+-- 不同类型输入
+select week(date'0000-1-1');
+ week 
+------
+    1
+(1 row)
+
+select week(datetime'9999-12-31 12:12:12');
+ week 
+------
+   52
+(1 row)
+
+select week(-1);
+ERROR:  Incorrect datetime value: "-1"
+CONTEXT:  referenced column: week
+select week(0);
+ERROR:  Incorrect datetime value: "0"
+CONTEXT:  referenced column: week
+select week(101);
+ week 
+------
+    0
+(1 row)
+
+select week(101.1);
+ERROR:  Truncated incorrect date value: "101.1"
+CONTEXT:  referenced column: week
+select week(99991231);
+ week 
+------
+   52
+(1 row)
+
+select week(99991231.123);
+ERROR:  Truncated incorrect date value: "99991231.123"
+CONTEXT:  referenced column: week
+select week(20211130235959.999999);
+ week 
+------
+   48
+(1 row)
+
+select week(20211130235959.9999999);
+ week 
+------
+   48
+(1 row)
+
+-- 双参数 
+select week('2000-1-1', 0);
+ week 
+------
+    0
+(1 row)
+
+select week('2000-1-1', 1);
+ week 
+------
+    0
+(1 row)
+
+select week('2000-1-1', 2);
+ week 
+------
+   52
+(1 row)
+
+select week('2000-1-1', 3);
+ week 
+------
+   52
+(1 row)
+
+select week('2000-1-1', 4);
+ week 
+------
+    0
+(1 row)
+
+select week('2000-1-1', 5);
+ week 
+------
+    0
+(1 row)
+
+select week('2000-1-1', 6);
+ week 
+------
+   52
+(1 row)
+
+select week('2000-1-1', 7);
+ week 
+------
+   52
+(1 row)
+
+select week(20000101, 0);
+ week 
+------
+    0
+(1 row)
+
+select week(date'0000-1-1', 1);
+ week 
+------
+    0
+(1 row)
+
+select week(datetime'9999-12-31 12:12:12', 2);
+ week 
+------
+   52
+(1 row)
+
+select week(datetime'9999-12-31 23:59:59.999999', 2);
+ week 
+------
+   52
+(1 row)
+
+select week(date'2000-1-1', 2);
+ week 
+------
+   52
+(1 row)
+
+-- GUC
+show default_week_format;
+ default_week_format 
+---------------------
+ 0
+(1 row)
+
+alter system set default_week_format = 1;
+select week('2000-1-1');
+ week 
+------
+    0
+(1 row)
+
+alter system set default_week_format = 2;
+select week('2000-1-1');
+ week 
+------
+   52
+(1 row)
+
+alter system set default_week_format = 0;
+--test yearweek
+-- 单参数
+-- 边界值,坏值
+select yearweek('0000-1-1');
+ yearweek 
+----------
+        1
+(1 row)
+
+select yearweek('0000-0-1');
+ERROR:  date/time field value out of range: "0000-0-1"
+HINT:  Perhaps you need a different "datestyle" setting.
+CONTEXT:  referenced column: yearweek
+select yearweek('0000-1-0');
+ERROR:  date/time field value out of range: "0000-1-0"
+HINT:  Perhaps you need a different "datestyle" setting.
+CONTEXT:  referenced column: yearweek
+select yearweek('0000-2-28');
+ yearweek 
+----------
+        9
+(1 row)
+
+select yearweek('0000-2-29');
+ERROR:  Incorrect datetime value: "0000-2-29"
+CONTEXT:  referenced column: yearweek
+select yearweek('9999-12-31');
+ yearweek 
+----------
+   999952
+(1 row)
+
+select yearweek('10000-1-1');
+ERROR:  Incorrect datetime value: "10000-1-1"
+CONTEXT:  referenced column: yearweek
+select yearweek('0000-1-1 12:12:12.9999995');
+ERROR:  Truncated incorrect datetime value: "0000-1-1 12:12:12.9999995"
+CONTEXT:  referenced column: yearweek
+select yearweek('0000-12-31 23:59:59.9999999');
+ yearweek 
+----------
+       53
+(1 row)
+
+-- 进位
+select yearweek('0000-2-28 23:59:59.999999');
+ yearweek 
+----------
+        9
+(1 row)
+
+select yearweek('0000-2-28 23:59:59.9999999');
+ERROR:  Truncated incorrect datetime value: "0000-2-28 23:59:59.9999999"
+CONTEXT:  referenced column: yearweek
+select yearweek('9999-12-31 23:59:59.999999');
+ yearweek 
+----------
+   999952
+(1 row)
+
+select yearweek('9999-12-31 23:59:59.9999999');
+ERROR:  Truncated incorrect datetime value: "9999-12-31 23:59:59.9999999"
+CONTEXT:  referenced column: yearweek
+select yearweek('2021-11-30 23:59:59.999999');
+ yearweek 
+----------
+   202148
+(1 row)
+
+select yearweek('2021-11-30 23:59:59.9999999');
+ yearweek 
+----------
+   202148
+(1 row)
+
+-- 不同类型输入
+select yearweek(date'0000-1-1');
+ yearweek 
+----------
+        1
+(1 row)
+
+select yearweek(datetime'9999-12-31 12:12:12');
+ yearweek 
+----------
+   999952
+(1 row)
+
+select yearweek(-1);
+ERROR:  Incorrect datetime value: "-1"
+CONTEXT:  referenced column: yearweek
+select yearweek(0);
+ERROR:  Incorrect datetime value: "0"
+CONTEXT:  referenced column: yearweek
+select yearweek(101);
+ yearweek 
+----------
+   199952
+(1 row)
+
+select yearweek(101.1);
+ERROR:  Truncated incorrect date value: "101.1"
+CONTEXT:  referenced column: yearweek
+select yearweek(99991231);
+ yearweek 
+----------
+   999952
+(1 row)
+
+select yearweek(99991231.123);
+ERROR:  Truncated incorrect date value: "99991231.123"
+CONTEXT:  referenced column: yearweek
+select yearweek(20211130235959.999999);
+ yearweek 
+----------
+   202148
+(1 row)
+
+select yearweek(20211130235959.9999999);
+ yearweek 
+----------
+   202148
+(1 row)
+
+-- 双参数 
+select yearweek('2000-1-1', 0);
+ yearweek 
+----------
+   199952
+(1 row)
+
+select yearweek('2000-1-1', 1);
+ yearweek 
+----------
+   199952
+(1 row)
+
+select yearweek('2000-1-1', 2);
+ yearweek 
+----------
+   199952
+(1 row)
+
+select yearweek('2000-1-1', 3);
+ yearweek 
+----------
+   199952
+(1 row)
+
+select yearweek('2000-1-1', 4);
+ yearweek 
+----------
+   199952
+(1 row)
+
+select yearweek('2000-1-1', 5);
+ yearweek 
+----------
+   199952
+(1 row)
+
+select yearweek('2000-1-1', 6);
+ yearweek 
+----------
+   199952
+(1 row)
+
+select yearweek('2000-1-1', 7);
+ yearweek 
+----------
+   199952
+(1 row)
+
+select yearweek(20000101, 0);
+ yearweek 
+----------
+   199952
+(1 row)
+
+select yearweek(date'0000-1-1', 1);
+  yearweek  
+------------
+ 4294967248
+(1 row)
+
+select yearweek(datetime'9999-12-31 12:12:12', 2);
+ yearweek 
+----------
+   999952
+(1 row)
+
+select yearweek(datetime'9999-12-31 23:59:59.999999', 2);
+ yearweek 
+----------
+   999952
+(1 row)
+
+select yearweek(date'2000-1-1', 2);
+ yearweek 
+----------
+   199952
+(1 row)
+
+\c contrib_regression
+DROP DATABASE b_datetime_func_test;

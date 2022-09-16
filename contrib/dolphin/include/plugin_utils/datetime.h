@@ -25,15 +25,26 @@
 #ifndef FRONTEND_PARSER
 
 /* validate b database date and time type */
-extern int ValidateDateForBDatabase(bool is2digits, struct pg_tm* tm);
+extern int ValidateDateForBDatabase(bool is2digits, struct pg_tm* tm, unsigned int date_flag = 0);
 extern int ValidateTimeForBDatabase(bool timeIn24, struct pg_tm* tm, fsec_t* fsec);
+#ifdef DOLPHIN
+extern int DecodeTimeOnlyForBDatabase(char** field, int* ftype, int nf, int* dtype, struct pg_tm* tm, fsec_t* fsec, int* tzp, int D, unsigned int date_flag = 0);
+extern int DecodeDateTimeForBDatabase(char** field, int* ftype, int nf, int* dtype, struct pg_tm* tm, fsec_t* fsec, int* tzp, unsigned int date_flag = 0);
+extern void EncodeDateOnlyForBDatabase(struct pg_tm* tm, int style, char* str, unsigned int date_flag = 0);
+#else
 extern int DecodeTimeOnlyForBDatabase(char** field, int* ftype, int nf, int* dtype, struct pg_tm* tm, fsec_t* fsec, int* tzp, int D);
 extern int DecodeDateTimeForBDatabase(char** field, int* ftype, int nf, int* dtype, struct pg_tm* tm, fsec_t* fsec, int* tzp);
 extern void EncodeDateOnlyForBDatabase(struct pg_tm* tm, int style, char* str);
+#endif
 extern void EncodeDateTimeForBDatabase(struct pg_tm* tm, fsec_t fsec, bool print_tz, int tz, const char* tzn, int style, char* str);
 
 extern void Unixtimestamp2tm(double unixtimestamp, struct pg_tm* tm, fsec_t* fsec);
 extern bool numeric_to_lldiv_t(NumericVar *from, lldiv_t *to);
+
+#ifdef DOLPHIN
+extern void lldiv_decode_tm(Numeric num, lldiv_t *div, struct pg_tm *tm, unsigned int date_flag);
+extern void NumericVar2lldiv(NumericVar *from, lldiv_t *to);
+#endif
 
 /* Limits for the TIME data type */
 #define TIME_MAX_HOUR 838

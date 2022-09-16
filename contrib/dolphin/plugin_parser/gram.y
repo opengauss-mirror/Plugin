@@ -1068,7 +1068,7 @@ static bool DolphinObjNameCmp(const char* s1, const char* s2, bool is_quoted);
 
 	KEY KEYS KILL KEY_PATH KEY_STORE
 
-	LABEL LANGUAGE LARGE_P LAST_P LC_COLLATE_P LC_CTYPE_P LEADING LEAKPROOF
+	LABEL LANGUAGE LARGE_P LAST_DAY_FUNC LAST_P LC_COLLATE_P LC_CTYPE_P LEADING LEAKPROOF
 	LEAST LESS LEFT LEVEL LIKE LIMIT LIST LISTEN LOAD LOCAL LOCALTIME LOCALTIMESTAMP
 	LOCATE LOCATION LOCK_P LOCKED LOG_P LOGGING LOGIN_ANY LOGIN_FAILURE LOGIN_SUCCESS LOGOUT LOOP LOW_PRIORITY
 	MAPPING MASKING MASTER MATCH MATERIALIZED MATCHED MAXEXTENTS MAXSIZE MAXTRANS MAXVALUE MEDIUMINT MERGE MICROSECOND_P MID MINUS_P MINUTE_P MINVALUE MINEXTENTS MOD MODE MODIFY_P MONTH_P MOVE MOVEMENT
@@ -27497,6 +27497,21 @@ func_expr_common_subexpr:
 					n->call_func = false;
 					$$ = (Node *)n;
 				}
+			| DATE_P '(' a_expr ')'
+				{
+					FuncCall *n = makeNode(FuncCall);
+					n->funcname = SystemFuncName("b_db_date");
+					n->colname = pstrdup("date");
+					n->args = list_make1($3);
+					n->agg_order = NIL;
+					n->agg_star = false;
+					n->agg_distinct = false;
+					n->func_variadic = false;
+					n->over = NULL;
+					n->location = @1;
+					n->call_func = false;
+					$$ = (Node *)n;
+				}
 			| SYSDATE '(' optional_precision ')'
 				{
 					FuncCall *n = makeNode(FuncCall);
@@ -27703,6 +27718,25 @@ func_expr_common_subexpr:
 					FuncCall *n = makeNode(FuncCall);
 					n->funcname = SystemFuncName("date_part");
 					n->args = $3;
+					n->agg_order = NIL;
+					n->agg_star = FALSE;
+					n->agg_distinct = FALSE;
+					n->func_variadic = FALSE;
+					n->over = NULL;
+					n->location = @1;
+					n->call_func = false;
+					$$ = (Node *)n;
+				}
+			| LAST_DAY_FUNC '(' a_expr ')'
+				{
+					FuncCall *n = makeNode(FuncCall);
+					if(GetSessionContext()->enableBCmptMode) {
+						n->funcname = SystemFuncName("b_db_last_day");
+						n->colname = pstrdup("last_day");
+					} else {
+						n->funcname = SystemFuncName("last_day");
+					}
+					n->args = list_make1($3);
 					n->agg_order = NIL;
 					n->agg_star = FALSE;
 					n->agg_distinct = FALSE;
@@ -30249,6 +30283,7 @@ col_name_keyword:
 			  col_name_keyword_nonambiguous { $$ = $1; }
 			| COALESCE
 			| CONVERT
+			| DATE_P
 			| DAYOFMONTH
 			| DAYOFWEEK
 			| DAYOFYEAR
@@ -30308,7 +30343,6 @@ col_name_keyword_nonambiguous:
 			| BYTEAWITHOUTORDERWITHEQUAL
 			| CHAR_P
 			| CHARACTER
-			| DATE_P
 			| DATETIME
 			| DEC
 			| DECIMAL_P
@@ -30449,6 +30483,7 @@ reserved_keyword:
 			| INTERSECT
 			| INTO
 			| IS
+			| LAST_DAY_FUNC
 			| LEADING
 			| LESS
 			| LIMIT

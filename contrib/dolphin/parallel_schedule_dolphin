@@ -106,3 +106,5 @@ test: case_sensitive_test/role_test
 # case sensitive test end
 
 test: json_array json_object json_quote json_contains json_contains_path json_extract json_unquote json_keys json_search json_array_append
+
+test: db_b_date_time_functions2

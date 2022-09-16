@@ -92,6 +92,9 @@ PG_FUNCTION_INFO_V1_PUBLIC(utc_date_func);
 extern "C" DLL_PUBLIC Datum utc_date_func(PG_FUNCTION_ARGS);
 PG_FUNCTION_INFO_V1_PUBLIC(utc_time_func);
 extern "C" DLL_PUBLIC Datum utc_time_func(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1_PUBLIC(time_to_sec);
+extern "C" DLL_PUBLIC Datum time_to_sec(PG_FUNCTION_ARGS);
 #endif
 /* common code for timetypmodin and timetztypmodin */
 static int32 anytime_typmodin(bool istz, ArrayType* ta)
@@ -353,7 +356,7 @@ Datum date_in(PG_FUNCTION_ARGS)
     PG_RETURN_DATEADT(date);
 }
 #ifdef DOLPHIN
-int NumberDate(char *str, pg_tm *tm) 
+int NumberDate(char *str, pg_tm *tm, unsigned int date_flag) 
 {
     int len = 0;
     char *cp = str;
@@ -389,10 +392,10 @@ int NumberDate(char *str, pg_tm *tm)
         }
     }
     int date = atoi(adjusted);
-    return int32_b_format_date_internal(tm, date, strlen(adjusted) != DATE_YYYYMMDD_LEN);
+    return int32_b_format_date_internal(tm, date, strlen(adjusted) != DATE_YYYYMMDD_LEN, date_flag);
 }
 
-int int32_b_format_date_internal(struct pg_tm *tm, int4 date, bool mayBe2Digit) 
+int int32_b_format_date_internal(struct pg_tm *tm, int4 date, bool mayBe2Digit, unsigned int date_flag)
 {
     int dterr;
     /* YYYYMMDD or YYMMDD*/
@@ -404,7 +407,7 @@ int int32_b_format_date_internal(struct pg_tm *tm, int4 date, bool mayBe2Digit)
     if (tm->tm_year > B_FORMAT_MAX_YEAR_OF_DATE) {
         dterr = DTERR_FIELD_OVERFLOW;
     } else {
-        dterr = ValidateDateForBDatabase(is2digits, tm);
+        dterr = ValidateDateForBDatabase(is2digits, tm, date_flag);
     }
     return dterr;
 }
@@ -3899,5 +3902,97 @@ Datum time_bool(PG_FUNCTION_ARGS)
         ereport(ERROR, (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE), errmsg("time out of range")));
     }
     PG_RETURN_BOOL(false);
+}
+
+/**
+ * The function is similar to time_in, but uses flag to control the parsing process.
+ */
+TimeADT time_in_with_flag(char *str, unsigned int date_flag)
+{
+    TimeADT result;
+    fsec_t fsec;
+    struct pg_tm tt, *tm = &tt;
+    int tz;
+    int nf;
+    int dterr;
+    char workbuf[MAXDATELEN + 1];
+    char* field[MAXDATEFIELDS];
+    int dtype;
+    int ftype[MAXDATEFIELDS];
+    int timeSign = 1;
+    int D = 0;
+    /* check if empty */
+    if (strlen(str) == 0) {
+        PG_RETURN_TIMEADT(0);
+    }
+    bool hasD = false;
+    char *adjusted = adjust_b_format_time(str, &timeSign, &D, &hasD);
+    dterr = ParseDateTime(adjusted, workbuf, sizeof(workbuf), field, ftype, MAXDATEFIELDS, &nf);
+    if (dterr != 0)
+        DateTimeParseError(dterr, str, "time");
+    if (dterr == 0) {
+        if (ftype[0] == DTK_NUMBER && nf == 1) {
+            /* for example: str = "2 121212" , "231034.1234" */
+            if (NumberTime(false, field[0], tm, &fsec, D, hasD)) {
+                ereport(ERROR,
+                    (errcode(ERRCODE_INVALID_DATETIME_FORMAT),
+                        errmsg("invalid input syntax for type %s: \"%s\"", "time", str)));
+            }
+        } else {
+            dterr = DecodeTimeOnlyForBDatabase(field, ftype, nf, &dtype, tm, &fsec, &tz, D, date_flag);
+            if (dterr != 0)
+                DateTimeParseError(dterr, str, "time");
+        }
+    }
+
+    if (tm->tm_year > B_FORMAT_MAX_YEAR_OF_DATE || (tm->tm_year == B_FORMAT_MIN_YEAR_OF_DATE && tm->tm_mon == FEBRUARY && tm->tm_mday == DAYNUM_FEB_LEAPYEAR)) {
+        ereport(ERROR,
+                (errcode(DTERR_BAD_FORMAT), errmsg("Truncated incorrect time value: \"%s\"", str)));
+    }
+
+    tm2time(tm, fsec, &result);
+    AdjustTimeForTypmod(&result, TIMESTAMP_MAX_PRECISION);
+    result *= timeSign;
+
+    /* do a final range check */
+    bool is_overflow = false;
+#ifdef HAVE_INT64_TIMESTAMP
+    if (result < -TIME_BOUND_WITHOUT_DICIMAL_SEC || result > TIME_BOUND_WITHOUT_DICIMAL_SEC)
+        is_overflow = true;
+#else
+    if (result < ((double)(-TIME_BOUND_WITHOUT_DICIMAL_SEC) / USECS_PER_SEC) || result > ((double)(TIME_BOUND_WITHOUT_DICIMAL_SEC) / USECS_PER_SEC))
+        is_overflow = true;
+#endif
+    if (is_overflow) {
+        ereport(ERROR,
+        (errcode(ERRCODE_DATETIME_FIELD_OVERFLOW),
+            errmsg("Truncated incorrect time value: \"%s\"", str)));
+    }
+    return result;
+}
+
+/* time_to_sec()
+ * @param time
+ * @return seconds of the given time
+ */
+Datum time_to_sec(PG_FUNCTION_ARGS)
+{
+    TimeADT time;
+    text *raw_text = PG_GETARG_TEXT_PP(0);
+    struct pg_tm result_tt, *result_tm = &result_tt;
+    fsec_t fsec;
+    int32 result;
+    int32 timeSign = 1;
+
+    char *time_str = text_to_cstring(raw_text);
+    time = time_in_with_flag(time_str, (ENABLE_ZERO_DAY | ENABLE_ZERO_MONTH));
+    if (time < 0) {
+        timeSign = -1;
+        time = -time;
+    }
+    time2tm(time, result_tm, &fsec);
+    result = ((result_tm->tm_hour * MINS_PER_HOUR + result_tm->tm_min) * SECS_PER_MINUTE) + result_tm->tm_sec;
+    result *= timeSign;
+    PG_RETURN_INT32(result);
 }
 #endif

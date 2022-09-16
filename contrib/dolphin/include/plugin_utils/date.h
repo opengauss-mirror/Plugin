@@ -43,10 +43,17 @@
 #define HALF_NANO2MICRO_BASE 500
 #define FRAC_PART_LEN_IN_NUMERICSEC 100000000
 
+#ifdef DOLPHIN
+#define TWO_DIGITS_YEAR_DATE_ONE 691231 /* 2069-12-31 */
+#define TWO_DIGITS_YEAR_DATE_TWO 700101 /* 1970-01-01 */
+#define TWO_DIGITS_YEAR_DATE_THREE 991231   /* 1999-12-31 */
+#define TIME_BOUND_WITHOUT_DICIMAL_SEC INT64CONST(B_FORMAT_MAX_TIME_USECS - 1000000)
+#endif
+
 /* for b compatibility type*/
-extern int int32_b_format_date_internal(struct pg_tm *tm, int4 date, bool mayBe2Digit);
+extern int int32_b_format_date_internal(struct pg_tm *tm, int4 date, bool mayBe2Digit, unsigned int date_flag = 0);
 extern int int32_b_format_time_internal(struct pg_tm *tm, bool timeIn24, int4 time, fsec_t *fsec);
-extern int NumberDate(char *str, pg_tm *tm);
+extern int NumberDate(char *str, pg_tm *tm, unsigned int date_flag = 0);
 extern int NumberTime(bool timeIn24, char *str, pg_tm *tm, fsec_t *fsec, int D = 0, bool hasD = false);
 /* for b compatibility time function*/
 extern void str_to_pg_tm(char *str, pg_tm &tt, fsec_t &fsec, int &timeSign);
@@ -55,6 +62,10 @@ extern bool time_in_no_ereport(const char *str, TimeADT *time);
 extern bool is_date_format(const char *str);
 extern bool date_in_no_ereport(const char *str, DateADT *date);
 extern bool date_sub_interval(DateADT date, Interval *span, DateADT *result);
+
+#ifdef DOLPHIN
+extern TimeADT time_in_with_flag(char *str, TimeADT *time, unsigned int date_flag);
+#endif
 
 /* ----------
  * Stores the seconds of type Numeric

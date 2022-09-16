@@ -20,6 +20,12 @@ struct MyLocale{
     char locale_name[LOCALE_LEN];
     char decimal_point;
     char thousand_sep;
+#ifdef DOLPHIN
+    char **month_names;
+    char **ab_month_names;
+    char **day_names;
+    char **ab_day_names;
+#endif
 };
 
 MyLocale* MyLocaleSearch(char* target);
