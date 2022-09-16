@@ -9,6 +9,8 @@ DROP FUNCTION IF EXISTS pg_catalog.elt(text, variadic arr "any") cascade;
 DROP FUNCTION IF EXISTS pg_catalog.elt(int8, variadic arr "any") cascade;
 CREATE OR REPLACE FUNCTION pg_catalog.elt(text, variadic arr "any") returns text LANGUAGE C IMMUTABLE as '$libdir/dolphin', 'elt_string';
 CREATE OR REPLACE FUNCTION pg_catalog.elt(int8, variadic arr "any") returns text LANGUAGE C IMMUTABLE as '$libdir/dolphin', 'elt_integer';
+DROP FUNCTION IF EXISTS pg_catalog.elt(bit, variadic arr "any") cascade;
+CREATE OR REPLACE FUNCTION pg_catalog.elt(bit, variadic arr "any") returns text LANGUAGE C IMMUTABLE as '$libdir/dolphin', 'elt_bit';
 
 DROP FUNCTION IF EXISTS pg_catalog.field(variadic arr "any") cascade;
 CREATE OR REPLACE FUNCTION pg_catalog.field(variadic arr "any") returns int8 LANGUAGE C IMMUTABLE as '$libdir/dolphin', 'field';
@@ -22,6 +24,8 @@ DROP FUNCTION IF EXISTS pg_catalog.soundex(text) cascade;
 CREATE OR REPLACE FUNCTION pg_catalog.soundex(text) returns text LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'soundex';
 DROP FUNCTION IF EXISTS pg_catalog.soundex(boolean) cascade;
 CREATE OR REPLACE FUNCTION pg_catalog.soundex(boolean) returns text LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'soundex_bool';
+DROP FUNCTION IF EXISTS pg_catalog.soundex(bit) cascade;
+CREATE OR REPLACE FUNCTION pg_catalog.soundex(bit) returns text LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'soundex_bit';
 
 DROP FUNCTION IF EXISTS pg_catalog.soundex_difference(text, text) cascade;
 CREATE OR REPLACE FUNCTION pg_catalog.soundex_difference(text, text) returns integer LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'soundex_difference';
@@ -30,6 +34,8 @@ DROP FUNCTION IF EXISTS pg_catalog.space(int4) cascade;
 DROP FUNCTION IF EXISTS pg_catalog.space(text) cascade;
 CREATE OR REPLACE FUNCTION pg_catalog.space(int4) returns text LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'space_integer';
 CREATE OR REPLACE FUNCTION pg_catalog.space(text) returns text LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'space_string';
+DROP FUNCTION IF EXISTS pg_catalog.space(bit) cascade;
+CREATE OR REPLACE FUNCTION pg_catalog.space(bit) returns text LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'space_bit';
 
 DROP FUNCTION IF EXISTS pg_catalog.chara(variadic arr "any") cascade;
 CREATE OR REPLACE FUNCTION pg_catalog.chara(variadic arr "any") returns text LANGUAGE C IMMUTABLE as '$libdir/dolphin', 'm_char';

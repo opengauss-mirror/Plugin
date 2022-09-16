@@ -11,5 +11,6 @@ select space(11.6);
 select space(true);
 select space(1,2,3);
 select space(2147483647111);
+select space(b'111');
 \c postgres
 drop database if exists db_space;

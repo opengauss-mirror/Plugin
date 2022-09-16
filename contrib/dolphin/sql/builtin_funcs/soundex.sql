@@ -24,6 +24,7 @@ select soundex('00人'),soundex('a00入'),soundex('baa入'),soundex('0b0入');
 select soundex('0000食不果腹'),soundex('食不裹腹');
 select soundex('气概'),soundex('气慨');
 select soundex('辐射'),soundex('幅射');
+select soundex(b'111');
 select 'ibc' sounds like 'abc';
 select 'aws' sounds like '10';
 select 'aftcbtlxpz' sounds like 'afdsbfdlsafs';

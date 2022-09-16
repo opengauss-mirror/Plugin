@@ -140,6 +140,12 @@ select soundex('辐射'),soundex('幅射');
  辐000   | 幅000
 (1 row)
 
+select soundex(b'111');
+ soundex 
+---------
+ 
+(1 row)
+
 select 'ibc' sounds like 'abc';
  soundex_difference 
 --------------------
