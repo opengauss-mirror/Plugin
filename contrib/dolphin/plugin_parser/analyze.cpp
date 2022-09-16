@@ -110,7 +110,8 @@ static Query* transformDeleteStmt(ParseState* pstate, DeleteStmt* stmt);
 static Query* transformInsertStmt(ParseState* pstate, InsertStmt* stmt);
 static UpsertExpr* transformUpsertClause(ParseState* pstate, UpsertClause* upsertClause);
 static int count_rowexpr_columns(ParseState* pstate, Node* expr);
-static Query* transformVariableSetStmt(ParseState* pstate, VariableSetStmt* stmt);
+static void transformVariableSetStmt(ParseState* pstate, VariableSetStmt* stmt);
+static Query* transformVariableMutiSetStmt(ParseState* pstate, VariableMultiSetStmt* muti_stmt);
 static Query* transformSelectStmt(
     ParseState* pstate, SelectStmt* stmt, bool isFirstNode = true, bool isCreateView = false);
 static Query* transformValuesClause(ParseState* pstate, SelectStmt* stmt);
@@ -125,7 +126,7 @@ static Query* transformExplainStmt(ParseState* pstate, ExplainStmt* stmt);
 static Query* transformCreateTableAsStmt(ParseState* pstate, CreateTableAsStmt* stmt);
 static void CheckDeleteRelation(Relation targetrel);
 static void CheckUpdateRelation(Relation targetrel);
-static Query* transformVariableSetValueStmt(ParseState* pstate, VariableSetStmt* stmt, bool is_alter_sys);
+static void transformVariableSetValueStmt(ParseState* pstate, VariableSetStmt* stmt);
 #ifdef PGXC
 static Query* transformExecDirectStmt(ParseState* pstate, ExecDirectStmt* stmt);
 static bool IsExecDirectUtilityStmt(const Node* node);
@@ -155,10 +156,12 @@ static const char* NOKEYUPDATE_KEYSHARE_ERRMSG = "/NO KEY UPDATE/KEY SHARE";
 static const char* NOKEYUPDATE_KEYSHARE_ERRMSG = "";
 #endif
 
+#ifdef DOLPHIN
 static Node* makeConstByType(Form_pg_attribute att_tup);
 static Node* makeTimetypeConst(Oid targetType, int32 targetTypmod, Oid targetCollation, int16 targetLen, bool targetByval);
 static Node* makeNotTimetypeConst(Oid targetType, int32 targetTypmod, Oid targetCollation, int16 targetLen, bool targetByval);
 static List* makeValueLists(ParseState* pstate);
+#endif
 
 /*
  * parse_analyze
@@ -396,8 +399,9 @@ Query* transformStmt(ParseState* pstate, Node* parseTree, bool isFirstNode, bool
 {
     Query* result = NULL;
     AnalyzerRoutine *analyzerRoutineHook = (AnalyzerRoutine*)u_sess->hook_cxt.analyzerRoutineHook;
+#ifdef DOLPHIN
     char* enumName = NULL;
-
+#endif
     switch (nodeTag(parseTree)) {
             /*
              * Optimizable statements
@@ -469,29 +473,21 @@ Query* transformStmt(ParseState* pstate, Node* parseTree, bool isFirstNode, bool
             result->utilityStmt = (Node*)parseTree;
         } break;
 
-        case T_AlterSystemStmt:
         case T_VariableSetStmt: {
                 VariableSetStmt* stmt;
-                bool is_alter_sys = false;
-
-                if (nodeTag(parseTree) == T_AlterSystemStmt) {
-                    AlterSystemStmt* alter_sys_stmt = (AlterSystemStmt*)parseTree;
-                    stmt = alter_sys_stmt->setstmt;
-                    is_alter_sys = true;
-                } else {
-                    stmt = (VariableSetStmt*)parseTree;
-                }
+                stmt = (VariableSetStmt*)parseTree;
 
                 if (DB_IS_CMPT(B_FORMAT) && u_sess->attr.attr_common.enable_set_variable_b_format && stmt->kind == VAR_SET_VALUE) {
-                    result = transformVariableSetValueStmt(pstate, stmt, is_alter_sys);
-                } else if (stmt->kind == VAR_SET_DEFINED) {
-                    result = transformVariableSetStmt(pstate, stmt);
-                } else {
-                    result = makeNode(Query);
-                    result->commandType = CMD_UTILITY;
-                    result->utilityStmt = (Node*)parseTree;
+                    transformVariableSetValueStmt(pstate, stmt);
                 }
+                result = makeNode(Query);
+                result->commandType = CMD_UTILITY;
+                result->utilityStmt = (Node*)parseTree;
             } break;
+
+        case T_VariableMultiSetStmt: 
+            result = transformVariableMutiSetStmt(pstate, (VariableMultiSetStmt*)parseTree);
+            break;
 #ifdef DOLPHIN
         case T_CreateEnumStmt:
             enumName = strVal(llast(((CreateEnumStmt*)parseTree)->typname));
@@ -593,12 +589,11 @@ bool analyze_requires_snapshot(Node* parseTree)
             }
             break;
 
-        case T_VariableSetStmt:
+        case T_VariableMultiSetStmt:
             /* user-defined variables support sublink */
-            if (((VariableSetStmt *)parseTree)->defined_args != NULL) {
                 result = true;
-            }
             break;
+
         default:
             /* other utility statements don't have any real parse analysis */
             result = false;
@@ -1760,7 +1755,11 @@ static Query* transformInsertStmt(ParseState* pstate, InsertStmt* stmt)
     /*
      * Determine which variant of INSERT we have.
      */
-    if (selectStmt == NULL && SQL_MODE_STRICT()) {
+    if (selectStmt == NULL
+#ifdef DOLPHIN
+     && SQL_MODE_STRICT()
+#endif
+     ) {
         /*
          * We have INSERT ... DEFAULT VALUES.  We can handle this case by
          * emitting an empty targetlist --- all columns will be defaulted when
@@ -2873,11 +2872,55 @@ static bool shouldTransformStartWithStmt(ParseState* pstate, SelectStmt* stmt, Q
 }
 
 /*
- * transformVariableSetStmt - transforms a user-defined variable
+ * transformVariableSetValueStmt - 
+ *    transforms a VariableSetStmt
  */
-static Query* transformVariableSetStmt(ParseState* pstate, VariableSetStmt* stmt)
+static Query* transformVariableMutiSetStmt(ParseState* pstate, VariableMultiSetStmt* muti_stmt)
 {
     Query *query = makeNode(Query);
+    List *resultList = NIL;
+
+    List* stmts = muti_stmt->args;
+    ListCell* cell = NULL;
+    VariableSetStmt* set_stmt;
+
+    foreach(cell, stmts) {
+        Node* stmt = (Node*)lfirst(cell);
+
+        if (nodeTag(stmt) == T_AlterSystemStmt) {
+            AlterSystemStmt *alter_sys_stmt = (AlterSystemStmt *)stmt;
+            set_stmt = alter_sys_stmt->setstmt;
+        } else {
+            set_stmt = (VariableSetStmt*)stmt;
+        }
+
+        if (set_stmt->kind == VAR_SET_DEFINED)
+            transformVariableSetStmt(pstate, set_stmt);
+        if (set_stmt->kind == VAR_SET_VALUE)
+            transformVariableSetValueStmt(pstate, set_stmt);
+
+        if (nodeTag(stmt) == T_AlterSystemStmt) {
+            AlterSystemStmt *newnode = makeNode(AlterSystemStmt);
+            newnode->setstmt = set_stmt;
+            resultList = lappend(resultList, newnode);
+        } else {
+            resultList = lappend(resultList, set_stmt);
+        }
+    }
+
+    list_free(muti_stmt->args);
+    muti_stmt->args = resultList;
+
+    query->commandType = CMD_UTILITY;
+    query->utilityStmt = (Node*)muti_stmt;
+    return query;
+}
+
+/*
+ * transformVariableSetStmt - transforms a user-defined variable
+ */
+static void transformVariableSetStmt(ParseState* pstate, VariableSetStmt* stmt)
+{
     List *resultList = NIL;
     ListCell *temp = NULL;
 
@@ -2898,21 +2941,14 @@ static Query* transformVariableSetStmt(ParseState* pstate, VariableSetStmt* stmt
         resultList = lappend(resultList, newUserElem);
     }
     stmt->defined_args = resultList;
-
-    query->commandType = CMD_UTILITY;
-    query->utilityStmt = (Node*)stmt;
-
-    return query;
 }
 
 /*
  * transformVariableSetValueStmt - 
  *    transforms a VariableSetStmt
  */
-static Query* transformVariableSetValueStmt(ParseState* pstate, VariableSetStmt* stmt, bool is_alter_sys)
+static void transformVariableSetValueStmt(ParseState* pstate, VariableSetStmt* stmt)
 {
-    Query *query = makeNode(Query);
-
     List *resultlist = NIL;
     ListCell* l = NULL;
 
@@ -2930,21 +2966,11 @@ static Query* transformVariableSetValueStmt(ParseState* pstate, VariableSetStmt*
             node = transformExpr(pstate, expr);
         }
 
-        resultlist = lappend(resultlist, (Expr *)node);
+        resultlist = lappend(resultlist, (Expr*)node);
     }
+
     list_free(stmt->args);
     stmt->args = resultlist;
-
-    query->commandType = CMD_UTILITY;
-    if (is_alter_sys) {
-        AlterSystemStmt* alter_sys_stmt = makeNode(AlterSystemStmt);
-        alter_sys_stmt->setstmt = stmt;
-        query->utilityStmt = (Node*)alter_sys_stmt;
-    } else {
-        query->utilityStmt = (Node*)stmt;
-    }
-
-    return query;
 }
 
 /*
