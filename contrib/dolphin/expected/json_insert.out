@@ -1,0 +1,221 @@
+drop database if exists test;
+NOTICE:  database "test" does not exist, skipping
+create database test dbcompatibility'B';
+\c test
+
+-- test for basic functionality of json_replace
+select JSON_INSERT('{"a": 43}', '$.b', 55);
+    json_insert     
+--------------------
+ {"a": 43, "b": 55}
+(1 row)
+
+select JSON_INSERT('{"a": 43}', '$.a', 55);
+ json_insert 
+-------------
+ {"a": 43}
+(1 row)
+
+select JSON_INSERT('{"a": 43}', '$.a[1]', 55);
+   json_insert   
+-----------------
+ {"a": [43, 55]}
+(1 row)
+
+select JSON_INSERT('{"a": 43}', '$.a[0]', 55);
+ json_insert 
+-------------
+ {"a": 43}
+(1 row)
+
+select JSON_INSERT('{"a": 43}', '$.b[1]', 55);
+ json_insert 
+-------------
+ {"a": 43}
+(1 row)
+
+select JSON_INSERT('{"a": 43}', '$.b[0]', 55);
+ json_insert 
+-------------
+ {"a": 43}
+(1 row)
+
+
+select JSON_INSERT('{"a": 43}', '$.b', 'hello');
+       json_insert       
+-------------------------
+ {"a": 43, "b": "hello"}
+(1 row)
+
+select JSON_INSERT('{"a": 43}', '$.b', cast('{"nn":"lihua"}'as json));
+           json_insert           
+---------------------------------
+ {"a": 43, "b": {"nn": "lihua"}}
+(1 row)
+
+select JSON_INSERT('{"a": 43}', '$.b', '{"nn":"lihua"}');
+             json_insert              
+--------------------------------------
+ {"a": 43, "b": "{\"nn\":\"lihua\"}"}
+(1 row)
+
+select JSON_INSERT('{"a": 43}', '$.b', true);
+     json_insert      
+----------------------
+ {"a": 43, "b": true}
+(1 row)
+
+select JSON_INSERT('{"a": 43}', '$.b', false);
+      json_insert      
+-----------------------
+ {"a": 43, "b": false}
+(1 row)
+
+
+-- test for null
+select JSON_INSERT('{"a": 43}', '$.b', null);
+ json_insert 
+-------------
+ 
+(1 row)
+
+select JSON_INSERT('{"a": 43}', null, 'hello');
+ json_insert 
+-------------
+ 
+(1 row)
+
+select JSON_INSERT(null, '$.b', 'hello');
+ json_insert 
+-------------
+ 
+(1 row)
+
+
+-- test for multiple path
+select JSON_INSERT('{"a": 43}', '$.b', 4323, '$.c', 'hello');
+            json_insert             
+------------------------------------
+ {"a": 43, "b": 4323, "c": "hello"}
+(1 row)
+
+
+-- test for invalid path
+SELECT JSON_INSERT('{"x":1}',2,2);
+ERROR:  Invalid JSON path expression.
+CONTEXT:  referenced column: json_insert
+SELECT JSON_INSERT('{"x":1}','2.as',2);
+ERROR:  Invalid JSON path expression.
+CONTEXT:  referenced column: json_insert
+
+-- test for invalid json text
+SELECT JSON_INSERT('', '$[1]', 9, '$[3]', 22);
+ERROR:  Invalid JSON text in function json_insert.
+CONTEXT:  referenced column: json_insert
+SELECT JSON_INSERT(122323, '$.b', 9, '$.a', 22);
+ERROR:  Invalid data type for JSON data in argument 1 to function json_insert
+CONTEXT:  referenced column: json_insert
+select JSON_INSERT('{"a": }', '$.b', 55);
+ERROR:  Invalid JSON text in function json_insert.
+CONTEXT:  referenced column: json_insert
+select JSON_INSERT('{a: 43}', '$.b', 55);
+ERROR:  Invalid JSON text in function json_insert.
+CONTEXT:  referenced column: json_insert
+
+-- test for path with wildcard
+select JSON_INSERT('{"a": 43}', '$.*.b', 55);
+ERROR:  In this situation, path expressions may not contain the * and ** tokens.
+CONTEXT:  referenced column: json_insert
+select JSON_INSERT('{"a": 43}', '$**.a', 55);
+ERROR:  In this situation, path expressions may not contain the * and ** tokens.
+CONTEXT:  referenced column: json_insert
+select JSON_INSERT('{"a": 43}', '$[*]', 55);
+ERROR:  In this situation, path expressions may not contain the * and ** tokens.
+CONTEXT:  referenced column: json_insert
+
+-- test for incorrect arg number
+SELECT JSON_INSERT('"x"');
+ERROR:  Incorrect parameter count in the call to native function 'JSON_INSERT'
+CONTEXT:  referenced column: json_insert
+SELECT JSON_INSERT('"x"', 2);
+ERROR:  Incorrect parameter count in the call to native function 'JSON_INSERT'
+CONTEXT:  referenced column: json_insert
+SELECT JSON_INSERT('"x"','a',3,true);
+ERROR:  Incorrect parameter count in the call to native function 'JSON_INSERT'
+CONTEXT:  referenced column: json_insert
+
+-- test for A Larger JSON Document
+SELECT JSON_INSERT('{  
+    "Person": {    
+       "Name": "Homer", 
+       "Age": 39,
+       "Hobbies": ["Eating", "Sleeping"]  
+    }
+ }', '$.Person.Name', 'Bart', '$.Person.Age', 10, '$.Person.Hobbies[1]', 'Base Jumping');
+                                 json_insert                                 
+-----------------------------------------------------------------------------
+ {"Person": {"Age": 39, "Hobbies": ["Eating", "Sleeping"], "Name": "Homer"}}
+(1 row)
+
+
+-- test for call other functions
+SELECT JSON_INSERT(json_build_object('name', 'Lihua'), '$.age', 43);
+         json_insert          
+------------------------------
+ {"age": 43, "name": "Lihua"}
+(1 row)
+
+select JSON_INSERT(json_build_object('name', 'Lihua'), '$.b', json_build_object('mm', 43));
+            json_insert             
+------------------------------------
+ {"b": {"mm": 43}, "name": "Lihua"}
+(1 row)
+
+select json_build_object('ob',JSON_INSERT('{"a": 43}', '$.b', 66));
+      json_build_object      
+-----------------------------
+ {"ob" : {"a": 43, "b": 66}}
+(1 row)
+
+
+-- test for table
+create temp table test (
+    textjson json
+);
+insert into test values
+('{"a": {"b": 32, "c":"hello"}, "d": 0.3443}'),
+('["dog", "pig", {"a": "here"}]'),
+('["pig", "dog", {"a": "there"}]'),
+('{"a": "abc","b": {"b": "abc", "a": "abc"}}');
+
+select JSON_INSERT(textjson, '$.name', 'Lihua') from test;
+                         json_insert                          
+--------------------------------------------------------------
+ {"a": {"b": 32, "c": "hello"}, "d": 0.3443, "name": "Lihua"}
+ ["dog", "pig", {"a": "here"}]
+ ["pig", "dog", {"a": "there"}]
+ {"a": "abc", "b": {"a": "abc", "b": "abc"}, "name": "Lihua"}
+(4 rows)
+
+select JSON_INSERT(textjson, '$.a[5]', 'Hi') from test;
+                     json_insert                     
+-----------------------------------------------------
+ {"a": [{"b": 32, "c": "hello"}, "Hi"], "d": 0.3443}
+ ["dog", "pig", {"a": "here"}]
+ ["pig", "dog", {"a": "there"}]
+ {"a": ["abc", "Hi"], "b": {"a": "abc", "b": "abc"}}
+(4 rows)
+
+
+insert into test values
+(JSON_INSERT('{"a": 43, "b": {"c": true}}', '$.b[4]', 'Test'));
+select * from test;
+                  textjson                  
+--------------------------------------------
+ {"a": {"b": 32, "c":"hello"}, "d": 0.3443}
+ ["dog", "pig", {"a": "here"}]
+ ["pig", "dog", {"a": "there"}]
+ {"a": "abc","b": {"b": "abc", "a": "abc"}}
+ {"a": 43, "b": [{"c": true}, "Test"]}
+(5 rows)
+

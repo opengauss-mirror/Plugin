@@ -12,13 +12,7 @@
  *
  * -------------------------------------------------------------------------
  */
-#ifdef DOLPHIN
-#include "cjson/cJSON.h"
-#endif
 #include "postgres.h"
-#ifdef DOLPHIN
-#include "plugin_postgres.h"
-#endif
 #include <limits.h>
 
 #include "fmgr.h"
@@ -39,15 +33,9 @@
 #include "utils/typcache.h"
 
 #ifdef DOLPHIN
-#define NextByte(p, plen) ((p)++, (plen)--)
-/* Set up to compile like_match.c for single-byte characters */
-#define CHAREQ(p1, p2) (*(p1) == *(p2))
-#define NextChar(p, plen) NextByte((p), (plen))
-#define CopyAdvChar(dst, src, srclen) (*(dst)++ = *(src)++, (srclen)--)
-#define do_like_escape MB_do_like_escape
-#define MatchText MB_MatchText
-#include "utils/pg_locale.h"
-#include "like_match.cpp"
+#include "cjson/cJSON.h"
+#include "plugin_postgres.h"
+#include "plugin_utils/json.h"
 #endif
 
 #ifdef DOLPHIN
@@ -59,6 +47,18 @@
 #define cJSON_JsonPath_AnyIndex (1 << 4)
 #define cJSON_JsonPath_Any (1 << 5)
 #define cJSON_JsonPath_IndexRanger (1 << 6)
+#define VALTYPE_IS_JSON(v) \
+    ((v) == UNKNOWNOID || (v) == JSONOID || (v) == JSONBOID || (v) == CSTRINGOID || (v) == TEXTOID)
+
+#define NextByte(p, plen) ((p)++, (plen)--)
+/* Set up to compile like_match.c for single-byte characters */
+#define CHAREQ(p1, p2) (*(p1) == *(p2))
+#define NextChar(p, plen) NextByte((p), (plen))
+#define CopyAdvChar(dst, src, srclen) (*(dst)++ = *(src)++, (srclen)--)
+#define do_like_escape MB_do_like_escape
+#define MatchText MB_MatchText
+#include "utils/pg_locale.h"
+#include "like_match.cpp"
 
 typedef struct cJSON_JsonPath {
     struct cJSON_JsonPath *next;
@@ -78,6 +78,11 @@ typedef struct cJSON_ResultWrapper {
     int len;
 } cJSON_ResultWrapper;
 
+typedef char *ElemType;
+typedef struct LinkNode {
+    ElemType data;
+    struct LinkNode *next;
+} * search_LinkStack;
 static int error_pos = -1;
 
 static bool jp_match(cJSON *item, cJSON_JsonPath *jp, cJSON_ResultWrapper *res);
@@ -110,6 +115,9 @@ cJSON *cJSON_ResultWrapperToArray(cJSON_ResultWrapper *res);
 void cJSON_SortObject(cJSON *object);
 int cJSON_JsonPathGetError();
 bool cJSON_JsonPathCanMatchMany(cJSON_JsonPath *jp);
+cJSON_bool cJSON_JsonInsert(cJSON *root, cJSON_JsonPath *jp, cJSON *value);
+static inline cJSON_JsonPath *jp_pop(cJSON_JsonPath *jp);
+text *formatJsondoc(char *str);
 
 static bool jp_match(cJSON *item, cJSON_JsonPath *jp, cJSON_ResultWrapper *res)
 {
@@ -284,7 +292,7 @@ static cJSON_JsonPath *jp_parse_key(const char *data, int *idx)
             item->type = cJSON_JsonPath_Key;
             item->key = (char *)cJSON_malloc(sizeof(char) * (end - i + 1));
             rc = strncpy_s(item->key, end - i + 1, data + i, end - i);
-	    securec_check(rc, "\0", "\0");
+            securec_check(rc, "\0", "\0");
             item->key[end - i] = '\0';
             *idx = end + 1;
         }
@@ -298,7 +306,7 @@ static cJSON_JsonPath *jp_parse_key(const char *data, int *idx)
         item->type = cJSON_JsonPath_Key;
         item->key = (char *)cJSON_malloc(sizeof(char) * (end - i + 1));
         rc = strncpy_s(item->key, end - i + 1, data + i, end - i);
-	securec_check(rc, "\0", "\0");
+        securec_check(rc, "\0", "\0");
         item->key[end - i] = '\0';
         *idx = end;
     }
@@ -390,7 +398,7 @@ cJSON_JsonPath *cJSON_CreateJsonPath()
     cJSON_JsonPath *jp = (cJSON_JsonPath *)cJSON_malloc(sizeof(cJSON_JsonPath));
     if (jp) {
         errno_t rc = memset_s(jp, sizeof(cJSON_JsonPath), 0, sizeof(cJSON_JsonPath));
-	securec_check(rc, "\0", "\0");
+        securec_check(rc, "\0", "\0");
     }
     return jp;
 }
@@ -583,6 +591,30 @@ extern "C" DLL_PUBLIC Datum json_search(PG_FUNCTION_ARGS);
 
 PG_FUNCTION_INFO_V1_PUBLIC(json_keys);
 extern "C" DLL_PUBLIC Datum json_keys(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1_PUBLIC(json_merge_preserve);
+extern "C" DLL_PUBLIC Datum json_merge_preserve(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1_PUBLIC(json_merge);
+extern "C" DLL_PUBLIC Datum json_merge(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1_PUBLIC(json_merge_patch);
+extern "C" DLL_PUBLIC Datum json_merge_patch(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1_PUBLIC(json_insert);
+extern "C" DLL_PUBLIC Datum json_insert(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1_PUBLIC(json_replace);
+extern "C" DLL_PUBLIC Datum json_replace(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1_PUBLIC(json_remove);
+extern "C" DLL_PUBLIC Datum json_remove(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1_PUBLIC(json_array_insert);
+extern "C" DLL_PUBLIC Datum json_array_insert(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1_PUBLIC(json_set);
+extern "C" DLL_PUBLIC Datum json_set(PG_FUNCTION_ARGS);
 #endif
 /* semantic action functions for json_object_keys */
 static void okeys_object_field_start(void *state, char *fname, bool isnull);
@@ -766,6 +798,24 @@ typedef struct PopulateRecordsetState {
 
 /* Turn a jsonb object into a record */
 static void make_row_from_rec_and_jsonb(Jsonb *element, PopulateRecordsetState *state);
+
+#ifdef DOLPHIN
+static text *json_merge_patch_unit(text *j1, text *j2);
+static text *json_merge_preserve_unit(text *j1, text *j2);
+static text *json_regular_format(text *json);
+static OkeysState *get_object_key_info(text *json);
+static void free_object_key_info(OkeysState *state);
+static int put_object_keys_into_set(char **keys, OkeysState *cState, OkeysState *tState);
+static int put_object_keys_into_set(char **keys, OkeysState *tState);
+static void appendObject(StringInfo result, text *json, int cnt, char **keys, int *pos);
+static void appendStringInfoObject(StringInfo result, text *json);
+static void appendStringInfoArray(StringInfo result, text *json);
+static void appendStringInfoArrayEle(StringInfo result, text *json);
+static void appendStringInfoScalar(StringInfo result, text *json);
+static void appendStringInfoObjectsPatch(StringInfo result, text *j1, text *j2);
+static void appendStringInfoObjectsPreserve(StringInfo result, text *j1, text *j2);
+static bool json_array_null(text *json);
+#endif
 
 /*
  * SQL function json_object_keys
@@ -3592,11 +3642,6 @@ Datum json_extract(PG_FUNCTION_ARGS)
 #endif
 
 #ifdef DOLPHIN
-typedef char *ElemType;
-typedef struct LinkNode {
-    ElemType data;
-    struct LinkNode *next;
-} * search_LinkStack;
 void search_PushStack(search_LinkStack &s, ElemType x)
 {
     LinkNode *newnode = (LinkNode *)malloc(sizeof(LinkNode));
@@ -3893,12 +3938,12 @@ char *strrpl(char *str, char *oldstr, char *newstr)
     securec_check(rc, "\0", "\0");
     for (int i = 0; i < length; i++) {
         if (!strncmp(str + i, oldstr, strlen(oldstr))) {
-            rc = strcat_s(bstr, length+1, newstr);
+            rc = strcat_s(bstr, length + 1, newstr);
             securec_check(rc, "\0", "\0");
             i += strlen(oldstr) - 1;
         } else {
-            rc = strncat_s(bstr, length+1, str + i, 1);
-	    securec_check(rc, "\0", "\0");
+            rc = strncat_s(bstr, length + 1, str + i, 1);
+            securec_check(rc, "\0", "\0");
         }
     }
     rc = strncpy_s(str, length + 1, bstr, length + 1);
@@ -4585,5 +4630,1313 @@ Datum json_array_append(PG_FUNCTION_ARGS)
 Datum json_append(PG_FUNCTION_ARGS)
 {
     PG_RETURN_TEXT_P(json_array_append(fcinfo));
+}
+#endif
+
+#ifdef DOLPHIN
+static OkeysState *get_object_key_info(text *json)
+{
+    OkeysState *tState = NULL;
+
+    JsonLexContext *ttLex = makeJsonLexContext(json, true);
+    JsonSemAction *tSem = NULL;
+
+    tState = (OkeysState *)palloc(sizeof(OkeysState));
+    tSem = (JsonSemAction *)palloc0(sizeof(JsonSemAction));
+
+    tState->lex = ttLex;
+    tState->result_size = 256;
+    tState->result_count = 0;
+    tState->sent_count = 0;
+    tState->result = (char **)palloc(256 * sizeof(char *));
+
+    tSem->semstate = (void *)tState;
+    tSem->array_start = okeys_array_start;
+    tSem->scalar = okeys_scalar;
+    tSem->object_field_start = okeys_object_field_start;
+    /* remainder are all NULL, courtesy of palloc0 above */
+    pg_parse_json(ttLex, tSem);
+    /* keys are now in state->result */
+    pfree(ttLex->strval->data);
+    pfree(ttLex->strval);
+    pfree(ttLex);
+    pfree(tSem);
+
+    return tState;
+}
+
+static void free_object_key_info(OkeysState *state)
+{
+    /* cleanup to reduce or eliminate memory leaks */
+    for (int i = 0; i < state->result_count; i++) {
+        pfree(state->result[i]);
+    }
+    pfree(state->result);
+    pfree(state);
+}
+
+static int put_object_keys_into_set(char **keys, OkeysState *cState, OkeysState *tState)
+{
+    int i;
+    int cnt = 0;
+    for (i = 0; i < cState->result_count; i++) {
+        bool flag = true;
+        for (int iter = 0; iter < cnt; iter++) {
+            if (strcmp(cState->result[i], keys[iter]) == 0)
+                flag = false;
+        }
+        if (flag) {
+            keys[cnt] = cState->result[i];
+            cnt++;
+        }
+    }
+
+    for (i = 0; i < tState->result_count; i++) {
+        bool flag = true;
+        for (int iter = 0; iter < cnt; iter++) {
+            if (strcmp(tState->result[i], keys[iter]) == 0)
+                flag = false;
+        }
+        if (flag) {
+            keys[cnt] = tState->result[i];
+            cnt++;
+        }
+    }
+    return cnt;
+}
+
+static int put_object_keys_into_set(char **keys, OkeysState *tState)
+{
+    int i;
+    int cnt = 0;
+    for (i = 0; i < tState->result_count; i++) {
+        bool flag = true;
+        for (int iter = 0; iter < cnt; iter++) {
+            if (strcmp(tState->result[i], keys[iter]) == 0)
+                flag = false;
+        }
+        if (flag) {
+            keys[cnt] = tState->result[i];
+            cnt++;
+        }
+    }
+    return cnt;
+}
+
+static void appendObject(StringInfo result, text *json, int cnt, char **keys, int *pos)
+{
+    appendStringInfoChar(result, '{');
+    for (int i = 0; i < cnt; i++) {
+        if (i != 0)
+            appendStringInfoString(result, ", ");
+        appendStringInfoChar(result, '"');
+        appendStringInfoString(result, keys[pos[i]]);
+        appendStringInfoChar(result, '"');
+        appendStringInfoString(result, ": ");
+        text *tResult = get_worker(json, keys[pos[i]], -1, NULL, NULL, -1, false);
+        appendStringInfoString(result, text_to_cstring(json_regular_format(tResult)));
+    }
+    appendStringInfoChar(result, '}');
+}
+
+static void appendStringInfoObject(StringInfo result, text *json)
+{
+    OkeysState *tState = NULL;
+    tState = get_object_key_info(json);
+
+    if (tState->result_count == 0) {
+        free_object_key_info(tState);
+        appendStringInfoChar(result, '{');
+        appendStringInfoChar(result, '}');
+        return;
+    }
+
+    char **keys = (char **)palloc(tState->result_count * sizeof(char *));
+    int cnt = put_object_keys_into_set(keys, tState);
+
+    int pos[cnt];
+    for (int i = 0; i < cnt; i++)
+        pos[i] = i;
+
+    get_keys_order(keys, 0, cnt - 1, pos);
+
+    appendObject(result, json, cnt, keys, pos);
+    free_object_key_info(tState);
+    pfree(keys);
+}
+
+static void appendStringInfoArray(StringInfo result, text *json)
+{
+    int arr_iter = 0;
+    appendStringInfoChar(result, '[');
+    while (true) {
+        text *val = get_worker(json, NULL, arr_iter, NULL, NULL, -1, false);
+        if (val == NULL)
+            break;
+        if (arr_iter != 0)
+            appendStringInfoString(result, ", ");
+        appendStringInfoString(result, text_to_cstring(json_regular_format(val)));
+        arr_iter++;
+    }
+    appendStringInfoChar(result, ']');
+}
+
+static void appendStringInfoArrayEle(StringInfo result, text *json)
+{
+    int arr_iter = 0;
+    while (true) {
+        text *val = get_worker(json, NULL, arr_iter, NULL, NULL, -1, false);
+        if (val == NULL)
+            break;
+        if (arr_iter != 0)
+            appendStringInfoString(result, ", ");
+        appendStringInfoString(result, text_to_cstring(json_regular_format(val)));
+        arr_iter++;
+    }
+}
+
+static void appendStringInfoScalar(StringInfo result, text *json)
+{
+    appendStringInfoString(result, text_to_cstring(json));
+}
+
+static void appendStringInfoObjectsPatch(StringInfo result, text *j1, text *j2)
+{
+    int i;
+
+    OkeysState *tState = NULL;
+    OkeysState *cState = NULL;
+
+    tState = get_object_key_info(j2);
+    cState = get_object_key_info(j1);
+
+    int result_count = cState->result_count + tState->result_count;
+    if (result_count == 0) {
+        free_object_key_info(tState);
+        free_object_key_info(cState);
+        appendStringInfoChar(result, '{');
+        appendStringInfoChar(result, '}');
+        return;
+    }
+
+    char **keys = (char **)palloc(result_count * sizeof(char *));
+    int cnt = put_object_keys_into_set(keys, cState, tState);
+
+    int pos[cnt];
+    for (i = 0; i < cnt; i++)
+        pos[i] = i;
+    bool flag = true;
+
+    get_keys_order(keys, 0, cnt - 1, pos);
+
+    appendStringInfoChar(result, '{');
+    for (i = 0; i < cnt; i++) {
+        text *res1 = get_worker(j1, keys[pos[i]], -1, NULL, NULL, -1, false);
+        text *res2 = get_worker(j2, keys[pos[i]], -1, NULL, NULL, -1, false);
+        if (res2 == NULL) {
+            if (i != 0 && flag)
+                appendStringInfoString(result, ", ");
+            appendStringInfoChar(result, '"');
+            appendStringInfoString(result, keys[pos[i]]);
+            appendStringInfoChar(result, '"');
+            appendStringInfoString(result, ": ");
+            appendStringInfoString(result, text_to_cstring(json_regular_format(res1)));
+        } else {
+            if (json_type(res2) == JSON_NULL) {
+                flag = false;
+                continue;
+            }
+            if (i != 0 && flag)
+                appendStringInfoString(result, ", ");
+            appendStringInfoChar(result, '"');
+            appendStringInfoString(result, keys[pos[i]]);
+            appendStringInfoChar(result, '"');
+            appendStringInfoString(result, ": ");
+            if (res1 != NULL) {
+                appendStringInfoString(result, text_to_cstring(json_merge_patch_unit(res1, res2)));
+            } else {
+                appendStringInfoString(result, text_to_cstring(json_regular_format(res2)));
+            }
+        }
+        flag = true;
+    }
+    appendStringInfoChar(result, '}');
+
+    free_object_key_info(cState);
+    free_object_key_info(tState);
+    pfree(keys);
+}
+
+static void appendStringInfoObjectsPreserve(StringInfo result, text *j1, text *j2)
+{
+    int i;
+
+    OkeysState *tState = NULL;
+    OkeysState *cState = NULL;
+    tState = get_object_key_info(j2);
+    cState = get_object_key_info(j1);
+
+    int result_count = cState->result_count + tState->result_count;
+    if (result_count == 0) {
+        free_object_key_info(tState);
+        free_object_key_info(cState);
+        appendStringInfoChar(result, '{');
+        appendStringInfoChar(result, '}');
+        return;
+    }
+
+    char **keys = (char **)palloc(result_count * sizeof(char *));
+    int cnt = put_object_keys_into_set(keys, cState, tState);
+
+    int pos[cnt];
+    for (i = 0; i < cnt; i++)
+        pos[i] = i;
+
+    get_keys_order(keys, 0, cnt - 1, pos);
+
+    appendStringInfoChar(result, '{');
+    for (i = 0; i < cnt; i++) {
+        if (i != 0)
+            appendStringInfoString(result, ", ");
+        appendStringInfoChar(result, '"');
+        appendStringInfoString(result, keys[pos[i]]);
+        appendStringInfoChar(result, '"');
+        appendStringInfoString(result, ": ");
+        text *res1 = get_worker(j1, keys[pos[i]], -1, NULL, NULL, -1, false);
+        text *res2 = get_worker(j2, keys[pos[i]], -1, NULL, NULL, -1, false);
+
+        if (res1 == NULL)
+            appendStringInfoString(result, text_to_cstring(json_regular_format(res2)));
+        else if (res2 == NULL)
+            appendStringInfoString(result, text_to_cstring(json_regular_format(res1)));
+        else
+            appendStringInfoString(result, text_to_cstring(json_merge_preserve_unit(res1, res2)));
+    }
+    appendStringInfoChar(result, '}');
+
+    free_object_key_info(cState);
+    free_object_key_info(tState);
+    pfree(keys);
+}
+
+static bool json_array_null(text *json)
+{
+    text *val = get_worker(json, NULL, 0, NULL, NULL, -1, false);
+    if (val == NULL)
+        return true;
+    return false;
+}
+
+static text *json_regular_format(text *json)
+{
+    JsonType tok = json_type(json);
+    StringInfo result = makeStringInfo();
+    switch (tok) {
+        case JSON_ARRAY: {
+            appendStringInfoArray(result, json);
+            break;
+        }
+        case JSON_OBJECT: {
+            appendStringInfoObject(result, json);
+            break;
+        }
+        case JSON_BOOL:
+        case JSON_NULL:
+        case JSON_NUMBER:
+        case JSON_STRING: {
+            appendStringInfoScalar(result, json);
+            break;
+        }
+        default:
+            elog(ERROR, "unexpected json type: %d", tok);
+    }
+    text *res = cstring_to_text_with_len(result->data, result->len);
+    pfree(result->data);
+    pfree(result);
+    return res;
+}
+
+static text *json_merge_patch_unit(text *j1, text *j2)
+{
+    JsonType t1 = json_type(j1);
+    JsonType t2 = json_type(j2);
+    StringInfo result = makeStringInfo();
+
+    switch (t1) {
+        case JSON_OBJECT: {
+            switch (t2) {
+                case JSON_OBJECT: {
+                    appendStringInfoObjectsPatch(result, j1, j2);
+                    break;
+                }
+                case JSON_ARRAY: {
+                    appendStringInfoArray(result, j2);
+                    break;
+                }
+                case JSON_BOOL:
+                case JSON_NULL:
+                case JSON_NUMBER:
+                case JSON_STRING: {
+                    appendStringInfoScalar(result, j2);
+                    break;
+                }
+                default:
+                    elog(ERROR, "unexpected json type: %d", t2);
+            }
+            break;
+        }
+        case JSON_ARRAY:
+        case JSON_BOOL:
+        case JSON_NULL:
+        case JSON_NUMBER:
+        case JSON_STRING: {
+            switch (t2) {
+                case JSON_ARRAY: {
+                    appendStringInfoArray(result, j2);
+                    break;
+                }
+                case JSON_OBJECT: {
+                    appendStringInfoObject(result, j2);
+                    break;
+                }
+                case JSON_BOOL:
+                case JSON_NULL:
+                case JSON_NUMBER:
+                case JSON_STRING: {
+                    appendStringInfoScalar(result, j2);
+                    break;
+                }
+                default:
+                    elog(ERROR, "unexpected json type: %d", t2);
+            }
+            break;
+        }
+        default:
+            elog(ERROR, "unexpected json type: %d", t1);
+    }
+    text *res = cstring_to_text_with_len(result->data, result->len);
+    pfree(result->data);
+    pfree(result);
+    return res;
+}
+
+static text *json_merge_preserve_unit(text *j1, text *j2)
+{
+    JsonType t1 = json_type(j1);
+    JsonType t2 = json_type(j2);
+    StringInfo result = makeStringInfo();
+
+    switch (t1) {
+        case JSON_OBJECT: {
+            switch (t2) {
+                case JSON_OBJECT: {
+                    appendStringInfoObjectsPreserve(result, j1, j2);
+                    break;
+                }
+                case JSON_ARRAY: {
+                    appendStringInfoChar(result, '[');
+                    appendStringInfoObject(result, j1);
+                    if (!json_array_null(j2))
+                        appendStringInfoString(result, ", ");
+                    appendStringInfoArrayEle(result, j2);
+                    appendStringInfoChar(result, ']');
+                    break;
+                }
+                case JSON_BOOL:
+                case JSON_NULL:
+                case JSON_NUMBER:
+                case JSON_STRING: {
+                    appendStringInfoChar(result, '[');
+                    appendStringInfoObject(result, j1);
+                    appendStringInfoString(result, ", ");
+                    appendStringInfoScalar(result, j2);
+                    appendStringInfoChar(result, ']');
+                    break;
+                }
+                default:
+                    elog(ERROR, "unexpected json type: %d", t2);
+            }
+            break;
+        }
+        case JSON_ARRAY: {
+            switch (t2) {
+                case JSON_ARRAY: {
+                    appendStringInfoChar(result, '[');
+                    appendStringInfoArrayEle(result, j1);
+                    if (!json_array_null(j1) && !json_array_null(j2))
+                        appendStringInfoString(result, ", ");
+                    appendStringInfoArrayEle(result, j2);
+                    appendStringInfoChar(result, ']');
+                    break;
+                }
+                case JSON_OBJECT: {
+                    appendStringInfoChar(result, '[');
+                    appendStringInfoArrayEle(result, j1);
+                    if (!json_array_null(j1))
+                        appendStringInfoString(result, ", ");
+                    appendStringInfoObject(result, j2);
+                    appendStringInfoChar(result, ']');
+                    break;
+                }
+                case JSON_BOOL:
+                case JSON_NULL:
+                case JSON_NUMBER:
+                case JSON_STRING: {
+                    appendStringInfoChar(result, '[');
+                    appendStringInfoArrayEle(result, j1);
+                    if (!json_array_null(j1))
+                        appendStringInfoString(result, ", ");
+                    appendStringInfoScalar(result, j2);
+                    appendStringInfoChar(result, ']');
+                    break;
+                }
+                default:
+                    elog(ERROR, "unexpected json type: %d", t2);
+            }
+            break;
+        }
+        case JSON_BOOL:
+        case JSON_NULL:
+        case JSON_NUMBER:
+        case JSON_STRING: {
+            switch (t2) {
+                case JSON_ARRAY: {
+                    appendStringInfoChar(result, '[');
+                    appendStringInfoScalar(result, j1);
+                    if (!json_array_null(j2))
+                        appendStringInfoString(result, ", ");
+                    appendStringInfoArrayEle(result, j2);
+                    appendStringInfoChar(result, ']');
+                    break;
+                }
+                case JSON_OBJECT: {
+                    appendStringInfoChar(result, '[');
+                    appendStringInfoScalar(result, j1);
+                    appendStringInfoString(result, ", ");
+                    appendStringInfoObject(result, j2);
+                    appendStringInfoChar(result, ']');
+                    break;
+                }
+                case JSON_BOOL:
+                case JSON_NULL:
+                case JSON_NUMBER:
+                case JSON_STRING: {
+                    appendStringInfoChar(result, '[');
+                    appendStringInfoScalar(result, j1);
+                    appendStringInfoString(result, ", ");
+                    appendStringInfoScalar(result, j2);
+                    appendStringInfoChar(result, ']');
+                    break;
+                }
+                default:
+                    elog(ERROR, "unexpected json type: %d", t2);
+            }
+            break;
+        }
+        default:
+            elog(ERROR, "unexpected json type: %d", t1);
+    }
+    text *res = cstring_to_text_with_len(result->data, result->len);
+    pfree(result->data);
+    pfree(result);
+    return res;
+}
+
+Datum json_merge_patch(PG_FUNCTION_ARGS)
+{
+    ArrayType *json_array = PG_GETARG_ARRAYTYPE_P(0);
+
+    Datum *jsontext = NULL;
+    bool *jsonnulls = NULL;
+    int json_num;
+
+    deconstruct_array(json_array, JSONOID, -1, false, 'i', &jsontext, &jsonnulls, &json_num);
+
+    if (json_num <= 1)
+        ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("Incorrect parameter count")));
+
+    text *result = cstring_to_text("null");
+    bool return_null = false;
+
+    for (int i = json_num - 1; i >= 0; i--) {
+        if (jsonnulls[i]) {
+            if (i == json_num - 1)
+                PG_RETURN_NULL();
+            else {
+                for (int j = i + 1; j < json_num; j++) {
+                    if (json_type(DatumGetTextP(jsontext[j])) == JSON_OBJECT && j == i + 1) {
+                        return_null = true;
+                    } else if (json_type(DatumGetTextP(jsontext[j])) == JSON_OBJECT && return_null)
+                        ;
+                    else {
+                        result = json_merge_patch_unit(result, DatumGetTextP(jsontext[j]));
+                        return_null = false;
+                    }
+                }
+            }
+            if (return_null)
+                PG_RETURN_NULL();
+            else
+                PG_RETURN_TEXT_P(result);
+        }
+    }
+
+    for (int i = 1; i < json_num; i++) {
+        if (i == 1)
+            result = json_merge_patch_unit(DatumGetTextP(jsontext[0]), DatumGetTextP(jsontext[1]));
+        else
+            result = json_merge_patch_unit(result, DatumGetTextP(jsontext[i]));
+    }
+
+    PG_RETURN_TEXT_P(result);
+}
+
+Datum json_merge_preserve(PG_FUNCTION_ARGS)
+{
+    ArrayType *json_array = PG_GETARG_ARRAYTYPE_P(0);
+
+    Datum *jsontext = NULL;
+    bool *jsonnulls = NULL;
+    int json_num;
+
+    deconstruct_array(json_array, JSONOID, -1, false, 'i', &jsontext, &jsonnulls, &json_num);
+
+    if (json_num <= 1)
+        ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("Incorrect parameter count")));
+    /*
+     * If the array is empty, return NULL; this is dubious but it's what 9.3
+     * did.
+     */
+    if (array_contains_nulls(json_array)) {
+        PG_RETURN_NULL();
+    }
+
+    text *result = NULL;
+    for (int i = 1; i < json_num; i++) {
+        if (i == 1)
+            result = json_merge_preserve_unit(DatumGetTextP(jsontext[0]), DatumGetTextP(jsontext[1]));
+        else
+            result = json_merge_preserve_unit(result, DatumGetTextP(jsontext[i]));
+    }
+
+    PG_RETURN_TEXT_P(result);
+}
+
+Datum json_merge(PG_FUNCTION_ARGS)
+{
+    PG_RETURN_TEXT_P(json_merge_preserve(fcinfo));
+}
+#endif
+
+#ifdef DOLPHIN
+cJSON_bool cJSON_JsonInsert(cJSON *root, cJSON_JsonPath *jp, cJSON *value)
+{
+    if (!root || !jp || !value) {
+        return false;
+    }
+    if (cJSON_JsonPathCanMatchMany(jp)) {
+        return false;  // can't use * and **
+    }
+    cJSON_ResultWrapper *w = cJSON_CreateResultWrapper();
+    if (cJSON_JsonPathMatch(root, jp, w)) {
+        cJSON_DeleteResultWrapper(w);
+        return false;  // Already exists
+    }
+    cJSON_JsonPath *last = jp_pop(jp);  // remove the last path node, then search again
+    if (!cJSON_JsonPathMatch(root, jp, w)) {
+        // we find nothing in the parent path
+        cJSON_DeleteResultWrapper(w);
+        cJSON_DeleteJsonPath(last);
+        return false;
+    }
+    cJSON *found = w->head->next->node;
+    if (last->type == cJSON_JsonPath_Index) {
+        if (cJSON_IsArray(found)) {
+            cJSON_AddItemToArray(found, value);
+        } else if (last->index > 0) {
+            // found a scalar or object and the index is not 0, auto wrap it
+            cJSON *n = cJSON_Duplicate(found, false);
+            n->child = found->child;
+            n->next = NULL;
+            n->prev = NULL;
+            found->type = cJSON_Array;
+            found->child = NULL;
+            cJSON_AddItemToArray(found, n);
+            cJSON_AddItemToArray(found, value);
+        }
+    } else if (last->type == cJSON_JsonPath_Key && cJSON_IsObject(found)) {
+        cJSON_AddItemToObject(found, last->key, value);
+    }
+    cJSON_DeleteJsonPath(last);
+    cJSON_DeleteResultWrapper(w);
+    return true;
+}
+
+static inline cJSON_JsonPath *jp_pop(cJSON_JsonPath *jp)
+{
+    cJSON_JsonPath *last = NULL;
+    if (!jp) {
+        return NULL;
+    }
+    while (jp->next && jp->next->next) {
+        jp = jp->next;
+    }
+    last = jp->next;
+    jp->next = NULL;
+    return last;
+}
+
+text *formatJsondoc(char *str)
+{
+    StringInfo buf = makeStringInfo();
+    bool quoted = false;
+    text *res;
+    while (*str != '\0') {
+        appendStringInfoChar(buf, *str);
+        switch (*str++) {
+            case '\"':
+                quoted = !quoted;
+                break;
+            case ':':
+            case ',':
+                if (!quoted) {
+                    appendStringInfoChar(buf, ' ');
+                }
+                break;
+            case '\\':
+                appendStringInfoChar(buf, *str++);
+                break;
+        }
+    }
+    res = cstring_to_text_with_len(buf->data, buf->len);
+    pfree(buf->data);
+    pfree(buf);
+    return res;
+}
+
+Datum json_insert(PG_FUNCTION_ARGS)
+{
+    int nargs = PG_NARGS();
+    Datum arg = 0;
+    Oid valtype;
+    char *data = NULL;
+    cJSON *root = NULL;
+    cJSON *value = NULL;
+    cJSON_JsonPath *jp = NULL;
+    text *res = NULL;
+    char *s = NULL;
+    Oid typOutput;
+    bool typIsVarlena = false;
+
+    if (nargs < 3 || nargs % 2 == 0) {
+        ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+                        errmsg("Incorrect parameter count in the call to native function 'JSON_INSERT'")));
+    }
+    if (PG_ARGISNULL(0)) {
+        PG_RETURN_NULL();
+    }
+    valtype = get_fn_expr_argtype(fcinfo->flinfo, 0);
+    if (VALTYPE_IS_JSON(valtype)) {
+        arg = PG_GETARG_DATUM(0);
+        getTypeOutputInfo(valtype, &typOutput, &typIsVarlena);
+        data = OidOutputFunctionCall(typOutput, arg);
+    } else {
+        ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+                        errmsg("Invalid data type for JSON data in argument 1 to function json_insert")));
+    }
+    root = cJSON_Parse(data);
+    pfree(data);
+    if (!root) {
+        ereport(ERROR,
+                (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("Invalid JSON text in function json_insert.")));
+    }
+    for (int i = 1; i < nargs; i += 2) {
+        /* process path */
+        if (PG_ARGISNULL(i)) {
+            cJSON_Delete(root);
+            PG_RETURN_NULL();
+        }
+        valtype = get_fn_expr_argtype(fcinfo->flinfo, i);
+        arg = PG_GETARG_DATUM(i);
+        getTypeOutputInfo(valtype, &typOutput, &typIsVarlena);
+        data = OidOutputFunctionCall(typOutput, arg);
+        jp = cJSON_JsonPathParse(data);
+        pfree(data);
+        if (!jp) {
+            cJSON_Delete(root);
+            ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("Invalid JSON path expression.")));
+        }
+        if (cJSON_JsonPathCanMatchMany(jp)) {
+            cJSON_DeleteJsonPath(jp);
+            cJSON_Delete(root);
+            ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+                            errmsg("In this situation, path expressions may not contain the * and ** tokens.")));
+        }
+        /* process json to add */
+        if (PG_ARGISNULL(i + 1)) {
+            value = cJSON_CreateNull();
+        } else {
+            valtype = get_fn_expr_argtype(fcinfo->flinfo, i + 1);
+            arg = PG_GETARG_DATUM(i + 1);
+            getTypeOutputInfo(valtype, &typOutput, &typIsVarlena);
+            data = OidOutputFunctionCall(typOutput, arg);
+            switch (valtype) {
+                case UNKNOWNOID:
+                case TEXTOID:
+                case CSTRINGOID:
+                    value = cJSON_CreateString(data);
+                    break;
+                case BOOLOID:
+                    value = cJSON_CreateBool(DatumGetBool(arg));
+                    break;
+                default:
+                    value = cJSON_Parse(data);
+                    break;
+            }
+            pfree(data);
+        }
+        if (!cJSON_JsonInsert(root, jp, value)) {
+            cJSON_Delete(value);  // when value is not inserted, delete it
+        };
+        cJSON_DeleteJsonPath(jp);
+    }
+    cJSON_SortObject(root);
+    s = cJSON_PrintUnformatted(root);
+    res = formatJsondoc(s);
+    cJSON_Delete(root);
+    cJSON_free(s);
+    PG_RETURN_TEXT_P(res);
+}
+#endif
+
+#ifdef DOLPHIN
+bool cJSON_JsonReplace(cJSON *root, cJSON_JsonPath *jp, cJSON *value, bool &invalidPath)
+{
+    if (!root || !jp || !value) {
+        return false;
+    }
+    if (cJSON_JsonPathCanMatchMany(jp)) {
+        invalidPath = true;
+        return false;  // can't use * and **
+    }
+    cJSON_ResultWrapper *w = cJSON_CreateResultWrapper();
+    if (!cJSON_JsonPathMatch(root, jp, w)) {
+        cJSON_DeleteResultWrapper(w);
+        return false;  // not exists
+    }
+    cJSON_JsonPath *last = jp_pop(jp);  // remove the last path node, then search again
+    if (!cJSON_JsonPathMatch(root, jp, w)) {
+        // we find nothing in the parent path
+        cJSON_DeleteResultWrapper(w);
+        if (last) {
+            cJSON_DeleteJsonPath(last);
+        }
+        return false;
+    }
+    cJSON *found = w->head->next->node;
+    if (last->type == cJSON_JsonPath_Index) {
+        if (cJSON_IsArray(found) && last->index >= 0) {
+            cJSON_ReplaceItemInArray(found, last->index, value);
+        } else {
+            cJSON_DeleteResultWrapper(w);
+            if (last) {
+                cJSON_DeleteJsonPath(last);
+            }
+            return false;
+        }
+    } else if (last->type == cJSON_JsonPath_Key && cJSON_IsObject(found)) {
+        cJSON_ReplaceItemInObject(found, last->key, value);
+    }
+    cJSON_DeleteJsonPath(last);
+    cJSON_DeleteResultWrapper(w);
+    return true;
+}
+
+bool cJSON_JsonRemove(cJSON *root, cJSON_JsonPath *jp, bool *invalidPath)
+{
+    if (!root || !jp) {
+        return false;
+    }
+    if (cJSON_JsonPathCanMatchMany(jp)) {
+        *invalidPath = true;
+        return false;  // can't use * and **
+    }
+    cJSON_ResultWrapper *w = cJSON_CreateResultWrapper();
+    if (!cJSON_JsonPathMatch(root, jp, w)) {
+        cJSON_DeleteResultWrapper(w);
+        return false;  // not exists
+    }
+
+    cJSON_JsonPath *last = jp_pop(jp);
+
+    if (!cJSON_JsonPathMatch(root, jp, w)) {
+        cJSON_DeleteResultWrapper(w);
+        // we find nothing in the parent path
+        return false;
+    }
+    cJSON *found = w->head->next->node;
+    if (last->type == cJSON_JsonPath_Index) {
+        if (cJSON_IsArray(found) && last->index >= 0) {
+            cJSON_DeleteItemFromArray(found, last->index);
+        } else {
+            // found a scalar or object and the index is not 0, auto wrap it
+            cJSON_DeleteResultWrapper(w);
+
+            if (last) {
+                cJSON_DeleteJsonPath(last);
+            }
+            return false;
+        }
+    } else if (last->type == cJSON_JsonPath_Key && cJSON_IsObject(found)) {
+        cJSON_DeleteItemFromObject(found, last->key);
+    }
+    cJSON_DeleteResultWrapper(w);
+
+    if (last) {
+        cJSON_DeleteJsonPath(last);
+    }
+    return true;
+}
+bool cJSON_JsonArrayInsert(cJSON *root, cJSON_JsonPath *jp, cJSON *value, bool *invlidPath, bool *isArray)
+{
+    if (!root || !jp || !value) {
+        return false;
+    }
+    if (cJSON_JsonPathCanMatchMany(jp)) {
+        *invlidPath = true;
+        return false;  // can't use * and **
+    }
+    cJSON_ResultWrapper *w = cJSON_CreateResultWrapper();
+    cJSON_JsonPath *last = jp_pop(jp);  // remove the last path node, then search again
+    if (!cJSON_JsonPathMatch(root, jp, w)) {
+        // we find nothing in the parent path
+        cJSON_DeleteResultWrapper(w);
+        if (last) {
+            cJSON_DeleteJsonPath(last);
+        }
+        return false;
+    }
+    cJSON *found = w->head->next->node;
+    if (last->type == cJSON_JsonPath_Index) {
+        if (cJSON_IsArray(found)) {
+            cJSON_InsertItemInArray(found, last->index, value);
+        } else if (last->index > 0) {
+            // found a scalar or object and the index is not 0, auto wrap it
+            cJSON *n = cJSON_Duplicate(found, false);
+            n->child = found->child;
+            n->next = NULL;
+            n->prev = NULL;
+            found->type = cJSON_Array;
+            found->child = NULL;
+            cJSON_AddItemToArray(found, n);
+            cJSON_AddItemToArray(found, value);
+        }
+    } else {
+        cJSON_DeleteResultWrapper(w);
+        if (last) {
+            cJSON_DeleteJsonPath(last);
+        }
+        *isArray = true;
+        return false;
+    }
+    cJSON_DeleteResultWrapper(w);
+    if (last) {
+        cJSON_DeleteJsonPath(last);
+    }
+    return true;
+}
+
+Datum json_replace(PG_FUNCTION_ARGS)
+{
+    int nargs = PG_NARGS();
+    Datum arg = 0;
+    Oid valtype;
+    char *pathString = NULL;
+    char *valueString = NULL;
+    cJSON *root = NULL;
+    cJSON *value = NULL;
+    cJSON_JsonPath *jp = NULL;
+    text *res = NULL;
+    char *s = NULL;
+    Oid typOutput;
+    bool typIsVarlena = false;
+    char *data = NULL;
+    bool invalidPath = false;
+
+    if (nargs < 3 || nargs % 2 == 0) {
+        ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+                        errmsg("Incorrect parameter count in the call to native function 'JSON_REPLACE'")));
+    }
+    if (PG_ARGISNULL(0)) {
+        cJSON_Delete(root);
+        PG_RETURN_NULL();
+    }
+    valtype = get_fn_expr_argtype(fcinfo->flinfo, 0);
+    if (VALTYPE_IS_JSON(valtype)) {
+        arg = PG_GETARG_DATUM(0);
+        getTypeOutputInfo(valtype, &typOutput, &typIsVarlena);
+        data = OidOutputFunctionCall(typOutput, arg);
+    } else {
+        ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+                        errmsg("Invalid data type for JSON data in argument 1 to function function json_replace")));
+    }
+    root = cJSON_Parse(data);
+    pfree(data);
+    if (!root) {
+        ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+                        errmsg("Invalid JSON text in function json_replace: \"Invalid value.\" at position 0.")));
+    }
+    for (int i = 1; i < nargs; i += 2) {
+        /* process path */
+        if (PG_ARGISNULL(i)) {
+            cJSON_Delete(root);
+            PG_RETURN_NULL();
+        }
+        valtype = get_fn_expr_argtype(fcinfo->flinfo, i);
+        arg = PG_GETARG_DATUM(i);
+        getTypeOutputInfo(valtype, &typOutput, &typIsVarlena);
+        pathString = OidOutputFunctionCall(typOutput, arg);
+        jp = cJSON_JsonPathParse(pathString);
+        pfree(pathString);
+        if (!jp) {
+            cJSON_Delete(root);
+            ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+                            errmsg("Invalid JSON path expression. The error is around argument %d.", i)));
+        }
+        /* process json to replace */
+        if (PG_ARGISNULL(i + 1)) {
+            value = cJSON_CreateNull();
+        } else {
+            valtype = get_fn_expr_argtype(fcinfo->flinfo, i + 1);
+            arg = PG_GETARG_DATUM(i + 1);
+            getTypeOutputInfo(valtype, &typOutput, &typIsVarlena);
+            valueString = OidOutputFunctionCall(typOutput, arg);
+            switch (valtype) {
+                case UNKNOWNOID:
+                case TEXTOID:
+                case CSTRINGOID:
+                    value = cJSON_CreateString(valueString);
+                    break;
+                case BOOLOID:
+                    value = cJSON_CreateBool(DatumGetBool(arg));
+                    break;
+                default:
+                    value = cJSON_Parse(valueString);
+                    break;
+            }
+            pfree(valueString);
+        }
+        if (jp->next == NULL && jp->type == cJSON_JsonPath_Start) {
+            cJSON_Delete(root);
+            cJSON_DeleteJsonPath(jp);
+            root = value;
+            continue;
+        }
+        if (!cJSON_JsonReplace(root, jp, value, invalidPath)) {
+            cJSON_Delete(value);  // when value is not replaced, delete it
+            if (invalidPath) {
+                cJSON_DeleteJsonPath(jp);
+                cJSON_Delete(root);
+                ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+                                errmsg("In this situation, path expressions may not contain the * and ** tokens.")));
+            }
+        };
+        cJSON_DeleteJsonPath(jp);
+    }
+    cJSON_SortObject(root);
+    s = cJSON_PrintUnformatted(root);
+    res = formatJsondoc(s);
+    cJSON_Delete(root);
+    cJSON_free(s);
+    PG_RETURN_TEXT_P(res);
+}
+
+Datum json_remove(PG_FUNCTION_ARGS)
+{
+    int nargs = PG_NARGS();
+    Datum arg = 0;
+    Oid valtype;
+    char *pathString = NULL;
+    cJSON *root = NULL;
+    cJSON_JsonPath *jp = NULL;
+    text *res = NULL;
+    char *s = NULL;
+    Oid typOutput;
+    bool typIsVarlena = false;
+    bool invalidPath = false;
+    char *data = NULL;
+    if (nargs < 2) {
+        ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+                        errmsg("Incorrect parameter count in the call to native function 'json_remove'")));
+    }
+    if (PG_ARGISNULL(0)) {
+        cJSON_Delete(root);
+        PG_RETURN_NULL();
+    }
+    valtype = get_fn_expr_argtype(fcinfo->flinfo, 0);
+    if (VALTYPE_IS_JSON(valtype)) {
+        arg = PG_GETARG_DATUM(0);
+        getTypeOutputInfo(valtype, &typOutput, &typIsVarlena);
+        data = OidOutputFunctionCall(typOutput, arg);
+    } else {
+        ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+                        errmsg("Invalid data type for JSON data in argument 1 to function function json_remove")));
+    }
+    root = cJSON_Parse(data);
+    pfree(data);
+    if (!root) {
+        ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+                        errmsg("Invalid JSON text in function json_replace: \"Invalid value.\" at position 0.")));
+    }
+    for (int i = 1; i < nargs; i++) {
+        /* process path */
+        if (PG_ARGISNULL(i)) {
+            cJSON_Delete(root);
+            PG_RETURN_NULL();
+        }
+        valtype = get_fn_expr_argtype(fcinfo->flinfo, i);
+        arg = PG_GETARG_DATUM(i);
+        getTypeOutputInfo(valtype, &typOutput, &typIsVarlena);
+        pathString = OidOutputFunctionCall(typOutput, arg);
+        jp = cJSON_JsonPathParse(pathString);
+        pfree(pathString);
+        if (!jp) {
+            cJSON_Delete(root);
+            ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+                            errmsg("Invalid JSON path expression. The error is around character position %d.", i)));
+        }
+        if (jp->next == NULL && jp->type == cJSON_JsonPath_Start) {
+            cJSON_Delete(root);
+            cJSON_DeleteJsonPath(jp);
+            ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+                            errmsg(" The path expression '$' is not allowed in this context.")));
+        }
+
+        /* process json to replace */
+        cJSON_JsonRemove(root, jp, &invalidPath);
+        if (invalidPath) {
+            cJSON_DeleteJsonPath(jp);
+            cJSON_Delete(root);
+            ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+                            errmsg("Invalid JSON path expression. The error is around character position %d.", i)));
+        }
+        cJSON_DeleteJsonPath(jp);
+    }
+    cJSON_SortObject(root);
+    s = cJSON_PrintUnformatted(root);
+    res = formatJsondoc(s);
+    cJSON_Delete(root);
+    cJSON_free(s);
+    PG_RETURN_TEXT_P(res);
+}
+
+Datum json_array_insert(PG_FUNCTION_ARGS)
+{
+    int nargs = PG_NARGS();
+    Datum arg = 0;
+    Oid valtype;
+    char *pathString = NULL;
+    char *valueString = NULL;
+    cJSON *root = NULL;
+    cJSON *value = NULL;
+    cJSON_JsonPath *jp = NULL;
+    text *res = NULL;
+    char *s = NULL;
+    Oid typOutput;
+    bool typIsVarlena = false;
+    bool invalidPath = false;
+    bool isArray = false;
+    char *data = NULL;
+    if (nargs < 3 || nargs % 2 == 0) {
+        ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("Invalid arg number")));
+    }
+    if (PG_ARGISNULL(0)) {
+        cJSON_Delete(root);
+        PG_RETURN_NULL();
+    }
+    valtype = get_fn_expr_argtype(fcinfo->flinfo, 0);
+    if (VALTYPE_IS_JSON(valtype)) {
+        arg = PG_GETARG_DATUM(0);
+        getTypeOutputInfo(valtype, &typOutput, &typIsVarlena);
+        data = OidOutputFunctionCall(typOutput, arg);
+    } else {
+        ereport(ERROR,
+                (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+                 errmsg("Invalid data type for JSON data in argument 1 to function function json_array_insert")));
+    }
+    root = cJSON_Parse(data);
+    pfree(data);
+    if (!root) {
+        ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+                        errmsg("Invalid JSON text in function json_replace: \"Invalid value.\" at position 0.")));
+    }
+    for (int i = 1; i < nargs; i += 2) {
+        /* process path */
+        if (PG_ARGISNULL(i)) {
+            cJSON_Delete(root);
+            PG_RETURN_NULL();
+        }
+        valtype = get_fn_expr_argtype(fcinfo->flinfo, i);
+        arg = PG_GETARG_DATUM(i);
+        getTypeOutputInfo(valtype, &typOutput, &typIsVarlena);
+        pathString = OidOutputFunctionCall(typOutput, arg);
+        jp = cJSON_JsonPathParse(pathString);
+        pfree(pathString);
+        if (!jp) {
+            cJSON_Delete(root);
+            ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+                            errmsg("Invalid JSON path expression. The error is around character position %d.", i)));
+        }
+        if (jp->next == NULL && jp->type == cJSON_JsonPath_Start) {
+            cJSON_Delete(root);
+            cJSON_DeleteJsonPath(jp);
+            ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+                            errmsg("A path expression is not a path to a cell in an array.")));
+        }
+        /* process json to add */
+        if (PG_ARGISNULL(i + 1)) {
+            value = cJSON_CreateNull();
+        } else {
+            valtype = get_fn_expr_argtype(fcinfo->flinfo, i + 1);
+            arg = PG_GETARG_DATUM(i + 1);
+            getTypeOutputInfo(valtype, &typOutput, &typIsVarlena);
+            valueString = OidOutputFunctionCall(typOutput, arg);
+            switch (valtype) {
+                case UNKNOWNOID:
+                case TEXTOID:
+                case CSTRINGOID:
+                    value = cJSON_CreateString(valueString);
+                    break;
+                case BOOLOID:
+                    value = cJSON_CreateBool(DatumGetBool(arg));
+                    break;
+                default:
+                    value = cJSON_Parse(valueString);
+                    break;
+            }
+            pfree(valueString);
+        }
+        if (!cJSON_JsonArrayInsert(root, jp, value, &invalidPath, &isArray)) {
+            cJSON_Delete(value);  // when value is not inserted, delete it
+        }
+        if (invalidPath) {
+            cJSON_DeleteJsonPath(jp);
+            cJSON_Delete(root);
+            ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+                            errmsg("Invalid JSON path expression. The error is around character position %d.", i)));
+        }
+        if (isArray) {
+            cJSON_DeleteJsonPath(jp);
+            cJSON_Delete(root);
+            ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+                            errmsg("A path expression is not a path to a cell in an array.")));
+        }
+        cJSON_DeleteJsonPath(jp);
+    }
+    cJSON_SortObject(root);
+    s = cJSON_PrintUnformatted(root);
+    res = formatJsondoc(s);
+    cJSON_Delete(root);
+    cJSON_free(s);
+    PG_RETURN_TEXT_P(res);
+}
+
+Datum json_set(PG_FUNCTION_ARGS)
+{
+    int nargs = PG_NARGS();
+    Datum arg = 0;
+    Oid valtype;
+    char *pathString = NULL;
+    char *valueString = NULL;
+    cJSON *root = NULL;
+    cJSON *value = NULL;
+    cJSON_JsonPath *jp = NULL;
+    text *res = NULL;
+    char *s = NULL;
+    Oid typOutput;
+    bool typIsVarlena = false;
+    char *data = NULL;
+    bool invalidPath = false;
+
+    if (nargs < 3 || nargs % 2 == 0) {
+        ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+                        errmsg("Incorrect parameter count in the call to native function 'JSON_SET'")));
+    }
+    if (PG_ARGISNULL(0)) {
+        cJSON_Delete(root);
+        PG_RETURN_NULL();
+    }
+    valtype = get_fn_expr_argtype(fcinfo->flinfo, 0);
+    if (VALTYPE_IS_JSON(valtype)) {
+        arg = PG_GETARG_DATUM(0);
+        getTypeOutputInfo(valtype, &typOutput, &typIsVarlena);
+        data = OidOutputFunctionCall(typOutput, arg);
+    } else {
+        ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+                        errmsg("Invalid data type for JSON data in argument 1 to function function json_set")));
+    }
+    root = cJSON_Parse(data);
+    pfree(data);
+    if (!root) {
+        ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+                        errmsg("Invalid JSON text in function json_set: \"Invalid value.\" at position 0.")));
+    }
+    for (int i = 1; i < nargs; i += 2) {
+        /* process path */
+        if (PG_ARGISNULL(i)) {
+            cJSON_Delete(root);
+            PG_RETURN_NULL();
+        }
+        valtype = get_fn_expr_argtype(fcinfo->flinfo, i);
+        arg = PG_GETARG_DATUM(i);
+        getTypeOutputInfo(valtype, &typOutput, &typIsVarlena);
+        pathString = OidOutputFunctionCall(typOutput, arg);
+        jp = cJSON_JsonPathParse(pathString);
+        pfree(pathString);
+        if (!jp) {
+            cJSON_Delete(root);
+            ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+                            errmsg("Invalid JSON path expression. The error is around argument %d.", i)));
+        }
+        /* process json to replace */
+        if (PG_ARGISNULL(i + 1)) {
+            value = cJSON_CreateNull();
+        } else {
+            valtype = get_fn_expr_argtype(fcinfo->flinfo, i + 1);
+            arg = PG_GETARG_DATUM(i + 1);
+            getTypeOutputInfo(valtype, &typOutput, &typIsVarlena);
+            valueString = OidOutputFunctionCall(typOutput, arg);
+            switch (valtype) {
+                case UNKNOWNOID:
+                case TEXTOID:
+                case CSTRINGOID:
+                    value = cJSON_CreateString(valueString);
+                    break;
+                case BOOLOID:
+                    value = cJSON_CreateBool(DatumGetBool(arg));
+                    break;
+                default:
+                    value = cJSON_Parse(valueString);
+                    break;
+            }
+            pfree(valueString);
+        }
+        if (!cJSON_JsonReplace(root, jp, value, invalidPath)) {
+            cJSON_JsonInsert(root, jp, value);
+            if (invalidPath) {
+                cJSON_DeleteJsonPath(jp);
+                cJSON_Delete(root);
+                ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+                                errmsg("In this situation, path expressions may not contain the * and ** tokens.")));
+            }
+        };
+        cJSON_DeleteJsonPath(jp);
+    }
+    cJSON_SortObject(root);
+    s = cJSON_PrintUnformatted(root);
+    res = cstring_to_text(s);
+    cJSON_Delete(root);
+    cJSON_free(s);
+    PG_RETURN_TEXT_P(res);
 }
 #endif

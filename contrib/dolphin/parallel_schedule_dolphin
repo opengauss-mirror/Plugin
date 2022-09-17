@@ -111,3 +111,5 @@ test: db_b_date_time_functions2
 test: show
 
 test: db_b_date_time_functions3
+
+test: json_array_insert json_insert json_merge_patch json_merge_preserve json_remove json_replace json_set json_depth
