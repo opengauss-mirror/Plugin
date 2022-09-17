@@ -165,6 +165,7 @@ static int128 TransformAutoIncStart(CreateStmt* stmt);
 #ifdef DOLPHIN
 static void transformTableIndex(CreateStmtContext* cxt);
 static void transformIndexNode(IndexStmt* index, CreateStmtContext* cxt, bool mustGlobal);
+static char* transformIndexOptions(List* list);
 #endif
 
 /*
@@ -3182,6 +3183,16 @@ static void transformIndexNode(IndexStmt* index, CreateStmtContext* cxt, bool mu
     index->concurrent = false;
     index->isPartitioned = cxt->ispartitioned;
     index->isGlobal = mustGlobal;
+    char* method = transformIndexOptions(index->indexOptions);
+    if (method != NULL) {
+        /* check current index access method name is exist? If not, return error */
+        if (index->accessMethod == NULL) {
+            index->accessMethod = method;
+        } else {
+            get_am_oid(index->accessMethod, false);
+            index->accessMethod = method;
+	}
+    }
 
     /*
      * @hdfs
@@ -3245,6 +3256,30 @@ static void transformIndexNode(IndexStmt* index, CreateStmtContext* cxt, bool mu
 
     list_free(indexElementsColumn);
     list_free(indexElementsExpr);
+}
+
+static char* transformIndexOptions(List* list)
+{
+    char* method = NULL;
+    ListCell* cell = NULL;
+    int first = 0;
+
+    /* check every access method name in index_options, if not exist, return error */
+    foreach (cell, list) {
+        void* pointer = lfirst(cell);
+        if (IsA(pointer, A_Const)) {
+            A_Const* con = (A_Const*) pointer;
+            if (IsA((Node*)&con->val, String)) {
+                /* return the last access method name */
+                char* am = strVal(&con->val);
+                if (am && get_am_oid(am, false) && first < 1) {
+                    method = am;
+                    first++;
+                }
+            }
+        }
+    }
+    return method;
 }
 #endif
 

@@ -202,7 +202,6 @@ drop table if exists test_temporary_index4;
 --fail example
 create table t1(a int , index idx_a (b));
 create table t1(a int , index using btree idx_a(a));
-create table t1(a int , index idx_a (a) using btree);
 create table t1(a int , b int, index idx_a (a,a));
 create table t1(a int , b int, index idx_a (a,b,a));
 create table t1(a int , index idx_a (abs(a)));
@@ -233,7 +232,6 @@ drop table if exists t1;
 create table t1(a int , b int);
 alter table  t1 add index (c);
 alter table  t1 add index using btree idx1 (a);
-alter table  t1 add index idx2 (a) using btree;
 \d+ t1
 drop table if exists t1;
 
@@ -299,6 +297,82 @@ alter table test_temporary_index1 add key(f11 desc, f12 asc);
 alter table test_temporary_index1 add key using btree(f11, f12),add unique(f11, f12),add primary key(f11, f12);
 
 drop table if exists test_temporary_index1;
+
+-- test index_options
+create table test_option1(a int, b int, index idx_op1 using btree(a) comment 'yy');
+alter table test_option1 add key ixd_at1 (b) comment 'aa';
+\d+ test_option1
+\di+ idx_op1
+\di+ ixd_at1
+create table test_option2(a int, b int, key idx_op2 using hash(a) comment 'yy' comment 'xx');
+alter table test_option2 add index ixd_at2 using hash(b) comment 'aa' comment 'bb';
+\di+ idx_op2
+\di+ ixd_at2
+create table test_option3(a int, b int, index idx_op3 (a) using btree);
+alter table test_option3 add index ixd_at3(b) using btree;
+\d+ test_option3
+create table test_option4(a int, b int, c int, key idx_op4 using hash(a) using btree using hash);
+alter table test_option4 add index ixd_at4 using hash (b) using btree using hash, add unique(a), add primary key (c);
+\d+ test_option4
+create table test_option5(a int, b int, c int, index idx_op5 (a) using btree comment 'yy' using hash);
+alter table test_option5 add index ixd_at5 using hash (b) using btree comment 'yy' using hash, add unique(a), add primary key (c);
+\d+ test_option5
+\di+ idx_op5
+\di+ ixd_at5
+create table test_option6(a int, b int, key idx_op6 using hash(a) using btree comment 'yy' using hash comment 'xx');
+\d+ test_option6
+\di+ idx_op6
+create table test_option7(a int, b int, index idx_op7 (a) using btree comment 'yy' using hash comment 'xx');
+\d+ test_option7
+create table test_option8(a int, b int, c int, key idx_op8_a (a) using btree comment 'yy' using hash comment 'xx', index idx_op8_b (b) using btree comment 'yy' using hash comment 'xx');
+alter table test_option8 add index ixd_at8_b(b) using btree comment 'yy' using hash comment 'xx', add index ixd_at8_c (c) using btree comment 'yy' using hash comment 'xx';
+\d+ test_option8
+
+CREATE TABLE test_option9
+(
+    f1  INTEGER,
+    f2  INTEGER,
+    f3  INTEGER,
+    key idx_op9 (f1) using btree comment 'yy'
+)
+PARTITION BY RANGE(f1)
+(
+        PARTITION P1 VALUES LESS THAN(2450815),
+        PARTITION P2 VALUES LESS THAN(2451179),
+        PARTITION P3 VALUES LESS THAN(2451544),
+        PARTITION P4 VALUES LESS THAN(MAXVALUE)
+);
+\d+ test_option9
+\di+ idx_op9
+CREATE TABLE test_option10
+(
+    f1  INTEGER,
+    f2  INTEGER,
+    f3  INTEGER,
+    key idx_op10 (f1) using btree comment 'yy' using hash comment 'xx'
+)
+PARTITION BY RANGE(f1)
+(
+        PARTITION P1 VALUES LESS THAN(2450815),
+        PARTITION P2 VALUES LESS THAN(2451179),
+        PARTITION P3 VALUES LESS THAN(2451544),
+        PARTITION P4 VALUES LESS THAN(MAXVALUE)
+);
+\d+ test_option10
+\di+ idx_op10
+
+create global temporary table test_option11(f1 int, f2 int, f3 int, index idx_op11 using btree(f1) using btree comment 'yy' using hash comment 'xx');
+create local temporary table test_option12(f1 int, f2 int, f3 int, index idx_op12 using btree(f1) using btree comment 'yy' using hash comment 'xx');
+
+-- fail example
+create table test_option13(a int, b int, index idx_op13 using aaa (a) using btree);
+create table test_option14(a int, b int, index idx_op14 using btree (a) using aaa);
+create table test_option15(a int, b int, index idx_op15 using btree (a) using aaa using btree);
+create table test_option16(a int, b int, index idx_op16 using btree (a) using aaa using btree comment 'xx');
+alter table test_option1 add key ixd_at11 using aaa (b) using btree;
+alter table test_option1 add key ixd_at12 using btree (b) using aaa;
+alter table test_option1 add key ixd_at13 using btree (b) using aaa using btree;
+alter table test_option1 add key ixd_at14 using btree (b) comment 'xx' using aaa using btree;
 
 \c contrib_regression
 DROP DATABASE test_table_index;
