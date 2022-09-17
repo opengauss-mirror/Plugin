@@ -105,6 +105,8 @@
 |plugin_optimizer|streamwalker.cpp   |src\gausskernel\optimizer\plan\streamwalker.cpp  |
 |plugin_optimizer\commands|functioncmds.cpp   |src\gausskernel\optimizer\commands\functioncmds.cpp  |
 |plugin_storage|hashfunc.cpp   |src\gausskernel\storage\access\hash\hashfunc.cpp  |
+|plugin_pl\plpgsql\src|gram.y   |src\common\pl\plpgsql\src\gram.y  |
+|plugin_pl\plpgsql\src|pl_scanner.cpp   |src\common\pl\plpgsql\src\pl_scanner.cpp  |
 |llvmir|openGauss_expr_dolphin_aarch64.ir   |src\gausskernel\runtime\codegen\llvmir\GaussDB_expr_aarch64.ir   |
 |llvmir|openGauss_expr_dolphin_aarch64.ll   |src\gausskernel\runtime\codegen\llvmir\GaussDB_expr_aarch64.ll   |
 |llvmir|openGauss_expr_dolphin_x86_64.ir   |src\gausskernel\runtime\codegen\llvmir\GaussDB_expr.ir   |

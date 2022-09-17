@@ -128,6 +128,7 @@ void dolphin_invoke(void)
 void set_default_guc()
 {
     set_config_option("behavior_compat_options", "display_leading_zero", PGC_USERSET, PGC_S_SESSION, GUC_ACTION_SET, true, 0, false);
+    set_config_option("enable_custom_parser", "true", PGC_USERSET, PGC_S_SESSION, GUC_ACTION_SET, true, 0, false);
 }
 
 void init_plugin_object()
@@ -159,6 +160,7 @@ void _PG_init(void)
         InitGlobalVecFuncMap();
     }
     g_instance.raw_parser_hook[DB_CMPT_B] = (void*)raw_parser;
+    g_instance.plsql_parser_hook[DB_CMPT_B] = (void*)plpgsql_yyparse;
     g_instance.llvmIrFilePath[DB_CMPT_B] = "share/postgresql/extension/openGauss_expr_dolphin.ir";
 }
 
@@ -315,6 +317,7 @@ void init_session_vars(void)
     u_sess->attr.attr_common.extension_session_vars_array[dolphin_index] = cxt;
     cxt->enableBCmptMode = false;
     cxt->lockNameList = NIL;
+    cxt->scan_from_pl = false;
 
     DefineCustomBoolVariable("b_compatibility_mode",
                              "Enable mysql behavior override opengauss's when collision happens.",

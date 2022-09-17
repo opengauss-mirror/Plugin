@@ -65,10 +65,9 @@ typedef struct BSqlPluginContext {
     List* lockNameList;
     double b_db_timestamp;
     int lower_case_table_names;
-#ifdef DOLPHIN
     int default_week_format;
     char* lc_time_names;
-#endif
+    bool scan_from_pl;
 } bSqlPluginContext;
 
 BSqlPluginContext* GetSessionContext();

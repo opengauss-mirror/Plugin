@@ -13,6 +13,7 @@
  *
  * -------------------------------------------------------------------------
  */
+#include "utils/builtins.h"
 #include "utils/plpgsql.h"
 #include "utils/pl_package.h"
 #include "catalog/pg_type.h"
@@ -26,6 +27,7 @@
 
 #define PG_KEYWORD(a, b, c) {a, b, c},
 #define LENGTH_OF_DOT_AND_STR_END 4
+#define INT32_STRING_SIZE 12
 /*
  * A word about keywords:
  *
@@ -170,6 +172,7 @@ static const ScanKeyword unreserved_keywords[] = {
     PG_KEYWORD("record", K_RECORD, UNRESERVED_KEYWORD)
     PG_KEYWORD("relative", K_RELATIVE, UNRESERVED_KEYWORD) 
     PG_KEYWORD("release", K_RELEASE, UNRESERVED_KEYWORD)
+    PG_KEYWORD("replace", K_REPLACE, UNRESERVED_KEYWORD)
     PG_KEYWORD("result_oid", K_RESULT_OID, UNRESERVED_KEYWORD) 
     PG_KEYWORD("returned_sqlstate", K_RETURNED_SQLSTATE, UNRESERVED_KEYWORD)
     PG_KEYWORD("reverse", K_REVERSE, UNRESERVED_KEYWORD) 
@@ -475,6 +478,9 @@ static int internal_yylex(TokenAuxData* auxdata)
         token = curr_compile->pushback_token[curr_compile->num_pushbacks];
         *auxdata = pushback_auxdata[curr_compile->num_pushbacks];
     } else {
+#ifdef DOLPHIN
+        GetSessionContext()->scan_from_pl = true;
+#endif
         token = core_yylex(&auxdata->lval.core_yystype, &auxdata->lloc, curr_compile->yyscanner);
 
         /* remember the length of yytext before it gets changed */
@@ -494,6 +500,9 @@ static int internal_yylex(TokenAuxData* auxdata)
             /* The core returns PARAM as ival, but we treat it like IDENT */
             auxdata->lval.str = pstrdup(yytext);
         }
+#ifdef DOLPHIN
+        GetSessionContext()->scan_from_pl = false;
+#endif
     }
 
     return token;
@@ -553,6 +562,9 @@ void plpgsql_append_object_typename(StringInfo buf, PLpgSQL_type *var_type)
 {
     errno_t ret;
     char* typcast = "::";
+    char* left = "(";
+    char* right = ")";
+    char* dot = ",";
     appendBinaryStringInfo(buf, typcast, 2);
 
     int len = strlen(var_type->typname) + strlen(var_type->typnamespace) + LENGTH_OF_DOT_AND_STR_END;
@@ -566,6 +578,24 @@ void plpgsql_append_object_typename(StringInfo buf, PLpgSQL_type *var_type)
     ret = strcat_s(typname, len, "\"");
     securec_check(ret, "\0", "\0");
     appendBinaryStringInfo(buf, typname, strlen(typname));
+    if (var_type->atttypmod != -1) {
+        appendBinaryStringInfo(buf, left, 1);
+        if (var_type->typoid == NUMERICOID) {
+            int32 typmod = var_type->atttypmod - VARHDRSZ;
+            char* precision = (char*)palloc(INT32_STRING_SIZE);
+            char* scale = (char*)palloc(INT32_STRING_SIZE);
+            pg_ltoa((int32)(((uint32)(typmod) >> 16) & 0xffff), precision);
+            pg_ltoa((int32)(((uint32)typmod) & 0xffff), scale);
+            appendBinaryStringInfo(buf, precision, strlen(precision));
+            appendBinaryStringInfo(buf, dot, 1);
+            appendBinaryStringInfo(buf, scale, strlen(scale));
+        } else {
+            char* typMod = (char*)palloc(INT32_STRING_SIZE);
+            pg_ltoa(var_type->atttypmod, typMod);
+            appendBinaryStringInfo(buf, typMod, strlen(typMod));
+        }
+        appendBinaryStringInfo(buf, right, 1);
+    }
     pfree_ext(typname);
 }
 
