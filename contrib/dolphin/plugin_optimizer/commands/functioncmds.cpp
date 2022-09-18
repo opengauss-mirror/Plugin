@@ -34,7 +34,9 @@
  */
 #include "postgres.h"
 #include "knl/knl_variable.h"
-
+#ifdef DOLPHIN
+#include "plugin_nodes/parsenodes_common.h"
+#endif
 #include "access/genam.h"
 #include "access/heapam.h"
 #include "access/tableam.h"
@@ -1105,7 +1107,15 @@ void CreateFunction(CreateFunctionStmt* stmt, const char* queryString, Oid pkg_o
     List *functionOptions = compute_attributes_sql_style((const List *)stmt->options, &as_clause, &language,
                                                          &isWindowFunc, &volatility, &isStrict, &security, &isLeakProof,
                                                          &proconfig, &procost, &prorows, &fenced, &shippable, &package);
-
+#ifdef DOLPHIN
+    if(proIsProcedure || stmt->isOtypeFunction){
+        if (strcmp(language,"sql") == 0 )
+            language = "plpgsql";
+        else if (strcmp(language,"plpgsql") != 0 ){
+            ereport(ERROR, (errcode(ERRCODE_INVALID_FUNCTION_DEFINITION), errmsg("wrong language specified")));
+        }
+    }
+#endif
     /* Look up the language and validate permissions */
     languageTuple = SearchSysCache1(LANGNAME, PointerGetDatum(language));
     if (!HeapTupleIsValid(languageTuple))
