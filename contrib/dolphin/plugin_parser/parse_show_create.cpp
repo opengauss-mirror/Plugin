@@ -153,6 +153,27 @@ SelectStmt *makeShowCreateTriggerQuery(char *schemaName, char *name)
     return stmt;
 }
 
+/**
+ * Build a parsed tree for 'show create database'.
+ * This is actually a parse of the following statement:
+ *
+ * select
+ * 'databaseName' as Database,
+ * gs_get_schemadef_name('databaseName') as "Create Database";
+ *
+ */
+SelectStmt *makeShowCreateDatabaseQuery(bool ifexists, char *databaseName)
+{
+    List *tl = (List *)list_make1(makeNameString(databaseName, "Database"));
+    tl = lappend(
+        tl, makeTargetFuncAlias("gs_get_schemadef_name",
+                                (List *)list_make2(plpsMakeStringConst(databaseName), makeBoolAConst(ifexists, -1)),
+                                "Create Database"));
+
+    SelectStmt *stmt = plpsMakeSelectStmt(tl, NIL, NULL, NIL);
+    return stmt;
+}
+
 static Node *makeTargetFuncAlias(char *funcName, List *fl, char *aliasName)
 {
     FuncCall *fn = (FuncCall *)makeNode(FuncCall);

@@ -101,3 +101,15 @@ DROP FUNCTION IF EXISTS pg_catalog.gs_get_viewdef_name(text) CASCADE;
 CREATE OR REPLACE FUNCTION pg_catalog.gs_get_viewdef_name (
 text
 ) RETURNS text LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'gs_get_viewdef_name';
+
+DROP FUNCTION IF EXISTS pg_catalog.gs_get_schemadef_name(text) CASCADE;
+
+CREATE OR REPLACE FUNCTION pg_catalog.gs_get_schemadef_name (
+text, boolean
+) RETURNS text LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'gs_get_schemadef_name';
+
+DROP FUNCTION IF EXISTS pg_catalog.ShowAllGUCReset(text) CASCADE;
+
+CREATE OR REPLACE FUNCTION pg_catalog.ShowAllGUCReset (
+IN isReset boolean, OUT Variable_name text, OUT Value text
+) RETURNS setof record LANGUAGE C VOLATILE STRICT as '$libdir/dolphin',  'ShowAllGUCReset';
