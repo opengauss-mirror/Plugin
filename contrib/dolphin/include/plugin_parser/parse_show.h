@@ -1,6 +1,8 @@
 #ifndef PARSE_SHOW_H
 #define PARSE_SHOW_H
 
+#define SHOW_CHECKSUM_COL	  "Checksum"
+#define SHOW_CHECKSUM_COL_S       "checksum"
 #define SHOW_COLLATION_COL	  "Collation"
 #define SHOW_COLLATION_COL_S	  "collation"
 #define SHOW_COMMENT_COL	  "Comment"
@@ -29,10 +31,14 @@
 #define SHOW_PRIVILEGES_COL_S	  "privileges"
 #define SHOW_STATUS_COL		  "Status"
 #define SHOW_STATUS_COL_S   	  "Status"
+#define SHOW_TABLE_COL            "Table"
+#define SHOW_TABLE_COL_S          "table"
 #define SHOW_TBL_TYPE_COL	  "Table_type"
 #define SHOW_TBL_TYPE_COL_S       "table_type"
 #define SHOW_TYPE_COL		  "Type"
 #define SHOW_TYPE_COL_S		  "type"
+
+#define TYPE_NAME_TEXT            "text"
 
 #define PG_CLASS_NAME 		  "pg_class"
 #define PG_NAMESPACE_NAME   	  "pg_namespace"
@@ -41,6 +47,7 @@
 #define DB4AI_NAME		  "db4ai"
 #define PG_TOAST_PREFIX		  "^pg_toast"
 
+#define PLPS_FUNCNAME_CHECKSUM    "checksum"
 
 #define PG_ATTRIBUTE_ALIAS	"a"
 #define PG_CLASS_ALIAS 		"c"
@@ -52,10 +59,12 @@
 extern bool plps_check_schema_or_table_valid(char *schemaname, char *tablename, bool is_missingok);
 extern Node* plpsMakeIntConst(int val);
 extern Node* plpsMakeStringConst(char* str);
+extern Node* plpsMakeSubLink(Node *stmt);
 extern Node* plpsAddCond(Node* left, Node* right, int location = PLPS_LOC_UNKNOWN);
 extern Node* plpsMakeColumnRef(char* relName, char* colName, int location = PLPS_LOC_UNKNOWN);
 extern Node* plpsMakeFunc(char* funcname, List* args, int location = PLPS_LOC_UNKNOWN);
 extern Node* plpsMakeNormalColumn(char *relname, char *colname, char* aliasname, int location = PLPS_LOC_UNKNOWN);
+extern Node* plpsMakeTypeCast(Node *arg, char *type_name, int location);
 extern Node* plpsMakeSortByNode(Node* sortExpr, SortByDir sortBd = SORTBY_DEFAULT);
 extern List* plpsMakeSortList(Node *sortExpr);
 extern SelectStmt* plpsMakeSelectStmt(List* targetList, List* fromList, Node* whereClause,

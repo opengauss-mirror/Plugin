@@ -187,6 +187,27 @@ Node* plpsMakeColumnRef(char* relname, char *colname, int location)
     return (Node*)makeColumnRef(relname, colname, location);
 }
 
+static Node* makeTypeCast(Node *arg, TypeName *typname, int location)
+{
+    TypeCast *n = makeNode(TypeCast);
+    n->arg = arg;
+    n->typname = typname;
+    n->location = location;
+    return (Node *) n;
+}
+
+Node* plpsMakeTypeCast(Node *castExpr, char *type_name, int location)
+{
+    TypeName *typname = NULL;
+    Node *typcast = NULL;
+
+    typname = makeTypeName(type_name);
+    typname->typmods = NIL; /* not used here */
+    typcast = makeTypeCast(castExpr, typname, location);
+
+    return typcast;
+}
+
 Node* plpsMakeNormalColumn(char* relname, char* colname, char* aliasname, int location)
 {
     Node* n = plpsMakeColumnRef(relname, colname);
