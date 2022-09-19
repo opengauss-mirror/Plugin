@@ -1,0 +1,68 @@
+drop database if exists show_createdatabase;
+NOTICE:  database "show_createdatabase" does not exist, skipping
+create database show_createdatabase dbcompatibility 'b';
+\c show_createdatabase
+CREATE USER test_showcreate_database WITH PASSWORD 'openGauss@123';
+NOTICE:  The iteration value of password is not recommended.Setting the iteration value too small reduces the security of the password, and setting it too large results in performance degradation.
+GRANT ALL PRIVILEGES TO test_showcreate_database;
+SET ROLE test_showcreate_database PASSWORD 'openGauss@123';
+create schema test_get_database;
+show create database test_get_database;
+     Database      |                             Create Database                             
+-------------------+-------------------------------------------------------------------------
+ test_get_database | CREATE SCHEMA test_get_database AUTHORIZATION test_showcreate_database 
+(1 row)
+
+show create schema test_get_database;
+     Database      |                             Create Database                             
+-------------------+-------------------------------------------------------------------------
+ test_get_database | CREATE SCHEMA test_get_database AUTHORIZATION test_showcreate_database 
+(1 row)
+
+show create database if not exists test_get_database;
+     Database      |                                    Create Database                                    
+-------------------+---------------------------------------------------------------------------------------
+ test_get_database | CREATE SCHEMA IF NOT EXISTS test_get_database AUTHORIZATION test_showcreate_database 
+(1 row)
+
+show create schema if not exists test_get_database;
+     Database      |                                    Create Database                                    
+-------------------+---------------------------------------------------------------------------------------
+ test_get_database | CREATE SCHEMA IF NOT EXISTS test_get_database AUTHORIZATION test_showcreate_database 
+(1 row)
+
+create schema test_database_blockchain with blockchain;
+show create database test_database_blockchain;
+         Database         |                                        Create Database                                        
+--------------------------+-----------------------------------------------------------------------------------------------
+ test_database_blockchain | CREATE SCHEMA test_database_blockchain AUTHORIZATION test_showcreate_database WITH BLOCKCHAIN
+(1 row)
+
+show create schema test_database_blockchain;
+         Database         |                                        Create Database                                        
+--------------------------+-----------------------------------------------------------------------------------------------
+ test_database_blockchain | CREATE SCHEMA test_database_blockchain AUTHORIZATION test_showcreate_database WITH BLOCKCHAIN
+(1 row)
+
+show create database if not exists test_database_blockchain;
+         Database         |                                               Create Database                                               
+--------------------------+-------------------------------------------------------------------------------------------------------------
+ test_database_blockchain | CREATE SCHEMA IF NOT EXISTS test_database_blockchain AUTHORIZATION test_showcreate_database WITH BLOCKCHAIN
+(1 row)
+
+show create schema if not exists test_database_blockchain;
+         Database         |                                               Create Database                                               
+--------------------------+-------------------------------------------------------------------------------------------------------------
+ test_database_blockchain | CREATE SCHEMA IF NOT EXISTS test_database_blockchain AUTHORIZATION test_showcreate_database WITH BLOCKCHAIN
+(1 row)
+
+drop schema test_database_blockchain cascade;
+-- Check no existence
+show create database aa;
+ERROR:  schema "aa" does not exist
+CONTEXT:  referenced column: Create Database
+drop schema test_get_database cascade;
+RESET ROLE;
+DROP USER test_showcreate_database;
+\c postgres
+drop database if exists show_createdatabase;

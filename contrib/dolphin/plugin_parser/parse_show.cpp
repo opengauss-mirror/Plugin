@@ -5,6 +5,9 @@
 #include "utils/lsyscache.h"
 #include "utils/builtins.h"
 #include "plugin_parser/parse_show.h"
+#include "utils/guc_tables.h"
+#include "plugin_postgres.h"
+#include "plugin_parser/parser.h"
 
 static Node* makeColumnRef(char* colName, int loc = PLPS_LOC_UNKNOWN);
 static Node* makeHostColumn();
@@ -22,6 +25,7 @@ static Node* makePluginsLicenseColumn(bool smallcase = FALSE);
 
 extern List* SystemFuncName(char* name);
 extern TypeName* SystemTypeName(char* name);
+extern Tuplestorestate* BuildTupleResult(FunctionCallInfo fcinfo, TupleDesc* tupdesc);
 
 /**
  * Build a parsed tree for 'SHOW [FULL] PROCESSLIST'.
@@ -653,5 +657,74 @@ SelectStmt* makeShowIndexQuery(char *schemaName, char *tableName, Node* whereCla
     Node* wc = whereClause ? plpsAddCond(condST, whereClause) : condST;
 
     SelectStmt* stmt = plpsMakeSelectStmt(tl, fl, wc, NULL);
+    return stmt;
+}
+
+#define VARIABLES_TABLES_COLS 2
+PG_FUNCTION_INFO_V1_PUBLIC(ShowAllGUCReset);
+extern "C" DLL_PUBLIC Datum ShowAllGUCReset(PG_FUNCTION_ARGS);
+
+Datum ShowAllGUCReset(PG_FUNCTION_ARGS)
+{
+    TupleDesc tupdesc;
+    Tuplestorestate *tupstore = NULL;
+    Datum values[VARIABLES_TABLES_COLS];
+    bool am_superuser = superuser();
+    bool is_reset = PG_GETARG_BOOL(0);
+
+    tupstore = BuildTupleResult(fcinfo, &tupdesc);
+    for (int i = 0; i < u_sess->num_guc_variables; i++) {
+        struct config_generic *conf = u_sess->guc_variables[i];
+        const char *setting = NULL;
+        bool isnull[VARIABLES_TABLES_COLS] = {false, false};
+        unsigned int flags = (unsigned int)conf->flags;
+
+        if ((flags & GUC_NO_SHOW_ALL) || ((flags & GUC_SUPERUSER_ONLY) && !am_superuser))
+            continue;
+
+        /* assign to the values array */
+        values[0] = PointerGetDatum(cstring_to_text(conf->name));
+
+        setting = is_reset ? GetConfigOptionResetString(conf->name) : GetConfigOptionByName(conf->name, NULL);
+
+        if (setting != NULL) {
+            values[1] = PointerGetDatum(cstring_to_text(setting));
+            isnull[1] = false;
+        } else {
+            values[1] = PointerGetDatum(NULL);
+            isnull[1] = true;
+        }
+        tuplestore_putvalues(tupstore, tupdesc, values, isnull);
+    }
+
+    tuplestore_donestoring(tupstore);
+    PG_RETURN_VOID();
+}
+
+static Node *makeFuncRange(char *funcName, List *fl)
+{
+    FuncCall *fn = (FuncCall *)makeNode(FuncCall);
+    fn->funcname = SystemFuncName(funcName);
+    fn->args = fl;
+
+    RangeFunction *n = makeNode(RangeFunction);
+    n->funccallnode = (Node *)fn;
+    n->coldeflist = NIL;
+    return (Node *)n;
+}
+
+SelectStmt *makeShowVariablesQuery(bool globalMode, Node *likeWhereOpt, bool isLikeExpr)
+{
+    Node *wc = NULL;
+
+    List *tl = (List *)list_make1(plpsMakeNormalColumn(NULL, "variable_name", "Variable_name"));
+    tl = lappend(tl, plpsMakeNormalColumn(NULL, "value", "Value"));
+    List *fl = list_make1(makeFuncRange("showallgucreset",list_make1(makeBoolAConst(globalMode, -1))));
+
+    wc = isLikeExpr && likeWhereOpt != NULL
+             ? (Node *)makeSimpleA_Expr(AEXPR_OP, "~~", plpsMakeColumnRef(NULL, "variable_name"), likeWhereOpt, -1)
+             : likeWhereOpt;
+
+    SelectStmt *stmt = plpsMakeSelectStmt(tl, fl, wc, NIL);
     return stmt;
 }

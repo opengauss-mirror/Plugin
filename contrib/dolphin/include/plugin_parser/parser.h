@@ -54,6 +54,7 @@ SelectStmt* makeShowColumnsDirectQuery(char* schemaname, char* tablename,
                                        bool fullmode, bool smallcase, Node* likeWhereOpt = NULL);
 SelectStmt* makeShowColumnsQuery(char* schemaName, char* tableName, char* dbname,
                                  bool fullMode, bool isLikeExpr, Node* likeWhereOpt = NULL);
+SelectStmt *makeShowCreateDatabaseQuery(bool ifexists, char *databaseName);
 SelectStmt* makeShowTablesQuery(bool fullmode, char* optDbName, Node* likeWhereOpt, bool isLikeExpr);
 SelectStmt* makeShowPluginsQuery(void);
 SelectStmt* makeShowDatabasesQuery(Node* likeNode, Node* whereExpr);
@@ -61,6 +62,7 @@ SelectStmt* makeShowMasterStatusQuery(void);
 SelectStmt* makeShowSlaveHostsQuery(void);
 
 SelectStmt* makeShowIndexQuery(char *schemaName, char *tableName, Node *whereClause);
+SelectStmt *makeShowVariablesQuery(bool globalMode, Node *likeWhereOpt, bool isLikeExpr);
 SelectStmt *findCreateClass(RangeVar *classrel, int mode);
 SelectStmt *findCreateProc(char *schemaName, char *name, int model);
 SelectStmt *findCreateTrigger(RangeVar *trel);

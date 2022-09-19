@@ -71,7 +71,7 @@ test: create_function_test/deterministic create_function_test/language_sql creat
 
 test: alter_function_test/alter_function  alter_function_test/alter_procedure replace_test/replace
 
-test: network2 use_dbname show_create view_definer_test insert_set
+test: network2 use_dbname show_create view_definer_test insert_set show_create_database show_variables
 
 test: partition_test1 partition_test2 partition_test3 partition_test4
 

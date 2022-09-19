@@ -12549,6 +12549,7 @@ Oid pg_get_serial_sequence_oid(text* tablename, text* columnname)
     return InvalidOid;
 }
 
+#ifdef DOLPHIN
 PG_FUNCTION_INFO_V1_PUBLIC(gs_get_viewdef_name);
 extern "C" DLL_PUBLIC Datum gs_get_viewdef_name(PG_FUNCTION_ARGS);
 
@@ -12607,3 +12608,41 @@ Datum gs_get_viewdef_name(PG_FUNCTION_ARGS)
     list_free_ext(names);
     PG_RETURN_TEXT_P(string_to_text(buf.data));
 }
+
+PG_FUNCTION_INFO_V1_PUBLIC(gs_get_schemadef_name);
+extern "C" DLL_PUBLIC Datum gs_get_schemadef_name(PG_FUNCTION_ARGS);
+
+Datum gs_get_schemadef_name(PG_FUNCTION_ARGS)
+{
+    text *schemaName = PG_GETARG_TEXT_P(0);
+    bool if_exists = PG_GETARG_BOOL(1);
+    Form_pg_namespace nspForm = NULL;
+    HeapTuple nsptuple = NULL;
+    char *nspName = NULL;
+    bool is_nspblockchain = false;
+    bool is_null = true;
+    StringInfoData buf;
+    nspName = text_to_cstring(schemaName);
+    Oid namespaceOid = get_namespace_oid(nspName, false);
+
+    initStringInfo(&buf);
+    nsptuple = SearchSysCache1(NAMESPACEOID, ObjectIdGetDatum(namespaceOid));
+    if (!HeapTupleIsValid(nsptuple)) {
+        ereport(ERROR, (errcode(ERRCODE_UNDEFINED_SCHEMA), errmsg("Unknown database \'%s\'", nspName)));
+    }
+    nspForm = (Form_pg_namespace)GETSTRUCT(nsptuple);
+    appendStringInfo(&buf, "CREATE SCHEMA ");
+    if (if_exists)
+        appendStringInfo(&buf, "IF NOT EXISTS ");
+    appendStringInfo(&buf, "%s ", NameStr(nspForm->nspname));
+    appendStringInfo(&buf, "AUTHORIZATION %s ", GetUserNameFromId(nspForm->nspowner));
+    Datum datum = SysCacheGetAttr(NAMESPACEOID, nsptuple, Anum_pg_namespace_nspblockchain, &is_null);
+    if (!is_null) {
+        is_nspblockchain = DatumGetBool(datum);
+    }
+    if (is_nspblockchain)
+        appendStringInfo(&buf, "WITH BLOCKCHAIN");
+    ReleaseSysCache(nsptuple);
+    PG_RETURN_TEXT_P(string_to_text(buf.data));
+}
+#endif

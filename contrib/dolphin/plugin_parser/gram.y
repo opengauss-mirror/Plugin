@@ -744,7 +744,7 @@ static bool DolphinObjNameCmp(const char* s1, const char* s2, bool is_quoted);
 %type <node>	overlay_placing substr_from substr_for optional_precision
 
 %type <boolean> opt_instead opt_incremental
-%type <boolean> opt_unique opt_concurrently opt_verbose opt_full opt_deltamerge opt_compact opt_hdfsdirectory opt_verify
+%type <boolean> opt_unique opt_concurrently opt_verbose opt_full opt_deltamerge opt_compact opt_hdfsdirectory opt_verify opt_global
 %type <boolean> opt_freeze opt_default opt_recheck opt_cascade
 %type <defelt>	opt_binary opt_oids copy_delimiter opt_noescaping
 %type <defelt>	OptCopyLogError OptCopyRejectLimit opt_load
@@ -3254,11 +3254,14 @@ VariableShowStmt:
 					} else if (pg_strcasecmp($2, "databases") == 0 || pg_strcasecmp($2, "schemas") == 0) {
 						SelectStmt *n = makeShowDatabasesQuery(NULL, NULL);
 						$$ = (Node *) n;
+					} else if (pg_strcasecmp($2, "variables") == 0) {
+						SelectStmt *n = makeShowVariablesQuery(FALSE, NULL, FALSE);
+						$$ = (Node *) n;
 					} else {
-					VariableShowStmt *n = makeNode(VariableShowStmt);
-					n->name = $2;
-					$$ = (Node *) n;
-				}
+						VariableShowStmt *n = makeNode(VariableShowStmt);
+						n->name = $2;
+						$$ = (Node *) n;
+					}
 				}
 			| SHOW TABLES LikeOrWhere
 				{
@@ -3314,6 +3317,16 @@ VariableShowStmt:
 					VariableShowStmt *n = makeNode(VariableShowStmt);
 					n->name = "all";
 					n->likename = $4;
+					$$ = (Node *) n;
+				}
+			| SHOW VARIABLES LikeOrWhere
+				{
+					SelectStmt *n = makeShowVariablesQuery(FALSE, $3->like_or_where, $3->is_like);
+					$$ = (Node *) n;
+				}
+			| SHOW opt_global VARIABLES OptLikeOrWhere
+				{
+					SelectStmt *n = makeShowVariablesQuery($2, $4->like_or_where, $4->is_like);
 					$$ = (Node *) n;
 				}
 			| SHOW ALL
@@ -3402,6 +3415,16 @@ VariableShowStmt:
 					SelectStmt *n = findCreateTrigger($4);
 					$$ = (Node *) n;
 				}
+			| SHOW CREATE opt_database ColId
+				{
+					SelectStmt *n = makeShowCreateDatabaseQuery(FALSE,$4);
+					$$ = (Node *) n;
+				}
+			| SHOW CREATE opt_database IF_P NOT EXISTS ColId
+				{
+					SelectStmt *n = makeShowCreateDatabaseQuery(TRUE,$7);
+					$$ = (Node *) n;
+				}
 		;
 
 show_index_schema_opt:
@@ -3418,6 +3441,11 @@ show_index_opt:
 opt_databases:
 			DATABASES { /* EMTPY */ }
 			| SCHEMAS { /* EMTPY */ }
+		;
+
+opt_database:
+			DATABASE { /* EMTPY */ }
+			| SCHEMA { /* EMTPY */ }
 		;
 
 OptLikeOrWhere:
@@ -3449,6 +3477,11 @@ LikeOrWhere:
                                         $$ = n;
                                 }
                 ;
+
+opt_global:
+			GLOBAL								{ $$ = TRUE; }
+			| SESSION							{ $$ = FALSE; }
+		;
 
 ConstraintsSetStmt:
 			SET CONSTRAINTS constraints_set_list constraints_set_mode

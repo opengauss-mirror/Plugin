@@ -1,0 +1,75 @@
+drop database if exists show_variables;
+NOTICE:  database "show_variables" does not exist, skipping
+create database show_variables dbcompatibility 'b';
+\c show_variables
+SET datestyle TO postgres, dmy;
+show variables like 'DateSty%';
+ Variable_name |     Value     
+---------------+---------------
+ DateStyle     | Postgres, DMY
+(1 row)
+
+show variables where variable_name like 'DateSty%';
+ Variable_name |     Value     
+---------------+---------------
+ DateStyle     | Postgres, DMY
+(1 row)
+
+show variables where variable_name = 'DateStyle';
+ Variable_name |     Value     
+---------------+---------------
+ DateStyle     | Postgres, DMY
+(1 row)
+
+show session variables like 'DateSty%';
+ Variable_name |     Value     
+---------------+---------------
+ DateStyle     | Postgres, DMY
+(1 row)
+
+show session variables where variable_name like 'DateSty%';
+ Variable_name |     Value     
+---------------+---------------
+ DateStyle     | Postgres, DMY
+(1 row)
+
+show session variables where variable_name = 'DateStyle';
+ Variable_name |     Value     
+---------------+---------------
+ DateStyle     | Postgres, DMY
+(1 row)
+
+show global variables like 'DateSty%';
+ Variable_name |     Value     
+---------------+---------------
+ DateStyle     | Postgres, MDY
+(1 row)
+
+show global variables where variable_name like 'DateSty%';
+ Variable_name |     Value     
+---------------+---------------
+ DateStyle     | Postgres, MDY
+(1 row)
+
+show global variables where variable_name = 'DateStyle';
+ Variable_name |     Value     
+---------------+---------------
+ DateStyle     | Postgres, MDY
+(1 row)
+
+SET datestyle TO ISO, MDY;
+show session variables where variable_name = 'DateStyle';
+ Variable_name |  Value   
+---------------+----------
+ DateStyle     | ISO, MDY
+(1 row)
+
+show global variables where variable_name = 'DateStyle';
+ Variable_name |     Value     
+---------------+---------------
+ DateStyle     | Postgres, MDY
+(1 row)
+
+RESET datestyle;
+\c postgres
+drop database if exists show_variables;
