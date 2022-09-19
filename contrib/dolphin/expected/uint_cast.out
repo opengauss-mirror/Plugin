@@ -87,11 +87,8 @@ select (18446744073709550515)::float8::uint8;
 (1 row)
 
 select (-18446744073709550515)::float8::uint8;
- uint8 
--------
- 2048
-(1 row)
-
+ERROR:  bigint unsigned out of range
+CONTEXT:  referenced column: uint8
 select (92233720368547758.0)::float4::uint8;
        uint8       
 -------------------
@@ -120,11 +117,32 @@ select (18446744073709550515)::float4::uint8;
 ERROR:  bigint unsigned out of range
 CONTEXT:  referenced column: uint8
 select (-18446744073709550515)::float4::uint8;
- uint8 
--------
- 0
-(1 row)
-
+ERROR:  bigint unsigned out of range
+CONTEXT:  referenced column: uint8
+select (-922337203685477580999.0)::float4::uint1;
+ERROR:  tinyint unsigned out of range
+CONTEXT:  referenced column: uint1
+select (-922337203685477580999.0)::float8::uint1;
+ERROR:  tinyint unsignedout of range
+CONTEXT:  referenced column: uint1
+select (-922337203685477580999.0)::float4::uint2;
+ERROR:  smallint unsigned out of range
+CONTEXT:  referenced column: uint2
+select (-922337203685477580999.0)::float8::uint2;
+ERROR:  smallint unsigned out of range
+CONTEXT:  referenced column: uint2
+select (-922337203685477580999.0)::float4::uint4;
+ERROR:  integer unsigned out of range
+CONTEXT:  referenced column: uint4
+select (-922337203685477580999.0)::float8::uint4;
+ERROR:  integer unsigned out of range
+CONTEXT:  referenced column: uint4
+select (-922337203685477580999.0)::float4::uint8;
+ERROR:  bigint unsigned out of range
+CONTEXT:  referenced column: uint8
+select (-922337203685477580999.0)::float8::uint8;
+ERROR:  bigint unsigned out of range
+CONTEXT:  referenced column: uint8
 select (0)::numeric::uint8;
  uint8 
 -------

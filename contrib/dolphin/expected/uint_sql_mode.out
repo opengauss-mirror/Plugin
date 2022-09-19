@@ -90,7 +90,7 @@ select (18446744073709550515)::float8::uint8;
 select (-18446744073709550515)::float8::uint8;
  uint8 
 -------
- 2048
+ 0
 (1 row)
 
 select (92233720368547758.0)::float4::uint8;

@@ -593,10 +593,9 @@ CREATE OPERATOR pg_catalog.-(
 rightarg = uint1, procedure = uint1um
 );
 
-create or replace function uint1(text)
-returns uint1
-as $$ select cast(to_number($1) as uint1)$$
-language sql IMMUTABLE strict;
+CREATE OR REPLACE FUNCTION uint1(text)
+RETURNS uint1
+LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'text_uint1';
 CREATE CAST (TEXT AS UINT1) WITH FUNCTION UINT1(TEXT) AS IMPLICIT;
 DROP FUNCTION IF EXISTS pg_catalog.uint1_int1_mod(uint1,int1) CASCADE;
 CREATE FUNCTION pg_catalog.uint1_int1_mod (
@@ -1298,10 +1297,9 @@ CREATE OPERATOR pg_catalog.-(
 rightarg = uint2, procedure = uint2um
 );
 
-create or replace function uint2(text)
-returns uint2
-as $$ select cast(to_number($1) as uint2)$$
-language sql IMMUTABLE strict;
+CREATE OR REPLACE FUNCTION uint2(text)
+RETURNS uint2
+LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'text_uint2';
 CREATE CAST (TEXT AS uint2) WITH FUNCTION uint2(TEXT) AS IMPLICIT;
 
 DROP FUNCTION IF EXISTS pg_catalog.uint2_int2_mod(uint2,int2) CASCADE;
@@ -1939,10 +1937,9 @@ CREATE OPERATOR pg_catalog.-(
 rightarg = uint4, procedure = uint4um
 );
 
-create or replace function uint4(text)
-returns uint4
-as $$ select cast(to_number($1) as uint4)$$
-language sql IMMUTABLE strict;
+CREATE OR REPLACE FUNCTION uint4(text)
+RETURNS uint4
+LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'text_uint4';
 
 CREATE CAST (TEXT AS uint4) WITH FUNCTION uint4(TEXT) AS IMPLICIT;
 
@@ -2586,10 +2583,9 @@ CREATE OPERATOR pg_catalog.-(
 rightarg = uint8, procedure = uint8um
 );
 
-create or replace function uint8(text)
-returns uint8
-as $$ select cast(to_number($1) as uint8)$$
-language sql IMMUTABLE strict;
+CREATE OR REPLACE FUNCTION uint8(text)
+RETURNS uint8
+LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'text_uint8';
 CREATE CAST (TEXT AS uint8) WITH FUNCTION uint8(TEXT) AS IMPLICIT;
 
 -------------------uint8 int8---------------
@@ -4413,3 +4409,23 @@ drop CAST IF EXISTS (int16 AS uint4) CASCADE;
 CREATE CAST (int16 AS uint4) WITH FUNCTION int16_u4(int16) AS ASSIGNMENT;
 drop CAST IF EXISTS (int16 AS uint8) CASCADE;
 CREATE CAST (int16 AS uint8) WITH FUNCTION int16_u8(int16) AS ASSIGNMENT;
+
+DROP FUNCTION IF EXISTS pg_catalog.text_cast_uint1(text) CASCADE;
+CREATE OR REPLACE FUNCTION pg_catalog.text_cast_uint1 (
+text
+) RETURNS uint1 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'text_cast_uint1';
+
+DROP FUNCTION IF EXISTS pg_catalog.text_cast_uint2(text) CASCADE;
+CREATE OR REPLACE FUNCTION pg_catalog.text_cast_uint2 (
+text
+) RETURNS uint2 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'text_cast_uint2';
+
+DROP FUNCTION IF EXISTS pg_catalog.text_cast_uint4(text) CASCADE;
+CREATE OR REPLACE FUNCTION pg_catalog.text_cast_uint4 (
+text
+) RETURNS uint4 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'text_cast_uint4';
+
+DROP FUNCTION IF EXISTS pg_catalog.text_cast_uint8(text) CASCADE;
+CREATE OR REPLACE FUNCTION pg_catalog.text_cast_uint8 (
+text
+) RETURNS uint8 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'text_cast_uint8';

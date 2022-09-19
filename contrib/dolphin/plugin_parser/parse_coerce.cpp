@@ -77,7 +77,7 @@ static bool Numeric2Others(Oid* ptype, Oid* ntype, TYPCATEGORY* pcategory, TYPCA
 
 static const doConvert convertFunctions[convertFunctionsCount] = {&String2Others, &Date2Others, &Numeric2Others};
 
-#define CAST_FUNCTION_ROW 6
+#define CAST_FUNCTION_ROW 7
 #define CAST_FUNCTION_COLUMN 4
 
 static const char* castFunction[CAST_FUNCTION_ROW][CAST_FUNCTION_COLUMN] = {{"i2_cast_ui1", "i2_cast_ui2", "i2_cast_ui4", "i2_cast_ui8"},
@@ -85,7 +85,8 @@ static const char* castFunction[CAST_FUNCTION_ROW][CAST_FUNCTION_COLUMN] = {{"i2
                                                                             {"i8_cast_ui1", "i8_cast_ui2", "i8_cast_ui4", "i8_cast_ui8"},
                                                                             {"f4_cast_ui1", "f4_cast_ui2", "f4_cast_ui4", "f4_cast_ui8"},
                                                                             {"f8_cast_ui1", "f8_cast_ui2", "f8_cast_ui4", "f8_cast_ui8"},
-                                                                            {"numeric_cast_uint1", "numeric_cast_uint2", "numeric_cast_uint4", "numeric_cast_uint8"}};
+                                                                            {"numeric_cast_uint1", "numeric_cast_uint2", "numeric_cast_uint4", "numeric_cast_uint8"},
+                                                                            {"text_cast_uint1", "text_cast_uint2", "text_cast_uint4", "text_cast_uint8"}};
 
 typedef enum {
     INVALID_COLUMN = -1,
@@ -102,7 +103,8 @@ typedef enum {
     INT8,
     FLOAT4,
     FLOAT8,
-    NUMERIC
+    NUMERIC,
+    TEXT
 } CastRow;
 #endif
 /*
@@ -2733,6 +2735,9 @@ Oid findUnsignedImplicitCastFunction(Oid targetTypeId, Oid sourceTypeId, Oid fun
             break;
         case NUMERICOID:
             row = NUMERIC;
+            break;
+        case TEXTOID:
+            row = TEXT;
             break;
     }
     if (row != INVALID_ROW && col != INVALID_COLUMN) {

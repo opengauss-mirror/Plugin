@@ -392,5 +392,65 @@ select 1999::year::uint4;
  1999
 (1 row)
 
+select (-1)::text::uint1;
+ uint1 
+-------
+ 255
+(1 row)
+
+select (-1)::text::uint2;
+ uint2 
+-------
+ 65535
+(1 row)
+
+select (-1)::text::uint4;
+   uint4    
+------------
+ 4294967295
+(1 row)
+
+select (-1)::text::uint8;
+        uint8         
+----------------------
+ 18446744073709551615
+(1 row)
+
+select '255'::text::uint1;
+ uint1 
+-------
+ 255
+(1 row)
+
+select '65535'::text::uint2;
+ uint2 
+-------
+ 65535
+(1 row)
+
+select '4294967295'::text::uint4;
+   uint4    
+------------
+ 4294967295
+(1 row)
+
+select '18446744073709551615'::text::uint8;
+        uint8         
+----------------------
+ 18446744073709551615
+(1 row)
+
+select '256'::text::uint1;
+ERROR:  tinyint unsigned out of range
+CONTEXT:  referenced column: uint1
+select '65536'::text::uint2;
+ERROR:  smallint unsigned out of range
+CONTEXT:  referenced column: uint2
+select '4294967296'::text::uint4;
+ERROR:  int unsigned out of range
+CONTEXT:  referenced column: uint4
+select '18446744073709551616'::text::uint8;
+ERROR:  bigint unsigned out of range
+CONTEXT:  referenced column: uint8
 \c postgres
 drop database uint_cast3;
