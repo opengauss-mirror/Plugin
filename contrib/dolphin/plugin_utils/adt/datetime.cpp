@@ -47,7 +47,7 @@ static int DecodeTimezone(const char* str, int* tzp);
 static const datetkn* datebsearch(const char* key, const datetkn* base, int nel);
 static int DecodeDate(char* str, unsigned int fmask, unsigned int* tmask, bool* is2digits, struct pg_tm* tm);
 #ifdef DOLPHIN
-static int ValidateDate(unsigned int fmask, bool isjulian, bool is2digits, bool bc, bool ad, struct pg_tm* tm);
+static int ValidateDate(unsigned int fmask, bool isjulian, bool is2digits, bool bc, bool ad, struct pg_tm* tm, unsigned int date_flag = 0);
 #else
 static int ValidateDate(unsigned int fmask, bool isjulian, bool is2digits, bool bc, struct pg_tm* tm);
 #endif
@@ -56,7 +56,10 @@ static void AppendTrailingZeros(char* str);
 static void AppendSeconds(char* cp, int sec, fsec_t fsec, int precision, bool fillzeros);
 static void AdjustFractSeconds(double frac, struct pg_tm* tm, fsec_t* fsec, int scale);
 static void AdjustFractDays(double frac, struct pg_tm* tm, fsec_t* fsec, int scale);
-
+#ifdef DOLPHIN
+static bool int8_to_tm(int64 int_val, struct pg_tm *tm, unsigned int date_flag, int *date_type);
+static bool lldiv_decode_tm_internal(lldiv_t *arg,  struct pg_tm *tm, fsec_t *fsec, unsigned int date_flag, int *date_type);
+#endif
 const int day_tab[2][13] = {
     {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31, 0}, {31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31, 0}};
 
@@ -768,7 +771,11 @@ int ParseDateTime(
  * happen if pg_time_t is just 32 bits), then assume UTC time zone - thomas
  * 1997-05-27
  */
+#ifdef DOLPHIN
+int DecodeDateTimeForBDatabase(char** field, int* ftype, int nf, int* dtype, struct pg_tm* tm, fsec_t* fsec, int* tzp, unsigned int date_flag)
+#else
 int DecodeDateTimeForBDatabase(char** field, int* ftype, int nf, int* dtype, struct pg_tm* tm, fsec_t* fsec, int* tzp)
+#endif
 {
     unsigned int fmask = 0, tmask;
     int type;
@@ -1304,7 +1311,7 @@ int DecodeDateTimeForBDatabase(char** field, int* ftype, int nf, int* dtype, str
 
     /* do final checking/adjustment of Y/M/D fields */
 #ifdef DOLPHIN
-    dterr = ValidateDate(fmask, isjulian, is2digits, bc, ad, tm);
+    dterr = ValidateDate(fmask, isjulian, is2digits, bc, ad, tm, date_flag);
 #else
     dterr = ValidateDate(fmask, isjulian, is2digits, bc, tm);
 #endif
@@ -1469,7 +1476,11 @@ overflow:
  * Allow specifying date to get a better time zone,
  * if time zones are allowed. - thomas 2001-12-26
  */
+#ifdef DOLPHIN
+int DecodeTimeOnlyForBDatabase(char** field, int* ftype, int nf, int* dtype, struct pg_tm* tm, fsec_t* fsec, int* tzp, int D, unsigned int date_flag)
+#else
 int DecodeTimeOnlyForBDatabase(char** field, int* ftype, int nf, int* dtype, struct pg_tm* tm, fsec_t* fsec, int* tzp, int D)
+#endif
 {
     unsigned int fmask = 0, tmask;
     int type;
@@ -1925,7 +1936,7 @@ int DecodeTimeOnlyForBDatabase(char** field, int* ftype, int nf, int* dtype, str
 #ifdef DOLPHIN
     tm->tm_hour += D * 24;
     /* do final checking/adjustment of Y/M/D fields */
-    dterr = ValidateDate(fmask, isjulian, is2digits, bc, ad, tm);
+    dterr = ValidateDate(fmask, isjulian, is2digits, bc, ad, tm, date_flag);
 #else
     dterr = ValidateDate(fmask, isjulian, is2digits, bc, tm);
 #endif
@@ -2170,9 +2181,9 @@ int ValidateTimeForBDatabase(bool timeIn24, struct pg_tm* tm, fsec_t* fsec)
     return 0;
 }
 
-int ValidateDateForBDatabase(bool is2digits, struct pg_tm* tm) 
+int ValidateDateForBDatabase(bool is2digits, struct pg_tm* tm, unsigned int date_flag) 
 {
-    return ValidateDate(DTK_DATE_M, false, is2digits, false, false, tm);
+    return ValidateDate(DTK_DATE_M, false, is2digits, false, false, tm, date_flag);
 }
 #endif
 /* ValidateDate()
@@ -2180,7 +2191,7 @@ int ValidateDateForBDatabase(bool is2digits, struct pg_tm* tm)
  * Return 0 if okay, a DTERR code if not.
  */
 #ifdef DOLPHIN
-static int ValidateDate(unsigned int fmask, bool isjulian, bool is2digits, bool bc, bool ad, struct pg_tm* tm)
+static int ValidateDate(unsigned int fmask, bool isjulian, bool is2digits, bool bc, bool ad, struct pg_tm* tm, unsigned int date_flag)
 #else
 static int ValidateDate(unsigned int fmask, bool isjulian, bool is2digits, bool bc, struct pg_tm* tm)
 #endif
@@ -2220,13 +2231,27 @@ static int ValidateDate(unsigned int fmask, bool isjulian, bool is2digits, bool 
 
     /* check for valid month */
     if (fmask & DTK_M(MONTH)) {
+#ifdef DOLPHIN
+        if ((date_flag & ENABLE_ZERO_MONTH)) {
+            if (tm->tm_mon < 0 || tm->tm_mon > MONTHS_PER_YEAR)
+                return DTERR_MD_FIELD_OVERFLOW;
+        } else if (tm->tm_mon < 1 || tm->tm_mon > MONTHS_PER_YEAR)
+#else
         if (tm->tm_mon < 1 || tm->tm_mon > MONTHS_PER_YEAR)
+#endif
             return DTERR_MD_FIELD_OVERFLOW;
     }
 
     /* minimal check for valid day */
     if (fmask & DTK_M(DAY)) {
-        if (tm->tm_mday < 1 || tm->tm_mday > 31)
+#ifdef DOLPHIN
+        if ((date_flag & ENABLE_ZERO_DAY)) {
+            if (tm->tm_mday < 0 || tm->tm_mday > 31)
+                return DTERR_MD_FIELD_OVERFLOW;
+        } else if(tm->tm_mday < 1 || tm->tm_mday > 31)
+#else
+        if(tm->tm_mday < 1 || tm->tm_mday > 31)
+#endif
             return DTERR_MD_FIELD_OVERFLOW;
     }
 
@@ -2236,7 +2261,13 @@ static int ValidateDate(unsigned int fmask, bool isjulian, bool is2digits, bool 
          * and year.  Note we don't use MD_FIELD_OVERFLOW here, since it seems
          * unlikely that "Feb 29" is a YMD-order error.
          */
+#ifdef DOLPHIN
+        if ((date_flag & ENABLE_ZERO_MONTH) && (tm->tm_mon == 0)) {
+            return 0;
+        } else if (tm->tm_mday > day_tab[isleap(tm->tm_year)][tm->tm_mon - 1])
+#else
         if (tm->tm_mday > day_tab[isleap(tm->tm_year)][tm->tm_mon - 1])
+#endif
             return DTERR_FIELD_OVERFLOW;
     }
 
@@ -3447,10 +3478,22 @@ static void EncodeTimezone(char* str, int tz, int style)
 /* EncodeDateOnly()
  * Encode date as local time.
  */
+#ifdef DOLPHIN
+void EncodeDateOnlyForBDatabase(struct pg_tm* tm, int style, char* str, unsigned int date_flag)
+#else
 void EncodeDateOnlyForBDatabase(struct pg_tm* tm, int style, char* str)
+#endif
 {
     errno_t rc;
+#ifdef DOLPHIN
+    if (date_flag & ENABLE_ZERO_MONTH) {
+        Assert(tm->tm_mon >= 0 && tm->tm_mon <= MONTHS_PER_YEAR);
+    } else {
+        Assert(tm->tm_mon >= 1 && tm->tm_mon <= MONTHS_PER_YEAR);
+    }
+#else
     Assert(tm->tm_mon >= 1 && tm->tm_mon <= MONTHS_PER_YEAR);
+#endif
     size_t str_len = 0;
 
     switch (style) {
@@ -4615,5 +4658,201 @@ bool numeric_to_lldiv_t(NumericVar *from, lldiv_t *to)
     }
 
     return true;
+}
+
+// extract integer part and fractional part from numeric
+// attention： to->rem must be divided by (long long)pow_of_10[8] to get a correct fractional part
+void NumericVar2lldiv(NumericVar *from, lldiv_t *to)
+{
+    if (!from->ndigits  || from->weight < -2) {
+        /* from == 0 */
+        to->quot = 0;
+        to->rem = 0;
+        return;
+    }
+    to->quot = to->rem = 0;
+
+    long long bound_val = from->sign ? LONG_LONG_MIN : LONG_LONG_MAX;
+
+    if (from->weight > DEC_DIGITS) {
+        to->quot = bound_val;
+        to->rem = 0;
+        return;
+    }
+
+    int int_remain_field = (from->weight >= 0) ? (from->weight + 1) : 0;
+    
+    int i = 0;
+    for (; int_remain_field > 0 && i < from->ndigits; --int_remain_field, ++i) {
+        if (from->weight == DEC_DIGITS) {
+            if((long long)(from->digits[i]) > abs(bound_val / (long long)pow_of_10[(int_remain_field - 1) * DEC_DIGITS] % 10000)) {
+                to->quot = bound_val;
+                to->rem = 0;
+                return;
+            }
+        }
+        to->quot += (long long)(from->digits[i]) * (long long)pow_of_10[(int_remain_field - 1) * DEC_DIGITS];
+    }
+
+    if (i == from->ndigits) {
+        to->rem = 0;
+    } else {
+        int frac_remain_field = 2;
+        if (from->weight >= -1) {
+            for (; i < from->ndigits && frac_remain_field > 0; ++i, --frac_remain_field) {
+                to->rem = to->rem * pow_of_10[4] + from->digits[i];
+            }
+            if (frac_remain_field) {
+                for(; frac_remain_field > 0; --frac_remain_field)
+                    to->rem *= pow_of_10[4];
+            }
+        } else {
+            to->rem = from->digits[i];
+        }
+    }
+
+    if (from->sign) {
+        to->quot = -to->quot;
+        to->rem = -to->rem;
+    }
+
+    return;
+}
+
+//decode the integer to pg_tm and do a range check as what MSQ does
+//true if success
+//false if faild
+static bool int8_to_tm(int64 int_val, struct pg_tm *tm, unsigned int date_flag, int *date_type)
+{
+    long long date_part = 0;
+    long long time_part = 0;
+    long long date = (long long)int_val;
+    *date_type = DTK_DATE;
+
+    errno_t rc = memset_s(tm, sizeof(*tm), 0, sizeof(*tm));
+    securec_check(rc, "\0", "\0");
+
+    if (date == 0 || date >= B_NORMAL_NUMBER_DATETIME) { // 1000-01-01 00:00:00
+        *date_type = DTK_DATE_TIME;
+        if (date > B_MAX_NUMBER_DATETIME) // 9999-12-31 23:59:59
+            return false;
+        goto decode_tm;
+    }
+
+    /* first consider the case of xxxx-xx-xx 00:00:00 */
+
+    if (date < B_FORMAT_DATE_INT_MIN)
+        return false;
+    if (date <= TWO_DIGITS_YEAR_DATE_ONE) {  // 2000-1-1 ~ 2069-12-31
+        date = (date + 20000000) * 1000000;
+        goto decode_tm;
+    }
+    if (date < TWO_DIGITS_YEAR_DATE_TWO)  // 1970-1999
+        return false;
+    if (date <= TWO_DIGITS_YEAR_DATE_THREE) {
+        date = (date + 19000000) * 1000000; 
+        goto decode_tm;
+    }
+
+    if (date <= B_FORMAT_MAX_DATE) {
+        date = date * 1000000;
+        goto decode_tm;
+    }
+    if (date < (B_FORMAT_DATE_INT_MIN * 1000000))
+        return false;
+
+    //now consider the case of xxxx-xx-xx xx:xx:xx
+    
+    *date_type = DTK_DATE_TIME;
+
+    if (date <= TWO_DIGITS_YEAR_DATETIME_ONE) { // 2069-12-31 23:59:59
+        date = date + 20000000000000LL;
+        goto decode_tm;
+    }
+    if (date < TWO_DIGITS_YEAR_DATETIME_TWO) // 1970-01-01 00:00:00
+        return false;
+    if (date <= TWO_DIGITS_YEAR_DATETIME_THREE)   //1999-12-31 23:59:59
+        date = date + 19000000000000LL;
+
+decode_tm:
+    date_part = (long long)(date / 1000000);//date part
+    time_part = (long long)(date - date_part * 1000000);//time part
+    tm->tm_year = (int)(date_part / 10000);
+    date_part = date_part % 10000;
+    tm->tm_mon = (int)(date_part / 100);
+    tm->tm_mday = (int)(date_part % 100);
+    tm->tm_hour = (int)(time_part / 10000);
+    time_part = time_part % 10000;
+    tm->tm_min = (int)(time_part / 100);
+    tm->tm_sec = (int)(time_part % 100);
+
+    //year_check
+    if (tm->tm_year < B_FORMAT_MIN_YEAR_OF_DATE || tm->tm_year > B_FORMAT_MAX_YEAR_OF_DATE) {
+        return false;
+    }
+    //month_check
+    if ((date_flag & ENABLE_ZERO_MONTH)) {
+        if (tm->tm_mon < 0 || tm->tm_mon > MONTHS_PER_YEAR)
+            return false;
+    } else if (tm->tm_mon < 1 || tm->tm_mon > MONTHS_PER_YEAR)
+        return false;
+    //day_check
+    if ((date_flag & ENABLE_ZERO_DAY)) {
+        if (tm->tm_mday < 0 || tm->tm_mday > DAYNUM_BIGMON)
+            return false;
+    } else if(tm->tm_mday < 1 || tm->tm_mday > DAYNUM_BIGMON)
+        return false;
+    //day and month check
+    if (tm->tm_year == B_FORMAT_MIN_YEAR_OF_DATE && tm->tm_mon == FEBRUARY && tm->tm_mday == DAYNUM_FEB_LEAPYEAR)
+        return false;
+    if ((tm->tm_mon == 0) && (date_flag & ENABLE_ZERO_MONTH)) {//do nothing
+    } else if (tm->tm_mday > day_tab[isleap(tm->tm_year)][tm->tm_mon - 1])
+        return false;
+
+    /* validate min, sec,*/
+    if (tm->tm_min < 0 || tm->tm_min >= MINS_PER_HOUR || tm->tm_sec < 0 ||
+        tm->tm_sec >= SECS_PER_MINUTE)
+        return false;
+
+    /* validate hour */
+    if (tm->tm_hour < 0 || tm->tm_hour >= HOURS_PER_DAY)
+        return false;
+
+    return true;
+}
+
+static bool lldiv_decode_tm_internal(lldiv_t *div,  struct pg_tm *tm, fsec_t *fsec, unsigned int date_flag, int *date_type)
+{
+    if (div->quot < 0 || div->rem < 0)
+        return false;
+    long frac_val = lrint((double)div->rem / pow_of_10[2]);
+#ifdef HAVE_INT64_TIMESTAMP
+    *fsec = (int32)frac_val;
+#else
+    *fsec = frac_val / 1000000.0;
+#endif
+    return int8_to_tm(div->quot, tm, date_flag, date_type);
+}
+
+void lldiv_decode_tm(Numeric num, lldiv_t *div, struct pg_tm *tm, unsigned int date_flag)
+{
+    fsec_t fsec;
+    int date_type;
+    if (!lldiv_decode_tm_internal(div, tm, &fsec, date_flag, &date_type)) {
+        char * str = DatumGetCString(DirectFunctionCall1(numeric_out, NumericGetDatum(num)));
+        ereport(ERROR,
+            (errcode(DTERR_BAD_FORMAT), errmsg("Incorrect datetime value: \"%s\"", str)));
+    }
+
+    if (date_type == DTK_DATE_TIME && !MaybeRound(tm, &fsec)) {
+        char * str = DatumGetCString(DirectFunctionCall1(numeric_out, NumericGetDatum(num)));
+        ereport(ERROR,
+                (errcode(DTERR_BAD_FORMAT), errmsg("Truncated incorrect datetime value: \"%s\"", str)));
+    } else if (date_type == DTK_DATE && fsec) {
+        char * str = DatumGetCString(DirectFunctionCall1(numeric_out, NumericGetDatum(num)));
+        ereport(ERROR,
+                (errcode(DTERR_BAD_FORMAT), errmsg("Truncated incorrect date value: \"%s\"", str)));
+    }
+    return;
 }
 #endif

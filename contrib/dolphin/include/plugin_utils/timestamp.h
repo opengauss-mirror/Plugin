@@ -37,13 +37,65 @@
 #define FRAC_PRECISION 6
 #define TIMESTAMP_MAX_PRECISION 6
 
+#ifdef DOLPHIN
+#define B_MAX_NUMBER_DATETIME INT64CONST(99991231235959)    /* 9999-12-31 23:59:59 */
+#define B_NORMAL_NUMBER_DATETIME INT64CONST(10000101000000) /* 1000-01-01 00:00:00 */
+#define TWO_DIGITS_YEAR_DATETIME_ONE INT64CONST(691231235959)   /* 2069-12-31 23:59:59 */
+#define TWO_DIGITS_YEAR_DATETIME_TWO INT64CONST(700101000000)   /* 1970-01-01 00:00:00 */
+#define TWO_DIGITS_YEAR_DATETIME_THREE INT64CONST(991231235959) /* 1999-12-31 23:59:59*/
+
+#define NORMAL_DATE 0
+#define ENABLE_ZERO_DAY 1
+#define ENABLE_ZERO_MONTH 2
+
+#define DTK_DATE_TIME 5
+#define IS_ZERO_NUMBER_DATE(quot, rem) (quot == 0 && rem >= 0 && rem < 99999950)
+#define MONDAY_IS_FIRST_WEEKDAY 1
+#define SCOPE_OF_WEEK 2
+#define FIRST_FULL_WEEK 4
+#define FOUR_DAYS_IN_YEAR 4
+#define WEEKS_PER_YEAR 52
+
+#define JANUARY 1
+#define FEBRUARY 2
+#define MARCH 3
+#define APRIL 4
+#define MAY 5
+#define JUNE 6
+#define JULY 7
+#define AUGEST 8
+#define SEPTEMBER 9
+#define OCTOBER 10
+#define NOVEMBER 11
+#define DECEMBER 12
+#define MAXYEAR 9999
+#define DAYNUM_FEB_LEAPYEAR 29
+#define DAYNUM_FEB_NONLEAPYEAR 28
+#define DAYNUM_BIGMON 31
+#define DAYNUM_LITTLEMON 30
+#define MAXNUM_HOUR 24
+#define MAXNUM_MIN 60
+#define MAXNUM_SEC 60
+#define DAYS_PER_COMMON_YEAR 365
+#define DAYS_PER_LEAP_YEAR 366
+#endif
+
 /* compatible with b format datetime and timestamp */
 extern void tm2datetime(struct pg_tm* tm, const fsec_t fsec, Timestamp* result);
 extern void datetime2tm(Timestamp dt, struct pg_tm* tm, fsec_t* fsec);
+#ifdef DOLPHIN
+extern int NumberTimestamp(char *str, pg_tm *tm, fsec_t *fsec, unsigned int date_flag = 0);
+#else
 extern int NumberTimestamp(char *str, pg_tm *tm, fsec_t *fsec);
+#endif
 extern bool datetime_in_no_ereport(const char *str, Timestamp *datetime);
 extern bool datetime_sub_days(Timestamp datetime, int days, Timestamp *result);
 extern bool datetime_sub_interval(Timestamp datetime, Interval *span, Timestamp *result);
+
+#ifdef DOLPHIN
+extern void datetime_in_with_flag(const char *str, struct pg_tm *tm, fsec_t *fsec, unsigned int date_flag);
+extern bool MaybeRound(struct pg_tm *tm, fsec_t *fsec);
+#endif
 
 extern Datum datetime_text(PG_FUNCTION_ARGS);
 extern Datum time_text(PG_FUNCTION_ARGS);

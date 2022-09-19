@@ -65,6 +65,10 @@ typedef struct BSqlPluginContext {
     List* lockNameList;
     double b_db_timestamp;
     int lower_case_table_names;
+#ifdef DOLPHIN
+    int default_week_format;
+    char* lc_time_names;
+#endif
 } bSqlPluginContext;
 
 BSqlPluginContext* GetSessionContext();
@@ -75,6 +79,10 @@ BSqlPluginContext* GetSessionContext();
 #define PG_GETARG_UINT64(n) DatumGetUInt64(PG_GETARG_DATUM(n))
 #define DEFAULT_GUC_B_DB_TIMESTAMP 0.0
 #define MAX_GUC_B_DB_TIMESTAMP 2147483647.0
+#ifdef DOLPHIN
+#define DEFAULT_GUC_WEEK_FORMAT 0
+#define MAX_GUC_WEEK_FORMAT 7
+#endif
 
 typedef enum {
     INVALID_OID = -1,

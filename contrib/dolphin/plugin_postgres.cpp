@@ -68,6 +68,9 @@
 #include "plugin_vector/vecfunc.h"
 #include "replication/archive_walreceiver.h"
 #include "plugin_commands/mysqlmode.h"
+#ifdef DOLPHIN
+#include "plugin_utils/my_locale.h"
+#endif
 #ifndef WIN32_ONLY_COMPILER
 #include "dynloader.h"
 #else
@@ -104,6 +107,11 @@ static bool CheckSqlMode(char** newval, void** extra, GucSource source);
 static void AssignSqlMode(const char* newval, void* extra);
 static bool check_b_db_timestamp(double* newval, void** extra, GucSource source);
 static void assign_b_db_timestamp(double newval, void* extra);
+#ifdef DOLPHIN
+static bool check_default_week_format(int* newval, void** extra, GucSource source);
+static void assign_default_week_format(int newval, void* extra);
+static bool check_lc_time_names(char** newval, void** extra, GucSource source);
+#endif
 static const int LOADER_COL_BUF_CNT = 5;
 static uint32 dolphin_index;
 extern void set_hypopg_prehook(ProcessUtility_hook_type func);
@@ -254,6 +262,38 @@ static void assign_b_db_timestamp(double newval, void* extra)
     GetSessionContext()->b_db_timestamp = newval;
 }
 
+#ifdef DOLPHIN
+static bool check_default_week_format(int* newval, void** extra, GucSource source)
+{
+    int newval_interval = *newval;
+    if (newval_interval < DEFAULT_GUC_WEEK_FORMAT) {
+        *newval = DEFAULT_GUC_WEEK_FORMAT;
+        ereport(WARNING,
+                (errmsg("Truncated incorrect default_week_format value: \'%d\'",newval_interval)));
+    } else if (newval_interval > MAX_GUC_WEEK_FORMAT) {
+        *newval = MAX_GUC_WEEK_FORMAT;
+        ereport(WARNING,
+                (errmsg("Truncated incorrect default_week_format value: \'%d\'",newval_interval)));
+    }
+    return true;
+}
+
+static void assign_default_week_format(int newval, void* extra)
+{
+    GetSessionContext()->default_week_format = newval;
+}
+
+static bool check_lc_time_names(char** newval, void** extra, GucSource source)
+{
+    MyLocale *locale = MyLocaleSearch(*newval);
+    if (locale == NULL) {
+        GUC_check_errmsg("Unknown locale:\'%s\'", *newval);
+        return false;
+    }
+    return true;
+}
+#endif
+
 BSqlPluginContext* GetSessionContext()
 {
     if (u_sess->attr.attr_common.extension_session_vars_array[dolphin_index] == NULL) {
@@ -322,6 +362,32 @@ void init_session_vars(void)
                             NULL,
                             NULL,
                             NULL);
+#ifdef DOLPHIN
+    DefineCustomIntVariable("default_week_format",
+                            gettext_noop("Set the default week format for function week."),
+                            gettext_noop("If the given value is less than 0, default_week_format will be set to 0. "
+                                        "If the given value is greater than 7, default_week_format will be set to 7."),
+                            &GetSessionContext()->default_week_format,
+                            DEFAULT_GUC_WEEK_FORMAT,
+                            INT_MIN,
+                            INT_MAX,
+                            PGC_SIGHUP,
+                            0,
+                            check_default_week_format,
+                            assign_default_week_format,
+                            NULL);
+    DefineCustomStringVariable("lc_time_names",
+                               gettext_noop("Set the language charset for the return value of "
+                               "function DAYNAME, MONTHNAME, and DATE_FORMAT."),
+                               NULL,
+                               &GetSessionContext()->lc_time_names,
+                               "en_US",
+                               PGC_SIGHUP,
+                               0,
+                               check_lc_time_names,
+                               NULL,
+                               NULL);
+#endif
 
 }
 
