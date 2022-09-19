@@ -43,6 +43,8 @@
 #define TWO_DIGITS_YEAR_DATETIME_ONE INT64CONST(691231235959)   /* 2069-12-31 23:59:59 */
 #define TWO_DIGITS_YEAR_DATETIME_TWO INT64CONST(700101000000)   /* 1970-01-01 00:00:00 */
 #define TWO_DIGITS_YEAR_DATETIME_THREE INT64CONST(991231235959) /* 1999-12-31 23:59:59*/
+#define UNIXTIMESTAMP_START_VALUE INT64CONST(-946684799000000)  /* 1970-01-01 00:00:01.000000 */
+#define UNIXTIMESTAMP_END_VALUE INT64CONST(1200798847999999)    /* 2038-01-19 03:14:07.999999 */
 
 #define NORMAL_DATE 0
 #define ENABLE_ZERO_DAY 1
@@ -95,6 +97,8 @@ extern bool datetime_sub_interval(Timestamp datetime, Interval *span, Timestamp 
 #ifdef DOLPHIN
 extern void datetime_in_with_flag(const char *str, struct pg_tm *tm, fsec_t *fsec, unsigned int date_flag);
 extern bool MaybeRound(struct pg_tm *tm, fsec_t *fsec);
+extern bool datetime_in_range(Timestamp datetime);
+extern bool datetime_add_interval(Timestamp datetime, Interval *span, Timestamp *result);
 #endif
 
 extern Datum datetime_text(PG_FUNCTION_ARGS);

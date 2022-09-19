@@ -109,3 +109,5 @@ test: json_array json_object json_quote json_contains json_contains_path json_ex
 
 test: db_b_date_time_functions2
 test: show
+
+test: db_b_date_time_functions3

@@ -163,6 +163,7 @@ static int cal_weekday_interval(struct pg_tm* tm, bool sunday_is_first_day);
 static int b_db_sumdays(int year, int month, int day);
 static int64 b_db_weekmode(int64 mode);
 static int b_db_cal_week(struct pg_tm* tm, int64 mode, uint* year);
+static bool timestampdiff_datetime_internal(int64 *result,  text *units, Timestamp dt1, Timestamp dt2);
 #endif
 
 void timestamp_FilpSign(pg_tm* tm);
@@ -262,6 +263,18 @@ PG_FUNCTION_INFO_V1_PUBLIC(yearweek_text);
 extern "C" DLL_PUBLIC Datum yearweek_text(PG_FUNCTION_ARGS);
 PG_FUNCTION_INFO_V1_PUBLIC(yearweek_numeric);
 extern "C" DLL_PUBLIC Datum yearweek_numeric(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(timestampdiff_datetime);
+extern "C" DLL_PUBLIC Datum timestampdiff_datetime(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(timestampdiff_time);
+extern "C" DLL_PUBLIC Datum timestampdiff_time(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(timestampdiff_time_before);
+extern "C" DLL_PUBLIC Datum timestampdiff_time_before(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(timestampdiff_time_after);
+extern "C" DLL_PUBLIC Datum timestampdiff_time_after(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(convert_tz);
+extern "C" DLL_PUBLIC Datum convert_tz(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(addtime_text);
+extern "C" DLL_PUBLIC Datum addtime_text(PG_FUNCTION_ARGS);
 #endif
 
 /* b format datetime and timestamp type */
@@ -7889,5 +7902,291 @@ Datum yearweek_numeric(PG_FUNCTION_ARGS)
     lldiv_decode_tm(num, &div, result_tm, NORMAL_DATE);
     week_internal(result_tm, &week, mode, &year);
     PG_RETURN_INT64(year * 100 + week);
+}
+
+/**
+ * true if datetime in [0000-01-01 00:00:00.000000, 9999-12-31 23:59:59.999999]
+*/
+bool datetime_in_range(Timestamp datetime)
+{
+    bool ret = true;
+#ifdef HAVE_INT64_TIMESTAMP
+    if (datetime < B_FORMAT_TIMESTAMP_MIN_VALUE || datetime > B_FORMAT_TIMESTAMP_MAX_VALUE)
+        ret = false;
+#else
+    if (datetime < (double)B_FORMAT_TIMESTAMP_MIN_VALUE / USECS_PER_SEC || 
+        datetime > (double)B_FORMAT_TIMESTAMP_MAX_VALUE / USECS_PER_SEC)
+        ret = false;
+#endif
+    return ret;
+}
+
+/*
+ * using timestamp_diff_internal to calculate
+ * true if success
+ * false if failed
+ */
+static bool timestampdiff_datetime_internal(int64 *result,  text *units, Timestamp dt1, Timestamp dt2)
+{
+    bool ret = true;
+    PG_TRY();
+    {
+        *result = timestamp_diff_internal(units, dt1, dt2, true);
+    }
+    PG_CATCH();
+    {
+        // If catch an error, just empty the error stack and set return value to false.
+        FlushErrorState();
+        ret = false;
+    }
+    PG_END_TRY();
+    return ret;
+}
+
+/* 
+ * function for B compatibility timestampdiff(unit, datetime/date, datetime/date)
+ */
+Datum timestampdiff_datetime(PG_FUNCTION_ARGS)
+{
+    text* units = PG_GETARG_TEXT_PP(0);
+    char *str1 = text_to_cstring(PG_GETARG_TEXT_PP(2));
+    char *str2 = text_to_cstring(PG_GETARG_TEXT_PP(1));
+    Timestamp datetime1, datetime2;
+    bool expr1_ok = datetime_in_no_ereport(str1, &datetime1) && datetime_in_range(datetime1);
+    bool expr2_ok = datetime_in_no_ereport(str2, &datetime2) && datetime_in_range(datetime2);
+    int64 result;
+
+    if (!expr1_ok || !expr2_ok) {
+        PG_RETURN_NULL();
+    }
+    if (timestampdiff_datetime_internal(&result, units, datetime1, datetime2)) {
+        PG_RETURN_INT64(result);
+    }
+    PG_RETURN_NULL();
+}
+
+static inline void add_currentdate_to_time(TimeADT time, Timestamp *result)
+{
+    TimestampTz state_start_timestamp;
+    Timestamp datetime;
+    int tzp;
+    struct pg_tm tt, *tm = &tt;
+    fsec_t fsec;
+    
+    state_start_timestamp = GetCurrentStatementStartTimestamp();
+    timestamp2tm(state_start_timestamp, &tzp, tm, &fsec, NULL, NULL);
+    tt.tm_hour = tt.tm_min = tt.tm_sec = 0;
+    tm2timestamp(tm, 0, NULL, &datetime);
+    *result = datetime + time;
+}
+
+/*
+ * function for B compatibility timestampdiff(unit, time, time)
+ */
+Datum timestampdiff_time(PG_FUNCTION_ARGS)
+{
+    text* units = PG_GETARG_TEXT_PP(0);
+    Timestamp datetime1, datetime2;
+    int64 result;
+
+    add_currentdate_to_time(PG_GETARG_TIMEADT(2), &datetime1);
+    add_currentdate_to_time(PG_GETARG_TIMEADT(1), &datetime2);
+    if (timestampdiff_datetime_internal(&result, units, datetime1, datetime2)) {
+        PG_RETURN_INT64(result);
+    }
+    PG_RETURN_NULL();
+}
+
+/*
+ * function for B compatibility timestampdiff(unit, time, datetime/date)
+ */
+Datum timestampdiff_time_before(PG_FUNCTION_ARGS)
+{
+    text* units = PG_GETARG_TEXT_PP(0);
+    char *str = text_to_cstring(PG_GETARG_TEXT_PP(2));
+    Timestamp datetime1, datetime2;
+    int64 result;
+
+    if (!datetime_in_no_ereport(str, &datetime1) || !datetime_in_range(datetime1)) {
+        PG_RETURN_NULL();
+    }
+    add_currentdate_to_time(PG_GETARG_TIMEADT(1), &datetime2);
+    if (timestampdiff_datetime_internal(&result, units, datetime1, datetime2)) {
+        PG_RETURN_INT64(result);
+    }
+    PG_RETURN_NULL();
+}
+
+/*
+ * function for B compatibility timestampdiff(unit, datetime/date, time)
+ */
+Datum timestampdiff_time_after(PG_FUNCTION_ARGS)
+{
+    text* units = PG_GETARG_TEXT_PP(0);
+    char *str = text_to_cstring(PG_GETARG_TEXT_PP(1));
+    Timestamp datetime1, datetime2;
+    int64 result;
+
+    if (!datetime_in_no_ereport(str, &datetime2) || !datetime_in_range(datetime2)) {
+        PG_RETURN_NULL();
+    }
+    add_currentdate_to_time(PG_GETARG_TIMEADT(2), &datetime1);
+    if (timestampdiff_datetime_internal(&result, units, datetime1, datetime2)) {
+        PG_RETURN_INT64(result);
+    }
+    PG_RETURN_NULL();
+}
+
+/*
+ * return -1 if the str is not a zone or izone
+ * return 0 if the str maybe a zone
+ * return 1 if the str maybe an izone
+ */
+static inline int tz_type(char *str)
+{
+    if (!str || strlen(str) == 0)
+        return -1;
+    if (*str == '+' || *str == '-') {
+        return 1;
+    } else if (isalpha((unsigned char)*str)) {
+        return 0;
+    }
+    return -1;
+}
+
+/*
+ * true if datetime is in range [1970-1-1 00:00:01.000000, 2038-01-19 03:14:07.999999]
+ */
+static inline bool datetime_in_unixtimestmap(Timestamp datetime)
+{
+    bool ret = true;
+#ifdef HAVE_INT64_TIMESTAMP
+    if (datetime < UNIXTIMESTAMP_START_VALUE || datetime > UNIXTIMESTAMP_END_VALUE)
+        ret = false;
+#else
+    if (datetime < (double)UNIXTIMESTAMP_START_VALUE / USECS_PER_SEC || 
+        datetime > (double)UNIXTIMESTAMP_END_VALUE / USECS_PER_SEC)
+        ret = false;
+#endif
+    return ret;
+}
+
+/*
+ * function for B compatibility convert_tz(datetime, from_tz, to_tz)
+ */
+Datum convert_tz(PG_FUNCTION_ARGS)
+{
+    char *str1 = text_to_cstring(PG_GETARG_TEXT_PP(0));
+    text* expr2 = PG_GETARG_TEXT_PP(1);
+    text* expr3 = PG_GETARG_TEXT_PP(2);
+    Timestamp raw_datetime, datetime;
+    Interval *interval;
+
+    char *str2 = text_to_cstring(expr2);
+    char *str3 = text_to_cstring(expr3);
+    bool expr1_ok = datetime_in_no_ereport(str1, &raw_datetime) && datetime_in_range(raw_datetime);
+    int from_ok = tz_type(str2);
+    int to_ok = tz_type(str3);
+
+    if (!expr1_ok || from_ok == -1 || to_ok == -1) {
+        PG_RETURN_NULL();
+    }
+    datetime = raw_datetime;
+
+    PG_TRY();
+    {
+        if (from_ok == 0) {
+            datetime = (Timestamp)DirectFunctionCall2(timestamp_zone, PointerGetDatum(expr2), TimestampGetDatum(datetime));
+        } else {
+            interval = (Interval*)DirectFunctionCall3(interval_in, CStringGetDatum(str2), ObjectIdGetDatum(InvalidOid), Int32GetDatum(-1));
+            datetime = (Timestamp)DirectFunctionCall2(timestamp_izone, PointerGetDatum(interval), TimestampGetDatum(datetime));
+        }
+        if (!datetime_in_unixtimestmap(datetime)) {
+            PG_RETURN_TIMESTAMP(raw_datetime);
+        }
+        if (to_ok == 0) {
+            datetime = (Timestamp)DirectFunctionCall2(timestamptz_zone, PointerGetDatum(expr3), TimestampGetDatum(datetime));
+        } else {
+            interval = (Interval*)DirectFunctionCall3(interval_in, CStringGetDatum(str3), ObjectIdGetDatum(InvalidOid), Int32GetDatum(-1));
+            datetime = (Timestamp)DirectFunctionCall2(timestamptz_izone, PointerGetDatum(interval), TimestampGetDatum(datetime));
+        }
+        PG_RETURN_TIMESTAMP(datetime);
+    }
+    PG_CATCH();
+    {
+        // If catch an error, just empty the error stack and return NULL.
+        FlushErrorState();
+        PG_RETURN_NULL();
+    }
+    PG_END_TRY();
+}
+
+/*
+ * add an interval to a datetime, giving a new datetime and assign it to result.
+ * false if parameter datetime or result out of range, otherwise true
+ */
+bool datetime_add_interval(Timestamp datetime, Interval *span, Timestamp *result)
+{
+    span->month = -span->month;
+    span->day = -span->day;
+    span->time = -span->time;
+    return datetime_sub_interval(datetime, span, result);
+}
+
+/**
+ * addtime(date/datetime/time, time)
+*/
+Datum addtime_text(PG_FUNCTION_ARGS)
+{
+    char *str1 = text_to_cstring(PG_GETARG_TEXT_PP(0));
+    char *str2 = text_to_cstring(PG_GETARG_TEXT_PP(1));
+    TimeADT time1, time2;
+    Timestamp datetime1, datetime2;
+
+    if (!time_in_no_ereport(str2, &time2)) {
+        ereport(ERROR, (errcode(ERRCODE_INVALID_DATETIME_FORMAT),
+                        errmsg("invalid input syntax \"%s\"", str2)));
+    }
+    if (datetime_in_no_ereport(str2, &datetime2)) {
+        PG_RETURN_NULL();
+    }
+    if (!time_in_range(time2)) {
+        ereport(ERROR, (errcode(ERRCODE_DATETIME_FIELD_OVERFLOW),
+                        errmsg("datetime/time field value out of range: \"%s\"",
+                               str2)));
+    }
+
+    if (datetime_in_no_ereport(str1, &datetime1)) {
+        Timestamp result;
+        if (datetime_sub_time(datetime1, -time2, &result)) {
+            /* The variable datetime or result does not exceed the specified
+             * range*/
+            if (result >= B_FORMAT_TIMESTAMP_FIRST_YEAR)
+                return DirectFunctionCall1(datetime_text, result);
+            else {
+                PG_RETURN_NULL();
+            }
+        }
+        ereport(ERROR, (errcode(ERRCODE_DATETIME_FIELD_OVERFLOW),
+                        errmsg("date/time field overflow")));
+    } else if (time_in_no_ereport(str1, &time1)) {
+        TimeADT result;
+        if (!time_in_range(time1)) {
+            ereport(ERROR,
+                    (errcode(ERRCODE_DATETIME_FIELD_OVERFLOW),
+                     errmsg("datetime/time field value out of range: \"%s\"",
+                            str1)));
+        }
+        result = time1 + time2;
+        if (!time_in_range(result)) {
+            ereport(ERROR, (errcode(ERRCODE_DATETIME_FIELD_OVERFLOW),
+                            errmsg("date/time field overflow")));
+        }
+        return DirectFunctionCall1(time_text, result);
+    }
+
+    ereport(ERROR, (errcode(ERRCODE_INVALID_DATETIME_FORMAT),
+                    errmsg("invalid input syntax \"%s\"", str1)));
+    PG_RETURN_NULL();
 }
 #endif

@@ -1,0 +1,1693 @@
+---- b compatibility case
+drop database if exists b_datetime_func_test;
+NOTICE:  database "b_datetime_func_test" does not exist, skipping
+create database b_datetime_func_test dbcompatibility 'b';
+\c b_datetime_func_test
+set datestyle = 'ISO,ymd';
+set time zone "Asia/Shanghai";
+-- test datediff
+-- 边界值，坏值
+select datediff('0000-1-2', '0000-1-1');
+ datediff 
+----------
+        1
+(1 row)
+
+select datediff('9999-12-31', '0000-1-1');
+ datediff 
+----------
+  3652424
+(1 row)
+
+select datediff('2021-12-31', '2020-1-1');
+ datediff 
+----------
+      730
+(1 row)
+
+select datediff('2021-0-1', '2021-1-1');
+ datediff 
+----------
+         
+(1 row)
+
+-- 进位
+select datediff('0000-1-2 23:59:59.999999', '0000-1-1 00:00:00');
+ datediff 
+----------
+        1
+(1 row)
+
+select datediff('0000-1-2 23:59:59.9999999', '0000-1-1 00:00:00');
+ datediff 
+----------
+        2
+(1 row)
+
+select datediff('0000-1-2 00:00:00', '0000-1-1 23:59:59.999999');
+ datediff 
+----------
+        1
+(1 row)
+
+select datediff('0000-1-2 00:00:00', '0000-1-1 23:59:59.9999999');
+ datediff 
+----------
+        0
+(1 row)
+
+select datediff('2021-12-31 23:59:59.999999', '2022-1-1 00:00:00');
+ datediff 
+----------
+       -1
+(1 row)
+
+select datediff('2021-12-31 23:59:59.9999999', '2022-1-1 00:00:00');
+ datediff 
+----------
+        0
+(1 row)
+
+select datediff('9999-12-31 23:59:59.999999', '0000-1-1 00:00:00');
+ datediff 
+----------
+  3652424
+(1 row)
+
+select datediff('9999-12-31 23:59:59.9999999', '0000-1-1 00:00:00');
+ datediff 
+----------
+         
+(1 row)
+
+-- 不同类型输入
+select datediff(20211112, 20211113);
+ datediff 
+----------
+       -1
+(1 row)
+
+select datediff(20211112, '20211113');
+ datediff 
+----------
+       -1
+(1 row)
+
+select datediff(date'2021-11-12', date'2021-11-12');
+ datediff 
+----------
+        0
+(1 row)
+
+select datediff(datetime'2021-11-12 12:12:12', datetime'2021-11-12 23:59:59.9999999');
+ datediff 
+----------
+       -1
+(1 row)
+
+select datediff('20211112235959.9999999', 20211112235959.9999999);
+ datediff 
+----------
+        0
+(1 row)
+
+-- test from_days
+select from_days(0);
+ from_days  
+------------
+ 0000-00-00
+(1 row)
+
+select from_days(355);
+ from_days  
+------------
+ 0000-00-00
+(1 row)
+
+select from_days(366);
+ from_days  
+------------
+ 0001-01-01
+(1 row)
+
+select from_days(355.5);
+ from_days  
+------------
+ 0000-00-00
+(1 row)
+
+select from_days(-1);
+ from_days  
+------------
+ 0000-00-00
+(1 row)
+
+select from_days(3652500);
+ from_days  
+------------
+ 0000-00-00
+(1 row)
+
+select from_days(3652499);
+  from_days  
+-------------
+ 10000-03-15
+(1 row)
+
+select from_days(3652499.5);
+ from_days  
+------------
+ 0000-00-00
+(1 row)
+
+select from_days('3652499abc');
+  from_days  
+-------------
+ 10000-03-15
+(1 row)
+
+select from_days('111111111111111111111111111111111111');
+ from_days  
+------------
+ 0000-00-00
+(1 row)
+
+-- test timestampdiff
+set b_compatibility_mode = true;
+-- 边界值，坏值
+select timestampdiff(microsecond, '0000-1-1 00:00:00', '0000-1-2');
+ timestampdiff 
+---------------
+   86400000000
+(1 row)
+
+select timestampdiff(second, '0000-1-1 00:00:00', '0000-1-2');
+ timestampdiff 
+---------------
+         86400
+(1 row)
+
+select timestampdiff(minute, '0000-1-1 00:00:00', '0000-1-2');
+ timestampdiff 
+---------------
+          1440
+(1 row)
+
+select timestampdiff(hour, '0000-1-1 00:00:00', '0000-1-2');
+ timestampdiff 
+---------------
+            24
+(1 row)
+
+select timestampdiff(day, '9999-11-12 00:00:00', '9999-11-11');
+ timestampdiff 
+---------------
+            -1
+(1 row)
+
+select timestampdiff(day, '10000-1-1 00:00:00', '9999-12-31');
+ timestampdiff 
+---------------
+              
+(1 row)
+
+select timestampdiff(year, '9999-12-31', '0000-12-31');
+ timestampdiff 
+---------------
+         -9998
+(1 row)
+
+select timestampdiff(quarter, '9999-12-31', '0000-12-31');
+ timestampdiff 
+---------------
+        -39995
+(1 row)
+
+select timestampdiff(month, '9999-12-31', '0000-12-31');
+ timestampdiff 
+---------------
+       -119987
+(1 row)
+
+select timestampdiff(week, '9999-12-31', '0000-12-31');
+ timestampdiff 
+---------------
+       -521722
+(1 row)
+
+select timestampdiff(microsecond, time'-838:59:59', time'838:59:59');
+ timestampdiff 
+---------------
+ 6040798000000
+(1 row)
+
+select timestampdiff(second, time'-838:59:59', time'838:59:59');
+ timestampdiff 
+---------------
+       6040798
+(1 row)
+
+select timestampdiff(minute, time'-838:59:59', time'838:59:59');
+ timestampdiff 
+---------------
+        100679
+(1 row)
+
+select timestampdiff(hour, time'-838:59:59', time'838:59:59');
+ timestampdiff 
+---------------
+          1677
+(1 row)
+
+select timestampdiff(day, time'-838:59:59', time'838:59:59');
+ timestampdiff 
+---------------
+            69
+(1 row)
+
+select timestampdiff(month, time'-838:59:59', time'838:59:59');
+ timestampdiff 
+---------------
+             2
+(1 row)
+
+select timestampdiff(quarter, time'-838:59:59', time'838:59:59');
+ timestampdiff 
+---------------
+             0
+(1 row)
+
+select timestampdiff(year, time'-838:59:59', time'838:59:59');
+ timestampdiff 
+---------------
+             0
+(1 row)
+
+select timestampdiff(microsecond, '0000-0-1', '0000-1-2');
+ timestampdiff 
+---------------
+              
+(1 row)
+
+select timestampdiff(microsecond, '9999-0-1', '0000-1-2');
+ timestampdiff 
+---------------
+              
+(1 row)
+
+-- 混合类型
+select timestampdiff(microsecond, '2022-9-12', time'12:12:12');
+--?.*
+--?.*
+--?.*
+(1 row)
+
+select timestampdiff(microsecond, time'12:12:12', '2022-9-12');
+--?.*
+--?.*
+--?.*
+(1 row)
+
+select timestampdiff(microsecond, datetime'2022-9-12 12:12:12.999999', time'12:12:12.999999');
+--?.*
+--?.*
+--?.*
+(1 row)
+
+select timestampdiff(microsecond, time'12:12:12.999999', datetime'2022-9-12 12:12:12.999999');
+--?.*
+--?.*
+--?.*
+(1 row)
+
+select timestampdiff(microsecond, date'2022-9-12', time'12:12:12.999999');
+--?.*
+--?.*
+--?.*
+(1 row)
+
+select timestampdiff(microsecond, time'12:12:12.999999', date'2022-9-12');
+--?.*
+--?.*
+--?.*
+(1 row)
+
+set b_compatibility_mode = false;
+-- test convert_tz
+-- 双字母,第一次转换超[1970-1-1 00:00:01.000000, 2038-01-19 03:14:07.999999]，结果不转换
+select convert_tz('1970-1-1 00:00:01.000000', 'MET', 'GMT');
+     convert_tz      
+---------------------
+ 1970-01-01 00:00:01
+(1 row)
+
+select convert_tz('1970-1-1 00:00:01.000000', 'CCT', 'GMT');
+     convert_tz      
+---------------------
+ 1970-01-01 00:00:01
+(1 row)
+
+select convert_tz('2038-01-19 03:14:07.999999', 'EDT', 'GMT');
+         convert_tz         
+----------------------------
+ 2038-01-19 03:14:07.999999
+(1 row)
+
+-- 双字母正常转换
+select convert_tz('1234-1-1 00:00:00', 'MET', 'GMT');
+     convert_tz      
+---------------------
+ 1234-01-01 00:00:00
+(1 row)
+
+select convert_tz('1970-1-1 00:00:01.000000', 'GMT', 'GMT');
+     convert_tz      
+---------------------
+ 1970-01-01 00:00:01
+(1 row)
+
+select convert_tz('1970-1-1 00:00:01.000000', 'EDT', 'GMT');
+     convert_tz      
+---------------------
+ 1970-01-01 04:00:01
+(1 row)
+
+select convert_tz('1970-1-1 00:00:01.000000', 'CDT', 'GMT');
+     convert_tz      
+---------------------
+ 1970-01-01 05:00:01
+(1 row)
+
+select convert_tz('1970-1-1 00:00:01.000000', 'EST', 'GMT');
+     convert_tz      
+---------------------
+ 1970-01-01 05:00:01
+(1 row)
+
+select convert_tz('1970-1-1 00:00:01.000000', 'MDT', 'GMT');
+     convert_tz      
+---------------------
+ 1970-01-01 06:00:01
+(1 row)
+
+select convert_tz('1970-1-1 00:00:01.000000', 'MST', 'GMT');
+     convert_tz      
+---------------------
+ 1970-01-01 07:00:01
+(1 row)
+
+select convert_tz('2038-01-19 03:14:07.999999', 'JST', 'GMT');
+         convert_tz         
+----------------------------
+ 2038-01-18 18:14:07.999999
+(1 row)
+
+select convert_tz('2038-01-19 03:14:07.999999', 'KST', 'GMT');
+         convert_tz         
+----------------------------
+ 2038-01-18 18:14:07.999999
+(1 row)
+
+select convert_tz('2038-01-19 03:14:07.999999', 'CCT', 'GMT');
+         convert_tz         
+----------------------------
+ 2038-01-18 19:14:07.999999
+(1 row)
+
+-- 双数字,第一次转换超[1970-1-1 00:00:01.000000, 2038-01-19 03:14:07.999999]，结果不转换
+select convert_tz('1970-1-1 00:00:01.000000', '+1:00', '+0:00');
+     convert_tz      
+---------------------
+ 1970-01-01 00:00:01
+(1 row)
+
+select convert_tz('2038-01-19 03:14:07.999999', '-1:00', '+0:00');
+         convert_tz         
+----------------------------
+ 2038-01-19 03:14:07.999999
+(1 row)
+
+-- 双数字正常转换
+select convert_tz('1970-1-1 00:00:01.000000', '-1:00', '+0:00');
+     convert_tz      
+---------------------
+ 1970-01-01 01:00:01
+(1 row)
+
+select convert_tz('1970-1-1 00:00:01.000000', '-2:00', '+0:00');
+     convert_tz      
+---------------------
+ 1970-01-01 02:00:01
+(1 row)
+
+select convert_tz('1970-1-1 00:00:01.000000', '-10:00', '+0:00');
+     convert_tz      
+---------------------
+ 1970-01-01 10:00:01
+(1 row)
+
+select convert_tz('2038-01-19 03:14:07.999999', '+1:00', '+0:00');
+         convert_tz         
+----------------------------
+ 2038-01-19 02:14:07.999999
+(1 row)
+
+select convert_tz('2038-01-19 03:14:07.999999', '+2:00', '+0:00');
+         convert_tz         
+----------------------------
+ 2038-01-19 01:14:07.999999
+(1 row)
+
+select convert_tz('2038-01-19 03:14:07.999999', '+10:00', '+0:00');
+         convert_tz         
+----------------------------
+ 2038-01-18 17:14:07.999999
+(1 row)
+
+-- 字母数字混合
+select convert_tz('1970-1-1 00:00:01.000000', '-1:00', 'GMT');
+     convert_tz      
+---------------------
+ 1970-01-01 01:00:01
+(1 row)
+
+select convert_tz('1970-1-1 00:00:01.000000', 'GMT', '+3:00');
+     convert_tz      
+---------------------
+ 1970-01-01 03:00:01
+(1 row)
+
+select convert_tz('2038-01-19 03:14:07.999999', '+2:00', 'GMT');
+         convert_tz         
+----------------------------
+ 2038-01-19 01:14:07.999999
+(1 row)
+
+select convert_tz('2038-01-19 03:14:07.999999', 'GMT', '+7:00');
+         convert_tz         
+----------------------------
+ 2038-01-19 10:14:07.999999
+(1 row)
+
+-- test adddate(date,INTERVAL expr unit)
+-- 边界值，坏值
+select adddate('0001-01-01',INTERVAL 1 day);
+  adddate   
+------------
+ 0001-01-02
+(1 row)
+
+select adddate('0001-02-28',INTERVAL 1 day);
+  adddate   
+------------
+ 0001-03-01
+(1 row)
+
+select adddate('0004-02-29',INTERVAL 1 day);
+  adddate   
+------------
+ 0004-03-01
+(1 row)
+
+select adddate('0001-12-31',INTERVAL 1 month);
+  adddate   
+------------
+ 0002-01-31
+(1 row)
+
+select adddate('9999-12-30',INTERVAL 1 day);
+  adddate   
+------------
+ 9999-12-31
+(1 row)
+
+select adddate('0000-01-01',INTERVAL 1 day);
+ERROR:  date/time field value out of range
+CONTEXT:  referenced column: adddate
+select adddate(2001-01-01,INTERVAL 1 day);
+ERROR:  invalid input syntax for type timestamp: "1999"
+CONTEXT:  referenced column: adddate
+select adddate('9999-12-12',INTERVAL 1 year);
+ERROR:  date/time field value out of range
+CONTEXT:  referenced column: adddate
+-- 进位
+select adddate('0001-01-31',INTERVAL 1 day);
+  adddate   
+------------
+ 0001-02-01
+(1 row)
+
+select adddate('0001-2-28',INTERVAL 1 day);
+  adddate   
+------------
+ 0001-03-01
+(1 row)
+
+select adddate('0001-12-31',INTERVAL 1 day);
+  adddate   
+------------
+ 0002-01-01
+(1 row)
+
+select adddate('2021-12-31',INTERVAL 1 day);
+  adddate   
+------------
+ 2022-01-01
+(1 row)
+
+select adddate('9998-12-31',INTERVAL 1 day);
+  adddate   
+------------
+ 9999-01-01
+(1 row)
+
+select adddate('0001-12-31',INTERVAL 1 month);
+  adddate   
+------------
+ 0002-01-31
+(1 row)
+
+select adddate('1999-12-31',INTERVAL 1 day);
+  adddate   
+------------
+ 2000-01-01
+(1 row)
+
+-- 不同类型输入
+select adddate(date'001-01-01',INTERVAL 1 day);
+  adddate   
+------------
+ 0001-01-02
+(1 row)
+
+select adddate(datetime'001-01-01 12:21:21',INTERVAL 1 day);
+       adddate       
+---------------------
+ 0001-01-02 12:21:21
+(1 row)
+
+select adddate(time'1:1:1',INTERVAL 1 day);
+ adddate  
+----------
+ 25:01:01
+(1 row)
+
+select adddate('2001-12-12',INTERVAL 1 day);
+  adddate   
+------------
+ 2001-12-13
+(1 row)
+
+select adddate('2001-12-12 12:12:12',INTERVAL 1 day);
+       adddate       
+---------------------
+ 2001-12-13 12:12:12
+(1 row)
+
+-- test date_add(date,INTERVAL expr unit)
+-- 边界值，坏值
+select date_add('0001-01-01',INTERVAL 1 day);
+  date_add  
+------------
+ 0001-01-02
+(1 row)
+
+select date_add('0001-02-28',INTERVAL 1 day);
+  date_add  
+------------
+ 0001-03-01
+(1 row)
+
+select date_add('0004-02-29',INTERVAL 1 day);
+  date_add  
+------------
+ 0004-03-01
+(1 row)
+
+select date_add('0001-12-31',INTERVAL 1 month);
+  date_add  
+------------
+ 0002-01-31
+(1 row)
+
+select date_add('9999-12-30',INTERVAL 1 day);
+  date_add  
+------------
+ 9999-12-31
+(1 row)
+
+select date_add('0000-01-01',INTERVAL 1 day);
+ERROR:  date/time field value out of range
+CONTEXT:  referenced column: date_add
+select date_add(2001-01-01,INTERVAL 1 day);
+ERROR:  invalid input syntax for type timestamp: "1999"
+CONTEXT:  referenced column: date_add
+select date_add('9999-12-12',INTERVAL 1 year);
+ERROR:  date/time field value out of range
+CONTEXT:  referenced column: date_add
+-- 进位
+select date_add('0001-01-31',INTERVAL 1 day);
+  date_add  
+------------
+ 0001-02-01
+(1 row)
+
+select date_add('0001-2-28',INTERVAL 1 day);
+  date_add  
+------------
+ 0001-03-01
+(1 row)
+
+select date_add('0001-12-31',INTERVAL 1 day);
+  date_add  
+------------
+ 0002-01-01
+(1 row)
+
+select date_add('2021-12-31',INTERVAL 1 day);
+  date_add  
+------------
+ 2022-01-01
+(1 row)
+
+select date_add('9998-12-31',INTERVAL 1 day);
+  date_add  
+------------
+ 9999-01-01
+(1 row)
+
+select date_add('0001-12-31',INTERVAL 1 month);
+  date_add  
+------------
+ 0002-01-31
+(1 row)
+
+select date_add('1999-12-31',INTERVAL 1 day);
+  date_add  
+------------
+ 2000-01-01
+(1 row)
+
+-- 不同类型输入
+select date_add(date'001-01-01',INTERVAL 1 day);
+  date_add  
+------------
+ 0001-01-02
+(1 row)
+
+select date_add(datetime'001-01-01 12:21:21',INTERVAL 1 day);
+      date_add       
+---------------------
+ 0001-01-02 12:21:21
+(1 row)
+
+select date_add(time'1:1:1',INTERVAL 1 day);
+ date_add 
+----------
+ 25:01:01
+(1 row)
+
+select date_add('2001-12-12',INTERVAL 1 day);
+  date_add  
+------------
+ 2001-12-13
+(1 row)
+
+select date_add('2001-12-12 12:12:12',INTERVAL 1 day);
+      date_add       
+---------------------
+ 2001-12-13 12:12:12
+(1 row)
+
+-- test date_sub(date,INTERVAL expr unit)
+-- 边界值，坏值
+select date_sub('0001-01-01',INTERVAL '-1' day);
+  date_sub  
+------------
+ 0001-01-02
+(1 row)
+
+select date_sub('0001-02-28',INTERVAL '-1' day);
+  date_sub  
+------------
+ 0001-03-01
+(1 row)
+
+select date_sub('0004-02-29',INTERVAL '-1' day);
+  date_sub  
+------------
+ 0004-03-01
+(1 row)
+
+select date_sub('0001-12-31',INTERVAL '-1' month);
+  date_sub  
+------------
+ 0002-01-31
+(1 row)
+
+select date_sub('9999-12-30',INTERVAL '-1' day);
+  date_sub  
+------------
+ 9999-12-31
+(1 row)
+
+select date_sub('0000-01-01',INTERVAL '-1' day);
+ERROR:  date/time field value out of range
+CONTEXT:  referenced column: date_sub
+select date_sub(2001-01-01,INTERVAL '-1' day);
+ERROR:  invalid input syntax for type timestamp: "1999"
+CONTEXT:  referenced column: date_sub
+select date_sub('9999-12-12',INTERVAL '-1' year);
+ERROR:  date/time field value out of range
+CONTEXT:  referenced column: date_sub
+-- 进位
+select date_sub('0001-01-31',INTERVAL '-1' day);
+  date_sub  
+------------
+ 0001-02-01
+(1 row)
+
+select date_sub('0001-2-28',INTERVAL '-1' day);
+  date_sub  
+------------
+ 0001-03-01
+(1 row)
+
+select date_sub('0001-12-31',INTERVAL '-1' day);
+  date_sub  
+------------
+ 0002-01-01
+(1 row)
+
+select date_sub('2021-12-31',INTERVAL '-1' day);
+  date_sub  
+------------
+ 2022-01-01
+(1 row)
+
+select date_sub('9998-12-31',INTERVAL '-1' day);
+  date_sub  
+------------
+ 9999-01-01
+(1 row)
+
+select date_sub('0001-12-31',INTERVAL '-1' month);
+  date_sub  
+------------
+ 0002-01-31
+(1 row)
+
+select date_sub('1999-12-31',INTERVAL '-1' day);
+  date_sub  
+------------
+ 2000-01-01
+(1 row)
+
+-- 不同类型输入
+select date_sub(date'001-01-01',INTERVAL '-1' day);
+  date_sub  
+------------
+ 0001-01-02
+(1 row)
+
+select date_sub(datetime'001-01-01 12:21:21',INTERVAL '-1' day);
+      date_sub       
+---------------------
+ 0001-01-02 12:21:21
+(1 row)
+
+select date_sub(time'1:1:1',INTERVAL '-1' day);
+ date_sub 
+----------
+ 25:01:01
+(1 row)
+
+select date_sub('2001-12-12',INTERVAL '-1' day);
+  date_sub  
+------------
+ 2001-12-13
+(1 row)
+
+select date_sub('2001-12-12 12:12:12',INTERVAL '-1' day);
+      date_sub       
+---------------------
+ 2001-12-13 12:12:12
+(1 row)
+
+-- test addtime(expr1,expr2)
+-- 边界值，坏值
+select addtime('0000-01-01 0:0:0','20:20:30');
+ addtime 
+---------
+ 
+(1 row)
+
+select addtime('0000-01-01 00:00:00.000000','00:00:00.000000');
+ addtime 
+---------
+ 
+(1 row)
+
+select addtime('9999-12-31 23:59:59.999999','0:0:0');
+          addtime           
+----------------------------
+ 9999-12-31 23:59:59.999999
+(1 row)
+
+select addtime(0000-01-01 00:00:00.000000,'00:00:00.000000');
+ERROR:  syntax error at or near "00"
+LINE 1: select addtime(0000-01-01 00:00:00.000000,'00:00:00.000000')...
+                                  ^
+select addtime('0000-01-01 00:00:00.000000',00:00:00.000000);
+ERROR:  syntax error at or near ":00"
+LINE 1: select addtime('0000-01-01 00:00:00.000000',00:00:00.000000)...
+                                                      ^
+select addtime('0000-01-01 00:00:00.000000','2001-01-01');
+ERROR:  invalid input syntax "2001-01-01"
+CONTEXT:  referenced column: addtime
+-- 进位
+select addtime('2000-12-31 23:59:59','0:0:1');
+       addtime       
+---------------------
+ 2001-01-01 00:00:00
+(1 row)
+
+select addtime('2000-12-31 23:59:59.9','0:0:0.1');
+       addtime       
+---------------------
+ 2001-01-01 00:00:00
+(1 row)
+
+select addtime('2000-1-31 23:59:59.9','0:0:0.1');
+       addtime       
+---------------------
+ 2000-02-01 00:00:00
+(1 row)
+
+select addtime('2000-1-31 23:59:59','0:0:1');
+       addtime       
+---------------------
+ 2000-02-01 00:00:00
+(1 row)
+
+-- 不同类型输入
+select addtime('11:22:33','10:20:30');
+ addtime  
+----------
+ 21:43:03
+(1 row)
+
+select addtime('2020-03-04 11:22:33', '10:20:30');
+       addtime       
+---------------------
+ 2020-03-04 21:43:03
+(1 row)
+
+select addtime(datetime'2020-03-04 11:22:33','10:20:30');
+       addtime       
+---------------------
+ 2020-03-04 21:43:03
+(1 row)
+
+select addtime(time'11:22:33','10:20:30');
+ addtime  
+----------
+ 21:43:03
+(1 row)
+
+select addtime(datetime'2020-03-04 11:22:33',time'10:20:30');
+       addtime       
+---------------------
+ 2020-03-04 21:43:03
+(1 row)
+
+select addtime('11:22:33',time'10:20:30');
+ addtime  
+----------
+ 21:43:03
+(1 row)
+
+-- test adddate(date/datetime/time,days)
+-- 边界值，坏值
+select adddate('0001-01-01',999);
+  adddate   
+------------
+ 0003-09-27
+(1 row)
+
+select adddate('0001-02-28',1000000);
+  adddate   
+------------
+ 2739-01-26
+(1 row)
+
+select adddate('0004-02-29',1);
+  adddate   
+------------
+ 0004-03-01
+(1 row)
+
+select adddate('9999-12-30',1);
+  adddate   
+------------
+ 9999-12-31
+(1 row)
+
+select adddate('9999-12-31',0);
+  adddate   
+------------
+ 9999-12-31
+(1 row)
+
+select adddate('9999-12-31',1);
+ERROR:  date/time field value out of range
+CONTEXT:  referenced column: adddate
+select adddate('10000-12-31',1)
+select adddate('0000-01-01',-1);
+ERROR:  syntax error at or near "select"
+LINE 2: select adddate('0000-01-01',-1);
+        ^
+select adddate(2001-01-01,1);
+ERROR:  invalid input syntax for type timestamp: "1999"
+CONTEXT:  referenced column: adddate
+select adddate('12:12:12',0.5);
+ERROR:  invalid input syntax for type date: "12:12:12"
+CONTEXT:  referenced column: adddate
+select adddate('12:12:12',45);
+ERROR:  invalid input syntax for type date: "12:12:12"
+CONTEXT:  referenced column: adddate
+select adddate(time'132:122:12',-55);
+ERROR:  date/time field value out of range: "132:122:12"
+LINE 1: select adddate(time'132:122:12',-55);
+                           ^
+CONTEXT:  referenced column: adddate
+select adddate('132:122:12',5);
+ERROR:  date/time field value out of range: "132:122:12"
+CONTEXT:  referenced column: adddate
+select adddate(time'sssssss',5);
+ERROR:  invalid input syntax for type time: "sssssss"
+LINE 1: select adddate(time'sssssss',5);
+                           ^
+CONTEXT:  referenced column: adddate
+select adddate('sssssss',5);
+ERROR:  invalid input syntax for type timestamp: "sssssss"
+CONTEXT:  referenced column: adddate
+-- 进位
+select adddate('0001-01-31',1);
+  adddate   
+------------
+ 0001-02-01
+(1 row)
+
+select adddate('0001-2-28',1);
+  adddate   
+------------
+ 0001-03-01
+(1 row)
+
+select adddate('0001-12-31',1);
+  adddate   
+------------
+ 0002-01-01
+(1 row)
+
+select adddate('2021-12-31',1);
+  adddate   
+------------
+ 2022-01-01
+(1 row)
+
+select adddate('9998-12-31',1);
+  adddate   
+------------
+ 9999-01-01
+(1 row)
+
+-- 不同类型输入
+select adddate(date'0001-01-01',1);
+  adddate   
+------------
+ 0001-01-02
+(1 row)
+
+select adddate('0001-01-01',1);
+  adddate   
+------------
+ 0001-01-02
+(1 row)
+
+select adddate(datetime'0001-01-01 12:21:21',1);
+       adddate       
+---------------------
+ 0001-01-02 12:21:21
+(1 row)
+
+select adddate('0001-01-01 12:21:21',1);
+       adddate       
+---------------------
+ 0001-01-02 12:21:21
+(1 row)
+
+select adddate(time'1:1:1',1);
+ adddate  
+----------
+ 25:01:01
+(1 row)
+
+select adddate(time'1:1:1',30);
+  adddate  
+-----------
+ 721:01:01
+(1 row)
+
+select adddate(time'1:1:1',-30);
+  adddate   
+------------
+ -718:58:59
+(1 row)
+
+select adddate(time'1:1:1',-100);
+ERROR:  time field value out of range
+CONTEXT:  referenced column: adddate
+select adddate('1:1:1',1);
+ERROR:  invalid input syntax for type date: "1:1:1"
+CONTEXT:  referenced column: adddate
+select adddate('2001-12-12',1);
+  adddate   
+------------
+ 2001-12-13
+(1 row)
+
+select adddate('2001-12-12 12:12:12',1);
+       adddate       
+---------------------
+ 2001-12-13 12:12:12
+(1 row)
+
+-- test adddate(date/datetime/time,INTERVAL expr unit)
+-- 边界值，坏值
+select adddate('0001-01-01',INTERVAL 1 day);
+  adddate   
+------------
+ 0001-01-02
+(1 row)
+
+select adddate('0001-02-28',INTERVAL 1 day);
+  adddate   
+------------
+ 0001-03-01
+(1 row)
+
+select adddate('0004-02-29',INTERVAL 1 day);
+  adddate   
+------------
+ 0004-03-01
+(1 row)
+
+select adddate('0001-12-31',INTERVAL 1 month);
+  adddate   
+------------
+ 0002-01-31
+(1 row)
+
+select adddate('9999-12-30',INTERVAL 1 day);
+  adddate   
+------------
+ 9999-12-31
+(1 row)
+
+select adddate('0000-01-01',INTERVAL 1 day);
+ERROR:  date/time field value out of range
+CONTEXT:  referenced column: adddate
+select adddate(2001-01-01,INTERVAL 1 day);
+ERROR:  invalid input syntax for type timestamp: "1999"
+CONTEXT:  referenced column: adddate
+select adddate('9999-12-12',INTERVAL 1 year);
+ERROR:  date/time field value out of range
+CONTEXT:  referenced column: adddate
+select adddate('0000-00-00',INTERVAL 1 day);
+ERROR:  date/time field value out of range: "0000-00-00"
+HINT:  Perhaps you need a different "datestyle" setting.
+CONTEXT:  referenced column: adddate
+select adddate('1000000-01-00',INTERVAL 1 day);
+ERROR:  date/time field value out of range: "1000000-01-00"
+HINT:  Perhaps you need a different "datestyle" setting.
+CONTEXT:  referenced column: adddate
+select adddate('0002-03-01',INTERVAL '-3' year);
+ERROR:  date/time field value out of range
+CONTEXT:  referenced column: adddate
+select adddate(time'12:12:12',INTERVAL 1 year);
+ERROR:  time field value out of range
+CONTEXT:  referenced column: adddate
+select adddate('12:12:12',INTERVAL 1 year);
+ERROR:  invalid input syntax for type date: "12:12:12"
+CONTEXT:  referenced column: adddate
+-- 进位
+select adddate('0001-01-31',INTERVAL 1 day);
+  adddate   
+------------
+ 0001-02-01
+(1 row)
+
+select adddate('0001-2-28',INTERVAL 1 day);
+  adddate   
+------------
+ 0001-03-01
+(1 row)
+
+select adddate('0001-12-31',INTERVAL 1 day);
+  adddate   
+------------
+ 0002-01-01
+(1 row)
+
+select adddate('2021-12-31',INTERVAL 1 day);
+  adddate   
+------------
+ 2022-01-01
+(1 row)
+
+select adddate('9998-12-31',INTERVAL 1 day);
+  adddate   
+------------
+ 9999-01-01
+(1 row)
+
+select adddate('0001-12-31',INTERVAL 1 month);
+  adddate   
+------------
+ 0002-01-31
+(1 row)
+
+select adddate('1999-12-31',INTERVAL 1 day);
+  adddate   
+------------
+ 2000-01-01
+(1 row)
+
+-- 不同类型输入
+select adddate(date'001-01-01',INTERVAL 1 day);
+  adddate   
+------------
+ 0001-01-02
+(1 row)
+
+select adddate(datetime'001-01-01 12:21:21',INTERVAL 1 day);
+       adddate       
+---------------------
+ 0001-01-02 12:21:21
+(1 row)
+
+select adddate(time'1:1:1',INTERVAL 1 day);
+ adddate  
+----------
+ 25:01:01
+(1 row)
+
+select adddate('2001-12-12',INTERVAL 1 day);
+  adddate   
+------------
+ 2001-12-13
+(1 row)
+
+select adddate('2001-12-12 12:12:12',INTERVAL 1 day);
+       adddate       
+---------------------
+ 2001-12-13 12:12:12
+(1 row)
+
+-- test date_add(date,INTERVAL expr unit)
+-- 边界值，坏值
+select date_add('0001-01-01',INTERVAL 1 day);
+  date_add  
+------------
+ 0001-01-02
+(1 row)
+
+select date_add('0001-02-28',INTERVAL 1 day);
+  date_add  
+------------
+ 0001-03-01
+(1 row)
+
+select date_add('0004-02-29',INTERVAL 1 day);
+  date_add  
+------------
+ 0004-03-01
+(1 row)
+
+select date_add('0001-01-01',1);
+  date_add  
+------------
+ 0001-01-02
+(1 row)
+
+select date_add('0001-02-28',1);
+  date_add  
+------------
+ 0001-03-01
+(1 row)
+
+select date_add('0004-02-29',1);
+  date_add  
+------------
+ 0004-03-01
+(1 row)
+
+select date_add('0001-12-31',INTERVAL 1 month);
+  date_add  
+------------
+ 0002-01-31
+(1 row)
+
+select date_add('9999-12-30',1);
+  date_add  
+------------
+ 9999-12-31
+(1 row)
+
+select date_add('0000-01-01',1);
+ERROR:  date/time field value out of range
+CONTEXT:  referenced column: date_add
+select date_add(2001-01-01,1);
+ERROR:  invalid input syntax for type timestamp: "1999"
+CONTEXT:  referenced column: date_add
+select date_add('9999-12-12',INTERVAL 1 year);
+ERROR:  date/time field value out of range
+CONTEXT:  referenced column: date_add
+select date_add('9999-12-12 12:12:12',INTERVAL 1 day);
+      date_add       
+---------------------
+ 9999-12-13 12:12:12
+(1 row)
+
+select date_add(time'12:12:12',1);
+ date_add 
+----------
+ 36:12:12
+(1 row)
+
+select date_add('12:12:12',1);
+ERROR:  invalid input syntax for type date: "12:12:12"
+CONTEXT:  referenced column: date_add
+select date_add('133:131:45',5);
+ERROR:  date/time field value out of range: "133:131:45"
+CONTEXT:  referenced column: date_add
+-- 进位
+select date_add('0001-01-31',INTERVAL 1 day);
+  date_add  
+------------
+ 0001-02-01
+(1 row)
+
+select date_add('0001-2-28',INTERVAL 1 day);
+  date_add  
+------------
+ 0001-03-01
+(1 row)
+
+select date_add('0001-12-31',INTERVAL 1 day);
+  date_add  
+------------
+ 0002-01-01
+(1 row)
+
+select date_add('2021-12-31',INTERVAL 1 day);
+  date_add  
+------------
+ 2022-01-01
+(1 row)
+
+select date_add('9998-12-31',INTERVAL 1 day);
+  date_add  
+------------
+ 9999-01-01
+(1 row)
+
+select date_add('0001-01-31',INTERVAL 1 day);
+  date_add  
+------------
+ 0001-02-01
+(1 row)
+
+select date_add('0001-2-28',1);
+  date_add  
+------------
+ 0001-03-01
+(1 row)
+
+select date_add('0001-12-31',1);
+  date_add  
+------------
+ 0002-01-01
+(1 row)
+
+select date_add('2021-12-31',1);
+  date_add  
+------------
+ 2022-01-01
+(1 row)
+
+select date_add('9998-12-31',1);
+  date_add  
+------------
+ 9999-01-01
+(1 row)
+
+select date_add('0001-12-31',INTERVAL 1 month);
+  date_add  
+------------
+ 0002-01-31
+(1 row)
+
+select date_add('1999-12-31',INTERVAL 1 day);
+  date_add  
+------------
+ 2000-01-01
+(1 row)
+
+-- 不同类型输入
+select date_add(date'001-01-01',INTERVAL 1 day);
+  date_add  
+------------
+ 0001-01-02
+(1 row)
+
+select date_add(datetime'001-01-01 12:21:21',INTERVAL 1 day);
+      date_add       
+---------------------
+ 0001-01-02 12:21:21
+(1 row)
+
+select date_add(time'1:1:1',INTERVAL 1 day);
+ date_add 
+----------
+ 25:01:01
+(1 row)
+
+select date_add('2001-12-12',INTERVAL 1 day);
+  date_add  
+------------
+ 2001-12-13
+(1 row)
+
+select date_add('2001-12-12 12:12:12',INTERVAL 1 day);
+      date_add       
+---------------------
+ 2001-12-13 12:12:12
+(1 row)
+
+-- test date_sub(date,INTERVAL expr unit)
+-- 边界值，坏值
+select date_sub('0001-01-01',INTERVAL '-1' day);
+  date_sub  
+------------
+ 0001-01-02
+(1 row)
+
+select date_sub('0001-02-28',INTERVAL '-1' day);
+  date_sub  
+------------
+ 0001-03-01
+(1 row)
+
+select date_sub('0004-02-29',INTERVAL '-1' day);
+  date_sub  
+------------
+ 0004-03-01
+(1 row)
+
+select date_sub('0001-12-31',INTERVAL '-1' month);
+  date_sub  
+------------
+ 0002-01-31
+(1 row)
+
+select date_sub('9999-12-30',INTERVAL '-1' day);
+  date_sub  
+------------
+ 9999-12-31
+(1 row)
+
+select date_sub('0000-01-01',INTERVAL '-1' day);
+ERROR:  date/time field value out of range
+CONTEXT:  referenced column: date_sub
+select date_sub(2001-01-01,INTERVAL '-1' day);
+ERROR:  invalid input syntax for type timestamp: "1999"
+CONTEXT:  referenced column: date_sub
+select date_sub('9999-12-12',INTERVAL '-1' year);
+ERROR:  date/time field value out of range
+CONTEXT:  referenced column: date_sub
+select date_sub('2001-01-01',1);
+  date_sub  
+------------
+ 2000-12-31
+(1 row)
+
+select date_sub('0001-02-28',1);
+  date_sub  
+------------
+ 0001-02-27
+(1 row)
+
+select date_sub('9999-12-30',-1);
+  date_sub  
+------------
+ 9999-12-31
+(1 row)
+
+select date_sub('0000-01-01',-1);
+ERROR:  date/time field value out of range
+CONTEXT:  referenced column: date_sub
+select date_sub(2001-01-01,-1);
+ERROR:  invalid input syntax for type timestamp: "1999"
+CONTEXT:  referenced column: date_sub
+-- 进位
+select date_sub('0001-01-31',INTERVAL '-1' day);
+  date_sub  
+------------
+ 0001-02-01
+(1 row)
+
+select date_sub('0001-2-28',INTERVAL '-1' day);
+  date_sub  
+------------
+ 0001-03-01
+(1 row)
+
+select date_sub('0001-12-31',INTERVAL '-1' day);
+  date_sub  
+------------
+ 0002-01-01
+(1 row)
+
+select date_sub('2021-12-31',INTERVAL '-1' day);
+  date_sub  
+------------
+ 2022-01-01
+(1 row)
+
+select date_sub('9998-12-31',INTERVAL '-1' day);
+  date_sub  
+------------
+ 9999-01-01
+(1 row)
+
+select date_sub('0001-01-31',-1);
+  date_sub  
+------------
+ 0001-02-01
+(1 row)
+
+select date_sub('0001-2-28',-1);
+  date_sub  
+------------
+ 0001-03-01
+(1 row)
+
+select date_sub('0001-12-31',-1);
+  date_sub  
+------------
+ 0002-01-01
+(1 row)
+
+select date_sub('2021-12-31',-1);
+  date_sub  
+------------
+ 2022-01-01
+(1 row)
+
+select date_sub('9998-12-31',-1);
+  date_sub  
+------------
+ 9999-01-01
+(1 row)
+
+select date_sub('1999-12-31',-1);
+  date_sub  
+------------
+ 2000-01-01
+(1 row)
+
+-- 不同类型输入
+select date_sub(date'001-01-01',INTERVAL '-1' day);
+  date_sub  
+------------
+ 0001-01-02
+(1 row)
+
+select date_sub(date'001-01-01',-1);
+  date_sub  
+------------
+ 0001-01-02
+(1 row)
+
+select date_sub(datetime'001-01-01 12:21:21',INTERVAL '-1' day);
+      date_sub       
+---------------------
+ 0001-01-02 12:21:21
+(1 row)
+
+select date_sub(time'1:1:1',INTERVAL '-1' day);
+ date_sub 
+----------
+ 25:01:01
+(1 row)
+
+select date_sub('2001-12-12',INTERVAL '-1' day);
+  date_sub  
+------------
+ 2001-12-13
+(1 row)
+
+select date_sub('2001-12-12 12:12:12',INTERVAL '-1' day);
+      date_sub       
+---------------------
+ 2001-12-13 12:12:12
+(1 row)
+
+-- test addtime(expr1,expr2)
+-- 边界值，坏值
+select addtime('0000-01-01 0:0:0','20:20:30');
+ addtime 
+---------
+ 
+(1 row)
+
+select addtime('0000-01-01 0:0:0',1);
+ addtime 
+---------
+ 
+(1 row)
+
+select addtime('0000-01-01 00:00:00.000000','00:00:00.000000');
+ addtime 
+---------
+ 
+(1 row)
+
+select addtime('0000-01-01 00:00:00.000000',1);
+ addtime 
+---------
+ 
+(1 row)
+
+select addtime('9999-12-31 23:59:59.999999','0:0:0');
+          addtime           
+----------------------------
+ 9999-12-31 23:59:59.999999
+(1 row)
+
+select addtime('9999-12-31 23:59:59.999999',1);
+ERROR:  date/time field overflow
+CONTEXT:  referenced column: addtime
+select addtime(0000-01-01 00:00:00.000000,1);
+ERROR:  syntax error at or near "00"
+LINE 1: select addtime(0000-01-01 00:00:00.000000,1);
+                                  ^
+select addtime('0000-01-01 00:00:00.000000',00:00:00.000000);
+ERROR:  syntax error at or near ":00"
+LINE 1: select addtime('0000-01-01 00:00:00.000000',00:00:00.000000)...
+                                                      ^
+select addtime('0000-01-01 00:00:00.000000','2001-01-01');
+ERROR:  invalid input syntax "2001-01-01"
+CONTEXT:  referenced column: addtime
+-- 进位
+select addtime('2000-12-31 23:59:59','0:0:1');
+       addtime       
+---------------------
+ 2001-01-01 00:00:00
+(1 row)
+
+select addtime('2000-12-31 23:59:59.9','0:0:0.1');
+       addtime       
+---------------------
+ 2001-01-01 00:00:00
+(1 row)
+
+select addtime('2000-1-31 23:59:59.9','0:0:0.1');
+       addtime       
+---------------------
+ 2000-02-01 00:00:00
+(1 row)
+
+select addtime('2000-1-31 23:59:59','0:0:1');
+       addtime       
+---------------------
+ 2000-02-01 00:00:00
+(1 row)
+
+-- 不同类型输入
+select addtime('11:22:33','10:20:30');
+ addtime  
+----------
+ 21:43:03
+(1 row)
+
+select addtime('11:22:33',999);
+ERROR:  invalid input syntax "999"
+CONTEXT:  referenced column: addtime
+select addtime('2020-03-04 11:22:33', '10:20:30');
+       addtime       
+---------------------
+ 2020-03-04 21:43:03
+(1 row)
+
+select addtime('2020-03-04 11:22:33', 1);
+       addtime       
+---------------------
+ 2020-03-04 11:22:34
+(1 row)
+
+select addtime(datetime'2020-03-04 11:22:33','10:20:30');
+       addtime       
+---------------------
+ 2020-03-04 21:43:03
+(1 row)
+
+select addtime(datetime'2020-03-04 11:22:33', 0);
+       addtime       
+---------------------
+ 2020-03-04 11:22:33
+(1 row)
+
+select addtime(time'11:22:33','10:20:30');
+ addtime  
+----------
+ 21:43:03
+(1 row)
+
+select addtime(datetime'2020-03-04 11:22:33',time'10:20:30');
+       addtime       
+---------------------
+ 2020-03-04 21:43:03
+(1 row)
+
+select addtime('11:22:33',time'10:20:30');
+ addtime  
+----------
+ 21:43:03
+(1 row)
+
+\c contrib_regression
+DROP DATABASE b_datetime_func_test;
