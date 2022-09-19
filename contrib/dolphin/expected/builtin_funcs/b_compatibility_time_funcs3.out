@@ -284,8 +284,8 @@ ERROR:  syntax error at or near "-"
 LINE 1: ...ame, result) values('UTC_TIMESTAMP(-1)', UTC_TIMESTAMP(-1));
                                                                   ^
 select * from func_test3;
-                        functionname                         |             result              
--------------------------------------------------------------+---------------------------------
+--?                        functionname                         |             result.*
+--?-------------------------------------------------------------.*
  TO_DAYS('2022-1-1')                                         | 738521
  TO_DAYS('44440101')                                         | 1623138
  TO_DAYS(20000229)                                           | 730544
