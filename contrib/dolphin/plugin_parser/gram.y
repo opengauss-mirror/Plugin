@@ -6919,14 +6919,14 @@ CreateAsOption:
 					n->option_type = OPT_COLLATE;
 					$$ = n;
 				}
-			| CHARSET opt_equal any_name
+			| opt_default CHARSET opt_equal any_name
 				{
 					ereport(WARNING, (errmsg("CHARSET for TABLE is not supported for current version. skipped")));
 					SingleTableOption *n = (SingleTableOption*)palloc0(sizeof(SingleTableOption));
 					n->option_type = OPT_CHARSET;
 					$$ = n;
 				}
-			| CHARACTER SET opt_equal any_name
+			| opt_default CHARACTER SET opt_equal any_name
 				{
 					ereport(WARNING, (errmsg("CHARACTER SET for TABLE is not supported for current version. skipped")));
 					SingleTableOption *n = (SingleTableOption*)palloc0(sizeof(SingleTableOption));
