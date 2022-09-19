@@ -15,6 +15,7 @@ ifeq "$(GCC)" "yes"
 override CFLAGS+= -mieee -I$(top_builddir)/$(subdir)/../include -fvisibility=hidden -fPIC
 endif
 endif
+SUBDIRS = show
 
 ifneq "$(MAKECMDGOALS)" "clean"
   ifneq "$(MAKECMDGOALS)" "distclean"
@@ -41,5 +42,4 @@ OBJS = acl.o arrayfuncs.o array_selfuncs.o array_typanalyze.o \
 	vacuumfuncs.o
 
 like.o: like.cpp like_match.cpp
-
 include $(top_srcdir)/src/gausskernel/common.mk

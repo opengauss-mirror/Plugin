@@ -433,6 +433,8 @@ static DolphinString* MakeDolphinStringByNode(Node* node, bool is_quoted);
 static List* GetNameListFromDolphinString(List* dolphinStringList);
 static char* GetDolphinObjName(char* string, bool is_quoted);
 static bool DolphinObjNameCmp(const char* s1, const char* s2, bool is_quoted);
+static SelectStmt *MakeFunctionSelect(char *funcCall, List* args, core_yyscan_t yyscanner);
+static SelectStmt *MakeShowGrantStmt(char *arg, int location, core_yyscan_t yyscanner);
 %}
 
 %define api.pure
@@ -1054,7 +1056,7 @@ static bool DolphinObjNameCmp(const char* s1, const char* s2, bool is_quoted);
 	FEATURES // DB4AI
 	FREEZE FROM FULL FUNCTION FUNCTIONS
 
-	GENERATED GLOBAL GRANT GRANTED GREATEST GROUP_P GROUPING_P GROUPPARENT
+	GENERATED GLOBAL GRANT GRANTED GREATEST GROUP_P GROUPING_P GROUPPARENT GRANTS TRIGGERS
 
 	HANDLER HAVING HDFSDIRECTORY HEADER_P HOLD HOSTS HOUR_P
 
@@ -3278,6 +3280,10 @@ VariableShowStmt:
 					} else if (pg_strcasecmp($2, "variables") == 0) {
 						SelectStmt *n = makeShowVariablesQuery(FALSE, NULL, FALSE);
 						$$ = (Node *) n;
+					} else if (pg_strcasecmp($2, "grants") == 0) {
+					    $$ = (Node *)MakeShowGrantStmt("", @2, yyscanner);
+					} else if (pg_strcasecmp($2, "triggers") == 0) {
+					    $$ = (Node *) makeShowTriggersQuery(list_make1(makeStringConst(NULL, 0)), NULL, NULL);
 					} else {
 						VariableShowStmt *n = makeNode(VariableShowStmt);
 						n->name = $2;
@@ -3446,6 +3452,34 @@ VariableShowStmt:
 					SelectStmt *n = makeShowCreateDatabaseQuery(TRUE,$7);
 					$$ = (Node *) n;
 				}
+            | SHOW GRANTS FOR user 
+                  {
+                      $$ = (Node *)MakeShowGrantStmt($4, @4, yyscanner);
+                  }
+            | SHOW TRIGGERS LikeOrWhere
+                {
+                    List *args = list_make1(makeStringConst(NULL, 0));
+                    SelectStmt *n = makeShowTriggersQuery(args, $3->like_or_where, $3->is_like);
+                    $$ = (Node *) n;
+                }
+            | SHOW TRIGGERS from_in ColId OptLikeOrWhere
+                {
+                    List *args = list_make1(makeStringConst($4, @4));
+                    SelectStmt *n = makeShowTriggersQuery(args, $5->like_or_where, $5->is_like);
+                    $$ = (Node *) n;
+                }
+            | SHOW FUNCTION STATUS OptLikeOrWhere
+                {
+                    List *args = list_make1(makeStringConst("f", 0));
+                    SelectStmt *n = makeShowFuncProQuery(args, $4->like_or_where, $4->is_like);
+                    $$ = (Node *) n;
+                } 
+            | SHOW PROCEDURE STATUS OptLikeOrWhere
+                {
+                    List *args = list_make1(makeStringConst("p", 0));
+                    SelectStmt *n = makeShowFuncProQuery(args, $4->like_or_where, $4->is_like);
+                    $$ = (Node *) n;
+                }
 		;
 
 show_index_schema_opt:
@@ -30000,6 +30034,7 @@ unreserved_keyword_without_key:
 			| GENERATED
 			| GLOBAL
 			| GRANTED
+			| GRANTS
 			| HANDLER
 			| HEADER_P
 			| HOSTS
@@ -30252,6 +30287,7 @@ unreserved_keyword_without_key:
 			| TRANSACTION
 			| TRANSFORM
 			| TRIGGER
+			| TRIGGERS
 			| TRUNCATE
 			| TRUSTED
 			| TSFIELD
@@ -33059,6 +33095,58 @@ static void CheckIconstType(Node* node)
 			errmsg("Un-support feature"),
 			errdetail("The parameter type should be an integer constant")));
 	}
+}
+
+/**
+ * select grant_sql from funcCall('arg')
+ * @param funcCall function name
+ * @param args args of function
+ * @param yyscanner used for makeColumnRef
+ * @return return select stmt which fromClause is a function call
+ */
+static SelectStmt *MakeFunctionSelect(char *funcCall, List *args, core_yyscan_t yyscanner)
+{
+    SelectStmt *objectSelect = makeNode(SelectStmt);
+
+    FuncCall *objectFunc = makeNode(FuncCall);
+    objectFunc->funcname = list_make1(makeString(funcCall));
+    objectFunc->args = args;
+    objectFunc->agg_distinct = FALSE;
+    objectFunc->func_variadic = FALSE;
+    objectFunc->over = NULL;
+    objectFunc->call_func = false;
+
+    RangeFunction *rangeFunc = makeNode(RangeFunction);
+    rangeFunc->funccallnode = (Node *)objectFunc;
+
+    objectSelect->fromClause = list_make1(rangeFunc);
+    ResTarget *resTarget = makeNode(ResTarget);
+    resTarget->val = makeColumnRef("grant_sql", NIL, 0, yyscanner);
+    resTarget->name = "Grants";
+    objectSelect->targetList = list_make1(resTarget);
+    return objectSelect;
+}
+
+/**
+ * select grant_sql from show_object_grants('arg') union select grant_sql('arg') union select grant_sql from
+ * show_any_privileges('arg');
+ * @param arg args(user_name) of functionCalL
+ * @param location arg location
+ * @param yyscanner used for MakeFunctionSelect
+ * @return select stmt
+ */
+static SelectStmt *MakeShowGrantStmt(char *arg, int location, core_yyscan_t yyscanner)
+{
+    List *args = list_make1(makeStringConst(arg, location));
+    SelectStmt *selectStmt = makeNode(SelectStmt);
+    SelectStmt *subSelect = makeNode(SelectStmt);
+    subSelect->larg = MakeFunctionSelect("show_object_grants", args, yyscanner);
+    subSelect->rarg = MakeFunctionSelect("show_role_privilege", args, yyscanner);
+    subSelect->op = SETOP_UNION;
+    selectStmt->larg = subSelect;
+    selectStmt->rarg = MakeFunctionSelect("show_any_privileges", args, yyscanner);
+    selectStmt->op = SETOP_UNION;
+    return selectStmt;
 }
 
 static unsigned char GetLowerCaseChar(unsigned char ch, bool enc_is_single_byte)
