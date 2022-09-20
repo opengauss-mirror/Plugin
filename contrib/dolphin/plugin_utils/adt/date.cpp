@@ -95,6 +95,20 @@ extern "C" DLL_PUBLIC Datum utc_time_func(PG_FUNCTION_ARGS);
 
 PG_FUNCTION_INFO_V1_PUBLIC(time_to_sec);
 extern "C" DLL_PUBLIC Datum time_to_sec(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(datediff);
+extern "C" DLL_PUBLIC Datum datediff(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(from_days_text);
+extern "C" DLL_PUBLIC Datum from_days_text(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(from_days_numeric);
+extern "C" DLL_PUBLIC Datum from_days_numeric(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(adddate_datetime_days_text);
+extern "C" DLL_PUBLIC Datum adddate_datetime_days_text(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(adddate_datetime_interval_text);
+extern "C" DLL_PUBLIC Datum adddate_datetime_interval_text(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(adddate_time_days);
+extern "C" DLL_PUBLIC Datum adddate_time_days(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(adddate_time_interval);
+extern "C" DLL_PUBLIC Datum adddate_time_interval(PG_FUNCTION_ARGS);
 #endif
 /* common code for timetypmodin and timetztypmodin */
 static int32 anytime_typmodin(bool istz, ArrayType* ta)
@@ -3995,4 +4009,205 @@ Datum time_to_sec(PG_FUNCTION_ARGS)
     result *= timeSign;
     PG_RETURN_INT32(result);
 }
+
+Datum datediff(PG_FUNCTION_ARGS)
+{
+    text* expr1 = PG_GETARG_TEXT_PP(0);
+    text* expr2 = PG_GETARG_TEXT_PP(1);
+    char *str1 = text_to_cstring(expr1);
+    char *str2 = text_to_cstring(expr2);
+
+    Timestamp datetime1, datetime2;
+    DateADT dt1, dt2;
+
+    if (!datetime_in_no_ereport(str1, &datetime1) || !datetime_in_no_ereport(str2, &datetime2) || 
+        !datetime_in_range(datetime1) || !datetime_in_range(datetime2)) {
+        PG_RETURN_NULL();
+    }
+    dt1 = DatumGetDateADT(timestamp2date(datetime1));
+    dt2 = DatumGetDateADT(timestamp2date(datetime2));
+    PG_RETURN_INT32(dt1 - dt2);
+}
+
+static inline void from_days_internal(int64 days, Datum *result)
+{
+    DateADT date;
+    struct pg_tm tt, *tm = &tt;
+    char buf[MAXDATELEN + 1];
+    if (days <= DAYS_PER_COMMON_YEAR || days >= FROM_DAYS_MAX_DAY) { //return '0000-00-00'
+        tm->tm_year = tm->tm_mon = tm->tm_mday = 0;
+    } else {
+        date = date2j(1, 1, 1) - POSTGRES_EPOCH_JDATE;
+        date += (days - DAYS_PER_LEAP_YEAR);
+        j2date(date + POSTGRES_EPOCH_JDATE, &(tm->tm_year), &(tm->tm_mon), &(tm->tm_mday));
+    }
+    EncodeDateOnlyForBDatabase(tm, u_sess->time_cxt.DateStyle, buf, ENABLE_ZERO_MONTH);
+    *result = DirectFunctionCall1(textin, CStringGetDatum(buf));
+}
+
+Datum from_days_text(PG_FUNCTION_ARGS)
+{
+    text* expr = PG_GETARG_TEXT_PP(0);
+    const char *str = text_to_cstring(expr);
+    char* endptr = NULL;
+    errno = 0;
+    int64 days;
+    Datum result;
+    double tmp = strtod(str, &endptr);
+    if (endptr == str || errno == ERANGE) {
+        /* Supposing that we get a "0". LONG_LONG_MAX or LONG_LONG_MIN has the same result —— '0000-00-00'. */
+        days = 0;
+    } else {
+        days = llround(tmp);
+    }
+    from_days_internal(days, &result);
+    PG_RETURN_DATUM(result);
+}
+
+Datum from_days_numeric(PG_FUNCTION_ARGS)
+{
+    Numeric num = PG_GETARG_NUMERIC(0);
+    Datum result;
+    int64 days;
+    PG_TRY();
+    {
+        days = (int64)DirectFunctionCall1(numeric_int8, NumericGetDatum(num));
+    }
+    PG_CATCH();
+    {
+        // If catch an error, just empty the error stack and set days to LONG_LONG_MAX
+        FlushErrorState();
+        days = LONG_LONG_MAX;   // supposing overflow
+    }
+    PG_END_TRY();
+    from_days_internal(days, &result);
+    PG_RETURN_DATUM(result);
+}
+
+/*
+ * add an interval to a date, giving a new date and assign it to result.
+ * false if parameter date or result out of range, otherwise true
+ */
+bool date_add_interval(DateADT date, Interval *span, DateADT *result)
+{
+    span->month = -span->month;
+    span->day = -span->day;
+    span->time = -span->time;
+    return date_sub_interval(date, span, result);
+}
+
+/**
+ * adddate(date/datetime, days)
+*/
+Datum adddate_datetime_days_text(PG_FUNCTION_ARGS)
+{
+    text* tmp = PG_GETARG_TEXT_PP(0);
+    int64 days = PG_GETARG_INT64(1);
+    char *expr;
+
+    expr = text_to_cstring(tmp);
+    if (is_date_format(expr)) {
+        DateADT date, result;
+        date = DatumGetDateADT(DirectFunctionCall1(date_in, CStringGetDatum(expr)));
+        if (date_sub_days(date, -days, &result)) {
+            /* The variable datetime or result does not exceed the specified range*/
+            return DirectFunctionCall1(date_text, result);
+        }
+    } else {
+        Timestamp datetime, result;
+        datetime = DatumGetTimestamp(
+            DirectFunctionCall3(timestamp_in, CStringGetDatum(expr), ObjectIdGetDatum(InvalidOid), Int32GetDatum(-1)));
+        if (datetime_sub_days(datetime, -days, &result)) {
+            /* The variable datetime or result does not exceed the specified range*/
+            return DirectFunctionCall1(datetime_text, result);
+        }
+    }
+    ereport(ERROR,
+        (errcode(ERRCODE_DATETIME_FIELD_OVERFLOW),
+            errmsg("date/time field value out of range")));
+    PG_RETURN_NULL();
+}
+
+/**
+ * adddate(date/datetime, INTERVAL expr UNIT)
+*/
+Datum adddate_datetime_interval_text(PG_FUNCTION_ARGS)
+{
+    text* tmp = PG_GETARG_TEXT_PP(0);
+    Interval *span = PG_GETARG_INTERVAL_P(1);
+    char *expr;
+
+    expr = text_to_cstring(tmp);
+    if (is_date_format(expr) && span->time == 0) {
+        DateADT date, result;
+        date = DatumGetDateADT(DirectFunctionCall1(date_in, CStringGetDatum(expr)));
+        if (date_add_interval(date, span, &result))
+            return DirectFunctionCall1(date_text, result);
+    } else {
+        Timestamp datetime, result;
+        datetime = DatumGetTimestamp(
+            DirectFunctionCall3(timestamp_in, CStringGetDatum(expr), ObjectIdGetDatum(InvalidOid), Int32GetDatum(-1)));
+        if (datetime_add_interval(datetime, span, &result))
+            /* The variable datetime or result does not exceed the specified range*/
+            return DirectFunctionCall1(datetime_text, result);
+    }
+    ereport(ERROR,
+            (errcode(ERRCODE_DATETIME_FIELD_OVERFLOW),
+                errmsg("date/time field value out of range")));
+    PG_RETURN_NULL();
+}
+
+/**
+ * adddate(time, days)
+*/
+Datum adddate_time_days(PG_FUNCTION_ARGS)
+{
+    TimeADT time = PG_GETARG_TIMEADT(0);
+    int64 days = PG_GETARG_INT64(1);
+    TimeADT time2;
+
+#ifdef HAVE_INT64_TIMESTAMP
+    time2 = days * HOURS_PER_DAY * MINS_PER_HOUR * SECS_PER_MINUTE * USECS_PER_SEC;
+#else
+    time2 = days * HOURS_PER_DAY * MINS_PER_HOUR * SECS_PER_MINUTE;
+#endif
+    time += time2;
+    if (time >= -B_FORMAT_TIME_MAX_VALUE && time <= B_FORMAT_TIME_MAX_VALUE) {
+        PG_RETURN_TIMEADT(time);
+    }
+    ereport(ERROR,
+            (errcode(ERRCODE_DATETIME_FIELD_OVERFLOW),
+             errmsg("time field value out of range")));
+    PG_RETURN_NULL();
+}
+
+/**
+ * adddate(time, INTERVAL expr UNIT)
+*/
+Datum adddate_time_interval(PG_FUNCTION_ARGS)
+{
+    TimeADT time = PG_GETARG_TIMEADT(0);
+    Interval *span = PG_GETARG_INTERVAL_P(1);
+    TimeADT time2 = span->time;
+    if (span->month != 0) {
+        ereport(ERROR,
+                (errcode(ERRCODE_DATETIME_FIELD_OVERFLOW),
+                 errmsg("time field value out of range")));
+        PG_RETURN_NULL();
+    }
+#ifdef HAVE_INT64_TIMESTAMP
+    time2 += (span->day * HOURS_PER_DAY * MINS_PER_HOUR * SECS_PER_MINUTE * USECS_PER_SEC);
+#else
+    time2 += (span->day * HOURS_PER_DAY * MINS_PER_HOUR * SECS_PER_MINUTE);
+#endif
+    time += time2;
+    if (time >= -B_FORMAT_TIME_MAX_VALUE && time <= B_FORMAT_TIME_MAX_VALUE) {
+        PG_RETURN_TIMEADT(time);
+    }
+    ereport(ERROR,
+            (errcode(ERRCODE_DATETIME_FIELD_OVERFLOW),
+             errmsg("time field value out of range")));
+    PG_RETURN_NULL();
+}
+
 #endif

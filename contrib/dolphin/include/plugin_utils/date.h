@@ -48,6 +48,7 @@
 #define TWO_DIGITS_YEAR_DATE_TWO 700101 /* 1970-01-01 */
 #define TWO_DIGITS_YEAR_DATE_THREE 991231   /* 1999-12-31 */
 #define TIME_BOUND_WITHOUT_DICIMAL_SEC INT64CONST(B_FORMAT_MAX_TIME_USECS - 1000000)
+#define FROM_DAYS_MAX_DAY 3652500
 #endif
 
 /* for b compatibility type*/
@@ -65,6 +66,7 @@ extern bool date_sub_interval(DateADT date, Interval *span, DateADT *result);
 
 #ifdef DOLPHIN
 extern TimeADT time_in_with_flag(char *str, TimeADT *time, unsigned int date_flag);
+extern bool date_add_interval(DateADT date, Interval *span, DateADT *result);
 #endif
 
 /* ----------

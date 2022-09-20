@@ -28059,31 +28059,22 @@ func_expr_common_subexpr:
 				}
 			| TIMESTAMPDIFF '(' timestamp_arg_list ')'
 				{
-					if (u_sess->attr.attr_sql.sql_compatibility == B_FORMAT)
-					{
-						FuncCall *n = makeNode(FuncCall);
+					FuncCall *n = makeNode(FuncCall);
+					if (GetSessionContext()->enableBCmptMode) {
+						n->funcname = SystemFuncName("b_timestampdiff");
+						n->colname = "timestampdiff";
+					} else {
 						n->funcname = SystemFuncName("timestamp_diff");
-						n->args = $3;
-						n->agg_order = NIL;
-						n->agg_star = FALSE;
-						n->agg_distinct = FALSE;
-						n->func_variadic = FALSE;
-						n->over = NULL;
-						n->location = @1;
-						n->call_func = false;
-						$$ = (Node *)n;
 					}
-					else
-					{
-        				const char* message = "timestampdiff syntax is not supported.";
-    					InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);
-						ereport(errstate,
-								(errmodule(MOD_PARSER),
-                                                                 errcode(ERRCODE_SYNTAX_ERROR),
-                                                                 errmsg("timestampdiff syntax is not supported."),
-                                                                 parser_errposition(@1)));
-  					        $$ = NULL;/* not reached */
-					}
+					n->args = $3;
+					n->agg_order = NIL;
+					n->agg_star = FALSE;
+					n->agg_distinct = FALSE;
+					n->func_variadic = FALSE;
+					n->over = NULL;
+					n->location = @1;
+					n->call_func = false;
+					$$ = (Node *)n;
 				}
 			| OVERLAY '(' overlay_list ')'
 				{
@@ -28975,6 +28966,8 @@ timestamp_units:
 			| HOUR_P								{ $$ = "hour"; }
 			| MINUTE_P								{ $$ = "minute"; }
 			| SECOND_P								{ $$ = "second"; }
+			| QUARTER								{ $$ = "quarter"; }
+			| MICROSECOND_P							{ $$ = "microsecond"; }
 			| Sconst								{ $$ = $1; }
 		;
 
