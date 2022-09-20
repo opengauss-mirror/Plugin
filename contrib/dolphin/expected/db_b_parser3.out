@@ -390,5 +390,13 @@ ERROR:  invalid input syntax for integer: "-12.3abc"
 LINE 1: select '-12.3abc' xor 'null';
                ^
 CONTEXT:  referenced column: xor
+create table t1 (a int, b varchar(20));
+insert into t1 values(1, 'true');
+select a = 1 xor b = 'true' from t1;
+ xor 
+-----
+   0
+(1 row)
+
 \c postgres
 drop database if exists db_b_parser3;

@@ -1165,7 +1165,7 @@ static SelectStmt *MakeShowGrantStmt(char *arg, int location, core_yyscan_t yysc
 %right      FEATURES TARGET // DB4AI
 %left		UNION EXCEPT MINUS_P
 %left		INTERSECT
-%left		OR
+%left		OR XOR
 %left		AND
 %right		NOT
 %right		'=' CmpNullOp COLON_EQUALS
@@ -1175,7 +1175,7 @@ static SelectStmt *MakeShowGrantStmt(char *arg, int location, core_yyscan_t yysc
 %nonassoc	OVERLAPS
 %nonassoc	BETWEEN
 %nonassoc	IN_P
-%left		DIV MOD XOR
+%left		DIV MOD
 %nonassoc	REGEXP RLIKE
 %left		POSTFIXOP		/* dummy for postfix Op rules */
 %nonassoc	lower_than_zerofill

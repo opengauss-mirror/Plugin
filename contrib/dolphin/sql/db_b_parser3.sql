@@ -109,6 +109,10 @@ select '-12.3abc' xor true;
 select '-12.3abc' xor false;
 select '-12.3abc' xor 'null';
 
+create table t1 (a int, b varchar(20));
+insert into t1 values(1, 'true');
+
+select a = 1 xor b = 'true' from t1;
 
 \c postgres
 drop database if exists db_b_parser3;
