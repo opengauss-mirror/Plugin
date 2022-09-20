@@ -701,7 +701,8 @@ static SelectStmt *MakeShowGrantStmt(char *arg, int location, core_yyscan_t yysc
 
 /* b compatibility: comment start */
 %type <list>	opt_index_options index_options opt_table_options table_options opt_column_options column_options
-%type <node>	index_option table_option column_option
+%type <node>	index_option table_option column_option table_index_option
+%type <list>	opt_table_index_options table_index_options
 
 %type <str>     opt_part_options
 %type <list>    part_options
@@ -5223,6 +5224,37 @@ index_option:
 			 }
 			 ;
 
+opt_table_index_options:
+			 /* EMPTY */		{ $$ = NIL; }
+			 | table_index_options	{ $$ = $1; }
+			 ;
+table_index_options:
+			 table_index_option
+			 {
+					BCompatibilityOptionSupportCheck();
+					$$ = list_make1($1);
+			 }
+			 | table_index_options table_index_option
+			 {
+					$$ = lcons($2, $1);
+			 }
+			 ;
+table_index_option:
+			 COMMENT opt_equal Sconst
+			 {
+					CommentStmt *n = makeNode(CommentStmt);
+					n->objtype = OBJECT_INDEX;
+					n->objname = NIL;
+					n->objargs = NIL;
+					n->comment = $3;
+					$$ = (Node*)n;
+			 }
+			 | USING access_method
+			 {
+					$$ = makeStringConst($2, -1);
+			 }
+		;
+
 opt_table_options:
 			 /* EMPTY */						{ $$ = NIL; }
 			 | table_options  { $$ = $1; }
@@ -8100,7 +8132,7 @@ table_index_elem:	ColId opt_asc_desc
 		;
 
 TableIndexClause:
-			index_key_opt index_name access_method_clause '(' table_index_elems ')' opt_index_options
+			index_key_opt index_name access_method_clause '(' table_index_elems ')' opt_table_index_options
 			{
 					IndexStmt *n = makeNode(IndexStmt);
 					n->unique = false;
@@ -8112,7 +8144,7 @@ TableIndexClause:
 					n->indexIncludingParams = NULL;
 					n->options = NULL;
 					n->tableSpace = NULL;
-					/* n->indexOptions = $7; */
+					n->indexOptions = $7;
 					n->whereClause = NULL;
 					n->excludeOpNames = NIL;
 					n->idxcomment = NULL;
@@ -8128,7 +8160,7 @@ TableIndexClause:
 					/* n->internal_index_flag = true; */
 					$$ = (Node *)n;
 			}
-			| index_key_opt access_method_clause '(' table_index_elems ')' opt_index_options
+			| index_key_opt access_method_clause '(' table_index_elems ')' opt_table_index_options
 			{
 					IndexStmt *n = makeNode(IndexStmt);
 					n->unique = false;
@@ -8140,7 +8172,7 @@ TableIndexClause:
 					n->indexIncludingParams = NULL;
 					n->options = NULL;
 					n->tableSpace = NULL;
-					/* n->indexOptions = $6; */
+					n->indexOptions = $6;
 					n->whereClause = NULL;
 					n->excludeOpNames = NIL;
 					n->idxcomment = NULL;
