@@ -1,0 +1,347 @@
+drop database if exists test_json_merge_preserve;
+NOTICE:  database "test_json_merge_preserve" does not exist, skipping
+create database test_json_merge_preserve dbcompatibility 'B';
+\c test_json_merge_preserve
+select json_merge_preserve(NULL);
+ERROR:  Incorrect parameter count
+CONTEXT:  referenced column: json_merge_preserve
+select json_merge_preserve(NULL,NULL);
+ json_merge_preserve 
+---------------------
+ 
+(1 row)
+
+select json_merge_preserve('"a"');
+ERROR:  Incorrect parameter count
+CONTEXT:  referenced column: json_merge_preserve
+select json_merge_preserve('1','"b"');
+ json_merge_preserve 
+---------------------
+ [1, "b"]
+(1 row)
+
+select json_merge_preserve('"a"','"b"');
+ json_merge_preserve 
+---------------------
+ ["a", "b"]
+(1 row)
+
+select json_merge_preserve(1,'"b"');
+ERROR:  function json_merge_preserve(integer, unknown) does not exist
+LINE 1: select json_merge_preserve(1,'"b"');
+               ^
+HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
+CONTEXT:  referenced column: json_merge_preserve
+select json_merge_preserve('["a",1,{"a":"abc"}]','["b",2,{"b":"bcd"}]');
+             json_merge_preserve              
+----------------------------------------------
+ ["a", 1, {"a": "abc"}, "b", 2, {"b": "bcd"}]
+(1 row)
+
+select json_merge_preserve('["a",1,{"a":"abc"}]',NULL);
+ json_merge_preserve 
+---------------------
+ 
+(1 row)
+
+select json_merge_preserve(NULL,'["b",2,{"b":"bcd"}]');
+ json_merge_preserve 
+---------------------
+ 
+(1 row)
+
+select json_merge_preserve('{"a":"abc"}','{"b":"bcd"}');
+   json_merge_preserve    
+--------------------------
+ {"a": "abc", "b": "bcd"}
+(1 row)
+
+select json_merge_preserve(NULL,'{"b":"bcd"}');
+ json_merge_preserve 
+---------------------
+ 
+(1 row)
+
+select json_merge_preserve('{"a":"abc"}','{"a":"bcd"}');
+  json_merge_preserve  
+-----------------------
+ {"a": ["abc", "bcd"]}
+(1 row)
+
+select json_merge_preserve('{"a":"abc"}','{" ":"bcd"}');
+   json_merge_preserve    
+--------------------------
+ {" ": "bcd", "a": "abc"}
+(1 row)
+
+select json_merge_preserve('{"a":"abc"}','{"":"abc"}');
+   json_merge_preserve   
+-------------------------
+ {"": "abc", "a": "abc"}
+(1 row)
+
+select json_merge_preserve('{"a":"abc"}','{"a":"bcd"}','{"c":"成都"}');
+        json_merge_preserve         
+------------------------------------
+ {"a": ["abc", "bcd"], "c": "成都"}
+(1 row)
+
+select json_merge_preserve('{"a":[{"b":["abc","abc"]},"ced"],"d":["efg","hij"]}','{"a":[{"c":["abc","abc"]},"ced"],"c":[1,2]}');
+                                          json_merge_preserve                                          
+-------------------------------------------------------------------------------------------------------
+ {"a": [{"b": ["abc", "abc"]}, "ced", {"c": ["abc", "abc"]}, "ced"], "c": [1, 2], "d": ["efg", "hij"]}
+(1 row)
+
+select json_merge_preserve('[{"a":"abc"},"bcd"]','[1]');
+   json_merge_preserve    
+--------------------------
+ [{"a": "abc"}, "bcd", 1]
+(1 row)
+
+select json_merge_preserve('[{"a":"abc"},"bcd"]','{"1":"jks"}');
+         json_merge_preserve         
+-------------------------------------
+ [{"a": "abc"}, "bcd", {"1": "jks"}]
+(1 row)
+
+select json_merge_preserve('{"colin":[{"a":"abc"},"bcd"]}','{"colinew":"handsome"}');
+                   json_merge_preserve                   
+---------------------------------------------------------
+ {"colin": [{"a": "abc"}, "bcd"], "colinew": "handsome"}
+(1 row)
+
+select json_merge_preserve('{"colin":[{"a":"abc"},"bcd"]}','{"colinew":"handsome"}','{"colin":"huawei"}','{"a":[1,2]}');
+                              json_merge_preserve                               
+--------------------------------------------------------------------------------
+ {"a": [1, 2], "colin": [{"a": "abc"}, "bcd", "huawei"], "colinew": "handsome"}
+(1 row)
+
+select json_merge_preserve('1','{"a":123}','true',NULL,'{"b":true}','{"b":1}','{"c":"23"}');
+ json_merge_preserve 
+---------------------
+ 
+(1 row)
+
+select json_merge_preserve('1','{"a":123}','true',NULL,'{"b":true}','{"b":1}','[1,2,3]');
+ json_merge_preserve 
+---------------------
+ 
+(1 row)
+
+select json_merge_preserve('1','{"a":123}','true',NULL,'{"b":true}','{"b":1}','[1,2,3]','{"a":1}');
+ json_merge_preserve 
+---------------------
+ 
+(1 row)
+
+select json_merge_preserve('{"a":"abd"}','{"a":null}');
+ json_merge_preserve  
+----------------------
+ {"a": ["abd", null]}
+(1 row)
+
+select json_merge_preserve('{"a:":"abd"}','{"a:":"bcd"}');
+  json_merge_preserve   
+------------------------
+ {"a:": ["abd", "bcd"]}
+(1 row)
+
+select json_merge_preserve('{"a:":"abd"}','{"a:":null}');
+  json_merge_preserve  
+-----------------------
+ {"a:": ["abd", null]}
+(1 row)
+
+select json_merge_preserve('{"a":{"b":"abc"}}','{"a":{"b":"bcd"}}');
+     json_merge_preserve      
+------------------------------
+ {"a": {"b": ["abc", "bcd"]}}
+(1 row)
+
+select json_merge_preserve('{"a":{"b":"abc"}}','{"a":{"b":null}}');
+     json_merge_preserve     
+-----------------------------
+ {"a": {"b": ["abc", null]}}
+(1 row)
+
+select json_merge_preserve('{"a":{"d":[1,2,3,4],"c":[5,6,7,{"e":"test"}]}}','{"b":{"c":2}}');
+                           json_merge_preserve                            
+--------------------------------------------------------------------------
+ {"a": {"c": [5, 6, 7, {"e": "test"}], "d": [1, 2, 3, 4]}, "b": {"c": 2}}
+(1 row)
+
+select json_merge_preserve('{"a":1}','[1,2,{"b":1,"a":2}]');
+        json_merge_preserve         
+------------------------------------
+ [{"a": 1}, 1, 2, {"a": 2, "b": 1}]
+(1 row)
+
+select json_merge_preserve('[]','[1,2,{"b":1,"a":2}]');
+   json_merge_preserve    
+--------------------------
+ [1, 2, {"a": 2, "b": 1}]
+(1 row)
+
+select json_merge_preserve('[]','{"c":{"b":1,"a":2}}');
+    json_merge_preserve    
+---------------------------
+ [{"c": {"a": 2, "b": 1}}]
+(1 row)
+
+select json_merge_preserve(null,'1','{"c":3,"b":5}');
+ json_merge_preserve 
+---------------------
+ 
+(1 row)
+
+select json_merge_preserve(null,'1','{"d":3,"c":5}','{"e":4,"a":{"b":1,"a":2}}');
+ json_merge_preserve 
+---------------------
+ 
+(1 row)
+
+select json_merge_preserve('{"c":3,"a":5}','1');
+  json_merge_preserve  
+-----------------------
+ [{"a": 5, "c": 3}, 1]
+(1 row)
+
+select json_merge_preserve('1','{"c":{"f":1,"e":2},"a":5}');
+         json_merge_preserve          
+--------------------------------------
+ [1, {"a": 5, "c": {"e": 2, "f": 1}}]
+(1 row)
+
+select json_merge_preserve('{"a":[null,true,false]}','[[1,2,3],[4,5,6],[7,8,9]]');
+                      json_merge_preserve                      
+---------------------------------------------------------------
+ [{"a": [null, true, false]}, [1, 2, 3], [4, 5, 6], [7, 8, 9]]
+(1 row)
+
+select json_merge_preserve('{"a":[[1,2,3],[4,5,6],[7,8,9]]}','null','true','false');
+                      json_merge_preserve                      
+---------------------------------------------------------------
+ [{"a": [[1, 2, 3], [4, 5, 6], [7, 8, 9]]}, null, true, false]
+(1 row)
+
+select json_merge_preserve('[[1,2,3],[4,5,6],[7,8,9]]','"gary"');
+            json_merge_preserve            
+-------------------------------------------
+ [[1, 2, 3], [4, 5, 6], [7, 8, 9], "gary"]
+(1 row)
+
+select json_merge_preserve('[[1,2,3],[4,5,6],[7,8,9]]','[[1,2,3],[4,5,6],[7,8,9]]');
+                        json_merge_preserve                         
+--------------------------------------------------------------------
+ [[1, 2, 3], [4, 5, 6], [7, 8, 9], [1, 2, 3], [4, 5, 6], [7, 8, 9]]
+(1 row)
+
+select json_merge_preserve('[[1,2,3],[4,5,6],[7,8,9]]','{"a":[null,true,false]}');
+                      json_merge_preserve                      
+---------------------------------------------------------------
+ [[1, 2, 3], [4, 5, 6], [7, 8, 9], {"a": [null, true, false]}]
+(1 row)
+
+select json_merge_preserve('"opengauss"','[[[[[[[[1,2]]]]]],3],"test"]');
+             json_merge_preserve              
+----------------------------------------------
+ ["opengauss", [[[[[[[1, 2]]]]]], 3], "test"]
+(1 row)
+
+select json_merge_preserve('"opengauss"','{"a":{"b":{"c":"test"}}}');
+            json_merge_preserve             
+--------------------------------------------
+ ["opengauss", {"a": {"b": {"c": "test"}}}]
+(1 row)
+
+select json_merge_preserve('"opengauss"','"server"');
+   json_merge_preserve   
+-------------------------
+ ["opengauss", "server"]
+(1 row)
+
+select json_merge_preserve('{}','{}');
+ json_merge_preserve 
+---------------------
+ {}
+(1 row)
+
+select json_merge_preserve('{}','[]');
+ json_merge_preserve 
+---------------------
+ [{}]
+(1 row)
+
+select json_merge_preserve('[]','{}');
+ json_merge_preserve 
+---------------------
+ [{}]
+(1 row)
+
+select json_merge_preserve('[]','1');
+ json_merge_preserve 
+---------------------
+ [1]
+(1 row)
+
+select json_merge_preserve('[]','{"a":1}');
+ json_merge_preserve 
+---------------------
+ [{"a": 1}]
+(1 row)
+
+select json_merge_preserve('1','[]');
+ json_merge_preserve 
+---------------------
+ [1]
+(1 row)
+
+select json_merge_preserve('{"a":1}','[]');
+ json_merge_preserve 
+---------------------
+ [{"a": 1}]
+(1 row)
+
+select json_merge_preserve('[1,2,3]','[]');
+ json_merge_preserve 
+---------------------
+ [1, 2, 3]
+(1 row)
+
+select json_merge_preserve('[]','[1,2,3]');
+ json_merge_preserve 
+---------------------
+ [1, 2, 3]
+(1 row)
+
+create table test (
+    doc1 json,
+    doc2 json
+);
+insert into test values
+('{"a":"abc"}','{"a":"bcd"}'),
+('{"colin":[{"a":"abc"},"bcd"]}','{"colinew":"handsome"}'),
+('{"a":[1,2]}','{" ":"bcd"}');
+select *,json_merge_preserve(doc1,doc2) from test;
+             doc1              |          doc2          |                   json_merge_preserve                   
+-------------------------------+------------------------+---------------------------------------------------------
+ {"a":"abc"}                   | {"a":"bcd"}            | {"a": ["abc", "bcd"]}
+ {"colin":[{"a":"abc"},"bcd"]} | {"colinew":"handsome"} | {"colin": [{"a": "abc"}, "bcd"], "colinew": "handsome"}
+ {"a":[1,2]}                   | {" ":"bcd"}            | {" ": "bcd", "a": [1, 2]}
+(3 rows)
+
+create table test1 (
+    doc1 json,
+    doc2 json
+);
+insert into test1 values
+(json_merge_preserve('{"colin":[{"a":"abc"},"bcd"]}','{"colinew":"handsome"}','{"colin":"huawei"}','{"a":[1,2]}'),
+ json_merge_preserve('[{"a":"abc"},"bcd"]','{"1":"jks"}'));
+ select * from test1;
+                                      doc1                                      |                doc2                 
+--------------------------------------------------------------------------------+-------------------------------------
+ {"a": [1, 2], "colin": [{"a": "abc"}, "bcd", "huawei"], "colinew": "handsome"} | [{"a": "abc"}, "bcd", {"1": "jks"}]
+(1 row)
+
+\c postgres;
+drop database if exists test_json_merge_preserve;

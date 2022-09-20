@@ -1,0 +1,346 @@
+drop database if exists test_json_merge_patch;
+NOTICE:  database "test_json_merge_patch" does not exist, skipping
+create database test_json_merge_patch dbcompatibility 'B';
+\c test_json_merge_patch
+select json_merge_patch(NULL);
+ERROR:  Incorrect parameter count
+CONTEXT:  referenced column: json_merge_patch
+select json_merge_patch(NULL,NULL);
+ json_merge_patch 
+------------------
+ 
+(1 row)
+
+select json_merge_patch('"a"');
+ERROR:  Incorrect parameter count
+CONTEXT:  referenced column: json_merge_patch
+select json_merge_patch('1','"b"');
+ json_merge_patch 
+------------------
+ "b"
+(1 row)
+
+select json_merge_patch('"a"','"b"');
+ json_merge_patch 
+------------------
+ "b"
+(1 row)
+
+select json_merge_patch(1,'"b"');
+ERROR:  function json_merge_patch(integer, unknown) does not exist
+LINE 1: select json_merge_patch(1,'"b"');
+               ^
+HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
+CONTEXT:  referenced column: json_merge_patch
+select json_merge_patch('["a",1,{"a":"abc"}]','["b",2,{"b":"bcd"}]');
+    json_merge_patch    
+------------------------
+ ["b", 2, {"b": "bcd"}]
+(1 row)
+
+select json_merge_patch('["a",1,{"a":"abc"}]',NULL);
+ json_merge_patch 
+------------------
+ 
+(1 row)
+
+select json_merge_patch(NULL,'["b",2,{"b":"bcd"}]');
+    json_merge_patch    
+------------------------
+ ["b", 2, {"b": "bcd"}]
+(1 row)
+
+select json_merge_patch('{"a":"abc"}','{"b":"bcd"}');
+     json_merge_patch     
+--------------------------
+ {"a": "abc", "b": "bcd"}
+(1 row)
+
+select json_merge_patch(NULL,'{"b":"bcd"}');
+ json_merge_patch 
+------------------
+ 
+(1 row)
+
+select json_merge_patch('{"a":"abc"}','{"a":"bcd"}');
+ json_merge_patch 
+------------------
+ {"a": "bcd"}
+(1 row)
+
+select json_merge_patch('{"a":"abc"}','{" ":"bcd"}');
+     json_merge_patch     
+--------------------------
+ {" ": "bcd", "a": "abc"}
+(1 row)
+
+select json_merge_patch('{"a":"abc"}','{"":"abc"}');
+    json_merge_patch     
+-------------------------
+ {"": "abc", "a": "abc"}
+(1 row)
+
+select json_merge_patch('{"a":"abc"}','{"a":"bcd"}','{"c":"成都"}');
+     json_merge_patch      
+---------------------------
+ {"a": "bcd", "c": "成都"}
+(1 row)
+
+select json_merge_patch('{"a":[{"b":["abc","abc"]},"ced"],"d":["efg","hij"]}','{"a":[{"c":["abc","abc"]},"ced"],"c":[1,2]}');
+                            json_merge_patch                             
+-------------------------------------------------------------------------
+ {"a": [{"c": ["abc", "abc"]}, "ced"], "c": [1, 2], "d": ["efg", "hij"]}
+(1 row)
+
+select json_merge_patch('[{"a":"abc"},"bcd"]','[1]');
+ json_merge_patch 
+------------------
+ [1]
+(1 row)
+
+select json_merge_patch('[{"a":"abc"},"bcd"]','{"1":"jks"}');
+ json_merge_patch 
+------------------
+ {"1": "jks"}
+(1 row)
+
+select json_merge_patch('{"colin":[{"a":"abc"},"bcd"]}','{"colinew":"handsome"}');
+                    json_merge_patch                     
+---------------------------------------------------------
+ {"colin": [{"a": "abc"}, "bcd"], "colinew": "handsome"}
+(1 row)
+
+select json_merge_patch('{"colin":[{"a":"abc"},"bcd"]}','{"colinew":"handsome"}','{"colin":"huawei"}','{"a":[1,2]}');
+                    json_merge_patch                     
+---------------------------------------------------------
+ {"a": [1, 2], "colin": "huawei", "colinew": "handsome"}
+(1 row)
+
+select json_merge_patch('1','{"a":123}','true',NULL,'{"b":true}','{"b":1}','{"c":"23"}');
+ json_merge_patch 
+------------------
+ 
+(1 row)
+
+select json_merge_patch('1','{"a":123}','true',NULL,'{"b":true}','{"b":1}','[1,2,3]');
+ json_merge_patch 
+------------------
+ [1, 2, 3]
+(1 row)
+
+select json_merge_patch('1','{"a":123}','true',NULL,'{"b":true}','{"b":1}','[1,2,3]','{"a":1}');
+ json_merge_patch 
+------------------
+ {"a": 1}
+(1 row)
+
+select json_merge_patch('{"a":"abd"}','{"a":null}');
+ json_merge_patch 
+------------------
+ {}
+(1 row)
+
+select json_merge_patch('{"a:":"abd"}','{"a:":"bcd"}');
+ json_merge_patch 
+------------------
+ {"a:": "bcd"}
+(1 row)
+
+select json_merge_patch('{"a:":"abd"}','{"a:":null}');
+ json_merge_patch 
+------------------
+ {}
+(1 row)
+
+select json_merge_patch('{"a":{"b":"abc"}}','{"a":{"b":"bcd"}}');
+  json_merge_patch   
+---------------------
+ {"a": {"b": "bcd"}}
+(1 row)
+
+select json_merge_patch('{"a":{"b":"abc"}}','{"a":{"b":null}}');
+ json_merge_patch 
+------------------
+ {"a": {}}
+(1 row)
+
+select json_merge_patch('{"a":{"d":[1,2,3,4],"c":[5,6,7,{"e":"test"}]}}','{"b":{"c":2}}');
+                             json_merge_patch                             
+--------------------------------------------------------------------------
+ {"a": {"c": [5, 6, 7, {"e": "test"}], "d": [1, 2, 3, 4]}, "b": {"c": 2}}
+(1 row)
+
+select json_merge_patch('{"a":1}','[1,2,{"b":1,"a":2}]');
+     json_merge_patch     
+--------------------------
+ [1, 2, {"a": 2, "b": 1}]
+(1 row)
+
+select json_merge_patch('[]','[1,2,{"b":1,"a":2}]');
+     json_merge_patch     
+--------------------------
+ [1, 2, {"a": 2, "b": 1}]
+(1 row)
+
+select json_merge_patch('[]','{"c":{"b":1,"a":2}}');
+    json_merge_patch     
+-------------------------
+ {"c": {"a": 2, "b": 1}}
+(1 row)
+
+select json_merge_patch(null,'1','{"c":3,"b":5}');
+ json_merge_patch 
+------------------
+ {"b": 5, "c": 3}
+(1 row)
+
+select json_merge_patch(null,'1','{"d":3,"c":5}','{"e":4,"a":{"b":1,"a":2}}');
+                json_merge_patch                 
+-------------------------------------------------
+ {"a": {"a": 2, "b": 1}, "c": 5, "d": 3, "e": 4}
+(1 row)
+
+select json_merge_patch('{"c":3,"a":5}','1');
+ json_merge_patch 
+------------------
+ 1
+(1 row)
+
+select json_merge_patch('1','{"c":{"f":1,"e":2},"a":5}');
+        json_merge_patch         
+---------------------------------
+ {"a": 5, "c": {"e": 2, "f": 1}}
+(1 row)
+
+select json_merge_patch('{"a":[null,true,false]}','[[1,2,3],[4,5,6],[7,8,9]]');
+         json_merge_patch          
+-----------------------------------
+ [[1, 2, 3], [4, 5, 6], [7, 8, 9]]
+(1 row)
+
+select json_merge_patch('{"a":[[1,2,3],[4,5,6],[7,8,9]]}','null','true','false');
+ json_merge_patch 
+------------------
+ false
+(1 row)
+
+select json_merge_patch('[[1,2,3],[4,5,6],[7,8,9]]','"gary"');
+ json_merge_patch 
+------------------
+ "gary"
+(1 row)
+
+select json_merge_patch('[[1,2,3],[4,5,6],[7,8,9]]','[[1,2,3],[4,5,6],[7,8,9]]');
+         json_merge_patch          
+-----------------------------------
+ [[1, 2, 3], [4, 5, 6], [7, 8, 9]]
+(1 row)
+
+select json_merge_patch('[[1,2,3],[4,5,6],[7,8,9]]','{"a":[null,true,false]}');
+      json_merge_patch      
+----------------------------
+ {"a": [null, true, false]}
+(1 row)
+
+select json_merge_patch('"opengauss"','[[[[[[[[1,2]]]]]],3],"test"]');
+        json_merge_patch         
+---------------------------------
+ [[[[[[[[1, 2]]]]]], 3], "test"]
+(1 row)
+
+select json_merge_patch('"opengauss"','{"a":{"b":{"c":"test"}}}');
+      json_merge_patch       
+-----------------------------
+ {"a": {"b": {"c": "test"}}}
+(1 row)
+
+select json_merge_patch('"opengauss"','"server"');
+ json_merge_patch 
+------------------
+ "server"
+(1 row)
+
+select json_merge_patch('{}','{}');
+ json_merge_patch 
+------------------
+ {}
+(1 row)
+
+select json_merge_patch('{}','[]');
+ json_merge_patch 
+------------------
+ []
+(1 row)
+
+select json_merge_patch('[]','{}');
+ json_merge_patch 
+------------------
+ {}
+(1 row)
+
+select json_merge_patch('[]','1');
+ json_merge_patch 
+------------------
+ 1
+(1 row)
+
+select json_merge_patch('[]','{"a":1}');
+ json_merge_patch 
+------------------
+ {"a": 1}
+(1 row)
+
+select json_merge_patch('1','[]');
+ json_merge_patch 
+------------------
+ []
+(1 row)
+
+select json_merge_patch('{"a":1}','[]');
+ json_merge_patch 
+------------------
+ []
+(1 row)
+
+select json_merge_patch('[1,2,3]','[]');
+ json_merge_patch 
+------------------
+ []
+(1 row)
+
+select json_merge_patch('[]','[1,2,3]');
+ json_merge_patch 
+------------------
+ [1, 2, 3]
+(1 row)
+
+create table test (
+    doc1 json,
+    doc2 json
+);
+insert into test values
+('{"a":"abc"}','{"a":"bcd"}'),
+('{"colin":[{"a":"abc"},"bcd"]}','{"colinew":"handsome"}'),
+('{"a":[1,2]}','{" ":"bcd"}');
+select *,json_merge_patch(doc1,doc2) from test;
+             doc1              |          doc2          |                    json_merge_patch                     
+-------------------------------+------------------------+---------------------------------------------------------
+ {"a":"abc"}                   | {"a":"bcd"}            | {"a": "bcd"}
+ {"colin":[{"a":"abc"},"bcd"]} | {"colinew":"handsome"} | {"colin": [{"a": "abc"}, "bcd"], "colinew": "handsome"}
+ {"a":[1,2]}                   | {" ":"bcd"}            | {" ": "bcd", "a": [1, 2]}
+(3 rows)
+
+create table test1 (
+    doc1 json,
+    doc2 json
+);
+insert into test1 values
+(json_merge_patch('{"colin":[{"a":"abc"},"bcd"]}','{"colinew":"handsome"}','{"colin":"huawei"}','{"a":[1,2]}'),
+ json_merge_patch('[{"a":"abc"},"bcd"]','{"1":"jks"}'));
+ select * from test1;
+                          doc1                           |     doc2     
+---------------------------------------------------------+--------------
+ {"a": [1, 2], "colin": "huawei", "colinew": "handsome"} | {"1": "jks"}
+(1 row)
+
+\c postgres;

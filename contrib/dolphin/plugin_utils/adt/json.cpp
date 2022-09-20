@@ -12,15 +12,9 @@
  *
  * -------------------------------------------------------------------------
  */
-#ifdef DOLPHIN
-#include "plugin_parser/scansup.h"
-#endif
 #include "postgres.h"
 #include "knl/knl_variable.h"
 #include "gaussdb_version.h"
-#ifdef DOLPHIN
-#include "plugin_postgres.h"
-#endif
 #include "access/htup.h"
 #include "access/transam.h"
 #include "catalog/pg_cast.h"
@@ -40,6 +34,12 @@
 #include "utils/syscache.h"
 
 #ifdef DOLPHIN
+#include "plugin_postgres.h"
+#include "plugin_parser/scansup.h"
+#include "plugin_utils/json.h"
+#endif
+
+#ifdef DOLPHIN
 PG_FUNCTION_INFO_V1_PUBLIC(json_array);
 extern "C" DLL_PUBLIC Datum json_array(PG_FUNCTION_ARGS);
 
@@ -55,7 +55,16 @@ extern "C" DLL_PUBLIC Datum json_unquote(PG_FUNCTION_ARGS);
 PG_FUNCTION_INFO_V1_PUBLIC(json_quote);
 extern "C" DLL_PUBLIC Datum json_quote(PG_FUNCTION_ARGS);
 
+PG_FUNCTION_INFO_V1_PUBLIC(json_depth);
+extern "C" DLL_PUBLIC Datum json_depth(PG_FUNCTION_ARGS);
+
 #endif
+
+#ifdef DOLPHIN
+static void Cobject(JsonLexContext *lex, JsonSemAction *sem, int &depth);
+static void Carray(JsonLexContext *lex, JsonSemAction *sem, int &depth);
+#endif
+
 /*
  * The context of the parser is maintained by the recursive descent
  * mechanism, but is passed explicitly to the error reporting routine
@@ -2103,7 +2112,7 @@ Datum json_array(PG_FUNCTION_ARGS)
 #endif
 
 #ifdef DOLPHIN
-void get_keys_order(char **a, int l, int r, int pos[])
+extern void get_keys_order(char **a, int l, int r, int pos[])
 {
     char *mid = a[pos[(l + r) / 2]];
     int i = l, j = r;
@@ -2380,9 +2389,6 @@ Datum json_unquote(PG_FUNCTION_ARGS)
     }
 }
 #endif
-
-extern void add_json_test(Datum val, bool is_null, StringInfo result, Oid val_type, bool key_scalar);
-
 extern void add_json_test(Datum val, bool is_null, StringInfo result, Oid val_type, bool key_scalar)
 {
     TYPCATEGORY tcategory;
@@ -2428,3 +2434,203 @@ extern void add_json_test(Datum val, bool is_null, StringInfo result, Oid val_ty
 
     datum_to_json(val, is_null, result, tcategory, typoutput, key_scalar);
 }
+
+#ifdef DOLPHIN
+void Cobject_field(JsonLexContext *lex, JsonSemAction *sem, int &depth)
+{
+    /*
+     * an object field is "fieldname" : value where value can be a scalar,
+     * object or array
+     */
+    char *fname = NULL; /* keep compiler quiet */
+    json_ofield_action ostart = sem->object_field_start;
+    json_ofield_action oend = sem->object_field_end;
+    bool isnull = false;
+    char **fnameaddr = NULL;
+    JsonTokenType tok;
+
+    if (ostart != NULL || oend != NULL) {
+        fnameaddr = &fname;
+    }
+    if (!lex_accept(lex, JSON_TOKEN_STRING, fnameaddr)) {
+        report_parse_error(JSON_PARSE_STRING, lex);
+    }
+
+    lex_expect(JSON_PARSE_OBJECT_LABEL, lex, JSON_TOKEN_COLON);
+    tok = lex_peek(lex);
+    isnull = tok == JSON_TOKEN_NULL;
+
+    if (ostart != NULL) {
+        (*ostart)(sem->semstate, fname, isnull);
+    }
+    switch (tok) {
+        case JSON_TOKEN_OBJECT_START:
+            Cobject(lex, sem, depth);
+            break;
+        case JSON_TOKEN_ARRAY_START:
+            Carray(lex, sem, depth);
+            break;
+        default:
+            parse_scalar(lex, sem);
+            if (depth >= lex->lex_level + 1) {
+
+            } else {
+                depth++;
+            }
+    }
+
+    if (oend != NULL) {
+        (*oend)(sem->semstate, fname, isnull);
+    }
+    if (fname != NULL) {
+        pfree(fname);
+    }
+}
+void Carray_element(JsonLexContext *lex, JsonSemAction *sem, int &depth)
+{
+    json_aelem_action astart = sem->array_element_start;
+    json_aelem_action aend = sem->array_element_end;
+    JsonTokenType tok = lex_peek(lex);
+    bool isnull;
+    isnull = tok == JSON_TOKEN_NULL;
+
+    if (astart != NULL) {
+        (*astart)(sem->semstate, isnull);
+    }
+
+    /* an array element is any object, array or scalar */
+    switch (tok) {
+        case JSON_TOKEN_OBJECT_START:
+            Cobject(lex, sem, depth);
+            break;
+        case JSON_TOKEN_ARRAY_START:
+            Carray(lex, sem, depth);
+            break;
+        default:
+            parse_scalar(lex, sem);
+            if (depth >= lex->lex_level + 1) {
+
+            } else {
+                depth++;
+            };
+    }
+
+    if (aend != NULL) {
+        (*aend)(sem->semstate, isnull);
+    }
+}
+static void Cobject(JsonLexContext *lex, JsonSemAction *sem, int &depth)
+{
+    /*
+     * an object is a possibly empty sequence of object fields, separated by
+     * commas and surrounde by curly braces.
+     */
+    json_struct_action ostart = sem->object_start;
+    json_struct_action oend = sem->object_end;
+    JsonTokenType tok;
+
+    if (ostart != NULL) {
+        (*ostart)(sem->semstate);
+    }
+
+    /*
+     * Data inside an object is at a higher nesting level than the object
+     * itself. Note that we increment this after we call the semantic routine
+     * for the object start and restore it before we call the routine for the
+     * object end.
+     */
+    lex->lex_level++;
+    if (lex->lex_level > depth)
+        depth = lex->lex_level;
+    /* we know this will succeeed, just clearing the token */
+    lex_expect(JSON_PARSE_OBJECT_START, lex, JSON_TOKEN_OBJECT_START);
+
+    tok = lex_peek(lex);
+    switch (tok) {
+        case JSON_TOKEN_STRING:
+            Cobject_field(lex, sem, depth);
+            while (lex_accept(lex, JSON_TOKEN_COMMA, NULL))
+                Cobject_field(lex, sem, depth);
+            break;
+        case JSON_TOKEN_OBJECT_END:
+            break;
+        default:
+            /* case of an invalid initial token inside the object */
+            report_parse_error(JSON_PARSE_OBJECT_START, lex);
+    }
+    lex_expect(JSON_PARSE_OBJECT_NEXT, lex, JSON_TOKEN_OBJECT_END);
+    lex->lex_level--;
+
+    if (oend != NULL) {
+        (*oend)(sem->semstate);
+    }
+}
+static void Carray(JsonLexContext *lex, JsonSemAction *sem, int &depth)
+{
+    /*
+     * an array is a possibly empty sequence of array elements, separated by
+     * commas and surrounded by square brackets.
+     */
+    json_struct_action astart = sem->array_start;
+    json_struct_action aend = sem->array_end;
+
+    if (astart != NULL) {
+        (*astart)(sem->semstate);
+    }
+
+    /*
+     * Data inside an array is at a higher nesting level than the array
+     * itself. Note that we increment this after we call the semantic routine
+     * for the array start and restore it before we call the routine for the
+     * array end.
+     */
+    lex->lex_level++;
+    if (lex->lex_level > depth)
+        depth = lex->lex_level;
+    lex_expect(JSON_PARSE_ARRAY_START, lex, JSON_TOKEN_ARRAY_START);
+    if (lex_peek(lex) != JSON_TOKEN_ARRAY_END) {
+        Carray_element(lex, sem, depth);
+        while (lex_accept(lex, JSON_TOKEN_COMMA, NULL))
+            Carray_element(lex, sem, depth);
+    }
+    lex_expect(JSON_PARSE_ARRAY_NEXT, lex, JSON_TOKEN_ARRAY_END);
+    lex->lex_level--;
+
+    if (aend != NULL) {
+        (*aend)(sem->semstate);
+    }
+}
+void sort_json(JsonLexContext *lex, JsonSemAction *sem, int &depth)
+{
+    JsonTokenType tok;
+
+    /* get the initial token */
+    json_lex(lex);
+    tok = lex_peek(lex);
+
+    /* parse by recursive descent */
+    switch (tok) {
+        case JSON_TOKEN_OBJECT_START:
+            Cobject(lex, sem, depth);
+            break;
+        case JSON_TOKEN_ARRAY_START:
+            Carray(lex, sem, depth);
+            break;
+        default:
+            parse_scalar(lex, sem); /* json can be a bare scalar */
+            depth++;
+    }
+
+    lex_expect(JSON_PARSE_END, lex, JSON_TOKEN_END);
+}
+Datum json_depth(PG_FUNCTION_ARGS)
+{
+    text *json = PG_GETARG_TEXT_P(0);
+    JsonLexContext *lex = NULL;
+    int depth = 0;
+    /* validate it */
+    lex = makeJsonLexContext(json, false);
+    sort_json(lex, &nullSemAction, depth);
+    PG_RETURN_INT32(depth);
+}
+#endif

@@ -23,4 +23,22 @@ CREATE OR REPLACE FUNCTION pg_catalog.json_search(json[]) RETURNS json LANGUAGE 
 CREATE OR REPLACE FUNCTION pg_catalog.json_array_append(json, VARIADIC "any") RETURNS text LANGUAGE C STABLE STRICT as '$libdir/dolphin','json_array_append';
 CREATE OR REPLACE FUNCTION pg_catalog.json_append(json, VARIADIC "any") RETURNS text LANGUAGE C STABLE STRICT as '$libdir/dolphin','json_append';
 
-CREATE OR REPLACE FUNCTION pg_catalog.json_unquote(text) RETURNS json LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'json_unquote';
+CREATE OR REPLACE FUNCTION pg_catalog.json_unquote(text) RETURNS text LANGUAGE C STABLE STRICT as '$libdir/dolphin','json_unquote';
+CREATE OR REPLACE FUNCTION pg_catalog.json_unquote(json) RETURNS text LANGUAGE C STABLE STRICT as '$libdir/dolphin','json_unquote';
+
+CREATE OR REPLACE FUNCTION pg_catalog.json_merge_preserve(variadic json[]) RETURNS json LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'json_merge_preserve';
+CREATE OR REPLACE FUNCTION pg_catalog.json_merge(variadic json[]) RETURNS json LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'json_merge';
+CREATE OR REPLACE FUNCTION pg_catalog.json_merge_patch(variadic json[]) RETURNS json LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'json_merge_patch';
+
+CREATE OR REPLACE FUNCTION pg_catalog.json_insert(variadic "any") RETURNS json LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'json_insert';
+
+CREATE OR REPLACE FUNCTION pg_catalog.json_depth(json) RETURNS int LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'json_depth';
+
+CREATE OR REPLACE FUNCTION pg_catalog.json_replace(variadic arr "any") RETURNS json LANGUAGE C STABLE as '$libdir/dolphin', 'json_replace';
+
+CREATE OR REPLACE FUNCTION pg_catalog.json_remove(json, variadic "any") RETURNS json LANGUAGE C STABLE as '$libdir/dolphin', 'json_remove';
+
+CREATE OR REPLACE FUNCTION pg_catalog.json_array_insert(json, variadic "any") RETURNS json LANGUAGE C STABLE as '$libdir/dolphin', 'json_array_insert';
+
+CREATE OR REPLACE FUNCTION pg_catalog.json_set( variadic "any") RETURNS json LANGUAGE C STABLE as '$libdir/dolphin', 'json_set';
+

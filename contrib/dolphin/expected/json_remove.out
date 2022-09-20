@@ -1,0 +1,132 @@
+drop database if exists test_json_remove;
+NOTICE:  database "test_json_remove" does not exist, skipping
+create database test_json_remove dbcompatibility'B';
+\c test_json_remove
+SELECT JSON_REMOVE('[0, 1, 2, [3, 4]]', '$[0]', '$[2]');
+ json_remove 
+-------------
+ [1, 2]
+(1 row)
+
+SELECT JSON_REMOVE('{"x": 1, "y": 2}', '$.x');
+ json_remove 
+-------------
+ {"y": 2}
+(1 row)
+
+SELECT JSON_REMOVE('{"Name": "Homer", "Age": 39}', '$.Gender');
+         json_remove          
+------------------------------
+ {"Age": 39, "Name": "Homer"}
+(1 row)
+
+SELECT JSON_REMOVE('[1, 2, [3, 4, 5]]', '$[2][1]');
+  json_remove   
+----------------
+ [1, 2, [3, 5]]
+(1 row)
+
+SELECT JSON_REMOVE('[1, 2, [3, 4, 5]]', '$[8]');
+    json_remove    
+-------------------
+ [1, 2, [3, 4, 5]]
+(1 row)
+
+SELECT JSON_REMOVE('[1, 2, 3, 4, 5]', '$[1]','$[3]');
+ json_remove 
+-------------
+ [1, 3, 4]
+(1 row)
+
+SELECT JSON_REMOVE('[1, 2, 3, 4, 5, 6, 7, 8]', '$[1]','$[3]','$[2]');
+   json_remove   
+-----------------
+ [1, 3, 6, 7, 8]
+(1 row)
+
+SELECT JSON_REMOVE('{"x": {"z":2,"a":3}, "y": 2}', '$.x.z');
+       json_remove       
+-------------------------
+ {"x": {"a": 3}, "y": 2}
+(1 row)
+
+SELECT JSON_REMOVE('{"x": {"z":2,"a":3}, "y": 2}', '$.x.z','$.y');
+   json_remove   
+-----------------
+ {"x": {"a": 3}}
+(1 row)
+
+SELECT JSON_REMOVE('{"x": {"z":2,"a":3}, "y": 2}', NULL);
+ json_remove 
+-------------
+ 
+(1 row)
+
+SELECT JSON_REMOVE(NULL, '$.x.z');
+ json_remove 
+-------------
+ 
+(1 row)
+
+SELECT JSON_REMOVE(NULL, NULL);
+ json_remove 
+-------------
+ 
+(1 row)
+
+SELECT JSON_REMOVE('{"x": {"z":2,"a":3}, "y": 2}', '$**');
+ERROR:  Invalid JSON path expression. The error is around character position 1.
+CONTEXT:  referenced column: json_remove
+SELECT JSON_REMOVE('[1,2,3,4]', '$[*]');
+ERROR:  Invalid JSON path expression. The error is around character position 1.
+CONTEXT:  referenced column: json_remove
+SELECT JSON_REMOVE('[1,2,3,4]', '$[1');
+ERROR:  Invalid JSON path expression. The error is around character position 1.
+CONTEXT:  referenced column: json_remove
+SELECT JSON_REMOVE('qwertyuiopasdfghjkl', '$[1]');
+ERROR:  invalid input syntax for type json
+LINE 1: SELECT JSON_REMOVE('qwertyuiopasdfghjkl', '$[1]');
+                           ^
+DETAIL:  Token "qwertyuiopasdfghjkl" is invalid.
+CONTEXT:  JSON data, line 1: qwertyuiopasdfghjkl
+referenced column: json_remove
+SELECT JSON_REMOVE('[1,2,3,4]', '$');
+ERROR:   The path expression '$' is not allowed in this context.
+CONTEXT:  referenced column: json_remove
+SELECT JSON_REMOVE('[1,2,3,4]');
+ERROR:  function json_remove(unknown) does not exist
+LINE 1: SELECT JSON_REMOVE('[1,2,3,4]');
+               ^
+HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
+CONTEXT:  referenced column: json_remove
+SELECT JSON_REMOVE();
+ERROR:  function json_remove() does not exist
+LINE 1: SELECT JSON_REMOVE();
+               ^
+HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
+CONTEXT:  referenced column: json_remove
+SELECT JSON_REMOVE('','');
+ERROR:  invalid input syntax for type json
+LINE 1: SELECT JSON_REMOVE('','');
+                           ^
+DETAIL:  The input string ended unexpectedly.
+CONTEXT:  JSON data, line 1: 
+referenced column: json_remove
+SELECT JSON_REMOVE(NULL);
+ERROR:  function json_remove(unknown) does not exist
+LINE 1: SELECT JSON_REMOVE(NULL);
+               ^
+HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
+CONTEXT:  referenced column: json_remove
+create table tab_json1(data json);
+create table info1(name json,address varchar(100));
+insert into info1 values ('{"x": {"z":2,"a":3}, "y": 2}', '$.x.z');
+insert into tab_json1 SELECT JSON_REMOVE(name,address) from info1;
+select * from tab_json1;
+          data           
+-------------------------
+ {"x": {"a": 3}, "y": 2}
+(1 row)
+
+\c postgres
+DROP DATABASE test_json_remove;
