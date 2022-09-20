@@ -8681,7 +8681,11 @@ static void set_sound(const char* arg, char* result, int size)
             result[0] = arg[0];
             result[1] = arg[1];
             if (arg[2] != ' ') {
-                result[2] = arg[2];
+                if (isalpha((unsigned char)arg[2])) {
+                    result[2] = code_letter(arg[2]);
+                } else {
+                    result[2] = arg[2];
+                }
             }
             result += 3;
             arg += 3;
