@@ -5,6 +5,11 @@ create database uint_cast2 dbcompatibility 'b';
 drop table if exists t1 ;
 NOTICE:  table "t1" does not exist, skipping
 create table t1(a uint8);
+insert into t1 values(1::text);
+insert into t1 values(0::text);
+insert into t1 values((-1)::text);
+ERROR:  bigint unsigned out of range
+CONTEXT:  referenced column: a
 insert into t1 values(1::bool);
 insert into t1 values(0::bool);
 insert into t1 values((-1)::bool);
@@ -94,6 +99,11 @@ ERROR:  tinyint unsigned out of range
 CONTEXT:  referenced column: a
 drop table if exists t1 ;
 create table t1(a uint4);
+insert into t1 values(1::text);
+insert into t1 values(0::text);
+insert into t1 values((-1)::text);
+ERROR:  int unsigned out of range
+CONTEXT:  referenced column: a
 insert into t1 values(1::bool);
 insert into t1 values(0::bool);
 insert into t1 values((-1)::bool);
@@ -193,6 +203,11 @@ ERROR:  tinyint unsigned out of range
 CONTEXT:  referenced column: a
 drop table if exists t1 ;
 create table t1(a uint2);
+insert into t1 values(1::text);
+insert into t1 values(0::text);
+insert into t1 values((-1)::text);
+ERROR:  smallint unsigned out of range
+CONTEXT:  referenced column: a
 insert into t1 values(1::bool);
 insert into t1 values(0::bool);
 insert into t1 values((-1)::bool);
@@ -310,6 +325,11 @@ ERROR:  tinyint unsigned out of range
 CONTEXT:  referenced column: a
 drop table if exists t1 ;
 create table t1(a uint1);
+insert into t1 values(1::text);
+insert into t1 values(0::text);
+insert into t1 values((-1)::text);
+ERROR:  tinyint unsigned out of range
+CONTEXT:  referenced column: a
 insert into t1 values(1::int8);
 insert into t1 values(0::int8);
 insert into t1 values((-1)::int8);

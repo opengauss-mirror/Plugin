@@ -3421,15 +3421,17 @@ Datum f4_cast_ui1(PG_FUNCTION_ARGS)
     float4 arg1 = PG_GETARG_FLOAT4(0);
     if (isnan(arg1))
         ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("tinyint unsigned of range")));
-    if (fcinfo->can_ignore && arg1 > UCHAR_MAX) {
+    if (fcinfo->can_ignore && (arg1 < SCHAR_MIN || arg1 > UCHAR_MAX)) {
         ereport(WARNING, (errmsg("tinyint unsigned out of range")));
-        PG_RETURN_UINT8(UCHAR_MAX);
+        PG_RETURN_UINT8(arg1 < SCHAR_MIN ? 0 : UCHAR_MAX);
     }
     if (SQL_MODE_STRICT()) {
-        if (arg1 > UCHAR_MAX)
+        if (arg1 < SCHAR_MIN || arg1 > UCHAR_MAX)
             ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("tinyint unsigned out of range")));
     } else if (arg1 > UCHAR_MAX) {
         arg1 = UCHAR_MAX;
+    } else if (arg1 < SCHAR_MIN) {
+        arg1 = 0;
     }
 
     PG_RETURN_UINT8((int16)round(arg1));
@@ -3440,15 +3442,17 @@ Datum f8_cast_ui1(PG_FUNCTION_ARGS)
     float8 arg1 = PG_GETARG_FLOAT8(0);
     if (isnan(arg1))
         ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("tinyint unsignedout of range")));
-    if (fcinfo->can_ignore && arg1 > UCHAR_MAX) {
+    if (fcinfo->can_ignore && (arg1 < SCHAR_MIN || arg1 > UCHAR_MAX)) {
         ereport(WARNING, (errmsg("tinyint unsigned out of range")));
-        PG_RETURN_UINT8(UCHAR_MAX);
+        PG_RETURN_UINT8(arg1 < SCHAR_MIN ? 0 : UCHAR_MAX);
     }
     if (SQL_MODE_STRICT()) {
-        if (arg1 > UCHAR_MAX)
+        if (arg1 < SCHAR_MIN || arg1 > UCHAR_MAX)
             ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("tinyint unsignedout of range")));
     } else if (arg1 > UCHAR_MAX) {
         arg1 = UCHAR_MAX;
+    } else if (arg1 < SCHAR_MIN) {
+        arg1 = 0;
     }
 
     PG_RETURN_UINT8((int16)round(arg1));
@@ -3463,16 +3467,18 @@ Datum f4_cast_ui2(PG_FUNCTION_ARGS)
         ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("smallint unsigned out of range")));
 
     /* keyword IGNORE has priority than sql mode */
-    if (fcinfo->can_ignore && num >= (float4)((uint32)USHRT_MAX + 1)) {
+    if (fcinfo->can_ignore && (num < (float4)SHRT_MIN || num >= (float4)((uint32)USHRT_MAX + 1))) {
         ereport(WARNING, (errmsg("smallint unsigned out of range")));
-        PG_RETURN_UINT16( USHRT_MAX);
+        PG_RETURN_UINT16(num < (float4)SHRT_MIN ? 0 : USHRT_MAX);
     }
     
     if (SQL_MODE_STRICT()) {
-        if (num >= (float4)((uint32)USHRT_MAX + 1))
+        if (num < (float)SHRT_MIN || num >= (float4)((uint32)USHRT_MAX + 1))
             ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("smallint unsigned out of range")));
     } else if (num >= (float4)((uint32)USHRT_MAX + 1)) {
         PG_RETURN_UINT16(USHRT_MAX);
+    } else if (num < (float4)SHRT_MIN) {
+        PG_RETURN_UINT16(0);
     }
 
     PG_RETURN_UINT16((int32)num);
@@ -3487,16 +3493,18 @@ Datum f8_cast_ui2(PG_FUNCTION_ARGS)
         ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("smallint unsigned out of range")));
 
     /* keyword IGNORE has priority than sql mode */
-    if (fcinfo->can_ignore && num >= (float8)((uint32)USHRT_MAX + 1)) {
+    if (fcinfo->can_ignore && (num < (float8)SHRT_MIN || num >= (float8)((uint32)USHRT_MAX + 1))) {
         ereport(WARNING, (errmsg("smallint unsigned out of range")));
-        PG_RETURN_UINT16(USHRT_MAX);
+        PG_RETURN_UINT16(num < (float8)SHRT_MIN ? 0 : USHRT_MAX);
     }
     
     if (SQL_MODE_STRICT()) {
-        if (num >= (float8)((uint32)USHRT_MAX + 1))
+        if (num < (float8)SHRT_MIN || num >= (float8)((uint32)USHRT_MAX + 1))
             ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("smallint unsigned out of range")));
     } else if (num >= (float8)((uint32)USHRT_MAX + 1)) {
         PG_RETURN_UINT16(USHRT_MAX);
+    } else if (num < (float8)SHRT_MIN) {
+        PG_RETURN_UINT16(0);
     }
 
     PG_RETURN_UINT16((int32)num);
@@ -3511,16 +3519,18 @@ Datum f4_cast_ui4(PG_FUNCTION_ARGS)
         ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("integer unsigned out of range")));
 
     /* keyword IGNORE has priority than sql mode */
-    if (fcinfo->can_ignore && num >= (float4)((uint64)UINT_MAX + 1)) {
+    if (fcinfo->can_ignore && (num < (float4)INT_MIN || num >= (float4)((uint64)UINT_MAX + 1))) {
         ereport(WARNING, (errmsg("integer unsigned out of range")));
-        PG_RETURN_UINT32(UINT_MAX);
+        PG_RETURN_UINT32(num < (float4)INT_MIN ? 0 : UINT_MAX);
     }
 
     if (SQL_MODE_STRICT()) {
-        if (num >= (float4)((uint64)UINT_MAX + 1))
+        if (num < (float4)INT_MIN || num >= (float4)((uint64)UINT_MAX + 1))
             ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("integer unsigned out of range")));
     } else if (num >= (float4)((uint64)UINT_MAX + 1)) {
         PG_RETURN_UINT32(UINT_MAX);
+    } else if (num < (float4)INT_MIN) {
+        PG_RETURN_UINT32(0);
     }
 
     PG_RETURN_UINT32((int64)num);
@@ -3535,16 +3545,18 @@ Datum f8_cast_ui4(PG_FUNCTION_ARGS)
         ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("integer unsigned out of range")));
  
     /* keyword IGNORE has priority than sql mode */
-    if (fcinfo->can_ignore && num >= (float8)((uint64)UINT_MAX + 1)) {
+    if (fcinfo->can_ignore && (num < (float8)INT_MIN || num >= (float8)((uint64)UINT_MAX + 1))) {
         ereport(WARNING, (errmsg("integer unsigned out of range")));
-        PG_RETURN_UINT32(UINT_MAX);
+        PG_RETURN_UINT32(num < (float8)INT_MIN ? 0 : UINT_MAX);
     }
 
     if (SQL_MODE_STRICT()) {
-        if (num >= (float8)((uint64)UINT_MAX + 1))
+        if (num < (float8)INT_MIN || num >= (float8)((uint64)UINT_MAX + 1))
             ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("integer unsigned out of range")));
     } else if (num >= (float8)((uint64)UINT_MAX + 1)) {
         PG_RETURN_UINT32(UINT_MAX);
+    } else if (num < (float8)INT_MIN) {
+        PG_RETURN_UINT32(0);
     }
 
     PG_RETURN_UINT32((int64)num);
@@ -3558,16 +3570,18 @@ Datum f4_cast_ui8(PG_FUNCTION_ARGS)
         ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("bigint unsigned out of range")));
 
     /* keyword IGNORE has higher priority than sql mode */
-    if (fcinfo->can_ignore && (int128)num > ULONG_MAX) {
+    if (fcinfo->can_ignore && (num < (float4)LONG_MIN || num >= (float4)((uint128)ULONG_MAX + 1))) {
         ereport(WARNING, (errmsg("bigint unsigned out of range")));
-        PG_RETURN_UINT64(ULONG_MAX);
+        PG_RETURN_UINT64(num < (float4)LONG_MIN ? 0 : ULONG_MAX);
     }
     
     if (SQL_MODE_STRICT()) {
-        if ((int128)num > ULONG_MAX)
+        if (num < (float4)LONG_MIN || num >= (float4)((uint128)ULONG_MAX + 1))
             ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("bigint unsigned out of range")));
-    } else if ((int128)num > ULONG_MAX) {
+    } else if (num >= (float4)((uint128)ULONG_MAX + 1)) {
         PG_RETURN_UINT64(ULONG_MAX);
+    } else if (num < (float4)LONG_MIN) {
+        PG_RETURN_UINT64(0);
     }
 
     PG_RETURN_UINT64((int128)num);
@@ -3581,15 +3595,17 @@ Datum f8_cast_ui8(PG_FUNCTION_ARGS)
         ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("bigint unsigned out of range")));
 
     /* keyword IGNORE has higher priority than sql mode */
-    if (fcinfo->can_ignore && (int128)num > ULONG_MAX) {
+    if (fcinfo->can_ignore && (num < (float8)LONG_MIN || num >= (float8)((uint128)ULONG_MAX + 1))) {
         ereport(WARNING, (errmsg("bigint unsigned out of range")));
-        PG_RETURN_UINT64(ULONG_MAX);
+        PG_RETURN_UINT64(num < (float8)LONG_MIN ? 0 : ULONG_MAX);
     }
     if (SQL_MODE_STRICT()) {
-        if ((int128)num > ULONG_MAX)
+        if (num < (float8)LONG_MIN || num >= (float8)((uint128)ULONG_MAX + 1))
             ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("bigint unsigned out of range")));
-    } else if ((int128)num > ULONG_MAX) {
+    } else if (num >= (float8)((uint128)ULONG_MAX + 1)) {
         PG_RETURN_UINT64(ULONG_MAX);
+    } else if (num < (float8)LONG_MIN) {
+        PG_RETURN_UINT64(0);
     }
 
     PG_RETURN_UINT64((int128)num);
@@ -4265,4 +4281,81 @@ Datum uint8_sortsupport(PG_FUNCTION_ARGS)
 
     ssup->comparator = uint8_fastcmp;
     PG_RETURN_VOID();
+}
+
+extern Datum int16in(PG_FUNCTION_ARGS);
+
+int128 text_uintInternal(Datum txt, int128 min, int128 max, char* intType, bool canIgnore)
+{
+    char* tmp = NULL;
+    int128 result;
+    tmp = DatumGetCString(DirectFunctionCall1(textout, txt));
+
+    result = DatumGetInt128(DirectFunctionCall1(int16in, CStringGetDatum(tmp)));
+    pfree_ext(tmp);
+
+     /* keyword IGNORE has higher priority than sql mode */
+    if (canIgnore && (result < min || result > max)) {
+        ereport(WARNING, (errmsg("%s unsigned out of range", intType)));
+        return result < min ? 0 : max;
+    }
+    
+    if (SQL_MODE_STRICT()) {
+        if (result < min || result > max)
+            ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("%s unsigned out of range", intType)));
+    } else if (result < min) {
+        return 0;
+    } else if (result > max) {
+        return max;
+    }
+
+    return result;
+}
+
+Datum text_uint1(PG_FUNCTION_ARGS)
+{
+    Datum txt = PG_GETARG_DATUM(0);
+    PG_RETURN_UINT64(text_uintInternal(txt, 0, UCHAR_MAX, "tinyint", fcinfo->can_ignore));
+}
+
+Datum text_uint2(PG_FUNCTION_ARGS)
+{
+    Datum txt = PG_GETARG_DATUM(0);
+    PG_RETURN_UINT64(text_uintInternal(txt, 0, USHRT_MAX, "smallint", fcinfo->can_ignore));
+}
+
+Datum text_uint4(PG_FUNCTION_ARGS)
+{
+    Datum txt = PG_GETARG_DATUM(0);
+    PG_RETURN_UINT64(text_uintInternal(txt, 0, UINT_MAX, "int", fcinfo->can_ignore));
+}
+
+Datum text_uint8(PG_FUNCTION_ARGS)
+{
+    Datum txt = PG_GETARG_DATUM(0);
+    PG_RETURN_UINT64(text_uintInternal(txt, 0, ULONG_MAX, "bigint", fcinfo->can_ignore));
+}
+
+Datum text_cast_uint1(PG_FUNCTION_ARGS)
+{
+    Datum txt = PG_GETARG_DATUM(0);
+    PG_RETURN_UINT8(text_uintInternal(txt, SCHAR_MIN, UCHAR_MAX, "tinyint", fcinfo->can_ignore));
+}
+
+Datum text_cast_uint2(PG_FUNCTION_ARGS)
+{
+    Datum txt = PG_GETARG_DATUM(0);
+    PG_RETURN_UINT16(text_uintInternal(txt, SHRT_MIN, USHRT_MAX, "smallint", fcinfo->can_ignore));
+}
+
+Datum text_cast_uint4(PG_FUNCTION_ARGS)
+{
+    Datum txt = PG_GETARG_DATUM(0);
+    PG_RETURN_UINT32(text_uintInternal(txt, INT_MIN, UINT_MAX, "int", fcinfo->can_ignore));
+}
+
+Datum text_cast_uint8(PG_FUNCTION_ARGS)
+{
+    Datum txt = PG_GETARG_DATUM(0);
+    PG_RETURN_UINT64(text_uintInternal(txt, LONG_MIN, ULONG_MAX, "bigint", fcinfo->can_ignore));
 }

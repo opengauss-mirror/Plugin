@@ -24,6 +24,15 @@ select (-9223372036854775809.0)::float4::uint8;
 select (18446744073709550515)::float4::uint8;
 select (-18446744073709550515)::float4::uint8;
 
+select (-922337203685477580999.0)::float4::uint1;
+select (-922337203685477580999.0)::float8::uint1;
+select (-922337203685477580999.0)::float4::uint2;
+select (-922337203685477580999.0)::float8::uint2;
+select (-922337203685477580999.0)::float4::uint4;
+select (-922337203685477580999.0)::float8::uint4;
+select (-922337203685477580999.0)::float4::uint8;
+select (-922337203685477580999.0)::float8::uint8;
+
 select (0)::numeric::uint8;
 select (-1)::numeric::uint8;
 select (18446744073709551615)::numeric(20)::uint8;

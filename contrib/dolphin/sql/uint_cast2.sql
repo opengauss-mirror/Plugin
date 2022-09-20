@@ -5,6 +5,10 @@ create database uint_cast2 dbcompatibility 'b';
 drop table if exists t1 ;
 create table t1(a uint8);
 
+insert into t1 values(1::text);
+insert into t1 values(0::text);
+insert into t1 values((-1)::text);
+
 insert into t1 values(1::bool);
 insert into t1 values(0::bool);
 insert into t1 values((-1)::bool);
@@ -72,6 +76,10 @@ insert into t1 values(256::uint1);
 drop table if exists t1 ;
 
 create table t1(a uint4);
+
+insert into t1 values(1::text);
+insert into t1 values(0::text);
+insert into t1 values((-1)::text);
 
 insert into t1 values(1::bool);
 insert into t1 values(0::bool);
@@ -144,6 +152,10 @@ drop table if exists t1 ;
 
 
 create table t1(a uint2);
+
+insert into t1 values(1::text);
+insert into t1 values(0::text);
+insert into t1 values((-1)::text);
 
 insert into t1 values(1::bool);
 insert into t1 values(0::bool);
@@ -222,6 +234,11 @@ insert into t1 values(256::uint1);
 drop table if exists t1 ;
 
 create table t1(a uint1);
+
+insert into t1 values(1::text);
+insert into t1 values(0::text);
+insert into t1 values((-1)::text);
+
 insert into t1 values(1::int8);
 insert into t1 values(0::int8);
 insert into t1 values((-1)::int8);

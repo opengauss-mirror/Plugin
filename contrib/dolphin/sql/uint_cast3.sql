@@ -80,5 +80,20 @@ select 19990101222222::uint8::datetime;
 select 1999::uint4::year;
 select 1999::year::uint4;
 
+select (-1)::text::uint1;
+select (-1)::text::uint2;
+select (-1)::text::uint4;
+select (-1)::text::uint8;
+
+select '255'::text::uint1;
+select '65535'::text::uint2;
+select '4294967295'::text::uint4;
+select '18446744073709551615'::text::uint8;
+
+select '256'::text::uint1;
+select '65536'::text::uint2;
+select '4294967296'::text::uint4;
+select '18446744073709551616'::text::uint8;
+
 \c postgres
 drop database uint_cast3;
