@@ -124,5 +124,17 @@ select make_set(-4294967296*1024*1024*1024,'1','2','3','4','5','6','7','8','9','
  63,64
 (1 row)
 
+select make_set(3, true, false);
+ make_set 
+----------
+ 1,0
+(1 row)
+
+select make_set(3,01/02/03, false, true, false);
+      make_set       
+---------------------
+ 0.166666666666667,0
+(1 row)
+
 \c postgres
 drop database make_set
