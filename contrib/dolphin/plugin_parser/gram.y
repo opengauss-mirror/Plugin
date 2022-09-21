@@ -18263,7 +18263,7 @@ rename_clause_list:
 	;
 
 rename_clause:
-		qualified_name TO qualified_name
+		dolphin_qualified_name TO dolphin_qualified_name
 		{
 			RenameCell* n = makeNode(RenameCell);
 			n->original_name = $1;
