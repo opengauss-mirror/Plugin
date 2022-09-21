@@ -36,5 +36,8 @@ select 1 sounds like 2;
 select true sounds like 3;
 select 2.2 sounds like false;
 
+select soundex('и мърморене');
+select soundex('ɔnɛkona mws');
+
 \c postgres
 drop database if exists db_soundex;

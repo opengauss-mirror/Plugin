@@ -206,5 +206,17 @@ LINE 1: select 2.2 sounds like false;
                    ^
 HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
 CONTEXT:  referenced column: soundex_difference
+select soundex('и мърморене');
+ soundex 
+---------
+ и000
+(1 row)
+
+select soundex('ɔnɛkona mws');
+ soundex 
+---------
+ ɔ5252
+(1 row)
+
 \c postgres
 drop database if exists db_soundex;
