@@ -38,6 +38,8 @@ select 2.2 sounds like false;
 
 select soundex('и мърморене');
 select soundex('ɔnɛkona mws');
+select soundex('ш');
+select soundex('я такая шчасліваяwjdkadskdjk');
 
 \c postgres
 drop database if exists db_soundex;

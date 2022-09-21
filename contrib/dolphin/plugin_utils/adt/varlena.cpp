@@ -8671,6 +8671,7 @@ static void set_sound(const char* arg, char* result, int size)
     result[size] = '\0';
     int count = 0;
     bool isNullStr = true;
+    int argLength = 0;
     while ((count++) < size) {
         if (isalpha((unsigned char)arg[0])) {
             result[0] = (char)toupper((unsigned char)*arg++);
@@ -8680,15 +8681,24 @@ static void set_sound(const char* arg, char* result, int size)
         } else if ((unsigned char)arg[0] & 0x80) {
             result[0] = arg[0];
             result[1] = arg[1];
-            if (arg[2] != ' ') {
-                if (isalpha((unsigned char)arg[2])) {
-                    result[2] = code_letter(arg[2]);
+            argLength = strlen(arg);
+            if (argLength > 2) {
+                if (arg[2] != ' ') {
+                    if (isalpha((unsigned char)arg[2])) {
+                        result[2] = code_letter(arg[2]);
+                    } else {
+                        result[2] = arg[2];
+                    }
+		    result += 3;
+                    arg += 3;
                 } else {
-                    result[2] = arg[2];
+                    result += 2;
+                    arg += 2;
                 }
+            } else if (argLength == 2) {
+                result += 2;
+                arg += 2;
             }
-            result += 3;
-            arg += 3;
             isNullStr = false;
             break;
         }
@@ -8851,7 +8861,14 @@ Datum make_set(PG_FUNCTION_ARGS)
             }
             if (flag % 2 == 1 || (flag % 2 == 0 && num < 0)) {
                 temp_char = _elt(i, fcinfo);
-                appendStringInfoString(&buf, text_to_cstring(temp_char));
+                /* handle bool value */
+                if (temp_char == NULL && fcinfo->arg[i] == 0) {
+                    appendStringInfoString(&buf, "0");
+                } else if (fcinfo->arg[i] == 1) {
+                    appendStringInfoString(&buf, "1");
+                } else {
+                    appendStringInfoString(&buf, text_to_cstring(temp_char));
+                }
                 output_flag = true;
             }
         }

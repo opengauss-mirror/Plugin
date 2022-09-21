@@ -218,5 +218,17 @@ select soundex('ɔnɛkona mws');
  ɔ5252
 (1 row)
 
+select soundex('ш');
+ soundex 
+---------
+ ш000
+(1 row)
+
+select soundex('я такая шчасліваяwjdkadskdjk');
+ soundex  
+----------
+ я2323232
+(1 row)
+
 \c postgres
 drop database if exists db_soundex;
