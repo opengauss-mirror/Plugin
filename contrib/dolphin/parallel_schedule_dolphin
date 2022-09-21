@@ -8,6 +8,8 @@ test: ast b_compatibility_time_type db_b_new_gram_test
 
 test: test_condition vec_engine
 
+test: group_concat_test
+
 test: db_b_parser1 db_b_parser2 db_b_parser3 db_b_parser4 second_microsecond
 
 test: db_b_plpgsql_test default_guc describe
