@@ -683,8 +683,8 @@ static SelectStmt *MakeShowGrantStmt(char *arg, int location, core_yyscan_t yysc
 				sort_clause opt_sort_clause sortby_list index_params table_index_elems constraint_params
 				name_list from_clause from_list opt_array_bounds dolphin_name_list
 				qualified_name_list any_name any_name_list dolphin_qualified_name_list dolphin_any_name dolphin_any_name_list
-				any_operator expr_list attrs callfunc_args callfunc_args_or_empty dolphin_attrs rename_clause rename_list
-				target_list insert_column_list set_target_list
+				any_operator expr_list attrs callfunc_args callfunc_args_or_empty dolphin_attrs rename_user_clause rename_list
+				target_list insert_column_list set_target_list rename_clause_list rename_clause
 				set_clause_list set_clause multiple_set_clause
 				ctext_expr_list ctext_row def_list tsconf_def_list indirection opt_indirection dolphin_indirection opt_dolphin_indirection
 				reloption_list tblspc_option_list cfoption_list group_clause TriggerFuncArgs select_limit
@@ -13575,10 +13575,10 @@ drop_type:	 CONTVIEW                              { $$ = OBJECT_CONTQUERY; }
             | PUBLICATION                           { $$ = OBJECT_PUBLICATION; }
 		;
 rename_list:
-                       rename_clause                                                   {$$ = list_make1($1);}
-                       | rename_list ',' rename_clause                 {$$ = lappend($1, $3);}
+                       rename_user_clause                                                   {$$ = list_make1($1);}
+                       | rename_list ',' rename_user_clause                 {$$ = lappend($1, $3);}
 
-rename_clause:
+rename_user_clause:
                        RoleId TO RoleId                                        {$$ = list_make2($1, $3); }
 any_name_list:
 			any_name								{ $$ = list_make1($1); }
@@ -18224,7 +18224,53 @@ RenameStmt: ALTER AGGREGATE func_name aggr_args RENAME TO name
 					}
 					$$ = (Node *)renamestmts;
 				}
+			| RENAME TABLE rename_clause_list
+				{
+#ifndef ENABLE_MULTIPLE_NODES
+					if (u_sess->attr.attr_sql.sql_compatibility == B_FORMAT) {
+						RenameStmt *n = makeNode(RenameStmt);
+						n->renameType = OBJECT_TABLE;
+						n->renameTargetList = $3;
+						n->renameTableflag = true;
+						n->missing_ok = false;
+						$$ = (Node *)n;
+					} else {
+						const char* message = "rename table syntax is supported on dbcompatibility B.";
+						InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);
+						ereport(errstate,
+							(errmodule(MOD_PARSER),
+                                                        errcode(ERRCODE_SYNTAX_ERROR),
+                                                        errmsg("rename table syntax is supported on dbcompatibility B."),
+                                                        parser_errposition(@1)));
+						$$ = NULL;
+					}
+#else
+                                        const char* message = "rename table syntax don't supported on distributed database.";
+                                        InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);
+                                        ereport(errstate,
+                                                (errmodule(MOD_PARSER),
+                                                errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+                                                errmsg("rename table syntax don't supported on distributed database."),
+                                                parser_errposition(@1)));
+                                        $$ = NULL;
+#endif
+				}
 		;
+
+rename_clause_list:
+		rename_clause					{ $$ = $1; }
+		| rename_clause_list ',' rename_clause		{ $$ = list_concat($1, $3); }
+	;
+
+rename_clause:
+		qualified_name TO qualified_name
+		{
+			RenameCell* n = makeNode(RenameCell);
+			n->original_name = $1;
+			n->modify_name = $3;
+			$$ = list_make1(n);
+		}
+	;
 
 opt_column: COLUMN									{ $$ = COLUMN; }
 			| /*EMPTY*/		%prec lower_than_key	{ $$ = 0; }
