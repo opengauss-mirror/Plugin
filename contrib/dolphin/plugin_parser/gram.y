@@ -5879,7 +5879,7 @@ add_partition_cmds_for_bdatabase:
  			;
 
 add_partition_cmd:
-		name VALUES LESS THAN '(' maxValueList ')' OptTableSpace
+		name VALUES LESS THAN '(' maxValueList ')' opt_part_options
 			{
 				RangePartitionDefState *p = makeNode(RangePartitionDefState);
 				AlterTableCmd *n = makeNode(AlterTableCmd);
@@ -5894,7 +5894,7 @@ add_partition_cmd:
 				$$ = (Node *)n;
 			}
 		/* ALTER TABLE ADD PARTITION: use START/END */
-		| name START '(' maxValueList ')'  END_P '(' maxValueList ')' opt_range_every_list OptTableSpace
+		| name START '(' maxValueList ')'  END_P '(' maxValueList ')' opt_range_every_list opt_part_options
 			{
 				RangePartitionStartEndDefState *p = makeNode(RangePartitionStartEndDefState);
 				AlterTableCmd *n = makeNode(AlterTableCmd);
@@ -5910,7 +5910,7 @@ add_partition_cmd:
 				n->def = (Node*)s;
 				$$ = (Node *)n;
 			}
-		| name END_P '(' maxValueList ')' OptTableSpace
+		| name END_P '(' maxValueList ')' opt_part_options
 			{
 				RangePartitionStartEndDefState *p = makeNode(RangePartitionStartEndDefState);
 				AlterTableCmd *n = makeNode(AlterTableCmd);
@@ -5926,7 +5926,7 @@ add_partition_cmd:
 				n->def = (Node*)s;
 				$$ = (Node *)n;
 			}
-		| name START '(' maxValueList ')' OptTableSpace
+		| name START '(' maxValueList ')' opt_part_options
 			{
 				RangePartitionStartEndDefState *p = makeNode(RangePartitionStartEndDefState);
 				AlterTableCmd *n = makeNode(AlterTableCmd);
@@ -5942,7 +5942,7 @@ add_partition_cmd:
 				n->def = (Node*)s;
 				$$ = (Node *)n;
 			}
-		| name VALUES '(' expr_list ')' OptTableSpace
+		| name VALUES '(' expr_list ')' opt_part_options
 			{
 				ListPartitionDefState *p = makeNode(ListPartitionDefState);
 				AlterTableCmd *n = makeNode(AlterTableCmd);
@@ -5956,7 +5956,7 @@ add_partition_cmd:
 				n->def = (Node*)s;
 				$$ = (Node *)n;
 			}
-		| name VALUES '(' DEFAULT ')' OptTableSpace
+		| name VALUES '(' DEFAULT ')' opt_part_options
 			{
 				ListPartitionDefState *p = makeNode(ListPartitionDefState);
 				AlterTableCmd *n = makeNode(AlterTableCmd);
@@ -5974,7 +5974,7 @@ add_partition_cmd:
 				$$ = (Node *)n;
 			}
 		| name VALUES LESS THAN
-		'(' maxValueList ')' OptTableSpace '(' subpartition_definition_list ')'
+		'(' maxValueList ')' opt_part_options '(' subpartition_definition_list ')'
 			{
 				RangePartitionDefState *p = makeNode(RangePartitionDefState);
 				AlterTableCmd *n = makeNode(AlterTableCmd);
@@ -6000,7 +6000,7 @@ add_partition_cmd:
 				n->def = (Node*)s;
 				$$ = (Node *)n;
 			}
-		| name VALUES '(' expr_list ')' OptTableSpace '(' subpartition_definition_list ')'
+		| name VALUES '(' expr_list ')' opt_part_options '(' subpartition_definition_list ')'
 			{
 				ListPartitionDefState *p = makeNode(ListPartitionDefState);
 				AlterTableCmd *n = makeNode(AlterTableCmd);
@@ -6026,7 +6026,7 @@ add_partition_cmd:
 				n->def = (Node*)s;
 				$$ = (Node *)n;
 			}
-		| name VALUES '(' DEFAULT ')' OptTableSpace '(' subpartition_definition_list ')'
+		| name VALUES '(' DEFAULT ')' opt_part_options '(' subpartition_definition_list ')'
 			{
 				ListPartitionDefState *p = makeNode(ListPartitionDefState);
 				AlterTableCmd *n = makeNode(AlterTableCmd);
