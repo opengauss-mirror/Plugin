@@ -1393,7 +1393,17 @@ Datum inetaton(PG_FUNCTION_ARGS)
     if (PG_ARGISNULL(0))
         PG_RETURN_NULL();
 
-    char *cp = text_to_cstring(PG_GETARG_TEXT_PP(0));
+    Oid argtypeid = get_fn_expr_argtype(fcinfo->flinfo, 0);
+    if (!OidIsValid(argtypeid))
+        PG_RETURN_NULL();
+
+    char *cp = NULL;
+    if (argtypeid == BOOLOID) {
+        if (PG_GETARG_BOOL(0))
+            PG_RETURN_INT64(1);
+        PG_RETURN_INT64(0);
+    } else
+        cp = text_to_cstring(PG_GETARG_TEXT_PP(0));
     if (*cp == '\0')
         PG_RETURN_NULL();
     uint64 val;
@@ -1631,7 +1641,16 @@ Datum inetntoa(PG_FUNCTION_ARGS)
     if (PG_ARGISNULL(0))
         PG_RETURN_NULL();
 
-    uint64 n = PG_GETARG_INT64(0);
+    Oid argtypeid = get_fn_expr_argtype(fcinfo->flinfo, 0);
+    if (!OidIsValid(argtypeid))
+        PG_RETURN_NULL();
+
+    uint64 n = 0;
+    if (argtypeid == BOOLOID) {
+        n = PG_GETARG_BOOL(0) ? 1 : 0;
+    } else
+        n = PG_GETARG_INT64(0);
+
     if (n > UINT32_MAX) {
         PG_RETURN_NULL();
     }
@@ -1770,7 +1789,7 @@ extern "C" DLL_PUBLIC Datum is_v4mapped(PG_FUNCTION_ARGS);
 Datum is_v4compat(PG_FUNCTION_ARGS)
 {
     if (PG_ARGISNULL(0))
-        PG_RETURN_NULL();
+        PG_RETURN_INT16(0);
 
     bytea *in = PG_GETARG_BYTEA_PP(0);
     char *ip = VARDATA_ANY(in);
@@ -1785,7 +1804,7 @@ Datum is_v4compat(PG_FUNCTION_ARGS)
 Datum is_v4mapped(PG_FUNCTION_ARGS)
 {
     if (PG_ARGISNULL(0))
-        PG_RETURN_NULL();
+        PG_RETURN_INT16(0);
 
     bytea *in = PG_GETARG_BYTEA_PP(0);
     char *ip = VARDATA_ANY(in);
