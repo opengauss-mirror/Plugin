@@ -7511,6 +7511,13 @@ static List* DividePartitionStartEndInterval(ParseState* pstate, Form_pg_attribu
         }
 
         default:
+            Oid typeoid = attr->atttypid;
+            if (typeoid == get_typeoid(PG_CATALOG_NAMESPACE, "uint4") || typeoid == get_typeoid(PG_CATALOG_NAMESPACE, "uint1") ||
+                typeoid == get_typeoid(PG_CATALOG_NAMESPACE, "uint2") || typeoid == get_typeoid(PG_CATALOG_NAMESPACE, "uint8")) {
+                result = divide_start_end_every_internal(
+                    pstate, partName, attr, startVal, endVal, everyExpr, numPart, maxNum, false, false, isPartition);
+                break;
+            }
             ereport(ERROR,
                 (errcode(ERRCODE_DATATYPE_MISMATCH),
                     errmsg("unsupported datatype served as a %s key in the start/end clause.",
@@ -7676,6 +7683,11 @@ List* transformRangePartStartEndStmt(ParseState* pstate, List* partitionList, Li
                 break;
 
             default:
+                if (target_type == get_typeoid(PG_CATALOG_NAMESPACE, "uint4") || target_type == get_typeoid(PG_CATALOG_NAMESPACE, "uint1") ||
+                    target_type == get_typeoid(PG_CATALOG_NAMESPACE, "uint2") || target_type == get_typeoid(PG_CATALOG_NAMESPACE, "uint8")) {
+                    isinterval = false;
+                    break;
+                }
                 ereport(ERROR,
                     (errcode(ERRCODE_DATATYPE_MISMATCH),
                         errmsg("datatype of column \"%s\" is unsupported for %s key in start/end clause.",

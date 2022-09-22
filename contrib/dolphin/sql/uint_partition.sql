@@ -197,5 +197,25 @@ create index subpartition_03_idx3 on subpartition_03(col_4) global;
 INSERT INTO subpartition_03 VALUES (1, 1, 1, 1) ON DUPLICATE KEY UPDATE col_2 = 2;
 select * from subpartition_03;
 
+drop table if exists t_unsigned_0030_5;
+drop table if exists t_unsigned_0030_6;
+drop table if exists t_unsigned_0030_7;
+drop table if exists t_unsigned_0030_8;
+create table t_unsigned_0030_5(col01 smallint unsigned)
+partition by range(col01)(partition p start(1) end(255) every(50));
+insert into t_unsigned_0030_5 values(1);
+
+create table t_unsigned_0030_6(col01 smallint unsigned)
+partition by range(col01)(partition p start(1) end(255) every(50));
+insert into t_unsigned_0030_6 values(1);
+
+create table t_unsigned_0030_7(col01 int unsigned)
+partition by range(col01)(partition p start(1) end(255) every(50));
+insert into t_unsigned_0030_7 values(1);
+
+create table t_unsigned_0030_8(col01 bigint unsigned)
+partition by range(col01)(partition p start(1) end(255) every(50));
+insert into t_unsigned_0030_8 values(1);
+
 \c postgres
 drop database uint_partition;

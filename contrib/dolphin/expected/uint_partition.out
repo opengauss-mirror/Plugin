@@ -235,5 +235,25 @@ select * from subpartition_03;
      1 | 1     | 1     |     1
 (1 row)
 
+drop table if exists t_unsigned_0030_5;
+NOTICE:  table "t_unsigned_0030_5" does not exist, skipping
+drop table if exists t_unsigned_0030_6;
+NOTICE:  table "t_unsigned_0030_6" does not exist, skipping
+drop table if exists t_unsigned_0030_7;
+NOTICE:  table "t_unsigned_0030_7" does not exist, skipping
+drop table if exists t_unsigned_0030_8;
+NOTICE:  table "t_unsigned_0030_8" does not exist, skipping
+create table t_unsigned_0030_5(col01 smallint unsigned)
+partition by range(col01)(partition p start(1) end(255) every(50));
+insert into t_unsigned_0030_5 values(1);
+create table t_unsigned_0030_6(col01 smallint unsigned)
+partition by range(col01)(partition p start(1) end(255) every(50));
+insert into t_unsigned_0030_6 values(1);
+create table t_unsigned_0030_7(col01 int unsigned)
+partition by range(col01)(partition p start(1) end(255) every(50));
+insert into t_unsigned_0030_7 values(1);
+create table t_unsigned_0030_8(col01 bigint unsigned)
+partition by range(col01)(partition p start(1) end(255) every(50));
+insert into t_unsigned_0030_8 values(1);
 \c postgres
 drop database uint_partition;
