@@ -2,7 +2,8 @@ drop database if exists test_op_and;
 CREATE DATABASE test_op_and with dbcompatibility='B';
 \c test_op_and
 set b_compatibility_mode = 1;
----create extension dolphin;
+set sql_mode = 'sql_mode_strict,sql_mode_full_group';
+
 ---create table
 create table testforboolean(a boolean,b boolean);
 create table testforint(a int,b int);
@@ -12,8 +13,6 @@ create table testfordate(a date,b date);
 create table testfortime(a time,b time);
 create table testforstring(a varchar,b varchar);
 
----create table testforbytea(a bytea ,b bytea );
---create table testfordate(a date,b date);
 ---insert data
 insert into testforboolean values(true,true);
 insert into testforboolean values(true,false);
@@ -76,23 +75,30 @@ insert into testforstring values('-10','+01');
 insert into testforstring values('123a','123a');
 
 
----insert into testforstring values('1001','1001a');
----ERROR:invalid input;
-
----select a^b from table
 select a&&b from testforboolean;
+select a||b from testforboolean;
 
 select a&&b from testforint;
+select a||b from testforint;
 
 select a&&b from testforfloat;
+select a||b from testforfloat;
 
+---正常报错，openGauss中本身的bit类型做and操作即返回此错误
 select a&&b from testforbit;
+---正常报错，openGauss中本身的bit类型做or操作即返回此错误
+select a||b from testforbit;
 
 select a&&b from testfordate;
+select a||b from testfordate;
 
 select a&&b from testfortime;
+select a||b from testfortime;
 
+---正常报错，&&的输入类型不能为字符串
 select a&&b from testforstring;
+---正常报错，||的输入类型不能为字符串
+select a||b from testforstring;
 
 ---drop table
 drop table testforboolean;
@@ -201,32 +207,46 @@ insert into testforint2_p5 values(-1,-1);
 insert into testforint2_p5 values(1,0);
 insert into testforint2_p5 values(2,123);
 
----select a^b
+
 select a&&b from testforboolean;
+select a||b from testforboolean;
 
 select a&&b from testforint;
+select a||b from testforint;
 
 select a&&b from testforfloat;
+select a||b from testforfloat;
 
+---正常报错，openGauss中本身的bit类型做and操作即返回此错误
 select a&&b from testforbit;
+---正常报错，openGauss中本身的bit类型做or操作即返回此错误
+select a||b from testforbit;
 
 select a&&b from testforboolean_u;
+select a||b from testforboolean_u;
 
 select a&&b from testforboolean_s;
+select a||b from testforboolean_s;
 
 select a&&b from testforint2_p1;
+select a||b from testforint2_p1;
 
 select a&&b from testforint2_p2;
+select a||b from testforint2_p2;
 
 select a&&b from testforint2_p3;
+select a||b from testforint2_p3;
 
 select a&&b from testforint2_p4;
+select a||b from testforint2_p4;
 
 select a&&b from testforint2_p5;
+select a||b from testforint2_p5;
 
 ---create view
 create view testforboolean_v as select * from testforboolean;
-select a^b from testforboolean_v;
+select a&&b from testforboolean_v;
+select a||b from testforboolean_v;
 drop view testforboolean_v;
 
 --- test for function
@@ -234,47 +254,85 @@ select count(tem) from (select a&&b tem from testforboolean);
 select a&&b,b from testforboolean order by b;
 
 select char_length('asbjhc')&&char_length('askjdhkj');
+---正常报错，&&的输入类型不能为text
 select left('1023jasdzlxc',5)&&left('1023jasdnzxc',5);
+---正常报错，&&的输入类型不能为text
 select substring('as1dz34lcas',3)&&substring('zxcbkj1shd',5);
+---正常报错，&&的输入类型不能为text
 select replace('123456789','234','asd')&&replace('123456789','234','asd');
+
+select count(tem) from (select a||b tem from testforboolean);
+select a||b,b from testforboolean order by b;
+
+select char_length('asbjhc')||char_length('askjdhkj');
+---正常报错，||的输入类型不能为text
+select left('1023jasdzlxc',5)||left('1023jasdnzxc',5);
+---正常报错，||的输入类型不能为text
+select substring('as1dz34lcas',3)||substring('zxcbkj1shd',5);
+---正常报错，||的输入类型不能为text
+select replace('123456789','234','asd')||replace('123456789','234','asd');
 
 --- test for arithmetic op
 select 1+1 && 1;
 select 1+1 && 0;
+select 1+1 || 1;
+select 1+1 || 0;
 
 select 1-1 && 1;
 select 0-1 && 1;
+select 1-1 || 1;
+select 0-1 || 1;
 
 select 1*2 && 1;
 select 0*3 && 1;
+select 1*2 || 1;
+select 0*3 || 1;
 
 select cast(4/2 as int) && 1;
 select cast(0/3 as int) && 1;
+select cast(4/2 as int) || 1;
+select cast(0/3 as int) || 1;
 
 select 6%3 && 1;
 select 6%4 && 1;
+select 6%3 || 1;
+select 6%4 || 1;
 
 --- test for comparison op
 select 1<1 && 1;
 select 0<1 && 1;
+select 1<1 || 1;
+select 0<1 || 1;
 
 select 1>1 && 1;
 select 1>0 && 1;
+select 1>1 || 1;
+select 1>0 || 1;
 
 select 1=1 && 1;
 select 0=1 && 1;
+select 1=1 || 1;
+select 0=1 || 1;
 
 select 1!=1 && 1;
 select 1!=0 && 1;
+select 1!=1 || 1;
+select 1!=0 || 1;
 
 select 1<>1 && 1;
 select 1<>0 && 1;
+select 1<>1 || 1;
+select 1<>0 || 1;
 
 select 1>=1 && 1;
 select 1>=2 && 1;
+select 1>=1 || 1;
+select 1>=2 || 1;
 
 select 1<=1 && 1;
 select 1<=0 && 1;
+select 1<=1 || 1;
+select 1<=0 || 1;
 
 ---create function
 create function test (boolean,boolean) returns boolean
@@ -283,12 +341,20 @@ create function test (boolean,boolean) returns boolean
     returns null on null input;
 select test(true,true);
 select test(true,false);
-drop procedure test;
+drop function test;
+
+create function test (boolean,boolean) returns boolean
+    as 'select $1||$2;'
+    language sql
+    returns null on null input;
+select test(true,true);
+select test(true,false);
+drop function test;
 
 ---create procedure
 create procedure test1(in a boolean,in b boolean)
-as 
-begin 
+as
+begin
    raise notice '%', a&&b;
 end;
 /
@@ -298,7 +364,17 @@ call test1(false,null);
 
 drop procedure test1;
 
+create procedure test1(in a boolean,in b boolean)
+as
+begin
+   raise notice '%', a||b;
+end;
+/
+call test1(true,true);
+call test1(true,false);
+call test1(false,null);
 
+drop procedure test1;
 
 ---drop table
 drop table testforboolean;
@@ -315,6 +391,7 @@ drop table testforint2_p5;
 
 ---drop database
 set b_compatibility_mode = 0;
+set sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat';
 \c postgres
 drop database test_op_and;
 
@@ -486,16 +563,26 @@ select abs(1)^abs(1);
 select abs(1^1);
 
 
+---正常报错：^不能作为表名
 create table ^;
+---正常报错：^不能作为表的列名
 create table test(^ int);
+---正常报错：^不能作为函数名
 create function ^;
 drop function if exists ^;
+---正常报错：^不能作为存储过程名
 create procedure ^;
+---正常报错：^不能作为视图名
 create view ^;
+---正常报错：^不能作为数据库名
 create database ^;
+---正常报错：^不能作为目录名
 create index ^;
+---正常报错：^不能作为序列名
 create sequence ^ increment by 1 minvalue 1 no maxvalue start with 1;
+---正常报错：^不能作为用户名
 create user ^ identified by 'hw123456';
+---正常报错：^不能作为角色名
 create role ^ identified by 'hw123456';
 
 
@@ -537,8 +624,13 @@ drop table testforbit;
 drop table testforint2;
 drop table testforint4;
 drop table testforint8;
+drop table testforbit_s;
+drop table testforbit_u;
 drop table testforint2_p1;
 drop table testforint2_p2;
+drop table testforint2_p3;
+drop table testforint2_p4;
+drop table testforint2_p5;
 
 ---drop database
 set b_compatibility_mode = 0;
@@ -552,12 +644,12 @@ create database like_test DBCOMPATIBILITY 'b';
 set b_compatibility_mode = 1;
 
 select 'a' like 'A';
-select 'a' like;
+---正常报错，like右边缺参数
+select 'a' like; 
+---正常报错，like右边参数过多
 select 'a' like 'A' 'a';
 
 
-select cast('c' as bytea) like cast('c' as bytea);
-select cast('c' as bytea) like cast('b' as bytea);
 
 select 100 like 100;
 select -100 like 100;
@@ -576,7 +668,9 @@ select '@Af%' like binary '@aF%';
 select 'abc' like 'ab\%' escape '\' ;
 select 'abc' like binary 'ab\%' escape '\' ;
 
+---正常报错，like不兼容bool型
 select true like true;
+---正常报错，like不兼容bit型
 select b'101' like b'101';
 
 
@@ -585,23 +679,27 @@ select left('1023jasdzlxc',5) like left('1023jasdnzxc',5);
 select substring('as1dz34lcas',3) like substring('zxcbkj1shd',5);
 select replace('123456789','234','asd') like replace('123456789','234','asd');
 
+---正常报错，表名不能为like
 create table like (id int);
+---正常报错，like不能为列名
 create table test1 (like char(10));
-create table test2 (t char(10) default 'a'like 'a');
 drop table if exists like;
 drop table if exists test1;
-drop table if exists test2;
 
 create function test (varchar,varchar) returns boolean
     as 'select $1 like $2;'
     language sql
     returns null on null input;
 select test('ab','ab');
+drop function test;
 
-
+---正常报错，like不能为序列
 create sequence like increment by 1 minvalue 1 no maxvalue start with 1;
+---正常报错，like不能为数据库名
 create database like;
+---正常报错，like不能为用户名
 create user like identified by 'hw123456';
+---正常报错，like不能为角色名
 create role like identified by 'hw123456';
 create table hotel (id int,name char(10),cin date,cout date,hotel char(10),room int);
 insert into hotel values
@@ -610,8 +708,9 @@ insert into hotel values
 (3,'Bob','2022-6-17','2022-6-25','Holiday',1),
 (4,'Claris','2022-5-9','2022-6-1','Holiday',1),
 (5,'Band','2022-3-6','2022-3-9','Vienna',3);
-
+---正常报错，like不能为索引名
 create index like on hotel(id);
+---正常报错，like不能为视图名
 create view like as select * from hotel;
 
 select count(cout like '2022%') from hotel group by hotel ;
@@ -643,7 +742,7 @@ select * from hotel natural inner join price where name not like 'b%';
 select * from hotel natural inner join price where name not like binary 'b%';
 select * from hotel natural inner join price where name not like 'b/%' escape '/';
 select * from hotel natural inner join price where name not like binary 'b/%' escape '/';
-select sum (case name like 'b%' then 1 else 0 end) as bnum from hotel group by hotel;
+
 
 
 drop table if exists hotel;
@@ -657,8 +756,6 @@ insert into hotel values
 (4,'Claris','2022-5-9','2022-6-1','Holiday',1),
 (5,'Band','2022-3-6','2022-3-9','Vienna',3);
 
-create index like on hotel(id);
-create view like as select * from hotel;
 
 select count(cout like '2022%') from hotel group by hotel ;
 select max(cout like '2022%') from hotel group by hotel ;
@@ -678,7 +775,7 @@ insert into hotel2 select * from hotel where hotel like 'vienna%';
 
 select max(cout) from hotel group by hotel having hotel like 'v%';
 
-create table price(hotelname char(10),price int) with (orientation = colume);
+create table price(hotelname char(10),price int) with (orientation = column);
 insert into price values
 ('Vienna',500),
 ('Holiday',700);
@@ -690,7 +787,7 @@ select * from hotel natural inner join price where name not like 'b%';
 select * from hotel natural inner join price where name not like binary 'b%';
 select * from hotel natural inner join price where name not like 'b/%' escape '/';
 select * from hotel natural inner join price where name not like binary 'b/%' escape '/';
-select sum (case name like 'b%' then 1 else 0 end) as bnum from hotel group by hotel;
+
 
 drop table if exists hotel;
 drop table if exists hotel2;
@@ -747,5 +844,5 @@ drop table testlike7;
 drop table testlike8;
 
 set b_compatibility_mode = 0;
-/c postgres
+\c postgres
 drop database if exists like_test;
