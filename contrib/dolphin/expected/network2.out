@@ -2,6 +2,7 @@ drop database if exists network2;
 NOTICE:  database "network2" does not exist, skipping
 create database network2 dbcompatibility 'b';
 \c network2
+set sql_mode = '';
 select inet_ntoa(inet_aton('255.255.255.255.255.255.255.255'));
  inet_ntoa 
 -----------
@@ -18,6 +19,12 @@ select inet_aton('255.255.255.255.255'),inet_aton('255.255.1.255'),inet_aton('0.
  inet_aton | inet_aton  | inet_aton 
 -----------+------------+-----------
            | 4294902271 |     65791
+(1 row)
+
+select inet_aton(true),inet_aton(false),inet_ntoa(true),inet_ntoa(false);
+ inet_aton | inet_aton | inet_ntoa | inet_ntoa 
+-----------+-----------+-----------+-----------
+         1 |         0 | 0.0.0.1   | 0.0.0.0
 (1 row)
 
 select hex(inet_aton('127'));
@@ -836,5 +843,12 @@ SELECT IS_IPV4_MAPPED(INET6_ATON('::')),IS_IPV4_COMPAT(INET6_ATON('::'));
               0 |              0
 (1 row)
 
+SELECT IS_IPV4_MAPPED(NULL),IS_IPV4_COMPAT(NULL);
+ is_ipv4_mapped | is_ipv4_compat 
+----------------+----------------
+              0 |              0
+(1 row)
+
+reset sql_mode;
 \c postgres
 drop database if exists network2;
