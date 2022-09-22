@@ -4008,7 +4008,7 @@ modify_column_cmd:
 					$$ = (Node *)n;
 				}
 			/* modify column comments start */
-			| COLUMN ColId opt_column_options
+			| COLUMN ColId column_options
 				{
 					AlterTableCmd *n = makeNode(AlterTableCmd);
 					ColumnDef *def = makeNode(ColumnDef);
@@ -4020,7 +4020,7 @@ modify_column_cmd:
 					$$ = (Node *)n;
 				}
 			;
-			| ColId opt_column_options
+			| ColId column_options
 				{
 					AlterTableCmd *n = makeNode(AlterTableCmd);
 					ColumnDef *def = makeNode(ColumnDef);
@@ -8208,7 +8208,7 @@ ColIdForTableElement:	IDENT						{ $$ = downcase_str($1, is_quoted()); }
 			| col_name_keyword						{ $$ = downcase_str(pstrdup($1), false); }
 		;
 
-columnDefForTableElement:	ColIdForTableElement Typename KVType ColCmprsMode create_generic_options ColQualList
+columnDefForTableElement:	ColIdForTableElement Typename KVType ColCmprsMode create_generic_options ColQualList opt_column_options
 				{
 					ColumnDef *n = makeNode(ColumnDef);
 					n->colname = $1;
@@ -8232,11 +8232,12 @@ columnDefForTableElement:	ColIdForTableElement Typename KVType ColCmprsMode crea
 						SplitColQualList($6, &n->constraints, &n->collClause,
 										yyscanner);
 					}
+					n->columnOptions = $7;
 					$$ = (Node *)n;
 				}
 		;
 
-columnDef:	ColId Typename KVType ColCmprsMode create_generic_options ColQualList
+columnDef:	ColId Typename KVType ColCmprsMode create_generic_options ColQualList opt_column_options
 				{
 					ColumnDef *n = makeNode(ColumnDef);
 					n->colname = $1;
@@ -8259,6 +8260,7 @@ columnDef:	ColId Typename KVType ColCmprsMode create_generic_options ColQualList
 						SplitColQualList($6, &n->constraints, &n->collClause,
 										yyscanner);
 					}
+					n->columnOptions = $7;
 					$$ = (Node *)n;
 				}
 		;
@@ -32903,34 +32905,36 @@ static CreateTableOptions* MakeCreateTableOptions(CreateTableOptions *tableOptio
 	return tableOptions;
 } 
 
-static CreateIndexOptions* MakeCreateIndexOptions(CreateIndexOptions *indexOptions, SingleIndexOption *indexOption)
+static CreateIndexOptions *MakeCreateIndexOptions(CreateIndexOptions *indexOptions, SingleIndexOption *indexOption)
 {
-	if (indexOptions == NULL) {
-		/* Initialize struct*/
-		indexOptions = (CreateIndexOptions*)palloc0(sizeof(CreateIndexOptions));
-	}
-	switch (indexOption->option_type) {
-	case OPT_INCLUDE:
-		if (indexOptions->indexIncludingParams != NIL) {
-			ereport(ERROR,
-				(errcode(ERRCODE_INVALID_TEXT_REPRESENTATION), errmsg("can't use option \"include\" more than once")));
-		}
-		indexOptions->indexIncludingParams = indexOption->option.list_content;
-		break;
-	case OPT_RELOPTIONS:
-		if (indexOptions->options != NIL) {
-			ereport(ERROR,
-				(errcode(ERRCODE_INVALID_TEXT_REPRESENTATION), errmsg("can't use option \"with\" more than once")));
-		}
-		indexOptions->options = indexOption->option.list_content;
-		break;
-	case OPT_TABLESPACE_INDEX:
-		indexOptions->tableSpace = indexOption->option.char_content;
-		break;
-	default:
-		break;
-	}
-	return indexOptions;
+    if (indexOptions == NULL) {
+        /* Initialize struct*/
+        indexOptions = (CreateIndexOptions *)palloc0(sizeof(CreateIndexOptions));
+    }
+    switch (indexOption->option_type) {
+        case OPT_INCLUDE:
+            if (indexOptions->indexIncludingParams != NIL) {
+                ereport(ERROR, (errcode(ERRCODE_INVALID_TEXT_REPRESENTATION),
+                                errmsg("can't use option \"include\" more than once")));
+            }
+            indexOptions->indexIncludingParams = indexOption->option.list_content;
+            break;
+        case OPT_RELOPTIONS:
+            if (indexOptions->options != NIL) {
+                ereport(ERROR, (errcode(ERRCODE_INVALID_TEXT_REPRESENTATION),
+                                errmsg("can't use option \"with\" more than once")));
+            }
+            indexOptions->options = indexOption->option.list_content;
+            break;
+        case OPT_TABLESPACE_INDEX:
+            indexOptions->tableSpace = indexOption->option.char_content;
+            break;
+        case OPT_COMMENT_INDEX:
+            indexOptions->comment = indexOption->option.comment;
+        default:
+            break;
+    }
+    return indexOptions;
 }
 
 static Node* MakeSetPasswdStmt(char* user, char* passwd, char* replace_passwd)
