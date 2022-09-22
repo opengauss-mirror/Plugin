@@ -968,5 +968,74 @@ SELECT COUNT(*) FROM t_ctas_new;
 
 DROP TABLE t_ctas_new;
 DROP TABLE t_ctas;
+drop database if exists test_m;
+NOTICE:  database "test_m" does not exist, skipping
+create database test_m dbcompatibility 'b';
+\c test_m
+create table test_unique(
+    f1 int,
+    f2 int,
+    f3 int,
+    f4 int,
+    constraint con_name1 unique index u_idx_name using btree(f1),
+    constraint con_name2 unique key u_key_name using btree (f2)
+);
+NOTICE:  CREATE TABLE / UNIQUE will create implicit index "u_idx_name" for table "test_unique"
+NOTICE:  CREATE TABLE / UNIQUE will create implicit index "u_key_name" for table "test_unique"
+\d+ test_unique
+                     Table "public.test_unique"
+ Column |  Type   | Modifiers | Storage | Stats target | Description 
+--------+---------+-----------+---------+--------------+-------------
+ f1     | integer |           | plain   |              | 
+ f2     | integer |           | plain   |              | 
+ f3     | integer |           | plain   |              | 
+ f4     | integer |           | plain   |              | 
+Indexes:
+    "u_idx_name" UNIQUE CONSTRAINT, btree (f1) TABLESPACE pg_default
+    "u_key_name" UNIQUE CONSTRAINT, btree (f2) TABLESPACE pg_default
+Has OIDs: no
+Options: orientation=row, compression=no
+
+drop table test_unique;
+-- error
+create table test_unique(f1 int, constraint con_name unique index index using btree(f1));
+ERROR:  syntax error at or near "index"
+LINE 1: ...t_unique(f1 int, constraint con_name unique index index usin...
+                                                             ^
+create table test_unique(f1 int, constraint con_name unique index key using btree(f1));
+ERROR:  syntax error at or near "key"
+LINE 1: ...t_unique(f1 int, constraint con_name unique index key using ...
+                                                             ^
+create table test_unique(f1 int, constraint con_name unique key index using btree(f1));
+ERROR:  syntax error at or near "index"
+LINE 1: ...est_unique(f1 int, constraint con_name unique key index usin...
+                                                             ^
+create table test_unique(f1 int, constraint con_name unique key key using btree(f1));
+ERROR:  syntax error at or near "key"
+LINE 1: ...est_unique(f1 int, constraint con_name unique key key using ...
+                                                             ^
+create table test_unique(f1 int, f2 int, f3 int, f4 int);
+alter table test_unique add constraint con_name1 unique index u_idx_name using btree(f1);
+NOTICE:  ALTER TABLE / ADD UNIQUE will create implicit index "u_idx_name" for table "test_unique"
+alter table test_unique add constraint con_name2 unique key u_key_name using btree (f2);
+NOTICE:  ALTER TABLE / ADD UNIQUE will create implicit index "u_key_name" for table "test_unique"
+-- error
+alter table test_unique add constraint con_name unique index index using btree(f3);
+ERROR:  syntax error at or near "index"
+LINE 1: ... test_unique add constraint con_name unique index index usin...
+                                                             ^
+alter table test_unique add constraint con_name unique index key using btree(f3);
+ERROR:  syntax error at or near "key"
+LINE 1: ... test_unique add constraint con_name unique index key using ...
+                                                             ^
+alter table test_unique add constraint con_name unique key index using btree(f3);
+ERROR:  syntax error at or near "index"
+LINE 1: ...le test_unique add constraint con_name unique key index usin...
+                                                             ^
+alter table test_unique add constraint con_name unique key key using btree(f3);
+ERROR:  syntax error at or near "key"
+LINE 1: ...le test_unique add constraint con_name unique key key using ...
+                                                             ^
 \c postgres
+drop database if exists test_m;
 drop database db_b_new_gram_test;

@@ -359,5 +359,35 @@ SELECT COUNT(*) FROM t_ctas_new;
 DROP TABLE t_ctas_new;
 DROP TABLE t_ctas;
 
+drop database if exists test_m;
+create database test_m dbcompatibility 'b';
+\c test_m
+create table test_unique(
+    f1 int,
+    f2 int,
+    f3 int,
+    f4 int,
+    constraint con_name1 unique index u_idx_name using btree(f1),
+    constraint con_name2 unique key u_key_name using btree (f2)
+);
+\d+ test_unique
+drop table test_unique;
+-- error
+create table test_unique(f1 int, constraint con_name unique index index using btree(f1));
+create table test_unique(f1 int, constraint con_name unique index key using btree(f1));
+create table test_unique(f1 int, constraint con_name unique key index using btree(f1));
+create table test_unique(f1 int, constraint con_name unique key key using btree(f1));
+
+create table test_unique(f1 int, f2 int, f3 int, f4 int);
+alter table test_unique add constraint con_name1 unique index u_idx_name using btree(f1);
+alter table test_unique add constraint con_name2 unique key u_key_name using btree (f2);
+
+-- error
+alter table test_unique add constraint con_name unique index index using btree(f3);
+alter table test_unique add constraint con_name unique index key using btree(f3);
+alter table test_unique add constraint con_name unique key index using btree(f3);
+alter table test_unique add constraint con_name unique key key using btree(f3);
+
 \c postgres
+drop database if exists test_m;
 drop database db_b_new_gram_test;
