@@ -8818,6 +8818,7 @@ Datum soundex_difference(PG_FUNCTION_ARGS)
     PG_RETURN_INT32(1);
 }
 
+#ifdef DOLPHIN
 Datum make_set(PG_FUNCTION_ARGS)
 {
     int64 num = PG_GETARG_INT64(0);
@@ -8851,7 +8852,14 @@ Datum make_set(PG_FUNCTION_ARGS)
             }
             if (flag % 2 == 1 || (flag % 2 == 0 && num < 0)) {
                 temp_char = _elt(i, fcinfo);
-                appendStringInfoString(&buf, text_to_cstring(temp_char));
+                /* handle bool value */
+                if (temp_char == NULL && fcinfo->arg[i] == 0) {
+                    appendStringInfoString(&buf, "0");
+                } else if (fcinfo->arg[i] == 1) {
+                    appendStringInfoString(&buf, "1");
+                } else {
+                    appendStringInfoString(&buf, text_to_cstring(temp_char));
+                }
                 output_flag = true;
             }
         }
@@ -8866,6 +8874,7 @@ Datum make_set(PG_FUNCTION_ARGS)
     pfree_ext(buf.data);
     PG_RETURN_TEXT_P(result);
 }
+#endif
 
 Datum uint1_list_agg_transfn(PG_FUNCTION_ARGS)
 {
