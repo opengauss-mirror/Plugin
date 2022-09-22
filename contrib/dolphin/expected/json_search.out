@@ -300,9 +300,9 @@ select json_search('{"a":"abc"}','one','abc');
 (1 row)
 
 select json_search('{"[1].a":"abc"}','one','abc');
- json_search 
--------------
- "$.[1].a"
+  json_search  
+---------------
+ "$.\"[1].a\""
 (1 row)
 
 select json_search('{"a":1}','one',1);
@@ -338,7 +338,7 @@ select json_search('{"":"abc"}','one','abc');
 select json_search('{" ":"abc"}','one','abc');
  json_search 
 -------------
- "$. "
+ "$.\" \""
 (1 row)
 
 select json_search('{"a":"abc"}','all','abc');
@@ -368,25 +368,25 @@ select json_search('{"abc":"abc"}','one','abc');
 select json_search('{"a c":"abc"}','one','abc');
  json_search 
 -------------
- "$.a c"
+ "$.\"a c\""
 (1 row)
 
 select json_search('{"a.c":"abc"}','one','abc');
  json_search 
 -------------
- "$.a.c"
+ "$.\"a.c\""
 (1 row)
 
 select json_search('{"a[]c":"abc"}','one','abc');
- json_search 
--------------
- "$.a[]c"
+ json_search  
+--------------
+ "$.\"a[]c\""
 (1 row)
 
 select json_search('{"0":"abc"}','one','abc');
  json_search 
 -------------
- "$.0"
+ "$.\"0\""
 (1 row)
 
 select json_search('{"a":"abc","b":"bcd"}','all','abc');
@@ -630,17 +630,26 @@ select json_search('{"a":["abc","bcd"],"b":"bcd"}','one','bcd',null,'$.*');
 (1 row)
 
 select json_search('{"a":["abc","bcd"],"b":"bcd"}','one','bcd',null,'$[*]');
-ERROR:  invalid JSON path expression
-CONTEXT:  referenced column: json_search
+ json_search 
+-------------
+ 
+(1 row)
+
 select json_search('{"a":["abc","bcd"],"b":"bcd"}','one','bcd',null,'$.a[*]');
-ERROR:  invalid JSON path expression
-CONTEXT:  referenced column: json_search
+ json_search 
+-------------
+ "$.a[1]"
+(1 row)
+
 select json_search('{"a":["abc","bcd"],"b":"bcd"}','one','bcd',null,'$.a[**]');
 ERROR:  invalid JSON path expression
 CONTEXT:  referenced column: json_search
 select json_search('["abc","bcd"]','one','bcd',null,'$[*]');
-ERROR:  invalid JSON path expression
-CONTEXT:  referenced column: json_search
+ json_search 
+-------------
+ "$[1]"
+(1 row)
+
 select json_search('["abc","bcd"]','one','bcd',null,'$**[1]');
  json_search 
 -------------
@@ -675,8 +684,11 @@ select json_search('[{"a":"abc"},"bcd"]','all','abc',null,'$**.a');
 (1 row)
 
 select json_search('[{"a":"abc"},"bcd"]','one','bcd',null,'$**.a[*]');
-ERROR:  invalid JSON path expression
-CONTEXT:  referenced column: json_search
+ json_search 
+-------------
+ 
+(1 row)
+
 select json_search('[{"a":"abc"},"bcd"]','one','bcd',null,'$**a[*]');
 ERROR:  invalid JSON path expression
 CONTEXT:  referenced column: json_search
@@ -723,19 +735,31 @@ select json_search('{"a":[{"b":["abc","abc"]},"ced"],"c":["efg","hij"]}','all','
 (1 row)
 
 select json_search('{"a":[{"b":["abc","abc"]},"ced"],"c":["efg","hij"]}','all','abc',null,'$.*[*]');
-ERROR:  invalid JSON path expression
-CONTEXT:  referenced column: json_search
+          json_search          
+-------------------------------
+ ["$.a[0].b[0]","$.a[0].b[1]"]
+(1 row)
+
 select json_search('{"a":[{"b":["abc","abc"]},"ced"],"c":["efg","hij"]}','all','abc',null,'$**.*[*].*[*]');
-ERROR:  invalid JSON path expression
-CONTEXT:  referenced column: json_search
+          json_search          
+-------------------------------
+ ["$.a[0].b[0]","$.a[0].b[1]"]
+(1 row)
+
 select json_search('{"a":[{"b":["abc","abc"]},"ced"],"c":["efg","hij"]}','all','abc',null,'$**.*[*].*[*].*');
-ERROR:  invalid JSON path expression
-CONTEXT:  referenced column: json_search
+ json_search 
+-------------
+ 
+(1 row)
+
 select json_search('{"a":[{"b":["abc","abc"]},"ced"],"c":["efg","hij"]}','all','abc',null,'$**.*[*].*[*].*','$**.*[*].*[*]');
-ERROR:  invalid JSON path expression
-CONTEXT:  referenced column: json_search
+          json_search          
+-------------------------------
+ ["$.a[0].b[0]","$.a[0].b[1]"]
+(1 row)
+
 select json_search('{"a":[{"b":["abc","abc"]},"ced"],"c":["efg","hij"]}','all','abc',null,'$**.*[*].*[*].*','$.');
-ERROR:  invalid JSON path expression
+ERROR:  cannot call function with empty path elements
 CONTEXT:  referenced column: json_search
 create table student(name VARCHAR(20) PRIMARY KEY);
 NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "student_pkey" for table "student"
@@ -747,9 +771,6 @@ select name from student;
 (1 row)
 
 drop table student;
-create table json_search_test (
-    doc json
-);
 create table c (
     doc json);
 insert into c values('{"a":"abc"}');
@@ -797,6 +818,9 @@ select *,json_search(doc, one_or_all,'abc',NULL,path) from test1;
  {"a": "abc","b": {"b": "abc", "a": "abc"}} | all        | $**.a | ["$.a","$.b.a"]
 (4 rows)
 
+create table json_search_test (
+    a text
+);
 insert into json_search_test values
 ('{"a":[{"d":["abc","bcd"]},"ced"],"c":["efg","hij"]}'),
 ('["abc","bcd"]'),
@@ -806,7 +830,7 @@ insert into json_search_test values
 insert into json_search_test values
 (json_search('{"a": 43, "b": {"c": "true"}}', 'one','true',NULL,'$.b'));
 select * from json_search_test;
-                         doc                         
+                          a                          
 -----------------------------------------------------
  {"a":[{"d":["abc","bcd"]},"ced"],"c":["efg","hij"]}
  ["abc","bcd"]

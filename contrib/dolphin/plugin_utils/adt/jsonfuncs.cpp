@@ -36,6 +36,8 @@
 #include "cjson/cJSON.h"
 #include "plugin_postgres.h"
 #include "plugin_utils/json.h"
+#include "utils/date.h"
+#include "plugin_utils/timestamp.h"
 #endif
 
 #ifdef DOLPHIN
@@ -49,6 +51,7 @@
 #define cJSON_JsonPath_IndexRanger (1 << 6)
 #define VALTYPE_IS_JSON(v) \
     ((v) == UNKNOWNOID || (v) == JSONOID || (v) == JSONBOID || (v) == CSTRINGOID || (v) == TEXTOID)
+#define wildcard_error "(\\*)(?=([^\"]|\"[^\"]*\")*$)"
 
 #define NextByte(p, plen) ((p)++, (plen)--)
 /* Set up to compile like_match.c for single-byte characters */
@@ -3415,7 +3418,7 @@ Datum json_contains(PG_FUNCTION_ARGS)
         cJSON_ResultWrapper *res = cJSON_CreateResultWrapper();
         cJSON *root = cJSON_Parse(data);
         if (DatumGetInt32(DirectFunctionCall2Coll(regexp_count_noopt, PG_GET_COLLATION(), PG_GETARG_DATUM(2),
-                                                  CStringGetTextDatum("(\\*)(?=([^\"]|\"[^\"]*\")*$)")))) {
+                                                  CStringGetTextDatum(wildcard_error)))) {
             cJSON_DeleteResultWrapper(res);
             cJSON_Delete(root);
             ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
@@ -3664,7 +3667,6 @@ void search_CleanStack(search_LinkStack &s)
 
 static Datum cut_path(Datum path, FunctionCallInfo fcinfo)
 {
-
     Datum first_cut = DirectFunctionCall4Coll(textregexreplace, PG_GET_COLLATION(), path,
                                               CStringGetTextDatum("\\s(?=([^\"]|\"[^\"]*\")*$)"),
                                               CStringGetTextDatum("\0"), CStringGetTextDatum("g"));
@@ -3684,7 +3686,7 @@ static Datum cut_path(Datum path, FunctionCallInfo fcinfo)
 
     if (DatumGetInt32(DirectFunctionCall2Coll(
             regexp_count_noopt, PG_GET_COLLATION(), second_cut,
-            CStringGetTextDatum("((\\[)[^\\[\\]]*[^\\[\\d\\]]+[^\\[\\]]*(\\]))(?=([^\"]|\"[^\"]*\")*$)")))) {
+            CStringGetTextDatum("((\\[)[^\\[\\]\\*]*[^\\[\\d\\]\\*]+[^\\[\\]\\*]*(\\]))(?=([^\"]|\"[^\"]*\")*$)")))) {
         ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("invalid JSON path expression")));
     }
 
@@ -3803,7 +3805,6 @@ text *by_path(text *target, Datum path_cut, FunctionCallInfo fcinfo)
 search_LinkStack stk = NULL;
 bool json_search_unit(text *target, text *candidate, bool mode_match, char *wildchar, char *last_position)
 {
-    errno_t rc = 0;
     JsonType tType = json_type(target);
     switch (tType) {
         case JSON_OBJECT: {
@@ -3830,21 +3831,32 @@ bool json_search_unit(text *target, text *candidate, bool mode_match, char *wild
             text *tResult = NULL;
 
             for (int k = 0; k < tState->result_count; k++) {
-                char *position = (char *)palloc(256);
-                rc = strncpy_s(position, 256, last_position, 256);
-                securec_check(rc, "\0", "\0");
+                StringInfo position = makeStringInfo();
+                appendStringInfoString(position, last_position);
                 tResult = get_worker(target, tState->result[k], -1, NULL, NULL, -1, false);
-                rc = strcat_s(position, 256, ".");
-                securec_check(rc, "\0", "\0");
-                rc = strcat_s(position, 256, tState->result[k]);
-                securec_check(rc, "\0", "\0");
-                if (json_search_unit(tResult, candidate, mode_match, wildchar, position)) {
+                appendStringInfoChar(position, '.');
+                int keyLen = strlen(tState->result[k]);
+                bool alpha_flag = true;
+                for (int i = 0; i < keyLen; i++) {
+                    if (!isalpha(tState->result[k][i])) {
+                        alpha_flag = false;
+                        break;
+                    }
+                }
+                if (alpha_flag) {
+                    appendStringInfoString(position, tState->result[k]);
+                } else {
+                    appendStringInfo(position, "\\\"%s\\\"", tState->result[k]);
+                }
+                if (json_search_unit(tResult, candidate, mode_match, wildchar, position->data)) {
                     if (mode_match == true) {
                         return true;
                     }
                     if (mode_match == false && json_type(tResult) == JSON_STRING) {
                         search_PushStack(stk, ",");
                     }
+                } else {
+                    DestroyStringInfo(position);
                 }
             }
             if (stk != NULL) {
@@ -3853,7 +3865,7 @@ bool json_search_unit(text *target, text *candidate, bool mode_match, char *wild
             for (int i = 0; i < tState->result_count; i++) {
                 pfree(tState->result[i]);
             }
-            pfree(tState->result);
+
             pfree(tState);
             break;
         }
@@ -3865,25 +3877,21 @@ bool json_search_unit(text *target, text *candidate, bool mode_match, char *wild
                 if (targetEle == NULL) {
                     break;
                 }
-                char *position = (char *)palloc(256);
-                rc = strncpy_s(position, 256, last_position, 256);
-                securec_check(rc, "\0", "\0");
+                StringInfo position = makeStringInfo();
+                appendStringInfoString(position, last_position);
                 char *arr_string = (char *)palloc(8);
                 pg_itoa(arr_int, arr_string);
-                rc = strcat_s(position, 256, "[");
-                securec_check(rc, "\0", "\0");
-                rc = strcat_s(position, 256, arr_string);
-                securec_check(rc, "\0", "\0");
-                rc = strcat_s(position, 256, "]");
-                securec_check(rc, "\0", "\0");
+                appendStringInfo(position, "[%s]", arr_string);
                 pfree(arr_string);
-                if (json_search_unit(targetEle, candidate, mode_match, wildchar, position)) {
+                if (json_search_unit(targetEle, candidate, mode_match, wildchar, position->data)) {
                     if (mode_match == true) {
                         return true;
                     }
                     if (mode_match == false && json_type(targetEle) == JSON_STRING) {
                         search_PushStack(stk, ",");
                     }
+                } else {
+                    DestroyStringInfo(position);
                 }
                 arr_int++;
             }
@@ -3914,12 +3922,9 @@ bool json_search_unit(text *target, text *candidate, bool mode_match, char *wild
                         break;
                     }
                 }
-                char *position = (char *)palloc(256);
-                rc = strncpy_s(position, 256, last_position, 256);
-                securec_check(rc, "\0", "\0");
-                rc = strcat_s(position, 256, "\"");
-                securec_check(rc, "\0", "\0");
-                search_PushStack(stk, position);
+                StringInfo position = makeStringInfo();
+                appendStringInfo(position, "%s\"", last_position);
+                search_PushStack(stk, position->data);
                 return true;
             }
         }
@@ -3951,18 +3956,6 @@ char *strrpl(char *str, char *oldstr, char *newstr)
     return str;
 }
 
-char *add_index(char *rpath)
-{
-    char *fpath = (char *)palloc(256);
-    errno_t rc = strncpy_s(fpath, 256, "[", 1);
-    securec_check(rc, "\0", "\0");
-    rc = strcat_s(fpath, 256, rpath);
-    securec_check(rc, "\0", "\0");
-    rc = strcat_s(fpath, 256, "]");
-    securec_check(rc, "\0", "\0");
-    return fpath;
-}
-
 static char *numeric_to_cstring(Numeric n)
 {
     Datum d = NumericGetDatum(n);
@@ -3972,58 +3965,51 @@ static char *numeric_to_cstring(Numeric n)
 
 char *remove_duplicate_path()
 {
-    errno_t rc = 0;
     search_LinkStack reverse_stack = NULL;
-    char *rpath = (char *)palloc(256);
-    if (strcmp(stk->data, ",") == 0) {
+    StringInfo rpath = makeStringInfo();
+    while (stk != NULL) {
+        search_PushStack(reverse_stack, stk->data);
         search_PopStack(stk);
-        while (stk != NULL) {
-            search_PushStack(reverse_stack, stk->data);
-            search_PopStack(stk);
-        }
-        char temp[64][256] = {'\0'};
-        int i = 0;
-        while (reverse_stack != NULL) {
-            rc = strncpy_s(temp[i], 256, reverse_stack->data, 256);
-            securec_check(rc, "\0", "\0");
-            i++;
-            search_PopStack(reverse_stack);
-        }
+    }
+    char temp[64][256] = {'\0'};
+    int i = 0;
+    while (reverse_stack != NULL) {
+        errno_t rc = strncpy_s(temp[i], 256, reverse_stack->data, 256);
+        securec_check(rc, "\0", "\0");
+        i++;
+        search_PopStack(reverse_stack);
+    }
 
-        int rpath_num = i;
-        for (i = 0; i < rpath_num; i++) {
-            if (strcmp(temp[i], ",") == 0) {
-                i++;
-            }
-
-            for (int j = i + 1; j < rpath_num; j++) {
-                if (strcmp(temp[j], ",") != 0) {
-                    if (*temp[i] != '\0' && *temp[i] != '\0') {
-                        if (strcmp(temp[i], temp[j]) == 0) {
-                            *temp[j] = '\0';
-                            *temp[j - 1] = '\0';
-                        }
+    int rpath_num = i;
+    for (i = 0; i < rpath_num; i++) {
+        if (strcmp(temp[i], ",") == 0 || *temp[i] == '\0') {
+            continue;
+        }
+        for (int j = i + 1; j < rpath_num; j++) {
+            if (strcmp(temp[j], ",") != 0) {
+                if (*temp[i] != '\0' && *temp[j] != '\0') {
+                    if (strcmp(temp[i], temp[j]) == 0) {
+                        *temp[j] = '\0';
+                        *temp[j - 1] = '\0';
                     }
                 }
             }
         }
-        i = 0;
-        rc = strncpy_s(rpath, 256, temp[i], 256);
-        securec_check(rc, "\0", "\0");
-        i++;
-        while (*temp[i] != '\0' && i < rpath_num) {
-            rc = strcat_s(rpath, 256, temp[i]);
-            securec_check(rc, "\0", "\0");
-            i++;
-        }
-        if (strstr(rpath, ",") != NULL) {
-            rpath = add_index(rpath);
-        }
-    } else {
-        rc = strncpy_s(rpath, 256, stk->data, 256);
-        securec_check(rc, "\0", "\0");
     }
-    return rpath;
+    appendStringInfoString(rpath, temp[0]);
+    i = 1;
+    while (i < rpath_num) {
+        if (*temp[i] != '\0') {
+            appendStringInfoString(rpath, temp[i]);
+        }
+        i++;
+    }
+    if (strstr(rpath->data, ",") != NULL) {
+        StringInfo fpath = makeStringInfo();
+        appendStringInfo(fpath, "[%s]", rpath->data);
+        return fpath->data;
+    }
+    return rpath->data;
 }
 
 Datum json_search(PG_FUNCTION_ARGS)
@@ -4036,31 +4022,52 @@ Datum json_search(PG_FUNCTION_ARGS)
     Oid val_type;
     text *search_text;
     char *search_string = (char *)palloc(32);
-    char *output_search_string = (char *)palloc(32);
-    errno_t rc = memset_s(output_search_string, 32, 0, 32);
-    securec_check(rc, "\0", "\0");
+    StringInfo output_search_string = makeStringInfo();
     val_type = get_fn_expr_argtype(fcinfo->flinfo, 2);
-    if (val_type == UNKNOWNOID) {
-        Datum search_datum = CStringGetTextDatum(PG_GETARG_POINTER(2));
-        search_string = TextDatumGetCString(search_datum);
-    } else if (val_type == INT4OID) {
-        pg_itoa(DatumGetInt32(PG_GETARG_DATUM(2)), search_string);
-    } else if (val_type == NUMERICOID) {
-        Numeric search_numeric = DatumGetNumeric(PG_GETARG_DATUM(2));
-        search_string = numeric_to_cstring(search_numeric);
-    } else {
-        PG_RETURN_NULL();
+    switch (val_type) {
+        case UNKNOWNOID: {
+            Datum search_datum = CStringGetTextDatum(PG_GETARG_POINTER(2));
+            search_string = TextDatumGetCString(search_datum);
+            break;
+        }
+        case INT4OID: {
+            pg_itoa(DatumGetInt32(PG_GETARG_DATUM(2)), search_string);
+            break;
+        }
+        case NUMERICOID: {
+            Numeric search_numeric = DatumGetNumeric(PG_GETARG_DATUM(2));
+            search_string = numeric_to_cstring(search_numeric);
+            break;
+        }
+        case FLOAT8OID: {
+            Datum search_datum = DirectFunctionCall1(float8_text, PG_GETARG_DATUM(2));
+            search_string = TextDatumGetCString(search_datum);
+            break;
+        }
+        case TIMESTAMPOID: {
+            Datum search_datum = DirectFunctionCall1(timestamp_text, PG_GETARG_DATUM(2));
+            search_string = TextDatumGetCString(search_datum);
+            break;
+        }
+        case DATEOID: {
+            Datum search_datum = DirectFunctionCall1(date_text, PG_GETARG_DATUM(2));
+            search_string = TextDatumGetCString(search_datum);
+            break;
+        }
+        case TIMEOID: {
+            Datum search_datum = DirectFunctionCall1(time_text, PG_GETARG_DATUM(2));
+            search_string = TextDatumGetCString(search_datum);
+            break;
+        }
+        default: {
+            PG_RETURN_NULL();
+        }
     }
     /* Double quotes on both sides to match. */
-    rc = strncpy_s(output_search_string, 32, "\"", 2);
-    securec_check(rc, "\0", "\0");
-    rc = strcat_s(output_search_string, 32, search_string);
-    securec_check(rc, "\0", "\0");
-    rc = strcat_s(output_search_string, 32, "\"");
-    securec_check(rc, "\0", "\0");
-    search_text = cstring_to_text(output_search_string);
+    appendStringInfo(output_search_string, "\"%s\"", search_string);
+    search_text = cstring_to_text(output_search_string->data);
     pfree(search_string);
-    pfree(output_search_string);
+    DestroyStringInfo(output_search_string);
     if (PG_NARGS() > 3 && PG_ARGISNULL(3) == 0) {
         val_type = get_fn_expr_argtype(fcinfo->flinfo, 3);
         if (val_type != BOOLOID) {
@@ -4084,13 +4091,9 @@ Datum json_search(PG_FUNCTION_ARGS)
     Datum path_cut;
     text *result = NULL;
     char *rpath = (char *)palloc(256);
-    rc = memset_s(rpath, 256, 0, 256);
+    errno_t rc = memset_s(rpath, 256, 0, 256);
     securec_check(rc, "\0", "\0");
     char *path_string = NULL;
-    char *position = (char *)palloc(256);
-    char *wildchar = (char *)palloc(256);
-    rc = memset_s(wildchar, 256, 0, 256);
-    securec_check(rc, "\0", "\0");
     Datum *pathtext = NULL;
     bool *pathnulls = NULL;
     int path_num;
@@ -4110,46 +4113,45 @@ Datum json_search(PG_FUNCTION_ARGS)
             for (i = 0; i < path_num; i++) {
                 path_cut = cut_path(pathtext[i], fcinfo);
                 path_string = TextDatumGetCString(pathtext[i]);
+                StringInfo wildchar = makeStringInfo();
+                StringInfo position = makeStringInfo();
                 /* If the path contains "*", replace it with "%" to use Matchtext(). */
                 if (strstr(path_string, "*") != NULL) {
-                    rc = strncpy_s(wildchar, 256, "\"", 2);
-                    securec_check(rc, "\0", "\0");
-
-                    rc = strcat_s(wildchar, 256, strrpl(path_string, "*", "%"));
-                    securec_check(rc, "\0", "\0");
-                    rc = strcat_s(wildchar, 256, "%");
-                    securec_check(rc, "\0", "\0");
+                    appendStringInfo(wildchar, "\"%s", strrpl(path_string, "*", "%"));
+                    appendStringInfoChar(wildchar, '%');
                     path_string[1] = '\0';
                     pathtext[i] = CStringGetTextDatum(path_string);
                     path_cut = cut_path(pathtext[i], fcinfo);
                 }
                 result = by_path(doc, path_cut, fcinfo);
                 if (result != NULL) {
-                    rc = strncpy_s(position, 256, "\"", 2);
-                    securec_check(rc, "\0", "\0");
-                    rc = strcat_s(position, 256, path_string);
-                    securec_check(rc, "\0", "\0");
-                    if (json_search_unit(result, search_text, true, wildchar, position)) {
+                    appendStringInfo(position, "\"%s", path_string);
+                    if (json_search_unit(result, search_text, true, wildchar->data, position->data)) {
                         rc = strncpy_s(rpath, 256, stk->data, 256);
                         securec_check(rc, "\0", "\0");
                         search_CleanStack(stk);
-                        pfree(position);
-                        pfree(wildchar);
-                        PG_RETURN_TEXT_P(cstring_to_text(rpath));
+                        DestroyStringInfo(position);
+                        DestroyStringInfo(wildchar);
+                        text *res = cstring_to_text(rpath);
+                        pfree(rpath);
+                        PG_RETURN_TEXT_P(res);
                     }
                 }
             }
         }
         if (PG_NARGS() < 5) {
-            rc = strncpy_s(position, 256, "\"$", 3);
-            securec_check(rc, "\0", "\0");
-            if (json_search_unit(doc, search_text, true, wildchar, position)) {
+            StringInfo wildchar = makeStringInfo();
+            StringInfo position = makeStringInfo();
+            appendStringInfoString(position, "\"$");
+            if (json_search_unit(doc, search_text, true, wildchar->data, position->data)) {
                 rc = strncpy_s(rpath, 256, stk->data, 256);
                 securec_check(rc, "\0", "\0");
                 search_CleanStack(stk);
-                pfree(position);
-                pfree(wildchar);
-                PG_RETURN_TEXT_P(cstring_to_text(rpath));
+                DestroyStringInfo(position);
+                DestroyStringInfo(wildchar);
+                text *res = cstring_to_text(rpath);
+                pfree(rpath);
+                PG_RETURN_TEXT_P(res);
             }
         }
     } else if (strcmp(one_or_all, "all") == 0) {
@@ -4158,47 +4160,54 @@ Datum json_search(PG_FUNCTION_ARGS)
             for (i = 0; i < path_num; i++) {
                 path_cut = cut_path(pathtext[i], fcinfo);
                 path_string = TextDatumGetCString(pathtext[i]);
+                StringInfo wildchar = makeStringInfo();
+                StringInfo position = makeStringInfo();
                 if (strstr(path_string, "*") != NULL) {
-                    rc = strncpy_s(wildchar, 256, "\"", 2);
-                    securec_check(rc, "\0", "\0");
-                    rc = strcat_s(wildchar, 256, strrpl(path_string, "*", "%"));
-                    securec_check(rc, "\0", "\0");
-                    rc = strcat_s(wildchar, 256, "%");
-                    securec_check(rc, "\0", "\0");
+                    appendStringInfo(wildchar, "\"%s", strrpl(path_string, "*", "%"));
+                    appendStringInfoChar(wildchar, '%');
                     path_string[1] = '\0';
                     pathtext[i] = CStringGetTextDatum(path_string);
                     path_cut = cut_path(pathtext[i], fcinfo);
                 }
                 result = by_path(doc, path_cut, fcinfo);
                 if (result != NULL) {
-                    rc = strncpy_s(position, 256, "\"", 2);
-                    securec_check(rc, "\0", "\0");
-                    rc = strcat_s(position, 256, path_string);
-                    securec_check(rc, "\0", "\0");
-                    if (json_search_unit(result, search_text, false, wildchar, position)) {
+                    appendStringInfo(position, "\"%s", path_string);
+                    if (json_search_unit(result, search_text, false, wildchar->data, position->data)) {
                         flag = true;
-                        search_PushStack(stk, ",");
+                        if (strcmp(stk->data, ",") != 0) {
+                            search_PushStack(stk, ",");
+                        }
                     }
                 }
+                DestroyStringInfo(position);
+                DestroyStringInfo(wildchar);
             }
-            pfree(position);
-            pfree(wildchar);
             if (flag == true) {
-                search_PopStack(stk);
+                if (strcmp(stk->data, ",") == 0) {
+                    search_PopStack(stk);
+                }
                 rpath = remove_duplicate_path();
                 search_CleanStack(stk);
-                PG_RETURN_TEXT_P(cstring_to_text(rpath));
+                text *res = cstring_to_text(rpath);
+                pfree(rpath);
+                PG_RETURN_TEXT_P(res);
             }
         }
         if (PG_NARGS() < 5) {
-            rc = strncpy_s(position, 256, "\"$", 3);
-            securec_check(rc, "\0", "\0");
-            if (json_search_unit(doc, search_text, false, wildchar, position)) {
+            StringInfo wildchar = makeStringInfo();
+            StringInfo position = makeStringInfo();
+            appendStringInfoString(position, "\"$");
+            if (json_search_unit(doc, search_text, false, wildchar->data, position->data)) {
+                if (strcmp(stk->data, ",") == 0) {
+                    search_PopStack(stk);
+                }
                 rpath = remove_duplicate_path();
                 search_CleanStack(stk);
-                pfree(position);
-                pfree(wildchar);
-                PG_RETURN_TEXT_P(cstring_to_text(rpath));
+                DestroyStringInfo(position);
+                DestroyStringInfo(wildchar);
+                text *res = cstring_to_text(rpath);
+                pfree(rpath);
+                PG_RETURN_TEXT_P(res);
             }
         }
     } else {
@@ -4614,12 +4623,22 @@ Datum json_array_append(PG_FUNCTION_ARGS)
         if (i == 1) {
             temp = CStringGetTextDatum(PG_GETARG_POINTER(1));
 
+            if (DatumGetInt32(DirectFunctionCall2Coll(regexp_count_noopt, PG_GET_COLLATION(), temp,
+                                                      CStringGetTextDatum(wildcard_error)))) {
+                ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+                                errmsg("in this situation, path expressions may not contain the * and ** tokens")));
+            }
             path_cut = cut_path(temp, fcinfo);
 
             result = by_path_test(PG_GETARG_TEXT_P(0), path_cut, fcinfo, PG_GETARG_DATUM(2), i);
         } else {
             temp = CStringGetTextDatum(PG_GETARG_POINTER(2 * i - 1));
 
+            if (DatumGetInt32(DirectFunctionCall2Coll(regexp_count_noopt, PG_GET_COLLATION(), temp,
+                                                      CStringGetTextDatum(wildcard_error)))) {
+                ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+                                errmsg("in this situation, path expressions may not contain the * and ** tokens")));
+            }
             path_cut = cut_path(temp, fcinfo);
 
             result = by_path_test(result, path_cut, fcinfo, PG_GETARG_DATUM(2 * i), i);
@@ -4627,6 +4646,7 @@ Datum json_array_append(PG_FUNCTION_ARGS)
     }
     PG_RETURN_TEXT_P(result);
 }
+
 Datum json_append(PG_FUNCTION_ARGS)
 {
     PG_RETURN_TEXT_P(json_array_append(fcinfo));

@@ -1,7 +1,7 @@
-drop database if exists test1;
-NOTICE:  database "test1" does not exist, skipping
-create database test1 dbcompatibility'B';
-\c test1
+drop database if exists test_json_keys;
+NOTICE:  database "test_json_keys" does not exist, skipping
+create database test_json_keys dbcompatibility'B';
+\c test_json_keys
 SELECT JSON_KEYS('{"a":"t1"}');
  json_keys 
 -----------
@@ -40,11 +40,15 @@ SELECT JSON_KEYS('{"电子科技大学":123}');
 
 SELECT JSON_KEYS('{efguewfioegwgf}');
 ERROR:  invalid input syntax for type json
+LINE 1: SELECT JSON_KEYS('{efguewfioegwgf}');
+                         ^
 DETAIL:  Token "efguewfioegwgf" is invalid.
 CONTEXT:  JSON data, line 1: {efguewfioegwgf...
 referenced column: json_keys
 SELECT JSON_KEYS('');
 ERROR:  invalid input syntax for type json
+LINE 1: SELECT JSON_KEYS('');
+                         ^
 DETAIL:  The input string ended unexpectedly.
 CONTEXT:  JSON data, line 1: 
 referenced column: json_keys
@@ -138,8 +142,7 @@ SELECT JSON_KEYS('[1,2,{"a":1,"b":{"c":2}},4]','$[8]');
  
 (1 row)
 
-create table student(name VARCHAR(20) PRIMARY KEY);
-NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "student_pkey" for table "student"
+create table student(name json);
 insert into student (name) value(json_keys('{"a":123,"b":{"c":"qwe"}}'));
 select name from student;
    name    
@@ -147,3 +150,5 @@ select name from student;
  ["a","b"]
 (1 row)
 
+\c postgres
+drop database test_json_keys;

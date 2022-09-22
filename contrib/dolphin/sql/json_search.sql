@@ -150,9 +150,6 @@ create table student(name VARCHAR(20) PRIMARY KEY);
 insert into student (name) value(json_search('{"a":[{"b":["abc","abc"]},"ced"],"c":["efg","hij"]}','all','abc',null,'$**[1]'));
 select name from student;
 drop table student;
-create table json_search_test (
-    doc json
-);
 
 create table c (
     doc json);
@@ -182,6 +179,9 @@ insert into test1 values
 ('{"a": "abc","b": {"b": "abc", "a": "abc"}}','all','$**.a');
 select *,json_search(doc, one_or_all,'abc',NULL,path) from test1;
 
+create table json_search_test (
+    a text
+);
 insert into json_search_test values
 ('{"a":[{"d":["abc","bcd"]},"ced"],"c":["efg","hij"]}'),
 ('["abc","bcd"]'),
