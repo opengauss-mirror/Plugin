@@ -27331,7 +27331,9 @@ func_expr_windowless:
             | func_expr_common_subexpr  { $$ = $1; }
         ;
 convert_list:
-            a_expr USING a_expr   {$$ = list_make2($1, $3);}
+            a_expr USING name   {$$ = list_make2($1, makeStringConst($3,-1));}
+            | a_expr USING Sconst   {$$ = list_make2($1, makeStringConst($3,-1));}
+        ;
 
 /*
  * Special expressions that are considered to be functions;
