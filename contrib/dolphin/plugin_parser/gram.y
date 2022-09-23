@@ -50,6 +50,7 @@
  */
 #include "postgres.h"
 #include "plugin_nodes/parsenodes_common.h"
+#include "plugin_parser/scanner.h"
 #include "knl/knl_variable.h"
 #include "utils/builtins.h"
 #include <ctype.h>
@@ -310,7 +311,6 @@ typedef struct DolphinString
 
 #define parser_yyerror(msg)  scanner_yyerror(msg, yyscanner)
 #define parser_errposition(pos)  scanner_errposition(pos, yyscanner)
-#define is_quoted()  pg_yyget_extra(yyscanner)->core_yy_extra.ident_quoted
 
 static long conv_bit_to_int(A_Const* bitStr);
 static void fix_bw_type(Node* bw_arg1, Node* bw_arg2, Node* bw_arg3);
@@ -501,6 +501,7 @@ static SelectStmt *MakeShowGrantStmt(char *arg, int location, core_yyscan_t yysc
 	struct SingleIndexOption	*singleindexoption;
 	struct IndexMethodRelationClause *indexmethodrelationclause;
 	struct DolphinString		*dolphinString;
+	struct DolphinIdent			*dolphinIdent;
 }
 %type <singletableoption> CreateOption CreateIfNotExistsOption CreateAsOption
 %type <createtableoptions> CreateOptionList CreateIfNotExistsOptionList CreateAsOptionList
@@ -1003,6 +1004,8 @@ static SelectStmt *MakeShowGrantStmt(char *arg, int location, core_yyscan_t yysc
 %type <list>	alter_tblspc_option_list
 %type <node>	alter_tblspc_option
 
+%type <dolphinIdent>	DolphinRoleId
+
 /*
  * Non-keyword token types.  These are hard-wired into the "flex" lexer.
  * They must be listed first so that their numeric codes do not depend on
@@ -1012,9 +1015,11 @@ static SelectStmt *MakeShowGrantStmt(char *arg, int location, core_yyscan_t yysc
  * DOT_DOT is unused in the core SQL grammar, and so will always provoke
  * parse errors.  It is needed by PL/pgsql.
  */
-%token <str>	IDENT FCONST SCONST BCONST VCONST XCONST Op CmpOp CmpNullOp COMMENTSTRING SET_USER_IDENT SET_IDENT
+%token <str>	FCONST SCONST BCONST VCONST XCONST Op CmpOp CmpNullOp COMMENTSTRING SET_USER_IDENT SET_IDENT
 %token <ival>	ICONST PARAM
 %token			TYPECAST ORA_JOINOP DOT_DOT COLON_EQUALS PARA_EQUALS SET_IDENT_SESSION SET_IDENT_GLOBAL
+
+%token <dolphinIdent>	IDENT
 
 /*
  * If you want to make any keyword changes, update the keyword table in
@@ -1561,7 +1566,7 @@ password_string:
 					t_thrd.postgres_cxt.clear_key_memory = true;
 					core_yy_extra_type yyextra = pg_yyget_extra(yyscanner)->core_yy_extra;
 					if (yyextra.ident_quoted)
-						$$ = $1;
+						$$ = $1->str;
 					else {
             			const char* message = "Password must be quoted";
             			InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);
@@ -1579,7 +1584,7 @@ namedata_string:
                 {
                     core_yy_extra_type yyextra = pg_yyget_extra(yyscanner)->core_yy_extra;
                     if (yyextra.ident_quoted)
-                        $$ = $1;
+                        $$ = $1->str;
                     else {
             			const char* message = "name data must be quoted";
             			InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);
@@ -2884,7 +2889,7 @@ set_ident_expr:
  
 					}
 				}
-			| SET_IDENT_SESSION '.' IDENT
+			| SET_IDENT_SESSION '.' normal_ident
 				{
 					SetVariableExpr *n = makeNode(SetVariableExpr);
 					n->name = $3;
@@ -2892,7 +2897,7 @@ set_ident_expr:
 					n->is_global = false;
 					$$ = (Node *) n;
 				}
-			| SET_IDENT_GLOBAL '.' IDENT
+			| SET_IDENT_GLOBAL '.' normal_ident
 				{
 					SetVariableExpr *n = makeNode(SetVariableExpr);
 					n->name = $3;
@@ -7273,7 +7278,7 @@ CreateStmt:	CREATE OptTemp TABLE dolphin_qualified_name '(' OptTableElementList 
 		;
 
 engine_option:
-	ENGINE_P opt_equal IDENT
+	ENGINE_P opt_equal normal_ident
 		{
 			$$ = NULL;
 		}
@@ -7294,7 +7299,7 @@ opt_engine:
 	;
 
 row_format_option:
-	ROW_FORMAT opt_equal IDENT
+	ROW_FORMAT opt_equal normal_ident
 		{
 			$$ = NULL;
 		}
@@ -7315,7 +7320,7 @@ opt_row_format:
 	;
 
 opt_engine_without_empty:
-	ENGINE_P opt_equal IDENT
+	ENGINE_P opt_equal normal_ident
 		{
 			$$ = NULL;
 		}
@@ -8203,7 +8208,7 @@ TypedTableElement:
 			| TableConstraint	 				{ $$ = $1; }
 		;
 
-ColIdForTableElement:	IDENT						{ $$ = downcase_str($1, is_quoted()); }
+ColIdForTableElement:	normal_ident				{ $$ = $1; }
 			| unreserved_keyword_without_key		{ $$ = downcase_str(pstrdup($1), false); }
 			| col_name_keyword						{ $$ = downcase_str(pstrdup($1), false); }
 		;
@@ -9893,12 +9898,12 @@ OptStorage_without_empty:
 		;
 		
 OptInitial:
-		INITIAL_P Iconst IDENT
+		INITIAL_P Iconst normal_ident
 		| /* empty */
 		;
 
 OptNext:
-		NEXT Iconst IDENT
+		NEXT Iconst normal_ident
 		| /*empty*/
 		;
 
@@ -10878,7 +10883,7 @@ LoggingStr:
 		;
 
 OptDatafileSize:
-			SIZE Iconst IDENT 							{ $$ = NULL; }
+			SIZE Iconst normal_ident 							{ $$ = NULL; }
 			| /*EMPTY */								{ $$ = NULL; }
 		;
 
@@ -10894,7 +10899,7 @@ OptAuto:
 		;
 
 OptNextStr:
-			NEXT Iconst IDENT							{ $$ = NULL; }
+			NEXT Iconst normal_ident							{ $$ = NULL; }
 			| /*EMPTY */								{ $$ = NULL; }
 		;
 
@@ -11955,7 +11960,7 @@ CreateUserMappingStmt: CREATE USER MAPPING FOR auth_ident SERVER name create_gen
 auth_ident:
 			CURRENT_USER	{ $$ = "current_user"; }
 		|	USER			{ $$ = "current_user"; }
-		|	RoleId			{ $$ = DolphinObjNameCmp($1, "public", is_quoted()) ? NULL : $1; }
+		|	DolphinRoleId	{ $$ = DolphinObjNameCmp($1->str, "public", $1->is_quoted) ? NULL : $1->str; }
 		;
 
 /*****************************************************************************
@@ -12248,7 +12253,7 @@ row_level_security_role_list: row_level_security_role
 					;
 
 row_level_security_role:
-			RoleId			{ char* result = "public"; $$ = DolphinObjNameCmp($1, "public", is_quoted()) ? result : $1; }
+			DolphinRoleId	{ char* result = "public"; $$ = DolphinObjNameCmp($1->str, "public", $1->is_quoted) ? result : $1->str; }
 		|	CURRENT_USER	{ $$ = pstrdup($1); }
 		|	SESSION_USER	{ $$ = pstrdup($1); }
 		;
@@ -14776,24 +14781,24 @@ grantee_list:
 			| grantee_list ',' grantee				{ $$ = lappend($1, $3); }
 		;
 
-grantee:	RoleId
+grantee:	DolphinRoleId
 				{
 					PrivGrantee *n = makeNode(PrivGrantee);
 					/* This hack lets us avoid reserving PUBLIC as a keyword*/
-					if (DolphinObjNameCmp($1, "public", is_quoted()))
+					if (DolphinObjNameCmp($1->str, "public", $1->is_quoted))
 						n->rolname = NULL;
 					else
-						n->rolname = $1;
+						n->rolname = $1->str;
 					$$ = (Node *)n;
 				}
-			| GROUP_P RoleId
+			| GROUP_P DolphinRoleId
 				{
 					PrivGrantee *n = makeNode(PrivGrantee);
 					/* Treat GROUP PUBLIC as a synonym for PUBLIC */
-					if (DolphinObjNameCmp($2, "public", is_quoted()))
+					if (DolphinObjNameCmp($2->str, "public", $2->is_quoted))
 						n->rolname = NULL;
 					else
-						n->rolname = $2;
+						n->rolname = $2->str;
 					$$ = (Node *)n;
 				}
 		;
@@ -29745,7 +29750,7 @@ dolphin_func_name:	type_function_name
 func_name_opt_arg:
 						func_name
 						/* This rule is never used. */
-						| IDENT BOGUS							{ $$ = NIL; }
+						| normal_ident BOGUS							{ $$ = NIL; }
 						/* This rule is never used. */
 						| unreserved_keyword BOGUS				{ $$ = NIL; };
 
@@ -29882,9 +29887,15 @@ AexprConst: Iconst
 Iconst:		ICONST									{ $$ = $1; };
 Sconst:		SCONST									{ $$ = $1; };
 
-RoleId:		IDENT									{ $$ = GetDolphinObjName($1, is_quoted()); }
-			| unreserved_keyword					{ $$ = GetDolphinObjName(pstrdup($1), is_quoted()); }
-			| col_name_keyword						{ $$ = GetDolphinObjName(pstrdup($1), is_quoted()); }
+DolphinRoleId:		IDENT							{ $$ = $1; }
+					| unreserved_keyword			{ $$ = CreateDolphinIdent(pstrdup($1), false); }
+					| col_name_keyword				{ $$ = CreateDolphinIdent(pstrdup($1), false); }
+		;
+
+
+RoleId:		IDENT									{ $$ = GetDolphinObjName($1->str, $1->is_quoted); }
+			| unreserved_keyword					{ $$ = GetDolphinObjName(pstrdup($1), false); }
+			| col_name_keyword						{ $$ = GetDolphinObjName(pstrdup($1), false); }
 		;
 
 SignedIconst: Iconst								{ $$ = $1; }
@@ -29905,39 +29916,39 @@ SignedIconst: Iconst								{ $$ = $1; }
 
 /* Column identifier --- names that can be column, table, etc names.
  */
-ColId:		IDENT									{ $$ = downcase_str($1, is_quoted()); }
-			| unreserved_keyword					{ $$ = downcase_str(pstrdup($1), is_quoted()); }
-			| col_name_keyword						{ $$ = downcase_str(pstrdup($1), is_quoted()); }
+ColId:		IDENT									{ $$ = downcase_str($1->str, $1->is_quoted); }
+			| unreserved_keyword					{ $$ = downcase_str(pstrdup($1), false); }
+			| col_name_keyword						{ $$ = downcase_str(pstrdup($1), false); }
 		;
 
-DolphinColId:		IDENT							{ $$ = MakeDolphinStringByChar($1, is_quoted()); }
-					| unreserved_keyword			{ $$ = MakeDolphinStringByChar(pstrdup($1), is_quoted()); }
-					| col_name_keyword				{ $$ = MakeDolphinStringByChar(pstrdup($1), is_quoted()); }
+DolphinColId:		IDENT							{ $$ = MakeDolphinStringByChar($1->str, $1->is_quoted); }
+					| unreserved_keyword			{ $$ = MakeDolphinStringByChar(pstrdup($1), false); }
+					| col_name_keyword				{ $$ = MakeDolphinStringByChar(pstrdup($1), false); }
 		;
 
-PrivilegeColId:         IDENT                                                           { $$ = downcase_str($1, is_quoted()); }
-                        | unreserved_keyword_without_proxy                              { $$ = downcase_str(pstrdup($1), is_quoted()); }
-                        | col_name_keyword                                              { $$ = downcase_str(pstrdup($1), is_quoted()); }
+PrivilegeColId:         normal_ident                                                    { $$ = $1; }
+                        | unreserved_keyword_without_proxy                              { $$ = downcase_str(pstrdup($1), false); }
+                        | col_name_keyword                                              { $$ = downcase_str(pstrdup($1), false); }
 		;
 
 /* Type/function identifier --- names that can be type or function names.
  */
-type_function_name:	IDENT							{ $$ = downcase_str($1, is_quoted()); }
-			| unreserved_keyword					{ $$ = downcase_str(pstrdup($1), is_quoted()); }
-			| type_func_name_keyword				{ $$ = downcase_str(pstrdup($1), is_quoted()); }
+type_function_name:	normal_ident							{ $$ = $1; }
+			| unreserved_keyword					{ $$ = downcase_str(pstrdup($1), false); }
+			| type_func_name_keyword				{ $$ = downcase_str(pstrdup($1), false); }
 		;
 
 /* Column label --- allowed labels in "AS" clauses.
  * This presently includes *all* Postgres keywords.
  */
-ColLabel:	IDENT									{ $$ = downcase_str($1, is_quoted()); }
-			| unreserved_keyword					{ $$ = downcase_str(pstrdup($1), is_quoted()); }
-			| col_name_keyword						{ $$ = downcase_str(pstrdup($1), is_quoted()); }
-			| type_func_name_keyword				{ $$ = downcase_str(pstrdup($1), is_quoted()); }
+ColLabel:	normal_ident							{ $$ = $1; }
+			| unreserved_keyword					{ $$ = downcase_str(pstrdup($1), false); }
+			| col_name_keyword						{ $$ = downcase_str(pstrdup($1), false); }
+			| type_func_name_keyword				{ $$ = downcase_str(pstrdup($1), false); }
 			| reserved_keyword
 				{
 					/* ROWNUM can not be used as alias */
-					if (DolphinObjNameCmp($1, "rownum", is_quoted())) {
+					if (DolphinObjNameCmp($1, "rownum", false)) {
 						const char* message = "ROWNUM cannot be used as an alias";
 						InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);
 						ereport(errstate,
@@ -29952,14 +29963,14 @@ ColLabel:	IDENT									{ $$ = downcase_str($1, is_quoted()); }
 /*
  * Column lable of dolphin type
  */
-DolphinColLabel:	IDENT									{ $$ = MakeDolphinStringByChar($1, is_quoted()); }
-					| unreserved_keyword					{ $$ = MakeDolphinStringByChar(pstrdup($1), is_quoted()); }
-					| col_name_keyword						{ $$ = MakeDolphinStringByChar(pstrdup($1), is_quoted()); }
-					| type_func_name_keyword				{ $$ = MakeDolphinStringByChar(pstrdup($1), is_quoted()); }
+DolphinColLabel:	IDENT									{ $$ = MakeDolphinStringByChar($1->str, $1->is_quoted); }
+					| unreserved_keyword					{ $$ = MakeDolphinStringByChar(pstrdup($1), false); }
+					| col_name_keyword						{ $$ = MakeDolphinStringByChar(pstrdup($1), false); }
+					| type_func_name_keyword				{ $$ = MakeDolphinStringByChar(pstrdup($1), false); }
 					| reserved_keyword
 						{
 							/* ROWNUM can not be used as alias */
-							if (DolphinObjNameCmp($1, "rownum", is_quoted())) {
+							if (DolphinObjNameCmp($1, "rownum", false)) {
 								const char* message = "ROWNUM cannot be used as an alias";
 								InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);
 								ereport(errstate,
@@ -29967,7 +29978,7 @@ DolphinColLabel:	IDENT									{ $$ = MakeDolphinStringByChar($1, is_quoted()); 
 										errmsg("ROWNUM cannot be used as an alias"),
 												parser_errposition(@1)));
 							}
-							$$ = MakeDolphinStringByChar(pstrdup($1), is_quoted());
+							$$ = MakeDolphinStringByChar(pstrdup($1), false);
 						}
 		;
 
@@ -30739,7 +30750,7 @@ reserved_keyword:
 		;
 
 /* normal_ident */
-normal_ident:		IDENT							{ $$ = downcase_str($1, is_quoted()); };
+normal_ident:		IDENT							{ $$ = downcase_str($1->str, $1->is_quoted); };
 
 %%
 
@@ -33314,6 +33325,14 @@ static bool DolphinObjNameCmp(const char* s1, const char* s2, bool is_quoted)
 		}
 	}
 	return true;
+}
+
+DolphinIdent* CreateDolphinIdent(char* ident, bool is_quoted)
+{
+    DolphinIdent* dolphinIdent = (DolphinIdent*)palloc(sizeof(DolphinIdent));
+    dolphinIdent->str = ident;
+    dolphinIdent->is_quoted = is_quoted;
+    return dolphinIdent;
 }
 
 /*

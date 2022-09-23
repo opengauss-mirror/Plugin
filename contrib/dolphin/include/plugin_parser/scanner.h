@@ -28,6 +28,12 @@
 #define ereport(a, b) fe_rethrow(yyscanner)
 #endif
 
+typedef struct DolphinIdent
+{
+	char* str;
+	bool is_quoted;
+} DolphinIdent;
+
 /*
  * The scanner returns extra data about scanned tokens in this union type.
  * Note that this is a subset of the fields used in YYSTYPE of the bison
@@ -37,6 +43,7 @@ typedef union core_YYSTYPE {
     int ival;            /* for integer literals */
     char* str;           /* for identifiers and non-integer literals */
     const char* keyword; /* canonical spelling of keywords */
+    DolphinIdent* dolphinIdent;
 } core_YYSTYPE;
 
 /*
@@ -151,6 +158,8 @@ extern int core_yylex(core_YYSTYPE* lvalp, YYLTYPE* llocp, core_yyscan_t yyscann
 extern int scanner_errposition(int location, core_yyscan_t yyscanner);
 extern void scanner_yyerror(const char* message, core_yyscan_t yyscanner);
 extern void addErrorList(const char* message, int lines);
+
+extern DolphinIdent* CreateDolphinIdent(char* ident, bool is_quoted);
 
 #endif /* SCANNER_H */
 
