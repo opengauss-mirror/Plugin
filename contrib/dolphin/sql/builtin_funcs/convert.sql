@@ -11,5 +11,6 @@ select convert(1 using 'utf8');
 select convert(1 using 'gbk');
 select convert(1 using 'utf8');
 select convert('测试' using 'utf8');
+select convert('测试' using utf8);
 \c postgres
 drop database if exists db_convert;
