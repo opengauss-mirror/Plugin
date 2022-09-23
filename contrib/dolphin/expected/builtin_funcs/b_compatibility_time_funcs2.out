@@ -609,8 +609,6 @@ insert into func_test2(functionName, result) values('TIMESTAMPADD(YEAR,1,''2022-
 ERROR:  date/time field value out of range: "2022-07-27 24:30:00"
 CONTEXT:  referenced column: result
 insert into func_test2(functionName, result) values('TIMESTAMPADD(YEAR,-1,''2022-07-27 -01:-30:00'')', TIMESTAMPADD(YEAR,-1,'2022-07-27 -01:-30:00'));
-ERROR:  time zone displacement out of range: "2022-07-27 -01:-30:00"
-CONTEXT:  referenced column: result
 insert into func_test2(functionName, result) values('TIMESTAMPADD(MONTH,1,''2022-07-27 26:61:60'')', TIMESTAMPADD(MONTH,1,'2022-07-27 26:61:60'));
 ERROR:  date/time field value out of range: "2022-07-27 26:61:60"
 CONTEXT:  referenced column: result
@@ -629,8 +627,6 @@ insert into func_test2(functionName, result) values('TIMESTAMPADD(MINUTE,1,''202
 ERROR:  date/time field value out of range: "2022-07-27 08:61:00"
 CONTEXT:  referenced column: result
 insert into func_test2(functionName, result) values('TIMESTAMPADD(MINUTE,-1,''2022-07-27 08:-59:00'')', TIMESTAMPADD(MINUTE,-1,'2022-07-27 08:-59:00'));
-ERROR:  time zone displacement out of range: "2022-07-27 08:-59:00"
-CONTEXT:  referenced column: result
 insert into func_test2(functionName, result) values('TIMESTAMPADD(SECOND,1,''2022-07-27 08:30:60'')', TIMESTAMPADD(SECOND,1,'2022-07-27 08:30:60'));
 ERROR:  date/time field value out of range: "2022-07-27 08:30:60"
 CONTEXT:  referenced column: result
@@ -964,9 +960,11 @@ select * from func_test2;
  TIMESTAMPADD(SECOND,-1.1,'2022-07-27')                                                      | Tue Jul 26 23:59:58.9 2022
  TIMESTAMPADD(SECOND,1.6,'2022-07-27')                                                       | Wed Jul 27 00:00:01.6 2022
  TIMESTAMPADD(SECOND,-1.6,'2022-07-27')                                                      | Tue Jul 26 23:59:58.4 2022
- TIMESTAMPADD(DAY,1,'2022-07-27 -01:30:00')                                                  | Thu Jul 28 00:00:00 2022
- TIMESTAMPADD(HOUR,1,'2022-07-27 -12:30:00')                                                 | Wed Jul 27 01:00:00 2022
- TIMESTAMPADD(SECOND,-1,'2022-07-27 08:30:-01')                                              | Wed Jul 27 08:29:59 2022
+ TIMESTAMPADD(YEAR,-1,'2022-07-27 -01:-30:00')                                               | Tue Jul 27 01:30:00 2021
+ TIMESTAMPADD(DAY,1,'2022-07-27 -01:30:00')                                                  | Thu Jul 28 01:30:00 2022
+ TIMESTAMPADD(HOUR,1,'2022-07-27 -12:30:00')                                                 | Wed Jul 27 13:30:00 2022
+ TIMESTAMPADD(MINUTE,-1,'2022-07-27 08:-59:00')                                              | Wed Jul 27 08:58:00 2022
+ TIMESTAMPADD(SECOND,-1,'2022-07-27 08:30:-01')                                              | Wed Jul 27 08:30:00 2022
  TIMESTAMPADD(HOUR,true,'2022-04-05')                                                        | Tue Apr 05 01:00:00 2022
  TIMESTAMPADD(HOUR,B'11','2022-04-05')                                                       | Tue Apr 05 03:00:00 2022
  TIMESTAMPADD(DAY,1,cast('2022-04-05' as datetime))                                          | Wed Apr 06 00:00:00 2022
@@ -998,7 +996,7 @@ select * from func_test2;
  TIMESTAMPADD(SECOND,-1,'2022-07-27 00:00:00')                                               | Tue Jul 26 23:59:59 2022
  TIMESTAMPADD(SECOND,0.001,'2022-07-27 08:30:59.999')                                        | Wed Jul 27 08:31:00 2022
  TIMESTAMPADD(SECOND,-0.001,'2022-07-27 00:00:00')                                           | Tue Jul 26 23:59:59.999 2022
-(260 rows)
+(262 rows)
 
 \c postgres
 drop database if exists b_time_funcs2;
