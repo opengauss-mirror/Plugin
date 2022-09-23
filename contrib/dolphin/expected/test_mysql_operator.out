@@ -3,7 +3,7 @@ NOTICE:  database "test_op_and" does not exist, skipping
 CREATE DATABASE test_op_and with dbcompatibility='B';
 \c test_op_and
 set b_compatibility_mode = 1;
----create extension dolphin;
+set sql_mode = 'sql_mode_strict,sql_mode_full_group';
 ---create table
 create table testforboolean(a boolean,b boolean);
 create table testforint(a int,b int);
@@ -12,8 +12,6 @@ create table testforbit(a bit(4),b bit(4));
 create table testfordate(a date,b date);
 create table testfortime(a time,b time);
 create table testforstring(a varchar,b varchar);
----create table testforbytea(a bytea ,b bytea );
---create table testfordate(a date,b date);
 ---insert data
 insert into testforboolean values(true,true);
 insert into testforboolean values(true,false);
@@ -68,9 +66,6 @@ insert into testfortime values(null,null);
 insert into testforstring values('10','10');
 insert into testforstring values('-10','+01');
 insert into testforstring values('123a','123a');
----insert into testforstring values('1001','1001a');
----ERROR:invalid input;
----select a^b from table
 select a&&b from testforboolean;
  ?column? 
 ----------
@@ -80,6 +75,18 @@ select a&&b from testforboolean;
  f
  
  f
+ 
+(7 rows)
+
+select a||b from testforboolean;
+ ?column? 
+----------
+ t
+ t
+ t
+ f
+ t
+ 
  
 (7 rows)
 
@@ -97,6 +104,20 @@ select a&&b from testforint;
  
 (9 rows)
 
+select a||b from testforint;
+ ?column? 
+----------
+ t
+ t
+ t
+ t
+ t
+ f
+ t
+ 
+ 
+(9 rows)
+
 select a&&b from testforfloat;
  ?column? 
 ----------
@@ -111,9 +132,38 @@ select a&&b from testforfloat;
  f
 (9 rows)
 
+select a||b from testforfloat;
+ ?column? 
+----------
+ t
+ t
+ t
+ t
+ t
+ f
+ t
+ f
+ f
+(9 rows)
+
+---正常报错，openGauss中本身的bit类型做and操作即返回此错误
 select a&&b from testforbit;
 ERROR:  NULL input for detoast datum
+---正常报错，openGauss中本身的bit类型做or操作即返回此错误
+select a||b from testforbit;
+ERROR:  NULL input for detoast datum
 select a&&b from testfordate;
+ ?column? 
+----------
+ t
+ t
+ t
+ t
+ t
+ t
+(6 rows)
+
+select a||b from testfordate;
  ?column? 
 ----------
  t
@@ -139,9 +189,30 @@ select a&&b from testfortime;
  f
 (10 rows)
 
+select a||b from testfortime;
+ ?column? 
+----------
+ t
+ t
+ t
+ t
+ t
+ t
+ f
+ t
+ f
+ f
+(10 rows)
+
+---正常报错，&&的输入类型不能为字符串
 select a&&b from testforstring;
 ERROR:  argument of AND must be type boolean, not type character varying
 LINE 1: select a&&b from testforstring;
+               ^
+---正常报错，||的输入类型不能为字符串
+select a||b from testforstring;
+ERROR:  argument of OR must be type boolean, not type character varying
+LINE 1: select a||b from testforstring;
                ^
 ---drop table
 drop table testforboolean;
@@ -232,7 +303,6 @@ insert into testforint2_p4 values(2,123);
 insert into testforint2_p5 values(-1,-1);
 insert into testforint2_p5 values(1,0);
 insert into testforint2_p5 values(2,123);
----select a^b
 select a&&b from testforboolean;
  ?column? 
 ----------
@@ -242,6 +312,18 @@ select a&&b from testforboolean;
  f
  
  f
+ 
+(7 rows)
+
+select a||b from testforboolean;
+ ?column? 
+----------
+ t
+ t
+ t
+ f
+ t
+ 
  
 (7 rows)
 
@@ -259,6 +341,20 @@ select a&&b from testforint;
  
 (9 rows)
 
+select a||b from testforint;
+ ?column? 
+----------
+ t
+ t
+ t
+ t
+ t
+ f
+ t
+ 
+ 
+(9 rows)
+
 select a&&b from testforfloat;
  ?column? 
 ----------
@@ -273,7 +369,25 @@ select a&&b from testforfloat;
  f
 (9 rows)
 
+select a||b from testforfloat;
+ ?column? 
+----------
+ t
+ t
+ t
+ t
+ t
+ f
+ t
+ f
+ f
+(9 rows)
+
+---正常报错，openGauss中本身的bit类型做and操作即返回此错误
 select a&&b from testforbit;
+ERROR:  NULL input for detoast datum
+---正常报错，openGauss中本身的bit类型做or操作即返回此错误
+select a||b from testforbit;
 ERROR:  NULL input for detoast datum
 select a&&b from testforboolean_u;
  ?column? 
@@ -284,6 +398,18 @@ select a&&b from testforboolean_u;
  f
  
  f
+ 
+(7 rows)
+
+select a||b from testforboolean_u;
+ ?column? 
+----------
+ t
+ t
+ t
+ f
+ t
+ 
  
 (7 rows)
 
@@ -299,11 +425,31 @@ select a&&b from testforboolean_s;
  
 (7 rows)
 
+select a||b from testforboolean_s;
+ ?column? 
+----------
+ t
+ t
+ t
+ f
+ t
+ 
+ 
+(7 rows)
+
 select a&&b from testforint2_p1;
  ?column? 
 ----------
  t
  f
+ t
+(3 rows)
+
+select a||b from testforint2_p1;
+ ?column? 
+----------
+ t
+ t
  t
 (3 rows)
 
@@ -315,11 +461,27 @@ select a&&b from testforint2_p2;
  t
 (3 rows)
 
+select a||b from testforint2_p2;
+ ?column? 
+----------
+ t
+ t
+ t
+(3 rows)
+
 select a&&b from testforint2_p3;
  ?column? 
 ----------
  t
  f
+ t
+(3 rows)
+
+select a||b from testforint2_p3;
+ ?column? 
+----------
+ t
+ t
  t
 (3 rows)
 
@@ -331,6 +493,14 @@ select a&&b from testforint2_p4;
  t
 (3 rows)
 
+select a||b from testforint2_p4;
+ ?column? 
+----------
+ t
+ t
+ t
+(3 rows)
+
 select a&&b from testforint2_p5;
  ?column? 
 ----------
@@ -339,18 +509,38 @@ select a&&b from testforint2_p5;
  f
 (3 rows)
 
+select a||b from testforint2_p5;
+ ?column? 
+----------
+ t
+ t
+ t
+(3 rows)
+
 ---create view
 create view testforboolean_v as select * from testforboolean;
-select a^b from testforboolean_v;
-      ?column?      
---------------------
- 1.0000000000000000
- 1.0000000000000000
- 0.0000000000000000
- 1.0000000000000000
-                   
-                   
-                   
+select a&&b from testforboolean_v;
+ ?column? 
+----------
+ t
+ f
+ f
+ f
+ 
+ f
+ 
+(7 rows)
+
+select a||b from testforboolean_v;
+ ?column? 
+----------
+ t
+ t
+ t
+ f
+ t
+ 
+ 
 (7 rows)
 
 drop view testforboolean_v;
@@ -379,17 +569,59 @@ select char_length('asbjhc')&&char_length('askjdhkj');
  t
 (1 row)
 
+---正常报错，&&的输入类型不能为text
 select left('1023jasdzlxc',5)&&left('1023jasdnzxc',5);
 ERROR:  argument of AND must be type boolean, not type text
 LINE 1: select left('1023jasdzlxc',5)&&left('1023jasdnzxc',5);
                ^
+---正常报错，&&的输入类型不能为text
 select substring('as1dz34lcas',3)&&substring('zxcbkj1shd',5);
 ERROR:  argument of AND must be type boolean, not type text
 LINE 1: select substring('as1dz34lcas',3)&&substring('zxcbkj1shd',5)...
                ^
+---正常报错，&&的输入类型不能为text
 select replace('123456789','234','asd')&&replace('123456789','234','asd');
 ERROR:  argument of AND must be type boolean, not type text
 LINE 1: select replace('123456789','234','asd')&&replace('123456789'...
+               ^
+select count(tem) from (select a||b tem from testforboolean);
+ count 
+-------
+     5
+(1 row)
+
+select a||b,b from testforboolean order by b;
+ ?column? | b 
+----------+---
+ f        | f
+ t        | f
+ t        | t
+ t        | t
+ t        | 
+          | 
+          | 
+(7 rows)
+
+select char_length('asbjhc')||char_length('askjdhkj');
+ ?column? 
+----------
+ t
+(1 row)
+
+---正常报错，||的输入类型不能为text
+select left('1023jasdzlxc',5)||left('1023jasdnzxc',5);
+ERROR:  argument of OR must be type boolean, not type text
+LINE 1: select left('1023jasdzlxc',5)||left('1023jasdnzxc',5);
+               ^
+---正常报错，||的输入类型不能为text
+select substring('as1dz34lcas',3)||substring('zxcbkj1shd',5);
+ERROR:  argument of OR must be type boolean, not type text
+LINE 1: select substring('as1dz34lcas',3)||substring('zxcbkj1shd',5)...
+               ^
+---正常报错，||的输入类型不能为text
+select replace('123456789','234','asd')||replace('123456789','234','asd');
+ERROR:  argument of OR must be type boolean, not type text
+LINE 1: select replace('123456789','234','asd')||replace('123456789'...
                ^
 --- test for arithmetic op
 select 1+1 && 1;
@@ -404,6 +636,18 @@ select 1+1 && 0;
  f
 (1 row)
 
+select 1+1 || 1;
+ ?column? 
+----------
+ t
+(1 row)
+
+select 1+1 || 0;
+ ?column? 
+----------
+ t
+(1 row)
+
 select 1-1 && 1;
  ?column? 
 ----------
@@ -411,6 +655,18 @@ select 1-1 && 1;
 (1 row)
 
 select 0-1 && 1;
+ ?column? 
+----------
+ t
+(1 row)
+
+select 1-1 || 1;
+ ?column? 
+----------
+ t
+(1 row)
+
+select 0-1 || 1;
  ?column? 
 ----------
  t
@@ -428,6 +684,18 @@ select 0*3 && 1;
  f
 (1 row)
 
+select 1*2 || 1;
+ ?column? 
+----------
+ t
+(1 row)
+
+select 0*3 || 1;
+ ?column? 
+----------
+ t
+(1 row)
+
 select cast(4/2 as int) && 1;
  ?column? 
 ----------
@@ -440,6 +708,18 @@ select cast(0/3 as int) && 1;
  f
 (1 row)
 
+select cast(4/2 as int) || 1;
+ ?column? 
+----------
+ t
+(1 row)
+
+select cast(0/3 as int) || 1;
+ ?column? 
+----------
+ t
+(1 row)
+
 select 6%3 && 1;
  ?column? 
 ----------
@@ -447,6 +727,18 @@ select 6%3 && 1;
 (1 row)
 
 select 6%4 && 1;
+ ?column? 
+----------
+ t
+(1 row)
+
+select 6%3 || 1;
+ ?column? 
+----------
+ t
+(1 row)
+
+select 6%4 || 1;
  ?column? 
 ----------
  t
@@ -465,6 +757,18 @@ select 0<1 && 1;
  t
 (1 row)
 
+select 1<1 || 1;
+ ?column? 
+----------
+ t
+(1 row)
+
+select 0<1 || 1;
+ ?column? 
+----------
+ t
+(1 row)
+
 select 1>1 && 1;
  ?column? 
 ----------
@@ -472,6 +776,18 @@ select 1>1 && 1;
 (1 row)
 
 select 1>0 && 1;
+ ?column? 
+----------
+ t
+(1 row)
+
+select 1>1 || 1;
+ ?column? 
+----------
+ t
+(1 row)
+
+select 1>0 || 1;
  ?column? 
 ----------
  t
@@ -489,6 +805,18 @@ select 0=1 && 1;
  f
 (1 row)
 
+select 1=1 || 1;
+ ?column? 
+----------
+ t
+(1 row)
+
+select 0=1 || 1;
+ ?column? 
+----------
+ t
+(1 row)
+
 select 1!=1 && 1;
  ?column? 
 ----------
@@ -496,6 +824,18 @@ select 1!=1 && 1;
 (1 row)
 
 select 1!=0 && 1;
+ ?column? 
+----------
+ t
+(1 row)
+
+select 1!=1 || 1;
+ ?column? 
+----------
+ t
+(1 row)
+
+select 1!=0 || 1;
  ?column? 
 ----------
  t
@@ -513,6 +853,18 @@ select 1<>0 && 1;
  t
 (1 row)
 
+select 1<>1 || 1;
+ ?column? 
+----------
+ t
+(1 row)
+
+select 1<>0 || 1;
+ ?column? 
+----------
+ t
+(1 row)
+
 select 1>=1 && 1;
  ?column? 
 ----------
@@ -525,6 +877,18 @@ select 1>=2 && 1;
  f
 (1 row)
 
+select 1>=1 || 1;
+ ?column? 
+----------
+ t
+(1 row)
+
+select 1>=2 || 1;
+ ?column? 
+----------
+ t
+(1 row)
+
 select 1<=1 && 1;
  ?column? 
 ----------
@@ -535,6 +899,18 @@ select 1<=0 && 1;
  ?column? 
 ----------
  f
+(1 row)
+
+select 1<=1 || 1;
+ ?column? 
+----------
+ t
+(1 row)
+
+select 1<=0 || 1;
+ ?column? 
+----------
+ t
 (1 row)
 
 ---create function
@@ -554,11 +930,28 @@ select test(true,false);
  f
 (1 row)
 
-drop procedure test;
+drop function test;
+create function test (boolean,boolean) returns boolean
+    as 'select $1||$2;'
+    language sql
+    returns null on null input;
+select test(true,true);
+ test 
+------
+ t
+(1 row)
+
+select test(true,false);
+ test 
+------
+ t
+(1 row)
+
+drop function test;
 ---create procedure
 create procedure test1(in a boolean,in b boolean)
-as 
-begin 
+as
+begin
    raise notice '%', a&&b;
 end;
 /
@@ -584,6 +977,34 @@ NOTICE:  f
 (1 row)
 
 drop procedure test1;
+create procedure test1(in a boolean,in b boolean)
+as
+begin
+   raise notice '%', a||b;
+end;
+/
+call test1(true,true);
+NOTICE:  t
+ test1 
+-------
+ 
+(1 row)
+
+call test1(true,false);
+NOTICE:  t
+ test1 
+-------
+ 
+(1 row)
+
+call test1(false,null);
+NOTICE:  <NULL>
+ test1 
+-------
+ 
+(1 row)
+
+drop procedure test1;
 ---drop table
 drop table testforboolean;
 drop table testforint;
@@ -598,6 +1019,7 @@ drop table testforint2_p4;
 drop table testforint2_p5;
 ---drop database
 set b_compatibility_mode = 0;
+set sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat';
 \c postgres
 drop database test_op_and;
 drop database if exists test_op_xor;
@@ -885,14 +1307,17 @@ select abs(1^1);
    0
 (1 row)
 
+---正常报错：^不能作为表名
 create table ^;
 ERROR:  syntax error at or near "^"
 LINE 1: create table ^;
                      ^
+---正常报错：^不能作为表的列名
 create table test(^ int);
 ERROR:  syntax error at or near "^"
 LINE 1: create table test(^ int);
                           ^
+---正常报错：^不能作为函数名
 create function ^;
 ERROR:  syntax error at or near "^"
 LINE 1: create function ^;
@@ -901,30 +1326,37 @@ drop function if exists ^;
 ERROR:  syntax error at or near "^"
 LINE 1: drop function if exists ^;
                                 ^
+---正常报错：^不能作为存储过程名
 create procedure ^;
 ERROR:  syntax error at or near "^"
 LINE 1: create procedure ^;
                          ^
+---正常报错：^不能作为视图名
 create view ^;
 ERROR:  syntax error at or near "^"
 LINE 1: create view ^;
                     ^
+---正常报错：^不能作为数据库名
 create database ^;
 ERROR:  syntax error at or near "^"
 LINE 1: create database ^;
                         ^
+---正常报错：^不能作为目录名
 create index ^;
 ERROR:  syntax error at or near "^"
 LINE 1: create index ^;
                      ^
+---正常报错：^不能作为序列名
 create sequence ^ increment by 1 minvalue 1 no maxvalue start with 1;
 ERROR:  syntax error at or near "^"
 LINE 1: create sequence ^ increment by 1 minvalue 1 no maxvalue star...
                         ^
+---正常报错：^不能作为用户名
 create user ^ identified by 'hw123456';
 ERROR:  syntax error at or near "^"
 LINE 1: create user ^ identified by 'hw123456';
                     ^
+---正常报错：^不能作为角色名
 create role ^ identified by 'hw123456';
 ERROR:  syntax error at or near "^"
 LINE 1: create role ^ identified by 'hw123456';
@@ -1062,8 +1494,13 @@ drop table testforbit;
 drop table testforint2;
 drop table testforint4;
 drop table testforint8;
+drop table testforbit_s;
+drop table testforbit_u;
 drop table testforint2_p1;
 drop table testforint2_p2;
+drop table testforint2_p3;
+drop table testforint2_p4;
+drop table testforint2_p5;
 ---drop database
 set b_compatibility_mode = 0;
 \c postgres
@@ -1079,24 +1516,16 @@ select 'a' like 'A';
  t
 (1 row)
 
-select 'a' like;
+---正常报错，like右边缺参数
+select 'a' like; 
 ERROR:  syntax error at or near ";"
 LINE 1: select 'a' like;
                        ^
+---正常报错，like右边参数过多
 select 'a' like 'A' 'a';
 ERROR:  syntax error at or near "'a'"
 LINE 1: select 'a' like 'A' 'a';
                             ^
-select cast('c' as bytea) like cast('c' as bytea);
-ERROR:  operator does not exist: bytea ~~* bytea
-LINE 1: select cast('c' as bytea) like cast('c' as bytea);
-                                  ^
-HINT:  No operator matches the given name and argument type(s). You might need to add explicit type casts.
-select cast('c' as bytea) like cast('b' as bytea);
-ERROR:  operator does not exist: bytea ~~* bytea
-LINE 1: select cast('c' as bytea) like cast('b' as bytea);
-                                  ^
-HINT:  No operator matches the given name and argument type(s). You might need to add explicit type casts.
 select 100 like 100;
  ?column? 
 ----------
@@ -1175,11 +1604,13 @@ select 'abc' like binary 'ab\%' escape '\' ;
  f
 (1 row)
 
+---正常报错，like不兼容bool型
 select true like true;
 ERROR:  operator does not exist: boolean ~~* boolean
 LINE 1: select true like true;
                     ^
 HINT:  No operator matches the given name and argument type(s). You might need to add explicit type casts.
+---正常报错，like不兼容bit型
 select b'101' like b'101';
 ERROR:  operator does not exist: bit ~~* bit
 LINE 1: select b'101' like b'101';
@@ -1209,26 +1640,22 @@ select replace('123456789','234','asd') like replace('123456789','234','asd');
  t
 (1 row)
 
+---正常报错，表名不能为like
 create table like (id int);
 ERROR:  syntax error at or near "like"
 LINE 1: create table like (id int);
                      ^
+---正常报错，like不能为列名
 create table test1 (like char(10));
 ERROR:  syntax error at or near "("
 LINE 1: create table test1 (like char(10));
                                      ^
-create table test2 (t char(10) default 'a'like 'a');
-ERROR:  syntax error at or near "like"
-LINE 1: create table test2 (t char(10) default 'a'like 'a');
-                                                  ^
 drop table if exists like;
 ERROR:  syntax error at or near "like"
 LINE 1: drop table if exists like;
                              ^
 drop table if exists test1;
 NOTICE:  table "test1" does not exist, skipping
-drop table if exists test2;
-NOTICE:  table "test2" does not exist, skipping
 create function test (varchar,varchar) returns boolean
     as 'select $1 like $2;'
     language sql
@@ -1239,18 +1666,23 @@ select test('ab','ab');
  t
 (1 row)
 
+drop function test;
+---正常报错，like不能为序列
 create sequence like increment by 1 minvalue 1 no maxvalue start with 1;
 ERROR:  syntax error at or near "like"
 LINE 1: create sequence like increment by 1 minvalue 1 no maxvalue s...
                         ^
+---正常报错，like不能为数据库名
 create database like;
 ERROR:  syntax error at or near "like"
 LINE 1: create database like;
                         ^
+---正常报错，like不能为用户名
 create user like identified by 'hw123456';
 ERROR:  syntax error at or near "like"
 LINE 1: create user like identified by 'hw123456';
                     ^
+---正常报错，like不能为角色名
 create role like identified by 'hw123456';
 ERROR:  syntax error at or near "like"
 LINE 1: create role like identified by 'hw123456';
@@ -1262,10 +1694,12 @@ insert into hotel values
 (3,'Bob','2022-6-17','2022-6-25','Holiday',1),
 (4,'Claris','2022-5-9','2022-6-1','Holiday',1),
 (5,'Band','2022-3-6','2022-3-9','Vienna',3);
+---正常报错，like不能为索引名
 create index like on hotel(id);
 ERROR:  syntax error at or near "like"
 LINE 1: create index like on hotel(id);
                      ^
+---正常报错，like不能为视图名
 create view like as select * from hotel;
 ERROR:  syntax error at or near "like"
 LINE 1: create view like as select * from hotel;
@@ -1420,10 +1854,6 @@ select * from hotel natural inner join price where name not like binary 'b/%' es
 ----+------+-----+------+-------+------+-----------+-------
 (0 rows)
 
-select sum (case name like 'b%' then 1 else 0 end) as bnum from hotel group by hotel;
-ERROR:  syntax error at or near "then"
-LINE 1: select sum (case name like 'b%' then 1 else 0 end) as bnum f...
-                                        ^
 drop table if exists hotel;
 drop table if exists hotel2;
 drop table if exists price;
@@ -1434,14 +1864,6 @@ insert into hotel values
 (3,'Bob','2022-6-17','2022-6-25','Holiday',1),
 (4,'Claris','2022-5-9','2022-6-1','Holiday',1),
 (5,'Band','2022-3-6','2022-3-9','Vienna',3);
-create index like on hotel(id);
-ERROR:  syntax error at or near "like"
-LINE 1: create index like on hotel(id);
-                     ^
-create view like as select * from hotel;
-ERROR:  syntax error at or near "like"
-LINE 1: create view like as select * from hotel;
-                    ^
 select count(cout like '2022%') from hotel group by hotel ;
  count 
 -------
@@ -1528,55 +1950,73 @@ select max(cout) from hotel group by hotel having hotel like 'v%';
  07-12-2022
 (1 row)
 
-create table price(hotelname char(10),price int) with (orientation = colume);
-ERROR:  Invalid string for  "ORIENTATION" option
-DETAIL:  Valid string are "column", "row", "timeseries".
+create table price(hotelname char(10),price int) with (orientation = column);
 insert into price values
 ('Vienna',500),
 ('Holiday',700);
-ERROR:  relation "price" does not exist on datanode1
-LINE 1: insert into price values
-                    ^
 select * from hotel natural inner join price where name like 'b%';
-ERROR:  relation "price" does not exist on datanode1
-LINE 1: select * from hotel natural inner join price where name like...
-                                               ^
+ id |    name    |    cin     |    cout    |   hotel    | room | hotelname  | price 
+----+------------+------------+------------+------------+------+------------+-------
+  3 | Bob        | 06-17-2022 | 06-25-2022 | Holiday    |    1 | Vienna     |   500
+  5 | Band       | 03-06-2022 | 03-09-2022 | Vienna     |    3 | Vienna     |   500
+  3 | Bob        | 06-17-2022 | 06-25-2022 | Holiday    |    1 | Holiday    |   700
+  5 | Band       | 03-06-2022 | 03-09-2022 | Vienna     |    3 | Holiday    |   700
+(4 rows)
+
 select * from hotel natural inner join price where name like binary 'b%';
-ERROR:  relation "price" does not exist on datanode1
-LINE 1: select * from hotel natural inner join price where name like...
-                                               ^
+ id | name | cin | cout | hotel | room | hotelname | price 
+----+------+-----+------+-------+------+-----------+-------
+(0 rows)
+
 select * from hotel natural inner join price where name like 'b/%' escape '/';
-ERROR:  relation "price" does not exist on datanode1
-LINE 1: select * from hotel natural inner join price where name like...
-                                               ^
+ id | name | cin | cout | hotel | room | hotelname | price 
+----+------+-----+------+-------+------+-----------+-------
+(0 rows)
+
 select * from hotel natural inner join price where name like binary 'b/%' escape '/';
-ERROR:  relation "price" does not exist on datanode1
-LINE 1: select * from hotel natural inner join price where name like...
-                                               ^
+ id | name | cin | cout | hotel | room | hotelname | price 
+----+------+-----+------+-------+------+-----------+-------
+(0 rows)
+
 select * from hotel natural inner join price where name not like 'b%';
-ERROR:  relation "price" does not exist on datanode1
-LINE 1: select * from hotel natural inner join price where name not ...
-                                               ^
+ id |    name    |    cin     |    cout    |   hotel    | room | hotelname  | price 
+----+------------+------------+------------+------------+------+------------+-------
+  1 | Alice      | 05-07-2022 | 05-08-2022 | Vienna     |    5 | Vienna     |   500
+  1 | Alice      | 05-07-2022 | 05-08-2022 | Vienna     |    5 | Holiday    |   700
+  2 | Anna       | 07-09-2022 | 07-12-2022 | Vienna     |    2 | Vienna     |   500
+  2 | Anna       | 07-09-2022 | 07-12-2022 | Vienna     |    2 | Holiday    |   700
+  4 | Claris     | 05-09-2022 | 06-01-2022 | Holiday    |    1 | Vienna     |   500
+  4 | Claris     | 05-09-2022 | 06-01-2022 | Holiday    |    1 | Holiday    |   700
+(6 rows)
+
 select * from hotel natural inner join price where name not like binary 'b%';
-ERROR:  relation "price" does not exist on datanode1
-LINE 1: select * from hotel natural inner join price where name not ...
-                                               ^
+ id | name | cin | cout | hotel | room | hotelname | price 
+----+------+-----+------+-------+------+-----------+-------
+(0 rows)
+
 select * from hotel natural inner join price where name not like 'b/%' escape '/';
-ERROR:  relation "price" does not exist on datanode1
-LINE 1: select * from hotel natural inner join price where name not ...
-                                               ^
+ id |    name    |    cin     |    cout    |   hotel    | room | hotelname  | price 
+----+------------+------------+------------+------------+------+------------+-------
+  1 | Alice      | 05-07-2022 | 05-08-2022 | Vienna     |    5 | Vienna     |   500
+  2 | Anna       | 07-09-2022 | 07-12-2022 | Vienna     |    2 | Vienna     |   500
+  3 | Bob        | 06-17-2022 | 06-25-2022 | Holiday    |    1 | Vienna     |   500
+  4 | Claris     | 05-09-2022 | 06-01-2022 | Holiday    |    1 | Vienna     |   500
+  5 | Band       | 03-06-2022 | 03-09-2022 | Vienna     |    3 | Vienna     |   500
+  1 | Alice      | 05-07-2022 | 05-08-2022 | Vienna     |    5 | Holiday    |   700
+  2 | Anna       | 07-09-2022 | 07-12-2022 | Vienna     |    2 | Holiday    |   700
+  3 | Bob        | 06-17-2022 | 06-25-2022 | Holiday    |    1 | Holiday    |   700
+  4 | Claris     | 05-09-2022 | 06-01-2022 | Holiday    |    1 | Holiday    |   700
+  5 | Band       | 03-06-2022 | 03-09-2022 | Vienna     |    3 | Holiday    |   700
+(10 rows)
+
 select * from hotel natural inner join price where name not like binary 'b/%' escape '/';
-ERROR:  relation "price" does not exist on datanode1
-LINE 1: select * from hotel natural inner join price where name not ...
-                                               ^
-select sum (case name like 'b%' then 1 else 0 end) as bnum from hotel group by hotel;
-ERROR:  syntax error at or near "then"
-LINE 1: select sum (case name like 'b%' then 1 else 0 end) as bnum f...
-                                        ^
+ id | name | cin | cout | hotel | room | hotelname | price 
+----+------+-----+------+-------+------+-----------+-------
+(0 rows)
+
 drop table if exists hotel;
 drop table if exists hotel2;
 drop table if exists price;
-NOTICE:  table "price" does not exist, skipping
 create unlogged table testlike1 (a char(10), b char(10));
 create table testlike2 (a char(10), b char(10)) with(storage_type=ustore);
 create table testlike3 (a char(10),b char(10)) with(segment=on);
@@ -1692,8 +2132,5 @@ drop table testlike6;
 drop table testlike7;
 drop table testlike8;
 set b_compatibility_mode = 0;
-/c postgres
+\c postgres
 drop database if exists like_test;
-ERROR:  syntax error at or near "/"
-LINE 1: /c postgres
-        ^
