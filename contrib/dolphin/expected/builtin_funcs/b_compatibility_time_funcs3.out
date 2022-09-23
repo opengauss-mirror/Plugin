@@ -161,8 +161,6 @@ insert into func_test3(functionName, result) values('TO_SECONDS(20220801182030)'
 insert into func_test3(functionName, result) values('TO_SECONDS(20220801182030.8888855)', TO_SECONDS(20220801182030.8888855));
 -- 任意分隔符参数
 insert into func_test3(functionName, result) values('TO_SECONDS(''0,1,1,0,0,0'')', TO_SECONDS('0,1,1,0,0,0'));
-ERROR:  invalid input syntax for type timestamp: "0,1,1,0,0,0"
-CONTEXT:  referenced column: result
 -- 边界测试
 -- 最大值
 insert into func_test3(functionName, result) values('TO_SECONDS(''9999-12-31'')', TO_SECONDS('9999-12-31'));
@@ -236,8 +234,6 @@ insert into func_test3(functionName, result) values('UNIX_TIMESTAMP(202208011820
 insert into func_test3(functionName, result) values('UNIX_TIMESTAMP(20220801182030.8888855)', UNIX_TIMESTAMP(20220801182030.8888855));
 -- 任意分隔符参数
 insert into func_test3(functionName, result) values('UNIX_TIMESTAMP(''0,1,1,0,0,0'')', UNIX_TIMESTAMP('0,1,1,0,0,0'));
-ERROR:  invalid input syntax for type timestamp: "0,1,1,0,0,0"
-CONTEXT:  referenced column: result
 -- 边界测试
 -- 最大值
 insert into func_test3(functionName, result) values('UNIX_TIMESTAMP(''2038-01-19'')', UNIX_TIMESTAMP('2038-01-19'));
@@ -332,6 +328,7 @@ select * from func_test3;
  TO_SECONDS(20220801)                                        | 63826531200
  TO_SECONDS(20220801182030)                                  | 63826597230
  TO_SECONDS(20220801182030.8888855)                          | 63826597230
+ TO_SECONDS('0,1,1,0,0,0')                                   | 86400
  TO_SECONDS('9999-12-31')                                    | 315569433600
  TO_SECONDS('9999-12-31 23:59:59')                           | 315569519999
  TO_SECONDS('9999-12-31 23:59:59.999999')                    | 315569519999
@@ -352,6 +349,7 @@ select * from func_test3;
  UNIX_TIMESTAMP(20220801)                                    | 1659337200
  UNIX_TIMESTAMP(20220801182030)                              | 1659403230
  UNIX_TIMESTAMP(20220801182030.8888855)                      | 1659403230.888886
+ UNIX_TIMESTAMP('0,1,1,0,0,0')                               | 0
  UNIX_TIMESTAMP('2038-01-19')                                | 0
  UNIX_TIMESTAMP('2038-01-19 11:14:07')                       | 0
  UNIX_TIMESTAMP('2038-01-19 11:14:07.9999')                  | 0
@@ -383,7 +381,7 @@ select * from func_test3;
 --? UTC_TIMESTAMP(4)                                            | .*
 --? UTC_TIMESTAMP(5)                                            | .*
 --? UTC_TIMESTAMP(6)                                            | .*
-(97 rows)
+(99 rows)
 
 \c postgres
 drop database if exists b_time_funcs3;
