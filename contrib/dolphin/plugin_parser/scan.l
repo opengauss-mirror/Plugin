@@ -547,7 +547,11 @@ other			.
 					else
 					{
 						/* If NCHAR isn't a keyword, just return "n" */
+#ifdef DOLPHIN
+						yylval->dolphinIdent = CreateDolphinIdent("n", false);
+#else
 						yylval->str = pstrdup("n");
+#endif
 						yyextra->ident_quoted = false;
 						yyextra->is_hint_str = false;
 						return IDENT;
@@ -765,7 +769,11 @@ other			.
 					ident = litbufdup(yyscanner);
 					if (yyextra->literallen >= NAMEDATALEN && u_sess->parser_cxt.is_load_copy == false && u_sess->parser_cxt.isForbidTruncate == false)
 						truncate_identifier(ident, yyextra->literallen, yyextra->warnOnTruncateIdent);
+#ifdef DOLPHIN
+					yylval->dolphinIdent = CreateDolphinIdent(ident, true);
+#else
 					yylval->str = ident;
+#endif
 					yyextra->ident_quoted = true;
 					yyextra->is_hint_str = false;
 					return IDENT;
@@ -781,7 +789,11 @@ other			.
 					identlen = strlen(ident);
 					if (identlen >= NAMEDATALEN && u_sess->parser_cxt.is_load_copy == false && u_sess->parser_cxt.isForbidTruncate == false)
 						truncate_identifier(ident, identlen, yyextra->warnOnTruncateIdent);
+#ifdef DOLPHIN
+					yylval->dolphinIdent = CreateDolphinIdent(ident, false);
+#else
 					yylval->str = ident;
+#endif
 					/* throw back all but the quote */
 					yyless(1);
 					yyextra->ident_quoted = false;
@@ -799,7 +811,11 @@ other			.
 					identlen = strlen(ident);
 					if (identlen >= NAMEDATALEN && u_sess->parser_cxt.is_load_copy == false && u_sess->parser_cxt.isForbidTruncate == false)
 						truncate_identifier(ident, identlen, yyextra->warnOnTruncateIdent);
+#ifdef DOLPHIN
+					yylval->dolphinIdent = CreateDolphinIdent(ident, false);
+#else
 					yylval->str = ident;
+#endif
 					yyextra->ident_quoted = false;
 					yyextra->is_hint_str = false;
 					return IDENT;
@@ -820,7 +836,11 @@ other			.
 					yyless(1);
 					/* and treat it as {identifier} */
 					ident = downcase_truncate_identifier(yytext, yyleng, yyextra->warnOnTruncateIdent);
+#ifdef DOLPHIN
+					yylval->dolphinIdent = CreateDolphinIdent(ident, false);
+#else
 					yylval->str = ident;
+#endif
 					yyextra->ident_quoted = false;
 					yyextra->is_hint_str = false;
 					return IDENT;
@@ -1195,10 +1215,11 @@ other			.
 						
 					}
 					ident = CopyIdentifier(yytext, yyleng, yyextra->warnOnTruncateIdent);
+					yylval->dolphinIdent = CreateDolphinIdent(ident, false);
 #else
-                    ident = downcase_truncate_identifier(yytext, yyleng, yyextra->warnOnTruncateIdent);
-#endif
+					ident = downcase_truncate_identifier(yytext, yyleng, yyextra->warnOnTruncateIdent);
 					yylval->str = ident;
+#endif
 					yyextra->ident_quoted = false;
 					return IDENT;
 				}
