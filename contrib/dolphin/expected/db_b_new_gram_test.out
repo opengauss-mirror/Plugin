@@ -543,6 +543,24 @@ Tablespace: "test_tbspace"
 
 DROP TABLE t_tbspace;
 DROP TABLESPACE test_tbspace;
+CREATE TABLESPACE test_tbspace_ibd ADD DATAFILE 'test_tbspace1.ibd';
+WARNING:  Suffix ".ibd" of datafile path detected. The actual path will be renamed as "test_tbspace1_ibd"
+CREATE TABLE t_tbspace(num int) TABLESPACE test_tbspace_ibd;
+\d t_tbspace
+   Table "public.t_tbspace"
+ Column |  Type   | Modifiers 
+--------+---------+-----------
+ num    | integer | 
+Tablespace: "test_tbspace_ibd"
+
+DROP TABLE t_tbspace;
+DROP TABLESPACE test_tbspace_ibd;
+CREATE TABLESPACE test_tbspace_ibd_1 ADD DATAFILE 'abc';
+DROP TABLESPACE test_tbspace_ibd_1;
+CREATE TABLESPACE test_tbspace_ibd_2 ADD DATAFILE '.ibd';
+ERROR:  relative location can only be formed of 'a~z', 'A~Z', '0~9', '-', '_' and two level directory at most
+DROP TABLESPACE test_tbspace_ibd_2;
+ERROR:  Tablespace "test_tbspace_ibd_2" does not exist.
 -- new grammar test for RENAME [TO | AS]
 CREATE TABLE t_rename(c int);
 \d t_rename

@@ -210,6 +210,18 @@ CREATE TABLE t_tbspace(num int) TABLESPACE test_tbspace;
 DROP TABLE t_tbspace;
 DROP TABLESPACE test_tbspace;
 
+CREATE TABLESPACE test_tbspace_ibd ADD DATAFILE 'test_tbspace1.ibd';
+CREATE TABLE t_tbspace(num int) TABLESPACE test_tbspace_ibd;
+\d t_tbspace
+DROP TABLE t_tbspace;
+DROP TABLESPACE test_tbspace_ibd;
+
+CREATE TABLESPACE test_tbspace_ibd_1 ADD DATAFILE 'abc';
+DROP TABLESPACE test_tbspace_ibd_1;
+
+CREATE TABLESPACE test_tbspace_ibd_2 ADD DATAFILE '.ibd';
+DROP TABLESPACE test_tbspace_ibd_2;
+
 -- new grammar test for RENAME [TO | AS]
 CREATE TABLE t_rename(c int);
 \d t_rename
