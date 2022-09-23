@@ -2132,6 +2132,9 @@ typedef struct CreateFunctionStmt {
     int startLineNumber;
     int firstLineNumber;
     char *definer;
+#ifdef DOLPHIN
+    bool isOtypeFunction;
+#endif
 } CreateFunctionStmt;
 
 typedef struct FunctionSources {
