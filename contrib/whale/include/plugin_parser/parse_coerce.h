@@ -46,6 +46,8 @@ extern TYPCATEGORY TypeCategory(Oid type);
 extern Node* coerce_to_target_type(ParseState* pstate, Node* expr, Oid exprtype, Oid targettype, int32 targettypmod,
     CoercionContext ccontext, CoercionForm cformat, int location);
 extern bool can_coerce_type(int nargs, Oid* input_typeids, Oid* target_typeids, CoercionContext ccontext);
+extern Node *type_transfer(Node *node, Oid atttypid, bool isSelect);
+extern Node *const_expression_to_const(Node *node);
 extern Node* coerce_type(ParseState* pstate, Node* node, Oid inputTypeId, Oid targetTypeId, int32 targetTypeMod,
     CoercionContext ccontext, CoercionForm cformat, int location);
 extern Node* coerce_to_domain(Node* arg, Oid baseTypeId, int32 baseTypeMod, Oid typeId, CoercionForm cformat,
@@ -57,6 +59,7 @@ extern Node* coerce_to_specific_type(ParseState* pstate, Node* node, Oid targetT
 extern int parser_coercion_errposition(ParseState* pstate, int coerce_location, Node* input_expr);
 
 extern Oid select_common_type(ParseState* pstate, List* exprs, const char* context, Node** which_expr);
+extern bool check_all_in_whitelist(List* resultexprs);
 extern Node* coerce_to_common_type(ParseState* pstate, Node* node, Oid targetTypeId, const char* context);
 
 extern bool check_generic_type_consistency(Oid* actual_arg_types, Oid* declared_arg_types, int nargs);
@@ -70,4 +73,7 @@ extern CoercionPathType find_typmod_coercion_function(Oid typeId, Oid* funcid);
 
 extern void expression_error_callback(void* arg);
 
+extern Node *transferConstToAconst(Node *node);
+
+extern Const* setValueToConstExpr(SetVariableExpr* set);
 #endif /* PARSE_COERCE_H */

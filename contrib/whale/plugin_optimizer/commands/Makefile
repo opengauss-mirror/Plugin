@@ -18,17 +18,6 @@ ifneq "$(MAKECMDGOALS)" "clean"
   endif
 endif
 
-SUBDIRS     = sequence
-
-OBJS = aggregatecmds.o alter.o analyze.o async.o comment.o  \
-	collationcmds.o constraint.o conversioncmds.o copy.o createas.o \
-	dbcommands.o define.o discard.o dropcmds.o extension.o \
-	foreigncmds.o functioncmds.o \
-	indexcmds.o lockcmds.o operatorcmds.o opclasscmds.o \
-	portalcmds.o prepare.o proclang.o packagecmds.o \
-	schemacmds.o tablecmds.o tablespace.o trigger.o \
-	typecmds.o user.o \
-	variable.o view.o formatter.o datasourcecmds.o \
-	directory.o shutdown.o
+OBJS = tablecmds.o 
 
 include $(top_srcdir)/src/gausskernel/common.mk
