@@ -95,6 +95,7 @@
 #include "catalog/pg_streaming_fn.h"
 #include "utils/varbit.h"
 #include "mb/pg_wchar.h"
+#include "lib/string.h"
 
 #pragma GCC diagnostic ignored "-Wsign-compare"
 #pragma GCC diagnostic ignored "-Wunused-variable"
@@ -10870,7 +10871,16 @@ CreateTableSpaceStmt: CREATE TABLESPACE name OptTableSpaceOwner OptRelative LOCA
 					CreateTableSpaceStmt *n = makeNode(CreateTableSpaceStmt);
 					n->tablespacename = $3;
 					n->owner = NULL;
-					n->location = $6;
+					/* if filepath ends with ".ibd", transfer '.' to '_' */				
+					char* path = $6;
+					int path_len = strlen(path);
+					if (path_len > 4 && strcmp(path + (path_len - 4), ".ibd") == 0) {
+						path[path_len - 4] = '_';
+						ereport(WARNING, (errmsg(
+							"Suffix \".ibd\" of datafile path detected. The actual path will be renamed as \"%s\"", path)));
+					}
+					n->location = path;
+					
 					n->relative = !is_absolute_path(n->location);
 					n->maxsize = NULL;
 					$$ = (Node *) n;
