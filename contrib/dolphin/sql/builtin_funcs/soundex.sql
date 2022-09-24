@@ -40,6 +40,7 @@ select soundex('и мърморене');
 select soundex('ɔnɛkona mws');
 select soundex('ш');
 select soundex('я такая шчасліваяwjdkadskdjk');
+select soundex('测T测h测试o测masёння я такая шчасліваяhello');
 
 \c postgres
 drop database if exists db_soundex;
