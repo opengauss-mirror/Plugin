@@ -580,6 +580,7 @@ static SelectStmt *MakeShowGrantStmt(char *arg, int location, core_yyscan_t yysc
 %type <node>	alter_column_default opclass_item opclass_drop alter_using AutoIncrementValue
 %type <ival>	add_drop opt_asc_desc opt_nulls_order con_asc_desc
 %type <ival>	OptNoLog
+%type <str>	unique_name
 
 %type <node>	alter_table_cmd alter_partition_cmd alter_type_cmd opt_collate_clause exchange_partition_cmd move_partition_cmd
 				modify_column_cmd
@@ -8988,15 +8989,15 @@ ConstraintElem:
 					n->initially_valid = !n->skip_validation;
 					$$ = (Node *)n;
 				}
-			| UNIQUE name access_method_clause '(' constraint_params ')' opt_c_include opt_definition OptConsTableSpace
+			| UNIQUE unique_name access_method_clause '(' constraint_params ')' opt_c_include opt_definition OptConsTableSpace
 				ConstraintAttributeSpec InformationalConstraintElem
 				{
 #ifdef 			ENABLE_MULTIPLE_NODES	
-					const char* message = "UNIQUE name is not yet supported in distributed database.";
+					const char* message = "UNIQUE unique_name is not yet supported in distributed database.";
 					InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);			
 					ereport(errstate,
 						(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
-							errmsg("UNIQUE name is not yet supported in distributed database.")));
+							errmsg("UNIQUE unique_name is not yet supported in distributed database.")));
 #endif	
 					if (u_sess->attr.attr_sql.sql_compatibility == B_FORMAT) {
 						Constraint *n = makeNode(Constraint);
@@ -9015,12 +9016,12 @@ ConstraintElem:
 						n->inforConstraint = (InformationalConstraint *) $11; /* informational constraint info */
 						$$ = (Node *)n;
 					} else {
-						const char* message = "UNIQUE name is supported only in B-format database.";
+						const char* message = "UNIQUE unique_name is supported only in B-format database.";
 						InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);
 						ereport(errstate,
 								(errmodule(MOD_PARSER),
 									errcode(ERRCODE_SYNTAX_ERROR),
-									errmsg("UNIQUE name is supported only in B-format database."),
+									errmsg("UNIQUE unique_name is supported only in B-format database."),
 									parser_errposition(@1)));
 						$$ = NULL;/* not reached */
 					}
@@ -9077,6 +9078,60 @@ ConstraintElem:
 								   &n->deferrable, &n->initdeferred, NULL,
 								   NULL, yyscanner);
 					n->inforConstraint = (InformationalConstraint *) $9; /* informational constraint info */
+					$$ = (Node *)n;
+				}
+			| UNIQUE index_key_opt unique_name access_method_clause '(' constraint_params ')' opt_c_include opt_definition OptConsTableSpace
+				ConstraintAttributeSpec InformationalConstraintElem
+				{
+					Constraint *n = makeNode(Constraint);
+					n->contype = CONSTR_UNIQUE;
+					n->location = @1;
+					n->conname = $3;
+					n->access_method = $4;
+					n->keys = $6;
+					n->including = $8;
+					n->options = $9;
+					n->indexname = NULL;
+					n->indexspace = $10;
+					processCASbits($11, @11, "UNIQUE",
+					               &n->deferrable, &n->initdeferred, NULL,
+					               NULL, yyscanner);
+					n->inforConstraint = (InformationalConstraint *) $12; /* informational constraint info */
+					$$ = (Node *)n;	
+				}
+			| UNIQUE index_key_opt USING access_method '(' constraint_params ')' opt_c_include opt_definition OptConsTableSpace
+				ConstraintAttributeSpec InformationalConstraintElem
+				{
+					Constraint *n = makeNode(Constraint);
+					n->contype = CONSTR_UNIQUE;
+					n->location = @1;
+					n->access_method = $4;
+					n->keys = $6;
+					n->including = $8;
+					n->options = $9;
+					n->indexname = NULL;
+					n->indexspace = $10;
+					processCASbits($11, @11, "UNIQUE",
+					               &n->deferrable, &n->initdeferred, NULL,
+					               NULL, yyscanner);
+					n->inforConstraint = (InformationalConstraint *) $12; /* informational constraint info */
+					$$ = (Node *)n;
+				}
+			| UNIQUE index_key_opt '(' constraint_params ')' opt_c_include opt_definition OptConsTableSpace
+				ConstraintAttributeSpec InformationalConstraintElem
+				{
+					Constraint *n = makeNode(Constraint);
+					n->contype = CONSTR_UNIQUE;
+					n->location = @1;
+					n->keys = $4;
+					n->including = $6;
+					n->options = $7;
+					n->indexname = NULL;
+					n->indexspace = $8;
+					processCASbits($9, @9, "UNIQUE",
+					               &n->deferrable, &n->initdeferred, NULL,
+					               NULL, yyscanner);
+					n->inforConstraint = (InformationalConstraint *) $10; /* informational constraint info */
 					$$ = (Node *)n;
 				}
 			| UNIQUE ExistingIndex ConstraintAttributeSpec InformationalConstraintElem
@@ -9263,6 +9318,13 @@ ConstraintElem:
 								   yyscanner);
 					$$ = (Node *)n;
 				}
+		;
+
+unique_name:		  
+			IDENT                           			{ $$ = $$ = downcase_str($1->str, $1->is_quoted); }
+			| unreserved_keyword_without_key			{ $$ = downcase_str(pstrdup($1), false); }
+			| col_name_keyword              			{ $$ = downcase_str(pstrdup($1), false); }
+			| PROXY                         			{ $$ = downcase_str(pstrdup($1), false); }			
 		;
 
 opt_no_inherit:	NO INHERIT							{  $$ = TRUE; }
