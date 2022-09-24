@@ -39,9 +39,11 @@ CREATE TABLE test_trigger_des_tbl(id1 INT, id2 INT, id3 INT);
 CREATE OR REPLACE FUNCTION tri_insert_func() RETURNS TRIGGER AS $$ DECLARE BEGIN INSERT INTO test_trigger_des_tbl VALUES(NEW.id1, NEW.id2, NEW.id3); RETURN NEW; END $$ LANGUAGE PLPGSQL;
 CREATE OR REPLACE FUNCTION tri_update_func() RETURNS TRIGGER AS $$ DECLARE BEGIN UPDATE test_trigger_des_tbl SET id3 = NEW.id3 WHERE id1=OLD.id1; RETURN OLD; END $$ LANGUAGE PLPGSQL;
 CREATE OR REPLACE FUNCTION TRI_DELETE_FUNC() RETURNS TRIGGER AS $$ DECLARE BEGIN DELETE FROM test_trigger_des_tbl WHERE id1=OLD.id1; RETURN OLD; END $$ LANGUAGE PLPGSQL;
+create or replace function tri_truncate_func0010() returns trigger as $$ declare begin truncate table test_trigger_src_tbl; return new; end $$ language plpgsql;
 CREATE TRIGGER insert_trigger BEFORE INSERT ON test_trigger_src_tbl FOR EACH ROW EXECUTE PROCEDURE tri_insert_func();
 CREATE TRIGGER update_trigger AFTER UPDATE ON test_trigger_src_tbl FOR EACH ROW EXECUTE PROCEDURE tri_update_func();
 CREATE TRIGGER delete_trigger BEFORE DELETE ON test_trigger_src_tbl FOR EACH ROW EXECUTE PROCEDURE tri_delete_func();
+create trigger truncate_trigger0010 before truncate on test_trigger_src_tbl for each statement execute procedure tri_truncate_func0010();
 
 show function status like 'func_add_s%';
 show procedure status like 'proc%';
