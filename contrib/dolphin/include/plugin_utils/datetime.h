@@ -51,6 +51,43 @@ extern void NumericVar2lldiv(NumericVar *from, lldiv_t *to);
 #define TIME_MAX_MINUTE 59
 #define TIME_MAX_SECOND 59
 
+#ifdef DOLPHIN
+#define DTK_NONE -1
+#define DTK_ERROR -2
+
+#define DATETIME_MAX_DECIMALS 6
+#define MAX_DATE_PARTS 8
+
+/* Limits for the TIME data type */
+#define TIME_MAX_VALUE (TIME_MAX_HOUR*10000 + TIME_MAX_MINUTE*100 + \
+                        TIME_MAX_SECOND)
+#define TIME_MAX_VALUE_SECONDS (TIME_MAX_HOUR * 3600L + \
+                                TIME_MAX_MINUTE * 60L + TIME_MAX_SECOND)
+
+/* two-digit years < this are 20..; >= this are 19.. */
+#define YY_PART_YEAR 70
+
+/* Time handling defaults */
+#define TIMESTAMP_MAX_YEAR 2038
+#define TIMESTAMP_MIN_YEAR (1900 + YY_PART_YEAR - 1)
+#define TIMESTAMP_MAX_VALUE INT_MAX32
+#define TIMESTAMP_MIN_VALUE 1
+/* Flags to str_to_datetime and number_to_datetime */
+typedef unsigned int time_flags;
+static const time_flags TIME_FUZZY_DATE = 1; /* Set if we should allow partial dates */
+static const time_flags TIME_DATETIME_ONLY = 2; /* Set if we only allow full datetimes */
+static const time_flags TIME_NO_NSEC_ROUNDING = 4;
+static const time_flags TIME_NO_DATE_FRAC_WARN = 8;
+static const time_flags TIME_NO_ZERO_IN_DATE = 16; /* Don't allow partial dates */
+static const time_flags TIME_NO_ZERO_DATE = 32; /* Don't allow 0000-00-00 date */
+static const time_flags TIME_INVALID_DATES = 64; /* Allow 2000-02-31 */
+
+#define MAX(a, b) ((a) > (b) ? (a) : (b))
+
+extern bool cstring_to_tm(const char *expr, pg_tm *tm, fsec_t &fsec);
+
+#endif
+
 #endif // !FRONTEND_PARSER
 
 #endif /* DATETIME_H */
