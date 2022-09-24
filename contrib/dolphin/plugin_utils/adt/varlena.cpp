@@ -8643,7 +8643,7 @@ Datum soundex_bit(PG_FUNCTION_ARGS)
     PG_RETURN_TEXT_P(cstring_to_text(""));
 }
 
-static void set_sound(const char* arg, char* result, int size, FunctionCallInfo fcinfo);
+static void set_sound(const char* arg, char* result, int size);
 
 /* ABCDEFGHIJKLMNOPQRSTUVWXYZ */
 static const char* code_table = "01230120022455012623010202";
@@ -8662,11 +8662,11 @@ Datum soundex(PG_FUNCTION_ARGS)
     int minSoundLen = pg_encoding_max_length(PG_UTF8) + SOUND_THRESHOLD;
 
     char* result = (char*)palloc(Max(strLen, minSoundLen));
-    set_sound(arg, result, strlen(arg), fcinfo);
+    set_sound(arg, result, strlen(arg));
     PG_RETURN_TEXT_P(cstring_to_text(result));
 }
 
-static void set_sound(const char* arg, char* result, int size, FunctionCallInfo fcinfo)
+static void set_sound(const char* arg, char* result, int size)
 {
     int cnt = 1;
     result[size] = '\0';
@@ -8688,7 +8688,7 @@ static void set_sound(const char* arg, char* result, int size, FunctionCallInfo 
             }
             firstChar = DirectFunctionCall3(text_substr_null, PointerGetDatum(cstring_to_text(arg)), Int32GetDatum(1), Int32GetDatum(lenOneByte));
             char* tmpStr = text_to_cstring(DatumGetTextPP(firstChar));
-           for (int tmp = 0; tmp < strlen(tmpStr); tmp++) {
+            for (int tmp = 0; tmp < strlen(tmpStr); tmp++) {
                 result[tmp] = tmpStr[tmp];
             }
             result += strlen(tmpStr);
@@ -8807,8 +8807,8 @@ Datum soundex_difference(PG_FUNCTION_ARGS)
 
     char* result1 = (char*)palloc(Max(str_len1, min_sound_len));
     char* result2 = (char*)palloc(Max(str_len2, min_sound_len));
-    set_sound(arg1, result1, strlen(arg1), fcinfo);
-    set_sound(arg2, result2, strlen(arg2), fcinfo);
+    set_sound(arg1, result1, strlen(arg1));
+    set_sound(arg2, result2, strlen(arg2));
 
     for (i = 0; i < SOUND_THRESHOLD; i++) {
         if (result1[i] != result2[i]) {
