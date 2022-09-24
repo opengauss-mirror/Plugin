@@ -159,36 +159,11 @@ void ProcessUtilityMain(Node* parse_tree, const char* query_string, ParamListInf
  * Set ProcessUtility PreHook of other ProcessUtilityHook Users, so that
  * we can hook standard_ProcessUtility.
  */
-void set_processutility_prehook()
-{
-    DynamicFileList* file_scanner = NULL;
-    void (*set_gsaudit_prehook)(ProcessUtility_hook_type);
-
-    char* securityPluginPath = expand_dynamic_library_name("security_plugin");
-    check_backend_env(securityPluginPath);
-
-    for (file_scanner = file_list; file_scanner != NULL && strcmp(securityPluginPath, file_scanner->filename) != 0;
-         file_scanner = file_scanner->next);
-
-    if (file_scanner != NULL) {
-        set_gsaudit_prehook = (void(*)(ProcessUtility_hook_type))pg_dlsym(file_scanner->handle, "set_gsaudit_prehook");
-        if (set_gsaudit_prehook != NULL) {
-            (*set_gsaudit_prehook)((ProcessUtility_hook_type)ProcessUtilityMain);
-            return;
-        }
-    }
-
-    if (u_sess->attr.attr_security.Audit_enabled) {
-        set_pgaudit_prehook((ProcessUtility_hook_type)ProcessUtilityMain);
-    } else {
-        set_hypopg_prehook((ProcessUtility_hook_type)ProcessUtilityMain);
-    }
-}
 
 void init_plugin_object()
 {
     u_sess->hook_cxt.transformStmtHook = (void*)transformStmt;
-    set_processutility_prehook();
+    u_sess->hook_cxt.standardProcessUtilityHook = (void*)ProcessUtilityMain;
 }
 
 void _PG_init(void)
@@ -5477,7 +5452,7 @@ void asql_ProcessUtility(Node* parse_tree, const char* query_string, ParamListIn
 #endif
 
         case T_VariableSetStmt:
-            ExecSetVariableStmt((VariableSetStmt*)parse_tree);
+            ExecSetVariableStmt((VariableSetStmt*)parse_tree, params);
 #ifdef PGXC
             /* Let the pooler manage the statement */
             if (IS_PGXC_COORDINATOR && !IsConnFromCoord()) {

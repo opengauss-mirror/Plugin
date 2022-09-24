@@ -42,7 +42,7 @@ extern Query* transformStmt(ParseState* pstate, Node* parseTree, bool isFirstNod
 extern bool analyze_requires_snapshot(Node* parseTree);
 
 extern void CheckSelectLocking(Query* qry);
-extern void applyLockingClause(Query* qry, Index rtindex, LockClauseStrength strength, bool noWait, bool pushedDown,
+extern void applyLockingClause(Query* qry, Index rtindex, LockClauseStrength strength, LockWaitPolicy waitPolicy, bool pushedDown,
                                int waitSec);
 #ifdef ENABLE_MOT
 extern void CheckTablesStorageEngine(Query* qry, StorageEngineType* type);
@@ -87,6 +87,8 @@ typedef Query* (*transformSelectStmtHook)(ParseState* pstate, SelectStmt* stmt, 
 typedef struct AnalyzerRoutine {
     transformSelectStmtHook transSelect;
 } AnalyzerRoutine;
+
+typedef Query* (*transformStmtFunc)(ParseState* pstate, Node* parseTree, bool isFirstNode, bool isCreateView);
 
 extern void transformOperatorPlus(ParseState* pstate, Node** whereClause);
 extern bool IsColumnRefPlusOuterJoin(const ColumnRef* cf);
