@@ -5069,8 +5069,8 @@ bool str_to_datetime(const char* str,  pg_tm *tm, fsec_t &fsec, int &nano, int &
       2003-03-03 20:00:20 AM
       20:00:20.000000 AM 03-03-2000
     */
-    i = MAX((unsigned int)format_position[0], (unsigned int)format_position[1]);
-    i = MAX(i, (unsigned int)format_position[2]);
+    i = Max((unsigned int)format_position[0], (unsigned int)format_position[1]);
+    i = Max(i, (unsigned int)format_position[2]);
     allow_space = ((1 << i) | (1 << format_position[6]));
     allow_space &= (1 | 2 | 4 | 8 | 64);
 
