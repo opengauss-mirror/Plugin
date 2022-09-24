@@ -43,25 +43,38 @@ Datum ShowTriggers(PG_FUNCTION_ARGS)
             (void)plps_check_schema_or_table_valid(schema, NULL, FALSE);
         }
         StringInfo stringInfo = makeStringInfo();
-        appendStringInfoString(stringInfo, "select i.trigger_name       as \"Trigger\","
-                                           "       i.event_manipulation as \"Event\","
-                                           "       i.event_object_table as \"Table\","
-                                           "       i.action_statement   AS \"Statement\","
-                                           "       i.action_timing      AS \"Timing\","
-                                           "       ''                   as \"Created\","
-                                           "       ''                   as \"sql_mode\","
-                                           "       r.rolname            AS \"Definer\","
-                                           "       ''                   as \"character_set_client\","
-                                           "       ''                   as \"collation_connection\","
-                                           "       b.datcollate         AS \"Database Collation\""
-                                           "from information_schema.triggers i"
-                                           "         left join"
-                                           "     pg_trigger t on i.trigger_name = t.tgname"
-                                           "         left join pg_roles r"
-                                           "                   on t.tgowner = r.oid"
-                                           "         left join pg_database b on b.datname = Current_database()");
+        appendStringInfoString(stringInfo, "select CAST(t.tgname AS character varying)  as \"Trigger\",\n"
+                                           "       CAST(em.text AS character varying)   as \"Event\",\n"
+                                           "       CAST(c.relname AS character varying) as \"Table\",\n"
+                                           "       substring(pg_catalog.pg_get_triggerdef(t.oid) from\n"
+                                           "                 position('EXECUTE PROCEDURE' in substring(pg_catalog.pg_get_triggerdef(t.oid) from 48)) + 47)\n"
+                                           "                 AS \"Statement\",\n"
+                                           "       CASE t.tgtype & 66 WHEN 2 THEN 'BEFORE' WHEN 64 THEN 'INSTEAD OF' ELSE 'AFTER' END  AS \"Timing\",\n"
+                                           "       null                   as \"Created\",\n"
+                                           "       null                   as \"sql_mode\",\n"
+                                           "       r.rolname            AS \"Definer\",\n"
+                                           "       null                   as \"character_set_client\",\n"
+                                           "       null                   as \"collation_connection\",\n"
+                                           "       b.datcollate         AS \"Database Collation\"\n"
+                                           "from pg_namespace n, pg_class c, (VALUES (4, 'INSERT'),\n"
+                                           "    (8, 'DELETE'),\n"
+                                           "    (16, 'UPDATE'), (32, 'TRUNCATE')) AS em (num, text), pg_trigger t\n"
+                                           "    left join pg_roles r\n"
+                                           "on t.tgowner = r.oid\n"
+                                           "    left join pg_database b on b.datname = Current_database()\n"
+                                           "where n.oid = c.relnamespace\n"
+                                           "  AND c.oid = t.tgrelid\n"
+                                           "  AND t.tgtype & em.num <> 0\n"
+                                           "  AND NOT t.tgisinternal\n"
+                                           "  AND (NOT pg_catalog.pg_is_other_temp_schema(n.oid))\n"
+                                           "  AND (pg_catalog.pg_has_role(c.relowner\n"
+                                           "    , 'USAGE')\n"
+                                           "   OR pg_catalog.has_table_privilege(c.oid\n"
+                                           "    , 'INSERT, UPDATE, DELETE, TRUNCATE, REFERENCES, TRIGGER')\n"
+                                           "   OR pg_catalog.has_any_column_privilege(c.oid\n"
+                                           "    , 'INSERT, UPDATE, REFERENCES'))");
         if (schema != NULL && strlen(schema) != 0) {
-            appendStringInfo(stringInfo, " AND i.trigger_schema = '%s'", schema);
+            appendStringInfo(stringInfo, " AND n.nspname = '%s'", schema);
         }
         CallSPIAndCheck(stringInfo->data);
         DestroyStringInfo(stringInfo);
