@@ -443,55 +443,64 @@ Datum timestamp_in(PG_FUNCTION_ARGS)
             ereport(ERROR, (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE), errmsg("timestamp out of range")));
         }
     } else {
-        /*
-         * default pg date formatting parsing.
-         */
-        dterr = ParseDateTime(str, workbuf, sizeof(workbuf), field, ftype, MAXDATEFIELDS, &nf);
-        if (dterr != 0)
-            DateTimeParseError(dterr, str, "timestamp");
-        if (dterr == 0) {
-            if (nf == 1 && ftype[0] == DTK_NUMBER) {
-                /* for example, str = "301210054523", "301210054523.123" */
-                dterr = NumberTimestamp(field[0], tm, &fsec);
-                dtype = DTK_DATE;
-            } else {
-                dterr = DecodeDateTimeForBDatabase(field, ftype, nf, &dtype, tm, &fsec, &tz);
+        bool flag = false;
+    #ifdef DOLPHIN
+        bool res = cstring_to_tm(str, tm, fsec);
+        flag |= res;
+    #endif
+        if (flag) {
+            tm2timestamp(tm, fsec, NULL, &result);
+        } else {
+            /*
+            * default pg date formatting parsing.
+            */
+            dterr = ParseDateTime(str, workbuf, sizeof(workbuf), field, ftype, MAXDATEFIELDS, &nf);
+            if (dterr != 0)
+                DateTimeParseError(dterr, str, "timestamp");
+            if (dterr == 0) {
+                if (nf == 1 && ftype[0] == DTK_NUMBER) {
+                    /* for example, str = "301210054523", "301210054523.123" */
+                    dterr = NumberTimestamp(field[0], tm, &fsec);
+                    dtype = DTK_DATE;
+                } else {
+                    dterr = DecodeDateTimeForBDatabase(field, ftype, nf, &dtype, tm, &fsec, &tz);
+                }
             }
-        }
-        if (dterr != 0)
-            DateTimeParseError(dterr, str, "timestamp");
-        switch (dtype) {
-            case DTK_DATE:
-                if (tm2timestamp(tm, fsec, NULL, &result) != 0)
+            if (dterr != 0)
+                DateTimeParseError(dterr, str, "timestamp");
+            switch (dtype) {
+                case DTK_DATE:
+                    if (tm2timestamp(tm, fsec, NULL, &result) != 0)
+                        ereport(ERROR,
+                            (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE), errmsg("timestamp out of range: \"%s\"", str)));
+                    break;
+
+                case DTK_EPOCH:
+                    result = SetEpochTimestamp();
+                    break;
+
+                case DTK_LATE:
+                    TIMESTAMP_NOEND(result);
+                    break;
+
+                case DTK_EARLY:
+                    TIMESTAMP_NOBEGIN(result);
+                    break;
+
+                case DTK_INVALID:
                     ereport(ERROR,
-                        (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE), errmsg("timestamp out of range: \"%s\"", str)));
-                break;
+                        (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+                            errmsg("date/time value \"%s\" is no longer supported", str)));
 
-            case DTK_EPOCH:
-                result = SetEpochTimestamp();
-                break;
+                    TIMESTAMP_NOEND(result);
+                    break;
 
-            case DTK_LATE:
-                TIMESTAMP_NOEND(result);
-                break;
-
-            case DTK_EARLY:
-                TIMESTAMP_NOBEGIN(result);
-                break;
-
-            case DTK_INVALID:
-                ereport(ERROR,
-                    (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
-                        errmsg("date/time value \"%s\" is no longer supported", str)));
-
-                TIMESTAMP_NOEND(result);
-                break;
-
-            default:
-                ereport(ERROR,
-                    (errcode(ERRCODE_WRONG_OBJECT_TYPE),
-                        errmsg("unexpected dtype %d while parsing timestamp \"%s\"", dtype, str)));
-                TIMESTAMP_NOEND(result);
+                default:
+                    ereport(ERROR,
+                        (errcode(ERRCODE_WRONG_OBJECT_TYPE),
+                            errmsg("unexpected dtype %d while parsing timestamp \"%s\"", dtype, str)));
+                    TIMESTAMP_NOEND(result);
+            }
         }
     }
 
@@ -1194,50 +1203,61 @@ Datum timestamptz_in(PG_FUNCTION_ARGS)
     int ftype[MAXDATEFIELDS];
     char workbuf[MAXDATELEN + MAXDATEFIELDS];
 
-    dterr = ParseDateTime(str, workbuf, sizeof(workbuf), field, ftype, MAXDATEFIELDS, &nf);
-    if (dterr != 0)
-        DateTimeParseError(dterr, str, "timestamp");
-    if (dterr == 0) {
-        if (nf == 1 && ftype[0] == DTK_NUMBER) {
-            /* for example, str = "301210054523", "301210054523.123" */
-            dterr = NumberTimestamp(field[0], tm, &fsec);
-            tz = DetermineTimeZoneOffset(tm, session_timezone);
-            dtype = DTK_DATE;
-        } else {
-            dterr = DecodeDateTimeForBDatabase(field, ftype, nf, &dtype, tm, &fsec, &tz);
+    bool flag = false;
+#ifdef DOLPHIN
+    bool res = cstring_to_tm(str, tm, fsec);
+    flag |= res;
+#endif
+
+    if (flag) {
+        tm2timestamp(tm, fsec, NULL, &result);
+        result = timestamp2timestamptz(result);
+    } else {
+        dterr = ParseDateTime(str, workbuf, sizeof(workbuf), field, ftype, MAXDATEFIELDS, &nf);
+        if (dterr != 0)
+            DateTimeParseError(dterr, str, "timestamp");
+        if (dterr == 0) {
+            if (nf == 1 && ftype[0] == DTK_NUMBER) {
+                /* for example, str = "301210054523", "301210054523.123" */
+                dterr = NumberTimestamp(field[0], tm, &fsec);
+                tz = DetermineTimeZoneOffset(tm, session_timezone);
+                dtype = DTK_DATE;
+            } else {
+                dterr = DecodeDateTimeForBDatabase(field, ftype, nf, &dtype, tm, &fsec, &tz);
+            }
         }
-    }
-    if (dterr != 0)
-        DateTimeParseError(dterr, str, "timestamp");
-    switch (dtype) {
-        case DTK_DATE:
-            if (tm2timestamp(tm, fsec, &tz, &result) != 0)
+        if (dterr != 0)
+            DateTimeParseError(dterr, str, "timestamp");
+        switch (dtype) {
+            case DTK_DATE:
+                if (tm2timestamp(tm, fsec, &tz, &result) != 0)
+                    ereport(ERROR,
+                        (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE), errmsg("timestamp out of range: \"%s\"", str)));
+                break;
+
+            case DTK_EPOCH:
+                result = SetEpochTimestamp();
+                break;
+
+            case DTK_LATE:
+                TIMESTAMP_NOEND(result);
+                break;
+
+            case DTK_EARLY:
+                TIMESTAMP_NOBEGIN(result);
+                break;
+
+            case DTK_INVALID:
                 ereport(ERROR,
-                    (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE), errmsg("timestamp out of range: \"%s\"", str)));
-            break;
+                    (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), 
+                        errmsg("date/time value \"%s\" is no longer supported", str)));
+                break;
 
-        case DTK_EPOCH:
-            result = SetEpochTimestamp();
-            break;
-
-        case DTK_LATE:
-            TIMESTAMP_NOEND(result);
-            break;
-
-        case DTK_EARLY:
-            TIMESTAMP_NOBEGIN(result);
-            break;
-
-        case DTK_INVALID:
-            ereport(ERROR,
-                (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), 
-                    errmsg("date/time value \"%s\" is no longer supported", str)));
-            break;
-
-        default:
-            ereport(ERROR,
-                (errcode(ERRCODE_WRONG_OBJECT_TYPE),
-                    errmsg("unexpected dtype %d while parsing timestamptz \"%s\"", dtype, str)));
+            default:
+                ereport(ERROR,
+                    (errcode(ERRCODE_WRONG_OBJECT_TYPE),
+                        errmsg("unexpected dtype %d while parsing timestamptz \"%s\"", dtype, str)));
+        }
     }
 
     AdjustTimestampForTypmod(&result, typmod);
