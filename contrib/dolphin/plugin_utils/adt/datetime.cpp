@@ -4859,14 +4859,6 @@ void lldiv_decode_tm(Numeric num, lldiv_t *div, struct pg_tm *tm, unsigned int d
     return;
 }
 
-/**
- @brief Set tm structure to 0000-00-00 00:00:00.000000
- @param tm The value to set
-*/
-void set_zero_time(pg_tm* tm) {
-    memset(tm, 0, sizeof(*tm));
-}
-
 /* Calc days in one year. works with 0 <= year <= 99 */
 unsigned int calc_days_in_year(int year) {
     return ((year & 3) == 0 && (year % 100 || (year % 400 == 0 && year)) ? 366 : 365);
@@ -5285,7 +5277,8 @@ bool str_to_datetime(const char* str,  pg_tm *tm, fsec_t &fsec, int &nano, int &
     return true;
 
 ERROR_STRING_DATETIME:
-    set_zero_time(tm);
+    errno_t rc = memset_s(&tm, sizeof(struct pg_tm), 0, sizeof(struct pg_tm));
+    securec_check(rc, "\0", "\0");
     return false;
 }
 
