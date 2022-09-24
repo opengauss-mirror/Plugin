@@ -988,13 +988,13 @@ other			.
 					if (nchars >= NAMEDATALEN)
 						yyerror("operator too long");
 #ifdef DOLPHIN
-					if (strcmp(yytext, "&&") == 0 && GetSessionContext()->enableBCmptMode)
+					if (strcmp(yytext, "&&") == 0 && GetSessionContext()->enableBCmptMode && !GetSessionContext()->scan_from_pl)
 					{
 						yylval->str = pstrdup("AND");
 						yyextra->is_hint_str = false;
 						return (int)AND;
 					}
-					if (strcmp(yytext, "||") == 0 && !SQL_MODE_PIPES_AS_CONCAT())
+					if (strcmp(yytext, "||") == 0 && !SQL_MODE_PIPES_AS_CONCAT() && !GetSessionContext()->scan_from_pl)
 					{
 						yylval->str = pstrdup("OR");
 						yyextra->is_hint_str = false;
@@ -1214,8 +1214,13 @@ other			.
 						yyleng = nchars;
 						
 					}
-					ident = CopyIdentifier(yytext, yyleng, yyextra->warnOnTruncateIdent);
-					yylval->dolphinIdent = CreateDolphinIdent(ident, false);
+					if (!GetSessionContext()->scan_from_pl) {
+						ident = CopyIdentifier(yytext, yyleng, yyextra->warnOnTruncateIdent);
+						yylval->dolphinIdent = CreateDolphinIdent(ident, false);
+					} else {
+						ident = downcase_truncate_identifier(yytext, yyleng, yyextra->warnOnTruncateIdent);
+						yylval->str = ident;
+					}
 #else
 					ident = downcase_truncate_identifier(yytext, yyleng, yyextra->warnOnTruncateIdent);
 					yylval->str = ident;

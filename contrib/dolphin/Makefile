@@ -3,6 +3,7 @@ parser = plugin_parser
 utils = plugin_utils
 executor = plugin_executor
 commands = plugin_optimizer/commands
+pl = plugin_pl/plpgsql/src
 adt = $(utils)/adt
 mb = $(utils)/mb
 vector = plugin_vector
@@ -50,7 +51,9 @@ OBJS += $(optimizer)/streamwalker.o
 
 OBJS += $(commands)/functioncmds.o
 
-all $(OBJS): parser utils executor vector commands storage optimizer;
+OBJS += $(pl)/pl_gram.o $(pl)/pl_scanner.o
+
+all $(OBJS): parser utils executor vector commands storage optimizer pl;
 
 
 parser:
@@ -73,6 +76,9 @@ optimizer:
 
 commands:
 	make -C $(commands)
+
+pl:
+	make -C $(pl)
 
 extra_clean:
 	make clean -C $(parser)
