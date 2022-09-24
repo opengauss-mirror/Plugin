@@ -68,6 +68,7 @@
 #define MediumBlobMaxAllocSize ((Size)(16 * 1024 * 1024 - 1)) /* 16MB - 1 */
 #define LongBlobMaxAllocSize (((Size)4 * 1024 * 1024 * 1024 - 1)) /* 4GB - 1 */
 #define SOUND_THRESHOLD 4
+#define ANTI_CODE '7'
 #define MAX_CHARA_THRESHOLD 256
 #define MAX_CHARA_REMINDERS_LEN 10
 #define CONV_MAX_CHAR_LEN 65 //max 64bit and 1 sign bit
@@ -8651,7 +8652,7 @@ static char code_letter(char letter)
     letter = toupper((unsigned char)letter);
     if (letter >= 'A' && letter <= 'Z')
         return code_table[letter - 'A'];
-    return letter;
+    return ANTI_CODE;
 }
 
 Datum soundex(PG_FUNCTION_ARGS)
@@ -8671,7 +8672,8 @@ static void set_sound(const char* arg, char* result, int size)
     result[size] = '\0';
     int count = 0;
     bool isNullStr = true;
-    int argLength = 0;
+    int lenOneByte = 0;
+    Datum firstChar;
     while ((count++) < size) {
         if (isalpha((unsigned char)arg[0])) {
             result[0] = (char)toupper((unsigned char)*arg++);
@@ -8679,26 +8681,18 @@ static void set_sound(const char* arg, char* result, int size)
             isNullStr = false;
             break;
         } else if ((unsigned char)arg[0] & 0x80) {
-            result[0] = arg[0];
-            result[1] = arg[1];
-            argLength = strlen(arg);
-            if (argLength > 2) {
-                if (arg[2] != ' ') {
-                    if (isalpha((unsigned char)arg[2])) {
-                        result[2] = code_letter(arg[2]);
-                    } else {
-                        result[2] = arg[2];
-                    }
-		    result += 3;
-                    arg += 3;
-                } else {
-                    result += 2;
-                    arg += 2;
-                }
-            } else if (argLength == 2) {
-                result += 2;
-                arg += 2;
+            if (pg_database_encoding_max_length() == 1) {
+                lenOneByte = get_step_len(*arg);
+            } else {
+                lenOneByte = 1;
             }
+            firstChar = DirectFunctionCall3(text_substr_null, PointerGetDatum(cstring_to_text(arg)), Int32GetDatum(1), Int32GetDatum(lenOneByte));
+            char* tmpStr = text_to_cstring(DatumGetTextPP(firstChar));
+            for (int tmp = 0; tmp < strlen(tmpStr); tmp++) {
+                result[tmp] = tmpStr[tmp];
+            }
+            result += strlen(tmpStr);
+            arg += strlen(tmpStr);
             isNullStr = false;
             break;
         }
@@ -8713,7 +8707,7 @@ static void set_sound(const char* arg, char* result, int size)
             if (isalpha((unsigned char)*arg) &&
                     code_letter(*arg) != code_letter(*(arg - 1)) &&
                     code_letter(*arg) != code_letter(*(result - 1))) {
-                if (code_letter(arg[0]) != '0') {
+                if (code_letter(arg[0]) != '0' && code_letter(*arg) != *(result - 1)) {
                     *result = code_letter(arg[0]);
                     ++result;
                     ++cnt;
