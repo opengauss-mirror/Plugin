@@ -119,6 +119,7 @@
 | :------------ | :------------ | :------------ |
 |plugin_mb|pg_wchar.h  |src\include\mb\pg_wchar.h   |
 |plugin_nodes|parsenodes_common.h  |src\include\nodes\parsenodes_common.h   |
+|plugin_nodes|parsenodes.h  |src\include\nodes\parsenodes.h   |
 |plugin_parser|analyze.h  |src\include\parser\analyze.h   |
 |plugin_parser|backslash_quotes.h  |src\include\parser\backslash_quotes.h   |
 |plugin_parser|gramparse.h  |src\include\parser\gramparse.h   |

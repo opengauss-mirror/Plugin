@@ -2081,6 +2081,26 @@ Oid LookupFuncName(List* funcname, int nargs, const Oid* argtypes, bool noError)
     return InvalidOid;
 }
 
+#ifdef DOLPHIN
+Oid LookupFuncNameTypeNamesNoargs(List* funcname)
+{
+    FuncCandidateList clist;
+
+    clist = FuncnameGetCandidates(funcname, -1, NIL, false, false, false);    
+    if (clist != NULL && clist->next == NULL && OidIsValid(clist->oid)) 
+        return clist->oid;
+    if (clist == NULL) {
+        ereport(ERROR,
+            (errcode(ERRCODE_UNDEFINED_FUNCTION),
+                errmsg("function %s does not exist", NameListToString(funcname))));
+    } else if (clist->next != NULL) {
+        ereport(ERROR,
+            (errcode(ERRCODE_AMBIGUOUS_FUNCTION),
+                errmsg("more than one function named \"%s\"", NameListToString(funcname))));
+    }
+    return InvalidOid;
+}
+#endif
 /*
  * LookupTypeNameOid
  *		Convenience routine to look up a type, silently accepting shell types

@@ -32,7 +32,23 @@ ALTER PROCEDURE proc1() DETERMINISTIC;
 
 ALTER PROCEDURE proc1() NOT DETERMINISTIC;
 
+-- no params
 ALTER PROCEDURE proc1  READS SQL DATA;
+
+\sf proc1
+ALTER PROCEDURE proc1  READS SQL DATA FENCED;
+
+\sf proc1
+-- 存储过程本身不支持重载
+CREATE  PROCEDURE proc1(a int)
+AS
+BEGIN
+RAISE NOTICE '%','aaa';
+END;
+/
+
+-- 修改不存在的存储过程
+ALTER PROCEDURE proc2  READS SQL DATA;
 
 \c postgres
 drop database db_alter_func_2;

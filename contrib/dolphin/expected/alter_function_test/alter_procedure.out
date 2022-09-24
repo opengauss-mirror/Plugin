@@ -34,9 +34,35 @@ ALTER PROCEDURE proc1() DETERMINISTIC;
 ERROR:  Do not support deterministic for ALTER FUNCTION.
 ALTER PROCEDURE proc1() NOT DETERMINISTIC;
 ERROR:  Do not support deterministic for ALTER FUNCTION.
+-- no params
 ALTER PROCEDURE proc1  READS SQL DATA;
-ERROR:  syntax error at or near "READS"
-LINE 1: ALTER PROCEDURE proc1  READS SQL DATA;
-                               ^
+\sf proc1
+CREATE DEFINER = tester2 PROCEDURE public.proc1()
+ SECURITY DEFINER
+AS  DECLARE 
+BEGIN
+RAISE NOTICE '%','aaa';
+END;
+/
+ALTER PROCEDURE proc1  READS SQL DATA FENCED;
+\sf proc1
+CREATE DEFINER = tester2 PROCEDURE public.proc1()
+ SECURITY DEFINER FENCED
+AS  DECLARE 
+BEGIN
+RAISE NOTICE '%','aaa';
+END;
+/
+-- 存储过程本身不支持重载
+CREATE  PROCEDURE proc1(a int)
+AS
+BEGIN
+RAISE NOTICE '%','aaa';
+END;
+/
+ERROR:  function "proc1" already exists with same argument types
+-- 修改不存在的存储过程
+ALTER PROCEDURE proc2  READS SQL DATA;
+ERROR:  function proc2 does not exist
 \c postgres
 drop database db_alter_func_2;

@@ -16,9 +16,92 @@ ALTER FUNCTION f1 (s char(20)) DETERMINISTIC;
 ERROR:  Do not support deterministic for ALTER FUNCTION.
 ALTER FUNCTION f1 (s char(20)) NOT DETERMINISTIC;
 ERROR:  Do not support deterministic for ALTER FUNCTION.
+-- no params
 ALTER FUNCTION f1 READS SQL DATA;
-ERROR:  syntax error at or near "READS"
-LINE 1: ALTER FUNCTION f1 READS SQL DATA;
-                          ^
+-- 存在没有参数的情况，有一样的也报错
+create  function f3  returns int 
+as $$ 
+begin
+	insert into t1 values(1);
+	return 1;
+end;
+$$ LANGUAGE PLPGSQL;
+create  function f3(a int)  returns int 
+as $$ 
+begin
+	insert into t1 values(1);
+	return 1;
+end;
+$$ LANGUAGE PLPGSQL;
+ALTER FUNCTION f3  fenced;
+ERROR:  more than one function named "f3"
+drop FUNCTION f3(a int);
+\sf f3
+CREATE DEFINER = tester2 FUNCTION public.f3()
+ RETURNS integer
+ LANGUAGE plpgsql
+ NOT FENCED NOT SHIPPABLE
+AS $function$ 
+begin
+	insert into t1 values(1);
+	return 1;
+end;
+$function$;
+-- 没有此函数报错
+ALTER FUNCTION f4  NO SQL;
+ERROR:  function f4 does not exist
+-- 有重载，没有没有参数的函数，报错
+create  function f5(a int)  returns int
+as $$
+begin
+        insert into t1 values(1);
+        return 1;
+end;
+$$ LANGUAGE PLPGSQL;
+create  function f5(a float)  returns int
+as $$
+begin
+        insert into t1 values(1);
+        return 1;
+end;
+$$ LANGUAGE PLPGSQL;
+alter FUNCTION f5 no sql;
+ERROR:  more than one function named "f5"
+create  function f5  returns int
+as $$
+begin
+        insert into t1 values(1);
+        return 1;
+end;
+$$ LANGUAGE PLPGSQL;
+alter FUNCTION f5 no sql;
+ERROR:  more than one function named "f5"
+create table t1 (a int);
+select  f5(1);
+ f5 
+----
+  1
+(1 row)
+
+select f5 (1.1);
+ f5 
+----
+  1
+(1 row)
+
+select  f5() ;
+ f5 
+----
+  1
+(1 row)
+
+select * from t1;
+ a 
+---
+ 1
+ 1
+ 1
+(3 rows)
+
 \c postgres
 drop database db_alter_func_1;
