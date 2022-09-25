@@ -72,7 +72,9 @@ extern void NumericVar2lldiv(NumericVar *from, lldiv_t *to);
 #define TIMESTAMP_MIN_YEAR (1900 + YY_PART_YEAR - 1)
 #define TIMESTAMP_MAX_VALUE INT_MAX32
 #define TIMESTAMP_MIN_VALUE 1
-/* Flags to str_to_datetime and number_to_datetime */
+/** Flags to str_to_datetime and number_to_datetime.
+ *  They may be useful in the future.
+ */
 typedef unsigned int time_flags;
 static const time_flags TIME_FUZZY_DATE = 1; /* Set if we should allow partial dates */
 static const time_flags TIME_DATETIME_ONLY = 2; /* Set if we only allow full datetimes */

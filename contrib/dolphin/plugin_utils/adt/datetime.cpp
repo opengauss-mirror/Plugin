@@ -4865,37 +4865,6 @@ unsigned int calc_days_in_year(int year) {
 }
 
 /**
-  @brief Calculate nr of day since year 0 in new date-system (from 1615)
-
-  @param[in] year Year (exact 4 digit year, no year conversions)
-  @param[in] month Month
-  @param[in] day Day
-
-  @note: 0000-00-00 is a valid date, and will return 0
-
-  @return Days since 0000-00-00
-*/
-
-long calc_daynr(int year, int month, int day) {
-    long delsum;
-    int temp;
-    int y = year; /* may be < 0 temporarily */
-
-    if (y == 0 && month == 0) {
-        return 0; /* Skip errors */
-    }
-    /* Cast to int to be able to handle month == 0 */
-    delsum = (long)(365 * y + 31 * (month - 1) + day);
-    if (month <= 2) {
-        y--;
-    } else {
-        delsum -= (long)(month * 4 + 23) / 10;
-    }
-    temp = ((y / 100 + 1) * 3) / 4;
-    return (delsum + y / 4 - temp);
-}
-
-/**
   @brief Check datetime value for validity according to flags.
 
   @param[in] tm Date to check.
@@ -5305,8 +5274,8 @@ bool datetime_add_nanoseconds_with_round(pg_tm *tm, fsec_t &fsec, int nano) {
 
     fsec %= USECS_PER_SEC;
     Interval interval;
-    memset(&interval, 0, sizeof(interval));
-    // second = 1;
+    errorno_t rc = memset_s(&interval, sizeof(interval), 0, sizeof(interval));
+    securec_check(rc, "\0", "\0");
     interval.time = -USECS_PER_SEC;
     /* date_add_interval cannot handle bad dates */
     bool non_zero_date = (tm->tm_year || tm->tm_mon || tm->tm_mday);
