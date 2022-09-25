@@ -4955,9 +4955,9 @@ bool check_datetime_range(const pg_tm *tm, const fsec_t fsec, const int tm_type)
    @retval false - error
 */
 
-bool str_to_datetime(const char* str,  pg_tm *tm, fsec_t &fsec, int &nano, int &tm_type) {
+bool str_to_datetime(const char* str,  time_flags flags, int &tm_type, 
+                        pg_tm *tm, fsec_t &fsec, int &nano) {
     size_t length = strlen(str);
-    time_flags flags = TIME_NO_ZERO_DATE;
     unsigned int field_length = 0, year_length = 0, digits, i, number_of_fields;
     unsigned int date[MAX_DATE_PARTS], date_len[MAX_DATE_PARTS];
     unsigned int add_hours = 0, start_loop;
@@ -5274,7 +5274,7 @@ bool datetime_add_nanoseconds_with_round(pg_tm *tm, fsec_t &fsec, int nano) {
 
     fsec %= USECS_PER_SEC;
     Interval interval;
-    errorno_t rc = memset_s(&interval, sizeof(interval), 0, sizeof(interval));
+    errno_t rc = memset_s(&interval, sizeof(interval), 0, sizeof(interval));
     securec_check(rc, "\0", "\0");
     interval.time = -USECS_PER_SEC;
     /* date_add_interval cannot handle bad dates */
@@ -5310,7 +5310,7 @@ bool datetime_add_nanoseconds_with_round(pg_tm *tm, fsec_t &fsec, int nano) {
 bool cstring_to_tm(const char *expr, pg_tm *tm, fsec_t &fsec)
 {
     int nano = 0, tm_type = DTK_NONE;
-    if (!str_to_datetime(expr, tm, fsec, nano, tm_type) ||
+    if (!str_to_datetime(expr, TIME_NO_ZERO_DATE, tm_type, tm, fsec, nano) ||
         !datetime_add_nanoseconds_with_round(tm, fsec, nano)) {
             return false;
         }
