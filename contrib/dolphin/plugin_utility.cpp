@@ -7075,7 +7075,7 @@ void standard_ProcessUtility(Node* parse_tree, const char* query_string, ParamLi
         }
 
         case T_CreatePublicationStmt:
-#if defined(ENABLE_MULTIPLE_NODES) || defined(ENABLE_LITE_MODE)
+#ifdef ENABLE_MULTIPLE_NODES
             ereport(ERROR,
                 (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
                     errmsg("PUBLICATION is not currently supported"),
@@ -7084,7 +7084,7 @@ void standard_ProcessUtility(Node* parse_tree, const char* query_string, ParamLi
             CreatePublication((CreatePublicationStmt *) parse_tree);
             break;
         case T_AlterPublicationStmt:
-#if defined(ENABLE_MULTIPLE_NODES) || defined(ENABLE_LITE_MODE)
+#ifdef ENABLE_MULTIPLE_NODES
             ereport(ERROR,
                 (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
                     errmsg("PUBLICATION is not currently supported"),
@@ -7093,7 +7093,7 @@ void standard_ProcessUtility(Node* parse_tree, const char* query_string, ParamLi
             AlterPublication((AlterPublicationStmt *) parse_tree);
             break;
         case T_CreateSubscriptionStmt:
-#if defined(ENABLE_MULTIPLE_NODES) || defined(ENABLE_LITE_MODE)
+#ifdef ENABLE_MULTIPLE_NODES
             ereport(ERROR,
                 (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
                     errmsg("SUBSCRIPTION is not currently supported"),
@@ -7102,7 +7102,7 @@ void standard_ProcessUtility(Node* parse_tree, const char* query_string, ParamLi
             CreateSubscription((CreateSubscriptionStmt *) parse_tree, is_top_level);
             break;
         case T_AlterSubscriptionStmt:
-#if defined(ENABLE_MULTIPLE_NODES) || defined(ENABLE_LITE_MODE)
+#ifdef ENABLE_MULTIPLE_NODES
             ereport(ERROR,
                 (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
                     errmsg("SUBSCRIPTION is not currently supported"),
@@ -7111,7 +7111,7 @@ void standard_ProcessUtility(Node* parse_tree, const char* query_string, ParamLi
             AlterSubscription((AlterSubscriptionStmt *) parse_tree, is_top_level);
             break;
         case T_DropSubscriptionStmt:
-#if defined(ENABLE_MULTIPLE_NODES) || defined(ENABLE_LITE_MODE)
+#ifdef ENABLE_MULTIPLE_NODES
             ereport(ERROR,
                 (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
                     errmsg("SUBSCRIPTION is not currently supported"),

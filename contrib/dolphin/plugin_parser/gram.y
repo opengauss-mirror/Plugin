@@ -402,6 +402,7 @@ static Node *make_node_from_scanbuf(int start_pos, int end_pos, core_yyscan_t yy
 static int64 SequenceStrGetInt64(const char *str);
 static int GetLoadType(int load_type_f, int load_type_s);
 static Node *MakeSqlLoadNode(char *colname);
+static void checkDeleteRelationError();
 static TypeName* parseFloatTypeByPrecision(int ival, int location, core_yyscan_t yyscanner);
 static TypeName* transferFloat4TypeInBFormat(char *typnam, List* list, int location, core_yyscan_t yyscanner);
 
@@ -427,6 +428,8 @@ static bool CheckWhetherInColList(char *colname, List *col_list);
 static int GetFillerColIndex(char *filler_col_name, List *col_list);
 static void RemoveFillerCol(List *filler_list, List *col_list);
 static int errstate;
+
+static void setDelimiterName(core_yyscan_t yyscanner, char*input, VariableSetStmt*n);
 static unsigned char GetLowerCaseChar(unsigned char ch, bool enc_is_single_byte);
 static char* downcase_str(char* ident, bool is_quoted);
 static DolphinString* MakeDolphinStringByChar(char* str, bool is_quoted);
@@ -557,7 +560,7 @@ static SelectStmt *MakeShowGrantStmt(char *arg, int location, core_yyscan_t yysc
 		CreateWeakPasswordDictionaryStmt DropWeakPasswordDictionaryStmt
 		AlterGlobalConfigStmt DropGlobalConfigStmt
 		CreatePublicationStmt AlterPublicationStmt
-		CreateSubscriptionStmt AlterSubscriptionStmt DropSubscriptionStmt CheckSumTableStmt
+		CreateSubscriptionStmt AlterSubscriptionStmt DropSubscriptionStmt DelimiterStmt CheckSumTableStmt
 		OptimizeStmt ShrinkStmt
 
 /* <DB4AI> */
@@ -996,6 +999,7 @@ static SelectStmt *MakeShowGrantStmt(char *arg, int location, core_yyscan_t yysc
 %type <typnam>  load_col_data_type
 %type <ival64>  load_col_sequence_item_sart column_sequence_item_step column_sequence_item_sart
 %type <trgcharacter> trigger_order
+%type <str> delimiter_str_name delimiter_str_names
 %type <node>	on_table opt_engine engine_option opt_engine_without_empty opt_compression opt_compression_without_empty set_compress_type opt_row_format row_format_option
 %type <keyword>	into_empty opt_temporary opt_values_in replace_empty
 %type <str>	compression_args
@@ -1154,6 +1158,9 @@ static SelectStmt *MakeShowGrantStmt(char *arg, int location, core_yyscan_t yysc
 			VALID_BEGIN
 			DECLARE_CURSOR ON_UPDATE_TIME
 			START_WITH CONNECT_BY WITH_ROLLUP
+			END_OF_INPUT
+			END_OF_INPUT_COLON
+			END_OF_PROC
 
 /* Precedence: lowest to highest */
 %nonassoc COMMENT
@@ -1253,6 +1260,38 @@ stmtblock:	stmtmulti
 
 /* the thrashing around here is to discard "empty" statements... */
 stmtmulti:	stmtmulti ';' stmt
+				{
+					if ($3 != NULL)
+					{
+						if (IsA($3, List))
+						{
+							$$ = list_concat($1, (List*)$3);
+						}
+						else
+						{
+						$$ = lappend($1, $3);
+						}
+					}
+					else
+						$$ = $1;
+				}
+			| stmtmulti ';' END_OF_INPUT stmt
+				{
+					if ($4 != NULL)
+					{
+						if (IsA($4, List))
+						{
+							$$ = list_concat($1, (List*)$4);
+						}
+						else
+						{
+						$$ = lappend($1, $4);
+						}
+					}
+					else
+						$$ = $1;
+				}
+			| stmtmulti END_OF_INPUT_COLON stmt
 				{
 					if ($3 != NULL)
 					{
@@ -1499,6 +1538,7 @@ stmt :
 			| ShrinkStmt
 			| /*EMPTY*/
 				{ $$ = NULL; }
+			| DelimiterStmt
 		;
 
 /*****************************************************************************
@@ -9321,7 +9361,7 @@ ConstraintElem:
 		;
 
 unique_name:		  
-			IDENT                           			{ $$ = $$ = downcase_str($1->str, $1->is_quoted); }
+			IDENT                           			{ $$ = downcase_str($1->str, $1->is_quoted); }
 			| unreserved_keyword_without_key			{ $$ = downcase_str(pstrdup($1), false); }
 			| col_name_keyword              			{ $$ = downcase_str(pstrdup($1), false); }
 			| PROXY                         			{ $$ = downcase_str(pstrdup($1), false); }			
@@ -17023,7 +17063,7 @@ subprogram_body: 	{
 						tok = YYLEX;
 
 						/* adapt A db's label */
-						if (!(tok == ';' || tok == 0)
+						if (!(tok == ';'  || (tok == 0 || tok == END_OF_PROC))
 							&& tok != IF_P
 							&& tok != CASE
 							&& tok != LOOP)
@@ -17034,7 +17074,7 @@ subprogram_body: 	{
 
 					 	if (blocklevel == 1
 							&& (pre_tok == ';' || pre_tok == BEGIN_P)
-							&& (tok == ';' || tok == 0))
+							&& (tok == ';' || (tok == 0 || tok == END_OF_PROC)))
 						{
 							/* Save the end of procedure body. */
 							proc_e = yylloc;
@@ -23005,15 +23045,7 @@ DeleteStmt: opt_with_clause DELETE_P hint_string FROM relation_expr_opt_alias_li
 					DeleteStmt *n = makeNode(DeleteStmt);
 					n->relations = $5;
 					if (list_length(n->relations) > 1) {
-#ifdef ENABLE_MULTIPLE_NODES
-						ereport(errstate, 
-							    (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
-								 errmsg("multi-relation delete is not yet supported.")));
-#endif
-						if (u_sess->attr.attr_sql.sql_compatibility != B_FORMAT)						
-							ereport(errstate, 
-									(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
-									 errmsg("multi-relation delete only support in B-format database")));
+						checkDeleteRelationError();
 					}
 					n->usingClause = $6;
 					n->whereClause = $7;
@@ -23030,21 +23062,26 @@ DeleteStmt: opt_with_clause DELETE_P hint_string FROM relation_expr_opt_alias_li
 					DeleteStmt *n = makeNode(DeleteStmt);
 					n->relations = $4;
 					if (list_length(n->relations) > 1) {
-#ifdef ENABLE_MULTIPLE_NODES
-						ereport(errstate, 
-							    (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
-								 errmsg("multi-relation delete is not yet supported.")));
-#endif
-						if (u_sess->attr.attr_sql.sql_compatibility != B_FORMAT)						
-							ereport(errstate, 
-									(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
-									 errmsg("multi-relation delete only support in B-format database")));
+						checkDeleteRelationError();
 					}
 					n->usingClause = $5;
 					n->whereClause = $6;
 					n->sortClause = $7;
 					n->limitClause = (Node*)list_nth($8, 1);
 					n->returningList = $9;
+					n->withClause = $1;
+					n->hintState = create_hintstate($3);				
+					$$ = (Node *)n;
+				}
+		/* this is only used in multi-relation DELETE for compatibility B database. */
+		| opt_with_clause DELETE_P hint_string relation_expr_opt_alias_list
+			FROM from_list where_or_current_clause
+				{
+					DeleteStmt *n = makeNode(DeleteStmt);
+					n->relations = $4;
+					checkDeleteRelationError();
+					n->usingClause = $6;
+					n->whereClause = $7;
 					n->withClause = $1;
 					n->hintState = create_hintstate($3);				
 					$$ = (Node *)n;
@@ -30032,6 +30069,44 @@ ColLabel:	normal_ident							{ $$ = $1; }
 				}
 		;
 
+DelimiterStmt: DELIMITER delimiter_str_names END_OF_INPUT
+			   {
+					VariableSetStmt *n = makeNode(VariableSetStmt);
+					setDelimiterName(yyscanner, $2, n);
+					$$ = (Node *)n;
+				}
+			|	DELIMITER delimiter_str_names END_OF_INPUT_COLON
+				{
+					VariableSetStmt *n = makeNode(VariableSetStmt);
+					setDelimiterName(yyscanner, $2, n);
+					$$ = (Node *)n;
+				}
+			;
+
+delimiter_str_names: delimiter_str_names delimiter_str_name
+					{
+						$$ = $1 ;
+					}
+                |    delimiter_str_name
+					{
+						$$ = $1;
+					}
+				;
+
+delimiter_str_name: ColId_or_Sconst 
+					{
+						$$ = $1;
+					}
+				|   all_Op
+				    {
+						$$ = $1;
+					}
+				|   ';'
+				    {
+						$$ = ";";
+					}
+				;
+
 /*
  * Column lable of dolphin type
  */
@@ -32912,6 +32987,22 @@ static void RemoveFillerCol(List *filler_list, List *col_list)
 	return;
 }
 
+static void setDelimiterName(core_yyscan_t yyscanner, char*input, VariableSetStmt*n)
+{
+	errno_t rc = 0;
+	base_yy_extra_type *yyextra = pg_yyget_extra(yyscanner);
+	if (u_sess->attr.attr_sql.sql_compatibility == B_FORMAT) {
+		if (strlen(input) >= DELIMITER_LENGTH) {
+			parser_yyerror("syntax error");
+		}
+		n->is_local = false;
+		n->kind = VAR_SET_VALUE;
+		n->name = "delimiter_name";
+		n->args = list_make1(makeStringConst(input, -1));
+	}
+}
+
+
 static FuncCall* MakePriorAsFunc()
 {
     List *funcName = list_make1(makeString("prior"));
@@ -32925,6 +33016,19 @@ static FuncCall* MakePriorAsFunc()
     n->over = NULL;
     n->call_func = false;
     return n;
+}
+
+static void checkDeleteRelationError()
+{
+#ifdef ENABLE_MULTIPLE_NODES
+	ereport(errstate, 
+			(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+				errmsg("multi-relation delete is not yet supported.")));
+#endif
+	if (u_sess->attr.attr_sql.sql_compatibility != B_FORMAT)						
+		ereport(errstate, 
+				(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+					errmsg("multi-relation delete only support in B-format database")));
 }
 
 static CreateTableOptions* MakeCreateTableOptions(CreateTableOptions *tableOptions, SingleTableOption *tableOption)

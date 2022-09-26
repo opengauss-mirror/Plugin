@@ -10075,6 +10075,8 @@ static void ATExecAddColumn(List** wqueue, AlteredTableInfo* tab, Relation rel, 
     }
 #endif
 
+    bool isDelta = RELATION_IS_DELTA(rel);
+    
     /* construct new attribute's pg_attribute entry */
     attribute.attrelid = myrelid;
     (void)namestrcpy(&(attribute.attname), colDef->colname);
@@ -10093,14 +10095,18 @@ static void ATExecAddColumn(List** wqueue, AlteredTableInfo* tab, Relation rel, 
     attribute.attisdropped = false;
     attribute.attislocal = colDef->is_local;
     attribute.attkvtype = colDef->kvtype;
-    VerifyAttrCompressMode(colDef->cmprs_mode, attribute.attlen, colDef->colname);
-    attribute.attcmprmode = colDef->cmprs_mode;
+    if (!isDelta) {
+        VerifyAttrCompressMode(colDef->cmprs_mode, attribute.attlen, colDef->colname);
+        attribute.attcmprmode = colDef->cmprs_mode;
+    } else {
+        attribute.attcmprmode = ATT_CMPR_NOCOMPRESS;
+    }
     attribute.attinhcount = colDef->inhcount;
     attribute.attcollation = collOid;
     /* attribute.attacl is handled by InsertPgAttributeTuple */
     ReleaseSysCache(typeTuple);
 
-    if (RelationIsRowFormat(rel) &&  ATT_CMPR_NOCOMPRESS < colDef->cmprs_mode
+    if (!isDelta && RelationIsRowFormat(rel) &&  ATT_CMPR_NOCOMPRESS < colDef->cmprs_mode
         && colDef->cmprs_mode <= ATT_CMPR_NUMSTR) {
         ereport(ERROR,
             (errcode(ERRCODE_INVALID_TABLE_DEFINITION),
@@ -11583,9 +11589,9 @@ static void ATExecAddIndexConstraint(AlteredTableInfo* tab, Relation rel, IndexS
         true, /* update pg_index */
         true, /* remove old dependencies */
         (g_instance.attr.attr_common.allowSystemTableMods || u_sess->attr.attr_common.IsInplaceUpgrade));
-
     /* index constraint */
     CreateNonColumnComment(index_oid, stmt->indexOptions, RelationRelationId);
+  
     index_close(indexRel, NoLock);
 }
 
@@ -12223,6 +12229,7 @@ static void ATAddForeignKeyConstraint(AlteredTableInfo* tab, Relation rel, Const
 
     /* foreign key constraint */
     CreateNonColumnComment(constrOid, fkconstraint->constraintOptions, ConstraintRelationId);
+    
     /*
      * Create the triggers that will enforce the constraint.
      */
@@ -13119,7 +13126,11 @@ static void CheckAutoIncrementConstraints(Relation conrel, SysScanDesc scan, Hea
  * Like DROP COLUMN, we can't use the normal ALTER TABLE recursion mechanism.
  */
 static void ATExecDropConstraint(Relation rel, const char* constrName, DropBehavior behavior, bool recurse,
-    bool recursing, bool missing_ok, LOCKMODE lockmode, bool dropFk)
+    bool recursing, bool missing_ok, LOCKMODE lockmode
+#ifdef DOLPHIN
+    , bool dropFk
+#endif
+)
 {
     List* children = NIL;
     ListCell* child = NULL;
@@ -13227,13 +13238,16 @@ static void ATExecDropConstraint(Relation rel, const char* constrName, DropBehav
 
     if (!found) {
         if (!missing_ok) {
+#ifdef DOLPHIN
             if (dropFk) {
                 ereport(ERROR,
                     (errcode(ERRCODE_UNDEFINED_OBJECT),
                         errmsg("foreign key \"%s\" of relation \"%s\" does not exist",
                             constrName,
                             RelationGetRelationName(rel))));
-            } else {
+            } else
+#endif
+            {
                 ereport(ERROR,
                     (errcode(ERRCODE_UNDEFINED_OBJECT),
                         errmsg("constraint \"%s\" of relation \"%s\" does not exist",
@@ -19544,7 +19558,7 @@ void CheckValuePartitionKeyType(Form_pg_attribute* attrs, List* pos)
         }
     }
 }
-
+#ifdef DOLPHIN
 int CheckAddedType(Oid typoid)
 {
     if (typoid == get_typeoid(PG_CATALOG_NAMESPACE, "uint1")){
@@ -19560,7 +19574,7 @@ int CheckAddedType(Oid typoid)
     }
     return INVALID_OID;
 }
-
+#endif
 /*
  * @@GaussDB@@
  * Target		: data partition
@@ -19640,6 +19654,7 @@ static bool CheckRangePartitionKeyType(Oid typoid)
         case NAMEOID:
             result = true;
             break;
+
         default:
 #ifdef DOLPHIN
             result = CheckAddedType(typoid) > INVALID_OID;
@@ -19648,6 +19663,7 @@ static bool CheckRangePartitionKeyType(Oid typoid)
 #endif
             break;
     }
+
     return result;
 }
 
@@ -19694,7 +19710,11 @@ static bool CheckHashPartitionKeyType(Oid typoid)
         case TIMESTAMPTZOID:
             return true;
         default:
+#ifdef DOLPHIN
             return CheckAddedType(typoid) > INVALID_OID;
+#else
+            return false;
+#endif
     }
 }
 
@@ -28886,6 +28906,7 @@ static void CopyTempAutoIncrement(Relation oldrel, Relation newrel)
     }
 }
 
+#ifdef DOLPHIN
 static List* ATGetNonUniqueKeyList(Relation rel)
 {
     List* result = NIL;
@@ -28917,7 +28938,6 @@ static char* ATGetPKName(Relation rel)
     return get_rel_name(pkoid);
 }
 
-#ifdef DOLPHIN
 /*
  * Functions for partition table, used in partitionfuncs.cpp
  */
