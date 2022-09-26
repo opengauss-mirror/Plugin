@@ -1,6 +1,6 @@
-drop database if exists test2;
-create database test2 dbcompatibility'B';
-\c test2
+drop database if exists test_json_array_append;
+create database test_json_array_append dbcompatibility'B';
+\c test_json_array_append
 
 select JSON_ARRAY_APPEND('[1, [2, 3]]', '$[1]', 4);
 select JSON_ARRAY_APPEND('[1, [2, 3]]', '$[0]', 4);
@@ -38,5 +38,4 @@ select JSON_ARRAY_APPEND('[1, [2, 3]]', '$[*]', 日);
 select JSON_ARRAY_APPEND('[1, [2, 3]]', ' ', 4);
 
 \c postgres
-DROP DATABASE test2;
-
+DROP DATABASE test_json_array_append;

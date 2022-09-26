@@ -54,10 +54,121 @@ select json_object(1, 'Json', 2, 'MyContex');
  {"1" : "Json", "2" : "MyContex"}
 (1 row)
 
-select json_object(current_date(),current_date());
+-- test for type date and time
+select json_object('2022-09-26'::date,20221001::date);
           json_object          
 -------------------------------
- {"09-24-2022" : "09-24-2022"}
+ {"09-26-2022" : "10-01-2022"}
+(1 row)
+
+select json_object('12:12:58'::time,'24:00:00'::time);
+        json_object        
+---------------------------
+ {"12:12:58" : "24:00:00"}
+(1 row)
+
+--test with ->,->>
+select json_object('a','{"a":"b"}','b',234342,'c',true)->'a';
+    ?column?     
+-----------------
+ "{\"a\":\"b\"}"
+(1 row)
+
+select json_object('a','{"a":"b"}'::json,'b',234342,'c',true)->'a';
+ ?column?  
+-----------
+ {"a":"b"}
+(1 row)
+
+select json_object('a','{"a":"b"}'::json,'b',234342,'c',true)->>'b';
+ ?column? 
+----------
+ 234342
+(1 row)
+
+--test with json functions
+select json_object_field(json_object('Name','Adam','Age',23,'Address','Chengdu'),'Name');
+ json_object_field 
+-------------------
+ "Adam"
+(1 row)
+
+select json_object_field(json_object('Name','Adam','Age',23,'Address','Chengdu','Test','{"a":233}'::json),'Test');
+ json_object_field 
+-------------------
+ {"a":233}
+(1 row)
+
+select json_object_field_text(json_object('Name','Adam','Age',23,'Address','Chengdu','Test','{"a":233}'::json),'Test');
+ json_object_field_text 
+------------------------
+ {"a":233}
+(1 row)
+
+select json_object_field_text(json_object('Name','Adam','Age',23,'Address','Chengdu'),'Name');
+ json_object_field_text 
+------------------------
+ Adam
+(1 row)
+
+select json_extract_path(json_object('Name','Adam','Age',23,'Address','Chengdu'),'Name');
+ json_extract_path 
+-------------------
+ "Adam"
+(1 row)
+
+select json_extract_path_op(json_object('Name','Adam','Age',23,'Address','Chengdu'),'{Name}');
+ json_extract_path_op 
+----------------------
+ "Adam"
+(1 row)
+
+select json_extract_path_text(json_object('Name','Adam','Age',23,'Address','Chengdu'),'Name');
+ json_extract_path_text 
+------------------------
+ Adam
+(1 row)
+
+select json_extract_path_text_op(json_object('Name','Adam','Age',23,'Address','Chengdu'),'{Name}');
+ json_extract_path_text_op 
+---------------------------
+ Adam
+(1 row)
+
+select * from json_each(json_object('Name','Adam','Age',23,'Address','Chengdu'));
+   key   |   value   
+---------+-----------
+ Age     | 23
+ Name    | "Adam"
+ Address | "Chengdu"
+(3 rows)
+
+select * from json_each_text(json_object('Name','Adam','Age',23,'Address','Chengdu'));
+   key   |  value  
+---------+---------
+ Age     | 23
+ Name    | Adam
+ Address | Chengdu
+(3 rows)
+
+select * from json_object_keys(json_object('Name','Adam','Age',23,'Address','Chengdu'));
+ json_object_keys 
+------------------
+ Age
+ Name
+ Address
+(3 rows)
+
+select json_typeof(json_object('Name','Adam','Age',23,'Address','Chengdu'));
+ json_typeof 
+-------------
+ object
+(1 row)
+
+select * from json_to_record(json_object('name','Adam','age',23,'address','Chengdu'), true) as x(Name text, Age int, d text);
+ name | age | d 
+------+-----+---
+ Adam |  23 | 
 (1 row)
 
 -- test for empty strings

@@ -15,7 +15,30 @@ select json_object('name', 'Tim', 'age', 20, 'friend', json_object('name', 'Jim'
 select json_object('City', 'Cairns', 'Population', 139693);
 select json_object(1234,234,212,333);
 select json_object(1, 'Json', 2, 'MyContex');
-select json_object(current_date(),current_date());
+
+-- test for type date and time
+select json_object('2022-09-26'::date,20221001::date);
+select json_object('12:12:58'::time,'24:00:00'::time);
+
+--test with ->,->>
+select json_object('a','{"a":"b"}','b',234342,'c',true)->'a';
+select json_object('a','{"a":"b"}'::json,'b',234342,'c',true)->'a';
+select json_object('a','{"a":"b"}'::json,'b',234342,'c',true)->>'b';
+
+--test with json functions
+select json_object_field(json_object('Name','Adam','Age',23,'Address','Chengdu'),'Name');
+select json_object_field(json_object('Name','Adam','Age',23,'Address','Chengdu','Test','{"a":233}'::json),'Test');
+select json_object_field_text(json_object('Name','Adam','Age',23,'Address','Chengdu','Test','{"a":233}'::json),'Test');
+select json_object_field_text(json_object('Name','Adam','Age',23,'Address','Chengdu'),'Name');
+select json_extract_path(json_object('Name','Adam','Age',23,'Address','Chengdu'),'Name');
+select json_extract_path_op(json_object('Name','Adam','Age',23,'Address','Chengdu'),'{Name}');
+select json_extract_path_text(json_object('Name','Adam','Age',23,'Address','Chengdu'),'Name');
+select json_extract_path_text_op(json_object('Name','Adam','Age',23,'Address','Chengdu'),'{Name}');
+select * from json_each(json_object('Name','Adam','Age',23,'Address','Chengdu'));
+select * from json_each_text(json_object('Name','Adam','Age',23,'Address','Chengdu'));
+select * from json_object_keys(json_object('Name','Adam','Age',23,'Address','Chengdu'));
+select json_typeof(json_object('Name','Adam','Age',23,'Address','Chengdu'));
+select * from json_to_record(json_object('name','Adam','age',23,'address','Chengdu'), true) as x(Name text, Age int, d text);
 
 -- test for empty strings
 select json_object('City', '', 'Population', 139693);
