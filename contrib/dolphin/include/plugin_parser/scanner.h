@@ -27,13 +27,13 @@
 #undef ereport
 #define ereport(a, b) fe_rethrow(yyscanner)
 #endif
-
+#ifdef DOLPHIN
 typedef struct DolphinIdent
 {
-	char* str;
-	bool is_quoted;
+    char* str;
+    bool is_quoted;
 } DolphinIdent;
-
+#endif
 /*
  * The scanner returns extra data about scanned tokens in this union type.
  * Note that this is a subset of the fields used in YYSTYPE of the bison
@@ -43,7 +43,9 @@ typedef union core_YYSTYPE {
     int ival;            /* for integer literals */
     char* str;           /* for identifiers and non-integer literals */
     const char* keyword; /* canonical spelling of keywords */
+#ifdef DOLPHIN
     DolphinIdent* dolphinIdent;
+#endif
 } core_YYSTYPE;
 
 /*
@@ -55,6 +57,8 @@ typedef union core_YYSTYPE {
  * therefore sufficient to make YYLTYPE an int.
  */
 #define YYLTYPE int
+
+#define DELIMITER_LENGTH 16
 
 /*
  * Another important component of the scanner's API is the token code numbers.
@@ -124,6 +128,9 @@ typedef struct core_yy_extra_type {
     int func_param_end;              /* function and procedure param string end pos,exclude right parenthesis */
     bool isPlpgsqlKeyWord;
     const PlpgsqlKeywordValue* plKeywordValue;
+    bool is_delimiter_name;
+    bool is_last_colon;
+    bool is_proc_end;
 } core_yy_extra_type;
 
 #ifdef FRONTEND_PARSER
@@ -158,8 +165,8 @@ extern int core_yylex(core_YYSTYPE* lvalp, YYLTYPE* llocp, core_yyscan_t yyscann
 extern int scanner_errposition(int location, core_yyscan_t yyscanner);
 extern void scanner_yyerror(const char* message, core_yyscan_t yyscanner);
 extern void addErrorList(const char* message, int lines);
-
+#ifdef DOLPHIN
 extern DolphinIdent* CreateDolphinIdent(char* ident, bool is_quoted);
-
+#endif
 #endif /* SCANNER_H */
 
