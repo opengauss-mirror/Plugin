@@ -5041,6 +5041,15 @@ List* transformAlterTableStmt(Oid relid, AlterTableStmt* stmt, const char* query
 
                 newcmds = lappend(newcmds, cmd);
                 break;
+            case AT_SetTableRowFormat:
+                ereport(WARNING, (errmsg("ROW_FORMAT for TABLE is not supported for current version. skipped")));
+                break;
+            case AT_SetTableCharset:
+                ereport(WARNING, (errmsg("CHARSET for TABLE is not supported for current version. skipped")));
+                break;
+            case AT_SetTableCollate:
+                ereport(WARNING, (errmsg("COLLATE for TABLE is not supported for current version. skipped")));
+                break;
             #endif
             case AT_SplitPartition:
                 if (!RELATION_IS_PARTITIONED(rel)) {
