@@ -923,7 +923,7 @@ other			.
 					if (slashstar)
 						nchars = slashstar - yytext;
 #ifdef DOLPHIN
-					if(nchars >= 1 &&  GetSessionContext()->enableBCmptMode)
+					if(nchars >= 1 &&  GetSessionContext()->enableBCmptMode && !yyextra->in_slash_proc_body)
                                          {
                                                 char   *sharpchar = strstr(yytext, "#");
                                                 if(sharpchar)
@@ -1210,7 +1210,7 @@ other			.
 					 */
 #ifdef DOLPHIN
 					char* sharpcomment = strstr(yytext,"#");
-					if(sharpcomment && GetSessionContext()->enableBCmptMode)
+					if(sharpcomment && GetSessionContext()->enableBCmptMode && !yyextra->in_slash_proc_body)
 					{
 						int nchars = sharpcomment - yytext;
 						yyless(nchars);
