@@ -411,22 +411,13 @@ static void add_distribute_info(PlannerInfo* root, Plan* scanPlan, Index relInde
         } else {
             List* quals = scanClauses;
 
-            /*
-             * If the type of scanPlan is DfsScan, must use the following opExpressionList
-             * instead of scanClauses which do not include pushdown quals.
-             */
-            if (IsA(scanPlan, DfsScan)) {
-                DfsPrivateItem* item = (DfsPrivateItem*)((DefElem*)linitial(((DfsScan*)scanPlan)->privateData))->arg;
-                quals = item->opExpressionList;
-            }
-
             /* A hashed table may have filter quals, it's exec nodes are not equal to it's data nodes */
             execNodes = GetRelationNodesByQuals(
                     (void*)root->parse, rte->relid, relIndex, (Node*)quals, RELATION_ACCESS_READ, NULL, false);
 
             if (execNodes == NULL) {
                 elog(DEBUG1, "[add_distribute_info] execNodes is NULL. Oid [%u]", rte->relid);
-                Assert(rte->relid < FirstNormalObjectId || IS_PGXC_DATANODE || IsA(scanPlan, DfsScan));
+                Assert(rte->relid < FirstNormalObjectId || IS_PGXC_DATANODE);
 
                 execNodes = makeNode(ExecNodes);
                 Distribution* distribution = ng_get_installation_group_distribution();
