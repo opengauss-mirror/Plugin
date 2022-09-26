@@ -174,7 +174,7 @@ select JSON_ARRAY_APPEND('[1, [2, 3]]', '$..1', 4);
 ERROR:  invalid JSON path expression
 CONTEXT:  referenced column: json_array_append
 select JSON_ARRAY_APPEND('[1, [2, 3]]', '$[*]', 4);
-ERROR:  invalid JSON path expression
+ERROR:  in this situation, path expressions may not contain the * and ** tokens
 CONTEXT:  referenced column: json_array_append
 select JSON_ARRAY_APPEND('[1, [2, 3]]', '$[*]', 日);
 ERROR:  column "日" does not exist

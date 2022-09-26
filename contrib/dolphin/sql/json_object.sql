@@ -1,18 +1,21 @@
-drop database if exists test_object;
-create database test_object dbcompatibility 'B';
-\c test_object
--- test for json_mysql_mode = false
+drop database if exists test_json_object;
+create database test_json_object dbcompatibility 'B';
+\c test_json_object
+-- test for b_compatibility_mode = false
 select json_object('{a,1,b,2,3,NULL,"d e f","a b c"}');
 select json_object('{a,b,"a b c"}', '{a,1,1}');
 
--- test for json_mysql_mode = true
-set json_mysql_mode = 1;
+-- test for b_compatibility_mode = true
+set b_compatibility_mode = 1;
 
 -- test for basic functionality of json_object
 select json_object('name', 'Jim', 'age', 20);
 select json_object('name', 'Jim', 'age', 20, 'name', 'Tim');
 select json_object('name', 'Tim', 'age', 20, 'friend', json_object('name', 'Jim', 'age', 20), 'hobby', json_build_array('games', 'sports'));
 select json_object('City', 'Cairns', 'Population', 139693);
+select json_object(1234,234,212,333);
+select json_object(1, 'Json', 2, 'MyContex');
+select json_object(current_date(),current_date());
 
 -- test for empty strings
 select json_object('City', '', 'Population', 139693);
@@ -20,10 +23,15 @@ select json_object('', 'Cairns', 'Population', 139693);
 
 -- test for empty lists
 select json_object();
+select json_object();
 
 -- test for null values
 select json_object('City', 'Cairns', 'Population', NULL);
-select json_object('City', 'Cairns', NULL, 139693);
+select json_object('City', 'Cairns', 139693, NULL);
+
+-- test for null keys
+select json_object(NULL, 'nothing');
+select json_object(NULL, NULL);
 
 -- test for float number
 select json_object('City', '', 'Population', 139693.123);
@@ -35,6 +43,8 @@ select json_object('a', 13245467687846546465222223888885674465456356544655479879
 
 -- test for bool values
 select json_object('Red', true, 'Blue', false);
+select json_object(true, 1, false, 0);
+select json_object(true, false, false, true);
 
 -- test for lots of pairs
 select json_object('Region', 'Asia', 'color', 'red', 'City', '', 'Population', 139693.123, 'name', 'Tim', 'age', 20, 'friend', json_object('name', 'Jim', 'age', 20), 'hobby', json_build_array('games', 'sports'), 'name', 'Tim', 'age', 20, 'friend', json_object('name', 'Jim', 'age', 20), 'hobby', json_build_array('games', 'sports'));
@@ -47,8 +57,6 @@ select json_object('Number', -1234564564868789790867567.456);
 -- test for numeric input starting with '+'
 select json_object('Number', +123);
 select json_object('Number', ++123);
-
-
 
 -- test for type check
 select json_object('Type', abc);
@@ -74,10 +82,10 @@ insert into info1 values ('Hnana','Riben',3403234);
 insert into tab_json1 select json_object('name',name,'address',address,'tel',tel) from info1;
 select * from tab_json1;
 
--- test for setting json_mysql_mode back to false
-set json_mysql_mode = 0;
+-- test for setting b_compatibility_mode back to false
+set b_compatibility_mode = 0;
 select json_object('{a,1,b,2,3,NULL,"d e f","a b c"}');
 select json_object('{a,b,"a b c"}', '{a,1,1}');
 
 \c postgres
-drop database test_object;
+drop database test_json_object;

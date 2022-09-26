@@ -1,6 +1,6 @@
-drop database if exists test1;
-create database test1 dbcompatibility'B';
-\c test1
+drop database if exists test_json_keys;
+create database test_json_keys dbcompatibility'B';
+\c test_json_keys
 
 SELECT JSON_KEYS('{"a":"t1"}');
 SELECT JSON_KEYS('{"a":"t1","b":"t2"}');
@@ -26,6 +26,10 @@ SELECT JSON_KEYS('[1,2,{"a":1,"b":{"c":2}},4]','$[2]');
 SELECT JSON_KEYS('{"a":1,"b":{"c":2}}','$.z');
 SELECT JSON_KEYS('[1,2,{"a":1,"b":{"c":2}},4]','$[8]');
 
-create table student(name VARCHAR(20) PRIMARY KEY);
+
+create table student(name json);
 insert into student (name) value(json_keys('{"a":123,"b":{"c":"qwe"}}'));
 select name from student;
+
+\c postgres
+drop database test_json_keys;
