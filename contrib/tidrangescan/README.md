@@ -23,3 +23,8 @@ Connect to gaussdb and create extension.
 ```
 CREATE EXTENSION tidrangescan;
 ```
+Also need to add *tidrangescan* into a guc parameter named 'shared_preload_libraries' and restart the database to make it work.
+```
+# the default is 'security_plugin'
+shared_preload_libraries = 'security_plugin, tidrangescan'
+```
