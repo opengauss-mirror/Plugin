@@ -4860,7 +4860,8 @@ void lldiv_decode_tm(Numeric num, lldiv_t *div, struct pg_tm *tm, unsigned int d
 }
 
 /* Calc days in one year. works with 0 <= year <= 99 */
-unsigned int calc_days_in_year(int year) {
+unsigned int calc_days_in_year(int year)
+{
     return ((year & 3) == 0 && (year % 100 || (year % 400 == 0 && year)) ? 366 : 365);
 }
 
@@ -4881,7 +4882,8 @@ unsigned int calc_days_in_year(int year) {
    @retval false - error
 */
 
-bool check_date(const pg_tm *tm, bool not_zero_date, time_flags flags) {
+bool check_date(const pg_tm *tm, bool not_zero_date, time_flags flags)
+{
     if (not_zero_date) {
         if (((flags & TIME_NO_ZERO_IN_DATE) || !(flags & TIME_FUZZY_DATE)) &&
             (tm->tm_mon == 0 || tm->tm_mday == 0)) {
@@ -4907,7 +4909,8 @@ bool check_date(const pg_tm *tm, bool not_zero_date, time_flags flags) {
    @retval true - success
    @retval false - error
 */
-bool check_datetime_range(const pg_tm *tm, const fsec_t fsec, const int tm_type) {
+bool check_datetime_range(const pg_tm *tm, const fsec_t fsec, const int tm_type)
+{
     /*
       In case of DTK_TIME hour value can be up to TIME_MAX_HOUR.
       In case of DTK_DATE_TIME it cannot be bigger than 23.
@@ -4956,7 +4959,8 @@ bool check_datetime_range(const pg_tm *tm, const fsec_t fsec, const int tm_type)
 */
 
 bool str_to_datetime(const char* str,  time_flags flags, int &tm_type, 
-                        pg_tm *tm, fsec_t &fsec, int &nano) {
+                        pg_tm *tm, fsec_t &fsec, int &nano)
+{
     size_t length = strlen(str);
     unsigned int field_length = 0, year_length = 0, digits, i, number_of_fields;
     unsigned int date[MAX_DATE_PARTS], date_len[MAX_DATE_PARTS];
@@ -5262,7 +5266,8 @@ ERROR_STRING_DATETIME:
    @retval true - success
    @retval false - error
 */
-bool datetime_add_nanoseconds_with_round(pg_tm *tm, fsec_t &fsec, int nano) {
+bool datetime_add_nanoseconds_with_round(pg_tm *tm, fsec_t &fsec, int nano)
+{
     if (nano >= 1000000000)
         return true;
     if (nano < 500)
