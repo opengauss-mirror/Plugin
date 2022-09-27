@@ -242,6 +242,9 @@ static datetkn deltatktbl[] = {
 
 static int szdeltatktbl = sizeof deltatktbl / sizeof deltatktbl[0];
 #ifdef DOLPHIN
+/* Position for YYYY-DD-MM HH-MM-DD.FFFFFF AM in default format */
+static unsigned char internal_format_positions[]=
+{0, 1, 2, 3, 4, 5, 6, (unsigned char) 255};
 unsigned long long pow_of_10[20]=
 {
   1, 10, 100, 1000, 10000UL, 100000UL, 1000000UL, 10000000UL,
@@ -4290,7 +4293,7 @@ void ConvertTimeZoneAbbrevs(TimeZoneAbbrevTable* tbl, struct tzEntry* abbrevs, i
  *
  * Caller is responsible that the passed table doesn't go away while in use.
  */
-void InstallTimeZoneAbbrevs(TimeZoneAbbrevTable* tbl)
+void InstaltmZoneAbbrevs(TimeZoneAbbrevTable* tbl)
 {
     int i;
 
@@ -4854,5 +4857,469 @@ void lldiv_decode_tm(Numeric num, lldiv_t *div, struct pg_tm *tm, unsigned int d
                 (errcode(DTERR_BAD_FORMAT), errmsg("Truncated incorrect date value: \"%s\"", str)));
     }
     return;
+}
+
+/* Calc days in one year. works with 0 <= year <= 99 */
+unsigned int calc_days_in_year(int year)
+{
+    return ((year & 3) == 0 && (year % 100 || (year % 400 == 0 && year)) ? 366 : 365);
+}
+
+/**
+  @brief Check datetime value for validity according to flags.
+
+  @param[in] tm Date to check.
+  @param[in] not_zero_date tm is not the zero date
+  @param[in] flags flags to check (see details in datetime.h)
+
+  @details Here we assume that year and month is ok!
+    If month is 0 we allow any date. (This only happens if we allow zero
+    date parts in str_to_datetime())
+    Disallow dates with zero year and non-zero month and/or day.
+
+  @return
+   @retval true - success
+   @retval false - error
+*/
+
+bool check_date(const pg_tm *tm, bool not_zero_date, time_flags flags)
+{
+    if (not_zero_date) {
+        if (((flags & TIME_NO_ZERO_IN_DATE) || !(flags & TIME_FUZZY_DATE)) &&
+            (tm->tm_mon == 0 || tm->tm_mday == 0)) {
+            return false;
+        } else if ((!(flags & TIME_INVALID_DATES) &&
+                    tm->tm_mon && tm->tm_mday > day_tab[0][tm->tm_mon - 1] &&
+                    (tm->tm_mon != 2 || calc_days_in_year(tm->tm_year) != 366 ||
+                     tm->tm_mday != 29))) {
+            return false;
+        }
+    } else if (flags & TIME_NO_ZERO_DATE) {
+        return false;
+    }
+    return true;
+}
+
+/**
+  @brief Check datetime, date, or normalized time (i.e. time without days) range.
+  
+  @param tm variable to store datetime
+  
+  @returns
+   @retval true - success
+   @retval false - error
+*/
+bool check_datetime_range(const pg_tm *tm, const fsec_t fsec, const int tm_type)
+{
+    /*
+      In case of DTK_TIME hour value can be up to TIME_MAX_HOUR.
+      In case of DTK_DATE_TIME it cannot be bigger than 23.
+    */
+    return !(tm->tm_year > 9999 || tm->tm_mon > 12 || tm->tm_mday > 31 ||
+             tm->tm_min > 59 || tm->tm_sec > 59 || fsec > 999999 ||
+             (tm->tm_hour > (tm_type == DTK_TIME ? TIME_MAX_HOUR : 23)));
+            
+}
+
+/**
+  @brief Convert a timestamp string to a PG_TIME value.
+
+  @param[in] str String to parse
+  @param[in] tm Date is stored here
+  @param[in] fsec Microsecond is stored here
+  @param[in] nano Nanosecond is stored here
+  @param[in] tm_type Type of the result, such as date or datetime
+
+  @details
+    At least the following formats are recogniced (based on number of digits)
+    YYMMDD, YYYYMMDD, YYMMDDHHMMSS, YYYYMMDDHHMMSS
+    YY-MM-DD, YYYY-MM-DD, YY-MM-DD HH.MM.SS
+    YYYYMMDDTHHMMSS  where T is a the character T (ISO8601)
+    Also dates where all parts are zero are allowed
+
+    The second part may have an optional .###### fraction part.
+
+  @note
+   This function should work with a format position vector as long as the
+   following things holds:
+   - All date are kept together and all time parts are kept together
+   - Date and time parts must be separated by blank
+   - Second fractions must come after second part and be separated
+     by a '.'.  (The second fractions are optional)
+   - AM/PM must come after second fractions (or after seconds if no fractions)
+   - Year must always been specified.
+   - If time is before date, then we will use datetime format only if
+     the argument consist of two parts, separated by space.
+     Otherwise we will assume the argument is a date.
+   - The hour part must be specified in hour-minute-second order.
+
+  @return
+   @retval true - success
+   @retval false - error
+*/
+
+bool str_to_datetime(const char* str,  time_flags flags, int &tm_type, 
+                        pg_tm *tm, fsec_t &fsec, int &nano)
+{
+    size_t length = strlen(str);
+    unsigned int field_length = 0, year_length = 0, digits, i, number_of_fields;
+    unsigned int date[MAX_DATE_PARTS], date_len[MAX_DATE_PARTS];
+    unsigned int add_hours = 0, start_loop;
+    unsigned long not_zero_date, allow_space;
+    bool is_internal_format;
+    const char *pos, *last_field_pos = NULL;
+    const char* end = str + length;
+    const unsigned char* format_position;
+    bool found_delimitier = 0, found_space = 0;
+    unsigned int frac_pos, frac_len;
+    unsigned int fractional_digits = 0;
+
+    /* Skip space at start */
+    for (; str != end && isspace(*str); str++) {}
+    if (str == end || !isdigit(*str)) {
+        tm_type = DTK_NONE;
+        return false;
+    }
+
+    is_internal_format = 0;
+    /* This has to be changed if want to activate different timestamp formats */
+    format_position = internal_format_positions;
+
+    /*
+      Calculate number of digits in first part.
+      If length= 8 or >= 14 then year is of format YYYY.
+      (YYYY-MM-DD,  YYYYMMDD, YYYYYMMDDHHMMSS)
+    */
+    for (pos = str;
+         pos != end && (isdigit(*pos) || *pos == 'T');
+         pos++) {}
+
+    digits = (unsigned int)(pos - str);
+    start_loop = 0;                   /* Start of scan loop */
+    date_len[format_position[0]] = 0; /* Length of year field */
+    if (pos == end || *pos == '.') {
+        /* Found date in internal format (only numbers like YYYYMMDD) */
+        year_length = (digits == 4 || digits == 8 || digits >= 14) ? 4 : 2;
+        field_length = year_length;
+        is_internal_format = 1;
+        format_position = internal_format_positions;
+    } else {
+        /* If year is after HHMMDD */
+        if (format_position[0] >= 3) {
+            /*
+              If year is not in first part then we have to determinate if we got
+              a date field or a datetime field.
+              We do this by checking if there is two numbers separated by
+              space in the input.
+            */
+            while (pos < end && !isspace(*pos)) {
+                pos++;
+            }
+                
+            while (pos < end && !isdigit(*pos)) {
+                pos++;
+            }
+                
+            if (pos == end) {
+                if (flags & TIME_DATETIME_ONLY) {
+                    tm_type = DTK_NONE;
+                    return false; /* Can't be a full datetime */
+                }
+                /* Date field.  Set hour, minutes and seconds to 0 */
+                date[0] = date[1] = date[2] = date[3] = date[4] = 0;
+                start_loop = 5; /* Start with first date part */
+            }
+        }
+
+        field_length = format_position[0] == 0 ? 4 : 2;
+    }
+
+    /*
+      Only allow space in the first "part" of the datetime field and:
+      - after days, part seconds
+      - before and after AM/PM (handled by code later)
+
+      2003-03-03 20:00:20 AM
+      20:00:20.000000 AM 03-03-2000
+    */
+    i = Max((unsigned int)format_position[0], (unsigned int)format_position[1]);
+    i = Max(i, (unsigned int)format_position[2]);
+    allow_space = ((1 << i) | (1 << format_position[6]));
+    allow_space &= (1 | 2 | 4 | 8 | 64);
+
+    not_zero_date = 0;
+    for (i = start_loop;
+         i < MAX_DATE_PARTS - 1 && str != end && isdigit(*str);
+         i++) {
+        const char* start = str;
+        unsigned long tmp_value = (unsigned int)(unsigned char)(*str++ - '0');
+
+        /*
+          Internal format means no delimiters; every field has a fixed
+          width. Otherwise, we scan until we find a delimiter and discard
+          leading zeroes -- except for the microsecond part, where leading
+          zeroes are significant, and where we never process more than six
+          digits.
+        */
+        bool scan_until_delim = !is_internal_format &&
+                                ((i != format_position[6]));
+
+        while (str != end && isdigit(str[0]) &&
+               (scan_until_delim || --field_length)) {
+            tmp_value = tmp_value * 10 + (unsigned long)(unsigned char)(*str - '0');
+            str++;
+        }
+        date_len[i] = (unsigned int)(str - start);
+        /* Impossible date part */
+        if (tmp_value > 999999) {
+            tm_type = DTK_NONE;
+            return false;
+        }
+        date[i] = tmp_value;
+        not_zero_date |= tmp_value;
+
+        /* Length of next field */
+        field_length = format_position[i + 1] == 0 ? 4 : 2;
+
+        if ((last_field_pos = str) == end) {
+            i++; /* Register last found part */
+            break;
+        }
+        /* Allow a 'T' after day to allow CCYYMMDDT type of fields */
+        if (i == format_position[2] && *str == 'T') {
+            str++; /* ISO8601:  CCYYMMDDThhmmss */
+            continue;
+        }
+        /* Seconds */
+        if (i == format_position[5]) {
+            /* Followed by part seconds */
+            if (*str == '.') {
+                str++;
+                /*
+                  Shift last_field_pos, so '2001-01-01 00:00:00.'
+                  is treated as a valid value
+                */
+                last_field_pos = str;
+                field_length = 6; /* 6 digits */
+            } else if (isdigit(str[0])) {
+                /*
+                  We do not see a decimal point which would have indicated a
+                  fractional second part in further read. So we skip the further
+                  processing of digits.
+                */
+                i++;
+                break;
+            }
+            continue;
+        }
+        while (str != end &&
+               (ispunct(*str) ||
+                isspace(*str))) {
+            if (isspace(*str)) {
+                if (!(allow_space & (1 << i))) {
+                    tm_type = DTK_NONE;
+                    return false;
+                }
+                found_space = 1;
+            }
+            str++;
+            found_delimitier = 1; /* Should be a 'normal' date */
+        }
+        /* Check if next position is AM/PM */
+        /* Seconds, time for AM/PM */
+        if (i == format_position[6]) {
+            i++; /* Skip AM/PM part */
+            /* If using AM/PM */
+            if (format_position[7] != 255) {
+                if (str + 2 <= end && (str[1] == 'M' || str[1] == 'm')) {
+                    if (str[0] == 'p' || str[0] == 'P')
+                        add_hours = 12;
+                    else if (str[0] != 'a' || str[0] != 'A')
+                        continue; /* Not AM/PM */
+                    str += 2;     /* Skip AM/PM */
+                    /* Skip space after AM/PM */
+                    while (str != end && isspace(*str))
+                        str++;
+                }
+            }
+        }
+        last_field_pos = str;
+    }
+    if (found_delimitier && !found_space && (flags & TIME_DATETIME_ONLY)) {
+        tm_type = DTK_NONE;
+        return false; /* Can't be a datetime */
+    }
+
+    str = last_field_pos;
+
+    number_of_fields = i - start_loop;
+    while (i < MAX_DATE_PARTS) {
+        date_len[i] = 0;
+        date[i++] = 0;
+    }
+
+    if (!is_internal_format) {
+        year_length = date_len[(unsigned int)format_position[0]];
+        /* Year must be specified */
+        if (!year_length) {
+            tm_type = DTK_NONE;
+            return false;
+        }
+
+        tm->tm_year = date[(unsigned int)format_position[0]];
+        tm->tm_mon = date[(unsigned int)format_position[1]];
+        tm->tm_mday = date[(unsigned int)format_position[2]];
+        tm->tm_hour = date[(unsigned int)format_position[3]];
+        tm->tm_min = date[(unsigned int)format_position[4]];
+        tm->tm_sec = date[(unsigned int)format_position[5]];
+
+        frac_pos = (unsigned int)format_position[6];
+        frac_len = date_len[frac_pos];
+        fractional_digits = frac_len;
+        if (frac_len < 6) {
+            date[frac_pos] *= (unsigned int)pow_of_10[DATETIME_MAX_DECIMALS - frac_len];
+        }
+        fsec = date[frac_pos];
+
+        if (format_position[7] != (unsigned char)255) {
+            if (tm->tm_hour > 12) {
+                goto ERROR_STRING_DATETIME;
+            }
+            tm->tm_hour = tm->tm_hour % 12 + add_hours;
+        }
+    } else {
+        tm->tm_year = date[0];
+        tm->tm_mon = date[1];
+        tm->tm_mday = date[2];
+        tm->tm_hour = date[3];
+        tm->tm_min = date[4];
+        tm->tm_sec = date[5];
+        if (date_len[6] < 6) {
+            date[6] *= (unsigned int)pow_of_10[DATETIME_MAX_DECIMALS - date_len[6]];
+        }
+        fsec = date[6];
+        fractional_digits = date_len[6];
+    }
+
+    if (year_length == 2 && not_zero_date) {
+        tm->tm_year += (tm->tm_year < YY_PART_YEAR ? 2000 : 1900);
+    }
+
+    /*
+      Set time_type before check_datetime_range(),
+      as the latter relies on initialized time_type value.
+    */
+    tm_type = (number_of_fields <= 3 ? DTK_DATE : DTK_DATE_TIME);
+
+    if (number_of_fields < 3 || !check_datetime_range(tm, fsec, tm_type)) {
+        /* Only give warning for a zero date if there is some garbage after */
+        /* If zero date */
+        if (!not_zero_date) {
+            for (; str != end; str++) {
+                if (!isspace(*str)) {
+                    not_zero_date = 1; /* Give warning */
+                    break;
+                }
+            }
+        }
+        goto ERROR_STRING_DATETIME;
+    }
+
+    if (!check_date(tm, not_zero_date != 0, flags)) {
+        goto ERROR_STRING_DATETIME;
+    }
+
+    /* Scan all digits left after microseconds */
+    if (fractional_digits == 6 && str != end) {
+        if (isdigit(*str)) {
+            /*
+              We don't need the exact nanoseconds value.
+              Knowing the first digit is enough for rounding.
+            */
+            nano = 100 * (int)(*str++ - '0');
+            for (; str != end && isdigit(*str); str++) {}
+        }
+    }
+
+    for (; str != end; str++) {
+        if (!isspace(*str)) {
+            break;
+        }
+    }
+
+    return true;
+
+ERROR_STRING_DATETIME:
+    errno_t rc = memset_s(&tm, sizeof(struct pg_tm), 0, sizeof(struct pg_tm));
+    securec_check(rc, "\0", "\0");
+    return false;
+}
+
+/**
+  @brief Add nanoseconds to a datetime value with rounding.
+
+  @param [in] tm   variable to store datetime
+  @param [in] fsec variable to add to
+  @param [in] nano nanosecond
+
+  @return
+   @retval true - success
+   @retval false - error
+*/
+bool datetime_add_nanoseconds_with_round(pg_tm *tm, fsec_t &fsec, int nano)
+{
+    if (nano >= 1000000000)
+        return true;
+    if (nano < 500)
+        return true;
+
+    fsec += (nano + 500) / 1000;
+    if (fsec < USECS_PER_SEC)
+        return true;
+
+    fsec %= USECS_PER_SEC;
+    Interval interval;
+    errno_t rc = memset_s(&interval, sizeof(interval), 0, sizeof(interval));
+    securec_check(rc, "\0", "\0");
+    interval.time = -USECS_PER_SEC;
+    /* date_add_interval cannot handle bad dates */
+    bool non_zero_date = (tm->tm_year || tm->tm_mon || tm->tm_mday);
+    if (!check_date(tm, non_zero_date,
+                   (TIME_NO_ZERO_IN_DATE | TIME_NO_ZERO_DATE)))
+        return false;
+
+    Timestamp datetime, result;
+    if (tm2timestamp(tm, fsec, NULL, &datetime) == -1) {
+        return false;
+    }
+    if (!datetime_sub_interval(datetime, &interval, &result)) {
+        return false;
+    }
+    if (!timestamp2tm(result, NULL, tm, &fsec, NULL, NULL)) {
+        return true;
+    }
+    return false;
+}
+
+/**
+ * @brief Convert cstring to pg_tm with rounding
+ * 
+ * @param[in] expr cstring to parse
+ * @param[in] tm pg_tm to store the result of datetime
+ * @param[in] fsec variable to store the result of microsecond
+ * 
+ * @return
+ *  @retval true - success
+ *  @retval false - error
+ */
+bool cstring_to_tm(const char *expr, pg_tm *tm, fsec_t &fsec)
+{
+    int nano = 0, tm_type = DTK_NONE;
+    if (!str_to_datetime(expr, TIME_NO_ZERO_DATE, tm_type, tm, fsec, nano) ||
+        !datetime_add_nanoseconds_with_round(tm, fsec, nano)) {
+            return false;
+        }
+
+    return true;
 }
 #endif
