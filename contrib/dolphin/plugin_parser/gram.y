@@ -5060,6 +5060,25 @@ alter_table_cmd:
 					n->def = (Node *)$1;
 					$$ = (Node *) n;
 				}
+			| row_format_option
+			{
+				AlterTableCmd *n = makeNode(AlterTableCmd);
+				n->subtype = AT_SetTableRowFormat;
+				$$ = (Node *) n;
+			}
+			| opt_default charset_with_opt_equal
+			{
+				AlterTableCmd *n = makeNode(AlterTableCmd);
+				n->subtype = AT_SetTableCharset;
+				$$ = (Node *) n;
+			}
+			| opt_default COLLATE opt_equal any_name
+			{
+				AlterTableCmd *n = makeNode(AlterTableCmd);
+				n->subtype = AT_SetTableCollate;
+				$$ = (Node *) n;
+			}
+			;
 
 /* PGXC_BEGIN */
 			/* ALTER TABLE <name> DISTRIBUTE BY ... */
@@ -7076,34 +7095,32 @@ CreateAsOption:
 					n->option_type = OPT_ENGINE;
 					$$ = n;
 				}
-			| COLLATE opt_equal any_name
+			| opt_default COLLATE opt_equal any_name
 				{
 					ereport(WARNING, (errmsg("COLLATE for TABLE is not supported for current version. skipped")));
 					SingleTableOption *n = (SingleTableOption*)palloc0(sizeof(SingleTableOption));
 					n->option_type = OPT_COLLATE;
 					$$ = n;
 				}
-			| opt_default CHARSET opt_equal any_name
-				{
-					ereport(WARNING, (errmsg("CHARSET for TABLE is not supported for current version. skipped")));
-					SingleTableOption *n = (SingleTableOption*)palloc0(sizeof(SingleTableOption));
-					n->option_type = OPT_CHARSET;
-					$$ = n;
-				}
-			| opt_default CHARACTER SET opt_equal any_name
+			| opt_default charset_with_opt_equal
 				{
 					ereport(WARNING, (errmsg("CHARACTER SET for TABLE is not supported for current version. skipped")));
 					SingleTableOption *n = (SingleTableOption*)palloc0(sizeof(SingleTableOption));
 					n->option_type = OPT_CHARSET;
 					$$ = n;
 				}
-			| ROW_FORMAT opt_equal any_name
+			| row_format_option
 				{
 					ereport(WARNING, (errmsg("ROW_FORMAT for TABLE is not supported for current version. skipped")));
 					SingleTableOption *n = (SingleTableOption*)palloc0(sizeof(SingleTableOption));
 					n->option_type = OPT_ROW_FORMAT;
 					$$ = n;
 				}
+		;
+
+charset_with_opt_equal:
+		CHARSET opt_equal any_name	{}
+		| CHARACTER SET opt_equal any_name	{}
 		;
 
 CreateStmt:	CREATE OptTemp TABLE dolphin_qualified_name '(' OptTableElementList ')'
@@ -7349,7 +7366,20 @@ row_format_option:
 		{
 			$$ = NULL;
 		}
+	| ROW_FORMAT opt_equal DEFAULT
+		{
+			$$ = NULL;
+		}
+	| ROW_FORMAT opt_equal COMPACT
+		{
+			$$ = NULL;
+		}
+	| ROW_FORMAT opt_equal FIXED_P
+		{
+			$$ = NULL;
+		}
 	;
+
 opt_row_format:
 	row_format_option
 		{
@@ -15889,7 +15919,7 @@ index_including_params:	index_elem						{ $$ = list_make1($1); }
 			| index_including_params ',' index_elem		{ $$ = lappend($1, $3); }
 		;
 
-collate_option: COLLATE opt_equal any_name			{ $$ = $3; }
+collate_option: opt_default COLLATE opt_equal any_name			{ $$ = $4; }
 		;
 
 opt_collate: collate_option							{ $$ = $1; }

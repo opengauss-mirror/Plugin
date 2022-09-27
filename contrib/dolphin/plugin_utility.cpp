@@ -9289,6 +9289,15 @@ const char* CreateAlterTableCommandTag(const AlterTableType subtype)
         case AT_RenameIndex:
             tag = "RENAME INDEX";
             break;
+        case AT_SetTableRowFormat:
+            tag = "SET TABLE ROW_FORMAT";
+            break;
+        case AT_SetTableCharset:
+            tag = "SET TABLE CHARSET";
+            break;
+        case AT_SetTableCollate:
+            tag = "SET TABLE COLLATE";
+            break;
 #endif
         default:
             tag = "?\?\?";

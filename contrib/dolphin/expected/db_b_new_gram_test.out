@@ -621,8 +621,11 @@ DROP TABLE t_column_charset;
 CREATE TABLE t_table_collate(c text) COLLATE test_collate;
 WARNING:  COLLATE for TABLE is not supported for current version. skipped
 DROP TABLE t_table_collate;
+CREATE TABLE t_table_default_collate(c text) DEFAULT COLLATE test_collate;
+WARNING:  COLLATE for TABLE is not supported for current version. skipped
+DROP TABLE t_table_default_collate;
 CREATE TABLE t_table_charset(c text) CHARSET test_charset;
-WARNING:  CHARSET for TABLE is not supported for current version. skipped
+WARNING:  CHARACTER SET for TABLE is not supported for current version. skipped
 DROP TABLE t_table_charset;
 CREATE TABLE t_table_charset(c text) CHARACTER SET test_charset;
 WARNING:  CHARACTER SET for TABLE is not supported for current version. skipped
@@ -631,14 +634,20 @@ CREATE TABLE t_table_default_charset(c text) DEFAULT CHARACTER SET test_charset;
 WARNING:  CHARACTER SET for TABLE is not supported for current version. skipped
 DROP TABLE t_table_default_charset;
 CREATE TABLE t_table_default_charset(c text) DEFAULT CHARSET test_charset;
-WARNING:  CHARSET for TABLE is not supported for current version. skipped
+WARNING:  CHARACTER SET for TABLE is not supported for current version. skipped
 DROP TABLE t_table_default_charset;
 CREATE TABLE t_table_row_format(c text) ROW_FORMAT test_row_format;
 WARNING:  ROW_FORMAT for TABLE is not supported for current version. skipped
 DROP TABLE t_table_row_format;
+CREATE TABLE t_table_row_format_default(c text) ROW_FORMAT = DEFAULT;
+WARNING:  ROW_FORMAT for TABLE is not supported for current version. skipped
+DROP TABLE t_table_row_format_default;
+CREATE TABLE t_table_row_format_default(c text) ROW_FORMAT DEFAULT;
+WARNING:  ROW_FORMAT for TABLE is not supported for current version. skipped
+DROP TABLE t_table_row_format_default;
 CREATE TABLE t_mixed_table_option(c text) ROW_FORMAT test_row_format CHARSET test_charset COLLATE test_collate;
 WARNING:  ROW_FORMAT for TABLE is not supported for current version. skipped
-WARNING:  CHARSET for TABLE is not supported for current version. skipped
+WARNING:  CHARACTER SET for TABLE is not supported for current version. skipped
 WARNING:  COLLATE for TABLE is not supported for current version. skipped
 DROP TABLE t_mixed_table_option;
 CREATE TABLE t_character_set_column(c text CHARACTER SET test_character_set);
@@ -653,6 +662,31 @@ DROP TABLE t_charset_column;
 CREATE TABLE t_charset_enum_column(c ENUM('a', 'b', 'c') CHARSET test_character_set);
 WARNING:  character set "test_character_set" for type ENUM is not supported yet. default value set
 DROP TABLE t_charset_enum_column;
+CREATE TABLE t_alter_test(c text);
+ALTER TABLE t_alter_test DEFAULT COLLATE = test_collate;
+WARNING:  COLLATE for TABLE is not supported for current version. skipped
+ALTER TABLE t_alter_test DEFAULT CHARACTER SET = test_charset;
+WARNING:  CHARSET for TABLE is not supported for current version. skipped
+ALTER TABLE t_alter_test DEFAULT CHARSET = test_charset;
+WARNING:  CHARSET for TABLE is not supported for current version. skipped
+ALTER TABLE t_alter_test ROW_FORMAT = DEFAULT;
+WARNING:  ROW_FORMAT for TABLE is not supported for current version. skipped
+ALTER TABLE t_alter_test ROW_FORMAT = DYNAMIC;
+WARNING:  ROW_FORMAT for TABLE is not supported for current version. skipped
+ALTER TABLE t_alter_test ROW_FORMAT = FIXED;
+WARNING:  ROW_FORMAT for TABLE is not supported for current version. skipped
+ALTER TABLE t_alter_test ROW_FORMAT = COMPRESSED;
+WARNING:  ROW_FORMAT for TABLE is not supported for current version. skipped
+ALTER TABLE t_alter_test ROW_FORMAT = REDUNDANT;
+WARNING:  ROW_FORMAT for TABLE is not supported for current version. skipped
+ALTER TABLE t_alter_test ROW_FORMAT = COMPACT;
+WARNING:  ROW_FORMAT for TABLE is not supported for current version. skipped
+-- mixture and out of order
+ALTER TABLE t_alter_test ROW_FORMAT = COMPACT, COLLATE = test_collate, CHARACTER SET test_charset;
+WARNING:  ROW_FORMAT for TABLE is not supported for current version. skipped
+WARNING:  COLLATE for TABLE is not supported for current version. skipped
+WARNING:  CHARSET for TABLE is not supported for current version. skipped
+DROP TABLE t_alter_test;
 -- test for integrity of function text
 SELECT text(10);
  text 
