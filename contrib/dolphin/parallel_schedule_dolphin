@@ -45,7 +45,7 @@ test: option
 
 test: uint_agg uint_and uint_cast uint_cast2 uint_div uint_mi uint_mod uint_mod2 uint_mul uint_numeric uint_operator uint_or uint_partition uint_pl uint_xor 
 
-test: uint_procedure_col_bypass uint_smp uint_index uint_sql_mode uint_ignore uint_join signed_unsigned_cast uint_in
+test: uint_procedure_col_bypass uint_smp uint_index uint_sql_mode uint_ignore uint_join signed_unsigned_cast uint_in implicit_cast
 
 test: disable_thread_pool
 

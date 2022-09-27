@@ -1,0 +1,294 @@
+drop database if exists implicit_cast;
+NOTICE:  database "implicit_cast" does not exist, skipping
+create database implicit_cast dbcompatibility 'b';
+\c implicit_cast
+select 1::int1 % 1::float4;
+ ?column? 
+----------
+ 0
+(1 row)
+
+select 1::int2 % 1::float4;
+ ?column? 
+----------
+        0
+(1 row)
+
+select 1::int4 % 1::float4;
+ ?column? 
+----------
+        0
+(1 row)
+
+select 1::int8 % 1::float4;
+ ?column? 
+----------
+        0
+(1 row)
+
+select 1::int1 % 1::float8;
+ ?column? 
+----------
+ 0
+(1 row)
+
+select 1::int2 % 1::float8;
+ ?column? 
+----------
+        0
+(1 row)
+
+select 1::int4 % 1::float8;
+ ?column? 
+----------
+        0
+(1 row)
+
+select 1::int8 % 1::float8;
+ ?column? 
+----------
+        0
+(1 row)
+
+select 1::int1 % 1::text;
+ ?column? 
+----------
+ 0
+(1 row)
+
+select 1::int2 % 1::text;
+ ?column? 
+----------
+        0
+(1 row)
+
+select 1::int4 % 1::text;
+ ?column? 
+----------
+        0
+(1 row)
+
+select 1::int8 % 1::text;
+ ?column? 
+----------
+        0
+(1 row)
+
+select 1::int1 # 1::float4;
+ ?column? 
+----------
+ 0
+(1 row)
+
+select 1::int2 # 1::float4;
+ ?column? 
+----------
+        0
+(1 row)
+
+select 1::int4 # 1::float4;
+ ?column? 
+----------
+        0
+(1 row)
+
+select 1::int8 # 1::float4;
+ ?column? 
+----------
+        0
+(1 row)
+
+select 1::int1 # 1::float8;
+ ?column? 
+----------
+ 0
+(1 row)
+
+select 1::int2 # 1::float8;
+ ?column? 
+----------
+        0
+(1 row)
+
+select 1::int4 # 1::float8;
+ ?column? 
+----------
+        0
+(1 row)
+
+select 1::int8 # 1::float8;
+ ?column? 
+----------
+        0
+(1 row)
+
+select 1::int1 # 1::text;
+ ?column? 
+----------
+ 0
+(1 row)
+
+select 1::int2 # 1::text;
+ ?column? 
+----------
+        0
+(1 row)
+
+select 1::int4 # 1::text;
+ ?column? 
+----------
+        0
+(1 row)
+
+select 1::int8 # 1::text;
+ ?column? 
+----------
+        0
+(1 row)
+
+select 1::int1 & 1::float4;
+ ?column? 
+----------
+ 1
+(1 row)
+
+select 1::int2 & 1::float4;
+ ?column? 
+----------
+        1
+(1 row)
+
+select 1::int4 & 1::float4;
+ ?column? 
+----------
+        1
+(1 row)
+
+select 1::int8 & 1::float4;
+ ?column? 
+----------
+        1
+(1 row)
+
+select 1::int1 & 1::float8;
+ ?column? 
+----------
+ 1
+(1 row)
+
+select 1::int2 & 1::float8;
+ ?column? 
+----------
+        1
+(1 row)
+
+select 1::int4 & 1::float8;
+ ?column? 
+----------
+        1
+(1 row)
+
+select 1::int8 & 1::float8;
+ ?column? 
+----------
+        1
+(1 row)
+
+select 1::int1 & 1::text;
+ ?column? 
+----------
+ 1
+(1 row)
+
+select 1::int2 & 1::text;
+ ?column? 
+----------
+        1
+(1 row)
+
+select 1::int4 & 1::text;
+ ?column? 
+----------
+        1
+(1 row)
+
+select 1::int8 & 1::text;
+ ?column? 
+----------
+        1
+(1 row)
+
+select 1::int1 | 1::float4;
+ ?column? 
+----------
+ 1
+(1 row)
+
+select 1::int2 | 1::float4;
+ ?column? 
+----------
+        1
+(1 row)
+
+select 1::int4 | 1::float4;
+ ?column? 
+----------
+        1
+(1 row)
+
+select 1::int8 | 1::float4;
+ ?column? 
+----------
+        1
+(1 row)
+
+select 1::int1 | 1::float8;
+ ?column? 
+----------
+ 1
+(1 row)
+
+select 1::int2 | 1::float8;
+ ?column? 
+----------
+        1
+(1 row)
+
+select 1::int4 | 1::float8;
+ ?column? 
+----------
+        1
+(1 row)
+
+select 1::int8 | 1::float8;
+ ?column? 
+----------
+        1
+(1 row)
+
+select 1::int1 | 1::text;
+ ?column? 
+----------
+ 1
+(1 row)
+
+select 1::int2 | 1::text;
+ ?column? 
+----------
+        1
+(1 row)
+
+select 1::int4 | 1::text;
+ ?column? 
+----------
+        1
+(1 row)
+
+select 1::int8 | 1::text;
+ ?column? 
+----------
+        1
+(1 row)
+
+\c postgres
+drop database if exists implicit_cast;

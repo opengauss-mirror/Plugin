@@ -704,11 +704,13 @@ static int GetCategoryPriority(TYPCATEGORY categoryoid)
     if (u_sess->attr.attr_sql.convert_string_to_digit) {
         switch (categoryoid) {
 #ifdef DOLPHIN
-            case ('C'):
-#endif
             case ('N'): /*Numeric*/
+                result = 5;
+                break;
+            case ('C'):
                 result = 4;
                 break;
+#endif
             case ('T'): /*Timespan*/
                 result = 3;
                 break;
@@ -732,13 +734,15 @@ static int GetCategoryPriority(TYPCATEGORY categoryoid)
                 break;
 #ifdef DOLPHIN
             case ('C'):
-#endif
-            case ('N'): /*Numeric*/
                 result = 3;
                 break;
-            case ('S'): /*String*/
+            case ('N'): /*Numeric*/
                 result = 4;
                 break;
+            case ('S'): /*String*/
+                result = 5;
+                break;
+#endif
             default:
                 result = 0;
                 break;
