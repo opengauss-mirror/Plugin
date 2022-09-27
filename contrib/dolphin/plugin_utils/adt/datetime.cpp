@@ -12,6 +12,7 @@
  *
  * -------------------------------------------------------------------------
  */
+#define DOLPHIN
 #include "postgres.h"
 #include "knl/knl_variable.h"
 
@@ -4862,7 +4863,7 @@ void lldiv_decode_tm(Numeric num, lldiv_t *div, struct pg_tm *tm, unsigned int d
 /* Calc days in one year. works with 0 <= year <= 99 */
 unsigned int calc_days_in_year(int year)
 {
-    return ((year & 3) == 0 && (year % 100 || (year % 400 == 0 && year)) ? 366 : 365);
+    return ((year & 3) == 0 && (year % 100 || (year % 400 == 0 && year)) ? DAYS_PER_LEAP_YEAR : DAYS_PER_COMMON_YEAR);
 }
 
 /**
@@ -4882,7 +4883,7 @@ unsigned int calc_days_in_year(int year)
    @retval false - error
 */
 
-bool check_date(const pg_tm *tm, bool not_zero_date, time_flags flags)
+bool CheckDateRange(const pg_tm *tm, bool not_zero_date, time_flags flags)
 {
     if (not_zero_date) {
         if (((flags & TIME_NO_ZERO_IN_DATE) || !(flags & TIME_FUZZY_DATE)) &&
@@ -4890,8 +4891,8 @@ bool check_date(const pg_tm *tm, bool not_zero_date, time_flags flags)
             return false;
         } else if ((!(flags & TIME_INVALID_DATES) &&
                     tm->tm_mon && tm->tm_mday > day_tab[0][tm->tm_mon - 1] &&
-                    (tm->tm_mon != 2 || calc_days_in_year(tm->tm_year) != 366 ||
-                     tm->tm_mday != 29))) {
+                    (tm->tm_mon != FEBRUARY || calc_days_in_year(tm->tm_year) != DAYS_PER_LEAP_YEAR ||
+                     tm->tm_mday != DAYNUM_FEB_LEAPYEAR))) {
             return false;
         }
     } else if (flags & TIME_NO_ZERO_DATE) {
@@ -4909,7 +4910,7 @@ bool check_date(const pg_tm *tm, bool not_zero_date, time_flags flags)
    @retval true - success
    @retval false - error
 */
-bool check_datetime_range(const pg_tm *tm, const fsec_t fsec, const int tm_type)
+bool CheckDatetimeRange(const pg_tm *tm, const fsec_t fsec, const int tm_type)
 {
     /*
       In case of DTK_TIME hour value can be up to TIME_MAX_HOUR.
@@ -5206,12 +5207,12 @@ bool str_to_datetime(const char* str,  time_flags flags, int &tm_type,
     }
 
     /*
-      Set time_type before check_datetime_range(),
+      Set time_type before CheckDatetimeRange(),
       as the latter relies on initialized time_type value.
     */
     tm_type = (number_of_fields <= 3 ? DTK_DATE : DTK_DATE_TIME);
 
-    if (number_of_fields < 3 || !check_datetime_range(tm, fsec, tm_type)) {
+    if (number_of_fields < 3 || !CheckDatetimeRange(tm, fsec, tm_type)) {
         /* Only give warning for a zero date if there is some garbage after */
         /* If zero date */
         if (!not_zero_date) {
@@ -5225,7 +5226,7 @@ bool str_to_datetime(const char* str,  time_flags flags, int &tm_type,
         goto ERROR_STRING_DATETIME;
     }
 
-    if (!check_date(tm, not_zero_date != 0, flags)) {
+    if (!CheckDateRange(tm, not_zero_date != 0, flags)) {
         goto ERROR_STRING_DATETIME;
     }
 
@@ -5284,7 +5285,7 @@ bool datetime_add_nanoseconds_with_round(pg_tm *tm, fsec_t &fsec, int nano)
     interval.time = -USECS_PER_SEC;
     /* date_add_interval cannot handle bad dates */
     bool non_zero_date = (tm->tm_year || tm->tm_mon || tm->tm_mday);
-    if (!check_date(tm, non_zero_date,
+    if (!CheckDateRange(tm, non_zero_date,
                    (TIME_NO_ZERO_IN_DATE | TIME_NO_ZERO_DATE)))
         return false;
 
