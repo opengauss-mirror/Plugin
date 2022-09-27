@@ -59,6 +59,51 @@ select * from t4;
 
 set B_COMPATIBILITY_MODE  = 0;
 
+--test inside plpgsql 
+set B_COMPATIBILITY_MODE  = 1;
+
+create table test(a varchar(10));
+
+CREATE FUNCTION testfunc3() return int as
+begin
+insert into test values ('bbbbbb');# 
+insert into test values ('c#
+d');
+return 1;
+end;
+/
+
+call testfunc3();
+
+
+CREATE FUNCTION testfunc2() return int as
+declare
+a#b int := 5
+int :=4;
+begin
+insert into test values (a);
+return 1;
+end;
+/
+
+call testfunc2();
+
+set B_COMPATIBILITY_MODE  = 0;
+
+
+CREATE FUNCTION testfunc12() return int as
+declare
+a#b int := 5
+int :=4;
+begin
+insert into test values (a);
+return 1;
+end;
+/
+
+call testfunc12();
+
+
 \c postgres
 
 drop database if exists db_comment_sharp;
