@@ -301,6 +301,11 @@ static Node* makeCoalesce(Node* first, Node* second)
     return (Node*)expr;
 }
 
+Node *plpsMakeCoalesce(Node* first, Node* second)
+{
+    return makeCoalesce(first, second);
+}
+
 static Node* makeSubLink(Node* stmt)
 {
     SubLink* nf = makeNode(SubLink);

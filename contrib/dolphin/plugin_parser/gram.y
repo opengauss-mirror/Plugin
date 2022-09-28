@@ -3660,7 +3660,7 @@ CheckPointStmt:
 CheckSumTableStmt:
 			CHECKSUM TABLE relation_expr_list OptQuickExt
 				{
-					SelectStmt *n = makeChecksumsTablesQuery($3, $4);
+					SelectStmt *n = makeChecksumsTablesQuery($3, $4, FALSE);
 					$$ = (Node*)n;
  				}
 		;
