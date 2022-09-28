@@ -8,6 +8,15 @@ grant update on table test to grant_test with grant option;
 grant alter on foreign server log_srv to grant_test;
 grant comment on foreign server log_srv to grant_test with grant option;
 grant usage on foreign data wrapper file_fdw to grant_test with grant option;
+/* column */
+create table test2(id1 int,id2 int, id3 int);
+grant comment(id1, id2) on test2 to grant_test ;
+grant comment(id3) on test2 to grant_test with grant option;
+/* encrypt key */
+CREATE CLIENT MASTER KEY proc_cmk2 WITH ( KEY_STORE = localkms , KEY_PATH = "gs_ktool" , ALGORITHM = RSA_2048);
+CREATE COLUMN ENCRYPTION KEY proc_cek2 WITH VALUES (CLIENT_MASTER_KEY = proc_cmk2, ALGORITHM = AEAD_AES_256_CBC_HMAC_SHA256);
+grant usage on column_encryption_key proc_cek2 to grant_test with grant option;
+grant usage on client_master_key  proc_cmk2 to grant_test;
 create or replace procedure proc1() 
 as
 declare
