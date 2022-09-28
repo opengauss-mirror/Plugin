@@ -149,3 +149,6 @@ select 2 ::uint8 ^ 2::uint8;
 select 2 ::uint8 ^ 2::bool;
 select 2 ::uint8 ^ 2::char;
 select 2 ::uint8 ^ 2::varchar;
+
+\c postgres
+drop database test_op_xor_unsignedint;

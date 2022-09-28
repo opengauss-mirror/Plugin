@@ -1,0 +1,866 @@
+drop database if exists test_bool_float;
+NOTICE:  database "test_bool_float" does not exist, skipping
+create database test_bool_float dbcompatibility 'b';
+\c test_bool_float
+set b_compatibility_mode = true;
+select 1::bool ^ 2::int1;
+ ?column? 
+----------
+ 3
+(1 row)
+
+select 1::bool ^ 2::int2;
+ ?column? 
+----------
+        3
+(1 row)
+
+select 1::bool ^ 2::int4;
+ ?column? 
+----------
+        3
+(1 row)
+
+select 1::bool ^ 2::int8;
+ ?column? 
+----------
+        3
+(1 row)
+
+select 1::bool ^ 2::uint1;
+ ?column? 
+----------
+ 3
+(1 row)
+
+select 1::bool ^ 2::uint2;
+ ?column? 
+----------
+ 3
+(1 row)
+
+select 1::bool ^ 2::uint4;
+ ?column? 
+----------
+ 3
+(1 row)
+
+select 1::bool ^ 2::uint8;
+ ?column? 
+----------
+ 3
+(1 row)
+
+select 1::bool ^ 2.0;
+ ?column? 
+----------
+        3
+(1 row)
+
+select 1::bool ^ 2::float;
+ ?column? 
+----------
+        0
+(1 row)
+
+select 1::bool ^ 2::float8;
+ ?column? 
+----------
+        3
+(1 row)
+
+select 1::bool ^ 2::numeric;
+ ?column? 
+----------
+        3
+(1 row)
+
+select 1::bool ^ 2::bool;
+ ?column? 
+----------
+        0
+(1 row)
+
+select (-1)::bool ^ 2::int2;
+ ?column? 
+----------
+        3
+(1 row)
+
+select (-1)::bool ^ 2::int4;
+ ?column? 
+----------
+        3
+(1 row)
+
+select (-1)::bool ^ 2::int8;
+ ?column? 
+----------
+        3
+(1 row)
+
+select (-1)::bool ^ 2::uint1;
+ ?column? 
+----------
+ 3
+(1 row)
+
+select (-1)::bool ^ 2::uint2;
+ ?column? 
+----------
+ 3
+(1 row)
+
+select (-1)::bool ^ 2::uint4;
+ ?column? 
+----------
+ 3
+(1 row)
+
+select (-1)::bool ^ 2::uint8;
+ ?column? 
+----------
+ 3
+(1 row)
+
+select (-1)::bool ^ 2.0;
+ ?column? 
+----------
+        3
+(1 row)
+
+select (-1)::bool ^ 2::float;
+ ?column? 
+----------
+        0
+(1 row)
+
+select (-1)::bool ^ 2::float8;
+ ?column? 
+----------
+        3
+(1 row)
+
+select (-1)::bool ^ 2::numeric;
+ ?column? 
+----------
+        3
+(1 row)
+
+select (-1)::bool ^ 2::bool;
+ ?column? 
+----------
+        0
+(1 row)
+
+select (-1)::bool ^ (-2)::int2;
+ ?column? 
+----------
+       -1
+(1 row)
+
+select (-1)::bool ^ (-2)::int4;
+ ?column? 
+----------
+       -1
+(1 row)
+
+select (-1)::bool ^ (-2)::int8;
+ ?column? 
+----------
+       -1
+(1 row)
+
+select (-1)::bool ^ (-2)::uint1;
+ ?column? 
+----------
+ 255
+(1 row)
+
+select (-1)::bool ^ (-2)::uint2;
+ ?column? 
+----------
+ 65535
+(1 row)
+
+select (-1)::bool ^ (-2)::uint4;
+  ?column?  
+------------
+ 4294967295
+(1 row)
+
+select (-1)::bool ^ (-2)::uint8;
+       ?column?       
+----------------------
+ 18446744073709551615
+(1 row)
+
+select (-1)::bool ^ -2.0;
+ ?column? 
+----------
+       -1
+(1 row)
+
+select (-1)::bool ^ (-2)::float;
+ ?column? 
+----------
+        0
+(1 row)
+
+select (-1)::bool ^ (-2)::float8;
+ ?column? 
+----------
+       -1
+(1 row)
+
+select (-1)::bool ^ (-2)::numeric;
+ ?column? 
+----------
+       -1
+(1 row)
+
+select (-1)::bool ^ (-2)::bool;
+ ?column? 
+----------
+        0
+(1 row)
+
+select 1::float ^ 2::int1;
+ ?column? 
+----------
+ 3
+(1 row)
+
+select 1::float ^ 2::int2;
+ ?column? 
+----------
+        3
+(1 row)
+
+select 1::float ^ 2::int4;
+ ?column? 
+----------
+        3
+(1 row)
+
+select 1::float ^ 2::int8;
+ ?column? 
+----------
+        3
+(1 row)
+
+select 1::float ^ 2::uint1;
+ ?column? 
+----------
+ 3
+(1 row)
+
+select 1::float ^ 2::uint2;
+ ?column? 
+----------
+ 3
+(1 row)
+
+select 1::float ^ 2::uint4;
+ ?column? 
+----------
+ 3
+(1 row)
+
+select 1::float ^ 2::uint8;
+ ?column? 
+----------
+ 3
+(1 row)
+
+select 1::float ^ 2.0;
+ ?column? 
+----------
+        3
+(1 row)
+
+select 1::float ^ 2::bool;
+ ?column? 
+----------
+        0
+(1 row)
+
+select 1::float ^ 2::float8;
+ ?column? 
+----------
+        3
+(1 row)
+
+select 1::float ^ 2::numeric;
+ ?column? 
+----------
+        3
+(1 row)
+
+select 1::float ^ 2::float;
+ ?column? 
+----------
+        3
+(1 row)
+
+select (-1)::float ^ 2::int2;
+ ?column? 
+----------
+       -3
+(1 row)
+
+select (-1)::float ^ 2::int4;
+ ?column? 
+----------
+       -3
+(1 row)
+
+select (-1)::float ^ 2::int8;
+ ?column? 
+----------
+       -3
+(1 row)
+
+select (-1)::float ^ 2::uint2;
+ ?column? 
+----------
+ 65533
+(1 row)
+
+select (-1)::float ^ 2::uint4;
+  ?column?  
+------------
+ 4294967293
+(1 row)
+
+select (-1)::float ^ 2::uint8;
+       ?column?       
+----------------------
+ 18446744073709551613
+(1 row)
+
+select (-1)::float ^ 2.0;
+ ?column? 
+----------
+       -3
+(1 row)
+
+select (-1)::float ^ 2::bool;
+ ?column? 
+----------
+        0
+(1 row)
+
+select (-1)::float ^ 2::float8;
+ ?column? 
+----------
+       -3
+(1 row)
+
+select (-1)::float ^ 2::numeric;
+ ?column? 
+----------
+       -3
+(1 row)
+
+select (-1)::float ^ 2::float;
+ ?column? 
+----------
+       -3
+(1 row)
+
+select (-1)::float ^ (-2)::int2;
+ ?column? 
+----------
+        1
+(1 row)
+
+select (-1)::float ^ (-2)::int4;
+ ?column? 
+----------
+        1
+(1 row)
+
+select (-1)::float ^ (-2)::int8;
+ ?column? 
+----------
+        1
+(1 row)
+
+select (-1)::float ^ (-2)::uint2;
+ ?column? 
+----------
+ 1
+(1 row)
+
+select (-1)::float ^ (-2)::uint4;
+ ?column? 
+----------
+ 1
+(1 row)
+
+select (-1)::float ^ (-2)::uint8;
+ ?column? 
+----------
+ 1
+(1 row)
+
+select (-1)::float ^ -2.0;
+ ?column? 
+----------
+        1
+(1 row)
+
+select (-1)::float ^ (-2)::bool;
+ ?column? 
+----------
+        0
+(1 row)
+
+select (-1)::float ^ (-2)::float8;
+ ?column? 
+----------
+        1
+(1 row)
+
+select (-1)::float ^ (-2)::numeric;
+ ?column? 
+----------
+        1
+(1 row)
+
+select (-1)::float ^ (-2)::float;
+ ?column? 
+----------
+        1
+(1 row)
+
+select 1::float8 ^ 2::int1;
+ ?column? 
+----------
+        3
+(1 row)
+
+select 1::float8 ^ 2::int2;
+ ?column? 
+----------
+        3
+(1 row)
+
+select 1::float8 ^ 2::int4;
+ ?column? 
+----------
+        3
+(1 row)
+
+select 1::float8 ^ 2::int8;
+ ?column? 
+----------
+        3
+(1 row)
+
+select 1::float8 ^ 2::uint1;
+ ?column? 
+----------
+        3
+(1 row)
+
+select 1::float8 ^ 2::uint2;
+ ?column? 
+----------
+        3
+(1 row)
+
+select 1::float8 ^ 2::uint4;
+ ?column? 
+----------
+        3
+(1 row)
+
+select 1::float8 ^ 2::uint8;
+ ?column? 
+----------
+        3
+(1 row)
+
+select 1::float8 ^ 2.0;
+ ?column? 
+----------
+        3
+(1 row)
+
+select 1::float8 ^ 2::float;
+ ?column? 
+----------
+        3
+(1 row)
+
+select 1::float8 ^ 2::float8;
+ ?column? 
+----------
+        3
+(1 row)
+
+select 1::float8 ^ 2::numeric;
+ ?column? 
+----------
+        3
+(1 row)
+
+select 1::float8 ^ 2::float8;
+ ?column? 
+----------
+        3
+(1 row)
+
+select (-1)::float8 ^ 2::int2;
+ ?column? 
+----------
+       -3
+(1 row)
+
+select (-1)::float8 ^ 2::int4;
+ ?column? 
+----------
+       -3
+(1 row)
+
+select (-1)::float8 ^ 2::int8;
+ ?column? 
+----------
+       -3
+(1 row)
+
+select (-1)::float8 ^ 2::uint1;
+ ?column? 
+----------
+       -3
+(1 row)
+
+select (-1)::float8 ^ 2::uint2;
+ ?column? 
+----------
+       -3
+(1 row)
+
+select (-1)::float8 ^ 2::uint4;
+ ?column? 
+----------
+       -3
+(1 row)
+
+select (-1)::float8 ^ 2::uint8;
+ ?column? 
+----------
+       -3
+(1 row)
+
+select (-1)::float8 ^ 2.0;
+ ?column? 
+----------
+       -3
+(1 row)
+
+select (-1)::float8 ^ 2::float;
+ ?column? 
+----------
+       -3
+(1 row)
+
+select (-1)::float8 ^ 2::float8;
+ ?column? 
+----------
+       -3
+(1 row)
+
+select (-1)::float8 ^ 2::numeric;
+ ?column? 
+----------
+       -3
+(1 row)
+
+select (-1)::float8 ^ 2::float8;
+ ?column? 
+----------
+       -3
+(1 row)
+
+select (-1)::float8 ^ (-2)::int2;
+ ?column? 
+----------
+        1
+(1 row)
+
+select (-1)::float8 ^ (-2)::int4;
+ ?column? 
+----------
+        1
+(1 row)
+
+select (-1)::float8 ^ (-2)::int8;
+ ?column? 
+----------
+        1
+(1 row)
+
+select (-1)::float8 ^ (-2)::uint1;
+ ?column? 
+----------
+     -255
+(1 row)
+
+select (-1)::float8 ^ (-2)::uint2;
+ ?column? 
+----------
+   -65535
+(1 row)
+
+select (-1)::float8 ^ -2.0;
+ ?column? 
+----------
+        1
+(1 row)
+
+select (-1)::float8 ^ (-2)::float;
+ ?column? 
+----------
+        1
+(1 row)
+
+select (-1)::float8 ^ (-2)::float8;
+ ?column? 
+----------
+        1
+(1 row)
+
+select (-1)::float8 ^ (-2)::numeric;
+ ?column? 
+----------
+        1
+(1 row)
+
+select (-1)::float8 ^ (-2)::float8;
+ ?column? 
+----------
+        1
+(1 row)
+
+select 1::numeric ^ 2::int1;
+ ?column? 
+----------
+        3
+(1 row)
+
+select 1::numeric ^ 2::int2;
+ ?column? 
+----------
+        3
+(1 row)
+
+select 1::numeric ^ 2::int4;
+ ?column? 
+----------
+        3
+(1 row)
+
+select 1::numeric ^ 2::int8;
+ ?column? 
+----------
+        3
+(1 row)
+
+select 1::numeric ^ 2::uint1;
+ ?column? 
+----------
+        3
+(1 row)
+
+select 1::numeric ^ 2::uint2;
+ ?column? 
+----------
+        3
+(1 row)
+
+select 1::numeric ^ 2::uint4;
+ ?column? 
+----------
+        3
+(1 row)
+
+select 1::numeric ^ 2::uint8;
+ ?column? 
+----------
+        3
+(1 row)
+
+select 1::numeric ^ 2.0;
+ ?column? 
+----------
+        3
+(1 row)
+
+select 1::numeric ^ 2::bool;
+ ?column? 
+----------
+        0
+(1 row)
+
+select 1::numeric ^ 2::float;
+ ?column? 
+----------
+        3
+(1 row)
+
+select 1::numeric ^ 2::float8;
+ ?column? 
+----------
+        3
+(1 row)
+
+select 1::numeric ^ 2::numeric;
+ ?column? 
+----------
+        3
+(1 row)
+
+select (-1)::numeric ^ 2::int2;
+ ?column? 
+----------
+       -3
+(1 row)
+
+select (-1)::numeric ^ 2::int4;
+ ?column? 
+----------
+       -3
+(1 row)
+
+select (-1)::numeric ^ 2::int8;
+ ?column? 
+----------
+       -3
+(1 row)
+
+select (-1)::numeric ^ 2::uint1;
+ ?column? 
+----------
+       -3
+(1 row)
+
+select (-1)::numeric ^ 2::uint2;
+ ?column? 
+----------
+       -3
+(1 row)
+
+select (-1)::numeric ^ 2::uint4;
+ ?column? 
+----------
+       -3
+(1 row)
+
+select (-1)::numeric ^ 2::uint8;
+ ?column? 
+----------
+       -3
+(1 row)
+
+select (-1)::numeric ^ 2.0;
+ ?column? 
+----------
+       -3
+(1 row)
+
+select (-1)::numeric ^ 2::bool;
+ ?column? 
+----------
+       -2
+(1 row)
+
+select (-1)::numeric ^ 2::float;
+ ?column? 
+----------
+       -3
+(1 row)
+
+select (-1)::numeric ^ 2::float8;
+ ?column? 
+----------
+       -3
+(1 row)
+
+select (-1)::numeric ^ 2::numeric;
+ ?column? 
+----------
+       -3
+(1 row)
+
+select (-1)::numeric ^ (-2)::int2;
+ ?column? 
+----------
+        1
+(1 row)
+
+select (-1)::numeric ^ (-2)::int4;
+ ?column? 
+----------
+        1
+(1 row)
+
+select (-1)::numeric ^ (-2)::int8;
+ ?column? 
+----------
+        1
+(1 row)
+
+select (-1)::numeric ^ (-2)::uint1;
+ ?column? 
+----------
+     -255
+(1 row)
+
+select (-1)::numeric ^ (-2)::uint2;
+ ?column? 
+----------
+   -65535
+(1 row)
+
+select (-1)::numeric ^ (-2)::uint4;
+  ?column?   
+-------------
+ -4294967295
+(1 row)
+
+select (-1)::numeric ^ -2.0;
+ ?column? 
+----------
+        1
+(1 row)
+
+select (-1)::numeric ^ (-2)::bool;
+ ?column? 
+----------
+       -2
+(1 row)
+
+select (-1)::numeric ^ (-2)::float;
+ ?column? 
+----------
+        1
+(1 row)
+
+select (-1)::numeric ^ (-2)::float8;
+ ?column? 
+----------
+        1
+(1 row)
+
+select (-1)::numeric ^ (-2)::numeric;
+ ?column? 
+----------
+        1
+(1 row)
+
+set b_compatibility_mode = false;
+\c postgres
+drop database test_bool_float;

@@ -285,3 +285,30 @@ create operator pg_catalog.^(leftarg = int2, rightarg = int2, procedure = pg_cat
 create operator pg_catalog.^(leftarg = int4, rightarg = int4, procedure = pg_catalog.int4xor);
 create operator pg_catalog.^(leftarg = int8, rightarg = int8, procedure = pg_catalog.int8xor);
 create operator pg_catalog.^(leftarg = bit, rightarg = bit, procedure = pg_catalog.bitxor);
+
+
+create function pg_catalog.blobxor(
+blob,
+blob
+)RETURNS int LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'blobxor';
+create function pg_catalog.blobxor(
+blob,
+int
+)RETURNS int LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'blobxor';
+create function pg_catalog.blobxor(
+int,
+blob
+)RETURNS int LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'blobxor';
+create function pg_catalog.blobxor(
+int8,
+blob
+)RETURNS int LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'blobxor';
+create function pg_catalog.blobxor(
+blob,
+int8
+)RETURNS int LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'blobxor';
+create operator pg_catalog.^(leftarg = blob, rightarg = blob, procedure = pg_catalog.blobxor);
+create operator pg_catalog.^(leftarg = blob, rightarg = integer, procedure = pg_catalog.blobxor);
+create operator pg_catalog.^(leftarg = integer, rightarg = blob, procedure = pg_catalog.blobxor);
+create operator pg_catalog.^(leftarg = int8, rightarg = blob, procedure = pg_catalog.blobxor);
+create operator pg_catalog.^(leftarg = blob, rightarg = int8, procedure = pg_catalog.blobxor);

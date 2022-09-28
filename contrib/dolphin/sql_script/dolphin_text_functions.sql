@@ -109,3 +109,9 @@ text
 ) RETURNS int LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'textxor';
 
 create operator pg_catalog.^(leftarg = text, rightarg = text, procedure = pg_catalog.textxor);
+
+create function pg_catalog.boolxor (
+boolean,
+boolean
+) RETURNS int LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'boolxor';
+create operator pg_catalog.^(leftarg = boolean, rightarg = boolean, procedure = pg_catalog.boolxor);
