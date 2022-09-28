@@ -55,7 +55,7 @@ SelectStmt* makeShowColumnsDirectQuery(char* schemaname, char* tablename,
 SelectStmt* makeShowColumnsQuery(char* schemaName, char* tableName, char* dbname,
                                  bool fullMode, bool isLikeExpr, Node* likeWhereOpt = NULL);
 SelectStmt *makeShowCreateDatabaseQuery(bool ifexists, char *databaseName);
-SelectStmt* makeChecksumsTablesQuery(List *tablelist, bool isExtendMode);
+SelectStmt* makeChecksumsTablesQuery(List *tablelist, bool isExtendMode, bool doFastChksum);
 SelectStmt* makeShowTablesQuery(bool fullmode, char* optDbName, Node* likeWhereOpt, bool isLikeExpr);
 SelectStmt* makeShowPluginsQuery(void);
 SelectStmt* makeShowDatabasesQuery(Node* likeNode, Node* whereExpr);

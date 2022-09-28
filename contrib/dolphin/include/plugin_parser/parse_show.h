@@ -62,6 +62,7 @@ extern Node* plpsMakeStringConst(char* str);
 extern Node* plpsMakeSubLink(Node *stmt);
 extern Node* plpsAddCond(Node* left, Node* right, int location = PLPS_LOC_UNKNOWN);
 extern Node* plpsMakeColumnRef(char* relName, char* colName, int location = PLPS_LOC_UNKNOWN);
+extern Node *plpsMakeCoalesce(Node* first, Node* second);
 extern Node* plpsMakeFunc(char* funcname, List* args, int location = PLPS_LOC_UNKNOWN);
 extern Node* plpsMakeNormalColumn(char *relname, char *colname, char* aliasname, int location = PLPS_LOC_UNKNOWN);
 extern Node* plpsMakeTypeCast(Node *arg, char *type_name, int location);

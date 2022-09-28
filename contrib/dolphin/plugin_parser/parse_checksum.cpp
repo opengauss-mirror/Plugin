@@ -6,8 +6,12 @@
 #include "utils/snapmgr.h"
 #include "storage/lmgr.h"
 #include "plugin_parser/parse_show.h"
+#include "plugin_parser/parse_relation.h"
 
 #define MAX_INT_TO_STRLEN (11)
+
+#define PLPS_CHKSUM_ZEROVAL   "0"
+#define PLPS_NULL_VAL          ""
 
 extern uint64 pg_relation_table_size(Relation rel);
 
@@ -16,19 +20,33 @@ static int checksum_table_impl(Relation rel, uint32 &crc32)
     TableScanDesc scan;
     HeapTuple tup;
     HeapTupleHeader tupHdr;
+    UHeapTuple utup;
+    UHeapDiskTuple utupHdr;
+    bool isUstoreRel = RelationIsUstoreFormat(rel);
     char *t_data;
     uint32_t row_crc32;
     uint64_t total_tup_count = 0;
 
     scan = tableam_scan_begin(rel, SnapshotNow, 0, NULL);
 
-    while(HeapTupleIsValid(tup = (HeapTuple)tableam_scan_getnexttuple(scan, ForwardScanDirection))) {
-        tupHdr = tup->t_data;
-        t_data = (char*)tupHdr + tupHdr->t_hoff;
-        row_crc32 = 0;
-        COMP_CRC32C(row_crc32, t_data, tup->t_len - tupHdr->t_hoff);
-        crc32 += row_crc32;
-        total_tup_count++;
+    if (!isUstoreRel) {
+        while(HeapTupleIsValid(tup = (HeapTuple)tableam_scan_getnexttuple(scan, ForwardScanDirection))) {
+            tupHdr = tup->t_data;
+            t_data = (char*)tupHdr + tupHdr->t_hoff;
+            row_crc32 = 0;
+            COMP_CRC32C(row_crc32, t_data, tup->t_len - tupHdr->t_hoff);
+            crc32 += row_crc32;
+            total_tup_count++;
+        }
+    } else {
+	while(UHeapTupleIsValid(utup = (UHeapTuple)tableam_scan_getnexttuple(scan, ForwardScanDirection))) {
+    	    utupHdr = utup->disk_tuple;
+    	    t_data = (char*)utupHdr + utupHdr->t_hoff;
+    	    row_crc32 = 0;
+    	    COMP_CRC32C(row_crc32, t_data, utup->disk_tuple_size - utupHdr->t_hoff);
+    	    crc32 += row_crc32;
+    	    total_tup_count++;
+	}
     }
 
     tableam_scan_end(scan);
@@ -52,7 +70,7 @@ Node* makeChecksumTextAgg(RangeVar *rv)
     ResTarget *rt = makeNode(ResTarget);
     rt->name = NULL;
     rt->indirection = NIL;
-    rt->val = (Node*)funcNode;
+    rt->val = plpsMakeCoalesce(funcNode, plpsMakeStringConst(PLPS_CHKSUM_ZEROVAL));
     rt->location = PLPS_LOC_UNKNOWN;
 
     SelectStmt *stmt = plpsMakeSelectStmt(list_make1(rt), list_make1(rv), NULL, NIL);
@@ -93,7 +111,7 @@ static bool isToastRelationEmpty(Oid toastRelid)
 }
 
 /* only Astore table support current in Compatability B database */
-List* checksums_tables(List *tableList, bool isExtendMode)
+List* checksums_tables(List *tableList, bool isExtendMode, bool doFastChksum)
 {
     ListCell *fl = NULL;
     Node *n = NULL;
@@ -103,7 +121,6 @@ List* checksums_tables(List *tableList, bool isExtendMode)
     List *sub_vl = NULL;
     Node *typCast = NULL;
     char *crc_str = NULL;
-    char *schemaname = NULL;
     char *compTablename = NULL;
     int len;
     int rc;
@@ -112,20 +129,19 @@ List* checksums_tables(List *tableList, bool isExtendMode)
         n = (Node*)lfirst(fl);
         /* only rangevar support for checksum_tables table list */
         rv = (RangeVar*)n;
-        schemaname = rv->schemaname;
-        if (schemaname == NULL) {
-            schemaname = DatumGetCString(DirectFunctionCall1(current_schema, PointerGetDatum(NULL)));
-            if (schemaname == NULL) {
+        if (rv->schemaname == NULL) {
+            rv->schemaname = DatumGetCString(DirectFunctionCall1(current_schema, PointerGetDatum(NULL)));
+            if (rv->schemaname == NULL) {
                 /* should not happend, error ret */
                 ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("current_schema is NULL!!!!")));
             }
         }
 
-        len = strlen(schemaname) + strlen(rv->relname) + 2; /* include . and \0 end */
+        len = strlen(rv->schemaname) + strlen(rv->relname) + 2; /* include . and \0 end */
         compTablename = (char*)palloc0(len);
-        rc = sprintf_s(compTablename, len, "%s.%s", schemaname, rv->relname);
+        rc = sprintf_s(compTablename, len, "%s.%s", rv->schemaname, rv->relname);
         if (!isExtendMode) {
-            sub_vl = list_make2(plpsMakeStringConst(compTablename), plpsMakeStringConst("NULL"));
+            sub_vl = list_make2(plpsMakeStringConst(compTablename), plpsMakeStringConst(PLPS_NULL_VAL));
             vl = lappend(vl, sub_vl);
             continue;
         }
@@ -135,7 +151,7 @@ List* checksums_tables(List *tableList, bool isExtendMode)
 
         /* for not exist tables or not ordinary table, just return NULL result */
         if (rel == NULL || RelationGetRelkind(rel) != RELKIND_RELATION) {
-            sub_vl = list_make2(plpsMakeStringConst(compTablename), plpsMakeStringConst("NULL"));
+            sub_vl = list_make2(plpsMakeStringConst(compTablename), plpsMakeStringConst(PLPS_NULL_VAL));
             vl = lappend(vl, sub_vl);
 
 	    if(rel != NULL) {
@@ -144,7 +160,10 @@ List* checksums_tables(List *tableList, bool isExtendMode)
             continue;
         }
 
-        if (isToastRelationEmpty(rel->rd_rel->reltoastrelid)) {
+        RangeTblEntry *rte = addRangeTableEntryForRelation(NULL, rel, NULL, false, false);
+        ExecCheckRTPerms(list_make1(rte), TRUE);
+
+        if (doFastChksum && OidIsValid(rel->rd_rel->reltoastrelid) && isToastRelationEmpty(rel->rd_rel->reltoastrelid)) {
             uint32 crc32 = 0;
             checksum_table_impl(rel, crc32);
 
@@ -170,9 +189,9 @@ List* checksums_tables(List *tableList, bool isExtendMode)
     return vl;
 } 
 
-SelectStmt* makeChecksumTableSubQuery(List *tablelist, bool isExtendMode)
+SelectStmt* makeChecksumTableSubQuery(List *tablelist, bool isExtendMode, bool doFastChksum)
 {
-    List *vl = checksums_tables(tablelist, isExtendMode);
+    List *vl = checksums_tables(tablelist, isExtendMode, doFastChksum);
     SelectStmt *stmt = plpsMakeSelectStmt(NIL, NIL, NULL, NIL);
 
     stmt->valuesLists = vl;
@@ -180,7 +199,7 @@ SelectStmt* makeChecksumTableSubQuery(List *tablelist, bool isExtendMode)
     return stmt;
 }
 
-SelectStmt* makeChecksumsTablesQuery(List *tablelist, bool isExtendMode)
+SelectStmt* makeChecksumsTablesQuery(List *tablelist, bool isExtendMode, bool doFastChksum)
 {
     Alias* alias = makeNode(Alias);
     ColumnRef* colRef = makeNode(ColumnRef);
@@ -193,7 +212,7 @@ SelectStmt* makeChecksumsTablesQuery(List *tablelist, bool isExtendMode)
     alias->colnames = cl;
 
     RangeSubselect* rsubselect = makeNode(RangeSubselect);
-    rsubselect->subquery = (Node*)makeChecksumTableSubQuery(tablelist, isExtendMode);
+    rsubselect->subquery = (Node*)makeChecksumTableSubQuery(tablelist, isExtendMode, doFastChksum);
     rsubselect->alias = alias;
 
     colRef->fields = list_make1(makeNode(A_Star));
