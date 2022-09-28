@@ -4429,3 +4429,86 @@ DROP FUNCTION IF EXISTS pg_catalog.text_cast_uint8(text) CASCADE;
 CREATE OR REPLACE FUNCTION pg_catalog.text_cast_uint8 (
 text
 ) RETURNS uint8 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'text_cast_uint8';
+
+-- ^ operator
+
+CREATE OPERATOR pg_catalog.^(
+leftarg = uint1, rightarg = uint1, procedure = uint1xor,
+commutator=operator(pg_catalog.^)
+);
+COMMENT ON OPERATOR pg_catalog.^(uint1, uint1) IS 'uint1xor';
+
+
+CREATE OPERATOR pg_catalog.^(
+leftarg = uint2, rightarg = uint2, procedure = uint2xor,
+commutator=operator(pg_catalog.^)
+);
+COMMENT ON OPERATOR pg_catalog.^(uint2, uint2) IS 'uint2xor';
+
+
+CREATE OPERATOR pg_catalog.^(
+leftarg = uint4, rightarg = uint4, procedure = uint4xor,
+commutator=operator(pg_catalog.^)
+);
+COMMENT ON OPERATOR pg_catalog.^(uint4, uint4) IS 'uint4xor';
+
+
+CREATE OPERATOR pg_catalog.^(
+leftarg = uint8, rightarg = uint8, procedure = uint8xor,
+commutator=operator(pg_catalog.^)
+);
+COMMENT ON OPERATOR pg_catalog.^(uint8, uint8) IS 'uint8xor';
+
+
+CREATE OPERATOR pg_catalog.^(
+leftarg = uint1, rightarg = int1, procedure = uint1_xor_int1
+);
+COMMENT ON OPERATOR pg_catalog.^(uint1, int1) IS 'uint1_xor_int1';
+
+
+CREATE OPERATOR pg_catalog.^(
+leftarg = int1, rightarg = uint1, procedure = int1_xor_uint1
+);
+COMMENT ON OPERATOR pg_catalog.^(int1, uint1) IS 'int1_xor_uint1';
+
+
+CREATE OPERATOR pg_catalog.^(
+leftarg = uint2, rightarg = int2, procedure = uint2_xor_int2,
+commutator=operator(pg_catalog.^)
+);
+COMMENT ON OPERATOR pg_catalog.^(uint2, int2) IS 'uint2_xor_int2';
+
+
+CREATE OPERATOR pg_catalog.^(
+leftarg = int2, rightarg = uint2, procedure = int2_xor_uint2,
+commutator=operator(pg_catalog.^)
+);
+COMMENT ON OPERATOR pg_catalog.^(int2, uint2) IS 'int2_xor_uint2';
+
+
+CREATE OPERATOR pg_catalog.^(
+leftarg = uint4, rightarg = int4, procedure = uint4_xor_int4,
+commutator=operator(pg_catalog.^)
+);
+COMMENT ON OPERATOR pg_catalog.^(uint4, int4) IS 'uint4_xor_int4';
+
+
+CREATE OPERATOR pg_catalog.^(
+leftarg = int4, rightarg = uint4, procedure = int4_xor_uint4,
+commutator=operator(pg_catalog.^)
+);
+COMMENT ON OPERATOR pg_catalog.^(int4, uint4) IS 'int4_xor_uint4';
+
+
+CREATE OPERATOR pg_catalog.^(
+leftarg = uint8, rightarg = int8, procedure = uint8_xor_int8,
+commutator=operator(pg_catalog.^)
+);
+COMMENT ON OPERATOR pg_catalog.^(uint8, int8) IS 'uint8_xor_int8';
+
+
+CREATE OPERATOR pg_catalog.^(
+leftarg = int8, rightarg = uint8, procedure = int8_xor_uint8,
+commutator=operator(pg_catalog.^)
+);
+COMMENT ON OPERATOR pg_catalog.^(int8, uint8) IS 'int8_xor_uint8';
