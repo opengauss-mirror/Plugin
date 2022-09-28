@@ -1,0 +1,738 @@
+drop database if exists test_op_xor_unsignedint;
+NOTICE:  database "test_op_xor_unsignedint" does not exist, skipping
+create database test_op_xor_unsignedint with dbcompatibility='B';
+\c test_op_xor_unsignedint
+select (-1)::uint1 ^ 2::int1;
+ ?column? 
+----------
+ 253
+(1 row)
+
+select (-1)::uint1 ^ 2::int2;
+ ?column? 
+----------
+ 253
+(1 row)
+
+select (-1)::uint1 ^ 2::int4;
+ ?column? 
+----------
+ 253
+(1 row)
+
+select (-1)::uint1 ^ 2::int8;
+ ?column? 
+----------
+ 253
+(1 row)
+
+select (-1)::uint1 ^ 2::uint1;
+ ?column? 
+----------
+ 253
+(1 row)
+
+select (-1)::uint1 ^ 2::uint2;
+ ?column? 
+----------
+ 253
+(1 row)
+
+select (-1)::uint1 ^ 2::uint4;
+ ?column? 
+----------
+ 253
+(1 row)
+
+select (-1)::uint1 ^ 2::uint8;
+ ?column? 
+----------
+ 253
+(1 row)
+
+select (-1)::uint1 ^ 2::bool;
+ ?column? 
+----------
+ 254
+(1 row)
+
+select (-1)::uint1 ^ 2::char;
+ ?column? 
+----------
+ 253
+(1 row)
+
+select (-1)::uint1 ^ 2::varchar;
+ ?column? 
+----------
+ 253
+(1 row)
+
+select (-10)::uint1 ^ (-2)::int2;
+ ?column? 
+----------
+ 65288
+(1 row)
+
+select (-10)::uint1 ^ (-2)::int4;
+  ?column?  
+------------
+ 4294967048
+(1 row)
+
+select (-10)::uint1 ^ (-2)::int8;
+       ?column?       
+----------------------
+ 18446744073709551368
+(1 row)
+
+select (-10)::uint1 ^ (-2)::uint1;
+ ?column? 
+----------
+ 8
+(1 row)
+
+select (-10)::uint1 ^ (-2)::uint2;
+ ?column? 
+----------
+ 65288
+(1 row)
+
+select (-10)::uint1 ^ (-2)::uint4;
+  ?column?  
+------------
+ 4294967048
+(1 row)
+
+select (-10)::uint1 ^ (-2)::uint8;
+       ?column?       
+----------------------
+ 18446744073709551368
+(1 row)
+
+select (-10)::uint1 ^ (-2)::bool;
+ ?column? 
+----------
+ 247
+(1 row)
+
+select (-10)::uint1 ^ (-2)::varchar;
+ERROR:  value "-2" is out of range for 8-bit integer
+select 2 ::uint1 ^ 2::int1;
+ ?column? 
+----------
+ 0
+(1 row)
+
+select 2 ::uint1 ^ 2::int2;
+ ?column? 
+----------
+ 0
+(1 row)
+
+select 2 ::uint1 ^ 2::int4;
+ ?column? 
+----------
+ 0
+(1 row)
+
+select 2 ::uint1 ^ 2::int8;
+ ?column? 
+----------
+ 0
+(1 row)
+
+select 2 ::uint1 ^ 2::uint1;
+ ?column? 
+----------
+ 0
+(1 row)
+
+select 2 ::uint1 ^ 2::uint2;
+ ?column? 
+----------
+ 0
+(1 row)
+
+select 2 ::uint1 ^ 2::uint4;
+ ?column? 
+----------
+ 0
+(1 row)
+
+select 2 ::uint1 ^ 2::uint8;
+ ?column? 
+----------
+ 0
+(1 row)
+
+select 2 ::uint1 ^ 2::bool;
+ ?column? 
+----------
+ 3
+(1 row)
+
+select 2 ::uint1 ^ 2::varchar;
+ ?column? 
+----------
+ 0
+(1 row)
+
+select (-1)::uint2 ^ 2::int1;
+ ?column? 
+----------
+ 65533
+(1 row)
+
+select (-1)::uint2 ^ 2::int2;
+ ?column? 
+----------
+ 65533
+(1 row)
+
+select (-1)::uint2 ^ 2::int4;
+ ?column? 
+----------
+ 65533
+(1 row)
+
+select (-1)::uint2 ^ 2::int8;
+ ?column? 
+----------
+ 65533
+(1 row)
+
+select (-1)::uint2 ^ 2::uint1;
+ ?column? 
+----------
+ 65533
+(1 row)
+
+select (-1)::uint2 ^ 2::uint2;
+ ?column? 
+----------
+ 65533
+(1 row)
+
+select (-1)::uint2 ^ 2::uint4;
+ ?column? 
+----------
+ 65533
+(1 row)
+
+select (-1)::uint2 ^ 2::uint8;
+ ?column? 
+----------
+ 65533
+(1 row)
+
+select (-1)::uint2 ^ 2::bool;
+ ?column? 
+----------
+ 65534
+(1 row)
+
+select (-1)::uint2 ^ 2::char;
+ ?column? 
+----------
+ 65533
+(1 row)
+
+select (-1)::uint2 ^ 2::varchar;
+ ?column? 
+----------
+ 65533
+(1 row)
+
+select (-10)::uint2 ^ (-2)::int2;
+ ?column? 
+----------
+ 8
+(1 row)
+
+select (-10)::uint2 ^ (-2)::int4;
+  ?column?  
+------------
+ 4294901768
+(1 row)
+
+select (-10)::uint2 ^ (-2)::int8;
+       ?column?       
+----------------------
+ 18446744073709486088
+(1 row)
+
+select (-10)::uint2 ^ (-2)::uint1;
+ ?column? 
+----------
+ 65288
+(1 row)
+
+select (-10)::uint2 ^ (-2)::uint2;
+ ?column? 
+----------
+ 8
+(1 row)
+
+select (-10)::uint2 ^ (-2)::uint4;
+  ?column?  
+------------
+ 4294901768
+(1 row)
+
+select (-10)::uint2 ^ (-2)::uint8;
+       ?column?       
+----------------------
+ 18446744073709486088
+(1 row)
+
+select (-10)::uint2 ^ (-2)::bool;
+ ?column? 
+----------
+ 65527
+(1 row)
+
+select (-10)::uint2 ^ (-2)::varchar;
+ ?column? 
+----------
+ 8
+(1 row)
+
+select 2 ::uint2 ^ 2::int1;
+ ?column? 
+----------
+ 0
+(1 row)
+
+select 2 ::uint2 ^ 2::int2;
+ ?column? 
+----------
+ 0
+(1 row)
+
+select 2 ::uint2 ^ 2::int4;
+ ?column? 
+----------
+ 0
+(1 row)
+
+select 2 ::uint2 ^ 2::int8;
+ ?column? 
+----------
+ 0
+(1 row)
+
+select 2 ::uint2 ^ 2::uint1;
+ ?column? 
+----------
+ 0
+(1 row)
+
+select 2 ::uint2 ^ 2::uint2;
+ ?column? 
+----------
+ 0
+(1 row)
+
+select 2 ::uint2 ^ 2::uint4;
+ ?column? 
+----------
+ 0
+(1 row)
+
+select 2 ::uint2 ^ 2::uint8;
+ ?column? 
+----------
+ 0
+(1 row)
+
+select 2 ::uint2 ^ 2::bool;
+ ?column? 
+----------
+ 3
+(1 row)
+
+select 2 ::uint2 ^ 2::char;
+ ?column? 
+----------
+ 0
+(1 row)
+
+select 2 ::uint2 ^ 2::varchar;
+ ?column? 
+----------
+ 0
+(1 row)
+
+select (-1)::uint4 ^ 2::int1;
+  ?column?  
+------------
+ 4294967293
+(1 row)
+
+select (-1)::uint4 ^ 2::int2;
+  ?column?  
+------------
+ 4294967293
+(1 row)
+
+select (-1)::uint4 ^ 2::int4;
+  ?column?  
+------------
+ 4294967293
+(1 row)
+
+select (-1)::uint4 ^ 2::int8;
+  ?column?  
+------------
+ 4294967293
+(1 row)
+
+select (-1)::uint4 ^ 2::uint1;
+  ?column?  
+------------
+ 4294967293
+(1 row)
+
+select (-1)::uint4 ^ 2::uint2;
+  ?column?  
+------------
+ 4294967293
+(1 row)
+
+select (-1)::uint4 ^ 2::uint4;
+  ?column?  
+------------
+ 4294967293
+(1 row)
+
+select (-1)::uint4 ^ 2::uint8;
+  ?column?  
+------------
+ 4294967293
+(1 row)
+
+select (-1)::uint4 ^ 2::bool;
+  ?column?  
+------------
+ 4294967294
+(1 row)
+
+select (-1)::uint4 ^ 2::char;
+  ?column?  
+------------
+ 4294967293
+(1 row)
+
+select (-1)::uint4 ^ 2::varchar;
+  ?column?  
+------------
+ 4294967293
+(1 row)
+
+select (-10)::uint4 ^ (-2)::int2;
+ ?column? 
+----------
+ 8
+(1 row)
+
+select (-10)::uint4 ^ (-2)::int4;
+ ?column? 
+----------
+ 8
+(1 row)
+
+select (-10)::uint4 ^ (-2)::int8;
+       ?column?       
+----------------------
+ 18446744069414584328
+(1 row)
+
+select (-10)::uint4 ^ (-2)::uint1;
+  ?column?  
+------------
+ 4294967048
+(1 row)
+
+select (-10)::uint4 ^ (-2)::uint2;
+  ?column?  
+------------
+ 4294901768
+(1 row)
+
+select (-10)::uint4 ^ (-2)::uint4;
+ ?column? 
+----------
+ 8
+(1 row)
+
+select (-10)::uint4 ^ (-2)::uint8;
+       ?column?       
+----------------------
+ 18446744069414584328
+(1 row)
+
+select (-10)::uint4 ^ (-2)::bool;
+  ?column?  
+------------
+ 4294967287
+(1 row)
+
+select (-10)::uint4 ^ (-2)::varchar;
+ ?column? 
+----------
+ 8
+(1 row)
+
+select 2 ::uint4 ^ 2::int1;
+ ?column? 
+----------
+ 0
+(1 row)
+
+select 2 ::uint4 ^ 2::int2;
+ ?column? 
+----------
+ 0
+(1 row)
+
+select 2 ::uint4 ^ 2::int4;
+ ?column? 
+----------
+ 0
+(1 row)
+
+select 2 ::uint4 ^ 2::int8;
+ ?column? 
+----------
+ 0
+(1 row)
+
+select 2 ::uint4 ^ 2::uint1;
+ ?column? 
+----------
+ 0
+(1 row)
+
+select 2 ::uint4 ^ 2::uint2;
+ ?column? 
+----------
+ 0
+(1 row)
+
+select 2 ::uint4 ^ 2::uint4;
+ ?column? 
+----------
+ 0
+(1 row)
+
+select 2 ::uint4 ^ 2::uint8;
+ ?column? 
+----------
+ 0
+(1 row)
+
+select 2 ::uint4 ^ 2::bool;
+ ?column? 
+----------
+ 3
+(1 row)
+
+select 2 ::uint4 ^ 2::char;
+ ?column? 
+----------
+ 0
+(1 row)
+
+select 2 ::uint4 ^ 2::varchar;
+ ?column? 
+----------
+ 0
+(1 row)
+
+select (-1)::uint8 ^ 2::int1;
+       ?column?       
+----------------------
+ 18446744073709551613
+(1 row)
+
+select (-1)::uint8 ^ 2::int2;
+       ?column?       
+----------------------
+ 18446744073709551613
+(1 row)
+
+select (-1)::uint8 ^ 2::int4;
+       ?column?       
+----------------------
+ 18446744073709551613
+(1 row)
+
+select (-1)::uint8 ^ 2::int8;
+       ?column?       
+----------------------
+ 18446744073709551613
+(1 row)
+
+select (-1)::uint8 ^ 2::uint1;
+       ?column?       
+----------------------
+ 18446744073709551613
+(1 row)
+
+select (-1)::uint8 ^ 2::uint2;
+       ?column?       
+----------------------
+ 18446744073709551613
+(1 row)
+
+select (-1)::uint8 ^ 2::uint4;
+       ?column?       
+----------------------
+ 18446744073709551613
+(1 row)
+
+select (-1)::uint8 ^ 2::uint8;
+       ?column?       
+----------------------
+ 18446744073709551613
+(1 row)
+
+select (-1)::uint8 ^ 2::bool;
+       ?column?       
+----------------------
+ 18446744073709551614
+(1 row)
+
+select (-1)::uint8 ^ 2::char;
+       ?column?       
+----------------------
+ 18446744073709551613
+(1 row)
+
+select (-1)::uint8 ^ 2::varchar;
+       ?column?       
+----------------------
+ 18446744073709551613
+(1 row)
+
+select (-10)::uint8 ^ (-2)::int2;
+ ?column? 
+----------
+ 8
+(1 row)
+
+select (-10)::uint8 ^ (-2)::int4;
+ ?column? 
+----------
+ 8
+(1 row)
+
+select (-10)::uint8 ^ (-2)::int8;
+ ?column? 
+----------
+ 8
+(1 row)
+
+select (-10)::uint8 ^ (-2)::uint1;
+       ?column?       
+----------------------
+ 18446744073709551368
+(1 row)
+
+select (-10)::uint8 ^ (-2)::uint2;
+       ?column?       
+----------------------
+ 18446744073709486088
+(1 row)
+
+select (-10)::uint8 ^ (-2)::uint4;
+       ?column?       
+----------------------
+ 18446744069414584328
+(1 row)
+
+select (-10)::uint8 ^ (-2)::uint8;
+ ?column? 
+----------
+ 8
+(1 row)
+
+select (-10)::uint8 ^ (-2)::bool;
+       ?column?       
+----------------------
+ 18446744073709551607
+(1 row)
+
+select (-10)::uint8 ^ (-2)::varchar;
+ ?column? 
+----------
+ 8
+(1 row)
+
+select 2 ::uint8 ^ 2::int1;
+ ?column? 
+----------
+ 0
+(1 row)
+
+select 2 ::uint8 ^ 2::int2;
+ ?column? 
+----------
+ 0
+(1 row)
+
+select 2 ::uint8 ^ 2::int4;
+ ?column? 
+----------
+ 0
+(1 row)
+
+select 2 ::uint8 ^ 2::int8;
+ ?column? 
+----------
+ 0
+(1 row)
+
+select 2 ::uint8 ^ 2::uint1;
+ ?column? 
+----------
+ 0
+(1 row)
+
+select 2 ::uint8 ^ 2::uint2;
+ ?column? 
+----------
+ 0
+(1 row)
+
+select 2 ::uint8 ^ 2::uint4;
+ ?column? 
+----------
+ 0
+(1 row)
+
+select 2 ::uint8 ^ 2::uint8;
+ ?column? 
+----------
+ 0
+(1 row)
+
+select 2 ::uint8 ^ 2::bool;
+ ?column? 
+----------
+ 3
+(1 row)
+
+select 2 ::uint8 ^ 2::char;
+ ?column? 
+----------
+ 0
+(1 row)
+
+select 2 ::uint8 ^ 2::varchar;
+ ?column? 
+----------
+ 0
+(1 row)
+
