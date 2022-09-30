@@ -2052,6 +2052,9 @@ void AlterFunction(AlterFunctionStmt* stmt)
 #ifdef DOLPHIN
     if (determ_item != NULL)
         ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("Do not support deterministic for ALTER FUNCTION.")));
+    if (language_item != NULL && strcmp(strVal(language_item->arg),"sql") != 0) {
+        ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("Do not support language %s for ALTER FUNCTION.", strVal(language_item->arg))));
+    }
 #endif
     if (volatility_item != NULL)
         procForm->provolatile = interpret_func_volatility(volatility_item);
