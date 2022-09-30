@@ -10,6 +10,7 @@ typedef bool (*TupleFilter)(HeapTuple heapTuple);
 
 /* scan SQL buffer */
 const static size_t SCAN_SQL_LEN = 1024;
+const static size_t MAX_OBJECT_NAME_LEN = 128;
 
 typedef struct {
     Oid roleOid;
@@ -38,7 +39,8 @@ typedef struct {
 typedef struct {
     RoleInShow role;
     RelationScan relationScan;
-    Datum currentRelName;
+    char currentObjectName[MAX_OBJECT_NAME_LEN];
+    char tableNameUsedForColumn[MAX_OBJECT_NAME_LEN];
     AclSanStatus aclStatus;
 } ShowGrantState;
 
@@ -46,6 +48,7 @@ bool PgClassFilter(HeapTuple heapTuple);
 void CallSPIAndCheck(char *query);
 bool PgProcProcedureFilter(HeapTuple heapTuple);
 bool PgProcFunctionFilter(HeapTuple heapTuple);
+bool PgAttributeFilter(HeapTuple heapTuple);
 
 bool PgTypeFilter(HeapTuple heapTuple);
 

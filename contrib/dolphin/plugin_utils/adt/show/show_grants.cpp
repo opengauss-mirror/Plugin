@@ -2,6 +2,7 @@
 
 #include "utils/relcache.h"
 
+#include "tcop/utility.h"
 #include "catalog/pg_class.h"
 #include "catalog/pg_foreign_server.h"
 #include "catalog/pg_foreign_data_wrapper.h"
@@ -16,7 +17,11 @@
 #include "catalog/gs_column_keys.h"
 #include "utils/acl.h"
 #include "libpq/auth.h"
+#include "utils/lsyscache.h"
 #include "funcapi.h"
+
+constexpr size_t PG_TYPE_INDEX = 6;
+constexpr size_t ATTRIBUTE_INDEX = 13;
 
 PG_FUNCTION_INFO_V1_PUBLIC(ShowAnyPrivileges);
 extern "C" DLL_PUBLIC Datum ShowAnyPrivileges(PG_FUNCTION_ARGS);
@@ -34,7 +39,6 @@ const static GrantRelation GRANT_RELATIONS[] = {
      "FOREIGN SERVER"},
     {ForeignDataWrapperRelationId, FOREIGNDATAWRAPPEROID, Anum_pg_foreign_data_wrapper_fdwname,
      Anum_pg_foreign_data_wrapper_fdwacl, "FOREIGN DATA WRAPPER"},
-    {PackageRelationId, PACKAGEOID, Anum_gs_package_pkgname, Anum_gs_package_pkgacl, "PACKAGE"},
     {ProcedureRelationId, PROCOID, Anum_pg_proc_proname, Anum_pg_proc_proacl, "PROCEDURE", PgProcProcedureFilter},
     {ProcedureRelationId, PROCOID, Anum_pg_proc_proname, Anum_pg_proc_proacl, "FUNCTION", PgProcFunctionFilter},
     {LanguageRelationId, LANGOID, Anum_pg_language_lanname, Anum_pg_language_lanacl, "LANGUAGE"},
@@ -48,13 +52,15 @@ const static GrantRelation GRANT_RELATIONS[] = {
      "DATA SOURCE"},
     {ClientLogicGlobalSettingsId, GLOBALSETTINGOID, Anum_gs_client_global_keys_global_key_name,
      Anum_gs_client_global_keys_key_acl, "CLIENT_MASTER_KEY"},
-    {ClientLogicColumnSettingsId, COLUMNSETTINGOID, Anum_gs_client_global_keys_global_key_name,
-     Anum_gs_client_global_keys_key_acl, "COLUMN_ENCRYPTION_KEY"},
+    {ClientLogicColumnSettingsId, COLUMNSETTINGOID, Anum_gs_column_keys_column_key_name, Anum_gs_column_keys_key_acl,
+     "COLUMN_ENCRYPTION_KEY"},
+    /* column sql: grant grant_type(column_id) on table table_name to user_name */
+    {AttributeRelationId, ATTNAME, Anum_pg_attribute_attname, Anum_pg_attribute_attacl, "TABLE", PgAttributeFilter},
 };
 
 bool PgTypeFilter(HeapTuple heapTuple)
 {
-    SysCacheIdentifier sysCacheId = GRANT_RELATIONS[7].sysCacheId;
+    SysCacheIdentifier sysCacheId = GRANT_RELATIONS[PG_TYPE_INDEX].sysCacheId;
     bool isNull = false;
     Datum namespaceDatum = SysCacheGetAttr(sysCacheId, heapTuple, Anum_pg_type_typnamespace, &isNull);
     Assert(!isNull);
@@ -109,6 +115,17 @@ bool PgProcFunctionFilter(HeapTuple heapTuple)
     return PgProcFilter(heapTuple, PROKIND_FUNCTION);
 }
 
+bool PgAttributeFilter(HeapTuple heapTuple)
+{
+    bool isNull = false;
+    SysCacheIdentifier sysCacheId = GRANT_RELATIONS[ATTRIBUTE_INDEX].sysCacheId;
+    Datum relIdDatum = SysCacheGetAttr(sysCacheId, heapTuple, Anum_pg_attribute_attrelid, &isNull);
+    Assert(!isNull);
+    Oid relId = DatumGetObjectId(relIdDatum);
+    Oid namespaceId = GetNamespaceIdbyRelId(relId);
+    return IsUserSchema(namespaceId);
+}
+
 /**
  * defaultFilter, return true always
  * @param tuple tuple
@@ -132,33 +149,45 @@ static const priv_map DDL_RIGHT[] = {
     {"ALTER", (1 << 0)}, {"DROP", (1 << 1)}, {"COMMENT", (1 << 2)}, {"INDEX", (1 << 3)}, {"VACUUM", (1 << 4)},
 };
 
-char *ConstructObjectGrantSQL(AclItem *aclItem, char *objectType, ShowGrantState *grantStatus)
+static void ConstructSubGrantSql(ShowGrantState *grantStatus, AclItem *aclItem, const priv_map *privMapPointer,
+                                 StringInfo noGrantOptionStr, StringInfo grantOptionStr)
 {
     uint32 privs = ACLITEM_GET_PRIVS(*aclItem);
     uint32 grantOption = ACLITEM_GET_GOPTIONS(*aclItem);
+    priv_map privMap = *privMapPointer;
+    AclMode value = privMap.value;
+    if ((privs & value) == 0) {
+        return;
+    }
+    StringInfo appendInfo = NULL;
+    appendInfo = ((grantOption & value) != 0) ? grantOptionStr : noGrantOptionStr;
+    if (grantStatus->relationScan.relationIndex == ATTRIBUTE_INDEX) {
+        appendStringInfo(appendInfo, ", %s(%s)", privMap.name, grantStatus->currentObjectName);
+    } else {
+        appendStringInfo(appendInfo, ", %s", privMap.name);
+    }
+}
 
-    StringInfo noGrantOptionStr = makeStringInfo();
-    StringInfo grantOptionStr = makeStringInfo();
-    char *object = DatumGetCString(grantStatus->currentRelName);
+char *ConstructObjectGrantSQL(AclItem *aclItem, char *objectType, ShowGrantState *grantStatus)
+{
+    uint32 privs = ACLITEM_GET_PRIVS(*aclItem);
     const priv_map *privMaps = ACLMODE_FOR_DDL(privs) ? DDL_RIGHT : ACl_OPTION_CHARS;
+    
     size_t ddlLength = sizeof(DDL_RIGHT) / sizeof(priv_map);
     size_t aclOptionLength = sizeof(ACl_OPTION_CHARS) / sizeof(priv_map);
     size_t length = ACLMODE_FOR_DDL(privs) ? ddlLength : aclOptionLength;
+    
+    StringInfo noGrantOptionStr = makeStringInfo();
+    StringInfo grantOptionStr = makeStringInfo();
     for (size_t i = 0; i < length; i++) {
-        priv_map privMap = privMaps[i];
-        AclMode value = privMap.value;
-        if ((privs & value) != 0) {
-            if ((grantOption & value) != 0) {
-                appendStringInfo(grantOptionStr, ", %s", privMap.name);
-            } else {
-                appendStringInfo(noGrantOptionStr, ", %s", privMap.name);
-            }
-        }
+        ConstructSubGrantSql(grantStatus, aclItem, &privMaps[i], noGrantOptionStr, grantOptionStr);
     }
 
-    Assert(grantOptionStr->len != 0 || noGrantOptionStr != 0);
+    Assert(grantOptionStr->len != 0 || noGrantOptionStr->len != 0);
     StringInfo noGrantResult = makeStringInfo();
     StringInfo grantResult = makeStringInfo();
+    bool isAttribute = grantStatus->relationScan.relationIndex == ATTRIBUTE_INDEX;
+    char *object = isAttribute ? grantStatus->tableNameUsedForColumn : grantStatus->currentObjectName;
     if (noGrantOptionStr->len != 0) {
         appendStringInfo(noGrantResult, "GRANT %s ON %s %s TO %s", noGrantOptionStr->data + 2, objectType, object,
                          grantStatus->role.roleName);
@@ -191,21 +220,13 @@ char *ConstructObjectGrantSQL(AclItem *aclItem, char *objectType, ShowGrantState
  */
 static bool IsUserSchema(Oid namespaceId)
 {
-    /* GetInformationSchemaOid will only be called once, Concurrently function-invoke is fine */
-    static Oid informationSchemaOid = GetInformationSchemaOid();
-    return namespaceId != informationSchemaOid && namespaceId != PG_TOAST_NAMESPACE &&
-           namespaceId != PG_PKG_SERVICE_NAMESPACE && namespaceId != PG_CATALOG_NAMESPACE &&
-           namespaceId != CSTORE_NAMESPACE && namespaceId != PG_SNAPSHOT_NAMESPACE &&
-           namespaceId != PG_TOAST_NAMESPACE && namespaceId != PG_DBEPERF_NAMESPACE &&
-           namespaceId != PG_BLOCKCHAIN_NAMESPACE && namespaceId != PG_SQLADVISOR_NAMESPACE &&
-           namespaceId != DBE_PLDEVELOPER_NAMESPACE && namespaceId != PG_PLDEBUG_NAMESPACE &&
-           namespaceId != PG_DB4AI_NAMESPACE;
+    return !IsSysSchema(namespaceId);
 }
 
 HeapTuple ObjectGrantTuple(FuncCallContext *fctx, ShowGrantState *grantStatus, char *type, AclItem *aclItem, char *sql)
 {
     Datum values[6];
-    values[0] = grantStatus->currentRelName;
+    values[0] = CStringGetDatum(grantStatus->currentObjectName);
     values[1] = ObjectIdGetDatum(aclItem->ai_grantee);
     values[2] = ObjectIdGetDatum(aclItem->ai_grantor);
     values[3] = UInt32GetDatum(aclItem->ai_privs);
@@ -390,14 +411,13 @@ Datum ShowObjectGrants(PG_FUNCTION_ARGS)
 
         HeapTuple tuple = NULL;
         GrantRelation grantRelation = GRANT_RELATIONS[showGrantState->relationScan.relationIndex];
-        while ((tuple = (HeapTuple)tableam_scan_getnexttuple(showGrantState->relationScan.scanDesc,
-                                                             ForwardScanDirection)) != NULL) {
-            if (tuple != NULL && (grantRelation.tupleFilter)(tuple)) {
-                bool isNull = true;
+        TableScanDesc scanDesc = showGrantState->relationScan.scanDesc;
+        while ((tuple = (HeapTuple)tableam_scan_getnexttuple(scanDesc, ForwardScanDirection)) != NULL) {
+            if ((grantRelation.tupleFilter)(tuple)) {
                 SysCacheIdentifier cacheId = grantRelation.sysCacheId;
-
+                bool isNull = true;
                 /* get object name from cache */
-                Datum relName = SysCacheGetAttr(cacheId, tuple, grantRelation.nameAttributeId, &isNull);
+                Datum objectName = SysCacheGetAttr(cacheId, tuple, grantRelation.nameAttributeId, &isNull);
                 Assert(!isNull);
                 /* get object acl from cache */
                 Datum aclDatum = SysCacheGetAttr(cacheId, tuple, grantRelation.aclAttributeId, &isNull);
@@ -405,7 +425,17 @@ Datum ShowObjectGrants(PG_FUNCTION_ARGS)
                     continue;
                 }
                 /* init grant option for next LoopAcl */
-                showGrantState->currentRelName = relName;
+                if (showGrantState->relationScan.relationIndex == ATTRIBUTE_INDEX) {
+                    /* grant comment(colname) on table relname to user */
+                    Datum attRelId = SysCacheGetAttr(cacheId, tuple, Anum_pg_attribute_attrelid, &isNull);
+                    Assert(!isNull);
+                    char *relNameOfColumn = get_rel_name(DatumGetObjectId(attRelId));
+                    char *tableNameUsedForColumn = showGrantState->tableNameUsedForColumn;
+                    securec_check(strcpy_s(tableNameUsedForColumn, MAX_OBJECT_NAME_LEN, relNameOfColumn), "\0", "\0");
+                }
+                char *objectNameChar = DatumGetCString(objectName);
+                char *currentObjectName = showGrantState->currentObjectName;
+                securec_check(strcpy_s(currentObjectName, MAX_OBJECT_NAME_LEN, objectNameChar), "\0", "\0");
                 showGrantState->aclStatus.aclDatum = aclDatum;
                 showGrantState->aclStatus.aclIndex = 0;
                 HeapTuple returnTuple = LoopAcl(fctx, grantRelation.grantType);
