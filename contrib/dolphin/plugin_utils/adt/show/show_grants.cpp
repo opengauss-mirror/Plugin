@@ -32,7 +32,6 @@ extern "C" DLL_PUBLIC Datum ShowRolePrivilege(PG_FUNCTION_ARGS);
 PG_FUNCTION_INFO_V1_PUBLIC(ShowObjectGrants);
 extern "C" DLL_PUBLIC Datum ShowObjectGrants(PG_FUNCTION_ARGS);
 
-static bool IsUserSchema(Oid namespaceId);
 const static GrantRelation GRANT_RELATIONS[] = {
     {RelationRelationId, RELOID, Anum_pg_class_relname, Anum_pg_class_relacl, "TABLE", PgClassFilter},
     {ForeignServerRelationId, FOREIGNSERVEROID, Anum_pg_foreign_server_srvname, Anum_pg_foreign_server_srvacl,
@@ -65,13 +64,13 @@ bool PgTypeFilter(HeapTuple heapTuple)
     Datum namespaceDatum = SysCacheGetAttr(sysCacheId, heapTuple, Anum_pg_type_typnamespace, &isNull);
     Assert(!isNull);
     Oid namespaceId = DatumGetObjectId(namespaceDatum);
-    return IsUserSchema(namespaceId);
+    return !IsSysSchema(namespaceId);
 }
 
 bool PgNamespaceFilter(HeapTuple heapTuple)
 {
     Oid oid = HeapTupleGetOid(heapTuple);
-    return IsUserSchema(oid);
+    return !IsSysSchema(oid);
 }
 
 bool PgClassFilter(HeapTuple heapTuple)
@@ -81,7 +80,7 @@ bool PgClassFilter(HeapTuple heapTuple)
     Datum namespaceDatum = SysCacheGetAttr(sysCacheId, heapTuple, Anum_pg_class_relnamespace, &isNull);
     Assert(!isNull);
     Oid namespaceId = DatumGetObjectId(namespaceDatum);
-    if (!IsUserSchema(namespaceId)) {
+    if (IsSysSchema(namespaceId)) {
         return false;
     }
     Datum relKindDatum = SysCacheGetAttr(sysCacheId, heapTuple, Anum_pg_class_relkind, &isNull);
@@ -96,7 +95,7 @@ bool PgProcFilter(HeapTuple heapTuple, char procType)
     Datum namespaceDatum = SysCacheGetAttr(sysCacheId, heapTuple, Anum_pg_proc_pronamespace, &isNull);
     Assert(!isNull);
     Oid namespaceId = DatumGetObjectId(namespaceDatum);
-    if (!IsUserSchema(namespaceId)) {
+    if (IsSysSchema(namespaceId)) {
         return false;
     }
     Datum proKindDatum = SysCacheGetAttr(sysCacheId, heapTuple, Anum_pg_proc_prokind, &isNull);
@@ -123,7 +122,7 @@ bool PgAttributeFilter(HeapTuple heapTuple)
     Assert(!isNull);
     Oid relId = DatumGetObjectId(relIdDatum);
     Oid namespaceId = GetNamespaceIdbyRelId(relId);
-    return IsUserSchema(namespaceId);
+    return !IsSysSchema(namespaceId);
 }
 
 /**
@@ -211,16 +210,6 @@ char *ConstructObjectGrantSQL(AclItem *aclItem, char *objectType, ShowGrantState
         DestroyStringInfo(noGrantResult);
         return grantResult->data;
     }
-}
-
-/**
- * return true if namespaceId is user-schema
- * @param namespaceId namespaceId
- * @return return true if namespaceId is user-schema
- */
-static bool IsUserSchema(Oid namespaceId)
-{
-    return !IsSysSchema(namespaceId);
 }
 
 HeapTuple ObjectGrantTuple(FuncCallContext *fctx, ShowGrantState *grantStatus, char *type, AclItem *aclItem, char *sql)
