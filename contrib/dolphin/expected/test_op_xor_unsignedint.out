@@ -736,3 +736,5 @@ select 2 ::uint8 ^ 2::varchar;
  0
 (1 row)
 
+\c postgres
+drop database test_op_xor_unsignedint;

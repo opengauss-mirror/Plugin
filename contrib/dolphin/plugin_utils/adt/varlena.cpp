@@ -9072,6 +9072,7 @@ Datum uint8_list_agg_noarg2_transfn(PG_FUNCTION_ARGS)
     PG_RETURN_POINTER(state);
 }
 
+
 Datum textxor(PG_FUNCTION_ARGS)
 {
     bool typIsVarlena = false;
@@ -9102,3 +9103,26 @@ Datum textxor(PG_FUNCTION_ARGS)
     pfree_ext(str1);
     PG_RETURN_INT32(ret);
 }
+
+
+#ifdef DOLPHIN
+
+PG_FUNCTION_INFO_V1_PUBLIC(blobxor);
+extern "C" DLL_PUBLIC Datum blobxor(PG_FUNCTION_ARGS);
+
+
+Datum blobxor(PG_FUNCTION_ARGS)
+{
+    int32 result = DatumGetInt32(textxor(fcinfo));
+    PG_RETURN_INT32(result);
+}
+
+
+PG_FUNCTION_INFO_V1_PUBLIC (boolxor);
+extern "C" DLL_PUBLIC Datum boolxor(PG_FUNCTION_ARGS);
+
+Datum boolxor(PG_FUNCTION_ARGS)
+{
+    PG_RETURN_INT32(PG_GETARG_BOOL(0) ^ PG_GETARG_BOOL(1));
+}
+#endif

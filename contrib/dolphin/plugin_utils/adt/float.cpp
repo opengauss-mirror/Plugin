@@ -1590,7 +1590,6 @@ Datum dpow(PG_FUNCTION_ARGS)
     float8 arg1 = PG_GETARG_FLOAT8(0);
     float8 arg2 = PG_GETARG_FLOAT8(1);
     float8 result;
-
     /*
      * The SQL spec requires that we emit a particular SQLSTATE error code for
      * certain error conditions.  Specifically, we don't return a
@@ -1629,6 +1628,32 @@ Datum dpow(PG_FUNCTION_ARGS)
         result = get_float8_infinity();
     }
     CHECKFLOATVAL(result, isinf(arg1) || isinf(arg2), arg1 == 0);
+    PG_RETURN_FLOAT8(result);
+}
+
+/*
+ * dpow_xor
+ * 
+ * 	Only needed for ^ to be compatible with both xor and power
+ */
+Datum dpow_xor(PG_FUNCTION_ARGS)
+{
+    /*
+     * Compatible with xor
+     */
+    if (GetSessionContext()->enableBCmptMode) {
+        float8 arg1 = PG_GETARG_FLOAT8(0);
+        float8 arg2 = PG_GETARG_FLOAT8(1);
+        int32 num1_int32 = DatumGetInt32(DirectFunctionCall1(dtoi4, Float8GetDatum(arg1)));
+        int32 num2_int32 = DatumGetInt32(DirectFunctionCall1(dtoi4, Float8GetDatum(arg2)));
+        int32 result_int32 = num1_int32 ^ num2_int32;
+        float8 result_float8 = DatumGetFloat8(DirectFunctionCall1(i4tod, Int32GetDatum(result_int32)));
+        PG_RETURN_FLOAT8(result_float8);
+    }
+    /*
+     * Compatible with power
+     */
+    float8 result = DatumGetFloat8(dpow(fcinfo));
     PG_RETURN_FLOAT8(result);
 }
 
