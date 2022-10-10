@@ -8688,7 +8688,7 @@ static void set_sound(const char* arg, char* result, int size)
             }
             firstChar = DirectFunctionCall3(text_substr_null, PointerGetDatum(cstring_to_text(arg)), Int32GetDatum(1), Int32GetDatum(lenOneByte));
             char* tmpStr = text_to_cstring(DatumGetTextPP(firstChar));
-            for (int tmp = 0; tmp < strlen(tmpStr); tmp++) {
+            for (size_t tmp = 0; tmp < strlen(tmpStr); tmp++) {
                 result[tmp] = tmpStr[tmp];
             }
             result += strlen(tmpStr);

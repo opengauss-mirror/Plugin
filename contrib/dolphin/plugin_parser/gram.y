@@ -3244,6 +3244,7 @@ zone_value:
 
 opt_encoding:
 			Sconst									{ $$ = $1; }
+			| normal_ident							{ $$ = $1; }
 			| DEFAULT								{ $$ = NULL; }
 			| /*EMPTY*/								{ $$ = NULL; }
 		;
