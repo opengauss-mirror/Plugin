@@ -15,7 +15,7 @@ postgres=# EXPLAIN (costs off) SELECT * FROM t1 WHERE ctid >= '(10,0)';
 Copy tidrangescan directoty to openGauss-server/contrib and make.
 ```
 cp contrib/tidrangescan /YOUR_PATH/openGauss-server/contrib -r
-cd /YOUR_PATH/openGauss-server/contrib
+cd /YOUR_PATH/openGauss-server/contrib/tidrangescan
 make && make install
 ```
 ## Use extension
