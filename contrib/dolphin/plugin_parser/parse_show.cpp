@@ -80,12 +80,26 @@ SelectStmt* makeShowProcesslistQuery(bool isFull)
  * Build a parsed tree for 'SHOW {DATABASES | SCHEMAS} [LIKE 'pattern' | WHERE expr]'.
  * This is actually a parse of the following statement:
  *
- * SELECT
- *    database AS "Database"
- * FROM
- *    (select nspname as "database" from pg_catalog.pg_namespace where expr)
+ * SELECT 
+ *    n.database AS "Database"
+ * FROM 
+ *    (
+ *    SELECT 
+ *       nspname AS "database",
+ *       (ACLEXPLODE(COALESCE(nspacl, ACLDEFAULT('n', nspowner)))).grantee AS grantee,
+ *       (ACLEXPLODE(COALESCE(nspacl, ACLDEFAULT('n', nspowner)))).privilege_type AS priv
+ *    FROM 
+ *       PG_NAMESPACE
+ *    ) n,
+ * PG_ROLES r
+ * WHERE 
+ *    (n.grantee = r.oid OR n.grantee = 0) AND 
+ *    n.priv = 'USAGE' AND
+ *    r.rolname = user
+ * GROUP BY 
+ *    n.database
  * ORDER BY
- *    database = 'information_schema' desc,
+ *    n.database = 'information_schema' DESC,
  *    1;
  *
  * @param likeNode
@@ -94,24 +108,59 @@ SelectStmt* makeShowProcesslistQuery(bool isFull)
  */
 SelectStmt* makeShowDatabasesQuery(Node* likeNode, Node* whereExpr)
 {
-    List* tl = list_make1(plpsMakeNormalColumn(NULL, "nspname", "database"));
+    Node* func = plpsMakeFunc("acldefault", list_make2(plpsMakeStringConst("n"), plpsMakeColumnRef(NULL, "nspowner")));
+    Node* expr = plpsMakeCoalesce(plpsMakeColumnRef(NULL, "nspacl"), func);
+    Node* rt1 = plpsMakeTargetFuncDirecAlias("aclexplode", list_make1((Node*)expr), list_make1(makeString("grantee")), "grantee");
+    Node* rt2 = plpsMakeTargetFuncDirecAlias("aclexplode", list_make1((Node*)expr), list_make1(makeString("privilege_type")), "priv");
+    List* tl = list_make3(plpsMakeNormalColumn(NULL, "nspname", "database"), (Node*)rt1, (Node*)rt2);
     List* fl = list_make1(makeRangeVar(NULL, "pg_namespace", -1));
+
+    RangeSubselect* rs = makeNode(RangeSubselect);
+    rs->subquery = (Node*)plpsMakeSelectStmt(tl, fl, NULL, NULL);
+    rs->alias = makeAlias(pstrdup("n"), NIL);
+
+    List* tl2 = list_make1(plpsMakeNormalColumn("n", "database", "Database"));
+    List* fl2 = list_make1((Node*)rs);
+
     Node* wc = NULL;
-    if (likeNode) {
-        wc = (Node*)makeSimpleA_Expr(AEXPR_OP, "~~", plpsMakeColumnRef(NULL, "database"), likeNode, -1);
-    } else if (whereExpr) {
-        wc = whereExpr;
+    if (!superuser()) {
+        fl2 = lappend(fl2, plpsMakeRangeAlias("pg_roles", "r"));
+        Node* cond1 = (Node*)makeSimpleA_Expr(AEXPR_OP, "=", plpsMakeColumnRef("n", "grantee"), plpsMakeColumnRef("r", "oid"), -1);
+        Node* cond2 = (Node*)makeSimpleA_Expr(AEXPR_OP, "=", plpsMakeColumnRef("n", "grantee"), plpsMakeIntConst(0), -1);
+        Node* cond3 = (Node*)makeSimpleA_Expr(AEXPR_OP, "=", plpsMakeColumnRef("n", "priv"), plpsMakeStringConst("USAGE"), -1);
+        Node* cond4 = (Node*)makeSimpleA_Expr(AEXPR_OP, "=", plpsMakeColumnRef("r", "rolname"), plpsMakeFunc("current_user", NULL), -1);
+        wc = (Node*)makeA_Expr(AEXPR_AND, NIL, 
+        (Node*)makeA_Expr(AEXPR_AND, NIL, 
+        (Node*)makeA_Expr(AEXPR_OR, NIL, cond1, cond2, -1),  
+        cond3, -1), cond4, -1);
     }
 
-    SelectStmt* substmt = plpsMakeSelectStmt(tl, fl, wc, NULL);
+    if (likeNode) {
+        Node* le = (Node*)makeSimpleA_Expr(AEXPR_OP, "~~", plpsMakeColumnRef(NULL, "database"), likeNode, -1);
+        if (wc) {
+            wc = (Node*)makeA_Expr(AEXPR_AND, NIL, wc, le, -1);
+        } else {
+            wc = le;
+        }
+    } else if (whereExpr) {
+        if (wc) {
+            wc = (Node*)makeA_Expr(AEXPR_AND, NIL, wc, whereExpr, -1);
+        } else {
+            wc = whereExpr;
+        }
+    }
 
-    List* tl2 = list_make1(plpsMakeNormalColumn(NULL, "database", "Database"));
-    List* fl2 = list_make1(makeRangeSubselect(substmt));
-    Node* sn1 = plpsMakeSortByNode((Node*)makeSimpleA_Expr(AEXPR_OP, "=", plpsMakeColumnRef(NULL, "database"), plpsMakeStringConst("information_schema"), -1), SORTBY_DESC);
+    List* gl = list_make1(plpsMakeColumnRef("n", "database"));
+    Node* sn1 = plpsMakeSortByNode(
+        (Node*)makeSimpleA_Expr(AEXPR_OP, "=", 
+        plpsMakeColumnRef("n", "database"), 
+        plpsMakeStringConst("information_schema"), -1), 
+        SORTBY_DESC);
     Node* sn2 = plpsMakeSortByNode(plpsMakeIntConst(1));
     List* sl2 = (List*)list_make2(sn1, sn2);
 
-    SelectStmt* stmt = plpsMakeSelectStmt(tl2, fl2, NULL, sl2);
+    SelectStmt* stmt = plpsMakeSelectStmt(tl2, fl2, wc, sl2);
+    stmt->groupClause = gl;
     return stmt;
 }
 
@@ -251,6 +300,34 @@ Node* plpsMakeStringConst(char* str)
     n->val.val.str = str;
     n->location = -1;
     return (Node*)n;
+}
+
+Node* plpsMakeRangeAlias(char* varName, char* aliasName)
+{
+    RangeVar* rv = makeRangeVar(NULL, varName, -1);
+    Alias* n = makeNode(Alias);
+    n->aliasname = aliasName;
+    rv->inhOpt = INH_DEFAULT;
+    rv->alias = n;
+    return (Node*)rv;
+}
+
+Node* plpsMakeTargetFuncDirecAlias(char* funName, List* funcArgs, List* funcDirection, char* aliasName)
+{
+    FuncCall* fn = (FuncCall*)makeNode(FuncCall);
+    fn->funcname = SystemFuncName(funName);
+    fn->args = funcArgs;
+
+    A_Indirection* n = makeNode(A_Indirection);
+    n->arg = (Node*)fn;
+    n->indirection = funcDirection;
+
+    ResTarget* rt = makeNode(ResTarget);
+    rt->name = aliasName;
+    rt->indirection = NIL;
+    rt->val = (Node*)n;
+    rt->location = -1;
+    return (Node*)rt;
 }
 
 static Node* makeStarColumn()

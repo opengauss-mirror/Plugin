@@ -9,7 +9,6 @@ static List* makeFromList();
 static Node* makeWhereTarget(char* schemaName, char* tableName);
 static Node* makeCurrentSchemaFunc();
 
-static RangeVar* makeRangeAlias(char* varName, char* aliasName);
 static Node* makeNullColumn(bool smallcase = FALSE);
 static Node* makeCaseNode(char* term, char* result);
 static Node* makeIndexSelect();
@@ -153,21 +152,11 @@ static Node* makeCaseNode(char* term, char* result)
 
 static List* makeFromList()
 {
-    List* fl = (List*)list_make1(makeRangeAlias("pg_namespace", "n"));
-    fl = lappend(fl, makeRangeAlias("pg_class", "c"));
-    fl = lappend(fl, makeRangeAlias("pg_attribute", "a"));
-    fl = lappend(fl, makeRangeAlias("pg_type", "t"));
+    List* fl = (List*)list_make1(plpsMakeRangeAlias("pg_namespace", "n"));
+    fl = lappend(fl, plpsMakeRangeAlias("pg_class", "c"));
+    fl = lappend(fl, plpsMakeRangeAlias("pg_attribute", "a"));
+    fl = lappend(fl, plpsMakeRangeAlias("pg_type", "t"));
     return fl;
-}
-
-static RangeVar* makeRangeAlias(char* varName, char* aliasName)
-{
-    RangeVar* rv = makeRangeVar(NULL, varName, -1);
-    Alias* n = makeNode(Alias);
-    n->aliasname = aliasName;
-    rv->inhOpt = INH_DEFAULT;
-    rv->alias = n;
-    return rv;
 }
 
 Node* plpsAddCond(Node* left, Node* right, int location)
