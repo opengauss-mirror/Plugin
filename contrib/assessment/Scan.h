@@ -49,7 +49,7 @@ public:
 
 class Scan {
 public:
-    explicit Scan(FILE *fd);
+    explicit Scan(FILE *fd, bool bFormat);
 
     vector <ScanSingleSql> GetNextSql();
 
@@ -58,6 +58,7 @@ public:
 private:
     PsqlScanState scanState = nullptr;
     FILE *fd = nullptr;
+    bool bFormat;
 };
 
 #endif //OPENGAUSS_SCAN_H

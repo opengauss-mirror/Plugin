@@ -319,7 +319,7 @@ void PrintProcess(size_t sqlSize, size_t i)
 
 vector <ScanSingleSql> SplitSQLFile(FILE* file)
 {
-    Scan* scan = new Scan(file);
+    Scan* scan = new Scan(file, g_assessmentSettings.database == DB_CMPT_B);
     vector <ScanSingleSql> vec;
     vector <ScanSingleSql> allSql;
     while ((vec = scan->GetNextSql()).size() != 0) {
