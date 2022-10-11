@@ -12,7 +12,6 @@
  *
  * -------------------------------------------------------------------------
  */
-#define DOLPHIN
 #include "postgres.h"
 #include "knl/knl_variable.h"
 

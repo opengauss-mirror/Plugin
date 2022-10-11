@@ -10,5 +10,14 @@ set character set 'gbk';
 show client_encoding;
 set character set default;
 show client_encoding;
+
+set names gbk;
+show client_encoding;
+set names default;
+show client_encoding;
+set names 'gbk';
+show client_encoding;
+set names default;
+show client_encoding;
 \c postgres
 drop database if exists db_charset;

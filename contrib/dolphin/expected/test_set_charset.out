@@ -36,5 +36,33 @@ show client_encoding;
  UTF8
 (1 row)
 
+set names gbk;
+show client_encoding;
+ client_encoding 
+-----------------
+ GBK
+(1 row)
+
+set names default;
+show client_encoding;
+ client_encoding 
+-----------------
+ UTF8
+(1 row)
+
+set names 'gbk';
+show client_encoding;
+ client_encoding 
+-----------------
+ GBK
+(1 row)
+
+set names default;
+show client_encoding;
+ client_encoding 
+-----------------
+ UTF8
+(1 row)
+
 \c postgres
 drop database if exists db_charset;
