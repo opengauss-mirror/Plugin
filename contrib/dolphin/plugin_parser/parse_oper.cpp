@@ -806,8 +806,8 @@ Expr* make_op(ParseState* pstate, List* opname, Node* ltree, Node* rtree, int lo
         } else if (ltypeId == 1186 && rtypeId == 705) {
             opform->oprright = 1114;
             opform->oprresult = 1114;
-            opform->oprcom = 2553;
-            opform->oprcode = 2032;
+            opform->oprcom = 2066;
+            opform->oprcode = 2548;
         }
     }
 
