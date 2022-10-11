@@ -56,18 +56,20 @@
 
 #define PLPS_LOC_UNKNOWN (-1)
 
-extern bool plps_check_schema_or_table_valid(char *schemaname, char *tablename, bool is_missingok);
+extern bool plps_check_schema_or_table_valid(char* schemaname, char* tablename, bool is_missingok);
 extern Node* plpsMakeIntConst(int val);
 extern Node* plpsMakeStringConst(char* str);
-extern Node* plpsMakeSubLink(Node *stmt);
+extern Node* plpsMakeSubLink(Node* stmt);
 extern Node* plpsAddCond(Node* left, Node* right, int location = PLPS_LOC_UNKNOWN);
 extern Node* plpsMakeColumnRef(char* relName, char* colName, int location = PLPS_LOC_UNKNOWN);
-extern Node *plpsMakeCoalesce(Node* first, Node* second);
+extern Node* plpsMakeCoalesce(Node* first, Node* second);
 extern Node* plpsMakeFunc(char* funcname, List* args, int location = PLPS_LOC_UNKNOWN);
-extern Node* plpsMakeNormalColumn(char *relname, char *colname, char* aliasname, int location = PLPS_LOC_UNKNOWN);
-extern Node* plpsMakeTypeCast(Node *arg, char *type_name, int location);
+extern Node* plpsMakeNormalColumn(char* relname, char* colname, char* aliasname, int location = PLPS_LOC_UNKNOWN);
+extern Node* plpsMakeTypeCast(Node* arg, char* type_name, int location);
+extern Node* plpsMakeTargetFuncDirecAlias(char* funName, List* funcArgs, List* funcDirection, char* aliasName);
+extern Node* plpsMakeRangeAlias(char* varName, char* aliasName);
 extern Node* plpsMakeSortByNode(Node* sortExpr, SortByDir sortBd = SORTBY_DEFAULT);
-extern List* plpsMakeSortList(Node *sortExpr);
+extern List* plpsMakeSortList(Node* sortExpr);
 extern SelectStmt* plpsMakeSelectStmt(List* targetList, List* fromList, Node* whereClause,
         List* sortClause, Node* limitCount = NULL);
 

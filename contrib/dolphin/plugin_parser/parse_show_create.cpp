@@ -14,7 +14,6 @@ static Node *makeNameString(char *str, char *aliasName);
 static Node *makeTypeCast(Node *arg, TypeName *typname);
 static Node *makeStringConstCast(char *str, TypeName *typname);
 static Node *makeTargetFuncAlias(char *funcName, List *fl, char *aliasName);
-static Node *makeTargetFuncDirecAlias(char *funName, List *funcArgs, List *funcDirection, char *aliasName);
 static Node *makeWhereTargetForFunc(char *schemaName, char *name);
 static Node *makeWhereTargetForTrg(char *schemaName, char *name);
 static Node *makeCurrentSchemaFunc();
@@ -47,7 +46,7 @@ SelectStmt *makeShowCreateFuncQuery(char *schemaName, char *name, int model)
 {
     List *tl =
         (List *)list_make1(makeNameString(name, (char *)(model == GS_SHOW_CREATE_FUNCTION ? "Function" : "Procedure")));
-    tl = lappend(tl, makeTargetFuncDirecAlias(
+    tl = lappend(tl, plpsMakeTargetFuncDirecAlias(
                          "pg_get_functiondef", list_make1(plpsMakeColumnRef("pg_proc", "oid")),
                          list_make1(makeString("definition")),
                          (char *)(model == GS_SHOW_CREATE_FUNCTION ? "Create Function" : "Create Procedure")));
@@ -212,24 +211,6 @@ static Node *makeStringConstCast(char *str, TypeName *typname)
     Node *s = plpsMakeStringConst(str);
 
     return makeTypeCast(s, typname);
-}
-
-static Node *makeTargetFuncDirecAlias(char *funName, List *funcArgs, List *funcDirection, char *aliasName)
-{
-    FuncCall *fn = (FuncCall *)makeNode(FuncCall);
-    fn->funcname = SystemFuncName(funName);
-    fn->args = funcArgs;
-
-    A_Indirection *n = makeNode(A_Indirection);
-    n->arg = (Node *)fn;
-    n->indirection = funcDirection;
-
-    ResTarget *rt = makeNode(ResTarget);
-    rt->name = aliasName;
-    rt->indirection = NIL;
-    rt->val = (Node *)n;
-    rt->location = -1;
-    return (Node *)rt;
 }
 
 static Node *makeWhereTargetForFunc(char *schemaName, char *name)
