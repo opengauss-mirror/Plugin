@@ -15,7 +15,7 @@
 
 #include "postgres.h"
 #include "knl/knl_variable.h"
-
+#include "plugin_postgres.h"
 #include "catalog/pg_operator.h"
 #ifdef DOLPHIN
 #include "catalog/pg_enum.h"
@@ -790,6 +790,7 @@ Expr* make_op(ParseState* pstate, List* opname, Node* ltree, Node* rtree, int lo
 
     opform = check_operator_is_shell(opname, pstate, location, tup);
 
+#ifdef DOLPHIN
     /**
      * If GUC parameter b_compatibility_mode is true,
      * and the expression is adding a string constant and an interval,
@@ -810,6 +811,7 @@ Expr* make_op(ParseState* pstate, List* opname, Node* ltree, Node* rtree, int lo
             opform->oprcode = 2548;
         }
     }
+#endif
 
     /* Do typecasting and build the expression tree */
     if (rtree == NULL) {
