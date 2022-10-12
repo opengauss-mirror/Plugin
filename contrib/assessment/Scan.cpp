@@ -176,7 +176,7 @@ vector <ScanSingleSql> Scan::GetNextSql()
         psql_scan_setup(this->scanState, line, (int) strlen(line));
         while (true) {
             promptStatus_t prompt_tmp = PROMPT_READY;
-            PsqlScanResult scan_result = psql_scan(this->scanState, query_buf, &prompt_tmp);
+            PsqlScanResult scan_result = psql_scan(this->scanState, query_buf, &prompt_tmp, this->bFormat, ";");
 
             if (PQExpBufferBroken(query_buf)) {
                 psql_error("out of memory\n");
@@ -218,9 +218,10 @@ void Scan::FreeScan()
     psql_scan_destroy(this->scanState);
 }
 
-Scan::Scan(FILE* fd)
+Scan::Scan(FILE* fd, bool bFormat)
 {
     this->fd = fd;
+    this->bFormat = bFormat;
     this->scanState = (PsqlScanStateData*) pg_malloc_zero(sizeof(PsqlScanStateData));
     auto rc = memset_s(this->scanState, sizeof(PsqlScanStateData), 0, sizeof(PsqlScanStateData));
     securec_check_c(rc, "", "");

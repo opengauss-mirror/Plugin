@@ -23,8 +23,6 @@
  */
 
 #include "assessment.h"
-#include "postgres.h"
-#include "fmgr/fmgr_comp.h"
 #include "utils/builtins.h"
 #include "utils/datum.h"
 #include "parser/parser.h"
