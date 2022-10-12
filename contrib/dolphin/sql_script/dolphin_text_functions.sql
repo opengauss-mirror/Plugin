@@ -115,3 +115,35 @@ boolean,
 boolean
 ) RETURNS int LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'boolxor';
 create operator pg_catalog.^(leftarg = boolean, rightarg = boolean, procedure = pg_catalog.boolxor);
+
+CREATE OR REPLACE FUNCTION pg_catalog.ord (text) RETURNS int16 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'ord_text';
+
+CREATE OR REPLACE FUNCTION pg_catalog.ord (numeric) RETURNS int16 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'ord_numeric';
+
+DROP FUNCTION IF EXISTS pg_catalog.substring_index (text, text, numeric) CASCADE;
+CREATE FUNCTION pg_catalog.substring_index (
+text,
+text,
+numeric
+) RETURNS text LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'substring_index';
+
+DROP FUNCTION IF EXISTS pg_catalog.substring_index (boolean, text, numeric) CASCADE;
+CREATE FUNCTION pg_catalog.substring_index (
+boolean,
+text,
+numeric
+) RETURNS text LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'substring_index_bool_1';
+
+DROP FUNCTION IF EXISTS pg_catalog.substring_index (text, boolean, numeric) CASCADE;
+CREATE FUNCTION pg_catalog.substring_index (
+text,
+boolean,
+numeric
+) RETURNS text LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'substring_index_bool_2';
+
+DROP FUNCTION IF EXISTS pg_catalog.substring_index (boolean, boolean, numeric) CASCADE;
+CREATE FUNCTION pg_catalog.substring_index (
+boolean,
+boolean,
+numeric
+) RETURNS text LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'substring_index_2bool';
