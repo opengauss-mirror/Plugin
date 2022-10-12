@@ -144,5 +144,46 @@ return 1;
 end
 call testfunc12();
 ERROR:  function "testfunc12" doesn't exist 
+--bug fix when use sharp after  keyword without space
+set b_compatibility_mode = on;
+create or replace function testfunc() returns trigger as
+$$
+declare
+begin
+insert into t_trig values(new.id);
+return new;
+end
+$$ language plpgsql;
+create table t_test (a int);
+create table t_test2 (a int);
+-- after keyword 
+create trigger test_trig
+after insert on t_test
+for each row#
+execute procedure testfunc();
+create trigger test_trig2
+after insert on t_test2
+for each row# 123123123
+execute procedure testfunc();
+create#
+table t_test3 (a int);
+create trigger test_trig3
+after insert on t_test3
+for each row
+execute# 
+procedure testfunc();
+--turn off parameter,has error 
+set b_compatibility_mode = off;
+create trigger test_trig4
+after insert on t_test
+for each row#
+execute procedure testfunc();
+ERROR:  syntax error at or near "row#"
+LINE 3: for each row#
+                 ^
+--clear enverment
+drop table t_test;
+drop table t_test2;
+drop table t_test3;
 \c postgres
 drop database if exists db_comment_sharp;
