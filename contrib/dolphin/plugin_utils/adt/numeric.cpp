@@ -3251,7 +3251,10 @@ Datum numeric_int2(PG_FUNCTION_ARGS)
 
     /* Test for overflow by reverse-conversion. */
     if ((int64)result != val) {
-        if (!SQL_MODE_STRICT()) {
+        if (fcinfo->can_ignore || !SQL_MODE_STRICT()) {
+            if (fcinfo->can_ignore) {
+                ereport(WARNING, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("smallint out of range")));
+            }
             if (NUMERIC_POS == x.sign)
                 PG_RETURN_INT16(INT16_MAX);
             else

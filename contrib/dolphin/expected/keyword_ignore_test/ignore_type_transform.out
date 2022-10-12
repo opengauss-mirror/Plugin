@@ -87,6 +87,17 @@ WARNING:  smallint out of range
 CONTEXT:  referenced column: num
 insert ignore into t values(10000);
 insert ignore into t values(-10000);
+insert ignore into t values((-32769)::numeric);
+WARNING:  smallint out of range
+CONTEXT:  referenced column: num
+insert ignore into t values((-32768)::float4);
+insert ignore into t values((-32769)::float4);
+WARNING:  smallint out of range
+CONTEXT:  referenced column: num
+insert ignore into t values((-32768)::float8);
+insert ignore into t values((-32769)::float8);
+WARNING:  smallint out of range
+CONTEXT:  referenced column: num
 select * from t;
   num   
 --------
@@ -96,7 +107,12 @@ select * from t;
  -32768
   10000
  -10000
-(6 rows)
+ -32768
+ -32768
+ -32768
+ -32768
+ -32768
+(11 rows)
 
 update ignore t set num = 1000000 where num = 10000;
 WARNING:  smallint out of range
@@ -108,9 +124,14 @@ select * from t;
   32767
  -32768
  -10000
+ -32768
+ -32768
+ -32768
+ -32768
+ -32768
   32767
   32767
-(6 rows)
+(11 rows)
 
 -- insert numeric table into smallint table
 drop table if exists t_smallint;
@@ -120,7 +141,13 @@ create table t_smallint(num smallint);
 create table t_numeric(num numeric(1000,100));
 insert into t_numeric values (38764378634891278678324089237898634298778923472389687.123874);
 insert into t_numeric values (-38764378634891278678324089237898634298778923472389687.123874);
+insert into t_numeric values(32768);
+insert into t_numeric values(-32769);
 insert ignore into t_smallint select num from t_numeric;
+WARNING:  smallint out of range
+CONTEXT:  referenced column: num
+WARNING:  smallint out of range
+CONTEXT:  referenced column: num
 WARNING:  smallint out of range
 CONTEXT:  referenced column: num
 WARNING:  smallint out of range
@@ -130,7 +157,9 @@ select * from t_smallint;
 --------
   32767
  -32768
-(2 rows)
+  32767
+ -32768
+(4 rows)
 
 -- test for int
 drop table if exists t;
