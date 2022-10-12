@@ -72,4 +72,7 @@ SelectStmt *findCreateClass(RangeVar *classrel, int mode);
 SelectStmt *findCreateProc(char *schemaName, char *name, int model);
 SelectStmt *findCreateTrigger(RangeVar *trel);
 
+SelectStmt* makeShowTableStatusQuery(char* schemaName, Node* likeWhereOpt, bool isLikeExpr);
+SelectStmt* makeFlushBinaryLogsQuery(void);
+
 #endif /* PARSER_H */
