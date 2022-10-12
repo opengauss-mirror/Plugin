@@ -391,6 +391,24 @@ Operator oper(ParseState* pstate, List* opname, Oid ltypeId, Oid rtypeId, bool n
         rtypeId = NUMERICOID;
     }
 
+#ifdef DOLPHIN
+    /**
+     * If GUC parameter b_compatibility_mode is true,
+     * and the expression is adding a string constant and an interval,
+     * we consider the string constant as datetime,
+     * and make it become adding an interval to datetime.
+     */
+    if (GetSessionContext()->enableBCmptMode) {
+        if (ltypeId == 705 && rtypeId == 1186) {
+            ltypeId = 1114;
+            location = 37;
+        } else if (ltypeId == 1186 && rtypeId == 705) {
+            rtypeId = 1114;
+            location = 25;
+        }
+    }
+#endif
+
     /*
      * Try to find the mapping in the lookaside cache.
      */
@@ -789,29 +807,6 @@ Expr* make_op(ParseState* pstate, List* opname, Node* ltree, Node* rtree, int lo
     }
 
     opform = check_operator_is_shell(opname, pstate, location, tup);
-
-#ifdef DOLPHIN
-    /**
-     * If GUC parameter b_compatibility_mode is true,
-     * and the expression is adding a string constant and an interval,
-     * we consider the string constant as datetime,
-     * and make it become adding an interval to datetime.
-     */
-    if (GetSessionContext()->enableBCmptMode) {
-        if (ltypeId == 705 && rtypeId == 1186) {
-            opform->oprleft = 1114;
-            opform->oprresult = 1114;
-            opform->oprcom = 2553;
-            opform->oprcode = 2032;
-
-        } else if (ltypeId == 1186 && rtypeId == 705) {
-            opform->oprright = 1114;
-            opform->oprresult = 1114;
-            opform->oprcom = 2066;
-            opform->oprcode = 2548;
-        }
-    }
-#endif
 
     /* Do typecasting and build the expression tree */
     if (rtree == NULL) {
