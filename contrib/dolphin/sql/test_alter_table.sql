@@ -48,5 +48,59 @@ reset dolphin.sql_mode;
 \d+ table_ddl_0030_02
 drop table table_ddl_0030_01,table_ddl_0030_02;
 
+create table test_primary(f11 int, f12 varchar(20), f13 bool);
+alter table test_primary add primary key using btree(f11 desc, f12 asc) comment 'primary key' using btree;
+\d+ test_primary
+drop table test_primary;
+
+create table test_primary(f11 int, f12 varchar(20), f13 bool);
+alter table test_primary add primary key (f11 desc, f12 asc) comment 'primary key' using btree;
+\d+ test_primary
+drop table test_primary;
+
+create table test_primary(f11 int, f12 varchar(20), f13 bool);
+alter table test_primary add primary key using btree(f11 desc, f12 asc) comment 'primary key' using btree using btree;
+\d+ test_primary
+drop table test_primary;
+
+create table test_unique(f31 int, f32 varchar(20));
+alter table test_unique add unique using btree(f31) comment 'unique index' using btree;
+\d+ test_unique
+drop table test_unique;
+
+create table test_unique(f31 int, f32 varchar(20));
+alter table test_unique add unique (f31) comment 'unique index' using btree;
+\d+ test_unique
+drop table test_unique;
+
+create table test_unique(f31 int, f32 varchar(20));
+alter table test_unique add unique using btree(f31) comment 'unique index' using btree using btree;
+\d+ test_unique
+drop table test_unique;
+
+create table test_unique(f31 int, f32 varchar(20), constraint con_t_unique unique using btree(f31, f32) comment 'unique index' using btree);
+\d+ test_unique
+drop table test_unique;
+
+create table test_unique(f31 int, f32 varchar(20), constraint con_t_unique unique (f31, f32) comment 'unique index' using btree);
+\d+ test_unique
+drop table test_unique;
+
+create table test_unique(f31 int, f32 varchar(20), constraint con_t_unique unique (f31, f32) comment 'unique index' using btree using btree);
+\d+ test_unique
+drop table test_unique;
+
+create table test_primary(f11 int, f12 varchar(20), f13 bool, constraint con_t_pri primary key using btree(f11 desc, f12 asc) comment 'primary key' using btree);
+\d+ test_primary
+drop table test_primary;
+
+create table test_primary(f11 int, f12 varchar(20), f13 bool, constraint con_t_pri primary key (f11 desc, f12 asc) comment 'primary key' using btree);
+\d+ test_primary
+drop table test_primary;
+
+create table test_primary(f11 int, f12 varchar(20), f13 bool, constraint con_t_pri primary key using btree(f11 desc, f12 asc) comment 'primary key' using btree using btree);
+\d+ test_primary
+drop table test_primary;
+
 \c postgres
 drop database if exists db_alter_table;
