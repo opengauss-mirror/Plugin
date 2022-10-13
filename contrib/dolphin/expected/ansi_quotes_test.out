@@ -1,0 +1,152 @@
+CREATE DATABASE test_ansi_quotes DBCOMPATIBILITY 'B';
+\c test_ansi_quotes
+CREATE TABLE test_quotes (a text);
+SHOW sql_mode;
+                            sql_mode                             
+-----------------------------------------------------------------
+ sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes
+(1 row)
+
+-- test insert
+INSERT INTO test_quotes VALUES('test1');    -- success
+INSERT INTO "test_quotes" VALUES('test2');    -- success
+INSERT INTO "test_quotes" VALUES("test3");    -- failed
+ERROR:  column "test3" does not exist
+LINE 1: INSERT INTO "test_quotes" VALUES("test3");
+                                         ^
+SELECT * FROM test_quotes;
+   a   
+-------
+ test1
+ test2
+(2 rows)
+
+SET sql_mode TO 'sql_mode_strict,sql_mode_full_group,pipes_as_concat';
+INSERT INTO test_quotes VALUES('test4');    -- success
+INSERT INTO "test_quotes" VALUES('test5');    -- failed
+ERROR:  syntax error at or near ""test_quotes""
+LINE 1: INSERT INTO "test_quotes" VALUES('test5');
+                    ^
+INSERT INTO test_quotes VALUES("test6");    -- success
+INSERT INTO "test_quotes" VALUES("test7");    -- failed
+ERROR:  syntax error at or near ""test_quotes""
+LINE 1: INSERT INTO "test_quotes" VALUES("test7");
+                    ^
+SELECT * FROM test_quotes;
+   a   
+-------
+ test1
+ test2
+ test4
+ test6
+(4 rows)
+
+SELECT * FROM "test_quotes";    -- failed
+ERROR:  syntax error at or near ""test_quotes""
+LINE 1: SELECT * FROM "test_quotes";
+                      ^
+SELECT "a" as a1, a as a2 FROM test_quotes;    -- success, but "a" is a normal string, not column
+ a1 |  a2   
+----+-------
+ a  | test1
+ a  | test2
+ a  | test4
+ a  | test6
+(4 rows)
+
+CREATE TABLE "test_quotes_2" (a text);    -- failed
+ERROR:  syntax error at or near ""test_quotes_2""
+LINE 1: CREATE TABLE "test_quotes_2" (a text);
+                     ^
+CREATE TABLE test_quotes_2 (a text) compression = "pglz";    -- success
+-- test desc
+desc test_quotes_2;
+ Field | Type | Null | Key | Default | Extra 
+-------+------+------+-----+---------+-------
+ a     | text | YES  |     | NULL    | 
+(1 row)
+
+-- test show
+show tables;
+       Tables_in_public        
+-------------------------------
+ index_statistic
+ pg_type_nonstrict_basic_value
+ test_quotes
+ test_quotes_2
+(4 rows)
+
+show full tables;
+       Tables_in_public        | Table_type 
+-------------------------------+------------
+ index_statistic               | VIEW
+ pg_type_nonstrict_basic_value | VIEW
+ test_quotes                   | BASE TABLE
+ test_quotes_2                 | BASE TABLE
+(4 rows)
+
+show create table test_quotes_2;
+     Table     |              Create Table               
+---------------+-----------------------------------------
+ test_quotes_2 | SET search_path = public;              +
+               | CREATE TABLE test_quotes_2 (           +
+               |     a text                             +
+               | )                                      +
+               | WITH (orientation=row, compresstype=1);
+(1 row)
+
+show columns from test_quotes;
+ Field | Type | Null | Key | Default | Extra 
+-------+------+------+-----+---------+-------
+ a     | text | YES  |     | NULL    | 
+(1 row)
+
+show columns from test_quotes_2;
+ Field | Type | Null | Key | Default | Extra 
+-------+------+------+-----+---------+-------
+ a     | text | YES  |     | NULL    | 
+(1 row)
+
+-- test functions
+select length("ggg");
+ length 
+--------
+      3
+(1 row)
+
+select left ("xxxx", 2);
+ left 
+------
+ xx
+(1 row)
+
+select substr("aaasaaaa", 1, 3);
+ substr 
+--------
+ aaa
+(1 row)
+
+-- test expr
+select "test" != "test";
+ ?column? 
+----------
+ f
+(1 row)
+
+select * from test_quotes where a like "%test%";
+   a   
+-------
+ test1
+ test2
+ test4
+ test6
+(4 rows)
+
+select * from test_quotes where a = "test1";
+   a   
+-------
+ test1
+(1 row)
+
+\c postgres
+DROP DATABASE test_ansi_quotes;
