@@ -3338,9 +3338,13 @@ VariableShowStmt:
 						SelectStmt *n = makeShowVariablesQuery(FALSE, NULL, FALSE);
 						$$ = (Node *) n;
 					} else if (pg_strcasecmp($2, "grants") == 0) {
-					    $$ = (Node *)MakeShowGrantStmt("", @2, yyscanner);
+						$$ = (Node *)MakeShowGrantStmt("", @2, yyscanner);
 					} else if (pg_strcasecmp($2, "triggers") == 0) {
-					    $$ = (Node *) makeShowTriggersQuery(list_make1(makeStringConst(NULL, 0)), NULL, NULL);
+						$$ = (Node *) MakeShowTriggersQuery(list_make1(makeStringConst(NULL, 0)), NULL, NULL);
+					}  else if (pg_strcasecmp($2, "charset") == 0) {
+						$$ = (Node *) MakeShowCharacterQuery(NIL, NULL, NULL);
+					}  else if (pg_strcasecmp($2, "collation") == 0) {
+						$$ = (Node *) MakeShowCollationQuery(NIL, NULL, NULL);
 					} else {
 						VariableShowStmt *n = makeNode(VariableShowStmt);
 						n->name = $2;
@@ -3531,27 +3535,42 @@ VariableShowStmt:
             | SHOW TRIGGERS LikeOrWhere
                 {
                     List *args = list_make1(makeStringConst(NULL, 0));
-                    SelectStmt *n = makeShowTriggersQuery(args, $3->like_or_where, $3->is_like);
+                    SelectStmt *n = MakeShowTriggersQuery(args, $3->like_or_where, $3->is_like);
                     $$ = (Node *) n;
                 }
             | SHOW TRIGGERS from_in ColId OptLikeOrWhere
                 {
                     List *args = list_make1(makeStringConst($4, @4));
-                    SelectStmt *n = makeShowTriggersQuery(args, $5->like_or_where, $5->is_like);
+                    SelectStmt *n = MakeShowTriggersQuery(args, $5->like_or_where, $5->is_like);
                     $$ = (Node *) n;
                 }
             | SHOW FUNCTION STATUS OptLikeOrWhere
                 {
                     List *args = list_make1(makeStringConst("f", 0));
-                    SelectStmt *n = makeShowFuncProQuery(args, $4->like_or_where, $4->is_like);
+                    SelectStmt *n = MakeShowFuncProQuery(args, $4->like_or_where, $4->is_like);
                     $$ = (Node *) n;
                 } 
             | SHOW PROCEDURE STATUS OptLikeOrWhere
                 {
                     List *args = list_make1(makeStringConst("p", 0));
-                    SelectStmt *n = makeShowFuncProQuery(args, $4->like_or_where, $4->is_like);
+                    SelectStmt *n = MakeShowFuncProQuery(args, $4->like_or_where, $4->is_like);
                     $$ = (Node *) n;
                 }
+            | SHOW CHARACTER SET OptLikeOrWhere
+                {
+                    SelectStmt *n = MakeShowCharacterQuery(NIL, $4->like_or_where, $4->is_like);
+                    $$ = (Node *) n;
+                }
+	    | SHOW CHARSET LikeOrWhere
+		{
+		    SelectStmt *n = MakeShowCharacterQuery(NIL, $3->like_or_where, $3->is_like);
+		    $$ = (Node *) n;
+		}
+	    | SHOW COLLATION OptLikeOrWhere
+		{
+		    SelectStmt *n = MakeShowCollationQuery(NIL, $3->like_or_where, $3->is_like);
+		    $$ = (Node *) n;
+		}
 		;
 
 show_index_schema_opt:

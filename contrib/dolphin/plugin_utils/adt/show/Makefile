@@ -15,6 +15,6 @@ ifeq "$(GCC)" "yes"
 override CFLAGS+= -mieee -I$(top_builddir)/$(subdir)/../include -fvisibility=hidden -fPIC
 endif
 endif
-OBJS = show_grants.o show_common.o show_function.o show_trigger.o
+OBJS = show_grants.o show_common.o show_function.o show_trigger.o show_charset.o show_collation.o
 
 include $(top_srcdir)/src/gausskernel/common.mk

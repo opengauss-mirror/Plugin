@@ -1,6 +1,5 @@
 #include "plugin_utils/show_common.h"
 #include "funcapi.h"
-#include "nodes/makefuncs.h"
 #include "plugin_parser/parse_show.h"
 
 PG_FUNCTION_INFO_V1_PUBLIC(ShowTriggers);
@@ -87,7 +86,7 @@ Datum ShowTriggers(PG_FUNCTION_ARGS)
 
     if (fctx->call_cntr < fctx->max_calls) {
         HeapTuple tuple = SPI_tuptable->vals[fctx->call_cntr];
-        const static int TRIGGER_ATTR_NUM = 11;
+        const static int TRIGGER_ATTR_NUM = fctx->tuple_desc->natts;
         Datum values[TRIGGER_ATTR_NUM];
         bool nulls[TRIGGER_ATTR_NUM];
         for (int columnIndex = 0; columnIndex < TRIGGER_ATTR_NUM; columnIndex++) {
@@ -114,16 +113,7 @@ Datum ShowTriggers(PG_FUNCTION_ARGS)
  * @param isLikeExpr true for like clause else where clause
  * @return selectstmt
  */
-SelectStmt *makeShowTriggersQuery(List *args, Node *likeWhereOpt, bool isLikeExpr)
+SelectStmt *MakeShowTriggersQuery(List *args, Node *likeWhereOpt, bool isLikeExpr)
 {
-    SelectStmt *selectStmt = MakeCommonQuery("show_triggers", args);
-    /* set where clause */
-    if (isLikeExpr) {
-        ColumnRef *columnRef = makeNode(ColumnRef);
-        columnRef->fields = list_make1(makeString("Trigger"));
-        likeWhereOpt = (Node *)makeSimpleA_Expr(AEXPR_OP, "~~", (Node *)columnRef, likeWhereOpt, 0);
-    }
-    selectStmt->whereClause = likeWhereOpt;
-
-    return selectStmt;
+    return MakeCommonQuery("show_triggers", "Trigger", args, likeWhereOpt, isLikeExpr);
 }

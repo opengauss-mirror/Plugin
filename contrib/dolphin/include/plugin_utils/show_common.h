@@ -58,6 +58,7 @@ Oid GetInformationSchemaOid();
 TupleDesc ConstructTupleDesc(TupleDescEntry *tupleDescEntries, int size);
 Oid SearchRoleIdFromAuthId(char *role);
 SelectStmt *MakeCommonQuery(char *functionName, List *args);
+SelectStmt *MakeCommonQuery(char *functionName, char *filterName, List *args, Node *likeWhereOpt, bool isLikeExpr);
 typedef struct {
     Relation relation;
     SysScanDesc scanDesc;

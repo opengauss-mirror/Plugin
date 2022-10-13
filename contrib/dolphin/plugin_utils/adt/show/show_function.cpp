@@ -1,6 +1,5 @@
 #include "plugin_utils/show_common.h"
 #include "funcapi.h"
-#include "nodes/makefuncs.h"
 
 PG_FUNCTION_INFO_V1_PUBLIC(ShowFunctionStatus);
 extern "C" DLL_PUBLIC Datum ShowFunctionStatus(PG_FUNCTION_ARGS);
@@ -84,7 +83,7 @@ Datum ShowFunctionStatus(PG_FUNCTION_ARGS)
 
     if (fctx->call_cntr < fctx->max_calls) {
         HeapTuple tuple = SPI_tuptable->vals[fctx->call_cntr];
-        static const int FUNCTION_STATUS_ATTR_NUM = 11;
+        static const int FUNCTION_STATUS_ATTR_NUM = fctx->tuple_desc->natts;
         Datum values[FUNCTION_STATUS_ATTR_NUM];
         bool nulls[FUNCTION_STATUS_ATTR_NUM];
         for (int columnIndex = 0; columnIndex < FUNCTION_STATUS_ATTR_NUM; columnIndex++) {
@@ -110,17 +109,7 @@ Datum ShowFunctionStatus(PG_FUNCTION_ARGS)
  * @param isLikeExpr true for like clause else where clause
  * @return selectstmt
  */
-SelectStmt *makeShowFuncProQuery(List *args, Node *likeWhereOpt, bool isLikeExpr)
+SelectStmt *MakeShowFuncProQuery(List *args, Node *likeWhereOpt, bool isLikeExpr)
 {
-    SelectStmt *selectStmt = MakeCommonQuery("show_function_status", args);
-
-    /* set where clause */
-    if (isLikeExpr) {
-        ColumnRef *columnRef = makeNode(ColumnRef);
-        columnRef->fields = list_make1(makeString("Name"));
-        likeWhereOpt = (Node *)makeSimpleA_Expr(AEXPR_OP, "~~", (Node *)columnRef, likeWhereOpt, 0);
-    }
-    selectStmt->whereClause = likeWhereOpt;
-
-    return selectStmt;
+    return MakeCommonQuery("show_function_status", "Name", args, likeWhereOpt, isLikeExpr);
 }
