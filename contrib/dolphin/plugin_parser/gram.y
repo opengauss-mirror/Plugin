@@ -3348,7 +3348,10 @@ VariableShowStmt:
 						$$ = (Node *) MakeShowCharacterQuery(NIL, NULL, NULL);
 					}  else if (pg_strcasecmp($2, "collation") == 0) {
 						$$ = (Node *) MakeShowCollationQuery(NIL, NULL, NULL);
-					} else {
+					} else if (pg_strcasecmp($2, "privileges") == 0) {
+                                                SelectStmt *n = makeShowPrivilegesQuery();
+                                                $$ = (Node *) n;
+                                        } else {
 						VariableShowStmt *n = makeNode(VariableShowStmt);
 						n->name = $2;
 						$$ = (Node *) n;
