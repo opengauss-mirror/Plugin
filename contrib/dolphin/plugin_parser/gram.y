@@ -96,6 +96,7 @@
 #include "utils/varbit.h"
 #include "mb/pg_wchar.h"
 #include "lib/string.h"
+#include "tcop/tcopprot.h"
 
 #pragma GCC diagnostic ignored "-Wsign-compare"
 #pragma GCC diagnostic ignored "-Wunused-variable"
@@ -22496,6 +22497,19 @@ PrepareStmt: PREPARE name prep_type_clause as_or_from PreparableStmt
 					n->query = $5;
 					$$ = (Node *) n;
 				}
+			| PREPARE name prep_type_clause as_or_from SCONST
+				{
+					PrepareStmt *n = makeNode(PrepareStmt);
+					n->name = $2;
+					n->argtypes = $3;
+					List *parsetreeList = pg_parse_query($5);
+					if (list_length(parsetreeList) != 1) {
+						ereport(ERROR, (errcode(ERRCODE_SYNTAX_ERROR), errmsg("PREPARE can contain only one SQL statement.")));
+					}
+					pfree($5);
+					n->query = (Node *)linitial(parsetreeList);
+					$$ = (Node *) n;
+				}
 		;
 
 prep_type_clause: '(' type_list ')'			{ $$ = $2; }
@@ -22549,6 +22563,13 @@ ExecuteStmt: EXECUTE name execute_param_clause
 					ExecuteStmt *n = makeNode(ExecuteStmt);
 					n->name = $2;
 					n->params = $3;
+					$$ = (Node *) n;
+				}
+			| EXECUTE name USING expr_list
+				{
+					ExecuteStmt *n = makeNode(ExecuteStmt);
+					n->name = $2;
+					n->params = $4;
 					$$ = (Node *) n;
 				}
 			| CREATE OptTemp TABLE create_as_target AS
