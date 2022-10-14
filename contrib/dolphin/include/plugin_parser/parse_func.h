@@ -59,6 +59,9 @@ extern const char* func_signature_string(List* funcname, int nargs, List* argnam
 extern Oid LookupFuncName(List* funcname, int nargs, const Oid* argtypes, bool noError);
 extern Oid LookupFuncNameTypeNames(List* funcname, List* argtypes, bool noError);
 extern Oid LookupFuncNameOptTypeNames(List* funcname, List* argtypes, bool noError);
+#ifdef DOLPHIN
+extern Oid LookupFuncNameTypeNamesNoargs(List* funcname);
+#endif
 extern Oid LookupPackageNames(List* pkgname);
 extern Oid LookupAggNameTypeNames(List* aggname, List* argtypes, bool noError);
 extern Oid LookupTypeNameOid(const TypeName* typname);

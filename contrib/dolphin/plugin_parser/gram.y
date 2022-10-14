@@ -51,6 +51,7 @@
 #include "postgres.h"
 #include "plugin_nodes/parsenodes_common.h"
 #include "plugin_parser/scanner.h"
+#include "plugin_nodes/parsenodes.h"
 #include "knl/knl_variable.h"
 #include "utils/builtins.h"
 #include <ctype.h>
@@ -17278,9 +17279,21 @@ AlterFunctionStmt:
 					AlterFunctionStmt *n = makeNode(AlterFunctionStmt);
 					n->func = $3;
 					n->actions = $4;
+					n->noargs = false;
 					$$ = (Node *) n;
 				}
-		;
+			| ALTER FUNCTION func_name alterfunc_opt_list opt_restrict
+				{
+					AlterFunctionStmt *n = makeNode(AlterFunctionStmt);
+					FuncWithArgs *narg = makeNode(FuncWithArgs);
+					narg->funcname = $3;
+					narg->funcargs = NIL;
+					n->func = narg;
+					n->actions = $4;
+					n->noargs = true;
+					$$ = (Node *) n;
+				}
+			;
 
 AlterProcedureStmt:
 			ALTER PROCEDURE function_with_argtypes alterfunc_opt_list opt_restrict
@@ -17288,8 +17301,20 @@ AlterProcedureStmt:
 					AlterFunctionStmt *n = makeNode(AlterFunctionStmt);
 					n->func = $3;
 					n->actions = $4;
+					n->noargs = false;
 					$$ = (Node *) n;
 				}
+			| ALTER PROCEDURE func_name alterfunc_opt_list opt_restrict
+				{
+					AlterFunctionStmt *n = makeNode(AlterFunctionStmt);
+					FuncWithArgs *narg = makeNode(FuncWithArgs);
+					narg->funcname = $3;
+					narg->funcargs = NIL;
+					n->func = narg;
+					n->actions = $4;
+					n->noargs = true;
+					$$ = (Node *) n;
+                                }
 		;
 
 alterfunc_opt_list:

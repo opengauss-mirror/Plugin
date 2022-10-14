@@ -36,6 +36,7 @@
 #include "knl/knl_variable.h"
 #ifdef DOLPHIN
 #include "plugin_nodes/parsenodes_common.h"
+#include "plugin_nodes/parsenodes.h"
 #endif
 #include "access/genam.h"
 #include "access/heapam.h"
@@ -68,7 +69,7 @@
 #include "parser/parse_coerce.h"
 #include "parser/parse_collate.h"
 #include "parser/parse_expr.h"
-#include "parser/parse_func.h"
+#include "plugin_parser/parse_func.h"
 #include "parser/parse_type.h"
 #include "storage/tcap.h"
 #include "utils/acl.h"
@@ -1958,8 +1959,14 @@ void AlterFunction(AlterFunctionStmt* stmt)
     DefElem* determ_item = NULL;
     DefElem* sql_item = NULL;
     bool isNull = false;
-
+#ifdef DOLPHIN
+    if (stmt->noargs)
+        funcOid = LookupFuncNameTypeNamesNoargs(stmt->func->funcname);
+    else
+        funcOid = LookupFuncNameTypeNames(stmt->func->funcname, stmt->func->funcargs, false);
+#else
     funcOid = LookupFuncNameTypeNames(stmt->func->funcname, stmt->func->funcargs, false);
+#endif
 #ifndef ENABLE_MULTIPLE_NODES
     char* schemaName = NULL;
     char* pkgname = NULL;
