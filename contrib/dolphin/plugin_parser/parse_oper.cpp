@@ -401,10 +401,8 @@ Operator oper(ParseState* pstate, List* opname, Oid ltypeId, Oid rtypeId, bool n
     if (GetSessionContext()->enableBCmptMode) {
         if (ltypeId == UNKNOWNOID && rtypeId == INTERVALOID) {
             ltypeId = TIMESTAMPOID;
-            location = TIMESTAMP_OP_INTERVAL_LOCATION;
         } else if (ltypeId == INTERVALOID && rtypeId == UNKNOWNOID) {
             rtypeId = TIMESTAMPOID;
-            location = INTERVAL_OP_TIMESTAMP_LOCATION;
         }
     }
 #endif
