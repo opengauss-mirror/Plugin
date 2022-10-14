@@ -35,7 +35,11 @@
  * keywords are to be matched in this way even though non-keyword identifiers
  * receive a different case-normalization mapping.
  */
+#ifdef DOLPHIN
+const ScanKeyword* ScanKeywordLookup(const char* text, const ScanKeyword* keywords, int num_keywords, int length)
+#else
 const ScanKeyword* ScanKeywordLookup(const char* text, const ScanKeyword* keywords, int num_keywords)
+#endif
 {
     int len, i;
     char word[NAMEDATALEN] = {0};
@@ -45,7 +49,11 @@ const ScanKeyword* ScanKeywordLookup(const char* text, const ScanKeyword* keywor
     if (text == NULL) {
         return NULL;
     }
-
+#ifdef DOLPHIN
+    if (length > 0)
+        len = length;
+    else 
+#endif
     len = strlen(text);
     /* We assume all keywords are shorter than NAMEDATALEN. */
     if (len >= NAMEDATALEN) {

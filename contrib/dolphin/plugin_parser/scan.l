@@ -1146,11 +1146,22 @@ other			.
 
 					SET_YYLLOC();
 
+#ifdef DOLPHIN
+					char* sharpcomment = strstr(yytext,"#");
+					if(sharpcomment && GetSessionContext()->enableBCmptMode && !yyextra->in_slash_proc_body)
+					{
+						int nchars = sharpcomment - yytext;
+						yyless(nchars);
+						dealSahrpComment(yyscanner);
+						yyleng = nchars;
+					}
 					/* Is it a keyword? */
+					keyword = ScanKeywordLookup(yytext, yyextra->keywords, yyextra->num_keywords, yyleng);
+#else
 					keyword = ScanKeywordLookup(yytext,
 												yyextra->keywords,
 												yyextra->num_keywords);
-
+#endif
 					yyextra->is_hint_str = false;
 					bool isPlpgsqlKeyword = yyextra->isPlpgsqlKeyWord;
 
@@ -1209,15 +1220,6 @@ other			.
 					 * if necessary.
 					 */
 #ifdef DOLPHIN
-					char* sharpcomment = strstr(yytext,"#");
-					if(sharpcomment && GetSessionContext()->enableBCmptMode && !yyextra->in_slash_proc_body)
-					{
-						int nchars = sharpcomment - yytext;
-						yyless(nchars);
-						dealSahrpComment(yyscanner);
-						yyleng = nchars;
-						
-					}
 					if (!GetSessionContext()->scan_from_pl) {
 						ident = CopyIdentifier(yytext, yyleng, yyextra->warnOnTruncateIdent);
 						yylval->dolphinIdent = CreateDolphinIdent(ident, false);

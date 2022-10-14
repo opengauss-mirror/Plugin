@@ -44,6 +44,10 @@ extern PGDLLIMPORT const int NumScanKeywords;
 extern const ScanKeyword SQLScanKeywords[];
 extern const int NumSQLScanKeywords;
 
+#ifdef DOLPHIN
+extern const ScanKeyword* ScanKeywordLookup(const char* text, const ScanKeyword* keywords, int num_keywords, int length = 0);
+#else
 extern const ScanKeyword* ScanKeywordLookup(const char* text, const ScanKeyword* keywords, int num_keywords);
+#endif 
 
 #endif /* KEYWORDS_H */
