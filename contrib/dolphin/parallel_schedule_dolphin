@@ -27,6 +27,8 @@ test: test_shows_1 test_shows_2
 
 test: test_shows_3 test_shows_4
 
+test: test_shows_5
+
 test: test_optimize
 
 test: test_set_charset
@@ -113,3 +115,6 @@ test: show b_comments
 test: db_b_date_time_functions3
 
 test: json_array_insert json_insert json_merge_patch json_merge_preserve json_remove json_replace json_set json_depth
+
+test: flush
+

@@ -47,6 +47,12 @@
 #define DB4AI_NAME		  "db4ai"
 #define PG_TOAST_PREFIX		  "^pg_toast"
 
+#define PG_OBJECT                 "pg_object"
+#define PG_DESCRIPTION            "pg_description"
+#define PG_CONSTRAINT             "pg_constraint"
+#define PG_ATTRDEF                "pg_attrdef"
+#define PG_DEPEND                 "pg_depend"
+
 #define PLPS_FUNCNAME_CHECKSUM    "checksum"
 
 #define PG_ATTRIBUTE_ALIAS	"a"
@@ -72,5 +78,8 @@ extern Node* plpsMakeSortByNode(Node* sortExpr, SortByDir sortBd = SORTBY_DEFAUL
 extern List* plpsMakeSortList(Node* sortExpr);
 extern SelectStmt* plpsMakeSelectStmt(List* targetList, List* fromList, Node* whereClause,
         List* sortClause, Node* limitCount = NULL);
+
+extern Node* plpsMakeTargetNode(Node* val, char* name = NULL);
+extern Node* plpsMakeSimpleJoinNode(JoinType jointype, Node* larg, Node* rarg, Node* quals);
 
 #endif /* PARSE_TARGET_H */

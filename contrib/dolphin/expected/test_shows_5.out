@@ -1,0 +1,122 @@
+DROP DATABASE IF EXISTS db_show_5;
+NOTICE:  database "db_show_5" does not exist, skipping
+CREATE DATABASE db_show_5 DBCOMPATIBILITY 'b';
+\c db_show_5
+CREATE SCHEMA tst_schema5;
+--orientation=row, normal primary key
+CREATE TABLE public.t1
+(
+id int primary key,
+name varchar(20),
+phone text
+) WITH(ORIENTATION=ROW, STORAGE_TYPE=USTORE);
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "t1_pkey" for table "t1"
+--orientation=column, serial primary key
+CREATE TABLE public.t2
+(
+id serial primary key,
+name varchar(20),
+phone text
+) WITH(ORIENTATION=COLUMN);
+NOTICE:  CREATE TABLE will create implicit sequence "t2_id_seq" for serial column "t2.id"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "t2_pkey" for table "t2"
+--create table in tst_schema5
+CREATE TABLE tst_schema5.tst_t1
+(
+id int primary key,
+name varchar(20),
+phone text
+) WITH(ORIENTATION=ROW, STORAGE_TYPE=USTORE);
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "tst_t1_pkey" for table "tst_t1"
+CREATE TABLE tst_schema5.tst_t2
+(
+id serial primary key,
+name varchar(20),
+phone text
+) WITH(ORIENTATION=COLUMN);
+NOTICE:  CREATE TABLE will create implicit sequence "tst_t2_id_seq" for serial column "tst_t2.id"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "tst_t2_pkey" for table "tst_t2"
+CREATE TABLE tst_schema5.tst_t3
+(
+id int,
+name varchar(20),
+phone text
+);
+COMMENT ON TABLE tst_schema5.tst_t3 IS 'this is comment';
+CREATE VIEW tst_schema5.tst_v1 AS SELECT * FROM tst_schema5.tst_t2;
+SHOW TABLE STATUS;
+--?             Name              | Engine | Version | Row_format | Rows | Avg_row_length | Data_length | Max_data_length | Index_length | Data_free | Auto_increment |       Create_time        |       Update_time        | Check_time |  Collation  | Checksum |                    Create_options                    | Comment 
+--?.*
+--?.*
+--?.*
+--?.*
+--?.*
+(4 rows)
+
+SHOW TABLE STATUS FROM tst_schema5;
+--?  Name  | Engine | Version | Row_format | Rows | Avg_row_length | Data_length | Max_data_length | Index_length | Data_free | Auto_increment |       Create_time        |       Update_time        | Check_time |  Collation  | Checksum |                    Create_options                    |     Comment     
+--?.*
+--?.*
+--?.*
+--?.*
+--?.*
+(4 rows)
+
+SHOW TABLE STATUS FROM tst_schema5 like '%tst_t3%';
+--?  Name  | Engine | Version | Row_format | Rows | Avg_row_length | Data_length | Max_data_length | Index_length | Data_free | Auto_increment |       Create_time        |       Update_time        | Check_time |  Collation  | Checksum |          Create_options          |     Comment     
+--?.*
+--?.*
+(1 row)
+
+SHOW TABLE STATUS FROM tst_schema5 WHERE Engine='USTORE';
+--?  Name  | Engine | Version | Row_format | Rows | Avg_row_length | Data_length | Max_data_length | Index_length | Data_free | Auto_increment |       Create_time        |       Update_time        | Check_time |  Collation  | Checksum |                    Create_options                    | Comment 
+--?.*
+--?.*
+(1 row)
+
+SHOW TABLE STATUS FROM tst_schema5 WHERE Row_format like '%ROW%';
+--?  Name  | Engine | Version | Row_format | Rows | Avg_row_length | Data_length | Max_data_length | Index_length | Data_free | Auto_increment |       Create_time        |       Update_time        | Check_time |  Collation  | Checksum |                    Create_options                    |     Comment     
+--?.*
+--?.*
+--?.*
+(2 rows)
+
+DROP ROLE if EXISTS tst_shows_u5;
+NOTICE:  role "tst_shows_u5" does not exist, skipping
+CREATE ROLE tst_shows_u5 IDENTIFIED BY 'tst_shows_u5@123';
+NOTICE:  The iteration value of password is not recommended.Setting the iteration value too small reduces the security of the password, and setting it too large results in performance degradation.
+SET ROLE tst_shows_u5 PASSWORD 'tst_shows_u5@123';
+SELECT CURRENT_USER;
+ current_user 
+--------------
+ tst_shows_u5
+(1 row)
+
+SHOW TABLE STATUS FROM tst_schema5;
+ERROR:  permission denied for sequence tst_t2_id_seq
+CONTEXT:  referenced column: Auto_increment
+RESET role;
+GRANT SELECT ON ALL TABLES IN SCHEMA tst_schema5 TO tst_shows_u5;
+GRANT SELECT ON ALL SEQUENCES IN SCHEMA tst_schema5 TO tst_shows_u5;
+SET ROLE tst_shows_u5 PASSWORD 'tst_shows_u5@123';
+SELECT CURRENT_USER;
+ current_user 
+--------------
+ tst_shows_u5
+(1 row)
+
+SHOW TABLE STATUS FROM tst_schema5;
+--?  Name  | Engine | Version | Row_format | Rows | Avg_row_length | Data_length | Max_data_length | Index_length | Data_free | Auto_increment |       Create_time        |       Update_time        | Check_time |  Collation  | Checksum |                    Create_options                    |     Comment     
+--?.*
+--?.*
+--?.*
+--?.*
+--?.*
+(4 rows)
+
+RESET ROLE;
+REVOKE SELECT ON ALL TABLES IN SCHEMA tst_schema5 FROM tst_shows_u5;
+REVOKE SELECT ON ALL SEQUENCES IN SCHEMA tst_schema5 FROM tst_shows_u5;
+DROP USER tst_shows_u5;
+\c postgres
+DROP DATABASE IF EXISTS db_show_5;

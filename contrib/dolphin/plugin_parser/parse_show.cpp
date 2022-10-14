@@ -23,6 +23,12 @@ static Node* makePluginsTypeColumn(bool smallcase = FALSE);
 static Node* makePluginsLibraryColumn(bool smallcase = FALSE);
 static Node* makePluginsLicenseColumn(bool smallcase = FALSE);
 
+static Node* makeEngineColumn();
+static Node* makeRowFormatColumn();
+static Node* makeAutoIncrementColumn();
+static List* makeShowTableStatusColumns();
+static Node* makeShowTableStatusJoinTable();
+
 extern List* SystemFuncName(char* name);
 extern TypeName* SystemTypeName(char* name);
 extern Tuplestorestate* BuildTupleResult(FunctionCallInfo fcinfo, TupleDesc* tupdesc);
@@ -831,5 +837,269 @@ SelectStmt *makeShowVariablesQuery(bool globalMode, Node *likeWhereOpt, bool isL
              : likeWhereOpt;
 
     SelectStmt *stmt = plpsMakeSelectStmt(tl, fl, wc, NIL);
+    return stmt;
+}
+
+Node* plpsMakeTargetNode(Node* val, char* name)
+{
+    ResTarget* rt = makeNode(ResTarget);
+    rt->name = name;
+    rt->indirection = NIL; 
+    rt->val = val;
+    rt->location = -1;
+    return (Node*)rt;
+}
+
+Node* plpsMakeSimpleJoinNode(JoinType jointype, Node* larg, Node* rarg, Node* quals)
+{
+    JoinExpr* join = makeNode(JoinExpr);
+    join->jointype = jointype;
+    join->larg = larg;
+    join->rarg = rarg;
+    join->quals = quals;
+    return (Node*)join;
+}
+
+static Node* makeEngineColumn()
+{
+    CaseWhen* w1 = makeNode(CaseWhen);
+    w1->expr = (Expr*)makeSimpleA_Expr(AEXPR_OP, "=", 
+                        plpsMakeColumnRef(PG_CLASS_NAME, "relkind"), plpsMakeStringConst("v"), -1);
+    w1->result = (Expr*)makeNullAConst(-1);
+
+    Node* ustroe = plpsMakeFunc("instr",
+                    list_make2(plpsMakeTypeCast(plpsMakeColumnRef(PG_CLASS_NAME, "reloptions"), "text", -1), 
+                            plpsMakeStringConst("ustore")));
+
+    CaseWhen* w2 = makeNode(CaseWhen);
+    w2->expr = (Expr*)makeSimpleA_Expr(AEXPR_OP, ">", ustroe, plpsMakeIntConst(0), -1);
+    w2->result = (Expr*)plpsMakeStringConst("USTORE");
+
+    CaseExpr* c = makeNode(CaseExpr);
+    c->casetype = InvalidOid;
+    c->arg = NULL;
+    c->args = list_make2((Node*)w1, (Node*)w2);
+    c->defresult = (Expr*)plpsMakeStringConst("ASTORE");
+    c->location = -1;
+
+    Node* rs = plpsMakeTargetNode((Node*)c, "engine");
+    return rs;
+}
+
+static Node* makeRowFormatColumn()
+{
+    CaseWhen* w1 = makeNode(CaseWhen);
+    w1->expr = (Expr*)makeSimpleA_Expr(AEXPR_OP, "=", 
+                        plpsMakeColumnRef(PG_CLASS_NAME, "relkind"), plpsMakeStringConst("v"), -1);
+    w1->result = (Expr*)makeNullAConst(-1);
+
+    Node* cloumn = plpsMakeFunc("instr",
+                    list_make2(plpsMakeTypeCast(plpsMakeColumnRef(PG_CLASS_NAME, "reloptions"), "text", -1), 
+                            plpsMakeStringConst("column")));
+
+    CaseWhen* w2 = makeNode(CaseWhen);
+    w2->expr = (Expr*)makeSimpleA_Expr(AEXPR_OP, ">", cloumn, plpsMakeIntConst(0), -1);
+    w2->result = (Expr*)plpsMakeStringConst("COLUMN");
+
+    CaseExpr* c = makeNode(CaseExpr);
+    c->casetype = InvalidOid;
+    c->arg = NULL;
+    c->args = list_make2((Node*)w1, (Node*)w2);
+    c->defresult = (Expr*)plpsMakeStringConst("ROW");
+    c->location = -1;
+
+    Node* rs = plpsMakeTargetNode((Node*)c, "row_format");
+    return rs;
+}
+
+static Node* makeAutoIncrementColumn()
+{
+    Node* fn = plpsMakeFunc("pg_sequence_last_value", (List*)list_make1(plpsMakeColumnRef(PG_DEPEND, "refobjid")));
+
+    A_Indirection *n = makeNode(A_Indirection);
+    n->arg = (Node*)fn;
+    n->indirection = (List*)list_make1(makeString("last_value"));
+
+    Node* rs = plpsMakeTargetNode((Node*)n, "auto_increment");
+    return rs;
+}
+
+static List* makeShowTableStatusColumns()
+{
+    List* tl = (List*)list_make1(plpsMakeNormalColumn(PG_CLASS_NAME, "relname", "name"));
+    tl = lappend(tl, makeEngineColumn());
+    tl = lappend(tl, plpsMakeTargetNode(makeNullAConst(-1), "version"));
+    tl = lappend(tl, makeRowFormatColumn());
+    tl = lappend(tl, plpsMakeNormalColumn(PG_CLASS_NAME, "reltuples", "rows"));
+    tl = lappend(tl, plpsMakeTargetNode(plpsMakeIntConst(0), "avg_row_length"));
+    tl = lappend(tl, plpsMakeTargetNode(plpsMakeFunc("pg_relation_size", (List*)list_make1(plpsMakeColumnRef(PG_CLASS_NAME, "oid"))), "data_length"));
+    tl = lappend(tl, plpsMakeTargetNode(plpsMakeIntConst(0), "max_data_length"));
+    tl = lappend(tl, plpsMakeTargetNode(plpsMakeFunc("pg_indexes_size", (List*)list_make1(plpsMakeColumnRef(PG_CLASS_NAME, "oid"))), "index_length"));
+    tl = lappend(tl, plpsMakeTargetNode(plpsMakeIntConst(0), "data_free"));
+    tl = lappend(tl, makeAutoIncrementColumn());
+    tl = lappend(tl, plpsMakeTargetNode(plpsMakeFunc("date_trunc", (List*)list_make2(plpsMakeStringConst("second"), 
+                                        plpsMakeTypeCast(plpsMakeColumnRef(PG_OBJECT, "ctime"), "timestamp", -1))), "create_time"));
+    tl = lappend(tl, plpsMakeTargetNode(plpsMakeFunc("date_trunc", (List*)list_make2(plpsMakeStringConst("second"), 
+                                        plpsMakeTypeCast(plpsMakeColumnRef(PG_OBJECT, "mtime"), "timestamp", -1))), "update_time"));
+    tl = lappend(tl, plpsMakeTargetNode(makeNullAConst(-1), "check_time"));
+    tl = lappend(tl, plpsMakeTargetNode(plpsMakeFunc("current_setting", (List*)list_make1(plpsMakeStringConst("lc_collate"))), "collation"));
+    tl = lappend(tl, plpsMakeTargetNode(makeNullAConst(-1), "checksum"));
+    tl = lappend(tl, plpsMakeTargetNode(plpsMakeTypeCast(plpsMakeColumnRef(PG_CLASS_NAME, "reloptions"), "text", -1), "create_options"));
+    tl = lappend(tl, plpsMakeNormalColumn(PG_DESCRIPTION, "description", "comment"));
+    return tl;
+}
+
+static Node* makeShowTableStatusJoinTable()
+{
+    Node* pgClass = (Node*)makeRangeVar(NULL, PG_CLASS_NAME, -1);
+    Node* pgNamspace = (Node*)makeRangeVar(NULL, PG_NAMESPACE_NAME, -1);
+    Node* quals1 = (Node*)makeSimpleA_Expr(AEXPR_OP, "=", 
+                            plpsMakeColumnRef(PG_CLASS_NAME, "relnamespace"), 
+                            plpsMakeColumnRef(PG_NAMESPACE_NAME, "oid"), -1);
+    Node* joinNamespace = plpsMakeSimpleJoinNode(JOIN_LEFT,  pgClass, pgNamspace, quals1);
+
+    Node* pgObject = (Node*)makeRangeVar(NULL, PG_OBJECT, -1);
+    Node* quals2 = (Node*)makeSimpleA_Expr(AEXPR_OP, "=", 
+                            plpsMakeColumnRef(PG_CLASS_NAME, "oid"), 
+                            plpsMakeColumnRef(PG_OBJECT, "object_oid"), -1);
+    Node* joinObject = plpsMakeSimpleJoinNode(JOIN_LEFT,  joinNamespace, pgObject, quals2);
+
+    Node* pgDescription = (Node*)makeRangeVar(NULL, PG_DESCRIPTION, -1);
+    Node* quals3 = (Node*)makeSimpleA_Expr(AEXPR_OP, "=", 
+                            plpsMakeColumnRef(PG_CLASS_NAME, "oid"), 
+                            plpsMakeColumnRef(PG_DESCRIPTION, "objoid"), -1);
+    Node* joinDescription = plpsMakeSimpleJoinNode(JOIN_LEFT,  joinObject, pgDescription, quals3);
+
+    Node* pgConstraint = (Node*)makeRangeVar(NULL, PG_CONSTRAINT, -1);
+    Node* quals4 = (Node*)makeSimpleA_Expr(AEXPR_OP, "=", 
+                            plpsMakeColumnRef(PG_CLASS_NAME, "oid"), 
+                            plpsMakeColumnRef(PG_CONSTRAINT, "conrelid"), -1);
+    Node* quals5 = (Node*)makeSimpleA_Expr(AEXPR_OP, "=", 
+                            plpsMakeColumnRef(PG_CONSTRAINT, "contype"), 
+                            plpsMakeStringConst("p"), -1);
+    Node* quals6 = (Node*)makeSimpleA_Expr(AEXPR_OP, "=",
+                            plpsMakeFunc("array_length", (List*)list_make2(plpsMakeColumnRef(PG_CONSTRAINT, "conkey"), plpsMakeIntConst(1))),
+                            plpsMakeIntConst(1), -1);
+    Node* joinConstraint = plpsMakeSimpleJoinNode(JOIN_LEFT,  joinDescription, pgConstraint, 
+                                (Node*)makeA_Expr(AEXPR_AND, NIL, 
+                                    (Node*)makeA_Expr(AEXPR_AND, NIL, quals4, quals5, -1), 
+                                    quals6, -1));
+    
+    Node* pgAttrdef = (Node*)makeRangeVar(NULL, PG_ATTRDEF, -1);
+    Node* quals7 = (Node*)makeSimpleA_Expr(AEXPR_OP, "=", 
+                            plpsMakeColumnRef(PG_CLASS_NAME, "oid"), 
+                            plpsMakeColumnRef(PG_ATTRDEF, "adrelid"), -1);
+    A_Indirection* a = makeNode(A_Indirection);
+    a->arg = (Node *)plpsMakeColumnRef(PG_CONSTRAINT, "conkey");
+    A_Indices *ai = makeNode(A_Indices);
+	ai->lidx = NULL;
+	ai->uidx = plpsMakeIntConst(1);
+    a->indirection = (List*)list_make1((Node*)ai);
+    Node* quals8 = (Node*)makeSimpleA_Expr(AEXPR_OP, "=", 
+                            plpsMakeColumnRef(PG_ATTRDEF, "adnum"), 
+                            (Node*)a, -1);
+    Node* joinAttrdef = plpsMakeSimpleJoinNode(JOIN_LEFT,  joinConstraint,  pgAttrdef,
+                                (Node*)makeA_Expr(AEXPR_AND, NIL, quals7, quals8, -1));
+    
+    Node* pgDepend = (Node*)makeRangeVar(NULL, PG_DEPEND, -1);
+    Node* quals9 = (Node*)makeSimpleA_Expr(AEXPR_OP, "=", 
+                            plpsMakeColumnRef(PG_ATTRDEF, "oid"), 
+                            plpsMakeColumnRef(PG_DEPEND, "objid"), -1);
+    Node* quals10 = (Node*)makeSimpleA_Expr(AEXPR_OP, "=", 
+                            plpsMakeColumnRef(PG_DEPEND, "refobjsubid"), 
+                            plpsMakeIntConst(0), -1);
+    Node* joinDepend = plpsMakeSimpleJoinNode(JOIN_LEFT,  joinAttrdef,  pgDepend,
+                                (Node*)makeA_Expr(AEXPR_AND, NIL, quals9, quals10, -1));
+    
+    return (Node*)joinDepend;
+}
+
+/**
+ * SELECT "name" as "Name", "engine" as "Engine", "version" as "Version", "row_format" as "Row_format", "rows" as "Rows",
+ *     "avg_row_length" as "Avg_row_length", "data_length" as "Data_length", "max_data_length" as "Max_data_length",
+ *     "index_length" as "Index_length", "data_free" as "Data_free", "auto_increment" as "Auto_increment",
+ *     "create_time" as "Create_time", "update_time" as "Update_time", "check_time" as "Check_time",
+ *     "collation" as "Collation", "checksum" as "Checksum", "create_options" as "Create_options", "comment" as "Comment"
+ * FROM
+ * (
+ *     SELECT pg_class.relname AS "name",
+ *         CASE WHEN pg_class.relkind='v' THEN NULL 
+ *         WHEN POSITION('ustore' IN pg_class.reloptions::TEXT) > 0 THEN 'USTORE' ELSE 'ASTORE' END AS "engine",
+ *         NULL AS "version",
+ *         CASE WHEN pg_class.relkind='v' THEN NULL 
+ *         WHEN POSITION('column' IN pg_class.reloptions::TEXT) > 0 THEN 'COLUMN' ELSE 'ROW' END AS "row_format",
+ *         pg_class.reltuples as "rows",
+ *         0 as "avg_row_length",
+ *         pg_relation_size(pg_class.oid) as "data_length",
+ *         0 as "max_data_length",
+ *         pg_indexes_size(pg_class.oid) as "index_length",
+ *         0 as "data_free",
+ *         (pg_sequence_last_value(pg_depend.refobjid)).last_value as "auto_increment",
+ *         date_trunc('second', pg_object.ctime::timestamp without time zone) as "create_time",
+ *         date_trunc('second', pg_object.mtime::timestamp without time zone) as "update_time",
+ *         NULL as "check_time",
+ *         current_setting('lc_collate') as "collation",
+ *         NULL as "checksum",
+ *         pg_class.reloptions::TEXT as "create_options",
+ *         pg_description.description as "comment"
+ *     FROM
+ *         pg_class
+ *         LEFT JOIN pg_namespace pg_namespace ON pg_class.relnamespace = pg_namespace.oid
+ *         LEFT JOIN pg_object ON pg_class.oid = pg_object.object_oid
+ *         LEFT JOIN pg_description ON pg_class.oid = pg_description.classoid
+ *         LEFT JOIN pg_constraint ON pg_class.oid=pg_constraint.conrelid and pg_constraint.contype='p' and array_length(pg_constraint.conkey, 1)=1
+ *         LEFT JOIN pg_attrdef ON pg_class.oid=pg_attrdef.adrelid and pg_attrdef.adnum=pg_constraint.conkey[1]
+ *         LEFT JOIN pg_depend ON pg_attrdef.oid=pg_depend.objid and pg_depend.refobjsubid=0
+ *     WHERE
+ *         pg_class.relkind in ('r', 'v') 
+ *         AND pg_namespace.nspname = `current_schema or input schemaname` // the input parameter, not valid sql
+ *         AND a_expr // where clause or like 'pattern' converted
+ * )
+ * 
+ * @param schemaName
+ * @param likeWhereOpt
+ * @param isLikeExpr
+ * @return The parsed tree for 'SHOW TABLE STATUS [{FROM|IN} dbname] [LIKE 'pattern' | WHERE expr]'
+*/
+SelectStmt* makeShowTableStatusQuery(char* schemaName, Node* likeWhereOpt, bool isLikeExpr)
+{
+    if (schemaName == NULL) {
+        schemaName = DatumGetCString(DirectFunctionCall1(current_schema, PointerGetDatum(NULL)));
+    }
+    (void)plps_check_schema_or_table_valid(schemaName, NULL, FALSE);
+
+    List* upperColumns = (List*)list_make1(plpsMakeNormalColumn(NULL, "name", "Name"));
+    upperColumns = lappend(upperColumns, plpsMakeNormalColumn(NULL, "engine", "Engine"));
+    upperColumns = lappend(upperColumns, plpsMakeNormalColumn(NULL, "version", "Version"));
+    upperColumns = lappend(upperColumns, plpsMakeNormalColumn(NULL, "row_format", "Row_format"));
+    upperColumns = lappend(upperColumns, plpsMakeNormalColumn(NULL, "rows", "Rows"));
+    upperColumns = lappend(upperColumns, plpsMakeNormalColumn(NULL, "avg_row_length", "Avg_row_length"));
+    upperColumns = lappend(upperColumns, plpsMakeNormalColumn(NULL, "data_length", "Data_length"));
+    upperColumns = lappend(upperColumns, plpsMakeNormalColumn(NULL, "max_data_length", "Max_data_length"));
+    upperColumns = lappend(upperColumns, plpsMakeNormalColumn(NULL, "index_length", "Index_length"));
+    upperColumns = lappend(upperColumns, plpsMakeNormalColumn(NULL, "data_free", "Data_free"));
+    upperColumns = lappend(upperColumns, plpsMakeNormalColumn(NULL, "auto_increment", "Auto_increment"));
+    upperColumns = lappend(upperColumns, plpsMakeNormalColumn(NULL, "create_time", "Create_time"));
+    upperColumns = lappend(upperColumns, plpsMakeNormalColumn(NULL, "update_time", "Update_time"));
+    upperColumns = lappend(upperColumns, plpsMakeNormalColumn(NULL, "check_time", "Check_time"));
+    upperColumns = lappend(upperColumns, plpsMakeNormalColumn(NULL, "collation", "Collation"));
+    upperColumns = lappend(upperColumns, plpsMakeNormalColumn(NULL, "checksum", "Checksum"));
+    upperColumns = lappend(upperColumns, plpsMakeNormalColumn(NULL, "create_options", "Create_options"));
+    upperColumns = lappend(upperColumns, plpsMakeNormalColumn(NULL, "comment", "Comment"));
+
+    List* lowerColumns = makeShowTableStatusColumns();
+    Node* joinTable = makeShowTableStatusJoinTable();
+
+    if (isLikeExpr && likeWhereOpt != NULL) {
+        likeWhereOpt = (Node*)makeSimpleA_Expr(AEXPR_OP, "~~", plpsMakeColumnRef(PG_CLASS_NAME, "relname"), likeWhereOpt, -1);
+    }
+
+    Node* wc = makeShowTablesWhereTarget(schemaName, likeWhereOpt);
+
+    SelectStmt* subSelect = plpsMakeSelectStmt(lowerColumns, list_make1(joinTable), wc, NULL);
+
+    List* fl = list_make1(makeRangeSubselect(subSelect));
+
+    SelectStmt* stmt = plpsMakeSelectStmt(upperColumns, fl, NULL, NULL);
     return stmt;
 }

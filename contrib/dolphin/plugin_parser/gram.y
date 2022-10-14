@@ -563,6 +563,7 @@ static SelectStmt *MakeShowGrantStmt(char *arg, int location, core_yyscan_t yysc
 		CreatePublicationStmt AlterPublicationStmt
 		CreateSubscriptionStmt AlterSubscriptionStmt DropSubscriptionStmt DelimiterStmt CheckSumTableStmt
 		OptimizeStmt ShrinkStmt
+		FlushStmt
 
 /* <DB4AI> */
 /* SNAPSHOTS */
@@ -1065,7 +1066,7 @@ static SelectStmt *MakeShowGrantStmt(char *arg, int location, core_yyscan_t yysc
 	EXCLUDE EXCLUDED EXCLUDING EXCLUSIVE EXECUTE EXISTS EXPIRED_P EXPLAIN
 	EXTENDED EXTENSION EXTERNAL EXTRACT
 
-	FALSE_P FAMILY FAST FENCED FETCH FIELDS FILEHEADER_P FILL_MISSING_FIELDS FILLER FILTER FIRST_P FIXED_P FLOAT_P FOLLOWING FOLLOWS_P FOR FORCE FOREIGN FORMATTER FORWARD
+	FALSE_P FAMILY FAST FENCED FETCH FIELDS FILEHEADER_P FILL_MISSING_FIELDS FILLER FILTER FIRST_P FIXED_P FLOAT_P FLUSH FOLLOWING FOLLOWS_P FOR FORCE FOREIGN FORMATTER FORWARD
 	FEATURES // DB4AI
 	FREEZE FROM FULL FUNCTION FUNCTIONS
 
@@ -1085,7 +1086,7 @@ static SelectStmt *MakeShowGrantStmt(char *arg, int location, core_yyscan_t yysc
 
 	LABEL LANGUAGE LARGE_P LAST_DAY_FUNC LAST_P LC_COLLATE_P LC_CTYPE_P LEADING LEAKPROOF
 	LEAST LESS LEFT LEVEL LIKE LIMIT LIST LISTEN LOAD LOCAL LOCALTIME LOCALTIMESTAMP
-	LOCATE LOCATION LOCK_P LOCKED LOG_P LOGGING LOGIN_ANY LOGIN_FAILURE LOGIN_SUCCESS LOGOUT LOOP LOW_PRIORITY
+	LOCATE LOCATION LOCK_P LOCKED LOG_P LOGGING LOGIN_ANY LOGIN_FAILURE LOGIN_SUCCESS LOGOUT LOGS LOOP LOW_PRIORITY
 	MAPPING MASKING MASTER MATCH MATERIALIZED MATCHED MAXEXTENTS MAXSIZE MAXTRANS MAXVALUE MEDIUMINT MERGE MICROSECOND_P MID MINUS_P MINUTE_P MINVALUE MINEXTENTS MOD MODE MODIFY_P MONTH_P MOVE MOVEMENT
 	MODEL // DB4AI
 	MODIFIES
@@ -1540,6 +1541,7 @@ stmt :
 			| /*EMPTY*/
 				{ $$ = NULL; }
 			| DelimiterStmt
+			| FlushStmt
 		;
 
 /*****************************************************************************
@@ -3358,6 +3360,21 @@ VariableShowStmt:
 			| SHOW FULL TABLES OptDbName OptLikeOrWhere
 				{
 					SelectStmt *n = makeShowTablesQuery(TRUE, $4, $5->like_or_where, $5->is_like);
+					$$ = (Node *) n;
+				}
+			| SHOW TABLE STATUS
+				{
+					SelectStmt *n = makeShowTableStatusQuery(NULL, NULL, FALSE);
+					$$ = (Node *) n;
+				}
+			| SHOW TABLE STATUS LikeOrWhere
+				{
+					SelectStmt *n = makeShowTableStatusQuery(NULL, $4->like_or_where, $4->is_like);
+					$$ = (Node *) n;
+				}
+			| SHOW TABLE STATUS from_in ColId OptLikeOrWhere
+				{
+					SelectStmt *n = makeShowTableStatusQuery($5, $6->like_or_where, $6->is_like);
 					$$ = (Node *) n;
 				}
 			| SHOW opt_full_fields from_in dolphin_qualified_name OptDbName OptLikeOrWhere
@@ -30185,6 +30202,14 @@ DolphinColLabel:	IDENT									{ $$ = MakeDolphinStringByChar($1->str, $1->is_qu
 						}
 		;
 
+FlushStmt:
+		FLUSH BINARY LOGS
+			{
+				SelectStmt *n = makeFlushBinaryLogsQuery();
+				$$ = (Node *) n;
+			}
+		;
+
 
 /*
  * Keyword category lists.  Generally, every keyword present in
@@ -30370,6 +30395,7 @@ unreserved_keyword_without_key:
 			| FILLER
 			| FILTER
 			| FIRST_P
+			| FLUSH
 			| FOLLOWING
 			| FOLLOWS_P
 			| FORCE
@@ -30436,6 +30462,7 @@ unreserved_keyword_without_key:
 			| LOGIN_SUCCESS
 			| LOGIN_FAILURE
 			| LOGOUT
+			| LOGS
 			| LOOP
 			| MAPPING
 			| MASKING
