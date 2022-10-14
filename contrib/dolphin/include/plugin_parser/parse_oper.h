@@ -55,4 +55,9 @@ extern Expr* make_op(ParseState* pstate, List* opname, Node* ltree, Node* rtree,
 extern Expr* make_scalar_array_op(ParseState* pstate, List* opname, bool useOr, Node* ltree, Node* rtree, int location);
 extern Oid OperatorLookup(List* operatorName, Oid leftObjectId, Oid rightObjectId, bool* defined);
 extern void InvalidateOprCacheCallBack(Datum arg, int cacheid, uint32 hashvalue);
+
+/* Value of location in expression datetime + interval */
+#define TIMESTAMP_OP_INTERVAL_LOCATION 37
+/* Value of location in expression interval + datetime */
+#define INTERVAL_OP_TIMESTAMP_LOCATION 25
 #endif /* PARSE_OPER_H */
