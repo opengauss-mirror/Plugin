@@ -912,7 +912,7 @@ static SelectStmt *MakeShowGrantStmt(char *arg, int location, core_yyscan_t yysc
 				subpartitioning_clause range_subpartitioning_clause hash_subpartitioning_clause
 				list_subpartitioning_clause subpartition_item opt_subpartition_index_def
                 range_subpartition_index_list range_subpartition_index_item
-%type <list>	range_partition_definition_list list_partition_definition_list hash_partition_definition_list maxValueList
+%type <list>	range_partition_definition_list list_partition_definition_list hash_partition_definition_list maxValueList maxValueList_with_opt_parens
 			column_item_list tablespaceList opt_interval_tablespaceList
 			split_dest_partition_define_list split_dest_listsubpartition_define_list split_dest_rangesubpartition_define_list
 			range_start_end_list range_less_than_list opt_range_every_list subpartition_definition_list
@@ -4218,14 +4218,14 @@ alter_partition_cmd:
 				$$ = $2;
 			}
 		/* ALTER TABLE MODIFY PARTITION ADD SUBPARTITION */
-		| MODIFY_PARTITION name ADD_SUBPARTITION name VALUES LESS THAN '(' maxValueList ')' OptTableSpace
+		| MODIFY_PARTITION name ADD_SUBPARTITION name VALUES LESS THAN maxValueList_with_opt_parens OptTableSpace
 			{
 				RangePartitionDefState *p = makeNode(RangePartitionDefState);
 				AlterTableCmd *n = makeNode(AlterTableCmd);
 				AddSubPartitionState *s = makeNode(AddSubPartitionState);
 				p->partitionName = $4;
-				p->boundary = $9;
-				p->tablespacename = $11;
+				p->boundary = $8;
+				p->tablespacename = $9;
 				s->subPartitionList = list_make1(p);
 				s->partitionName = $2;
 				n->subtype = AT_AddSubPartition;
@@ -4264,17 +4264,17 @@ alter_partition_cmd:
 				$$ = (Node *)n;
 			}
 		/* ALTER TABLE DROP PARTITION */
-		| DROP_PARTITION FOR '(' maxValueList ')' OptGPI
+		| DROP_PARTITION FOR maxValueList_with_opt_parens OptGPI
 			{
 				RangePartitionDefState *p = makeNode(RangePartitionDefState);
 				AlterTableCmd *n = makeNode(AlterTableCmd);
 
-				p->boundary = $4;
+				p->boundary = $3;
 				n->subtype = AT_DropPartition;
 				n->def = (Node*)p;
 				n->behavior = DROP_CASCADE;
 				n->missing_ok = FALSE;
-				n->alterGPI = $6;
+				n->alterGPI = $4;
 				$$ = (Node *)n;
 			}
 		/* ALTER TABLE DROP SUBPARTITION */
@@ -4303,37 +4303,37 @@ alter_partition_cmd:
 				$$ = (Node*)n;
 			}
 		/* split one partition into two partition */
-		| SPLIT PARTITION name AT '(' maxValueList ')' INTO
+		| SPLIT PARTITION name AT maxValueList_with_opt_parens INTO
 		  '(' split_dest_partition_define_list ')' OptGPI
 			{
 				AlterTableCmd	*n = makeNode(AlterTableCmd);
 				SplitPartitionState	*s = makeNode(SplitPartitionState);
 
 				s->src_partition_name = $3;
-				s->split_point = $6;
-				s->dest_partition_define_list = $10;
+				s->split_point = $5;
+				s->dest_partition_define_list = $8;
 				s->partition_for_values = NULL;
 
 				n->def = (Node*)s;
 				n->subtype = AT_SplitPartition;
-				n->alterGPI = $12;
+				n->alterGPI = $10;
 				$$ = (Node*)n;
 			}
 		/* split one partition into two partition */
-		| SPLIT PARTITION_FOR '(' maxValueList ')' AT '(' maxValueList ')' INTO
+		| SPLIT PARTITION_FOR maxValueList_with_opt_parens AT maxValueList_with_opt_parens INTO
 		  '(' split_dest_partition_define_list ')' OptGPI
 			{
 				AlterTableCmd	*n = makeNode(AlterTableCmd);
 				SplitPartitionState	*s = makeNode(SplitPartitionState);
 
-				s->partition_for_values = $4;
-				s->split_point = $8;
-				s->dest_partition_define_list = $12;
+				s->partition_for_values = $3;
+				s->split_point = $5;
+				s->dest_partition_define_list = $8;
 				s->src_partition_name = NULL;
 
 				n->def = (Node*)s;
 				n->subtype = AT_SplitPartition;
-				n->alterGPI = $14;
+				n->alterGPI = $10;
 				$$ = (Node*)n;
 			}
 		/*split one partition into multiple partition*/
@@ -4352,26 +4352,26 @@ alter_partition_cmd:
 				n->alterGPI = $8;
 				$$ = (Node*)n;
 			}
-		| SPLIT PARTITION_FOR '(' maxValueList ')' INTO '(' range_partition_definition_list ')' OptGPI
+		| SPLIT PARTITION_FOR maxValueList_with_opt_parens INTO '(' range_partition_definition_list ')' OptGPI
 			{
 				AlterTableCmd	*n = makeNode(AlterTableCmd);
 				SplitPartitionState	*s = makeNode(SplitPartitionState);
 
-				s->partition_for_values = $4;
-				s->dest_partition_define_list = $8;
+				s->partition_for_values = $3;
+				s->dest_partition_define_list = $6;
 				s->src_partition_name = NULL;
 				s->split_point = NULL;
 
 				n->def = (Node*)s;
 				n->subtype = AT_SplitPartition;
-				n->alterGPI = $10;
+				n->alterGPI = $8;
 				$$ = (Node*)n;
 			}
 		/* split one list subpartition into two subpartition */
-		| SPLIT SUBPARTITION name VALUES '(' maxValueList ')' INTO
+		| SPLIT SUBPARTITION name VALUES maxValueList_with_opt_parens INTO
 		  '(' split_dest_listsubpartition_define_list ')' OptGPI
 			{
-				if (list_length($10) != 2)  {
+				if (list_length($8) != 2)  {
 					ereport(ERROR,
 						(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
 							errmsg("Un-support feature"),
@@ -4381,21 +4381,21 @@ alter_partition_cmd:
 				SplitPartitionState	*s = makeNode(SplitPartitionState);
 
 				s->src_partition_name = $3;
-				s->newListSubPartitionBoundry = $6;
-				s->dest_partition_define_list = $10;
+				s->newListSubPartitionBoundry = $5;
+				s->dest_partition_define_list = $8;
 				s->partition_for_values = NULL;
 				s->splitType = LISTSUBPARTITIION;
 
 				n->def = (Node*)s;
 				n->subtype = AT_SplitSubPartition;
-				n->alterGPI = $12;
+				n->alterGPI = $10;
 				$$ = (Node*)n;
 			}
 		/* split one range subpartition into two subpartition */
-		| SPLIT SUBPARTITION name AT '(' maxValueList ')' INTO
+		| SPLIT SUBPARTITION name AT maxValueList_with_opt_parens INTO
 		  '(' split_dest_rangesubpartition_define_list ')' OptGPI
 			{
-				if (list_length($10) != 2)  {
+				if (list_length($8) != 2)  {
 					ereport(ERROR,
 						(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
 							errmsg("Un-support feature"),
@@ -4405,14 +4405,14 @@ alter_partition_cmd:
 				SplitPartitionState	*s = makeNode(SplitPartitionState);
 
 				s->src_partition_name = $3;
-				s->split_point = $6;
-				s->dest_partition_define_list = $10;
+				s->split_point = $5;
+				s->dest_partition_define_list = $8;
 				s->partition_for_values = NULL;
 				s->splitType = RANGESUBPARTITIION;
 
 				n->def = (Node*)s;
 				n->subtype = AT_SplitSubPartition;
-				n->alterGPI = $12;
+				n->alterGPI = $10;
 				$$ = (Node*)n;
 			}
 		| REORGANIZE PARTITION name_list INTO '(' range_partition_definition_list ')'
@@ -4442,17 +4442,17 @@ alter_partition_cmd:
 				$$ = (Node*)n;
 			}
 		/* truncate partition */
-		| TRUNCATE PARTITION_FOR '(' maxValueList ')' OptGPI
+		| TRUNCATE PARTITION_FOR maxValueList_with_opt_parens OptGPI
 			{
 
 				RangePartitionDefState *p = makeNode(RangePartitionDefState);
 				AlterTableCmd *n = makeNode(AlterTableCmd);
 
-				p->boundary = $4;
+				p->boundary = $3;
 				n->subtype = AT_TruncatePartition;
 				n->def = (Node*)p;
 				n->missing_ok = FALSE;
-				n->alterGPI = $6;
+				n->alterGPI = $4;
 				$$ = (Node *)n;
 
 			}
@@ -4500,16 +4500,16 @@ move_partition_cmd:
 				$$ = (Node *)n;
 			}
 		/* ALTER TABLE <name> MOVE PARTITION FOR (...) TABLESPACE <tablespacename> */
-		| MOVE PARTITION_FOR '(' maxValueList ')' TABLESPACE name
+		| MOVE PARTITION_FOR maxValueList_with_opt_parens TABLESPACE name
 			{
 				RangePartitionDefState *p = makeNode(RangePartitionDefState);
 				AlterTableCmd *n = makeNode(AlterTableCmd);
 
-				p->boundary = $4;
+				p->boundary = $3;
 
 				n->subtype = AT_SetPartitionTableSpace;
 				n->def = (Node*)p;
-				n->name = $7;
+				n->name = $5;
 				$$ = (Node *)n;
 			}
 		;
@@ -4561,16 +4561,34 @@ exchange_partition_cmd:
 			}
 
 		/* exchange partition */
-		| EXCHANGE PARTITION_FOR '(' maxValueList ')'
+		| EXCHANGE PARTITION_FOR maxValueList_with_opt_parens
 		  WITH TABLE relation_expr opt_verbose OptGPI
 			{
 				AlterTableCmd *n = makeNode(AlterTableCmd);
 				RangePartitionDefState *p = makeNode(RangePartitionDefState);
 
-				p->boundary = $4;
+				p->boundary = $3;
 
 				n->subtype = AT_ExchangePartition;
-				n->exchange_with_rel = $8;
+				n->exchange_with_rel = $6;
+				n->check_validation = TRUE;
+				n->exchange_verbose = $7;
+				n->def = (Node*)p;
+				n->missing_ok = FALSE;
+				n->alterGPI = $8;
+				$$ = (Node *)n;
+			}
+
+		| EXCHANGE PARTITION_FOR maxValueList_with_opt_parens
+		  WITH TABLE relation_expr WITH VALIDATION opt_verbose OptGPI
+			{
+				AlterTableCmd *n = makeNode(AlterTableCmd);
+				RangePartitionDefState *p = makeNode(RangePartitionDefState);
+
+				p->boundary = $3;
+
+				n->subtype = AT_ExchangePartition;
+				n->exchange_with_rel = $6;
 				n->check_validation = TRUE;
 				n->exchange_verbose = $9;
 				n->def = (Node*)p;
@@ -4579,38 +4597,20 @@ exchange_partition_cmd:
 				$$ = (Node *)n;
 			}
 
-		| EXCHANGE PARTITION_FOR '(' maxValueList ')'
-		  WITH TABLE relation_expr WITH VALIDATION opt_verbose OptGPI
-			{
-				AlterTableCmd *n = makeNode(AlterTableCmd);
-				RangePartitionDefState *p = makeNode(RangePartitionDefState);
-
-				p->boundary = $4;
-
-				n->subtype = AT_ExchangePartition;
-				n->exchange_with_rel = $8;
-				n->check_validation = TRUE;
-				n->exchange_verbose = $11;
-				n->def = (Node*)p;
-				n->missing_ok = FALSE;
-				n->alterGPI = $12;
-				$$ = (Node *)n;
-			}
-
-		| EXCHANGE PARTITION_FOR '(' maxValueList ')'
+		| EXCHANGE PARTITION_FOR maxValueList_with_opt_parens
 		  WITH TABLE relation_expr WITHOUT VALIDATION OptGPI
 			{
 				AlterTableCmd *n = makeNode(AlterTableCmd);
 				RangePartitionDefState *p = makeNode(RangePartitionDefState);
 
-				p->boundary = $4;
+				p->boundary = $3;
 
 				n->subtype = AT_ExchangePartition;
-				n->exchange_with_rel = $8;
+				n->exchange_with_rel = $6;
 				n->check_validation = FALSE;
 				n->def = (Node*)p;
 				n->missing_ok = FALSE;
-				n->alterGPI = $11;
+				n->alterGPI = $9;
 				$$ = (Node *)n;
 			}
 		;
@@ -5992,14 +5992,14 @@ add_partition_cmds_for_bdatabase:
  			;
 
 add_partition_cmd:
-		name VALUES LESS THAN '(' maxValueList ')' opt_part_options
+		name VALUES LESS THAN maxValueList_with_opt_parens opt_part_options
 			{
 				RangePartitionDefState *p = makeNode(RangePartitionDefState);
 				AlterTableCmd *n = makeNode(AlterTableCmd);
 				AddPartitionState *s = makeNode(AddPartitionState);
 				p->partitionName = $1;
-				p->boundary = $6;
-				p->tablespacename = $8;
+				p->boundary = $5;
+				p->tablespacename = $6;
 				s->partitionList = list_make1(p);
 				s->isStartEnd = false;
 				n->subtype = AT_AddPartition;
@@ -6007,48 +6007,48 @@ add_partition_cmd:
 				$$ = (Node *)n;
 			}
 		/* ALTER TABLE ADD PARTITION: use START/END */
-		| name START '(' maxValueList ')'  END_P '(' maxValueList ')' opt_range_every_list opt_part_options
+		| name START maxValueList_with_opt_parens  END_P maxValueList_with_opt_parens opt_range_every_list opt_part_options
 			{
 				RangePartitionStartEndDefState *p = makeNode(RangePartitionStartEndDefState);
 				AlterTableCmd *n = makeNode(AlterTableCmd);
 				AddPartitionState *s = makeNode(AddPartitionState);
 				p->partitionName = $1;
-				p->startValue = $4;
-				p->endValue = $8;
-				p->everyValue = $10;
-				p->tableSpaceName = $11;
+				p->startValue = $3;
+				p->endValue = $5;
+				p->everyValue = $6;
+				p->tableSpaceName = $7;
 				s->partitionList = list_make1(p);
 				s->isStartEnd = true;
 				n->subtype = AT_AddPartition;
 				n->def = (Node*)s;
 				$$ = (Node *)n;
 			}
-		| name END_P '(' maxValueList ')' opt_part_options
+		| name END_P maxValueList_with_opt_parens opt_part_options
 			{
 				RangePartitionStartEndDefState *p = makeNode(RangePartitionStartEndDefState);
 				AlterTableCmd *n = makeNode(AlterTableCmd);
 				AddPartitionState *s = makeNode(AddPartitionState);
 				p->partitionName = $1;
 				p->startValue = NIL;
-				p->endValue = $4;
+				p->endValue = $3;
 				p->everyValue = NIL;
-				p->tableSpaceName = $6;
+				p->tableSpaceName = $4;
 				s->partitionList = list_make1(p);
 				s->isStartEnd = true;
 				n->subtype = AT_AddPartition;
 				n->def = (Node*)s;
 				$$ = (Node *)n;
 			}
-		| name START '(' maxValueList ')' opt_part_options
+		| name START maxValueList_with_opt_parens opt_part_options
 			{
 				RangePartitionStartEndDefState *p = makeNode(RangePartitionStartEndDefState);
 				AlterTableCmd *n = makeNode(AlterTableCmd);
 				AddPartitionState *s = makeNode(AddPartitionState);
 				p->partitionName = $1;
-				p->startValue = $4;
+				p->startValue = $3;
 				p->endValue = NIL;
 				p->everyValue = NIL;
-				p->tableSpaceName = $6;
+				p->tableSpaceName = $4;
 				s->partitionList = list_make1(p);
 				s->isStartEnd = true;
 				n->subtype = AT_AddPartition;
@@ -6087,15 +6087,15 @@ add_partition_cmd:
 				$$ = (Node *)n;
 			}
 		| name VALUES LESS THAN
-		'(' maxValueList ')' opt_part_options '(' subpartition_definition_list ')'
+		maxValueList_with_opt_parens opt_part_options '(' subpartition_definition_list ')'
 			{
 				RangePartitionDefState *p = makeNode(RangePartitionDefState);
 				AlterTableCmd *n = makeNode(AlterTableCmd);
 				AddPartitionState *s = makeNode(AddPartitionState);
 				p->partitionName = $1;
-				p->boundary = $6;
-				p->tablespacename = $8;
-				p->subPartitionDefState = $10;
+				p->boundary = $5;
+				p->tablespacename = $6;
+				p->subPartitionDefState = $8;
 				int i = 0;
 				ListCell *elem = NULL;
 				List *parts = p->subPartitionDefState;
@@ -7796,12 +7796,12 @@ subpartition_item:
 				$$ = (Node*)n;
 			}
 		| SUBPARTITION name VALUES LESS THAN
-		'(' maxValueList ')' opt_part_options
+		maxValueList_with_opt_parens opt_part_options
 			{
 				RangePartitionDefState *n = makeNode(RangePartitionDefState);
 				n->partitionName = $2;
-				n->boundary = $7;
-				n->tablespacename = $9;
+				n->boundary = $6;
+				n->tablespacename = $7;
 
 				$$ = (Node *)n;
 			}
@@ -8012,23 +8012,23 @@ hash_partition_item:
 
 range_less_than_item:
 		PARTITION name VALUES LESS THAN
-		'(' maxValueList ')' opt_part_options
+		maxValueList_with_opt_parens opt_part_options
 			{
 				RangePartitionDefState *n = makeNode(RangePartitionDefState);
 				n->partitionName = $2;
-				n->boundary = $7;
-				n->tablespacename = $9;
+				n->boundary = $6;
+				n->tablespacename = $7;
 
 				$$ = (Node *)n;
 			}
 		| PARTITION name VALUES LESS THAN
-		'(' maxValueList ')' opt_part_options '(' subpartition_definition_list ')'
+		maxValueList_with_opt_parens opt_part_options '(' subpartition_definition_list ')'
 			{
 				RangePartitionDefState *n = makeNode(RangePartitionDefState);
 				n->partitionName = $2;
-				n->boundary = $7;
-				n->tablespacename = $9;
-				n->subPartitionDefState = $11;
+				n->boundary = $6;
+				n->tablespacename = $7;
+				n->subPartitionDefState = $9;
 				int i = 0;
 				ListCell *elem = NULL;
 				List *parts = n->subPartitionDefState;
@@ -8057,45 +8057,45 @@ range_start_end_list:
 		;
 	
 range_start_end_item:
-		PARTITION name START '(' maxValueList ')'  END_P '(' maxValueList ')' opt_range_every_list opt_part_options
+		PARTITION name START maxValueList_with_opt_parens  END_P maxValueList_with_opt_parens opt_range_every_list opt_part_options
 			{
 				RangePartitionStartEndDefState *n = makeNode(RangePartitionStartEndDefState);
 				n->partitionName = $2;
-				n->startValue = $5;
-				n->endValue = $9;
-				n->everyValue = $11;
-				n->tableSpaceName = $12;
+				n->startValue = $4;
+				n->endValue = $6;
+				n->everyValue = $7;
+				n->tableSpaceName = $8;
 
 				$$ = (Node *)n;
 			}
-		| PARTITION name END_P '(' maxValueList ')' opt_part_options
+		| PARTITION name END_P maxValueList_with_opt_parens opt_part_options
 			{
 				RangePartitionStartEndDefState *n = makeNode(RangePartitionStartEndDefState);
 				n->partitionName = $2;
 				n->startValue = NIL;
-				n->endValue = $5;
+				n->endValue = $4;
 				n->everyValue = NIL;
-				n->tableSpaceName = $7;
+				n->tableSpaceName = $5;
 
 				$$ = (Node *)n;
 			}
-		| PARTITION name START '(' maxValueList ')' opt_part_options
+		| PARTITION name START maxValueList_with_opt_parens opt_part_options
 			{
 				RangePartitionStartEndDefState *n = makeNode(RangePartitionStartEndDefState);
 				n->partitionName = $2;
-				n->startValue = $5;
+				n->startValue = $4;
 				n->endValue = NIL;
 				n->everyValue = NIL;
-				n->tableSpaceName = $7;
+				n->tableSpaceName = $5;
 
 				$$ = (Node *)n;
 			}
 		;
 
 opt_range_every_list:
-		EVERY '(' maxValueList ')' 
+		EVERY maxValueList_with_opt_parens 
 			{
-				$$ = $3;
+				$$ = $2;
 			}
 		| /* empty */ { $$ = NIL; }
 		;
@@ -8104,6 +8104,22 @@ partition_name:
 		ColId
 			{
 				$$ = makeRangeVar(NULL, $1, @1);
+			}
+		;
+
+maxValueList_with_opt_parens:
+		'(' maxValueList ')'
+			{
+				$$ = $2;
+			}
+		| MAXVALUE
+			{
+				Const *n = makeNode(Const);
+
+				n->ismaxvalue = true;
+				n->location = @1;
+
+				$$ = list_make1((Node *)n);
 			}
 		;
 
@@ -9953,12 +9969,12 @@ range_slice_less_than_list:
 		;
 
 range_slice_less_than_item:
-		SLICE name VALUES LESS THAN '(' maxValueList ')' OptDatanodeName
+		SLICE name VALUES LESS THAN maxValueList_with_opt_parens OptDatanodeName
 			{
 				RangePartitionDefState *n = makeNode(RangePartitionDefState);
 				n->partitionName = $2;
-				n->boundary = $7;
-				n->tablespacename = $9;
+				n->boundary = $6;
+				n->tablespacename = $7;
 
 				$$ = (Node *)n;
 			}
@@ -9976,31 +9992,31 @@ range_slice_start_end_list:
 		;
 
 range_slice_start_end_item:
-		SLICE name START '(' maxValueList ')' END_P '(' maxValueList ')' opt_range_every_list
+		SLICE name START maxValueList_with_opt_parens END_P maxValueList_with_opt_parens opt_range_every_list
 			{
 				RangePartitionStartEndDefState *n = makeNode(RangePartitionStartEndDefState);
 				n->partitionName = $2;
-				n->startValue = $5;
-				n->endValue = $9;
-				n->everyValue = $11;
+				n->startValue = $4;
+				n->endValue = $6;
+				n->everyValue = $7;
 
 				$$ = (Node *)n;
 			}
-		| SLICE name END_P '(' maxValueList ')'
+		| SLICE name END_P maxValueList_with_opt_parens
 			{
 				RangePartitionStartEndDefState *n = makeNode(RangePartitionStartEndDefState);
 				n->partitionName = $2;
 				n->startValue = NIL;
-				n->endValue = $5;
+				n->endValue = $4;
 				n->everyValue = NIL;
 
 				$$ = (Node *)n;
 			}
-		| SLICE name START '(' maxValueList ')'
+		| SLICE name START maxValueList_with_opt_parens
 			{
 				RangePartitionStartEndDefState *n = makeNode(RangePartitionStartEndDefState);
 				n->partitionName = $2;
-				n->startValue = $5;
+				n->startValue = $4;
 				n->endValue = NIL;
 				n->everyValue = NIL;
 
@@ -18256,28 +18272,28 @@ RenameStmt: ALTER AGGREGATE func_name aggr_args RENAME TO name
 					$$ = (Node *)n;
 				}
 
-			| ALTER TABLE relation_expr RENAME_PARTITION FOR '(' maxValueList ')' TO name
+			| ALTER TABLE relation_expr RENAME_PARTITION FOR maxValueList_with_opt_parens TO name
 			    {
 			        RenameStmt *n = makeNode(RenameStmt);
 			        n->renameType = OBJECT_PARTITION;
 					n->relationType = OBJECT_TABLE;
 			        n->relation = $3;
-			        n->object = $7;
+			        n->object = $6;
 			        n->subname = NULL;
-			        n->newname = $10;
+			        n->newname = $8;
 			        n->missing_ok = false;
 			        $$ = (Node *)n;
 			    }
 
-			| ALTER TABLE IF_P EXISTS relation_expr RENAME_PARTITION FOR '(' maxValueList ')' TO name
+			| ALTER TABLE IF_P EXISTS relation_expr RENAME_PARTITION FOR maxValueList_with_opt_parens TO name
 			    {
 			        RenameStmt *n = makeNode(RenameStmt);
 			        n->renameType = OBJECT_PARTITION;
 					n->relationType = OBJECT_TABLE;
 			        n->relation = $5;
-			        n->object = $9;
+			        n->object = $8;
 			        n->subname = NULL;
-			        n->newname = $12;
+			        n->newname = $10;
 			        n->missing_ok = true;
 			        $$ = (Node *)n;
 			    }

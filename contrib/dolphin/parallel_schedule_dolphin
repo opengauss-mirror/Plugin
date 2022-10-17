@@ -79,7 +79,7 @@ test: alter_function_test/alter_function  alter_function_test/alter_procedure al
 
 test: network2 use_dbname show_create view_definer_test insert_set show_create_database show_variables
 
-test: partition_test1 partition_test2 partition_test3 partition_test4
+test: partition_test1 partition_test2 partition_test3 partition_test4 partition_maxvalue_test
 
 test: test_table_index
 
