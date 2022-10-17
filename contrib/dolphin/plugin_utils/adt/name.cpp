@@ -29,6 +29,7 @@
 #include "utils/array.h"
 #include "utils/builtins.h"
 #include "utils/lsyscache.h"
+#include "plugin_postgres.h"
 
 /*****************************************************************************
  *	 USER I/O ROUTINES (none)												 *
@@ -279,3 +280,9 @@ Datum current_schemas(PG_FUNCTION_ARGS)
     PG_RETURN_POINTER(array);
 }
 
+PG_FUNCTION_INFO_V1_PUBLIC(get_b_database);
+extern "C" DLL_PUBLIC Datum get_b_database(PG_FUNCTION_ARGS);
+Datum get_b_database(PG_FUNCTION_ARGS)
+{
+    return current_schema(fcinfo);
+}

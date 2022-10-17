@@ -113,3 +113,7 @@ DROP FUNCTION IF EXISTS pg_catalog.ShowAllGUCReset(text) CASCADE;
 CREATE OR REPLACE FUNCTION pg_catalog.ShowAllGUCReset (
 IN isReset boolean, OUT Variable_name text, OUT Value text
 ) RETURNS setof record LANGUAGE C VOLATILE STRICT as '$libdir/dolphin',  'ShowAllGUCReset';
+
+DROP FUNCTION IF EXISTS pg_catalog.database() CASCADE;
+CREATE OR REPLACE FUNCTION pg_catalog.database(
+) RETURNS name LANGUAGE C STABLE STRICT AS '$libdir/dolphin','get_b_database';
