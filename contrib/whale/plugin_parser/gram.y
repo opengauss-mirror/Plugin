@@ -264,6 +264,8 @@ static bool CheckWhetherInColList(char *colname, List *col_list);
 static int GetFillerColIndex(char *filler_col_name, List *col_list);
 static void RemoveFillerCol(List *filler_list, List *col_list);
 static int errstate;
+
+static void setDelimiterName(core_yyscan_t yyscanner, char*input, VariableSetStmt*n);
 %}
 
 %define api.pure
@@ -355,7 +357,7 @@ static int errstate;
 		RuleActionStmt RuleActionStmtOrEmpty RuleStmt
 		SecLabelStmt SelectStmt TimeCapsuleStmt TransactionStmt TruncateStmt CallFuncStmt
 		UnlistenStmt UpdateStmt VacuumStmt
-		VariableResetStmt VariableSetStmt VariableShowStmt VerifyStmt ShutdownStmt
+		VariableResetStmt VariableSetStmt VariableShowStmt VerifyStmt ShutdownStmt VariableMultiSetStmt
 		ViewStmt CheckPointStmt CreateConversionStmt
 		DeallocateStmt PrepareStmt ExecuteStmt
 		DropOwnedStmt ReassignOwnedStmt
@@ -372,7 +374,7 @@ static int errstate;
 		CreateWeakPasswordDictionaryStmt DropWeakPasswordDictionaryStmt
 		AlterGlobalConfigStmt DropGlobalConfigStmt
 		CreatePublicationStmt AlterPublicationStmt
-		CreateSubscriptionStmt AlterSubscriptionStmt DropSubscriptionStmt
+		CreateSubscriptionStmt AlterSubscriptionStmt DropSubscriptionStmt DelimiterStmt
 		ShrinkStmt
 
 /* <DB4AI> */
@@ -487,7 +489,7 @@ static int errstate;
 				name_list from_clause from_list opt_array_bounds
 				qualified_name_list any_name any_name_list
 				any_operator expr_list attrs callfunc_args
-				target_list insert_column_list set_target_list
+				target_list insert_column_list set_target_list rename_clause_list rename_clause
 				set_clause_list set_clause multiple_set_clause
 				ctext_expr_list ctext_row def_list tsconf_def_list indirection opt_indirection
 				reloption_list tblspc_option_list cfoption_list group_clause TriggerFuncArgs select_limit
@@ -577,6 +579,8 @@ static int errstate;
 %type <mergewhen>	merge_insert merge_update
 
 %type <vsetstmt> generic_set set_rest set_rest_more SetResetClause FunctionSetResetClause set_session_extension set_global_extension guc_variable_set generic_set_extension
+%type <list>	VariableSetElemsList
+%type <node>	set_global VariableSetElem
 
 %type <node>	TableElement TypedTableElement ConstraintElem TableFuncElement
 				ForeignTableElement
@@ -635,7 +639,7 @@ static int errstate;
 %type <ival>	Iconst SignedIconst
 %type <str>		Sconst comment_text notify_payload
 %type <str>		RoleId TypeOwner opt_granted_by opt_boolean_or_string ColId_or_Sconst definer_user definer_expression
-%type <list>	var_list guc_value_list guc_value_extension_list
+%type <list>	var_list guc_value_extension_list
 %type <str>		ColId ColLabel var_name type_function_name param_name
 %type <node>	var_value zone_value
 
@@ -672,7 +676,6 @@ static int errstate;
 %type <with>	with_clause opt_with_clause
 %type <list>	cte_list
 
-%type <list>	user_defined_list
 %type <node>	uservar_name user_defined_single
 
 %type <list>	within_group_clause pkg_body_subprogram
@@ -787,6 +790,7 @@ static int errstate;
 %type <typnam>  load_col_data_type
 %type <ival64>  load_col_sequence_item_sart column_sequence_item_step column_sequence_item_sart
 %type <trgcharacter> trigger_order
+%type <str> delimiter_str_name delimiter_str_names
 /*
  * Non-keyword token types.  These are hard-wired into the "flex" lexer.
  * They must be listed first so that their numeric codes do not depend on
@@ -929,6 +933,9 @@ static int errstate;
 			VALID_BEGIN
 			DECLARE_CURSOR ON_UPDATE_TIME
 			START_WITH CONNECT_BY
+			END_OF_INPUT
+			END_OF_INPUT_COLON
+			END_OF_PROC
 
 /* Precedence: lowest to highest */
 %nonassoc   COMMENT
@@ -1016,6 +1023,38 @@ stmtblock:	stmtmulti
 
 /* the thrashing around here is to discard "empty" statements... */
 stmtmulti:	stmtmulti ';' stmt
+				{
+					if ($3 != NULL)
+					{
+						if (IsA($3, List))
+						{
+							$$ = list_concat($1, (List*)$3);
+						}
+						else
+						{
+						$$ = lappend($1, $3);
+						}
+					}
+					else
+						$$ = $1;
+				}
+			| stmtmulti ';' END_OF_INPUT stmt
+				{
+					if ($4 != NULL)
+					{
+						if (IsA($4, List))
+						{
+							$$ = list_concat($1, (List*)$4);
+						}
+						else
+						{
+						$$ = lappend($1, $4);
+						}
+					}
+					else
+						$$ = $1;
+				}
+			| stmtmulti END_OF_INPUT_COLON stmt
 				{
 					if ($3 != NULL)
 					{
@@ -1246,12 +1285,14 @@ stmt :
 			| VacuumStmt
 			| VariableResetStmt
 			| VariableSetStmt
+			| VariableMultiSetStmt
 			| VariableShowStmt
 			| VerifyStmt
 			| ViewStmt
 			| ShrinkStmt
 			| /*EMPTY*/
 				{ $$ = NULL; }
+			| DelimiterStmt
 		;
 
 /*****************************************************************************
@@ -2060,33 +2101,6 @@ VariableSetStmt:
 					n->is_local = false;
 					$$ = (Node *) n;
 				}
-			| SET user_defined_list
-				{
-#ifdef			ENABLE_MULTIPLE_NODES
-					const char* message = "SET @var_name := expr is not yet supported in distributed database.";
-					InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);			
-					ereport(errstate,
-						(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
-							errmsg("SET @var_name := expr is not yet supported in distributed database.")));
-#endif
-					if (u_sess->attr.attr_sql.sql_compatibility == B_FORMAT && u_sess->attr.attr_common.enable_set_variable_b_format) {
-						VariableSetStmt *n = makeNode(VariableSetStmt);
-						n->kind = VAR_SET_DEFINED;
-						n->name = "USER DEFINED VARIABLE";
-						n->defined_args = $2;
-						n->is_local = false;
-						$$ = (Node *)n;
-					} else {
-						const char* message = "SET @var_name := expr is supported only in B-format database, and enable_set_variable_b_format = on.";
-						InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);
-						ereport(errstate,
-							(errmodule(MOD_PARSER),
-								errcode(ERRCODE_SYNTAX_ERROR),
-								errmsg("SET @var_name := expr is supported only in B-format database, and enable_set_variable_b_format = on."),
-								parser_errposition(@1)));
-						$$ = NULL;/* not reached */						
-					}
-				}
 			| SET generic_set_extension
 				{
 #ifdef			ENABLE_MULTIPLE_NODES
@@ -2107,7 +2121,7 @@ VariableSetStmt:
 							(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
 								errmsg("SET supported expr value only in B_FORMAT and enable_set_variable_b_format is on.")));
 					}
-				} 
+				}
 			| SET SESSION generic_set_extension
 				{
 #ifdef			ENABLE_MULTIPLE_NODES
@@ -2129,320 +2143,7 @@ VariableSetStmt:
 								errmsg("SET supported expr value only in B_FORMAT and enable_set_variable_b_format is on.")));
 					}
 				}
-			| SET set_session_extension
- 				{
-#ifdef			ENABLE_MULTIPLE_NODES
-					const char* message = "SET config_parameter = expr is not yet supported in distributed database.";
-					InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);			
-					ereport(errstate,
-						(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
-							errmsg("SET config_parameter = expr is not yet supported in distributed database.")));
-#endif
-					VariableSetStmt *n = $2;
- 					n->is_local = false;
- 					$$ = (Node *) n;
- 				}
-			| SET set_global_extension
- 				{
- #if defined(ENABLE_MULTIPLE_NODES) || defined (ENABLE_PRIVATEGAUSS)
-					const char* message = "SET GLOBAL is not supported";
-					InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);
-					ereport(errstate,
-						(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
-							errmsg("SET GLOBAL is not supported.")));
-#else
-					AlterSystemStmt *n = makeNode(AlterSystemStmt);
-					n->setstmt = $2;
-					$$ = (Node *) n;
-#endif
- 				}
 		;
-
-set_session_extension:
-			 SET_IDENT_SESSION '.' guc_variable_set
-				{
-					VariableSetStmt *n = $3;
-					n->is_local = false;
-					$$ = n;
-				}
-			| SET_IDENT '=' guc_value_list
-				{
-					int len = strlen($1);
-					errno_t rc = EOK;
- 
-					char *name = (char *)palloc(len - 1);
-					rc = strncpy_s(name, len - 1, $1 + 2, len-2);
-					securec_check(rc, "\0", "\0");
-
-					VariableSetStmt *n = makeNode(VariableSetStmt);
-					n->kind = VAR_SET_VALUE;
-					n->name = pstrdup(name);
-					n->args = $3;
-					pfree(name);
-					$$ = n;
-				}
-			| SET_IDENT '=' DEFAULT
-				{
-					int len = strlen($1);
-					errno_t rc = EOK;
- 
-					char *name = (char *)palloc(len - 1);
-					rc = strncpy_s(name, len - 1, $1 + 2, len-2);
-					securec_check(rc, "\0", "\0");
-	
-					VariableSetStmt *n = makeNode(VariableSetStmt);
-					n->kind = VAR_SET_DEFAULT;
-					n->name = pstrdup(name);
-					pfree(name);
-					$$ = n;
-				}
-			;
- 
-set_global_extension:
-			GLOBAL guc_variable_set
-				{
-					VariableSetStmt *n = $2;
-					$$ = n;
-				}
-			| SET_IDENT_GLOBAL '.' guc_variable_set
-				{
-					VariableSetStmt *n = $3;
-					$$ = n;
- 				}
- 		;
- 
-guc_variable_set:
-			var_name '=' guc_value_list
-				{
-					VariableSetStmt *n = makeNode(VariableSetStmt);
-					n->kind = VAR_SET_VALUE;
-					n->name = $1;
-					n->args = $3;
-					/* if we are setting role, we switch to the new syntax which check the password of role */
-					if(!pg_strcasecmp("role", n->name) || !pg_strcasecmp("session_authorization", n->name))
-					{
-						const char* message = "SET TO rolename\" not yet supported";
-						InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);
-						ereport(errstate,
-							(errcode(ERRCODE_SYNTAX_ERROR),
-								 errmsg("\"SET %s = rolename\" not yet supported", n->name),
-									 errhint("Use \"SET %s rolename\" clauses.", n->name)));
-					}
-					else
-					{
-						n->kind = VAR_SET_VALUE;
-					}
-					$$ = n;
-				}
-			| var_name '=' DEFAULT
-				{
-					VariableSetStmt *n = makeNode(VariableSetStmt);
-					n->kind = VAR_SET_DEFAULT;
-					n->name = $1;
-					$$ = n;
-				}
-			| CURRENT_SCHEMA '=' var_list
-				{
-					VariableSetStmt *n = makeNode(VariableSetStmt);
-					n->kind = VAR_SET_VALUE;
-					n->name = "current_schema";
-					n->args = $3;
-					$$ = n;
-				}
-			| CURRENT_SCHEMA '=' DEFAULT
-				{
-					VariableSetStmt *n = makeNode(VariableSetStmt);
-					n->kind = VAR_SET_DEFAULT;
-					n->name = "current_schema";
-					$$ = n;
-				}
-			;
- 
-guc_value_list:	set_expr							{ $$ = list_make1($1); }
-				| guc_value_list ',' set_expr		{ $$ = lappend($1, $3); }
-		;
-
-guc_value_extension_list: set_expr_extension		{ $$ = list_make1($1); }
-				| guc_value_extension_list ',' set_expr_extension 	{ $$ = lappend($1, $3); }
-		;
-
-set_ident_expr:
-			SET_IDENT
-				{
-					int len = strlen($1);
-					errno_t rc = EOK;
- 
-					if (len > 2 && strncmp($1, "@@", 2) == 0) {
-						char *name	= (char *)palloc(len - 1);
-						rc = strncpy_s(name, len - 1, $1 + 2, len-2);
-						securec_check(rc, "\0", "\0");
- 
-						SetVariableExpr *n = makeNode(SetVariableExpr);
-						n->name = pstrdup(name);
-						n->is_session = true;
-						n->is_global = false;
-						$$ = (Node *) n;
-					} else {
- 
-					}
-				}
-			| SET_IDENT_SESSION '.' IDENT
-				{
-					SetVariableExpr *n = makeNode(SetVariableExpr);
-					n->name = $3;
-					n->is_session = true;
-					n->is_global = false;
-					$$ = (Node *) n;
-				}
-			| SET_IDENT_GLOBAL '.' IDENT
-				{
-					SetVariableExpr *n = makeNode(SetVariableExpr);
-					n->name = $3;
-					n->is_session = false;
-					n->is_global = true;
-					$$ = (Node *) n;
-				}
-		;
-
-set_expr:	
-			 var_value
-				{ $$ = $1; }
-			| set_expr_extension
-				{ $$ = $1; }
-		;
-
-set_expr_extension:
-			 set_ident_expr
-				{ $$ = $1; }
-			| '(' a_expr ')' opt_indirection
-				{
-					if ($4)
-					{
-						A_Indirection *n = makeNode(A_Indirection);
-						n->arg = $2;
-						n->indirection = check_indirection($4, yyscanner);
-						$$ = (Node *)n;
-					}
-					else
-						$$ = $2;
-				}
-			| case_expr
-				{ $$ = $1; }
-			| func_expr
-				{ $$ = $1; }
-			| select_with_parens			%prec UMINUS
-				{
-					SubLink *n = makeNode(SubLink);
-					n->subLinkType = EXPR_SUBLINK;
-					n->testexpr = NULL;
-					n->operName = NIL;
-					n->subselect = $1;
-					n->location = @1;
-					$$ = (Node *)n;
-				}
-			| select_with_parens indirection
-				{
-					/*
-					 * Because the select_with_parens nonterminal is designed
-					 * to "eat" as many levels of parens as possible, the
-					 * '(' a_expr ')' opt_indirection production above will
-					 * fail to match a sub-SELECT with indirection decoration;
-					 * the sub-SELECT won't be regarded as an a_expr as long
-					 * as there are parens around it.  To support applying
-					 * subscripting or field selection to a sub-SELECT result,
-					 * we need this redundant-looking production.
-					 */
-					SubLink *n = makeNode(SubLink);
-					A_Indirection *a = makeNode(A_Indirection);
-					n->subLinkType = EXPR_SUBLINK;
-					n->testexpr = NULL;
-					n->operName = NIL;
-					n->subselect = $1;
-					n->location = @1;
-					a->arg = (Node *)n;
-					a->indirection = check_indirection($2, yyscanner);
-					$$ = (Node *)a;
-				}
-			| uservar_name           %prec UMINUS
-				{
-#ifdef			ENABLE_MULTIPLE_NODES
-					const char* message = "@var_name is not yet supported in distributed database.";
-					InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);			
-					ereport(errstate,
-						(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
-							errmsg("@var_name is not yet supported in distributed database.")));
-#endif
-					if (u_sess->attr.attr_sql.sql_compatibility == B_FORMAT && u_sess->attr.attr_common.enable_set_variable_b_format) {
-						$$ = $1;
-					} else {
-						const char* message = "@var_name is supported only in B-format database, and enable_set_variable_b_format = on.";
-						InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);
-						ereport(errstate,
-							(errmodule(MOD_PARSER),
-								errcode(ERRCODE_SYNTAX_ERROR),
-								errmsg("@var_name is supported only in B-format database, and enable_set_variable_b_format = on."),
-								parser_errposition(@1)));
-						$$ = NULL;/* not reached */
-					}
-				}
-			| b_expr TYPECAST Typename
-				{ $$ = makeTypeCast($1, $3, @2); }
-			| '@' b_expr
-				{ $$ = (Node *) makeSimpleA_Expr(AEXPR_OP, "@", NULL, $2, @1); }
-			| b_expr '+' b_expr
-				{ $$ = (Node *) makeSimpleA_Expr(AEXPR_OP, "+", $1, $3, @2); }
-			| b_expr '-' b_expr
-				{ $$ = (Node *) makeSimpleA_Expr(AEXPR_OP, "-", $1, $3, @2); }
-			| b_expr '*' b_expr
-				{ $$ = (Node *) makeSimpleA_Expr(AEXPR_OP, "*", $1, $3, @2); }
-			| b_expr '/' b_expr
-				{ $$ = (Node *) makeSimpleA_Expr(AEXPR_OP, "/", $1, $3, @2); }
-			| b_expr '%' b_expr
-				{ $$ = (Node *) makeSimpleA_Expr(AEXPR_OP, "%", $1, $3, @2); }
-			| b_expr '^' b_expr
-				{ $$ = (Node *) makeSimpleA_Expr(AEXPR_OP, "^", $1, $3, @2); }
-			| b_expr '<' b_expr
-				{ $$ = (Node *) makeSimpleA_Expr(AEXPR_OP, "<", $1, $3, @2); }
-			| b_expr '>' b_expr
-				{ $$ = (Node *) makeSimpleA_Expr(AEXPR_OP, ">", $1, $3, @2); }
-			| b_expr '=' b_expr
-				{ $$ = (Node *) makeSimpleA_Expr(AEXPR_OP, "=", $1, $3, @2); }
-			| b_expr '@' b_expr
-				{ $$ = (Node *) makeSimpleA_Expr(AEXPR_OP, "@", $1, $3, @2); }
-			| b_expr CmpOp b_expr
-				{ $$ = (Node *) makeSimpleA_Expr(AEXPR_OP, $2, $1, $3, @2); }
-			| b_expr qual_Op b_expr				%prec Op
-				{ $$ = (Node *) makeA_Expr(AEXPR_OP, $2, $1, $3, @2); }
-			| qual_Op b_expr					%prec Op
-				{ $$ = (Node *) makeA_Expr(AEXPR_OP, $1, NULL, $2, @1); }
-			| b_expr qual_Op					%prec POSTFIXOP
-				{ $$ = (Node *) makeA_Expr(AEXPR_OP, $2, $1, NULL, @2); }
-			| b_expr IS DISTINCT FROM b_expr		%prec IS
-				{
-					$$ = (Node *) makeSimpleA_Expr(AEXPR_DISTINCT, "=", $1, $5, @2);
-				}
-			| b_expr IS NOT DISTINCT FROM b_expr	%prec IS
-				{
-					$$ = (Node *) makeA_Expr(AEXPR_NOT, NIL,
-						NULL, (Node *) makeSimpleA_Expr(AEXPR_DISTINCT, "=", $1, $6, @2), @2);
-				}
-			| b_expr IS OF '(' type_list ')'		%prec IS
-				{
-					$$ = (Node *) makeSimpleA_Expr(AEXPR_OF, "=", $1, (Node *) $5, @2);
-				}
-			| b_expr IS NOT OF '(' type_list ')'	%prec IS
-				{
-					$$ = (Node *) makeSimpleA_Expr(AEXPR_OF, "<>", $1, (Node *) $6, @2);
-				}
-			| b_expr IS DOCUMENT_P					%prec IS
-				{
-					$$ = makeXmlExpr(IS_DOCUMENT, NULL, NIL, list_make1($1), @2);
-				}
-			| b_expr IS NOT DOCUMENT_P				%prec IS
-				{
-					$$ = (Node *) makeA_Expr(AEXPR_NOT, NIL, NULL, makeXmlExpr(IS_DOCUMENT, NULL, NIL, list_make1($1), @2),@2);
-				}
-			;
 
 set_rest:
 			TRANSACTION transaction_mode_list
@@ -2662,11 +2363,76 @@ set_rest_more:  /* Generic SET syntaxes: */
 					$$ = n;
 				}
 		;
-		
-user_defined_list:
-			user_defined_single					{ $$ = list_make1($1); }
-			| user_defined_list ',' user_defined_single		{ $$ = lappend($1, $3); }
-			;
+
+/*****************************************************************************
+ *
+ * VariableMultiSetStmt only used for:
+ * 1. set [session|global] configure_param = expr 
+ * 2. set @usr_var := expr
+ *
+ *****************************************************************************/
+
+VariableMultiSetStmt:	SET VariableSetElemsList
+						{
+#ifdef			ENABLE_MULTIPLE_NODES
+							const char* message = "set multiple variables is not yet supported in distributed database.";
+							InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);			
+					InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);			
+							InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);			
+					InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);			
+							InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);			
+					InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);			
+							InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);			
+							ereport(errstate,
+								(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+									errmsg("set multiple variables is not yet supported in distributed database.")));
+#endif
+							if (DB_IS_CMPT(B_FORMAT) && u_sess->attr.attr_common.enable_set_variable_b_format)
+							{
+								VariableMultiSetStmt* n = makeNode(VariableMultiSetStmt);
+								n->args = $2;
+								$$ = (Node*)n;
+							} else {
+								const char* message = "SET UserVar/GLOBAL/SESSION is supported only in B-format database, and enable_set_variable_b_format = on.";
+								InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);
+								ereport(errstate,
+									(errmodule(MOD_PARSER),
+										errcode(ERRCODE_SYNTAX_ERROR),
+										errmsg("SET UserVar/GLOBAL/SESSION is supported only in B-format database, and enable_set_variable_b_format = on."),
+										parser_errposition(@1)));
+								$$ = NULL;/* not reached */	
+							}
+						}
+					;
+
+VariableSetElemsList:
+						 VariableSetElem 	{ $$ = list_make1($1); }
+						| VariableSetElemsList ',' VariableSetElem 	{ $$ = lappend($1, $3); }
+				;
+
+VariableSetElem:
+					set_session_extension
+						{
+							VariableSetStmt *n = $1;
+							n->is_local = false;
+							n->is_multiset = true;
+							$$ = (Node *)n;
+						}
+					| set_global
+						{
+							$$ = $1;
+						}
+					| user_defined_single
+						{
+							VariableSetStmt *n = makeNode(VariableSetStmt);
+							n->kind = VAR_SET_DEFINED;
+							n->name = "USER DEFINED VARIABLE";
+							n->defined_args = list_make1($1);
+							n->is_local = false;
+							n->is_multiset = true;
+							$$ = (Node *)n;
+						}
+				;
 
 user_defined_single:
 			uservar_name COLON_EQUALS a_expr
@@ -2684,6 +2450,21 @@ user_defined_single:
 					$$ = (Node *)n;
 				}
 			;
+
+set_global:	 set_global_extension
+ 				{
+#if defined(ENABLE_MULTIPLE_NODES) || defined (ENABLE_PRIVATEGAUSS)
+					const char* message = "SET GLOBAL is not supported";
+					InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);
+					ereport(errstate,
+						(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+							errmsg("SET GLOBAL is not supported.")));
+#else
+						AlterSystemStmt *n = makeNode(AlterSystemStmt);
+						n->setstmt = $1;
+						$$ = (Node *) n;
+#endif
+ 				}
 
 generic_set_extension:
 			 var_name '=' guc_value_extension_list
@@ -2717,6 +2498,290 @@ generic_set_extension:
 					$$ = n;
 				}
 		;
+
+set_session_extension:
+			 SET_IDENT_SESSION '.' guc_variable_set
+				{
+					VariableSetStmt *n = $3;
+					n->is_local = false;
+					$$ = n;
+				}
+			| SET_IDENT '=' set_expr
+				{
+					int len = strlen($1);
+					errno_t rc = EOK;
+ 
+					char *name = (char *)palloc(len - 1);
+					rc = strncpy_s(name, len - 1, $1 + 2, len-2);
+					securec_check(rc, "\0", "\0");
+
+					VariableSetStmt *n = makeNode(VariableSetStmt);
+					n->kind = VAR_SET_VALUE;
+					n->name = pstrdup(name);
+					n->args = list_make1($3);
+					pfree(name);
+					$$ = n;
+				}
+			| SET_IDENT '=' DEFAULT
+				{
+					int len = strlen($1);
+					errno_t rc = EOK;
+ 
+					char *name = (char *)palloc(len - 1);
+					rc = strncpy_s(name, len - 1, $1 + 2, len-2);
+					securec_check(rc, "\0", "\0");
+	
+					VariableSetStmt *n = makeNode(VariableSetStmt);
+					n->kind = VAR_SET_DEFAULT;
+					n->name = pstrdup(name);
+					pfree(name);
+					$$ = n;
+				}
+			;
+ 
+set_global_extension:
+			GLOBAL guc_variable_set
+				{
+					VariableSetStmt *n = $2;
+					$$ = n;
+				}
+			| SET_IDENT_GLOBAL '.' guc_variable_set
+				{
+					VariableSetStmt *n = $3;
+					$$ = n;
+ 				}
+ 		;
+ 
+guc_variable_set:
+			var_name '=' set_expr
+				{
+					VariableSetStmt *n = makeNode(VariableSetStmt);
+					n->kind = VAR_SET_VALUE;
+					n->name = $1;
+					n->args = list_make1($3);
+					n->is_multiset = true;
+					/* if we are setting role, we switch to the new syntax which check the password of role */
+					if(!pg_strcasecmp("role", n->name) || !pg_strcasecmp("session_authorization", n->name))
+					{
+						const char* message = "SET TO rolename\" not yet supported";
+						InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);
+						ereport(errstate,
+							(errcode(ERRCODE_SYNTAX_ERROR),
+								 errmsg("\"SET %s = rolename\" not yet supported", n->name),
+									 errhint("Use \"SET %s rolename\" clauses.", n->name)));
+					}
+					else
+					{
+						n->kind = VAR_SET_VALUE;
+					}
+					$$ = n;
+				}
+			| var_name '=' DEFAULT
+				{
+					VariableSetStmt *n = makeNode(VariableSetStmt);
+					n->kind = VAR_SET_DEFAULT;
+					n->name = $1;
+					n->is_multiset = true;
+					$$ = n;
+				}
+			| CURRENT_SCHEMA '=' set_expr
+				{
+					VariableSetStmt *n = makeNode(VariableSetStmt);
+					n->kind = VAR_SET_VALUE;
+					n->name = "current_schema";
+					n->args = list_make1($3);
+					$$ = n;
+				}
+			| CURRENT_SCHEMA '=' DEFAULT
+				{
+					VariableSetStmt *n = makeNode(VariableSetStmt);
+					n->kind = VAR_SET_DEFAULT;
+					n->name = "current_schema";
+					$$ = n;
+				}
+			;
+
+guc_value_extension_list: set_expr_extension		{ $$ = list_make1($1); }
+				| guc_value_extension_list ',' set_expr_extension 	{ $$ = lappend($1, $3); }
+		;
+
+set_ident_expr:
+			SET_IDENT
+				{
+					int len = strlen($1);
+					errno_t rc = EOK;
+ 
+					if (len > 2 && strncmp($1, "@@", 2) == 0) {
+						char *name	= (char *)palloc(len - 1);
+						rc = strncpy_s(name, len - 1, $1 + 2, len-2);
+						securec_check(rc, "\0", "\0");
+ 
+						SetVariableExpr *n = makeNode(SetVariableExpr);
+						n->name = pstrdup(name);
+						n->is_session = true;
+						n->is_global = false;
+						$$ = (Node *) n;
+					} else {
+ 
+					}
+				}
+			| SET_IDENT_SESSION '.' IDENT
+				{
+					SetVariableExpr *n = makeNode(SetVariableExpr);
+					n->name = $3;
+					n->is_session = true;
+					n->is_global = false;
+					$$ = (Node *) n;
+				}
+			| SET_IDENT_GLOBAL '.' IDENT
+				{
+					SetVariableExpr *n = makeNode(SetVariableExpr);
+					n->name = $3;
+					n->is_session = false;
+					n->is_global = true;
+					$$ = (Node *) n;
+				}
+		;
+
+set_expr:	
+			 var_value
+				{ $$ = $1; }
+			| set_expr_extension
+				{ $$ = $1; }
+		;
+
+set_expr_extension:
+			 set_ident_expr
+				{ $$ = $1; }
+			| '(' a_expr ')' opt_indirection
+				{
+					if ($4)
+					{
+						A_Indirection *n = makeNode(A_Indirection);
+						n->arg = $2;
+						n->indirection = check_indirection($4, yyscanner);
+						$$ = (Node *)n;
+					}
+					else
+						$$ = $2;
+				}
+			| case_expr
+				{ $$ = $1; }
+			| func_expr
+				{ $$ = $1; }
+			| select_with_parens			%prec UMINUS
+				{
+					SubLink *n = makeNode(SubLink);
+					n->subLinkType = EXPR_SUBLINK;
+					n->testexpr = NULL;
+					n->operName = NIL;
+					n->subselect = $1;
+					n->location = @1;
+					$$ = (Node *)n;
+				}
+			| select_with_parens indirection
+				{
+					/*
+					 * Because the select_with_parens nonterminal is designed
+					 * to "eat" as many levels of parens as possible, the
+					 * '(' a_expr ')' opt_indirection production above will
+					 * fail to match a sub-SELECT with indirection decoration;
+					 * the sub-SELECT won't be regarded as an a_expr as long
+					 * as there are parens around it.  To support applying
+					 * subscripting or field selection to a sub-SELECT result,
+					 * we need this redundant-looking production.
+					 */
+					SubLink *n = makeNode(SubLink);
+					A_Indirection *a = makeNode(A_Indirection);
+					n->subLinkType = EXPR_SUBLINK;
+					n->testexpr = NULL;
+					n->operName = NIL;
+					n->subselect = $1;
+					n->location = @1;
+					a->arg = (Node *)n;
+					a->indirection = check_indirection($2, yyscanner);
+					$$ = (Node *)a;
+				}
+			| uservar_name           %prec UMINUS
+				{
+#ifdef			ENABLE_MULTIPLE_NODES
+					const char* message = "@var_name is not yet supported in distributed database.";
+					InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);			
+					ereport(errstate,
+						(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+							errmsg("@var_name is not yet supported in distributed database.")));
+#endif
+					if (u_sess->attr.attr_sql.sql_compatibility == B_FORMAT && u_sess->attr.attr_common.enable_set_variable_b_format) {
+						$$ = $1;
+					} else {
+						const char* message = "@var_name is supported only in B-format database, and enable_set_variable_b_format = on.";
+						InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);
+						ereport(errstate,
+							(errmodule(MOD_PARSER),
+								errcode(ERRCODE_SYNTAX_ERROR),
+								errmsg("@var_name is supported only in B-format database, and enable_set_variable_b_format = on."),
+								parser_errposition(@1)));
+						$$ = NULL;/* not reached */
+					}
+				}
+			| b_expr TYPECAST Typename
+				{ $$ = makeTypeCast($1, $3, @2); }
+			| '@' b_expr
+				{ $$ = (Node *) makeSimpleA_Expr(AEXPR_OP, "@", NULL, $2, @1); }
+			| b_expr '+' b_expr
+				{ $$ = (Node *) makeSimpleA_Expr(AEXPR_OP, "+", $1, $3, @2); }
+			| b_expr '-' b_expr
+				{ $$ = (Node *) makeSimpleA_Expr(AEXPR_OP, "-", $1, $3, @2); }
+			| b_expr '*' b_expr
+				{ $$ = (Node *) makeSimpleA_Expr(AEXPR_OP, "*", $1, $3, @2); }
+			| b_expr '/' b_expr
+				{ $$ = (Node *) makeSimpleA_Expr(AEXPR_OP, "/", $1, $3, @2); }
+			| b_expr '%' b_expr
+				{ $$ = (Node *) makeSimpleA_Expr(AEXPR_OP, "%", $1, $3, @2); }
+			| b_expr '^' b_expr
+				{ $$ = (Node *) makeSimpleA_Expr(AEXPR_OP, "^", $1, $3, @2); }
+			| b_expr '<' b_expr
+				{ $$ = (Node *) makeSimpleA_Expr(AEXPR_OP, "<", $1, $3, @2); }
+			| b_expr '>' b_expr
+				{ $$ = (Node *) makeSimpleA_Expr(AEXPR_OP, ">", $1, $3, @2); }
+			| b_expr '=' b_expr
+				{ $$ = (Node *) makeSimpleA_Expr(AEXPR_OP, "=", $1, $3, @2); }
+			| b_expr '@' b_expr
+				{ $$ = (Node *) makeSimpleA_Expr(AEXPR_OP, "@", $1, $3, @2); }
+			| b_expr CmpOp b_expr
+				{ $$ = (Node *) makeSimpleA_Expr(AEXPR_OP, $2, $1, $3, @2); }
+			| b_expr qual_Op b_expr				%prec Op
+				{ $$ = (Node *) makeA_Expr(AEXPR_OP, $2, $1, $3, @2); }
+			| qual_Op b_expr					%prec Op
+				{ $$ = (Node *) makeA_Expr(AEXPR_OP, $1, NULL, $2, @1); }
+			| b_expr qual_Op					%prec POSTFIXOP
+				{ $$ = (Node *) makeA_Expr(AEXPR_OP, $2, $1, NULL, @2); }
+			| b_expr IS DISTINCT FROM b_expr		%prec IS
+				{
+					$$ = (Node *) makeSimpleA_Expr(AEXPR_DISTINCT, "=", $1, $5, @2);
+				}
+			| b_expr IS NOT DISTINCT FROM b_expr	%prec IS
+				{
+					$$ = (Node *) makeA_Expr(AEXPR_NOT, NIL,
+						NULL, (Node *) makeSimpleA_Expr(AEXPR_DISTINCT, "=", $1, $6, @2), @2);
+				}
+			| b_expr IS OF '(' type_list ')'		%prec IS
+				{
+					$$ = (Node *) makeSimpleA_Expr(AEXPR_OF, "=", $1, (Node *) $5, @2);
+				}
+			| b_expr IS NOT OF '(' type_list ')'	%prec IS
+				{
+					$$ = (Node *) makeSimpleA_Expr(AEXPR_OF, "<>", $1, (Node *) $6, @2);
+				}
+			| b_expr IS DOCUMENT_P					%prec IS
+				{
+					$$ = makeXmlExpr(IS_DOCUMENT, NULL, NIL, list_make1($1), @2);
+				}
+			| b_expr IS NOT DOCUMENT_P				%prec IS
+				{
+					$$ = (Node *) makeA_Expr(AEXPR_NOT, NIL, NULL, makeXmlExpr(IS_DOCUMENT, NULL, NIL, list_make1($1), @2),@2);
+				}
+			;
 
 uservar_name:
 			SET_USER_IDENT						
@@ -3409,7 +3474,7 @@ modify_column_cmd:
 					$$ = (Node *)n;
 				}
 			/* modify column comments start */
-			| COLUMN ColId opt_column_options
+			| COLUMN ColId column_options
 				{
 					AlterTableCmd *n = makeNode(AlterTableCmd);
 					ColumnDef *def = makeNode(ColumnDef);
@@ -3421,7 +3486,7 @@ modify_column_cmd:
 					$$ = (Node *)n;
 				}
 			;
-			| ColId opt_column_options
+			| ColId column_options
 				{
 					AlterTableCmd *n = makeNode(AlterTableCmd);
 					ColumnDef *def = makeNode(ColumnDef);
@@ -7283,6 +7348,15 @@ ConstraintElem:
 							errmsg("UNIQUE name is not yet supported in distributed database.")));
 #endif	
 					if (u_sess->attr.attr_sql.sql_compatibility == B_FORMAT) {
+						if (strcasecmp($2, "index") == 0 || strcasecmp($2, "key") == 0) {
+							const char* message = "index/key cannot be used as unique name.";
+							InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);
+							ereport(errstate,
+									(errmodule(MOD_PARSER),
+										errcode(ERRCODE_SYNTAX_ERROR),
+										errmsg("index/key cannot be used as unique name."),
+										parser_errposition(@1)));
+						}
 						Constraint *n = makeNode(Constraint);
 						n->contype = CONSTR_UNIQUE;
 						n->location = @1;
@@ -14375,7 +14449,7 @@ subprogram_body: 	{
 						tok = YYLEX;
 
 						/* adapt A db's label */
-						if (!(tok == ';' || tok == 0)
+						if (!(tok == ';'  || (tok == 0 || tok == END_OF_PROC))
 							&& tok != IF_P
 							&& tok != CASE
 							&& tok != LOOP)
@@ -14386,7 +14460,7 @@ subprogram_body: 	{
 
 					 	if (blocklevel == 1
 							&& (pre_tok == ';' || pre_tok == BEGIN_P)
-							&& (tok == ';' || tok == 0))
+							&& (tok == ';' || (tok == 0 || tok == END_OF_PROC)))
 						{
 							/* Save the end of procedure body. */
 							proc_e = yylloc;
@@ -15599,7 +15673,53 @@ RenameStmt: ALTER AGGREGATE func_name aggr_args RENAME TO name
 					n->missing_ok = false;
 					$$ = (Node *)n;
 				}
+			| RENAME TABLE rename_clause_list
+				{
+#ifndef ENABLE_MULTIPLE_NODES
+					if (u_sess->attr.attr_sql.sql_compatibility == B_FORMAT) {
+						RenameStmt *n = makeNode(RenameStmt);
+						n->renameType = OBJECT_TABLE;
+						n->renameTargetList = $3;
+						n->renameTableflag = true;
+						n->missing_ok = false;
+						$$ = (Node *)n;
+					} else {
+						const char* message = "rename table syntax is supported on dbcompatibility B.";
+						InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);
+						ereport(errstate,
+							(errmodule(MOD_PARSER),
+                                                        errcode(ERRCODE_SYNTAX_ERROR),
+                                                        errmsg("rename table syntax is supported on dbcompatibility B."),
+                                                        parser_errposition(@1)));
+						$$ = NULL;
+					}
+#else
+                                        const char* message = "rename table syntax don't supported on distributed database.";
+                                        InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);
+                                        ereport(errstate,
+                                                (errmodule(MOD_PARSER),
+                                                errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+                                                errmsg("rename table syntax don't supported on distributed database."),
+                                                parser_errposition(@1)));
+                                        $$ = NULL;
+#endif
+				}
 		;
+
+rename_clause_list:
+		rename_clause					{ $$ = $1; }
+		| rename_clause_list ',' rename_clause		{ $$ = list_concat($1, $3); }
+	;
+
+rename_clause:
+		qualified_name TO qualified_name
+		{
+			RenameCell* n = makeNode(RenameCell);
+			n->original_name = $1;
+			n->modify_name = $3;
+			$$ = list_make1(n);
+		}
+	;
 
 opt_column: COLUMN									{ $$ = COLUMN; }
 			| /*EMPTY*/								{ $$ = 0; }
@@ -25704,6 +25824,43 @@ ColLabel:	IDENT									{ $$ = $1; }
 				}
 		;
 
+DelimiterStmt: DELIMITER delimiter_str_names END_OF_INPUT
+			   {
+					VariableSetStmt *n = makeNode(VariableSetStmt);
+					setDelimiterName(yyscanner, $2, n);
+					$$ = (Node *)n;
+				}
+			|	DELIMITER delimiter_str_names END_OF_INPUT_COLON
+				{
+					VariableSetStmt *n = makeNode(VariableSetStmt);
+					setDelimiterName(yyscanner, $2, n);
+					$$ = (Node *)n;
+				}
+			;
+
+delimiter_str_names: delimiter_str_names delimiter_str_name
+					{
+						$$ = $1 ;
+					}
+                |    delimiter_str_name
+					{
+						$$ = $1;
+					}
+				;
+
+delimiter_str_name: ColId_or_Sconst 
+					{
+						$$ = $1;
+					}
+				|   all_Op
+				    {
+						$$ = $1;
+					}
+				|   ';'
+				    {
+						$$ = ";";
+					}
+				;
 
 /*
  * Keyword category lists.  Generally, every keyword present in
@@ -28466,6 +28623,22 @@ static void RemoveFillerCol(List *filler_list, List *col_list)
 
 	return;
 }
+
+static void setDelimiterName(core_yyscan_t yyscanner, char*input, VariableSetStmt*n)
+{
+	errno_t rc = 0;
+	base_yy_extra_type *yyextra = pg_yyget_extra(yyscanner);
+	if (u_sess->attr.attr_sql.sql_compatibility == B_FORMAT) {
+		if (strlen(input) >= DELIMITER_LENGTH) {
+			parser_yyerror("syntax error");
+		}
+		n->is_local = false;
+		n->kind = VAR_SET_VALUE;
+		n->name = "delimiter_name";
+		n->args = list_make1(makeStringConst(input, -1));
+	}
+}
+
 
 static FuncCall* MakePriorAsFunc()
 {
