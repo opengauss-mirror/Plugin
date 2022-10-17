@@ -147,3 +147,15 @@ boolean,
 boolean,
 numeric
 ) RETURNS text LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'substring_index_2bool';
+
+create function pg_catalog.bool_float8_xor(
+boolean,
+float8
+) RETURNS int LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'bool_float8_xor';
+create operator pg_catalog.^(leftarg = boolean, rightarg = float8, procedure = pg_catalog.bool_float8_xor);
+
+create function pg_catalog.float8_bool_xor(
+float8,
+boolean
+) RETURNS int LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'float8_bool_xor';
+create operator pg_catalog.^(leftarg = float8, rightarg = boolean, procedure = pg_catalog.float8_bool_xor);

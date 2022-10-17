@@ -3034,9 +3034,46 @@ Datum float8_bool(PG_FUNCTION_ARGS)
 {
     float8 num = PG_GETARG_FLOAT8(0);
     
-    if (num == 0.0)
+    if (num == 0.0 || isnan(num))
         PG_RETURN_BOOL(false);
     else
         PG_RETURN_BOOL(true);
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(float4_bool);
+extern "C" DLL_PUBLIC Datum float4_bool(PG_FUNCTION_ARGS);
+
+Datum float4_bool(PG_FUNCTION_ARGS)
+{
+    float4 num = PG_GETARG_FLOAT4(0);
+
+    if(num == 0.0 || isnan(num))
+        PG_RETURN_BOOL(false);
+    else
+        PG_RETURN_BOOL(true);
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC (bool_float8_xor);
+extern "C" DLL_PUBLIC Datum bool_float8_xor(PG_FUNCTION_ARGS);
+
+Datum bool_float8_xor(PG_FUNCTION_ARGS)
+{
+    bool temp = PG_GETARG_BOOL(0);
+    int32 arg1 = temp ? 1 : 0;
+    float8 num = PG_GETARG_FLOAT8(1);
+    int32 arg2 = DatumGetInt32(DirectFunctionCall1(dtoi4, Float8GetDatum(num)));
+    PG_RETURN_INT32(arg1 ^ arg2);
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC (float8_bool_xor);
+extern "C" DLL_PUBLIC Datum float8_bool_xor(PG_FUNCTION_ARGS);
+
+Datum float8_bool_xor(PG_FUNCTION_ARGS)
+{
+    float8 num = PG_GETARG_FLOAT8(0);
+    bool temp = PG_GETARG_BOOL(1);
+    int32 arg1 = temp ? 1 : 0;
+    int32 arg2 = DatumGetInt32(DirectFunctionCall1(dtoi4, Float8GetDatum(num)));
+    PG_RETURN_INT32(arg1 ^ arg2);
 }
 #endif

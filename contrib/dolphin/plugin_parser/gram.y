@@ -26435,7 +26435,7 @@ a_expr:		c_expr									{ $$ = $1; }
 					$$ = (Node *) makeSimpleA_Expr(AEXPR_OP, "~~", $1, (Node *) n, @2);
 				}
 			| a_expr NOT LIKE BINARY a_expr %prec LIKE
-				{ $$ = (Node *) makeSimpleA_Expr(AEXPR_OP, "~~", $1, $5, @2); }
+				{ $$ = (Node *) makeSimpleA_Expr(AEXPR_OP, "!~~", $1, $5, @2); }
 			| a_expr NOT LIKE BINARY a_expr ESCAPE a_expr %prec LIKE
 				{
 					FuncCall *n = makeNode(FuncCall);
@@ -26448,7 +26448,7 @@ a_expr:		c_expr									{ $$ = $1; }
 					n->over = NULL;
 					n->location = @2;
 					n->call_func = false;
-					$$ = (Node *) makeSimpleA_Expr(AEXPR_OP, "~~", $1, (Node *) n, @2);
+					$$ = (Node *) makeSimpleA_Expr(AEXPR_OP, "!~~", $1, (Node *) n, @2);
 				}
 			| a_expr ILIKE a_expr
 				{ $$ = (Node *) makeSimpleA_Expr(AEXPR_OP, "~~*", $1, $3, @2); }

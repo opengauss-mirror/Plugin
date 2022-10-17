@@ -1826,9 +1826,19 @@ select * from hotel natural inner join price where name not like 'b%';
 (6 rows)
 
 select * from hotel natural inner join price where name not like binary 'b%';
- id | name | cin | cout | hotel | room | hotelname | price 
-----+------+-----+------+-------+------+-----------+-------
-(0 rows)
+ id |    name    |    cin     |    cout    |   hotel    | room | hotelname  | price 
+----+------------+------------+------------+------------+------+------------+-------
+  1 | Alice      | 05-07-2022 | 05-08-2022 | Vienna     |    5 | Vienna     |   500
+  2 | Anna       | 07-09-2022 | 07-12-2022 | Vienna     |    2 | Vienna     |   500
+  3 | Bob        | 06-17-2022 | 06-25-2022 | Holiday    |    1 | Vienna     |   500
+  4 | Claris     | 05-09-2022 | 06-01-2022 | Holiday    |    1 | Vienna     |   500
+  5 | Band       | 03-06-2022 | 03-09-2022 | Vienna     |    3 | Vienna     |   500
+  1 | Alice      | 05-07-2022 | 05-08-2022 | Vienna     |    5 | Holiday    |   700
+  2 | Anna       | 07-09-2022 | 07-12-2022 | Vienna     |    2 | Holiday    |   700
+  3 | Bob        | 06-17-2022 | 06-25-2022 | Holiday    |    1 | Holiday    |   700
+  4 | Claris     | 05-09-2022 | 06-01-2022 | Holiday    |    1 | Holiday    |   700
+  5 | Band       | 03-06-2022 | 03-09-2022 | Vienna     |    3 | Holiday    |   700
+(10 rows)
 
 select * from hotel natural inner join price where name not like 'b/%' escape '/';
  id |    name    |    cin     |    cout    |   hotel    | room | hotelname  | price 
@@ -1846,9 +1856,19 @@ select * from hotel natural inner join price where name not like 'b/%' escape '/
 (10 rows)
 
 select * from hotel natural inner join price where name not like binary 'b/%' escape '/';
- id | name | cin | cout | hotel | room | hotelname | price 
-----+------+-----+------+-------+------+-----------+-------
-(0 rows)
+ id |    name    |    cin     |    cout    |   hotel    | room | hotelname  | price 
+----+------------+------------+------------+------------+------+------------+-------
+  1 | Alice      | 05-07-2022 | 05-08-2022 | Vienna     |    5 | Vienna     |   500
+  2 | Anna       | 07-09-2022 | 07-12-2022 | Vienna     |    2 | Vienna     |   500
+  3 | Bob        | 06-17-2022 | 06-25-2022 | Holiday    |    1 | Vienna     |   500
+  4 | Claris     | 05-09-2022 | 06-01-2022 | Holiday    |    1 | Vienna     |   500
+  5 | Band       | 03-06-2022 | 03-09-2022 | Vienna     |    3 | Vienna     |   500
+  1 | Alice      | 05-07-2022 | 05-08-2022 | Vienna     |    5 | Holiday    |   700
+  2 | Anna       | 07-09-2022 | 07-12-2022 | Vienna     |    2 | Holiday    |   700
+  3 | Bob        | 06-17-2022 | 06-25-2022 | Holiday    |    1 | Holiday    |   700
+  4 | Claris     | 05-09-2022 | 06-01-2022 | Holiday    |    1 | Holiday    |   700
+  5 | Band       | 03-06-2022 | 03-09-2022 | Vienna     |    3 | Holiday    |   700
+(10 rows)
 
 drop table if exists hotel;
 drop table if exists hotel2;
@@ -1986,9 +2006,19 @@ select * from hotel natural inner join price where name not like 'b%';
 (6 rows)
 
 select * from hotel natural inner join price where name not like binary 'b%';
- id | name | cin | cout | hotel | room | hotelname | price 
-----+------+-----+------+-------+------+-----------+-------
-(0 rows)
+ id |    name    |    cin     |    cout    |   hotel    | room | hotelname  | price 
+----+------------+------------+------------+------------+------+------------+-------
+  1 | Alice      | 05-07-2022 | 05-08-2022 | Vienna     |    5 | Vienna     |   500
+  2 | Anna       | 07-09-2022 | 07-12-2022 | Vienna     |    2 | Vienna     |   500
+  3 | Bob        | 06-17-2022 | 06-25-2022 | Holiday    |    1 | Vienna     |   500
+  4 | Claris     | 05-09-2022 | 06-01-2022 | Holiday    |    1 | Vienna     |   500
+  5 | Band       | 03-06-2022 | 03-09-2022 | Vienna     |    3 | Vienna     |   500
+  1 | Alice      | 05-07-2022 | 05-08-2022 | Vienna     |    5 | Holiday    |   700
+  2 | Anna       | 07-09-2022 | 07-12-2022 | Vienna     |    2 | Holiday    |   700
+  3 | Bob        | 06-17-2022 | 06-25-2022 | Holiday    |    1 | Holiday    |   700
+  4 | Claris     | 05-09-2022 | 06-01-2022 | Holiday    |    1 | Holiday    |   700
+  5 | Band       | 03-06-2022 | 03-09-2022 | Vienna     |    3 | Holiday    |   700
+(10 rows)
 
 select * from hotel natural inner join price where name not like 'b/%' escape '/';
  id |    name    |    cin     |    cout    |   hotel    | room | hotelname  | price 
@@ -2006,9 +2036,19 @@ select * from hotel natural inner join price where name not like 'b/%' escape '/
 (10 rows)
 
 select * from hotel natural inner join price where name not like binary 'b/%' escape '/';
- id | name | cin | cout | hotel | room | hotelname | price 
-----+------+-----+------+-------+------+-----------+-------
-(0 rows)
+ id |    name    |    cin     |    cout    |   hotel    | room | hotelname  | price 
+----+------------+------------+------------+------------+------+------------+-------
+  1 | Alice      | 05-07-2022 | 05-08-2022 | Vienna     |    5 | Vienna     |   500
+  2 | Anna       | 07-09-2022 | 07-12-2022 | Vienna     |    2 | Vienna     |   500
+  3 | Bob        | 06-17-2022 | 06-25-2022 | Holiday    |    1 | Vienna     |   500
+  4 | Claris     | 05-09-2022 | 06-01-2022 | Holiday    |    1 | Vienna     |   500
+  5 | Band       | 03-06-2022 | 03-09-2022 | Vienna     |    3 | Vienna     |   500
+  1 | Alice      | 05-07-2022 | 05-08-2022 | Vienna     |    5 | Holiday    |   700
+  2 | Anna       | 07-09-2022 | 07-12-2022 | Vienna     |    2 | Holiday    |   700
+  3 | Bob        | 06-17-2022 | 06-25-2022 | Holiday    |    1 | Holiday    |   700
+  4 | Claris     | 05-09-2022 | 06-01-2022 | Holiday    |    1 | Holiday    |   700
+  5 | Band       | 03-06-2022 | 03-09-2022 | Vienna     |    3 | Holiday    |   700
+(10 rows)
 
 drop table if exists hotel;
 drop table if exists hotel2;
