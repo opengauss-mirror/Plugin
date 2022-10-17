@@ -15,7 +15,7 @@
 
 #include "postgres.h"
 #include "knl/knl_variable.h"
-
+#include "plugin_postgres.h"
 #include "catalog/pg_operator.h"
 #ifdef DOLPHIN
 #include "catalog/pg_enum.h"
@@ -390,6 +390,22 @@ Operator oper(ParseState* pstate, List* opname, Oid ltypeId, Oid rtypeId, bool n
         ltypeId = NUMERICOID;
         rtypeId = NUMERICOID;
     }
+
+#ifdef DOLPHIN
+    /**
+     * If GUC parameter b_compatibility_mode is true,
+     * and the expression is adding a string constant and an interval,
+     * we consider the string constant as datetime,
+     * and make it become adding an interval to datetime.
+     */
+    if (GetSessionContext()->enableBCmptMode) {
+        if (ltypeId == UNKNOWNOID && rtypeId == INTERVALOID) {
+            ltypeId = TIMESTAMPOID;
+        } else if (ltypeId == INTERVALOID && rtypeId == UNKNOWNOID) {
+            rtypeId = TIMESTAMPOID;
+        }
+    }
+#endif
 
     /*
      * Try to find the mapping in the lookaside cache.

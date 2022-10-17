@@ -6,6 +6,24 @@ drop database if exists b_time_type;
 create database b_time_type dbcompatibility 'b';
 \c b_time_type
 
+-- test datetime add/substract interval
+-- when b_compatibility_mode = true
+set b_compatibility_mode = true;
+SELECT '1997-12-31 23:59:59' + INTERVAL 1 SECOND;
+SELECT datetime'1997-12-31 23:59:59' + INTERVAL 1 SECOND;
+SELECT '1997-12-31 23:59:59' - INTERVAL 1 SECOND;
+SELECT datetime'1997-12-31 23:59:59' - INTERVAL 1 SECOND;
+SELECT INTERVAL 1 SECOND + '1997-12-31 23:59:59';
+SELECT INTERVAL 1 SECOND + datetime'1997-12-31 23:59:59';
+-- when b_compatibility_mode = false;
+set b_compatibility_mode = false;
+SELECT '1997-12-31 23:59:59' + INTERVAL 1 SECOND;
+SELECT datetime'1997-12-31 23:59:59' + INTERVAL 1 SECOND;
+SELECT '1997-12-31 23:59:59' - INTERVAL 1 SECOND;
+SELECT datetime'1997-12-31 23:59:59' - INTERVAL 1 SECOND;
+SELECT INTERVAL 1 SECOND + '1997-12-31 23:59:59';
+SELECT INTERVAL 1 SECOND + datetime'1997-12-31 23:59:59';
+
 -- test date
 -- 'YYYY-MM-DD' 'YY-MM-DD'
 SELECT date'2001-01-01';
