@@ -66,7 +66,7 @@ select coalesce(null, null,123::int8,321::int8);
 select coalesce(null, null,123::float4,321::float4);
 select coalesce(null, null,null,123::float8,321::float8);
 select coalesce(null, null,null,''::text,'hello!'::text);
-select coalesce(null, null,null,'100.001'::number,134);
+select coalesce(null, null,null,'100.001'::numeric,134);
 select coalesce(null, null,null,'2001-01-01 01:01:01.3654'::date,'2012-08-02 15:57:54.6365'::date);
 select coalesce(null, null,null,'2001-01-01 01:01:01.3654'::timestamp,'2012-08-02 15:57:54.6365'::timestamp);
 select coalesce(null, null);
@@ -134,8 +134,8 @@ SELECT ifnull('100.001'::float4, 'hello!'::text);
 SELECT ifnull('hello!'::text, '100.001'::float8);
 SELECT ifnull('100.001'::float8, 'hello!'::text);
 --ifnull(text, number)
-SELECT ifnull('hello!'::text, '100.001'::number);
-SELECT ifnull('100.001'::number, 'hello!'::text);
+SELECT ifnull('hello!'::text, '100.001'::numeric);
+SELECT ifnull('100.001'::numeric, 'hello!'::text);
 
 --null
 SELECT ifnull('j', '');
@@ -148,10 +148,10 @@ SELECT ifnull('hello!'::text, ''::int2);
 SELECT ifnull('100'::int2, ''::text);
 SELECT ifnull(''::text, '100.001'::float8);
 SELECT ifnull('100.001'::float8, ''::text);
-SELECT ifnull(''::text, '100.001'::number);
-SELECT ifnull(''::number, 'hello!'::text);
-SELECT ifnull('hello!'::text, ''::number);
-SELECT ifnull('100.001'::number, ''::text);
+SELECT ifnull(''::text, '100.001'::numeric);
+SELECT ifnull(''::numeric, 'hello!'::text);
+SELECT ifnull('hello!'::text, ''::numeric);
+SELECT ifnull('100.001'::numeric, ''::text);
 
 select ifnull(t1,t2) from test_bccf;
 select ifnull(t1,t3) from test_bccf;
@@ -168,12 +168,12 @@ SELECT isnull(''::char);
 SELECT isnull(''::int2);
 SELECT isnull(''::int4);
 SELECT isnull(''::int8);
-SELECT isnull(''::number);
+SELECT isnull(''::numeric);
 SELECT isnull('j');
 SELECT isnull('hello!'::text);
 SELECT isnull('100'::int2);
 SELECT isnull('100.001'::float8);
-SELECT isnull('100.001'::number);
+SELECT isnull('100.001'::numeric);
 
 
 select * from test_bccf where isnull(t1) order by 1, 2;
@@ -367,7 +367,7 @@ select coalesce(null, null,123::int8,321::int8);
 select coalesce(null, null,123::float4,321::float4);
 select coalesce(null, null,null,123::float8,321::float8);
 select coalesce(null, null,null,''::text,'hello!'::text);
-select coalesce(null, null,null,'100.001'::number,134);
+select coalesce(null, null,null,'100.001'::numeric,134);
 select coalesce(null, null,null,'2001-01-01 01:01:01.3654'::date,'2012-08-02 15:57:54.6365'::date);
 select coalesce(null, null,null,'2001-01-01 01:01:01.3654'::timestamp,'2012-08-02 15:57:54.6365'::timestamp);
 select coalesce(null, null);
@@ -435,8 +435,8 @@ SELECT ifnull('100.001'::float4, 'hello!'::text);
 SELECT ifnull('hello!'::text, '100.001'::float8);
 SELECT ifnull('100.001'::float8, 'hello!'::text);
 --ifnull(text, number)
-SELECT ifnull('hello!'::text, '100.001'::number);
-SELECT ifnull('100.001'::number, 'hello!'::text);
+SELECT ifnull('hello!'::text, '100.001'::numeric);
+SELECT ifnull('100.001'::numeric, 'hello!'::text);
 
 --null
 SELECT ifnull('j', '');
@@ -449,10 +449,10 @@ SELECT ifnull('hello!'::text, ''::int2);
 SELECT ifnull('100'::int2, ''::text);
 SELECT ifnull(''::text, '100.001'::float8);
 SELECT ifnull('100.001'::float8, ''::text);
-SELECT ifnull(''::text, '100.001'::number);
-SELECT ifnull(''::number, 'hello!'::text);
-SELECT ifnull('hello!'::text, ''::number);
-SELECT ifnull('100.001'::number, ''::text);
+SELECT ifnull(''::text, '100.001'::numeric);
+SELECT ifnull(''::numeric, 'hello!'::text);
+SELECT ifnull('hello!'::text, ''::numeric);
+SELECT ifnull('100.001'::numeric, ''::text);
 
 select ifnull(t1,t2) from test_bccf;
 select ifnull(t1,t3) from test_bccf;
@@ -469,12 +469,12 @@ SELECT isnull(''::char);
 SELECT isnull(''::int2);
 SELECT isnull(''::int4);
 SELECT isnull(''::int8);
-SELECT isnull(''::number);
+SELECT isnull(''::numeric);
 SELECT isnull('j');
 SELECT isnull('hello!'::text);
 SELECT isnull('100'::int2);
 SELECT isnull('100.001'::float8);
-SELECT isnull('100.001'::number);
+SELECT isnull('100.001'::numeric);
 
 
 select * from test_bccf where isnull(t1) order by 1, 2;

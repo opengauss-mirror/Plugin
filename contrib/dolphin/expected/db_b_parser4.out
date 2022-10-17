@@ -6,18 +6,19 @@ create database db_b_parser4 dbcompatibility 'b';
 drop table if exists tb_db_b_parser_0001;
 NOTICE:  table "tb_db_b_parser_0001" does not exist, skipping
 create table tb_db_b_parser_0001(a text(10),b tinytext,c mediumtext,d longtext);
---验证默认精度类型 decimal/number/dec/numeric
+--验证默认精度类型 decimal/number/dec/numeric/fixed
 drop table if exists tb_db_b_parser_0002;
 NOTICE:  table "tb_db_b_parser_0002" does not exist, skipping
-create table tb_db_b_parser_0002(a decimal, b number, c dec, d numeric);
+create table tb_db_b_parser_0002(a decimal, b number, c dec, d numeric, e fixed);
 \d tb_db_b_parser_0002
  Table "public.tb_db_b_parser_0002"
  Column |     Type      | Modifiers 
 --------+---------------+-----------
  a      | numeric(10,0) | 
- b      | numeric(10,0) | 
+ b      | numeric       | 
  c      | numeric(10,0) | 
  d      | numeric(10,0) | 
+ e      | numeric(10,0) | 
 
 --验证float4(n)和double类型
 drop table if exists tb_default_float;

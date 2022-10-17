@@ -25487,11 +25487,6 @@ Numeric:	INT_P opt_type_modifiers field_unsigned
 			| NUMBER_P opt_type_modifiers
 				{
 					$$ = SystemTypeName("numeric");
-					/* for B_FORMAT compatibility, default (p, s) of decimal is (10, 0) */
-					if ($2 == NULL) {
-						$2 = list_make1(makeIntConst(10, -1));
-						$2 = lappend($2, makeIntConst(0, -1));  
-					}
 					$$->typmods = $2;
 					$$->location = @1;
 				}

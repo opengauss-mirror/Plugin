@@ -120,7 +120,7 @@ select coalesce(null, null,null,''::text,'hello!'::text);
  
 (1 row)
 
-select coalesce(null, null,null,'100.001'::number,134);
+select coalesce(null, null,null,'100.001'::numeric,134);
  coalesce 
 ----------
       100
@@ -735,13 +735,13 @@ SELECT ifnull('100.001'::float8, 'hello!'::text);
 (1 row)
 
 --ifnull(text, number)
-SELECT ifnull('hello!'::text, '100.001'::number);
+SELECT ifnull('hello!'::text, '100.001'::numeric);
  ifnull 
 --------
  hello!
 (1 row)
 
-SELECT ifnull('100.001'::number, 'hello!'::text);
+SELECT ifnull('100.001'::numeric, 'hello!'::text);
  ifnull 
 --------
     100
@@ -808,25 +808,25 @@ SELECT ifnull('100.001'::float8, ''::text);
  100.001
 (1 row)
 
-SELECT ifnull(''::text, '100.001'::number);
+SELECT ifnull(''::text, '100.001'::numeric);
  ifnull 
 --------
  
 (1 row)
 
-SELECT ifnull(''::number, 'hello!'::text);
+SELECT ifnull(''::numeric, 'hello!'::text);
  ifnull 
 --------
       0
 (1 row)
 
-SELECT ifnull('hello!'::text, ''::number);
+SELECT ifnull('hello!'::text, ''::numeric);
  ifnull 
 --------
  hello!
 (1 row)
 
-SELECT ifnull('100.001'::number, ''::text);
+SELECT ifnull('100.001'::numeric, ''::text);
  ifnull 
 --------
     100
@@ -1038,7 +1038,7 @@ SELECT isnull(''::int8);
  f
 (1 row)
 
-SELECT isnull(''::number);
+SELECT isnull(''::numeric);
  ?column? 
 ----------
  f
@@ -1068,7 +1068,7 @@ SELECT isnull('100.001'::float8);
  f
 (1 row)
 
-SELECT isnull('100.001'::number);
+SELECT isnull('100.001'::numeric);
  ?column? 
 ----------
  f
@@ -2324,7 +2324,7 @@ select coalesce(null, null,null,''::text,'hello!'::text);
  
 (1 row)
 
-select coalesce(null, null,null,'100.001'::number,134);
+select coalesce(null, null,null,'100.001'::numeric,134);
  coalesce 
 ----------
       100
@@ -2939,13 +2939,13 @@ SELECT ifnull('100.001'::float8, 'hello!'::text);
 (1 row)
 
 --ifnull(text, number)
-SELECT ifnull('hello!'::text, '100.001'::number);
+SELECT ifnull('hello!'::text, '100.001'::numeric);
  ifnull 
 --------
  hello!
 (1 row)
 
-SELECT ifnull('100.001'::number, 'hello!'::text);
+SELECT ifnull('100.001'::numeric, 'hello!'::text);
  ifnull 
 --------
     100
@@ -3012,25 +3012,25 @@ SELECT ifnull('100.001'::float8, ''::text);
  100.001
 (1 row)
 
-SELECT ifnull(''::text, '100.001'::number);
+SELECT ifnull(''::text, '100.001'::numeric);
  ifnull 
 --------
  
 (1 row)
 
-SELECT ifnull(''::number, 'hello!'::text);
+SELECT ifnull(''::numeric, 'hello!'::text);
  ifnull 
 --------
       0
 (1 row)
 
-SELECT ifnull('hello!'::text, ''::number);
+SELECT ifnull('hello!'::text, ''::numeric);
  ifnull 
 --------
  hello!
 (1 row)
 
-SELECT ifnull('100.001'::number, ''::text);
+SELECT ifnull('100.001'::numeric, ''::text);
  ifnull 
 --------
     100
@@ -3242,7 +3242,7 @@ SELECT isnull(''::int8);
  f
 (1 row)
 
-SELECT isnull(''::number);
+SELECT isnull(''::numeric);
  ?column? 
 ----------
  f
@@ -3272,7 +3272,7 @@ SELECT isnull('100.001'::float8);
  f
 (1 row)
 
-SELECT isnull('100.001'::number);
+SELECT isnull('100.001'::numeric);
  ?column? 
 ----------
  f

@@ -4,9 +4,9 @@ create database db_b_parser4 dbcompatibility 'b';
 --验证text类型
 drop table if exists tb_db_b_parser_0001;
 create table tb_db_b_parser_0001(a text(10),b tinytext,c mediumtext,d longtext);
---验证默认精度类型 decimal/number/dec/numeric
+--验证默认精度类型 decimal/number/dec/numeric/fixed
 drop table if exists tb_db_b_parser_0002;
-create table tb_db_b_parser_0002(a decimal, b number, c dec, d numeric);
+create table tb_db_b_parser_0002(a decimal, b number, c dec, d numeric, e fixed);
 
 \d tb_db_b_parser_0002
 --验证float4(n)和double类型
