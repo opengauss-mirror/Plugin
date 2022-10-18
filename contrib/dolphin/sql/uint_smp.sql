@@ -46,24 +46,24 @@ set query_dop = 1;
 
 drop table if exists t2 ;
 create table t2(a uint4);
-insert into t2 select generate_series(1,2550000);
-insert into t2 select generate_series(1,2550000);
+insert into t2 select generate_series(1,200000);
+insert into t2 select generate_series(1,200000);
 explain(costs off, verbose) select * from t2 where a = 2;
-explain(costs off, verbose) select * from t2 where a = 2 and t2.a in (select a from t2 where a > 500);
+explain(costs off, verbose) select * from t2 where a = 2 and t2.a in (select a from t2 where a < 500);
  set query_dop = 4;
 explain(costs off, verbose)  select * from t2 where a = 2;
-explain(costs off, verbose) select * from t2 where a = 2 and t2.a in (select a from t2 where a > 500);
+explain(costs off, verbose) select * from t2 where a = 2 and t2.a in (select a from t2 where a < 500);
  set query_dop = 1;
 
 drop table if exists t2 ;
 create table t2(a uint8);
-insert into t2 select generate_series(1,2550000);
-insert into t2 select generate_series(1,2550000);
+insert into t2 select generate_series(1,200000);
+insert into t2 select generate_series(1,200000);
 explain(costs off, verbose)   select * from t2 where a = 2;
-explain(costs off, verbose) select * from t2 where a = 2 and t2.a in (select a from t2 where a > 500);
+explain(costs off, verbose) select * from t2 where a = 2 and t2.a in (select a from t2 where a < 500);
  set query_dop = 4;
 explain(costs off, verbose)  select * from t2 where a = 2;
-explain(costs off, verbose) select * from t2 where a = 2 and t2.a in (select a from t2 where a > 500);
+explain(costs off, verbose) select * from t2 where a = 2 and t2.a in (select a from t2 where a < 500);
  set query_dop = 1;
 
 set opfusion_debug_mode = off;
@@ -71,8 +71,8 @@ set opfusion_debug_mode = off;
 create table join_1(a uint4);
 create table join_2(a uint8);
 
-insert into join_1 select generate_series(1, 1000000);
-insert into join_2 select generate_series(1, 1000000);
+insert into join_1 select generate_series(1, 150000);
+insert into join_2 select generate_series(1, 150000);
 
 set query_dop = 2;
 explain(costs off, verbose) select * from join_1 join join_2;
