@@ -668,10 +668,14 @@ select '@Af%' like binary '@aF%';
 select 'abc' like 'ab\%' escape '\' ;
 select 'abc' like binary 'ab\%' escape '\' ;
 
----正常报错，like不兼容bool型
 select true like true;
----正常报错，like不兼容bit型
-select b'101' like b'101';
+select true like 'a';
+select 'a' like true;
+select 'a' not like true;
+select true not like true;
+select true not like 'a';
+
+
 
 
 select char_length('asbjhc') like char_length('askjdhkj');

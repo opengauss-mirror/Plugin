@@ -405,8 +405,17 @@ Operator oper(ParseState* pstate, List* opname, Oid ltypeId, Oid rtypeId, bool n
             rtypeId = TIMESTAMPOID;
         }
     }
+    /**
+     * the result of 'bool like unknown' is wrong, which we should change into 'bool like text' 
+     */
+    if (GetSessionContext()->enableBCmptMode) {
+        if (ltypeId == UNKNOWNOID && rtypeId == BOOLOID) {
+            ltypeId = TEXTOID;
+        } else if (ltypeId == BOOLOID && rtypeId == UNKNOWNOID) {
+            rtypeId = TEXTOID;
+        }
+    } 
 #endif
-
     /*
      * Try to find the mapping in the lookaside cache.
      */
