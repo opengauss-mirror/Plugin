@@ -24,6 +24,33 @@ select WEEKOFYEAR(datetime '2021-11-4 16:30:44.341191');
 
 select YEAR(datetime '2021-11-4 16:30:44.341191');
 
+SELECT dayofmonth('2022-10-09 09:55:28.12345');
+SELECT dayofweek('2022-10-09 09:55:28.12345');
+SELECT dayofyear('2022-10-09 09:55:28.12345');
+SELECT hour('2022-10-09 09:55:28.12345');
+SELECT microsecond('2022-10-09 09:55:28.12345');
+SELECT minute('2022-10-09 09:55:28.12345');
+SELECT quarter('2022-10-09 09:55:28.12345');
+SELECT second('2022-10-09 09:55:28.12345');
+SELECT weekday('2022-10-09 09:55:28.12345');
+SELECT weekofyear('2022-10-09 09:55:28.12345');
+select now(),dayofmonth(now()),dayofmonth('2022-06-13');
+select now(),dayofyear(now()),dayofyear('2022-06-13');
+
+SELECT dayofmonth(20221009);
+SELECT dayofweek(20221009);
+SELECT dayofyear(20221009);
+SELECT quarter(20221009);
+SELECT weekday(20221009);
+SELECT weekofyear(20221009);
+
+select year('');
+select year('2022');
+select year('2022-06');
+select year('2022-06-13');
+select year('9999-06-13');
+select year('10000-06-13');
+select year(20221009);
 
 --测试点：LOCATE(substr,str)
 select locate('test','testgood');

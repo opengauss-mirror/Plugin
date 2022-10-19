@@ -98,6 +98,8 @@
 #define MAXNUM_SEC 60
 #define DAYS_PER_COMMON_YEAR 365
 #define DAYS_PER_LEAP_YEAR 366
+#else
+#define MAX_YEAR 9999
 #endif
 
 /* NaN and Infinity Macro used in interval_mul and interval_div*/
@@ -184,6 +186,8 @@ PG_FUNCTION_INFO_V1_PUBLIC(numeric_b_format_timestamp);
 extern "C" DLL_PUBLIC Datum numeric_b_format_timestamp(PG_FUNCTION_ARGS);
 PG_FUNCTION_INFO_V1_PUBLIC(datetime_year_part);
 extern "C" DLL_PUBLIC Datum datetime_year_part(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(text_year_part);
+extern "C" DLL_PUBLIC Datum text_year_part(PG_FUNCTION_ARGS);
 
 PG_FUNCTION_INFO_V1_PUBLIC(b_db_sys_real_timestamp);
 extern "C" DLL_PUBLIC Datum b_db_sys_real_timestamp(PG_FUNCTION_ARGS);
@@ -4700,6 +4704,24 @@ Datum datetime_year_part(PG_FUNCTION_ARGS)
         result = tm->tm_year;
     else {
         ereport(ERROR, (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE), errmsg("timestamp out of range")));
+    }
+    PG_RETURN_FLOAT8(result);
+}
+
+Datum text_year_part(PG_FUNCTION_ARGS)
+{
+    Timestamp timestamp;
+    char* str = TextDatumGetCString(PG_GETARG_TEXT_PP(0));
+    if (!datetime_in_no_ereport(str, &timestamp)) {
+        PG_RETURN_NULL();
+    }
+    float8 result = 0;
+    fsec_t fsec;
+    struct pg_tm tt, *tm = &tt;
+    if (timestamp2tm(timestamp, NULL, tm, &fsec, NULL, NULL) == 0 && tm->tm_year <= MAX_YEAR) {
+        result = tm->tm_year;
+    } else {
+        PG_RETURN_NULL();
     }
     PG_RETURN_FLOAT8(result);
 }
