@@ -1109,10 +1109,10 @@ void CreateFunction(CreateFunctionStmt* stmt, const char* queryString, Oid pkg_o
                                                          &isWindowFunc, &volatility, &isStrict, &security, &isLeakProof,
                                                          &proconfig, &procost, &prorows, &fenced, &shippable, &package);
 #ifdef DOLPHIN
-    if(proIsProcedure || stmt->isOtypeFunction){
+    if(proIsProcedure || stmt->isOraStyle) {
         if (strcmp(language,"sql") == 0 )
             language = "plpgsql";
-        else if (strcmp(language,"plpgsql") != 0 ){
+        else if (strcmp(language,"plpgsql") != 0) {
             ereport(ERROR, (errcode(ERRCODE_INVALID_FUNCTION_DEFINITION), errmsg("wrong language specified")));
         }
     }

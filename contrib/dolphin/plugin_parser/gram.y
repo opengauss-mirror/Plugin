@@ -16055,7 +16055,6 @@ CreateFunctionStmt:
 					n->options = $9;
 					n->withClause = $10;
 					n->isProcedure = false;
-					n->isOtypeFunction = false;
 					$$ = (Node *)n;
 				}
 			| CREATE opt_or_replace definer_user FUNCTION func_name_opt_arg proc_args
@@ -16076,7 +16075,6 @@ CreateFunctionStmt:
 					n->options = $12;
 					n->withClause = $13;
 					n->isProcedure = false;
-					n->isOtypeFunction = false;
 					$$ = (Node *)n;
 				}
 			| CREATE opt_or_replace definer_user FUNCTION func_name_opt_arg proc_args
@@ -16096,7 +16094,6 @@ CreateFunctionStmt:
 					n->options = $7;
 					n->withClause = $8;
 					n->isProcedure = false;
-					n->isOtypeFunction = false;
 					$$ = (Node *)n;
 				}
 			| CREATE opt_or_replace definer_user FUNCTION func_name_opt_arg proc_args
@@ -16132,7 +16129,6 @@ CreateFunctionStmt:
 					n->withClause = NIL;
 					n->withClause = NIL;
 					n->isProcedure = false;
-					n->isOtypeFunction = true;
                     u_sess->parser_cxt.isCreateFuncOrProc = false;
 					$$ = (Node *)n;
 				}
@@ -16199,7 +16195,6 @@ CreateProcedureStmt:
 					n->inputHeaderSrc = FormatFuncArgType(yyscanner, funSource->headerSrc, n->parameters);
 					n->returnType = NULL;
 					n->isProcedure = true;
-					n->isOtypeFunction = false;
 					if (0 == count)
 					{
 						n->returnType = makeTypeName("void");
