@@ -1055,7 +1055,7 @@ static SelectStmt *MakeShowGrantStmt(char *arg, int location, core_yyscan_t yysc
 	CURRENT_TIME CURTIME CURRENT_TIMESTAMP CURRENT_USER CURSOR CYCLE NOW_FUNC
 	SHRINK
 
-	DATA_P DATABASE DATABASES DATAFILE DATANODE DATANODES DATATYPE_CL DATE_P DATETIME DATE_FORMAT_P DAY_P  DAYOFMONTH DAYOFWEEK DAYOFYEAR DBCOMPATIBILITY_P DB_B_FORMAT DB_B_JSOBJ DEALLOCATE DEC DECIMAL_P DECLARE DECODE DEFAULT DEFAULTS
+	DATA_P DATABASE DATABASES DATAFILE DATANODE DATANODES DATATYPE_CL DATE_P DATETIME DATE_FORMAT_P DAY_P DBCOMPATIBILITY_P DB_B_FORMAT DB_B_JSOBJ DEALLOCATE DEC DECIMAL_P DECLARE DECODE DEFAULT DEFAULTS
 	DEFERRABLE DEFERRED DEFINER DELAYED DELETE_P DELIMITER DELIMITERS DELTA DELTAMERGE DESC DESCRIBE DETERMINISTIC DIV
 /* PGXC_BEGIN */
 	DICTIONARY DIRECT DIRECTORY DISABLE_P DISCARD DISTINCT DISTINCTROW DISTRIBUTE DISTRIBUTION DO DOCUMENT_P DOMAIN_P DOUBLE_P
@@ -1130,7 +1130,7 @@ static SelectStmt *MakeShowGrantStmt(char *arg, int location, core_yyscan_t yysc
 	VACUUM VALID VALIDATE VALIDATION VALIDATOR VALUE_P VALUES VARBINARY VARCHAR VARCHAR2 VARIABLES VARIADIC VARRAY VARYING VCGROUP
 	VERBOSE VERIFY VERSION_P VIEW VOLATILE
 
-	WAIT WEAK WEEKDAY WEEKOFYEAR WHEN WHERE WHITESPACE_P WINDOW WITH WITHIN WITHOUT WORK WORKLOAD WRAPPER WRITE
+	WAIT WEAK WHEN WHERE WHITESPACE_P WINDOW WITH WITHIN WITHOUT WORK WORKLOAD WRAPPER WRITE
 
 	XML_P XMLATTRIBUTES XMLCONCAT XMLELEMENT XMLEXISTS XMLFOREST XMLPARSE XOR
 	XMLPI XMLROOT XMLSERIALIZE
@@ -28122,146 +28122,6 @@ func_expr_common_subexpr:
 					n->call_func = false;
 					$$ = (Node *)n;
 				}
-			| DAYOFMONTH '(' a_expr ')'
-				{
-					FuncCall *n = makeNode(FuncCall);
-					n->funcname = SystemFuncName("date_part");
-					n->args = list_make2(makeStringConst("day", -1), $3);
-					n->agg_order = NIL;
-					n->agg_star = FALSE;
-					n->agg_distinct = FALSE;
-					n->func_variadic = FALSE;
-					n->over = NULL;
-					n->location = @1;
-					n->call_func = false;
-					$$ = (Node *)n;
-				}
-			| DAYOFWEEK '(' a_expr ')'
-				{
-					FuncCall *n = makeNode(FuncCall);
-					n->funcname = SystemFuncName("date_part");
-					n->args = list_make2(makeStringConst("dow", -1), $3);
-					n->agg_order = NIL;
-					n->agg_star = FALSE;
-					n->agg_distinct = FALSE;
-					n->func_variadic = FALSE;
-					n->over = NULL;
-					n->location = @1;
-					n->call_func = false;
-					$$ = (Node *) makeSimpleA_Expr(AEXPR_OP, "+", (Node *)n, makeIntConst(1, -1), -1);
-				}
-			| DAYOFYEAR '(' a_expr ')'
-				{
-					FuncCall *n = makeNode(FuncCall);
-					n->funcname = SystemFuncName("date_part");
-					n->args = list_make2(makeStringConst("doy", -1), $3);
-					n->agg_order = NIL;
-					n->agg_star = FALSE;
-					n->agg_distinct = FALSE;
-					n->func_variadic = FALSE;
-					n->over = NULL;
-					n->location = @1;
-					n->call_func = false;
-					$$ = (Node *)n;
-				}
-			| HOUR_P '(' a_expr ')'
-				{
-					FuncCall *n = makeNode(FuncCall);
-					n->funcname = SystemFuncName("date_part");
-					n->args = list_make2(makeStringConst("hour", -1), $3);
-					n->agg_order = NIL;
-					n->agg_star = FALSE;
-					n->agg_distinct = FALSE;
-					n->func_variadic = FALSE;
-					n->over = NULL;
-					n->location = @1;
-					n->call_func = false;
-					$$ = (Node *)n;
-				}
-			| MICROSECOND_P '(' a_expr ')'
-				{
-					FuncCall *n = makeNode(FuncCall);
-					n->funcname = SystemFuncName("date_part");
-					n->args = list_make2(makeStringConst("microsecond", -1), $3);
-					n->agg_order = NIL;
-					n->agg_star = FALSE;
-					n->agg_distinct = FALSE;
-					n->func_variadic = FALSE;
-					n->over = NULL;
-					n->location = @1;
-					n->call_func = false;
-					$$ = (Node *)n;
-				}
-			| MINUTE_P '(' a_expr ')'
-				{
-					FuncCall *n = makeNode(FuncCall);
-					n->funcname = SystemFuncName("date_part");
-					n->args = list_make2(makeStringConst("minute", -1), $3);
-					n->agg_order = NIL;
-					n->agg_star = FALSE;
-					n->agg_distinct = FALSE;
-					n->func_variadic = FALSE;
-					n->over = NULL;
-					n->location = @1;
-					n->call_func = false;
-					$$ = (Node *)n;
-				}
-			| QUARTER '(' a_expr ')'
-				{
-					FuncCall *n = makeNode(FuncCall);
-					n->funcname = SystemFuncName("date_part");
-					n->args = list_make2(makeStringConst("quarter", -1), $3);
-					n->agg_order = NIL;
-					n->agg_star = FALSE;
-					n->agg_distinct = FALSE;
-					n->func_variadic = FALSE;
-					n->over = NULL;
-					n->location = @1;
-					n->call_func = false;
-					$$ = (Node *)n;
-				}
-			| SECOND_P '(' a_expr ')'
-				{
-					FuncCall *n = makeNode(FuncCall);
-					n->funcname = SystemFuncName("date_part");
-					n->args = list_make2(makeStringConst("second", -1), $3);
-					n->agg_order = NIL;
-					n->agg_star = FALSE;
-					n->agg_distinct = FALSE;
-					n->func_variadic = FALSE;
-					n->over = NULL;
-					n->location = @1;
-					n->call_func = false;
-					$$ = (Node *)n;
-				}
-			| WEEKDAY '(' a_expr ')'
-				{
-					FuncCall *n = makeNode(FuncCall);
-					n->funcname = SystemFuncName("date_part");
-					n->args = list_make2(makeStringConst("isodow", -1), $3);
-					n->agg_order = NIL;
-					n->agg_star = FALSE;
-					n->agg_distinct = FALSE;
-					n->func_variadic = FALSE;
-					n->over = NULL;
-					n->location = @1;
-					n->call_func = false;
-					$$ = (Node *) makeSimpleA_Expr(AEXPR_OP, "-", (Node *)n, makeIntConst(1, -1), -1);
-				}
-			| WEEKOFYEAR '(' a_expr ')'
-				{
-					FuncCall *n = makeNode(FuncCall);
-					n->funcname = SystemFuncName("date_part");
-					n->args = list_make2(makeStringConst("week", -1), $3);
-					n->agg_order = NIL;
-					n->agg_star = FALSE;
-					n->agg_distinct = FALSE;
-					n->func_variadic = FALSE;
-					n->over = NULL;
-					n->location = @1;
-					n->call_func = false;
-					$$ = (Node *)n;
-				}
 			| TIMESTAMP '(' a_expr ')'
 				{
 					FuncCall *n = makeNode(FuncCall);
@@ -30405,6 +30265,7 @@ unreserved_keyword_without_key:
 			| HANDLER
 			| HEADER_P
 			| HOSTS
+			| HOUR_P
 			| HOLD
 			| IDENTIFIED
 			| IDENTITY_P
@@ -30469,7 +30330,9 @@ unreserved_keyword_without_key:
 			| MAXSIZE
 			| MAXTRANS
 			| MERGE
+			| MICROSECOND_P
 			| MINEXTENTS
+			| MINUTE_P
 			| MINVALUE
 			| MOD
 			| MODE
@@ -30543,6 +30406,7 @@ unreserved_keyword_without_key:
 			| PUBLICATION
 			| PUBLISH
 			| PURGE
+			| QUARTER
 			| QUERY
 			| QUICK
 			| QUOTE
@@ -30595,6 +30459,7 @@ unreserved_keyword_without_key:
 			| SCHEMAS
 			| SCROLL
 			| SEARCH
+			| SECOND_P
 			| SECURITY
 			| SEQUENCE
 			| SEQUENCES
@@ -30722,27 +30587,19 @@ col_name_keyword:
 			| COALESCE
 			| CONVERT
 			| DATE_P
-			| DAYOFMONTH
-			| DAYOFWEEK
-			| DAYOFYEAR
 			| DB_B_FORMAT
 			| DB_B_JSOBJ
 			| EXTRACT
 			| GREATEST
-			| HOUR_P
 			| IFNULL
 			| LEAST
 			| LOCATE
-			| MICROSECOND_P
 			| MID
-			| MINUTE_P
 			| NULLIF
 			| NVARCHAR
 			| NVL
 			| OVERLAY
 			| POSITION
-			| QUARTER
-			| SECOND_P
 			| SUBSTR
 			| SUBSTRING
 			| TEXT_P
@@ -30751,8 +30608,6 @@ col_name_keyword:
 			| TIMESTAMPDIFF
 			| TREAT
 			| TRIM
-			| WEEKDAY
-			| WEEKOFYEAR
 			| XMLCONCAT
 			| XMLELEMENT
 			| XMLEXISTS

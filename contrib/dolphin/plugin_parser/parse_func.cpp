@@ -1636,6 +1636,33 @@ FuncDetailCode func_get_detail(List* funcname, List* fargs, List* fargnames, int
 
     if (best_candidate == NULL) {
         /*
+         * didn't find an exact match, so now try to match up candidates...
+         */
+        if (raw_candidates != NULL) {
+            FuncCandidateList current_candidates;
+            int ncandidates;
+
+            ncandidates = func_match_argtypes(nargs, argtypes, raw_candidates, &current_candidates);
+
+            /* one match only? then run with it... */
+            if (ncandidates == 1)
+                best_candidate = current_candidates;
+
+            /*
+             * multiple candidates? then better decide or throw an error...
+             */
+            else if (ncandidates > 1) {
+                best_candidate = func_select_candidate(nargs, argtypes, current_candidates);
+                /*
+                 * If we were able to choose a best candidate, we're done.
+                 * Otherwise, ambiguous function call.
+                 */
+                if (!best_candidate)
+                    return FUNCDETAIL_MULTIPLE;
+            }
+        }
+
+        /*
          * If we didn't find an exact match, next consider the possibility
          * that this is really a type-coercion request: a single-argument
          * function call where the function name is a type name.  If so, and
@@ -1674,7 +1701,7 @@ FuncDetailCode func_get_detail(List* funcname, List* fargs, List* fargnames, int
          * coerce_type can't handle, we'll cause infinite recursion between
          * this module and coerce_type!
          */
-        if (nargs == 1 && fargs != NIL && fargnames == NIL) {
+        if (best_candidate == NULL && nargs == 1 && fargs != NIL && fargnames == NIL) {
             Oid targetType = FuncNameAsType(funcname);
 
             if (OidIsValid(targetType)) {
@@ -1716,33 +1743,6 @@ FuncDetailCode func_get_detail(List* funcname, List* fargs, List* fargnames, int
                     *true_typeids = argtypes;
                     return FUNCDETAIL_COERCION;
                 }
-            }
-        }
-
-        /*
-         * didn't find an exact match, so now try to match up candidates...
-         */
-        if (raw_candidates != NULL) {
-            FuncCandidateList current_candidates;
-            int ncandidates;
-
-            ncandidates = func_match_argtypes(nargs, argtypes, raw_candidates, &current_candidates);
-
-            /* one match only? then run with it... */
-            if (ncandidates == 1)
-                best_candidate = current_candidates;
-
-            /*
-             * multiple candidates? then better decide or throw an error...
-             */
-            else if (ncandidates > 1) {
-                best_candidate = func_select_candidate(nargs, argtypes, current_candidates);
-                /*
-                 * If we were able to choose a best candidate, we're done.
-                 * Otherwise, ambiguous function call.
-                 */
-                if (!best_candidate)
-                    return FUNCDETAIL_MULTIPLE;
             }
         }
     }

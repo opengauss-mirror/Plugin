@@ -4,69 +4,219 @@ create database db_b_parser2 dbcompatibility 'b';
 \c db_b_parser2
 --验证DAYOFMONTH() DAYOFWEEK() DAYOFYEAR() HOUR() MICROSECOND() MINUTE() QUARTER() SECOND() WEEKDAY() WEEKOFYEAR() YEAR()
 select DAYOFMONTH(datetime '2021-11-4 16:30:44.341191');
- date_part 
------------
-         4
+ dayofmonth 
+------------
+          4
 (1 row)
 
 select DAYOFWEEK(datetime '2021-11-4 16:30:44.341191');
- ?column? 
-----------
-        5
+ dayofweek 
+-----------
+         5
 (1 row)
 
 select DAYOFYEAR(datetime '2021-12-31 16:30:44.341191');
- date_part 
+ dayofyear 
 -----------
        365
 (1 row)
 
 select HOUR(datetime '2021-11-4 16:30:44.341191');
- date_part 
------------
-        16
+ hour 
+------
+   16
 (1 row)
 
 select MICROSECOND(datetime '2021-11-4 16:30:44.341191');
- date_part 
------------
-    341191
+ microsecond 
+-------------
+      341191
 (1 row)
 
 select MINUTE(datetime '2021-11-4 16:30:44.341191');
- date_part 
------------
-        30
+ minute 
+--------
+     30
 (1 row)
 
 select QUARTER(datetime '2021-11-4 16:30:44.341191');
- date_part 
------------
-         4
+ quarter 
+---------
+       4
 (1 row)
 
 select SECOND(datetime '2021-11-4 16:30:44.341191');
- date_part 
------------
-        44
+ second 
+--------
+     44
 (1 row)
 
 select WEEKDAY(datetime '2021-11-4 16:30:44.341191');
- ?column? 
-----------
-        3
+ weekday 
+---------
+       3
 (1 row)
 
 select WEEKOFYEAR(datetime '2021-11-4 16:30:44.341191');
- date_part 
------------
-        44
+ weekofyear 
+------------
+         44
 (1 row)
 
 select YEAR(datetime '2021-11-4 16:30:44.341191');
  year 
 ------
  2021
+(1 row)
+
+SELECT dayofmonth('2022-10-09 09:55:28.12345');
+ dayofmonth 
+------------
+          9
+(1 row)
+
+SELECT dayofweek('2022-10-09 09:55:28.12345');
+ dayofweek 
+-----------
+         1
+(1 row)
+
+SELECT dayofyear('2022-10-09 09:55:28.12345');
+ dayofyear 
+-----------
+       282
+(1 row)
+
+SELECT hour('2022-10-09 09:55:28.12345');
+ hour 
+------
+    9
+(1 row)
+
+SELECT microsecond('2022-10-09 09:55:28.12345');
+ microsecond 
+-------------
+      123450
+(1 row)
+
+SELECT minute('2022-10-09 09:55:28.12345');
+ minute 
+--------
+     55
+(1 row)
+
+SELECT quarter('2022-10-09 09:55:28.12345');
+ quarter 
+---------
+       4
+(1 row)
+
+SELECT second('2022-10-09 09:55:28.12345');
+ second 
+--------
+     28
+(1 row)
+
+SELECT weekday('2022-10-09 09:55:28.12345');
+ weekday 
+---------
+       6
+(1 row)
+
+SELECT weekofyear('2022-10-09 09:55:28.12345');
+ weekofyear 
+------------
+         40
+(1 row)
+
+select now(),dayofmonth(now()),dayofmonth('2022-06-13');
+          now()           | dayofmonth | dayofmonth 
+--------------------------+------------+------------
+--?13.*
+(1 row)
+
+select now(),dayofyear(now()),dayofyear('2022-06-13');
+          now()           | dayofyear | dayofyear 
+--------------------------+-----------+-----------
+--?164.*
+(1 row)
+
+SELECT dayofmonth(20221009);
+ dayofmonth 
+------------
+          9
+(1 row)
+
+SELECT dayofweek(20221009);
+ dayofweek 
+-----------
+         1
+(1 row)
+
+SELECT dayofyear(20221009);
+ dayofyear 
+-----------
+       282
+(1 row)
+
+SELECT quarter(20221009);
+ quarter 
+---------
+       4
+(1 row)
+
+SELECT weekday(20221009);
+ weekday 
+---------
+       6
+(1 row)
+
+SELECT weekofyear(20221009);
+ weekofyear 
+------------
+         40
+(1 row)
+
+select year('');
+ year 
+------
+     
+(1 row)
+
+select year('2022');
+ year 
+------
+     
+(1 row)
+
+select year('2022-06');
+ year 
+------
+     
+(1 row)
+
+select year('2022-06-13');
+ year 
+------
+ 2022
+(1 row)
+
+select year('9999-06-13');
+ year 
+------
+ 9999
+(1 row)
+
+select year('10000-06-13');
+ year 
+------
+     
+(1 row)
+
+select year(20221009);
+ year 
+------
+ 2022
 (1 row)
 
 --测试点：LOCATE(substr,str)
