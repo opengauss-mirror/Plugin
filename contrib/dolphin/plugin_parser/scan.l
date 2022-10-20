@@ -756,6 +756,12 @@ other			.
 					SET_YYLLOC();
 					BEGIN(xd);
 					startlit();
+#ifdef DOLPHIN
+					if (!SQL_MODE_ANSI_QUOTES()) {
+						yyextra->warn_on_first_escape = true;
+						yyextra->saw_non_ascii = false;
+					}
+#endif
 				}
 {xuistart}		{
 					SET_YYLLOC();
@@ -763,22 +769,42 @@ other			.
 					startlit();
 				}
 <xd>{xdstop}	{
-					char		   *ident;
-
-					BEGIN(INITIAL);
-					if (yyextra->literallen == 0)
-						yyerror("zero-length delimited identifier");
-					ident = litbufdup(yyscanner);
-					if (yyextra->literallen >= NAMEDATALEN && u_sess->parser_cxt.is_load_copy == false && u_sess->parser_cxt.isForbidTruncate == false)
-						truncate_identifier(ident, yyextra->literallen, yyextra->warnOnTruncateIdent);
 #ifdef DOLPHIN
-					yylval->dolphinIdent = CreateDolphinIdent(ident, true);
-#else
-					yylval->str = ident;
+					if (SQL_MODE_ANSI_QUOTES()) {
 #endif
-					yyextra->ident_quoted = true;
-					yyextra->is_hint_str = false;
-					return IDENT;
+						char		   *ident;
+
+						BEGIN(INITIAL);
+						if (yyextra->literallen == 0)
+							yyerror("zero-length delimited identifier");
+						ident = litbufdup(yyscanner);
+						if (yyextra->literallen >= NAMEDATALEN && u_sess->parser_cxt.is_load_copy == false && u_sess->parser_cxt.isForbidTruncate == false)
+							truncate_identifier(ident, yyextra->literallen, yyextra->warnOnTruncateIdent);
+#ifdef DOLPHIN
+						yylval->dolphinIdent = CreateDolphinIdent(ident, true);
+#else
+						yylval->str = ident;
+#endif
+						yyextra->ident_quoted = true;
+						yyextra->is_hint_str = false;
+						return IDENT;
+#ifdef DOLPHIN
+					} else {
+						yyless(1);
+						BEGIN(INITIAL);
+						/*
+						* check that the data remains valid if it might have been
+						* made invalid by unescaping any chars.
+						*/
+						if (yyextra->saw_non_ascii)
+							pg_verifymbstr(yyextra->literalbuf,
+										yyextra->literallen,
+										false);
+						yylval->str = litbufdup(yyscanner);
+						yyextra->is_hint_str = false;
+						return SCONST;
+					}
+#endif
 				}
 <xui>{xuistop1}	{
 					char		   *ident;
