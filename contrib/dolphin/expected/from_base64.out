@@ -1,0 +1,80 @@
+drop database if exists from_base64;
+NOTICE:  database "from_base64" does not exist, skipping
+create database from_base64 dbcompatibility 'b';
+\c from_base64
+--测试正常base64编码作为输入，返回base64编码的解码结果
+SELECT FROM_BASE64('YWJj');
+ from_base64 
+-------------
+ abc
+(1 row)
+
+SELECT FROM_BASE64('MTIzNDU2');
+ from_base64 
+-------------
+ 123456
+(1 row)
+
+--测试非base64编码和NULL作为输入，均返回空值
+SELECT FROM_BASE64('asjeifj');
+ from_base64 
+-------------
+ 
+(1 row)
+
+SELECT FROM_BASE64(NULL);
+ from_base64 
+-------------
+ 
+(1 row)
+
+--测试bit类型、bool类型、numeric类型、date类型作为输入
+SELECT FROM_BASE64(b'01011001010101110100101001101010');
+ from_base64 
+-------------
+ abc
+(1 row)
+
+SELECT FROM_BASE64(TRUE);
+ from_base64 
+-------------
+ 
+(1 row)
+
+SELECT FROM_BASE64(FALSE);
+ from_base64 
+-------------
+ 
+(1 row)
+
+SELECT FROM_BASE64(123456781234567812345678);
+                           from_base64                           
+-----------------------------------------------------------------
+ \327m\370\347\256\374\327m\370\347\256\374\327m\370\347\256\374
+(1 row)
+
+SELECT FROM_BASE64('123456781234567812345678');
+                           from_base64                           
+-----------------------------------------------------------------
+ \327m\370\347\256\374\327m\370\347\256\374\327m\370\347\256\374
+(1 row)
+
+SELECT FROM_BASE64(now());
+ from_base64 
+-------------
+ 
+(1 row)
+
+-- 测试table类型作为输入
+CREATE TABLE test_base64 (name text);
+INSERT INTO test_base64 values('YWJj'), ('MTIzNDU2'), ('asjeifj');
+SELECT FROM_BASE64(name) from test_base64;
+ from_base64 
+-------------
+ abc
+ 123456
+ 
+(3 rows)
+
+\c postgres
+drop database if exists from_base64;

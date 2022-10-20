@@ -13,16 +13,17 @@
  */
 #include "postgres.h"
 #include "knl/knl_variable.h"
-
+#include "plugin_postgres.h"
 #include <ctype.h>
 
 #include "utils/builtins.h"
 
+#ifdef DOLPHIN
 struct pg_encoding {
     unsigned (*encode_len)(const char* data, unsigned dlen);
     unsigned (*decode_len)(const char* data, unsigned dlen);
     unsigned (*encode)(const char* data, unsigned dlen, char* res);
-    unsigned (*decode)(const char* data, unsigned dlen, char* res);
+    unsigned (*decode)(const char* data, unsigned dlen, char* res, bool flag);
 };
 
 static const struct pg_encoding* pg_find_encoding(const char* name);
@@ -31,18 +32,13 @@ static const struct pg_encoding* pg_find_encoding(const char* name);
  * SQL functions.
  */
 
-Datum binary_encode(PG_FUNCTION_ARGS)
+static text* encode_internal(bytea* data, char* namebuf)
 {
-    bytea* data = PG_GETARG_BYTEA_P(0);
-    Datum name = PG_GETARG_DATUM(1);
     text* result = NULL;
-    char* namebuf = NULL;
     int datalen, resultlen, res;
     const struct pg_encoding* enc;
 
     datalen = VARSIZE(data) - VARHDRSZ;
-
-    namebuf = TextDatumGetCString(name);
 
     enc = pg_find_encoding(namebuf);
     if (enc == NULL)
@@ -59,21 +55,29 @@ Datum binary_encode(PG_FUNCTION_ARGS)
 
     SET_VARSIZE(result, VARHDRSZ + res);
 
+    return result;
+}
+
+Datum binary_encode(PG_FUNCTION_ARGS)
+{
+    bytea* data = PG_GETARG_BYTEA_P(0);
+    Datum name = PG_GETARG_DATUM(1);
+    text* result = NULL;
+    char* namebuf = NULL;
+
+    namebuf = TextDatumGetCString(name);
+    result = encode_internal(data, namebuf);
+
     PG_RETURN_TEXT_P(result);
 }
 
-Datum binary_decode(PG_FUNCTION_ARGS)
+static bytea* decode_internal(text* data, char* namebuf, bool flag)
 {
-    text* data = PG_GETARG_TEXT_P(0);
-    Datum name = PG_GETARG_DATUM(1);
     bytea* result = NULL;
-    char* namebuf = NULL;
     int datalen, resultlen, res;
     const struct pg_encoding* enc;
 
     datalen = VARSIZE(data) - VARHDRSZ;
-
-    namebuf = TextDatumGetCString(name);
 
     enc = pg_find_encoding(namebuf);
     if (enc == NULL)
@@ -82,16 +86,43 @@ Datum binary_decode(PG_FUNCTION_ARGS)
     resultlen = enc->decode_len(VARDATA(data), datalen);
     result = (bytea*)palloc(VARHDRSZ + resultlen);
 
-    res = enc->decode(VARDATA(data), datalen, VARDATA(result));
+    res = enc->decode(VARDATA(data), datalen, VARDATA(result), flag);
 
     /* Make this FATAL 'cause we've trodden on memory ... */
     if (res > resultlen)
         ereport(ERROR, (errcode(ERRCODE_DATA_EXCEPTION), errmsg("overflow - decode estimate too small")));
 
     SET_VARSIZE(result, VARHDRSZ + res);
+    return result;
+}
+
+Datum binary_decode(PG_FUNCTION_ARGS)
+{
+    text* data = PG_GETARG_TEXT_P(0);
+    Datum name = PG_GETARG_DATUM(1);
+    bytea* result = NULL;
+    char* namebuf = NULL;
+
+    namebuf = TextDatumGetCString(name);
+    result = decode_internal(data, namebuf, true);
 
     PG_RETURN_BYTEA_P(result);
 }
+
+PG_FUNCTION_INFO_V1_PUBLIC(base64_decode);
+extern "C" DLL_PUBLIC Datum base64_decode(PG_FUNCTION_ARGS);
+
+Datum base64_decode(PG_FUNCTION_ARGS)
+{
+    text* decodeData = PG_GETARG_TEXT_P(0);
+    bytea* decodeResult = decode_internal(decodeData, "base64", false);
+
+    bytea* encodeData = decodeResult;
+    text* encodeResult = encode_internal(encodeData, "escape");
+
+    PG_RETURN_TEXT_P(encodeResult);
+}
+#endif
 
 /*
  * HEX
@@ -255,7 +286,8 @@ static inline char get_hex(char c)
     return (char)res;
 }
 
-unsigned hex_decode(const char* src, unsigned len, char* dst)
+#ifdef DOLPHIN
+unsigned hex_decode(const char* src, unsigned len, char* dst, bool flag)
 {
     const char *s = NULL, *srcend;
     char v1, v2, *p;
@@ -279,6 +311,7 @@ unsigned hex_decode(const char* src, unsigned len, char* dst)
 
     return p - dst;
 }
+#endif
 
 static unsigned hex_enc_len(const char* src, unsigned srclen)
 {
@@ -467,7 +500,8 @@ static unsigned b64_encode(const char* src, unsigned len, char* dst)
     return p - dst;
 }
 
-static unsigned b64_decode(const char* src, unsigned len, char* dst)
+#ifdef DOLPHIN
+static unsigned b64_decode(const char* src, unsigned len, char* dst, bool flag)
 {
     const char *srcend = src + len, *s = src;
     char* p = dst;
@@ -489,16 +523,28 @@ static unsigned b64_decode(const char* src, unsigned len, char* dst)
                     end = 1;
                 else if (pos == 3)
                     end = 2;
-                else
-                    ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("unexpected \"=\"")));
+                else {
+                    if (flag)
+                        ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("unexpected \"=\"")));
+                    else {
+                        *dst = 0;
+                        return 0;
+                    }
+                }
             }
             b = 0;
         } else {
             b = -1;
             if (c > 0 && c < 127)
                 b = b64lookup[(unsigned char)c];
-            if (b < 0)
-                ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("invalid symbol")));
+            if (b < 0) {
+                if (flag)
+                    ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("invalid symbol")));
+                else {
+                    *dst = 0;
+                    return 0;
+                }
+            }
         }
         /* add it to buffer */
         buf = (buf << 6) + b;
@@ -514,11 +560,17 @@ static unsigned b64_decode(const char* src, unsigned len, char* dst)
         }
     }
 
-    if (pos != 0)
-        ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("invalid end sequence")));
-
+    if (pos != 0) {
+        if (flag)
+            ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("invalid end sequence")));
+        else {
+            *dst = 0;
+            return 0;
+        }
+    }
     return p - dst;
 }
+#endif
 
 static unsigned b64_enc_len(const char* src, unsigned srclen)
 {
@@ -580,7 +632,8 @@ static unsigned esc_encode(const char* src, unsigned srclen, char* dst)
     return len;
 }
 
-static unsigned esc_decode(const char* src, unsigned srclen, char* dst)
+#ifdef DOLPHIN
+static unsigned esc_decode(const char* src, unsigned srclen, char* dst, bool flag)
 {
     const char* end = src + srclen;
     char* rp = dst;
@@ -616,6 +669,7 @@ static unsigned esc_decode(const char* src, unsigned srclen, char* dst)
 
     return len;
 }
+#endif
 
 static unsigned esc_enc_len(const char* src, unsigned srclen)
 {

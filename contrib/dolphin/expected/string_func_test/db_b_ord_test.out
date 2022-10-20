@@ -1,0 +1,89 @@
+drop database if exists db_b_ord_test;
+NOTICE:  database "db_b_ord_test" does not exist, skipping
+create database db_b_ord_test dbcompatibility 'B';
+\c db_b_ord_test
+-- test 1 byte
+select ord('1111');
+ ord 
+-----
+  49
+(1 row)
+
+select ord('sss111');
+ ord 
+-----
+ 115
+(1 row)
+
+-- test 2 byte
+select ord('Ŷ1111');
+  ord  
+-------
+ 50614
+(1 row)
+
+select ord('߷1111');
+  ord  
+-------
+ 57271
+(1 row)
+
+-- test 3 byte
+select ord('অ1111');
+   ord    
+----------
+ 14722693
+(1 row)
+
+select ord('ꬤ1111');
+   ord    
+----------
+ 15379620
+(1 row)
+
+-- test 4 byte
+select ord('𒁖1111');
+    ord     
+------------
+ 4036133270
+(1 row)
+
+select ord('𓃔1111');
+    ord     
+------------
+ 4036199316
+(1 row)
+
+-- test number
+select ord(11111);
+ ord 
+-----
+  49
+(1 row)
+
+select ord(99999);
+ ord 
+-----
+  57
+(1 row)
+
+-- test empty
+select ord('');
+ ord 
+-----
+   0
+(1 row)
+
+-- test from table
+create table test_ord (name text);
+insert into test_ord values('1234'), ('嬴政'), ('𓃔𓃘𓃲𓃰');
+select ord(name) from test_ord;
+    ord     
+------------
+         49
+   15051956
+ 4036199316
+(3 rows)
+
+\c postgres
+drop database if exists db_b_ord_test;

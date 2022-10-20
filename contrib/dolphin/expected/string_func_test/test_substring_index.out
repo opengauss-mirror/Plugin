@@ -1,0 +1,249 @@
+drop database if exists test_substring_index;
+NOTICE:  database "test_substring_index" does not exist, skipping
+create database test_substring_index dbcompatibility 'b';
+\c test_substring_index
+SELECT SUBSTRING_INDEX('www.opengauss.com','.',0);
+ substring_index 
+-----------------
+ 
+(1 row)
+
+SELECT SUBSTRING_INDEX('www.opengauss.com','',2);
+ substring_index 
+-----------------
+ 
+(1 row)
+
+SELECT SUBSTRING_INDEX('','.',2);
+ substring_index 
+-----------------
+ 
+(1 row)
+
+SELECT SUBSTRING_INDEX('','',2);
+ substring_index 
+-----------------
+ 
+(1 row)
+
+SELECT SUBSTRING_INDEX('www.opengauss.com','.',2);
+ substring_index 
+-----------------
+ www.opengauss
+(1 row)
+
+SELECT SUBSTRING_INDEX('www.opengauss.com','.',-2);
+ substring_index 
+-----------------
+ opengauss.com
+(1 row)
+
+SELECT SUBSTRING_INDEX('www.opengauss.com','.',3);
+  substring_index  
+-------------------
+ www.opengauss.com
+(1 row)
+
+SELECT SUBSTRING_INDEX('www.opengauss.com','.',-3);
+  substring_index  
+-------------------
+ www.opengauss.com
+(1 row)
+
+SELECT SUBSTRING_INDEX('www.opengauss.com','w',3);
+ substring_index 
+-----------------
+ ww
+(1 row)
+
+SELECT SUBSTRING_INDEX('www.opengauss.com','W',3);
+  substring_index  
+-------------------
+ www.opengauss.com
+(1 row)
+
+SELECT SUBSTRING_INDEX('www.opengauss.com','.',2.1);
+ substring_index 
+-----------------
+ www.opengauss
+(1 row)
+
+SELECT SUBSTRING_INDEX('www.opengauss.com','.',-2.1);
+ substring_index 
+-----------------
+ opengauss.com
+(1 row)
+
+SELECT SUBSTRING_INDEX('www.opengauss.com','.','2');
+ substring_index 
+-----------------
+ www.opengauss
+(1 row)
+
+SELECT SUBSTRING_INDEX('www.opengauss.com','.','-2');
+ substring_index 
+-----------------
+ opengauss.com
+(1 row)
+
+SELECT SUBSTRING_INDEX('www.opengauss.com','.','2.1');
+ substring_index 
+-----------------
+ www.opengauss
+(1 row)
+
+SELECT SUBSTRING_INDEX('www.opengauss.com','.','-2.1');
+ substring_index 
+-----------------
+ opengauss.com
+(1 row)
+
+SELECT SUBSTRING_INDEX('www.opengauss.com','.','abc');
+ substring_index 
+-----------------
+ 
+(1 row)
+
+SELECT SUBSTRING_INDEX('www.opengauss.com','.',2147483647);
+  substring_index  
+-------------------
+ www.opengauss.com
+(1 row)
+
+SELECT SUBSTRING_INDEX('www.opengauss.com','.',-2147483648);
+  substring_index  
+-------------------
+ www.opengauss.com
+(1 row)
+
+SELECT SUBSTRING_INDEX('www.opengauss.com','.',9223372036854775807);
+  substring_index  
+-------------------
+ www.opengauss.com
+(1 row)
+
+SELECT SUBSTRING_INDEX('www.opengauss.com','.',-9223372036854775808);
+  substring_index  
+-------------------
+ www.opengauss.com
+(1 row)
+
+SELECT SUBSTRING_INDEX('www.opengauss.com','.',10000000000000000000);
+  substring_index  
+-------------------
+ www.opengauss.com
+(1 row)
+
+SELECT SUBSTRING_INDEX('www.opengauss.com','.',-10000000000000000000);
+  substring_index  
+-------------------
+ www.opengauss.com
+(1 row)
+
+SELECT SUBSTRING_INDEX(123132,1,2);
+ substring_index 
+-----------------
+ 123
+(1 row)
+
+SELECT SUBSTRING_INDEX(-123132,1,2);
+ substring_index 
+-----------------
+ -123
+(1 row)
+
+SELECT SUBSTRING_INDEX(123132,-1,1);
+ substring_index 
+-----------------
+ 123132
+(1 row)
+
+SELECT SUBSTRING_INDEX(-123132,-1,1);
+ substring_index 
+-----------------
+ 
+(1 row)
+
+SELECT SUBSTRING_INDEX('123132',1,2);
+ substring_index 
+-----------------
+ 123
+(1 row)
+
+SELECT SUBSTRING_INDEX(123132,'1',2);
+ substring_index 
+-----------------
+ 123
+(1 row)
+
+SELECT SUBSTRING_INDEX(1.23,'.',1);
+ substring_index 
+-----------------
+ 1
+(1 row)
+
+SELECT SUBSTRING_INDEX(1.23,1.2,1);
+ substring_index 
+-----------------
+ 
+(1 row)
+
+SELECT SUBSTRING_INDEX(True,'1',1);
+ substring_index 
+-----------------
+ 
+(1 row)
+
+SELECT SUBSTRING_INDEX(False,'0',1);
+ substring_index 
+-----------------
+ 
+(1 row)
+
+SELECT SUBSTRING_INDEX('0101',True,2);
+ substring_index 
+-----------------
+ 010
+(1 row)
+
+SELECT SUBSTRING_INDEX('0101',False,2);
+ substring_index 
+-----------------
+ 01
+(1 row)
+
+create table myTable(myText text, myInt int, myFloat float, myBool boolean, myDate date);
+insert into myTable values ('www.opengauss.com',123321,1.123,True,'2022-10-11');
+SELECT SUBSTRING_INDEX(myText,'.',2) FROM myTable;
+ substring_index 
+-----------------
+ www.opengauss
+(1 row)
+
+SELECT SUBSTRING_INDEX(myInt,'1',2) FROM myTable;
+ substring_index 
+-----------------
+ 12332
+(1 row)
+
+SELECT SUBSTRING_INDEX(myFloat,'.',1) FROM myTable;
+ substring_index 
+-----------------
+ 1
+(1 row)
+
+SELECT SUBSTRING_INDEX(myBool,'1',1) FROM myTable;
+ substring_index 
+-----------------
+ 
+(1 row)
+
+SELECT SUBSTRING_INDEX(myDate,'-',1) FROM myTable;
+ substring_index 
+-----------------
+ 10
+(1 row)
+
+drop table myTable;
+\c postgres
+drop database test_substring_index;

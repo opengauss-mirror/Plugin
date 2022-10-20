@@ -318,6 +318,23 @@ extern "C" DLL_PUBLIC Datum db_b_format_locale(PG_FUNCTION_ARGS);
 PG_FUNCTION_INFO_V1_PUBLIC(textxor);
 extern "C" DLL_PUBLIC Datum textxor(PG_FUNCTION_ARGS);
 
+PG_FUNCTION_INFO_V1_PUBLIC(ord_text);
+extern "C" DLL_PUBLIC Datum ord_text(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1_PUBLIC(ord_numeric);
+extern "C" DLL_PUBLIC Datum ord_numeric(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(substring_index);
+extern "C" DLL_PUBLIC Datum substring_index(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1_PUBLIC(substring_index_bool_1);
+extern "C" DLL_PUBLIC Datum substring_index_bool_1(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1_PUBLIC(substring_index_bool_2);
+extern "C" DLL_PUBLIC Datum substring_index_bool_2(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1_PUBLIC(substring_index_2bool);
+extern "C" DLL_PUBLIC Datum substring_index_2bool(PG_FUNCTION_ARGS);
+
 #endif
 
 /*****************************************************************************
@@ -9124,5 +9141,152 @@ extern "C" DLL_PUBLIC Datum boolxor(PG_FUNCTION_ARGS);
 Datum boolxor(PG_FUNCTION_ARGS)
 {
     PG_RETURN_INT32(PG_GETARG_BOOL(0) ^ PG_GETARG_BOOL(1));
+}
+
+/*
+ * Return the code for the leftmost character if that character 
+ * is a multi-byte (sequence of one or more bytes) one
+ */
+Datum ord_text(PG_FUNCTION_ARGS)
+{
+    text* str = PG_GETARG_TEXT_PP(0);
+    if (VARATT_IS_HUGE_TOAST_POINTER((varlena *)str)) {
+        ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+                errmsg("ord could not support more than 1GB clob/blob data")));
+    }
+    const char* ptr = VARDATA_ANY(str);
+    int len = VARSIZE_ANY_EXHDR(str);
+    if (len == 0) 
+        PG_RETURN_INT128(0);
+    int128 result = 0;
+
+    int sz;
+    sz = pg_mblen(ptr);
+    int128 currentNum = 1;
+    ptr += sz-1;
+    for (int i = 0; i < sz; i++) {
+        result += ((*ptr) & 0xff)*currentNum;
+        currentNum <<= 8;
+        ptr--;
+    }
+
+    PG_RETURN_INT128(result);
+}
+
+/*
+ * Return the code for the leftmost character if that character 
+ * is a multi-byte (sequence of one or more bytes) one
+ */
+Datum ord_numeric(PG_FUNCTION_ARGS)
+{
+    const char* ptr = numeric_to_cstring(PG_GETARG_NUMERIC(0));
+    if (ptr != NULL)
+        PG_RETURN_INT128((int128)((*ptr) & 0xff));
+    else 
+        PG_RETURN_INT128(0);
+}
+
+
+static int64 NumericToLongLongNoOverflow(Numeric num)
+{
+    char* endptr = NULL;
+    char* tmp = DatumGetCString(DirectFunctionCall1(numeric_out, NumericGetDatum(num)));
+    long double val = strtold(tmp, &endptr);
+    if (*endptr != '\0') {
+        ereport(ERROR,
+                (errcode(ERRCODE_INVALID_TEXT_REPRESENTATION),
+                 errmsg("invalid input syntax for type long long precision: \"%s\"", tmp)));
+    }
+    int64 val_int = floor(val);
+    pfree_ext(tmp);
+    return val;
+}
+
+static text* SubstringIndexReally(text* textStr, text* textStrToSearch, Numeric count)
+{
+    text* result = NULL;
+    int position = 0;
+
+    int64 count64 = NumericToLongLongNoOverflow(count);
+    
+    if (TEXTISORANULL(textStr) || TEXTISORANULL(textStrToSearch) || (0 == count64)) {
+        result = cstring_to_text("");
+        return result;
+    }
+
+    int count32 = 0;
+    if (count64 > PG_INT32_MAX || count64 <= PG_INT32_MIN) { /* PG_INT32_MIN is a special one during the longlong conversion int, so exclude it */
+        result = textStr;
+        return result;
+    } else {
+        count32 = count64;
+    }
+
+    if (count32 > 0) {
+        position = getResultPostion(textStr, textStrToSearch, 1, count32);
+        if (position == 0) {
+            result = textStr;
+        } else {
+            result = text_substring(PointerGetDatum(textStr), 1, position-1, false);
+        }
+    } else {
+        count32 = GET_POSITIVE(count32);
+        position = getResultPostionReverse(textStr, textStrToSearch, -1, count32);
+        if (position == 0) {
+            result = textStr;
+        } else {
+            result = text_substring(PointerGetDatum(textStr), position + 1, -1, true);
+        }
+    }
+    
+    return result;
+}
+
+Datum substring_index(PG_FUNCTION_ARGS)
+{
+    text* textStr = PG_GETARG_TEXT_P(0);
+    text* textStrToSearch = PG_GETARG_TEXT_P(1);
+    Numeric count = PG_GETARG_NUMERIC(2);
+    text* result = NULL;
+
+    result = SubstringIndexReally(textStr, textStrToSearch, count);
+    PG_RETURN_TEXT_P(result);
+}
+
+Datum substring_index_bool_1(PG_FUNCTION_ARGS)
+{
+    bool firstArg = PG_GETARG_BOOL(0);
+    text* textStr = cstring_to_text(firstArg ? "1" : "0");
+    text* textStrToSearch = PG_GETARG_TEXT_P(1);
+    Numeric count = PG_GETARG_NUMERIC(2);
+    text* result = NULL;
+
+    result = SubstringIndexReally(textStr, textStrToSearch, count);
+    PG_RETURN_TEXT_P(result);
+}
+
+Datum substring_index_bool_2(PG_FUNCTION_ARGS)
+{
+    text* textStr = PG_GETARG_TEXT_P(0);
+    bool secondArg = PG_GETARG_BOOL(1);
+    text* textStrToSearch = cstring_to_text(secondArg ? "1" : "0");
+    Numeric count = PG_GETARG_NUMERIC(2);
+    text* result = NULL;
+
+    result = SubstringIndexReally(textStr, textStrToSearch, count);
+    PG_RETURN_TEXT_P(result);
+}
+
+Datum substring_index_2bool(PG_FUNCTION_ARGS)
+{
+    bool firstArg = PG_GETARG_BOOL(0);
+    text* textStr = cstring_to_text(firstArg ? "1" : "0");
+    bool secondArg = PG_GETARG_BOOL(1);
+    text* textStrToSearch = cstring_to_text(secondArg ? "1" : "0");
+    Numeric count = PG_GETARG_NUMERIC(2);
+    text* result = NULL;
+
+    result = SubstringIndexReally(textStr, textStrToSearch, count);
+    PG_RETURN_TEXT_P(result);
 }
 #endif

@@ -118,3 +118,4 @@ test: json_array_insert json_insert json_merge_patch json_merge_preserve json_re
 
 test: flush
 
+test: oct from_base64 string_func_test/test_substring_index string_func_test/db_b_ord_test
