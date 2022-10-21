@@ -37,7 +37,7 @@ ERROR:  Do not support deterministic for ALTER FUNCTION.
 -- no params
 ALTER PROCEDURE proc1  READS SQL DATA;
 \sf proc1
-CREATE DEFINER = tester2 PROCEDURE public.proc1()
+--?CREATE DEFINER = .* PROCEDURE public.proc1()
  SECURITY DEFINER
 AS  DECLARE 
 BEGIN
@@ -46,7 +46,7 @@ END;
 /
 ALTER PROCEDURE proc1  READS SQL DATA FENCED;
 \sf proc1
-CREATE DEFINER = tester2 PROCEDURE public.proc1()
+--?CREATE DEFINER = .* PROCEDURE public.proc1()
  SECURITY DEFINER FENCED
 AS  DECLARE 
 BEGIN

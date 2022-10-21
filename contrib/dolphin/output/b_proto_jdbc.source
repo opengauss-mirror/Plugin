@@ -1,6 +1,7 @@
 -- dowload mysql-connector-java
-\! sh /opt/opengauss/openGauss-server/contrib/dolphin/proto_jdbc/install-jars.sh > /dev/null 2>&1
+\! sh @abs_builddir@/proto_jdbc/install-jars.sh > /dev/null 2>&1
 drop database if exists b_databaseproto;
+NOTICE:  database "b_databaseproto" does not exist, skipping
 create database b_databaseproto dbcompatibility 'b';
 \c b_databaseproto
 -- change logic database for dolphin-server
