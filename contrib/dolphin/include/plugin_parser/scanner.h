@@ -131,6 +131,9 @@ typedef struct core_yy_extra_type {
     bool is_delimiter_name;
     bool is_last_colon;
     bool is_proc_end;
+#ifdef DOLPHIN
+    int paramIdx;
+#endif
 } core_yy_extra_type;
 
 #ifdef FRONTEND_PARSER

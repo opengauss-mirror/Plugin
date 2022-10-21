@@ -949,20 +949,51 @@ other			.
 					if (slashstar)
 						nchars = slashstar - yytext;
 #ifdef DOLPHIN
-					if(nchars >= 1 &&  GetSessionContext()->enableBCmptMode && !yyextra->in_slash_proc_body)
-                                         {
-                                                char   *sharpchar = strstr(yytext, "#");
-                                                if(sharpchar)
-                                                {
-                                                        nchars = sharpchar - yytext;
-                                                        if (nchars == 0)
-                                                        {
-                                                                yyless(nchars);
-                                                                dealSahrpComment(yyscanner);
-                                                                goto end;
-                                                        }
-                                                }
-                                         }
+					if(nchars >= 1 && GetSessionContext()->enableBCmptMode && !yyextra->in_slash_proc_body)
+					{
+						char   *sharpchar = strstr(yytext, "#");
+						if(sharpchar)
+						{
+							nchars = sharpchar - yytext;
+							if (nchars == 0)
+							{
+								yyless(nchars);
+								dealSahrpComment(yyscanner);
+								goto end;
+							}
+						}
+					}
+					if (GetSessionContext()->enableBCmptMode)
+					{
+						char *qMark = strstr(yytext, "?");
+						if (qMark != NULL)
+						{
+							if (nchars == 1)
+							{
+								/* single ?, treat as param */
+								SET_YYLLOC();
+								yylval->ival = getDynaParamSeq(NULL, false, false, yyscanner);
+								yyextra->is_hint_str = false;
+								return PARAM;
+							}
+
+							/* multibyte, get ? postition */
+							nchars = qMark - yytext;
+							if (nchars == 0)
+							{
+								/* begin with ?, strip all char except fist ?, treat first ? as param */
+								yyless(1);
+								SET_YYLLOC();
+								yylval->ival = getDynaParamSeq(NULL, false, false, yyscanner);
+								yyextra->is_hint_str = false;
+								return PARAM;
+							}
+							/*
+							 * else not begin with ?, strip all char after ?, should do yyless(nchars).
+							 * since it will be done in 'if (nchars < (int)yyleng)', so nothing to do here.
+							 */
+						}
+					}
 #endif
 					/*
 					 * For SQL compatibility, '+' and '-' cannot be the
@@ -1471,7 +1502,9 @@ scanner_init(const char *str,
 	yyext->is_delimiter_name = false;
 	yyext->is_last_colon = false;
 	yyext->is_proc_end = false;
-
+#ifdef DOLPHIN
+	yyext->paramIdx = 0;
+#endif
 	// Added CALL for procedure and function
 	getDynaParamSeq("init", true, true, NULL);
 
@@ -1950,6 +1983,18 @@ getDynaParamSeq(const char *string, bool initflag, bool placeholder, core_yyscan
 					(errcode(ERRCODE_SYNTAX_ERROR), 
 					errmsg("It is forbidden to use placeholder and dollar quoting together.")));
 		u_sess->parser_cxt.has_dollar = true;
+#ifdef DOLPHIN
+		if (string == NULL)
+		{
+			return ++(yyextra->paramIdx);
+		}
+		if (yyextra->paramIdx != 0)
+		{
+			ereport(ERROR,
+					(errcode(ERRCODE_SYNTAX_ERROR), 
+					errmsg("It is forbidden to use question mark and dollar quoting together.")));
+		}
+#endif
 		return atol(string);
 	}
 
