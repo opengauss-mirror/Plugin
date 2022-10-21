@@ -1764,447 +1764,445 @@ SELECT strcmp(t2,t1) from test_bccf;
      -1
 (48 rows)
 
-----------------GS_INTERVAL expression------------------------
-select gs_interval(null);
- gs_interval 
--------------
-          -1
+----------------interval expression------------------------
+select interval(null);
+ERROR:  syntax error at or near ")"
+LINE 1: select interval(null);
+                            ^
+select interval(null, 123);
+ interval 
+----------
+       -1
 (1 row)
 
-select gs_interval(null, 123);
- gs_interval 
--------------
-          -1
+select interval(null, 123.45);
+ interval 
+----------
+       -1
 (1 row)
 
-select gs_interval(null, 123.45);
- gs_interval 
--------------
-          -1
+select interval(123,null);
+ interval 
+----------
+        1
 (1 row)
 
-select gs_interval(123,null);
- gs_interval 
--------------
-           1
+select interval(123,null,17,43.123);
+ interval 
+----------
+        3
 (1 row)
 
-select gs_interval(123,null,17,43.123);
- gs_interval 
--------------
-           3
+select interval(123.213,null,17,43.123);
+ interval 
+----------
+        3
 (1 row)
 
-select gs_interval(123.213,null,17,43.123);
- gs_interval 
--------------
-           3
+select interval(100, '10e2');
+ interval 
+----------
+        0
 (1 row)
 
-select gs_interval(100, '10e2');
- gs_interval 
--------------
-           0
+select interval(100, '   10e1');
+ interval 
+----------
+        1
 (1 row)
 
-select gs_interval(100, '   10e1');
- gs_interval 
--------------
-           1
+select interval(100, '   10e1', '      10Eeasd');
+ interval 
+----------
+        2
 (1 row)
 
-select gs_interval(100, '   10e1', '      10Eeasd');
- gs_interval 
--------------
-           2
+select interval(10e3, '   10e1', '      10E1easd    ', '2e10');
+ interval 
+----------
+        2
 (1 row)
 
-select gs_interval(10e3, '   10e1', '      10E1easd    ', '2e10');
- gs_interval 
--------------
-           2
+select interval(0, '   wa');
+ interval 
+----------
+        1
 (1 row)
 
-select gs_interval(0, '   wa');
- gs_interval 
--------------
-           1
+select interval(0, '   wa', '  e1212');
+ interval 
+----------
+        2
 (1 row)
 
-select gs_interval(0, '   wa', '  e1212');
- gs_interval 
--------------
-           2
+select interval(0, '   abiusdhiw');
+ interval 
+----------
+        1
 (1 row)
 
-select gs_interval(0, '   abiusdhiw');
- gs_interval 
--------------
-           1
+select interval(0, '   abiusdhiw', '   kqiwjoiqh  ');
+ interval 
+----------
+        2
 (1 row)
 
-select gs_interval(0, '   abiusdhiw', '   kqiwjoiqh  ');
- gs_interval 
--------------
-           2
+select interval(0, '   1e12abiusdhiw');
+ interval 
+----------
+        0
 (1 row)
 
-select gs_interval(0, '   1e12abiusdhiw');
- gs_interval 
--------------
-           0
+select interval(0, '   e13fsdsda');
+ interval 
+----------
+        1
 (1 row)
 
-select gs_interval(0, '   e13fsdsda');
- gs_interval 
--------------
-           1
+select interval(0, '1e13fsdsda');
+ interval 
+----------
+        0
 (1 row)
 
-select gs_interval(0, '1e13fsdsda');
- gs_interval 
--------------
-           0
+select interval(100, '1e1fsdsda');
+ interval 
+----------
+        1
 (1 row)
 
-select gs_interval(100, '1e1fsdsda');
- gs_interval 
--------------
-           1
+select interval('+12', 121);
+ interval 
+----------
+        0
 (1 row)
 
-select gs_interval('+12', 121);
- gs_interval 
--------------
-           0
+select interval('+12', 12);
+ interval 
+----------
+        1
 (1 row)
 
-select gs_interval('+12', 12);
- gs_interval 
--------------
-           1
+select interval('+12', 0);
+ interval 
+----------
+        1
 (1 row)
 
-select gs_interval('+12', 0);
- gs_interval 
--------------
-           1
+select interval('-12', 0);
+ interval 
+----------
+        0
 (1 row)
 
-select gs_interval('-12', 0);
- gs_interval 
--------------
-           0
+select interval('-12.2', 0);
+ interval 
+----------
+        0
 (1 row)
 
-select gs_interval('-12.2', 0);
- gs_interval 
--------------
-           0
+select interval('-.2', 0);
+ interval 
+----------
+        0
 (1 row)
 
-select gs_interval('-.2', 0);
- gs_interval 
--------------
-           0
+select interval('-.2', -100);
+ interval 
+----------
+        1
 (1 row)
 
-select gs_interval('-.2', -100);
- gs_interval 
--------------
-           1
+select interval('-.2E2', -100);
+ interval 
+----------
+        1
 (1 row)
 
-select gs_interval('-.2E2', -100);
- gs_interval 
--------------
-           1
+select interval('-.2E4', -100);
+ interval 
+----------
+        0
 (1 row)
 
-select gs_interval('-.2E4', -100);
- gs_interval 
--------------
-           0
+select interval('..', 21);
+ interval 
+----------
+        0
 (1 row)
 
-select gs_interval('..', 21);
- gs_interval 
--------------
-           0
+select interval('.21.', 21);
+ interval 
+----------
+        0
 (1 row)
 
-select gs_interval('.21.', 21);
- gs_interval 
--------------
-           0
+select interval('.21.', 0);
+ interval 
+----------
+        1
 (1 row)
 
-select gs_interval('.21.', 0);
- gs_interval 
--------------
-           1
+select interval('+.21.', 0);
+ interval 
+----------
+        1
 (1 row)
 
-select gs_interval('+.21.', 0);
- gs_interval 
--------------
-           1
+select interval('-.21.', 0);
+ interval 
+----------
+        0
 (1 row)
 
-select gs_interval('-.21.', 0);
- gs_interval 
--------------
-           0
+select interval('-.21.', -1);
+ interval 
+----------
+        1
 (1 row)
 
-select gs_interval('-.21.', -1);
- gs_interval 
--------------
-           1
+select interval('-..21.', -1);
+ interval 
+----------
+        1
 (1 row)
 
-select gs_interval('-..21.', -1);
- gs_interval 
--------------
-           1
+select interval('...', -1);
+ interval 
+----------
+        1
 (1 row)
 
-select gs_interval('...', -1);
- gs_interval 
--------------
-           1
+select interval('...', -1);
+ interval 
+----------
+        1
 (1 row)
 
-select gs_interval('...', -1);
- gs_interval 
--------------
-           1
+select interval(123::int2,null);
+ interval 
+----------
+        1
 (1 row)
 
-select gs_interval(123::int2,null);
- gs_interval 
--------------
-           1
+select interval(123::int4,null);
+ interval 
+----------
+        1
 (1 row)
 
-select gs_interval(123::int4,null);
- gs_interval 
--------------
-           1
+select interval(123::int8,null);
+ interval 
+----------
+        1
 (1 row)
 
-select gs_interval(123::int8,null);
- gs_interval 
--------------
-           1
+select interval(123,123.23);
+ interval 
+----------
+        0
 (1 row)
 
-select gs_interval(123,123.23);
- gs_interval 
--------------
-           0
+select interval(123,123.23::int);
+ interval 
+----------
+        1
 (1 row)
 
-select gs_interval(123,123.23::int);
- gs_interval 
--------------
-           1
+select interval(null, '2001-01-01 01:01:01.3654'::date);
+ interval 
+----------
+       -1
 (1 row)
 
-select gs_interval(null, '2001-01-01 01:01:01.3654'::date);
- gs_interval 
--------------
-          -1
+select interval('2001-01-01 01:01:01.3654'::date, null);
+ interval 
+----------
+        1
 (1 row)
 
-select gs_interval('2001-01-01 01:01:01.3654'::date, null);
- gs_interval 
--------------
-           1
+select interval('2001-01-01 01:01:01.3654'::date, '2001-01-01 01:01:01.3654'::date);
+ interval 
+----------
+        1
 (1 row)
 
-select gs_interval('2001-01-01 01:01:01.3654'::date, '2001-01-01 01:01:01.3654'::date);
- gs_interval 
--------------
-           1
+select interval('2001-01-01 01:01:01.3654'::date, '1999-01-01 01:01:01.3654'::date);
+ interval 
+----------
+        1
 (1 row)
 
-select gs_interval('2001-01-01 01:01:01.3654'::date, '1999-01-01 01:01:01.3654'::date);
- gs_interval 
--------------
-           1
+select interval('2022-12-12'::timestamp,123);
+ interval 
+----------
+        0
 (1 row)
 
-select gs_interval('2022-12-12'::timestamp,123);
- gs_interval 
--------------
-           0
+select interval('2022-12-12'::timestamp,'2022-12-12'::timestamp);
+ interval 
+----------
+        1
 (1 row)
 
-select gs_interval('2022-12-12'::timestamp,'2022-12-12'::timestamp);
- gs_interval 
--------------
-           1
+select interval(123,'2022-12-12'::timestamp);
+ interval 
+----------
+        1
 (1 row)
 
-select gs_interval(123,'2022-12-12'::timestamp);
- gs_interval 
--------------
-           1
+select interval(1,' ');
+ interval 
+----------
+        1
 (1 row)
 
-select gs_interval(1,' ');
- gs_interval 
--------------
-           1
+select interval(b'1',' ');
+ interval 
+----------
+        1
 (1 row)
 
-select gs_interval(b'1',' ');
- gs_interval 
--------------
-           1
+select interval('a',' ');
+ interval 
+----------
+        1
 (1 row)
 
-select gs_interval('a',' ');
- gs_interval 
--------------
-           1
+select interval(false,' ');
+ interval 
+----------
+        1
 (1 row)
 
-select gs_interval(false,' ');
- gs_interval 
--------------
-           1
+select interval(' ',true);
+ interval 
+----------
+        0
 (1 row)
 
-select gs_interval(' ',true);
- gs_interval 
--------------
-           0
+select interval(' ',b'1');
+ interval 
+----------
+        0
 (1 row)
 
-select gs_interval(' ',b'1');
- gs_interval 
--------------
-           0
+select interval(' ','a');
+ interval 
+----------
+        1
 (1 row)
 
-select gs_interval(' ','a');
- gs_interval 
--------------
-           1
+select interval(' ',12);
+ interval 
+----------
+        0
 (1 row)
 
-select gs_interval(' ',12);
- gs_interval 
--------------
-           0
-(1 row)
-
-select gs_interval(t1, t2) from test_bccf;
- gs_interval 
--------------
-           0
-          -1
-           1
-           1
-           0
-          -1
-           1
-           1
-           0
-          -1
-           1
-           0
-           0
-          -1
-           1
-           1
-           0
-          -1
-           1
-           1
-           1
-          -1
-           1
-           1
-           1
-          -1
-           1
-           1
-           0
-          -1
-           1
-           0
-           1
-          -1
-           1
-           0
-           0
-          -1
-           1
-           1
-           0
-          -1
-           1
-           1
-           0
-          -1
-           1
-           0
+select interval(t1, t2) from test_bccf;
+ interval 
+----------
+        0
+       -1
+        1
+        1
+        0
+       -1
+        1
+        1
+        0
+       -1
+        1
+        0
+        0
+       -1
+        1
+        1
+        0
+       -1
+        1
+        1
+        1
+       -1
+        1
+        1
+        1
+       -1
+        1
+        1
+        0
+       -1
+        1
+        0
+        1
+       -1
+        1
+        0
+        0
+       -1
+        1
+        1
+        0
+       -1
+        1
+        1
+        0
+       -1
+        1
+        0
 (48 rows)
 
-select gs_interval(t2, t1) from test_bccf;
- gs_interval 
--------------
-           1
-          -1
-          -1
-           0
-           1
-          -1
-          -1
-           1
-           1
-          -1
-          -1
-           1
-           1
-          -1
-          -1
-           0
-           1
-          -1
-          -1
-           0
-           0
-          -1
-          -1
-           0
-           0
-          -1
-          -1
-           0
-           1
-          -1
-          -1
-           1
-          -1
-          -1
-          -1
-           1
-           1
-          -1
-          -1
-           0
-           1
-          -1
-          -1
-           0
-           1
-          -1
-          -1
-           1
+select interval(t2, t1) from test_bccf;
+ interval 
+----------
+        1
+       -1
+       -1
+        0
+        1
+       -1
+       -1
+        1
+        1
+       -1
+       -1
+        1
+        1
+       -1
+       -1
+        0
+        1
+       -1
+       -1
+        0
+        0
+       -1
+       -1
+        0
+        0
+       -1
+       -1
+        0
+        1
+       -1
+       -1
+        1
+       -1
+       -1
+       -1
+        1
+        1
+       -1
+       -1
+        0
+        1
+       -1
+       -1
+        0
+        1
+       -1
+       -1
+        1
 (48 rows)
 
 drop table test_bccf;
@@ -3968,447 +3966,445 @@ SELECT strcmp(t2,t1) from test_bccf;
      -1
 (48 rows)
 
-----------------GS_INTERVAL expression------------------------
-select gs_interval(null);
- gs_interval 
--------------
-          -1
+----------------interval expression------------------------
+select interval(null);
+ERROR:  syntax error at or near ")"
+LINE 1: select interval(null);
+                            ^
+select interval(null, 123);
+ interval 
+----------
+       -1
 (1 row)
 
-select gs_interval(null, 123);
- gs_interval 
--------------
-          -1
+select interval(null, 123.45);
+ interval 
+----------
+       -1
 (1 row)
 
-select gs_interval(null, 123.45);
- gs_interval 
--------------
-          -1
+select interval(123,null);
+ interval 
+----------
+        1
 (1 row)
 
-select gs_interval(123,null);
- gs_interval 
--------------
-           1
+select interval(123,null,17,43.123);
+ interval 
+----------
+        3
 (1 row)
 
-select gs_interval(123,null,17,43.123);
- gs_interval 
--------------
-           3
+select interval(123.213,null,17,43.123);
+ interval 
+----------
+        3
 (1 row)
 
-select gs_interval(123.213,null,17,43.123);
- gs_interval 
--------------
-           3
+select interval(100, '10e2');
+ interval 
+----------
+        0
 (1 row)
 
-select gs_interval(100, '10e2');
- gs_interval 
--------------
-           0
+select interval(100, '   10e1');
+ interval 
+----------
+        1
 (1 row)
 
-select gs_interval(100, '   10e1');
- gs_interval 
--------------
-           1
+select interval(100, '   10e1', '      10Eeasd');
+ interval 
+----------
+        2
 (1 row)
 
-select gs_interval(100, '   10e1', '      10Eeasd');
- gs_interval 
--------------
-           2
+select interval(10e3, '   10e1', '      10E1easd    ', '2e10');
+ interval 
+----------
+        2
 (1 row)
 
-select gs_interval(10e3, '   10e1', '      10E1easd    ', '2e10');
- gs_interval 
--------------
-           2
+select interval(0, '   wa');
+ interval 
+----------
+        1
 (1 row)
 
-select gs_interval(0, '   wa');
- gs_interval 
--------------
-           1
+select interval(0, '   wa', '  e1212');
+ interval 
+----------
+        2
 (1 row)
 
-select gs_interval(0, '   wa', '  e1212');
- gs_interval 
--------------
-           2
+select interval(0, '   abiusdhiw');
+ interval 
+----------
+        1
 (1 row)
 
-select gs_interval(0, '   abiusdhiw');
- gs_interval 
--------------
-           1
+select interval(0, '   abiusdhiw', '   kqiwjoiqh  ');
+ interval 
+----------
+        2
 (1 row)
 
-select gs_interval(0, '   abiusdhiw', '   kqiwjoiqh  ');
- gs_interval 
--------------
-           2
+select interval(0, '   1e12abiusdhiw');
+ interval 
+----------
+        0
 (1 row)
 
-select gs_interval(0, '   1e12abiusdhiw');
- gs_interval 
--------------
-           0
+select interval(0, '   e13fsdsda');
+ interval 
+----------
+        1
 (1 row)
 
-select gs_interval(0, '   e13fsdsda');
- gs_interval 
--------------
-           1
+select interval(0, '1e13fsdsda');
+ interval 
+----------
+        0
 (1 row)
 
-select gs_interval(0, '1e13fsdsda');
- gs_interval 
--------------
-           0
+select interval(100, '1e1fsdsda');
+ interval 
+----------
+        1
 (1 row)
 
-select gs_interval(100, '1e1fsdsda');
- gs_interval 
--------------
-           1
+select interval('+12', 121);
+ interval 
+----------
+        0
 (1 row)
 
-select gs_interval('+12', 121);
- gs_interval 
--------------
-           0
+select interval('+12', 12);
+ interval 
+----------
+        1
 (1 row)
 
-select gs_interval('+12', 12);
- gs_interval 
--------------
-           1
+select interval('+12', 0);
+ interval 
+----------
+        1
 (1 row)
 
-select gs_interval('+12', 0);
- gs_interval 
--------------
-           1
+select interval('-12', 0);
+ interval 
+----------
+        0
 (1 row)
 
-select gs_interval('-12', 0);
- gs_interval 
--------------
-           0
+select interval('-12.2', 0);
+ interval 
+----------
+        0
 (1 row)
 
-select gs_interval('-12.2', 0);
- gs_interval 
--------------
-           0
+select interval('-.2', 0);
+ interval 
+----------
+        0
 (1 row)
 
-select gs_interval('-.2', 0);
- gs_interval 
--------------
-           0
+select interval('-.2', -100);
+ interval 
+----------
+        1
 (1 row)
 
-select gs_interval('-.2', -100);
- gs_interval 
--------------
-           1
+select interval('-.2E2', -100);
+ interval 
+----------
+        1
 (1 row)
 
-select gs_interval('-.2E2', -100);
- gs_interval 
--------------
-           1
+select interval('-.2E4', -100);
+ interval 
+----------
+        0
 (1 row)
 
-select gs_interval('-.2E4', -100);
- gs_interval 
--------------
-           0
+select interval('..', 21);
+ interval 
+----------
+        0
 (1 row)
 
-select gs_interval('..', 21);
- gs_interval 
--------------
-           0
+select interval('.21.', 21);
+ interval 
+----------
+        0
 (1 row)
 
-select gs_interval('.21.', 21);
- gs_interval 
--------------
-           0
+select interval('.21.', 0);
+ interval 
+----------
+        1
 (1 row)
 
-select gs_interval('.21.', 0);
- gs_interval 
--------------
-           1
+select interval('+.21.', 0);
+ interval 
+----------
+        1
 (1 row)
 
-select gs_interval('+.21.', 0);
- gs_interval 
--------------
-           1
+select interval('-.21.', 0);
+ interval 
+----------
+        0
 (1 row)
 
-select gs_interval('-.21.', 0);
- gs_interval 
--------------
-           0
+select interval('-.21.', -1);
+ interval 
+----------
+        1
 (1 row)
 
-select gs_interval('-.21.', -1);
- gs_interval 
--------------
-           1
+select interval('-..21.', -1);
+ interval 
+----------
+        1
 (1 row)
 
-select gs_interval('-..21.', -1);
- gs_interval 
--------------
-           1
+select interval('...', -1);
+ interval 
+----------
+        1
 (1 row)
 
-select gs_interval('...', -1);
- gs_interval 
--------------
-           1
+select interval('...', -1);
+ interval 
+----------
+        1
 (1 row)
 
-select gs_interval('...', -1);
- gs_interval 
--------------
-           1
+select interval(123::int2,null);
+ interval 
+----------
+        1
 (1 row)
 
-select gs_interval(123::int2,null);
- gs_interval 
--------------
-           1
+select interval(123::int4,null);
+ interval 
+----------
+        1
 (1 row)
 
-select gs_interval(123::int4,null);
- gs_interval 
--------------
-           1
+select interval(123::int8,null);
+ interval 
+----------
+        1
 (1 row)
 
-select gs_interval(123::int8,null);
- gs_interval 
--------------
-           1
+select interval(123,123.23);
+ interval 
+----------
+        0
 (1 row)
 
-select gs_interval(123,123.23);
- gs_interval 
--------------
-           0
+select interval(123,123.23::int);
+ interval 
+----------
+        1
 (1 row)
 
-select gs_interval(123,123.23::int);
- gs_interval 
--------------
-           1
+select interval(null, '2001-01-01 01:01:01.3654'::date);
+ interval 
+----------
+       -1
 (1 row)
 
-select gs_interval(null, '2001-01-01 01:01:01.3654'::date);
- gs_interval 
--------------
-          -1
+select interval('2001-01-01 01:01:01.3654'::date, null);
+ interval 
+----------
+        1
 (1 row)
 
-select gs_interval('2001-01-01 01:01:01.3654'::date, null);
- gs_interval 
--------------
-           1
+select interval('2001-01-01 01:01:01.3654'::date, '2001-01-01 01:01:01.3654'::date);
+ interval 
+----------
+        1
 (1 row)
 
-select gs_interval('2001-01-01 01:01:01.3654'::date, '2001-01-01 01:01:01.3654'::date);
- gs_interval 
--------------
-           1
+select interval('2001-01-01 01:01:01.3654'::date, '1999-01-01 01:01:01.3654'::date);
+ interval 
+----------
+        1
 (1 row)
 
-select gs_interval('2001-01-01 01:01:01.3654'::date, '1999-01-01 01:01:01.3654'::date);
- gs_interval 
--------------
-           1
+select interval('2022-12-12'::timestamp,123);
+ interval 
+----------
+        0
 (1 row)
 
-select gs_interval('2022-12-12'::timestamp,123);
- gs_interval 
--------------
-           0
+select interval('2022-12-12'::timestamp,'2022-12-12'::timestamp);
+ interval 
+----------
+        1
 (1 row)
 
-select gs_interval('2022-12-12'::timestamp,'2022-12-12'::timestamp);
- gs_interval 
--------------
-           1
+select interval(123,'2022-12-12'::timestamp);
+ interval 
+----------
+        1
 (1 row)
 
-select gs_interval(123,'2022-12-12'::timestamp);
- gs_interval 
--------------
-           1
+select interval(1,' ');
+ interval 
+----------
+        1
 (1 row)
 
-select gs_interval(1,' ');
- gs_interval 
--------------
-           1
+select interval(b'1',' ');
+ interval 
+----------
+        1
 (1 row)
 
-select gs_interval(b'1',' ');
- gs_interval 
--------------
-           1
+select interval('a',' ');
+ interval 
+----------
+        1
 (1 row)
 
-select gs_interval('a',' ');
- gs_interval 
--------------
-           1
+select interval(false,' ');
+ interval 
+----------
+        1
 (1 row)
 
-select gs_interval(false,' ');
- gs_interval 
--------------
-           1
+select interval(' ',true);
+ interval 
+----------
+        0
 (1 row)
 
-select gs_interval(' ',true);
- gs_interval 
--------------
-           0
+select interval(' ',b'1');
+ interval 
+----------
+        0
 (1 row)
 
-select gs_interval(' ',b'1');
- gs_interval 
--------------
-           0
+select interval(' ','a');
+ interval 
+----------
+        1
 (1 row)
 
-select gs_interval(' ','a');
- gs_interval 
--------------
-           1
+select interval(' ',12);
+ interval 
+----------
+        0
 (1 row)
 
-select gs_interval(' ',12);
- gs_interval 
--------------
-           0
-(1 row)
-
-select gs_interval(t1, t2) from test_bccf;
- gs_interval 
--------------
-           0
-          -1
-           1
-           1
-           0
-          -1
-           1
-           1
-           0
-          -1
-           1
-           0
-           0
-          -1
-           1
-           1
-           0
-          -1
-           1
-           1
-           1
-          -1
-           1
-           1
-           1
-          -1
-           1
-           1
-           0
-          -1
-           1
-           0
-           1
-          -1
-           1
-           0
-           0
-          -1
-           1
-           1
-           0
-          -1
-           1
-           1
-           0
-          -1
-           1
-           0
+select interval(t1, t2) from test_bccf;
+ interval 
+----------
+        0
+       -1
+        1
+        1
+        0
+       -1
+        1
+        1
+        0
+       -1
+        1
+        0
+        0
+       -1
+        1
+        1
+        0
+       -1
+        1
+        1
+        1
+       -1
+        1
+        1
+        1
+       -1
+        1
+        1
+        0
+       -1
+        1
+        0
+        1
+       -1
+        1
+        0
+        0
+       -1
+        1
+        1
+        0
+       -1
+        1
+        1
+        0
+       -1
+        1
+        0
 (48 rows)
 
-select gs_interval(t2, t1) from test_bccf;
- gs_interval 
--------------
-           1
-          -1
-          -1
-           0
-           1
-          -1
-          -1
-           1
-           1
-          -1
-          -1
-           1
-           1
-          -1
-          -1
-           0
-           1
-          -1
-          -1
-           0
-           0
-          -1
-          -1
-           0
-           0
-          -1
-          -1
-           0
-           1
-          -1
-          -1
-           1
-          -1
-          -1
-          -1
-           1
-           1
-          -1
-          -1
-           0
-           1
-          -1
-          -1
-           0
-           1
-          -1
-          -1
-           1
+select interval(t2, t1) from test_bccf;
+ interval 
+----------
+        1
+       -1
+       -1
+        0
+        1
+       -1
+       -1
+        1
+        1
+       -1
+       -1
+        1
+        1
+       -1
+       -1
+        0
+        1
+       -1
+       -1
+        0
+        0
+       -1
+       -1
+        0
+        0
+       -1
+       -1
+        0
+        1
+       -1
+       -1
+        1
+       -1
+       -1
+       -1
+        1
+        1
+       -1
+       -1
+        0
+        1
+       -1
+       -1
+        0
+        1
+       -1
+       -1
+        1
 (48 rows)
 
 drop table test_bccf;
@@ -5580,634 +5576,634 @@ ERROR:  NVL types blob and text cannot be matched
 LINE 1: select ifnull(blb, txt) from typeset;
                            ^
 CONTEXT:  referenced column: ifnull
-select gs_interval(tyint, smint) from typeset;
- gs_interval 
--------------
-           1
+select interval(tyint, smint) from typeset;
+ interval 
+----------
+        1
 (1 row)
 
-select gs_interval(tyint, anint) from typeset;
- gs_interval 
--------------
-           1
+select interval(tyint, anint) from typeset;
+ interval 
+----------
+        1
 (1 row)
 
-select gs_interval(tyint, bgint) from typeset;
- gs_interval 
--------------
-           1
+select interval(tyint, bgint) from typeset;
+ interval 
+----------
+        1
 (1 row)
 
-select gs_interval(tyint, dcmal) from typeset;
- gs_interval 
--------------
-           1
+select interval(tyint, dcmal) from typeset;
+ interval 
+----------
+        1
 (1 row)
 
-select gs_interval(tyint, nmric) from typeset;
- gs_interval 
--------------
-           1
+select interval(tyint, nmric) from typeset;
+ interval 
+----------
+        1
 (1 row)
 
-select gs_interval(tyint, flt) from typeset;
- gs_interval 
--------------
-           0
+select interval(tyint, flt) from typeset;
+ interval 
+----------
+        0
 (1 row)
 
-select gs_interval(tyint, bt) from typeset;
- gs_interval 
--------------
-           0
+select interval(tyint, bt) from typeset;
+ interval 
+----------
+        0
 (1 row)
 
-select gs_interval(tyint, dt) from typeset;
- gs_interval 
--------------
-           1
+select interval(tyint, dt) from typeset;
+ interval 
+----------
+        1
 (1 row)
 
-select gs_interval(tyint, tmstp) from typeset;
- gs_interval 
--------------
-           1
+select interval(tyint, tmstp) from typeset;
+ interval 
+----------
+        1
 (1 row)
 
-select gs_interval(tyint, tm) from typeset;
- gs_interval 
--------------
-           1
+select interval(tyint, tm) from typeset;
+ interval 
+----------
+        1
 (1 row)
 
-select gs_interval(tyint, ch) from typeset;
- gs_interval 
--------------
-           0
+select interval(tyint, ch) from typeset;
+ interval 
+----------
+        0
 (1 row)
 
-select gs_interval(tyint, vch) from typeset;
- gs_interval 
--------------
-           0
+select interval(tyint, vch) from typeset;
+ interval 
+----------
+        0
 (1 row)
 
-select gs_interval(tyint, blb) from typeset;
- gs_interval 
--------------
-           0
+select interval(tyint, blb) from typeset;
+ interval 
+----------
+        0
 (1 row)
 
-select gs_interval(tyint, txt) from typeset;
- gs_interval 
--------------
-           0
+select interval(tyint, txt) from typeset;
+ interval 
+----------
+        0
 (1 row)
 
-select gs_interval(smint, anint) from typeset;
- gs_interval 
--------------
-           1
+select interval(smint, anint) from typeset;
+ interval 
+----------
+        1
 (1 row)
 
-select gs_interval(smint, bgint) from typeset;
- gs_interval 
--------------
-           1
+select interval(smint, bgint) from typeset;
+ interval 
+----------
+        1
 (1 row)
 
-select gs_interval(smint, dcmal) from typeset;
- gs_interval 
--------------
-           1
+select interval(smint, dcmal) from typeset;
+ interval 
+----------
+        1
 (1 row)
 
-select gs_interval(smint, nmric) from typeset;
- gs_interval 
--------------
-           1
+select interval(smint, nmric) from typeset;
+ interval 
+----------
+        1
 (1 row)
 
-select gs_interval(smint, flt) from typeset;
- gs_interval 
--------------
-           0
+select interval(smint, flt) from typeset;
+ interval 
+----------
+        0
 (1 row)
 
-select gs_interval(smint, bt) from typeset;
- gs_interval 
--------------
-           0
+select interval(smint, bt) from typeset;
+ interval 
+----------
+        0
 (1 row)
 
-select gs_interval(smint, dt) from typeset;
- gs_interval 
--------------
-           1
+select interval(smint, dt) from typeset;
+ interval 
+----------
+        1
 (1 row)
 
-select gs_interval(smint, tmstp) from typeset;
- gs_interval 
--------------
-           1
+select interval(smint, tmstp) from typeset;
+ interval 
+----------
+        1
 (1 row)
 
-select gs_interval(smint, tm) from typeset;
- gs_interval 
--------------
-           1
+select interval(smint, tm) from typeset;
+ interval 
+----------
+        1
 (1 row)
 
-select gs_interval(smint, ch) from typeset;
- gs_interval 
--------------
-           0
+select interval(smint, ch) from typeset;
+ interval 
+----------
+        0
 (1 row)
 
-select gs_interval(smint, vch) from typeset;
- gs_interval 
--------------
-           0
+select interval(smint, vch) from typeset;
+ interval 
+----------
+        0
 (1 row)
 
-select gs_interval(smint, blb) from typeset;
- gs_interval 
--------------
-           0
+select interval(smint, blb) from typeset;
+ interval 
+----------
+        0
 (1 row)
 
-select gs_interval(smint, txt) from typeset;
- gs_interval 
--------------
-           0
+select interval(smint, txt) from typeset;
+ interval 
+----------
+        0
 (1 row)
 
-select gs_interval(anint, bgint) from typeset;
- gs_interval 
--------------
-           1
+select interval(anint, bgint) from typeset;
+ interval 
+----------
+        1
 (1 row)
 
-select gs_interval(anint, dcmal) from typeset;
- gs_interval 
--------------
-           1
+select interval(anint, dcmal) from typeset;
+ interval 
+----------
+        1
 (1 row)
 
-select gs_interval(anint, nmric) from typeset;
- gs_interval 
--------------
-           1
+select interval(anint, nmric) from typeset;
+ interval 
+----------
+        1
 (1 row)
 
-select gs_interval(anint, flt) from typeset;
- gs_interval 
--------------
-           0
+select interval(anint, flt) from typeset;
+ interval 
+----------
+        0
 (1 row)
 
-select gs_interval(anint, bt) from typeset;
- gs_interval 
--------------
-           0
+select interval(anint, bt) from typeset;
+ interval 
+----------
+        0
 (1 row)
 
-select gs_interval(anint, dt) from typeset;
- gs_interval 
--------------
-           1
+select interval(anint, dt) from typeset;
+ interval 
+----------
+        1
 (1 row)
 
-select gs_interval(anint, tmstp) from typeset;
- gs_interval 
--------------
-           1
+select interval(anint, tmstp) from typeset;
+ interval 
+----------
+        1
 (1 row)
 
-select gs_interval(anint, tm) from typeset;
- gs_interval 
--------------
-           1
+select interval(anint, tm) from typeset;
+ interval 
+----------
+        1
 (1 row)
 
-select gs_interval(anint, ch) from typeset;
- gs_interval 
--------------
-           0
+select interval(anint, ch) from typeset;
+ interval 
+----------
+        0
 (1 row)
 
-select gs_interval(anint, vch) from typeset;
- gs_interval 
--------------
-           0
+select interval(anint, vch) from typeset;
+ interval 
+----------
+        0
 (1 row)
 
-select gs_interval(anint, blb) from typeset;
- gs_interval 
--------------
-           0
+select interval(anint, blb) from typeset;
+ interval 
+----------
+        0
 (1 row)
 
-select gs_interval(anint, txt) from typeset;
- gs_interval 
--------------
-           0
+select interval(anint, txt) from typeset;
+ interval 
+----------
+        0
 (1 row)
 
-select gs_interval(bgint, dcmal) from typeset;
- gs_interval 
--------------
-           1
+select interval(bgint, dcmal) from typeset;
+ interval 
+----------
+        1
 (1 row)
 
-select gs_interval(bgint, nmric) from typeset;
- gs_interval 
--------------
-           1
+select interval(bgint, nmric) from typeset;
+ interval 
+----------
+        1
 (1 row)
 
-select gs_interval(bgint, flt) from typeset;
- gs_interval 
--------------
-           0
+select interval(bgint, flt) from typeset;
+ interval 
+----------
+        0
 (1 row)
 
-select gs_interval(bgint, bt) from typeset;
- gs_interval 
--------------
-           0
+select interval(bgint, bt) from typeset;
+ interval 
+----------
+        0
 (1 row)
 
-select gs_interval(bgint, dt) from typeset;
- gs_interval 
--------------
-           1
+select interval(bgint, dt) from typeset;
+ interval 
+----------
+        1
 (1 row)
 
-select gs_interval(bgint, tmstp) from typeset;
- gs_interval 
--------------
-           1
+select interval(bgint, tmstp) from typeset;
+ interval 
+----------
+        1
 (1 row)
 
-select gs_interval(bgint, tm) from typeset;
- gs_interval 
--------------
-           1
+select interval(bgint, tm) from typeset;
+ interval 
+----------
+        1
 (1 row)
 
-select gs_interval(bgint, ch) from typeset;
- gs_interval 
--------------
-           0
+select interval(bgint, ch) from typeset;
+ interval 
+----------
+        0
 (1 row)
 
-select gs_interval(bgint, vch) from typeset;
- gs_interval 
--------------
-           0
+select interval(bgint, vch) from typeset;
+ interval 
+----------
+        0
 (1 row)
 
-select gs_interval(bgint, blb) from typeset;
- gs_interval 
--------------
-           0
+select interval(bgint, blb) from typeset;
+ interval 
+----------
+        0
 (1 row)
 
-select gs_interval(bgint, txt) from typeset;
- gs_interval 
--------------
-           0
+select interval(bgint, txt) from typeset;
+ interval 
+----------
+        0
 (1 row)
 
-select gs_interval(dcmal, nmric) from typeset;
- gs_interval 
--------------
-           1
+select interval(dcmal, nmric) from typeset;
+ interval 
+----------
+        1
 (1 row)
 
-select gs_interval(dcmal, flt) from typeset;
- gs_interval 
--------------
-           0
+select interval(dcmal, flt) from typeset;
+ interval 
+----------
+        0
 (1 row)
 
-select gs_interval(dcmal, bt) from typeset;
- gs_interval 
--------------
-           0
+select interval(dcmal, bt) from typeset;
+ interval 
+----------
+        0
 (1 row)
 
-select gs_interval(dcmal, dt) from typeset;
- gs_interval 
--------------
-           1
+select interval(dcmal, dt) from typeset;
+ interval 
+----------
+        1
 (1 row)
 
-select gs_interval(dcmal, tmstp) from typeset;
- gs_interval 
--------------
-           1
+select interval(dcmal, tmstp) from typeset;
+ interval 
+----------
+        1
 (1 row)
 
-select gs_interval(dcmal, tm) from typeset;
- gs_interval 
--------------
-           1
+select interval(dcmal, tm) from typeset;
+ interval 
+----------
+        1
 (1 row)
 
-select gs_interval(dcmal, ch) from typeset;
- gs_interval 
--------------
-           0
+select interval(dcmal, ch) from typeset;
+ interval 
+----------
+        0
 (1 row)
 
-select gs_interval(dcmal, vch) from typeset;
- gs_interval 
--------------
-           0
+select interval(dcmal, vch) from typeset;
+ interval 
+----------
+        0
 (1 row)
 
-select gs_interval(dcmal, blb) from typeset;
- gs_interval 
--------------
-           0
+select interval(dcmal, blb) from typeset;
+ interval 
+----------
+        0
 (1 row)
 
-select gs_interval(dcmal, txt) from typeset;
- gs_interval 
--------------
-           0
+select interval(dcmal, txt) from typeset;
+ interval 
+----------
+        0
 (1 row)
 
-select gs_interval(nmric, flt) from typeset;
- gs_interval 
--------------
-           0
+select interval(nmric, flt) from typeset;
+ interval 
+----------
+        0
 (1 row)
 
-select gs_interval(nmric, bt) from typeset;
- gs_interval 
--------------
-           0
+select interval(nmric, bt) from typeset;
+ interval 
+----------
+        0
 (1 row)
 
-select gs_interval(nmric, dt) from typeset;
- gs_interval 
--------------
-           1
+select interval(nmric, dt) from typeset;
+ interval 
+----------
+        1
 (1 row)
 
-select gs_interval(nmric, tmstp) from typeset;
- gs_interval 
--------------
-           1
+select interval(nmric, tmstp) from typeset;
+ interval 
+----------
+        1
 (1 row)
 
-select gs_interval(nmric, tm) from typeset;
- gs_interval 
--------------
-           1
+select interval(nmric, tm) from typeset;
+ interval 
+----------
+        1
 (1 row)
 
-select gs_interval(nmric, ch) from typeset;
- gs_interval 
--------------
-           0
+select interval(nmric, ch) from typeset;
+ interval 
+----------
+        0
 (1 row)
 
-select gs_interval(nmric, vch) from typeset;
- gs_interval 
--------------
-           0
+select interval(nmric, vch) from typeset;
+ interval 
+----------
+        0
 (1 row)
 
-select gs_interval(nmric, blb) from typeset;
- gs_interval 
--------------
-           0
+select interval(nmric, blb) from typeset;
+ interval 
+----------
+        0
 (1 row)
 
-select gs_interval(nmric, txt) from typeset;
- gs_interval 
--------------
-           0
+select interval(nmric, txt) from typeset;
+ interval 
+----------
+        0
 (1 row)
 
-select gs_interval(flt, bt) from typeset;
- gs_interval 
--------------
-           0
+select interval(flt, bt) from typeset;
+ interval 
+----------
+        0
 (1 row)
 
-select gs_interval(flt, dt) from typeset;
- gs_interval 
--------------
-           1
+select interval(flt, dt) from typeset;
+ interval 
+----------
+        1
 (1 row)
 
-select gs_interval(flt, tmstp) from typeset;
- gs_interval 
--------------
-           1
+select interval(flt, tmstp) from typeset;
+ interval 
+----------
+        1
 (1 row)
 
-select gs_interval(flt, tm) from typeset;
- gs_interval 
--------------
-           1
+select interval(flt, tm) from typeset;
+ interval 
+----------
+        1
 (1 row)
 
-select gs_interval(flt, ch) from typeset;
- gs_interval 
--------------
-           0
+select interval(flt, ch) from typeset;
+ interval 
+----------
+        0
 (1 row)
 
-select gs_interval(flt, vch) from typeset;
- gs_interval 
--------------
-           0
+select interval(flt, vch) from typeset;
+ interval 
+----------
+        0
 (1 row)
 
-select gs_interval(flt, blb) from typeset;
- gs_interval 
--------------
-           0
+select interval(flt, blb) from typeset;
+ interval 
+----------
+        0
 (1 row)
 
-select gs_interval(flt, txt) from typeset;
- gs_interval 
--------------
-           0
+select interval(flt, txt) from typeset;
+ interval 
+----------
+        0
 (1 row)
 
-select gs_interval(bt, dt) from typeset;
- gs_interval 
--------------
-           1
+select interval(bt, dt) from typeset;
+ interval 
+----------
+        1
 (1 row)
 
-select gs_interval(bt, tmstp) from typeset;
- gs_interval 
--------------
-           1
+select interval(bt, tmstp) from typeset;
+ interval 
+----------
+        1
 (1 row)
 
-select gs_interval(bt, tm) from typeset;
- gs_interval 
--------------
-           1
+select interval(bt, tm) from typeset;
+ interval 
+----------
+        1
 (1 row)
 
-select gs_interval(bt, ch) from typeset;
- gs_interval 
--------------
-           1
+select interval(bt, ch) from typeset;
+ interval 
+----------
+        1
 (1 row)
 
-select gs_interval(bt, vch) from typeset;
- gs_interval 
--------------
-           1
+select interval(bt, vch) from typeset;
+ interval 
+----------
+        1
 (1 row)
 
-select gs_interval(bt, blb) from typeset;
- gs_interval 
--------------
-           0
+select interval(bt, blb) from typeset;
+ interval 
+----------
+        0
 (1 row)
 
-select gs_interval(bt, txt) from typeset;
- gs_interval 
--------------
-           1
+select interval(bt, txt) from typeset;
+ interval 
+----------
+        1
 (1 row)
 
-select gs_interval(dt, tmstp) from typeset;
- gs_interval 
--------------
-           1
+select interval(dt, tmstp) from typeset;
+ interval 
+----------
+        1
 (1 row)
 
-select gs_interval(dt, tm) from typeset;
- gs_interval 
--------------
-           0
+select interval(dt, tm) from typeset;
+ interval 
+----------
+        0
 (1 row)
 
-select gs_interval(dt, ch) from typeset;
- gs_interval 
--------------
-           0
+select interval(dt, ch) from typeset;
+ interval 
+----------
+        0
 (1 row)
 
-select gs_interval(dt, vch) from typeset;
- gs_interval 
--------------
-           0
+select interval(dt, vch) from typeset;
+ interval 
+----------
+        0
 (1 row)
 
-select gs_interval(dt, blb) from typeset;
- gs_interval 
--------------
-           0
+select interval(dt, blb) from typeset;
+ interval 
+----------
+        0
 (1 row)
 
-select gs_interval(dt, txt) from typeset;
- gs_interval 
--------------
-           0
+select interval(dt, txt) from typeset;
+ interval 
+----------
+        0
 (1 row)
 
-select gs_interval(tmstp, tm) from typeset;
- gs_interval 
--------------
-           0
+select interval(tmstp, tm) from typeset;
+ interval 
+----------
+        0
 (1 row)
 
-select gs_interval(tmstp, ch) from typeset;
- gs_interval 
--------------
-           0
+select interval(tmstp, ch) from typeset;
+ interval 
+----------
+        0
 (1 row)
 
-select gs_interval(tmstp, vch) from typeset;
- gs_interval 
--------------
-           0
+select interval(tmstp, vch) from typeset;
+ interval 
+----------
+        0
 (1 row)
 
-select gs_interval(tmstp, blb) from typeset;
- gs_interval 
--------------
-           0
+select interval(tmstp, blb) from typeset;
+ interval 
+----------
+        0
 (1 row)
 
-select gs_interval(tmstp, txt) from typeset;
- gs_interval 
--------------
-           0
+select interval(tmstp, txt) from typeset;
+ interval 
+----------
+        0
 (1 row)
 
-select gs_interval(tm, ch) from typeset;
- gs_interval 
--------------
-           0
+select interval(tm, ch) from typeset;
+ interval 
+----------
+        0
 (1 row)
 
-select gs_interval(tm, vch) from typeset;
- gs_interval 
--------------
-           0
+select interval(tm, vch) from typeset;
+ interval 
+----------
+        0
 (1 row)
 
-select gs_interval(tm, blb) from typeset;
- gs_interval 
--------------
-           0
+select interval(tm, blb) from typeset;
+ interval 
+----------
+        0
 (1 row)
 
-select gs_interval(tm, txt) from typeset;
- gs_interval 
--------------
-           0
+select interval(tm, txt) from typeset;
+ interval 
+----------
+        0
 (1 row)
 
-select gs_interval(ch, vch) from typeset;
- gs_interval 
--------------
-           1
+select interval(ch, vch) from typeset;
+ interval 
+----------
+        1
 (1 row)
 
-select gs_interval(ch, blb) from typeset;
- gs_interval 
--------------
-           0
+select interval(ch, blb) from typeset;
+ interval 
+----------
+        0
 (1 row)
 
-select gs_interval(ch, txt) from typeset;
- gs_interval 
--------------
-           1
+select interval(ch, txt) from typeset;
+ interval 
+----------
+        1
 (1 row)
 
-select gs_interval(vch, blb) from typeset;
- gs_interval 
--------------
-           0
+select interval(vch, blb) from typeset;
+ interval 
+----------
+        0
 (1 row)
 
-select gs_interval(vch, txt) from typeset;
- gs_interval 
--------------
-           1
+select interval(vch, txt) from typeset;
+ interval 
+----------
+        1
 (1 row)
 
-select gs_interval(blb, txt) from typeset;
- gs_interval 
--------------
-           1
+select interval(blb, txt) from typeset;
+ interval 
+----------
+        1
 (1 row)
 
 select strcmp(tyint, smint) from typeset;

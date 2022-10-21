@@ -837,7 +837,7 @@ static SelectStmt *MakeShowGrantStmt(char *arg, int location, core_yyscan_t yysc
 				GenericType Numeric opt_float
 				Character ConstCharacter
 				CharacterWithLength CharacterWithoutLength
-				PreciseConstDatetime ConstDatetime ConstSet ConstInterval
+				PreciseConstDatetime ConstDatetime ConstSet
 				Bit ConstBit BitWithLength BitWithoutLength client_logic_type
 				datatypecl OptCopyColTypename Binary EnumType
 %type <str>		character
@@ -3194,9 +3194,10 @@ zone_value:
 				{
 					$$ = makeStringConst($1, @1);
 				}
-			| ConstInterval Sconst opt_interval
+			| INTERVAL Sconst opt_interval
 				{
-					TypeName *t = $1;
+					TypeName *t = SystemTypeName("interval");
+					t->location = @1;
 					if ($3 != NIL)
 					{
 						A_Const *n = (A_Const *) linitial($3);
@@ -3212,9 +3213,10 @@ zone_value:
 					t->typmods = $3;
 					$$ = makeStringConstCast($2, @2, t);
 				}
-			| ConstInterval '(' Iconst ')' Sconst opt_interval
+			| INTERVAL '(' Iconst ')' Sconst opt_interval
 				{
-					TypeName *t = $1;
+					TypeName *t = SystemTypeName("interval");
+					t->location = @1;
 					if ($6 != NIL)
 					{
 						A_Const *n = (A_Const *) linitial($6);
@@ -25244,14 +25246,16 @@ SimpleTypename:
 			| Character								{ $$ = $1; }
 			| ConstDatetime							{ $$ = $1; }
 			| ConstSet								{ $$ = $1; }
-			| ConstInterval opt_interval
+			| INTERVAL opt_interval
 				{
-					$$ = $1;
+					$$ = SystemTypeName("interval");
+					$$->location = @1;
 					$$->typmods = $2;
 				}
-			| ConstInterval '(' Iconst ')' opt_interval
+			| INTERVAL '(' Iconst ')' opt_interval
 				{
-					$$ = $1;
+					$$ = SystemTypeName("interval");
+					$$->location = @1;
 					if ($5 != NIL)
 					{
 						if (list_length($5) != 1) {
@@ -25921,14 +25925,6 @@ ConstSet:
 #endif
                 }
         ;
-
-ConstInterval:
-			INTERVAL
-				{
-					$$ = SystemTypeName("interval");
-					$$->location = @1;
-				}
-		;
 
 opt_timezone:
 			WITH_TIME ZONE							{ $$ = TRUE; }
@@ -28558,6 +28554,21 @@ func_expr_common_subexpr:
 					n->call_func = false;
 					$$ = (Node *)n;
 				}
+			| INTERVAL '(' a_expr ',' expr_list ')'
+				{
+					FuncCall *n = makeNode(FuncCall);
+					n->funcname = SystemFuncName("gs_interval");
+					n->colname = "interval";
+					n->args = lcons($3, $5);
+					n->agg_order = NIL;
+					n->agg_star = FALSE;
+					n->agg_distinct = FALSE;
+					n->func_variadic = FALSE;
+					n->over = NULL;
+					n->location = @1;
+					n->call_func = false;
+					$$ = (Node *)n;
+				}
 		;
 
 current_date_func:	CURRENT_DATE
@@ -29888,29 +29899,33 @@ AexprConst: Iconst
 				{
 					$$ = makeStringConstCast($2, @2, $1);
 				}
-			| ConstInterval Sconst opt_interval
+			| INTERVAL Sconst opt_interval
 				{
-					TypeName *t = $1;
+					TypeName *t = SystemTypeName("interval");
+					t->location = @1;
 					t->typmods = $3;
 					$$ = makeStringConstCast($2, @2, t);
 				}
-			| ConstInterval ICONST opt_interval
+			| INTERVAL ICONST opt_interval
 				{
-					TypeName *t = $1;
+					TypeName *t = SystemTypeName("interval");
+					t->location = @1;
 					t->typmods = $3;
 					char buf[64];
 					snprintf(buf, sizeof(buf), "%d", $2);
 					$$ = makeStringConstCast(pstrdup(buf), @2, t);
 				}
-			| ConstInterval FCONST opt_interval
+			| INTERVAL FCONST opt_interval
 				{
-					TypeName *t = $1;
+					TypeName *t = SystemTypeName("interval");
+					t->location = @1;
 					t->typmods = $3;
 					$$ = makeStringConstCast($2, @2, t);
 				}
-			| ConstInterval '(' Iconst ')' Sconst opt_interval
+			| INTERVAL '(' Iconst ')' Sconst opt_interval
 				{
-					TypeName *t = $1;
+					TypeName *t = SystemTypeName("interval");
+					t->location = @1;
 					if ($6 != NIL)
 					{
 						if (list_length($6) != 1) {
@@ -30613,6 +30628,7 @@ col_name_keyword:
 			| EXTRACT
 			| GREATEST
 			| IFNULL
+			| INTERVAL
 			| LEAST
 			| LOCATE
 			| MID
@@ -30669,7 +30685,6 @@ col_name_keyword_nonambiguous:
 			| INOUT
 			| INT_P
 			| INTEGER
-			| INTERVAL
 			| MEDIUMINT
 			| NATIONAL
 			| NCHAR
