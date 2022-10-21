@@ -95,6 +95,58 @@ show triggers in grant_test;
 --?.*
 (4 rows)
 
+/* show character set */
+SHOW CHARACTER SET LIKE 'a%';
+ charset |    description    | default collation | maxlen 
+---------+-------------------+-------------------+--------
+ abc     | alias for WIN1258 |                   |      1
+ alt     | alias for WIN866  |                   |      1
+(2 rows)
+
+SHOW CHARACTER SET WHERE charset LIKE 'i%';
+  charset  |        description         | default collation | maxlen 
+-----------+----------------------------+-------------------+--------
+ iso88591  | ISO 8859-1, ECMA 94        |                   |      1
+ iso885910 | ISO 8859-10, ECMA 144      |                   |      1
+ iso885913 | ISO 8859-13                |                   |      1
+ iso885914 | ISO 8859-14                |                   |      1
+ iso885915 | ISO 8859-15                |                   |      1
+ iso885916 | ISO 8859-16, ASRO SR 14111 |                   |      1
+ iso88592  | ISO 8859-2, ECMA 94        |                   |      1
+ iso88593  | ISO 8859-3, ECMA 94        |                   |      1
+ iso88594  | ISO 8859-4, ECMA 94        |                   |      1
+ iso88595  | ISO 8859-5, ECMA 113       |                   |      1
+ iso88596  | ISO 8859-6, ECMA 114       |                   |      1
+ iso88597  | ISO 8859-7, ECMA 118       |                   |      1
+ iso88598  | ISO 8859-8, ECMA 121       |                   |      1
+ iso88599  | ISO 8859-9, ECMA 128       |                   |      1
+(14 rows)
+
+/* show collation */
+SHOW COLLATION LIKE 'aa%';
+    collation     | charset |  id   | default | compiled | sortlen 
+------------------+---------+-------+---------+----------+---------
+--? aa_DJ            | utf8    | .* |         | Yes      |        
+--? aa_DJ            | latin1  | .* |         | Yes      |        
+--? aa_DJ.iso88591   | latin1  | .* |         | Yes      |        
+--? aa_DJ.utf8       | utf8    | .* |         | Yes      |        
+--? aa_ER            | utf8    | .* |         | Yes      |        
+--? aa_ER.utf8       | utf8    | .* |         | Yes      |        
+--? aa_ER.utf8@saaho | utf8    | .* |         | Yes      |        
+--? aa_ER@saaho      | utf8    | .* |         | Yes      |        
+--? aa_ET            | utf8    | .* |         | Yes      |        
+--? aa_ET.utf8       | utf8    | .* |         | Yes      |        
+(10 rows)
+
+SHOW COLLATION WHERE charset = 'win1251';
+  collation   | charset |  id   | default | compiled | sortlen 
+--------------+---------+-------+---------+----------+---------
+--? be_BY        | win1251 | .* |         | Yes      |        
+--? be_BY.cp1251 | win1251 | .* |         | Yes      |        
+--? bg_BG        | win1251 | .* |         | Yes      |        
+--? bg_BG.cp1251 | win1251 | .* |         | Yes      |        
+(4 rows)
+
 reset search_path;
 drop user grant_test cascade;
 NOTICE:  drop cascades to 8 other objects

@@ -1,5 +1,7 @@
 #include "plugin_utils/show_common.h"
 #include "funcapi.h"
+#include "nodes/makefuncs.h"
+
 
 /**
  * search oid of role name
@@ -85,6 +87,20 @@ SelectStmt *MakeCommonQuery(char *functionName, List *args)
     RangeFunction *rangeFunction = makeNode(RangeFunction);
     rangeFunction->funccallnode = (Node *)funcCall;
     selectStmt->fromClause = list_make1(rangeFunction);
+
+    return selectStmt;
+}
+
+SelectStmt *MakeCommonQuery(char *functionName, char *filterName, List *args, Node *likeWhereOpt, bool isLikeExpr)
+{
+    SelectStmt *selectStmt = MakeCommonQuery(functionName, args);
+    /* set where clause */
+    if (isLikeExpr) {
+        ColumnRef *columnRef = makeNode(ColumnRef);
+        columnRef->fields = list_make1(makeString(filterName));
+        likeWhereOpt = (Node *)makeSimpleA_Expr(AEXPR_OP, "~~", (Node *)columnRef, likeWhereOpt, -1);
+    }
+    selectStmt->whereClause = likeWhereOpt;
 
     return selectStmt;
 }

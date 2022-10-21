@@ -52,3 +52,20 @@ CREATE FUNCTION pg_catalog.show_triggers(IN schema_name NAME,
                                          OUT "Database Collation" NAME
 ) RETURNS SETOF RECORD AS '$libdir/dolphin','ShowTriggers' 
  LANGUAGE C;
+
+CREATE FUNCTION pg_catalog.show_character_set(OUT "charset" NAME,
+                                         OUT "description" TEXT,
+                                         OUT "default collation" TEXT,
+                                         OUT "maxlen" INT4,
+                                         OUT "server" BOOL
+) RETURNS SETOF RECORD AS '$libdir/dolphin','ShowCharset' 
+ LANGUAGE C;
+
+CREATE FUNCTION pg_catalog.show_collation(OUT "collation" NAME,
+                                         OUT "charset" NAME,
+                                         OUT "id" OID,
+                                         OUT "default" TEXT,
+                                         OUT "compiled" TEXT,
+                                         OUT "sortlen" INT4
+) RETURNS SETOF RECORD AS '$libdir/dolphin','ShowCollation' 
+ LANGUAGE C;

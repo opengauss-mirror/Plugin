@@ -62,8 +62,10 @@ SelectStmt* makeShowDatabasesQuery(Node* likeNode, Node* whereExpr);
 SelectStmt* makeShowMasterStatusQuery(void);
 SelectStmt* makeShowSlaveHostsQuery(void);
 #ifdef DOLPHIN
-SelectStmt *makeShowTriggersQuery(List *args, Node *likeWhereOpt, bool isLikeExpr);
-SelectStmt *makeShowFuncProQuery(List *args, Node *likeWhereOpt, bool isLikeExpr);
+SelectStmt *MakeShowTriggersQuery(List *args, Node *likeWhereOpt, bool isLikeExpr);
+SelectStmt *MakeShowFuncProQuery(List *args, Node *likeWhereOpt, bool isLikeExpr);
+SelectStmt *MakeShowCharacterQuery(List *args, Node *likeWhereOpt, bool isLikeExpr);
+SelectStmt *MakeShowCollationQuery(List *args, Node *likeWhereOpt, bool isLikeExpr);
 #endif
 
 SelectStmt* makeShowIndexQuery(char *schemaName, char *tableName, Node *whereClause);
