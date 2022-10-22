@@ -354,7 +354,7 @@ static void SetTidRangeScanPath(PlannerInfo *root, RelOptInfo *baserel, Index rt
 
     /* only plain relations are supported */
     if (baserel->rtekind != RTE_RELATION || rte->relkind == RELKIND_FOREIGN_TABLE || rte->tablesample != NULL ||
-        baserel->isPartitionedTable)
+        baserel->isPartitionedTable || rte->orientation != REL_ROW_ORIENTED)
         return;
 
     /*
