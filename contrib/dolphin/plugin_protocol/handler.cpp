@@ -29,9 +29,7 @@
 #include "plugin_protocol/handler.h"
 
 static int execute_sql(const char* sql);
-static int execute_use_schema(char *schema);
 static void execute_show_variables();
-static int execute_show_columns_from(char *tableName);
 static void execute_fetch_server_config();
 
 void dophin_send_ready_for_query(CommandDest dest)
@@ -168,81 +166,6 @@ int execute_sql(const char* sql)
     finish_xact_command();
 
     return 0;
-}
-
-int execute_show_columns_from(char *tableName)
-{
-    int rc;
-    
-    start_xact_command();
-
-    SPI_STACK_LOG("connect", NULL, NULL);
-    if ((rc = SPI_connect()) != SPI_OK_CONNECT) {
-        ereport(ERROR, (errcode(ERRCODE_INTERNAL_ERROR),
-            errmsg("dolphin SPI_connect failed: %s", SPI_result_code_string(rc)),
-            errdetail("SPI_connect failed"),
-            errcause("System error."),
-            erraction("Check whether the snapshot retry is successful")));
-    }
-
-    StringInfo sql = makeStringInfo();
-    appendStringInfo(sql, "show columns from %s", tableName);
-
-    rc = SPI_execute(sql->data, false, 0);
-
-    StringInfo buf = makeStringInfo();
-    if (rc == SPI_OK_SELECT && SPI_processed > 0) {
-        TupleDesc spi_tupdesc = SPI_tuptable->tupdesc;
-        for (uint32 i = 0; i < SPI_processed; i++) {
-            HeapTuple spi_tuple = SPI_tuptable->vals[i];
-            char *name = SPI_getvalue(spi_tuple, spi_tupdesc, SPI_fnumber(spi_tupdesc, "Field"));
-            dolphin_data_field *field = make_dolphin_data_field(name, tableName);
-            send_column_definition41_packet(buf, field);
-
-            pfree(field);
-        }
-
-       /* EOF packet at end of all rows*/
-       send_network_eof_packet(buf); 
-    }
-    
-    DestroyStringInfo(sql);
-    DestroyStringInfo(buf);
-
-    SPI_STACK_LOG("finish", NULL, NULL);
-    SPI_finish();
-
-    finish_xact_command();
-
-    return 0;
-}
-
-int execute_use_schema(char *schema)
-{
-    int rc;
-    
-    start_xact_command();
-
-    SPI_STACK_LOG("connect", NULL, NULL);
-    if ((rc = SPI_connect()) != SPI_OK_CONNECT) {
-        ereport(ERROR, (errcode(ERRCODE_INTERNAL_ERROR),
-            errmsg("dolphin SPI_connect failed: %s", SPI_result_code_string(rc)),
-            errdetail("SPI_connect failed"),
-            errcause("System error."),
-            erraction("Check whether the snapshot retry is successful")));
-    }
-
-    StringInfo buf = makeStringInfo();
-    appendStringInfo(buf, "use %s", schema);
-    rc = SPI_execute(buf->data, false, 0);
-    pfree(buf);
-    
-    SPI_STACK_LOG("finish", NULL, NULL);
-    SPI_finish();
-
-    finish_xact_command();
-
-    return rc;
 }
 
 void execute_show_variables()

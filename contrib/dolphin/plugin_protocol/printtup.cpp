@@ -126,7 +126,7 @@ static void SendRowDescriptionMessage(StringInfo buf, TupleDesc typeinfo, List *
         }
     
         if (tlist_item != NULL) {
-            TargetEntry *tle = (TargetEntry *)lfirst(tlist_item);
+            // convert t_list_item to TargetEntry later (TargetEntry *tle = (TargetEntry *)lfirst(tlist_item))
             tlist_item = lnext(tlist_item);
         } 
         
