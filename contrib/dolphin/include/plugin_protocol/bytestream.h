@@ -250,7 +250,7 @@ static inline void dq_skip_bytes(StringInfo buf, int len)
     buf->cursor += len;
 } 
 
-static inline char* dq_get_string_len(StringInfo msg, uint64 len)
+static inline char* dq_get_string_len(StringInfo msg, int len)
 {
     if (len < 0 || len > (msg->len - msg->cursor)) {
         ereport(ERROR, (errcode(ERRCODE_PROTOCOL_VIOLATION), errmsg("insufficient data left in message")));
@@ -293,6 +293,8 @@ static inline char* dq_get_string_lenenc(StringInfo msg)
     if (first != 0xfe) {
         len = len & 0xffffffff;
     }
+    // stringInfo only alloc int-length size memroy here, 
+    // mysql proto define the 8 byte int type, but not used so far.
     return dq_get_string_len(msg, len);
 }
 
