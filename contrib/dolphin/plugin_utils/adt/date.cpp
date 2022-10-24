@@ -109,6 +109,14 @@ PG_FUNCTION_INFO_V1_PUBLIC(adddate_time_days);
 extern "C" DLL_PUBLIC Datum adddate_time_days(PG_FUNCTION_ARGS);
 PG_FUNCTION_INFO_V1_PUBLIC(adddate_time_interval);
 extern "C" DLL_PUBLIC Datum adddate_time_interval(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(GetHour);
+extern "C" DLL_PUBLIC Datum GetHour(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(GetMicrosecond);
+extern "C" DLL_PUBLIC Datum GetMicrosecond(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(GetMinute);
+extern "C" DLL_PUBLIC Datum GetMinute(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(GetSecond);
+extern "C" DLL_PUBLIC Datum GetSecond(PG_FUNCTION_ARGS);
 #endif
 /* common code for timetypmodin and timetztypmodin */
 static int32 anytime_typmodin(bool istz, ArrayType* ta)
@@ -4210,4 +4218,36 @@ Datum adddate_time_interval(PG_FUNCTION_ARGS)
     PG_RETURN_NULL();
 }
 
+static inline Datum GetSepecificPartOfTime(PG_FUNCTION_ARGS, const char *part)
+{
+    char *tString = text_to_cstring(PG_GETARG_TEXT_PP(0));
+    TimeADT tm;
+    if (time_in_no_ereport(tString, &tm)) {
+        return DirectFunctionCall2(time_part, CStringGetTextDatum(part), TimeADTGetDatum(tm));
+    }
+    Timestamp ts = DatumGetTimestamp(
+        DirectFunctionCall3(timestamp_in, CStringGetDatum(tString), ObjectIdGetDatum(InvalidOid), Int32GetDatum(-1)));
+    pfree(tString);
+    return DirectFunctionCall2(timestamp_part, CStringGetTextDatum(part), TimestampGetDatum(ts));
+}
+
+Datum GetHour(PG_FUNCTION_ARGS)
+{
+    return GetSepecificPartOfTime(fcinfo, "hour");
+}
+
+Datum GetMicrosecond(PG_FUNCTION_ARGS)
+{
+    return GetSepecificPartOfTime(fcinfo, "microsecond");
+}
+
+Datum GetMinute(PG_FUNCTION_ARGS)
+{
+    return GetSepecificPartOfTime(fcinfo, "minute");
+}
+
+Datum GetSecond(PG_FUNCTION_ARGS)
+{
+    return GetSepecificPartOfTime(fcinfo, "second");
+}
 #endif
