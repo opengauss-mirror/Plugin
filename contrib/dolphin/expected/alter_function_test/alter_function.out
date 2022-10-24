@@ -37,7 +37,7 @@ ALTER FUNCTION f3  fenced;
 ERROR:  more than one function named "f3"
 drop FUNCTION f3(a int);
 \sf f3
-CREATE DEFINER = tester2 FUNCTION public.f3()
+--?CREATE DEFINER = .* FUNCTION public.f3()
  RETURNS integer
  LANGUAGE plpgsql
  NOT FENCED NOT SHIPPABLE
