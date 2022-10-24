@@ -104,6 +104,7 @@
 |plugin_vector|vecfuncache.cpp   |src\gausskernel\runtime\vecexecutor\vecfuncache.cpp   |
 |plugin_optimizer|streamwalker.cpp   |src\gausskernel\optimizer\plan\streamwalker.cpp  |
 |plugin_optimizer\commands|functioncmds.cpp   |src\gausskernel\optimizer\commands\functioncmds.cpp  |
+|plugin_optimizer\commands|foreigncmds.cpp   |src\gausskernel\optimizer\commands\foreigncmds.cpp  |
 |plugin_storage|hashfunc.cpp   |src\gausskernel\storage\access\hash\hashfunc.cpp  |
 |plugin_pl\plpgsql\src|gram.y   |src\common\pl\plpgsql\src\gram.y  |
 |plugin_pl\plpgsql\src|pl_scanner.cpp   |src\common\pl\plpgsql\src\pl_scanner.cpp  |
@@ -120,6 +121,7 @@
 |文件夹   |文件名   |对应内核文件路径   |
 | :------------ | :------------ | :------------ |
 |plugin_mb|pg_wchar.h  |src\include\mb\pg_wchar.h   |
+|plugin_commands|defrem.h  |src\include\commands\defrem.h   |
 |plugin_nodes|parsenodes_common.h  |src\include\nodes\parsenodes_common.h   |
 |plugin_nodes|parsenodes.h  |src\include\nodes\parsenodes.h   |
 |plugin_parser|analyze.h  |src\include\parser\analyze.h   |
