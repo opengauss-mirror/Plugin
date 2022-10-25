@@ -25672,7 +25672,7 @@ ConstCharacter:  CharacterWithLength
 				}
 		;
 
-CharacterWithLength:  character '(' Iconst ')' opt_charset
+CharacterWithLength:  character '(' a_expr ')' opt_charset
 				{
 					if (($5 != NULL) && (strcmp($5, "sql_text") != 0))
 					{
@@ -25680,9 +25680,35 @@ CharacterWithLength:  character '(' Iconst ')' opt_charset
 					}
 
 					$$ = SystemTypeName($1);
-					$$->typmods = list_make1(makeIntConst($3, @3));
+					$$->typmods = list_make1($3);
 					$$->location = @1;
 				}
+			| CHAR_P '(' a_expr ')' opt_charset
+			{
+				// If the type of $3 is not Iconst, an error is reported
+				CheckIconstType($3);
+				if (($5 != NULL) && (strcmp($5, "sql_text") != 0))
+				{
+					ereport(WARNING, (errmsg("character set \"%s\" for type %s is not supported yet. default value set", $5, $1)));
+				}
+
+				$$ = SystemTypeName((char *)("bpchar"));
+				$$->typmods = list_make1($3);
+				$$->location = @1;
+			}
+			| CHAR_P VARYING '(' a_expr ')' opt_charset
+			{
+				// If the type of $4 is not Iconst, an error is reported
+				CheckIconstType($4);
+				if (($6 != NULL) && (strcmp($6, "sql_text") != 0))
+				{
+					ereport(WARNING, (errmsg("character set \"%s\" for type %s is not supported yet. default value set", $6, $1)));
+				}
+
+				$$ = SystemTypeName((char *)("varchar"));
+				$$->typmods = list_make1($4);
+				$$->location = @1;
+			}
 			| TEXT_P '(' a_expr ')' opt_charset
 			{
 				if (($5 != NULL) && (strcmp($5, "sql_text") != 0))
@@ -25709,6 +25735,31 @@ CharacterWithoutLength:	 character opt_charset
 
 					$$->location = @1;
 				}
+			| CHAR_P opt_charset
+				{
+					if (($2 != NULL) && (strcmp($2, "sql_text") != 0))
+					{
+						ereport(WARNING, (errmsg("character set \"%s\" for type %s is not supported yet. default value set", $2, $1)));
+					}
+
+					$$ = SystemTypeName((char *)("bpchar"));
+
+					/* char defaults to char(1), varchar to no limit */
+					$$->typmods = list_make1(makeIntConst(1, -1));
+
+					$$->location = @1;
+				}
+			| CHAR_P VARYING opt_charset
+				{
+					if (($3 != NULL) && (strcmp($3, "sql_text") != 0))
+					{
+						ereport(WARNING, (errmsg("character set \"%s\" for type %s is not supported yet. default value set", $3, $1)));
+					}
+
+					$$ = SystemTypeName((char *)("varchar"));
+
+					$$->location = @1;
+				}
 			| TEXT_P opt_charset
 				{
 					if (($2 != NULL) && (strcmp($2, "sql_text") != 0))
@@ -25721,8 +25772,6 @@ CharacterWithoutLength:	 character opt_charset
 		;
 
 character:	CHARACTER opt_varying
-										{ $$ = (char *)($2 ? "varchar": "bpchar"); }
-			| CHAR_P opt_varying
 										{ $$ = (char *)($2 ? "varchar": "bpchar"); }
 			| NVARCHAR
 										{ $$ = "nvarchar2"; }
@@ -28583,6 +28632,36 @@ func_expr_common_subexpr:
 					n->call_func = false;
 					$$ = (Node *)n;
 				}
+			| CHAR_P '(' a_expr ')'
+				{
+					FuncCall *n = makeNode(FuncCall);
+					n->funcname = SystemFuncName("chara");
+					n->colname = "char";
+					n->args = list_make1($3);
+					n->agg_order = NIL;
+					n->agg_star = FALSE;
+					n->agg_distinct = FALSE;
+					n->func_variadic = FALSE;
+					n->over = NULL;
+					n->location = @1;
+					n->call_func = false;
+					$$ = (Node *)n;
+				}
+			| CHAR_P '(' a_expr ',' expr_list ')'
+				{
+					FuncCall *n = makeNode(FuncCall);
+					n->funcname = SystemFuncName("chara");
+					n->colname = "char";
+					n->args = lcons($3, $5);
+					n->agg_order = NIL;
+					n->agg_star = FALSE;
+					n->agg_distinct = FALSE;
+					n->func_variadic = FALSE;
+					n->over = NULL;
+					n->location = @1;
+					n->call_func = false;
+					$$ = (Node *)n;
+				}
 		;
 
 current_date_func:	CURRENT_DATE
@@ -30634,6 +30713,7 @@ unreserved_keyword_without_key:
  */
 col_name_keyword:
 			  col_name_keyword_nonambiguous { $$ = $1; }
+			| CHAR_P
 			| COALESCE
 			| CONVERT
 			| DATE_P
@@ -30685,7 +30765,6 @@ col_name_keyword_nonambiguous:
 			| BUCKETCNT
 			| BYTEAWITHOUTORDER
 			| BYTEAWITHOUTORDERWITHEQUAL
-			| CHAR_P
 			| CHARACTER
 			| DATETIME
 			| DEC
