@@ -37,6 +37,38 @@ SELECT weekofyear('2022-10-09 09:55:28.12345');
 select now(),dayofmonth(now()),dayofmonth('2022-06-13');
 select now(),dayofyear(now()),dayofyear('2022-06-13');
 
+select second('10:20:30');
+select second('30:20:10.123456');
+select second('2022-10-09 11:22:33');
+select second('2022-10-09 11:22:33.456789');
+select second('20221009112233');
+select second('373839');
+select second('2022-10-09');
+
+select minute('10:20:30');
+select minute('30:20:10.123456');
+select minute('2022-10-09 11:22:33');
+select minute('2022-10-09 11:22:33.456789');
+select minute('20221009112233');
+select minute('373839');
+select minute('2022-10-09');
+
+select microsecond('10:20:30');
+select microsecond('30:20:10.123456');
+select microsecond('2022-10-09 11:22:33');
+select microsecond('2022-10-09 11:22:33.456789');
+select microsecond('20221009112233');
+select microsecond('373839');
+select microsecond('2022-10-09');
+
+select hour('10:20:30');
+select hour('30:20:10.123456');
+select hour('2022-10-09 11:22:33');
+select hour('2022-10-09 11:22:33.456789');
+select hour('20221009112233');
+select hour('373839');
+select hour('2022-10-09');
+
 SELECT dayofmonth(20221009);
 SELECT dayofweek(20221009);
 SELECT dayofyear(20221009);

@@ -141,6 +141,174 @@ select now(),dayofyear(now()),dayofyear('2022-06-13');
 --?164.*
 (1 row)
 
+select second('10:20:30');
+ second 
+--------
+     30
+(1 row)
+
+select second('30:20:10.123456');
+ second 
+--------
+     10
+(1 row)
+
+select second('2022-10-09 11:22:33');
+ second 
+--------
+     33
+(1 row)
+
+select second('2022-10-09 11:22:33.456789');
+ second 
+--------
+     33
+(1 row)
+
+select second('20221009112233');
+ second 
+--------
+     33
+(1 row)
+
+select second('373839');
+ second 
+--------
+     39
+(1 row)
+
+select second('2022-10-09');
+ second 
+--------
+      0
+(1 row)
+
+select minute('10:20:30');
+ minute 
+--------
+     20
+(1 row)
+
+select minute('30:20:10.123456');
+ minute 
+--------
+     20
+(1 row)
+
+select minute('2022-10-09 11:22:33');
+ minute 
+--------
+     22
+(1 row)
+
+select minute('2022-10-09 11:22:33.456789');
+ minute 
+--------
+     22
+(1 row)
+
+select minute('20221009112233');
+ minute 
+--------
+     22
+(1 row)
+
+select minute('373839');
+ minute 
+--------
+     38
+(1 row)
+
+select minute('2022-10-09');
+ minute 
+--------
+      0
+(1 row)
+
+select microsecond('10:20:30');
+ microsecond 
+-------------
+           0
+(1 row)
+
+select microsecond('30:20:10.123456');
+ microsecond 
+-------------
+      123456
+(1 row)
+
+select microsecond('2022-10-09 11:22:33');
+ microsecond 
+-------------
+           0
+(1 row)
+
+select microsecond('2022-10-09 11:22:33.456789');
+ microsecond 
+-------------
+      456789
+(1 row)
+
+select microsecond('20221009112233');
+ microsecond 
+-------------
+           0
+(1 row)
+
+select microsecond('373839');
+ microsecond 
+-------------
+           0
+(1 row)
+
+select microsecond('2022-10-09');
+ microsecond 
+-------------
+           0
+(1 row)
+
+select hour('10:20:30');
+ hour 
+------
+   10
+(1 row)
+
+select hour('30:20:10.123456');
+ hour 
+------
+   30
+(1 row)
+
+select hour('2022-10-09 11:22:33');
+ hour 
+------
+   11
+(1 row)
+
+select hour('2022-10-09 11:22:33.456789');
+ hour 
+------
+   11
+(1 row)
+
+select hour('20221009112233');
+ hour 
+------
+   11
+(1 row)
+
+select hour('373839');
+ hour 
+------
+   37
+(1 row)
+
+select hour('2022-10-09');
+ hour 
+------
+    0
+(1 row)
+
 SELECT dayofmonth(20221009);
  dayofmonth 
 ------------
