@@ -341,11 +341,10 @@ SELECT time'12:12:12.123456';
 (1 row)
 
 SELECT time'34 22:59:59.999999';
-       time       
-------------------
- 838:59:59.999999
-(1 row)
-
+ERROR:  date/time field value out of range: "34 22:59:59.999999"
+LINE 1: SELECT time'34 22:59:59.999999';
+                   ^
+CONTEXT:  referenced column: time
 SELECT time'12:60:12.123456';
 ERROR:  date/time field value out of range: "12:60:12.123456"
 LINE 1: SELECT time'12:60:12.123456';
@@ -379,29 +378,25 @@ SELECT time'-34 22:59:59';
 (1 row)
 
 SELECT time'34 22:59:59.999999';
-       time       
-------------------
- 838:59:59.999999
-(1 row)
-
+ERROR:  date/time field value out of range: "34 22:59:59.999999"
+LINE 1: SELECT time'34 22:59:59.999999';
+                   ^
+CONTEXT:  referenced column: time
 SELECT time'34 22:59:59.9999999999999999999999';
-   time    
------------
- 839:00:00
-(1 row)
-
+ERROR:  date/time field value out of range: "34 22:59:59.9999999999999999999999"
+LINE 1: SELECT time'34 22:59:59.9999999999999999999999';
+                   ^
+CONTEXT:  referenced column: time
 SELECT time'-34 22:59:59.9999999999999999999999';
-    time    
-------------
- -839:00:00
-(1 row)
-
+ERROR:  date/time field value out of range: "-34 22:59:59.9999999999999999999999"
+LINE 1: SELECT time'-34 22:59:59.9999999999999999999999';
+                   ^
+CONTEXT:  referenced column: time
 SELECT time'-34 22:59:59.9999999999999999999999';
-    time    
-------------
- -839:00:00
-(1 row)
-
+ERROR:  date/time field value out of range: "-34 22:59:59.9999999999999999999999"
+LINE 1: SELECT time'-34 22:59:59.9999999999999999999999';
+                   ^
+CONTEXT:  referenced column: time
 SELECT time'838:59:59';
    time    
 -----------
@@ -560,17 +555,11 @@ SELECT 233445.123::time;
 (1 row)
 
 SELECT 8385959.999999::time;
-   time    
------------
- 839:00:00
-(1 row)
-
+ERROR:  invalid input syntax for type time: "8385959.999999"
+CONTEXT:  referenced column: time
 SELECT 8385959.9999999::time;
-   time    
------------
- 839:00:00
-(1 row)
-
+ERROR:  invalid input syntax for type time: "8385959.9999999"
+CONTEXT:  referenced column: time
 SELECT -232323::time;
  ?column?  
 -----------

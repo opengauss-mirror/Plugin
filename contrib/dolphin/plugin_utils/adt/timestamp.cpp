@@ -43,6 +43,7 @@
 #include "plugin_utils/year.h"
 #ifdef DOLPHIN
 #include "plugin_utils/my_locale.h"
+#include "plugin_commands/mysqlmode.h"
 #endif
 
 #ifdef PGXC
@@ -62,7 +63,14 @@
 #endif
 
 #define DATE_WITHOUT_SPC_LEN 14
+
 #define FOUR_DIGIT_LEN 4 /* year is 4 */
+#ifdef DOLPHIN
+#define THREE_DIGIT_LEN 3
+#define SIX_DIGIT_LEN 6
+#define SEVEN_DIGIT_LEN 7
+#define EIGHT_DIGIT_LEN 8
+#endif
 #define TWO_DIGIT_LEN 2  /*month,day,hour,minute and second*/
 #define MAXLEN_DATE 10   /* with separator, without time-string*/
 #define MINLEN_DATE 8    /* without separator, without time-string */
@@ -163,8 +171,6 @@ static int daydiff_timestamp(const struct pg_tm* tm, const struct pg_tm* tm1, co
 #ifdef DOLPHIN
 static int cal_weekday_interval(struct pg_tm* tm, bool sunday_is_first_day);
 static int b_db_sumdays(int year, int month, int day);
-static int64 b_db_weekmode(int64 mode);
-static int b_db_cal_week(struct pg_tm* tm, int64 mode, uint* year);
 static bool timestampdiff_datetime_internal(int64 *result,  text *units, Timestamp dt1, Timestamp dt2);
 #endif
 
@@ -279,6 +285,15 @@ PG_FUNCTION_INFO_V1_PUBLIC(convert_tz);
 extern "C" DLL_PUBLIC Datum convert_tz(PG_FUNCTION_ARGS);
 PG_FUNCTION_INFO_V1_PUBLIC(addtime_text);
 extern "C" DLL_PUBLIC Datum addtime_text(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1_PUBLIC(date_format_text);
+extern "C" DLL_PUBLIC Datum date_format_text(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(str_to_date);
+extern "C" DLL_PUBLIC Datum str_to_date(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(from_unixtime_with_one_arg);
+extern "C" DLL_PUBLIC Datum from_unixtime_with_one_arg(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(from_unixtime_with_two_arg);
+extern "C" DLL_PUBLIC Datum from_unixtime_with_two_arg(PG_FUNCTION_ARGS);
 #endif
 
 /* b format datetime and timestamp type */
@@ -7409,12 +7424,19 @@ bool MaybeRound(struct pg_tm *tm, fsec_t *fsec)
     return true;
 }
 
+// return true if tm and fsec are both zero
+static inline bool is_zero_datetime(struct pg_tm *tm, fsec_t fsec)
+{
+    return !(tm->tm_year || tm->tm_mon || tm->tm_mday || 
+             tm->tm_hour || tm->tm_min || tm->tm_sec ||
+             fsec);
+}
+
 /**
  *  The function is similar to timestamp_in, but uses date_flag to control the parsing process.
 */
-void datetime_in_with_flag(const char *str, struct pg_tm *tm, unsigned int date_flag)
+void datetime_in_with_flag_internal(const char *str, struct pg_tm *tm, fsec_t *fsec, unsigned int date_flag)
 {
-    fsec_t fsec;
     int tz;
     int dtype;
     int nf;
@@ -7431,24 +7453,35 @@ void datetime_in_with_flag(const char *str, struct pg_tm *tm, unsigned int date_
     if (dterr == 0) {
         if (nf == 1 && ftype[0] == DTK_NUMBER) {
             /* for example, str = "301210054523", "301210054523.123" */
-            dterr = NumberTimestamp(field[0], tm, &fsec, date_flag);
+            dterr = NumberTimestamp(field[0], tm, fsec, date_flag);
             dtype = DTK_DATE;
         } else {
-            dterr = DecodeDateTimeForBDatabase(field, ftype, nf, &dtype, tm, &fsec, &tz, date_flag);
+            dterr = DecodeDateTimeForBDatabase(field, ftype, nf, &dtype, tm, fsec, &tz, date_flag);
         }
     }
     if (dterr != 0)
         DateTimeParseError(dterr, str, "timestamp");
+
+    if (!(date_flag & ENABLE_ZERO_DATE) && is_zero_datetime(tm, *fsec)) {
+        ereport(ERROR,
+                (errcode(DTERR_BAD_FORMAT), errmsg("Incorrect datetime value: \"%s\"", str)));
+    }
 
     if (tm->tm_year > B_FORMAT_MAX_YEAR_OF_DATE || (tm->tm_year == B_FORMAT_MIN_YEAR_OF_DATE && tm->tm_mon == FEBRUARY && tm->tm_mday == DAYNUM_FEB_LEAPYEAR)) {
         ereport(ERROR,
                 (errcode(DTERR_BAD_FORMAT), errmsg("Incorrect datetime value: \"%s\"", str)));
     }
 
-    if (!MaybeRound(tm, &fsec)) {
+    if (!MaybeRound(tm, fsec)) {
         ereport(ERROR,
                 (errcode(DTERR_BAD_FORMAT), errmsg("Truncated incorrect datetime value: \"%s\"", str)));
     }
+}
+
+void datetime_in_with_flag(const char *str, struct pg_tm *tm, unsigned int date_flag)
+{
+    fsec_t fsec;
+    datetime_in_with_flag_internal(str, tm, &fsec, date_flag);
 }
 
 // convert Numeric arg into lldiv_t
@@ -7759,7 +7792,7 @@ The meaning of each bit is as follows:
  *@param mode specified week mode in [0~7]
  *@return adjusted mode
 */
-static int64 b_db_weekmode(int64 mode)
+int64 b_db_weekmode(int64 mode)
 {
     /* make sure that weekmode is an integer between 0 and 7 */
     int64 weekmode = (mode & 7);
@@ -7775,7 +7808,7 @@ static int64 b_db_weekmode(int64 mode)
  *@param year this parameter may be used in yearweek()
  *@return week numbers
 */
-static int b_db_cal_week(struct pg_tm* tm, int64 mode, uint *year)
+int b_db_cal_week(struct pg_tm* tm, int64 mode, uint *year)
 {
     long days;
     long weekday;
@@ -8230,5 +8263,1085 @@ Datum addtime_text(PG_FUNCTION_ARGS)
     ereport(ERROR, (errcode(ERRCODE_INVALID_DATETIME_FORMAT),
                     errmsg("invalid input syntax \"%s\"", str1)));
     PG_RETURN_NULL();
+}
+
+bool datetime_in_with_sql_mode(char *str, struct pg_tm *tm, fsec_t *fsec, unsigned int date_flag)
+{
+    bool ret = true;
+    bool raise_warning = false;
+    int code;
+    const char *msg = NULL;
+    PG_TRY();
+    {
+        datetime_in_with_flag_internal(str, tm, fsec, date_flag);
+    }
+    PG_CATCH();
+    {
+        ret = false;
+        if (SQL_MODE_STRICT()) {
+            PG_RE_THROW();
+        } else {
+            raise_warning = true;
+            code = geterrcode();
+            msg = pstrdup(Geterrmsg());
+            FlushErrorState();
+        }
+    }
+    PG_END_TRY();
+    if (raise_warning) {
+        ereport(WARNING, (errcode(code), errmsg("%s", msg)));
+    }
+    return ret;
+}
+
+// functions to help date_format to get the result str length
+static inline int get_result_len(char *format, int len)
+{
+    int result = 0;
+    char *end = format + len;
+    for (;format != end; format++) {
+        if (*format != '%' || format + 1 == end) {
+            result++;
+        } else {
+            switch (*++format) {
+                case 'e':
+                case 'c':
+                case 's':
+                case 'S':
+                case 'p':
+                case 'l':
+                case 'i':
+                case 'I':
+                case 'h':
+                case 'd':
+                case 'm':
+                case 'y':
+                case 'v':
+                case 'V':
+                case 'u':
+                case 'U':
+                    result += TWO_DIGIT_LEN;
+                    break;
+                case 'j':
+                    result += THREE_DIGIT_LEN;
+                    break;
+                case 'X':
+                case 'x':
+                case 'Y':
+                case 'D':
+                    result += FOUR_DIGIT_LEN;
+                    break;
+                case 'f':
+                    result += SIX_DIGIT_LEN;
+                    break;
+                case 'k':
+                case 'H':
+                    result += SEVEN_DIGIT_LEN;
+                    break;
+                case 'T':
+                    result += EIGHT_DIGIT_LEN;    // "hh:mm:ss"
+                    break;
+                case 'r':
+                    result += THREE_DIGIT_LEN + EIGHT_DIGIT_LEN;   // "hh:mm:ss [A|P]M", length is 11
+                    break;
+                case 'a':
+                case 'b':
+                    result += FOUR_DIGIT_LEN * EIGHT_DIGIT_LEN;    // length is 32
+                    break;
+                case 'M':
+                case 'W':
+                    result += EIGHT_DIGIT_LEN * EIGHT_DIGIT_LEN;   // length is 64
+                    break;
+                case 'w':
+                case '%':
+                default:
+                    result++;
+                    break;
+            }
+        }
+    }
+    return (result > MAXDATELEN ? result : MAXDATELEN);
+}
+
+/*
+ * @Description: Create a formated date value in a string.
+ * @return: The formated date value as a string.
+ */
+Datum date_format_text(PG_FUNCTION_ARGS)
+{
+    text *date_text = PG_GETARG_TEXT_PP(0);
+    text *format_text = PG_GETARG_TEXT_PP(1);
+    char buf[MAXDATELEN];          /* string for temporary storage */
+    char *format = NULL;           /* format string */
+    char *str = NULL;              /* return string */
+    char *ptr = NULL, *end = NULL; /* head and tail of format */
+    char temp_ptr[2];
+    int remain = 0;       /* remaining buffer size of variable str */
+    int insert_len = 0;            /* number of characters inserted into str */
+    struct pg_tm tt, *tm = &tt;
+    fsec_t fsec = 0;
+    int32 hours_i;      /* hour in range of 0..12 */
+    MyLocale *locale = NULL;
+    errno_t rc = EOK;
+
+    /* convert date_text and format_text into string from text */
+    text_to_cstring_buffer(date_text, buf, MAXDATELEN);
+    if (!datetime_in_with_sql_mode(buf, tm, &fsec, (ENABLE_ZERO_DAY | ENABLE_ZERO_MONTH))) {
+        PG_RETURN_NULL();
+    }
+
+    format = text_to_cstring(format_text);
+    int format_len = strlen(format);
+    remain = get_result_len(format, format_len);
+    str = (char*)palloc(remain + 1);
+
+    str[0] = '\0';
+    ptr = format;
+    end = ptr + format_len;
+    for (; ptr != end; ptr++) {
+        if (*ptr != '%' || ptr + 1 == end) {
+            temp_ptr[0] = *ptr;
+            temp_ptr[1] = '\0';
+            insert_len = 1;
+            rc = strcat_s(str, remain, temp_ptr);
+            securec_check(rc, "", "");
+        } else {
+            switch (*++ptr) {
+                case 'a':{  // abbreviated weekday name
+                    if (!(tm->tm_mon || tm->tm_year))
+                       PG_RETURN_NULL();
+                    int weekday = cal_weekday_interval(tm, true);
+                    if (locale == NULL) {
+                        locale = MyLocaleSearch(GetSessionContext()->lc_time_names);
+                    }
+                    char *weekname = locale->ab_day_names[weekday - 1];
+                    insert_len = sprintf_s(buf, MAXDATELEN, "%s", weekname);
+                    securec_check_ss(insert_len, "", "");
+                    rc = strcat_s(str, remain, buf);
+                    securec_check(rc, "", "");
+                    break;
+                }
+                case 'b':{  // abbreviated month name
+                    if (!tm->tm_mon)
+                       PG_RETURN_NULL();
+                    if (locale == NULL) {
+                        locale = MyLocaleSearch(GetSessionContext()->lc_time_names);
+                    }
+                    char *monthname = locale->ab_month_names[tm->tm_mon - 1];
+                    insert_len = sprintf_s(buf, MAXDATELEN, "%s", monthname);
+                    securec_check_ss(insert_len, "", "");
+                    rc = strcat_s(str, remain, buf);
+                    securec_check(rc, "", "");
+                    break;
+                }
+                case 'D':{  // day of month with suffix
+                    insert_len = sprintf_s(buf, MAXDATELEN, "%d", tm->tm_mday);
+                    securec_check_ss(insert_len, "", "");
+                    
+                    rc = strcat_s(str, remain, buf);
+                    securec_check(rc, "", "");
+                    remain -= insert_len;
+                    if (tm->tm_mday >= 10 && tm->tm_mday <= 19) {
+                        rc = strcat_s(str, remain,"th");
+                    } else {
+                        switch (tm->tm_mday % 10) {
+                            case 1:
+                                rc = strcat_s(str, remain,"st");
+                                break;
+                            case 2:
+                                rc = strcat_s(str, remain,"nd");
+                                break;
+                            case 3:
+                                rc = strcat_s(str, remain,"rd");
+                                break;
+                            default:
+                                rc = strcat_s(str, remain,"th");
+                                break;
+	                     }
+                    }
+                    securec_check(rc, "", "");
+                    insert_len = TWO_DIGIT_LEN;
+                    break;
+                }
+                case 'j':{  // day of the year
+                    int result = (date2j(tm->tm_year, tm->tm_mon, tm->tm_mday) - date2j(tm->tm_year, 1, 1) + 1);
+                    insert_len = sprintf_s(buf, MAXDATELEN, "%03d", result);
+                    securec_check_ss(insert_len, "", "");
+                    rc = strcat_s(str, remain, buf);
+                    securec_check(rc, "", "");
+                    break;
+                }
+                case 'M':{  // full name of month
+                    if(!tm->tm_mon)
+                       PG_RETURN_NULL();
+                    if (locale == NULL) {
+                        locale = MyLocaleSearch(GetSessionContext()->lc_time_names);
+                    }
+                    char *monthname = locale->month_names[tm->tm_mon - 1];
+                    insert_len = sprintf_s(buf, MAXDATELEN, "%s", monthname);
+                    securec_check_ss(insert_len, "", "");
+                    rc = strcat_s(str, remain, buf);
+                    securec_check(rc, "", "");
+                    break;
+                }
+                case 'U':{  // week number under mode 0
+                    uint year = 0;
+                    int week = b_db_cal_week(tm, FIRST_FULL_WEEK, &year);
+                    insert_len = sprintf_s(buf, MAXDATELEN, "%02d", week);
+                    securec_check_ss(insert_len, "", "");
+                    rc = strcat_s(str, remain, buf);
+                    securec_check(rc, "", "");
+                    break;
+                }
+                case 'u':{  // week number under mode 1
+                    uint year = 0;
+                    int week = b_db_cal_week(tm, MONDAY_IS_FIRST_WEEKDAY, &year);
+                    insert_len = sprintf_s(buf, MAXDATELEN, "%02d", week);
+                    securec_check_ss(insert_len, "", "");
+                    rc = strcat_s(str, remain, buf);
+                    securec_check(rc, "", "");
+                    break;
+                }
+                case 'V':{  // week number under mode 2
+                    uint year = 0;
+                    int week = b_db_cal_week(tm, (SCOPE_OF_WEEK | FIRST_FULL_WEEK), &year);
+                    insert_len = sprintf_s(buf, MAXDATELEN, "%02d", week);
+                    securec_check_ss(insert_len, "", "");
+                    rc = strcat_s(str, remain, buf);
+                    securec_check(rc, "", "");
+                    break;
+                }
+                case 'v':{  // week number under mode 3
+                    uint year = 0;
+                    int week = b_db_cal_week(tm, (SCOPE_OF_WEEK | MONDAY_IS_FIRST_WEEKDAY), &year);
+                    insert_len = sprintf_s(buf, MAXDATELEN, "%02d", week);
+                    securec_check_ss(insert_len, "", "");
+                    rc = strcat_s(str, remain, buf);
+                    securec_check(rc, "", "");
+                    break;
+                }
+                case 'W':{  // full weekday name
+                    if(!(tm->tm_mon||tm->tm_year))
+                       PG_RETURN_NULL();
+                    int weekday = cal_weekday_interval(tm, true);
+                    if (locale == NULL) {
+                        locale = MyLocaleSearch(GetSessionContext()->lc_time_names);
+                    }
+                    char *weekname = locale->day_names[weekday - 1];
+                    insert_len = sprintf_s(buf, MAXDATELEN, "%s", weekname);
+                    securec_check_ss(insert_len, "", "");
+                    rc = strcat_s(str, remain, buf);
+                    securec_check(rc, "", "");
+                    break;
+                }
+                case 'w':{  // day of the week
+                    if(!(tm->tm_mon||tm->tm_year))
+                       PG_RETURN_NULL();
+                    int weekday = cal_weekday_interval(tm, true);
+                    insert_len = sprintf_s(buf, MAXDATELEN, "%d", weekday);
+                    securec_check_ss(insert_len, "", "");
+                    rc = strcat_s(str, remain, buf);
+                    securec_check(rc, "", "");
+                    break;
+                }
+                case 'X':{  // Year for the week where Sunday is the first day of the week, used with %V
+                    uint year;
+                    b_db_cal_week(tm, (SCOPE_OF_WEEK | FIRST_FULL_WEEK), &year);
+                    insert_len = sprintf_s(buf, MAXDATELEN, "%u", year);
+                    securec_check_ss(insert_len, "", "");
+                    rc = strcat_s(str, remain, buf);
+                    securec_check(rc, "", "");
+                    break;
+                }
+                case 'x':{  // Year for the week, where Monday is the first day of the week, used with %v
+                    uint year;
+                    b_db_cal_week(tm, (SCOPE_OF_WEEK | MONDAY_IS_FIRST_WEEKDAY), &year);
+                    insert_len = sprintf_s(buf, MAXDATELEN, "%u", year);
+                    securec_check_ss(insert_len, "", "");
+                    rc = strcat_s(str, remain, buf);
+                    securec_check(rc, "", "");
+                    break;
+                }
+                case 'c':{  // month
+                    insert_len = sprintf_s(buf, MAXDATELEN, "%d", tm->tm_mon);
+                    securec_check_ss(insert_len, "", "");
+                    rc = strcat_s(str, remain, buf);
+                    securec_check(rc, "", "");
+                    break;
+                }
+                case 'e':{  // day of the month
+                    insert_len = sprintf_s(buf, MAXDATELEN, "%d", tm->tm_mday);
+                    securec_check_ss(insert_len, "", "");
+                    rc = strcat_s(str, remain, buf);
+                    securec_check(rc, "", "");
+                    break;
+                }
+                case 'd':{  // day of the month, always 2 digits
+                    insert_len = sprintf_s(buf, MAXDATELEN, "%02d", tm->tm_mday);
+                    securec_check_ss(insert_len, "", "");
+                    rc = strcat_s(str, remain, buf);
+                    securec_check(rc, "", "");
+                    break;
+                }
+                case 'm':{  // month, always 2 digits
+                    insert_len = sprintf_s(buf, MAXDATELEN, "%02d", tm->tm_mon);
+                    securec_check_ss(insert_len, "", "");
+                    rc = strcat_s(str, remain, buf);
+                    securec_check(rc, "", "");
+                    break;
+                }
+                case 'y':{  // year, 2 digits
+                    insert_len = sprintf_s(buf, MAXDATELEN, "%02d", tm->tm_year%100);
+                    securec_check_ss(insert_len, "", "");
+                    rc = strcat_s(str, remain, buf);
+                    securec_check(rc, "", "");
+                    break;
+                }
+                case 'Y':{  // year, four digits
+                    insert_len = sprintf_s(buf, MAXDATELEN, "%04d", tm->tm_year);
+                    securec_check_ss(insert_len, "", "");
+                    rc = strcat_s(str, remain, buf);
+                    securec_check(rc, "", "");
+                    break;
+                }
+                case 'f':{  // microseconds
+                    insert_len = sprintf_s(buf, MAXDATELEN, "%06d", fsec);
+                    securec_check_ss(insert_len, "", "");
+                    rc = strcat_s(str, remain, buf);
+                    securec_check(rc, "", "");
+                    break;
+                }
+                case 'H':{  // hours in range of 0..23, always 2 digits
+                    insert_len = sprintf_s(buf, MAXDATELEN, "%02d", tm->tm_hour);
+                    securec_check_ss(insert_len, "", "");
+                    rc = strcat_s(str, remain, buf);
+                    securec_check(rc, "", "");
+                    break;
+                }
+                case 'k': { // hours in range of 0..23
+                    insert_len = sprintf_s(buf, MAXDATELEN, "%d", tm->tm_hour);
+                    securec_check_ss(insert_len, "", "");
+                    rc = strcat_s(str, remain, buf);
+                    securec_check(rc, "", "");
+                    break;
+                }
+                case 'h':
+                case 'I': { // hours in range of 0..12
+                    hours_i = (tm->tm_hour % MAX_VALUE_24_CLOCK + MAX_VALUE_12_CLOCK - 1) % MAX_VALUE_12_CLOCK + MIN_VALUE_12_CLOCK;
+                    insert_len = sprintf_s(buf, MAXDATELEN, "%02d", hours_i);
+                    securec_check_ss(insert_len, "", "");
+                    rc = strcat_s(str, remain, buf);
+                    securec_check(rc, "", "");
+                    break;
+                }
+                case 'i': { // minutes, always 2 digits
+                    insert_len = sprintf_s(buf, MAXDATELEN, "%02d", tm->tm_min);
+                    securec_check_ss(insert_len, "", "");
+                    rc = strcat_s(str, remain, buf);
+                    securec_check(rc, "", "");
+                    break;
+                }
+                case 'p':{  // AM or PM
+                    hours_i = tm->tm_hour % MAX_VALUE_24_CLOCK;
+                    insert_len = AM_PM_LEN;
+                    rc = strcat_s(str, remain,
+                                  (hours_i < MAX_VALUE_12_CLOCK ? "AM" : "PM"));
+                    securec_check(rc, "", "");
+                    break;
+                }
+                case 'r':{  // time with format of 'hh:mm:ss [A/P]M', 12 hours
+                    insert_len =
+                        sprintf_s(buf, MAXDATELEN,
+                                  (((tm->tm_hour % MAX_VALUE_24_CLOCK) < MAX_VALUE_12_CLOCK) ? "%02d:%02d:%02d AM" : "%02d:%02d:%02d PM"),
+                                  (tm->tm_hour + MAX_VALUE_12_CLOCK - 1) % MAX_VALUE_12_CLOCK + MIN_VALUE_12_CLOCK,
+                                  tm->tm_min, tm->tm_sec);
+                    securec_check_ss(insert_len, "", "");
+                    rc = strcat_s(str, remain, buf);
+                    securec_check(rc, "", "");
+                    break;
+                }
+                case 'S':
+                case 's': { // seconds, always 2 digits
+                    insert_len = sprintf_s(buf, MAXDATELEN, "%02d", tm->tm_sec);
+                    securec_check_ss(insert_len, "", "");
+                    rc = strcat_s(str, remain, buf);
+                    securec_check(rc, "", "");
+                    break;
+                }
+                case 'T':{  // time with format of 'hh:mm:ss', 24 hours
+                    insert_len = sprintf_s(
+                        buf, MAXDATELEN, "%02d:%02d:%02d",
+                        tm->tm_hour, tm->tm_min, tm->tm_sec);
+                    securec_check_ss(insert_len, "", "");
+                    rc = strcat_s(str, remain, buf);
+                    securec_check(rc, "", "");
+                    break;
+                }
+                default:
+                    temp_ptr[0] = *ptr;
+                    temp_ptr[1] = '\0';
+                    insert_len = 1;
+                    rc = strcat_s(str, remain, temp_ptr);
+                    securec_check(rc, "", "");
+                    break;
+            }
+        }
+        remain -= insert_len;
+    }
+    text *result_text = cstring_to_text(str);
+    pfree(str);
+    PG_RETURN_TEXT_P(result_text);
+}
+
+/**
+ * find the type to return
+*/
+static inline int find_return_type(char *format)
+{
+    const char *time_specifiers = "fHISThiklrs";
+    const char *date_specifiers = "MVUXYWabcjmvuxyw";
+    int len = strlen(format);
+    bool contain_time = false, contain_date = false;
+
+    for (int i = 0; i < len; ++i) {
+        if (format[i] == '%' && (i + 1) != len) {
+            ++i;
+            if (!contain_time && strchr(time_specifiers, format[i])) {
+                contain_time = true;
+            } else if (!contain_date && strchr(date_specifiers, format[i])) {
+                contain_date = true;
+            }
+
+            if (contain_time && contain_date) {
+                return DTK_DATE_TIME;
+            }
+        }
+    }
+
+    if (contain_time) {
+        if (contain_date)
+            return DTK_DATE_TIME;
+        else
+            return DTK_TIME;
+    } else {
+        return DTK_DATE;
+    }
+    return DTK_DATE;
+}
+
+/**
+ * return -1 if the result is a normal negtive value
+ * reutrn 0 if the result >= 0
+*/
+static inline long long str2ll_with_endptr(char *start, int tmp_len, int *true_len, int *error)
+{
+    char cp[tmp_len + 1];
+    for (int i = 0; i < tmp_len; ++i) {
+        cp[i] = *(start + i);
+    }
+    cp[tmp_len] = '\0';
+    char *endptr = NULL;
+    errno = 0;
+    long long value = strtoll(cp, &endptr, 10);
+    if (endptr == cp)
+        *error = EDOM;
+    else if (errno == ERANGE)
+        *error = ERANGE;
+    else if (value < 0)
+        *error = -1;
+    else if (value >= 0)
+        *error = 0;
+    *true_len = (int)(endptr - cp);
+    return value;
+}
+
+static inline int handling_2000_year(int year)
+{
+    if (year < 70)
+        return year + 2000;
+    return year + 1900;
+}
+
+/**
+ * Find dayname or monthname
+ * return -1 if find nothing
+ * return >= 0 if find in array[#-0]
+*/
+static inline int find_index_with_name(char **name_array, int array_len, char *name_start, char *name_end, char **end_of_name)
+{
+    char *cp = name_start;
+    for (; cp < name_end && isalpha((unsigned char)(*cp)); ++cp)
+        ;
+    bool is_find = false;
+    const char* j;
+    char *i;
+    int pos;
+    for (pos = 0; pos < array_len; ++pos) {
+        j = name_array[pos];
+        for (i = name_start;
+             i != name_end && toupper((unsigned char)(*i)) == toupper((unsigned char)(*j)); 
+             ++i, ++j)
+            ;
+        if (i == cp && *j == '\0') {
+            is_find = true;
+            break;
+        }
+    }
+    if (is_find) {
+        *end_of_name = cp;
+        return pos;
+    }
+    return -1;
+}
+
+static inline bool ncmp_case_insensitive(const char *str1, const char *str2, int n)
+{
+    Assert(n >= 0);
+    if ((int)strlen(str1) < n || (int)strlen(str2) < n)   // the length of each str can not less than n
+        return false;
+    for (int i = 0; i < n; ++i) {
+        if (toupper((unsigned char)(*str1)) != toupper((unsigned char)(*str2)))
+            return false;
+        str1++;
+        str2++;
+    }
+    return true;
+}
+
+/**
+ * founction for calculating '%r' or '%T'.
+ * %r -> %I:%i:%S %p
+ * %T -> %H:%i:%S
+ * return ture if success
+*/
+static inline bool calc_compound_specifiers(const char *format, char *str, struct pg_tm *tm, char **sub_end)
+{
+    bool time_in12 = false;
+    int daypart = 0;
+    int str_len = strlen(str);
+    int format_len = strlen(format);
+    char *str_end = str + str_len;
+    const char *format_ptr = format, *format_end = format + format_len;
+    for (; format_ptr != format_end && str != str_end; ++format_ptr) {
+        while (isspace((unsigned char)(*str)) && str < str_end)
+            ++str;
+        if (str >= str_end)
+            break;
+        
+        if (*format_ptr == '%' && (format_ptr + 1) != format_end) {
+            int tmp_len = 0, true_len = 0;
+            int val_len = (int)(str_end - str);
+            ++format_ptr;
+            int error = 0;
+            switch (*format_ptr) {
+                case 'I':
+                    time_in12 = true;
+                case 'H':
+                    tmp_len = (TWO_DIGIT_LEN < val_len ? TWO_DIGIT_LEN : val_len);
+                    tm->tm_hour = (int)str2ll_with_endptr(str, tmp_len, &true_len, &error);
+                    str += true_len;
+                    break;
+                case 'i':
+                    tmp_len = (TWO_DIGIT_LEN < val_len ? TWO_DIGIT_LEN : val_len);
+                    tm->tm_min = (int)str2ll_with_endptr(str, tmp_len, &true_len, &error);
+                    str += true_len;
+                    break;
+                case 'S':
+                    tmp_len = (TWO_DIGIT_LEN < val_len ? TWO_DIGIT_LEN : val_len);
+                    tm->tm_sec = (int)str2ll_with_endptr(str, tmp_len, &true_len, &error);
+                    str += true_len;
+                    break;
+                case 'p':
+                    if (val_len < TWO_DIGIT_LEN || ! time_in12)
+                        goto err;
+                    if (ncmp_case_insensitive(str, "PM", 2))
+                        daypart = HOURS_HALF_DAY;
+                    else if (!ncmp_case_insensitive(str, "AM", 2))
+                        goto err;
+                    str += TWO_DIGIT_LEN;
+                    break;
+                default:
+                    goto err;
+            }
+            if (error)
+                goto err;
+        } else if (!isspace((unsigned char)(*format_ptr))) {
+            if (*str != *format_ptr)
+                goto err;
+            str++;
+        }
+    }
+
+    if (time_in12) {
+        if (tm->tm_hour > HOURS_HALF_DAY || tm->tm_hour < 1)
+            goto err;
+        tm->tm_hour = tm->tm_hour % HOURS_HALF_DAY + daypart;
+    }
+    *sub_end = str;
+    return true;
+
+err:
+    return false;
+}
+
+static const char *type_name_arr[] = {"time", "date", "datetime"};
+static inline const char* find_type_name(int type) {
+    switch (type) {
+        case DTK_TIME:
+            return type_name_arr[0];
+        case DTK_DATE:
+            return type_name_arr[1];
+        case DTK_DATE_TIME:
+            return type_name_arr[2];
+        default:
+            return type_name_arr[2];
+    }
+    return type_name_arr[2];
+}
+
+/**
+ * some additional calculation for str_to_date
+ * return true if successs
+ *        false if falied
+*/
+static inline bool yearday_to_date(struct pg_tm *tm, int yearday)
+{
+    DateADT date;
+    int days = b_db_sumdays(tm->tm_year, 1, 1) + yearday - 1;
+    if (days <= 0 || days > MAX_NUMBER_OF_DAY)
+        return false;
+    date = date2j(tm->tm_year, 1, 1) + yearday - 1;
+    j2date(date, &(tm->tm_year), &(tm->tm_mon), &(tm->tm_mday));
+    return true;
+}
+
+static inline bool week_year_to_date(struct pg_tm *tm, bool sunday_first_without_iso, bool strict_week_range, int weeknumber, int weekday, bool is_strict_week_year, int  strict_week_year)
+{
+    int days;
+    long long weekday_b;
+    struct pg_tm tmp_tt, *tmp_tm = &tmp_tt;
+    DateADT date;
+
+    /**
+     * Some incorrect case of using %V, %v, %X, %x, %U and %u
+     * case1: %V is used with %x
+     *        or
+     *        %v is used with %X
+     * 
+     * case2: %U or %u is used with %X or %x
+    */
+    if ((strict_week_range && 
+        (strict_week_year < 0 || 
+        is_strict_week_year != sunday_first_without_iso)) || 
+        (!strict_week_range && strict_week_year >= 0))
+        return false;
+
+    tmp_tt.tm_year = (strict_week_range ? strict_week_year : tm->tm_year);
+    tmp_tt.tm_mon = 1;
+    tmp_tt.tm_mday = 1;
+    days = b_db_sumdays(tmp_tt.tm_year, tmp_tt.tm_mon, tmp_tt.tm_mday);
+    date = date2j(tmp_tt.tm_year, tmp_tt.tm_mon, tmp_tt.tm_mday);
+    weekday_b = cal_weekday_interval(tmp_tm, sunday_first_without_iso);
+
+    if (sunday_first_without_iso) {
+        int tmp = ((weekday_b == 0) ? 0 : DAYS_PER_WEEK) - weekday_b + (weeknumber - 1) * DAYS_PER_WEEK + weekday % DAYS_PER_WEEK;
+        days += tmp;
+        date += tmp;
+    } else {
+        int tmp = ((weekday_b <= (FOUR_DAYS_IN_YEAR - 1)) ? 0 : DAYS_PER_WEEK) - weekday_b + (weeknumber - 1) * DAYS_PER_WEEK + (weekday - 1);
+        days += tmp;
+        date += tmp;
+    }
+
+    if (days <= 0 || days > MAX_NUMBER_OF_DAY)
+        return false;
+    // get the final date
+    j2date(date, &tm->tm_year, &tm->tm_mon, &tm->tm_mday);
+    return true;
+}
+
+/**
+ * validate the result for str_to_date
+ * return true if normal
+ * return false if out of range
+*/
+static inline bool final_range_check(int return_type, struct pg_tm *tm, fsec_t *fsec)
+{
+    int dterr = 0;
+    if (return_type == DTK_DATE || return_type == DTK_DATE_TIME) {
+        dterr = ValidateDateForBDatabase(false, tm);
+        if (dterr)
+            return false;
+        if (return_type == DTK_DATE_TIME) {
+            dterr =  ValidateTimeForBDatabase(true, tm, fsec);
+            if (dterr)
+                return false;
+        }
+    } else if (return_type == DTK_TIME) {
+        dterr = ValidateTimeForBDatabase(true, tm, fsec);
+        if (dterr)
+            return false;
+    }
+    return true;
+}
+
+// construct text result for str_to_date
+static inline Datum make_text_result(int return_type ,struct pg_tm *tm, fsec_t fsec, char *buf)
+{
+    if (return_type == DTK_DATE) {
+        EncodeDateOnlyForBDatabase(tm, u_sess->time_cxt.DateStyle, buf);
+    } else if (return_type == DTK_DATE_TIME) {
+        EncodeDateTimeForBDatabase(tm, fsec, false, 0, NULL, u_sess->time_cxt.DateStyle, buf);
+    } else if (return_type == DTK_TIME) {
+        // time can not be negtive here, so we just encode the tm and fsec
+        EncodeTimeOnly(tm, fsec, false, 0, u_sess->time_cxt.DateStyle, buf);
+    }
+    return CStringGetTextDatum(buf);
+}
+
+/**
+ * compatibility of str_to_date
+*/
+Datum str_to_date(PG_FUNCTION_ARGS)
+{
+    int errlevel = (SQL_MODE_STRICT() ? ERROR : WARNING);
+    if (PG_ARGISNULL(0)) {
+        PG_RETURN_NULL();
+    }
+    char *str = text_to_cstring(PG_GETARG_TEXT_PP(0));
+    if (PG_ARGISNULL(1)) {
+        ereport(errlevel, (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+            errmsg("Incorrect datetime value: \'%s\' for function str_to_date", str)));
+        PG_RETURN_NULL();
+    }
+    char *format = text_to_cstring(PG_GETARG_TEXT_PP(1));
+    int return_type = find_return_type(format);
+    const char *type_name = find_type_name(return_type);
+    struct pg_tm tt, *tm = &tt;
+    fsec_t fsec = 0;
+    int fsec_int = 0;
+    errno_t rc = memset_s(tm, sizeof(*tm), 0, sizeof(*tm));
+    securec_check(rc, "\0", "\0");
+
+    int str_len = strlen(str);
+    int format_len = strlen(format);
+    char *str_begin = str, *str_end = str + str_len;
+    char *format_ptr = format, *format_end = format + format_len;
+    
+    MyLocale *locale = NULL;
+    bool time_in12 = false;
+    int frac_part = 0;
+    int daypart = 0;
+    int weekday = 0;
+    int yearday = 0;
+    bool sunday_first_without_iso = false;
+    bool strict_week_range = false;
+    int weeknumber = -1;
+    bool is_strict_week_year = false;
+    int  strict_week_year = -1;
+    Datum result;
+    char buf[MAXDATELEN + 1];
+
+    for (; format_ptr != format_end && str != str_end; ++format_ptr) {
+        while (isspace((unsigned char)(*str)) && str < str_end)
+            ++str;
+        if (str >= str_end)
+            break;
+        
+        if (*format_ptr == '%' && (format_ptr + 1) != format_end) {
+            int tmp_len = 0, true_len = 0;
+            int val_len = (int)(str_end - str);
+            ++format_ptr;
+            int error = 0;
+            switch (*format_ptr) {
+            /* year */
+                case 'Y':
+                    tmp_len = (FOUR_DIGIT_LEN < val_len ? FOUR_DIGIT_LEN : val_len);
+                    tm->tm_year = (int)str2ll_with_endptr(str, tmp_len, &true_len, &error);
+                    if (true_len <= TWO_DIGIT_LEN)
+                        tm->tm_year = handling_2000_year(tm->tm_year);
+                    str += true_len;
+                    break;
+                case 'y':
+                    tmp_len = (TWO_DIGIT_LEN < val_len ? TWO_DIGIT_LEN : val_len);
+                    tm->tm_year = (int)str2ll_with_endptr(str, tmp_len, &true_len, &error);
+                    tm->tm_year = handling_2000_year(tm->tm_year);
+                    str += true_len;
+                    break;
+
+                /* month */
+                case 'm':
+                case 'c':
+                    tmp_len = (TWO_DIGIT_LEN < val_len ? TWO_DIGIT_LEN : val_len);
+                    tm->tm_mon = (int)str2ll_with_endptr(str, tmp_len, &true_len, &error);
+                    str += true_len;
+                    break;
+                case 'M':
+                    if (locale == NULL) {
+                        locale = MyLocaleSearch("en_US");
+                    }
+                    if ((tm->tm_mon = (find_index_with_name(locale->month_names, MONTHS_PER_YEAR, str, str_end, &str) + 1)) <= 0)
+                        goto err;
+                    break;
+                case 'b':
+                    if (locale == NULL) {
+                        locale = MyLocaleSearch("en_US");
+                    }
+                    if ((tm->tm_mon = (find_index_with_name(locale->ab_month_names, MONTHS_PER_YEAR, str, str_end, &str) + 1)) <= 0)
+                        goto err;
+                    break;
+
+                /* day */
+                case 'd':
+                case 'e':
+                    tmp_len = (TWO_DIGIT_LEN < val_len ? TWO_DIGIT_LEN : val_len);
+                    tm->tm_mday = (int)str2ll_with_endptr(str, tmp_len, &true_len, &error);
+                    str += true_len;
+                    break;
+                case 'D':
+                    tmp_len = (TWO_DIGIT_LEN < val_len ? TWO_DIGIT_LEN : val_len);
+                    tm->tm_mday = (int)str2ll_with_endptr(str, tmp_len, &true_len, &error);
+                    tmp_len = (int)(str_end - (str + true_len));
+                    str = (str + true_len) + (TWO_DIGIT_LEN < tmp_len ? TWO_DIGIT_LEN : tmp_len);
+                    break;
+
+                /* hour */
+                case 'h':
+                case 'I':
+                case 'l':
+                    time_in12 = true;
+                case 'k':
+                case 'H':
+                    tmp_len = (TWO_DIGIT_LEN < val_len ? TWO_DIGIT_LEN : val_len);
+                    tm->tm_hour = (int)str2ll_with_endptr(str, tmp_len, &true_len, &error);
+                    str += true_len;
+                    break;
+                
+                /* minute */
+                case 'i':
+                    tmp_len = (TWO_DIGIT_LEN < val_len ? TWO_DIGIT_LEN : val_len);
+                    tm->tm_min = (int)str2ll_with_endptr(str, tmp_len, &true_len, &error);
+                    str += true_len;
+                    break;
+                
+                /* second */
+                case 's':
+                case 'S':
+                    tmp_len = (TWO_DIGIT_LEN < val_len ? TWO_DIGIT_LEN : val_len);
+                    tm->tm_sec = (int)str2ll_with_endptr(str, tmp_len, &true_len, &error);
+                    str += true_len;
+                    break;
+                
+                /* fractional second */
+                case 'f':
+                    tmp_len = (int)(str_end - str);
+                    if (tmp_len > TIMESTAMP_MAX_PRECISION)
+                        tmp_len = TIMESTAMP_MAX_PRECISION;
+                    fsec_int = (int)str2ll_with_endptr(str, tmp_len, &true_len, &error);
+                    frac_part = TIMESTAMP_MAX_PRECISION - true_len;
+                    if (frac_part > 0)
+                        fsec_int *= (int)pow_of_10[frac_part];
+#ifdef HAVE_INT64_TIMESTAMP
+                    fsec = fsec_int;
+#else
+                    fsec = (double)fsec_int / 1000000;
+#endif
+                    str += true_len;
+                    break;
+
+                /* am / pm */
+                case 'p':
+                    if (val_len < TWO_DIGIT_LEN || ! time_in12)
+                        goto err;
+                    if (ncmp_case_insensitive(str, "PM", 2))
+                        daypart = HOURS_HALF_DAY;
+                    else if (!ncmp_case_insensitive(str, "AM", 2))
+                        goto err;
+                    str += TWO_DIGIT_LEN;
+                    break;
+                
+                /* something else */
+                case 'W':
+                    if (locale == NULL) {
+                        locale = MyLocaleSearch("en_US");
+                    }
+                    if ((weekday = (find_index_with_name(locale->day_names, DAYS_PER_WEEK, str, str_end, &str) + 1)) <= 0)
+                        goto err;
+                    break;
+                case 'a':
+                    if (locale == NULL) {
+                        locale = MyLocaleSearch("en_US");
+                    }
+                    if ((weekday = (find_index_with_name(locale->ab_day_names, DAYS_PER_WEEK, str, str_end, &str) + 1)) <= 0)
+                        goto err;
+                    break;
+                case 'w':
+                    tmp_len = 1;
+                    if ((weekday = (int)str2ll_with_endptr(str, tmp_len, &true_len, &error)) < 0 || weekday >= DAYS_PER_WEEK)
+                        goto err;
+                    if (!weekday)
+                        weekday = DAYS_PER_WEEK;
+                    str += true_len;
+                    break;
+                case 'j':
+                    tmp_len = (THREE_DIGIT_LEN < val_len ? THREE_DIGIT_LEN : val_len);
+                    yearday = (int)str2ll_with_endptr(str, tmp_len, &true_len, &error);
+                    str += true_len;
+                    break;
+                
+                /* week numbers */
+                case 'V':
+                case 'U':
+                case 'v':
+                case 'u':
+                    sunday_first_without_iso = (*format_ptr =='U' || *format_ptr == 'V');
+                    strict_week_range = (*format_ptr =='V' || *format_ptr =='v');
+                    tmp_len = (TWO_DIGIT_LEN < val_len ? TWO_DIGIT_LEN : val_len);
+                    if ((weeknumber = (int)str2ll_with_endptr(str, tmp_len, &true_len, &error)) < 0 || 
+                        (strict_week_range && !weeknumber) || weeknumber > (WEEKS_PER_YEAR + 1))
+                        goto err;
+                    str += true_len;
+                    break;
+                /* year used with 'strict' %V and %v week numbers */
+                case 'X':
+                case 'x':
+                    is_strict_week_year = (*format_ptr == 'X');
+                    tmp_len = (FOUR_DIGIT_LEN < val_len ? FOUR_DIGIT_LEN : val_len);
+                    strict_week_year = (int)str2ll_with_endptr(str, tmp_len, &true_len, &error);
+                    str += true_len;
+                    break;
+                
+                /* time in am/pm notation */
+                case 'r':
+                    if (!calc_compound_specifiers("%I:%i:%S %p", str, tm, &str))
+                        goto err;
+                    break;
+                
+                /* time in 24-hour notation */
+                case 'T':
+                    if (!calc_compound_specifiers("%H:%i:%S", str, tm, &str))
+                        goto err;
+                    break;
+                
+                /* conversion specifiers that match classes of characters */
+                case '.':
+                    while (str < str_end && ispunct((unsigned char)(*str)))
+                        str++;
+                    break;
+                case '@':
+                    while (str < str_end && isalpha((unsigned char)(*str)))
+                        str++;
+                    break;
+                case '#':
+                    while (str < str_end && isdigit((unsigned char)(*str)))
+                        str++;
+                    break;
+                default:
+                    goto err;
+            }
+            if (error)
+                goto err;
+       } else if (!isspace((unsigned char)(*format_ptr))) {
+            if (*str != *format_ptr)
+                goto err;
+            str++;
+       }
+    }
+
+    if (str != str_end) {
+        while (isspace((unsigned char)(*str)) && str != str_end) {
+            str++;
+        }
+        if (str != str_end) {
+            ereport(errlevel, (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+                            errmsg("Truncated incorrect %s value: \'%s\'", type_name, str_begin)));
+        }
+    }
+
+    if (time_in12) {
+        if (tm->tm_hour > HOURS_HALF_DAY || tm->tm_hour < 1)
+            goto err;
+        tm->tm_hour = tm->tm_hour % HOURS_HALF_DAY + daypart;
+    }
+    
+    if (yearday > 0 && !yearday_to_date(tm, yearday))
+        goto err;
+
+    if (weeknumber >= 0 && weekday && 
+        !week_year_to_date(tm, sunday_first_without_iso, strict_week_range, weeknumber, weekday, is_strict_week_year, strict_week_year))
+        goto err;
+
+    // a simple quick range check
+    if (tm->tm_mon > MONTHS_PER_YEAR || tm->tm_mday > DAYNUM_BIGMON || 
+        tm->tm_hour >= HOURS_PER_DAY || tm->tm_min >= MINS_PER_HOUR || tm->tm_sec >= SECS_PER_MINUTE)
+        goto err;
+    
+    if (return_type == DTK_TIME && tm->tm_mday) {
+        tm->tm_hour += tm->tm_mday * HOURS_PER_DAY;
+        tm->tm_mday = 0;
+    }
+
+    // range check
+    if (!final_range_check(return_type, tm, &fsec))
+        goto err;
+
+    // make the text result
+    result = make_text_result(return_type, tm, fsec, buf);
+    PG_RETURN_DATUM(result);
+
+err:
+    ereport(errlevel, (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE),
+            errmsg("Incorrect %s value: \'%s\' for function str_to_date", type_name, str_begin)));
+    PG_RETURN_NULL();
+}
+
+static inline Timestamp from_unixtime_internal(lldiv_t *div)
+{
+    struct pg_tm tt, *tm = &tt;
+    fsec_t fsec;
+    int tzp = 0;
+    double offset = 0;
+    Timestamp datetime;
+
+    if (div->rem == 0) {
+        offset = div->quot;
+    } else {
+        offset = div->quot + llround(div->rem / (double)pow_of_10[2]) / (double)pow_of_10[6];
+    }
+    Unixtimestamp2tm(offset , tm , &fsec);
+    /* find the current session time zone offset. */
+    tzp = -DetermineTimeZoneOffset(tm, session_timezone);
+    tm2timestamp(tm, fsec, &tzp, &datetime);
+    return datetime;
+}
+
+Datum from_unixtime_with_one_arg(PG_FUNCTION_ARGS)
+{
+    Numeric num = PG_GETARG_NUMERIC(0);
+    lldiv_t div;
+    Timestamp datetime;
+    
+    Numeric_to_lldiv(num, &div);
+    if (div.quot > MAX_UNIXTIMESTAMP_VALUE || div.quot < 0 || div.rem < 0)
+        PG_RETURN_NULL();
+    datetime = from_unixtime_internal(&div);
+    PG_RETURN_TIMESTAMP(datetime);
+}
+
+Datum from_unixtime_with_two_arg(PG_FUNCTION_ARGS)
+{
+    Numeric num = PG_GETARG_NUMERIC(0);
+    text *format_text = PG_GETARG_TEXT_PP(1);
+    lldiv_t div;
+    Timestamp datetime;
+    char *tmp = NULL;
+
+    Numeric_to_lldiv(num, &div);
+    if (div.quot > MAX_UNIXTIMESTAMP_VALUE || div.quot < 0 || div.rem < 0)
+        PG_RETURN_NULL();
+    
+    datetime = from_unixtime_internal(&div);
+    tmp = DatumGetCString(DirectFunctionCall1(timestamp_out, TimestampGetDatum(datetime)));
+    PG_RETURN_TEXT_P(DirectFunctionCall2(date_format_text, PointerGetDatum(cstring_to_text(tmp)), PointerGetDatum(format_text)));
 }
 #endif

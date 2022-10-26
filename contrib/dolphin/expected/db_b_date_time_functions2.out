@@ -337,7 +337,7 @@ select pg_sleep(1);
 -- test time_to_sec
 -- 边界值，坏值
 select time_to_sec('-838:59:59.1');
-ERROR:  Truncated incorrect time value: "-838:59:59.1"
+ERROR:  date/time field value out of range: "-838:59:59.1"
 CONTEXT:  referenced column: time_to_sec
 select time_to_sec('-838:59:59');
  time_to_sec 
@@ -346,7 +346,7 @@ select time_to_sec('-838:59:59');
 (1 row)
 
 select time_to_sec('838:59:59.1');
-ERROR:  Truncated incorrect time value: "838:59:59.1"
+ERROR:  date/time field value out of range: "838:59:59.1"
 CONTEXT:  referenced column: time_to_sec
 select time_to_sec('838:59:59');
  time_to_sec 

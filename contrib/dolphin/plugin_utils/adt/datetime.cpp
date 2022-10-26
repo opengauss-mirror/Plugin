@@ -32,6 +32,9 @@
 #include "utils/memutils.h"
 #include "utils/tzparser.h"
 #include "plugin_parser/scansup.h"
+#ifdef DOLPHIN
+#include "plugin_commands/mysqlmode.h"
+#endif
 
 static int DecodeNumber(int flen, char* field, bool haveTextMonth, unsigned int fmask, unsigned int* tmask,
     struct pg_tm* tm, fsec_t* fsec, bool* is2digits);
@@ -66,6 +69,12 @@ const int day_tab[2][13] = {
 char* months[] = {"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec", NULL};
 
 char* days[] = {"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", NULL};
+
+const char* unitnms[20] = {"year", "quarter", "month", "week", "day", "hour", "minute", "second", "microsecond", 
+                           "year_month", "day_hour", "day_minute", "day_second", "hour_minute", "hour_second",
+                           "minute_second", "day_microsecond", "hour_microsecond", "minute_microsecond", "second_microsecond"};
+
+const int units_size = sizeof(unitnms) / sizeof(unitnms[0]);
 
 /*****************************************************************************
  *	 PRIVATE ROUTINES														 *
@@ -2178,8 +2187,19 @@ int ValidateTimeForBDatabase(bool timeIn24, struct pg_tm* tm, fsec_t* fsec)
             return DTERR_FIELD_OVERFLOW;
     } else {
         /* b format time type validation: range is in[-838, 838] */
-        if (tm->tm_hour >= B_FORMAT_TIME_BOUND)
-            return DTERR_FIELD_OVERFLOW;
+        if (tm->tm_hour >= B_FORMAT_TIME_BOUND || 
+                (tm->tm_hour == B_FORMAT_TIME_BOUND - 1 && tm->tm_min == MINS_PER_HOUR - 1 && 
+                tm->tm_sec == SECS_PER_MINUTE - 1 && *fsec)) {
+            if (SQL_MODE_STRICT()) {
+                return DTERR_FIELD_OVERFLOW;
+            } else {
+                tm->tm_hour = B_FORMAT_TIME_BOUND - 1;
+                tm->tm_min = MINS_PER_HOUR - 1;
+                tm->tm_sec = SECS_PER_MINUTE - 1;
+                *fsec = 0;
+                ereport(WARNING, (errcode(DTERR_FIELD_OVERFLOW), errmsg("Truncated incorrect time value.")));
+            }
+        }
     }
     return 0;
 }

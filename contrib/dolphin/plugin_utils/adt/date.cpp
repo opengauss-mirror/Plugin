@@ -33,6 +33,9 @@
 #include "utils/formatting.h"
 #include "utils/nabstime.h"
 #include "utils/sortsupport.h"
+#ifdef DOLPHIN
+#include "plugin_commands/mysqlmode.h"
+#endif
 
 /*
  * gcc's -ffast-math switch breaks routines that expect exact results from
@@ -117,6 +120,11 @@ PG_FUNCTION_INFO_V1_PUBLIC(GetMinute);
 extern "C" DLL_PUBLIC Datum GetMinute(PG_FUNCTION_ARGS);
 PG_FUNCTION_INFO_V1_PUBLIC(GetSecond);
 extern "C" DLL_PUBLIC Datum GetSecond(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1_PUBLIC(get_format);
+extern "C" DLL_PUBLIC Datum get_format(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(b_extract);
+extern "C" DLL_PUBLIC Datum b_extract(PG_FUNCTION_ARGS);
 #endif
 /* common code for timetypmodin and timetztypmodin */
 static int32 anytime_typmodin(bool istz, ArrayType* ta)
@@ -3975,21 +3983,6 @@ TimeADT time_in_with_flag(char *str, unsigned int date_flag)
     tm2time(tm, fsec, &result);
     AdjustTimeForTypmod(&result, TIMESTAMP_MAX_PRECISION);
     result *= timeSign;
-
-    /* do a final range check */
-    bool is_overflow = false;
-#ifdef HAVE_INT64_TIMESTAMP
-    if (result < -TIME_BOUND_WITHOUT_DICIMAL_SEC || result > TIME_BOUND_WITHOUT_DICIMAL_SEC)
-        is_overflow = true;
-#else
-    if (result < ((double)(-TIME_BOUND_WITHOUT_DICIMAL_SEC) / USECS_PER_SEC) || result > ((double)(TIME_BOUND_WITHOUT_DICIMAL_SEC) / USECS_PER_SEC))
-        is_overflow = true;
-#endif
-    if (is_overflow) {
-        ereport(ERROR,
-        (errcode(ERRCODE_DATETIME_FIELD_OVERFLOW),
-            errmsg("Truncated incorrect time value: \"%s\"", str)));
-    }
     return result;
 }
 
@@ -4249,5 +4242,264 @@ Datum GetMinute(PG_FUNCTION_ARGS)
 Datum GetSecond(PG_FUNCTION_ARGS)
 {
     return GetSepecificPartOfTime(fcinfo, "second");
+}
+
+bool time_in_with_sql_mode(char *str, TimeADT *result, unsigned int date_flag)
+{
+    bool ret = true;
+    bool raise_warning = false;
+    int code;
+    const char *msg = NULL;
+    PG_TRY();
+    {
+        *result = time_in_with_flag(str, date_flag);
+    }
+    PG_CATCH();
+    {
+        ret = false;
+        if (SQL_MODE_STRICT()) {
+            PG_RE_THROW();
+        } else {
+            raise_warning = true;
+            code = geterrcode();
+            msg = pstrdup(Geterrmsg());
+            FlushErrorState();
+        }
+    }
+    PG_END_TRY();
+    if (raise_warning) {
+        ereport(WARNING, (errcode(code), errmsg("%s", msg)));
+    }
+    return ret;
+}
+
+static DateTimeFormat date_time_formats[] =
+{
+  {"usa", "%m.%d.%Y", "%Y-%m-%d %H.%i.%s", "%h:%i:%s %p" },
+  {"jis", "%Y-%m-%d", "%Y-%m-%d %H:%i:%s", "%H:%i:%s" },
+  {"iso", "%Y-%m-%d", "%Y-%m-%d %H:%i:%s", "%H:%i:%s" },
+  {"eur", "%d.%m.%Y", "%Y-%m-%d %H.%i.%s", "%H.%i.%s" },
+  {"internal", "%Y%m%d", "%Y%m%d%H%i%s", "%H%i%s" }
+};
+static int szdate_time_formats = sizeof date_time_formats / sizeof date_time_formats[0];
+
+/** 
+ * Function for B compatibility get_format(date/datetime/time, 'EUR'|'USA'|'JIS'|'ISO'|'INTERNAL') 
+*/
+Datum get_format(PG_FUNCTION_ARGS)
+{
+    int32 time_type = PG_GETARG_INT32(0);
+    text* units = PG_GETARG_TEXT_PP(1);
+    const char *result_str = NULL;
+
+    char *lowunits = downcase_truncate_identifier(VARDATA_ANY(units), VARSIZE_ANY_EXHDR(units), false);
+    bool find_format = false;
+    int i;
+    for (i = 0; i < szdate_time_formats; ++i) {
+        if (strcmp(lowunits, date_time_formats[i].format_name) == 0) {
+            find_format = true;
+            break;
+        }
+    }
+    if (!find_format) {
+        PG_RETURN_NULL();
+    }
+    switch (time_type)
+    {
+        case DTK_DATE:
+            result_str = date_time_formats[i].date_format;
+            break;
+        case DTK_DATE_TIME:
+            result_str = date_time_formats[i].datetime_format;
+            break;
+        case DTK_TIME:
+            result_str = date_time_formats[i].time_format;
+            break;
+        default:
+            Assert(0);  /* impossible */
+            break;
+    }
+
+    PG_RETURN_DATUM(CStringGetTextDatum(result_str));
+}
+
+/**
+ * parse unit symbol into an enum value
+*/
+static inline void resolve_units(char *unit_str, b_units *unit)
+{
+    for(int i = 0; i < units_size; i++) {
+        if(strcmp(unit_str, unitnms[i]) == 0) {
+            *unit = (b_units)i;
+            return;
+        }
+    }
+    ereport(ERROR, 
+            (errmodule(MOD_FUNCTION),
+            errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+            errmsg("units \"%s\" not supported", unit_str)));
+}
+
+/**
+ * return 1 if we should parse the expr in extract(unit from expr) into date or datetime
+ * return 0 if we should parse it into time
+*/
+static inline int find_type(b_units unit)
+{
+    switch (unit)
+    {
+        case UNIT_YEAR:
+        case UNIT_QUARTER:
+        case UNIT_MONTH:
+        case UNIT_WEEK:
+        case UNIT_DAY:
+        case UNIT_YEAR_MONTH:
+        case UNIT_DAY_HOUR:
+        case UNIT_DAY_MINUTE:
+        case UNIT_DAY_SECOND:
+        case UNIT_DAY_MICROSECOND:
+            return 1;
+        case UNIT_HOUR:
+        case UNIT_MINUTE:
+        case UNIT_SECOND:
+        case UNIT_MICROSECOND:
+        case UNIT_HOUR_MINUTE:
+        case UNIT_HOUR_SECOND:
+        case UNIT_MINUTE_SECOND:
+        case UNIT_HOUR_MICROSECOND:
+        case UNIT_MINUTE_MICROSECOND:
+        case UNIT_SECOND_MICROSECOND:
+            return 0;
+        default:
+            Assert(0);  // impossible
+            break;
+    }
+    return 1;   // can not reach here, just keep compiler silence.
+}
+
+Datum b_extract(PG_FUNCTION_ARGS)
+{
+    text *units = PG_GETARG_TEXT_PP(0);
+    char *str = text_to_cstring(PG_GETARG_TEXT_PP(1));
+    b_units enum_unit;
+    struct pg_tm tt, *tm = &tt;
+    fsec_t fsec;
+    int32 int_fsec;
+    TimeADT time;
+    int time_sign = 1;
+    int64 result;
+
+    char *lowunits = downcase_truncate_identifier(VARDATA_ANY(units), VARSIZE_ANY_EXHDR(units), false);
+    resolve_units(lowunits, &enum_unit);
+    if (find_type(enum_unit)) {
+        if (!datetime_in_with_sql_mode(str, tm, &fsec, (ENABLE_ZERO_DAY | ENABLE_ZERO_MONTH))) {
+            PG_RETURN_NULL();
+        }
+    } else {
+        if (!time_in_with_sql_mode(str, &time, (ENABLE_ZERO_DAY | ENABLE_ZERO_MONTH))) {
+            PG_RETURN_NULL();
+        }
+        if (time < 0) {
+            time_sign = -1;
+            time = -time;
+        }
+        time2tm(time, tm, &fsec);
+    }
+
+#ifdef HAVE_INT64_TIMESTAMP
+    int_fsec = fsec;
+#else
+    int_fsec = (int32)(fsec * 1000000);
+#endif
+
+    int64 mul_2 = 100, mul_4 = 10000, mul_6 = 1000000;
+    switch (enum_unit) {
+        case UNIT_YEAR: {
+            result = tm->tm_year;
+            break;
+        }
+        case UNIT_QUARTER: {
+            result = (tm->tm_mon + 2) / 3;
+            break;
+        }
+        case UNIT_MONTH: {
+            result = tm->tm_mon;
+            break;
+        }
+        case UNIT_WEEK: {
+            uint year = 0;
+            result = b_db_cal_week(tm, b_db_weekmode(GetSessionContext()->default_week_format), &year);
+            break;
+        }
+        case UNIT_DAY: {
+            result = tm->tm_mday;
+            break;
+        }
+        case UNIT_HOUR: {
+            result = tm->tm_hour * time_sign;
+            break;
+        }
+        case UNIT_MINUTE: {
+            result = tm->tm_min * time_sign;
+            break;
+        }
+        case UNIT_SECOND: {
+            result = tm->tm_sec * time_sign;
+            break;
+        }
+        case UNIT_MICROSECOND: {
+            result = int_fsec * time_sign;
+            break;
+        }
+        case UNIT_YEAR_MONTH: {
+            result = tm->tm_year * mul_2 + tm->tm_mon;
+            break;
+        }
+        case UNIT_DAY_HOUR: {
+            result = (tm->tm_mday * mul_2 + tm->tm_hour) * time_sign;
+            break;
+        }
+        case UNIT_DAY_MINUTE: {
+            result = (tm->tm_mday * mul_4 + tm->tm_hour * mul_2 + tm->tm_min) * time_sign;
+            break;
+        }
+        case UNIT_DAY_SECOND: {
+            result = (tm->tm_mday * mul_6 + tm->tm_hour * mul_4 + tm->tm_min * mul_2 + tm->tm_sec) * time_sign;
+            break;
+        }
+        case UNIT_HOUR_MINUTE: {
+            result = (tm->tm_hour * mul_2 + tm->tm_min) * time_sign;
+            break;
+        }
+        case UNIT_HOUR_SECOND: {
+            result = (tm->tm_hour * mul_4 + tm->tm_min * mul_2 + tm->tm_sec) * time_sign;
+            break;
+        }
+        case UNIT_MINUTE_SECOND: {
+            result = (tm->tm_min * mul_2 + tm->tm_sec) * time_sign;
+            break;
+        }
+        case UNIT_DAY_MICROSECOND: {
+            result = ((tm->tm_mday * mul_6 + tm->tm_hour * mul_4 + tm->tm_min * mul_2 + tm->tm_sec) * mul_6 + int_fsec) * time_sign;
+            break;
+        }
+        case UNIT_HOUR_MICROSECOND: {
+            result = ((tm->tm_hour * mul_4 + tm->tm_min * mul_2 + tm->tm_sec) * mul_6 + int_fsec) * time_sign;
+            break;
+        }
+        case UNIT_MINUTE_MICROSECOND: {
+            result = ((tm->tm_min * mul_2 + tm->tm_sec) * mul_6 + int_fsec) * time_sign;
+            break;
+        }
+        case UNIT_SECOND_MICROSECOND: {
+            result = (tm->tm_sec * mul_6 + int_fsec) * time_sign;
+            break;
+        }
+        default: {
+            Assert(0);// impossible
+            break;
+        }
+    }
+    PG_RETURN_INT64(result);
 }
 #endif

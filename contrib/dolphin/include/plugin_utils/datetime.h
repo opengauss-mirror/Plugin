@@ -44,6 +44,33 @@ extern bool numeric_to_lldiv_t(NumericVar *from, lldiv_t *to);
 #ifdef DOLPHIN
 extern void lldiv_decode_tm(Numeric num, lldiv_t *div, struct pg_tm *tm, unsigned int date_flag);
 extern void NumericVar2lldiv(NumericVar *from, lldiv_t *to);
+
+extern unsigned long long pow_of_10[20];
+extern const char* unitnms[20];
+extern const int units_size;
+enum b_units
+{
+  UNIT_YEAR,
+  UNIT_QUARTER,
+  UNIT_MONTH,
+  UNIT_WEEK,
+  UNIT_DAY,
+  UNIT_HOUR,
+  UNIT_MINUTE,
+  UNIT_SECOND,
+  UNIT_MICROSECOND,
+  UNIT_YEAR_MONTH,
+  UNIT_DAY_HOUR,
+  UNIT_DAY_MINUTE,
+  UNIT_DAY_SECOND,
+  UNIT_HOUR_MINUTE,
+  UNIT_HOUR_SECOND,
+  UNIT_MINUTE_SECOND,
+  UNIT_DAY_MICROSECOND,
+  UNIT_HOUR_MICROSECOND,
+  UNIT_MINUTE_MICROSECOND,
+  UNIT_SECOND_MICROSECOND
+};
 #endif
 
 /* Limits for the TIME data type */
