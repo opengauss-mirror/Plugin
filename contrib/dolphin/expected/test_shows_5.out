@@ -43,6 +43,7 @@ name varchar(20),
 phone text
 );
 COMMENT ON TABLE tst_schema5.tst_t3 IS 'this is comment';
+COMMENT ON COLUMN tst_schema5.tst_t3.name IS 'comment on column';
 CREATE VIEW tst_schema5.tst_v1 AS SELECT * FROM tst_schema5.tst_t2;
 SHOW TABLE STATUS;
 --?             Name              | Engine | Version | Row_format | Rows | Avg_row_length | Data_length | Max_data_length | Index_length | Data_free | Auto_increment |       Create_time        |       Update_time        | Check_time |  Collation  | Checksum |                    Create_options                    | Comment 

@@ -968,7 +968,11 @@ static Node* makeShowTableStatusJoinTable()
     Node* quals3 = (Node*)makeSimpleA_Expr(AEXPR_OP, "=", 
                             plpsMakeColumnRef(PG_CLASS_NAME, "oid"), 
                             plpsMakeColumnRef(PG_DESCRIPTION, "objoid"), -1);
-    Node* joinDescription = plpsMakeSimpleJoinNode(JOIN_LEFT,  joinObject, pgDescription, quals3);
+    Node* qualsObjsubid = (Node*)makeSimpleA_Expr(AEXPR_OP, "=", 
+                            plpsMakeColumnRef(PG_DESCRIPTION, "objsubid"), 
+                            plpsMakeIntConst(0), -1);
+    Node* joinDescription = plpsMakeSimpleJoinNode(JOIN_LEFT,  joinObject, pgDescription,
+                                (Node*)makeA_Expr(AEXPR_AND, NIL, quals3, qualsObjsubid, -1));
 
     Node* pgConstraint = (Node*)makeRangeVar(NULL, PG_CONSTRAINT, -1);
     Node* quals4 = (Node*)makeSimpleA_Expr(AEXPR_OP, "=", 
@@ -1046,7 +1050,7 @@ static Node* makeShowTableStatusJoinTable()
  *         pg_class
  *         LEFT JOIN pg_namespace pg_namespace ON pg_class.relnamespace = pg_namespace.oid
  *         LEFT JOIN pg_object ON pg_class.oid = pg_object.object_oid
- *         LEFT JOIN pg_description ON pg_class.oid = pg_description.classoid
+ *         LEFT JOIN pg_description ON pg_class.oid = pg_description.classoid and pg_description.objsubid=0
  *         LEFT JOIN pg_constraint ON pg_class.oid=pg_constraint.conrelid and pg_constraint.contype='p' and array_length(pg_constraint.conkey, 1)=1
  *         LEFT JOIN pg_attrdef ON pg_class.oid=pg_attrdef.adrelid and pg_attrdef.adnum=pg_constraint.conkey[1]
  *         LEFT JOIN pg_depend ON pg_attrdef.oid=pg_depend.objid and pg_depend.refobjsubid=0
