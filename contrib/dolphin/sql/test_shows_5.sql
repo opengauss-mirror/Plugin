@@ -42,6 +42,7 @@ name varchar(20),
 phone text
 );
 COMMENT ON TABLE tst_schema5.tst_t3 IS 'this is comment';
+COMMENT ON COLUMN tst_schema5.tst_t3.name IS 'comment on column';
 
 CREATE VIEW tst_schema5.tst_v1 AS SELECT * FROM tst_schema5.tst_t2;
 
