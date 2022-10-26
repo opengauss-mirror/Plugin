@@ -142,6 +142,20 @@ void init_plugin_object()
     u_sess->hook_cxt.aggSmpHook = (void*)check_plugin_function;
     u_sess->hook_cxt.standardProcessUtilityHook = (void*)standard_ProcessUtility;
     set_default_guc();
+
+    if (u_sess->proc_cxt.MyProcPort && u_sess->proc_cxt.MyProcPort->database_name) {
+        if (!protocol_inited) {
+            int ret = strcpy_s(g_proto_ctx.database_name.data, NAMEDATALEN, u_sess->proc_cxt.MyProcPort->database_name);
+            securec_check(ret, "\0", "\0");
+
+            define_dolphin_server_guc();
+            server_listen_init();
+            protocol_inited = true;
+            g_instance.listen_cxt.reload_fds = true;
+        } else {
+            define_dolphin_server_guc();
+        }
+    }
 }
 
 void _PG_init(void)
@@ -166,18 +180,6 @@ void _PG_init(void)
     g_instance.raw_parser_hook[DB_CMPT_B] = (void*)raw_parser;
     g_instance.plsql_parser_hook[DB_CMPT_B] = (void*)plpgsql_yyparse;
     g_instance.llvmIrFilePath[DB_CMPT_B] = "share/postgresql/extension/openGauss_expr_dolphin.ir";
-
-    if (!protocol_inited) {
-        int ret = strcpy_s(g_proto_ctx.database_name.data, NAMEDATALEN, u_sess->proc_cxt.MyProcPort->database_name);
-        securec_check(ret, "\0", "\0");
-
-        define_dolphin_server_guc();
-        server_listen_init();
-        protocol_inited = true;
-        g_instance.listen_cxt.reload_fds = true;
-    } else {
-        define_dolphin_server_guc();
-    }
 }
 
 void _PG_fini(void)

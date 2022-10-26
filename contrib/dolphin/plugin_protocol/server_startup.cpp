@@ -74,7 +74,7 @@ void define_dolphin_server_guc()
                 gettext_noop("Predefined dolphin database name"),
                 NULL,
                 &GetSessionContext()->default_database_name,
-                pstrdup(g_proto_ctx.database_name.data),
+                g_proto_ctx.database_name.data,
                 PGC_SIGHUP,
                 GUC_NOT_IN_SAMPLE,
                 NULL, AssignDatabaseName, NULL);
