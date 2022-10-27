@@ -444,3 +444,13 @@ CREATE OR REPLACE FUNCTION pg_catalog.str_to_date (text, text) RETURNS text LANG
 
 CREATE OR REPLACE FUNCTION pg_catalog.from_unixtime (numeric) RETURNS datetime LANGUAGE C STABLE RETURNS NULL ON NULL INPUT as '$libdir/dolphin', 'from_unixtime_with_one_arg';
 CREATE OR REPLACE FUNCTION pg_catalog.from_unixtime (numeric, text) RETURNS TEXT LANGUAGE C STABLE RETURNS NULL ON NULL INPUT as '$libdir/dolphin', 'from_unixtime_with_two_arg';
+
+
+DROP FUNCTION IF EXISTS pg_catalog.year_any_value (year, year) CASCADE;
+CREATE OR REPLACE FUNCTION pg_catalog.year_any_value (year, year) RETURNS year LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'year_any_value';
+
+drop aggregate if exists pg_catalog.any_value(year);
+CREATE AGGREGATE pg_catalog.any_value(year) (
+        sfunc = year_any_value,
+        stype = year
+);

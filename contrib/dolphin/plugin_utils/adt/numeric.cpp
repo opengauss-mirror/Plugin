@@ -19568,6 +19568,41 @@ Datum bool_numeric(PG_FUNCTION_ARGS)
     PG_RETURN_NUMERIC(res);
 }
 #ifdef DOLPHIN
+PG_FUNCTION_INFO_V1_PUBLIC(bigint_any_value);
+extern "C" DLL_PUBLIC Datum bigint_any_value(PG_FUNCTION_ARGS);
+Datum bigint_any_value(PG_FUNCTION_ARGS)
+{
+    return PG_GETARG_DATUM(0);
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(uint_any_value);
+extern "C" DLL_PUBLIC Datum uint_any_value(PG_FUNCTION_ARGS);
+Datum uint_any_value(PG_FUNCTION_ARGS)
+{
+    return PG_GETARG_DATUM(0);
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(numeric_any_value);
+extern "C" DLL_PUBLIC Datum numeric_any_value(PG_FUNCTION_ARGS);
+Datum numeric_any_value(PG_FUNCTION_ARGS)
+{
+    return PG_GETARG_DATUM(0);
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(double_any_value);
+extern "C" DLL_PUBLIC Datum double_any_value(PG_FUNCTION_ARGS);
+Datum double_any_value(PG_FUNCTION_ARGS)
+{
+    return PG_GETARG_DATUM(0);
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(float_any_value);
+extern "C" DLL_PUBLIC Datum float_any_value(PG_FUNCTION_ARGS);
+Datum float_any_value(PG_FUNCTION_ARGS)
+{
+    return PG_GETARG_DATUM(0);
+}
+
 static unsigned int crc32_cal(unsigned char *data, int len)
 {
     unsigned int crc = PG_UINT32_MAX;

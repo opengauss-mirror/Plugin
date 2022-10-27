@@ -336,3 +336,49 @@ RETURNS text LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'AnalyzePartitio
 CREATE OR REPLACE FUNCTION pg_catalog.analyze_tables (
 IN tableName cstring[], OUT "Table" text, OUT "Op" text, OUT "Msg_type" text, OUT "Msg_text" text
 ) RETURNS setof record LANGUAGE C VOLATILE STRICT as '$libdir/dolphin',  'analyze_tables';
+
+
+DROP FUNCTION IF EXISTS pg_catalog.bigint_any_value (bigint, bigint) CASCADE;
+CREATE OR REPLACE FUNCTION pg_catalog.bigint_any_value (bigint, bigint) RETURNS bigint LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'bigint_any_value';
+
+drop aggregate if exists pg_catalog.any_value(bigint);
+CREATE AGGREGATE pg_catalog.any_value(bigint) (
+        sfunc = bigint_any_value,
+        stype = int8
+);
+
+DROP FUNCTION IF EXISTS pg_catalog.numeric_any_value (numeric, numeric) CASCADE;
+CREATE OR REPLACE FUNCTION pg_catalog.numeric_any_value (numeric, numeric) RETURNS numeric LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'numeric_any_value';
+
+drop aggregate if exists pg_catalog.any_value(numeric);
+CREATE AGGREGATE pg_catalog.any_value(numeric) (
+        sfunc = numeric_any_value,
+        stype = numeric
+);
+
+DROP FUNCTION IF EXISTS pg_catalog.double_any_value (double, double) CASCADE;
+CREATE OR REPLACE FUNCTION pg_catalog.double_any_value (double, double) RETURNS double LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'double_any_value';
+
+drop aggregate if exists pg_catalog.any_value(double);
+CREATE AGGREGATE pg_catalog.any_value(double) (
+        sfunc = double_any_value,
+        stype = double
+);
+
+DROP FUNCTION IF EXISTS pg_catalog.float_any_value (float, float) CASCADE;
+CREATE OR REPLACE FUNCTION pg_catalog.float_any_value (float, float) RETURNS float LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'float_any_value';
+
+drop aggregate if exists pg_catalog.any_value(float);
+CREATE AGGREGATE pg_catalog.any_value(float) (
+        sfunc = float_any_value,
+        stype = float
+);
+
+DROP FUNCTION IF EXISTS pg_catalog.text_any_value (text, text) CASCADE;
+CREATE OR REPLACE FUNCTION pg_catalog.text_any_value (text, text) RETURNS text LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'text_any_value';
+
+drop aggregate if exists pg_catalog.any_value(text);
+CREATE AGGREGATE pg_catalog.any_value(text) (
+        sfunc = text_any_value,
+        stype = text
+);
