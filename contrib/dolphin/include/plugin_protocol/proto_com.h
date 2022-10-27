@@ -82,7 +82,7 @@ enum dolphin_server_capability {
    CLIENT_MULTI_STATEMENTS | CLIENT_MULTI_RESULTS | CLIENT_PS_MULTI_RESULTS |  \
    CLIENT_REMEMBER_OPTIONS | CLIENT_PLUGIN_AUTH | CLIENT_PLUGIN_AUTH_LENENC_CLIENT_DATA |    \
    CLIENT_CAN_HANDLE_EXPIRED_PASSWORDS | CLIENT_SESSION_TRACK |             \
-   CLIENT_OPTIONAL_RESULTSET_METADATA | CLIENT_QUERY_ATTRIBUTES |           \
+   CLIENT_OPTIONAL_RESULTSET_METADATA | CLIENT_QUERY_ATTRIBUTES  |           \
    CLIENT_MULTI_FACTOR_AUTHENTICATION)
 
 #define AUTH_PLUGIN_DATA_LEN 20
@@ -240,6 +240,7 @@ typedef struct dolphin_data_field {
   uint charsetnr;
   uint type; 
   void *extension;
+  char *default_value;
 } dolphin_data_field;
 
 #define MAX_TYPE_NAME_LEN 64

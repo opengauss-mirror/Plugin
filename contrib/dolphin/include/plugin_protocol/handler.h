@@ -25,6 +25,8 @@
 #include "postgres.h"
 #include "tcop/dest.h"
 
+extern void proc_exit(int code);
+
 extern void dophin_send_ready_for_query(CommandDest dest);
 extern void dophin_send_message(ErrorData *edata);
 extern int dophin_read_command(StringInfo buf);

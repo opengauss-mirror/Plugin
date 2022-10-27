@@ -30,6 +30,7 @@
 
 static int execute_sql(const char* sql);
 static void execute_show_variables();
+static int execute_show_columns_from(char *tableName);
 static void execute_fetch_server_config();
 
 void dophin_send_ready_for_query(CommandDest dest)
@@ -88,8 +89,19 @@ int dolphin_process_command(StringInfo buf)
     uint8 command = pq_getmsgbyte(buf);
 
     switch (command) {
-        case COM_SLEEP:
+        case COM_PING: {
+            send_general_ok_packet();
             break;
+        }
+        case COM_QUIT: {
+            proc_exit(0);
+            // Port *port = u_sess->proc_cxt.MyProcPort;
+            // if (port->sock >= 0) {
+            //     StreamClose(port->sock);
+            // }
+            // ereport(ERROR, (errcode(ERRCODE_INTERNAL_ERROR), errmsg("response of COM_QUIT packet."))); 
+            break;
+        }
         case COM_INIT_DB: {
             char *schemaName = dq_get_string_eof(buf);
             StringInfo sql = makeStringInfo();
@@ -125,9 +137,19 @@ int dolphin_process_command(StringInfo buf)
         // COM_FIELD_LIST response will trigger client-server [ FIN,ACK] error, just comment it here.
         // maybe desc & show columns sql result is the root cause.
         case COM_FIELD_LIST: {
+            char *tableName = dq_get_string_null(buf);
+            execute_show_columns_from(tableName);
+            break;
+        }
+        case COM_STMT_PREPARE: {
+            break;
+        }
+        case COM_STMT_EXECUTE: {
+            break;
         }
         default:
-            ereport(ERROR, (errcode(ERRCODE_INTERNAL_ERROR), errmsg("dolphin server protocol not supported."))); 
+            // COM_CREATE_DB, COM_DROP_DB have deprecated by mysql-server
+           ereport(ERROR, (errcode(ERRCODE_INTERNAL_ERROR), errmsg("dolphin server protocol not supported."))); 
     }
     return 0;
 }
@@ -163,6 +185,55 @@ int execute_sql(const char* sql)
 
     SPI_STACK_LOG("finish", NULL, NULL);
     SPI_finish();
+    finish_xact_command();
+
+    return 0;
+}
+
+int execute_show_columns_from(char *tableName)
+{
+    int rc;
+    
+    start_xact_command();
+
+    SPI_STACK_LOG("connect", NULL, NULL);
+    if ((rc = SPI_connect()) != SPI_OK_CONNECT) {
+        ereport(ERROR, (errcode(ERRCODE_INTERNAL_ERROR),
+            errmsg("dolphin SPI_connect failed: %s", SPI_result_code_string(rc)),
+            errdetail("SPI_connect failed"),
+            errcause("System error."),
+            erraction("Check whether the snapshot retry is successful")));
+    }
+
+    StringInfo sql = makeStringInfo();
+    appendStringInfo(sql, "show columns from %s", tableName);
+
+    rc = SPI_execute(sql->data, false, 0);
+
+    StringInfo buf = makeStringInfo();
+    if (rc == SPI_OK_SELECT && SPI_processed > 0) {
+        TupleDesc spi_tupdesc = SPI_tuptable->tupdesc;
+        for (uint32 i = 0; i < SPI_processed; i++) {
+            HeapTuple spi_tuple = SPI_tuptable->vals[i];
+            char *name = SPI_getvalue(spi_tuple, spi_tupdesc, SPI_fnumber(spi_tupdesc, "Field"));
+            char *default_value = SPI_getvalue(spi_tuple, spi_tupdesc, SPI_fnumber(spi_tupdesc, "Default"));
+            dolphin_data_field *field = make_dolphin_data_field(name, tableName);
+            field->default_value = default_value; 
+            send_column_definition41_packet(buf, field);
+
+            pfree(field);
+        }
+
+       /* EOF packet at end of all rows*/
+       send_network_eof_packet(buf); 
+    }
+    
+    DestroyStringInfo(sql);
+    DestroyStringInfo(buf);
+
+    SPI_STACK_LOG("finish", NULL, NULL);
+    SPI_finish();
+
     finish_xact_command();
 
     return 0;

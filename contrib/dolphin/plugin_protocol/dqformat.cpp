@@ -20,6 +20,8 @@
  * -------------------------------------------------------------------------
  */
 #include "plugin_protocol/dqformat.h"
+#include "knl/knl_session.h"
+#include "libpq/libpq.h"
 
 #define AUTH_PLUGIN_DATA_PART_1 8
 #define CAPABILITY_UPPER_BITS 16
@@ -144,11 +146,11 @@ void send_field_count_packet(StringInfo buf, int count)
 dolphin_data_field* make_dolphin_data_field(const char *name, char *tableName)
 {
     dolphin_data_field *field = (dolphin_data_field *) palloc0(sizeof(dolphin_data_field));
-    // db, table, org_table (tle->resorigtbl), org_name, character_set, decimals will implement later
+    // table, org_table (tle->resorigtbl), org_name, character_set, decimals will implement later
     field->name = name; 
-    field->type = DOLPHIN_TYPE_STRING; // map to atttypid
+    field->type = DOLPHIN_TYPE_VAR_STRING; // map to atttypid
     field->length = DEFAULLT_DATA_FIELD_LEN; 
-    field->db = g_proto_ctx.database_name.data;
+    field->db =  u_sess->proc_cxt.MyProcPort->database_name;
     field->table = tableName;
     field->org_table = tableName;
 
@@ -174,6 +176,10 @@ void send_column_definition41_packet(StringInfo buf, dolphin_data_field *field)
     dq_append_int2(buf, field->flags);       /* flags (2) */ 
     dq_append_int1(buf, field->decimals);    /* decimals */
     dq_append_int2(buf, 0x00);               /* filler */
+
+    if (field->default_value) {
+        dq_append_string_lenenc(buf, field->default_value);
+    }
     
     dq_putmessage(buf->data, buf->len);
 }
