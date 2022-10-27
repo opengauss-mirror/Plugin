@@ -391,27 +391,22 @@ insert into func_test2(functionName, result) values(' TIME_FORMAT(false, ''%T|%r
 insert into func_test2(functionName, result) values('TIMESTAMP(null)', TIMESTAMP(null)); 
 insert into func_test2(functionName, result) values('TIMESTAMP(''asdasd'')', TIMESTAMP('asdasd'));
 ERROR:  invalid input syntax for type timestamp: "asdasd"
-LINE 1: ...result) values('TIMESTAMP(''asdasd'')', TIMESTAMP('asdasd'))...
-                                                             ^
+CONTEXT:  referenced column: result
     -- 不存在的日期或时间
 insert into func_test2(functionName, result) values('TIMESTAMP(''2003-13-01'')', TIMESTAMP('2003-13-01'));
 ERROR:  date/time field value out of range: "2003-13-01"
-LINE 1: ...lt) values('TIMESTAMP(''2003-13-01'')', TIMESTAMP('2003-13-0...
-                                                             ^
 HINT:  Perhaps you need a different "datestyle" setting.
+CONTEXT:  referenced column: result
 insert into func_test2(functionName, result) values('TIMESTAMP(''2003-2-29'')', TIMESTAMP('2003-2-29'));
 ERROR:  date/time field value out of range: "2003-2-29"
-LINE 1: ...ult) values('TIMESTAMP(''2003-2-29'')', TIMESTAMP('2003-2-29...
-                                                             ^
+CONTEXT:  referenced column: result
 insert into func_test2(functionName, result) values('TIMESTAMP(''2003-12-31 24:00:00'')', TIMESTAMP('2003-12-31 24:00:00')); 
 insert into func_test2(functionName, result) values('TIMESTAMP(''2003-12-31 23:60:00'')', TIMESTAMP('2003-12-31 23:60:00')); 
 ERROR:  date/time field value out of range: "2003-12-31 23:60:00"
-LINE 1: ...s('TIMESTAMP(''2003-12-31 23:60:00'')', TIMESTAMP('2003-12-3...
-                                                             ^
+CONTEXT:  referenced column: result
 insert into func_test2(functionName, result) values('TIMESTAMP(''2003-12-31 23:59:60'')', TIMESTAMP('2003-12-31 23:59:60'));
 ERROR:  date/time field value out of range: "2003-12-31 23:59:60"
-LINE 1: ...s('TIMESTAMP(''2003-12-31 23:59:60'')', TIMESTAMP('2003-12-3...
-                                                             ^
+CONTEXT:  referenced column: result
 -- 主体功能
 insert into func_test2(functionName, result) values('TIMESTAMP(''2003-12-31'')', TIMESTAMP('2003-12-31'));
 insert into func_test2(functionName, result) values('TIMESTAMP(''20031231'')', TIMESTAMP('20031231'));
@@ -435,35 +430,28 @@ CONTEXT:  referenced column: result
 insert into func_test2(functionName, result) values('TIMESTAMP(date''2003-01-01'')', TIMESTAMP(date'2003-01-01'));
 insert into func_test2(functionName, result) values('TIMESTAMP(cast(''2007-12-10 23:59:59'' as datetime))', TIMESTAMP(cast('2007-12-10 23:59:59' as datetime))); 
 insert into func_test2(functionName, result) values('TIMESTAMP(true)', TIMESTAMP(true));
-ERROR:  function pg_catalog.timestamp_mysql(boolean) does not exist
-LINE 1: ...2(functionName, result) values('TIMESTAMP(true)', TIMESTAMP(...
-                                                             ^
-HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
+ERROR:  timestamp out of range
+CONTEXT:  referenced column: result
 insert into func_test2(functionName, result) values('TIMESTAMP(B''1'')', TIMESTAMP(B'1')); 
-ERROR:  function pg_catalog.timestamp_mysql(bit) does not exist
-LINE 1: ...functionName, result) values('TIMESTAMP(B''1'')', TIMESTAMP(...
-                                                             ^
-HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
+ERROR:  unsupported input data type
+CONTEXT:  referenced column: result
 -- TIMESTAMP(expr1, expr2)
     -- 特异参数
 insert into func_test2(functionName, result) values('TIMESTAMP(NULL, NULL)', TIMESTAMP(NULL, NULL)); 
 insert into func_test2(functionName, result) values('TIMESTAMP(''20000321'', ''abcd'')', TIMESTAMP('20000321', 'abcd'));
-ERROR:  invalid input syntax "abcd"
+ERROR:  invalid input syntax for type time: "abcd"
 CONTEXT:  referenced column: result
 insert into func_test2(functionName, result) values('TIMESTAMP(''abcd'', ''010101'')', TIMESTAMP('abcd', '010101'));
 ERROR:  invalid input syntax for type timestamp: "abcd"
-CONTEXT:  SQL function "timestamp_mysql" during inlining
-referenced column: result
+CONTEXT:  referenced column: result
     -- 不存在的日期或时间
 insert into func_test2(functionName, result) values('TIMESTAMP(''2003-2-29'',''25:00:00'')', TIMESTAMP('2003-2-29', '25:00:00'));
 ERROR:  date/time field value out of range: "2003-2-29"
-CONTEXT:  SQL function "timestamp_mysql" during inlining
-referenced column: result
+CONTEXT:  referenced column: result
 insert into func_test2(functionName, result) values('TIMESTAMP(''2003-12-31 24:00:00'',''25:00:00'')', TIMESTAMP('2003-12-31 24:00:00', '25:00:00')); 
 insert into func_test2(functionName, result) values('TIMESTAMP(''2003-12-31 23:60:00'',''25:00:00'')', TIMESTAMP('2003-12-31 23:60:00', '25:00:00')); 
 ERROR:  date/time field value out of range: "2003-12-31 23:60:00"
-CONTEXT:  SQL function "timestamp_mysql" during inlining
-referenced column: result
+CONTEXT:  referenced column: result
     -- 日期越界
 insert into func_test2(functionName, result) values('TIMESTAMP(''10000-01-01'',''25:00:00'')', TIMESTAMP('10000-01-01', '25:00:00')); 
 ERROR:  date/time field value out of range
@@ -484,7 +472,7 @@ insert into func_test2(functionName, result) values('TIMESTAMP(20031231120000.00
     -- 边界值
 insert into func_test2(functionName, result) values('TIMESTAMP(''1000-12-31'',''838:59:59'')', TIMESTAMP('1000-12-31', '838:59:59')); 
 insert into func_test2(functionName, result) values('TIMESTAMP(''1000-01-01 00:00:00'',''839:00:00'')', TIMESTAMP('1000-12-31 00:00:00', '839:00:00')); 
-ERROR:  invalid input syntax "839:00:00"
+ERROR:  date/time field value out of range: "839:00:00"
 CONTEXT:  referenced column: result
 insert into func_test2(functionName, result) values('TIMESTAMP(''9999-12-31'',''23:59:59.999999'')', TIMESTAMP('9999-12-31', '23:59:59.999999')); 
 insert into func_test2(functionName, result) values('TIMESTAMP(''9999-12-31 00:00:00'',''24:00:00'')', TIMESTAMP('9999-12-31 00:00:00', '24:00:00')); 
@@ -496,19 +484,13 @@ ERROR:  date/time field overflow
 CONTEXT:  referenced column: result
     -- 不同参数类型
 insert into func_test2(functionName, result) values('TIMESTAMP(date''2003-01-01'', date''2000-01-01'')', TIMESTAMP(date'2003-01-01', date'2000-01-01'));
-ERROR:  invalid input syntax "01-01-2000"
-CONTEXT:  referenced column: result
 insert into func_test2(functionName, result) values('TIMESTAMP(cast(''2007-12-10 23:59:59'' as datetime), cast(''2007-12-10 22:59:59'' as datetime))', TIMESTAMP(cast('2007-12-10 23:59:59' as datetime), cast('2007-12-10 22:59:59' as datetime)));
 insert into func_test2(functionName, result) values('TIMESTAMP(true, false)', TIMESTAMP(true, false));
-ERROR:  function pg_catalog.timestamp_mysql(boolean, boolean) does not exist
-LINE 1: ...ionName, result) values('TIMESTAMP(true, false)', TIMESTAMP(...
-                                                             ^
-HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
+ERROR:  timestamp out of range
+CONTEXT:  referenced column: result
 insert into func_test2(functionName, result) values('TIMESTAMP(B''1'', B''1'')', TIMESTAMP(B'1', B'1'));
-ERROR:  function pg_catalog.timestamp_mysql(bit, bit) does not exist
-LINE 1: ...Name, result) values('TIMESTAMP(B''1'', B''1'')', TIMESTAMP(...
-                                                             ^
-HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
+ERROR:  unsupported input data type
+CONTEXT:  referenced column: result
 -- TIMESTAMPADD()
 -- 正常测试
 -- date格式
@@ -900,7 +882,8 @@ select * from func_test2;
  TIMESTAMP('1000-12-31','838:59:59')                                                         | Tue Feb 03 22:59:59 1001
  TIMESTAMP('9999-12-31','23:59:59.999999')                                                   | Fri Dec 31 23:59:59.999999 9999
  TIMESTAMP('0001-01-01', '00:00:00')                                                         | Mon Jan 01 00:00:00 0001
- TIMESTAMP(cast('2007-12-10 23:59:59' as datetime), cast('2007-12-10 22:59:59' as datetime)) | Mon Dec 10 23:59:59 2007
+ TIMESTAMP(date'2003-01-01', date'2000-01-01')                                               | Wed Jan 01 00:00:00 2003
+ TIMESTAMP(cast('2007-12-10 23:59:59' as datetime), cast('2007-12-10 22:59:59' as datetime)) | Tue Dec 11 22:59:58 2007
  TIMESTAMPADD(YEAR,1,'2022-07-27')                                                           | 07-27-2023
  TIMESTAMPADD(YEAR,-1,'2022-07-27')                                                          | 07-27-2021
  TIMESTAMPADD(MONTH,1,'2022-07-27')                                                          | 08-27-2022
@@ -996,7 +979,7 @@ select * from func_test2;
  TIMESTAMPADD(SECOND,-1,'2022-07-27 00:00:00')                                               | Tue Jul 26 23:59:59 2022
  TIMESTAMPADD(SECOND,0.001,'2022-07-27 08:30:59.999')                                        | Wed Jul 27 08:31:00 2022
  TIMESTAMPADD(SECOND,-0.001,'2022-07-27 00:00:00')                                           | Tue Jul 26 23:59:59.999 2022
-(262 rows)
+(263 rows)
 
 \c postgres
 drop database if exists b_time_funcs2;

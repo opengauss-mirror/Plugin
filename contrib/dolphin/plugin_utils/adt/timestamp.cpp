@@ -222,20 +222,12 @@ PG_FUNCTION_INFO_V1_PUBLIC(timestamp_add_text);
 extern "C" DLL_PUBLIC Datum timestamp_add_text(PG_FUNCTION_ARGS);
 PG_FUNCTION_INFO_V1_PUBLIC(timestamp_add_time);
 extern "C" DLL_PUBLIC Datum timestamp_add_time(PG_FUNCTION_ARGS);
-PG_FUNCTION_INFO_V1_PUBLIC(to_seconds_text);
-extern "C" DLL_PUBLIC Datum to_seconds_text(PG_FUNCTION_ARGS);
-PG_FUNCTION_INFO_V1_PUBLIC(to_seconds_time);
-extern "C" DLL_PUBLIC Datum to_seconds_time(PG_FUNCTION_ARGS);
-PG_FUNCTION_INFO_V1_PUBLIC(to_seconds_numeric);
-extern "C" DLL_PUBLIC Datum to_seconds_numeric(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(to_seconds);
+extern "C" DLL_PUBLIC Datum to_seconds(PG_FUNCTION_ARGS);
 PG_FUNCTION_INFO_V1_PUBLIC(unix_timestamp_no_args);
 extern "C" DLL_PUBLIC Datum unix_timestamp_no_args(PG_FUNCTION_ARGS);
-PG_FUNCTION_INFO_V1_PUBLIC(unix_timestamp_text);
-extern "C" DLL_PUBLIC Datum unix_timestamp_text(PG_FUNCTION_ARGS);
-PG_FUNCTION_INFO_V1_PUBLIC(unix_timestamp_time);
-extern "C" DLL_PUBLIC Datum unix_timestamp_time(PG_FUNCTION_ARGS);
-PG_FUNCTION_INFO_V1_PUBLIC(unix_timestamp_numeric);
-extern "C" DLL_PUBLIC Datum unix_timestamp_numeric(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(unix_timestamp);
+extern "C" DLL_PUBLIC Datum unix_timestamp(PG_FUNCTION_ARGS);
 PG_FUNCTION_INFO_V1_PUBLIC(utc_timestamp_func);
 extern "C" DLL_PUBLIC Datum utc_timestamp_func(PG_FUNCTION_ARGS);
 PG_FUNCTION_INFO_V1_PUBLIC(func_return_null);
@@ -6458,6 +6450,74 @@ bool datetime_in_no_ereport(const char *str, Timestamp *datetime)
     return ret;
 }
 
+/**
+ * Convert non-NULL values of the indicated types to the Timestamp value
+ */
+void convert_to_datetime(Datum value, Oid valuetypid, Timestamp *datetime) 
+{
+    switch (valuetypid) {
+        case UNKNOWNOID:
+        case CSTRINGOID: {
+            *datetime = DatumGetTimestamp(DirectFunctionCall3(timestamp_in, value, ObjectIdGetDatum(InvalidOid), Int32GetDatum(-1)));
+            break;
+        }
+        case TEXTOID: {
+            char *str = text_to_cstring(DatumGetTextPP(value));
+            *datetime = DatumGetTimestamp(
+                DirectFunctionCall3(timestamp_in, CStringGetDatum(str), ObjectIdGetDatum(InvalidOid), Int32GetDatum(-1)));
+            break;
+        }
+        case TIMESTAMPOID: {
+            *datetime = DatumGetTimestamp(value);
+            break;
+        }
+        case DATEOID: {
+            *datetime = DatumGetTimestamp(DirectFunctionCall1(date_timestamp, value));
+            break;
+        }
+        case TIMEOID: {
+            // The conversion rule from Time to Timestamp is:
+            // Combining the current date withe the input time
+            pg_tm tt, *tm = &tt;
+            Timestamp temp;
+            TimeADT time = DatumGetTimeADT(value);
+            GetCurrentDateTime(tm);
+            tm->tm_hour = tm->tm_min = tm->tm_sec = 0;  // Keep date only
+            tm2timestamp(tm, 0, NULL, &temp);
+            *datetime = temp + time;
+            break;
+        }
+        case INT4OID: {
+            *datetime = DatumGetTimestamp(DirectFunctionCall1(int32_b_format_datetime, value));
+            break;
+        }
+        case INT8OID: {
+            *datetime = DatumGetTimestamp(DirectFunctionCall1(int64_b_format_datetime, value));
+            break;
+        }
+        case NUMERICOID: {
+            *datetime = DatumGetTimestamp(DirectFunctionCall1(numeric_b_format_datetime, value));
+            break;
+        }
+        case BOOLOID: {
+            *datetime = DatumGetTimestamp(DirectFunctionCall1(int32_b_format_datetime, 
+                                        DirectFunctionCall1(bool_int4, value)));
+            break;
+        }
+        case TIMESTAMPTZOID: {
+            *datetime = DatumGetTimestamp(DirectFunctionCall1(timestamptz_timestamp, value));
+            break;
+        }
+        case ABSTIMEOID: {
+            *datetime = DatumGetTimestamp(DirectFunctionCall1(abstime_timestamp, value));
+            break;
+        }
+        default: {
+            ereport(ERROR, (errcode(ERRCODE_DATATYPE_MISMATCH), errmsg("unsupported input data type")));
+        }
+    }
+}
+
 /* 
  * @Description: Subtract time from a datetime, giving a new datetime and assign it to result.
  * @return: false if parameter date or result out of range, otherwise true
@@ -6489,7 +6549,7 @@ Datum subtime_text(PG_FUNCTION_ARGS)
     text *expr1 = PG_GETARG_TEXT_PP(0);
     text *expr2 = PG_GETARG_TEXT_PP(1);
     TimeADT time1, time2;
-    Timestamp datetime1, datetime2;
+    Timestamp datetime1;
     char *str1, *str2;
     str1 = text_to_cstring(expr1);
     str2 = text_to_cstring(expr2);
@@ -6497,9 +6557,7 @@ Datum subtime_text(PG_FUNCTION_ARGS)
         ereport(ERROR, (errcode(ERRCODE_INVALID_DATETIME_FORMAT),
                         errmsg("invalid input syntax \"%s\"", str2)));
     }
-    if (datetime_in_no_ereport(str2, &datetime2)) {
-        PG_RETURN_NULL();
-    }
+
     if (!time_in_range(time2)) {
         ereport(ERROR, (errcode(ERRCODE_DATETIME_FIELD_OVERFLOW),
                         errmsg("datetime/time field value out of range: \"%s\"",
@@ -7128,8 +7186,12 @@ Datum timestamp_add_time(PG_FUNCTION_ARGS)
  */
 Datum timestamp_param1(PG_FUNCTION_ARGS)
 {
-    Timestamp datetime = PG_GETARG_TIMESTAMP(0);
-    
+    Timestamp datetime;
+    Oid val_type;
+
+    val_type = get_fn_expr_argtype(fcinfo->flinfo, 0);
+    convert_to_datetime(PG_GETARG_DATUM(0), val_type, &datetime);
+
     if (datetime >= B_FORMAT_TIMESTAMP_MIN_VALUE && datetime <= B_FORMAT_TIMESTAMP_MAX_VALUE)
         PG_RETURN_TIMESTAMP(datetime);
 
@@ -7147,22 +7209,22 @@ Datum timestamp_param1(PG_FUNCTION_ARGS)
  */
 Datum timestamp_param2(PG_FUNCTION_ARGS)
 {
-    Timestamp date = PG_GETARG_TIMESTAMP(0);
-    text *expr2 = PG_GETARG_TEXT_PP(1);
-    char *str2;
-    str2 = text_to_cstring(expr2);
+    Timestamp datetime;
+    TimeADT time;
+    Oid val_type;
 
-    TimeADT time = 0;
-    if (!time_in_no_ereport(str2, &time)) {
-        Timestamp tmp;
-        if (!datetime_in_no_ereport(str2, &tmp)) {
-            ereport(ERROR,
-                    (errcode(ERRCODE_INVALID_DATETIME_FORMAT),
-                     errmsg("invalid input syntax \"%s\"", str2)));
-        }
+    val_type = get_fn_expr_argtype(fcinfo->flinfo, 0);
+    convert_to_datetime(PG_GETARG_DATUM(0), val_type, &datetime);
+    if (datetime < B_FORMAT_TIMESTAMP_FIRST_YEAR || datetime > B_FORMAT_TIMESTAMP_MAX_VALUE) {
+        ereport(ERROR, (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE),
+                        errmsg("date/time field value out of range")));
     }
+
+    val_type = get_fn_expr_argtype(fcinfo->flinfo, 1);
+    convert_to_time(PG_GETARG_DATUM(1), val_type, &time);
     time_in_range(time);
-    Timestamp result = date + time;
+
+    Timestamp result = datetime + time;
     if (result < B_FORMAT_TIMESTAMP_FIRST_YEAR || result > B_FORMAT_TIMESTAMP_MAX_VALUE) {
         ereport(ERROR, (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE),
                         errmsg("date/time field overflow")));
@@ -7192,53 +7254,13 @@ Timestamp calc_timestamp_from_zero(Timestamp timestamp)
  * Recieve the normal string variable as text.
  * @return: the number of seconds from the year 0 to the given date
  */
-Datum to_seconds_text(PG_FUNCTION_ARGS)
+Datum to_seconds(PG_FUNCTION_ARGS)
 {
-    text *tmp = PG_GETARG_TEXT_PP(0);
-    char *expr = text_to_cstring(tmp);
-
-    Timestamp timestamp =
-        DirectFunctionCall3(timestamp_in, CStringGetDatum(expr), ObjectIdGetDatum(InvalidOid), Int64GetDatum(-1));
-    if (timestamp < B_FORMAT_TIMESTAMP_MIN_VALUE || timestamp > B_FORMAT_TIMESTAMP_MAX_VALUE) {
-        ereport(ERROR, (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE), errmsg("date/time value out of range")));
-    }
-    Timestamp result = calc_timestamp_from_zero(timestamp);
-    if (result == B_FORMAT_TIMESTAMP_MIN_VALUE) {
-        ereport(ERROR, (errcode(ERRCODE_DATETIME_FIELD_OVERFLOW), errmsg("date/time field out of range")));
-    }
-    PG_RETURN_NUMERIC(DirectFunctionCall1(int8_numeric, result /= USECS_PER_SEC));
-}
-
-/**
- * @Description: calculate the number of seconds from the year 0 to the given date.
- * Recieve the variable of the type time.
- * @return: the number of seconds from the year 0 to the given date
- */
-Datum to_seconds_time(PG_FUNCTION_ARGS)
-{
-    TimeADT timeArg = PG_GETARG_TIMEADT(0);
-    if (timeArg < -B_FORMAT_TIME_MAX_VALUE || timeArg > B_FORMAT_TIME_MAX_VALUE) {
-        ereport(ERROR, (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE), errmsg("time value out of range")));
-    }
-
-    struct pg_tm tt, *tm = &tt;
-    GetCurrentDateTime(tm);
-    tm->tm_hour = tm->tm_min = tm->tm_sec = 0;
     Timestamp timestamp;
-    tm2timestamp(tm, 0, NULL, &timestamp);
-    Timestamp result = (timestamp + timeArg - B_FORMAT_TIMESTAMP_MIN_VALUE) / USECS_PER_SEC;
-    PG_RETURN_NUMERIC(DirectFunctionCall1(int8_numeric, result));
-}
+    Oid val_type;
 
-/**
- * @Description: calculate the number of seconds from the year 0 to the given date.
- * Recieve the variable of type number
- * @return: the number of seconds from the year 0 to the given date
- */
-Datum to_seconds_numeric(PG_FUNCTION_ARGS)
-{
-    Numeric n = PG_GETARG_NUMERIC(0);
-    Timestamp timestamp = DirectFunctionCall1(numeric_b_format_datetime, NumericGetDatum(n));
+    val_type = get_fn_expr_argtype(fcinfo->flinfo, 0);
+    convert_to_datetime(PG_GETARG_DATUM(0), val_type, &timestamp);
     if (timestamp < B_FORMAT_TIMESTAMP_MIN_VALUE || timestamp > B_FORMAT_TIMESTAMP_MAX_VALUE) {
         ereport(ERROR, (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE), errmsg("date/time value out of range")));
     }
@@ -7294,71 +7316,17 @@ Datum unix_timestamp_no_args(PG_FUNCTION_ARGS)
  * which is represented by text, or can be converted to text.
  * @return: The number of seconds from '1970-01-01 00:00:00 UTC' to the given datetime.
  */
-Datum unix_timestamp_text(PG_FUNCTION_ARGS)
+Datum unix_timestamp(PG_FUNCTION_ARGS)
 {
-    text *textArg = PG_GETARG_TEXT_PP(0);
-    char *expr = text_to_cstring(textArg);
+    Timestamp timestamp;
+    Oid val_type;
 
-    Timestamp timestamp =
-        DirectFunctionCall3(timestamp_in, CStringGetDatum(expr), ObjectIdGetDatum(InvalidOid), Int32GetDatum(-1));
+    val_type = get_fn_expr_argtype(fcinfo->flinfo, 0);
+    convert_to_datetime(PG_GETARG_DATUM(0), val_type, &timestamp);
+
     pg_tm tt, *tm = &tt;
     GetCurrentDateTime(tm);
     Timestamp epoch = SetEpochTimestamp();
-    Timestamp ans = timestamp - epoch - tm->tm_gmtoff * USECS_PER_SEC;
-    if (ans / USECS_PER_SEC > INT_MAX || ans < USECS_PER_SEC) {
-        PG_RETURN_NUMERIC(DirectFunctionCall1(int8_numeric, 0));
-    }
-    PG_RETURN_NUMERIC(DirectFunctionCall2(numeric_trunc,
-                            DirectFunctionCall2(numeric_div,
-                                DirectFunctionCall1(int8_numeric, ans),
-                                DirectFunctionCall1(int8_numeric, USECS_PER_SEC)
-                            ),
-                            determine_precision(ans % USECS_PER_SEC)
-                        )
-                    );
-}
-
-/**
- * @Description: Calculate the number of seconds from '1970-01-01 00:00:00 UTC' to the given datetime,
- * which is represented by time.
- * @return: The number of seconds from '1970-01-01 00:00:00 UTC' to the given datetime.
- */
-Datum unix_timestamp_time(PG_FUNCTION_ARGS)
-{
-    TimeADT timeArg = PG_GETARG_TIMEADT(0);
-    if (timeArg < -B_FORMAT_TIME_MAX_VALUE || timeArg > B_FORMAT_TIME_MAX_VALUE) {
-        ereport(ERROR, (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE), errmsg("time value out of range")));
-    }
-
-    pg_tm tt, *tm = &tt;
-    GetCurrentDateTime(tm);
-    tm->tm_hour = tm->tm_min = tm->tm_sec = 0;
-    Timestamp result_timestamp;
-    tm2timestamp(tm, 0, NULL, &result_timestamp);
-    Timestamp epoch = SetEpochTimestamp();
-    Timestamp ans = result_timestamp + timeArg - epoch - tm->tm_gmtoff * USECS_PER_SEC;
-    PG_RETURN_NUMERIC(DirectFunctionCall2(numeric_trunc,
-                            DirectFunctionCall2(numeric_div,
-                                DirectFunctionCall1(int8_numeric, ans),
-                                DirectFunctionCall1(int8_numeric, USECS_PER_SEC)
-                            ),
-                            determine_precision(ans % USECS_PER_SEC)
-                        )
-                    );
-}
-
-/**
- * @Description: Calculate the number of seconds from '1970-01-01 00:00:00 UTC' to the given datetime,
- * which is represented by number.
- * @return: The number of seconds from '1970-01-01 00:00:00 UTC' to the given datetime.
- */
-Datum unix_timestamp_numeric(PG_FUNCTION_ARGS)
-{
-    Numeric n = PG_GETARG_NUMERIC(0);
-    Timestamp timestamp = DirectFunctionCall1(numeric_b_format_datetime, NumericGetDatum(n));
-    Timestamp epoch = SetEpochTimestamp();
-    pg_tm tt, *tm = &tt;
-    GetCurrentDateTime(tm);
     Timestamp ans = timestamp - epoch - tm->tm_gmtoff * USECS_PER_SEC;
     if (ans / USECS_PER_SEC > INT_MAX || ans < USECS_PER_SEC) {
         PG_RETURN_NUMERIC(DirectFunctionCall1(int8_numeric, 0));

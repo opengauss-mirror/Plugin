@@ -143,13 +143,9 @@ CONTEXT:  referenced column: result
 -- 特殊参数类型
 insert into func_test3(functionName, result) values('TO_SECONDS(null)', TO_SECONDS(null));
 insert into func_test3(functionName, result) values('TO_SECONDS(true)', TO_SECONDS(true));
-ERROR:  date/time field value out of range: "000001"
-HINT:  Perhaps you need a different "datestyle" setting.
+ERROR:  timestamp out of range
 CONTEXT:  referenced column: result
 insert into func_test3(functionName, result) values('TO_SECONDS(date''2022-04-05'')', TO_SECONDS(date'2022-04-05'));
-ERROR:  date/time field value out of range: "04-05-2022"
-HINT:  Perhaps you need a different "datestyle" setting.
-CONTEXT:  referenced column: result
 insert into func_test3(functionName, result) values('TO_SECONDS(cast(''2022-04-05 14:35:00'' as datetime))', TO_SECONDS(cast('2022-04-05 14:35:00' as datetime)));
 insert into func_test3(functionName, result) values('TO_SECONDS(cast(''2022-04-05 14:35:00.888'' as datetime))', TO_SECONDS(cast('2022-04-05 14:35:00.888' as datetime)));
 insert into func_test3(functionName, result) values('TO_SECONDS(time''1:1:1'')', TO_SECONDS(time'1:1:1'));
@@ -216,13 +212,9 @@ CONTEXT:  referenced column: result
 -- 特殊类型参数
 insert into func_test3(functionName, result) values('UNIX_TIMESTAMP(null)', UNIX_TIMESTAMP(null));
 insert into func_test3(functionName, result) values('UNIX_TIMESTAMP(true)', UNIX_TIMESTAMP(true));
-ERROR:  date/time field value out of range: "000001"
-HINT:  Perhaps you need a different "datestyle" setting.
+ERROR:  timestamp out of range
 CONTEXT:  referenced column: result
 insert into func_test3(functionName, result) values('UNIX_TIMESTAMP(date''2022-04-05'')', UNIX_TIMESTAMP(date'2022-04-05'));
-ERROR:  date/time field value out of range: "04-05-2022"
-HINT:  Perhaps you need a different "datestyle" setting.
-CONTEXT:  referenced column: result
 insert into func_test3(functionName, result) values('UNIX_TIMESTAMP(cast(''2022-04-05 14:35:00'' as datetime))', UNIX_TIMESTAMP(cast('2022-04-05 14:35:00' as datetime)));
 insert into func_test3(functionName, result) values('UNIX_TIMESTAMP(cast(''2022-04-05 14:35:00.888'' as datetime))', UNIX_TIMESTAMP(cast('2022-04-05 14:35:00.888' as datetime)));
 insert into func_test3(functionName, result) values('UNIX_TIMESTAMP(time''1:1:1'')', UNIX_TIMESTAMP(time'1:1:1'));
@@ -320,6 +312,7 @@ select * from func_test3;
  TO_SECONDS('20220727152530')                                | 63826154730
  TO_SECONDS('2022-07-27 15:25:30.8888854')                   | 63826154730
  TO_SECONDS(null)                                            | 
+ TO_SECONDS(date'2022-04-05')                                | 63816336000
  TO_SECONDS(cast('2022-04-05 14:35:00' as datetime))         | 63816388500
  TO_SECONDS(cast('2022-04-05 14:35:00.888' as datetime))     | 63816388501
 --? TO_SECONDS(time'1:1:1')                                     | .*
@@ -341,6 +334,7 @@ select * from func_test3;
  UNIX_TIMESTAMP('2022-07-27 15:25:30.8888855')               | 1658960730.888886
  UNIX_TIMESTAMP('20220727152530.8888854')                    | 1658960730.888885
  UNIX_TIMESTAMP(null)                                        | 
+ UNIX_TIMESTAMP(date'2022-04-05')                            | 1649142000
  UNIX_TIMESTAMP(cast('2022-04-05 14:35:00' as datetime))     | 1649194500
  UNIX_TIMESTAMP(cast('2022-04-05 14:35:00.888' as datetime)) | 1649194501
 --? UNIX_TIMESTAMP(time'1:1:1')                                 | .*
@@ -381,7 +375,7 @@ select * from func_test3;
 --? UTC_TIMESTAMP(4)                                            | .*
 --? UTC_TIMESTAMP(5)                                            | .*
 --? UTC_TIMESTAMP(6)                                            | .*
-(99 rows)
+(101 rows)
 
 \c postgres
 drop database if exists b_time_funcs3;

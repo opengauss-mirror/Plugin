@@ -295,15 +295,12 @@ CREATE OR REPLACE FUNCTION pg_catalog.time_format (text, text) RETURNS text LANG
 CREATE OR REPLACE FUNCTION pg_catalog.time_format (date, text) RETURNS TEXT AS $$ SELECT pg_catalog.time_format('00:00:00', $2) $$ LANGUAGE SQL;
 CREATE OR REPLACE FUNCTION pg_catalog.time_format (numeric, text) RETURNS TEXT AS $$ SELECT pg_catalog.time_format(cast($1 as text), $2)  $$ LANGUAGE SQL;
 
-CREATE OR REPLACE FUNCTION pg_catalog.time_mysql (text) RETURNS text LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'time_mysql';
-CREATE OR REPLACE FUNCTION pg_catalog.time_mysql (numeric) RETURNS text AS $$ SELECT pg_catalog.time_mysql(cast($1 as text))  $$ LANGUAGE SQL;
-CREATE OR REPLACE FUNCTION pg_catalog.time_mysql (date) RETURNS text AS $$ SELECT pg_catalog.time_mysql('00:00:00')  $$ LANGUAGE SQL;
+CREATE OR REPLACE FUNCTION pg_catalog.time_mysql (text) RETURNS time LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'time_mysql';
+CREATE OR REPLACE FUNCTION pg_catalog.time_mysql (numeric) RETURNS time AS $$ SELECT pg_catalog.time_mysql(cast($1 as text))  $$ LANGUAGE SQL;
+CREATE OR REPLACE FUNCTION pg_catalog.time_mysql (date) RETURNS time AS $$ SELECT pg_catalog.time_mysql('00:00:00')  $$ LANGUAGE SQL;
 
-CREATE OR REPLACE FUNCTION pg_catalog.timestamp_mysql (datetime) RETURNS datetime LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'timestamp_param1';
-CREATE OR REPLACE FUNCTION pg_catalog.timestamp_mysql (datetime, text) RETURNS datetime LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'timestamp_param2';
-CREATE OR REPLACE FUNCTION pg_catalog.timestamp_mysql (text, text) RETURNS datetime AS $$ SELECT pg_catalog.timestamp_mysql(pg_catalog.timestamp_mysql($1), $2)  $$ LANGUAGE SQL;
-CREATE OR REPLACE FUNCTION pg_catalog.timestamp_mysql (time, text) RETURNS datetime AS $$ SELECT pg_catalog.timestamp_mysql(pg_catalog.timestamp_mysql((clock_timestamp()::date), $1), $2)  $$ LANGUAGE SQL;
-CREATE OR REPLACE FUNCTION pg_catalog.timestamp_mysql (time) RETURNS datetime AS $$ SELECT pg_catalog.timestamp_mysql((clock_timestamp()::date), $1)  $$ LANGUAGE SQL;
+CREATE OR REPLACE FUNCTION pg_catalog.timestamp_mysql ("any") RETURNS datetime LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'timestamp_param1';
+CREATE OR REPLACE FUNCTION pg_catalog.timestamp_mysql ("any", "any") RETURNS datetime LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'timestamp_param2';
 
 CREATE OR REPLACE FUNCTION pg_catalog.timestamp_add (text, numeric, text) RETURNS text LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'timestamp_add_text';
 CREATE OR REPLACE FUNCTION pg_catalog.timestamp_add (text, numeric, time) RETURNS time LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'timestamp_add_time';
@@ -312,14 +309,10 @@ CREATE OR REPLACE FUNCTION pg_catalog.timestamp_add (text, numeric, numeric) RET
 CREATE OR REPLACE FUNCTION pg_catalog.to_days (datetime) RETURNS int8 LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'to_days';
 CREATE OR REPLACE FUNCTION pg_catalog.to_days (time) RETURNS int8 AS $$ SELECT pg_catalog.to_days(text_date('now') + $1)  $$ LANGUAGE SQL;
 
-CREATE OR REPLACE FUNCTION pg_catalog.to_seconds (text) RETURNS numeric LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'to_seconds_text';
-CREATE OR REPLACE FUNCTION pg_catalog.to_seconds (time) RETURNS numeric LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'to_seconds_time';
-CREATE OR REPLACE FUNCTION pg_catalog.to_seconds (numeric) RETURNS numeric LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'to_seconds_numeric';
+CREATE OR REPLACE FUNCTION pg_catalog.to_seconds ("any") RETURNS numeric LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'to_seconds';
 
 CREATE OR REPLACE FUNCTION pg_catalog.unix_timestamp () RETURNS numeric LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'unix_timestamp_no_args';
-CREATE OR REPLACE FUNCTION pg_catalog.unix_timestamp (text) RETURNS numeric LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'unix_timestamp_text';
-CREATE OR REPLACE FUNCTION pg_catalog.unix_timestamp (time) RETURNS numeric LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'unix_timestamp_time';
-CREATE OR REPLACE FUNCTION pg_catalog.unix_timestamp (numeric) RETURNS numeric LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'unix_timestamp_numeric';
+CREATE OR REPLACE FUNCTION pg_catalog.unix_timestamp ("any") RETURNS numeric LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'unix_timestamp';
 
 CREATE OR REPLACE FUNCTION pg_catalog.utc_timestamp_func (int4) RETURNS datetime LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'utc_timestamp_func';
 CREATE OR REPLACE FUNCTION pg_catalog.utc_date_func () RETURNS date LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'utc_date_func';

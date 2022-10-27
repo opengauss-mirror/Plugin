@@ -3602,6 +3602,68 @@ bool date_sub_interval(DateADT date, Interval *span, DateADT *result)
     return true;
 }
 
+/**
+ * Convert non-NULL values of the indicated types to the TimeADT value
+ */
+void convert_to_time(Datum value, Oid valuetypid, TimeADT *time)
+{
+    switch (valuetypid) {
+        case UNKNOWNOID:
+        case CSTRINGOID: {
+            *time = DatumGetTimeADT(
+                DirectFunctionCall3(time_in, value, ObjectIdGetDatum(InvalidOid), Int32GetDatum(-1)));
+            break;
+        }
+        case TEXTOID: {
+            char *str = text_to_cstring(DatumGetTextPP(value));
+            *time = DatumGetTimeADT(
+                DirectFunctionCall3(time_in, CStringGetDatum(str), ObjectIdGetDatum(InvalidOid), Int32GetDatum(-1)));
+            break;
+        }
+        case TIMESTAMPOID: {
+            *time = DatumGetTimeADT(DirectFunctionCall1(timestamp_time, value));
+            break;
+        }
+        case DATEOID: {
+            *time = 0;  // time is set to 00:00:00
+            break;
+        }
+        case TIMEOID: {
+            *time = DatumGetTimeADT(value);
+            break;
+        }
+        case INT4OID: {
+            *time = DatumGetTimeADT(DirectFunctionCall1(int32_b_format_time, value));
+            break;
+        }
+        case NUMERICOID: {
+            *time = DatumGetTimeADT(DirectFunctionCall1(numeric_b_format_time, value));
+            break;
+        }
+        case BOOLOID: {
+            *time = DatumGetTimeADT(DirectFunctionCall1(int32_b_format_time, 
+                                    DirectFunctionCall1(bool_int4, value)));
+            break;
+        }
+        case TIMETZOID: {
+            *time = DatumGetTimeADT(DirectFunctionCall1(timetz_time, value));
+            break;
+        }
+        case TIMESTAMPTZOID: {
+            *time = DatumGetTimeADT(DirectFunctionCall1(timestamptz_time, value));
+            break;
+        }
+        case ABSTIMEOID: {
+            *time = DatumGetTimeADT(DirectFunctionCall1(timestamp_time, 
+                                    DirectFunctionCall1(abstime_timestamp, value)));
+            break;
+        }
+        default: {
+            ereport(ERROR, (errcode(ERRCODE_DATATYPE_MISMATCH), errmsg("unsupported input data type")));
+        }
+    }
+}
+
 /* subdate(Text, int64)
  * @Description: Subtract days from a date/datetime converted from text, giving a new date/datetime.
  * The return type is the same as the type of the first parameter (date/datetime). (The actual return
@@ -3803,8 +3865,7 @@ Datum time_mysql(PG_FUNCTION_ARGS)
 {
     text *expr = PG_GETARG_TEXT_PP(0);
     char *str;
-    char buf[MAXDATELEN + 2];
-    char *cp = buf;
+    TimeADT time;
     struct pg_tm tt, *tm = &tt;
     fsec_t fsec;
     int timeSign = 1;
@@ -3812,30 +3873,10 @@ Datum time_mysql(PG_FUNCTION_ARGS)
     str = text_to_cstring(expr);
 
     str_to_pg_tm(str, tt, fsec, timeSign);
-
-    if (fsec / USECS_PER_SEC) {
-        tt.tm_sec += fsec / USECS_PER_SEC;
-        tt.tm_min += tt.tm_sec / SECS_PER_MINUTE;
-        tt.tm_sec %= SECS_PER_MINUTE;
-        tt.tm_hour += tt.tm_min / MINS_PER_HOUR;
-        tt.tm_min %= MINS_PER_HOUR;
-        fsec = 0;
-    }
-
-    if (tm->tm_hour == TIME_MAX_HOUR && tm->tm_min == TIME_MAX_MINUTE &&
-        tm->tm_sec == TIME_MAX_SECOND && fsec > 0) {
-        ereport(ERROR,
-                (errcode(ERRCODE_DATETIME_FIELD_OVERFLOW),
-                 errmsg("date/time field value out of range: \"%s\"", str)));
-    }
-
-    if (timeSign == -1) {
-        *cp = '-';
-        ++cp;
-    }
-
-    EncodeTimeOnly(tm, fsec, false, 0, u_sess->time_cxt.DateStyle, cp);
-    PG_RETURN_TEXT_P(cstring_to_text(buf));
+    tm2time(tm, fsec, &time);
+    AdjustTimeForTypmod(&time, -1);
+    time *= timeSign;
+    PG_RETURN_TIMEADT(time);
 }
 
 /**
