@@ -407,6 +407,54 @@ alter table test_unique add constraint con_name unique index key using btree(f3)
 alter table test_unique add constraint con_name unique key index using btree(f3);
 alter table test_unique add constraint con_name unique key key using btree(f3);
 
+-- test multi partition select for partition table
+create table multi_partition_select_test(C_INT INTEGER) partition by range(C_INT)
+(
+    partition test_part1 values less than (400),
+    partition test_part2 values less than (700),
+    partition test_part3 values less than (1000)
+);
+insert into multi_partition_select_test values(111);
+insert into multi_partition_select_test values(555);
+insert into multi_partition_select_test values(888);
+select a.* from multi_partition_select_test partition (test_part1) a;
+select a.* from multi_partition_select_test partition (test_part1, test_part2) a;
+select a.* from multi_partition_select_test partition (test_part1, test_part2, test_part3) a;
+select * from multi_partition_select_test partition (test_part2, test_part3);
+drop table multi_partition_select_test;
+
+-- test multi partition select for subpartition table
+CREATE TABLE ignore_range_range
+(
+    month_code VARCHAR2 ( 30 ) NOT NULL ,
+    dept_code  VARCHAR2 ( 30 ) NOT NULL ,
+    user_no    VARCHAR2 ( 30 ) NOT NULL ,
+    sales_amt  int
+)
+    PARTITION BY RANGE (month_code) SUBPARTITION BY RANGE (dept_code)
+(
+  PARTITION p_201901 VALUES LESS THAN( '201901' )
+  (
+    SUBPARTITION p_201901_a VALUES LESS THAN( '2' ),
+    SUBPARTITION p_201901_b VALUES LESS THAN( '5' )
+  ),
+  PARTITION p_201905 VALUES LESS THAN( '201905' )
+  (
+    SUBPARTITION p_201905_a VALUES LESS THAN( '2' ),
+    SUBPARTITION p_201905_b VALUES LESS THAN( '5' )
+  )
+);
+insert ignore into ignore_range_range values('201812', '1', '1', 1);
+insert ignore into ignore_range_range values('201903', '4', '1', 1);
+-- select only from subpartition
+select * from ignore_range_range partition (p_201901_a, p_201905_a);
+select * from ignore_range_range partition (p_201901_a, p_201905_b);
+select * from ignore_range_range partition (p_201901_b, p_201905_a);
+-- select from mixture of partition and subpartition
+select * from ignore_range_range partition (p_201901, p_201905_a);
+select * from ignore_range_range partition (p_201901, p_201905_b);
+drop table ignore_range_range;
+
 \c postgres
 drop database if exists test_m;
 drop database db_b_new_gram_test;

@@ -19,6 +19,7 @@
 #include "knl/knl_variable.h"
 
 #include "plugin_nodes/parsenodes_common.h"
+#include "plugin_commands/defrem.h"
 #include "nodes/print.h"
 
 #include "access/cstore_delta.h"
