@@ -49,6 +49,7 @@
 #define TWO_DIGITS_YEAR_DATE_THREE 991231   /* 1999-12-31 */
 #define TIME_BOUND_WITHOUT_DICIMAL_SEC INT64CONST(B_FORMAT_MAX_TIME_USECS - 1000000)
 #define FROM_DAYS_MAX_DAY 3652500
+#define MAX_NUMBER_OF_DAY 3652424
 #endif
 
 /* for b compatibility type*/
@@ -65,8 +66,17 @@ extern bool date_in_no_ereport(const char *str, DateADT *date);
 extern bool date_sub_interval(DateADT date, Interval *span, DateADT *result);
 
 #ifdef DOLPHIN
-extern TimeADT time_in_with_flag(char *str, TimeADT *time, unsigned int date_flag);
+extern TimeADT time_in_with_flag(char *str, unsigned int date_flag);
+extern bool time_in_with_sql_mode(char *str, TimeADT *result, unsigned int date_flag);
 extern bool date_add_interval(DateADT date, Interval *span, DateADT *result);
+
+typedef struct DateTimeFormat
+{
+    const char *format_name;
+    const char *date_format;
+    const char *datetime_format;
+    const char *time_format;
+}DateTimeFormat;
 #endif
 
 /* ----------

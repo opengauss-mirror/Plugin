@@ -49,6 +49,7 @@
 #define NORMAL_DATE 0
 #define ENABLE_ZERO_DAY 1
 #define ENABLE_ZERO_MONTH 2
+#define ENABLE_ZERO_DATE 4  /* enable date like 0000-00-00 */
 
 #define DTK_DATE_TIME 5
 #define IS_ZERO_NUMBER_DATE(quot, rem) (quot == 0 && rem >= 0 && rem < 99999950)
@@ -57,6 +58,9 @@
 #define FIRST_FULL_WEEK 4
 #define FOUR_DAYS_IN_YEAR 4
 #define WEEKS_PER_YEAR 52
+
+#define HOURS_HALF_DAY 12
+#define MAX_UNIXTIMESTAMP_VALUE INT32_MAX
 
 #define JANUARY 1
 #define FEBRUARY 2
@@ -96,9 +100,13 @@ extern bool datetime_sub_interval(Timestamp datetime, Interval *span, Timestamp 
 
 #ifdef DOLPHIN
 extern void datetime_in_with_flag(const char *str, struct pg_tm *tm, fsec_t *fsec, unsigned int date_flag);
+extern void datetime_in_with_flag_internal(const char *str, struct pg_tm *tm, fsec_t* fsec, unsigned int date_flag);
 extern bool MaybeRound(struct pg_tm *tm, fsec_t *fsec);
 extern bool datetime_in_range(Timestamp datetime);
 extern bool datetime_add_interval(Timestamp datetime, Interval *span, Timestamp *result);
+extern int64 b_db_weekmode(int64 mode);
+extern int b_db_cal_week(struct pg_tm* tm, int64 mode, uint* year);
+extern bool datetime_in_with_sql_mode(char *str, struct pg_tm *tm, fsec_t *fsec, unsigned int date_flag);
 #endif
 
 extern Datum datetime_text(PG_FUNCTION_ARGS);

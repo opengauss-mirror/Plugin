@@ -88,6 +88,9 @@
 #include "utils/builtins.h"
 #include "utils/date.h"
 #include "utils/datetime.h"
+#ifdef DOLPHIN
+#include "plugin_utils/timestamp.h"
+#endif
 #include "utils/rel.h"
 #include "utils/numeric.h"
 #include "utils/syscache.h"
@@ -753,7 +756,7 @@ static SelectStmt *MakeShowGrantStmt(char *arg, int location, core_yyscan_t yysc
 %type <list>	convert_list
 %type <list>	substr_list trim_list
 %type <list>	opt_interval interval_second
-%type <node>	overlay_placing substr_from substr_for optional_precision
+%type <node>	overlay_placing substr_from substr_for optional_precision get_format_time_type
 
 %type <boolean> opt_instead opt_incremental
 %type <boolean> opt_unique opt_concurrently opt_verbose opt_full opt_deltamerge opt_compact opt_hdfsdirectory opt_verify opt_global OptQuickExt
@@ -841,7 +844,7 @@ static SelectStmt *MakeShowGrantStmt(char *arg, int location, core_yyscan_t yysc
 				Bit ConstBit BitWithLength BitWithoutLength client_logic_type
 				datatypecl OptCopyColTypename Binary EnumType
 %type <str>		character
-%type <str>		extract_arg
+%type <str>		extract_arg msq_extract_arg
 %type <str>		timestamp_units
 %type <str>		opt_charset charset_option
 %type <str>		selected_timezone
@@ -1056,7 +1059,7 @@ static SelectStmt *MakeShowGrantStmt(char *arg, int location, core_yyscan_t yysc
 	CURRENT_TIME CURTIME CURRENT_TIMESTAMP CURRENT_USER CURSOR CYCLE NOW_FUNC
 	SHRINK
 
-	DATA_P DATABASE DATABASES DATAFILE DATANODE DATANODES DATATYPE_CL DATE_P DATETIME DATE_FORMAT_P DAY_P DBCOMPATIBILITY_P DB_B_FORMAT DB_B_JSOBJ DEALLOCATE DEC DECIMAL_P DECLARE DECODE DEFAULT DEFAULTS
+	DATA_P DATABASE DATABASES DATAFILE DATANODE DATANODES DATATYPE_CL DATE_P DATETIME DATE_FORMAT_P DAY_P DAY_HOUR_P DAY_MICROSECOND_P DAY_MINUTE_P DAY_SECOND_P DAYOFMONTH DAYOFWEEK DAYOFYEAR DBCOMPATIBILITY_P DB_B_FORMAT DB_B_JSOBJ DEALLOCATE DEC DECIMAL_P DECLARE DECODE DEFAULT DEFAULTS
 	DEFERRABLE DEFERRED DEFINER DELAYED DELETE_P DELIMITER DELIMITERS DELTA DELTAMERGE DESC DESCRIBE DETERMINISTIC DIV
 /* PGXC_BEGIN */
 	DICTIONARY DIRECT DIRECTORY DISABLE_P DISCARD DISTINCT DISTINCTROW DISTRIBUTE DISTRIBUTION DO DOCUMENT_P DOMAIN_P DOUBLE_P
@@ -1071,9 +1074,9 @@ static SelectStmt *MakeShowGrantStmt(char *arg, int location, core_yyscan_t yysc
 	FEATURES // DB4AI
 	FREEZE FROM FULL FUNCTION FUNCTIONS
 
-	GENERATED GLOBAL GRANT GRANTED GREATEST GROUP_P GROUPING_P GROUPPARENT GRANTS TRIGGERS
+	GENERATED GET_FORMAT GLOBAL GRANT GRANTED GREATEST GROUP_P GROUPING_P GROUPPARENT GRANTS TRIGGERS
 
-	HANDLER HAVING HDFSDIRECTORY HEADER_P HOLD HOSTS HOUR_P
+	HANDLER HAVING HDFSDIRECTORY HEADER_P HOLD HOSTS HOUR_P HOUR_MICROSECOND_P HOUR_MINUTE_P HOUR_SECOND_P
 
 	IDENTIFIED IDENTITY_P IF_P IFNULL IGNORE IGNORE_EXTRA_DATA ILIKE IMMEDIATE IMMUTABLE IMPLICIT_P IN_P INCLUDE
 	INCLUDING INCREMENT INCREMENTAL INDEX INDEXES INFILE INHERIT INHERITS INITIAL_P INITIALLY INITRANS INLINE_P
@@ -1088,7 +1091,7 @@ static SelectStmt *MakeShowGrantStmt(char *arg, int location, core_yyscan_t yysc
 	LABEL LANGUAGE LARGE_P LAST_DAY_FUNC LAST_P LC_COLLATE_P LC_CTYPE_P LEADING LEAKPROOF
 	LEAST LESS LEFT LEVEL LIKE LIMIT LIST LISTEN LOAD LOCAL LOCALTIME LOCALTIMESTAMP
 	LOCATE LOCATION LOCK_P LOCKED LOG_P LOGGING LOGIN_ANY LOGIN_FAILURE LOGIN_SUCCESS LOGOUT LOGS LOOP LOW_PRIORITY
-	MAPPING MASKING MASTER MATCH MATERIALIZED MATCHED MAXEXTENTS MAXSIZE MAXTRANS MAXVALUE MEDIUMINT MERGE MICROSECOND_P MID MINUS_P MINUTE_P MINVALUE MINEXTENTS MOD MODE MODIFY_P MONTH_P MOVE MOVEMENT
+	MAPPING MASKING MASTER MATCH MATERIALIZED MATCHED MAXEXTENTS MAXSIZE MAXTRANS MAXVALUE MEDIUMINT MERGE MICROSECOND_P MID MINUS_P MINUTE_P MINUTE_MICROSECOND_P MINUTE_SECOND_P MINVALUE MINEXTENTS MOD MODE MODIFY_P MONTH_P MOVE MOVEMENT
 	MODEL // DB4AI
 	MODIFIES
 	NAME_P NAMES NATIONAL NATURAL NCHAR NEXT NO NOCOMPRESS NOCYCLE NODE NOLOGGING NOMAXVALUE NOMINVALUE NONE
@@ -1115,7 +1118,7 @@ static SelectStmt *MakeShowGrantStmt(char *arg, int location, core_yyscan_t yysc
 	RESET RESIZE RESOURCE RESTART RESTRICT RETURN RETURNING RETURNS REUSE REVOKE RIGHT RLIKE ROLE ROLES ROLLBACK ROLLUP
 	ROTATION ROUTINE ROW ROWNUM ROWS ROWTYPE_P ROW_FORMAT RULE
 
-	SAMPLE SAVEPOINT SCHEMA SCHEMAS SCROLL SEARCH SECOND_P SECURITY SELECT SEPARATOR_P SEQUENCE SEQUENCES
+	SAMPLE SAVEPOINT SCHEMA SCHEMAS SCROLL SEARCH SECOND_P SECOND_MICROSECOND_P SECURITY SELECT SEPARATOR_P SEQUENCE SEQUENCES
 	SERIALIZABLE SERVER SESSION SESSION_USER SET SETS SETOF SHARE SHIPPABLE SHOW SHUTDOWN SIBLINGS SIGNED
 	SIMILAR SIMPLE SIZE SKIP SLAVE SLICE SMALLDATETIME SMALLDATETIME_FORMAT_P SMALLINT SNAPSHOT SOME SOUNDS SOURCE_P SPACE SPILL SPLIT SQL STABLE STANDALONE_P START STARTWITH
 	STATEMENT STATEMENT_ID STATISTICS STATUS STDIN STDOUT STORAGE STORE_P STORED STRATIFY STREAM STRICT_P STRIP_P SUBPARTITION SUBSCRIPTION SUBSTR SUBSTRING
@@ -1136,7 +1139,7 @@ static SelectStmt *MakeShowGrantStmt(char *arg, int location, core_yyscan_t yysc
 	XML_P XMLATTRIBUTES XMLCONCAT XMLELEMENT XMLEXISTS XMLFOREST XMLPARSE XOR
 	XMLPI XMLROOT XMLSERIALIZE
 
-	YEAR_P YES_P
+	YEAR_P YEAR_MONTH_P YES_P
 
 	ZEROFILL ZONE
 
@@ -28172,7 +28175,12 @@ func_expr_common_subexpr:
 			| EXTRACT '(' extract_list ')'
 				{
 					FuncCall *n = makeNode(FuncCall);
-					n->funcname = SystemFuncName("date_part");
+					if (GetSessionContext()->enableBCmptMode) {
+						n->funcname = SystemFuncName("b_extract");
+						n->colname = "extract";
+					} else {
+						n->funcname = SystemFuncName("date_part");
+					}
 					n->args = $3;
 					n->agg_order = NIL;
 					n->agg_star = FALSE;
@@ -28514,6 +28522,20 @@ func_expr_common_subexpr:
 					NullTest *n = makeNode(NullTest);
 					n->arg = (Expr *)$3;
 					n->nulltesttype = IS_NULL;
+					$$ = (Node *)n;
+				}
+			| GET_FORMAT '(' get_format_time_type ',' a_expr ')'
+				{
+					FuncCall *n = makeNode(FuncCall);
+					n->funcname = SystemFuncName("get_format");
+					n->args = list_make2($3, $5);
+					n->agg_order = NIL;
+					n->agg_star = FALSE;
+					n->agg_distinct = FALSE;
+					n->func_variadic = FALSE;
+					n->over = NULL;
+					n->location = @1;
+					n->call_func = false;
 					$$ = (Node *)n;
 				}
 			| GREATEST '(' expr_list ')'
@@ -29189,6 +29211,7 @@ extract_list:
  */
 extract_arg:
 			normal_ident							{ $$ = $1; }
+			| msq_extract_arg                       { $$ = $1; }
 			| YEAR_P								{ $$ = "year"; }
 			| MONTH_P								{ $$ = "month"; }
 			| DAY_P									{ $$ = "day"; }
@@ -29198,6 +29221,20 @@ extract_arg:
 			| QUARTER								{ $$ = "quarter"; }
 			| MICROSECOND_P							{ $$ = "microsecond"; }
 			| Sconst								{ $$ = $1; }
+		;
+
+msq_extract_arg:
+			SECOND_MICROSECOND_P                    { $$ = "second_microsecond"; }
+			| MINUTE_MICROSECOND_P					{ $$ = "minute_microsecond"; }
+			| MINUTE_SECOND_P						{ $$ = "minute_second"; }
+			| HOUR_MICROSECOND_P					{ $$ = "hour_microsecond"; }
+			| HOUR_SECOND_P                         { $$ = "hour_second"; }
+			| HOUR_MINUTE_P							{ $$ = "hour_minute"; }
+			| DAY_MICROSECOND_P						{ $$ = "day_microsecond"; }
+			| DAY_SECOND_P							{ $$ = "day_second"; }
+			| DAY_MINUTE_P							{ $$ = "day_minute"; }
+			| DAY_HOUR_P							{ $$ = "day_hour"; }
+			| YEAR_MONTH_P							{ $$ = "year_month"; }
 		;
 
 timestamp_arg_list:
@@ -29227,6 +29264,12 @@ optional_precision:
 					$$ = makeIntConst($1, @1);
 				}
 			|/*EMPTY*/								{ $$ = NULL; }
+
+get_format_time_type:
+			DATE_P									{ $$ = makeIntConst(DTK_DATE, @1); }
+			| TIME									{ $$ = makeIntConst(DTK_TIME, @1); }
+			| DATETIME								{ $$ = makeIntConst(DTK_DATE_TIME, @1); }
+		;
 
 /* OVERLAY() arguments
  * SQL99 defines the OVERLAY() function:
@@ -30316,8 +30359,12 @@ unreserved_keyword_without_key:
 			| DATANODE
 			| DATANODES
 			| DATATYPE_CL
-			| DAY_P
 			| DATE_FORMAT_P
+			| DAY_HOUR_P
+			| DAY_MICROSECOND_P
+			| DAY_MINUTE_P
+			| DAY_P
+			| DAY_SECOND_P
 			| DBCOMPATIBILITY_P
 			| DEALLOCATE
 			| DECLARE
@@ -30394,7 +30441,10 @@ unreserved_keyword_without_key:
 			| HANDLER
 			| HEADER_P
 			| HOSTS
+			| HOUR_MICROSECOND_P
+			| HOUR_MINUTE_P
 			| HOUR_P
+			| HOUR_SECOND_P
 			| HOLD
 			| IDENTIFIED
 			| IDENTITY_P
@@ -30461,7 +30511,9 @@ unreserved_keyword_without_key:
 			| MERGE
 			| MICROSECOND_P
 			| MINEXTENTS
+			| MINUTE_MICROSECOND_P
 			| MINUTE_P
+			| MINUTE_SECOND_P
 			| MINVALUE
 			| MOD
 			| MODE
@@ -30588,6 +30640,7 @@ unreserved_keyword_without_key:
 			| SCHEMAS
 			| SCROLL
 			| SEARCH
+			| SECOND_MICROSECOND_P
 			| SECOND_P
 			| SECURITY
 			| SEQUENCE
@@ -30692,6 +30745,7 @@ unreserved_keyword_without_key:
 			| WRAPPER
 			| WRITE
 			| XML_P
+			| YEAR_MONTH_P
 			| YEAR_P
 			| YES_P
 			| ZEROFILL
@@ -30720,6 +30774,7 @@ col_name_keyword:
 			| DB_B_FORMAT
 			| DB_B_JSOBJ
 			| EXTRACT
+			| GET_FORMAT
 			| GREATEST
 			| IFNULL
 			| INTERVAL
