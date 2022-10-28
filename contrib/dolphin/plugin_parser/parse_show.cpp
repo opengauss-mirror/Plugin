@@ -1107,3 +1107,120 @@ SelectStmt* makeShowTableStatusQuery(char* schemaName, Node* likeWhereOpt, bool 
     SelectStmt* stmt = plpsMakeSelectStmt(upperColumns, fl, NULL, NULL);
     return stmt;
 }
+
+typedef struct PrivilegeRowData {
+    char *priv_type;
+    char *priv_context;
+    char *priv_comment;
+} PrivilegeRowData;
+
+static PrivilegeRowData g_privlist[] = {
+    {"Alter", "Large object,Sequence,Database,Foreign Server,Function,Node group,Schema,Tablespace,Type,Directory,Package",  "To alter the 'objects'"},
+    {"Alter any index", "Index", "To alter any index"},
+    {"Alter any sequence", "Sequence", "To alter any sequence"},
+    {"Alter any table", "Table", "To alter any table"},
+    {"Alter any trigger", "Trigger", "To alter any trigger"},
+    {"Alter any type", "Type", "To alter any type"},
+    {"Comment", "Table", "To comment on table"},
+    {"Compute", "Node group", "To compute on node group"},
+    {"Connect", "Database", "To connect database"},
+    {"Create", "Database,Schema,Tablespace,Node group", "To create database,schema,tablespace,node group"},
+    {"Create any function", "Function", "To create any function"},
+    {"Create any index", "Index", "To create any index"},
+    {"Create any package", "Package", "To create any package"},
+    {"Create any sequence", "Sequence", "To create any sequence"},
+    {"Create any synonym", "Synonym", "To create any synonym"},
+    {"Create any table", "Table", "To create any table"},
+    {"Create any trigger", "Trigger", "To create any trigger"},
+    {"Create any type", "Type",  "To create any type"},
+    {"Delte", "Table", "To delete table"},
+    {"Delte any table", "Table", "To delete any table"},
+    {"Drop any sequence", "Sequence", "To drop any sequence"},
+    {"Drop any synonym", "Synonym", "To drop any synonym"},
+    {"Drop any table", "Table", "To drop any table"},
+    {"Drop any trigger", "Trigger", "To drop any trigger"},
+    {"Drop any type", "Type", "To drop any type"},
+    {"Execute", "Function,Procedure,Package", "To execute function, procedure,Package"},
+    {"Execute any function", "Function", "To execute any function"},
+    {"Execute any package", "Package", "To execute any package"},
+    {"Index", "Table", "To create index on table"},
+    {"Insert", "Table", "To insert into table"},
+    {"Insert any table", "Table", "To insert any table"},
+    {"References", "Table", "To have references on table"},
+    {"Select", "Large object,Sequence,Table", "To select on large object,sequence and table"},
+    {"Select any sequence", "Sequence", "To select any sequence"},
+    {"Select any table", "Table", "To select on any table"},
+    {"Temporary", "Database", "To create temporary table in database"},
+    {"Temp", "Database", "To create temporary table in database"},
+    {"Truncate", "Table", "To truncate table"},
+    {"Update", "Large object,Sequence,Table", "To update large object,Sequence,Table"},
+    {"Update any table", "Table", "To update any table"},
+    {"Usage", "Domain,Foreign data wrapper,Foreign server,Language,Schema,Sequence,Type", "To use domain,fdw,foreign server,language,schema,sequence and type"},
+    {"Vacuum", "Table", "To vacuum table"}
+};
+
+SelectStmt* makeShowPrivilegesSubQuery(void)
+{
+    SelectStmt* stmt = makeNode(SelectStmt);
+    List* vl = NULL;
+    List* sub_vl = NULL;
+    int priv_len = sizeof(g_privlist)/sizeof(PrivilegeRowData);
+    int i;
+
+    for(i = 0; i < priv_len; i++) {
+        sub_vl = list_make3(plpsMakeStringConst(g_privlist[i].priv_type),
+                            plpsMakeStringConst(g_privlist[i].priv_context),
+                            plpsMakeStringConst(g_privlist[i].priv_comment));
+        vl = lappend(vl, sub_vl);
+    }
+
+    stmt->distinctClause = NIL;
+    stmt->targetList = NIL;
+    stmt->valuesLists = vl;
+    stmt->fromClause = NIL;
+    stmt->whereClause = NULL;
+    stmt->sortClause = NIL;
+    stmt->groupClause = NIL;
+    stmt->havingClause = NULL;
+    stmt->windowClause = NIL;
+    stmt->hintState = NULL;
+    stmt->hasPlus = false;
+
+    return stmt;
+}
+
+SelectStmt* makeShowPrivilegesQuery(void)
+{
+    SelectStmt* stmt = makeNode(SelectStmt);
+    Alias* alias = makeNode(Alias);
+    ColumnRef* colRef = makeNode(ColumnRef);
+    ResTarget* rt = makeNode(ResTarget);
+    List* cl = NULL;
+
+    cl = list_make3(makeString(SHOW_PRIVILEGES_COL), makeString(SHOW_CONTEXT_COL),
+                        makeString(SHOW_COMMENT_COL));
+
+    alias->aliasname = "__unnamed_subquery__";
+    alias->colnames = cl;
+
+    RangeSubselect* rsubselect = makeNode(RangeSubselect);
+    rsubselect->subquery = (Node*)makeShowPrivilegesSubQuery();
+    rsubselect->alias = alias;
+
+    colRef->fields = list_make1(makeNode(A_Star));
+    colRef->location = PLPS_LOC_UNKNOWN;
+    colRef->indnum = 0;
+
+    rt->val = (Node*)colRef;
+
+    stmt->targetList = list_make1(rt);
+    stmt->fromClause = list_make1(rsubselect);
+    stmt->whereClause = NULL;
+    stmt->sortClause = NIL;
+    stmt->havingClause = NULL;
+    stmt->windowClause = NULL;
+    stmt->hintState = NULL;
+    stmt->hasPlus = FALSE;
+
+    return stmt;
+}

@@ -2,6 +2,9 @@ drop database if exists db_show;
 create database db_show dbcompatibility 'b';
 \c db_show
 
+-- show privileges
+show privileges;
+
 -- create tables/views in tst_schema1 namespace
 CREATE SCHEMA tst_schema1;
 SET SEARCH_PATH TO tst_schema1;
