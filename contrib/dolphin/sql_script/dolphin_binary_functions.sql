@@ -281,6 +281,7 @@ CREATE CAST (raw AS longblob) WITHOUT FUNCTION AS IMPLICIT;
 CREATE CAST (raw AS tinyblob) WITH FUNCTION to_tinyblob(longblob) AS IMPLICIT;
 CREATE CAST (raw AS mediumblob) WITH FUNCTION to_mediumblob(longblob) AS IMPLICIT;
 
+create operator pg_catalog.^(leftarg = int1, rightarg = int1, procedure = pg_catalog.int1xor);
 create operator pg_catalog.^(leftarg = int2, rightarg = int2, procedure = pg_catalog.int2xor);
 create operator pg_catalog.^(leftarg = int4, rightarg = int4, procedure = pg_catalog.int4xor);
 create operator pg_catalog.^(leftarg = int8, rightarg = int8, procedure = pg_catalog.int8xor);
@@ -290,23 +291,23 @@ create operator pg_catalog.^(leftarg = bit, rightarg = bit, procedure = pg_catal
 create function pg_catalog.blobxor(
 blob,
 blob
-)RETURNS int LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'blobxor';
+)RETURNS cstring LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'blobxor';
 create function pg_catalog.blobxor(
 blob,
 int
-)RETURNS int LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'blobxor';
+)RETURNS cstring LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'blobxor';
 create function pg_catalog.blobxor(
 int,
 blob
-)RETURNS int LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'blobxor';
+)RETURNS cstring LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'blobxor';
 create function pg_catalog.blobxor(
 int8,
 blob
-)RETURNS int LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'blobxor';
+)RETURNS cstring LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'blobxor';
 create function pg_catalog.blobxor(
 blob,
 int8
-)RETURNS int LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'blobxor';
+)RETURNS cstring LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'blobxor';
 create operator pg_catalog.^(leftarg = blob, rightarg = blob, procedure = pg_catalog.blobxor);
 create operator pg_catalog.^(leftarg = blob, rightarg = integer, procedure = pg_catalog.blobxor);
 create operator pg_catalog.^(leftarg = integer, rightarg = blob, procedure = pg_catalog.blobxor);

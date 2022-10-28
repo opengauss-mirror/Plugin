@@ -9110,13 +9110,75 @@ Datum textxor(PG_FUNCTION_ARGS)
 PG_FUNCTION_INFO_V1_PUBLIC(blobxor);
 extern "C" DLL_PUBLIC Datum blobxor(PG_FUNCTION_ARGS);
 
-
 Datum blobxor(PG_FUNCTION_ARGS)
 {
-    int32 result = DatumGetInt32(textxor(fcinfo));
-    PG_RETURN_INT32(result);
-}
+    bool typIsVarlena = false;
+    Oid typOutput = INVALID_OID;
+    Datum dt = 0;
+    Oid valtype = INVALID_OID;
 
+    dt = PG_GETARG_DATUM(0);
+    valtype = get_fn_expr_argtype(fcinfo->flinfo, 0);
+    check_huge_toast_pointer(dt, valtype);
+    if (!OidIsValid(valtype))
+       ereport(ERROR, (errcode(ERRCODE_INDETERMINATE_DATATYPE),
+           errmsg("could not determine data type of binary_string_xor() input")));
+    getTypeOutputInfo(valtype, &typOutput, &typIsVarlena);
+    char* p1 = OidOutputFunctionCall(typOutput, dt);
+
+    dt = PG_GETARG_DATUM(1);
+    valtype = get_fn_expr_argtype(fcinfo->flinfo, 1);
+    check_huge_toast_pointer(dt, valtype);
+    if (!OidIsValid(valtype))
+       ereport(ERROR, (errcode(ERRCODE_INDETERMINATE_DATATYPE),
+           errmsg("could not determine data type of binary_string_xor() input")));
+    getTypeOutputInfo(valtype, &typOutput, &typIsVarlena);
+    char* p2 = OidOutputFunctionCall(typOutput, dt);
+
+    int len1 = strlen(p1);
+    int len2 = strlen(p2);
+    if (len1 != len2) {
+        ereport(ERROR, (errcode(ERRCODE_DATA_CORRUPTED),
+            errmsg("binary xor strings must be of equal length")));
+    } else {
+        int len_p16_1 = len1 * 2 + 1; 
+        int len_p16_2 = len2 * 2 + 1; 
+        char* p1_16 = (char*)palloc(len_p16_1);
+        char* p2_16 = (char*)palloc(len_p16_2);
+        int* p1_int = (int*)palloc(len1 * sizeof(int));
+        int* p2_int = (int*)palloc(len2 * sizeof(int));
+
+        p1_16[0] = '\0';
+        p2_16[0] = '\0'; 
+        for (int i = 0; i < len1; i++) {
+            int rc;
+            char* temp = (char*)palloc(3);
+            p1_int[i] = p1[i];
+            p2_int[i] = p2[i];
+            rc = sprintf_s(temp, sizeof(temp), "%x", p1_int[i]);
+            securec_check_ss(rc, "\0", "\0");
+            rc = strcat_s(p1_16, len_p16_1, temp);
+            securec_check(rc, "\0", "\0");
+            rc = sprintf_s(temp, sizeof(temp), "%x", p2_int[i]);
+            securec_check_ss(rc, "\0", "\0");
+            rc = strcat_s(p2_16, len_p16_2, temp);
+            securec_check(rc, "\0", "\0");
+            pfree(temp);
+        }
+        pfree(p1_int);
+        pfree(p2_int);
+        char* result = (char*)palloc(strlen(p1_16) + 1);
+        result[strlen(p1_16)] = '\0';
+        for (int i = 0; i < strlen(p1_16); i++){
+            int temp1 = p1_16[i] - '0';
+            int temp2 = p2_16[i] - '0';
+            result[i] = temp1 ^ temp2 +'0';
+        }
+        pfree(p1_16);
+        pfree(p2_16);
+        PG_RETURN_CSTRING(result);
+    }
+}
 
 PG_FUNCTION_INFO_V1_PUBLIC (boolxor);
 extern "C" DLL_PUBLIC Datum boolxor(PG_FUNCTION_ARGS);
