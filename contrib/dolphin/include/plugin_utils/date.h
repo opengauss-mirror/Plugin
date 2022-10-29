@@ -64,6 +64,7 @@ extern bool time_in_no_ereport(const char *str, TimeADT *time);
 extern bool is_date_format(const char *str);
 extern bool date_in_no_ereport(const char *str, DateADT *date);
 extern bool date_sub_interval(DateADT date, Interval *span, DateADT *result);
+extern void convert_to_time(Datum value, Oid valuetypid, TimeADT *time);
 
 #ifdef DOLPHIN
 extern TimeADT time_in_with_flag(char *str, unsigned int date_flag);
