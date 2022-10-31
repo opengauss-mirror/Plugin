@@ -4359,3 +4359,69 @@ Datum text_cast_uint8(PG_FUNCTION_ARGS)
     Datum txt = PG_GETARG_DATUM(0);
     PG_RETURN_UINT64(text_uintInternal(txt, LONG_MIN, ULONG_MAX, "bigint", fcinfo->can_ignore));
 }
+
+#ifdef DOLPHIN
+Datum uint2_xor_bool(PG_FUNCTION_ARGS)
+{
+    uint16 arg1 = PG_GETARG_UINT16(0);
+    bool temp = PG_GETARG_BOOL(1);
+    uint16 arg2 = temp ? 1 : 0;
+    PG_RETURN_UINT16(arg1 ^ arg2);
+}
+
+Datum bool_xor_uint2(PG_FUNCTION_ARGS)
+{
+    bool temp = PG_GETARG_BOOL(0);
+    uint16 arg1 = PG_GETARG_UINT16(1);
+    uint16 arg2 = temp ? 1 : 0;
+    PG_RETURN_UINT16(arg1 ^ arg2);
+}
+
+Datum uint1_xor_bool(PG_FUNCTION_ARGS)
+{
+    uint8 arg1 = PG_GETARG_UINT8(0);
+    bool temp = PG_GETARG_BOOL(1);
+    uint8 arg2 = temp ? 1 : 0;
+    PG_RETURN_UINT8(arg1 ^ arg2);
+}
+
+Datum bool_xor_uint1(PG_FUNCTION_ARGS)
+{
+    bool temp = PG_GETARG_BOOL(0);
+    uint8 arg1 = PG_GETARG_UINT8(1);
+    uint8 arg2 = temp ? 1 : 0;
+    PG_RETURN_UINT8(arg1 ^ arg2);
+}
+
+Datum uint4_xor_bool(PG_FUNCTION_ARGS)
+{
+    uint32 arg1 = PG_GETARG_UINT32(0);
+    bool temp = PG_GETARG_BOOL(1);
+    uint32 arg2 = temp ? 1 : 0;
+    PG_RETURN_UINT32(arg1 ^ arg2);
+}
+
+Datum bool_xor_uint4(PG_FUNCTION_ARGS)
+{
+    bool temp = PG_GETARG_BOOL(0);
+    uint32 arg1 = PG_GETARG_UINT32(1);
+    uint32 arg2 = temp ? 1 : 0;
+    PG_RETURN_UINT32(arg1 ^ arg2);
+}
+
+Datum uint8_xor_bool(PG_FUNCTION_ARGS)
+{
+    uint64 arg1 = PG_GETARG_UINT64(0);
+    bool temp = PG_GETARG_BOOL(1);
+    uint64 arg2 = temp ? 1 : 0;
+    PG_RETURN_UINT64(arg1 ^ arg2);
+}
+
+Datum bool_xor_uint8(PG_FUNCTION_ARGS)
+{
+    bool temp = PG_GETARG_BOOL(0);
+    uint64 arg1 = PG_GETARG_UINT64(1);
+    uint64 arg2 = temp ? 1 : 0;
+    PG_RETURN_UINT64(arg1 ^ arg2);
+}
+#endif

@@ -4512,3 +4512,84 @@ leftarg = int8, rightarg = uint8, procedure = int8_xor_uint8,
 commutator=operator(pg_catalog.^)
 );
 COMMENT ON OPERATOR pg_catalog.^(int8, uint8) IS 'int8_xor_uint8';
+
+DROP FUNCTION IF EXISTS pg_catalog.uint2_xor_bool(uint2, boolean) CASCADE;
+CREATE OR REPLACE FUNCTION pg_catalog.uint2_xor_bool (
+uint2, boolean
+) RETURNS uint2 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'uint2_xor_bool';
+
+DROP FUNCTION IF EXISTS pg_catalog.uint1_xor_bool(uint1, boolean) CASCADE;
+CREATE OR REPLACE FUNCTION pg_catalog.uint1_xor_bool (
+uint1, boolean
+) RETURNS uint1 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'uint1_xor_bool';
+
+DROP FUNCTION IF EXISTS pg_catalog.uint4_xor_bool(uint4, boolean) CASCADE;
+CREATE OR REPLACE FUNCTION pg_catalog.uint4_xor_bool (
+uint4, boolean
+) RETURNS uint4 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'uint4_xor_bool';
+
+DROP FUNCTION IF EXISTS pg_catalog.uint8_xor_bool(uint8, boolean) CASCADE;
+CREATE OR REPLACE FUNCTION pg_catalog.uint8_xor_bool (
+uint8, boolean
+) RETURNS uint8 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'uint8_xor_bool';
+
+DROP FUNCTION IF EXISTS pg_catalog.bool_xor_uint1(boolean, uint1) CASCADE;
+CREATE OR REPLACE FUNCTION pg_catalog.bool_xor_uint1 (
+boolean, uint1
+) RETURNS uint1 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'bool_xor_uint1';
+
+DROP FUNCTION IF EXISTS pg_catalog.bool_xor_uint2(boolean, uint2) CASCADE;
+CREATE OR REPLACE FUNCTION pg_catalog.bool_xor_uint2 (
+boolean, uint2
+) RETURNS uint2 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'bool_xor_uint2';
+
+DROP FUNCTION IF EXISTS pg_catalog.bool_xor_uint4(boolean, uint4) CASCADE;
+CREATE OR REPLACE FUNCTION pg_catalog.bool_xor_uint4 (
+boolean, uint4
+) RETURNS uint4 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'bool_xor_uint4';
+
+DROP FUNCTION IF EXISTS pg_catalog.bool_xor_uint8(boolean, uint8) CASCADE;
+CREATE OR REPLACE FUNCTION pg_catalog.bool_xor_uint8 (
+boolean, uint8
+) RETURNS uint8 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'bool_xor_uint8';
+
+CREATE OPERATOR pg_catalog.^(
+leftarg = uint8, rightarg = boolean, procedure = uint8_xor_bool,
+commutator=operator(pg_catalog.^)
+);
+COMMENT ON OPERATOR pg_catalog.^(uint8, boolean) IS 'uint8_xor_bool';
+CREATE OPERATOR pg_catalog.^(
+leftarg = uint4, rightarg = boolean, procedure = uint4_xor_bool,
+commutator=operator(pg_catalog.^)
+);
+COMMENT ON OPERATOR pg_catalog.^(uint4, boolean) IS 'uint4_xor_bool';
+CREATE OPERATOR pg_catalog.^(
+leftarg = uint2, rightarg = boolean, procedure = uint2_xor_bool,
+commutator=operator(pg_catalog.^)
+);
+COMMENT ON OPERATOR pg_catalog.^(uint2, boolean) IS 'uint2_xor_bool';
+CREATE OPERATOR pg_catalog.^(
+leftarg = uint1, rightarg = boolean, procedure = uint1_xor_bool,
+commutator=operator(pg_catalog.^)
+);
+COMMENT ON OPERATOR pg_catalog.^(uint1, boolean) IS 'uint1_xor_bool';
+CREATE OPERATOR pg_catalog.^(
+leftarg = boolean, rightarg = uint1, procedure = bool_xor_uint1,
+commutator=operator(pg_catalog.^)
+);
+COMMENT ON OPERATOR pg_catalog.^(boolean, uint1) IS 'bool_xor_uint1';
+CREATE OPERATOR pg_catalog.^(
+leftarg = boolean, rightarg = uint2, procedure = bool_xor_uint2,
+commutator=operator(pg_catalog.^)
+);
+COMMENT ON OPERATOR pg_catalog.^(boolean, uint2) IS 'bool_xor_uint2';
+CREATE OPERATOR pg_catalog.^(
+leftarg = boolean, rightarg = uint4, procedure = bool_xor_uint4,
+commutator=operator(pg_catalog.^)
+);
+COMMENT ON OPERATOR pg_catalog.^(boolean, uint4) IS 'bool_xor_uint4';
+CREATE OPERATOR pg_catalog.^(
+leftarg = boolean, rightarg = uint8, procedure = bool_xor_uint8,
+commutator=operator(pg_catalog.^)
+);
+COMMENT ON OPERATOR pg_catalog.^(boolean, uint8) IS 'bool_xor_uint8';

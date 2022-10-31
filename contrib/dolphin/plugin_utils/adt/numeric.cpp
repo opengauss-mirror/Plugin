@@ -19487,6 +19487,7 @@ Datum numeric_bool(PG_FUNCTION_ARGS)
     bool result = false;
     char* tmp = DatumGetCString(DirectFunctionCall1(numeric_out, NumericGetDatum(num)));
 
+    remove_tail_zero(tmp);
     if (strcmp(tmp, "0") != 0) {
         result = true;
     }
