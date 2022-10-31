@@ -549,10 +549,13 @@ other			.
 					{
 						/* If NCHAR isn't a keyword, just return "n" */
 #ifdef DOLPHIN
-						yylval->dolphinIdent = CreateDolphinIdent("n", false);
-#else
-						yylval->str = pstrdup("n");
+						if (!GetSessionContext()->scan_from_pl) {
+							yylval->dolphinIdent = CreateDolphinIdent("n", false);
+						} else
 #endif
+						{
+							yylval->str = pstrdup("n");
+						}
 						yyextra->ident_quoted = false;
 						yyextra->is_hint_str = false;
 						return IDENT;
@@ -781,10 +784,13 @@ other			.
 						if (yyextra->literallen >= NAMEDATALEN && u_sess->parser_cxt.is_load_copy == false && u_sess->parser_cxt.isForbidTruncate == false)
 							truncate_identifier(ident, yyextra->literallen, yyextra->warnOnTruncateIdent);
 #ifdef DOLPHIN
-						yylval->dolphinIdent = CreateDolphinIdent(ident, true);
-#else
-						yylval->str = ident;
+						if (!GetSessionContext()->scan_from_pl) {
+							yylval->dolphinIdent = CreateDolphinIdent(ident, true);
+						} else
 #endif
+						{
+							yylval->str = ident;
+						}
 						yyextra->ident_quoted = true;
 						yyextra->is_hint_str = false;
 						return IDENT;
@@ -818,10 +824,13 @@ other			.
 					if (identlen >= NAMEDATALEN && u_sess->parser_cxt.is_load_copy == false && u_sess->parser_cxt.isForbidTruncate == false)
 						truncate_identifier(ident, identlen, yyextra->warnOnTruncateIdent);
 #ifdef DOLPHIN
-					yylval->dolphinIdent = CreateDolphinIdent(ident, false);
-#else
-					yylval->str = ident;
+					if (!GetSessionContext()->scan_from_pl) {
+						yylval->dolphinIdent = CreateDolphinIdent(ident, false);
+					} else
 #endif
+					{
+						yylval->str = ident;
+					}
 					/* throw back all but the quote */
 					yyless(1);
 					yyextra->ident_quoted = false;
@@ -840,10 +849,13 @@ other			.
 					if (identlen >= NAMEDATALEN && u_sess->parser_cxt.is_load_copy == false && u_sess->parser_cxt.isForbidTruncate == false)
 						truncate_identifier(ident, identlen, yyextra->warnOnTruncateIdent);
 #ifdef DOLPHIN
-					yylval->dolphinIdent = CreateDolphinIdent(ident, false);
-#else
-					yylval->str = ident;
+					if (!GetSessionContext()->scan_from_pl) {
+						yylval->dolphinIdent = CreateDolphinIdent(ident, false);
+					} else
 #endif
+					{
+						yylval->str = ident;
+					}
 					yyextra->ident_quoted = false;
 					yyextra->is_hint_str = false;
 					return IDENT;
@@ -865,10 +877,13 @@ other			.
 					/* and treat it as {identifier} */
 					ident = downcase_truncate_identifier(yytext, yyleng, yyextra->warnOnTruncateIdent);
 #ifdef DOLPHIN
-					yylval->dolphinIdent = CreateDolphinIdent(ident, false);
-#else
-					yylval->str = ident;
+					if (!GetSessionContext()->scan_from_pl) {
+						yylval->dolphinIdent = CreateDolphinIdent(ident, false);
+					} else
 #endif
+					{
+						yylval->str = ident;
+					}
 					yyextra->ident_quoted = false;
 					yyextra->is_hint_str = false;
 					return IDENT;
