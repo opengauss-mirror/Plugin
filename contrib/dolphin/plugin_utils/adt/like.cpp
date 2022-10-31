@@ -26,6 +26,9 @@
 #include "utils/builtins.h"
 #include "utils/pg_locale.h"
 
+#include "funcapi.h"
+#include "plugin_postgres.h"
+
 static int SB_MatchText(char* t, int tlen, char* p, int plen, pg_locale_t locale, bool locale_is_c);
 static text* SB_do_like_escape(text*, text*);
 
@@ -36,7 +39,28 @@ static int UTF8_MatchText(char* t, int tlen, char* p, int plen, pg_locale_t loca
 
 static int SB_IMatchText(char* t, int tlen, char* p, int plen, pg_locale_t locale, bool locale_is_c);
 
-static int Generic_Text_IC_like(text* str, text* pat, Oid collation);
+static int Generic_Text_IC_like(text* str, text* pat, Oid collation, bool ifbpchar=false);
+
+
+PG_FUNCTION_INFO_V1_PUBLIC(booltextlike);
+extern "C" DLL_PUBLIC Datum booltextlike(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1_PUBLIC(textboollike);
+extern "C" DLL_PUBLIC Datum textboollike(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1_PUBLIC(boolboollike);
+extern "C" DLL_PUBLIC Datum boolboollike(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1_PUBLIC(booltextnlike);
+extern "C" DLL_PUBLIC Datum booltextnlike(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1_PUBLIC(textboolnlike);
+extern "C" DLL_PUBLIC Datum textboolnlike(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1_PUBLIC(boolboolnlike);
+extern "C" DLL_PUBLIC Datum boolboolnlike(PG_FUNCTION_ARGS);
+
+
 
 /* --------------------
  * Support routine for MatchText. Compares given multibyte streams
@@ -153,7 +177,7 @@ int GenericMatchText(char* s, int slen, char* p, int plen)
         return MB_MatchText(s, slen, p, plen, 0, true);
 }
 
-static inline int Generic_Text_IC_like(text* str, text* pat, Oid collation)
+static inline int Generic_Text_IC_like(text* str, text* pat, Oid collation,bool ifbpchar)
 {
     char *s = NULL, *p = NULL;
     int slen, plen;
@@ -171,7 +195,10 @@ static inline int Generic_Text_IC_like(text* str, text* pat, Oid collation)
         plen = (VARSIZE(pat) - VARHDRSZ);
         str = DatumGetTextP(DirectFunctionCall1Coll(lower, collation, PointerGetDatum(str)));
         s = VARDATA(str);
-        slen = (VARSIZE(str) - VARHDRSZ);
+        if (ifbpchar)
+            slen = bcTruelen(str);
+        else
+            slen = (VARSIZE(str) - VARHDRSZ);
         if (GetDatabaseEncoding() == PG_UTF8)
             return UTF8_MatchText(s, slen, p, plen, 0, true);
         else
@@ -497,4 +524,182 @@ Datum like_escape_bytea(PG_FUNCTION_ARGS)
     bytea* result = SB_do_like_escape((text*)pat, (text*)esc);
 
     PG_RETURN_BYTEA_P((bytea*)result);
+}
+
+Datum bpchartextlike(PG_FUNCTION_ARGS)
+{
+    BpChar* str = PG_GETARG_TEXT_PP(0);
+    text* pat = PG_GETARG_TEXT_PP(1);
+    FUNC_CHECK_HUGE_POINTER(false, str, "textlike()");
+
+    bool result = false;
+    char *s, *p;
+    int slen, plen;
+
+    s = VARDATA_ANY(str);
+    slen = bcTruelen(str);
+    p = VARDATA_ANY(pat);
+    plen = VARSIZE_ANY_EXHDR(pat);
+
+    result = (GenericMatchText(s, slen, p, plen) == LIKE_TRUE);
+
+    PG_RETURN_BOOL(result);
+}
+
+Datum bpchartextnlike(PG_FUNCTION_ARGS)
+{
+    BpChar* str = PG_GETARG_TEXT_PP(0);
+    text* pat = PG_GETARG_TEXT_PP(1);
+
+    bool result = false;
+    char *s, *p;
+    int slen, plen;
+
+    s = VARDATA_ANY(str);
+    slen = bcTruelen(str);
+    p = VARDATA_ANY(pat);
+    plen = VARSIZE_ANY_EXHDR(pat);
+
+    result = (GenericMatchText(s, slen, p, plen) == LIKE_FALSE);
+
+    PG_RETURN_BOOL(result);
+}
+
+Datum booltextlike(PG_FUNCTION_ARGS)
+{
+    bool boolleft = PG_GETARG_BOOL(0);
+    text* pat = PG_GETARG_TEXT_PP(1);
+    bool result = false;
+    char *s, *p;
+    int slen, plen;
+
+    s = boolleft ? (char*)"1" : (char*)"0";
+    slen = 1;
+    p = VARDATA_ANY(pat);
+    plen = VARSIZE_ANY_EXHDR(pat);
+
+    result = (GenericMatchText(s, slen, p, plen) == LIKE_TRUE);
+
+    PG_RETURN_BOOL(result);
+}
+
+Datum booltextnlike(PG_FUNCTION_ARGS)
+{
+    bool boolleft = PG_GETARG_BOOL(0);
+    text* pat = PG_GETARG_TEXT_PP(1);
+
+    bool result = false;
+    char *s, *p;
+    int slen, plen;
+    s = boolleft ? (char*)"1" : (char*)"0";
+    slen = 1;
+    p = VARDATA_ANY(pat);
+    plen = VARSIZE_ANY_EXHDR(pat);
+
+    result = (GenericMatchText(s, slen, p, plen) == LIKE_FALSE);
+
+    PG_RETURN_BOOL(result);
+}
+
+
+Datum textboollike(PG_FUNCTION_ARGS)
+{
+    text* str = PG_GETARG_TEXT_PP(0);
+    bool boolright = PG_GETARG_BOOL(1);
+
+    bool result = false;
+    char *s, *p;
+    int slen, plen;
+
+    s = VARDATA_ANY(str);
+    slen = VARSIZE_ANY_EXHDR(str);
+    p = boolright ? (char*)"1" : (char*)"0";
+    plen = 1;
+
+    result = (GenericMatchText(s, slen, p, plen) == LIKE_TRUE);
+
+    PG_RETURN_BOOL(result);
+}
+
+Datum textboolnlike(PG_FUNCTION_ARGS)
+{
+    text* str = PG_GETARG_TEXT_PP(0);
+    bool boolright = PG_GETARG_BOOL(1);
+
+    bool result = false;
+    char *s, *p;
+    int slen, plen;
+
+    s = VARDATA_ANY(str);
+    slen = VARSIZE_ANY_EXHDR(str);
+    p = boolright ? (char*)"1" : (char*)"0";
+    plen = 1;
+
+    result = (GenericMatchText(s, slen, p, plen) == LIKE_FALSE);
+
+    PG_RETURN_BOOL(result);
+}
+
+Datum boolboollike(PG_FUNCTION_ARGS)
+{
+    bool boolleft = PG_GETARG_BOOL(0);
+    bool boolright = PG_GETARG_BOOL(1);
+
+    bool result = false;
+    char *s, *p;
+    int slen, plen;
+
+    s = boolleft ? (char*)"1" : (char*)"0";
+    slen = 1;
+    p = boolright ? (char*)"1" : (char*)"0";
+    plen = 1;
+    result = (GenericMatchText(s, slen, p, plen) == LIKE_TRUE);
+
+    PG_RETURN_BOOL(result);
+
+}
+
+Datum boolboolnlike(PG_FUNCTION_ARGS)
+{
+    bool boolleft = PG_GETARG_BOOL(0);
+    bool boolright = PG_GETARG_BOOL(1);
+
+    bool result = false;
+    char *s, *p;
+    int slen, plen;
+
+    s = boolleft ? (char*)"1" : (char*)"0";
+    slen = 1;
+    p = boolright ? (char*)"1" : (char*)"0";
+    plen = 1;
+    result = (GenericMatchText(s, slen, p, plen) == LIKE_FALSE);
+
+    PG_RETURN_BOOL(result);
+
+}
+
+Datum bpchartexticlike(PG_FUNCTION_ARGS)
+{
+    text* str = PG_GETARG_TEXT_PP(0);
+    text* pat = PG_GETARG_TEXT_PP(1);
+    FUNC_CHECK_HUGE_POINTER(false, str, "textclike()");
+
+    bool result = false;
+
+    result = (Generic_Text_IC_like(str, pat, PG_GET_COLLATION(), true) == LIKE_TRUE);
+
+    PG_RETURN_BOOL(result);
+}
+
+Datum bpchartexticnlike(PG_FUNCTION_ARGS)
+{
+    text* str = PG_GETARG_TEXT_PP(0);
+    text* pat = PG_GETARG_TEXT_PP(1);
+    FUNC_CHECK_HUGE_POINTER(false, str, "texticnlike()");
+
+    bool result = false;
+
+    result = (Generic_Text_IC_like(str, pat, PG_GET_COLLATION(), true) != LIKE_TRUE);
+
+    PG_RETURN_BOOL(result);
 }

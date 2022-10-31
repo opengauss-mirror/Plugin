@@ -83,3 +83,55 @@ CREATE CAST (time as boolean) WITH FUNCTION time_bool(time) AS IMPLICIT;
 
 CREATE OR REPLACE FUNCTION pg_catalog.bit_bool(bit) returns boolean LANGUAGE C immutable as '$libdir/dolphin', 'bit_bool';
 CREATE CAST (bit as boolean) WITH FUNCTION bit_bool(bit) AS IMPLICIT;
+
+CREATE FUNCTION pg_catalog.boolboollike(
+bool,
+bool
+) RETURNS bool LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'boolboollike';
+
+CREATE OPERATOR pg_catalog.~~(leftarg = bool, rightarg = bool, procedure = pg_catalog.boolboollike);
+CREATE OPERATOR pg_catalog.~~*(leftarg = bool, rightarg = bool, procedure = pg_catalog.boolboollike);
+
+CREATE FUNCTION pg_catalog.booltextlike(
+bool,
+text
+) RETURNS bool LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'booltextlike';
+
+CREATE OPERATOR pg_catalog.~~(leftarg = bool, rightarg = text, procedure = pg_catalog.booltextlike);
+CREATE OPERATOR pg_catalog.~~*(leftarg = bool, rightarg = text, procedure = pg_catalog.booltextlike);
+
+CREATE FUNCTION pg_catalog.textboollike(
+text,
+bool
+) RETURNS bool LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'textboollike';
+
+CREATE OPERATOR pg_catalog.~~(leftarg = text, rightarg = bool, procedure = pg_catalog.textboollike);
+CREATE OPERATOR pg_catalog.~~*(leftarg = text, rightarg = bool, procedure = pg_catalog.textboollike);
+
+CREATE FUNCTION pg_catalog.boolboolnlike(
+bool,
+bool
+) RETURNS bool LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'boolboolnlike';
+
+CREATE OPERATOR pg_catalog.!~~(leftarg = bool, rightarg = bool, procedure = pg_catalog.boolboolnlike);
+CREATE OPERATOR pg_catalog.!~~*(leftarg = bool, rightarg = bool, procedure = pg_catalog.boolboolnlike);
+
+CREATE FUNCTION pg_catalog.booltextnlike(
+bool,
+text
+) RETURNS bool LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'booltextnlike';
+
+CREATE OPERATOR pg_catalog.!~~(leftarg = bool, rightarg = text, procedure = pg_catalog.booltextnlike);
+CREATE OPERATOR pg_catalog.!~~*(leftarg = bool, rightarg = text, procedure = pg_catalog.booltextnlike);
+
+CREATE FUNCTION pg_catalog.textboolnlike(
+text,
+bool
+) RETURNS bool LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'textboolnlike';
+
+CREATE OPERATOR pg_catalog.!~~(leftarg = text, rightarg = bool, procedure = pg_catalog.textboolnlike);
+CREATE OPERATOR pg_catalog.!~~*(leftarg = text, rightarg = bool, procedure = pg_catalog.textboolnlike);
+
+
+CREATE OPERATOR pg_catalog.~~*(leftarg = bytea, rightarg = bytea, procedure = pg_catalog.bytealike);
+CREATE OPERATOR pg_catalog.!~~*(leftarg = bytea, rightarg = bytea, procedure = pg_catalog.byteanlike);

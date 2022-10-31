@@ -1600,18 +1600,42 @@ select 'abc' like binary 'ab\%' escape '\' ;
  f
 (1 row)
 
----正常报错，like不兼容bool型
 select true like true;
-ERROR:  operator does not exist: boolean ~~* boolean
-LINE 1: select true like true;
-                    ^
-HINT:  No operator matches the given name and argument type(s). You might need to add explicit type casts.
----正常报错，like不兼容bit型
-select b'101' like b'101';
-ERROR:  operator does not exist: bit ~~* bit
-LINE 1: select b'101' like b'101';
-                      ^
-HINT:  No operator matches the given name and argument type(s). You might need to add explicit type casts.
+ ?column? 
+----------
+ t
+(1 row)
+
+select true like 'a';
+ ?column? 
+----------
+ f
+(1 row)
+
+select 'a' like true;
+ ?column? 
+----------
+ f
+(1 row)
+
+select 'a' not like true;
+ ?column? 
+----------
+ t
+(1 row)
+
+select true not like true;
+ ?column? 
+----------
+ f
+(1 row)
+
+select true not like 'a';
+ ?column? 
+----------
+ t
+(1 row)
+
 select char_length('asbjhc') like char_length('askjdhkj');
  ?column? 
 ----------
