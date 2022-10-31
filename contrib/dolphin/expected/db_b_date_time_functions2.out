@@ -1246,6 +1246,12 @@ show default_week_format;
 (1 row)
 
 alter system set default_week_format = 1;
+select pg_sleep(1);
+ pg_sleep 
+----------
+ 
+(1 row)
+
 select week('2000-1-1');
  week 
 ------
@@ -1253,6 +1259,12 @@ select week('2000-1-1');
 (1 row)
 
 alter system set default_week_format = 2;
+select pg_sleep(1);
+ pg_sleep 
+----------
+ 
+(1 row)
+
 select week('2000-1-1');
  week 
 ------
@@ -1260,6 +1272,12 @@ select week('2000-1-1');
 (1 row)
 
 alter system set default_week_format = 0;
+select pg_sleep(1);
+ pg_sleep 
+----------
+ 
+(1 row)
+
 --test yearweek
 -- 单参数
 -- 边界值,坏值

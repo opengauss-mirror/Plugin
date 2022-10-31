@@ -285,10 +285,13 @@ select week(date'2000-1-1', 2);
 -- GUC
 show default_week_format;
 alter system set default_week_format = 1;
+select pg_sleep(1);
 select week('2000-1-1');
 alter system set default_week_format = 2;
+select pg_sleep(1);
 select week('2000-1-1');
 alter system set default_week_format = 0;
+select pg_sleep(1);
 
 --test yearweek
 -- 单参数
