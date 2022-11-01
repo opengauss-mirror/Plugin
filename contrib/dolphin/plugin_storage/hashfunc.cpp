@@ -64,7 +64,11 @@ Datum hashchar(PG_FUNCTION_ARGS)
 
 Datum hashint1(PG_FUNCTION_ARGS)
 {
+#ifdef DOLPHIN
+    return hash_uint32((int32)PG_GETARG_INT8(0));
+#else
     return hash_uint32((int32)PG_GETARG_UINT8(0));
+#endif
 }
 
 Datum hashint2(PG_FUNCTION_ARGS)

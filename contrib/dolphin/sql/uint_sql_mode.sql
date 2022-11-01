@@ -314,7 +314,7 @@ insert into t1 values(32768::int2);
 
 insert into t1 values(1::int1);
 insert into t1 values(0::int1);
-insert into t1 values(255::int1);
+insert into t1 values(127::int1);
 
 insert into t1 values(1::uint4);
 insert into t1 values(0::uint4);
@@ -384,7 +384,7 @@ insert into t1 values(32768::int2);
 
 insert into t1 values(1::int1);
 insert into t1 values(0::int1);
-insert into t1 values(255::int1);
+insert into t1 values(127::int1);
 
 
 insert into t1 values(1::uint8);
@@ -459,7 +459,7 @@ insert into t1 values(32768::int2);
 
 insert into t1 values(1::int1);
 insert into t1 values(0::int1);
-insert into t1 values(255::int1);
+insert into t1 values(127::int1);
 
 
 insert into t1 values(1::uint8);
@@ -537,7 +537,7 @@ insert into t1 values(256::int4);
 
 insert into t1 values(1::int1);
 insert into t1 values(0::int1);
-insert into t1 values(255::int1);
+insert into t1 values(127::int1);
 
 insert into t1 values(1::uint8);
 insert into t1 values(0::uint8);

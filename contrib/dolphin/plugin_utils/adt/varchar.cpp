@@ -911,7 +911,11 @@ Datum int4_bpchar(PG_FUNCTION_ARGS)
  */
 Datum int1_bpchar(PG_FUNCTION_ARGS)
 {
+#ifdef DOLPHIN
+    int8 arg1 = PG_GETARG_INT8(0);
+#else
     uint8 arg1 = PG_GETARG_UINT8(0);
+#endif
     char* tmp = NULL;
     Datum result;
 
@@ -1754,7 +1758,11 @@ Datum timestamp_varchar(PG_FUNCTION_ARGS)
  */
 Datum int1_varchar(PG_FUNCTION_ARGS)
 {
+#ifdef DOLPHIN
+    int8 arg1 = PG_GETARG_INT8(0);
+#else
     uint8 arg1 = PG_GETARG_UINT8(0);
+#endif
     char* tmp = NULL;
     Datum result;
     tmp = DatumGetCString(DirectFunctionCall1(int1out, arg1));
@@ -1837,7 +1845,11 @@ Datum varchar_timestamp(PG_FUNCTION_ARGS)
  */
 Datum int1_nvarchar2(PG_FUNCTION_ARGS)
 {
+#ifdef DOLPHIN
+    int8 arg1 = PG_GETARG_INT8(0);
+#else
     uint8 arg1 = PG_GETARG_UINT8(0);
+#endif
     char* tmp = NULL;
     Datum result;
     tmp = DatumGetCString(DirectFunctionCall1(int1out, arg1));

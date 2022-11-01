@@ -3270,7 +3270,11 @@ Datum numeric_int2(PG_FUNCTION_ARGS)
 // sql compatible : sybase data type tinyint
 Datum int1_numeric(PG_FUNCTION_ARGS)
 {
+#ifdef DOLPHIN
+    int8 val = PG_GETARG_INT8(0);
+#else
     uint8 val = PG_GETARG_UINT8(0);
+#endif
     Numeric res;
     NumericVar result;
 
@@ -3290,7 +3294,11 @@ Datum numeric_int1(PG_FUNCTION_ARGS)
     Numeric num = PG_GETARG_NUMERIC(0);
     NumericVar x;
     int64 val;
+#ifdef DOLPHIN
+    int8 result;
+#else
     uint8 result;
+#endif
     uint16 numFlags = NUMERIC_NB_FLAGBITS(num);
 
     if (NUMERIC_FLAG_IS_NANORBI(numFlags)) {
@@ -3305,9 +3313,11 @@ Datum numeric_int1(PG_FUNCTION_ARGS)
     /* Convert to variable format and thence to uint8 */
     init_var_from_num(num, &x);
 
+#ifndef DOLPHIN
     if (x.sign == NUMERIC_NEG && !fcinfo->can_ignore) {
         ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("tinyint out of range")));
     }
+#endif
 
     if (!numericvar_to_int64(&x, &val)) {
         if (fcinfo->can_ignore) {
@@ -3321,6 +3331,26 @@ Datum numeric_int1(PG_FUNCTION_ARGS)
         }
     }
     /* Down-convert to int1 */
+#ifdef DOLPHIN
+    result = (int8)val;
+
+    /* Test for overflow by reverse-conversion. */
+    if ((int64)result != val) {
+        if (fcinfo->can_ignore || !SQL_MODE_STRICT()) {
+            if (fcinfo->can_ignore) {
+                ereport(WARNING, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("tinyint out of range")));
+            }
+            if (NUMERIC_POS == x.sign)
+                PG_RETURN_INT8(INT8_MAX);
+            else
+                PG_RETURN_INT8(INT8_MIN);
+        } else {
+            ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("tinyint out of range")));
+        }
+    }
+
+    PG_RETURN_INT8(result);
+#else
     result = (uint8)val;
 
     /* Test for overflow by reverse-conversion. */
@@ -3328,6 +3358,7 @@ Datum numeric_int1(PG_FUNCTION_ARGS)
         ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("tinyint out of range")));
 
     PG_RETURN_UINT8(result);
+#endif
 }
 
 Datum float8_numeric(PG_FUNCTION_ARGS)
@@ -3553,6 +3584,20 @@ Datum numeric_avg_accum(PG_FUNCTION_ARGS)
     Numeric newval = PG_GETARG_NUMERIC(1);
 
     PG_RETURN_ARRAYTYPE_P(do_numeric_avg_accum(transarray, newval));
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(int1_accum);
+extern "C" DLL_PUBLIC Datum int1_accum(PG_FUNCTION_ARGS);
+
+Datum int1_accum(PG_FUNCTION_ARGS)
+{
+    ArrayType* transarray = PG_GETARG_ARRAYTYPE_P(0);
+    Datum newval1 = PG_GETARG_DATUM(1);
+    Numeric newval;
+
+    newval = DatumGetNumeric(DirectFunctionCall1(int1_numeric, newval1));
+
+    PG_RETURN_ARRAYTYPE_P(do_numeric_accum(transarray, newval));
 }
 
 /*
@@ -3970,7 +4015,11 @@ typedef struct Int8TransTypeData {
 Datum int1_avg_accum(PG_FUNCTION_ARGS)
 {
     ArrayType* transarray = NULL;
+#ifdef DOLPHIN
+    int8 newval = PG_GETARG_INT8(1);
+#else
     uint8 newval = PG_GETARG_UINT8(1);
+#endif
     Int8TransTypeData* transdata = NULL;
 
     /*

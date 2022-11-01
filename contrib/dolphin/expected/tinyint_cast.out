@@ -1,0 +1,386 @@
+drop database if exists tinyint_cast;
+NOTICE:  database "tinyint_cast" does not exist, skipping
+create database tinyint_cast dbcompatibility 'b';
+\c tinyint_cast
+create table t1(a int1);
+insert into t1 values('');
+ERROR:  invalid input syntax for integer: ""
+LINE 1: insert into t1 values('');
+                              ^
+CONTEXT:  referenced column: a
+insert into t1 values('1.4');
+insert into t1 values('-1.5');
+select (0)::int1::bool;
+ bool 
+------
+ f
+(1 row)
+
+select (1)::int1::bool;
+ bool 
+------
+ t
+(1 row)
+
+select (-1)::bool::int1;
+ int1 
+------
+ 1
+(1 row)
+
+select (0)::bool::int1;
+ int1 
+------
+ 0
+(1 row)
+
+select (1)::bool::int1;
+ int1 
+------
+ 1
+(1 row)
+
+select (-127.5)::float4::int1;
+ int1 
+------
+ -128
+(1 row)
+
+select (-128.4)::float4::int1;
+ int1 
+------
+ -128
+(1 row)
+
+select (127.9)::float4::int1;
+ERROR:  tinyint out of range
+CONTEXT:  referenced column: int1
+select (127.3)::float4::int1;
+ int1 
+------
+ 127
+(1 row)
+
+select (-127.5)::float8::int1;
+ int1 
+------
+ -128
+(1 row)
+
+select (-128.4)::float8::int1;
+ int1 
+------
+ -128
+(1 row)
+
+select (127.9)::float8::int1;
+ERROR:  tinyint out of range
+CONTEXT:  referenced column: int1
+select (127.3)::float8::int1;
+ int1 
+------
+ 127
+(1 row)
+
+select (-127.5)::numeric::int1;
+ int1 
+------
+ -128
+(1 row)
+
+select (-128.4)::numeric::int1;
+ int1 
+------
+ -128
+(1 row)
+
+select (127.9)::numeric::int1;
+ERROR:  tinyint out of range
+CONTEXT:  referenced column: int1
+select (127.3)::numeric::int1;
+ int1 
+------
+ 127
+(1 row)
+
+select (-128)::int2::int1;
+ int1 
+------
+ -128
+(1 row)
+
+select (127)::int2::int1;
+ int1 
+------
+ 127
+(1 row)
+
+select (32767)::int2::int1;
+ERROR:  tinyint out of range
+CONTEXT:  referenced column: int1
+select (-32768)::int2::int1;
+ERROR:  tinyint out of range
+CONTEXT:  referenced column: int1
+select (127)::int4::int1;
+ int1 
+------
+ 127
+(1 row)
+
+select (-128)::int4::int1;
+ int1 
+------
+ -128
+(1 row)
+
+select (2147483647)::int4::int1;
+ERROR:  tinyint out of range
+CONTEXT:  referenced column: int1
+select (-2147483648)::int4::int1;
+ERROR:  tinyint out of range
+CONTEXT:  referenced column: int1
+select (127)::int8::int1;
+ int1 
+------
+ 127
+(1 row)
+
+select (-128)::int8::int1;
+ int1 
+------
+ -128
+(1 row)
+
+select (9223372036854775807)::int8::int1;
+ERROR:  tinyint out of range
+CONTEXT:  referenced column: int1
+select (-9223372036854775808)::int8::int1;
+ERROR:  tinyint out of range
+CONTEXT:  referenced column: int1
+select (-1)::int1::uint1;
+ uint1 
+-------
+ 255
+(1 row)
+
+select (0)::int1::uint1;
+ uint1 
+-------
+ 0
+(1 row)
+
+select (1)::int1::uint1;
+ uint1 
+-------
+ 1
+(1 row)
+
+select (127)::int1::uint1;
+ uint1 
+-------
+ 127
+(1 row)
+
+select (-128)::int1::uint1;
+ uint1 
+-------
+ 128
+(1 row)
+
+select (-1)::int1::uint2;
+ uint2 
+-------
+ 65535
+(1 row)
+
+select (0)::int1::uint2;
+ uint2 
+-------
+ 0
+(1 row)
+
+select (1)::int1::uint2;
+ uint2 
+-------
+ 1
+(1 row)
+
+select (127)::int1::uint2;
+ uint2 
+-------
+ 127
+(1 row)
+
+select (-128)::int1::uint2;
+ uint2 
+-------
+ 65408
+(1 row)
+
+select (-1)::int1::uint4;
+   uint4    
+------------
+ 4294967295
+(1 row)
+
+select (0)::int1::uint4;
+ uint4 
+-------
+ 0
+(1 row)
+
+select (1)::int1::uint4;
+ uint4 
+-------
+ 1
+(1 row)
+
+select (127)::int1::uint4;
+ uint4 
+-------
+ 127
+(1 row)
+
+select (-128)::int1::uint4;
+   uint4    
+------------
+ 4294967168
+(1 row)
+
+select (-1)::int1::uint8;
+        uint8         
+----------------------
+ 18446744073709551615
+(1 row)
+
+select (0)::int1::uint8;
+ uint8 
+-------
+ 0
+(1 row)
+
+select (1)::int1::uint8;
+ uint8 
+-------
+ 1
+(1 row)
+
+select (127)::int1::uint8;
+ uint8 
+-------
+ 127
+(1 row)
+
+select (-128)::int1::uint8;
+        uint8         
+----------------------
+ 18446744073709551488
+(1 row)
+
+select 255::uint1::int1;
+ERROR:  smallint out of range
+CONTEXT:  referenced column: int1
+select 255::uint2::int1;
+ERROR:  tinyint out of range
+CONTEXT:  referenced column: int1
+select 65535::uint2::int1;
+ERROR:  tinyint out of range
+CONTEXT:  referenced column: int1
+select 255::uint4::int1;
+ERROR:  tinyint unsigned out of range
+CONTEXT:  referenced column: int1
+select 4294967295::uint4::int1;
+ERROR:  tinyint unsigned out of range
+CONTEXT:  referenced column: int1
+select 255::uint8::int1;
+ERROR:  tinyint out of range
+CONTEXT:  referenced column: int1
+select 18446744073709551615::uint8::int1;
+ERROR:  tinyint out of range
+CONTEXT:  referenced column: int1
+select 1::int1::int16;
+ int16 
+-------
+     1
+(1 row)
+
+select 1::int16::int1;
+ int1 
+------
+ 1
+(1 row)
+
+select 1::int1::clob;
+ clob 
+------
+ 1
+(1 row)
+
+select 1::clob::int1;
+ int1 
+------
+ 1
+(1 row)
+
+select 1::int1::bpchar;
+ bpchar 
+--------
+ 1
+(1 row)
+
+select 1::bpchar::int1;
+ int1 
+------
+ 1
+(1 row)
+
+select 1::int1::varchar;
+ varchar 
+---------
+ 1
+(1 row)
+
+select 1::varchar::int1;
+ int1 
+------
+ 1
+(1 row)
+
+select 1::int1::nvarchar2;
+ nvarchar2 
+-----------
+ 1
+(1 row)
+
+select 1::nvarchar2::int1;
+ int1 
+------
+ 1
+(1 row)
+
+select 1::int1::interval;
+ interval 
+----------
+ @ 1 day
+(1 row)
+
+select (-1)::text::int1;
+ int1 
+------
+ -1
+(1 row)
+
+select '127'::text::int1;
+ int1 
+------
+ 127
+(1 row)
+
+select '-128'::text::int1;
+ int1 
+------
+ -128
+(1 row)
+
+\c postgres
+drop database tinyint_cast;

@@ -51,10 +51,10 @@ select 18446744073709551615::uint8 & 0::uint8;
  0
 (1 row)
 
-select 18446744073709551615::uint8 & 255::int1;
+select 18446744073709551615::uint8 & 127::int1;
  ?column? 
 ----------
- 255
+ 127
 (1 row)
 
 select 18446744073709551615::uint8 & 32767::int2;
@@ -166,10 +166,10 @@ select 4294967295::uint4 & 0::uint8;
  0
 (1 row)
 
-select 4294967295::uint4 & 255::int1;
+select 4294967295::uint4 & 127::int1;
  ?column? 
 ----------
- 255
+ 127
 (1 row)
 
 select 4294967295::uint4 & 32767::int2;
@@ -281,10 +281,10 @@ select 65535::uint2 & 0::uint8;
  0
 (1 row)
 
-select 65535::uint2 & 255::int1;
+select 65535::uint2 & 127::int1;
  ?column? 
 ----------
- 255
+ 127
 (1 row)
 
 select 65535::uint2 & 32767::int2;
@@ -396,10 +396,10 @@ select 255::uint1 & 0::uint8;
  0
 (1 row)
 
-select 255::uint1 & 255::int1;
+select 255::uint1 & 127::int1;
  ?column? 
 ----------
- 255
+ 127
 (1 row)
 
 select 255::uint1 & 32767::int2;
@@ -754,73 +754,73 @@ select (-32768)::int2 & 18446744073709551615::uint8;
 (1 row)
 
 --int1
-select 255::int1 & 0::uint1;
+select 127::int1 & 0::uint1;
  ?column? 
 ----------
  0
 (1 row)
 
-select 255::int1 & 0::uint2;
+select 127::int1 & 0::uint2;
  ?column? 
 ----------
  0
 (1 row)
 
-select 255::int1 & 0::uint4;
+select 127::int1 & 0::uint4;
  ?column? 
 ----------
  0
 (1 row)
 
-select 255::int1 & 0::uint8;
+select 127::int1 & 0::uint8;
  ?column? 
 ----------
  0
 (1 row)
 
-select 255::int1 & 255::uint1;
+select 127::int1 & 255::uint1;
  ?column? 
 ----------
- 255
+ 127
 (1 row)
 
-select 255::int1 & 65535::uint2;
+select 127::int1 & 65535::uint2;
  ?column? 
 ----------
- 255
+ 127
 (1 row)
 
-select 255::int1 & 4294967295::uint4;
+select 127::int1 & 4294967295::uint4;
  ?column? 
 ----------
- 255
+ 127
 (1 row)
 
-select 255::int1 & 18446744073709551615::uint8;
+select 127::int1 & 18446744073709551615::uint8;
  ?column? 
 ----------
- 255
+ 127
 (1 row)
 
-select 255::int1 & 1::uint1;
+select 127::int1 & 1::uint1;
  ?column? 
 ----------
  1
 (1 row)
 
-select 255::int1 & 1::uint2;
+select 127::int1 & 1::uint2;
  ?column? 
 ----------
  1
 (1 row)
 
-select 255::int1 & 1::uint4;
+select 127::int1 & 1::uint4;
  ?column? 
 ----------
  1
 (1 row)
 
-select 255::int1 & 1::uint8;
+select 127::int1 & 1::uint8;
  ?column? 
 ----------
  1

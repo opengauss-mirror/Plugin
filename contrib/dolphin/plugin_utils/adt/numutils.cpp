@@ -151,8 +151,13 @@ int32 PgAtoiInternal(char* s, int size, int c, bool sqlModeStrict)
                     (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE),
                         errmsg("value \"%s\" is out of range for type smallint", s)));
             break;
+#ifdef DOLPHIN
+        case sizeof(int8):
+            if (errno == ERANGE || l < CHAR_MIN || l > CHAR_MAX)
+#else
         case sizeof(uint8):
             if (errno == ERANGE || l < 0 || l > UCHAR_MAX)
+#endif
                 ereport(ERROR,
                     (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE),
                         errmsg("value \"%s\" is out of range for 8-bit integer", s)));
@@ -347,6 +352,11 @@ invalid_syntax:
 //
 // It doesn't seem worth implementing this separately.
 void pg_ctoa(uint8 i, char* a)
+{
+    pg_ltoa((int32)i, a);
+}
+
+void pg_ctoa(int8 i, char* a)
 {
     pg_ltoa((int32)i, a);
 }

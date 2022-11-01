@@ -1,0 +1,262 @@
+drop database if exists tinyint_operator;
+NOTICE:  database "tinyint_operator" does not exist, skipping
+create database tinyint_operator dbcompatibility 'b';
+\c tinyint_operator
+select 1::int1 + 1::int1;
+ ?column? 
+----------
+ 2
+(1 row)
+
+select (-1)::int1 + (-1)::int1;
+ ?column? 
+----------
+ -2
+(1 row)
+
+select 127::int1 + 127::int1;
+ERROR:  tinyint out of range
+select (-128)::int1 + (-128)::int1;
+ERROR:  tinyint out of range
+select 1::int1 - 1::int1;
+ ?column? 
+----------
+ 0
+(1 row)
+
+select (-1)::int1 - (-1)::int1;
+ ?column? 
+----------
+ 0
+(1 row)
+
+select 127::int1 - (-1)::int1;
+ERROR:  tinyint out of range
+select (-128)::int1 - 1::int1;
+ERROR:  tinyint out of range
+select 1::int1 * 1::int1;
+ ?column? 
+----------
+ 1
+(1 row)
+
+select (-1)::int1 * (-1)::int1;
+ ?column? 
+----------
+ 1
+(1 row)
+
+select 127::int1 * 127::int1;
+ERROR:  tinyint out of range
+select (-128)::int1 * (-128)::int1;
+ERROR:  tinyint out of range
+select 1::int1 / 1::int1;
+ ?column? 
+----------
+        1
+(1 row)
+
+select (-1)::int1 / (-1)::int1;
+ ?column? 
+----------
+        1
+(1 row)
+
+select 127::int1 / 127::int1;
+ ?column? 
+----------
+        1
+(1 row)
+
+select (-128)::int1 / (-128)::int1;
+ ?column? 
+----------
+        1
+(1 row)
+
+select 1::int1 % 1::int1;
+ ?column? 
+----------
+ 0
+(1 row)
+
+select (-1)::int1 % (-1)::int1;
+ ?column? 
+----------
+ 0
+(1 row)
+
+select 127::int1 % 127::int1;
+ ?column? 
+----------
+ 0
+(1 row)
+
+select (-128)::int1 % (-128)::int1;
+ ?column? 
+----------
+ 0
+(1 row)
+
+select 1::int1 & 1::int1;
+ ?column? 
+----------
+ 1
+(1 row)
+
+select (-1)::int1 & (-1)::int1;
+ ?column? 
+----------
+ -1
+(1 row)
+
+select 127::int1 & 127::int1;
+ ?column? 
+----------
+ 127
+(1 row)
+
+select (-128)::int1 & (-128)::int1;
+ ?column? 
+----------
+ -128
+(1 row)
+
+select 1::int1 | 1::int1;
+ ?column? 
+----------
+ 1
+(1 row)
+
+select (-1)::int1 | (-1)::int1;
+ ?column? 
+----------
+ -1
+(1 row)
+
+select 127::int1 | 127::int1;
+ ?column? 
+----------
+ 127
+(1 row)
+
+select (-128)::int1 | (-128)::int1;
+ ?column? 
+----------
+ -128
+(1 row)
+
+select 1::int1 # 1::int1;
+ ?column? 
+----------
+ 0
+(1 row)
+
+select (-1)::int1 # (-1)::int1;
+ ?column? 
+----------
+ 0
+(1 row)
+
+select 127::int1 # 127::int1;
+ ?column? 
+----------
+ 0
+(1 row)
+
+select (-128)::int1 # (-128)::int1;
+ ?column? 
+----------
+ 0
+(1 row)
+
+select ~1::int1;
+ ?column? 
+----------
+ -2
+(1 row)
+
+select ~(-1)::int1;
+ ?column? 
+----------
+ 0
+(1 row)
+
+select ~127::int1;
+ ?column? 
+----------
+ -128
+(1 row)
+
+select ~(-128)::int1;
+ ?column? 
+----------
+ 127
+(1 row)
+
+select -1::int1;
+ ?column? 
+----------
+ -1
+(1 row)
+
+select -(-1)::int1;
+ ?column? 
+----------
+ 1
+(1 row)
+
+select -127::int1;
+ ?column? 
+----------
+ -127
+(1 row)
+
+select -(-128)::int1;
+ERROR:  tinyint out of range
+select +1::int1;
+ ?column? 
+----------
+ 1
+(1 row)
+
+select +(-1)::int1;
+ ?column? 
+----------
+ -1
+(1 row)
+
+select +127::int1;
+ ?column? 
+----------
+ 127
+(1 row)
+
+select +(-128)::int1;
+ ?column? 
+----------
+ -128
+(1 row)
+
+select @1::int1;
+ ?column? 
+----------
+ 1
+(1 row)
+
+select @(-1)::int1;
+ ?column? 
+----------
+ 1
+(1 row)
+
+select @127::int1;
+ ?column? 
+----------
+ 127
+(1 row)
+
+select @(-128)::int1;
+ERROR:  tinyint out of range
+\c postgres
+drop database tinyint_operator;

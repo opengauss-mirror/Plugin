@@ -1048,11 +1048,8 @@ select (1)::int1::uint1;
 (1 row)
 
 select (255)::int1::uint1;
- uint1 
--------
- 255
-(1 row)
-
+ERROR:  tinyint out of range
+CONTEXT:  referenced column: uint1
 select (0)::int1::uint2;
  uint2 
 -------
@@ -1066,11 +1063,8 @@ select (1)::int1::uint2;
 (1 row)
 
 select (255)::int1::uint2;
- uint2 
--------
- 255
-(1 row)
-
+ERROR:  tinyint out of range
+CONTEXT:  referenced column: uint2
 select (0)::int1::uint4;
  uint4 
 -------
@@ -1084,11 +1078,8 @@ select (1)::int1::uint4;
 (1 row)
 
 select (255)::int1::uint4;
- uint4 
--------
- 255
-(1 row)
-
+ERROR:  tinyint out of range
+CONTEXT:  referenced column: uint4
 select (0)::int1::uint8;
  uint8 
 -------
@@ -1102,15 +1093,12 @@ select (1)::int1::uint8;
 (1 row)
 
 select (255)::int1::uint8;
- uint8 
--------
- 255
-(1 row)
-
+ERROR:  tinyint out of range
+CONTEXT:  referenced column: uint8
 select 255::uint1::int1;
  int1 
 ------
- 255
+ 127
 (1 row)
 
 select 255::uint1::int2;
@@ -1152,13 +1140,13 @@ select 255::uint1::numeric;
 select 255::uint2::int1;
  int1 
 ------
- 255
+ 127
 (1 row)
 
 select 65535::uint2::int1;
  int1 
 ------
- 255
+ 127
 (1 row)
 
 select 32767::uint2::int2;
@@ -1206,13 +1194,13 @@ select 65535::uint2::numeric;
 select 255::uint4::int1;
  int1 
 ------
- 255
+ 127
 (1 row)
 
 select 4294967295::uint4::int1;
  int1 
 ------
- 255
+ 127
 (1 row)
 
 select 32767::uint4::int2;
@@ -1266,13 +1254,13 @@ select 4294967295::uint4::numeric;
 select 255::uint8::int1;
  int1 
 ------
- 255
+ 127
 (1 row)
 
 select 18446744073709551615::uint8::int1;
  int1 
 ------
- 255
+ 127
 (1 row)
 
 select 32767::uint8::int2;
@@ -1415,7 +1403,7 @@ insert into t1 values(32767::int2);
 insert into t1 values(32768::int2);
 insert into t1 values(1::int1);
 insert into t1 values(0::int1);
-insert into t1 values(255::int1);
+insert into t1 values(127::int1);
 insert into t1 values(1::uint4);
 insert into t1 values(0::uint4);
 insert into t1 values((-1)::uint4);
@@ -1469,7 +1457,7 @@ select * from t1;
  32767
  1
  0
- 255
+ 127
  1
  0
  4294967295
@@ -1526,7 +1514,7 @@ insert into t1 values(32767::int2);
 insert into t1 values(32768::int2);
 insert into t1 values(1::int1);
 insert into t1 values(0::int1);
-insert into t1 values(255::int1);
+insert into t1 values(127::int1);
 insert into t1 values(1::uint8);
 insert into t1 values(0::uint8);
 insert into t1 values((-1)::uint8);
@@ -1582,7 +1570,7 @@ select * from t1;
  32767
  1
  0
- 255
+ 127
  1
  0
  4294967295
@@ -1641,7 +1629,7 @@ insert into t1 values(32767::int2);
 insert into t1 values(32768::int2);
 insert into t1 values(1::int1);
 insert into t1 values(0::int1);
-insert into t1 values(255::int1);
+insert into t1 values(127::int1);
 insert into t1 values(1::uint8);
 insert into t1 values(0::uint8);
 insert into t1 values((-1)::uint8);
@@ -1703,7 +1691,7 @@ select * from t1;
  32767
  1
  0
- 255
+ 127
  1
  0
  65535
@@ -1768,7 +1756,7 @@ insert into t1 values(255::int4);
 insert into t1 values(256::int4);
 insert into t1 values(1::int1);
 insert into t1 values(0::int1);
-insert into t1 values(255::int1);
+insert into t1 values(127::int1);
 insert into t1 values(1::uint8);
 insert into t1 values(0::uint8);
 insert into t1 values((-1)::uint8);
@@ -1832,7 +1820,7 @@ select * from t1;
  255
  1
  0
- 255
+ 127
  1
  0
  255

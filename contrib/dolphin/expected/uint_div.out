@@ -574,70 +574,70 @@ select 32767::int2 / 1::uint8;
 (1 row)
 
 --int1
-select 255::int1 / 0::uint1;
+select 127::int1 / 0::uint1;
  ?column? 
 ----------
          
 (1 row)
 
-select 255::int1 / 0::uint2;
+select 127::int1 / 0::uint2;
  ?column? 
 ----------
          
 (1 row)
 
-select 255::int1 / 0::uint4;
+select 127::int1 / 0::uint4;
  ?column? 
 ----------
          
 (1 row)
 
-select 255::int1 / 0::uint8;
+select 127::int1 / 0::uint8;
  ?column? 
 ----------
          
 (1 row)
 
-select 255::int1 / 65535::uint2;
+select 127::int1 / 65535::uint2;
       ?column?       
 ---------------------
- 0.00389105058365759
+ 0.00193789578088045
 (1 row)
 
-select 255::int1 / 4294967295::uint4;
+select 127::int1 / 4294967295::uint4;
        ?column?       
 ----------------------
- 5.93718141455603e-08
+ 2.95694917509261e-08
 (1 row)
 
-select 255::int1 / 18446744073709551615::uint8;
+select 127::int1 / 18446744073709551615::uint8;
        ?column?       
 ----------------------
- 1.38235776991902e-17
+ 6.88468379528295e-18
 (1 row)
 
-select 255::int1 / 1::uint1;
+select 127::int1 / 1::uint1;
  ?column? 
 ----------
-      255
+      127
 (1 row)
 
-select 255::int1 / 1::uint2;
+select 127::int1 / 1::uint2;
  ?column? 
 ----------
-      255
+      127
 (1 row)
 
-select 255::int1 / 1::uint4;
+select 127::int1 / 1::uint4;
  ?column? 
 ----------
-      255
+      127
 (1 row)
 
-select 255::int1 / 1::uint8;
+select 127::int1 / 1::uint8;
  ?column? 
 ----------
-      255
+      127
 (1 row)
 
 \c postgres

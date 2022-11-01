@@ -124,19 +124,19 @@ select 32767::int2 * 1::uint2;
 select 32767::int2 * 1::uint4;
 select 32767::int2 * 1::uint8;
 --int1
-select 255::int1 * 0::uint1;
-select 255::int1 * 0::uint2;
-select 255::int1 * 0::uint4;
-select 255::int1 * 0::uint8;
+select 127::int1 * 0::uint1;
+select 127::int1 * 0::uint2;
+select 127::int1 * 0::uint4;
+select 127::int1 * 0::uint8;
 
-select 255::int1 * 65535::uint2;
-select 255::int1 * 4294967295::uint4;
-select 255::int1 * 18446744073709551615::uint8;
+select 127::int1 * 65535::uint2;
+select 127::int1 * 4294967295::uint4;
+select 127::int1 * 18446744073709551615::uint8;
 
-select 255::int1 * 1::uint1;
-select 255::int1 * 1::uint2;
-select 255::int1 * 1::uint4;
-select 255::int1 * 1::uint8;
+select 127::int1 * 1::uint1;
+select 127::int1 * 1::uint2;
+select 127::int1 * 1::uint4;
+select 127::int1 * 1::uint8;
 
 \c postgres
 drop database uint_mul

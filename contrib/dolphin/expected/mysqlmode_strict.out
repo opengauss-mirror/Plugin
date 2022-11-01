@@ -13,8 +13,6 @@ create table test_char(a char);
 create table test_varchar7(a varchar(7));
 --insert into table values ...
 insert into test_tint(a) values(-55);
-ERROR:  tinyint out of range
-CONTEXT:  referenced column: a
 insert into test_tint(a) values(55);
 insert into test_tint(a) values(355);
 ERROR:  tinyint out of range
@@ -29,20 +27,10 @@ LINE 1: insert into test_tint(a) values('888aa');
                                         ^
 CONTEXT:  referenced column: a
 insert into test_tint(a) values('-88aa');
-ERROR:  value "-88aa" is out of range for 8-bit integer
-LINE 1: insert into test_tint(a) values('-88aa');
-                                        ^
-CONTEXT:  referenced column: a
 insert into test_tint(a) values(123423.55);
-ERROR:  tinyint out of range
-CONTEXT:  referenced column: a
 insert into test_tint(a) values(12.55);
 insert into test_tint(a) values(-12.55);
-ERROR:  tinyint out of range
-CONTEXT:  referenced column: a
 insert into test_tint(a) values(-12123451.55);
-ERROR:  tinyint out of range
-CONTEXT:  referenced column: a
 insert into test_tint(a) values(1.4e300);
 ERROR:  tinyint out of range
 CONTEXT:  referenced column: a
@@ -50,12 +38,17 @@ insert into test_tint(a) values(-1.4e300);
 ERROR:  tinyint out of range
 CONTEXT:  referenced column: a
 select * from test_tint;
- a  
-----
+  a   
+------
+ -55
  55
  0
+ -88
+ 127
  13
-(3 rows)
+ -13
+ -128
+(8 rows)
 
 insert into test_sint(a) values(-55);
 insert into test_sint(a) values(55);
@@ -267,12 +260,17 @@ select * from test_tint1;
 
 insert into test_sint1 select * from test_tint;
 select * from test_sint1;
- a  
-----
- 55
-  0
- 13
-(3 rows)
+  a   
+------
+  -55
+   55
+    0
+  -88
+  127
+   13
+  -13
+ -128
+(8 rows)
 
 delete from test_sint1;
 insert into test_sint1 select * from test_int;
@@ -356,12 +354,17 @@ select * from test_sint1;
 
 insert into test_int1 select * from test_tint;
 select * from test_int1;
- a  
-----
- 55
-  0
- 13
-(3 rows)
+  a   
+------
+  -55
+   55
+    0
+  -88
+  127
+   13
+  -13
+ -128
+(8 rows)
 
 delete from test_int1;
 insert into test_int1 select * from test_sint;
@@ -445,12 +448,17 @@ select * from test_int1;
 
 insert into test_bint1 select * from test_tint;
 select * from test_bint1;
- a  
-----
- 55
-  0
- 13
-(3 rows)
+  a   
+------
+  -55
+   55
+    0
+  -88
+  127
+   13
+  -13
+ -128
+(8 rows)
 
 delete from test_bint1;
 insert into test_bint1 select * from test_sint;
@@ -536,10 +544,15 @@ insert into test_char1 select * from test_tint;
 select * from test_char1;
  a 
 ---
+ -
  5
  0
+ -
  1
-(3 rows)
+ 1
+ -
+ -
+(8 rows)
 
 delete from test_char1;
 insert into test_char1 select * from test_sint;
@@ -614,12 +627,17 @@ select * from test_char1;
 
 insert into test_varchar7_1 select * from test_tint;
 select * from test_varchar7_1;
- a  
-----
+  a   
+------
+ -55
  55
  0
+ -88
+ 127
  13
-(3 rows)
+ -13
+ -128
+(8 rows)
 
 delete from test_varchar7_1;
 insert into test_varchar7_1 select * from test_sint;
@@ -1098,8 +1116,6 @@ create table test_varchar7_strict(a varchar(7));
     
 --insert into table values ...
 insert into test_tint_strict(a) values(-55);
-ERROR:  tinyint out of range
-CONTEXT:  referenced column: a
 insert into test_tint_strict(a) values(55);
 insert into test_tint_strict(a) values(355);
 ERROR:  tinyint out of range
@@ -1127,8 +1143,6 @@ ERROR:  tinyint out of range
 CONTEXT:  referenced column: a
 insert into test_tint_strict(a) values(12.55);
 insert into test_tint_strict(a) values(-12.55);
-ERROR:  tinyint out of range
-CONTEXT:  referenced column: a
 insert into test_tint_strict(a) values(-12123451.55);
 ERROR:  tinyint out of range
 CONTEXT:  referenced column: a
@@ -1139,11 +1153,13 @@ insert into test_tint_strict(a) values(-1.4e300);
 ERROR:  tinyint out of range
 CONTEXT:  referenced column: a
 select * from test_tint_strict;
- a  
-----
+  a  
+-----
+ -55
  55
  13
-(2 rows)
+ -13
+(4 rows)
 
     
 insert into test_sint_strict(a) values(-55);
@@ -1353,32 +1369,38 @@ create table test_char_strict1(a char);
 create table test_varchar7_strict_1(a varchar(7));
     
 insert into test_tint_strict1 select * from test_sint_strict;
-ERROR:  tinyint out of range
-CONTEXT:  referenced column: a
 select * from test_tint_strict1;
- a 
----
-(0 rows)
+  a  
+-----
+ -55
+ 55
+ 13
+ -13
+(4 rows)
 
     
 delete from test_tint_strict1;
 insert into test_tint_strict1 select * from test_int_strict;
-ERROR:  tinyint out of range
-CONTEXT:  referenced column: a
 select * from test_tint_strict1;
- a 
----
-(0 rows)
+  a  
+-----
+ -55
+ 55
+ 13
+ -13
+(4 rows)
 
     
 delete from test_tint_strict1;
 insert into test_tint_strict1 select * from test_bint_strict;
-ERROR:  tinyint out of range
-CONTEXT:  referenced column: a
 select * from test_tint_strict1;
- a 
----
-(0 rows)
+  a  
+-----
+ -55
+ 55
+ 13
+ -13
+(4 rows)
 
     
 delete from test_tint_strict1;
@@ -1422,11 +1444,13 @@ select * from test_tint_strict1;
     
 insert into test_sint_strict1 select * from test_tint_strict;
 select * from test_sint_strict1;
- a  
-----
- 55
- 13
-(2 rows)
+  a  
+-----
+ -55
+  55
+  13
+ -13
+(4 rows)
 
     
 delete from test_sint_strict1;
@@ -1493,11 +1517,13 @@ select * from test_sint_strict1;
     
 insert into test_int_strict1 select * from test_tint_strict;
 select * from test_int_strict1;
- a  
-----
- 55
- 13
-(2 rows)
+  a  
+-----
+ -55
+  55
+  13
+ -13
+(4 rows)
 
     
 delete from test_int_strict1;
@@ -1564,11 +1590,13 @@ select * from test_int_strict1;
     
 insert into test_bint_strict1 select * from test_tint_strict;
 select * from test_bint_strict1;
- a  
-----
- 55
- 13
-(2 rows)
+  a  
+-----
+ -55
+  55
+  13
+ -13
+(4 rows)
 
     
 delete from test_bint_strict1;
@@ -1685,11 +1713,13 @@ select * from test_char_strict1;
     
 insert into test_varchar7_strict_1 select * from test_tint_strict;
 select * from test_varchar7_strict_1;
- a  
-----
+  a  
+-----
+ -55
  55
  13
-(2 rows)
+ -13
+(4 rows)
 
     
 delete from test_varchar7_strict_1;

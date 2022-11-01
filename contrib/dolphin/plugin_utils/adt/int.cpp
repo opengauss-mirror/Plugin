@@ -40,6 +40,7 @@
 #include "utils/array.h"
 #include "utils/builtins.h"
 #include "plugin_commands/mysqlmode.h"
+#include "plugin_utils/tinyint.h"
 
 #define SAMESIGN(a, b) (((a) < 0) == ((b) < 0))
 
@@ -1231,14 +1232,19 @@ Datum generate_series_step_int4(PG_FUNCTION_ARGS)
 Datum int1in(PG_FUNCTION_ARGS)
 {
     char* num = PG_GETARG_CSTRING(0);
-
-    PG_RETURN_UINT8((uint8)PgAtoiInternal(num, sizeof(uint8), '\0', SQL_MODE_STRICT()));
+#ifdef DOLPHIN
+    PG_RETURN_INT8((int8)PgAtoiInternal(num, sizeof(int8), '\0', SQL_MODE_STRICT()));
+#endif
 }
 
 // int1out - converts uint8 to "num"
 Datum int1out(PG_FUNCTION_ARGS)
 {
+#ifdef DOLPHIN
+    int8 arg1 = PG_GETARG_INT8(0);
+#else
     uint8 arg1 = PG_GETARG_UINT8(0);
+#endif
     char* result = (char*)palloc(5); /* sign, 3 digits, '\0' */
 
     pg_ctoa(arg1, result);
@@ -1250,13 +1256,21 @@ Datum int1recv(PG_FUNCTION_ARGS)
 {
     StringInfo buf = (StringInfo)PG_GETARG_POINTER(0);
 
+#ifdef DOLPHIN
+    PG_RETURN_INT8((int8)pq_getmsgint(buf, sizeof(int8)));
+#else
     PG_RETURN_UINT8((uint8)pq_getmsgint(buf, sizeof(uint8)));
+#endif
 }
 
 // int1send - converts uint8 to binary format
 Datum int1send(PG_FUNCTION_ARGS)
 {
+#ifdef DOLPHIN
+    int8 arg1 = PG_GETARG_INT8(0);
+#else
     uint8 arg1 = PG_GETARG_UINT8(0);
+#endif
     StringInfoData buf;
 
     pq_begintypsend(&buf);
@@ -1266,38 +1280,60 @@ Datum int1send(PG_FUNCTION_ARGS)
 
 Datum int1and(PG_FUNCTION_ARGS)
 {
+#ifdef DOLPHIN
+    int8 arg1 = PG_GETARG_INT8(0);
+    int8 arg2 = PG_GETARG_INT8(1);
+#else
     uint8 arg1 = PG_GETARG_UINT8(0);
     uint8 arg2 = PG_GETARG_UINT8(1);
+#endif
 
     PG_RETURN_UINT8(arg1 & arg2);
 }
 
 Datum int1or(PG_FUNCTION_ARGS)
 {
+#ifdef DOLPHIN
+    int8 arg1 = PG_GETARG_INT8(0);
+    int8 arg2 = PG_GETARG_INT8(1);
+#else
     uint8 arg1 = PG_GETARG_UINT8(0);
     uint8 arg2 = PG_GETARG_UINT8(1);
+#endif
 
     PG_RETURN_UINT8(arg1 | arg2);
 }
 
 Datum int1xor(PG_FUNCTION_ARGS)
 {
+#ifdef DOLPHIN
+    int8 arg1 = PG_GETARG_INT8(0);
+    int8 arg2 = PG_GETARG_INT8(1);
+#else
     uint8 arg1 = PG_GETARG_UINT8(0);
     uint8 arg2 = PG_GETARG_UINT8(1);
+#endif
 
     PG_RETURN_UINT8(arg1 ^ arg2);
 }
 
 Datum int1not(PG_FUNCTION_ARGS)
 {
-    uint8 arg1 = PG_GETARG_UINT8(0);
-
+#ifdef DOLPHIN
+    int8 arg1 = PG_GETARG_INT8(0);
+#else
+    int8 arg1 = PG_GETARG_INT8(0);
+#endif
     PG_RETURN_UINT8((uint8)(~arg1));
 }
 
 Datum int1shl(PG_FUNCTION_ARGS)
 {
+#ifdef DOLPHIN
+    int8 arg1 = PG_GETARG_INT8(0);
+#else
     uint8 arg1 = PG_GETARG_UINT8(0);
+#endif
     int32 arg2 = PG_GETARG_INT32(1);
 
     PG_RETURN_UINT8((uint8)(arg1 << arg2));
@@ -1305,7 +1341,11 @@ Datum int1shl(PG_FUNCTION_ARGS)
 
 Datum int1shr(PG_FUNCTION_ARGS)
 {
+#ifdef DOLPHIN
+    int8 arg1 = PG_GETARG_INT8(0);
+#else
     uint8 arg1 = PG_GETARG_UINT8(0);
+#endif
     int32 arg2 = PG_GETARG_INT32(1);
 
     PG_RETURN_UINT8(arg1 >> arg2);
@@ -1322,55 +1362,90 @@ Datum int1shr(PG_FUNCTION_ARGS)
  */
 Datum int1eq(PG_FUNCTION_ARGS)
 {
+#ifdef DOLPHIN
+    int8 arg1 = PG_GETARG_INT8(0);
+    int8 arg2 = PG_GETARG_INT8(1);
+#else
     uint8 arg1 = PG_GETARG_UINT8(0);
     uint8 arg2 = PG_GETARG_UINT8(1);
+#endif
 
     PG_RETURN_BOOL(arg1 == arg2);
 }
 
 Datum int1ne(PG_FUNCTION_ARGS)
 {
+#ifdef DOLPHIN
+    int8 arg1 = PG_GETARG_INT8(0);
+    int8 arg2 = PG_GETARG_INT8(1);
+#else
     uint8 arg1 = PG_GETARG_UINT8(0);
     uint8 arg2 = PG_GETARG_UINT8(1);
+#endif
 
     PG_RETURN_BOOL(arg1 != arg2);
 }
 
 Datum int1lt(PG_FUNCTION_ARGS)
 {
+#ifdef DOLPHIN
+    int8 arg1 = PG_GETARG_INT8(0);
+    int8 arg2 = PG_GETARG_INT8(1);
+#else
     uint8 arg1 = PG_GETARG_UINT8(0);
     uint8 arg2 = PG_GETARG_UINT8(1);
+#endif
 
     PG_RETURN_BOOL(arg1 < arg2);
 }
 
 Datum int1le(PG_FUNCTION_ARGS)
 {
+#ifdef DOLPHIN
+    int8 arg1 = PG_GETARG_INT8(0);
+    int8 arg2 = PG_GETARG_INT8(1);
+#else
     uint8 arg1 = PG_GETARG_UINT8(0);
     uint8 arg2 = PG_GETARG_UINT8(1);
+#endif
 
     PG_RETURN_BOOL(arg1 <= arg2);
 }
 
 Datum int1gt(PG_FUNCTION_ARGS)
 {
+#ifdef DOLPHIN
+    int8 arg1 = PG_GETARG_INT8(0);
+    int8 arg2 = PG_GETARG_INT8(1);
+#else
     uint8 arg1 = PG_GETARG_UINT8(0);
     uint8 arg2 = PG_GETARG_UINT8(1);
+#endif
 
     PG_RETURN_BOOL(arg1 > arg2);
 }
 
 Datum int1ge(PG_FUNCTION_ARGS)
 {
+#ifdef DOLPHIN
+    int8 arg1 = PG_GETARG_INT8(0);
+    int8 arg2 = PG_GETARG_INT8(1);
+#else
     uint8 arg1 = PG_GETARG_UINT8(0);
     uint8 arg2 = PG_GETARG_UINT8(1);
+#endif
 
     PG_RETURN_BOOL(arg1 >= arg2);
 }
 Datum int1cmp(PG_FUNCTION_ARGS)
 {
+#ifdef DOLPHIN
+    int8 arg1 = PG_GETARG_INT8(0);
+    int8 arg2 = PG_GETARG_INT8(1);
+#else
     uint8 arg1 = PG_GETARG_UINT8(0);
     uint8 arg2 = PG_GETARG_UINT8(1);
+#endif
 
     if (arg1 > arg2)
         PG_RETURN_INT32(1);
@@ -1380,6 +1455,163 @@ Datum int1cmp(PG_FUNCTION_ARGS)
         PG_RETURN_INT32(-1);
 }
 
+#ifdef DOLPHIN
+
+Datum int12eq(PG_FUNCTION_ARGS)
+{
+    int8 arg1 = PG_GETARG_INT8(0);
+    int16 arg2 = PG_GETARG_INT16(1);
+
+    PG_RETURN_BOOL(arg1 == arg2);
+}
+
+Datum int12lt(PG_FUNCTION_ARGS)
+{
+    int8 arg1 = PG_GETARG_INT8(0);
+    int16 arg2 = PG_GETARG_INT16(1);
+
+    PG_RETURN_BOOL(arg1 < arg2);
+}
+
+Datum int12le(PG_FUNCTION_ARGS)
+{
+    int8 arg1 = PG_GETARG_INT8(0);
+    int16 arg2 = PG_GETARG_INT16(1);
+
+    PG_RETURN_BOOL(arg1 <= arg2);
+}
+
+Datum int12gt(PG_FUNCTION_ARGS)
+{
+    int8 arg1 = PG_GETARG_INT8(0);
+    int16 arg2 = PG_GETARG_INT16(1);
+
+    PG_RETURN_BOOL(arg1 > arg2);
+}
+
+Datum int12ge(PG_FUNCTION_ARGS)
+{
+    int8 arg1 = PG_GETARG_INT8(0);
+    int16 arg2 = PG_GETARG_INT16(1);
+
+    PG_RETURN_BOOL(arg1 >= arg2);
+}
+
+Datum int14eq(PG_FUNCTION_ARGS)
+{
+    int8 arg1 = PG_GETARG_INT8(0);
+    int32 arg2 = PG_GETARG_INT32(1);
+
+    PG_RETURN_BOOL(arg1 == arg2);
+}
+
+Datum int14lt(PG_FUNCTION_ARGS)
+{
+    int8 arg1 = PG_GETARG_INT8(0);
+    int32 arg2 = PG_GETARG_INT32(1);
+
+    PG_RETURN_BOOL(arg1 < arg2);
+}
+
+Datum int14le(PG_FUNCTION_ARGS)
+{
+    int8 arg1 = PG_GETARG_INT8(0);
+    int32 arg2 = PG_GETARG_INT32(1);
+
+    PG_RETURN_BOOL(arg1 <= arg2);
+}
+
+Datum int14gt(PG_FUNCTION_ARGS)
+{
+    int8 arg1 = PG_GETARG_INT8(0);
+    int32 arg2 = PG_GETARG_INT32(1);
+
+    PG_RETURN_BOOL(arg1 > arg2);
+}
+
+Datum int14ge(PG_FUNCTION_ARGS)
+{
+    int8 arg1 = PG_GETARG_INT8(0);
+    int32 arg2 = PG_GETARG_INT32(1);
+
+    PG_RETURN_BOOL(arg1 >= arg2);
+}
+
+Datum int18eq(PG_FUNCTION_ARGS)
+{
+    int8 arg1 = PG_GETARG_INT8(0);
+    int64 arg2 = PG_GETARG_INT64(1);
+
+    PG_RETURN_BOOL(arg1 == arg2);
+}
+
+Datum int18lt(PG_FUNCTION_ARGS)
+{
+    int8 arg1 = PG_GETARG_INT8(0);
+    int64 arg2 = PG_GETARG_INT64(1);
+
+    PG_RETURN_BOOL(arg1 < arg2);
+}
+
+Datum int18le(PG_FUNCTION_ARGS)
+{
+    int8 arg1 = PG_GETARG_INT8(0);
+    int64 arg2 = PG_GETARG_INT64(1);
+
+    PG_RETURN_BOOL(arg1 <= arg2);
+}
+
+Datum int18gt(PG_FUNCTION_ARGS)
+{
+    int8 arg1 = PG_GETARG_INT8(0);
+    int64 arg2 = PG_GETARG_INT64(1);
+
+    PG_RETURN_BOOL(arg1 > arg2);
+}
+
+Datum int18ge(PG_FUNCTION_ARGS)
+{
+    int8 arg1 = PG_GETARG_INT8(0);
+    int64 arg2 = PG_GETARG_INT64(1);
+
+    PG_RETURN_BOOL(arg1 >= arg2);
+}
+
+int intCmp(int64 arg1, int64 arg2)
+{
+    if (arg1 > arg2)
+        return 1;
+    else if (arg1 == arg2)
+        return 0;
+    else
+        return -1;
+}
+
+Datum int12cmp(PG_FUNCTION_ARGS)
+{
+    int8 arg1 = PG_GETARG_INT8(0);
+    int16 arg2 = PG_GETARG_INT16(1);
+
+    PG_RETURN_INT32(intCmp(arg1, arg2));
+}
+
+Datum int14cmp(PG_FUNCTION_ARGS)
+{
+    int8 arg1 = PG_GETARG_INT8(0);
+    int32 arg2 = PG_GETARG_INT32(1);
+
+    PG_RETURN_INT32(intCmp(arg1, arg2));
+}
+
+Datum int18cmp(PG_FUNCTION_ARGS)
+{
+    int8 arg1 = PG_GETARG_INT8(0);
+    int64 arg2 = PG_GETARG_INT64(1);
+
+    PG_RETURN_INT32(intCmp(arg1, arg2));
+}
+#endif
+
 /*
  *		===================
  *		CONVERSION ROUTINES
@@ -1387,7 +1619,11 @@ Datum int1cmp(PG_FUNCTION_ARGS)
  */
 Datum i1toi2(PG_FUNCTION_ARGS)
 {
+#ifdef DOLPHIN
+    int8 arg1 = PG_GETARG_INT8(0);
+#else
     uint8 arg1 = PG_GETARG_UINT8(0);
+#endif
 
     PG_RETURN_INT16((int16)arg1);
 }
@@ -1396,6 +1632,26 @@ Datum i2toi1(PG_FUNCTION_ARGS)
 {
     int16 arg1 = PG_GETARG_INT16(0);
 
+#ifdef DOLPHIN
+    if (arg1 < CHAR_MIN || arg1 > CHAR_MAX) {
+        if (fcinfo->can_ignore) {
+            ereport(WARNING, (errmsg("tinyint out of range")));
+            PG_RETURN_UINT8((uint8)(arg1 < 0 ? CHAR_MIN : CHAR_MAX));
+        }
+        ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("tinyint out of range")));
+    }
+
+    if (SQL_MODE_STRICT()) {
+        if (unlikely(arg1 < CHAR_MIN) || unlikely(arg1 > CHAR_MAX))
+            ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("tinyint out of range")));
+    } else if (arg1 > CHAR_MAX) {
+        arg1 = CHAR_MAX;
+    } else if (arg1 < CHAR_MIN) {
+        arg1 = CHAR_MIN;
+    }
+
+    PG_RETURN_INT8((int8)arg1);
+#else
     if (arg1 < 0 || arg1 > UCHAR_MAX) {
         if (fcinfo->can_ignore) {
             ereport(WARNING, (errmsg("tinyint out of range")));
@@ -1405,11 +1661,16 @@ Datum i2toi1(PG_FUNCTION_ARGS)
     }
 
     PG_RETURN_UINT8((uint8)arg1);
+#endif
 }
 
 Datum i1toi4(PG_FUNCTION_ARGS)
 {
+#ifdef DOLPHIN
+    int8 arg1 = PG_GETARG_INT8(0);
+#else
     uint8 arg1 = PG_GETARG_UINT8(0);
+#endif
 
     PG_RETURN_INT32((int32)arg1);
 }
@@ -1418,6 +1679,26 @@ Datum i4toi1(PG_FUNCTION_ARGS)
 {
     int32 arg1 = PG_GETARG_INT32(0);
 
+#ifdef DOLPHIN
+    if (arg1 < CHAR_MIN || arg1 > CHAR_MAX) {
+        if (fcinfo->can_ignore) {
+            ereport(WARNING, (errmsg("tinyint out of range")));
+            PG_RETURN_INT8((int8)(arg1 < 0 ? CHAR_MIN : CHAR_MAX));
+        }
+        ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("tinyint out of range")));
+    }
+
+    if (SQL_MODE_STRICT()) {
+        if (unlikely(arg1 < CHAR_MIN) || unlikely(arg1 > CHAR_MAX))
+            ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("tinyint out of range")));
+    } else if (arg1 > CHAR_MAX) {
+        arg1 = CHAR_MAX;
+    } else if (arg1 < CHAR_MIN) {
+        arg1 = CHAR_MIN;
+    }
+
+    PG_RETURN_INT8((int8)arg1);
+#else
     if (arg1 < 0 || arg1 > UCHAR_MAX) {
         if (fcinfo->can_ignore) {
             ereport(WARNING, (errmsg("tinyint out of range")));
@@ -1427,11 +1708,16 @@ Datum i4toi1(PG_FUNCTION_ARGS)
     }
 
     PG_RETURN_UINT8((uint8)arg1);
+#endif
 }
 
 Datum i1toi8(PG_FUNCTION_ARGS)
 {
+#ifdef DOLPHIN
+    int8 arg1 = PG_GETARG_INT8(0);
+#else
     uint8 arg1 = PG_GETARG_UINT8(0);
+#endif
 
     PG_RETURN_INT64((int64)arg1);
 }
@@ -1440,6 +1726,26 @@ Datum i8toi1(PG_FUNCTION_ARGS)
 {
     int64 arg1 = PG_GETARG_INT64(0);
 
+#ifdef DOLPHIN
+    if (arg1 < CHAR_MIN || arg1 > CHAR_MAX) {
+        if (fcinfo->can_ignore) {
+            ereport(WARNING, (errmsg("tinyint out of range")));
+            PG_RETURN_INT8((int8)(arg1 < 0 ? CHAR_MIN : CHAR_MAX));
+        }
+        ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("tinyint out of range")));
+    }
+
+    if (SQL_MODE_STRICT()) {
+        if (unlikely(arg1 < CHAR_MIN) || unlikely(arg1 > CHAR_MAX))
+            ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("tinyint out of range")));
+    } else if (arg1 > CHAR_MAX) {
+        arg1 = CHAR_MAX;
+    } else if (arg1 < CHAR_MIN) {
+        arg1 = CHAR_MIN;
+    }
+
+    PG_RETURN_INT8((int8)arg1);
+#else
     if (arg1 < 0 || arg1 > UCHAR_MAX) {
         if (fcinfo->can_ignore) {
             ereport(WARNING, (errmsg("tinyint out of range")));
@@ -1449,18 +1755,27 @@ Datum i8toi1(PG_FUNCTION_ARGS)
     }
 
     PG_RETURN_UINT8((uint8)arg1);
+#endif
 }
 
 Datum i1tof4(PG_FUNCTION_ARGS)
 {
+#ifdef DOLPHIN
+    int8 arg1 = PG_GETARG_INT8(0);
+#else
     uint8 arg1 = PG_GETARG_UINT8(0);
+#endif
 
     PG_RETURN_FLOAT4((float4)arg1);
 }
 
 Datum i1tof8(PG_FUNCTION_ARGS)
 {
+#ifdef DOLPHIN
+    int8 arg1 = PG_GETARG_INT8(0);
+#else
     uint8 arg1 = PG_GETARG_UINT8(0);
+#endif
 
     PG_RETURN_FLOAT8((float8)arg1);
 }
@@ -1469,6 +1784,31 @@ Datum f4toi1(PG_FUNCTION_ARGS)
 {
     float4 arg1 = PG_GETARG_FLOAT4(0);
 
+#ifdef DOLPHIN
+    arg1 = round(arg1);
+
+    if (isnan(arg1))
+        ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("smallint out of range")));
+
+    if (arg1 < CHAR_MIN || arg1 > CHAR_MAX) {
+        if (fcinfo->can_ignore) {
+            ereport(WARNING, (errmsg("tinyint out of range")));
+            PG_RETURN_INT8((int8)(arg1 < 0 ? CHAR_MIN : CHAR_MAX));
+        }
+        ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("tinyint out of range")));
+    }
+
+    if (SQL_MODE_STRICT()) {
+        if (unlikely(arg1 < CHAR_MIN) || unlikely(arg1 > CHAR_MAX))
+            ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("tinyint out of range")));
+    } else if (arg1 > CHAR_MAX) {
+        arg1 = CHAR_MAX;
+    } else if (arg1 < CHAR_MIN) {
+        arg1 = CHAR_MIN;
+    }
+
+    PG_RETURN_INT8((int8)round(arg1));
+#else
     if (arg1 < 0 || arg1 > UCHAR_MAX) {
         if (fcinfo->can_ignore) {
             ereport(WARNING, (errmsg("tinyint out of range")));
@@ -1478,12 +1818,38 @@ Datum f4toi1(PG_FUNCTION_ARGS)
     }
 
     PG_RETURN_UINT8((uint8)round(arg1));
+#endif
 }
 
 Datum f8toi1(PG_FUNCTION_ARGS)
 {
     float8 arg1 = PG_GETARG_FLOAT8(0);
 
+#ifdef DOLPHIN
+    arg1 = round(arg1);
+
+    if (isnan(arg1))
+        ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("smallint out of range")));
+
+    if (arg1 < CHAR_MIN || arg1 > CHAR_MAX) {
+        if (fcinfo->can_ignore) {
+            ereport(WARNING, (errmsg("tinyint out of range")));
+            PG_RETURN_INT8((int8)(arg1 < 0 ? CHAR_MIN : CHAR_MAX));
+        }
+        ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("tinyint out of range")));
+    }
+
+    if (SQL_MODE_STRICT()) {
+        if (unlikely(arg1 < CHAR_MIN) || unlikely(arg1 > CHAR_MAX))
+            ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("tinyint out of range")));
+    } else if (arg1 > CHAR_MAX) {
+        arg1 = CHAR_MAX;
+    } else if (arg1 < CHAR_MIN) {
+        arg1 = CHAR_MIN;
+    }
+
+    PG_RETURN_INT8((int8)round(arg1));
+#else
     if (arg1 < 0 || arg1 > UCHAR_MAX) {
         if (fcinfo->can_ignore) {
             ereport(WARNING, (errmsg("tinyint out of range")));
@@ -1493,12 +1859,17 @@ Datum f8toi1(PG_FUNCTION_ARGS)
     }
 
     PG_RETURN_UINT8((uint8)round(arg1));
+#endif
 }
 
 /* Cast int1 -> bool */
 Datum int1_bool(PG_FUNCTION_ARGS)
 {
+#ifdef DOLPHIN
+    if (PG_GETARG_INT8(0) == 0)
+#else
     if (PG_GETARG_UINT8(0) == 0)
+#endif
         PG_RETURN_BOOL(false);
     else
         PG_RETURN_BOOL(true);
@@ -1508,9 +1879,15 @@ Datum int1_bool(PG_FUNCTION_ARGS)
 Datum bool_int1(PG_FUNCTION_ARGS)
 {
     if (PG_GETARG_BOOL(0) == false)
+#ifdef DOLPHIN
+        PG_RETURN_INT8(0);
+    else
+        PG_RETURN_INT8(1);
+#else
         PG_RETURN_UINT8(0);
     else
         PG_RETURN_UINT8(1);
+#endif
 }
 
 /* Cast int1 -> interval */
@@ -1534,20 +1911,46 @@ Datum int4_interval(PG_FUNCTION_ARGS)
 /* OPERATE INT1 */
 Datum int1um(PG_FUNCTION_ARGS)
 {
+#ifdef DOLPHIN
+    int8 result = PG_GETARG_INT8(0);
+    if (unlikely(result == PG_INT8_MIN))
+        ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("tinyint out of range")));
+    PG_RETURN_INT8(0 - result);
+#else
     uint16 result = PG_GETARG_UINT8(0);
 
     PG_RETURN_INT16(0 - result);
+#endif
 }
 
 Datum int1up(PG_FUNCTION_ARGS)
 {
+#ifdef DOLPHIN
+    int8 arg = PG_GETARG_INT8(0);
+
+    PG_RETURN_INT8(arg);
+#else
     uint8 arg = PG_GETARG_UINT8(0);
 
     PG_RETURN_UINT8(arg);
+#endif
 }
 
 Datum int1pl(PG_FUNCTION_ARGS)
 {
+#ifdef DOLPHIN
+    int8 arg1 = PG_GETARG_INT8(0);
+    int8 arg2 = PG_GETARG_INT8(1);
+    int16 result;
+
+    result = arg1 + arg2;
+
+    if (result < CHAR_MIN || result > CHAR_MAX) {
+        ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("tinyint out of range")));
+    }
+
+    PG_RETURN_INT8((int8)result);
+#else
     uint8 arg1 = PG_GETARG_UINT8(0);
     uint8 arg2 = PG_GETARG_UINT8(1);
     uint16 result;
@@ -1559,10 +1962,23 @@ Datum int1pl(PG_FUNCTION_ARGS)
     }
 
     PG_RETURN_UINT8((uint8)result);
+#endif
 }
 
 Datum int1mi(PG_FUNCTION_ARGS)
 {
+#ifdef DOLPHIN
+    int8 arg1 = PG_GETARG_INT8(0);
+    int8 arg2 = PG_GETARG_INT8(1);
+    int16 result;
+
+    result = arg1 - arg2;
+    if (result < CHAR_MIN || result > CHAR_MAX) {
+        ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("tinyint out of range")));
+    }
+
+    PG_RETURN_INT8((int8)result);
+#else
     uint8 arg1 = PG_GETARG_UINT8(0);
     uint8 arg2 = PG_GETARG_UINT8(1);
     uint8 result;
@@ -1574,10 +1990,24 @@ Datum int1mi(PG_FUNCTION_ARGS)
     result = arg1 - arg2;
 
     PG_RETURN_UINT8(result);
+#endif
 }
 
 Datum int1mul(PG_FUNCTION_ARGS)
 {
+#ifdef DOLPHIN
+    int8 arg1 = PG_GETARG_INT8(0);
+    int8 arg2 = PG_GETARG_INT8(1);
+    int16 result16;
+
+    result16 = (int16)arg1 * (int16)arg2;
+
+    if ((result16 < CHAR_MIN) || (result16 > CHAR_MAX)) {
+        ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("tinyint out of range")));
+    }
+
+    PG_RETURN_INT8((int8)result16);
+#else
     uint8 arg1 = PG_GETARG_UINT8(0);
     uint8 arg2 = PG_GETARG_UINT8(1);
     int16 result16;
@@ -1593,13 +2023,18 @@ Datum int1mul(PG_FUNCTION_ARGS)
     }
 
     PG_RETURN_UINT8((uint8)result16);
+#endif
 }
 
 Datum int1div(PG_FUNCTION_ARGS)
 {
+#ifdef DOLPHIN
+    int8 arg1 = PG_GETARG_INT8(0);
+    int8 arg2 = PG_GETARG_INT8(1);
+#else
     uint8 arg1 = PG_GETARG_UINT8(0);
     uint8 arg2 = PG_GETARG_UINT8(1);
-
+#endif
     float8 result;
 
     if (arg2 == 0) {
@@ -1616,13 +2051,35 @@ Datum int1div(PG_FUNCTION_ARGS)
 
 Datum int1abs(PG_FUNCTION_ARGS)
 {
+#ifdef DOLPHIN
+    int8 arg1 = PG_GETARG_INT8(0);
+    int8 result;
+
+    if (unlikely(arg1 == PG_INT8_MIN))
+        ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("tinyint out of range")));
+    result = (arg1 < 0) ? -arg1 : arg1;
+    PG_RETURN_INT8(result);
+#else
     uint8 arg1 = PG_GETARG_UINT8(0);
 
     PG_RETURN_UINT8(arg1);
+#endif
 }
 
 Datum int1mod(PG_FUNCTION_ARGS)
 {
+#ifdef DOLPHIN
+    int8 arg1 = PG_GETARG_INT8(0);
+    int8 arg2 = PG_GETARG_INT8(1);
+
+    if (arg2 == 0) {
+        PG_RETURN_INT8(arg1);
+    }
+
+    /* No overflow is possible */
+
+    PG_RETURN_INT8(arg1 % arg2);
+#else
     uint8 arg1 = PG_GETARG_UINT8(0);
     uint8 arg2 = PG_GETARG_UINT8(1);
 
@@ -1640,41 +2097,71 @@ Datum int1mod(PG_FUNCTION_ARGS)
     /* No overflow is possible */
 
     PG_RETURN_UINT8(arg1 % arg2);
+#endif
 }
 
 Datum int1larger(PG_FUNCTION_ARGS)
 {
+#ifdef DOLPHIN
+    int8 arg1 = PG_GETARG_INT8(0);
+    int8 arg2 = PG_GETARG_INT8(1);
+
+    PG_RETURN_INT8((arg1 > arg2) ? arg1 : arg2);
+#else
     uint8 arg1 = PG_GETARG_UINT8(0);
     uint8 arg2 = PG_GETARG_UINT8(1);
 
     PG_RETURN_UINT8((arg1 > arg2) ? arg1 : arg2);
+#endif
 }
 
 Datum int1smaller(PG_FUNCTION_ARGS)
 {
+#ifdef DOLPHIN
+    int8 arg1 = PG_GETARG_INT8(0);
+    int8 arg2 = PG_GETARG_INT8(1);
+
+    PG_RETURN_INT8((arg1 < arg2) ? arg1 : arg2);
+#else
     uint8 arg1 = PG_GETARG_UINT8(0);
     uint8 arg2 = PG_GETARG_UINT8(1);
 
     PG_RETURN_UINT8((arg1 < arg2) ? arg1 : arg2);
+#endif
 }
 
 Datum int1inc(PG_FUNCTION_ARGS)
 {
+#ifdef DOLPHIN
+    int8 arg = PG_GETARG_INT8(0);
+#else
     uint8 arg = PG_GETARG_UINT8(0);
+#endif
     int16 result;
 
     result = arg + 1;
 
     /* Overflow check */
+#ifdef DOLPHIN
+    if (result > CHAR_MAX)
+        ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("tinyint out of range")));
+
+    PG_RETURN_INT8((int8)result);
+#else
     if (result > UCHAR_MAX)
         ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("tinyint out of range")));
 
     PG_RETURN_UINT8((uint8)result);
+#endif
 }
 
 Datum int1_text(PG_FUNCTION_ARGS)
 {
-    uint8 arg1 = PG_GETARG_UINT8(0);
+#ifdef DOLPHIN
+    int8 arg1 = PG_GETARG_INT8(0);
+#else
+   uint8 arg1 = PG_GETARG_UINT8(0);
+#endif
     char* tmp = NULL;
     Datum result;
     tmp = DatumGetCString(DirectFunctionCall1(int1out, arg1));

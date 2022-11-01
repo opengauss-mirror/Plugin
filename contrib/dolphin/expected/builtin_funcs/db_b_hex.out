@@ -3,11 +3,10 @@ NOTICE:  database "db_b_hex" does not exist, skipping
 create database db_b_hex dbcompatibility 'B';
 \c db_b_hex
 select hex(int1(255));
- hex 
------
- ff
-(1 row)
-
+ERROR:  tinyint out of range
+CONTEXT:  referenced column: to_number
+SQL function "int1" statement 1
+referenced column: hex
 select hex(int1(256));
 ERROR:  tinyint out of range
 CONTEXT:  referenced column: to_number
