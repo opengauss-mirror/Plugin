@@ -1719,6 +1719,19 @@ static void transformTableLikeClause(
         !RelationIsValuePartitioned(relation))
         table_like_clause->options = table_like_clause->options & ~CREATE_TABLE_LIKE_PARTITION;
 
+#ifdef DOLPHIN
+    if (table_like_clause->options & CREATE_TABLE_LIKE_M_STYLE &&
+        !(table_like_clause->options >> MAX_TABLE_LIKE_OPTIONS)) {
+        if (!(table_like_clause-> options & CREATE_TABLE_LIKE_EXCLUDING_INDEXES)) {
+            table_like_clause->options |= CREATE_TABLE_LIKE_INDEXES;
+        }
+        if (!RELATION_ISNOT_REGULAR_PARTITIONED(relation) &&
+            !(table_like_clause-> options & CREATE_TABLE_LIKE_EXCLUDING_PARTITION)) {
+            table_like_clause->options |= CREATE_TABLE_LIKE_PARTITION;
+        }
+    }
+#endif
+
     if (table_like_clause->options & CREATE_TABLE_LIKE_PARTITION) {
         if (RELATION_ISNOT_REGULAR_PARTITIONED(relation)) {
             ereport(ERROR,

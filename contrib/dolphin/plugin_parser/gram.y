@@ -7342,6 +7342,7 @@ CreateStmt:	CREATE OptTemp TABLE dolphin_qualified_name '(' OptTableElementList 
 					CreateStmt *n = makeNode(CreateStmt);
 					$4->relpersistence = $2;
 					n->relation = $4;
+					((TableLikeClause *)$5)->options |= CREATE_TABLE_LIKE_M_STYLE;
 					n->tableElts = list_make1($5);
 					n->constraints = NIL;
 					n->if_not_exists = false;
@@ -7364,6 +7365,7 @@ CreateStmt:	CREATE OptTemp TABLE dolphin_qualified_name '(' OptTableElementList 
 					CreateStmt *n = makeNode(CreateStmt);
 					$7->relpersistence = $2;
 					n->relation = $7;
+					((TableLikeClause *)$8)->options |= CREATE_TABLE_LIKE_M_STYLE;
 					n->tableElts = list_make1($8);
 					n->constraints = NIL;
 					n->if_not_exists = true;
@@ -8971,7 +8973,16 @@ excluding_option_list:
 
 TableLikeOptionList:
 				TableLikeOptionList INCLUDING TableLikeIncludingOption	{ $$ = $1 | $3; }
-				| TableLikeOptionList EXCLUDING TableLikeExcludingOption	{ $$ = $1 & ~$3; }
+				| TableLikeOptionList EXCLUDING TableLikeExcludingOption
+					{
+						if ($3 & CREATE_TABLE_LIKE_INDEXES) {
+							$$ = ($1 | CREATE_TABLE_LIKE_EXCLUDING_INDEXES) & ~$3;
+						} else if ($3 & CREATE_TABLE_LIKE_PARTITION) {
+							$$ = ($1 | CREATE_TABLE_LIKE_EXCLUDING_PARTITION) & ~$3;
+						} else {
+							$$ = $1 & ~$3; 
+						}
+					}
 				| /* EMPTY */						{ $$ = CREATE_TABLE_LIKE_DEFAULTS_SERIAL; }
 		;
 
@@ -23013,6 +23024,13 @@ insert_rest:
 					$$->selectStmt = $4;
 					$$->isRewritten = false;
 				}
+			| '(' ')' SelectStmt
+				{
+					$$ = makeNode(InsertStmt);
+					$$->cols = NIL;
+					$$->selectStmt = $3;
+					$$->isRewritten = false;
+				}
 			| DEFAULT VALUES
 				{
 					$$ = makeNode(InsertStmt);
@@ -23030,6 +23048,17 @@ insert_rest:
 							$$->selectStmt = $1;
 						}
 						$$->isRewritten = false;
+				}
+			| '(' ')' insert_empty_values
+				{
+					$$ = makeNode(InsertStmt);
+					$$->cols = NIL;
+					if (list_length(((SelectStmt *)$3)->valuesLists) == 1) {
+						$$->selectStmt = NULL;
+					} else {
+						$$->selectStmt = $3;
+					}
+					$$->isRewritten = false;
 				}
 		;
 
@@ -25793,6 +25822,8 @@ character:	CHARACTER opt_varying
 			| NVARCHAR
 										{ $$ = "nvarchar2"; }
 			| NVARCHAR2
+										{ $$ = "nvarchar2"; }
+			| NATIONAL VARCHAR
 										{ $$ = "nvarchar2"; }
 			| VARCHAR
 										{ $$ = "varchar"; }

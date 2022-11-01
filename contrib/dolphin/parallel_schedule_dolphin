@@ -121,3 +121,5 @@ test: flush
 test: oct from_base64 string_func_test/test_substring_index string_func_test/db_b_ord_test
 
 test: db_b_date_time_functions4
+
+test: like_default_test
