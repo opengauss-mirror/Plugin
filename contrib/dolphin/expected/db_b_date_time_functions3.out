@@ -1216,6 +1216,49 @@ select adddate('2001-12-12 12:12:12',INTERVAL 1 day);
  2001-12-13 12:12:12
 (1 row)
 
+-- interval为负数
+select adddate('2001-12-12 12:12:12',INTERVAL -1 year);
+       adddate       
+---------------------
+ 2000-12-12 12:12:12
+(1 row)
+
+select adddate('2001-12-12 12:12:12',INTERVAL -1 month);
+       adddate       
+---------------------
+ 2001-11-12 12:12:12
+(1 row)
+
+select adddate('2001-12-12 12:12:12',INTERVAL -1 day);
+       adddate       
+---------------------
+ 2001-12-11 12:12:12
+(1 row)
+
+select adddate('2001-12-12 12:12:12',INTERVAL -1 hour);
+       adddate       
+---------------------
+ 2001-12-12 11:12:12
+(1 row)
+
+select adddate('2001-12-12 12:12:12',INTERVAL -1 minute);
+       adddate       
+---------------------
+ 2001-12-12 12:11:12
+(1 row)
+
+select adddate('2001-12-12 12:12:12',INTERVAL -1 second);
+       adddate       
+---------------------
+ 2001-12-12 12:12:11
+(1 row)
+
+select adddate('2001-12-12 12:12:12',INTERVAL -1.2 second);
+        adddate        
+-----------------------
+ 2001-12-12 12:12:10.8
+(1 row)
+
 -- test date_add(date,INTERVAL expr unit)
 -- 边界值，坏值
 select date_add('0001-01-01',INTERVAL 1 day);
@@ -1397,6 +1440,49 @@ select date_add('2001-12-12 12:12:12',INTERVAL 1 day);
  2001-12-13 12:12:12
 (1 row)
 
+-- interval为负数
+select date_add('2001-12-12 12:12:12',INTERVAL -1 year);
+      date_add       
+---------------------
+ 2000-12-12 12:12:12
+(1 row)
+
+select date_add('2001-12-12 12:12:12',INTERVAL -1 month);
+      date_add       
+---------------------
+ 2001-11-12 12:12:12
+(1 row)
+
+select date_add('2001-12-12 12:12:12',INTERVAL -1 day);
+      date_add       
+---------------------
+ 2001-12-11 12:12:12
+(1 row)
+
+select date_add('2001-12-12 12:12:12',INTERVAL -1 hour);
+      date_add       
+---------------------
+ 2001-12-12 11:12:12
+(1 row)
+
+select date_add('2001-12-12 12:12:12',INTERVAL -1 minute);
+      date_add       
+---------------------
+ 2001-12-12 12:11:12
+(1 row)
+
+select date_add('2001-12-12 12:12:12',INTERVAL -1 second);
+      date_add       
+---------------------
+ 2001-12-12 12:12:11
+(1 row)
+
+select date_add('2001-12-12 12:12:12',INTERVAL -1.2 second);
+       date_add        
+-----------------------
+ 2001-12-12 12:12:10.8
+(1 row)
+
 -- test date_sub(date,INTERVAL expr unit)
 -- 边界值，坏值
 select date_sub('0001-01-01',INTERVAL '-1' day);
@@ -1564,6 +1650,49 @@ select date_sub('2001-12-12 12:12:12',INTERVAL '-1' day);
       date_sub       
 ---------------------
  2001-12-13 12:12:12
+(1 row)
+
+-- interval为负数
+select date_sub('2001-12-12 12:12:12',INTERVAL -1 year);
+      date_sub       
+---------------------
+ 2002-12-12 12:12:12
+(1 row)
+
+select date_sub('2001-12-12 12:12:12',INTERVAL -1 month);
+      date_sub       
+---------------------
+ 2002-01-12 12:12:12
+(1 row)
+
+select date_sub('2001-12-12 12:12:12',INTERVAL -1 day);
+      date_sub       
+---------------------
+ 2001-12-13 12:12:12
+(1 row)
+
+select date_sub('2001-12-12 12:12:12',INTERVAL -1 hour);
+      date_sub       
+---------------------
+ 2001-12-12 13:12:12
+(1 row)
+
+select date_sub('2001-12-12 12:12:12',INTERVAL -1 minute);
+      date_sub       
+---------------------
+ 2001-12-12 12:13:12
+(1 row)
+
+select date_sub('2001-12-12 12:12:12',INTERVAL -1 second);
+      date_sub       
+---------------------
+ 2001-12-12 12:12:13
+(1 row)
+
+select date_sub('2001-12-12 12:12:12',INTERVAL -1.2 second);
+       date_sub        
+-----------------------
+ 2001-12-12 12:12:13.2
 (1 row)
 
 -- test addtime(expr1,expr2)

@@ -30056,21 +30056,18 @@ AexprConst: Iconst
 					t->typmods = $3;
 					$$ = makeStringConstCast($2, @2, t);
 				}
-			| INTERVAL ICONST opt_interval
+			| INTERVAL NumericOnly opt_interval
 				{
 					TypeName *t = SystemTypeName("interval");
 					t->location = @1;
 					t->typmods = $3;
-					char buf[64];
-					snprintf(buf, sizeof(buf), "%d", $2);
-					$$ = makeStringConstCast(pstrdup(buf), @2, t);
-				}
-			| INTERVAL FCONST opt_interval
-				{
-					TypeName *t = SystemTypeName("interval");
-					t->location = @1;
-					t->typmods = $3;
-					$$ = makeStringConstCast($2, @2, t);
+					if ($2->type == T_Integer) {
+						char buf[64];
+						snprintf(buf, sizeof(buf), "%ld", $2->val.ival);
+						$$ = makeStringConstCast(pstrdup(buf), @2, t);
+					} else if ($2->type == T_Float) {
+						$$ = makeStringConstCast($2->val.str, @2, t);
+					}
 				}
 			| INTERVAL '(' Iconst ')' Sconst opt_interval
 				{
@@ -30778,6 +30775,9 @@ unreserved_keyword_without_key:
  *
  * If the new col_name_keyword is not used in func_expr_common_subexpr,
  * add it to col_name_keyword_nonambiguous!
+ * 
+ * We make INTERVAL's priority lower than '+' or '-' here to enbale INTERVAL to receive 
+ * negtive number.
  */
 col_name_keyword:
 			  col_name_keyword_nonambiguous { $$ = $1; }
@@ -30791,7 +30791,7 @@ col_name_keyword:
 			| GET_FORMAT
 			| GREATEST
 			| IFNULL
-			| INTERVAL
+			| INTERVAL	%prec UNBOUNDED
 			| LEAST
 			| LOCATE
 			| MID
