@@ -3,7 +3,7 @@ NOTICE:  database "uint_agg" does not exist, skipping
 create database uint_agg dbcompatibility 'b';
 \c uint_agg
 --uint1
-create table u1(a uint1, b int1);
+create table u1(a uint1, b int2);
 insert into u1 values(null, null),(255, 255),(0, 0),(255, 255),(null, null);
 select avg(a), avg(b) from u1;
          avg          |         avg          
@@ -14,13 +14,13 @@ select avg(a), avg(b) from u1;
 select bit_and(a), bit_and(b) from u1;
  bit_and | bit_and 
 ---------+---------
- 0       | 0
+ 0       |       0
 (1 row)
 
 select bit_or(a), bit_or(b) from u1;
  bit_or | bit_or 
 --------+--------
- 255    | 255
+ 255    |    255
 (1 row)
 
 select count(a), count(b) from u1;
@@ -72,21 +72,21 @@ select sum(a), sum(b) from u1;
 (1 row)
 
 select var_pop(a), var_pop(b) from u1;
-      var_pop       | var_pop 
---------------------+---------
- 14450.000000000000 |   14450
+      var_pop       |      var_pop       
+--------------------+--------------------
+ 14450.000000000000 | 14450.000000000000
 (1 row)
 
 select var_samp(a), var_samp(b) from u1;
-      var_samp      | var_samp 
---------------------+----------
- 21675.000000000000 |    21675
+      var_samp      |      var_samp      
+--------------------+--------------------
+ 21675.000000000000 | 21675.000000000000
 (1 row)
 
 select variance(a), variance(b) from u1;
-      variance      | variance 
---------------------+----------
- 21675.000000000000 |    21675
+      variance      |      variance      
+--------------------+--------------------
+ 21675.000000000000 | 21675.000000000000
 (1 row)
 
 select listagg(a) within group(order by a) from u1;

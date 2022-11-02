@@ -12,7 +12,7 @@ select 18446744073709551615::uint8 & 0::uint2;
 select 18446744073709551615::uint8 & 0::uint4;
 select 18446744073709551615::uint8 & 0::uint8;
 
-select 18446744073709551615::uint8 & 255::int1;
+select 18446744073709551615::uint8 & 127::int1;
 select 18446744073709551615::uint8 & 32767::int2;
 select 18446744073709551615::uint8 & 2147483647::int4;
 select 18446744073709551615::uint8 & 9223372036854775807::int8;
@@ -35,7 +35,7 @@ select 4294967295::uint4 & 0::uint2;
 select 4294967295::uint4 & 0::uint4;
 select 4294967295::uint4 & 0::uint8;
 
-select 4294967295::uint4 & 255::int1;
+select 4294967295::uint4 & 127::int1;
 select 4294967295::uint4 & 32767::int2;
 select 4294967295::uint4 & 2147483647::int4;
 select 4294967295::uint4 & 9223372036854775807::int8;
@@ -59,7 +59,7 @@ select 65535::uint2 & 0::uint2;
 select 65535::uint2 & 0::uint4;
 select 65535::uint2 & 0::uint8;
 
-select 65535::uint2 & 255::int1;
+select 65535::uint2 & 127::int1;
 select 65535::uint2 & 32767::int2;
 select 65535::uint2 & 2147483647::int4;
 select 65535::uint2 & 9223372036854775807::int8;
@@ -82,7 +82,7 @@ select 255::uint1 & 0::uint2;
 select 255::uint1 & 0::uint4;
 select 255::uint1 & 0::uint8;
 
-select 255::uint1 & 255::int1;
+select 255::uint1 & 127::int1;
 select 255::uint1 & 32767::int2;
 select 255::uint1 & 2147483647::int4;
 select 255::uint1 & 9223372036854775807::int8;
@@ -159,20 +159,20 @@ select (-32768)::int2 & 4294967295::uint4;
 select (-32768)::int2 & 18446744073709551615::uint8;
 
 --int1
-select 255::int1 & 0::uint1;
-select 255::int1 & 0::uint2;
-select 255::int1 & 0::uint4;
-select 255::int1 & 0::uint8;
+select 127::int1 & 0::uint1;
+select 127::int1 & 0::uint2;
+select 127::int1 & 0::uint4;
+select 127::int1 & 0::uint8;
 
-select 255::int1 & 255::uint1;
-select 255::int1 & 65535::uint2;
-select 255::int1 & 4294967295::uint4;
-select 255::int1 & 18446744073709551615::uint8;
+select 127::int1 & 255::uint1;
+select 127::int1 & 65535::uint2;
+select 127::int1 & 4294967295::uint4;
+select 127::int1 & 18446744073709551615::uint8;
 
-select 255::int1 & 1::uint1;
-select 255::int1 & 1::uint2;
-select 255::int1 & 1::uint4;
-select 255::int1 & 1::uint8;
+select 127::int1 & 1::uint1;
+select 127::int1 & 1::uint2;
+select 127::int1 & 1::uint4;
+select 127::int1 & 1::uint8;
 
 \c postgres
 drop database uint_and

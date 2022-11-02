@@ -1,0 +1,322 @@
+drop database if exists tinyint_agg;
+NOTICE:  database "tinyint_agg" does not exist, skipping
+create database tinyint_agg dbcompatibility 'b';
+\c tinyint_agg
+create table u1(a int1, b int2);
+insert into u1 values(null, null),(127, 127),(0, 0),(-128, -128),(null, null);
+select avg(a), avg(b) from u1;
+           avg           |           avg           
+-------------------------+-------------------------
+ -0.33333333333333333333 | -0.33333333333333333333
+(1 row)
+
+select bit_and(a), bit_and(b) from u1;
+ bit_and | bit_and 
+---------+---------
+ 0       |       0
+(1 row)
+
+select bit_or(a), bit_or(b) from u1;
+ bit_or | bit_or 
+--------+--------
+ -1     |     -1
+(1 row)
+
+select count(a), count(b) from u1;
+ count | count 
+-------+-------
+     3 |     3
+(1 row)
+
+select count(distinct a), count(distinct b) from u1;
+ count | count 
+-------+-------
+     3 |     3
+(1 row)
+
+select max(a), max(b) from u1;
+ max | max 
+-----+-----
+ 127 | 127
+(1 row)
+
+select min(a), min(b) from u1;
+ min  | min  
+------+------
+ -128 | -128
+(1 row)
+
+select stddev(a), stddev(b) from u1;
+      stddev      |      stddev      
+------------------+------------------
+ 127.500326796967 | 127.500326796967
+(1 row)
+
+select stddev_pop(a), stddev_pop(b) from u1;
+      stddev_pop      |      stddev_pop      
+----------------------+----------------------
+ 104.1035808968911288 | 104.1035808968911288
+(1 row)
+
+select stddev_samp(a), stddev_samp(b) from u1;
+   stddev_samp    |   stddev_samp    
+------------------+------------------
+ 127.500326796967 | 127.500326796967
+(1 row)
+
+select sum(a), sum(b) from u1;
+ sum | sum 
+-----+-----
+  -1 |  -1
+(1 row)
+
+select var_pop(a), var_pop(b) from u1;
+        var_pop         |        var_pop         
+------------------------+------------------------
+ 10837.5555555555555556 | 10837.5555555555555556
+(1 row)
+
+select var_samp(a), var_samp(b) from u1;
+      var_samp      |      var_samp      
+--------------------+--------------------
+ 16256.333333333333 | 16256.333333333333
+(1 row)
+
+select variance(a), variance(b) from u1;
+      variance      |      variance      
+--------------------+--------------------
+ 16256.333333333333 | 16256.333333333333
+(1 row)
+
+select listagg(a) within group(order by a) from u1;
+ listagg  
+----------
+ -1280127
+(1 row)
+
+select listagg(a, ',') within group(order by a) from u1;
+  listagg   
+------------
+ -128,0,127
+(1 row)
+
+drop table if exists smp_test;
+NOTICE:  table "smp_test" does not exist, skipping
+drop table if exists t1;
+NOTICE:  table "t1" does not exist, skipping
+create table smp_test(a int1);
+create table t1(a int4);
+insert into t1 select generate_series(1, 1000000);
+insert into smp_test select a % 128 from t1;
+set query_dop = 2;
+explain(costs off, verbose) select avg(a) from smp_test;
+                  QUERY PLAN                   
+-----------------------------------------------
+ Aggregate
+   Output: pg_catalog.avg((avg(a)))
+   ->  Streaming(type: LOCAL GATHER dop: 1/2)
+         Output: (avg(a))
+         ->  Aggregate
+               Output: avg(a)
+               ->  Seq Scan on public.smp_test
+                     Output: a
+(8 rows)
+
+explain(costs off, verbose) select bit_and(a) from smp_test;
+                  QUERY PLAN                   
+-----------------------------------------------
+ Aggregate
+   Output: bit_and((bit_and(a)))
+   ->  Streaming(type: LOCAL GATHER dop: 1/2)
+         Output: (bit_and(a))
+         ->  Aggregate
+               Output: bit_and(a)
+               ->  Seq Scan on public.smp_test
+                     Output: a
+(8 rows)
+
+explain(costs off, verbose) select bit_or(a) from smp_test;
+                  QUERY PLAN                   
+-----------------------------------------------
+ Aggregate
+   Output: bit_or((bit_or(a)))
+   ->  Streaming(type: LOCAL GATHER dop: 1/2)
+         Output: (bit_or(a))
+         ->  Aggregate
+               Output: bit_or(a)
+               ->  Seq Scan on public.smp_test
+                     Output: a
+(8 rows)
+
+explain(costs off, verbose) select count(a) from smp_test;
+                  QUERY PLAN                   
+-----------------------------------------------
+ Aggregate
+   Output: count((count(a)))
+   ->  Streaming(type: LOCAL GATHER dop: 1/2)
+         Output: (count(a))
+         ->  Aggregate
+               Output: count(a)
+               ->  Seq Scan on public.smp_test
+                     Output: a
+(8 rows)
+
+explain(costs off, verbose) select count(distinct a) from smp_test;
+                              QUERY PLAN                              
+----------------------------------------------------------------------
+ Aggregate
+   Output: count((count(a)))
+   ->  Streaming(type: LOCAL GATHER dop: 1/2)
+         Output: (count(a))
+         ->  Aggregate
+               Output: count(a)
+               ->  HashAggregate
+                     Output: a
+                     Group By Key: smp_test.a
+                     ->  Streaming(type: LOCAL REDISTRIBUTE dop: 2/2)
+                           Output: a
+                           Distribute Key: a
+                           ->  HashAggregate
+                                 Output: a
+                                 Group By Key: smp_test.a
+                                 ->  Seq Scan on public.smp_test
+                                       Output: a
+(17 rows)
+
+explain(costs off, verbose) select max(a) from smp_test;
+                  QUERY PLAN                   
+-----------------------------------------------
+ Aggregate
+   Output: max((max(a)))
+   ->  Streaming(type: LOCAL GATHER dop: 1/2)
+         Output: (max(a))
+         ->  Aggregate
+               Output: max(a)
+               ->  Seq Scan on public.smp_test
+                     Output: a
+(8 rows)
+
+explain(costs off, verbose) select min(a)from smp_test;
+                    QUERY PLAN                    
+--------------------------------------------------
+ Aggregate
+   Output: min((min((a)::double precision)))
+   ->  Streaming(type: LOCAL GATHER dop: 1/2)
+         Output: (min((a)::double precision))
+         ->  Aggregate
+               Output: min((a)::double precision)
+               ->  Seq Scan on public.smp_test
+                     Output: a
+(8 rows)
+
+explain(costs off, verbose) select stddev(a) from smp_test;
+                          QUERY PLAN                          
+--------------------------------------------------------------
+ Aggregate
+   Output: pg_catalog.stddev((stddev((a)::double precision)))
+   ->  Streaming(type: LOCAL GATHER dop: 1/2)
+         Output: (stddev((a)::double precision))
+         ->  Aggregate
+               Output: stddev((a)::double precision)
+               ->  Seq Scan on public.smp_test
+                     Output: a
+(8 rows)
+
+explain(costs off, verbose) select stddev_pop(a) from smp_test;
+                    QUERY PLAN                    
+--------------------------------------------------
+ Aggregate
+   Output: pg_catalog.stddev_pop((stddev_pop(a)))
+   ->  Streaming(type: LOCAL GATHER dop: 1/2)
+         Output: (stddev_pop(a))
+         ->  Aggregate
+               Output: stddev_pop(a)
+               ->  Seq Scan on public.smp_test
+                     Output: a
+(8 rows)
+
+explain(costs off, verbose) select stddev_samp(a) from smp_test;
+                               QUERY PLAN                               
+------------------------------------------------------------------------
+ Aggregate
+   Output: pg_catalog.stddev_samp((stddev_samp((a)::double precision)))
+   ->  Streaming(type: LOCAL GATHER dop: 1/2)
+         Output: (stddev_samp((a)::double precision))
+         ->  Aggregate
+               Output: stddev_samp((a)::double precision)
+               ->  Seq Scan on public.smp_test
+                     Output: a
+(8 rows)
+
+explain(costs off, verbose) select sum(a)from smp_test;
+                    QUERY PLAN                    
+--------------------------------------------------
+ Aggregate
+   Output: sum((sum((a)::double precision)))
+   ->  Streaming(type: LOCAL GATHER dop: 1/2)
+         Output: (sum((a)::double precision))
+         ->  Aggregate
+               Output: sum((a)::double precision)
+               ->  Seq Scan on public.smp_test
+                     Output: a
+(8 rows)
+
+explain(costs off, verbose) select var_pop(a) from smp_test;
+                  QUERY PLAN                   
+-----------------------------------------------
+ Aggregate
+   Output: pg_catalog.var_pop((var_pop(a)))
+   ->  Streaming(type: LOCAL GATHER dop: 1/2)
+         Output: (var_pop(a))
+         ->  Aggregate
+               Output: var_pop(a)
+               ->  Seq Scan on public.smp_test
+                     Output: a
+(8 rows)
+
+explain(costs off, verbose) select var_samp(a) from smp_test;
+                  QUERY PLAN                   
+-----------------------------------------------
+ Aggregate
+   Output: pg_catalog.var_samp((var_samp(a)))
+   ->  Streaming(type: LOCAL GATHER dop: 1/2)
+         Output: (var_samp(a))
+         ->  Aggregate
+               Output: var_samp(a)
+               ->  Seq Scan on public.smp_test
+                     Output: a
+(8 rows)
+
+explain(costs off, verbose) select variance(a)from smp_test;
+                  QUERY PLAN                   
+-----------------------------------------------
+ Aggregate
+   Output: pg_catalog.variance((variance(a)))
+   ->  Streaming(type: LOCAL GATHER dop: 1/2)
+         Output: (variance(a))
+         ->  Aggregate
+               Output: variance(a)
+               ->  Seq Scan on public.smp_test
+                     Output: a
+(8 rows)
+
+explain(costs off, verbose) select listagg(a) within group(order by a) from smp_test;
+                    QUERY PLAN                    
+--------------------------------------------------
+ Aggregate
+   Output: listagg(a ) WITHIN GROUP ( ORDER BY a)
+   ->  Seq Scan on public.smp_test
+         Output: a
+(4 rows)
+
+explain(costs off, verbose) select listagg(a, ',') within group(order by a) from smp_test;
+                         QUERY PLAN                          
+-------------------------------------------------------------
+ Aggregate
+   Output: listagg(a, ','::text ) WITHIN GROUP ( ORDER BY a)
+   ->  Seq Scan on public.smp_test
+         Output: a
+(4 rows)
+
+\c postgres
+drop database tinyint_agg;

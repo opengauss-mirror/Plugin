@@ -3,7 +3,7 @@ create database uint_agg dbcompatibility 'b';
 \c uint_agg
 
 --uint1
-create table u1(a uint1, b int1);
+create table u1(a uint1, b int2);
 insert into u1 values(null, null),(255, 255),(0, 0),(255, 255),(null, null);
 select avg(a), avg(b) from u1;
 select bit_and(a), bit_and(b) from u1;

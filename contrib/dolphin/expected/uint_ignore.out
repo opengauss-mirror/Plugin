@@ -58,7 +58,7 @@ WARNING:  smallint out of range
 CONTEXT:  referenced column: a
 insert ignore into t1 values(1::int1);
 insert ignore into t1 values(0::int1);
-insert ignore into t1 values(255::int1);
+insert ignore into t1 values(127::int1);
 insert ignore into t1 values(1::uint4);
 insert ignore into t1 values(0::uint4);
 insert ignore into t1 values((-1)::uint4);
@@ -118,7 +118,7 @@ select * from t1;
  32767
  1
  0
- 255
+ 127
  1
  0
  4294967295
@@ -207,7 +207,7 @@ WARNING:  smallint out of range
 CONTEXT:  referenced column: a
 insert ignore into t1 values(1::int1);
 insert ignore into t1 values(0::int1);
-insert ignore into t1 values(255::int1);
+insert ignore into t1 values(127::int1);
 insert ignore into t1 values(1::uint8);
 insert ignore into t1 values(0::uint8);
 insert ignore into t1 values((-1)::uint8);
@@ -271,7 +271,7 @@ select * from t1;
  32767
  1
  0
- 255
+ 127
  1
  0
  4294967295
@@ -366,7 +366,7 @@ WARNING:  smallint out of range
 CONTEXT:  referenced column: a
 insert ignore into t1 values(1::int1);
 insert ignore into t1 values(0::int1);
-insert ignore into t1 values(255::int1);
+insert ignore into t1 values(127::int1);
 insert ignore into t1 values(1::uint8);
 insert ignore into t1 values(0::uint8);
 insert ignore into t1 values((-1)::uint8);
@@ -446,7 +446,7 @@ select * from t1;
  32767
  1
  0
- 255
+ 127
  1
  0
  65535
@@ -553,7 +553,7 @@ WARNING:  tinyint unsigned out of range
 CONTEXT:  referenced column: a
 insert ignore into t1 values(1::int1);
 insert ignore into t1 values(0::int1);
-insert ignore into t1 values(255::int1);
+insert ignore into t1 values(127::int1);
 insert ignore into t1 values(1::uint8);
 insert ignore into t1 values(0::uint8);
 insert ignore into t1 values((-1)::uint8);
@@ -637,7 +637,7 @@ select * from t1;
  255
  1
  0
- 255
+ 127
  1
  0
  255

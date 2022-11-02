@@ -77,10 +77,11 @@ static bool Numeric2Others(Oid* ptype, Oid* ntype, TYPCATEGORY* pcategory, TYPCA
 
 static const doConvert convertFunctions[convertFunctionsCount] = {&String2Others, &Date2Others, &Numeric2Others};
 
-#define CAST_FUNCTION_ROW 7
+#define CAST_FUNCTION_ROW 8
 #define CAST_FUNCTION_COLUMN 4
 
-static const char* castFunction[CAST_FUNCTION_ROW][CAST_FUNCTION_COLUMN] = {{"i2_cast_ui1", "i2_cast_ui2", "i2_cast_ui4", "i2_cast_ui8"},
+static const char* castFunction[CAST_FUNCTION_ROW][CAST_FUNCTION_COLUMN] = {{"i1_cast_ui1", "i1_cast_ui2", "i1_cast_ui4", "i1_cast_ui8"},
+                                                                            {"i2_cast_ui1", "i2_cast_ui2", "i2_cast_ui4", "i2_cast_ui8"},
                                                                             {"i4_cast_ui1", "i4_cast_ui2", "i4_cast_ui4", "i4_cast_ui8"},
                                                                             {"i8_cast_ui1", "i8_cast_ui2", "i8_cast_ui4", "i8_cast_ui8"},
                                                                             {"f4_cast_ui1", "f4_cast_ui2", "f4_cast_ui4", "f4_cast_ui8"},
@@ -98,6 +99,7 @@ typedef enum {
 
 typedef enum {
     INVALID_ROW = -1,
+    INT1,
     INT2,
     INT4,
     INT8,
@@ -2718,6 +2720,9 @@ Oid findUnsignedImplicitCastFunction(Oid targetTypeId, Oid sourceTypeId, Oid fun
         col = UINT8;
     }
     switch (sourceTypeId) {
+        case INT1OID:
+            row = INT1;
+            break;
         case INT2OID:
             row = INT2;
             break;

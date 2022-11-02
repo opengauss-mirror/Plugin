@@ -19587,6 +19587,11 @@ static bool CheckRangePartitionKeyType(Oid typoid)
     bool result = true;
 
     switch (typoid) {
+#ifdef DOLPHIN
+        case INT1OID:
+            result = true;
+            break;
+#endif
         case INT2OID:
             result = true;
             break;

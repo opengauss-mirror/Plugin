@@ -70,9 +70,9 @@ CONTEXT:  referenced column: a
 insert into t1 values(1::int1);
 insert into t1 values(0::int1);
 insert into t1 values((-1)::int1);
-ERROR:  tinyint out of range
+ERROR:  int unsigned out of range
 CONTEXT:  referenced column: a
-insert into t1 values(255::int1);
+insert into t1 values(127::int1);
 insert into t1 values(256::int1);
 ERROR:  tinyint out of range
 CONTEXT:  referenced column: a
@@ -172,9 +172,9 @@ CONTEXT:  referenced column: a
 insert into t1 values(1::int1);
 insert into t1 values(0::int1);
 insert into t1 values((-1)::int1);
-ERROR:  tinyint out of range
+ERROR:  int unsigned out of range
 CONTEXT:  referenced column: a
-insert into t1 values(255::int1);
+insert into t1 values(127::int1);
 insert into t1 values(256::int1);
 ERROR:  tinyint out of range
 CONTEXT:  referenced column: a
@@ -280,9 +280,9 @@ CONTEXT:  referenced column: a
 insert into t1 values(1::int1);
 insert into t1 values(0::int1);
 insert into t1 values((-1)::int1);
-ERROR:  tinyint out of range
+ERROR:  smallint unsigned out of range
 CONTEXT:  referenced column: a
-insert into t1 values(255::int1);
+insert into t1 values(127::int1);
 insert into t1 values(256::int1);
 ERROR:  tinyint out of range
 CONTEXT:  referenced column: a
@@ -408,9 +408,9 @@ CONTEXT:  referenced column: a
 insert into t1 values(1::int1);
 insert into t1 values(0::int1);
 insert into t1 values((-1)::int1);
-ERROR:  tinyint out of range
+ERROR:  smallint unsigned out of range
 CONTEXT:  referenced column: a
-insert into t1 values(255::int1);
+insert into t1 values(127::int1);
 insert into t1 values(256::int1);
 ERROR:  tinyint out of range
 CONTEXT:  referenced column: a

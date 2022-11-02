@@ -191,24 +191,24 @@ select (-32768)::int2 mod 4294967295::uint4;
 select (-32768)::int2 mod 18446744073709551615::uint8;
 
 --int1
-select 255::int1 mod 0::uint1;
-select 255::int1 mod 0::uint2;
-select 255::int1 mod 0::uint4;
-select 255::int1 mod 0::uint8;
+select 127::int1 mod 0::uint1;
+select 127::int1 mod 0::uint2;
+select 127::int1 mod 0::uint4;
+select 127::int1 mod 0::uint8;
 
-select 255::int1 mod null::uint1;
-select 255::int1 mod null::uint2;
-select 255::int1 mod null::uint4;
-select 255::int1 mod null::uint8;
+select 127::int1 mod null::uint1;
+select 127::int1 mod null::uint2;
+select 127::int1 mod null::uint4;
+select 127::int1 mod null::uint8;
 
-select 255::int1 mod 65535::uint2;
-select 255::int1 mod 4294967295::uint4;
-select 255::int1 mod 18446744073709551615::uint8;
+select 127::int1 mod 65535::uint2;
+select 127::int1 mod 4294967295::uint4;
+select 127::int1 mod 18446744073709551615::uint8;
 
-select 255::int1 mod 1::uint1;
-select 255::int1 mod 1::uint2;
-select 255::int1 mod 1::uint4;
-select 255::int1 mod 1::uint8;
+select 127::int1 mod 1::uint1;
+select 127::int1 mod 1::uint2;
+select 127::int1 mod 1::uint4;
+select 127::int1 mod 1::uint8;
 
 \c postgres
 drop database uint_mod2

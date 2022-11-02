@@ -216,7 +216,11 @@ Datum int16send(PG_FUNCTION_ARGS)
 
 Datum int1_16(PG_FUNCTION_ARGS)
 {
+#ifdef DOLPHIN
+    int8 arg = PG_GETARG_INT8(0);
+#else
     uint1 arg = PG_GETARG_UINT8(0);
+#endif
     PG_RETURN_INT128((int128)arg);
 }
 

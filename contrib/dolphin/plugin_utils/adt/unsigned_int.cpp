@@ -268,11 +268,11 @@ Datum uint18cmp(PG_FUNCTION_ARGS)
 Datum uint1_int1cmp(PG_FUNCTION_ARGS)
 {
     uint8 arg1 = PG_GETARG_UINT8(0);
-    uint8 arg2 = PG_GETARG_UINT8(1);
+    int8 arg2 = PG_GETARG_INT8(1);
 
-    if (arg1 > arg2)
+    if ((int16)arg1 > (int16)arg2)
         PG_RETURN_INT32(1);
-    else if (arg1 == arg2)
+    else if ((int16)arg1 == (int16)arg2)
         PG_RETURN_INT32(0);
     else
         PG_RETURN_INT32(-1);
@@ -1330,56 +1330,96 @@ Datum ui1toui4(PG_FUNCTION_ARGS)
 Datum ui4toi1(PG_FUNCTION_ARGS)
 {
     uint32 arg1 = PG_GETARG_UINT32(0);
-    if (fcinfo->can_ignore && arg1 > UCHAR_MAX) {
+    if (fcinfo->can_ignore && arg1 > SCHAR_MAX) {
         ereport(WARNING, (errmsg("tinyint unsigned out of range")));
-        PG_RETURN_UINT8((uint8)UCHAR_MAX);
+        PG_RETURN_INT8((int8)SCHAR_MAX);
     }
     if (SQL_MODE_STRICT()) {
-        if (arg1 > UCHAR_MAX)
+        if (arg1 > SCHAR_MAX)
             ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("tinyint unsigned out of range")));
-    } else if (arg1 > UCHAR_MAX) {
-        arg1 = UCHAR_MAX;
+    } else if (arg1 > SCHAR_MAX) {
+        arg1 = SCHAR_MAX;
     }
-    PG_RETURN_UINT8((uint8)arg1);
+    PG_RETURN_INT8((int8)arg1);
 }
 
 Datum i1toui4(PG_FUNCTION_ARGS)
 {
-    uint8 arg1 = PG_GETARG_UINT8(0);
+    int8 arg1 = PG_GETARG_INT8(0);
+    if (fcinfo->can_ignore && arg1 < 0) {
+        ereport(WARNING, (errmsg("int unsigned out of range")));
+        PG_RETURN_UINT32((uint32)0);
+    }
+    if (SQL_MODE_STRICT()) {
+        if (arg1 < 0)
+            ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("int unsigned out of range")));
+    } else if (arg1 < 0) {
+        arg1 = 0;
+    }
     PG_RETURN_UINT32((uint32)arg1);
 }
 
 Datum ui2toi1(PG_FUNCTION_ARGS)
 {
     uint16 arg1 = PG_GETARG_UINT16(0);
-    if (fcinfo->can_ignore && arg1 > UCHAR_MAX) {
-        ereport(WARNING, (errmsg("tinyint unsigned out of range")));
-        PG_RETURN_UINT8((uint8)UCHAR_MAX);
+    if (fcinfo->can_ignore && arg1 > SCHAR_MAX) {
+        ereport(WARNING, (errmsg("tinyint out of range")));
+        PG_RETURN_INT8((int8)SCHAR_MAX);
     }
     if (SQL_MODE_STRICT()) {
-        if (arg1 > UCHAR_MAX)
-            ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("tinyint unsigned out of range")));
-    } else if (arg1 > UCHAR_MAX) {
-        arg1 = UCHAR_MAX;
+        if (arg1 > SCHAR_MAX)
+            ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("tinyint out of range")));
+    } else if (arg1 > SCHAR_MAX) {
+        arg1 = SCHAR_MAX;
     }
-    PG_RETURN_UINT8((uint8)arg1);
+    PG_RETURN_INT8((int8)arg1);
 }
 
 Datum i1toui2(PG_FUNCTION_ARGS)
 {
-    uint8 arg1 = PG_GETARG_UINT8(0);
+    int8 arg1 = PG_GETARG_INT8(0);
+    if (fcinfo->can_ignore && arg1 < 0) {
+        ereport(WARNING, (errmsg("smallint unsigned out of range")));
+        PG_RETURN_UINT16((uint16)0);
+    }
+    if (SQL_MODE_STRICT()) {
+        if (arg1 < 0)
+            ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("smallint unsigned out of range")));
+    } else if (arg1 < 0) {
+        arg1 = 0;
+    }
     PG_RETURN_UINT16((uint16)arg1);
 }
 
 Datum ui1toi1(PG_FUNCTION_ARGS)
 {
     uint8 arg1 = PG_GETARG_UINT8(0);
-    PG_RETURN_UINT8(arg1);
+    if (fcinfo->can_ignore && arg1 > SCHAR_MAX) {
+        ereport(WARNING, (errmsg("smallint out of range")));
+        PG_RETURN_INT8((int8)SCHAR_MAX);
+    }
+    if (SQL_MODE_STRICT()) {
+        if (arg1 > SCHAR_MAX)
+            ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("smallint out of range")));
+    } else if (arg1 > SCHAR_MAX) {
+        arg1 = SCHAR_MAX;
+    }
+    PG_RETURN_INT8(arg1);
 }
 
 Datum i1toui1(PG_FUNCTION_ARGS)
 {
-    uint8 arg1 = PG_GETARG_UINT8(0);
+    int8 arg1 = PG_GETARG_INT8(0);
+    if (fcinfo->can_ignore && arg1 < 0) {
+        ereport(WARNING, (errmsg("smallint unsigned out of range")));
+        PG_RETURN_UINT8((uint8)0);
+    }
+    if (SQL_MODE_STRICT()) {
+        if (arg1 < 0)
+            ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("smallint unsigned out of range")));
+    } else if (arg1 < 0) {
+        arg1 = 0;
+    }
     PG_RETURN_UINT8(arg1);
 }
 
@@ -1678,7 +1718,7 @@ Datum uint4smaller(PG_FUNCTION_ARGS)
 
 Datum int1_pl_uint1(PG_FUNCTION_ARGS)
 {
-    uint8 arg1 = PG_GETARG_UINT8(0);
+    int8 arg1 = PG_GETARG_INT8(0);
     uint8 arg2 = PG_GETARG_UINT8(1);
     int16 result = (int16)arg1 + (int16)arg2;
 
@@ -1692,7 +1732,7 @@ Datum int1_pl_uint1(PG_FUNCTION_ARGS)
 Datum uint1_pl_int1(PG_FUNCTION_ARGS)
 {
     uint8 arg1 = PG_GETARG_UINT8(0);
-    uint8 arg2 = PG_GETARG_UINT8(1);
+    int8 arg2 = PG_GETARG_INT8(1);
     int16 result = (int16)arg1 + (int16)arg2;
 
     if (result < 0 || result > UCHAR_MAX) {
@@ -1759,7 +1799,7 @@ Datum int4_pl_uint4(PG_FUNCTION_ARGS)
 /* datatype minus */
 Datum int1_mi_uint1(PG_FUNCTION_ARGS)
 {
-    uint8 arg1 = PG_GETARG_UINT8(0);
+    int8 arg1 = PG_GETARG_INT8(0);
     uint8 arg2 = PG_GETARG_UINT8(1);
     int16 result;
     result = (int16)arg1 - (int16)arg2;
@@ -1773,11 +1813,11 @@ Datum int1_mi_uint1(PG_FUNCTION_ARGS)
 Datum uint1_mi_int1(PG_FUNCTION_ARGS)
 {
     uint8 arg1 = PG_GETARG_UINT8(0);
-    uint8 arg2 = PG_GETARG_UINT8(1);
+    int8 arg2 = PG_GETARG_INT8(1);
     int16 result;
 
     result = (int16)arg1 - (int16)arg2;
-    if (result < 0) {
+    if (result < 0 || result > UCHAR_MAX) {
         ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("tinyint unsigned out of range")));
     }
 
@@ -1839,11 +1879,11 @@ Datum int4_mi_uint4(PG_FUNCTION_ARGS)
 /* datatype multiply */
 Datum int1_mul_uint1(PG_FUNCTION_ARGS)
 {
-    uint8 arg1 = PG_GETARG_UINT8(0);
+    int8 arg1 = PG_GETARG_INT8(0);
     uint8 arg2 = PG_GETARG_UINT8(1);
     int16 result;
     result = (int16)arg1 * (int16)arg2;
-    if (result > UCHAR_MAX) {
+    if (result < 0 || result > UCHAR_MAX) {
         ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("tinyint unsigned out of range")));
     }
     PG_RETURN_UINT8(result);
@@ -1852,10 +1892,10 @@ Datum int1_mul_uint1(PG_FUNCTION_ARGS)
 Datum uint1_mul_int1(PG_FUNCTION_ARGS)
 {
     uint8 arg1 = PG_GETARG_UINT8(0);
-    uint8 arg2 = PG_GETARG_UINT8(1);
+    int8 arg2 = PG_GETARG_INT8(1);
     int16 result;
     result = (int16)arg1 * (int16)arg2;
-    if (result > UCHAR_MAX) {
+    if (result < 0 || result > UCHAR_MAX) {
         ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("tinyint unsigned out of range")));
     }
     PG_RETURN_UINT8(result);
@@ -1913,7 +1953,7 @@ Datum int4_mul_uint4(PG_FUNCTION_ARGS)
 /* datatype divide */
 Datum int1_div_uint1(PG_FUNCTION_ARGS)
 {
-    uint8 arg1 = PG_GETARG_UINT8(0);
+    int8 arg1 = PG_GETARG_INT8(0);
     uint8 arg2 = PG_GETARG_UINT8(1);
     INTEGER_DIV_INTEGER(arg1, arg2);
 }
@@ -1921,7 +1961,7 @@ Datum int1_div_uint1(PG_FUNCTION_ARGS)
 Datum uint1_div_int1(PG_FUNCTION_ARGS)
 {
     uint8 arg1 = PG_GETARG_UINT8(0);
-    uint8 arg2 = PG_GETARG_UINT8(1);
+    int8 arg2 = PG_GETARG_INT8(1);
     INTEGER_DIV_INTEGER(arg1, arg2);
 }
 
@@ -1955,98 +1995,98 @@ Datum int4_div_uint4(PG_FUNCTION_ARGS)
 
 Datum int1_uint1_eq(PG_FUNCTION_ARGS)
 {
-    uint8 arg1 = PG_GETARG_UINT8(0);
+    int8 arg1 = PG_GETARG_INT8(0);
     uint8 arg2 = PG_GETARG_UINT8(1);
 
-    PG_RETURN_BOOL(arg1 == arg2);
+    PG_RETURN_BOOL((int16)arg1 == (int16)arg2);
 }
 
 Datum int1_uint1_ne(PG_FUNCTION_ARGS)
 {
-    uint8 arg1 = PG_GETARG_UINT8(0);
+    int8 arg1 = PG_GETARG_INT8(0);
     uint8 arg2 = PG_GETARG_UINT8(1);
 
-    PG_RETURN_BOOL(arg1 != arg2);
+    PG_RETURN_BOOL((int16)arg1 != (int16)arg2);
 }
 
 Datum int1_uint1_lt(PG_FUNCTION_ARGS)
 {
-    uint8 arg1 = PG_GETARG_UINT8(0);
+    int8 arg1 = PG_GETARG_INT8(0);
     uint8 arg2 = PG_GETARG_UINT8(1);
 
-    PG_RETURN_BOOL(arg1 < arg2);
+    PG_RETURN_BOOL((int16)arg1 < (int16)arg2);
 }
 
 Datum int1_uint1_le(PG_FUNCTION_ARGS)
 {
-    uint8 arg1 = PG_GETARG_INT8(0);
+    int8 arg1 = PG_GETARG_INT8(0);
     uint8 arg2 = PG_GETARG_UINT8(1);
 
-    PG_RETURN_BOOL(arg1 <= arg2);
+    PG_RETURN_BOOL((int16)arg1 <= (int16)arg2);
 }
 
 Datum int1_uint1_gt(PG_FUNCTION_ARGS)
 {
-    uint8 arg1 = PG_GETARG_INT8(0);
+    int8 arg1 = PG_GETARG_INT8(0);
     uint8 arg2 = PG_GETARG_UINT8(1);
 
-    PG_RETURN_BOOL(arg1 > arg2);
+    PG_RETURN_BOOL((int16)arg1 > (int16)arg2);
 }
 
 Datum int1_uint1_ge(PG_FUNCTION_ARGS)
 {
-    uint8 arg1 = PG_GETARG_INT8(0);
+    int8 arg1 = PG_GETARG_INT8(0);
     uint8 arg2 = PG_GETARG_UINT8(1);
 
-    PG_RETURN_BOOL(arg1 >= arg2);
+    PG_RETURN_BOOL((int16)arg1 >= (int16)arg2);
 }
 
 Datum uint1_int1_eq(PG_FUNCTION_ARGS)
 {
     uint8 arg1 = PG_GETARG_UINT8(0);
-    uint8 arg2 = PG_GETARG_INT8(1);
+    int8 arg2 = PG_GETARG_INT8(1);
 
-    PG_RETURN_BOOL(arg1 == arg2);
+    PG_RETURN_BOOL((int16)arg1 == (int16)arg2);
 }
 
 Datum uint1_int1_ne(PG_FUNCTION_ARGS)
 {
     uint8 arg1 = PG_GETARG_UINT8(0);
-    uint8 arg2 = PG_GETARG_INT8(1);
+    int8 arg2 = PG_GETARG_INT8(1);
 
-    PG_RETURN_BOOL(arg1 != arg2);
+    PG_RETURN_BOOL((int16)arg1 != (int16)arg2);
 }
 
 Datum uint1_int1_lt(PG_FUNCTION_ARGS)
 {
     uint8 arg1 = PG_GETARG_UINT8(0);
-    uint8 arg2 = PG_GETARG_INT8(1);
+    int8 arg2 = PG_GETARG_INT8(1);
 
-    PG_RETURN_BOOL(arg1 < arg2);
+    PG_RETURN_BOOL((int16)arg1 < (int16)arg2);
 }
 
 Datum uint1_int1_le(PG_FUNCTION_ARGS)
 {
     uint8 arg1 = PG_GETARG_UINT8(0);
-    uint8 arg2 = PG_GETARG_INT8(1);
+    int8 arg2 = PG_GETARG_INT8(1);
 
-    PG_RETURN_BOOL(arg1 <= arg2);
+    PG_RETURN_BOOL((int16)arg1 <= (int16)arg2);
 }
 
 Datum uint1_int1_gt(PG_FUNCTION_ARGS)
 {
     uint8 arg1 = PG_GETARG_UINT8(0);
-    uint8 arg2 = PG_GETARG_INT8(1);
+    int8 arg2 = PG_GETARG_INT8(1);
 
-    PG_RETURN_BOOL(arg1 > arg2);
+    PG_RETURN_BOOL((int16)arg1 > (int16)arg2);
 }
 
 Datum uint1_int1_ge(PG_FUNCTION_ARGS)
 {
     uint8 arg1 = PG_GETARG_UINT8(0);
-    uint8 arg2 = PG_GETARG_INT8(1);
+    int8 arg2 = PG_GETARG_INT8(1);
 
-    PG_RETURN_BOOL(arg1 >= arg2);
+    PG_RETURN_BOOL((int16)arg1 >= (int16)arg2);
 }
 
 Datum uint2_int2_eq(PG_FUNCTION_ARGS)
@@ -2526,22 +2566,32 @@ Datum ui1toui8(PG_FUNCTION_ARGS)
 Datum ui8toi1(PG_FUNCTION_ARGS)
 {
     uint64 arg1 = PG_GETARG_UINT64(0);
-    if (fcinfo->can_ignore && arg1 > UCHAR_MAX) {
+    if (fcinfo->can_ignore && arg1 > CHAR_MAX) {
         ereport(WARNING, (errmsg("tinyint unsigned out of range")));
-        PG_RETURN_UINT8((uint8)UCHAR_MAX);
+        PG_RETURN_INT8((int8)CHAR_MAX);
     }
     if (SQL_MODE_STRICT()) {
-        if (arg1 > UCHAR_MAX)
+        if (arg1 > CHAR_MAX)
             ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("tinyint out of range")));
-    } else if (arg1 > UCHAR_MAX) {
-        arg1 = UCHAR_MAX;
+    } else if (arg1 > CHAR_MAX) {
+        arg1 = CHAR_MAX;
     }
-    PG_RETURN_UINT8((uint8)arg1);
+    PG_RETURN_INT8((int8)arg1);
 }
 
 Datum i1toui8(PG_FUNCTION_ARGS)
 {
-    uint8 arg1 = PG_GETARG_INT8(0);
+    int8 arg1 = PG_GETARG_INT8(0);
+    if (fcinfo->can_ignore && arg1 < 0) {
+        ereport(WARNING, (errmsg("int unsigned out of range")));
+        PG_RETURN_UINT64((uint64)0);
+    }
+    if (SQL_MODE_STRICT()) {
+        if (arg1 < 0)
+            ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("int unsigned out of range")));
+    } else if (arg1 < 0) {
+        arg1 = 0;
+    }
     PG_RETURN_UINT64((uint64)arg1);
 }
 
@@ -3115,25 +3165,25 @@ Datum bool_uint8(PG_FUNCTION_ARGS)
 Datum uint1_int1_mod(PG_FUNCTION_ARGS)
 {
     uint8 arg1 = PG_GETARG_UINT8(0);
-    uint8 arg2 = PG_GETARG_UINT8(1);
+    int8 arg2 = PG_GETARG_INT8(1);
 
     if (arg2 == 0) {
         PG_RETURN_NULL();
     }
 
-    PG_RETURN_UINT8(arg1 % arg2);
+    PG_RETURN_UINT8((int16)arg1 % (int16)arg2);
 }
 
 Datum int1_uint1_mod(PG_FUNCTION_ARGS)
 {
-    uint8 arg1 = PG_GETARG_UINT8(0);
+    int8 arg1 = PG_GETARG_INT8(0);
     uint8 arg2 = PG_GETARG_UINT8(1);
 
     if (arg2 == 0) {
         PG_RETURN_NULL();
     }
 
-    PG_RETURN_UINT8(arg1 % arg2);
+    PG_RETURN_UINT8((int16)arg1 % (int16)arg2);
 }
 
 Datum uint2_int2_mod(PG_FUNCTION_ARGS)
@@ -3211,14 +3261,14 @@ Datum int8_uint8_mod(PG_FUNCTION_ARGS)
 Datum uint1_xor_int1(PG_FUNCTION_ARGS)
 {
     uint8 arg1 = PG_GETARG_UINT8(0);
-    uint8 arg2 = PG_GETARG_UINT8(1);
+    int8 arg2 = PG_GETARG_INT8(1);
 
     PG_RETURN_UINT8(arg1 ^ arg2);
 }
 
 Datum int1_xor_uint1(PG_FUNCTION_ARGS)
 {
-    uint8 arg1 = PG_GETARG_UINT8(0);
+    int8 arg1 = PG_GETARG_INT8(0);
     uint8 arg2 = PG_GETARG_UINT8(1);
 
     PG_RETURN_UINT8(arg1 ^ arg2);
@@ -3270,6 +3320,12 @@ Datum int8_xor_uint8(PG_FUNCTION_ARGS)
     uint64 arg2 = PG_GETARG_UINT64(1);
 
     PG_RETURN_UINT64(arg1 ^ arg2);
+}
+
+Datum i1_cast_ui1(PG_FUNCTION_ARGS)
+{
+    int8 arg1 = PG_GETARG_INT8(0);
+    PG_RETURN_UINT8((uint8)arg1);
 }
 
 Datum i2_cast_ui1(PG_FUNCTION_ARGS)
@@ -3326,6 +3382,12 @@ Datum i8_cast_ui1(PG_FUNCTION_ARGS)
     PG_RETURN_UINT8((uint8)arg1);
 }
 
+Datum i1_cast_ui2(PG_FUNCTION_ARGS)
+{
+    int16 arg1 = PG_GETARG_INT8(0);
+    PG_RETURN_UINT16((uint16)arg1);
+}
+
 Datum i2_cast_ui2(PG_FUNCTION_ARGS)
 {
     int16 arg1 = PG_GETARG_INT16(0);
@@ -3368,6 +3430,12 @@ Datum i8_cast_ui2(PG_FUNCTION_ARGS)
     PG_RETURN_UINT16((uint16)arg1);
 }
 
+Datum i1_cast_ui4(PG_FUNCTION_ARGS)
+{
+    int32 arg1 = PG_GETARG_INT8(0);
+    PG_RETURN_UINT32((uint32)arg1);
+}
+
 Datum i2_cast_ui4(PG_FUNCTION_ARGS)
 {
     int32 arg1 = PG_GETARG_INT16(0);
@@ -3396,6 +3464,12 @@ Datum i8_cast_ui4(PG_FUNCTION_ARGS)
         arg1 = UINT_MAX;
     }
     PG_RETURN_UINT32((uint32)arg1);
+}
+
+Datum i1_cast_ui8(PG_FUNCTION_ARGS)
+{
+    int64 arg1 = PG_GETARG_INT8(0);
+    PG_RETURN_UINT64((uint64)arg1);
 }
 
 Datum i2_cast_ui8(PG_FUNCTION_ARGS)
@@ -3614,14 +3688,14 @@ Datum f8_cast_ui8(PG_FUNCTION_ARGS)
 Datum uint1_or_int1(PG_FUNCTION_ARGS)
 {
     uint8 arg1 = PG_GETARG_UINT8(0);
-    uint8 arg2 = PG_GETARG_UINT8(1);
+    int8 arg2 = PG_GETARG_INT8(1);
 
     PG_RETURN_UINT8(arg1 | arg2);
 }
 
 Datum int1_or_uint1(PG_FUNCTION_ARGS)
 {
-    uint8 arg1 = PG_GETARG_UINT8(0);
+    int8 arg1 = PG_GETARG_INT8(0);
     uint8 arg2 = PG_GETARG_UINT8(1);
 
     PG_RETURN_UINT8(arg1 | arg2);
@@ -3678,14 +3752,14 @@ Datum int8_or_uint8(PG_FUNCTION_ARGS)
 Datum uint1_and_int1(PG_FUNCTION_ARGS)
 {
     uint8 arg1 = PG_GETARG_UINT8(0);
-    uint8 arg2 = PG_GETARG_UINT8(1);
+    int8 arg2 = PG_GETARG_INT8(1);
 
     PG_RETURN_UINT8(arg1 & arg2);
 }
 
 Datum int1_and_uint1(PG_FUNCTION_ARGS)
 {
-    uint8 arg1 = PG_GETARG_UINT8(0);
+    int8 arg1 = PG_GETARG_INT8(0);
     uint8 arg2 = PG_GETARG_UINT8(1);
 
     PG_RETURN_UINT8(arg1 & arg2);

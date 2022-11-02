@@ -117,7 +117,11 @@ select (-10)::uint1 ^ (-2)::bool;
 (1 row)
 
 select (-10)::uint1 ^ (-2)::varchar;
-ERROR:  value "-2" is out of range for 8-bit integer
+ ?column? 
+----------
+ 8
+(1 row)
+
 select 2 ::uint1 ^ 2::int1;
  ?column? 
 ----------

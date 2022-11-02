@@ -23,10 +23,6 @@ LINE 1: insert into test_tint(a) values('888aa');
                                         ^
 CONTEXT:  referenced column: a
 insert into test_tint(a) values('-88aa');
-ERROR:  value "-88aa" is out of range for 8-bit integer
-LINE 1: insert into test_tint(a) values('-88aa');
-                                        ^
-CONTEXT:  referenced column: a
 insert into test_tint(a) values(123423.55);
 insert into test_tint(a) values(12.55);
 insert into test_tint(a) values(-12.55);
@@ -41,13 +37,14 @@ select * from test_tint;
  255
  0
  0
+ 168
  255
  13
  0
  0
  255
  0
-(11 rows)
+(12 rows)
 
 insert into test_sint(a) values(-55);
 insert into test_sint(a) values(55);
@@ -303,13 +300,14 @@ select * from test_sint1;
  255
  0
  0
+ 168
  255
  13
  0
  0
  255
  0
-(11 rows)
+(12 rows)
 
 delete from test_sint1;
 insert into test_sint1 select * from test_int;
@@ -402,13 +400,14 @@ select * from test_int1;
  255
  0
  0
+ 168
  255
  13
  0
  0
  255
  0
-(11 rows)
+(12 rows)
 
 delete from test_int1;
 insert into test_int1 select * from test_sint;
@@ -501,13 +500,14 @@ select * from test_bint1;
  255
  0
  0
+ 168
  255
  13
  0
  0
  255
  0
-(11 rows)
+(12 rows)
 
 delete from test_bint1;
 insert into test_bint1 select * from test_sint;
@@ -600,13 +600,14 @@ select * from test_char1;
  2
  0
  0
+ 1
  2
  1
  0
  0
  2
  0
-(11 rows)
+(12 rows)
 
 delete from test_char1;
 insert into test_char1 select * from test_sint;
@@ -688,13 +689,14 @@ select * from test_varchar7_1;
  255
  0
  0
+ 168
  255
  13
  0
  0
  255
  0
-(11 rows)
+(12 rows)
 
 delete from test_varchar7_1;
 insert into test_varchar7_1 select * from test_sint;

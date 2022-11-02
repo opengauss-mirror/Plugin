@@ -4131,6 +4131,11 @@ commutator=operator(pg_catalog.&)
 COMMENT ON OPERATOR pg_catalog.&(int8, uint8) IS 'int8_and_uint8';
 
 -- cast
+DROP FUNCTION IF EXISTS pg_catalog.i1_cast_ui1(int1) CASCADE;
+CREATE OR REPLACE FUNCTION pg_catalog.i1_cast_ui1 (
+int1
+) RETURNS uint1 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'i1_cast_ui1';
+
 DROP FUNCTION IF EXISTS pg_catalog.i2_cast_ui1(int2) CASCADE;
 CREATE OR REPLACE FUNCTION pg_catalog.i2_cast_ui1 (
 int2
@@ -4145,6 +4150,11 @@ DROP FUNCTION IF EXISTS pg_catalog.i8_cast_ui1(int8) CASCADE;
 CREATE OR REPLACE FUNCTION pg_catalog.i8_cast_ui1 (
 int8
 ) RETURNS uint1 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'i8_cast_ui1';
+
+DROP FUNCTION IF EXISTS pg_catalog.i1_cast_ui2(int1) CASCADE;
+CREATE OR REPLACE FUNCTION pg_catalog.i1_cast_ui2 (
+int1
+) RETURNS uint2 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'i1_cast_ui2';
 
 DROP FUNCTION IF EXISTS pg_catalog.i2_cast_ui2(int2) CASCADE;
 CREATE OR REPLACE FUNCTION pg_catalog.i2_cast_ui2 (
@@ -4161,6 +4171,11 @@ CREATE OR REPLACE FUNCTION pg_catalog.i8_cast_ui2 (
 int8
 ) RETURNS uint2 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'i8_cast_ui2';
 
+DROP FUNCTION IF EXISTS pg_catalog.i1_cast_ui4(int1) CASCADE;
+CREATE OR REPLACE FUNCTION pg_catalog.i1_cast_ui4 (
+int1
+) RETURNS uint4 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'i1_cast_ui4';
+
 DROP FUNCTION IF EXISTS pg_catalog.i2_cast_ui4(int2) CASCADE;
 CREATE OR REPLACE FUNCTION pg_catalog.i2_cast_ui4 (
 int2
@@ -4175,6 +4190,11 @@ DROP FUNCTION IF EXISTS pg_catalog.i8_cast_ui4(int8) CASCADE;
 CREATE OR REPLACE FUNCTION pg_catalog.i8_cast_ui4 (
 int8
 ) RETURNS uint4 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'i8_cast_ui4';
+
+DROP FUNCTION IF EXISTS pg_catalog.i1_cast_ui8(int1) CASCADE;
+CREATE OR REPLACE FUNCTION pg_catalog.i1_cast_ui8 (
+int1
+) RETURNS uint8 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'i1_cast_ui8';
 
 DROP FUNCTION IF EXISTS pg_catalog.i2_cast_ui8(int2) CASCADE;
 CREATE OR REPLACE FUNCTION pg_catalog.i2_cast_ui8 (

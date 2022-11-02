@@ -12,8 +12,6 @@ ERROR:  tinyint out of range
 CONTEXT:  referenced column: num
 insert into t values(100);
 insert into t values(-100);
-ERROR:  tinyint out of range
-CONTEXT:  referenced column: num
 insert ignore into t values(10000);
 WARNING:  tinyint out of range
 CONTEXT:  referenced column: num
@@ -22,30 +20,30 @@ WARNING:  tinyint out of range
 CONTEXT:  referenced column: num
 insert ignore into t values(100);
 insert ignore into t values(-100);
-WARNING:  tinyint out of range
-CONTEXT:  referenced column: num
 select * from t;
- num 
------
+ num  
+------
  100
- 255
- 0
+ -100
+ 127
+ -128
  100
- 0
-(5 rows)
+ -100
+(6 rows)
 
 update ignore t set num = 100000 where num = 100;
 WARNING:  tinyint out of range
 CONTEXT:  referenced column: num
 select * from t;
- num 
------
- 255
- 0
- 0
- 255
- 255
-(5 rows)
+ num  
+------
+ -100
+ 127
+ -128
+ -100
+ 127
+ 127
+(6 rows)
 
 -- insert numeric table into tinyint table
 drop table if exists t_tinyint;
@@ -64,7 +62,7 @@ CONTEXT:  referenced column: num
 select * from t_tinyint;
  num 
 -----
- 255
+ -1
  0
 (2 rows)
 
@@ -302,10 +300,10 @@ CONTEXT:  referenced column: num
 WARNING:  tinyint out of range
 CONTEXT:  referenced column: num
 select * from t_tinyint;
- num 
------
- 255
- 0
+ num  
+------
+ 127
+ -128
 (2 rows)
 
 -- insert int table into smallint table
@@ -338,8 +336,6 @@ ERROR:  tinyint out of range
 CONTEXT:  referenced column: num
 insert into t_tinyint values (123.023::float4);
 insert into t_tinyint values (-123.023::float4);
-ERROR:  tinyint out of range
-CONTEXT:  referenced column: num
 insert ignore into t_tinyint values (10000.023::float4);
 WARNING:  tinyint out of range
 CONTEXT:  referenced column: num
@@ -348,17 +344,16 @@ WARNING:  tinyint out of range
 CONTEXT:  referenced column: num
 insert ignore into t_tinyint values (123.023::float4);
 insert ignore into t_tinyint values (-123.023::float4);
-WARNING:  tinyint out of range
-CONTEXT:  referenced column: num
 select * from t_tinyint;
- num 
------
+ num  
+------
  123
- 255
- 0
+ -123
+ 127
+ -128
  123
- 0
-(5 rows)
+ -123
+(6 rows)
 
 -- test for float4 to smallint
 drop table if exists t_smallint;
@@ -461,8 +456,6 @@ ERROR:  tinyint out of range
 CONTEXT:  referenced column: num
 insert into t_tinyint values (100.123::float8);
 insert into t_tinyint values (-100.123::float8);
-ERROR:  tinyint out of range
-CONTEXT:  referenced column: num
 insert ignore into t_tinyint values (238947289573489758943455436587549686.023::float8);
 WARNING:  tinyint out of range
 CONTEXT:  referenced column: num
@@ -471,17 +464,16 @@ WARNING:  tinyint out of range
 CONTEXT:  referenced column: num
 insert ignore into t_tinyint values (100.123::float8);
 insert ignore into t_tinyint values (-100.123::float8);
-WARNING:  tinyint out of range
-CONTEXT:  referenced column: num
 select * from t_tinyint;
- num 
------
+ num  
+------
  100
- 255
- 0
+ -100
+ 127
+ -128
  100
- 0
-(5 rows)
+ -100
+(6 rows)
 
 -- test for float8 to smallint
 drop table if exists t_smallint;

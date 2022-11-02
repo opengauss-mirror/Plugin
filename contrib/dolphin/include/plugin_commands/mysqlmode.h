@@ -12,6 +12,7 @@
 #define OPT_SQL_MODE_MAX 5
 #define SQL_MODE_STRICT() (GetSessionContext()->sqlModeFlags & OPT_SQL_MODE_STRICT)
 #define SQL_MODE_FULL_GROUP() (GetSessionContext()->sqlModeFlags & OPT_SQL_MODE_FULL_GROUP)
+#define PG_RETURN_INT8(x) return Int8GetDatum(x)
 #define SQL_MODE_PIPES_AS_CONCAT() (GetSessionContext()->sqlModeFlags & OPT_SQL_MODE_PIPES_AS_CONCAT)
 #define SQL_MODE_ANSI_QUOTES() (GetSessionContext()->sqlModeFlags & OPT_SQL_MODE_ANSI_QUOTES)
 
@@ -23,4 +24,5 @@ extern uint32 PgStrtouint32Internal(const char* s, bool sqlModeStrict);
 extern bool Scanint8Internal(const char* str, bool errorOK, int64* result, bool sqlModeStrict);
 extern void CheckSpaceAndDotInternal(bool errorOK, int c, char* digitAfterDot, const char** ptr);
 extern uint64 pg_getmsguint64(StringInfo msg);
+extern void pg_ctoa(int8 i, char* a);
 #endif /* MYSQLMODE_H */

@@ -7516,7 +7516,9 @@ static List* DividePartitionStartEndInterval(ParseState* pstate, Form_pg_attribu
                 pstate, partName, attr, startVal, endVal, everyExpr, numPart, maxNum, false, true, isPartition);
             break;
         }
-
+#ifdef DOLPHIN
+        case INT1OID:
+#endif
         case INT2OID:
         case INT4OID:
         case INT8OID: {
@@ -7555,6 +7557,7 @@ static List* DividePartitionStartEndInterval(ParseState* pstate, Form_pg_attribu
         }
 
         default:
+#ifdef DOLPHIN
             Oid typeoid = attr->atttypid;
             if (typeoid == get_typeoid(PG_CATALOG_NAMESPACE, "uint4") || typeoid == get_typeoid(PG_CATALOG_NAMESPACE, "uint1") ||
                 typeoid == get_typeoid(PG_CATALOG_NAMESPACE, "uint2") || typeoid == get_typeoid(PG_CATALOG_NAMESPACE, "uint8")) {
@@ -7566,8 +7569,9 @@ static List* DividePartitionStartEndInterval(ParseState* pstate, Form_pg_attribu
                 (errcode(ERRCODE_DATATYPE_MISMATCH),
                     errmsg("unsupported datatype served as a %s key in the start/end clause.",
                         (isPartition ? "partition" : "distribution")),
-                    errhint("Valid datatypes are: smallint, int, bigint, float4/real, float8/double, numeric, date and "
+                    errhint("Valid datatypes are: tinyint [unsigned], smallint [unsigned], int [unsigned], bigint [unsigned], float4/real, float8/double, numeric, date and "
                             "timestamp [with time zone].")));
+#endif
     }
 
     return result;
@@ -7711,6 +7715,9 @@ List* transformRangePartStartEndStmt(ParseState* pstate, List* partitionList, Li
         target_type = attr->atttypid;
 
         switch (target_type) {
+#ifdef DOLPHIN
+            case INT1OID:
+#endif
             case INT2OID:
             case INT4OID:
             case INT8OID:
@@ -7727,6 +7734,7 @@ List* transformRangePartStartEndStmt(ParseState* pstate, List* partitionList, Li
                 break;
 
             default:
+#ifdef DOLPHIN
                 if (target_type == get_typeoid(PG_CATALOG_NAMESPACE, "uint4") || target_type == get_typeoid(PG_CATALOG_NAMESPACE, "uint1") ||
                     target_type == get_typeoid(PG_CATALOG_NAMESPACE, "uint2") || target_type == get_typeoid(PG_CATALOG_NAMESPACE, "uint8")) {
                     isinterval = false;
@@ -7736,8 +7744,9 @@ List* transformRangePartStartEndStmt(ParseState* pstate, List* partitionList, Li
                     (errcode(ERRCODE_DATATYPE_MISMATCH),
                         errmsg("datatype of column \"%s\" is unsupported for %s key in start/end clause.",
                             NameStr(attrs[i]->attname), (isPartition ? "partition" : "distribution")),
-                        errhint("Valid datatypes are: smallint, int, bigint, float4/real, float8/double, numeric, date "
+                        errhint("Valid datatypes are: tinyint [unsigned], smallint [unsigned], int [unsigned], bigint [unsigned], float4/real, float8/double, numeric, date "
                                 "and timestamp [with time zone].")));
+#endif
                 break;
         }
     }

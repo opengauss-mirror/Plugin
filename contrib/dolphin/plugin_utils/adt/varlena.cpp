@@ -5929,6 +5929,61 @@ Datum list_agg_noarg2_transfn(PG_FUNCTION_ARGS)
     PG_RETURN_POINTER(state);
 }
 
+#ifdef DOLPHIN
+PG_FUNCTION_INFO_V1_PUBLIC(int1_list_agg_transfn);
+PG_FUNCTION_INFO_V1_PUBLIC(int1_list_agg_noarg2_transfn);
+extern "C" DLL_PUBLIC Datum int1_list_agg_transfn(PG_FUNCTION_ARGS);
+extern "C" DLL_PUBLIC Datum int1_list_agg_noarg2_transfn(PG_FUNCTION_ARGS);
+
+Datum int1_list_agg_transfn(PG_FUNCTION_ARGS)
+{
+    StringInfo state;
+
+    state = PG_ARGISNULL(0) ? NULL : (StringInfo)PG_GETARG_POINTER(0);
+
+    /* Append the value unless null. */
+    if (!PG_ARGISNULL(1)) {
+        /* On the first time through, we ignore the delimiter. */
+        if (state == NULL)
+            state = makeStringAggState(fcinfo);
+        else if (!PG_ARGISNULL(2))
+            appendStringInfoText(state, PG_GETARG_TEXT_PP(2)); /* delimiter */
+
+        appendStringInfo(state, "%hd", PG_GETARG_INT8(1)); /* value */
+    }
+
+    /*
+     * The transition type for list_agg() is declared to be "internal",
+     * which is a pass-by-value type the same size as a pointer.
+     */
+    PG_RETURN_POINTER(state);
+}
+
+Datum int1_list_agg_noarg2_transfn(PG_FUNCTION_ARGS)
+{
+    StringInfo state;
+
+    state = PG_ARGISNULL(0) ? NULL : (StringInfo)PG_GETARG_POINTER(0);
+
+    /* Append the value unless null. */
+    if (!PG_ARGISNULL(1)) {
+        /* On the first time through, we ignore the delimiter. */
+        if (state == NULL)
+            state = makeStringAggState(fcinfo);
+        else if (!PG_ARGISNULL(2))
+            appendStringInfoText(state, cstring_to_text("")); /* delimiter */
+
+        appendStringInfo(state, "%hd", PG_GETARG_INT8(1)); /* value */
+    }
+
+    /*
+     * The transition type for list_agg() is declared to be "internal",
+     * which is a pass-by-value type the same size as a pointer.
+     */
+    PG_RETURN_POINTER(state);
+}
+#endif
+
 Datum int2_list_agg_transfn(PG_FUNCTION_ARGS)
 {
     StringInfo state;
