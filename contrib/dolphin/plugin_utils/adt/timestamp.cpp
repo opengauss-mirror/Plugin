@@ -286,6 +286,8 @@ PG_FUNCTION_INFO_V1_PUBLIC(from_unixtime_with_one_arg);
 extern "C" DLL_PUBLIC Datum from_unixtime_with_one_arg(PG_FUNCTION_ARGS);
 PG_FUNCTION_INFO_V1_PUBLIC(from_unixtime_with_two_arg);
 extern "C" DLL_PUBLIC Datum from_unixtime_with_two_arg(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(timestamp_uint8);
+extern "C" DLL_PUBLIC Datum timestamp_uint8(PG_FUNCTION_ARGS);
 #endif
 
 /* b format datetime and timestamp type */
@@ -9311,5 +9313,23 @@ Datum from_unixtime_with_two_arg(PG_FUNCTION_ARGS)
     datetime = from_unixtime_internal(&div);
     tmp = DatumGetCString(DirectFunctionCall1(timestamp_out, TimestampGetDatum(datetime)));
     PG_RETURN_TEXT_P(DirectFunctionCall2(date_format_text, PointerGetDatum(cstring_to_text(tmp)), PointerGetDatum(format_text)));
+}
+
+Datum timestamp_uint8(PG_FUNCTION_ARGS)
+{
+    Timestamp timestamp = PG_GETARG_TIMESTAMP(0);
+    fsec_t fsec;
+    struct pg_tm tt, *tm = &tt;
+    char result_buff[TIMESTAMP_YYYYMMDDhhmmss_LEN + 3] = {0};
+    uint64 result = 0;
+    if (timestamp2tm(timestamp, NULL, tm, &fsec, NULL, NULL) == 0) {
+        errno_t ret = EOK;
+        ret = sprintf_s(result_buff, TIMESTAMP_YYYYMMDDhhmmss_LEN + 3, "%04d%02d%02d%02d%02d%02d", tm->tm_year, tm->tm_mon, tm->tm_mday, tm->tm_hour, tm->tm_min, tm->tm_sec);
+        securec_check_ss(ret, "\0", "\0");
+        result = (uint64)pg_strtouint64(result_buff, NULL, 10);
+    } else {
+        ereport(ERROR, (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE), errmsg("date out of range")));
+    }
+    PG_RETURN_UINT64(result);
 }
 #endif
