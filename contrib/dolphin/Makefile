@@ -54,7 +54,7 @@ OBJS += $(storage)/hashfunc.o
 
 OBJS += $(optimizer)/streamwalker.o
 
-OBJS += $(commands)/functioncmds.o $(commands)/foreigncmds.o
+OBJS += $(commands)/functioncmds.o $(commands)/foreigncmds.o $(commands)/copy.o
 
 OBJS += $(pl)/pl_gram.o $(pl)/pl_scanner.o
 

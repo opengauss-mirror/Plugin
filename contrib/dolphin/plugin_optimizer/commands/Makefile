@@ -19,7 +19,7 @@ ifneq "$(MAKECMDGOALS)" "clean"
 endif
 
 
-OBJS = functioncmds.o foreigncmds.o
+OBJS = functioncmds.o foreigncmds.o copy.o
 
 include $(top_srcdir)/src/gausskernel/common.mk
 
