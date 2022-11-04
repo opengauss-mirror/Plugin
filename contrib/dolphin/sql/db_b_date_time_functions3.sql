@@ -263,6 +263,14 @@ select adddate(datetime'001-01-01 12:21:21',INTERVAL 1 day);
 select adddate(time'1:1:1',INTERVAL 1 day);
 select adddate('2001-12-12',INTERVAL 1 day);
 select adddate('2001-12-12 12:12:12',INTERVAL 1 day);
+-- interval为负数
+select adddate('2001-12-12 12:12:12',INTERVAL -1 year);
+select adddate('2001-12-12 12:12:12',INTERVAL -1 month);
+select adddate('2001-12-12 12:12:12',INTERVAL -1 day);
+select adddate('2001-12-12 12:12:12',INTERVAL -1 hour);
+select adddate('2001-12-12 12:12:12',INTERVAL -1 minute);
+select adddate('2001-12-12 12:12:12',INTERVAL -1 second);
+select adddate('2001-12-12 12:12:12',INTERVAL -1.2 second);
 
 -- test date_add(date,INTERVAL expr unit)
 -- 边界值，坏值
@@ -300,6 +308,14 @@ select date_add(datetime'001-01-01 12:21:21',INTERVAL 1 day);
 select date_add(time'1:1:1',INTERVAL 1 day);
 select date_add('2001-12-12',INTERVAL 1 day);
 select date_add('2001-12-12 12:12:12',INTERVAL 1 day);
+-- interval为负数
+select date_add('2001-12-12 12:12:12',INTERVAL -1 year);
+select date_add('2001-12-12 12:12:12',INTERVAL -1 month);
+select date_add('2001-12-12 12:12:12',INTERVAL -1 day);
+select date_add('2001-12-12 12:12:12',INTERVAL -1 hour);
+select date_add('2001-12-12 12:12:12',INTERVAL -1 minute);
+select date_add('2001-12-12 12:12:12',INTERVAL -1 second);
+select date_add('2001-12-12 12:12:12',INTERVAL -1.2 second);
 
 -- test date_sub(date,INTERVAL expr unit)
 -- 边界值，坏值
@@ -335,6 +351,14 @@ select date_sub(datetime'001-01-01 12:21:21',INTERVAL '-1' day);
 select date_sub(time'1:1:1',INTERVAL '-1' day);
 select date_sub('2001-12-12',INTERVAL '-1' day);
 select date_sub('2001-12-12 12:12:12',INTERVAL '-1' day);
+-- interval为负数
+select date_sub('2001-12-12 12:12:12',INTERVAL -1 year);
+select date_sub('2001-12-12 12:12:12',INTERVAL -1 month);
+select date_sub('2001-12-12 12:12:12',INTERVAL -1 day);
+select date_sub('2001-12-12 12:12:12',INTERVAL -1 hour);
+select date_sub('2001-12-12 12:12:12',INTERVAL -1 minute);
+select date_sub('2001-12-12 12:12:12',INTERVAL -1 second);
+select date_sub('2001-12-12 12:12:12',INTERVAL -1.2 second);
 
 -- test addtime(expr1,expr2)
 -- 边界值，坏值
