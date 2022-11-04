@@ -1,6 +1,6 @@
 drop database if exists b_char_blank_test_2;
 NOTICE:  database "b_char_blank_test_2" does not exist, skipping
-create database b_char_blank_test_2 encoding 'UTF-8' lc_collate 'en_US.UTF-8' lc_ctype 'en_US.UTF-8' dbcompatibility 'B';
+create database b_char_blank_test_2 encoding 'UTF-8' lc_collate 'C' lc_ctype 'C' dbcompatibility 'B';
 \c b_char_blank_test_2
 ---------------------------
 ----- column table
