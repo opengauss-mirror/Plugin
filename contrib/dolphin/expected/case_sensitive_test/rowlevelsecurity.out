@@ -1121,9 +1121,9 @@ explain(costs off) select aa_1 from aa, bb where bb_1 = 1 and aa_1 > (select min
                Group By Key: regress_rls_schema.aa.aa_2
                ->  Nested Loop Semi Join
                      ->  Seq Scan on aa
-                           Filter: ((aa_2 = 1) AND (rls = 1))
+--?.*
                      ->  Seq Scan on bb
-                           Filter: ((rls = 1) AND (bb_1 = 1) AND (bb_2 = 1))
+--?.*
    ->  Seq Scan on aa
          Filter: (rls = 1)
  Notice: This query is influenced by row level security feature
