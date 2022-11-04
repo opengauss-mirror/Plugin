@@ -5,76 +5,80 @@ create database test_op_blob dbcompatibility 'b';
 select '1'::blob ^ '1'::blob;
  ?column? 
 ----------
- 0000
+        0
 (1 row)
 
 select '1'::blob ^ '1'::char;
-ERROR:  binary xor strings must be of equal length
+ ?column? 
+----------
+        0
+(1 row)
+
 -- error: different length
 select '1'::blob ^ '11'::varchar;
  ?column? 
 ----------
- 0100
+       10
 (1 row)
 
 select '1'::blob ^ 11::int1;
  ?column? 
 ----------
- 0100
+       10
 (1 row)
 
 select '1'::blob ^ 11::int2;
  ?column? 
 ----------
- 0100
+       10
 (1 row)
 
 select '1'::blob ^ 11::int4;
  ?column? 
 ----------
- 0100
+       10
 (1 row)
 
 select '1'::blob ^ 11::uint1;
  ?column? 
 ----------
- 0100
+       10
 (1 row)
 
 select '1'::blob ^ 11::uint2;
  ?column? 
 ----------
- 0100
+       10
 (1 row)
 
 select '1'::blob ^ 11::uint4;
  ?column? 
 ----------
- 0100
+       10
 (1 row)
 
 select '1'::blob ^ 11.0;
  ?column? 
 ----------
- 0100
+       10
 (1 row)
 
 select '1'::blob ^ 11::float;
  ?column? 
 ----------
- 0100
+       10
 (1 row)
 
 select '1'::blob ^ 11::float8;
  ?column? 
 ----------
- 0100
+       10
 (1 row)
 
 select '1'::blob ^ 11::numeric;
  ?column? 
 ----------
- 0100
+       10
 (1 row)
 
 \c postgres
