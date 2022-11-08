@@ -87,11 +87,14 @@ select * from t_timestamp;
 
 -- timetz
 create table t_timetz(c timetz not null);
+set timezone to 'PRC';
 insert ignore into t_timetz values (null);
 select * from t_timetz;
 insert into t_timetz values('00:00:01+08');
 update ignore t_timetz set c = null;
 select * from t_timetz;
+reset timezone;
+show timezone;
 
 -- time
 create table t_time(c time not null);

@@ -111,6 +111,7 @@ insert into func_test3(functionName, result) values('TO_SECONDS(''0000-01-01 00:
 insert into func_test3(functionName, result) values('TO_SECONDS(''0000-00-00'')', TO_SECONDS('0000-00-00'));
 insert into func_test3(functionName, result) values('TO_SECONDS(''0000-00-00 00:00:00'')', TO_SECONDS('0000-00-00 00:00:00'));
 
+set timezone to 'PRC';
 -- UNIX_TIMESTAMP()
 -- 正常测试
 -- date格式
@@ -159,7 +160,8 @@ insert into func_test3(functionName, result) values('UNIX_TIMESTAMP(''1970-01-01
 insert into func_test3(functionName, result) values('UNIX_TIMESTAMP(''1970-01-01 08:00:00.999999'')', UNIX_TIMESTAMP('1970-01-01 08:00:00.999999'));
 insert into func_test3(functionName, result) values('UNIX_TIMESTAMP(''1970-01-01 07:59:59'')', UNIX_TIMESTAMP('1970-01-01 07:59:59'));
 insert into func_test3(functionName, result) values('UNIX_TIMESTAMP(''1969-12-31'')', UNIX_TIMESTAMP('1969-12-31'));
-
+reset timezone;
+show timezone;
 -- UTC_DATE
 insert into func_test3(functionName, result) values('UTC_DATE', UTC_DATE);
 insert into func_test3(functionName, result) values('UTC_DATE()', UTC_DATE());
