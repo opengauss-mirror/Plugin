@@ -12,7 +12,7 @@ create table test_nv (name national varchar(10));
 --------+---------------+-----------
  name   | nvarchar2(10) | 
 
-drop table test_nv;
+drop table if exists test_nv;
 create table test_nv (id int, name national varchar(10));
 \d test_nv
        Table "public.test_nv"
@@ -21,7 +21,7 @@ create table test_nv (id int, name national varchar(10));
  id     | integer       | 
  name   | nvarchar2(10) | 
 
-drop table test_nv;
+drop table if exists test_nv;
 create table test_nv (id int, name nvarchar(10));
 \d test_nv
        Table "public.test_nv"
@@ -30,7 +30,7 @@ create table test_nv (id int, name nvarchar(10));
  id     | integer       | 
  name   | nvarchar2(10) | 
 
-drop table test_nv;
+drop table if exists test_nv;
 
 
 create table test_non(id int, name varchar(25));
@@ -77,7 +77,7 @@ create table test_part_like2 like test_part;
 Partition By RANGE(id)
 Number of partitions: 5 (View pg_partition to check each partition range.)
 
-drop table test_non_like1, test_non_like2, test_part_like1, test_part_like2;
+drop table if exists test_non_like1, test_non_like2, test_part_like1, test_part_like2;
 
 create table if not exists test_non_like1 (like test_non);
 \d test_non_like1
@@ -113,7 +113,7 @@ create table if not exists test_part_like2 like test_part;
 Partition By RANGE(id)
 Number of partitions: 5 (View pg_partition to check each partition range.)
 
-drop table test_non_like1, test_non_like2, test_part_like1, test_part_like2;
+drop table if exists test_non_like1, test_non_like2, test_part_like1, test_part_like2;
 
 create table test_non_like1 (like test_non including indexes);
 \d test_non_like1
@@ -149,7 +149,7 @@ create table test_part_like2 like test_part including indexes;
 Partition By RANGE(id)
 Number of partitions: 5 (View pg_partition to check each partition range.)
 
-drop table test_non_like1, test_non_like2, test_part_like1, test_part_like2;
+drop table if exists test_non_like1, test_non_like2, test_part_like1, test_part_like2;
 
 create table test_non_like1 (like test_non including partition);
 ERROR:  could not specify "INCLUDING PARTITION" for non-partitioned-table relation:"test_non"
@@ -177,8 +177,9 @@ create table test_part_like2 like test_part including partition;
 Partition By RANGE(id)
 Number of partitions: 5 (View pg_partition to check each partition range.)
 
-drop table test_non_like1, test_non_like2, test_part_like1, test_part_like2;
-ERROR:  table "test_non_like1" does not exist
+drop table if exists test_non_like1, test_non_like2, test_part_like1, test_part_like2;
+NOTICE:  table "test_non_like1" does not exist, skipping
+NOTICE:  table "test_non_like2" does not exist, skipping
 
 create table test_non_like1 (like test_non including partition including indexes);
 ERROR:  could not specify "INCLUDING PARTITION" for non-partitioned-table relation:"test_non"
@@ -187,8 +188,6 @@ create table test_non_like2 like test_non including partition including indexes;
 ERROR:  could not specify "INCLUDING PARTITION" for non-partitioned-table relation:"test_non"
 \d test_non_like2
 create table test_part_like1 (like test_part including partition including indexes);
-ERROR:  relation "test_part_like1" already exists in schema "public"
-DETAIL:  creating new table with existing name in the same schema
 \d test_part_like1
        Table "public.test_part_like1"
  Column |         Type          | Modifiers 
@@ -199,8 +198,6 @@ Partition By RANGE(id)
 Number of partitions: 5 (View pg_partition to check each partition range.)
 
 create table test_part_like2 like test_part including partition including indexes;
-ERROR:  relation "test_part_like2" already exists in schema "public"
-DETAIL:  creating new table with existing name in the same schema
 \d test_part_like2
        Table "public.test_part_like2"
  Column |         Type          | Modifiers 
@@ -210,8 +207,9 @@ DETAIL:  creating new table with existing name in the same schema
 Partition By RANGE(id)
 Number of partitions: 5 (View pg_partition to check each partition range.)
 
-drop table test_non_like1, test_non_like2, test_part_like1, test_part_like2;
-ERROR:  table "test_non_like1" does not exist
+drop table if exists test_non_like1, test_non_like2, test_part_like1, test_part_like2;
+NOTICE:  table "test_non_like1" does not exist, skipping
+NOTICE:  table "test_non_like2" does not exist, skipping
 
 create table test_non_like1 (like test_non including all);
 \d test_non_like1
@@ -230,8 +228,6 @@ create table test_non_like2 like test_non including all;
  name   | character varying(25) | 
 
 create table test_part_like1 (like test_part including all);
-ERROR:  relation "test_part_like1" already exists in schema "public"
-DETAIL:  creating new table with existing name in the same schema
 \d test_part_like1
        Table "public.test_part_like1"
  Column |         Type          | Modifiers 
@@ -242,8 +238,6 @@ Partition By RANGE(id)
 Number of partitions: 5 (View pg_partition to check each partition range.)
 
 create table test_part_like2 like test_part including all;
-ERROR:  relation "test_part_like2" already exists in schema "public"
-DETAIL:  creating new table with existing name in the same schema
 \d test_part_like2
        Table "public.test_part_like2"
  Column |         Type          | Modifiers 
@@ -253,7 +247,7 @@ DETAIL:  creating new table with existing name in the same schema
 Partition By RANGE(id)
 Number of partitions: 5 (View pg_partition to check each partition range.)
 
-drop table test_non_like1, test_non_like2, test_part_like1, test_part_like2;
+drop table if exists test_non_like1, test_non_like2, test_part_like1, test_part_like2;
 
 create table test_non_like1 (like test_non including all excluding indexes);
 \d test_non_like1
@@ -291,7 +285,7 @@ create table test_part_like2 like test_part including all excluding indexes;
 Partition By RANGE(id)
 Number of partitions: 5 (View pg_partition to check each partition range.)
 
-drop table test_non_like1, test_non_like2, test_part_like1, test_part_like2;
+drop table if exists test_non_like1, test_non_like2, test_part_like1, test_part_like2;
 
 create table test_non_like1 (like test_non including all excluding partition);
 \d test_non_like1
@@ -325,7 +319,7 @@ create table test_part_like2 like test_part including all excluding partition;
  id     | integer               | 
  name   | character varying(25) | 
 
-drop table test_non_like1, test_non_like2, test_part_like1, test_part_like2;
+drop table if exists test_non_like1, test_non_like2, test_part_like1, test_part_like2;
 
 create table test_non_like1 (like test_non including all excluding partition excluding indexes);
 \d test_non_like1
@@ -359,7 +353,7 @@ create table test_part_like2 like test_part including all excluding partition ex
  id     | integer               | 
  name   | character varying(25) | 
 
-drop table test_non_like1, test_non_like2, test_part_like1, test_part_like2;
+drop table if exists test_non_like1, test_non_like2, test_part_like1, test_part_like2;
 
 create table test_non_like1 (like test_non excluding indexes);
 \d test_non_like1
@@ -395,7 +389,7 @@ create table test_part_like2 like test_part excluding indexes;
 Partition By RANGE(id)
 Number of partitions: 5 (View pg_partition to check each partition range.)
 
-drop table test_non_like1, test_non_like2, test_part_like1, test_part_like2;
+drop table if exists test_non_like1, test_non_like2, test_part_like1, test_part_like2;
 
 create table test_non_like1 (like test_non excluding partition);
 \d test_non_like1
@@ -429,7 +423,7 @@ create table test_part_like2 like test_part excluding partition;
  id     | integer               | 
  name   | character varying(25) | 
 
-drop table test_non_like1, test_non_like2, test_part_like1, test_part_like2;
+drop table if exists test_non_like1, test_non_like2, test_part_like1, test_part_like2;
 
 create table test_non_like1 (like test_non excluding reloptions);
 \d test_non_like1
@@ -465,7 +459,7 @@ create table test_part_like2 like test_part excluding reloptions;
 Partition By RANGE(id)
 Number of partitions: 5 (View pg_partition to check each partition range.)
 
-drop table test_non_like1, test_non_like2, test_part_like1, test_part_like2;
+drop table if exists test_non_like1, test_non_like2, test_part_like1, test_part_like2;
 
 create table test_non_like1 (like test_non excluding partition excluding indexes);
 \d test_non_like1
@@ -499,7 +493,7 @@ create table test_part_like2 like test_part excluding partition excluding indexe
  id     | integer               | 
  name   | character varying(25) | 
 
-drop table test_non_like1, test_non_like2, test_part_like1, test_part_like2;
+drop table if exists test_non_like1, test_non_like2, test_part_like1, test_part_like2;
 
 create index test_non_id_idx on test_non(id);
 create index test_part_id_idx on test_part(id);
@@ -542,7 +536,7 @@ Indexes:
 Partition By RANGE(id)
 Number of partitions: 5 (View pg_partition to check each partition range.)
 
-drop table test_non_like1, test_non_like2, test_part_like1, test_part_like2;
+drop table if exists test_non_like1, test_non_like2, test_part_like1, test_part_like2;
 
 create table if not exists test_non_like1 (like test_non);
 \d test_non_like1
@@ -582,7 +576,7 @@ Indexes:
 Partition By RANGE(id)
 Number of partitions: 5 (View pg_partition to check each partition range.)
 
-drop table test_non_like1, test_non_like2, test_part_like1, test_part_like2;
+drop table if exists test_non_like1, test_non_like2, test_part_like1, test_part_like2;
 
 create table test_non_like1 (like test_non including indexes);
 \d test_non_like1
@@ -619,31 +613,15 @@ Indexes:
 Partition By RANGE(id)
 Number of partitions: 5 (View pg_partition to check each partition range.)
 
-drop table test_non_like1, test_non_like2, test_part_like1, test_part_like2;
-ERROR:  table "test_part_like1" does not exist
+drop table if exists test_non_like1, test_non_like2, test_part_like1, test_part_like2;
+NOTICE:  table "test_part_like1" does not exist, skipping
 
 create table test_non_like1 (like test_non including partition);
 ERROR:  could not specify "INCLUDING PARTITION" for non-partitioned-table relation:"test_non"
 \d test_non_like1
-       Table "public.test_non_like1"
- Column |         Type          | Modifiers 
---------+-----------------------+-----------
- id     | integer               | 
- name   | character varying(25) | 
-Indexes:
-    "test_non_like1_id_idx" btree (id) TABLESPACE pg_default
-
 create table test_non_like2 like test_non including partition;
 ERROR:  could not specify "INCLUDING PARTITION" for non-partitioned-table relation:"test_non"
 \d test_non_like2
-       Table "public.test_non_like2"
- Column |         Type          | Modifiers 
---------+-----------------------+-----------
- id     | integer               | 
- name   | character varying(25) | 
-Indexes:
-    "test_non_like2_id_idx" btree (id) TABLESPACE pg_default
-
 create table test_part_like1 (like test_part including partition);
 \d test_part_like1
        Table "public.test_part_like1"
@@ -655,8 +633,6 @@ Partition By RANGE(id)
 Number of partitions: 5 (View pg_partition to check each partition range.)
 
 create table test_part_like2 like test_part including partition;
-ERROR:  relation "test_part_like2" already exists in schema "public"
-DETAIL:  creating new table with existing name in the same schema
 \d test_part_like2
        Table "public.test_part_like2"
  Column |         Type          | Modifiers 
@@ -668,7 +644,9 @@ Indexes:
 Partition By RANGE(id)
 Number of partitions: 5 (View pg_partition to check each partition range.)
 
-drop table test_non_like1, test_non_like2, test_part_like1, test_part_like2;
+drop table if exists test_non_like1, test_non_like2, test_part_like1, test_part_like2;
+NOTICE:  table "test_non_like1" does not exist, skipping
+NOTICE:  table "test_non_like2" does not exist, skipping
 
 create table test_non_like1 (like test_non including partition including indexes);
 ERROR:  could not specify "INCLUDING PARTITION" for non-partitioned-table relation:"test_non"
@@ -700,8 +678,9 @@ Indexes:
 Partition By RANGE(id)
 Number of partitions: 5 (View pg_partition to check each partition range.)
 
-drop table test_non_like1, test_non_like2, test_part_like1, test_part_like2;
-ERROR:  table "test_non_like1" does not exist
+drop table if exists test_non_like1, test_non_like2, test_part_like1, test_part_like2;
+NOTICE:  table "test_non_like1" does not exist, skipping
+NOTICE:  table "test_non_like2" does not exist, skipping
 
 create table test_non_like1 (like test_non including all);
 \d test_non_like1
@@ -724,8 +703,6 @@ Indexes:
     "test_non_like2_id_idx" btree (id) TABLESPACE pg_default
 
 create table test_part_like1 (like test_part including all);
-ERROR:  relation "test_part_like1" already exists in schema "public"
-DETAIL:  creating new table with existing name in the same schema
 \d test_part_like1
        Table "public.test_part_like1"
  Column |         Type          | Modifiers 
@@ -738,8 +715,6 @@ Partition By RANGE(id)
 Number of partitions: 5 (View pg_partition to check each partition range.)
 
 create table test_part_like2 like test_part including all;
-ERROR:  relation "test_part_like2" already exists in schema "public"
-DETAIL:  creating new table with existing name in the same schema
 \d test_part_like2
        Table "public.test_part_like2"
  Column |         Type          | Modifiers 
@@ -751,7 +726,7 @@ Indexes:
 Partition By RANGE(id)
 Number of partitions: 5 (View pg_partition to check each partition range.)
 
-drop table test_non_like1, test_non_like2, test_part_like1, test_part_like2;
+drop table if exists test_non_like1, test_non_like2, test_part_like1, test_part_like2;
 
 create table test_non_like1 (like test_non including all excluding indexes);
 \d test_non_like1
@@ -789,7 +764,7 @@ create table test_part_like2 like test_part including all excluding indexes;
 Partition By RANGE(id)
 Number of partitions: 5 (View pg_partition to check each partition range.)
 
-drop table test_non_like1, test_non_like2, test_part_like1, test_part_like2;
+drop table if exists test_non_like1, test_non_like2, test_part_like1, test_part_like2;
 
 create table test_non_like1 (like test_non including all excluding partition);
 \d test_non_like1
@@ -817,32 +792,25 @@ ERROR:  non-partitioned table does not support global partitioned indexes
 create table test_part_like2 like test_part including all excluding partition;
 ERROR:  non-partitioned table does not support global partitioned indexes 
 \d test_part_like2
-drop table test_non_like1, test_non_like2, test_part_like1, test_part_like2;
-ERROR:  table "test_part_like1" does not exist
+drop table if exists test_non_like1, test_non_like2, test_part_like1, test_part_like2;
+NOTICE:  table "test_part_like1" does not exist, skipping
+NOTICE:  table "test_part_like2" does not exist, skipping
 
 create table test_non_like1 (like test_non including all excluding partition excluding indexes);
-ERROR:  relation "test_non_like1" already exists in schema "public"
-DETAIL:  creating new table with existing name in the same schema
 \d test_non_like1
        Table "public.test_non_like1"
  Column |         Type          | Modifiers 
 --------+-----------------------+-----------
  id     | integer               | 
  name   | character varying(25) | 
-Indexes:
-    "test_non_like1_id_idx" btree (id) TABLESPACE pg_default
 
 create table test_non_like2 like test_non including all excluding partition excluding indexes;
-ERROR:  relation "test_non_like2" already exists in schema "public"
-DETAIL:  creating new table with existing name in the same schema
 \d test_non_like2
        Table "public.test_non_like2"
  Column |         Type          | Modifiers 
 --------+-----------------------+-----------
  id     | integer               | 
  name   | character varying(25) | 
-Indexes:
-    "test_non_like2_id_idx" btree (id) TABLESPACE pg_default
 
 create table test_part_like1 (like test_part including all excluding partition excluding indexes);
 \d test_part_like1
@@ -860,7 +828,7 @@ create table test_part_like2 like test_part including all excluding partition ex
  id     | integer               | 
  name   | character varying(25) | 
 
-drop table test_non_like1, test_non_like2, test_part_like1, test_part_like2;
+drop table if exists test_non_like1, test_non_like2, test_part_like1, test_part_like2;
 
 create table test_non_like1 (like test_non excluding indexes);
 \d test_non_like1
@@ -896,7 +864,7 @@ create table test_part_like2 like test_part excluding indexes;
 Partition By RANGE(id)
 Number of partitions: 5 (View pg_partition to check each partition range.)
 
-drop table test_non_like1, test_non_like2, test_part_like1, test_part_like2;
+drop table if exists test_non_like1, test_non_like2, test_part_like1, test_part_like2;
 
 create table test_non_like1 (like test_non excluding partition);
 \d test_non_like1
@@ -927,12 +895,10 @@ create table test_part_like1 (like test_part excluding partition);
 create table test_part_like2 like test_part excluding partition;
 ERROR:  non-partitioned table does not support global partitioned indexes 
 \d test_part_like2
-drop table test_non_like1, test_non_like2, test_part_like1, test_part_like2;
-ERROR:  table "test_part_like2" does not exist
+drop table if exists test_non_like1, test_non_like2, test_part_like1, test_part_like2;
+NOTICE:  table "test_part_like2" does not exist, skipping
 
 create table test_non_like1 (like test_non excluding partition excluding indexes);
-ERROR:  relation "test_non_like1" already exists in schema "public"
-DETAIL:  creating new table with existing name in the same schema
 \d test_non_like1
        Table "public.test_non_like1"
  Column |         Type          | Modifiers 
@@ -941,20 +907,14 @@ DETAIL:  creating new table with existing name in the same schema
  name   | character varying(25) | 
 
 create table test_non_like2 like test_non excluding partition excluding indexes;
-ERROR:  relation "test_non_like2" already exists in schema "public"
-DETAIL:  creating new table with existing name in the same schema
 \d test_non_like2
        Table "public.test_non_like2"
  Column |         Type          | Modifiers 
 --------+-----------------------+-----------
  id     | integer               | 
  name   | character varying(25) | 
-Indexes:
-    "test_non_like2_id_idx" btree (id) TABLESPACE pg_default
 
 create table test_part_like1 (like test_part excluding partition excluding indexes);
-ERROR:  relation "test_part_like1" already exists in schema "public"
-DETAIL:  creating new table with existing name in the same schema
 \d test_part_like1
        Table "public.test_part_like1"
  Column |         Type          | Modifiers 
@@ -970,9 +930,9 @@ create table test_part_like2 like test_part excluding partition excluding indexe
  id     | integer               | 
  name   | character varying(25) | 
 
-drop table test_non_like1, test_non_like2, test_part_like1, test_part_like2;
+drop table if exists test_non_like1, test_non_like2, test_part_like1, test_part_like2;
 
-drop table test_non, test_part;
+drop table if exists test_non, test_part;
 
 create table test_insert
 (
@@ -1047,7 +1007,7 @@ select * from test_insert;
 
 
 \c postgres
-drop database like_default_test;
+drop database if exists like_default_test;
 
 
 
