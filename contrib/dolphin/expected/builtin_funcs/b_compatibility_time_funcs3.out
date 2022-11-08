@@ -176,6 +176,7 @@ insert into func_test3(functionName, result) values('TO_SECONDS(''0000-00-00 00:
 ERROR:  date/time field value out of range: "0000-00-00 00:00:00"
 HINT:  Perhaps you need a different "datestyle" setting.
 CONTEXT:  referenced column: result
+set timezone to 'PRC';
 -- UNIX_TIMESTAMP()
 -- 正常测试
 -- date格式
@@ -240,6 +241,13 @@ insert into func_test3(functionName, result) values('UNIX_TIMESTAMP(''1970-01-01
 insert into func_test3(functionName, result) values('UNIX_TIMESTAMP(''1970-01-01 08:00:00.999999'')', UNIX_TIMESTAMP('1970-01-01 08:00:00.999999'));
 insert into func_test3(functionName, result) values('UNIX_TIMESTAMP(''1970-01-01 07:59:59'')', UNIX_TIMESTAMP('1970-01-01 07:59:59'));
 insert into func_test3(functionName, result) values('UNIX_TIMESTAMP(''1969-12-31'')', UNIX_TIMESTAMP('1969-12-31'));
+reset timezone;
+show timezone;
+ TimeZone 
+----------
+ PST8PDT
+(1 row)
+
 -- UTC_DATE
 insert into func_test3(functionName, result) values('UTC_DATE', UTC_DATE);
 insert into func_test3(functionName, result) values('UTC_DATE()', UTC_DATE());
@@ -327,33 +335,33 @@ select * from func_test3;
  TO_SECONDS('9999-12-31 23:59:59.999999')                    | 315569519999
  TO_SECONDS('0000-01-01')                                    | 86400
  TO_SECONDS('0000-01-01 00:00:00')                           | 86400
- UNIX_TIMESTAMP('2022-07-27')                                | 1658905200
- UNIX_TIMESTAMP('20220727')                                  | 1658905200
- UNIX_TIMESTAMP('2022-07-27 15:25:30')                       | 1658960730
- UNIX_TIMESTAMP('20220727152530')                            | 1658960730
- UNIX_TIMESTAMP('2022-07-27 15:25:30.8888855')               | 1658960730.888886
- UNIX_TIMESTAMP('20220727152530.8888854')                    | 1658960730.888885
+ UNIX_TIMESTAMP('2022-07-27')                                | 1658851200
+ UNIX_TIMESTAMP('20220727')                                  | 1658851200
+ UNIX_TIMESTAMP('2022-07-27 15:25:30')                       | 1658906730
+ UNIX_TIMESTAMP('20220727152530')                            | 1658906730
+ UNIX_TIMESTAMP('2022-07-27 15:25:30.8888855')               | 1658906730.888886
+ UNIX_TIMESTAMP('20220727152530.8888854')                    | 1658906730.888885
  UNIX_TIMESTAMP(null)                                        | 
- UNIX_TIMESTAMP(date'2022-04-05')                            | 1649142000
- UNIX_TIMESTAMP(cast('2022-04-05 14:35:00' as datetime))     | 1649194500
- UNIX_TIMESTAMP(cast('2022-04-05 14:35:00.888' as datetime)) | 1649194501
+ UNIX_TIMESTAMP(date'2022-04-05')                            | 1649088000
+ UNIX_TIMESTAMP(cast('2022-04-05 14:35:00' as datetime))     | 1649140500
+ UNIX_TIMESTAMP(cast('2022-04-05 14:35:00.888' as datetime)) | 1649140501
 --? UNIX_TIMESTAMP(time'1:1:1')                                 | .*
 --? UNIX_TIMESTAMP(time'25:00:00')                              | .*
- UNIX_TIMESTAMP(050505)                                      | 1115276400
- UNIX_TIMESTAMP(20220801)                                    | 1659337200
- UNIX_TIMESTAMP(20220801182030)                              | 1659403230
- UNIX_TIMESTAMP(20220801182030.8888855)                      | 1659403230.888886
+ UNIX_TIMESTAMP(050505)                                      | 1115222400
+ UNIX_TIMESTAMP(20220801)                                    | 1659283200
+ UNIX_TIMESTAMP(20220801182030)                              | 1659349230
+ UNIX_TIMESTAMP(20220801182030.8888855)                      | 1659349230.888886
  UNIX_TIMESTAMP('0,1,1,0,0,0')                               | 0
- UNIX_TIMESTAMP('2038-01-19')                                | 0
- UNIX_TIMESTAMP('2038-01-19 11:14:07')                       | 0
- UNIX_TIMESTAMP('2038-01-19 11:14:07.9999')                  | 0
+ UNIX_TIMESTAMP('2038-01-19')                                | 2147443200
+ UNIX_TIMESTAMP('2038-01-19 11:14:07')                       | 2147483647
+ UNIX_TIMESTAMP('2038-01-19 11:14:07.9999')                  | 2147483647.9999
  UNIX_TIMESTAMP('2038-01-19 11:14:07.999999999')             | 0
  UNIX_TIMESTAMP('2038-01-19 11:14:08')                       | 0
- UNIX_TIMESTAMP('1970-01-01')                                | 25200
- UNIX_TIMESTAMP('1970-01-01 08:00:00')                       | 54000
- UNIX_TIMESTAMP('1970-01-01 08:00:01')                       | 54001
- UNIX_TIMESTAMP('1970-01-01 08:00:00.999999')                | 54000.999999
- UNIX_TIMESTAMP('1970-01-01 07:59:59')                       | 53999
+ UNIX_TIMESTAMP('1970-01-01')                                | 0
+ UNIX_TIMESTAMP('1970-01-01 08:00:00')                       | 0
+ UNIX_TIMESTAMP('1970-01-01 08:00:01')                       | 1
+ UNIX_TIMESTAMP('1970-01-01 08:00:00.999999')                | 0
+ UNIX_TIMESTAMP('1970-01-01 07:59:59')                       | 0
  UNIX_TIMESTAMP('1969-12-31')                                | 0
 --? UTC_DATE                                                    | .*
 --? UTC_DATE()                                                  | .*

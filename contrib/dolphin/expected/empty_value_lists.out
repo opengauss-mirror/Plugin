@@ -450,12 +450,20 @@ select *from test35;
  @ 0
 (2 rows)
 
+set timezone to 'PRC';
 insert into test36 values(),();
+reset timezone;
+show timezone;
+ TimeZone 
+----------
+ PST8PDT
+(1 row)
+
 select *from test36;
      num     
 -------------
- 00:00:00-07
- 00:00:00-07
+ 00:00:00+08
+ 00:00:00+08
 (2 rows)
 
 insert into test37 values(),();
