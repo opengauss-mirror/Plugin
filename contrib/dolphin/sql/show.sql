@@ -59,6 +59,7 @@ show procedure status like 'proc%';
 show triggers in grant_test;
 
 /* show character set */
+SHOW CHARSET;
 SHOW CHARACTER SET LIKE 'a%';
 SHOW CHARACTER SET WHERE charset LIKE 'i%';
 /* show collation */
