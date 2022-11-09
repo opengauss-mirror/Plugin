@@ -69,6 +69,7 @@ typedef struct BSqlPluginContext {
     char* lc_time_names;
     bool scan_from_pl;
     char* default_database_name;
+    int paramIdx;
 } bSqlPluginContext;
 
 BSqlPluginContext* GetSessionContext();
