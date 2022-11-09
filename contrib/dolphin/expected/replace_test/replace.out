@@ -26,5 +26,30 @@ replace into parts partition(p1) table t2;
 replace DELAYED into parts partition(p1) values(4);
 replace DELAYED into parts partition(p1) values(4);
 replace DELAYED into parts partition(p1) select a from t2 where a >=2 ;
+SET lower_case_table_names = 0;
+create table T1 (A int);
+create table T2 (A int);
+insert into T1 values(1);
+insert into T2 values(2);
+create table Parts (id int) partition by range(id)
+( partition p1 values less than(10),
+partition p2 values less than(20),
+partition p3 values less than(30),
+partition p4 values less than(40),
+partition p5 values less than(50));
+Replace T1 table T2;
+Replace into T1 table T2;
+Replace LOW_PRIORITY into T1 table T2;
+Replace DELAYED into T1 table T2;
+Replace DELAYED T1 table T2;
+Replace T1 table T2;
+Replace T1 values (3);
+Replace T1 (A) values (3),(4);
+Replace T1 (A) select A from T2;
+replace T1 set A = 7;
+replace into Parts partition(p1) table T2;
+replace DELAYED into Parts partition(p1) values(4);
+replace DELAYED into Parts partition(p1) values(4);
+replace DELAYED into Parts partition(p1) select A from T2 where A >=2 ;
 \c postgres
 drop database db_replace;

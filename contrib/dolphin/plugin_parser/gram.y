@@ -23411,8 +23411,22 @@ set_target:
 			DolphinColId opt_dolphin_indirection
 				{
 					$$ = makeNode(ResTarget);
-					$$->name = $1->str;
-					$$->indirection = check_indirection(GetNameListFromDolphinString($2), yyscanner);
+					if ($2 == NIL) {
+						$$->name = downcase_str($1->str, $1->is_quoted);
+					} else {
+						$$->name = GetDolphinObjName($1->str, $1->is_quoted);;
+					}
+					List* result = NIL;
+					ListCell* cell = NULL;
+					foreach(cell, $2) {
+						DolphinString* item = (DolphinString*)lfirst(cell);
+						if (IsA(item->node, String)) {
+							Value* value = (Value*)(item->node);
+							value->val.str = downcase_str(value->val.str, item->is_quoted);
+						}
+						result = lappend(result, item->node);
+					}
+					$$->indirection = check_indirection(result, yyscanner);
 					$$->val = NULL;	/* upper production sets this */
 					$$->location = @1;
 				}
@@ -29524,7 +29538,7 @@ columnref:	DolphinColId
 					}
 					cell = NULL;
 					switch (list_length($2) - indices)
-				{
+					{
 						case 0:
 							/* column */
 							first_word = downcase_str($1->str, $1->is_quoted);
@@ -29554,6 +29568,7 @@ columnref:	DolphinColId
 								GetSessionContext()->lower_case_table_names > 0)) {
 								text = downcase_str(text, is_quoted);
 							}
+							count++;
 							result = lappend(result, (Node*)makeString(text));
 						} else {
 							result = lappend(result, dolphinString->node);
