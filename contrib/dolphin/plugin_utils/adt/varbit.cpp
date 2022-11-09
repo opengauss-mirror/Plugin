@@ -1474,9 +1474,9 @@ Datum bittobigint(VarBit* arg, bool isUnsigned)
     /* Check that the bit string is not too long */
     if ((uint32)VARBITLEN(arg) > sizeof(result) * BITS_PER_BYTE) {
         if (isUnsigned) {
-            ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("bigint unsigned out of range")));
+            PG_RETURN_UINT64(PG_UINT64_MAX);
         } else {
-            ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("bigint out of range")));
+            PG_RETURN_INT64(-1);
         }
     }
 
