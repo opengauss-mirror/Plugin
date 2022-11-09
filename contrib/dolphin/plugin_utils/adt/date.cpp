@@ -3376,6 +3376,19 @@ void sec_to_numericsec(NumericVar *from, NumericSec *to)
     }
 }
 
+/*
+ * Check whether the TimeADT value is within the specified range: 
+ * [-838:59:59, 838:59:59] (the time range is from MySQL).
+ * Error will be reported if the TimeADT value exceeds the range.
+ */
+void check_b_format_time_range_with_ereport(TimeADT &time)
+{
+    if (time < -B_FORMAT_TIME_MAX_VALUE || time > B_FORMAT_TIME_MAX_VALUE) {
+        ereport(ERROR, (errcode(ERRCODE_DATETIME_FIELD_OVERFLOW), 
+                        errmsg("time field value out of range")));
+    }
+}
+
 /* 
  * @Description: Keep timeADT in range(-B_FORMAT_TIME_MAX_VALUE, B_FORMAT_TIME_MAX_VALUE)
  * @return: bool, whether in range
@@ -3399,28 +3412,43 @@ Datum maketime(PG_FUNCTION_ARGS)
     int64 hour = PG_GETARG_INT64(0);
     int64 minute = PG_GETARG_INT64(1);
     NumericVar tmp;
-    NumericSec second;
+    lldiv_t seconds;
     init_var_from_num(PG_GETARG_NUMERIC(2), &tmp);
-    sec_to_numericsec(&tmp, &second);
+    if (!numeric_to_lldiv_t(&tmp, &seconds)) {
+        PG_RETURN_NULL();
+    }
 
     struct pg_tm tt;
     TimeADT time;
+    unsigned int hour_abs;
+    fsec_t fsec;
     bool overflow = 0;
     bool neg = 0;
 
-    if (minute < 0 || minute >= MINS_PER_HOUR || second.int_val < 0 || second.int_val >= SECS_PER_MINUTE)
+    if (minute < 0 || minute > TIME_MAX_MINUTE || seconds.quot < 0 || seconds.quot > TIME_MAX_SECOND || seconds.rem < 0)
         PG_RETURN_NULL();
 
     if (hour < 0)
         neg = 1;
-    if (-hour > UINT_MAX || hour > UINT_MAX)
+
+    hour_abs = (uint)((hour < 0 ? -hour : hour));
+
+    if (-hour > UINT_MAX || hour > UINT_MAX || hour_abs > TIME_MAX_HOUR)
         overflow = 1;
 
     if (!overflow) {
-        tt.tm_hour = (uint)((hour < 0 ? -hour : hour));
-        tt.tm_min = (uint)minute;
-        tt.tm_sec = (uint)second.int_val;
-        fsec_t fsec = nano2microsecond(second.frac_val * 10);
+        tt.tm_hour = (int)hour_abs;
+        tt.tm_min = (int)minute;
+        tt.tm_sec = (int)seconds.quot;
+        fsec = static_cast<int32>(seconds.rem / NANO2MICRO_BASE);
+        uint nanoseconds = seconds.rem % NANO2MICRO_BASE;
+        if (nanoseconds >= HALF_NANO2MICRO_BASE) {
+            fsec += 1;
+        }
+#ifndef HAVE_INT64_TIMESTAMP
+        fsec /= USECS_PER_SEC;
+#endif
+
         tm2time(&tt, fsec, &time);
         if (neg)
             time = -time;

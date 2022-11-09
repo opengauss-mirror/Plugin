@@ -60,6 +60,10 @@ insert into func_test(functionName, result) values ('maketime(0, 60, 0)', maketi
 insert into func_test(functionName, result) values ('maketime(0, 0, -1)', maketime(0, 0, -1)); -- second < 0
 insert into func_test(functionName, result) values ('maketime(0, 0, 60)', maketime(0, 0, 60)); -- second >= 60
 insert into func_test(functionName, result) values ('maketime(0, 0, pow(10,18))', maketime(0, 0, pow(10,18))); -- second >=10^18
+insert into func_test(functionName, result) values ('maketime(4294967295, 1, 1)', maketime(4294967295, 1, 1));
+insert into func_test(functionName, result) values ('maketime(-4294967295, 0, 1)', maketime(-4294967295, 0, 1));
+insert into func_test(functionName, result) values ('maketime(2147483649, 1, 1)', maketime(2147483649, 1, 1));
+insert into func_test(functionName, result) values ('maketime(-2147483649, 1, 1)', maketime(-2147483649, 1, 1));
 -- 精度一致
 insert into func_test(functionName, result) values ('maketime(0, 0, 59.9999)', maketime(0, 0, 59.9999));  -- 结果精度与参数相同
 insert into func_test(functionName, result) values ('maketime(0, 0, 59.999999001)', maketime(0, 0, 59.999999001)); -- 最高保留精度为小数点后6位
@@ -343,6 +347,10 @@ select * from func_test;
  maketime(0, 0, -1)                                                     | 
  maketime(0, 0, 60)                                                     | 
  maketime(0, 0, pow(10,18))                                             | 
+ maketime(4294967295, 1, 1)                                             | 838:59:59
+ maketime(-4294967295, 0, 1)                                            | -838:59:59
+ maketime(2147483649, 1, 1)                                             | 838:59:59
+ maketime(-2147483649, 1, 1)                                            | -838:59:59
  maketime(0, 0, 59.9999)                                                | 00:00:59.9999
  maketime(0, 0, 59.999999001)                                           | 00:00:59.999999
  maketime(838, 59, 58.999999)                                           | 838:59:58.999999
@@ -451,7 +459,7 @@ select * from func_test;
  subdate(time'100:59:59', INTERVAL '1 20:50:50.888888' DAY To SECOND)   | 56:09:08.111112
  subdate(time'100:59:59', INTERVAL '-1 20:50:50.888888' HOUR To SECOND) | 121:50:49.888888
  subdate(time(6)'100:59:59.555', 2                                      | 52:59:59.555
-(138 rows)
+--?.*
 
 \c postgres
 drop database if exists b_time_funcs;
