@@ -616,6 +616,25 @@ int base_yylex(YYSTYPE* lvalp, YYLTYPE* llocp, core_yyscan_t yyscanner)
                     break;
             }
             break;
+       case DO:
+            /* parse DO Sconst To one Token */
+           GET_NEXT_TOKEN();
+           switch (next_token) {
+                case SCONST:
+                    cur_token = DO_SCONST;
+                    break;
+                case LANGUAGE:
+                    cur_token = DO_LANGUAGE;
+                    break;
+                default:
+                    /* save the lookahead token for next time */
+                    SET_LOOKAHEAD_TOKEN();
+                    /* and back up the output info to cur_token */
+                    lvalp->core_yystype = cur_yylval;
+                    *llocp = cur_yylloc;
+                    break;
+            }
+            break;
 #endif
         default:
             break;
