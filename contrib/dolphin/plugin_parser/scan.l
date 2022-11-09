@@ -1518,7 +1518,7 @@ scanner_init(const char *str,
 	yyext->is_last_colon = false;
 	yyext->is_proc_end = false;
 #ifdef DOLPHIN
-	yyext->paramIdx = 0;
+	GetSessionContext()->paramIdx = 0;
 #endif
 	// Added CALL for procedure and function
 	getDynaParamSeq("init", true, true, NULL);
@@ -1561,6 +1561,9 @@ scanner_finish(core_yyscan_t yyscanner)
 		list_free_deep(yyextra->parameter_list);
 		yyextra->parameter_list = NIL;
 	}
+#ifdef DOLPHIN
+	GetSessionContext()->paramIdx = 0;
+#endif
 }
 
 
@@ -2001,9 +2004,9 @@ getDynaParamSeq(const char *string, bool initflag, bool placeholder, core_yyscan
 #ifdef DOLPHIN
 		if (string == NULL)
 		{
-			return ++(yyextra->paramIdx);
+			return ++(GetSessionContext()->paramIdx);
 		}
-		if (yyextra->paramIdx != 0)
+		if (GetSessionContext()->paramIdx != 0)
 		{
 			ereport(ERROR,
 					(errcode(ERRCODE_SYNTAX_ERROR), 
