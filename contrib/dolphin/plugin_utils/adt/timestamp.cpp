@@ -6873,7 +6873,14 @@ Datum time_format(PG_FUNCTION_ARGS)
                  errmsg("date/time field value out of range: \"%s\"", str)));
     }
 
-    str[0] = '\0';
+    if (isNeg) {
+        str[0] = '-';
+        str[1] = '\0';
+        remain--;
+    } else {
+        str[0] = '\0';
+    }
+
     ptr = format;
     end = ptr + strlen(format);
     for (; ptr != end; ptr++) {
@@ -6963,8 +6970,7 @@ Datum time_format(PG_FUNCTION_ARGS)
                     break;
                 case 'T':
                     insert_len = sprintf_s(
-                        buf, MAXDATELEN, (isNeg ? "-%02d:%02d:%02d" : "%02d:%02d:%02d"),
-                        tm->tm_hour, tm->tm_min, tm->tm_sec);
+                        buf, MAXDATELEN, "%02d:%02d:%02d", tm->tm_hour, tm->tm_min, tm->tm_sec);
                     securec_check_ss(insert_len, "", "");
                     rc = strcat_s(str, remain, buf);
                     break;

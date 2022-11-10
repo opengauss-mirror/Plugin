@@ -231,6 +231,11 @@ insert into func_test2(functionName, result) values(' TIME_FORMAT(''25:30:30'', 
 insert into func_test2(functionName, result) values(' TIME_FORMAT(''-25:30:30'', ''%T|%r|%H|%h|%I|%i|%S|%f|%p|%k'')    ', TIME_FORMAT('-25:30:30', '%T|%r|%H|%h|%I|%i|%S|%f|%p|%k'));
 insert into func_test2(functionName, result) values(' TIME_FORMAT(''838:59:59'', ''%T|%r|%H|%h|%I|%i|%S|%f|%p|%k'')    ', TIME_FORMAT('838:59:59', '%T|%r|%H|%h|%I|%i|%S|%f|%p|%k'));
 insert into func_test2(functionName, result) values(' TIME_FORMAT(''-838:59:59'', ''%T|%r|%H|%h|%I|%i|%S|%f|%p|%k'')    ', TIME_FORMAT('-838:59:59', '%T|%r|%H|%h|%I|%i|%S|%f|%p|%k'));
+insert into func_test2(functionName, result) values('TIME_FORMAT(''-838:59:59'',''%h'')', TIME_FORMAT('-838:59:59','%h'));
+insert into func_test2(functionName, result) values('TIME_FORMAT(''-838:59:59'',''%h'')', TIME_FORMAT('-838:59:59','%h'));
+insert into func_test2(functionName, result) values('TIME_FORMAT(''-838:59:59'',''%k'')', TIME_FORMAT('-838:59:59','%k'));
+insert into func_test2(functionName, result) values('TIME_FORMAT(''-838:59:59'',''%r'')', TIME_FORMAT('-838:59:59','%r'));
+insert into func_test2(functionName, result) values('TIME_FORMAT(''-838:59:59'',''%i'')', TIME_FORMAT('-838:59:59','%i'));
 -- 边界情况
 insert into func_test2(functionName, result) values(' TIME_FORMAT(''838:0:0'', ''%T|%r|%H|%h|%I|%i|%S|%f|%p|%k'')    ', TIME_FORMAT('838:0:0', '%T|%r|%H|%h|%I|%i|%S|%f|%p|%k'));
 insert into func_test2(functionName, result) values(' TIME_FORMAT(''839:0:0'', ''%T|%r|%H|%h|%I|%i|%S|%f|%p|%k'')    ', TIME_FORMAT('839:0:0', '%T|%r|%H|%h|%I|%i|%S|%f|%p|%k'));
