@@ -63,7 +63,6 @@ extern "C" DLL_PUBLIC Datum year_sortsupport(PG_FUNCTION_ARGS);
 PG_FUNCTION_INFO_V1_PUBLIC(int32_year);
 extern "C" DLL_PUBLIC Datum int32_year(PG_FUNCTION_ARGS);
 PG_FUNCTION_INFO_V1_PUBLIC(year_integer);
-extern "C" DLL_PUBLIC Datum year_integer(PG_FUNCTION_ARGS);
 PG_FUNCTION_INFO_V1_PUBLIC(year_scale);
 extern "C" DLL_PUBLIC Datum year_scale(PG_FUNCTION_ARGS);
 

@@ -163,6 +163,8 @@ insert into func_test2(functionName, result) values('TIMEDIFF(time''-37:59:59'',
 insert into func_test2(functionName, result) values('TIMEDIFF(date''2008-12-31'', cast(''2008-12-30 01:01:01.000002'' as datetime)))', TIMEDIFF(date'2008-12-31', cast('2008-12-30 01:01:01.000002' as datetime)));
 insert into func_test2(functionName, result) values('TIMEDIFF(date''2008-12-31'', date''2008-12-30'')', TIMEDIFF(date'2008-12-31', date'2008-12-30'));
 insert into func_test2(functionName, result) values('TIMEDIFF(date''2008-12-31'', time''22:01:01.000002'')', TIMEDIFF(date'2008-12-31', time'22:01:01.000002'));
+insert into func_test2(functionName, result) values('TIMEDIFF(cast(235956 as unsigned), cast(010101 as unsigned))', TIMEDIFF(cast(235956 as unsigned), cast(010101 as unsigned)));
+insert into func_test2(functionName, result) values('TIMEDIFF(year''2021'', year''2022'')', TIMEDIFF(year'2021', year'2022'));
 
 -- TIME (time格式)
 insert into func_test2(functionName, result) values('TIME(''00:00:00'')',TIME('00:00:00'));

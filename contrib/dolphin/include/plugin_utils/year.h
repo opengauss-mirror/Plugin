@@ -52,5 +52,6 @@ extern Datum year_mi(YearADT y1, YearADT y2);
 extern Datum year_hash(PG_FUNCTION_ARGS);
 extern int year_cmp_internal(YearADT y1, YearADT y2);
 
+extern "C" DLL_PUBLIC Datum year_integer(PG_FUNCTION_ARGS);
 
 #endif /* YEAR_T_H */

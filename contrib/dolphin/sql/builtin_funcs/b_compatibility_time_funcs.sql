@@ -160,6 +160,8 @@ insert into func_test(functionName, result) values ('sec_to_time(3599.999999700)
 insert into func_test(functionName, result) values ('sec_to_time(3020399)', sec_to_time(3020399)); -- 未超出边界
 insert into func_test(functionName, result) values ('sec_to_time(3020399 + 1)', sec_to_time(3020399 + 1)); -- 超出边界
 insert into func_test(functionName, result) values ('sec_to_time(3020399.000000500)', sec_to_time(3020399.000000500)); -- 进位导致超出边界
+insert into func_test(functionName, result) values ('sec_to_time(-100000000)', sec_to_time(-100000000));
+insert into func_test(functionName, result) values ('sec_to_time(-999999999)', sec_to_time(-999999999));
 
 -- subdate
     -- 非指定类型的参数
