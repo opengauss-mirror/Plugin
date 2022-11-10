@@ -1,0 +1,81 @@
+\c table_name_test_db;
+SET lower_case_table_names TO 0;
+--
+-- VACUUM
+--
+CREATE TABLE `Vactst` (`i` INT);
+INSERT INTO `Vactst` VALUES (1);
+INSERT INTO `Vactst` SELECT * FROM `Vactst`;
+INSERT INTO `Vactst` SELECT * FROM `Vactst`;
+INSERT INTO `Vactst` SELECT * FROM `Vactst`;
+INSERT INTO `Vactst` SELECT * FROM `Vactst`;
+INSERT INTO `Vactst` SELECT * FROM `Vactst`;
+INSERT INTO `Vactst` SELECT * FROM `Vactst`;
+INSERT INTO `Vactst` SELECT * FROM `Vactst`;
+INSERT INTO `Vactst` SELECT * FROM `Vactst`;
+INSERT INTO `Vactst` SELECT * FROM `Vactst`;
+INSERT INTO `Vactst` SELECT * FROM `Vactst`;
+INSERT INTO `Vactst` SELECT * FROM `Vactst`;
+INSERT INTO `Vactst` VALUES (0);
+SELECT count(*) FROM `Vactst`;
+ count 
+-------
+  2049
+(1 row)
+
+DELETE FROM `Vactst` WHERE `i` != 0;
+SELECT * FROM `Vactst`;
+ i 
+---
+ 0
+(1 row)
+
+VACUUM FULL `Vactst`;
+UPDATE `Vactst` SET `i` = `i` + 1;
+INSERT INTO `Vactst` SELECT * FROM `Vactst`;
+INSERT INTO `Vactst` SELECT * FROM `Vactst`;
+INSERT INTO `Vactst` SELECT * FROM `Vactst`;
+INSERT INTO `Vactst` SELECT * FROM `Vactst`;
+INSERT INTO `Vactst` SELECT * FROM `Vactst`;
+INSERT INTO `Vactst` SELECT * FROM `Vactst`;
+INSERT INTO `Vactst` SELECT * FROM `Vactst`;
+INSERT INTO `Vactst` SELECT * FROM `Vactst`;
+INSERT INTO `Vactst` SELECT * FROM `Vactst`;
+INSERT INTO `Vactst` SELECT * FROM `Vactst`;
+INSERT INTO `Vactst` SELECT * FROM `Vactst`;
+INSERT INTO `Vactst` VALUES (0);
+SELECT count(*) FROM `Vactst`;
+ count 
+-------
+  2049
+(1 row)
+
+DELETE FROM `Vactst` WHERE `i` != 0;
+VACUUM (FULL) `Vactst`;
+DELETE FROM `Vactst`;
+SELECT * FROM `Vactst`;
+ i 
+---
+(0 rows)
+
+VACUUM (FULL, FREEZE) `Vactst`;
+VACUUM (ANALYZE, FULL) `Vactst`;
+CREATE TABLE `Vaccluster` (`i` INT PRIMARY KEY);
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "Vaccluster_pkey" for table "Vaccluster"
+ALTER TABLE `Vaccluster` CLUSTER ON Vaccluster_pkey;
+ERROR:  index "vaccluster_pkey" for table "Vaccluster" does not exist
+INSERT INTO `Vaccluster` SELECT * FROM `Vactst`;
+CLUSTER `Vaccluster`;
+ERROR:  there is no previously clustered index for table "Vaccluster"
+set xc_maintenance_mode = on;
+VACUUM FULL pg_am;
+VACUUM FULL pg_class;
+VACUUM FULL pg_database;
+set xc_maintenance_mode = off;
+VACUUM FULL `Vaccluster`;
+VACUUM FULL `Vactst`;
+DROP TABLE `Vaccluster`;
+DROP TABLE `Vactst`;
+CREATE TABLE "~!@#$%^&*+-=`,./\';:{}[]|0(>_<)0"(A TEXT);
+VACUUM  "~!@#$%^&*+-=`,./\';:{}[]|0(>_<)0";
+DROP TABLE "~!@#$%^&*+-=`,./\';:{}[]|0(>_<)0";

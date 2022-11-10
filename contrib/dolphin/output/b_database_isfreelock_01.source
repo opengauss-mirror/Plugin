@@ -50,9 +50,9 @@ LINE 1: select is_free_lock(a);
 CONTEXT:  referenced column: is_free_lock
 --failed
 select is_free_lock(`);
-ERROR:  syntax error at or near ")"
+ERROR:  unterminated quoted identifier at or near "`);"
 LINE 1: select is_free_lock(`);
-                             ^
+                            ^
 --failed
 select is_free_lock(!);
 ERROR:  syntax error at or near ")"

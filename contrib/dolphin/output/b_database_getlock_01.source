@@ -96,9 +96,9 @@ LINE 1: select get_lock(a,1);
 CONTEXT:  referenced column: get_lock
 --failed
 select get_lock(`);
-ERROR:  syntax error at or near ")"
+ERROR:  unterminated quoted identifier at or near "`);"
 LINE 1: select get_lock(`);
-                         ^
+                        ^
 --failed
 select get_lock(!);
 ERROR:  syntax error at or near ")"
@@ -111,9 +111,9 @@ LINE 1: select get_lock(@);
                          ^
 --failed
 select get_lock(`,1);
-ERROR:  syntax error at or near ","
+ERROR:  unterminated quoted identifier at or near "`,1);"
 LINE 1: select get_lock(`,1);
-                         ^
+                        ^
 --failed
 select get_lock(!,1);
 ERROR:  syntax error at or near ","

@@ -1,0 +1,324 @@
+\c table_name_test_db;
+SET lower_case_table_names TO 0;
+--
+--FOR BLACKLIST FEATURE: SEQUENCE、EXCLUDE、InheRITS is not supported.
+--
+/* Test Inheritance of structure (LIKE) */
+CREATE TABLE `Inhx` (`xx` text DEFAULT 'text');
+/*
+ * Test double Inheritance
+ *
+ * Ensure that defaults are NOT included unless
+ * INCLUDING DEFAULTS is specified
+ */
+CREATE TABLE `Ctla` (`aa` TEXT);
+CREATE TABLE `Ctlb` (`bb` TEXT) InheRITS (`Ctla`);
+ERROR:  CREATE TABLE ... INHERITS is not yet supported.
+CREATE TABLE `Foo` (LIKE `nonexistent`);
+ERROR:  Table (null).nonexistent does not exist in current datanode.
+LINE 1: CREATE TABLE `Foo` (LIKE `nonexistent`);
+                                 ^
+CREATE TABLE `Inhe` (`ee` text, LIKE `Inhx`) Inherits (`Ctlb`);
+ERROR:  CREATE TABLE ... INHERITS is not yet supported.
+INSERT INTO `Inhe` VALUES ('ee-col1', 'ee-col2', DEFAULT, 'ee-col4');
+ERROR:  relation "Inhe" does not exist on datanode1
+LINE 1: INSERT INTO `Inhe` VALUES ('ee-col1', 'ee-col2', DEFAULT, 'e...
+                    ^
+SELECT * FROM `Inhe`; /* Columns aa, bb, xx value NULL, ee */
+ERROR:  relation "Inhe" does not exist on datanode1
+LINE 1: SELECT * FROM `Inhe`;
+                      ^
+SELECT * FROM `Inhx`; /* Empty set since LIKE Inherits structure only */
+ xx 
+----
+(0 rows)
+
+SELECT * FROM `Ctlb`; /* Has ee entry */
+ERROR:  relation "Ctlb" does not exist on datanode1
+LINE 2: SELECT * FROM `Ctlb`;
+                      ^
+SELECT * FROM `Ctla`; /* Has ee entry */
+ aa 
+----
+(0 rows)
+
+CREATE TABLE `inhf` (LIKE `Inhx`, LIKE `Inhx`); /* Throw error */
+ERROR:  column "xx" specified more than once
+CREATE TABLE `inhf` (LIKE `Inhx` INCLUDING DEFAULTS INCLUDING CONSTRAINTS);
+INSERT INTO `inhf` DEFAULT VALUES;
+SELECT * FROM `inhf`; /* Single entry with value 'text' */
+  xx  
+------
+ text
+(1 row)
+
+ALTER TABLE `Inhx` add constraint `Foo` CHECK (`xx` = 'text');
+ALTER TABLE `Inhx` ADD PRIMARY KEY (`xx`);
+NOTICE:  ALTER TABLE / ADD PRIMARY KEY will create implicit index "Inhx_pkey" for table "Inhx"
+CREATE TABLE `Inhg` (LIKE `Inhx`); /* Doesn't copy constraint */
+INSERT INTO `Inhg` VALUES ('foo');
+DROP TABLE `Inhg`;
+CREATE TABLE `Inhg` (`x` text, LIKE `Inhx` INCLUDING CONSTRAINTS, `y` text); /* Copies constraints */
+INSERT INTO `Inhg` VALUES ('x', 'text', 'y'); /* Succeeds */
+INSERT INTO `Inhg` VALUES ('x', 'text', 'y'); /* Succeeds -- Unique constraints not copied */
+INSERT INTO `Inhg` VALUES ('x', 'foo',  'y');  /* fails due to constraint */
+ERROR:  new row for relation "Inhg" violates check constraint "foo"
+DETAIL:  N/A
+SELECT * FROM `Inhg`; /* Two records with three columns in order x=x, xx=text, y=y */
+ x |  xx  | y 
+---+------+---
+ x | text | y
+ x | text | y
+(2 rows)
+
+DROP TABLE `Inhg`;
+CREATE TABLE `Inhg` (`x` text, LIKE `Inhx` INCLUDING INDEXES, `y` text) DISTRIBUTE BY REPLICATION; /* copies indexes */
+ERROR:  Un-support feature
+DETAIL:  The distributed capability is not supported currently.
+INSERT INTO `Inhg` VALUES (5, 10);
+ERROR:  relation "Inhg" does not exist on datanode1
+LINE 2: INSERT INTO `Inhg` VALUES (5, 10);
+                    ^
+INSERT INTO `Inhg` VALUES (20, 10); -- should fail
+ERROR:  relation "Inhg" does not exist on datanode1
+LINE 1: INSERT INTO `Inhg` VALUES (20, 10);
+                    ^
+DROP TABLE `Inhg`;
+ERROR:  table "Inhg" does not exist
+/* Multiple primary keys creation should fail */
+CREATE TABLE `Inhg` (`x` text, LIKE `Inhx` INCLUDING INDEXES, PRIMARY KEY(`x`)); /* fails */
+ERROR:  multiple primary keys for table "Inhg" are not allowed
+CREATE TABLE `Inhz` (`xx` text DEFAULT 'text', `yy` int UNIQUE) DISTRIBUTE BY REPLICATION;
+ERROR:  Un-support feature
+DETAIL:  The distributed capability is not supported currently.
+CREATE UNIQUE INDEX `Inhz_xx_idx` on `Inhz` (`xx`) WHERE `xx` <> 'Test';
+ERROR:  relation "Inhz" does not exist
+/* Ok to create multiple unique indexes */
+CREATE TABLE `Inhg` (x text UNIQUE, LIKE `Inhz` INCLUDING INDEXES) DISTRIBUTE BY REPLICATION;
+ERROR:  Un-support feature
+DETAIL:  The distributed capability is not supported currently.
+INSERT INTO `Inhg` (`xx`, `yy`, `x`) VALUES ('Test', 5, 10);
+ERROR:  relation "Inhg" does not exist on datanode1
+LINE 1: INSERT INTO `Inhg` (`xx`, `yy`, `x`) VALUES ('Test', 5, 10);
+                    ^
+INSERT INTO `Inhg` (`xx`, `yy`, `x`) VALUES ('Test', 10, 15);
+ERROR:  relation "Inhg" does not exist on datanode1
+LINE 1: INSERT INTO `Inhg` (`xx`, `yy`, `x`) VALUES ('Test', 10, 15)...
+                    ^
+INSERT INTO `Inhg` (`xx`, `yy`, `x`) VALUES ('foo', 10, 15); -- should fail
+ERROR:  relation "Inhg" does not exist on datanode1
+LINE 1: INSERT INTO `Inhg` (`xx`, `yy`, `x`) VALUES ('foo', 10, 15);
+                    ^
+DROP TABLE `Inhg`;
+ERROR:  table "Inhg" does not exist
+DROP TABLE `Inhz`;
+ERROR:  table "Inhz" does not exist
+-- including storage and comments
+CREATE TABLE `Ctlt1` (`a` text CHECK (length(`a`) > 2) PRIMARY KEY, `b` text);
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "Ctlt1_pkey" for table "Ctlt1"
+CREATE INDEX `ctlt1_b_key` ON `Ctlt1` (`b`);
+CREATE INDEX `ctlt1_fnidx` ON `Ctlt1` ((`a` || `b`));
+COMMENT ON COLUMN `Ctlt1`.a IS 'A';
+ERROR:  relation "ctlt1" does not exist
+COMMENT ON COLUMN `Ctlt1`.b IS 'B';
+ERROR:  relation "ctlt1" does not exist
+COMMENT ON CONSTRAINT ctlt1_a_check ON `Ctlt1` IS 't1_a_check';
+ERROR:  constraint "ctlt1_a_check" for table "Ctlt1" does not exist
+COMMENT ON INDEX ctlt1_pkey IS 'index pkey';
+ERROR:  relation "ctlt1_pkey" does not exist
+COMMENT ON INDEX `ctlt1_b_key` IS 'index b_key';
+ALTER TABLE `Ctlt1` ALTER COLUMN `a` SET STORAGE MAIN;
+CREATE TABLE `Ctlt2` (`c` text);
+ALTER TABLE `Ctlt2` ALTER COLUMN `c` SET STORAGE EXTERNAL;
+COMMENT ON COLUMN `Ctlt2`.`c` IS C;
+ERROR:  syntax error at or near "C"
+LINE 1: COMMENT ON COLUMN `Ctlt2`.`c` IS C;
+                                         ^
+CREATE TABLE `Ctlt3` (`a` text CHECK (length(`a`) < 5), `c` text);
+ALTER TABLE `Ctlt3` ALTER COLUMN `c` SET STORAGE EXTERNAL;
+ALTER TABLE `Ctlt3` ALTER COLUMN `a` SET STORAGE MAIN;
+COMMENT ON COLUMN `Ctlt3`.`a` IS 'A3';
+ERROR:  relation "ctlt3" does not exist
+COMMENT ON COLUMN `Ctlt3`.`c` IS 'C';
+ERROR:  relation "ctlt3" does not exist
+COMMENT ON CONSTRAINT `ctlt3_a_check` ON `Ctlt3` IS 't3_a_check';
+ERROR:  constraint "ctlt3_a_check" for table "Ctlt3" does not exist
+CREATE TABLE `Ctlt4` (`a` text, `c` text);
+ALTER TABLE `Ctlt4` ALTER COLUMN `c` SET STORAGE EXTERNAL;
+CREATE TABLE `Ctlt12_storage` (LIKE `Ctlt1` INCLUDING STORAGE, LIKE `Ctlt2` INCLUDING STORAGE);
+\d+ "Ctlt12_storage"
+                   Table "public.Ctlt12_storage"
+ Column | Type | Modifiers | Storage  | Stats target | Description 
+--------+------+-----------+----------+--------------+-------------
+ a      | text | not null  | main     |              | 
+ b      | text |           | extended |              | 
+ c      | text |           | external |              | 
+Has OIDs: no
+Options: orientation=row, compression=no
+
+CREATE TABLE `Ctlt12_comments` (LIKE `Ctlt1` INCLUDING COMMENTS, LIKE `Ctlt2` INCLUDING COMMENTS);
+\d+ "Ctlt12_comments"
+                  Table "public.Ctlt12_comments"
+ Column | Type | Modifiers | Storage  | Stats target | Description 
+--------+------+-----------+----------+--------------+-------------
+ a      | text | not null  | extended |              | 
+ b      | text |           | extended |              | 
+ c      | text |           | extended |              | 
+Has OIDs: no
+Options: orientation=row, compression=no
+
+CREATE TABLE `Ctlt1_inh` (LIKE `Ctlt1` INCLUDING CONSTRAINTS INCLUDING COMMENTS) InheRITS (`Ctlt1`);
+ERROR:  CREATE TABLE ... INHERITS is not yet supported.
+\d+ "Ctlt1_inh"
+SELECT `description` FROM `pg_description`, `pg_constraint` c WHERE `classoid` = 'pg_constraint'::regclass AND `objoid` = `c`.`oid` AND `c`.`conrelid` = 'Ctlt1_inh'::regclass;
+ERROR:  relation "ctlt1_inh" does not exist
+LINE 1: ...ass AND `objoid` = `c`.`oid` AND `c`.`conrelid` = 'Ctlt1_inh...
+                                                             ^
+CREATE TABLE `Ctlt13_inh` () InheRITS (`Ctlt1`, `Ctlt3`);
+ERROR:  CREATE TABLE ... INHERITS is not yet supported.
+\d+ "Ctlt13_inh"
+CREATE TABLE `ctlt13_like` (LIKE `Ctlt3` INCLUDING CONSTRAINTS INCLUDING COMMENTS INCLUDING STORAGE) InheRITS (`Ctlt1`);
+ERROR:  CREATE TABLE ... INHERITS is not yet supported.
+\d+ "ctlt13_like"
+SELECT `description` FROM `pg_description`, `pg_constraint` c WHERE `classoid` = 'pg_constraint'::regclass AND `objoid` = `c`.`oid` AND `c`.`conrelid` = 'ctlt13_like'::regclass;
+ERROR:  relation "ctlt13_like" does not exist
+LINE 1: ...ass AND `objoid` = `c`.`oid` AND `c`.`conrelid` = 'ctlt13_li...
+                                                             ^
+CREATE TABLE `Ctlt_all` (LIKE `Ctlt1` INCLUDING DEFAULTS  INCLUDING CONSTRAINTS  INCLUDING INDEXES  INCLUDING STORAGE  INCLUDING COMMENTS);
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "Ctlt_all_pkey" for table "Ctlt_all"
+\d+ "Ctlt_all"
+                      Table "public.Ctlt_all"
+ Column | Type | Modifiers | Storage  | Stats target | Description 
+--------+------+-----------+----------+--------------+-------------
+ a      | text | not null  | main     |              | 
+ b      | text |           | extended |              | 
+Indexes:
+    "Ctlt_all_pkey" PRIMARY KEY, btree (a) TABLESPACE pg_default
+    "Ctlt_all_b_idx" btree (b) TABLESPACE pg_default
+    "Ctlt_all_expr_idx" btree ((a || b)) TABLESPACE pg_default
+Check constraints:
+    "Ctlt1_a_check" CHECK (length(a) > 2)
+Has OIDs: no
+Options: orientation=row, compression=no
+
+SELECT `c`.`relname`, `objsubid`, `description` FROM `pg_description`, `pg_index` i, `pg_class` c WHERE `classoid` = 'pg_class'::regclass AND `objoid` = `i`.`indexrelid` AND `c`.`oid` = `i`.`indexrelid` AND `i`.`indrelid` = 'Ctlt_all'::regclass ORDER BY `c`.`relname`, `objsubid`;
+ERROR:  relation "ctlt_all" does not exist
+LINE 1: ...`c`.`oid` = `i`.`indexrelid` AND `i`.`indrelid` = 'Ctlt_all'...
+                                                             ^
+CREATE TABLE `Inh_error1` () InheRITS (`Ctlt1`, `Ctlt4`);
+ERROR:  CREATE TABLE ... INHERITS is not yet supported.
+CREATE TABLE `Inh_error2` (LIKE `Ctlt4` INCLUDING STORAGE) InheRITS (`Ctlt1`);
+ERROR:  CREATE TABLE ... INHERITS is not yet supported.
+DROP TABLE if exists `Ctlt1`, `Ctlt2`, `Ctlt3`, `Ctlt4`, `Ctlt12_storage`, `Ctlt12_comments`, `Ctlt1_inh`, `Ctlt13_inh`, `ctlt13_like`, `Ctlt_all`, `Ctla`, `Ctlb` CASCADE;
+NOTICE:  table "Ctlt1_inh" does not exist, skipping
+NOTICE:  table "Ctlt13_inh" does not exist, skipping
+NOTICE:  table "ctlt13_like" does not exist, skipping
+NOTICE:  table "Ctlb" does not exist, skipping
+/* LIKE with other relation kinds */
+CREATE TABLE `Ctlt4` (`a` int, `b` text);
+CREATE SEQUENCE `ctlseq1`;
+CREATE TABLE `ctlt10` (LIKE `ctlseq1`);  -- fail
+ERROR:  "ctlseq1" is not a table, view, composite type, or foreign table
+LINE 1: CREATE TABLE `ctlt10` (LIKE `ctlseq1`);
+                                    ^
+CREATE VIEW `ctlv1` AS SELECT * FROM `Ctlt4`;
+CREATE TABLE `Ctlt11` (LIKE `ctlv1`);
+ERROR:  openGauss does not support VIEW in LIKE clauses
+DETAIL:  The feature is not currently supported
+CREATE TABLE `ctlt11a` (LIKE `ctlv1` INCLUDING DEFAULTS  INCLUDING CONSTRAINTS  INCLUDING INDEXES  INCLUDING STORAGE  INCLUDING COMMENTS);
+ERROR:  openGauss does not support VIEW in LIKE clauses
+DETAIL:  The feature is not currently supported
+CREATE TYPE `ctlty1` AS (`a` int, `b` text);
+CREATE TABLE `Ctlt12` (LIKE `ctlty1`);
+-- including all, including all excluding some option(s)
+CREATE TABLE `Ctlt13` (LIKE `Ctlt4` INCLUDING ALL);
+CREATE TABLE `Ctlt14` (LIKE `Ctlt4` INCLUDING ALL EXCLUDING RELOPTIONS) WITH (ORIENTATION = COLUMN);
+-- should fail, syntax error
+CREATE TABLE `Ctlt15` (LIKE `Ctlt4` INCLUDING ALL INCLUDING RELOPTIONS);
+ERROR:  syntax error at or near "INCLUDING RELOPTIONS"
+LINE 1: CREATE TABLE `Ctlt15` (LIKE `Ctlt4` INCLUDING ALL INCLUDING ...
+                                                          ^
+CREATE TABLE `Ctlt16` (LIKE `Ctlt4` INCLUDING ALL EXCLUDING ALL);
+CREATE TABLE `Ctlt17` (LIKE `Ctlt4` INCLUDING DEFAULTS INCLUDING CONSTRAINTS EXCLUDING ALL);
+CREATE TABLE `Ctlt18` (LIKE `Ctlt4` EXCLUDING ALL);
+DROP SEQUENCE `ctlseq1`;
+DROP TYPE `ctlty1`;
+DROP VIEW `ctlv1`;
+DROP TABLE IF EXISTS `Ctlt4`, `ctlt10`, `Ctlt11`, `ctlt11a`, `Ctlt12`, `Ctlt13`, `Ctlt14`, `Ctlt16`, `Ctlt17`, `Ctlt18`;
+NOTICE:  table "ctlt10" does not exist, skipping
+NOTICE:  table "Ctlt11" does not exist, skipping
+NOTICE:  table "ctlt11a" does not exist, skipping
+create table `Ctltcol`(`id1` integer, `id2` integer, `id3` integer, `partial` cluster key(`id1`,`id2`))with(orientation = column);
+ERROR:  syntax error at or near "key"
+LINE 1: ..., `id2` integer, `id3` integer, `partial` cluster key(`id1`,...
+                                                             ^
+create table `Ctltcollike`(like `Ctltcol` including all);
+ERROR:  Table (null).Ctltcol does not exist in current datanode.
+LINE 1: create table `Ctltcollike`(like `Ctltcol` including all);
+                                        ^
+\d+ "Ctltcollike"
+drop table `Ctltcol`;
+ERROR:  table "Ctltcol" does not exist
+drop table `Ctltcollike`;
+ERROR:  table "Ctltcollike" does not exist
+create table `Test1`(`a` int, `b` int, `c` int)distribute by hash(`a`, `b`);
+ERROR:  Un-support feature
+DETAIL:  The distributed capability is not supported currently.
+create table `Test` (like `Test1` including distribution);
+ERROR:  Un-support feature
+DETAIL:  The distributed capability is not supported currently.
+\d+ "Test"
+drop table `Test`;
+ERROR:  table "Test" does not exist
+drop table `Test1`;
+ERROR:  table "Test1" does not exist
+-- including all, with oids /without oids
+create table `Ctltesta`(`a1` int, `a2` int) with oids;
+ERROR:  CREATE TABLE ... WITH OIDS is not yet supported.
+\d+ "Ctltesta"
+create table `Ctltestb`(like `Ctltesta` including all);
+ERROR:  Table (null).Ctltesta does not exist in current datanode.
+LINE 1: create table `Ctltestb`(like `Ctltesta` including all);
+                                     ^
+\d+ "Ctltestb"
+create table `Ctltestc`(like `Ctltesta` including all excluding oids);
+ERROR:  Table (null).Ctltesta does not exist in current datanode.
+LINE 1: create table `Ctltestc`(like `Ctltesta` including all exclud...
+                                     ^
+\d+ "Ctltestc"
+create table `Ctltestd`(`a1` int, `a2` int, constraint `firstkey` primary key(`a1`))with oids distribute by hash(`a1`);
+ERROR:  CREATE TABLE ... WITH OIDS is not yet supported.
+\d+ "Ctltestd"
+create table `Ctlteste`(like `Ctltestd` including all);
+ERROR:  Table (null).Ctltestd does not exist in current datanode.
+LINE 1: create table `Ctlteste`(like `Ctltestd` including all);
+                                     ^
+\d+ "Ctlteste"
+drop table if exists `Ctltesta`, `Ctltestb`, `Ctltestc`, `Ctltestd`, `Ctlteste`;
+NOTICE:  table "Ctltesta" does not exist, skipping
+NOTICE:  table "Ctltestb" does not exist, skipping
+NOTICE:  table "Ctltestc" does not exist, skipping
+NOTICE:  table "Ctltestd" does not exist, skipping
+NOTICE:  table "Ctlteste" does not exist, skipping
+create table `Ctltestf`(`a1` int, `a2` int, constraint `firstkey` primary key(oid)) distribute by hash(`a1`);
+ERROR:  Un-support feature
+DETAIL:  The distributed capability is not supported currently.
+\d+ "Ctltestf"
+create table `Ctltestg`(`a1` int, `a2` int, constraint `firstkey` primary key(oid))with oids distribute by hash(`a1`);
+ERROR:  CREATE TABLE ... WITH OIDS is not yet supported.
+\d+ "Ctltestg"
+drop table if exists `Ctltestf`, `Ctltestg`;
+NOTICE:  table "Ctltestf" does not exist, skipping
+NOTICE:  table "Ctltestg" does not exist, skipping
+create schema `testschema`;
+CREATE OR REPLACE FUNCTION `testschema`.`func_increment_plsql`(`i` integer) RETURNS integer AS $$
+        BEGIN
+                RETURN `i` + 1;
+        END;
+$$ LANGUAGE plpgsql IMMUTABLE  ;
+create table `testschema`.`Test1` (`a` int , `b` int default `testschema`.`func_increment_plsql`(1));
+alter schema `testschema` rename to `TESTTABLE_bak`;
+create table `TESTTABLE_bak`.`Test2` (like `TESTTABLE_bak`.`Test1` including all);
+drop table `TESTTABLE_bak`.`Test2`;
+drop table `TESTTABLE_bak`.`Test1`;
+drop function `TESTTABLE_bak`.`func_increment_plsql`();

@@ -1,0 +1,2 @@
+\c table_name_test_db;te_test
+\connect: FATAL:  database "table_name_test_db;te_test" does not exist

@@ -50,9 +50,9 @@ LINE 1: select release_lock(a);
 CONTEXT:  referenced column: release_lock
 --failed
 select release_lock(`);
-ERROR:  syntax error at or near ")"
+ERROR:  unterminated quoted identifier at or near "`);"
 LINE 1: select release_lock(`);
-                             ^
+                            ^
 --failed
 select release_lock(!);
 ERROR:  syntax error at or near ")"

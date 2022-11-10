@@ -1,0 +1,33 @@
+DROP DATABASE IF EXISTS table_name_test_db;
+NOTICE:  database "table_name_test_db" does not exist, skipping
+CREATE DATABASE table_name_test_db dbcompatibility 'b';
+\c table_name_test_db
+create table `point` (`c1` point) with (storage_type=USTORE);
+CREATE TABLE `point_tbl`(`f1` point);
+INSERT INTO `point_tbl`(`f1`) VALUES ('(0.0,0.0)');
+INSERT INTO `point_tbl`(`f1`) VALUES ('(-10.0,0.0)');
+INSERT INTO `point_tbl`(`f1`) VALUES ('(-3.0,4.0)');
+INSERT INTO `point_tbl`(`f1`) VALUES ('(5.1, 34.5)');
+INSERT INTO `point_tbl`(`f1`) VALUES ('(-5.0,-12.0)');
+-- bad format points
+INSERT INTO `point_tbl`(`f1`) VALUES ('asdfasdf');
+ERROR:  invalid input syntax for type point: "asdfasdf"
+LINE 1: INSERT INTO `point_tbl`(`f1`) VALUES ('asdfasdf');
+                                              ^
+CONTEXT:  referenced column: f1
+INSERT INTO `point_tbl`(`f1`) VALUES ('10.0,10.0');
+INSERT INTO `point_tbl`(`f1`) VALUES ('(10.0 10.0)');
+ERROR:  invalid input syntax for type point: "(10.0 10.0)"
+LINE 1: INSERT INTO `point_tbl`(`f1`) VALUES ('(10.0 10.0)');
+                                              ^
+CONTEXT:  referenced column: f1
+INSERT INTO `point_tbl`(`f1`) VALUES ('(10.0,10.0');
+ERROR:  invalid input syntax for type point: "(10.0,10.0"
+LINE 1: INSERT INTO `point_tbl`(`f1`) VALUES ('(10.0,10.0');
+                                              ^
+CONTEXT:  referenced column: f1
+-- Test that GiST indexes provide same behavior as sequential scan
+CREATE TEMP TABLE `point_gist_tbl`(`f1` point);
+INSERT INTO `point_gist_tbl` SELECT '(0,0)' FROM generate_series(0,1000);
+CREATE INDEX `point_gist_tbl_index` ON `point_gist_tbl` USING gist (`f1`);
+INSERT INTO `point_gist_tbl` VALUES ('(0.0000009,0.0000009)');
