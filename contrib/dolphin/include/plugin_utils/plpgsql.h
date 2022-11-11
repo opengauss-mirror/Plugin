@@ -24,8 +24,9 @@
 #include "commands/trigger.h"
 #include "executor/spi.h"
 #include "executor/functions.h"
-#include "parser/scanner.h"
+#include "plugin_parser/scanner.h"
 #include "utils/pl_global_package_runtime_cache.h"
+#include "plugin_postgres.h"
 
 /**********************************************************************
  * Definitions
@@ -1603,10 +1604,9 @@ extern Node* plpgsql_check_match_var(Node* node, ParseState* pstate, ColumnRef* 
  * Functions in pl_handler.c
  * ----------
  */
-extern "C" void _PG_init(void);
-extern "C" Datum plpgsql_call_handler(PG_FUNCTION_ARGS);
-extern "C" Datum plpgsql_inline_handler(PG_FUNCTION_ARGS);
-extern "C" Datum plpgsql_validator(PG_FUNCTION_ARGS);
+extern "C" DLL_PUBLIC Datum b_plpgsql_call_handler(PG_FUNCTION_ARGS);
+extern "C" DLL_PUBLIC Datum b_plpgsql_inline_handler(PG_FUNCTION_ARGS);
+extern "C" DLL_PUBLIC Datum b_plpgsql_validator(PG_FUNCTION_ARGS);
 extern "C" PLpgSQL_package* plpgsql_package_validator(Oid packageOid, bool isSpec, bool isCreate=false);
 extern void record_pkg_function_dependency(PLpgSQL_package* pkg, List** invalItems, Oid funcid, Oid pkgid);
 extern void DecreasePackageUseCount(PLpgSQL_function* func);

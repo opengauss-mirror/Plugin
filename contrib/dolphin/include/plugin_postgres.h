@@ -51,8 +51,6 @@
 
 typedef enum { QUERY_MESSAGE = 0, HYBRID_MESSAGE } MessageType;
 
-extern "C" DLL_PUBLIC void _PG_init(void);
-extern "C" DLL_PUBLIC void _PG_fini(void);
 extern "C" DLL_PUBLIC void dolphin_invoke(void);
 extern "C" DLL_PUBLIC void init_plugin_object();
 extern "C" DLL_PUBLIC void init_session_vars(void);

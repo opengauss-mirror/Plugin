@@ -3,6 +3,7 @@
 #include "plugin_parser/analyze.h"
 #include "plugin_storage/hash.h"
 #include "plugin_postgres.h"
+#include "plugin_utils/plpgsql.h"
 #include "commands/extension.h"
 #include "commands/dbcommands.h"
 #include "commands/copy.h"
@@ -91,6 +92,14 @@ static const struct sql_mode_entry sql_mode_options[OPT_SQL_MODE_MAX] = {
     {"ansi_quotes", OPT_SQL_MODE_ANSI_QUOTES},
 };
 
+/*
+ * For loading plpgsql function.
+ */
+typedef struct {
+    char* func_name;
+    PGFunction func_addr;
+} RegExternFunc;
+
 PG_MODULE_MAGIC_PUBLIC;
 
 extern void InitLockNameHash();
@@ -99,6 +108,7 @@ extern pthread_mutex_t gNameHashLock;
 extern void initBSQLBuiltinFuncs();
 extern struct HTAB* b_nameHash;
 extern struct HTAB* b_oidHash;
+extern RegExternFunc b_plpgsql_function_table[3];
 extern bool isAllTempObjects(Node* parse_tree, const char* query_string, bool sent_to_remote);
 extern void ts_check_feature_disable();
 extern void ExecAlterDatabaseSetStmt(Node* parse_tree, const char* query_string, bool sent_to_remote);
@@ -120,6 +130,9 @@ extern void set_hypopg_prehook(ProcessUtility_hook_type func);
 extern void set_pgaudit_prehook(ProcessUtility_hook_type func);
 extern bool check_plugin_function(Oid funcId);
 static bool protocol_inited;
+
+extern "C" DLL_PUBLIC void _PG_init(void);
+extern "C" DLL_PUBLIC void _PG_fini(void);
 
 PG_FUNCTION_INFO_V1_PUBLIC(dolphin_invoke);
 void dolphin_invoke(void)
@@ -180,6 +193,10 @@ void _PG_init(void)
     g_instance.raw_parser_hook[DB_CMPT_B] = (void*)raw_parser;
     g_instance.plsql_parser_hook[DB_CMPT_B] = (void*)plpgsql_yyparse;
     g_instance.llvmIrFilePath[DB_CMPT_B] = "share/postgresql/extension/openGauss_expr_dolphin.ir";
+
+    b_plpgsql_function_table[0] = {"plpgsql_call_handler", b_plpgsql_call_handler};
+    b_plpgsql_function_table[1] = {"plpgsql_inline_handler", b_plpgsql_inline_handler};
+    b_plpgsql_function_table[2] = {"plpgsql_validator", b_plpgsql_validator};
 }
 
 void _PG_fini(void)

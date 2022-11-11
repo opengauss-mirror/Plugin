@@ -56,7 +56,7 @@ OBJS += $(optimizer)/streamwalker.o
 
 OBJS += $(commands)/functioncmds.o $(commands)/foreigncmds.o $(commands)/copy.o
 
-OBJS += $(pl)/pl_gram.o $(pl)/pl_scanner.o
+OBJS += $(pl)/pl_gram.o $(pl)/pl_scanner.o $(pl)/pl_comp.o $(pl)/pl_handler.o
 
 all $(OBJS): protocol parser utils executor vector commands storage optimizer pl;
 

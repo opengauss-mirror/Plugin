@@ -14,7 +14,7 @@
  * -------------------------------------------------------------------------
  */
 
-#include "utils/plpgsql.h"
+#include "plugin_utils/plpgsql.h"
 #include "utils/fmgroids.h"
 #include "utils/pl_package.h"
 #include "auditfuncs.h"
@@ -36,8 +36,8 @@
 #include "utils/lsyscache.h"
 #include "utils/syscache.h"
 #include "utils/acl.h"
-#include "parser/parser.h"
-#include "parser/parse_type.h"
+#include "plugin_parser/parser.h"
+#include "plugin_parser/parse_type.h"
 #include "pgstat.h"
 #include "utils/timestamp.h"
 #include "executor/spi_priv.h"
@@ -541,7 +541,7 @@ static void validate_search_path(PLpgSQL_function* func)
  * call this function for execution of PL/pgSQL procedures.
  * ----------
  */
-PG_FUNCTION_INFO_V1(plpgsql_call_handler);
+PG_FUNCTION_INFO_V1_PUBLIC(b_plpgsql_call_handler);
 
 static Oid get_package_id(Oid func_oid)
 {
@@ -684,7 +684,7 @@ extern bool CheckElementParsetreeTag(Node* parsetree)
     return result;
 }
 
-Datum plpgsql_call_handler(PG_FUNCTION_ARGS)
+Datum b_plpgsql_call_handler(PG_FUNCTION_ARGS)
 {
     bool nonatomic;
     PLpgSQL_function* func = NULL;
@@ -1026,9 +1026,9 @@ Datum plpgsql_call_handler(PG_FUNCTION_ARGS)
  * Called by PostgreSQL to execute an anonymous code block
  * ----------
  */
-PG_FUNCTION_INFO_V1(plpgsql_inline_handler);
+PG_FUNCTION_INFO_V1_PUBLIC(b_plpgsql_inline_handler);
 
-Datum plpgsql_inline_handler(PG_FUNCTION_ARGS)
+Datum b_plpgsql_inline_handler(PG_FUNCTION_ARGS)
 {
     InlineCodeBlock* codeblock = (InlineCodeBlock*)DatumGetPointer(PG_GETARG_DATUM(0));
     PLpgSQL_function* func = NULL;
@@ -1204,9 +1204,9 @@ Datum plpgsql_inline_handler(PG_FUNCTION_ARGS)
  * CREATE FUNCTION time.
  * ----------
  */
-PG_FUNCTION_INFO_V1(plpgsql_validator);
+PG_FUNCTION_INFO_V1_PUBLIC(b_plpgsql_validator);
 
-Datum plpgsql_validator(PG_FUNCTION_ARGS)
+Datum b_plpgsql_validator(PG_FUNCTION_ARGS)
 {
     Oid funcoid = PG_GETARG_OID(0);
     HeapTuple tuple = NULL;

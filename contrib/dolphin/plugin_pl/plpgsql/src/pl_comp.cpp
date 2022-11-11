@@ -13,8 +13,8 @@
  * -------------------------------------------------------------------------
  */
 
+#include "plugin_utils/plpgsql.h"
 #include "utils/pl_package.h"
-#include "utils/plpgsql.h"
 
 #include <ctype.h>
 
@@ -34,10 +34,10 @@
 #include "nodes/pg_list.h"
 #include "optimizer/clauses.h"
 #include "optimizer/subselect.h"
-#include "parser/parse_type.h"
+#include "plugin_parser/parse_type.h"
 #include "pgxc/locator.h"
 #include "utils/builtins.h"
-#include "utils/fmgroids.h"
+#include "plugin_utils/fmgroids.h"
 #include "utils/globalplancore.h"
 #include "utils/guc.h"
 #include "utils/lsyscache.h"
