@@ -165,6 +165,9 @@ insert into func_test(functionName, result) values ('sec_to_time(pow(10,18)-1)',
 insert into func_test(functionName, result) values ('sec_to_time(1000)', sec_to_time(1000)); 
 insert into func_test(functionName, result) values ('sec_to_time(0)', sec_to_time(0));
 insert into func_test(functionName, result) values ('sec_to_time(-1000000)', sec_to_time(-1000000));
+insert into func_test(functionName, result) values ('sec_to_time(''2022-12-31 14:25:30'')', sec_to_time('2022-12-31 14:25:30'));
+insert into func_test(functionName, result) values ('sec_to_time(''2012-2-25'')', sec_to_time('2012-2-25'));
+insert into func_test(functionName, result) values ('sec_to_time(''14:25:56'')', sec_to_time('14:25:56'));
     -- 小数精度
 insert into func_test(functionName, result) values ('sec_to_time(1000000.499)', sec_to_time(1000000.499));
 insert into func_test(functionName, result) values ('sec_to_time(1000000.4990000)', sec_to_time(1000000.4990000));
@@ -406,6 +409,9 @@ select * from func_test;
  sec_to_time(1000)                                                      | 00:16:40
  sec_to_time(0)                                                         | 00:00:00
  sec_to_time(-1000000)                                                  | -277:46:40
+ sec_to_time('2022-12-31 14:25:30')                                     | 00:33:42
+ sec_to_time('2012-2-25')                                               | 00:33:32
+ sec_to_time('14:25:56')                                                | 00:00:14
  sec_to_time(1000000.499)                                               | 277:46:40.499
  sec_to_time(1000000.4990000)                                           | 277:46:40.499
  sec_to_time(1000000.4999994999)                                        | 277:46:40.499999
@@ -445,7 +451,7 @@ select * from func_test;
  subdate(time'100:59:59', INTERVAL '1 20:50:50.888888' DAY To SECOND)   | 56:09:08.111112
  subdate(time'100:59:59', INTERVAL '-1 20:50:50.888888' HOUR To SECOND) | 121:50:49.888888
  subdate(time(6)'100:59:59.555', 2                                      | 52:59:59.555
-(135 rows)
+(138 rows)
 
 \c postgres
 drop database if exists b_time_funcs;

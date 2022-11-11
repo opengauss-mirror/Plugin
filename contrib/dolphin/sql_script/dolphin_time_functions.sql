@@ -250,6 +250,7 @@ CREATE OR REPLACE FUNCTION pg_catalog.maketime (bit, int8, numeric) RETURNS time
 CREATE OR REPLACE FUNCTION pg_catalog.maketime (int8, bit, numeric) RETURNS time AS $$ SELECT pg_catalog.maketime(cast($1 as int8), cast($2 as int8), $3) $$ LANGUAGE SQL;
 
 CREATE OR REPLACE FUNCTION pg_catalog.sec_to_time (numeric) RETURNS time LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'sec_to_time';
+CREATE OR REPLACE FUNCTION pg_catalog.sec_to_time (text) RETURNS time LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'sec_to_time_str';
 
 CREATE OR REPLACE FUNCTION pg_catalog.subdate (text, int8) RETURNS text LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'subdate_datetime_days_text';
 CREATE OR REPLACE FUNCTION pg_catalog.subdate (text, text) RETURNS text AS $$ SELECT pg_catalog.subdate($1, cast($2 as int8))  $$ LANGUAGE SQL;

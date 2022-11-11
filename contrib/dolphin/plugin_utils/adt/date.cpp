@@ -56,6 +56,7 @@ static int tm2time(struct pg_tm* tm, fsec_t fsec, TimeADT* result);
 static int tm2timetz(struct pg_tm* tm, fsec_t fsec, int tz, TimeTzADT* result);
 static void AdjustTimeForTypmod(TimeADT* time, int32 typmod);
 #ifdef DOLPHIN
+extern const char* extract_numericstr(const char* str);
 static char* adjust_b_format_time(char *str, int *timeSign, int *D, bool *hasD);
 
 PG_FUNCTION_INFO_V1_PUBLIC(int32_b_format_time);
@@ -79,6 +80,8 @@ PG_FUNCTION_INFO_V1_PUBLIC(maketime);
 extern "C" DLL_PUBLIC Datum maketime(PG_FUNCTION_ARGS);
 PG_FUNCTION_INFO_V1_PUBLIC(sec_to_time);
 extern "C" DLL_PUBLIC Datum sec_to_time(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(sec_to_time_str);
+extern "C" DLL_PUBLIC Datum sec_to_time_str(PG_FUNCTION_ARGS);
 PG_FUNCTION_INFO_V1_PUBLIC(subdate_datetime_days_text);
 extern "C" DLL_PUBLIC Datum subdate_datetime_days_text(PG_FUNCTION_ARGS);
 PG_FUNCTION_INFO_V1_PUBLIC(subdate_datetime_interval_text);
@@ -3464,6 +3467,22 @@ Datum sec_to_time(PG_FUNCTION_ARGS)
     if (overflow || time < -B_FORMAT_TIME_MAX_VALUE || time > B_FORMAT_TIME_MAX_VALUE)
         time = neg ? -B_FORMAT_TIME_MAX_VALUE : B_FORMAT_TIME_MAX_VALUE;
     PG_RETURN_TIMEADT(time);
+}
+
+/* 
+ * The effect is the same as sec_to_time()
+ * This function is used to receive string parameters.
+ * Non pure numeric strings only retain the front numeric part.
+ * For example, '2000.1abcd' will be converted to '2000.1'
+ */
+Datum sec_to_time_str(PG_FUNCTION_ARGS)
+{
+    text *tmp = PG_GETARG_TEXT_PP(0);
+    char *str = text_to_cstring(tmp);
+    char *numeric_str = (char *)extract_numericstr(str);
+    Datum seconds =
+        DirectFunctionCall3(numeric_in, CStringGetDatum(numeric_str), ObjectIdGetDatum(0), Int32GetDatum(-1));
+    return DirectFunctionCall1(sec_to_time, seconds);
 }
 
 /*
