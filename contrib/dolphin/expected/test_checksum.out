@@ -216,5 +216,17 @@ CHECKSUM TABLE tst_tmp_t1,tst_tmp_t2;
  tst_schema1.tst_tmp_t2 | 4591054688
 (2 rows)
 
+-- TEST SAME COLNAME WITH TABLENAME
+CREATE TABLE t_same(t_same int, name text);
+CREATE TABLE t_same_cmp(t_same int, name text);
+INSERT INTO t_same VALUES(2022001, 'same check');
+INSERT INTO t_same_cmp VALUES(2022001, 'same check');
+CHECKSUM TABLE t_same, t_same_cmp;
+         Table          |  Checksum  
+------------------------+------------
+ tst_schema1.t_same     | 3322879598
+ tst_schema1.t_same_cmp | 3322879598
+ (2 rows)
+
 \c postgres
 drop database if exists db_chk_tbl;

@@ -181,6 +181,15 @@ INSERT INTO tst_tmp_t2 (SELECT * FROM tst_tmp_t1);
 
 CHECKSUM TABLE tst_tmp_t1,tst_tmp_t2;
 
+-- TEST SAME COLNAME WITH TABLENAME
+CREATE TABLE t_same(t_same int, name text);
+CREATE TABLE t_same_cmp(t_same int, name text);
+
+INSERT INTO t_same VALUES(2022001, 'same check');
+INSERT INTO t_same_cmp VALUES(2022001, 'same check');
+
+CHECKSUM TABLE t_same, t_same_cmp;
+
 \c postgres
 drop database if exists db_chk_tbl;
 
