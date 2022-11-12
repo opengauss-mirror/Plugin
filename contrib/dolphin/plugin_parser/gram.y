@@ -22339,6 +22339,13 @@ ExplainStmt:
 					n->options = NIL;
 					$$ = (Node *) n;
 				}
+		| EXPLAIN EXTENDED ExplainableStmt
+				{
+					ExplainStmt* stmt = makeNode(ExplainStmt);
+					stmt->query = $3;
+					stmt->options = NIL;
+					$$ = (Node*)stmt;
+				}
 		| EXPLAIN PERFORMANCE ExplainableStmt
 				{
 					ExplainStmt *n = makeNode(ExplainStmt);
@@ -22369,6 +22376,22 @@ ExplainStmt:
 					n->query = $5;
 					n->options = $3;
 					$$ = (Node *) n;
+				}
+		| EXPLAIN DB_B_FORMAT '=' ColId_or_Sconst ExplainableStmt
+				{
+					ExplainStmt* stmt = makeNode(ExplainStmt);
+					stmt->query = $5;
+					if (pg_strcasecmp($4, "json") == 0) {
+						DefElem* def = makeDefElem((char*)$2, (Node*)makeString("json"));
+						stmt->options = list_make1(def);
+					} else if (pg_strcasecmp($4, "traditional") == 0) {
+                                         	stmt->options = NIL;
+					} else {
+						DefElem* def = makeDefElem((char*)$2, (Node*)makeString($4));
+						stmt->options = list_make1(def);					
+					}
+
+					$$ = (Node*)stmt;					
 				}
 		| EXPLAIN PLAN SET STATEMENT_ID '=' Sconst FOR ExplainableStmt
 				{

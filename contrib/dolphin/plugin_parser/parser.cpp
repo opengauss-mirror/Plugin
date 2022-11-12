@@ -26,6 +26,9 @@
 #include "plugin_parser/gramparse.h"
 #include "plugin_parser/parser.h"
 
+#define ASCII_DOT 46
+#define ASCII_SEMICOLON 59
+
 extern void resetOperatorPlusFlag();
 
 static void resetIsTimeCapsuleFlag()
@@ -130,6 +133,29 @@ List* raw_parser(const char* str, List** query_string_locationlist)
         yyextra->lookahead_yylloc[0] = *llocp;              \
         yyextra->lookahead_num = 1;                         \
     } while (0)
+
+#define READ_TWO_TOKEN()                                                     \
+    do {                                                                     \
+        cur_yylval = lvalp->core_yystype;                                    \
+        cur_yylloc = *llocp;                                                 \
+        next_token = core_yylex(&(lvalp->core_yystype), llocp, yyscanner);   \
+        /* get first token */                                                \
+        yyextra->lookahead_token[1] = next_token;                            \
+        yyextra->lookahead_yylval[1] = lvalp->core_yystype;                  \
+        yyextra->lookahead_yylloc[1] = *llocp;                               \
+        /* get the second token */                                           \
+        next_token = core_yylex(&(lvalp->core_yystype), llocp, yyscanner);   \
+        yyextra->lookahead_token[0] = next_token;                            \
+        yyextra->lookahead_yylval[0] = lvalp->core_yystype;                  \
+        yyextra->lookahead_yylloc[0] = *llocp;                               \
+        yyextra->lookahead_num = 2;                                          \
+    } while (0)
+
+
+static inline bool IsDescStmtSymbol(int token)
+{
+    return (token == ASCII_DOT || token == ASCII_SEMICOLON);
+}
 
 /*
  * Intermediate filter between parser and core lexer (core_yylex in scan.l).
@@ -528,20 +554,7 @@ int base_yylex(YYSTYPE* lvalp, YYLTYPE* llocp, core_yyscan_t yyscanner)
             }
             break;
         case ON:
-            cur_yylval = lvalp->core_yystype;
-            cur_yylloc = *llocp;
-            next_token = core_yylex(&(lvalp->core_yystype), llocp, yyscanner);
-            /* get first token after ON (Normal UPDATE). We don't care what it is */
-            yyextra->lookahead_token[1] = next_token;
-            yyextra->lookahead_yylval[1] = lvalp->core_yystype;
-            yyextra->lookahead_yylloc[1] = *llocp;
-
-            /* get the second token after ON. */
-            next_token = core_yylex(&(lvalp->core_yystype), llocp, yyscanner);
-            yyextra->lookahead_token[0] = next_token;
-            yyextra->lookahead_yylval[0] = lvalp->core_yystype;
-            yyextra->lookahead_yylloc[0] = *llocp;
-            yyextra->lookahead_num = 2;
+            READ_TWO_TOKEN();
             switch (next_token) {
             case CURRENT_TIMESTAMP:
             case CURRENT_TIME:
@@ -558,6 +571,23 @@ int base_yylex(YYSTYPE* lvalp, YYLTYPE* llocp, core_yyscan_t yyscanner)
                 *llocp = cur_yylloc;
                 break;
             }
+            break;
+        case EXPLAIN:
+            READ_TWO_TOKEN();
+            if (IsDescStmtSymbol(next_token)) {
+                cur_token = DESC;
+            }
+            lvalp->core_yystype = cur_yylval;
+            *llocp = cur_yylloc;
+            break;
+        case DESC:
+        case DESCRIBE:
+            READ_TWO_TOKEN();
+            if (!IsDescStmtSymbol(next_token)) {
+                cur_token = EXPLAIN;
+            }
+            lvalp->core_yystype = cur_yylval;
+            *llocp = cur_yylloc;
             break;
         default:
             break;
