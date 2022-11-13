@@ -268,11 +268,7 @@ insert into func_test2(functionName, result) values('TIME(''0:60:0'')',TIME('0:6
 ERROR:  date/time field value out of range: "0:60:0"
 CONTEXT:  referenced column: result
 insert into func_test2(functionName, result) values('TIME(''0:59.5:0'')',TIME('0:59.5:0'));
-ERROR:  invalid input syntax for type time: "0:59.5:0"
-CONTEXT:  referenced column: result
 insert into func_test2(functionName, result) values('TIME(''0:59.4:0'')',TIME('0:59.4:0'));
-ERROR:  invalid input syntax for type time: "0:59.4:0"
-CONTEXT:  referenced column: result
 insert into func_test2(functionName, result) values('TIME(''0:0:-1'')',TIME('0:0:-1'));
 insert into func_test2(functionName, result) values('TIME(''0:0:60'')',TIME('0:0:60'));
 ERROR:  date/time field value out of range: "0:0:60"
@@ -353,11 +349,7 @@ insert into func_test2(functionName, result) values(' TIME_FORMAT(''0:60:0'', ''
 ERROR:  date/time field value out of range: "0:60:0"
 CONTEXT:  referenced column: result
 insert into func_test2(functionName, result) values(' TIME_FORMAT(''0:59.5:0'', ''%T|%r|%H|%h|%I|%i|%S|%f|%p|%k'')    ', TIME_FORMAT('0:59.5:0', '%T|%r|%H|%h|%I|%i|%S|%f|%p|%k'));
-ERROR:  invalid input syntax for type time: "0:59.5:0"
-CONTEXT:  referenced column: result
 insert into func_test2(functionName, result) values(' TIME_FORMAT(''0:59.4:0'', ''%T|%r|%H|%h|%I|%i|%S|%f|%p|%k'')    ', TIME_FORMAT('0:59.4:0', '%T|%r|%H|%h|%I|%i|%S|%f|%p|%k'));
-ERROR:  invalid input syntax for type time: "0:59.4:0"
-CONTEXT:  referenced column: result
 insert into func_test2(functionName, result) values(' TIME_FORMAT(''0:0:-1'', ''%T|%r|%H|%h|%I|%i|%S|%f|%p|%k'')    ', TIME_FORMAT('0:0:-1', '%T|%r|%H|%h|%I|%i|%S|%f|%p|%k'));
 insert into func_test2(functionName, result) values(' TIME_FORMAT(''0:0:60'', ''%T|%r|%H|%h|%I|%i|%S|%f|%p|%k'')    ', TIME_FORMAT('0:0:60', '%T|%r|%H|%h|%I|%i|%S|%f|%p|%k'));
 ERROR:  date/time field value out of range: "0:0:60"
@@ -820,10 +812,12 @@ select * from func_test2;
  TIME('-838:59:59')                                                                          | -838:59:59
  TIME('838:0:0')                                                                             | 838:00:00
  TIME('0:-1:0')                                                                              | 00:00:00
+ TIME('0:59.5:0')                                                                            | 00:59:00.5
+ TIME('0:59.4:0')                                                                            | 00:59:00.4
  TIME('0:0:-1')                                                                              | 00:00:00
  TIME('00:00:59.9999')                                                                       | 00:00:59.9999
  TIME('00:00:59.999999000')                                                                  | 00:00:59.999999
- TIME('83:59:59.0000000009')                                                                 | 83:59:59
+ TIME('83:59:59.0000000009')                                                                 | 83:59:59.000001
  TIME('00:10:59.999999999')                                                                  | 00:11:00
  TIME('00:59:59.999999999')                                                                  | 01:00:00
  TIME('838:59:59.000000500')                                                                 | 838:59:59
@@ -857,10 +851,12 @@ select * from func_test2;
  TIME_FORMAT('-838:59:59','%i')                                                              | -59
   TIME_FORMAT('838:0:0', '%T|%r|%H|%h|%I|%i|%S|%f|%p|%k')                                    | 838:00:00|10:00:00 PM|838|10|10|00|00|000000|PM|838
   TIME_FORMAT('0:-1:0', '%T|%r|%H|%h|%I|%i|%S|%f|%p|%k')                                     | 00:00:00|12:00:00 AM|00|12|12|00|00|000000|AM|0
+  TIME_FORMAT('0:59.5:0', '%T|%r|%H|%h|%I|%i|%S|%f|%p|%k')                                   | 00:59:00|12:59:00 AM|00|12|12|59|00|500000|AM|0
+  TIME_FORMAT('0:59.4:0', '%T|%r|%H|%h|%I|%i|%S|%f|%p|%k')                                   | 00:59:00|12:59:00 AM|00|12|12|59|00|400000|AM|0
   TIME_FORMAT('0:0:-1', '%T|%r|%H|%h|%I|%i|%S|%f|%p|%k')                                     | 00:00:00|12:00:00 AM|00|12|12|00|00|000000|AM|0
   TIME_FORMAT('00:00:59.9999', '%T|%r|%H|%h|%I|%i|%S|%f|%p|%k')                              | 00:00:59|12:00:59 AM|00|12|12|00|59|999900|AM|0
   TIME_FORMAT('00:00:59.999999000', '%T|%r|%H|%h|%I|%i|%S|%f|%p|%k')                         | 00:00:59|12:00:59 AM|00|12|12|00|59|999999|AM|0
-  TIME_FORMAT('83:59:59.0000000009', '%T|%r|%H|%h|%I|%i|%S|%f|%p|%k')                        | 83:59:59|11:59:59 AM|83|11|11|59|59|000000|AM|83
+  TIME_FORMAT('83:59:59.0000000009', '%T|%r|%H|%h|%I|%i|%S|%f|%p|%k')                        | 83:59:59|11:59:59 AM|83|11|11|59|59|000001|AM|83
   TIME_FORMAT('00:10:59.999999999', '%T|%r|%H|%h|%I|%i|%S|%f|%p|%k')                         | 00:11:00|12:11:00 AM|00|12|12|11|00|000000|AM|0
   TIME_FORMAT('00:59:59.999999999', '%T|%r|%H|%h|%I|%i|%S|%f|%p|%k')                         | 01:00:00|01:00:00 AM|01|01|01|00|00|000000|AM|1
   TIME_FORMAT('838:59:59.000000500', '%T|%r|%H|%h|%I|%i|%S|%f|%p|%k')                        | 838:59:59|10:59:59 PM|838|10|10|59|59|000000|PM|838
