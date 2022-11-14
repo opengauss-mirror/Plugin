@@ -56,15 +56,19 @@ static int checksum_table_impl(Relation rel, uint32 &crc32)
 
 Node* makeChecksumTextAgg(RangeVar *rv)
 {
-    Node *argCol = NULL;
+    ColumnRef *argCol = NULL;
     Node *funcNode = NULL;
     Node *typCast = NULL;
 
     /* little differences, its the relname */
-    argCol = plpsMakeColumnRef(NULL, rv->relname);
-   
+    argCol = makeNode(ColumnRef);
+    /* tablename.* to avoid same colname with tablename */
+    argCol->fields = list_make2(makeString(rv->relname), makeNode(A_Star));
+    argCol->location = PLPS_LOC_UNKNOWN;
+    argCol->indnum = 0;
+
     /* the ::text */
-    typCast = plpsMakeTypeCast(argCol, TYPE_NAME_TEXT, PLPS_LOC_UNKNOWN);
+    typCast = plpsMakeTypeCast((Node*)argCol, TYPE_NAME_TEXT, PLPS_LOC_UNKNOWN);
     funcNode = plpsMakeFunc(PLPS_FUNCNAME_CHECKSUM, list_make1(typCast), PLPS_LOC_UNKNOWN);
 
     ResTarget *rt = makeNode(ResTarget);

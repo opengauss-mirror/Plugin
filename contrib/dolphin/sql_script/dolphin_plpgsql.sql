@@ -1,0 +1,3 @@
+create or replace function pg_catalog.b_plpgsql_call_handler() returns language_handler language C volatile as '$libdir/dolphin', 'b_plpgsql_call_handler';
+create or replace function pg_catalog.b_plpgsql_inline_handler(internal) returns void language C strict volatile as '$libdir/dolphin', 'b_plpgsql_inline_handler';
+create or replace function pg_catalog.b_plpgsql_validator(oid) returns void language C strict volatile as '$libdir/dolphin', 'b_plpgsql_validator';

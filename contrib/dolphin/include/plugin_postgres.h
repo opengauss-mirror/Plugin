@@ -51,8 +51,6 @@
 
 typedef enum { QUERY_MESSAGE = 0, HYBRID_MESSAGE } MessageType;
 
-extern "C" DLL_PUBLIC void _PG_init(void);
-extern "C" DLL_PUBLIC void _PG_fini(void);
 extern "C" DLL_PUBLIC void dolphin_invoke(void);
 extern "C" DLL_PUBLIC void init_plugin_object();
 extern "C" DLL_PUBLIC void init_session_vars(void);
@@ -69,6 +67,7 @@ typedef struct BSqlPluginContext {
     char* lc_time_names;
     bool scan_from_pl;
     char* default_database_name;
+    int paramIdx;
 } bSqlPluginContext;
 
 BSqlPluginContext* GetSessionContext();
