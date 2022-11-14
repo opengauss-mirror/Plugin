@@ -574,7 +574,7 @@ static SelectStmt *MakeShowGrantStmt(char *arg, int location, core_yyscan_t yysc
 %type <node>	SnapshotStmt
 %type <list>	AlterSnapshotCmdOrEmpty AlterSnapshotCmdList AlterSnapshotCmdListNoParens
 %type <list>	AlterSnapshotCmdListWithParens SnapshotSample SnapshotSampleList OptSnapshotStratify
-%type <str>		SnapshotVersion OptSnapshotVersion OptSnapshotComment
+%type <str>		SnapshotVersion OptSnapshotVersion OptSnapshotComment opt_bracket
 %type <boolean>	OptSnapshotAlias AlterSnapshotDdl AlterSnapshotDdlList
 %type <boolean>	OptAlterUpdateSnapshot OptInsertIntoSnapshot OptDeleteFromSnapshot
 
@@ -852,7 +852,7 @@ static SelectStmt *MakeShowGrantStmt(char *arg, int location, core_yyscan_t yysc
 
 %type <ival>	Iconst SignedIconst
 %type <str>		Sconst comment_text notify_payload
-%type <str>		RoleId TypeOwner opt_granted_by opt_boolean_or_string ColId_or_Sconst Dolphin_ColId_or_Sconst definer_user definer_expression
+%type <str>		RoleId RoleIdWithOutCurrentUser TypeOwner opt_granted_by opt_boolean_or_string ColId_or_Sconst Dolphin_ColId_or_Sconst definer_user definer_expression
 %type <list>	var_list guc_value_extension_list
 %type <str>		ColId ColLabel var_name type_function_name param_name user opt_password opt_replace show_index_schema_opt ColIdForTableElement PrivilegeColId
 %type <node>	var_value zone_value
@@ -1016,7 +1016,7 @@ static SelectStmt *MakeShowGrantStmt(char *arg, int location, core_yyscan_t yysc
 %type <list>	alter_tblspc_option_list
 %type <node>	alter_tblspc_option
 
-%type <dolphinIdent>	DolphinRoleId
+%type <dolphinIdent>	DolphinRoleId DolphinRoleIdWithOutCurrentUser
 
 /*
  * Non-keyword token types.  These are hard-wired into the "flex" lexer.
@@ -12158,9 +12158,9 @@ CreateUserMappingStmt: CREATE USER MAPPING FOR auth_ident SERVER name create_gen
 
 /* User mapping authorization identifier */
 auth_ident:
-			CURRENT_USER	{ $$ = "current_user"; }
-		|	USER			{ $$ = "current_user"; }
-		|	DolphinRoleId	{ $$ = DolphinObjNameCmp($1->str, "public", $1->is_quoted) ? NULL : $1->str; }
+			CURRENT_USER opt_bracket			{ $$ = "current_user"; }
+		|	USER								{ $$ = "current_user"; }
+		|	DolphinRoleIdWithOutCurrentUser		{ $$ = DolphinObjNameCmp($1->str, "public", $1->is_quoted) ? NULL : $1->str; }
 		;
 
 /*****************************************************************************
@@ -12453,9 +12453,9 @@ row_level_security_role_list: row_level_security_role
 					;
 
 row_level_security_role:
-			DolphinRoleId	{ char* result = "public"; $$ = DolphinObjNameCmp($1->str, "public", $1->is_quoted) ? result : $1->str; }
-		|	CURRENT_USER	{ $$ = pstrdup($1); }
-		|	SESSION_USER	{ $$ = pstrdup($1); }
+			DolphinRoleIdWithOutCurrentUser		{ char* result = "public"; $$ = DolphinObjNameCmp($1->str, "public", $1->is_quoted) ? result : $1->str; }
+		|	CURRENT_USER opt_bracket			{ $$ = pstrdup($1); }
+		|	SESSION_USER						{ $$ = pstrdup($1); }
 		;
 
 RLSDefaultPermissive:
@@ -19196,9 +19196,9 @@ DropSubscriptionStmt: DROP SUBSCRIPTION name opt_drop_behavior
 				}
 		;
 
-TypeOwner:	RoleId			{ $$ = $1; }
-			| CURRENT_USER	{ $$ = pstrdup($1); }
-			| SESSION_USER	{ $$ = pstrdup($1); }
+TypeOwner:	RoleIdWithOutCurrentUser			{ $$ = $1; }
+			| CURRENT_USER opt_bracket			{ $$ = pstrdup($1); }
+			| SESSION_USER						{ $$ = pstrdup($1); }
 		;
 
 /*****************************************************************************
@@ -20064,6 +20064,9 @@ opt_equal:	'='										{}
 			| /*EMPTY*/								{}
 		;
 
+opt_bracket:	'(' ')'								{}
+				| /*EMPTY*/							{}
+		;
 
 /*****************************************************************************
  *
@@ -28079,7 +28082,7 @@ func_expr_common_subexpr:
 					n->call_func = false;
 					$$ = (Node *)n;
 				}
-			| CURRENT_USER
+			| CURRENT_USER opt_bracket
 				{
 					FuncCall *n = makeNode(FuncCall);
 					n->funcname = SystemFuncName("current_user");
@@ -30153,15 +30156,22 @@ AexprConst: Iconst
 Iconst:		ICONST									{ $$ = $1; };
 Sconst:		SCONST									{ $$ = $1; };
 
-DolphinRoleId:		IDENT							{ $$ = $1; }
-					| unreserved_keyword			{ $$ = CreateDolphinIdent(pstrdup($1), false); }
-					| col_name_keyword				{ $$ = CreateDolphinIdent(pstrdup($1), false); }
+DolphinRoleId:		DolphinRoleIdWithOutCurrentUser			{ $$ = $1; }
+					| CURRENT_USER  opt_bracket				{ $$ = CreateDolphinIdent(GetUserNameFromId(GetUserId()), false); }
 		;
 
+DolphinRoleIdWithOutCurrentUser:		IDENT						{ $$ = $1; }
+										| unreserved_keyword		{ $$ = CreateDolphinIdent(pstrdup($1), false); }
+										| col_name_keyword			{ $$ = CreateDolphinIdent(pstrdup($1), false); }
+ 		;
 
-RoleId:		IDENT									{ $$ = GetDolphinObjName($1->str, $1->is_quoted); }
-			| unreserved_keyword					{ $$ = GetDolphinObjName(pstrdup($1), false); }
-			| col_name_keyword						{ $$ = GetDolphinObjName(pstrdup($1), false); }
+RoleId:		RoleIdWithOutCurrentUser			{ $$ = $1; }
+			| CURRENT_USER  opt_bracket			{ $$ = GetUserNameFromId(GetUserId()); }
+		;
+
+RoleIdWithOutCurrentUser:		IDENT						{ $$ = GetDolphinObjName($1->str, $1->is_quoted); }
+								| unreserved_keyword		{ $$ = GetDolphinObjName(pstrdup($1), false); }
+								| col_name_keyword			{ $$ = GetDolphinObjName(pstrdup($1), false); }
 		;
 
 SignedIconst: Iconst								{ $$ = $1; }

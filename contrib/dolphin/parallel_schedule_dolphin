@@ -120,8 +120,10 @@ test: json_array_insert json_insert json_merge_patch json_merge_preserve json_re
 
 test: flush
 
-test: oct from_base64 string_func_test/test_substring_index string_func_test/db_b_ord_test
+test: oct string_func_test/db_b_from_base64_test string_func_test/test_substring_index string_func_test/db_b_ord_test
 
 test: db_b_date_time_functions4
 
 test: like_default_test conv_cast_test read_only_guc_test
+
+test: string_func_test/db_b_to_base64_test string_func_test/db_b_unhex_test bit_count test_current_user

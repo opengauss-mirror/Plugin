@@ -1,0 +1,82 @@
+drop database if exists test_bit_count;
+NOTICE:  database "test_bit_count" does not exist, skipping
+create database test_bit_count dbcompatibility 'b';
+\c test_bit_count
+-- 测试数字，字符串，二进制输入
+SELECT bit_count(29);
+ bit_count 
+-----------
+ 4
+(1 row)
+
+SELECT bit_count('29');
+ bit_count 
+-----------
+ 4
+(1 row)
+
+SELECT bit_count(b'101010');
+ bit_count 
+-----------
+ 3
+(1 row)
+
+-- 测试数字越界（超过64无符号数范围）
+select bit_count(18446744073709551614);
+ bit_count 
+-----------
+ 63
+(1 row)
+
+select bit_count(18446744073709551615);
+ bit_count 
+-----------
+ 64
+(1 row)
+
+select bit_count(18446744073709551616);
+ bit_count 
+-----------
+ 64
+(1 row)
+
+-- 测试字符串越界（超过64无符号数范围）
+select bit_count('18446744073709551614');
+ bit_count 
+-----------
+ 63
+(1 row)
+
+select bit_count('18446744073709551615');
+ bit_count 
+-----------
+ 64
+(1 row)
+
+select bit_count('18446744073709551616');
+ bit_count 
+-----------
+ 64
+(1 row)
+
+-- 测试bit越界（超过64位）
+select bit_count(b'111111111111111111111111111111111111111111111111111111111111111');
+ bit_count 
+-----------
+ 63
+(1 row)
+
+select bit_count(b'1111111111111111111111111111111111111111111111111111111111111111');
+ bit_count 
+-----------
+ 64
+(1 row)
+
+select bit_count(b'10000000111111111111111111111111111111111111111111111111111111111111111');
+ bit_count 
+-----------
+ 64
+(1 row)
+
+\c postgres
+drop database test_bit_count;

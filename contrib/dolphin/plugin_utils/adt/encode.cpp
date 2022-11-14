@@ -58,6 +58,16 @@ static text* encode_internal(bytea* data, char* namebuf)
     return result;
 }
 
+PG_FUNCTION_INFO_V1_PUBLIC(base64_encode);
+extern "C" DLL_PUBLIC Datum base64_encode(PG_FUNCTION_ARGS);
+Datum base64_encode(PG_FUNCTION_ARGS)
+{
+    bytea* data = PG_GETARG_BYTEA_P(0);
+    text* result = encode_internal(data, "base64");
+
+    PG_RETURN_TEXT_P(result);
+}
+
 Datum binary_encode(PG_FUNCTION_ARGS)
 {
     bytea* data = PG_GETARG_BYTEA_P(0);
@@ -84,6 +94,10 @@ static bytea* decode_internal(text* data, char* namebuf, bool flag)
         ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("unrecognized encoding: \"%s\"", namebuf)));
 
     resultlen = enc->decode_len(VARDATA(data), datalen);
+    const int evenLength = 2;
+    if (strcmp(namebuf, "hex") == 0 && !flag && datalen % evenLength != 0) {
+        resultlen += 1;
+    }
     result = (bytea*)palloc(VARHDRSZ + resultlen);
 
     res = enc->decode(VARDATA(data), datalen, VARDATA(result), flag);
@@ -117,10 +131,18 @@ Datum base64_decode(PG_FUNCTION_ARGS)
     text* decodeData = PG_GETARG_TEXT_P(0);
     bytea* decodeResult = decode_internal(decodeData, "base64", false);
 
-    bytea* encodeData = decodeResult;
-    text* encodeResult = encode_internal(encodeData, "escape");
+    PG_RETURN_TEXT_P(decodeResult);
+}
 
-    PG_RETURN_TEXT_P(encodeResult);
+PG_FUNCTION_INFO_V1_PUBLIC(unhex);
+extern "C" DLL_PUBLIC Datum unhex(PG_FUNCTION_ARGS);
+
+Datum unhex(PG_FUNCTION_ARGS)
+{
+    text* decodeData = PG_GETARG_TEXT_P(0);
+    bytea* decodeResult = decode_internal(decodeData, "hex", false);
+    
+    PG_RETURN_TEXT_P(decodeResult);
 }
 #endif
 
@@ -273,20 +295,26 @@ unsigned hex_encode(const char* src, unsigned len, char* dst)
     return len * 2;
 }
 
-static inline char get_hex(char c)
+#ifdef DOLPHIN
+static inline char get_hex(char c, bool flag, bool& isValid)
 {
     int res = -1;
 
     if (c > 0 && c < 127)
         res = hexlookup[(unsigned char)c];
 
-    if (res < 0)
-        ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("invalid hexadecimal digit: \"%c\"", c)));
+    if (res < 0) {
+        if (flag)
+            ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("invalid hexadecimal digit: \"%c\"", c)));
+        else {
+            isValid = false;
+            return 0;
+        }
+    }
 
     return (char)res;
 }
 
-#ifdef DOLPHIN
 unsigned hex_decode(const char* src, unsigned len, char* dst, bool flag)
 {
     const char *s = NULL, *srcend;
@@ -300,12 +328,36 @@ unsigned hex_decode(const char* src, unsigned len, char* dst, bool flag)
             s++;
             continue;
         }
-        v1 = get_hex(*s++) << 4;
-        if (s >= srcend)
-            ereport(ERROR,
-                (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("invalid hexadecimal data: odd number of digits")));
+        bool isValid = true;
+        const int shiftLeft = 4;
+        v1 = get_hex(*s++, flag, isValid) << shiftLeft;
+        if (!isValid) {
+            *dst = 0;
+            return 0;
+        }
+        if (s >= srcend) {
+            if (flag)
+                ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("invalid hexadecimal data: odd number of digits")));
+            else {
+                char* newSrc = (char*)palloc(len + 2);
+                char* tempSrc = newSrc;
+                const char* oldSrc = src;
+                *tempSrc = '0';
+                tempSrc++;
+                while (oldSrc < srcend) {
+                    *tempSrc = *oldSrc;
+                    tempSrc++;
+                    oldSrc++;
+                }
+                return hex_decode(newSrc, len + 1, dst, flag);
+            }
+        }
 
-        v2 = get_hex(*s++);
+        v2 = get_hex(*s++, flag, isValid);
+        if (!isValid) {
+            *dst = 0;
+            return 0;
+        }
         *p++ = v1 | v2;
     }
 
