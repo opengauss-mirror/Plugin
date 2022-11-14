@@ -68,6 +68,27 @@ typedef struct BSqlPluginContext {
     bool scan_from_pl;
     char* default_database_name;
     int paramIdx;
+#ifdef DOLPHIN
+    char* version_comment;
+    int auto_increment_increment;
+    char* character_set_client;
+    char* character_set_connection;
+    char* character_set_results;
+    char* character_set_server;
+    char* collation_server;
+    char* collation_connection;
+    char* init_connect;
+    int interactive_timeout;
+    char* license;
+    int max_allowed_packet;
+    int net_buffer_length;
+    int net_write_timeout;
+    long int query_cache_size;
+    int query_cache_type;
+    char* system_time_zone;
+    char* time_zone;
+    int wait_timeout;
+#endif
 } bSqlPluginContext;
 
 BSqlPluginContext* GetSessionContext();
@@ -81,6 +102,30 @@ BSqlPluginContext* GetSessionContext();
 #ifdef DOLPHIN
 #define DEFAULT_GUC_WEEK_FORMAT 0
 #define MAX_GUC_WEEK_FORMAT 7
+#define DEFAULT_AUTO_INCREMENT 1
+#define MIN_AUTO_INCREMENT 1
+#define MAX_AUTO_INCREMENT 65535
+#define DEFAULT_INTERACTIVE_TIMEOUT 28800
+#define MIN_INTERACTIVE_TIMEOUT 1
+#define MAX_INTERACTIVE_TIMEOUT 31536000
+#define DEFAULT_MAX_ALLOWED_PACKET 4194304
+#define MIN_MAX_ALLOWED_PACKET 1024
+#define MAX_MAX_ALLOWED_PACKET 1073741824
+#define DEFAULT_NET_BUFFER_LENGTH 16384
+#define MIN_NET_BUFFER_LENGTH 1024
+#define MAX_NET_BUFFER_LENGTH 1048576
+#define DEFAULT_NET_WRITE_TIMEOUT 60
+#define MIN_NET_WRITE_TIMEOUT 1
+#define MAX_NET_WRITE_TIMEOUT 31536000
+#define DEFAULT_QUREY_CACHE_SIZE 1048576
+#define MIN_QUREY_CACHE_SIZE 0
+#define MAX_QUREY_CACHE_SIZE LONG_MAX
+#define QUERY_CACHE_OFF 0
+#define QUERY_CACHE_ON 1
+#define QUERY_CACHE_DEMAND 2
+#define DEFAULT_WAIT_TIMEOUT 28800
+#define MIN_WAIT_TIMEOUT 1
+#define MAX_WAIT_TIMEOUT 31536000
 #endif
 
 typedef enum {
