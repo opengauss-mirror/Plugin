@@ -48,6 +48,7 @@
 #include "vectorsonic/vsonichashagg.h"
 #ifdef DOLPHIN
 #include "plugin_commands/mysqlmode.h"
+#define NEG_PG_UINT64_MAX -18446744073709551615
 
 #ifndef CRCMASK
 #define CRCMASK 0xEDB88320
@@ -19619,7 +19620,7 @@ int conv_n(char *result, int128 data, int from_base_s, int to_base_s)
     if (from_base_s > 0) {
         if (data > PG_UINT64_MAX) {
             data = PG_UINT64_MAX;
-        } else if (data < PG_INT64_MIN) {
+        } else if (data < NEG_PG_UINT64_MAX) {
             data = PG_UINT64_MAX;
         }
     } else {
@@ -19706,11 +19707,7 @@ static int str_to_int64(char *str, int len, int128 *result, int *from_base_s)
     }
 
     if (str[0] == '-') {
-        if (*from_base_s > 0) {
-            sum_128 = PG_UINT64_MAX - sum_128 + 1;
-        } else {
             sum_128 *= -1;
-        }
     }
 
     if (*from_base_s > 0) {
@@ -19773,22 +19770,6 @@ int128 conv_numeric_int16(Numeric num)
     return result;
 }
 
-Datum conv_num(PG_FUNCTION_ARGS)
-{
-    Numeric value = PG_GETARG_NUMERIC(0);
-    int128 num = conv_numeric_int16(value);
-    int from_base = PG_GETARG_INT32(1);
-    int to_base = PG_GETARG_INT32(2);
-    char result[CONV_MAX_CHAR_LEN + 1] = "";
-    int ret;
-
-    ret = conv_n(result, num, from_base, to_base);
-    if (ret != 0) {
-        PG_RETURN_NULL();
-    }
-    PG_RETURN_TEXT_P(cstring_to_text(result));
-}
-
 int128 conv_numeric_int128(Numeric num)
 {
     int128 result = 0;
@@ -19812,6 +19793,22 @@ int128 conv_numeric_int128(Numeric num)
         result = PG_INT128_MAX;
 
     return result;
+}
+
+Datum conv_num(PG_FUNCTION_ARGS)
+{
+    Numeric value = PG_GETARG_NUMERIC(0);
+    int128 num = conv_numeric_int128(value);
+    int from_base = PG_GETARG_INT32(1);
+    int to_base = PG_GETARG_INT32(2);
+    char result[CONV_MAX_CHAR_LEN + 1] = "";
+    int ret;
+
+    ret = conv_n(result, num, from_base, to_base);
+    if (ret != 0) {
+        PG_RETURN_NULL();
+    }
+    PG_RETURN_TEXT_P(cstring_to_text(result));
 }
 
 Datum bin_bit(PG_FUNCTION_ARGS)

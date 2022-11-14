@@ -124,4 +124,4 @@ test: oct from_base64 string_func_test/test_substring_index string_func_test/db_
 
 test: db_b_date_time_functions4
 
-test: like_default_test read_only_guc_test
+test: like_default_test conv_cast_test read_only_guc_test
