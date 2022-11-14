@@ -4879,6 +4879,33 @@ void lldiv_decode_tm(Numeric num, lldiv_t *div, struct pg_tm *tm, unsigned int d
     return;
 }
 
+bool lldiv_decode_tm_with_sql_mode(Numeric num, lldiv_t *div, struct pg_tm *tm, unsigned int date_flag)
+{
+    bool ret = true;
+    int code;
+    const char *msg = NULL;
+    PG_TRY();
+    {
+        lldiv_decode_tm(num, div, tm, date_flag);
+    }
+    PG_CATCH();
+    {
+        ret = false;
+        if (SQL_MODE_STRICT()) {
+            PG_RE_THROW();
+        } else {
+            code = geterrcode();
+            msg = pstrdup(Geterrmsg());
+            FlushErrorState();
+        }
+    }
+    PG_END_TRY();
+    if (msg) {
+        ereport(WARNING, (errcode(code), errmsg("%s", msg)));
+    }
+    return ret;
+}
+
 /* Calc days in one year. works with 0 <= year <= 99 */
 unsigned int calc_days_in_year(int year)
 {

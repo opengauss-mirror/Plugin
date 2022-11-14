@@ -43,6 +43,7 @@ extern bool numeric_to_lldiv_t(NumericVar *from, lldiv_t *to);
 
 #ifdef DOLPHIN
 extern void lldiv_decode_tm(Numeric num, lldiv_t *div, struct pg_tm *tm, unsigned int date_flag);
+extern bool lldiv_decode_tm_with_sql_mode(Numeric num, lldiv_t *div, struct pg_tm *tm, unsigned int date_flag);
 extern void NumericVar2lldiv(NumericVar *from, lldiv_t *to);
 
 extern unsigned long long pow_of_10[20];

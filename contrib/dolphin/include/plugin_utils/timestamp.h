@@ -99,10 +99,8 @@ extern bool datetime_sub_days(Timestamp datetime, int days, Timestamp *result);
 extern bool datetime_sub_interval(Timestamp datetime, Interval *span, Timestamp *result);
 
 #ifdef DOLPHIN
-extern void datetime_in_with_flag(const char *str, struct pg_tm *tm, fsec_t *fsec, unsigned int date_flag);
 extern void datetime_in_with_flag_internal(const char *str, struct pg_tm *tm, fsec_t* fsec, unsigned int date_flag);
 extern bool MaybeRound(struct pg_tm *tm, fsec_t *fsec);
-extern bool datetime_in_range(Timestamp datetime);
 extern bool datetime_add_interval(Timestamp datetime, Interval *span, Timestamp *result);
 extern void convert_to_datetime(Datum value, Oid valuetypid, Timestamp *datetime);
 extern int64 b_db_weekmode(int64 mode);

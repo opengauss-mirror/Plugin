@@ -3981,7 +3981,7 @@ Datum time_bool(PG_FUNCTION_ARGS)
 TimeADT time_in_with_flag(char *str, unsigned int date_flag)
 {
     TimeADT result;
-    fsec_t fsec;
+    fsec_t fsec = 0;
     struct pg_tm tt, *tm = &tt;
     int tz;
     int nf;
@@ -3992,6 +3992,8 @@ TimeADT time_in_with_flag(char *str, unsigned int date_flag)
     int ftype[MAXDATEFIELDS];
     int timeSign = 1;
     int D = 0;
+    errno_t rc = memset_s(&tt, sizeof(tt), 0, sizeof(tt));
+    securec_check(rc, "\0", "\0");
     /* check if empty */
     if (strlen(str) == 0) {
         PG_RETURN_TIMEADT(0);
@@ -4034,14 +4036,15 @@ TimeADT time_in_with_flag(char *str, unsigned int date_flag)
 Datum time_to_sec(PG_FUNCTION_ARGS)
 {
     TimeADT time;
-    text *raw_text = PG_GETARG_TEXT_PP(0);
+    char *time_str = text_to_cstring(PG_GETARG_TEXT_PP(0));
     struct pg_tm result_tt, *result_tm = &result_tt;
     fsec_t fsec;
     int32 result;
     int32 timeSign = 1;
 
-    char *time_str = text_to_cstring(raw_text);
-    time = time_in_with_flag(time_str, (ENABLE_ZERO_DAY | ENABLE_ZERO_MONTH));
+    if (!time_in_with_sql_mode(time_str, &time, (ENABLE_ZERO_DAY | ENABLE_ZERO_MONTH))) {
+        PG_RETURN_NULL();
+    }
     if (time < 0) {
         timeSign = -1;
         time = -time;
@@ -4054,20 +4057,20 @@ Datum time_to_sec(PG_FUNCTION_ARGS)
 
 Datum datediff(PG_FUNCTION_ARGS)
 {
-    text* expr1 = PG_GETARG_TEXT_PP(0);
-    text* expr2 = PG_GETARG_TEXT_PP(1);
-    char *str1 = text_to_cstring(expr1);
-    char *str2 = text_to_cstring(expr2);
+    char *str1 = text_to_cstring(PG_GETARG_TEXT_PP(0));
+    char *str2 = text_to_cstring(PG_GETARG_TEXT_PP(1));
 
-    Timestamp datetime1, datetime2;
+    struct pg_tm tt1, *tm1 = &tt1;
+    struct pg_tm tt2, *tm2 = &tt2;
+    fsec_t fsec1, fsec2;
     DateADT dt1, dt2;
 
-    if (!datetime_in_no_ereport(str1, &datetime1) || !datetime_in_no_ereport(str2, &datetime2) || 
-        !datetime_in_range(datetime1) || !datetime_in_range(datetime2)) {
+    if (!datetime_in_with_sql_mode(str1, tm1, &fsec1, NORMAL_DATE) || 
+        !datetime_in_with_sql_mode(str2, tm2, &fsec2, NORMAL_DATE)) {
         PG_RETURN_NULL();
     }
-    dt1 = DatumGetDateADT(timestamp2date(datetime1));
-    dt2 = DatumGetDateADT(timestamp2date(datetime2));
+    dt1 = date2j(tm1->tm_year, tm1->tm_mon, tm1->tm_mday);
+    dt2 = date2j(tm2->tm_year, tm2->tm_mon, tm2->tm_mday);
     PG_RETURN_INT32(dt1 - dt2);
 }
 
@@ -4089,18 +4092,25 @@ static inline void from_days_internal(int64 days, Datum *result)
 
 Datum from_days_text(PG_FUNCTION_ARGS)
 {
+    int errlevel = (SQL_MODE_STRICT() ? ERROR : WARNING);
     text* expr = PG_GETARG_TEXT_PP(0);
     const char *str = text_to_cstring(expr);
     char* endptr = NULL;
     errno = 0;
     int64 days;
     Datum result;
+    const char *str_end = str + strlen(str);
     double tmp = strtod(str, &endptr);
     if (endptr == str || errno == ERANGE) {
         /* Supposing that we get a "0". LONG_LONG_MAX or LONG_LONG_MIN has the same result —— '0000-00-00'. */
         days = 0;
     } else {
         days = llround(tmp);
+    }
+
+    if (endptr != str_end) {
+        ereport(errlevel,
+            (errcode(DTERR_BAD_FORMAT), errmsg("Truncated incorrect INTEGER value: \"%s\"", str)));
     }
     from_days_internal(days, &result);
     PG_RETURN_DATUM(result);
@@ -4111,17 +4121,8 @@ Datum from_days_numeric(PG_FUNCTION_ARGS)
     Numeric num = PG_GETARG_NUMERIC(0);
     Datum result;
     int64 days;
-    PG_TRY();
-    {
-        days = (int64)DirectFunctionCall1(numeric_int8, NumericGetDatum(num));
-    }
-    PG_CATCH();
-    {
-        // If catch an error, just empty the error stack and set days to LONG_LONG_MAX
-        FlushErrorState();
-        days = LONG_LONG_MAX;   // supposing overflow
-    }
-    PG_END_TRY();
+    /* Days will be set to boundary value of INT64 if !SQL_MODE_STRICT(). */
+    days = (int64)DirectFunctionCall1(numeric_int8, NumericGetDatum(num));
     from_days_internal(days, &result);
     PG_RETURN_DATUM(result);
 }
@@ -4143,28 +4144,36 @@ bool date_add_interval(DateADT date, Interval *span, DateADT *result)
 */
 Datum adddate_datetime_days_text(PG_FUNCTION_ARGS)
 {
+    int errlevel = (SQL_MODE_STRICT() ? ERROR : WARNING);
     text* tmp = PG_GETARG_TEXT_PP(0);
     int64 days = PG_GETARG_INT64(1);
     char *expr;
+    struct pg_tm tt, *tm = &tt;
+    fsec_t fsec;
 
     expr = text_to_cstring(tmp);
     if (is_date_format(expr)) {
         DateADT date, result;
-        date = DatumGetDateADT(DirectFunctionCall1(date_in, CStringGetDatum(expr)));
+        if (!datetime_in_with_sql_mode(expr, tm, &fsec, NORMAL_DATE)) {
+            PG_RETURN_NULL();
+        }
+        date = date2j(tm->tm_year, tm->tm_mon, tm->tm_mday) - POSTGRES_EPOCH_JDATE;
         if (date_sub_days(date, -days, &result)) {
             /* The variable datetime or result does not exceed the specified range*/
             return DirectFunctionCall1(date_text, result);
         }
     } else {
         Timestamp datetime, result;
-        datetime = DatumGetTimestamp(
-            DirectFunctionCall3(timestamp_in, CStringGetDatum(expr), ObjectIdGetDatum(InvalidOid), Int32GetDatum(-1)));
+        if (!datetime_in_with_sql_mode(expr, tm, &fsec, NORMAL_DATE)) {
+            PG_RETURN_NULL();
+        }
+        tm2timestamp(tm, fsec, NULL, &datetime);
         if (datetime_sub_days(datetime, -days, &result)) {
             /* The variable datetime or result does not exceed the specified range*/
             return DirectFunctionCall1(datetime_text, result);
         }
     }
-    ereport(ERROR,
+    ereport(errlevel,
         (errcode(ERRCODE_DATETIME_FIELD_OVERFLOW),
             errmsg("date/time field value out of range")));
     PG_RETURN_NULL();
@@ -4175,25 +4184,33 @@ Datum adddate_datetime_days_text(PG_FUNCTION_ARGS)
 */
 Datum adddate_datetime_interval_text(PG_FUNCTION_ARGS)
 {
+    int errlevel = (SQL_MODE_STRICT() ? ERROR : WARNING);
     text* tmp = PG_GETARG_TEXT_PP(0);
     Interval *span = PG_GETARG_INTERVAL_P(1);
     char *expr;
+    struct pg_tm tt, *tm = &tt;
+    fsec_t fsec;
 
     expr = text_to_cstring(tmp);
     if (is_date_format(expr) && span->time == 0) {
         DateADT date, result;
-        date = DatumGetDateADT(DirectFunctionCall1(date_in, CStringGetDatum(expr)));
+        if (!datetime_in_with_sql_mode(expr, tm, &fsec, NORMAL_DATE)) {
+            PG_RETURN_NULL();
+        }
+        date = date2j(tm->tm_year, tm->tm_mon, tm->tm_mday) - POSTGRES_EPOCH_JDATE;
         if (date_add_interval(date, span, &result))
             return DirectFunctionCall1(date_text, result);
     } else {
         Timestamp datetime, result;
-        datetime = DatumGetTimestamp(
-            DirectFunctionCall3(timestamp_in, CStringGetDatum(expr), ObjectIdGetDatum(InvalidOid), Int32GetDatum(-1)));
+        if (!datetime_in_with_sql_mode(expr, tm, &fsec, NORMAL_DATE)) {
+            PG_RETURN_NULL();
+        }
+        tm2timestamp(tm, fsec, NULL, &datetime);
         if (datetime_add_interval(datetime, span, &result))
             /* The variable datetime or result does not exceed the specified range*/
             return DirectFunctionCall1(datetime_text, result);
     }
-    ereport(ERROR,
+    ereport(errlevel,
             (errcode(ERRCODE_DATETIME_FIELD_OVERFLOW),
                 errmsg("date/time field value out of range")));
     PG_RETURN_NULL();
@@ -4204,6 +4221,7 @@ Datum adddate_datetime_interval_text(PG_FUNCTION_ARGS)
 */
 Datum adddate_time_days(PG_FUNCTION_ARGS)
 {
+    int errlevel = (SQL_MODE_STRICT() ? ERROR : WARNING);
     TimeADT time = PG_GETARG_TIMEADT(0);
     int64 days = PG_GETARG_INT64(1);
     TimeADT time2;
@@ -4217,7 +4235,7 @@ Datum adddate_time_days(PG_FUNCTION_ARGS)
     if (time >= -B_FORMAT_TIME_MAX_VALUE && time <= B_FORMAT_TIME_MAX_VALUE) {
         PG_RETURN_TIMEADT(time);
     }
-    ereport(ERROR,
+    ereport(errlevel,
             (errcode(ERRCODE_DATETIME_FIELD_OVERFLOW),
              errmsg("time field value out of range")));
     PG_RETURN_NULL();
@@ -4228,11 +4246,12 @@ Datum adddate_time_days(PG_FUNCTION_ARGS)
 */
 Datum adddate_time_interval(PG_FUNCTION_ARGS)
 {
+    int errlevel = (SQL_MODE_STRICT() ? ERROR : WARNING);
     TimeADT time = PG_GETARG_TIMEADT(0);
     Interval *span = PG_GETARG_INTERVAL_P(1);
     TimeADT time2 = span->time;
     if (span->month != 0) {
-        ereport(ERROR,
+        ereport(errlevel,
                 (errcode(ERRCODE_DATETIME_FIELD_OVERFLOW),
                  errmsg("time field value out of range")));
         PG_RETURN_NULL();
@@ -4246,7 +4265,7 @@ Datum adddate_time_interval(PG_FUNCTION_ARGS)
     if (time >= -B_FORMAT_TIME_MAX_VALUE && time <= B_FORMAT_TIME_MAX_VALUE) {
         PG_RETURN_TIMEADT(time);
     }
-    ereport(ERROR,
+    ereport(errlevel,
             (errcode(ERRCODE_DATETIME_FIELD_OVERFLOW),
              errmsg("time field value out of range")));
     PG_RETURN_NULL();
