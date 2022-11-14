@@ -56,7 +56,7 @@ OBJS += $(optimizer)/streamwalker.o
 
 OBJS += $(commands)/functioncmds.o $(commands)/foreigncmds.o $(commands)/copy.o
 
-OBJS += $(pl)/pl_gram.o $(pl)/pl_scanner.o
+OBJS += $(pl)/pl_gram.o $(pl)/pl_scanner.o $(pl)/pl_comp.o $(pl)/pl_handler.o
 
 all $(OBJS): protocol parser utils executor vector commands storage optimizer pl;
 
@@ -123,6 +123,11 @@ ifdef MJDBC_TEST
 endif
 
 REGRESS_OPTS = --dlpath=$(top_builddir)/src/test/regress -c 0 -d 1 --single_node -p ${p} --schedule=./parallel_schedule_dolphin --regconf=regress.conf -r 1 -n --keep_last_data=false --temp-config=./make_check_postgresql.conf
+export dp = $(shell expr $(p) + 3)
+
+plugin_check:
+	sed -i 's/dolphin\.port=.*/dolphin\.port=${dp}/g' ./make_check_postgresql.conf
+	make check
 
 include $(top_builddir)/$(base_dir)/configure.mk
 ifdef USE_PGXS

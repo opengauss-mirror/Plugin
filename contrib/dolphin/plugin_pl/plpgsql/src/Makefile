@@ -15,7 +15,7 @@ include $(top_builddir)/$(base_dir)/configure.mk
 # Shared library parameters
 #NAME= plpgsql
 
-override CPPFLAGS := -I. -I$(srcdir) $(CPPFLAGS)
+override CPPFLAGS := -I. -I$(srcdir) -I$(top_builddir)/src/common/pl/plpgsql/src $(CPPFLAGS)
 SHLIB_LINK = $(filter -lintl, $(LIBS))
 
 ifneq "$(MAKECMDGOALS)" "clean"
@@ -25,7 +25,7 @@ ifneq "$(MAKECMDGOALS)" "clean"
     endif
   endif
 endif
-OBJS = pl_gram.o pl_scanner.o
+OBJS = pl_gram.o pl_scanner.o pl_comp.o pl_handler.o
 
 FLEXFLAGS = -CF -b -p -p
 
