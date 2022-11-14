@@ -26,6 +26,7 @@
 #include "plugin_parser/gramparse.h"
 #include "plugin_parser/parser.h"
 
+#define ASCII_COMMA 44
 #define ASCII_DOT 46
 #define ASCII_SEMICOLON 59
 
@@ -155,6 +156,11 @@ List* raw_parser(const char* str, List** query_string_locationlist)
 static inline bool IsDescStmtSymbol(int token)
 {
     return (token == ASCII_DOT || token == ASCII_SEMICOLON);
+}
+
+static inline bool IsDescribeStmt(char *scanbuf) 
+{
+    return(scanbuf && (!pg_strcasecmp(scanbuf, "desc") || !pg_strcasecmp(scanbuf, "describe")));
 }
 
 /*
@@ -582,12 +588,14 @@ int base_yylex(YYSTYPE* lvalp, YYLTYPE* llocp, core_yyscan_t yyscanner)
             break;
         case DESC:
         case DESCRIBE:
-            READ_TWO_TOKEN();
-            if (!IsDescStmtSymbol(next_token)) {
-                cur_token = EXPLAIN;
+            if (IsDescribeStmt(yyextra->core_yy_extra.scanbuf)) {
+                READ_TWO_TOKEN();
+                if (!IsDescStmtSymbol(next_token)) {
+                    cur_token = EXPLAIN;
+                }
+                lvalp->core_yystype = cur_yylval;
+                *llocp = cur_yylloc;
             }
-            lvalp->core_yystype = cur_yylval;
-            *llocp = cur_yylloc;
             break;
         default:
             break;
