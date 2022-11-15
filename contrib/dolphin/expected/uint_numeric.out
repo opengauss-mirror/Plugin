@@ -147,7 +147,7 @@ select 65535::float4::uint2;
 (1 row)
 
 select 4294967295::float4::uint4;
-ERROR:  integer unsigned out of range
+ERROR:  int unsigned out of range
 CONTEXT:  referenced column: uint4
 select 18446744073709551615::float4::uint8;
 ERROR:  bigint unsigned out of range
@@ -159,7 +159,7 @@ select 65536::float4::uint2;
 ERROR:  smallint unsigned out of range
 CONTEXT:  referenced column: uint2
 select 4294967296::float4::uint4;
-ERROR:  integer unsigned out of range
+ERROR:  int unsigned out of range
 CONTEXT:  referenced column: uint4
 select 18446744073709551616::float4::uint8;
 ERROR:  bigint unsigned out of range
@@ -240,7 +240,7 @@ select 65536::float8::uint2;
 ERROR:  smallint unsigned out of range
 CONTEXT:  referenced column: uint2
 select 4294967296::float8::uint4;
-ERROR:  integer unsigned out of range
+ERROR:  int unsigned out of range
 CONTEXT:  referenced column: uint4
 select 18446744073709551616::float8::uint8;
 ERROR:  bigint unsigned out of range
@@ -270,10 +270,10 @@ insert into t2 values((-1)::numeric);
 ERROR:  smallint unsigned out of range
 CONTEXT:  referenced column: a
 insert into t3 values((-1)::float4);
-ERROR:  integer unsigned out of range
+ERROR:  int unsigned out of range
 CONTEXT:  referenced column: a
 insert into t3 values((-1)::float8);
-ERROR:  integer unsigned out of range
+ERROR:  int unsigned out of range
 CONTEXT:  referenced column: a
 insert into t3 values((-1)::numeric);
 ERROR:  unsigned int out of range
@@ -306,10 +306,10 @@ insert into t2 select c from num;
 ERROR:  smallint unsigned out of range
 CONTEXT:  referenced column: a
 insert into t3 select a from num;
-ERROR:  integer unsigned out of range
+ERROR:  int unsigned out of range
 CONTEXT:  referenced column: a
 insert into t3 select b from num;
-ERROR:  integer unsigned out of range
+ERROR:  int unsigned out of range
 CONTEXT:  referenced column: a
 insert into t3 select c from num;
 ERROR:  unsigned int out of range

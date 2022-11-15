@@ -70,7 +70,7 @@ CONTEXT:  referenced column: a
 insert into t1 values(1::int1);
 insert into t1 values(0::int1);
 insert into t1 values((-1)::int1);
-ERROR:  int unsigned out of range
+ERROR:  bigint unsigned out of range
 CONTEXT:  referenced column: a
 insert into t1 values(127::int1);
 insert into t1 values(256::int1);
@@ -81,7 +81,7 @@ insert into t1 values(0::uint4);
 insert into t1 values((-1)::uint4);
 insert into t1 values(4294967295::uint4);
 insert into t1 values(4294967296::uint4);
-ERROR:  unsigned int out of range
+ERROR:   int unsigned out of range
 CONTEXT:  referenced column: a
 insert into t1 values(1::uint2);
 insert into t1 values(0::uint2);
@@ -110,22 +110,22 @@ insert into t1 values((-1)::bool);
 insert into t1 values(1.0::float4);
 insert into t1 values(0.0::float4);
 insert into t1 values((-1.0)::float4);
-ERROR:  integer unsigned out of range
+ERROR:  int unsigned out of range
 CONTEXT:  referenced column: a
 insert into t1 values(4294967295::float4);
-ERROR:  integer unsigned out of range
+ERROR:  int unsigned out of range
 CONTEXT:  referenced column: a
 insert into t1 values(4294967296::float4);
-ERROR:  integer unsigned out of range
+ERROR:  int unsigned out of range
 CONTEXT:  referenced column: a
 insert into t1 values(1.0::float8);
 insert into t1 values(0.0::float8);
 insert into t1 values((-1.0)::float8);
-ERROR:  integer unsigned out of range
+ERROR:  int unsigned out of range
 CONTEXT:  referenced column: a
 insert into t1 values(4294967295::float8);
 insert into t1 values(4294967296::float8);
-ERROR:  integer unsigned out of range
+ERROR:  int unsigned out of range
 CONTEXT:  referenced column: a
 insert into t1 values(1::numeric);
 insert into t1 values(0::numeric);
@@ -310,7 +310,7 @@ insert into t1 values(4294967295::uint4);
 ERROR:  smallint unsigned out of range
 CONTEXT:  referenced column: a
 insert into t1 values(4294967296::uint4);
-ERROR:  unsigned int out of range
+ERROR:   int unsigned out of range
 CONTEXT:  referenced column: a
 insert into t1 values(65535::uint4);
 insert into t1 values(65536::uint4);
@@ -408,7 +408,7 @@ CONTEXT:  referenced column: a
 insert into t1 values(1::int1);
 insert into t1 values(0::int1);
 insert into t1 values((-1)::int1);
-ERROR:  smallint unsigned out of range
+ERROR:  tinyint unsigned out of range
 CONTEXT:  referenced column: a
 insert into t1 values(127::int1);
 insert into t1 values(256::int1);
@@ -438,7 +438,7 @@ insert into t1 values(4294967295::uint4);
 ERROR:  tinyint unsigned out of range
 CONTEXT:  referenced column: a
 insert into t1 values(4294967296::uint4);
-ERROR:  unsigned int out of range
+ERROR:   int unsigned out of range
 CONTEXT:  referenced column: a
 insert into t1 values(255::uint4);
 insert into t1 values(256::uint4);
