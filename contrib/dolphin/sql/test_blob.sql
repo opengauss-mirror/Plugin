@@ -32,6 +32,29 @@ insert into test_long select l from test_template;
 create table test_template2 (t tinyblob, b blob, m mediumblob, l longblob);
 \COPY test_template2 from './test_template.data';
 
+truncate test_tiny;
+truncate test_blob;
+truncate test_medium;
+truncate test_long;
+
+insert into test_tiny values('ppp');
+insert into test_blob values('ppp');
+insert into test_medium values('ppp');
+insert into test_long values('ppp');
+
+set b_compatibility_mode = true;
+set bytea_output = 'escape';
+
+insert into test_blob values('ppp');
+
+select * from test_tiny;
+select * from test_blob;
+select * from test_medium;
+select * from test_long;
+
+set b_compatibility_mode = false;
+select * from test_blob;
+
 drop table test_template;
 drop table test_template2;
 drop table test_tiny;

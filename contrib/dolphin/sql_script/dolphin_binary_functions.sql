@@ -162,7 +162,7 @@ DROP FUNCTION IF EXISTS pg_catalog.tinyblob_rawout(tinyblob) CASCADE;
 
 CREATE FUNCTION pg_catalog.tinyblob_rawout (
 tinyblob
-) RETURNS cstring LANGUAGE INTERNAL IMMUTABLE STRICT as 'rawout';
+) RETURNS cstring LANGUAGE INTERNAL IMMUTABLE STRICT as 'byteaout';
 
 DROP FUNCTION IF EXISTS pg_catalog.tinyblob_recv(internal) CASCADE;
 
@@ -195,7 +195,7 @@ DROP FUNCTION IF EXISTS pg_catalog.mediumblob_rawout(mediumblob) CASCADE;
 
 CREATE FUNCTION pg_catalog.mediumblob_rawout (
 mediumblob
-) RETURNS cstring LANGUAGE INTERNAL IMMUTABLE STRICT as 'rawout';
+) RETURNS cstring LANGUAGE INTERNAL IMMUTABLE STRICT as 'byteaout';
 
 DROP FUNCTION IF EXISTS pg_catalog.mediumblob_recv(internal) CASCADE;
 
@@ -227,7 +227,7 @@ DROP FUNCTION IF EXISTS pg_catalog.longblob_rawout(longblob) CASCADE;
 
 CREATE FUNCTION pg_catalog.longblob_rawout (
 longblob
-) RETURNS cstring LANGUAGE INTERNAL IMMUTABLE STRICT as 'rawout';
+) RETURNS cstring LANGUAGE INTERNAL IMMUTABLE STRICT as 'byteaout';
 
 DROP FUNCTION IF EXISTS pg_catalog.longblob_recv(internal) CASCADE;
 
