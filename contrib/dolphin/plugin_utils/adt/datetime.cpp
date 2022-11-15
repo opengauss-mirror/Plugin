@@ -566,7 +566,7 @@ static int SpecialFractionalSecond(char* cp, fsec_t* fsec, unsigned int fmask)
         if (field_length > 0) {
             value *= pow_of_10[field_length];
         } else {
-            if ((fmask & DTK_DATE_M) < DTK_DATE_M) {
+            if ((fmask & DTK_DATE_M) != DTK_DATE_M) {
                 while (isdigit(*(cp + 1))) {
                     ++cp;
                 }
