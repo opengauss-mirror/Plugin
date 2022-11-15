@@ -1,0 +1,105 @@
+drop database if exists unhex_test;
+NOTICE:  database "unhex_test" does not exist, skipping
+create database unhex_test dbcompatibility 'b';
+\c unhex_test
+--测试字符串作为输入，返回十六进制编码的编码结果
+SELECT UNHEX('6f70656e4761757373');
+   unhex   
+-----------
+ openGauss
+(1 row)
+
+SELECT UNHEX(HEX('string'));
+ unhex  
+--------
+ string
+(1 row)
+
+SELECT HEX(UNHEX('1267'));
+ hex  
+------
+ 1267
+(1 row)
+
+SELECT UNHEX(HEX('测试'));
+ unhex 
+-------
+ 测试
+(1 row)
+
+--测试非十六进制符号和二进制类型作为输入，返回NULL
+SELECT UNHEX('GG');
+ unhex 
+-------
+ 
+(1 row)
+
+SELECT UNHEX('4142'::bytea);
+ unhex 
+-------
+ 
+(1 row)
+
+--测试十六进制串字符数为奇数的情况，在高位补0后返回解码结果
+SELECT UNHEX('941424344');
+    unhex     
+--------------
+         ABCD
+(1 row)
+
+SELECT UNHEX('0941424344');
+    unhex     
+--------------
+         ABCD
+(1 row)
+
+--测试numeric作为输入，返回十六进制编码的编码结果，这里是的数字是十六进制编码，若想将十六进制数转为十进制数，需使用其它函数
+SELECT UNHEX('41424344454647484950515253545556575859');
+        unhex        
+---------------------
+ ABCDEFGHIPQRSTUVWXY
+(1 row)
+
+SELECT UNHEX(41424344454647484950515253545556575859);
+        unhex        
+---------------------
+ ABCDEFGHIPQRSTUVWXY
+(1 row)
+
+--测试日期类型、bool类型、空值作为输入
+SELECT UNHEX(now());
+ unhex 
+-------
+ 
+(1 row)
+
+SELECT HEX(UNHEX(TRUE));
+ hex 
+-----
+ 01
+(1 row)
+
+SELECT HEX(UNHEX(FALSE));
+ hex 
+-----
+ 00
+(1 row)
+
+SELECT UNHEX(NULL);
+ unhex 
+-------
+ 
+(1 row)
+
+--测试表格类型作为输入
+CREATE TABLE test_unhex (name text);
+INSERT INTO test_unhex values('4142'), ('6f70656e4761757373');
+SELECT UNHEX(name) from test_unhex;
+   unhex   
+-----------
+ AB
+ openGauss
+(2 rows)
+
+\c postgres
+drop database if exists unhex_test;
