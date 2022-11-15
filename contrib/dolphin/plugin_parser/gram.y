@@ -24562,15 +24562,9 @@ table_ref:	relation_expr		%prec UMINUS
 
 					$$ = (Node *) n;
 				}
-			| relation_expr PARTITION '(' name ',' name_list ')'
+			| relation_expr PARTITION '(' name_list ')'
 				{
-					$1->partitionNameList = lcons(makeString($4), $6);
-					$$ = (Node *)$1;
-				}
-			| relation_expr PARTITION '(' name ')'
-				{
-					$1->partitionname = $4;
-					$1->ispartition = true;
+					$1->partitionNameList = $4;
 					$$ = (Node *)$1;
 				}
 			| relation_expr SUBPARTITION '(' name ')'
@@ -24597,17 +24591,10 @@ table_ref:	relation_expr		%prec UMINUS
 					$1->issubpartition = true;
 					$$ = (Node *)$1;
 				}
-			| relation_expr PARTITION '(' name ')' dolphin_alias_clause
+			| relation_expr PARTITION '(' name_list ')' dolphin_alias_clause
 				{
-					$1->partitionname = $4;
 					$1->alias = $6;
-					$1->ispartition = true;
-					$$ = (Node *)$1;
-				}
-			| relation_expr PARTITION '(' name ',' name_list ')' dolphin_alias_clause
-				{
-					$1->alias = $8;
-					$1->partitionNameList = lcons(makeString($4), $6);
+					$1->partitionNameList = $4;
 					$$ = (Node *)$1;
 				}
 			| relation_expr SUBPARTITION '(' name ')' dolphin_alias_clause
