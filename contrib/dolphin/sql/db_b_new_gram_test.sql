@@ -280,6 +280,7 @@ CREATE TABLE t_charset_column(c text(10) CHARSET test_character_set);
 DROP TABLE t_charset_column;
 CREATE TABLE t_charset_enum_column(c ENUM('a', 'b', 'c') CHARSET test_character_set);
 DROP TABLE t_charset_enum_column;
+-- test for alter statement
 CREATE TABLE t_alter_test(c text);
 ALTER TABLE t_alter_test DEFAULT COLLATE = test_collate;
 ALTER TABLE t_alter_test DEFAULT CHARACTER SET = test_charset;
@@ -293,6 +294,16 @@ ALTER TABLE t_alter_test ROW_FORMAT = COMPACT;
 -- mixture and out of order
 ALTER TABLE t_alter_test ROW_FORMAT = COMPACT, COLLATE = test_collate, CHARACTER SET test_charset;
 DROP TABLE t_alter_test;
+-- test for single quote and double quotes input
+CREATE TABLE t_quote_test(c text) ROW_FORMAT = 'test_row_format' COLLATE = 'test_collate' CHARSET = 'test_charset';
+DROP TABLE t_quote_test;
+CREATE TABLE t_quote_test(c text) ROW_FORMAT = "test_row_format" COLLATE = "test_collate" CHARSET = "test_charset";
+DROP TABLE t_quote_test;
+CREATE TABLE t_quote_test(c text CHARSET 'test_charset' COLLATE 'test_collate');
+DROP TABLE t_quote_test;
+CREATE TABLE t_quote_test(c text CHARSET "test_charset" COLLATE "test_collate");
+ALTER TABLE t_quote_test ROW_FORMAT = 'COMPACT', COLLATE = 'test_collate', CHARACTER SET 'test_charset';
+ALTER TABLE t_quote_test ROW_FORMAT = "COMPACT", COLLATE = "test_collate", CHARACTER SET "test_charset";
 -- test for integrity of function text
 SELECT text(10);
 SELECT text(true);

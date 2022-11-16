@@ -694,7 +694,7 @@ static SelectStmt *MakeShowGrantStmt(char *arg, int location, core_yyscan_t yysc
 				opt_include_without_empty opt_c_include index_including_params
 				sort_clause opt_sort_clause sortby_list index_params table_index_elems constraint_params
 				name_list from_clause from_list opt_array_bounds dolphin_name_list
-				qualified_name_list any_name any_name_list dolphin_qualified_name_list dolphin_any_name dolphin_any_name_list
+				qualified_name_list any_name any_name_or_sconst any_name_list dolphin_qualified_name_list dolphin_any_name dolphin_any_name_list
 				any_operator expr_list attrs callfunc_args callfunc_args_or_empty dolphin_attrs rename_user_clause rename_list
 				target_list insert_column_list set_target_list rename_clause_list rename_clause
 				set_clause_list set_clause multiple_set_clause
@@ -5119,7 +5119,7 @@ alter_table_cmd:
 				n->subtype = AT_SetTableCharset;
 				$$ = (Node *) n;
 			}
-			| opt_default COLLATE opt_equal any_name
+			| opt_default COLLATE opt_equal any_name_or_sconst
 			{
 				AlterTableCmd *n = makeNode(AlterTableCmd);
 				n->subtype = AT_SetTableCollate;
@@ -7142,7 +7142,7 @@ CreateAsOption:
 					n->option_type = OPT_ENGINE;
 					$$ = n;
 				}
-			| opt_default COLLATE opt_equal any_name
+			| opt_default COLLATE opt_equal any_name_or_sconst
 				{
 					ereport(WARNING, (errmsg("COLLATE for TABLE is not supported for current version. skipped")));
 					SingleTableOption *n = (SingleTableOption*)palloc0(sizeof(SingleTableOption));
@@ -7166,8 +7166,8 @@ CreateAsOption:
 		;
 
 charset_with_opt_equal:
-		CHARSET opt_equal any_name	{}
-		| CHARACTER SET opt_equal any_name	{}
+		CHARSET opt_equal any_name_or_sconst	{}
+		| CHARACTER SET opt_equal any_name_or_sconst	{}
 		;
 
 CreateStmt:	CREATE OptTemp TABLE dolphin_qualified_name '(' OptTableElementList ')'
@@ -8451,7 +8451,7 @@ ColConstraint:
 				}
 			| ColConstraintElem						{ $$ = $1; }
 			| ConstraintAttr						{ $$ = $1; }
-			| COLLATE any_name
+			| COLLATE any_name_or_sconst
 				{
 					/*
 					 * Note: the CollateClause is momentarily included in
@@ -13801,6 +13801,10 @@ any_name:	ColId						{ $$ = list_make1(makeString($1)); }
 			| ColId attrs				{ $$ = lcons(makeString($1), $2); }
 		;
 
+any_name_or_sconst:
+		any_name					{ $$ = $1; }
+		| Sconst					{ $$ = list_make1(makeString($1)); }
+
 dolphin_any_name:	DolphinColId						{ $$ = list_make1(makeString(GetDolphinObjName($1->str, $1->is_quoted))); }
 			| DolphinColId dolphin_attrs
 			{
@@ -15977,7 +15981,7 @@ index_including_params:	index_elem						{ $$ = list_make1($1); }
 			| index_including_params ',' index_elem		{ $$ = lappend($1, $3); }
 		;
 
-collate_option: opt_default COLLATE opt_equal any_name			{ $$ = $4; }
+collate_option: opt_default COLLATE opt_equal any_name_or_sconst			{ $$ = $4; }
 		;
 
 opt_collate: collate_option							{ $$ = $1; }
@@ -25852,8 +25856,8 @@ opt_charset:
 			| /*EMPTY*/								{ $$ = NULL; }
 		;
 charset_option:
-			CHARACTER SET ColId						{ $$ = $3; }
-			| CHARSET ColId							{ $$ = $2; }
+			CHARACTER SET ColId_or_Sconst					{ $$ = $3; }
+			| CHARSET ColId_or_Sconst					{ $$ = $2; }
 		;
 
 /*
