@@ -2380,11 +2380,11 @@ static int DecodeTime(
         /* opengauss: always assume mm:ss.sss is MINUTE TO SECOND 
          * b database : always assume hh:mm:00.sss 
          */
-        #ifdef DOLPHIN
+#ifdef DOLPHIN
         dterr = SpecialFractionalSecond(cp, fsec, fmask);
-        #else
+#else
         dterr = ParseFractionalSecond(cp, fsec);
-        #endif
+#endif
         if (dterr)
             return dterr;
 #ifdef DOLPHIN
@@ -2403,11 +2403,11 @@ static int DecodeTime(
         if (*cp == '\0')
             *fsec = 0;
         else if (*cp == '.') {
-            #ifdef DOLPHIN
+#ifdef DOLPHIN
             dterr = SpecialFractionalSecond(cp, fsec, fmask);
-            #else
+#else
             dterr = ParseFractionalSecond(cp, fsec);
-            #endif
+#endif
             if (dterr)
                 return dterr;
         } else
