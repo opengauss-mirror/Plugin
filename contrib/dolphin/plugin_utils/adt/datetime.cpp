@@ -4666,10 +4666,14 @@ bool numeric_to_lldiv_t(NumericVar *from, lldiv_t *to)
         to->quot += from->digits[j] * pow_of_10[i * DEC_DIGITS];
     }
 
-    int frac_group = from->dscale / DEC_DIGITS + 1;
+    int frac_group = from->ndigits - frac_start_pos;
     if (from->dscale > 0 && from->weight >= -2) {
         if (frac_group == 1) {
-            to->rem = from->digits[frac_start_pos] * NBASE * pow_of_10[1];
+            if (from->weight == -2) {
+                to->rem = from->digits[frac_start_pos] * pow_of_10[1];
+            } else {
+                to->rem = from->digits[frac_start_pos] * NBASE * pow_of_10[1];
+            }
         } else {
             to->rem = (from->digits[frac_start_pos] * NBASE + from->digits[frac_start_pos + 1]) * pow_of_10[1];
         }
@@ -5240,6 +5244,7 @@ bool cstring_to_datetime(const char* str,  time_flags flags, int &tm_type,
     return true;
 
 ERROR_STRING_DATETIME:
+    tm_type = DTK_ERROR;
     errno_t rc = memset_s(&tm, sizeof(struct pg_tm), 0, sizeof(struct pg_tm));
     securec_check(rc, "\0", "\0");
     return false;

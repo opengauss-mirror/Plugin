@@ -112,6 +112,9 @@ static const time_flags TIME_NO_ZERO_IN_DATE = 16; /* Don't allow partial dates 
 static const time_flags TIME_NO_ZERO_DATE = 32; /* Don't allow 0000-00-00 date */
 static const time_flags TIME_INVALID_DATES = 64; /* Allow 2000-02-31 */
 
+extern bool cstring_to_datetime(const char* str,  time_flags flags, int &tm_type, 
+                        pg_tm *tm, fsec_t &fsec, int &nano);
+extern bool datetime_add_nanoseconds_with_round(pg_tm *tm, fsec_t &fsec, int nano);
 extern bool cstring_to_tm(const char *expr, pg_tm *tm, fsec_t &fsec);
 
 #endif

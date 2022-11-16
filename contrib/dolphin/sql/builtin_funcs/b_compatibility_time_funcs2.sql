@@ -107,12 +107,17 @@ insert into func_test2(functionName, result) values('TIMEDIFF(''2000-13-01 00:00
 insert into func_test2(functionName, result) values('TIMEDIFF(''1-01-1 20:59:59'', ''2001-01-01 21:00'');', TIMEDIFF('1-01-1 20:59:59', '2001-01-01 21:00')   );
 insert into func_test2(functionName, result) values('TIMEDIFF(''10000-1-1 20:59:59'', ''2001-01-01 21:00'')', TIMEDIFF('10000-1-1 20:59:59', '2001-01-01 21:00') );
 insert into func_test2(functionName, result) values('TIMEDIFF(''1000-1-1 20:59:59'', ''1000-01-01 1:00'')', TIMEDIFF('1000-1-1 20:59:59', '1000-01-01 1:00') );
+insert into func_test2(functionName, result) values('TIMEDIFF(''294277-1-9 4:00:54.775807'',''294277-1-9 4:00:54.775806'')', TIMEDIFF('294277-1-9 4:00:54.775807','294277-1-9 4:00:54.775806') );
+
 -- TIMEDIFF ( time, time )
 	-- 正常测试
 insert into func_test2(functionName, result) values('TIMEDIFF(''-37:59:59'', ''-39:59:59'')', TIMEDIFF('-37:59:59', '-39:59:59') );
 insert into func_test2(functionName, result) values('TIMEDIFF(''-37:59:59'', ''39:59:59'')', TIMEDIFF('-37:59:59', '39:59:59') );
 insert into func_test2(functionName, result) values('TIMEDIFF(''37:59:59'', ''-39:59:59'')', TIMEDIFF('37:59:59', '-39:59:59') );
 insert into func_test2(functionName, result) values('TIMEDIFF(''37:59:59'', ''39:59:59'')', TIMEDIFF('37:59:59', '39:59:59') );
+insert into func_test2(functionName, result) values('TIMEDIFF(''23:59:59'', ''01:01:01'')', TIMEDIFF('23:59:59', '01:01:01'));
+insert into func_test2(functionName, result) values('TIMEDIFF(''235959'', ''010101'')', TIMEDIFF('235959', '010101'));
+insert into func_test2(functionName, result) values('TIMEDIFF(235959, 010101)', TIMEDIFF(235959, 010101));
 insert into func_test2(functionName, result) values('TIMEDIFF(''01:00:00.999999'', ''02:00:00.999998'')', TIMEDIFF('01:00:00.999999', '02:00:00.999998'));
 insert into func_test2(functionName, result) values('TIMEDIFF(''24:00:00.999999'', ''02:00:00.999998'')', TIMEDIFF('24:00:00.999999', '02:00:00.999998'));
 insert into func_test2(functionName, result) values('TIMEDIFF(''01:00:00.000000'', ''02:00:00.999999'')', TIMEDIFF('01:00:00.000000', '02:00:00.999999'));
@@ -147,6 +152,9 @@ insert into func_test2(functionName, result) values('subtime(''2000-01-01'', ''2
 insert into func_test2(functionName, result) values('TIMEDIFF(false, true)', TIMEDIFF(false, true) );
 insert into func_test2(functionName, result) values('TIMEDIFF(B''101'', B''101'')', TIMEDIFF(B'101', B'101') );
 insert into func_test2(functionName, result) values('TIMEDIFF(cast(''2000-02-28 20:59:59'' as datetime), cast(''2001-02-28 23:00'' as datetime))', TIMEDIFF(cast('2000-02-28 20:59:59' as datetime), cast('2001-02-28 23:00' as datetime)));
+insert into func_test2(functionName, result) values('TIMEDIFF(time''23:59:59'',time''01:01:01'')', TIMEDIFF(time'23:59:59',time'01:01:01'));
+insert into func_test2(functionName, result) values('TIMEDIFF(cast(235959 as time),cast(010101 as time))', TIMEDIFF(cast(235959 as time),cast(010101 as time)));
+insert into func_test2(functionName, result) values('TIMEDIFF(235959::time, 010101::time)', TIMEDIFF(235959::time, 010101::time));
 insert into func_test2(functionName, result) values('TIMEDIFF(cast(''2008-12-31 23:59:59.000001'' as datetime), time''22:01:01.000002'')', TIMEDIFF(cast('2008-12-31 23:59:59.000001' as datetime), time'22:01:01.000002'));
 insert into func_test2(functionName, result) values('TIMEDIFF(cast(''2008-12-31 23:59:59.000001'' as datetime), date''2008-12-30'')', TIMEDIFF(cast('2008-12-31 23:59:59.000001' as datetime), date'2008-12-30'));
 insert into func_test2(functionName, result) values('TIMEDIFF(time''23:59:59.000001'', cast(''2008-12-30 22:01:01.000002'' as datetime)))', TIMEDIFF(time'23:59:59.000001', cast('2008-12-30 22:01:01.000002' as datetime)));
