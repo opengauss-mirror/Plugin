@@ -138,6 +138,9 @@ insert into func_test(functionName, result) values ('sec_to_time(pow(10,18)-1)',
 insert into func_test(functionName, result) values ('sec_to_time(1000)', sec_to_time(1000)); 
 insert into func_test(functionName, result) values ('sec_to_time(0)', sec_to_time(0));
 insert into func_test(functionName, result) values ('sec_to_time(-1000000)', sec_to_time(-1000000));
+insert into func_test(functionName, result) values ('sec_to_time(''2022-12-31 14:25:30'')', sec_to_time('2022-12-31 14:25:30'));
+insert into func_test(functionName, result) values ('sec_to_time(''2012-2-25'')', sec_to_time('2012-2-25'));
+insert into func_test(functionName, result) values ('sec_to_time(''14:25:56'')', sec_to_time('14:25:56'));
     -- 小数精度
 insert into func_test(functionName, result) values ('sec_to_time(1000000.499)', sec_to_time(1000000.499));
 insert into func_test(functionName, result) values ('sec_to_time(1000000.4990000)', sec_to_time(1000000.4990000));
