@@ -7446,12 +7446,6 @@ void datetime_in_with_flag_internal(const char *str, struct pg_tm *tm, fsec_t *f
     }
 }
 
-void datetime_in_with_flag(const char *str, struct pg_tm *tm, unsigned int date_flag)
-{
-    fsec_t fsec;
-    datetime_in_with_flag_internal(str, tm, &fsec, date_flag);
-}
-
 // convert Numeric arg into lldiv_t
 // div.quot is the integer of the Numeric
 // div.rem is the fractional part of the Numeric
@@ -7480,12 +7474,14 @@ static inline bool zero_date_tm(struct pg_tm *result_tm)
  */
 Datum dayname_text(PG_FUNCTION_ARGS)
 {
-    text *raw_text = PG_GETARG_TEXT_PP(0);
+    char *date_str = text_to_cstring(PG_GETARG_TEXT_PP(0));
     struct pg_tm result_tt, *result_tm = &result_tt;
+    fsec_t fsec;
     Datum result;
 
-    char *date_str = text_to_cstring(raw_text);
-    datetime_in_with_flag(date_str, result_tm, NORMAL_DATE);
+    if (!datetime_in_with_sql_mode(date_str, result_tm, &fsec, NORMAL_DATE)) {
+        PG_RETURN_NULL();
+    }
     if (!zero_date_tm(result_tm)) {
         dayname_internal(result_tm, &result);
     } else {
@@ -7504,7 +7500,9 @@ Datum dayname_numeric(PG_FUNCTION_ARGS)
     Datum result;
 
     Numeric_to_lldiv(num, &div);
-    lldiv_decode_tm(num, &div, result_tm, NORMAL_DATE);
+    if (!lldiv_decode_tm_with_sql_mode(num, &div, result_tm, NORMAL_DATE)) {
+        PG_RETURN_NULL();
+    }
     dayname_internal(result_tm, &result);
     PG_RETURN_DATUM(result);
 }
@@ -7545,19 +7543,17 @@ static inline void monthname_internal(struct pg_tm *result_tm, Datum *result)
  */
 Datum monthname_text(PG_FUNCTION_ARGS)
 {
-    text *raw_text = PG_GETARG_TEXT_PP(0);
+    char *date_str = text_to_cstring(PG_GETARG_TEXT_PP(0));
     struct pg_tm result_tt, *result_tm = &result_tt;
+    fsec_t fsec;
     Datum result;
-
-    char *date_str = text_to_cstring(raw_text);
     
-    datetime_in_with_flag(date_str, result_tm, ENABLE_ZERO_DAY);
-    if (!zero_date_tm(result_tm)) {
-        monthname_internal(result_tm, &result);
-        PG_RETURN_DATUM(result);
+    if (!datetime_in_with_sql_mode(date_str, result_tm, &fsec, (ENABLE_ZERO_DAY | ENABLE_ZERO_MONTH)) || 
+        result_tm->tm_mon == 0) {
+        PG_RETURN_NULL();
     }
-    
-    PG_RETURN_NULL();   // When date is truncated to '0000-00-00', monthname return NULL
+    monthname_internal(result_tm, &result);
+    PG_RETURN_DATUM(result);
 }
 
 Datum monthname_numeric(PG_FUNCTION_ARGS)
@@ -7571,7 +7567,10 @@ Datum monthname_numeric(PG_FUNCTION_ARGS)
     if (IS_ZERO_NUMBER_DATE(div.quot, div.rem)) {   // when number input is 0, monthname return NULL
         PG_RETURN_NULL();
     }
-    lldiv_decode_tm(num, &div, result_tm, ENABLE_ZERO_DAY);
+    if (!lldiv_decode_tm_with_sql_mode(num, &div, result_tm, (ENABLE_ZERO_DAY | ENABLE_ZERO_MONTH)) || 
+        result_tm->tm_mon == 0) {   // when month number is 0, monthname return NULL
+        PG_RETURN_NULL();
+    }
     monthname_internal(result_tm, &result);
     PG_RETURN_DATUM(result);
 }
@@ -7582,11 +7581,13 @@ Datum monthname_numeric(PG_FUNCTION_ARGS)
  */
 Datum month_text(PG_FUNCTION_ARGS)
 {
-    text *raw_text = PG_GETARG_TEXT_PP(0);
+    char *date_str = text_to_cstring(PG_GETARG_TEXT_PP(0));
     struct pg_tm result_tt, *result_tm = &result_tt;
+    fsec_t fsec;
 
-    char *date_str = text_to_cstring(raw_text);
-    datetime_in_with_flag(date_str, result_tm, (ENABLE_ZERO_DAY | ENABLE_ZERO_MONTH));
+    if (!datetime_in_with_sql_mode(date_str, result_tm, &fsec, (ENABLE_ZERO_DAY | ENABLE_ZERO_MONTH))) {
+        PG_RETURN_NULL();
+    }
     PG_RETURN_INT32(result_tm->tm_mon);
 }
 
@@ -7597,10 +7598,12 @@ Datum month_numeric(PG_FUNCTION_ARGS)
     struct pg_tm result_tt, *result_tm = &result_tt;
 
     Numeric_to_lldiv(num, &div);
-    if(IS_ZERO_NUMBER_DATE(div.quot, div.rem)) {
+    if (IS_ZERO_NUMBER_DATE(div.quot, div.rem)) {
         PG_RETURN_INT32(0);
     }
-    lldiv_decode_tm(num, &div, result_tm, (ENABLE_ZERO_DAY | ENABLE_ZERO_MONTH));
+    if (!lldiv_decode_tm_with_sql_mode(num, &div, result_tm, (ENABLE_ZERO_DAY | ENABLE_ZERO_MONTH))) {
+        PG_RETURN_NULL();
+    }
     PG_RETURN_INT32(result_tm->tm_mon);
 }
 
@@ -7619,18 +7622,21 @@ static inline void b_last_day_internal(struct pg_tm *result_tm, DateADT *result)
  */
 Datum last_day_text(PG_FUNCTION_ARGS)
 {
-    text *raw_text = PG_GETARG_TEXT_PP(0);
+    int errlevel = (SQL_MODE_STRICT() ? ERROR : WARNING);
+    char *date_str = text_to_cstring(PG_GETARG_TEXT_PP(0));
     struct pg_tm result_tt, *result_tm = &result_tt;
+    fsec_t fsec;
     DateADT result;
 
-    char *date_str = text_to_cstring(raw_text);
-    datetime_in_with_flag(date_str, result_tm, ENABLE_ZERO_DAY);
+    if (!datetime_in_with_sql_mode(date_str, result_tm, &fsec, ENABLE_ZERO_DAY)) {
+        PG_RETURN_NULL();
+    }
     if (!zero_date_tm(result_tm)) {
         b_last_day_internal(result_tm, &result);
         PG_RETURN_DATEADT(result);
     }
-    ereport(ERROR,(errcode(DTERR_BAD_FORMAT), errmsg("Incorrect datetime value: \'0000-00-00\'")));
-    PG_RETURN_DATEADT(0);
+    ereport(errlevel, (errcode(DTERR_BAD_FORMAT), errmsg("Incorrect datetime value: \'0000-00-00\'")));
+    PG_RETURN_NULL();
 }
 
 Datum last_day_numeric(PG_FUNCTION_ARGS)
@@ -7641,7 +7647,9 @@ Datum last_day_numeric(PG_FUNCTION_ARGS)
     DateADT result;
 
     Numeric_to_lldiv(num, &div);
-    lldiv_decode_tm(num, &div, result_tm, ENABLE_ZERO_DAY);
+    if (!lldiv_decode_tm_with_sql_mode(num, &div, result_tm, ENABLE_ZERO_DAY)) {
+        PG_RETURN_NULL();
+    }
     b_last_day_internal(result_tm, &result);
     PG_RETURN_DATEADT(result);
 }
@@ -7660,12 +7668,14 @@ static inline void date_internal(struct pg_tm *result_tm, Datum *result)
  */
 Datum b_db_date_text(PG_FUNCTION_ARGS)
 {
-    text *raw_text = PG_GETARG_TEXT_PP(0);
+    char *date_str = text_to_cstring(PG_GETARG_TEXT_PP(0));
     struct pg_tm result_tt, *result_tm = &result_tt;
+    fsec_t fsec;
     Datum result;
 
-    char *date_str = text_to_cstring(raw_text);
-    datetime_in_with_flag(date_str, result_tm, (ENABLE_ZERO_DAY | ENABLE_ZERO_MONTH));
+    if (!datetime_in_with_sql_mode(date_str, result_tm, &fsec, (ENABLE_ZERO_DAY | ENABLE_ZERO_MONTH))) {
+        PG_RETURN_NULL();
+    }
     date_internal(result_tm, &result);
     PG_RETURN_DATUM(result);
 }
@@ -7687,7 +7697,9 @@ Datum b_db_date_numeric(PG_FUNCTION_ARGS)
         result = DirectFunctionCall1(textin, CStringGetDatum(buf));
         PG_RETURN_DATUM(result);
     }
-    lldiv_decode_tm(num, &div, result_tm, (ENABLE_ZERO_DAY | ENABLE_ZERO_MONTH));
+    if (!lldiv_decode_tm_with_sql_mode(num, &div, result_tm, (ENABLE_ZERO_DAY | ENABLE_ZERO_MONTH))) {
+        PG_RETURN_NULL();
+    }
     date_internal(result_tm, &result);
     PG_RETURN_DATUM(result);
 }
@@ -7700,9 +7712,12 @@ Datum dayofmonth_text(PG_FUNCTION_ARGS)
 {
     text *raw_text = PG_GETARG_TEXT_PP(0);
     struct pg_tm result_tt, *result_tm = &result_tt;
+    fsec_t fsec;
 
     char *date_str = text_to_cstring(raw_text);
-    datetime_in_with_flag(date_str, result_tm, (ENABLE_ZERO_DAY | ENABLE_ZERO_MONTH));
+    if (!datetime_in_with_sql_mode(date_str, result_tm, &fsec, (ENABLE_ZERO_DAY | ENABLE_ZERO_MONTH))) {
+        PG_RETURN_NULL();
+    }
     PG_RETURN_INT32(result_tm->tm_mday);
 }
 
@@ -7713,10 +7728,12 @@ Datum dayofmonth_numeric(PG_FUNCTION_ARGS)
     struct pg_tm result_tt, *result_tm = &result_tt;
 
     Numeric_to_lldiv(num, &div);
-    if(IS_ZERO_NUMBER_DATE(div.quot, div.rem)) {
+    if (IS_ZERO_NUMBER_DATE(div.quot, div.rem)) {
         PG_RETURN_INT32(0);
     }
-    lldiv_decode_tm(num, &div, result_tm, (ENABLE_ZERO_DAY | ENABLE_ZERO_MONTH));
+    if (!lldiv_decode_tm_with_sql_mode(num, &div, result_tm, (ENABLE_ZERO_DAY | ENABLE_ZERO_MONTH))) {
+        PG_RETURN_NULL();
+    }
     PG_RETURN_INT32(result_tm->tm_mday);
 }
 
@@ -7841,14 +7858,16 @@ static inline void week_internal(struct pg_tm *result_tm, int32 *week, int64 mod
 
 Datum week_text(PG_FUNCTION_ARGS)
 {
+    int errlevel = (SQL_MODE_STRICT() ? ERROR : WARNING);
     struct pg_tm result_tt, *result_tm = &result_tt;
+    fsec_t fsec;
     int32 week;
-    int64 mode;
+    int64 mode; 
 
     if (PG_ARGISNULL(0)) {
         PG_RETURN_NULL();
     }
-    text *raw_text = PG_GETARG_TEXT_PP(0);
+    char *date_str = text_to_cstring(PG_GETARG_TEXT_PP(0));
 
     if (PG_ARGISNULL(1)) {
         mode = GetSessionContext()->default_week_format;
@@ -7856,13 +7875,15 @@ Datum week_text(PG_FUNCTION_ARGS)
         mode = PG_GETARG_INT64(1);
     }
 
-    char *date_str = text_to_cstring(raw_text);
-    datetime_in_with_flag(date_str, result_tm, NORMAL_DATE);
-    /* When date is truncated to '0000-00-00', MSQ's week() return an invalid vaulue 613566757.
+    if (!datetime_in_with_sql_mode(date_str, result_tm, &fsec, NORMAL_DATE)) {
+        PG_RETURN_NULL();
+    }
+    /* When date is truncated to '0000-00-00', MSQ's week() return an invalid vaulue.
        Here we raise an error.
     */
     if (zero_date_tm(result_tm)) {
-        ereport(ERROR,(errcode(DTERR_BAD_FORMAT), errmsg("Truncated incorrect datetime value: \"%s\"", date_str)));
+        ereport(errlevel, (errcode(DTERR_BAD_FORMAT), errmsg("Truncated incorrect datetime value: \"%s\"", date_str)));
+        PG_RETURN_NULL();
     }
     week_internal(result_tm, &week, mode, NULL);
     PG_RETURN_INT32(week);
@@ -7888,14 +7909,18 @@ Datum week_numeric(PG_FUNCTION_ARGS)
         mode = PG_GETARG_INT64(1);
     }
 
-    lldiv_decode_tm(num, &div, result_tm, NORMAL_DATE);
+    if (!lldiv_decode_tm_with_sql_mode(num, &div, result_tm, NORMAL_DATE)) {
+        PG_RETURN_NULL();
+    }
     week_internal(result_tm, &week, mode, NULL);
     PG_RETURN_INT32(week);
 }
 
 Datum yearweek_text(PG_FUNCTION_ARGS)
 {
+    int errlevel = (SQL_MODE_STRICT() ? ERROR : WARNING);
     struct pg_tm result_tt, *result_tm = &result_tt;
+    fsec_t fsec;
     int32 week;
     uint year;
     int64 mode;
@@ -7908,15 +7933,16 @@ Datum yearweek_text(PG_FUNCTION_ARGS)
         mode = PG_GETARG_INT64(1);
     }
 
-    text *raw_text = PG_GETARG_TEXT_PP(0);
-    char *date_str = text_to_cstring(raw_text);
-
-    datetime_in_with_flag(date_str, result_tm, NORMAL_DATE);
-    /* When date is truncated to '0000-00-00', MSQ's yearweek() return an invalid vaulue 613566757.
+    char *date_str = text_to_cstring(PG_GETARG_TEXT_PP(0));
+    if (!datetime_in_with_sql_mode(date_str, result_tm, &fsec, NORMAL_DATE)) {
+        PG_RETURN_NULL();
+    }
+    /* When date is truncated to '0000-00-00', MSQ's yearweek() return an invalid vaulue.
        Here we raise an error.
     */
     if (zero_date_tm(result_tm)) {
-        ereport(ERROR,(errcode(DTERR_BAD_FORMAT), errmsg("Truncated incorrect datetime value: \"%s\"", date_str)));
+        ereport(errlevel,(errcode(DTERR_BAD_FORMAT), errmsg("Incorrect datetime value: \'0000-00-00\'")));
+        PG_RETURN_NULL();
     }
     week_internal(result_tm, &week, mode, &year);
     PG_RETURN_INT64(year * 100 + week);
@@ -7942,26 +7968,11 @@ Datum yearweek_numeric(PG_FUNCTION_ARGS)
         mode = PG_GETARG_INT64(1);
     }
 
-    lldiv_decode_tm(num, &div, result_tm, NORMAL_DATE);
+    if (!lldiv_decode_tm_with_sql_mode(num, &div, result_tm, NORMAL_DATE)) {
+        PG_RETURN_NULL();
+    }
     week_internal(result_tm, &week, mode, &year);
     PG_RETURN_INT64(year * 100 + week);
-}
-
-/**
- * true if datetime in [0000-01-01 00:00:00.000000, 9999-12-31 23:59:59.999999]
-*/
-bool datetime_in_range(Timestamp datetime)
-{
-    bool ret = true;
-#ifdef HAVE_INT64_TIMESTAMP
-    if (datetime < B_FORMAT_TIMESTAMP_MIN_VALUE || datetime > B_FORMAT_TIMESTAMP_MAX_VALUE)
-        ret = false;
-#else
-    if (datetime < (double)B_FORMAT_TIMESTAMP_MIN_VALUE / USECS_PER_SEC || 
-        datetime > (double)B_FORMAT_TIMESTAMP_MAX_VALUE / USECS_PER_SEC)
-        ret = false;
-#endif
-    return ret;
 }
 
 /*
@@ -7972,17 +7983,27 @@ bool datetime_in_range(Timestamp datetime)
 static bool timestampdiff_datetime_internal(int64 *result,  text *units, Timestamp dt1, Timestamp dt2)
 {
     bool ret = true;
+    int code;
+    const char *msg = NULL;
     PG_TRY();
     {
         *result = timestamp_diff_internal(units, dt1, dt2, true);
     }
     PG_CATCH();
     {
-        // If catch an error, just empty the error stack and set return value to false.
-        FlushErrorState();
         ret = false;
+        if (SQL_MODE_STRICT()) {
+            PG_RE_THROW();
+        } else {
+            code = geterrcode();
+            msg = pstrdup(Geterrmsg());
+            FlushErrorState();
+        }
     }
     PG_END_TRY();
+    if (msg) {
+        ereport(WARNING, (errcode(code), errmsg("%s", msg)));
+    }
     return ret;
 }
 
@@ -7994,18 +8015,22 @@ Datum timestampdiff_datetime(PG_FUNCTION_ARGS)
     text* units = PG_GETARG_TEXT_PP(0);
     char *str1 = text_to_cstring(PG_GETARG_TEXT_PP(2));
     char *str2 = text_to_cstring(PG_GETARG_TEXT_PP(1));
+    struct pg_tm tt1, *tm1 = &tt1;
+    struct pg_tm tt2, *tm2 = &tt2;
+    fsec_t fsec1, fsec2;
     Timestamp datetime1, datetime2;
-    bool expr1_ok = datetime_in_no_ereport(str1, &datetime1) && datetime_in_range(datetime1);
-    bool expr2_ok = datetime_in_no_ereport(str2, &datetime2) && datetime_in_range(datetime2);
     int64 result;
 
-    if (!expr1_ok || !expr2_ok) {
+    if (!datetime_in_with_sql_mode(str1, tm1, &fsec1, NORMAL_DATE) || 
+        !datetime_in_with_sql_mode(str2, tm2, &fsec2, NORMAL_DATE)) {
         PG_RETURN_NULL();
     }
-    if (timestampdiff_datetime_internal(&result, units, datetime1, datetime2)) {
-        PG_RETURN_INT64(result);
+    tm2timestamp(tm1, fsec1, NULL, &datetime1);
+    tm2timestamp(tm2, fsec2, NULL, &datetime2);
+    if (!timestampdiff_datetime_internal(&result, units, datetime1, datetime2)) {
+        PG_RETURN_NULL();
     }
-    PG_RETURN_NULL();
+    PG_RETURN_INT64(result);
 }
 
 static inline void add_currentdate_to_time(TimeADT time, Timestamp *result)
@@ -8034,10 +8059,10 @@ Datum timestampdiff_time(PG_FUNCTION_ARGS)
 
     add_currentdate_to_time(PG_GETARG_TIMEADT(2), &datetime1);
     add_currentdate_to_time(PG_GETARG_TIMEADT(1), &datetime2);
-    if (timestampdiff_datetime_internal(&result, units, datetime1, datetime2)) {
-        PG_RETURN_INT64(result);
+    if (!timestampdiff_datetime_internal(&result, units, datetime1, datetime2)) {
+        PG_RETURN_NULL();
     }
-    PG_RETURN_NULL();
+    PG_RETURN_INT64(result);
 }
 
 /*
@@ -8047,17 +8072,20 @@ Datum timestampdiff_time_before(PG_FUNCTION_ARGS)
 {
     text* units = PG_GETARG_TEXT_PP(0);
     char *str = text_to_cstring(PG_GETARG_TEXT_PP(2));
+    struct pg_tm tt, *tm = &tt;
+    fsec_t fsec;
     Timestamp datetime1, datetime2;
     int64 result;
 
-    if (!datetime_in_no_ereport(str, &datetime1) || !datetime_in_range(datetime1)) {
+    if (!datetime_in_with_sql_mode(str, tm, &fsec, NORMAL_DATE)) {
         PG_RETURN_NULL();
     }
+    tm2timestamp(tm, fsec, NULL, &datetime1);
     add_currentdate_to_time(PG_GETARG_TIMEADT(1), &datetime2);
-    if (timestampdiff_datetime_internal(&result, units, datetime1, datetime2)) {
-        PG_RETURN_INT64(result);
+    if (!timestampdiff_datetime_internal(&result, units, datetime1, datetime2)) {
+        PG_RETURN_NULL();
     }
-    PG_RETURN_NULL();
+    PG_RETURN_INT64(result);
 }
 
 /*
@@ -8067,17 +8095,20 @@ Datum timestampdiff_time_after(PG_FUNCTION_ARGS)
 {
     text* units = PG_GETARG_TEXT_PP(0);
     char *str = text_to_cstring(PG_GETARG_TEXT_PP(1));
+    struct pg_tm tt, *tm = &tt;
+    fsec_t fsec;
     Timestamp datetime1, datetime2;
     int64 result;
 
-    if (!datetime_in_no_ereport(str, &datetime2) || !datetime_in_range(datetime2)) {
+    if (!datetime_in_with_sql_mode(str, tm, &fsec, NORMAL_DATE)) {
         PG_RETURN_NULL();
     }
+    tm2timestamp(tm, fsec, NULL, &datetime2);
     add_currentdate_to_time(PG_GETARG_TIMEADT(2), &datetime1);
-    if (timestampdiff_datetime_internal(&result, units, datetime1, datetime2)) {
-        PG_RETURN_INT64(result);
+    if (!timestampdiff_datetime_internal(&result, units, datetime1, datetime2)) {
+        PG_RETURN_NULL();
     }
-    PG_RETURN_NULL();
+    PG_RETURN_INT64(result);
 }
 
 /*
@@ -8122,34 +8153,38 @@ Datum convert_tz(PG_FUNCTION_ARGS)
     char *str1 = text_to_cstring(PG_GETARG_TEXT_PP(0));
     text* expr2 = PG_GETARG_TEXT_PP(1);
     text* expr3 = PG_GETARG_TEXT_PP(2);
+    struct pg_tm tt, *tm = &tt;
+    fsec_t fsec;
     Timestamp raw_datetime, datetime;
     Interval *interval;
+    int code;
+    const char *msg = NULL;
 
     char *str2 = text_to_cstring(expr2);
     char *str3 = text_to_cstring(expr3);
-    bool expr1_ok = datetime_in_no_ereport(str1, &raw_datetime) && datetime_in_range(raw_datetime);
     int from_ok = tz_type(str2);
     int to_ok = tz_type(str3);
 
-    if (!expr1_ok || from_ok == -1 || to_ok == -1) {
+    if (!datetime_in_with_sql_mode(str1, tm, &fsec, NORMAL_DATE) || from_ok == -1 || to_ok == -1) {
         PG_RETURN_NULL();
     }
+    tm2timestamp(tm, fsec, NULL, &raw_datetime);
     datetime = raw_datetime;
 
     PG_TRY();
     {
-        if (from_ok == 0) {
+        if (from_ok == 0) { // if expr2 is zone
             datetime = (Timestamp)DirectFunctionCall2(timestamp_zone, PointerGetDatum(expr2), TimestampGetDatum(datetime));
-        } else {
+        } else {    // if expr2 is izone
             interval = (Interval*)DirectFunctionCall3(interval_in, CStringGetDatum(str2), ObjectIdGetDatum(InvalidOid), Int32GetDatum(-1));
             datetime = (Timestamp)DirectFunctionCall2(timestamp_izone, PointerGetDatum(interval), TimestampGetDatum(datetime));
         }
         if (!datetime_in_unixtimestmap(datetime)) {
             PG_RETURN_TIMESTAMP(raw_datetime);
         }
-        if (to_ok == 0) {
+        if (to_ok == 0) {   // if expr3 is zone
             datetime = (Timestamp)DirectFunctionCall2(timestamptz_zone, PointerGetDatum(expr3), TimestampGetDatum(datetime));
-        } else {
+        } else {    // if expr3 is izone
             interval = (Interval*)DirectFunctionCall3(interval_in, CStringGetDatum(str3), ObjectIdGetDatum(InvalidOid), Int32GetDatum(-1));
             datetime = (Timestamp)DirectFunctionCall2(timestamptz_izone, PointerGetDatum(interval), TimestampGetDatum(datetime));
         }
@@ -8157,11 +8192,17 @@ Datum convert_tz(PG_FUNCTION_ARGS)
     }
     PG_CATCH();
     {
-        // If catch an error, just empty the error stack and return NULL.
-        FlushErrorState();
-        PG_RETURN_NULL();
+        if (SQL_MODE_STRICT()) {
+            PG_RE_THROW();
+        } else {
+            code = geterrcode();
+            msg = pstrdup(Geterrmsg());
+            FlushErrorState();
+        }
     }
     PG_END_TRY();
+    ereport(WARNING, (errcode(code), errmsg("%s", msg)));
+    PG_RETURN_NULL();
 }
 
 /*
@@ -8177,59 +8218,64 @@ bool datetime_add_interval(Timestamp datetime, Interval *span, Timestamp *result
 }
 
 /**
+ * To help addtime_text to make sure if arg2 is a datetime format str.
+ * No err or warnings will be raised.
+*/
+static inline bool datetime_in_no_err_with_flag(char *str, struct pg_tm *tm, fsec_t *fsec, unsigned int date_flag)
+{
+    bool ret = true;
+    PG_TRY();
+    {
+        datetime_in_with_flag_internal(str, tm, fsec, date_flag);
+    }
+    PG_CATCH();
+    {
+        ret = false;
+        FlushErrorState();
+    }
+    PG_END_TRY();
+    return ret;
+}
+
+/**
  * addtime(date/datetime/time, time)
 */
 Datum addtime_text(PG_FUNCTION_ARGS)
 {
+    int errlevel = (SQL_MODE_STRICT() ? ERROR : WARNING);
     char *str1 = text_to_cstring(PG_GETARG_TEXT_PP(0));
     char *str2 = text_to_cstring(PG_GETARG_TEXT_PP(1));
+    struct pg_tm tt, *tm = &tt;
+    fsec_t fsec;
     TimeADT time1, time2;
-    Timestamp datetime1, datetime2;
+    Timestamp datetime;
 
-    if (!time_in_no_ereport(str2, &time2)) {
-        ereport(ERROR, (errcode(ERRCODE_INVALID_DATETIME_FORMAT),
-                        errmsg("invalid input syntax \"%s\"", str2)));
-    }
-    if (datetime_in_no_ereport(str2, &datetime2)) {
+    if (!time_in_with_sql_mode(str2, &time2, (ENABLE_ZERO_DAY | ENABLE_ZERO_MONTH)) || 
+        datetime_in_no_err_with_flag(str2, tm, &fsec, (ENABLE_ZERO_DAY | ENABLE_ZERO_MONTH))) {
         PG_RETURN_NULL();
     }
-    if (!time_in_range(time2)) {
-        ereport(ERROR, (errcode(ERRCODE_DATETIME_FIELD_OVERFLOW),
-                        errmsg("datetime/time field value out of range: \"%s\"",
-                               str2)));
-    }
 
-    if (datetime_in_no_ereport(str1, &datetime1)) {
+    if (datetime_in_no_ereport(str1, &datetime)) {
         Timestamp result;
-        if (datetime_sub_time(datetime1, -time2, &result)) {
+        if (datetime_sub_time(datetime, -time2, &result)) {
             /* The variable datetime or result does not exceed the specified
              * range*/
             if (result >= B_FORMAT_TIMESTAMP_FIRST_YEAR)
                 return DirectFunctionCall1(datetime_text, result);
             else {
-                PG_RETURN_NULL();
+                PG_RETURN_NULL();   // When result is less than '0001-1-1 00:00:00', return NULL.
             }
         }
-        ereport(ERROR, (errcode(ERRCODE_DATETIME_FIELD_OVERFLOW),
+        ereport(errlevel, (errcode(ERRCODE_DATETIME_FIELD_OVERFLOW),
                         errmsg("date/time field overflow")));
-    } else if (time_in_no_ereport(str1, &time1)) {
+    } else if (time_in_with_sql_mode(str1, &time1, NORMAL_DATE)) {
         TimeADT result;
-        if (!time_in_range(time1)) {
-            ereport(ERROR,
-                    (errcode(ERRCODE_DATETIME_FIELD_OVERFLOW),
-                     errmsg("datetime/time field value out of range: \"%s\"",
-                            str1)));
-        }
         result = time1 + time2;
         if (!time_in_range(result)) {
-            ereport(ERROR, (errcode(ERRCODE_DATETIME_FIELD_OVERFLOW),
-                            errmsg("date/time field overflow")));
+            ereport(errlevel, (errcode(ERRCODE_DATETIME_FIELD_OVERFLOW), errmsg("date/time field overflow")));
         }
         return DirectFunctionCall1(time_text, result);
     }
-
-    ereport(ERROR, (errcode(ERRCODE_INVALID_DATETIME_FORMAT),
-                    errmsg("invalid input syntax \"%s\"", str1)));
     PG_RETURN_NULL();
 }
 
@@ -8238,7 +8284,7 @@ bool datetime_in_with_sql_mode(char *str, struct pg_tm *tm, fsec_t *fsec, unsign
     bool ret = true;
     bool raise_warning = false;
     int code;
-    const char *msg = NULL;
+    const char *msg = NULL; 
     PG_TRY();
     {
         datetime_in_with_flag_internal(str, tm, fsec, date_flag);
