@@ -334,6 +334,11 @@ insert into func_test2(functionName, result) values(' TIME_FORMAT(''25:30:30'', 
 insert into func_test2(functionName, result) values(' TIME_FORMAT(''-25:30:30'', ''%T|%r|%H|%h|%I|%i|%S|%f|%p|%k'')    ', TIME_FORMAT('-25:30:30', '%T|%r|%H|%h|%I|%i|%S|%f|%p|%k'));
 insert into func_test2(functionName, result) values(' TIME_FORMAT(''838:59:59'', ''%T|%r|%H|%h|%I|%i|%S|%f|%p|%k'')    ', TIME_FORMAT('838:59:59', '%T|%r|%H|%h|%I|%i|%S|%f|%p|%k'));
 insert into func_test2(functionName, result) values(' TIME_FORMAT(''-838:59:59'', ''%T|%r|%H|%h|%I|%i|%S|%f|%p|%k'')    ', TIME_FORMAT('-838:59:59', '%T|%r|%H|%h|%I|%i|%S|%f|%p|%k'));
+insert into func_test2(functionName, result) values('TIME_FORMAT(''-838:59:59'',''%h'')', TIME_FORMAT('-838:59:59','%h'));
+insert into func_test2(functionName, result) values('TIME_FORMAT(''-838:59:59'',''%h'')', TIME_FORMAT('-838:59:59','%h'));
+insert into func_test2(functionName, result) values('TIME_FORMAT(''-838:59:59'',''%k'')', TIME_FORMAT('-838:59:59','%k'));
+insert into func_test2(functionName, result) values('TIME_FORMAT(''-838:59:59'',''%r'')', TIME_FORMAT('-838:59:59','%r'));
+insert into func_test2(functionName, result) values('TIME_FORMAT(''-838:59:59'',''%i'')', TIME_FORMAT('-838:59:59','%i'));
 -- 边界情况
 insert into func_test2(functionName, result) values(' TIME_FORMAT(''838:0:0'', ''%T|%r|%H|%h|%I|%i|%S|%f|%p|%k'')    ', TIME_FORMAT('838:0:0', '%T|%r|%H|%h|%I|%i|%S|%f|%p|%k'));
 insert into func_test2(functionName, result) values(' TIME_FORMAT(''839:0:0'', ''%T|%r|%H|%h|%I|%i|%S|%f|%p|%k'')    ', TIME_FORMAT('839:0:0', '%T|%r|%H|%h|%I|%i|%S|%f|%p|%k'));
@@ -845,6 +850,11 @@ select * from func_test2;
   TIME_FORMAT('-25:30:30', '%T|%r|%H|%h|%I|%i|%S|%f|%p|%k')                                  | -25:30:30|01:30:30 AM|25|01|01|30|30|000000|AM|25
   TIME_FORMAT('838:59:59', '%T|%r|%H|%h|%I|%i|%S|%f|%p|%k')                                  | 838:59:59|10:59:59 PM|838|10|10|59|59|000000|PM|838
   TIME_FORMAT('-838:59:59', '%T|%r|%H|%h|%I|%i|%S|%f|%p|%k')                                 | -838:59:59|10:59:59 PM|838|10|10|59|59|000000|PM|838
+ TIME_FORMAT('-838:59:59','%h')                                                              | -10
+ TIME_FORMAT('-838:59:59','%h')                                                              | -10
+ TIME_FORMAT('-838:59:59','%k')                                                              | -838
+ TIME_FORMAT('-838:59:59','%r')                                                              | -10:59:59 PM
+ TIME_FORMAT('-838:59:59','%i')                                                              | -59
   TIME_FORMAT('838:0:0', '%T|%r|%H|%h|%I|%i|%S|%f|%p|%k')                                    | 838:00:00|10:00:00 PM|838|10|10|00|00|000000|PM|838
   TIME_FORMAT('0:-1:0', '%T|%r|%H|%h|%I|%i|%S|%f|%p|%k')                                     | 00:00:00|12:00:00 AM|00|12|12|00|00|000000|AM|0
   TIME_FORMAT('0:0:-1', '%T|%r|%H|%h|%I|%i|%S|%f|%p|%k')                                     | 00:00:00|12:00:00 AM|00|12|12|00|00|000000|AM|0
