@@ -3320,63 +3320,6 @@ Datum makedate(PG_FUNCTION_ARGS)
 }
 
 /*
- * @Description: Convert nanoseconds to microseconds and round up, Require: nanoseconds < 1000000000。
- * @return: int32 in microseconds
- */
-fsec_t nano2microsecond(uint nanoseconds)
-{
-    fsec_t microseconds;
-    int32 remain;
-    microseconds = nanoseconds / NANO2MICRO_BASE;
-    remain = nanoseconds % NANO2MICRO_BASE;
-    /* round up */
-    if (remain >= HALF_NANO2MICRO_BASE)
-        microseconds += 1;
-
-    return microseconds;
-}
-
-/*
- * @Description: Convert NumericVar second value to NumericSec value. Keep 8 digits after the decimal point.
- * @return: void.
- */
-void sec_to_numericsec(NumericVar *from, NumericSec *to)
-{
-    if (!from->ndigits) {
-        /* from == 0 */
-        to->int_val = 0;
-        to->frac_val = 0;
-        return;
-    }
-    int int_part = from->weight + 1;
-    int frac_part = from->ndigits - int_part;
-    if (int_part > 2) {
-        to->int_val = NBASE * NBASE;
-        to->frac_val = 0;
-        return;
-    }
-    if (int_part == 2) {
-        to->int_val = from->digits[0] * NBASE + (from->ndigits > 1 ? from->digits[1] : 0);
-    } else if (int_part == 1) {
-        to->int_val = from->digits[0];
-    } else {
-        to->int_val = 0;
-    }
-
-    if (frac_part >= 2) {
-        to->frac_val = from->digits[int_part] * NBASE + from->digits[int_part + 1];
-    } else if (frac_part == 1) {
-        to->frac_val = from->digits[int_part] * NBASE;
-    } else {
-        to->frac_val = 0;
-    }
-
-    if (from->sign) {
-        to->int_val = -to->int_val;
-    }
-}
-
-/*
  * Check whether the TimeADT value is within the specified range: 
  * [-838:59:59, 838:59:59] (the time range is from MySQL).
  * Error will be reported if the TimeADT value exceeds the range.
@@ -3467,26 +3410,35 @@ Datum maketime(PG_FUNCTION_ARGS)
 Datum sec_to_time(PG_FUNCTION_ARGS)
 {
     NumericVar tmp;
-    NumericSec second;
+    lldiv_t seconds;
     init_var_from_num(PG_GETARG_NUMERIC(0), &tmp);
-    sec_to_numericsec(&tmp, &second);
+    numeric_to_lldiv_t(&tmp, &seconds);
+
     struct pg_tm tt;
     TimeADT time;
     bool neg = 0;
     bool overflow = 0;
-    if (second.int_val < 0) {
+    if (seconds.quot < 0) {
         neg = 1;
-        second.int_val = -second.int_val;
+        seconds.quot = -seconds.quot;
+        seconds.rem = -seconds.rem;
     }
 
-    if (second.int_val >= B_FORMAT_TIME_BOUND * 3600)
+    if (seconds.quot > TIME_MAX_VALUE_SECONDS)
         overflow = 1;
 
     if (!overflow) {
         tt.tm_hour = 0;
         tt.tm_min = 0;
-        tt.tm_sec = (uint) second.int_val; // keep only the integer part
-        fsec_t fsec = nano2microsecond(second.frac_val * 10);
+        tt.tm_sec = (int) seconds.quot; // keep only the integer part
+        fsec_t fsec = static_cast<int32>(seconds.rem / NANO2MICRO_BASE);
+        uint nanoseconds = seconds.rem % NANO2MICRO_BASE;
+        if (nanoseconds >= HALF_NANO2MICRO_BASE) {
+            fsec += 1;
+        }
+#ifndef HAVE_INT64_TIMESTAMP
+        fsec /= USECS_PER_SEC;
+#endif
         tm2time(&tt, fsec, &time);
         if (neg)
             time = -time;
@@ -3661,8 +3613,12 @@ void convert_to_time(Datum value, Oid valuetypid, TimeADT *time)
                 DirectFunctionCall3(time_in, value, ObjectIdGetDatum(InvalidOid), Int32GetDatum(-1)));
             break;
         }
+        case CLOBOID:
+        case NVARCHAR2OID:
+        case BPCHAROID:
+        case VARCHAROID:
         case TEXTOID: {
-            char *str = text_to_cstring(DatumGetTextPP(value));
+            char *str = TextDatumGetCString(value);
             *time = DatumGetTimeADT(
                 DirectFunctionCall3(time_in, CStringGetDatum(str), ObjectIdGetDatum(InvalidOid), Int32GetDatum(-1)));
             break;
@@ -3679,8 +3635,20 @@ void convert_to_time(Datum value, Oid valuetypid, TimeADT *time)
             *time = DatumGetTimeADT(value);
             break;
         }
+        case INT1OID:
+        case INT2OID:
         case INT4OID: {
             *time = DatumGetTimeADT(DirectFunctionCall1(int32_b_format_time, value));
+            break;
+        }
+        case INT8OID: {
+            int8 int_val = DatumGetInt64(value);
+            if (int_val > (int64)INT_MAX){
+                ereport(ERROR, (errcode(ERRCODE_INVALID_DATETIME_FORMAT),
+                                errmsg("invalid input syntax for type time: \"%d\"", int_val)));
+            } else {
+                *time = DatumGetTimeADT(DirectFunctionCall1(int32_b_format_time, value));
+            }
             break;
         }
         case NUMERICOID: {
@@ -3690,6 +3658,15 @@ void convert_to_time(Datum value, Oid valuetypid, TimeADT *time)
         case BOOLOID: {
             *time = DatumGetTimeADT(DirectFunctionCall1(int32_b_format_time, 
                                     DirectFunctionCall1(bool_int4, value)));
+            break;
+        }
+        case FLOAT4OID:
+            *time = DatumGetTimeADT(DirectFunctionCall1(numeric_b_format_time, 
+                                    DirectFunctionCall1(float4_numeric, value)));
+            break;
+        case FLOAT8OID: {
+            *time = DatumGetTimeADT(DirectFunctionCall1(numeric_b_format_time, 
+                                    DirectFunctionCall1(float8_numeric, value)));
             break;
         }
         case TIMETZOID: {
@@ -3706,7 +3683,24 @@ void convert_to_time(Datum value, Oid valuetypid, TimeADT *time)
             break;
         }
         default: {
-            ereport(ERROR, (errcode(ERRCODE_DATATYPE_MISMATCH), errmsg("unsupported input data type")));
+            if (valuetypid == get_typeoid(PG_CATALOG_NAMESPACE, "uint1") ||
+                valuetypid == get_typeoid(PG_CATALOG_NAMESPACE, "uint2") ||
+                valuetypid == get_typeoid(PG_CATALOG_NAMESPACE, "uint4") ||
+                valuetypid == get_typeoid(PG_CATALOG_NAMESPACE, "uint8")) {
+                uint64 uint_val = DatumGetUInt64(value);
+                if (uint_val > (uint64)INT_MAX) {
+                    ereport(ERROR, (errcode(ERRCODE_INVALID_DATETIME_FORMAT),
+                                    errmsg("time out of range: \"%lu\"", uint_val)));
+                } else {
+                    *time = DatumGetTimeADT(DirectFunctionCall1(int32_b_format_time, value));
+                }
+            } else if (valuetypid == get_typeoid(PG_CATALOG_NAMESPACE, "year")) {
+                *time = DatumGetTimeADT(DirectFunctionCall1(int32_b_format_time, 
+                                        DirectFunctionCall1(year_integer, value)));
+            } else {
+                ereport(ERROR, (errcode(ERRCODE_DATATYPE_MISMATCH), errmsg("unsupported input data type")));
+            }
+            break;
         }
     }
 }

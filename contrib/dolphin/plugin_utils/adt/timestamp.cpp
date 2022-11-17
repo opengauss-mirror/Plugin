@@ -6471,8 +6471,12 @@ void convert_to_datetime(Datum value, Oid valuetypid, Timestamp *datetime)
             *datetime = DatumGetTimestamp(DirectFunctionCall3(timestamp_in, value, ObjectIdGetDatum(InvalidOid), Int32GetDatum(-1)));
             break;
         }
+        case CLOBOID:
+        case NVARCHAR2OID:
+        case BPCHAROID:
+        case VARCHAROID:
         case TEXTOID: {
-            char *str = text_to_cstring(DatumGetTextPP(value));
+            char *str = TextDatumGetCString(value);
             *datetime = DatumGetTimestamp(
                 DirectFunctionCall3(timestamp_in, CStringGetDatum(str), ObjectIdGetDatum(InvalidOid), Int32GetDatum(-1)));
             break;
@@ -6497,6 +6501,8 @@ void convert_to_datetime(Datum value, Oid valuetypid, Timestamp *datetime)
             *datetime = temp + time;
             break;
         }
+        case INT1OID:
+        case INT2OID:
         case INT4OID: {
             *datetime = DatumGetTimestamp(DirectFunctionCall1(int32_b_format_datetime, value));
             break;
@@ -6507,6 +6513,15 @@ void convert_to_datetime(Datum value, Oid valuetypid, Timestamp *datetime)
         }
         case NUMERICOID: {
             *datetime = DatumGetTimestamp(DirectFunctionCall1(numeric_b_format_datetime, value));
+            break;
+        }
+        case FLOAT4OID:
+            *datetime = DatumGetTimeADT(DirectFunctionCall1(numeric_b_format_datetime, 
+                                    DirectFunctionCall1(float4_numeric, value)));
+            break;
+        case FLOAT8OID: {
+            *datetime = DatumGetTimeADT(DirectFunctionCall1(numeric_b_format_datetime, 
+                                    DirectFunctionCall1(float8_numeric, value)));
             break;
         }
         case BOOLOID: {
@@ -6523,8 +6538,21 @@ void convert_to_datetime(Datum value, Oid valuetypid, Timestamp *datetime)
             break;
         }
         default: {
-            ereport(ERROR, (errcode(ERRCODE_DATATYPE_MISMATCH), errmsg("unsupported input data type")));
-        }
+            if (valuetypid == get_typeoid(PG_CATALOG_NAMESPACE, "uint1") || 
+                valuetypid == get_typeoid(PG_CATALOG_NAMESPACE, "uint2") || 
+                valuetypid == get_typeoid(PG_CATALOG_NAMESPACE, "uint4") ||
+                valuetypid == get_typeoid(PG_CATALOG_NAMESPACE, "uint8")) {
+                    uint64 uint_val = DatumGetUInt64(value);
+                    if (uint_val > (uint64)LONG_LONG_MAX) {
+                        ereport(ERROR, (errcode(ERRCODE_INVALID_DATETIME_FORMAT),
+                                        errmsg("timestamp out of range:: \"%lu\"", uint_val)));
+                    } else {
+                        *datetime = DatumGetTimeADT(DirectFunctionCall1(int64_b_format_datetime, value));
+                    }
+            } else {
+                ereport(ERROR, (errcode(ERRCODE_DATATYPE_MISMATCH), errmsg("unsupported input data type")));
+            }
+        }      
     }
 }
 
@@ -6602,6 +6630,8 @@ Oid convert_to_datetime_time(Datum value, Oid valuetypid, Timestamp *datetime, T
         case CSTRINGOID: {
             return convert_cstring_to_datetime_time(DatumGetCString(value), datetime, time);
         }
+        case CLOBOID:
+        case NVARCHAR2OID:
         case BPCHAROID:
         case VARCHAROID:
         case TEXTOID: {
@@ -6622,6 +6652,8 @@ Oid convert_to_datetime_time(Datum value, Oid valuetypid, Timestamp *datetime, T
         }
         case TIMEOID:
         case TIMETZOID:
+        case INT1OID:
+        case INT2OID:
         case INT4OID:
         case BOOLOID: {
             convert_to_time(value, valuetypid, time);
@@ -6653,7 +6685,50 @@ Oid convert_to_datetime_time(Datum value, Oid valuetypid, Timestamp *datetime, T
                 return TIMEOID;
             }
         }
+        case FLOAT4OID: {
+            double float_val = (double)DatumGetFloat4(value);
+            if (float_val >= (double)pow_of_10[10]) {
+                convert_to_datetime(value, valuetypid, datetime);
+                check_b_format_datetime_range_with_ereport(*datetime);
+                return TIMESTAMPOID;
+            } else {
+                convert_to_time(value, valuetypid, time);
+                check_b_format_time_range_with_ereport(*time);
+                return TIMEOID;
+            }
+        }
+        case FLOAT8OID: {
+            double float_val = (double)DatumGetFloat8(value);
+            if (float_val >= (double)pow_of_10[10]) {
+                convert_to_datetime(value, valuetypid, datetime);
+                check_b_format_datetime_range_with_ereport(*datetime);
+                return TIMESTAMPOID;
+            } else {
+                convert_to_time(value, valuetypid, time);
+                check_b_format_time_range_with_ereport(*time);
+                return TIMEOID;
+            }
+        }
         default: {
+            if (valuetypid == get_typeoid(PG_CATALOG_NAMESPACE, "uint1") || 
+                valuetypid == get_typeoid(PG_CATALOG_NAMESPACE, "uint2") || 
+                valuetypid == get_typeoid(PG_CATALOG_NAMESPACE, "uint4") ||
+                valuetypid == get_typeoid(PG_CATALOG_NAMESPACE, "year")) {
+                convert_to_time(value, valuetypid, time);
+                check_b_format_time_range_with_ereport(*time);
+                return TIMEOID;
+            } else if (valuetypid == get_typeoid(PG_CATALOG_NAMESPACE, "uint8")) {
+                uint64 number = DatumGetUInt64(value);
+                if (number >= (uint64)pow_of_10[10]) {
+                    convert_to_datetime(value, valuetypid, datetime);
+                    check_b_format_datetime_range_with_ereport(*datetime);
+                    return TIMESTAMPOID;
+                } else {
+                    convert_to_time(value, valuetypid, time);
+                    check_b_format_time_range_with_ereport(*time);
+                    return TIMEOID;
+                }
+            }
             ereport(ERROR, (errcode(ERRCODE_DATATYPE_MISMATCH),
                             errmsg("unsupported input data type: %s", format_type_be(valuetypid))));
             return InvalidOid;

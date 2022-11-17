@@ -81,15 +81,4 @@ typedef struct DateTimeFormat
 }DateTimeFormat;
 #endif
 
-/* ----------
- * Stores the seconds of type Numeric
- * ----------
- */
-typedef struct {
-    int32 int_val; /* Integer value  */
-    int32 frac_val; /* Fractional value  */
-} NumericSec;
-
-extern void sec_to_numericsec(NumericVar *from, NumericSec *to);
-
 #endif /* DATE_H */
