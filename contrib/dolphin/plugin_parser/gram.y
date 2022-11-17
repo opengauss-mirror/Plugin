@@ -8956,6 +8956,9 @@ TableLikeClause:
 					TableLikeClause *n = makeNode(TableLikeClause);
 					n->relation = $2;
 					n->options = CREATE_TABLE_LIKE_ALL & ~$4;
+					if ($4 & CREATE_TABLE_LIKE_MAX) {
+						n->options |= CREATE_TABLE_LIKE_MAX;
+					}
 #ifndef ENABLE_MULTIPLE_NODES					
 					if (IS_SINGLE_NODE) 
 					{
@@ -8975,10 +8978,12 @@ TableLikeOptionList:
 				TableLikeOptionList INCLUDING TableLikeIncludingOption	{ $$ = $1 | $3; }
 				| TableLikeOptionList EXCLUDING TableLikeExcludingOption
 					{
-						if ($3 & CREATE_TABLE_LIKE_INDEXES) {
-							$$ = ($1 | CREATE_TABLE_LIKE_EXCLUDING_INDEXES) & ~$3;
+						if ($3 == CREATE_TABLE_LIKE_ALL) {
+							$$ = ($1 & ~$3) | CREATE_TABLE_LIKE_EXCLUDING_PARTITION | CREATE_TABLE_LIKE_EXCLUDING_INDEXES;
+						} else if ($3 & CREATE_TABLE_LIKE_INDEXES) {
+							$$ = ($1 & ~$3) | CREATE_TABLE_LIKE_EXCLUDING_INDEXES;
 						} else if ($3 & CREATE_TABLE_LIKE_PARTITION) {
-							$$ = ($1 | CREATE_TABLE_LIKE_EXCLUDING_PARTITION) & ~$3;
+							$$ = ($1 & ~$3) | CREATE_TABLE_LIKE_EXCLUDING_PARTITION;
 						} else {
 							$$ = $1 & ~$3; 
 						}
