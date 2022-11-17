@@ -1618,7 +1618,7 @@ select * from test_int_strict1;
     
 delete from test_int_strict1;
 insert into test_int_strict1 select * from test_float4_strict;
-ERROR:  integer unsigned out of range
+ERROR:  int unsigned out of range
 CONTEXT:  referenced column: a
 select * from test_int_strict1;
  a 
@@ -1628,7 +1628,7 @@ select * from test_int_strict1;
     
 delete from test_int_strict1;
 insert into test_int_strict1 select * from test_float8_strict;
-ERROR:  integer unsigned out of range
+ERROR:  int unsigned out of range
 CONTEXT:  referenced column: a
 select * from test_int_strict1;
  a 

@@ -278,7 +278,7 @@ select (-128)::int1::uint8;
 (1 row)
 
 select 255::uint1::int1;
-ERROR:  smallint out of range
+ERROR:  tinyint out of range
 CONTEXT:  referenced column: int1
 select 255::uint2::int1;
 ERROR:  tinyint out of range
@@ -287,10 +287,10 @@ select 65535::uint2::int1;
 ERROR:  tinyint out of range
 CONTEXT:  referenced column: int1
 select 255::uint4::int1;
-ERROR:  tinyint unsigned out of range
+ERROR:  tinyint out of range
 CONTEXT:  referenced column: int1
 select 4294967295::uint4::int1;
-ERROR:  tinyint unsigned out of range
+ERROR:  tinyint out of range
 CONTEXT:  referenced column: int1
 select 255::uint8::int1;
 ERROR:  tinyint out of range
