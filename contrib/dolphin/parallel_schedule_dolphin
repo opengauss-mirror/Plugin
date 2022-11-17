@@ -83,6 +83,8 @@ test: partition_test1 partition_test2 partition_test3 partition_test4
 
 test: test_table_index
 
+test: single_line_trigger
+
 test: db_b_date_time_functions
 
 test: prefixkey_index
