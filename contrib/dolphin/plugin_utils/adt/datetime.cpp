@@ -546,6 +546,43 @@ static int ParseFractionalSecond(char* cp, fsec_t* fsec)
     return 0;
 }
 
+#ifdef DOLPHIN
+/**
+ * A special method for handling fractional second, compatible with MySQL.
+*/
+static int SpecialFractionalSecond(char* cp, fsec_t* fsec, unsigned int fmask)
+{
+    *fsec = 0;
+
+    if (strlen(cp) >= 2 && *cp == '.' && isdigit(cp[1])) {
+        int field_length = 6;
+        ulong value = 0;
+        ++cp;
+        while (*cp != '\0' && isdigit(*cp) && field_length--) {
+            value = value * 10 + (*cp - '0');
+            ++cp;
+        }
+
+        if (field_length > 0) {
+            value *= pow_of_10[field_length];
+        } else {
+            if ((fmask & DTK_DATE_M) != DTK_DATE_M) {
+                while (isdigit(*(cp + 1))) {
+                    ++cp;
+                }
+            }
+
+            if ((*cp - '0') >= 5) {
+                ++value;
+            }
+        }
+        *fsec = value;
+    }
+
+    return 0;
+}
+#endif
+
 /* ParseDateTime()
  *	Break string into tokens based on a date/time context.
  *	Returns 0 if successful, DTERR code if bogus input detected.
@@ -1597,7 +1634,7 @@ int DecodeTimeOnlyForBDatabase(char** field, int* ftype, int nf, int* dtype, str
                 break;
 
             case DTK_TIME:
-                dterr = DecodeTime(field[i], (fmask | DTK_DATE_M), INTERVAL_FULL_RANGE, &tmask, tm, fsec
+                dterr = DecodeTime(field[i], fmask, INTERVAL_FULL_RANGE, &tmask, tm, fsec
 #ifdef DOLPHIN
                 , false
 #endif
@@ -2343,7 +2380,11 @@ static int DecodeTime(
         /* opengauss: always assume mm:ss.sss is MINUTE TO SECOND 
          * b database : always assume hh:mm:00.sss 
          */
+#ifdef DOLPHIN
+        dterr = SpecialFractionalSecond(cp, fsec, fmask);
+#else
         dterr = ParseFractionalSecond(cp, fsec);
+#endif
         if (dterr)
             return dterr;
 #ifdef DOLPHIN
@@ -2362,7 +2403,11 @@ static int DecodeTime(
         if (*cp == '\0')
             *fsec = 0;
         else if (*cp == '.') {
+#ifdef DOLPHIN
+            dterr = SpecialFractionalSecond(cp, fsec, fmask);
+#else
             dterr = ParseFractionalSecond(cp, fsec);
+#endif
             if (dterr)
                 return dterr;
         } else
