@@ -284,12 +284,10 @@ CREATE OR REPLACE FUNCTION pg_catalog.subtime (numeric, text) RETURNS TEXT LANGU
 CREATE OR REPLACE FUNCTION pg_catalog.timediff ("any", "any") RETURNS time LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'timediff';
 
 CREATE OR REPLACE FUNCTION pg_catalog.time_format (text, text) RETURNS text LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'time_format';
-CREATE OR REPLACE FUNCTION pg_catalog.time_format (date, text) RETURNS TEXT AS $$ SELECT pg_catalog.time_format('00:00:00', $2) $$ LANGUAGE SQL;
+CREATE OR REPLACE FUNCTION pg_catalog.time_format (date, text) RETURNS text LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'time_format_date';
 CREATE OR REPLACE FUNCTION pg_catalog.time_format (numeric, text) RETURNS TEXT AS $$ SELECT pg_catalog.time_format(cast($1 as text), $2)  $$ LANGUAGE SQL;
 
-CREATE OR REPLACE FUNCTION pg_catalog.time_mysql (text) RETURNS time LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'time_mysql';
-CREATE OR REPLACE FUNCTION pg_catalog.time_mysql (numeric) RETURNS time AS $$ SELECT pg_catalog.time_mysql(cast($1 as text))  $$ LANGUAGE SQL;
-CREATE OR REPLACE FUNCTION pg_catalog.time_mysql (date) RETURNS time AS $$ SELECT pg_catalog.time_mysql('00:00:00')  $$ LANGUAGE SQL;
+CREATE OR REPLACE FUNCTION pg_catalog.time_mysql ("any") RETURNS time LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'time_mysql';
 
 CREATE OR REPLACE FUNCTION pg_catalog.timestamp_mysql ("any") RETURNS datetime LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'timestamp_param1';
 CREATE OR REPLACE FUNCTION pg_catalog.timestamp_mysql ("any", "any") RETURNS datetime LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'timestamp_param2';

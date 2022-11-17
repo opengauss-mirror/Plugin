@@ -217,7 +217,7 @@ insert into func_test2(functionName, result) values('TIMEDIFF(''839:59:59'', ''8
 ERROR:  date/time field value out of range: "839:59:59"
 CONTEXT:  referenced column: result
 insert into func_test2(functionName, result) values('TIMEDIFF(''-837:59:59'', ''-839:59:59'')', TIMEDIFF('-837:59:59', '-839:59:59') );
-ERROR:  date/time field value out of range: "839:59:59"
+ERROR:  date/time field value out of range: "-839:59:59"
 CONTEXT:  referenced column: result
 -- TIMEDIFF ( time, datetime ), TIMEDIFF ( time, datetime )
 insert into func_test2(functionName, result) values('TIMEDIFF(''2000-02-28 20:59:59'', ''4:00'')', TIMEDIFF('2000-02-28 20:59:59', '4:00') );
@@ -311,20 +311,24 @@ CONTEXT:  referenced column: result
 -- 异常格式
 insert into func_test2(functionName, result) values('TIME(''2003-12-40 01:02:03'')', TIME('2003-12-40 01:02:03'));
 ERROR:  date/time field value out of range: "2003-12-40 01:02:03"
-HINT:  Perhaps you need a different "datestyle" setting.
 CONTEXT:  referenced column: result
 insert into func_test2(functionName, result) values('TIME(''2003-13-31 01:02:03.000123'')', TIME('2003-13-31 01:02:03'));
 ERROR:  date/time field value out of range: "2003-13-31 01:02:03"
-HINT:  Perhaps you need a different "datestyle" setting.
 CONTEXT:  referenced column: result
 -- 非字符串类型
 insert into func_test2(functionName, result) values('TIME(time''1:1:1'')', TIME(time'1:1:1'));
 insert into func_test2(functionName, result) values('TIME(date''2000-01-01'')', TIME(date'2000-01-01'));
 insert into func_test2(functionName, result) values('TIME(cast(''2001-12-10 23:59:59'' as datetime))', TIME(cast('2001-12-10 23:59:59' as datetime)));
-ERROR:  invalid input syntax for type time: "Mon Dec 10 23:59:59 2001"
-CONTEXT:  referenced column: result
 insert into func_test2(functionName, result) values('TIME(false)', TIME(false));
 insert into func_test2(functionName, result) values('TIME(B''1'')', TIME(B'1'));
+ERROR:  unsupported input data type: bit
+CONTEXT:  referenced column: result
+insert into func_test2(functionName, result) values('TIME(date''5874897-12-31'')', TIME(date'5874897-12-31'));
+ERROR:  date out of range for timestamp
+CONTEXT:  referenced column: result
+insert into func_test2(functionName, result) values('TIME(date''10000-01-01'')', TIME(date'10000-01-01'));
+ERROR:  date/time field value out of range
+CONTEXT:  referenced column: result
 -- TIME_FORMAT()
 insert into func_test2(functionName, result) values(' TIME_FORMAT(''00:00:00'', ''%T|%r|%H|%h|%I|%i|%S|%f|%p|%k'')    ', TIME_FORMAT('00:00:00', '%T|%r|%H|%h|%I|%i|%S|%f|%p|%k'));
 insert into func_test2(functionName, result) values(' TIME_FORMAT(''240000'', ''%T|%r|%H|%h|%I|%i|%S|%f|%p|%k'')    ', TIME_FORMAT('240000', '%T|%r|%H|%h|%I|%i|%S|%f|%p|%k'));
@@ -398,6 +402,12 @@ ERROR:  invalid input syntax for type time: "Mon Dec 10 23:59:59 2001"
 CONTEXT:  referenced column: result
 insert into func_test2(functionName, result) values(' TIME_FORMAT(B''1'', ''%T|%r||%f'')    ', TIME_FORMAT(B'1', '%T|%r||%f'));
 insert into func_test2(functionName, result) values(' TIME_FORMAT(false, ''%T|%r||%f'')    ', TIME_FORMAT(false, '%T|%r||%f'));
+insert into func_test2(functionName, result) values(' TIME_FORMAT(date''5874897-12-31'', ''%t|%r|%h|%h'')', TIME_FORMAT(date'5874897-12-31', '%t|%r|%h|%h'));
+ERROR:  date field value out of range
+CONTEXT:  referenced column: result
+insert into func_test2(functionName, result) values(' TIME_FORMAT(date''10000-1-1'', date''9999-12-31'')', TIME_FORMAT(date'10000-1-1', date'9999-12-31'));
+ERROR:  date field value out of range
+CONTEXT:  referenced column: result
 -- TIMESTAMP(expr)
 -- 特异参数
 insert into func_test2(functionName, result) values('TIMESTAMP(null)', TIMESTAMP(null)); 
@@ -840,8 +850,8 @@ select * from func_test2;
  TIME('20031231010203.0001235')                                                              | 01:02:03.000124
  TIME(time'1:1:1')                                                                           | 01:01:01
  TIME(date'2000-01-01')                                                                      | 00:00:00
+ TIME(cast('2001-12-10 23:59:59' as datetime))                                               | 23:59:59
  TIME(false)                                                                                 | 00:00:00
- TIME(B'1')                                                                                  | 00:00:01
   TIME_FORMAT('00:00:00', '%T|%r|%H|%h|%I|%i|%S|%f|%p|%k')                                   | 00:00:00|12:00:00 AM|00|12|12|00|00|000000|AM|0
   TIME_FORMAT('240000', '%T|%r|%H|%h|%I|%i|%S|%f|%p|%k')                                     | 24:00:00|12:00:00 AM|24|12|12|00|00|000000|AM|24
   TIME_FORMAT(240000, '%T|%r|%H|%h|%I|%i|%S|%f|%p|%k')                                       | 24:00:00|12:00:00 AM|24|12|12|00|00|000000|AM|24

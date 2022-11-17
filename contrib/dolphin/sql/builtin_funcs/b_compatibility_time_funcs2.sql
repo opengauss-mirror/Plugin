@@ -221,6 +221,8 @@ insert into func_test2(functionName, result) values('TIME(date''2000-01-01'')', 
 insert into func_test2(functionName, result) values('TIME(cast(''2001-12-10 23:59:59'' as datetime))', TIME(cast('2001-12-10 23:59:59' as datetime)));
 insert into func_test2(functionName, result) values('TIME(false)', TIME(false));
 insert into func_test2(functionName, result) values('TIME(B''1'')', TIME(B'1'));
+insert into func_test2(functionName, result) values('TIME(date''5874897-12-31'')', TIME(date'5874897-12-31'));
+insert into func_test2(functionName, result) values('TIME(date''10000-01-01'')', TIME(date'10000-01-01'));
 
 -- TIME_FORMAT()
 insert into func_test2(functionName, result) values(' TIME_FORMAT(''00:00:00'', ''%T|%r|%H|%h|%I|%i|%S|%f|%p|%k'')    ', TIME_FORMAT('00:00:00', '%T|%r|%H|%h|%I|%i|%S|%f|%p|%k'));
@@ -275,6 +277,8 @@ insert into func_test2(functionName, result) values(' TIME_FORMAT(time''01:01:01
 insert into func_test2(functionName, result) values(' TIME_FORMAT(cast(''2001-12-10 23:59:59'' as datetime), ''%T|%r||%f'')    ', TIME_FORMAT(cast('2001-12-10 23:59:59' as datetime), '%T|%r||%f'));
 insert into func_test2(functionName, result) values(' TIME_FORMAT(B''1'', ''%T|%r||%f'')    ', TIME_FORMAT(B'1', '%T|%r||%f'));
 insert into func_test2(functionName, result) values(' TIME_FORMAT(false, ''%T|%r||%f'')    ', TIME_FORMAT(false, '%T|%r||%f'));
+insert into func_test2(functionName, result) values(' TIME_FORMAT(date''5874897-12-31'', ''%t|%r|%h|%h'')', TIME_FORMAT(date'5874897-12-31', '%t|%r|%h|%h'));
+insert into func_test2(functionName, result) values(' TIME_FORMAT(date''10000-1-1'', date''9999-12-31'')', TIME_FORMAT(date'10000-1-1', date'9999-12-31'));
 
 -- TIMESTAMP(expr)
 -- 特异参数
