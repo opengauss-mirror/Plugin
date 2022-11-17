@@ -129,6 +129,7 @@ static uint32 dolphin_index;
 extern void set_hypopg_prehook(ProcessUtility_hook_type func);
 extern void set_pgaudit_prehook(ProcessUtility_hook_type func);
 extern bool check_plugin_function(Oid funcId);
+extern PGFunction SearchFuncByOid(Oid funcId);
 static bool protocol_inited;
 
 extern "C" DLL_PUBLIC void _PG_init(void);
@@ -154,6 +155,7 @@ void init_plugin_object()
     u_sess->hook_cxt.computeHashHook  = (void*)compute_hash_default;
     u_sess->hook_cxt.aggSmpHook = (void*)check_plugin_function;
     u_sess->hook_cxt.standardProcessUtilityHook = (void*)standard_ProcessUtility;
+    u_sess->hook_cxt.searchFuncHook = (void*)SearchFuncByOid;
     set_default_guc();
 
     if (u_sess->proc_cxt.MyProcPort && u_sess->proc_cxt.MyProcPort->database_name) {
@@ -677,4 +679,14 @@ void create_dolphin_extension()
     execute_sql_file();
     u_sess->attr.attr_common.enable_full_encryption = pre_enable_full_encryption;
     finish_xact_command();
+}
+
+PGFunction SearchFuncByOid(Oid funcId)
+{
+    FmgrInfo* fmgrInfo = NULL;
+    fmgrInfo = (FmgrInfo*)palloc0(sizeof(FmgrInfo));
+    fmgr_info(funcId, fmgrInfo);
+    PGFunction func = fmgrInfo->fn_addr;
+    pfree(fmgrInfo);
+    return func;
 }

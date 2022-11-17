@@ -10,6 +10,7 @@ mb = $(utils)/mb
 vector = plugin_vector
 storage = plugin_storage
 optimizer = plugin_optimizer
+catalog = plugin_catalog
 subdir = contrib/dolphin
 top_builddir = ../..
 base_dir = contrib/dolphin
@@ -58,7 +59,9 @@ OBJS += $(commands)/functioncmds.o $(commands)/foreigncmds.o $(commands)/copy.o
 
 OBJS += $(pl)/pl_gram.o $(pl)/pl_scanner.o $(pl)/pl_comp.o $(pl)/pl_handler.o
 
-all $(OBJS): protocol parser utils executor vector commands storage optimizer pl;
+OBJS += $(catalog)/heap.o
+
+all $(OBJS): protocol parser utils executor vector commands storage optimizer pl catalog;
 
 protocol:
 	make -C $(protocol)
@@ -87,6 +90,10 @@ commands:
 pl:
 	make -C $(pl)
 
+catalog:
+	make -C $(catalog)
+
+
 extra_clean:
 	make clean -C $(protocol)
 	make clean -C $(parser)
@@ -96,6 +103,8 @@ extra_clean:
 	make clean -C $(storage)
 	make clean -C $(optimizer)
 	make clean -C $(commands)
+	make clean -C $(pl)
+	make clean -C $(catalog)
 clean: extra_clean
 
 dolphin--1.0.sql: sql_script/*

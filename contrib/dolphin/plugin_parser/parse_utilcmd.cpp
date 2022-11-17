@@ -35,7 +35,7 @@
 #include "catalog/dependency.h"
 #include "catalog/gs_column_keys.h"
 #include "catalog/gs_encrypted_columns.h"
-#include "catalog/heap.h"
+#include "plugin_catalog/heap.h"
 #include "catalog/index.h"
 #include "catalog/namespace.h"
 #include "catalog/pg_collation.h"

@@ -38,7 +38,7 @@
 #include "access/multixact.h"
 #include "catalog/catalog.h"
 #include "catalog/dependency.h"
-#include "catalog/heap.h"
+#include "plugin_catalog/heap.h"
 #include "catalog/index.h"
 #include "catalog/indexing.h"
 #include "catalog/namespace.h"

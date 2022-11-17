@@ -48,7 +48,7 @@
 #include "catalog/pg_trigger.h"
 #include "catalog/pg_type.h"
 #include "catalog/pg_set.h"
-#include "catalog/heap.h"
+#include "plugin_catalog/heap.h"
 #include "catalog/gs_encrypted_proc.h"
 #include "catalog/gs_encrypted_columns.h"
 #include "catalog/gs_package.h"
