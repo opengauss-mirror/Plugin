@@ -26,9 +26,11 @@
 #include "plugin_parser/gramparse.h"
 #include "plugin_parser/parser.h"
 
+#ifdef DOLPHIN
 #define ASCII_COMMA 44
 #define ASCII_DOT 46
 #define ASCII_SEMICOLON 59
+#endif
 
 extern void resetOperatorPlusFlag();
 
@@ -162,16 +164,17 @@ List* raw_parser(const char* str, List** query_string_locationlist)
         yyextra->lookahead_num = 2;                                                                                 \
     } while (0)
 
-
+#ifdef DOLPHIN
 static inline bool IsDescStmtSymbol(int token)
 {
     return (token == ASCII_DOT || token == ASCII_SEMICOLON);
 }
 
-static inline bool IsDescribeStmt(char *scanbuf) 
+static inline bool IsDescribeStmt(char* scanbuf) 
 {
     return(scanbuf && (!pg_strcasecmp(scanbuf, "desc") || !pg_strcasecmp(scanbuf, "describe")));
 }
+#endif
 
 /*
  * Intermediate filter between parser and core lexer (core_yylex in scan.l).
@@ -574,6 +577,7 @@ int base_yylex(YYSTYPE* lvalp, YYLTYPE* llocp, core_yyscan_t yyscanner)
                 break;
             }
             break;
+#ifdef DOLPHIN
         case EXPLAIN:
             READ_TWO_TOKEN();
             if (IsDescStmtSymbol(next_token)) {
@@ -593,6 +597,7 @@ int base_yylex(YYSTYPE* lvalp, YYLTYPE* llocp, core_yyscan_t yyscanner)
                 *llocp = cur_yylloc;
             }
             break;
+#endif
         default:
             break;
     }
