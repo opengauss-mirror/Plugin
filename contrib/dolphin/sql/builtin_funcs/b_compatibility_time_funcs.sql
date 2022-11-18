@@ -224,6 +224,12 @@ insert into func_test(functionName, result) values ('subdate(time''100:59:59'', 
 insert into func_test(functionName, result) values ('subdate(time(6)''100:59:59.555'', 2',subdate(time(6)'100:59:59.555', 2)); -- time包含小数
 insert into func_test(functionName, result) values ('subdate(time''815:0:0'', -1)',subdate(time'815:0:0', -1)); -- 越界838:59:59
 insert into func_test(functionName, result) values ('subdate(time''-838:59:59'', INTERVAL ''1'' SECOND)',subdate(time'-838:59:59', INTERVAL '1' SECOND)); -- 越界-838:59:59
+-- 浮点数格式的interval值
+insert into func_test(functionName, result) values('subdate(''2022-01-01'', interval 21.9 year)', subdate('2022-01-01', interval 21.9 year));
+insert into func_test(functionName, result) values('subdate(''2022-01-01 01:01:01'', interval 1.5 month)', subdate('2022-01-01 01:01:01', interval 1.5 month));
+insert into func_test(functionName, result) values('subdate(time''838:59:59'', interval 1.999 hour)', subdate(time'838:59:59', interval 1.999 hour));
+insert into func_test(functionName, result) values('subdate(''2022-01-01 01:01:01'', interval 1.999 minute)', subdate('2022-01-01 01:01:01', interval 1.999 minute));
+insert into func_test(functionName, result) values('subdate(''2022-01-01 01:01:01'', interval 1.999 second)', subdate('2022-01-01 01:01:01', interval 1.999 second));
 -- insert test
 create table insert_subdate(date_col date, datetime_col datetime);
 insert into insert_subdate(date_col, datetime_col) values (subdate('2021-1-1', 1), subdate('2021-1-1 01:01:01', 1));

@@ -307,6 +307,12 @@ CONTEXT:  referenced column: result
 insert into func_test(functionName, result) values ('subdate(time''-838:59:59'', INTERVAL ''1'' SECOND)',subdate(time'-838:59:59', INTERVAL '1' SECOND)); -- 越界-838:59:59
 ERROR:  time field value out of range
 CONTEXT:  referenced column: result
+-- 浮点数格式的interval值
+insert into func_test(functionName, result) values('subdate(''2022-01-01'', interval 21.9 year)', subdate('2022-01-01', interval 21.9 year));
+insert into func_test(functionName, result) values('subdate(''2022-01-01 01:01:01'', interval 1.5 month)', subdate('2022-01-01 01:01:01', interval 1.5 month));
+insert into func_test(functionName, result) values('subdate(time''838:59:59'', interval 1.999 hour)', subdate(time'838:59:59', interval 1.999 hour));
+insert into func_test(functionName, result) values('subdate(''2022-01-01 01:01:01'', interval 1.999 minute)', subdate('2022-01-01 01:01:01', interval 1.999 minute));
+insert into func_test(functionName, result) values('subdate(''2022-01-01 01:01:01'', interval 1.999 second)', subdate('2022-01-01 01:01:01', interval 1.999 second));
 -- insert test
 create table insert_subdate(date_col date, datetime_col datetime);
 insert into insert_subdate(date_col, datetime_col) values (subdate('2021-1-1', 1), subdate('2021-1-1 01:01:01', 1));
@@ -459,6 +465,11 @@ select * from func_test;
  subdate(time'100:59:59', INTERVAL '1 20:50:50.888888' DAY To SECOND)   | 56:09:08.111112
  subdate(time'100:59:59', INTERVAL '-1 20:50:50.888888' HOUR To SECOND) | 121:50:49.888888
  subdate(time(6)'100:59:59.555', 2                                      | 52:59:59.555
+ subdate('2022-01-01', interval 21.9 year)                              | 01-01-2000
+ subdate('2022-01-01 01:01:01', interval 1.5 month)                     | Mon Nov 01 01:01:01 2021
+ subdate(time'838:59:59', interval 1.999 hour)                          | 836:59:59
+ subdate('2022-01-01 01:01:01', interval 1.999 minute)                  | Sat Jan 01 00:59:01 2022
+ subdate('2022-01-01 01:01:01', interval 1.999 second)                  | Sat Jan 01 01:00:59.001 2022
 --?.*
 
 \c postgres
