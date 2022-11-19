@@ -1898,6 +1898,18 @@ CreateUserStmt:
 					IsValidIdentUsername($3);
 					n->role = $3;
 					n->options = $6;
+					n->missing_ok = false;
+					$$ = (Node *)n;
+					u_sess->parser_cxt.isForbidTruncate = false;
+				}
+			| CREATE USER IF_P NOT EXISTS RoleId opt_with {u_sess->parser_cxt.isForbidTruncate = true;} OptRoleList
+				{
+					CreateRoleStmt *n = makeNode(CreateRoleStmt);
+					n->stmt_type = ROLESTMT_USER;
+					IsValidIdentUsername($6);
+					n->role = $6;
+					n->options = $9;
+					n->missing_ok = true;
 					$$ = (Node *)n;
 					u_sess->parser_cxt.isForbidTruncate = false;
 				}
