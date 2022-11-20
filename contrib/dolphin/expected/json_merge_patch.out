@@ -27,10 +27,7 @@ select json_merge_patch('"a"','"b"');
 (1 row)
 
 select json_merge_patch(1,'"b"');
-ERROR:  function json_merge_patch(integer, unknown) does not exist
-LINE 1: select json_merge_patch(1,'"b"');
-               ^
-HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
+ERROR:  Invalid data type for JSON data in argument 1 to function json_merge_patch
 CONTEXT:  referenced column: json_merge_patch
 select json_merge_patch('["a",1,{"a":"abc"}]','["b",2,{"b":"bcd"}]');
     json_merge_patch    
@@ -45,11 +42,8 @@ select json_merge_patch('["a",1,{"a":"abc"}]',NULL);
 (1 row)
 
 select json_merge_patch(NULL,'["b",2,{"b":"bcd"}]');
-    json_merge_patch    
-------------------------
- ["b", 2, {"b": "bcd"}]
-(1 row)
-
+ERROR:  Invalid JSON text in argument 1 to function json_merge_patch.
+CONTEXT:  referenced column: json_merge_patch
 select json_merge_patch('{"a":"abc"}','{"b":"bcd"}');
      json_merge_patch     
 --------------------------
@@ -57,11 +51,8 @@ select json_merge_patch('{"a":"abc"}','{"b":"bcd"}');
 (1 row)
 
 select json_merge_patch(NULL,'{"b":"bcd"}');
- json_merge_patch 
-------------------
- 
-(1 row)
-
+ERROR:  Invalid JSON text in argument 1 to function json_merge_patch.
+CONTEXT:  referenced column: json_merge_patch
 select json_merge_patch('{"a":"abc"}','{"a":"bcd"}');
  json_merge_patch 
 ------------------
@@ -119,21 +110,18 @@ select json_merge_patch('{"colin":[{"a":"abc"},"bcd"]}','{"colinew":"handsome"}'
 select json_merge_patch('1','{"a":123}','true',NULL,'{"b":true}','{"b":1}','{"c":"23"}');
  json_merge_patch 
 ------------------
- 
+ true
 (1 row)
 
 select json_merge_patch('1','{"a":123}','true',NULL,'{"b":true}','{"b":1}','[1,2,3]');
  json_merge_patch 
 ------------------
- [1, 2, 3]
+ true
 (1 row)
 
 select json_merge_patch('1','{"a":123}','true',NULL,'{"b":true}','{"b":1}','[1,2,3]','{"a":1}');
- json_merge_patch 
-------------------
- {"a": 1}
-(1 row)
-
+ERROR:  Invalid JSON text in argument 4 to function json_merge_patch.
+CONTEXT:  referenced column: json_merge_patch
 select json_merge_patch('{"a":"abd"}','{"a":null}');
  json_merge_patch 
 ------------------
@@ -189,17 +177,11 @@ select json_merge_patch('[]','{"c":{"b":1,"a":2}}');
 (1 row)
 
 select json_merge_patch(null,'1','{"c":3,"b":5}');
- json_merge_patch 
-------------------
- {"b": 5, "c": 3}
-(1 row)
-
+ERROR:  Invalid JSON text in argument 1 to function json_merge_patch.
+CONTEXT:  referenced column: json_merge_patch
 select json_merge_patch(null,'1','{"d":3,"c":5}','{"e":4,"a":{"b":1,"a":2}}');
-                json_merge_patch                 
--------------------------------------------------
- {"a": {"a": 2, "b": 1}, "c": 5, "d": 3, "e": 4}
-(1 row)
-
+ERROR:  Invalid JSON text in argument 1 to function json_merge_patch.
+CONTEXT:  referenced column: json_merge_patch
 select json_merge_patch('{"c":3,"a":5}','1');
  json_merge_patch 
 ------------------
@@ -315,8 +297,8 @@ select json_merge_patch('[]','[1,2,3]');
 (1 row)
 
 create table test (
-    doc1 json,
-    doc2 json
+    doc1 text,
+    doc2 text
 );
 insert into test values
 ('{"a":"abc"}','{"a":"bcd"}'),
@@ -331,8 +313,8 @@ select *,json_merge_patch(doc1,doc2) from test;
 (3 rows)
 
 create table test1 (
-    doc1 json,
-    doc2 json
+    doc1 text,
+    doc2 text
 );
 insert into test1 values
 (json_merge_patch('{"colin":[{"a":"abc"},"bcd"]}','{"colinew":"handsome"}','{"colin":"huawei"}','{"a":[1,2]}'),
@@ -344,3 +326,4 @@ insert into test1 values
 (1 row)
 
 \c postgres;
+drop database if exists test_json_merge_patch;

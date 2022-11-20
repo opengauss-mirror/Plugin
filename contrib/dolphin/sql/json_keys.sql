@@ -32,4 +32,4 @@ insert into student (name) value(json_keys('{"a":123,"b":{"c":"qwe"}}'));
 select name from student;
 
 \c postgres
-drop database test_json_keys;
+drop database if exists test_json_keys;

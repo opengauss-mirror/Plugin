@@ -19,52 +19,52 @@ select json_object('{a,b,"a b c"}', '{a,1,1}');
 set b_compatibility_mode = 1;
 -- test for basic functionality of json_object
 select json_object('name', 'Jim', 'age', 20);
-         json_object          
-------------------------------
- {"age" : 20, "name" : "Jim"}
+        json_object         
+----------------------------
+ {"age": 20, "name": "Jim"}
 (1 row)
 
 select json_object('name', 'Jim', 'age', 20, 'name', 'Tim');
-         json_object          
-------------------------------
- {"age" : 20, "name" : "Jim"}
+        json_object         
+----------------------------
+ {"age": 20, "name": "Jim"}
 (1 row)
 
 select json_object('name', 'Tim', 'age', 20, 'friend', json_object('name', 'Jim', 'age', 20), 'hobby', json_build_array('games', 'sports'));
-                                             json_object                                              
-------------------------------------------------------------------------------------------------------
- {"age" : 20, "name" : "Tim", "hobby" : ["games", "sports"], "friend" : {"age" : 20, "name" : "Jim"}}
+                                          json_object                                           
+------------------------------------------------------------------------------------------------
+ {"age": 20, "name": "Tim", "hobby": ["games", "sports"], "friend": {"age": 20, "name": "Jim"}}
 (1 row)
 
 select json_object('City', 'Cairns', 'Population', 139693);
-                json_object                 
---------------------------------------------
- {"City" : "Cairns", "Population" : 139693}
+               json_object                
+------------------------------------------
+ {"City": "Cairns", "Population": 139693}
 (1 row)
 
 select json_object(1234,234,212,333);
-         json_object         
------------------------------
- {"212" : 333, "1234" : 234}
+        json_object        
+---------------------------
+ {"212": 333, "1234": 234}
 (1 row)
 
 select json_object(1, 'Json', 2, 'MyContex');
-           json_object            
-----------------------------------
- {"1" : "Json", "2" : "MyContex"}
+          json_object           
+--------------------------------
+ {"1": "Json", "2": "MyContex"}
 (1 row)
 
 -- test for type date and time
 select json_object('2022-09-26'::date,20221001::date);
-          json_object          
--------------------------------
- {"09-26-2022" : "10-01-2022"}
+         json_object          
+------------------------------
+ {"09-26-2022": "10-01-2022"}
 (1 row)
 
 select json_object('12:12:58'::time,'24:00:00'::time);
-        json_object        
----------------------------
- {"12:12:58" : "24:00:00"}
+       json_object        
+--------------------------
+ {"12:12:58": "24:00:00"}
 (1 row)
 
 --test with ->,->>
@@ -173,15 +173,15 @@ select * from json_to_record(json_object('name','Adam','age',23,'address','Cheng
 
 -- test for empty strings
 select json_object('City', '', 'Population', 139693);
-             json_object              
---------------------------------------
- {"City" : "", "Population" : 139693}
+            json_object             
+------------------------------------
+ {"City": "", "Population": 139693}
 (1 row)
 
 select json_object('', 'Cairns', 'Population', 139693);
-              json_object               
-----------------------------------------
- {"" : "Cairns", "Population" : 139693}
+             json_object              
+--------------------------------------
+ {"": "Cairns", "Population": 139693}
 (1 row)
 
 -- test for empty lists
@@ -199,15 +199,15 @@ select json_object();
 
 -- test for null values
 select json_object('City', 'Cairns', 'Population', NULL);
-               json_object                
-------------------------------------------
- {"City" : "Cairns", "Population" : null}
+              json_object               
+----------------------------------------
+ {"City": "Cairns", "Population": null}
 (1 row)
 
 select json_object('City', 'Cairns', 139693, NULL);
-             json_object              
---------------------------------------
- {"City" : "Cairns", "139693" : null}
+            json_object             
+------------------------------------
+ {"City": "Cairns", "139693": null}
 (1 row)
 
 -- test for null keys
@@ -219,86 +219,86 @@ ERROR:  arg 1: key cannot be null
 CONTEXT:  referenced column: json_object
 -- test for float number
 select json_object('City', '', 'Population', 139693.123);
-               json_object                
-------------------------------------------
- {"City" : "", "Population" : 139693.123}
+              json_object               
+----------------------------------------
+ {"City": "", "Population": 139693.123}
 (1 row)
 
 select json_object('City', '', 'Population', 0.123);
-             json_object             
--------------------------------------
- {"City" : "", "Population" : 0.123}
+            json_object            
+-----------------------------------
+ {"City": "", "Population": 0.123}
 (1 row)
 
 select json_object('City', '', 'Population', 5/7);
-                   json_object                   
--------------------------------------------------
- {"City" : "", "Population" : 0.714285714285714}
+                  json_object                  
+-----------------------------------------------
+ {"City": "", "Population": 0.714285714285714}
 (1 row)
 
 -- test for enormous number
 select json_object('a', 132454676878465464652222238888856744654563565446554798798451344787945.3153);
-                                    json_object                                     
-------------------------------------------------------------------------------------
- {"a" : 132454676878465464652222238888856744654563565446554798798451344787945.3153}
+                                    json_object                                    
+-----------------------------------------------------------------------------------
+ {"a": 132454676878465464652222238888856744654563565446554798798451344787945.3153}
 (1 row)
 
 -- test for bool values
 select json_object('Red', true, 'Blue', false);
-          json_object           
---------------------------------
- {"Red" : true, "Blue" : false}
+         json_object          
+------------------------------
+ {"Red": true, "Blue": false}
 (1 row)
 
 select json_object(true, 1, false, 0);
-        json_object        
----------------------------
- {"true" : 1, "false" : 0}
+       json_object       
+-------------------------
+ {"true": 1, "false": 0}
 (1 row)
 
 select json_object(true, false, false, true);
-           json_object            
-----------------------------------
- {"true" : false, "false" : true}
+          json_object           
+--------------------------------
+ {"true": false, "false": true}
 (1 row)
 
 -- test for lots of pairs
 select json_object('Region', 'Asia', 'color', 'red', 'City', '', 'Population', 139693.123, 'name', 'Tim', 'age', 20, 'friend', json_object('name', 'Jim', 'age', 20), 'hobby', json_build_array('games', 'sports'), 'name', 'Tim', 'age', 20, 'friend', json_object('name', 'Jim', 'age', 20), 'hobby', json_build_array('games', 'sports'));
-                                                                                   json_object                                                                                    
-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
- {"age" : 20, "City" : "", "name" : "Tim", "color" : "red", "hobby" : ["games", "sports"], "Region" : "Asia", "friend" : {"age" : 20, "name" : "Jim"}, "Population" : 139693.123}
+                                                                              json_object                                                                               
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ {"age": 20, "City": "", "name": "Tim", "color": "red", "hobby": ["games", "sports"], "Region": "Asia", "friend": {"age": 20, "name": "Jim"}, "Population": 139693.123}
 (1 row)
 
 -- test for negative input
 select json_object('Number', -123);
-    json_object    
--------------------
- {"Number" : -123}
+   json_object    
+------------------
+ {"Number": -123}
 (1 row)
 
 select json_object('Number', -123.12134);
-       json_object       
--------------------------
- {"Number" : -123.12134}
+      json_object       
+------------------------
+ {"Number": -123.12134}
 (1 row)
 
 select json_object('Number', -1234564564868789790867567.456);
-                 json_object                 
----------------------------------------------
- {"Number" : -1234564564868789790867567.456}
+                json_object                 
+--------------------------------------------
+ {"Number": -1234564564868789790867567.456}
 (1 row)
 
 -- test for numeric input starting with '+'
 select json_object('Number', +123);
-   json_object    
-------------------
- {"Number" : 123}
+   json_object   
+-----------------
+ {"Number": 123}
 (1 row)
 
 select json_object('Number', ++123);
-   json_object    
-------------------
- {"Number" : 123}
+   json_object   
+-----------------
+ {"Number": 123}
 (1 row)
 
 -- test for type check
@@ -321,18 +321,18 @@ ERROR:  invalid number or arguments: object must be matched key value pairs
 CONTEXT:  referenced column: json_object
 -- test for trim
 select json_object( 'City',            'Cairns',          'Population'          , NULL );
-               json_object                
-------------------------------------------
- {"City" : "Cairns", "Population" : null}
+              json_object               
+----------------------------------------
+ {"City": "Cairns", "Population": null}
 (1 row)
 
 -- test for inserting object into tables
 create table tab_json1(data json);
 insert into tab_json1 values (json_object('names','David','address','Beijing','Tel',1324053333,'names','Mike'));
 select * from tab_json1;
-                              data                              
-----------------------------------------------------------------
- {"Tel" : 1324053333, "names" : "David", "address" : "Beijing"}
+                            data                             
+-------------------------------------------------------------
+ {"Tel": 1324053333, "names": "David", "address": "Beijing"}
 (1 row)
 
 -- use the data in tables
@@ -342,12 +342,12 @@ insert into info1 values ('Tobbo','Meiguo',132333394);
 insert into info1 values ('Hnana','Riben',3403234);
 insert into tab_json1 select json_object('name',name,'address',address,'tel',tel) from info1;
 select * from tab_json1;
-                              data                              
-----------------------------------------------------------------
- {"Tel" : 1324053333, "names" : "David", "address" : "Beijing"}
- {"tel" : 1323394, "name" : "Jack", "address" : "Zhongguo"}
- {"tel" : 132333394, "name" : "Tobbo", "address" : "Meiguo"}
- {"tel" : 3403234, "name" : "Hnana", "address" : "Riben"}
+                            data                             
+-------------------------------------------------------------
+ {"Tel": 1324053333, "names": "David", "address": "Beijing"}
+ {"tel": 1323394, "name": "Jack", "address": "Zhongguo"}
+ {"tel": 132333394, "name": "Tobbo", "address": "Meiguo"}
+ {"tel": 3403234, "name": "Hnana", "address": "Riben"}
 (4 rows)
 
 -- test for setting b_compatibility_mode back to false
@@ -365,4 +365,4 @@ select json_object('{a,b,"a b c"}', '{a,1,1}');
 (1 row)
 
 \c postgres
-drop database test_json_object;
+drop database if exists test_json_object;

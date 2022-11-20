@@ -1,7 +1,7 @@
-drop database if exists test_quote;
-NOTICE:  database "test_quote" does not exist, skipping
-create database test_quote dbcompatibility'B';
-\c test_quote
+drop database if exists test_json_quote;
+NOTICE:  database "test_json_quote" does not exist, skipping
+create database test_json_quote dbcompatibility'B';
+\c test_json_quote
 select json_quote(E'a\tb');
  json_quote 
 ------------
@@ -89,4 +89,4 @@ select name from student;
 
 drop table student;
 \c postgres
-drop database test_quote;
+drop database test_json_quote;

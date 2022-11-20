@@ -1,6 +1,6 @@
-drop database if exists json_test;
-create database json_test dbcompatibility 'B';
-\c json_test
+drop database if exists test_json_replace;
+create database test_json_replace dbcompatibility 'B';
+\c test_json_replace
 
 -- test for basic functionality of json_replace
 SELECT JSON_REPLACE('{"a": 1, "b": 2, "c": 3}', '$.b', 9);
@@ -70,22 +70,5 @@ SELECT JSON_REPLACE('x','a',3,true);
 -- test for invalid json document
 SELECT JSON_REPLACE('x',2,2);
 
--- test for table
-create temp table test (
-    textjson json
-);
-insert into test values
-('{"a": {"b": 32, "c":"hello"}, "d": 0.3443}'),
-('["dog", "pig", {"a": "here"}]'),
-('["pig", "dog", {"a": "there"}]'),
-('{"a": "abc","b": {"b": "abc", "a": "abc"}}');
-
-select JSON_REPLACE(textjson, '$.a', 'Lihua') from test;
-select JSON_REPLACE(textjson, '$[0]', 'Animal') from test;
-
-insert into test values
-(JSON_REPLACE('{"a": 43, "b": {"c": true}}', '$.b', 'Test'));
-select * from test;
-
 \c postgres
-drop database json_test;
+drop database if exists test_json_replace;

@@ -9,9 +9,9 @@ SELECT JSON_KEYS('{"a":"t1"}');
 (1 row)
 
 SELECT JSON_KEYS('{"a":"t1","b":"t2"}');
- json_keys 
------------
- ["a","b"]
+ json_keys  
+------------
+ ["a", "b"]
 (1 row)
 
 SELECT JSON_KEYS('{"a":12}');
@@ -21,15 +21,15 @@ SELECT JSON_KEYS('{"a":12}');
 (1 row)
 
 SELECT JSON_KEYS('{"a":12,"b":34}');
- json_keys 
------------
- ["a","b"]
+ json_keys  
+------------
+ ["a", "b"]
 (1 row)
 
 SELECT JSON_KEYS('{"a":123,"b":{"c":"qwe"}}');
- json_keys 
------------
- ["a","b"]
+ json_keys  
+------------
+ ["a", "b"]
 (1 row)
 
 SELECT JSON_KEYS('{"电子科技大学":123}');
@@ -39,19 +39,11 @@ SELECT JSON_KEYS('{"电子科技大学":123}');
 (1 row)
 
 SELECT JSON_KEYS('{efguewfioegwgf}');
-ERROR:  invalid input syntax for type json
-LINE 1: SELECT JSON_KEYS('{efguewfioegwgf}');
-                         ^
-DETAIL:  Token "efguewfioegwgf" is invalid.
-CONTEXT:  JSON data, line 1: {efguewfioegwgf...
-referenced column: json_keys
+ERROR:  Invalid JSON text in argument 1 to function json_keys.
+CONTEXT:  referenced column: json_keys
 SELECT JSON_KEYS('');
-ERROR:  invalid input syntax for type json
-LINE 1: SELECT JSON_KEYS('');
-                         ^
-DETAIL:  The input string ended unexpectedly.
-CONTEXT:  JSON data, line 1: 
-referenced column: json_keys
+ERROR:  Invalid JSON text in argument 1 to function json_keys.
+CONTEXT:  referenced column: json_keys
 SELECT JSON_KEYS();
 ERROR:  function json_keys() does not exist
 LINE 1: SELECT JSON_KEYS();
@@ -95,16 +87,10 @@ SELECT JSON_KEYS('[1,2,3,4]');
 (1 row)
 
 SELECT JSON_KEYS('[1,2,[114,514],4]','$[2]');
- json_keys 
------------
- 
-(1 row)
-
+ERROR:  Invalid data type for JSON data in argument 1 to function json_extract
+CONTEXT:  referenced column: json_keys
 SELECT JSON_KEYS(true);
-ERROR:  function json_keys(boolean) does not exist
-LINE 1: SELECT JSON_KEYS(true);
-               ^
-HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
+ERROR:  Invalid data type for JSON data in argument 1 to function json_keys
 CONTEXT:  referenced column: json_keys
 SELECT JSON_KEYS(true,false);
 ERROR:  function json_keys(boolean, boolean) does not exist
@@ -113,42 +99,27 @@ LINE 1: SELECT JSON_KEYS(true,false);
 HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
 CONTEXT:  referenced column: json_keys
 SELECT JSON_KEYS('{"a":1,"b":{"c":2}}','$.b');
- json_keys 
------------
- ["c"]
-(1 row)
-
+ERROR:  Invalid data type for JSON data in argument 1 to function json_extract
+CONTEXT:  referenced column: json_keys
 SELECT JSON_KEYS('{"a":1,"b":{"c":{"d":114},"d":514}}','$.b.c');
- json_keys 
------------
- ["d"]
-(1 row)
-
+ERROR:  Invalid data type for JSON data in argument 1 to function json_extract
+CONTEXT:  referenced column: json_keys
 SELECT JSON_KEYS('[1,2,{"a":1,"b":{"c":2}},4]','$[2]');
- json_keys 
------------
- ["a","b"]
-(1 row)
-
+ERROR:  Invalid data type for JSON data in argument 1 to function json_extract
+CONTEXT:  referenced column: json_keys
 SELECT JSON_KEYS('{"a":1,"b":{"c":2}}','$.z');
- json_keys 
------------
- 
-(1 row)
-
+ERROR:  Invalid data type for JSON data in argument 1 to function json_extract
+CONTEXT:  referenced column: json_keys
 SELECT JSON_KEYS('[1,2,{"a":1,"b":{"c":2}},4]','$[8]');
- json_keys 
------------
- 
-(1 row)
-
+ERROR:  Invalid data type for JSON data in argument 1 to function json_extract
+CONTEXT:  referenced column: json_keys
 create table student(name json);
 insert into student (name) value(json_keys('{"a":123,"b":{"c":"qwe"}}'));
 select name from student;
-   name    
------------
- ["a","b"]
+    name    
+------------
+ ["a", "b"]
 (1 row)
 
 \c postgres
-drop database test_json_keys;
+drop database if exists test_json_keys;

@@ -40,29 +40,13 @@
 #endif
 
 #ifdef DOLPHIN
-PG_FUNCTION_INFO_V1_PUBLIC(json_array);
-extern "C" DLL_PUBLIC Datum json_array(PG_FUNCTION_ARGS);
-
-PG_FUNCTION_INFO_V1_PUBLIC(json_object_mysql);
-extern "C" DLL_PUBLIC Datum json_object_mysql(PG_FUNCTION_ARGS);
-
-PG_FUNCTION_INFO_V1_PUBLIC(json_object_noarg);
-extern "C" DLL_PUBLIC Datum json_object_noarg(PG_FUNCTION_ARGS);
-
-PG_FUNCTION_INFO_V1_PUBLIC(json_unquote);
-extern "C" DLL_PUBLIC Datum json_unquote(PG_FUNCTION_ARGS);
-
-PG_FUNCTION_INFO_V1_PUBLIC(json_quote);
-extern "C" DLL_PUBLIC Datum json_quote(PG_FUNCTION_ARGS);
-
-PG_FUNCTION_INFO_V1_PUBLIC(json_depth);
-extern "C" DLL_PUBLIC Datum json_depth(PG_FUNCTION_ARGS);
-
-#endif
-
-#ifdef DOLPHIN
-static void Cobject(JsonLexContext *lex, JsonSemAction *sem, int &depth);
-static void Carray(JsonLexContext *lex, JsonSemAction *sem, int &depth);
+static void DelChar(char *inStr, char *outStr, int &a, int &b);
+static void CheckSign(char *inStr, int &x);
+static void depth_object_field(JsonLexContext *lex, JsonSemAction *sem, int &depth);
+static void depth_array_element(JsonLexContext *lex, JsonSemAction *sem, int &depth);
+static void depth_object(JsonLexContext *lex, JsonSemAction *sem, int &depth);
+static void depth_array(JsonLexContext *lex, JsonSemAction *sem, int &depth);
+static void sort_json(JsonLexContext *lex, JsonSemAction *sem, int &depth);
 #endif
 
 /*
@@ -103,6 +87,26 @@ static void add_json(Datum val, bool is_null, StringInfo result, Oid val_type, b
 
 /* the null action object used for pure validation */
 static JsonSemAction nullSemAction = {NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL};
+
+#ifdef DOLPHIN
+PG_FUNCTION_INFO_V1_PUBLIC(json_array);
+extern "C" DLL_PUBLIC Datum json_array(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1_PUBLIC(json_object_mysql);
+extern "C" DLL_PUBLIC Datum json_object_mysql(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1_PUBLIC(json_object_noarg);
+extern "C" DLL_PUBLIC Datum json_object_noarg(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1_PUBLIC(json_unquote);
+extern "C" DLL_PUBLIC Datum json_unquote(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1_PUBLIC(json_quote);
+extern "C" DLL_PUBLIC Datum json_quote(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1_PUBLIC(json_depth);
+extern "C" DLL_PUBLIC Datum json_depth(PG_FUNCTION_ARGS);
+#endif
 
 /* Recursive Descent parser support routines */
 /*
@@ -2109,9 +2113,7 @@ Datum json_array(PG_FUNCTION_ARGS)
 {
     PG_RETURN_TEXT_P(json_build_array(fcinfo));
 }
-#endif
 
-#ifdef DOLPHIN
 extern void get_keys_order(char **a, int l, int r, int pos[])
 {
     char *mid = a[pos[(l + r) / 2]];
@@ -2261,7 +2263,7 @@ Datum json_object_mysql(PG_FUNCTION_ARGS)
         appendStringInfoString(result, sep);
         sep = ", ";
         appendStringInfoString(result, keys[pos[order]]);
-        appendStringInfoString(result, " : ");
+        appendStringInfoString(result, ": ");
         /* process value */
         val_type = get_fn_expr_argtype(fcinfo->flinfo, 2 * pos[order] + 1);
         /* see comments above */
@@ -2297,9 +2299,7 @@ Datum json_object_noarg(PG_FUNCTION_ARGS)
     appendStringInfoChar(result, '}');
     PG_RETURN_TEXT_P(cstring_to_text_with_len(result->data, result->len));
 }
-#endif
 
-#ifdef DOLPHIN
 Datum json_quote(PG_FUNCTION_ARGS)
 {
     text *str = PG_GETARG_TEXT_PP(0);
@@ -2316,10 +2316,8 @@ Datum json_quote(PG_FUNCTION_ARGS)
     datum_to_json(val, false, result, tcategory, typoutput, false);
     PG_RETURN_TEXT_P(cstring_to_text_with_len(result->data, result->len));
 }
-#endif
 
-#ifdef DOLPHIN
-void DelChar(char *inStr, char *outStr, int &a, int &b)
+static void DelChar(char *inStr, char *outStr, int &a, int &b)
 {
     char *tmp;
     char *tep;
@@ -2340,7 +2338,7 @@ void DelChar(char *inStr, char *outStr, int &a, int &b)
         tep++;
     }
 }
-void CheckSign(char *inStr, int &x)
+static void CheckSign(char *inStr, int &x)
 {
     char *tmp;
     tmp = inStr;
@@ -2388,55 +2386,8 @@ Datum json_unquote(PG_FUNCTION_ARGS)
         PG_RETURN_TEXT_P(NULL);
     }
 }
-#endif
-extern void add_json_test(Datum val, bool is_null, StringInfo result, Oid val_type, bool key_scalar)
-{
-    TYPCATEGORY tcategory;
-    Oid typoutput;
-    bool typisvarlena = false;
-    Oid castfunc = InvalidOid;
 
-    if (val_type == InvalidOid) {
-        ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("could not determine input data type")));
-    }
-
-    getTypeOutputInfo(val_type, &typoutput, &typisvarlena);
-    if (val_type > FirstNormalObjectId) {
-        HeapTuple tuple;
-        Form_pg_cast castForm;
-
-        tuple = SearchSysCache2(CASTSOURCETARGET, ObjectIdGetDatum(val_type), ObjectIdGetDatum(JSONOID));
-        if (HeapTupleIsValid(tuple)) {
-            castForm = (Form_pg_cast)GETSTRUCT(tuple);
-            if (castForm->castmethod == COERCION_METHOD_FUNCTION) {
-                castfunc = typoutput = castForm->castfunc;
-            }
-            ReleaseSysCache(tuple);
-        }
-    }
-    if (castfunc != InvalidOid) {
-        tcategory = TYPCATEGORY_JSON_CAST;
-    } else if (val_type == RECORDARRAYOID) {
-        tcategory = TYPCATEGORY_ARRAY;
-    } else if (val_type == RECORDOID) {
-        tcategory = TYPCATEGORY_COMPOSITE;
-    } else if (val_type == JSONOID) {
-        tcategory = TYPCATEGORY_JSON;
-    } else {
-        tcategory = TypeCategory(val_type);
-    }
-
-    if (key_scalar && (tcategory == TYPCATEGORY_ARRAY || tcategory == TYPCATEGORY_COMPOSITE ||
-                       tcategory == TYPCATEGORY_JSON || tcategory == TYPCATEGORY_JSON_CAST)) {
-        ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
-                        errmsg("key value must be scalar, not array, composite or json")));
-    }
-
-    datum_to_json(val, is_null, result, tcategory, typoutput, key_scalar);
-}
-
-#ifdef DOLPHIN
-void Cobject_field(JsonLexContext *lex, JsonSemAction *sem, int &depth)
+static void depth_object_field(JsonLexContext *lex, JsonSemAction *sem, int &depth)
 {
     /*
      * an object field is "fieldname" : value where value can be a scalar,
@@ -2465,10 +2416,10 @@ void Cobject_field(JsonLexContext *lex, JsonSemAction *sem, int &depth)
     }
     switch (tok) {
         case JSON_TOKEN_OBJECT_START:
-            Cobject(lex, sem, depth);
+            depth_object(lex, sem, depth);
             break;
         case JSON_TOKEN_ARRAY_START:
-            Carray(lex, sem, depth);
+            depth_array(lex, sem, depth);
             break;
         default:
             parse_scalar(lex, sem);
@@ -2486,7 +2437,8 @@ void Cobject_field(JsonLexContext *lex, JsonSemAction *sem, int &depth)
         pfree(fname);
     }
 }
-void Carray_element(JsonLexContext *lex, JsonSemAction *sem, int &depth)
+
+static void depth_array_element(JsonLexContext *lex, JsonSemAction *sem, int &depth)
 {
     json_aelem_action astart = sem->array_element_start;
     json_aelem_action aend = sem->array_element_end;
@@ -2501,10 +2453,10 @@ void Carray_element(JsonLexContext *lex, JsonSemAction *sem, int &depth)
     /* an array element is any object, array or scalar */
     switch (tok) {
         case JSON_TOKEN_OBJECT_START:
-            Cobject(lex, sem, depth);
+            depth_object(lex, sem, depth);
             break;
         case JSON_TOKEN_ARRAY_START:
-            Carray(lex, sem, depth);
+            depth_array(lex, sem, depth);
             break;
         default:
             parse_scalar(lex, sem);
@@ -2519,7 +2471,8 @@ void Carray_element(JsonLexContext *lex, JsonSemAction *sem, int &depth)
         (*aend)(sem->semstate, isnull);
     }
 }
-static void Cobject(JsonLexContext *lex, JsonSemAction *sem, int &depth)
+
+static void depth_object(JsonLexContext *lex, JsonSemAction *sem, int &depth)
 {
     /*
      * an object is a possibly empty sequence of object fields, separated by
@@ -2548,9 +2501,9 @@ static void Cobject(JsonLexContext *lex, JsonSemAction *sem, int &depth)
     tok = lex_peek(lex);
     switch (tok) {
         case JSON_TOKEN_STRING:
-            Cobject_field(lex, sem, depth);
+            depth_object_field(lex, sem, depth);
             while (lex_accept(lex, JSON_TOKEN_COMMA, NULL))
-                Cobject_field(lex, sem, depth);
+                depth_object_field(lex, sem, depth);
             break;
         case JSON_TOKEN_OBJECT_END:
             break;
@@ -2565,7 +2518,8 @@ static void Cobject(JsonLexContext *lex, JsonSemAction *sem, int &depth)
         (*oend)(sem->semstate);
     }
 }
-static void Carray(JsonLexContext *lex, JsonSemAction *sem, int &depth)
+
+static void depth_array(JsonLexContext *lex, JsonSemAction *sem, int &depth)
 {
     /*
      * an array is a possibly empty sequence of array elements, separated by
@@ -2589,9 +2543,9 @@ static void Carray(JsonLexContext *lex, JsonSemAction *sem, int &depth)
         depth = lex->lex_level;
     lex_expect(JSON_PARSE_ARRAY_START, lex, JSON_TOKEN_ARRAY_START);
     if (lex_peek(lex) != JSON_TOKEN_ARRAY_END) {
-        Carray_element(lex, sem, depth);
+        depth_array_element(lex, sem, depth);
         while (lex_accept(lex, JSON_TOKEN_COMMA, NULL))
-            Carray_element(lex, sem, depth);
+            depth_array_element(lex, sem, depth);
     }
     lex_expect(JSON_PARSE_ARRAY_NEXT, lex, JSON_TOKEN_ARRAY_END);
     lex->lex_level--;
@@ -2600,7 +2554,8 @@ static void Carray(JsonLexContext *lex, JsonSemAction *sem, int &depth)
         (*aend)(sem->semstate);
     }
 }
-void sort_json(JsonLexContext *lex, JsonSemAction *sem, int &depth)
+
+static void sort_json(JsonLexContext *lex, JsonSemAction *sem, int &depth)
 {
     JsonTokenType tok;
 
@@ -2611,10 +2566,10 @@ void sort_json(JsonLexContext *lex, JsonSemAction *sem, int &depth)
     /* parse by recursive descent */
     switch (tok) {
         case JSON_TOKEN_OBJECT_START:
-            Cobject(lex, sem, depth);
+            depth_object(lex, sem, depth);
             break;
         case JSON_TOKEN_ARRAY_START:
-            Carray(lex, sem, depth);
+            depth_array(lex, sem, depth);
             break;
         default:
             parse_scalar(lex, sem); /* json can be a bare scalar */
@@ -2623,9 +2578,26 @@ void sort_json(JsonLexContext *lex, JsonSemAction *sem, int &depth)
 
     lex_expect(JSON_PARSE_END, lex, JSON_TOKEN_END);
 }
+
 Datum json_depth(PG_FUNCTION_ARGS)
 {
-    text *json = PG_GETARG_TEXT_P(0);
+    Oid valtype;
+    Oid typOutput;
+    bool typIsVarlena = false;
+    Datum arg = 0;
+    char* data;
+    text *json;
+
+    valtype = get_fn_expr_argtype(fcinfo->flinfo, 0);
+    if (VALTYPE_IS_JSON(valtype)) {
+        arg = PG_GETARG_DATUM(0);
+        getTypeOutputInfo(valtype, &typOutput, &typIsVarlena);
+        data = OidOutputFunctionCall(typOutput, arg);
+        json = cstring_to_text(data);
+    } else {
+        ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+                        errmsg("Invalid data type for JSON data in argument 1 to function json_depth")));
+    }
     JsonLexContext *lex = NULL;
     int depth = 0;
     /* validate it */

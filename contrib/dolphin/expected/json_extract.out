@@ -1,7 +1,7 @@
-drop database if exists test_extract;
-NOTICE:  database "test_extract" does not exist, skipping
-create database test_extract dbcompatibility'B';
-\c test_extract
+drop database if exists test_json_extract;
+NOTICE:  database "test_json_extract" does not exist, skipping
+create database test_json_extract dbcompatibility'B';
+\c test_json_extract
 select json_extract('{"a": "lihua"}', '$.a');
  json_extract 
 --------------
@@ -9,12 +9,8 @@ select json_extract('{"a": "lihua"}', '$.a');
 (1 row)
 
 select json_extract('{"a"}', '$.a');
-ERROR:  invalid input syntax for type json
-LINE 1: select json_extract('{"a"}', '$.a');
-                            ^
-DETAIL:  Expected ":", but found "}".
-CONTEXT:  JSON data, line 1: {"a"}
-referenced column: json_extract
+ERROR:  Invalid JSON text in argument 1 to function json_extract.
+CONTEXT:  referenced column: json_extract
 select json_extract('{"a":[1, true, null]}', '$.a [1]');
  json_extract 
 --------------
@@ -24,7 +20,7 @@ select json_extract('{"a":[1, true, null]}', '$.a [1]');
 select json_extract('{"a":[1, true, null]}', '$.a [*]');
   json_extract   
 -----------------
- [null, true, 1]
+ [1, true, null]
 (1 row)
 
 select json_extract('{"a":{"b": "hi"}}', '$ .* .b');
@@ -42,7 +38,7 @@ select json_extract('{"a": 3233}', '$');
 select json_extract('{"a": {"a": true}, "b": [{"a": "lihua"}]}', '$**.a');
          json_extract         
 ------------------------------
- ["lihua", true, {"a": true}]
+ [{"a": true}, true, "lihua"]
 (1 row)
 
 select json_extract('{"a": "true", "b":{"a": 43}}', '$.a');
@@ -114,4 +110,4 @@ select * from test;
 (5 rows)
 
 \c postgres
-drop database if exists test_extract;
+drop database if exists test_json_extract;
