@@ -1,0 +1,174 @@
+drop database if exists load;
+create database load dbcompatibility 'B';
+\c load
+
+create table t1(a int, b int);
+load data infile '@abs_builddir@/data/load1.csv' into table t1;
+select * from t1;
+delete t1;
+
+--prefix
+load data infile '@abs_builddir@/data/load2.csv' into table t1 lines starting by 'hello';
+select * from t1;
+delete t1;
+
+--fileds terminated
+load data infile '@abs_builddir@/data/load3.csv' into table t1 fields terminated by 'delimiter' lines starting by 'hello';
+select * from t1;
+delete t1;
+
+--lines terminanted
+load data infile '@abs_builddir@/data/load4.csv' into table t1 columns terminated by 'delimiter' lines starting by 'hello' terminated by '#';
+select * from t1;
+delete t1;
+
+--enclosed by
+load data infile '@abs_builddir@/data/load5.csv' into table t1 columns enclosed by '''' terminated by 'delimiter' lines starting by 'hello' terminated by '#';
+select * from t1;
+delete t1;
+
+--ecasped by
+load data infile '@abs_builddir@/data/load5.csv' into table t1 columns enclosed by '''' terminated by 'delimiter' escaped by E'\\' lines starting by 'hello' terminated by '#';
+select * from t1;
+--ignore
+create table t2(a int primary key, b char unique);
+insert into t2 values(1, 'a'), (2, 'b');
+load data infile '@abs_builddir@/data/load6.csv' ignore into table t2;
+select * from t2;
+
+--replace
+load data infile '@abs_builddir@/data/load6.csv' replace into table t2;
+select * from t2;
+
+drop table t2;
+create table t2(a int primary key, b char unique)with(storage_type = ustore);
+insert into t2 values(1, 'a'), (2, 'b');
+load data infile '@abs_builddir@/data/load6.csv' ignore into table t2;
+select * from t2;
+load data infile '@abs_builddir@/data/load6.csv' replace into table t2;
+select * from t2;
+
+drop table t2;
+create table t2(a int primary key, b char unique)with(segment = on);
+insert into t2 values(1, 'a'), (2, 'b');
+load data infile '@abs_builddir@/data/load6.csv' ignore into table t2;
+select * from t2;
+load data infile '@abs_builddir@/data/load6.csv' replace into table t2;
+select * from t2;
+
+--partition
+create table t3(a int primary key, b char unique) partition by range(a)
+(
+    partition p1 values less than (1),
+    partition p2 values less than (2),
+    partition p3 values less than (10)
+);
+insert into t3 values(1, 'a'), (2, 'b');
+load data infile '@abs_builddir@/data/load6.csv' ignore into table t3;
+select * from t3;
+load data infile '@abs_builddir@/data/load6.csv' replace into table t3;
+select * from t3;
+
+drop table t3;
+create table t3(a int primary key, b char unique) partition by range(a)
+(
+    partition p1 values less than (1),
+    partition p2 values less than (2),
+    partition p3 values less than (10)
+) with(storage_type = ustore);
+insert into t3 values(1, 'a'), (2, 'b');
+load data infile '@abs_builddir@/data/load6.csv' ignore into table t3;
+select * from t3;
+load data infile '@abs_builddir@/data/load6.csv' replace into table t3;
+select * from t3;
+--subpartition
+create table t4(a int primary key, b char unique) partition by range(a) subpartition by list(b)
+(
+    partition p1 values less than (1)
+    (
+        subpartition p11 values('a'),
+        subpartition p12 values('b'),
+        subpartition p13 values('c')
+    ),
+    partition p2 values less than (2)
+    (
+        subpartition p21 values('a'),
+        subpartition p22 values('b'),
+        subpartition p23 values('c')
+    ),
+    partition p3 values less than (10)
+    (
+        subpartition p31 values('a'),
+        subpartition p32 values('b'),
+        subpartition p33 values('c')
+    )
+);
+insert into t4 values(1, 'a'), (2, 'b');
+load data infile '@abs_builddir@/data/load6.csv' ignore into table t4;
+select * from t4;
+load data infile '@abs_builddir@/data/load6.csv' replace into table t4;
+select * from t4;
+
+drop table t4;
+create table t4(a int primary key, b char unique) partition by range(a) subpartition by list(b)
+(
+    partition p1 values less than (1)
+    (
+        subpartition p11 values('a'),
+        subpartition p12 values('b'),
+        subpartition p13 values('c')
+    ),
+    partition p2 values less than (2)
+    (
+        subpartition p21 values('a'),
+        subpartition p22 values('b'),
+        subpartition p23 values('c')
+    ),
+    partition p3 values less than (10)
+    (
+        subpartition p31 values('a'),
+        subpartition p32 values('b'),
+        subpartition p33 values('c')
+    )
+) with(segment = on);
+insert into t4 values(1, 'a'), (2, 'b');
+load data infile '@abs_builddir@/data/load6.csv' ignore into table t4;
+select * from t4;
+load data infile '@abs_builddir@/data/load6.csv' replace into table t4;
+select * from t4;
+
+--trigger
+create table t5(a int primary key, b char unique);
+create table t6(a varchar(30));
+insert into t5 values(1, 'a'), (2, 'b');
+create trigger tri1 before insert on t5 for each statement begin insert into t6 values('before_insert_statement'); end;
+/
+
+create trigger tri2 before insert on t5 for each row begin insert into t6 values('before_insert_row'); end;
+/
+
+create trigger tri3 after insert on t5 for each statement begin insert into t6 values('after_insert_statement'); end;
+/
+
+create trigger tri4 after insert on t5 for each row begin insert into t6 values('after_insert_row'); end;
+/
+
+create trigger tri5 before delete on t5 for each statement begin insert into t6 values('before_delete_statement'); end;
+/
+
+create trigger tri6 before delete on t5 for each row begin insert into t6 values('before_delete_row'); end;
+/
+
+create trigger tri7 after delete on t5 for each statement begin insert into t6 values('after_delete_statement'); end;
+/
+
+create trigger tri8 after delete on t5 for each row begin insert into t6 values('after_delete_row'); end;
+/
+
+load data infile '@abs_builddir@/data/load6.csv' ignore into table t5;
+select * from t6;
+delete t6;
+load data infile '@abs_builddir@/data/load6.csv' replace into table t5;
+select * from t6;
+\c postgres
+drop database if exists load;
