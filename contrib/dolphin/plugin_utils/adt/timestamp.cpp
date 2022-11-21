@@ -6582,8 +6582,13 @@ Oid convert_cstring_to_datetime_time(const char* str, Timestamp *datetime, TimeA
     if (len >= 12) {
         int fsec = 0, nano = 0, tm_type = DTK_NONE;
         struct pg_tm tt, *tm = &tt;
+        bool warnings = false;
         /* Check whether the string is a full timestamp */
-        cstring_to_datetime(str, (TIME_FUZZY_DATE | TIME_DATETIME_ONLY), tm_type, tm, fsec, nano);
+        cstring_to_datetime(str, (TIME_FUZZY_DATE | TIME_DATETIME_ONLY), tm_type, tm, fsec, nano, warnings);
+        if (warnings && SQL_MODE_STRICT()) {
+            ereport(ERROR, (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE),
+                            errmsg("date/time field value out of range: \"%s\"", str)));
+        }
         switch (tm_type) {
             case DTK_NONE:
                 break; /* Not a timestamp */

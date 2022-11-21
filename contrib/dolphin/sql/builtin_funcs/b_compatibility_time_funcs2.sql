@@ -95,7 +95,11 @@ insert into func_test2(functionName, result) values('TIMEDIFF(''2008-12-31 23:60
 insert into func_test2(functionName, result) values('TIMEDIFF(''2008-12-31 23:59:59.000001'',''2008-12-30 01:60:01.000002'')', TIMEDIFF('2008-12-31 23:59:59.000001','2008-12-30 01:60:01.000002'));
 insert into func_test2(functionName, result) values('TIMEDIFF(''2008-12-31 23:59:59.000001'',''2008-12-30 24:01:01.000002'')', TIMEDIFF('2008-12-31 23:59:59.000001','2008-12-30 24:01:01.000002'));
 insert into func_test2(functionName, result) values('TIMEDIFF(''2008-12-31 23:59:59.000001'',''2008-12-30 01:01:01.000002'')', TIMEDIFF('2008-12-31 23:59:59.000001','2008-12-30 01:01:01.000002'));
-	-- 特异参数测试
+	-- 数值格式
+insert into func_test2(functionName, result) values('TIMEDIFF(''100000101151515'', ''100000101151514'')', TIMEDIFF('100000101151515', '100000101151514'));
+insert into func_test2(functionName, result) values('TIMEDIFF(20000101010101, 20000101010101.123456)', TIMEDIFF(20000101010101, 20000101010101.123456));
+insert into func_test2(functionName, result) values('TIMEDIFF(''20000101010101'', ''20000101010101.123456'')', TIMEDIFF('20000101010101', '20000101010101.123456'));
+    -- 特异参数测试
 insert into func_test2(functionName, result) values('TIMEDIFF(''2007-12-40 23:59:59.999999'',''2000-02-28 20:59:59'')', TIMEDIFF('2007-12-40 23:59:59.999999','2000-02-28 20:59:59'));
 insert into func_test2(functionName, result) values('TIMEDIFF(''2007-13-31 23:59:59.999999'',''2000-02-28 20:59:59'')', TIMEDIFF('2007-13-31 23:59:59.999999','2000-02-28 20:59:59'));
 insert into func_test2(functionName, result) values('TIMEDIFF(''2000-02-28 20:59:59'', NULL)', TIMEDIFF('2000-02-28 20:59:59', NULL) );
@@ -104,6 +108,7 @@ insert into func_test2(functionName, result) values('TIMEDIFF(''abcd'', ''-2000-
 insert into func_test2(functionName, result) values('TIMEDIFF(''2000-02-28 20:59:59'', ''abcd'')', TIMEDIFF('2000-02-28 20:59:59', 'abcd') );
 insert into func_test2(functionName, result) values('TIMEDIFF(''2000-13-01 00:00:00'',''2000-01-01 00:00:00.000001'')', TIMEDIFF('2000-13-01 00:00:00','2000-01-01 00:00:00.000001'));
 	-- 边界测试
+insert into func_test2(functionName, result) values('TIMEDIFF(''9999-12-31 23:59:59.9999999'',''9999-12-31 23:59:59.9'')', TIMEDIFF('9999-12-31 23:59:59.9999999','9999-12-31 23:59:59.9'));
 insert into func_test2(functionName, result) values('TIMEDIFF(''1-01-1 20:59:59'', ''2001-01-01 21:00'');', TIMEDIFF('1-01-1 20:59:59', '2001-01-01 21:00')   );
 insert into func_test2(functionName, result) values('TIMEDIFF(''10000-1-1 20:59:59'', ''2001-01-01 21:00'')', TIMEDIFF('10000-1-1 20:59:59', '2001-01-01 21:00') );
 insert into func_test2(functionName, result) values('TIMEDIFF(''1000-1-1 20:59:59'', ''1000-01-01 1:00'')', TIMEDIFF('1000-1-1 20:59:59', '1000-01-01 1:00') );
@@ -126,6 +131,7 @@ insert into func_test2(functionName, result) values('TIMEDIFF(''02:61:00.000000'
 insert into func_test2(functionName, result) values('TIMEDIFF(''60:00:00.000000'', ''02:00:00.999999'')', TIMEDIFF('60:00:00.000000', '02:00:00.999999'));
 insert into func_test2(functionName, result) values('TIMEDIFF(''2000-01-01 00:00:00'',''2000-01-01 00:00:00.000001'')', TIMEDIFF('2000-01-01 00:00:00','2000-01-01 00:00:00.000001'));
 insert into func_test2(functionName, result) values('TIMEDIFF(''00:00:00'',''00:00:00.000001'')', TIMEDIFF('00:00:00','00:00:00.000001'));
+insert into func_test2(functionName, result) values('TIMEDIFF(''02:59:00.0000001578'', ''02:00:00.999999'')', TIMEDIFF('02:59:00.0000001578', '02:00:00.999999'));
 	-- 数值格式
 insert into func_test2(functionName, result) values('TIMEDIFF(''-375959'', ''-395959'')', TIMEDIFF('-375959', '395959') );
 insert into func_test2(functionName, result) values('TIMEDIFF(''-375959.000002'', ''-395959.000001'')', TIMEDIFF('-375959.000002', '395959.000001') );
@@ -147,7 +153,7 @@ insert into func_test2(functionName, result) values('TIMEDIFF(''-837:59:59'', ''
 insert into func_test2(functionName, result) values('TIMEDIFF(''2000-02-28 20:59:59'', ''4:00'')', TIMEDIFF('2000-02-28 20:59:59', '4:00') );
 insert into func_test2(functionName, result) values('TIMEDIFF(''20:59:59'', ''2000-02-28 23:00'')', TIMEDIFF('2000-02-28 20:59:59', '2000-02-28 23:00') );
 -- date格式字符串
-insert into func_test2(functionName, result) values('subtime(''2000-01-01'', ''2022-01-01'')', TIMEDIFF('2000-01-01', '2022-01-01') ); 
+insert into func_test2(functionName, result) values('TIMEDIFF(''2000-01-01'', ''2022-01-01'')', TIMEDIFF('2000-01-01', '2022-01-01') ); 
 -- 非字符串类型参数用例
 insert into func_test2(functionName, result) values('TIMEDIFF(false, true)', TIMEDIFF(false, true) );
 insert into func_test2(functionName, result) values('TIMEDIFF(B''101'', B''101'')', TIMEDIFF(B'101', B'101') );

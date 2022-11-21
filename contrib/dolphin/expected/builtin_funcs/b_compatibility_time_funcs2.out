@@ -138,7 +138,13 @@ insert into func_test2(functionName, result) values('TIMEDIFF(''2008-12-31 23:59
 ERROR:  date/time field value out of range: "2008-12-30 24:01:01.000002"
 CONTEXT:  referenced column: result
 insert into func_test2(functionName, result) values('TIMEDIFF(''2008-12-31 23:59:59.000001'',''2008-12-30 01:01:01.000002'')', TIMEDIFF('2008-12-31 23:59:59.000001','2008-12-30 01:01:01.000002'));
-	-- 特异参数测试
+	-- 数值格式
+insert into func_test2(functionName, result) values('TIMEDIFF(''100000101151515'', ''100000101151514'')', TIMEDIFF('100000101151515', '100000101151514'));
+ERROR:  date/time field value out of range: "100000101151515"
+CONTEXT:  referenced column: result
+insert into func_test2(functionName, result) values('TIMEDIFF(20000101010101, 20000101010101.123456)', TIMEDIFF(20000101010101, 20000101010101.123456));
+insert into func_test2(functionName, result) values('TIMEDIFF(''20000101010101'', ''20000101010101.123456'')', TIMEDIFF('20000101010101', '20000101010101.123456'));
+    -- 特异参数测试
 insert into func_test2(functionName, result) values('TIMEDIFF(''2007-12-40 23:59:59.999999'',''2000-02-28 20:59:59'')', TIMEDIFF('2007-12-40 23:59:59.999999','2000-02-28 20:59:59'));
 ERROR:  date/time field value out of range: "2007-12-40 23:59:59.999999"
 CONTEXT:  referenced column: result
@@ -157,6 +163,7 @@ insert into func_test2(functionName, result) values('TIMEDIFF(''2000-13-01 00:00
 ERROR:  date/time field value out of range: "2000-13-01 00:00:00"
 CONTEXT:  referenced column: result
 	-- 边界测试
+insert into func_test2(functionName, result) values('TIMEDIFF(''9999-12-31 23:59:59.9999999'',''9999-12-31 23:59:59.9'')', TIMEDIFF('9999-12-31 23:59:59.9999999','9999-12-31 23:59:59.9'));
 insert into func_test2(functionName, result) values('TIMEDIFF(''1-01-1 20:59:59'', ''2001-01-01 21:00'');', TIMEDIFF('1-01-1 20:59:59', '2001-01-01 21:00')   );
 ERROR:  time field value out of range
 CONTEXT:  referenced column: result
@@ -188,6 +195,7 @@ CONTEXT:  referenced column: result
 insert into func_test2(functionName, result) values('TIMEDIFF(''60:00:00.000000'', ''02:00:00.999999'')', TIMEDIFF('60:00:00.000000', '02:00:00.999999'));
 insert into func_test2(functionName, result) values('TIMEDIFF(''2000-01-01 00:00:00'',''2000-01-01 00:00:00.000001'')', TIMEDIFF('2000-01-01 00:00:00','2000-01-01 00:00:00.000001'));
 insert into func_test2(functionName, result) values('TIMEDIFF(''00:00:00'',''00:00:00.000001'')', TIMEDIFF('00:00:00','00:00:00.000001'));
+insert into func_test2(functionName, result) values('TIMEDIFF(''02:59:00.0000001578'', ''02:00:00.999999'')', TIMEDIFF('02:59:00.0000001578', '02:00:00.999999'));
 	-- 数值格式
 insert into func_test2(functionName, result) values('TIMEDIFF(''-375959'', ''-395959'')', TIMEDIFF('-375959', '395959') );
 insert into func_test2(functionName, result) values('TIMEDIFF(''-375959.000002'', ''-395959.000001'')', TIMEDIFF('-375959.000002', '395959.000001') );
@@ -223,7 +231,7 @@ CONTEXT:  referenced column: result
 insert into func_test2(functionName, result) values('TIMEDIFF(''2000-02-28 20:59:59'', ''4:00'')', TIMEDIFF('2000-02-28 20:59:59', '4:00') );
 insert into func_test2(functionName, result) values('TIMEDIFF(''20:59:59'', ''2000-02-28 23:00'')', TIMEDIFF('2000-02-28 20:59:59', '2000-02-28 23:00') );
 -- date格式字符串
-insert into func_test2(functionName, result) values('subtime(''2000-01-01'', ''2022-01-01'')', TIMEDIFF('2000-01-01', '2022-01-01') ); 
+insert into func_test2(functionName, result) values('TIMEDIFF(''2000-01-01'', ''2022-01-01'')', TIMEDIFF('2000-01-01', '2022-01-01') ); 
 ERROR:  invalid input syntax for type time: "2000-01-01"
 CONTEXT:  referenced column: result
 -- 非字符串类型参数用例
@@ -767,8 +775,11 @@ select * from func_test2;
  TIMEDIFF('2008-12-31 23:59:59.0000015','2008-12-30 01:01:01.999999')                        | 46:58:57.000003
  TIMEDIFF('2008-12-31 23:59:59.0000014','2008-12-30 01:01:01.000002')                        | 46:58:57.999999
  TIMEDIFF('2008-12-31 23:59:59.000001','2008-12-30 01:01:01.000002')                         | 46:58:57.999999
+ TIMEDIFF(20000101010101, 20000101010101.123456)                                             | -00:00:00.123456
+ TIMEDIFF('20000101010101', '20000101010101.123456')                                         | -00:00:00.123456
  TIMEDIFF('2000-02-28 20:59:59', NULL)                                                       | 
  TIMEDIFF(NULL, '2000-02-28 20:59:59')                                                       | 
+ TIMEDIFF('9999-12-31 23:59:59.9999999','9999-12-31 23:59:59.9')                             | 00:00:00.1
  TIMEDIFF('1000-1-1 20:59:59', '1000-01-01 1:00')                                            | 19:59:59
  TIMEDIFF('-37:59:59', '-39:59:59')                                                          | 02:00:00
  TIMEDIFF('-37:59:59', '39:59:59')                                                           | -77:59:58
@@ -783,6 +794,7 @@ select * from func_test2;
  TIMEDIFF('60:00:00.000000', '02:00:00.999999')                                              | 57:59:59.000001
  TIMEDIFF('2000-01-01 00:00:00','2000-01-01 00:00:00.000001')                                | -00:00:00.000001
  TIMEDIFF('00:00:00','00:00:00.000001')                                                      | -00:00:00.000001
+ TIMEDIFF('02:59:00.0000001578', '02:00:00.999999')                                          | 00:58:59.000002
  TIMEDIFF('-375959', '-395959')                                                              | -77:59:58
  TIMEDIFF('-375959.000002', '-395959.000001')                                                | -77:59:58.000003
  TIMEDIFF(-375959, 395959)                                                                   | -77:59:58
