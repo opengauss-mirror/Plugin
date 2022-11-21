@@ -30,7 +30,7 @@
 #include "access/tupdesc.h"
 #include "access/xlog.h"
 #include "bulkload/dist_fdw.h"
-#include "catalog/heap.h"
+#include "plugin_catalog/heap.h"
 #include "catalog/pgxc_class.h"
 #include "bulkload/dist_fdw.h"
 #include "catalog/namespace.h"

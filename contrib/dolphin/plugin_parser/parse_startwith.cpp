@@ -21,7 +21,7 @@
 
 #include "access/heapam.h"
 #include "catalog/catalog.h"
-#include "catalog/heap.h"
+#include "plugin_catalog/heap.h"
 #include "catalog/pg_synonym.h"
 #include "catalog/pg_type.h"
 #include "commands/defrem.h"
