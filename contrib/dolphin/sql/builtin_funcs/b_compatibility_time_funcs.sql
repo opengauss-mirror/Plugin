@@ -29,7 +29,7 @@ insert into func_test(functionName, result) values('makedate(70, 32)', makedate(
 insert into func_test(functionName, result) values('makedate(100,32)', makedate(100,32));
 insert into func_test(functionName, result) values('makedate(9999,366)', makedate(9999,366));
 insert into func_test(functionName, result) values('makedate(pow(2,62),366)', makedate(pow(2,62),366));
-
+insert into func_test(functionName, result) values('makedate(2001, 9223372036854775807)', makedate(2001, 9223372036854775807));
 -- MAKETIME
     -- 非指定类型的参数
 insert into func_test(functionName, result) values ('maketime(''25.5'', ''30.4'', ''30'')', maketime('25.5', '30.4', '30'));
@@ -52,6 +52,7 @@ insert into func_test(functionName, result) values ('maketime(4294967295, 1, 1)'
 insert into func_test(functionName, result) values ('maketime(-4294967295, 0, 1)', maketime(-4294967295, 0, 1));
 insert into func_test(functionName, result) values ('maketime(2147483649, 1, 1)', maketime(2147483649, 1, 1));
 insert into func_test(functionName, result) values ('maketime(-2147483649, 1, 1)', maketime(-2147483649, 1, 1));
+insert into func_test(functionName, result) values ('maketime(-9223372036854775808, 0, 0)', maketime(-9223372036854775808, 0, 0));
 
 -- 精度一致
 insert into func_test(functionName, result) values ('maketime(0, 0, 59.9999)', maketime(0, 0, 59.9999));  -- 结果精度与参数相同
