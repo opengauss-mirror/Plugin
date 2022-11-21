@@ -4621,3 +4621,15 @@ leftarg = boolean, rightarg = uint8, procedure = bool_xor_uint8,
 commutator=operator(pg_catalog.^)
 );
 COMMENT ON OPERATOR pg_catalog.^(boolean, uint8) IS 'bool_xor_uint8';
+
+DROP FUNCTION IF EXISTS timestamp_uint8(timestamp) CASCADE;
+CREATE OR REPLACE FUNCTION timestamp_uint8(timestamp)
+RETURNS uint8 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'timestamp_uint8';
+drop CAST IF EXISTS (timestamp AS uint8) CASCADE;
+CREATE CAST (timestamp AS uint8) WITH FUNCTION timestamp_uint8(timestamp);
+
+DROP FUNCTION IF EXISTS cash_uint(money) CASCADE;
+CREATE OR REPLACE FUNCTION cash_uint(money)
+RETURNS uint8 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'cash_uint';
+drop CAST IF EXISTS (money AS uint8) CASCADE;
+CREATE CAST (money AS uint8) WITH FUNCTION cash_uint(money) AS ASSIGNMENT;
