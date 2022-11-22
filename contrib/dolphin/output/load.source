@@ -1,0 +1,326 @@
+drop database if exists load;
+NOTICE:  database "load" does not exist, skipping
+create database load dbcompatibility 'B';
+\c load
+create table t1(a int, b int);
+load data infile '@abs_builddir@/data/load1.csv' into table t1;
+select * from t1;
+ a | b 
+---+---
+ 1 | 3
+ 4 | 5
+ 1 | 5
+ 3 | 4
+(4 rows)
+
+delete t1;
+--prefix
+load data infile '@abs_builddir@/data/load2.csv' into table t1 lines starting by 'hello';
+select * from t1;
+ a | b 
+---+---
+ 1 | 3
+ 1 | 5
+(2 rows)
+
+delete t1;
+--fileds terminated
+load data infile '@abs_builddir@/data/load3.csv' into table t1 fields terminated by 'delimiter' lines starting by 'hello';
+select * from t1;
+ a | b 
+---+---
+ 1 | 3
+ 1 | 5
+(2 rows)
+
+delete t1;
+--lines terminanted
+load data infile '@abs_builddir@/data/load4.csv' into table t1 columns terminated by 'delimiter' lines starting by 'hello' terminated by '#';
+select * from t1;
+ a | b 
+---+---
+ 1 | 3
+ 1 | 5
+(2 rows)
+
+delete t1;
+--enclosed by
+load data infile '@abs_builddir@/data/load5.csv' into table t1 columns enclosed by '''' terminated by 'delimiter' lines starting by 'hello' terminated by '#';
+select * from t1;
+ a | b 
+---+---
+ 1 | 3
+ 1 | 5
+(2 rows)
+
+delete t1;
+--ecasped by
+load data infile '@abs_builddir@/data/load5.csv' into table t1 columns enclosed by '''' terminated by 'delimiter' escaped by E'\\' lines starting by 'hello' terminated by '#';
+select * from t1;
+ a | b 
+---+---
+ 1 | 3
+ 1 | 5
+(2 rows)
+
+--ignore
+create table t2(a int primary key, b char unique);
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "t2_pkey" for table "t2"
+NOTICE:  CREATE TABLE / UNIQUE will create implicit index "t2_b_key" for table "t2"
+insert into t2 values(1, 'a'), (2, 'b');
+load data infile '@abs_builddir@/data/load6.csv' ignore into table t2;
+select * from t2;
+ a | b 
+---+---
+ 1 | a
+ 2 | b
+ 3 | c
+(3 rows)
+
+--replace
+load data infile '@abs_builddir@/data/load6.csv' replace into table t2;
+select * from t2;
+ a | b 
+---+---
+ 1 | b
+ 3 | c
+(2 rows)
+
+drop table t2;
+create table t2(a int primary key, b char unique)with(storage_type = ustore);
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "t2_pkey" for table "t2"
+NOTICE:  CREATE TABLE / UNIQUE will create implicit index "t2_b_key" for table "t2"
+insert into t2 values(1, 'a'), (2, 'b');
+load data infile '@abs_builddir@/data/load6.csv' ignore into table t2;
+select * from t2;
+ a | b 
+---+---
+ 1 | a
+ 2 | b
+ 3 | c
+(3 rows)
+
+load data infile '@abs_builddir@/data/load6.csv' replace into table t2;
+select * from t2;
+ a | b 
+---+---
+ 1 | b
+ 3 | c
+(2 rows)
+
+drop table t2;
+create table t2(a int primary key, b char unique)with(segment = on);
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "t2_pkey" for table "t2"
+NOTICE:  CREATE TABLE / UNIQUE will create implicit index "t2_b_key" for table "t2"
+insert into t2 values(1, 'a'), (2, 'b');
+load data infile '@abs_builddir@/data/load6.csv' ignore into table t2;
+select * from t2;
+ a | b 
+---+---
+ 1 | a
+ 2 | b
+ 3 | c
+(3 rows)
+
+load data infile '@abs_builddir@/data/load6.csv' replace into table t2;
+select * from t2;
+ a | b 
+---+---
+ 1 | b
+ 3 | c
+(2 rows)
+
+--partition
+create table t3(a int primary key, b char unique) partition by range(a)
+(
+    partition p1 values less than (1),
+    partition p2 values less than (2),
+    partition p3 values less than (10)
+);
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "t3_pkey" for table "t3"
+NOTICE:  CREATE TABLE / UNIQUE will create implicit index "t3_b_tableoid_key" for table "t3"
+insert into t3 values(1, 'a'), (2, 'b');
+load data infile '@abs_builddir@/data/load6.csv' ignore into table t3;
+select * from t3;
+ a | b 
+---+---
+ 1 | a
+ 2 | b
+ 3 | c
+(3 rows)
+
+load data infile '@abs_builddir@/data/load6.csv' replace into table t3;
+select * from t3;
+ a | b 
+---+---
+ 1 | b
+ 3 | c
+(2 rows)
+
+drop table t3;
+create table t3(a int primary key, b char unique) partition by range(a)
+(
+    partition p1 values less than (1),
+    partition p2 values less than (2),
+    partition p3 values less than (10)
+) with(storage_type = ustore);
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "t3_pkey" for table "t3"
+NOTICE:  CREATE TABLE / UNIQUE will create implicit index "t3_b_tableoid_key" for table "t3"
+insert into t3 values(1, 'a'), (2, 'b');
+load data infile '@abs_builddir@/data/load6.csv' ignore into table t3;
+select * from t3;
+ a | b 
+---+---
+ 1 | a
+ 2 | b
+ 3 | c
+(3 rows)
+
+load data infile '@abs_builddir@/data/load6.csv' replace into table t3;
+select * from t3;
+ a | b 
+---+---
+ 1 | b
+ 3 | c
+(2 rows)
+
+--subpartition
+create table t4(a int primary key, b char unique) partition by range(a) subpartition by list(b)
+(
+    partition p1 values less than (1)
+    (
+        subpartition p11 values('a'),
+        subpartition p12 values('b'),
+        subpartition p13 values('c')
+    ),
+    partition p2 values less than (2)
+    (
+        subpartition p21 values('a'),
+        subpartition p22 values('b'),
+        subpartition p23 values('c')
+    ),
+    partition p3 values less than (10)
+    (
+        subpartition p31 values('a'),
+        subpartition p32 values('b'),
+        subpartition p33 values('c')
+    )
+);
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "t4_pkey" for table "t4"
+NOTICE:  CREATE TABLE / UNIQUE will create implicit index "t4_b_tableoid_key" for table "t4"
+insert into t4 values(1, 'a'), (2, 'b');
+load data infile '@abs_builddir@/data/load6.csv' ignore into table t4;
+select * from t4;
+ a | b 
+---+---
+ 1 | a
+ 3 | c
+ 2 | b
+(3 rows)
+
+load data infile '@abs_builddir@/data/load6.csv' replace into table t4;
+select * from t4;
+ a | b 
+---+---
+ 1 | b
+ 3 | c
+(2 rows)
+
+drop table t4;
+create table t4(a int primary key, b char unique) partition by range(a) subpartition by list(b)
+(
+    partition p1 values less than (1)
+    (
+        subpartition p11 values('a'),
+        subpartition p12 values('b'),
+        subpartition p13 values('c')
+    ),
+    partition p2 values less than (2)
+    (
+        subpartition p21 values('a'),
+        subpartition p22 values('b'),
+        subpartition p23 values('c')
+    ),
+    partition p3 values less than (10)
+    (
+        subpartition p31 values('a'),
+        subpartition p32 values('b'),
+        subpartition p33 values('c')
+    )
+) with(segment = on);
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "t4_pkey" for table "t4"
+NOTICE:  CREATE TABLE / UNIQUE will create implicit index "t4_b_tableoid_key" for table "t4"
+insert into t4 values(1, 'a'), (2, 'b');
+load data infile '@abs_builddir@/data/load6.csv' ignore into table t4;
+select * from t4;
+ a | b 
+---+---
+ 1 | a
+ 3 | c
+ 2 | b
+(3 rows)
+
+load data infile '@abs_builddir@/data/load6.csv' replace into table t4;
+select * from t4;
+ a | b 
+---+---
+ 1 | b
+ 3 | c
+(2 rows)
+
+--trigger
+create table t5(a int primary key, b char unique);
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "t5_pkey" for table "t5"
+NOTICE:  CREATE TABLE / UNIQUE will create implicit index "t5_b_key" for table "t5"
+create table t6(a varchar(30));
+insert into t5 values(1, 'a'), (2, 'b');
+create trigger tri1 before insert on t5 for each statement begin insert into t6 values('before_insert_statement'); end;
+/
+create trigger tri2 before insert on t5 for each row begin insert into t6 values('before_insert_row'); end;
+/
+create trigger tri3 after insert on t5 for each statement begin insert into t6 values('after_insert_statement'); end;
+/
+create trigger tri4 after insert on t5 for each row begin insert into t6 values('after_insert_row'); end;
+/
+create trigger tri5 before delete on t5 for each statement begin insert into t6 values('before_delete_statement'); end;
+/
+create trigger tri6 before delete on t5 for each row begin insert into t6 values('before_delete_row'); end;
+/
+create trigger tri7 after delete on t5 for each statement begin insert into t6 values('after_delete_statement'); end;
+/
+create trigger tri8 after delete on t5 for each row begin insert into t6 values('after_delete_row'); end;
+/
+load data infile '@abs_builddir@/data/load6.csv' ignore into table t5;
+select * from t6;
+            a            
+-------------------------
+ before_insert_statement
+ before_insert_row
+ before_insert_row
+ after_insert_row
+ after_insert_statement
+(5 rows)
+
+delete t6;
+load data infile '@abs_builddir@/data/load6.csv' replace into table t5;
+select * from t6;
+            a            
+-------------------------
+ before_insert_statement
+ before_insert_row
+ before_delete_statement
+ before_delete_row
+ after_delete_row
+ before_delete_row
+ after_delete_row
+ after_insert_row
+ before_insert_row
+ before_delete_row
+ after_delete_row
+ after_insert_row
+ after_insert_statement
+ after_delete_statement
+(14 rows)
+
+\c postgres
+drop database if exists load;

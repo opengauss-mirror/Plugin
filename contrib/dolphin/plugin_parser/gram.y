@@ -619,6 +619,8 @@ static SelectStmt *MakeShowGrantStmt(char *arg, int location, core_yyscan_t yysc
 				transaction_mode_item
 				create_extension_opt_item alter_extension_opt_item
 
+%type <list>	opt_fields_options fields_list opt_lines_options lines_list
+%type <defelt>	opt_ignore_number opt_character fields_option lines_option conflict_option
 %type <ival>	opt_lock lock_type cast_context opt_wait kill_opt
 %type <ival>	vacuum_option_list vacuum_option_elem opt_verify_options
 %type <boolean>	opt_check opt_force opt_or_replace
@@ -1066,7 +1068,7 @@ static SelectStmt *MakeShowGrantStmt(char *arg, int location, core_yyscan_t yysc
 /* PGXC_END */
 	DROP DUPLICATE DISCONNECT
 
-	EACH ELASTIC ELSE ENABLE_P ENCLOSED ENCODING ENCRYPTED ENCRYPTED_VALUE ENCRYPTION ENCRYPTION_TYPE END_P ENFORCED ENGINE_P ENUM_P ERRORS ESCAPE EOL ESCAPING EVERY EXCEPT EXCHANGE
+	EACH ELASTIC ELSE ENABLE_P ENCLOSED ENCODING ENCRYPTED ENCRYPTED_VALUE ENCRYPTION ENCRYPTION_TYPE END_P ENFORCED ENGINE_P ENUM_P ERRORS ESCAPE ESCAPED EOL ESCAPING EVERY EXCEPT EXCHANGE
 	EXCLUDE EXCLUDED EXCLUDING EXCLUSIVE EXECUTE EXISTS EXPIRED_P EXPLAIN
 	EXTENDED EXTENSION EXTERNAL EXTRACT
 
@@ -1089,7 +1091,7 @@ static SelectStmt *MakeShowGrantStmt(char *arg, int location, core_yyscan_t yysc
 	KEY KEYS KILL KEY_PATH KEY_STORE
 
 	LABEL LANGUAGE LARGE_P LAST_DAY_FUNC LAST_P LC_COLLATE_P LC_CTYPE_P LEADING LEAKPROOF
-	LEAST LESS LEFT LEVEL LIKE LIMIT LIST LISTEN LOAD LOCAL LOCALTIME LOCALTIMESTAMP
+	LEAST LESS LEFT LEVEL LIKE LINES LIMIT LIST LISTEN LOAD LOCAL LOCALTIME LOCALTIMESTAMP
 	LOCATE LOCATION LOCK_P LOCKED LOG_P LOGGING LOGIN_ANY LOGIN_FAILURE LOGIN_SUCCESS LOGOUT LOGS LOOP LOW_PRIORITY
 	MAPPING MASKING MASTER MATCH MATERIALIZED MATCHED MAXEXTENTS MAXSIZE MAXTRANS MAXVALUE MEDIUMINT MERGE MICROSECOND_P MID MINUS_P MINUTE_P MINUTE_MICROSECOND_P MINUTE_SECOND_P MINVALUE MINEXTENTS MOD MODE MODIFY_P MONTH_P MOVE MOVEMENT
 	MODEL // DB4AI
@@ -1120,7 +1122,7 @@ static SelectStmt *MakeShowGrantStmt(char *arg, int location, core_yyscan_t yysc
 
 	SAMPLE SAVEPOINT SCHEMA SCHEMAS SCROLL SEARCH SECOND_P SECOND_MICROSECOND_P SECURITY SELECT SEPARATOR_P SEQUENCE SEQUENCES
 	SERIALIZABLE SERVER SESSION SESSION_USER SET SETS SETOF SHARE SHIPPABLE SHOW SHUTDOWN SIBLINGS SIGNED
-	SIMILAR SIMPLE SIZE SKIP SLAVE SLICE SMALLDATETIME SMALLDATETIME_FORMAT_P SMALLINT SNAPSHOT SOME SOUNDS SOURCE_P SPACE SPILL SPLIT SQL STABLE STANDALONE_P START STARTWITH
+	SIMILAR SIMPLE SIZE SKIP SLAVE SLICE SMALLDATETIME SMALLDATETIME_FORMAT_P SMALLINT SNAPSHOT SOME SOUNDS SOURCE_P SPACE SPILL SPLIT SQL STABLE STANDALONE_P START STARTING STARTWITH
 	STATEMENT STATEMENT_ID STATISTICS STATUS STDIN STDOUT STORAGE STORE_P STORED STRATIFY STREAM STRICT_P STRIP_P SUBPARTITION SUBSCRIPTION SUBSTR SUBSTRING
 	SYMMETRIC SYNONYM SYSDATE SYSID SYSTEM_P SYS_REFCURSOR
 
@@ -6326,8 +6328,8 @@ CopyStmt:	COPY BINARY dolphin_qualified_name opt_column_list opt_oids
 
 					if ($9)
 						n->options = lappend(n->options, $9);
-                                        if ($10)
-                                                n->options = lappend(n->options, $10);
+					if ($10)
+						n->options = lappend(n->options, $10);
 					if ($11)
 						n->options = lappend(n->options, $11);
 					if ($12)
@@ -6367,8 +6369,8 @@ CopyStmt:	COPY BINARY dolphin_qualified_name opt_column_list opt_oids
 
 					if ($8)
 						n->options = lappend(n->options, $8);
-                                        if ($9)
-                                                n->options = lappend(n->options, $9);
+					if ($9)
+						n->options = lappend(n->options, $9);
 					if ($10)
 						n->options = lappend(n->options, $10);
 					if ($11)
@@ -6376,7 +6378,7 @@ CopyStmt:	COPY BINARY dolphin_qualified_name opt_column_list opt_oids
 					if ($12)
 						n->options = lappend(n->options, $12);
 					if ($14)
-						n->options = list_concat(n->options, $14);
+						n->options = list_concat(n->options, $14);		
 					$$ = (Node *)n;
 
 					u_sess->parser_cxt.is_load_copy = false;
@@ -19667,19 +19669,35 @@ LoadStmt:	LOAD file_name
                     n->is_load_data = false;
 					$$ = (Node *)n;
 				}
-
-        | LOAD {u_sess->parser_cxt.is_load_copy = true;} opt_load_data opt_load_data_options_list load_type_set qualified_name load_oper_table_type load_table_options_list
-                {
-                    LoadStmt *n = makeNode(LoadStmt);
-					n->is_load_data = true;
-					n->pre_load_options = NULL;
-                    n->load_options = $4;
-					n->load_type = (LOAD_DATA_TYPE)GetLoadType($5, $7);
-                    n->relation = $6;
-					n->rel_options = $8;
-                    $$ = (Node *)n;
+		| LoadAct DATA_P INFILE Sconst conflict_option INTO TABLE dolphin_qualified_name opt_character opt_fields_options 
+		opt_lines_options opt_ignore_number opt_column_list
+				{
+					CopyStmt *n = makeNode(CopyStmt);
+					n->relation = $8;
+					n->query = NULL;
+					n->attlist = u_sess->parser_cxt.col_list;
+					n->is_from = TRUE;
+					n->filename = $4;
+					ListCell* option = NULL;
+					n->relation->length = @3;
+					n->options = NIL;
+					n->options = lappend(n->options, makeDefElem("format", (Node *)makeString("csv")));
+					n->options = lappend(n->options, makeDefElem("compatibility", (Node *)makeInteger(TRUE)));
+					/* Concatenate user-supplied flags */
+					if ($5)
+						n->options = lappend(n->options, $5);
+					if ($9)
+						n->options = lappend(n->options, $9);
+					if ($12)
+						n->options = lappend(n->options, $12);
+					if ($10)
+						n->options = list_concat(n->options, $10);
+					if ($11)
+						n->options = list_concat(n->options, $11);
+					$$ = (Node *)n;
 					u_sess->parser_cxt.is_load_copy = false;
-                }
+					u_sess->parser_cxt.col_list = NULL;
+				}
         | OPTIONS '(' load_options_list ')' LOAD {u_sess->parser_cxt.is_load_copy = true;} opt_load_data opt_load_data_options_list load_type_set qualified_name load_oper_table_type load_table_options_list
                 {
                     LoadStmt *n = makeNode(LoadStmt);
@@ -19692,6 +19710,101 @@ LoadStmt:	LOAD file_name
                     $$ = (Node *)n;
 					u_sess->parser_cxt.is_load_copy = false;
                 }
+	;
+
+LoadAct: LOAD {u_sess->parser_cxt.is_load_copy = true;}
+	;
+
+conflict_option:
+		REPLACE		{ $$ = makeDefElem("replace", (Node *)makeInteger(TRUE));}
+		| IGNORE	{ $$ = makeDefElem("ignore", (Node *)makeInteger(TRUE));}
+		| /* EMPTY */	{ $$ = NULL;}
+	;
+
+rows_lines:
+		ROWS
+		| LINES
+	;
+
+opt_ignore_number:
+		IGNORE Iconst rows_lines
+			{
+#ifdef ENABLE_MULTIPLE_NODES
+				const char* message = "SKIP is not supported";
+				InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);
+				ereport(errstate, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("SKIP is not supported")));
+#endif
+				$$ = makeDefElem("skip", (Node *)makeInteger($2));
+			}
+		| /* EMPTY */ { $$ = NULL;}
+	;
+
+fields_list:
+	fields_list fields_option
+		{
+			$$ = lappend($1, $2);
+		}
+	| fields_option
+		{
+			$$ = list_make1($1);
+		}
+	;
+
+fields_option:
+		TERMINATED BY Sconst
+			{
+				$$ = makeDefElem("delimiter", (Node *)makeString($3));
+			}
+		| OPTIONALLY ENCLOSED BY Sconst
+			{
+				$$ = makeDefElem("quote", (Node *)makeString($4));
+			}
+		| ENCLOSED BY Sconst
+			{
+				$$ = makeDefElem("quote", (Node *)makeString($3));
+			}
+		| ESCAPED BY Sconst
+			{
+				$$ = makeDefElem("escape", (Node *)makeString($3));
+			}
+	;
+
+opt_fields_options:
+		FIELDS fields_list	{ $$ = $2;}
+		| COLUMNS fields_list	{ $$ = $2;}
+		| /* EMPTY */	{ $$ = NIL;}
+	;
+
+lines_list:
+	lines_list lines_option
+		{
+			$$ = lappend($1, $2);
+		}
+	| lines_option
+		{
+			$$ = list_make1($1);
+		}
+	;
+
+lines_option:
+		TERMINATED BY Sconst
+			{
+				$$ = makeDefElem("eol", (Node *)makeString($3));
+			}
+		| STARTING BY Sconst
+			{
+				$$ = makeDefElem("prefix", (Node *)makeString($3));
+			}
+	;
+
+opt_lines_options:
+		LINES lines_list	{$$ = $2;}
+		| /* EMPTY */	{$$ = NIL;}	
+	;
+
+opt_character:
+		CHARACTER SET Sconst		{ $$ = makeDefElem("encoding", (Node *)makeString($3));}
+		| /* EMPTY */		{ $$ = NULL; }
 	;
 
 load_options_list:
@@ -30426,7 +30539,7 @@ unreserved_keyword_without_key:
 			| CHARACTERSET
 			| CHARSET
 			| CHECKPOINT
-                        | CHECKSUM
+			| CHECKSUM
 			| CLASS
 			| CLEAN
 			| CLIENT
@@ -30448,7 +30561,7 @@ unreserved_keyword_without_key:
 			| COMPRESSION
 			| CONDITION
 			| CONFIGURATION
-                        | CONNECT
+			| CONNECT
 			| CONNECTION
 			| CONSTANT
 			| CONSTRAINTS
@@ -30518,6 +30631,7 @@ unreserved_keyword_without_key:
 			| EOL
 			| ERRORS
 			| ESCAPE
+			| ESCAPED
 			| ESCAPING
 			| EVERY
 			| EXCHANGE
@@ -30596,7 +30710,8 @@ unreserved_keyword_without_key:
 			| LC_COLLATE_P
 			| LC_CTYPE_P
 			| LEAKPROOF
-                        | LEVEL
+			| LEVEL
+			| LINES
 			| LIST
 			| LISTEN
 			| LOAD
@@ -30691,7 +30806,7 @@ unreserved_keyword_without_key:
 			| PREPARED
 			| PRESERVE
 			| PRIOR
-                        | PRIVATE
+			| PRIVATE
 			| PRIVILEGE
 			| PRIVILEGES
 			| PROCEDURAL
@@ -30768,7 +30883,7 @@ unreserved_keyword_without_key:
 			| SHIPPABLE
 			| SHOW
 			| SHUTDOWN
-                        | SIBLINGS
+			| SIBLINGS
 			| SIMPLE
 			| SIZE
 			| SKIP
@@ -30783,7 +30898,8 @@ unreserved_keyword_without_key:
 			| SQL
 			| STABLE
 			| STANDALONE_P
-                        | START
+			| START
+			| STARTING
 			| STATEMENT
 			| STATEMENT_ID
 			| STATISTICS
@@ -30794,7 +30910,7 @@ unreserved_keyword_without_key:
 			| STORE_P
 			| STORED
 			| STRATIFY
-                        | STREAM
+			| STREAM
 			| STRICT_P
 			| STRIP_P
 			| SUBPARTITION
@@ -31102,7 +31218,7 @@ reserved_keyword:
 			| REFERENCES
 			| REJECT_P
 			| RETURNING
-                        | ROWNUM
+			| ROWNUM
 			| SELECT
 			| SESSION_USER
 			| SHRINK
