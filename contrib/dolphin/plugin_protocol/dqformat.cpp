@@ -168,7 +168,7 @@ void send_column_definition41_packet(StringInfo buf, dolphin_data_field *field)
 
     /* length of the following block, 12 byte */
     dq_append_int_lenenc(buf, 0x0c);        /* next_length (lenenc_int) */
-    dq_append_int2(buf, 0x2d);               /* character_set (2) */
+    dq_append_int2(buf, field->charsetnr);               /* character_set (2) */
     dq_append_int4(buf, field->length);       /* column_length (4) */
     dq_append_int1(buf, field->type);        /* column_type (1) */
     dq_append_int2(buf, field->flags);       /* flags (2) */ 
