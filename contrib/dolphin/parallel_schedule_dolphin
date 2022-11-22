@@ -73,6 +73,8 @@ test: b_database_releasealllocks_01
 
 test: b_database_releaselock_01 b_database_releaselock_02 b_database_releaselock_03 b_database_releaselock_04
 
+test: create_function_test/m_type_create_proc
+
 test: create_function_test/deterministic create_function_test/language_sql create_function_test/sql_options create_function_test/sql_security create_function_test/call_function create_function_test/commentsharp
 
 test: alter_function_test/alter_function  alter_function_test/alter_procedure alter_function_test/language_sql replace_test/replace

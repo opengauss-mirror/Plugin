@@ -904,7 +904,7 @@ static SelectStmt *MakeShowGrantStmt(char *arg, int location, core_yyscan_t yysc
 %type <chr>		OptCompress OptCompress_without_empty
 %type <ival>	KVType
 %type <ival>		ColCmprsMode
-%type <fun_src>		subprogram_body
+%type <fun_src>		subprogram_body b_proc_body
 %type <keyword> as_is as_empty
 %type <node>	column_item opt_table_partitioning_clause_without_empty
 				opt_partition_index_def  range_partition_index_item  range_partition_index_list
@@ -16227,8 +16227,254 @@ callfunc_args:   func_arg_expr
 					$$ = NULL;
 				}
 			;
+b_proc_body:
+			{
+				int     proc_b  = 0;
+				int     proc_e  = 0;
+				char    *proc_body_str  = NULL;
+				int     proc_body_len   = 0;
+				int     blocklevel              = 0;
+				bool    add_declare     = true;  /* Mark if need to add a DECLARE */
+				FunctionSources *funSrc = NULL;
+				char *proc_header_str = NULL;
+				int rc = 0;
+				rc = CompileWhich();
+				int tok = YYEMPTY;
+				int pre_tok = 0;
+				bool end_parsed = false;
+				int max_block_level = 1;
+				List* infolist = NIL;
+				DolphinProcBodyInfo* bdinfo = InitDolphinProcBodyInfo();
+				base_yy_extra_type *yyextra = pg_yyget_extra(yyscanner);
+
+				yyextra->core_yy_extra.in_slash_proc_body = true;
+				u_sess->parser_cxt.eaten_begin = true;
+				/* the token BEGIN_P have been parsed */
+				if (u_sess->parser_cxt.eaten_begin)
+						blocklevel = 1;
+				
+				bdinfo->m_block_level = blocklevel;
+				if (yychar == YYEOF || yychar == YYEMPTY)
+						tok = YYLEX;
+				else
+				{
+						tok = yychar;
+						yychar = YYEMPTY;
+				}
+
+				if (u_sess->parser_cxt.eaten_declare || DECLARE == tok)
+						add_declare = false;
+
+				/* Save procedure header str,start with param exclude brackets */
+				proc_header_str = ParseFunctionArgSrc(yyscanner);
+
+				/* Save the beginning of procedure body. */
+				proc_b = yylloc;
+				if (rc != PLPGSQL_COMPILE_NULL && rc != PLPGSQL_COMPILE_PROC) {
+						u_sess->plsql_cxt.procedure_first_line = GetLineNumber(yyextra->core_yy_extra.scanbuf, yylloc);
+				}
+				/* start procedure body scan */
+				while(true)
+				{
+						if (tok == YYEOF) {
+								proc_e = yylloc;
+								if (!end_parsed)
+										parser_yyerror("subprogram body is not ended correctly");
+								break;
+						}
+
+						if (tok == BEGIN_P) {
+							if (infolist == NIL)
+								infolist = list_make1(bdinfo);
+							else
+								lappend (infolist,bdinfo);
+							blocklevel++;
+							bdinfo = InitDolphinProcBodyInfo();
+							bdinfo->m_begin_b = yylloc;	
+							bdinfo->m_block_level = blocklevel;
+						}
+						
+						/*
+						 * End of procedure rules:
+						 *      ;END [;]
+						 *      | BEGIN END[;]
+						 */
+
+						if (tok == DECLARE)
+						{	
+							if (bdinfo == NULL) {
+								parser_yyerror("subprogram body is not ended correctly");
+							}
+							if (blocklevel > max_block_level) {
+								max_block_level = blocklevel;
+								bdinfo->m_begin_e = yylloc;
+								bdinfo->m_begin_len = bdinfo->m_begin_e - bdinfo->m_begin_b +1;
+							}
+							if (!bdinfo->m_declare_b)
+								bdinfo->m_declare_b = yylloc;
+							add_declare = false;
+							while (true)
+							{
+								tok = YYLEX;
+								if (tok == ';')
+								{
+									bdinfo->m_declare_e = yylloc;
+									bdinfo->m_declare_len =  bdinfo->m_declare_e - bdinfo->m_declare_b + 1;
+									break;
+								}
+								else if (tok == YYEOF) {
+                                	                                proc_e = yylloc;
+                        	                                        if (!end_parsed)
+                                                                                parser_yyerror("subprogram body is not ended correctly");
+                	                                                break;
+		                                                }
+							
+							}			
+						}
+						if (tok == END_P)
+						{
+								tok = YYLEX;
+								end_parsed = true;
+								/* adapt A db's label */
+								if (!(tok == ';' || tok == 0)
+										&& tok != IF_P
+										&& tok != CASE
+										&& tok != LOOP)
+								{
+										tok = END_P;
+										continue;
+								}
+
+								if (blocklevel == 1
+										&& (pre_tok == ';' || pre_tok == BEGIN_P)
+										&& (tok == ';' || tok == 0))
+								{
+										/* Save the end of procedure body. */
+										proc_e = yylloc;
+
+										if (tok == ';' )
+										{
+												if (yyextra->lookahead_num != 0) {
+														parser_yyerror("subprogram body is not ended correctly");
+														break;
+												}
+												else
+												{
+														yyextra->lookahead_token[0] = tok;
+														yyextra->lookahead_num = 1;
+												}
+										}
+										break;
+								}
+
+								/* Cope with nested BEGIN/END pairs.
+								 * In fact the tok can not be 0
+								 */
+								if (blocklevel > 1
+										 && (pre_tok == ';' || pre_tok == BEGIN_P)
+										 && (tok == ';' || tok == 0))
+								{
+										blocklevel--;
+								}
+						}
+
+						pre_tok = tok;
+						tok = YYLEX;
+				}
+				
+				if (infolist == NIL)
+					infolist = list_make1(bdinfo);
+				else
+					lappend (infolist,bdinfo);
+
+				if (proc_e == 0) {
+						ereport(errstate, (errcode(ERRCODE_SYNTAX_ERROR), errmsg("subprogram body is not ended correctly")));
+				}
+				proc_body_len = proc_e - proc_b  + 1  + 7;//- strlen(u_sess->attr.attr_common.delimiter_name);
+
+				/* Add a DECLARE in the start of the subprogram body
+				 *      to compatiable with the A db.
+				 *      XXX : It is best to change the gram.y in plpgsql.
+				 */
+				if (add_declare)
+				{
+						proc_body_str = (char *)palloc0(proc_body_len + DECLARE_LEN + 1);
+						strncpy(proc_body_str, DECLARE_STR, DECLARE_LEN + 1);
+						strncpy(proc_body_str + DECLARE_LEN, " begin " , 7);
+						strncpy(proc_body_str + 7 + DECLARE_LEN,
+										yyextra->core_yy_extra.scanbuf + proc_b - 1, proc_body_len - 7);
+						proc_body_len = DECLARE_LEN + proc_body_len;
+				}
+				else
+				{
+						proc_body_str = (char *)palloc0(proc_body_len + 1);
+						DolphinDealProcBodyStr(proc_body_str, yyextra->core_yy_extra.scanbuf, infolist, proc_b, proc_body_len);
+				}
+
+				proc_body_str[proc_body_len] = '\0';
+
+				/* Reset the flag which mark whether we are in slash proc. */
+				yyextra->core_yy_extra.in_slash_proc_body = false;
+				yyextra->core_yy_extra.dolqstart = NULL;
+
+				/*
+				 * Add the end location of slash proc to the locationlist for the multi-query
+				 * processed.
+				 */
+				yyextra->core_yy_extra.query_string_locationlist =
+						lappend_int(yyextra->core_yy_extra.query_string_locationlist, yylloc);
+
+				funSrc = (FunctionSources*)palloc0(sizeof(FunctionSources));
+				funSrc->bodySrc   = proc_body_str;
+				funSrc->headerSrc = proc_header_str;
+
+				$$ = funSrc;
+			}
+		;
 CreateProcedureStmt:
-			CREATE opt_or_replace definer_user PROCEDURE func_name_opt_arg proc_args
+			CREATE opt_or_replace definer_user PROCEDURE func_name_opt_arg proc_args opt_createproc_opt_list{
+                                u_sess->parser_cxt.eaten_declare = false;
+                                u_sess->parser_cxt.eaten_begin = false;
+                                pg_yyget_extra(yyscanner)->core_yy_extra.include_ora_comment = true;
+                                u_sess->parser_cxt.isCreateFuncOrProc = true;
+                        }
+			BEGIN_P b_proc_body
+				{
+					int rc = 0;
+                                        rc = CompileWhich();
+                                        if ((rc == PLPGSQL_COMPILE_PROC || rc == PLPGSQL_COMPILE_NULL) && u_sess->cmd_cxt.CurrentExtensionObject == InvalidOid) {
+                                                u_sess->plsql_cxt.procedure_first_line = GetLineNumber(t_thrd.postgres_cxt.debug_query_string, @6);
+                                        }
+                                        rc = CompileWhich();
+                                        CreateFunctionStmt *n = makeNode(CreateFunctionStmt);
+                                        FunctionSources *funSource = (FunctionSources *)$10;
+                                        int count = get_outarg_num($6);
+					n->isOraStyle = true;
+                                        n->isPrivate = false;
+                                        n->replace = $2;
+                                        n->definer = $3;
+                                        if (n->replace && NULL != n->definer) {
+                                                parser_yyerror("not support DEFINER function");
+                                        }
+                                        n->funcname = $5;
+                                        n->parameters = $6;
+                                        n->inputHeaderSrc = FormatFuncArgType(yyscanner, funSource->headerSrc, n->parameters);
+                                        n->returnType = NULL;
+                                        n->isProcedure = true;
+                                        if (0 == count)
+                                        {
+                                                n->returnType = makeTypeName("void");
+                                                n->returnType->typmods = NULL;
+                                                n->returnType->arrayBounds = NULL;
+                                        }
+                                        n->options = $7;
+                                        n->options = lappend(n->options, makeDefElem("as",
+                                                                                (Node *)list_make1(makeString(funSource->bodySrc))));
+                                        n->withClause = NIL;
+					u_sess->parser_cxt.isCreateFuncOrProc = false;
+                                        $$ = (Node *)n;
+				}
+			|  CREATE opt_or_replace definer_user PROCEDURE func_name_opt_arg proc_args
 			opt_createproc_opt_list as_is {
 				u_sess->parser_cxt.eaten_declare = false;
 				u_sess->parser_cxt.eaten_begin = false;
@@ -33876,6 +34122,45 @@ DolphinIdent* CreateDolphinIdent(char* ident, bool is_quoted)
     return dolphinIdent;
 }
 
+DolphinProcBodyInfo* InitDolphinProcBodyInfo()
+{
+	DolphinProcBodyInfo* binfo = (DolphinProcBodyInfo*)palloc(sizeof(DolphinProcBodyInfo));
+	binfo->m_begin_b = binfo->m_begin_e = binfo->m_declare_len = binfo->m_block_level = 0;
+	binfo->m_begin_len = binfo->m_declare_b = binfo->m_declare_e = 0;
+	return binfo;
+}
+
+void DolphinDealProcBodyStr(char* target, char* scanbuf, List* infol, int begin, int len)
+{
+	ListCell* lc;
+	DolphinProcBodyInfo* preinfo = NULL;
+	DolphinProcBodyInfo* info = NULL;
+	int offset = 0;
+	foreach (lc, infol) {
+		preinfo = info;
+		info = (DolphinProcBodyInfo*)lfirst(lc);
+		if (info->m_block_level == 1) {
+			strncpy(target, scanbuf + begin - 1, info->m_declare_len + 1);
+			offset += info->m_declare_len + 1;
+			strncpy(target + offset, " begin ", 7);
+			offset += 7;
+		}
+		if (preinfo != NULL)
+		{
+			strncpy(target + offset, scanbuf + preinfo->m_declare_e + 1, 
+				info->m_begin_b - preinfo->m_declare_e - 1);
+			offset += info->m_begin_b - preinfo->m_declare_e - 1;
+			strncpy(target + offset, scanbuf + info->m_declare_b,
+                                info->m_declare_len + 1);
+			offset += info->m_declare_len + 1;
+			strncpy(target + offset, scanbuf + info->m_begin_b ,
+                                info->m_begin_len - 2);
+			offset += info->m_begin_len - 2;
+		}
+	}
+	strncpy(target + offset, scanbuf + info->m_declare_e + 1,
+                                 len - offset + 1);
+}
 /*
  * Must undefine this stuff before including scan.c, since it has different
  * definitions for these macros.
