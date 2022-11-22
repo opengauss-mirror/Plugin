@@ -12888,13 +12888,21 @@ CreateTrigStmt:
                        ;
 
 triggerbody_subprogram_or_single:{
-				pg_yyget_extra(yyscanner)->core_yy_extra.func_param_begin = yylloc;
+				if (yychar == YYEOF || yychar == YYEMPTY)
+				{
+					base_yy_extra_type *yyextra = pg_yyget_extra(yyscanner);
+					int count = strlen(yyextra->core_yy_extra.scanbuf);
+					GetSessionContext()->single_line_trigger_begin = count;
+				}
+				else
+					GetSessionContext()->single_line_trigger_begin = yylloc;
+				
 			} trigger_body_stmt
 				{
 					Node* node = (Node*)$2;
 					if(node->type == T_Invalid)
 					{
-						pg_yyget_extra(yyscanner)->core_yy_extra.func_param_begin = 0;
+						GetSessionContext()->single_line_trigger_begin = 0;
 						$$ = (FunctionSources*)$2;
 					}
 					else
@@ -12902,10 +12910,10 @@ triggerbody_subprogram_or_single:{
 						FunctionSources *funSrc = NULL;
 						char* strbody = NULL;
 						base_yy_extra_type *yyextra = pg_yyget_extra(yyscanner);
-						int start_pos = pg_yyget_extra(yyscanner)->core_yy_extra.func_param_begin;
+						int start_pos = GetSessionContext()->single_line_trigger_begin;
 						int end_pos = yylloc;
 						strbody = TriggerBodyGet(start_pos, end_pos, yyextra);
-						pg_yyget_extra(yyscanner)->core_yy_extra.func_param_begin = 0;
+						GetSessionContext()->single_line_trigger_begin = 0;
 						funSrc = (FunctionSources*)palloc0(sizeof(FunctionSources));
 						funSrc->bodySrc   = strbody;
 

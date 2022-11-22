@@ -89,6 +89,7 @@ typedef struct BSqlPluginContext {
     char* system_time_zone;
     char* time_zone;
     int wait_timeout;
+    int single_line_trigger_begin;
 #endif
 } bSqlPluginContext;
 

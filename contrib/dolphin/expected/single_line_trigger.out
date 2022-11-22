@@ -151,6 +151,103 @@ begin
 end;
 /
 NOTICE:  trigger "animal_trigger1" for relation "animals" already exists,skipping
+drop trigger animal_trigger1 on animals;
+drop trigger animal_trigger2 on animals;
+drop trigger animal_trigger3 on animals;
+drop trigger animal_trigger4 on animals;
+drop trigger animal_trigger5 on animals;
+drop trigger animal_trigger6 on animals;
+drop trigger animal_trigger7 on animals;
+delete food, animals;
+--definer test 
+create definer=d_user1 trigger animal_trigger1
+after insert on t
+for each row
+insert into t1 values(3);
+ERROR:  role "d_user1" is not exists
+-- trigger_order{follows|precedes} && begin ... end test
+create trigger animal_trigger1
+after insert on animals
+for each row
+insert into food(id, foodtype, remark, time_flag) values (1,'ice cream', 'sdsdsdsd', now());
+create trigger animal_trigger2
+after insert on animals
+for each row
+follows animal_trigger1
+insert into food(id, foodtype, remark, time_flag) values (2,'chocolate', 'sdsdsdsd', now());
+create trigger animal_trigger3
+after insert on animals
+for each row
+follows animal_trigger1
+insert into food(id, foodtype, remark, time_flag) values (3,'cake', 'sdsdsdsd', now());
+create trigger animal_trigger4
+after insert on animals
+for each row
+follows animal_trigger1
+insert into food(id, foodtype, remark, time_flag) values (4,'sausage', 'sdsdsdsd', now());
+insert into animals (id, name) values(1,'lion');
+select id, foodtype, remark from food;
+ id | foodtype  |  remark  
+----+-----------+----------
+  1 | ice cream | sdsdsdsd
+  4 | sausage   | sdsdsdsd
+  3 | cake      | sdsdsdsd
+  2 | chocolate | sdsdsdsd
+(4 rows)
+
+delete from food;
+create trigger animal_trigger5
+after insert on animals
+for each row
+precedes animal_trigger3
+insert into food(id, foodtype, remark, time_flag) values (5,'milk', 'sdsds', now());
+create trigger animal_trigger6
+after insert on animals
+for each row
+precedes animal_trigger2
+insert into food(id, foodtype, remark, time_flag) values (6,'strawberry', 'sdsds', now());
+insert into animals (id, name) values (2, 'dog');
+select id, foodtype, remark from food;
+ id |  foodtype  |  remark  
+----+------------+----------
+  1 | ice cream  | sdsdsdsd
+  4 | sausage    | sdsdsdsd
+  5 | milk       | sdsds
+  3 | cake       | sdsdsdsd
+  6 | strawberry | sdsds
+  2 | chocolate  | sdsdsdsd
+(6 rows)
+
+delete from food;
+create trigger animal_trigger7
+after insert on animals
+for each row
+follows animal_trigger5
+insert into food(id, foodtype, remark, time_flag) values (7,'jelly', 'sdsds', now());
+insert into animals (id,name) values(3,'cat');
+select id, foodtype, remark from food;
+ id |  foodtype  |  remark  
+----+------------+----------
+  1 | ice cream  | sdsdsdsd
+  4 | sausage    | sdsdsdsd
+  5 | milk       | sdsds
+  7 | jelly      | sdsds
+  3 | cake       | sdsdsdsd
+  6 | strawberry | sdsds
+  2 | chocolate  | sdsdsdsd
+(7 rows)
+
+-- if not exists test
+create trigger animal_trigger1
+after insert on animals
+for each row
+insert into food(id, foodtype, remark, time_flag) values (1,'ice cream', 'sdsdsdsd', now());
+ERROR:  trigger "animal_trigger1" for relation "animals" already exists
+create trigger if not exists animal_trigger1
+after insert on animals
+for each row
+insert into food(id, foodtype, remark, time_flag) values (1,'ice cream', 'sdsdsdsd', now());
+NOTICE:  trigger "animal_trigger1" for relation "animals" already exists,skipping
 drop table food;
 drop table animals;
 set enable_set_variable_b_format = on;
