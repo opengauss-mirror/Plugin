@@ -597,6 +597,25 @@ int base_yylex(YYSTYPE* lvalp, YYLTYPE* llocp, core_yyscan_t yyscanner)
                 *llocp = cur_yylloc;
             }
             break;
+        case DEFAULT:
+            /*
+             * DEFAULT must be reduced to one token, to allow START as table / column alias.
+             */
+            GET_NEXT_TOKEN();
+
+            switch (next_token) {
+                case '(':
+                    cur_token = DEFAULT_FUNC;
+                    break;
+                default:
+                    /* save the lookahead token for next time */
+                    SET_LOOKAHEAD_TOKEN();
+                    /* and back up the output info to cur_token */
+                    lvalp->core_yystype = cur_yylval;
+                    *llocp = cur_yylloc;
+                    break;
+            }
+            break;
 #endif
         default:
             break;

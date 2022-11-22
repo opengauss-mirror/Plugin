@@ -17,9 +17,12 @@
 #include "postgres.h"
 #include "knl/knl_variable.h"
 
+#include "catalog/indexing.h"
+#include "catalog/pg_attrdef.h"
 #include "catalog/pg_type.h"
 #include "catalog/pg_proc.h"
 #include "catalog/gs_package.h"
+#include "catalog/gs_package_fn.h"
 #include "commands/dbcommands.h"
 #include "commands/sequence.h"
 #include "db4ai/predict_by.h"
@@ -44,6 +47,7 @@
 #include "plugin_parser/parse_agg.h"
 #include "rewrite/rewriteManip.h"
 #include "utils/builtins.h"
+#include "utils/fmgroids.h"
 #include "utils/lsyscache.h"
 #include "utils/plpgsql.h"
 #include "utils/xml.h"
@@ -93,6 +97,13 @@ static Node *transformStartWithColumnRef(ParseState *pstate, ColumnRef *cref, ch
 static Node* tryTransformFunc(ParseState* pstate, List* fields, int location);
 static void SubCheckOutParam(List* exprtargs, Oid funcid);
 static Node* transformPrefixKey(ParseState* pstate, PrefixKey* pkey);
+
+#ifdef DOLPHIN
+typedef struct DefaultFuncType {
+    Oid tableOid = InvalidOid;
+    int colNumber = 0;
+} DefaultFuncType;
+#endif
 
 #define OrientedIsCOLorPAX(rte) ((rte)->orientation == REL_COL_ORIENTED || (rte)->orientation == REL_PAX_ORIENTED)
 #define INDEX_KEY_MAX_PREFIX_LENGTH (int)2676
@@ -1506,11 +1517,159 @@ static Node* transformUserVar(UserVar *uservar)
     return (Node *)result;
 }
 
+#ifdef DOLPHIN
+static DefaultFuncType* DefaultFuncTransformColumnRef(ParseState* pstate, ColumnRef* cref)
+{
+    char* nspname = NULL;
+    char* relname = NULL;
+    char* colname = NULL;
+    RangeTblEntry* rte = NULL;
+    int levels_up;
+    DefaultFuncType* result = NULL;
+    Node* node = NULL;
+    result = (DefaultFuncType*)palloc0(sizeof(DefaultFuncType));
+
+    switch (list_length(cref->fields)) {
+        case 1:
+            colname = strVal(linitial(cref->fields));
+            rte = (RangeTblEntry*)linitial(pstate->p_rtable);
+            break;
+        case 2:
+            relname = strVal(linitial(cref->fields));
+            colname = strVal(lsecond(cref->fields));
+            rte = refnameRangeTblEntry(pstate, nspname, relname, cref->location, &levels_up);
+            break;
+        case 3:
+            nspname = strVal(linitial(cref->fields));
+            relname = strVal(lsecond(cref->fields));
+            colname = strVal(lthird(cref->fields));
+            rte = refnameRangeTblEntry(pstate, nspname, relname, cref->location, &levels_up);
+            break;
+        case 4: {
+            char* catname = strVal(linitial(cref->fields));
+
+            /*
+             * We check the catalog name and then ignore it.
+             */
+            if (strcmp(catname, get_and_check_db_name(u_sess->proc_cxt.MyDatabaseId, false)) != 0) {
+                break;
+            }
+            nspname = strVal(lsecond(cref->fields));
+            relname = strVal(lthird(cref->fields));
+            colname = strVal(lfourth(cref->fields));
+            rte = refnameRangeTblEntry(pstate, nspname, relname, cref->location, &levels_up);
+            break;
+        }
+        default:
+            break;
+    }
+    if (rte != NULL) {
+        node = scanRTEForColumn(pstate, rte, colname, cref->location);
+    } else {
+        ereport(ERROR,
+            (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmodule(MOD_OPT),
+                    errmsg("Invalid rte call."),
+                        errdetail("database.schema.table_name.colname exist error.")));
+    }
+    result->tableOid = rte->relid;
+    result->colNumber = ((Var*)node)->varattno;
+    return result;
+}
+
+static Node* HandleDefaultFunction(ParseState* pstate, FuncCall* fn)
+{
+    int attnum = -1;
+    Oid reloid = InvalidOid;
+    bool hasDefault = false;
+    DefaultFuncType* dft = DefaultFuncTransformColumnRef(pstate, (ColumnRef*)lfirst(list_head(fn->args)));
+    reloid = dft->tableOid;
+    attnum = dft->colNumber;
+
+    HeapTuple attTuple = SearchSysCache2(ATTNUM, ObjectIdGetDatum(reloid), Int16GetDatum(attnum));
+    if (HeapTupleIsValid(attTuple)) {
+        attnum = ((Form_pg_attribute)GETSTRUCT(attTuple))->attnum;
+        hasDefault = ((Form_pg_attribute)GETSTRUCT(attTuple))->atthasdef;
+    }
+    ReleaseSysCache(attTuple);
+
+    if (attnum != -1){
+        HeapTuple htup = NULL;
+        bool isnull = false;
+        ScanKeyData skey[2];
+        Datum val;
+        Datum adsrcVal;
+        List* wholename = NIL;
+        char* tempFuncName = NULL;
+        Const* con = makeConst(UNKNOWNOID, -1, InvalidOid, -2, (Datum)0, true, false);
+        con->location = fn->location;
+
+        if (hasDefault) {
+            Relation adrel = heap_open(AttrDefaultRelationId, RowExclusiveLock);
+            ScanKeyInit(&skey[0], Anum_pg_attrdef_adrelid, BTEqualStrategyNumber, F_OIDEQ, ObjectIdGetDatum(reloid));
+            ScanKeyInit(&skey[1], Anum_pg_attrdef_adnum, BTEqualStrategyNumber, F_INT2EQ, Int16GetDatum(attnum));
+            SysScanDesc adscan = systable_beginscan(adrel, AttrDefaultIndexId, true, NULL, 2, skey);
+            if (HeapTupleIsValid(htup = systable_getnext(adscan))) {
+                val = heap_getattr(htup, Anum_pg_attrdef_adbin, adrel->rd_att, &isnull);
+                if (val && pg_strcasecmp(TextDatumGetCString(val), "") == 0) {
+                    systable_endscan(adscan);
+                    heap_close(adrel, RowExclusiveLock);
+                    return (Node*)con;
+                }
+                adsrcVal = heap_getattr(htup, Anum_pg_attrdef_adsrc, adrel->rd_att, &isnull);
+                tempFuncName = TextDatumGetCString(adsrcVal);
+                char* firstLocation = strchr(tempFuncName, '(');
+                bool temp_result = false;
+                if (firstLocation != NULL) {
+                    int funcNameLength = firstLocation - tempFuncName;
+                    char* funcName = (char*)palloc0(funcNameLength + 1);
+                    errno_t rc = memcpy_s(funcName, funcNameLength, tempFuncName, funcNameLength);
+                    securec_check(rc, "", "");
+                    HeapTuple temp_htup = NULL;
+                    isnull = false;
+                    Relation rel_proc = heap_open(ProcedureRelationId, RowExclusiveLock);
+                    SysScanDesc temp_adscan = systable_beginscan(rel_proc, InvalidOid, false, NULL, 0, NULL);
+                    while (HeapTupleIsValid(temp_htup = systable_getnext(temp_adscan))) {
+                        Datum val = heap_getattr(temp_htup, Anum_pg_proc_proname, rel_proc->rd_att, &isnull);
+                        if (val && pg_strcasecmp(DatumGetCString(val), funcName) == 0) {
+                           temp_result = true;
+                           break;
+                        }
+                    }
+                    systable_endscan(temp_adscan);
+                    heap_close(rel_proc, RowExclusiveLock);
+                }
+                if (temp_result) {
+                    systable_endscan(adscan);
+                    heap_close(adrel, RowExclusiveLock);
+                    return (Node*)con;
+                }
+            }
+            systable_endscan(adscan);
+            heap_close(adrel, RowExclusiveLock);
+        } else {
+            return (Node*)con;
+        }
+
+        Expr* expr = (Expr*)stringToNode_skip_extern_fields(TextDatumGetCString(val));
+        return (Node*) expr;
+    }
+    ereport(ERROR,
+        (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmodule(MOD_OPT),
+            errmsg("Invalid function call."),
+                errdetail("unsupport call on deault function")));
+}
+#endif
+
 static Node* transformFuncCall(ParseState* pstate, FuncCall* fn)
 {
     List* targs = NIL;
     ListCell* args = NULL;
     Node* result = NULL;
+
+    /* For DEFAULT function, while transform, replace it to the default expr for col*/
+    if (strcmp(strVal(linitial(fn->funcname)), "mode_b_default") == 0) {
+        return HandleDefaultFunction(pstate, fn);
+    }
 
     /* Transform the list of arguments ... */
     targs = NIL;

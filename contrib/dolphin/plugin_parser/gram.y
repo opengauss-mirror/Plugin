@@ -1061,7 +1061,7 @@ static SelectStmt *MakeShowGrantStmt(char *arg, int location, core_yyscan_t yysc
 	CURRENT_TIME CURTIME CURRENT_TIMESTAMP CURRENT_USER CURSOR CYCLE NOW_FUNC
 	SHRINK
 
-	DATA_P DATABASE DATABASES DATAFILE DATANODE DATANODES DATATYPE_CL DATE_P DATETIME DATE_FORMAT_P DAY_P DAY_HOUR_P DAY_MICROSECOND_P DAY_MINUTE_P DAY_SECOND_P DAYOFMONTH DAYOFWEEK DAYOFYEAR DBCOMPATIBILITY_P DB_B_FORMAT DB_B_JSOBJ DEALLOCATE DEC DECIMAL_P DECLARE DECODE DEFAULT DEFAULTS
+	DATA_P DATABASE DATABASES DATAFILE DATANODE DATANODES DATATYPE_CL DATE_P DATETIME DATE_FORMAT_P DAY_P DAY_HOUR_P DAY_MICROSECOND_P DAY_MINUTE_P DAY_SECOND_P DAYOFMONTH DAYOFWEEK DAYOFYEAR DBCOMPATIBILITY_P DB_B_FORMAT DB_B_JSOBJ DEALLOCATE DEC DECIMAL_P DECLARE DECODE DEFAULT DEFAULTS DEFAULT_FUNC
 	DEFERRABLE DEFERRED DEFINER DELAYED DELETE_P DELIMITER DELIMITERS DELTA DELTAMERGE DESC DESCRIBE DETERMINISTIC DIV
 /* PGXC_BEGIN */
 	DICTIONARY DIRECT DIRECTORY DISABLE_P DISCARD DISTINCT DISTINCTROW DISTRIBUTE DISTRIBUTION DO DOCUMENT_P DOMAIN_P DOUBLE_P
@@ -1169,6 +1169,7 @@ static SelectStmt *MakeShowGrantStmt(char *arg, int location, core_yyscan_t yysc
 			END_OF_INPUT
 			END_OF_INPUT_COLON
 			END_OF_PROC
+			DEFAULT_FUNC
 
 /* Precedence: lowest to highest */
 %nonassoc COMMENT
@@ -27949,6 +27950,21 @@ func_expr_common_subexpr:
 					n->agg_star = false;
 					n->agg_distinct = false;
 					n->func_variadic = false;
+					n->over = NULL;
+					n->location = @1;
+					n->call_func = false;
+					$$ = (Node *)n;
+				}
+			| DEFAULT_FUNC columnref ')'
+				{
+					FuncCall *n = makeNode(FuncCall);
+					n->funcname = list_make1(makeString("mode_b_default"));
+					ColumnRef *temp_col = (ColumnRef *)$2;
+					n->args = list_make1((Node *)temp_col);
+					n->agg_order = NIL;
+					n->agg_star = TRUE;
+					n->agg_distinct = FALSE;
+					n->func_variadic = FALSE;
 					n->over = NULL;
 					n->location = @1;
 					n->call_func = false;
