@@ -66,5 +66,18 @@ select convert('测试' using utf8);
  测试
 (1 row)
 
+select convert(11.1, decimal(10,3));
+ numeric 
+---------
+  11.100
+(1 row)
+
+select convert(1 using decimal(10,3));
+WARNING:  global syscache reference leak LocalCatCTup resowner.cpp 2243
+ numeric 
+---------
+   1.000
+(1 row)
+
 \c postgres
 drop database if exists db_convert;
