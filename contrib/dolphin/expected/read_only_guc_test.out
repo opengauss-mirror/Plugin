@@ -104,7 +104,7 @@ show query_cache_type;
 show system_time_zone;
  system_time_zone 
 ------------------
- SYSTEM
+ 
 (1 row)
 
 show time_zone;
@@ -219,7 +219,7 @@ SELECT * FROM pg_settings WHERE NAME='query_cache_type';
 SELECT * FROM pg_settings WHERE NAME='system_time_zone';
        name       | setting | unit |      category      |          short_desc          | extra_desc | context  | vartype | source  | min_val | max_val | enumvals | boot_val | reset_val | sourcefile | sourceline 
 ------------------+---------+------+--------------------+------------------------------+------------+----------+---------+---------+---------+---------+----------+----------+-----------+------------+------------
- system_time_zone | SYSTEM  |      | Customized Options | The time zone set by server. |            | internal | string  | default |         |         |          |          |           |            |           
+ system_time_zone |         |      | Customized Options | The time zone set by server. |            | internal | string  | default |         |         |          |          |           |            |           
 (1 row)
 
 SELECT * FROM pg_settings WHERE NAME='time_zone';

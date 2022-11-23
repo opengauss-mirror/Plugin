@@ -619,7 +619,7 @@ void init_session_vars(void)
     DefineCustomStringVariable("time_zone",
                                gettext_noop("The time zone set currently."),
                                NULL,
-                               &GetSessionContext()->system_time_zone,
+                               &GetSessionContext()->time_zone,
                                "SYSTEM",
                                PGC_INTERNAL,
                                0,
