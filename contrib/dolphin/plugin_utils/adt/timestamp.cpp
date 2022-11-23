@@ -171,7 +171,6 @@ static int daydiff_timestamp(const struct pg_tm* tm, const struct pg_tm* tm1, co
 #ifdef DOLPHIN
 void check_b_format_datetime_range_with_ereport(Timestamp &datetime);
 Oid convert_cstring_to_datetime_time(const char* str, Timestamp *datetime, TimeADT *time);
-Oid convert_to_datetime_time(Datum value, Oid valuetypid, Timestamp *datetime, TimeADT *time);
 static int cal_weekday_interval(struct pg_tm* tm, bool sunday_is_first_day);
 static int b_db_sumdays(int year, int month, int day);
 static bool timestampdiff_datetime_internal(int64 *result,  text *units, Timestamp dt1, Timestamp dt2);
@@ -209,6 +208,8 @@ PG_FUNCTION_INFO_V1_PUBLIC(subtime_text);
 extern "C" DLL_PUBLIC Datum subtime_text(PG_FUNCTION_ARGS);
 PG_FUNCTION_INFO_V1_PUBLIC(time_format);
 extern "C" DLL_PUBLIC Datum time_format(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(time_format_date);
+extern "C" DLL_PUBLIC Datum time_format_date(PG_FUNCTION_ARGS);
 PG_FUNCTION_INFO_V1_PUBLIC(timestamp_param1);
 extern "C" DLL_PUBLIC Datum timestamp_param1(PG_FUNCTION_ARGS);
 PG_FUNCTION_INFO_V1_PUBLIC(timestamp_param2);
@@ -6568,15 +6569,15 @@ void convert_to_datetime(Datum value, Oid valuetypid, Timestamp *datetime)
 Oid convert_cstring_to_datetime_time(const char* str, Timestamp *datetime, TimeADT *time)
 {
     size_t len = strlen(str);
+    const char *start;
     const char *end = str + len;
-    int time_sign = 1; // 1 means positive time, -1 means negative time
 
     /* Skip space at start */
     for (; str != end && isspace((unsigned char)*str); str++)
         len--;
+    start = str;
     /* Determine positive or negative time */
     if (str != end && *str == '-') {
-        time_sign = -1;
         str++;
         len--;
     }
@@ -6612,8 +6613,7 @@ Oid convert_cstring_to_datetime_time(const char* str, Timestamp *datetime, TimeA
 
     /* Not a timestamp. Try to convert str to time*/
     *time = DatumGetTimeADT(
-        DirectFunctionCall3(time_in, CStringGetDatum(str), ObjectIdGetDatum(InvalidOid), Int32GetDatum(-1)));
-    *time *= time_sign;
+        DirectFunctionCall3(time_in, CStringGetDatum(start), ObjectIdGetDatum(InvalidOid), Int32GetDatum(-1)));
     check_b_format_time_range_with_ereport(*time);
     return TIMEOID;
 }
@@ -6657,7 +6657,8 @@ Oid convert_to_datetime_time(Datum value, Oid valuetypid, Timestamp *datetime, T
         case INT1OID:
         case INT2OID:
         case INT4OID:
-        case BOOLOID: {
+        case BOOLOID: 
+        case BITOID: {
             convert_to_time(value, valuetypid, time);
             check_b_format_time_range_with_ereport(*time);
             return TIMEOID;
@@ -7063,6 +7064,24 @@ Datum time_format(PG_FUNCTION_ARGS)
         securec_check(rc, "", "");
     }
     PG_RETURN_TEXT_P(cstring_to_text(str));
+}
+
+/* 
+ * The effect is the same as time_format()
+ * This function is used to receive date parameter and the date 
+ * is required to be in the range of [0000-01-01, 9999-12-31]
+ */
+Datum time_format_date(PG_FUNCTION_ARGS)
+{
+    DateADT date = PG_GETARG_DATEADT(0);
+    
+    if (date < B_FORMAT_DATEADT_MIN_VALUE || date > B_FORMAT_DATEADT_MAX_VALUE) {
+        ereport(ERROR,
+                (errcode(ERRCODE_DATETIME_FIELD_OVERFLOW),
+                 errmsg("date field value out of range")));
+    }
+
+    return DirectFunctionCall2(time_format, CStringGetTextDatum("0"), PG_GETARG_DATUM(1));
 }
 
 /*

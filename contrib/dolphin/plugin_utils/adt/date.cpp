@@ -3682,6 +3682,14 @@ void convert_to_time(Datum value, Oid valuetypid, TimeADT *time)
                                     DirectFunctionCall1(abstime_timestamp, value)));
             break;
         }
+        case BITOID: {
+            if (SQL_MODE_STRICT()) {
+                ereport(ERROR, (errcode(ERRCODE_DATATYPE_MISMATCH),
+                                errmsg("unsupported input data type: %s", format_type_be(valuetypid))));
+            }
+            *time = 0;
+            break;
+        }
         default: {
             if (valuetypid == get_typeoid(PG_CATALOG_NAMESPACE, "uint1") ||
                 valuetypid == get_typeoid(PG_CATALOG_NAMESPACE, "uint2") ||
@@ -3904,20 +3912,30 @@ void str_to_pg_tm(char *str, pg_tm &tt, fsec_t &fsec, int &timeSign)
  */
 Datum time_mysql(PG_FUNCTION_ARGS)
 {
-    text *expr = PG_GETARG_TEXT_PP(0);
-    char *str;
     TimeADT time;
-    struct pg_tm tt, *tm = &tt;
-    fsec_t fsec;
-    int timeSign = 1;
+    TimeADT result = 0;
+    Timestamp datetime;
+    Oid val_type;
 
-    str = text_to_cstring(expr);
+    val_type = get_fn_expr_argtype(fcinfo->flinfo, 0);
+    val_type = convert_to_datetime_time(PG_GETARG_DATUM(0), val_type, &datetime, &time);
 
-    str_to_pg_tm(str, tt, fsec, timeSign);
-    tm2time(tm, fsec, &time);
-    AdjustTimeForTypmod(&time, -1);
-    time *= timeSign;
-    PG_RETURN_TIMEADT(time);
+    switch (val_type) {
+        case TIMEOID: {
+            result = time;
+            break;
+        }
+        case TIMESTAMPOID:
+        case DATEOID: {
+            result = DatumGetTimeADT(DirectFunctionCall1(timestamp_time, TimeADTGetDatum(datetime)));
+            break;
+        }
+        default: {
+            ereport(ERROR, (errcode(ERRCODE_DATATYPE_MISMATCH),
+                            errmsg("unsupported input data type: %s", format_type_be(val_type))));
+        }
+    }
+    PG_RETURN_TIMEADT(result);
 }
 
 /**
