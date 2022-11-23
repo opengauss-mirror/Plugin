@@ -16,10 +16,14 @@ insert into normal_01 values(1,1,1,1,1) on duplicate key update c3 = 2;
 select * from normal_01;
 insert into normal_01 values(1,1,1,1,1) on duplicate key update c1 =1, c2 = 1, c3=2, c4=1,c5=1;
 select * from normal_01;
+insert into normal_01 values(1,1,1,1,1) on duplicate key update c1 =values(c1) + values(c1), c2 = 1, c3=values(c2) + 1, c4=1,c5=1;
+select * from normal_01;
 
 --unique
 create table normal_02(c1 int, c2 int, c3 int unique) ;
 insert into normal_02 values(101, 1, 300) on duplicate key update c3=101;
+select * from normal_02;
+insert into normal_02 values(101, 1, 300) on duplicate key update c3=values(c1) * 2;
 select * from normal_02;
 
 --unique on multiple column 
@@ -29,6 +33,8 @@ select * from normal_03;
 insert into normal_03 values(101, 1, 1) on duplicate key update c2=101;
 select * from normal_03;
 insert into normal_03 values(101, 1, 1) on duplicate key update c2 =1,c3=101;
+select * from normal_03;
+insert into normal_03 values(101, 1, 1) on duplicate key update c2 =1 + values(c2),c3 = values(c1) + values(c2) + values(c3);
 select * from normal_03;
 
 -- index on multiple column
@@ -43,6 +49,8 @@ INSERT INTO normal_04 VALUES (1, 1) ON DUPLICATE KEY UPDATE col3 = 3;
 select * from normal_04;
 INSERT INTO normal_04 VALUES (1, 1) ON DUPLICATE KEY UPDATE col3 = 3;
 select * from normal_04;
+INSERT INTO normal_04 VALUES (1, 3) ON DUPLICATE KEY UPDATE col3 = values(col3) * values(col3);
+select * from normal_04;
 
 --ustore test
 --primary key
@@ -51,12 +59,16 @@ INSERT INTO ustore_01 VALUES(1) ON DUPLICATE KEY UPDATE col1 = 1;
 select * from ustore_01;
 INSERT INTO ustore_01 VALUES(1) ON DUPLICATE KEY UPDATE col1 = 1;
 select * from ustore_01;
+INSERT INTO ustore_01 VALUES(1) ON DUPLICATE KEY UPDATE col1 = - values(col1);
+select * from ustore_01;
 --index on multiple column
 CREATE TABLE ustore_02 (col1 INT, col2 INT) with(storage_type=ustore);
 INSERT INTO ustore_02 VALUES (1, 2) ON DUPLICATE KEY UPDATE col1 = 5;
 select * from ustore_02;
 CREATE UNIQUE INDEX ustore_02_u_index ON ustore_02(col1, col2);
 INSERT INTO ustore_02 VALUES (1, 2) ON DUPLICATE KEY UPDATE col2 = 5;
+select * from ustore_02;
+INSERT INTO ustore_02 VALUES (1, 5) ON DUPLICATE KEY UPDATE col2 = values(col1);
 select * from ustore_02;
 
 -- test ustore_03 with one primary key
@@ -87,7 +99,7 @@ INSERT INTO ustore_03 (col2, col3, col5)
             (30, 30, 30)
     ON DUPLICATE KEY UPDATE
         col1 = 100,
-        col2 = 100,
+        col2 = values(col2) + 1,
         col3 = 100,
         col5 = 100;
 select * from ustore_03;
@@ -104,7 +116,8 @@ INSERT INTO ustore_04 VALUES (1, 1) ON DUPLICATE KEY UPDATE col3 = 3;
 select * from ustore_04;
 INSERT INTO ustore_04 VALUES (1, 1) ON DUPLICATE KEY UPDATE col3 = 3;
 select * from ustore_04;
-
+INSERT INTO ustore_04 VALUES (1, 1, 3) ON DUPLICATE KEY UPDATE col3 = values(col1) + values(col2);
+select * from ustore_04;
 -- test t6 with one more index
 CREATE TABLE t6 (
     col1 INT,

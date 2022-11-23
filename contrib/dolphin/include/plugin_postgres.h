@@ -68,6 +68,7 @@ typedef struct BSqlPluginContext {
     bool scan_from_pl;
     char* default_database_name;
     int paramIdx;
+    bool isUpsert;
 } bSqlPluginContext;
 
 BSqlPluginContext* GetSessionContext();

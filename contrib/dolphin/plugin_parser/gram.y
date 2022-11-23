@@ -23126,7 +23126,7 @@ returning_clause:
 		;
 
 upsert_clause:
-			ON DUPLICATE KEY UPDATE set_clause_list where_clause
+			UPSERT set_clause_list where_clause
 				{
 					if (u_sess->attr.attr_sql.enable_upsert_to_merge
 #ifdef ENABLE_MULTIPLE_NODES					
@@ -23136,14 +23136,14 @@ upsert_clause:
 						MergeWhenClause *n = makeNode(MergeWhenClause);
 						n->matched = true;
 						n->commandType = CMD_UPDATE;
-						n->targetList = $5;
+						n->targetList = $2;
 						$$ = (Node *) n;
 					} else {
 #ifdef ENABLE_MULTIPLE_NODES
 						/* check subquery in set clause*/
 						ListCell* cell = NULL;
 						ResTarget* res = NULL;
-						foreach (cell, $5) {
+						foreach (cell, $2) {
 							res = (ResTarget*)lfirst(cell);
 							if (IsA(res->val,SubLink)) {
 								const char* message = "Update with subquery is not yet supported whithin INSERT ON DUPLICATE KEY UPDATE statement.";
@@ -23157,13 +23157,13 @@ upsert_clause:
 #endif
 
 						UpsertClause *uc = makeNode(UpsertClause);
-						uc->targetList = $5;
+						uc->targetList = $2;
 						uc->location = @1;
-						uc->whereClause = $6;
+						uc->whereClause = $3;
 						$$ = (Node *) uc;
 					}
 				}
-			| ON DUPLICATE KEY UPDATE NOTHING
+			| UPSERT NOTHING
 				{
 					if (unlikely(u_sess->attr.attr_sql.enable_upsert_to_merge ||
 						t_thrd.proc->workingVersionNum < UPSERT_ROW_STORE_VERSION_NUM)) {
@@ -23176,6 +23176,10 @@ upsert_clause:
 					}
 				}
 		;
+
+UPSERT:
+	ON DUPLICATE KEY UPDATE { GetSessionContext()->isUpsert = true; }
+	;
 
 /*****************************************************************************
  *
@@ -23351,33 +23355,6 @@ single_set_clause:
 				{
 					$$ = $1;
 					$$->val = (Node *) $3;
-				}
-			/* this is only used in ON DUPLICATE KEY UPDATE col = VALUES(col) case
-			 * for mysql compatibility
-			 */
-			| set_target assign_operator VALUES '(' columnref ')'
-				{
-					ColumnRef *c = NULL;
-					int nfields = 0;
-					if (IsA($5, ColumnRef))
-						c = (ColumnRef *) $5;
-					else if (IsA($5, A_Indirection))
-						c = (ColumnRef *)(((A_Indirection *)$5)->arg);
-					nfields = list_length(c->fields);
-					/* only allow col.*, col[...], col */
-					if (nfields > 1)
-					{
-						const char* message = "only allow column name within VALUES";
-    					InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);
-						ereport(errstate,
-								(errcode(ERRCODE_SYNTAX_ERROR),
-								 errmsg("only allow column name within VALUES"),
-								 parser_errposition(@5)));
-					}
-
-					c->fields = lcons((Node *)makeString("excluded"), c->fields);
-					$$ = $1;
-					$$->val = (Node *) $5;
 				}
 		;
 
@@ -26904,6 +26881,34 @@ a_expr:		c_expr									{ $$ = $1; }
 					n->location = @2;
 					n->call_func = false;
 					$$ = (Node *) n;
+				}
+			| VALUES '(' columnref ')'
+				{
+					if (!GetSessionContext()->isUpsert)
+						ereport(errstate, 
+								(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+								errmsg("VALUES only support in UPSERT clause")));
+
+					ColumnRef *c = NULL;
+					int nfields = 0;
+					if (IsA($3, ColumnRef))
+						c = (ColumnRef *) $3;
+					else if (IsA($3, A_Indirection))
+						c = (ColumnRef *)(((A_Indirection *)$3)->arg);
+					nfields = list_length(c->fields);
+					/* only allow col.*, col[...], col */
+					if (nfields > 1)
+					{
+						const char* message = "only allow column name within VALUES";
+    					InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);
+						ereport(errstate,
+								(errcode(ERRCODE_SYNTAX_ERROR),
+								 errmsg("only allow column name within VALUES"),
+								 parser_errposition(@3)));
+					}
+
+					c->fields = lcons((Node *)makeString("excluded"), c->fields);
+					$$ = (Node *) $3;
 				}
 		;
 
@@ -31961,6 +31966,7 @@ parser_init(base_yy_extra_type *yyext)
 	yyext->parsetree = NIL;		/* in case grammar forgets to set it */
 	yyext->core_yy_extra.query_string_locationlist = NIL;
 	yyext->core_yy_extra.paren_depth = 0;
+	GetSessionContext()->isUpsert = false;
 }
 
 static Expr *
