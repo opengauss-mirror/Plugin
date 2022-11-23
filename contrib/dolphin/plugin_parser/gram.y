@@ -27877,45 +27877,45 @@ func_expr_common_subexpr:
 					n->call_func = false;
 					$$ = (Node *)n;
 				}
-            | CONVERT '(' a_expr USING Typename ')'
-            {
-                    TypeName* typname = (TypeName*)$5;
-                    Type typtup = LookupTypeName(NULL, typname, NULL);
-                    FuncCall *n = makeNode(FuncCall);
-                    if (NULL == typtup) {
-                        n->funcname = SystemFuncName("convert");
-                        n->args = list_make2($3, makeStringConst(strVal(linitial(typname->names)),-1));
-                        n->agg_order = NIL;
-                        n->agg_star = FALSE;
-                        n->agg_distinct = FALSE;
-                        n->func_variadic = FALSE;
-                        n->over = NULL;
-                        n->location = @1;
-                        n->call_func = false;
-                        $$ = (Node *)n;
-                    } else {
-                        $$ = makeTypeCast($3, $5, @1);
-                    }
+			| CONVERT '(' a_expr USING Typename ')'
+			{
+			        TypeName* typname = (TypeName*)$5;
+				Type typtup = LookupTypeName(NULL, typname, NULL);
+				FuncCall *n = makeNode(FuncCall);
+				if (NULL == typtup) {
+				        n->funcname = SystemFuncName("convert");
+					n->args = list_make2($3, makeStringConst(strVal(linitial(typname->names)), -1));
+					n->agg_order = NIL;
+					n->agg_star = FALSE;
+					n->agg_distinct = FALSE;
+					n->func_variadic = FALSE;
+					n->over = NULL;
+					n->location = @1;
+					n->call_func = false;
+					$$ = (Node *)n;
+				} else {
+				        $$ = makeTypeCast($3, $5, @1);
+				}
 
-            }
-            | CONVERT '(' a_expr USING Sconst ')'
-            {
-                FuncCall *n = makeNode(FuncCall);
-                n->funcname = SystemFuncName("convert");
-                n->args = list_make2($3, makeStringConst($5,-1));
-                n->agg_order = NIL;
-                n->agg_star = FALSE;
-                n->agg_distinct = FALSE;
-                n->func_variadic = FALSE;
-                n->over = NULL;
-                n->location = @1;
-                n->call_func = false;
-                $$ = (Node *)n;
-            }
-            | CONVERT '(' a_expr ',' Typename ')'
-            {
-                $$ = makeTypeCast($3, $5, @1);
-            }
+			}
+			| CONVERT '(' a_expr USING Sconst ')'
+			{
+			        FuncCall *n = makeNode(FuncCall);
+				n->funcname = SystemFuncName("convert");
+				n->args = list_make2($3, makeStringConst($5, -1));
+				n->agg_order = NIL;
+				n->agg_star = FALSE;
+				n->agg_distinct = FALSE;
+				n->func_variadic = FALSE;
+				n->over = NULL;
+				n->location = @1;
+				n->call_func = false;
+				$$ = (Node *)n;
+			}
+			| CONVERT '(' a_expr ',' Typename ')'
+			{
+			        $$ = makeTypeCast($3, $5, @1);
+			}
 			| CURRENT_TIME
 				{
 					FuncCall *n = makeNode(FuncCall);
