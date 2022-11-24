@@ -3304,7 +3304,8 @@ Datum makedate(PG_FUNCTION_ARGS)
     int64 dayofyear = PG_GETARG_INT64(1);
     DateADT date;
 
-    if (year < B_FORMAT_MIN_YEAR_OF_DATE || year > B_FORMAT_MAX_YEAR_OF_DATE || dayofyear <= 0)
+    if (year < B_FORMAT_MIN_YEAR_OF_DATE || year > B_FORMAT_MAX_YEAR_OF_DATE || 
+        dayofyear <= 0 || dayofyear >= (int64)pow_of_10[7])
         PG_RETURN_NULL();
 
     if (YEAR2_IN_RANGE(year))
