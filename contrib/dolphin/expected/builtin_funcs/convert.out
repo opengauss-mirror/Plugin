@@ -73,7 +73,6 @@ select convert(11.1, decimal(10,3));
 (1 row)
 
 select convert(1 using decimal(10,3));
-WARNING:  global syscache reference leak LocalCatCTup resowner.cpp 2243
  numeric 
 ---------
    1.000

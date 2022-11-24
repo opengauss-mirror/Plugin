@@ -27894,6 +27894,7 @@ func_expr_common_subexpr:
 					n->call_func = false;
 					$$ = (Node *)n;
 				} else {
+				        ReleaseSysCache(typtup);
 				        $$ = makeTypeCast($3, $5, @1);
 				}
 
