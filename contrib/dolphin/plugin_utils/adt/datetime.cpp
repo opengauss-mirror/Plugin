@@ -566,7 +566,7 @@ static int SpecialFractionalSecond(char* cp, fsec_t* fsec, unsigned int fmask)
         if (field_length > 0) {
             value *= pow_of_10[field_length];
         } else {
-            if ((fmask & DTK_DATE_M) != DTK_DATE_M) {
+            if ((fmask & DTK_DATE_M) != DTK_DATE_M && isdigit(*cp)) {
                 while (isdigit(*(cp + 1))) {
                     ++cp;
                 }
@@ -5055,7 +5055,7 @@ bool CheckDatetimeRange(const pg_tm *tm, const fsec_t fsec, const int tm_type)
 */
 
 bool cstring_to_datetime(const char* str,  time_flags flags, int &tm_type, 
-                        pg_tm *tm, fsec_t &fsec, int &nano)
+                        pg_tm *tm, fsec_t &fsec, int &nano, bool &warnings)
 {
     size_t length = strlen(str);
     unsigned int field_length = 0, year_length = 0, digits, i, number_of_fields;
@@ -5282,6 +5282,7 @@ bool cstring_to_datetime(const char* str,  time_flags flags, int &tm_type,
 
     for (; str != end; str++) {
         if (!isspace(*str)) {
+            warnings = true;
             break;
         }
     }
@@ -5318,24 +5319,19 @@ bool datetime_add_nanoseconds_with_round(pg_tm *tm, fsec_t &fsec, int nano)
         return true;
 
     fsec %= USECS_PER_SEC;
-    Interval interval;
-    errno_t rc = memset_s(&interval, sizeof(interval), 0, sizeof(interval));
-    securec_check(rc, "\0", "\0");
-    interval.time = -USECS_PER_SEC;
     /* date_add_interval cannot handle bad dates */
     bool non_zero_date = (tm->tm_year || tm->tm_mon || tm->tm_mday);
     if (!CheckDateRange(tm, non_zero_date,
                    (TIME_NO_ZERO_IN_DATE | TIME_NO_ZERO_DATE)))
         return false;
 
-    Timestamp datetime, result;
+    tm->tm_sec += 1;
+    
+    Timestamp datetime;
     if (tm2timestamp(tm, fsec, NULL, &datetime) == -1) {
         return false;
     }
-    if (!datetime_sub_interval(datetime, &interval, &result)) {
-        return false;
-    }
-    if (!timestamp2tm(result, NULL, tm, &fsec, NULL, NULL)) {
+    if (datetime >= B_FORMAT_TIMESTAMP_MIN_VALUE || datetime <= B_FORMAT_TIMESTAMP_MAX_VALUE) {
         return true;
     }
     return false;
@@ -5355,7 +5351,8 @@ bool datetime_add_nanoseconds_with_round(pg_tm *tm, fsec_t &fsec, int nano)
 bool cstring_to_tm(const char *expr, pg_tm *tm, fsec_t &fsec)
 {
     int nano = 0, tm_type = DTK_NONE;
-    if (!cstring_to_datetime(expr, TIME_NO_ZERO_DATE, tm_type, tm, fsec, nano) ||
+    bool warnings = false;
+    if (!cstring_to_datetime(expr, TIME_NO_ZERO_DATE, tm_type, tm, fsec, nano, warnings) ||
         !datetime_add_nanoseconds_with_round(tm, fsec, nano)) {
             return false;
         }
