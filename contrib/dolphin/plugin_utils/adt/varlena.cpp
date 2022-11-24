@@ -640,65 +640,73 @@ Datum byteaout(PG_FUNCTION_ARGS)
 // input interface of RAW type
 Datum rawin(PG_FUNCTION_ARGS)
 {
-    Datum fmt = DirectFunctionCall1(textin, CStringGetDatum(pstrdup("HEX")));
-    Datum result;
-    char* cstring_arg1 = PG_GETARG_CSTRING(0);
-    char* tmp = NULL;
-    int len = 0;
-    Datum arg1;
-    errno_t rc = EOK;
+    if (!GetSessionContext()->enableBCmptMode) {
+        Datum fmt = DirectFunctionCall1(textin, CStringGetDatum(pstrdup("HEX")));
+        Datum result;
+        char* cstring_arg1 = PG_GETARG_CSTRING(0);
+        char* tmp = NULL;
+        int len = 0;
+        Datum arg1;
+        errno_t rc = EOK;
 
-    len = strlen(cstring_arg1);
+        len = strlen(cstring_arg1);
 
-    if (0 != (len % 2)) {
-        tmp = (char*)palloc0(len + 2);
-        tmp[0] = '0';
-        rc = strncat_s(tmp, len + 2, cstring_arg1, len + 1);
-        securec_check(rc, tmp, "\0");
-        arg1 = DirectFunctionCall1(textin, CStringGetDatum(tmp));
-    } else
-        arg1 = DirectFunctionCall1(textin, PG_GETARG_DATUM(0));
+        if (0 != (len % 2)) {
+            tmp = (char*)palloc0(len + 2);
+            tmp[0] = '0';
+            rc = strncat_s(tmp, len + 2, cstring_arg1, len + 1);
+            securec_check(rc, tmp, "\0");
+            arg1 = DirectFunctionCall1(textin, CStringGetDatum(tmp));
+        } else
+            arg1 = DirectFunctionCall1(textin, PG_GETARG_DATUM(0));
 
-    result = DirectFunctionCall2(binary_decode, arg1, fmt);
+        result = DirectFunctionCall2(binary_decode, arg1, fmt);
 
-    return result;
+        return result;
+    } else {
+        return byteain(fcinfo);
+    }
 }
 
 // output interface of RAW type
 Datum rawout(PG_FUNCTION_ARGS)
 {
-    /*fcinfo->fncollation is set to 0 when calling Macro FuncCall1,
-     *so the collation value needs to be reset.
-     */
-    if (!OidIsValid(fcinfo->fncollation))
-        fcinfo->fncollation = DEFAULT_COLLATION_OID;
+    if (!GetSessionContext()->enableBCmptMode) {
+        /*fcinfo->fncollation is set to 0 when calling Macro FuncCall1,
+        *so the collation value needs to be reset.
+        */
+        if (!OidIsValid(fcinfo->fncollation))
+            fcinfo->fncollation = DEFAULT_COLLATION_OID;
 
-    bytea* data = PG_GETARG_BYTEA_P(0);
-    text* ans = NULL;
-    int datalen = 0;
-    int resultlen = 0;
-    int ans_len = 0;
-    char* out_string = NULL;
+        bytea* data = PG_GETARG_BYTEA_P(0);
+        text* ans = NULL;
+        int datalen = 0;
+        int resultlen = 0;
+        int ans_len = 0;
+        char* out_string = NULL;
 
-    datalen = VARSIZE(data) - VARHDRSZ;
+        datalen = VARSIZE(data) - VARHDRSZ;
 
-    resultlen = datalen << 1;
+        resultlen = datalen << 1;
 
-    if (resultlen < (int)(MaxAllocSize - VARHDRSZ) * 2) {
-        ans = (text*)palloc_huge(CurrentMemoryContext, VARHDRSZ + resultlen);
-        ans_len = hex_encode(VARDATA(data), datalen, VARDATA(ans));
-        /* Make this FATAL 'cause we've trodden on memory ... */
-        if (ans_len > resultlen)
-            ereport(FATAL, (errcode(ERRCODE_DATA_CORRUPTED), errmsg("overflow - encode estimate too small")));
+        if (resultlen < (int)(MaxAllocSize - VARHDRSZ) * 2) {
+            ans = (text*)palloc_huge(CurrentMemoryContext, VARHDRSZ + resultlen);
+            ans_len = hex_encode(VARDATA(data), datalen, VARDATA(ans));
+            /* Make this FATAL 'cause we've trodden on memory ... */
+            if (ans_len > resultlen)
+                ereport(FATAL, (errcode(ERRCODE_DATA_CORRUPTED), errmsg("overflow - encode estimate too small")));
 
-        SET_VARSIZE(ans, VARHDRSZ + ans_len);
-        
-        out_string = str_toupper_for_raw(VARDATA_ANY(ans), VARSIZE_ANY_EXHDR(ans), PG_GET_COLLATION());
+            SET_VARSIZE(ans, VARHDRSZ + ans_len);
+            
+            out_string = str_toupper_for_raw(VARDATA_ANY(ans), VARSIZE_ANY_EXHDR(ans), PG_GET_COLLATION());
+        } else {
+            ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("blob length: %d ,out of memory", resultlen)));
+        }
+        pfree_ext(ans);
+        PG_RETURN_CSTRING(out_string);
     } else {
-        ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("blob length: %d ,out of memory", resultlen)));
+        return byteaout(fcinfo);
     }
-    pfree_ext(ans);
-    PG_RETURN_CSTRING(out_string);
 }
 
 // Implements interface of rawtohex(text)
@@ -7979,21 +7987,21 @@ Datum bytea2var(PG_FUNCTION_ARGS)
 
 Datum tinyblob_rawin(PG_FUNCTION_ARGS)
 {
-    Datum result = rawin(fcinfo);
+    Datum result = byteain(fcinfo);
     check_blob_size(result, (int64)TinyBlobMaxAllocSize);
     return result;
 }
 
 Datum mediumblob_rawin(PG_FUNCTION_ARGS)
 {
-    Datum result = rawin(fcinfo);
+    Datum result = byteain(fcinfo);
     check_blob_size(result, (int64)MediumBlobMaxAllocSize);
     return result;
 }
 
 Datum longblob_rawin(PG_FUNCTION_ARGS)
 {
-    Datum result = rawin(fcinfo);
+    Datum result = byteain(fcinfo);
     check_blob_size(result, (int64)LongBlobMaxAllocSize);
     return result;
 }
