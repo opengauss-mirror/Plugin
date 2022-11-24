@@ -757,7 +757,7 @@ static SelectStmt *MakeShowGrantStmt(char *arg, int location, core_yyscan_t yysc
 
 %type <list>	convert_list
 %type <list>	substr_list trim_list
-%type <list>	opt_interval interval_second
+%type <list>	opt_interval interval_second opt_single_interval opt_multipart_interval
 %type <node>	overlay_placing substr_from substr_for optional_precision get_format_time_type
 
 %type <boolean> opt_instead opt_incremental
@@ -26226,6 +26226,121 @@ selected_timezone:
 			| /*EMPTY*/								{ $$ = NULL; }
 		;
 
+opt_single_interval:
+			/* Interval units containing only a single part */
+			YEAR_P
+				{ $$ = list_make1(makeIntConst(INTERVAL_MASK(YEAR), @1)); }
+			| MONTH_P
+				{ $$ = list_make1(makeIntConst(INTERVAL_MASK(MONTH), @1)); }
+			| DAY_P
+				{ $$ = list_make1(makeIntConst(INTERVAL_MASK(DAY), @1)); }
+			| HOUR_P
+				{ $$ = list_make1(makeIntConst(INTERVAL_MASK(HOUR), @1)); }
+			| MINUTE_P
+				{ $$ = list_make1(makeIntConst(INTERVAL_MASK(MINUTE), @1)); }
+			| YEAR_P '(' Iconst ')'
+				{ $$ = list_make1(makeIntConst(INTERVAL_MASK(YEAR), @1)); }
+			| MONTH_P '(' Iconst ')'
+				{ $$ = list_make1(makeIntConst(INTERVAL_MASK(MONTH), @1)); }
+			| DAY_P '(' Iconst ')'
+				{  $$ = list_make1(makeIntConst(INTERVAL_MASK(DAY), @1));   }
+			| HOUR_P '(' Iconst ')'
+				{ $$ = list_make1(makeIntConst(INTERVAL_MASK(HOUR), @1)); }
+			| MINUTE_P '(' Iconst ')'
+				{ $$ = list_make1(makeIntConst(INTERVAL_MASK(MINUTE), @1)); }
+		;
+
+opt_multipart_interval:
+			/* Interval units containing multiple parts */
+			interval_second /* Second contain integer and fraction parts */
+				{ $$ = $1; }
+			| YEAR_P TO MONTH_P
+				{
+					$$ = list_make1(makeIntConst(INTERVAL_MASK(YEAR) |
+												 INTERVAL_MASK(MONTH), @1));
+				}
+			| DAY_P TO HOUR_P
+				{
+					$$ = list_make1(makeIntConst(INTERVAL_MASK(DAY) |
+												 INTERVAL_MASK(HOUR), @1));
+				}
+			| DAY_P TO MINUTE_P
+				{
+					$$ = list_make1(makeIntConst(INTERVAL_MASK(DAY) |
+												 INTERVAL_MASK(HOUR) |
+												 INTERVAL_MASK(MINUTE), @1));
+				}
+			| DAY_P TO interval_second
+				{
+					$$ = $3;
+					linitial($$) = makeIntConst(INTERVAL_MASK(DAY) |
+												INTERVAL_MASK(HOUR) |
+												INTERVAL_MASK(MINUTE) |
+												INTERVAL_MASK(SECOND), @1);
+				}
+			| HOUR_P TO MINUTE_P
+				{
+					$$ = list_make1(makeIntConst(INTERVAL_MASK(HOUR) |
+												 INTERVAL_MASK(MINUTE), @1));
+				}
+			| HOUR_P TO interval_second
+				{
+					$$ = $3;
+					linitial($$) = makeIntConst(INTERVAL_MASK(HOUR) |
+												INTERVAL_MASK(MINUTE) |
+												INTERVAL_MASK(SECOND), @1);
+				}
+			| MINUTE_P TO interval_second
+				{
+					$$ = $3;
+					linitial($$) = makeIntConst(INTERVAL_MASK(MINUTE) |
+												INTERVAL_MASK(SECOND), @1);
+				}
+			| YEAR_P '(' Iconst ')' TO MONTH_P
+				{
+					$$ = list_make1(makeIntConst(INTERVAL_MASK(YEAR) |
+												 INTERVAL_MASK(MONTH), @1));
+				}
+			| DAY_P '(' Iconst ')'  TO HOUR_P
+				{
+					$$ = list_make1(makeIntConst(INTERVAL_MASK(DAY) |
+												 INTERVAL_MASK(HOUR), @1));
+				}
+			| DAY_P '(' Iconst ')'   TO MINUTE_P
+				{
+					$$ = list_make1(makeIntConst(INTERVAL_MASK(DAY) |
+												 INTERVAL_MASK(HOUR) |
+												 INTERVAL_MASK(MINUTE), @1));
+				}
+			| DAY_P '(' Iconst ')' TO interval_second
+				{
+					$$ = $6;
+					linitial($$) = makeIntConst(INTERVAL_MASK(DAY) |
+												INTERVAL_MASK(HOUR) |
+												INTERVAL_MASK(MINUTE) |
+												INTERVAL_MASK(SECOND), @1);
+				}
+			| HOUR_P '(' Iconst ')'  TO MINUTE_P
+				{
+					$$ = list_make1(makeIntConst(INTERVAL_MASK(HOUR) |
+												 INTERVAL_MASK(MINUTE), @1));
+				}
+			| HOUR_P '(' Iconst ')'   TO interval_second
+				{
+					$$ = $6;
+					linitial($$) = makeIntConst(INTERVAL_MASK(HOUR) |
+												INTERVAL_MASK(MINUTE) |
+												INTERVAL_MASK(SECOND), @1);
+				}
+			| MINUTE_P  '(' Iconst ')'  TO interval_second
+				{
+					$$ = $6;
+					linitial($$) = makeIntConst(INTERVAL_MASK(MINUTE) |
+												INTERVAL_MASK(SECOND), @1);
+				}
+			| /*EMPTY*/
+				{ $$ = NIL; }
+		;
 
 opt_interval:
 			YEAR_P
@@ -30280,7 +30395,30 @@ AexprConst: Iconst
 					t->typmods = $3;
 					$$ = makeStringConstCast($2, @2, t);
 				}
-			| INTERVAL NumericOnly opt_interval
+			| INTERVAL NumericOnly opt_single_interval
+				{
+					TypeName *t = SystemTypeName("interval");
+					t->location = @1;
+					t->typmods = $3;
+					long ival;
+					char buf[64];
+					int rc;
+					if ($2->type == T_Integer) {
+						ival = $2->val.ival;
+					} else if ($2->type == T_Float) {
+						int frac_part = 0;
+						rc = sscanf_s($2->val.str, "%ld.%1d", &ival, &frac_part);
+						securec_check_ss(rc, "", "");
+						if (frac_part >= 5) {
+							/* rounding */
+							ival += (ival >= 0L ? 1 : -1);
+						}
+					}
+					rc = snprintf_s(buf, sizeof(buf), sizeof(buf) - 1, "%ld", ival);
+					securec_check_ss(rc, "", "");
+					$$ = makeStringConstCast(pstrdup(buf), @2, t);
+				}
+			| INTERVAL NumericOnly opt_multipart_interval
 				{
 					TypeName *t = SystemTypeName("interval");
 					t->location = @1;
