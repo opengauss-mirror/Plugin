@@ -1205,4 +1205,31 @@ Datum uint_cash(PG_FUNCTION_ARGS)
 
     PG_RETURN_CASH(result);
 }
+
+PG_FUNCTION_INFO_V1_PUBLIC(cash_uint);
+extern "C" DLL_PUBLIC Datum cash_uint(PG_FUNCTION_ARGS);
+
+Datum cash_uint(PG_FUNCTION_ARGS)
+{
+    Cash money = PG_GETARG_CASH(0);
+    uint64 result;
+    int fpoint;
+    uint64 scale;
+    int i;
+    struct lconv* lconvert = PGLC_localeconv();
+
+    /* see comments about frac_digits in cash_in() */
+    fpoint = lconvert->frac_digits;
+    if (fpoint < 0 || fpoint > 10)
+        fpoint = 2;
+
+    /* compute required scale factor */
+    scale = 1;
+    for (i = 0; i < fpoint; i++)
+        scale *= 10;
+
+    result = DatumGetInt64(DirectFunctionCall2(cash_div_int8, money, (int64)scale));
+
+    PG_RETURN_UINT64(result);
+}
 #endif

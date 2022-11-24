@@ -250,6 +250,7 @@ CREATE OR REPLACE FUNCTION pg_catalog.maketime (bit, int8, numeric) RETURNS time
 CREATE OR REPLACE FUNCTION pg_catalog.maketime (int8, bit, numeric) RETURNS time AS $$ SELECT pg_catalog.maketime(cast($1 as int8), cast($2 as int8), $3) $$ LANGUAGE SQL;
 
 CREATE OR REPLACE FUNCTION pg_catalog.sec_to_time (numeric) RETURNS time LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'sec_to_time';
+CREATE OR REPLACE FUNCTION pg_catalog.sec_to_time (text) RETURNS time LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'sec_to_time_str';
 
 CREATE OR REPLACE FUNCTION pg_catalog.subdate (text, int8) RETURNS text LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'subdate_datetime_days_text';
 CREATE OR REPLACE FUNCTION pg_catalog.subdate (text, text) RETURNS text AS $$ SELECT pg_catalog.subdate($1, cast($2 as int8))  $$ LANGUAGE SQL;
@@ -280,24 +281,13 @@ CREATE OR REPLACE FUNCTION pg_catalog.subtime (numeric, numeric) RETURNS TEXT LA
 CREATE OR REPLACE FUNCTION pg_catalog.subtime (text, numeric) RETURNS TEXT LANGUAGE SQL STABLE STRICT as 'select pg_catalog.subtime($1, cast($2 as text))';
 CREATE OR REPLACE FUNCTION pg_catalog.subtime (numeric, text) RETURNS TEXT LANGUAGE SQL STABLE STRICT as 'select pg_catalog.subtime(cast($1 as text), $2)';
 
-CREATE OR REPLACE FUNCTION pg_catalog.timediff (text, text) RETURNS time LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'timediff_text';
-CREATE OR REPLACE FUNCTION pg_catalog.timediff (datetime, text) RETURNS time LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'timediff_datetime_text';
-CREATE OR REPLACE FUNCTION pg_catalog.timediff (time, text) RETURNS time LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'timediff_time_text';
-CREATE OR REPLACE FUNCTION pg_catalog.timediff (datetime, time) RETURNS time LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'func_return_null';
-CREATE OR REPLACE FUNCTION pg_catalog.timediff (time, date) RETURNS time LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'func_return_null';
-CREATE OR REPLACE FUNCTION pg_catalog.timediff (date, text) RETURNS time LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'timediff_date_text';
-CREATE OR REPLACE FUNCTION pg_catalog.timediff (date, time) RETURNS time LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'func_return_null';
-CREATE OR REPLACE FUNCTION pg_catalog.timediff (numeric, numeric) RETURNS time LANGUAGE SQL STABLE STRICT as 'select pg_catalog.timediff(cast($1 as text), cast($2 as text))';
-CREATE OR REPLACE FUNCTION pg_catalog.timediff (text, numeric) RETURNS time LANGUAGE SQL STABLE STRICT as 'select pg_catalog.timediff($1, cast($2 as text))';
-CREATE OR REPLACE FUNCTION pg_catalog.timediff (numeric, text) RETURNS time LANGUAGE SQL STABLE STRICT as 'select pg_catalog.timediff(cast($1 as text), $2)';
+CREATE OR REPLACE FUNCTION pg_catalog.timediff ("any", "any") RETURNS time LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'timediff';
 
 CREATE OR REPLACE FUNCTION pg_catalog.time_format (text, text) RETURNS text LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'time_format';
-CREATE OR REPLACE FUNCTION pg_catalog.time_format (date, text) RETURNS TEXT AS $$ SELECT pg_catalog.time_format('00:00:00', $2) $$ LANGUAGE SQL;
+CREATE OR REPLACE FUNCTION pg_catalog.time_format (date, text) RETURNS text LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'time_format_date';
 CREATE OR REPLACE FUNCTION pg_catalog.time_format (numeric, text) RETURNS TEXT AS $$ SELECT pg_catalog.time_format(cast($1 as text), $2)  $$ LANGUAGE SQL;
 
-CREATE OR REPLACE FUNCTION pg_catalog.time_mysql (text) RETURNS time LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'time_mysql';
-CREATE OR REPLACE FUNCTION pg_catalog.time_mysql (numeric) RETURNS time AS $$ SELECT pg_catalog.time_mysql(cast($1 as text))  $$ LANGUAGE SQL;
-CREATE OR REPLACE FUNCTION pg_catalog.time_mysql (date) RETURNS time AS $$ SELECT pg_catalog.time_mysql('00:00:00')  $$ LANGUAGE SQL;
+CREATE OR REPLACE FUNCTION pg_catalog.time_mysql ("any") RETURNS time LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'time_mysql';
 
 CREATE OR REPLACE FUNCTION pg_catalog.timestamp_mysql ("any") RETURNS datetime LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'timestamp_param1';
 CREATE OR REPLACE FUNCTION pg_catalog.timestamp_mysql ("any", "any") RETURNS datetime LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'timestamp_param2';
@@ -380,9 +370,9 @@ CREATE OR REPLACE FUNCTION pg_catalog.adddate (numeric, interval) RETURNS text A
 CREATE OR REPLACE FUNCTION pg_catalog.adddate (time, int8) RETURNS time LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'adddate_time_days';
 CREATE OR REPLACE FUNCTION pg_catalog.adddate (time, interval) RETURNS time LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'adddate_time_interval';
 
-CREATE OR REPLACE FUNCTION pg_catalog.date_sub (text, interval) RETURNS text LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'subdate_datetime_interval_text';
-CREATE OR REPLACE FUNCTION pg_catalog.date_sub (numeric, interval) RETURNS text AS $$ SELECT pg_catalog.date_sub(cast($1 as text), $2)  $$ LANGUAGE SQL;
-CREATE OR REPLACE FUNCTION pg_catalog.date_sub (time, interval) RETURNS time LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'subdate_time_interval';
+CREATE OR REPLACE FUNCTION pg_catalog.date_sub (text, interval) RETURNS text AS $$ SELECT pg_catalog.adddate($1, -$2)  $$ LANGUAGE SQL;
+CREATE OR REPLACE FUNCTION pg_catalog.date_sub (numeric, interval) RETURNS text AS $$ SELECT pg_catalog.adddate(cast($1 as text), -$2)  $$ LANGUAGE SQL;
+CREATE OR REPLACE FUNCTION pg_catalog.date_sub (time, interval) RETURNS time AS $$ SELECT pg_catalog.adddate($1, -$2)  $$ LANGUAGE SQL;
 
 CREATE OR REPLACE FUNCTION pg_catalog.date_add (text, interval) RETURNS text AS $$ SELECT pg_catalog.adddate($1, $2)  $$ LANGUAGE SQL;
 CREATE OR REPLACE FUNCTION pg_catalog.date_add (numeric, interval) RETURNS text AS $$ SELECT pg_catalog.adddate(cast($1 as text), $2)  $$ LANGUAGE SQL;

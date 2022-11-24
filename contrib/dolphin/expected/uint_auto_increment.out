@@ -1,0 +1,3138 @@
+-- create b db
+create database uint_auto_increment with dbcompatibility = 'B';
+\c uint_auto_increment
+-- test CREATE TABLE with AUTO_INCREMENT
+-- syntax error
+CREATE TABLE test_create_autoinc_err(id int unsigned auto_increment key, name varchar(200),a int unsigned);
+ERROR:  syntax error at or near "key"
+LINE 1: ...create_autoinc_err(id int unsigned auto_increment key, name ...
+                                                             ^
+CREATE TABLE test_create_autoinc_err(id int unsigned auto_increment unique key, name varchar(200),a int unsigned);
+ERROR:  syntax error at or near "key"
+LINE 1: ...autoinc_err(id int unsigned auto_increment unique key, name ...
+                                                             ^
+-- constraint error
+CREATE TABLE test_create_autoinc_err(id int unsigned auto_increment, name varchar(200),a int unsigned, primary key(name, id));
+NOTICE:  CREATE TABLE will create implicit sequence "test_create_autoinc_err_id_seq" for serial column "test_create_autoinc_err.id"
+ERROR:  Incorrect table definition, auto_increment column must be defined as a key
+CREATE TABLE test_create_autoinc_err(id int unsigned auto_increment, name varchar(200),a int unsigned, unique(name, id));
+NOTICE:  CREATE TABLE will create implicit sequence "test_create_autoinc_err_id_seq" for serial column "test_create_autoinc_err.id"
+ERROR:  Incorrect table definition, auto_increment column must be defined as a key
+CREATE TABLE test_create_autoinc_err(id int unsigned auto_increment primary key CHECK (id < 500), name varchar(200),a int unsigned);
+NOTICE:  CREATE TABLE will create implicit sequence "test_create_autoinc_err_id_seq" for serial column "test_create_autoinc_err.id"
+ERROR:  check constraint cannot refer to an auto_increment column
+CREATE TABLE test_create_autoinc_err(id int unsigned auto_increment primary key, name varchar(200),a int unsigned CHECK ((id + a) < 500));
+NOTICE:  CREATE TABLE will create implicit sequence "test_create_autoinc_err_id_seq" for serial column "test_create_autoinc_err.id"
+ERROR:  check constraint cannot refer to an auto_increment column
+CREATE TABLE test_create_autoinc_err(id int unsigned auto_increment primary key DEFAULT 100, name varchar(200),a int unsigned);
+NOTICE:  CREATE TABLE will create implicit sequence "test_create_autoinc_err_id_seq" for serial column "test_create_autoinc_err.id"
+ERROR:  multiple default values specified for column "id" of table "test_create_autoinc_err"
+CREATE TABLE test_create_autoinc_err(id int unsigned auto_increment primary key GENERATED ALWAYS AS (a+1) STORED, name varchar(200),a int unsigned);
+NOTICE:  CREATE TABLE will create implicit sequence "test_create_autoinc_err_id_seq" for serial column "test_create_autoinc_err.id"
+ERROR:  both default and generation expression specified for column "id" of table "test_create_autoinc_err"
+--auto_increment value error
+CREATE TABLE test_create_autoinc_err(id int unsigned auto_increment primary key, name varchar(200),a int unsigned) auto_increment=1;
+NOTICE:  CREATE TABLE will create implicit sequence "test_create_autoinc_err_id_seq" for serial column "test_create_autoinc_err.id"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "test_create_autoinc_err_pkey" for table "test_create_autoinc_err"
+CREATE TABLE test_create_autoinc_err(id int unsigned auto_increment primary key, name varchar(200),a int unsigned) auto_increment=0; 
+NOTICE:  CREATE TABLE will create implicit sequence "test_create_autoinc_err_id_seq1" for serial column "test_create_autoinc_err.id"
+ERROR:  auto_increment value must be greater than 0
+CREATE TABLE test_create_autoinc_err(id int unsigned auto_increment primary key, name varchar(200),a int unsigned) auto_increment=170141183460469231731687303715884105728;
+NOTICE:  CREATE TABLE will create implicit sequence "test_create_autoinc_err_id_seq1" for serial column "test_create_autoinc_err.id"
+ERROR:  value "170141183460469231731687303715884105728" is out of range for type int16
+DETAIL:  text exceeds the length of int16
+CREATE TABLE test_create_autoinc_err(id int unsigned auto_increment primary key, name varchar(200),a int unsigned) auto_increment=1.1;
+NOTICE:  CREATE TABLE will create implicit sequence "test_create_autoinc_err_id_seq1" for serial column "test_create_autoinc_err.id"
+ERROR:  invalid input syntax for type int16: "1.1"
+DETAIL:  text contain invalid character
+CREATE TEMPORARY TABLE test_create_autoinc_err(id int unsigned auto_increment primary key, name varchar(200),a int unsigned) auto_increment=1;
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "test_create_autoinc_err_pkey" for table "test_create_autoinc_err"
+CREATE TEMPORARY TABLE test_create_autoinc_err(id int unsigned auto_increment primary key, name varchar(200),a int unsigned) auto_increment=0; 
+ERROR:  auto_increment value must be greater than 0
+CREATE TEMPORARY TABLE test_create_autoinc_err(id int unsigned auto_increment primary key, name varchar(200),a int unsigned) auto_increment=170141183460469231731687303715884105728;
+ERROR:  value "170141183460469231731687303715884105728" is out of range for type int16
+DETAIL:  text exceeds the length of int16
+CREATE TEMPORARY TABLE test_create_autoinc_err(id int unsigned auto_increment primary key, name varchar(200),a int unsigned) auto_increment=1.1;
+ERROR:  invalid input syntax for type int16: "1.1"
+DETAIL:  text contain invalid character
+-- table type error
+CREATE TABLE test_create_autoinc_err(id int4 unsigned auto_increment, name varchar(200),a int unsigned, primary key(id)) with (ORIENTATION=column);
+ERROR:  Un-supported feature
+DETAIL:  Orientation type column is not supported for auto_increment
+CREATE TABLE test_create_autoinc_err(id int2 unsigned auto_increment, name varchar(200),a int unsigned, primary key(id)) with (ORIENTATION=orc);
+ERROR:  Un-supported feature
+DETAIL:  Orientation type orc is not supported for auto_increment
+CREATE TABLE test_create_autoinc_err(id int1 unsigned auto_increment, name varchar(200),a int unsigned, primary key(id)) with (ORIENTATION=timeseries);
+ERROR:  Un-supported feature
+DETAIL:  Orientation type timeseries is not supported for auto_increment
+--test CREATE TABLE LIKE with AUTO_INCREMENT
+CREATE TABLE test_create_autoinc_source(id int unsigned auto_increment primary key) AUTO_INCREMENT = 100;
+NOTICE:  CREATE TABLE will create implicit sequence "test_create_autoinc_source_id_seq" for serial column "test_create_autoinc_source.id"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "test_create_autoinc_source_pkey" for table "test_create_autoinc_source"
+INSERT INTO test_create_autoinc_source VALUES(DEFAULT);
+INSERT INTO test_create_autoinc_source VALUES(DEFAULT);
+SELECT id FROM test_create_autoinc_source ORDER BY 1;
+ id  
+-----
+ 100
+ 101
+(2 rows)
+
+--local temp table
+CREATE TEMPORARY TABLE test_create_autoinc_like_temp(LIKE test_create_autoinc_source INCLUDING INDEXES);
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "test_create_autoinc_like_temp_pkey" for table "test_create_autoinc_like_temp"
+INSERT INTO test_create_autoinc_like_temp VALUES(0);
+SELECT LAST_INSERT_ID();
+ last_insert_id 
+----------------
+              1
+(1 row)
+
+INSERT INTO test_create_autoinc_like_temp VALUES(DEFAULT);
+ALTER TABLE test_create_autoinc_like_temp AUTO_INCREMENT=200;
+INSERT INTO test_create_autoinc_like_temp VALUES(DEFAULT);
+SELECT id FROM test_create_autoinc_like_temp ORDER BY 1;
+ id  
+-----
+ 1
+ 2
+ 200
+(3 rows)
+
+TRUNCATE TABLE test_create_autoinc_like_temp;
+INSERT INTO test_create_autoinc_like_temp VALUES(DEFAULT);
+SELECT id FROM test_create_autoinc_like_temp ORDER BY 1;
+ id 
+----
+ 1
+(1 row)
+
+DROP TABLE test_create_autoinc_like_temp;
+CREATE TEMPORARY TABLE test_create_autoinc_like_temp(LIKE test_create_autoinc_source INCLUDING INDEXES) AUTO_INCREMENT=100;
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "test_create_autoinc_like_temp_pkey" for table "test_create_autoinc_like_temp"
+INSERT INTO test_create_autoinc_like_temp VALUES(0);
+SELECT LAST_INSERT_ID();
+ last_insert_id 
+----------------
+            100
+(1 row)
+
+INSERT INTO test_create_autoinc_like_temp VALUES(DEFAULT);
+ALTER TABLE test_create_autoinc_like_temp AUTO_INCREMENT=200;
+INSERT INTO test_create_autoinc_like_temp VALUES(DEFAULT);
+SELECT id FROM test_create_autoinc_like_temp ORDER BY 1;
+ id  
+-----
+ 100
+ 101
+ 200
+(3 rows)
+
+TRUNCATE TABLE test_create_autoinc_like_temp;
+INSERT INTO test_create_autoinc_like_temp VALUES(DEFAULT);
+SELECT id FROM test_create_autoinc_like_temp ORDER BY 1;
+ id 
+----
+ 1
+(1 row)
+
+DROP TABLE test_create_autoinc_like_temp;
+DROP TABLE test_create_autoinc_source;
+--test ALTER TABLE ADD COLUMN AUTO_INCREMENT
+--cstore is not supported
+CREATE TABLE test_alter_autoinc_col(col int unsigned) with (ORIENTATION=column);
+ERROR:  type "uint4" is not supported in column store
+INSERT INTO test_alter_autoinc_col VALUES(1);
+ERROR:  relation "test_alter_autoinc_col" does not exist on datanode1
+LINE 1: INSERT INTO test_alter_autoinc_col VALUES(1);
+                    ^
+ALTER TABLE test_alter_autoinc_col ADD COLUMN id int unsigned AUTO_INCREMENT primary key;
+ERROR:  relation "test_alter_autoinc_col" does not exist
+DROP TABLE test_alter_autoinc_col;
+ERROR:  table "test_alter_autoinc_col" does not exist
+--astore with data
+CREATE TABLE test_alter_autoinc(col int unsigned);
+INSERT INTO test_alter_autoinc VALUES(1);
+INSERT INTO test_alter_autoinc VALUES(2);
+ALTER TABLE test_alter_autoinc ADD COLUMN id int unsigned AUTO_INCREMENT primary key;
+NOTICE:  ALTER TABLE will create implicit sequence "test_alter_autoinc_id_seq" for serial column "test_alter_autoinc.id"
+NOTICE:  ALTER TABLE / ADD PRIMARY KEY will create implicit index "test_alter_autoinc_pkey" for table "test_alter_autoinc"
+SELECT id, col FROM test_alter_autoinc ORDER BY 1, 2;
+ id | col 
+----+-----
+ 1  | 1
+ 2  | 2
+(2 rows)
+
+insert into test_alter_autoinc(col) values (3),(4),(5);
+SELECT id, col FROM test_alter_autoinc ORDER BY 1, 2;
+ id | col 
+----+-----
+ 1  | 1
+ 2  | 2
+ 3  | 3
+ 4  | 4
+ 5  | 5
+(5 rows)
+
+insert into test_alter_autoinc values (1, 1);
+ERROR:  duplicate key value violates unique constraint "test_alter_autoinc_pkey"
+DETAIL:  Key (id)=(1) already exists.
+insert into test_alter_autoinc values (6, 0);
+select last_insert_id();
+ last_insert_id 
+----------------
+              6
+(1 row)
+
+ALTER TABLE test_alter_autoinc AUTO_INCREMENT = 1000;
+INSERT INTO test_alter_autoinc VALUES(3,DEFAULT);
+SELECT id, col FROM test_alter_autoinc ORDER BY 1, 2;
+  id  | col 
+------+-----
+ 1    | 1
+ 2    | 2
+ 3    | 3
+ 4    | 4
+ 5    | 5
+ 6    | 6
+ 1000 | 3
+(7 rows)
+
+TRUNCATE TABLE test_alter_autoinc;
+INSERT INTO test_alter_autoinc VALUES(4,DEFAULT);
+SELECT id, col FROM test_alter_autoinc ORDER BY 1, 2;
+ id | col 
+----+-----
+ 1  | 4
+(1 row)
+
+ALTER TABLE test_alter_autoinc DROP COLUMN id;
+SELECT col FROM test_alter_autoinc ORDER BY 1;
+ col 
+-----
+ 4
+(1 row)
+
+ALTER TABLE test_alter_autoinc ADD id int unsigned AUTO_INCREMENT, ADD primary key(id), AUTO_INCREMENT = 100;
+NOTICE:  ALTER TABLE will create implicit sequence "test_alter_autoinc_id_seq" for serial column "test_alter_autoinc.id"
+NOTICE:  ALTER TABLE / ADD PRIMARY KEY will create implicit index "test_alter_autoinc_pkey" for table "test_alter_autoinc"
+INSERT INTO test_alter_autoinc VALUES(5,DEFAULT);
+SELECT id, col FROM test_alter_autoinc ORDER BY 1, 2;
+ id  | col 
+-----+-----
+ 100 | 4
+ 101 | 5
+(2 rows)
+
+ALTER TABLE test_alter_autoinc DROP COLUMN id, ADD id int unsigned AUTO_INCREMENT, ADD primary key(id), AUTO_INCREMENT = 200;
+NOTICE:  ALTER TABLE will create implicit sequence "test_alter_autoinc_id_seq1" for serial column "test_alter_autoinc.id"
+NOTICE:  ALTER TABLE / ADD PRIMARY KEY will create implicit index "test_alter_autoinc_pkey" for table "test_alter_autoinc"
+INSERT INTO test_alter_autoinc VALUES(6,DEFAULT);
+SELECT id, col FROM test_alter_autoinc ORDER BY 1, 2;
+ id  | col 
+-----+-----
+ 200 | 4
+ 201 | 5
+ 202 | 6
+(3 rows)
+
+SELECT pg_catalog.pg_get_tabledef('test_alter_autoinc');
+                     pg_get_tabledef                     
+---------------------------------------------------------
+ SET search_path = public;                              +
+ CREATE TABLE test_alter_autoinc (                      +
+     col uint4,                                         +
+     id uint4 AUTO_INCREMENT NOT NULL,                  +
+     CONSTRAINT test_alter_autoinc_pkey PRIMARY KEY (id)+
+ ) AUTO_INCREMENT = 203                                 +
+ WITH (orientation=row, compression=no);
+(1 row)
+
+-- supplementary tests
+ALTER TABLE test_alter_autoinc AUTO_INCREMENT = 1000;
+INSERT INTO test_alter_autoinc VALUES(7,DEFAULT);
+SELECT id, col FROM test_alter_autoinc ORDER BY 1, 2;
+  id  | col 
+------+-----
+ 200  | 4
+ 201  | 5
+ 202  | 6
+ 1000 | 7
+(4 rows)
+
+ALTER TABLE test_alter_autoinc DROP COLUMN id, ADD id int unsigned AUTO_INCREMENT UNIQUE;
+NOTICE:  ALTER TABLE will create implicit sequence "test_alter_autoinc_id_seq" for serial column "test_alter_autoinc.id"
+NOTICE:  ALTER TABLE / ADD UNIQUE will create implicit index "test_alter_autoinc_id_key" for table "test_alter_autoinc"
+INSERT INTO test_alter_autoinc VALUES(8,DEFAULT);
+SELECT id, col FROM test_alter_autoinc ORDER BY 1, 2;
+ id | col 
+----+-----
+ 1  | 4
+ 2  | 5
+ 3  | 6
+ 4  | 7
+ 5  | 8
+(5 rows)
+
+DROP TABLE test_alter_autoinc;
+--test alter table add AUTO_INCREMENT NULL UNIQUE
+CREATE TABLE test_alter_autoinc(col int1 unsigned);
+INSERT INTO test_alter_autoinc VALUES(1);
+INSERT INTO test_alter_autoinc VALUES(2);
+ALTER TABLE test_alter_autoinc ADD COLUMN id int unsigned AUTO_INCREMENT NULL UNIQUE;
+NOTICE:  ALTER TABLE will create implicit sequence "test_alter_autoinc_id_seq" for serial column "test_alter_autoinc.id"
+NOTICE:  ALTER TABLE / ADD UNIQUE will create implicit index "test_alter_autoinc_id_key" for table "test_alter_autoinc"
+INSERT INTO test_alter_autoinc VALUES(3,0);
+SELECT id, col FROM test_alter_autoinc ORDER BY 1, 2;
+ id | col 
+----+-----
+ 1  | 3
+    | 1
+    | 2
+(3 rows)
+
+DROP TABLE test_alter_autoinc;
+--part table with data
+CREATE TABLE test_alter_partition_autoinc (
+    col2 INT NOT NULL,
+    col3 INT NOT NULL
+) PARTITION BY RANGE (col2) SUBPARTITION BY HASH (col3) (
+    PARTITION col1_less_1000 VALUES LESS THAN(1000)
+    (
+        SUBPARTITION p1_col2_hash1,
+        SUBPARTITION p1_col2_hash2
+    ),
+    PARTITION col1_mid_1000 VALUES LESS THAN(2000)
+    (
+        SUBPARTITION p2_col2_hash1,
+        SUBPARTITION p2_col2_hash2
+    ),
+    PARTITION col1_greater_2000 VALUES LESS THAN (MAXVALUE)
+    (
+        SUBPARTITION p3_col2_hash1,
+        SUBPARTITION p3_col2_hash2
+    )
+);
+INSERT INTO test_alter_partition_autoinc VALUES(1,1);
+INSERT INTO test_alter_partition_autoinc VALUES(2001,2001);
+ALTER TABLE test_alter_partition_autoinc ADD col1 int unsigned AUTO_INCREMENT, ADD UNIQUE(col1, col2, col3), AUTO_INCREMENT = 100;
+NOTICE:  ALTER TABLE will create implicit sequence "test_alter_partition_autoinc_col1_seq" for serial column "test_alter_partition_autoinc.col1"
+NOTICE:  ALTER TABLE / ADD UNIQUE will create implicit index "test_alter_partition_autoinc_col1_col2_col3_key" for table "test_alter_partition_autoinc"
+SELECT col1, col2, col3 FROM test_alter_partition_autoinc ORDER BY 1, 2;
+ col1 | col2 | col3 
+------+------+------
+ 100  |    1 |    1
+ 101  | 2001 | 2001
+(2 rows)
+
+ALTER TABLE test_alter_partition_autoinc AUTO_INCREMENT = 1000;
+INSERT INTO test_alter_partition_autoinc VALUES(3001,3001,DEFAULT);
+SELECT col1, col2, col3 FROM test_alter_partition_autoinc ORDER BY 1, 2;
+ col1 | col2 | col3 
+------+------+------
+ 100  |    1 |    1
+ 101  | 2001 | 2001
+ 1000 | 3001 | 3001
+(3 rows)
+
+TRUNCATE TABLE test_alter_partition_autoinc;
+INSERT INTO test_alter_partition_autoinc VALUES(1,1,DEFAULT);
+SELECT col1, col2, col3 FROM test_alter_partition_autoinc ORDER BY 1, 2;
+ col1 | col2 | col3 
+------+------+------
+ 1    |    1 |    1
+(1 row)
+
+DROP TABLE test_alter_partition_autoinc;
+-- auto_increment in table with single column PRIMARY KEY
+CREATE TABLE single_autoinc_pk(col int unsigned auto_increment PRIMARY KEY) AUTO_INCREMENT = 10;
+NOTICE:  CREATE TABLE will create implicit sequence "single_autoinc_pk_col_seq" for serial column "single_autoinc_pk.col"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "single_autoinc_pk_pkey" for table "single_autoinc_pk"
+INSERT INTO single_autoinc_pk VALUES(NULL);
+SELECT LAST_INSERT_ID();
+ last_insert_id 
+----------------
+             10
+(1 row)
+
+INSERT INTO single_autoinc_pk VALUES(1 - 1);
+SELECT LAST_INSERT_ID();
+ last_insert_id 
+----------------
+             11
+(1 row)
+
+INSERT INTO single_autoinc_pk VALUES(100);
+SELECT LAST_INSERT_ID();
+ last_insert_id 
+----------------
+             11
+(1 row)
+
+INSERT INTO single_autoinc_pk VALUES(DEFAULT);
+SELECT LAST_INSERT_ID();
+ last_insert_id 
+----------------
+            101
+(1 row)
+
+ALTER TABLE single_autoinc_pk AUTO_INCREMENT = 1000;
+SELECT LAST_INSERT_ID();
+ last_insert_id 
+----------------
+            101
+(1 row)
+
+INSERT INTO single_autoinc_pk VALUES(DEFAULT);
+SELECT LAST_INSERT_ID();
+ last_insert_id 
+----------------
+           1000
+(1 row)
+
+SELECT col FROM single_autoinc_pk ORDER BY 1;
+ col  
+------
+ 10
+ 11
+ 100
+ 101
+ 1000
+(5 rows)
+
+UPDATE single_autoinc_pk SET col=NULL WHERE col=10;
+ERROR:  null value in column "col" violates not-null constraint
+DETAIL:  Failing row contains (null).
+UPDATE single_autoinc_pk SET col=0 WHERE col=11;
+SELECT col FROM single_autoinc_pk ORDER BY 1;
+ col  
+------
+ 0
+ 10
+ 100
+ 101
+ 1000
+(5 rows)
+
+UPDATE single_autoinc_pk SET col=DEFAULT WHERE col=100;
+ERROR:  duplicate key value violates unique constraint "single_autoinc_pk_pkey"
+DETAIL:  Key (col)=(0) already exists.
+UPDATE single_autoinc_pk SET col=3000 WHERE col=0;
+SELECT LAST_INSERT_ID();
+ last_insert_id 
+----------------
+           1000
+(1 row)
+
+INSERT INTO single_autoinc_pk VALUES(DEFAULT);
+SELECT LAST_INSERT_ID();
+ last_insert_id 
+----------------
+           3001
+(1 row)
+
+SELECT col FROM single_autoinc_pk ORDER BY 1;
+ col  
+------
+ 10
+ 100
+ 101
+ 1000
+ 3000
+ 3001
+(6 rows)
+
+SELECT pg_catalog.pg_get_tabledef('single_autoinc_pk');
+                     pg_get_tabledef                     
+---------------------------------------------------------
+ SET search_path = public;                              +
+ CREATE TABLE single_autoinc_pk (                       +
+     col uint4 AUTO_INCREMENT NOT NULL,                 +
+     CONSTRAINT single_autoinc_pk_pkey PRIMARY KEY (col)+
+ ) AUTO_INCREMENT = 3002                                +
+ WITH (orientation=row, compression=no);
+(1 row)
+
+ALTER TABLE single_autoinc_pk ADD CONSTRAINT test_alter_single_autoinc_pk_u1 UNIQUE(col);
+NOTICE:  ALTER TABLE / ADD UNIQUE will create implicit index "test_alter_single_autoinc_pk_u1" for table "single_autoinc_pk"
+ALTER TABLE single_autoinc_pk ADD CONSTRAINT test_alter_single_autoinc_pk_u2 UNIQUE(col);
+NOTICE:  ALTER TABLE / ADD UNIQUE will create implicit index "test_alter_single_autoinc_pk_u2" for table "single_autoinc_pk"
+SELECT pg_catalog.pg_get_tabledef('single_autoinc_pk');
+                                            pg_get_tabledef                                             
+--------------------------------------------------------------------------------------------------------
+ SET search_path = public;                                                                             +
+ CREATE TABLE single_autoinc_pk (                                                                      +
+     col uint4 AUTO_INCREMENT NOT NULL,                                                                +
+     CONSTRAINT test_alter_single_autoinc_pk_u2 UNIQUE (col)                                           +
+ ) AUTO_INCREMENT = 3002                                                                               +
+ WITH (orientation=row, compression=no);                                                               +
+ ALTER TABLE single_autoinc_pk ADD CONSTRAINT test_alter_single_autoinc_pk_u1 UNIQUE USING btree (col);+
+ ALTER TABLE single_autoinc_pk ADD CONSTRAINT single_autoinc_pk_pkey PRIMARY KEY USING btree  (col);
+(1 row)
+
+ALTER TABLE single_autoinc_pk DROP CONSTRAINT test_alter_single_autoinc_pk_u2;
+SELECT pg_catalog.pg_get_tabledef('single_autoinc_pk');
+                                           pg_get_tabledef                                           
+-----------------------------------------------------------------------------------------------------
+ SET search_path = public;                                                                          +
+ CREATE TABLE single_autoinc_pk (                                                                   +
+     col uint4 AUTO_INCREMENT NOT NULL,                                                             +
+     CONSTRAINT test_alter_single_autoinc_pk_u1 UNIQUE (col)                                        +
+ ) AUTO_INCREMENT = 3002                                                                            +
+ WITH (orientation=row, compression=no);                                                            +
+ ALTER TABLE single_autoinc_pk ADD CONSTRAINT single_autoinc_pk_pkey PRIMARY KEY USING btree  (col);
+(1 row)
+
+DROP TABLE single_autoinc_pk;
+-- auto_increment in table with single column NULL UNIQUE
+CREATE TABLE single_autoinc_uk(col int unsigned auto_increment NULL UNIQUE) AUTO_INCREMENT = 10;
+NOTICE:  CREATE TABLE will create implicit sequence "single_autoinc_uk_col_seq" for serial column "single_autoinc_uk.col"
+NOTICE:  CREATE TABLE / UNIQUE will create implicit index "single_autoinc_uk_col_key" for table "single_autoinc_uk"
+INSERT INTO single_autoinc_uk VALUES(NULL);
+SELECT LAST_INSERT_ID();
+ last_insert_id 
+----------------
+             10
+(1 row)
+
+SELECT col FROM single_autoinc_uk ORDER BY 1;
+ col 
+-----
+ 
+(1 row)
+
+INSERT INTO single_autoinc_uk VALUES(1 - 1);
+SELECT LAST_INSERT_ID();
+ last_insert_id 
+----------------
+             11
+(1 row)
+
+SELECT col FROM single_autoinc_uk ORDER BY 1;
+ col 
+-----
+ 11
+ 
+(2 rows)
+
+INSERT INTO single_autoinc_uk VALUES(100);
+SELECT col FROM single_autoinc_uk ORDER BY 1;
+ col 
+-----
+ 11
+ 100
+ 
+(3 rows)
+
+INSERT INTO single_autoinc_uk VALUES(DEFAULT);
+SELECT LAST_INSERT_ID();
+ last_insert_id 
+----------------
+            101
+(1 row)
+
+SELECT col FROM single_autoinc_uk ORDER BY 1;
+ col 
+-----
+ 11
+ 100
+ 
+ 
+(4 rows)
+
+ALTER TABLE single_autoinc_uk AUTO_INCREMENT = 1000;
+INSERT INTO single_autoinc_uk VALUES(0);
+SELECT LAST_INSERT_ID();
+ last_insert_id 
+----------------
+           1000
+(1 row)
+
+SELECT col FROM single_autoinc_uk ORDER BY 1;
+ col  
+------
+ 11
+ 100
+ 1000
+ 
+ 
+(5 rows)
+
+UPDATE single_autoinc_uk SET col=NULL WHERE col=11;
+SELECT col FROM single_autoinc_uk ORDER BY 1;
+ col  
+------
+ 100
+ 1000
+ 
+ 
+ 
+(5 rows)
+
+UPDATE single_autoinc_uk SET col=0 WHERE col=100;
+SELECT col FROM single_autoinc_uk ORDER BY 1;
+ col  
+------
+ 0
+ 1000
+ 
+ 
+ 
+(5 rows)
+
+UPDATE single_autoinc_uk SET col=DEFAULT WHERE col=1000;
+SELECT col FROM single_autoinc_uk ORDER BY 1;
+ col 
+-----
+ 0
+ 
+ 
+ 
+ 
+(5 rows)
+
+UPDATE single_autoinc_uk SET col=3000 WHERE col=0;
+INSERT INTO single_autoinc_uk VALUES(0);
+SELECT LAST_INSERT_ID();
+ last_insert_id 
+----------------
+           3001
+(1 row)
+
+SELECT col FROM single_autoinc_uk ORDER BY 1;
+ col  
+------
+ 3000
+ 3001
+ 
+ 
+ 
+ 
+(6 rows)
+
+SELECT pg_catalog.pg_get_tabledef('single_autoinc_uk');
+                    pg_get_tabledef                    
+-------------------------------------------------------
+ SET search_path = public;                            +
+ CREATE TABLE single_autoinc_uk (                     +
+     col uint4 AUTO_INCREMENT,                        +
+     CONSTRAINT single_autoinc_uk_col_key UNIQUE (col)+
+ ) AUTO_INCREMENT = 3002                              +
+ WITH (orientation=row, compression=no);
+(1 row)
+
+DROP TABLE single_autoinc_uk;
+-- test auto_increment with rollback
+CREATE TABLE single_autoinc_rollback(col int unsigned auto_increment PRIMARY KEY) AUTO_INCREMENT = 10;
+NOTICE:  CREATE TABLE will create implicit sequence "single_autoinc_rollback_col_seq" for serial column "single_autoinc_rollback.col"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "single_autoinc_rollback_pkey" for table "single_autoinc_rollback"
+begin transaction;
+INSERT INTO single_autoinc_rollback VALUES(DEFAULT);
+SELECT LAST_INSERT_ID();
+ last_insert_id 
+----------------
+             10
+(1 row)
+
+SELECT col FROM single_autoinc_rollback ORDER BY 1;
+ col 
+-----
+ 10
+(1 row)
+
+rollback;
+SELECT LAST_INSERT_ID();
+ last_insert_id 
+----------------
+             10
+(1 row)
+
+SELECT col FROM single_autoinc_rollback ORDER BY 1;
+ col 
+-----
+(0 rows)
+
+begin transaction;
+INSERT INTO single_autoinc_rollback VALUES(DEFAULT);
+SELECT LAST_INSERT_ID();
+ last_insert_id 
+----------------
+             11
+(1 row)
+
+SELECT col FROM single_autoinc_rollback ORDER BY 1;
+ col 
+-----
+ 11
+(1 row)
+
+commit;
+begin transaction;
+INSERT INTO single_autoinc_rollback VALUES(4000);
+SELECT LAST_INSERT_ID();
+ last_insert_id 
+----------------
+             11
+(1 row)
+
+SELECT col FROM single_autoinc_rollback ORDER BY 1;
+ col  
+------
+ 11
+ 4000
+(2 rows)
+
+rollback;
+SELECT col FROM single_autoinc_rollback ORDER BY 1;
+ col 
+-----
+ 11
+(1 row)
+
+begin transaction;
+INSERT INTO single_autoinc_rollback VALUES(DEFAULT);
+SELECT LAST_INSERT_ID();
+ last_insert_id 
+----------------
+           4001
+(1 row)
+
+SELECT col FROM single_autoinc_rollback ORDER BY 1;
+ col  
+------
+ 11
+ 4001
+(2 rows)
+
+commit;
+DROP TABLE single_autoinc_rollback;
+--test auto_increment if duplcate key error
+create table test_autoinc_duplicate_err
+(
+    id     int unsigned auto_increment primary key,
+    gender int unsigned         null,
+    name   varchar(50) null,
+    unique (gender,name)
+);
+NOTICE:  CREATE TABLE will create implicit sequence "test_autoinc_duplicate_err_id_seq" for serial column "test_autoinc_duplicate_err.id"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "test_autoinc_duplicate_err_pkey" for table "test_autoinc_duplicate_err"
+NOTICE:  CREATE TABLE / UNIQUE will create implicit index "test_autoinc_duplicate_err_gender_name_key" for table "test_autoinc_duplicate_err"
+insert into test_autoinc_duplicate_err (gender,name) values (1,'Gauss');
+SELECT LAST_INSERT_ID();
+ last_insert_id 
+----------------
+              1
+(1 row)
+
+insert into test_autoinc_duplicate_err (gender,name) values (1,'Gauss');
+ERROR:  duplicate key value violates unique constraint "test_autoinc_duplicate_err_gender_name_key"
+DETAIL:  Key (gender, name)=(1, Gauss) already exists.
+SELECT LAST_INSERT_ID();
+ last_insert_id 
+----------------
+              1
+(1 row)
+
+insert into test_autoinc_duplicate_err (gender,name) values (1,'Euler');
+SELECT LAST_INSERT_ID();
+ last_insert_id 
+----------------
+              3
+(1 row)
+
+select * from test_autoinc_duplicate_err order by id;
+ id | gender | name  
+----+--------+-------
+ 1  | 1      | Gauss
+ 3  | 1      | Euler
+(2 rows)
+
+insert into test_autoinc_duplicate_err (id,gender,name) values (10,1,'Gauss');
+ERROR:  duplicate key value violates unique constraint "test_autoinc_duplicate_err_gender_name_key"
+DETAIL:  Key (gender, name)=(1, Gauss) already exists.
+select * from test_autoinc_duplicate_err order by id;
+ id | gender | name  
+----+--------+-------
+ 1  | 1      | Gauss
+ 3  | 1      | Euler
+(2 rows)
+
+insert into test_autoinc_duplicate_err (gender,name) values (1,'Newton');
+select * from test_autoinc_duplicate_err order by id;
+ id | gender |  name  
+----+--------+--------
+ 1  | 1      | Gauss
+ 3  | 1      | Euler
+ 4  | 1      | Newton
+(3 rows)
+
+drop table test_autoinc_duplicate_err;
+--test auto_increment with check error
+CREATE TABLE test_autoinc_with_check(
+    col1 int unsigned auto_increment primary key, col2 int unsigned, CHECK (col2 >0)
+);
+NOTICE:  CREATE TABLE will create implicit sequence "test_autoinc_with_check_col1_seq" for serial column "test_autoinc_with_check.col1"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "test_autoinc_with_check_pkey" for table "test_autoinc_with_check"
+INSERT INTO test_autoinc_with_check VALUES(DEFAULT, 1);
+INSERT INTO test_autoinc_with_check VALUES(DEFAULT, 1);
+INSERT INTO test_autoinc_with_check VALUES(DEFAULT, 2);
+SELECT col1,col2 FROM test_autoinc_with_check ORDER BY 1;
+ col1 | col2 
+------+------
+ 1    | 1
+ 2    | 1
+ 3    | 2
+(3 rows)
+
+DROP TABLE test_autoinc_with_check;
+-- auto_increment in ustore table PRIMARY KEY
+CREATE TABLE ustore_single_autoinc(col int unsigned auto_increment PRIMARY KEY) WITH (STORAGE_TYPE=USTORE);
+NOTICE:  CREATE TABLE will create implicit sequence "ustore_single_autoinc_col_seq" for serial column "ustore_single_autoinc.col"
+ERROR:  data type uint4 has no default operator class for access method "ubtree"
+HINT:  You must specify an operator class for the index or define a default operator class for the data type.
+INSERT INTO ustore_single_autoinc VALUES(NULL);
+ERROR:  relation "ustore_single_autoinc" does not exist on datanode1
+LINE 1: INSERT INTO ustore_single_autoinc VALUES(NULL);
+                    ^
+SELECT LAST_INSERT_ID();
+ last_insert_id 
+----------------
+              3
+(1 row)
+
+INSERT INTO ustore_single_autoinc VALUES(1 - 1);
+ERROR:  relation "ustore_single_autoinc" does not exist on datanode1
+LINE 1: INSERT INTO ustore_single_autoinc VALUES(1 - 1);
+                    ^
+SELECT LAST_INSERT_ID();
+ last_insert_id 
+----------------
+              3
+(1 row)
+
+INSERT INTO ustore_single_autoinc VALUES(100);
+ERROR:  relation "ustore_single_autoinc" does not exist on datanode1
+LINE 1: INSERT INTO ustore_single_autoinc VALUES(100);
+                    ^
+SELECT LAST_INSERT_ID();
+ last_insert_id 
+----------------
+              3
+(1 row)
+
+INSERT INTO ustore_single_autoinc VALUES(DEFAULT);
+ERROR:  relation "ustore_single_autoinc" does not exist on datanode1
+LINE 1: INSERT INTO ustore_single_autoinc VALUES(DEFAULT);
+                    ^
+SELECT LAST_INSERT_ID();
+ last_insert_id 
+----------------
+              3
+(1 row)
+
+ALTER TABLE ustore_single_autoinc AUTO_INCREMENT = 1000;
+ERROR:  relation "ustore_single_autoinc" does not exist
+SELECT LAST_INSERT_ID();
+ last_insert_id 
+----------------
+              3
+(1 row)
+
+INSERT INTO ustore_single_autoinc VALUES(DEFAULT);
+ERROR:  relation "ustore_single_autoinc" does not exist on datanode1
+LINE 1: INSERT INTO ustore_single_autoinc VALUES(DEFAULT);
+                    ^
+SELECT LAST_INSERT_ID();
+ last_insert_id 
+----------------
+              3
+(1 row)
+
+SELECT col FROM ustore_single_autoinc ORDER BY 1;
+ERROR:  relation "ustore_single_autoinc" does not exist on datanode1
+LINE 1: SELECT col FROM ustore_single_autoinc ORDER BY 1;
+                        ^
+INSERT INTO ustore_single_autoinc select col-col from ustore_single_autoinc;
+ERROR:  relation "ustore_single_autoinc" does not exist on datanode1
+LINE 1: INSERT INTO ustore_single_autoinc select col-col from ustore...
+                    ^
+SELECT LAST_INSERT_ID();
+ last_insert_id 
+----------------
+              3
+(1 row)
+
+SELECT col FROM ustore_single_autoinc ORDER BY 1;
+ERROR:  relation "ustore_single_autoinc" does not exist on datanode1
+LINE 1: SELECT col FROM ustore_single_autoinc ORDER BY 1;
+                        ^
+INSERT INTO ustore_single_autoinc VALUES(500);
+ERROR:  relation "ustore_single_autoinc" does not exist on datanode1
+LINE 1: INSERT INTO ustore_single_autoinc VALUES(500);
+                    ^
+SELECT LAST_INSERT_ID();
+ last_insert_id 
+----------------
+              3
+(1 row)
+
+INSERT INTO ustore_single_autoinc VALUES(1);
+ERROR:  relation "ustore_single_autoinc" does not exist on datanode1
+LINE 1: INSERT INTO ustore_single_autoinc VALUES(1);
+                    ^
+SELECT LAST_INSERT_ID();
+ last_insert_id 
+----------------
+              3
+(1 row)
+
+INSERT INTO ustore_single_autoinc VALUES(2100), (NULL), (2000), (DEFAULT), (2200), (NULL);
+ERROR:  relation "ustore_single_autoinc" does not exist on datanode1
+LINE 1: INSERT INTO ustore_single_autoinc VALUES(2100), (NULL), (200...
+                    ^
+SELECT LAST_INSERT_ID();
+ last_insert_id 
+----------------
+              3
+(1 row)
+
+SELECT col FROM ustore_single_autoinc ORDER BY 1;
+ERROR:  relation "ustore_single_autoinc" does not exist on datanode1
+LINE 1: SELECT col FROM ustore_single_autoinc ORDER BY 1;
+                        ^
+UPDATE ustore_single_autoinc SET col=NULL WHERE col=2201;
+ERROR:  relation "ustore_single_autoinc" does not exist on datanode1
+LINE 1: UPDATE ustore_single_autoinc SET col=NULL WHERE col=2201;
+               ^
+SELECT col FROM ustore_single_autoinc ORDER BY 1;
+ERROR:  relation "ustore_single_autoinc" does not exist on datanode1
+LINE 1: SELECT col FROM ustore_single_autoinc ORDER BY 1;
+                        ^
+UPDATE ustore_single_autoinc SET col=0 WHERE col=2200;
+ERROR:  relation "ustore_single_autoinc" does not exist on datanode1
+LINE 1: UPDATE ustore_single_autoinc SET col=0 WHERE col=2200;
+               ^
+SELECT col FROM ustore_single_autoinc ORDER BY 1;
+ERROR:  relation "ustore_single_autoinc" does not exist on datanode1
+LINE 1: SELECT col FROM ustore_single_autoinc ORDER BY 1;
+                        ^
+UPDATE ustore_single_autoinc SET col=DEFAULT WHERE col=2101;
+ERROR:  relation "ustore_single_autoinc" does not exist on datanode1
+LINE 1: UPDATE ustore_single_autoinc SET col=DEFAULT WHERE col=2101;
+               ^
+UPDATE ustore_single_autoinc SET col=3000 WHERE col=1;
+ERROR:  relation "ustore_single_autoinc" does not exist on datanode1
+LINE 1: UPDATE ustore_single_autoinc SET col=3000 WHERE col=1;
+               ^
+SELECT LAST_INSERT_ID();
+ last_insert_id 
+----------------
+              3
+(1 row)
+
+INSERT INTO ustore_single_autoinc VALUES(DEFAULT);
+ERROR:  relation "ustore_single_autoinc" does not exist on datanode1
+LINE 1: INSERT INTO ustore_single_autoinc VALUES(DEFAULT);
+                    ^
+SELECT LAST_INSERT_ID();
+ last_insert_id 
+----------------
+              3
+(1 row)
+
+SELECT col FROM ustore_single_autoinc ORDER BY 1;
+ERROR:  relation "ustore_single_autoinc" does not exist on datanode1
+LINE 1: SELECT col FROM ustore_single_autoinc ORDER BY 1;
+                        ^
+SELECT LAST_INSERT_ID();
+ last_insert_id 
+----------------
+              3
+(1 row)
+
+SELECT col FROM ustore_single_autoinc ORDER BY 1;
+ERROR:  relation "ustore_single_autoinc" does not exist on datanode1
+LINE 1: SELECT col FROM ustore_single_autoinc ORDER BY 1;
+                        ^
+SELECT pg_catalog.pg_get_tabledef('ustore_single_autoinc');
+ERROR:  relation "ustore_single_autoinc" does not exist
+LINE 1: SELECT pg_catalog.pg_get_tabledef('ustore_single_autoinc');
+                                          ^
+CONTEXT:  referenced column: pg_get_tabledef
+TRUNCATE TABLE ustore_single_autoinc;
+ERROR:  relation "ustore_single_autoinc" does not exist
+INSERT INTO ustore_single_autoinc VALUES(DEFAULT);
+ERROR:  relation "ustore_single_autoinc" does not exist on datanode1
+LINE 1: INSERT INTO ustore_single_autoinc VALUES(DEFAULT);
+                    ^
+SELECT LAST_INSERT_ID();
+ last_insert_id 
+----------------
+              3
+(1 row)
+
+SELECT col FROM ustore_single_autoinc ORDER BY 1;
+ERROR:  relation "ustore_single_autoinc" does not exist on datanode1
+LINE 1: SELECT col FROM ustore_single_autoinc ORDER BY 1;
+                        ^
+DROP TABLE ustore_single_autoinc;
+ERROR:  table "ustore_single_autoinc" does not exist
+-- auto_increment in local temp table PRIMARY KEY
+CREATE TEMPORARY TABLE ltemp_single_autoinc(col int unsigned auto_increment PRIMARY KEY);
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "ltemp_single_autoinc_pkey" for table "ltemp_single_autoinc"
+INSERT INTO ltemp_single_autoinc VALUES(NULL);
+SELECT LAST_INSERT_ID();
+ last_insert_id 
+----------------
+              1
+(1 row)
+
+INSERT INTO ltemp_single_autoinc VALUES(1 - 1);
+SELECT LAST_INSERT_ID();
+ last_insert_id 
+----------------
+              2
+(1 row)
+
+INSERT INTO ltemp_single_autoinc VALUES(100);
+SELECT LAST_INSERT_ID();
+ last_insert_id 
+----------------
+              2
+(1 row)
+
+INSERT INTO ltemp_single_autoinc VALUES(DEFAULT);
+SELECT LAST_INSERT_ID();
+ last_insert_id 
+----------------
+            101
+(1 row)
+
+ALTER TABLE ltemp_single_autoinc AUTO_INCREMENT = 1000;
+SELECT LAST_INSERT_ID();
+ last_insert_id 
+----------------
+            101
+(1 row)
+
+INSERT INTO ltemp_single_autoinc VALUES(DEFAULT);
+SELECT LAST_INSERT_ID();
+ last_insert_id 
+----------------
+           1000
+(1 row)
+
+SELECT col FROM ltemp_single_autoinc ORDER BY 1;
+ col  
+------
+ 1
+ 2
+ 100
+ 101
+ 1000
+(5 rows)
+
+INSERT INTO ltemp_single_autoinc select col-col from ltemp_single_autoinc;
+SELECT LAST_INSERT_ID();
+ last_insert_id 
+----------------
+           1001
+(1 row)
+
+SELECT col FROM ltemp_single_autoinc ORDER BY 1;
+ col  
+------
+ 1
+ 2
+ 100
+ 101
+ 1000
+ 1001
+ 1002
+ 1003
+ 1004
+ 1005
+(10 rows)
+
+INSERT INTO ltemp_single_autoinc VALUES(500);
+SELECT LAST_INSERT_ID();
+ last_insert_id 
+----------------
+           1001
+(1 row)
+
+INSERT INTO ltemp_single_autoinc VALUES(1);
+ERROR:  duplicate key value violates unique constraint "ltemp_single_autoinc_pkey"
+DETAIL:  Key (col)=(1) already exists.
+SELECT LAST_INSERT_ID();
+ last_insert_id 
+----------------
+           1001
+(1 row)
+
+INSERT INTO ltemp_single_autoinc VALUES(2100), (NULL), (2000), (DEFAULT), (2200), (NULL);
+SELECT LAST_INSERT_ID();
+ last_insert_id 
+----------------
+           2101
+(1 row)
+
+SELECT col FROM ltemp_single_autoinc ORDER BY 1;
+ col  
+------
+ 1
+ 2
+ 100
+ 101
+ 500
+ 1000
+ 1001
+ 1002
+ 1003
+ 1004
+ 1005
+ 2000
+ 2100
+ 2101
+ 2102
+ 2200
+ 2201
+(17 rows)
+
+UPDATE ltemp_single_autoinc SET col=NULL WHERE col=2201;
+ERROR:  null value in column "col" violates not-null constraint
+DETAIL:  Failing row contains (null).
+SELECT col FROM ltemp_single_autoinc ORDER BY 1;
+ col  
+------
+ 1
+ 2
+ 100
+ 101
+ 500
+ 1000
+ 1001
+ 1002
+ 1003
+ 1004
+ 1005
+ 2000
+ 2100
+ 2101
+ 2102
+ 2200
+ 2201
+(17 rows)
+
+UPDATE ltemp_single_autoinc SET col=0 WHERE col=2200;
+SELECT col FROM ltemp_single_autoinc ORDER BY 1;
+ col  
+------
+ 0
+ 1
+ 2
+ 100
+ 101
+ 500
+ 1000
+ 1001
+ 1002
+ 1003
+ 1004
+ 1005
+ 2000
+ 2100
+ 2101
+ 2102
+ 2201
+(17 rows)
+
+UPDATE ltemp_single_autoinc SET col=DEFAULT WHERE col=2101;
+ERROR:  duplicate key value violates unique constraint "ltemp_single_autoinc_pkey"
+DETAIL:  Key (col)=(0) already exists.
+UPDATE ltemp_single_autoinc SET col=3000 WHERE col=1;
+SELECT LAST_INSERT_ID();
+ last_insert_id 
+----------------
+           2101
+(1 row)
+
+INSERT INTO ltemp_single_autoinc VALUES(DEFAULT);
+SELECT LAST_INSERT_ID();
+ last_insert_id 
+----------------
+           3001
+(1 row)
+
+SELECT col FROM ltemp_single_autoinc ORDER BY 1;
+ col  
+------
+ 0
+ 2
+ 100
+ 101
+ 500
+ 1000
+ 1001
+ 1002
+ 1003
+ 1004
+ 1005
+ 2000
+ 2100
+ 2101
+ 2102
+ 2201
+ 3000
+ 3001
+(18 rows)
+
+SELECT LAST_INSERT_ID();
+ last_insert_id 
+----------------
+           3001
+(1 row)
+
+SELECT col FROM ltemp_single_autoinc ORDER BY 1;
+ col  
+------
+ 0
+ 2
+ 100
+ 101
+ 500
+ 1000
+ 1001
+ 1002
+ 1003
+ 1004
+ 1005
+ 2000
+ 2100
+ 2101
+ 2102
+ 2201
+ 3000
+ 3001
+(18 rows)
+
+SELECT pg_catalog.pg_get_tabledef('ltemp_single_autoinc');
+ERROR:  Can not get temporary tables defination.
+CONTEXT:  referenced column: pg_get_tabledef
+TRUNCATE TABLE ltemp_single_autoinc;
+INSERT INTO ltemp_single_autoinc VALUES(DEFAULT);
+SELECT LAST_INSERT_ID();
+ last_insert_id 
+----------------
+              1
+(1 row)
+
+SELECT col FROM ltemp_single_autoinc ORDER BY 1;
+ col 
+-----
+ 1
+(1 row)
+
+DROP TABLE ltemp_single_autoinc;
+-- auto_increment in local temp table NULL UNIQUE
+CREATE TEMPORARY TABLE single_autoinc_uk(col int unsigned auto_increment NULL UNIQUE) AUTO_INCREMENT = 10;
+NOTICE:  CREATE TABLE / UNIQUE will create implicit index "single_autoinc_uk_col_key" for table "single_autoinc_uk"
+INSERT INTO single_autoinc_uk VALUES(NULL);
+SELECT LAST_INSERT_ID();
+ last_insert_id 
+----------------
+             10
+(1 row)
+
+SELECT col FROM single_autoinc_uk ORDER BY 1;
+ col 
+-----
+ 
+(1 row)
+
+INSERT INTO single_autoinc_uk VALUES(1 - 1);
+SELECT LAST_INSERT_ID();
+ last_insert_id 
+----------------
+             11
+(1 row)
+
+SELECT col FROM single_autoinc_uk ORDER BY 1;
+ col 
+-----
+ 11
+ 
+(2 rows)
+
+INSERT INTO single_autoinc_uk VALUES(100);
+SELECT col FROM single_autoinc_uk ORDER BY 1;
+ col 
+-----
+ 11
+ 100
+ 
+(3 rows)
+
+INSERT INTO single_autoinc_uk VALUES(DEFAULT);
+SELECT LAST_INSERT_ID();
+ last_insert_id 
+----------------
+            101
+(1 row)
+
+SELECT col FROM single_autoinc_uk ORDER BY 1;
+ col 
+-----
+ 11
+ 100
+ 
+ 
+(4 rows)
+
+ALTER TABLE single_autoinc_uk AUTO_INCREMENT = 1000;
+INSERT INTO single_autoinc_uk VALUES(0);
+SELECT LAST_INSERT_ID();
+ last_insert_id 
+----------------
+           1000
+(1 row)
+
+SELECT col FROM single_autoinc_uk ORDER BY 1;
+ col  
+------
+ 11
+ 100
+ 1000
+ 
+ 
+(5 rows)
+
+UPDATE single_autoinc_uk SET col=NULL WHERE col=11;
+SELECT col FROM single_autoinc_uk ORDER BY 1;
+ col  
+------
+ 100
+ 1000
+ 
+ 
+ 
+(5 rows)
+
+UPDATE single_autoinc_uk SET col=0 WHERE col=100;
+SELECT col FROM single_autoinc_uk ORDER BY 1;
+ col  
+------
+ 0
+ 1000
+ 
+ 
+ 
+(5 rows)
+
+UPDATE single_autoinc_uk SET col=DEFAULT WHERE col=1000;
+SELECT col FROM single_autoinc_uk ORDER BY 1;
+ col 
+-----
+ 0
+ 
+ 
+ 
+ 
+(5 rows)
+
+UPDATE single_autoinc_uk SET col=3000 WHERE col=0;
+INSERT INTO single_autoinc_uk VALUES(0);
+SELECT LAST_INSERT_ID();
+ last_insert_id 
+----------------
+           3001
+(1 row)
+
+SELECT col FROM single_autoinc_uk ORDER BY 1;
+ col  
+------
+ 3000
+ 3001
+ 
+ 
+ 
+ 
+(6 rows)
+
+SELECT pg_catalog.pg_get_tabledef('single_autoinc_uk');
+ERROR:  Can not get temporary tables defination.
+CONTEXT:  referenced column: pg_get_tabledef
+DROP TABLE single_autoinc_uk;
+--auto_increment in global temp table
+CREATE GLOBAL TEMPORARY TABLE gtemp_single_autoinc(col int unsigned auto_increment PRIMARY KEY);
+NOTICE:  CREATE TABLE will create implicit sequence "gtemp_single_autoinc_col_seq" for serial column "gtemp_single_autoinc.col"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "gtemp_single_autoinc_pkey" for table "gtemp_single_autoinc"
+INSERT INTO gtemp_single_autoinc VALUES(NULL);
+SELECT LAST_INSERT_ID();
+ last_insert_id 
+----------------
+              1
+(1 row)
+
+INSERT INTO gtemp_single_autoinc VALUES(1 - 1);
+SELECT LAST_INSERT_ID();
+ last_insert_id 
+----------------
+              2
+(1 row)
+
+INSERT INTO gtemp_single_autoinc VALUES(100);
+SELECT LAST_INSERT_ID();
+ last_insert_id 
+----------------
+              2
+(1 row)
+
+INSERT INTO gtemp_single_autoinc VALUES(DEFAULT);
+SELECT LAST_INSERT_ID();
+ last_insert_id 
+----------------
+            101
+(1 row)
+
+ALTER TABLE gtemp_single_autoinc AUTO_INCREMENT = 1000;
+SELECT LAST_INSERT_ID();
+ last_insert_id 
+----------------
+            101
+(1 row)
+
+INSERT INTO gtemp_single_autoinc VALUES(DEFAULT);
+SELECT LAST_INSERT_ID();
+ last_insert_id 
+----------------
+           1000
+(1 row)
+
+SELECT col FROM gtemp_single_autoinc ORDER BY 1;
+ col  
+------
+ 1
+ 2
+ 100
+ 101
+ 1000
+(5 rows)
+
+INSERT INTO gtemp_single_autoinc select col-col from gtemp_single_autoinc;
+SELECT LAST_INSERT_ID();
+ last_insert_id 
+----------------
+           1001
+(1 row)
+
+SELECT col FROM gtemp_single_autoinc ORDER BY 1;
+ col  
+------
+ 1
+ 2
+ 100
+ 101
+ 1000
+ 1001
+ 1002
+ 1003
+ 1004
+ 1005
+(10 rows)
+
+INSERT INTO gtemp_single_autoinc VALUES(500);
+SELECT LAST_INSERT_ID();
+ last_insert_id 
+----------------
+           1001
+(1 row)
+
+INSERT INTO gtemp_single_autoinc VALUES(1);
+ERROR:  duplicate key value violates unique constraint "gtemp_single_autoinc_pkey"
+DETAIL:  Key (col)=(1) already exists.
+SELECT LAST_INSERT_ID();
+ last_insert_id 
+----------------
+           1001
+(1 row)
+
+INSERT INTO gtemp_single_autoinc VALUES(2100), (NULL), (2000), (DEFAULT), (2200), (NULL);
+SELECT LAST_INSERT_ID();
+ last_insert_id 
+----------------
+           2101
+(1 row)
+
+SELECT col FROM gtemp_single_autoinc ORDER BY 1;
+ col  
+------
+ 1
+ 2
+ 100
+ 101
+ 500
+ 1000
+ 1001
+ 1002
+ 1003
+ 1004
+ 1005
+ 2000
+ 2100
+ 2101
+ 2102
+ 2200
+ 2201
+(17 rows)
+
+UPDATE gtemp_single_autoinc SET col=NULL WHERE col=2201;
+ERROR:  null value in column "col" violates not-null constraint
+DETAIL:  Failing row contains (null).
+SELECT col FROM gtemp_single_autoinc ORDER BY 1;
+ col  
+------
+ 1
+ 2
+ 100
+ 101
+ 500
+ 1000
+ 1001
+ 1002
+ 1003
+ 1004
+ 1005
+ 2000
+ 2100
+ 2101
+ 2102
+ 2200
+ 2201
+(17 rows)
+
+UPDATE gtemp_single_autoinc SET col=0 WHERE col=2200;
+SELECT col FROM gtemp_single_autoinc ORDER BY 1;
+ col  
+------
+ 0
+ 1
+ 2
+ 100
+ 101
+ 500
+ 1000
+ 1001
+ 1002
+ 1003
+ 1004
+ 1005
+ 2000
+ 2100
+ 2101
+ 2102
+ 2201
+(17 rows)
+
+UPDATE gtemp_single_autoinc SET col=DEFAULT WHERE col=2101;
+ERROR:  duplicate key value violates unique constraint "gtemp_single_autoinc_pkey"
+DETAIL:  Key (col)=(0) already exists.
+UPDATE gtemp_single_autoinc SET col=3000 WHERE col=1;
+SELECT LAST_INSERT_ID();
+ last_insert_id 
+----------------
+           2101
+(1 row)
+
+INSERT INTO gtemp_single_autoinc VALUES(DEFAULT);
+SELECT LAST_INSERT_ID();
+ last_insert_id 
+----------------
+           3001
+(1 row)
+
+SELECT col FROM gtemp_single_autoinc ORDER BY 1;
+ col  
+------
+ 0
+ 2
+ 100
+ 101
+ 500
+ 1000
+ 1001
+ 1002
+ 1003
+ 1004
+ 1005
+ 2000
+ 2100
+ 2101
+ 2102
+ 2201
+ 3000
+ 3001
+(18 rows)
+
+SELECT LAST_INSERT_ID();
+ last_insert_id 
+----------------
+           3001
+(1 row)
+
+SELECT col FROM gtemp_single_autoinc ORDER BY 1;
+ col  
+------
+ 0
+ 2
+ 100
+ 101
+ 500
+ 1000
+ 1001
+ 1002
+ 1003
+ 1004
+ 1005
+ 2000
+ 2100
+ 2101
+ 2102
+ 2201
+ 3000
+ 3001
+(18 rows)
+
+SELECT pg_catalog.pg_get_tabledef('gtemp_single_autoinc');
+                           pg_get_tabledef                            
+----------------------------------------------------------------------
+ SET search_path = public;                                           +
+ CREATE GLOBAL TEMPORARY TABLE gtemp_single_autoinc (                +
+     col uint4 AUTO_INCREMENT NOT NULL,                              +
+     CONSTRAINT gtemp_single_autoinc_pkey PRIMARY KEY (col)          +
+ ) AUTO_INCREMENT = 3002                                             +
+ WITH (orientation=row, compression=no, on_commit_delete_rows=false);
+(1 row)
+
+TRUNCATE TABLE gtemp_single_autoinc;
+INSERT INTO gtemp_single_autoinc VALUES(DEFAULT);
+SELECT LAST_INSERT_ID();
+ last_insert_id 
+----------------
+              1
+(1 row)
+
+SELECT col FROM gtemp_single_autoinc ORDER BY 1;
+ col 
+-----
+ 1
+(1 row)
+
+DROP TABLE gtemp_single_autoinc;
+--auto_increment in unlogged table
+CREATE UNLOGGED TABLE unlog_single_autoinc(col int unsigned auto_increment PRIMARY KEY);
+NOTICE:  CREATE TABLE will create implicit sequence "unlog_single_autoinc_col_seq" for serial column "unlog_single_autoinc.col"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "unlog_single_autoinc_pkey" for table "unlog_single_autoinc"
+INSERT INTO unlog_single_autoinc VALUES(NULL);
+SELECT LAST_INSERT_ID();
+ last_insert_id 
+----------------
+              1
+(1 row)
+
+INSERT INTO unlog_single_autoinc VALUES(1 - 1);
+SELECT LAST_INSERT_ID();
+ last_insert_id 
+----------------
+              2
+(1 row)
+
+INSERT INTO unlog_single_autoinc VALUES(100);
+SELECT LAST_INSERT_ID();
+ last_insert_id 
+----------------
+              2
+(1 row)
+
+INSERT INTO unlog_single_autoinc VALUES(DEFAULT);
+SELECT LAST_INSERT_ID();
+ last_insert_id 
+----------------
+            101
+(1 row)
+
+ALTER TABLE unlog_single_autoinc AUTO_INCREMENT = 1000;
+SELECT LAST_INSERT_ID();
+ last_insert_id 
+----------------
+            101
+(1 row)
+
+INSERT INTO unlog_single_autoinc VALUES(DEFAULT);
+SELECT LAST_INSERT_ID();
+ last_insert_id 
+----------------
+           1000
+(1 row)
+
+SELECT col FROM unlog_single_autoinc ORDER BY 1;
+ col  
+------
+ 1
+ 2
+ 100
+ 101
+ 1000
+(5 rows)
+
+INSERT INTO unlog_single_autoinc select col-col from unlog_single_autoinc;
+SELECT LAST_INSERT_ID();
+ last_insert_id 
+----------------
+           1001
+(1 row)
+
+SELECT col FROM unlog_single_autoinc ORDER BY 1;
+ col  
+------
+ 1
+ 2
+ 100
+ 101
+ 1000
+ 1001
+ 1002
+ 1003
+ 1004
+ 1005
+(10 rows)
+
+INSERT INTO unlog_single_autoinc VALUES(500);
+SELECT LAST_INSERT_ID();
+ last_insert_id 
+----------------
+           1001
+(1 row)
+
+INSERT INTO unlog_single_autoinc VALUES(1);
+ERROR:  duplicate key value violates unique constraint "unlog_single_autoinc_pkey"
+DETAIL:  Key (col)=(1) already exists.
+SELECT LAST_INSERT_ID();
+ last_insert_id 
+----------------
+           1001
+(1 row)
+
+INSERT INTO unlog_single_autoinc VALUES(2100), (NULL), (2000), (DEFAULT), (2200), (NULL);
+SELECT LAST_INSERT_ID();
+ last_insert_id 
+----------------
+           2101
+(1 row)
+
+SELECT col FROM unlog_single_autoinc ORDER BY 1;
+ col  
+------
+ 1
+ 2
+ 100
+ 101
+ 500
+ 1000
+ 1001
+ 1002
+ 1003
+ 1004
+ 1005
+ 2000
+ 2100
+ 2101
+ 2102
+ 2200
+ 2201
+(17 rows)
+
+UPDATE unlog_single_autoinc SET col=NULL WHERE col=2201;
+ERROR:  null value in column "col" violates not-null constraint
+DETAIL:  Failing row contains (null).
+SELECT col FROM unlog_single_autoinc ORDER BY 1;
+ col  
+------
+ 1
+ 2
+ 100
+ 101
+ 500
+ 1000
+ 1001
+ 1002
+ 1003
+ 1004
+ 1005
+ 2000
+ 2100
+ 2101
+ 2102
+ 2200
+ 2201
+(17 rows)
+
+UPDATE unlog_single_autoinc SET col=0 WHERE col=2200;
+SELECT col FROM unlog_single_autoinc ORDER BY 1;
+ col  
+------
+ 0
+ 1
+ 2
+ 100
+ 101
+ 500
+ 1000
+ 1001
+ 1002
+ 1003
+ 1004
+ 1005
+ 2000
+ 2100
+ 2101
+ 2102
+ 2201
+(17 rows)
+
+UPDATE unlog_single_autoinc SET col=DEFAULT WHERE col=2101;
+ERROR:  duplicate key value violates unique constraint "unlog_single_autoinc_pkey"
+DETAIL:  Key (col)=(0) already exists.
+UPDATE unlog_single_autoinc SET col=3000 WHERE col=1;
+SELECT LAST_INSERT_ID();
+ last_insert_id 
+----------------
+           2101
+(1 row)
+
+INSERT INTO unlog_single_autoinc VALUES(DEFAULT);
+SELECT LAST_INSERT_ID();
+ last_insert_id 
+----------------
+           3001
+(1 row)
+
+SELECT col FROM unlog_single_autoinc ORDER BY 1;
+ col  
+------
+ 0
+ 2
+ 100
+ 101
+ 500
+ 1000
+ 1001
+ 1002
+ 1003
+ 1004
+ 1005
+ 2000
+ 2100
+ 2101
+ 2102
+ 2201
+ 3000
+ 3001
+(18 rows)
+
+SELECT LAST_INSERT_ID();
+ last_insert_id 
+----------------
+           3001
+(1 row)
+
+SELECT col FROM unlog_single_autoinc ORDER BY 1;
+ col  
+------
+ 0
+ 2
+ 100
+ 101
+ 500
+ 1000
+ 1001
+ 1002
+ 1003
+ 1004
+ 1005
+ 2000
+ 2100
+ 2101
+ 2102
+ 2201
+ 3000
+ 3001
+(18 rows)
+
+SELECT pg_catalog.pg_get_tabledef('unlog_single_autoinc');
+                      pg_get_tabledef                       
+------------------------------------------------------------
+ SET search_path = public;                                 +
+ CREATE UNLOGGED TABLE unlog_single_autoinc (              +
+     col uint4 AUTO_INCREMENT NOT NULL,                    +
+     CONSTRAINT unlog_single_autoinc_pkey PRIMARY KEY (col)+
+ ) AUTO_INCREMENT = 3002                                   +
+ WITH (orientation=row, compression=no);
+(1 row)
+
+TRUNCATE TABLE unlog_single_autoinc;
+INSERT INTO unlog_single_autoinc VALUES(DEFAULT);
+SELECT LAST_INSERT_ID();
+ last_insert_id 
+----------------
+              1
+(1 row)
+
+SELECT col FROM unlog_single_autoinc ORDER BY 1;
+ col 
+-----
+ 1
+(1 row)
+
+DROP TABLE unlog_single_autoinc;
+--auto_increment column as partkey primary key
+CREATE TABLE test_part_autoinc_pk (
+	col1 INT AUTO_INCREMENT,
+    col2 INT NOT NULL,
+    col3 INT NOT NULL,
+    PRIMARY KEY(col1, col2)
+) PARTITION BY RANGE (col1) SUBPARTITION BY HASH (col2) (
+    PARTITION col1_less_1000 VALUES LESS THAN(1000)
+    (
+        SUBPARTITION p1_col2_hash1,
+        SUBPARTITION p1_col2_hash2
+    ),
+    PARTITION col1_mid_1000 VALUES LESS THAN(2000)
+    (
+        SUBPARTITION p2_col2_hash1,
+        SUBPARTITION p2_col2_hash2
+    ),
+    PARTITION col1_greater_2000 VALUES LESS THAN (MAXVALUE)
+    (
+        SUBPARTITION p3_col2_hash1,
+        SUBPARTITION p3_col2_hash2
+    )
+);
+NOTICE:  CREATE TABLE will create implicit sequence "test_part_autoinc_pk_col1_seq" for serial column "test_part_autoinc_pk.col1"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "test_part_autoinc_pk_pkey" for table "test_part_autoinc_pk"
+INSERT INTO test_part_autoinc_pk VALUES(NULL, 1, 1);
+SELECT LAST_INSERT_ID();
+ last_insert_id 
+----------------
+              1
+(1 row)
+
+INSERT INTO test_part_autoinc_pk VALUES(1 - 1, 1, 1);
+SELECT LAST_INSERT_ID();
+ last_insert_id 
+----------------
+              2
+(1 row)
+
+INSERT INTO test_part_autoinc_pk VALUES(100, 1, 1);
+SELECT LAST_INSERT_ID();
+ last_insert_id 
+----------------
+              2
+(1 row)
+
+INSERT INTO test_part_autoinc_pk VALUES(DEFAULT, 1, 1);
+SELECT LAST_INSERT_ID();
+ last_insert_id 
+----------------
+            101
+(1 row)
+
+ALTER TABLE test_part_autoinc_pk AUTO_INCREMENT = 1000;
+SELECT LAST_INSERT_ID();
+ last_insert_id 
+----------------
+            101
+(1 row)
+
+INSERT INTO test_part_autoinc_pk VALUES(DEFAULT, 1, 1);
+SELECT LAST_INSERT_ID();
+ last_insert_id 
+----------------
+           1000
+(1 row)
+
+SELECT col1 FROM test_part_autoinc_pk ORDER BY 1;
+ col1 
+------
+    1
+    2
+  100
+  101
+ 1000
+(5 rows)
+
+INSERT INTO test_part_autoinc_pk select col1-col1, col2, col3 from test_part_autoinc_pk;
+SELECT LAST_INSERT_ID();
+ last_insert_id 
+----------------
+           1001
+(1 row)
+
+SELECT col1 FROM test_part_autoinc_pk ORDER BY 1;
+ col1 
+------
+    1
+    2
+  100
+  101
+ 1000
+ 1001
+ 1002
+ 1003
+ 1004
+ 1005
+(10 rows)
+
+INSERT INTO test_part_autoinc_pk VALUES(500, 1, 1);
+SELECT LAST_INSERT_ID();
+ last_insert_id 
+----------------
+           1001
+(1 row)
+
+INSERT INTO test_part_autoinc_pk VALUES(1, 1, 1);
+ERROR:  duplicate key value violates unique constraint "test_part_autoinc_pk_pkey"
+DETAIL:  Key (col1, col2)=(1, 1) already exists.
+SELECT LAST_INSERT_ID();
+ last_insert_id 
+----------------
+           1001
+(1 row)
+
+INSERT INTO test_part_autoinc_pk VALUES(2100, 1, 1), (NULL, 1, 1), (2000, 1, 1), (DEFAULT, 1, 1), (2200, 1, 1), (NULL, 1, 1);
+SELECT LAST_INSERT_ID();
+ last_insert_id 
+----------------
+           2101
+(1 row)
+
+SELECT col1 FROM test_part_autoinc_pk ORDER BY 1;
+ col1 
+------
+    1
+    2
+  100
+  101
+  500
+ 1000
+ 1001
+ 1002
+ 1003
+ 1004
+ 1005
+ 2000
+ 2100
+ 2101
+ 2102
+ 2200
+ 2201
+(17 rows)
+
+UPDATE test_part_autoinc_pk SET col1=NULL WHERE col1=2201;
+ERROR:  null value in column "col1" violates not-null constraint
+DETAIL:  Failing row contains (null, 1, 1).
+SELECT col1 FROM test_part_autoinc_pk ORDER BY 1;
+ col1 
+------
+    1
+    2
+  100
+  101
+  500
+ 1000
+ 1001
+ 1002
+ 1003
+ 1004
+ 1005
+ 2000
+ 2100
+ 2101
+ 2102
+ 2200
+ 2201
+(17 rows)
+
+UPDATE test_part_autoinc_pk SET col1=0 WHERE col1=2200;
+SELECT col1 FROM test_part_autoinc_pk ORDER BY 1;
+ col1 
+------
+    0
+    1
+    2
+  100
+  101
+  500
+ 1000
+ 1001
+ 1002
+ 1003
+ 1004
+ 1005
+ 2000
+ 2100
+ 2101
+ 2102
+ 2201
+(17 rows)
+
+UPDATE test_part_autoinc_pk SET col1=DEFAULT WHERE col1=2101;
+ERROR:  duplicate key value violates unique constraint "test_part_autoinc_pk_pkey"
+DETAIL:  Key (col1, col2)=(0, 1) already exists.
+UPDATE test_part_autoinc_pk SET col1=3000 WHERE col1=1;
+SELECT LAST_INSERT_ID();
+ last_insert_id 
+----------------
+           2101
+(1 row)
+
+INSERT INTO test_part_autoinc_pk VALUES(DEFAULT, 1, 1);
+SELECT LAST_INSERT_ID();
+ last_insert_id 
+----------------
+           3001
+(1 row)
+
+SELECT col1 FROM test_part_autoinc_pk ORDER BY 1;
+ col1 
+------
+    0
+    2
+  100
+  101
+  500
+ 1000
+ 1001
+ 1002
+ 1003
+ 1004
+ 1005
+ 2000
+ 2100
+ 2101
+ 2102
+ 2201
+ 3000
+ 3001
+(18 rows)
+
+SELECT LAST_INSERT_ID();
+ last_insert_id 
+----------------
+           3001
+(1 row)
+
+SELECT col1 FROM test_part_autoinc_pk ORDER BY 1;
+ col1 
+------
+    0
+    2
+  100
+  101
+  500
+ 1000
+ 1001
+ 1002
+ 1003
+ 1004
+ 1005
+ 2000
+ 2100
+ 2101
+ 2102
+ 2201
+ 3000
+ 3001
+(18 rows)
+
+SELECT pg_catalog.pg_get_tabledef('test_part_autoinc_pk');
+                                  pg_get_tabledef                                  
+-----------------------------------------------------------------------------------
+ SET search_path = public;                                                        +
+ CREATE TABLE test_part_autoinc_pk (                                              +
+     col1 integer AUTO_INCREMENT NOT NULL,                                        +
+     col2 integer NOT NULL,                                                       +
+     col3 integer NOT NULL,                                                       +
+     CONSTRAINT test_part_autoinc_pk_pkey PRIMARY KEY (col1, col2)                +
+ ) AUTO_INCREMENT = 3002                                                          +
+ WITH (orientation=row, compression=no)                                           +
+ PARTITION BY RANGE (col1) SUBPARTITION BY HASH (col2)                            +
+ (                                                                                +
+     PARTITION col1_less_1000 VALUES LESS THAN (1000) TABLESPACE pg_default       +
+     (                                                                            +
+         SUBPARTITION p1_col2_hash1 TABLESPACE pg_default,                        +
+         SUBPARTITION p1_col2_hash2 TABLESPACE pg_default                         +
+     ),                                                                           +
+     PARTITION col1_mid_1000 VALUES LESS THAN (2000) TABLESPACE pg_default        +
+     (                                                                            +
+         SUBPARTITION p2_col2_hash1 TABLESPACE pg_default,                        +
+         SUBPARTITION p2_col2_hash2 TABLESPACE pg_default                         +
+     ),                                                                           +
+     PARTITION col1_greater_2000 VALUES LESS THAN (MAXVALUE) TABLESPACE pg_default+
+     (                                                                            +
+         SUBPARTITION p3_col2_hash1 TABLESPACE pg_default,                        +
+         SUBPARTITION p3_col2_hash2 TABLESPACE pg_default                         +
+     )                                                                            +
+ )                                                                                +
+ ENABLE ROW MOVEMENT;
+(1 row)
+
+TRUNCATE TABLE test_part_autoinc_pk;
+INSERT INTO test_part_autoinc_pk VALUES(DEFAULT, 1, 1);
+SELECT LAST_INSERT_ID();
+ last_insert_id 
+----------------
+              1
+(1 row)
+
+SELECT col1 FROM test_part_autoinc_pk ORDER BY 1;
+ col1 
+------
+    1
+(1 row)
+
+DROP TABLE test_part_autoinc_pk;
+--auto_increment column as unique key not partkey
+CREATE TABLE test_part_autoinc_unique (
+	col1 INT AUTO_INCREMENT NULL,
+    col2 INT NOT NULL,
+    col3 INT NOT NULL,
+    UNIQUE(col1, col2, col3)
+) PARTITION BY RANGE (col2) SUBPARTITION BY HASH (col3) (
+    PARTITION col1_less_1000 VALUES LESS THAN(1000)
+    (
+        SUBPARTITION p1_col2_hash1,
+        SUBPARTITION p1_col2_hash2
+    ),
+    PARTITION col1_mid_1000 VALUES LESS THAN(2000)
+    (
+        SUBPARTITION p2_col2_hash1,
+        SUBPARTITION p2_col2_hash2
+    ),
+    PARTITION col1_greater_2000 VALUES LESS THAN (MAXVALUE)
+    (
+        SUBPARTITION p3_col2_hash1,
+        SUBPARTITION p3_col2_hash2
+    )
+);
+NOTICE:  CREATE TABLE will create implicit sequence "test_part_autoinc_unique_col1_seq" for serial column "test_part_autoinc_unique.col1"
+NOTICE:  CREATE TABLE / UNIQUE will create implicit index "test_part_autoinc_unique_col1_col2_col3_key" for table "test_part_autoinc_unique"
+INSERT INTO test_part_autoinc_unique VALUES(NULL, 1, 1);
+SELECT LAST_INSERT_ID();
+ last_insert_id 
+----------------
+              1
+(1 row)
+
+INSERT INTO test_part_autoinc_unique VALUES(1 - 1, 1001, 1001);
+SELECT LAST_INSERT_ID();
+ last_insert_id 
+----------------
+              2
+(1 row)
+
+INSERT INTO test_part_autoinc_unique VALUES(100, 2001, 2001);
+SELECT LAST_INSERT_ID();
+ last_insert_id 
+----------------
+              2
+(1 row)
+
+INSERT INTO test_part_autoinc_unique(col2,col3) VALUES(2001, 2001);
+SELECT LAST_INSERT_ID();
+ last_insert_id 
+----------------
+            101
+(1 row)
+
+SELECT col1 FROM test_part_autoinc_unique ORDER BY 1;
+ col1 
+------
+    2
+  100
+     
+     
+(4 rows)
+
+ALTER TABLE test_part_autoinc_unique AUTO_INCREMENT = 1000;
+SELECT LAST_INSERT_ID();
+ last_insert_id 
+----------------
+            101
+(1 row)
+
+INSERT INTO test_part_autoinc_unique VALUES(0, 1, 1);
+SELECT LAST_INSERT_ID();
+ last_insert_id 
+----------------
+           1000
+(1 row)
+
+SELECT col1 FROM test_part_autoinc_unique ORDER BY 1;
+ col1 
+------
+    2
+  100
+ 1000
+     
+     
+(5 rows)
+
+INSERT INTO test_part_autoinc_unique select col1-col1, col2, col3 from test_part_autoinc_unique order by 1 NULLS FIRST;
+SELECT LAST_INSERT_ID();
+ last_insert_id 
+----------------
+           1001
+(1 row)
+
+SELECT col1 FROM test_part_autoinc_unique ORDER BY 1;
+ col1 
+------
+    2
+  100
+ 1000
+ 1003
+ 1004
+ 1005
+     
+     
+     
+     
+(10 rows)
+
+INSERT INTO test_part_autoinc_unique VALUES(500, 1001, 1001);
+SELECT LAST_INSERT_ID();
+ last_insert_id 
+----------------
+           1001
+(1 row)
+
+INSERT INTO test_part_autoinc_unique VALUES(1, 2001, 2001);
+SELECT LAST_INSERT_ID();
+ last_insert_id 
+----------------
+           1001
+(1 row)
+
+INSERT INTO test_part_autoinc_unique VALUES(2100, 1, 1), (0, 1001, 1001), (2000, 2001, 2001), (NULL, 1, 1), (2200, 1001, 1001), (0, 2001, 2001);
+SELECT LAST_INSERT_ID();
+ last_insert_id 
+----------------
+           2101
+(1 row)
+
+SELECT col1 FROM test_part_autoinc_unique ORDER BY 1;
+ col1 
+------
+    1
+    2
+  100
+  500
+ 1000
+ 1003
+ 1004
+ 1005
+ 2000
+ 2100
+ 2101
+ 2200
+ 2201
+     
+     
+     
+     
+     
+(18 rows)
+
+UPDATE test_part_autoinc_unique SET col1=NULL WHERE col1=2201;
+SELECT col1 FROM test_part_autoinc_unique ORDER BY 1;
+ col1 
+------
+    1
+    2
+  100
+  500
+ 1000
+ 1003
+ 1004
+ 1005
+ 2000
+ 2100
+ 2101
+ 2200
+     
+     
+     
+     
+     
+     
+(18 rows)
+
+UPDATE test_part_autoinc_unique SET col1=0 WHERE col1=2200;
+SELECT col1 FROM test_part_autoinc_unique ORDER BY 1;
+ col1 
+------
+    0
+    1
+    2
+  100
+  500
+ 1000
+ 1003
+ 1004
+ 1005
+ 2000
+ 2100
+ 2101
+     
+     
+     
+     
+     
+     
+(18 rows)
+
+UPDATE test_part_autoinc_unique SET col1=DEFAULT WHERE col1=2101;
+SELECT LAST_INSERT_ID();
+ last_insert_id 
+----------------
+           2101
+(1 row)
+
+INSERT INTO test_part_autoinc_unique VALUES(0, 1, 1);
+SELECT LAST_INSERT_ID();
+ last_insert_id 
+----------------
+           2202
+(1 row)
+
+SELECT col1 FROM test_part_autoinc_unique ORDER BY 1;
+ col1 
+------
+    0
+    1
+    2
+  100
+  500
+ 1000
+ 1003
+ 1004
+ 1005
+ 2000
+ 2100
+ 2202
+     
+     
+     
+     
+     
+     
+     
+(19 rows)
+
+SELECT LAST_INSERT_ID();
+ last_insert_id 
+----------------
+           2202
+(1 row)
+
+SELECT col1 FROM test_part_autoinc_unique ORDER BY 1;
+ col1 
+------
+    0
+    1
+    2
+  100
+  500
+ 1000
+ 1003
+ 1004
+ 1005
+ 2000
+ 2100
+ 2202
+     
+     
+     
+     
+     
+     
+     
+(19 rows)
+
+SELECT pg_catalog.pg_get_tabledef('test_part_autoinc_unique');
+                                   pg_get_tabledef                                    
+--------------------------------------------------------------------------------------
+ SET search_path = public;                                                           +
+ CREATE TABLE test_part_autoinc_unique (                                             +
+     col1 integer AUTO_INCREMENT,                                                    +
+     col2 integer NOT NULL,                                                          +
+     col3 integer NOT NULL,                                                          +
+     CONSTRAINT test_part_autoinc_unique_col1_col2_col3_key UNIQUE (col1, col2, col3)+
+ ) AUTO_INCREMENT = 2203                                                             +
+ WITH (orientation=row, compression=no)                                              +
+ PARTITION BY RANGE (col2) SUBPARTITION BY HASH (col3)                               +
+ (                                                                                   +
+     PARTITION col1_less_1000 VALUES LESS THAN (1000) TABLESPACE pg_default          +
+     (                                                                               +
+         SUBPARTITION p1_col2_hash1 TABLESPACE pg_default,                           +
+         SUBPARTITION p1_col2_hash2 TABLESPACE pg_default                            +
+     ),                                                                              +
+     PARTITION col1_mid_1000 VALUES LESS THAN (2000) TABLESPACE pg_default           +
+     (                                                                               +
+         SUBPARTITION p2_col2_hash1 TABLESPACE pg_default,                           +
+         SUBPARTITION p2_col2_hash2 TABLESPACE pg_default                            +
+     ),                                                                              +
+     PARTITION col1_greater_2000 VALUES LESS THAN (MAXVALUE) TABLESPACE pg_default   +
+     (                                                                               +
+         SUBPARTITION p3_col2_hash1 TABLESPACE pg_default,                           +
+         SUBPARTITION p3_col2_hash2 TABLESPACE pg_default                            +
+     )                                                                               +
+ )                                                                                   +
+ ENABLE ROW MOVEMENT;
+(1 row)
+
+TRUNCATE TABLE test_part_autoinc_unique;
+INSERT INTO test_part_autoinc_unique VALUES(DEFAULT, 1, 1);
+SELECT LAST_INSERT_ID();
+ last_insert_id 
+----------------
+              1
+(1 row)
+
+SELECT col1 FROM test_part_autoinc_unique ORDER BY 1;
+ col1 
+------
+     
+(1 row)
+
+INSERT INTO test_part_autoinc_unique VALUES(0, 1, 1);
+SELECT LAST_INSERT_ID();
+ last_insert_id 
+----------------
+              2
+(1 row)
+
+SELECT col1 FROM test_part_autoinc_unique ORDER BY 1;
+ col1 
+------
+    2
+     
+(2 rows)
+
+DROP TABLE test_part_autoinc_unique;
+--test insert into on duplicate AND merge into
+CREATE TABLE test_autoinc_upsert(col int unsigned auto_increment UNIQUE, col1 INT);
+NOTICE:  CREATE TABLE will create implicit sequence "test_autoinc_upsert_col_seq" for serial column "test_autoinc_upsert.col"
+NOTICE:  CREATE TABLE / UNIQUE will create implicit index "test_autoinc_upsert_col_key" for table "test_autoinc_upsert"
+CREATE TABLE test_autoinc_merge(col int unsigned auto_increment UNIQUE, col1 INT);
+NOTICE:  CREATE TABLE will create implicit sequence "test_autoinc_merge_col_seq" for serial column "test_autoinc_merge.col"
+NOTICE:  CREATE TABLE / UNIQUE will create implicit index "test_autoinc_merge_col_key" for table "test_autoinc_merge"
+--insert test_autoinc_upsert
+INSERT INTO test_autoinc_upsert VALUES(DEFAULT,0) ON DUPLICATE KEY UPDATE col1=col;
+INSERT INTO test_autoinc_upsert VALUES(1,0) ON DUPLICATE KEY UPDATE col1=col;
+INSERT INTO test_autoinc_upsert VALUES(2,0) ON DUPLICATE KEY UPDATE col1=col;
+INSERT INTO test_autoinc_upsert VALUES(100,0) ON DUPLICATE KEY UPDATE col1=col;
+SELECT LAST_INSERT_ID();
+ last_insert_id 
+----------------
+              1
+(1 row)
+
+SELECT col,col1 FROM test_autoinc_upsert ORDER BY 1;
+ col | col1 
+-----+------
+ 1   |    1
+ 2   |    0
+ 100 |    0
+(3 rows)
+
+--all insert test_autoinc_merge
+MERGE INTO test_autoinc_merge m USING test_autoinc_upsert u 
+  ON m.col = u.col
+WHEN MATCHED THEN
+  UPDATE SET m.col1=u.col
+WHEN NOT MATCHED THEN  
+  INSERT VALUES (u.col, u.col1);
+SELECT LAST_INSERT_ID();
+ last_insert_id 
+----------------
+              1
+(1 row)
+
+SELECT col,col1 FROM test_autoinc_merge ORDER BY 1;
+ col | col1 
+-----+------
+ 1   |    1
+ 2   |    0
+ 100 |    0
+(3 rows)
+
+--all update test_autoinc_merge
+MERGE INTO test_autoinc_merge m USING test_autoinc_upsert u 
+  ON m.col = u.col
+WHEN MATCHED THEN
+  UPDATE SET m.col1=u.col
+WHEN NOT MATCHED THEN  
+  INSERT VALUES (u.col, u.col1);
+SELECT LAST_INSERT_ID();
+ last_insert_id 
+----------------
+              1
+(1 row)
+
+SELECT col,col1 FROM test_autoinc_merge ORDER BY 1;
+ col | col1 
+-----+------
+ 1   |    1
+ 2   |    2
+ 100 |  100
+(3 rows)
+
+SELECT LAST_INSERT_ID();
+ last_insert_id 
+----------------
+              1
+(1 row)
+
+SELECT col,col1 FROM test_autoinc_merge ORDER BY 1;
+ col | col1 
+-----+------
+ 1   |    1
+ 2   |    2
+ 100 |  100
+(3 rows)
+
+--insert test_autoinc_upsert 
+INSERT INTO test_autoinc_upsert VALUES(100,NULL) ON DUPLICATE KEY UPDATE col1=col;
+INSERT INTO test_autoinc_upsert VALUES(DEFAULT,NULL) ON DUPLICATE KEY UPDATE col1=col;
+INSERT INTO test_autoinc_upsert VALUES(50,NULL) ON DUPLICATE KEY UPDATE col1=col;
+SELECT LAST_INSERT_ID();
+ last_insert_id 
+----------------
+            101
+(1 row)
+
+SELECT col,col1 FROM test_autoinc_upsert ORDER BY 1;
+ col | col1 
+-----+------
+ 1   |    1
+ 2   |    0
+ 50  |     
+ 100 |  100
+ 101 |     
+(5 rows)
+
+--insert and update test_autoinc_merge
+MERGE INTO test_autoinc_merge m USING test_autoinc_upsert u 
+  ON m.col = u.col
+WHEN MATCHED THEN
+  UPDATE SET m.col1=u.col1
+WHEN NOT MATCHED THEN  
+  INSERT VALUES (u.col, u.col1);
+SELECT LAST_INSERT_ID();
+ last_insert_id 
+----------------
+            101
+(1 row)
+
+SELECT col,col1 FROM test_autoinc_merge ORDER BY 1;
+ col | col1 
+-----+------
+ 1   |    1
+ 2   |    0
+ 50  |     
+ 100 |  100
+ 101 |     
+(5 rows)
+
+--insert null/0 to test_autoinc_merge.col
+MERGE INTO test_autoinc_merge m USING test_autoinc_upsert u 
+  ON m.col = u.col1
+WHEN MATCHED THEN
+  UPDATE SET m.col1=u.col1
+WHEN NOT MATCHED THEN  
+  INSERT VALUES (u.col1, u.col1);
+SELECT LAST_INSERT_ID();
+ last_insert_id 
+----------------
+            102
+(1 row)
+
+SELECT col,col1 FROM test_autoinc_merge ORDER BY 1;
+ col | col1 
+-----+------
+ 1   |    1
+ 2   |    0
+ 50  |     
+ 100 |  100
+ 101 |     
+ 102 |    0
+ 103 |     
+ 104 |     
+(8 rows)
+
+--iinsert default to test_autoinc_merge.col
+MERGE INTO test_autoinc_merge m USING test_autoinc_upsert u 
+  ON m.col = u.col1
+WHEN MATCHED THEN
+  UPDATE SET m.col1=u.col1
+WHEN NOT MATCHED THEN  
+  INSERT VALUES (default, u.col1);
+SELECT LAST_INSERT_ID();
+ last_insert_id 
+----------------
+            105
+(1 row)
+
+SELECT col,col1 FROM test_autoinc_merge ORDER BY 1;
+ col | col1 
+-----+------
+ 1   |    1
+ 2   |    0
+ 50  |     
+ 100 |  100
+ 101 |     
+ 102 |    0
+ 103 |     
+ 104 |     
+ 105 |    0
+ 106 |     
+ 107 |     
+(11 rows)
+
+DROP TABLE test_autoinc_upsert;
+DROP TABLE test_autoinc_merge;
+--ERROR test
+CREATE TABLE test_autoinc_err (
+    col1 int2 unsigned auto_increment primary key,
+    col2 int unsigned unique
+);
+NOTICE:  CREATE TABLE will create implicit sequence "test_autoinc_err_col1_seq" for serial column "test_autoinc_err.col1"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "test_autoinc_err_pkey" for table "test_autoinc_err"
+NOTICE:  CREATE TABLE / UNIQUE will create implicit index "test_autoinc_err_col2_key" for table "test_autoinc_err"
+INSERT INTO test_autoinc_err VALUES(NULL, 1);
+SELECT LAST_INSERT_ID();
+ last_insert_id 
+----------------
+              1
+(1 row)
+
+INSERT INTO test_autoinc_err VALUES(DEFAULT, 1);
+ERROR:  duplicate key value violates unique constraint "test_autoinc_err_col2_key"
+DETAIL:  Key (col2)=(1) already exists.
+SELECT LAST_INSERT_ID();
+ last_insert_id 
+----------------
+              1
+(1 row)
+
+SELECT col1,col2 FROM test_autoinc_err ORDER BY 1;
+ col1 | col2 
+------+------
+ 1    | 1
+(1 row)
+
+INSERT INTO test_autoinc_err VALUES(DEFAULT, 3);
+SELECT LAST_INSERT_ID();
+ last_insert_id 
+----------------
+              3
+(1 row)
+
+SELECT col1,col2 FROM test_autoinc_err ORDER BY 1;
+ col1 | col2 
+------+------
+ 1    | 1
+ 3    | 3
+(2 rows)
+
+INSERT INTO test_autoinc_err VALUES(0,1), (100,5);
+ERROR:  duplicate key value violates unique constraint "test_autoinc_err_col2_key"
+DETAIL:  Key (col2)=(1) already exists.
+SELECT LAST_INSERT_ID();
+ last_insert_id 
+----------------
+              3
+(1 row)
+
+SELECT col1,col2 FROM test_autoinc_err ORDER BY 1;
+ col1 | col2 
+------+------
+ 1    | 1
+ 3    | 3
+(2 rows)
+
+INSERT INTO test_autoinc_err VALUES(0,5), (6,6), (0,1), (7,7);
+ERROR:  duplicate key value violates unique constraint "test_autoinc_err_col2_key"
+DETAIL:  Key (col2)=(1) already exists.
+SELECT LAST_INSERT_ID();
+ last_insert_id 
+----------------
+              5
+(1 row)
+
+SELECT col1,col2 FROM test_autoinc_err ORDER BY 1;
+ col1 | col2 
+------+------
+ 1    | 1
+ 3    | 3
+(2 rows)
+
+INSERT INTO test_autoinc_err VALUES(DEFAULT, 5);
+SELECT LAST_INSERT_ID();
+ last_insert_id 
+----------------
+              8
+(1 row)
+
+SELECT col1,col2 FROM test_autoinc_err ORDER BY 1;
+ col1 | col2 
+------+------
+ 1    | 1
+ 3    | 3
+ 8    | 5
+(3 rows)
+
+DROP TABLE test_autoinc_err;
+-- last_insert_id test
+CREATE TABLE test_last_insert_id(col int8 unsigned auto_increment PRIMARY KEY) AUTO_INCREMENT = 10;
+NOTICE:  CREATE TABLE will create implicit sequence "test_last_insert_id_col_seq" for serial column "test_last_insert_id.col"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "test_last_insert_id_pkey" for table "test_last_insert_id"
+INSERT INTO test_last_insert_id VALUES(DEFAULT);
+SELECT LAST_INSERT_ID();
+ last_insert_id 
+----------------
+             10
+(1 row)
+
+INSERT INTO test_last_insert_id VALUES(0), (NULL), (50), (DEFAULT);
+SELECT LAST_INSERT_ID();
+ last_insert_id 
+----------------
+             11
+(1 row)
+
+SELECT LAST_INSERT_ID(100 + 100);
+ last_insert_id 
+----------------
+            200
+(1 row)
+
+SELECT LAST_INSERT_ID();
+ last_insert_id 
+----------------
+            200
+(1 row)
+
+SELECT LAST_INSERT_ID(NULL);
+ last_insert_id 
+----------------
+               
+(1 row)
+
+SELECT LAST_INSERT_ID();
+ last_insert_id 
+----------------
+              0
+(1 row)
+
+SELECT LAST_INSERT_ID(1.1);
+ last_insert_id 
+----------------
+              1
+(1 row)
+
+SELECT LAST_INSERT_ID();
+ last_insert_id 
+----------------
+              1
+(1 row)
+
+DROP TABLE test_last_insert_id;
+-- test auto_increment insert multi values
+create table test_autoinc_batch_insert (
+    col1 int8 unsigned auto_increment primary key,
+    col2 int unsigned 
+);
+NOTICE:  CREATE TABLE will create implicit sequence "test_autoinc_batch_insert_col1_seq" for serial column "test_autoinc_batch_insert.col1"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "test_autoinc_batch_insert_pkey" for table "test_autoinc_batch_insert"
+TRUNCATE TABLE test_autoinc_batch_insert;
+INSERT INTO test_autoinc_batch_insert VALUES(DEFAULT, 1), (DEFAULT, 1), (DEFAULT, 1), (DEFAULT, 1), (DEFAULT, 1);
+SELECT LAST_INSERT_ID();
+ last_insert_id 
+----------------
+              1
+(1 row)
+
+SELECT col1,col2 FROM test_autoinc_batch_insert ORDER BY 1;
+ col1 | col2 
+------+------
+ 1    | 1
+ 2    | 1
+ 3    | 1
+ 4    | 1
+ 5    | 1
+(5 rows)
+
+INSERT INTO test_autoinc_batch_insert VALUES(DEFAULT, 1);
+SELECT col1,col2 FROM test_autoinc_batch_insert ORDER BY 1;
+ col1 | col2 
+------+------
+ 1    | 1
+ 2    | 1
+ 3    | 1
+ 4    | 1
+ 5    | 1
+ 6    | 1
+(6 rows)
+
+TRUNCATE TABLE test_autoinc_batch_insert;
+INSERT INTO test_autoinc_batch_insert VALUES(5, 1), (8, 1), (7, 1), (9, 1), (20, 1);
+SELECT LAST_INSERT_ID();
+ last_insert_id 
+----------------
+              6
+(1 row)
+
+SELECT col1,col2 FROM test_autoinc_batch_insert ORDER BY 1;
+ col1 | col2 
+------+------
+ 5    | 1
+ 7    | 1
+ 8    | 1
+ 9    | 1
+ 20   | 1
+(5 rows)
+
+INSERT INTO test_autoinc_batch_insert VALUES(DEFAULT, 1);
+SELECT col1,col2 FROM test_autoinc_batch_insert ORDER BY 1;
+ col1 | col2 
+------+------
+ 5    | 1
+ 7    | 1
+ 8    | 1
+ 9    | 1
+ 20   | 1
+ 21   | 1
+(6 rows)
+
+TRUNCATE TABLE test_autoinc_batch_insert;
+INSERT INTO test_autoinc_batch_insert VALUES(5, 1), (NULL, 1), (NULL, 1), (NULL, 1), (NULL, 1);
+SELECT LAST_INSERT_ID();
+ last_insert_id 
+----------------
+              6
+(1 row)
+
+SELECT col1,col2 FROM test_autoinc_batch_insert ORDER BY 1;
+ col1 | col2 
+------+------
+ 5    | 1
+ 6    | 1
+ 7    | 1
+ 8    | 1
+ 9    | 1
+(5 rows)
+
+INSERT INTO test_autoinc_batch_insert VALUES(DEFAULT, 1);
+SELECT col1,col2 FROM test_autoinc_batch_insert ORDER BY 1;
+ col1 | col2 
+------+------
+ 5    | 1
+ 6    | 1
+ 7    | 1
+ 8    | 1
+ 9    | 1
+ 10   | 1
+(6 rows)
+
+TRUNCATE TABLE test_autoinc_batch_insert;
+INSERT INTO test_autoinc_batch_insert VALUES(10, 1);
+INSERT INTO test_autoinc_batch_insert VALUES(NULL, 1), (NULL, 1), (15, 1), (NULL, 1), (NULL, 1);
+SELECT LAST_INSERT_ID();
+ last_insert_id 
+----------------
+             11
+(1 row)
+
+SELECT col1,col2 FROM test_autoinc_batch_insert ORDER BY 1;
+ col1 | col2 
+------+------
+ 10   | 1
+ 11   | 1
+ 12   | 1
+ 15   | 1
+ 16   | 1
+ 17   | 1
+(6 rows)
+
+INSERT INTO test_autoinc_batch_insert VALUES(DEFAULT, 1);
+SELECT col1,col2 FROM test_autoinc_batch_insert ORDER BY 1;
+ col1 | col2 
+------+------
+ 10   | 1
+ 11   | 1
+ 12   | 1
+ 15   | 1
+ 16   | 1
+ 17   | 1
+ 18   | 1
+(7 rows)
+
+drop table test_autoinc_batch_insert;
+-- test auto_increment insert select
+create table test_autoinc_insert_select (
+    col1 int2 unsigned auto_increment primary key,
+    col2 int unsigned 
+);
+NOTICE:  CREATE TABLE will create implicit sequence "test_autoinc_insert_select_col1_seq" for serial column "test_autoinc_insert_select.col1"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "test_autoinc_insert_select_pkey" for table "test_autoinc_insert_select"
+create table test_autoinc_source (
+    col1 int unsigned,
+    col2 int unsigned
+);
+TRUNCATE TABLE test_autoinc_source;
+TRUNCATE TABLE test_autoinc_insert_select;
+INSERT INTO test_autoinc_source VALUES(DEFAULT, 1), (DEFAULT, 2), (DEFAULT, 3), (DEFAULT, 4), (DEFAULT, 5);
+INSERT INTO test_autoinc_insert_select SELECT * FROM test_autoinc_source order by col2;
+SELECT LAST_INSERT_ID();
+ last_insert_id 
+----------------
+              1
+(1 row)
+
+SELECT col1,col2 FROM test_autoinc_insert_select ORDER BY 1;
+ col1 | col2 
+------+------
+ 1    | 1
+ 2    | 2
+ 3    | 3
+ 4    | 4
+ 5    | 5
+(5 rows)
+
+INSERT INTO test_autoinc_insert_select VALUES(DEFAULT, 1);
+SELECT col1,col2 FROM test_autoinc_insert_select ORDER BY 1;
+ col1 | col2 
+------+------
+ 1    | 1
+ 2    | 2
+ 3    | 3
+ 4    | 4
+ 5    | 5
+ 6    | 1
+(6 rows)
+
+TRUNCATE TABLE test_autoinc_source;
+TRUNCATE TABLE test_autoinc_insert_select;
+INSERT INTO test_autoinc_source VALUES(5, 1), (8, 2), (7, 3), (9, 4), (20, 5);
+INSERT INTO test_autoinc_insert_select SELECT * FROM test_autoinc_source order by col2;
+SELECT LAST_INSERT_ID();
+ last_insert_id 
+----------------
+              6
+(1 row)
+
+SELECT col1,col2 FROM test_autoinc_insert_select ORDER BY 1;
+ col1 | col2 
+------+------
+ 5    | 1
+ 7    | 3
+ 8    | 2
+ 9    | 4
+ 20   | 5
+(5 rows)
+
+INSERT INTO test_autoinc_insert_select VALUES(DEFAULT, 1);
+SELECT col1,col2 FROM test_autoinc_insert_select ORDER BY 1;
+ col1 | col2 
+------+------
+ 5    | 1
+ 7    | 3
+ 8    | 2
+ 9    | 4
+ 20   | 5
+ 21   | 1
+(6 rows)
+
+TRUNCATE TABLE test_autoinc_source;
+TRUNCATE TABLE test_autoinc_insert_select;
+INSERT INTO test_autoinc_source VALUES(5, 1), (NULL, 2), (NULL, 3), (NULL, 4), (NULL, 5);
+INSERT INTO test_autoinc_insert_select SELECT * FROM test_autoinc_source order by col2;
+SELECT LAST_INSERT_ID();
+ last_insert_id 
+----------------
+              6
+(1 row)
+
+SELECT col1,col2 FROM test_autoinc_insert_select ORDER BY 1;
+ col1 | col2 
+------+------
+ 5    | 1
+ 6    | 2
+ 7    | 3
+ 8    | 4
+ 9    | 5
+(5 rows)
+
+INSERT INTO test_autoinc_insert_select VALUES(DEFAULT, 1);
+SELECT col1,col2 FROM test_autoinc_insert_select ORDER BY 1;
+ col1 | col2 
+------+------
+ 5    | 1
+ 6    | 2
+ 7    | 3
+ 8    | 4
+ 9    | 5
+ 10   | 1
+(6 rows)
+
+TRUNCATE TABLE test_autoinc_source;
+TRUNCATE TABLE test_autoinc_insert_select;
+INSERT INTO test_autoinc_source VALUES(5, 1), (NULL, 2), (NULL, 3), (4, 4), (NULL, 5);
+INSERT INTO test_autoinc_insert_select SELECT * FROM test_autoinc_source order by col2;
+SELECT LAST_INSERT_ID();
+ last_insert_id 
+----------------
+              6
+(1 row)
+
+SELECT col1,col2 FROM test_autoinc_insert_select ORDER BY 1;
+ col1 | col2 
+------+------
+ 4    | 4
+ 5    | 1
+ 6    | 2
+ 7    | 3
+ 8    | 5
+(5 rows)
+
+INSERT INTO test_autoinc_insert_select VALUES(DEFAULT, 1);
+SELECT col1,col2 FROM test_autoinc_insert_select ORDER BY 1;
+ col1 | col2 
+------+------
+ 4    | 4
+ 5    | 1
+ 6    | 2
+ 7    | 3
+ 8    | 5
+ 9    | 1
+(6 rows)
+
+drop table test_autoinc_source;
+drop table test_autoinc_insert_select;
+\c postgres
+drop database if exists uint_auto_increment;

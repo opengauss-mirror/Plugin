@@ -19,7 +19,7 @@
 
 #include "access/sysattr.h"
 #include "access/tableam.h"
-#include "catalog/heap.h"
+#include "plugin_catalog/heap.h"
 #include "catalog/namespace.h"
 #include "catalog/pg_type.h"
 #include "funcapi.h"

@@ -56,6 +56,7 @@ static int tm2time(struct pg_tm* tm, fsec_t fsec, TimeADT* result);
 static int tm2timetz(struct pg_tm* tm, fsec_t fsec, int tz, TimeTzADT* result);
 static void AdjustTimeForTypmod(TimeADT* time, int32 typmod);
 #ifdef DOLPHIN
+extern const char* extract_numericstr(const char* str);
 static char* adjust_b_format_time(char *str, int *timeSign, int *D, bool *hasD);
 
 PG_FUNCTION_INFO_V1_PUBLIC(int32_b_format_time);
@@ -79,6 +80,8 @@ PG_FUNCTION_INFO_V1_PUBLIC(maketime);
 extern "C" DLL_PUBLIC Datum maketime(PG_FUNCTION_ARGS);
 PG_FUNCTION_INFO_V1_PUBLIC(sec_to_time);
 extern "C" DLL_PUBLIC Datum sec_to_time(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(sec_to_time_str);
+extern "C" DLL_PUBLIC Datum sec_to_time_str(PG_FUNCTION_ARGS);
 PG_FUNCTION_INFO_V1_PUBLIC(subdate_datetime_days_text);
 extern "C" DLL_PUBLIC Datum subdate_datetime_days_text(PG_FUNCTION_ARGS);
 PG_FUNCTION_INFO_V1_PUBLIC(subdate_datetime_interval_text);
@@ -3317,59 +3320,15 @@ Datum makedate(PG_FUNCTION_ARGS)
 }
 
 /*
- * @Description: Convert nanoseconds to microseconds and round up, Require: nanoseconds < 1000000000。
- * @return: int32 in microseconds
+ * Check whether the TimeADT value is within the specified range: 
+ * [-838:59:59, 838:59:59] (the time range is from MySQL).
+ * Error will be reported if the TimeADT value exceeds the range.
  */
-fsec_t nano2microsecond(uint nanoseconds)
+void check_b_format_time_range_with_ereport(TimeADT &time)
 {
-    fsec_t microseconds;
-    int32 remain;
-    microseconds = nanoseconds / NANO2MICRO_BASE;
-    remain = nanoseconds % NANO2MICRO_BASE;
-    /* round up */
-    if (remain >= HALF_NANO2MICRO_BASE)
-        microseconds += 1;
-
-    return microseconds;
-}
-
-/*
- * @Description: Convert NumericVar second value to NumericSec value. Keep 8 digits after the decimal point.
- * @return: void.
- */
-void sec_to_numericsec(NumericVar *from, NumericSec *to)
-{
-    if (!from->ndigits) {
-        /* from == 0 */
-        to->int_val = 0;
-        to->frac_val = 0;
-        return;
-    }
-    int int_part = from->weight + 1;
-    int frac_part = from->ndigits - int_part;
-    if (int_part > 2) {
-        to->int_val = NBASE * NBASE;
-        to->frac_val = 0;
-        return;
-    }
-    if (int_part == 2) {
-        to->int_val = from->digits[0] * NBASE + (from->ndigits > 1 ? from->digits[1] : 0);
-    } else if (int_part == 1) {
-        to->int_val = from->digits[0];
-    } else {
-        to->int_val = 0;
-    }
-
-    if (frac_part >= 2) {
-        to->frac_val = from->digits[int_part] * NBASE + from->digits[int_part + 1];
-    } else if (frac_part == 1) {
-        to->frac_val = from->digits[int_part] * NBASE;
-    } else {
-        to->frac_val = 0;
-    }
-
-    if (from->sign) {
-        to->int_val = -to->int_val;
+    if (time < -B_FORMAT_TIME_MAX_VALUE || time > B_FORMAT_TIME_MAX_VALUE) {
+        ereport(ERROR, (errcode(ERRCODE_DATETIME_FIELD_OVERFLOW), 
+                        errmsg("time field value out of range")));
     }
 }
 
@@ -3396,28 +3355,43 @@ Datum maketime(PG_FUNCTION_ARGS)
     int64 hour = PG_GETARG_INT64(0);
     int64 minute = PG_GETARG_INT64(1);
     NumericVar tmp;
-    NumericSec second;
+    lldiv_t seconds;
     init_var_from_num(PG_GETARG_NUMERIC(2), &tmp);
-    sec_to_numericsec(&tmp, &second);
+    if (!numeric_to_lldiv_t(&tmp, &seconds)) {
+        PG_RETURN_NULL();
+    }
 
     struct pg_tm tt;
     TimeADT time;
+    unsigned int hour_abs;
+    fsec_t fsec;
     bool overflow = 0;
     bool neg = 0;
 
-    if (minute < 0 || minute >= MINS_PER_HOUR || second.int_val < 0 || second.int_val >= SECS_PER_MINUTE)
+    if (minute < 0 || minute > TIME_MAX_MINUTE || seconds.quot < 0 || seconds.quot > TIME_MAX_SECOND || seconds.rem < 0)
         PG_RETURN_NULL();
 
     if (hour < 0)
         neg = 1;
-    if (-hour > UINT_MAX || hour > UINT_MAX)
+
+    hour_abs = (uint)((hour < 0 ? -hour : hour));
+
+    if (-hour > UINT_MAX || hour > UINT_MAX || hour_abs > TIME_MAX_HOUR)
         overflow = 1;
 
     if (!overflow) {
-        tt.tm_hour = (uint)((hour < 0 ? -hour : hour));
-        tt.tm_min = (uint)minute;
-        tt.tm_sec = (uint)second.int_val;
-        fsec_t fsec = nano2microsecond(second.frac_val * 10);
+        tt.tm_hour = (int)hour_abs;
+        tt.tm_min = (int)minute;
+        tt.tm_sec = (int)seconds.quot;
+        fsec = static_cast<int32>(seconds.rem / NANO2MICRO_BASE);
+        uint nanoseconds = seconds.rem % NANO2MICRO_BASE;
+        if (nanoseconds >= HALF_NANO2MICRO_BASE) {
+            fsec += 1;
+        }
+#ifndef HAVE_INT64_TIMESTAMP
+        fsec /= USECS_PER_SEC;
+#endif
+
         tm2time(&tt, fsec, &time);
         if (neg)
             time = -time;
@@ -3436,26 +3410,35 @@ Datum maketime(PG_FUNCTION_ARGS)
 Datum sec_to_time(PG_FUNCTION_ARGS)
 {
     NumericVar tmp;
-    NumericSec second;
+    lldiv_t seconds;
     init_var_from_num(PG_GETARG_NUMERIC(0), &tmp);
-    sec_to_numericsec(&tmp, &second);
+    numeric_to_lldiv_t(&tmp, &seconds);
+
     struct pg_tm tt;
     TimeADT time;
     bool neg = 0;
     bool overflow = 0;
-    if (second.int_val < 0) {
+    if (seconds.quot < 0) {
         neg = 1;
-        second.int_val = -second.int_val;
+        seconds.quot = -seconds.quot;
+        seconds.rem = -seconds.rem;
     }
 
-    if (second.int_val >= B_FORMAT_TIME_BOUND * 3600)
+    if (seconds.quot > TIME_MAX_VALUE_SECONDS)
         overflow = 1;
 
     if (!overflow) {
         tt.tm_hour = 0;
         tt.tm_min = 0;
-        tt.tm_sec = (uint) second.int_val; // keep only the integer part
-        fsec_t fsec = nano2microsecond(second.frac_val * 10);
+        tt.tm_sec = (int) seconds.quot; // keep only the integer part
+        fsec_t fsec = static_cast<int32>(seconds.rem / NANO2MICRO_BASE);
+        uint nanoseconds = seconds.rem % NANO2MICRO_BASE;
+        if (nanoseconds >= HALF_NANO2MICRO_BASE) {
+            fsec += 1;
+        }
+#ifndef HAVE_INT64_TIMESTAMP
+        fsec /= USECS_PER_SEC;
+#endif
         tm2time(&tt, fsec, &time);
         if (neg)
             time = -time;
@@ -3464,6 +3447,22 @@ Datum sec_to_time(PG_FUNCTION_ARGS)
     if (overflow || time < -B_FORMAT_TIME_MAX_VALUE || time > B_FORMAT_TIME_MAX_VALUE)
         time = neg ? -B_FORMAT_TIME_MAX_VALUE : B_FORMAT_TIME_MAX_VALUE;
     PG_RETURN_TIMEADT(time);
+}
+
+/* 
+ * The effect is the same as sec_to_time()
+ * This function is used to receive string parameters.
+ * Non pure numeric strings only retain the front numeric part.
+ * For example, '2000.1abcd' will be converted to '2000.1'
+ */
+Datum sec_to_time_str(PG_FUNCTION_ARGS)
+{
+    text *tmp = PG_GETARG_TEXT_PP(0);
+    char *str = text_to_cstring(tmp);
+    char *numeric_str = (char *)extract_numericstr(str);
+    Datum seconds =
+        DirectFunctionCall3(numeric_in, CStringGetDatum(numeric_str), ObjectIdGetDatum(0), Int32GetDatum(-1));
+    return DirectFunctionCall1(sec_to_time, seconds);
 }
 
 /*
@@ -3614,8 +3613,12 @@ void convert_to_time(Datum value, Oid valuetypid, TimeADT *time)
                 DirectFunctionCall3(time_in, value, ObjectIdGetDatum(InvalidOid), Int32GetDatum(-1)));
             break;
         }
+        case CLOBOID:
+        case NVARCHAR2OID:
+        case BPCHAROID:
+        case VARCHAROID:
         case TEXTOID: {
-            char *str = text_to_cstring(DatumGetTextPP(value));
+            char *str = TextDatumGetCString(value);
             *time = DatumGetTimeADT(
                 DirectFunctionCall3(time_in, CStringGetDatum(str), ObjectIdGetDatum(InvalidOid), Int32GetDatum(-1)));
             break;
@@ -3632,8 +3635,20 @@ void convert_to_time(Datum value, Oid valuetypid, TimeADT *time)
             *time = DatumGetTimeADT(value);
             break;
         }
+        case INT1OID:
+        case INT2OID:
         case INT4OID: {
             *time = DatumGetTimeADT(DirectFunctionCall1(int32_b_format_time, value));
+            break;
+        }
+        case INT8OID: {
+            int8 int_val = DatumGetInt64(value);
+            if (int_val > (int64)INT_MAX){
+                ereport(ERROR, (errcode(ERRCODE_INVALID_DATETIME_FORMAT),
+                                errmsg("invalid input syntax for type time: \"%d\"", int_val)));
+            } else {
+                *time = DatumGetTimeADT(DirectFunctionCall1(int32_b_format_time, value));
+            }
             break;
         }
         case NUMERICOID: {
@@ -3643,6 +3658,15 @@ void convert_to_time(Datum value, Oid valuetypid, TimeADT *time)
         case BOOLOID: {
             *time = DatumGetTimeADT(DirectFunctionCall1(int32_b_format_time, 
                                     DirectFunctionCall1(bool_int4, value)));
+            break;
+        }
+        case FLOAT4OID:
+            *time = DatumGetTimeADT(DirectFunctionCall1(numeric_b_format_time, 
+                                    DirectFunctionCall1(float4_numeric, value)));
+            break;
+        case FLOAT8OID: {
+            *time = DatumGetTimeADT(DirectFunctionCall1(numeric_b_format_time, 
+                                    DirectFunctionCall1(float8_numeric, value)));
             break;
         }
         case TIMETZOID: {
@@ -3658,8 +3682,33 @@ void convert_to_time(Datum value, Oid valuetypid, TimeADT *time)
                                     DirectFunctionCall1(abstime_timestamp, value)));
             break;
         }
+        case BITOID: {
+            if (SQL_MODE_STRICT()) {
+                ereport(ERROR, (errcode(ERRCODE_DATATYPE_MISMATCH),
+                                errmsg("unsupported input data type: %s", format_type_be(valuetypid))));
+            }
+            *time = 0;
+            break;
+        }
         default: {
-            ereport(ERROR, (errcode(ERRCODE_DATATYPE_MISMATCH), errmsg("unsupported input data type")));
+            if (valuetypid == get_typeoid(PG_CATALOG_NAMESPACE, "uint1") ||
+                valuetypid == get_typeoid(PG_CATALOG_NAMESPACE, "uint2") ||
+                valuetypid == get_typeoid(PG_CATALOG_NAMESPACE, "uint4") ||
+                valuetypid == get_typeoid(PG_CATALOG_NAMESPACE, "uint8")) {
+                uint64 uint_val = DatumGetUInt64(value);
+                if (uint_val > (uint64)INT_MAX) {
+                    ereport(ERROR, (errcode(ERRCODE_INVALID_DATETIME_FORMAT),
+                                    errmsg("time out of range: \"%lu\"", uint_val)));
+                } else {
+                    *time = DatumGetTimeADT(DirectFunctionCall1(int32_b_format_time, value));
+                }
+            } else if (valuetypid == get_typeoid(PG_CATALOG_NAMESPACE, "year")) {
+                *time = DatumGetTimeADT(DirectFunctionCall1(int32_b_format_time, 
+                                        DirectFunctionCall1(year_integer, value)));
+            } else {
+                ereport(ERROR, (errcode(ERRCODE_DATATYPE_MISMATCH), errmsg("unsupported input data type")));
+            }
+            break;
         }
     }
 }
@@ -3863,20 +3912,30 @@ void str_to_pg_tm(char *str, pg_tm &tt, fsec_t &fsec, int &timeSign)
  */
 Datum time_mysql(PG_FUNCTION_ARGS)
 {
-    text *expr = PG_GETARG_TEXT_PP(0);
-    char *str;
     TimeADT time;
-    struct pg_tm tt, *tm = &tt;
-    fsec_t fsec;
-    int timeSign = 1;
+    TimeADT result = 0;
+    Timestamp datetime;
+    Oid val_type;
 
-    str = text_to_cstring(expr);
+    val_type = get_fn_expr_argtype(fcinfo->flinfo, 0);
+    val_type = convert_to_datetime_time(PG_GETARG_DATUM(0), val_type, &datetime, &time);
 
-    str_to_pg_tm(str, tt, fsec, timeSign);
-    tm2time(tm, fsec, &time);
-    AdjustTimeForTypmod(&time, -1);
-    time *= timeSign;
-    PG_RETURN_TIMEADT(time);
+    switch (val_type) {
+        case TIMEOID: {
+            result = time;
+            break;
+        }
+        case TIMESTAMPOID:
+        case DATEOID: {
+            result = DatumGetTimeADT(DirectFunctionCall1(timestamp_time, TimeADTGetDatum(datetime)));
+            break;
+        }
+        default: {
+            ereport(ERROR, (errcode(ERRCODE_DATATYPE_MISMATCH),
+                            errmsg("unsupported input data type: %s", format_type_be(val_type))));
+        }
+    }
+    PG_RETURN_TIMEADT(result);
 }
 
 /**
@@ -3981,7 +4040,7 @@ Datum time_bool(PG_FUNCTION_ARGS)
 TimeADT time_in_with_flag(char *str, unsigned int date_flag)
 {
     TimeADT result;
-    fsec_t fsec;
+    fsec_t fsec = 0;
     struct pg_tm tt, *tm = &tt;
     int tz;
     int nf;
@@ -3992,6 +4051,8 @@ TimeADT time_in_with_flag(char *str, unsigned int date_flag)
     int ftype[MAXDATEFIELDS];
     int timeSign = 1;
     int D = 0;
+    errno_t rc = memset_s(&tt, sizeof(tt), 0, sizeof(tt));
+    securec_check(rc, "\0", "\0");
     /* check if empty */
     if (strlen(str) == 0) {
         PG_RETURN_TIMEADT(0);
@@ -4034,14 +4095,15 @@ TimeADT time_in_with_flag(char *str, unsigned int date_flag)
 Datum time_to_sec(PG_FUNCTION_ARGS)
 {
     TimeADT time;
-    text *raw_text = PG_GETARG_TEXT_PP(0);
+    char *time_str = text_to_cstring(PG_GETARG_TEXT_PP(0));
     struct pg_tm result_tt, *result_tm = &result_tt;
     fsec_t fsec;
     int32 result;
     int32 timeSign = 1;
 
-    char *time_str = text_to_cstring(raw_text);
-    time = time_in_with_flag(time_str, (ENABLE_ZERO_DAY | ENABLE_ZERO_MONTH));
+    if (!time_in_with_sql_mode(time_str, &time, (ENABLE_ZERO_DAY | ENABLE_ZERO_MONTH))) {
+        PG_RETURN_NULL();
+    }
     if (time < 0) {
         timeSign = -1;
         time = -time;
@@ -4054,20 +4116,20 @@ Datum time_to_sec(PG_FUNCTION_ARGS)
 
 Datum datediff(PG_FUNCTION_ARGS)
 {
-    text* expr1 = PG_GETARG_TEXT_PP(0);
-    text* expr2 = PG_GETARG_TEXT_PP(1);
-    char *str1 = text_to_cstring(expr1);
-    char *str2 = text_to_cstring(expr2);
+    char *str1 = text_to_cstring(PG_GETARG_TEXT_PP(0));
+    char *str2 = text_to_cstring(PG_GETARG_TEXT_PP(1));
 
-    Timestamp datetime1, datetime2;
+    struct pg_tm tt1, *tm1 = &tt1;
+    struct pg_tm tt2, *tm2 = &tt2;
+    fsec_t fsec1, fsec2;
     DateADT dt1, dt2;
 
-    if (!datetime_in_no_ereport(str1, &datetime1) || !datetime_in_no_ereport(str2, &datetime2) || 
-        !datetime_in_range(datetime1) || !datetime_in_range(datetime2)) {
+    if (!datetime_in_with_sql_mode(str1, tm1, &fsec1, NORMAL_DATE) || 
+        !datetime_in_with_sql_mode(str2, tm2, &fsec2, NORMAL_DATE)) {
         PG_RETURN_NULL();
     }
-    dt1 = DatumGetDateADT(timestamp2date(datetime1));
-    dt2 = DatumGetDateADT(timestamp2date(datetime2));
+    dt1 = date2j(tm1->tm_year, tm1->tm_mon, tm1->tm_mday);
+    dt2 = date2j(tm2->tm_year, tm2->tm_mon, tm2->tm_mday);
     PG_RETURN_INT32(dt1 - dt2);
 }
 
@@ -4089,18 +4151,25 @@ static inline void from_days_internal(int64 days, Datum *result)
 
 Datum from_days_text(PG_FUNCTION_ARGS)
 {
+    int errlevel = (SQL_MODE_STRICT() ? ERROR : WARNING);
     text* expr = PG_GETARG_TEXT_PP(0);
     const char *str = text_to_cstring(expr);
     char* endptr = NULL;
     errno = 0;
     int64 days;
     Datum result;
+    const char *str_end = str + strlen(str);
     double tmp = strtod(str, &endptr);
     if (endptr == str || errno == ERANGE) {
         /* Supposing that we get a "0". LONG_LONG_MAX or LONG_LONG_MIN has the same result —— '0000-00-00'. */
         days = 0;
     } else {
         days = llround(tmp);
+    }
+
+    if (endptr != str_end) {
+        ereport(errlevel,
+            (errcode(DTERR_BAD_FORMAT), errmsg("Truncated incorrect INTEGER value: \"%s\"", str)));
     }
     from_days_internal(days, &result);
     PG_RETURN_DATUM(result);
@@ -4111,17 +4180,8 @@ Datum from_days_numeric(PG_FUNCTION_ARGS)
     Numeric num = PG_GETARG_NUMERIC(0);
     Datum result;
     int64 days;
-    PG_TRY();
-    {
-        days = (int64)DirectFunctionCall1(numeric_int8, NumericGetDatum(num));
-    }
-    PG_CATCH();
-    {
-        // If catch an error, just empty the error stack and set days to LONG_LONG_MAX
-        FlushErrorState();
-        days = LONG_LONG_MAX;   // supposing overflow
-    }
-    PG_END_TRY();
+    /* Days will be set to boundary value of INT64 if !SQL_MODE_STRICT(). */
+    days = (int64)DirectFunctionCall1(numeric_int8, NumericGetDatum(num));
     from_days_internal(days, &result);
     PG_RETURN_DATUM(result);
 }
@@ -4143,28 +4203,36 @@ bool date_add_interval(DateADT date, Interval *span, DateADT *result)
 */
 Datum adddate_datetime_days_text(PG_FUNCTION_ARGS)
 {
+    int errlevel = (SQL_MODE_STRICT() ? ERROR : WARNING);
     text* tmp = PG_GETARG_TEXT_PP(0);
     int64 days = PG_GETARG_INT64(1);
     char *expr;
+    struct pg_tm tt, *tm = &tt;
+    fsec_t fsec;
 
     expr = text_to_cstring(tmp);
     if (is_date_format(expr)) {
         DateADT date, result;
-        date = DatumGetDateADT(DirectFunctionCall1(date_in, CStringGetDatum(expr)));
+        if (!datetime_in_with_sql_mode(expr, tm, &fsec, NORMAL_DATE)) {
+            PG_RETURN_NULL();
+        }
+        date = date2j(tm->tm_year, tm->tm_mon, tm->tm_mday) - POSTGRES_EPOCH_JDATE;
         if (date_sub_days(date, -days, &result)) {
             /* The variable datetime or result does not exceed the specified range*/
             return DirectFunctionCall1(date_text, result);
         }
     } else {
         Timestamp datetime, result;
-        datetime = DatumGetTimestamp(
-            DirectFunctionCall3(timestamp_in, CStringGetDatum(expr), ObjectIdGetDatum(InvalidOid), Int32GetDatum(-1)));
+        if (!datetime_in_with_sql_mode(expr, tm, &fsec, NORMAL_DATE)) {
+            PG_RETURN_NULL();
+        }
+        tm2timestamp(tm, fsec, NULL, &datetime);
         if (datetime_sub_days(datetime, -days, &result)) {
             /* The variable datetime or result does not exceed the specified range*/
             return DirectFunctionCall1(datetime_text, result);
         }
     }
-    ereport(ERROR,
+    ereport(errlevel,
         (errcode(ERRCODE_DATETIME_FIELD_OVERFLOW),
             errmsg("date/time field value out of range")));
     PG_RETURN_NULL();
@@ -4175,25 +4243,33 @@ Datum adddate_datetime_days_text(PG_FUNCTION_ARGS)
 */
 Datum adddate_datetime_interval_text(PG_FUNCTION_ARGS)
 {
+    int errlevel = (SQL_MODE_STRICT() ? ERROR : WARNING);
     text* tmp = PG_GETARG_TEXT_PP(0);
     Interval *span = PG_GETARG_INTERVAL_P(1);
     char *expr;
+    struct pg_tm tt, *tm = &tt;
+    fsec_t fsec;
 
     expr = text_to_cstring(tmp);
     if (is_date_format(expr) && span->time == 0) {
         DateADT date, result;
-        date = DatumGetDateADT(DirectFunctionCall1(date_in, CStringGetDatum(expr)));
+        if (!datetime_in_with_sql_mode(expr, tm, &fsec, NORMAL_DATE)) {
+            PG_RETURN_NULL();
+        }
+        date = date2j(tm->tm_year, tm->tm_mon, tm->tm_mday) - POSTGRES_EPOCH_JDATE;
         if (date_add_interval(date, span, &result))
             return DirectFunctionCall1(date_text, result);
     } else {
         Timestamp datetime, result;
-        datetime = DatumGetTimestamp(
-            DirectFunctionCall3(timestamp_in, CStringGetDatum(expr), ObjectIdGetDatum(InvalidOid), Int32GetDatum(-1)));
+        if (!datetime_in_with_sql_mode(expr, tm, &fsec, NORMAL_DATE)) {
+            PG_RETURN_NULL();
+        }
+        tm2timestamp(tm, fsec, NULL, &datetime);
         if (datetime_add_interval(datetime, span, &result))
             /* The variable datetime or result does not exceed the specified range*/
             return DirectFunctionCall1(datetime_text, result);
     }
-    ereport(ERROR,
+    ereport(errlevel,
             (errcode(ERRCODE_DATETIME_FIELD_OVERFLOW),
                 errmsg("date/time field value out of range")));
     PG_RETURN_NULL();
@@ -4204,6 +4280,7 @@ Datum adddate_datetime_interval_text(PG_FUNCTION_ARGS)
 */
 Datum adddate_time_days(PG_FUNCTION_ARGS)
 {
+    int errlevel = (SQL_MODE_STRICT() ? ERROR : WARNING);
     TimeADT time = PG_GETARG_TIMEADT(0);
     int64 days = PG_GETARG_INT64(1);
     TimeADT time2;
@@ -4217,7 +4294,7 @@ Datum adddate_time_days(PG_FUNCTION_ARGS)
     if (time >= -B_FORMAT_TIME_MAX_VALUE && time <= B_FORMAT_TIME_MAX_VALUE) {
         PG_RETURN_TIMEADT(time);
     }
-    ereport(ERROR,
+    ereport(errlevel,
             (errcode(ERRCODE_DATETIME_FIELD_OVERFLOW),
              errmsg("time field value out of range")));
     PG_RETURN_NULL();
@@ -4228,11 +4305,12 @@ Datum adddate_time_days(PG_FUNCTION_ARGS)
 */
 Datum adddate_time_interval(PG_FUNCTION_ARGS)
 {
+    int errlevel = (SQL_MODE_STRICT() ? ERROR : WARNING);
     TimeADT time = PG_GETARG_TIMEADT(0);
     Interval *span = PG_GETARG_INTERVAL_P(1);
     TimeADT time2 = span->time;
     if (span->month != 0) {
-        ereport(ERROR,
+        ereport(errlevel,
                 (errcode(ERRCODE_DATETIME_FIELD_OVERFLOW),
                  errmsg("time field value out of range")));
         PG_RETURN_NULL();
@@ -4246,7 +4324,7 @@ Datum adddate_time_interval(PG_FUNCTION_ARGS)
     if (time >= -B_FORMAT_TIME_MAX_VALUE && time <= B_FORMAT_TIME_MAX_VALUE) {
         PG_RETURN_TIMEADT(time);
     }
-    ereport(ERROR,
+    ereport(errlevel,
             (errcode(ERRCODE_DATETIME_FIELD_OVERFLOW),
              errmsg("time field value out of range")));
     PG_RETURN_NULL();

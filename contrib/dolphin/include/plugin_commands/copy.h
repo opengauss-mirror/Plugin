@@ -360,6 +360,12 @@ typedef struct CopyStateData {
     LedgerHashState hashstate;
     bool is_load_copy;
     bool is_useeof;
+#ifdef DOLPHIN
+    bool is_ignore;
+    bool is_replace;
+    char* linePrefix;
+    bool is_compatible;
+#endif
 } CopyStateData;
 
 typedef struct InsertCopyLogInfoData {
@@ -452,6 +458,102 @@ extern void HeapAddToBulkInsertSelect(CopyFromBulk bulk, Tuple tup, bool needCop
 extern void UHeapAddToBulk(CopyFromBulk bulk, Tuple tup, bool needCopy);
 
 extern void HeapAddToBulk(CopyFromBulk bulk, Tuple tup, bool needCopy);
+
+#ifdef DOLPHIN
+// from trigger.cpp to make u_sess->tri_cxt.afterTriggers->query_depth visible in copy.cpp
+typedef struct ReplaceData {
+    Relation targetRel;
+    int2 bucketid;
+    int uniqueCount;
+    bool has_before_statement_delete_trigger;
+    Partition partition;
+} ReplaceData;
+
+typedef struct AfterTriggerEventChunk {
+    struct AfterTriggerEventChunk* next; /* list link */
+    char* freeptr;                       /* start of free space in chunk */
+    char* endfree;                       /* end of free space in chunk */
+    char* endptr;                        /* end of chunk */
+                                         /* event data follows here */
+} AfterTriggerEventChunk;
+
+typedef struct AfterTriggerEventList {
+    AfterTriggerEventChunk* head;
+    AfterTriggerEventChunk* tail;
+    char* tailfree; /* freeptr of tail chunk */
+} AfterTriggerEventList;
+
+typedef struct SetConstraintTriggerData {
+    Oid sct_tgoid;
+    bool sct_tgisdeferred;
+} SetConstraintTriggerData;
+
+typedef struct SetConstraintStateData {
+    bool all_isset;
+    bool all_isdeferred;
+    int numstates;                          /* number of trigstates[] entries in use */
+    int numalloc;                           /* allocated size of trigstates[] */
+    SetConstraintTriggerData trigstates[1]; /* VARIABLE LENGTH ARRAY */
+} SetConstraintStateData;
+typedef SetConstraintStateData* SetConstraintState;
+
+typedef int32 TsOffset;
+
+/*
+ * ARTupInfo: Wrapper around tuplestore. The only reason we have this wrapper
+ * is because we need to keep track of the position of tuplestore readptr which
+ * is not directly accessible by the tuplestore interface. Hence the field
+ * ti_curpos.
+ */
+typedef struct {
+    Tuplestorestate* tupstate;
+
+    /*
+     * ti_curpos: first position is 0. ti_curpos either points to a valid record,
+     * or one position more than the last record when the tuplestore is at eof.
+     * So if there are 3 tuples, and currently tuplestore is at eof, its value
+     * will be 4. If tuplestore is empty, it's value will be 0. If the tupstate
+     * is not allocated, its value is -1.
+     */
+    TsOffset ti_curpos;
+} ARTupInfo;
+
+const int ARTUP_NUM = 2;
+
+typedef struct {
+    /*
+     * rs_tupinfo[0] contains the trigtuple in case of INSERT/DELETE,
+     * rs_tupinfo[1] contains the new tuple for UPDATE.
+     */
+    ARTupInfo rs_tupinfo[ARTUP_NUM];
+
+    /* If one or more rows belong to a deferred trigger, this is set to true. */
+    bool rs_has_deferred;
+} ARRowStore;
+
+typedef struct AfterTriggersData {
+    CommandId firing_counter;           /* next firing ID to assign */
+    SetConstraintState state;           /* the active S C state */
+    AfterTriggerEventList events;       /* deferred-event list */
+    int query_depth;                    /* current query list index */
+    AfterTriggerEventList* query_stack; /* events pending from each query */
+    int maxquerydepth;                  /* allocated len of above array */
+    MemoryContext event_cxt;            /* memory context for events, if any */
+
+    MemoryContext xc_rs_cxt;   /* memory context to store OLD and NEW rows */
+    ARRowStore** xc_rowstores; /* Array of per-query row triggers. */
+    int xc_max_rowstores;      /* Allocated length of above array */
+
+    /* these fields are just for resetting at subtrans abort: */
+    SetConstraintState* state_stack;     /* stacked S C states */
+    AfterTriggerEventList* events_stack; /* stacked list pointers */
+    int* depth_stack;                    /* stacked query_depths */
+    CommandId* firing_stack;             /* stacked firing_counters */
+    int maxtransdepth;                   /* allocated len of above arrays */
+} AfterTriggersData;
+#endif
+
+
 #endif /* COPY_H */
 
 extern void CopyFromInsertBatch(Relation rel, EState* estate, CommandId mycid, int hi_options,

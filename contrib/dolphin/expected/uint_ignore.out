@@ -64,7 +64,7 @@ insert ignore into t1 values(0::uint4);
 insert ignore into t1 values((-1)::uint4);
 insert ignore into t1 values(4294967295::uint4);
 insert ignore into t1 values(4294967296::uint4);
-WARNING:  unsigned int out of range
+WARNING:   int unsigned out of range
 CONTEXT:  referenced column: a
 insert ignore into t1 values(1::uint2);
 insert ignore into t1 values(0::uint2);
@@ -144,22 +144,22 @@ insert ignore into t1 values((-1)::bool);
 insert ignore into t1 values(1.0::float4);
 insert ignore into t1 values(0.0::float4);
 insert ignore into t1 values((-1.0)::float4);
-WARNING:  integer unsigned out of range
+WARNING:  int unsigned out of range
 CONTEXT:  referenced column: a
 insert ignore into t1 values(4294967295::float4);
-WARNING:  integer unsigned out of range
+WARNING:  int unsigned out of range
 CONTEXT:  referenced column: a
 insert ignore into t1 values(4294967296::float4);
-WARNING:  integer unsigned out of range
+WARNING:  int unsigned out of range
 CONTEXT:  referenced column: a
 insert ignore into t1 values(1.0::float8);
 insert ignore into t1 values(0.0::float8);
 insert ignore into t1 values((-1.0)::float8);
-WARNING:  integer unsigned out of range
+WARNING:  int unsigned out of range
 CONTEXT:  referenced column: a
 insert ignore into t1 values(4294967295::float8);
 insert ignore into t1 values(4294967296::float8);
-WARNING:  integer unsigned out of range
+WARNING:  int unsigned out of range
 CONTEXT:  referenced column: a
 insert ignore into t1 values(1::numeric);
 insert ignore into t1 values(0::numeric);
@@ -391,7 +391,7 @@ insert ignore into t1 values(4294967295::uint4);
 WARNING:  smallint unsigned out of range
 CONTEXT:  referenced column: a
 insert ignore into t1 values(4294967296::uint4);
-WARNING:  unsigned int out of range
+WARNING:   int unsigned out of range
 CONTEXT:  referenced column: a
 insert ignore into t1 values(65535::uint4);
 insert ignore into t1 values(65536::uint4);
@@ -578,7 +578,7 @@ insert ignore into t1 values(4294967295::uint4);
 WARNING:  tinyint unsigned out of range
 CONTEXT:  referenced column: a
 insert ignore into t1 values(4294967296::uint4);
-WARNING:  unsigned int out of range
+WARNING:   int unsigned out of range
 CONTEXT:  referenced column: a
 WARNING:  tinyint unsigned out of range
 CONTEXT:  referenced column: a

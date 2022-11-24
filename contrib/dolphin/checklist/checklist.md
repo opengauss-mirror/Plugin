@@ -111,6 +111,7 @@
 |plugin_pl\plpgsql\src|pl_scanner.cpp   |src\common\pl\plpgsql\src\pl_scanner.cpp  |
 |plugin_pl\plpgsql\src|pl_handler.cpp   |src\common\pl\plpgsql\src\pl_handler.cpp  |
 |plugin_pl\plpgsql\src|pl_comp.cpp   |src\common\pl\plpgsql\src\pl_comp.cpp  |
+|plugin_catalog|heap.cpp   |src\common\backend\catalog\heap.cpp  |
 |llvmir|openGauss_expr_dolphin_aarch64.ir   |src\gausskernel\runtime\codegen\llvmir\GaussDB_expr_aarch64.ir   |
 |llvmir|openGauss_expr_dolphin_aarch64.ll   |src\gausskernel\runtime\codegen\llvmir\GaussDB_expr_aarch64.ll   |
 |llvmir|openGauss_expr_dolphin_x86_64.ir   |src\gausskernel\runtime\codegen\llvmir\GaussDB_expr.ir   |
@@ -160,6 +161,7 @@
 |plugin_utils|timestamp.h  |src\include\utils\timestamp.h   |
 |plugin_utils|plpgsql.h  |src\include\utils\plpgsql.h   |
 |plugin_vector|vecfunc.h  |src\include\vecexecutor\vecfunc.h   |
+|plugin_catalog|heap.h  |src\include\catalog\heap.h   |
 |./|builtin_funcs.ini  |src\common\backend\catalog\builtin_funcs.ini   |
 |./|fmgrtab.h  |src\include\utils\fmgrtab.h   |
 |./|int8.h  |src\include\utils\int8.h   |

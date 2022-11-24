@@ -67,6 +67,7 @@ extern bool date_sub_interval(DateADT date, Interval *span, DateADT *result);
 extern void convert_to_time(Datum value, Oid valuetypid, TimeADT *time);
 
 #ifdef DOLPHIN
+extern void check_b_format_time_range_with_ereport(TimeADT &time);
 extern TimeADT time_in_with_flag(char *str, unsigned int date_flag);
 extern bool time_in_with_sql_mode(char *str, TimeADT *result, unsigned int date_flag);
 extern bool date_add_interval(DateADT date, Interval *span, DateADT *result);
@@ -79,16 +80,5 @@ typedef struct DateTimeFormat
     const char *time_format;
 }DateTimeFormat;
 #endif
-
-/* ----------
- * Stores the seconds of type Numeric
- * ----------
- */
-typedef struct {
-    int32 int_val; /* Integer value  */
-    int32 frac_val; /* Fractional value  */
-} NumericSec;
-
-extern void sec_to_numericsec(NumericVar *from, NumericSec *to);
 
 #endif /* DATE_H */

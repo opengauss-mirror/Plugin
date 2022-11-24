@@ -219,9 +219,9 @@ select 4294967295::uint4 - null::uint8;
 (1 row)
 
 select 4294967295::uint4 - (-1)::int2;
-ERROR:  unsigned int out of range
+ERROR:   int unsigned out of range
 select 4294967295::uint4 - (-1)::int4;
-ERROR:  unsigned int out of range
+ERROR:   int unsigned out of range
 select 4294967295::uint4 - (-1)::int8;
   ?column?  
 ------------
@@ -233,19 +233,19 @@ ERROR:  bigint unsigned out of range
 select 4294967295::uint4 - 18446744073709551615::uint8;
 ERROR:  bigint unsigned out of range
 select 0::uint4 - 1::int1;
-ERROR:  unsigned int out of range
+ERROR:   int unsigned out of range
 select 0::uint4 - 1::int2;
-ERROR:  unsigned int out of range
+ERROR:   int unsigned out of range
 select 0::uint4 - 1::int4;
-ERROR:  unsigned int out of range
+ERROR:   int unsigned out of range
 select 0::uint4 - 1::int8;
 ERROR:  bigint unsigned out of range
 select 0::uint4 - 1::uint1;
-ERROR:  unsigned int out of range
+ERROR:   int unsigned out of range
 select 0::uint4 - 1::uint2;
-ERROR:  unsigned int out of range
+ERROR:   int unsigned out of range
 select 0::uint4 - 1::uint4;
-ERROR:  unsigned int out of range
+ERROR:   int unsigned out of range
 select 0::uint4 - 1::uint8;
 ERROR:  bigint unsigned out of range
 --uint2
@@ -360,11 +360,11 @@ select 65535::uint2 - (-1)::int8;
 (1 row)
 
 select 65535::uint2 - 2147483647::int4;
-ERROR:  unsigned int out of range
+ERROR:   int unsigned out of range
 select 65535::uint2 - 9223372036854775807::int8;
 ERROR:  bigint unsigned out of range
 select 65535::uint2 - 4294967295::uint4;
-ERROR:  unsigned int out of range
+ERROR:   int unsigned out of range
 select 65535::uint2 - 18446744073709551615::uint8;
 ERROR:  bigint unsigned out of range
 select 0::uint2 - 1::int1;
@@ -372,7 +372,7 @@ ERROR:  smallint unsigned out of range
 select 0::uint2 - 1::int2;
 ERROR:  smallint unsigned out of range
 select 0::uint2 - 1::int4;
-ERROR:  unsigned int out of range
+ERROR:   int unsigned out of range
 select 0::uint2 - 1::int8;
 ERROR:  bigint unsigned out of range
 select 0::uint2 - 1::uint1;
@@ -380,7 +380,7 @@ ERROR:  smallint unsigned out of range
 select 0::uint2 - 1::uint2;
 ERROR:  smallint unsigned out of range
 select 0::uint2 - 1::uint4;
-ERROR:  unsigned int out of range
+ERROR:   int unsigned out of range
 select 0::uint2 - 1::uint8;
 ERROR:  bigint unsigned out of range
 --uint1
@@ -501,13 +501,13 @@ select 255::uint1 - (-1)::int8;
 select 255::uint1 - 32767::int2;
 ERROR:  smallint unsigned out of range
 select 255::uint1 - 2147483647::int4;
-ERROR:  unsigned int out of range
+ERROR:   int unsigned out of range
 select 255::uint1 - 9223372036854775807::int8;
 ERROR:  bigint unsigned out of range
 select 255::uint1 - 65535::uint2;
 ERROR:  smallint unsigned out of range
 select 255::uint1 - 4294967295::uint4;
-ERROR:  unsigned int out of range
+ERROR:   int unsigned out of range
 select 255::uint1 - 18446744073709551615::uint8;
 ERROR:  bigint unsigned out of range
 select 0::uint1 - 1::int1;
@@ -515,7 +515,7 @@ ERROR:  tinyint unsigned out of range
 select 0::uint1 - 1::int2;
 ERROR:  smallint unsigned out of range
 select 0::uint1 - 1::int4;
-ERROR:  unsigned int out of range
+ERROR:   int unsigned out of range
 select 0::uint1 - 1::int8;
 ERROR:  bigint unsigned out of range
 select 0::uint1 - 1::uint1;
@@ -523,7 +523,7 @@ ERROR:  tinyint unsigned out of range
 select 0::uint1 - 1::uint2;
 ERROR:  smallint unsigned out of range
 select 0::uint1 - 1::uint4;
-ERROR:  unsigned int out of range
+ERROR:   int unsigned out of range
 select 0::uint1 - 1::uint8;
 ERROR:  bigint unsigned out of range
 --int8
@@ -635,15 +635,15 @@ select 2147483647::int4 - null::uint8;
 (1 row)
 
 select 2147483647::int4 - 4294967295::uint4;
-ERROR:  unsigned int out of range
+ERROR:   int unsigned out of range
 select 2147483647::int4 - 18446744073709551615::uint8;
 ERROR:  bigint unsigned out of range
 select 0::int4 - 1::uint1;
-ERROR:  unsigned int out of range
+ERROR:   int unsigned out of range
 select 0::int4 - 1::uint2;
-ERROR:  unsigned int out of range
+ERROR:   int unsigned out of range
 select 0::int4 - 1::uint4;
-ERROR:  unsigned int out of range
+ERROR:   int unsigned out of range
 select 0::int4 - 1::uint8;
 ERROR:  bigint unsigned out of range
 --int2
@@ -698,7 +698,7 @@ select 32767::int2 - null::uint8;
 select 32767::int2 - 65535::uint2;
 ERROR:  smallint unsigned out of range
 select 32767::int2 - 4294967295::uint4;
-ERROR:  unsigned int out of range
+ERROR:   int unsigned out of range
 select 32767::int2 - 18446744073709551615::uint8;
 ERROR:  bigint unsigned out of range
 select 0::int2 - 1::uint1;
@@ -706,7 +706,7 @@ ERROR:  smallint unsigned out of range
 select 0::int2 - 1::uint2;
 ERROR:  smallint unsigned out of range
 select 0::int2 - 1::uint4;
-ERROR:  unsigned int out of range
+ERROR:   int unsigned out of range
 select 0::int2 - 1::uint8;
 ERROR:  bigint unsigned out of range
 --int1
@@ -761,7 +761,7 @@ select 127::int1 - null::uint8;
 select 127::int1 - 65535::uint2;
 ERROR:  smallint unsigned out of range
 select 127::int1 - 4294967295::uint4;
-ERROR:  unsigned int out of range
+ERROR:   int unsigned out of range
 select 127::int1 - 18446744073709551615::uint8;
 ERROR:  bigint unsigned out of range
 select 0::int1 - 1::uint1;
@@ -769,7 +769,7 @@ ERROR:  tinyint unsigned out of range
 select 0::int1 - 1::uint2;
 ERROR:  smallint unsigned out of range
 select 0::int1 - 1::uint4;
-ERROR:  unsigned int out of range
+ERROR:   int unsigned out of range
 select 0::int1 - 1::uint8;
 ERROR:  bigint unsigned out of range
 \c postgres

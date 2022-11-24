@@ -1,0 +1,42 @@
+drop database if exists db_cast;
+NOTICE:  database "db_cast" does not exist, skipping
+create database db_cast dbcompatibility 'B';
+\c db_cast
+select cast('$2'::money as unsigned);
+ uint8 
+-------
+ 2
+(1 row)
+
+select cast(cast('$2'::money as unsigned) as money);
+ money 
+-------
+ $2.00
+(1 row)
+
+select current_timestamp;
+    current_timestamp     
+--------------------------
+--?.*
+(1 row)
+
+select cast('2022-11-10 18:03:20'::timestamp as unsigned);
+     uint8      
+----------------
+ 20221111020320
+(1 row)
+
+select cast(current_timestamp::timestamp as unsigned);
+ current_timestamp 
+-------------------
+--?.*
+(1 row)
+
+select cast(cast('2022-11-10 18:03:20'::timestamp as unsigned) as timestamp);
+         timestamptz          
+------------------------------
+ Fri Nov 11 02:03:20 2022 PST
+(1 row)
+
+\c postgres
+drop database if exists db_cast;

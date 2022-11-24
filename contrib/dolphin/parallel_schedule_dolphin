@@ -12,7 +12,7 @@ test: group_concat_test
 
 test: db_b_parser1 db_b_parser2 db_b_parser3 db_b_parser4 second_microsecond
 
-test: db_b_plpgsql_test default_guc describe
+test: db_b_plpgsql_test default_guc describe explain_desc
 
 test: empty_value_list empty_value_lists empty_value_support_value
 
@@ -49,7 +49,7 @@ test: option
 
 test: uint_agg uint_and uint_cast uint_cast2 uint_div uint_mi uint_mod uint_mod2 uint_mul uint_numeric uint_operator uint_or uint_partition uint_pl uint_xor 
 
-test: uint_procedure_col_bypass uint_smp uint_index uint_sql_mode uint_ignore uint_join signed_unsigned_cast uint_in implicit_cast
+test: uint_procedure_col_bypass uint_smp uint_index uint_sql_mode uint_ignore uint_join signed_unsigned_cast uint_in implicit_cast uint_auto_increment
 
 test: tinyint_agg tinyint_cast tinyint_index tinyint_operator tinyint_partition tinyint_smp_join_procedure
 
@@ -96,7 +96,7 @@ test: case_sensitive_test/create_table case_sensitive_test/create_table_like cas
 
 test: case_sensitive_test/single_node_foreign_key case_sensitive_test/create_index case_sensitive_test/insert case_sensitive_test/update case_sensitive_test/delete case_sensitive_test/vacuum case_sensitive_test/analyze_commands case_sensitive_test/single_node_triggers
 
-test: case_sensitive_test/alter_table case_sensitive_test/reindex_internal case_sensitive_test/spi_test case_sensitive_test/quoted
+test: case_sensitive_test/alter_table case_sensitive_test/reindex_internal case_sensitive_test/spi_test case_sensitive_test/quoted case_sensitive_test/case_sensitive_bug_test
 
 test: case_sensitive_test/drop
 
@@ -105,7 +105,7 @@ test: case_sensitive_test/clean_env
 test: case_sensitive_test/role_test
 # case sensitive test end
 
-test: test_mysql_prepare db_b_rename_user_test export_set
+test: test_mysql_prepare db_b_rename_user_test export_set if_not_exists_test
 
 test: test_mysql_operator test_op_xor_unsignedint test_op_blob test_op_xor_boolandfloat
 
@@ -120,8 +120,16 @@ test: json_array_insert json_insert json_merge_patch json_merge_preserve json_re
 
 test: flush
 
-test: oct from_base64 string_func_test/test_substring_index string_func_test/db_b_ord_test
+test: oct string_func_test/db_b_from_base64_test string_func_test/test_substring_index string_func_test/db_b_ord_test
 
 test: db_b_date_time_functions4
 
-test: like_default_test
+test: load
+
+test: like_default_test conv_cast_test read_only_guc_test
+
+test: string_func_test/db_b_to_base64_test string_func_test/db_b_unhex_test bit_count test_current_user
+
+test: builtin_funcs/cast
+
+test: default_function

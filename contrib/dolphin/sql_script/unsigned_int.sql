@@ -515,6 +515,7 @@ CREATE CAST (UINT1 AS INTERVAL) WITH FUNCTION NUMTODAY(UINT1) AS IMPLICIT;
 
 CREATE OPERATOR pg_catalog.=(
 leftarg = uint1, rightarg = uint1, procedure = uint1eq,
+commutator=operator(pg_catalog.=),
 restrict = eqsel, join = eqjoinsel,
 HASHES, MERGES
 );
@@ -803,6 +804,7 @@ COMMENT ON OPERATOR pg_catalog./(int1, uint1) IS 'int1_div_uint1';
 
 CREATE OPERATOR pg_catalog.=(
 leftarg = int1, rightarg = uint1, procedure = int1_uint1_eq,
+commutator=operator(pg_catalog.=),
 restrict = eqsel, join = eqjoinsel,
 HASHES, MERGES
 );
@@ -1219,6 +1221,7 @@ CREATE CAST (uint2 AS INTERVAL) WITH FUNCTION NUMTODAY(uint2) AS IMPLICIT;
 
 CREATE OPERATOR pg_catalog.=(
 leftarg = uint2, rightarg = uint2, procedure = uint2eq,
+commutator=operator(pg_catalog.=),
 restrict = eqsel, join = eqjoinsel,
 HASHES, MERGES
 );
@@ -1508,6 +1511,7 @@ COMMENT ON OPERATOR pg_catalog./(int2, uint2) IS 'int2_div_uint2';
 
 CREATE OPERATOR pg_catalog.=(
 leftarg = int2, rightarg = uint2, procedure = int2_uint2_eq,
+commutator=operator(pg_catalog.=),
 restrict = eqsel, join = eqjoinsel,
 HASHES, MERGES
 );
@@ -1859,6 +1863,7 @@ CREATE CAST (bool AS uint4) WITH FUNCTION bool_uint4(bool) AS IMPLICIT;
 
 CREATE OPERATOR pg_catalog.=(
 leftarg = uint4, rightarg = uint4, procedure = uint4eq,
+commutator=operator(pg_catalog.=),
 restrict = eqsel, join = eqjoinsel,
 HASHES, MERGES
 );
@@ -2149,6 +2154,7 @@ COMMENT ON OPERATOR pg_catalog.%(int4, uint4) IS 'int4_uint4_mod';
 
 CREATE OPERATOR pg_catalog.=(
 leftarg = int4, rightarg = uint4, procedure = int4_uint4_eq,
+commutator=operator(pg_catalog.=),
 restrict = eqsel, join = eqjoinsel,
 HASHES, MERGES
 );
@@ -2505,6 +2511,7 @@ CREATE CAST (bool AS uint8) WITH FUNCTION bool_uint8(bool) AS IMPLICIT;
 
 CREATE OPERATOR pg_catalog.=(
 leftarg = uint8, rightarg = uint8, procedure = uint8eq,
+commutator=operator(pg_catalog.=),
 restrict = eqsel, join = eqjoinsel,
 HASHES, MERGES
 );
@@ -2796,6 +2803,7 @@ COMMENT ON OPERATOR pg_catalog.%(int8, uint8) IS 'int8_uint8_mod';
 
 CREATE OPERATOR pg_catalog.=(
 leftarg = int8, rightarg = uint8, procedure = int8_uint8_eq,
+commutator=operator(pg_catalog.=),
 restrict = eqsel, join = eqjoinsel,
 HASHES, MERGES
 );
@@ -4613,3 +4621,15 @@ leftarg = boolean, rightarg = uint8, procedure = bool_xor_uint8,
 commutator=operator(pg_catalog.^)
 );
 COMMENT ON OPERATOR pg_catalog.^(boolean, uint8) IS 'bool_xor_uint8';
+
+DROP FUNCTION IF EXISTS timestamp_uint8(timestamp) CASCADE;
+CREATE OR REPLACE FUNCTION timestamp_uint8(timestamp)
+RETURNS uint8 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'timestamp_uint8';
+drop CAST IF EXISTS (timestamp AS uint8) CASCADE;
+CREATE CAST (timestamp AS uint8) WITH FUNCTION timestamp_uint8(timestamp);
+
+DROP FUNCTION IF EXISTS cash_uint(money) CASCADE;
+CREATE OR REPLACE FUNCTION cash_uint(money)
+RETURNS uint8 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'cash_uint';
+drop CAST IF EXISTS (money AS uint8) CASCADE;
+CREATE CAST (money AS uint8) WITH FUNCTION cash_uint(money) AS ASSIGNMENT;

@@ -129,6 +129,7 @@ static uint32 dolphin_index;
 extern void set_hypopg_prehook(ProcessUtility_hook_type func);
 extern void set_pgaudit_prehook(ProcessUtility_hook_type func);
 extern bool check_plugin_function(Oid funcId);
+extern PGFunction SearchFuncByOid(Oid funcId);
 static bool protocol_inited;
 
 extern "C" DLL_PUBLIC void _PG_init(void);
@@ -154,6 +155,7 @@ void init_plugin_object()
     u_sess->hook_cxt.computeHashHook  = (void*)compute_hash_default;
     u_sess->hook_cxt.aggSmpHook = (void*)check_plugin_function;
     u_sess->hook_cxt.standardProcessUtilityHook = (void*)standard_ProcessUtility;
+    u_sess->hook_cxt.searchFuncHook = (void*)SearchFuncByOid;
     set_default_guc();
 
     if (u_sess->proc_cxt.MyProcPort && u_sess->proc_cxt.MyProcPort->database_name) {
@@ -428,6 +430,216 @@ void init_session_vars(void)
                                check_lc_time_names,
                                NULL,
                                NULL);
+    DefineCustomStringVariable("version_comment",
+                               gettext_noop("Comment of the server and the type of license the server has."),
+                               NULL,
+                               &GetSessionContext()->version_comment,
+                               "openGauss Server(MulanPSL-2.0)",
+                               PGC_INTERNAL,
+                               0,
+                               NULL,
+                               NULL,
+                               NULL);
+    DefineCustomIntVariable("auto_increment_increment",
+                            gettext_noop("Self-increasing step length of AUTO_INCREMENT columns."),
+                            NULL,
+                            &GetSessionContext()->auto_increment_increment,
+                            DEFAULT_AUTO_INCREMENT,
+                            MIN_AUTO_INCREMENT,
+                            MAX_AUTO_INCREMENT,
+                            PGC_INTERNAL,
+                            0,
+                            NULL,
+                            NULL,
+                            NULL);
+    DefineCustomStringVariable("character_set_client",
+                               gettext_noop("Client uses this character set."),
+                               NULL,
+                               &GetSessionContext()->character_set_client,
+                               "utf8",
+                               PGC_INTERNAL,
+                               0,
+                               NULL,
+                               NULL,
+                               NULL);
+    DefineCustomStringVariable("character_set_connection",
+                               gettext_noop("When there is no character set introducer, this character set is used."),
+                               NULL,
+                               &GetSessionContext()->character_set_connection,
+                               "utf8",
+                               PGC_INTERNAL,
+                               0,
+                               NULL,
+                               NULL,
+                               NULL);
+    DefineCustomStringVariable("character_set_results",
+                               gettext_noop("The server uses this character set "
+                               "to return the query results to the client"),
+                               NULL,
+                               &GetSessionContext()->character_set_results,
+                               "utf8",
+                               PGC_INTERNAL,
+                               0,
+                               NULL,
+                               NULL,
+                               NULL);
+    DefineCustomStringVariable("character_set_server",
+                               gettext_noop("Server uses this character set."),
+                               NULL,
+                               &GetSessionContext()->character_set_server,
+                               "latin1",
+                               PGC_INTERNAL,
+                               0,
+                               NULL,
+                               NULL,
+                               NULL);
+    DefineCustomStringVariable("collation_server",
+                               gettext_noop("Server uses this collation."),
+                               NULL,
+                               &GetSessionContext()->collation_server,
+                               "latin1_swedish_ci",
+                               PGC_INTERNAL,
+                               0,
+                               NULL,
+                               NULL,
+                               NULL);
+    DefineCustomStringVariable("collation_connection",
+                               gettext_noop("The connection character set uses this collation."),
+                               NULL,
+                               &GetSessionContext()->collation_connection,
+                               "",
+                               PGC_INTERNAL,
+                               0,
+                               NULL,
+                               NULL,
+                               NULL);
+    DefineCustomStringVariable("init_connect",
+                               gettext_noop("SQL statements executed when each connection is initialized."),
+                               NULL,
+                               &GetSessionContext()->init_connect,
+                               "",
+                               PGC_INTERNAL,
+                               0,
+                               NULL,
+                               NULL,
+                               NULL);
+    DefineCustomIntVariable("interactive_timeout",
+                            gettext_noop("After this number of seconds of inactivity, "
+                            "the server will close the interactive connection."),
+                            NULL,
+                            &GetSessionContext()->interactive_timeout,
+                            DEFAULT_INTERACTIVE_TIMEOUT,
+                            MIN_INTERACTIVE_TIMEOUT,
+                            MAX_INTERACTIVE_TIMEOUT,
+                            PGC_INTERNAL,
+                            0,
+                            NULL,
+                            NULL,
+                            NULL);
+    DefineCustomStringVariable("license",
+                               gettext_noop("The server uses this license."),
+                               NULL,
+                               &GetSessionContext()->license,
+                               "MulanPSL-2.0",
+                               PGC_INTERNAL,
+                               0,
+                               NULL,
+                               NULL,
+                               NULL);
+    DefineCustomIntVariable("max_allowed_packet",
+                            gettext_noop("The upper limit of the size of a packet."),
+                            NULL,
+                            &GetSessionContext()->max_allowed_packet,
+                            DEFAULT_MAX_ALLOWED_PACKET,
+                            MIN_MAX_ALLOWED_PACKET,
+                            MAX_MAX_ALLOWED_PACKET,
+                            PGC_INTERNAL,
+                            0,
+                            NULL,
+                            NULL,
+                            NULL);
+    DefineCustomIntVariable("net_buffer_length",
+                            gettext_noop("The default size of the buffer."),
+                            NULL,
+                            &GetSessionContext()->net_buffer_length,
+                            DEFAULT_NET_BUFFER_LENGTH,
+                            MIN_NET_BUFFER_LENGTH,
+                            MAX_NET_BUFFER_LENGTH,
+                            PGC_INTERNAL,
+                            0,
+                            NULL,
+                            NULL,
+                            NULL);
+    DefineCustomIntVariable("net_write_timeout",
+                            gettext_noop("After this number of seconds of waiting, "
+                            "the server will abort the write."),
+                            NULL,
+                            &GetSessionContext()->net_write_timeout,
+                            DEFAULT_NET_WRITE_TIMEOUT,
+                            MIN_NET_WRITE_TIMEOUT,
+                            MAX_NET_WRITE_TIMEOUT,
+                            PGC_INTERNAL,
+                            0,
+                            NULL,
+                            NULL,
+                            NULL);
+    DefineCustomInt64Variable("query_cache_size",
+                            gettext_noop("When caching query results, this bytes of memory will be allocated."),
+                            NULL,
+                            &GetSessionContext()->query_cache_size,
+                            DEFAULT_QUREY_CACHE_SIZE,
+                            MIN_QUREY_CACHE_SIZE,
+                            MAX_QUREY_CACHE_SIZE,
+                            PGC_INTERNAL,
+                            0,
+                            NULL,
+                            NULL,
+                            NULL);
+    DefineCustomIntVariable("query_cache_type",
+                            gettext_noop("The type of query cache."),
+                            NULL,
+                            &GetSessionContext()->query_cache_type,
+                            QUERY_CACHE_OFF,
+                            QUERY_CACHE_OFF,
+                            QUERY_CACHE_DEMAND,
+                            PGC_INTERNAL,
+                            0,
+                            NULL,
+                            NULL,
+                            NULL);
+    DefineCustomStringVariable("system_time_zone",
+                               gettext_noop("The time zone set by server."),
+                               NULL,
+                               &GetSessionContext()->system_time_zone,
+                               "",
+                               PGC_INTERNAL,
+                               0,
+                               NULL,
+                               NULL,
+                               NULL);
+    DefineCustomStringVariable("time_zone",
+                               gettext_noop("The time zone set currently."),
+                               NULL,
+                               &GetSessionContext()->time_zone,
+                               "SYSTEM",
+                               PGC_INTERNAL,
+                               0,
+                               NULL,
+                               NULL,
+                               NULL);
+    DefineCustomIntVariable("wait_timeout",
+                            gettext_noop("After this number of seconds of inactivity, "
+                            "the server will close the noninteractive connection."),
+                            NULL,
+                            &GetSessionContext()->wait_timeout,
+                            DEFAULT_WAIT_TIMEOUT,
+                            MIN_WAIT_TIMEOUT,
+                            MAX_WAIT_TIMEOUT,
+                            PGC_INTERNAL,
+                            0,
+                            NULL,
+                            NULL,
+                            NULL);
 #endif
 
 }
@@ -468,4 +680,14 @@ void create_dolphin_extension()
     execute_sql_file();
     u_sess->attr.attr_common.enable_full_encryption = pre_enable_full_encryption;
     finish_xact_command();
+}
+
+PGFunction SearchFuncByOid(Oid funcId)
+{
+    FmgrInfo* fmgrInfo = NULL;
+    fmgrInfo = (FmgrInfo*)palloc0(sizeof(FmgrInfo));
+    fmgr_info(funcId, fmgrInfo);
+    PGFunction func = fmgrInfo->fn_addr;
+    pfree(fmgrInfo);
+    return func;
 }

@@ -5,1413 +5,724 @@ create database b_datetime_func_test dbcompatibility 'b';
 \c b_datetime_func_test
 set datestyle = 'ISO,ymd';
 set time zone "Asia/Shanghai";
+create table test(funcname text, result text);
 -- test get_format
-select get_format(DATE, 'EUR');
- get_format 
-------------
- %d.%m.%Y
-(1 row)
-
-select get_format(DATE, 'USA');
- get_format 
-------------
- %m.%d.%Y
-(1 row)
-
-select get_format(DATE, 'JIS');
- get_format 
-------------
- %Y-%m-%d
-(1 row)
-
-select get_format(DATE, 'ISO');
- get_format 
-------------
- %Y-%m-%d
-(1 row)
-
-select get_format(DATE, 'INTERNAL');
- get_format 
-------------
- %Y%m%d
-(1 row)
-
-select get_format(DATETIME, 'EUR');
-    get_format     
--------------------
- %Y-%m-%d %H.%i.%s
-(1 row)
-
-select get_format(DATETIME, 'USA');
-    get_format     
--------------------
- %Y-%m-%d %H.%i.%s
-(1 row)
-
-select get_format(DATETIME, 'JIS');
-    get_format     
--------------------
- %Y-%m-%d %H:%i:%s
-(1 row)
-
-select get_format(DATETIME, 'ISO');
-    get_format     
--------------------
- %Y-%m-%d %H:%i:%s
-(1 row)
-
-select get_format(DATETIME, 'INTERNAL');
-  get_format  
---------------
- %Y%m%d%H%i%s
-(1 row)
-
-select get_format(TIME, 'EUR');
- get_format 
-------------
- %H.%i.%s
-(1 row)
-
-select get_format(TIME, 'USA');
- get_format  
--------------
- %h:%i:%s %p
-(1 row)
-
-select get_format(TIME, 'JIS');
- get_format 
-------------
- %H:%i:%s
-(1 row)
-
-select get_format(TIME, 'ISO');
- get_format 
-------------
- %H:%i:%s
-(1 row)
-
-select get_format(TIME, 'INTERNAL');
- get_format 
-------------
- %H%i%s
-(1 row)
-
-select get_format(DATE, 'abc');
- get_format 
-------------
- 
-(1 row)
-
-select get_format(abc, 'EUR');
+-- 功能
+insert into test values('get_format(DATE, ''EUR'')', get_format(DATE, 'EUR'));
+insert into test values('get_format(DATE, ''USA'')', get_format(DATE, 'USA'));
+insert into test values('get_format(DATE, ''JIS'')', get_format(DATE, 'JIS'));
+insert into test values('get_format(DATE, ''ISO'')', get_format(DATE, 'ISO'));
+insert into test values('get_format(DATE, ''INTERNAL'')', get_format(DATE, 'INTERNAL'));
+insert into test values('get_format(DATETIME, ''EUR'')', get_format(DATETIME, 'EUR'));
+insert into test values('get_format(DATETIME, ''USA'')', get_format(DATETIME, 'USA'));
+insert into test values('get_format(DATETIME, ''JIS'')', get_format(DATETIME, 'JIS'));
+insert into test values('get_format(DATETIME, ''ISO'')', get_format(DATETIME, 'ISO'));
+insert into test values('get_format(DATETIME, ''INTERNAL'')', get_format(DATETIME, 'INTERNAL'));
+insert into test values('get_format(TIME, ''EUR'')', get_format(TIME, 'EUR'));
+insert into test values('get_format(TIME, ''USA'')', get_format(TIME, 'USA'));
+insert into test values('get_format(TIME, ''JIS'')', get_format(TIME, 'JIS'));
+insert into test values('get_format(TIME, ''ISO'')', get_format(TIME, 'ISO'));
+insert into test values('get_format(TIME, ''INTERNAL'')', get_format(TIME, 'INTERNAL'));
+-- 特异
+insert into test values('get_format(DATE, ''abc'')', get_format(DATE, 'abc'));
+insert into test values('get_format(DATE, null)', get_format(DATE, null));
+-- 错误情况
+insert into test values('get_format(abc, ''EUR'')', get_format(abc, 'EUR'));
 ERROR:  syntax error at or near "abc"
-LINE 1: select get_format(abc, 'EUR');
-                          ^
+LINE 1: ...est values('get_format(abc, ''EUR'')', get_format(abc, 'EUR'...
+                                                             ^
 -- test extract
 set b_compatibility_mode = true;
--- 严格模式
-set sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat';
--- 单unit
-select extract(YEAR FROM '2019-07-02');
- extract 
----------
-    2019
-(1 row)
-
-select extract(MONTH FROM '2019-07-02');
- extract 
----------
-       7
-(1 row)
-
-select extract(WEEK FROM '2019-07-02');
- extract 
----------
-      26
-(1 row)
-
-select extract(QUARTER FROM '2019-07-02');
- extract 
----------
-       3
-(1 row)
-
-select extract(DAY FROM '2019-07-02');
- extract 
----------
-       2
-(1 row)
-
-select extract(SECOND FROM '2019-07-02 12:12:12');
- extract 
----------
-      12
-(1 row)
-
-select extract(MINUTE FROM '2019-07-02 12:12:12');
- extract 
----------
-      12
-(1 row)
-
-select extract(HOUR FROM '2019-07-02 12:12:12');
- extract 
----------
-      12
-(1 row)
-
-select extract(MICROSECOND FROM '2019-07-02 12:12:12.12121');
- extract 
----------
-  121210
-(1 row)
-
-select extract(SECOND FROM '12:12:12');
- extract 
----------
-      12
-(1 row)
-
-select extract(MINUTE FROM '12:12:12');
- extract 
----------
-      12
-(1 row)
-
-select extract(HOUR FROM '12:12:12');
- extract 
----------
-      12
-(1 row)
-
-select extract(MICROSECOND FROM '12:12:12.12121');
- extract 
----------
-  121210
-(1 row)
-
-select extract(hour from '838:59:59');
- extract 
----------
-     838
-(1 row)
-
-select extract(hour from '-838:59:59');
- extract 
----------
-    -838
-(1 row)
-
--- 混合unit
-select extract(YEAR_MONTH FROM '2019-07-02');
- extract 
----------
-  201907
-(1 row)
-
-select extract(DAY_MINUTE FROM '2019-07-02 12:12:12');
- extract 
----------
-   21212
-(1 row)
-
-select extract(DAY_HOUR FROM '2019-07-02 12:12:12');
- extract 
----------
-     212
-(1 row)
-
-select extract(DAY_MINUTE FROM '2019-07-02 12:12:12');
- extract 
----------
-   21212
-(1 row)
-
-select extract(DAY_MICROSECOND FROM '2019-07-02 12:12:12.12121');
-    extract    
----------------
- 2121212121210
-(1 row)
-
-select extract(SECOND_MICROSECOND FROM '2019-07-02 12:12:12.12121');
- extract  
-----------
- 12121210
-(1 row)
-
-select extract(SECOND_MICROSECOND FROM '12:12:12.12121');
- extract  
-----------
- 12121210
-(1 row)
-
-select extract(MINUTE_MICROSECOND FROM '2019-07-02 12:12:12.12121');
-  extract   
-------------
- 1212121210
-(1 row)
-
-select extract(MINUTE_MICROSECOND FROM '12:12:12.12121');
-  extract   
-------------
- 1212121210
-(1 row)
-
-select extract(MINUTE_SECOND FROM '2019-07-02 12:12:12.12121');
- extract 
----------
-    1212
-(1 row)
-
-select extract(MINUTE_SECOND FROM '12:12:12.12121');
- extract 
----------
-    1212
-(1 row)
-
-select extract(HOUR_SECOND FROM '2019-07-02 12:12:12.12121');
- extract 
----------
-  121212
-(1 row)
-
-select extract(HOUR_SECOND FROM '12:12:12.12121');
- extract 
----------
-  121212
-(1 row)
-
-select extract(HOUR_MINUTE FROM '2019-07-02 12:12:12.12121');
- extract 
----------
-    1212
-(1 row)
-
-select extract(HOUR_MINUTE FROM '12:12:12.12121');
- extract 
----------
-    1212
-(1 row)
-
-select extract(HOUR_MICROSECOND FROM '2019-07-02 12:12:12.12121');
-   extract    
---------------
- 121212121210
-(1 row)
-
-select extract(HOUR_MICROSECOND FROM '12:12:12.12121');
-   extract    
---------------
- 121212121210
-(1 row)
-
--- 边界值，坏值
-select extract(aaa FROM '2019-07-02');
-ERROR:  units "aaa" not supported
-CONTEXT:  referenced column: extract
-select extract(DAY FROM '0000-00-00');
-ERROR:  Incorrect datetime value: "0000-00-00"
-CONTEXT:  referenced column: extract
-select extract(DAY FROM '2001-01-45');
-ERROR:  date/time field value out of range: "2001-01-45"
-HINT:  Perhaps you need a different "datestyle" setting.
-CONTEXT:  referenced column: extract
-select extract(YEAR FROM '9999-01-01');
- extract 
----------
-    9999
-(1 row)
-
-select extract(YEAR FROM '10000-01-01');
-ERROR:  Incorrect datetime value: "10000-01-01"
-CONTEXT:  referenced column: extract
-select extract(hour from '838:59:59.1');
-ERROR:  date/time field value out of range: "838:59:59.1"
-CONTEXT:  referenced column: extract
-select extract(hour from '839:00:00');
-ERROR:  date/time field value out of range: "839:00:00"
-CONTEXT:  referenced column: extract
-select extract(hour from '-838:59:59.1');
-ERROR:  date/time field value out of range: "-838:59:59.1"
-CONTEXT:  referenced column: extract
-select extract(hour from '-839:00:00');
-ERROR:  date/time field value out of range: "-839:00:00"
-CONTEXT:  referenced column: extract
-select extract(hour from '40 1:1:0');
-ERROR:  date/time field value out of range: "40 1:1:0"
-CONTEXT:  referenced column: extract
-select extract(hour from '-40 1:1:0');
-ERROR:  date/time field value out of range: "-40 1:1:0"
-CONTEXT:  referenced column: extract
--- 非严格模式
-set sql_mode = 'sql_mode_full_group,pipes_as_concat';
--- 单unit
-select extract(hour from '838:59:59');
- extract 
----------
-     838
-(1 row)
-
-select extract(hour from '-838:59:59');
- extract 
----------
-    -838
-(1 row)
-
--- 边界值，坏值
-select extract(aaa FROM '2019-07-02');
-ERROR:  units "aaa" not supported
-CONTEXT:  referenced column: extract
-select extract(DAY FROM '0000-00-00');
-WARNING:  Incorrect datetime value: "0000-00-00"
-CONTEXT:  referenced column: extract
- extract 
----------
-        
-(1 row)
-
-select extract(DAY FROM '2001-01-45');
-WARNING:  date/time field value out of range: "2001-01-45"
-CONTEXT:  referenced column: extract
- extract 
----------
-        
-(1 row)
-
-select extract(YEAR FROM '9999-01-01');
- extract 
----------
-    9999
-(1 row)
-
-select extract(YEAR FROM '10000-01-01');
+-- 严格模式或者非严格模式都有值
+-- 功能-单unit
+insert into test values('extract(YEAR FROM ''2019-07-02'')',extract(YEAR FROM '2019-07-02'));
+insert into test values('extract(MONTH FROM ''2019-07-02'')',extract(MONTH FROM '2019-07-02'));
+insert into test values('extract(WEEK FROM ''2019-07-02'')',extract(WEEK FROM '2019-07-02'));
+insert into test values('extract(QUARTER FROM ''2019-07-02'')',extract(QUARTER FROM '2019-07-02'));
+insert into test values('extract(DAY FROM ''2019-07-02'')',extract(DAY FROM '2019-07-02'));
+insert into test values('extract(SECOND FROM ''2019-07-02 12:12:12'')',extract(SECOND FROM '2019-07-02 12:12:12'));
+insert into test values('extract(MINUTE FROM ''2019-07-02 12:12:12'')',extract(MINUTE FROM '2019-07-02 12:12:12'));
+insert into test values('extract(HOUR FROM ''2019-07-02 12:12:12'')',extract(HOUR FROM '2019-07-02 12:12:12'));
+insert into test values('extract(MICROSECOND FROM ''2019-07-02 12:12:12.12121'')',extract(MICROSECOND FROM '2019-07-02 12:12:12.12121'));
+insert into test values('extract(SECOND FROM ''12:12:12'')',extract(SECOND FROM '12:12:12'));
+insert into test values('extract(MINUTE FROM ''12:12:12'')',extract(MINUTE FROM '12:12:12'));
+insert into test values('extract(HOUR FROM ''12:12:12'')',extract(HOUR FROM '12:12:12'));
+insert into test values('extract(MICROSECOND FROM ''12:12:12.12121'')',extract(MICROSECOND FROM '12:12:12.12121'));
+-- 功能-混合unit
+insert into test values('extract(YEAR_MONTH FROM ''2019-07-02'')',extract(YEAR_MONTH FROM '2019-07-02'));
+insert into test values('extract(DAY_HOUR FROM ''2019-07-02 12:12:12'')', extract(DAY_HOUR FROM '2019-07-02 12:12:12'));
+insert into test values('extract(DAY_MINUTE FROM ''2019-07-02 12:12:12'')', extract(DAY_MINUTE FROM '2019-07-02 12:12:12'));
+insert into test values('extract(DAY_MICROSECOND FROM ''2019-07-02 12:12:12.12121'')', extract(DAY_MICROSECOND FROM '2019-07-02 12:12:12.12121'));
+insert into test values('extract(SECOND_MICROSECOND FROM ''2019-07-02 12:12:12.12121'')', extract(SECOND_MICROSECOND FROM '2019-07-02 12:12:12.12121'));
+insert into test values('extract(SECOND_MICROSECOND FROM ''12:12:12.12121'')', extract(SECOND_MICROSECOND FROM '12:12:12.12121'));
+insert into test values('extract(MINUTE_MICROSECOND FROM ''2019-07-02 12:12:12.12121'')', extract(MINUTE_MICROSECOND FROM '2019-07-02 12:12:12.12121'));
+insert into test values('extract(MINUTE_MICROSECOND FROM ''12:12:12.12121'')', extract(MINUTE_MICROSECOND FROM '12:12:12.12121'));
+insert into test values('extract(MINUTE_SECOND FROM ''2019-07-02 12:12:12.12121'')', extract(MINUTE_SECOND FROM '2019-07-02 12:12:12.12121'));
+insert into test values('extract(MINUTE_SECOND FROM ''12:12:12.12121'')', extract(MINUTE_SECOND FROM '12:12:12.12121'));
+insert into test values('extract(HOUR_SECOND FROM ''2019-07-02 12:12:12.12121'')', extract(HOUR_SECOND FROM '2019-07-02 12:12:12.12121'));
+insert into test values('extract(HOUR_SECOND FROM ''12:12:12.12121'')', extract(HOUR_SECOND FROM '12:12:12.12121'));
+insert into test values('extract(HOUR_MINUTE FROM ''2019-07-02 12:12:12.12121'')', extract(HOUR_MINUTE FROM '2019-07-02 12:12:12.12121'));
+insert into test values('extract(HOUR_MINUTE FROM ''12:12:12.12121'')', extract(HOUR_MINUTE FROM '12:12:12.12121'));
+insert into test values('extract(HOUR_MICROSECOND FROM ''2019-07-02 12:12:12.12121'')', extract(HOUR_MICROSECOND FROM '2019-07-02 12:12:12.12121'));
+insert into test values('extract(HOUR_MICROSECOND FROM ''12:12:12.12121'')', extract(HOUR_MICROSECOND FROM '12:12:12.12121'));
+-- 边界
+insert into test values('extract(YEAR FROM ''9999-12-31'')', extract(YEAR FROM '9999-12-31'));
+insert into test values('extract(YEAR FROM ''0000-1-1'')', extract(YEAR FROM '0000-1-1'));
+insert into test values('extract(hour from ''838:59:59'')', extract(hour from '838:59:59'));
+insert into test values('extract(hour from ''-838:59:59'')', extract(hour from '-838:59:59'));
+-- 类型
+insert into test values('extract(hour from time''-838:59:59'')', extract(hour from time'-838:59:59'));
+insert into test values('extract(MONTH FROM date''2019-07-02'')', extract(MONTH FROM date'2019-07-02'));
+insert into test values('extract(YEAR from cast(''2019-07-02'' as datetime)', extract(YEAR from cast('2019-07-02' as datetime)));
+insert into test values('extract(hour from 8385959)', extract(hour from 8385959));
+insert into test values('extract(MONTH FROM 20190702)', extract(MONTH FROM 20190702));
+-- 特异
+insert into test values('extract(hour from null)', extract(hour from null));
+-- 非严格模式，参数不合法，报warning，返回NULL或者对应值
+set sql_mode = 'sql_mode_full_group,pipes_as_concat,ansi_quotes';
+insert into test values('extract(DAY FROM ''10000-01-01'')', extract(DAY FROM '10000-01-01'));
 WARNING:  Incorrect datetime value: "10000-01-01"
-CONTEXT:  referenced column: extract
- extract 
----------
-        
-(1 row)
-
-select extract(hour from '838:59:59.1');
+CONTEXT:  referenced column: result
+insert into test values('extract(hour from ''838:59:59.1'')', extract(hour from '838:59:59.1'));
 WARNING:  Truncated incorrect time value.
-CONTEXT:  referenced column: extract
- extract 
----------
-     838
-(1 row)
-
-select extract(hour from '839:00:00');
+CONTEXT:  referenced column: result
+insert into test values('extract(hour from ''839:00:00'')', extract(hour from '839:00:00'));
 WARNING:  Truncated incorrect time value.
-CONTEXT:  referenced column: extract
- extract 
----------
-     838
-(1 row)
-
-select extract(hour from '-838:59:59.1');
+CONTEXT:  referenced column: result
+insert into test values('extract(hour from ''-838:59:59.1'')', extract(hour from '-838:59:59.1'));
 WARNING:  Truncated incorrect time value.
-CONTEXT:  referenced column: extract
- extract 
----------
-    -838
-(1 row)
-
-select extract(hour from '-839:00:00');
+CONTEXT:  referenced column: result
+insert into test values('extract(hour from ''-839:00:00'')', extract(hour from '-839:00:00'));
 WARNING:  Truncated incorrect time value.
-CONTEXT:  referenced column: extract
- extract 
----------
-    -838
-(1 row)
-
-select extract(hour from '40 1:1:0');
+CONTEXT:  referenced column: result
+insert into test values('extract(hour from ''40 1:1:0'')', extract(hour from '40 1:1:0'));
 WARNING:  Truncated incorrect time value.
-CONTEXT:  referenced column: extract
- extract 
----------
-     838
-(1 row)
-
-select extract(hour from '-40 1:1:0');
+CONTEXT:  referenced column: result
+insert into test values('extract(hour from ''-40 1:1:0'')', extract(hour from '-40 1:1:0'));
 WARNING:  Truncated incorrect time value.
-CONTEXT:  referenced column: extract
- extract 
----------
-    -838
-(1 row)
-
--- extract 结束
+CONTEXT:  referenced column: result
+-- 严格模式，参数不合法，抛出错误
+set sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes';
+insert into test values('extract(DAY FROM ''10000-01-01'')', extract(DAY FROM '10000-01-01'));
+ERROR:  Incorrect datetime value: "10000-01-01"
+CONTEXT:  referenced column: result
+insert into test values('extract(hour from ''838:59:59.1'')', extract(hour from '838:59:59.1'));
+ERROR:  date/time field value out of range: "838:59:59.1"
+CONTEXT:  referenced column: result
+insert into test values('extract(hour from ''839:00:00'')', extract(hour from '839:00:00'));
+ERROR:  date/time field value out of range: "839:00:00"
+CONTEXT:  referenced column: result
+insert into test values('extract(hour from ''-838:59:59.1'')', extract(hour from '-838:59:59.1'));
+ERROR:  date/time field value out of range: "-838:59:59.1"
+CONTEXT:  referenced column: result
+insert into test values('extract(hour from ''-839:00:00'')', extract(hour from '-839:00:00'));
+ERROR:  date/time field value out of range: "-839:00:00"
+CONTEXT:  referenced column: result
+insert into test values('extract(hour from ''40 1:1:0'')', extract(hour from '40 1:1:0'));
+ERROR:  date/time field value out of range: "40 1:1:0"
+CONTEXT:  referenced column: result
+insert into test values('extract(hour from ''-40 1:1:0'')', extract(hour from '-40 1:1:0'));
+ERROR:  date/time field value out of range: "-40 1:1:0"
+CONTEXT:  referenced column: result
 set b_compatibility_mode = false;
 -- test date_format
--- 严格模式
-set sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat';
--- format的各种情况
-select date_format('2001-01-01 12:12:12','%a');
- date_format 
--------------
- Mon
-(1 row)
-
-select date_format('2001-01-01 12:12:12','%b');
- date_format 
--------------
- Jan
-(1 row)
-
-select date_format('2001-01-01 12:12:12','%c');
- date_format 
--------------
- 1
-(1 row)
-
-select date_format('2001-01-01 12:12:12','%D');
- date_format 
--------------
- 1st
-(1 row)
-
-select date_format('2001-01-01 12:12:12','%d');
- date_format 
--------------
- 01
-(1 row)
-
-select date_format('2001-01-01 12:12:12','%e');
- date_format 
--------------
- 1
-(1 row)
-
-select date_format('2001-01-01 12:12:12','%f');
- date_format 
--------------
- 000000
-(1 row)
-
-select date_format('2001-01-01 12:12:12','%H');
- date_format 
--------------
- 12
-(1 row)
-
-select date_format('2001-01-01 12:12:12','%h');
- date_format 
--------------
- 12
-(1 row)
-
-select date_format('2001-01-01 12:12:12','%I');
- date_format 
--------------
- 12
-(1 row)
-
-select date_format('2001-01-01 12:12:12','%i');
- date_format 
--------------
- 12
-(1 row)
-
-select date_format('2001-01-01 12:12:12','%j');
- date_format 
--------------
- 001
-(1 row)
-
-select date_format('2001-01-01 12:12:12','%k');
- date_format 
--------------
- 12
-(1 row)
-
-select date_format('2001-01-01 12:12:12','%l');
- date_format 
--------------
- l
-(1 row)
-
-select date_format('2001-01-01 12:12:12','%M');
- date_format 
--------------
- January
-(1 row)
-
-select date_format('2001-01-01 12:12:12','%m');
- date_format 
--------------
- 01
-(1 row)
-
-select date_format('2001-01-01 12:12:12','%p');
- date_format 
--------------
- PM
-(1 row)
-
-select date_format('2001-01-01 12:12:12','%r');
- date_format 
--------------
- 12:12:12 PM
-(1 row)
-
-select date_format('2001-01-01 12:12:12','%S');
- date_format 
--------------
- 12
-(1 row)
-
-select date_format('2001-01-01 12:12:12','%s');
- date_format 
--------------
- 12
-(1 row)
-
-select date_format('2001-01-01 12:12:12','%T');
- date_format 
--------------
- 12:12:12
-(1 row)
-
-select date_format('2001-01-01 12:12:12','%U');
- date_format 
--------------
- 00
-(1 row)
-
-select date_format('2001-01-01 12:12:12','%u');
- date_format 
--------------
- 01
-(1 row)
-
-select date_format('2001-01-01 12:12:12','%V');
- date_format 
--------------
- 53
-(1 row)
-
-select date_format('2001-01-01 12:12:12','%v');
- date_format 
--------------
- 01
-(1 row)
-
-select date_format('2001-01-01 12:12:12','%W');
- date_format 
--------------
- Monday
-(1 row)
-
-select date_format('2001-01-01 12:12:12','%w');
- date_format 
--------------
- 1
-(1 row)
-
-select date_format('2001-01-01 12:12:12','%X');
- date_format 
--------------
- 2000
-(1 row)
-
-select date_format('2001-01-01 12:12:12','%x');
- date_format 
--------------
- 2001
-(1 row)
-
-select date_format('2001-01-01 12:12:12','%Y');
- date_format 
--------------
- 2001
-(1 row)
-
-select date_format('2001-01-01 12:12:12','%y');
- date_format 
--------------
- 01
-(1 row)
-
-select date_format('2001-01-01 12:12:12','aaaa');
- date_format 
--------------
- aaaa
-(1 row)
-
-select date_format('2001-01-01 12:12:12','%dffff');
- date_format 
--------------
- 01ffff
-(1 row)
-
-select date_format('2001-01-01 12:12:12.34567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890','%b');
- date_format 
--------------
- Jan
-(1 row)
-
-select date_format('2001-01-01 12:12:12','%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b');
-                                                                                                                                                                         date_format                                                                                                                                                                          
---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
- JanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJan
-(1 row)
-
--- format参数存在组合
-select date_format('2001-01-01 12:12:12','%Y %M %D %U');
-     date_format     
----------------------
- 2001 January 1st 00
-(1 row)
-
-select date_format('2001-01-01 12:12:12','%H %k %I %r %T %S %w');
-            date_format             
-------------------------------------
- 12 12 12 12:12:12 PM 12:12:12 12 1
-(1 row)
-
--- 边界值，坏值
-select date_format('0000-00-00','%Y');
-ERROR:  Incorrect datetime value: "0000-00-00"
-CONTEXT:  referenced column: date_format
-select date_format('2001-01-9999','%Y');
-ERROR:  date/time field value out of range: "2001-01-9999"
+-- 严格模式或者非严格模式都有值
+-- 功能
+insert into test values(' date_format(''2001-01-01 12:12:12'',''%a'')', date_format('2001-01-01 12:12:12','%a'));
+insert into test values(' date_format(''2001-01-01 12:12:12'',''%b'')', date_format('2001-01-01 12:12:12','%b'));
+insert into test values(' date_format(''2001-01-01 12:12:12'',''%c'')', date_format('2001-01-01 12:12:12','%c'));
+insert into test values(' date_format(''2001-01-01 12:12:12'',''%D'')', date_format('2001-01-01 12:12:12','%D'));
+insert into test values(' date_format(''2001-01-01 12:12:12'',''%d'')', date_format('2001-01-01 12:12:12','%d'));
+insert into test values(' date_format(''2001-01-01 12:12:12'',''%e'')', date_format('2001-01-01 12:12:12','%e'));
+insert into test values(' date_format(''2001-01-01 12:12:12'',''%f'')', date_format('2001-01-01 12:12:12','%f'));
+insert into test values(' date_format(''2001-01-01 12:12:12'',''%H'')', date_format('2001-01-01 12:12:12','%H'));
+insert into test values(' date_format(''2001-01-01 12:12:12'',''%h'')', date_format('2001-01-01 12:12:12','%h'));
+insert into test values(' date_format(''2001-01-01 12:12:12'',''%I'')', date_format('2001-01-01 12:12:12','%I'));
+insert into test values(' date_format(''2001-01-01 12:12:12'',''%i'')', date_format('2001-01-01 12:12:12','%i'));
+insert into test values(' date_format(''2001-01-01 12:12:12'',''%j'')', date_format('2001-01-01 12:12:12','%j'));
+insert into test values(' date_format(''2001-01-01 12:12:12'',''%k'')', date_format('2001-01-01 12:12:12','%k'));
+insert into test values(' date_format(''2001-01-01 12:12:12'',''%l'')', date_format('2001-01-01 12:12:12','%l'));
+insert into test values(' date_format(''2001-01-01 12:12:12'',''%M'')', date_format('2001-01-01 12:12:12','%M'));
+insert into test values(' date_format(''2001-01-01 12:12:12'',''%m'')', date_format('2001-01-01 12:12:12','%m'));
+insert into test values(' date_format(''2001-01-01 12:12:12'',''%p'')', date_format('2001-01-01 12:12:12','%p'));
+insert into test values(' date_format(''2001-01-01 12:12:12'',''%r'')', date_format('2001-01-01 12:12:12','%r'));
+insert into test values(' date_format(''2001-01-01 12:12:12'',''%S'')', date_format('2001-01-01 12:12:12','%S'));
+insert into test values(' date_format(''2001-01-01 12:12:12'',''%s'')', date_format('2001-01-01 12:12:12','%s'));
+insert into test values(' date_format(''2001-01-01 12:12:12'',''%T'')', date_format('2001-01-01 12:12:12','%T'));
+insert into test values(' date_format(''2001-01-01 12:12:12'',''%U'')', date_format('2001-01-01 12:12:12','%U'));
+insert into test values(' date_format(''2001-01-01 12:12:12'',''%u'')', date_format('2001-01-01 12:12:12','%u'));
+insert into test values(' date_format(''2001-01-01 12:12:12'',''%V'')', date_format('2001-01-01 12:12:12','%V'));
+insert into test values(' date_format(''2001-01-01 12:12:12'',''%v'')', date_format('2001-01-01 12:12:12','%v'));
+insert into test values(' date_format(''2001-01-01 12:12:12'',''%W'')', date_format('2001-01-01 12:12:12','%W'));
+insert into test values(' date_format(''2001-01-01 12:12:12'',''%w'')', date_format('2001-01-01 12:12:12','%w'));
+insert into test values(' date_format(''2001-01-01 12:12:12'',''%X'')', date_format('2001-01-01 12:12:12','%X'));
+insert into test values(' date_format(''2001-01-01 12:12:12'',''%x'')', date_format('2001-01-01 12:12:12','%x'));
+insert into test values(' date_format(''2001-01-01 12:12:12'',''%Y'')', date_format('2001-01-01 12:12:12','%Y'));
+insert into test values(' date_format(''2001-01-01 12:12:12'',''%y'')', date_format('2001-01-01 12:12:12','%y'));
+insert into test values(' date_format(''2001-01-01 12:12:12'',''aaaa'')', date_format('2001-01-01 12:12:12','aaaa'));
+insert into test values(' date_format(''2001-01-01 12:12:12'',''%dffff'')', date_format('2001-01-01 12:12:12','%dffff'));
+insert into test values(' date_format(''2001-01-01 12:12:12.34567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890'',''%b'')', date_format('2001-01-01 12:12:12.34567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890','%b'));
+insert into test values(' date_format(''2001-01-01 12:12:12'',''%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b'')', date_format('2001-01-01 12:12:12','%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b'));
+insert into test values(' date_format(''2001-01-01 12:12:12'',''%Y %M %D %U'')', date_format('2001-01-01 12:12:12','%Y %M %D %U'));
+insert into test values(' date_format(''2001-01-01 12:12:12'',''%H %k %I %r %T %S %w'')', date_format('2001-01-01 12:12:12','%H %k %I %r %T %S %w'));
+-- 边界
+insert into test values('date_format(''0000-01-01'',''%Y'')', date_format('0000-01-01','%Y'));
+insert into test values('date_format(''9999-12-31'',''%Y'')', date_format('9999-12-31','%Y'));
+insert into test values('date_format(''0000-01-01 00:00:00'',''%Y %m %d %T'')', date_format('0000-01-01 00:00:00','%Y %m %d %T'));
+insert into test values('date_format(''9999-12-31 23:59:59.999999'',''%Y %m %d %T %f'')', date_format('9999-12-31 23:59:59.999999','%Y %m %d %T %f'));
+-- 类型
+insert into test values('date_format(date''2001-01-09'',''%Y'')', date_format(date'2001-01-09','%Y'));
+insert into test values('date_format(cast(''2001-01-09 12:12:12'' as datetime),''%Y %m %d %T'')', date_format(cast('2001-01-09 12:12:12' as datetime),'%Y %m %d %T'));
+insert into test values('date_format(20010101,''%Y'')', date_format(20010101,'%Y'));
+insert into test values('date_format(20010101121212,''%Y %m %d %T'')', date_format(20010101121212,'%Y %m %d %T'));
+-- 特异
+insert into test values('date_format(null, ''%Y'')', date_format(null, '%Y'));
+insert into test values('date_format(''2021-11-12'', null)', date_format('2021-11-12', null));
+insert into test values('date_format(null, null)', date_format(null, null));
+insert into test values('date_format(''2021-0-12 12:12:12'', ''%Y %m %d %T'')', date_format('2021-0-12 12:12:12', '%Y %m %d %T'));
+insert into test values('date_format(''2021-1-0 12:12:12'', ''%Y %m %d %T'')', date_format('2021-1-0 12:12:12', '%Y %m %d %T'));
+insert into test values('date_format(''2021-0-0 12:12:12'', ''%Y %m %d %T'')', date_format('2021-0-0 12:12:12', '%Y %m %d %T'));
+-- 非严格模式，参数不合法，报warning，返回NULL或者对应值
+set sql_mode = 'sql_mode_full_group,pipes_as_concat,ansi_quotes';
+insert into test values('date_format(''10000-01-01 12:12:12'',''%Y %m %d %T'')', date_format('10000-01-01 12:12:12','%Y %m %d %T'));
+WARNING:  Incorrect datetime value: "10000-01-01 12:12:12"
+CONTEXT:  referenced column: result
+insert into test values('date_format(''2001-01-32 12:12:12'',''%Y %m %d %T'')', date_format('2001-01-32 12:12:12','%Y %m %d %T'));
+WARNING:  date/time field value out of range: "2001-01-32 12:12:12"
+CONTEXT:  referenced column: result
+-- 严格模式，参数不合法，抛出错误
+set sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes';
+insert into test values('date_format(''10000-01-01 12:12:12'',''%Y %m %d %T'')', date_format('10000-01-01 12:12:12','%Y %m %d %T'));
+ERROR:  Incorrect datetime value: "10000-01-01 12:12:12"
+CONTEXT:  referenced column: result
+insert into test values('date_format(''2001-01-32 12:12:12'',''%Y %m %d %T'')', date_format('2001-01-32 12:12:12','%Y %m %d %T'));
+ERROR:  date/time field value out of range: "2001-01-32 12:12:12"
 HINT:  Perhaps you need a different "datestyle" setting.
-CONTEXT:  referenced column: date_format
-select date_format('2001-00-09','%Y');
- date_format 
--------------
- 2001
-(1 row)
-
-select date_format('2001-15-09','%Y');
-ERROR:  date/time field value out of range: "2001-15-09"
-HINT:  Perhaps you need a different "datestyle" setting.
-CONTEXT:  referenced column: date_format
-select date_format('9999-00-09','%Y');
- date_format 
--------------
- 9999
-(1 row)
-
-select date_format('10000-00-09','%Y');
-ERROR:  Incorrect datetime value: "10000-00-09"
-CONTEXT:  referenced column: date_format
--- 不同类型输入
-select date_format(date'2001-01-09','%Y');
- date_format 
--------------
- 2001
-(1 row)
-
-select date_format(datetime'2001-01-09 12:12:12','%Y');
- date_format 
--------------
- 2001
-(1 row)
-
-select date_format(20010101,'%Y');
- date_format 
--------------
- 2001
-(1 row)
-
--- 非严格模式
-set sql_mode = 'sql_mode_full_group,pipes_as_concat';
--- 边界值，坏值
-select date_format('0000-00-00','%Y');
-WARNING:  Incorrect datetime value: "0000-00-00"
-CONTEXT:  referenced column: date_format
- date_format 
--------------
- 
-(1 row)
-
-select date_format('2001-01-9999','%Y');
-WARNING:  date/time field value out of range: "2001-01-9999"
-CONTEXT:  referenced column: date_format
- date_format 
--------------
- 
-(1 row)
-
-select date_format('2001-00-09','%Y');
- date_format 
--------------
- 2001
-(1 row)
-
-select date_format('2001-15-09','%Y');
-WARNING:  date/time field value out of range: "2001-15-09"
-CONTEXT:  referenced column: date_format
- date_format 
--------------
- 
-(1 row)
-
-select date_format('9999-00-09','%Y');
- date_format 
--------------
- 9999
-(1 row)
-
-select date_format('10000-00-09','%Y');
-WARNING:  Incorrect datetime value: "10000-00-09"
-CONTEXT:  referenced column: date_format
- date_format 
--------------
- 
-(1 row)
-
--- date_format 结束
+CONTEXT:  referenced column: result
 -- test from_unixtime
--- 单参数
-select from_unixtime(0);
-    from_unixtime    
----------------------
- 1970-01-01 08:00:00
-(1 row)
-
-select from_unixtime(1);
-    from_unixtime    
----------------------
- 1970-01-01 08:00:01
-(1 row)
-
-select from_unixtime(1.999999);
-       from_unixtime        
-----------------------------
- 1970-01-01 08:00:01.999999
-(1 row)
-
-select from_unixtime(1.9999995);
-    from_unixtime    
----------------------
- 1970-01-01 08:00:02
-(1 row)
-
-select from_unixtime(1454545444);
-    from_unixtime    
----------------------
- 2016-02-04 08:24:04
-(1 row)
-
--- 双参数
-select from_unixtime(0,'%Y-%m-%d %T');
-    from_unixtime    
----------------------
- 1970-01-01 08:00:00
-(1 row)
-
-select from_unixtime(1.999999,'%Y-%m-%d %T.%f');
-       from_unixtime        
-----------------------------
- 1970-01-01 08:00:01.999999
-(1 row)
-
-select from_unixtime(1454545444,'%Y %M %D');
-   from_unixtime   
--------------------
- 2016 February 4th
-(1 row)
-
--- 边界值，坏值
-select from_unixtime(-1);
- from_unixtime 
----------------
- 
-(1 row)
-
-select from_unixtime(-1454545444);
- from_unixtime 
----------------
- 
-(1 row)
-
-select from_unixtime(-1,'%Y');
- from_unixtime 
----------------
- 
-(1 row)
-
-select from_unixtime(-1454545444,'%Y %M %D');
- from_unixtime 
----------------
- 
-(1 row)
-
-select from_unixtime(11111111111111111,'%Y %M %D');
- from_unixtime 
----------------
- 
-(1 row)
-
-select from_unixtime(11111111111111111);
- from_unixtime 
----------------
- 
-(1 row)
-
-select from_unixtime(2147483647);
-    from_unixtime    
----------------------
- 2038-01-19 11:14:07
-(1 row)
-
-select from_unixtime(2147483647,'%Y');
- from_unixtime 
----------------
- 2038
-(1 row)
-
-select from_unixtime(2147483648);
- from_unixtime 
----------------
- 
-(1 row)
-
+-- 严格模式或者非严格模式都有值
+-- 功能-单参数
+insert into test values('from_unixtime(0)', from_unixtime(0));
+insert into test values('from_unixtime(1)', from_unixtime(1));
+insert into test values('from_unixtime(1.999999)', from_unixtime(1.999999));
+insert into test values('from_unixtime(1.9999995)', from_unixtime(1.9999995));
+insert into test values('from_unixtime(1454545444)', from_unixtime(1454545444));
+-- 功能-双参数
+insert into test values('from_unixtime(0,''%Y-%m-%d %T'')', from_unixtime(0,'%Y-%m-%d %T'));
+insert into test values('from_unixtime(1.999999,''%Y-%m-%d %T.%f'')', from_unixtime(1.999999,'%Y-%m-%d %T.%f'));
+insert into test values('from_unixtime(1454545444,''%Y %M %D'')', from_unixtime(1454545444,'%Y %M %D'));
+-- 边界
+insert into test values('from_unixtime(2147483647)', from_unixtime(2147483647));
+insert into test values('from_unixtime(2147483647,''%Y'')', from_unixtime(2147483647,'%Y'));
+-- 特异
+insert into test values('from_unixtime(null)', from_unixtime(null));
+insert into test values('from_unixtime(null,''%Y'')', from_unixtime(null,'%Y'));
+insert into test values('from_unixtime(2147483647,null)', from_unixtime(2147483647,null));
+insert into test values('from_unixtime(null,null)', from_unixtime(null,null));
+-- 超范围，空值
+insert into test values('from_unixtime(-1)', from_unixtime(-1));
+insert into test values('from_unixtime(-1454545444)', from_unixtime(-1454545444));
+insert into test values('from_unixtime(-1,''%Y'')', from_unixtime(-1,'%Y'));
+insert into test values('from_unixtime(-1454545444,''%Y %M %D'')', from_unixtime(-1454545444,'%Y %M %D'));
+insert into test values('from_unixtime(11111111111111111,''%Y %M %D'')', from_unixtime(11111111111111111,'%Y %M %D'));
+insert into test values('from_unixtime(11111111111111111)', from_unixtime(11111111111111111));
+insert into test values('from_unixtime(2147483648)', from_unixtime(2147483648));
 -- test str_to_date
--- 严格模式
-set sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat';
--- 正常值
-select str_to_date('01,5,2013','%d,%m,%Y');
- str_to_date 
--------------
- 2013-05-01
-(1 row)
-
-select str_to_date('May 1, 2013','%M %d,%Y');
- str_to_date 
--------------
- 2013-05-01
-(1 row)
-
-select str_to_date('a09:30:17','a%h:%i:%s');
- str_to_date 
--------------
- 09:30:17
-(1 row)
-
-select str_to_date('a09:30:17','%h:%i:%s');
-ERROR:  Incorrect time value: 'a09:30:17' for function str_to_date
-CONTEXT:  referenced column: str_to_date
-select str_to_date('09:30:17','%h:%i:%s');
- str_to_date 
--------------
- 09:30:17
-(1 row)
-
-select str_to_date(' 2001,01,01 09:30:17','%Y,%m,%D %H:%i:%s');
-     str_to_date     
----------------------
- 2001-01-01 09:30:17
-(1 row)
-
-select str_to_date(' 2001,01,01 09:30:17','%Y,%m,%D %h:%i:%s');
-     str_to_date     
----------------------
- 2001-01-01 09:30:17
-(1 row)
-
-select str_to_date(' 2001,01,01 09:30:17','%Y,%m,%D %I:%i:%s');
-     str_to_date     
----------------------
- 2001-01-01 09:30:17
-(1 row)
-
-select str_to_date(' 2001,01,01 09:30:17','%Y,%m,%D %k:%i:%S');
-     str_to_date     
----------------------
- 2001-01-01 09:30:17
-(1 row)
-
-select str_to_date(' 2001,01,01 09:30:17','%Y,%m,%D %l:%i:%s');
-     str_to_date     
----------------------
- 2001-01-01 09:30:17
-(1 row)
-
-select str_to_date('abc','abc');
-ERROR:  Incorrect date value: 'abc' for function str_to_date
-CONTEXT:  referenced column: str_to_date
-select str_to_date('9','%m');
-ERROR:  Incorrect date value: '9' for function str_to_date
-CONTEXT:  referenced column: str_to_date
-select str_to_date('9','%s');
- str_to_date 
--------------
- 00:00:09
-(1 row)
-
-select str_to_date('00/00/0000', '%m/%d/%Y');
-ERROR:  Incorrect date value: '00/00/0000' for function str_to_date
-CONTEXT:  referenced column: str_to_date
-select str_to_date('04/31/2004', '%m/%d/%Y');
-ERROR:  Incorrect date value: '04/31/2004' for function str_to_date
-CONTEXT:  referenced column: str_to_date
-select str_to_date('2022,12,12','%Y,%m,%D');
- str_to_date 
--------------
- 2022-12-12
-(1 row)
-
-select str_to_date('2022,January,12','%Y,%M,%d');
- str_to_date 
--------------
- 2022-01-12
-(1 row)
-
-select str_to_date('22,January,12','%y,%M,%d');
- str_to_date 
--------------
- 2022-01-12
-(1 row)
-
-select str_to_date('2022,Jan,12','%Y,%M,%d');
-ERROR:  Incorrect date value: '2022,Jan,12' for function str_to_date
-CONTEXT:  referenced column: str_to_date
-select str_to_date('2022,1,12','%Y,%c,%d');
- str_to_date 
--------------
- 2022-01-12
-(1 row)
-
-select str_to_date('2022,1,12','%Y,%c,%e');
- str_to_date 
--------------
- 2022-01-12
-(1 row)
-
-select str_to_date('2022,1,12 12112','%Y,%c,%e %f');
-        str_to_date        
----------------------------
- 2022-01-12 00:00:00.12112
-(1 row)
-
-select str_to_date('2022,345', '%Y,%j');
- str_to_date 
--------------
- 2022-12-11
-(1 row)
-
-select str_to_date('2001-01-01 12:1:12 PM','%Y-%m-%D %r');
-     str_to_date     
----------------------
- 2001-01-01 14:01:12
-(1 row)
-
-select str_to_date('2001-01-01 12:1:12 PM','%Y-%m-%D %T');
-ERROR:  Truncated incorrect datetime value: '2001-01-01 12:1:12 PM'
-CONTEXT:  referenced column: str_to_date
-select str_to_date('2001,00,Sun 12:1:12 PM','%Y,%U,%a %T');
-ERROR:  Truncated incorrect datetime value: '2001,00,Sun 12:1:12 PM'
-CONTEXT:  referenced column: str_to_date
-select str_to_date('2001,00,Sun 12:1:12 PM','%Y,%u,%a %T');
-ERROR:  Truncated incorrect datetime value: '2001,00,Sun 12:1:12 PM'
-CONTEXT:  referenced column: str_to_date
-select str_to_date('2001,05,Sat 12:1:12 PM','%Y,%V,%a %T');
-ERROR:  Truncated incorrect datetime value: '2001,05,Sat 12:1:12 PM'
-CONTEXT:  referenced column: str_to_date
-select str_to_date('2001,05,Sat 12:1:12 PM','%Y,%v,%a %T');
-ERROR:  Truncated incorrect datetime value: '2001,05,Sat 12:1:12 PM'
-CONTEXT:  referenced column: str_to_date
-select str_to_date('2001,01,Sunday 12:1:12 PM','%Y,%U,%W %T');
-ERROR:  Truncated incorrect datetime value: '2001,01,Sunday 12:1:12 PM'
-CONTEXT:  referenced column: str_to_date
-select str_to_date('2001,01,1 12:1:12 PM','%Y,%U,%w %T');
-ERROR:  Truncated incorrect datetime value: '2001,01,1 12:1:12 PM'
-CONTEXT:  referenced column: str_to_date
-select str_to_date('2001,01,01','%Y,%X,%V');
-ERROR:  Incorrect date value: '2001,01,01' for function str_to_date
-CONTEXT:  referenced column: str_to_date
-select str_to_date('2001,01,01','%Y,%x,%v');
-ERROR:  Incorrect date value: '2001,01,01' for function str_to_date
-CONTEXT:  referenced column: str_to_date
-SELECT str_to_date('200442 Monday', '%X%V %W');
- str_to_date 
--------------
- 2004-10-18
-(1 row)
-
--- 边界值，坏值
-select str_to_date(null, '%Y');
- str_to_date 
--------------
- 
-(1 row)
-
-select str_to_date('2021-11-12', null);
-ERROR:  Incorrect datetime value: '2021-11-12' for function str_to_date
-CONTEXT:  referenced column: str_to_date
-select str_to_date('01,5,9999','%d,%m,%Y');
- str_to_date 
--------------
- 9999-05-01
-(1 row)
-
-select str_to_date('22,January,Sun','%y,%M,%a');
-ERROR:  Incorrect date value: '22,January,Sun' for function str_to_date
-CONTEXT:  referenced column: str_to_date
-select str_to_date('01,5,10000','%d,%m,%Y');
-ERROR:  Truncated incorrect date value: '01,5,10000'
-CONTEXT:  referenced column: str_to_date
-select str_to_date('01,5,9999','%d,%m%Y');
-ERROR:  Incorrect date value: '01,5,9999' for function str_to_date
-CONTEXT:  referenced column: str_to_date
-select str_to_date('015,9999','%d,%m,%Y');
-ERROR:  Incorrect date value: '015,9999' for function str_to_date
-CONTEXT:  referenced column: str_to_date
-select str_to_date('00,5,9999','%d,%m,%Y');
-ERROR:  Incorrect date value: '00,5,9999' for function str_to_date
-CONTEXT:  referenced column: str_to_date
-select str_to_date('01,0,9999','%d,%m,%Y');
-ERROR:  Incorrect date value: '01,0,9999' for function str_to_date
-CONTEXT:  referenced column: str_to_date
-select str_to_date('01,111,9999','%d,%m,%Y');
-ERROR:  Incorrect date value: '01,111,9999' for function str_to_date
-CONTEXT:  referenced column: str_to_date
-SELECT STR_TO_DATE('200454 Monday', '%X%V %W');
-ERROR:  Incorrect date value: '200454 Monday' for function str_to_date
-CONTEXT:  referenced column: str_to_date
--- 非严格模式
-set sql_mode = 'sql_mode_full_group,pipes_as_concat';
--- 正常值
-select str_to_date('01,5,2013','%d,%m,%Y');
- str_to_date 
--------------
- 2013-05-01
-(1 row)
-
-select str_to_date('May 1, 2013','%M %d,%Y');
- str_to_date 
--------------
- 2013-05-01
-(1 row)
-
-select str_to_date('a09:30:17','a%h:%i:%s');
- str_to_date 
--------------
- 09:30:17
-(1 row)
-
-select str_to_date('a09:30:17','%h:%i:%s');
-WARNING:  Incorrect time value: 'a09:30:17' for function str_to_date
-CONTEXT:  referenced column: str_to_date
- str_to_date 
--------------
- 
-(1 row)
-
-select str_to_date('09:30:17','%h:%i:%s');
- str_to_date 
--------------
- 09:30:17
-(1 row)
-
-select str_to_date(' 2001,01,01 09:30:17','%Y,%m,%D %H:%i:%s');
-     str_to_date     
----------------------
- 2001-01-01 09:30:17
-(1 row)
-
-select str_to_date(' 2001,01,01 09:30:17','%Y,%m,%D %h:%i:%s');
-     str_to_date     
----------------------
- 2001-01-01 09:30:17
-(1 row)
-
-select str_to_date(' 2001,01,01 09:30:17','%Y,%m,%D %I:%i:%s');
-     str_to_date     
----------------------
- 2001-01-01 09:30:17
-(1 row)
-
-select str_to_date(' 2001,01,01 09:30:17','%Y,%m,%D %k:%i:%S');
-     str_to_date     
----------------------
- 2001-01-01 09:30:17
-(1 row)
-
-select str_to_date(' 2001,01,01 09:30:17','%Y,%m,%D %l:%i:%s');
-     str_to_date     
----------------------
- 2001-01-01 09:30:17
-(1 row)
-
-select str_to_date('abc','abc');
-WARNING:  Incorrect date value: 'abc' for function str_to_date
-CONTEXT:  referenced column: str_to_date
- str_to_date 
--------------
- 
-(1 row)
-
-select str_to_date('9','%m');
-WARNING:  Incorrect date value: '9' for function str_to_date
-CONTEXT:  referenced column: str_to_date
- str_to_date 
--------------
- 
-(1 row)
-
-select str_to_date('9','%s');
- str_to_date 
--------------
- 00:00:09
-(1 row)
-
-select str_to_date('00/00/0000', '%m/%d/%Y');
-WARNING:  Incorrect date value: '00/00/0000' for function str_to_date
-CONTEXT:  referenced column: str_to_date
- str_to_date 
--------------
- 
-(1 row)
-
-select str_to_date('04/31/2004', '%m/%d/%Y');
-WARNING:  Incorrect date value: '04/31/2004' for function str_to_date
-CONTEXT:  referenced column: str_to_date
- str_to_date 
--------------
- 
-(1 row)
-
-select str_to_date('2022,12,12','%Y,%m,%D');
- str_to_date 
--------------
- 2022-12-12
-(1 row)
-
-select str_to_date('2022,January,12','%Y,%M,%d');
- str_to_date 
--------------
- 2022-01-12
-(1 row)
-
-select str_to_date('22,January,12','%y,%M,%d');
- str_to_date 
--------------
- 2022-01-12
-(1 row)
-
-select str_to_date('2022,Jan,12','%Y,%M,%d');
-WARNING:  Incorrect date value: '2022,Jan,12' for function str_to_date
-CONTEXT:  referenced column: str_to_date
- str_to_date 
--------------
- 
-(1 row)
-
-select str_to_date('2022,1,12','%Y,%c,%d');
- str_to_date 
--------------
- 2022-01-12
-(1 row)
-
-select str_to_date('2022,1,12','%Y,%c,%e');
- str_to_date 
--------------
- 2022-01-12
-(1 row)
-
-select str_to_date('2022,1,12 12112','%Y,%c,%e %f');
-        str_to_date        
----------------------------
- 2022-01-12 00:00:00.12112
-(1 row)
-
-select str_to_date('2022,345', '%Y,%j');
- str_to_date 
--------------
- 2022-12-11
-(1 row)
-
-select str_to_date('2001-01-01 12:1:12 PM','%Y-%m-%D %r');
-     str_to_date     
----------------------
- 2001-01-01 14:01:12
-(1 row)
-
-select str_to_date('2001-01-01 12:1:12 PM','%Y-%m-%D %T');
-WARNING:  Truncated incorrect datetime value: '2001-01-01 12:1:12 PM'
-CONTEXT:  referenced column: str_to_date
-     str_to_date     
----------------------
- 2001-01-01 02:01:12
-(1 row)
-
-select str_to_date('2001,00,Sun 12:1:12 PM','%Y,%U,%a %T');
-WARNING:  Truncated incorrect datetime value: '2001,00,Sun 12:1:12 PM'
-CONTEXT:  referenced column: str_to_date
-     str_to_date     
----------------------
- 2000-12-31 12:01:12
-(1 row)
-
-select str_to_date('2001,00,Sun 12:1:12 PM','%Y,%u,%a %T');
-WARNING:  Truncated incorrect datetime value: '2001,00,Sun 12:1:12 PM'
-CONTEXT:  referenced column: str_to_date
-     str_to_date     
----------------------
- 2000-12-31 12:01:12
-(1 row)
-
-select str_to_date('2001,05,Sat 12:1:12 PM','%Y,%V,%a %T');
-WARNING:  Truncated incorrect datetime value: '2001,05,Sat 12:1:12 PM'
-CONTEXT:  referenced column: str_to_date
-WARNING:  Incorrect datetime value: '2001,05,Sat 12:1:12 PM' for function str_to_date
-CONTEXT:  referenced column: str_to_date
- str_to_date 
--------------
- 
-(1 row)
-
-select str_to_date('2001,05,Sat 12:1:12 PM','%Y,%v,%a %T');
-WARNING:  Truncated incorrect datetime value: '2001,05,Sat 12:1:12 PM'
-CONTEXT:  referenced column: str_to_date
-WARNING:  Incorrect datetime value: '2001,05,Sat 12:1:12 PM' for function str_to_date
-CONTEXT:  referenced column: str_to_date
- str_to_date 
--------------
- 
-(1 row)
-
-select str_to_date('2001,01,Sunday 12:1:12 PM','%Y,%U,%W %T');
-WARNING:  Truncated incorrect datetime value: '2001,01,Sunday 12:1:12 PM'
-CONTEXT:  referenced column: str_to_date
-     str_to_date     
----------------------
- 2001-01-07 12:01:12
-(1 row)
-
-select str_to_date('2001,01,1 12:1:12 PM','%Y,%U,%w %T');
-WARNING:  Truncated incorrect datetime value: '2001,01,1 12:1:12 PM'
-CONTEXT:  referenced column: str_to_date
-     str_to_date     
----------------------
- 2001-01-08 12:01:12
-(1 row)
-
-select str_to_date('2001,01,01','%Y,%X,%V');
-WARNING:  Incorrect date value: '2001,01,01' for function str_to_date
-CONTEXT:  referenced column: str_to_date
- str_to_date 
--------------
- 
-(1 row)
-
-select str_to_date('2001,01,01','%Y,%x,%v');
-WARNING:  Incorrect date value: '2001,01,01' for function str_to_date
-CONTEXT:  referenced column: str_to_date
- str_to_date 
--------------
- 
-(1 row)
-
-SELECT STR_TO_DATE('200442 Monday', '%X%V %W');
- str_to_date 
--------------
- 2004-10-18
-(1 row)
-
-SELECT STR_TO_DATE('200442 Monday', '%x%v %W');
- str_to_date 
--------------
- 2004-10-11
-(1 row)
-
--- 边界值，坏值
-select str_to_date(null, '%Y');
- str_to_date 
--------------
- 
-(1 row)
-
-select str_to_date('2021-11-12', null);
+-- 严格模式或者非严格模式都有值
+-- 功能-返回date
+insert into test values('str_to_date(''2021-11-12'', ''%Y-%m-%d'')', str_to_date('2021-11-12', '%Y-%m-%d'));
+insert into test values('str_to_date(''9999-12-31'', ''%Y-%m-%d'')', str_to_date('9999-12-31', '%Y-%m-%d'));
+insert into test values('str_to_date(''12 12 12'', ''%y %m %d'')', str_to_date('12 12 12', '%y %m %d'));
+insert into test values('str_to_date(''200442 Monday'', ''%X%V %W'')', str_to_date('200442 Monday', '%X%V %W'));
+insert into test values('str_to_date(''200442 Monday'', ''%x%v %W'')', str_to_date('200442 Monday', '%x%v %W'));
+insert into test values('str_to_date(''200442 Monday'', ''%Y%U %W'')', str_to_date('200442 Monday', '%Y%U %W'));
+insert into test values('str_to_date(''200442 Monday'', ''%Y%u %W'')', str_to_date('200442 Monday', '%Y%u %W'));
+insert into test values('str_to_date(''200442 Mon'', ''%Y%u %a'')', str_to_date('200442 Mon', '%Y%u %a'));
+insert into test values('str_to_date(''200442 Tue'', ''%Y%u %a'')', str_to_date('200442 Tue', '%Y%u %a'));
+insert into test values('str_to_date(''200442 Wed'', ''%Y%u %a'')', str_to_date('200442 Wed', '%Y%u %a'));
+insert into test values('str_to_date(''200442 Thu'', ''%Y%u %a'')', str_to_date('200442 Thu', '%Y%u %a'));
+insert into test values('str_to_date(''200442 Fri'', ''%Y%u %a'')', str_to_date('200442 Fri', '%Y%u %a'));
+insert into test values('str_to_date(''200442 Sat'', ''%Y%u %a'')', str_to_date('200442 Sat', '%Y%u %a'));
+insert into test values('str_to_date(''200442 Sun'', ''%Y%u %a'')', str_to_date('200442 Sun', '%Y%u %a'));
+insert into test values('str_to_date(''200442 1'', ''%X%V %w'')', str_to_date('200442 1', '%X%V %w'));
+insert into test values('str_to_date(''200442 1'', ''%x%v %w'')', str_to_date('200442 1', '%x%v %w'));
+insert into test values('str_to_date(''200442 1'', ''%Y%U %w'')', str_to_date('200442 1', '%Y%U %w'));
+insert into test values('str_to_date(''200442 1'', ''%Y%u %w'')', str_to_date('200442 1', '%Y%u %w'));
+insert into test values('str_to_date(''200442 2'', ''%Y%u %w'')', str_to_date('200442 2', '%Y%u %w'));
+insert into test values('str_to_date(''200442 3'', ''%Y%u %w'')', str_to_date('200442 3', '%Y%u %w'));
+insert into test values('str_to_date(''200442 4'', ''%Y%u %w'')', str_to_date('200442 4', '%Y%u %w'));
+insert into test values('str_to_date(''200442 5'', ''%Y%u %w'')', str_to_date('200442 5', '%Y%u %w'));
+insert into test values('str_to_date(''200442 6'', ''%Y%u %w'')', str_to_date('200442 6', '%Y%u %w'));
+insert into test values('str_to_date(''200442 0'', ''%Y%u %w'')', str_to_date('200442 0', '%Y%u %w'));
+insert into test values('str_to_date(''2004 100'', ''%Y %j'')', str_to_date('2004 100', '%Y %j'));
+insert into test values('str_to_date(''2004 January 12'', ''%Y %M %d'')', str_to_date('2004 January 12', '%Y %M %d'));
+insert into test values('str_to_date(''2004 February 12'', ''%Y %M %d'')', str_to_date('2004 February 12', '%Y %M %d'));
+insert into test values('str_to_date(''2004 March 12'', ''%Y %M %d'')', str_to_date('2004 March 12', '%Y %M %d'));
+insert into test values('str_to_date(''2004 April 12'', ''%Y %M %d'')', str_to_date('2004 April 12', '%Y %M %d'));
+insert into test values('str_to_date(''2004 May 12'', ''%Y %M %d'')', str_to_date('2004 May 12', '%Y %M %d'));
+insert into test values('str_to_date(''2004 June 12'', ''%Y %M %d'')', str_to_date('2004 June 12', '%Y %M %d'));
+insert into test values('str_to_date(''2004 July 12'', ''%Y %M %d'')', str_to_date('2004 July 12', '%Y %M %d'));
+insert into test values('str_to_date(''2004 August 12'', ''%Y %M %d'')', str_to_date('2004 August 12', '%Y %M %d'));
+insert into test values('str_to_date(''2004 September 12'', ''%Y %M %d'')', str_to_date('2004 September 12', '%Y %M %d'));
+insert into test values('str_to_date(''2004 October 12'', ''%Y %M %d'')', str_to_date('2004 October 12', '%Y %M %d'));
+insert into test values('str_to_date(''2004 November 12'', ''%Y %M %d'')', str_to_date('2004 November 12', '%Y %M %d'));
+insert into test values('str_to_date(''2004 December 12'', ''%Y %M %d'')', str_to_date('2004 December 12', '%Y %M %d'));
+insert into test values('str_to_date(''2004 Jan 12'', ''%Y %b %d'')', str_to_date('2004 Jan 12', '%Y %b %d'));
+insert into test values('str_to_date(''2004 Feb 12'', ''%Y %b %d'')', str_to_date('2004 Feb 12', '%Y %b %d'));
+insert into test values('str_to_date(''2004 Mar 12'', ''%Y %b %d'')', str_to_date('2004 Mar 12', '%Y %b %d'));
+insert into test values('str_to_date(''2004 Apr 12'', ''%Y %b %d'')', str_to_date('2004 Apr 12', '%Y %b %d'));
+insert into test values('str_to_date(''2004 May 12'', ''%Y %b %d'')', str_to_date('2004 May 12', '%Y %b %d'));
+insert into test values('str_to_date(''2004 Jun 12'', ''%Y %b %d'')', str_to_date('2004 Jun 12', '%Y %b %d'));
+insert into test values('str_to_date(''2004 Jul 12'', ''%Y %b %d'')', str_to_date('2004 Jul 12', '%Y %b %d'));
+insert into test values('str_to_date(''2004 Aug 12'', ''%Y %b %d'')', str_to_date('2004 Aug 12', '%Y %b %d'));
+insert into test values('str_to_date(''2004 Sep 12'', ''%Y %b %d'')', str_to_date('2004 Sep 12', '%Y %b %d'));
+insert into test values('str_to_date(''2004 Oct 12'', ''%Y %b %d'')', str_to_date('2004 Oct 12', '%Y %b %d'));
+insert into test values('str_to_date(''2004 Nov 12'', ''%Y %b %d'')', str_to_date('2004 Nov 12', '%Y %b %d'));
+insert into test values('str_to_date(''2004 Dec 12'', ''%Y %b %d'')', str_to_date('2004 Dec 12', '%Y %b %d'));
+-- 功能-返回datetime
+insert into test values('str_to_date(''2021-11-12 12:12:12'', ''%Y-%m-%d %T'')', str_to_date('2021-11-12 12:12:12', '%Y-%m-%d %T'));
+insert into test values('str_to_date(''9999-12-31 23:59:59'', ''%Y-%m-%d %T'')', str_to_date('9999-12-31 23:59:59', '%Y-%m-%d %T'));
+insert into test values('str_to_date(''0000-1-1 00:00:00'', ''%Y-%m-%d %T'')', str_to_date('0000-1-1 00:00:00', '%Y-%m-%d %T'));
+insert into test values('str_to_date(''2021-11-12 12:12:12.123456'', ''%Y-%m-%d %T.%f'')', str_to_date('2021-11-12 12:12:12.123456', '%Y-%m-%d %T.%f'));
+insert into test values('str_to_date(''9999-12-31 23:59:59.999999'', ''%Y-%m-%d %T.%f'')', str_to_date('9999-12-31 23:59:59.999999', '%Y-%m-%d %T.%f'));
+insert into test values('str_to_date(''0000-1-1 00:00:00.000000'', ''%Y-%m-%d %T.%f'')', str_to_date('0000-1-1 00:00:00.000000', '%Y-%m-%d %T.%f'));
+-- 功能-返回time
+insert into test values('str_to_date(''0'', ''%H'')', str_to_date('0', '%H'));
+insert into test values('str_to_date(''23'', ''%H'')', str_to_date('23', '%H'));
+insert into test values('str_to_date(''12'', ''%h'')', str_to_date('12', '%h'));
+insert into test values('str_to_date(''10:11:12'', ''%T'')', str_to_date('10:11:12', '%T'));
+insert into test values('str_to_date(''10:11:12.999999'', ''%T.%f'')', str_to_date('10:11:12.999999', '%T.%f'));
+insert into test values('str_to_date(''10:11:12'', ''%H:%i:%S'')', str_to_date('10:11:12', '%H:%i:%S'));
+insert into test values('str_to_date(''10:11:12.999999'', ''%H:%i:%S.%f'')', str_to_date('10:11:12.999999', '%H:%i:%S.%f'));
+insert into test values('str_to_date(''1:1:1 pm'', ''%r'')', str_to_date('1:1:1 pm', '%r'));
+insert into test values('str_to_date(''1:1:1 am'', ''%r'')', str_to_date('1:1:1 am', '%r'));
+insert into test values('str_to_date(''1:1:1 pm'', ''%h:%i:%S %p'')', str_to_date('1:1:1 pm', '%h:%i:%S %p'));
+insert into test values('str_to_date(''1:1:1 am'', ''%h:%i:%S %p'')', str_to_date('1:1:1 am', '%h:%i:%S %p'));
+insert into test values('str_to_date(''1:1:1.999999 pm'', ''%h:%i:%S.%f %p'')', str_to_date('1:1:1.999999 pm', '%h:%i:%S.%f %p'));
+insert into test values('str_to_date(''1:1:1.999999 am'', ''%h:%i:%S.%f %p'')', str_to_date('1:1:1.999999 am', '%h:%i:%S.%f %p'));
+-- 边界
+insert into test values('str_to_date(''0000 1 1'', ''%Y %m %d'')', str_to_date('0000 1 1', '%Y %m %d'));
+insert into test values('str_to_date(''9999 12 31'', ''%Y %m %d'')', str_to_date('9999 12 31', '%Y %m %d'));
+insert into test values('str_to_date(''0000 1 1 00:00:00'', ''%Y %m %d %T'')', str_to_date('0000 1 1 00:00:00', '%Y %m %d %T'));
+insert into test values('str_to_date(''9999 12 31 23:59:59.999999'', ''%Y %m %d %T.%f'')', str_to_date('9999 12 31 23:59:59.999999', '%Y %m %d %T.%f'));
+-- 特异
+insert into test values('str_to_date(null, ''%Y %m %d'')', str_to_date(null, '%Y %m %d'));
+-- 非严格模式，参数不合法，报warning，返回NULL或者对应值
+set sql_mode = 'sql_mode_full_group,pipes_as_concat,ansi_quotes';
+insert into test values('str_to_date(''0'', ''%h'')', str_to_date('0', '%h'));
+WARNING:  Incorrect time value: '0' for function str_to_date
+CONTEXT:  referenced column: result
+insert into test values('str_to_date(''10000-1-1'', ''%Y-%m-%d'')', str_to_date('10000-1-1', '%Y-%m-%d'));
+WARNING:  Incorrect date value: '10000-1-1' for function str_to_date
+CONTEXT:  referenced column: result
+insert into test values('str_to_date(''2021-13-1'', ''%Y-%m-%d'')', str_to_date('2021-13-1', '%Y-%m-%d'));
+WARNING:  Incorrect date value: '2021-13-1' for function str_to_date
+CONTEXT:  referenced column: result
+insert into test values('str_to_date(''2021-1-32'', ''%Y-%m-%d'')', str_to_date('2021-1-32', '%Y-%m-%d'));
+WARNING:  Incorrect date value: '2021-1-32' for function str_to_date
+CONTEXT:  referenced column: result
+insert into test values('str_to_date(''2021-1-1 24:00:00'', ''%Y-%m-%d %T'')', str_to_date('2021-1-1 24:00:00', '%Y-%m-%d %T'));
+WARNING:  Incorrect datetime value: '2021-1-1 24:00:00' for function str_to_date
+CONTEXT:  referenced column: result
+insert into test values('str_to_date(''2021-1-1 00:60:00'', ''%Y-%m-%d %T'')', str_to_date('2021-1-1 00:60:00', '%Y-%m-%d %T'));
+WARNING:  Incorrect datetime value: '2021-1-1 00:60:00' for function str_to_date
+CONTEXT:  referenced column: result
+insert into test values('str_to_date(''2021-1-1 00:00:60'', ''%Y-%m-%d %T'')', str_to_date('2021-1-1 00:00:60', '%Y-%m-%d %T'));
+WARNING:  Incorrect datetime value: '2021-1-1 00:00:60' for function str_to_date
+CONTEXT:  referenced column: result
+insert into test values('str_to_date(''2021-1-1 24:00:00'', ''%Y-%m-%d %H:%i:%S'')', str_to_date('2021-1-1 24:00:00', '%Y-%m-%d %H:%i:%S'));
+WARNING:  Incorrect datetime value: '2021-1-1 24:00:00' for function str_to_date
+CONTEXT:  referenced column: result
+insert into test values('str_to_date(''2021-1-1 00:60:00'', ''%Y-%m-%d %H:%i:%S'')', str_to_date('2021-1-1 00:60:00', '%Y-%m-%d %H:%i:%S'));
+WARNING:  Incorrect datetime value: '2021-1-1 00:60:00' for function str_to_date
+CONTEXT:  referenced column: result
+insert into test values('str_to_date(''2021-1-1 00:00:60'', ''%Y-%m-%d %H:%i:%S'')', str_to_date('2021-1-1 00:00:60', '%Y-%m-%d %H:%i:%S'));
+WARNING:  Incorrect datetime value: '2021-1-1 00:00:60' for function str_to_date
+CONTEXT:  referenced column: result
+insert into test values('str_to_date(''13:00:00 pm'', ''%r'')', str_to_date('13:00:00 pm', '%r'));
+WARNING:  Incorrect time value: '13:00:00 pm' for function str_to_date
+CONTEXT:  referenced column: result
+insert into test values('str_to_date(''13:00:00 am'', ''%r'')', str_to_date('13:00:00 am', '%r'));
+WARNING:  Incorrect time value: '13:00:00 am' for function str_to_date
+CONTEXT:  referenced column: result
+insert into test values('str_to_date(''24:00:00'', ''%T'')', str_to_date('24:00:00', '%T'));
+WARNING:  Incorrect time value: '24:00:00' for function str_to_date
+CONTEXT:  referenced column: result
+insert into test values('str_to_date(''13:00:00'', ''%h:%i:%S'')', str_to_date('13:00:00', '%h:%i:%S'));
+WARNING:  Incorrect time value: '13:00:00' for function str_to_date
+CONTEXT:  referenced column: result
+insert into test values('str_to_date(''24:00:00'', ''%H:%i:%S'')', str_to_date('24:00:00', '%H:%i:%S'));
+WARNING:  Incorrect time value: '24:00:00' for function str_to_date
+CONTEXT:  referenced column: result
+insert into test values('str_to_date(''13'',''%h'')', str_to_date('13','%h'));
+WARNING:  Incorrect time value: '13' for function str_to_date
+CONTEXT:  referenced column: result
+insert into test values('str_to_date(''24'',''%H'')', str_to_date('24','%H'));
+WARNING:  Incorrect time value: '24' for function str_to_date
+CONTEXT:  referenced column: result
+insert into test values('str_to_date(''2021-11-12'', ''%Y/a%m/%d'')', str_to_date('2021-11-12', '%Y/a%m/%d'));
+WARNING:  Incorrect date value: '2021-11-12' for function str_to_date
+CONTEXT:  referenced column: result
+insert into test values('str_to_date(''2021-a11-12'', ''%Y/%m/%d'')', str_to_date('2021-a11-12', '%Y/%m/%d'));
+WARNING:  Incorrect date value: '2021-a11-12' for function str_to_date
+CONTEXT:  referenced column: result
+insert into test values('str_to_date(''2021/11/12abc'', ''%Y/%m/%d'')', str_to_date('2021/11/12abc', '%Y/%m/%d'));
+WARNING:  Truncated incorrect date value: '2021/11/12abc'
+CONTEXT:  referenced column: result
+insert into test values('str_to_date(''200442 Monday'', ''%X%v %W'')', str_to_date('200442 Monday', '%X%v %W'));
+WARNING:  Incorrect date value: '200442 Monday' for function str_to_date
+CONTEXT:  referenced column: result
+insert into test values('str_to_date(''200442 Monday'', ''%x%V %W'')', str_to_date('200442 Monday', '%x%V %W'));
+WARNING:  Incorrect date value: '200442 Monday' for function str_to_date
+CONTEXT:  referenced column: result
+insert into test values('str_to_date(''200442 Monday'', ''%x%U %W'')', str_to_date('200442 Monday', '%x%U %W'));
+WARNING:  Incorrect date value: '200442 Monday' for function str_to_date
+CONTEXT:  referenced column: result
+insert into test values('str_to_date(''200442 Monday'', ''%x%u %W'')', str_to_date('200442 Monday', '%x%u %W'));
+WARNING:  Incorrect date value: '200442 Monday' for function str_to_date
+CONTEXT:  referenced column: result
+insert into test values('str_to_date(''200442 Monday'', ''%x%U %W'')', str_to_date('200442 Monday', '%x%U %W'));
+WARNING:  Incorrect date value: '200442 Monday' for function str_to_date
+CONTEXT:  referenced column: result
+insert into test values('str_to_date(''200442 Monday'', ''%x%u %W'')', str_to_date('200442 Monday', '%x%u %W'));
+WARNING:  Incorrect date value: '200442 Monday' for function str_to_date
+CONTEXT:  referenced column: result
+insert into test values('str_to_date(''2021-11-12'', null)', str_to_date('2021-11-12', null));
 WARNING:  Incorrect datetime value: '2021-11-12' for function str_to_date
-CONTEXT:  referenced column: str_to_date
- str_to_date 
--------------
- 
-(1 row)
-
-select str_to_date('01,5,9999','%d,%m,%Y');
- str_to_date 
--------------
- 9999-05-01
-(1 row)
-
-select str_to_date('22,January,Sun','%y,%M,%a');
-WARNING:  Incorrect date value: '22,January,Sun' for function str_to_date
-CONTEXT:  referenced column: str_to_date
- str_to_date 
--------------
- 
-(1 row)
-
-select str_to_date('01,5,10000','%d,%m,%Y');
-WARNING:  Truncated incorrect date value: '01,5,10000'
-CONTEXT:  referenced column: str_to_date
- str_to_date 
--------------
- 1000-05-01
-(1 row)
-
-select str_to_date('01,5,9999','%d,%m%Y');
-WARNING:  Incorrect date value: '01,5,9999' for function str_to_date
-CONTEXT:  referenced column: str_to_date
- str_to_date 
--------------
- 
-(1 row)
-
-select str_to_date('015,9999','%d,%m,%Y');
-WARNING:  Incorrect date value: '015,9999' for function str_to_date
-CONTEXT:  referenced column: str_to_date
- str_to_date 
--------------
- 
-(1 row)
-
-select str_to_date('00,5,9999','%d,%m,%Y');
-WARNING:  Incorrect date value: '00,5,9999' for function str_to_date
-CONTEXT:  referenced column: str_to_date
- str_to_date 
--------------
- 
-(1 row)
-
-select str_to_date('01,0,9999','%d,%m,%Y');
-WARNING:  Incorrect date value: '01,0,9999' for function str_to_date
-CONTEXT:  referenced column: str_to_date
- str_to_date 
--------------
- 
-(1 row)
-
-select str_to_date('01,111,9999','%d,%m,%Y');
-WARNING:  Incorrect date value: '01,111,9999' for function str_to_date
-CONTEXT:  referenced column: str_to_date
- str_to_date 
--------------
- 
-(1 row)
-
-SELECT STR_TO_DATE('200454 Monday', '%X%V %W');
+CONTEXT:  referenced column: result
+insert into test values('str_to_date(''200454 Monday'', ''%X%V %W'')', str_to_date('200454 Monday', '%X%V %W'));
 WARNING:  Incorrect date value: '200454 Monday' for function str_to_date
-CONTEXT:  referenced column: str_to_date
- str_to_date 
--------------
- 
-(1 row)
+CONTEXT:  referenced column: result
+-- 严格模式，参数不合法，抛出错误
+set sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes';
+insert into test values('str_to_date(''0'', ''%h'')', str_to_date('0', '%h'));
+ERROR:  Incorrect time value: '0' for function str_to_date
+CONTEXT:  referenced column: result
+insert into test values('str_to_date(''10000-1-1'', ''%Y-%m-%d'')', str_to_date('10000-1-1', '%Y-%m-%d'));
+ERROR:  Incorrect date value: '10000-1-1' for function str_to_date
+CONTEXT:  referenced column: result
+insert into test values('str_to_date(''2021-13-1'', ''%Y-%m-%d'')', str_to_date('2021-13-1', '%Y-%m-%d'));
+ERROR:  Incorrect date value: '2021-13-1' for function str_to_date
+CONTEXT:  referenced column: result
+insert into test values('str_to_date(''2021-1-32'', ''%Y-%m-%d'')', str_to_date('2021-1-32', '%Y-%m-%d'));
+ERROR:  Incorrect date value: '2021-1-32' for function str_to_date
+CONTEXT:  referenced column: result
+insert into test values('str_to_date(''2021-1-1 24:00:00'', ''%Y-%m-%d %T'')', str_to_date('2021-1-1 24:00:00', '%Y-%m-%d %T'));
+ERROR:  Incorrect datetime value: '2021-1-1 24:00:00' for function str_to_date
+CONTEXT:  referenced column: result
+insert into test values('str_to_date(''2021-1-1 00:60:00'', ''%Y-%m-%d %T'')', str_to_date('2021-1-1 00:60:00', '%Y-%m-%d %T'));
+ERROR:  Incorrect datetime value: '2021-1-1 00:60:00' for function str_to_date
+CONTEXT:  referenced column: result
+insert into test values('str_to_date(''2021-1-1 00:00:60'', ''%Y-%m-%d %T'')', str_to_date('2021-1-1 00:00:60', '%Y-%m-%d %T'));
+ERROR:  Incorrect datetime value: '2021-1-1 00:00:60' for function str_to_date
+CONTEXT:  referenced column: result
+insert into test values('str_to_date(''2021-1-1 24:00:00'', ''%Y-%m-%d %H:%i:%S'')', str_to_date('2021-1-1 24:00:00', '%Y-%m-%d %H:%i:%S'));
+ERROR:  Incorrect datetime value: '2021-1-1 24:00:00' for function str_to_date
+CONTEXT:  referenced column: result
+insert into test values('str_to_date(''2021-1-1 00:60:00'', ''%Y-%m-%d %H:%i:%S'')', str_to_date('2021-1-1 00:60:00', '%Y-%m-%d %H:%i:%S'));
+ERROR:  Incorrect datetime value: '2021-1-1 00:60:00' for function str_to_date
+CONTEXT:  referenced column: result
+insert into test values('str_to_date(''2021-1-1 00:00:60'', ''%Y-%m-%d %H:%i:%S'')', str_to_date('2021-1-1 00:00:60', '%Y-%m-%d %H:%i:%S'));
+ERROR:  Incorrect datetime value: '2021-1-1 00:00:60' for function str_to_date
+CONTEXT:  referenced column: result
+insert into test values('str_to_date(''13:00:00 pm'', ''%r'')', str_to_date('13:00:00 pm', '%r'));
+ERROR:  Incorrect time value: '13:00:00 pm' for function str_to_date
+CONTEXT:  referenced column: result
+insert into test values('str_to_date(''13:00:00 am'', ''%r'')', str_to_date('13:00:00 am', '%r'));
+ERROR:  Incorrect time value: '13:00:00 am' for function str_to_date
+CONTEXT:  referenced column: result
+insert into test values('str_to_date(''24:00:00'', ''%T'')', str_to_date('24:00:00', '%T'));
+ERROR:  Incorrect time value: '24:00:00' for function str_to_date
+CONTEXT:  referenced column: result
+insert into test values('str_to_date(''13:00:00'', ''%h:%i:%S'')', str_to_date('13:00:00', '%h:%i:%S'));
+ERROR:  Incorrect time value: '13:00:00' for function str_to_date
+CONTEXT:  referenced column: result
+insert into test values('str_to_date(''24:00:00'', ''%H:%i:%S'')', str_to_date('24:00:00', '%H:%i:%S'));
+ERROR:  Incorrect time value: '24:00:00' for function str_to_date
+CONTEXT:  referenced column: result
+insert into test values('str_to_date(''13'',''%h'')', str_to_date('13','%h'));
+ERROR:  Incorrect time value: '13' for function str_to_date
+CONTEXT:  referenced column: result
+insert into test values('str_to_date(''24'',''%H'')', str_to_date('24','%H'));
+ERROR:  Incorrect time value: '24' for function str_to_date
+CONTEXT:  referenced column: result
+insert into test values('str_to_date(''2021-11-12'', ''%Y/a%m/%d'')', str_to_date('2021-11-12', '%Y/a%m/%d'));
+ERROR:  Incorrect date value: '2021-11-12' for function str_to_date
+CONTEXT:  referenced column: result
+insert into test values('str_to_date(''2021-a11-12'', ''%Y/%m/%d'')', str_to_date('2021-a11-12', '%Y/%m/%d'));
+ERROR:  Incorrect date value: '2021-a11-12' for function str_to_date
+CONTEXT:  referenced column: result
+insert into test values('str_to_date(''2021/11/12abc'', ''%Y/%m/%d'')', str_to_date('2021/11/12abc', '%Y/%m/%d'));
+ERROR:  Truncated incorrect date value: '2021/11/12abc'
+CONTEXT:  referenced column: result
+insert into test values('str_to_date(''200442 Monday'', ''%X%v %W'')', str_to_date('200442 Monday', '%X%v %W'));
+ERROR:  Incorrect date value: '200442 Monday' for function str_to_date
+CONTEXT:  referenced column: result
+insert into test values('str_to_date(''200442 Monday'', ''%x%V %W'')', str_to_date('200442 Monday', '%x%V %W'));
+ERROR:  Incorrect date value: '200442 Monday' for function str_to_date
+CONTEXT:  referenced column: result
+insert into test values('str_to_date(''200442 Monday'', ''%x%U %W'')', str_to_date('200442 Monday', '%x%U %W'));
+ERROR:  Incorrect date value: '200442 Monday' for function str_to_date
+CONTEXT:  referenced column: result
+insert into test values('str_to_date(''200442 Monday'', ''%x%u %W'')', str_to_date('200442 Monday', '%x%u %W'));
+ERROR:  Incorrect date value: '200442 Monday' for function str_to_date
+CONTEXT:  referenced column: result
+insert into test values('str_to_date(''200442 Monday'', ''%x%U %W'')', str_to_date('200442 Monday', '%x%U %W'));
+ERROR:  Incorrect date value: '200442 Monday' for function str_to_date
+CONTEXT:  referenced column: result
+insert into test values('str_to_date(''200442 Monday'', ''%x%u %W'')', str_to_date('200442 Monday', '%x%u %W'));
+ERROR:  Incorrect date value: '200442 Monday' for function str_to_date
+CONTEXT:  referenced column: result
+insert into test values('str_to_date(''2021-11-12'', null)', str_to_date('2021-11-12', null));
+ERROR:  Incorrect datetime value: '2021-11-12' for function str_to_date
+CONTEXT:  referenced column: result
+insert into test values('str_to_date(''200454 Monday'', ''%X%V %W'')', str_to_date('200454 Monday', '%X%V %W'));
+ERROR:  Incorrect date value: '200454 Monday' for function str_to_date
+CONTEXT:  referenced column: result
+-- 结果
+select * from test;
+                                                                                                                                    funcname                                                                                                                                    |                                                                                                                                                                            result                                                                                                                                                                            
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ get_format(DATE, 'EUR')                                                                                                                                                                                                                                                        | %d.%m.%Y
+ get_format(DATE, 'USA')                                                                                                                                                                                                                                                        | %m.%d.%Y
+ get_format(DATE, 'JIS')                                                                                                                                                                                                                                                        | %Y-%m-%d
+ get_format(DATE, 'ISO')                                                                                                                                                                                                                                                        | %Y-%m-%d
+ get_format(DATE, 'INTERNAL')                                                                                                                                                                                                                                                   | %Y%m%d
+ get_format(DATETIME, 'EUR')                                                                                                                                                                                                                                                    | %Y-%m-%d %H.%i.%s
+ get_format(DATETIME, 'USA')                                                                                                                                                                                                                                                    | %Y-%m-%d %H.%i.%s
+ get_format(DATETIME, 'JIS')                                                                                                                                                                                                                                                    | %Y-%m-%d %H:%i:%s
+ get_format(DATETIME, 'ISO')                                                                                                                                                                                                                                                    | %Y-%m-%d %H:%i:%s
+ get_format(DATETIME, 'INTERNAL')                                                                                                                                                                                                                                               | %Y%m%d%H%i%s
+ get_format(TIME, 'EUR')                                                                                                                                                                                                                                                        | %H.%i.%s
+ get_format(TIME, 'USA')                                                                                                                                                                                                                                                        | %h:%i:%s %p
+ get_format(TIME, 'JIS')                                                                                                                                                                                                                                                        | %H:%i:%s
+ get_format(TIME, 'ISO')                                                                                                                                                                                                                                                        | %H:%i:%s
+ get_format(TIME, 'INTERNAL')                                                                                                                                                                                                                                                   | %H%i%s
+ get_format(DATE, 'abc')                                                                                                                                                                                                                                                        | 
+ get_format(DATE, null)                                                                                                                                                                                                                                                         | 
+ extract(YEAR FROM '2019-07-02')                                                                                                                                                                                                                                                | 2019
+ extract(MONTH FROM '2019-07-02')                                                                                                                                                                                                                                               | 7
+ extract(WEEK FROM '2019-07-02')                                                                                                                                                                                                                                                | 26
+ extract(QUARTER FROM '2019-07-02')                                                                                                                                                                                                                                             | 3
+ extract(DAY FROM '2019-07-02')                                                                                                                                                                                                                                                 | 2
+ extract(SECOND FROM '2019-07-02 12:12:12')                                                                                                                                                                                                                                     | 12
+ extract(MINUTE FROM '2019-07-02 12:12:12')                                                                                                                                                                                                                                     | 12
+ extract(HOUR FROM '2019-07-02 12:12:12')                                                                                                                                                                                                                                       | 12
+ extract(MICROSECOND FROM '2019-07-02 12:12:12.12121')                                                                                                                                                                                                                          | 121210
+ extract(SECOND FROM '12:12:12')                                                                                                                                                                                                                                                | 12
+ extract(MINUTE FROM '12:12:12')                                                                                                                                                                                                                                                | 12
+ extract(HOUR FROM '12:12:12')                                                                                                                                                                                                                                                  | 12
+ extract(MICROSECOND FROM '12:12:12.12121')                                                                                                                                                                                                                                     | 121210
+ extract(YEAR_MONTH FROM '2019-07-02')                                                                                                                                                                                                                                          | 201907
+ extract(DAY_HOUR FROM '2019-07-02 12:12:12')                                                                                                                                                                                                                                   | 212
+ extract(DAY_MINUTE FROM '2019-07-02 12:12:12')                                                                                                                                                                                                                                 | 21212
+ extract(DAY_MICROSECOND FROM '2019-07-02 12:12:12.12121')                                                                                                                                                                                                                      | 2121212121210
+ extract(SECOND_MICROSECOND FROM '2019-07-02 12:12:12.12121')                                                                                                                                                                                                                   | 12121210
+ extract(SECOND_MICROSECOND FROM '12:12:12.12121')                                                                                                                                                                                                                              | 12121210
+ extract(MINUTE_MICROSECOND FROM '2019-07-02 12:12:12.12121')                                                                                                                                                                                                                   | 1212121210
+ extract(MINUTE_MICROSECOND FROM '12:12:12.12121')                                                                                                                                                                                                                              | 1212121210
+ extract(MINUTE_SECOND FROM '2019-07-02 12:12:12.12121')                                                                                                                                                                                                                        | 1212
+ extract(MINUTE_SECOND FROM '12:12:12.12121')                                                                                                                                                                                                                                   | 1212
+ extract(HOUR_SECOND FROM '2019-07-02 12:12:12.12121')                                                                                                                                                                                                                          | 121212
+ extract(HOUR_SECOND FROM '12:12:12.12121')                                                                                                                                                                                                                                     | 121212
+ extract(HOUR_MINUTE FROM '2019-07-02 12:12:12.12121')                                                                                                                                                                                                                          | 1212
+ extract(HOUR_MINUTE FROM '12:12:12.12121')                                                                                                                                                                                                                                     | 1212
+ extract(HOUR_MICROSECOND FROM '2019-07-02 12:12:12.12121')                                                                                                                                                                                                                     | 121212121210
+ extract(HOUR_MICROSECOND FROM '12:12:12.12121')                                                                                                                                                                                                                                | 121212121210
+ extract(YEAR FROM '9999-12-31')                                                                                                                                                                                                                                                | 9999
+ extract(YEAR FROM '0000-1-1')                                                                                                                                                                                                                                                  | 0
+ extract(hour from '838:59:59')                                                                                                                                                                                                                                                 | 838
+ extract(hour from '-838:59:59')                                                                                                                                                                                                                                                | -838
+ extract(hour from time'-838:59:59')                                                                                                                                                                                                                                            | -838
+ extract(MONTH FROM date'2019-07-02')                                                                                                                                                                                                                                           | 7
+ extract(YEAR from cast('2019-07-02' as datetime)                                                                                                                                                                                                                               | 2019
+ extract(hour from 8385959)                                                                                                                                                                                                                                                     | 838
+ extract(MONTH FROM 20190702)                                                                                                                                                                                                                                                   | 7
+ extract(hour from null)                                                                                                                                                                                                                                                        | 
+ extract(DAY FROM '10000-01-01')                                                                                                                                                                                                                                                | 
+ extract(hour from '838:59:59.1')                                                                                                                                                                                                                                               | 838
+ extract(hour from '839:00:00')                                                                                                                                                                                                                                                 | 838
+ extract(hour from '-838:59:59.1')                                                                                                                                                                                                                                              | -838
+ extract(hour from '-839:00:00')                                                                                                                                                                                                                                                | -838
+ extract(hour from '40 1:1:0')                                                                                                                                                                                                                                                  | 838
+ extract(hour from '-40 1:1:0')                                                                                                                                                                                                                                                 | -838
+  date_format('2001-01-01 12:12:12','%a')                                                                                                                                                                                                                                       | Mon
+  date_format('2001-01-01 12:12:12','%b')                                                                                                                                                                                                                                       | Jan
+  date_format('2001-01-01 12:12:12','%c')                                                                                                                                                                                                                                       | 1
+  date_format('2001-01-01 12:12:12','%D')                                                                                                                                                                                                                                       | 1st
+  date_format('2001-01-01 12:12:12','%d')                                                                                                                                                                                                                                       | 01
+  date_format('2001-01-01 12:12:12','%e')                                                                                                                                                                                                                                       | 1
+  date_format('2001-01-01 12:12:12','%f')                                                                                                                                                                                                                                       | 000000
+  date_format('2001-01-01 12:12:12','%H')                                                                                                                                                                                                                                       | 12
+  date_format('2001-01-01 12:12:12','%h')                                                                                                                                                                                                                                       | 12
+  date_format('2001-01-01 12:12:12','%I')                                                                                                                                                                                                                                       | 12
+  date_format('2001-01-01 12:12:12','%i')                                                                                                                                                                                                                                       | 12
+  date_format('2001-01-01 12:12:12','%j')                                                                                                                                                                                                                                       | 001
+  date_format('2001-01-01 12:12:12','%k')                                                                                                                                                                                                                                       | 12
+  date_format('2001-01-01 12:12:12','%l')                                                                                                                                                                                                                                       | l
+  date_format('2001-01-01 12:12:12','%M')                                                                                                                                                                                                                                       | January
+  date_format('2001-01-01 12:12:12','%m')                                                                                                                                                                                                                                       | 01
+  date_format('2001-01-01 12:12:12','%p')                                                                                                                                                                                                                                       | PM
+  date_format('2001-01-01 12:12:12','%r')                                                                                                                                                                                                                                       | 12:12:12 PM
+  date_format('2001-01-01 12:12:12','%S')                                                                                                                                                                                                                                       | 12
+  date_format('2001-01-01 12:12:12','%s')                                                                                                                                                                                                                                       | 12
+  date_format('2001-01-01 12:12:12','%T')                                                                                                                                                                                                                                       | 12:12:12
+  date_format('2001-01-01 12:12:12','%U')                                                                                                                                                                                                                                       | 00
+  date_format('2001-01-01 12:12:12','%u')                                                                                                                                                                                                                                       | 01
+  date_format('2001-01-01 12:12:12','%V')                                                                                                                                                                                                                                       | 53
+  date_format('2001-01-01 12:12:12','%v')                                                                                                                                                                                                                                       | 01
+  date_format('2001-01-01 12:12:12','%W')                                                                                                                                                                                                                                       | Monday
+  date_format('2001-01-01 12:12:12','%w')                                                                                                                                                                                                                                       | 1
+  date_format('2001-01-01 12:12:12','%X')                                                                                                                                                                                                                                       | 2000
+  date_format('2001-01-01 12:12:12','%x')                                                                                                                                                                                                                                       | 2001
+  date_format('2001-01-01 12:12:12','%Y')                                                                                                                                                                                                                                       | 2001
+  date_format('2001-01-01 12:12:12','%y')                                                                                                                                                                                                                                       | 01
+  date_format('2001-01-01 12:12:12','aaaa')                                                                                                                                                                                                                                     | aaaa
+  date_format('2001-01-01 12:12:12','%dffff')                                                                                                                                                                                                                                   | 01ffff
+  date_format('2001-01-01 12:12:12.34567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890','%b')                                                                                                      | Jan
+  date_format('2001-01-01 12:12:12','%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b') | JanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJanJan
+  date_format('2001-01-01 12:12:12','%Y %M %D %U')                                                                                                                                                                                                                              | 2001 January 1st 00
+  date_format('2001-01-01 12:12:12','%H %k %I %r %T %S %w')                                                                                                                                                                                                                     | 12 12 12 12:12:12 PM 12:12:12 12 1
+ date_format('0000-01-01','%Y')                                                                                                                                                                                                                                                 | 0000
+ date_format('9999-12-31','%Y')                                                                                                                                                                                                                                                 | 9999
+ date_format('0000-01-01 00:00:00','%Y %m %d %T')                                                                                                                                                                                                                               | 0000 01 01 00:00:00
+ date_format('9999-12-31 23:59:59.999999','%Y %m %d %T %f')                                                                                                                                                                                                                     | 9999 12 31 23:59:59 999999
+ date_format(date'2001-01-09','%Y')                                                                                                                                                                                                                                             | 2001
+ date_format(cast('2001-01-09 12:12:12' as datetime),'%Y %m %d %T')                                                                                                                                                                                                             | 2001 01 09 12:12:12
+ date_format(20010101,'%Y')                                                                                                                                                                                                                                                     | 2001
+ date_format(20010101121212,'%Y %m %d %T')                                                                                                                                                                                                                                      | 2001 01 01 12:12:12
+ date_format(null, '%Y')                                                                                                                                                                                                                                                        | 
+ date_format('2021-11-12', null)                                                                                                                                                                                                                                                | 
+ date_format(null, null)                                                                                                                                                                                                                                                        | 
+ date_format('2021-0-12 12:12:12', '%Y %m %d %T')                                                                                                                                                                                                                               | 2021 00 12 12:12:12
+ date_format('2021-1-0 12:12:12', '%Y %m %d %T')                                                                                                                                                                                                                                | 2021 01 00 12:12:12
+ date_format('2021-0-0 12:12:12', '%Y %m %d %T')                                                                                                                                                                                                                                | 2021 00 00 12:12:12
+ date_format('10000-01-01 12:12:12','%Y %m %d %T')                                                                                                                                                                                                                              | 
+ date_format('2001-01-32 12:12:12','%Y %m %d %T')                                                                                                                                                                                                                               | 
+ from_unixtime(0)                                                                                                                                                                                                                                                               | 1970-01-01 08:00:00
+ from_unixtime(1)                                                                                                                                                                                                                                                               | 1970-01-01 08:00:01
+ from_unixtime(1.999999)                                                                                                                                                                                                                                                        | 1970-01-01 08:00:01.999999
+ from_unixtime(1.9999995)                                                                                                                                                                                                                                                       | 1970-01-01 08:00:02
+ from_unixtime(1454545444)                                                                                                                                                                                                                                                      | 2016-02-04 08:24:04
+ from_unixtime(0,'%Y-%m-%d %T')                                                                                                                                                                                                                                                 | 1970-01-01 08:00:00
+ from_unixtime(1.999999,'%Y-%m-%d %T.%f')                                                                                                                                                                                                                                       | 1970-01-01 08:00:01.999999
+ from_unixtime(1454545444,'%Y %M %D')                                                                                                                                                                                                                                           | 2016 February 4th
+ from_unixtime(2147483647)                                                                                                                                                                                                                                                      | 2038-01-19 11:14:07
+ from_unixtime(2147483647,'%Y')                                                                                                                                                                                                                                                 | 2038
+ from_unixtime(null)                                                                                                                                                                                                                                                            | 
+ from_unixtime(null,'%Y')                                                                                                                                                                                                                                                       | 
+ from_unixtime(2147483647,null)                                                                                                                                                                                                                                                 | 
+ from_unixtime(null,null)                                                                                                                                                                                                                                                       | 
+ from_unixtime(-1)                                                                                                                                                                                                                                                              | 
+ from_unixtime(-1454545444)                                                                                                                                                                                                                                                     | 
+ from_unixtime(-1,'%Y')                                                                                                                                                                                                                                                         | 
+ from_unixtime(-1454545444,'%Y %M %D')                                                                                                                                                                                                                                          | 
+ from_unixtime(11111111111111111,'%Y %M %D')                                                                                                                                                                                                                                    | 
+ from_unixtime(11111111111111111)                                                                                                                                                                                                                                               | 
+ from_unixtime(2147483648)                                                                                                                                                                                                                                                      | 
+ str_to_date('2021-11-12', '%Y-%m-%d')                                                                                                                                                                                                                                          | 2021-11-12
+ str_to_date('9999-12-31', '%Y-%m-%d')                                                                                                                                                                                                                                          | 9999-12-31
+ str_to_date('12 12 12', '%y %m %d')                                                                                                                                                                                                                                            | 2012-12-12
+ str_to_date('200442 Monday', '%X%V %W')                                                                                                                                                                                                                                        | 2004-10-18
+ str_to_date('200442 Monday', '%x%v %W')                                                                                                                                                                                                                                        | 2004-10-11
+ str_to_date('200442 Monday', '%Y%U %W')                                                                                                                                                                                                                                        | 2004-10-18
+ str_to_date('200442 Monday', '%Y%u %W')                                                                                                                                                                                                                                        | 2004-10-11
+ str_to_date('200442 Mon', '%Y%u %a')                                                                                                                                                                                                                                           | 2004-10-11
+ str_to_date('200442 Tue', '%Y%u %a')                                                                                                                                                                                                                                           | 2004-10-12
+ str_to_date('200442 Wed', '%Y%u %a')                                                                                                                                                                                                                                           | 2004-10-13
+ str_to_date('200442 Thu', '%Y%u %a')                                                                                                                                                                                                                                           | 2004-10-14
+ str_to_date('200442 Fri', '%Y%u %a')                                                                                                                                                                                                                                           | 2004-10-15
+ str_to_date('200442 Sat', '%Y%u %a')                                                                                                                                                                                                                                           | 2004-10-16
+ str_to_date('200442 Sun', '%Y%u %a')                                                                                                                                                                                                                                           | 2004-10-17
+ str_to_date('200442 1', '%X%V %w')                                                                                                                                                                                                                                             | 2004-10-18
+ str_to_date('200442 1', '%x%v %w')                                                                                                                                                                                                                                             | 2004-10-11
+ str_to_date('200442 1', '%Y%U %w')                                                                                                                                                                                                                                             | 2004-10-18
+ str_to_date('200442 1', '%Y%u %w')                                                                                                                                                                                                                                             | 2004-10-11
+ str_to_date('200442 2', '%Y%u %w')                                                                                                                                                                                                                                             | 2004-10-12
+ str_to_date('200442 3', '%Y%u %w')                                                                                                                                                                                                                                             | 2004-10-13
+ str_to_date('200442 4', '%Y%u %w')                                                                                                                                                                                                                                             | 2004-10-14
+ str_to_date('200442 5', '%Y%u %w')                                                                                                                                                                                                                                             | 2004-10-15
+ str_to_date('200442 6', '%Y%u %w')                                                                                                                                                                                                                                             | 2004-10-16
+ str_to_date('200442 0', '%Y%u %w')                                                                                                                                                                                                                                             | 2004-10-17
+ str_to_date('2004 100', '%Y %j')                                                                                                                                                                                                                                               | 2004-04-09
+ str_to_date('2004 January 12', '%Y %M %d')                                                                                                                                                                                                                                     | 2004-01-12
+ str_to_date('2004 February 12', '%Y %M %d')                                                                                                                                                                                                                                    | 2004-02-12
+ str_to_date('2004 March 12', '%Y %M %d')                                                                                                                                                                                                                                       | 2004-03-12
+ str_to_date('2004 April 12', '%Y %M %d')                                                                                                                                                                                                                                       | 2004-04-12
+ str_to_date('2004 May 12', '%Y %M %d')                                                                                                                                                                                                                                         | 2004-05-12
+ str_to_date('2004 June 12', '%Y %M %d')                                                                                                                                                                                                                                        | 2004-06-12
+ str_to_date('2004 July 12', '%Y %M %d')                                                                                                                                                                                                                                        | 2004-07-12
+ str_to_date('2004 August 12', '%Y %M %d')                                                                                                                                                                                                                                      | 2004-08-12
+ str_to_date('2004 September 12', '%Y %M %d')                                                                                                                                                                                                                                   | 2004-09-12
+ str_to_date('2004 October 12', '%Y %M %d')                                                                                                                                                                                                                                     | 2004-10-12
+ str_to_date('2004 November 12', '%Y %M %d')                                                                                                                                                                                                                                    | 2004-11-12
+ str_to_date('2004 December 12', '%Y %M %d')                                                                                                                                                                                                                                    | 2004-12-12
+ str_to_date('2004 Jan 12', '%Y %b %d')                                                                                                                                                                                                                                         | 2004-01-12
+ str_to_date('2004 Feb 12', '%Y %b %d')                                                                                                                                                                                                                                         | 2004-02-12
+ str_to_date('2004 Mar 12', '%Y %b %d')                                                                                                                                                                                                                                         | 2004-03-12
+ str_to_date('2004 Apr 12', '%Y %b %d')                                                                                                                                                                                                                                         | 2004-04-12
+ str_to_date('2004 May 12', '%Y %b %d')                                                                                                                                                                                                                                         | 2004-05-12
+ str_to_date('2004 Jun 12', '%Y %b %d')                                                                                                                                                                                                                                         | 2004-06-12
+ str_to_date('2004 Jul 12', '%Y %b %d')                                                                                                                                                                                                                                         | 2004-07-12
+ str_to_date('2004 Aug 12', '%Y %b %d')                                                                                                                                                                                                                                         | 2004-08-12
+ str_to_date('2004 Sep 12', '%Y %b %d')                                                                                                                                                                                                                                         | 2004-09-12
+ str_to_date('2004 Oct 12', '%Y %b %d')                                                                                                                                                                                                                                         | 2004-10-12
+ str_to_date('2004 Nov 12', '%Y %b %d')                                                                                                                                                                                                                                         | 2004-11-12
+ str_to_date('2004 Dec 12', '%Y %b %d')                                                                                                                                                                                                                                         | 2004-12-12
+ str_to_date('2021-11-12 12:12:12', '%Y-%m-%d %T')                                                                                                                                                                                                                              | 2021-11-12 12:12:12
+ str_to_date('9999-12-31 23:59:59', '%Y-%m-%d %T')                                                                                                                                                                                                                              | 9999-12-31 23:59:59
+ str_to_date('0000-1-1 00:00:00', '%Y-%m-%d %T')                                                                                                                                                                                                                                | 0000-01-01 00:00:00
+ str_to_date('2021-11-12 12:12:12.123456', '%Y-%m-%d %T.%f')                                                                                                                                                                                                                    | 2021-11-12 12:12:12.123456
+ str_to_date('9999-12-31 23:59:59.999999', '%Y-%m-%d %T.%f')                                                                                                                                                                                                                    | 9999-12-31 23:59:59.999999
+ str_to_date('0000-1-1 00:00:00.000000', '%Y-%m-%d %T.%f')                                                                                                                                                                                                                      | 0000-01-01 00:00:00
+ str_to_date('0', '%H')                                                                                                                                                                                                                                                         | 00:00:00
+ str_to_date('23', '%H')                                                                                                                                                                                                                                                        | 23:00:00
+ str_to_date('12', '%h')                                                                                                                                                                                                                                                        | 00:00:00
+ str_to_date('10:11:12', '%T')                                                                                                                                                                                                                                                  | 10:11:12
+ str_to_date('10:11:12.999999', '%T.%f')                                                                                                                                                                                                                                        | 10:11:12.999999
+ str_to_date('10:11:12', '%H:%i:%S')                                                                                                                                                                                                                                            | 10:11:12
+ str_to_date('10:11:12.999999', '%H:%i:%S.%f')                                                                                                                                                                                                                                  | 10:11:12.999999
+ str_to_date('1:1:1 pm', '%r')                                                                                                                                                                                                                                                  | 13:01:01
+ str_to_date('1:1:1 am', '%r')                                                                                                                                                                                                                                                  | 01:01:01
+ str_to_date('1:1:1 pm', '%h:%i:%S %p')                                                                                                                                                                                                                                         | 13:01:01
+ str_to_date('1:1:1 am', '%h:%i:%S %p')                                                                                                                                                                                                                                         | 01:01:01
+ str_to_date('1:1:1.999999 pm', '%h:%i:%S.%f %p')                                                                                                                                                                                                                               | 13:01:01.999999
+ str_to_date('1:1:1.999999 am', '%h:%i:%S.%f %p')                                                                                                                                                                                                                               | 01:01:01.999999
+ str_to_date('0000 1 1', '%Y %m %d')                                                                                                                                                                                                                                            | 0000-01-01
+ str_to_date('9999 12 31', '%Y %m %d')                                                                                                                                                                                                                                          | 9999-12-31
+ str_to_date('0000 1 1 00:00:00', '%Y %m %d %T')                                                                                                                                                                                                                                | 0000-01-01 00:00:00
+ str_to_date('9999 12 31 23:59:59.999999', '%Y %m %d %T.%f')                                                                                                                                                                                                                    | 9999-12-31 23:59:59.999999
+ str_to_date(null, '%Y %m %d')                                                                                                                                                                                                                                                  | 
+ str_to_date('0', '%h')                                                                                                                                                                                                                                                         | 
+ str_to_date('10000-1-1', '%Y-%m-%d')                                                                                                                                                                                                                                           | 
+ str_to_date('2021-13-1', '%Y-%m-%d')                                                                                                                                                                                                                                           | 
+ str_to_date('2021-1-32', '%Y-%m-%d')                                                                                                                                                                                                                                           | 
+ str_to_date('2021-1-1 24:00:00', '%Y-%m-%d %T')                                                                                                                                                                                                                                | 
+ str_to_date('2021-1-1 00:60:00', '%Y-%m-%d %T')                                                                                                                                                                                                                                | 
+ str_to_date('2021-1-1 00:00:60', '%Y-%m-%d %T')                                                                                                                                                                                                                                | 
+ str_to_date('2021-1-1 24:00:00', '%Y-%m-%d %H:%i:%S')                                                                                                                                                                                                                          | 
+ str_to_date('2021-1-1 00:60:00', '%Y-%m-%d %H:%i:%S')                                                                                                                                                                                                                          | 
+ str_to_date('2021-1-1 00:00:60', '%Y-%m-%d %H:%i:%S')                                                                                                                                                                                                                          | 
+ str_to_date('13:00:00 pm', '%r')                                                                                                                                                                                                                                               | 
+ str_to_date('13:00:00 am', '%r')                                                                                                                                                                                                                                               | 
+ str_to_date('24:00:00', '%T')                                                                                                                                                                                                                                                  | 
+ str_to_date('13:00:00', '%h:%i:%S')                                                                                                                                                                                                                                            | 
+ str_to_date('24:00:00', '%H:%i:%S')                                                                                                                                                                                                                                            | 
+ str_to_date('13','%h')                                                                                                                                                                                                                                                         | 
+ str_to_date('24','%H')                                                                                                                                                                                                                                                         | 
+ str_to_date('2021-11-12', '%Y/a%m/%d')                                                                                                                                                                                                                                         | 
+ str_to_date('2021-a11-12', '%Y/%m/%d')                                                                                                                                                                                                                                         | 
+ str_to_date('2021/11/12abc', '%Y/%m/%d')                                                                                                                                                                                                                                       | 2021-11-12
+ str_to_date('200442 Monday', '%X%v %W')                                                                                                                                                                                                                                        | 
+ str_to_date('200442 Monday', '%x%V %W')                                                                                                                                                                                                                                        | 
+ str_to_date('200442 Monday', '%x%U %W')                                                                                                                                                                                                                                        | 
+ str_to_date('200442 Monday', '%x%u %W')                                                                                                                                                                                                                                        | 
+ str_to_date('200442 Monday', '%x%U %W')                                                                                                                                                                                                                                        | 
+ str_to_date('200442 Monday', '%x%u %W')                                                                                                                                                                                                                                        | 
+ str_to_date('2021-11-12', null)                                                                                                                                                                                                                                                | 
+ str_to_date('200454 Monday', '%X%V %W')                                                                                                                                                                                                                                        | 
+(238 rows)
 
-SELECT STR_TO_DATE('200454 Monday', '%x%v %W');
-WARNING:  Incorrect date value: '200454 Monday' for function str_to_date
-CONTEXT:  referenced column: str_to_date
- str_to_date 
--------------
- 
-(1 row)
-
--- str_to_date结束
-set sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat';
+drop table test;
 \c contrib_regression
 DROP DATABASE b_datetime_func_test;

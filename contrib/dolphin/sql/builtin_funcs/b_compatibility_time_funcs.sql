@@ -48,6 +48,11 @@ insert into func_test(functionName, result) values ('maketime(0, 60, 0)', maketi
 insert into func_test(functionName, result) values ('maketime(0, 0, -1)', maketime(0, 0, -1)); -- second < 0
 insert into func_test(functionName, result) values ('maketime(0, 0, 60)', maketime(0, 0, 60)); -- second >= 60
 insert into func_test(functionName, result) values ('maketime(0, 0, pow(10,18))', maketime(0, 0, pow(10,18))); -- second >=10^18
+insert into func_test(functionName, result) values ('maketime(4294967295, 1, 1)', maketime(4294967295, 1, 1));
+insert into func_test(functionName, result) values ('maketime(-4294967295, 0, 1)', maketime(-4294967295, 0, 1));
+insert into func_test(functionName, result) values ('maketime(2147483649, 1, 1)', maketime(2147483649, 1, 1));
+insert into func_test(functionName, result) values ('maketime(-2147483649, 1, 1)', maketime(-2147483649, 1, 1));
+
 -- 精度一致
 insert into func_test(functionName, result) values ('maketime(0, 0, 59.9999)', maketime(0, 0, 59.9999));  -- 结果精度与参数相同
 insert into func_test(functionName, result) values ('maketime(0, 0, 59.999999001)', maketime(0, 0, 59.999999001)); -- 最高保留精度为小数点后6位
@@ -138,6 +143,9 @@ insert into func_test(functionName, result) values ('sec_to_time(pow(10,18)-1)',
 insert into func_test(functionName, result) values ('sec_to_time(1000)', sec_to_time(1000)); 
 insert into func_test(functionName, result) values ('sec_to_time(0)', sec_to_time(0));
 insert into func_test(functionName, result) values ('sec_to_time(-1000000)', sec_to_time(-1000000));
+insert into func_test(functionName, result) values ('sec_to_time(''2022-12-31 14:25:30'')', sec_to_time('2022-12-31 14:25:30'));
+insert into func_test(functionName, result) values ('sec_to_time(''2012-2-25'')', sec_to_time('2012-2-25'));
+insert into func_test(functionName, result) values ('sec_to_time(''14:25:56'')', sec_to_time('14:25:56'));
     -- 小数精度
 insert into func_test(functionName, result) values ('sec_to_time(1000000.499)', sec_to_time(1000000.499));
 insert into func_test(functionName, result) values ('sec_to_time(1000000.4990000)', sec_to_time(1000000.4990000));
@@ -152,6 +160,8 @@ insert into func_test(functionName, result) values ('sec_to_time(3599.999999700)
 insert into func_test(functionName, result) values ('sec_to_time(3020399)', sec_to_time(3020399)); -- 未超出边界
 insert into func_test(functionName, result) values ('sec_to_time(3020399 + 1)', sec_to_time(3020399 + 1)); -- 超出边界
 insert into func_test(functionName, result) values ('sec_to_time(3020399.000000500)', sec_to_time(3020399.000000500)); -- 进位导致超出边界
+insert into func_test(functionName, result) values ('sec_to_time(-100000000)', sec_to_time(-100000000));
+insert into func_test(functionName, result) values ('sec_to_time(-999999999)', sec_to_time(-999999999));
 
 -- subdate
     -- 非指定类型的参数

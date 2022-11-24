@@ -574,7 +574,7 @@ static SelectStmt *MakeShowGrantStmt(char *arg, int location, core_yyscan_t yysc
 %type <node>	SnapshotStmt
 %type <list>	AlterSnapshotCmdOrEmpty AlterSnapshotCmdList AlterSnapshotCmdListNoParens
 %type <list>	AlterSnapshotCmdListWithParens SnapshotSample SnapshotSampleList OptSnapshotStratify
-%type <str>		SnapshotVersion OptSnapshotVersion OptSnapshotComment
+%type <str>		SnapshotVersion OptSnapshotVersion OptSnapshotComment opt_bracket
 %type <boolean>	OptSnapshotAlias AlterSnapshotDdl AlterSnapshotDdlList
 %type <boolean>	OptAlterUpdateSnapshot OptInsertIntoSnapshot OptDeleteFromSnapshot
 
@@ -619,6 +619,8 @@ static SelectStmt *MakeShowGrantStmt(char *arg, int location, core_yyscan_t yysc
 				transaction_mode_item
 				create_extension_opt_item alter_extension_opt_item
 
+%type <list>	opt_fields_options fields_list opt_lines_options lines_list
+%type <defelt>	opt_ignore_number opt_character fields_option lines_option conflict_option
 %type <ival>	opt_lock lock_type cast_context opt_wait kill_opt
 %type <ival>	vacuum_option_list vacuum_option_elem opt_verify_options
 %type <boolean>	opt_check opt_force opt_or_replace
@@ -694,7 +696,7 @@ static SelectStmt *MakeShowGrantStmt(char *arg, int location, core_yyscan_t yysc
 				opt_include_without_empty opt_c_include index_including_params
 				sort_clause opt_sort_clause sortby_list index_params table_index_elems constraint_params
 				name_list from_clause from_list opt_array_bounds dolphin_name_list
-				qualified_name_list any_name any_name_list dolphin_qualified_name_list dolphin_any_name dolphin_any_name_list
+				qualified_name_list any_name any_name_or_sconst any_name_list dolphin_qualified_name_list dolphin_any_name dolphin_any_name_list
 				any_operator expr_list attrs callfunc_args callfunc_args_or_empty dolphin_attrs rename_user_clause rename_list
 				target_list insert_column_list set_target_list rename_clause_list rename_clause
 				set_clause_list set_clause multiple_set_clause
@@ -852,7 +854,7 @@ static SelectStmt *MakeShowGrantStmt(char *arg, int location, core_yyscan_t yysc
 
 %type <ival>	Iconst SignedIconst
 %type <str>		Sconst comment_text notify_payload
-%type <str>		RoleId TypeOwner opt_granted_by opt_boolean_or_string ColId_or_Sconst Dolphin_ColId_or_Sconst definer_user definer_expression
+%type <str>		RoleId RoleIdWithOutCurrentUser TypeOwner opt_granted_by opt_boolean_or_string ColId_or_Sconst Dolphin_ColId_or_Sconst definer_user definer_expression
 %type <list>	var_list guc_value_extension_list
 %type <str>		ColId ColLabel var_name type_function_name param_name user opt_password opt_replace show_index_schema_opt ColIdForTableElement PrivilegeColId
 %type <node>	var_value zone_value
@@ -1016,7 +1018,7 @@ static SelectStmt *MakeShowGrantStmt(char *arg, int location, core_yyscan_t yysc
 %type <list>	alter_tblspc_option_list
 %type <node>	alter_tblspc_option
 
-%type <dolphinIdent>	DolphinRoleId
+%type <dolphinIdent>	DolphinRoleId DolphinRoleIdWithOutCurrentUser
 
 /*
  * Non-keyword token types.  These are hard-wired into the "flex" lexer.
@@ -1059,14 +1061,14 @@ static SelectStmt *MakeShowGrantStmt(char *arg, int location, core_yyscan_t yysc
 	CURRENT_TIME CURTIME CURRENT_TIMESTAMP CURRENT_USER CURSOR CYCLE NOW_FUNC
 	SHRINK
 
-	DATA_P DATABASE DATABASES DATAFILE DATANODE DATANODES DATATYPE_CL DATE_P DATETIME DATE_FORMAT_P DAY_P DAY_HOUR_P DAY_MICROSECOND_P DAY_MINUTE_P DAY_SECOND_P DAYOFMONTH DAYOFWEEK DAYOFYEAR DBCOMPATIBILITY_P DB_B_FORMAT DB_B_JSOBJ DEALLOCATE DEC DECIMAL_P DECLARE DECODE DEFAULT DEFAULTS
+	DATA_P DATABASE DATABASES DATAFILE DATANODE DATANODES DATATYPE_CL DATE_P DATETIME DATE_FORMAT_P DAY_P DAY_HOUR_P DAY_MICROSECOND_P DAY_MINUTE_P DAY_SECOND_P DAYOFMONTH DAYOFWEEK DAYOFYEAR DBCOMPATIBILITY_P DB_B_FORMAT DB_B_JSOBJ DEALLOCATE DEC DECIMAL_P DECLARE DECODE DEFAULT DEFAULTS DEFAULT_FUNC
 	DEFERRABLE DEFERRED DEFINER DELAYED DELETE_P DELIMITER DELIMITERS DELTA DELTAMERGE DESC DESCRIBE DETERMINISTIC DIV
 /* PGXC_BEGIN */
 	DICTIONARY DIRECT DIRECTORY DISABLE_P DISCARD DISTINCT DISTINCTROW DISTRIBUTE DISTRIBUTION DO DOCUMENT_P DOMAIN_P DOUBLE_P
 /* PGXC_END */
 	DROP DUPLICATE DISCONNECT
 
-	EACH ELASTIC ELSE ENABLE_P ENCLOSED ENCODING ENCRYPTED ENCRYPTED_VALUE ENCRYPTION ENCRYPTION_TYPE END_P ENFORCED ENGINE_P ENUM_P ERRORS ESCAPE EOL ESCAPING EVERY EXCEPT EXCHANGE
+	EACH ELASTIC ELSE ENABLE_P ENCLOSED ENCODING ENCRYPTED ENCRYPTED_VALUE ENCRYPTION ENCRYPTION_TYPE END_P ENFORCED ENGINE_P ENUM_P ERRORS ESCAPE ESCAPED EOL ESCAPING EVERY EXCEPT EXCHANGE
 	EXCLUDE EXCLUDED EXCLUDING EXCLUSIVE EXECUTE EXISTS EXPIRED_P EXPLAIN
 	EXTENDED EXTENSION EXTERNAL EXTRACT
 
@@ -1089,7 +1091,7 @@ static SelectStmt *MakeShowGrantStmt(char *arg, int location, core_yyscan_t yysc
 	KEY KEYS KILL KEY_PATH KEY_STORE
 
 	LABEL LANGUAGE LARGE_P LAST_DAY_FUNC LAST_P LC_COLLATE_P LC_CTYPE_P LEADING LEAKPROOF
-	LEAST LESS LEFT LEVEL LIKE LIMIT LIST LISTEN LOAD LOCAL LOCALTIME LOCALTIMESTAMP
+	LEAST LESS LEFT LEVEL LIKE LINES LIMIT LIST LISTEN LOAD LOCAL LOCALTIME LOCALTIMESTAMP
 	LOCATE LOCATION LOCK_P LOCKED LOG_P LOGGING LOGIN_ANY LOGIN_FAILURE LOGIN_SUCCESS LOGOUT LOGS LOOP LOW_PRIORITY
 	MAPPING MASKING MASTER MATCH MATERIALIZED MATCHED MAXEXTENTS MAXSIZE MAXTRANS MAXVALUE MEDIUMINT MERGE MICROSECOND_P MID MINUS_P MINUTE_P MINUTE_MICROSECOND_P MINUTE_SECOND_P MINVALUE MINEXTENTS MOD MODE MODIFY_P MONTH_P MOVE MOVEMENT
 	MODEL // DB4AI
@@ -1120,7 +1122,7 @@ static SelectStmt *MakeShowGrantStmt(char *arg, int location, core_yyscan_t yysc
 
 	SAMPLE SAVEPOINT SCHEMA SCHEMAS SCROLL SEARCH SECOND_P SECOND_MICROSECOND_P SECURITY SELECT SEPARATOR_P SEQUENCE SEQUENCES
 	SERIALIZABLE SERVER SESSION SESSION_USER SET SETS SETOF SHARE SHIPPABLE SHOW SHUTDOWN SIBLINGS SIGNED
-	SIMILAR SIMPLE SIZE SKIP SLAVE SLICE SMALLDATETIME SMALLDATETIME_FORMAT_P SMALLINT SNAPSHOT SOME SOUNDS SOURCE_P SPACE SPILL SPLIT SQL STABLE STANDALONE_P START STARTWITH
+	SIMILAR SIMPLE SIZE SKIP SLAVE SLICE SMALLDATETIME SMALLDATETIME_FORMAT_P SMALLINT SNAPSHOT SOME SOUNDS SOURCE_P SPACE SPILL SPLIT SQL STABLE STANDALONE_P START STARTING STARTWITH
 	STATEMENT STATEMENT_ID STATISTICS STATUS STDIN STDOUT STORAGE STORE_P STORED STRATIFY STREAM STRICT_P STRIP_P SUBPARTITION SUBSCRIPTION SUBSTR SUBSTRING
 	SYMMETRIC SYNONYM SYSDATE SYSID SYSTEM_P SYS_REFCURSOR
 
@@ -1167,6 +1169,7 @@ static SelectStmt *MakeShowGrantStmt(char *arg, int location, core_yyscan_t yysc
 			END_OF_INPUT
 			END_OF_INPUT_COLON
 			END_OF_PROC
+			DEFAULT_FUNC
 
 /* Precedence: lowest to highest */
 %nonassoc COMMENT
@@ -1898,6 +1901,18 @@ CreateUserStmt:
 					IsValidIdentUsername($3);
 					n->role = $3;
 					n->options = $6;
+					n->missing_ok = false;
+					$$ = (Node *)n;
+					u_sess->parser_cxt.isForbidTruncate = false;
+				}
+			| CREATE USER IF_P NOT EXISTS RoleId opt_with {u_sess->parser_cxt.isForbidTruncate = true;} OptRoleList
+				{
+					CreateRoleStmt *n = makeNode(CreateRoleStmt);
+					n->stmt_type = ROLESTMT_USER;
+					IsValidIdentUsername($6);
+					n->role = $6;
+					n->options = $9;
+					n->missing_ok = true;
 					$$ = (Node *)n;
 					u_sess->parser_cxt.isForbidTruncate = false;
 				}
@@ -5119,7 +5134,7 @@ alter_table_cmd:
 				n->subtype = AT_SetTableCharset;
 				$$ = (Node *) n;
 			}
-			| opt_default COLLATE opt_equal any_name
+			| opt_default COLLATE opt_equal any_name_or_sconst
 			{
 				AlterTableCmd *n = makeNode(AlterTableCmd);
 				n->subtype = AT_SetTableCollate;
@@ -6314,8 +6329,8 @@ CopyStmt:	COPY BINARY dolphin_qualified_name opt_column_list opt_oids
 
 					if ($9)
 						n->options = lappend(n->options, $9);
-                                        if ($10)
-                                                n->options = lappend(n->options, $10);
+					if ($10)
+						n->options = lappend(n->options, $10);
 					if ($11)
 						n->options = lappend(n->options, $11);
 					if ($12)
@@ -6355,8 +6370,8 @@ CopyStmt:	COPY BINARY dolphin_qualified_name opt_column_list opt_oids
 
 					if ($8)
 						n->options = lappend(n->options, $8);
-                                        if ($9)
-                                                n->options = lappend(n->options, $9);
+					if ($9)
+						n->options = lappend(n->options, $9);
 					if ($10)
 						n->options = lappend(n->options, $10);
 					if ($11)
@@ -6364,7 +6379,7 @@ CopyStmt:	COPY BINARY dolphin_qualified_name opt_column_list opt_oids
 					if ($12)
 						n->options = lappend(n->options, $12);
 					if ($14)
-						n->options = list_concat(n->options, $14);
+						n->options = list_concat(n->options, $14);		
 					$$ = (Node *)n;
 
 					u_sess->parser_cxt.is_load_copy = false;
@@ -7142,7 +7157,7 @@ CreateAsOption:
 					n->option_type = OPT_ENGINE;
 					$$ = n;
 				}
-			| opt_default COLLATE opt_equal any_name
+			| opt_default COLLATE opt_equal any_name_or_sconst
 				{
 					ereport(WARNING, (errmsg("COLLATE for TABLE is not supported for current version. skipped")));
 					SingleTableOption *n = (SingleTableOption*)palloc0(sizeof(SingleTableOption));
@@ -7166,8 +7181,8 @@ CreateAsOption:
 		;
 
 charset_with_opt_equal:
-		CHARSET opt_equal any_name	{}
-		| CHARACTER SET opt_equal any_name	{}
+		CHARSET opt_equal any_name_or_sconst	{}
+		| CHARACTER SET opt_equal any_name_or_sconst	{}
 		;
 
 CreateStmt:	CREATE OptTemp TABLE dolphin_qualified_name '(' OptTableElementList ')'
@@ -8451,7 +8466,7 @@ ColConstraint:
 				}
 			| ColConstraintElem						{ $$ = $1; }
 			| ConstraintAttr						{ $$ = $1; }
-			| COLLATE any_name
+			| COLLATE any_name_or_sconst
 				{
 					/*
 					 * Note: the CollateClause is momentarily included in
@@ -8956,6 +8971,9 @@ TableLikeClause:
 					TableLikeClause *n = makeNode(TableLikeClause);
 					n->relation = $2;
 					n->options = CREATE_TABLE_LIKE_ALL & ~$4;
+					if ($4 & CREATE_TABLE_LIKE_MAX) {
+						n->options |= CREATE_TABLE_LIKE_MAX;
+					}
 #ifndef ENABLE_MULTIPLE_NODES					
 					if (IS_SINGLE_NODE) 
 					{
@@ -8975,10 +8993,12 @@ TableLikeOptionList:
 				TableLikeOptionList INCLUDING TableLikeIncludingOption	{ $$ = $1 | $3; }
 				| TableLikeOptionList EXCLUDING TableLikeExcludingOption
 					{
-						if ($3 & CREATE_TABLE_LIKE_INDEXES) {
-							$$ = ($1 | CREATE_TABLE_LIKE_EXCLUDING_INDEXES) & ~$3;
+						if ($3 == CREATE_TABLE_LIKE_ALL) {
+							$$ = ($1 & ~$3) | CREATE_TABLE_LIKE_EXCLUDING_PARTITION | CREATE_TABLE_LIKE_EXCLUDING_INDEXES;
+						} else if ($3 & CREATE_TABLE_LIKE_INDEXES) {
+							$$ = ($1 & ~$3) | CREATE_TABLE_LIKE_EXCLUDING_INDEXES;
 						} else if ($3 & CREATE_TABLE_LIKE_PARTITION) {
-							$$ = ($1 | CREATE_TABLE_LIKE_EXCLUDING_PARTITION) & ~$3;
+							$$ = ($1 & ~$3) | CREATE_TABLE_LIKE_EXCLUDING_PARTITION;
 						} else {
 							$$ = $1 & ~$3; 
 						}
@@ -12158,9 +12178,9 @@ CreateUserMappingStmt: CREATE USER MAPPING FOR auth_ident SERVER name create_gen
 
 /* User mapping authorization identifier */
 auth_ident:
-			CURRENT_USER	{ $$ = "current_user"; }
-		|	USER			{ $$ = "current_user"; }
-		|	DolphinRoleId	{ $$ = DolphinObjNameCmp($1->str, "public", $1->is_quoted) ? NULL : $1->str; }
+			CURRENT_USER opt_bracket			{ $$ = "current_user"; }
+		|	USER								{ $$ = "current_user"; }
+		|	DolphinRoleIdWithOutCurrentUser		{ $$ = DolphinObjNameCmp($1->str, "public", $1->is_quoted) ? NULL : $1->str; }
 		;
 
 /*****************************************************************************
@@ -12453,9 +12473,9 @@ row_level_security_role_list: row_level_security_role
 					;
 
 row_level_security_role:
-			DolphinRoleId	{ char* result = "public"; $$ = DolphinObjNameCmp($1->str, "public", $1->is_quoted) ? result : $1->str; }
-		|	CURRENT_USER	{ $$ = pstrdup($1); }
-		|	SESSION_USER	{ $$ = pstrdup($1); }
+			DolphinRoleIdWithOutCurrentUser		{ char* result = "public"; $$ = DolphinObjNameCmp($1->str, "public", $1->is_quoted) ? result : $1->str; }
+		|	CURRENT_USER opt_bracket			{ $$ = pstrdup($1); }
+		|	SESSION_USER						{ $$ = pstrdup($1); }
 		;
 
 RLSDefaultPermissive:
@@ -13800,6 +13820,10 @@ dolphin_any_name_list:
 any_name:	ColId						{ $$ = list_make1(makeString($1)); }
 			| ColId attrs				{ $$ = lcons(makeString($1), $2); }
 		;
+
+any_name_or_sconst:
+		any_name					{ $$ = $1; }
+		| Sconst					{ $$ = list_make1(makeString($1)); }
 
 dolphin_any_name:	DolphinColId						{ $$ = list_make1(makeString(GetDolphinObjName($1->str, $1->is_quoted))); }
 			| DolphinColId dolphin_attrs
@@ -15977,7 +16001,7 @@ index_including_params:	index_elem						{ $$ = list_make1($1); }
 			| index_including_params ',' index_elem		{ $$ = lappend($1, $3); }
 		;
 
-collate_option: opt_default COLLATE opt_equal any_name			{ $$ = $4; }
+collate_option: opt_default COLLATE opt_equal any_name_or_sconst			{ $$ = $4; }
 		;
 
 opt_collate: collate_option							{ $$ = $1; }
@@ -19196,9 +19220,9 @@ DropSubscriptionStmt: DROP SUBSCRIPTION name opt_drop_behavior
 				}
 		;
 
-TypeOwner:	RoleId			{ $$ = $1; }
-			| CURRENT_USER	{ $$ = pstrdup($1); }
-			| SESSION_USER	{ $$ = pstrdup($1); }
+TypeOwner:	RoleIdWithOutCurrentUser			{ $$ = $1; }
+			| CURRENT_USER opt_bracket			{ $$ = pstrdup($1); }
+			| SESSION_USER						{ $$ = pstrdup($1); }
 		;
 
 /*****************************************************************************
@@ -19646,19 +19670,35 @@ LoadStmt:	LOAD file_name
                     n->is_load_data = false;
 					$$ = (Node *)n;
 				}
-
-        | LOAD {u_sess->parser_cxt.is_load_copy = true;} opt_load_data opt_load_data_options_list load_type_set qualified_name load_oper_table_type load_table_options_list
-                {
-                    LoadStmt *n = makeNode(LoadStmt);
-					n->is_load_data = true;
-					n->pre_load_options = NULL;
-                    n->load_options = $4;
-					n->load_type = (LOAD_DATA_TYPE)GetLoadType($5, $7);
-                    n->relation = $6;
-					n->rel_options = $8;
-                    $$ = (Node *)n;
+		| LoadAct DATA_P INFILE Sconst conflict_option INTO TABLE dolphin_qualified_name opt_character opt_fields_options 
+		opt_lines_options opt_ignore_number opt_column_list
+				{
+					CopyStmt *n = makeNode(CopyStmt);
+					n->relation = $8;
+					n->query = NULL;
+					n->attlist = u_sess->parser_cxt.col_list;
+					n->is_from = TRUE;
+					n->filename = $4;
+					ListCell* option = NULL;
+					n->relation->length = @3;
+					n->options = NIL;
+					n->options = lappend(n->options, makeDefElem("format", (Node *)makeString("csv")));
+					n->options = lappend(n->options, makeDefElem("compatibility", (Node *)makeInteger(TRUE)));
+					/* Concatenate user-supplied flags */
+					if ($5)
+						n->options = lappend(n->options, $5);
+					if ($9)
+						n->options = lappend(n->options, $9);
+					if ($12)
+						n->options = lappend(n->options, $12);
+					if ($10)
+						n->options = list_concat(n->options, $10);
+					if ($11)
+						n->options = list_concat(n->options, $11);
+					$$ = (Node *)n;
 					u_sess->parser_cxt.is_load_copy = false;
-                }
+					u_sess->parser_cxt.col_list = NULL;
+				}
         | OPTIONS '(' load_options_list ')' LOAD {u_sess->parser_cxt.is_load_copy = true;} opt_load_data opt_load_data_options_list load_type_set qualified_name load_oper_table_type load_table_options_list
                 {
                     LoadStmt *n = makeNode(LoadStmt);
@@ -19671,6 +19711,101 @@ LoadStmt:	LOAD file_name
                     $$ = (Node *)n;
 					u_sess->parser_cxt.is_load_copy = false;
                 }
+	;
+
+LoadAct: LOAD {u_sess->parser_cxt.is_load_copy = true;}
+	;
+
+conflict_option:
+		REPLACE		{ $$ = makeDefElem("replace", (Node *)makeInteger(TRUE));}
+		| IGNORE	{ $$ = makeDefElem("ignore", (Node *)makeInteger(TRUE));}
+		| /* EMPTY */	{ $$ = NULL;}
+	;
+
+rows_lines:
+		ROWS
+		| LINES
+	;
+
+opt_ignore_number:
+		IGNORE Iconst rows_lines
+			{
+#ifdef ENABLE_MULTIPLE_NODES
+				const char* message = "SKIP is not supported";
+				InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);
+				ereport(errstate, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("SKIP is not supported")));
+#endif
+				$$ = makeDefElem("skip", (Node *)makeInteger($2));
+			}
+		| /* EMPTY */ { $$ = NULL;}
+	;
+
+fields_list:
+	fields_list fields_option
+		{
+			$$ = lappend($1, $2);
+		}
+	| fields_option
+		{
+			$$ = list_make1($1);
+		}
+	;
+
+fields_option:
+		TERMINATED BY Sconst
+			{
+				$$ = makeDefElem("delimiter", (Node *)makeString($3));
+			}
+		| OPTIONALLY ENCLOSED BY Sconst
+			{
+				$$ = makeDefElem("quote", (Node *)makeString($4));
+			}
+		| ENCLOSED BY Sconst
+			{
+				$$ = makeDefElem("quote", (Node *)makeString($3));
+			}
+		| ESCAPED BY Sconst
+			{
+				$$ = makeDefElem("escape", (Node *)makeString($3));
+			}
+	;
+
+opt_fields_options:
+		FIELDS fields_list	{ $$ = $2;}
+		| COLUMNS fields_list	{ $$ = $2;}
+		| /* EMPTY */	{ $$ = NIL;}
+	;
+
+lines_list:
+	lines_list lines_option
+		{
+			$$ = lappend($1, $2);
+		}
+	| lines_option
+		{
+			$$ = list_make1($1);
+		}
+	;
+
+lines_option:
+		TERMINATED BY Sconst
+			{
+				$$ = makeDefElem("eol", (Node *)makeString($3));
+			}
+		| STARTING BY Sconst
+			{
+				$$ = makeDefElem("prefix", (Node *)makeString($3));
+			}
+	;
+
+opt_lines_options:
+		LINES lines_list	{$$ = $2;}
+		| /* EMPTY */	{$$ = NIL;}	
+	;
+
+opt_character:
+		CHARACTER SET Sconst		{ $$ = makeDefElem("encoding", (Node *)makeString($3));}
+		| /* EMPTY */		{ $$ = NULL; }
 	;
 
 load_options_list:
@@ -20064,6 +20199,9 @@ opt_equal:	'='										{}
 			| /*EMPTY*/								{}
 		;
 
+opt_bracket:	'(' ')'								{}
+				| /*EMPTY*/							{}
+		;
 
 /*****************************************************************************
  *
@@ -22339,6 +22477,13 @@ ExplainStmt:
 					n->options = NIL;
 					$$ = (Node *) n;
 				}
+		| EXPLAIN EXTENDED ExplainableStmt
+				{
+					ExplainStmt* stmt = makeNode(ExplainStmt);
+					stmt->query = $3;
+					stmt->options = NIL;
+					$$ = (Node*)stmt;
+				}
 		| EXPLAIN PERFORMANCE ExplainableStmt
 				{
 					ExplainStmt *n = makeNode(ExplainStmt);
@@ -22369,6 +22514,22 @@ ExplainStmt:
 					n->query = $5;
 					n->options = $3;
 					$$ = (Node *) n;
+				}
+		| EXPLAIN DB_B_FORMAT '=' ColId_or_Sconst ExplainableStmt
+				{
+					ExplainStmt* stmt = makeNode(ExplainStmt);
+					stmt->query = $5;
+					if (pg_strcasecmp($4, "json") == 0) {
+						DefElem* def = makeDefElem((char*)$2, (Node*)makeString("json"));
+						stmt->options = list_make1(def);
+					} else if (pg_strcasecmp($4, "traditional") == 0) {
+                                         	stmt->options = NIL;
+					} else {
+						DefElem* def = makeDefElem((char*)$2, (Node*)makeString($4));
+						stmt->options = list_make1(def);					
+					}
+
+					$$ = (Node*)stmt;					
 				}
 		| EXPLAIN PLAN SET STATEMENT_ID '=' Sconst FOR ExplainableStmt
 				{
@@ -23417,8 +23578,22 @@ set_target:
 			DolphinColId opt_dolphin_indirection
 				{
 					$$ = makeNode(ResTarget);
-					$$->name = $1->str;
-					$$->indirection = check_indirection(GetNameListFromDolphinString($2), yyscanner);
+					if ($2 == NIL) {
+						$$->name = downcase_str($1->str, $1->is_quoted);
+					} else {
+						$$->name = GetDolphinObjName($1->str, $1->is_quoted);;
+					}
+					List* result = NIL;
+					ListCell* cell = NULL;
+					foreach(cell, $2) {
+						DolphinString* item = (DolphinString*)lfirst(cell);
+						if (IsA(item->node, String)) {
+							Value* value = (Value*)(item->node);
+							value->val.str = downcase_str(value->val.str, item->is_quoted);
+						}
+						result = lappend(result, item->node);
+					}
+					$$->indirection = check_indirection(result, yyscanner);
 					$$->val = NULL;	/* upper production sets this */
 					$$->location = @1;
 				}
@@ -24536,15 +24711,9 @@ table_ref:	relation_expr		%prec UMINUS
 
 					$$ = (Node *) n;
 				}
-			| relation_expr PARTITION '(' name ',' name_list ')'
+			| relation_expr PARTITION '(' name_list ')'
 				{
-					$1->partitionNameList = lcons(makeString($4), $6);
-					$$ = (Node *)$1;
-				}
-			| relation_expr PARTITION '(' name ')'
-				{
-					$1->partitionname = $4;
-					$1->ispartition = true;
+					$1->partitionNameList = $4;
 					$$ = (Node *)$1;
 				}
 			| relation_expr SUBPARTITION '(' name ')'
@@ -24571,17 +24740,10 @@ table_ref:	relation_expr		%prec UMINUS
 					$1->issubpartition = true;
 					$$ = (Node *)$1;
 				}
-			| relation_expr PARTITION '(' name ')' dolphin_alias_clause
+			| relation_expr PARTITION '(' name_list ')' dolphin_alias_clause
 				{
-					$1->partitionname = $4;
 					$1->alias = $6;
-					$1->ispartition = true;
-					$$ = (Node *)$1;
-				}
-			| relation_expr PARTITION '(' name ',' name_list ')' dolphin_alias_clause
-				{
-					$1->alias = $8;
-					$1->partitionNameList = lcons(makeString($4), $6);
+					$1->partitionNameList = $4;
 					$$ = (Node *)$1;
 				}
 			| relation_expr SUBPARTITION '(' name ')' dolphin_alias_clause
@@ -25839,8 +26001,8 @@ opt_charset:
 			| /*EMPTY*/								{ $$ = NULL; }
 		;
 charset_option:
-			CHARACTER SET ColId						{ $$ = $3; }
-			| CHARSET ColId							{ $$ = $2; }
+			CHARACTER SET ColId_or_Sconst					{ $$ = $3; }
+			| CHARSET ColId_or_Sconst					{ $$ = $2; }
 		;
 
 /*
@@ -27798,6 +27960,21 @@ func_expr_common_subexpr:
 					n->call_func = false;
 					$$ = (Node *)n;
 				}
+			| DEFAULT_FUNC columnref ')'
+				{
+					FuncCall *n = makeNode(FuncCall);
+					n->funcname = list_make1(makeString("mode_b_default"));
+					ColumnRef *temp_col = (ColumnRef *)$2;
+					n->args = list_make1((Node *)temp_col);
+					n->agg_order = NIL;
+					n->agg_star = TRUE;
+					n->agg_distinct = FALSE;
+					n->func_variadic = FALSE;
+					n->over = NULL;
+					n->location = @1;
+					n->call_func = false;
+					$$ = (Node *)n;
+				}
 			| CURRENT_TIMESTAMP
 				{
 					FuncCall *n = makeNode(FuncCall);
@@ -28084,7 +28261,7 @@ func_expr_common_subexpr:
 					n->call_func = false;
 					$$ = (Node *)n;
 				}
-			| CURRENT_USER
+			| CURRENT_USER opt_bracket
 				{
 					FuncCall *n = makeNode(FuncCall);
 					n->funcname = SystemFuncName("current_user");
@@ -29560,7 +29737,7 @@ columnref:	DolphinColId
 					}
 					cell = NULL;
 					switch (list_length($2) - indices)
-				{
+					{
 						case 0:
 							/* column */
 							first_word = downcase_str($1->str, $1->is_quoted);
@@ -29590,6 +29767,7 @@ columnref:	DolphinColId
 								GetSessionContext()->lower_case_table_names > 0)) {
 								text = downcase_str(text, is_quoted);
 							}
+							count++;
 							result = lappend(result, (Node*)makeString(text));
 						} else {
 							result = lappend(result, dolphinString->node);
@@ -30158,15 +30336,22 @@ AexprConst: Iconst
 Iconst:		ICONST									{ $$ = $1; };
 Sconst:		SCONST									{ $$ = $1; };
 
-DolphinRoleId:		IDENT							{ $$ = $1; }
-					| unreserved_keyword			{ $$ = CreateDolphinIdent(pstrdup($1), false); }
-					| col_name_keyword				{ $$ = CreateDolphinIdent(pstrdup($1), false); }
+DolphinRoleId:		DolphinRoleIdWithOutCurrentUser			{ $$ = $1; }
+					| CURRENT_USER  opt_bracket				{ $$ = CreateDolphinIdent(GetUserNameFromId(GetUserId()), false); }
 		;
 
+DolphinRoleIdWithOutCurrentUser:		IDENT						{ $$ = $1; }
+										| unreserved_keyword		{ $$ = CreateDolphinIdent(pstrdup($1), false); }
+										| col_name_keyword			{ $$ = CreateDolphinIdent(pstrdup($1), false); }
+ 		;
 
-RoleId:		IDENT									{ $$ = GetDolphinObjName($1->str, $1->is_quoted); }
-			| unreserved_keyword					{ $$ = GetDolphinObjName(pstrdup($1), false); }
-			| col_name_keyword						{ $$ = GetDolphinObjName(pstrdup($1), false); }
+RoleId:		RoleIdWithOutCurrentUser			{ $$ = $1; }
+			| CURRENT_USER  opt_bracket			{ $$ = GetUserNameFromId(GetUserId()); }
+		;
+
+RoleIdWithOutCurrentUser:		IDENT						{ $$ = GetDolphinObjName($1->str, $1->is_quoted); }
+								| unreserved_keyword		{ $$ = GetDolphinObjName(pstrdup($1), false); }
+								| col_name_keyword			{ $$ = GetDolphinObjName(pstrdup($1), false); }
 		;
 
 SignedIconst: Iconst								{ $$ = $1; }
@@ -30375,7 +30560,7 @@ unreserved_keyword_without_key:
 			| CHARACTERSET
 			| CHARSET
 			| CHECKPOINT
-                        | CHECKSUM
+			| CHECKSUM
 			| CLASS
 			| CLEAN
 			| CLIENT
@@ -30397,7 +30582,7 @@ unreserved_keyword_without_key:
 			| COMPRESSION
 			| CONDITION
 			| CONFIGURATION
-                        | CONNECT
+			| CONNECT
 			| CONNECTION
 			| CONSTANT
 			| CONSTRAINTS
@@ -30467,6 +30652,7 @@ unreserved_keyword_without_key:
 			| EOL
 			| ERRORS
 			| ESCAPE
+			| ESCAPED
 			| ESCAPING
 			| EVERY
 			| EXCHANGE
@@ -30545,7 +30731,8 @@ unreserved_keyword_without_key:
 			| LC_COLLATE_P
 			| LC_CTYPE_P
 			| LEAKPROOF
-                        | LEVEL
+			| LEVEL
+			| LINES
 			| LIST
 			| LISTEN
 			| LOAD
@@ -30640,7 +30827,7 @@ unreserved_keyword_without_key:
 			| PREPARED
 			| PRESERVE
 			| PRIOR
-                        | PRIVATE
+			| PRIVATE
 			| PRIVILEGE
 			| PRIVILEGES
 			| PROCEDURAL
@@ -30717,7 +30904,7 @@ unreserved_keyword_without_key:
 			| SHIPPABLE
 			| SHOW
 			| SHUTDOWN
-                        | SIBLINGS
+			| SIBLINGS
 			| SIMPLE
 			| SIZE
 			| SKIP
@@ -30732,7 +30919,8 @@ unreserved_keyword_without_key:
 			| SQL
 			| STABLE
 			| STANDALONE_P
-                        | START
+			| START
+			| STARTING
 			| STATEMENT
 			| STATEMENT_ID
 			| STATISTICS
@@ -30743,7 +30931,7 @@ unreserved_keyword_without_key:
 			| STORE_P
 			| STORED
 			| STRATIFY
-                        | STREAM
+			| STREAM
 			| STRICT_P
 			| STRIP_P
 			| SUBPARTITION
@@ -31051,7 +31239,7 @@ reserved_keyword:
 			| REFERENCES
 			| REJECT_P
 			| RETURNING
-                        | ROWNUM
+			| ROWNUM
 			| SELECT
 			| SESSION_USER
 			| SHRINK

@@ -662,6 +662,7 @@ DROP TABLE t_charset_column;
 CREATE TABLE t_charset_enum_column(c ENUM('a', 'b', 'c') CHARSET test_character_set);
 WARNING:  character set "test_character_set" for type ENUM is not supported yet. default value set
 DROP TABLE t_charset_enum_column;
+-- test for alter statement
 CREATE TABLE t_alter_test(c text);
 ALTER TABLE t_alter_test DEFAULT COLLATE = test_collate;
 WARNING:  COLLATE for TABLE is not supported for current version. skipped
@@ -687,6 +688,32 @@ WARNING:  ROW_FORMAT for TABLE is not supported for current version. skipped
 WARNING:  COLLATE for TABLE is not supported for current version. skipped
 WARNING:  CHARSET for TABLE is not supported for current version. skipped
 DROP TABLE t_alter_test;
+-- test for single quote and double quotes input
+CREATE TABLE t_quote_test(c text) ROW_FORMAT = 'test_row_format' COLLATE = 'test_collate' CHARSET = 'test_charset';
+WARNING:  ROW_FORMAT for TABLE is not supported for current version. skipped
+WARNING:  COLLATE for TABLE is not supported for current version. skipped
+WARNING:  CHARACTER SET for TABLE is not supported for current version. skipped
+DROP TABLE t_quote_test;
+CREATE TABLE t_quote_test(c text) ROW_FORMAT = "test_row_format" COLLATE = "test_collate" CHARSET = "test_charset";
+WARNING:  ROW_FORMAT for TABLE is not supported for current version. skipped
+WARNING:  COLLATE for TABLE is not supported for current version. skipped
+WARNING:  CHARACTER SET for TABLE is not supported for current version. skipped
+DROP TABLE t_quote_test;
+CREATE TABLE t_quote_test(c text CHARSET 'test_charset' COLLATE 'test_collate');
+WARNING:  character set "test_charset" for type text is not supported yet. default value set
+WARNING:  Invalid collation for column c detected. default value set
+DROP TABLE t_quote_test;
+CREATE TABLE t_quote_test(c text CHARSET "test_charset" COLLATE "test_collate");
+WARNING:  character set "test_charset" for type text is not supported yet. default value set
+WARNING:  Invalid collation for column c detected. default value set
+ALTER TABLE t_quote_test ROW_FORMAT = 'COMPACT', COLLATE = 'test_collate', CHARACTER SET 'test_charset';
+WARNING:  ROW_FORMAT for TABLE is not supported for current version. skipped
+WARNING:  COLLATE for TABLE is not supported for current version. skipped
+WARNING:  CHARSET for TABLE is not supported for current version. skipped
+ALTER TABLE t_quote_test ROW_FORMAT = "COMPACT", COLLATE = "test_collate", CHARACTER SET "test_charset";
+WARNING:  ROW_FORMAT for TABLE is not supported for current version. skipped
+WARNING:  COLLATE for TABLE is not supported for current version. skipped
+WARNING:  CHARSET for TABLE is not supported for current version. skipped
 -- test for integrity of function text
 SELECT text(10);
  text 
@@ -1132,6 +1159,20 @@ CREATE TABLE ignore_range_range
 );
 insert ignore into ignore_range_range values('201812', '1', '1', 1);
 insert ignore into ignore_range_range values('201903', '4', '1', 1);
+-- select from single partition
+select * from ignore_range_range partition (p_201901);
+ month_code | dept_code | user_no | sales_amt 
+------------+-----------+---------+-----------
+ 201812     | 1         | 1       |         1
+(1 row)
+
+-- select from single subpartition
+select * from ignore_range_range partition (p_201901_a);
+ month_code | dept_code | user_no | sales_amt 
+------------+-----------+---------+-----------
+ 201812     | 1         | 1       |         1
+(1 row)
+
 -- select only from subpartition
 select * from ignore_range_range partition (p_201901_a, p_201905_a);
  month_code | dept_code | user_no | sales_amt 

@@ -132,10 +132,10 @@ select (-922337203685477580999.0)::float8::uint2;
 ERROR:  smallint unsigned out of range
 CONTEXT:  referenced column: uint2
 select (-922337203685477580999.0)::float4::uint4;
-ERROR:  integer unsigned out of range
+ERROR:  int unsigned out of range
 CONTEXT:  referenced column: uint4
 select (-922337203685477580999.0)::float8::uint4;
-ERROR:  integer unsigned out of range
+ERROR:  int unsigned out of range
 CONTEXT:  referenced column: uint4
 select (-922337203685477580999.0)::float4::uint8;
 ERROR:  bigint unsigned out of range
@@ -438,13 +438,13 @@ select (1)::int8::uint4;
 (1 row)
 
 select (9223372036854775807)::int8::uint4;
-ERROR:  unsigned int out of range
+ERROR:   int unsigned out of range
 CONTEXT:  referenced column: uint4
 select (9223372036854775808)::int8::uint4;
 ERROR:  bigint out of range
 CONTEXT:  referenced column: uint4
 select (-9223372036854775808)::int8::uint4;
-ERROR:  unsigned int out of range
+ERROR:   int unsigned out of range
 CONTEXT:  referenced column: uint4
 select (-9223372036854775809)::int8::uint4;
 ERROR:  bigint out of range
@@ -456,7 +456,7 @@ select (4294967295)::int8::uint4;
 (1 row)
 
 select (4294967296)::int8::uint4;
-ERROR:  unsigned int out of range
+ERROR:   int unsigned out of range
 CONTEXT:  referenced column: uint4
 select (-2147483648)::int8::uint4;
    uint4    
@@ -465,7 +465,7 @@ select (-2147483648)::int8::uint4;
 (1 row)
 
 select (-2147483649)::int8::uint4;
-ERROR:  unsigned int out of range
+ERROR:   int unsigned out of range
 CONTEXT:  referenced column: uint4
 select (-1)::bool::uint2;
  uint2 
@@ -993,7 +993,7 @@ select (256)::int1::uint8;
 ERROR:  tinyint out of range
 CONTEXT:  referenced column: uint8
 select 255::uint1::int1;
-ERROR:  smallint out of range
+ERROR:  tinyint out of range
 CONTEXT:  referenced column: int1
 select 255::uint1::int2;
  int2 
@@ -1077,10 +1077,10 @@ select 65535::uint2::numeric;
 (1 row)
 
 select 255::uint4::int1;
-ERROR:  tinyint unsigned out of range
+ERROR:  tinyint out of range
 CONTEXT:  referenced column: int1
 select 4294967295::uint4::int1;
-ERROR:  tinyint unsigned out of range
+ERROR:  tinyint out of range
 CONTEXT:  referenced column: int1
 select 32767::uint4::int2;
  int2  

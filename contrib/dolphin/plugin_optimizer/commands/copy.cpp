@@ -17,6 +17,7 @@
 #include "postgres.h"
 #include "knl/knl_variable.h"
 #include <arpa/inet.h>
+#include "plugin_commands/copy.h"
 #include <fnmatch.h>
 #include <libgen.h>
 #include "access/tableam.h"
@@ -30,7 +31,7 @@
 #include "access/tupdesc.h"
 #include "access/xlog.h"
 #include "bulkload/dist_fdw.h"
-#include "catalog/heap.h"
+#include "plugin_catalog/heap.h"
 #include "catalog/pgxc_class.h"
 #include "bulkload/dist_fdw.h"
 #include "catalog/namespace.h"
@@ -40,7 +41,6 @@
 #include "catalog/pg_trigger.h"
 #endif
 #include "catalog/storage_gtt.h"
-#include "commands/copy.h"
 #include "commands/defrem.h"
 #include "commands/trigger.h"
 #include "commands/copypartition.h"
@@ -129,6 +129,10 @@
 #define COPY_ERROR_TABLE "pgxc_copy_error_log"
 
 #define COPY_ERROR_TABLE_NUM_COL 6
+
+#ifdef DOLPHIN
+#define PREFIX_MAX_LEN 65535
+#endif
 
 static const Oid copy_error_table_col_typid[COPY_ERROR_TABLE_NUM_COL] = {
     VARCHAROID, TIMESTAMPTZOID, VARCHAROID, INT8OID, TEXTOID, TEXTOID};
@@ -333,7 +337,11 @@ static bool IfCopyLineMatchWhenListPosition(CopyState cstate);
 static bool IfCopyLineMatchWhenListField(CopyState cstate);
 static void CopyGetWhenListAttFieldno(CopyState cstate, List *attnamelist);
 static int CopyGetColumnListIndex(CopyState cstate, List *attnamelist, const char* colname);
-
+#ifdef DOLPHIN
+static List* ExecInsertIndexTuplesWithoutCheck(TupleTableSlot* slot, ItemPointer tupleid, EState* estate,
+    Relation targetPartRel, Partition p, int2 bucketId);
+static bool DoReplace(TupleTableSlot* myslot, EState* estate, ResultRelInfo* resultRelInfo, ReplaceData* replaceData, CopyState cstate);
+#endif
 const char *gds_protocol_version_gaussdb = "1.0";
 /*
  * Send copy start/stop messages for frontend copies.  These have changed
@@ -1678,6 +1686,23 @@ void ProcessCopyOptions(CopyState cstate, bool is_from, List* options)
             cstate->is_load_copy = defGetBoolean(defel);
         } else if (pg_strcasecmp((defel->defname), "useeof") == 0) {
             cstate->is_useeof = defGetBoolean(defel);
+#ifdef DOLPHIN
+        } else if (pg_strcasecmp((defel->defname), "compatibility") == 0) {
+            cstate->is_compatible = defGetBoolean(defel);           
+        } else if (pg_strcasecmp((defel->defname), "ignore") == 0) {
+            cstate->is_ignore = defGetBoolean(defel);
+        } else if (pg_strcasecmp((defel->defname), "replace") == 0) {
+            cstate->is_replace = defGetBoolean(defel);
+        } else if (pg_strcasecmp(defel->defname, "prefix") == 0) {
+            if (cstate->linePrefix)
+                ereport(ERROR, (errcode(ERRCODE_SYNTAX_ERROR), errmsg("conflicting or redundant options")));
+            if (strlen(defGetString(defel)) > PREFIX_MAX_LEN)
+                ereport(ERROR,
+                    (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+                        errmsg("not a valid lines prefix string, lines prefix string must not exceed the maximum length "
+                                "(%d bytes)", PREFIX_MAX_LEN)));
+            cstate->linePrefix = defGetString(defel);
+#endif
         } else if (pg_strcasecmp(defel->defname, optChunkSize) == 0) {
             if (obs_chunksize) {
                 ereport(ERROR, (errcode(ERRCODE_SYNTAX_ERROR), errmsg("conflicting or redundant options")));
@@ -1708,7 +1733,7 @@ void ProcessCopyOptions(CopyState cstate, bool is_from, List* options)
 
     /* Set defaults for omitted options */
     if (!cstate->delim)
-        cstate->delim = (char*)(IS_CSV(cstate) ? "," : "\t");
+        cstate->delim = (char*)((IS_CSV(cstate) && !cstate->is_compatible) ? "," : "\t");
 
     if (!cstate->null_print)
         cstate->null_print = (char*)(IS_CSV(cstate) ? "" : "\\N");
@@ -1848,7 +1873,11 @@ void ProcessCopyOptions(CopyState cstate, bool is_from, List* options)
             (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
                 errmsg("HEADER FILE only available using COPY TO or WRITE ONLY foreign table")));
 
-    if (cstate->eol_type == EOL_UD && is_from && !IS_TEXT(cstate))
+#ifdef DOLPHIN
+    if (cstate->eol_type == EOL_UD && is_from && !IS_TEXT(cstate) && !cstate->is_compatible)
+#else
+  if (cstate->eol_type == EOL_UD && is_from && !IS_TEXT(cstate))
+#endif
         ereport(ERROR,
             (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
                 errmsg("EOL specification can not be used with non-text format using COPY FROM or READ ONLY foreign "
@@ -3924,6 +3953,11 @@ uint64 CopyFrom(CopyState cstate)
     bool isForeignTbl = false; /* Whether this foreign table support COPY */
     bool rel_isblockchain = false;
     int hash_colno = -1;
+#ifdef DOLPHIN
+    bool has_before_statement_delete_trigger = false;
+    bool has_after_statement_delete_trigger = false;
+    int uniqueCount = 0;
+#endif
     Assert(cstate->rel);
 
     if (cstate->rel->rd_rel->relkind != RELKIND_RELATION) {
@@ -3942,17 +3976,31 @@ uint64 CopyFrom(CopyState cstate)
                     errmsg("cannot copy to materialized view \"%s\"",
                     RelationGetRelationName(cstate->rel))));
         else if (cstate->rel->rd_rel->relkind == RELKIND_FOREIGN_TABLE) {
+#ifdef DOLPHIN
+            if (!CheckSupportedFDWType(RelationGetRelid(cstate->rel)) || cstate->is_compatible)
+#else
             if (!CheckSupportedFDWType(RelationGetRelid(cstate->rel)))
+#endif
                 ereport(ERROR,
                     (errcode(ERRCODE_WRONG_OBJECT_TYPE),
                         errmsg("cannot copy to foreign table \"%s\"", RelationGetRelationName(cstate->rel))));
             isForeignTbl = true;
         } else if (cstate->rel->rd_rel->relkind == RELKIND_STREAM) {
+#ifdef DOLPHIN
+            if (!CheckSupportedFDWType(RelationGetRelid(cstate->rel)) || cstate->is_compatible)
+#else
             if (!CheckSupportedFDWType(RelationGetRelid(cstate->rel)))
+#endif
                 ereport(ERROR,
                     (errcode(ERRCODE_WRONG_OBJECT_TYPE),
                         errmsg("cannot copy to stream \"%s\"", RelationGetRelationName(cstate->rel))));
             isForeignTbl = true;
+#ifdef DOLPHIN
+        } else if (cstate->is_compatible && RelationIsColStore(cstate->rel)) {
+            ereport(ERROR,
+                (errcode(ERRCODE_WRONG_OBJECT_TYPE),
+                    errmsg("load cannot support colstore table \"%s\"", RelationGetRelationName(cstate->rel))));       
+#endif
         } else if (RELKIND_IS_SEQUENCE(cstate->rel->rd_rel->relkind))
             ereport(ERROR,
                 (errcode(ERRCODE_WRONG_OBJECT_TYPE),
@@ -4026,7 +4074,25 @@ uint64 CopyFrom(CopyState cstate)
         1, /* dummy rangetable index */
         0);
 
+#ifdef DOLPHIN
+    bool isSpeculative = !RelationIsColStore(cstate->rel) && (cstate->is_replace || cstate->is_ignore);
+    ExecOpenIndices(resultRelInfo, isSpeculative);
+
+    if (cstate->is_replace || cstate->is_ignore) {
+        if (resultRelInfo->ri_NumIndices > 0) {
+            IndexInfo** indexInfos = resultRelInfo->ri_IndexRelationInfo;
+            for (int i = 0; i < resultRelInfo->ri_NumIndices; ++i) {
+                if (indexInfos[i]->ii_Unique) {
+                    uniqueCount++;
+                }
+            }
+        }
+    }
+    // for replace and ignore condition, if there has primary or unique key, then must call heap_insert() separately for every tuple.
+    bool is_single_insert = (uniqueCount > 0) && (cstate->is_replace || cstate->is_ignore);
+#else
     ExecOpenIndices(resultRelInfo, false);
+#endif
     init_gtt_storage(CMD_INSERT, resultRelInfo);
 
     resultRelationDesc = resultRelInfo->ri_RelationDesc;
@@ -4059,7 +4125,11 @@ uint64 CopyFrom(CopyState cstate)
      */
     if ((resultRelInfo->ri_TrigDesc != NULL &&
         (resultRelInfo->ri_TrigDesc->trig_insert_before_row || resultRelInfo->ri_TrigDesc->trig_insert_instead_row)) ||
+#ifdef DOLPHIN
+        cstate->volatile_defexprs || is_single_insert) {
+#else
         cstate->volatile_defexprs) {
+#endif
         useHeapMultiInsert = false;
     } else {
         useHeapMultiInsert = true;
@@ -4693,6 +4763,9 @@ uint64 CopyFrom(CopyState cstate)
                     ItemPointer pTSelf = NULL;
                     Relation subPartRel = NULL;
                     Partition subPart = NULL;
+#ifdef DOLPHIN
+                    targetRel = cstate->rel;
+#endif
                     if (isPartitionRel) {
                         /* get partititon oid to insert the record */
                         partitionid = heapTupleGetPartitionId(resultRelationDesc, tuple);
@@ -4713,7 +4786,22 @@ uint64 CopyFrom(CopyState cstate)
                         }
 
                         targetRel = heaprel;
-
+#ifdef DOLPHIN
+                    }
+                    if (cstate->is_replace) {
+                        ReplaceData* replaceData = (ReplaceData*)palloc0(sizeof(ReplaceData));
+                        replaceData->targetRel = targetRel;
+                        replaceData->bucketid = bucketid;
+                        replaceData->uniqueCount = uniqueCount;
+                        replaceData->partition = partition;
+                        replaceData->has_before_statement_delete_trigger = has_before_statement_delete_trigger;
+                        if (DoReplace(myslot, estate, resultRelInfo, replaceData, cstate))
+                            has_after_statement_delete_trigger = true;
+                        has_before_statement_delete_trigger = replaceData->has_before_statement_delete_trigger;
+                        pfree(replaceData);
+                    }
+                    if (isPartitionRel) {
+#endif
                         if (bucketid != InvalidBktId) {
                             searchHBucketFakeRelation(
                                 estate->esfRelations, estate->es_query_cxt, heaprel, bucketid, targetRel);
@@ -4751,6 +4839,45 @@ uint64 CopyFrom(CopyState cstate)
                     }
 
                     /* OK, store the tuple and create index entries for it */
+#ifdef DOLPHIN
+                    if (resultRelInfo->ri_NumIndices > 0 && !RelationIsColStore(cstate->rel)) {
+                        if (cstate->is_ignore) {
+                            bool specConflict = false;
+                            recheckIndexes = ExecInsertIndexTuples(slot,
+                                pTSelf,
+                                estate,
+                                isPartitionRel ? heaprel : NULL,
+                                isPartitionRel ? partition : NULL,
+                                bucketid, &specConflict, NULL);
+                            if (specConflict) {
+                                //Rollback tuple
+                                tableam_tuple_abort_speculative(targetRel, tuple);
+                                list_free(recheckIndexes);
+                                resetPerTupCxt = true;
+                                continue;
+                            }
+                        } else if (cstate->is_replace) {
+                            /* 
+                            * for replace we don't need to check conflict for inserting index
+                            * since we already clear all conflicts above.
+                            */
+                            recheckIndexes = ExecInsertIndexTuplesWithoutCheck(slot,
+                                pTSelf,
+                                estate,
+                                isPartitionRel ? heaprel : NULL,
+                                isPartitionRel ? partition : NULL,
+                                bucketid);
+                        } else {
+                            recheckIndexes = ExecInsertIndexTuples(slot,
+                                pTSelf,
+                                estate,
+                                isPartitionRel ? heaprel : NULL,
+                                isPartitionRel ? partition : NULL,
+                                bucketid, NULL, NULL);
+                        }
+                    }
+
+#else
                     if (resultRelInfo->ri_NumIndices > 0 && !RelationIsColStore(cstate->rel))
                         recheckIndexes = ExecInsertIndexTuples(slot,
                             pTSelf,
@@ -4759,10 +4886,21 @@ uint64 CopyFrom(CopyState cstate)
                             isPartitionRel ? partition : NULL,
                             bucketid, NULL, NULL);
 
-                    /* AFTER ROW INSERT Triggers */
-                    ExecARInsertTriggers(estate, resultRelInfo, partitionid, bucketid, (HeapTuple)tuple,
-                        recheckIndexes);
+#endif
+                    if (resultRelInfo->ri_TrigDesc && resultRelInfo->ri_TrigDesc->trig_insert_after_row) {
+                        if (u_sess->tri_cxt.afterTriggers->query_depth < 0) {
+                            /* Prepare to catch AFTER triggers. */
+                            AfterTriggerBeginQuery();
+                        }
+                        /* AFTER ROW INSERT Triggers */
+                        ExecARInsertTriggers(estate, resultRelInfo, partitionid, bucketid, (HeapTuple)tuple,
+                            recheckIndexes);
 
+#ifdef DOLPHIN
+                        /* Handle queued AFTER triggers */
+                        AfterTriggerEndQuery(estate);
+#endif
+                    }
                     list_free(recheckIndexes);
 
                     resetPerTupCxt = true;
@@ -4874,11 +5012,31 @@ uint64 CopyFrom(CopyState cstate)
         Log_copy_error_spi(cstate);
     }
 
+#ifdef DOLPHIN
+    if (!cstate->is_ignore || processed > 0) {
+        if (resultRelInfo->ri_TrigDesc && resultRelInfo->ri_TrigDesc->trig_insert_after_statement) {
+            if (u_sess->tri_cxt.afterTriggers->query_depth < 0) {
+                /* Prepare to catch AFTER triggers. */
+                AfterTriggerBeginQuery();
+            }
+            /* Execute AFTER STATEMENT insertion triggers */
+            ExecASInsertTriggers(estate, resultRelInfo);
+        }
+    }
+    if (has_after_statement_delete_trigger) {
+        ExecASDeleteTriggers(estate, resultRelInfo);
+    }
+    if (u_sess->tri_cxt.afterTriggers->query_depth >= 0) {
+        /* Handle queued AFTER triggers */
+        AfterTriggerEndQuery(estate);
+    }
+#else
     /* Execute AFTER STATEMENT insertion triggers */
     ExecASInsertTriggers(estate, resultRelInfo);
 
     /* Handle queued AFTER triggers */
     AfterTriggerEndQuery(estate);
+#endif
 
     /* To free the statement allocated in ExecForeignInsert, MOT doesn't need this */
     if (isForeignTbl && !isMOTFromTblOid(RelationGetRelid(cstate->rel))) {
@@ -6677,6 +6835,25 @@ static bool CopyReadLineTextTemplate(CopyState cstate)
      * For a little extra speed within the loop, we copy raw_buf and
      * raw_buf_len into local variables.
      */
+#ifdef DOLPHIN
+    while(cstate->linePrefix) {
+        int start = cstate->raw_buf_index;
+        int prefixLength = strlen(cstate->linePrefix);
+        if (start + prefixLength >= cstate->raw_buf_len) {
+            if (!CopyLoadRawBuf(cstate)) {
+                return true;
+            }
+            start = 0;
+        }
+
+        if (strncmp(&cstate->raw_buf[start], cstate->linePrefix, prefixLength) == 0) {
+            cstate->raw_buf_index = start + prefixLength;
+            break;
+        }
+
+        cstate->raw_buf_index++;
+    }
+#endif
     copy_raw_buf = cstate->raw_buf;
     raw_buf_ptr = cstate->raw_buf_index;
     copy_buf_len = cstate->raw_buf_len;
@@ -10396,3 +10573,352 @@ static void LogCopyUErrorLogBulk(CopyState cstate)
     FreeInsertCopyLogInfo(copyLogInfo);
     return;
 }
+
+#ifdef DOLPHIN
+static inline int128 Datum2autoinc(ConstrAutoInc *cons_autoinc, Datum datum)
+{
+    if (cons_autoinc->datum2autoinc_func != NULL) {
+        return DatumGetInt128(DirectFunctionCall1((PGFunction)(uintptr_t)cons_autoinc->datum2autoinc_func, datum));
+    }
+    return DatumGetInt128(datum);
+}
+
+static void UpdateAutoIncrement(Relation rel, Tuple tuple, EState* estate)
+{
+    if (!RelHasAutoInc(rel)) {
+        return;
+    }
+
+    bool isnull = false;
+    ConstrAutoInc* cons_autoinc = rel->rd_att->constr->cons_autoinc;
+    Datum datum = tableam_tops_tuple_getattr(tuple, cons_autoinc->attnum, rel->rd_att, &isnull);
+
+    if (!isnull) {
+        int128 autoinc = Datum2autoinc(cons_autoinc, datum);
+        if (rel->rd_rel->relpersistence == RELPERSISTENCE_TEMP) {
+            tmptable_autoinc_setval(rel->rd_rel->relfilenode, cons_autoinc->next, autoinc, true);
+        } else {
+            autoinc_setval(cons_autoinc->seqoid, autoinc, true);
+        }
+    }
+
+    if (estate->first_autoinc != 0 && u_sess->cmd_cxt.last_insert_id != estate->first_autoinc) {
+        u_sess->cmd_cxt.last_insert_id = estate->first_autoinc;
+    }
+}
+
+
+// almost the same as ExecInsertIndexTuples, but without constraint check
+static List* ExecInsertIndexTuplesWithoutCheck(TupleTableSlot* slot, ItemPointer tupleid, EState* estate,
+    Relation targetPartRel, Partition p, int2 bucketId)
+{
+    List* result = NIL;
+    ResultRelInfo* resultRelInfo = NULL;
+    int i;
+    int numIndices;
+    RelationPtr relationDescs;
+    Relation heapRelation;
+    IndexInfo** indexInfoArray;
+    ExprContext* econtext = NULL;
+    Datum values[INDEX_MAX_KEYS];
+    bool isnull[INDEX_MAX_KEYS];
+    Relation actualheap;
+    bool ispartitionedtable = false;
+    bool containGPI;
+    List* partitionIndexOidList = NIL;
+
+    /*
+     * Get information from the result relation info structure.
+     */
+    resultRelInfo = estate->es_result_relation_info;
+    numIndices = resultRelInfo->ri_NumIndices;
+    relationDescs = resultRelInfo->ri_IndexRelationDescs;
+    indexInfoArray = resultRelInfo->ri_IndexRelationInfo;
+    heapRelation = resultRelInfo->ri_RelationDesc;
+    containGPI = resultRelInfo->ri_ContainGPI;
+
+    /*
+     * We will use the EState's per-tuple context for evaluating predicates
+     * and index expressions (creating it if it's not already there).
+     */
+    econtext = GetPerTupleExprContext(estate);
+
+    /* Arrange for econtext's scan tuple to be the tuple under test */
+    econtext->ecxt_scantuple = slot;
+
+    if (RELATION_IS_PARTITIONED(heapRelation)) {
+        Assert(PointerIsValid(targetPartRel));
+
+        ispartitionedtable = true;
+
+        actualheap = targetPartRel;
+
+        if (p == NULL || p->pd_part == NULL) {
+            return NIL;
+        }
+        /* If the global partition index is included, the index insertion process needs to continue */
+        if (!p->pd_part->indisusable && !containGPI) {
+            numIndices = 0;
+        }
+    } else {
+        actualheap = heapRelation;
+    }
+
+    if (bucketId != InvalidBktId) {
+        searchHBucketFakeRelation(estate->esfRelations, estate->es_query_cxt, actualheap, bucketId, actualheap);
+    }
+
+    /* Partition create in current transaction, set partition and rel reloption wait_clean_gpi */
+    if (RelationCreateInCurrXact(actualheap) && containGPI && !PartitionEnableWaitCleanGpi(p)) {
+        /* partition create not set wait_clean_gpi, must use update, and we ensure no concurrency */
+        PartitionSetWaitCleanGpi(RelationGetRelid(actualheap), true, false);
+        /* Partitioned create set wait_clean_gpi=n, and we want save it, so just use inplace */
+        PartitionedSetWaitCleanGpi(RelationGetRelationName(heapRelation), RelationGetRelid(heapRelation), true, true);
+    }
+
+    /*
+     * for each index, form and insert the index tuple
+     */
+    for (i = 0; i < numIndices; i++) {
+        Relation indexRelation = relationDescs[i];
+        IndexInfo* indexInfo = NULL;
+        bool satisfiesConstraint = false;
+        Oid partitionedindexid = InvalidOid;
+        Oid indexpartitionid = InvalidOid;
+        Relation actualindex = NULL;
+        Partition indexpartition = NULL;
+
+        if (indexRelation == NULL) {
+            continue;
+        }
+
+        indexInfo = indexInfoArray[i];
+
+        /* If the index is marked as read-only, ignore it */
+        if (!indexInfo->ii_ReadyForInserts) {
+            continue;
+        }
+
+        /* The GPI index insertion is the same as that of a common table */
+        if (ispartitionedtable && !RelationIsGlobalIndex(indexRelation)) {
+            partitionedindexid = RelationGetRelid(indexRelation);
+            if (!PointerIsValid(partitionIndexOidList)) {
+                partitionIndexOidList = PartitionGetPartIndexList(p);
+                // no local indexes available
+                if (!PointerIsValid(partitionIndexOidList)) {
+                    return NIL;
+                }
+            }
+
+            indexpartitionid = searchPartitionIndexOid(partitionedindexid, partitionIndexOidList);
+
+            searchFakeReationForPartitionOid(estate->esfRelations,
+                estate->es_query_cxt,
+                indexRelation,
+                indexpartitionid,
+                actualindex,
+                indexpartition,
+                RowExclusiveLock);
+            // skip unusable index
+            if (!indexpartition->pd_part->indisusable) {
+                continue;
+            }
+        } else {
+            actualindex = indexRelation;
+        }
+        if (bucketId != InvalidBktId && !RelationIsCrossBucketIndex(indexRelation)) {
+            searchHBucketFakeRelation(estate->esfRelations, estate->es_query_cxt, actualindex, bucketId, actualindex);
+        }
+
+        /* Check for partial index */
+        if (indexInfo->ii_Predicate != NIL) {
+            List* predicate = NIL;
+
+            /*
+             * If predicate state not set up yet, create it (in the estate's
+             * per-query context)
+             */
+            predicate = indexInfo->ii_PredicateState;
+            if (predicate == NIL) {
+                predicate = (List*)ExecPrepareExpr((Expr*)indexInfo->ii_Predicate, estate);
+                indexInfo->ii_PredicateState = predicate;
+            }
+
+            /* Skip this index-update if the predicate isn't satisfied */
+            if (!ExecQual(predicate, econtext, false)) {
+                continue;
+            }
+        }
+
+        /*
+         * FormIndexDatum fills in its values and isnull parameters with the
+         * appropriate values for the column(s) of the index.
+         */
+        FormIndexDatum(indexInfo, slot, estate, values, isnull);
+
+        /*
+         * The index AM does the actual insertion, no need for checking.
+         *
+         */
+        satisfiesConstraint = index_insert(actualindex, /* index relation */
+            values,                                     /* array of index Datums */
+            isnull,                                     /* null flags */
+            tupleid,                                    /* tid of heap tuple */
+            actualheap,                                 /* heap relation */
+            UNIQUE_CHECK_NO);
+
+
+        if (indexInfo->ii_ExclusionOps != NULL) {
+            bool errorOK = !actualindex->rd_index->indimmediate;
+
+            satisfiesConstraint = check_exclusion_constraint(
+                actualheap, actualindex, indexInfo, tupleid, values, isnull, estate, false, errorOK);
+        }
+
+    }
+
+    if (result == NULL) {
+        UpdateAutoIncrement(heapRelation, slot->tts_tuple, estate);
+    }
+
+    list_free_ext(partitionIndexOidList);
+    return result;
+}
+
+   
+static bool DoReplace(TupleTableSlot* myslot, EState* estate, ResultRelInfo* resultRelInfo, ReplaceData* replaceData, CopyState cstate)
+{
+    // most conflict check times should be the number of unique and primary index.
+    int checkCount = 0;
+    bool hasConflict = true;
+    bool has_after_statement_delete_trigger = false;
+    Relation targetRel = replaceData->targetRel;
+    int2 bucketid = replaceData->bucketid;
+    int uniqueCount = replaceData->uniqueCount;
+    uint64 res_hash = 0;
+    Partition delete_partition = replaceData->partition;
+    bool has_before_statement_delete_trigger = replaceData->has_before_statement_delete_trigger;
+    Relation resultRelationDesc = NULL;
+    resultRelationDesc = resultRelInfo->ri_RelationDesc;
+    EPQState epqstate;
+    if (resultRelInfo->ri_TrigDesc && resultRelInfo->ri_TrigDesc->trig_delete_before_row) {
+        EvalPlanQualInit(&epqstate, estate, NULL, NIL, -1);
+        EvalPlanQualSetSlot(&epqstate, myslot);
+    }
+    while (hasConflict && checkCount < uniqueCount) {
+        ConflictInfoData conflictInfo;
+        Oid conflictPartOid = InvalidOid;
+        int2 conflictBucketid = InvalidBktId;
+        Relation fake_relation = NULL;
+        Relation part_relation = NULL;
+        Partition partition = NULL;
+        bool isgpi = false;
+        uint64 hash_del = 0;
+        bool is_record = false;
+        hasConflict = !ExecCheckIndexConstraints(myslot, estate, targetRel,
+                                    delete_partition, &isgpi, bucketid, &conflictInfo,
+                                    &conflictPartOid, &conflictBucketid);
+        if (hasConflict) {
+            TupleTableSlot* oldslot = NULL;
+            if (!has_before_statement_delete_trigger && resultRelInfo->ri_TrigDesc && resultRelInfo->ri_TrigDesc->trig_delete_before_statement) {
+                ExecBSDeleteTriggers(estate, resultRelInfo);
+                has_before_statement_delete_trigger = true;
+                replaceData->has_before_statement_delete_trigger = true;
+            }
+            /* BEFORE ROW DELETE Triggers */
+            if (resultRelInfo->ri_TrigDesc && resultRelInfo->ri_TrigDesc->trig_delete_before_row) {
+                ExecBRDeleteTriggers(estate,
+                    &epqstate,
+                    resultRelInfo,
+                    conflictPartOid,
+                    conflictBucketid,
+                    NULL,
+                    &(&conflictInfo)->conflictTid);
+            }
+            fake_relation = resultRelationDesc;
+            if (isPartitionedRelation(resultRelationDesc->rd_rel)) {
+                searchFakeReationForPartitionOid(estate->esfRelations,
+                    estate->es_query_cxt,
+                    resultRelationDesc,
+                    conflictPartOid,
+                    part_relation,
+                    partition,
+                    RowExclusiveLock);
+                fake_relation = part_relation;
+            }
+            if (conflictBucketid != InvalidBktId) {
+                searchHBucketFakeRelation(
+                    estate->esfRelations, estate->es_query_cxt, fake_relation, conflictBucketid, fake_relation);
+            }
+
+            if (resultRelationDesc->rd_isblockchain) {
+                hash_del = get_user_tupleid_hash(fake_relation, &(&conflictInfo)->conflictTid);
+            }
+            //Delete tuple
+            TM_FailureData tmfd;
+            TM_Result res;
+            res = tableam_tuple_delete(fake_relation,
+                &(&conflictInfo)->conflictTid,
+                GetCurrentCommandId(true),
+                InvalidSnapshot,
+                InvalidSnapshot,
+                true, /* wait for commit */
+                &oldslot,
+                &tmfd,
+                true);
+            switch (res) {
+                case TM_SelfModified:
+                    /* Tuple was already updated in current command? */
+                    ereport(ERROR, (errcode(ERRCODE_T_R_SERIALIZATION_FAILURE), errmsg("tuple already updated by self")));
+                    break;
+                case TM_Ok:
+                    break;
+                case TM_Updated:
+                case TM_Deleted:
+                    ereport(ERROR, (errcode(ERRCODE_T_R_SERIALIZATION_FAILURE), errmsg("tuple concurrently updated")));
+                    break;
+                default:
+                    ereport(ERROR, (errcode(ERRCODE_T_R_SERIALIZATION_FAILURE), errmsg("unrecognized tuple status: %u", res)));
+                    break;
+            }
+            /* Record delete operator to history table */
+            if (resultRelationDesc->rd_isblockchain) {
+                MemoryContext old_context = MemoryContextSwitchTo(GetPerTupleMemoryContext(estate));
+                is_record = hist_table_record_delete(fake_relation, hash_del, &res_hash);
+                (void)MemoryContextSwitchTo(old_context);
+            }
+
+            if (is_record) {
+                cstate->hashstate.has_histhash = true;
+                cstate->hashstate.histhash -= res_hash;
+            }
+            Bitmapset *modifiedIdxAttrs = NULL;
+            ExecIndexTuplesState exec_index_tuples_state;
+            exec_index_tuples_state.estate = estate;
+            exec_index_tuples_state.targetPartRel =
+                isPartitionedRelation(resultRelationDesc->rd_rel) ? part_relation : NULL;
+            exec_index_tuples_state.p = isPartitionedRelation(resultRelationDesc->rd_rel) ? partition : NULL;
+            exec_index_tuples_state.conflict = NULL;
+            exec_index_tuples_state.rollbackIndex = false;
+            tableam_tops_exec_delete_index_tuples(oldslot, fake_relation, NULL,
+                &(&conflictInfo)->conflictTid, exec_index_tuples_state, modifiedIdxAttrs);
+            if (oldslot) {
+                ExecDropSingleTupleTableSlot(oldslot);
+            }
+            if (resultRelInfo->ri_TrigDesc && resultRelInfo->ri_TrigDesc->trig_delete_after_row) {
+                if (u_sess->tri_cxt.afterTriggers->query_depth < 0) {
+                    /* Prepare to catch AFTER triggers. */
+                    AfterTriggerBeginQuery();
+                }
+                has_after_statement_delete_trigger = true;
+                /* AFTER ROW DELETE Triggers */
+                ExecARDeleteTriggers(estate, resultRelInfo, conflictPartOid, conflictBucketid, NULL, &(&conflictInfo)->conflictTid);
+                /* Handle queued AFTER triggers */
+                AfterTriggerEndQuery(estate);
+            }
+        }
+        checkCount++;
+    }
+    return has_after_statement_delete_trigger;
+}
+#endif
