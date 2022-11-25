@@ -1133,8 +1133,8 @@ static PrivilegeRowData g_privlist[] = {
     {"Create any table", "Table", "To create any table"},
     {"Create any trigger", "Trigger", "To create any trigger"},
     {"Create any type", "Type",  "To create any type"},
-    {"Delte", "Table", "To delete table"},
-    {"Delte any table", "Table", "To delete any table"},
+    {"Delete", "Table", "To delete table"},
+    {"Delete any table", "Table", "To delete any table"},
     {"Drop any sequence", "Sequence", "To drop any sequence"},
     {"Drop any synonym", "Synonym", "To drop any synonym"},
     {"Drop any table", "Table", "To drop any table"},
@@ -1197,7 +1197,7 @@ SelectStmt* makeShowPrivilegesQuery(void)
     ResTarget* rt = makeNode(ResTarget);
     List* cl = NULL;
 
-    cl = list_make3(makeString(SHOW_PRIVILEGES_COL), makeString(SHOW_CONTEXT_COL),
+    cl = list_make3(makeString(SHOW_PRIVILEGE_COL), makeString(SHOW_CONTEXT_COL),
                         makeString(SHOW_COMMENT_COL));
 
     alias->aliasname = "__unnamed_subquery__";
