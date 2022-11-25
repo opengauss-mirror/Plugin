@@ -12887,7 +12887,8 @@ CreateTrigStmt:
 				}
                        ;
 
-triggerbody_subprogram_or_single:{
+triggerbody_subprogram_or_single:
+			{
 				if (yychar == YYEOF || yychar == YYEMPTY)
 				{
 					base_yy_extra_type *yyextra = pg_yyget_extra(yyscanner);
@@ -12920,7 +12921,7 @@ triggerbody_subprogram_or_single:{
 						$$ = funSrc;
 					}
 				}
-                       ;
+			;
 
 trigger_body_stmt:
 			DeleteStmt { $$ = (Node*)$1; }
