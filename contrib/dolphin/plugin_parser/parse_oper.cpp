@@ -413,8 +413,12 @@ Operator oper(ParseState* pstate, List* opname, Oid ltypeId, Oid rtypeId, bool n
             ltypeId = TEXTOID;
         } else if (ltypeId == BOOLOID && rtypeId == UNKNOWNOID) {
             rtypeId = TEXTOID;
+        } else if (ltypeId == BLOBOID && rtypeId == UNKNOWNOID) {
+            rtypeId = RAWOID;
+        } else if (ltypeId == UNKNOWNOID && rtypeId == BLOBOID) {
+            rtypeId = RAWOID;
         }
-    } 
+    }
 #endif
     /*
      * Try to find the mapping in the lookaside cache.

@@ -60,6 +60,11 @@ extern "C" DLL_PUBLIC Datum textboolnlike(PG_FUNCTION_ARGS);
 PG_FUNCTION_INFO_V1_PUBLIC(boolboolnlike);
 extern "C" DLL_PUBLIC Datum boolboolnlike(PG_FUNCTION_ARGS);
 
+PG_FUNCTION_INFO_V1_PUBLIC(bitotherlike);
+extern "C" DLL_PUBLIC Datum bitotherlike(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1_PUBLIC(bitothernlike);
+extern "C" DLL_PUBLIC Datum bitothernlike(PG_FUNCTION_ARGS);
 
 
 /* --------------------
@@ -312,6 +317,18 @@ Datum textnlike(PG_FUNCTION_ARGS)
 
     result = (GenericMatchText(s, slen, p, plen) != LIKE_TRUE);
 
+    PG_RETURN_BOOL(result);
+}
+
+Datum bitotherlike(PG_FUNCTION_ARGS)
+{
+    bool result = false;
+    PG_RETURN_BOOL(result);
+}
+
+Datum bitothernlike(PG_FUNCTION_ARGS)
+{
+    bool result = true;
     PG_RETURN_BOOL(result);
 }
 
