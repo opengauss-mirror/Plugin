@@ -4700,9 +4700,9 @@ bool numeric_to_lldiv_t(NumericVar *from, lldiv_t *to)
     int int_end_pos = (from->weight < 0 ? -1 : from->weight);
     int frac_start_pos = int_end_pos + 1;
     /* Avoid to overflow. */
-    if (int_end_pos > (DEC_DIGITS + 1) ||
-        (from->weight > 0 && from->digits[0] > (int64)(LONG_LONG_MAX / pow_of_10[from->weight]))) {
-        to->quot = LONG_LONG_MAX;
+    if (int_end_pos > DEC_DIGITS ||
+        (from->weight == DEC_DIGITS && from->digits[0] >= (int64)(LLDIV_MAX / pow_of_10[from->weight * DEC_DIGITS]))) {
+        to->quot = from->sign ? LLDIV_MIN : LLDIV_MAX;
         to->rem = 0;
         return false;
     }

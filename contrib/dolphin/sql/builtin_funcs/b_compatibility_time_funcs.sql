@@ -131,6 +131,7 @@ insert into func_test(functionName, result) values ('period_diff(pow(2,62), pow(
     -- 非指定类型的参数
 insert into func_test(functionName, result) values ('sec_to_time(''1000'')', sec_to_time('1000'));
 insert into func_test(functionName, result) values ('sec_to_time(''1000.5'')', sec_to_time('1000.5'));
+insert into func_test(functionName, result) values ('sec_to_time(''-5231'')', sec_to_time('-5231'));
 insert into func_test(functionName, result) values ('sec_to_time(1000.5)', sec_to_time(1000.5));
 insert into func_test(functionName, result) values ('sec_to_time(''abcd'')', sec_to_time('abcd'));
 insert into func_test(functionName, result) values ('sec_to_time(true)', sec_to_time(true));
@@ -162,6 +163,9 @@ insert into func_test(functionName, result) values ('sec_to_time(3020399 + 1)', 
 insert into func_test(functionName, result) values ('sec_to_time(3020399.000000500)', sec_to_time(3020399.000000500)); -- 进位导致超出边界
 insert into func_test(functionName, result) values ('sec_to_time(-100000000)', sec_to_time(-100000000));
 insert into func_test(functionName, result) values ('sec_to_time(-999999999)', sec_to_time(-999999999));
+insert into func_test(functionName, result) values ('sec_to_time(10000000000000000000)', sec_to_time(10000000000000000000));
+insert into func_test(functionName, result) values ('sec_to_time(-10000000000000000000)', sec_to_time(-10000000000000000000));
+insert into func_test(functionName, result) values ('sec_to_time(-9223372036854775808)', sec_to_time(-9223372036854775808));
 
 -- subdate
     -- 非指定类型的参数

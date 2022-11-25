@@ -3412,12 +3412,15 @@ Datum sec_to_time(PG_FUNCTION_ARGS)
     NumericVar tmp;
     lldiv_t seconds;
     init_var_from_num(PG_GETARG_NUMERIC(0), &tmp);
-    numeric_to_lldiv_t(&tmp, &seconds);
-
     struct pg_tm tt;
     TimeADT time;
     bool neg = 0;
     bool overflow = 0;
+
+    if (!numeric_to_lldiv_t(&tmp, &seconds)) {
+        overflow = 1;
+    }
+
     if (seconds.quot < 0) {
         neg = 1;
         seconds.quot = -seconds.quot;
@@ -3459,10 +3462,33 @@ Datum sec_to_time_str(PG_FUNCTION_ARGS)
 {
     text *tmp = PG_GETARG_TEXT_PP(0);
     char *str = text_to_cstring(tmp);
+    int sign = 1;
+    size_t len = strlen(str);
+    const char *start = str;
+    const char *end = str + len;
+    /* Skip spaces */
+    while (str < end && isspace((unsigned char)*str))
+        str++;
+
+    /* Skip signs */
+    if (*str == '-') {
+        sign = -1;
+        str++;
+    } else if (*str == '+') {
+        str++;
+    }
+
+    if (str == end && SQL_MODE_STRICT()) {
+        ereport(ERROR, (errcode(ERRCODE_INVALID_TEXT_REPRESENTATION),
+                        errmsg("Truncated incorrect numeric value: \"%s\"", start)));
+    }
+
     char *numeric_str = (char *)extract_numericstr(str);
     Datum seconds =
         DirectFunctionCall3(numeric_in, CStringGetDatum(numeric_str), ObjectIdGetDatum(0), Int32GetDatum(-1));
-    return DirectFunctionCall1(sec_to_time, seconds);
+    TimeADT time = DatumGetTimeADT(DirectFunctionCall1(sec_to_time, seconds));
+    time *= sign;
+    PG_RETURN_TIMEADT(time);
 }
 
 /*
