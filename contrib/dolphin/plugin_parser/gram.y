@@ -26593,7 +26593,18 @@ a_expr:		c_expr									{ $$ = $1; }
 			| a_expr qual_Op a_expr				%prec Op
 				{ $$ = (Node *) makeA_Expr(AEXPR_OP, $2, $1, $3, @2); }
 			| qual_Op a_expr					%prec Op
-				{ $$ = (Node *) makeA_Expr(AEXPR_OP, $1, NULL, $2, @1); }
+				{
+					char* op_str = ((Value*)lfirst($1->head))->val.str;
+					/* see if condition satisfied for special handling of b_compatibility mode */
+					bool is_satisfied = (GetSessionContext()->enableBCmptMode && $1->length == 1);
+					if (is_satisfied && strcmp("!", op_str) == 0) {
+						$$ = (Node *) makeA_Expr(AEXPR_NOT, NIL, NULL, $2, @1);
+					} else if (is_satisfied && strcmp("!!", op_str) == 0) {
+						ereport(ERROR, (errcode(ERRCODE_SYNTAX_ERROR), errmsg("Operator '!!' is deprecated when b_compatibility_mode is on. Please use function factorial().")));
+					} else {
+						$$ = (Node *) makeA_Expr(AEXPR_OP, $1, NULL, $2, @1);
+					}
+				}
 			| a_expr qual_Op					%prec POSTFIXOP
 				{ $$ = (Node *) makeA_Expr(AEXPR_OP, $2, $1, NULL, @2); }
 

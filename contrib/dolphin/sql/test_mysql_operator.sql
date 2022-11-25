@@ -847,6 +847,28 @@ drop table testlike6;
 drop table testlike7;
 drop table testlike8;
 
+-- test for '!' in place of NOT for expr
+set b_compatibility_mode = 0;
+select !0;
+select !!0;
+select !!10;
+select !!!0;
+set b_compatibility_mode = 1;
+select !0;
+select !9;
+select !!0;
+select !!9;
+select !!!0;
+select !(0);
+select !(!(0));
+select !(!(!(0)));
+select !(10.345::numeric);
+select !(10.345::float4);
+select !(10.345::float8);
+select !('2012-01-01'::date);
+select !('23:59:59'::time);
+select !b'1001';
+
 set b_compatibility_mode = 0;
 \c postgres
 drop database if exists like_test;
