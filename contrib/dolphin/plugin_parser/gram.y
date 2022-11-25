@@ -905,8 +905,7 @@ static SelectStmt *MakeShowGrantStmt(char *arg, int location, core_yyscan_t yysc
 %type <chr>		OptCompress OptCompress_without_empty
 %type <ival>	KVType
 %type <ival>		ColCmprsMode
-%type <fun_src>		subprogram_body b_proc_body
-%type <fun_src>		subprogram_body triggerbody_subprogram_or_single
+%type <fun_src>		subprogram_body b_proc_body triggerbody_subprogram_or_single
 %type <node>    trigger_body_stmt
 %type <keyword> as_is as_empty
 %type <node>	column_item opt_table_partitioning_clause_without_empty
