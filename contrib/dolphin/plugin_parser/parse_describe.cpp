@@ -48,7 +48,9 @@ extern TypeName* SystemTypeName(char* name);
  *            pg_index
  *        WHERE
  *            c.oid = pg_index.indrelid
- *            AND a.attnum = any(pg_index.indkey) LIMIT 1),
+ *            AND a.attnum = any(pg_index.indkey) 
+ *            order by indisprimary = 't' desc, indisunique = 't' desc 
+ *            LIMIT 1),
  *        (SELECT
  *            'MUL'
  *        FROM
@@ -207,22 +209,28 @@ static Node* makeExtraColumn(bool smallcase)
     return (Node*)rt;
 }
 
-static Node* makeIndexSelect()
+static Node *makeIndexSelect()
 {
-    List* tl = list_make1(makeIndexColumn());
-    List* fl = list_make1(makeRangeVar(NULL, "pg_index", -1));
-    Node* wc = (Node*)makeA_Expr(AEXPR_AND, NIL,
-                                 (Node*)makeSimpleA_Expr(AEXPR_OP, "=",
-                                                         plpsMakeColumnRef("c", "oid"),
-                                                         plpsMakeColumnRef("pg_index", "indrelid"), -1),
-                                 (Node*)makeSimpleA_Expr(AEXPR_OP_ANY, "=",
-                                                         plpsMakeColumnRef("a", "attnum"),
-                                                         plpsMakeColumnRef("pg_index", "indkey"),
-                                                         -1), -1);
-    Node* lc = plpsMakeIntConst(1);
+    List *tl = list_make1(makeIndexColumn());
+    List *fl = list_make1(makeRangeVar(NULL, "pg_index", -1));
+    Node *wc = (Node *)makeA_Expr(AEXPR_AND, NIL,
+                                  (Node *)makeSimpleA_Expr(AEXPR_OP, "=", plpsMakeColumnRef("c", "oid"),
+                                                           plpsMakeColumnRef("pg_index", "indrelid"), -1),
+                                  (Node *)makeSimpleA_Expr(AEXPR_OP_ANY, "=", plpsMakeColumnRef("a", "attnum"),
+                                                           plpsMakeColumnRef("pg_index", "indkey"), -1),
+                                  -1);
+    Node *lc = plpsMakeIntConst(1);
+    Node *sn1 =
+        plpsMakeSortByNode((Node *)makeSimpleA_Expr(AEXPR_OP, "=", plpsMakeColumnRef("pg_index", "indisprimary"),
+                                                    plpsMakeStringConst("t"), -1),
+                           SORTBY_DESC);
+    Node *sn2 = plpsMakeSortByNode((Node *)makeSimpleA_Expr(AEXPR_OP, "=", plpsMakeColumnRef("pg_index", "indisunique"),
+                                                            plpsMakeStringConst("t"), -1),
+                                   SORTBY_DESC);
+    List *sl = (List *)list_make2(sn1, sn2);
 
-    SelectStmt* stmt = plpsMakeSelectStmt(tl, fl, wc, NULL, lc);
-    return (Node*)stmt;
+    SelectStmt *stmt = plpsMakeSelectStmt(tl, fl, wc, sl, lc);
+    return (Node *)stmt;
 }
 
 static Node* makeIndexColumn()
