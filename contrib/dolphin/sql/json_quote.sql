@@ -1,6 +1,7 @@
-drop database if exists test_quote;
-create database test_quote dbcompatibility'B';
-\c test_quote
+drop database if exists test_json_quote;
+create database test_json_quote dbcompatibility'B';
+\c test_json_quote
+
 select json_quote(E'a\tb');
 select json_quote('a    b');
 select json_quote('"ab"');
@@ -15,11 +16,11 @@ select json_quote('');
 select json_quote(ab);
 select json_quote('~!ada221');
 select json_quote('null');
+
 create table student(name VARCHAR(20) PRIMARY KEY);
 insert into student (name) value(json_quote('lc'));
 select name from student;
 drop table student;
+
 \c postgres
-drop database test_quote;
-
-
+drop database test_json_quote;

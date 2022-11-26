@@ -359,6 +359,8 @@ void init_session_vars(void)
     cxt->paramIdx = 0;
     cxt->isUpsert = false;
     cxt->single_line_trigger_begin = 0;
+    cxt->do_sconst = NULL;
+    cxt->single_line_proc_begin = 0;
 
     DefineCustomBoolVariable("b_compatibility_mode",
                              "Enable mysql behavior override opengauss's when collision happens.",

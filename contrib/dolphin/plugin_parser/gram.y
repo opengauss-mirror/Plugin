@@ -436,6 +436,7 @@ static int GetFillerColIndex(char *filler_col_name, List *col_list);
 static void RemoveFillerCol(List *filler_list, List *col_list);
 static int errstate;
 
+static char* DoStmtPreformGet(int& start_pos, int& end_pos, base_yy_extra_type* yyextra);
 static void setDelimiterName(core_yyscan_t yyscanner, char*input, VariableSetStmt*n);
 static unsigned char GetLowerCaseChar(unsigned char ch, bool enc_is_single_byte);
 static char* downcase_str(char* ident, bool is_quoted);
@@ -621,8 +622,8 @@ static SelectStmt *MakeShowGrantStmt(char *arg, int location, core_yyscan_t yysc
 				transaction_mode_item
 				create_extension_opt_item alter_extension_opt_item
 
-%type <list>	opt_fields_options fields_list opt_lines_options lines_list
-%type <defelt>	opt_ignore_number opt_character fields_option lines_option conflict_option
+%type <list>	opt_fields_options fields_list opt_lines_options lines_list expr_do_list
+%type <defelt>	opt_ignore_number opt_character fields_option lines_option conflict_option opt_do_language
 %type <ival>	opt_lock lock_type cast_context opt_wait kill_opt
 %type <ival>	vacuum_option_list vacuum_option_elem opt_verify_options
 %type <boolean>	opt_check opt_force opt_or_replace
@@ -1172,6 +1173,7 @@ static SelectStmt *MakeShowGrantStmt(char *arg, int location, core_yyscan_t yysc
 			END_OF_INPUT_COLON
 			END_OF_PROC
 			DEFAULT_FUNC
+	                DO_SCONST DO_LANGUAGE
 
 /* Precedence: lowest to highest */
 %nonassoc COMMENT
@@ -17936,13 +17938,50 @@ any_operator:
  *
  *****************************************************************************/
 
-DoStmt: DO dostmt_opt_list
-				{
-					DoStmt *n = makeNode(DoStmt);
-					n->args = $2;
-					$$ = (Node *)n;
-				}
+
+DoStmt:
+		DO_SCONST {GetSessionContext()->do_sconst = yylval.str; } opt_do_language
+                                {
+                                        char* sconst_str = GetSessionContext()->do_sconst;
+                                        DoStmt *n = makeNode(DoStmt);
+                                        n->args = list_make1(makeDefElem("as", (Node *)makeString(sconst_str)));
+                                        if ($3)
+                                                lappend(n->args, $3);
+                                        $$ = (Node *)n;
+                                }
+                	| DO_LANGUAGE ColId_or_Sconst Sconst
+                                {
+                                        DoStmt *n = makeNode(DoStmt);
+                                        n->args = list_make2(makeDefElem("as", (Node *)makeString($3)),
+                                                makeDefElem("language", (Node *)makeString($2)));
+                                        $$ = (Node *)n;
+                                }
+                	| DO {GetSessionContext()->single_line_proc_begin = yylloc;} expr_do_list
+                                {
+                                        char* strbody = NULL;
+                                        base_yy_extra_type *yyextra = pg_yyget_extra(yyscanner);
+                                        int start_pos = GetSessionContext()->single_line_proc_begin + 3;
+                                        int end_pos = yylloc;
+                                        strbody = DoStmtPreformGet(start_pos, end_pos, yyextra);
+                                        GetSessionContext()->single_line_proc_begin = 0;
+                                        DoStmt *n = makeNode(DoStmt);
+                                        DefElem* defel = makeDefElem("as", (Node *)makeString(strbody));
+                                        List* deflist =  list_make1(defel);
+                                        n->args = deflist;
+                                        $$ = (Node *)n;
+                                }
+                ;
+opt_do_language:
+        	LANGUAGE ColId_or_Sconst
+        			{
+                			$$ = makeDefElem("language", (Node *)makeString($2));
+        			}
+        		| {$$ = NULL;}
 		;
+expr_do_list:
+                	a_expr                       { $$ = NULL; }
+                	| expr_do_list ',' a_expr            { $$ = NULL; }
+                ;
 
 dostmt_opt_list:
 			dostmt_opt_item						{ $$ = list_make1($1); }
@@ -32936,6 +32975,20 @@ get_outarg_num (List *fun_args)
 			count++;
 	}
 	return count;
+}
+/* To Transform expr stirng into an ANONYMOUS BLOCK*/
+static char* DoStmtPreformGet(int& start_pos, int& end_pos, base_yy_extra_type* yyextra)
+{
+	int length = end_pos - start_pos + 1;
+	char* delimiter_str = u_sess->attr.attr_common.delimiter_name;
+	int delimiter_len = strlen(delimiter_str);
+	char* block_str = (char *)palloc0(length + 1 + 21 + delimiter_len);
+	strncpy(block_str, " begin perform ", 15);
+	strncpy(block_str + 15,yyextra->core_yy_extra.scanbuf + start_pos - 1, length);
+	strncpy(block_str + 15 + length, delimiter_str, delimiter_len);
+	strncpy(block_str + length + 15 + delimiter_len,"  end; ", 6);
+	block_str[length + 21 + delimiter_len] = '\0';
+	return block_str;
 }
 
 // To make a node for anonymous block

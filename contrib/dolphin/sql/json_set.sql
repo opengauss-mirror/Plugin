@@ -26,5 +26,6 @@ create table dataa(name VARCHAR(20) PRIMARY KEY);
 insert into dataa (name) value(json_set('{"s":1}','$.s',3,'$.w',5));
 select name from dataa;
 drop table dataa;
+
 \c postgres
-drop database test_json_set;
+drop database if exists test_json_set;

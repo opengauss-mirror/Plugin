@@ -1,7 +1,7 @@
-drop database if exists test_unquote;
-NOTICE:  database "test_unquote" does not exist, skipping
-create database test_unquote dbcompatibility 'B';
-\c test_unquote
+drop database if exists test_json_unquote;
+NOTICE:  database "test_json_unquote" does not exist, skipping
+create database test_json_unquote dbcompatibility 'B';
+\c test_json_unquote
 select json_unquote('"abc"');
  json_unquote 
 --------------
@@ -149,4 +149,4 @@ select name from data;
 
 drop table data;
 \c postgres
-drop database test_unquote;
+drop database if exists test_json_unquote;

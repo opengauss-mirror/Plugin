@@ -1,6 +1,6 @@
-drop database if exists test;
-create database test dbcompatibility'B';
-\c test
+drop database if exists test_json_insert;
+create database test_json_insert dbcompatibility'B';
+\c test_json_insert
 
 -- test for basic functionality of json_replace
 select JSON_INSERT('{"a": 43}', '$.b', 55);
@@ -74,3 +74,6 @@ select JSON_INSERT(textjson, '$.a[5]', 'Hi') from test;
 insert into test values
 (JSON_INSERT('{"a": 43, "b": {"c": true}}', '$.b[4]', 'Test'));
 select * from test;
+
+\c postgres
+drop database if exists test_json_insert;

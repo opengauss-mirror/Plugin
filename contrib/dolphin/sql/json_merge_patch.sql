@@ -57,8 +57,8 @@ select json_merge_patch('[1,2,3]','[]');
 select json_merge_patch('[]','[1,2,3]');
 
 create table test (
-    doc1 json,
-    doc2 json
+    doc1 text,
+    doc2 text
 );
 insert into test values
 ('{"a":"abc"}','{"a":"bcd"}'),
@@ -67,8 +67,8 @@ insert into test values
 select *,json_merge_patch(doc1,doc2) from test;
 
 create table test1 (
-    doc1 json,
-    doc2 json
+    doc1 text,
+    doc2 text
 );
 insert into test1 values
 (json_merge_patch('{"colin":[{"a":"abc"},"bcd"]}','{"colinew":"handsome"}','{"colin":"huawei"}','{"a":[1,2]}'),
@@ -76,3 +76,4 @@ insert into test1 values
  select * from test1;
 
 \c postgres;
+drop database if exists test_json_merge_patch;

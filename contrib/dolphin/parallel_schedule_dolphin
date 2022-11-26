@@ -77,6 +77,8 @@ test: create_function_test/m_type_create_proc
 
 test: create_function_test/deterministic create_function_test/language_sql create_function_test/sql_options create_function_test/sql_security create_function_test/call_function create_function_test/commentsharp
 
+test: b_do_statment
+
 test: alter_function_test/alter_function  alter_function_test/alter_procedure alter_function_test/language_sql replace_test/replace
 
 test: network2 use_dbname show_create view_definer_test insert_set show_create_database show_variables
@@ -120,7 +122,7 @@ test: show b_comments ansi_quotes_test
 
 test: db_b_date_time_functions3
 
-test: json_array_insert json_insert json_merge_patch json_merge_preserve json_remove json_replace json_set json_depth
+test: json_array_insert json_insert json_merge_patch  json_merge_preserve json_remove json_replace json_set json_depth
 
 test: flush
 

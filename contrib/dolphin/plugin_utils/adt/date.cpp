@@ -3333,6 +3333,19 @@ void check_b_format_time_range_with_ereport(TimeADT &time)
     }
 }
 
+/*
+ * Check whether the Date value is within the specified range: 
+ * [0000-01-01, 9999-12-31] (the time range is from MySQL).
+ * Error will be reported if the Date value exceeds the range.
+ */
+void check_b_format_date_range_with_ereport(DateADT &date)
+{
+    if (date < B_FORMAT_DATEADT_MIN_VALUE || date > B_FORMAT_DATEADT_MAX_VALUE) {
+        ereport(ERROR, (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE),
+                        errmsg("date field value out of range")));
+    }
+}
+
 /* 
  * @Description: Keep timeADT in range(-B_FORMAT_TIME_MAX_VALUE, B_FORMAT_TIME_MAX_VALUE)
  * @return: bool, whether in range
@@ -3710,6 +3723,131 @@ void convert_to_time(Datum value, Oid valuetypid, TimeADT *time)
                 ereport(ERROR, (errcode(ERRCODE_DATATYPE_MISMATCH), errmsg("unsupported input data type")));
             }
             break;
+        }
+    }
+}
+
+/**
+ * @Description:Convert cstring values to the Timestamp or Date value according to its format.
+ * Timestamp type cannot exceed this range: [0000-01-01 00:00:00, 9999-12-31 23:59:59.999999]
+ * Date type cannot exceed this range: [0000-01-01, 9999-12-31]
+ * Error will be reported if the above range is exceeded.
+ * @return: Actual Timestamp or Date type oid. 
+ */
+Oid convert_cstring_to_datetime_date(const char* str, Timestamp *datetime, DateADT *date)
+{
+    if (is_date_format(str)){
+        *date = DatumGetDateADT(DirectFunctionCall1(date_in, CStringGetDatum(str)));
+        check_b_format_date_range_with_ereport(*date);
+        return DATEOID;
+    }
+    *datetime = DatumGetTimestamp(
+        DirectFunctionCall3(timestamp_in, CStringGetDatum(str), ObjectIdGetDatum(InvalidOid), Int32GetDatum(-1)));
+    check_b_format_datetime_range_with_ereport(*datetime);
+    return TIMESTAMPOID;
+}
+
+/**
+ * Convert non-NULL values of the indicated types to the Timestamp or Date value
+ * Timestamp type cannot exceed this range: [0000-01-01 00:00:00, 9999-12-31 23:59:59.999999]
+ * Date type cannot exceed this range: [0000-01-01, 9999-12-31]
+ * Error will be reported if the above range is exceeded.
+ * @return: TIMESTAMPOID or DATEOID. 
+ */
+Oid convert_to_datetime_date(Datum value, Oid valuetypid, Timestamp *datetime, DateADT *date)
+{
+    switch (valuetypid) {
+        case UNKNOWNOID:
+        case CSTRINGOID: {
+            return convert_cstring_to_datetime_date(DatumGetCString(value), datetime, date);
+        }
+        case CLOBOID:
+        case NVARCHAR2OID:
+        case BPCHAROID:
+        case VARCHAROID:
+        case TEXTOID: {
+            char *str = TextDatumGetCString(value);
+            return convert_cstring_to_datetime_date(str, datetime, date);
+        }
+        case TIMESTAMPOID:
+        case TIMESTAMPTZOID:
+        case ABSTIMEOID: 
+        case TIMEOID:
+        case TIMETZOID:{
+            convert_to_datetime(value, valuetypid, datetime);
+            check_b_format_datetime_range_with_ereport(*datetime);
+            return TIMESTAMPOID;
+        }
+        case DATEOID: {
+            *date = DatumGetDateADT(value);
+            check_b_format_date_range_with_ereport(*date);
+            return DATEOID;
+        }
+        case BOOLOID:{
+            *date = DatumGetTimestamp(DirectFunctionCall1(int32_b_format_date, 
+                                        DirectFunctionCall1(bool_int4, value)));
+            check_b_format_date_range_with_ereport(*date);
+            return DATEOID;
+        }
+        case INT1OID:
+        case INT2OID:
+        case INT4OID:
+        case INT8OID:{
+            int64 number = DatumGetInt64(value);
+            if (number >= (int64)pow_of_10[8]) {
+                /* Fuzzy boundary is used. The exact boundary is 99991231*/
+                convert_to_datetime(value, valuetypid, datetime);
+                check_b_format_datetime_range_with_ereport(*datetime);
+                return TIMESTAMPOID;
+            }
+            *date = DatumGetTimestamp(DirectFunctionCall1(int32_b_format_date, value));
+            check_b_format_date_range_with_ereport(*date);
+            return DATEOID;
+        }
+        case NUMERICOID: {
+            Datum bound = DirectFunctionCall1(int8_numeric, Int64GetDatum((int64)pow_of_10[8]));
+            if (DirectFunctionCall2(numeric_ge, value, bound)) {
+                convert_to_datetime(value, valuetypid, datetime);
+                check_b_format_datetime_range_with_ereport(*datetime);
+                return TIMESTAMPOID;
+            } else {
+                NumericVar tmp;
+                lldiv_t val;
+                init_var_from_num(DatumGetNumeric(value), &tmp);
+                if (!numeric_to_lldiv_t(&tmp, &val) ||  val.rem != 0) {
+                    ereport(ERROR, (errcode(ERRCODE_INVALID_DATETIME_FORMAT),
+                                    errmsg("invalid input syntax for type date")));
+                }
+                *date = DatumGetTimestamp(DirectFunctionCall1(int32_b_format_date, Int64GetDatum(val.quot)));
+                check_b_format_date_range_with_ereport(*date);
+                return DATEOID;
+            }
+           
+        }
+        case FLOAT4OID: 
+        case FLOAT8OID: {
+            return convert_to_datetime_date(DirectFunctionCall1(float8_numeric, value), 
+                                            NUMERICOID, datetime, date);
+        }
+        default: {
+            if (valuetypid == get_typeoid(PG_CATALOG_NAMESPACE, "uint1") || 
+                valuetypid == get_typeoid(PG_CATALOG_NAMESPACE, "uint2") || 
+                valuetypid == get_typeoid(PG_CATALOG_NAMESPACE, "uint4") ||
+                valuetypid == get_typeoid(PG_CATALOG_NAMESPACE, "uint8")) {
+                uint64 uint_val = DatumGetUInt64(value);
+                if (uint_val >= (uint64)pow_of_10[8]) {
+                    convert_to_datetime(value, valuetypid, datetime);
+                    check_b_format_datetime_range_with_ereport(*datetime);
+                    return TIMESTAMPOID;
+                } else {
+                    *date = DatumGetTimestamp(DirectFunctionCall1(int32_b_format_date, value));
+                    check_b_format_date_range_with_ereport(*date);
+                    return DATEOID;
+                }
+            }
+            ereport(ERROR, (errcode(ERRCODE_DATATYPE_MISMATCH),
+                            errmsg("unsupported input data type: %s", format_type_be(valuetypid))));
+            return InvalidOid;
         }
     }
 }

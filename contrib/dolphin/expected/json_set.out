@@ -35,19 +35,19 @@ select json_set('[1,2,[3,4,5]]','$[2]',9,'$[2][3]',22);
 select json_set('{"student":{"id":1,"gender":"man"}}','$.age',23);
                    json_set                   
 ----------------------------------------------
- {"age":23,"student":{"gender":"man","id":1}}
+ {"age":23,"student":{"id":1,"gender":"man"}}
 (1 row)
 
 select json_set('{"student":{"id":1,"gender":"man"}}','$.student.age',23);
                    json_set                   
 ----------------------------------------------
- {"student":{"age":23,"gender":"man","id":1}}
+ {"student":{"id":1,"age":23,"gender":"man"}}
 (1 row)
 
 select json_set('{"student":{"id":1,"gender":"man"}}','$.age',23,'$.student.id',3);
                    json_set                   
 ----------------------------------------------
- {"age":23,"student":{"gender":"man","id":3}}
+ {"age":23,"student":{"id":3,"gender":"man"}}
 (1 row)
 
 select json_set('[1,2]','$.[1]');
@@ -75,7 +75,7 @@ select json_set('{"name":"lc"}','$.name','lcc','$.id',45);
 (1 row)
 
 select json_set('x',2,2);
-ERROR:  Invalid JSON text in function json_set: "Invalid value." at position 0.
+ERROR:  Invalid JSON text in argument 1 to function json_set.
 CONTEXT:  referenced column: json_set
 select json_set('{"s":2}','$**.s',4);
 ERROR:  In this situation, path expressions may not contain the * and ** tokens.
@@ -109,4 +109,4 @@ select name from dataa;
 
 drop table dataa;
 \c postgres
-drop database test_json_set;
+drop database if exists test_json_set;

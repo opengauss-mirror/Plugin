@@ -38,4 +38,4 @@ select JSON_ARRAY_APPEND('[1, [2, 3]]', '$[*]', 日);
 select JSON_ARRAY_APPEND('[1, [2, 3]]', ' ', 4);
 
 \c postgres
-DROP DATABASE test_json_array_append;
+drop database if exists test_json_array_append;

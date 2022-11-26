@@ -1,6 +1,7 @@
-drop database if exists test_extract;
-create database test_extract dbcompatibility'B';
-\c test_extract
+drop database if exists test_json_extract;
+create database test_json_extract dbcompatibility'B';
+\c test_json_extract
+
 select json_extract('{"a": "lihua"}', '$.a');
 select json_extract('{"a"}', '$.a');
 select json_extract('{"a":[1, true, null]}', '$.a [1]');
@@ -31,4 +32,4 @@ insert into test values
 select * from test;
 
 \c postgres
-drop database if exists test_extract;
+drop database if exists test_json_extract;
