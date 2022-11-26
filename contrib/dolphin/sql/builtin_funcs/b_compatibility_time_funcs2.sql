@@ -460,6 +460,8 @@ insert into func_test2(functionName, result) values('TIMESTAMPADD(HOUR,1,date''2
 insert into func_test2(functionName, result) values('TIMESTAMPADD(DAY,1,cast(''2022-04-05'' as datetime))', TIMESTAMPADD(day,1,cast('2022-04-05' as datetime)));
 -- time类型参数
 insert into func_test2(functionName, result) values('TIMESTAMPADD(DAY,1,time''14:30:00'')', TIMESTAMPADD(day,1,time'14:30:00'));
+-- 字符串增量
+insert into func_test2(functionName, result) values('TIMESTAMPADD(YEAR,''abc'',''0001-01-01'')', TIMESTAMPADD(year,'abc','0001-01-01'));
 
 -- 边界测试
 -- 最大值
@@ -502,6 +504,10 @@ insert into func_test2(functionName, result) values('TIMESTAMPADD(SECOND,1,''202
 insert into func_test2(functionName, result) values('TIMESTAMPADD(SECOND,-1,''2022-07-27 00:00:00'')', TIMESTAMPADD(SECOND,-1,'2022-07-27 00:00:00'));
 insert into func_test2(functionName, result) values('TIMESTAMPADD(SECOND,0.001,''2022-07-27 08:30:59.999'')', TIMESTAMPADD(SECOND,0.001,'2022-07-27 08:30:59.999'));
 insert into func_test2(functionName, result) values('TIMESTAMPADD(SECOND,-0.001,''2022-07-27 00:00:00'')', TIMESTAMPADD(SECOND,-0.001,'2022-07-27 00:00:00'));
+-- 越界预判
+insert into func_test2(functionName, result) values('TIMESTAMPADD(year,1,time''23:59:59'')', TIMESTAMPADD(year,1,time'23:59:59'));
+insert into func_test2(functionName, result) values('TIMESTAMPADD(qtr,1,time''23:59:59'')', TIMESTAMPADD(qtr,1,time'23:59:59'));
+insert into func_test2(functionName, result) values('TIMESTAMPADD(month,1,time''23:59:59'')', TIMESTAMPADD(month,1,time'23:59:59'));
 
 -- TIME、TIMESTAMP建表语法修改测试
 create table t1(col timestamp('1'));

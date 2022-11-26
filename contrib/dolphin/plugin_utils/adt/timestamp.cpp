@@ -169,11 +169,11 @@ static int WhetherBigMon(struct pg_tm* tm);
 static int daydiff_timestamp(const struct pg_tm* tm, const struct pg_tm* tm1, const struct pg_tm* tm2,
                              bool day_fix = false);
 #ifdef DOLPHIN
-void check_b_format_datetime_range_with_ereport(Timestamp &datetime);
 Oid convert_cstring_to_datetime_time(const char* str, Timestamp *datetime, TimeADT *time);
 static int cal_weekday_interval(struct pg_tm* tm, bool sunday_is_first_day);
 static int b_db_sumdays(int year, int month, int day);
 static bool timestampdiff_datetime_internal(int64 *result,  text *units, Timestamp dt1, Timestamp dt2);
+static inline long long str2ll_with_endptr(char *start, int tmp_len, int *true_len, int *error);
 #endif
 
 void timestamp_FilpSign(pg_tm* tm);
@@ -216,10 +216,10 @@ PG_FUNCTION_INFO_V1_PUBLIC(timestamp_param2);
 extern "C" DLL_PUBLIC Datum timestamp_param2(PG_FUNCTION_ARGS);
 PG_FUNCTION_INFO_V1_PUBLIC(timediff);
 extern "C" DLL_PUBLIC Datum timediff(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(timestamp_add_numeric);
+extern "C" DLL_PUBLIC Datum timestamp_add_numeric(PG_FUNCTION_ARGS);
 PG_FUNCTION_INFO_V1_PUBLIC(timestamp_add_text);
 extern "C" DLL_PUBLIC Datum timestamp_add_text(PG_FUNCTION_ARGS);
-PG_FUNCTION_INFO_V1_PUBLIC(timestamp_add_time);
-extern "C" DLL_PUBLIC Datum timestamp_add_time(PG_FUNCTION_ARGS);
 PG_FUNCTION_INFO_V1_PUBLIC(to_seconds);
 extern "C" DLL_PUBLIC Datum to_seconds(PG_FUNCTION_ARGS);
 PG_FUNCTION_INFO_V1_PUBLIC(unix_timestamp_no_args);
@@ -7098,10 +7098,14 @@ TimeADT time_sub_interval(TimeADT time, Interval *span)
 {
     if (span->month || span->day < -B_FORMAT_TIME_MAX_VALUE_TO_DAY ||
         span->day > B_FORMAT_TIME_MAX_VALUE_TO_DAY) {
+        ereport(ERROR, (errcode(ERRCODE_DATETIME_FIELD_OVERFLOW), 
+                        errmsg("time field value out of range")));
         return B_FORMAT_TIME_MAX_VALUE;
     } else {
         TimeADT result = time - (span->day * SECS_PER_DAY * USECS_PER_SEC + span->time);
         if (result < -B_FORMAT_TIME_MAX_VALUE || result > B_FORMAT_TIME_MAX_VALUE) {
+            ereport(ERROR, (errcode(ERRCODE_DATETIME_FIELD_OVERFLOW), 
+                            errmsg("time field value out of range")));
             return B_FORMAT_TIME_MAX_VALUE;
         }
         return result;
@@ -7172,35 +7176,28 @@ bool determine_conversion(int dtk)
 }
 
 /*
- * @Description: Compatible with timestampadd(units, interval, expr) function in mysql.
- * Add a period of time 'interval' in units 'units' to a date/datetime expression expr.
- * @return: a date or a datetime value.
+ * @Description: Internal operation function of timestamp_add_numeric() 
+ * and timestamp_add_text() function.
+ * @return: a date ,datetime or time value (text type).
  */
-Datum timestamp_add_text(PG_FUNCTION_ARGS)
+Datum timestamp_add_internal(char *lowunits, int unit, int unit_type, Numeric num, Datum expr, Oid expr_type) 
 {
-    text *units = PG_GETARG_TEXT_PP(0);
-    text *tmp = PG_GETARG_TEXT_PP(2);
-    char *expr = text_to_cstring(tmp);
-    char *lowunits = text_to_cstring(units);
+    Timestamp datetime, res_datetime;
+    DateADT date, res_date;
+    TimeADT time, res_time;
 
-    NumericVar num;
+    NumericVar tmp;
     lldiv_t delta;
-    init_var_from_num(PG_GETARG_NUMERIC(1), &num);
-    if (!numeric_to_lldiv_t(&num, &delta)) {
+    init_var_from_num(num, &tmp);
+    if (!numeric_to_lldiv_t(&tmp, &delta)) {
         ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("interval out of range")));
     }
 
     Interval sp, *span = &sp;
     span->time = span->day = span->month = 0;
 
-    int val = 0;
-    int type = DecodeUnits(0, lowunits, &val);
-
-    if (type == UNKNOWN_FIELD) {
-        type = DecodeSpecial(0, lowunits, &val);
-    }
-    if (type == UNITS) {
-        if (!calc_interval(span, delta, val)) {
+    if (unit_type == UNITS) {
+        if (!calc_interval(span, delta, unit)) {
             ereport(ERROR, (errcode(ERRCODE_ERROR_IN_ASSIGNMENT), errmsg("failed to calculate interval")));
         }
     } else {
@@ -7211,72 +7208,112 @@ Datum timestamp_add_text(PG_FUNCTION_ARGS)
     span->day = -span->day;
     span->month = -span->month;
 
-    bool conversion = determine_conversion(val);
-    if (!conversion && is_date_format(expr) && span->time == 0) {
-        DateADT date, result_date;
-        date = DirectFunctionCall1(date_in, CStringGetDatum(expr));
-        if (date_sub_interval(date, span, &result_date)) {
-            PG_RETURN_TEXT_P(DirectFunctionCall1(date_text, result_date));
-        }
-        ereport(ERROR, (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE), errmsg("date/time field overflow")));
-    } else {
-        Timestamp datetime, result_datetime;
-        datetime = DirectFunctionCall3(timestamp_in, CStringGetDatum(expr), InvalidOid, -1);
-        if (datetime_sub_interval(datetime, span, &result_datetime)) {
-            PG_RETURN_TEXT_P(DirectFunctionCall1(datetime_text, result_datetime));
-        }
-        ereport(ERROR, (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE), errmsg("date/time field overflow")));
+    switch (expr_type) {
+        // when the input type is time or timetz
+        case TIMETZOID:
+        case TIMEOID:
+            convert_to_time(expr, expr_type, &time);
+            res_time = time_sub_interval(time, span);
+            PG_RETURN_TEXT_P(DirectFunctionCall1(time_text, TimeADTGetDatum(res_time)));
     }
-    PG_RETURN_NULL();
+
+    bool conversion = determine_conversion(unit);
+    if (conversion) {
+        // With specific units, the return type is datetime
+        convert_to_datetime(expr, expr_type, &datetime);
+        check_b_format_datetime_range_with_ereport(datetime);
+        expr_type = TIMESTAMPOID;
+    } else {
+        expr_type = convert_to_datetime_date(expr, expr_type, &datetime, &date);
+    }
+
+    switch (expr_type) {
+        case TIMESTAMPOID:
+            if (datetime_sub_interval(datetime, span, &res_datetime)) {
+                PG_RETURN_TEXT_P(DirectFunctionCall1(datetime_text, res_datetime));
+            }
+            break;
+        case DATEOID:
+            if (date_sub_interval(date, span, &res_date)) {
+                PG_RETURN_TEXT_P(DirectFunctionCall1(date_text, res_date));
+            }
+            break;
+        default:
+            ereport(ERROR, (errcode(ERRCODE_DATATYPE_MISMATCH),
+                            errmsg("unsupported input data type: %s", format_type_be(expr_type))));
+    }
+    ereport(ERROR, (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE), errmsg("date/time field overflow")));
+
+    return (Datum)0;
 }
 
 /*
  * @Description: Compatible with timestampadd(units, interval, expr) function in mysql.
- * Add a period of time 'interval' in units 'units' to a time parameter expr.
- * @return: a time value.
+ * Add a period of time 'interval' in units 'units' to a date/datetime expression expr.
+ * This function receives 'interval' parameter of numeric type.
+ * @return: a date, datetime or time value (text type).
  */
-Datum timestamp_add_time(PG_FUNCTION_ARGS)
-{
-    text *units = PG_GETARG_TEXT_PP(0);
-    char *lowunits = text_to_cstring(units);
+Datum timestamp_add_numeric(PG_FUNCTION_ARGS) {
+    text* units = PG_GETARG_TEXT_PP(0);
+    char* lowunits = NULL;
+    lowunits = downcase_truncate_identifier(VARDATA_ANY(units), VARSIZE_ANY_EXHDR(units), false);
+    Oid expr_type = get_fn_expr_argtype(fcinfo->flinfo, 2);
 
-    NumericVar n;
-    lldiv_t div;
-    init_var_from_num(PG_GETARG_NUMERIC(1), &n);
-    if (!numeric_to_lldiv_t(&n, &div)) {
-        ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("interval out of range")));
+    /* parse unit */
+    int unit = 0;
+    int unit_type = DecodeUnits(0, lowunits, &unit);
+
+    if (unit_type == UNKNOWN_FIELD) {
+        unit_type = DecodeSpecial(0, lowunits, &unit);
     }
 
-    TimeADT time = PG_GETARG_TIMEADT(2);
+    return timestamp_add_internal(lowunits, unit, unit_type, PG_GETARG_NUMERIC(1), PG_GETARG_DATUM(2), expr_type);
+}
+
+/*
+ * @Description: Compatible with timestampadd(units, interval, expr) function in mysql.
+ * Add a period of time 'interval' in units 'units' to a date/datetime expression expr.
+ * This function receives 'interval' parameter of string type.
+ * @return: a date or a datetime value (text type).
+ */
+Datum timestamp_add_text(PG_FUNCTION_ARGS)
+{
+    text* units = PG_GETARG_TEXT_PP(0);
+    text *num_txt = PG_GETARG_TEXT_PP(1);
+    char* lowunits = NULL;
+    lowunits = downcase_truncate_identifier(VARDATA_ANY(units), VARSIZE_ANY_EXHDR(units), false);
+    Oid expr_type = get_fn_expr_argtype(fcinfo->flinfo, 2);
 
     Interval sp, *span = &sp;
     span->time = span->day = span->month = 0;
 
-    int val = 0;
-    int type = DecodeUnits(0, lowunits, &val);
+    /* parse unit */
+    int unit = 0;
+    int unit_type = DecodeUnits(0, lowunits, &unit);
 
-    if (type == UNKNOWN_FIELD) {
-        type = DecodeSpecial(0, lowunits, &val);
+    if (unit_type == UNKNOWN_FIELD) {
+        unit_type = DecodeSpecial(0, lowunits, &unit);
     }
-    if (type == UNITS) {
-        if (!calc_interval(span, div, val)) {
-            ereport(ERROR, (errcode(ERRCODE_ERROR_IN_ASSIGNMENT), errmsg("failed to calculate interval")));
-        }
+
+    /* check the format of num_str */
+    char *num_str = text_to_cstring(num_txt);
+    Numeric num;
+    int true_len, errorno;
+    long long ret = str2ll_with_endptr(num_str, strlen(num_str), &true_len, &errorno);
+    if (errorno == EDOM && SQL_MODE_STRICT()) {
+        ereport(ERROR, (errcode(ERRCODE_DATA_EXCEPTION), 
+                        errmsg("Truncated incorrect INTEGER value: %s", num_str)));
+    }
+
+    /* str to Numeric*/
+    if (unit == DTK_SECOND) {
+        num = DatumGetNumeric(
+            DirectFunctionCall3(numeric_in, CStringGetDatum(num_str), ObjectIdGetDatum(0), Int32GetDatum(-1)));
     } else {
-        ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("unknown unit: \"%s\"", lowunits)));
+        num = DatumGetNumeric(DirectFunctionCall1(int8_numeric, Int64GetDatum(ret)));
     }
 
-    span->time = -span->time;
-    span->day = -span->day;
-    span->month = -span->month;
-
-    TimeADT result = time_sub_interval(time, span);
-    if (abs(result) <= B_FORMAT_TIME_MAX_VALUE) {
-        PG_RETURN_TIMEADT(result);
-    } else {
-        ereport(ERROR, (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE), errmsg("date/time field overflow")));
-    }
-    PG_RETURN_NULL();
+    return timestamp_add_internal(lowunits, unit, unit_type, num, PG_GETARG_DATUM(2), expr_type);
 }
 
 /*
