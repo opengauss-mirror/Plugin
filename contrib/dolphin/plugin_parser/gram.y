@@ -1116,7 +1116,7 @@ static SelectStmt *MakeShowGrantStmt(char *arg, int location, core_yyscan_t yysc
 	QUARTER QUERY QUICK QUOTE
 
 	RANDOMIZED RANGE RATIO RAW READ READS REAL REASSIGN REBUILD RECHECK RECURSIVE RECYCLEBIN REDISANYVALUE REF REFERENCES REFRESH REINDEX REJECT_P
-	RELATIVE_P RELEASE RELOPTIONS REMOTE_P REMOVE RENAME REPEATABLE REPLACE REPLICA REGEXP REORGANIZE REPAIR
+	RELATIVE_P RELEASE RELOPTIONS REMOTE_P REMOVE RENAME REPEAT REPEATABLE REPLACE REPLICA REGEXP REORGANIZE REPAIR
 	RESET RESIZE RESOURCE RESTART RESTRICT RETURN RETURNING RETURNS REUSE REVOKE RIGHT RLIKE ROLE ROLES ROLLBACK ROLLUP
 	ROTATION ROUTINE ROW ROWNUM ROWS ROWTYPE_P ROW_FORMAT RULE
 
@@ -1136,7 +1136,7 @@ static SelectStmt *MakeShowGrantStmt(char *arg, int location, core_yyscan_t yysc
 	VACUUM VALID VALIDATE VALIDATION VALIDATOR VALUE_P VALUES VARBINARY VARCHAR VARCHAR2 VARIABLES VARIADIC VARRAY VARYING VCGROUP
 	VERBOSE VERIFY VERSION_P VIEW VOLATILE
 
-	WAIT WEAK WHEN WHERE WHITESPACE_P WINDOW WITH WITHIN WITHOUT WORK WORKLOAD WRAPPER WRITE
+	WAIT WEAK WHEN WHERE WHILE_P WHITESPACE_P WINDOW WITH WITHIN WITHOUT WORK WORKLOAD WRAPPER WRITE
 
 	XML_P XMLATTRIBUTES XMLCONCAT XMLELEMENT XMLEXISTS XMLFOREST XMLPARSE XOR
 	XMLPI XMLROOT XMLSERIALIZE
@@ -2318,7 +2318,17 @@ OptSchemaEltList:
 		;
 
 OptBlockchainWith:
-			WITH BLOCKCHAIN							{ $$ = true; }
+			WITH BLOCKCHAIN
+			    {
+                    if (ENABLE_DMS) {
+			            const char* message = "BLOCKCHAIN is not supported while DMS and DSS enabled";
+			            InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);
+			            ereport(errstate, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), 
+				                errmsg("BLOCKCHAIN is not supported while DMS and DSS enabled")));
+					}
+
+                    $$ = true;
+			    }
 			| /* EMPTY */							{ $$ = false; }
 		;
 
@@ -2340,7 +2350,17 @@ AlterSchemaStmt:
 			;
 
 OptAlterToBlockchain:
-			WITH BLOCKCHAIN							{ $$ = true; }
+			WITH BLOCKCHAIN
+			    {
+                    if (ENABLE_DMS) {
+			            const char* message = "BLOCKCHAIN is not supported while DMS and DSS enabled";
+			            InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);
+			            ereport(errstate, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), 
+				                errmsg("BLOCKCHAIN is not supported while DMS and DSS enabled")));
+					}
+
+                    $$ = true;
+			    }
 			| WITHOUT BLOCKCHAIN					{ $$ = false; }
 		;
 
@@ -10663,6 +10683,11 @@ CreateMatViewStmt:
                                 errmsg("It's not supported to specify distribute key on incremental materialized views")));
                    }
 #endif
+                   if (ENABLE_DMS) {
+                        ereport(errstate, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+                            errmsg("matview is not supported while DMS and DSS enabled.")));
+                   }
+                    
 				   $6->ivm = $3;
 				   $$ = (Node *) ctas;
 			   }
@@ -16534,7 +16559,7 @@ pkg_body_subprogram: {
                             }
                             continue;
                         }
-						if (tok == LOOP || tok == IF_P || tok == CASE)
+						if (tok == LOOP || tok == IF_P || tok == CASE || tok == WHILE_P || tok == REPEAT)
 						{
 							continue;
 						}
@@ -17173,7 +17198,9 @@ subprogram_body: 	{
 						if (!(tok == ';'  || (tok == 0 || tok == END_OF_PROC))
 							&& tok != IF_P
 							&& tok != CASE
-							&& tok != LOOP)
+							&& tok != LOOP
+							&& tok != WHILE_P
+							&& tok != REPEAT)
 						{
 							tok = END_P;
 							continue;
@@ -19471,14 +19498,28 @@ TransactionStmt:
 					$$ = (Node *)n;
 				}
 			| PREPARE TRANSACTION Sconst
-				{
+				{   
+					if (ENABLE_DMS) {
+			            const char* message = "PREPARE TRANSACTION is not supported while DMS and DSS enabled";
+			            InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);
+			            ereport(errstate, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), 
+				                errmsg("PREPARE TRANSACTION is not supported while DMS and DSS enabled")));
+					}
+
 					TransactionStmt *n = makeNode(TransactionStmt);
 					n->kind = TRANS_STMT_PREPARE;
 					n->gid = $3;
 					$$ = (Node *)n;
 				}
 			| COMMIT PREPARED Sconst
-				{
+				{   
+					if (ENABLE_DMS) {
+			            const char* message = "COMMIT TRANSACTION is not supported while DMS and DSS enabled";
+			            InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);
+			            ereport(errstate, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), 
+				                errmsg("COMMIT TRANSACTION is not supported while DMS and DSS enabled")));
+					}
+
 					TransactionStmt *n = makeNode(TransactionStmt);
 					n->kind = TRANS_STMT_COMMIT_PREPARED;
 					n->gid = $3;
@@ -19486,7 +19527,14 @@ TransactionStmt:
 					$$ = (Node *)n;
 				}
 			| COMMIT PREPARED Sconst WITH Sconst
-				{
+				{   
+					if (ENABLE_DMS) {
+			            const char* message = "COMMIT TRANSACTION is not supported while DMS and DSS enabled";
+			            InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);
+			            ereport(errstate, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), 
+				                errmsg("COMMIT TRANSACTION is not supported while DMS and DSS enabled")));
+					}
+
 					TransactionStmt *n = makeNode(TransactionStmt);
 					n->kind = TRANS_STMT_COMMIT_PREPARED;
 					n->gid = $3;
@@ -19494,7 +19542,14 @@ TransactionStmt:
 					$$ = (Node *)n;
 				}
 			| ROLLBACK PREPARED Sconst
-				{
+				{   
+					if (ENABLE_DMS) {
+			            const char* message = "ROLLBACK TRANSACTION is not supported while DMS and DSS enabled";
+			            InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);
+			            ereport(errstate, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), 
+				                errmsg("ROLLBACK TRANSACTION is not supported while DMS and DSS enabled")));
+					}
+
 					TransactionStmt *n = makeNode(TransactionStmt);
 					n->kind = TRANS_STMT_ROLLBACK_PREPARED;
 					n->gid = $3;
@@ -23469,17 +23524,25 @@ UpdateStmt: opt_with_clause UPDATE hint_string opt_ignore from_list
 				{
 					UpdateStmt *n = makeNode(UpdateStmt);
 					n->relation = NULL;
-					if (list_length($5) > 1) {
 #ifdef ENABLE_MULTIPLE_NODES
+					if (list_length($5) > 1) {
 						ereport(errstate, 
 							    (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
 								 errmsg("multi-relation update is not yet supported.")));
-#endif
-						if (u_sess->attr.attr_sql.sql_compatibility != B_FORMAT)
+					}
+					if (!IsA(linitial($5), RangeVar)) {
+							ereport(errstate,
+								    (errcode(ERRCODE_SYNTAX_ERROR),
+								     errmsg("invalid target relation name."),
+								     parser_errposition(@5)));
+					}
+#else
+					if (u_sess->attr.attr_sql.sql_compatibility != B_FORMAT) {
+						if (list_length($5) > 1) {
 							ereport(errstate, 
 									(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
 									 errmsg("multi-relation update only support in B-format database")));
-					} else {
+						}
 						if (!IsA(linitial($5), RangeVar)) {
 							ereport(errstate,
 								    (errcode(ERRCODE_SYNTAX_ERROR),
@@ -23487,6 +23550,7 @@ UpdateStmt: opt_with_clause UPDATE hint_string opt_ignore from_list
 								     parser_errposition(@5)));
 						}
 					}
+#endif
 					n->relationClause = $5;
 					n->targetList = $7;
 					n->fromClause = $8;
@@ -31011,6 +31075,7 @@ unreserved_keyword_without_key:
 			| REMOVE
 			| RENAME
 			| REORGANIZE
+			| REPEAT
 			| REPEATABLE
 			| REPLACE
 			| REPLICA
@@ -31136,6 +31201,7 @@ unreserved_keyword_without_key:
 			| VOLATILE
 			| WAIT
 			| WEAK
+			| WHILE_P
 			| WHITESPACE_P
 			| WITHIN
 			| WITHOUT
