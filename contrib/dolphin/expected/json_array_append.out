@@ -147,9 +147,9 @@ select JSON_ARRAY_APPEND('[1, [2, 3]]', '$[1]', '');
 (1 row)
 
 select JSON_ARRAY_APPEND('[1, [2, 3]]', '$[1]', json '{"x": 3, "y": [1,2,3]}');
-          json_array_append          
--------------------------------------
- [1, [2, 3, {"x": 3, "y": [1,2,3]}]]
+           json_array_append           
+---------------------------------------
+ [1, [2, 3, {"x": 3, "y": [1, 2, 3]}]]
 (1 row)
 
 select JSON_ARRAY_APPEND('[1, [2, 3]]', '$[1]', 1.2);
@@ -159,22 +159,22 @@ select JSON_ARRAY_APPEND('[1, [2, 3]]', '$[1]', 1.2);
 (1 row)
 
 select JSON_ARRAY_APPEND('[1, [2, 3]]', '[1]', 4);
-ERROR:  invalid JSON path expression
+ERROR:  Invalid JSON path expression. The error is around argument 1.
 CONTEXT:  referenced column: json_array_append
 select JSON_ARRAY_APPEND('[1, [2, 3]]', '$[]', 4);
-ERROR:  invalid JSON path expression
+ERROR:  Invalid JSON path expression. The error is around argument 1.
 CONTEXT:  referenced column: json_array_append
 select JSON_ARRAY_APPEND('[1, [2, 3]]', '$[1', 4);
-ERROR:  invalid JSON path expression
+ERROR:  Invalid JSON path expression. The error is around argument 1.
 CONTEXT:  referenced column: json_array_append
 select JSON_ARRAY_APPEND('[1, [2, 3]]', '$.1', 4);
-ERROR:  invalid JSON path expression
+ERROR:  Invalid JSON path expression. The error is around argument 1.
 CONTEXT:  referenced column: json_array_append
 select JSON_ARRAY_APPEND('[1, [2, 3]]', '$..1', 4);
-ERROR:  invalid JSON path expression
+ERROR:  Invalid JSON path expression. The error is around argument 1.
 CONTEXT:  referenced column: json_array_append
 select JSON_ARRAY_APPEND('[1, [2, 3]]', '$[*]', 4);
-ERROR:  in this situation, path expressions may not contain the * and ** tokens
+ERROR:  In this situation, path expressions may not contain the * and ** tokens.
 CONTEXT:  referenced column: json_array_append
 select JSON_ARRAY_APPEND('[1, [2, 3]]', '$[*]', 日);
 ERROR:  column "日" does not exist
@@ -182,7 +182,7 @@ LINE 1: select JSON_ARRAY_APPEND('[1, [2, 3]]', '$[*]', 日);
                                                         ^
 CONTEXT:  referenced column: json_array_append
 select JSON_ARRAY_APPEND('[1, [2, 3]]', ' ', 4);
-ERROR:  invalid JSON path expression
+ERROR:  Invalid JSON path expression. The error is around argument 1.
 CONTEXT:  referenced column: json_array_append
 \c postgres
-DROP DATABASE test_json_array_append;
+drop database if exists test_json_array_append;

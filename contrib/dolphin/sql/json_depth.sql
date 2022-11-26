@@ -22,6 +22,7 @@ select json_depth('{"a":{"b":2},"c":3}');
 select json_depth('{"a":{"b":{"c":{"d":{"e":{"f":2}}}}},"c":3}');
 select json_depth('[[[[[[[1]]]]]],2,3,4,5]');
 select json_depth('{"a":[{"b":2},3]}');
+
 create table test1(data json);
 insert into test1 values('{"a":1}');
 insert into test1 values('{"a":1}');
@@ -30,5 +31,6 @@ insert into test1 values('[1,{"a":1},{"a":1,"B":{"c":1}}]');
 select *from test1;
 select json_depth(data) from test1;
 drop table test1;
+
 \c postgres
-drop database test_json_depth;
+drop database if exists test_json_depth;

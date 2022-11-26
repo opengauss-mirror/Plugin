@@ -75,29 +75,22 @@ SELECT JSON_REMOVE(NULL, NULL);
 (1 row)
 
 SELECT JSON_REMOVE('{"x": {"z":2,"a":3}, "y": 2}', '$**');
-ERROR:  Invalid JSON path expression. The error is around character position 1.
+ERROR:  Invalid JSON path expression. The error is around argument 1.
 CONTEXT:  referenced column: json_remove
 SELECT JSON_REMOVE('[1,2,3,4]', '$[*]');
-ERROR:  Invalid JSON path expression. The error is around character position 1.
+ERROR:  In this situation, path expressions may not contain the * and ** tokens.
 CONTEXT:  referenced column: json_remove
 SELECT JSON_REMOVE('[1,2,3,4]', '$[1');
-ERROR:  Invalid JSON path expression. The error is around character position 1.
+ERROR:  Invalid JSON path expression. The error is around argument 1.
 CONTEXT:  referenced column: json_remove
 SELECT JSON_REMOVE('qwertyuiopasdfghjkl', '$[1]');
-ERROR:  invalid input syntax for type json
-LINE 1: SELECT JSON_REMOVE('qwertyuiopasdfghjkl', '$[1]');
-                           ^
-DETAIL:  Token "qwertyuiopasdfghjkl" is invalid.
-CONTEXT:  JSON data, line 1: qwertyuiopasdfghjkl
-referenced column: json_remove
+ERROR:  Invalid JSON text in argument 1 to function json_remove.
+CONTEXT:  referenced column: json_remove
 SELECT JSON_REMOVE('[1,2,3,4]', '$');
 ERROR:   The path expression '$' is not allowed in this context.
 CONTEXT:  referenced column: json_remove
 SELECT JSON_REMOVE('[1,2,3,4]');
-ERROR:  function json_remove(unknown) does not exist
-LINE 1: SELECT JSON_REMOVE('[1,2,3,4]');
-               ^
-HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
+ERROR:  Incorrect parameter count in the call to native function 'json_remove'
 CONTEXT:  referenced column: json_remove
 SELECT JSON_REMOVE();
 ERROR:  function json_remove() does not exist
@@ -106,17 +99,10 @@ LINE 1: SELECT JSON_REMOVE();
 HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
 CONTEXT:  referenced column: json_remove
 SELECT JSON_REMOVE('','');
-ERROR:  invalid input syntax for type json
-LINE 1: SELECT JSON_REMOVE('','');
-                           ^
-DETAIL:  The input string ended unexpectedly.
-CONTEXT:  JSON data, line 1: 
-referenced column: json_remove
+ERROR:  Invalid JSON text in argument 1 to function json_remove.
+CONTEXT:  referenced column: json_remove
 SELECT JSON_REMOVE(NULL);
-ERROR:  function json_remove(unknown) does not exist
-LINE 1: SELECT JSON_REMOVE(NULL);
-               ^
-HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
+ERROR:  Incorrect parameter count in the call to native function 'json_remove'
 CONTEXT:  referenced column: json_remove
 create table tab_json1(data json);
 create table info1(name json,address varchar(100));
@@ -129,4 +115,4 @@ select * from tab_json1;
 (1 row)
 
 \c postgres
-DROP DATABASE test_json_remove;
+drop database if exists test_json_remove;
