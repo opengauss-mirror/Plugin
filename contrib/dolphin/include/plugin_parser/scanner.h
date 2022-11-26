@@ -33,6 +33,16 @@ typedef struct DolphinIdent
     char* str;
     bool is_quoted;
 } DolphinIdent;
+
+typedef struct DolphinProcBodyInfo {
+    int m_begin_b;
+    int m_begin_e;
+    int m_begin_len;
+    int m_declare_b;
+    int m_declare_e;
+    int m_declare_len;
+    int m_block_level;
+} DolphinProcBodyInfo;
 #endif
 /*
  * The scanner returns extra data about scanned tokens in this union type.
@@ -167,6 +177,8 @@ extern void scanner_yyerror(const char* message, core_yyscan_t yyscanner);
 extern void addErrorList(const char* message, int lines);
 #ifdef DOLPHIN
 extern DolphinIdent* CreateDolphinIdent(char* ident, bool is_quoted);
+extern DolphinProcBodyInfo* InitDolphinProcBodyInfo();
+extern void DolphinDealProcBodyStr(char* target, char* scanbuf, List* infol, int begin, int len);
 #endif
 #endif /* SCANNER_H */
 
