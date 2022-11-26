@@ -20351,9 +20351,21 @@ static void ATPrepReorganizePartition(Relation rel)
             (errcode(ERRCODE_WRONG_OBJECT_TYPE), errmsg("can not Reorganize partition against NON-PARTITIONED table")));
     }
 
+    if (RelationIsColStore(rel)) {
+        ereport(ERROR,
+            (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+                errmsg("Un-support feature"),
+                errdetail("reorganize partition doesn't support column-store relation")));
+    }
+
     if (rel->partMap->type == PART_TYPE_HASH) {
         ereport(ERROR,
             (errcode(ERRCODE_WRONG_OBJECT_TYPE), errmsg("can not Reorganize HASH partition table")));
+    }
+
+    if (rel->partMap->type == PART_TYPE_INTERVAL) {
+        ereport(ERROR, (errcode(ERRCODE_OPERATE_NOT_SUPPORTED),
+            errmsg("can not reorganize partition against interval partitioned table")));
     }
 }
 #endif
@@ -24852,6 +24864,17 @@ static void AddNewPartitionForTable(Relation rel, List* destPartDefList)
     CommandCounterIncrement();
 }
 
+static void CheckSubPartDef(List* subdef)
+{
+    if (!subdef)
+        return;
+    ListCell* cell = NULL;
+    foreach (cell, subdef) {
+        if (nodeTag(lfirst(cell)) != T_HashPartitionDefState)
+            ereport(ERROR, (errcode(ERRCODE_INVALID_OPERATION), errmsg("The subpartition def type must be HASH")));
+    }
+}
+
 static void ATExecReorganizePartition(Relation partTableRel, AlterTableCmd* cmd)
 {
     SplitPartitionState* reorgPart = NULL;
@@ -24936,9 +24959,11 @@ static void ATExecReorganizePartition(Relation partTableRel, AlterTableCmd* cmd)
         char* tablespacename = NULL;
         if (partTableRel->partMap->type == PART_TYPE_RANGE) {
             RangePartitionDefState* rangePartDef = (RangePartitionDefState*)lfirst(cell);
+            CheckSubPartDef(rangePartDef->subPartitionDefState);
             tablespacename = rangePartDef->tablespacename;
         } else if (partTableRel->partMap->type == PART_TYPE_LIST) {
             ListPartitionDefState* listPartDef = (ListPartitionDefState*)lfirst(cell);
+            CheckSubPartDef(listPartDef->subPartitionDefState);
             tablespacename = listPartDef->tablespacename;
         }
         CheckPartitionTablespace(tablespacename, partTableRel->rd_rel->relowner);
@@ -25020,6 +25045,9 @@ static void ATExecReorganizePartition(Relation partTableRel, AlterTableCmd* cmd)
             srcPartOid = lfirst_oid(cell);
             part = partitionOpen(partTableRel, srcPartOid, AccessExclusiveLock);
             partRel = partitionGetRelation(partTableRel, part);
+            if (partRel->partMap->type != PART_TYPE_HASH) {
+                ereport(ERROR, (errcode(ERRCODE_WRONG_OBJECT_TYPE), errmsg("The subpart type must be HASH for REORGANIZE PARTITION")));
+            }
             srcSubPartOidList = relationGetPartitionOidList(partRel);
             foreach (subCell, srcSubPartOidList) {
                 srcSubPartOid = lfirst_oid(subCell);
@@ -25029,6 +25057,7 @@ static void ATExecReorganizePartition(Relation partTableRel, AlterTableCmd* cmd)
                 finishPartitionHeapSwap(srcSubPartOid, tempTableOid, false, u_sess->utils_cxt.RecentXmin, GetOldestMultiXactId());
                 CommandCounterIncrement();
                 partitionClose(partRel, subPart, AccessExclusiveLock);
+                fastDropPartition(partRel, srcSubPartOid, "REORGANIZE PARTITION", InvalidOid, false);
             }
             list_free_ext(srcSubPartOidList);
             CacheInvalidatePartcache(part);
