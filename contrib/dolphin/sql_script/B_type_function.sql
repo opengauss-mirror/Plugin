@@ -135,6 +135,153 @@ bool
 CREATE OPERATOR pg_catalog.!~~(leftarg = text, rightarg = bool, procedure = pg_catalog.textboolnlike);
 CREATE OPERATOR pg_catalog.!~~*(leftarg = text, rightarg = bool, procedure = pg_catalog.textboolnlike);
 
+CREATE FUNCTION pg_catalog.bitlike(
+VarBit,
+VarBit
+) RETURNS bool LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'bitlike';
+
+CREATE FUNCTION pg_catalog.bitnlike(
+VarBit,
+VarBit
+) RETURNS bool LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'bitnlike';
+
+CREATE OPERATOR pg_catalog.!~~(leftarg=VarBit, rightarg=VarBit, procedure=pg_catalog.bitnlike);
+CREATE OPERATOR pg_catalog.!~~*(leftarg=VarBit, rightarg=VarBit, procedure=pg_catalog.bitnlike);
+
+CREATE OPERATOR pg_catalog.~~(leftarg=VarBit, rightarg=VarBit, procedure=pg_catalog.bitlike);
+CREATE OPERATOR pg_catalog.~~*(leftarg=VarBit, rightarg=VarBit, procedure=pg_catalog.bitlike);
+
+
+CREATE FUNCTION pg_catalog.bitothernlike(
+VarBit,
+bool
+) RETURNS bool LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'bitothernlike';
+
+CREATE OPERATOR pg_catalog.!~~(leftarg=VarBit, rightarg=bool, procedure=pg_catalog.bitothernlike);
+CREATE OPERATOR pg_catalog.!~~*(leftarg=VarBit, rightarg=bool, procedure=pg_catalog.bitothernlike);
+
+CREATE FUNCTION pg_catalog.bitothern2like(
+bool,
+VarBit
+) RETURNS bool LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'bitothernlike';
+
+CREATE OPERATOR pg_catalog.!~~(leftarg=bool, rightarg=VarBit, procedure=pg_catalog.bitothern2like);
+CREATE OPERATOR pg_catalog.!~~*(leftarg=bool, rightarg=VarBit, procedure=pg_catalog.bitothern2like);
+
+CREATE FUNCTION pg_catalog.bitothern3like(
+VarBit,
+text
+) RETURNS bool LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'bitothernlike';
+
+CREATE OPERATOR pg_catalog.!~~(leftarg=VarBit, rightarg=text, procedure=pg_catalog.bitothern3like);
+CREATE OPERATOR pg_catalog.!~~*(leftarg=VarBit, rightarg=text, procedure=pg_catalog.bitothern3like);
+
+CREATE FUNCTION pg_catalog.bitothern4like(
+text,
+VarBit
+) RETURNS bool LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'bitothernlike';
+
+CREATE OPERATOR pg_catalog.!~~(leftarg=text, rightarg=VarBit, procedure=pg_catalog.bitothern4like);
+CREATE OPERATOR pg_catalog.!~~*(leftarg=text, rightarg=VarBit, procedure=pg_catalog.bitothern4like);
+
+CREATE FUNCTION pg_catalog.bitothern5like(
+VarBit,
+bytea
+) RETURNS bool LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'bitothernlike';
+
+CREATE OPERATOR pg_catalog.!~~(leftarg=VarBit, rightarg=bytea, procedure=pg_catalog.bitothern5like);
+CREATE OPERATOR pg_catalog.!~~*(leftarg=VarBit, rightarg=bytea, procedure=pg_catalog.bitothern5like);
+
+CREATE FUNCTION pg_catalog.bitothern6like(
+bytea,
+VarBit
+) RETURNS bool LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'bitothernlike';
+
+CREATE OPERATOR pg_catalog.!~~(leftarg=bytea, rightarg=VarBit, procedure=pg_catalog.bitothern6like);
+CREATE OPERATOR pg_catalog.!~~*(leftarg=bytea, rightarg=VarBit, procedure=pg_catalog.bitothern6like);
+
+CREATE FUNCTION pg_catalog.bitothern7like(
+VarBit,
+blob
+) RETURNS bool LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'bitothernlike';
+
+CREATE OPERATOR pg_catalog.!~~(leftarg=VarBit, rightarg=blob, procedure=pg_catalog.bitothern7like);
+CREATE OPERATOR pg_catalog.!~~*(leftarg=VarBit, rightarg=blob, procedure=pg_catalog.bitothern7like);
+
+CREATE FUNCTION pg_catalog.bitothern8like(
+blob,
+VarBit
+) RETURNS bool LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'bitothernlike';
+
+CREATE OPERATOR pg_catalog.!~~(leftarg=blob, rightarg=VarBit, procedure=pg_catalog.bitothern8like);
+CREATE OPERATOR pg_catalog.!~~*(leftarg=blob, rightarg=VarBit, procedure=pg_catalog.bitothern8like);
+
+CREATE FUNCTION pg_catalog.bitotherlike(
+VarBit,
+bool
+) RETURNS bool LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'bitotherlike';
+
+CREATE OPERATOR pg_catalog.~~(leftarg=VarBit, rightarg=bool, procedure=pg_catalog.bitotherlike);
+CREATE OPERATOR pg_catalog.~~*(leftarg=VarBit, rightarg=bool, procedure=pg_catalog.bitotherlike);
+
+CREATE FUNCTION pg_catalog.bitother2like(
+bool,
+VarBit
+) RETURNS bool LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'bitotherlike';
+
+CREATE OPERATOR pg_catalog.~~(leftarg=bool, rightarg=VarBit, procedure=pg_catalog.bitother2like);
+CREATE OPERATOR pg_catalog.~~*(leftarg=bool, rightarg=VarBit, procedure=pg_catalog.bitother2like);
+
+CREATE FUNCTION pg_catalog.bitother3like(
+VarBit,
+text
+) RETURNS bool LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'bitotherlike';
+
+CREATE OPERATOR pg_catalog.~~(leftarg=VarBit, rightarg=text, procedure=pg_catalog.bitother3like);
+CREATE OPERATOR pg_catalog.~~*(leftarg=VarBit, rightarg=text, procedure=pg_catalog.bitother3like);
+
+CREATE FUNCTION pg_catalog.bitother4like(
+text,
+VarBit
+) RETURNS bool LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'bitotherlike';
+
+CREATE OPERATOR pg_catalog.~~(leftarg=text, rightarg=VarBit, procedure=pg_catalog.bitother4like);
+CREATE OPERATOR pg_catalog.~~*(leftarg=text, rightarg=VarBit, procedure=pg_catalog.bitother4like);
+
+CREATE FUNCTION pg_catalog.bitother5like(
+VarBit,
+bytea
+) RETURNS bool LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'bitotherlike';
+
+CREATE OPERATOR pg_catalog.~~(leftarg=VarBit, rightarg=bytea, procedure=pg_catalog.bitother5like);
+CREATE OPERATOR pg_catalog.~~*(leftarg=VarBit, rightarg=bytea, procedure=pg_catalog.bitother5like);
+
+CREATE FUNCTION pg_catalog.bitother6like(
+bytea,
+VarBit
+) RETURNS bool LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'bitotherlike';
+
+CREATE OPERATOR pg_catalog.~~(leftarg=bytea, rightarg=VarBit, procedure=pg_catalog.bitother6like);
+CREATE OPERATOR pg_catalog.~~*(leftarg=bytea, rightarg=VarBit, procedure=pg_catalog.bitother6like);
+
+CREATE FUNCTION pg_catalog.bitother7like(
+VarBit,
+blob
+) RETURNS bool LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'bitotherlike';
+
+CREATE OPERATOR pg_catalog.~~(leftarg=VarBit, rightarg=blob, procedure=pg_catalog.bitother7like);
+CREATE OPERATOR pg_catalog.~~*(leftarg=VarBit, rightarg=blob, procedure=pg_catalog.bitother7like);
+
+CREATE FUNCTION pg_catalog.bitother8like(
+blob,
+VarBit
+) RETURNS bool LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'bitotherlike';
+
+CREATE OPERATOR pg_catalog.~~(leftarg=blob, rightarg=VarBit, procedure=pg_catalog.bitother8like);
+CREATE OPERATOR pg_catalog.~~*(leftarg=blob, rightarg=VarBit, procedure=pg_catalog.bitother8like);
 
 CREATE OPERATOR pg_catalog.~~*(leftarg = bytea, rightarg = bytea, procedure = pg_catalog.bytealike);
 CREATE OPERATOR pg_catalog.!~~*(leftarg = bytea, rightarg = bytea, procedure = pg_catalog.byteanlike);
+
+CREATE OPERATOR pg_catalog.~~*(leftarg=raw, rightarg=raw, procedure=pg_catalog.rawlike);
+CREATE OPERATOR pg_catalog.!~~*(leftarg=raw, rightarg=raw, procedure=pg_catalog.rawnlike);

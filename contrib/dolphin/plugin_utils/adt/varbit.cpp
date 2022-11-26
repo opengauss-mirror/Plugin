@@ -2009,4 +2009,24 @@ Datum bit_bool(PG_FUNCTION_ARGS)
     }
     PG_RETURN_BOOL(false);
 }
+
+PG_FUNCTION_INFO_V1_PUBLIC(bitlike);
+extern "C" DLL_PUBLIC Datum bitlike(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1_PUBLIC(bitnlike);
+extern "C" DLL_PUBLIC Datum bitnlike(PG_FUNCTION_ARGS);
+
+Datum bitlike(PG_FUNCTION_ARGS)
+{
+    bool result = false;
+    result = DatumGetBool(biteq(fcinfo));
+    PG_RETURN_BOOL(result);
+}
+
+Datum bitnlike(PG_FUNCTION_ARGS)
+{
+    bool result = false;
+    result = DatumGetBool(bitne(fcinfo));
+    PG_RETURN_BOOL(result);
+}
 #endif
