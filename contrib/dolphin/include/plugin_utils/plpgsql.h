@@ -711,6 +711,7 @@ typedef struct { /* WHILE cond LOOP statement		*/
     PLpgSQL_expr* cond;
     List* body; /* List of statements */
     char* sqlString;
+    bool condition;
 } PLpgSQL_stmt_while;
 
 typedef struct { /* FOR statement with integer loopvar	*/
