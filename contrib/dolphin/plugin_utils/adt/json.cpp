@@ -29,7 +29,9 @@
 #include "utils/builtins.h"
 #include "utils/lsyscache.h"
 #include "utils/json.h"
-#include "utils/jsonapi.h"
+#ifdef DOLPHIN
+#include "plugin_utils/jsonapi.h"
+#endif
 #include "utils/typcache.h"
 #include "utils/syscache.h"
 
@@ -47,6 +49,7 @@ static void depth_array_element(JsonLexContext *lex, JsonSemAction *sem, int &de
 static void depth_object(JsonLexContext *lex, JsonSemAction *sem, int &depth);
 static void depth_array(JsonLexContext *lex, JsonSemAction *sem, int &depth);
 static void sort_json(JsonLexContext *lex, JsonSemAction *sem, int &depth);
+static char *type_case(JsonTokenType tok);
 #endif
 
 /*
@@ -65,7 +68,7 @@ typedef enum               /* contexts of JSON parser */
   JSON_PARSE_OBJECT_COMMA, /* saw object ',', expecting next label */
   JSON_PARSE_END           /* saw the end of a document, expect nothing */
 } JsonParseContext;
-static inline void json_lex(JsonLexContext *lex);
+static inline void json_lex(JsonLexContext *lex, bool flag = false);
 static inline void json_lex_string(JsonLexContext *lex);
 static inline void json_lex_number(JsonLexContext *lex, char *s, bool *num_err);
 static inline void parse_scalar(JsonLexContext *lex, JsonSemAction *sem);
@@ -87,7 +90,8 @@ static void add_json(Datum val, bool is_null, StringInfo result, Oid val_type, b
 
 /* the null action object used for pure validation */
 static JsonSemAction nullSemAction = {NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL};
-
+static inline bool lex_accept(JsonLexContext *lex, JsonTokenType token, char **lexeme);
+static inline void lex_expect(JsonParseContext ctx, JsonLexContext *lex, JsonTokenType token);
 #ifdef DOLPHIN
 PG_FUNCTION_INFO_V1_PUBLIC(json_array);
 extern "C" DLL_PUBLIC Datum json_array(PG_FUNCTION_ARGS);
@@ -162,7 +166,6 @@ static inline void lex_expect(JsonParseContext ctx, JsonLexContext *lex, JsonTok
 {
     if (!lex_accept(lex, token, NULL))
         report_parse_error(ctx, lex);
-    ;
 }
 
 /*
@@ -363,7 +366,6 @@ static void parse_object_field(JsonLexContext *lex, JsonSemAction *sem)
     if (!lex_accept(lex, JSON_TOKEN_STRING, fnameaddr)) {
         report_parse_error(JSON_PARSE_STRING, lex);
     }
-
     lex_expect(JSON_PARSE_OBJECT_LABEL, lex, JSON_TOKEN_COLON);
     tok = lex_peek(lex);
     isnull = tok == JSON_TOKEN_NULL;
@@ -414,7 +416,6 @@ static void parse_object(JsonLexContext *lex, JsonSemAction *sem)
 
     /* we know this will succeeed, just clearing the token */
     lex_expect(JSON_PARSE_OBJECT_START, lex, JSON_TOKEN_OBJECT_START);
-
     tok = lex_peek(lex);
     switch (tok) {
         case JSON_TOKEN_STRING:
@@ -428,7 +429,6 @@ static void parse_object(JsonLexContext *lex, JsonSemAction *sem)
             /* case of an invalid initial token inside the object */
             report_parse_error(JSON_PARSE_OBJECT_START, lex);
     }
-
     lex_expect(JSON_PARSE_OBJECT_NEXT, lex, JSON_TOKEN_OBJECT_END);
     lex->lex_level--;
 
@@ -503,7 +503,7 @@ static void parse_array(JsonLexContext *lex, JsonSemAction *sem)
 /*
  * Lex one token from the input stream.
  */
-static inline void json_lex(JsonLexContext *lex)
+static inline void json_lex(JsonLexContext *lex, bool flag)
 {
     char *s = NULL;
     int len;
@@ -567,7 +567,17 @@ static inline void json_lex(JsonLexContext *lex)
             case '-':
                 /* Negative number. */
                 json_lex_number(lex, s + 1, NULL);
-                lex->token_type = JSON_TOKEN_NUMBER;
+#ifdef DOLPHIN
+		if (flag) {
+                    if (lex->ifint) {
+                        lex->token_type = JSON_TOKEN_DOUBLE;
+                    } else {
+                        lex->token_type = JSON_TOKEN_INTEGER;
+                    }
+                } else {
+                    lex->token_type = JSON_TOKEN_NUMBER;
+                }
+#endif
                 break;
             case '0':
             case '1':
@@ -580,8 +590,18 @@ static inline void json_lex(JsonLexContext *lex)
             case '8':
             case '9':
                 /* Positive number. */
+#ifdef DOLPHIN
                 json_lex_number(lex, s, NULL);
-                lex->token_type = JSON_TOKEN_NUMBER;
+                if (flag) {
+                    if (lex->ifint) {
+                        lex->token_type = JSON_TOKEN_DOUBLE;
+                    } else {
+                        lex->token_type = JSON_TOKEN_INTEGER;
+                    }
+                } else {
+                    lex->token_type = JSON_TOKEN_NUMBER;
+                }
+#endif
                 break;
             default: {
                 char *p = NULL;
@@ -889,6 +909,9 @@ static inline void json_lex_number(JsonLexContext *lex, char *s, bool *num_err)
                 len++;
             } while (len < lex->input_length && *s >= '0' && *s <= '9');
         }
+#ifdef DOLPHIN
+        lex->ifint = true;
+#endif
     }
 
     /* Part (4): parse optional exponent. */
@@ -2067,6 +2090,35 @@ void escape_json(StringInfo buf, const char *str)
  * initial token should never be JSON_TOKEN_OBJECT_END, JSON_TOKEN_ARRAY_END,
  * JSON_TOKEN_COLON, JSON_TOKEN_COMMA, or JSON_TOKEN_END.
  */
+#ifdef DOLPHIN
+static char *type_case(JsonTokenType tok)
+
+{
+
+    switch (tok) {
+        case JSON_TOKEN_OBJECT_START:
+            return "object";
+        case JSON_TOKEN_ARRAY_START:
+            return "array";
+        case JSON_TOKEN_STRING:
+            return "string";
+        case JSON_TOKEN_NUMBER:
+            return "number";
+        case JSON_TOKEN_TRUE:
+        case JSON_TOKEN_FALSE:
+            return "boolean";
+        case JSON_TOKEN_NULL:
+            return "null";
+        case JSON_TOKEN_INTEGER:
+            return "INTEGER";
+        case JSON_TOKEN_DOUBLE:
+            return "DOUBLE";
+        default:
+            elog(ERROR, "unexpected json token: %d", tok);
+            return 0;
+    }
+}
+#endif
 Datum json_typeof(PG_FUNCTION_ARGS)
 {
     text *json = NULL;
@@ -2081,30 +2133,7 @@ Datum json_typeof(PG_FUNCTION_ARGS)
     /* Lex exactly one token from the input and check its type. */
     json_lex(lex);
     tok = lex_peek(lex);
-    switch (tok) {
-        case JSON_TOKEN_OBJECT_START:
-            type = "object";
-            break;
-        case JSON_TOKEN_ARRAY_START:
-            type = "array";
-            break;
-        case JSON_TOKEN_STRING:
-            type = "string";
-            break;
-        case JSON_TOKEN_NUMBER:
-            type = "number";
-            break;
-        case JSON_TOKEN_TRUE:
-        case JSON_TOKEN_FALSE:
-            type = "boolean";
-            break;
-        case JSON_TOKEN_NULL:
-            type = "null";
-            break;
-        default:
-            elog(ERROR, "unexpected json token: %d", tok);
-    }
-
+    type = type_case(tok);
     PG_RETURN_TEXT_P(cstring_to_text(type));
 }
 
@@ -2356,10 +2385,22 @@ static void CheckSign(char *inStr, int &x)
 
 Datum json_unquote(PG_FUNCTION_ARGS)
 {
-    text *json_val = PG_GETARG_TEXT_PP(0);
-    char *str = text_to_cstring(json_val);
+    Oid valtype;
+    Oid typOutput;
+    bool typIsVarlena = false;
+    Datum arg = 0;
+    char *str = NULL;
+    valtype = get_fn_expr_argtype(fcinfo->flinfo, 0);
+    if (VALTYPE_IS_JSON(valtype)) {
+        arg = PG_GETARG_DATUM(0);
+        getTypeOutputInfo(valtype, &typOutput, &typIsVarlena);
+        str = OidOutputFunctionCall(typOutput, arg);
+    } else {
+        ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+                        errmsg("Invalid data type for JSON data in argument 1 to function json_unquote")));
+    }
     char *str1 = NULL;
-    str1 = (char *)malloc(1000);
+    str1 = (char *)palloc(strlen(str) + 10);
     int a = 0;
     int b = 0;
     int x = 0;
@@ -2367,22 +2408,22 @@ Datum json_unquote(PG_FUNCTION_ARGS)
     if (x == 2) {
         DelChar(str, str1, a, b);
         if ((a == 2 && b == 1) || a >= 3) {
-            free(str1);
+            pfree(str1);
             PG_RETURN_TEXT_P(NULL);
         } else {
             char *str2 = scanstr(str1);
             char *str3 = scanstr(str2);
-            free(str1);
+            pfree(str1);
             text *result = cstring_to_text(str3);
             PG_RETURN_TEXT_P(result);
         }
     } else if (x == 0 || x == 1) {
         char *str2 = scanstr(str);
         text *result = cstring_to_text(str2);
-        free(str1);
+        pfree(str1);
         PG_RETURN_TEXT_P(result);
     } else {
-        free(str1);
+        pfree(str1);
         PG_RETURN_TEXT_P(NULL);
     }
 }
@@ -2585,8 +2626,8 @@ Datum json_depth(PG_FUNCTION_ARGS)
     Oid typOutput;
     bool typIsVarlena = false;
     Datum arg = 0;
-    char* data;
-    text *json;
+    char *data = NULL;
+    text *json = NULL;
 
     valtype = get_fn_expr_argtype(fcinfo->flinfo, 0);
     if (VALTYPE_IS_JSON(valtype)) {
@@ -2604,5 +2645,105 @@ Datum json_depth(PG_FUNCTION_ARGS)
     lex = makeJsonLexContext(json, false);
     sort_json(lex, &nullSemAction, depth);
     PG_RETURN_INT32(depth);
+}
+#endif
+
+#ifdef DOLPHIN
+PG_FUNCTION_INFO_V1_PUBLIC(json_valid);
+extern "C" DLL_PUBLIC Datum json_valid(PG_FUNCTION_ARGS);
+Datum json_valid(PG_FUNCTION_ARGS)
+{
+    if (PG_ARGISNULL(0))
+        PG_RETURN_NULL();
+
+    Oid valtype;
+    Oid typOutput;
+    bool typIsVarlena = false;
+    Datum arg = 0;
+    char *data = NULL;
+    text *result = NULL;
+    JsonLexContext *lex = NULL;
+
+    valtype = get_fn_expr_argtype(fcinfo->flinfo, 0);
+    if (!VALTYPE_IS_JSON(valtype))
+        PG_RETURN_BOOL(false);
+
+    arg = PG_GETARG_DATUM(0);
+    getTypeOutputInfo(valtype, &typOutput, &typIsVarlena);
+    data = OidOutputFunctionCall(typOutput, arg);
+    result = cstring_to_text(data);
+    lex = makeJsonLexContext(result, false);
+
+    MemoryContext old_context = CurrentMemoryContext;
+    PG_TRY();
+    {
+        pg_parse_json(lex, &nullSemAction);
+    }
+    PG_CATCH();
+    {
+        ErrorData *edata = NULL;
+        MemoryContext cxt = MemoryContextSwitchTo(old_context);
+        edata = CopyErrorData();
+        if (edata->sqlerrcode == ERRCODE_INVALID_TEXT_REPRESENTATION) {
+            FlushErrorState();
+            /* the old edata is no longer used */
+            FreeErrorData(edata);
+
+            MemoryContextSwitchTo(cxt);
+            PG_RETURN_BOOL(false);
+        } else {
+            MemoryContextSwitchTo(cxt);
+            ReThrowError(edata);
+        }
+    }
+    PG_END_TRY();
+
+    PG_RETURN_BOOL(true);
+}
+
+#endif
+
+#ifdef DOLPHIN
+
+PG_FUNCTION_INFO_V1_PUBLIC(json_type);
+extern "C" DLL_PUBLIC Datum json_type(PG_FUNCTION_ARGS);
+
+Datum json_type(PG_FUNCTION_ARGS)
+{
+    if (PG_ARGISNULL(0))
+        PG_RETURN_NULL();
+    Oid valtype;
+    Oid typOutput;
+    bool typIsVarlena = false;
+    Datum arg = 0;
+    char *data = NULL;
+    text *json = NULL;
+    valtype = get_fn_expr_argtype(fcinfo->flinfo, 0);
+    if (VALTYPE_IS_JSON(valtype)) {
+        arg = PG_GETARG_DATUM(0);
+        getTypeOutputInfo(valtype, &typOutput, &typIsVarlena);
+        data = OidOutputFunctionCall(typOutput, arg);
+        json = cstring_to_text(data);
+    } else {
+        ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+                        errmsg("Invalid data type for JSON data in argument 1 to function json_type")));
+    }
+
+    JsonLexContext *lex = NULL;
+    JsonTokenType tok;
+    char *type = NULL;
+
+    if (!json_valid(fcinfo)) {
+        ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+                        errmsg("Invalid data type for JSON data in argument 1 to function json_type")));
+    }
+    lex = makeJsonLexContext(json, false);
+
+    /* Lex exactly one token from the input and check its type. */
+    json_lex(lex, true);
+    tok = lex_peek(lex);
+    type = type_case(tok);
+    pfree(lex);
+    PG_RETURN_TEXT_P(cstring_to_text(type));
 }
 #endif

@@ -8,7 +8,6 @@ select json_quote('"ab"');
 select json_quote('a
 b');
 select json_quote(null);
-select json_quote(E'ab\'');
 select json_quote(E'\'ab\'');
 select json_quote(''ab'');
 select json_quote('\"ab\"');

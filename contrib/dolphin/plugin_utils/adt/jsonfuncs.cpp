@@ -27,7 +27,9 @@
 #include "utils/hsearch.h"
 #include "utils/json.h"
 #include "utils/jsonb.h"
-#include "utils/jsonapi.h"
+#ifdef DOLPHIN
+#include "plugin_utils/jsonapi.h"
+#endif
 #include "utils/lsyscache.h"
 #include "utils/memutils.h"
 #include "utils/typcache.h"
@@ -35,6 +37,7 @@
 #ifdef DOLPHIN
 #include "cjson/cJSON.h"
 #include "plugin_postgres.h"
+#include "plugin_parser/scansup.h"
 #include "plugin_utils/json.h"
 #include "utils/date.h"
 #include "plugin_utils/timestamp.h"
@@ -573,21 +576,100 @@ static void okeys_scalar(void *state, char *token, JsonTokenType tokentype)
  * these implement the -> ->> #> and #>> operators
  * and the json{b?}_extract_path*(json, text, ...) functions
  */
+#ifdef DOLPHIN
 Datum json_object_field(PG_FUNCTION_ARGS)
 {
     text *json = PG_GETARG_TEXT_P(0);
+    text *in_array = PG_GETARG_TEXT_P(1);
     text *result = NULL;
-    text *fname = PG_GETARG_TEXT_P(1);
-    char *fnamestr = text_to_cstring(fname);
+    char *path = NULL;
+    char *data = text_to_cstring(json);
+    cJSON_ResultWrapper *res = NULL;
+    cJSON_JsonPath *jp = NULL;
+    cJSON *root = NULL;
+    int error_pos = -1;
+    char *r = NULL;
+    bool many = false;
 
-    result = get_worker(json, fnamestr, -1, NULL, NULL, -1, false);
-
-    if (result != NULL) {
-        PG_RETURN_TEXT_P(result);
+    root = cJSON_ParseWithOpts(data, 0, 1);
+    if (!root) {
+        cJSON_DeleteResultWrapper(res);
+        ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+                        errmsg("Invalid JSON text in argument 1 to function json_extract.")));
+    }
+    cJSON_SortObject(root);
+    res = cJSON_CreateResultWrapper();
+    path = TextDatumGetCString(in_array);
+    jp = jp_parse(path, error_pos);
+    if (!jp) {
+        char *fnamestr = text_to_cstring(in_array);
+        result = get_worker(json, fnamestr, -1, NULL, NULL, -1, false);
+        if (result != NULL) {
+            PG_RETURN_TEXT_P(result);
+        } else {
+            PG_RETURN_NULL();
+        }
     } else {
-        PG_RETURN_NULL();
+        many |= cJSON_JsonPathCanMatchMany(jp);
+        cJSON_JsonPathMatch(root, jp, res);
+        cJSON_DeleteJsonPath(jp);
+        if (res->len > 0) {
+            if (many) {
+                cJSON *arr = cJSON_ResultWrapperToArray(res);
+                r = cJSON_PrintUnformatted(arr);
+                result = formatJsondoc(r);
+                cJSON_Delete(arr);
+            } else {
+                r = cJSON_PrintUnformatted(res->head->next->node);
+                result = formatJsondoc(r);
+            }
+            cJSON_free(r);
+        } else {
+            PG_RETURN_NULL();
+        }
+        cJSON_Delete(root);
+        cJSON_DeleteResultWrapper(res);
+        PG_RETURN_TEXT_P(result);
     }
 }
+
+void delchar_oper(char *inStr, char *outStr, int &a, int &b)
+{
+    char *tmp;
+    char *tep;
+    tmp = outStr;
+    tep = inStr;
+    while (*tep != '\0') {
+        if (*tep == '\"') {
+            tep++;
+            a++;
+        }
+        if (*tep == '\\') {
+            b++;
+        }
+        *tmp = *tep;
+        tmp++;
+        if (*tep == '\0')
+            break;
+        tep++;
+    }
+}
+void checksign_oper(char *inStr, int &x)
+{
+    char *tmp;
+    tmp = inStr;
+    if (*tmp == '\"') {
+        x++;
+    }
+    while (*tmp != '\0') {
+        tmp++;
+    }
+    tmp--;
+    if (*tmp == '\"') {
+        x++;
+    }
+}
+#endif
 
 Datum jsonb_object_field(PG_FUNCTION_ARGS)
 {
@@ -625,22 +707,92 @@ Datum jsonb_object_field(PG_FUNCTION_ARGS)
     }
     PG_RETURN_NULL();
 }
-
+#ifdef DOLPHIN
 Datum json_object_field_text(PG_FUNCTION_ARGS)
 {
     text *json = PG_GETARG_TEXT_P(0);
+    text *in_array = PG_GETARG_TEXT_P(1);
     text *result = NULL;
-    text *fname = PG_GETARG_TEXT_P(1);
-    char *fnamestr = text_to_cstring(fname);
+    char *path = NULL;
+    char *data = text_to_cstring(json);
+    cJSON_ResultWrapper *res = NULL;
+    cJSON_JsonPath *jp = NULL;
+    cJSON *root = NULL;
+    int error_pos = -1;
+    char *r = NULL;
+    bool many = false;
 
-    result = get_worker(json, fnamestr, -1, NULL, NULL, -1, true);
-
-    if (result != NULL) {
-        PG_RETURN_TEXT_P(result);
+    root = cJSON_ParseWithOpts(data, 0, 1);
+    if (!root) {
+        cJSON_DeleteResultWrapper(res);
+        ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+                        errmsg("Invalid JSON text in argument 1 to function json_extract.")));
+    }
+    cJSON_SortObject(root);
+    res = cJSON_CreateResultWrapper();
+    path = TextDatumGetCString(in_array);
+    jp = jp_parse(path, error_pos);
+    if (!jp) {
+        char *fnamestr = text_to_cstring(in_array);
+        result = get_worker(json, fnamestr, -1, NULL, NULL, -1, true);
+        if (result != NULL) {
+            PG_RETURN_TEXT_P(result);
+        } else {
+            PG_RETURN_NULL();
+        }
     } else {
-        PG_RETURN_NULL();
+        many |= cJSON_JsonPathCanMatchMany(jp);
+        cJSON_JsonPathMatch(root, jp, res);
+        cJSON_DeleteJsonPath(jp);
+        if (res->len > 0) {
+            if (many) {
+                cJSON *arr = cJSON_ResultWrapperToArray(res);
+                r = cJSON_PrintUnformatted(arr);
+                result = formatJsondoc(r);
+                cJSON_Delete(arr);
+            } else {
+                r = cJSON_PrintUnformatted(res->head->next->node);
+                result = formatJsondoc(r);
+            }
+            cJSON_free(r);
+        } else {
+            PG_RETURN_NULL();
+        }
+        cJSON_Delete(root);
+        cJSON_DeleteResultWrapper(res);
+        text *json_val = result;
+        char *str = text_to_cstring(json_val);
+        char *str1 = NULL;
+        str1 = (char *)palloc(strlen(str)+10);
+        int a = 0;
+        int b = 0;
+        int x = 0;
+        checksign_oper(str, x);
+        if (x == 2) {
+            delchar_oper(str, str1, a, b);
+            if ((a == 2 && b == 1) || a >= 3) {
+                pfree(str1);
+                PG_RETURN_TEXT_P(NULL);
+            } else {
+                char *str2 = scanstr(str1);
+                char *str3 = scanstr(str2);
+                pfree(str1);
+                text *result = cstring_to_text(str3);
+                PG_RETURN_TEXT_P(result);
+            }
+        } else if (x == 0 || x == 1) {
+            char *str2 = scanstr(str);
+            text *result = cstring_to_text(str2);
+            pfree(str1);
+            PG_RETURN_TEXT_P(result);
+        } else {
+            pfree(str1);
+            PG_RETURN_TEXT_P(NULL);
+        }
     }
 }
+
+#endif
 
 Datum jsonb_object_field_text(PG_FUNCTION_ARGS)
 {
@@ -3932,7 +4084,7 @@ Datum json_extract(PG_FUNCTION_ARGS)
 
 static void search_PushStack(search_LinkStack &s, ElemType x)
 {
-    LinkNode *newnode = (LinkNode *)malloc(sizeof(LinkNode));
+    LinkNode *newnode = (LinkNode *)palloc(sizeof(LinkNode));
     newnode->data = x;
     newnode->next = s;
     s = newnode;
@@ -3942,7 +4094,7 @@ static void search_PopStack(search_LinkStack &s)
 {
     LinkNode *p = s;
     s = s->next;
-    free(p);
+    pfree(p);
 }
 
 static search_LinkStack search_ReverseStack(search_LinkStack &s)
@@ -4424,49 +4576,52 @@ Datum json_search(PG_FUNCTION_ARGS)
 
 Datum json_keys(PG_FUNCTION_ARGS)
 {
-    char *json;
     int num = 0;
     char **keys;
-    cJSON *json_cJSON;
+    cJSON *root = NULL;
     cJSON *node;
     Oid valtype;
     Datum arg = 0;
+    int error_pos = -1;
 
     valtype = get_fn_expr_argtype(fcinfo->flinfo, 0);
     arg = PG_GETARG_DATUM(0);
-    json_cJSON = input_to_cjson(valtype, "json_keys", 1, arg);
+    root = input_to_cjson(valtype, "json_keys", 1, arg);
 
     if (PG_NARGS() == 2) {
-        ArrayType *path_array = PG_GETARG_ARRAYTYPE_P(1);
-        if (array_contains_nulls(path_array)) {
+        char *path = text_to_cstring(PG_GETARG_TEXT_P(1));
+        cJSON_JsonPath *jp = NULL;
+        cJSON_ResultWrapper *res = NULL;
+
+        res = cJSON_CreateResultWrapper();
+        if (containsAsterisk(path) > 0) {
+            ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+                            errmsg("in this situation, path expressions may not contain the * and ** tokens")));
+        }
+
+        jp = jp_parse(path, error_pos);
+        if (!jp) {
+            cJSON_DeleteResultWrapper(res);
+            cJSON_Delete(root);
+            ereport(ERROR,
+                    (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+                     errmsg("Invalid JSON path expression. The error is around character position %d.", error_pos)));
+        }
+        cJSON_JsonPathMatch(root, jp, res);
+        if (res->len == 1) {
+            root = res->head->next->node;
+        } else {
             PG_RETURN_NULL();
         }
-        Datum *pathtext = NULL;
-        bool *pathnulls = NULL;
-        int path_num;
-
-        deconstruct_array(path_array, TEXTOID, -1, false, 'i', &pathtext, &pathnulls, &path_num);
-        if (path_num > 1) {
-            ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
-                            errmsg("Incorrect parameter count in the call to native function 'json_keys'")));
-        }
-        Datum pathJson = DirectFunctionCall2Coll(json_extract, PG_GET_COLLATION(), PointerGetDatum(json),
-                                                 PointerGetDatum(PG_GETARG_ARRAYTYPE_P(1)));
-        if (!pathJson)
-            PG_RETURN_NULL();
-
-        json_cJSON = cJSON_ParseWithOpts(TextDatumGetCString(pathJson), 0, 1);
-        if (!json_cJSON) {
-            ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
-                            errmsg("Invalid JSON text in call to json_extract returned")));
-        }
+        cJSON_DeleteJsonPath(jp);
+        cJSON_DeleteResultWrapper(res);
     }
 
-    if ((json_cJSON->type & 0xFF) != cJSON_Object) {
+    if ((root->type & 0xFF) != cJSON_Object) {
         PG_RETURN_NULL();
     }
-    node = json_cJSON->child;
-    keys = (char **)palloc(cJSON_GetArraySize(json_cJSON) * sizeof(char *));
+    node = root->child;
+    keys = (char **)palloc(cJSON_GetArraySize(root) * sizeof(char *));
     StringInfo result = makeStringInfo();
     while (node != NULL) {
         keys[num] = node->string;
@@ -5621,4 +5776,263 @@ Datum json_set(PG_FUNCTION_ARGS)
     pfree(s);
     PG_RETURN_TEXT_P(res);
 }
+#endif
+
+#ifdef DOLPHIN
+
+PG_FUNCTION_INFO_V1_PUBLIC(json_length);
+extern "C" DLL_PUBLIC Datum json_length(PG_FUNCTION_ARGS);
+
+/* semantic action functions for json_length */
+static void length_object_field_start(void *state, char *fname, bool isnull);
+static void length_array_element_start(void *state, bool isnull);
+static void length_scalar(void *state, char *token, JsonTokenType tokentype);
+
+static void length_object_field_start(void *state, char *fname, bool isnull)
+{
+    OkeysState *_state = (OkeysState *)state;
+    if (_state->lex->lex_level == 1) {
+        _state->result_count++;
+    }
+}
+
+static void length_array_element_start(void *state, bool isnull)
+{
+    OkeysState *_state = (OkeysState *)state;
+    if (_state->lex->lex_level == 1) {
+        _state->result_count++;
+    }
+}
+
+static void length_scalar(void *state, char *token, JsonTokenType tokentype)
+{
+    OkeysState *_state = (OkeysState *)state;
+    if (_state->lex->lex_level == 0) {
+        _state->result_count = 1;
+    }
+}
+
+Datum json_length(PG_FUNCTION_ARGS)
+{
+    Oid valtype;
+    Oid typOutput;
+    int result;
+    bool typIsVarlena = false;
+    Datum arg = 0;
+    text *json = NULL;
+    char *data = NULL;
+    int error_pos = -1;
+
+    valtype = get_fn_expr_argtype(fcinfo->flinfo, 0);
+    if (VALTYPE_IS_JSON(valtype)) {
+        arg = PG_GETARG_DATUM(0);
+        getTypeOutputInfo(valtype, &typOutput, &typIsVarlena);
+        data = OidOutputFunctionCall(typOutput, arg);
+        json = cstring_to_text(data);
+    } else {
+        ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+                        errmsg("Invalid data type for JSON data in argument 1 to function json_length")));
+    }
+
+    if (PG_NARGS() == 2) {
+        cJSON *root = NULL;
+        char *path = text_to_cstring(PG_GETARG_TEXT_P(1));
+        cJSON_JsonPath *jp = NULL;
+        cJSON_ResultWrapper *res = NULL;
+
+        root = cJSON_ParseWithOpts(data, 0, 1);
+        res = cJSON_CreateResultWrapper();
+        if (containsAsterisk(path) > 0) {
+            ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+                            errmsg("in this situation, path expressions may not contain the * and ** tokens")));
+        }
+
+        jp = jp_parse(path, error_pos);
+        if (!jp) {
+            cJSON_DeleteResultWrapper(res);
+            cJSON_Delete(root);
+            ereport(ERROR,
+                    (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+                     errmsg("Invalid JSON path expression. The error is around character position %d.", error_pos)));
+        }
+        cJSON_JsonPathMatch(root, jp, res);
+        if (res->len == 1) {
+            json = cstring_to_text(cJSON_PrintUnformatted(res->head->next->node));
+        } else {
+            PG_RETURN_NULL();
+        }
+        cJSON_DeleteJsonPath(jp);
+        cJSON_DeleteResultWrapper(res);
+    }
+    JsonLexContext *lex = makeJsonLexContext(json, true);
+    OkeysState *state = (OkeysState *)palloc(sizeof(OkeysState));
+    JsonSemAction *sem = (JsonSemAction *)palloc0(sizeof(JsonSemAction));
+
+    state->lex = lex;
+    state->result_count = 0;
+    sem->semstate = (void *)state;
+    sem->object_field_start = length_object_field_start;
+    sem->array_element_start = length_array_element_start;
+    sem->scalar = length_scalar;
+
+    pg_parse_json(lex, sem);
+    result = state->result_count;
+    pfree(state);
+    pfree(sem);
+    PG_RETURN_INT32(result);
+}
+
+#endif
+
+#ifdef DOLPHIN
+
+PG_FUNCTION_INFO_V1_PUBLIC(json_objectagg_finalfn);
+extern "C" DLL_PUBLIC Datum json_objectagg_finalfn(PG_FUNCTION_ARGS);
+
+Datum json_objectagg_finalfn(PG_FUNCTION_ARGS)
+{
+    StringInfo state;
+    cJSON *root = NULL;
+
+    /* cannot be called directly because of internal-type argument */
+    Assert(AggCheckCallContext(fcinfo, NULL));
+    state = PG_ARGISNULL(0) ? NULL : (StringInfo)PG_GETARG_POINTER(0);
+    if (state == NULL) {
+        PG_RETURN_TEXT_P(cstring_to_text("{}"));
+    }
+
+    appendStringInfoString(state, " }");
+    root = cJSON_Parse(state->data);
+    resetStringInfo(state);
+    json_regular_format(state, root);
+    cJSON_Delete(root);
+
+    PG_RETURN_TEXT_P(cstring_to_text_with_len(state->data, state->len));
+}
+
+#endif
+
+#ifdef DOLPHIN
+
+PG_FUNCTION_INFO_V1_PUBLIC(json_storage_size);
+extern "C" DLL_PUBLIC Datum json_storage_size(PG_FUNCTION_ARGS);
+Datum json_storage_size(PG_FUNCTION_ARGS)
+{
+    Oid valtype;
+    Datum arg = 0;
+    cJSON *doc_cJSON = NULL;
+    valtype = get_fn_expr_argtype(fcinfo->flinfo, 0);
+    arg = PG_GETARG_DATUM(0);
+    doc_cJSON = input_to_cjson(valtype, "json_storage_size", 1, arg);
+    int32 n = pg_column_size(fcinfo);
+    PG_RETURN_INT32(n);
+}
+
+#endif
+
+#ifdef DOLPHIN
+void newline_and_indent(StringInfo buf, int depth)
+{
+    appendStringInfoChar(buf, '\n');
+    for (int i = 0; i < depth; i++) {
+        appendStringInfoChar(buf, ' ');
+    }
+}
+text *prettyJsondoc(char *str)
+{
+    StringInfo buf = makeStringInfo();
+    text *res;
+    bool quoted = false;
+    int depth = 0;
+    appendStringInfoString(buf, "  ");
+    while (*str != '\0') {
+        if (!quoted) {
+            switch (*str) {
+                case '\"':
+                    quoted = true;
+                    appendStringInfoChar(buf, '"');
+                    break;
+                case ',':
+                    appendStringInfoChar(buf, ',');
+                    newline_and_indent(buf, depth);
+                    break;
+                case ':':
+                    appendStringInfoChar(buf, ':');
+                    appendStringInfoChar(buf, ' ');
+                case '{':
+                    if (*(str + 1) != '}') {
+                        depth += 2;
+                        appendStringInfoChar(buf, '{');
+                        newline_and_indent(buf, depth);
+                    } else {
+                        appendStringInfoString(buf, "{}");
+                        str++;
+                    }
+                    break;
+                case '[':
+                    if (*(str + 1) != ']') {
+                        depth += 2;
+                        appendStringInfoChar(buf, '[');
+                        newline_and_indent(buf, depth);
+                    } else {
+                        appendStringInfoString(buf, "[]");
+                        str++;
+                    }
+                    break;
+                case '}':
+                    depth -= 2;
+                    newline_and_indent(buf, depth);
+                    appendStringInfoChar(buf, '}');
+                    break;
+                case ']':
+                    depth -= 2;
+                    newline_and_indent(buf, depth);
+                    appendStringInfoChar(buf, ']');
+                    break;
+                default:
+                    appendStringInfoChar(buf, *str);
+                    break;
+            }
+        } else {
+            switch (*str) {
+                case '"':
+                    quoted = false;
+                    appendStringInfoChar(buf, '"');
+                    break;
+                case '\\':
+                    str++;
+                    appendStringInfoChar(buf, '\\');
+                    break;
+                default:
+                    appendStringInfoChar(buf, *str);
+                    break;
+            }
+        }
+        str++;
+    }
+    res = cstring_to_text_with_len(buf->data, buf->len);
+    DestroyStringInfo(buf);
+    return res;
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(json_pretty);
+extern "C" DLL_PUBLIC Datum json_pretty(PG_FUNCTION_ARGS);
+Datum json_pretty(PG_FUNCTION_ARGS)
+{
+    if (PG_ARGISNULL(0))
+        PG_RETURN_NULL();
+    Oid valtype;
+    Datum arg = 0;
+    cJSON *root = NULL;
+    valtype = get_fn_expr_argtype(fcinfo->flinfo, 0);
+    arg = PG_GETARG_DATUM(0);
+    root = input_to_cjson(valtype, "json_pretty", 1, arg);
+    cJSON_SortObject(root);
+    char *unformattedJson = cJSON_PrintUnformatted(root);
+    text *res = prettyJsondoc(unformattedJson);
+    cJSON_free(unformattedJson);
+    cJSON_Delete(root);
+    PG_RETURN_TEXT_P(res);
+}
+
 #endif
