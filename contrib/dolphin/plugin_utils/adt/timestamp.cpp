@@ -8776,6 +8776,14 @@ Datum date_format_text(PG_FUNCTION_ARGS)
                     securec_check(rc, "", "");
                     break;
                 }
+                case 'l': { // hours in range of 1..12
+                    hours_i = (tm->tm_hour % MAX_VALUE_24_CLOCK + MAX_VALUE_12_CLOCK - 1) % MAX_VALUE_12_CLOCK + MIN_VALUE_12_CLOCK;
+                    insert_len = sprintf_s(buf, MAXDATELEN, "%d", hours_i);
+                    securec_check_ss(insert_len, "", "");
+                    rc = strcat_s(str, remain, buf);
+                    securec_check(rc, "", "");
+                    break;
+                }
                 case 'h':
                 case 'I': { // hours in range of 0..12
                     hours_i = (tm->tm_hour % MAX_VALUE_24_CLOCK + MAX_VALUE_12_CLOCK - 1) % MAX_VALUE_12_CLOCK + MIN_VALUE_12_CLOCK;
