@@ -443,6 +443,7 @@ static DolphinString* MakeDolphinStringByNode(Node* node, bool is_quoted);
 static List* GetNameListFromDolphinString(List* dolphinStringList);
 static char* GetDolphinObjName(char* string, bool is_quoted);
 static bool DolphinObjNameCmp(const char* s1, const char* s2, bool is_quoted);
+static char* SingleLineProcedureQueryGet(int& start_pos, int& end_pos, base_yy_extra_type* yyextra);
 static SelectStmt *MakeFunctionSelect(char *funcCall, List* args, core_yyscan_t yyscanner);
 static SelectStmt *MakeShowGrantStmt(char *arg, int location, core_yyscan_t yyscanner);
 %}
@@ -661,6 +662,9 @@ static SelectStmt *MakeShowGrantStmt(char *arg, int location, core_yyscan_t yysc
 %type <range>	qualified_name insert_target OptConstrFromTable opt_index_name insert_partition_clause update_delete_partition_clause dolphin_qualified_name
 
 %type <str>		all_Op MathOp OptDbName
+%type <str>		SingleLineProcPart
+%type <list>		proc_arg_no_empty
+
 
 %type <str>		RowLevelSecurityPolicyName row_level_security_cmd RLSDefaultForCmd row_level_security_role
 %type <boolean>	RLSDefaultPermissive
@@ -16473,8 +16477,30 @@ b_proc_body:
 				$$ = funSrc;
 			}
 		;
+SingleLineProcPart:
+			{GetSessionContext()->single_line_proc_begin = yylloc;}
+				SelectStmt
+                        {
+                                char* strbody = NULL;
+                                base_yy_extra_type *yyextra = pg_yyget_extra(yyscanner);
+                                int start_pos = GetSessionContext()->single_line_proc_begin;
+                                int end_pos = yylloc;
+                                strbody = SingleLineProcedureQueryGet(start_pos, end_pos, yyextra);
+                                GetSessionContext()->single_line_proc_begin = -1;
+                                $$ = strbody;
+                        }
+		;
+proc_arg_no_empty:
+                        {pg_yyget_extra(yyscanner)->core_yy_extra.func_param_begin = yylloc;}
+                        func_args_with_defaults {
+                                        pg_yyget_extra(yyscanner)->core_yy_extra.func_param_end = yylloc;
+                                        $$= $2;
+                                }
+		;
+
 CreateProcedureStmt:
-			CREATE opt_or_replace definer_user PROCEDURE func_name_opt_arg proc_args opt_createproc_opt_list{
+			CREATE opt_or_replace definer_user PROCEDURE func_name_opt_arg proc_arg_no_empty
+			opt_createproc_opt_list{
                                 u_sess->parser_cxt.eaten_declare = false;
                                 u_sess->parser_cxt.eaten_begin = false;
                                 pg_yyget_extra(yyscanner)->core_yy_extra.include_ora_comment = true;
@@ -16516,7 +16542,8 @@ CreateProcedureStmt:
 					u_sess->parser_cxt.isCreateFuncOrProc = false;
                                         $$ = (Node *)n;
 				}
-			|  CREATE opt_or_replace definer_user PROCEDURE func_name_opt_arg proc_args
+
+			| CREATE opt_or_replace definer_user PROCEDURE func_name_opt_arg proc_arg_no_empty
 			opt_createproc_opt_list as_is {
 				u_sess->parser_cxt.eaten_declare = false;
 				u_sess->parser_cxt.eaten_begin = false;
@@ -16556,10 +16583,102 @@ CreateProcedureStmt:
 					n->options = lappend(n->options, makeDefElem("as",
 										(Node *)list_make1(makeString(funSource->bodySrc))));
 					n->withClause = NIL;
-                    u_sess->parser_cxt.isCreateFuncOrProc = false;
+					u_sess->parser_cxt.isCreateFuncOrProc = false;
 					$$ = (Node *)n;
 				}
+			| CREATE opt_or_replace definer_user PROCEDURE func_name_opt_arg opt_createproc_opt_list as_is {
+						u_sess->parser_cxt.eaten_declare = false;
+						u_sess->parser_cxt.eaten_begin = false;
+						pg_yyget_extra(yyscanner)->core_yy_extra.include_ora_comment = true;
+						u_sess->parser_cxt.isCreateFuncOrProc = true;
+					}
+					subprogram_body
+					{
+							int rc = 0;
+							rc = CompileWhich();
+							if ((rc == PLPGSQL_COMPILE_PROC || rc == PLPGSQL_COMPILE_NULL) && u_sess->cmd_cxt.CurrentExtensionObject == InvalidOid) {
+									u_sess->plsql_cxt.procedure_first_line = GetLineNumber(t_thrd.postgres_cxt.debug_query_string, @7);
+							}
+							rc = CompileWhich();
+							CreateFunctionStmt *n = makeNode(CreateFunctionStmt);
+							FunctionSources *funSource = (FunctionSources *)$9;
+							int count = get_outarg_num(NIL);
+		
+							n->isOraStyle = true;
+							n->isPrivate = false;
+							n->replace = $2;
+							n->definer = $3;
+							if (n->replace && NULL != n->definer) {
+									parser_yyerror("not support DEFINER function");
+							}
+							n->funcname = $5;
+							n->parameters = NIL;
+							n->inputHeaderSrc = FormatFuncArgType(yyscanner, funSource->headerSrc, n->parameters);
+							n->returnType = NULL;
+							n->isProcedure = true;
+							if (0 == count)
+							{
+									n->returnType = makeTypeName("void");
+									n->returnType->typmods = NULL;
+									n->returnType->arrayBounds = NULL;
+							}
+							n->options = $6;
+							n->options = lappend(n->options, makeDefElem("as",
+									(Node *)list_make1(makeString(funSource->bodySrc))));
+							n->withClause = NIL;
+							u_sess->parser_cxt.isCreateFuncOrProc = false;
+							$$ = (Node *)n;
+		
+					}
 
+			| CREATE opt_or_replace definer_user PROCEDURE func_name_opt_arg 
+				proc_arg_no_empty
+				opt_createproc_opt_list{
+						u_sess->parser_cxt.eaten_declare = false;
+						u_sess->parser_cxt.eaten_begin = false;
+						pg_yyget_extra(yyscanner)->core_yy_extra.include_ora_comment = true;
+						u_sess->parser_cxt.isCreateFuncOrProc = true;
+				} SingleLineProcPart
+					{
+						int rc = 0;
+						rc = CompileWhich();
+						if ((rc == PLPGSQL_COMPILE_PROC || rc == PLPGSQL_COMPILE_NULL) && u_sess->cmd_cxt.CurrentExtensionObject == InvalidOid) {
+								u_sess->plsql_cxt.procedure_first_line = GetLineNumber(t_thrd.postgres_cxt.debug_query_string, @8);
+						}
+						rc = CompileWhich();
+						CreateFunctionStmt *n = makeNode(CreateFunctionStmt);
+						int count = get_outarg_num($6);
+						n->isOraStyle = false;
+						n->isPrivate = false;
+						n->replace = $2;
+						n->definer = $3;
+						if (n->replace && NULL != n->definer) {
+								parser_yyerror("not support DEFINER function");
+						}
+						n->funcname = $5;
+						n->parameters = $6;
+						n->inputHeaderSrc = FormatFuncArgType(yyscanner, NULL, n->parameters);
+						n->returnType = NULL;
+						n->isProcedure = false;
+						if (0 == count)
+						{
+							n->returnType = makeTypeName("void");
+							n->returnType->typmods = NULL;
+							n->returnType->arrayBounds = NULL;
+						}
+						n->options = $7;
+						n->options = lappend(n->options, makeDefElem("as",
+								(Node *)list_make1(makeString($9))));
+						n->withClause = NIL;
+						u_sess->parser_cxt.isCreateFuncOrProc = false;
+
+						TypeName* type =  makeTypeName("record");
+						type->setof = TRUE;
+						type->arrayBounds = NIL;
+						n->returnType = type;
+
+						$$ = (Node *)n;
+					}
 		;
 
 CreatePackageStmt:
@@ -17316,7 +17435,7 @@ common_func_opt_item:
 				{
 					$$ = makeDefElem("rows", (Node *)$2);
 				}
-			| FunctionSetResetClause
+			| FunctionSetResetClause %prec '(' ')'
 				{
 					/* we abuse the normal content of a DefElem here */
 					$$ = makeDefElem("set", (Node *)$1);
@@ -33321,7 +33440,7 @@ makeCallFuncStmt(List* funcname,List* parameters, bool is_call)
 	newm->fromClause  = list_make1(rangeFunction);
 	newm->whereClause = NULL;
 	newm->havingClause= NULL;
-    newm->groupClause = NIL;
+	newm->groupClause = NIL;
 	return (Node*)newm;
 }
 
@@ -34423,6 +34542,22 @@ static bool DolphinObjNameCmp(const char* s1, const char* s2, bool is_quoted)
 		}
 	}
 	return true;
+}
+
+static char* SingleLineProcedureQueryGet(int& start_pos, int& end_pos, base_yy_extra_type* yyextra)
+{
+	char* delimiter_str = u_sess->attr.attr_common.delimiter_name;
+	StringInfoData select_query;
+	initStringInfo(&select_query);
+	appendStringInfo(&select_query, "\n");
+	appendBinaryStringInfo(&select_query, yyextra->core_yy_extra.scanbuf + start_pos - 1, end_pos - start_pos + 1);
+	if (delimiter_str == NULL)
+		appendStringInfo(&select_query, ";");
+	else
+		appendStringInfoString(&select_query, delimiter_str);
+	appendStringInfo(&select_query, "\n");
+
+	return select_query.data;
 }
 
 DolphinIdent* CreateDolphinIdent(char* ident, bool is_quoted)
