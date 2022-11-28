@@ -427,6 +427,8 @@ static void CheckIconstType(Node* node);
 /* B Compatibility Check */
 static void BCompatibilityOptionSupportCheck();
 
+static char* TriggerBodyGet(int& start_pos, int& end_pos, base_yy_extra_type* yyextra);
+
 #ifndef ENABLE_MULTIPLE_NODES
 static bool CheckWhetherInColList(char *colname, List *col_list);
 #endif
@@ -908,7 +910,8 @@ static SelectStmt *MakeShowGrantStmt(char *arg, int location, core_yyscan_t yysc
 %type <chr>		OptCompress OptCompress_without_empty
 %type <ival>	KVType
 %type <ival>		ColCmprsMode
-%type <fun_src>		subprogram_body b_proc_body
+%type <fun_src>		subprogram_body b_proc_body triggerbody_subprogram_or_single
+%type <node>    trigger_body_stmt
 %type <keyword> as_is as_empty
 %type <node>	column_item opt_table_partitioning_clause_without_empty
 				opt_partition_index_def  range_partition_index_item  range_partition_index_list
@@ -12819,7 +12822,7 @@ CreateTrigStmt:
 				u_sess->parser_cxt.eaten_begin = false;
 				pg_yyget_extra(yyscanner)->core_yy_extra.include_ora_comment = true;
 				u_sess->parser_cxt.isCreateFuncOrProc = true;
-			} subprogram_body
+			} triggerbody_subprogram_or_single
 				{
 					if (u_sess->attr.attr_sql.sql_compatibility != B_FORMAT || $2 != false)
 					{
@@ -12857,7 +12860,7 @@ CreateTrigStmt:
 				u_sess->parser_cxt.eaten_begin = false;
 				pg_yyget_extra(yyscanner)->core_yy_extra.include_ora_comment = true;
 				u_sess->parser_cxt.isCreateFuncOrProc = true;
-			} subprogram_body
+			} triggerbody_subprogram_or_single
 				{
 					if (u_sess->attr.attr_sql.sql_compatibility != B_FORMAT)
 					{
@@ -12887,6 +12890,52 @@ CreateTrigStmt:
 					n->constrrel = NULL;
 					$$ = (Node *)n;
 				}
+                       ;
+
+triggerbody_subprogram_or_single:
+			{
+				if (yychar == YYEOF || yychar == YYEMPTY)
+				{
+					base_yy_extra_type *yyextra = pg_yyget_extra(yyscanner);
+					int count = strlen(yyextra->core_yy_extra.scanbuf);
+					GetSessionContext()->single_line_trigger_begin = count;
+				}
+				else
+					GetSessionContext()->single_line_trigger_begin = yylloc;
+				
+			} trigger_body_stmt
+				{
+					Node* node = (Node*)$2;
+					if(node->type == T_Invalid)
+					{
+						GetSessionContext()->single_line_trigger_begin = 0;
+						$$ = (FunctionSources*)$2;
+					}
+					else
+					{
+						FunctionSources *funSrc = NULL;
+						char* strbody = NULL;
+						base_yy_extra_type *yyextra = pg_yyget_extra(yyscanner);
+						int start_pos = GetSessionContext()->single_line_trigger_begin;
+						int end_pos = yylloc;
+						strbody = TriggerBodyGet(start_pos, end_pos, yyextra);
+						GetSessionContext()->single_line_trigger_begin = 0;
+						funSrc = (FunctionSources*)palloc0(sizeof(FunctionSources));
+						funSrc->bodySrc   = strbody;
+
+						$$ = funSrc;
+					}
+				}
+			;
+
+trigger_body_stmt:
+			DeleteStmt { $$ = (Node*)$1; }
+			| InsertStmt { $$ = (Node*)$1; }
+			| UpdateStmt { $$ = (Node*)$1; }
+			| VariableMultiSetStmt { $$ = (Node*)$1; }
+			| VariableSetStmt { $$ = (Node*)$1; }
+			| CallFuncStmt { $$ = (Node*)$1; }
+			| subprogram_body { $$ = (Node*)$1; }
 			;
 
 TriggerActionTime:
@@ -34607,6 +34656,28 @@ void DolphinDealProcBodyStr(char* target, char* scanbuf, List* infol, int begin,
 	strncpy(target + offset, scanbuf + info->m_declare_e + 1,
                                  len - offset + 1);
 }
+
+static char* TriggerBodyGet(int& start_pos, int& end_pos, base_yy_extra_type* yyextra)
+{
+	StringInfoData select_query;
+	char* delimiter_str = u_sess->attr.attr_common.delimiter_name;
+	initStringInfo(&select_query);
+	appendStringInfo(&select_query, "begin");
+	appendStringInfo(&select_query, "\n ");
+	appendBinaryStringInfo(&select_query, yyextra->core_yy_extra.scanbuf + start_pos, end_pos - start_pos + 1);
+	if (strncasecmp(yyextra->core_yy_extra.scanbuf + start_pos, "call ", 5) == 0)
+	{
+		if (delimiter_str == NULL)
+			appendStringInfo(&select_query, ";");
+		else
+			appendStringInfo(&select_query, "%s", delimiter_str);
+	}
+	appendStringInfo(&select_query, "\n");
+	appendStringInfo(&select_query, "end");
+
+	return select_query.data;
+}
+
 /*
  * Must undefine this stuff before including scan.c, since it has different
  * definitions for these macros.

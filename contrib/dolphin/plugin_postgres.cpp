@@ -358,6 +358,7 @@ void init_session_vars(void)
     cxt->default_database_name = NULL;
     cxt->paramIdx = 0;
     cxt->isUpsert = false;
+    cxt->single_line_trigger_begin = 0;
     cxt->do_sconst = NULL;
     cxt->single_line_proc_begin = 0;
 
