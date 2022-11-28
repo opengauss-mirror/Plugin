@@ -35,6 +35,9 @@
 
 #include "plugin_protocol/dqformat.h"
 #include "plugin_protocol/printtup.h"
+#include "plugin_protocol/proto_com.h"
+
+#define DOLPHIN_BLOB_LENGTH 65535
 
 static void printtup_startup(DestReceiver *self, int operation, TupleDesc typeinfo);
 static void printtup_shutdown(DestReceiver *self);
@@ -118,8 +121,15 @@ static void SendRowDescriptionMessage(StringInfo buf, TupleDesc typeinfo, List *
         dolphin_data_field *field = (dolphin_data_field *) palloc0(sizeof(dolphin_data_field));
         // db, table, org_table (tle->resorigtbl), org_name, character_set, decimals will implement later
         field->name = attrs[i]->attname.data;
-        field->type = DOLPHIN_TYPE_STRING; // map to atttypid
-        field->length = attrs[i]->attlen;
+        const TypeItem* item = GetItemByTypeOid(attrs[i]->atttypid);
+        field->type = item->dolphin_type_id; // map to atttypid
+        field->flags = item->flags;
+        field->charsetnr = item->charset_flag;
+        if (attrs[i]->atttypid != BLOBOID) {
+            field->length = attrs[i]->attlen;
+        } else {
+            field->length = DOLPHIN_BLOB_LENGTH;
+        }
 
         while (tlist_item && ((TargetEntry *)lfirst(tlist_item))->resjunk) {
             tlist_item = lnext(tlist_item);
