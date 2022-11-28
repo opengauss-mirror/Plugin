@@ -783,14 +783,14 @@ Oid typeTypeCollation(Type typ)
  * of that string.	The "string" can be NULL to perform conversion of a NULL
  * (which might result in failure, if the input function rejects NULLs).
  */
-Datum stringTypeDatum(Type tp, char* string, int32 atttypmod)
+Datum stringTypeDatum(Type tp, char* string, int32 atttypmod, bool can_ignore)
 {
     Form_pg_type typform = (Form_pg_type)GETSTRUCT(tp);
     Oid typinput = typform->typinput;
     Oid typioparam = getTypeIOParam(tp);
     Datum result;
 
-    result = OidInputFunctionCall(typinput, string, typioparam, atttypmod);
+    result = OidInputFunctionCall(typinput, string, typioparam, atttypmod, can_ignore);
 
 #ifdef RANDOMIZE_ALLOCATED_MEMORY
 
