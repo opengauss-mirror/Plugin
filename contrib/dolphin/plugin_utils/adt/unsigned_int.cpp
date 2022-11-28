@@ -67,7 +67,7 @@ Datum uint1in(PG_FUNCTION_ARGS)
 {
     char *num = PG_GETARG_CSTRING(0);
 
-    PG_RETURN_UINT8((uint8)PgAtoiInternal(num, sizeof(uint8), '\0', SQL_MODE_STRICT()));
+    PG_RETURN_UINT8((uint8)PgAtoiInternal(num, sizeof(uint8), '\0', SQL_MODE_STRICT(), true));
 }
 
 /*
