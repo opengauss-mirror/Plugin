@@ -138,4 +138,4 @@ test: string_func_test/db_b_to_base64_test string_func_test/db_b_unhex_test bit_
 
 test: builtin_funcs/cast
 
-test: default_function
+test: default_function get_b_database
