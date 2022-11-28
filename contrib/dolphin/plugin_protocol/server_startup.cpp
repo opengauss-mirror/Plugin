@@ -57,7 +57,7 @@ TypeItem b_type_items[] = {
     {"bit", DOLPHIN_TYPE_BIT, BITOID, 0, 0x2d},                                   // bit
     {"varbit", DOLPHIN_TYPE_BIT, VARBITOID, 0, 0x2d},                             // bit
     // bool type
-    {"bool", DOLPHIN_TYPE_BIT, BOOLOID, 0, 0x2d},                                 // bool
+    {"bool", DOLPHIN_TYPE_TINY, BOOLOID, 0, 0x2d},                                 // bool
     //char type
     {"char", DOLPHIN_TYPE_STRING, CHAROID, 0, 0x2d},                              // char
     {"bpchar", DOLPHIN_TYPE_STRING, BPCHAROID, 0, 0x2d},                          // bpchar

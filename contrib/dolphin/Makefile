@@ -134,6 +134,8 @@ endif
 REGRESS_OPTS = --dlpath=$(top_builddir)/src/test/regress -c 0 -d 1 --single_node -p ${p} --schedule=./parallel_schedule_dolphin --regconf=regress.conf -r 1 -n --keep_last_data=false --temp-config=./make_check_postgresql.conf
 export dp = $(shell expr $(p) + 3)
 
+export THIRD_PARTY_LIBS = $(with_3rd)
+
 plugin_check:
 	sed -i 's/dolphin\.port=.*/dolphin\.port=${dp}/g' ./make_check_postgresql.conf
 	make check
