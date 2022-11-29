@@ -7932,6 +7932,7 @@ int64 b_db_weekmode(int64 mode)
 */
 int b_db_cal_week(struct pg_tm* tm, int64 mode, uint *year)
 {
+    struct pg_tm tmp_tt, *tmp_tm = &tmp_tt;
     long days;
     long weekday;
     long tm_year = tm->tm_year;
@@ -7945,9 +7946,10 @@ int b_db_cal_week(struct pg_tm* tm, int64 mode, uint *year)
     bool week_scope = mode & SCOPE_OF_WEEK;
     bool first_week = mode & FIRST_FULL_WEEK;
 
-    tm->tm_mon = 1;
-    tm->tm_mday = 1;
-    weekday = cal_weekday_interval(tm, !monday_is_first_day);
+    tmp_tm->tm_year = tm->tm_year;
+    tmp_tm->tm_mon = 1;
+    tmp_tm->tm_mday = 1;
+    weekday = cal_weekday_interval(tmp_tm, !monday_is_first_day);
     *year = tm_year;
 
     if (tm_mon == JANUARY && tm_mday <= DAYS_PER_WEEK - weekday) {
@@ -8698,7 +8700,7 @@ Datum date_format_text(PG_FUNCTION_ARGS)
                 case 'X':{  // Year for the week where Sunday is the first day of the week, used with %V
                     uint year;
                     b_db_cal_week(tm, (SCOPE_OF_WEEK | FIRST_FULL_WEEK), &year);
-                    insert_len = sprintf_s(buf, MAXDATELEN, "%u", year);
+                    insert_len = sprintf_s(buf, MAXDATELEN, "%04u", year);
                     securec_check_ss(insert_len, "", "");
                     rc = strcat_s(str, remain, buf);
                     securec_check(rc, "", "");
@@ -8707,7 +8709,7 @@ Datum date_format_text(PG_FUNCTION_ARGS)
                 case 'x':{  // Year for the week, where Monday is the first day of the week, used with %v
                     uint year;
                     b_db_cal_week(tm, (SCOPE_OF_WEEK | MONDAY_IS_FIRST_WEEKDAY), &year);
-                    insert_len = sprintf_s(buf, MAXDATELEN, "%u", year);
+                    insert_len = sprintf_s(buf, MAXDATELEN, "%04u", year);
                     securec_check_ss(insert_len, "", "");
                     rc = strcat_s(str, remain, buf);
                     securec_check(rc, "", "");

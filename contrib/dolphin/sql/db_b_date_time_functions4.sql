@@ -105,6 +105,9 @@ set b_compatibility_mode = false;
 -- test date_format
 -- 严格模式或者非严格模式都有值
 -- 功能
+insert into test values('date_format(''0000-01-01'',''%U %u %V %v %X %x %j'')', date_format('0000-01-01', '%U %u %V %v %X %x %j'));
+insert into test values('date_format(''2021-11-12'',''%U %u %V %v %X %x %j'')', date_format('2021-11-12', '%U %u %V %v %X %x %j'));
+insert into test values('date_format(''9999-12-31'',''%U %u %V %v %X %x %j'')', date_format('9999-12-31', '%U %u %V %v %X %x %j'));
 insert into test values('date_format(''2001-01-01 12:12:12'',''%a'')', date_format('2001-01-01 12:12:12','%a'));
 insert into test values('date_format(''2001-01-01 12:12:12'',''%b'')', date_format('2001-01-01 12:12:12','%b'));
 insert into test values('date_format(''2001-01-01 12:12:12'',''%c'')', date_format('2001-01-01 12:12:12','%c'));
