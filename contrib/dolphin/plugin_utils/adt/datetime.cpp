@@ -3458,7 +3458,7 @@ int DecodeUnits(int field, const char* lowtoken, int* val)
  * DTERR_TZDISP_OVERFLOW from DTERR_FIELD_OVERFLOW, but SQL99 mandates three
  * separate SQLSTATE codes, so ...
  */
-void DateTimeParseError(int dterr, const char* str, const char* datatype)
+void DateTimeParseError(int dterr, const char* str, const char* datatype, bool can_ignore)
 {
     switch (dterr) {
         case DTERR_FIELD_OVERFLOW:
