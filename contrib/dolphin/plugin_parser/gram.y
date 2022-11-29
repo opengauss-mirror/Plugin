@@ -30191,6 +30191,7 @@ get_format_time_type:
 			DATE_P									{ $$ = makeIntConst(DTK_DATE, @1); }
 			| TIME									{ $$ = makeIntConst(DTK_TIME, @1); }
 			| DATETIME								{ $$ = makeIntConst(DTK_DATE_TIME, @1); }
+			| TIMESTAMP								{ $$ = makeIntConst(DTK_DATE_TIME, @1); }
 		;
 
 /* OVERLAY() arguments
