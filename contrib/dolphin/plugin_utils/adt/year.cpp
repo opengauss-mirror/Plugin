@@ -503,4 +503,11 @@ Datum year_hash(PG_FUNCTION_ARGS)
 {
     return hashint8(fcinfo);
 }
+
+PG_FUNCTION_INFO_V1_PUBLIC(year_any_value);
+extern "C" DLL_PUBLIC Datum year_any_value(PG_FUNCTION_ARGS);
+Datum year_any_value(PG_FUNCTION_ARGS)
+{
+    return PG_GETARG_DATUM(0);
+}
 #endif

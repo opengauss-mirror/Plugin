@@ -9350,4 +9350,11 @@ Datum substring_index_2bool(PG_FUNCTION_ARGS)
     result = SubstringIndexReally(textStr, textStrToSearch, count);
     PG_RETURN_TEXT_P(result);
 }
+
+PG_FUNCTION_INFO_V1_PUBLIC(text_any_value);
+extern "C" DLL_PUBLIC Datum text_any_value(PG_FUNCTION_ARGS);
+Datum text_any_value(PG_FUNCTION_ARGS)
+{
+    return PG_GETARG_DATUM(0);
+}
 #endif

@@ -4633,3 +4633,11 @@ CREATE OR REPLACE FUNCTION cash_uint(money)
 RETURNS uint8 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'cash_uint';
 drop CAST IF EXISTS (money AS uint8) CASCADE;
 CREATE CAST (money AS uint8) WITH FUNCTION cash_uint(money) AS ASSIGNMENT;
+
+DROP FUNCTION IF EXISTS pg_catalog.uint_any_value (uint8, uint8) CASCADE;
+CREATE OR REPLACE FUNCTION pg_catalog.uint_any_value (uint8, uint8) RETURNS uint8 LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'uint_any_value';
+drop aggregate if exists pg_catalog.any_value(uint8);
+CREATE AGGREGATE pg_catalog.any_value(uint8) (
+        sfunc = uint_any_value,
+        stype = uint8
+);
