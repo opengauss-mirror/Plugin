@@ -22,6 +22,11 @@ insert into test values('get_format(TIME, ''USA'')', get_format(TIME, 'USA'));
 insert into test values('get_format(TIME, ''JIS'')', get_format(TIME, 'JIS'));
 insert into test values('get_format(TIME, ''ISO'')', get_format(TIME, 'ISO'));
 insert into test values('get_format(TIME, ''INTERNAL'')', get_format(TIME, 'INTERNAL'));
+insert into test values('get_format(TIMESTAMP, ''EUR'')', get_format(TIMESTAMP, 'EUR'));
+insert into test values('get_format(TIMESTAMP, ''USA'')', get_format(TIMESTAMP, 'USA'));
+insert into test values('get_format(TIMESTAMP, ''JIS'')', get_format(TIMESTAMP, 'JIS'));
+insert into test values('get_format(TIMESTAMP, ''ISO'')', get_format(TIMESTAMP, 'ISO'));
+insert into test values('get_format(TIMESTAMP, ''INTERNAL'')', get_format(TIMESTAMP, 'INTERNAL'));
 -- 特异
 insert into test values('get_format(DATE, ''abc'')', get_format(DATE, 'abc'));
 insert into test values('get_format(DATE, null)', get_format(DATE, null));
