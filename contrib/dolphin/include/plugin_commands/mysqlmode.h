@@ -16,7 +16,7 @@
 #define SQL_MODE_PIPES_AS_CONCAT() (GetSessionContext()->sqlModeFlags & OPT_SQL_MODE_PIPES_AS_CONCAT)
 #define SQL_MODE_ANSI_QUOTES() (GetSessionContext()->sqlModeFlags & OPT_SQL_MODE_ANSI_QUOTES)
 
-extern int32 PgAtoiInternal(char* s, int size, int c, bool sqlModeStrict);
+extern int32 PgAtoiInternal(char* s, int size, int c, bool sqlModeStrict, bool isUnsigned = false);
 extern int16 PgStrtoint16Internal(const char* s, bool sqlModeStrict);
 extern int32 PgStrtoint32Internal(const char* s, bool sqlModeStrict);
 extern uint16 PgStrtouint16Internal(const char* s, bool sqlModeStrict);

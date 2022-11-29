@@ -22,7 +22,7 @@ ERROR:  tinyint out of range
 CONTEXT:  referenced column: a
 insert into test_tint(a) values('a888');
 insert into test_tint(a) values('888aa');
-ERROR:  value "888aa" is out of range for 8-bit integer
+ERROR:  value "888aa" is out of range for type tinyint
 LINE 1: insert into test_tint(a) values('888aa');
                                         ^
 CONTEXT:  referenced column: a
@@ -240,7 +240,7 @@ select * from test_tint1;
 
 delete from test_tint1;
 insert into test_tint1 select * from test_varchar7;
-ERROR:  value "-123499" is out of range for 8-bit integer
+ERROR:  value "-123499" is out of range for type tinyint
 CONTEXT:  referenced column: a
 select * from test_tint1;
  a 
@@ -1425,7 +1425,7 @@ select * from test_tint_strict1;
     
 delete from test_tint_strict1;
 insert into test_tint_strict1 select * from test_varchar7_strict;
-ERROR:  value "13434.8" is out of range for 8-bit integer
+ERROR:  value "13434.8" is out of range for type tinyint
 CONTEXT:  referenced column: a
 select * from test_tint_strict1;
  a 

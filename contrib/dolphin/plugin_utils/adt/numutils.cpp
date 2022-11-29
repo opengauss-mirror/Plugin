@@ -78,7 +78,7 @@ int32 pg_atoi(char* s, int size, int c)
     return PgAtoiInternal(s, size, c, true);
 }
 
-int32 PgAtoiInternal(char* s, int size, int c, bool sqlModeStrict)
+int32 PgAtoiInternal(char* s, int size, int c, bool sqlModeStrict, bool isUnsigned)
 {
     long l;
     char* badp = NULL;
@@ -152,15 +152,27 @@ int32 PgAtoiInternal(char* s, int size, int c, bool sqlModeStrict)
                         errmsg("value \"%s\" is out of range for type smallint", s)));
             break;
 #ifdef DOLPHIN
-        case sizeof(int8):
-            if (errno == ERANGE || l < CHAR_MIN || l > CHAR_MAX)
+        case sizeof(uint8):
+            if (!isUnsigned) {
+                if (errno == ERANGE || l < CHAR_MIN || l > CHAR_MAX) {
+                    ereport(ERROR,
+                        (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE),
+                            errmsg("value \"%s\" is out of range for type tinyint", s)));            
+                }
+            } else {
+                if (errno == ERANGE || l < 0 || l > UCHAR_MAX) {
+                    ereport(ERROR,
+                        (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE),
+                            errmsg("value \"%s\" is out of range for type tinyint unsigned", s))); 
+                }
+            }
 #else
         case sizeof(uint8):
             if (errno == ERANGE || l < 0 || l > UCHAR_MAX)
-#endif
                 ereport(ERROR,
                     (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE),
                         errmsg("value \"%s\" is out of range for 8-bit integer", s)));
+#endif
             break;
         default:
             ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("unsupported result size: %d", size)));
