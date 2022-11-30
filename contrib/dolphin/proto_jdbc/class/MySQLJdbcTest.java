@@ -90,6 +90,21 @@ public class MySQLJdbcTest {
             for (int i = 1; i <= resultSetMetaData.getColumnCount(); i++) {
                 System.out.println(resultSetMetaData.getColumnName(i) + ":" + resultSetMetaData.getColumnTypeName(i));
             }
+
+            // test for jdbc.getBoolean and getInt
+            statement.executeUpdate("drop table if exists t3");
+            statement.executeUpdate("create table t3 (id int, c boolean)");
+            statement.executeUpdate("insert into t3 values(1, true), (2, false)");
+            resultSet = statement.executeQuery("select * from t3");
+            while (resultSet.next()) {
+                final boolean res_getBoolean = resultSet.getBoolean("c");
+                final int res_getInt = resultSet.getInt("c");
+                final String res_getString = resultSet.getString("c");
+                System.out.println("res_getBoolean: " + res_getBoolean);
+                System.out.println("res_getInt: " + res_getInt);
+                System.out.println("res_getString: " + res_getString);
+            }
+
             statement.executeUpdate("drop table if exists t3");
             statement.executeUpdate("create table t3 (id int, name varchar(50))");
             statement.executeUpdate("insert into t3 set id='1', name='mysql'");
