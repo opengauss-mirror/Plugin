@@ -4906,21 +4906,19 @@ static bool lldiv_decode_tm_internal(lldiv_t *div,  struct pg_tm *tm, fsec_t *fs
     return int8_to_tm(div->quot, tm, date_flag, date_type);
 }
 
-void lldiv_decode_tm(Numeric num, lldiv_t *div, struct pg_tm *tm, unsigned int date_flag)
+void lldiv_decode_tm(Numeric num, lldiv_t *div, struct pg_tm *tm, fsec_t *fsec, unsigned int date_flag, int *date_type)
 {
-    fsec_t fsec;
-    int date_type;
-    if (!lldiv_decode_tm_internal(div, tm, &fsec, date_flag, &date_type)) {
+    if (!lldiv_decode_tm_internal(div, tm, fsec, date_flag, date_type)) {
         char * str = DatumGetCString(DirectFunctionCall1(numeric_out, NumericGetDatum(num)));
         ereport(ERROR,
             (errcode(DTERR_BAD_FORMAT), errmsg("Incorrect datetime value: \"%s\"", str)));
     }
 
-    if (date_type == DTK_DATE_TIME && !MaybeRound(tm, &fsec)) {
+    if (*date_type == DTK_DATE_TIME && !MaybeRound(tm, fsec)) {
         char * str = DatumGetCString(DirectFunctionCall1(numeric_out, NumericGetDatum(num)));
         ereport(ERROR,
                 (errcode(DTERR_BAD_FORMAT), errmsg("Truncated incorrect datetime value: \"%s\"", str)));
-    } else if (date_type == DTK_DATE && fsec) {
+    } else if (*date_type == DTK_DATE && *fsec) {
         char * str = DatumGetCString(DirectFunctionCall1(numeric_out, NumericGetDatum(num)));
         ereport(ERROR,
                 (errcode(DTERR_BAD_FORMAT), errmsg("Truncated incorrect date value: \"%s\"", str)));
@@ -4928,14 +4926,14 @@ void lldiv_decode_tm(Numeric num, lldiv_t *div, struct pg_tm *tm, unsigned int d
     return;
 }
 
-bool lldiv_decode_tm_with_sql_mode(Numeric num, lldiv_t *div, struct pg_tm *tm, unsigned int date_flag)
+bool lldiv_decode_datetime(Numeric num, lldiv_t *div, struct pg_tm *tm, fsec_t *fsec, unsigned int date_flag, int *date_type)
 {
     bool ret = true;
     int code;
     const char *msg = NULL;
     PG_TRY();
     {
-        lldiv_decode_tm(num, div, tm, date_flag);
+        lldiv_decode_tm(num, div, tm, fsec, date_flag, date_type);
     }
     PG_CATCH();
     {
@@ -4953,6 +4951,13 @@ bool lldiv_decode_tm_with_sql_mode(Numeric num, lldiv_t *div, struct pg_tm *tm, 
         ereport(WARNING, (errcode(code), errmsg("%s", msg)));
     }
     return ret;
+}
+
+bool lldiv_decode_tm_with_sql_mode(Numeric num, lldiv_t *div, struct pg_tm *tm, unsigned int date_flag)
+{
+    fsec_t fsec = 0;
+    int date_type = 0;
+    return lldiv_decode_datetime(num, div, tm, &fsec, date_flag, &date_type);
 }
 
 /* Calc days in one year. works with 0 <= year <= 99 */

@@ -78,12 +78,33 @@ insert into test values('extract(MONTH FROM date''2019-07-02'')', extract(MONTH 
 insert into test values('extract(YEAR from cast(''2019-07-02'' as datetime)', extract(YEAR from cast('2019-07-02' as datetime)));
 insert into test values('extract(hour from 8385959)', extract(hour from 8385959));
 insert into test values('extract(MONTH FROM 20190702)', extract(MONTH FROM 20190702));
+insert into test values('extract(year FROM 101)', extract(year FROM 101));
+insert into test values('extract(month FROM 101)', extract(month FROM 101));
+insert into test values('extract(quarter FROM 101)', extract(quarter FROM 101));
+insert into test values('extract(day FROM 101)', extract(day FROM 101));
+insert into test values('extract(day_hour FROM 101)', extract(day_hour FROM 101));
+insert into test values('extract(day_microsecond FROM 101)', extract(day_microsecond FROM 101));
+insert into test values('extract(hour FROM 101)', extract(hour FROM 101));
+insert into test values('extract(minute FROM 101)', extract(minute FROM 101));
+insert into test values('extract(second FROM 101)', extract(second FROM 101));
+insert into test values('extract(microsecond FROM 101)', extract(microsecond FROM 101));
+insert into test values('extract(year FROM 0)', extract(year FROM 0));
+insert into test values('extract(month FROM 0)', extract(month FROM 0));
+insert into test values('extract(quarter FROM 0)', extract(quarter FROM 0));
+insert into test values('extract(day FROM 0)', extract(day FROM 0));
+insert into test values('extract(day_hour FROM 0)', extract(day_hour FROM 0));
+insert into test values('extract(day_microsecond FROM 0)', extract(day_microsecond FROM 0));
+insert into test values('extract(hour FROM 0)', extract(hour FROM 0));
+insert into test values('extract(minute FROM 0)', extract(minute FROM 0));
+insert into test values('extract(second FROM 0)', extract(second FROM 0));
+insert into test values('extract(microsecond FROM 0)', extract(microsecond FROM 0));
 -- 特异
 insert into test values('extract(hour from null)', extract(hour from null));
 
 -- 非严格模式，参数不合法，报warning，返回NULL或者对应值
 set dolphin.sql_mode = 'sql_mode_full_group,pipes_as_concat,ansi_quotes';
 insert into test values('extract(DAY FROM ''10000-01-01'')', extract(DAY FROM '10000-01-01'));
+insert into test values('extract(year from 100000101)', extract(year from 100000101));
 insert into test values('extract(hour from ''838:59:59.1'')', extract(hour from '838:59:59.1'));
 insert into test values('extract(hour from ''839:00:00'')', extract(hour from '839:00:00'));
 insert into test values('extract(hour from ''-838:59:59.1'')', extract(hour from '-838:59:59.1'));
@@ -94,6 +115,7 @@ insert into test values('extract(hour from ''-40 1:1:0'')', extract(hour from '-
 -- 严格模式，参数不合法，抛出错误
 set dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes';
 insert into test values('extract(DAY FROM ''10000-01-01'')', extract(DAY FROM '10000-01-01'));
+insert into test values('extract(year from 100000101)', extract(year from 100000101));
 insert into test values('extract(hour from ''838:59:59.1'')', extract(hour from '838:59:59.1'));
 insert into test values('extract(hour from ''839:00:00'')', extract(hour from '839:00:00'));
 insert into test values('extract(hour from ''-838:59:59.1'')', extract(hour from '-838:59:59.1'));
@@ -155,6 +177,8 @@ insert into test values('date_format(date''2001-01-09'',''%Y'')', date_format(da
 insert into test values('date_format(cast(''2001-01-09 12:12:12'' as datetime),''%Y %m %d %T'')', date_format(cast('2001-01-09 12:12:12' as datetime),'%Y %m %d %T'));
 insert into test values('date_format(20010101,''%Y'')', date_format(20010101,'%Y'));
 insert into test values('date_format(20010101121212,''%Y %m %d %T'')', date_format(20010101121212,'%Y %m %d %T'));
+insert into test values('date_format(20010101,''%Y'')', date_format(20010101,'%Y'));
+insert into test values('date_format(101,''%Y %y %m %d %U %u %V %v %X %x'')', date_format(100,'%Y %y %m %d %U %u %V %v %X %x'));
 -- 特异
 insert into test values('date_format(null, ''%Y'')', date_format(null, '%Y'));
 insert into test values('date_format(''2021-11-12'', null)', date_format('2021-11-12', null));
@@ -167,11 +191,13 @@ insert into test values('date_format(''2021-0-0 12:12:12'', ''%Y %m %d %T'')', d
 set dolphin.sql_mode = 'sql_mode_full_group,pipes_as_concat,ansi_quotes';
 insert into test values('date_format(''10000-01-01 12:12:12'',''%Y %m %d %T'')', date_format('10000-01-01 12:12:12','%Y %m %d %T'));
 insert into test values('date_format(''2001-01-32 12:12:12'',''%Y %m %d %T'')', date_format('2001-01-32 12:12:12','%Y %m %d %T'));
+insert into test values('date_format(100000101, ''%b'')', date_format(100000101, '%b'));
 
 -- 严格模式，参数不合法，抛出错误
 set dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes';
 insert into test values('date_format(''10000-01-01 12:12:12'',''%Y %m %d %T'')', date_format('10000-01-01 12:12:12','%Y %m %d %T'));
 insert into test values('date_format(''2001-01-32 12:12:12'',''%Y %m %d %T'')', date_format('2001-01-32 12:12:12','%Y %m %d %T'));
+insert into test values('date_format(100000101, ''%b'')', date_format(100000101, '%b'));
 
 -- test from_unixtime
 -- 严格模式或者非严格模式都有值
