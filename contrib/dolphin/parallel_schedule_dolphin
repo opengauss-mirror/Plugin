@@ -118,7 +118,13 @@ test: test_mysql_operator test_op_xor_unsignedint test_op_blob test_op_xor_boola
 test: json_array json_object json_quote json_contains json_contains_path json_extract json_unquote json_keys json_search json_array_append
 
 test: db_b_date_time_functions2
-test: show b_comments ansi_quotes_test
+test: show b_comments
+
+test: ansi_quotes_start
+
+test: pl_debugger_server pl_debugger_client
+
+test: ansi_quotes_test
 
 test: db_b_date_time_functions3
 
