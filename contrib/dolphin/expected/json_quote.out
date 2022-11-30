@@ -33,12 +33,6 @@ select json_quote(null);
  
 (1 row)
 
-select json_quote(E'ab\'');
- json_quote 
-------------
- "ab'"
-(1 row)
-
 select json_quote(E'\'ab\'');
  json_quote 
 ------------

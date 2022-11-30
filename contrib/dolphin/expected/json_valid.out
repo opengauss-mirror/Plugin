@@ -1,0 +1,667 @@
+drop database if exists test_json_valid;
+NOTICE:  database "test_json_valid" does not exist, skipping
+create database test_json_valid dbcompatibility 'b';
+\c test_json_valid
+select json_valid(NULL);
+ json_valid 
+------------
+ 
+(1 row)
+
+select json_valid('1');
+ json_valid 
+------------
+ t
+(1 row)
+
+select json_valid('31.35621312');
+ json_valid 
+------------
+ t
+(1 row)
+
+select json_valid('31.356213.12');
+ json_valid 
+------------
+ f
+(1 row)
+
+select json_valid('03135621312');
+ json_valid 
+------------
+ f
+(1 row)
+
+select json_valid('0.3135621312');
+ json_valid 
+------------
+ t
+(1 row)
+
+select json_valid('true');
+ json_valid 
+------------
+ t
+(1 row)
+
+select json_valid('truee');
+ json_valid 
+------------
+ f
+(1 row)
+
+select json_valid('false');
+ json_valid 
+------------
+ t
+(1 row)
+
+select json_valid('null');
+ json_valid 
+------------
+ t
+(1 row)
+
+select json_valid('"hello world"');
+ json_valid 
+------------
+ t
+(1 row)
+
+select json_valid('3a');
+ json_valid 
+------------
+ f
+(1 row)
+
+select json_valid('"3a"');
+ json_valid 
+------------
+ t
+(1 row)
+
+select json_valid('{"a":1}');
+ json_valid 
+------------
+ t
+(1 row)
+
+select json_valid('{"a":1');
+ json_valid 
+------------
+ f
+(1 row)
+
+select json_valid('"a":1}');
+ json_valid 
+------------
+ f
+(1 row)
+
+select json_valid('{a":1}');
+ json_valid 
+------------
+ f
+(1 row)
+
+select json_valid('{"a"1}');
+ json_valid 
+------------
+ f
+(1 row)
+
+select json_valid('{"a":true}');
+ json_valid 
+------------
+ t
+(1 row)
+
+select json_valid('{"a":false}');
+ json_valid 
+------------
+ t
+(1 row)
+
+select json_valid('{"a":null}');
+ json_valid 
+------------
+ t
+(1 row)
+
+select json_valid('{"a":[1,2,3]}');
+ json_valid 
+------------
+ t
+(1 row)
+
+select json_valid('{"a":[[1,2,3]}');
+ json_valid 
+------------
+ f
+(1 row)
+
+select json_valid('{"a":{"b":"happy"}}');
+ json_valid 
+------------
+ t
+(1 row)
+
+select json_valid('{"a":{}}');
+ json_valid 
+------------
+ t
+(1 row)
+
+select json_valid('{"a":{}');
+ json_valid 
+------------
+ f
+(1 row)
+
+select json_valid('[1, 2, 3, true, false, "hello", "world"]');
+ json_valid 
+------------
+ t
+(1 row)
+
+select json_valid('[1, 2, 3');
+ json_valid 
+------------
+ f
+(1 row)
+
+select json_valid('1, 2, 3]');
+ json_valid 
+------------
+ f
+(1 row)
+
+select json_valid('[1, , 3]');
+ json_valid 
+------------
+ f
+(1 row)
+
+select json_valid('[1, 2 3]');
+ json_valid 
+------------
+ f
+(1 row)
+
+select json_valid('[1, {"hello": "world"}]');
+ json_valid 
+------------
+ t
+(1 row)
+
+select json_valid('[1, {"hello": world"}]');
+ json_valid 
+------------
+ f
+(1 row)
+
+select json_valid('[1, [[[[["test"]]]], "huawei"]]');
+ json_valid 
+------------
+ t
+(1 row)
+
+select json_valid('[1, [[[#["test"]]]], "huawei"]]');
+ json_valid 
+------------
+ f
+(1 row)
+
+select json_valid('"\uG123"');
+ json_valid 
+------------
+ f
+(1 row)
+
+select json_valid('"\uA123"');
+ json_valid 
+------------
+ t
+(1 row)
+
+select json_valid('"\123"');
+ json_valid 
+------------
+ f
+(1 row)
+
+select json_valid('"\t"');
+ json_valid 
+------------
+ t
+(1 row)
+
+select json_valid('"\a"');
+ json_valid 
+------------
+ f
+(1 row)
+
+select json_valid('"\udbff\udfff"');
+ json_valid 
+------------
+ t
+(1 row)
+
+select json_valid('"\udfff\udfff"');
+ json_valid 
+------------
+ t
+(1 row)
+
+select json_valid('-1.1');
+ json_valid 
+------------
+ t
+(1 row)
+
+select json_valid('-1.1.1');
+ json_valid 
+------------
+ f
+(1 row)
+
+select json_valid('"""');
+ json_valid 
+------------
+ f
+(1 row)
+
+select json_valid('{"a":""}');
+ json_valid 
+------------
+ t
+(1 row)
+
+select json_valid('{"a":"""}');
+ json_valid 
+------------
+ f
+(1 row)
+
+select json_valid('{"a":"\u"}');
+ json_valid 
+------------
+ f
+(1 row)
+
+select json_valid('{"a":truee}');
+ json_valid 
+------------
+ f
+(1 row)
+
+select json_valid('{"a":{"b":ffalse}}');
+ json_valid 
+------------
+ f
+(1 row)
+
+select json_valid('[{"a":[{"b":-2.3.3}]}]');
+ json_valid 
+------------
+ f
+(1 row)
+
+select json_valid('[{"a":[{"b":"\u"}]}]');
+ json_valid 
+------------
+ f
+(1 row)
+
+select json_valid('[{"a":[{"b":nul}]}]');
+ json_valid 
+------------
+ f
+(1 row)
+
+select json_valid('1'::json);
+ json_valid 
+------------
+ t
+(1 row)
+
+select json_valid('31.35621312'::json);
+ json_valid 
+------------
+ t
+(1 row)
+
+select json_valid('31.356213.12'::json);
+ERROR:  invalid input syntax for type json
+LINE 1: select json_valid('31.356213.12'::json);
+                          ^
+DETAIL:  Token "." is invalid.
+CONTEXT:  JSON data, line 1: 31.356213....
+referenced column: json_valid
+select json_valid('03135621312'::json);
+ERROR:  invalid input syntax for type json
+LINE 1: select json_valid('03135621312'::json);
+                          ^
+DETAIL:  Token "03135621312" is invalid.
+CONTEXT:  JSON data, line 1: 03135621312
+referenced column: json_valid
+select json_valid('0.3135621312'::json);
+ json_valid 
+------------
+ t
+(1 row)
+
+select json_valid('true'::json);
+ json_valid 
+------------
+ t
+(1 row)
+
+select json_valid('truee'::json);
+ERROR:  invalid input syntax for type json
+LINE 1: select json_valid('truee'::json);
+                          ^
+DETAIL:  Token "truee" is invalid.
+CONTEXT:  JSON data, line 1: truee
+referenced column: json_valid
+select json_valid('false'::json);
+ json_valid 
+------------
+ t
+(1 row)
+
+select json_valid('null'::json);
+ json_valid 
+------------
+ t
+(1 row)
+
+select json_valid('"hello world"'::json);
+ json_valid 
+------------
+ t
+(1 row)
+
+select json_valid('3a'::json);
+ERROR:  invalid input syntax for type json
+LINE 1: select json_valid('3a'::json);
+                          ^
+DETAIL:  Token "3a" is invalid.
+CONTEXT:  JSON data, line 1: 3a
+referenced column: json_valid
+select json_valid('"3a"'::json);
+ json_valid 
+------------
+ t
+(1 row)
+
+select json_valid('{"a":1}'::json);
+ json_valid 
+------------
+ t
+(1 row)
+
+select json_valid('{"a":1'::json);
+ERROR:  invalid input syntax for type json
+LINE 1: select json_valid('{"a":1'::json);
+                          ^
+DETAIL:  The input string ended unexpectedly.
+CONTEXT:  JSON data, line 1: {"a":1
+referenced column: json_valid
+select json_valid('"a":1}'::json);
+ERROR:  invalid input syntax for type json
+LINE 1: select json_valid('"a":1}'::json);
+                          ^
+DETAIL:  Expected end of input, but found ":".
+CONTEXT:  JSON data, line 1: "a":...
+referenced column: json_valid
+select json_valid('{a":1}'::json);
+ERROR:  invalid input syntax for type json
+LINE 1: select json_valid('{a":1}'::json);
+                          ^
+DETAIL:  Token "a" is invalid.
+CONTEXT:  JSON data, line 1: {a...
+referenced column: json_valid
+select json_valid('{"a"1}'::json);
+ERROR:  invalid input syntax for type json
+LINE 1: select json_valid('{"a"1}'::json);
+                          ^
+DETAIL:  Expected ":", but found "1".
+CONTEXT:  JSON data, line 1: {"a"1...
+referenced column: json_valid
+select json_valid('{"a":true}'::json);
+ json_valid 
+------------
+ t
+(1 row)
+
+select json_valid('{"a":false}'::json);
+ json_valid 
+------------
+ t
+(1 row)
+
+select json_valid('{"a":null}'::json);
+ json_valid 
+------------
+ t
+(1 row)
+
+select json_valid('{"a":[1,2,3]}'::json);
+ json_valid 
+------------
+ t
+(1 row)
+
+select json_valid('{"a":[[1,2,3]}'::json);
+ERROR:  invalid input syntax for type json
+LINE 1: select json_valid('{"a":[[1,2,3]}'::json);
+                          ^
+DETAIL:  Expected "," or "]", but found "}".
+CONTEXT:  JSON data, line 1: {"a":[[1,2,3]}
+referenced column: json_valid
+select json_valid('{"a":{"b":"happy"}}'::json);
+ json_valid 
+------------
+ t
+(1 row)
+
+select json_valid('{"a":{}}'::json);
+ json_valid 
+------------
+ t
+(1 row)
+
+select json_valid('{"a":{}'::json);
+ERROR:  invalid input syntax for type json
+LINE 1: select json_valid('{"a":{}'::json);
+                          ^
+DETAIL:  The input string ended unexpectedly.
+CONTEXT:  JSON data, line 1: {"a":{}
+referenced column: json_valid
+select json_valid('[1, 2, 3, true, false, "hello", "world"]'::json);
+ json_valid 
+------------
+ t
+(1 row)
+
+select json_valid('[1, 2, 3'::json);
+ERROR:  invalid input syntax for type json
+LINE 1: select json_valid('[1, 2, 3'::json);
+                          ^
+DETAIL:  The input string ended unexpectedly.
+CONTEXT:  JSON data, line 1: [1, 2, 3
+referenced column: json_valid
+select json_valid('1, 2, 3]'::json);
+ERROR:  invalid input syntax for type json
+LINE 1: select json_valid('1, 2, 3]'::json);
+                          ^
+DETAIL:  Expected end of input, but found ",".
+CONTEXT:  JSON data, line 1: 1,...
+referenced column: json_valid
+select json_valid('[1, , 3]'::json);
+ERROR:  invalid input syntax for type json
+LINE 1: select json_valid('[1, , 3]'::json);
+                          ^
+DETAIL:  Expected JSON value, but found ",".
+CONTEXT:  JSON data, line 1: [1, ,...
+referenced column: json_valid
+select json_valid('[1, 2 3]'::json);
+ERROR:  invalid input syntax for type json
+LINE 1: select json_valid('[1, 2 3]'::json);
+                          ^
+DETAIL:  Expected "," or "]", but found "3".
+CONTEXT:  JSON data, line 1: [1, 2 3...
+referenced column: json_valid
+select json_valid('[1, {"hello": "world"}]'::json);
+ json_valid 
+------------
+ t
+(1 row)
+
+select json_valid('[1, {"hello": world"}]'::json);
+ERROR:  invalid input syntax for type json
+LINE 1: select json_valid('[1, {"hello": world"}]'::json);
+                          ^
+DETAIL:  Token "world" is invalid.
+CONTEXT:  JSON data, line 1: [1, {"hello": world...
+referenced column: json_valid
+select json_valid('[1, [[[[["test"]]]], "huawei"]]'::json);
+ json_valid 
+------------
+ t
+(1 row)
+
+select json_valid('[1, [[[#["test"]]]], "huawei"]]'::json);
+ERROR:  invalid input syntax for type json
+LINE 1: select json_valid('[1, [[[#["test"]]]], "huawei"]]'::json);
+                          ^
+DETAIL:  Token "#" is invalid.
+CONTEXT:  JSON data, line 1: [1, [[[#...
+referenced column: json_valid
+select json_valid('"\uG123"'::json);
+ERROR:  invalid input syntax for type json
+LINE 1: select json_valid('"\uG123"'::json);
+                          ^
+DETAIL:  "\u" must be followed by four hexadecimal digits.
+CONTEXT:  JSON data, line 1: "\uG...
+referenced column: json_valid
+select json_valid('"\uA123"'::json);
+ json_valid 
+------------
+ t
+(1 row)
+
+select json_valid('"\123"'::json);
+ERROR:  invalid input syntax for type json
+LINE 1: select json_valid('"\123"'::json);
+                          ^
+DETAIL:  Escape sequence "\1" is invalid.
+CONTEXT:  JSON data, line 1: "\1...
+referenced column: json_valid
+select json_valid('"\t"'::json);
+ json_valid 
+------------
+ t
+(1 row)
+
+select json_valid('"\a"'::json);
+ERROR:  invalid input syntax for type json
+LINE 1: select json_valid('"\a"'::json);
+                          ^
+DETAIL:  Escape sequence "\a" is invalid.
+CONTEXT:  JSON data, line 1: "\a...
+referenced column: json_valid
+select json_valid('-1.1'::json);
+ json_valid 
+------------
+ t
+(1 row)
+
+select json_valid('-1.1.1'::json);
+ERROR:  invalid input syntax for type json
+LINE 1: select json_valid('-1.1.1'::json);
+                          ^
+DETAIL:  Token "." is invalid.
+CONTEXT:  JSON data, line 1: -1.1....
+referenced column: json_valid
+select json_valid('"""'::json);
+ERROR:  invalid input syntax for type json
+LINE 1: select json_valid('"""'::json);
+                          ^
+DETAIL:  Token """ is invalid.
+CONTEXT:  JSON data, line 1: """
+referenced column: json_valid
+select json_valid('{"a":""}'::json);
+ json_valid 
+------------
+ t
+(1 row)
+
+select json_valid('{"a":"""}'::json);
+ERROR:  invalid input syntax for type json
+LINE 1: select json_valid('{"a":"""}'::json);
+                          ^
+DETAIL:  Token ""}" is invalid.
+CONTEXT:  JSON data, line 1: {"a":"""}
+referenced column: json_valid
+select json_valid('{"a":"\u"}'::json);
+ERROR:  invalid input syntax for type json
+LINE 1: select json_valid('{"a":"\u"}'::json);
+                          ^
+DETAIL:  "\u" must be followed by four hexadecimal digits.
+CONTEXT:  JSON data, line 1: {"a":"\u"...
+referenced column: json_valid
+select json_valid('{"a":truee}'::json);
+ERROR:  invalid input syntax for type json
+LINE 1: select json_valid('{"a":truee}'::json);
+                          ^
+DETAIL:  Token "truee" is invalid.
+CONTEXT:  JSON data, line 1: {"a":truee...
+referenced column: json_valid
+select json_valid('{"a":{"b":ffalse}}'::json);
+ERROR:  invalid input syntax for type json
+LINE 1: select json_valid('{"a":{"b":ffalse}}'::json);
+                          ^
+DETAIL:  Token "ffalse" is invalid.
+CONTEXT:  JSON data, line 1: {"a":{"b":ffalse...
+referenced column: json_valid
+select json_valid('[{"a":[{"b":-2.3.3}]}]'::json);
+ERROR:  invalid input syntax for type json
+LINE 1: select json_valid('[{"a":[{"b":-2.3.3}]}]'::json);
+                          ^
+DETAIL:  Token "." is invalid.
+CONTEXT:  JSON data, line 1: [{"a":[{"b":-2.3....
+referenced column: json_valid
+select json_valid('[{"a":[{"b":"\u"}]}]'::json);
+ERROR:  invalid input syntax for type json
+LINE 1: select json_valid('[{"a":[{"b":"\u"}]}]'::json);
+                          ^
+DETAIL:  "\u" must be followed by four hexadecimal digits.
+CONTEXT:  JSON data, line 1: [{"a":[{"b":"\u"...
+referenced column: json_valid
+select json_valid('[{"a":[{"b":nul}]}]'::json);
+ERROR:  invalid input syntax for type json
+LINE 1: select json_valid('[{"a":[{"b":nul}]}]'::json);
+                          ^
+DETAIL:  Token "nul" is invalid.
+CONTEXT:  JSON data, line 1: [{"a":[{"b":nul...
+referenced column: json_valid
+create table json_valid_test (
+    target text
+);
+insert into json_valid_test values('[1, [[[[["test"]]]], "huawei"]]');
+insert into json_valid_test values('{"a":{"b":"happy"}}');
+insert into json_valid_test values('[1, , 3]');
+select target, json_valid(target) from json_valid_test;
+             target              | json_valid 
+---------------------------------+------------
+ [1, [[[[["test"]]]], "huawei"]] | t
+ {"a":{"b":"happy"}}             | t
+ [1, , 3]                        | f
+(3 rows)
+
+drop table json_valid_test;
+\c postgres
+drop database if exists test_json_valid;

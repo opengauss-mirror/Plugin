@@ -87,8 +87,11 @@ SELECT JSON_KEYS('[1,2,3,4]');
 (1 row)
 
 SELECT JSON_KEYS('[1,2,[114,514],4]','$[2]');
-ERROR:  Invalid data type for JSON data in argument 1 to function json_extract
-CONTEXT:  referenced column: json_keys
+ json_keys 
+-----------
+ 
+(1 row)
+
 SELECT JSON_KEYS(true);
 ERROR:  Invalid data type for JSON data in argument 1 to function json_keys
 CONTEXT:  referenced column: json_keys
@@ -99,20 +102,35 @@ LINE 1: SELECT JSON_KEYS(true,false);
 HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
 CONTEXT:  referenced column: json_keys
 SELECT JSON_KEYS('{"a":1,"b":{"c":2}}','$.b');
-ERROR:  Invalid data type for JSON data in argument 1 to function json_extract
-CONTEXT:  referenced column: json_keys
+ json_keys 
+-----------
+ ["c"]
+(1 row)
+
 SELECT JSON_KEYS('{"a":1,"b":{"c":{"d":114},"d":514}}','$.b.c');
-ERROR:  Invalid data type for JSON data in argument 1 to function json_extract
-CONTEXT:  referenced column: json_keys
+ json_keys 
+-----------
+ ["d"]
+(1 row)
+
 SELECT JSON_KEYS('[1,2,{"a":1,"b":{"c":2}},4]','$[2]');
-ERROR:  Invalid data type for JSON data in argument 1 to function json_extract
-CONTEXT:  referenced column: json_keys
+ json_keys  
+------------
+ ["a", "b"]
+(1 row)
+
 SELECT JSON_KEYS('{"a":1,"b":{"c":2}}','$.z');
-ERROR:  Invalid data type for JSON data in argument 1 to function json_extract
-CONTEXT:  referenced column: json_keys
+ json_keys 
+-----------
+ 
+(1 row)
+
 SELECT JSON_KEYS('[1,2,{"a":1,"b":{"c":2}},4]','$[8]');
-ERROR:  Invalid data type for JSON data in argument 1 to function json_extract
-CONTEXT:  referenced column: json_keys
+ json_keys 
+-----------
+ 
+(1 row)
+
 create table student(name json);
 insert into student (name) value(json_keys('{"a":123,"b":{"c":"qwe"}}'));
 select name from student;

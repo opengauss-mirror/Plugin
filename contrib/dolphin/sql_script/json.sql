@@ -13,7 +13,7 @@ CREATE OR REPLACE FUNCTION pg_catalog.json_contains_path("any", text, variadic t
 CREATE OR REPLACE FUNCTION pg_catalog.json_extract("any", variadic text[]) RETURNS json LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'json_extract';
 
 CREATE OR REPLACE FUNCTION pg_catalog.json_keys("any") RETURNS json LANGUAGE C STABLE STRICT as '$libdir/dolphin','json_keys';
-CREATE OR REPLACE FUNCTION pg_catalog.json_keys("any",variadic text[]) RETURNS json LANGUAGE C STABLE STRICT as '$libdir/dolphin','json_keys';
+CREATE OR REPLACE FUNCTION pg_catalog.json_keys("any",text) RETURNS json LANGUAGE C STABLE STRICT as '$libdir/dolphin','json_keys';
 
 CREATE OR REPLACE FUNCTION pg_catalog.json_search("any",text,"any") RETURNS text LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'json_search';
 CREATE OR REPLACE FUNCTION pg_catalog.json_search("any",text,"any","any") RETURNS text LANGUAGE C STABLE as '$libdir/dolphin', 'json_search';
@@ -23,7 +23,7 @@ CREATE OR REPLACE FUNCTION pg_catalog.json_array_append("any", VARIADIC "any") R
 
 CREATE OR REPLACE FUNCTION pg_catalog.json_append("any", VARIADIC "any") RETURNS json LANGUAGE C STABLE STRICT as '$libdir/dolphin','json_append';
 
-CREATE OR REPLACE FUNCTION pg_catalog.json_unquote(text) RETURNS text LANGUAGE C STABLE STRICT as '$libdir/dolphin','json_unquote';
+CREATE OR REPLACE FUNCTION pg_catalog.json_unquote("any") RETURNS text LANGUAGE C STABLE STRICT as '$libdir/dolphin','json_unquote';
 
 CREATE OR REPLACE FUNCTION pg_catalog.json_merge_preserve(variadic arr "any") RETURNS json LANGUAGE C STABLE as '$libdir/dolphin', 'json_merge_preserve';
 
@@ -42,3 +42,23 @@ CREATE OR REPLACE FUNCTION pg_catalog.json_remove(variadic arr "any") RETURNS js
 CREATE OR REPLACE FUNCTION pg_catalog.json_array_insert(variadic arr "any") RETURNS json LANGUAGE C STABLE as '$libdir/dolphin', 'json_array_insert';
 
 CREATE OR REPLACE FUNCTION pg_catalog.json_set(variadic "any") RETURNS json LANGUAGE C STABLE as '$libdir/dolphin', 'json_set';
+
+CREATE OR REPLACE FUNCTION pg_catalog.json_length("any") RETURNS int LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'json_length';
+CREATE OR REPLACE FUNCTION pg_catalog.json_length("any",text) RETURNS int LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'json_length';
+create aggregate pg_catalog.json_arrayagg("any") (SFUNC = json_agg_transfn, STYPE = internal, finalfunc = json_agg_finalfn);
+
+CREATE OR REPLACE FUNCTION pg_catalog.json_objectagg_finalfn(
+    internal
+) RETURNS json LANGUAGE C as '$libdir/dolphin', 'json_objectagg_finalfn';
+
+create aggregate pg_catalog.json_objectagg("any", "any") (SFUNC = json_object_agg_transfn, STYPE = internal, finalfunc = json_objectagg_finalfn);
+
+CREATE OR REPLACE FUNCTION pg_catalog.json_valid("any") RETURNS boolean LANGUAGE C STABLE as '$libdir/dolphin', 'json_valid';
+
+CREATE OR REPLACE FUNCTION pg_catalog.json_storage_size("any") RETURNS int LANGUAGE C STABLE as '$libdir/dolphin', 'json_storage_size';
+
+CREATE OR REPLACE FUNCTION pg_catalog.json_pretty("any") RETURNS json LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'json_pretty';
+
+CREATE OR REPLACE FUNCTION pg_catalog.json_type("any") RETURNS text LANGUAGE C STABLE as '$libdir/dolphin', 'json_type';
+
+

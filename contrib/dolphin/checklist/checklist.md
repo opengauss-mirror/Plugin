@@ -165,3 +165,4 @@
 |./|builtin_funcs.ini  |src\common\backend\catalog\builtin_funcs.ini   |
 |./|fmgrtab.h  |src\include\utils\fmgrtab.h   |
 |./|int8.h  |src\include\utils\int8.h   |
+|plugin_utils|jsonapi.h  |src\include\utils\jsonapi.h

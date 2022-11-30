@@ -1,0 +1,156 @@
+drop database if exists test_operator;
+NOTICE:  database "test_operator" does not exist, skipping
+create database test_operator dbcompatibility 'B';
+\c test_operator
+drop table if exists test1;
+NOTICE:  table "test1" does not exist, skipping
+create table test1(data json);
+insert into test1 values('[10,20,[30,40]]');
+select data->'$[1]' from test1;
+ ?column? 
+----------
+ 20
+(1 row)
+
+select data->'$[2][1]' from test1;
+ ?column? 
+----------
+ 40
+(1 row)
+
+drop table if exists test2;
+NOTICE:  table "test2" does not exist, skipping
+create table test2(data json);
+insert into test2 values('{"a":"lihua"}');
+insert into test2 values('{"b":"zhanghai"}');
+insert into test2 values('{"c":"susan"}');
+select data->'$.a' from test2;
+ ?column? 
+----------
+ "lihua"
+ 
+ 
+(3 rows)
+
+select data->'$.b' from test2;
+  ?column?  
+------------
+ 
+ "zhanghai"
+ 
+(3 rows)
+
+select data->'$.c' from test2;
+ ?column? 
+----------
+ 
+ 
+ "susan"
+(3 rows)
+
+select data->'$.*' from test2;
+   ?column?   
+--------------
+ ["lihua"]
+ ["zhanghai"]
+ ["susan"]
+(3 rows)
+
+select data->>'$.*' from test2;
+   ?column?   
+--------------
+ ["lihua"]
+ ["zhanghai"]
+ ["susan"]
+(3 rows)
+
+select data->>'$.d' from test2;
+ ?column? 
+----------
+ 
+ 
+ 
+(3 rows)
+
+select data->'$.d' from test2;
+ ?column? 
+----------
+ 
+ 
+ 
+(3 rows)
+
+select data->>'$.a' from test2;
+ ?column? 
+----------
+ lihua
+ 
+ 
+(3 rows)
+
+select data->>'$.b' from test2;
+ ?column? 
+----------
+ 
+ zhanghai
+ 
+(3 rows)
+
+select data->>'$.c' from test2;
+ ?column? 
+----------
+ 
+ 
+ susan
+(3 rows)
+
+select data->'a' from test2;
+ ?column? 
+----------
+ "lihua"
+ 
+ 
+(3 rows)
+
+select data->'b' from test2;
+  ?column?  
+------------
+ 
+ "zhanghai"
+ 
+(3 rows)
+
+select data->'c' from test2;
+ ?column? 
+----------
+ 
+ 
+ "susan"
+(3 rows)
+
+select data->>'a' from test2;
+ ?column? 
+----------
+ lihua
+ 
+ 
+(3 rows)
+
+select data->>'b' from test2;
+ ?column? 
+----------
+ 
+ zhanghai
+ 
+(3 rows)
+
+select data->>'c' from test2;
+ ?column? 
+----------
+ 
+ 
+ susan
+(3 rows)
+
+\c postgres
+drop database test_operator;

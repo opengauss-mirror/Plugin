@@ -115,7 +115,7 @@ test: test_mysql_prepare db_b_rename_user_test export_set if_not_exists_test
 
 test: test_mysql_operator test_op_xor_unsignedint test_op_blob test_op_xor_boolandfloat
 
-test: json_array json_object json_quote json_contains json_contains_path json_extract json_unquote json_keys json_search json_array_append
+test: json_array json_object json_quote json_contains json_contains_path json_extract json_unquote  json_keys json_search json_array_append
 
 test: db_b_date_time_functions2
 test: show b_comments
@@ -145,3 +145,5 @@ test: string_func_test/db_b_to_base64_test string_func_test/db_b_unhex_test bit_
 test: builtin_funcs/cast any_value_test
 
 test: default_function get_b_database
+
+test: json_type json_pretty json_valid json_length json_objectagg json_arrayagg json_operator json_storage_size

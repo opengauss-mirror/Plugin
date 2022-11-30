@@ -1,0 +1,145 @@
+drop database if exists test_json_storage_size;
+NOTICE:  database "test_json_storage_size" does not exist, skipping
+create database test_json_storage_size dbcompatibility'B';
+\c test_json_storage_size
+set enable_set_variable_b_format to on;
+SELECT JSON_STORAGE_SIZE('0');
+ json_storage_size 
+-------------------
+                 2
+(1 row)
+
+SELECT JSON_STORAGE_SIZE('1');
+ json_storage_size 
+-------------------
+                 2
+(1 row)
+
+SELECT JSON_STORAGE_SIZE('1000');
+ json_storage_size 
+-------------------
+                 5
+(1 row)
+
+SELECT JSON_STORAGE_SIZE('100000');
+ json_storage_size 
+-------------------
+                 7
+(1 row)
+
+SELECT JSON_STORAGE_SIZE('"a"');
+ json_storage_size 
+-------------------
+                 4
+(1 row)
+
+SELECT JSON_STORAGE_SIZE('"Hello World"');
+ json_storage_size 
+-------------------
+                14
+(1 row)
+
+SELECT JSON_STORAGE_SIZE('true');
+ json_storage_size 
+-------------------
+                 5
+(1 row)
+
+SELECT JSON_STORAGE_SIZE('false');
+ json_storage_size 
+-------------------
+                 6
+(1 row)
+
+SELECT JSON_STORAGE_SIZE('null');
+ json_storage_size 
+-------------------
+                 5
+(1 row)
+
+SELECT JSON_STORAGE_SIZE('[1, "abc", null, true, "10:27:06.000000", {"id": 1}]');
+ json_storage_size 
+-------------------
+                53
+(1 row)
+
+SELECT JSON_STORAGE_SIZE('{"db": ["mysql", "oracle"], "id": 123, "info": {"age": 20}}');
+ json_storage_size 
+-------------------
+                60
+(1 row)
+
+SELECT JSON_STORAGE_SIZE('[1, 2]');
+ json_storage_size 
+-------------------
+                 7
+(1 row)
+
+SELECT JSON_STORAGE_SIZE('[1, 2, 3]');
+ json_storage_size 
+-------------------
+                10
+(1 row)
+
+SELECT JSON_STORAGE_SIZE('{"x": 1}');
+ json_storage_size 
+-------------------
+                 9
+(1 row)
+
+SELECT JSON_STORAGE_SIZE('{"x": 1, "y": 2}');
+ json_storage_size 
+-------------------
+                17
+(1 row)
+
+SET @data = '{
+  "Person": {
+    "Age": 10,
+    "Name": "Bart",
+    "Friends": [
+      "Bart",
+      "Milhouse"
+    ]
+  }
+}';
+SELECT JSON_STORAGE_SIZE(@data);
+ json_storage_size 
+-------------------
+               114
+(1 row)
+
+DROP TABLE IF EXISTS test_json_storage_size;
+NOTICE:  table "test_json_storage_size" does not exist, skipping
+CREATE TABLE test_json_storage_size (
+    json_col JSON NOT NULL
+);
+INSERT INTO test_json_storage_size
+VALUES ('{"x": 1, "y": 2}');
+SELECT
+    json_col,
+    JSON_STORAGE_SIZE(json_col)
+FROM
+    test_json_storage_size;
+     json_col     | json_storage_size 
+------------------+-------------------
+ {"x": 1, "y": 2} |                17
+(1 row)
+
+UPDATE test_json_storage_size
+SET json_col = '{"x": 1, "y": 2, "z": 3}';
+SELECT
+    json_col,
+    JSON_STORAGE_SIZE(json_col)
+FROM
+    test_json_storage_size;
+         json_col         | json_storage_size 
+--------------------------+-------------------
+ {"x": 1, "y": 2, "z": 3} |                25
+(1 row)
+
+SELECT JSON_STORAGE_SIZE('{0,1}');
+ERROR:  Invalid JSON text in argument 1 to function json_storage_size.
+CONTEXT:  referenced column: json_storage_size
+\c postgres
+drop database test_json_storage_size
