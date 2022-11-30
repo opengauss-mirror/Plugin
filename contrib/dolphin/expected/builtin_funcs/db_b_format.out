@@ -28,7 +28,7 @@ select format('%1s %1s!', 'Hello', 'world');
 (1 row)
 
 -- test for b_compatibility_mode = true
-set b_compatibility_mode = 1;
+set dolphin.b_compatibility_mode = 1;
 -- test for basic functionality of FORMAT
 select format(234.567, 3);
  format  
@@ -480,7 +480,7 @@ select format(null, null, null);
 (1 row)
 
 -- test for setting b_compatibility_mode back to false
-set b_compatibility_mode = 0;
+set dolphin.b_compatibility_mode = 0;
 select format(1234.456, 2);
   format  
 ----------

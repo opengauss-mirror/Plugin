@@ -5,7 +5,7 @@ create database empty_value_support_value dbcompatibility 'b';
 create table test1(num int not null);
 insert into test1 value();
 insert into test1 value(),();
-set sql_mode = '';
+set dolphin.sql_mode = '';
 insert into test1 value();
 select * from test1;
 insert into test1 value(),();

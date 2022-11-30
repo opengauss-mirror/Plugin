@@ -25,7 +25,7 @@ insert into test values('datediff(null, ''2021-11-12'')', datediff(null, '2021-1
 insert into test values('datediff(''2021-11-12'', null)', datediff('2021-11-12', null));
 insert into test values('datediff(null, null)', datediff(null, null));
 -- 非严格模式，参数不合法，报warning，返回NULL或者对应值
-set sql_mode = 'sql_mode_full_group,pipes_as_concat,ansi_quotes';
+set dolphin.sql_mode = 'sql_mode_full_group,pipes_as_concat,ansi_quotes';
 insert into test values('datediff(''10000-01-01'', ''2021-11-12'')', datediff('10000-01-01', '2021-11-12'));
 WARNING:  Incorrect datetime value: "10000-01-01"
 CONTEXT:  referenced column: result
@@ -39,7 +39,7 @@ insert into test values('datediff(9999999999999999999999, 20211112)', datediff(9
 WARNING:  timestamp out of range: "9999999999999999999999"
 CONTEXT:  referenced column: result
 -- 严格模式，参数不合法，抛出错误
-set sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes';
+set dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes';
 insert into test values('datediff(''10000-01-01'', ''2021-11-12'')', datediff('10000-01-01', '2021-11-12'));
 ERROR:  Incorrect datetime value: "10000-01-01"
 CONTEXT:  referenced column: result
@@ -71,7 +71,7 @@ insert into test values('from_days(365)', from_days(365));
 insert into test values('from_days(1111111111111111111)', from_days(1111111111111111111));
 insert into test values('from_days(''1111111111111111111'')', from_days('1111111111111111111'));
 -- test timestampdiff
-set b_compatibility_mode = true;
+set dolphin.b_compatibility_mode = true;
 -- 严格模式或者非严格模式都有值
 -- 功能
 insert into test values('timestampdiff(microsecond, ''0000-1-1 00:00:00'', ''0000-1-2'')', timestampdiff(microsecond, '0000-1-1 00:00:00', '0000-1-2'));
@@ -116,7 +116,7 @@ insert into test values('timestampdiff(week, null, ''9999-12-31'')', timestampdi
 insert into test values('timestampdiff(week, ''9999-12-31'', null)', timestampdiff(week, '9999-12-31', null));
 insert into test values('timestampdiff(week, null, null)', timestampdiff(week, null, null));
 -- 非严格模式，参数不合法，报warning，返回NULL或者对应值
-set sql_mode = 'sql_mode_full_group,pipes_as_concat,ansi_quotes';
+set dolphin.sql_mode = 'sql_mode_full_group,pipes_as_concat,ansi_quotes';
 insert into test values('timestampdiff(microsecond, ''abc'', ''2021-11-12'')', timestampdiff(microsecond, 'abc', '2021-11-12'));
 WARNING:  invalid input syntax for type timestamp: "abc"
 CONTEXT:  referenced column: result
@@ -127,7 +127,7 @@ insert into test values('timestampdiff(microsecond, ''10000-1-1'', ''2021-11-12'
 WARNING:  Incorrect datetime value: "10000-1-1"
 CONTEXT:  referenced column: result
 -- 严格模式，参数不合法，抛出错误
-set sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes';
+set dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes';
 insert into test values('timestampdiff(microsecond, ''abc'', ''2021-11-12'')', timestampdiff(microsecond, 'abc', '2021-11-12'));
 ERROR:  invalid input syntax for type timestamp: "abc"
 CONTEXT:  referenced column: result
@@ -137,7 +137,7 @@ CONTEXT:  referenced column: result
 insert into test values('timestampdiff(microsecond, ''10000-1-1'', ''2021-11-12'')', timestampdiff(microsecond, '10000-1-1', '2021-11-12'));
 ERROR:  Incorrect datetime value: "10000-1-1"
 CONTEXT:  referenced column: result
-set b_compatibility_mode = false;
+set dolphin.b_compatibility_mode = false;
 -- test convert_tz
 -- 严格模式或者非严格模式都有值
 -- 双字母,第一次转换超[1970-1-1 00:00:01.000000, 2038-01-19 03:14:07.999999]，结果不转换
@@ -175,7 +175,7 @@ insert into test values('convert_tz(null, ''+1:00'', ''+0:00'')', convert_tz(nul
 insert into test values('convert_tz(''2021-11-12 12:12:12'', null, ''+0:00'')', convert_tz('2021-11-12 12:12:12', null, '+0:00'));
 insert into test values('convert_tz(''2021-11-12 12:12:12'', ''+1:00'', null)', convert_tz('2021-11-12 12:12:12', '+1:00', null));
 -- 非严格模式，参数不合法，报warning，返回NULL或者对应值
-set sql_mode = 'sql_mode_full_group,pipes_as_concat,ansi_quotes';
+set dolphin.sql_mode = 'sql_mode_full_group,pipes_as_concat,ansi_quotes';
 insert into test values('convert_tz(''10000-1-1 10:10:10'', ''+1:00'', ''+0:00'')', convert_tz('10000-1-1 10:10:10', '+1:00', '+0:00'));
 WARNING:  Incorrect datetime value: "10000-1-1 10:10:10"
 CONTEXT:  referenced column: result
@@ -186,7 +186,7 @@ insert into test values('convert_tz(''2021-11-12 12:12:12'', ''+1:00'', ''abc'')
 WARNING:  time zone "abc" not recognized
 CONTEXT:  referenced column: result
 -- 严格模式，参数不合法，抛出错误
-set sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes';
+set dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes';
 insert into test values('convert_tz(''10000-1-1 10:10:10'', ''+1:00'', ''+0:00'')', convert_tz('10000-1-1 10:10:10', '+1:00', '+0:00'));
 ERROR:  Incorrect datetime value: "10000-1-1 10:10:10"
 CONTEXT:  referenced column: result
@@ -249,7 +249,7 @@ insert into test values('adddate(null, INTERVAL 1 day)', adddate(null, INTERVAL 
 insert into test values('adddate(''2021-11-12'', null)', adddate('2021-11-12', null));
 insert into test values('adddate(null, null)', adddate(null, null));
 -- 非严格模式，参数或者结果不合法，报warning，返回NULL或者对应值
-set sql_mode = 'sql_mode_full_group,pipes_as_concat,ansi_quotes';
+set dolphin.sql_mode = 'sql_mode_full_group,pipes_as_concat,ansi_quotes';
 insert into test values('adddate(''10000-1-1'', INTERVAL -1 day)', adddate('10000-1-1', INTERVAL -1 day));
 WARNING:  Incorrect datetime value: "10000-1-1"
 CONTEXT:  referenced column: result
@@ -285,7 +285,7 @@ insert into test values('adddate(''0001-1-1 00:00:00'', INTERVAL -1 second)', ad
 WARNING:  date/time field value out of range
 CONTEXT:  referenced column: result
 -- 严格模式，参数不合法，抛出错误
-set sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes';
+set dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes';
 insert into test values('adddate(''10000-1-1'', INTERVAL -1 day)', adddate('10000-1-1', INTERVAL -1 day));
 ERROR:  Incorrect datetime value: "10000-1-1"
 CONTEXT:  referenced column: result
@@ -367,7 +367,7 @@ insert into test values('date_add(time''838:59:59'', INTERVAL -1 second)', date_
 -- 特异
 insert into test values('date_add(null, INTERVAL 1 day)', date_add(null, INTERVAL 1 day));
 -- 非严格模式，参数或者结果不合法，报warning，返回NULL或者对应值
-set sql_mode = 'sql_mode_full_group,pipes_as_concat,ansi_quotes';
+set dolphin.sql_mode = 'sql_mode_full_group,pipes_as_concat,ansi_quotes';
 insert into test values('date_add(''10000-1-1'', INTERVAL -1 day)', date_add('10000-1-1', INTERVAL -1 day));
 WARNING:  Incorrect datetime value: "10000-1-1"
 CONTEXT:  referenced column: result
@@ -403,7 +403,7 @@ insert into test values('date_add(''0001-1-1 00:00:00'', INTERVAL -1 second)', d
 WARNING:  date/time field value out of range
 CONTEXT:  referenced column: result
 -- 严格模式，参数不合法，抛出错误
-set sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes';
+set dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes';
 insert into test values('date_add(''10000-1-1'', INTERVAL -1 day)', date_add('10000-1-1', INTERVAL -1 day));
 ERROR:  Incorrect datetime value: "10000-1-1"
 CONTEXT:  referenced column: result
@@ -485,7 +485,7 @@ insert into test values('date_sub(time''838:59:59'', INTERVAL 1 second)', date_s
 -- 特异
 insert into test values('date_sub(null, INTERVAL 1 day)', date_sub(null, INTERVAL 1 day));
 -- 非严格模式，参数或者结果不合法，报warning，返回NULL或者对应值
-set sql_mode = 'sql_mode_full_group,pipes_as_concat,ansi_quotes';
+set dolphin.sql_mode = 'sql_mode_full_group,pipes_as_concat,ansi_quotes';
 insert into test values('date_sub(''10000-1-1'', INTERVAL 1 day)', date_sub('10000-1-1', INTERVAL 1 day));
 WARNING:  Incorrect datetime value: "10000-1-1"
 CONTEXT:  referenced column: result
@@ -521,7 +521,7 @@ insert into test values('date_sub(''0001-1-1 00:00:00'', INTERVAL 1 second)', da
 WARNING:  date/time field value out of range
 CONTEXT:  referenced column: result
 -- 严格模式，参数不合法，抛出错误
-set sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes';
+set dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes';
 insert into test values('date_sub(''10000-1-1'', INTERVAL 1 day)', date_sub('10000-1-1', INTERVAL 1 day));
 ERROR:  Incorrect datetime value: "10000-1-1"
 CONTEXT:  referenced column: result
@@ -583,7 +583,7 @@ insert into test values('addtime(null, null)', addtime(null, null));
 insert into test values('addtime(''12:12:12'', ''2021-11-12 12:12:12'')', addtime('12:12:12', '2021-11-12 12:12:12'));
 insert into test values('addtime(''0001-1-1 00:00:00'', ''-00:00:01'')', addtime('0001-1-1 00:00:00', '-00:00:01'));
 -- 非严格模式，参数或者结果不合法，报warning，返回NULL或者对应值
-set sql_mode = 'sql_mode_full_group,pipes_as_concat,ansi_quotes';
+set dolphin.sql_mode = 'sql_mode_full_group,pipes_as_concat,ansi_quotes';
 insert into test values('addtime(''839:00:00'', ''00:00:00'')', addtime('839:00:00', '00:00:00'));
 WARNING:  Truncated incorrect time value.
 CONTEXT:  referenced column: result
@@ -609,7 +609,7 @@ insert into test values('addtime(''10000-1-1 00:00:00'', ''00:00:00'')', addtime
 WARNING:  date/time field overflow
 CONTEXT:  referenced column: result
 -- 严格模式，参数或结果不合法，抛出错误
-set sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes';
+set dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes';
 insert into test values('addtime(''839:00:00'', ''00:00:00'')', addtime('839:00:00', '00:00:00'));
 ERROR:  date/time field value out of range: "839:00:00"
 CONTEXT:  referenced column: result

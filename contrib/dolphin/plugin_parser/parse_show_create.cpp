@@ -51,7 +51,7 @@ SelectStmt *makeShowCreateFuncQuery(char *schemaName, char *name, int model)
                          list_make1(makeString("definition")),
                          (char *)(model == GS_SHOW_CREATE_FUNCTION ? "Create Function" : "Create Procedure")));
     tl = lappend(
-        tl, makeTargetFuncAlias("current_setting", (List *)list_make1(plpsMakeStringConst("sql_mode")), "sql_mode"));
+        tl, makeTargetFuncAlias("current_setting", (List *)list_make1(plpsMakeStringConst("dolphin.sql_mode")), "sql_mode"));
     tl = lappend(tl, makeTargetFuncAlias("current_setting", (List *)list_make1(plpsMakeStringConst("client_encoding")),
                                          "character_set_client"));
     tl = lappend(tl, makeTargetFuncAlias("current_setting", (List *)list_make1(plpsMakeStringConst("lc_collate")),
@@ -136,7 +136,7 @@ SelectStmt *makeShowCreateTriggerQuery(char *schemaName, char *name)
 {
     List *tl = (List *)list_make1(makeNameString(name, "Trigger"));
     tl = lappend(
-        tl, makeTargetFuncAlias("current_setting", (List *)list_make1(plpsMakeStringConst("sql_mode")), "sql_mode"));
+        tl, makeTargetFuncAlias("current_setting", (List *)list_make1(plpsMakeStringConst("dolphin.sql_mode")), "sql_mode"));
     tl =
         lappend(tl, makeTargetFuncAlias("pg_get_triggerdef", (List *)list_make1(plpsMakeColumnRef("pg_trigger", "oid")),
                                         "SQL Original Statement"));

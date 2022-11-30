@@ -4,7 +4,7 @@ create database show_create dbcompatibility 'b';
 CREATE USER test_showcreate WITH PASSWORD 'openGauss@123';
 GRANT ALL PRIVILEGES TO test_showcreate;
 SET ROLE test_showcreate PASSWORD 'openGauss@123';
-set sql_mode = 'sql_mode_strict,sql_mode_full_group';
+set dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group';
 create schema test_get_def;
 set current_schema=test_get_def;
 -- tests for table

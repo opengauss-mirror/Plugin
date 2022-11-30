@@ -71,7 +71,7 @@ select localtimestamp(7);
 
 -- test now(precision)
 -- when the GUC variable b_db_timestamp = 0, now returns the current date and time
-show b_db_timestamp;
+show dolphin.b_db_timestamp;
 select now();
 select now(0);
 select now(1);
@@ -83,9 +83,9 @@ select now(6);
 select now(7);
 
 -- when the GUC variable b_db_timestamp != 0, now returns the timestamp according to b_db_timestamp
-set b_db_timestamp = 0.1;
-set b_db_timestamp = 2147483647.1;
-set b_db_timestamp = 1.1234;
+set dolphin.b_db_timestamp = 0.1;
+set dolphin.b_db_timestamp = 2147483647.1;
+set dolphin.b_db_timestamp = 1.1234;
 select now();
 select now(0);
 select now(1);
@@ -95,7 +95,7 @@ select now(4);
 select now(5);
 select now(6);
 select now(7);
-set b_db_timestamp = 0.0;
+set dolphin.b_db_timestamp = 0.0;
 
 -- test sysdate(precision)
 select sysdate;

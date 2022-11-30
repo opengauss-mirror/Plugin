@@ -39,7 +39,7 @@ insert into prepare_table_02 values(1, 1),(1, 1),(1, 1);
 analyze prepare_table_01;
 analyze prepare_table_02;
 
-set b_compatibility_mode to on;
+set dolphin.b_compatibility_mode to on;
 prepare p1 from 'select * from prepare_table_01, prepare_table_02 where prepare_table_01.a = prepare_table_02.a';
 prepare p2(int) from 'select * from prepare_table_01, prepare_table_02 where prepare_table_01.a = prepare_table_02.a and prepare_table_01.b = ?';
 prepare s_error from 'select * from prepare_table_01, prepare_table_02 where prepare_table_01.a = prepare_table_02.a and prepare_table_01.b = ? and prepare_table_01.a = $1';
@@ -95,7 +95,7 @@ prepare p1 from 'select * from prepare_table_02 where a= ?* ?*? *?+ ?';
 execute p1 using @a,@a,@a,@b,@c;
 DEALLOCATE p1;
 
-set b_compatibility_mode to off;
+set dolphin.b_compatibility_mode to off;
 prepare p2(int) from 'select * from prepare_table_01, prepare_table_02 where prepare_table_01.a = prepare_table_02.a and prepare_table_01.b = ?';
 SELECT jsonb '{"a":null, "b":"qq"}' ? 'a';
 SELECT jsonb '{"a":null, "b":"qq"}' ?| ARRAY['a','b'];
@@ -104,7 +104,7 @@ SELECT jsonb '{"a":null, "b":"qq"}' ?& ARRAY['a','b'];
 drop table prepare_table_01;
 drop table prepare_table_02;
 
-set b_compatibility_mode to on;
+set dolphin.b_compatibility_mode to on;
 -- Testset 1 dynamic datanode reduction for single table
 create table t1_xc_fqs(id1 int, id2 int, num int);
 
@@ -237,7 +237,7 @@ deallocate s0;
 deallocate s1;
 deallocate s2;
 
-reset b_compatibility_mode;
+reset dolphin.b_compatibility_mode;
 reset enable_set_variable_b_format;
 \c postgres
 drop database test_mysql_prepare;

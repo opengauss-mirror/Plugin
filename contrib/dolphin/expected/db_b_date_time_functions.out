@@ -303,9 +303,9 @@ ERROR:  Too-big precision 7 specified for 'now'. Maximum is 6.
 CONTEXT:  referenced column: localtimestamp(7)
 -- test now(precision)
 -- when the GUC variable b_db_timestamp = 0, now returns the current date and time
-show b_db_timestamp;
- b_db_timestamp 
-----------------
+show dolphin.b_db_timestamp;
+ dolphin.b_db_timestamp 
+------------------------
  0
 (1 row)
 
@@ -361,11 +361,11 @@ select now(7);
 ERROR:  Too-big precision 7 specified for 'now'. Maximum is 6.
 CONTEXT:  referenced column: now(7)
 -- when the GUC variable b_db_timestamp != 0, now returns the timestamp according to b_db_timestamp
-set b_db_timestamp = 0.1;
+set dolphin.b_db_timestamp = 0.1;
 ERROR:  Variable 'b_db_timestamp' can not be set to the value of '0.100000'
-set b_db_timestamp = 2147483647.1;
-ERROR:  2.14748e+09 is outside the valid range for parameter "b_db_timestamp" (0 .. 2.14748e+09)
-set b_db_timestamp = 1.1234;
+set dolphin.b_db_timestamp = 2147483647.1;
+ERROR:  2.14748e+09 is outside the valid range for parameter "dolphin.b_db_timestamp" (0 .. 2.14748e+09)
+set dolphin.b_db_timestamp = 1.1234;
 select now();
         now()        
 ---------------------
@@ -417,7 +417,7 @@ select now(6);
 select now(7);
 ERROR:  Too-big precision 7 specified for 'now'. Maximum is 6.
 CONTEXT:  referenced column: now(7)
-set b_db_timestamp = 0.0;
+set dolphin.b_db_timestamp = 0.0;
 -- test sysdate(precision)
 select sysdate;
 ERROR:  syntax error at or near ";"

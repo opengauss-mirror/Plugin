@@ -2,7 +2,7 @@ drop DATABASE if exists sql_mode_strict2;
 NOTICE:  database "sql_mode_strict2" does not exist, skipping
 CREATE DATABASE sql_mode_strict2 dbcompatibility 'B';
 \c sql_mode_strict2;
-set sql_mode = '';
+set dolphin.sql_mode = '';
 create table test_tint(a tinyint unsigned);
 create table test_sint(a smallint unsigned);
 create table test_int(a int unsigned);
@@ -1161,7 +1161,7 @@ select * from mysql_strictsqlmode_t1 order by c1;
 
 drop table mysql_strictsqlmode_t1;
 --test sql_mode = 'sql_mode_strict'
-set sql_mode = 'sql_mode_strict';
+set dolphin.sql_mode = 'sql_mode_strict';
 create table test_tint_strict(a tinyint unsigned);
 create table test_sint_strict(a smallint unsigned);
 create table test_int_strict(a int unsigned);

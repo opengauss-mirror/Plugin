@@ -6,7 +6,7 @@ select json_object('{a,1,b,2,3,NULL,"d e f","a b c"}');
 select json_object('{a,b,"a b c"}', '{a,1,1}');
 
 -- test for b_compatibility_mode = true
-set b_compatibility_mode = 1;
+set dolphin.b_compatibility_mode = 1;
 
 -- test for basic functionality of json_object
 select json_object('name', 'Jim', 'age', 20);
@@ -106,7 +106,7 @@ insert into tab_json1 select json_object('name',name,'address',address,'tel',tel
 select * from tab_json1;
 
 -- test for setting b_compatibility_mode back to false
-set b_compatibility_mode = 0;
+set dolphin.b_compatibility_mode = 0;
 select json_object('{a,1,b,2,3,NULL,"d e f","a b c"}');
 select json_object('{a,b,"a b c"}', '{a,1,1}');
 

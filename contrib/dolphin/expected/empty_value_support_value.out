@@ -9,7 +9,7 @@ DETAIL:  Failing row contains (null).
 insert into test1 value(),();
 ERROR:  null value in column "num" violates not-null constraint
 DETAIL:  Failing row contains (null).
-set sql_mode = '';
+set dolphin.sql_mode = '';
 insert into test1 value();
 select * from test1;
  num 

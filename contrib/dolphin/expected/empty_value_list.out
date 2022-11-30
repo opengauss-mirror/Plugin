@@ -165,7 +165,7 @@ insert into test41 values();
 ERROR:  null value in column "num" violates not-null constraint
 DETAIL:  Failing row contains (null).
 --not strict_all_tables mode
-set sql_mode = '';
+set dolphin.sql_mode = '';
 insert into test1 values();
 select *from test1;
  num 

@@ -8,14 +8,14 @@ insert into t1 values(10,11);
 
 insert into t1 values(12,13);
 
-set B_COMPATIBILITY_MODE  = 0;
+set dolphin.b_compatibility_mode  = 0;
 
 select a # b from t1;
 
 select a -- b from t1;
 ;
 
-set B_COMPATIBILITY_MODE  = 1;
+set dolphin.b_compatibility_mode  = 1;
 
 select 2 # b from t1 ;
 
@@ -33,7 +33,7 @@ select a + b from t1;#+===- comment aaa
 select a + b from t1;=#- comment aaa
 ;
 
-set B_COMPATIBILITY_MODE  = 0;
+set dolphin.b_compatibility_mode  = 0;
 
 create table t1#t2 (a int);
 
@@ -41,7 +41,7 @@ insert into t1#t2 values(1),(2);
 
 select * from t1#t2;
 
-set B_COMPATIBILITY_MODE  = 1;
+set dolphin.b_compatibility_mode  = 1;
 
 create table t3#t2
 (a int);
@@ -57,10 +57,10 @@ insert into t4 values(1),(3);
 
 select * from t4;
 
-set B_COMPATIBILITY_MODE  = 0;
+set dolphin.b_compatibility_mode  = 0;
 
 --test inside plpgsql 
-set B_COMPATIBILITY_MODE  = 1;
+set dolphin.b_compatibility_mode  = 1;
 
 create table test(a varchar(10));
 
@@ -88,7 +88,7 @@ end;
 
 call testfunc2();
 
-set B_COMPATIBILITY_MODE  = 0;
+set dolphin.b_compatibility_mode  = 0;
 
 
 CREATE FUNCTION testfunc12() return int as
@@ -104,7 +104,7 @@ end;
 call testfunc12();
 
 --bug fix when use sharp after  keyword without space
-set b_compatibility_mode = on;
+set dolphin.b_compatibility_mode = on;
 
 create or replace function testfunc() returns trigger as
 $$
@@ -141,7 +141,7 @@ execute#
 procedure testfunc();
 
 --turn off parameter,has error 
-set b_compatibility_mode = off;
+set dolphin.b_compatibility_mode = off;
 
 create trigger test_trig4
 after insert on t_test

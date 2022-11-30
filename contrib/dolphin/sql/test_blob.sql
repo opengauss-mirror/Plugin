@@ -42,7 +42,7 @@ insert into test_blob values('ppp');
 insert into test_medium values('ppp');
 insert into test_long values('ppp');
 
-set b_compatibility_mode = true;
+set dolphin.b_compatibility_mode = true;
 set bytea_output = 'escape';
 
 insert into test_blob values('ppp');
@@ -52,7 +52,7 @@ select * from test_blob;
 select * from test_medium;
 select * from test_long;
 
-set b_compatibility_mode = false;
+set dolphin.b_compatibility_mode = false;
 select * from test_blob;
 
 drop table test_template;

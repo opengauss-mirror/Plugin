@@ -8,7 +8,7 @@ create database b_time_type dbcompatibility 'b';
 
 -- test datetime add/substract interval
 -- when b_compatibility_mode = true
-set b_compatibility_mode = true;
+set dolphin.b_compatibility_mode = true;
 SELECT '1997-12-31 23:59:59' + INTERVAL 1 SECOND;
 SELECT datetime'1997-12-31 23:59:59' + INTERVAL 1 SECOND;
 SELECT '1997-12-31 23:59:59' - INTERVAL 1 SECOND;
@@ -16,7 +16,7 @@ SELECT datetime'1997-12-31 23:59:59' - INTERVAL 1 SECOND;
 SELECT INTERVAL 1 SECOND + '1997-12-31 23:59:59';
 SELECT INTERVAL 1 SECOND + datetime'1997-12-31 23:59:59';
 -- when b_compatibility_mode = false;
-set b_compatibility_mode = false;
+set dolphin.b_compatibility_mode = false;
 SELECT '1997-12-31 23:59:59' + INTERVAL 1 SECOND;
 SELECT datetime'1997-12-31 23:59:59' + INTERVAL 1 SECOND;
 SELECT '1997-12-31 23:59:59' - INTERVAL 1 SECOND;

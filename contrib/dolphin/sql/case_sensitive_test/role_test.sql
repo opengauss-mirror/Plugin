@@ -1,7 +1,7 @@
 DROP DATABASE IF EXISTS role_test_db;
 CREATE DATABASE role_test_db dbcompatibility 'b';
 \c role_test_db;
-SET lower_case_table_names TO 0;
+set dolphin.lower_case_table_names TO 0;
 CREATE TABLE test_table (a int);
 CREATE USER Test_User WITH PASSWORD 'openGauss@123';
 SELECT rolname FROM pg_roles WHERE rolname LIKE '%Test_%';

@@ -1,7 +1,7 @@
 drop database if exists network2;
 create database network2 dbcompatibility 'b';
 \c network2
-set sql_mode = '';
+set dolphin.sql_mode = '';
 select inet_ntoa(inet_aton('255.255.255.255.255.255.255.255'));
 select inet_ntoa(1099511627775),inet_ntoa(4294902271),inet_ntoa(4294967295),inet_ntoa(511);
 select inet_aton('255.255.255.255.255'),inet_aton('255.255.1.255'),inet_aton('0.1.255');
@@ -143,6 +143,6 @@ SELECT IS_IPV4_MAPPED(INET6_ATON('::ABCD:1.2.3.4')),IS_IPV4_COMPAT(INET6_ATON(':
 SELECT IS_IPV4_MAPPED(INET6_ATON('::1')),IS_IPV4_COMPAT(INET6_ATON('::1'));
 SELECT IS_IPV4_MAPPED(INET6_ATON('::')),IS_IPV4_COMPAT(INET6_ATON('::'));
 SELECT IS_IPV4_MAPPED(NULL),IS_IPV4_COMPAT(NULL);
-reset sql_mode;
+reset dolphin.sql_mode;
 \c postgres
 drop database if exists network2;

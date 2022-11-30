@@ -80,7 +80,7 @@ select insert('abcdefg', 2, 4, 5.21);
  a5.21fg
 (1 row)
 
-set sql_mode='';
+set dolphin.sql_mode='';
 select insert('abcdefg', '2aa', 4, 'yyy');
  insert 
 --------

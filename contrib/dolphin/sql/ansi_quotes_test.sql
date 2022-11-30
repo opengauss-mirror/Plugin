@@ -1,14 +1,14 @@
 CREATE DATABASE test_ansi_quotes DBCOMPATIBILITY 'B';
 \c test_ansi_quotes
 CREATE TABLE test_quotes (a text);
-SHOW sql_mode;
+show dolphin.sql_mode;
 
 -- test insert
 INSERT INTO test_quotes VALUES('test1');    -- success
 INSERT INTO "test_quotes" VALUES('test2');    -- success
 INSERT INTO "test_quotes" VALUES("test3");    -- failed
 SELECT * FROM test_quotes;
-SET sql_mode TO 'sql_mode_strict,sql_mode_full_group,pipes_as_concat';
+set dolphin.sql_mode TO 'sql_mode_strict,sql_mode_full_group,pipes_as_concat';
 INSERT INTO test_quotes VALUES('test4');    -- success
 INSERT INTO "test_quotes" VALUES('test5');    -- failed
 INSERT INTO test_quotes VALUES("test6");    -- success

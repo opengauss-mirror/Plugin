@@ -1,5 +1,5 @@
 \c table_name_test_db
-set lower_case_table_names = 0;
+set dolphin.lower_case_table_names = 0;
 DROP TABLE IF EXISTS PUBLIC.Test;
 CREATE TABLE PUBLIC.Test (a int);
 SELECT PUBLIC.Test.A FROM PUBLIC.Test WHERE PUBLIC.Test.A <> 2;

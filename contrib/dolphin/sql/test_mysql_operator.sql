@@ -1,8 +1,8 @@
 drop database if exists test_op_and;
 CREATE DATABASE test_op_and with dbcompatibility='B';
 \c test_op_and
-set b_compatibility_mode = 1;
-set sql_mode = 'sql_mode_strict,sql_mode_full_group';
+set dolphin.b_compatibility_mode = 1;
+set dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group';
 
 ---create table
 create table testforboolean(a boolean,b boolean);
@@ -390,8 +390,8 @@ drop table testforint2_p4;
 drop table testforint2_p5;
 
 ---drop database
-set b_compatibility_mode = 0;
-set sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat';
+set dolphin.b_compatibility_mode = 0;
+set dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat';
 \c postgres
 drop database test_op_and;
 
@@ -399,7 +399,7 @@ drop database test_op_and;
 drop database if exists test_op_xor;
 CREATE DATABASE test_op_xor with dbcompatibility='B';
 \c test_op_xor
-set b_compatibility_mode = 1;
+set dolphin.b_compatibility_mode = 1;
 
 select null^1;
 
@@ -633,7 +633,7 @@ drop table testforint2_p4;
 drop table testforint2_p5;
 
 ---drop database
-set b_compatibility_mode = 0;
+set dolphin.b_compatibility_mode = 0;
 \c postgres
 drop database test_op_xor;
 
@@ -641,7 +641,7 @@ drop database test_op_xor;
 drop database if exists like_test;
 create database like_test DBCOMPATIBILITY 'b';
 \c like_test
-set b_compatibility_mode = 1;
+set dolphin.b_compatibility_mode = 1;
 
 select 'a' like 'A';
 ---正常报错，like右边缺参数
@@ -848,12 +848,12 @@ drop table testlike7;
 drop table testlike8;
 
 -- test for '!' in place of NOT for expr
-set b_compatibility_mode = 0;
+set dolphin.b_compatibility_mode = 0;
 select !0;
 select !!0;
 select !!10;
 select !!!0;
-set b_compatibility_mode = 1;
+set dolphin.b_compatibility_mode = 1;
 select !0;
 select !9;
 select !!0;
@@ -869,6 +869,6 @@ select !('2012-01-01'::date);
 select !('23:59:59'::time);
 select !b'1001';
 
-set b_compatibility_mode = 0;
+set dolphin.b_compatibility_mode = 0;
 \c postgres
 drop database if exists like_test;
