@@ -2,7 +2,7 @@ drop database if exists test_bool_float;
 NOTICE:  database "test_bool_float" does not exist, skipping
 create database test_bool_float dbcompatibility 'b';
 \c test_bool_float
-set b_compatibility_mode = true;
+set dolphin.b_compatibility_mode = true;
 select 1::bool ^ 2::int1;
  ?column? 
 ----------
@@ -861,6 +861,6 @@ select (-1)::numeric ^ (-2)::numeric;
         1
 (1 row)
 
-set b_compatibility_mode = false;
+set dolphin.b_compatibility_mode = false;
 \c postgres
 drop database test_bool_float;

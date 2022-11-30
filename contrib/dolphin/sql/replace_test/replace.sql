@@ -28,7 +28,7 @@ replace DELAYED into parts partition(p1) values(4);
 replace DELAYED into parts partition(p1) values(4);
 replace DELAYED into parts partition(p1) select a from t2 where a >=2 ;
 
-SET lower_case_table_names = 0;
+set dolphin.lower_case_table_names = 0;
 
 create table T1 (A int);
 create table T2 (A int);

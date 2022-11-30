@@ -90,7 +90,7 @@ insert into test40 values(),();
 insert into test41 values(),();
 
 --not strict_all_tables mode
-set sql_mode = '';
+set dolphin.sql_mode = '';
 insert into test1 values(),();
 select *from test1;
 insert into test2 values(),();

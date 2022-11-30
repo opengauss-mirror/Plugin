@@ -16,7 +16,7 @@ select insert('abcdefg', 1147483640, 1147483640, 'yyy');
 select insert('abcdefg', 2.3213, 4.123123, 'yyy');
 select insert(5.1234, 2, 4, 'yyy');
 select insert('abcdefg', 2, 4, 5.21);
-set sql_mode='';
+set dolphin.sql_mode='';
 select insert('abcdefg', '2aa', 4, 'yyy');
 select insert('abcdefg', 2, '3abc', 'yyy');
 select insert('abcdefg', 'aa2', 4, 'yyy');

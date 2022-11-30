@@ -2,7 +2,7 @@ drop database if exists uint_sql_mode;
 create database uint_sql_mode dbcompatibility 'b';
 \c uint_sql_mode
 
-set sql_mode = '';
+set dolphin.sql_mode = '';
 
 select (-1)::bool::uint8;
 select (0)::bool::uint8;

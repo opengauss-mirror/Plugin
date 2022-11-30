@@ -1,5 +1,5 @@
 \c table_name_test_db;
-SET lower_case_table_names TO 0;
+set dolphin.lower_case_table_names TO 0;
 --
 -- Test for Row Level Security feature
 --
@@ -33,7 +33,7 @@ ALTER DATABASE table_name_test_db ENABLE PRIVATE OBJECT;
 SET search_path = regress_rls_schema;
 -- regress_rls_alice is the owner of all schema
 SET ROLE regress_rls_alice PASSWORD 'Ttest@123';
-SET lower_case_table_names TO 0;
+set dolphin.lower_case_table_names TO 0;
 -- setup of malicious function (NOT SHIPPABLE)
 CREATE OR REPLACE FUNCTION regress_rls_schema.rls_fleak1(text) RETURNS bool
 	COST 0.0000001 LANGUAGE plpgsql
@@ -392,7 +392,7 @@ EXECUTE two;
 
 -- viewpoint from regress_rls_bob
 SET ROLE regress_rls_bob PASSWORD 'Ttest@123';
-SET lower_case_table_names TO 0;
+set dolphin.lower_case_table_names TO 0;
 EXECUTE one;
  did | cid | dlevel |     dauthor     |     dtitle     
 -----+-----+--------+-----------------+----------------
@@ -472,7 +472,7 @@ NOTICE:  f_leak => regress_rls_bob
 
 -- viewpoint from regress_rls_peter
 SET ROLE regress_rls_peter PASSWORD 'Ttest@123';
-SET lower_case_table_names TO 0;
+set dolphin.lower_case_table_names TO 0;
 EXECUTE one;
  did | cid | dlevel |      dauthor      |         dtitle          
 -----+-----+--------+-------------------+-------------------------
@@ -601,7 +601,7 @@ EXPLAIN (COSTS OFF, VERBOSE ON) SELECT * FROM document_Row INNER JOIN category_r
 
 -- viewpoint from regress_rls_david
 SET ROLE regress_rls_david PASSWORD 'Ttest@123';
-SET lower_case_table_names TO 0;
+set dolphin.lower_case_table_names TO 0;
 EXECUTE one;
  did | cid | dlevel |      dauthor      |        dtitle         
 -----+-----+--------+-------------------+-----------------------
@@ -875,7 +875,7 @@ SELECT type, database, object_name, detail_info FROM pg_query_audit('2000-01-01 
 
 -- viewpoint from rls_regres_david again
 SET ROLE regress_rls_david PASSWORD 'Ttest@123';
-SET lower_case_table_names TO 0;
+set dolphin.lower_case_table_names TO 0;
 SELECT * FROM document_Row ORDER BY did;
  did | cid | dlevel |      dauthor      |           dtitle            
 -----+-----+--------+-------------------+-----------------------------
@@ -1020,7 +1020,7 @@ SELECT * FROM tt_rep;
 
 -- viewpoint from regress_rls_alice again
 SET ROLE regress_rls_alice PASSWORD 'Ttest@123';
-SET lower_case_table_names TO 0;
+set dolphin.lower_case_table_names TO 0;
 ALTER TABLE tt_rep FORCE ROW LEVEL SECURITY;
 ALTER TABLE par_row_t1 FORCE ROW LEVEL SECURITY;
 \d
@@ -1131,7 +1131,7 @@ explain(costs off) select aa_1 from aa, bb where bb_1 = 1 and aa_1 > (select min
 
 -- clean environment
 RESET ROLE;
-SET lower_case_table_names TO 0;
+set dolphin.lower_case_table_names TO 0;
 DROP ROW LEVEL SECURITY POLICY t12 ON inlist_T1;
 ERROR:  row level policy "t12" for table "inlist_T1" does not exists
 DROP ROW LEVEL SECURITY POLICY IF EXISTS t12 ON inlist_T1;

@@ -5,7 +5,7 @@ create database db_comment_sharp dbcompatibility 'B';
 create table t1(a int,b int);
 insert into t1 values(10,11);
 insert into t1 values(12,13);
-set B_COMPATIBILITY_MODE  = 0;
+set dolphin.b_compatibility_mode  = 0;
 select a # b from t1;
  ?column? 
 ----------
@@ -19,7 +19,7 @@ ERROR:  column "a" does not exist
 LINE 1: select a 
                ^
 CONTEXT:  referenced column: a
-set B_COMPATIBILITY_MODE  = 1;
+set dolphin.b_compatibility_mode  = 1;
 select 2 # b from t1 ;
  ?column? 
 ----------
@@ -57,7 +57,7 @@ select a + b from t1;=#- comment aaa
 ERROR:  syntax error at or near "="
 LINE 1: =#- comment aaa
         ^
-set B_COMPATIBILITY_MODE  = 0;
+set dolphin.b_compatibility_mode  = 0;
 create table t1#t2 (a int);
 insert into t1#t2 values(1),(2);
 select * from t1#t2;
@@ -67,7 +67,7 @@ select * from t1#t2;
  2
 (2 rows)
 
-set B_COMPATIBILITY_MODE  = 1;
+set dolphin.b_compatibility_mode  = 1;
 create table t3#t2
 (a int);
 insert  into t3 values(1),(2);
@@ -88,9 +88,9 @@ select * from t4;
  3
 (2 rows)
 
-set B_COMPATIBILITY_MODE  = 0;
+set dolphin.b_compatibility_mode  = 0;
 --test inside plpgsql 
-set B_COMPATIBILITY_MODE  = 1;
+set dolphin.b_compatibility_mode  = 1;
 create table test(a varchar(10));
 CREATE FUNCTION testfunc3() return int as
 begin
@@ -121,7 +121,7 @@ call testfunc2();
          1
 (1 row)
 
-set B_COMPATIBILITY_MODE  = 0;
+set dolphin.b_compatibility_mode  = 0;
 CREATE FUNCTION testfunc12() return int as
 declare
 a#b int := 5
@@ -145,7 +145,7 @@ end
 call testfunc12();
 ERROR:  function "testfunc12" doesn't exist 
 --bug fix when use sharp after  keyword without space
-set b_compatibility_mode = on;
+set dolphin.b_compatibility_mode = on;
 create or replace function testfunc() returns trigger as
 $$
 declare
@@ -173,7 +173,7 @@ for each row
 execute# 
 procedure testfunc();
 --turn off parameter,has error 
-set b_compatibility_mode = off;
+set dolphin.b_compatibility_mode = off;
 create trigger test_trig4
 after insert on t_test
 for each row#

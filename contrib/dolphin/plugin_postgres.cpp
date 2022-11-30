@@ -362,7 +362,7 @@ void init_session_vars(void)
     cxt->do_sconst = NULL;
     cxt->single_line_proc_begin = 0;
 
-    DefineCustomBoolVariable("b_compatibility_mode",
+    DefineCustomBoolVariable("dolphin.b_compatibility_mode",
                              "Enable mysql behavior override opengauss's when collision happens.",
                              NULL,
                              &ENABLE_B_CMPT_MODE,
@@ -371,7 +371,7 @@ void init_session_vars(void)
                              0,
                              NULL, NULL, NULL);
 
-    DefineCustomStringVariable("sql_mode",
+    DefineCustomStringVariable("dolphin.sql_mode",
                                gettext_noop("CUSTOM_OPTIONS"),
                                NULL,
                                &GetSessionContext()->sqlModeString,
@@ -381,7 +381,7 @@ void init_session_vars(void)
                                CheckSqlMode,
                                AssignSqlMode,
                                NULL);
-    DefineCustomRealVariable("b_db_timestamp",
+    DefineCustomRealVariable("dolphin.b_db_timestamp",
                              "A flag influces function now(n) in B compatibility.",
                              "If b_db_timestamp is 0, now(n) will return current timestamp. "
                              "If b_db_timestamp is between 1 and 2147483647, the b_db_timestamp "
@@ -396,7 +396,7 @@ void init_session_vars(void)
                              check_b_db_timestamp,
                              assign_b_db_timestamp,
                              NULL);
-    DefineCustomIntVariable("lower_case_table_names",
+    DefineCustomIntVariable("dolphin.lower_case_table_names",
                             gettext_noop("used to set the sensitive of identifier"),
                             NULL,
                             &GetSessionContext()->lower_case_table_names,
@@ -409,7 +409,7 @@ void init_session_vars(void)
                             NULL,
                             NULL);
 #ifdef DOLPHIN
-    DefineCustomIntVariable("default_week_format",
+    DefineCustomIntVariable("dolphin.default_week_format",
                             gettext_noop("Set the default week format for function week."),
                             gettext_noop("If the given value is less than 0, default_week_format will be set to 0. "
                                         "If the given value is greater than 7, default_week_format will be set to 7."),
@@ -422,7 +422,7 @@ void init_session_vars(void)
                             check_default_week_format,
                             assign_default_week_format,
                             NULL);
-    DefineCustomStringVariable("lc_time_names",
+    DefineCustomStringVariable("dolphin.lc_time_names",
                                gettext_noop("Set the language charset for the return value of "
                                "function DAYNAME, MONTHNAME, and DATE_FORMAT."),
                                NULL,

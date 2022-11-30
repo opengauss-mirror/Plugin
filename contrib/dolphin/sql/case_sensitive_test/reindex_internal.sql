@@ -1,5 +1,5 @@
 \c table_name_test_db;
-SET lower_case_table_names TO 0;
+set dolphin.lower_case_table_names TO 0;
 --REINDEX INTERNAL TABLE name [PARTITION name]：
 -- 	used to reindex the index of the cudesc table.
 

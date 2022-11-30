@@ -1,5 +1,5 @@
 \c table_name_test_db;
-SET lower_case_table_names TO 0;
+set dolphin.lower_case_table_names TO 0;
 --
 -- RULES
 -- From Jan's original setup_ruletest.sql and run_ruletest.sql

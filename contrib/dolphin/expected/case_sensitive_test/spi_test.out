@@ -1,5 +1,5 @@
 \c table_name_test_db;
-SET lower_case_table_names TO 0;
+set dolphin.lower_case_table_names TO 0;
 drop table if exists T_LETTER_0028;
 NOTICE:  table "T_LETTER_0028" does not exist, skipping
 create table T_LETTER_0028

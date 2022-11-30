@@ -34,7 +34,7 @@ insert into test values('get_format(DATE, null)', get_format(DATE, null));
 insert into test values('get_format(abc, ''EUR'')', get_format(abc, 'EUR'));
 
 -- test extract
-set b_compatibility_mode = true;
+set dolphin.b_compatibility_mode = true;
 -- 严格模式或者非严格模式都有值
 -- 功能-单unit
 insert into test values('extract(YEAR FROM ''2019-07-02'')',extract(YEAR FROM '2019-07-02'));
@@ -82,7 +82,7 @@ insert into test values('extract(MONTH FROM 20190702)', extract(MONTH FROM 20190
 insert into test values('extract(hour from null)', extract(hour from null));
 
 -- 非严格模式，参数不合法，报warning，返回NULL或者对应值
-set sql_mode = 'sql_mode_full_group,pipes_as_concat,ansi_quotes';
+set dolphin.sql_mode = 'sql_mode_full_group,pipes_as_concat,ansi_quotes';
 insert into test values('extract(DAY FROM ''10000-01-01'')', extract(DAY FROM '10000-01-01'));
 insert into test values('extract(hour from ''838:59:59.1'')', extract(hour from '838:59:59.1'));
 insert into test values('extract(hour from ''839:00:00'')', extract(hour from '839:00:00'));
@@ -92,7 +92,7 @@ insert into test values('extract(hour from ''40 1:1:0'')', extract(hour from '40
 insert into test values('extract(hour from ''-40 1:1:0'')', extract(hour from '-40 1:1:0'));
 
 -- 严格模式，参数不合法，抛出错误
-set sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes';
+set dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes';
 insert into test values('extract(DAY FROM ''10000-01-01'')', extract(DAY FROM '10000-01-01'));
 insert into test values('extract(hour from ''838:59:59.1'')', extract(hour from '838:59:59.1'));
 insert into test values('extract(hour from ''839:00:00'')', extract(hour from '839:00:00'));
@@ -100,7 +100,7 @@ insert into test values('extract(hour from ''-838:59:59.1'')', extract(hour from
 insert into test values('extract(hour from ''-839:00:00'')', extract(hour from '-839:00:00'));
 insert into test values('extract(hour from ''40 1:1:0'')', extract(hour from '40 1:1:0'));
 insert into test values('extract(hour from ''-40 1:1:0'')', extract(hour from '-40 1:1:0'));
-set b_compatibility_mode = false;
+set dolphin.b_compatibility_mode = false;
 
 -- test date_format
 -- 严格模式或者非严格模式都有值
@@ -161,12 +161,12 @@ insert into test values('date_format(''2021-1-0 12:12:12'', ''%Y %m %d %T'')', d
 insert into test values('date_format(''2021-0-0 12:12:12'', ''%Y %m %d %T'')', date_format('2021-0-0 12:12:12', '%Y %m %d %T'));
 
 -- 非严格模式，参数不合法，报warning，返回NULL或者对应值
-set sql_mode = 'sql_mode_full_group,pipes_as_concat,ansi_quotes';
+set dolphin.sql_mode = 'sql_mode_full_group,pipes_as_concat,ansi_quotes';
 insert into test values('date_format(''10000-01-01 12:12:12'',''%Y %m %d %T'')', date_format('10000-01-01 12:12:12','%Y %m %d %T'));
 insert into test values('date_format(''2001-01-32 12:12:12'',''%Y %m %d %T'')', date_format('2001-01-32 12:12:12','%Y %m %d %T'));
 
 -- 严格模式，参数不合法，抛出错误
-set sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes';
+set dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes';
 insert into test values('date_format(''10000-01-01 12:12:12'',''%Y %m %d %T'')', date_format('10000-01-01 12:12:12','%Y %m %d %T'));
 insert into test values('date_format(''2001-01-32 12:12:12'',''%Y %m %d %T'')', date_format('2001-01-32 12:12:12','%Y %m %d %T'));
 
@@ -283,7 +283,7 @@ insert into test values('str_to_date(''9999 12 31 23:59:59.999999'', ''%Y %m %d 
 insert into test values('str_to_date(null, ''%Y %m %d'')', str_to_date(null, '%Y %m %d'));
 
 -- 非严格模式，参数不合法，报warning，返回NULL或者对应值
-set sql_mode = 'sql_mode_full_group,pipes_as_concat,ansi_quotes';
+set dolphin.sql_mode = 'sql_mode_full_group,pipes_as_concat,ansi_quotes';
 insert into test values('str_to_date(''0'', ''%h'')', str_to_date('0', '%h'));
 insert into test values('str_to_date(''10000-1-1'', ''%Y-%m-%d'')', str_to_date('10000-1-1', '%Y-%m-%d'));
 insert into test values('str_to_date(''2021-13-1'', ''%Y-%m-%d'')', str_to_date('2021-13-1', '%Y-%m-%d'));
@@ -314,7 +314,7 @@ insert into test values('str_to_date(''2021-11-12'', null)', str_to_date('2021-1
 insert into test values('str_to_date(''200454 Monday'', ''%X%V %W'')', str_to_date('200454 Monday', '%X%V %W'));
 
 -- 严格模式，参数不合法，抛出错误
-set sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes';
+set dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes';
 insert into test values('str_to_date(''0'', ''%h'')', str_to_date('0', '%h'));
 insert into test values('str_to_date(''10000-1-1'', ''%Y-%m-%d'')', str_to_date('10000-1-1', '%Y-%m-%d'));
 insert into test values('str_to_date(''2021-13-1'', ''%Y-%m-%d'')', str_to_date('2021-13-1', '%Y-%m-%d'));
