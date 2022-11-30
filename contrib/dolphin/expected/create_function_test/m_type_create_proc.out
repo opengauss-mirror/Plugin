@@ -32,38 +32,38 @@ CREATE PROCEDURE procedure_1_m (c1 int, c2 int)
 //
 delimiter ;
 call procedure_1_m(6,9);
- procedure_1_m 
----------------
- 
-(1 row)
-
+ERROR:  column reference "c1" is ambiguous
+LINE 1: insert into item values(c1, c2)
+                                ^
+DETAIL:  It could refer to either a PL/pgSQL variable or a table column.
+QUERY:  insert into item values(c1, c2)
+CONTEXT:  PL/pgSQL function procedure_1_m(integer,integer) line 1 at SQL statement
 select * from item;
  c1 | c2 
 ----+----
   1 |  2
-  6 |  9
-(2 rows)
+(1 row)
 
 select procedure_1_m(6,9);
- procedure_1_m 
----------------
- 
-(1 row)
-
+ERROR:  column reference "c1" is ambiguous
+LINE 1: insert into item values(c1, c2)
+                                ^
+DETAIL:  It could refer to either a PL/pgSQL variable or a table column.
+QUERY:  insert into item values(c1, c2)
+CONTEXT:  PL/pgSQL function procedure_1_m(integer,integer) line 1 at SQL statement
+referenced column: procedure_1_m
 select * from procedure_1_m(6,9);
- procedure_1_m 
----------------
- 
-(1 row)
-
+ERROR:  column reference "c1" is ambiguous
+LINE 1: insert into item values(c1, c2)
+                                ^
+DETAIL:  It could refer to either a PL/pgSQL variable or a table column.
+QUERY:  insert into item values(c1, c2)
+CONTEXT:  PL/pgSQL function procedure_1_m(integer,integer) line 1 at SQL statement
 select * from item;
  c1 | c2 
 ----+----
   1 |  2
-  6 |  9
-  6 |  9
-  6 |  9
-(4 rows)
+(1 row)
 
 -- test declare
 create table test (a int);
@@ -76,11 +76,12 @@ insert into test values (a + b);
 end;
 /
 call testpro (2);
- testpro 
----------
- 
-(1 row)
-
+ERROR:  column reference "a" is ambiguous
+LINE 1: insert into test values (a + b)
+                                 ^
+DETAIL:  It could refer to either a PL/pgSQL variable or a table column.
+QUERY:  insert into test values (a + b)
+CONTEXT:  PL/pgSQL function testpro(integer) line 6 at SQL statement
 --error
 delimiter //
 CREATE PROCEDURE testpro_m() 
@@ -108,17 +109,16 @@ end;
 //
 delimiter ;
 call testpro_m (5);
- testpro_m 
------------
- 
-(1 row)
-
+ERROR:  column reference "a" is ambiguous
+LINE 1: insert into test values (a + b)
+                                 ^
+DETAIL:  It could refer to either a PL/pgSQL variable or a table column.
+QUERY:  insert into test values (a + b)
+CONTEXT:  PL/pgSQL function testpro_m(integer) line 5 at SQL statement
 select * from test;
- a  
-----
-  7
- 10
-(2 rows)
+ a 
+---
+(0 rows)
 
 --testmulti declare
  delimiter //
@@ -154,28 +154,23 @@ select * from test;
  //
 delimiter ;
 call testpro_m6(10);
- testpro_m6 
-------------
- 
-(1 row)
-
+ERROR:  column reference "a" is ambiguous
+LINE 1: insert into test values (a + b)
+                                 ^
+DETAIL:  It could refer to either a PL/pgSQL variable or a table column.
+QUERY:  insert into test values (a + b)
+CONTEXT:  PL/pgSQL function testpro_m6(integer) line 4 at SQL statement
 call testpro_m7(11);
- testpro_m7 
-------------
- 
-(1 row)
-
+ERROR:  column reference "a" is ambiguous
+LINE 1: insert into test values (a + b)
+                                 ^
+DETAIL:  It could refer to either a PL/pgSQL variable or a table column.
+QUERY:  insert into test values (a + b)
+CONTEXT:  PL/pgSQL function testpro_m7(integer) line 4 at SQL statement
 select * from test;
- a  
-----
-  7
- 10
- 19
- 19
- 20
- 20
- 20
-(7 rows)
+ a 
+---
+(0 rows)
 
 -- test options 
 delimiter //

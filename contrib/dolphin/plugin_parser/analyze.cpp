@@ -199,6 +199,7 @@ Query* parse_analyze(
     }
 
     pfree_ext(pstate->p_ref_hook_state);
+    pstate->rightRefState = nullptr;
     free_parsestate(pstate);
 
     /* For plpy CTAS query. CTAS is a recursive call. CREATE query is the first rewrited.
@@ -299,22 +300,53 @@ Query* transformTopLevelStmt(ParseState* pstate, Node* parseTree, bool isFirstNo
         AssertEreport(stmt && IsA(stmt, SelectStmt) && stmt->larg == NULL, MOD_OPT, "failure to check parseTree");
 
         if (stmt->intoClause) {
-            CreateTableAsStmt* ctas = makeNode(CreateTableAsStmt);
+            if (stmt->intoClause->userVarList) {
+                UserSetElem* uset = makeNode(UserSetElem);
+                uset->name = stmt->intoClause->userVarList;
+                stmt->intoClause = NULL;
 
-            ctas->query = parseTree;
-            ctas->into = stmt->intoClause;
-            ctas->relkind = OBJECT_TABLE;
-            ctas->is_select_into = true;
+                SubLink* sl = makeNode(SubLink);
+                sl->subLinkType = EXPR_SUBLINK;
+                sl->testexpr = NULL;
+                sl->operName = NIL;
+                sl->subselect = (Node *)stmt;
+                sl->location = -1;
 
-            /*
-             * Remove the intoClause from the SelectStmt.  This makes it safe
-             * for transformSelectStmt to complain if it finds intoClause set
-             * (implying that the INTO appeared in a disallowed place).
-             */
-            stmt->intoClause = NULL;
+                SelectIntoVarList *sis = makeNode(SelectIntoVarList);
+                sis->sublink = sl;
+                sis->userVarList = uset->name;
 
-            parseTree = (Node*)ctas;
+                uset->val = (Expr *)sis;
+
+                VariableSetStmt* vss = makeNode(VariableSetStmt);
+                vss->kind = VAR_SET_DEFINED;
+                vss->name = "SELECT INTO VARLIST";
+                vss->defined_args = list_make1((Node *)uset);
+                vss->is_local = false;
+                vss->is_multiset = true;
+
+                VariableMultiSetStmt* vmss = makeNode(VariableMultiSetStmt);
+                vmss->args = list_make1((Node *)vss);
+                parseTree = (Node *)vmss;
+            } else {
+                CreateTableAsStmt* ctas = makeNode(CreateTableAsStmt);
+
+                ctas->query = parseTree;
+                ctas->into = stmt->intoClause;
+                ctas->relkind = OBJECT_TABLE;
+                ctas->is_select_into = true;
+
+                /*
+                 * Remove the intoClause from the SelectStmt.  This makes it safe
+                 * for transformSelectStmt to complain if it finds intoClause set
+                 * (implying that the INTO appeared in a disallowed place).
+                 */
+                stmt->intoClause = NULL;
+
+                parseTree = (Node*)ctas;
+            }
         }
+
     }
 
     return transformStmt(pstate, parseTree, isFirstNode, isCreateView);
@@ -528,6 +560,10 @@ Query* transformStmt(ParseState* pstate, Node* parseTree, bool isFirstNode, bool
     /* Mark whether synonym object is in rtables or not. */
     result->hasSynonyms = pstate->p_hasSynonyms;
 
+    if (nodeTag(parseTree) != T_InsertStmt) {
+        result->rightRefState = nullptr;
+    }
+    
     return result;
 }
 
@@ -931,6 +967,10 @@ static void transformLimitSortClause(ParseState* pstate, void* stmt, Query* qry,
     rlist =  forDel ? transformSortClause(pstate, ((DeleteStmt*)stmt)->sortClause, &qry->targetList, true, false) :
                 transformUpdateSortClause(pstate, (UpdateStmt*)stmt, qry);
 
+    /*
+     * For update statement, the effective range of sort clause is not optimized. For delete statement,
+     * sorting is performed only when limit or returning clause takes effect.
+     */
     if (qry->limitCount != NULL) {
         /* flag for discriminating rownum */
         Const *flag = makeNode(Const);
@@ -939,8 +979,10 @@ static void transformLimitSortClause(ParseState* pstate, void* stmt, Query* qry,
         flag->consttype = INT8OID;
         flag->consttypmod = -1;
         qry->limitOffset = (Node*)flag;
+        qry->sortClause = rlist;
+    } else if (!forDel || qry->returningList != NULL) {
+        qry->sortClause = rlist;
     }
-    qry->sortClause = rlist;
 }
 
 static void CheckUDRelations(ParseState* pstate, List* sortClause, Node* limitClause, List* returningList,
@@ -1559,6 +1601,61 @@ static void CheckUnsupportInsertSelectClause(Query* query)
     }
 }
 
+
+static void SetInsertAttrnoState(ParseState* pstate, List* attrnos) 
+{
+    RightRefState* rstate = pstate->rightRefState;
+    Relation relation = (Relation)linitial(pstate->p_target_relation);
+    rstate->colCnt = RelationGetNumberOfAttributes(relation);
+    int len = list_length(attrnos);
+    rstate->explicitAttrLen = len;
+    rstate->explicitAttrNos = (int*)palloc0(sizeof(int) * len);
+    
+    ListCell* attr = list_head(attrnos);
+    for (int i = 0; i < len; ++i) {
+        rstate->explicitAttrNos[i] = lfirst_int(attr);
+        attr = lnext(attr);
+    }
+}
+
+static void SetUpsertAttrnoState(ParseState* pstate, List *targetList) 
+{
+    if (!targetList) {
+        return;
+    }
+    RightRefState* rstate = pstate->rightRefState;
+    int len = list_length(targetList);
+    rstate->usExplicitAttrLen = len;
+    rstate->usExplicitAttrNos = (int*)palloc0(sizeof(int) * len);
+
+    Relation relation = (Relation)linitial(pstate->p_target_relation);
+    Form_pg_attribute* attr = relation->rd_att->attrs;
+    int colNum = RelationGetNumberOfAttributes(relation);
+    ListCell* target = list_head(targetList);
+    for (int ni = 0; ni < len; ++ni) {
+        ResTarget* res = (ResTarget*)lfirst(target);
+        const char* name = res->name;
+        for (int ci = 0; ci < colNum; ++ci) {
+            if (attr[ci]->attisdropped) {
+                continue;
+            }
+            if (strcmp(name, attr[ci]->attname.data) == 0) {
+                rstate->usExplicitAttrNos[ni] = ci + 1;
+                break;
+            }
+        }
+        
+        target = lnext(target);
+    }
+}
+
+static RightRefState* MakeRightRefState() 
+{
+    RightRefState* refState = (RightRefState*)palloc0(sizeof(RightRefState));
+    refState->isSupported = !IsInitdb && DB_IS_CMPT(B_FORMAT);
+    return refState;
+}
+
 /*
  * transformInsertStmt -
  *	  transform an Insert Statement
@@ -1585,9 +1682,13 @@ static Query* transformInsertStmt(ParseState* pstate, InsertStmt* stmt)
     /* There can't be any outer WITH to worry about */
     AssertEreport(pstate->p_ctenamespace == NIL, MOD_OPT, "para should be NIL");
 
+    RightRefState* rightRefState = MakeRightRefState();
+    
     qry->commandType = CMD_INSERT;
     pstate->p_is_insert = true;
     pstate->p_has_ignore = stmt->hasIgnore;
+    pstate->rightRefState = rightRefState;
+    
     /* set io state for backend status for the thread, we will use it to check user space */
     pgstat_set_io_state(IOSTATE_WRITE);
 
@@ -1750,6 +1851,9 @@ static Query* transformInsertStmt(ParseState* pstate, InsertStmt* stmt)
 
     /* Validate stmt->cols list, or build default list if no list given */
     icolumns = checkInsertTargets(pstate, stmt->cols, &attrnos);
+
+    SetInsertAttrnoState(pstate, attrnos);
+    
     AssertEreport(list_length(icolumns) == list_length(attrnos), MOD_OPT, "list length inconsistent");
 
     /*
@@ -2130,7 +2234,15 @@ static Query* transformInsertStmt(ParseState* pstate, InsertStmt* stmt)
 
     /* Process DUPLICATE KEY UPDATE, if any. */
     if (stmt->upsertClause) {
-        qry->upsertClause = transformUpsertClause(pstate, stmt->upsertClause);
+        if (IS_SUPPORT_RIGHT_REF(rightRefState)) {
+            pstate->p_varnamespace = NIL;
+            rightRefState->isUpsert = true;
+            SetUpsertAttrnoState(pstate, stmt->upsertClause->targetList);
+            qry->upsertClause = transformUpsertClause(pstate, stmt->upsertClause);
+            rightRefState->isUpsert = false;
+        } else {
+            qry->upsertClause = transformUpsertClause(pstate, stmt->upsertClause);
+        }
     }
     /*
      * If we have a RETURNING clause, we need to add the target relation to
@@ -2179,8 +2291,17 @@ static Query* transformInsertStmt(ParseState* pstate, InsertStmt* stmt)
     qry->hintState = stmt->hintState;
     qry->hasIgnore = stmt->hasIgnore;
 
+    if (IS_ENABLE_RIGHT_REF(rightRefState)) {
+        qry->rightRefState = rightRefState;
+    } else {
+        qry->rightRefState = nullptr;
+        pstate->rightRefState = nullptr;
+        pfree(rightRefState);
+    }
+
     return qry;
 }
+
 #ifdef DOLPHIN
 static List* makeValueLists(ParseState* pstate)
 {
@@ -4051,6 +4172,49 @@ void fixResTargetListWithTableNameRef(Relation rd, RangeVar* rel, List* clause_l
     }
 }
 
+/* Merge the targetlists of multiple identical result relations into the one and change their rtindex. */
+static void MergeTargetList(List** targetLists, RangeTblEntry* rte1, int rtindex1,
+                            RangeTblEntry* rte2, int rtindex2)
+{
+    ListCell* l = NULL;
+
+    foreach (l, targetLists[rtindex2 - 1]) {
+        TargetEntry* tle = (TargetEntry*)lfirst(l);
+        tle->rtindex = (Index)rtindex1;
+        rte1->updatedCols = bms_add_member(rte1->updatedCols, tle->resno - FirstLowInvalidHeapAttributeNumber);
+        rte2->updatedCols = bms_del_member(rte2->updatedCols, tle->resno - FirstLowInvalidHeapAttributeNumber);
+    }
+    targetLists[rtindex1 - 1] = list_concat(targetLists[rtindex1 - 1], targetLists[rtindex2 - 1]);
+    targetLists[rtindex2 - 1] = NULL;
+}
+
+static void transformMultiTargetList(List* target_rangetblentry, List** targetLists)
+{
+    int rtindex1 = 1, rtindex2 = 1;
+    ListCell* l1;
+    ListCell* l2;
+
+    if (list_length(target_rangetblentry) <= 1) {
+        return;
+    }
+    foreach (l1, target_rangetblentry) {
+        RangeTblEntry* rte1 = (RangeTblEntry*)lfirst(l1);
+        rtindex2 = 0;
+
+        l2 = lnext(l1);
+        rtindex2 = rtindex1 + 1;
+        while (l2 != NULL) {
+            RangeTblEntry* rte2 = (RangeTblEntry*)lfirst(l2);
+            if (rte2->relid == rte1->relid) {
+                MergeTargetList(targetLists, rte1, rtindex1, rte2, rtindex2);
+            }
+            rtindex2++;
+            l2 = lnext(l2);
+        }
+        rtindex1++;
+    }
+}
+
 /*
  * If a relation has no column updated in the resultRelations, it is redundant
  * and remove it from the resultRelations.
@@ -4069,7 +4233,7 @@ static List* remove_update_redundant_relation(List* resultRelations, List* targe
     while (res != NULL) {
         res_next = lnext(res);
         target_rte = (RangeTblEntry*)lfirst(rte);
-        if (target_rte->updatedCols == NULL) {
+        if (bms_is_empty(target_rte->updatedCols)) {
             resultRelations = list_delete_cell(resultRelations, res, res_pre);
         } else {
             res_pre = res;
@@ -4150,7 +4314,7 @@ static Query* transformUpdateStmt(ParseState* pstate, UpdateStmt* stmt)
         qry->hasModifyingCTE = pstate->p_hasModifyingCTE;
     }
 
-    if (list_length(stmt->relationClause) > 1) {
+    if (list_length(stmt->relationClause) > 1 || !IsA(linitial(stmt->relationClause), RangeVar)) {
         /* add all relations from relationClause to resultRelations. */
         transformFromClause(pstate, stmt->relationClause, true, false, true);
         qry->resultRelations = pstate->p_updateRelations;
@@ -4466,7 +4630,12 @@ static List* transformUpdateTargetList(ParseState* pstate, List* qryTlist, List*
         tle->rtindex = rtindex;
         new_tle[rtindex - 1] = lappend(new_tle[rtindex - 1], tle);
     }
-    
+    /*
+     * If there are actually the same result relations by different alias
+     * or synonym in multiple update, merge their targetLists.
+     */
+    transformMultiTargetList(pstate->p_target_rangetblentry, new_tle);
+
     forboth (rb, pstate->p_target_rangetblentry, r, pstate->p_target_relation) {
         target_rte = (RangeTblEntry*)lfirst(rb);
         targetrel = (Relation)lfirst(r);
@@ -4478,6 +4647,7 @@ static List* transformUpdateTargetList(ParseState* pstate, List* qryTlist, List*
             tlist = list_concat(tlist, new_tle[i]);
         }
     }
+    pfree(new_tle);
     return tlist;
 }
 

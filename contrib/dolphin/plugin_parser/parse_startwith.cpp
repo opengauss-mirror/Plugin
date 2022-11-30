@@ -1432,6 +1432,7 @@ void AddStartWithCTEPseudoReturnColumns(CommonTableExpr *cte,
 
         /* make pseudo return column's TLE */
         tle = makeTargetEntry((Expr *)expr, list_length(ctequery->targetList) + 1, att->colname, false);
+        tle->isStartWithPseudo = true;
 
         /* Add the pseudo return column to CTE's target list */
         ctequery->targetList = lappend(ctequery->targetList, tle);
@@ -1481,10 +1482,7 @@ static void AddWithClauseToBranch(ParseState *pstate, SelectStmt *stmt, List *re
 
         foreach(lc2, clause->ctes) {
             CommonTableExpr *cte = (CommonTableExpr *)lfirst(lc2);
-
-            if (pg_strcasecmp(cte->ctename, info->relname) == 0) {
-                ctes = lappend(ctes, cte);
-            }
+            ctes = lappend(ctes, cte);
         }
 
         foreach(lc2, pstate->p_ctenamespace) {

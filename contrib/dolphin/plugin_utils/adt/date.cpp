@@ -18,6 +18,7 @@
 
 #include <limits.h>
 #include <float.h>
+#include <ctype.h>
 
 #include "access/hash.h"
 #include "commands/copy.h"
@@ -55,6 +56,8 @@ static int timetz2tm(TimeTzADT* time, struct pg_tm* tm, fsec_t* fsec, int* tzp);
 static int tm2time(struct pg_tm* tm, fsec_t fsec, TimeADT* result);
 static int tm2timetz(struct pg_tm* tm, fsec_t fsec, int tz, TimeTzADT* result);
 static void AdjustTimeForTypmod(TimeADT* time, int32 typmod);
+static int getStartingDigits(char* str);
+
 #ifdef DOLPHIN
 extern const char* extract_numericstr(const char* str);
 static char* adjust_b_format_time(char *str, int *timeSign, int *D, bool *hasD);
@@ -179,6 +182,27 @@ static char* anytime_typmodout(bool istz, int32 typmod)
     securec_check_ss(rc, "", "");
     return res;
 }
+
+/*
+ * Get starting digits of input string and return as int
+ *
+ * If the first character is not digit, return -1. NOTICE that if the first character is '+' or '-',
+ * it will consider it as invalid digit. So handle starting '+' nad '-' before using this function.
+ */
+static int getStartingDigits(char* str)
+{
+    int digitnum = 0;
+    long trunc_val = 0;
+    while (isdigit((unsigned char)*str)) {
+        trunc_val = trunc_val * 10 + (*str++ - '0');
+        digitnum++;
+        if (trunc_val > PG_INT32_MAX) {
+            return PG_INT32_MAX;
+        }
+    }
+    return digitnum == 0 ? -1 : trunc_val;
+}
+
 #ifdef DOLPHIN
 /* curdate()
  * @reruen  current date in b compatibility,    date

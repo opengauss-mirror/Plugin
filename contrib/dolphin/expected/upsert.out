@@ -97,7 +97,7 @@ select * from normal_03;
  c1  | c2  | c3  
 -----+-----+-----
  101 | 101 |   1
- 101 |   2 | 103
+ 101 |   2 | 104
 (2 rows)
 
 -- index on multiple column
