@@ -12313,7 +12313,7 @@ make_case(int location, PLpgSQL_expr *t_expr,
         ListCell *l;
 
         /* use a name unlikely to collide with any user names */
-        snprintf(varname, sizeof(varname), "__Case__Variable_%d__",
+        snprintf(varname, sizeof(varname), "__case__variable_%d__",
                  u_sess->plsql_cxt.curr_compile_context->plpgsql_nDatums);
 
         /*
@@ -12342,7 +12342,7 @@ make_case(int location, PLpgSQL_expr *t_expr,
             /* And do the string hacking */
             initStringInfo(&ds);
 
-            appendStringInfo(&ds, "SELECT \"%s\" IN (%s)",
+            appendStringInfo(&ds, "SELECT %s IN (%s)",
                              varname, expr->query + 7);
 
             pfree_ext(expr->query);
