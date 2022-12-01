@@ -177,11 +177,17 @@ CREATE CAST(int4 AS date) WITH FUNCTION int32_b_format_date(int4) AS IMPLICIT;
 
 CREATE OR REPLACE FUNCTION pg_catalog.int32_b_format_time (int4) RETURNS time LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'int32_b_format_time';
 
+CREATE OR REPLACE FUNCTION pg_catalog.int64_b_format_time (int8) RETURNS time LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'int64_b_format_time';
+
 CREATE OR REPLACE FUNCTION pg_catalog.numeric_b_format_time (numeric) RETURNS time LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'numeric_b_format_time';
 
 DROP CAST IF EXISTS (int4 AS time) CASCADE;
 
 CREATE CAST(int4 AS time) WITH FUNCTION int32_b_format_time(int4) AS IMPLICIT;
+
+DROP CAST IF EXISTS (int8 AS time) CASCADE;
+
+CREATE CAST(int8 AS time) WITH FUNCTION int64_b_format_time(int8) AS IMPLICIT;
 
 DROP CAST IF EXISTS (numeric AS time) CASCADE;
 

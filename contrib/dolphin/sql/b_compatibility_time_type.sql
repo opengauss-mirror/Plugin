@@ -126,6 +126,9 @@ SELECT -8385959::time;
 CREATE TABLE time_tbl (v time);
 INSERT INTO time_tbl VALUES(-561234);
 INSERT INTO time_tbl VALUES(-1202334);
+INSERT INTO time_tbl VALUES(99991231235959);
+INSERT INTO time_tbl VALUES(99991231235959.999999);
+INSERT INTO time_tbl VALUES('20220-01-01');
 -- test table's dafault typmod
 INSERT INTO time_tbl VALUES(232323.123);
 SELECT * FROM time_tbl;
@@ -528,6 +531,13 @@ select ('2001-10-10 11:11:59.123456'::time(6) / 2);
 select ('2001-10-10 11:11:59.123456'::datetime(6) + 1);
 select ('2001-10-10 11:11:59.123456'::datetime(6) - 1);
 select ('2001-10-10 11:11:59.123456'::datetime(6) / 2);
+
+-- no strict mode
+set dolphin.sql_mode = '';
+CREATE TABLE time_tbl (v time);
+INSERT INTO time_tbl VALUES('20220-01-01');
+select * from time_tbl;
+DROP TABLE time_tbl;
 
 \c postgres
 DROP DATABASE b_time_type;

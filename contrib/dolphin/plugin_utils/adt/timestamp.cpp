@@ -185,7 +185,6 @@ extern "C" DLL_PUBLIC Datum int64_b_format_timestamp(PG_FUNCTION_ARGS);
 PG_FUNCTION_INFO_V1_PUBLIC(int32_b_format_timestamp);
 extern "C" DLL_PUBLIC Datum int32_b_format_timestamp(PG_FUNCTION_ARGS);
 PG_FUNCTION_INFO_V1_PUBLIC(int64_b_format_datetime);
-extern "C" DLL_PUBLIC Datum int64_b_format_datetime(PG_FUNCTION_ARGS);
 PG_FUNCTION_INFO_V1_PUBLIC(int32_b_format_datetime);
 extern "C" DLL_PUBLIC Datum int32_b_format_datetime(PG_FUNCTION_ARGS);
 PG_FUNCTION_INFO_V1_PUBLIC(numeric_b_format_datetime);

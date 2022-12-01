@@ -50,6 +50,7 @@
 #define TIME_BOUND_WITHOUT_DICIMAL_SEC INT64CONST(B_FORMAT_MAX_TIME_USECS - 1000000)
 #define FROM_DAYS_MAX_DAY 3652500
 #define MAX_NUMBER_OF_DAY 3652424
+#define TIME_MAX_FRAC 999999
 #endif
 
 /* for b compatibility type*/
@@ -67,9 +68,11 @@ extern bool date_sub_interval(DateADT date, Interval *span, DateADT *result);
 extern void convert_to_time(Datum value, Oid valuetypid, TimeADT *time);
 
 #ifdef DOLPHIN
+bool cstring_to_time(const char *str, pg_tm *tm, fsec_t &fsec, int &timeSign, int &tm_type, bool &warnings);
 extern void check_b_format_time_range_with_ereport(TimeADT &time);
 extern void check_b_format_date_range_with_ereport(DateADT &date);
 extern Oid convert_to_datetime_date(Datum value, Oid valuetypid, Timestamp *datetime, DateADT *date);
+extern void adjust_time_range(pg_tm *tm, fsec_t &fsec, bool &warnings);
 extern TimeADT time_in_with_flag(char *str, unsigned int date_flag);
 extern bool time_in_with_sql_mode(char *str, TimeADT *result, unsigned int date_flag);
 extern bool date_add_interval(DateADT date, Interval *span, DateADT *result);

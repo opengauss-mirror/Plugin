@@ -5246,10 +5246,11 @@ select ifnull(bgint, tmstp) from typeset;
 (1 row)
 
 select ifnull(bgint, tm) from typeset;
-ERROR:  NVL types bigint and time without time zone cannot be matched
-LINE 1: select ifnull(bgint, tm) from typeset;
-                             ^
-CONTEXT:  referenced column: ifnull
+  ifnull  
+----------
+ 00:01:27
+(1 row)
+
 select ifnull(bgint, ch) from typeset;
  ifnull 
 --------

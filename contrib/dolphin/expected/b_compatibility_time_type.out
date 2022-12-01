@@ -575,6 +575,13 @@ SELECT -8385959::time;
 CREATE TABLE time_tbl (v time);
 INSERT INTO time_tbl VALUES(-561234);
 INSERT INTO time_tbl VALUES(-1202334);
+INSERT INTO time_tbl VALUES(99991231235959);
+INSERT INTO time_tbl VALUES(99991231235959.999999);
+INSERT INTO time_tbl VALUES('20220-01-01');
+ERROR:  invalid input syntax for type time: "20220-01-01"
+LINE 1: INSERT INTO time_tbl VALUES('20220-01-01');
+                                    ^
+CONTEXT:  referenced column: v
 -- test table's dafault typmod
 INSERT INTO time_tbl VALUES(232323.123);
 SELECT * FROM time_tbl;
@@ -582,8 +589,10 @@ SELECT * FROM time_tbl;
 ------------
  -56:12:34
  -120:23:34
+ 23:59:59
+ 24:00:00
  23:23:23
-(3 rows)
+(5 rows)
 
 -- test alter table add [column]
 ALTER TABLE time_tbl ADD COLUMN dt datetime;
@@ -594,9 +603,11 @@ SELECT * FROM time_tbl;
 ------------+--------------------------+------------------------------
  -56:12:34  |                          | 
  -120:23:34 |                          | 
+ 23:59:59   |                          | 
+ 24:00:00   |                          | 
  23:23:23   |                          | 
  23:23:24   | Sat Dec 12 10:10:11 2020 | Sat Dec 12 10:10:11 2020 PST
-(4 rows)
+(6 rows)
 
 DROP TABLE time_tbl;
 -- test alter table modify column
@@ -1732,6 +1743,17 @@ select ('2001-10-10 11:11:59.123456'::datetime(6) / 2);
  10005505055579.6
 (1 row)
 
+-- no strict mode
+set dolphin.sql_mode = '';
+CREATE TABLE time_tbl (v time);
+INSERT INTO time_tbl VALUES('20220-01-01');
+select * from time_tbl;
+    v     
+----------
+ 02:02:20
+(1 row)
+
+DROP TABLE time_tbl;
 \c postgres
 DROP DATABASE b_time_type;
 DROP TABLESPACE b_time_type_example;

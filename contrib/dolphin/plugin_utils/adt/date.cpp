@@ -59,11 +59,14 @@ static void AdjustTimeForTypmod(TimeADT* time, int32 typmod);
 static int getStartingDigits(char* str);
 
 #ifdef DOLPHIN
+bool check_pg_tm_time_part(pg_tm *tm, fsec_t fsec);
 extern const char* extract_numericstr(const char* str);
 static char* adjust_b_format_time(char *str, int *timeSign, int *D, bool *hasD);
 
 PG_FUNCTION_INFO_V1_PUBLIC(int32_b_format_time);
 extern "C" DLL_PUBLIC Datum int32_b_format_time(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(int64_b_format_time);
+extern "C" DLL_PUBLIC Datum int64_b_format_time(PG_FUNCTION_ARGS);
 PG_FUNCTION_INFO_V1_PUBLIC(numeric_b_format_time);
 extern "C" DLL_PUBLIC Datum numeric_b_format_time(PG_FUNCTION_ARGS);
 PG_FUNCTION_INFO_V1_PUBLIC(int32_b_format_date);
@@ -1412,7 +1415,6 @@ Datum time_in(PG_FUNCTION_ARGS)
     char* time_fmt = NULL;
 #ifdef DOLPHIN
     int timeSign = 1;
-    int D = 0;
 #endif
     /*
      * this case is used for time format is specified.
@@ -1427,13 +1429,39 @@ Datum time_in(PG_FUNCTION_ARGS)
         to_timestamp_from_format(tm, &fsec, str, (void*)time_fmt);
     } else {
 #ifdef DOLPHIN
-        /* check if empty */
-        if (strlen(str) == 0) {
-            PG_RETURN_TIMEADT(0);
+        int tm_type;
+        bool warnings;
+        errno_t rc = memset_s(tm, sizeof(struct pg_tm), 0, sizeof(struct pg_tm));
+        securec_check(rc, "\0", "\0");
+        cstring_to_time(str, tm, fsec, timeSign, tm_type, warnings);
+
+        if (warnings) {
+            /* tt2 stores openGauss's parsing result while tt stores M*'s parsing result */
+            struct pg_tm tt2;
+            tm = &tt2;
+            int D = 0;
+            bool hasD = false;
+            char *adjusted = adjust_b_format_time(str, &timeSign, &D, &hasD);
+            /* check if empty */
+            if (strlen(adjusted) == 0) {
+                PG_RETURN_TIMEADT(0);
+            }
+            dterr = ParseDateTime(adjusted, workbuf, sizeof(workbuf), field, ftype, MAXDATEFIELDS, &nf);
+            if (dterr == 0) {
+                dterr = DecodeTimeOnlyForBDatabase(field, ftype, nf, &dtype, tm, &fsec, &tz, D);
+            }
+            if (dterr != 0) {
+                /*
+                 * If sql mode is strict, then an error had happend,
+                 * otherwise we can return tt which stores M*'s parsing result.
+                 */
+                if (SQL_MODE_STRICT()) {
+                    DateTimeParseError(dterr, str, "time");
+                } else {
+                    tm = &tt; // switch to M*'s parsing result
+                }
+            }
         }
-        bool hasD = false;
-        char *adjusted = adjust_b_format_time(str, &timeSign, &D, &hasD);
-        dterr = ParseDateTime(adjusted, workbuf, sizeof(workbuf), field, ftype, MAXDATEFIELDS, &nf);
 #else
         /*
          * original pg time format parsing
@@ -1441,23 +1469,8 @@ Datum time_in(PG_FUNCTION_ARGS)
         dterr = ParseDateTime(str, workbuf, sizeof(workbuf), field, ftype, MAXDATEFIELDS, &nf);
         if (dterr == 0)
             dterr = DecodeTimeOnly(field, ftype, nf, &dtype, tm, &fsec, &tz);
-#endif
-        if (dterr != 0)
+        if (dterr != 0){
             DateTimeParseError(dterr, str, "time");
-#ifdef DOLPHIN
-        if (dterr == 0) {
-            if (ftype[0] == DTK_NUMBER && nf == 1) {
-                /* for example: str = "2 121212" , "231034.1234" */
-                if (NumberTime(false, field[0], tm, &fsec, D, hasD)) {
-                    ereport(ERROR,
-                        (errcode(ERRCODE_INVALID_DATETIME_FORMAT),
-                            errmsg("invalid input syntax for type %s: \"%s\"", "time", str)));
-                }
-            } else {
-                dterr = DecodeTimeOnlyForBDatabase(field, ftype, nf, &dtype, tm, &fsec, &tz, D);
-                if (dterr != 0)
-                    DateTimeParseError(dterr, str, "time");
-            }
         }
 #endif
     }
@@ -1565,6 +1578,16 @@ Datum int32_b_format_time(PG_FUNCTION_ARGS)
     }
     tm2time(tm, 0, &result);
     PG_RETURN_TIMEADT(result * sign);
+}
+
+/* int8(hhmmss) convert to b format time */
+Datum int64_b_format_time(PG_FUNCTION_ARGS) {
+    int64 number = PG_GETARG_INT64(0);
+    if (number >= (int64)pow_of_10[10]) { /* datetime: 0001-00-00 00-00-00 */
+        Datum datetime = DirectFunctionCall1(int64_b_format_datetime, Int64GetDatum(number));
+        return DirectFunctionCall1(timestamp_time, datetime);
+    }
+    return DirectFunctionCall1(int32_b_format_time, Int32GetDatum((int32)number));
 }
 
 static char* adjust_b_format_time(char *str, int *timeSign, int *D, bool *hasD)
@@ -3340,6 +3363,222 @@ ScalarVector* vtimestamp_part(PG_FUNCTION_ARGS)
     return presult;
 }
 #ifdef DOLPHIN
+
+/**
+ * @Description: Convert a time string to a pg_tm struct. The parsing logic
+ * is compatible with the str_to_time() function in MySQL
+ * @param [in] str : A string in full TIMESTAMP format or TIME format
+ * @param [out] tm : to save time value
+ * @param [out] fsec: to save fractional second part of time
+ * @param [out] timeSign: to save sign of time
+ * @param [out] tm_type: return the time type corresponding to str.
+ * @param [out] warnings: return true when an parse exception occurs
+ *
+ * @return true if success, otherwise false.
+ */
+bool cstring_to_time(const char *str, pg_tm *tm, fsec_t &fsec, int &timeSign, int &tm_type, bool &warnings)
+{
+    size_t length = strlen(str);
+    ulong date[4]; /* 0~3 correspond to: days, hours, minutes, seconds in turn*/
+    uint pos;
+    int nano;
+    const char *end = str + length, *end_of_days;
+    bool found_days, found_hours;
+    uint64 value;
+    errno_t rc;
+
+    bool is_internal_format = false; /* If true, str is a number format(HHMMSS[.fsec]) */
+
+    /* init */
+    rc = memset_s(date, sizeof(date), 0, sizeof(date));
+    securec_check(rc, "\0", "\0");
+    fsec = nano = warnings = 0;
+
+    /* Skip space at start */
+    for (; str != end && isspace((unsigned char)*str); str++)
+        length--;
+
+    /* Determine positive or negative time */
+    if (str != end && *str == '-') {
+        timeSign = -1;
+        str++;
+        length--;
+    }
+    if (str == end)
+        return false; // error format
+
+    /* Check first if str is a full TIMESTAMP */
+    if (length >= 12) {
+        cstring_to_datetime(str, (TIME_FUZZY_DATE | TIME_DATETIME_ONLY), tm_type, tm, fsec, nano, warnings);
+        if (nano >= 500) {
+            fsec += 1; /* round */
+        }
+        if (tm_type != DTK_NONE) {
+            return tm_type != DTK_ERROR;
+        }
+        fsec = nano = warnings = 0;
+    }
+
+    /* Not a timestamp. Try to get this as a DAYS_TO_SECOND string */
+    for (value = 0; str != end && isdigit((unsigned char)*str); str++) {
+        value = value * 10L + (long)(*str - '0');
+    }
+
+    if (value > UINT_MAX) {
+        return false;
+    }
+
+    /* Skip all space after 'days' */
+    end_of_days = str;
+    for (; str != end && isspace((unsigned char)*str); str++)
+        ;
+
+    pos = found_days = found_hours = 0;
+    if ((end - str) > 1 && str != end_of_days && isdigit((unsigned char)*str)) {
+        /* Found days part */
+        date[0] = (ulong)value;
+        pos = 1; /* Assume next is hours */
+        found_days = 1;
+    } else if ((end - str) > 1 && *str == ':' && isdigit((unsigned char)*(str + 1))) {
+        date[0] = 0; /* not found days part. day set to 0 */
+        date[1] = (ulong)value;
+        pos = 2; /* Assume next is minutes */
+        found_hours = 1;
+        str++;
+    } else {
+        /* str is a number format */
+        date[0] = 0;
+        date[1] = (ulong)(value / 10000);
+        date[2] = (ulong)(value / 100 % 100);
+        date[3] = (ulong)(value % 100);
+        pos = 4;
+        is_internal_format = true;
+    }
+
+    if (!is_internal_format) {
+        for (;;) {
+            /* Parse the remaining time parts (excluding the fractional second part) */
+            for (value = 0; str != end && isdigit((unsigned char)*str); str++) {
+                value = value * 10L + (long)(*str - '0');
+            }
+            date[pos++] = (ulong)value;
+            if (pos == 4 || (end - str) < 2 || *str != ':' || !isdigit((unsigned char)*(str + 1))) {
+                break;
+            }
+            str++;
+        }
+    }
+
+    /* Parse fractional second part */
+    pos = 4;
+    if (str != end && *str == '.') {
+        int field_length = MAX_TIME_PRECISION;
+        str++;
+        for (value = 0; str != end && isdigit((unsigned char)*str); str++) {
+            if (field_length-- > 0) {
+                value = value * 10L + (long)(*str - '0');
+            }
+        }
+        if (field_length >= 0) {
+            value *= (long)pow_of_10[field_length];
+        } else {
+            /* Compatible with MySQL's special nanosecond carry mode */
+            nano = (int)(*(str - 1) - '0') * pow_of_10[2];
+        }
+        fsec = (int32)value;
+    }
+
+    /* field overflow checks */
+    if (date[0] > INT_MAX || date[1] > INT_MAX || date[2] > INT_MAX || date[3] > INT_MAX) {
+        return false; // overflow error
+    }
+    /* set pg_tm and type*/
+    tm->tm_year = 0;
+    tm->tm_mon = 0;
+    tm->tm_mday = date[0];
+    tm->tm_hour = date[1];
+    tm->tm_min = date[2];
+    tm->tm_sec = date[3];
+    tm_type = DTK_TIME;
+
+    if (!check_pg_tm_time_part(tm, fsec)) {
+        warnings = true; // warning: MYSQL_TIME_WARN_OUT_OF_RANGE
+        return false;    // error: out of range
+    }
+
+    if (nano >= 500) {
+        fsec += 1; /* round */
+    }
+
+    /* adjust time into supported time range*/
+    adjust_time_range(tm, fsec, warnings);
+    tm->tm_hour += HOURS_PER_DAY * tm->tm_mday;
+
+    while (str != end) {
+        if (!isspace((unsigned char)*str)) {
+            warnings = true;
+            break;
+        }
+        str++;
+    }
+    return true;
+}
+
+/**
+ * @Description: Check if TIME parts are out of range.
+ * @in tm - pg_tm value to be checked.
+ * @in fsec - fractional second part in TIME
+ * @return TRUE if any part is out of range. False if all parts is ok.
+ */
+bool check_pg_tm_time_part(pg_tm *tm, fsec_t fsec)
+{
+    return tm->tm_hour >= 0 && tm->tm_min >= 0 && tm->tm_min <= TIME_MAX_MINUTE && tm->tm_sec >= 0 &&
+           tm->tm_sec <= TIME_MAX_MINUTE && fsec >= 0 && fsec <= TIME_MAX_FRAC;
+}
+
+/**
+ * @Description: Check if TIME value in pg_tm are out of range.
+ * @in tm - pg_tm value to be checked.
+ * @in fsec - fractional second part in TIME
+ * NOTIC: Ensure that all time parts in tm are not out of range before input by check_pg_tm_time_part()
+ *
+ * @return TRUE if time is out of range, false otherwise.
+ */
+bool check_pg_tm_time_range(pg_tm *tm, fsec_t fsec)
+{
+    int64 hour = (int64)tm->tm_hour + HOURS_PER_DAY * (int64)tm->tm_mday;
+    if (hour <= TIME_MAX_HOUR &&
+        (hour != TIME_MAX_HOUR || tm->tm_min != TIME_MAX_MINUTE || tm->tm_sec != TIME_MAX_SECOND || !fsec)) {
+        return true;
+    }
+    return false;
+}
+
+/**
+ * @Description: Adjust TIME value to lie in [-838:59:59, 838:59:59].
+ * If TIME value lies outside of the range, set it to the closest endpoint of the range
+ * and set warnings to true.
+ * @param [in] tm : pg_tm value to be adjust.
+ * @param [in] fsec - fractional second part in TIME
+ * @param [out] warnings - Set to TRUE if time is out of range.
+ * NOTIC: Ensure that all time parts in tm are not out of range before input by check_pg_tm_time_part()
+ *
+ * @return void
+ */
+void adjust_time_range(pg_tm *tm, fsec_t &fsec, bool &warnings)
+{
+    if (check_pg_tm_time_range(tm, fsec)) {
+        return;
+    }
+    /* If time out of range, set max time value */
+    fsec = 0;
+    tm->tm_mday = 0;
+    tm->tm_hour = TIME_MAX_HOUR;
+    tm->tm_min = TIME_MAX_MINUTE;
+    tm->tm_sec = TIME_MAX_SECOND;
+    warnings = true;
+}
+
 /* makedate()
  * @Description: Convert yyyy.ddd into date type
  * @return: Convert result, date type.
