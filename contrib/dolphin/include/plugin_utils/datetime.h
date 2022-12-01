@@ -42,9 +42,11 @@ extern void Unixtimestamp2tm(double unixtimestamp, struct pg_tm* tm, fsec_t* fse
 extern bool numeric_to_lldiv_t(NumericVar *from, lldiv_t *to);
 
 #ifdef DOLPHIN
-extern void lldiv_decode_tm(Numeric num, lldiv_t *div, struct pg_tm *tm, unsigned int date_flag);
+extern void lldiv_decode_tm(Numeric num, lldiv_t *div, struct pg_tm *tm, fsec_t *fsec, unsigned int date_flag, int *date_type);
 extern bool lldiv_decode_tm_with_sql_mode(Numeric num, lldiv_t *div, struct pg_tm *tm, unsigned int date_flag);
+extern void Numeric_to_lldiv(Numeric num, lldiv_t *div);
 extern void NumericVar2lldiv(NumericVar *from, lldiv_t *to);
+extern bool lldiv_decode_datetime(Numeric num, lldiv_t *div, struct pg_tm *tm, fsec_t *fsec, unsigned int date_flag, int *date_type);
 
 extern unsigned long long pow_of_10[20];
 extern const char* unitnms[20];
