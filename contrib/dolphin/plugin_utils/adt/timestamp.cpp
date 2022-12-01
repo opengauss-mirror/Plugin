@@ -296,6 +296,8 @@ PG_FUNCTION_INFO_V1_PUBLIC(from_unixtime_with_two_arg);
 extern "C" DLL_PUBLIC Datum from_unixtime_with_two_arg(PG_FUNCTION_ARGS);
 PG_FUNCTION_INFO_V1_PUBLIC(timestamp_uint8);
 extern "C" DLL_PUBLIC Datum timestamp_uint8(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(datetime_float);
+extern "C" DLL_PUBLIC Datum datetime_float(PG_FUNCTION_ARGS);
 #endif
 
 /* b format datetime and timestamp type */
@@ -9824,5 +9826,19 @@ Datum timestamp_uint8(PG_FUNCTION_ARGS)
         ereport(ERROR, (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE), errmsg("date out of range")));
     }
     PG_RETURN_UINT64(result);
+}
+
+Datum datetime_float(PG_FUNCTION_ARGS)
+{
+    Timestamp timestamp = PG_GETARG_TIMESTAMP(0);
+    fsec_t fsec;
+    struct pg_tm tt, *tm = &tt;
+    float8 result = 0;
+    if (timestamp2tm(timestamp, NULL, tm, &fsec, NULL, NULL) == 0) {
+        result = tm->tm_year*1e10 + tm->tm_mon*1e8 + tm->tm_mday*1e6 + tm->tm_hour*1e4 + tm->tm_min*1e2 + tm->tm_sec + fsec/1e6;
+    } else {
+        ereport(ERROR, (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE), errmsg("date out of range")));
+    }
+    PG_RETURN_FLOAT8(result);
 }
 #endif

@@ -121,6 +121,8 @@ extern bool cstring_to_datetime(const char* str,  time_flags flags, int &tm_type
 extern bool datetime_add_nanoseconds_with_round(pg_tm *tm, fsec_t &fsec, int nano);
 extern bool cstring_to_tm(const char *expr, pg_tm *tm, fsec_t &fsec);
 
+#define tmfsec2float(tm, fsec) ((tm)->tm_hour*10000 + (tm)->tm_min*100 + (tm)->tm_sec + (fsec)/1000000.0)
+
 #endif
 
 #endif // !FRONTEND_PARSER
