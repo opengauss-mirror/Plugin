@@ -521,8 +521,8 @@ SELECT * FROM ti_hash PARTITION(P2);
 DROP TABLE ti_hash;
 
 -- test cast function
-select cast(-232323.555 as time);
-select cast('20121010101010.555' as datetime);
+SELECT cast(-232323.555 as time);
+SELECT cast('20121010101010.555' as datetime);
 
 -- test time type operations
 select ('2001-10-10 11:11:59.123456'::time(6) + 1);
@@ -538,6 +538,47 @@ CREATE TABLE time_tbl (v time);
 INSERT INTO time_tbl VALUES('20220-01-01');
 select * from time_tbl;
 DROP TABLE time_tbl;
+
+-- test sql_mode NO_ZERO_DATE
+CREATE TABLE t_NO_ZERO_DATE_date(v date);
+CREATE TABLE t_NO_ZERO_DATE_datetime(v datetime);
+CREATE TABLE t_NO_ZERO_DATE_timestamp(v timestamp);
+
+INSERT INTO t_NO_ZERO_DATE_date(v) VALUES('0000-00-00');
+INSERT INTO t_NO_ZERO_DATE_date(v) VALUES('0000-00-01');
+INSERT INTO t_NO_ZERO_DATE_date(v) VALUES('0000-01-00');
+INSERT INTO t_NO_ZERO_DATE_date(v) VALUES('2000-00-00');
+INSERT INTO t_NO_ZERO_DATE_datetime(v) VALUES('0000-00-00 10:01');
+INSERT INTO t_NO_ZERO_DATE_datetime(v) VALUES('0000-00-01 10:01');
+INSERT INTO t_NO_ZERO_DATE_datetime(v) VALUES('0000-01-00 10:01');
+INSERT INTO t_NO_ZERO_DATE_datetime(v) VALUES('2000-00-00 10:01');
+INSERT INTO t_NO_ZERO_DATE_timestamp(v) VALUES('0000-00-00 10:01');
+INSERT INTO t_NO_ZERO_DATE_timestamp(v) VALUES('0000-00-01 10:01');
+INSERT INTO t_NO_ZERO_DATE_timestamp(v) VALUES('0000-01-00 10:01');
+INSERT INTO t_NO_ZERO_DATE_timestamp(v) VALUES('2000-00-00 10:01');
+
+SET dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group';
+INSERT INTO t_NO_ZERO_DATE_date(v) VALUES('0000-00-00');
+INSERT INTO t_NO_ZERO_DATE_date(v) VALUES('0000-00-01');
+INSERT INTO t_NO_ZERO_DATE_date(v) VALUES('0000-01-00');
+INSERT INTO t_NO_ZERO_DATE_date(v) VALUES('2000-00-00');
+INSERT INTO t_NO_ZERO_DATE_datetime(v) VALUES('0000-00-00 10:01');
+INSERT INTO t_NO_ZERO_DATE_datetime(v) VALUES('0000-00-01 10:01');
+INSERT INTO t_NO_ZERO_DATE_datetime(v) VALUES('0000-01-00 10:01');
+INSERT INTO t_NO_ZERO_DATE_datetime(v) VALUES('2000-00-00 10:01');
+INSERT INTO t_NO_ZERO_DATE_timestamp(v) VALUES('0000-00-00 10:01');
+INSERT INTO t_NO_ZERO_DATE_timestamp(v) VALUES('0000-00-01 10:01');
+INSERT INTO t_NO_ZERO_DATE_timestamp(v) VALUES('0000-01-00 10:01');
+INSERT INTO t_NO_ZERO_DATE_timestamp(v) VALUES('2000-00-00 10:01');
+
+SELECT * FROM t_NO_ZERO_DATE_date;
+SELECT * FROM t_NO_ZERO_DATE_datetime;
+SELECT * FROM t_NO_ZERO_DATE_timestamp;
+
+DROP TABLE t_NO_ZERO_DATE_date;
+DROP TABLE t_NO_ZERO_DATE_datetime;
+DROP TABLE t_NO_ZERO_DATE_timestamp;
+RESET dolphin.sql_mode;
 
 \c postgres
 DROP DATABASE b_time_type;

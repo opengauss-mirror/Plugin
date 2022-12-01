@@ -298,6 +298,9 @@ static int strtoi(const char* nptr, char** endptr, int base)
 
 int date2j(int y, int m, int d)
 {
+#ifdef DOLPHIN
+    if (y == 0 && m == 0 && d == 0) return JDATE_ALL_ZERO_VALUE;
+#endif
     int julian;
     int century;
 
@@ -338,6 +341,14 @@ void j2date(int jd, int* year, int* month, int* day)
     quad = julian * 2141 / 65536;
     *day = julian - 7834 * quad / 256;
     *month = (quad + 10) % MONTHS_PER_YEAR + 1;
+
+#ifdef DOLPHIN
+    if (jd == JDATE_ALL_ZERO_VALUE) {
+        *year = 0;
+        *month = 0;
+        *day = 0;
+    }
+#endif
 
     return;
 } /* j2date() */
@@ -2292,7 +2303,7 @@ static int ValidateDate(unsigned int fmask, bool isjulian, bool is2digits, bool 
     /* check for valid month */
     if (fmask & DTK_M(MONTH)) {
 #ifdef DOLPHIN
-        if ((date_flag & ENABLE_ZERO_MONTH)) {
+        if ((date_flag & ENABLE_ZERO_MONTH) || (!SQL_MODE_NO_ZERO_DATE() && SQL_MODE_STRICT())) {
             if (tm->tm_mon < 0 || tm->tm_mon > MONTHS_PER_YEAR)
                 return DTERR_MD_FIELD_OVERFLOW;
         } else if (tm->tm_mon < 1 || tm->tm_mon > MONTHS_PER_YEAR)
@@ -2305,7 +2316,7 @@ static int ValidateDate(unsigned int fmask, bool isjulian, bool is2digits, bool 
     /* minimal check for valid day */
     if (fmask & DTK_M(DAY)) {
 #ifdef DOLPHIN
-        if ((date_flag & ENABLE_ZERO_DAY)) {
+        if ((date_flag & ENABLE_ZERO_DAY) || (!SQL_MODE_NO_ZERO_DATE() && SQL_MODE_STRICT())) {
             if (tm->tm_mday < 0 || tm->tm_mday > 31)
                 return DTERR_MD_FIELD_OVERFLOW;
         } else if(tm->tm_mday < 1 || tm->tm_mday > 31)
@@ -2315,7 +2326,16 @@ static int ValidateDate(unsigned int fmask, bool isjulian, bool is2digits, bool 
             return DTERR_MD_FIELD_OVERFLOW;
     }
 
-    if ((fmask & DTK_DATE_M) == DTK_DATE_M) {
+#ifdef DOLPHIN
+    if ((date_flag & (ENABLE_ZERO_DAY | ENABLE_ZERO_MONTH)) == 0 && (fmask & (DTK_M(DAY) | DTK_M(MONTH) | DTK_M(YEAR)))) {
+        int zero_cnt = (tm->tm_mon == 0) + (tm->tm_mday == 0) + (tm->tm_year == 0);
+        if (zero_cnt > 1 && zero_cnt < 3) {
+            return DTERR_FIELD_OVERFLOW;
+        }
+    }
+#endif
+
+    if ((fmask & DTK_DATE_M) == DTK_DATE_M && (tm->tm_mon && tm->tm_year && tm->tm_mday)) {
         /*
          * Check for valid day of month, now that we know for sure the month
          * and year.  Note we don't use MD_FIELD_OVERFLOW here, since it seems
@@ -3555,7 +3575,7 @@ void EncodeDateOnlyForBDatabase(struct pg_tm* tm, int style, char* str)
 {
     errno_t rc;
 #ifdef DOLPHIN
-    if (date_flag & ENABLE_ZERO_MONTH) {
+    if (date_flag & ENABLE_ZERO_MONTH || (!SQL_MODE_NO_ZERO_DATE() && SQL_MODE_STRICT())) {
         Assert(tm->tm_mon >= 0 && tm->tm_mon <= MONTHS_PER_YEAR);
     } else {
         Assert(tm->tm_mon >= 1 && tm->tm_mon <= MONTHS_PER_YEAR);
@@ -3686,7 +3706,21 @@ void EncodeDateTimeForBDatabase(struct pg_tm* tm, fsec_t fsec, bool print_tz, in
 {
     int day;
     errno_t rc = EOK;
+#ifdef DOLPHIN
+    if (!SQL_MODE_NO_ZERO_DATE() && SQL_MODE_STRICT()) {
+        Assert(tm->tm_mon >= 0 && tm->tm_mon <= MONTHS_PER_YEAR);
+    } else {
+        Assert(tm->tm_mon >= 1 && tm->tm_mon <= MONTHS_PER_YEAR);
+    }
+#else
     Assert(tm->tm_mon >= 1 && tm->tm_mon <= MONTHS_PER_YEAR);
+#endif
+
+#ifdef DOLPHIN   
+    if (style == USE_POSTGRES_DATES && tm->tm_year == 0  && tm->tm_mon == 0 && tm->tm_mday == 0) {
+        style = USE_ISO_DATES;
+    }
+#endif
 
     /*
      * Negative tm_isdst means we have no valid time zone translation.

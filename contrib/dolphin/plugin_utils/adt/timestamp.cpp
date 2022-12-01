@@ -2291,10 +2291,14 @@ recalc_t:
     utime = (pg_time_t)dt;
     if ((Timestamp)utime == dt) {
         struct pg_tm* tx = pg_localtime(&utime, attimezone ? attimezone : session_timezone);
-
-        tm->tm_year = tx->tm_year + 1900;
-        tm->tm_mon = tx->tm_mon + 1;
-        tm->tm_mday = tx->tm_mday;
+#ifdef DOLPHIN
+        if (tm->tm_year || tm->tm_mon || tm->tm_mday)
+#endif
+        {
+            tm->tm_year = tx->tm_year + 1900;
+            tm->tm_mon = tx->tm_mon + 1;
+            tm->tm_mday = tx->tm_mday;
+        }
         tm->tm_hour = tx->tm_hour;
         tm->tm_min = tx->tm_min;
         tm->tm_sec = tx->tm_sec;

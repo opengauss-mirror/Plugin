@@ -1694,13 +1694,13 @@ SELECT * FROM ti_hash PARTITION(P2);
 
 DROP TABLE ti_hash;
 -- test cast function
-select cast(-232323.555 as time);
+SELECT cast(-232323.555 as time);
    time    
 -----------
  -23:23:24
 (1 row)
 
-select cast('20121010101010.555' as datetime);
+SELECT cast('20121010101010.555' as datetime);
         timestamp         
 --------------------------
  Wed Oct 10 10:10:11 2012
@@ -1754,6 +1754,153 @@ select * from time_tbl;
 (1 row)
 
 DROP TABLE time_tbl;
+-- test sql_mode NO_ZERO_DATE
+CREATE TABLE t_NO_ZERO_DATE_date(v date);
+CREATE TABLE t_NO_ZERO_DATE_datetime(v datetime);
+CREATE TABLE t_NO_ZERO_DATE_timestamp(v timestamp);
+INSERT INTO t_NO_ZERO_DATE_date(v) VALUES('0000-00-00');
+ERROR:  date/time field value out of range: "0000-00-00"
+LINE 1: INSERT INTO t_NO_ZERO_DATE_date(v) VALUES('0000-00-00');
+                                                  ^
+HINT:  Perhaps you need a different "datestyle" setting.
+CONTEXT:  referenced column: v
+INSERT INTO t_NO_ZERO_DATE_date(v) VALUES('0000-00-01');
+ERROR:  date/time field value out of range: "0000-00-01"
+LINE 1: INSERT INTO t_NO_ZERO_DATE_date(v) VALUES('0000-00-01');
+                                                  ^
+HINT:  Perhaps you need a different "datestyle" setting.
+CONTEXT:  referenced column: v
+INSERT INTO t_NO_ZERO_DATE_date(v) VALUES('0000-01-00');
+ERROR:  date/time field value out of range: "0000-01-00"
+LINE 1: INSERT INTO t_NO_ZERO_DATE_date(v) VALUES('0000-01-00');
+                                                  ^
+HINT:  Perhaps you need a different "datestyle" setting.
+CONTEXT:  referenced column: v
+INSERT INTO t_NO_ZERO_DATE_date(v) VALUES('2000-00-00');
+ERROR:  date/time field value out of range: "2000-00-00"
+LINE 1: INSERT INTO t_NO_ZERO_DATE_date(v) VALUES('2000-00-00');
+                                                  ^
+HINT:  Perhaps you need a different "datestyle" setting.
+CONTEXT:  referenced column: v
+INSERT INTO t_NO_ZERO_DATE_datetime(v) VALUES('0000-00-00 10:01');
+ERROR:  date/time field value out of range: "0000-00-00 10:01"
+LINE 1: INSERT INTO t_NO_ZERO_DATE_datetime(v) VALUES('0000-00-00 10...
+                                                      ^
+HINT:  Perhaps you need a different "datestyle" setting.
+CONTEXT:  referenced column: v
+INSERT INTO t_NO_ZERO_DATE_datetime(v) VALUES('0000-00-01 10:01');
+ERROR:  date/time field value out of range: "0000-00-01 10:01"
+LINE 1: INSERT INTO t_NO_ZERO_DATE_datetime(v) VALUES('0000-00-01 10...
+                                                      ^
+HINT:  Perhaps you need a different "datestyle" setting.
+CONTEXT:  referenced column: v
+INSERT INTO t_NO_ZERO_DATE_datetime(v) VALUES('0000-01-00 10:01');
+ERROR:  date/time field value out of range: "0000-01-00 10:01"
+LINE 1: INSERT INTO t_NO_ZERO_DATE_datetime(v) VALUES('0000-01-00 10...
+                                                      ^
+HINT:  Perhaps you need a different "datestyle" setting.
+CONTEXT:  referenced column: v
+INSERT INTO t_NO_ZERO_DATE_datetime(v) VALUES('2000-00-00 10:01');
+ERROR:  date/time field value out of range: "2000-00-00 10:01"
+LINE 1: INSERT INTO t_NO_ZERO_DATE_datetime(v) VALUES('2000-00-00 10...
+                                                      ^
+HINT:  Perhaps you need a different "datestyle" setting.
+CONTEXT:  referenced column: v
+INSERT INTO t_NO_ZERO_DATE_timestamp(v) VALUES('0000-00-00 10:01');
+ERROR:  date/time field value out of range: "0000-00-00 10:01"
+LINE 1: INSERT INTO t_NO_ZERO_DATE_timestamp(v) VALUES('0000-00-00 1...
+                                                       ^
+HINT:  Perhaps you need a different "datestyle" setting.
+CONTEXT:  referenced column: v
+INSERT INTO t_NO_ZERO_DATE_timestamp(v) VALUES('0000-00-01 10:01');
+ERROR:  date/time field value out of range: "0000-00-01 10:01"
+LINE 1: INSERT INTO t_NO_ZERO_DATE_timestamp(v) VALUES('0000-00-01 1...
+                                                       ^
+HINT:  Perhaps you need a different "datestyle" setting.
+CONTEXT:  referenced column: v
+INSERT INTO t_NO_ZERO_DATE_timestamp(v) VALUES('0000-01-00 10:01');
+ERROR:  date/time field value out of range: "0000-01-00 10:01"
+LINE 1: INSERT INTO t_NO_ZERO_DATE_timestamp(v) VALUES('0000-01-00 1...
+                                                       ^
+HINT:  Perhaps you need a different "datestyle" setting.
+CONTEXT:  referenced column: v
+INSERT INTO t_NO_ZERO_DATE_timestamp(v) VALUES('2000-00-00 10:01');
+ERROR:  date/time field value out of range: "2000-00-00 10:01"
+LINE 1: INSERT INTO t_NO_ZERO_DATE_timestamp(v) VALUES('2000-00-00 1...
+                                                       ^
+HINT:  Perhaps you need a different "datestyle" setting.
+CONTEXT:  referenced column: v
+SET dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group';
+INSERT INTO t_NO_ZERO_DATE_date(v) VALUES('0000-00-00');
+INSERT INTO t_NO_ZERO_DATE_date(v) VALUES('0000-00-01');
+ERROR:  date/time field value out of range: "0000-00-01"
+LINE 1: INSERT INTO t_NO_ZERO_DATE_date(v) VALUES('0000-00-01');
+                                                  ^
+CONTEXT:  referenced column: v
+INSERT INTO t_NO_ZERO_DATE_date(v) VALUES('0000-01-00');
+ERROR:  date/time field value out of range: "0000-01-00"
+LINE 1: INSERT INTO t_NO_ZERO_DATE_date(v) VALUES('0000-01-00');
+                                                  ^
+CONTEXT:  referenced column: v
+INSERT INTO t_NO_ZERO_DATE_date(v) VALUES('2000-00-00');
+ERROR:  date/time field value out of range: "2000-00-00"
+LINE 1: INSERT INTO t_NO_ZERO_DATE_date(v) VALUES('2000-00-00');
+                                                  ^
+CONTEXT:  referenced column: v
+INSERT INTO t_NO_ZERO_DATE_datetime(v) VALUES('0000-00-00 10:01');
+INSERT INTO t_NO_ZERO_DATE_datetime(v) VALUES('0000-00-01 10:01');
+ERROR:  date/time field value out of range: "0000-00-01 10:01"
+LINE 1: INSERT INTO t_NO_ZERO_DATE_datetime(v) VALUES('0000-00-01 10...
+                                                      ^
+CONTEXT:  referenced column: v
+INSERT INTO t_NO_ZERO_DATE_datetime(v) VALUES('0000-01-00 10:01');
+ERROR:  date/time field value out of range: "0000-01-00 10:01"
+LINE 1: INSERT INTO t_NO_ZERO_DATE_datetime(v) VALUES('0000-01-00 10...
+                                                      ^
+CONTEXT:  referenced column: v
+INSERT INTO t_NO_ZERO_DATE_datetime(v) VALUES('2000-00-00 10:01');
+ERROR:  date/time field value out of range: "2000-00-00 10:01"
+LINE 1: INSERT INTO t_NO_ZERO_DATE_datetime(v) VALUES('2000-00-00 10...
+                                                      ^
+CONTEXT:  referenced column: v
+INSERT INTO t_NO_ZERO_DATE_timestamp(v) VALUES('0000-00-00 10:01');
+INSERT INTO t_NO_ZERO_DATE_timestamp(v) VALUES('0000-00-01 10:01');
+ERROR:  date/time field value out of range: "0000-00-01 10:01"
+LINE 1: INSERT INTO t_NO_ZERO_DATE_timestamp(v) VALUES('0000-00-01 1...
+                                                       ^
+CONTEXT:  referenced column: v
+INSERT INTO t_NO_ZERO_DATE_timestamp(v) VALUES('0000-01-00 10:01');
+ERROR:  date/time field value out of range: "0000-01-00 10:01"
+LINE 1: INSERT INTO t_NO_ZERO_DATE_timestamp(v) VALUES('0000-01-00 1...
+                                                       ^
+CONTEXT:  referenced column: v
+INSERT INTO t_NO_ZERO_DATE_timestamp(v) VALUES('2000-00-00 10:01');
+ERROR:  date/time field value out of range: "2000-00-00 10:01"
+LINE 1: INSERT INTO t_NO_ZERO_DATE_timestamp(v) VALUES('2000-00-00 1...
+                                                       ^
+CONTEXT:  referenced column: v
+SELECT * FROM t_NO_ZERO_DATE_date;
+     v      
+------------
+ 00-00-0000
+(1 row)
+
+SELECT * FROM t_NO_ZERO_DATE_datetime;
+          v          
+---------------------
+ 0000-00-00 10:01:00
+(1 row)
+
+SELECT * FROM t_NO_ZERO_DATE_timestamp;
+              v               
+------------------------------
+ 0000-00-00 10:01:00+08:05:43
+(1 row)
+
+DROP TABLE t_NO_ZERO_DATE_date;
+DROP TABLE t_NO_ZERO_DATE_datetime;
+DROP TABLE t_NO_ZERO_DATE_timestamp;
+RESET dolphin.sql_mode;
 \c postgres
 DROP DATABASE b_time_type;
 DROP TABLESPACE b_time_type_example;

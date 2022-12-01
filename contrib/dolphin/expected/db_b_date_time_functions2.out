@@ -43,7 +43,7 @@ insert into test values('dayname(20211112235959.9999999)', dayname(2021111223595
 -- 特异
 insert into test values('dayname(null)', dayname(null));
 -- 非严格模式，参数不合法，报warning，返回NULL或者对应值
-set dolphin.sql_mode = 'sql_mode_full_group,pipes_as_concat,ansi_quotes';
+set dolphin.sql_mode = 'sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date';
 insert into test values('dayname(''10000-1-1'')', dayname('10000-1-1'));
 WARNING:  Incorrect datetime value: "10000-1-1"
 CONTEXT:  referenced column: result
@@ -66,7 +66,7 @@ insert into test values('dayname(9999999999999999999999)', dayname(9999999999999
 WARNING:  Incorrect datetime value: "9999999999999999999999"
 CONTEXT:  referenced column: result
 -- 严格模式，参数不合法，抛出错误
-set dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes';
+set dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date';
 insert into test values('dayname(''10000-1-1'')', dayname('10000-1-1'));
 ERROR:  Incorrect datetime value: "10000-1-1"
 CONTEXT:  referenced column: result
@@ -132,7 +132,7 @@ insert into test values('monthname(''2021-00-01'')', monthname('2021-00-01'));
 insert into test values('monthname(20210001)', monthname(20210001));
 insert into test values('monthname(0)', monthname(0));
 -- 非严格模式，参数不合法，报warning，返回NULL或者对应值
-set dolphin.sql_mode = 'sql_mode_full_group,pipes_as_concat,ansi_quotes';
+set dolphin.sql_mode = 'sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date';
 insert into test values('monthname(''10000-1-1'')', monthname('10000-1-1'));
 WARNING:  Incorrect datetime value: "10000-1-1"
 CONTEXT:  referenced column: result
@@ -152,7 +152,7 @@ insert into test values('monthname(9999999999999999999999)', monthname(999999999
 WARNING:  Incorrect datetime value: "9999999999999999999999"
 CONTEXT:  referenced column: result
 -- 严格模式，参数不合法，抛出错误
-set dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes';
+set dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date';
 insert into test values('monthname(''10000-1-1'')', monthname('10000-1-1'));
 ERROR:  Incorrect datetime value: "10000-1-1"
 CONTEXT:  referenced column: result
@@ -255,7 +255,7 @@ insert into test values('time_to_sec(8385959)', time_to_sec(8385959));
 -- 特异
 insert into test values('time_to_sec(null)', time_to_sec(null));
 -- 非严格模式，参数不合法，报warning，返回NULL或者对应值边界值
-set dolphin.sql_mode = 'sql_mode_full_group,pipes_as_concat,ansi_quotes';
+set dolphin.sql_mode = 'sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date';
 insert into test values('time_to_sec(''00:00:60'')', time_to_sec('00:00:60'));
 WARNING:  date/time field value out of range: "00:00:60"
 CONTEXT:  referenced column: result
@@ -287,7 +287,7 @@ insert into test values('time_to_sec(''-34 23:00:00'')', time_to_sec('-34 23:00:
 WARNING:  Truncated incorrect time value.
 CONTEXT:  referenced column: result
 -- 严格模式，参数不合法，抛出错误
-set dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes';
+set dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date';
 insert into test values('time_to_sec(''00:00:60'')', time_to_sec('00:00:60'));
 ERROR:  date/time field value out of range: "00:00:60"
 CONTEXT:  referenced column: result
@@ -358,7 +358,7 @@ insert into test values('month(20210100)', month(20210100));
 insert into test values('month(20210000)', month(20210000));
 insert into test values('month(0)', month(0));
 -- 非严格模式，参数不合法，报warning，返回NULL或者对应值
-set dolphin.sql_mode = 'sql_mode_full_group,pipes_as_concat,ansi_quotes';
+set dolphin.sql_mode = 'sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date';
 insert into test values('month(''10000-1-1'')', month('10000-1-1'));
 WARNING:  Incorrect datetime value: "10000-1-1"
 CONTEXT:  referenced column: result
@@ -378,7 +378,7 @@ insert into test values('month(9999999999999999999999)', month(99999999999999999
 WARNING:  Incorrect datetime value: "9999999999999999999999"
 CONTEXT:  referenced column: result
 -- 严格模式，参数不合法，抛出错误
-set dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes';
+set dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date';
 insert into test values('month(''10000-1-1'')', month('10000-1-1'));
 ERROR:  Incorrect datetime value: "10000-1-1"
 CONTEXT:  referenced column: result
@@ -433,7 +433,7 @@ insert into test values('last_day(null)', last_day(null));
 insert into test values('last_day(''2021-01-00'')', last_day('2021-01-00'));
 insert into test values('last_day(20210100)', last_day(20210100));
 -- 非严格模式，参数不合法，报warning，返回NULL或者对应值
-set dolphin.sql_mode = 'sql_mode_full_group,pipes_as_concat,ansi_quotes';
+set dolphin.sql_mode = 'sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date';
 insert into test values('last_day(''2021-00-01'')', last_day('2021-00-01'));
 WARNING:  date/time field value out of range: "2021-00-01"
 CONTEXT:  referenced column: result
@@ -468,7 +468,7 @@ insert into test values('last_day(9999999999999999999999)', last_day(99999999999
 WARNING:  Incorrect datetime value: "9999999999999999999999"
 CONTEXT:  referenced column: result
 -- 严格模式，参数不合法，抛出错误
-set dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes';
+set dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date';
 insert into test values('last_day(''2021-00-01'')', last_day('2021-00-01'));
 ERROR:  date/time field value out of range: "2021-00-01"
 HINT:  Perhaps you need a different "datestyle" setting.
@@ -536,7 +536,7 @@ insert into test values('date(20210031)', date(20210031));
 insert into test values('date(20210100)', date(20210100));
 insert into test values('date(20210100)', date(20210100));
 -- 非严格模式，参数不合法，报warning，返回NULL或者对应值
-set dolphin.sql_mode = 'sql_mode_full_group,pipes_as_concat,ansi_quotes';
+set dolphin.sql_mode = 'sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date';
 insert into test values('date(''10000-1-1'')', date('10000-1-1'));
 WARNING:  Incorrect datetime value: "10000-1-1"
 CONTEXT:  referenced column: result
@@ -556,7 +556,7 @@ insert into test values('date(9999999999999999999999)', date(9999999999999999999
 WARNING:  Incorrect datetime value: "9999999999999999999999"
 CONTEXT:  referenced column: result
 -- 严格模式，参数不合法，抛出错误
-set dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes';
+set dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date';
 insert into test values('date(''10000-1-1'')', date('10000-1-1'));
 ERROR:  Incorrect datetime value: "10000-1-1"
 CONTEXT:  referenced column: result
@@ -607,7 +607,7 @@ insert into test values('day(20210100)', day(20210100));
 insert into test values('day(20210000)', day(20210000));
 insert into test values('day(0)', day(0));
 -- 非严格模式，参数不合法，报warning，返回NULL或者对应值
-set dolphin.sql_mode = 'sql_mode_full_group,pipes_as_concat,ansi_quotes';
+set dolphin.sql_mode = 'sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date';
 insert into test values('day(''10000-1-1'')', day('10000-1-1'));
 WARNING:  Incorrect datetime value: "10000-1-1"
 CONTEXT:  referenced column: result
@@ -627,7 +627,7 @@ insert into test values('day(9999999999999999999999)', day(999999999999999999999
 WARNING:  Incorrect datetime value: "9999999999999999999999"
 CONTEXT:  referenced column: result
 -- 严格模式，参数不合法，抛出错误
-set dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes';
+set dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date';
 insert into test values('day(''10000-1-1'')', day('10000-1-1'));
 ERROR:  Incorrect datetime value: "10000-1-1"
 CONTEXT:  referenced column: result
@@ -791,7 +791,7 @@ insert into test values('week(20211112235959.9999999)', week(20211112235959.9999
 -- 单参数-特异
 insert into test values('week(null)', week(null));
 -- 单参数-非严格模式，参数不合法，报warning，返回NULL或者对应值
-set dolphin.sql_mode = 'sql_mode_full_group,pipes_as_concat,ansi_quotes';
+set dolphin.sql_mode = 'sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date';
 insert into test values('week(''10000-1-1'')', week('10000-1-1'));
 WARNING:  Incorrect datetime value: "10000-1-1"
 CONTEXT:  referenced column: result
@@ -820,7 +820,7 @@ insert into test values('week(''0000-12-31 22:59:59.9999995'')', week('0000-12-3
 WARNING:  Truncated incorrect datetime value: "0000-12-31 22:59:59.9999995"
 CONTEXT:  referenced column: result
 -- 单参数-严格模式，参数不合法，抛出错误
-set dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes';
+set dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date';
 insert into test values('week(''10000-1-1'')', week('10000-1-1'));
 ERROR:  Incorrect datetime value: "10000-1-1"
 CONTEXT:  referenced column: result
@@ -863,7 +863,7 @@ insert into test values('week(null, 0)', week(null, 0));
 insert into test values('week(''2000-1-1'', null)', week('2000-1-1', null));
 insert into test values('week(null, null)', week(null, null));
 -- 双参数-非严格模式，参数不合法，报warning，返回NULL或者对应值
-set dolphin.sql_mode = 'sql_mode_full_group,pipes_as_concat,ansi_quotes';
+set dolphin.sql_mode = 'sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date';
 insert into test values('week(''10000-1-1'', 0)', week('10000-1-1', 0));
 WARNING:  Incorrect datetime value: "10000-1-1"
 CONTEXT:  referenced column: result
@@ -892,7 +892,7 @@ insert into test values('week(''0000-12-31 22:59:59.9999995'', 0)', week('0000-1
 WARNING:  Truncated incorrect datetime value: "0000-12-31 22:59:59.9999995"
 CONTEXT:  referenced column: result
 -- 双参数-严格模式，参数不合法，抛出错误
-set dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes';
+set dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date';
 insert into test values('week(''10000-1-1'', 0)', week('10000-1-1', 0));
 ERROR:  Incorrect datetime value: "10000-1-1"
 CONTEXT:  referenced column: result
@@ -941,7 +941,7 @@ insert into test values('yearweek(20211112235959.9999999)', yearweek(20211112235
 -- 单参数-特异
 insert into test values('yearweek(null)', yearweek(null));
 -- 单参数-非严格模式，参数不合法，报warning，返回NULL或者对应值
-set dolphin.sql_mode = 'sql_mode_full_group,pipes_as_concat,ansi_quotes';
+set dolphin.sql_mode = 'sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date';
 insert into test values('yearweek(''10000-1-1'')', yearweek('10000-1-1'));
 WARNING:  Incorrect datetime value: "10000-1-1"
 CONTEXT:  referenced column: result
@@ -970,7 +970,7 @@ insert into test values('yearweek(''0000-12-31 22:59:59.9999995'')', yearweek('0
 WARNING:  Incorrect datetime value: '0000-00-00'
 CONTEXT:  referenced column: result
 -- 单参数-严格模式，参数不合法，抛出错误
-set dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes';
+set dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date';
 insert into test values('yearweek(''10000-1-1'')', yearweek('10000-1-1'));
 ERROR:  Incorrect datetime value: "10000-1-1"
 CONTEXT:  referenced column: result
@@ -1013,7 +1013,7 @@ insert into test values('yearweek(null, 0)', yearweek(null, 0));
 insert into test values('yearweek(''2000-1-1'', null)', yearweek('2000-1-1', null));
 insert into test values('yearweek(null, null)', yearweek(null, null));
 -- 双参数-非严格模式，参数不合法，报warning，返回NULL或者对应值
-set dolphin.sql_mode = 'sql_mode_full_group,pipes_as_concat,ansi_quotes';
+set dolphin.sql_mode = 'sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date';
 insert into test values('yearweek(''10000-1-1'', 0)', yearweek('10000-1-1', 0));
 WARNING:  Incorrect datetime value: "10000-1-1"
 CONTEXT:  referenced column: result
@@ -1042,7 +1042,7 @@ insert into test values('yearweek(''0000-12-31 22:59:59.9999995'', 0)', yearweek
 WARNING:  Incorrect datetime value: '0000-00-00'
 CONTEXT:  referenced column: result
 -- 双参数-严格模式，参数不合法，抛出错误
-set dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes';
+set dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date';
 insert into test values('yearweek(''10000-1-1'', 0)', yearweek('10000-1-1', 0));
 ERROR:  Incorrect datetime value: "10000-1-1"
 CONTEXT:  referenced column: result
