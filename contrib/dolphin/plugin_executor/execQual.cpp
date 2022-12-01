@@ -621,13 +621,24 @@ static Datum ExecEvalScalarVar(ExprState* exprstate, ExprContext* econtext, bool
             break;
     }
 
-    Assert(slot != NULL);
-
     attnum = variable->varattno;
 
     /* This was checked by ExecInitExpr */
     Assert(attnum != InvalidAttrNumber);
 
+    RightRefState* refState = econtext->rightRefState;
+    int index = attnum - 1;
+    if (IS_ENABLE_INSERT_RIGHT_REF(refState) ||
+       (IS_ENABLE_UPSERT_RIGHT_REF(refState) && refState->hasExecs[index] && index < refState->colCnt)) {
+        *isNull = refState->isNulls[index];
+        return refState->values[index];
+    }
+
+    if (slot == nullptr) {
+        ereport(ERROR,(errcode(ERRCODE_INVALID_ATTRIBUTE), errmodule(MOD_EXECUTOR),
+                        errmsg("attribute number %d does not exists.", attnum)));
+    }
+    
     /*
      * If it's a user attribute, check validity (bogus system attnums will be
      * caught inside table's getattr).  What we have to check for here is the
@@ -6292,7 +6303,6 @@ static bool ExecTargetList(List* targetlist, ExprContext* econtext, Datum* value
     ExprDoneCond* itemIsDone, ExprDoneCond* isDone)
 {
     MemoryContext oldContext;
-    ListCell* tl = NULL;
     bool haveDoneSets = false;
 
     /*
@@ -6300,19 +6310,32 @@ static bool ExecTargetList(List* targetlist, ExprContext* econtext, Datum* value
      */
     oldContext = MemoryContextSwitchTo(econtext->ecxt_per_tuple_memory);
 
+    RightRefState* refState = econtext->rightRefState;
+    int targetCount = list_length(targetlist);
+    GenericExprState* targetArr[targetCount];
+    
+    int colCnt = (IS_ENABLE_RIGHT_REF(refState) && refState->colCnt > 0) ? refState->colCnt : 1;
+    bool hasExecs[colCnt];
+
+    SortTargetListAsArray(refState, targetlist, targetArr);
+
+    InitOutputValues(refState, targetArr, values, isnull, targetCount, hasExecs);
+    
     /*
      * evaluate all the expressions in the target list
      */
     haveDoneSets = false; /* any exhausted set exprs in tlist? */
 
-    foreach (tl, targetlist) {
-        GenericExprState* gstate = (GenericExprState*)lfirst(tl);
+    for (GenericExprState* gstate : targetArr) {
         TargetEntry* tle = (TargetEntry*)gstate->xprstate.expr;
         AttrNumber resind = tle->resno - 1;
 
         ELOG_FIELD_NAME_START(tle->resname);
 
         values[resind] = ExecEvalExpr(gstate->arg, econtext, &isnull[resind], &itemIsDone[resind]);
+        if (IS_ENABLE_RIGHT_REF(refState) && resind < refState->colCnt) {
+            hasExecs[resind] = true;
+        }
 
         if (T_Var == nodeTag(tle->expr) && !isnull[resind]) {
             Var *var = (Var *)tle->expr;
@@ -6394,8 +6417,7 @@ static bool ExecTargetList(List* targetlist, ExprContext* econtext, Datum* value
              * We have some done and some undone sets.	Restart the done ones
              * so that we can deliver a tuple (if possible).
              */
-            foreach (tl, targetlist) {
-                GenericExprState* gstate = (GenericExprState*)lfirst(tl);
+            for (GenericExprState* gstate : targetArr) {
                 TargetEntry* tle = (TargetEntry*)gstate->xprstate.expr;
                 AttrNumber resind = tle->resno - 1;
 
@@ -6421,8 +6443,7 @@ static bool ExecTargetList(List* targetlist, ExprContext* econtext, Datum* value
              * XXX is that still necessary?
              */
             if (*isDone == ExprEndResult) {
-                foreach (tl, targetlist) {
-                    GenericExprState* gstate = (GenericExprState*)lfirst(tl);
+                for (GenericExprState* gstate : targetArr) {
                     TargetEntry* tle = (TargetEntry*)gstate->xprstate.expr;
                     AttrNumber resind = tle->resno - 1;
 
@@ -6437,6 +6458,13 @@ static bool ExecTargetList(List* targetlist, ExprContext* econtext, Datum* value
         }
     }
 
+
+    if (IS_ENABLE_RIGHT_REF(econtext->rightRefState)) {
+        econtext->rightRefState->values = nullptr;
+        econtext->rightRefState->isNulls = nullptr;
+        econtext->rightRefState->hasExecs = nullptr;
+    }
+    
     /* Report success */
     MemoryContextSwitchTo(oldContext);
 
@@ -6493,7 +6521,7 @@ TupleTableSlot* ExecProject(ProjectionInfo* projInfo, ExprDoneCond* isDone)
         tableam_tslot_getsomeattrs(econtext->ecxt_outertuple, projInfo->pi_lastOuterVar);
     }
 
-    if (projInfo->pi_lastScanVar > 0) {
+    if (projInfo->pi_lastScanVar > 0 && econtext->ecxt_scantuple) {
     	tableam_tslot_getsomeattrs(econtext->ecxt_scantuple, projInfo->pi_lastScanVar);
     }
 
@@ -6502,7 +6530,7 @@ TupleTableSlot* ExecProject(ProjectionInfo* projInfo, ExprDoneCond* isDone)
      * slots ... a mite ugly, but fast ...
      */
     int numSimpleVars = projInfo->pi_numSimpleVars;
-    if (numSimpleVars > 0) {
+    if (numSimpleVars > 0 && !IS_ENABLE_RIGHT_REF(projInfo->pi_exprContext->rightRefState)) {
         Datum* values = slot->tts_values;
         bool* isnull = slot->tts_isnull;
         int* varSlotOffsets = projInfo->pi_varSlotOffsets;
@@ -6546,9 +6574,19 @@ TupleTableSlot* ExecProject(ProjectionInfo* projInfo, ExprDoneCond* isDone)
      * already marked empty.
      */
     if (projInfo->pi_targetlist) {
-        if (!ExecTargetList(
-                projInfo->pi_targetlist, econtext, slot->tts_values, slot->tts_isnull, projInfo->pi_itemIsDone, isDone))
+        if (IS_ENABLE_RIGHT_REF(econtext->rightRefState)) {
+            econtext->rightRefState->isUpsert = projInfo->isUpsertHasRightRef;
+        }
+        bool flag = !ExecTargetList(projInfo->pi_targetlist, econtext, slot->tts_values,
+                                    slot->tts_isnull, projInfo->pi_itemIsDone, isDone);
+
+        if (econtext->rightRefState) {
+            econtext->rightRefState->isUpsert = false;
+        }
+        
+        if (flag) {
             return slot; /* no more result rows, return empty slot */
+        }
     }
 
     /*

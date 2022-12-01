@@ -782,6 +782,9 @@ Oid typeTypeCollation(Type typ)
  * Given a type structure and a string, returns the internal representation
  * of that string.	The "string" can be NULL to perform conversion of a NULL
  * (which might result in failure, if the input function rejects NULLs).
+ *
+ * With param can_ignore == true, truncation or transformation may be cast
+ * for input string if string is invalid for target type.
  */
 Datum stringTypeDatum(Type tp, char* string, int32 atttypmod, bool can_ignore)
 {

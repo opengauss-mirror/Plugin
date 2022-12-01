@@ -718,7 +718,7 @@ static SelectStmt *MakeShowGrantStmt(char *arg, int location, core_yyscan_t yysc
 				create_generic_options alter_generic_options
 				relation_expr_list dostmt_opt_list
 				merge_values_clause publication_name_list empty_value insert_set_list insert_set_clause
-				relation_expr_opt_alias_list user_list
+				relation_expr_opt_alias_list into_user_var_list user_list
 
 /* b compatibility: comment start */
 %type <list>	opt_index_options index_options opt_table_options table_options opt_column_options column_options
@@ -740,7 +740,7 @@ static SelectStmt *MakeShowGrantStmt(char *arg, int location, core_yyscan_t yysc
 %type <defelt>	fdw_option
 
 %type <range>	OptTempTableName
-%type <into>	into_clause create_as_target create_as_target_dolphin create_mv_target
+%type <into>	into_clause create_as_target create_as_target_dolphin create_mv_target opt_into_clause
 
 %type <defelt>	createfunc_opt_item createproc_opt_item common_func_opt_item dostmt_opt_item
 %type <fun_param> func_arg func_arg_with_default table_func_column
@@ -1252,6 +1252,8 @@ static SelectStmt *MakeShowGrantStmt(char *arg, int location, core_yyscan_t yysc
 %right		UMINUS BY NAME_P PASSING ROW TYPE_P VALUE_P
 %left		'[' ']'
 %left		'(' ')'
+%left		EMPTY_FROM_CLAUSE
+%right		INTO
 %left		TYPECAST
 %left		'.'
 /*
@@ -24400,14 +24402,29 @@ select_with_parens:
 										yyscanner);
 					$$ = $1;
 				}
-			| select_clause opt_sort_clause for_locking_clause opt_select_limit
+			| select_clause opt_sort_clause for_locking_clause opt_select_limit opt_into_clause
 				{
-                                        FilterStartWithUseCases((SelectStmt *) $1, $3, yyscanner, @3);
+					FilterStartWithUseCases((SelectStmt *) $1, $3, yyscanner, @3);
 					insertSelectOptions((SelectStmt *) $1, $2, $3,
 										(Node*)list_nth($4, 0), (Node*)list_nth($4, 1),
 										NULL,
 										yyscanner);
-					$$ = $1;
+					SelectStmt *stmt = (SelectStmt *) $1;
+					if ($5 != NULL) {
+						if (stmt->intoClause != NULL) {
+							ereport(errstate,
+									(errcode(ERRCODE_SYNTAX_ERROR),
+									errmsg("select statement can contain only one into_clause")));
+						}
+						IntoClause *itc = (IntoClause *) $5;
+						if (itc->rel != NULL && u_sess->attr.attr_sql.sql_compatibility != B_FORMAT) {
+							ereport(errstate, 
+								(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+								errmsg("into new table here only support in B-format database")));
+						}
+						stmt->intoClause = itc;
+					}
+					$$ = (Node *)stmt;
 				}
 			| select_clause opt_sort_clause select_limit opt_for_locking_clause
 				{
@@ -24417,6 +24434,50 @@ select_with_parens:
 										NULL,
 										yyscanner);
 					$$ = $1;
+				}
+			| select_clause opt_sort_clause select_limit for_locking_clause into_clause
+				{
+					FilterStartWithUseCases((SelectStmt *) $1, $4, yyscanner, @4);
+					insertSelectOptions((SelectStmt *) $1, $2, $4,
+										(Node*)list_nth($3, 0), (Node*)list_nth($3, 1),
+										NULL,
+										yyscanner);
+					SelectStmt *stmt = (SelectStmt *) $1;
+					if (stmt->intoClause != NULL) {
+						ereport(errstate,
+								(errcode(ERRCODE_SYNTAX_ERROR),
+								errmsg("select statement can contain only one into_clause")));
+					}
+					IntoClause *itc = (IntoClause *) $5;
+					if (itc->rel != NULL && u_sess->attr.attr_sql.sql_compatibility != B_FORMAT) {
+						ereport(errstate,
+							(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+							errmsg("into new table here only support in B-format database")));
+					}
+					stmt->intoClause = itc;
+					$$ = (Node *)stmt;
+				}
+			| select_clause opt_sort_clause opt_select_limit into_clause opt_for_locking_clause
+				{
+					FilterStartWithUseCases((SelectStmt *) $1, $5, yyscanner, @5);
+					insertSelectOptions((SelectStmt *) $1, $2, $5,
+										(Node*)list_nth($3, 0), (Node*)list_nth($3, 1),
+										NULL,
+										yyscanner);
+					SelectStmt *stmt = (SelectStmt *) $1;
+					if (stmt->intoClause != NULL) {
+						ereport(errstate,
+								(errcode(ERRCODE_SYNTAX_ERROR),
+								errmsg("select statement can contain only one into_clause")));
+					}
+					IntoClause *itc = (IntoClause *) $4;
+					if (itc->rel != NULL && u_sess->attr.attr_sql.sql_compatibility != B_FORMAT) {
+						ereport(errstate,
+							(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+							errmsg("into new table here only support in B-format database")));
+					}
+					stmt->intoClause = itc;
+					$$ = (Node *)stmt;
 				}
  		;
 
@@ -24438,14 +24499,73 @@ select_no_parens:
 										yyscanner);
 					$$ = $2;
 				}
-			| with_clause select_clause opt_sort_clause for_locking_clause opt_select_limit
+			| with_clause select_clause opt_sort_clause for_locking_clause opt_select_limit opt_into_clause
 				{
-                                        FilterStartWithUseCases((SelectStmt *) $2, $4, yyscanner, @4);
+					FilterStartWithUseCases((SelectStmt *) $2, $4, yyscanner, @4);
 					insertSelectOptions((SelectStmt *) $2, $3, $4,
 										(Node*)list_nth($5, 0), (Node*)list_nth($5, 1),
 										$1,
 										yyscanner);
-					$$ = $2;
+					SelectStmt *stmt = (SelectStmt *) $2;
+					if ($6 != NULL) {
+						if (stmt->intoClause != NULL) {
+							ereport(errstate,
+									(errcode(ERRCODE_SYNTAX_ERROR),
+									errmsg("select statement can contain only one into_clause")));
+						}
+						IntoClause *itc = (IntoClause *) $6;
+						if (itc->rel != NULL && u_sess->attr.attr_sql.sql_compatibility != B_FORMAT) {
+							ereport(errstate,
+								(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+								errmsg("into new table here only support in B-format database")));
+						}
+						stmt->intoClause = itc;
+					}
+					$$ = (Node *)stmt;
+				}
+			| with_clause select_clause opt_sort_clause select_limit for_locking_clause into_clause
+				{
+                                        FilterStartWithUseCases((SelectStmt *) $2, $5, yyscanner, @5);
+					insertSelectOptions((SelectStmt *) $2, $3, $5,
+										(Node*)list_nth($4, 0), (Node*)list_nth($4, 1),
+										$1,
+										yyscanner);
+					SelectStmt *stmt = (SelectStmt *) $2;
+					if (stmt->intoClause != NULL) {
+						ereport(errstate,
+								(errcode(ERRCODE_SYNTAX_ERROR),
+								errmsg("select statement can contain only one into_clause")));
+					}
+					IntoClause *itc = (IntoClause *) $6;
+					if (itc->rel != NULL && u_sess->attr.attr_sql.sql_compatibility != B_FORMAT) {
+						ereport(errstate,
+							(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+							errmsg("into new table here only support in B-format database")));
+					}
+					stmt->intoClause = itc;
+					$$ = (Node *)stmt;
+				}
+			| with_clause select_clause opt_sort_clause opt_select_limit into_clause opt_for_locking_clause
+				{
+                                        FilterStartWithUseCases((SelectStmt *) $2, $6, yyscanner, @6);
+					insertSelectOptions((SelectStmt *) $2, $3, $6,
+										(Node*)list_nth($4, 0), (Node*)list_nth($4, 1),
+										$1,
+										yyscanner);
+					SelectStmt *stmt = (SelectStmt *) $2;
+					if (stmt->intoClause != NULL) {
+						ereport(errstate,
+								(errcode(ERRCODE_SYNTAX_ERROR),
+								errmsg("select statement can contain only one into_clause")));
+					}
+					IntoClause *itc = (IntoClause *) $5;
+					if (itc->rel != NULL && u_sess->attr.attr_sql.sql_compatibility != B_FORMAT) {
+						ereport(errstate,
+							(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+							errmsg("into new table here only support in B-format database")));
+					}
+					stmt->intoClause = itc;
+					$$ = (Node *)stmt;
 				}
 			| with_clause select_clause opt_sort_clause select_limit opt_for_locking_clause
 				{
@@ -24488,7 +24608,7 @@ select_clause:
  */
 simple_select:
 			SELECT hint_string opt_distinct target_list
-			into_clause from_clause where_clause start_with_clause
+			opt_into_clause from_clause where_clause start_with_clause
 			group_clause having_clause window_clause
 				{
 					SelectStmt *n = makeNode(SelectStmt);
@@ -24608,6 +24728,12 @@ opt_with_clause:
 		| /*EMPTY*/								{ $$ = NULL; }
 		;
 
+opt_into_clause:
+		into_clause								{ $$ = $1; }
+		| /*EMPTY*/								%prec INTO
+			{ $$ = NULL; }
+		;
+
 opt_ignore:
 		IGNORE								    {  $$ = TRUE; }
 		| /*EMPTY*/							    {  $$ = FALSE; }
@@ -24627,9 +24753,25 @@ into_clause:
 					$$->skipData = false;
 					$$->relkind = INTO_CLAUSE_RELKIND_DEFAULT;
 				}
-			| /*EMPTY*/
-				{ $$ = NULL; }
-		;
+			| INTO into_user_var_list
+				{
+					$$ = makeNode(IntoClause);
+					$$->rel = NULL;
+					$$->colNames = NIL;
+					$$->options = NIL;
+					$$->onCommit = ONCOMMIT_NOOP;
+					$$->row_compress = REL_CMPRS_PAGE_PLAIN;
+					$$->tableSpaceName = NULL;
+					$$->skipData = false;
+					$$->relkind = INTO_CLAUSE_RELKIND_DEFAULT;
+					$$->userVarList = $2;
+				}
+	;
+
+into_user_var_list:
+		uservar_name									{ $$ = list_make1($1); }
+		| into_user_var_list ',' uservar_name			{ $$ = lappend($1,$3); }
+	;
 
 /*
  * Redundancy here is needed to avoid shift/reduce conflicts,
@@ -25169,7 +25311,8 @@ values_clause:
 
 from_clause:
 			FROM from_list							{ $$ = $2; }
-			| /*EMPTY*/								{ $$ = NIL; }
+			| /*EMPTY*/								%prec EMPTY_FROM_CLAUSE
+				{ $$ = NIL; }
 		;
 
 from_list:
@@ -31237,16 +31380,16 @@ unreserved_keyword_without_key:
 			| AT
 			| ATTRIBUTE
 			| AUDIT
-			| AUTO_INCREMENT
 			| AUTOEXTEND
 			| AUTOMAPPED
+			| AUTO_INCREMENT
 			| BACKWARD
 /* PGXC_BEGIN */
 			| BARRIER
 /* PGXC_END */
 			| BEFORE
-			| BEGIN_NON_ANOYBLOCK
 			| BEGIN_P
+			| BEGIN_NON_ANOYBLOCK
 			| BLANKS
 			| BLOB_P
 			| BLOCKCHAIN
@@ -31293,9 +31436,10 @@ unreserved_keyword_without_key:
 			| CONTAINS
 			| CONTENT_P
 			| CONTINUE_P
+			| CONTVIEW
 			| CONVERSION_P
-            | CONTVIEW
 			| COORDINATOR
+			| COORDINATORS
 			| COPY
 			| COST
 			| CSV
@@ -31344,6 +31488,7 @@ unreserved_keyword_without_key:
 			| DROP
 			| DUPLICATE
 			| EACH
+			| ELASTIC
 			| ENABLE_P
 			| ENCLOSED
 			| ENCODING
@@ -31372,10 +31517,11 @@ unreserved_keyword_without_key:
 			| FAMILY
 			| FAST
 			| FEATURES 			// DB4AI
+			| FENCED
 			| FIELDS
 			| FILEHEADER_P
-			| FILL_MISSING_FIELDS
 			| FILLER
+			| FILL_MISSING_FIELDS
 			| FILTER
 			| FIRST_P
 			| FLUSH
@@ -31416,10 +31562,10 @@ unreserved_keyword_without_key:
 			| INITRANS
 			| INLINE_P
 			| INPUT_P
-			| INTERNAL
 			| INSENSITIVE
 			| INSERT
 			| INSTEAD
+			| INTERNAL
 			| INVOKER
 			| IP
 			| ISNULL
@@ -31447,8 +31593,8 @@ unreserved_keyword_without_key:
 			| LOG_P
 			| LOGGING
 			| LOGIN_ANY
-			| LOGIN_SUCCESS
 			| LOGIN_FAILURE
+			| LOGIN_SUCCESS
 			| LOGOUT
 			| LOGS
 			| LOOP
@@ -31531,6 +31677,7 @@ unreserved_keyword_without_key:
 			| PREPARED
 			| PRESERVE
 			| PRIOR
+			| PRIORER
 			| PRIVATE
 			| PRIVILEGE
 			| PRIVILEGES
@@ -31597,6 +31744,7 @@ unreserved_keyword_without_key:
 			| SECOND_MICROSECOND_P
 			| SECOND_P
 			| SECURITY
+			| SEPARATOR_P
 			| SEQUENCE
 			| SEQUENCES
 			| SERIALIZABLE
@@ -31604,7 +31752,6 @@ unreserved_keyword_without_key:
 			| SESSION
 			| SET
 			| SETS
-			| SEPARATOR_P
 			| SHARE
 			| SHIPPABLE
 			| SHOW
@@ -31642,8 +31789,8 @@ unreserved_keyword_without_key:
 			| SUBPARTITION
 			| SUBSCRIPTION
 			| SYNONYM
-			| SYS_REFCURSOR					{ $$ = "refcursor"; }
 			| SYSID
+			| SYS_REFCURSOR					{ $$ = "refcursor"; }
 			| SYSTEM_P
 			| TABLES
 			| TABLESPACE
@@ -31653,8 +31800,8 @@ unreserved_keyword_without_key:
 			| TEMPORARY
 			| TERMINATED
 			| THAN
-			| TIME_FORMAT_P
 			| TIMESTAMP_FORMAT_P
+			| TIME_FORMAT_P
 			| TRANSACTION
 			| TRANSFORM
 			| TRIGGER
@@ -31687,6 +31834,7 @@ unreserved_keyword_without_key:
 			| VALUE_P
 			| VARIABLES
 			| VARYING
+			| VCGROUP
 			| VERSION_P
 			| VIEW
 			| VOLATILE
@@ -31929,8 +32077,8 @@ reserved_keyword:
 			| MAXVALUE
 			| MINUS_P
 			| MODIFY_P
-			| NOT
 			| NOCYCLE
+			| NOT
 			| NOW_FUNC
 			| NULL_P
 			| OFFSET
@@ -33309,6 +33457,7 @@ makeCallFuncStmt(List* funcname,List* parameters, bool is_call)
 	ColumnRef *column = NULL;
 	ResTarget *resTarget = NULL;
 	FuncCall *funcCall = NULL;
+	List *userVarList = NIL;
 	RangeFunction *rangeFunction = NULL;
 	char *schemaname = NULL;
 	char *name = NULL;
@@ -33435,6 +33584,15 @@ makeCallFuncStmt(List* funcname,List* parameters, bool is_call)
 			{
 				get_arg_mode_by_pos(i, p_argmodes, narg, have_assigend, &argmode);
 				in_parameters = append_inarg_list(argmode, cell, in_parameters);
+
+				if (argmode == FUNC_PARAM_OUT || argmode == FUNC_PARAM_INOUT) {
+					if (IsA(arg, TypeCast)) {
+						arg = (*(TypeCast *)arg).arg;
+					}
+					if (IsA(arg, UserVar)) {
+						userVarList = lappend(userVarList,arg);
+					}
+				}
 			}
 
 			i++;
@@ -33490,7 +33648,12 @@ makeCallFuncStmt(List* funcname,List* parameters, bool is_call)
 	newm->fromClause  = list_make1(rangeFunction);
 	newm->whereClause = NULL;
 	newm->havingClause= NULL;
-	newm->groupClause = NIL;
+    newm->groupClause = NIL;
+	if (userVarList != NIL) {
+		IntoClause *n = makeNode(IntoClause);
+		n->userVarList = userVarList;
+		newm->intoClause  = n;
+	}
 	return (Node*)newm;
 }
 

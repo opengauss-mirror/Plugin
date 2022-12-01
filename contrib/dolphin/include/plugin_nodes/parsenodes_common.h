@@ -688,6 +688,12 @@ typedef struct SelectStmt {
     /* Eventually add fields for CORRESPONDING spec here */
 } SelectStmt;
 
+typedef struct SelectIntoVarList {
+    NodeTag type;
+    SubLink *sublink;
+    List *userVarList;
+} SelectIntoVarList;
+
 /* ----------------------
  *		CREATE TABLE AS Statement (a/k/a SELECT INTO)
  *
@@ -1834,6 +1840,19 @@ typedef struct A_ArrayExpr {
 
 #define FRAMEOPTION_DEFAULTS (FRAMEOPTION_RANGE | FRAMEOPTION_START_UNBOUNDED_PRECEDING | FRAMEOPTION_END_CURRENT_ROW)
 
+
+#define IS_SUPPORT_RIGHT_REF(rightRefState) ((rightRefState) && (rightRefState)->isSupported)
+
+#define IS_ENABLE_INSERT_RIGHT_REF(rightRefState) (IS_SUPPORT_RIGHT_REF(rightRefState) && \
+(rightRefState)->isInsertHasRightRef && !((rightRefState)->isUpsert))
+
+#define IS_ENABLE_UPSERT_RIGHT_REF(rightRefState) (IS_SUPPORT_RIGHT_REF(rightRefState) && \
+(rightRefState)->isUpsertHasRightRef && (rightRefState)->isUpsert)
+
+#define IS_ENABLE_RIGHT_REF(rightRefState) ((rightRefState) && (rightRefState)->isSupported && \
+((rightRefState)->isInsertHasRightRef || (rightRefState)->isUpsertHasRightRef))
+
+
 /*
  * XMLSERIALIZE (in raw parse tree only)
  */
@@ -1880,6 +1899,25 @@ typedef enum TdTruncCastStatus {
     TRUNC_CAST_QUERY
 } TdTruncCastStatus;
 #define TRUNCAST_VERSION_NUM 92023
+
+
+typedef struct RightRefState {
+    bool isSupported;
+    bool isInsertHasRightRef;
+    int explicitAttrLen;
+    int* explicitAttrNos;
+    Const** constValues;
+    
+    int colCnt;
+    Datum* values;
+    bool* hasExecs;
+    bool* isNulls;
+    
+    bool isUpsert;
+    bool isUpsertHasRightRef;
+    int usExplicitAttrLen;
+    int* usExplicitAttrNos;
+} RightRefState;
 
 /* ****************************************************************************
  * 	Query Tree
@@ -2010,6 +2048,8 @@ typedef struct Query {
                             * an error that has no idea about $x when INSERT SELECT query is analyzed. */
     int fixed_numParams;
     List* resultRelations; /* rtable index list of target relation for INSERT/UPDATE/DELETE/MERGE. */
+    
+    RightRefState* rightRefState;
 } Query;
 
 /* ----------------------
