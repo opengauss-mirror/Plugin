@@ -105,6 +105,7 @@
 #pragma GCC diagnostic ignored "-Wsign-compare"
 #pragma GCC diagnostic ignored "-Wunused-variable"
 
+#define MAX_ERROR_COUNT 65535
 #define MAXFNAMELEN		64
 #define isquote(C) ((C) == '\"')
 #ifndef ENABLE_MULTIPLE_NODES
@@ -435,6 +436,7 @@ static bool CheckWhetherInColList(char *colname, List *col_list);
 static int GetFillerColIndex(char *filler_col_name, List *col_list);
 static void RemoveFillerCol(List *filler_list, List *col_list);
 static int errstate;
+static void CheckPartitionExpr(Node* expr, int* colCount);
 
 static char* DoStmtPreformGet(int& start_pos, int& end_pos, base_yy_extra_type* yyextra);
 static void setDelimiterName(core_yyscan_t yyscanner, char*input, VariableSetStmt*n);
@@ -1131,7 +1133,7 @@ static SelectStmt *MakeShowGrantStmt(char *arg, int location, core_yyscan_t yysc
 	SERIALIZABLE SERVER SESSION SESSION_USER SET SETS SETOF SHARE SHIPPABLE SHOW SHUTDOWN SIBLINGS SIGNED
 	SIMILAR SIMPLE SIZE SKIP SLAVE SLICE SMALLDATETIME SMALLDATETIME_FORMAT_P SMALLINT SNAPSHOT SOME SOUNDS SOURCE_P SPACE SPILL SPLIT SQL STABLE STANDALONE_P START STARTING STARTWITH
 	STATEMENT STATEMENT_ID STATISTICS STATUS STDIN STDOUT STORAGE STORE_P STORED STRATIFY STREAM STRICT_P STRIP_P SUBPARTITION SUBSCRIPTION SUBSTR SUBSTRING
-	SYMMETRIC SYNONYM SYSDATE SYSID SYSTEM_P SYS_REFCURSOR
+	SYMMETRIC SYNONYM SYSDATE SYSID SYSTEM_P SYS_REFCURSOR SHOW_ERRORS
 
 	TABLE TABLES TABLESAMPLE TABLESPACE TARGET TEMP TEMPLATE TEMPORARY TERMINATED TEXT_P THAN THEN TIME TIME_FORMAT_P TIMECAPSULE TIMESTAMP TIMESTAMP_FORMAT_P TIMESTAMPADD TIMESTAMPDIFF TINYINT
 	TO TRAILING TRANSACTION TRANSFORM TREAT TRIGGER TRIM TRUE_P
@@ -1143,7 +1145,7 @@ static SelectStmt *MakeShowGrantStmt(char *arg, int location, core_yyscan_t yysc
 	VACUUM VALID VALIDATE VALIDATION VALIDATOR VALUE_P VALUES VARBINARY VARCHAR VARCHAR2 VARIABLES VARIADIC VARRAY VARYING VCGROUP
 	VERBOSE VERIFY VERSION_P VIEW VOLATILE
 
-	WAIT WEAK WHEN WHERE WHILE_P WHITESPACE_P WINDOW WITH WITHIN WITHOUT WORK WORKLOAD WRAPPER WRITE
+	WAIT WARNINGS WEAK WHEN WHERE WHILE_P WHITESPACE_P WINDOW WITH WITHIN WITHOUT WORK WORKLOAD WRAPPER WRITE
 
 	XML_P XMLATTRIBUTES XMLCONCAT XMLELEMENT XMLEXISTS XMLFOREST XMLPARSE XOR
 	XMLPI XMLROOT XMLSERIALIZE
@@ -1172,7 +1174,7 @@ static SelectStmt *MakeShowGrantStmt(char *arg, int location, core_yyscan_t yysc
 			NOT_ENFORCED
 			VALID_BEGIN
 			DECLARE_CURSOR ON_UPDATE_TIME
-			START_WITH CONNECT_BY WITH_ROLLUP
+			START_WITH CONNECT_BY SHOW_ERRORS WITH_ROLLUP
 			END_OF_INPUT
 			END_OF_INPUT_COLON
 			END_OF_PROC
@@ -3371,7 +3373,161 @@ FunctionSetResetClause:
 
 
 VariableShowStmt:
-			SHOW var_name
+			SHOW WARNINGS
+				{
+#ifdef ENABLE_MULTIPLE_NODES
+					ereport(ERROR,
+						(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+							errmsg("Un-support feature"),
+							errdetail("Show warnings feature is unsupported on distributed mode.")));
+#else
+					if (u_sess->attr.attr_sql.sql_compatibility == B_FORMAT)
+					{
+						VariableShowStmt *n = makeNode(VariableShowStmt);
+						n->name = "show_warnings";
+						n->offset = 0;
+						n->count = MAX_ERROR_COUNT;
+						$$ = (Node *) n;
+					}
+#endif
+				}
+			| SHOW WARNINGS LIMIT Iconst
+				{
+#ifdef ENABLE_MULTIPLE_NODES
+					ereport(ERROR,
+						(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+							errmsg("Un-support feature"),
+							errdetail("Show warnings feature is unsupported on distributed mode.")));
+#else
+					if (u_sess->attr.attr_sql.sql_compatibility == B_FORMAT)
+					{
+						VariableShowStmt *n = makeNode(VariableShowStmt);
+						n->name = "show_warnings";
+						n->offset = 0;
+						n->count = $4;
+						$$ = (Node *) n;
+					}
+#endif
+				}
+			| SHOW WARNINGS LIMIT Iconst ',' Iconst
+				{
+#ifdef ENABLE_MULTIPLE_NODES
+					ereport(ERROR,
+						(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+							errmsg("Un-support feature"),
+							errdetail("Show warnings feature is unsupported on distributed mode.")));
+#else
+					if (u_sess->attr.attr_sql.sql_compatibility == B_FORMAT)
+					{
+						VariableShowStmt *n = makeNode(VariableShowStmt);
+						n->name = "show_warnings";
+						n->offset = $4;
+						n->count = $6;
+						$$ = (Node *) n;
+					}
+#endif
+				}
+			| SHOW IDENT '(' '*' ')' WARNINGS
+				{
+#ifdef ENABLE_MULTIPLE_NODES
+					ereport(ERROR,
+						(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+							errmsg("Un-support feature"),
+							errdetail("Show count(*) warnings feature is unsupported on distributed mode.")));
+#else
+					if (u_sess->attr.attr_sql.sql_compatibility == B_FORMAT)
+					{
+						char *ident = downcase_str($2->str, false);
+						if (strcmp(ident, "count") != 0) {
+							const char* message = "Un-support feature";
+							InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);
+							ereport(errstate, (errcode(ERRCODE_SYNTAX_ERROR),
+								errmsg("Un-support function \"%s\" for show warnings", ident)));
+						}
+						VariableShowStmt *n = makeNode(VariableShowStmt);
+						n->name = "show_warnings_count";
+						$$ = (Node *) n;
+					}
+#endif
+				}
+			| SHOW_ERRORS
+				{
+#ifdef ENABLE_MULTIPLE_NODES
+					ereport(ERROR,
+						(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+							errmsg("Un-support feature"),
+							errdetail("Show errors feature is unsupported on distributed mode.")));
+#else
+					if (u_sess->attr.attr_sql.sql_compatibility == B_FORMAT)
+					{
+						VariableShowStmt *n = makeNode(VariableShowStmt);
+						n->name = "show_errors";
+						n->offset = 0;
+						n->count = MAX_ERROR_COUNT;
+						$$ = (Node *) n;
+					}
+#endif
+				}
+			| SHOW_ERRORS LIMIT Iconst
+				{
+#ifdef ENABLE_MULTIPLE_NODES
+					ereport(ERROR,
+						(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+							errmsg("Un-support feature"),
+							errdetail("Show errors feature is unsupported on distributed mode.")));
+#else
+					if (u_sess->attr.attr_sql.sql_compatibility == B_FORMAT)
+					{
+						VariableShowStmt *n = makeNode(VariableShowStmt);
+						n->name = "show_errors";
+						n->offset = 0;
+						n->count = $3;
+						$$ = (Node *) n;
+					}
+#endif
+				}
+			| SHOW_ERRORS LIMIT Iconst ',' Iconst
+				{
+#ifdef ENABLE_MULTIPLE_NODES
+					ereport(ERROR,
+						(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+							errmsg("Un-support feature"),
+							errdetail("Show errors feature is unsupported on distributed mode.")));
+#else
+					if (u_sess->attr.attr_sql.sql_compatibility == B_FORMAT)
+					{
+						VariableShowStmt *n = makeNode(VariableShowStmt);
+						n->name = "show_errors";
+						n->offset = $3;
+						n->count = $5;
+						$$ = (Node *) n;
+					}
+#endif
+				}
+			| SHOW IDENT '(' '*' ')' ERRORS
+				{
+#ifdef ENABLE_MULTIPLE_NODES
+					ereport(ERROR,
+						(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+							errmsg("Un-support feature"),
+							errdetail("Show count(*) errors feature is unsupported on distributed mode.")));
+#else
+					if (u_sess->attr.attr_sql.sql_compatibility == B_FORMAT)
+					{
+						char *ident = downcase_str($2->str, false);
+						if (strcmp(ident, "count") != 0) {
+							const char* message = "Un-support feature";
+							InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);
+							ereport(errstate, (errcode(ERRCODE_SYNTAX_ERROR),
+							errmsg("Un-support function \"%s\" for show errors", ident)));
+						}
+						VariableShowStmt *n = makeNode(VariableShowStmt);
+						n->name = "show_errors_count";
+						$$ = (Node *) n;
+					}
+#endif
+				}
+			| SHOW var_name
 				{
 					if (pg_strcasecmp($2, "processlist") == 0) {
 						SelectStmt *n = makeShowProcesslistQuery(FALSE);
@@ -7864,9 +8020,14 @@ column_item_list:
 		;
 
 column_item:
-		ColId
+		a_expr
 			{
-				$$ = makeColumnRef($1, NIL, @1, yyscanner);
+				//$$ = makeColumnRef($1, NIL, @1, yyscanner);
+				$$ = $1;
+				int colCount = 0;
+				CheckPartitionExpr($$, &colCount);
+				if (colCount == 0)
+					ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("No Column in the part expr")));
 			}
 		;
 
@@ -12764,9 +12925,9 @@ CreateTrigStmt:
 					{
 						parser_yyerror("syntax error found");
 					}
-					if (u_sess->attr.attr_sql.sql_compatibility != B_FORMAT && $3 != NULL)
+					if ($3 != NULL)
 					{
-						parser_yyerror("only support definer in mysql compatibility database");
+						parser_yyerror("only support definer in B compatibility database and B syntax");
 					}
 					CreateTrigStmt *n = makeNode(CreateTrigStmt);
 					n->definer = $3;
@@ -12828,7 +12989,7 @@ CreateTrigStmt:
 				{
 					if (u_sess->attr.attr_sql.sql_compatibility != B_FORMAT || $2 != false)
 					{
-						parser_yyerror("only support definer, trigger_order, subprogram_body in mysql compatibility database");
+						parser_yyerror("only support definer, trigger_order, subprogram_body in B compatibility database");
 					}
 					CreateTrigStmt *n = makeNode(CreateTrigStmt);
 					if ($2 != false)
@@ -12866,7 +13027,7 @@ CreateTrigStmt:
 				{
 					if (u_sess->attr.attr_sql.sql_compatibility != B_FORMAT)
 					{
-						parser_yyerror("only support definer, if not exists, trigger_order, subprogram_body in mysql compatibility database");
+						parser_yyerror("only support definer, if not exists, trigger_order, subprogram_body in B compatibility database");
 					}
 					CreateTrigStmt *n = makeNode(CreateTrigStmt);
 					if ($2 != false)
@@ -34283,6 +34444,45 @@ static void checkDeleteRelationError()
 		ereport(errstate, 
 				(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
 					errmsg("multi-relation delete only support in B-format database")));
+}
+
+#ifndef MAX_SUPPORTED_FUNC_FOR_PART_EXPR
+#define MAX_SUPPORTED_FUNC_FOR_PART_EXPR 23
+#endif
+static void CheckPartitionExpr(Node* expr, int* colCount)
+{
+	if (expr == NULL)
+		ereport(ERROR, (errcode(ERRCODE_NULL_VALUE_NOT_ALLOWED), errmsg("The expr can't be NULL")));
+	if (expr->type == T_A_Expr) {
+		char* name = strVal(linitial(((A_Expr*)expr)->name));
+		if (strcmp(name, "+") != 0 && strcmp(name, "-") != 0 && strcmp(name, "*") != 0)
+			ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("The %s operator is not supported for Partition Expr", name)));
+		CheckPartitionExpr(((A_Expr*)expr)->lexpr, colCount);
+		CheckPartitionExpr(((A_Expr*)expr)->rexpr, colCount);
+	} else if (expr->type == T_FuncCall) {
+		char* validFuncName[MAX_SUPPORTED_FUNC_FOR_PART_EXPR] = {"abs","ceiling","datediff","day","dayofmonth","dayofweek","dayofyear","extract","floor","hour",
+		"microsecond","minute","mod","month","quarter","second","time_to_sec","to_days","to_seconds","unix_timestamp","weekday","year","yearweek"};
+		char* funcname = strVal(linitial(((FuncCall*)expr)->funcname));
+		int count = 0;
+		for (;count < MAX_SUPPORTED_FUNC_FOR_PART_EXPR;count++) {
+			if (strcmp(funcname, validFuncName[count]) == 0)
+				break;
+			else
+				continue;
+		}
+		if (count == MAX_SUPPORTED_FUNC_FOR_PART_EXPR)
+			ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("The %s func is not supported for Partition Expr", funcname)));
+		ListCell* cell = NULL;
+		foreach (cell, ((FuncCall*)expr)->args) {
+			CheckPartitionExpr((Node*)(lfirst(cell)),colCount);
+		}
+	} else if (expr->type == T_ColumnRef) {
+		(*colCount)++;
+	} else if (expr->type == T_A_Const) {
+		return;
+	} else {
+		ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("The Partition Expr can't be %d type", expr->type)));
+	}
 }
 
 static CreateTableOptions* MakeCreateTableOptions(CreateTableOptions *tableOptions, SingleTableOption *tableOption)
