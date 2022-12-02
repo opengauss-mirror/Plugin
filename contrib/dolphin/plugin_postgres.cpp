@@ -158,7 +158,7 @@ void init_plugin_object()
     u_sess->hook_cxt.searchFuncHook = (void*)SearchFuncByOid;
     set_default_guc();
 
-    if (u_sess->proc_cxt.MyProcPort && u_sess->proc_cxt.MyProcPort->database_name) {
+    if (g_instance.attr.attr_network.enable_dolphin_proto && u_sess->proc_cxt.MyProcPort && u_sess->proc_cxt.MyProcPort->database_name) {
         if (!protocol_inited) {
             int ret = strcpy_s(g_proto_ctx.database_name.data, NAMEDATALEN, u_sess->proc_cxt.MyProcPort->database_name);
             securec_check(ret, "\0", "\0");

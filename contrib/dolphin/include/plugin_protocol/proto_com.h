@@ -27,7 +27,6 @@
 extern THR_LOCAL uint8 next_seqid;
 
 typedef struct dolphin_proto_ctx {
-    int port;
     char *server_name;
     NameData database_name;
     int32 connect_id;
