@@ -13,7 +13,8 @@ UPDATE pg_user
    SET usesuper = 't'::bool
    WHERE usename = 'postgres';
 ERROR:  cannot update view "pg_user"
-HINT:  You need an unconditional ON UPDATE DO INSTEAD rule or an INSTEAD OF UPDATE trigger.
+DETAIL:  Views that do not select from a single table or view are not automatically updatable.
+HINT:  To enable updating the view, provide an INSTEAD OF UPDATE trigger or an unconditional ON UPDATE DO INSTEAD rule.
 --
 -- FUNCTION REMOVAL
 --

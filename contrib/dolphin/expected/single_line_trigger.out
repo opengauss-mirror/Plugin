@@ -142,7 +142,7 @@ begin
     insert into food(id, foodtype, remark, time_flag) values (1,'ice cream', 'sdsdsdsd', now());
 end;
 /
-ERROR:  trigger "animal_trigger1" for relation "animals" already exists
+ERROR:  trigger "animal_trigger1" already exists
 create trigger if not exists animal_trigger1
 after insert on animals
 for each row
@@ -150,7 +150,7 @@ begin
     insert into food(id, foodtype, remark, time_flag) values (1,'ice cream', 'sdsdsdsd', now());
 end;
 /
-NOTICE:  trigger "animal_trigger1" for relation "animals" already exists,skipping
+NOTICE:  trigger "animal_trigger1" already exists, skipping
 drop trigger animal_trigger1 on animals;
 drop trigger animal_trigger2 on animals;
 drop trigger animal_trigger3 on animals;
@@ -242,12 +242,12 @@ create trigger animal_trigger1
 after insert on animals
 for each row
 insert into food(id, foodtype, remark, time_flag) values (1,'ice cream', 'sdsdsdsd', now());
-ERROR:  trigger "animal_trigger1" for relation "animals" already exists
+ERROR:  trigger "animal_trigger1" already exists
 create trigger if not exists animal_trigger1
 after insert on animals
 for each row
 insert into food(id, foodtype, remark, time_flag) values (1,'ice cream', 'sdsdsdsd', now());
-NOTICE:  trigger "animal_trigger1" for relation "animals" already exists,skipping
+NOTICE:  trigger "animal_trigger1" already exists, skipping
 drop table food;
 drop table animals;
 set enable_set_variable_b_format = on;
@@ -305,7 +305,7 @@ select @sum;
 (1 row)
 
 CREATE TRIGGER if not exists ins_call100 after INSERT ON t FOR EACH ROW call proc(NEW.id);
-NOTICE:  trigger "ins_call100" for relation "t" already exists,skipping
+NOTICE:  trigger "ins_call100" already exists, skipping
 drop table t, t1;
 drop procedure proc;
 reset enable_set_variable_b_format;
