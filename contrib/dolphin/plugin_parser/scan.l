@@ -783,6 +783,7 @@ other			.
 						ident = litbufdup(yyscanner);
 						if (yyextra->literallen >= NAMEDATALEN && u_sess->parser_cxt.is_load_copy == false && u_sess->parser_cxt.isForbidTruncate == false)
 							truncate_identifier(ident, yyextra->literallen, yyextra->warnOnTruncateIdent);
+						set_is_delimiter_name(ident,yyscanner);
 #ifdef DOLPHIN
 						if (!GetSessionContext()->scan_from_pl) {
 							yylval->dolphinIdent = CreateDolphinIdent(ident, true);
@@ -1296,6 +1297,7 @@ other			.
 						{
 							yyextra->is_hint_str = true;
 						}
+						set_is_delimiter_name(yytext,yyscanner);
 #ifdef DOLPHIN
 						yyextra->ident_quoted = false;
 #endif

@@ -116,12 +116,11 @@ return 1;
 end;
 /
 call testfunc2();
-ERROR:  column reference "a" is ambiguous
-LINE 1: insert into test values (a)
-                                 ^
-DETAIL:  It could refer to either a PL/pgSQL variable or a table column.
-QUERY:  insert into test values (a)
-CONTEXT:  PL/pgSQL function testfunc2() line 6 at SQL statement
+ testfunc2 
+-----------
+         1
+(1 row)
+
 set dolphin.b_compatibility_mode  = 0;
 CREATE FUNCTION testfunc12() return int as
 declare

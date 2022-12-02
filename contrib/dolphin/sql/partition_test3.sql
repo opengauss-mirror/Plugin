@@ -50,31 +50,31 @@ PARTITION BY RANGE(a) SUBPARTITION BY RANGE(b)
 );
 
 --test b_compatibility drop and add partition syntax
-select relname, boundaries from pg_partition where parentid in (select parentid from pg_partition where relname = 'test_part2');
+select relname, boundaries from pg_partition where parentid in (select parentid from pg_partition where relname = 'test_part2') order by 1,2;
 ALTER TABLE test_part2 DROP PARTITION p3;
-select relname, boundaries from pg_partition where parentid in (select parentid from pg_partition where relname = 'test_part2');
+select relname, boundaries from pg_partition where parentid in (select parentid from pg_partition where relname = 'test_part2') order by 1,2;
 ALTER TABLE test_part2 add PARTITION (PARTITION p3 VALUES LESS THAN (400),PARTITION p4 VALUES LESS THAN (500),PARTITION p5 VALUES LESS THAN (600));
-select relname, boundaries from pg_partition where parentid in (select parentid from pg_partition where relname = 'test_part2');
+select relname, boundaries from pg_partition where parentid in (select parentid from pg_partition where relname = 'test_part2') order by 1,2;
 ALTER TABLE test_part2 add PARTITION (PARTITION p6 VALUES LESS THAN (700),PARTITION p7 VALUES LESS THAN (800));
 ALTER TABLE test_part2 DROP PARTITION p4,p5,p6;
-select relname, boundaries from pg_partition where parentid in (select parentid from pg_partition where relname = 'test_part2');
+select relname, boundaries from pg_partition where parentid in (select parentid from pg_partition where relname = 'test_part2') order by 1,2;
 ALTER TABLE test_part2 add PARTITION (PARTITION p4 VALUES LESS THAN (500));
 
 
-select relname, boundaries from pg_partition where parentid in (select oid from pg_partition where parentid in (select parentid from pg_partition where relname = 'test_subpart2'));
+select relname, boundaries from pg_partition where parentid in (select oid from pg_partition where parentid in (select parentid from pg_partition where relname = 'test_subpart2')) order by 1,2;
 ALTER TABLE test_subpart2 DROP SUBPARTITION p0_0;
 ALTER TABLE test_subpart2 DROP SUBPARTITION p0_2, p1_0, p1_2;
-select relname, boundaries from pg_partition where parentid in (select oid from pg_partition where parentid in (select parentid from pg_partition where relname = 'test_subpart2'));
+select relname, boundaries from pg_partition where parentid in (select oid from pg_partition where parentid in (select parentid from pg_partition where relname = 'test_subpart2')) order by 1,2;
 
 --test opengauss drop and add partition syntax
 ALTER TABLE test_part2 add PARTITION (PARTITION p5 VALUES LESS THAN (600));
 ALTER TABLE test_part2 DROP PARTITION p5, DROP PARTITION p0, DROP PARTITION p7;
-select relname, boundaries from pg_partition where parentid in (select parentid from pg_partition where relname = 'test_part2');
+select relname, boundaries from pg_partition where parentid in (select parentid from pg_partition where relname = 'test_part2') order by 1,2;
 ALTER TABLE test_part2 add PARTITION p4 VALUES LESS THAN (100),add PARTITION p5 VALUES LESS THAN (200);
 ALTER TABLE test_part2 add PARTITION p4 VALUES LESS THAN (500),add PARTITION p5 VALUES LESS THAN (600);
-select relname, boundaries from pg_partition where parentid in (select parentid from pg_partition where relname = 'test_part2');
+select relname, boundaries from pg_partition where parentid in (select parentid from pg_partition where relname = 'test_part2') order by 1,2;
 ALTER TABLE test_subpart2 DROP SUBPARTITION p2_0, DROP SUBPARTITION p2_2, DROP SUBPARTITION p3_0;
-select relname, boundaries from pg_partition where parentid in (select oid from pg_partition where parentid in (select parentid from pg_partition where relname = 'test_subpart2'));
+select relname, boundaries from pg_partition where parentid in (select oid from pg_partition where parentid in (select parentid from pg_partition where relname = 'test_subpart2')) order by 1,2;
 
 --test add partition other syntax
 CREATE TABLE IF NOT EXISTS test_part2_1
