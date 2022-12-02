@@ -116,8 +116,10 @@ insert into test values('timestampdiff(microsecond, time''12:12:12.999999'', cas
 insert into test values('timestampdiff(microsecond, date''2022-9-12'', time''12:12:12.999999'')',timestampdiff(microsecond, date'2022-9-12', time'12:12:12.999999'));
 insert into test values('timestampdiff(microsecond, time''12:12:12.999999'', date''2022-9-12'')', timestampdiff(microsecond, time'12:12:12.999999', date'2022-9-12'));
 insert into test values('timestampdiff(microsecond, ''20211112121212.999999'', ''20220912111111.999999'')', timestampdiff(microsecond, '20211112121212.999999', '20220912111111.999999'));
-insert into test values('timestampdiff(microsecond, 101, ''20211112121212.999999'')', timestampdiff(microsecond, 101, '20220912111111.999999'));
-insert into test values('timestampdiff(microsecond, ''20211112121212.999999'', 101)', timestampdiff(microsecond, '20220912111111.999999', 101));
+insert into test values('timestampdiff(microsecond, 101, ''20211112121212.999999'')', timestampdiff(microsecond, 101, '20211112121212.999999'));
+insert into test values('timestampdiff(microsecond, ''20211112121212.999999'', 101)', timestampdiff(microsecond, '20211112121212.999999', 101));
+insert into test values('timestampdiff(microsecond, 99991231235959.999999, 101)', timestampdiff(microsecond, 99991231235959.999999, 101));
+insert into test values('timestampdiff(microsecond, 101, 99991231235959.999999)', timestampdiff(microsecond, 101, 99991231235959.999999));
 -- 特异
 insert into test values('timestampdiff(week, null, ''9999-12-31'')', timestampdiff(week, null, '9999-12-31'));
 insert into test values('timestampdiff(week, ''9999-12-31'', null)', timestampdiff(week, '9999-12-31', null));
@@ -936,12 +938,14 @@ select * from test order by funcname;
  timestampdiff(microsecond, '0000-1-1 00:00:00', '0000-1-2')                                      | 86400000000
  timestampdiff(microsecond, '0000-1-1', '9999-12-31')                                             | 315569433257000000
  timestampdiff(microsecond, '10000-1-1', '2021-11-12')                                            | 
- timestampdiff(microsecond, 101, '20211112121212.999999')                                         | -716296271999999
+ timestampdiff(microsecond, 101, '20211112121212.999999')                                         | 690034332999999
+ timestampdiff(microsecond, 101, 99991231235959.999999)                                           | 252455615999999999
  timestampdiff(microsecond, '2021-11-12', '10000-1-1')                                            | 
- timestampdiff(microsecond, '20211112121212.999999', 101)                                         | 716296271999999
+ timestampdiff(microsecond, '20211112121212.999999', 101)                                         | -690034332999999
  timestampdiff(microsecond, '20211112121212.999999', '20220912111111.999999')                     | 26261939000000
 --?.*
 --?.*
+ timestampdiff(microsecond, 99991231235959.999999, 101)                                           | -252455615999999999
  timestampdiff(microsecond, 'abc', '2021-11-12')                                                  | 
 --?.*
 --?.*
@@ -970,7 +974,7 @@ select * from test order by funcname;
  timestampdiff(year, '0000-1-1', '9999-12-31')                                                    | 9999
  timestampdiff(year, '9999-12-31', '0000-12-31')                                                  | -9998
  timestampdiff(year, time'-838:59:59', time'838:59:59')                                           | 0
-(307 rows)
+(309 rows)
 
 drop table test;
 \c contrib_regression
