@@ -271,7 +271,6 @@ dolqdelim		\$({dolq_start}{dolq_cont}*)?\$
 dolqfailed		\${dolq_start}{dolq_cont}*
 dolqinside		[^$]+
 
-#ifdef DOLPHIN
 /* Double quote
  * Allows embedded spaces and other special characters into identifiers.
  */
@@ -280,7 +279,6 @@ xdstart			{dquote}
 xdstop			{dquote}
 xddouble		{dquote}{dquote}
 xdinside		[^"]+
-#endif
 
 /* backquote quote
  * Allows embedded spaces and other special characters into identifiers.
@@ -781,13 +779,11 @@ other			.
 					BEGIN(xui);
 					startlit();
 				}
-#ifdef DOLPHIN
 {xbqstart}		{
 					SET_YYLLOC();
 					BEGIN(xbq);
 					startlit();
 				}
-#endif
 <xd>{xdstop}	{
 #ifdef DOLPHIN
 					if (SQL_MODE_ANSI_QUOTES()) {
@@ -878,7 +874,6 @@ other			.
 					yyextra->is_hint_str = false;
 					return IDENT;
 				}
-#ifdef DOLPHIN
 <xbq>{xbqstop}	{
 					char		   *ident;
 
@@ -898,7 +893,6 @@ other			.
 					yyextra->is_hint_str = false;
 					return IDENT;
 				}
-#endif
 <xd,xui>{xddouble}	{
 					addlitchar('"', yyscanner);
 				}
