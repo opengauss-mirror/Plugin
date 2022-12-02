@@ -478,8 +478,13 @@ Datum timestamp_in(PG_FUNCTION_ARGS)
             * default pg date formatting parsing.
             */
             dterr = ParseDateTime(str, workbuf, sizeof(workbuf), field, ftype, MAXDATEFIELDS, &nf);
-            if (dterr != 0)
-                DateTimeParseError(dterr, str, "timestamp");
+            if (dterr != 0) {
+                DateTimeParseError(dterr, str, "timestamp", fcinfo->can_ignore);
+                /*
+                 * if error ignorable, function DateTimeParseError reports warning instead, then return current timestamp.
+                 */
+                PG_RETURN_TIMESTAMP(GetCurrentTimestamp());
+            }
             if (dterr == 0) {
                 if (nf == 1 && ftype[0] == DTK_NUMBER) {
                     /* for example, str = "301210054523", "301210054523.123" */
@@ -489,8 +494,10 @@ Datum timestamp_in(PG_FUNCTION_ARGS)
                     dterr = DecodeDateTimeForBDatabase(field, ftype, nf, &dtype, tm, &fsec, &tz);
                 }
             }
-            if (dterr != 0)
-                DateTimeParseError(dterr, str, "timestamp");
+            if (dterr != 0) {
+                DateTimeParseError(dterr, str, "timestamp", fcinfo->can_ignore);
+                PG_RETURN_TIMESTAMP(GetCurrentTimestamp());
+            }
             switch (dtype) {
                 case DTK_DATE:
                     if (tm2timestamp(tm, fsec, NULL, &result) != 0)
@@ -917,8 +924,11 @@ Datum smalldatetime_in(PG_FUNCTION_ARGS)
             dterr = DecodeDateTimeForBDatabase(field, ftype, nf, &dtype, tm, &fsec, &tz);
             fsec = 0;
         }
-        if (dterr != 0)
-            DateTimeParseError(dterr, str, "smalldatetime");
+        if (dterr != 0) {
+            DateTimeParseError(dterr, str, "smalldatetime", fcinfo->can_ignore);
+            /* if error ignorable, return epoch time as result */
+            GetEpochTime(tm);
+        }
         if (tm->tm_sec >= 30) {
             sign = 1;
         }
@@ -1237,8 +1247,13 @@ Datum timestamptz_in(PG_FUNCTION_ARGS)
         result = timestamp2timestamptz(result);
     } else {
         dterr = ParseDateTime(str, workbuf, sizeof(workbuf), field, ftype, MAXDATEFIELDS, &nf);
-        if (dterr != 0)
-            DateTimeParseError(dterr, str, "timestamp");
+        if (dterr != 0) {
+            DateTimeParseError(dterr, str, "timestamp", fcinfo->can_ignore);
+            /*
+             * if error ignorable, function DateTimeParseError reports warning instead, then return current timestamp.
+             */
+            PG_RETURN_TIMESTAMP(GetCurrentTimestamp());
+        }
         if (dterr == 0) {
             if (nf == 1 && ftype[0] == DTK_NUMBER) {
                 /* for example, str = "301210054523", "301210054523.123" */
@@ -1249,8 +1264,10 @@ Datum timestamptz_in(PG_FUNCTION_ARGS)
                 dterr = DecodeDateTimeForBDatabase(field, ftype, nf, &dtype, tm, &fsec, &tz);
             }
         }
-        if (dterr != 0)
-            DateTimeParseError(dterr, str, "timestamp");
+        if (dterr != 0) {
+            DateTimeParseError(dterr, str, "timestamp", fcinfo->can_ignore);
+            PG_RETURN_TIMESTAMP(GetCurrentTimestamp());
+        }
         switch (dtype) {
             case DTK_DATE:
                 if (tm2timestamp(tm, fsec, &tz, &result) != 0)
@@ -1411,7 +1428,7 @@ Datum interval_in(PG_FUNCTION_ARGS)
 #endif
     int32        typmod = PG_GETARG_INT32(2);
     Interval     *result = NULL;
-    result = char_to_interval(str, typmod);
+    result = char_to_interval(str, typmod, fcinfo->can_ignore);
 
     AdjustIntervalForTypmod(result, typmod);
 
