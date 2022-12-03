@@ -119,15 +119,6 @@ static ProtocolExtensionConfig dolphin_protocol_config = {
  */
 void define_dolphin_server_guc()
 {
-    DefineCustomIntVariable(
-                "dolphin.port",
-                gettext_noop("Sets the dolphin TCP port the server listens on."),
-                NULL,
-                &g_proto_ctx.port,
-                3307, 1024, 65535,
-                PGC_SIGHUP,
-                GUC_NOT_IN_SAMPLE,
-                NULL, NULL, NULL);
     DefineCustomStringVariable(
                 "dolphin.default_database_name",
                 gettext_noop("Predefined dolphin database name"),
@@ -200,7 +191,7 @@ void server_listen_init(void)
             if (strcmp(curhost, "*") == 0) {
                 status = StreamServerPort(AF_UNSPEC,
                     NULL,
-                    g_proto_ctx.port,
+                    g_instance.attr.attr_network.dolphin_server_port,
                     g_instance.attr.attr_network.UnixSocketDir,
                     g_instance.listen_cxt.ListenSocket,
                     MAXLISTEN,
@@ -211,7 +202,7 @@ void server_listen_init(void)
             } else {
                 status = StreamServerPort(AF_UNSPEC,
                     curhost,
-                    g_proto_ctx.port,
+                    g_instance.attr.attr_network.dolphin_server_port,
                     g_instance.attr.attr_network.UnixSocketDir,
                     g_instance.listen_cxt.ListenSocket,
                     MAXLISTEN,
@@ -227,7 +218,7 @@ void server_listen_init(void)
                 ereport(FATAL,
                     (errmsg("could not create listen socket for \"%s:%d\"",
                         curhost,
-                        g_proto_ctx.port)));
+                        g_instance.attr.attr_network.dolphin_server_port)));
             }
 
             /* record the first successful host addr in lockfile */

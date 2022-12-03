@@ -137,7 +137,7 @@ export dp = $(shell expr $(p) + 3)
 export THIRD_PARTY_LIBS = $(with_3rd)
 
 plugin_check:
-	sed -i 's/dolphin\.port=.*/dolphin\.port=${dp}/g' ./make_check_postgresql.conf
+	sed -i 's/dolphin\_server\_port=.*/dolphin\_server\_port=${dp}/g' ./make_check_postgresql.conf
 	make check
 
 include $(top_builddir)/$(base_dir)/configure.mk
