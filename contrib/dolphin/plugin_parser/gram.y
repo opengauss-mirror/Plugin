@@ -884,7 +884,7 @@ static SelectStmt *MakeShowGrantStmt(char *arg, int location, core_yyscan_t yysc
 %type <boolean> OptRelative
 %type <boolean> OptGPI
 %type <str>		OptTableSpace OptTableSpace_without_empty OptConsTableSpace OptTableSpaceOwner LoggingStr size_clause OptMaxSize OptDatafileSize OptReuse OptAuto OptNextStr OptDatanodeName
-%type <list>	opt_check_option
+%type <ival>	opt_check_option
 
 %type <str>		opt_provider security_label
 
@@ -13289,6 +13289,52 @@ DropTrigStmt:
 					n->concurrent = false;
 					$$ = (Node *) n;
 				}
+			| DROP TRIGGER name opt_drop_behavior
+				{
+#ifdef	ENABLE_MULTIPLE_NODES
+					const char* message = "drop trigger name is not yet supported in distributed database.";
+					InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);			
+					ereport(errstate,
+						(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+							errmsg("drop trigger name is not yet supported in distributed database.")));
+#endif
+					if (u_sess->attr.attr_sql.sql_compatibility != B_FORMAT) {
+						ereport(errstate, 
+								(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+								errmsg("drop trigger without table name only support in B-format database")));
+					}
+					DropStmt *n = makeNode(DropStmt);
+					n->removeType = OBJECT_TRIGGER;
+					n->objects = list_make1(list_make1(makeString($3)));
+					n->arguments = NIL;
+					n->behavior = $4;
+					n->missing_ok = false;
+					n->concurrent = false;
+					$$ = (Node *) n;
+				}
+			| DROP TRIGGER IF_P EXISTS name opt_drop_behavior
+				{
+#ifdef	ENABLE_MULTIPLE_NODES
+					const char* message = "drop trigger if exists name is not yet supported in distributed database.";
+					InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);			
+					ereport(errstate,
+						(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+							errmsg("drop trigger if exists name is not yet supported in distributed database.")));
+#endif
+					if (u_sess->attr.attr_sql.sql_compatibility != B_FORMAT) {
+						ereport(errstate, 
+								(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+								errmsg("drop trigger without table name only support in B-format database")));
+					}
+					DropStmt *n = makeNode(DropStmt);
+					n->removeType = OBJECT_TRIGGER;
+					n->objects = list_make1(list_make1(makeString($5)));
+					n->arguments = NIL;
+					n->behavior = $6;
+					n->missing_ok = true;
+					n->concurrent = false;
+					$$ = (Node *) n;
+				}
 		;
 
 
@@ -16666,7 +16712,7 @@ b_proc_body:
 				else
 				{
 						proc_body_str = (char *)palloc0(proc_body_len + 1);
-						DolphinDealProcBodyStr(proc_body_str, yyextra->core_yy_extra.scanbuf, infolist, proc_b, proc_body_len);
+						DolphinDealProcBodyStr(proc_body_str, yyextra->core_yy_extra.scanbuf, infolist, proc_b, proc_body_len + 1);
 				}
 
 				proc_body_str[proc_body_len] = '\0';
@@ -18764,6 +18810,7 @@ RenameStmt: ALTER AGGREGATE func_name aggr_args RENAME TO name
 					n->replace = true;
 					n->sql_statement = NULL;
 					n->is_alter = true;
+					n->withCheckOption = (ViewCheckOption)$7;
 					$$ = (Node *) n;
 				}
 			| ALTER definer_expression VIEW qualified_name opt_column_list AS SelectStmt opt_check_option
@@ -18784,6 +18831,7 @@ RenameStmt: ALTER AGGREGATE func_name aggr_args RENAME TO name
 					n->replace = true;
 					n->sql_statement = NULL;
 					n->is_alter = true;
+					n->withCheckOption = (ViewCheckOption)$8;
 					$$ = (Node *) n;
 				}
 			| ALTER MATERIALIZED VIEW qualified_name RENAME TO name
@@ -20282,7 +20330,8 @@ ViewStmt: CREATE OptTemp VIEW qualified_name opt_column_list opt_reloptions
 					n->query = $8;
 					n->replace = false;
 					n->options = $6;
-                                                                                n->sql_statement = NULL;
+					n->sql_statement = NULL;
+					n->withCheckOption = (ViewCheckOption)$9;
 					$$ = (Node *) n;
 				}
 		| CREATE OR REPLACE OptTemp VIEW qualified_name opt_column_list opt_reloptions
@@ -20295,7 +20344,8 @@ ViewStmt: CREATE OptTemp VIEW qualified_name opt_column_list opt_reloptions
 					n->query = $10;
 					n->replace = true;
 					n->options = $8;
-                                                                                n->sql_statement = NULL;
+					n->sql_statement = NULL;
+					n->withCheckOption = (ViewCheckOption)$11;
 					$$ = (Node *) n;
 				}
 		| CREATE opt_or_replace definer_expression OptTemp VIEW qualified_name opt_column_list opt_reloptions
@@ -20310,36 +20360,16 @@ ViewStmt: CREATE OptTemp VIEW qualified_name opt_column_list opt_reloptions
 					n->replace = $2;
 					n->options = $8;
 					n->sql_statement = NULL;
+					n->withCheckOption = (ViewCheckOption)$11;
 					$$ = (Node *) n;
 				}
 		;
 
 opt_check_option:
-		WITH CHECK OPTION
-				{
-					const char* message = "WITH CHECK OPTION is not implemented";
-    				InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);
-					ereport(errstate,
-							(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
-							 errmsg("WITH CHECK OPTION is not implemented")));
-				}
-		| WITH CASCADED CHECK OPTION
-				{
-					const char* message = "WITH CHECK OPTION is not implemented";
-    				InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);
-					ereport(errstate,
-							(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
-							 errmsg("WITH CHECK OPTION is not implemented")));
-				}
-		| WITH LOCAL CHECK OPTION
-				{
-					const char* message = "WITH CHECK OPTION is not implemented";
-    				InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);
-					ereport(errstate,
-							(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
-							 errmsg("WITH CHECK OPTION is not implemented")));
-				}
-		| /* EMPTY */							{ $$ = NIL; }
+		WITH CHECK OPTION				{ $$ = CASCADED_CHECK_OPTION; }
+		| WITH CASCADED CHECK OPTION	{ $$ = CASCADED_CHECK_OPTION; }
+		| WITH LOCAL CHECK OPTION		{ $$ = LOCAL_CHECK_OPTION; }
+		| /* EMPTY */					{ $$ = NO_CHECK_OPTION; }
 		;
 
 /*****************************************************************************
@@ -34995,33 +35025,40 @@ void DolphinDealProcBodyStr(char* target, char* scanbuf, List* infol, int begin,
 	DolphinProcBodyInfo* preinfo = NULL;
 	DolphinProcBodyInfo* info = NULL;
 	int offset = 0;
+	int rc;
 	foreach (lc, infol) {
 		preinfo = info;
 		info = (DolphinProcBodyInfo*)lfirst(lc);
 		if (info->m_block_level == 1) {
-			strncpy(target, scanbuf + begin - 1, info->m_declare_len + 1);
+			rc = strncpy_s(target, len, scanbuf + begin - 1, info->m_declare_len + 1);
+			securec_check(rc, "", "");
 			offset += info->m_declare_len + 1;
-			strncpy(target + offset, " begin ", 7);
+			rc = strncpy_s(target + offset, len - offset, " begin ", 7);
+			securec_check(rc, "", "");
 			offset += 7;
 		}
 		if (preinfo != NULL)
 		{
-			strncpy(target + offset, scanbuf + preinfo->m_declare_e + 1, 
+			rc = strncpy_s(target + offset, len - offset, scanbuf + preinfo->m_declare_e + 1,
 				info->m_begin_b - preinfo->m_declare_e - 1);
+			securec_check(rc, "", "");
 			offset += info->m_begin_b - preinfo->m_declare_e - 1;
-			strncpy(target + offset, scanbuf + info->m_declare_b,
+			rc = strncpy_s(target + offset, len - offset, scanbuf + info->m_declare_b,
                                 info->m_declare_len + 1);
+			securec_check(rc, "", "");
 			offset += info->m_declare_len + 1;
 			if (info->m_begin_len > 2)
 			{
-				strncpy(target + offset, scanbuf + info->m_begin_b ,
+				rc = strncpy_s(target + offset, len - offset, scanbuf + info->m_begin_b ,
                                 info->m_begin_len - 2);
+				securec_check(rc, "", "");
 				offset += info->m_begin_len - 2;
 			}
 		}
 	}
-	strncpy(target + offset, scanbuf + info->m_declare_e + 1,
-                                 len - offset + 1);
+	rc = strncpy_s(target + offset, len - offset, scanbuf + info->m_declare_e + 1,
+                                 len - offset - 1);
+	securec_check(rc, "", "");
 }
 
 static char* TriggerBodyGet(int& start_pos, int& end_pos, base_yy_extra_type* yyextra)
