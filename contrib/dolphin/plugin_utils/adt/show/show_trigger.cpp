@@ -41,6 +41,13 @@ Datum ShowTriggers(PG_FUNCTION_ARGS)
         if (schema != NULL) {
             (void)plps_check_schema_or_table_valid(schema, NULL, FALSE);
         }
+
+        SPI_STACK_LOG("connect", NULL, NULL);
+        if (SPI_connect() != SPI_OK_CONNECT) {
+            ereport(ERROR, (errcode(ERRCODE_SPI_CONNECTION_FAILURE), errmsg("SPI_connect failed")));
+        }
+        fctx->user_fctx = GetSqlMode();
+        SetSqlMode("ansi_quotes");
         StringInfo stringInfo = makeStringInfo();
         appendStringInfoString(stringInfo, "select CAST(t.tgname AS character varying)  as \"Trigger\",\n"
                                            "       CAST(em.text AS character varying)   as \"Event\",\n"
@@ -75,7 +82,10 @@ Datum ShowTriggers(PG_FUNCTION_ARGS)
         if (schema != NULL && strlen(schema) != 0) {
             appendStringInfo(stringInfo, " AND n.nspname = '%s'", schema);
         }
-        CallSPIAndCheck(stringInfo->data);
+        if (SPI_execute(stringInfo->data, true, 0) != SPI_OK_SELECT) {
+            ereport(ERROR, (errcode(ERRCODE_DATA_EXCEPTION), errmsg("failed to exec query '%s'", stringInfo->data)));
+        }
+
         DestroyStringInfo(stringInfo);
         fctx->max_calls = SPI_processed;
         fctx->call_cntr = 0;
@@ -98,6 +108,7 @@ Datum ShowTriggers(PG_FUNCTION_ARGS)
         HeapTuple returnTuple = heap_form_tuple(fctx->tuple_desc, values, nulls);
         SRF_RETURN_NEXT(fctx, HeapTupleGetDatum(returnTuple));
     } else {
+        SetSqlMode((const char*)fctx->user_fctx);
         SPI_STACK_LOG("finish", NULL, NULL);
         if (SPI_finish() != SPI_OK_FINISH) {
             ereport(ERROR, (errcode(ERRCODE_SPI_FINISH_FAILURE), errmsg("SPI_finish failed")));

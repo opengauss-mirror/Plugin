@@ -167,7 +167,7 @@ List* raw_parser(const char* str, List** query_string_locationlist)
 #ifdef DOLPHIN
 static inline bool IsDescStmtSymbol(int token)
 {
-    return (token == ASCII_DOT || token == ASCII_SEMICOLON);
+    return (token == ASCII_DOT || token == ASCII_SEMICOLON || token == 0);
 }
 
 static inline bool IsDescribeStmt(char* scanbuf) 
