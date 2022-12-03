@@ -13,6 +13,8 @@ create table t2(stime timestamp default current_timestamp);
 insert into t2 values(now());
 select default(stime) from t2;
 
+select default(does_not_exist) from t2;
+
 create schema tt;
 
 create table tt.t3(id int, stime timestamp on update current_timestamp);

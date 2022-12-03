@@ -36,6 +36,9 @@ select default(stime) from t2;
  
 (1 row)
 
+select default(does_not_exist) from t2;
+ERROR:  Unknown column 'does_not_exist' in 'field list'
+CONTEXT:  referenced column: mode_b_default
 create schema tt;
 create table tt.t3(id int, stime timestamp on update current_timestamp);
 \d tt.t3

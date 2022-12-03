@@ -1627,6 +1627,11 @@ static DefaultFuncType* DefaultFuncTransformColumnRef(ParseState* pstate, Column
                     errmsg("Invalid rte call."),
                         errdetail("database.schema.table_name.colname exist error.")));
     }
+
+    if (node == NULL) {
+        ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmodule(MOD_OPT),
+            errmsg("Unknown column '%s' in 'field list'", colname)));
+    }
     result->tableOid = rte->relid;
     result->colNumber = ((Var*)node)->varattno;
     return result;

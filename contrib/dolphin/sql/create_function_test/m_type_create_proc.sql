@@ -3,9 +3,25 @@ create database m_create_proc_type dbcompatibility 'B';
 \c m_create_proc_type
 
 --test create procedure 
-
-
 delimiter //
+
+CREATE PROCEDURE p()
+  BEGIN
+  DECLARE v INT DEFAULT 1;
+  CASE v
+  WHEN 2 THEN SELECT v;
+  WHEN 3 THEN SELECT 0;
+  ELSE
+  BEGIN
+  END;
+  END CASE;
+END;
+//
+
+CREATE PROCEDURE p()
+  BEGIN
+  END;
+//
 
 CREATE PROCEDURE proc1 ()
        BEGIN

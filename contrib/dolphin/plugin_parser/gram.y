@@ -35012,9 +35012,12 @@ void DolphinDealProcBodyStr(char* target, char* scanbuf, List* infol, int begin,
 			strncpy(target + offset, scanbuf + info->m_declare_b,
                                 info->m_declare_len + 1);
 			offset += info->m_declare_len + 1;
-			strncpy(target + offset, scanbuf + info->m_begin_b ,
+			if (info->m_begin_len > 2)
+			{
+				strncpy(target + offset, scanbuf + info->m_begin_b ,
                                 info->m_begin_len - 2);
-			offset += info->m_begin_len - 2;
+				offset += info->m_begin_len - 2;
+			}
 		}
 	}
 	strncpy(target + offset, scanbuf + info->m_declare_e + 1,

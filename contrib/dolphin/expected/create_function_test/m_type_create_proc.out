@@ -4,6 +4,37 @@ create database m_create_proc_type dbcompatibility 'B';
 \c m_create_proc_type
 --test create procedure 
 delimiter //
+CREATE PROCEDURE p()
+  BEGIN
+  DECLARE v INT DEFAULT 1;
+  CASE v
+  WHEN 2 THEN SELECT v;
+  WHEN 3 THEN SELECT 0;
+  ELSE
+  BEGIN
+  END;
+  END CASE;
+END;
+//
+ERROR:  unexpected end of function definition at end of input
+LINE 7:   BEGIN
+               ^
+QUERY:   DECLARE v INT DEFAULT 1; begin 
+  CASE v
+  WHEN 2 THEN SELECT v;
+  WHEN 3 THEN SELECT 0;
+  ELSE
+  CREATE PROCEDURE p()
+  BEGIN
+CREATE PROCEDURE p()
+  BEGIN
+  END;
+//
+ERROR:  syntax error at or near "//"
+LINE 2: //
+        ^
+QUERY:   DECLARE  begin  END;
+//
 CREATE PROCEDURE proc1 ()
        BEGIN
          SELECT 1;
