@@ -1,5 +1,5 @@
 \c table_name_test_db;
-SET lower_case_table_names TO 0;
+SET dolphin.lower_case_table_names TO 0;
 CREATE TABLE `Test_trigger_src_tbl`(`id1` INT, `id2` INT, `id3` INT);
 CREATE TABLE `Test_trigger_des_tbl`(`id1` INT, `id2` INT, `id3` INT);
 

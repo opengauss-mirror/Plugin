@@ -24,7 +24,7 @@ select * from `test` where "ID" like 10;
 select * from `test` where `id`=10;
 drop table `test`;
 
-set lower_case_table_names to 0;
+set dolphin.lower_case_table_names to 0;
 
 create table `Test`(`ID` "int4");
 insert into `Test` values(10);

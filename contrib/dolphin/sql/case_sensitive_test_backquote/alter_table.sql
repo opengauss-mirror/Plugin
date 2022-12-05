@@ -1,5 +1,5 @@
 \c table_name_test_db;
-SET lower_case_table_names TO 0;
+SET dolphin.lower_case_table_names TO 0;
 
 --
 --FOR BLACKLIST FEATURE: REFERENCES/INHERITS/WITH OIDS/RULE/CREATE TYPE/DOMAIN is not supported.
