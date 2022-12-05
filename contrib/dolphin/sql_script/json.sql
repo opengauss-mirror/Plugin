@@ -53,12 +53,12 @@ CREATE OR REPLACE FUNCTION pg_catalog.json_objectagg_finalfn(
 
 create aggregate pg_catalog.json_objectagg("any", "any") (SFUNC = json_object_agg_transfn, STYPE = internal, finalfunc = json_objectagg_finalfn);
 
-CREATE OR REPLACE FUNCTION pg_catalog.json_valid("any") RETURNS boolean LANGUAGE C STABLE as '$libdir/dolphin', 'json_valid';
+CREATE OR REPLACE FUNCTION pg_catalog.json_valid("any") RETURNS boolean LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'json_valid';
 
-CREATE OR REPLACE FUNCTION pg_catalog.json_storage_size("any") RETURNS int LANGUAGE C STABLE as '$libdir/dolphin', 'json_storage_size';
+CREATE OR REPLACE FUNCTION pg_catalog.json_storage_size("any") RETURNS int LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'json_storage_size';
 
 CREATE OR REPLACE FUNCTION pg_catalog.json_pretty("any") RETURNS json LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'json_pretty';
 
-CREATE OR REPLACE FUNCTION pg_catalog.json_type("any") RETURNS text LANGUAGE C STABLE as '$libdir/dolphin', 'json_type';
+CREATE OR REPLACE FUNCTION pg_catalog.json_type("any") RETURNS text LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'json_type';
 
 
