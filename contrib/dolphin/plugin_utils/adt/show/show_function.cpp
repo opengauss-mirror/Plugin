@@ -38,7 +38,15 @@ void ShowFunctionStatusFirstCall(PG_FUNCTION_ARGS)
     MemoryContext oldContext = MemoryContextSwitchTo(fctx->multi_call_memory_ctx);
     fctx->tuple_desc = ShowFunctionTupleDesc();
     BpChar *searchType = PG_GETARG_BPCHAR_P(0);
-    char query[1024];
+
+    SPI_STACK_LOG("connect", NULL, NULL);
+    if (SPI_connect() != SPI_OK_CONNECT) {
+        ereport(ERROR, (errcode(ERRCODE_SPI_CONNECTION_FAILURE), errmsg("SPI_connect failed")));
+    }
+
+    fctx->user_fctx = GetSqlMode();
+    SetSqlMode("ansi_quotes");
+    char query[SCAN_SQL_LEN];
     int ret = sprintf_s(query, sizeof(query),
                         "SELECT "
                         " n.nspname AS \"Db\", "
@@ -66,7 +74,9 @@ void ShowFunctionStatusFirstCall(PG_FUNCTION_ARGS)
                         " p.prokind = '%c'",
                         VARDATA_ANY(searchType)[0]);
     securec_check_ss(ret, "\0", "\0");
-    CallSPIAndCheck(query);
+    if (SPI_execute(query, true, 0) != SPI_OK_SELECT) {
+        ereport(ERROR, (errcode(ERRCODE_DATA_EXCEPTION), errmsg("failed to exec query '%s'", query)));
+    }
     fctx->max_calls = SPI_processed;
     fctx->call_cntr = 0;
     MemoryContextSwitchTo(oldContext);
@@ -94,6 +104,7 @@ Datum ShowFunctionStatus(PG_FUNCTION_ARGS)
         HeapTuple returnTuple = heap_form_tuple(fctx->tuple_desc, values, nulls);
         SRF_RETURN_NEXT(fctx, HeapTupleGetDatum(returnTuple));
     } else {
+        SetSqlMode((const char*)fctx->user_fctx);
         SPI_STACK_LOG("finish", NULL, NULL);
         if (SPI_finish() != SPI_OK_FINISH) {
             ereport(ERROR, (errcode(ERRCODE_SPI_FINISH_FAILURE), errmsg("SPI_finish failed")));

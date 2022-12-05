@@ -46,6 +46,8 @@ typedef struct {
 
 bool PgClassFilter(HeapTuple heapTuple);
 void CallSPIAndCheck(char *query);
+char *GetSqlMode();
+void SetSqlMode(const char *sqlMode);
 bool PgProcProcedureFilter(HeapTuple heapTuple);
 bool PgProcFunctionFilter(HeapTuple heapTuple);
 bool PgAttributeFilter(HeapTuple heapTuple);

@@ -54,9 +54,16 @@ CREATE TRIGGER update_trigger AFTER UPDATE ON test_trigger_src_tbl FOR EACH ROW 
 CREATE TRIGGER delete_trigger BEFORE DELETE ON test_trigger_src_tbl FOR EACH ROW EXECUTE PROCEDURE tri_delete_func();
 create trigger truncate_trigger0010 before truncate on test_trigger_src_tbl for each statement execute procedure tri_truncate_func0010();
 
+set dolphin.sql_mode='sql_mode_full_group';
+show dolphin.sql_mode;
+
 show function status like 'func_add_s%';
+show dolphin.sql_mode;
 show procedure status like 'proc%';
+show dolphin.sql_mode;
 show triggers in grant_test;
+show dolphin.sql_mode;
+reset dolphin.sql_mode;
 
 /* show character set */
 SHOW CHARSET;
