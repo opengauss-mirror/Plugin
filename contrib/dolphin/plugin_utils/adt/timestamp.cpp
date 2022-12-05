@@ -8159,9 +8159,6 @@ static bool timestampdiff_datetime_internal(int64 *result,  text *units, Timesta
 /* 
  * function for B compatibility timestampdiff(unit, datetime/date, datetime/date)
  */
-/* 
- * function for B compatibility timestampdiff(unit, datetime/date, datetime/date)
- */
 Datum timestampdiff_datetime_tt(PG_FUNCTION_ARGS)
 {
     text* units = PG_GETARG_TEXT_PP(0);
@@ -8188,8 +8185,8 @@ Datum timestampdiff_datetime_tt(PG_FUNCTION_ARGS)
 Datum timestampdiff_datetime_nn(PG_FUNCTION_ARGS)
 {
     text* units = PG_GETARG_TEXT_PP(0);
-    Numeric num1 = PG_GETARG_NUMERIC(1);
-    Numeric num2 = PG_GETARG_NUMERIC(2);
+    Numeric num1 = PG_GETARG_NUMERIC(2);
+    Numeric num2 = PG_GETARG_NUMERIC(1);
     struct pg_tm tt1, *tm1 = &tt1;
     struct pg_tm tt2, *tm2 = &tt2;
     lldiv_t div1, div2;
@@ -8233,8 +8230,8 @@ Datum timestampdiff_datetime_tn(PG_FUNCTION_ARGS)
         !lldiv_decode_datetime(num, &div, tm2, &fsec2, NORMAL_DATE, &date_type)) {
         PG_RETURN_NULL();
     }
-    tm2timestamp(tm1, fsec1, NULL, &datetime1);
-    tm2timestamp(tm2, fsec2, NULL, &datetime2);
+    tm2timestamp(tm1, fsec1, NULL, &datetime2);
+    tm2timestamp(tm2, fsec2, NULL, &datetime1);
     if (!timestampdiff_datetime_internal(&result, units, datetime1, datetime2)) {
         PG_RETURN_NULL();
     }

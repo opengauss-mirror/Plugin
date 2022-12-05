@@ -103,8 +103,10 @@ insert into test values('timestampdiff(microsecond, time''12:12:12.999999'', cas
 insert into test values('timestampdiff(microsecond, date''2022-9-12'', time''12:12:12.999999'')',timestampdiff(microsecond, date'2022-9-12', time'12:12:12.999999'));
 insert into test values('timestampdiff(microsecond, time''12:12:12.999999'', date''2022-9-12'')', timestampdiff(microsecond, time'12:12:12.999999', date'2022-9-12'));
 insert into test values('timestampdiff(microsecond, ''20211112121212.999999'', ''20220912111111.999999'')', timestampdiff(microsecond, '20211112121212.999999', '20220912111111.999999'));
-insert into test values('timestampdiff(microsecond, 101, ''20211112121212.999999'')', timestampdiff(microsecond, 101, '20220912111111.999999'));
-insert into test values('timestampdiff(microsecond, ''20211112121212.999999'', 101)', timestampdiff(microsecond, '20220912111111.999999', 101));
+insert into test values('timestampdiff(microsecond, 101, ''20211112121212.999999'')', timestampdiff(microsecond, 101, '20211112121212.999999'));
+insert into test values('timestampdiff(microsecond, ''20211112121212.999999'', 101)', timestampdiff(microsecond, '20211112121212.999999', 101));
+insert into test values('timestampdiff(microsecond, 99991231235959.999999, 101)', timestampdiff(microsecond, 99991231235959.999999, 101));
+insert into test values('timestampdiff(microsecond, 101, 99991231235959.999999)', timestampdiff(microsecond, 101, 99991231235959.999999));
 -- 特异
 insert into test values('timestampdiff(week, null, ''9999-12-31'')', timestampdiff(week, null, '9999-12-31'));
 insert into test values('timestampdiff(week, ''9999-12-31'', null)', timestampdiff(week, '9999-12-31', null));
