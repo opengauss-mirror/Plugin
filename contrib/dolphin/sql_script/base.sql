@@ -356,22 +356,22 @@ CREATE AGGREGATE pg_catalog.any_value(numeric) (
         stype = numeric
 );
 
-DROP FUNCTION IF EXISTS pg_catalog.double_any_value (double, double) CASCADE;
-CREATE OR REPLACE FUNCTION pg_catalog.double_any_value (double, double) RETURNS double LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'double_any_value';
+DROP FUNCTION IF EXISTS pg_catalog.double_any_value (double precision, double precision) CASCADE;
+CREATE OR REPLACE FUNCTION pg_catalog.double_any_value (double precision, double precision) RETURNS double precision LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'double_any_value';
 
-drop aggregate if exists pg_catalog.any_value(double);
-CREATE AGGREGATE pg_catalog.any_value(double) (
+drop aggregate if exists pg_catalog.any_value(double precision);
+CREATE AGGREGATE pg_catalog.any_value(double precision) (
         sfunc = double_any_value,
-        stype = double
+        stype = double precision
 );
 
-DROP FUNCTION IF EXISTS pg_catalog.float_any_value (float, float) CASCADE;
-CREATE OR REPLACE FUNCTION pg_catalog.float_any_value (float, float) RETURNS float LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'float_any_value';
+DROP FUNCTION IF EXISTS pg_catalog.float_any_value (float4, float4) CASCADE;
+CREATE OR REPLACE FUNCTION pg_catalog.float_any_value (float4, float4) RETURNS float4 LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'float_any_value';
 
-drop aggregate if exists pg_catalog.any_value(float);
-CREATE AGGREGATE pg_catalog.any_value(float) (
+drop aggregate if exists pg_catalog.any_value(float4);
+CREATE AGGREGATE pg_catalog.any_value(float4) (
         sfunc = float_any_value,
-        stype = float
+        stype = float4
 );
 
 DROP FUNCTION IF EXISTS pg_catalog.text_any_value (text, text) CASCADE;
