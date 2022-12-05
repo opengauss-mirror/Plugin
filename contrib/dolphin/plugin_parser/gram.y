@@ -847,7 +847,7 @@ static SelectStmt *MakeShowGrantStmt(char *arg, int location, core_yyscan_t yysc
 %type <list>	copy_options
 
 %type <typnam>	Typename SimpleTypename ConstTypename
-				GenericType Numeric opt_float
+				GenericType Numeric opt_float dolphin_float
 				Character ConstCharacter
 				CharacterWithLength CharacterWithoutLength
 				PreciseConstDatetime ConstDatetime ConstSet
@@ -26407,6 +26407,10 @@ GenericType:
 					/* for B_FORMAT compatibility, float4(n) refers to float4 */
 					if (($1 != NULL) && (strcmp($1, "float4") == 0 || strcmp($1, "float") == 0)) {
 						$$ = transferFloat4TypeInBFormat($1, $2, @2, yyscanner);
+					} else if (($1 != NULL) && (strcmp($1, "double") == 0) && ($2 != NULL) && (list_length($2) == 2)) {
+						$$ = SystemTypeName("numeric");
+						$$->typmods = $2;
+						$$->location = @1;
 						/* for B_FORMAT compatibility, real and double refer to float8 */
 					} else if (($1 != NULL) && ((strcmp($1, "real") == 0 || strcmp($1, "double") == 0))) {
 						$$ = makeTypeName("float8");
@@ -26558,6 +26562,11 @@ Numeric:	INT_P opt_type_modifiers field_unsigned
 					$$ = SystemTypeName("float4");
 					$$->location = @1;
 				}
+			| REAL dolphin_float
+				{
+					$$ = $2;
+					$$->location = @1;
+				}
 			| FLOAT_P opt_float
 				{
 					$$ = $2;
@@ -26576,6 +26585,11 @@ Numeric:	INT_P opt_type_modifiers field_unsigned
 			| DOUBLE_P PRECISION
 				{
 					$$ = SystemTypeName("float8");
+					$$->location = @1;
+				}
+			| DOUBLE_P PRECISION dolphin_float
+				{
+					$$ = $3;
 					$$->location = @1;
 				}
 			| DECIMAL_P opt_type_modifiers
@@ -26635,6 +26649,13 @@ Numeric:	INT_P opt_type_modifiers field_unsigned
 				}
 		;
 
+dolphin_float: '(' Iconst ',' Iconst ')'
+				{
+					$$ = SystemTypeName("numeric");
+					$$->typmods = list_make2(makeIntConst($2, @2), makeIntConst($4, @4));
+				}
+		;
+
 opt_float:	'(' Iconst ')'
 				{
 					/*
@@ -26643,6 +26664,7 @@ opt_float:	'(' Iconst ')'
 					 */
 					$$ = parseFloatTypeByPrecision($2, @2, yyscanner);
 				}
+			| dolphin_float {$$ = $1;}
 			| /*EMPTY*/
 				{
 					/* for B_FORMAT compatibility, float refers to float4 */
