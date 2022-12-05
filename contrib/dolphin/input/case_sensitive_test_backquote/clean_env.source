@@ -1,0 +1,2 @@
+\c postgres
+DROP DATABASE table_name_test_db;

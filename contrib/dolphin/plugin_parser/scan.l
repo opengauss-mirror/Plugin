@@ -160,6 +160,7 @@ static char* CopyIdentifier(const char* ident, int len, bool warn);
 %x xb
 %x xc
 %x xd
+%x xbq
 %x xh
 %x xe
 %x xq
@@ -279,6 +280,13 @@ xdstop			{dquote}
 xddouble		{dquote}{dquote}
 xdinside		[^"]+
 
+/* backquote quote
+ * Allows embedded spaces and other special characters into identifiers.
+ */
+bquote			\`
+xbqstart		{bquote}
+xbqstop			{bquote}
+xbqinside		[^`]+
 /* Unicode escapes */
 uescape			[uU][eE][sS][cC][aA][pP][eE]{whitespace}*{quote}[^']{quote}
 /* error rule to avoid backup */
@@ -347,7 +355,7 @@ set_identifier	{set_ident_start}{set_ident_cont}*
  * rule for "operator"!
  */
 self			[,()\[\].;\:\+\-\*\/\%\^\<\>\=\@]
-op_chars		[\~\!\#\^\&\|\`\?\+\-\*\/\%\<\>\=\@]
+op_chars		[\~\!\#\^\&\|\?\+\-\*\/\%\<\>\=\@]
 operator		{op_chars}+
 
 /* we no longer allow unary minus in numbers.
@@ -771,6 +779,11 @@ other			.
 					BEGIN(xui);
 					startlit();
 				}
+{xbqstart}		{
+					SET_YYLLOC();
+					BEGIN(xbq);
+					startlit();
+				}
 <xd>{xdstop}	{
 #ifdef DOLPHIN
 					if (SQL_MODE_ANSI_QUOTES()) {
@@ -861,14 +874,35 @@ other			.
 					yyextra->is_hint_str = false;
 					return IDENT;
 				}
+<xbq>{xbqstop}	{
+					char		   *ident;
+
+					BEGIN(INITIAL);
+					if (yyextra->literallen == 0)
+						yyerror("zero-length delimited identifier");
+					ident = litbufdup(yyscanner);
+					if (yyextra->literallen >= NAMEDATALEN && u_sess->parser_cxt.is_load_copy == false && u_sess->parser_cxt.isForbidTruncate == false)
+						truncate_identifier(ident, yyextra->literallen, yyextra->warnOnTruncateIdent);
+					if (!GetSessionContext()->scan_from_pl) {
+						yylval->dolphinIdent = CreateDolphinIdent(ident, false);
+					} else
+					{
+						yylval->str = ident;
+					}
+					yyextra->ident_quoted = false;
+					yyextra->is_hint_str = false;
+					return IDENT;
+				}
 <xd,xui>{xddouble}	{
 					addlitchar('"', yyscanner);
 				}
 <xd,xui>{xdinside}	{
 					addlit(yytext, yyleng, yyscanner);
 				}
-<xd,xui><<EOF>>		{ yyerror("unterminated quoted identifier"); return 0;}
-
+<xbq>{xbqinside}	{
+					addlit(yytext, yyleng, yyscanner);
+				}
+<xd,xbq,xui><<EOF>>		{ yyerror("unterminated quoted identifier"); return 0;}
 {xufailed}	{
 					char		   *ident;
 
@@ -1042,7 +1076,7 @@ other			.
 
 						for (ic = nchars-2; ic >= 0; ic--)
 						{
-							if (strchr("~!#^&|`?%", yytext[ic]))
+							if (strchr("~!#^&|?%", yytext[ic]))
 								break;
 						}
 						if (ic >= 0)

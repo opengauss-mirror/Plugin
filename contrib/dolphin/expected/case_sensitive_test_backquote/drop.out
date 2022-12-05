@@ -1,0 +1,152 @@
+\c table_name_test_db;
+SET dolphin.lower_case_table_names TO 0;
+--
+-- drop.source
+--
+--
+-- this will fail if the user is not the postgres superuser.
+-- if it does, don't worry about it (you can turn usersuper
+-- back on as "postgres").  too many people don't follow
+-- directions and run this as "postgres", though...
+--
+UPDATE `pg_user`
+   SET `usesuper` = 't'::bool
+   WHERE `usename` = 'postgres';
+ERROR:  cannot update view "pg_user"
+DETAIL:  Views that do not select from a single table or view are not automatically updatable.
+HINT:  To enable updating the view, provide an INSTEAD OF UPDATE trigger or an unconditional ON UPDATE DO INSTEAD rule.
+--
+-- FUNCTION REMOVAL
+--
+DROP FUNCTION `hobbies`("Person");
+ERROR:  function hobbies("Person") does not exist
+DROP FUNCTION `hobby_construct`(text,text);
+ERROR:  function hobby_construct(text, text) does not exist
+DROP FUNCTION `equipment`("Hobbies_r");
+ERROR:  function equipment("Hobbies_r") does not exist
+DROP FUNCTION `user_relns`();
+ERROR:  function user_relns does not exist
+DROP FUNCTION `widget_in`(`cstring`);
+ERROR:  function widget_in(cstring) does not exist
+DROP FUNCTION `widget_out`(`widget`);
+ERROR:  type "widget" does not exist
+DROP FUNCTION `pt_in_widget`(`point`,`widget`);
+ERROR:  type "widget" does not exist
+DROP FUNCTION `overpaid`(`Emp`);
+ERROR:  type "emp" does not exist
+DROP FUNCTION `boxarea`(`box`);
+ERROR:  function boxarea(box) does not exist
+DROP FUNCTION `interpt_pp`(`path`,`path`);
+ERROR:  function interpt_pp(path, path) does not exist
+DROP FUNCTION `reverse_name`(`name`);
+ERROR:  function reverse_name(name) does not exist
+DROP FUNCTION `oldstyle_length`(`int4`, `text`);
+ERROR:  function oldstyle_length(integer, text) does not exist
+--
+-- OPERATOR REMOVAL
+--
+DROP OPERATOR ## (`path`, `path`);
+ERROR:  operator does not exist: path ## path
+DROP OPERATOR <% (`point`, `widget`);
+ERROR:  type "widget" does not exist
+-- left unary
+DROP OPERATOR @#@ (`none`, `int4`);
+ERROR:  type "none" does not exist
+-- right unary
+DROP OPERATOR #@# (`int4`, `none`);
+ERROR:  type "none" does not exist
+-- right unary
+DROP OPERATOR #%# (`int4`, `none`);
+ERROR:  type "none" does not exist
+--
+-- ABSTRACT DATA TYPE REMOVAL
+--
+DROP TYPE `city_budget`;
+ERROR:  type "city_budget" does not exist
+DROP TYPE `widget`;
+ERROR:  type "widget" does not exist
+--
+-- RULE REMOVAL
+--	(is also tested in queries.source)
+--
+--
+-- AGGREGATE REMOVAL
+--
+DROP AGGREGATE `newavg` (`int4`);
+ERROR:  aggregate newavg(integer) does not exist
+DROP AGGREGATE `newsum` (`int4`);
+ERROR:  aggregate newsum(integer) does not exist
+DROP AGGREGATE `newcnt` (`int4`);
+ERROR:  aggregate newcnt(integer) does not exist
+--
+-- CLASS REMOVAL
+--	(Inheritance hierarchies are deleted in reverse order)
+--
+--
+-- DROP ancillary data structures (i.e. indices)
+--
+DROP INDEX `onek_unique1`;
+DROP INDEX `onek_unique2`;
+DROP INDEX `onek_hundred`;
+DROP INDEX `onek_stringu1`;
+DROP INDEX `tenk1_unique1`;
+DROP INDEX `tenk1_unique2`;
+DROP INDEX `tenk1_hundred`;
+DROP INDEX `tenk2_unique1`;
+DROP INDEX `tenk2_unique2`;
+DROP INDEX `tenk2_hundred`;
+-- DROP INDEX onek2_u1_prtl;
+-- DROP INDEX onek2_u2_prtl;
+-- DROP INDEX onek2_stu1_prtl;
+DROP INDEX `rix`;
+DROP INDEX `iix`;
+DROP INDEX `six`;
+DROP INDEX `hash_i4_index`;
+DROP INDEX `hash_name_index`;
+DROP INDEX `hash_txt_index`;
+DROP INDEX `hash_f8_index`;
+-- DROP INDEX hash_ovfl_index;
+DROP INDEX `bt_i4_index`;
+DROP INDEX `bt_name_index`;
+DROP INDEX `bt_txt_index`;
+DROP INDEX `bt_f8_index`;
+DROP TABLE  `Onek`;
+DROP TABLE  `Onek2`;
+DROP TABLE  `Tenk1`;
+DROP TABLE  `Tenk2`;
+DROP TABLE  `Hobbies_r`;
+DROP TABLE  `Equipment_r`;
+DROP TABLE  `AggTest`;
+DROP TABLE  `f_Star`;
+DROP TABLE  `e_Star`;
+DROP TABLE  `d_Star`;
+DROP TABLE  `c_Star`;
+DROP TABLE  `b_Star`;
+DROP TABLE  `a_Star`;
+--
+-- must be in reverse Inheritance order
+--
+DROP TABLE  `Stud_Emp`;
+DROP TABLE  `Student`;
+DROP TABLE  `Slow_emp4000`;
+DROP TABLE  `Fast_emp4000`;
+DROP TABLE  `Emp`;
+DROP TABLE  `Person`;
+DROP TABLE  `ramp`;
+ERROR:  table "ramp" does not exist
+DROP TABLE  `Real_City`;
+DROP TABLE  `Dept`;
+DROP TABLE  `iHighway`;
+DROP TABLE  `sHighway`;
+DROP TABLE  `Road`;
+DROP TABLE  `City`;
+ERROR:  table "City" does not exist
+DROP TABLE  `Hash_i4_heap`;
+DROP TABLE  `Hash_name_heap`;
+DROP TABLE  `Hash_txt_heap`;
+DROP TABLE  `Hash_f8_heap`;
+-- DROP TABLE  hash_ovfl_heap;
+DROP TABLE  `BT_i4_heap`;
+DROP TABLE  `BT_name_heap`;
+DROP TABLE  `BT_txt_heap`;
+DROP TABLE  `BT_f8_heap`;
