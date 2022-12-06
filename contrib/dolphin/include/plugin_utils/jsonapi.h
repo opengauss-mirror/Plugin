@@ -7,13 +7,13 @@
  * Portions Copyright (c) 1996-2014, PostgreSQL Global Development Group
  * Portions Copyright (c) 1994, Regents of the University of California
  *
- * src/include/utils/jsonapi.h
+ * dolphin/include/plugin_utils/jsonapi.h
  *
  *-------------------------------------------------------------------------
  */
 
-#ifndef JSONAPI_H
-#define JSONAPI_H
+#ifndef PLUGIN_JSONAPI_H
+#define PLUGIN_JSONAPI_H
 
 #include "lib/stringinfo.h"
 
@@ -114,4 +114,4 @@ extern void pg_parse_json(JsonLexContext *lex, JsonSemAction *sem);
 extern JsonLexContext *makeJsonLexContext(text *json, bool need_escapes);
 extern JsonLexContext *makeJsonLexContextCstringLen(char *json, int len, bool need_escapes);
 
-#endif   /* JSONAPI_H */
+#endif   /* PLUGIN_JSONAPI_H */

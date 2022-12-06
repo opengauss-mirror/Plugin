@@ -27,9 +27,6 @@
 #include "utils/hsearch.h"
 #include "utils/json.h"
 #include "utils/jsonb.h"
-#ifdef DOLPHIN
-#include "plugin_utils/jsonapi.h"
-#endif
 #include "utils/lsyscache.h"
 #include "utils/memutils.h"
 #include "utils/typcache.h"
@@ -39,8 +36,7 @@
 #include "plugin_postgres.h"
 #include "plugin_parser/scansup.h"
 #include "plugin_utils/json.h"
-#include "utils/date.h"
-#include "plugin_utils/timestamp.h"
+#include "plugin_utils/jsonapi.h"
 #include "utils/pg_locale.h"
 #endif
 
@@ -162,6 +158,19 @@ static void appendStringInfoArrayEle(StringInfo result, cJSON *json);
 static void json_regular_format(StringInfo result, cJSON *json);
 static cJSON *json_merge_patch_unit(cJSON *j1, cJSON *j2);
 static cJSON *json_merge_preserve_unit(cJSON *j1, cJSON *j2);
+
+/* semantic action functions for json_length */
+static void length_object_field_start(void *state, char *fname, bool isnull);
+static void length_array_element_start(void *state, bool isnull);
+static void length_scalar(void *state, char *token, JsonTokenType tokentype);
+
+/* functions for json_pretty */
+static void newline_and_indent(StringInfo buf, int depth);
+static text *prettyJsondoc(char *str);
+
+/* functions for json_object_field_text*/
+static void delchar_oper(char *inStr, char *outStr, int &a, int &b);
+static void checksign_oper(char *inStr, int &x);
 #endif
 
 /* semantic action functions for json_object_keys */
@@ -392,6 +401,18 @@ extern "C" DLL_PUBLIC Datum json_array_insert(PG_FUNCTION_ARGS);
 
 PG_FUNCTION_INFO_V1_PUBLIC(json_set);
 extern "C" DLL_PUBLIC Datum json_set(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1_PUBLIC(json_length);
+extern "C" DLL_PUBLIC Datum json_length(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1_PUBLIC(json_objectagg_finalfn);
+extern "C" DLL_PUBLIC Datum json_objectagg_finalfn(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1_PUBLIC(json_storage_size);
+extern "C" DLL_PUBLIC Datum json_storage_size(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1_PUBLIC(json_pretty);
+extern "C" DLL_PUBLIC Datum json_pretty(PG_FUNCTION_ARGS);
 #endif
 
 /*
@@ -632,43 +653,6 @@ Datum json_object_field(PG_FUNCTION_ARGS)
         PG_RETURN_TEXT_P(result);
     }
 }
-
-void delchar_oper(char *inStr, char *outStr, int &a, int &b)
-{
-    char *tmp;
-    char *tep;
-    tmp = outStr;
-    tep = inStr;
-    while (*tep != '\0') {
-        if (*tep == '\"') {
-            tep++;
-            a++;
-        }
-        if (*tep == '\\') {
-            b++;
-        }
-        *tmp = *tep;
-        tmp++;
-        if (*tep == '\0')
-            break;
-        tep++;
-    }
-}
-void checksign_oper(char *inStr, int &x)
-{
-    char *tmp;
-    tmp = inStr;
-    if (*tmp == '\"') {
-        x++;
-    }
-    while (*tmp != '\0') {
-        tmp++;
-    }
-    tmp--;
-    if (*tmp == '\"') {
-        x++;
-    }
-}
 #endif
 
 Datum jsonb_object_field(PG_FUNCTION_ARGS)
@@ -707,7 +691,46 @@ Datum jsonb_object_field(PG_FUNCTION_ARGS)
     }
     PG_RETURN_NULL();
 }
+
 #ifdef DOLPHIN
+static void delchar_oper(char *inStr, char *outStr, int &a, int &b)
+{
+    char *tmp;
+    char *tep;
+    tmp = outStr;
+    tep = inStr;
+    while (*tep != '\0') {
+        if (*tep == '\"') {
+            tep++;
+            a++;
+        }
+        if (*tep == '\\') {
+            b++;
+        }
+        *tmp = *tep;
+        tmp++;
+        if (*tep == '\0')
+            break;
+        tep++;
+    }
+}
+
+static void checksign_oper(char *inStr, int &x)
+{
+    char *tmp;
+    tmp = inStr;
+    if (*tmp == '\"') {
+        x++;
+    }
+    while (*tmp != '\0') {
+        tmp++;
+    }
+    tmp--;
+    if (*tmp == '\"') {
+        x++;
+    }
+}
+
 Datum json_object_field_text(PG_FUNCTION_ARGS)
 {
     text *json = PG_GETARG_TEXT_P(0);
@@ -763,7 +786,7 @@ Datum json_object_field_text(PG_FUNCTION_ARGS)
         text *json_val = result;
         char *str = text_to_cstring(json_val);
         char *str1 = NULL;
-        str1 = (char *)palloc(strlen(str)+10);
+        str1 = (char *)palloc(strlen(str) + 10);
         int a = 0;
         int b = 0;
         int x = 0;
@@ -791,7 +814,6 @@ Datum json_object_field_text(PG_FUNCTION_ARGS)
         }
     }
 }
-
 #endif
 
 Datum jsonb_object_field_text(PG_FUNCTION_ARGS)
@@ -3849,8 +3871,6 @@ Datum json_contains(PG_FUNCTION_ARGS)
     candidate_cJSON = input_to_cjson(valtype, "json_contains", 2, arg);
 
     if (PG_NARGS() == 2) {
-        if (PG_ARGISNULL(0) || PG_ARGISNULL(1))
-            PG_RETURN_NULL();
         resBool = json_contains_unit(target_cJSON, candidate_cJSON);
         cJSON_Delete(target_cJSON);
         cJSON_Delete(candidate_cJSON);
@@ -3858,10 +3878,6 @@ Datum json_contains(PG_FUNCTION_ARGS)
             PG_RETURN_BOOL(true);
     } else {
         cJSON *result = NULL;
-
-        if (PG_ARGISNULL(0) || PG_ARGISNULL(1) || PG_ARGISNULL(2))
-            PG_RETURN_NULL();
-
         path = TextDatumGetCString(PG_GETARG_DATUM(2));
 
         if (containsAsterisk(path) > 0) {
@@ -3902,9 +3918,6 @@ Datum json_contains(PG_FUNCTION_ARGS)
 
 Datum json_contains_path(PG_FUNCTION_ARGS)
 {
-    if (PG_ARGISNULL(0) || PG_ARGISNULL(1))
-        PG_RETURN_NULL();
-
     char *mode = text_to_cstring(PG_GETARG_TEXT_P(1));
     ArrayType *path_array = PG_GETARG_ARRAYTYPE_P(2);
 
@@ -5231,9 +5244,9 @@ Datum json_merge_patch(PG_FUNCTION_ARGS)
     cJSON **jsondoc = NULL;
     jsondoc = (cJSON **)palloc(jsondoc_num * sizeof(cJSON *));
     for (iter = 0; iter < jsondoc_num; iter++) {
-        valtype = get_fn_expr_argtype(fcinfo->flinfo, iter);
-        arg = PG_GETARG_DATUM(iter);
-        jsondoc[iter] = input_to_cjson(valtype, "json_merge_patch", iter + 1, arg);
+        valtype = get_fn_expr_argtype(fcinfo->flinfo, iter + null_pos + 1);
+        arg = PG_GETARG_DATUM(iter + null_pos + 1);
+        jsondoc[iter] = input_to_cjson(valtype, "json_merge_patch", iter + null_pos + 2, arg);
     }
 
     // If args contain null, find location that cannot be null from the front to the back
@@ -5776,17 +5789,6 @@ Datum json_set(PG_FUNCTION_ARGS)
     pfree(s);
     PG_RETURN_TEXT_P(res);
 }
-#endif
-
-#ifdef DOLPHIN
-
-PG_FUNCTION_INFO_V1_PUBLIC(json_length);
-extern "C" DLL_PUBLIC Datum json_length(PG_FUNCTION_ARGS);
-
-/* semantic action functions for json_length */
-static void length_object_field_start(void *state, char *fname, bool isnull);
-static void length_array_element_start(void *state, bool isnull);
-static void length_scalar(void *state, char *token, JsonTokenType tokentype);
 
 static void length_object_field_start(void *state, char *fname, bool isnull)
 {
@@ -5882,13 +5884,6 @@ Datum json_length(PG_FUNCTION_ARGS)
     PG_RETURN_INT32(result);
 }
 
-#endif
-
-#ifdef DOLPHIN
-
-PG_FUNCTION_INFO_V1_PUBLIC(json_objectagg_finalfn);
-extern "C" DLL_PUBLIC Datum json_objectagg_finalfn(PG_FUNCTION_ARGS);
-
 Datum json_objectagg_finalfn(PG_FUNCTION_ARGS)
 {
     StringInfo state;
@@ -5910,12 +5905,6 @@ Datum json_objectagg_finalfn(PG_FUNCTION_ARGS)
     PG_RETURN_TEXT_P(cstring_to_text_with_len(state->data, state->len));
 }
 
-#endif
-
-#ifdef DOLPHIN
-
-PG_FUNCTION_INFO_V1_PUBLIC(json_storage_size);
-extern "C" DLL_PUBLIC Datum json_storage_size(PG_FUNCTION_ARGS);
 Datum json_storage_size(PG_FUNCTION_ARGS)
 {
     Oid valtype;
@@ -5928,17 +5917,15 @@ Datum json_storage_size(PG_FUNCTION_ARGS)
     PG_RETURN_INT32(n);
 }
 
-#endif
-
-#ifdef DOLPHIN
-void newline_and_indent(StringInfo buf, int depth)
+static void newline_and_indent(StringInfo buf, int depth)
 {
     appendStringInfoChar(buf, '\n');
     for (int i = 0; i < depth; i++) {
         appendStringInfoChar(buf, ' ');
     }
 }
-text *prettyJsondoc(char *str)
+
+static text *prettyJsondoc(char *str)
 {
     StringInfo buf = makeStringInfo();
     text *res;
@@ -6015,8 +6002,6 @@ text *prettyJsondoc(char *str)
     return res;
 }
 
-PG_FUNCTION_INFO_V1_PUBLIC(json_pretty);
-extern "C" DLL_PUBLIC Datum json_pretty(PG_FUNCTION_ARGS);
 Datum json_pretty(PG_FUNCTION_ARGS)
 {
     if (PG_ARGISNULL(0))
@@ -6034,5 +6019,4 @@ Datum json_pretty(PG_FUNCTION_ARGS)
     cJSON_Delete(root);
     PG_RETURN_TEXT_P(res);
 }
-
 #endif

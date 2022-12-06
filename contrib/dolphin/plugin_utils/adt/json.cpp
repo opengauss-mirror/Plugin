@@ -29,9 +29,6 @@
 #include "utils/builtins.h"
 #include "utils/lsyscache.h"
 #include "utils/json.h"
-#ifdef DOLPHIN
-#include "plugin_utils/jsonapi.h"
-#endif
 #include "utils/typcache.h"
 #include "utils/syscache.h"
 
@@ -39,6 +36,7 @@
 #include "plugin_postgres.h"
 #include "plugin_parser/scansup.h"
 #include "plugin_utils/json.h"
+#include "plugin_utils/jsonapi.h"
 #endif
 
 #ifdef DOLPHIN
@@ -92,6 +90,7 @@ static void add_json(Datum val, bool is_null, StringInfo result, Oid val_type, b
 static JsonSemAction nullSemAction = {NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL};
 static inline bool lex_accept(JsonLexContext *lex, JsonTokenType token, char **lexeme);
 static inline void lex_expect(JsonParseContext ctx, JsonLexContext *lex, JsonTokenType token);
+
 #ifdef DOLPHIN
 PG_FUNCTION_INFO_V1_PUBLIC(json_array);
 extern "C" DLL_PUBLIC Datum json_array(PG_FUNCTION_ARGS);
@@ -110,6 +109,12 @@ extern "C" DLL_PUBLIC Datum json_quote(PG_FUNCTION_ARGS);
 
 PG_FUNCTION_INFO_V1_PUBLIC(json_depth);
 extern "C" DLL_PUBLIC Datum json_depth(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1_PUBLIC(json_valid);
+extern "C" DLL_PUBLIC Datum json_valid(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1_PUBLIC(json_type);
+extern "C" DLL_PUBLIC Datum json_type(PG_FUNCTION_ARGS);
 #endif
 
 /* Recursive Descent parser support routines */
@@ -568,7 +573,7 @@ static inline void json_lex(JsonLexContext *lex, bool flag)
                 /* Negative number. */
                 json_lex_number(lex, s + 1, NULL);
 #ifdef DOLPHIN
-		if (flag) {
+                if (flag) {
                     if (lex->ifint) {
                         lex->token_type = JSON_TOKEN_DOUBLE;
                     } else {
@@ -2090,6 +2095,7 @@ void escape_json(StringInfo buf, const char *str)
  * initial token should never be JSON_TOKEN_OBJECT_END, JSON_TOKEN_ARRAY_END,
  * JSON_TOKEN_COLON, JSON_TOKEN_COMMA, or JSON_TOKEN_END.
  */
+
 #ifdef DOLPHIN
 static char *type_case(JsonTokenType tok)
 
@@ -2119,6 +2125,7 @@ static char *type_case(JsonTokenType tok)
     }
 }
 #endif
+
 Datum json_typeof(PG_FUNCTION_ARGS)
 {
     text *json = NULL;
@@ -2646,16 +2653,9 @@ Datum json_depth(PG_FUNCTION_ARGS)
     sort_json(lex, &nullSemAction, depth);
     PG_RETURN_INT32(depth);
 }
-#endif
 
-#ifdef DOLPHIN
-PG_FUNCTION_INFO_V1_PUBLIC(json_valid);
-extern "C" DLL_PUBLIC Datum json_valid(PG_FUNCTION_ARGS);
 Datum json_valid(PG_FUNCTION_ARGS)
 {
-    if (PG_ARGISNULL(0))
-        PG_RETURN_NULL();
-
     Oid valtype;
     Oid typOutput;
     bool typIsVarlena = false;
@@ -2701,17 +2701,8 @@ Datum json_valid(PG_FUNCTION_ARGS)
     PG_RETURN_BOOL(true);
 }
 
-#endif
-
-#ifdef DOLPHIN
-
-PG_FUNCTION_INFO_V1_PUBLIC(json_type);
-extern "C" DLL_PUBLIC Datum json_type(PG_FUNCTION_ARGS);
-
 Datum json_type(PG_FUNCTION_ARGS)
 {
-    if (PG_ARGISNULL(0))
-        PG_RETURN_NULL();
     Oid valtype;
     Oid typOutput;
     bool typIsVarlena = false;

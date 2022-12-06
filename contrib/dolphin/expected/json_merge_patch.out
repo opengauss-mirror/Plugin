@@ -42,8 +42,11 @@ select json_merge_patch('["a",1,{"a":"abc"}]',NULL);
 (1 row)
 
 select json_merge_patch(NULL,'["b",2,{"b":"bcd"}]');
-ERROR:  Invalid JSON text in argument 1 to function json_merge_patch.
-CONTEXT:  referenced column: json_merge_patch
+    json_merge_patch    
+------------------------
+ ["b", 2, {"b": "bcd"}]
+(1 row)
+
 select json_merge_patch('{"a":"abc"}','{"b":"bcd"}');
      json_merge_patch     
 --------------------------
@@ -51,8 +54,11 @@ select json_merge_patch('{"a":"abc"}','{"b":"bcd"}');
 (1 row)
 
 select json_merge_patch(NULL,'{"b":"bcd"}');
-ERROR:  Invalid JSON text in argument 1 to function json_merge_patch.
-CONTEXT:  referenced column: json_merge_patch
+ json_merge_patch 
+------------------
+ 
+(1 row)
+
 select json_merge_patch('{"a":"abc"}','{"a":"bcd"}');
  json_merge_patch 
 ------------------
@@ -110,18 +116,21 @@ select json_merge_patch('{"colin":[{"a":"abc"},"bcd"]}','{"colinew":"handsome"}'
 select json_merge_patch('1','{"a":123}','true',NULL,'{"b":true}','{"b":1}','{"c":"23"}');
  json_merge_patch 
 ------------------
- true
+ 
 (1 row)
 
 select json_merge_patch('1','{"a":123}','true',NULL,'{"b":true}','{"b":1}','[1,2,3]');
  json_merge_patch 
 ------------------
- true
+ [1, 2, 3]
 (1 row)
 
 select json_merge_patch('1','{"a":123}','true',NULL,'{"b":true}','{"b":1}','[1,2,3]','{"a":1}');
-ERROR:  Invalid JSON text in argument 4 to function json_merge_patch.
-CONTEXT:  referenced column: json_merge_patch
+ json_merge_patch 
+------------------
+ {"a": 1}
+(1 row)
+
 select json_merge_patch('{"a":"abd"}','{"a":null}');
  json_merge_patch 
 ------------------
@@ -177,11 +186,17 @@ select json_merge_patch('[]','{"c":{"b":1,"a":2}}');
 (1 row)
 
 select json_merge_patch(null,'1','{"c":3,"b":5}');
-ERROR:  Invalid JSON text in argument 1 to function json_merge_patch.
-CONTEXT:  referenced column: json_merge_patch
+ json_merge_patch 
+------------------
+ {"b": 5, "c": 3}
+(1 row)
+
 select json_merge_patch(null,'1','{"d":3,"c":5}','{"e":4,"a":{"b":1,"a":2}}');
-ERROR:  Invalid JSON text in argument 1 to function json_merge_patch.
-CONTEXT:  referenced column: json_merge_patch
+                json_merge_patch                 
+-------------------------------------------------
+ {"a": {"a": 2, "b": 1}, "c": 5, "d": 3, "e": 4}
+(1 row)
+
 select json_merge_patch('{"c":3,"a":5}','1');
  json_merge_patch 
 ------------------
