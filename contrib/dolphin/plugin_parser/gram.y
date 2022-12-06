@@ -35090,8 +35090,15 @@ static char* TriggerBodyGet(int& start_pos, int& end_pos, base_yy_extra_type* yy
 	initStringInfo(&select_query);
 	appendStringInfo(&select_query, "begin");
 	appendStringInfo(&select_query, "\n ");
-	appendBinaryStringInfo(&select_query, yyextra->core_yy_extra.scanbuf + start_pos, end_pos - start_pos + 1);
-	if (strncasecmp(yyextra->core_yy_extra.scanbuf + start_pos, "call ", 5) == 0)
+	int copy_len = end_pos - start_pos + 1;
+	bool append_delimiter = false;
+	if (yyextra->core_yy_extra.scanbuf[end_pos] == '\0')
+	{
+		append_delimiter = true;
+		copy_len--;
+	}
+	appendBinaryStringInfo(&select_query, yyextra->core_yy_extra.scanbuf + start_pos, copy_len);
+	if (strncasecmp(yyextra->core_yy_extra.scanbuf + start_pos, "call ", 5) == 0 || append_delimiter)
 	{
 		if (delimiter_str == NULL)
 			appendStringInfo(&select_query, ";");
