@@ -1678,6 +1678,7 @@ static Node* HandleDefaultFunction(ParseState* pstate, FuncCall* fn)
         ScanKeyData skey[2];
         Datum val;
         Datum adsrcVal;
+        Datum adgencol;
         List* wholename = NIL;
         char* tempFuncName = NULL;
         Const* con = makeConst(UNKNOWNOID, -1, InvalidOid, -2, (Datum)0, true, false);
@@ -1691,6 +1692,12 @@ static Node* HandleDefaultFunction(ParseState* pstate, FuncCall* fn)
             if (HeapTupleIsValid(htup = systable_getnext(adscan))) {
                 val = heap_getattr(htup, Anum_pg_attrdef_adbin, adrel->rd_att, &isnull);
                 if (val && pg_strcasecmp(TextDatumGetCString(val), "") == 0) {
+                    systable_endscan(adscan);
+                    heap_close(adrel, RowExclusiveLock);
+                    return (Node*)con;
+                }
+                adgencol = heap_getattr(htup, Anum_pg_attrdef_adgencol, adrel->rd_att, &isnull);
+                if (adgencol && DatumGetChar(adgencol) == 's') {
                     systable_endscan(adscan);
                     heap_close(adrel, RowExclusiveLock);
                     return (Node*)con;
@@ -1717,6 +1724,10 @@ static Node* HandleDefaultFunction(ParseState* pstate, FuncCall* fn)
                     }
                     systable_endscan(temp_adscan);
                     heap_close(rel_proc, RowExclusiveLock);
+                } else if (tempFuncName != NULL && pg_strcasecmp(tempFuncName, "AUTO_INCREMENT") == 0) {
+                    systable_endscan(adscan);
+                    heap_close(adrel, RowExclusiveLock);
+                    return (Node*)con;
                 }
                 if (temp_result) {
                     systable_endscan(adscan);
