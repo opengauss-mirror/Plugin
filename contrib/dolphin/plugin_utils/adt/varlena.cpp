@@ -1640,15 +1640,19 @@ int int64_to_int(int64 l_num)
 {
     int i_num;
     if (l_num > PG_INT32_MAX) {
-        if (!SQL_MODE_STRICT())
+        if (!SQL_MODE_STRICT()) {
+            ereport(WARNING, (errmsg("integer out of range")));
             i_num = PG_INT32_MAX;
-        else
+        } else {
             ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("integer out of range")));
+        }
     } else if (l_num <= PG_INT32_MIN) { /* PG_INT32_MIN is a special one during the longlong conversion int, so exclude it */
-        if (!SQL_MODE_STRICT())
+        if (!SQL_MODE_STRICT()) {
+            ereport(WARNING, (errmsg("integer out of range")));
             i_num = PG_INT32_MIN;
-        else
+        } else {
             ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("integer out of range")));
+        }
     } else
         i_num = l_num;
     return i_num;

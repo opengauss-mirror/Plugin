@@ -244,10 +244,11 @@ int16 PgStrtoint16Internal(const char* s, bool sqlModeStrict, bool can_ignore)
     int16 tmp = 0;
     bool neg = false;
     char digitAfterDot = '\0';
+    int errlevel = (!can_ignore && sqlModeStrict) ? ERROR : WARNING;
 
 #ifdef DOLPHIN
     if (*s == 0) {
-        ereport((!can_ignore && sqlModeStrict) ? ERROR : WARNING,
+        ereport(errlevel,
             (errmodule(MOD_FUNCTION),
                 errcode(ERRCODE_INVALID_TEXT_REPRESENTATION),
                 errmsg("invalid input syntax for smallint: \"%s\"", s)));
@@ -304,15 +305,13 @@ int16 PgStrtoint16Internal(const char* s, bool sqlModeStrict, bool can_ignore)
     return tmp;
 
 out_of_range:
-    if (!can_ignore && sqlModeStrict) {
-        ereport(ERROR,
-            (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE),
-                errmsg("value \"%s\" is out of range for type %s", s, "smallint")));
+    ereport(errlevel,
+        (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE),
+            errmsg("value \"%s\" is out of range for type %s", s, "smallint")));
+    if (neg) {
+        return PG_INT16_MIN;
     } else {
-        if (neg)
-            return PG_INT16_MIN;
-        else
-            return PG_INT16_MAX;
+        return PG_INT16_MAX;
     }
 
 invalid_syntax:
@@ -407,6 +406,9 @@ out_of_range:
             (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE),
                 errmsg("value \"%s\" is out of range for type %s", s, "integer")));
     } else {
+        ereport(WARNING,
+            (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE),
+                errmsg("value \"%s\" is out of range for type %s", s, "integer")));
         if (neg)
             return PG_INT32_MIN;
         else

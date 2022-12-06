@@ -13,9 +13,15 @@ create table test_char(a char);
 create table test_varchar7(a varchar(7));
 --insert into table values ...
 insert into test_tint(a) values(-55);
+WARNING:  tinyint unsigned out of range
+CONTEXT:  referenced column: a
 insert into test_tint(a) values(55);
 insert into test_tint(a) values(355);
+WARNING:  tinyint unsigned out of range
+CONTEXT:  referenced column: a
 insert into test_tint(a) values(-355);
+WARNING:  tinyint unsigned out of range
+CONTEXT:  referenced column: a
 insert into test_tint(a) values('a888');
 insert into test_tint(a) values('888aa');
 ERROR:  value "888aa" is out of range for type tinyint unsigned
@@ -28,11 +34,21 @@ LINE 1: insert into test_tint(a) values('-88aa');
                                         ^
 CONTEXT:  referenced column: a
 insert into test_tint(a) values(123423.55);
+WARNING:  tinyint unsigned out of range
+CONTEXT:  referenced column: a
 insert into test_tint(a) values(12.55);
 insert into test_tint(a) values(-12.55);
+WARNING:  tinyint unsigned out of range
+CONTEXT:  referenced column: a
 insert into test_tint(a) values(-12123451.55);
+WARNING:  tinyint unsigned out of range
+CONTEXT:  referenced column: a
 insert into test_tint(a) values(1.4e300);
+WARNING:  tinyint unsigned out of range
+CONTEXT:  referenced column: a
 insert into test_tint(a) values(-1.4e300);
+WARNING:  tinyint unsigned out of range
+CONTEXT:  referenced column: a
 select * from test_tint;
   a  
 -----
@@ -50,9 +66,15 @@ select * from test_tint;
 (11 rows)
 
 insert into test_sint(a) values(-55);
+WARNING:  smallint unsigned out of range
+CONTEXT:  referenced column: a
 insert into test_sint(a) values(55);
 insert into test_sint(a) values(35589898923423423423423423);
+WARNING:  smallint unsigned out of range
+CONTEXT:  referenced column: a
 insert into test_sint(a) values(-3553434343434343432434);
+WARNING:  smallint unsigned out of range
+CONTEXT:  referenced column: a
 insert into test_sint(a) values('a888');
 WARNING:  invalid input syntax for smallint unsigned: "a888"
 LINE 1: insert into test_sint(a) values('a888');
@@ -61,11 +83,21 @@ CONTEXT:  referenced column: a
 insert into test_sint(a) values('88123423433834343423434aa');
 insert into test_sint(a) values('-88aa');
 insert into test_sint(a) values(1234233434343434343434343434343.55);
+WARNING:  smallint unsigned out of range
+CONTEXT:  referenced column: a
 insert into test_sint(a) values(12.55);
 insert into test_sint(a) values(-12.55);
+WARNING:  smallint unsigned out of range
+CONTEXT:  referenced column: a
 insert into test_sint(a) values(-12123451343434343434343434343434.55);
+WARNING:  smallint unsigned out of range
+CONTEXT:  referenced column: a
 insert into test_sint(a) values(1.4e300);
+WARNING:  smallint unsigned out of range
+CONTEXT:  referenced column: a
 insert into test_sint(a) values(-1.4e300);
+WARNING:  smallint unsigned out of range
+CONTEXT:  referenced column: a
 select * from test_sint;
    a   
 -------
@@ -85,9 +117,15 @@ select * from test_sint;
 (13 rows)
 
 insert into test_int(a) values(-55);
+WARNING:  int unsigned out of range
+CONTEXT:  referenced column: a
 insert into test_int(a) values(55);
 insert into test_int(a) values(35589898923423423423423423);
+WARNING:  unsigned int out of range
+CONTEXT:  referenced column: a
 insert into test_int(a) values(-3553434343434343432434);
+WARNING:  unsigned int out of range
+CONTEXT:  referenced column: a
 insert into test_int(a) values('a888');
 WARNING:  invalid input syntax for int unsigned: "a888"
 LINE 1: insert into test_int(a) values('a888');
@@ -96,11 +134,21 @@ CONTEXT:  referenced column: a
 insert into test_int(a) values('88123423433834343423434aa');
 insert into test_int(a) values('-88aa');
 insert into test_int(a) values(1234233434343434343434343434343.55);
+WARNING:  unsigned int out of range
+CONTEXT:  referenced column: a
 insert into test_int(a) values(12.55);
 insert into test_int(a) values(-12.55);
+WARNING:  unsigned int out of range
+CONTEXT:  referenced column: a
 insert into test_int(a) values(-12123451343434343434343434343434.55);
+WARNING:  unsigned int out of range
+CONTEXT:  referenced column: a
 insert into test_int(a) values(1.4e300);
+WARNING:  unsigned int out of range
+CONTEXT:  referenced column: a
 insert into test_int(a) values(-1.4e300);
+WARNING:  unsigned int out of range
+CONTEXT:  referenced column: a
 select * from test_int;
      a      
 ------------
@@ -120,22 +168,46 @@ select * from test_int;
 (13 rows)
 
 insert into test_bint(a) values(-55);
+WARNING:  bigint unsigned out of range
+CONTEXT:  referenced column: a
 insert into test_bint(a) values(55);
 insert into test_bint(a) values(35589898923423423423423423);
+WARNING:  bigint unsigned out of range
+CONTEXT:  referenced column: a
 insert into test_bint(a) values(-3553434343434343432434);
+WARNING:  bigint unsigned out of range
+CONTEXT:  referenced column: a
 insert into test_bint(a) values('a888');
 WARNING:  invalid input syntax for type bigint unsigned: "a888"
 LINE 1: insert into test_bint(a) values('a888');
                                         ^
 CONTEXT:  referenced column: a
 insert into test_bint(a) values('88123423433834343423434aa');
+WARNING:  value "88123423433834343423434aa" is out of range for type bigint unsigned
+LINE 1: insert into test_bint(a) values('88123423433834343423434aa')...
+                                        ^
+CONTEXT:  referenced column: a
 insert into test_bint(a) values('-88aa');
+WARNING:  value "-88aa" is out of range for type bigint unsigned
+LINE 1: insert into test_bint(a) values('-88aa');
+                                        ^
+CONTEXT:  referenced column: a
 insert into test_bint(a) values(1234233434343434343434343434343.55);
+WARNING:  bigint unsigned out of range
+CONTEXT:  referenced column: a
 insert into test_bint(a) values(12.55);
 insert into test_bint(a) values(-12.55);
+WARNING:  bigint unsigned out of range
+CONTEXT:  referenced column: a
 insert into test_bint(a) values(-12123451343434343434343434343434.55);
+WARNING:  bigint unsigned out of range
+CONTEXT:  referenced column: a
 insert into test_bint(a) values(1.4e300);
+WARNING:  bigint unsigned out of range
+CONTEXT:  referenced column: a
 insert into test_bint(a) values(-1.4e300);
+WARNING:  bigint unsigned out of range
+CONTEXT:  referenced column: a
 select * from test_bint;
           a           
 ----------------------
@@ -206,6 +278,14 @@ create table test_bint1(a bigint unsigned);
 create table test_char1(a char);
 create table test_varchar7_1(a varchar(7));
 insert into test_tint1 select * from test_sint;
+WARNING:  tinyint unsigned out of range
+CONTEXT:  referenced column: a
+WARNING:  tinyint unsigned out of range
+CONTEXT:  referenced column: a
+WARNING:  tinyint unsigned out of range
+CONTEXT:  referenced column: a
+WARNING:  tinyint unsigned out of range
+CONTEXT:  referenced column: a
 select * from test_tint1;
   a  
 -----
@@ -226,6 +306,14 @@ select * from test_tint1;
 
 delete from test_tint1;
 insert into test_tint1 select * from test_int;
+WARNING:  tinyint unsigned out of range
+CONTEXT:  referenced column: a
+WARNING:  tinyint unsigned out of range
+CONTEXT:  referenced column: a
+WARNING:  tinyint unsigned out of range
+CONTEXT:  referenced column: a
+WARNING:  tinyint unsigned out of range
+CONTEXT:  referenced column: a
 select * from test_tint1;
   a  
 -----
@@ -246,6 +334,14 @@ select * from test_tint1;
 
 delete from test_tint1;
 insert into test_tint1 select * from test_bint;
+WARNING:  tinyint unsigned out of range
+CONTEXT:  referenced column: a
+WARNING:  tinyint unsigned out of range
+CONTEXT:  referenced column: a
+WARNING:  tinyint unsigned out of range
+CONTEXT:  referenced column: a
+WARNING:  tinyint unsigned out of range
+CONTEXT:  referenced column: a
 select * from test_tint1;
   a  
 -----
@@ -266,6 +362,10 @@ select * from test_tint1;
 
 delete from test_tint1;
 insert into test_tint1 select * from test_float4;
+WARNING:  tinyint unsigned out of range
+CONTEXT:  referenced column: a
+WARNING:  tinyint unsigned out of range
+CONTEXT:  referenced column: a
 select * from test_tint1;
   a  
 -----
@@ -275,6 +375,10 @@ select * from test_tint1;
 
 delete from test_tint1;
 insert into test_tint1 select * from test_float8;
+WARNING:  tinyint unsigned out of range
+CONTEXT:  referenced column: a
+WARNING:  tinyint unsigned out of range
+CONTEXT:  referenced column: a
 select * from test_tint1;
   a  
 -----
@@ -325,6 +429,14 @@ select * from test_sint1;
 
 delete from test_sint1;
 insert into test_sint1 select * from test_int;
+WARNING:  smallint unsigned out of range
+CONTEXT:  referenced column: a
+WARNING:  smallint unsigned out of range
+CONTEXT:  referenced column: a
+WARNING:  smallint unsigned out of range
+CONTEXT:  referenced column: a
+WARNING:  smallint unsigned out of range
+CONTEXT:  referenced column: a
 select * from test_sint1;
    a   
 -------
@@ -345,6 +457,14 @@ select * from test_sint1;
 
 delete from test_sint1;
 insert into test_sint1 select * from test_bint;
+WARNING:  smallint unsigned out of range
+CONTEXT:  referenced column: a
+WARNING:  smallint unsigned out of range
+CONTEXT:  referenced column: a
+WARNING:  smallint unsigned out of range
+CONTEXT:  referenced column: a
+WARNING:  smallint unsigned out of range
+CONTEXT:  referenced column: a
 select * from test_sint1;
    a   
 -------
@@ -365,6 +485,10 @@ select * from test_sint1;
 
 delete from test_sint1;
 insert into test_sint1 select * from test_float4;
+WARNING:  smallint unsigned out of range
+CONTEXT:  referenced column: a
+WARNING:  smallint unsigned out of range
+CONTEXT:  referenced column: a
 select * from test_sint1;
    a   
 -------
@@ -374,6 +498,10 @@ select * from test_sint1;
 
 delete from test_sint1;
 insert into test_sint1 select * from test_float8;
+WARNING:  smallint unsigned out of range
+CONTEXT:  referenced column: a
+WARNING:  smallint unsigned out of range
+CONTEXT:  referenced column: a
 select * from test_sint1;
    a   
 -------
@@ -444,6 +572,14 @@ select * from test_int1;
 
 delete from test_int1;
 insert into test_int1 select * from test_bint;
+WARNING:  int unsigned out of range
+CONTEXT:  referenced column: a
+WARNING:  int unsigned out of range
+CONTEXT:  referenced column: a
+WARNING:  int unsigned out of range
+CONTEXT:  referenced column: a
+WARNING:  int unsigned out of range
+CONTEXT:  referenced column: a
 select * from test_int1;
      a      
 ------------
@@ -464,6 +600,10 @@ select * from test_int1;
 
 delete from test_int1;
 insert into test_int1 select * from test_float4;
+WARNING:  int unsigned out of range
+CONTEXT:  referenced column: a
+WARNING:  int unsigned out of range
+CONTEXT:  referenced column: a
 select * from test_int1;
      a      
 ------------
@@ -473,6 +613,10 @@ select * from test_int1;
 
 delete from test_int1;
 insert into test_int1 select * from test_float8;
+WARNING:  int unsigned out of range
+CONTEXT:  referenced column: a
+WARNING:  int unsigned out of range
+CONTEXT:  referenced column: a
 select * from test_int1;
      a      
 ------------
@@ -563,6 +707,10 @@ select * from test_bint1;
 
 delete from test_bint1;
 insert into test_bint1 select * from test_float4;
+WARNING:  bigint unsigned out of range
+CONTEXT:  referenced column: a
+WARNING:  bigint unsigned out of range
+CONTEXT:  referenced column: a
 select * from test_bint1;
           a           
 ----------------------
@@ -572,6 +720,10 @@ select * from test_bint1;
 
 delete from test_bint1;
 insert into test_bint1 select * from test_float8;
+WARNING:  bigint unsigned out of range
+CONTEXT:  referenced column: a
+WARNING:  bigint unsigned out of range
+CONTEXT:  referenced column: a
 select * from test_bint1;
           a           
 ----------------------
@@ -1173,8 +1325,12 @@ create table mysql_strictsqlmode_t1(c1 int unsigned,c2 double precision);
 insert into mysql_strictsqlmode_t1 values(1,0);
 insert into mysql_strictsqlmode_t1 values(2,-99);
 insert into mysql_strictsqlmode_t1 values(3,-999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999);
+WARNING:  "-999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999" is out of range for type double precision
+CONTEXT:  referenced column: c2
 insert into mysql_strictsqlmode_t1 values(4,99);
 insert into mysql_strictsqlmode_t1 values(5,999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999);
+WARNING:  "999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999" is out of range for type double precision
+CONTEXT:  referenced column: c2
 select * from mysql_strictsqlmode_t1 order by c1;
  c1 |           c2           
 ----+------------------------
@@ -1500,7 +1656,7 @@ select * from test_tint_strict1;
     
 delete from test_tint_strict1;
 insert into test_tint_strict1 select * from test_float8_strict;
-ERROR:  tinyint unsignedout of range
+ERROR:  tinyint unsigned out of range
 CONTEXT:  referenced column: a
 select * from test_tint_strict1;
  a 

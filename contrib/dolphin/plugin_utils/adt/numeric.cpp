@@ -3077,7 +3077,7 @@ Datum numeric_power_xor(PG_FUNCTION_ARGS)
      * Compatible with power when b_compatibility_mode=false.
      */
     Numeric result = DatumGetNumeric(numeric_power(fcinfo));
-    PG_RETURN_NUMERIC(result); 
+    PG_RETURN_NUMERIC(result);
 }
 
 /* ----------------------------------------------------------------------
@@ -3139,9 +3139,8 @@ static int32 numericvar_to_int32(const NumericVar* var, bool can_ignore)
     if (!numericvar_to_int64(var, &val)) {
         /* keyword IGNORE has higher precedent than sql mode */
         if (can_ignore || !SQL_MODE_STRICT()) {
-            if (can_ignore) {
-                ereport(WARNING, (errmsg("integer out of range")));
-            }
+            ereport(WARNING, (errmsg("integer out of range")));
+
             if (NUMERIC_POS == var->sign) {
                 return INT32_MAX;
             } else {
@@ -3156,11 +3155,14 @@ static int32 numericvar_to_int32(const NumericVar* var, bool can_ignore)
 
     /* Test for overflow by reverse-conversion. */
     if ((int64)result != val) {
-        if (!SQL_MODE_STRICT()) {
-            if (NUMERIC_POS == var->sign)
+        if (can_ignore || !SQL_MODE_STRICT()) {
+            ereport(WARNING, (errmsg("integer out of range")));
+
+            if (NUMERIC_POS == var->sign) {
                 result = INT32_MAX;
-            else
+            } else {
                 result = INT32_MIN;
+            }
         } else {
             ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("integer out of range")));
         }
@@ -3206,13 +3208,13 @@ Datum numeric_int8(PG_FUNCTION_ARGS)
 
     if (!numericvar_to_int64(&x, &result)) {
         if (fcinfo->can_ignore || !SQL_MODE_STRICT()) {
-            if (fcinfo->can_ignore) {
-                ereport(WARNING, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("bigint out of range")));
-            }
-            if (NUMERIC_POS == x.sign)
+            ereport(WARNING, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("bigint out of range")));
+
+            if (NUMERIC_POS == x.sign) {
                 PG_RETURN_INT64(INT64_MAX);
-            else
+            } else {
                 PG_RETURN_INT64(INT64_MIN);
+            }
         } else {
             ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("bigint out of range")));
         }
@@ -3260,12 +3262,11 @@ Datum numeric_int2(PG_FUNCTION_ARGS)
 
     if (!numericvar_to_int64(&x, &val)) {
         if (fcinfo->can_ignore || !SQL_MODE_STRICT()) {
-            if (fcinfo->can_ignore) {
-                ereport(WARNING, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("smallint out of range")));
-            }
-            if (NUMERIC_POS == x.sign)
+            ereport(WARNING, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("smallint out of range")));
+
+            if (NUMERIC_POS == x.sign) {
                 PG_RETURN_INT16(INT16_MAX);
-            else
+            } else
                 PG_RETURN_INT16(INT16_MIN);
         } else {
             ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("smallint out of range")));
@@ -3278,13 +3279,13 @@ Datum numeric_int2(PG_FUNCTION_ARGS)
     /* Test for overflow by reverse-conversion. */
     if ((int64)result != val) {
         if (fcinfo->can_ignore || !SQL_MODE_STRICT()) {
-            if (fcinfo->can_ignore) {
-                ereport(WARNING, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("smallint out of range")));
-            }
-            if (NUMERIC_POS == x.sign)
+            ereport(WARNING, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("smallint out of range")));
+
+            if (NUMERIC_POS == x.sign) {
                 PG_RETURN_INT16(INT16_MAX);
-            else
+            } else {
                 PG_RETURN_INT16(INT16_MIN);
+            }
         } else {
             ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("smallint out of range")));
         }
@@ -3346,12 +3347,14 @@ Datum numeric_int1(PG_FUNCTION_ARGS)
 #endif
 
     if (!numericvar_to_int64(&x, &val)) {
-        if (fcinfo->can_ignore) {
+        if (fcinfo->can_ignore || !SQL_MODE_STRICT()) {
             ereport(WARNING, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("tinyint out of range")));
-            if (NUMERIC_POS == x.sign)
-                PG_RETURN_INT64(INT64_MAX);
-            else
-                PG_RETURN_INT64(INT64_MIN);
+
+            if (NUMERIC_POS == x.sign) {
+                PG_RETURN_INT8(INT8_MAX);
+            } else {
+                PG_RETURN_INT8(INT8_MIN);
+            }
         } else {
             ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("tinyint out of range")));
         }
@@ -3363,13 +3366,13 @@ Datum numeric_int1(PG_FUNCTION_ARGS)
     /* Test for overflow by reverse-conversion. */
     if ((int64)result != val) {
         if (fcinfo->can_ignore || !SQL_MODE_STRICT()) {
-            if (fcinfo->can_ignore) {
-                ereport(WARNING, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("tinyint out of range")));
-            }
-            if (NUMERIC_POS == x.sign)
+            ereport(WARNING, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("tinyint out of range")));
+
+            if (NUMERIC_POS == x.sign) {
                 PG_RETURN_INT8(INT8_MAX);
-            else
+            } else {
                 PG_RETURN_INT8(INT8_MIN);
+            }
         } else {
             ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("tinyint out of range")));
         }
@@ -20217,9 +20220,8 @@ Datum numeric_uint2(PG_FUNCTION_ARGS)
 
     if (!numericvar_to_int64(&x, &val)) {
         if (fcinfo->can_ignore || !SQL_MODE_STRICT()) {
-            if (fcinfo->can_ignore) {
-                ereport(WARNING, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("smallint unsigned out of range")));
-            }
+            ereport(WARNING, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("smallint unsigned out of range")));
+
             if (NUMERIC_POS == x.sign)
                 PG_RETURN_UINT16(USHRT_MAX);
             else
@@ -20234,9 +20236,8 @@ Datum numeric_uint2(PG_FUNCTION_ARGS)
     /* Test for overflow by reverse-conversion. */
     if ((int64)result != val) {
         if (fcinfo->can_ignore || !SQL_MODE_STRICT()) {
-            if (fcinfo->can_ignore) {
-                ereport(WARNING, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("smallint unsigned out of range")));
-            }
+            ereport(WARNING, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("smallint unsigned out of range")));
+
             if (NUMERIC_POS == x.sign)
                 PG_RETURN_UINT16(USHRT_MAX);
             else
@@ -20281,9 +20282,8 @@ Datum numeric_uint1(PG_FUNCTION_ARGS)
 
     if (!numericvar_to_int64(&x, &val)) {
         if (fcinfo->can_ignore || !SQL_MODE_STRICT()) {
-            if (fcinfo->can_ignore) {
-                ereport(WARNING, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("tinyint unsigned out of range")));
-            }
+            ereport(WARNING, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("tinyint unsigned out of range")));
+
             if (NUMERIC_POS == x.sign)
                 PG_RETURN_UINT8(UCHAR_MAX);
             else
@@ -20297,9 +20297,8 @@ Datum numeric_uint1(PG_FUNCTION_ARGS)
 
     if ((int64)result != val) {
         if (fcinfo->can_ignore || !SQL_MODE_STRICT()) {
-            if (fcinfo->can_ignore) {
-                ereport(WARNING, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("tinyint unsigned out of range")));
-            }
+            ereport(WARNING, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("tinyint unsigned out of range")));
+
             if (NUMERIC_POS == x.sign)
                 PG_RETURN_UINT8(UCHAR_MAX);
             else
@@ -20411,9 +20410,8 @@ Datum numeric_uint8(PG_FUNCTION_ARGS)
 
     if (!numericvar_to_uint8(&x, &result)) {
         if (fcinfo->can_ignore || !SQL_MODE_STRICT()) {
-            if (fcinfo->can_ignore) {
-                ereport(WARNING, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("bigint unsigned out of range")));
-            }
+            ereport(WARNING, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("bigint unsigned out of range")));
+
             if (NUMERIC_POS == x.sign)
                 PG_RETURN_UINT64(ULONG_MAX);
             else
@@ -20481,9 +20479,8 @@ Datum numeric_uint4(PG_FUNCTION_ARGS)
 
     if (!numericvar_to_int64(&x, &val)) {
         if (fcinfo->can_ignore || !SQL_MODE_STRICT()) {
-            if (fcinfo->can_ignore) {
-                ereport(WARNING, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("unsigned int out of range")));
-            }
+            ereport(WARNING, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("unsigned int out of range")));
+
             if (NUMERIC_POS == x.sign)
                 PG_RETURN_UINT32(UINT_MAX);
             else
@@ -20499,9 +20496,8 @@ Datum numeric_uint4(PG_FUNCTION_ARGS)
     /* Test for overflow by reverse-conversion. */
     if ((int64)result != val) {
         if (fcinfo->can_ignore || !SQL_MODE_STRICT()) {
-            if (fcinfo->can_ignore) {
-                ereport(WARNING, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("unsigned int out of range")));
-            }
+            ereport(WARNING, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("unsigned int out of range")));
+
             if (NUMERIC_POS == x.sign)
                 PG_RETURN_UINT32(UINT_MAX);
             else
@@ -20582,9 +20578,8 @@ Datum numeric_cast_uint1(PG_FUNCTION_ARGS)
 
     if (!numericvar_to_int64(&x, &val)) {
         if (fcinfo->can_ignore || !SQL_MODE_STRICT()) {
-            if (fcinfo->can_ignore) {
-                ereport(WARNING, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("tinyint unsigned out of range")));
-            }
+            ereport(WARNING, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("tinyint unsigned out of range")));
+
             if (NUMERIC_POS == x.sign)
                 PG_RETURN_UINT8(UCHAR_MAX);
             else
@@ -20599,9 +20594,8 @@ Datum numeric_cast_uint1(PG_FUNCTION_ARGS)
 
     if ((int64)result != val) {
         if (fcinfo->can_ignore || !SQL_MODE_STRICT()) {
-            if (fcinfo->can_ignore) {
-                ereport(WARNING, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("tinyint unsigned out of range")));
-            }
+            ereport(WARNING, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("tinyint unsigned out of range")));
+            
             if (NUMERIC_POS == x.sign)
                 PG_RETURN_UINT8(UCHAR_MAX);
         }
@@ -20634,9 +20628,8 @@ Datum numeric_cast_uint2(PG_FUNCTION_ARGS)
 
     if (!numericvar_to_int64(&x, &val)) {
         if (fcinfo->can_ignore || !SQL_MODE_STRICT()) {
-            if (fcinfo->can_ignore) {
-                ereport(WARNING, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("smallint unsigned out of range")));
-            }
+            ereport(WARNING, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("smallint unsigned out of range")));
+
             if (NUMERIC_POS == x.sign)
                 PG_RETURN_UINT16(USHRT_MAX);
             else
@@ -20652,9 +20645,8 @@ Datum numeric_cast_uint2(PG_FUNCTION_ARGS)
     /* Test for overflow by reverse-conversion. */
     if ((int64)result != val) {
         if (fcinfo->can_ignore || !SQL_MODE_STRICT()) {
-            if (fcinfo->can_ignore) {
-                ereport(WARNING, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("smallint unsigned out of range")));
-            }
+            ereport(WARNING, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("smallint unsigned out of range")));
+
             if (NUMERIC_POS == x.sign)
                 PG_RETURN_UINT16(USHRT_MAX);
         }
@@ -20689,9 +20681,8 @@ Datum numeric_cast_uint4(PG_FUNCTION_ARGS)
 
     if (!numericvar_to_int64(&x, &val)) {
         if (fcinfo->can_ignore || !SQL_MODE_STRICT()) {
-            if (fcinfo->can_ignore) {
-                ereport(WARNING, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("unsigned int out of range")));
-            }
+            ereport(WARNING, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("unsigned int out of range")));
+            
             if (NUMERIC_POS == x.sign)
                 PG_RETURN_UINT32(UINT_MAX);
             else
@@ -20707,9 +20698,8 @@ Datum numeric_cast_uint4(PG_FUNCTION_ARGS)
     /* Test for overflow by reverse-conversion. */
     if ((int64)result != val) {
         if (fcinfo->can_ignore || !SQL_MODE_STRICT()) {
-            if (fcinfo->can_ignore) {
-                ereport(WARNING, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("unsigned int out of range")));
-            }
+            ereport(WARNING, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("unsigned int out of range")));
+
             if (NUMERIC_POS == x.sign)
                 PG_RETURN_UINT32(UINT_MAX);
         }
@@ -20741,9 +20731,8 @@ Datum numeric_cast_uint8(PG_FUNCTION_ARGS)
 
     if (!numericvar_to_uint8(&x, &result)) {
         if (fcinfo->can_ignore || !SQL_MODE_STRICT()) {
-            if (fcinfo->can_ignore) {
-                ereport(WARNING, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("bigint unsigned out of range")));
-            }
+            ereport(WARNING, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("bigint unsigned out of range")));
+
             if (NUMERIC_POS == x.sign) {
                 PG_RETURN_UINT64(ULONG_MAX);
             } else {

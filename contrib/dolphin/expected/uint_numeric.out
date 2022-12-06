@@ -234,7 +234,7 @@ select 18446744073709551615::float8::uint8;
 ERROR:  bigint unsigned out of range
 CONTEXT:  referenced column: uint8
 select 256::float8::uint1;
-ERROR:  tinyint unsignedout of range
+ERROR:  tinyint unsigned out of range
 CONTEXT:  referenced column: uint1
 select 65536::float8::uint2;
 ERROR:  smallint unsigned out of range
@@ -255,7 +255,7 @@ insert into t1 values((-1)::float4);
 ERROR:  tinyint unsigned out of range
 CONTEXT:  referenced column: a
 insert into t1 values((-1)::float8);
-ERROR:  tinyint unsignedout of range
+ERROR:  tinyint unsigned out of range
 CONTEXT:  referenced column: a
 insert into t1 values((-1)::numeric);
 ERROR:  tinyint unsigned out of range
@@ -291,7 +291,7 @@ insert into t1 select a from num;
 ERROR:  tinyint unsigned out of range
 CONTEXT:  referenced column: a
 insert into t1 select b from num;
-ERROR:  tinyint unsignedout of range
+ERROR:  tinyint unsigned out of range
 CONTEXT:  referenced column: a
 insert into t1 select c from num;
 ERROR:  tinyint unsigned out of range
