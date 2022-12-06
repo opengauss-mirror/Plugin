@@ -131,6 +131,7 @@ extern void set_pgaudit_prehook(ProcessUtility_hook_type func);
 extern bool check_plugin_function(Oid funcId);
 extern PGFunction SearchFuncByOid(Oid funcId);
 static bool protocol_inited;
+static bool global_hook_inited = false;
 
 extern "C" DLL_PUBLIC void _PG_init(void);
 extern "C" DLL_PUBLIC void _PG_fini(void);
@@ -150,6 +151,17 @@ void set_default_guc()
 
 void init_plugin_object()
 {
+    if (!global_hook_inited) {
+        g_instance.raw_parser_hook[DB_CMPT_B] = (void*)raw_parser;
+        g_instance.llvmIrFilePath[DB_CMPT_B] = "share/postgresql/extension/openGauss_expr_dolphin.ir";
+
+        b_plpgsql_function_table[0] = {"plpgsql_call_handler", b_plpgsql_call_handler};
+        b_plpgsql_function_table[1] = {"plpgsql_inline_handler", b_plpgsql_inline_handler};
+        b_plpgsql_function_table[2] = {"plpgsql_validator", b_plpgsql_validator};
+
+        global_hook_inited = true;
+    }
+
     u_sess->hook_cxt.transformStmtHook = (void*)transformStmt;
     u_sess->hook_cxt.execInitExprHook = (void*)ExecInitExpr;
     u_sess->hook_cxt.computeHashHook  = (void*)compute_hash_default;
@@ -192,13 +204,6 @@ void _PG_init(void)
     if (g_instance.plugin_vec_func_cxt.vec_func_plugin[DOLPHIN_VEC] == NULL) {
         InitGlobalVecFuncMap();
     }
-    g_instance.raw_parser_hook[DB_CMPT_B] = (void*)raw_parser;
-    g_instance.plsql_parser_hook[DB_CMPT_B] = (void*)plpgsql_yyparse;
-    g_instance.llvmIrFilePath[DB_CMPT_B] = "share/postgresql/extension/openGauss_expr_dolphin.ir";
-
-    b_plpgsql_function_table[0] = {"plpgsql_call_handler", b_plpgsql_call_handler};
-    b_plpgsql_function_table[1] = {"plpgsql_inline_handler", b_plpgsql_inline_handler};
-    b_plpgsql_function_table[2] = {"plpgsql_validator", b_plpgsql_validator};
 }
 
 void _PG_fini(void)

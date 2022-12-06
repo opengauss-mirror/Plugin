@@ -4312,16 +4312,16 @@ CREATE CAST (uint4 AS time) WITH FUNCTION int32_b_format_time(uint4);
 DROP FUNCTION IF EXISTS pg_catalog.int32_b_format_datetime(uint4) CASCADE;
 CREATE OR REPLACE FUNCTION pg_catalog.int32_b_format_datetime (
 uint4
-) RETURNS datetime LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'int32_b_format_datetime';
-drop CAST IF EXISTS (uint4 AS datetime) CASCADE;
-CREATE CAST (uint4 AS datetime) WITH FUNCTION int32_b_format_datetime(uint4);
+) RETURNS timestamp(0) without time zone LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'int32_b_format_datetime';
+drop CAST IF EXISTS (uint4 AS timestamp(0) without time zone) CASCADE;
+CREATE CAST (uint4 AS timestamp(0) without time zone) WITH FUNCTION int32_b_format_datetime(uint4);
 
 DROP FUNCTION IF EXISTS pg_catalog.int64_b_format_datetime(uint8) CASCADE;
 CREATE OR REPLACE FUNCTION pg_catalog.int64_b_format_datetime (
 uint8
-) RETURNS datetime LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'int64_b_format_datetime';
-drop CAST IF EXISTS (uint8 AS datetime) CASCADE;
-CREATE CAST (uint8 AS datetime) WITH FUNCTION int64_b_format_datetime(uint8);
+) RETURNS timestamp(0) without time zone LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'int64_b_format_datetime';
+drop CAST IF EXISTS (uint8 AS timestamp(0) without time zone) CASCADE;
+CREATE CAST (uint8 AS timestamp(0) without time zone) WITH FUNCTION int64_b_format_datetime(uint8);
 
 DROP FUNCTION IF EXISTS pg_catalog.int32_b_format_timestamp(uint4) CASCADE;
 CREATE OR REPLACE FUNCTION pg_catalog.int32_b_format_timestamp (
@@ -4622,11 +4622,11 @@ commutator=operator(pg_catalog.^)
 );
 COMMENT ON OPERATOR pg_catalog.^(boolean, uint8) IS 'bool_xor_uint8';
 
-DROP FUNCTION IF EXISTS timestamp_uint8(timestamp) CASCADE;
-CREATE OR REPLACE FUNCTION timestamp_uint8(timestamp)
+DROP FUNCTION IF EXISTS timestamp_uint8(timestamp(0) with time zone) CASCADE;
+CREATE OR REPLACE FUNCTION timestamp_uint8(timestamp(0) with time zone)
 RETURNS uint8 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'timestamp_uint8';
-drop CAST IF EXISTS (timestamp AS uint8) CASCADE;
-CREATE CAST (timestamp AS uint8) WITH FUNCTION timestamp_uint8(timestamp);
+drop CAST IF EXISTS (timestamp(0) with time zone AS uint8) CASCADE;
+CREATE CAST (timestamp(0) with time zone AS uint8) WITH FUNCTION timestamp_uint8(timestamp(0) with time zone);
 
 DROP FUNCTION IF EXISTS cash_uint(money) CASCADE;
 CREATE OR REPLACE FUNCTION cash_uint(money)

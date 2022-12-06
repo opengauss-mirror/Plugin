@@ -1,11 +1,11 @@
 DROP FUNCTION IF EXISTS pg_catalog.b_db_sys_real_timestamp(integer) CASCADE;
-CREATE OR REPLACE FUNCTION pg_catalog.b_db_sys_real_timestamp(integer) returns datetime LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'b_db_sys_real_timestamp';
+CREATE OR REPLACE FUNCTION pg_catalog.b_db_sys_real_timestamp(integer) returns timestamp(0) without time zone LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'b_db_sys_real_timestamp';
 
 DROP FUNCTION IF EXISTS pg_catalog.b_db_statement_start_time(integer) CASCADE;
 CREATE OR REPLACE FUNCTION pg_catalog.b_db_statement_start_time(integer) returns time LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'b_db_statement_start_time';
 
 DROP FUNCTION IF EXISTS pg_catalog.b_db_statement_start_timestamp(integer) CASCADE;
-CREATE OR REPLACE FUNCTION pg_catalog.b_db_statement_start_timestamp(integer) returns datetime LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'b_db_statement_start_timestamp';
+CREATE OR REPLACE FUNCTION pg_catalog.b_db_statement_start_timestamp(integer) returns timestamp(0) without time zone LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'b_db_statement_start_timestamp';
 
 DROP FUNCTION IF EXISTS pg_catalog.curdate() CASCADE;
 CREATE OR REPLACE FUNCTION pg_catalog.curdate() returns date LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'curdate';
@@ -187,29 +187,29 @@ DROP CAST IF EXISTS (numeric AS time) CASCADE;
 
 CREATE CAST(numeric AS time) WITH FUNCTION numeric_b_format_time(numeric) AS IMPLICIT;
 
---CREATE DATETIME'S CAST FUNCTION
+--CREATE timestamp(0) without time zone'S CAST FUNCTION
 
-CREATE OR REPLACE FUNCTION pg_catalog.int32_b_format_datetime (int4) RETURNS datetime LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'int32_b_format_datetime';
+CREATE OR REPLACE FUNCTION pg_catalog.int32_b_format_datetime (int4) RETURNS timestamp(0) without time zone LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'int32_b_format_datetime';
 
-CREATE OR REPLACE FUNCTION pg_catalog.int64_b_format_datetime (int8) RETURNS datetime LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'int64_b_format_datetime';
+CREATE OR REPLACE FUNCTION pg_catalog.int64_b_format_datetime (int8) RETURNS timestamp(0) without time zone LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'int64_b_format_datetime';
 
-CREATE OR REPLACE FUNCTION pg_catalog.numeric_b_format_datetime (numeric) RETURNS datetime LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'numeric_b_format_datetime';
+CREATE OR REPLACE FUNCTION pg_catalog.numeric_b_format_datetime (numeric) RETURNS timestamp(0) without time zone LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'numeric_b_format_datetime';
 
-DROP CAST IF EXISTS (int4 AS datetime) CASCADE;
+DROP CAST IF EXISTS (int4 AS timestamp(0) without time zone) CASCADE;
 
-CREATE CAST(int4 AS datetime) WITH FUNCTION int32_b_format_datetime(int4) AS IMPLICIT;
+CREATE CAST(int4 AS timestamp(0) without time zone) WITH FUNCTION int32_b_format_datetime(int4) AS IMPLICIT;
 
-DROP CAST IF EXISTS (int8 AS datetime) CASCADE;
+DROP CAST IF EXISTS (int8 AS timestamp(0) without time zone) CASCADE;
 
-CREATE CAST(int8 AS datetime) WITH FUNCTION int64_b_format_datetime(int8) AS IMPLICIT;
+CREATE CAST(int8 AS timestamp(0) without time zone) WITH FUNCTION int64_b_format_datetime(int8) AS IMPLICIT;
 
-DROP CAST IF EXISTS (numeric AS datetime) CASCADE;
+DROP CAST IF EXISTS (numeric AS timestamp(0) without time zone) CASCADE;
 
-CREATE CAST(numeric AS datetime) WITH FUNCTION numeric_b_format_datetime(numeric) AS IMPLICIT;
+CREATE CAST(numeric AS timestamp(0) without time zone) WITH FUNCTION numeric_b_format_datetime(numeric) AS IMPLICIT;
 
---CREATE DATETIME'S YEAR PART FUNCTION
+--CREATE timestamp(0) without time zone'S YEAR PART FUNCTION
 
-CREATE FUNCTION pg_catalog.year (datetime) RETURNS float8 LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'datetime_year_part';
+CREATE FUNCTION pg_catalog.year (timestamp(0) without time zone) RETURNS float8 LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'datetime_year_part';
 CREATE FUNCTION pg_catalog.year (text) RETURNS float8 LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'text_year_part';
 
 --CREATE TIMESTAMP'S CAST FUNCTION
@@ -273,9 +273,9 @@ CREATE OR REPLACE FUNCTION pg_catalog.period_diff (int8, bit) RETURNS int8 AS $$
 
 CREATE OR REPLACE FUNCTION pg_catalog.subtime (text, text) RETURNS TEXT LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'subtime_text';
 CREATE OR REPLACE FUNCTION pg_catalog.subtime (date, text) RETURNS TEXT LANGUAGE SQL STABLE STRICT as 'select pg_catalog.subtime(cast(0 as time), $2)';
-CREATE OR REPLACE FUNCTION pg_catalog.subtime (date, datetime) RETURNS TEXT LANGUAGE SQL STABLE STRICT as 'select pg_catalog.subtime(cast(0 as time), cast($2 as time))';
+CREATE OR REPLACE FUNCTION pg_catalog.subtime (date, timestamp(0) without time zone) RETURNS TEXT LANGUAGE SQL STABLE STRICT as 'select pg_catalog.subtime(cast(0 as time), cast($2 as time))';
 CREATE OR REPLACE FUNCTION pg_catalog.subtime (date, date) RETURNS TEXT LANGUAGE SQL STABLE STRICT as 'select pg_catalog.subtime(cast(0 as time), cast(0 as time))';
-CREATE OR REPLACE FUNCTION pg_catalog.subtime (text, datetime) RETURNS TEXT LANGUAGE SQL STABLE STRICT as 'select pg_catalog.subtime($1, cast($2 as time))';
+CREATE OR REPLACE FUNCTION pg_catalog.subtime (text, timestamp(0) without time zone) RETURNS TEXT LANGUAGE SQL STABLE STRICT as 'select pg_catalog.subtime($1, cast($2 as time))';
 CREATE OR REPLACE FUNCTION pg_catalog.subtime (text, date) RETURNS TEXT LANGUAGE SQL STABLE STRICT as 'select pg_catalog.subtime($1, cast(0 as time))';
 CREATE OR REPLACE FUNCTION pg_catalog.subtime (numeric, numeric) RETURNS TEXT LANGUAGE SQL STABLE STRICT as 'select pg_catalog.subtime(cast($1 as text), cast($2 as text))';
 CREATE OR REPLACE FUNCTION pg_catalog.subtime (text, numeric) RETURNS TEXT LANGUAGE SQL STABLE STRICT as 'select pg_catalog.subtime($1, cast($2 as text))';
@@ -289,13 +289,13 @@ CREATE OR REPLACE FUNCTION pg_catalog.time_format (numeric, text) RETURNS TEXT A
 
 CREATE OR REPLACE FUNCTION pg_catalog.time_mysql ("any") RETURNS time LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'time_mysql';
 
-CREATE OR REPLACE FUNCTION pg_catalog.timestamp_mysql ("any") RETURNS datetime LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'timestamp_param1';
-CREATE OR REPLACE FUNCTION pg_catalog.timestamp_mysql ("any", "any") RETURNS datetime LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'timestamp_param2';
+CREATE OR REPLACE FUNCTION pg_catalog.timestamp_mysql ("any") RETURNS timestamp(0) without time zone LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'timestamp_param1';
+CREATE OR REPLACE FUNCTION pg_catalog.timestamp_mysql ("any", "any") RETURNS timestamp(0) without time zone LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'timestamp_param2';
 
 CREATE OR REPLACE FUNCTION pg_catalog.timestamp_add (text, numeric, "any") RETURNS text LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'timestamp_add_numeric';
 CREATE OR REPLACE FUNCTION pg_catalog.timestamp_add (text, text, "any") RETURNS text LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'timestamp_add_text';
 
-CREATE OR REPLACE FUNCTION pg_catalog.to_days (datetime) RETURNS int8 LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'to_days';
+CREATE OR REPLACE FUNCTION pg_catalog.to_days (timestamp(0) without time zone) RETURNS int8 LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'to_days';
 CREATE OR REPLACE FUNCTION pg_catalog.to_days (time) RETURNS int8 AS $$ SELECT pg_catalog.to_days(text_date('now') + $1)  $$ LANGUAGE SQL;
 
 CREATE OR REPLACE FUNCTION pg_catalog.to_seconds ("any") RETURNS numeric LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'to_seconds';
@@ -303,7 +303,7 @@ CREATE OR REPLACE FUNCTION pg_catalog.to_seconds ("any") RETURNS numeric LANGUAG
 CREATE OR REPLACE FUNCTION pg_catalog.unix_timestamp () RETURNS numeric LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'unix_timestamp_no_args';
 CREATE OR REPLACE FUNCTION pg_catalog.unix_timestamp ("any") RETURNS numeric LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'unix_timestamp';
 
-CREATE OR REPLACE FUNCTION pg_catalog.utc_timestamp_func (int4) RETURNS datetime LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'utc_timestamp_func';
+CREATE OR REPLACE FUNCTION pg_catalog.utc_timestamp_func (int4) RETURNS timestamp(0) without time zone LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'utc_timestamp_func';
 CREATE OR REPLACE FUNCTION pg_catalog.utc_date_func () RETURNS date LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'utc_date_func';
 CREATE OR REPLACE FUNCTION pg_catalog.utc_time_func (int4) RETURNS time LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'utc_time_func';
 
@@ -367,9 +367,9 @@ CREATE OR REPLACE FUNCTION pg_catalog.b_timestampdiff(text,time,numeric) RETURNS
 CREATE OR REPLACE FUNCTION pg_catalog.b_timestampdiff(text,text,time) RETURNS int8 AS $$ SELECT -pg_catalog.b_timestampdiff($1, $3, $2) $$ LANGUAGE SQL;
 CREATE OR REPLACE FUNCTION pg_catalog.b_timestampdiff(text,numeric,time) RETURNS int8 AS $$ SELECT -pg_catalog.b_timestampdiff($1, $3, $2) $$ LANGUAGE SQL;
 
-CREATE OR REPLACE FUNCTION pg_catalog.convert_tz(text,text,text) RETURNS datetime LANGUAGE C STABLE RETURNS NULL ON NULL INPUT as '$libdir/dolphin', 'convert_tz_t';
-CREATE OR REPLACE FUNCTION pg_catalog.convert_tz(numeric,text,text) RETURNS datetime LANGUAGE C STABLE RETURNS NULL ON NULL INPUT as '$libdir/dolphin', 'convert_tz_n';
-CREATE OR REPLACE FUNCTION pg_catalog.convert_tz(time,text,text) RETURNS datetime LANGUAGE C STABLE RETURNS NULL ON NULL INPUT as '$libdir/dolphin', 'convert_tz_time';
+CREATE OR REPLACE FUNCTION pg_catalog.convert_tz(text,text,text) RETURNS timestamp(0) without time zone LANGUAGE C STABLE RETURNS NULL ON NULL INPUT as '$libdir/dolphin', 'convert_tz_t';
+CREATE OR REPLACE FUNCTION pg_catalog.convert_tz(numeric,text,text) RETURNS timestamp(0) without time zone LANGUAGE C STABLE RETURNS NULL ON NULL INPUT as '$libdir/dolphin', 'convert_tz_n';
+CREATE OR REPLACE FUNCTION pg_catalog.convert_tz(time,text,text) RETURNS timestamp(0) without time zone LANGUAGE C STABLE RETURNS NULL ON NULL INPUT as '$libdir/dolphin', 'convert_tz_time';
 
 CREATE OR REPLACE FUNCTION pg_catalog.adddate (text, int8) RETURNS text LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'adddate_datetime_days_t';
 CREATE OR REPLACE FUNCTION pg_catalog.adddate (text, text) RETURNS text AS $$ SELECT pg_catalog.adddate($1, cast($2 as int8))  $$ LANGUAGE SQL;
@@ -390,9 +390,9 @@ CREATE OR REPLACE FUNCTION pg_catalog.date_add (time, interval) RETURNS time AS 
 
 CREATE OR REPLACE FUNCTION pg_catalog.addtime (text, text) RETURNS TEXT LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'addtime_text';
 CREATE OR REPLACE FUNCTION pg_catalog.addtime (date, text) RETURNS TEXT LANGUAGE SQL STABLE STRICT as 'select pg_catalog.addtime(cast(0 as time), $2)';
-CREATE OR REPLACE FUNCTION pg_catalog.addtime (date, datetime) RETURNS TEXT LANGUAGE SQL STABLE STRICT as 'select pg_catalog.addtime(cast(0 as time), cast($2 as time))';
+CREATE OR REPLACE FUNCTION pg_catalog.addtime (date, timestamp(0) without time zone) RETURNS TEXT LANGUAGE SQL STABLE STRICT as 'select pg_catalog.addtime(cast(0 as time), cast($2 as time))';
 CREATE OR REPLACE FUNCTION pg_catalog.addtime (date, date) RETURNS TEXT LANGUAGE SQL STABLE STRICT as 'select pg_catalog.addtime(cast(0 as time), cast(0 as time))';
-CREATE OR REPLACE FUNCTION pg_catalog.addtime (text, datetime) RETURNS TEXT LANGUAGE SQL STABLE STRICT as 'select pg_catalog.addtime($1, cast($2 as time))';
+CREATE OR REPLACE FUNCTION pg_catalog.addtime (text, timestamp(0) without time zone) RETURNS TEXT LANGUAGE SQL STABLE STRICT as 'select pg_catalog.addtime($1, cast($2 as time))';
 CREATE OR REPLACE FUNCTION pg_catalog.addtime (text, date) RETURNS TEXT LANGUAGE SQL STABLE STRICT as 'select pg_catalog.addtime($1, cast(0 as time))';
 CREATE OR REPLACE FUNCTION pg_catalog.addtime (numeric, numeric) RETURNS TEXT LANGUAGE SQL STABLE STRICT as 'select pg_catalog.addtime(cast($1 as text), cast($2 as text))';
 CREATE OR REPLACE FUNCTION pg_catalog.addtime (text, numeric) RETURNS TEXT LANGUAGE SQL STABLE STRICT as 'select pg_catalog.addtime($1, cast($2 as text))';
@@ -408,42 +408,42 @@ CREATE OR REPLACE FUNCTION pg_catalog.dayofmonth (timetz) RETURNS float8 LANGUAG
 CREATE OR REPLACE FUNCTION pg_catalog.dayofmonth (abstime) RETURNS float8 LANGUAGE SQL STABLE STRICT as 'select pg_catalog.date_part(''day'', $1)';
 CREATE OR REPLACE FUNCTION pg_catalog.dayofmonth (date) RETURNS float8 LANGUAGE SQL STABLE STRICT as 'select pg_catalog.date_part(''day'', $1)';
 CREATE OR REPLACE FUNCTION pg_catalog.dayofmonth (time) RETURNS float8 LANGUAGE SQL STABLE STRICT as 'select pg_catalog.date_part(''day'', $1)';
-CREATE OR REPLACE FUNCTION pg_catalog.dayofmonth (timestamp) RETURNS float8 LANGUAGE SQL STABLE STRICT as 'select pg_catalog.date_part(''day'', $1)';
+CREATE OR REPLACE FUNCTION pg_catalog.dayofmonth (timestamp(0) with time zone) RETURNS float8 LANGUAGE SQL STABLE STRICT as 'select pg_catalog.date_part(''day'', $1)';
 
 CREATE OR REPLACE FUNCTION pg_catalog.dayofweek (timestamptz) RETURNS float8 LANGUAGE SQL STABLE STRICT as 'select 1 + pg_catalog.date_part(''dow'', $1)';
 CREATE OR REPLACE FUNCTION pg_catalog.dayofweek (timetz) RETURNS float8 LANGUAGE SQL STABLE STRICT as 'select 1 + pg_catalog.date_part(''dow'', $1)';
 CREATE OR REPLACE FUNCTION pg_catalog.dayofweek (abstime) RETURNS float8 LANGUAGE SQL STABLE STRICT as 'select 1 + pg_catalog.date_part(''dow'', $1)';
 CREATE OR REPLACE FUNCTION pg_catalog.dayofweek (date) RETURNS float8 LANGUAGE SQL STABLE STRICT as 'select 1 + pg_catalog.date_part(''dow'', $1)';
 CREATE OR REPLACE FUNCTION pg_catalog.dayofweek (time) RETURNS float8 LANGUAGE SQL STABLE STRICT as 'select 1 + pg_catalog.date_part(''dow'', $1)';
-CREATE OR REPLACE FUNCTION pg_catalog.dayofweek (timestamp) RETURNS float8 LANGUAGE SQL STABLE STRICT as 'select 1 + pg_catalog.date_part(''dow'', $1)';
+CREATE OR REPLACE FUNCTION pg_catalog.dayofweek (timestamp(0) with time zone) RETURNS float8 LANGUAGE SQL STABLE STRICT as 'select 1 + pg_catalog.date_part(''dow'', $1)';
 
 CREATE OR REPLACE FUNCTION pg_catalog.dayofyear (timestamptz) RETURNS float8 LANGUAGE SQL STABLE STRICT as 'select pg_catalog.date_part(''doy'', $1)';
 CREATE OR REPLACE FUNCTION pg_catalog.dayofyear (timetz) RETURNS float8 LANGUAGE SQL STABLE STRICT as 'select pg_catalog.date_part(''doy'', $1)';
 CREATE OR REPLACE FUNCTION pg_catalog.dayofyear (abstime) RETURNS float8 LANGUAGE SQL STABLE STRICT as 'select pg_catalog.date_part(''doy'', $1)';
 CREATE OR REPLACE FUNCTION pg_catalog.dayofyear (date) RETURNS float8 LANGUAGE SQL STABLE STRICT as 'select pg_catalog.date_part(''doy'', $1)';
 CREATE OR REPLACE FUNCTION pg_catalog.dayofyear (time) RETURNS float8 LANGUAGE SQL STABLE STRICT as 'select pg_catalog.date_part(''doy'', $1)';
-CREATE OR REPLACE FUNCTION pg_catalog.dayofyear (timestamp) RETURNS float8 LANGUAGE SQL STABLE STRICT as 'select pg_catalog.date_part(''doy'', $1)';
+CREATE OR REPLACE FUNCTION pg_catalog.dayofyear (timestamp(0) with time zone) RETURNS float8 LANGUAGE SQL STABLE STRICT as 'select pg_catalog.date_part(''doy'', $1)';
 
 CREATE OR REPLACE FUNCTION pg_catalog.quarter (timestamptz) RETURNS float8 LANGUAGE SQL STABLE STRICT as 'select pg_catalog.date_part(''quarter'', $1)';
 CREATE OR REPLACE FUNCTION pg_catalog.quarter (timetz) RETURNS float8 LANGUAGE SQL STABLE STRICT as 'select pg_catalog.date_part(''quarter'', $1)';
 CREATE OR REPLACE FUNCTION pg_catalog.quarter (abstime) RETURNS float8 LANGUAGE SQL STABLE STRICT as 'select pg_catalog.date_part(''quarter'', $1)';
 CREATE OR REPLACE FUNCTION pg_catalog.quarter (date) RETURNS float8 LANGUAGE SQL STABLE STRICT as 'select pg_catalog.date_part(''quarter'', $1)';
 CREATE OR REPLACE FUNCTION pg_catalog.quarter (time) RETURNS float8 LANGUAGE SQL STABLE STRICT as 'select pg_catalog.date_part(''quarter'', $1)';
-CREATE OR REPLACE FUNCTION pg_catalog.quarter (timestamp) RETURNS float8 LANGUAGE SQL STABLE STRICT as 'select pg_catalog.date_part(''quarter'', $1)';
+CREATE OR REPLACE FUNCTION pg_catalog.quarter (timestamp(0) with time zone) RETURNS float8 LANGUAGE SQL STABLE STRICT as 'select pg_catalog.date_part(''quarter'', $1)';
 
 CREATE OR REPLACE FUNCTION pg_catalog.weekday (timestamptz) RETURNS float8 LANGUAGE SQL STABLE STRICT as 'select pg_catalog.date_part(''isodow'', $1) - 1';
 CREATE OR REPLACE FUNCTION pg_catalog.weekday (timetz) RETURNS float8 LANGUAGE SQL STABLE STRICT as 'select pg_catalog.date_part(''isodow'', $1) - 1';
 CREATE OR REPLACE FUNCTION pg_catalog.weekday (abstime) RETURNS float8 LANGUAGE SQL STABLE STRICT as 'select pg_catalog.date_part(''isodow'', $1) - 1';
 CREATE OR REPLACE FUNCTION pg_catalog.weekday (date) RETURNS float8 LANGUAGE SQL STABLE STRICT as 'select pg_catalog.date_part(''isodow'', $1) - 1';
 CREATE OR REPLACE FUNCTION pg_catalog.weekday (time) RETURNS float8 LANGUAGE SQL STABLE STRICT as 'select pg_catalog.date_part(''isodow'', $1) - 1';
-CREATE OR REPLACE FUNCTION pg_catalog.weekday (timestamp) RETURNS float8 LANGUAGE SQL STABLE STRICT as 'select pg_catalog.date_part(''isodow'', $1) - 1';
+CREATE OR REPLACE FUNCTION pg_catalog.weekday (timestamp(0) with time zone) RETURNS float8 LANGUAGE SQL STABLE STRICT as 'select pg_catalog.date_part(''isodow'', $1) - 1';
 
 CREATE OR REPLACE FUNCTION pg_catalog.weekofyear (timestamptz) RETURNS float8 LANGUAGE SQL STABLE STRICT as 'select pg_catalog.date_part(''week'', $1)';
 CREATE OR REPLACE FUNCTION pg_catalog.weekofyear (timetz) RETURNS float8 LANGUAGE SQL STABLE STRICT as 'select pg_catalog.date_part(''week'', $1)';
 CREATE OR REPLACE FUNCTION pg_catalog.weekofyear (abstime) RETURNS float8 LANGUAGE SQL STABLE STRICT as 'select pg_catalog.date_part(''week'', $1)';
 CREATE OR REPLACE FUNCTION pg_catalog.weekofyear (date) RETURNS float8 LANGUAGE SQL STABLE STRICT as 'select pg_catalog.date_part(''week'', $1)';
 CREATE OR REPLACE FUNCTION pg_catalog.weekofyear (time) RETURNS float8 LANGUAGE SQL STABLE STRICT as 'select pg_catalog.date_part(''week'', $1)';
-CREATE OR REPLACE FUNCTION pg_catalog.weekofyear (timestamp) RETURNS float8 LANGUAGE SQL STABLE STRICT as 'select pg_catalog.date_part(''week'', $1)';
+CREATE OR REPLACE FUNCTION pg_catalog.weekofyear (timestamp(0) with time zone) RETURNS float8 LANGUAGE SQL STABLE STRICT as 'select pg_catalog.date_part(''week'', $1)';
 
 CREATE OR REPLACE FUNCTION pg_catalog.get_format (int4, text) RETURNS TEXT LANGUAGE C STABLE RETURNS NULL ON NULL INPUT as '$libdir/dolphin', 'get_format';
 
@@ -455,7 +455,7 @@ CREATE OR REPLACE FUNCTION pg_catalog.b_extract (text, numeric) RETURNS int8 LAN
 
 CREATE OR REPLACE FUNCTION pg_catalog.str_to_date (text, text) RETURNS text LANGUAGE C STABLE CALLED ON NULL INPUT as '$libdir/dolphin', 'str_to_date';
 
-CREATE OR REPLACE FUNCTION pg_catalog.from_unixtime (numeric) RETURNS datetime LANGUAGE C STABLE RETURNS NULL ON NULL INPUT as '$libdir/dolphin', 'from_unixtime_with_one_arg';
+CREATE OR REPLACE FUNCTION pg_catalog.from_unixtime (numeric) RETURNS timestamp(0) without time zone LANGUAGE C STABLE RETURNS NULL ON NULL INPUT as '$libdir/dolphin', 'from_unixtime_with_one_arg';
 CREATE OR REPLACE FUNCTION pg_catalog.from_unixtime (numeric, text) RETURNS TEXT LANGUAGE C STABLE RETURNS NULL ON NULL INPUT as '$libdir/dolphin', 'from_unixtime_with_two_arg';
 
 
