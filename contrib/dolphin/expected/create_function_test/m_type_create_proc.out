@@ -30,11 +30,6 @@ CREATE PROCEDURE p()
   BEGIN
   END;
 //
-ERROR:  syntax error at or near "//"
-LINE 2: //
-        ^
-QUERY:   DECLARE  begin  END;
-//
 CREATE PROCEDURE proc1 ()
        BEGIN
          SELECT 1;
@@ -223,5 +218,134 @@ CREATE PROCEDURE procedure_2_m_o() NO SQL READS SQL DATA LANGUAGE SQL
        END;
 //
 delimiter ;
+-- issue fix 
+-- test while
+drop table if exists test9;
+NOTICE:  table "test9" does not exist, skipping
+create table test9(
+id int(11) unsigned not null auto_increment,
+sname varchar(255) not null,
+  primary key (id)
+)engine=innodb default charset=utf8;
+WARNING:  CHARACTER SET for TABLE is not supported for current version. skipped
+NOTICE:  CREATE TABLE will create implicit sequence "test9_id_seq" for serial column "test9.id"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "test9_pkey" for table "test9"
+drop procedure if exists test_proc;
+NOTICE:  function test_proc() does not exist, skipping
+delimiter //
+create procedure test_proc()
+begin
+    declare i int;
+	i := 1;
+    while i<=10 do
+        insert into test9 values(null,rand()*10);
+        i := i+1;
+    end while;
+end;
+//
+delimiter ;
+call test_proc();
+ test_proc 
+-----------
+ 
+(1 row)
+
+--test loop,if
+delimiter //
+create or replace procedure doiterate(p1 int)
+begin
+LABEL1:loop
+p1 := p1+1;
+if p1 < 10 then
+raise notice '123';
+end if;
+exit LABEL1;
+end loop LABEL1;
+end;
+//
+delimiter ;
+call doiterate(2);
+NOTICE:  123
+ doiterate 
+-----------
+ 
+(1 row)
+
+--test repeat
+delimiter //
+CREATE or replace PROCEDURE dorepeat(p1 INT)
+BEGIN
+declare
+i int = 0;
+<<label>>
+repeat
+i = i + 1;
+until i >p1 end repeat label;
+raise notice '%',i;
+end;
+//
+delimiter ;
+select dorepeat(5);
+NOTICE:  6
+CONTEXT:  referenced column: dorepeat
+ dorepeat 
+----------
+ 
+(1 row)
+
+-- test  case
+delimiter //
+CREATE or replace PROCEDURE docase(p1 INT)
+BEGIN
+declare
+i int = p1;
+<<label>>
+case i
+when i > 10 then raise notice '%','big';
+when i < 1 then raise notice '%','small';
+else  raise notice '%','good';
+end case;
+end;
+//
+delimiter ;
+select docase(4);
+NOTICE:  good
+CONTEXT:  referenced column: docase
+ docase 
+--------
+ 
+(1 row)
+
+select docase(0);
+NOTICE:  big
+CONTEXT:  referenced column: docase
+ docase 
+--------
+ 
+(1 row)
+
+select docase(100);
+NOTICE:  good
+CONTEXT:  referenced column: docase
+ docase 
+--------
+ 
+(1 row)
+
+--test empty 
+drop procedure  if exists doempty;
+NOTICE:  function doempty() does not exist, skipping
+delimiter //
+CREATE or replace PROCEDURE doempty()
+BEGIN
+end;
+//
+delimiter ;
+call doempty();
+ doempty 
+---------
+ 
+(1 row)
+
 \c postgres
 drop database m_create_proc_type;

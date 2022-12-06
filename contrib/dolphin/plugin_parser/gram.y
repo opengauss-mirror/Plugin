@@ -16643,14 +16643,16 @@ b_proc_body:
 								if (!(tok == ';' || tok == 0)
 										&& tok != IF_P
 										&& tok != CASE
-										&& tok != LOOP)
+										&& tok != LOOP
+										&& tok != WHILE_P
+										&& tok != REPEAT)
 								{
 										tok = END_P;
 										continue;
 								}
-
+								/*pre_tok = 0 for begin (nothing) end;*/
 								if (blocklevel == 1
-										&& (pre_tok == ';' || pre_tok == BEGIN_P)
+										&& (pre_tok == ';' || pre_tok == BEGIN_P || pre_tok == 0)
 										&& (tok == ';' || tok == 0))
 								{
 										/* Save the end of procedure body. */
@@ -16675,8 +16677,8 @@ b_proc_body:
 								 * In fact the tok can not be 0
 								 */
 								if (blocklevel > 1
-										 && (pre_tok == ';' || pre_tok == BEGIN_P)
-										 && (tok == ';' || tok == 0))
+									&& (pre_tok == ';' || pre_tok == BEGIN_P)
+									&& (tok == ';' || tok == 0))
 								{
 										blocklevel--;
 								}
