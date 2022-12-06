@@ -147,6 +147,12 @@ PG_FUNCTION_INFO_V1_PUBLIC(b_extract_text);
 extern "C" DLL_PUBLIC Datum b_extract_text(PG_FUNCTION_ARGS);
 PG_FUNCTION_INFO_V1_PUBLIC(b_extract_numeric);
 extern "C" DLL_PUBLIC Datum b_extract_numeric(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(b_extract);
+extern "C" DLL_PUBLIC Datum b_extract(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(time_float);
+extern "C" DLL_PUBLIC Datum time_float(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(date_int);
+extern "C" DLL_PUBLIC Datum date_int(PG_FUNCTION_ARGS);
 #endif
 /* common code for timetypmodin and timetztypmodin */
 static int32 anytime_typmodin(bool istz, ArrayType* ta)
@@ -5049,5 +5055,42 @@ Datum b_extract_numeric(PG_FUNCTION_ARGS)
     }
 
     PG_RETURN_INT64(extract_internal(enum_unit, tm, fsec, time_sign));
+}
+
+/* Transfor TimeADT into float8 formate
+ * exp: "10:22:33.456" -> 102233.456
+ */
+Datum time_float(PG_FUNCTION_ARGS)
+{
+    TimeADT timeVal = PG_GETARG_TIMEADT(0);
+
+    struct pg_tm tt, *tm = &tt;
+    fsec_t fsec;
+    bool sig = 0;
+    if (timeVal < 0) {
+        timeVal *= -1;
+        sig = 1;
+    }
+    time2tm(timeVal, tm, &fsec);
+
+    float8 res = tmfsec2float(tm, fsec);
+
+    PG_RETURN_FLOAT8(res);
+}
+
+Datum date_int(PG_FUNCTION_ARGS)
+{
+    DateADT date = PG_GETARG_DATEADT(0);
+    struct pg_tm tt, *tm = &tt;
+    
+    if (unlikely(date > 0 && (INT_MAX - date < POSTGRES_EPOCH_JDATE))) {
+        ereport(ERROR,
+            (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+                errmsg("input julian date is overflow")));
+    }
+    j2date(date + POSTGRES_EPOCH_JDATE, &(tm->tm_year), &(tm->tm_mon), &(tm->tm_mday));
+
+    int32 res = tm->tm_year*10000 + tm->tm_mon*100 + tm->tm_mon;
+    PG_RETURN_INT32(res);
 }
 #endif

@@ -467,3 +467,64 @@ CREATE AGGREGATE pg_catalog.any_value(year) (
         sfunc = year_any_value,
         stype = year
 );
+
+
+CREATE OR REPLACE FUNCTION pg_catalog.time_float (time) RETURNS float8 LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'time_float';
+DROP CAST IF EXISTS (time AS float8) CASCADE;
+CREATE CAST(time AS float8) WITH FUNCTION time_float(time) AS IMPLICIT;
+
+CREATE OR REPLACE FUNCTION pg_catalog.time_pl_float (time, float8) RETURNS float8 LANGUAGE SQL STABLE STRICT as 'select pg_catalog.time_float($1) + $2';
+-- DROP OPERATOR IF EXISTS + (time, float8);
+CREATE OPERATOR + (
+    PROCEDURE = time_pl_float,
+    LEFTARG = time,
+    RIGHTARG = float8
+);
+
+CREATE OR REPLACE FUNCTION pg_catalog.time_mi_float (time, float8) RETURNS float8 LANGUAGE SQL STABLE STRICT as 'select pg_catalog.time_float($1) - $2';
+-- DROP OPERATOR IF EXISTS - (time, float8);
+CREATE OPERATOR - (
+    PROCEDURE = time_mi_float,
+    LEFTARG = time,
+    RIGHTARG = float8
+);
+
+CREATE OR REPLACE FUNCTION pg_catalog.datetime_float (datetime) RETURNS float8 LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'datetime_float';
+DROP CAST IF EXISTS (datetime AS float8) CASCADE;
+CREATE CAST(datetime AS float8) WITH FUNCTION datetime_float(datetime) AS IMPLICIT;
+
+CREATE OR REPLACE FUNCTION pg_catalog.datetime_pl_float (datetime, float8) RETURNS float8 LANGUAGE SQL STABLE STRICT as 'select pg_catalog.datetime_float($1) + $2';
+-- DROP OPERATOR IF EXISTS + (datetime, float8);
+CREATE OPERATOR + (
+    PROCEDURE = datetime_pl_float,
+    LEFTARG = datetime,
+    RIGHTARG = float8
+);
+
+CREATE OR REPLACE FUNCTION pg_catalog.datetime_mi_float (datetime, float8) RETURNS float8 LANGUAGE SQL STABLE STRICT as 'select pg_catalog.datetime_float($1) - $2';
+-- DROP OPERATOR IF EXISTS - (datetime, float8);
+CREATE OPERATOR - (
+    PROCEDURE = datetime_mi_float,
+    LEFTARG = datetime,
+    RIGHTARG = float8
+);
+
+-- CREATE OR REPLACE FUNCTION pg_catalog.date_int (date) RETURNS int4 LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'date_int';
+-- DROP CAST IF EXISTS (date AS integer) CASCADE;
+-- CREATE CAST(date AS integer) WITH FUNCTION date_int(date) AS IMPLICIT;
+
+-- CREATE OR REPLACE FUNCTION pg_catalog.date_pl_int (date, integer) RETURNS integer LANGUAGE SQL STABLE STRICT as 'select pg_catalog.date_int($1) + $2';
+-- -- DROP OPERATOR + (date, integer);
+-- CREATE OPERATOR + (
+--     PROCEDURE = date_pl_int,
+--     LEFTARG = date,
+--     RIGHTARG = integer
+-- );
+
+-- CREATE OR REPLACE FUNCTION pg_catalog.date_mi_int (date, integer) RETURNS integer LANGUAGE SQL STABLE STRICT as 'select pg_catalog.date_int($1) - $2';
+-- -- DROP OPERATOR - (date, integer);
+-- CREATE OPERATOR - (
+--     PROCEDURE = date_mi_int,
+--     LEFTARG = date,
+--     RIGHTARG = integer
+-- );

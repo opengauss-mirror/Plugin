@@ -521,6 +521,14 @@ DROP TABLE ti_hash;
 select cast(-232323.555 as time);
 select cast('20121010101010.555' as datetime);
 
+-- test time type operations
+select ('2001-10-10 11:11:59.123456'::time(6) + 1);
+select ('2001-10-10 11:11:59.123456'::time(6) - 1);
+select ('2001-10-10 11:11:59.123456'::time(6) / 2);
+select ('2001-10-10 11:11:59.123456'::datetime(6) + 1);
+select ('2001-10-10 11:11:59.123456'::datetime(6) - 1);
+select ('2001-10-10 11:11:59.123456'::datetime(6) / 2);
+
 \c postgres
 DROP DATABASE b_time_type;
 DROP TABLESPACE b_time_type_example;
