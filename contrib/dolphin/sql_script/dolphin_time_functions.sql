@@ -489,23 +489,23 @@ CREATE OPERATOR - (
     RIGHTARG = float8
 );
 
-CREATE OR REPLACE FUNCTION pg_catalog.datetime_float (datetime) RETURNS float8 LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'datetime_float';
-DROP CAST IF EXISTS (datetime AS float8) CASCADE;
-CREATE CAST(datetime AS float8) WITH FUNCTION datetime_float(datetime) AS IMPLICIT;
+CREATE OR REPLACE FUNCTION pg_catalog.datetime_float (timestamp(0) without time zone) RETURNS float8 LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'datetime_float';
+DROP CAST IF EXISTS (timestamp(0) without time zone AS float8) CASCADE;
+CREATE CAST(timestamp(0) without time zone AS float8) WITH FUNCTION datetime_float(timestamp(0) without time zone) AS IMPLICIT;
 
-CREATE OR REPLACE FUNCTION pg_catalog.datetime_pl_float (datetime, float8) RETURNS float8 LANGUAGE SQL STABLE STRICT as 'select pg_catalog.datetime_float($1) + $2';
--- DROP OPERATOR IF EXISTS + (datetime, float8);
+CREATE OR REPLACE FUNCTION pg_catalog.datetime_pl_float (timestamp(0) without time zone, float8) RETURNS float8 LANGUAGE SQL STABLE STRICT as 'select pg_catalog.datetime_float($1) + $2';
+-- DROP OPERATOR IF EXISTS + (timestamp(0) without time zone, float8);
 CREATE OPERATOR + (
     PROCEDURE = datetime_pl_float,
-    LEFTARG = datetime,
+    LEFTARG = timestamp(0) without time zone,
     RIGHTARG = float8
 );
 
-CREATE OR REPLACE FUNCTION pg_catalog.datetime_mi_float (datetime, float8) RETURNS float8 LANGUAGE SQL STABLE STRICT as 'select pg_catalog.datetime_float($1) - $2';
--- DROP OPERATOR IF EXISTS - (datetime, float8);
+CREATE OR REPLACE FUNCTION pg_catalog.datetime_mi_float (timestamp(0) without time zone, float8) RETURNS float8 LANGUAGE SQL STABLE STRICT as 'select pg_catalog.datetime_float($1) - $2';
+-- DROP OPERATOR IF EXISTS - (timestamp(0) without time zone, float8);
 CREATE OPERATOR - (
     PROCEDURE = datetime_mi_float,
-    LEFTARG = datetime,
+    LEFTARG = timestamp(0) without time zone,
     RIGHTARG = float8
 );
 
