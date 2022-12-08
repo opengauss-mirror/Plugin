@@ -73,5 +73,33 @@ select default(db_default.tt.t3.id) from tt.t3;
  
 (1 row)
 
+create table t4 (c1 INT NOT NULL AUTO_INCREMENT PRIMARY KEY, c2 VARCHAR(100), c3 VARCHAR(100));
+NOTICE:  CREATE TABLE will create implicit sequence "t4_c1_seq" for serial column "t4.c1"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "t4_pkey" for table "t4"
+\d t4
+                     Table "public.t4"
+ Column |          Type          |        Modifiers        
+--------+------------------------+-------------------------
+ c1     | integer                | not null AUTO_INCREMENT
+ c2     | character varying(100) | 
+ c3     | character varying(100) | 
+Indexes:
+    "t4_pkey" PRIMARY KEY, btree (c1) TABLESPACE pg_default
+
+select default(c1) from t4;
+ mode_b_default 
+----------------
+(0 rows)
+
+drop table t4;
+create table t5 (c1 int, c2 int, c3 int generated always as (c1-c2) stored);
+insert into t5 values(1, 2);
+select default(c3) from t5;
+ mode_b_default 
+----------------
+ 
+(1 row)
+
+drop table t5;
 \c postgres
 drop database if exists db_default;
