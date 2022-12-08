@@ -3381,7 +3381,7 @@ bool cstring_to_time(const char *str, pg_tm *tm, fsec_t &fsec, int &timeSign, in
     size_t length = strlen(str);
     ulong date[4]; /* 0~3 correspond to: days, hours, minutes, seconds in turn*/
     uint pos;
-    int nano;
+    int nano = 0;
     const char *end = str + length, *end_of_days;
     bool found_days, found_hours;
     uint64 value;
@@ -3392,7 +3392,8 @@ bool cstring_to_time(const char *str, pg_tm *tm, fsec_t &fsec, int &timeSign, in
     /* init */
     rc = memset_s(date, sizeof(date), 0, sizeof(date));
     securec_check(rc, "\0", "\0");
-    fsec = nano = warnings = 0;
+    fsec = 0;
+    warnings = false;
 
     /* Skip space at start */
     for (; str != end && isspace((unsigned char)*str); str++)
@@ -3416,7 +3417,9 @@ bool cstring_to_time(const char *str, pg_tm *tm, fsec_t &fsec, int &timeSign, in
         if (tm_type != DTK_NONE) {
             return tm_type != DTK_ERROR;
         }
-        fsec = nano = warnings = 0;
+        fsec = 0;
+        nano = 0;
+        warnings = false;
     }
 
     /* Not a timestamp. Try to get this as a DAYS_TO_SECOND string */
