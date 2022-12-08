@@ -69,13 +69,16 @@ void CheckSpaceAndDotInternal(bool errorOK, int c, char* digitAfterDot, const ch
  *
  * If errorOK is false, ereport a useful error message if the string is bad.
  * If errorOK is true, just return "false" for bad input.
+ *
+ * Param can_ignore is true when using ignore hint, which will ignore errors of
+ * overflowing or invalid input.
  */
-bool scanint8(const char* str, bool errorOK, int64* result)
+bool scanint8(const char* str, bool errorOK, int64* result, bool can_ignore)
 {
-    return Scanint8Internal(str, errorOK, result, true);
+    return Scanint8Internal(str, errorOK, result, true, can_ignore);
 }
 
-bool Scanint8Internal(const char* str, bool errorOK, int64* result, bool sqlModeStrict)
+bool Scanint8Internal(const char* str, bool errorOK, int64* result, bool sqlModeStrict, bool can_ignore)
 {
     const char* ptr = str;
     int64 tmp = 0;
@@ -105,7 +108,7 @@ bool Scanint8Internal(const char* str, bool errorOK, int64* result, bool sqlMode
     if (unlikely(!isdigit((unsigned char)*ptr))) {
         if (errorOK)
             return false;
-        else if (!sqlModeStrict) {
+        else if (can_ignore || !sqlModeStrict) {
             *result = tmp;
             return true;
         }
@@ -123,16 +126,12 @@ bool Scanint8Internal(const char* str, bool errorOK, int64* result, bool sqlMode
         if (unlikely(pg_mul_s64_overflow(tmp, 10, &tmp)) || unlikely(pg_sub_s64_overflow(tmp, digit, &tmp))) {
             if (errorOK)
                 return false;
-            else if (sqlModeStrict)
+            else if (!can_ignore && sqlModeStrict)
                 ereport(ERROR,
                     (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE),
                         errmsg("value \"%s\" is out of range for type %s", str, "bigint")));
-            else if(neg) {
-                *result = PG_INT64_MIN;
-                return true;
-            }
             else {
-                *result = PG_INT64_MAX;
+                *result = neg ? PG_INT64_MIN : PG_INT64_MAX;
                 return true;
             }
         }
@@ -145,7 +144,7 @@ bool Scanint8Internal(const char* str, bool errorOK, int64* result, bool sqlMode
     if (unlikely(*ptr != '\0')) {
         if (errorOK)
             return false;
-        else if (sqlModeStrict)
+        else if (!can_ignore && sqlModeStrict)
             /* Empty string will be treated as NULL if sql_compatibility == A_FORMAT,
                 Other wise whitespace will be convert to 0 */
             ereport(ERROR,
@@ -158,7 +157,7 @@ bool Scanint8Internal(const char* str, bool errorOK, int64* result, bool sqlMode
         if (unlikely(tmp == PG_INT64_MIN)) {
             if (errorOK)
                 return false;
-            else if (sqlModeStrict)
+            else if (!can_ignore && sqlModeStrict)
                 ereport(ERROR,
                     (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE),
                         errmsg("value \"%s\" is out of range for type %s", str, "bigint")));
@@ -187,7 +186,7 @@ Datum int8in(PG_FUNCTION_ARGS)
     char* str = PG_GETARG_CSTRING(0);
     int64 result;
 
-    (void)Scanint8Internal(str, false, &result, SQL_MODE_STRICT());
+    (void)Scanint8Internal(str, false, &result, SQL_MODE_STRICT(), fcinfo->can_ignore);
     PG_RETURN_INT64(result);
 }
 

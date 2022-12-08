@@ -121,5 +121,5 @@ create table test3(a double(3.6, 1.6));
        Table "public.test3"
  Column |     Type     | Modifiers 
 --------+--------------+-----------
- a      | numeric(3,1) | 
+ a      | numeric(4,2) | 
 

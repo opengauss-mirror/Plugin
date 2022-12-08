@@ -381,8 +381,13 @@ Datum date_in(PG_FUNCTION_ARGS)
         if (dterr == 0)
             dterr = DecodeDateTime(field, ftype, nf, &dtype, tm, &fsec, &tzp);
 #else
-        if (dterr != 0)
-            DateTimeParseError(dterr, str, "date");
+        if (dterr != 0) {
+            DateTimeParseError(dterr, str, "date", fcinfo->can_ignore);
+            /*
+             * if reporting warning in DateTimeParseError, return 1970-01-01
+             */
+            PG_RETURN_DATEADT(UNIX_EPOCH_JDATE - POSTGRES_EPOCH_JDATE);
+        }
         if (dterr == 0) {
             if (ftype[0] == DTK_NUMBER && nf == 1) {
                 dterr = NumberDate(field[0], tm);
@@ -392,8 +397,10 @@ Datum date_in(PG_FUNCTION_ARGS)
             }
         }
 #endif
-        if (dterr != 0)
-            DateTimeParseError(dterr, str, "date");
+        if (dterr != 0) {
+            DateTimeParseError(dterr, str, "date", fcinfo->can_ignore);
+            PG_RETURN_DATEADT(UNIX_EPOCH_JDATE - POSTGRES_EPOCH_JDATE);
+        }
         switch (dtype) {
             case DTK_DATE:
                 break;
@@ -1442,8 +1449,22 @@ Datum time_in(PG_FUNCTION_ARGS)
         if (dterr == 0)
             dterr = DecodeTimeOnly(field, ftype, nf, &dtype, tm, &fsec, &tz);
 #endif
-        if (dterr != 0)
-            DateTimeParseError(dterr, str, "time");
+        if (dterr != 0) {
+            DateTimeParseError(dterr, str, "time", fcinfo->can_ignore);
+            /*
+             * can_ignore == true means hint string "ignore_error" used. warning report instead of error.
+             * then we will return 00:00:xx if the first 1 or 2 character is lower than 60, otherwise return 00:00:00
+             */
+            char* field_str = field[0];
+            if (*field_str == '+') {
+                field_str++;
+            }
+            int trunc_val = getStartingDigits(field_str);
+            if (trunc_val < 0 || trunc_val >= 60) {
+                PG_RETURN_TIMEADT(0);
+            }
+            PG_RETURN_TIMEADT(trunc_val * 1000 * 1000);
+        }
 #ifdef DOLPHIN
         if (dterr == 0) {
             if (ftype[0] == DTK_NUMBER && nf == 1) {
@@ -1455,8 +1476,22 @@ Datum time_in(PG_FUNCTION_ARGS)
                 }
             } else {
                 dterr = DecodeTimeOnlyForBDatabase(field, ftype, nf, &dtype, tm, &fsec, &tz, D);
-                if (dterr != 0)
-                    DateTimeParseError(dterr, str, "time");
+                if (dterr != 0) {
+                    DateTimeParseError(dterr, str, "time", fcinfo->can_ignore);
+                    /*
+                     * can_ignore == true means hint string "ignore_error" used. warning report instead of error.
+                     * then we will return 00:00:xx if the first 1 or 2 character is lower than 60, otherwise return 00:00:00
+                     */
+                    char* field_str = field[0];
+                    if (*field_str == '+') {
+                        field_str++;
+                    }
+                    int trunc_val = getStartingDigits(field_str);
+                    if (trunc_val < 0 || trunc_val >= 60) {
+                        PG_RETURN_TIMEADT(0);
+                    }
+                    PG_RETURN_TIMEADT(trunc_val * 1000 * 1000);
+                }
             }
         }
 #endif
@@ -2355,8 +2390,22 @@ Datum timetz_in(PG_FUNCTION_ARGS)
     dterr = ParseDateTime(str, workbuf, sizeof(workbuf), field, ftype, MAXDATEFIELDS, &nf);
     if (dterr == 0)
         dterr = DecodeTimeOnly(field, ftype, nf, &dtype, tm, &fsec, &tz);
-    if (dterr != 0)
-        DateTimeParseError(dterr, str, "time with time zone");
+    if (dterr != 0) {
+        DateTimeParseError(dterr, str, "time with time zone", fcinfo->can_ignore);
+        /*
+         * can_ignore == true means hint string "ignore_error" used. warning report instead of error.
+         * then we will return 00:00:xx if the first 1 or 2 character is lower than 60, otherwise return 00:00:00
+         */
+        char* field_str = field[0];
+        if (*field_str == '+') {
+            field_str++;
+        }
+        tm->tm_hour = 0;
+        tm->tm_min = 0;
+        int trunc_val = getStartingDigits(field_str);
+        tm->tm_sec = (trunc_val < 0 || trunc_val >= 60) ? 0 : trunc_val;
+        fsec = 0;
+    }
 
     result = (TimeTzADT*)palloc(sizeof(TimeTzADT));
     tm2timetz(tm, fsec, tz, result);

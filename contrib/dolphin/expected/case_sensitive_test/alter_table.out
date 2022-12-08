@@ -112,8 +112,7 @@ ALTER TABLE Tmp RENAME TO Tmp_new;
 -- SELECT * FROM Tmp_new;
 -- ALTER TABLE Tmp RENAME TO Tmp_new2;
 SELECT * FROM Tmp;		-- should fail
-ERROR:  
---?GAUSS.*: relation "Tmp" does not exist on datanode1
+ERROR:  relation "Tmp" does not exist on datanode1
 SQLSTATE: 42P01
 LINE 1: SELECT * FROM Tmp;
                       ^
