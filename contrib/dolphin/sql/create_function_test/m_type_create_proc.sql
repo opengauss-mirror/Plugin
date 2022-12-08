@@ -181,6 +181,99 @@ CREATE PROCEDURE procedure_2_m_o() NO SQL READS SQL DATA LANGUAGE SQL
 delimiter ;
 
 
+-- issue fix 
+
+-- test while
+drop table if exists test9;
+create table test9(
+id int(11) unsigned not null auto_increment,
+sname varchar(255) not null,
+  primary key (id)
+)engine=innodb default charset=utf8;
+
+drop procedure if exists test_proc;
+delimiter //
+create procedure test_proc()
+begin
+    declare i int;
+	i := 1;
+    while i<=10 do
+        insert into test9 values(null,rand()*10);
+        i := i+1;
+    end while;
+end;
+//
+delimiter ;
+call test_proc();
+
+
+--test loop,if
+delimiter //
+create or replace procedure doiterate(p1 int)
+begin
+LABEL1:loop
+p1 := p1+1;
+if p1 < 10 then
+raise notice '123';
+end if;
+exit LABEL1;
+end loop LABEL1;
+end;
+//
+delimiter ;
+call doiterate(2);
+
+--test repeat
+delimiter //
+CREATE or replace PROCEDURE dorepeat(p1 INT)
+BEGIN
+declare
+i int = 0;
+<<label>>
+repeat
+i = i + 1;
+until i >p1 end repeat label;
+raise notice '%',i;
+end;
+//
+delimiter ;
+select dorepeat(5);
+
+
+-- test  case
+delimiter //
+CREATE or replace PROCEDURE docase(p1 INT)
+BEGIN
+declare
+i int = p1;
+<<label>>
+case i
+when i > 10 then raise notice '%','big';
+when i < 1 then raise notice '%','small';
+else  raise notice '%','good';
+end case;
+end;
+//
+delimiter ;
+select docase(4);
+select docase(0);
+select docase(100);
+
+--test empty 
+
+drop procedure  if exists doempty;
+delimiter //
+CREATE or replace PROCEDURE doempty()
+BEGIN
+end;
+//
+delimiter ;
+
+call doempty();
+
+
+
+
 
 \c postgres
 
