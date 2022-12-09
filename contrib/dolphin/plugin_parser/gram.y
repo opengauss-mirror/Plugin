@@ -29388,7 +29388,7 @@ func_expr_common_subexpr:
 					n->call_func = false;
 					$$ = (Node *)n;
 				}
-			| SESSION_USER
+			| SESSION_USER opt_bracket
 				{
 					FuncCall *n = makeNode(FuncCall);
 					n->funcname = SystemFuncName("session_user");
@@ -29402,7 +29402,7 @@ func_expr_common_subexpr:
 					n->call_func = false;
 					$$ = (Node *)n;
 				}
-			| USER
+			| USER opt_bracket
 				{
 					FuncCall *n = makeNode(FuncCall);
 					n->funcname = SystemFuncName("current_user");

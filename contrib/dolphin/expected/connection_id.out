@@ -1,0 +1,13 @@
+drop database if exists test_connection_id;
+NOTICE:  database "test_connection_id" does not exist, skipping
+create database test_connection_id dbcompatibility 'b';
+\c test_connection_id
+-- 测试返回连接的ID
+SELECT CONNECTION_ID();
+  connection_id  
+-----------------
+--?
+(1 row)
+
+\c postgres
+drop database test_connection_id;

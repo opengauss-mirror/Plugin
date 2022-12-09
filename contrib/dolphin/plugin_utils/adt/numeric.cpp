@@ -123,6 +123,15 @@ extern "C" DLL_PUBLIC Datum export_set_4args(PG_FUNCTION_ARGS);
 PG_FUNCTION_INFO_V1_PUBLIC(export_set_3args);
 extern "C" DLL_PUBLIC Datum export_set_3args(PG_FUNCTION_ARGS);
 
+PG_FUNCTION_INFO_V1_PUBLIC(bit_count_numeric);
+extern "C" DLL_PUBLIC Datum bit_count_numeric(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1_PUBLIC(bit_count_text);
+extern "C" DLL_PUBLIC Datum bit_count_text(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1_PUBLIC(bit_count_bit);
+extern "C" DLL_PUBLIC Datum bit_count_bit(PG_FUNCTION_ARGS);
+
 #endif
 /* ----------
  * Some preinitialized constants
@@ -20858,6 +20867,117 @@ Datum export_set_3args(PG_FUNCTION_ARGS)
     char* off = text_to_cstring(PG_GETARG_TEXT_PP(2));
     
     PG_RETURN_TEXT_P(TextExportSet(value, on, off, ",", 64));
+}
+
+
+int64 getCount(uint64 num)
+{
+    int64 count = 0;
+    while (num > 0)
+    {
+        if ((num&1) == 1)
+            count++;
+        num = num>>1;
+    }
+    return count;
+}
+
+Datum bit_count_numeric(PG_FUNCTION_ARGS)
+{
+    Numeric num = PG_GETARG_NUMERIC(0);
+    NumericVar x;
+    uint64 value;
+    int128 bits = 0;
+    uint16 numFlags = NUMERIC_NB_FLAGBITS(num);
+    int64 maxNum = 63, minNum = 1;
+
+    if (NUMERIC_FLAG_IS_NANORBI(numFlags)) {
+        /* Handle Big Integer */
+        if (NUMERIC_FLAG_IS_BI(numFlags))
+            num = makeNumericNormal(num);
+        /* XXX would it be better to return NULL? */
+        else
+            ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("cannot deal with NaN")));
+    }
+
+    /* Convert to variable format and thence to int8 */
+    init_var_from_num(num, &x);
+    floor_var(&x, &x);
+
+    if (!numericvar_to_int128(&x, &bits)) {
+        if (fcinfo->can_ignore || !SQL_MODE_STRICT()) {
+            ereport(WARNING, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("bigint unsigned out of range")));
+            if (cmp_var(&x, &const_zero) < 0)
+                PG_RETURN_INT64(minNum);
+            else
+                PG_RETURN_INT64(maxNum);
+        }
+        ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("bigint unsigned out of range")));
+    }
+    if (bits > PG_UINT64_MAX || bits < PG_INT64_MIN){
+        if (fcinfo->can_ignore || !SQL_MODE_STRICT()) {
+            ereport(WARNING, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("bigint unsigned out of range")));
+            if (bits > PG_UINT64_MAX)
+                PG_RETURN_INT64(maxNum);
+            else if(bits < PG_INT64_MIN)
+                PG_RETURN_INT64(minNum);
+        }
+        ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("bigint unsigned out of range")));
+    }
+    free_var(&x);
+
+    PG_RETURN_INT64(getCount(bits));
+}
+
+Datum bit_count_text(PG_FUNCTION_ARGS)
+{
+    text* string = PG_GETARG_TEXT_PP(0);
+    int fromBase = 10;
+    char* data = VARDATA_ANY(string);
+    int len = VARSIZE_ANY_EXHDR(string);
+    int128 num = 0;
+    int64 maxNum = 64, minNum = 1;
+    if (len <= 0) {
+        PG_RETURN_NULL();
+    }
+    if (0 != str_to_int64(data, len, &num, &fromBase)) {
+        PG_RETURN_NULL();
+    }
+    
+    if (num > PG_UINT64_MAX || num < PG_INT64_MIN) {
+        if (fcinfo->can_ignore || !SQL_MODE_STRICT()) {
+            ereport(WARNING, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("bigint unsigned out of range")));
+            if (num > 0)
+                PG_RETURN_INT64(maxNum);
+            else
+                PG_RETURN_INT64(minNum);
+        }
+        ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("bigint unsigned out of range")));
+    }
+
+    PG_RETURN_INT64(getCount(num));
+}
+
+Datum bit_count_bit(PG_FUNCTION_ARGS)
+{
+    char* num = text_to_cstring(PG_GETARG_TEXT_PP(0));
+    int len = strlen(num);
+    int64 count = 0;
+    int64 maxNum = 64;
+    for (int i = 0; i<len; i++)
+    {
+        if(num[i] == '1')
+            count ++;
+    }
+    if(count > maxNum)
+    {
+        if (fcinfo->can_ignore || !SQL_MODE_STRICT()) {
+            ereport(WARNING, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("bigint unsigned out of range")));
+            PG_RETURN_INT64(maxNum);
+        }
+        ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("bigint unsigned out of range")));
+    }
+    PG_RETURN_INT64(count);
 }
 
 #endif

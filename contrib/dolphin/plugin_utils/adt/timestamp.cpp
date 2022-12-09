@@ -298,6 +298,11 @@ PG_FUNCTION_INFO_V1_PUBLIC(timestamp_uint8);
 extern "C" DLL_PUBLIC Datum timestamp_uint8(PG_FUNCTION_ARGS);
 PG_FUNCTION_INFO_V1_PUBLIC(datetime_float);
 extern "C" DLL_PUBLIC Datum datetime_float(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1_PUBLIC(timestamp_xor_transfn);
+extern "C" DLL_PUBLIC Datum timestamp_xor_transfn(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(timestamp_agg_finalfn);
+extern "C" DLL_PUBLIC Datum timestamp_agg_finalfn(PG_FUNCTION_ARGS);
 #endif
 
 /* b format datetime and timestamp type */
@@ -9837,5 +9842,50 @@ Datum datetime_float(PG_FUNCTION_ARGS)
         ereport(ERROR, (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE), errmsg("date out of range")));
     }
     PG_RETURN_FLOAT8(result);
+}
+#endif
+
+
+#ifdef DOLPHIN
+Datum timestamp_xor_transfn(PG_FUNCTION_ARGS)
+{
+    int128 state;
+    int128 ts_int;
+    Timestamp timestamp;
+
+    state = PG_ARGISNULL(0) ? 0 : PG_GETARG_INT128(0);
+
+    /* Append the value unless null. */
+    if (!PG_ARGISNULL(1)) {
+        /* On the first time through, we ignore the delimiter. */
+        int tz;
+        struct pg_tm tt, *tm = &tt;
+        fsec_t fsec;
+        const char* tzn = NULL;
+        timestamp = PG_GETARG_TIMESTAMP(1);
+
+        if (timestamp2tm(timestamp, &tz, tm, &fsec, &tzn, NULL) != 0)
+            ereport(ERROR, (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE), errmsg("timestamp out of range")));
+        
+        ts_int = tm->tm_year*1e10 + tm->tm_mon*1e8 + tm->tm_mday*1e6 + tm->tm_hour*1e4 + tm->tm_min*1e2 + tm->tm_sec;
+
+        state = state ^ ts_int;
+    }
+    /*
+     * The transition type for list_agg() is declared to be "internal",
+     * which is a pass-by-value type the same size as a pointer.
+     */
+    PG_RETURN_INT128(state);
+}
+
+Datum timestamp_agg_finalfn(PG_FUNCTION_ARGS)
+{
+    int128 finalResult;
+    /* cannot be called directly because of internal-type argument */
+    Assert(AggCheckCallContext(fcinfo, NULL));
+
+    finalResult = PG_ARGISNULL(0) ? 0 : PG_GETARG_INT128(0);
+
+    PG_RETURN_INT128(finalResult);
 }
 #endif

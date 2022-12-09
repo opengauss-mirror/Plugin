@@ -313,3 +313,37 @@ create operator pg_catalog.^(leftarg = blob, rightarg = integer, procedure = pg_
 create operator pg_catalog.^(leftarg = integer, rightarg = blob, procedure = pg_catalog.blobxor);
 create operator pg_catalog.^(leftarg = int8, rightarg = blob, procedure = pg_catalog.blobxor);
 create operator pg_catalog.^(leftarg = blob, rightarg = int8, procedure = pg_catalog.blobxor);
+
+DROP FUNCTION IF EXISTS pg_catalog.bit_longblob(uint8,longblob) CASCADE;
+CREATE FUNCTION pg_catalog.bit_longblob (t1 uint8, t2 longblob) RETURNS uint8  AS
+$$
+DECLARE num NUMBER := to_number(unhex(substring(cast(t2 as text), 3)));
+BEGIN
+    IF num > 9223372036854775807 then
+        num = 9223372036854775807;
+    ELSEIF num < -9223372036854775808 then
+        num = 9223372036854775808;
+    END IF;
+    RETURN (SELECT uint8_xor(t1, num));
+END;
+$$
+LANGUAGE plpgsql;
+drop aggregate if exists pg_catalog.bit_xor(longblob);
+create aggregate pg_catalog.bit_xor(longblob) (SFUNC=bit_longblob, STYPE= uint8);
+
+DROP FUNCTION IF EXISTS pg_catalog.bit_blob(uint8,blob) CASCADE;
+CREATE FUNCTION pg_catalog.bit_blob (t1 uint8, t2 blob) RETURNS uint8  AS
+$$
+DECLARE num NUMBER := to_number((cast(t2 as text)));
+BEGIN
+    IF num > 9223372036854775807 then
+        num = 9223372036854775807;
+    ELSEIF num < -9223372036854775808 then
+        num = 9223372036854775808;
+    END IF;
+    RETURN (SELECT uint8_xor(t1, num));
+END;
+$$
+LANGUAGE plpgsql;
+drop aggregate if exists pg_catalog.bit_xor(blob);
+create aggregate pg_catalog.bit_xor(blob) (SFUNC=bit_blob, STYPE= uint8);
