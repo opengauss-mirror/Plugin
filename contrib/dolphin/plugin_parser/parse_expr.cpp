@@ -1679,7 +1679,6 @@ static Node* HandleDefaultFunction(ParseState* pstate, FuncCall* fn)
         Datum val;
         Datum adsrcVal;
         Datum adgencol;
-        List* wholename = NIL;
         char* tempFuncName = NULL;
         Const* con = makeConst(UNKNOWNOID, -1, InvalidOid, -2, (Datum)0, true, false);
         con->location = fn->location;
@@ -1748,6 +1747,8 @@ static Node* HandleDefaultFunction(ParseState* pstate, FuncCall* fn)
         (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmodule(MOD_OPT),
             errmsg("Invalid function call."),
                 errdetail("unsupport call on deault function")));
+    /* prevent compiler wanring*/
+    return NULL;
 }
 #endif
 
