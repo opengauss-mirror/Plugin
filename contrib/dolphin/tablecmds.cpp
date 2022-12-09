@@ -3463,6 +3463,8 @@ void RemoveRelations(DropStmt* drop, StringInfo tmp_queryString, RemoteQueryExec
     StringInfo relation_namelist = makeStringInfo();
     char relPersistence;
     List *typlist = NULL;
+    int indrelid;
+    Bitmapset* indreloids = NULL;
 
     /* DROP CONCURRENTLY uses a weaker lock, and has some restrictions */
     if (drop->concurrent) {
@@ -3730,6 +3732,18 @@ void RemoveRelations(DropStmt* drop, StringInfo tmp_queryString, RemoteQueryExec
         char* relation_name = NameListToQuotedString((List*)lfirst(cell));
         appendStringInfo(relation_namelist, relation_namelist->data[0] ? ", %s" : "%s", relation_name);
         pfree_ext(relation_name);
+        /* Record table relid for checking. */
+        if (relkind == RELKIND_INDEX) {
+            HeapTuple idx_tup = SearchSysCache1(INDEXRELID, ObjectIdGetDatum(obj.objectId));
+            if (!HeapTupleIsValid(idx_tup)) {
+                continue;
+            }
+            indrelid = ((Form_pg_index)GETSTRUCT(idx_tup))->indrelid;
+            ReleaseSysCache(idx_tup);
+            if (indrelid > 0 && !bms_is_member(indrelid, indreloids)) {
+                indreloids = bms_add_member(indreloids, indrelid);
+            }
+        }
     }
 
     /*
@@ -3758,6 +3772,11 @@ void RemoveRelations(DropStmt* drop, StringInfo tmp_queryString, RemoteQueryExec
     free_object_addresses(objects);
     pfree_ext(relation_namelist->data);
     pfree_ext(relation_namelist);
+    /* check after dropping index */
+    while ((indrelid = bms_first_member(indreloids)) > 0) {
+        CheckRelAutoIncrementIndex(indrelid, AccessShareLock);
+    }
+    bms_free(indreloids);
 }
 
 /*
@@ -13442,24 +13461,6 @@ bool ConstraintSatisfyAutoIncrement(HeapTuple tuple, TupleDesc desc, AttrNumber 
     pfree(keys);
     return false;
 }
-
-static void CheckAutoIncrementConstraints(Relation conrel, SysScanDesc scan, HeapTuple tuple,
-    AttrNumber attrnum, bool satisfy_autoinc)
-{
-    if (attrnum == 0 || satisfy_autoinc) {
-        return;
-    }
-    Form_pg_constraint con;
-    while (HeapTupleIsValid(tuple = systable_getnext(scan))) {
-        con = (Form_pg_constraint)GETSTRUCT(tuple);
-        if (ConstraintSatisfyAutoIncrement(tuple, RelationGetDescr(conrel), attrnum, con->contype)) {
-            return;
-        }
-    }
-    ereport(ERROR, (errcode(ERRCODE_INVALID_TABLE_DEFINITION),
-                    (errmsg("auto_increment column must be defined as a unique or primary key"))));
-}
-
 /*
  * ALTER TABLE DROP CONSTRAINT
  *
@@ -13481,8 +13482,6 @@ static void ATExecDropConstraint(Relation rel, const char* constrName, DropBehav
     HeapTuple tuple;
     bool found = false;
     bool is_no_inherit_constraint = false;
-    AttrNumber autoinc_attnum = RelAutoIncAttrNum(rel);
-    bool satisfy_autoinc = false;
 
     /* At top level, permission check was done in ATPrepCmd, else do it */
     if (recursing)
@@ -13507,9 +13506,6 @@ static void ATExecDropConstraint(Relation rel, const char* constrName, DropBehav
         || (dropFk && con->contype != CONSTRAINT_FOREIGN)
 #endif
         ) {
-            if (ConstraintSatisfyAutoIncrement(tuple, RelationGetDescr(conrel), autoinc_attnum, con->contype)) {
-                satisfy_autoinc = true;
-            }
             continue;
         }
 
@@ -13572,7 +13568,6 @@ static void ATExecDropConstraint(Relation rel, const char* constrName, DropBehav
         /* constraint found and dropped -- no need to keep looping */
         break;
     }
-    CheckAutoIncrementConstraints(conrel, scan, tuple, autoinc_attnum, satisfy_autoinc);
 
     systable_endscan(scan);
 
@@ -29362,6 +29357,45 @@ static void CopyTempAutoIncrement(Relation oldrel, Relation newrel)
     int128* value = find_tmptable_cache_autoinc(oldrel->rd_rel->relfilenode);
     if (value != NULL) {
         tmptable_autoinc_reset(newrel->rd_rel->relfilenode, *value);
+    }
+}
+
+void CheckRelAutoIncrementIndex(Oid relid, LOCKMODE lockmode)
+{
+    List* idxoidlist = NULL;
+    bool found = false;
+    Relation rel = relation_open(relid, lockmode);
+    AttrNumber autoinc_attnum = RelAutoIncAttrNum(rel);
+
+    if (autoinc_attnum <= 0) {
+        relation_close(rel, lockmode);
+        return;
+    }
+
+    if (!rel->rd_rel->relhasindex) {
+        ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+                (errmsg("Incorrect table definition, auto_increment column must be defined as a key"))));
+    }
+
+    idxoidlist = RelationGetIndexList(rel);
+    relation_close(rel, lockmode);
+
+    foreach_cell(l, idxoidlist) {
+        Relation idxrel = index_open(lfirst_oid(l), AccessShareLock);
+        Form_pg_index index = idxrel->rd_index;
+
+        if (IndexIsValid(index) && index->indkey.values[0] == autoinc_attnum) {
+            found = true;
+            index_close(idxrel, AccessShareLock);
+            break;
+        }
+        index_close(idxrel, AccessShareLock);
+    }
+
+    list_free(idxoidlist);
+    if (!found) {
+        ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+                (errmsg("Incorrect table definition, auto_increment column must be defined as a key"))));
     }
 }
 

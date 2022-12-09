@@ -215,6 +215,7 @@ typedef struct tableInfo {
     AttrNumber autoinc_attnum;
     Oid autoinc_consoid;
     Oid autoinc_seqoid;
+    Oid autoinc_idxoid;
 } tableInfo;
 
 typedef struct SubpartitionInfo {
@@ -2202,26 +2203,24 @@ static void get_index_list_info(Oid tableoid, StringInfo buf, const char* relnam
 
         constriantid = get_index_constraint(index->indexrelid);
         if (OidIsValid(constriantid)) {
-            if (tableinfo->autoinc_consoid == constriantid) {
-                continue;
-            }
+            if (tableinfo->autoinc_consoid != constriantid) {
+                HeapTuple tup = SearchSysCache1(CONSTROID, ObjectIdGetDatum(constriantid));
+                if (!HeapTupleIsValid(tup)) { /* should not happen */
+                    ereport(ERROR,
+                        (errcode(ERRCODE_UNDEFINED_OBJECT), errmsg("cache lookup failed for constraint %u", constriantid)));
+                }
+                Form_pg_constraint conForm = (Form_pg_constraint)GETSTRUCT(tup);
 
-            HeapTuple tup = SearchSysCache1(CONSTROID, ObjectIdGetDatum(constriantid));
-            if (!HeapTupleIsValid(tup)) { /* should not happen */
-                ereport(ERROR,
-                    (errcode(ERRCODE_UNDEFINED_OBJECT), errmsg("cache lookup failed for constraint %u", constriantid)));
+                if (conForm->contype == CONSTRAINT_UNIQUE || conForm->contype == CONSTRAINT_PRIMARY) {
+                    get_table_constraint_info(conForm, tup, buf, constriantid, relname);
+                    appendStringInfo(buf, ";");
+                } else {
+                    appendStringInfo(buf, "\n%s;", pg_get_indexdef_worker(index->indexrelid, 0, NULL, false, true, 0));
+                }
+                /* Cleanup */
+                ReleaseSysCache(tup);
             }
-            Form_pg_constraint conForm = (Form_pg_constraint)GETSTRUCT(tup);
-
-            if (conForm->contype == CONSTRAINT_UNIQUE || conForm->contype == CONSTRAINT_PRIMARY) {
-                get_table_constraint_info(conForm, tup, buf, constriantid, relname);
-                appendStringInfo(buf, ";");
-            } else {
-                appendStringInfo(buf, "\n%s;", pg_get_indexdef_worker(index->indexrelid, 0, NULL, false, true, 0));
-            }
-            /* Cleanup */
-            ReleaseSysCache(tup);
-        } else {
+        } else if (tableinfo->autoinc_consoid > 0 || tableinfo->autoinc_idxoid != index->indexrelid) {
             appendStringInfo(buf, "\n%s;", pg_get_indexdef_worker(index->indexrelid, 0, NULL, false, true, 0));
 
             /* If the index is clustered, we need to record that. */
@@ -2672,6 +2671,7 @@ static char* pg_get_tabledef_worker(Oid tableoid)
     tableinfo.autoinc_attnum = 0;
     tableinfo.autoinc_consoid = 0;
     tableinfo.autoinc_seqoid = 0;
+    tableinfo.autoinc_idxoid = 0;
 
     ReleaseSysCache(tuple);
 
@@ -2824,6 +2824,48 @@ static char* pg_get_tabledef_worker(Oid tableoid)
 
         systable_endscan(scan);
         heap_close(pg_constraint, AccessShareLock);
+
+        /* If auto_increment column has no constraints, try find an index. */
+        if (tableinfo.autoinc_attnum > 0 && tableinfo.autoinc_consoid == 0 && tableinfo.autoinc_idxoid == 0) {
+            Relation pg_idx_rel = heap_open(IndexRelationId, AccessShareLock);
+            ScanKeyInit(&skey[0], Anum_pg_index_indrelid, BTEqualStrategyNumber, F_OIDEQ, ObjectIdGetDatum(tableoid));
+            scan = systable_beginscan(pg_idx_rel, IndexIndrelidIndexId, true, NULL, 1, skey);
+            while (HeapTupleIsValid(tuple = systable_getnext(scan))) {
+                Form_pg_index pg_idx = (Form_pg_index)GETSTRUCT(tuple);
+                Form_pg_class idx_pg_class;
+                HeapTuple ht_am, ht_class;
+                char* idxname = NULL;
+                char* idxam = NULL;
+                if (tableinfo.autoinc_idxoid == 0 && pg_idx->indkey.values[0] == tableinfo.autoinc_attnum) {
+                    tableinfo.autoinc_idxoid = pg_idx->indexrelid;
+                    ht_class = SearchSysCache1(RELOID, ObjectIdGetDatum(pg_idx->indexrelid));
+                    if (!HeapTupleIsValid(ht_class)) {
+                        continue;
+                    }
+                    /* get index name and access method name */
+                    idx_pg_class = (Form_pg_class)GETSTRUCT(ht_class);
+                    idxname = pstrdup(NameStr(idx_pg_class->relname));
+                    ht_am = SearchSysCache1(AMOID, ObjectIdGetDatum(idx_pg_class->relam));
+                    if (HeapTupleIsValid(ht_am)) {
+                        idxam = pstrdup(NameStr(((Form_pg_am)GETSTRUCT(ht_am))->amname));
+                        ReleaseSysCache(ht_am);
+                    }
+                    ReleaseSysCache(ht_class);
+                    /* print index defination */
+                    appendStringInfo(&buf, (actual_atts == 0) ? " (\n    " : ",\n    ");
+                    appendStringInfo(&buf, "INDEX %s ", quote_identifier(idxname));
+                    if (idxam) {
+                        appendStringInfo(&buf, "USING %s ", quote_identifier(idxam));
+                        pfree(idxam);
+                    }
+                    appendStringInfo(&buf, "(%s)", pg_get_indexdef_columns(pg_idx->indexrelid, false));
+                    pfree(idxname);
+                    break;
+                }
+            }
+            systable_endscan(scan);
+            heap_close(pg_idx_rel, AccessShareLock);
+        }
 
         if (actual_atts) {
             appendStringInfo(&buf, "\n)");

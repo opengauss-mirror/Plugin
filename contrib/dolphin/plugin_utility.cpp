@@ -4175,6 +4175,9 @@ void standard_ProcessUtility(Node* parse_tree, const char* query_string, ParamLi
                     if (lnext(l) != NULL)
                         CommandCounterIncrement();
                 }
+                if (atstmt->relkind == OBJECT_TABLE) {
+                    CheckRelAutoIncrementIndex(rel_id, NoLock);
+                }
 #ifdef ENABLE_MULTIPLE_NODES
                 if (drop_seq_string != NULL) {
                     Assert(exec_nodes != NULL);
