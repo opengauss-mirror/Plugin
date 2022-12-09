@@ -3,7 +3,7 @@ drop database if exists db_test_condition;
 -- create database db_test_condition dbcompatibility 'b';
 create database db_test_condition with DBCOMPATIBILITY = 'B';
 \c db_test_condition
-
+set dolphin.sql_mode = '';
 create table test_bccf (t1 int ,t2 float, t3 char, t4 text);
 insert into test_bccf values(1,3,null,null);
 insert into test_bccf values(null,null,'c',null);

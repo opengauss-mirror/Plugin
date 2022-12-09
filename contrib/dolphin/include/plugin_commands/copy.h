@@ -365,6 +365,8 @@ typedef struct CopyStateData {
     bool is_replace;
     char* linePrefix;
     bool is_compatible;
+    bool hit_eof;
+    bool has_escape;
 #endif
 } CopyStateData;
 

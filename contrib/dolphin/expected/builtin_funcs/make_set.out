@@ -2,6 +2,7 @@ drop database if exists make_set;
 NOTICE:  database "make_set" does not exist, skipping
 create database make_set dbcompatibility 'b';
 \c make_set
+set dolphin.sql_mode = '';
 select make_set(3, 'a', 'b', 'c');
  make_set 
 ----------

@@ -270,10 +270,17 @@ Datum float4in(PG_FUNCTION_ARGS)
      * Check for an empty-string input to begin with, to avoid the vagaries of
      * strtod() on different platforms.
      */
-    if (*num == '\0')
+    if (*num == '\0') {
+
+#ifdef DOLPHIN
+        if (!SQL_MODE_STRICT())
+            PG_RETURN_FLOAT4((float4)0);
+#endif
+
         ereport(ERROR,
             (errcode(ERRCODE_INVALID_TEXT_REPRESENTATION),
                 errmsg("invalid input syntax for type real: \"%s\"", orig_num)));
+    }
 
     /* skip leading whitespace */
     while (*num != '\0' && isspace((unsigned char)*num))
@@ -520,10 +527,17 @@ Datum float8in(PG_FUNCTION_ARGS)
      * Check for an empty-string input to begin with, to avoid the vagaries of
      * strtod() on different platforms.
      */
-    if (*num == '\0')
+    if (*num == '\0') {
+
+#ifdef DOLPHIN
+        if (!SQL_MODE_STRICT())
+            PG_RETURN_FLOAT8((float8)0);
+#endif
+
         ereport(ERROR,
             (errcode(ERRCODE_INVALID_TEXT_REPRESENTATION),
                 errmsg("invalid input syntax for type double precision: \"%s\"", orig_num)));
+    }
 
     /* skip leading whitespace */
     while (*num != '\0' && isspace((unsigned char)*num))

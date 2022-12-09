@@ -89,6 +89,18 @@ bool Scanint8Internal(const char* str, bool errorOK, int64* result, bool sqlMode
      * value as a negative number.
      */
 
+#ifdef DOLPHIN
+    if (*str == 0) {
+        if (sqlModeStrict)
+            ereport(ERROR,
+                (errmodule(MOD_FUNCTION),
+                    errcode(ERRCODE_INVALID_TEXT_REPRESENTATION),
+                    errmsg("invalid input syntax for bigint: \"%s\"", str)));
+        *result = 0;
+        return true;
+    }
+#endif
+
     /* skip leading spaces */
     while (*ptr && isspace((unsigned char)*ptr)) {
         ptr++;
