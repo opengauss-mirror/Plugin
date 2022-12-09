@@ -610,7 +610,7 @@ insert into test values('yearweek(''0000-1-1 23:59:59.9999995'', 0)', yearweek('
 insert into test values('yearweek(''0000-12-31 22:59:59.9999995'', 0)', yearweek('0000-12-31 22:59:59.9999995', 0));
 
 -- 结果
-select * from test;
+select * from test order by funcname;
 drop table test;
 \c contrib_regression
 DROP DATABASE b_datetime_func_test;

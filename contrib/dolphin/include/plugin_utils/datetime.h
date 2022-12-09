@@ -42,9 +42,11 @@ extern void Unixtimestamp2tm(double unixtimestamp, struct pg_tm* tm, fsec_t* fse
 extern bool numeric_to_lldiv_t(NumericVar *from, lldiv_t *to);
 
 #ifdef DOLPHIN
-extern void lldiv_decode_tm(Numeric num, lldiv_t *div, struct pg_tm *tm, unsigned int date_flag);
+extern void lldiv_decode_tm(Numeric num, lldiv_t *div, struct pg_tm *tm, fsec_t *fsec, unsigned int date_flag, int *date_type);
 extern bool lldiv_decode_tm_with_sql_mode(Numeric num, lldiv_t *div, struct pg_tm *tm, unsigned int date_flag);
+extern void Numeric_to_lldiv(Numeric num, lldiv_t *div);
 extern void NumericVar2lldiv(NumericVar *from, lldiv_t *to);
+extern bool lldiv_decode_datetime(Numeric num, lldiv_t *div, struct pg_tm *tm, fsec_t *fsec, unsigned int date_flag, int *date_type);
 
 extern unsigned long long pow_of_10[20];
 extern const char* unitnms[20];
@@ -85,6 +87,8 @@ enum b_units
 
 #define DATETIME_MAX_DECIMALS 6
 #define MAX_DATE_PARTS 8
+#define LLDIV_MIN -1000000000000000000LL
+#define LLDIV_MAX  1000000000000000000LL
 
 /* Limits for the TIME data type */
 #define TIME_MAX_VALUE (TIME_MAX_HOUR*10000 + TIME_MAX_MINUTE*100 + \
@@ -116,6 +120,8 @@ extern bool cstring_to_datetime(const char* str,  time_flags flags, int &tm_type
                         pg_tm *tm, fsec_t &fsec, int &nano, bool &warnings);
 extern bool datetime_add_nanoseconds_with_round(pg_tm *tm, fsec_t &fsec, int nano);
 extern bool cstring_to_tm(const char *expr, pg_tm *tm, fsec_t &fsec);
+
+#define tmfsec2float(tm, fsec) ((tm)->tm_hour*10000 + (tm)->tm_min*100 + (tm)->tm_sec + (fsec)/1000000.0)
 
 #endif
 

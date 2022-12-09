@@ -1,0 +1,186 @@
+drop database if exists test_json_type;
+NOTICE:  database "test_json_type" does not exist, skipping
+create database test_json_type dbcompatibility'B';
+\c test_json_type
+---string 
+select json_type('"aa"');
+ json_type 
+-----------
+ string
+(1 row)
+
+select json_type('""');
+ json_type 
+-----------
+ string
+(1 row)
+
+select json_type('"dajhdjhasgda"');
+ json_type 
+-----------
+ string
+(1 row)
+
+select json_type('"[1,2]"');
+ json_type 
+-----------
+ string
+(1 row)
+
+select json_type('"true"');
+ json_type 
+-----------
+ string
+(1 row)
+
+select json_type('"false"');
+ json_type 
+-----------
+ string
+(1 row)
+
+select json_type('"11"');
+ json_type 
+-----------
+ string
+(1 row)
+
+---null
+select json_type('null');
+ json_type 
+-----------
+ null
+(1 row)
+
+select json_type(null);
+ json_type 
+-----------
+ 
+(1 row)
+
+---array
+select json_type('[1,2]');
+ json_type 
+-----------
+ array
+(1 row)
+
+select json_type('[1,2,2,3,3,4,4,4,4,4,4,4,4]');
+ json_type 
+-----------
+ array
+(1 row)
+
+select json_type('[1,[1,2,3]]');
+ json_type 
+-----------
+ array
+(1 row)
+
+---object
+select json_type('{"w":1}');
+ json_type 
+-----------
+ object
+(1 row)
+
+select json_type('{"2":[1,2,3]}');
+ json_type 
+-----------
+ object
+(1 row)
+
+select json_type('{"w":2,"q":[1,2,3]}');
+ json_type 
+-----------
+ object
+(1 row)
+
+select json_type('{"w":{"2":3},"2":4}');
+ json_type 
+-----------
+ object
+(1 row)
+
+---数字类型
+select json_type('11');
+ json_type 
+-----------
+ INTEGER
+(1 row)
+
+select json_type('11.2');
+ json_type 
+-----------
+ DOUBLE
+(1 row)
+
+select json_type('331243657894584726574382970');
+ json_type 
+-----------
+ INTEGER
+(1 row)
+
+select json_type('0');
+ json_type 
+-----------
+ INTEGER
+(1 row)
+
+select json_type('1');
+ json_type 
+-----------
+ INTEGER
+(1 row)
+
+select json_type('22.467253186970835436578690');
+ json_type 
+-----------
+ DOUBLE
+(1 row)
+
+---boolean 
+select json_type('true');
+ json_type 
+-----------
+ boolean
+(1 row)
+
+select json_type('false');
+ json_type 
+-----------
+ boolean
+(1 row)
+
+---error
+select json_type('212asajh');
+ERROR:  Invalid data type for JSON data in argument 1 to function json_type
+CONTEXT:  referenced column: json_type
+select json_type('aaaa');
+ERROR:  Invalid data type for JSON data in argument 1 to function json_type
+CONTEXT:  referenced column: json_type
+select json_type('truee');
+ERROR:  Invalid data type for JSON data in argument 1 to function json_type
+CONTEXT:  referenced column: json_type
+select json_type('falsee');
+ERROR:  Invalid data type for JSON data in argument 1 to function json_type
+CONTEXT:  referenced column: json_type
+select json_type('nulll');
+ERROR:  Invalid data type for JSON data in argument 1 to function json_type
+CONTEXT:  referenced column: json_type
+select json_type('[1,,2]');
+ERROR:  Invalid data type for JSON data in argument 1 to function json_type
+CONTEXT:  referenced column: json_type
+select json_type('{w:2}');
+ERROR:  Invalid data type for JSON data in argument 1 to function json_type
+CONTEXT:  referenced column: json_type
+create table test_type (t1 text ,t2 float, t3 char, t4 text);
+insert into test_type values('{"a":1}',3,null,null);
+select json_type(t1) from test_type;
+ json_type 
+-----------
+ object
+(1 row)
+
+\c postgres
+drop database test_json_type;

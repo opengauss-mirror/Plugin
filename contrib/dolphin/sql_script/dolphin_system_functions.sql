@@ -50,7 +50,7 @@ OUT "Xlog_File_Name" text, OUT "Xlog_File_Offset" int4, OUT "Xlog_Lsn" text
 ) RETURNS setof record LANGUAGE C VOLATILE STRICT as '$libdir/dolphin', 'gs_master_status';
 
 DROP FUNCTION IF EXISTS pg_catalog.get_lock(text, text) CASCADE;
-DROP FUNCTION IF EXISTS pg_catalog.get_lock(text, double) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.get_lock(text, double precision) CASCADE;
 DROP FUNCTION IF EXISTS pg_catalog.get_lock(text) CASCADE;
 DROP FUNCTION IF EXISTS pg_catalog.release_lock(text) CASCADE;
 DROP FUNCTION IF EXISTS pg_catalog.is_free_lock(text) CASCADE;
@@ -66,7 +66,7 @@ text
 
 CREATE FUNCTION pg_catalog.get_lock (
 text,
-double
+double precision
 ) RETURNS int LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'GetAdvisoryLockWithtime';
 
 CREATE FUNCTION pg_catalog.get_lock (
@@ -113,3 +113,7 @@ DROP FUNCTION IF EXISTS pg_catalog.ShowAllGUCReset(text) CASCADE;
 CREATE OR REPLACE FUNCTION pg_catalog.ShowAllGUCReset (
 IN isReset boolean, OUT Variable_name text, OUT Value text
 ) RETURNS setof record LANGUAGE C VOLATILE STRICT as '$libdir/dolphin',  'ShowAllGUCReset';
+
+DROP FUNCTION IF EXISTS pg_catalog.database() CASCADE;
+CREATE OR REPLACE FUNCTION pg_catalog.database(
+) RETURNS name LANGUAGE C STABLE STRICT AS '$libdir/dolphin','get_b_database';

@@ -1,0 +1,181 @@
+drop database if exists test_json_length;
+NOTICE:  database "test_json_length" does not exist, skipping
+create database test_json_length dbcompatibility 'B';
+\c test_json_length
+select json_length(NULL);
+ json_length 
+-------------
+            
+(1 row)
+
+select json_length('NULL');
+ERROR:  invalid input syntax for type json
+DETAIL:  Token "NULL" is invalid.
+CONTEXT:  JSON data, line 1: NULL
+referenced column: json_length
+select json_length('true');
+ json_length 
+-------------
+           1
+(1 row)
+
+select json_length('false');
+ json_length 
+-------------
+           1
+(1 row)
+
+select json_length('"abc"');
+ json_length 
+-------------
+           1
+(1 row)
+
+select json_length('"成都"');
+ json_length 
+-------------
+           1
+(1 row)
+
+select json_length('1');
+ json_length 
+-------------
+           1
+(1 row)
+
+select json_length('1','2');
+ERROR:  Invalid JSON path expression. The error is around character position 1.
+CONTEXT:  referenced column: json_length
+select json_length('[]');
+ json_length 
+-------------
+           0
+(1 row)
+
+select json_length('{}');
+ json_length 
+-------------
+           0
+(1 row)
+
+select json_length('[1,2,3]');
+ json_length 
+-------------
+           3
+(1 row)
+
+select json_length('{"a":1,"b":2,"c":3,"d":4}');
+ json_length 
+-------------
+           4
+(1 row)
+
+select json_length('{"a":1:"b":2,"c":3,"d":4}');
+ERROR:  invalid input syntax for type json
+DETAIL:  Expected "," or "}", but found ":".
+CONTEXT:  JSON data, line 1: {"a":1:...
+referenced column: json_length
+select json_length('[null,1,true,[1,2,3],{"a":1,"b":2},"a"]');
+ json_length 
+-------------
+           6
+(1 row)
+
+select json_length('[1,{"a":[{"b":[1,2,3]}]},2]');
+ json_length 
+-------------
+           3
+(1 row)
+
+select json_length('{"a":"abc","b":["abc",{"c":"1","d":{"e":["1",2,3]}}]}');
+ json_length 
+-------------
+           2
+(1 row)
+
+select json_length('[{"a":"abc","b":["abc",{"c":"1","d":{"e":["1",2,3]}}]},1]');
+ json_length 
+-------------
+           2
+(1 row)
+
+select json_length('{"a":"abc","b":[1,2,3],"c":[{"abc":"a"},{"a":[2,3,{"c":{"a":1}}]}]}');
+ json_length 
+-------------
+           3
+(1 row)
+
+select json_length('[{"a":"abc","b":["abc",{"c":"1","d":{"e":["1",2,3]}}]},[1,2,3],{"a":1}]');
+ json_length 
+-------------
+           3
+(1 row)
+
+select json_length('[{"a":"abc","b":["abc",{"c":"1","d":{"e":["1",2,3]}}]},[1,2,3],{"a":1},[1,2,3,{"a":1,"b":2,"c":3}],1,2,3,true]');
+ json_length 
+-------------
+           8
+(1 row)
+
+select json_length('{"a":"abc","b":"abc"}','$.a');
+ json_length 
+-------------
+           1
+(1 row)
+
+select json_length('{"a":"abc","b":"abc"}','$.*');
+ERROR:  in this situation, path expressions may not contain the * and ** tokens
+CONTEXT:  referenced column: json_length
+select json_length('{"a":"abc","b":"abc"}','$.a','$.b');
+ERROR:  function json_length(unknown, unknown, unknown) does not exist
+LINE 1: select json_length('{"a":"abc","b":"abc"}','$.a','$.b');
+               ^
+HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
+CONTEXT:  referenced column: json_length
+select json_length('{"a":"abc","b":{"a":"abc","a":"abc"}}','$**.a');
+ERROR:  in this situation, path expressions may not contain the * and ** tokens
+CONTEXT:  referenced column: json_length
+select json_length(json_merge_patch('{"a":{"d":[1,2,3,4],"c":[5,6,7,{"e":"test"}]}}','{"b":{"c":2}}'));
+ json_length 
+-------------
+           2
+(1 row)
+
+select json_length(json_merge_preserve(null,'1','{"d":3,"c":5}','{"e":4,"a":{"b":1,"a":2}}'));
+ json_length 
+-------------
+            
+(1 row)
+
+create table test (
+    doc text
+);
+insert into test values
+('{"a":"abc","b":["abc",{"c":"1","d":{"e":["1",2,3]}}]}'),
+('[{"a":"abc","b":["abc",{"c":"1","d":{"e":["1",2,3]}}]},1]'),
+('{"a":"abc","b":[1,2,3],"c":[{"abc":"a"},{"a":[2,3,{"c":{"a":1}}]}]}');
+select *,json_length(doc) from test;
+                                 doc                                 | json_length 
+---------------------------------------------------------------------+-------------
+ {"a":"abc","b":["abc",{"c":"1","d":{"e":["1",2,3]}}]}               |           2
+ [{"a":"abc","b":["abc",{"c":"1","d":{"e":["1",2,3]}}]},1]           |           2
+ {"a":"abc","b":[1,2,3],"c":[{"abc":"a"},{"a":[2,3,{"c":{"a":1}}]}]} |           3
+(3 rows)
+
+drop table test;
+create table test (
+    result int
+);
+insert into test values
+(json_length('[{"a":"abc","b":["abc",{"c":"1","d":{"e":["1",2,3]}}]},[1,2,3],{"a":1}]')),
+(json_length('[{"a":"abc","b":["abc",{"c":"1","d":{"e":["1",2,3]}}]},[1,2,3],{"a":1},[1,2,3,{"a":1,"b":2,"c":3}],1,2,3,true]'));
+ select * from test;
+ result 
+--------
+      3
+      8
+(2 rows)
+
+ drop table test;
+\c postgres;
+drop database if exists test_json_length;

@@ -1,7 +1,7 @@
-drop database if exists test_c;
-NOTICE:  database "test_c" does not exist, skipping
-create database test_c dbcompatibility 'b';
-\c test_c
+drop database if exists test_json_contains;
+NOTICE:  database "test_json_contains" does not exist, skipping
+create database test_json_contains dbcompatibility 'b';
+\c test_json_contains
 select json_contains('1',null);
  json_contains 
 ---------------
@@ -51,10 +51,7 @@ select json_contains('null','null');
 (1 row)
 
 select json_contains('1',1);
-ERROR:  function json_contains(unknown, integer) does not exist
-LINE 1: select json_contains('1',1);
-               ^
-HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
+ERROR:  Invalid data type for JSON data in argument 2 to function json_contains
 CONTEXT:  referenced column: json_contains
 select json_contains('-1','-1');
  json_contains 
@@ -183,61 +180,29 @@ select json_contains('{"a":[1,2,3],"b":4,"c":5}','4');
 (1 row)
 
 select json_contains('[1,2,3,4,5]','');
-ERROR:  invalid input syntax for type json
-LINE 1: select json_contains('[1,2,3,4,5]','');
-                                           ^
-DETAIL:  The input string ended unexpectedly.
-CONTEXT:  JSON data, line 1: 
-referenced column: json_contains
+ERROR:  Invalid JSON text in argument 2 to function json_contains.
+CONTEXT:  referenced column: json_contains
 select json_contains('[1,2,3,4,5]','[1,2');
-ERROR:  invalid input syntax for type json
-LINE 1: select json_contains('[1,2,3,4,5]','[1,2');
-                                           ^
-DETAIL:  The input string ended unexpectedly.
-CONTEXT:  JSON data, line 1: [1,2
-referenced column: json_contains
+ERROR:  Invalid JSON text in argument 2 to function json_contains.
+CONTEXT:  referenced column: json_contains
 select json_contains('[1,2,3,4,5]','[1,]');
-ERROR:  invalid input syntax for type json
-LINE 1: select json_contains('[1,2,3,4,5]','[1,]');
-                                           ^
-DETAIL:  Expected JSON value, but found "]".
-CONTEXT:  JSON data, line 1: [1,]
-referenced column: json_contains
+ERROR:  Invalid JSON text in argument 2 to function json_contains.
+CONTEXT:  referenced column: json_contains
 select json_contains('','1');
-ERROR:  invalid input syntax for type json
-LINE 1: select json_contains('','1');
-                             ^
-DETAIL:  The input string ended unexpectedly.
-CONTEXT:  JSON data, line 1: 
-referenced column: json_contains
+ERROR:  Invalid JSON text in argument 1 to function json_contains.
+CONTEXT:  referenced column: json_contains
 select json_contains('[1,2,3','1');
-ERROR:  invalid input syntax for type json
-LINE 1: select json_contains('[1,2,3','1');
-                             ^
-DETAIL:  The input string ended unexpectedly.
-CONTEXT:  JSON data, line 1: [1,2,3
-referenced column: json_contains
+ERROR:  Invalid JSON text in argument 1 to function json_contains.
+CONTEXT:  referenced column: json_contains
 select json_contains('[1,2,]','1');
-ERROR:  invalid input syntax for type json
-LINE 1: select json_contains('[1,2,]','1');
-                             ^
-DETAIL:  Expected JSON value, but found "]".
-CONTEXT:  JSON data, line 1: [1,2,]
-referenced column: json_contains
+ERROR:  Invalid JSON text in argument 1 to function json_contains.
+CONTEXT:  referenced column: json_contains
 select json_contains('{"a":{"b":2},"c":3}','{"c:3}');
-ERROR:  invalid input syntax for type json
-LINE 1: select json_contains('{"a":{"b":2},"c":3}','{"c:3}');
-                                                   ^
-DETAIL:  Token ""c:3}" is invalid.
-CONTEXT:  JSON data, line 1: {"c:3}
-referenced column: json_contains
+ERROR:  Invalid JSON text in argument 2 to function json_contains.
+CONTEXT:  referenced column: json_contains
 select json_contains('{"a":{"b":2},"c":3}','{"c":}');
-ERROR:  invalid input syntax for type json
-LINE 1: select json_contains('{"a":{"b":2},"c":3}','{"c":}');
-                                                   ^
-DETAIL:  Expected JSON value, but found "}".
-CONTEXT:  JSON data, line 1: {"c":}
-referenced column: json_contains
+ERROR:  Invalid JSON text in argument 2 to function json_contains.
+CONTEXT:  referenced column: json_contains
 select json_contains('{"a":{"b":2},"c":3}','{"c":null}');
  json_contains 
 ---------------
@@ -245,14 +210,10 @@ select json_contains('{"a":{"b":2},"c":3}','{"c":null}');
 (1 row)
 
 select json_contains('{"a":{"b":2},null:3}','{"c":3}');
-ERROR:  invalid input syntax for type json
-LINE 1: select json_contains('{"a":{"b":2},null:3}','{"c":3}');
-                             ^
-DETAIL:  Expected string, but found "null".
-CONTEXT:  JSON data, line 1: {"a":{"b":2},null...
-referenced column: json_contains
+ERROR:  Invalid JSON text in argument 1 to function json_contains.
+CONTEXT:  referenced column: json_contains
 select json_contains('[1,2,3,4]','[2,4]','');
-ERROR:  Invalid jsonpath expression
+ERROR:  Invalid JSON path expression. The error is around character position 0.
 CONTEXT:  referenced column: json_contains
 select json_contains('[1,2,3,4]','[2,4]',);
 ERROR:  syntax error at or near ")"
@@ -337,29 +298,20 @@ select json_contains('{"a":1,"b":2}','2','$.c');
 (1 row)
 
 select json_contains('{"a":1,"b":2}','2','$.');
- json_contains 
----------------
- 
-(1 row)
-
+ERROR:  Invalid JSON path expression. The error is around character position 2.
+CONTEXT:  referenced column: json_contains
 select json_contains('{"a":1,"b":2}','2','$$.b');
-ERROR:  Invalid jsonpath expression
+ERROR:  Invalid JSON path expression. The error is around character position 1.
 CONTEXT:  referenced column: json_contains
 select json_contains('{"a":1,"b":2}','2','.b');
-ERROR:  Invalid jsonpath expression
+ERROR:  Invalid JSON path expression. The error is around character position 1.
 CONTEXT:  referenced column: json_contains
 select json_contains('{"a":1,"b":2}','2','$..b');
- json_contains 
----------------
- 
-(1 row)
-
+ERROR:  Invalid JSON path expression. The error is around character position 2.
+CONTEXT:  referenced column: json_contains
 select json_contains('{"a":1,"b":2}','2','$."b".');
- json_contains 
----------------
- 
-(1 row)
-
+ERROR:  Invalid JSON path expression. The error is around character position 6.
+CONTEXT:  referenced column: json_contains
 select json_contains('[1,2,3,4]','2','$[1]');
  json_contains 
 ---------------
@@ -367,16 +319,16 @@ select json_contains('[1,2,3,4]','2','$[1]');
 (1 row)
 
 select json_contains('[1,2,3,4]','2','$[1]]');
-ERROR:  Invalid jsonpath expression
+ERROR:  Invalid JSON path expression. The error is around character position 4.
 CONTEXT:  referenced column: json_contains
 select json_contains('[1,2,3,4]','2','$[[1]]');
-ERROR:  Invalid jsonpath expression
+ERROR:  Invalid JSON path expression. The error is around character position 2.
 CONTEXT:  referenced column: json_contains
 select json_contains('[1,2,3,4]','1','$[]');
-ERROR:  Invalid jsonpath expression
+ERROR:  Invalid JSON path expression. The error is around character position 2.
 CONTEXT:  referenced column: json_contains
 select json_contains('[1,2,3,4]','2','$1');
-ERROR:  Invalid jsonpath expression
+ERROR:  Invalid JSON path expression. The error is around character position 1.
 CONTEXT:  referenced column: json_contains
 select json_contains('[1,2,3,4]','[2,4]','$');
  json_contains 
@@ -391,8 +343,8 @@ select json_contains('[1,2,3,[4,5]]','2','$**[1]');
 ERROR:  in this situation, path expressions may not contain the * and ** tokens
 CONTEXT:  referenced column: json_contains
 create table json_contains_test (
-    target json,
-    candidate json,
+    target text,
+    candidate text,
     path text
 );
 insert into json_contains_test values('{"a":{"b":{"c":{"d":{"e":{"f":2}}}}},"c":3}','2','$.a.b.c.d.e.f');
@@ -417,5 +369,5 @@ select *, json_contains(target, candidate, path) from json_contains_test;
 (8 rows)
 
 drop table json_contains_test;
-\c postgres
-drop database if exists test_c;
+\c postgres;
+drop database if exists test_json_contains;

@@ -20,6 +20,7 @@
 #include <dirent.h>
 #include <math.h>
 
+#include "access/sysattr.h"
 #include "catalog/catalog.h"
 #include "catalog/pg_authid.h"
 #include "catalog/pg_tablespace.h"
@@ -33,11 +34,13 @@
 #include "plugin_parser/keywords.h"
 #include "pgstat.h"
 #include "postmaster/syslogger.h"
+#include "rewrite/rewriteHandler.h"
 #include "replication/replicainternal.h"
 #include "storage/smgr/fd.h"
 #include "storage/pmsignal.h"
 #include "storage/proc.h"
 #include "storage/procarray.h"
+#include "storage/file/fio_device.h"
 #include "utils/lsyscache.h"
 #include "tcop/tcopprot.h"
 #include "utils/acl.h"
@@ -626,37 +629,50 @@ Datum pg_tablespace_databases(PG_FUNCTION_ARGS)
 
         fctx = (ts_db_fctx*)palloc(sizeof(ts_db_fctx));
 
-        /*
-         * size = tablespace dirname length + dir sep char + oid + terminator
-         */
-#ifdef PGXC
-        /* openGauss tablespaces also include node name in path */
-        location_len = 9 + 1 + OIDCHARS + 1 + strlen(g_instance.attr.attr_common.PGXCNodeName) + 1 +
-                       strlen(TABLESPACE_VERSION_DIRECTORY) + 1;
-        fctx->location = (char*)palloc(location_len);
-#else
-        location_len = 9 + 1 + OIDCHARS + 1 + strlen(TABLESPACE_VERSION_DIRECTORY) + 1 fctx->location =
-                           (char*)palloc(location_len);
-#endif
         if (tablespaceOid == GLOBALTABLESPACE_OID) {
             fctx->dirdesc = NULL;
             ereport(WARNING, (errmsg("global tablespace never has databases")));
         } else {
-            if (tablespaceOid == DEFAULTTABLESPACE_OID)
-                ss_rc = sprintf_s(fctx->location, location_len, "base");
-            else
-#ifdef PGXC
-                /* openGauss tablespaces also include node name in path */
+            if (tablespaceOid == DEFAULTTABLESPACE_OID) {
+                location_len = (int)strlen(DEFTBSDIR) + 1;
+                fctx->location = (char*)palloc(location_len);
+                ss_rc = sprintf_s(fctx->location, (size_t)location_len, "%s", DEFTBSDIR);
+            } else if (ENABLE_DSS) {
+                location_len = (int)strlen(TBLSPCDIR) + 1 + OIDCHARS + 1 +
+                               (int)strlen(TABLESPACE_VERSION_DIRECTORY) + 1;
+                fctx->location = (char*)palloc(location_len);
                 ss_rc = sprintf_s(fctx->location,
                     location_len,
-                    "pg_tblspc/%u/%s_%s",
+                    "%s/%u/%s",
+                    TBLSPCDIR,
+                    tablespaceOid,
+                    TABLESPACE_VERSION_DIRECTORY);
+            } else {
+#ifdef PGXC
+                /* openGauss tablespaces also include node name in path */
+                location_len = (int)strlen(TBLSPCDIR) + 1 + OIDCHARS + 1 +
+                               (int)strlen(TABLESPACE_VERSION_DIRECTORY) + 1 +
+                               (int)strlen(g_instance.attr.attr_common.PGXCNodeName) + 1;
+                fctx->location = (char*)palloc(location_len);
+                ss_rc = sprintf_s(fctx->location,
+                    location_len,
+                    "%s/%u/%s_%s",
+                    TBLSPCDIR,
                     tablespaceOid,
                     TABLESPACE_VERSION_DIRECTORY,
                     g_instance.attr.attr_common.PGXCNodeName);
 #else
-                ss_rc = sprintf_s(
-                    fctx->location, location_len, "pg_tblspc/%u/%s", tablespaceOid, TABLESPACE_VERSION_DIRECTORY);
+                location_len = (int)strlen(TBLSPCDIR) + 1 + OIDCHARS + 1 +
+                               (int)strlen(TABLESPACE_VERSION_DIRECTORY) + 1;
+                fctx->location = (char*)palloc(location_len);
+                ss_rc = sprintf_s(fctx->location,
+                    location_len,
+                    "%s/%u/%s",
+                    TBLSPCDIR,
+                    tablespaceOid,
+                    TABLESPACE_VERSION_DIRECTORY);
 #endif
+            }
             securec_check_ss(ss_rc, "\0", "\0");
             fctx->dirdesc = AllocateDir(fctx->location);
 
@@ -690,7 +706,7 @@ Datum pg_tablespace_databases(PG_FUNCTION_ARGS)
         /* if database subdir is empty, don't report tablespace as used */
 
         /* size = path length + dir sep char + file name + terminator */
-        int sub_len = strlen(fctx->location) + 1 + strlen(de->d_name) + 1;
+        int sub_len = (int)strlen(fctx->location) + 1 + (int)strlen(de->d_name) + 1;
         subdir = (char*)palloc(sub_len);
         ss_rc = sprintf_s(subdir, sub_len, "%s/%s", fctx->location, de->d_name);
         securec_check_ss(ss_rc, "\0", "\0");
@@ -743,7 +759,8 @@ Datum pg_tablespace_location(PG_FUNCTION_ARGS)
      * Find the location of the tablespace by reading the symbolic link that
      * is in pg_tblspc/<oid>.
      */
-    errno_t ss_rc = snprintf_s(sourcepath, sizeof(sourcepath), sizeof(sourcepath) - 1, "pg_tblspc/%u", tablespaceOid);
+    errno_t ss_rc = snprintf_s(sourcepath, sizeof(sourcepath), sizeof(sourcepath) - 1,
+                               "%s/%u", TBLSPCDIR, tablespaceOid);
     securec_check_ss(ss_rc, "\0", "\0");
 
     rllen = readlink(sourcepath, targetpath, sizeof(targetpath));
@@ -1024,4 +1041,53 @@ Datum pg_get_replica_identity_index(PG_FUNCTION_ARGS)
         PG_RETURN_OID(idxoid);
     else
         PG_RETURN_NULL();
+}
+
+/* Compatible with ROW_COUNT functions of B database */
+Datum b_database_row_count(PG_FUNCTION_ARGS)
+{
+    PG_RETURN_INT64(u_sess->statement_cxt.last_row_count);
+}
+
+/*
+ * pg_relation_is_updatable - determine which update events the specified
+ * relation supports.
+ *
+ * This relies on relation_is_updatable() in rewriteHandler.c, which see
+ * for additional information.
+ */
+Datum pg_relation_is_updatable(PG_FUNCTION_ARGS)
+{
+    Oid reloid = PG_GETARG_OID(0);
+    bool include_triggers = PG_GETARG_BOOL(1);
+
+    PG_RETURN_INT32(relation_is_updatable(reloid, include_triggers, NULL));
+}
+
+/*
+ * pg_column_is_updatable - determine whether a column is updatable
+ *
+ * This function encapsulates the decision about just what
+ * information_schema.columns.is_updatable actually means.	It's not clear
+ * whether deletability of the column's relation should be required, so
+ * we want that decision in C code where we could change it without initdb.
+ */
+Datum pg_column_is_updatable(PG_FUNCTION_ARGS)
+{
+    Oid reloid = PG_GETARG_OID(0);
+    AttrNumber attnum = PG_GETARG_INT16(1);
+    AttrNumber col = attnum - FirstLowInvalidHeapAttributeNumber;
+    bool include_triggers = PG_GETARG_BOOL(2);
+    int events;
+
+    /* System columns are never updatable */
+    if (attnum <= 0)
+        PG_RETURN_BOOL(false);
+
+    events = relation_is_updatable(reloid, include_triggers, bms_make_singleton(col));
+
+    /* We require both updatability and deletability of the relation */
+#define REQ_EVENTS ((1 << CMD_UPDATE) | (1 << CMD_DELETE))
+
+    PG_RETURN_BOOL((events & REQ_EVENTS) == REQ_EVENTS);
 }

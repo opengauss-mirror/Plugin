@@ -2183,6 +2183,162 @@ select * from testlike8 where a like binary 'A%';
 ---+---
 (0 rows)
 
+select b'1010' like b'0010';
+ ?column? 
+----------
+ f
+(1 row)
+
+select b'1010' like b'0011';
+ ?column? 
+----------
+ f
+(1 row)
+
+select b'1010' like b'1100';
+ ?column? 
+----------
+ f
+(1 row)
+
+select '1010'::bit(4) like '0010'::bit(4);
+ ?column? 
+----------
+ f
+(1 row)
+
+select '1010'::bit(4) like '0011'::bit(4);
+ ?column? 
+----------
+ f
+(1 row)
+
+select '1010'::bit(4) like '1100'::bit(4);
+ ?column? 
+----------
+ f
+(1 row)
+
+select b'1010' not like b'0010';
+ ?column? 
+----------
+ t
+(1 row)
+
+select b'1010' not like b'0011';
+ ?column? 
+----------
+ t
+(1 row)
+
+select b'1010' not like b'1100';
+ ?column? 
+----------
+ t
+(1 row)
+
+select '1010'::bit(4) not like '0010'::bit(4);
+ ?column? 
+----------
+ t
+(1 row)
+
+select '1010'::bit(4) not like '0011'::bit(4);
+ ?column? 
+----------
+ t
+(1 row)
+
+select '1010'::bit(4) not like '1100'::bit(4);
+ ?column? 
+----------
+ t
+(1 row)
+
+select 'deadbeef'::blob like 'deadbeef';
+ ?column? 
+----------
+ t
+(1 row)
+
+select 'deadbeef'::blob like 'DEADBEEF'::blob;
+ ?column? 
+----------
+ f
+(1 row)
+
+select 'DEADBEEF'::blob like 'DEADBEEF'::blob;
+ ?column? 
+----------
+ t
+(1 row)
+
+select 'deadbeef'::blob like null;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '1010'::blob like '1100';
+ ?column? 
+----------
+ f
+(1 row)
+
+select '1010'::blob like '1100'::blob;
+ ?column? 
+----------
+ f
+(1 row)
+
+select '1010'::blob like null;
+ ?column? 
+----------
+ 
+(1 row)
+
+select 'deadbeef'::blob not like 'deadbeef';
+ ?column? 
+----------
+ f
+(1 row)
+
+select 'deadbeef'::blob not like 'DEADBEEF'::blob;
+ ?column? 
+----------
+ t
+(1 row)
+
+select 'DEADBEEF'::blob not like 'DEADBEEF'::blob;
+ ?column? 
+----------
+ f
+(1 row)
+
+select 'deadbeef'::blob not like null;
+ ?column? 
+----------
+ 
+(1 row)
+
+select '1010'::blob not like '1100';
+ ?column? 
+----------
+ t
+(1 row)
+
+select '1010'::blob not like '1100'::blob;
+ ?column? 
+----------
+ t
+(1 row)
+
+select '1010'::blob not like null;
+ ?column? 
+----------
+ 
+(1 row)
+
 drop table testlike1;
 drop table testlike2;
 drop table testlike3;

@@ -55,6 +55,7 @@
 #include "utils/guc.h"
 #include "utils/guc_tables.h"
 
+extern Node* build_column_default(Relation rel, int attrno, bool isInsertCmd = false, bool needOnUpdate = false);
 extern Node* makeAConst(Value* v, int location);
 extern Value* makeStringValue(char* str);
 static Node* transformParamRef(ParseState* pstate, ParamRef* pref);
@@ -73,6 +74,7 @@ static Node* transformUserVar(UserVar *uservar);
 static Node* transformFuncCall(ParseState* pstate, FuncCall* fn);
 static Node* transformCaseExpr(ParseState* pstate, CaseExpr* c);
 static Node* transformSubLink(ParseState* pstate, SubLink* sublink);
+static Node* transformSelectIntoVarList(ParseState* pstate, SelectIntoVarList* sis);
 static Node* transformArrayExpr(ParseState* pstate, A_ArrayExpr* a, Oid array_type, Oid element_type, int32 typmod);
 static Node* transformRowExpr(ParseState* pstate, RowExpr* r);
 static Node* transformCoalesceExpr(ParseState* pstate, CoalesceExpr* c);
@@ -107,6 +109,63 @@ typedef struct DefaultFuncType {
 
 #define OrientedIsCOLorPAX(rte) ((rte)->orientation == REL_COL_ORIENTED || (rte)->orientation == REL_PAX_ORIENTED)
 #define INDEX_KEY_MAX_PREFIX_LENGTH (int)2676
+
+
+static inline bool IsAutoIncrementColumn(TupleDesc rdAtt, int attrNo) 
+{
+    return rdAtt->constr && rdAtt->constr->cons_autoinc && rdAtt->constr->cons_autoinc->attnum == attrNo;
+}
+
+static void AddDefaultExprNode(ParseState* pstate)
+{
+    RightRefState* refState = pstate->rightRefState;
+    if (refState->isInsertHasRightRef) {
+        return;
+    }
+    pstate->rightRefState->isInsertHasRightRef = true;
+    
+    Relation relation = (Relation)linitial(pstate->p_target_relation);
+    TupleDesc rdAtt = relation->rd_att;
+    int fieldCnt = rdAtt->natts;
+    refState->constValues = (Const**)palloc0(sizeof(Const) * fieldCnt);
+    
+    eval_const_expressions_context context;
+    context.boundParams = nullptr;
+    context.root = nullptr;
+    context.active_fns = NIL;
+    context.case_val = NULL;
+    context.estimate = false;
+
+    for (int i = 0; i < fieldCnt; ++i) {
+        Form_pg_attribute attTup = rdAtt->attrs[i];
+        if (IsAutoIncrementColumn(rdAtt, i + 1)) {
+            refState->constValues[i] = makeConst(attTup->atttypid, -1, attTup->attcollation,
+                      attTup->attlen, (Datum)0, false, attTup->attbyval);
+        } else if (ISGENERATEDCOL(rdAtt, i)) {
+            refState->constValues[i] = nullptr;
+        } else {
+            Node* node = build_column_default(relation, i + 1, true);
+            if (node == nullptr) {
+                refState->constValues[i] = nullptr;
+            } else if (IsA(node, Const)) {
+                refState->constValues[i] = (Const*)node;
+            } else if (IsA(node, FuncExpr)) {
+                FuncExpr* expr = (FuncExpr*)node;
+                List* args = expr->args;
+                Expr* simple = simplify_function(expr->funcid, expr->funcresulttype, exprTypmod((const Node*)expr), 
+                                                    expr->funccollid, expr->inputcollid, &args, true, false, &context);
+                if (simple && IsA(simple, Const)) {
+                    refState->constValues[i] = (Const*)simple;
+                } else {
+                    refState->constValues[i] = nullptr;
+                }
+            } else {
+                refState->constValues[i] = nullptr;
+            }
+        }
+    }
+}
+
 /*
  * transformExpr -
  *	  Analyze and transform expressions. Type checking and type casting is
@@ -146,6 +205,13 @@ Node* transformExpr(ParseState* pstate, Node* expr)
     switch (nodeTag(expr)) {
         case T_ColumnRef:
             result = transformColumnRef(pstate, (ColumnRef*)expr);
+            if (IS_SUPPORT_RIGHT_REF(pstate->rightRefState)) {
+                if (pstate->rightRefState->isUpsert) {
+                    pstate->rightRefState->isUpsertHasRightRef = true;
+                } else {
+                    AddDefaultExprNode(pstate);
+                }
+            }
             break;
 
         case T_ParamRef:
@@ -276,6 +342,10 @@ Node* transformExpr(ParseState* pstate, Node* expr)
 
         case T_SubLink:
             result = transformSubLink(pstate, (SubLink*)expr);
+            break;
+
+	case T_SelectIntoVarList:
+            result = transformSelectIntoVarList(pstate, (SelectIntoVarList*)expr);
             break;
 
         case T_CaseExpr:
@@ -926,10 +996,15 @@ Node* transformColumnRef(ParseState* pstate, ColumnRef* cref)
         if (node == NULL) {
             node = hookresult;
         } else if (hookresult != NULL) {
-            ereport(ERROR,
-                (errcode(ERRCODE_AMBIGUOUS_COLUMN),
-                    errmsg("column reference \"%s\" is ambiguous", NameListToString(cref->fields)),
-                    parser_errposition(pstate, cref->location)));
+            if (IS_SUPPORT_RIGHT_REF(pstate->rightRefState)) {
+                node = hookresult;
+            } else {
+                ereport(ERROR,
+                    (errcode(ERRCODE_AMBIGUOUS_COLUMN),
+                        errmsg("column reference \"%s\" is ambiguous", NameListToString(cref->fields)),
+                        parser_errposition(pstate, cref->location)));
+            }
+
         }
     }
     
@@ -1571,6 +1646,11 @@ static DefaultFuncType* DefaultFuncTransformColumnRef(ParseState* pstate, Column
                     errmsg("Invalid rte call."),
                         errdetail("database.schema.table_name.colname exist error.")));
     }
+
+    if (node == NULL) {
+        ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmodule(MOD_OPT),
+            errmsg("Unknown column '%s' in 'field list'", colname)));
+    }
     result->tableOid = rte->relid;
     result->colNumber = ((Var*)node)->varattno;
     return result;
@@ -1598,6 +1678,7 @@ static Node* HandleDefaultFunction(ParseState* pstate, FuncCall* fn)
         ScanKeyData skey[2];
         Datum val;
         Datum adsrcVal;
+        Datum adgencol;
         List* wholename = NIL;
         char* tempFuncName = NULL;
         Const* con = makeConst(UNKNOWNOID, -1, InvalidOid, -2, (Datum)0, true, false);
@@ -1611,6 +1692,12 @@ static Node* HandleDefaultFunction(ParseState* pstate, FuncCall* fn)
             if (HeapTupleIsValid(htup = systable_getnext(adscan))) {
                 val = heap_getattr(htup, Anum_pg_attrdef_adbin, adrel->rd_att, &isnull);
                 if (val && pg_strcasecmp(TextDatumGetCString(val), "") == 0) {
+                    systable_endscan(adscan);
+                    heap_close(adrel, RowExclusiveLock);
+                    return (Node*)con;
+                }
+                adgencol = heap_getattr(htup, Anum_pg_attrdef_adgencol, adrel->rd_att, &isnull);
+                if (adgencol && DatumGetChar(adgencol) == 's') {
                     systable_endscan(adscan);
                     heap_close(adrel, RowExclusiveLock);
                     return (Node*)con;
@@ -1637,6 +1724,10 @@ static Node* HandleDefaultFunction(ParseState* pstate, FuncCall* fn)
                     }
                     systable_endscan(temp_adscan);
                     heap_close(rel_proc, RowExclusiveLock);
+                } else if (tempFuncName != NULL && pg_strcasecmp(tempFuncName, "AUTO_INCREMENT") == 0) {
+                    systable_endscan(adscan);
+                    heap_close(adrel, RowExclusiveLock);
+                    return (Node*)con;
                 }
                 if (temp_result) {
                     systable_endscan(adscan);
@@ -1665,12 +1756,12 @@ static Node* transformFuncCall(ParseState* pstate, FuncCall* fn)
     List* targs = NIL;
     ListCell* args = NULL;
     Node* result = NULL;
-
+#ifdef DOLPHIN
     /* For DEFAULT function, while transform, replace it to the default expr for col*/
     if (strcmp(strVal(linitial(fn->funcname)), "mode_b_default") == 0) {
         return HandleDefaultFunction(pstate, fn);
     }
-
+#endif
     /* Transform the list of arguments ... */
     targs = NIL;
     foreach (args, fn->args) {
@@ -2020,6 +2111,31 @@ Node* transformSetVariableExpr(SetVariableExpr* set)
     result->value = (Expr*)copyObject(values);
 
     return (Node *)result;
+}
+
+static Node* transformSelectIntoVarList(ParseState* pstate, SelectIntoVarList* sis)
+{
+    SubLink* sublink = (SubLink *)sis->sublink;
+    Query* qtree = NULL;
+
+    if (IsA(sublink->subselect, Query)) {
+        return (Node *)sis;
+    }
+    pstate->p_hasSubLinks = true;
+    qtree = parse_sub_analyze(sublink->subselect, pstate, NULL, false, true);
+    
+    if (!IsA(qtree, Query) || qtree->commandType != CMD_SELECT || qtree->utilityStmt != NULL) {
+        ereport(ERROR, (errcode(ERRCODE_INVALID_OPERATION), errmsg("unexpected non-SELECT command in SubLink")));
+    }
+    sublink->subselect = (Node*)qtree;
+    
+    if (list_length(qtree->targetList) != list_length(sis->userVarList)) {
+        ereport(ERROR,
+            (errcode(ERRCODE_SYNTAX_ERROR),
+                errmsg("number of variables must equal the number of columns"),
+                parser_errposition(pstate, sublink->location)));
+    }
+    return (Node *)sis;
 }
 
 static Node* transformSubLink(ParseState* pstate, SubLink* sublink)

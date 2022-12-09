@@ -1,0 +1,34 @@
+drop database if exists get_db;
+NOTICE:  database "get_db" does not exist, skipping
+create database get_db dbcompatibility 'b';
+\c get_db
+select database();
+ database 
+----------
+ public
+(1 row)
+
+create schema testdb;
+use testdb;
+select database();
+ database 
+----------
+ testdb
+(1 row)
+
+create schema testdb1;
+select database();
+ database 
+----------
+ testdb
+(1 row)
+
+use testdb1;
+select database();
+ database 
+----------
+ testdb1
+(1 row)
+
+\c postgres
+drop database if exists get_db;

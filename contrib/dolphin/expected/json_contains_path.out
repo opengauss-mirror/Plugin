@@ -1,7 +1,7 @@
-drop database if exists test_cp;
-NOTICE:  database "test_cp" does not exist, skipping
-create database test_cp dbcompatibility 'b';
-\c test_cp
+drop database if exists test_json_contains_path;
+NOTICE:  database "test_json_contains_path" does not exist, skipping
+create database test_json_contains_path dbcompatibility 'b';
+\c test_json_contains_path
 select json_contains_path(null,'one','$[0]');
  json_contains_path 
 --------------------
@@ -141,11 +141,8 @@ select json_contains_path('{"a": 1, "b": 2, "c": {"d": 4}}', 'all', '$.a.d');
 (1 row)
 
 select json_contains_path('{"a": 1, "b": 2, "c": {"d": 4}}', 'one', '$.');
- json_contains_path 
---------------------
- f
-(1 row)
-
+ERROR:  Invalid JSON path expression. The error is around character position 2.
+CONTEXT:  referenced column: json_contains_path
 select json_contains_path('{"a": 1, "b": 2, "c": {"d": 4}}', 'one', '$.a', '$.');
  json_contains_path 
 --------------------
@@ -153,11 +150,8 @@ select json_contains_path('{"a": 1, "b": 2, "c": {"d": 4}}', 'one', '$.a', '$.')
 (1 row)
 
 select json_contains_path('{"a": 1, "b": 2, "c": {"d": 4}}', 'one', '$.', '$.a');
- json_contains_path 
---------------------
- t
-(1 row)
-
+ERROR:  Invalid JSON path expression. The error is around character position 2.
+CONTEXT:  referenced column: json_contains_path
 select json_contains_path('[0,1,2]', 'one', '$[0]','$1]');
  json_contains_path 
 --------------------
@@ -165,13 +159,13 @@ select json_contains_path('[0,1,2]', 'one', '$[0]','$1]');
 (1 row)
 
 select json_contains_path('[0,1,2]', 'one', '$[0','$[1]');
-ERROR:  Invalid jsonpath expression
+ERROR:  Invalid JSON path expression. The error is around character position 3.
 CONTEXT:  referenced column: json_contains_path
 select json_contains_path('{"a": 1, "b": 2, "c": {"d": 4}}', 'all', '$.a', '$.b','$."c.d');
-ERROR:  Invalid jsonpath expression
+ERROR:  Invalid JSON path expression. The error is around character position 6.
 CONTEXT:  referenced column: json_contains_path
 create table json_contains_path_test (
-    target json,
+    target text,
     mode text
 );
 insert into json_contains_path_test values('{"a": 1, "b": 2, "c": {"d": 4}}', 'one');
@@ -184,5 +178,5 @@ select *, json_contains_path(target, mode, '$.a.d', '$.c.d') from json_contains_
 (2 rows)
 
 drop table json_contains_path_test;
-\c postgres
-drop database if exists test_cp;
+\c postgres;
+drop database if exists test_json_contains_path;

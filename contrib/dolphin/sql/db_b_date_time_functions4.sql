@@ -22,6 +22,11 @@ insert into test values('get_format(TIME, ''USA'')', get_format(TIME, 'USA'));
 insert into test values('get_format(TIME, ''JIS'')', get_format(TIME, 'JIS'));
 insert into test values('get_format(TIME, ''ISO'')', get_format(TIME, 'ISO'));
 insert into test values('get_format(TIME, ''INTERNAL'')', get_format(TIME, 'INTERNAL'));
+insert into test values('get_format(TIMESTAMP, ''EUR'')', get_format(TIMESTAMP, 'EUR'));
+insert into test values('get_format(TIMESTAMP, ''USA'')', get_format(TIMESTAMP, 'USA'));
+insert into test values('get_format(TIMESTAMP, ''JIS'')', get_format(TIMESTAMP, 'JIS'));
+insert into test values('get_format(TIMESTAMP, ''ISO'')', get_format(TIMESTAMP, 'ISO'));
+insert into test values('get_format(TIMESTAMP, ''INTERNAL'')', get_format(TIMESTAMP, 'INTERNAL'));
 -- 特异
 insert into test values('get_format(DATE, ''abc'')', get_format(DATE, 'abc'));
 insert into test values('get_format(DATE, null)', get_format(DATE, null));
@@ -73,12 +78,33 @@ insert into test values('extract(MONTH FROM date''2019-07-02'')', extract(MONTH 
 insert into test values('extract(YEAR from cast(''2019-07-02'' as datetime)', extract(YEAR from cast('2019-07-02' as datetime)));
 insert into test values('extract(hour from 8385959)', extract(hour from 8385959));
 insert into test values('extract(MONTH FROM 20190702)', extract(MONTH FROM 20190702));
+insert into test values('extract(year FROM 101)', extract(year FROM 101));
+insert into test values('extract(month FROM 101)', extract(month FROM 101));
+insert into test values('extract(quarter FROM 101)', extract(quarter FROM 101));
+insert into test values('extract(day FROM 101)', extract(day FROM 101));
+insert into test values('extract(day_hour FROM 101)', extract(day_hour FROM 101));
+insert into test values('extract(day_microsecond FROM 101)', extract(day_microsecond FROM 101));
+insert into test values('extract(hour FROM 101)', extract(hour FROM 101));
+insert into test values('extract(minute FROM 101)', extract(minute FROM 101));
+insert into test values('extract(second FROM 101)', extract(second FROM 101));
+insert into test values('extract(microsecond FROM 101)', extract(microsecond FROM 101));
+insert into test values('extract(year FROM 0)', extract(year FROM 0));
+insert into test values('extract(month FROM 0)', extract(month FROM 0));
+insert into test values('extract(quarter FROM 0)', extract(quarter FROM 0));
+insert into test values('extract(day FROM 0)', extract(day FROM 0));
+insert into test values('extract(day_hour FROM 0)', extract(day_hour FROM 0));
+insert into test values('extract(day_microsecond FROM 0)', extract(day_microsecond FROM 0));
+insert into test values('extract(hour FROM 0)', extract(hour FROM 0));
+insert into test values('extract(minute FROM 0)', extract(minute FROM 0));
+insert into test values('extract(second FROM 0)', extract(second FROM 0));
+insert into test values('extract(microsecond FROM 0)', extract(microsecond FROM 0));
 -- 特异
 insert into test values('extract(hour from null)', extract(hour from null));
 
 -- 非严格模式，参数不合法，报warning，返回NULL或者对应值
 set dolphin.sql_mode = 'sql_mode_full_group,pipes_as_concat,ansi_quotes';
 insert into test values('extract(DAY FROM ''10000-01-01'')', extract(DAY FROM '10000-01-01'));
+insert into test values('extract(year from 100000101)', extract(year from 100000101));
 insert into test values('extract(hour from ''838:59:59.1'')', extract(hour from '838:59:59.1'));
 insert into test values('extract(hour from ''839:00:00'')', extract(hour from '839:00:00'));
 insert into test values('extract(hour from ''-838:59:59.1'')', extract(hour from '-838:59:59.1'));
@@ -89,6 +115,7 @@ insert into test values('extract(hour from ''-40 1:1:0'')', extract(hour from '-
 -- 严格模式，参数不合法，抛出错误
 set dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes';
 insert into test values('extract(DAY FROM ''10000-01-01'')', extract(DAY FROM '10000-01-01'));
+insert into test values('extract(year from 100000101)', extract(year from 100000101));
 insert into test values('extract(hour from ''838:59:59.1'')', extract(hour from '838:59:59.1'));
 insert into test values('extract(hour from ''839:00:00'')', extract(hour from '839:00:00'));
 insert into test values('extract(hour from ''-838:59:59.1'')', extract(hour from '-838:59:59.1'));
@@ -100,43 +127,46 @@ set dolphin.b_compatibility_mode = false;
 -- test date_format
 -- 严格模式或者非严格模式都有值
 -- 功能
-insert into test values(' date_format(''2001-01-01 12:12:12'',''%a'')', date_format('2001-01-01 12:12:12','%a'));
-insert into test values(' date_format(''2001-01-01 12:12:12'',''%b'')', date_format('2001-01-01 12:12:12','%b'));
-insert into test values(' date_format(''2001-01-01 12:12:12'',''%c'')', date_format('2001-01-01 12:12:12','%c'));
-insert into test values(' date_format(''2001-01-01 12:12:12'',''%D'')', date_format('2001-01-01 12:12:12','%D'));
-insert into test values(' date_format(''2001-01-01 12:12:12'',''%d'')', date_format('2001-01-01 12:12:12','%d'));
-insert into test values(' date_format(''2001-01-01 12:12:12'',''%e'')', date_format('2001-01-01 12:12:12','%e'));
-insert into test values(' date_format(''2001-01-01 12:12:12'',''%f'')', date_format('2001-01-01 12:12:12','%f'));
-insert into test values(' date_format(''2001-01-01 12:12:12'',''%H'')', date_format('2001-01-01 12:12:12','%H'));
-insert into test values(' date_format(''2001-01-01 12:12:12'',''%h'')', date_format('2001-01-01 12:12:12','%h'));
-insert into test values(' date_format(''2001-01-01 12:12:12'',''%I'')', date_format('2001-01-01 12:12:12','%I'));
-insert into test values(' date_format(''2001-01-01 12:12:12'',''%i'')', date_format('2001-01-01 12:12:12','%i'));
-insert into test values(' date_format(''2001-01-01 12:12:12'',''%j'')', date_format('2001-01-01 12:12:12','%j'));
-insert into test values(' date_format(''2001-01-01 12:12:12'',''%k'')', date_format('2001-01-01 12:12:12','%k'));
-insert into test values(' date_format(''2001-01-01 12:12:12'',''%l'')', date_format('2001-01-01 12:12:12','%l'));
-insert into test values(' date_format(''2001-01-01 12:12:12'',''%M'')', date_format('2001-01-01 12:12:12','%M'));
-insert into test values(' date_format(''2001-01-01 12:12:12'',''%m'')', date_format('2001-01-01 12:12:12','%m'));
-insert into test values(' date_format(''2001-01-01 12:12:12'',''%p'')', date_format('2001-01-01 12:12:12','%p'));
-insert into test values(' date_format(''2001-01-01 12:12:12'',''%r'')', date_format('2001-01-01 12:12:12','%r'));
-insert into test values(' date_format(''2001-01-01 12:12:12'',''%S'')', date_format('2001-01-01 12:12:12','%S'));
-insert into test values(' date_format(''2001-01-01 12:12:12'',''%s'')', date_format('2001-01-01 12:12:12','%s'));
-insert into test values(' date_format(''2001-01-01 12:12:12'',''%T'')', date_format('2001-01-01 12:12:12','%T'));
-insert into test values(' date_format(''2001-01-01 12:12:12'',''%U'')', date_format('2001-01-01 12:12:12','%U'));
-insert into test values(' date_format(''2001-01-01 12:12:12'',''%u'')', date_format('2001-01-01 12:12:12','%u'));
-insert into test values(' date_format(''2001-01-01 12:12:12'',''%V'')', date_format('2001-01-01 12:12:12','%V'));
-insert into test values(' date_format(''2001-01-01 12:12:12'',''%v'')', date_format('2001-01-01 12:12:12','%v'));
-insert into test values(' date_format(''2001-01-01 12:12:12'',''%W'')', date_format('2001-01-01 12:12:12','%W'));
-insert into test values(' date_format(''2001-01-01 12:12:12'',''%w'')', date_format('2001-01-01 12:12:12','%w'));
-insert into test values(' date_format(''2001-01-01 12:12:12'',''%X'')', date_format('2001-01-01 12:12:12','%X'));
-insert into test values(' date_format(''2001-01-01 12:12:12'',''%x'')', date_format('2001-01-01 12:12:12','%x'));
-insert into test values(' date_format(''2001-01-01 12:12:12'',''%Y'')', date_format('2001-01-01 12:12:12','%Y'));
-insert into test values(' date_format(''2001-01-01 12:12:12'',''%y'')', date_format('2001-01-01 12:12:12','%y'));
-insert into test values(' date_format(''2001-01-01 12:12:12'',''aaaa'')', date_format('2001-01-01 12:12:12','aaaa'));
-insert into test values(' date_format(''2001-01-01 12:12:12'',''%dffff'')', date_format('2001-01-01 12:12:12','%dffff'));
-insert into test values(' date_format(''2001-01-01 12:12:12.34567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890'',''%b'')', date_format('2001-01-01 12:12:12.34567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890','%b'));
-insert into test values(' date_format(''2001-01-01 12:12:12'',''%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b'')', date_format('2001-01-01 12:12:12','%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b'));
-insert into test values(' date_format(''2001-01-01 12:12:12'',''%Y %M %D %U'')', date_format('2001-01-01 12:12:12','%Y %M %D %U'));
-insert into test values(' date_format(''2001-01-01 12:12:12'',''%H %k %I %r %T %S %w'')', date_format('2001-01-01 12:12:12','%H %k %I %r %T %S %w'));
+insert into test values('date_format(''0000-01-01'',''%U %u %V %v %X %x %j'')', date_format('0000-01-01', '%U %u %V %v %X %x %j'));
+insert into test values('date_format(''2021-11-12'',''%U %u %V %v %X %x %j'')', date_format('2021-11-12', '%U %u %V %v %X %x %j'));
+insert into test values('date_format(''9999-12-31'',''%U %u %V %v %X %x %j'')', date_format('9999-12-31', '%U %u %V %v %X %x %j'));
+insert into test values('date_format(''2001-01-01 12:12:12'',''%a'')', date_format('2001-01-01 12:12:12','%a'));
+insert into test values('date_format(''2001-01-01 12:12:12'',''%b'')', date_format('2001-01-01 12:12:12','%b'));
+insert into test values('date_format(''2001-01-01 12:12:12'',''%c'')', date_format('2001-01-01 12:12:12','%c'));
+insert into test values('date_format(''2001-01-01 12:12:12'',''%D'')', date_format('2001-01-01 12:12:12','%D'));
+insert into test values('date_format(''2001-01-01 12:12:12'',''%d'')', date_format('2001-01-01 12:12:12','%d'));
+insert into test values('date_format(''2001-01-01 12:12:12'',''%e'')', date_format('2001-01-01 12:12:12','%e'));
+insert into test values('date_format(''2001-01-01 12:12:12'',''%f'')', date_format('2001-01-01 12:12:12','%f'));
+insert into test values('date_format(''2001-01-01 12:12:12'',''%H'')', date_format('2001-01-01 12:12:12','%H'));
+insert into test values('date_format(''2001-01-01 12:12:12'',''%h'')', date_format('2001-01-01 12:12:12','%h'));
+insert into test values('date_format(''2001-01-01 12:12:12'',''%I'')', date_format('2001-01-01 12:12:12','%I'));
+insert into test values('date_format(''2001-01-01 12:12:12'',''%i'')', date_format('2001-01-01 12:12:12','%i'));
+insert into test values('date_format(''2001-01-01 12:12:12'',''%j'')', date_format('2001-01-01 12:12:12','%j'));
+insert into test values('date_format(''2001-01-01 12:12:12'',''%k'')', date_format('2001-01-01 12:12:12','%k'));
+insert into test values('date_format(''2001-01-01 12:12:12'',''%l'')', date_format('2001-01-01 12:12:12','%l'));
+insert into test values('date_format(''2001-01-01 12:12:12'',''%M'')', date_format('2001-01-01 12:12:12','%M'));
+insert into test values('date_format(''2001-01-01 12:12:12'',''%m'')', date_format('2001-01-01 12:12:12','%m'));
+insert into test values('date_format(''2001-01-01 12:12:12'',''%p'')', date_format('2001-01-01 12:12:12','%p'));
+insert into test values('date_format(''2001-01-01 12:12:12'',''%r'')', date_format('2001-01-01 12:12:12','%r'));
+insert into test values('date_format(''2001-01-01 12:12:12'',''%S'')', date_format('2001-01-01 12:12:12','%S'));
+insert into test values('date_format(''2001-01-01 12:12:12'',''%s'')', date_format('2001-01-01 12:12:12','%s'));
+insert into test values('date_format(''2001-01-01 12:12:12'',''%T'')', date_format('2001-01-01 12:12:12','%T'));
+insert into test values('date_format(''2001-01-01 12:12:12'',''%U'')', date_format('2001-01-01 12:12:12','%U'));
+insert into test values('date_format(''2001-01-01 12:12:12'',''%u'')', date_format('2001-01-01 12:12:12','%u'));
+insert into test values('date_format(''2001-01-01 12:12:12'',''%V'')', date_format('2001-01-01 12:12:12','%V'));
+insert into test values('date_format(''2001-01-01 12:12:12'',''%v'')', date_format('2001-01-01 12:12:12','%v'));
+insert into test values('date_format(''2001-01-01 12:12:12'',''%W'')', date_format('2001-01-01 12:12:12','%W'));
+insert into test values('date_format(''2001-01-01 12:12:12'',''%w'')', date_format('2001-01-01 12:12:12','%w'));
+insert into test values('date_format(''2001-01-01 12:12:12'',''%X'')', date_format('2001-01-01 12:12:12','%X'));
+insert into test values('date_format(''2001-01-01 12:12:12'',''%x'')', date_format('2001-01-01 12:12:12','%x'));
+insert into test values('date_format(''2001-01-01 12:12:12'',''%Y'')', date_format('2001-01-01 12:12:12','%Y'));
+insert into test values('date_format(''2001-01-01 12:12:12'',''%y'')', date_format('2001-01-01 12:12:12','%y'));
+insert into test values('date_format(''2001-01-01 12:12:12'',''aaaa'')', date_format('2001-01-01 12:12:12','aaaa'));
+insert into test values('date_format(''2001-01-01 12:12:12'',''%dffff'')', date_format('2001-01-01 12:12:12','%dffff'));
+insert into test values('date_format(''2001-01-01 12:12:12.34567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890'',''%b'')', date_format('2001-01-01 12:12:12.34567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890','%b'));
+insert into test values('date_format(''2001-01-01 12:12:12'',''%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b'')', date_format('2001-01-01 12:12:12','%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b'));
+insert into test values('date_format(''2001-01-01 12:12:12'',''%Y %M %D %U'')', date_format('2001-01-01 12:12:12','%Y %M %D %U'));
+insert into test values('date_format(''2001-01-01 12:12:12'',''%H %k %I %r %T %S %w'')', date_format('2001-01-01 12:12:12','%H %k %I %r %T %S %w'));
 -- 边界
 insert into test values('date_format(''0000-01-01'',''%Y'')', date_format('0000-01-01','%Y'));
 insert into test values('date_format(''9999-12-31'',''%Y'')', date_format('9999-12-31','%Y'));
@@ -147,6 +177,8 @@ insert into test values('date_format(date''2001-01-09'',''%Y'')', date_format(da
 insert into test values('date_format(cast(''2001-01-09 12:12:12'' as datetime),''%Y %m %d %T'')', date_format(cast('2001-01-09 12:12:12' as datetime),'%Y %m %d %T'));
 insert into test values('date_format(20010101,''%Y'')', date_format(20010101,'%Y'));
 insert into test values('date_format(20010101121212,''%Y %m %d %T'')', date_format(20010101121212,'%Y %m %d %T'));
+insert into test values('date_format(20010101,''%Y'')', date_format(20010101,'%Y'));
+insert into test values('date_format(101,''%Y %y %m %d %U %u %V %v %X %x'')', date_format(100,'%Y %y %m %d %U %u %V %v %X %x'));
 -- 特异
 insert into test values('date_format(null, ''%Y'')', date_format(null, '%Y'));
 insert into test values('date_format(''2021-11-12'', null)', date_format('2021-11-12', null));
@@ -159,11 +191,13 @@ insert into test values('date_format(''2021-0-0 12:12:12'', ''%Y %m %d %T'')', d
 set dolphin.sql_mode = 'sql_mode_full_group,pipes_as_concat,ansi_quotes';
 insert into test values('date_format(''10000-01-01 12:12:12'',''%Y %m %d %T'')', date_format('10000-01-01 12:12:12','%Y %m %d %T'));
 insert into test values('date_format(''2001-01-32 12:12:12'',''%Y %m %d %T'')', date_format('2001-01-32 12:12:12','%Y %m %d %T'));
+insert into test values('date_format(100000101, ''%b'')', date_format(100000101, '%b'));
 
 -- 严格模式，参数不合法，抛出错误
 set dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes';
 insert into test values('date_format(''10000-01-01 12:12:12'',''%Y %m %d %T'')', date_format('10000-01-01 12:12:12','%Y %m %d %T'));
 insert into test values('date_format(''2001-01-32 12:12:12'',''%Y %m %d %T'')', date_format('2001-01-32 12:12:12','%Y %m %d %T'));
+insert into test values('date_format(100000101, ''%b'')', date_format(100000101, '%b'));
 
 -- test from_unixtime
 -- 严格模式或者非严格模式都有值
@@ -340,7 +374,7 @@ insert into test values('str_to_date(''2021-11-12'', null)', str_to_date('2021-1
 insert into test values('str_to_date(''200454 Monday'', ''%X%V %W'')', str_to_date('200454 Monday', '%X%V %W'));
 
 -- 结果
-select * from test;
+select * from test order by funcname;
 drop table test;
 \c contrib_regression
 DROP DATABASE b_datetime_func_test;

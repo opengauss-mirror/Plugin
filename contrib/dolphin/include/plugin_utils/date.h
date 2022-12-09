@@ -68,6 +68,8 @@ extern void convert_to_time(Datum value, Oid valuetypid, TimeADT *time);
 
 #ifdef DOLPHIN
 extern void check_b_format_time_range_with_ereport(TimeADT &time);
+extern void check_b_format_date_range_with_ereport(DateADT &date);
+extern Oid convert_to_datetime_date(Datum value, Oid valuetypid, Timestamp *datetime, DateADT *date);
 extern TimeADT time_in_with_flag(char *str, unsigned int date_flag);
 extern bool time_in_with_sql_mode(char *str, TimeADT *result, unsigned int date_flag);
 extern bool date_add_interval(DateADT date, Interval *span, DateADT *result);

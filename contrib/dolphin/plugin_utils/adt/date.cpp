@@ -18,6 +18,7 @@
 
 #include <limits.h>
 #include <float.h>
+#include <ctype.h>
 
 #include "access/hash.h"
 #include "commands/copy.h"
@@ -55,6 +56,8 @@ static int timetz2tm(TimeTzADT* time, struct pg_tm* tm, fsec_t* fsec, int* tzp);
 static int tm2time(struct pg_tm* tm, fsec_t fsec, TimeADT* result);
 static int tm2timetz(struct pg_tm* tm, fsec_t fsec, int tz, TimeTzADT* result);
 static void AdjustTimeForTypmod(TimeADT* time, int32 typmod);
+static int getStartingDigits(char* str);
+
 #ifdef DOLPHIN
 extern const char* extract_numericstr(const char* str);
 static char* adjust_b_format_time(char *str, int *timeSign, int *D, bool *hasD);
@@ -101,16 +104,30 @@ extern "C" DLL_PUBLIC Datum utc_time_func(PG_FUNCTION_ARGS);
 
 PG_FUNCTION_INFO_V1_PUBLIC(time_to_sec);
 extern "C" DLL_PUBLIC Datum time_to_sec(PG_FUNCTION_ARGS);
-PG_FUNCTION_INFO_V1_PUBLIC(datediff);
-extern "C" DLL_PUBLIC Datum datediff(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(datediff_t_t);
+extern "C" DLL_PUBLIC Datum datediff_t_t(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(datediff_t_n);
+extern "C" DLL_PUBLIC Datum datediff_t_n(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(datediff_n_n);
+extern "C" DLL_PUBLIC Datum datediff_n_n(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(datediff_time_t);
+extern "C" DLL_PUBLIC Datum datediff_time_t(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(datediff_time_n);
+extern "C" DLL_PUBLIC Datum datediff_time_n(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(datediff_time_time);
+extern "C" DLL_PUBLIC Datum datediff_time_time(PG_FUNCTION_ARGS);
 PG_FUNCTION_INFO_V1_PUBLIC(from_days_text);
 extern "C" DLL_PUBLIC Datum from_days_text(PG_FUNCTION_ARGS);
 PG_FUNCTION_INFO_V1_PUBLIC(from_days_numeric);
 extern "C" DLL_PUBLIC Datum from_days_numeric(PG_FUNCTION_ARGS);
-PG_FUNCTION_INFO_V1_PUBLIC(adddate_datetime_days_text);
-extern "C" DLL_PUBLIC Datum adddate_datetime_days_text(PG_FUNCTION_ARGS);
-PG_FUNCTION_INFO_V1_PUBLIC(adddate_datetime_interval_text);
-extern "C" DLL_PUBLIC Datum adddate_datetime_interval_text(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(adddate_datetime_days_t);
+extern "C" DLL_PUBLIC Datum adddate_datetime_days_t(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(adddate_datetime_days_n);
+extern "C" DLL_PUBLIC Datum adddate_datetime_days_n(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(adddate_datetime_interval_t);
+extern "C" DLL_PUBLIC Datum adddate_datetime_interval_t(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(adddate_datetime_interval_n);
+extern "C" DLL_PUBLIC Datum adddate_datetime_interval_n(PG_FUNCTION_ARGS);
 PG_FUNCTION_INFO_V1_PUBLIC(adddate_time_days);
 extern "C" DLL_PUBLIC Datum adddate_time_days(PG_FUNCTION_ARGS);
 PG_FUNCTION_INFO_V1_PUBLIC(adddate_time_interval);
@@ -126,8 +143,16 @@ extern "C" DLL_PUBLIC Datum GetSecond(PG_FUNCTION_ARGS);
 
 PG_FUNCTION_INFO_V1_PUBLIC(get_format);
 extern "C" DLL_PUBLIC Datum get_format(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(b_extract_text);
+extern "C" DLL_PUBLIC Datum b_extract_text(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(b_extract_numeric);
+extern "C" DLL_PUBLIC Datum b_extract_numeric(PG_FUNCTION_ARGS);
 PG_FUNCTION_INFO_V1_PUBLIC(b_extract);
 extern "C" DLL_PUBLIC Datum b_extract(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(time_float);
+extern "C" DLL_PUBLIC Datum time_float(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(date_int);
+extern "C" DLL_PUBLIC Datum date_int(PG_FUNCTION_ARGS);
 #endif
 /* common code for timetypmodin and timetztypmodin */
 static int32 anytime_typmodin(bool istz, ArrayType* ta)
@@ -179,6 +204,27 @@ static char* anytime_typmodout(bool istz, int32 typmod)
     securec_check_ss(rc, "", "");
     return res;
 }
+
+/*
+ * Get starting digits of input string and return as int
+ *
+ * If the first character is not digit, return -1. NOTICE that if the first character is '+' or '-',
+ * it will consider it as invalid digit. So handle starting '+' nad '-' before using this function.
+ */
+static int getStartingDigits(char* str)
+{
+    int digitnum = 0;
+    long trunc_val = 0;
+    while (isdigit((unsigned char)*str)) {
+        trunc_val = trunc_val * 10 + (*str++ - '0');
+        digitnum++;
+        if (trunc_val > PG_INT32_MAX) {
+            return PG_INT32_MAX;
+        }
+    }
+    return digitnum == 0 ? -1 : trunc_val;
+}
+
 #ifdef DOLPHIN
 /* curdate()
  * @reruen  current date in b compatibility,    date
@@ -335,8 +381,13 @@ Datum date_in(PG_FUNCTION_ARGS)
         if (dterr == 0)
             dterr = DecodeDateTime(field, ftype, nf, &dtype, tm, &fsec, &tzp);
 #else
-        if (dterr != 0)
-            DateTimeParseError(dterr, str, "date");
+        if (dterr != 0) {
+            DateTimeParseError(dterr, str, "date", fcinfo->can_ignore);
+            /*
+             * if reporting warning in DateTimeParseError, return 1970-01-01
+             */
+            PG_RETURN_DATEADT(UNIX_EPOCH_JDATE - POSTGRES_EPOCH_JDATE);
+        }
         if (dterr == 0) {
             if (ftype[0] == DTK_NUMBER && nf == 1) {
                 dterr = NumberDate(field[0], tm);
@@ -346,8 +397,10 @@ Datum date_in(PG_FUNCTION_ARGS)
             }
         }
 #endif
-        if (dterr != 0)
-            DateTimeParseError(dterr, str, "date");
+        if (dterr != 0) {
+            DateTimeParseError(dterr, str, "date", fcinfo->can_ignore);
+            PG_RETURN_DATEADT(UNIX_EPOCH_JDATE - POSTGRES_EPOCH_JDATE);
+        }
         switch (dtype) {
             case DTK_DATE:
                 break;
@@ -1396,8 +1449,22 @@ Datum time_in(PG_FUNCTION_ARGS)
         if (dterr == 0)
             dterr = DecodeTimeOnly(field, ftype, nf, &dtype, tm, &fsec, &tz);
 #endif
-        if (dterr != 0)
-            DateTimeParseError(dterr, str, "time");
+        if (dterr != 0) {
+            DateTimeParseError(dterr, str, "time", fcinfo->can_ignore);
+            /*
+             * can_ignore == true means hint string "ignore_error" used. warning report instead of error.
+             * then we will return 00:00:xx if the first 1 or 2 character is lower than 60, otherwise return 00:00:00
+             */
+            char* field_str = field[0];
+            if (*field_str == '+') {
+                field_str++;
+            }
+            int trunc_val = getStartingDigits(field_str);
+            if (trunc_val < 0 || trunc_val >= 60) {
+                PG_RETURN_TIMEADT(0);
+            }
+            PG_RETURN_TIMEADT(trunc_val * 1000 * 1000);
+        }
 #ifdef DOLPHIN
         if (dterr == 0) {
             if (ftype[0] == DTK_NUMBER && nf == 1) {
@@ -1409,8 +1476,22 @@ Datum time_in(PG_FUNCTION_ARGS)
                 }
             } else {
                 dterr = DecodeTimeOnlyForBDatabase(field, ftype, nf, &dtype, tm, &fsec, &tz, D);
-                if (dterr != 0)
-                    DateTimeParseError(dterr, str, "time");
+                if (dterr != 0) {
+                    DateTimeParseError(dterr, str, "time", fcinfo->can_ignore);
+                    /*
+                     * can_ignore == true means hint string "ignore_error" used. warning report instead of error.
+                     * then we will return 00:00:xx if the first 1 or 2 character is lower than 60, otherwise return 00:00:00
+                     */
+                    char* field_str = field[0];
+                    if (*field_str == '+') {
+                        field_str++;
+                    }
+                    int trunc_val = getStartingDigits(field_str);
+                    if (trunc_val < 0 || trunc_val >= 60) {
+                        PG_RETURN_TIMEADT(0);
+                    }
+                    PG_RETURN_TIMEADT(trunc_val * 1000 * 1000);
+                }
             }
         }
 #endif
@@ -2309,8 +2390,22 @@ Datum timetz_in(PG_FUNCTION_ARGS)
     dterr = ParseDateTime(str, workbuf, sizeof(workbuf), field, ftype, MAXDATEFIELDS, &nf);
     if (dterr == 0)
         dterr = DecodeTimeOnly(field, ftype, nf, &dtype, tm, &fsec, &tz);
-    if (dterr != 0)
-        DateTimeParseError(dterr, str, "time with time zone");
+    if (dterr != 0) {
+        DateTimeParseError(dterr, str, "time with time zone", fcinfo->can_ignore);
+        /*
+         * can_ignore == true means hint string "ignore_error" used. warning report instead of error.
+         * then we will return 00:00:xx if the first 1 or 2 character is lower than 60, otherwise return 00:00:00
+         */
+        char* field_str = field[0];
+        if (*field_str == '+') {
+            field_str++;
+        }
+        tm->tm_hour = 0;
+        tm->tm_min = 0;
+        int trunc_val = getStartingDigits(field_str);
+        tm->tm_sec = (trunc_val < 0 || trunc_val >= 60) ? 0 : trunc_val;
+        fsec = 0;
+    }
 
     result = (TimeTzADT*)palloc(sizeof(TimeTzADT));
     tm2timetz(tm, fsec, tz, result);
@@ -3333,6 +3428,19 @@ void check_b_format_time_range_with_ereport(TimeADT &time)
     }
 }
 
+/*
+ * Check whether the Date value is within the specified range: 
+ * [0000-01-01, 9999-12-31] (the time range is from MySQL).
+ * Error will be reported if the Date value exceeds the range.
+ */
+void check_b_format_date_range_with_ereport(DateADT &date)
+{
+    if (date < B_FORMAT_DATEADT_MIN_VALUE || date > B_FORMAT_DATEADT_MAX_VALUE) {
+        ereport(ERROR, (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE),
+                        errmsg("date field value out of range")));
+    }
+}
+
 /* 
  * @Description: Keep timeADT in range(-B_FORMAT_TIME_MAX_VALUE, B_FORMAT_TIME_MAX_VALUE)
  * @return: bool, whether in range
@@ -3413,12 +3521,15 @@ Datum sec_to_time(PG_FUNCTION_ARGS)
     NumericVar tmp;
     lldiv_t seconds;
     init_var_from_num(PG_GETARG_NUMERIC(0), &tmp);
-    numeric_to_lldiv_t(&tmp, &seconds);
-
     struct pg_tm tt;
     TimeADT time;
     bool neg = 0;
     bool overflow = 0;
+
+    if (!numeric_to_lldiv_t(&tmp, &seconds)) {
+        overflow = 1;
+    }
+
     if (seconds.quot < 0) {
         neg = 1;
         seconds.quot = -seconds.quot;
@@ -3460,10 +3571,33 @@ Datum sec_to_time_str(PG_FUNCTION_ARGS)
 {
     text *tmp = PG_GETARG_TEXT_PP(0);
     char *str = text_to_cstring(tmp);
+    int sign = 1;
+    size_t len = strlen(str);
+    const char *start = str;
+    const char *end = str + len;
+    /* Skip spaces */
+    while (str < end && isspace((unsigned char)*str))
+        str++;
+
+    /* Skip signs */
+    if (*str == '-') {
+        sign = -1;
+        str++;
+    } else if (*str == '+') {
+        str++;
+    }
+
+    if (str == end && SQL_MODE_STRICT()) {
+        ereport(ERROR, (errcode(ERRCODE_INVALID_TEXT_REPRESENTATION),
+                        errmsg("Truncated incorrect numeric value: \"%s\"", start)));
+    }
+
     char *numeric_str = (char *)extract_numericstr(str);
     Datum seconds =
         DirectFunctionCall3(numeric_in, CStringGetDatum(numeric_str), ObjectIdGetDatum(0), Int32GetDatum(-1));
-    return DirectFunctionCall1(sec_to_time, seconds);
+    TimeADT time = DatumGetTimeADT(DirectFunctionCall1(sec_to_time, seconds));
+    time *= sign;
+    PG_RETURN_TIMEADT(time);
 }
 
 /*
@@ -3710,6 +3844,131 @@ void convert_to_time(Datum value, Oid valuetypid, TimeADT *time)
                 ereport(ERROR, (errcode(ERRCODE_DATATYPE_MISMATCH), errmsg("unsupported input data type")));
             }
             break;
+        }
+    }
+}
+
+/**
+ * @Description:Convert cstring values to the Timestamp or Date value according to its format.
+ * Timestamp type cannot exceed this range: [0000-01-01 00:00:00, 9999-12-31 23:59:59.999999]
+ * Date type cannot exceed this range: [0000-01-01, 9999-12-31]
+ * Error will be reported if the above range is exceeded.
+ * @return: Actual Timestamp or Date type oid. 
+ */
+Oid convert_cstring_to_datetime_date(const char* str, Timestamp *datetime, DateADT *date)
+{
+    if (is_date_format(str)){
+        *date = DatumGetDateADT(DirectFunctionCall1(date_in, CStringGetDatum(str)));
+        check_b_format_date_range_with_ereport(*date);
+        return DATEOID;
+    }
+    *datetime = DatumGetTimestamp(
+        DirectFunctionCall3(timestamp_in, CStringGetDatum(str), ObjectIdGetDatum(InvalidOid), Int32GetDatum(-1)));
+    check_b_format_datetime_range_with_ereport(*datetime);
+    return TIMESTAMPOID;
+}
+
+/**
+ * Convert non-NULL values of the indicated types to the Timestamp or Date value
+ * Timestamp type cannot exceed this range: [0000-01-01 00:00:00, 9999-12-31 23:59:59.999999]
+ * Date type cannot exceed this range: [0000-01-01, 9999-12-31]
+ * Error will be reported if the above range is exceeded.
+ * @return: TIMESTAMPOID or DATEOID. 
+ */
+Oid convert_to_datetime_date(Datum value, Oid valuetypid, Timestamp *datetime, DateADT *date)
+{
+    switch (valuetypid) {
+        case UNKNOWNOID:
+        case CSTRINGOID: {
+            return convert_cstring_to_datetime_date(DatumGetCString(value), datetime, date);
+        }
+        case CLOBOID:
+        case NVARCHAR2OID:
+        case BPCHAROID:
+        case VARCHAROID:
+        case TEXTOID: {
+            char *str = TextDatumGetCString(value);
+            return convert_cstring_to_datetime_date(str, datetime, date);
+        }
+        case TIMESTAMPOID:
+        case TIMESTAMPTZOID:
+        case ABSTIMEOID: 
+        case TIMEOID:
+        case TIMETZOID:{
+            convert_to_datetime(value, valuetypid, datetime);
+            check_b_format_datetime_range_with_ereport(*datetime);
+            return TIMESTAMPOID;
+        }
+        case DATEOID: {
+            *date = DatumGetDateADT(value);
+            check_b_format_date_range_with_ereport(*date);
+            return DATEOID;
+        }
+        case BOOLOID:{
+            *date = DatumGetTimestamp(DirectFunctionCall1(int32_b_format_date, 
+                                        DirectFunctionCall1(bool_int4, value)));
+            check_b_format_date_range_with_ereport(*date);
+            return DATEOID;
+        }
+        case INT1OID:
+        case INT2OID:
+        case INT4OID:
+        case INT8OID:{
+            int64 number = DatumGetInt64(value);
+            if (number >= (int64)pow_of_10[8]) {
+                /* Fuzzy boundary is used. The exact boundary is 99991231*/
+                convert_to_datetime(value, valuetypid, datetime);
+                check_b_format_datetime_range_with_ereport(*datetime);
+                return TIMESTAMPOID;
+            }
+            *date = DatumGetTimestamp(DirectFunctionCall1(int32_b_format_date, value));
+            check_b_format_date_range_with_ereport(*date);
+            return DATEOID;
+        }
+        case NUMERICOID: {
+            Datum bound = DirectFunctionCall1(int8_numeric, Int64GetDatum((int64)pow_of_10[8]));
+            if (DirectFunctionCall2(numeric_ge, value, bound)) {
+                convert_to_datetime(value, valuetypid, datetime);
+                check_b_format_datetime_range_with_ereport(*datetime);
+                return TIMESTAMPOID;
+            } else {
+                NumericVar tmp;
+                lldiv_t val;
+                init_var_from_num(DatumGetNumeric(value), &tmp);
+                if (!numeric_to_lldiv_t(&tmp, &val) ||  val.rem != 0) {
+                    ereport(ERROR, (errcode(ERRCODE_INVALID_DATETIME_FORMAT),
+                                    errmsg("invalid input syntax for type date")));
+                }
+                *date = DatumGetTimestamp(DirectFunctionCall1(int32_b_format_date, Int64GetDatum(val.quot)));
+                check_b_format_date_range_with_ereport(*date);
+                return DATEOID;
+            }
+           
+        }
+        case FLOAT4OID: 
+        case FLOAT8OID: {
+            return convert_to_datetime_date(DirectFunctionCall1(float8_numeric, value), 
+                                            NUMERICOID, datetime, date);
+        }
+        default: {
+            if (valuetypid == get_typeoid(PG_CATALOG_NAMESPACE, "uint1") || 
+                valuetypid == get_typeoid(PG_CATALOG_NAMESPACE, "uint2") || 
+                valuetypid == get_typeoid(PG_CATALOG_NAMESPACE, "uint4") ||
+                valuetypid == get_typeoid(PG_CATALOG_NAMESPACE, "uint8")) {
+                uint64 uint_val = DatumGetUInt64(value);
+                if (uint_val >= (uint64)pow_of_10[8]) {
+                    convert_to_datetime(value, valuetypid, datetime);
+                    check_b_format_datetime_range_with_ereport(*datetime);
+                    return TIMESTAMPOID;
+                } else {
+                    *date = DatumGetTimestamp(DirectFunctionCall1(int32_b_format_date, value));
+                    check_b_format_date_range_with_ereport(*date);
+                    return DATEOID;
+                }
+            }
+            ereport(ERROR, (errcode(ERRCODE_DATATYPE_MISMATCH),
+                            errmsg("unsupported input data type: %s", format_type_be(valuetypid))));
+            return InvalidOid;
         }
     }
 }
@@ -4038,11 +4297,8 @@ Datum time_bool(PG_FUNCTION_ARGS)
 /**
  * The function is similar to time_in, but uses flag to control the parsing process.
  */
-TimeADT time_in_with_flag(char *str, unsigned int date_flag)
+void time_in_with_flag_internal(char *str, struct pg_tm *tm, fsec_t *fsec, int *timeSign, unsigned int date_flag)
 {
-    TimeADT result;
-    fsec_t fsec = 0;
-    struct pg_tm tt, *tm = &tt;
     int tz;
     int nf;
     int dterr;
@@ -4050,29 +4306,30 @@ TimeADT time_in_with_flag(char *str, unsigned int date_flag)
     char* field[MAXDATEFIELDS];
     int dtype;
     int ftype[MAXDATEFIELDS];
-    int timeSign = 1;
+    *timeSign = 1;
     int D = 0;
-    errno_t rc = memset_s(&tt, sizeof(tt), 0, sizeof(tt));
+    *fsec = 0;
+    errno_t rc = memset_s(tm, sizeof(*tm), 0, sizeof(*tm));
     securec_check(rc, "\0", "\0");
     /* check if empty */
     if (strlen(str) == 0) {
-        PG_RETURN_TIMEADT(0);
+        return;
     }
     bool hasD = false;
-    char *adjusted = adjust_b_format_time(str, &timeSign, &D, &hasD);
+    char *adjusted = adjust_b_format_time(str, timeSign, &D, &hasD);
     dterr = ParseDateTime(adjusted, workbuf, sizeof(workbuf), field, ftype, MAXDATEFIELDS, &nf);
     if (dterr != 0)
         DateTimeParseError(dterr, str, "time");
     if (dterr == 0) {
         if (ftype[0] == DTK_NUMBER && nf == 1) {
             /* for example: str = "2 121212" , "231034.1234" */
-            if (NumberTime(false, field[0], tm, &fsec, D, hasD)) {
+            if (NumberTime(false, field[0], tm, fsec, D, hasD)) {
                 ereport(ERROR,
                     (errcode(ERRCODE_INVALID_DATETIME_FORMAT),
                         errmsg("invalid input syntax for type %s: \"%s\"", "time", str)));
             }
         } else {
-            dterr = DecodeTimeOnlyForBDatabase(field, ftype, nf, &dtype, tm, &fsec, &tz, D, date_flag);
+            dterr = DecodeTimeOnlyForBDatabase(field, ftype, nf, &dtype, tm, fsec, &tz, D, date_flag);
             if (dterr != 0)
                 DateTimeParseError(dterr, str, "time");
         }
@@ -4082,11 +4339,54 @@ TimeADT time_in_with_flag(char *str, unsigned int date_flag)
         ereport(ERROR,
                 (errcode(DTERR_BAD_FORMAT), errmsg("Truncated incorrect time value: \"%s\"", str)));
     }
+    return;
+}
 
+TimeADT time_in_with_flag(char *str, unsigned int date_flag)
+{
+    TimeADT result;
+    struct pg_tm tt, *tm = &tt;
+    fsec_t fsec;
+    int timeSign;
+    time_in_with_flag_internal(str, tm, &fsec, &timeSign, date_flag);
     tm2time(tm, fsec, &result);
     AdjustTimeForTypmod(&result, TIMESTAMP_MAX_PRECISION);
     result *= timeSign;
     return result;
+}
+
+/**
+ * time parser for function extract
+ */
+bool time_to_tm_with_sql_mode(char *str, struct pg_tm *tm, fsec_t *fsec, int *timeSign, unsigned int date_flag)
+{
+	TimeADT time;
+    bool ret = true;
+    int code;
+    const char *msg = NULL;
+    PG_TRY();
+    {
+        time_in_with_flag_internal(str, tm, fsec, timeSign, date_flag);
+		tm2time(tm, *fsec, &time);
+		AdjustTimeForTypmod(&time, TIMESTAMP_MAX_PRECISION);
+		time2tm(time, tm, fsec);
+    }
+    PG_CATCH();
+    {
+        ret = false;
+        if (SQL_MODE_STRICT()) {
+            PG_RE_THROW();
+        } else {
+            code = geterrcode();
+            msg = pstrdup(Geterrmsg());
+            FlushErrorState();
+        }
+    }
+    PG_END_TRY();
+    if (msg) {
+        ereport(WARNING, (errcode(code), errmsg("%s", msg)));
+    }
+    return ret;
 }
 
 /* time_to_sec()
@@ -4115,7 +4415,15 @@ Datum time_to_sec(PG_FUNCTION_ARGS)
     PG_RETURN_INT32(result);
 }
 
-Datum datediff(PG_FUNCTION_ARGS)
+static inline int32 datediff_internal(struct pg_tm* tm1, struct pg_tm* tm2)
+{
+    DateADT dt1, dt2;
+    dt1 = date2j(tm1->tm_year, tm1->tm_mon, tm1->tm_mday);
+    dt2 = date2j(tm2->tm_year, tm2->tm_mon, tm2->tm_mday);
+    return (dt1 - dt2);
+}
+
+Datum datediff_t_t(PG_FUNCTION_ARGS)
 {
     char *str1 = text_to_cstring(PG_GETARG_TEXT_PP(0));
     char *str2 = text_to_cstring(PG_GETARG_TEXT_PP(1));
@@ -4123,15 +4431,96 @@ Datum datediff(PG_FUNCTION_ARGS)
     struct pg_tm tt1, *tm1 = &tt1;
     struct pg_tm tt2, *tm2 = &tt2;
     fsec_t fsec1, fsec2;
-    DateADT dt1, dt2;
 
     if (!datetime_in_with_sql_mode(str1, tm1, &fsec1, NORMAL_DATE) || 
         !datetime_in_with_sql_mode(str2, tm2, &fsec2, NORMAL_DATE)) {
         PG_RETURN_NULL();
     }
-    dt1 = date2j(tm1->tm_year, tm1->tm_mon, tm1->tm_mday);
-    dt2 = date2j(tm2->tm_year, tm2->tm_mon, tm2->tm_mday);
-    PG_RETURN_INT32(dt1 - dt2);
+
+    PG_RETURN_INT32(datediff_internal(tm1, tm2));
+}
+
+Datum datediff_t_n(PG_FUNCTION_ARGS)
+{
+    char *str = text_to_cstring(PG_GETARG_TEXT_PP(0));
+    Numeric num = PG_GETARG_NUMERIC(1);
+    lldiv_t div;
+    struct pg_tm tt1, *tm1 = &tt1;
+    struct pg_tm tt2, *tm2 = &tt2;
+    fsec_t fsec;
+
+    Numeric_to_lldiv(num, &div);
+    if (!datetime_in_with_sql_mode(str, tm1, &fsec, NORMAL_DATE) || 
+        !lldiv_decode_tm_with_sql_mode(num, &div, tm2, NORMAL_DATE)) {
+        PG_RETURN_NULL();
+    }
+    PG_RETURN_INT32(datediff_internal(tm1, tm2));
+}
+
+Datum datediff_n_n(PG_FUNCTION_ARGS)
+{
+    Numeric num1 = PG_GETARG_NUMERIC(0);
+    Numeric num2 = PG_GETARG_NUMERIC(1);
+    lldiv_t div1, div2;
+    struct pg_tm tt1, *tm1 = &tt1;
+    struct pg_tm tt2, *tm2 = &tt2;
+
+    Numeric_to_lldiv(num1, &div1);
+    Numeric_to_lldiv(num2, &div2);
+    if (!lldiv_decode_tm_with_sql_mode(num1, &div1, tm1, NORMAL_DATE) || 
+        !lldiv_decode_tm_with_sql_mode(num2, &div2, tm2, NORMAL_DATE)) {
+        PG_RETURN_NULL();
+    }
+    PG_RETURN_INT32(datediff_internal(tm1, tm2));
+}
+
+Datum datediff_time_t(PG_FUNCTION_ARGS)
+{
+    char *str2 = text_to_cstring(PG_GETARG_TEXT_PP(1));
+    struct pg_tm tt1, *tm1 = &tt1;
+    struct pg_tm tt2, *tm2 = &tt2;
+    fsec_t fsec1, fsec2;
+    Timestamp datetime1;
+
+    if (!datetime_in_with_sql_mode(str2, tm2, &fsec2, NORMAL_DATE)) {
+        PG_RETURN_NULL();
+    }
+
+    add_currentdate_to_time(PG_GETARG_TIMEADT(0), &datetime1);
+    timestamp2tm(datetime1, NULL, tm1, &fsec1, NULL, NULL);
+    PG_RETURN_INT32(datediff_internal(tm1, tm2));
+}
+
+Datum datediff_time_n(PG_FUNCTION_ARGS)
+{
+    Numeric num2 = PG_GETARG_NUMERIC(1);
+    lldiv_t div2;
+    struct pg_tm tt1, *tm1 = &tt1;
+    struct pg_tm tt2, *tm2 = &tt2;
+    fsec_t fsec1;
+    Timestamp datetime1;
+    
+    Numeric_to_lldiv(num2, &div2);
+    if (!lldiv_decode_tm_with_sql_mode(num2, &div2, tm2, NORMAL_DATE)) {
+        PG_RETURN_NULL();
+    }
+
+    add_currentdate_to_time(PG_GETARG_TIMEADT(0), &datetime1);
+    timestamp2tm(datetime1, NULL, tm1, &fsec1, NULL, NULL);
+    PG_RETURN_INT32(datediff_internal(tm1, tm2));
+}
+
+Datum datediff_time_time(PG_FUNCTION_ARGS)
+{
+    Timestamp datetime1, datetime2;
+    struct pg_tm tt1, *tm1 = &tt1;
+    struct pg_tm tt2, *tm2 = &tt2;
+    fsec_t fsec1, fsec2;
+    add_currentdate_to_time(PG_GETARG_TIMEADT(0), &datetime1);
+    add_currentdate_to_time(PG_GETARG_TIMEADT(1), &datetime2);
+    timestamp2tm(datetime1, NULL, tm1, &fsec1, NULL, NULL);
+    timestamp2tm(datetime2, NULL, tm2, &fsec2, NULL, NULL);
+    PG_RETURN_INT32(datediff_internal(tm1, tm2));
 }
 
 static inline void from_days_internal(int64 days, Datum *result)
@@ -4202,7 +4591,7 @@ bool date_add_interval(DateADT date, Interval *span, DateADT *result)
 /**
  * adddate(date/datetime, days)
 */
-Datum adddate_datetime_days_text(PG_FUNCTION_ARGS)
+Datum adddate_datetime_days_t(PG_FUNCTION_ARGS)
 {
     int errlevel = (SQL_MODE_STRICT() ? ERROR : WARNING);
     text* tmp = PG_GETARG_TEXT_PP(0);
@@ -4212,11 +4601,12 @@ Datum adddate_datetime_days_text(PG_FUNCTION_ARGS)
     fsec_t fsec;
 
     expr = text_to_cstring(tmp);
+    if (!datetime_in_with_sql_mode(expr, tm, &fsec, NORMAL_DATE)) {
+        PG_RETURN_NULL();
+    }
+
     if (is_date_format(expr)) {
         DateADT date, result;
-        if (!datetime_in_with_sql_mode(expr, tm, &fsec, NORMAL_DATE)) {
-            PG_RETURN_NULL();
-        }
         date = date2j(tm->tm_year, tm->tm_mon, tm->tm_mday) - POSTGRES_EPOCH_JDATE;
         if (date_sub_days(date, -days, &result)) {
             /* The variable datetime or result does not exceed the specified range*/
@@ -4224,9 +4614,42 @@ Datum adddate_datetime_days_text(PG_FUNCTION_ARGS)
         }
     } else {
         Timestamp datetime, result;
-        if (!datetime_in_with_sql_mode(expr, tm, &fsec, NORMAL_DATE)) {
-            PG_RETURN_NULL();
+        tm2timestamp(tm, fsec, NULL, &datetime);
+        if (datetime_sub_days(datetime, -days, &result)) {
+            /* The variable datetime or result does not exceed the specified range*/
+            return DirectFunctionCall1(datetime_text, result);
         }
+    }
+    ereport(errlevel,
+        (errcode(ERRCODE_DATETIME_FIELD_OVERFLOW),
+            errmsg("date/time field value out of range")));
+    PG_RETURN_NULL();
+}
+
+Datum adddate_datetime_days_n(PG_FUNCTION_ARGS)
+{
+    int errlevel = (SQL_MODE_STRICT() ? ERROR : WARNING);
+    Numeric num = PG_GETARG_NUMERIC(0);
+    int64 days = PG_GETARG_INT64(1);
+    struct pg_tm tt, *tm = &tt;
+    lldiv_t div;
+    fsec_t fsec;
+    int date_type = 0;
+    
+    Numeric_to_lldiv(num, &div);
+    if (!lldiv_decode_datetime(num, &div, tm, &fsec, NORMAL_DATE, &date_type)) {
+        PG_RETURN_NULL();
+    }
+
+    if (date_type == DTK_DATE) {
+        DateADT date, result;
+        date = date2j(tm->tm_year, tm->tm_mon, tm->tm_mday) - POSTGRES_EPOCH_JDATE;
+        if (date_sub_days(date, -days, &result)) {
+            /* The variable datetime or result does not exceed the specified range*/
+            return DirectFunctionCall1(date_text, result);
+        }
+    } else {
+        Timestamp datetime, result;
         tm2timestamp(tm, fsec, NULL, &datetime);
         if (datetime_sub_days(datetime, -days, &result)) {
             /* The variable datetime or result does not exceed the specified range*/
@@ -4242,7 +4665,7 @@ Datum adddate_datetime_days_text(PG_FUNCTION_ARGS)
 /**
  * adddate(date/datetime, INTERVAL expr UNIT)
 */
-Datum adddate_datetime_interval_text(PG_FUNCTION_ARGS)
+Datum adddate_datetime_interval_t(PG_FUNCTION_ARGS)
 {
     int errlevel = (SQL_MODE_STRICT() ? ERROR : WARNING);
     text* tmp = PG_GETARG_TEXT_PP(0);
@@ -4252,19 +4675,50 @@ Datum adddate_datetime_interval_text(PG_FUNCTION_ARGS)
     fsec_t fsec;
 
     expr = text_to_cstring(tmp);
+    if (!datetime_in_with_sql_mode(expr, tm, &fsec, NORMAL_DATE)) {
+        PG_RETURN_NULL();
+    }
+
     if (is_date_format(expr) && span->time == 0) {
         DateADT date, result;
-        if (!datetime_in_with_sql_mode(expr, tm, &fsec, NORMAL_DATE)) {
-            PG_RETURN_NULL();
-        }
         date = date2j(tm->tm_year, tm->tm_mon, tm->tm_mday) - POSTGRES_EPOCH_JDATE;
         if (date_add_interval(date, span, &result))
             return DirectFunctionCall1(date_text, result);
     } else {
         Timestamp datetime, result;
-        if (!datetime_in_with_sql_mode(expr, tm, &fsec, NORMAL_DATE)) {
-            PG_RETURN_NULL();
-        }
+        tm2timestamp(tm, fsec, NULL, &datetime);
+        if (datetime_add_interval(datetime, span, &result))
+            /* The variable datetime or result does not exceed the specified range*/
+            return DirectFunctionCall1(datetime_text, result);
+    }
+    ereport(errlevel,
+            (errcode(ERRCODE_DATETIME_FIELD_OVERFLOW),
+                errmsg("date/time field value out of range")));
+    PG_RETURN_NULL();
+}
+
+Datum adddate_datetime_interval_n(PG_FUNCTION_ARGS)
+{
+    int errlevel = (SQL_MODE_STRICT() ? ERROR : WARNING);
+    Numeric num = PG_GETARG_NUMERIC(0);
+    Interval *span = PG_GETARG_INTERVAL_P(1);
+    struct pg_tm tt, *tm = &tt;
+    lldiv_t div;
+    fsec_t fsec;
+    int date_type = 0;
+
+    Numeric_to_lldiv(num, &div);
+    if (!lldiv_decode_datetime(num, &div, tm, &fsec, NORMAL_DATE, &date_type)) {
+        PG_RETURN_NULL();
+    }
+
+    if (date_type == DTK_DATE && span->time == 0) {
+        DateADT date, result;
+        date = date2j(tm->tm_year, tm->tm_mon, tm->tm_mday) - POSTGRES_EPOCH_JDATE;
+        if (date_add_interval(date, span, &result))
+            return DirectFunctionCall1(date_text, result);
+    } else {
+        Timestamp datetime, result;
         tm2timestamp(tm, fsec, NULL, &datetime);
         if (datetime_add_interval(datetime, span, &result))
             /* The variable datetime or result does not exceed the specified range*/
@@ -4367,7 +4821,6 @@ Datum GetSecond(PG_FUNCTION_ARGS)
 bool time_in_with_sql_mode(char *str, TimeADT *result, unsigned int date_flag)
 {
     bool ret = true;
-    bool raise_warning = false;
     int code;
     const char *msg = NULL;
     PG_TRY();
@@ -4380,14 +4833,13 @@ bool time_in_with_sql_mode(char *str, TimeADT *result, unsigned int date_flag)
         if (SQL_MODE_STRICT()) {
             PG_RE_THROW();
         } else {
-            raise_warning = true;
             code = geterrcode();
             msg = pstrdup(Geterrmsg());
             FlushErrorState();
         }
     }
     PG_END_TRY();
-    if (raise_warning) {
+    if (msg) {
         ereport(WARNING, (errcode(code), errmsg("%s", msg)));
     }
     return ret;
@@ -4474,11 +4926,11 @@ static inline int find_type(b_units unit)
         case UNIT_WEEK:
         case UNIT_DAY:
         case UNIT_YEAR_MONTH:
+            return 1;
         case UNIT_DAY_HOUR:
         case UNIT_DAY_MINUTE:
         case UNIT_DAY_SECOND:
         case UNIT_DAY_MICROSECOND:
-            return 1;
         case UNIT_HOUR:
         case UNIT_MINUTE:
         case UNIT_SECOND:
@@ -4497,35 +4949,10 @@ static inline int find_type(b_units unit)
     return 1;   // can not reach here, just keep compiler silence.
 }
 
-Datum b_extract(PG_FUNCTION_ARGS)
+static inline int64 extract_internal(b_units enum_unit, struct pg_tm* tm, fsec_t fsec, int time_sign)
 {
-    text *units = PG_GETARG_TEXT_PP(0);
-    char *str = text_to_cstring(PG_GETARG_TEXT_PP(1));
-    b_units enum_unit;
-    struct pg_tm tt, *tm = &tt;
-    fsec_t fsec;
     int32 int_fsec;
-    TimeADT time;
-    int time_sign = 1;
     int64 result;
-
-    char *lowunits = downcase_truncate_identifier(VARDATA_ANY(units), VARSIZE_ANY_EXHDR(units), false);
-    resolve_units(lowunits, &enum_unit);
-    if (find_type(enum_unit)) {
-        if (!datetime_in_with_sql_mode(str, tm, &fsec, (ENABLE_ZERO_DAY | ENABLE_ZERO_MONTH))) {
-            PG_RETURN_NULL();
-        }
-    } else {
-        if (!time_in_with_sql_mode(str, &time, (ENABLE_ZERO_DAY | ENABLE_ZERO_MONTH))) {
-            PG_RETURN_NULL();
-        }
-        if (time < 0) {
-            time_sign = -1;
-            time = -time;
-        }
-        time2tm(time, tm, &fsec);
-    }
-
 #ifdef HAVE_INT64_TIMESTAMP
     int_fsec = fsec;
 #else
@@ -4620,6 +5047,99 @@ Datum b_extract(PG_FUNCTION_ARGS)
             break;
         }
     }
-    PG_RETURN_INT64(result);
+    return result;
+}
+
+Datum b_extract_text(PG_FUNCTION_ARGS)
+{
+    text *units = PG_GETARG_TEXT_PP(0);
+    char *str = text_to_cstring(PG_GETARG_TEXT_PP(1));
+    b_units enum_unit;
+    struct pg_tm tt, *tm = &tt;
+    fsec_t fsec;
+    int time_sign = 1;
+
+    char *lowunits = downcase_truncate_identifier(VARDATA_ANY(units), VARSIZE_ANY_EXHDR(units), false);
+    resolve_units(lowunits, &enum_unit);
+    if (find_type(enum_unit)) {
+        if (!datetime_in_with_sql_mode(str, tm, &fsec, (ENABLE_ZERO_DAY | ENABLE_ZERO_MONTH))) {
+            PG_RETURN_NULL();
+        }
+    } else {
+        if (!time_to_tm_with_sql_mode(str, tm, &fsec, &time_sign, (ENABLE_ZERO_DAY | ENABLE_ZERO_MONTH))) {
+            PG_RETURN_NULL();
+        }
+    }
+
+    PG_RETURN_INT64(extract_internal(enum_unit, tm, fsec, time_sign));
+}
+
+Datum b_extract_numeric(PG_FUNCTION_ARGS)
+{
+    text *units = PG_GETARG_TEXT_PP(0);
+    Numeric num = PG_GETARG_NUMERIC(1);
+    lldiv_t div;
+    struct pg_tm tt, *tm = &tt;
+    fsec_t fsec = 0;
+    int time_sign = 1;
+    b_units enum_unit;
+    int date_type = 0;
+
+    char *lowunits = downcase_truncate_identifier(VARDATA_ANY(units), VARSIZE_ANY_EXHDR(units), false);
+    resolve_units(lowunits, &enum_unit);
+    Numeric_to_lldiv(num, &div);
+    if (find_type(enum_unit)) {
+        if (IS_ZERO_NUMBER_DATE(div.quot, div.rem)) {
+            fsec = 0;
+            errno_t rc = memset_s(&tt, sizeof(tt), 0, sizeof(tt));
+            securec_check(rc, "\0", "\0");
+        } else if (!lldiv_decode_datetime(num, &div, tm, &fsec, (ENABLE_ZERO_DAY | ENABLE_ZERO_MONTH), &date_type)) {
+            PG_RETURN_NULL();
+        }
+    } else {
+        char *str = DatumGetCString(DirectFunctionCall1(numeric_out, NumericGetDatum(num)));
+        if (!time_to_tm_with_sql_mode(str, tm, &fsec, &time_sign, (ENABLE_ZERO_DAY | ENABLE_ZERO_MONTH))) {
+            PG_RETURN_NULL();
+        }
+    }
+
+    PG_RETURN_INT64(extract_internal(enum_unit, tm, fsec, time_sign));
+}
+
+/* Transfor TimeADT into float8 formate
+ * exp: "10:22:33.456" -> 102233.456
+ */
+Datum time_float(PG_FUNCTION_ARGS)
+{
+    TimeADT timeVal = PG_GETARG_TIMEADT(0);
+
+    struct pg_tm tt, *tm = &tt;
+    fsec_t fsec;
+    bool sig = 0;
+    if (timeVal < 0) {
+        timeVal *= -1;
+        sig = 1;
+    }
+    time2tm(timeVal, tm, &fsec);
+
+    float8 res = tmfsec2float(tm, fsec);
+
+    PG_RETURN_FLOAT8(res);
+}
+
+Datum date_int(PG_FUNCTION_ARGS)
+{
+    DateADT date = PG_GETARG_DATEADT(0);
+    struct pg_tm tt, *tm = &tt;
+    
+    if (unlikely(date > 0 && (INT_MAX - date < POSTGRES_EPOCH_JDATE))) {
+        ereport(ERROR,
+            (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+                errmsg("input julian date is overflow")));
+    }
+    j2date(date + POSTGRES_EPOCH_JDATE, &(tm->tm_year), &(tm->tm_mon), &(tm->tm_mday));
+
+    int32 res = tm->tm_year*10000 + tm->tm_mon*100 + tm->tm_mon;
+    PG_RETURN_INT32(res);
 }
 #endif

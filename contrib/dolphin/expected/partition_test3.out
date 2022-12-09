@@ -48,55 +48,55 @@ PARTITION BY RANGE(a) SUBPARTITION BY RANGE(b)
     )
 );
 --test b_compatibility drop and add partition syntax
-select relname, boundaries from pg_partition where parentid in (select parentid from pg_partition where relname = 'test_part2');
+select relname, boundaries from pg_partition where parentid in (select parentid from pg_partition where relname = 'test_part2') order by 1,2;
   relname   | boundaries 
 ------------+------------
- test_part2 | 
  p0         | {100}
  p1         | {200}
  p2         | {300}
  p3         | {400}
+ test_part2 | 
 (5 rows)
 
 ALTER TABLE test_part2 DROP PARTITION p3;
-select relname, boundaries from pg_partition where parentid in (select parentid from pg_partition where relname = 'test_part2');
+select relname, boundaries from pg_partition where parentid in (select parentid from pg_partition where relname = 'test_part2') order by 1,2;
   relname   | boundaries 
 ------------+------------
- test_part2 | 
  p0         | {100}
  p1         | {200}
  p2         | {300}
+ test_part2 | 
 (4 rows)
 
 ALTER TABLE test_part2 add PARTITION (PARTITION p3 VALUES LESS THAN (400),PARTITION p4 VALUES LESS THAN (500),PARTITION p5 VALUES LESS THAN (600));
-select relname, boundaries from pg_partition where parentid in (select parentid from pg_partition where relname = 'test_part2');
+select relname, boundaries from pg_partition where parentid in (select parentid from pg_partition where relname = 'test_part2') order by 1,2;
   relname   | boundaries 
 ------------+------------
- test_part2 | 
  p0         | {100}
  p1         | {200}
  p2         | {300}
  p3         | {400}
  p4         | {500}
  p5         | {600}
+ test_part2 | 
 (7 rows)
 
 ALTER TABLE test_part2 add PARTITION (PARTITION p6 VALUES LESS THAN (700),PARTITION p7 VALUES LESS THAN (800));
 ALTER TABLE test_part2 DROP PARTITION p4,p5,p6;
-select relname, boundaries from pg_partition where parentid in (select parentid from pg_partition where relname = 'test_part2');
+select relname, boundaries from pg_partition where parentid in (select parentid from pg_partition where relname = 'test_part2') order by 1,2;
   relname   | boundaries 
 ------------+------------
- test_part2 | 
  p0         | {100}
  p1         | {200}
  p2         | {300}
  p3         | {400}
  p7         | {800}
+ test_part2 | 
 (6 rows)
 
 ALTER TABLE test_part2 add PARTITION (PARTITION p4 VALUES LESS THAN (500));
 ERROR:  upper boundary of adding partition MUST overtop last existing partition
-select relname, boundaries from pg_partition where parentid in (select oid from pg_partition where parentid in (select parentid from pg_partition where relname = 'test_subpart2'));
+select relname, boundaries from pg_partition where parentid in (select oid from pg_partition where parentid in (select parentid from pg_partition where relname = 'test_subpart2')) order by 1,2;
  relname | boundaries 
 ---------+------------
  p0_0    | {100}
@@ -115,7 +115,7 @@ select relname, boundaries from pg_partition where parentid in (select oid from 
 
 ALTER TABLE test_subpart2 DROP SUBPARTITION p0_0;
 ALTER TABLE test_subpart2 DROP SUBPARTITION p0_2, p1_0, p1_2;
-select relname, boundaries from pg_partition where parentid in (select oid from pg_partition where parentid in (select parentid from pg_partition where relname = 'test_subpart2'));
+select relname, boundaries from pg_partition where parentid in (select oid from pg_partition where parentid in (select parentid from pg_partition where relname = 'test_subpart2')) order by 1,2;
  relname | boundaries 
 ---------+------------
  p0_1    | {200}
@@ -133,34 +133,34 @@ ALTER TABLE test_part2 add PARTITION (PARTITION p5 VALUES LESS THAN (600));
 ERROR:  upper boundary of adding partition MUST overtop last existing partition
 ALTER TABLE test_part2 DROP PARTITION p5, DROP PARTITION p0, DROP PARTITION p7;
 ERROR:  partition "p5" does not exist
-select relname, boundaries from pg_partition where parentid in (select parentid from pg_partition where relname = 'test_part2');
+select relname, boundaries from pg_partition where parentid in (select parentid from pg_partition where relname = 'test_part2') order by 1,2;
   relname   | boundaries 
 ------------+------------
- test_part2 | 
  p0         | {100}
  p1         | {200}
  p2         | {300}
  p3         | {400}
  p7         | {800}
+ test_part2 | 
 (6 rows)
 
 ALTER TABLE test_part2 add PARTITION p4 VALUES LESS THAN (100),add PARTITION p5 VALUES LESS THAN (200);
 ERROR:  upper boundary of adding partition MUST overtop last existing partition
 ALTER TABLE test_part2 add PARTITION p4 VALUES LESS THAN (500),add PARTITION p5 VALUES LESS THAN (600);
 ERROR:  upper boundary of adding partition MUST overtop last existing partition
-select relname, boundaries from pg_partition where parentid in (select parentid from pg_partition where relname = 'test_part2');
+select relname, boundaries from pg_partition where parentid in (select parentid from pg_partition where relname = 'test_part2') order by 1,2;
   relname   | boundaries 
 ------------+------------
- test_part2 | 
  p0         | {100}
  p1         | {200}
  p2         | {300}
  p3         | {400}
  p7         | {800}
+ test_part2 | 
 (6 rows)
 
 ALTER TABLE test_subpart2 DROP SUBPARTITION p2_0, DROP SUBPARTITION p2_2, DROP SUBPARTITION p3_0;
-select relname, boundaries from pg_partition where parentid in (select oid from pg_partition where parentid in (select parentid from pg_partition where relname = 'test_subpart2'));
+select relname, boundaries from pg_partition where parentid in (select oid from pg_partition where parentid in (select parentid from pg_partition where relname = 'test_subpart2')) order by 1,2;
  relname | boundaries 
 ---------+------------
  p0_1    | {200}

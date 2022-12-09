@@ -46,6 +46,8 @@
 #define TWO_DIGITS_YEAR_DATETIME_THREE INT64CONST(991231235959) /* 1999-12-31 23:59:59*/
 #define UNIXTIMESTAMP_START_VALUE INT64CONST(-946684799000000)  /* 1970-01-01 00:00:01.000000 */
 #define UNIXTIMESTAMP_END_VALUE INT64CONST(1200798847999999)    /* 2038-01-19 03:14:07.999999 */
+#define IZONE_BOUND1 INT64CONST(46740000000) /* 12:59:00 */
+#define IZONE_BOUND2 INT64CONST(46800000000) /* 13:00:00 */
 
 #define NORMAL_DATE 0
 #define ENABLE_ZERO_DAY 1
@@ -101,6 +103,7 @@ extern bool datetime_sub_interval(Timestamp datetime, Interval *span, Timestamp 
 
 #ifdef DOLPHIN
 Oid convert_to_datetime_time(Datum value, Oid valuetypid, Timestamp *datetime, TimeADT *time);
+extern void check_b_format_datetime_range_with_ereport(Timestamp &datetime);
 extern void datetime_in_with_flag_internal(const char *str, struct pg_tm *tm, fsec_t* fsec, unsigned int date_flag);
 extern bool MaybeRound(struct pg_tm *tm, fsec_t *fsec);
 extern bool datetime_add_interval(Timestamp datetime, Interval *span, Timestamp *result);
@@ -108,6 +111,7 @@ extern void convert_to_datetime(Datum value, Oid valuetypid, Timestamp *datetime
 extern int64 b_db_weekmode(int64 mode);
 extern int b_db_cal_week(struct pg_tm* tm, int64 mode, uint* year);
 extern bool datetime_in_with_sql_mode(char *str, struct pg_tm *tm, fsec_t *fsec, unsigned int date_flag);
+extern void add_currentdate_to_time(TimeADT time, Timestamp *result);
 #endif
 
 extern Datum datetime_text(PG_FUNCTION_ARGS);

@@ -1526,12 +1526,19 @@ static void validateDfsTableDef(CreateStmt* stmt, bool isDfsTbl)
     }
 }
 
+static void check_sub_part_tbl_space(Oid ownerId, char* tablespacename, List* subPartitionDefState)
+{
+    ListCell* subspccell = NULL;
+    foreach(subspccell, subPartitionDefState) {
+        RangePartitionDefState* subpartitiondef = (RangePartitionDefState*)lfirst(subspccell);
+        char* subtablespacename = subpartitiondef->tablespacename;
+        CheckPartitionTablespace(subtablespacename, ownerId);
+    }
+}
+
 /* Check tablespace's permissions for partition */
 static void check_part_tbl_space(CreateStmt* stmt, Oid ownerId, bool dfsTablespace)
 {
-    Oid partitionTablespaceId;
-    bool isPartitionTablespaceDfs = false;
-    RangePartitionDefState* partitiondef = NULL;
     ListCell* spccell = NULL;
     /* check value partition table is created at DFS table space */
     if (stmt->partTableState->partitionStrategy == PART_STRATEGY_VALUE && !dfsTablespace)
@@ -1540,21 +1547,31 @@ static void check_part_tbl_space(CreateStmt* stmt, Oid ownerId, bool dfsTablespa
                 errmsg("Value partitioned table can only be created on DFS tablespace.")));
 
     foreach (spccell, stmt->partTableState->partitionList) {
-        partitiondef = (RangePartitionDefState*)lfirst(spccell);
-
-        if (partitiondef->tablespacename) {
-            partitionTablespaceId = get_tablespace_oid(partitiondef->tablespacename, false);
-            isPartitionTablespaceDfs = IsSpecifiedTblspc(partitionTablespaceId, FILESYSTEM_HDFS);
-            if (isPartitionTablespaceDfs) {
-                ereport(ERROR,
-                    (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
-                        errmsg("Partition can not be created on DFS tablespace.Only table-level tablespace can be "
-                               "DFS.DFS table only support partition strategy '%s' feature.",
-                            GetPartitionStrategyNameByType(PART_STRATEGY_VALUE))));
-            }
+        if (nodeTag(lfirst(spccell)) == T_RangePartitionDefState) {
+            RangePartitionDefState* partitiondef = (RangePartitionDefState*)lfirst(spccell);
+            char* tablespacename = partitiondef->tablespacename;
+            List* subPartitionDefState = partitiondef->subPartitionDefState;
+            CheckPartitionTablespace(tablespacename, ownerId);
+            check_sub_part_tbl_space(ownerId, tablespacename, subPartitionDefState);
+        } else if (nodeTag(lfirst(spccell)) == T_HashPartitionDefState) {
+            HashPartitionDefState* partitiondef = (HashPartitionDefState*)lfirst(spccell);
+            char* tablespacename = partitiondef->tablespacename;
+            List* subPartitionDefState = partitiondef->subPartitionDefState;
+            CheckPartitionTablespace(tablespacename, ownerId);
+            check_sub_part_tbl_space(ownerId, tablespacename, subPartitionDefState);
+        } else if (nodeTag(lfirst(spccell)) == T_ListPartitionDefState) {
+            ListPartitionDefState* partitiondef = (ListPartitionDefState*)lfirst(spccell);
+            char* tablespacename = partitiondef->tablespacename;
+            List* subPartitionDefState = partitiondef->subPartitionDefState;
+            CheckPartitionTablespace(tablespacename, ownerId);
+            check_sub_part_tbl_space(ownerId, tablespacename, subPartitionDefState);
+        } else {
+            ereport(ERROR, (errmodule(MOD_COMMAND), errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+                errmsg("Unknown PartitionDefState"),
+                errdetail("N/A"), errcause("The partition type is incorrect."),
+                erraction("Use the correct partition type.")));
+            break;
         }
-
-        CheckPartitionTablespace(partitiondef->tablespacename, ownerId);
     }
 }
 
@@ -1933,6 +1950,53 @@ static List *GetSubpPartitionDefList(PartitionState *partTableState, ListCell *c
     return subPartitionList;
 }
 
+void UpdatePartKeyExpr(Relation rel, PartitionState *partTableState, Oid partOid)
+{
+    ParseState* pstate = NULL;
+    RangeTblEntry* rte = NULL;
+    HeapTuple partTuple = NULL;
+    pstate = make_parsestate(NULL);
+    rte = addRangeTableEntryForRelation(pstate, rel, NULL, false, true);
+    addRTEtoQuery(pstate, rte, true, true, true);
+    Relation pgPartitionRel = heap_open(PartitionRelationId, RowExclusiveLock);
+    if (OidIsValid(partOid))
+        partTuple = SearchSysCache1(PARTRELID, ObjectIdGetDatum(partOid));
+    else
+        partTuple = searchPgPartitionByParentIdCopy(PART_OBJ_TYPE_PARTED_TABLE, rel->rd_id);
+    if (!partTuple)
+        ereport(ERROR,(errcode(ERRCODE_PARTITION_ERROR),errmsg("The partition can't be found")));
+    bool isnull = false;
+    Datum val = fastgetattr(partTuple, Anum_pg_partition_partkeyexpr, RelationGetDescr(pgPartitionRel), &isnull);
+    if (isnull) {
+        if (OidIsValid(partOid))
+            ReleaseSysCache(partTuple);
+        else
+            heap_freetuple(partTuple);
+        heap_close(pgPartitionRel, RowExclusiveLock);
+        return;
+    }
+	// Oid* partitionKeyDataType = NULL;
+    Node* expr = transformExpr(pstate, (Node*)(linitial(partTableState->partitionKey)));
+    assign_expr_collations(pstate, expr);
+    bool nulls[Natts_pg_partition] = {false};
+    bool replaces[Natts_pg_partition] = {false};
+    Datum values[Natts_pg_partition] = {0};
+    replaces[Anum_pg_partition_partkeyexpr - 1] = true;
+    char* partkeyexpr = nodeToString(expr);
+    values[Anum_pg_partition_partkeyexpr - 1] = partkeyexpr ? CStringGetTextDatum(partkeyexpr) : CStringGetTextDatum("");
+    HeapTuple new_tuple = heap_modify_tuple(partTuple, RelationGetDescr(pgPartitionRel), values, nulls, replaces);
+    simple_heap_update(pgPartitionRel, &new_tuple->t_self, new_tuple);
+    CatalogUpdateIndexes(pgPartitionRel, new_tuple);
+    if (OidIsValid(partOid))
+        ReleaseSysCache(partTuple);
+    else
+        heap_freetuple(partTuple);
+    heap_freetuple_ext(new_tuple);
+    if (pgPartitionRel) {
+        heap_close(pgPartitionRel, RowExclusiveLock);
+    }
+}
+
 /* ----------------------------------------------------------------
  *		DefineRelation
  *				Creates a new relation.
@@ -2241,6 +2305,10 @@ Oid DefineRelation(CreateStmt* stmt, char relkind, Oid ownerId, bool isCTAS)
         ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
             errmsg("hasuids is not supported in current version!")));
     }
+    if (ENABLE_DMS && relhasuids) {
+        ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+            errmsg("hasuids is not supported under Shared Storage.")));
+    }
     if (std_opt != NULL) {
         RowTblCheckHashBucketOption(stmt->options, std_opt);
         if ((std_opt->segment)) {
@@ -2531,15 +2599,17 @@ Oid DefineRelation(CreateStmt* stmt, char relkind, Oid ownerId, bool isCTAS)
             ColumnRef *partitionKeyRef = (ColumnRef *)linitial(stmt->partTableState->partitionKey);
             ColumnRef *subPartitionKeyRef =
                 (ColumnRef *)linitial(stmt->partTableState->subPartitionState->partitionKey);
-            char *partitonKeyName = ((Value *)linitial(partitionKeyRef->fields))->val.str;
-            char *subPartitonKeyName = ((Value *)linitial(subPartitionKeyRef->fields))->val.str;
-            if (!strcmp(partitonKeyName, subPartitonKeyName)) {
-                ereport(
-                    ERROR,
-                    (errmodule(MOD_COMMAND), errcode(ERRCODE_DUPLICATE_OBJECT),
-                     errmsg("The two partition keys of a subpartition partition table are the same."), errdetail("N/A"),
-                     errcause("The two partition keys of a subpartition partition table cannot be the same."),
-                     erraction("Partition keys cannot be the same column.")));
+            if (IsA(partitionKeyRef,ColumnRef) && IsA(subPartitionKeyRef,ColumnRef)) {
+                char *partitonKeyName = ((Value *)linitial(partitionKeyRef->fields))->val.str;
+                char *subPartitonKeyName = ((Value *)linitial(subPartitionKeyRef->fields))->val.str;
+                if (!strcmp(partitonKeyName, subPartitonKeyName)) {
+                    ereport(
+                        ERROR,
+                        (errmodule(MOD_COMMAND), errcode(ERRCODE_DUPLICATE_OBJECT),
+                        errmsg("The two partition keys of a subpartition partition table are the same."), errdetail("N/A"),
+                        errcause("The two partition keys of a subpartition partition table cannot be the same."),
+                        erraction("Partition keys cannot be the same column.")));
+                }
             }
             foreach (cell, stmt->partTableState->partitionList) {
                 stmt->partTableState->subPartitionState->partitionList =
@@ -2756,7 +2826,24 @@ Oid DefineRelation(CreateStmt* stmt, char relkind, Oid ownerId, bool isCTAS)
             (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
                 errmsg("The table %s do not support segment storage", stmt->relation->relname)));
     }
-    
+
+    if (ENABLE_DMS) {
+        if ((relkind == RELKIND_RELATION && storage_type != SEGMENT_PAGE) ||
+            relkind == RELKIND_MATVIEW ||
+            pg_strcasecmp(storeChar, ORIENTATION_ROW) != 0 ||
+            relkind == RELKIND_FOREIGN_TABLE ||
+            stmt->relation->relpersistence == RELPERSISTENCE_UNLOGGED ||
+            stmt->relation->relpersistence == RELPERSISTENCE_TEMP ||
+            stmt->relation->relpersistence == RELPERSISTENCE_GLOBAL_TEMP ||
+            pg_strcasecmp(COMPRESSION_NO, StdRdOptionsGetStringData(std_opt, compression, COMPRESSION_NO)) != 0 ||
+            IsCompressedByCmprsInPgclass((RelCompressType)stmt->row_compress)) {
+            ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+                errmsg("Only support segment storage type and ASTORE while DMS and DSS enabled.\n"
+                "Foreign table, matview, temp table or unlogged table is not supported.\nCompression is not "
+                "supported.")));
+        }
+    }
+
     /*
      * Create the relation.  Inherited defaults and constraints are passed in
      * for immediate handling --- since they don't need parsing, they can be
@@ -2889,6 +2976,20 @@ Oid DefineRelation(CreateStmt* stmt, char relkind, Oid ownerId, bool isCTAS)
 
     ereport(DEBUG1, (errmsg("Define relation <%s.%s>, reloid: %u, relfilenode: %u", stmt->relation->schemaname,
         stmt->relation->relname, relationId, rel->rd_node.relNode)));
+
+    if (stmt->partTableState) {
+        UpdatePartKeyExpr(rel, stmt->partTableState, InvalidOid);
+        if (stmt->partTableState->subPartitionState) {
+            List* partitionList = relationGetPartitionList(rel, NoLock);
+            ListCell* cell = NULL;
+            foreach (cell, partitionList) {
+                Partition partition = (Partition)(lfirst(cell));
+                UpdatePartKeyExpr(rel, stmt->partTableState->subPartitionState, partition->pd_id);
+            }
+            releasePartitionList(rel, &partitionList, NoLock);
+        }
+        CommandCounterIncrement();
+    }
     /*
      * Now add any newly specified column default and generation expressions
      * to the new relation.  These are passed to us in the form of raw
@@ -6043,8 +6144,8 @@ static void RenameTableFeature(RenameStmt* stmt)
     List* search_path = fetch_search_path(false);
     Oid relnamespace = InvalidOid;
     RangeVar* temp_name = NULL;
-    Oid relid = InvalidOid;
-    Relation rel_pg_class;
+    Oid relid = InvalidOid, relid_temp = InvalidOid;
+    Relation rel_pg_class, rel_pg_type;
     HeapTuple tup;
     HeapTuple newtup;
     Form_pg_class relform;
@@ -6052,12 +6153,15 @@ static void RenameTableFeature(RenameStmt* stmt)
     Datum values[Natts_pg_class] = { 0 };
     bool nulls[Natts_pg_class] = { false };
     bool replaces[Natts_pg_class] = { false };
+    Datum type_values[Natts_pg_type] = { 0 };
+    bool type_nulls[Natts_pg_type] = { false };
+    bool type_replaces[Natts_pg_type] = { false };
 
     if (stmt->renameTargetList == NULL) {
         ereport(ERROR, (errcode(ERRCODE_INVALID_TABLE_DEFINITION), errmsg("Cannot get rename table name and modify name")));
     }
-
     RenameTableNameData storageTable[stmt->renameTargetList->length];
+    bool tempSchema[stmt->renameTargetList->length] = { false };
     Relation lockRelation[stmt->renameTargetList->length];
     int tableName_Count = 0;
     ListCell* rename_Cell = NULL;
@@ -6065,15 +6169,29 @@ static void RenameTableFeature(RenameStmt* stmt)
         RenameCell* renameInfo = (RenameCell*)lfirst(rename_Cell);
         temp_name = renameInfo->original_name;
         orgiSchema = temp_name->schemaname;
+        /* orgitable NOT NULL */
+        Assert(temp_name->relname != NULL);
+        orgitable = temp_name->relname;
         /* if schema name don't assign */
         if (orgiSchema == NULL && search_path != NIL) {
-            relnamespace = linitial_oid(search_path);
-            if (!OidIsValid(relnamespace)) {
-                ereport(ERROR, (errcode(ERRCODE_INVALID_TABLE_DEFINITION), errmsg("Cannot get current namespace on Rename Table.")));
+            ListCell* l = NULL;
+            foreach(l, search_path) {
+                relnamespace = lfirst_oid(l);
+                if (!OidIsValid(relnamespace)) {
+                    ereport(ERROR, (errcode(ERRCODE_INVALID_TABLE_DEFINITION), errmsg("Cannot get current namespace on Rename Table.")));
+                }
+                relid = get_relname_relid(orgitable, relnamespace);
+                /* Traversal the search_path until the correct schema of table is found */
+                if (OidIsValid(relid)) {
+                    orgiSchema = get_namespace_name(relnamespace);
+                    break;
+                }
             }
-            orgiSchema = get_namespace_name(relnamespace);
         }
-        orgitable = temp_name->relname;
+        if (orgiSchema == NULL) {
+            orgiSchema = get_namespace_name(PG_PUBLIC_NAMESPACE);
+            tempSchema[tableName_Count] = true;
+        }
         storageTable[tableName_Count].schemaname = pstrdup(orgiSchema);
         storageTable[tableName_Count].relname = pstrdup(orgitable);
         tableName_Count++;
@@ -6083,20 +6201,20 @@ static void RenameTableFeature(RenameStmt* stmt)
         qsort((void*)storageTable, (size_t)stmt->renameTargetList->length, sizeof(RenameTableNameData), Compare_RenameTableNameData_func);
     }
     for (int num = 0; num < stmt->renameTargetList->length; num++) {
-        orgiNameSpace = get_namespace_oid(storageTable[num].schemaname, false);
-        relid = get_relname_relid(storageTable[num].relname, orgiNameSpace);
-
-        if (!OidIsValid(relid) && OidIsValid(u_sess->catalog_cxt.myTempNamespace)) {
-            relid = get_relname_relid(storageTable[num].relname, u_sess->catalog_cxt.myTempNamespace);
+        if (orgiSchema != NULL && !tempSchema[num]) {
+            orgiNameSpace = get_namespace_oid(storageTable[num].schemaname, false);
+        } else if (OidIsValid(u_sess->catalog_cxt.myTempNamespace)) {
+            orgiNameSpace = u_sess->catalog_cxt.myTempNamespace;
         }
-
+        relid = get_relname_relid(storageTable[num].relname, orgiNameSpace);
         if(!OidIsValid(relid)) {
             lockRelation[num] = NULL;
+            orgiNameSpace = InvalidOid;
             continue;
         } else {
             /* Don't support Tempporary Table */
-            if (IsTempTable(relid)) {
-                ereport(ERROR, (errcode(ERRCODE_CACHE_LOOKUP_FAILED), errmsg("relation %s is temporary table, Rename table don't support.", get_rel_name(relid))));
+            if (IsTempTable(relid) || IsGlobalTempTable(relid)) {
+                ereport(ERROR, (errcode(ERRCODE_INVALID_TABLE_DEFINITION), errmsg("relation %s is temporary table, Rename table don't support.", get_rel_name(relid))));
             }
             lockRelation[num] = relation_open(relid, AccessExclusiveLock);
         }
@@ -6116,18 +6234,36 @@ static void RenameTableFeature(RenameStmt* stmt)
         if (modfySchema != NULL) {
             modfyNameSpace = get_namespace_oid(modfySchema, false);
         }
+        /* modfytable NOT NULL */
+        Assert(temp_name->relname);
         modfytable = temp_name->relname;
 
         /* obtain search_path, get schema name */
         if (orgiSchema == NULL && search_path != NIL) {
-            relnamespace = linitial_oid(search_path);
-            if (!OidIsValid(relnamespace)) {
-                ereport(ERROR, (errcode(ERRCODE_INVALID_TABLE_DEFINITION), errmsg("Cannot get current namespace on Rename Table.")));
-            } else if (orgiSchema == NULL) {
-                orgiNameSpace = relnamespace;
+            ListCell* l = NULL;
+            foreach (l, search_path) {
+                relnamespace = lfirst_oid(l);
+                if (!OidIsValid(relnamespace)) {
+                    ereport(ERROR, (errcode(ERRCODE_INVALID_TABLE_DEFINITION), errmsg("Cannot get current namespace on Rename Table.")));
+                }
+                relid = get_relname_relid(orgitable, relnamespace);
+                /* Traversal the search_path until the correct schema of table is found */
+                if (OidIsValid(relid)) {
+                    orgiSchema = get_namespace_name(relnamespace);
+                    orgiNameSpace = relnamespace;
+                    if (modfySchema == NULL) {
+                        modfyNameSpace = relnamespace;
+                    }
+                    break;
+                }
             }
-        } else if (search_path == NIL && (orgiSchema == NULL || modfySchema == NULL)) {
+        } else if (search_path == NIL && orgiSchema == NULL) {
             ereport(ERROR, (errcode(ERRCODE_INVALID_TABLE_DEFINITION), errmsg("Rename Table search_path get NIL in error.")));
+        }
+        if (modfySchema == NULL && orgiSchema != NULL) {
+            /* if modfytable table has no schema specified,
+             * it's the same as orgiNameSpace */
+            modfyNameSpace = orgiNameSpace;
         }
 
         /* Check whether exist Synonym on old table name and new table name */
@@ -6144,52 +6280,110 @@ static void RenameTableFeature(RenameStmt* stmt)
             SearchSysCacheExists2(SYNONYMNAMENSP, PointerGetDatum(modfytable), ObjectIdGetDatum(orgiNameSpace))) {
             ereport(ERROR, (errcode(ERRCODE_INVALID_TABLE_DEFINITION), errmsg("Rename Table \"%s.%s\" exist Synonym, so Rename table can't execute.",
                 orgiSchema, modfytable)));
-        } else if((orgiSchema == NULL && modfySchema == NULL) &&
+        } else if ((orgiSchema == NULL && modfySchema == NULL) &&
             SearchSysCacheExists2(SYNONYMNAMENSP, PointerGetDatum(modfytable), ObjectIdGetDatum(relnamespace))) {
             ereport(ERROR, (errcode(ERRCODE_INVALID_TABLE_DEFINITION), errmsg("Rename Table \"%s.%s\" exist Synonym, so Rename table can't execute.",
                 get_namespace_name(relnamespace), modfytable)));
+        } else if (orgitable != NULL) {
+            Oid temp_namespace = InvalidOid;
+            if (orgiSchema != NULL) {
+                if (OidIsValid(orgiNameSpace)) {
+                    temp_namespace = orgiNameSpace;
+                } else {
+                    temp_namespace = relnamespace;
+                }
+            } else {
+                temp_namespace = relnamespace;
+            }
+            if (SearchSysCacheExists2(SYNONYMNAMENSP, PointerGetDatum(orgitable), ObjectIdGetDatum(temp_namespace))) {
+                ereport(ERROR, (errcode(ERRCODE_INVALID_TABLE_DEFINITION), errmsg("Rename Table \"%s.%s\" is Synonym, so Rename table can't support.",
+                    get_namespace_name(temp_namespace), orgitable)));
+            }
         }
 
         /* check a user's access privileges to a namespace */
-        if (pg_namespace_aclcheck(orgiNameSpace, GetUserId(), ACL_CREATE) == ACLCHECK_NO_PRIV) {
+        if (pg_namespace_aclcheck(orgiNameSpace, GetUserId(), ACL_USAGE) != ACLCHECK_OK) {
             ereport(ERROR, (errcode(ERRCODE_INVALID_TABLE_DEFINITION), errmsg("User %s don't have creat privileges on Schema %s.",
                 GetUserNameFromId(GetUserId()), get_namespace_name(orgiNameSpace))));
         }
-        if (pg_namespace_aclcheck(modfyNameSpace, GetUserId(), ACL_CREATE) == ACLCHECK_NO_PRIV) {
+        if (pg_namespace_aclcheck(modfyNameSpace, GetUserId(), ACL_USAGE) != ACLCHECK_OK) {
             ereport(ERROR, (errcode(ERRCODE_INVALID_TABLE_DEFINITION), errmsg("User %s don't have creat privileges on Schema %s.",
                 GetUserNameFromId(GetUserId()), get_namespace_name(modfyNameSpace))));
         }
 
         /* Do rename table work */
         rel_pg_class = heap_open(RelationRelationId, RowExclusiveLock);
-
         relid = get_relname_relid(orgitable, orgiNameSpace);
 
         /* Support view but cannot span schemaes */
-        if (IsRelaionView(relid) && modfyNameSpace != orgiNameSpace) {
-            ereport(ERROR, (errcode(ERRCODE_CACHE_LOOKUP_FAILED), errmsg("relation %s is view, Rename table don't support span schemaes.", get_rel_name(relid))));
-        } else if (!OidIsValid(relid)) {
-            ereport(ERROR, (errcode(ERRCODE_CACHE_LOOKUP_FAILED), errmsg("relation \"%s.%s\" does not exist, skipping", get_namespace_name(orgiNameSpace), orgitable)));
+        if (!OidIsValid(relid)) {
+            ereport(ERROR, (errcode(ERRCODE_INVALID_TABLE_DEFINITION), errmsg("relation \"%s.%s\" does not exist, skipping", get_namespace_name(orgiNameSpace), orgitable)));
+        } else if (IsRelaionView(relid) && modfyNameSpace != orgiNameSpace) {
+            ereport(ERROR, (errcode(ERRCODE_INVALID_TABLE_DEFINITION), errmsg("relation %s is view, Rename table don't support span schemaes.", get_rel_name(relid))));
+        } else if (orgiNameSpace == modfyNameSpace && pg_strcasecmp(orgitable, modfytable) == 0) {
+            ereport(ERROR, (errcode(ERRCODE_INVALID_TABLE_DEFINITION), errmsg("relation \"%s.%s\" already exists", get_namespace_name(modfyNameSpace), modfytable)));
+        } else if (pg_class_aclcheck(relid, GetUserId(), ACL_ALTER) == ACLCHECK_NO_PRIV) {
+            ereport(ERROR, (errcode(ERRCODE_INVALID_TABLE_DEFINITION), errmsg("permission denied for relation %s.%s", get_namespace_name(orgiNameSpace), orgitable)));
         }
 
         /* Rename regular table */
         replaces[Anum_pg_class_relname - 1] = true;
         values[Anum_pg_class_relname - 1] = DirectFunctionCall1(namein, CStringGetDatum(modfytable));
+        type_replaces[Anum_pg_type_typname - 1] = true;
+        type_values[Anum_pg_type_typname - 1] = DirectFunctionCall1(namein, CStringGetDatum(modfytable));
         if (modfySchema != NULL) {
             replaces[Anum_pg_class_relnamespace - 1] = true;
             values[Anum_pg_class_relnamespace - 1] = ObjectIdGetDatum(modfyNameSpace);
+            type_replaces[Anum_pg_type_typnamespace - 1] = true;
+            type_values[Anum_pg_type_typnamespace - 1] = ObjectIdGetDatum(modfyNameSpace);
         }
+
+        /* delete table privileges */
+        /* delete the table relacl. only superuser can operate the table */
+        nulls[Anum_pg_class_relacl - 1] = true;
+        replaces[Anum_pg_class_relacl - 1] = true;
 
         tup = SearchSysCache1(RELOID, ObjectIdGetDatum(relid));
         if (!HeapTupleIsValid(tup)) {
-            ereport(ERROR, (errcode(ERRCODE_CACHE_LOOKUP_FAILED), errmsg("cache lookup failed for relation %s", get_rel_name(relid))));
+            ereport(ERROR, (errcode(ERRCODE_INVALID_TABLE_DEFINITION), errmsg("cache lookup failed for relation %s", get_rel_name(relid))));
         }
 
         relform = (Form_pg_class)GETSTRUCT(tup);
         if (relform->relkind == RELKIND_RELATION && relform->parttype == PARTTYPE_PARTITIONED_RELATION) {
             renamePartitionedTable(relid, modfytable);
+        } else if (relform->relhastriggers && modfyNameSpace != orgiNameSpace) {
+            ScanKeyData key;
+            bool is_find = false;
+            HeapTuple tuple = NULL;
+            Relation tgrel = heap_open(TriggerRelationId, RowExclusiveLock);
+            ScanKeyInit(&key, Anum_pg_trigger_tgrelid, BTEqualStrategyNumber, F_OIDEQ, ObjectIdGetDatum(relid));
+            SysScanDesc scan = systable_beginscan(tgrel, TriggerRelidNameIndexId, true, NULL, 1, &key);
+            while (HeapTupleIsValid(tuple = systable_getnext(scan))) {
+                Form_pg_trigger pg_trigger = (Form_pg_trigger)GETSTRUCT(tuple);
+                if (!pg_trigger->tgisinternal) {
+                    is_find = true;
+                    break;
+                }
+            }
+            systable_endscan(scan);
+            heap_close(tgrel, RowExclusiveLock);
+            if (is_find) {
+                ereport(ERROR, (errcode(ERRCODE_INVALID_TABLE_DEFINITION), errmsg("Trigger in wrong schema on table %s", get_rel_name(relid))));
+            }
+        }
+        /* Fix other dependent stuff */
+        if (relform->relkind == RELKIND_RELATION || relform->relkind == RELKIND_MATVIEW) {
+            ObjectAddresses* objsMoved = NULL;
+            objsMoved = new_object_addresses();
+            Relation rel;
+            rel = relation_open(relid, NoLock);
+            // AlterIndexNamespaces(rel_pg_class, rel, orgiNameSpace, modfyNameSpace, objsMoved);
+            // AlterSeqNamespaces(rel_pg_class, rel, orgiNameSpace, modfyNameSpace, objsMoved, AccessExclusiveLock);
+            AlterConstraintNamespaces(RelationGetRelid(rel), orgiNameSpace, modfyNameSpace, false, objsMoved);
+            relation_close(rel, NoLock);
         }
 
+        relid_temp = relid;
         newtup = heap_modify_tuple(tup, RelationGetDescr(rel_pg_class), values, nulls, replaces);
         simple_heap_update(rel_pg_class, &newtup->t_self, newtup);
         CatalogUpdateIndexes(rel_pg_class, newtup);
@@ -6198,21 +6392,25 @@ static void RenameTableFeature(RenameStmt* stmt)
         heap_close(rel_pg_class, RowExclusiveLock);
         CommandCounterIncrement();
 
-        /* revoke table privileges */
-        InternalGrant istmt;
-        istmt.is_grant = false;
-        istmt.objtype = ACL_OBJECT_RELATION;
-        istmt.objects = list_make1_oid(relid);
-        istmt.all_privs= true;
-        istmt.privileges = ACL_NO_RIGHTS;
-        istmt.ddl_privileges = ACL_NO_DDL_RIGHTS;
-        istmt.col_privs = NIL;
-        istmt.col_ddl_privs = NIL;
-        istmt.grantees = list_make1_oid(ACL_ID_PUBLIC);
-        istmt.grant_option = false;
-        istmt.behavior = DROP_CASCADE;
+        rel_pg_type = heap_open(TypeRelationId, RowExclusiveLock);
+        relid = get_typeoid(orgiNameSpace, orgitable);
+        if (!OidIsValid(relid)) {
+            ereport(ERROR, (errcode(ERRCODE_INVALID_TABLE_DEFINITION), errmsg("type \"%s.%s\" does not exist, skipping", get_namespace_name(orgiNameSpace), orgitable)));
+        }
+        tup = SearchSysCache1(TYPEOID, ObjectIdGetDatum(relid));
+        if (!HeapTupleIsValid(tup)) {
+            ereport(ERROR, (errcode(ERRCODE_INVALID_TABLE_DEFINITION), errmsg("cache lookup failed for type %s", get_rel_name(relid))));
+        }
+        newtup = heap_modify_tuple(tup, RelationGetDescr(rel_pg_type), type_values, type_nulls, type_replaces);
+        simple_heap_update(rel_pg_type, &newtup->t_self, newtup);
+        CatalogUpdateIndexes(rel_pg_type, newtup);
+        ReleaseSysCache(tup);
+        tableam_tops_free_tuple(newtup);
+        heap_close(rel_pg_type, RowExclusiveLock);
+        CommandCounterIncrement();
 
-        ExecGrant_Relation(&istmt);
+        /* update dependencies to point to the new schema */
+        (void)changeDependencyFor(RelationRelationId, relid_temp, NamespaceRelationId, orgiNameSpace, modfyNameSpace);
     }
     for (int num = stmt->renameTargetList->length - 1; num >= 0; num--) {
         if (lockRelation[num] != NULL) {
@@ -6223,6 +6421,7 @@ static void RenameTableFeature(RenameStmt* stmt)
         pfree(storageTable[num].schemaname);
         pfree(storageTable[num].relname);
     }
+    list_free_ext(search_path);
 }
 
 /*
@@ -15604,6 +15803,10 @@ static void ATExecSetRelOptions(Relation rel, List* defList, AlterTableType oper
                 ereport(ERROR, (errcode(ERRCODE_INVALID_OPERATION),
                     errmsg("table with oids cannot add or modify hasuids by ALTER TABLE command.")));
             }
+            if (ENABLE_DMS && newRelHasUids) {
+                ereport(ERROR, (errcode(ERRCODE_INVALID_OPERATION),
+                    errmsg("table under Shared Storage cannot add or modify hasuids by ALTER TABLE command.")));
+            }
             if (RelationIsColStore(rel)) {
                 /* un-supported options. dont care its values */
                 ForbidToSetOptionsForColTbl(defList);
@@ -15658,6 +15861,36 @@ static void ATExecSetRelOptions(Relation rel, List* defList, AlterTableType oper
                                      RelationGetRelationName(rel));
     }
     CheckSupportModifyCompression(rel, relOpt, defList);
+
+    /* Special-case validation of view options */
+    if (rel->rd_rel->relkind == RELKIND_VIEW) {
+        Query* view_query = get_view_query(rel);
+        ListCell* cell = NULL;
+        bool check_option = false;
+
+        foreach(cell, defList) {
+            DefElem* defel = (DefElem*)lfirst(cell);
+
+            if (pg_strcasecmp(defel->defname, "check_option") == 0) {
+                check_option = true;
+                break;
+            }
+        }
+
+        /*
+        * If the check option is specified, look to see if the view is
+        * actually auto-updatable or not.
+        */
+        if (check_option) {
+            const char *view_updatable_error = view_query_is_auto_updatable(view_query, true);
+
+            if (view_updatable_error)
+                ereport(ERROR,
+                        (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+                        errmsg("WITH CHECK OPTION is supported only on auto-updatable views"),
+                        errhint("%s", view_updatable_error)));
+        }
+    }
 
     /*
      * All we need do here is update the pg_class row; the new options will be
@@ -15903,8 +16136,10 @@ static void ATExecSetTableSpaceForPartitionP3(Oid tableOid, Oid partOid, Oid new
     } else {
         newcbi = RelationIsCrossBucketIndex(rel);
         isbucket = BUCKET_OID_IS_VALID(rel->rd_bucketoid) && !newcbi;
+        Oid database_id = (ConvertToRelfilenodeTblspcOid(newTableSpace) == GLOBALTABLESPACE_OID) ?
+            InvalidOid : u_sess->proc_cxt.MyDatabaseId;
         newrelfilenode = seg_alloc_segment(ConvertToRelfilenodeTblspcOid(newTableSpace),
-                                           u_sess->proc_cxt.MyDatabaseId, isbucket, InvalidBlockNumber);
+                                           database_id, isbucket, InvalidBlockNumber);
     }
     partRel = partitionGetRelation(rel, part);
     /* make sure we create the right underlying storage for cross-bucket index */
@@ -16191,6 +16426,7 @@ static void JudgeSmgrDsync(char relpersistence, bool copying_initfork, SMgrRelat
 static void copy_relation_data(Relation rel, SMgrRelation* dstptr, ForkNumber forkNum, char relpersistence)
 {
     char* buf = NULL;
+    char* unalign_buffer = NULL;
     Page page;
     bool use_wal = false;
     bool copying_initfork = false;
@@ -16215,7 +16451,12 @@ static void copy_relation_data(Relation rel, SMgrRelation* dstptr, ForkNumber fo
     }
     ADIO_ELSE()
     {
-        buf = (char*)palloc(BLCKSZ);
+        if (ENABLE_DSS) {
+            unalign_buffer = (char*)palloc(BLCKSZ + ALIGNOF_BUFFER);
+            buf = (char*)BUFFERALIGN(unalign_buffer);
+        } else {
+            buf = (char*)palloc(BLCKSZ);
+        }
     }
     ADIO_END();
     page = (Page)buf;
@@ -16352,7 +16593,11 @@ static void copy_relation_data(Relation rel, SMgrRelation* dstptr, ForkNumber fo
     }
     ADIO_ELSE()
     {
-        pfree_ext(buf);
+        if (ENABLE_DSS) {
+            pfree_ext(unalign_buffer);
+        } else {
+            pfree_ext(buf);
+        }
     }
     ADIO_END();
 
@@ -16364,6 +16609,7 @@ static void mergeHeapBlock(Relation src, Relation dest, ForkNumber forkNum, char
     bool destHasFSM)
 {
     char* buf = NULL;
+    char* unaligned_buffer = NULL;
     char* bufToWrite = NULL;
     Page page = NULL;
     bool use_wal = false;
@@ -16392,7 +16638,12 @@ static void mergeHeapBlock(Relation src, Relation dest, ForkNumber forkNum, char
     }
     ADIO_ELSE()
     {
-        buf = (char*)palloc(BLCKSZ);
+        if (ENABLE_DSS) {
+            unaligned_buffer = (char*)palloc(BLCKSZ + ALIGNOF_BUFFER);
+            buf = (char*)BUFFERALIGN(unaligned_buffer);
+        } else {
+            buf = (char*)palloc(BLCKSZ);
+        }
     }
     ADIO_END();
     page = (Page)buf;
@@ -16575,7 +16826,11 @@ static void mergeHeapBlock(Relation src, Relation dest, ForkNumber forkNum, char
     }
     ADIO_ELSE()
     {
-        pfree_ext(buf);
+        if (ENABLE_DSS) {
+            pfree_ext(unaligned_buffer);
+        } else {
+            pfree_ext(buf);
+        }
     }
     ADIO_END();
 
@@ -17845,13 +18100,11 @@ static void ATExecGenericOptions(Relation rel, List* options)
     simple_heap_update(ftrel, &tuple->t_self, tuple);
     CatalogUpdateIndexes(ftrel, tuple);
 
-#ifdef ENABLE_MOT
     /*
      * Invalidate relcache so that all sessions will refresh any cached plans
      * that might depend on the old options.
      */
     CacheInvalidateRelcache(rel);
-#endif
 
     heap_close(ftrel, RowExclusiveLock);
 
@@ -19318,6 +19571,7 @@ void checkPartNotInUse(Partition part, const char* stmt)
     }
 }
 
+extern Node* GetColumnRef(Node* key, bool* isExpr);
 /*
  * @@GaussDB@@
  * Target		: data partition
@@ -19346,9 +19600,13 @@ List* GetPartitionkeyPos(List* partitionkeys, List* schema)
     errno_t rc = EOK;
     rc = memset_s(is_exist, len * sizeof(bool), 0, len * sizeof(bool));
     securec_check(rc, "\0", "\0");
-
+    bool isExpr = false;
     foreach (partitionkey_cell, partitionkeys) {
-        ColumnRef* partitionkey_ref = (ColumnRef*)lfirst(partitionkey_cell);
+        ColumnRef* partitionkey_ref = (ColumnRef*)GetColumnRef((Node*)lfirst(partitionkey_cell),&isExpr);
+        if (!partitionkey_ref)
+            ereport(ERROR,(errcode(ERRCODE_UNDEFINED_COLUMN),(errmsg("The partition key doesn't have any column."))));
+        if (isExpr && partitionkeys->length > 1)
+            ereport(ERROR,(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),(errmsg("The multi partition expr keys are not supported."))));
         char* partitonkey_name = ((Value*)linitial(partitionkey_ref->fields))->val.str;
 
         foreach (schema_cell, schema) {
@@ -20351,9 +20609,21 @@ static void ATPrepReorganizePartition(Relation rel)
             (errcode(ERRCODE_WRONG_OBJECT_TYPE), errmsg("can not Reorganize partition against NON-PARTITIONED table")));
     }
 
+    if (RelationIsColStore(rel)) {
+        ereport(ERROR,
+            (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+                errmsg("Un-support feature"),
+                errdetail("reorganize partition doesn't support column-store relation")));
+    }
+
     if (rel->partMap->type == PART_TYPE_HASH) {
         ereport(ERROR,
             (errcode(ERRCODE_WRONG_OBJECT_TYPE), errmsg("can not Reorganize HASH partition table")));
+    }
+
+    if (rel->partMap->type == PART_TYPE_INTERVAL) {
+        ereport(ERROR, (errcode(ERRCODE_OPERATE_NOT_SUPPORTED),
+            errmsg("can not reorganize partition against interval partitioned table")));
     }
 }
 #endif
@@ -24852,6 +25122,17 @@ static void AddNewPartitionForTable(Relation rel, List* destPartDefList)
     CommandCounterIncrement();
 }
 
+static void CheckSubPartDef(List* subdef)
+{
+    if (!subdef)
+        return;
+    ListCell* cell = NULL;
+    foreach (cell, subdef) {
+        if (nodeTag(lfirst(cell)) != T_HashPartitionDefState)
+            ereport(ERROR, (errcode(ERRCODE_INVALID_OPERATION), errmsg("The subpartition def type must be HASH")));
+    }
+}
+
 static void ATExecReorganizePartition(Relation partTableRel, AlterTableCmd* cmd)
 {
     SplitPartitionState* reorgPart = NULL;
@@ -24936,9 +25217,11 @@ static void ATExecReorganizePartition(Relation partTableRel, AlterTableCmd* cmd)
         char* tablespacename = NULL;
         if (partTableRel->partMap->type == PART_TYPE_RANGE) {
             RangePartitionDefState* rangePartDef = (RangePartitionDefState*)lfirst(cell);
+            CheckSubPartDef(rangePartDef->subPartitionDefState);
             tablespacename = rangePartDef->tablespacename;
         } else if (partTableRel->partMap->type == PART_TYPE_LIST) {
             ListPartitionDefState* listPartDef = (ListPartitionDefState*)lfirst(cell);
+            CheckSubPartDef(listPartDef->subPartitionDefState);
             tablespacename = listPartDef->tablespacename;
         }
         CheckPartitionTablespace(tablespacename, partTableRel->rd_rel->relowner);
@@ -25020,6 +25303,9 @@ static void ATExecReorganizePartition(Relation partTableRel, AlterTableCmd* cmd)
             srcPartOid = lfirst_oid(cell);
             part = partitionOpen(partTableRel, srcPartOid, AccessExclusiveLock);
             partRel = partitionGetRelation(partTableRel, part);
+            if (partRel->partMap->type != PART_TYPE_HASH) {
+                ereport(ERROR, (errcode(ERRCODE_WRONG_OBJECT_TYPE), errmsg("The subpart type must be HASH for REORGANIZE PARTITION")));
+            }
             srcSubPartOidList = relationGetPartitionOidList(partRel);
             foreach (subCell, srcSubPartOidList) {
                 srcSubPartOid = lfirst_oid(subCell);
@@ -25029,6 +25315,7 @@ static void ATExecReorganizePartition(Relation partTableRel, AlterTableCmd* cmd)
                 finishPartitionHeapSwap(srcSubPartOid, tempTableOid, false, u_sess->utils_cxt.RecentXmin, GetOldestMultiXactId());
                 CommandCounterIncrement();
                 partitionClose(partRel, subPart, AccessExclusiveLock);
+                fastDropPartition(partRel, srcSubPartOid, "REORGANIZE PARTITION", InvalidOid, false);
             }
             list_free_ext(srcSubPartOidList);
             CacheInvalidatePartcache(part);

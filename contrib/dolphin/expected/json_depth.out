@@ -40,8 +40,6 @@ select json_depth('null');
 
 select json_depth('[}');
 ERROR:  invalid input syntax for type json
-LINE 1: select json_depth('[}');
-                          ^
 DETAIL:  Expected JSON value, but found "}".
 CONTEXT:  JSON data, line 1: [}
 referenced column: json_depth
@@ -145,4 +143,4 @@ select json_depth(data) from test1;
 
 drop table test1;
 \c postgres
-drop database test_json_depth;
+drop database if exists test_json_depth;

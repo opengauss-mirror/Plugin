@@ -1,7 +1,7 @@
-drop database if exists json_test;
-NOTICE:  database "json_test" does not exist, skipping
-create database json_test dbcompatibility 'B';
-\c json_test
+drop database if exists test_json_replace;
+NOTICE:  database "test_json_replace" does not exist, skipping
+create database test_json_replace dbcompatibility 'B';
+\c test_json_replace
 -- test for basic functionality of json_replace
 SELECT JSON_REPLACE('{"a": 1, "b": 2, "c": 3}', '$.b', 9);
        json_replace       
@@ -196,7 +196,7 @@ SELECT JSON_REPLACE('{
  }', '$.Person.Name', 'Bart', '$.Person.Age', 10, '$.Person.Hobbies[1]', 'Base Jumping');
                                   json_replace                                  
 --------------------------------------------------------------------------------
- {"Person": {"Age": 10, "Hobbies": ["Eating", "Base Jumping"], "Name": "Bart"}}
+ {"Person": {"Age": 10, "Name": "Bart", "Hobbies": ["Eating", "Base Jumping"]}}
 (1 row)
 
 -- test for invalid path
@@ -208,10 +208,10 @@ ERROR:  Invalid JSON path expression. The error is around argument 1.
 CONTEXT:  referenced column: json_replace
 -- test for invalid json text
 SELECT JSON_REPLACE('', '$[1]', 9, '$[3]', 22);
-ERROR:  Invalid JSON text in function json_replace: "Invalid value." at position 0.
+ERROR:  Invalid JSON text in argument 1 to function json_replace.
 CONTEXT:  referenced column: json_replace
 SELECT JSON_REPLACE(122323, '$.b', 9, '$.a', 22);
-ERROR:  Invalid data type for JSON data in argument 1 to function function json_replace
+ERROR:  Invalid data type for JSON data in argument 1 to function json_replace
 CONTEXT:  referenced column: json_replace
 -- test for NULL
 SELECT JSON_REPLACE(null,2,2);
@@ -241,46 +241,7 @@ ERROR:  Incorrect parameter count in the call to native function 'JSON_REPLACE'
 CONTEXT:  referenced column: json_replace
 -- test for invalid json document
 SELECT JSON_REPLACE('x',2,2);
-ERROR:  Invalid JSON text in function json_replace: "Invalid value." at position 0.
+ERROR:  Invalid JSON text in argument 1 to function json_replace.
 CONTEXT:  referenced column: json_replace
--- test for table
-create temp table test (
-    textjson json
-);
-insert into test values
-('{"a": {"b": 32, "c":"hello"}, "d": 0.3443}'),
-('["dog", "pig", {"a": "here"}]'),
-('["pig", "dog", {"a": "there"}]'),
-('{"a": "abc","b": {"b": "abc", "a": "abc"}}');
-select JSON_REPLACE(textjson, '$.a', 'Lihua') from test;
-                 json_replace                  
------------------------------------------------
- {"a": "Lihua", "d": 0.3443}
- ["dog", "pig", {"a": "here"}]
- ["pig", "dog", {"a": "there"}]
- {"a": "Lihua", "b": {"a": "abc", "b": "abc"}}
-(4 rows)
-
-select JSON_REPLACE(textjson, '$[0]', 'Animal') from test;
-                json_replace                 
----------------------------------------------
- {"a": {"b": 32, "c": "hello"}, "d": 0.3443}
- ["Animal", "pig", {"a": "here"}]
- ["Animal", "dog", {"a": "there"}]
- {"a": "abc", "b": {"a": "abc", "b": "abc"}}
-(4 rows)
-
-insert into test values
-(JSON_REPLACE('{"a": 43, "b": {"c": true}}', '$.b', 'Test'));
-select * from test;
-                  textjson                  
---------------------------------------------
- {"a": {"b": 32, "c":"hello"}, "d": 0.3443}
- ["dog", "pig", {"a": "here"}]
- ["pig", "dog", {"a": "there"}]
- {"a": "abc","b": {"b": "abc", "a": "abc"}}
- {"a": 43, "b": "Test"}
-(5 rows)
-
 \c postgres
-drop database json_test;
+drop database if exists test_json_replace;

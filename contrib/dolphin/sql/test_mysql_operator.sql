@@ -838,6 +838,36 @@ insert into testlike8 values ('a','2022-8-01');
 select * from testlike8 where a like 'A%';
 select * from testlike8 where a like binary 'A%';
 
+select b'1010' like b'0010';
+select b'1010' like b'0011';
+select b'1010' like b'1100';
+select '1010'::bit(4) like '0010'::bit(4);
+select '1010'::bit(4) like '0011'::bit(4);
+select '1010'::bit(4) like '1100'::bit(4);
+
+select b'1010' not like b'0010';
+select b'1010' not like b'0011';
+select b'1010' not like b'1100';
+select '1010'::bit(4) not like '0010'::bit(4);
+select '1010'::bit(4) not like '0011'::bit(4);
+select '1010'::bit(4) not like '1100'::bit(4);
+
+select 'deadbeef'::blob like 'deadbeef';
+select 'deadbeef'::blob like 'DEADBEEF'::blob;
+select 'DEADBEEF'::blob like 'DEADBEEF'::blob;
+select 'deadbeef'::blob like null;
+select '1010'::blob like '1100';
+select '1010'::blob like '1100'::blob;
+select '1010'::blob like null;
+
+select 'deadbeef'::blob not like 'deadbeef';
+select 'deadbeef'::blob not like 'DEADBEEF'::blob;
+select 'DEADBEEF'::blob not like 'DEADBEEF'::blob;
+select 'deadbeef'::blob not like null;
+select '1010'::blob not like '1100';
+select '1010'::blob not like '1100'::blob;
+select '1010'::blob not like null;
+
 drop table testlike1;
 drop table testlike2;
 drop table testlike3;

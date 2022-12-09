@@ -333,7 +333,7 @@ static char* flatten_reloptions(Oid relid);
 static Oid SearchSysTable(const char* query);
 static void replace_cl_types_in_argtypes(Oid func_id, int numargs, Oid* argtypes, bool *is_client_logic);
 
-static void AppendSubPartitionByInfo(StringInfo buf, Oid tableoid, SubpartitionInfo *subpartinfo);
+static void AppendSubPartitionByInfo(StringInfo buf, Oid tableoid, SubpartitionInfo *subpartinfo, tableInfo* tableinfo = NULL);
 static void AppendSubPartitionDetail(StringInfo buf, tableInfo tableinfo, SubpartitionInfo *subpartinfo);
 static void AppendRangeIntervalPartitionInfo(StringInfo buf, Oid tableoid, tableInfo tableinfo, int partkeynum,
     Oid *iPartboundary, SubpartitionInfo *subpartinfo);
@@ -960,6 +960,32 @@ static void GetListDistributionDef(StringInfo query, StringInfo buf, Oid tableoi
     return;
 }
 
+void GetPartitionExprKeySrc(StringInfo buf, Datum* datum, char* relname, Oid tableoid, int* partkeynum, Oid** iPartboundary)
+{
+    *partkeynum = 1;
+    *iPartboundary = (Oid*)palloc0(*partkeynum * sizeof(Oid));
+    char* partkeystr = MemoryContextStrdup(LocalMyDBCacheMemCxt(), TextDatumGetCString(*datum));
+    Node* partkeyexpr = NULL;
+    if (partkeystr)
+        partkeyexpr = (Node*)stringToNode_skip_extern_fields(partkeystr);
+    else
+        ereport(ERROR, (errcode(ERRCODE_NULL_VALUE_NOT_ALLOWED), errmsg("fata error: The partkeystr can't be NULL")));
+    if (!partkeyexpr)
+        ereport(ERROR, (errcode(ERRCODE_NULL_VALUE_NOT_ALLOWED), errmsg("The partkeyexpr can't be NULL")));
+    if (partkeyexpr->type == T_OpExpr)
+        (*iPartboundary)[0] = ((OpExpr*)partkeyexpr)->opresulttype;
+    else if (partkeyexpr->type == T_FuncExpr)
+        (*iPartboundary)[0] = ((FuncExpr*)partkeyexpr)->funcresulttype;
+    else
+        ereport(ERROR,
+            (errcode(ERRCODE_NODE_ID_MISSMATCH),
+                errmsg("The node type %d is wrong, it must be T_OpExpr or T_FuncExpr", partkeyexpr->type)));
+    char* partKeyExprSrc = deparse_expression(partkeyexpr, deparse_context_for(relname, tableoid), false, false);
+    appendStringInfo(buf, "%s", partKeyExprSrc);
+    pfree_ext(partKeyExprSrc);
+    pfree_ext(partkeystr);
+}
+
 /*
  * @Description: get partition table defination
  * @in query - append query for SPI_execute.
@@ -971,6 +997,7 @@ static void GetListDistributionDef(StringInfo query, StringInfo buf, Oid tableoi
 static void get_table_partitiondef(StringInfo query, StringInfo buf, Oid tableoid, tableInfo tableinfo)
 {
     bool isnull = false;
+    bool isPartExprKeyNull = false;
     Relation relation = NULL;
     ScanKeyData key[2];
     SysScanDesc scan = NULL;
@@ -1004,7 +1031,10 @@ static void get_table_partitiondef(StringInfo query, StringInfo buf, Oid tableoi
     scan = systable_beginscan(relation, PartitionParentOidIndexId, true, NULL, 2, key);
     if (HeapTupleIsValid(tuple = systable_getnext(scan))) {
         int2vector* partVec = NULL;
-        Datum datum = SysCacheGetAttr(PARTRELID, tuple, Anum_pg_partition_partkey, &isnull);
+        Datum datum = 0;
+        datum = SysCacheGetAttr(PARTRELID, tuple, Anum_pg_partition_partkeyexpr, &isPartExprKeyNull);
+        if (isPartExprKeyNull)
+            datum = SysCacheGetAttr(PARTRELID, tuple, Anum_pg_partition_partkey, &isnull);
         partition = (Form_pg_partition)GETSTRUCT(tuple);
 
         appendStringInfo(buf, "\n");
@@ -1037,7 +1067,7 @@ static void get_table_partitiondef(StringInfo query, StringInfo buf, Oid tableoi
             }
         }
 
-        if (isnull == false) {
+        if (isnull == false && isPartExprKeyNull) {
             partVec = (int2vector*)DatumGetPointer(datum);
             partkeynum = partVec->dim1;
             iPartboundary = (Oid*)palloc0(partkeynum * sizeof(Oid));
@@ -1053,6 +1083,8 @@ static void get_table_partitiondef(StringInfo query, StringInfo buf, Oid tableoi
                 appendStringInfo(buf, "%s", quote_identifier(attname));
                 pfree_ext(attname);
             }
+        } else if (!isPartExprKeyNull) {
+            GetPartitionExprKeySrc(buf, &datum, tableinfo.relname, tableoid, &partkeynum, &iPartboundary);
         }
         appendStringInfo(buf, ")");
     }
@@ -1076,7 +1108,7 @@ static void get_table_partitiondef(StringInfo query, StringInfo buf, Oid tableoi
 
     SubpartitionInfo *subpartinfo = (SubpartitionInfo *)palloc0(sizeof(SubpartitionInfo));
     if (parttype == PARTTYPE_SUBPARTITIONED_RELATION) {
-        AppendSubPartitionByInfo(buf, tableoid, subpartinfo);
+        AppendSubPartitionByInfo(buf, tableoid, subpartinfo, &tableinfo);
     }
 
     if (partstrategy == PART_STRATEGY_RANGE || partstrategy == PART_STRATEGY_INTERVAL) {
@@ -1098,7 +1130,7 @@ static void get_table_partitiondef(StringInfo query, StringInfo buf, Oid tableoi
     pfree_ext(subpartinfo);
 }
 
-static void AppendSubPartitionByInfo(StringInfo buf, Oid tableoid, SubpartitionInfo *subpartinfo)
+static void AppendSubPartitionByInfo(StringInfo buf, Oid tableoid, SubpartitionInfo *subpartinfo, tableInfo* tableinfo)
 {
     Relation partrel = NULL;
     ScanKeyData key[2];
@@ -1108,6 +1140,7 @@ static void AppendSubPartitionByInfo(StringInfo buf, Oid tableoid, SubpartitionI
     SysScanDesc subscan = NULL;
     HeapTuple subparttuple = NULL;
     bool isnull = false;
+    bool isPartExprKeyNull = false;
 
     partrel = heap_open(PartitionRelationId, AccessShareLock);
     ScanKeyInit(&key[0], Anum_pg_partition_parttype, BTEqualStrategyNumber, F_CHAREQ,
@@ -1122,27 +1155,18 @@ static void AppendSubPartitionByInfo(StringInfo buf, Oid tableoid, SubpartitionI
         ereport(ERROR, (errcode(ERRCODE_CACHE_LOOKUP_FAILED),
             errmsg("could not find partition tuple for subpartition relation %u", tableoid)));
     }
+    Datum datum = 0;
+    datum = SysCacheGetAttr(PARTRELID, parttuple, Anum_pg_partition_partkeyexpr, &isPartExprKeyNull);
+    if (isPartExprKeyNull)
+        datum = SysCacheGetAttr(PARTRELID, parttuple, Anum_pg_partition_partkey, &isnull);
+    Assert(!isnull || !isPartExprKeyNull);
 
-    Datum datum = SysCacheGetAttr(PARTRELID, parttuple, Anum_pg_partition_partkey, &isnull);
-    Assert(!isnull);
-    int2vector *partVec = (int2vector *)DatumGetPointer(datum);
-    int partkeynum = partVec->dim1;
-    if (partkeynum != 1) {
-        systable_endscan(scan);
-        heap_close(partrel, AccessShareLock);
-        ereport(ERROR,
-            (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
-                errmsg("only support one partkey in subpartition table")));
-    }
-    char *attname = get_attname(tableoid, partVec->values[0]);
     Oid subparentid = HeapTupleGetOid(parttuple);
-
     ScanKeyInit(&subkey[0], Anum_pg_partition_parttype, BTEqualStrategyNumber, F_CHAREQ,
         CharGetDatum(PARTTYPE_SUBPARTITIONED_RELATION));
     ScanKeyInit(&subkey[1], Anum_pg_partition_parentid, BTEqualStrategyNumber, F_OIDEQ, ObjectIdGetDatum(subparentid));
     subscan = systable_beginscan(partrel, PartitionParentOidIndexId, true, NULL, 2, subkey);
     subparttuple = systable_getnext(subscan);
-
     if (!HeapTupleIsValid(subparttuple)) {
         systable_endscan(scan);
         systable_endscan(subscan);
@@ -1150,7 +1174,6 @@ static void AppendSubPartitionByInfo(StringInfo buf, Oid tableoid, SubpartitionI
         ereport(ERROR, (errcode(ERRCODE_CACHE_LOOKUP_FAILED),
             errmsg("could not find subpartition tuple for subpartition relation %u", tableoid)));
     }
-
     Form_pg_partition part = (Form_pg_partition)GETSTRUCT(subparttuple);
     switch (part->partstrategy) {
         case PART_STRATEGY_RANGE:
@@ -1168,14 +1191,33 @@ static void AppendSubPartitionByInfo(StringInfo buf, Oid tableoid, SubpartitionI
             ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
                 errmsg("unrecognized subpartition type %c", part->partstrategy)));
     }
-    appendStringInfo(buf, "%s", quote_identifier(attname));
+
+    int partkeynum = 0;
+    if (!isnull && isPartExprKeyNull) {
+        int2vector *partVec = (int2vector *)DatumGetPointer(datum);
+        partkeynum = partVec->dim1;
+        char *attname = get_attname(tableoid, partVec->values[0]);
+        appendStringInfo(buf, "%s", quote_identifier(attname));
+        pfree_ext(attname);
+        subpartinfo->attnum = partVec->values[0];
+        subpartinfo->subpartkeytype = get_atttype(tableoid, subpartinfo->attnum);
+    } else if (!isPartExprKeyNull) {
+        Oid* iPartboundary = NULL;
+        GetPartitionExprKeySrc(buf, &datum, tableinfo->relname, tableoid, &partkeynum, &iPartboundary);
+        subpartinfo->subpartkeytype = *iPartboundary;
+        pfree_ext(iPartboundary);
+    }
     appendStringInfo(buf, ")");
-    pfree_ext(attname);
+    if (partkeynum != 1) {
+        systable_endscan(scan);
+        heap_close(partrel, AccessShareLock);
+        ereport(ERROR,
+            (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+                errmsg("only support one partkey in subpartition table")));
+    }
 
     subpartinfo->issubpartition = true;
-    subpartinfo->attnum = partVec->values[0];
     subpartinfo->subparttype = part->partstrategy;
-    subpartinfo->subpartkeytype = get_atttype(tableoid, subpartinfo->attnum);
     subpartinfo->istypestring = isTypeString(subpartinfo->subpartkeytype);
 
     systable_endscan(scan);
@@ -1642,7 +1684,7 @@ static int get_table_attribute(
                             find_nextval_seqoid_walker(adexpr, &tableinfo->autoinc_seqoid);
                             tableinfo->autoinc_attnum = attrdef->adnum;
                             appendStringInfo(buf, " %s", adsrc);
-                        } else {
+                        } else if (pg_strcasecmp(adsrc, "") != 0) {
                             appendStringInfo(buf, " DEFAULT %s", adsrc);
                         }
                         if (isOnUpdate) {
@@ -5088,14 +5130,12 @@ static void set_deparse_planstate(deparse_namespace* dpns, PlanState* ps)
          * mark upsert clause under PlanState.
          */
         dpns->inner_tlist = ((ModifyTableState*)ps)->mt_upsert->us_excludedtlist;
+    } else if ((IsA(ps, ModifyTableState) || IsA(ps, VecModifyTableState) || IsA(ps, DistInsertSelectState)) &&
+                ((ModifyTableState *)ps)->operation == CMD_MERGE) {
+        /* For merge into statements, source relation is always the inner one. */
+        dpns->inner_tlist = ((ModifyTable*)(ps->plan))->mergeSourceTargetList;
     } else if (dpns->inner_planstate != NULL) {
-        if ((IsA(ps, ModifyTableState) || IsA(ps, VecModifyTableState) || IsA(ps, DistInsertSelectState)) &&
-            ((ModifyTableState *)ps)->operation == CMD_MERGE) {
-            /* For merge into statements, source relation is always the inner one. */
-            dpns->inner_tlist = ((ModifyTable*)(ps->plan))->mergeSourceTargetList;
-        } else {
-            dpns->inner_tlist = dpns->inner_planstate->plan->targetlist;
-        }
+        dpns->inner_tlist = dpns->inner_planstate->plan->targetlist;
     } else {
         dpns->inner_tlist = NIL;
     }
@@ -5103,6 +5143,8 @@ static void set_deparse_planstate(deparse_namespace* dpns, PlanState* ps)
     /* index_tlist is set only if it's an IndexOnlyScan */
     if (IsA(ps->plan, IndexOnlyScan))
         dpns->index_tlist = ((IndexOnlyScan*)ps->plan)->indextlist;
+    else if (IsA(ps->plan, ForeignScan))
+        dpns->index_tlist = ((ForeignScan *)ps->plan)->fdw_scan_tlist;
     else if (IsA(ps->plan, ExtensiblePlan))
         dpns->index_tlist = ((ExtensiblePlan*)ps->plan)->extensible_plan_tlist;
     else
@@ -6275,7 +6317,7 @@ static void get_target_list(Query* query, List* targetList, deparse_context* con
             continue; /* ignore junk entries */
 
         /* Ignore junk columns from the targetlist in start with */
-        if (query->hasRecursive && IsPseudoReturnColumn(tle->resname)) {
+        if (query->hasRecursive && tle->isStartWithPseudo) {
             continue;
         }
 
@@ -8244,7 +8286,10 @@ static char* get_variable(
                     errmsg("bogus varattno for INNER_VAR var: %d", var->varattno)));
 
         Assert(netlevelsup == 0);
-        push_child_plan(dpns, dpns->inner_planstate, &save_dpns);
+        bool push = dpns->inner_planstate != NULL;
+        if (push) {
+            push_child_plan(dpns, dpns->inner_planstate, &save_dpns);
+        }
 
         /*
          * Force parentheses because our caller probably assumed a Var is a
@@ -8256,7 +8301,9 @@ static char* get_variable(
         if (!IsA(tle->expr, Var))
             appendStringInfoChar(buf, ')');
 
-        pop_child_plan(dpns, &save_dpns);
+        if (push) {
+            pop_child_plan(dpns, &save_dpns);
+        }
         return NULL;
     } else if (var->varno == INDEX_VAR && dpns->index_tlist) {
         TargetEntry* tle = NULL;
@@ -11012,6 +11059,11 @@ static void get_sublink_expr(SubLink* sublink, deparse_context* context)
                 exprType((Node*)linitial(rcexpr->largs)),
                 exprType((Node*)linitial(rcexpr->rargs)));
             appendStringInfoChar(buf, ')');
+        } else if (IsA(sublink->testexpr, Const)) {
+            /* const will occur after preprocess_const_params rewrite */
+            get_rule_expr((Node*)sublink->testexpr, context, false);
+            set_string_info_right(need_paren, buf);
+            return;
         } else
             ereport(ERROR,
                 (errcode(ERRCODE_UNRECOGNIZED_NODE_TYPE),

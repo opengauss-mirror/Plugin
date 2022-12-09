@@ -1,6 +1,6 @@
 test: float_numeric_test/db_b_log_test float_numeric_test/db_b_sqrt_test
 
-test: keyword_ignore_test/ignore_no_matched_partition keyword_ignore_test/ignore_not_null_constraints keyword_ignore_test/ignore_type_transform keyword_ignore_test/ignore_unique_constraints
+test: keyword_ignore_test/ignore_no_matched_partition keyword_ignore_test/ignore_not_null_constraints keyword_ignore_test/ignore_type_transform keyword_ignore_test/ignore_unique_constraints keyword_ignore_test/ignore_invalid_input
 
 test: string_func_test/db_b_ascii_test string_func_test/db_b_left_right_test string_func_test/db_b_quote_test string_func_test/db_b_string_length_test string_func_test/db_b_substr_test string_func_test/db_b_trim_test string_func_test/db_b_insert_test
 
@@ -73,15 +73,23 @@ test: b_database_releasealllocks_01
 
 test: b_database_releaselock_01 b_database_releaselock_02 b_database_releaselock_03 b_database_releaselock_04
 
-test: create_function_test/deterministic create_function_test/language_sql create_function_test/sql_options create_function_test/sql_security create_function_test/call_function create_function_test/commentsharp
+test: create_function_test/m_type_create_proc
+
+test: create_function_test/deterministic create_function_test/language_sql create_function_test/sql_options create_function_test/sql_security create_function_test/call_function create_function_test/commentsharp   create_function_test/single_line_proc
+
+test: b_do_statment
 
 test: alter_function_test/alter_function  alter_function_test/alter_procedure alter_function_test/language_sql replace_test/replace
 
 test: network2 use_dbname show_create view_definer_test insert_set show_create_database show_variables
 
-test: partition_test1 partition_test2 partition_test3 partition_test4
+test: partition_test1 partition_test2 partition_test3 partition_test4 partition_maxvalue_test
 
 test: test_table_index
+
+test: test_float_double_real_double_precision_MD
+
+test: single_line_trigger
 
 test: db_b_date_time_functions
 
@@ -103,20 +111,40 @@ test: case_sensitive_test/drop
 test: case_sensitive_test/clean_env
 
 test: case_sensitive_test/role_test
+
+test: case_sensitive_test_backquote/create_env
+
+test: case_sensitive_test_backquote/create_table case_sensitive_test_backquote/create_table_like case_sensitive_test_backquote/create_foreign_table case_sensitive_test_backquote/cluster case_sensitive_test_backquote/temp case_sensitive_test_backquote/rowlevelsecurity case_sensitive_test_backquote/rules
+
+test: case_sensitive_test_backquote/single_node_foreign_key case_sensitive_test_backquote/create_index case_sensitive_test_backquote/insert case_sensitive_test_backquote/update case_sensitive_test_backquote/delete case_sensitive_test_backquote/vacuum case_sensitive_test_backquote/analyze_commands case_sensitive_test_backquote/single_node_triggers
+
+test: case_sensitive_test_backquote/alter_table case_sensitive_test_backquote/reindex_internal case_sensitive_test_backquote/spi_test case_sensitive_test_backquote/quoted
+
+test: case_sensitive_test_backquote/drop
+
+test: case_sensitive_test_backquote/clean_env
+
+test: case_sensitive_test_backquote/role_test
 # case sensitive test end
 
 test: test_mysql_prepare db_b_rename_user_test export_set if_not_exists_test
 
 test: test_mysql_operator test_op_xor_unsignedint test_op_blob test_op_xor_boolandfloat
 
-test: json_array json_object json_quote json_contains json_contains_path json_extract json_unquote json_keys json_search json_array_append
+test: json_array json_object json_quote json_contains json_contains_path json_extract json_unquote  json_keys json_search json_array_append
 
 test: db_b_date_time_functions2
-test: show b_comments ansi_quotes_test
+test: show b_comments
+
+test: ansi_quotes_start
+
+test: pl_debugger_server pl_debugger_client
+
+test: ansi_quotes_test
 
 test: db_b_date_time_functions3
 
-test: json_array_insert json_insert json_merge_patch json_merge_preserve json_remove json_replace json_set json_depth
+test: json_array_insert json_insert json_merge_patch  json_merge_preserve json_remove json_replace json_set json_depth
 
 test: flush
 
@@ -130,6 +158,8 @@ test: like_default_test conv_cast_test read_only_guc_test
 
 test: string_func_test/db_b_to_base64_test string_func_test/db_b_unhex_test bit_count test_current_user
 
-test: builtin_funcs/cast
+test: builtin_funcs/cast any_value_test
 
-test: default_function
+test: default_function get_b_database
+
+test: json_type json_pretty json_valid json_length json_objectagg json_arrayagg json_operator json_storage_size

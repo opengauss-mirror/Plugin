@@ -126,6 +126,7 @@ static const ScanKeyword unreserved_keywords[] = {
     PG_KEYWORD("call", K_CALL, UNRESERVED_KEYWORD)
     PG_KEYWORD("collect", K_COLLECT, UNRESERVED_KEYWORD) 
     PG_KEYWORD("commit", K_COMMIT, UNRESERVED_KEYWORD) 
+    PG_KEYWORD("condition", K_CONDITION, UNRESERVED_KEYWORD) 
     PG_KEYWORD("constant", K_CONSTANT, UNRESERVED_KEYWORD) 
     PG_KEYWORD("continue", K_CONTINUE, UNRESERVED_KEYWORD) 
     PG_KEYWORD("current", K_CURRENT, UNRESERVED_KEYWORD) 
@@ -133,6 +134,7 @@ static const ScanKeyword unreserved_keywords[] = {
     PG_KEYWORD("debug", K_DEBUG, UNRESERVED_KEYWORD) 
     PG_KEYWORD("detail", K_DETAIL, UNRESERVED_KEYWORD) 
     PG_KEYWORD("distinct", K_DISTINCT, UNRESERVED_KEYWORD) 
+    PG_KEYWORD("do", K_DO, UNRESERVED_KEYWORD)
     PG_KEYWORD("dump", K_DUMP, UNRESERVED_KEYWORD) 
     PG_KEYWORD("errcode", K_ERRCODE, UNRESERVED_KEYWORD) 
     PG_KEYWORD("error", K_ERROR, UNRESERVED_KEYWORD) 
@@ -172,6 +174,7 @@ static const ScanKeyword unreserved_keywords[] = {
     PG_KEYWORD("record", K_RECORD, UNRESERVED_KEYWORD)
     PG_KEYWORD("relative", K_RELATIVE, UNRESERVED_KEYWORD) 
     PG_KEYWORD("release", K_RELEASE, UNRESERVED_KEYWORD)
+    PG_KEYWORD("repeat", K_REPEAT, UNRESERVED_KEYWORD)
     PG_KEYWORD("replace", K_REPLACE, UNRESERVED_KEYWORD)
     PG_KEYWORD("result_oid", K_RESULT_OID, UNRESERVED_KEYWORD) 
     PG_KEYWORD("returned_sqlstate", K_RETURNED_SQLSTATE, UNRESERVED_KEYWORD)
@@ -189,6 +192,7 @@ static const ScanKeyword unreserved_keywords[] = {
     PG_KEYWORD("table", K_TABLE, UNRESERVED_KEYWORD)
     PG_KEYWORD("type", K_TYPE, UNRESERVED_KEYWORD)
     PG_KEYWORD("union", K_UNION, UNRESERVED_KEYWORD)
+    PG_KEYWORD("until", K_UNTIL, UNRESERVED_KEYWORD)
     PG_KEYWORD("use_column", K_USE_COLUMN, UNRESERVED_KEYWORD)
     PG_KEYWORD("use_variable", K_USE_VARIABLE, UNRESERVED_KEYWORD)
     PG_KEYWORD("variable_conflict", K_VARIABLE_CONFLICT, UNRESERVED_KEYWORD)
@@ -225,6 +229,7 @@ static void push_back_token(int token, TokenAuxData* auxdata);
 static void location_lineno_init(void);
 static int get_self_defined_tok(int tok_flag);
 static int plpgsql_parse_cursor_attribute(int* loc);
+static int plpgsql_parse_declare(int* loc);
 static void RecordDependencyOfPkg(PLpgSQL_package* pkg, Oid pkgOid, Oid currCompPkgOid);
 static PLpgSQL_datum* SearchPackageDatum(PLpgSQL_package* pkg, Oid pkgOid, Oid currCompPkgOid,
     const char* pkgname, const char* objname);
@@ -257,11 +262,22 @@ int plpgsql_yylex(void)
         plpgsql_yylloc = loc;
         return tok1;
     }
+    if (u_sess->attr.attr_sql.sql_compatibility == B_FORMAT) {
+        /* parse declare condition */
+        tok1 = plpgsql_parse_declare(&loc);
+        if (tok1 != -1) {
+            plpgsql_yylloc = loc;
+            return tok1;
+        }
+    }
 
     tok1 = internal_yylex(&aux1);
     if (tok1 == IDENT || tok1 == PARAM || tok1 == T_SQL_BULK_EXCEPTIONS) {
         int tok2;
         TokenAuxData aux2;
+        char* tok1_val = NULL;
+        if(tok1 == PARAM)
+            tok1_val = aux1.lval.str;
 
         tok2 = internal_yylex(&aux2);
         if (tok2 == '.') {
@@ -400,7 +416,21 @@ int plpgsql_yylex(void)
             } else if (aux1.lval.str[0] == ':' && tok1 == PARAM) {
                 /* Check place holder, it should be like :({identifier}|{integer})
                  * It is a placeholder in exec statement. */
-                tok1 = T_PLACEHOLDER;
+                if(u_sess->attr.attr_sql.sql_compatibility == B_FORMAT)
+                {
+                    if(pg_strcasecmp(tok1_val, ":loop") == 0)
+                        tok1 = T_LABELLOOP;
+                    else if(pg_strcasecmp(tok1_val, ":while") == 0)
+                        tok1 = T_LABELWHILE;
+                    else if(pg_strcasecmp(tok1_val, ":repeat") == 0)
+                        tok1 = T_LABELREPEAT;
+                    else
+                        tok1 = T_PLACEHOLDER;
+                }
+                else
+                {
+                    tok1 = T_PLACEHOLDER;
+                }
             } else {
                 tok1 = T_WORD;
             }
@@ -1108,6 +1138,55 @@ static int plpgsql_parse_cursor_attribute(int* loc)
     return token;
 }
 
+static int plpgsql_parse_declare(int* loc)
+{
+    TokenAuxData aux1;
+    int tok1 = -1;
+    int token = -1;
+
+    if (u_sess->parser_cxt.in_package_function_compile) {
+        return token;
+    }
+
+    tok1 = internal_yylex(&aux1);
+    if (tok1 == K_DECLARE) {
+        TokenAuxData aux2;
+        TokenAuxData aux3;
+
+        int tok2 = -1;
+        int tok3 = -1;
+        tok2 = internal_yylex(&aux2);
+        tok3 = internal_yylex(&aux3);
+        if (tok2 != IDENT || tok3 != IDENT) {
+            push_back_token(tok3, &aux3);
+            push_back_token(tok2, &aux2);
+            push_back_token(tok1, &aux1);
+            return token;
+        }
+        if (strcasecmp(aux3.lval.str, "cursor") == 0) {
+            token = T_DECLARE_CURSOR;
+            push_back_token(tok3, &aux3);
+            push_back_token(tok2, &aux2);
+            /* get the declare attribute location */
+            *loc = aux1.lloc;
+            plpgsql_yylval = aux1.lval;
+        } else if (strcasecmp(aux3.lval.str, "condition") == 0) {
+            token = T_DECLARE_CONDITION;
+            push_back_token(tok3, &aux3);
+            push_back_token(tok2, &aux2);
+            /* get the declare attribute location */
+            *loc = aux1.lloc;
+            plpgsql_yylval = aux1.lval;
+        } else {
+                push_back_token(tok3, &aux3);
+                push_back_token(tok2, &aux2);
+                push_back_token(tok1, &aux1);
+        }
+    } else {
+        push_back_token(tok1, &aux1);
+    }
+    return token;
+}
 /*
  * a convenient method to see if the next two tokens are what we expected
  */

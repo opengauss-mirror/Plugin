@@ -371,6 +371,7 @@ typedef struct PLpgSQL_var { /* Scalar variable */
     PLpgSQL_expr* cursor_explicit_expr;
     int cursor_explicit_argrow;
     int cursor_options;
+    int customCondition; /* only for declare condition variable. */
 
     Datum value;
     bool isnull;
@@ -711,6 +712,7 @@ typedef struct { /* WHILE cond LOOP statement		*/
     PLpgSQL_expr* cond;
     List* body; /* List of statements */
     char* sqlString;
+    bool condition;
 } PLpgSQL_stmt_while;
 
 typedef struct { /* FOR statement with integer loopvar	*/

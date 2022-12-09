@@ -167,7 +167,7 @@ List* raw_parser(const char* str, List** query_string_locationlist)
 #ifdef DOLPHIN
 static inline bool IsDescStmtSymbol(int token)
 {
-    return (token == ASCII_DOT || token == ASCII_SEMICOLON);
+    return (token == ASCII_DOT || token == ASCII_SEMICOLON || token == 0);
 }
 
 static inline bool IsDescribeStmt(char* scanbuf) 
@@ -577,6 +577,25 @@ int base_yylex(YYSTYPE* lvalp, YYLTYPE* llocp, core_yyscan_t yyscanner)
                 break;
             }
             break;
+        case SHOW:
+            /*
+             * SHOW ERRORS must be reduced to one token, to allow ERRORS as table / column alias.
+             */
+            GET_NEXT_TOKEN();
+
+            switch (next_token) {
+                case ERRORS:
+                    cur_token = SHOW_ERRORS;
+                    break;
+                default:
+                    /* save the lookahead token for next time */
+                    SET_LOOKAHEAD_TOKEN();
+                    /* and back up the output info to cur_token */
+                    lvalp->core_yystype = cur_yylval;
+                    *llocp = cur_yylloc;
+                    break;
+            }
+            break;
 #ifdef DOLPHIN
         case EXPLAIN:
             READ_TWO_TOKEN();
@@ -606,6 +625,25 @@ int base_yylex(YYSTYPE* lvalp, YYLTYPE* llocp, core_yyscan_t yyscanner)
             switch (next_token) {
                 case '(':
                     cur_token = DEFAULT_FUNC;
+                    break;
+                default:
+                    /* save the lookahead token for next time */
+                    SET_LOOKAHEAD_TOKEN();
+                    /* and back up the output info to cur_token */
+                    lvalp->core_yystype = cur_yylval;
+                    *llocp = cur_yylloc;
+                    break;
+            }
+            break;
+       case DO:
+            /* parse DO Sconst To one Token */
+           GET_NEXT_TOKEN();
+           switch (next_token) {
+                case SCONST:
+                    cur_token = DO_SCONST;
+                    break;
+                case LANGUAGE:
+                    cur_token = DO_LANGUAGE;
                     break;
                 default:
                     /* save the lookahead token for next time */

@@ -105,6 +105,7 @@
 #pragma GCC diagnostic ignored "-Wsign-compare"
 #pragma GCC diagnostic ignored "-Wunused-variable"
 
+#define MAX_ERROR_COUNT 65535
 #define MAXFNAMELEN		64
 #define isquote(C) ((C) == '\"')
 #ifndef ENABLE_MULTIPLE_NODES
@@ -427,13 +428,17 @@ static void CheckIconstType(Node* node);
 /* B Compatibility Check */
 static void BCompatibilityOptionSupportCheck();
 
+static char* TriggerBodyGet(int& start_pos, int& end_pos, base_yy_extra_type* yyextra);
+
 #ifndef ENABLE_MULTIPLE_NODES
 static bool CheckWhetherInColList(char *colname, List *col_list);
 #endif
 static int GetFillerColIndex(char *filler_col_name, List *col_list);
 static void RemoveFillerCol(List *filler_list, List *col_list);
 static int errstate;
+static void CheckPartitionExpr(Node* expr, int* colCount);
 
+static char* DoStmtPreformGet(int& start_pos, int& end_pos, base_yy_extra_type* yyextra);
 static void setDelimiterName(core_yyscan_t yyscanner, char*input, VariableSetStmt*n);
 static unsigned char GetLowerCaseChar(unsigned char ch, bool enc_is_single_byte);
 static char* downcase_str(char* ident, bool is_quoted);
@@ -442,6 +447,7 @@ static DolphinString* MakeDolphinStringByNode(Node* node, bool is_quoted);
 static List* GetNameListFromDolphinString(List* dolphinStringList);
 static char* GetDolphinObjName(char* string, bool is_quoted);
 static bool DolphinObjNameCmp(const char* s1, const char* s2, bool is_quoted);
+static char* SingleLineProcedureQueryGet(int& start_pos, int& end_pos, base_yy_extra_type* yyextra);
 static SelectStmt *MakeFunctionSelect(char *funcCall, List* args, core_yyscan_t yyscanner);
 static SelectStmt *MakeShowGrantStmt(char *arg, int location, core_yyscan_t yyscanner);
 %}
@@ -619,8 +625,8 @@ static SelectStmt *MakeShowGrantStmt(char *arg, int location, core_yyscan_t yysc
 				transaction_mode_item
 				create_extension_opt_item alter_extension_opt_item
 
-%type <list>	opt_fields_options fields_list opt_lines_options lines_list
-%type <defelt>	opt_ignore_number opt_character fields_option lines_option conflict_option
+%type <list>	opt_fields_options fields_list opt_lines_options lines_list expr_do_list
+%type <defelt>	opt_ignore_number opt_character fields_option lines_option conflict_option opt_do_language
 %type <ival>	opt_lock lock_type cast_context opt_wait kill_opt
 %type <ival>	vacuum_option_list vacuum_option_elem opt_verify_options
 %type <boolean>	opt_check opt_force opt_or_replace
@@ -660,6 +666,9 @@ static SelectStmt *MakeShowGrantStmt(char *arg, int location, core_yyscan_t yysc
 %type <range>	qualified_name insert_target OptConstrFromTable opt_index_name insert_partition_clause update_delete_partition_clause dolphin_qualified_name
 
 %type <str>		all_Op MathOp OptDbName
+%type <str>		SingleLineProcPart
+%type <list>		proc_arg_no_empty
+
 
 %type <str>		RowLevelSecurityPolicyName row_level_security_cmd RLSDefaultForCmd row_level_security_role
 %type <boolean>	RLSDefaultPermissive
@@ -711,7 +720,7 @@ static SelectStmt *MakeShowGrantStmt(char *arg, int location, core_yyscan_t yysc
 				create_generic_options alter_generic_options
 				relation_expr_list dostmt_opt_list
 				merge_values_clause publication_name_list empty_value insert_set_list insert_set_clause
-				relation_expr_opt_alias_list user_list
+				relation_expr_opt_alias_list into_user_var_list user_list
 
 /* b compatibility: comment start */
 %type <list>	opt_index_options index_options opt_table_options table_options opt_column_options column_options
@@ -733,7 +742,7 @@ static SelectStmt *MakeShowGrantStmt(char *arg, int location, core_yyscan_t yysc
 %type <defelt>	fdw_option
 
 %type <range>	OptTempTableName
-%type <into>	into_clause create_as_target create_as_target_dolphin create_mv_target
+%type <into>	into_clause create_as_target create_as_target_dolphin create_mv_target opt_into_clause
 
 %type <defelt>	createfunc_opt_item createproc_opt_item common_func_opt_item dostmt_opt_item
 %type <fun_param> func_arg func_arg_with_default table_func_column
@@ -755,7 +764,6 @@ static SelectStmt *MakeShowGrantStmt(char *arg, int location, core_yyscan_t yysc
 
 %type <list>	extract_list timestamp_arg_list overlay_list position_list
 
-%type <list>	convert_list
 %type <list>	substr_list trim_list
 %type <list>	opt_interval interval_second opt_single_interval opt_multipart_interval
 %type <node>	overlay_placing substr_from substr_for optional_precision get_format_time_type
@@ -839,7 +847,7 @@ static SelectStmt *MakeShowGrantStmt(char *arg, int location, core_yyscan_t yysc
 %type <list>	copy_options
 
 %type <typnam>	Typename SimpleTypename ConstTypename
-				GenericType Numeric opt_float
+				GenericType Numeric opt_float dolphin_float
 				Character ConstCharacter
 				CharacterWithLength CharacterWithoutLength
 				PreciseConstDatetime ConstDatetime ConstSet
@@ -876,7 +884,7 @@ static SelectStmt *MakeShowGrantStmt(char *arg, int location, core_yyscan_t yysc
 %type <boolean> OptRelative
 %type <boolean> OptGPI
 %type <str>		OptTableSpace OptTableSpace_without_empty OptConsTableSpace OptTableSpaceOwner LoggingStr size_clause OptMaxSize OptDatafileSize OptReuse OptAuto OptNextStr OptDatanodeName
-%type <list>	opt_check_option
+%type <ival>	opt_check_option
 
 %type <str>		opt_provider security_label
 
@@ -904,7 +912,8 @@ static SelectStmt *MakeShowGrantStmt(char *arg, int location, core_yyscan_t yysc
 %type <chr>		OptCompress OptCompress_without_empty
 %type <ival>	KVType
 %type <ival>		ColCmprsMode
-%type <fun_src>		subprogram_body
+%type <fun_src>		subprogram_body b_proc_body triggerbody_subprogram_or_single
+%type <node>    trigger_body_stmt
 %type <keyword> as_is as_empty
 %type <node>	column_item opt_table_partitioning_clause_without_empty
 				opt_partition_index_def  range_partition_index_item  range_partition_index_list
@@ -914,7 +923,7 @@ static SelectStmt *MakeShowGrantStmt(char *arg, int location, core_yyscan_t yysc
 				subpartitioning_clause range_subpartitioning_clause hash_subpartitioning_clause
 				list_subpartitioning_clause subpartition_item opt_subpartition_index_def
                 range_subpartition_index_list range_subpartition_index_item
-%type <list>	range_partition_definition_list list_partition_definition_list hash_partition_definition_list maxValueList
+%type <list>	range_partition_definition_list list_partition_definition_list hash_partition_definition_list maxValueList maxValueList_with_opt_parens
 			column_item_list tablespaceList opt_interval_tablespaceList
 			split_dest_partition_define_list split_dest_listsubpartition_define_list split_dest_rangesubpartition_define_list
 			range_start_end_list range_less_than_list opt_range_every_list subpartition_definition_list
@@ -1116,7 +1125,7 @@ static SelectStmt *MakeShowGrantStmt(char *arg, int location, core_yyscan_t yysc
 	QUARTER QUERY QUICK QUOTE
 
 	RANDOMIZED RANGE RATIO RAW READ READS REAL REASSIGN REBUILD RECHECK RECURSIVE RECYCLEBIN REDISANYVALUE REF REFERENCES REFRESH REINDEX REJECT_P
-	RELATIVE_P RELEASE RELOPTIONS REMOTE_P REMOVE RENAME REPEATABLE REPLACE REPLICA REGEXP REORGANIZE REPAIR
+	RELATIVE_P RELEASE RELOPTIONS REMOTE_P REMOVE RENAME REPEAT REPEATABLE REPLACE REPLICA REGEXP REORGANIZE REPAIR
 	RESET RESIZE RESOURCE RESTART RESTRICT RETURN RETURNING RETURNS REUSE REVOKE RIGHT RLIKE ROLE ROLES ROLLBACK ROLLUP
 	ROTATION ROUTINE ROW ROWNUM ROWS ROWTYPE_P ROW_FORMAT RULE
 
@@ -1124,7 +1133,7 @@ static SelectStmt *MakeShowGrantStmt(char *arg, int location, core_yyscan_t yysc
 	SERIALIZABLE SERVER SESSION SESSION_USER SET SETS SETOF SHARE SHIPPABLE SHOW SHUTDOWN SIBLINGS SIGNED
 	SIMILAR SIMPLE SIZE SKIP SLAVE SLICE SMALLDATETIME SMALLDATETIME_FORMAT_P SMALLINT SNAPSHOT SOME SOUNDS SOURCE_P SPACE SPILL SPLIT SQL STABLE STANDALONE_P START STARTING STARTWITH
 	STATEMENT STATEMENT_ID STATISTICS STATUS STDIN STDOUT STORAGE STORE_P STORED STRATIFY STREAM STRICT_P STRIP_P SUBPARTITION SUBSCRIPTION SUBSTR SUBSTRING
-	SYMMETRIC SYNONYM SYSDATE SYSID SYSTEM_P SYS_REFCURSOR
+	SYMMETRIC SYNONYM SYSDATE SYSID SYSTEM_P SYS_REFCURSOR SHOW_ERRORS
 
 	TABLE TABLES TABLESAMPLE TABLESPACE TARGET TEMP TEMPLATE TEMPORARY TERMINATED TEXT_P THAN THEN TIME TIME_FORMAT_P TIMECAPSULE TIMESTAMP TIMESTAMP_FORMAT_P TIMESTAMPADD TIMESTAMPDIFF TINYINT
 	TO TRAILING TRANSACTION TRANSFORM TREAT TRIGGER TRIM TRUE_P
@@ -1136,7 +1145,7 @@ static SelectStmt *MakeShowGrantStmt(char *arg, int location, core_yyscan_t yysc
 	VACUUM VALID VALIDATE VALIDATION VALIDATOR VALUE_P VALUES VARBINARY VARCHAR VARCHAR2 VARIABLES VARIADIC VARRAY VARYING VCGROUP
 	VERBOSE VERIFY VERSION_P VIEW VOLATILE
 
-	WAIT WEAK WHEN WHERE WHITESPACE_P WINDOW WITH WITHIN WITHOUT WORK WORKLOAD WRAPPER WRITE
+	WAIT WARNINGS WEAK WHEN WHERE WHILE_P WHITESPACE_P WINDOW WITH WITHIN WITHOUT WORK WORKLOAD WRAPPER WRITE
 
 	XML_P XMLATTRIBUTES XMLCONCAT XMLELEMENT XMLEXISTS XMLFOREST XMLPARSE XOR
 	XMLPI XMLROOT XMLSERIALIZE
@@ -1165,11 +1174,12 @@ static SelectStmt *MakeShowGrantStmt(char *arg, int location, core_yyscan_t yysc
 			NOT_ENFORCED
 			VALID_BEGIN
 			DECLARE_CURSOR ON_UPDATE_TIME
-			START_WITH CONNECT_BY WITH_ROLLUP
+			START_WITH CONNECT_BY SHOW_ERRORS WITH_ROLLUP
 			END_OF_INPUT
 			END_OF_INPUT_COLON
 			END_OF_PROC
 			DEFAULT_FUNC
+	                DO_SCONST DO_LANGUAGE
 
 /* Precedence: lowest to highest */
 %nonassoc COMMENT
@@ -1244,6 +1254,8 @@ static SelectStmt *MakeShowGrantStmt(char *arg, int location, core_yyscan_t yysc
 %right		UMINUS BY NAME_P PASSING ROW TYPE_P VALUE_P
 %left		'[' ']'
 %left		'(' ')'
+%left		EMPTY_FROM_CLAUSE
+%right		INTO
 %left		TYPECAST
 %left		'.'
 /*
@@ -2318,7 +2330,17 @@ OptSchemaEltList:
 		;
 
 OptBlockchainWith:
-			WITH BLOCKCHAIN							{ $$ = true; }
+			WITH BLOCKCHAIN
+			    {
+                    if (ENABLE_DMS) {
+			            const char* message = "BLOCKCHAIN is not supported while DMS and DSS enabled";
+			            InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);
+			            ereport(errstate, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), 
+				                errmsg("BLOCKCHAIN is not supported while DMS and DSS enabled")));
+					}
+
+                    $$ = true;
+			    }
 			| /* EMPTY */							{ $$ = false; }
 		;
 
@@ -2340,7 +2362,17 @@ AlterSchemaStmt:
 			;
 
 OptAlterToBlockchain:
-			WITH BLOCKCHAIN							{ $$ = true; }
+			WITH BLOCKCHAIN
+			    {
+                    if (ENABLE_DMS) {
+			            const char* message = "BLOCKCHAIN is not supported while DMS and DSS enabled";
+			            InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);
+			            ereport(errstate, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), 
+				                errmsg("BLOCKCHAIN is not supported while DMS and DSS enabled")));
+					}
+
+                    $$ = true;
+			    }
 			| WITHOUT BLOCKCHAIN					{ $$ = false; }
 		;
 
@@ -3341,7 +3373,161 @@ FunctionSetResetClause:
 
 
 VariableShowStmt:
-			SHOW var_name
+			SHOW WARNINGS
+				{
+#ifdef ENABLE_MULTIPLE_NODES
+					ereport(ERROR,
+						(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+							errmsg("Un-support feature"),
+							errdetail("Show warnings feature is unsupported on distributed mode.")));
+#else
+					if (u_sess->attr.attr_sql.sql_compatibility == B_FORMAT)
+					{
+						VariableShowStmt *n = makeNode(VariableShowStmt);
+						n->name = "show_warnings";
+						n->offset = 0;
+						n->count = MAX_ERROR_COUNT;
+						$$ = (Node *) n;
+					}
+#endif
+				}
+			| SHOW WARNINGS LIMIT Iconst
+				{
+#ifdef ENABLE_MULTIPLE_NODES
+					ereport(ERROR,
+						(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+							errmsg("Un-support feature"),
+							errdetail("Show warnings feature is unsupported on distributed mode.")));
+#else
+					if (u_sess->attr.attr_sql.sql_compatibility == B_FORMAT)
+					{
+						VariableShowStmt *n = makeNode(VariableShowStmt);
+						n->name = "show_warnings";
+						n->offset = 0;
+						n->count = $4;
+						$$ = (Node *) n;
+					}
+#endif
+				}
+			| SHOW WARNINGS LIMIT Iconst ',' Iconst
+				{
+#ifdef ENABLE_MULTIPLE_NODES
+					ereport(ERROR,
+						(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+							errmsg("Un-support feature"),
+							errdetail("Show warnings feature is unsupported on distributed mode.")));
+#else
+					if (u_sess->attr.attr_sql.sql_compatibility == B_FORMAT)
+					{
+						VariableShowStmt *n = makeNode(VariableShowStmt);
+						n->name = "show_warnings";
+						n->offset = $4;
+						n->count = $6;
+						$$ = (Node *) n;
+					}
+#endif
+				}
+			| SHOW IDENT '(' '*' ')' WARNINGS
+				{
+#ifdef ENABLE_MULTIPLE_NODES
+					ereport(ERROR,
+						(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+							errmsg("Un-support feature"),
+							errdetail("Show count(*) warnings feature is unsupported on distributed mode.")));
+#else
+					if (u_sess->attr.attr_sql.sql_compatibility == B_FORMAT)
+					{
+						char *ident = downcase_str($2->str, false);
+						if (strcmp(ident, "count") != 0) {
+							const char* message = "Un-support feature";
+							InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);
+							ereport(errstate, (errcode(ERRCODE_SYNTAX_ERROR),
+								errmsg("Un-support function \"%s\" for show warnings", ident)));
+						}
+						VariableShowStmt *n = makeNode(VariableShowStmt);
+						n->name = "show_warnings_count";
+						$$ = (Node *) n;
+					}
+#endif
+				}
+			| SHOW_ERRORS
+				{
+#ifdef ENABLE_MULTIPLE_NODES
+					ereport(ERROR,
+						(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+							errmsg("Un-support feature"),
+							errdetail("Show errors feature is unsupported on distributed mode.")));
+#else
+					if (u_sess->attr.attr_sql.sql_compatibility == B_FORMAT)
+					{
+						VariableShowStmt *n = makeNode(VariableShowStmt);
+						n->name = "show_errors";
+						n->offset = 0;
+						n->count = MAX_ERROR_COUNT;
+						$$ = (Node *) n;
+					}
+#endif
+				}
+			| SHOW_ERRORS LIMIT Iconst
+				{
+#ifdef ENABLE_MULTIPLE_NODES
+					ereport(ERROR,
+						(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+							errmsg("Un-support feature"),
+							errdetail("Show errors feature is unsupported on distributed mode.")));
+#else
+					if (u_sess->attr.attr_sql.sql_compatibility == B_FORMAT)
+					{
+						VariableShowStmt *n = makeNode(VariableShowStmt);
+						n->name = "show_errors";
+						n->offset = 0;
+						n->count = $3;
+						$$ = (Node *) n;
+					}
+#endif
+				}
+			| SHOW_ERRORS LIMIT Iconst ',' Iconst
+				{
+#ifdef ENABLE_MULTIPLE_NODES
+					ereport(ERROR,
+						(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+							errmsg("Un-support feature"),
+							errdetail("Show errors feature is unsupported on distributed mode.")));
+#else
+					if (u_sess->attr.attr_sql.sql_compatibility == B_FORMAT)
+					{
+						VariableShowStmt *n = makeNode(VariableShowStmt);
+						n->name = "show_errors";
+						n->offset = $3;
+						n->count = $5;
+						$$ = (Node *) n;
+					}
+#endif
+				}
+			| SHOW IDENT '(' '*' ')' ERRORS
+				{
+#ifdef ENABLE_MULTIPLE_NODES
+					ereport(ERROR,
+						(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+							errmsg("Un-support feature"),
+							errdetail("Show count(*) errors feature is unsupported on distributed mode.")));
+#else
+					if (u_sess->attr.attr_sql.sql_compatibility == B_FORMAT)
+					{
+						char *ident = downcase_str($2->str, false);
+						if (strcmp(ident, "count") != 0) {
+							const char* message = "Un-support feature";
+							InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);
+							ereport(errstate, (errcode(ERRCODE_SYNTAX_ERROR),
+							errmsg("Un-support function \"%s\" for show errors", ident)));
+						}
+						VariableShowStmt *n = makeNode(VariableShowStmt);
+						n->name = "show_errors_count";
+						$$ = (Node *) n;
+					}
+#endif
+				}
+			| SHOW var_name
 				{
 					if (pg_strcasecmp($2, "processlist") == 0) {
 						SelectStmt *n = makeShowProcesslistQuery(FALSE);
@@ -4233,14 +4419,14 @@ alter_partition_cmd:
 				$$ = $2;
 			}
 		/* ALTER TABLE MODIFY PARTITION ADD SUBPARTITION */
-		| MODIFY_PARTITION name ADD_SUBPARTITION name VALUES LESS THAN '(' maxValueList ')' OptTableSpace
+		| MODIFY_PARTITION name ADD_SUBPARTITION name VALUES LESS THAN maxValueList_with_opt_parens OptTableSpace
 			{
 				RangePartitionDefState *p = makeNode(RangePartitionDefState);
 				AlterTableCmd *n = makeNode(AlterTableCmd);
 				AddSubPartitionState *s = makeNode(AddSubPartitionState);
 				p->partitionName = $4;
-				p->boundary = $9;
-				p->tablespacename = $11;
+				p->boundary = $8;
+				p->tablespacename = $9;
 				s->subPartitionList = list_make1(p);
 				s->partitionName = $2;
 				n->subtype = AT_AddSubPartition;
@@ -4279,17 +4465,17 @@ alter_partition_cmd:
 				$$ = (Node *)n;
 			}
 		/* ALTER TABLE DROP PARTITION */
-		| DROP_PARTITION FOR '(' maxValueList ')' OptGPI
+		| DROP_PARTITION FOR maxValueList_with_opt_parens OptGPI
 			{
 				RangePartitionDefState *p = makeNode(RangePartitionDefState);
 				AlterTableCmd *n = makeNode(AlterTableCmd);
 
-				p->boundary = $4;
+				p->boundary = $3;
 				n->subtype = AT_DropPartition;
 				n->def = (Node*)p;
 				n->behavior = DROP_CASCADE;
 				n->missing_ok = FALSE;
-				n->alterGPI = $6;
+				n->alterGPI = $4;
 				$$ = (Node *)n;
 			}
 		/* ALTER TABLE DROP SUBPARTITION */
@@ -4318,37 +4504,37 @@ alter_partition_cmd:
 				$$ = (Node*)n;
 			}
 		/* split one partition into two partition */
-		| SPLIT PARTITION name AT '(' maxValueList ')' INTO
+		| SPLIT PARTITION name AT maxValueList_with_opt_parens INTO
 		  '(' split_dest_partition_define_list ')' OptGPI
 			{
 				AlterTableCmd	*n = makeNode(AlterTableCmd);
 				SplitPartitionState	*s = makeNode(SplitPartitionState);
 
 				s->src_partition_name = $3;
-				s->split_point = $6;
-				s->dest_partition_define_list = $10;
+				s->split_point = $5;
+				s->dest_partition_define_list = $8;
 				s->partition_for_values = NULL;
 
 				n->def = (Node*)s;
 				n->subtype = AT_SplitPartition;
-				n->alterGPI = $12;
+				n->alterGPI = $10;
 				$$ = (Node*)n;
 			}
 		/* split one partition into two partition */
-		| SPLIT PARTITION_FOR '(' maxValueList ')' AT '(' maxValueList ')' INTO
+		| SPLIT PARTITION_FOR maxValueList_with_opt_parens AT maxValueList_with_opt_parens INTO
 		  '(' split_dest_partition_define_list ')' OptGPI
 			{
 				AlterTableCmd	*n = makeNode(AlterTableCmd);
 				SplitPartitionState	*s = makeNode(SplitPartitionState);
 
-				s->partition_for_values = $4;
-				s->split_point = $8;
-				s->dest_partition_define_list = $12;
+				s->partition_for_values = $3;
+				s->split_point = $5;
+				s->dest_partition_define_list = $8;
 				s->src_partition_name = NULL;
 
 				n->def = (Node*)s;
 				n->subtype = AT_SplitPartition;
-				n->alterGPI = $14;
+				n->alterGPI = $10;
 				$$ = (Node*)n;
 			}
 		/*split one partition into multiple partition*/
@@ -4367,26 +4553,26 @@ alter_partition_cmd:
 				n->alterGPI = $8;
 				$$ = (Node*)n;
 			}
-		| SPLIT PARTITION_FOR '(' maxValueList ')' INTO '(' range_partition_definition_list ')' OptGPI
+		| SPLIT PARTITION_FOR maxValueList_with_opt_parens INTO '(' range_partition_definition_list ')' OptGPI
 			{
 				AlterTableCmd	*n = makeNode(AlterTableCmd);
 				SplitPartitionState	*s = makeNode(SplitPartitionState);
 
-				s->partition_for_values = $4;
-				s->dest_partition_define_list = $8;
+				s->partition_for_values = $3;
+				s->dest_partition_define_list = $6;
 				s->src_partition_name = NULL;
 				s->split_point = NULL;
 
 				n->def = (Node*)s;
 				n->subtype = AT_SplitPartition;
-				n->alterGPI = $10;
+				n->alterGPI = $8;
 				$$ = (Node*)n;
 			}
 		/* split one list subpartition into two subpartition */
-		| SPLIT SUBPARTITION name VALUES '(' maxValueList ')' INTO
+		| SPLIT SUBPARTITION name VALUES maxValueList_with_opt_parens INTO
 		  '(' split_dest_listsubpartition_define_list ')' OptGPI
 			{
-				if (list_length($10) != 2)  {
+				if (list_length($8) != 2)  {
 					ereport(ERROR,
 						(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
 							errmsg("Un-support feature"),
@@ -4396,21 +4582,21 @@ alter_partition_cmd:
 				SplitPartitionState	*s = makeNode(SplitPartitionState);
 
 				s->src_partition_name = $3;
-				s->newListSubPartitionBoundry = $6;
-				s->dest_partition_define_list = $10;
+				s->newListSubPartitionBoundry = $5;
+				s->dest_partition_define_list = $8;
 				s->partition_for_values = NULL;
 				s->splitType = LISTSUBPARTITIION;
 
 				n->def = (Node*)s;
 				n->subtype = AT_SplitSubPartition;
-				n->alterGPI = $12;
+				n->alterGPI = $10;
 				$$ = (Node*)n;
 			}
 		/* split one range subpartition into two subpartition */
-		| SPLIT SUBPARTITION name AT '(' maxValueList ')' INTO
+		| SPLIT SUBPARTITION name AT maxValueList_with_opt_parens INTO
 		  '(' split_dest_rangesubpartition_define_list ')' OptGPI
 			{
-				if (list_length($10) != 2)  {
+				if (list_length($8) != 2)  {
 					ereport(ERROR,
 						(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
 							errmsg("Un-support feature"),
@@ -4420,14 +4606,14 @@ alter_partition_cmd:
 				SplitPartitionState	*s = makeNode(SplitPartitionState);
 
 				s->src_partition_name = $3;
-				s->split_point = $6;
-				s->dest_partition_define_list = $10;
+				s->split_point = $5;
+				s->dest_partition_define_list = $8;
 				s->partition_for_values = NULL;
 				s->splitType = RANGESUBPARTITIION;
 
 				n->def = (Node*)s;
 				n->subtype = AT_SplitSubPartition;
-				n->alterGPI = $12;
+				n->alterGPI = $10;
 				$$ = (Node*)n;
 			}
 		| REORGANIZE PARTITION name_list INTO '(' range_partition_definition_list ')'
@@ -4457,17 +4643,17 @@ alter_partition_cmd:
 				$$ = (Node*)n;
 			}
 		/* truncate partition */
-		| TRUNCATE PARTITION_FOR '(' maxValueList ')' OptGPI
+		| TRUNCATE PARTITION_FOR maxValueList_with_opt_parens OptGPI
 			{
 
 				RangePartitionDefState *p = makeNode(RangePartitionDefState);
 				AlterTableCmd *n = makeNode(AlterTableCmd);
 
-				p->boundary = $4;
+				p->boundary = $3;
 				n->subtype = AT_TruncatePartition;
 				n->def = (Node*)p;
 				n->missing_ok = FALSE;
-				n->alterGPI = $6;
+				n->alterGPI = $4;
 				$$ = (Node *)n;
 
 			}
@@ -4515,16 +4701,16 @@ move_partition_cmd:
 				$$ = (Node *)n;
 			}
 		/* ALTER TABLE <name> MOVE PARTITION FOR (...) TABLESPACE <tablespacename> */
-		| MOVE PARTITION_FOR '(' maxValueList ')' TABLESPACE name
+		| MOVE PARTITION_FOR maxValueList_with_opt_parens TABLESPACE name
 			{
 				RangePartitionDefState *p = makeNode(RangePartitionDefState);
 				AlterTableCmd *n = makeNode(AlterTableCmd);
 
-				p->boundary = $4;
+				p->boundary = $3;
 
 				n->subtype = AT_SetPartitionTableSpace;
 				n->def = (Node*)p;
-				n->name = $7;
+				n->name = $5;
 				$$ = (Node *)n;
 			}
 		;
@@ -4576,16 +4762,34 @@ exchange_partition_cmd:
 			}
 
 		/* exchange partition */
-		| EXCHANGE PARTITION_FOR '(' maxValueList ')'
+		| EXCHANGE PARTITION_FOR maxValueList_with_opt_parens
 		  WITH TABLE relation_expr opt_verbose OptGPI
 			{
 				AlterTableCmd *n = makeNode(AlterTableCmd);
 				RangePartitionDefState *p = makeNode(RangePartitionDefState);
 
-				p->boundary = $4;
+				p->boundary = $3;
 
 				n->subtype = AT_ExchangePartition;
-				n->exchange_with_rel = $8;
+				n->exchange_with_rel = $6;
+				n->check_validation = TRUE;
+				n->exchange_verbose = $7;
+				n->def = (Node*)p;
+				n->missing_ok = FALSE;
+				n->alterGPI = $8;
+				$$ = (Node *)n;
+			}
+
+		| EXCHANGE PARTITION_FOR maxValueList_with_opt_parens
+		  WITH TABLE relation_expr WITH VALIDATION opt_verbose OptGPI
+			{
+				AlterTableCmd *n = makeNode(AlterTableCmd);
+				RangePartitionDefState *p = makeNode(RangePartitionDefState);
+
+				p->boundary = $3;
+
+				n->subtype = AT_ExchangePartition;
+				n->exchange_with_rel = $6;
 				n->check_validation = TRUE;
 				n->exchange_verbose = $9;
 				n->def = (Node*)p;
@@ -4594,38 +4798,20 @@ exchange_partition_cmd:
 				$$ = (Node *)n;
 			}
 
-		| EXCHANGE PARTITION_FOR '(' maxValueList ')'
-		  WITH TABLE relation_expr WITH VALIDATION opt_verbose OptGPI
-			{
-				AlterTableCmd *n = makeNode(AlterTableCmd);
-				RangePartitionDefState *p = makeNode(RangePartitionDefState);
-
-				p->boundary = $4;
-
-				n->subtype = AT_ExchangePartition;
-				n->exchange_with_rel = $8;
-				n->check_validation = TRUE;
-				n->exchange_verbose = $11;
-				n->def = (Node*)p;
-				n->missing_ok = FALSE;
-				n->alterGPI = $12;
-				$$ = (Node *)n;
-			}
-
-		| EXCHANGE PARTITION_FOR '(' maxValueList ')'
+		| EXCHANGE PARTITION_FOR maxValueList_with_opt_parens
 		  WITH TABLE relation_expr WITHOUT VALIDATION OptGPI
 			{
 				AlterTableCmd *n = makeNode(AlterTableCmd);
 				RangePartitionDefState *p = makeNode(RangePartitionDefState);
 
-				p->boundary = $4;
+				p->boundary = $3;
 
 				n->subtype = AT_ExchangePartition;
-				n->exchange_with_rel = $8;
+				n->exchange_with_rel = $6;
 				n->check_validation = FALSE;
 				n->def = (Node*)p;
 				n->missing_ok = FALSE;
-				n->alterGPI = $11;
+				n->alterGPI = $9;
 				$$ = (Node *)n;
 			}
 		;
@@ -6007,14 +6193,14 @@ add_partition_cmds_for_bdatabase:
  			;
 
 add_partition_cmd:
-		name VALUES LESS THAN '(' maxValueList ')' opt_part_options
+		name VALUES LESS THAN maxValueList_with_opt_parens opt_part_options
 			{
 				RangePartitionDefState *p = makeNode(RangePartitionDefState);
 				AlterTableCmd *n = makeNode(AlterTableCmd);
 				AddPartitionState *s = makeNode(AddPartitionState);
 				p->partitionName = $1;
-				p->boundary = $6;
-				p->tablespacename = $8;
+				p->boundary = $5;
+				p->tablespacename = $6;
 				s->partitionList = list_make1(p);
 				s->isStartEnd = false;
 				n->subtype = AT_AddPartition;
@@ -6022,48 +6208,48 @@ add_partition_cmd:
 				$$ = (Node *)n;
 			}
 		/* ALTER TABLE ADD PARTITION: use START/END */
-		| name START '(' maxValueList ')'  END_P '(' maxValueList ')' opt_range_every_list opt_part_options
+		| name START maxValueList_with_opt_parens  END_P maxValueList_with_opt_parens opt_range_every_list opt_part_options
 			{
 				RangePartitionStartEndDefState *p = makeNode(RangePartitionStartEndDefState);
 				AlterTableCmd *n = makeNode(AlterTableCmd);
 				AddPartitionState *s = makeNode(AddPartitionState);
 				p->partitionName = $1;
-				p->startValue = $4;
-				p->endValue = $8;
-				p->everyValue = $10;
-				p->tableSpaceName = $11;
+				p->startValue = $3;
+				p->endValue = $5;
+				p->everyValue = $6;
+				p->tableSpaceName = $7;
 				s->partitionList = list_make1(p);
 				s->isStartEnd = true;
 				n->subtype = AT_AddPartition;
 				n->def = (Node*)s;
 				$$ = (Node *)n;
 			}
-		| name END_P '(' maxValueList ')' opt_part_options
+		| name END_P maxValueList_with_opt_parens opt_part_options
 			{
 				RangePartitionStartEndDefState *p = makeNode(RangePartitionStartEndDefState);
 				AlterTableCmd *n = makeNode(AlterTableCmd);
 				AddPartitionState *s = makeNode(AddPartitionState);
 				p->partitionName = $1;
 				p->startValue = NIL;
-				p->endValue = $4;
+				p->endValue = $3;
 				p->everyValue = NIL;
-				p->tableSpaceName = $6;
+				p->tableSpaceName = $4;
 				s->partitionList = list_make1(p);
 				s->isStartEnd = true;
 				n->subtype = AT_AddPartition;
 				n->def = (Node*)s;
 				$$ = (Node *)n;
 			}
-		| name START '(' maxValueList ')' opt_part_options
+		| name START maxValueList_with_opt_parens opt_part_options
 			{
 				RangePartitionStartEndDefState *p = makeNode(RangePartitionStartEndDefState);
 				AlterTableCmd *n = makeNode(AlterTableCmd);
 				AddPartitionState *s = makeNode(AddPartitionState);
 				p->partitionName = $1;
-				p->startValue = $4;
+				p->startValue = $3;
 				p->endValue = NIL;
 				p->everyValue = NIL;
-				p->tableSpaceName = $6;
+				p->tableSpaceName = $4;
 				s->partitionList = list_make1(p);
 				s->isStartEnd = true;
 				n->subtype = AT_AddPartition;
@@ -6102,15 +6288,15 @@ add_partition_cmd:
 				$$ = (Node *)n;
 			}
 		| name VALUES LESS THAN
-		'(' maxValueList ')' opt_part_options '(' subpartition_definition_list ')'
+		maxValueList_with_opt_parens opt_part_options '(' subpartition_definition_list ')'
 			{
 				RangePartitionDefState *p = makeNode(RangePartitionDefState);
 				AlterTableCmd *n = makeNode(AlterTableCmd);
 				AddPartitionState *s = makeNode(AddPartitionState);
 				p->partitionName = $1;
-				p->boundary = $6;
-				p->tablespacename = $8;
-				p->subPartitionDefState = $10;
+				p->boundary = $5;
+				p->tablespacename = $6;
+				p->subPartitionDefState = $8;
 				int i = 0;
 				ListCell *elem = NULL;
 				List *parts = p->subPartitionDefState;
@@ -7811,12 +7997,12 @@ subpartition_item:
 				$$ = (Node*)n;
 			}
 		| SUBPARTITION name VALUES LESS THAN
-		'(' maxValueList ')' opt_part_options
+		maxValueList_with_opt_parens opt_part_options
 			{
 				RangePartitionDefState *n = makeNode(RangePartitionDefState);
 				n->partitionName = $2;
-				n->boundary = $7;
-				n->tablespacename = $9;
+				n->boundary = $6;
+				n->tablespacename = $7;
 
 				$$ = (Node *)n;
 			}
@@ -7834,9 +8020,14 @@ column_item_list:
 		;
 
 column_item:
-		ColId
+		a_expr
 			{
-				$$ = makeColumnRef($1, NIL, @1, yyscanner);
+				//$$ = makeColumnRef($1, NIL, @1, yyscanner);
+				$$ = $1;
+				int colCount = 0;
+				CheckPartitionExpr($$, &colCount);
+				if (colCount == 0)
+					ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("No Column in the part expr")));
 			}
 		;
 
@@ -8027,23 +8218,23 @@ hash_partition_item:
 
 range_less_than_item:
 		PARTITION name VALUES LESS THAN
-		'(' maxValueList ')' opt_part_options
+		maxValueList_with_opt_parens opt_part_options
 			{
 				RangePartitionDefState *n = makeNode(RangePartitionDefState);
 				n->partitionName = $2;
-				n->boundary = $7;
-				n->tablespacename = $9;
+				n->boundary = $6;
+				n->tablespacename = $7;
 
 				$$ = (Node *)n;
 			}
 		| PARTITION name VALUES LESS THAN
-		'(' maxValueList ')' opt_part_options '(' subpartition_definition_list ')'
+		maxValueList_with_opt_parens opt_part_options '(' subpartition_definition_list ')'
 			{
 				RangePartitionDefState *n = makeNode(RangePartitionDefState);
 				n->partitionName = $2;
-				n->boundary = $7;
-				n->tablespacename = $9;
-				n->subPartitionDefState = $11;
+				n->boundary = $6;
+				n->tablespacename = $7;
+				n->subPartitionDefState = $9;
 				int i = 0;
 				ListCell *elem = NULL;
 				List *parts = n->subPartitionDefState;
@@ -8072,45 +8263,45 @@ range_start_end_list:
 		;
 	
 range_start_end_item:
-		PARTITION name START '(' maxValueList ')'  END_P '(' maxValueList ')' opt_range_every_list opt_part_options
+		PARTITION name START maxValueList_with_opt_parens  END_P maxValueList_with_opt_parens opt_range_every_list opt_part_options
 			{
 				RangePartitionStartEndDefState *n = makeNode(RangePartitionStartEndDefState);
 				n->partitionName = $2;
-				n->startValue = $5;
-				n->endValue = $9;
-				n->everyValue = $11;
-				n->tableSpaceName = $12;
+				n->startValue = $4;
+				n->endValue = $6;
+				n->everyValue = $7;
+				n->tableSpaceName = $8;
 
 				$$ = (Node *)n;
 			}
-		| PARTITION name END_P '(' maxValueList ')' opt_part_options
+		| PARTITION name END_P maxValueList_with_opt_parens opt_part_options
 			{
 				RangePartitionStartEndDefState *n = makeNode(RangePartitionStartEndDefState);
 				n->partitionName = $2;
 				n->startValue = NIL;
-				n->endValue = $5;
+				n->endValue = $4;
 				n->everyValue = NIL;
-				n->tableSpaceName = $7;
+				n->tableSpaceName = $5;
 
 				$$ = (Node *)n;
 			}
-		| PARTITION name START '(' maxValueList ')' opt_part_options
+		| PARTITION name START maxValueList_with_opt_parens opt_part_options
 			{
 				RangePartitionStartEndDefState *n = makeNode(RangePartitionStartEndDefState);
 				n->partitionName = $2;
-				n->startValue = $5;
+				n->startValue = $4;
 				n->endValue = NIL;
 				n->everyValue = NIL;
-				n->tableSpaceName = $7;
+				n->tableSpaceName = $5;
 
 				$$ = (Node *)n;
 			}
 		;
 
 opt_range_every_list:
-		EVERY '(' maxValueList ')' 
+		EVERY maxValueList_with_opt_parens 
 			{
-				$$ = $3;
+				$$ = $2;
 			}
 		| /* empty */ { $$ = NIL; }
 		;
@@ -8119,6 +8310,22 @@ partition_name:
 		ColId
 			{
 				$$ = makeRangeVar(NULL, $1, @1);
+			}
+		;
+
+maxValueList_with_opt_parens:
+		'(' maxValueList ')'
+			{
+				$$ = $2;
+			}
+		| MAXVALUE
+			{
+				Const *n = makeNode(Const);
+
+				n->ismaxvalue = true;
+				n->location = @1;
+
+				$$ = list_make1((Node *)n);
 			}
 		;
 
@@ -9973,12 +10180,12 @@ range_slice_less_than_list:
 		;
 
 range_slice_less_than_item:
-		SLICE name VALUES LESS THAN '(' maxValueList ')' OptDatanodeName
+		SLICE name VALUES LESS THAN maxValueList_with_opt_parens OptDatanodeName
 			{
 				RangePartitionDefState *n = makeNode(RangePartitionDefState);
 				n->partitionName = $2;
-				n->boundary = $7;
-				n->tablespacename = $9;
+				n->boundary = $6;
+				n->tablespacename = $7;
 
 				$$ = (Node *)n;
 			}
@@ -9996,31 +10203,31 @@ range_slice_start_end_list:
 		;
 
 range_slice_start_end_item:
-		SLICE name START '(' maxValueList ')' END_P '(' maxValueList ')' opt_range_every_list
+		SLICE name START maxValueList_with_opt_parens END_P maxValueList_with_opt_parens opt_range_every_list
 			{
 				RangePartitionStartEndDefState *n = makeNode(RangePartitionStartEndDefState);
 				n->partitionName = $2;
-				n->startValue = $5;
-				n->endValue = $9;
-				n->everyValue = $11;
+				n->startValue = $4;
+				n->endValue = $6;
+				n->everyValue = $7;
 
 				$$ = (Node *)n;
 			}
-		| SLICE name END_P '(' maxValueList ')'
+		| SLICE name END_P maxValueList_with_opt_parens
 			{
 				RangePartitionStartEndDefState *n = makeNode(RangePartitionStartEndDefState);
 				n->partitionName = $2;
 				n->startValue = NIL;
-				n->endValue = $5;
+				n->endValue = $4;
 				n->everyValue = NIL;
 
 				$$ = (Node *)n;
 			}
-		| SLICE name START '(' maxValueList ')'
+		| SLICE name START maxValueList_with_opt_parens
 			{
 				RangePartitionStartEndDefState *n = makeNode(RangePartitionStartEndDefState);
 				n->partitionName = $2;
-				n->startValue = $5;
+				n->startValue = $4;
 				n->endValue = NIL;
 				n->everyValue = NIL;
 
@@ -10663,6 +10870,11 @@ CreateMatViewStmt:
                                 errmsg("It's not supported to specify distribute key on incremental materialized views")));
                    }
 #endif
+                   if (ENABLE_DMS) {
+                        ereport(errstate, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+                            errmsg("matview is not supported while DMS and DSS enabled.")));
+                   }
+                    
 				   $6->ivm = $3;
 				   $$ = (Node *) ctas;
 			   }
@@ -12713,9 +12925,9 @@ CreateTrigStmt:
 					{
 						parser_yyerror("syntax error found");
 					}
-					if (u_sess->attr.attr_sql.sql_compatibility != B_FORMAT && $3 != NULL)
+					if ($3 != NULL)
 					{
-						parser_yyerror("only support definer in mysql compatibility database");
+						parser_yyerror("only support definer in B compatibility database and B syntax");
 					}
 					CreateTrigStmt *n = makeNode(CreateTrigStmt);
 					n->definer = $3;
@@ -12773,11 +12985,11 @@ CreateTrigStmt:
 				u_sess->parser_cxt.eaten_begin = false;
 				pg_yyget_extra(yyscanner)->core_yy_extra.include_ora_comment = true;
 				u_sess->parser_cxt.isCreateFuncOrProc = true;
-			} subprogram_body
+			} triggerbody_subprogram_or_single
 				{
 					if (u_sess->attr.attr_sql.sql_compatibility != B_FORMAT || $2 != false)
 					{
-						parser_yyerror("only support definer, trigger_order, subprogram_body in mysql compatibility database");
+						parser_yyerror("only support definer, trigger_order, subprogram_body in B compatibility database");
 					}
 					CreateTrigStmt *n = makeNode(CreateTrigStmt);
 					if ($2 != false)
@@ -12811,11 +13023,11 @@ CreateTrigStmt:
 				u_sess->parser_cxt.eaten_begin = false;
 				pg_yyget_extra(yyscanner)->core_yy_extra.include_ora_comment = true;
 				u_sess->parser_cxt.isCreateFuncOrProc = true;
-			} subprogram_body
+			} triggerbody_subprogram_or_single
 				{
 					if (u_sess->attr.attr_sql.sql_compatibility != B_FORMAT)
 					{
-						parser_yyerror("only support definer, if not exists, trigger_order, subprogram_body in mysql compatibility database");
+						parser_yyerror("only support definer, if not exists, trigger_order, subprogram_body in B compatibility database");
 					}
 					CreateTrigStmt *n = makeNode(CreateTrigStmt);
 					if ($2 != false)
@@ -12841,6 +13053,52 @@ CreateTrigStmt:
 					n->constrrel = NULL;
 					$$ = (Node *)n;
 				}
+                       ;
+
+triggerbody_subprogram_or_single:
+			{
+				if (yychar == YYEOF || yychar == YYEMPTY)
+				{
+					base_yy_extra_type *yyextra = pg_yyget_extra(yyscanner);
+					int count = strlen(yyextra->core_yy_extra.scanbuf);
+					GetSessionContext()->single_line_trigger_begin = count;
+				}
+				else
+					GetSessionContext()->single_line_trigger_begin = yylloc;
+				
+			} trigger_body_stmt
+				{
+					Node* node = (Node*)$2;
+					if(node->type == T_Invalid)
+					{
+						GetSessionContext()->single_line_trigger_begin = 0;
+						$$ = (FunctionSources*)$2;
+					}
+					else
+					{
+						FunctionSources *funSrc = NULL;
+						char* strbody = NULL;
+						base_yy_extra_type *yyextra = pg_yyget_extra(yyscanner);
+						int start_pos = GetSessionContext()->single_line_trigger_begin;
+						int end_pos = yylloc;
+						strbody = TriggerBodyGet(start_pos, end_pos, yyextra);
+						GetSessionContext()->single_line_trigger_begin = 0;
+						funSrc = (FunctionSources*)palloc0(sizeof(FunctionSources));
+						funSrc->bodySrc   = strbody;
+
+						$$ = funSrc;
+					}
+				}
+			;
+
+trigger_body_stmt:
+			DeleteStmt { $$ = (Node*)$1; }
+			| InsertStmt { $$ = (Node*)$1; }
+			| UpdateStmt { $$ = (Node*)$1; }
+			| VariableMultiSetStmt { $$ = (Node*)$1; }
+			| VariableSetStmt { $$ = (Node*)$1; }
+			| CallFuncStmt { $$ = (Node*)$1; }
+			| subprogram_body { $$ = (Node*)$1; }
 			;
 
 TriggerActionTime:
@@ -13027,6 +13285,52 @@ DropTrigStmt:
 					n->objects = list_make1(lappend($7, makeString($5)));
 					n->arguments = NIL;
 					n->behavior = $8;
+					n->missing_ok = true;
+					n->concurrent = false;
+					$$ = (Node *) n;
+				}
+			| DROP TRIGGER name opt_drop_behavior
+				{
+#ifdef	ENABLE_MULTIPLE_NODES
+					const char* message = "drop trigger name is not yet supported in distributed database.";
+					InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);			
+					ereport(errstate,
+						(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+							errmsg("drop trigger name is not yet supported in distributed database.")));
+#endif
+					if (u_sess->attr.attr_sql.sql_compatibility != B_FORMAT) {
+						ereport(errstate, 
+								(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+								errmsg("drop trigger without table name only support in B-format database")));
+					}
+					DropStmt *n = makeNode(DropStmt);
+					n->removeType = OBJECT_TRIGGER;
+					n->objects = list_make1(list_make1(makeString($3)));
+					n->arguments = NIL;
+					n->behavior = $4;
+					n->missing_ok = false;
+					n->concurrent = false;
+					$$ = (Node *) n;
+				}
+			| DROP TRIGGER IF_P EXISTS name opt_drop_behavior
+				{
+#ifdef	ENABLE_MULTIPLE_NODES
+					const char* message = "drop trigger if exists name is not yet supported in distributed database.";
+					InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);			
+					ereport(errstate,
+						(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+							errmsg("drop trigger if exists name is not yet supported in distributed database.")));
+#endif
+					if (u_sess->attr.attr_sql.sql_compatibility != B_FORMAT) {
+						ereport(errstate, 
+								(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+								errmsg("drop trigger without table name only support in B-format database")));
+					}
+					DropStmt *n = makeNode(DropStmt);
+					n->removeType = OBJECT_TRIGGER;
+					n->objects = list_make1(list_make1(makeString($5)));
+					n->arguments = NIL;
+					n->behavior = $6;
 					n->missing_ok = true;
 					n->concurrent = false;
 					$$ = (Node *) n;
@@ -16227,8 +16531,279 @@ callfunc_args:   func_arg_expr
 					$$ = NULL;
 				}
 			;
+b_proc_body:
+			{
+				int     proc_b  = 0;
+				int     proc_e  = 0;
+				char    *proc_body_str  = NULL;
+				int     proc_body_len   = 0;
+				int     blocklevel              = 0;
+				bool    add_declare     = true;  /* Mark if need to add a DECLARE */
+				FunctionSources *funSrc = NULL;
+				char *proc_header_str = NULL;
+				int rc = 0;
+				rc = CompileWhich();
+				int tok = YYEMPTY;
+				int pre_tok = 0;
+				bool end_parsed = false;
+				int max_block_level = 1;
+				List* infolist = NIL;
+				DolphinProcBodyInfo* bdinfo = InitDolphinProcBodyInfo();
+				base_yy_extra_type *yyextra = pg_yyget_extra(yyscanner);
+
+				yyextra->core_yy_extra.in_slash_proc_body = true;
+				u_sess->parser_cxt.eaten_begin = true;
+				/* the token BEGIN_P have been parsed */
+				if (u_sess->parser_cxt.eaten_begin)
+						blocklevel = 1;
+				
+				bdinfo->m_block_level = blocklevel;
+				if (yychar == YYEOF || yychar == YYEMPTY)
+						tok = YYLEX;
+				else
+				{
+						tok = yychar;
+						yychar = YYEMPTY;
+				}
+
+				if (u_sess->parser_cxt.eaten_declare || DECLARE == tok)
+						add_declare = false;
+
+				/* Save procedure header str,start with param exclude brackets */
+				proc_header_str = ParseFunctionArgSrc(yyscanner);
+
+				/* Save the beginning of procedure body. */
+				proc_b = yylloc;
+				if (rc != PLPGSQL_COMPILE_NULL && rc != PLPGSQL_COMPILE_PROC) {
+						u_sess->plsql_cxt.procedure_first_line = GetLineNumber(yyextra->core_yy_extra.scanbuf, yylloc);
+				}
+				/* start procedure body scan */
+				while(true)
+				{
+						if (tok == YYEOF) {
+								proc_e = yylloc;
+								if (!end_parsed)
+										parser_yyerror("subprogram body is not ended correctly");
+								break;
+						}
+
+						if (tok == BEGIN_P) {
+							if (infolist == NIL)
+								infolist = list_make1(bdinfo);
+							else
+								lappend (infolist,bdinfo);
+							blocklevel++;
+							bdinfo = InitDolphinProcBodyInfo();
+							bdinfo->m_begin_b = yylloc;	
+							bdinfo->m_block_level = blocklevel;
+						}
+						
+						/*
+						 * End of procedure rules:
+						 *      ;END [;]
+						 *      | BEGIN END[;]
+						 */
+
+						if (tok == DECLARE)
+						{	
+							if (bdinfo == NULL) {
+								parser_yyerror("subprogram body is not ended correctly");
+							}
+							if (blocklevel > max_block_level) {
+								max_block_level = blocklevel;
+								bdinfo->m_begin_e = yylloc;
+								bdinfo->m_begin_len = bdinfo->m_begin_e - bdinfo->m_begin_b +1;
+							}
+							if (!bdinfo->m_declare_b)
+								bdinfo->m_declare_b = yylloc;
+							add_declare = false;
+							while (true)
+							{
+								tok = YYLEX;
+								if (tok == ';')
+								{
+									bdinfo->m_declare_e = yylloc;
+									bdinfo->m_declare_len =  bdinfo->m_declare_e - bdinfo->m_declare_b + 1;
+									break;
+								}
+								else if (tok == YYEOF) {
+                                	                                proc_e = yylloc;
+                        	                                        if (!end_parsed)
+                                                                                parser_yyerror("subprogram body is not ended correctly");
+                	                                                break;
+		                                                }
+							
+							}			
+						}
+						if (tok == END_P)
+						{
+								tok = YYLEX;
+								end_parsed = true;
+								/* adapt A db's label */
+								if (!(tok == ';' || tok == 0)
+										&& tok != IF_P
+										&& tok != CASE
+										&& tok != LOOP
+										&& tok != WHILE_P
+										&& tok != REPEAT)
+								{
+										tok = END_P;
+										continue;
+								}
+								/*pre_tok = 0 for begin (nothing) end;*/
+								if (blocklevel == 1
+										&& (pre_tok == ';' || pre_tok == BEGIN_P || pre_tok == 0)
+										&& (tok == ';' || tok == 0))
+								{
+										/* Save the end of procedure body. */
+										proc_e = yylloc;
+
+										if (tok == ';' )
+										{
+												if (yyextra->lookahead_num != 0) {
+														parser_yyerror("subprogram body is not ended correctly");
+														break;
+												}
+												else
+												{
+														yyextra->lookahead_token[0] = tok;
+														yyextra->lookahead_num = 1;
+												}
+										}
+										break;
+								}
+
+								/* Cope with nested BEGIN/END pairs.
+								 * In fact the tok can not be 0
+								 */
+								if (blocklevel > 1
+									&& (pre_tok == ';' || pre_tok == BEGIN_P)
+									&& (tok == ';' || tok == 0))
+								{
+										blocklevel--;
+								}
+						}
+
+						pre_tok = tok;
+						tok = YYLEX;
+				}
+				
+				if (infolist == NIL)
+					infolist = list_make1(bdinfo);
+				else
+					lappend (infolist,bdinfo);
+
+				if (proc_e == 0) {
+						ereport(errstate, (errcode(ERRCODE_SYNTAX_ERROR), errmsg("subprogram body is not ended correctly")));
+				}
+				proc_body_len = proc_e - proc_b  + 1  + 7;//- strlen(u_sess->attr.attr_common.delimiter_name);
+
+				/* Add a DECLARE in the start of the subprogram body
+				 *      to compatiable with the A db.
+				 *      XXX : It is best to change the gram.y in plpgsql.
+				 */
+				if (add_declare)
+				{
+						proc_body_str = (char *)palloc0(proc_body_len + DECLARE_LEN + 1);
+						strncpy(proc_body_str, DECLARE_STR, DECLARE_LEN + 1);
+						strncpy(proc_body_str + DECLARE_LEN, " begin " , 7);
+						strncpy(proc_body_str + 7 + DECLARE_LEN,
+										yyextra->core_yy_extra.scanbuf + proc_b - 1, proc_body_len - 7);
+						proc_body_len = DECLARE_LEN + proc_body_len;
+				}
+				else
+				{
+						proc_body_str = (char *)palloc0(proc_body_len + 1);
+						DolphinDealProcBodyStr(proc_body_str, yyextra->core_yy_extra.scanbuf, infolist, proc_b, proc_body_len + 1);
+				}
+
+				proc_body_str[proc_body_len] = '\0';
+
+				/* Reset the flag which mark whether we are in slash proc. */
+				yyextra->core_yy_extra.in_slash_proc_body = false;
+				yyextra->core_yy_extra.dolqstart = NULL;
+
+				/*
+				 * Add the end location of slash proc to the locationlist for the multi-query
+				 * processed.
+				 */
+				yyextra->core_yy_extra.query_string_locationlist =
+						lappend_int(yyextra->core_yy_extra.query_string_locationlist, yylloc);
+
+				funSrc = (FunctionSources*)palloc0(sizeof(FunctionSources));
+				funSrc->bodySrc   = proc_body_str;
+				funSrc->headerSrc = proc_header_str;
+
+				$$ = funSrc;
+			}
+		;
+SingleLineProcPart:
+			{GetSessionContext()->single_line_proc_begin = yylloc;}
+				SelectStmt
+                        {
+                                char* strbody = NULL;
+                                base_yy_extra_type *yyextra = pg_yyget_extra(yyscanner);
+                                int start_pos = GetSessionContext()->single_line_proc_begin;
+                                int end_pos = yylloc;
+                                strbody = SingleLineProcedureQueryGet(start_pos, end_pos, yyextra);
+                                GetSessionContext()->single_line_proc_begin = -1;
+                                $$ = strbody;
+                        }
+		;
+proc_arg_no_empty:
+                        {pg_yyget_extra(yyscanner)->core_yy_extra.func_param_begin = yylloc;}
+                        func_args_with_defaults {
+                                        pg_yyget_extra(yyscanner)->core_yy_extra.func_param_end = yylloc;
+                                        $$= $2;
+                                }
+		;
+
 CreateProcedureStmt:
-			CREATE opt_or_replace definer_user PROCEDURE func_name_opt_arg proc_args
+			CREATE opt_or_replace definer_user PROCEDURE func_name_opt_arg proc_arg_no_empty
+			opt_createproc_opt_list{
+                                u_sess->parser_cxt.eaten_declare = false;
+                                u_sess->parser_cxt.eaten_begin = false;
+                                pg_yyget_extra(yyscanner)->core_yy_extra.include_ora_comment = true;
+                                u_sess->parser_cxt.isCreateFuncOrProc = true;
+                        }
+			BEGIN_P b_proc_body
+				{
+					int rc = 0;
+                                        rc = CompileWhich();
+                                        if ((rc == PLPGSQL_COMPILE_PROC || rc == PLPGSQL_COMPILE_NULL) && u_sess->cmd_cxt.CurrentExtensionObject == InvalidOid) {
+                                                u_sess->plsql_cxt.procedure_first_line = GetLineNumber(t_thrd.postgres_cxt.debug_query_string, @6);
+                                        }
+                                        rc = CompileWhich();
+                                        CreateFunctionStmt *n = makeNode(CreateFunctionStmt);
+                                        FunctionSources *funSource = (FunctionSources *)$10;
+                                        int count = get_outarg_num($6);
+					n->isOraStyle = true;
+                                        n->isPrivate = false;
+                                        n->replace = $2;
+                                        n->definer = $3;
+                                        if (n->replace && NULL != n->definer) {
+                                                parser_yyerror("not support DEFINER function");
+                                        }
+                                        n->funcname = $5;
+                                        n->parameters = $6;
+                                        n->inputHeaderSrc = FormatFuncArgType(yyscanner, funSource->headerSrc, n->parameters);
+                                        n->returnType = NULL;
+                                        n->isProcedure = true;
+                                        if (0 == count)
+                                        {
+                                                n->returnType = makeTypeName("void");
+                                                n->returnType->typmods = NULL;
+                                                n->returnType->arrayBounds = NULL;
+                                        }
+                                        n->options = $7;
+                                        n->options = lappend(n->options, makeDefElem("as",
+                                                                                (Node *)list_make1(makeString(funSource->bodySrc))));
+                                        n->withClause = NIL;
+					u_sess->parser_cxt.isCreateFuncOrProc = false;
+                                        $$ = (Node *)n;
+				}
+
+			| CREATE opt_or_replace definer_user PROCEDURE func_name_opt_arg proc_arg_no_empty
 			opt_createproc_opt_list as_is {
 				u_sess->parser_cxt.eaten_declare = false;
 				u_sess->parser_cxt.eaten_begin = false;
@@ -16268,10 +16843,102 @@ CreateProcedureStmt:
 					n->options = lappend(n->options, makeDefElem("as",
 										(Node *)list_make1(makeString(funSource->bodySrc))));
 					n->withClause = NIL;
-                    u_sess->parser_cxt.isCreateFuncOrProc = false;
+					u_sess->parser_cxt.isCreateFuncOrProc = false;
 					$$ = (Node *)n;
 				}
+			| CREATE opt_or_replace definer_user PROCEDURE func_name_opt_arg opt_createproc_opt_list as_is {
+						u_sess->parser_cxt.eaten_declare = false;
+						u_sess->parser_cxt.eaten_begin = false;
+						pg_yyget_extra(yyscanner)->core_yy_extra.include_ora_comment = true;
+						u_sess->parser_cxt.isCreateFuncOrProc = true;
+					}
+					subprogram_body
+					{
+							int rc = 0;
+							rc = CompileWhich();
+							if ((rc == PLPGSQL_COMPILE_PROC || rc == PLPGSQL_COMPILE_NULL) && u_sess->cmd_cxt.CurrentExtensionObject == InvalidOid) {
+									u_sess->plsql_cxt.procedure_first_line = GetLineNumber(t_thrd.postgres_cxt.debug_query_string, @7);
+							}
+							rc = CompileWhich();
+							CreateFunctionStmt *n = makeNode(CreateFunctionStmt);
+							FunctionSources *funSource = (FunctionSources *)$9;
+							int count = get_outarg_num(NIL);
+		
+							n->isOraStyle = true;
+							n->isPrivate = false;
+							n->replace = $2;
+							n->definer = $3;
+							if (n->replace && NULL != n->definer) {
+									parser_yyerror("not support DEFINER function");
+							}
+							n->funcname = $5;
+							n->parameters = NIL;
+							n->inputHeaderSrc = FormatFuncArgType(yyscanner, funSource->headerSrc, n->parameters);
+							n->returnType = NULL;
+							n->isProcedure = true;
+							if (0 == count)
+							{
+									n->returnType = makeTypeName("void");
+									n->returnType->typmods = NULL;
+									n->returnType->arrayBounds = NULL;
+							}
+							n->options = $6;
+							n->options = lappend(n->options, makeDefElem("as",
+									(Node *)list_make1(makeString(funSource->bodySrc))));
+							n->withClause = NIL;
+							u_sess->parser_cxt.isCreateFuncOrProc = false;
+							$$ = (Node *)n;
+		
+					}
 
+			| CREATE opt_or_replace definer_user PROCEDURE func_name_opt_arg 
+				proc_arg_no_empty
+				opt_createproc_opt_list{
+						u_sess->parser_cxt.eaten_declare = false;
+						u_sess->parser_cxt.eaten_begin = false;
+						pg_yyget_extra(yyscanner)->core_yy_extra.include_ora_comment = true;
+						u_sess->parser_cxt.isCreateFuncOrProc = true;
+				} SingleLineProcPart
+					{
+						int rc = 0;
+						rc = CompileWhich();
+						if ((rc == PLPGSQL_COMPILE_PROC || rc == PLPGSQL_COMPILE_NULL) && u_sess->cmd_cxt.CurrentExtensionObject == InvalidOid) {
+								u_sess->plsql_cxt.procedure_first_line = GetLineNumber(t_thrd.postgres_cxt.debug_query_string, @8);
+						}
+						rc = CompileWhich();
+						CreateFunctionStmt *n = makeNode(CreateFunctionStmt);
+						int count = get_outarg_num($6);
+						n->isOraStyle = false;
+						n->isPrivate = false;
+						n->replace = $2;
+						n->definer = $3;
+						if (n->replace && NULL != n->definer) {
+								parser_yyerror("not support DEFINER function");
+						}
+						n->funcname = $5;
+						n->parameters = $6;
+						n->inputHeaderSrc = FormatFuncArgType(yyscanner, NULL, n->parameters);
+						n->returnType = NULL;
+						n->isProcedure = false;
+						if (0 == count)
+						{
+							n->returnType = makeTypeName("void");
+							n->returnType->typmods = NULL;
+							n->returnType->arrayBounds = NULL;
+						}
+						n->options = $7;
+						n->options = lappend(n->options, makeDefElem("as",
+								(Node *)list_make1(makeString($9))));
+						n->withClause = NIL;
+						u_sess->parser_cxt.isCreateFuncOrProc = false;
+
+						TypeName* type =  makeTypeName("record");
+						type->setof = TRUE;
+						type->arrayBounds = NIL;
+						n->returnType = type;
+
+						$$ = (Node *)n;
+					}
 		;
 
 CreatePackageStmt:
@@ -16534,7 +17201,7 @@ pkg_body_subprogram: {
                             }
                             continue;
                         }
-						if (tok == LOOP || tok == IF_P || tok == CASE)
+						if (tok == LOOP || tok == IF_P || tok == CASE || tok == WHILE_P || tok == REPEAT)
 						{
 							continue;
 						}
@@ -17028,7 +17695,7 @@ common_func_opt_item:
 				{
 					$$ = makeDefElem("rows", (Node *)$2);
 				}
-			| FunctionSetResetClause
+			| FunctionSetResetClause %prec '(' ')'
 				{
 					/* we abuse the normal content of a DefElem here */
 					$$ = makeDefElem("set", (Node *)$1);
@@ -17173,7 +17840,9 @@ subprogram_body: 	{
 						if (!(tok == ';'  || (tok == 0 || tok == END_OF_PROC))
 							&& tok != IF_P
 							&& tok != CASE
-							&& tok != LOOP)
+							&& tok != LOOP
+							&& tok != WHILE_P
+							&& tok != REPEAT)
 						{
 							tok = END_P;
 							continue;
@@ -17599,13 +18268,50 @@ any_operator:
  *
  *****************************************************************************/
 
-DoStmt: DO dostmt_opt_list
-				{
-					DoStmt *n = makeNode(DoStmt);
-					n->args = $2;
-					$$ = (Node *)n;
-				}
+
+DoStmt:
+		DO_SCONST {GetSessionContext()->do_sconst = yylval.str; } opt_do_language
+                                {
+                                        char* sconst_str = GetSessionContext()->do_sconst;
+                                        DoStmt *n = makeNode(DoStmt);
+                                        n->args = list_make1(makeDefElem("as", (Node *)makeString(sconst_str)));
+                                        if ($3)
+                                                lappend(n->args, $3);
+                                        $$ = (Node *)n;
+                                }
+                	| DO_LANGUAGE ColId_or_Sconst Sconst
+                                {
+                                        DoStmt *n = makeNode(DoStmt);
+                                        n->args = list_make2(makeDefElem("as", (Node *)makeString($3)),
+                                                makeDefElem("language", (Node *)makeString($2)));
+                                        $$ = (Node *)n;
+                                }
+                	| DO {GetSessionContext()->single_line_proc_begin = yylloc;} expr_do_list
+                                {
+                                        char* strbody = NULL;
+                                        base_yy_extra_type *yyextra = pg_yyget_extra(yyscanner);
+                                        int start_pos = GetSessionContext()->single_line_proc_begin + 3;
+                                        int end_pos = yylloc;
+                                        strbody = DoStmtPreformGet(start_pos, end_pos, yyextra);
+                                        GetSessionContext()->single_line_proc_begin = 0;
+                                        DoStmt *n = makeNode(DoStmt);
+                                        DefElem* defel = makeDefElem("as", (Node *)makeString(strbody));
+                                        List* deflist =  list_make1(defel);
+                                        n->args = deflist;
+                                        $$ = (Node *)n;
+                                }
+                ;
+opt_do_language:
+        	LANGUAGE ColId_or_Sconst
+        			{
+                			$$ = makeDefElem("language", (Node *)makeString($2));
+        			}
+        		| {$$ = NULL;}
 		;
+expr_do_list:
+                	a_expr                       { $$ = NULL; }
+                	| expr_do_list ',' a_expr            { $$ = NULL; }
+                ;
 
 dostmt_opt_list:
 			dostmt_opt_item						{ $$ = list_make1($1); }
@@ -18106,6 +18812,7 @@ RenameStmt: ALTER AGGREGATE func_name aggr_args RENAME TO name
 					n->replace = true;
 					n->sql_statement = NULL;
 					n->is_alter = true;
+					n->withCheckOption = (ViewCheckOption)$7;
 					$$ = (Node *) n;
 				}
 			| ALTER definer_expression VIEW qualified_name opt_column_list AS SelectStmt opt_check_option
@@ -18126,6 +18833,7 @@ RenameStmt: ALTER AGGREGATE func_name aggr_args RENAME TO name
 					n->replace = true;
 					n->sql_statement = NULL;
 					n->is_alter = true;
+					n->withCheckOption = (ViewCheckOption)$8;
 					$$ = (Node *) n;
 				}
 			| ALTER MATERIALIZED VIEW qualified_name RENAME TO name
@@ -18280,28 +18988,28 @@ RenameStmt: ALTER AGGREGATE func_name aggr_args RENAME TO name
 					$$ = (Node *)n;
 				}
 
-			| ALTER TABLE relation_expr RENAME_PARTITION FOR '(' maxValueList ')' TO name
+			| ALTER TABLE relation_expr RENAME_PARTITION FOR maxValueList_with_opt_parens TO name
 			    {
 			        RenameStmt *n = makeNode(RenameStmt);
 			        n->renameType = OBJECT_PARTITION;
 					n->relationType = OBJECT_TABLE;
 			        n->relation = $3;
-			        n->object = $7;
+			        n->object = $6;
 			        n->subname = NULL;
-			        n->newname = $10;
+			        n->newname = $8;
 			        n->missing_ok = false;
 			        $$ = (Node *)n;
 			    }
 
-			| ALTER TABLE IF_P EXISTS relation_expr RENAME_PARTITION FOR '(' maxValueList ')' TO name
+			| ALTER TABLE IF_P EXISTS relation_expr RENAME_PARTITION FOR maxValueList_with_opt_parens TO name
 			    {
 			        RenameStmt *n = makeNode(RenameStmt);
 			        n->renameType = OBJECT_PARTITION;
 					n->relationType = OBJECT_TABLE;
 			        n->relation = $5;
-			        n->object = $9;
+			        n->object = $8;
 			        n->subname = NULL;
-			        n->newname = $12;
+			        n->newname = $10;
 			        n->missing_ok = true;
 			        $$ = (Node *)n;
 			    }
@@ -19471,14 +20179,28 @@ TransactionStmt:
 					$$ = (Node *)n;
 				}
 			| PREPARE TRANSACTION Sconst
-				{
+				{   
+					if (ENABLE_DMS) {
+			            const char* message = "PREPARE TRANSACTION is not supported while DMS and DSS enabled";
+			            InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);
+			            ereport(errstate, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), 
+				                errmsg("PREPARE TRANSACTION is not supported while DMS and DSS enabled")));
+					}
+
 					TransactionStmt *n = makeNode(TransactionStmt);
 					n->kind = TRANS_STMT_PREPARE;
 					n->gid = $3;
 					$$ = (Node *)n;
 				}
 			| COMMIT PREPARED Sconst
-				{
+				{   
+					if (ENABLE_DMS) {
+			            const char* message = "COMMIT TRANSACTION is not supported while DMS and DSS enabled";
+			            InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);
+			            ereport(errstate, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), 
+				                errmsg("COMMIT TRANSACTION is not supported while DMS and DSS enabled")));
+					}
+
 					TransactionStmt *n = makeNode(TransactionStmt);
 					n->kind = TRANS_STMT_COMMIT_PREPARED;
 					n->gid = $3;
@@ -19486,7 +20208,14 @@ TransactionStmt:
 					$$ = (Node *)n;
 				}
 			| COMMIT PREPARED Sconst WITH Sconst
-				{
+				{   
+					if (ENABLE_DMS) {
+			            const char* message = "COMMIT TRANSACTION is not supported while DMS and DSS enabled";
+			            InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);
+			            ereport(errstate, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), 
+				                errmsg("COMMIT TRANSACTION is not supported while DMS and DSS enabled")));
+					}
+
 					TransactionStmt *n = makeNode(TransactionStmt);
 					n->kind = TRANS_STMT_COMMIT_PREPARED;
 					n->gid = $3;
@@ -19494,7 +20223,14 @@ TransactionStmt:
 					$$ = (Node *)n;
 				}
 			| ROLLBACK PREPARED Sconst
-				{
+				{   
+					if (ENABLE_DMS) {
+			            const char* message = "ROLLBACK TRANSACTION is not supported while DMS and DSS enabled";
+			            InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);
+			            ereport(errstate, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), 
+				                errmsg("ROLLBACK TRANSACTION is not supported while DMS and DSS enabled")));
+					}
+
 					TransactionStmt *n = makeNode(TransactionStmt);
 					n->kind = TRANS_STMT_ROLLBACK_PREPARED;
 					n->gid = $3;
@@ -19596,7 +20332,8 @@ ViewStmt: CREATE OptTemp VIEW qualified_name opt_column_list opt_reloptions
 					n->query = $8;
 					n->replace = false;
 					n->options = $6;
-                                                                                n->sql_statement = NULL;
+					n->sql_statement = NULL;
+					n->withCheckOption = (ViewCheckOption)$9;
 					$$ = (Node *) n;
 				}
 		| CREATE OR REPLACE OptTemp VIEW qualified_name opt_column_list opt_reloptions
@@ -19609,7 +20346,8 @@ ViewStmt: CREATE OptTemp VIEW qualified_name opt_column_list opt_reloptions
 					n->query = $10;
 					n->replace = true;
 					n->options = $8;
-                                                                                n->sql_statement = NULL;
+					n->sql_statement = NULL;
+					n->withCheckOption = (ViewCheckOption)$11;
 					$$ = (Node *) n;
 				}
 		| CREATE opt_or_replace definer_expression OptTemp VIEW qualified_name opt_column_list opt_reloptions
@@ -19624,36 +20362,16 @@ ViewStmt: CREATE OptTemp VIEW qualified_name opt_column_list opt_reloptions
 					n->replace = $2;
 					n->options = $8;
 					n->sql_statement = NULL;
+					n->withCheckOption = (ViewCheckOption)$11;
 					$$ = (Node *) n;
 				}
 		;
 
 opt_check_option:
-		WITH CHECK OPTION
-				{
-					const char* message = "WITH CHECK OPTION is not implemented";
-    				InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);
-					ereport(errstate,
-							(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
-							 errmsg("WITH CHECK OPTION is not implemented")));
-				}
-		| WITH CASCADED CHECK OPTION
-				{
-					const char* message = "WITH CHECK OPTION is not implemented";
-    				InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);
-					ereport(errstate,
-							(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
-							 errmsg("WITH CHECK OPTION is not implemented")));
-				}
-		| WITH LOCAL CHECK OPTION
-				{
-					const char* message = "WITH CHECK OPTION is not implemented";
-    				InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);
-					ereport(errstate,
-							(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
-							 errmsg("WITH CHECK OPTION is not implemented")));
-				}
-		| /* EMPTY */							{ $$ = NIL; }
+		WITH CHECK OPTION				{ $$ = CASCADED_CHECK_OPTION; }
+		| WITH CASCADED CHECK OPTION	{ $$ = CASCADED_CHECK_OPTION; }
+		| WITH LOCAL CHECK OPTION		{ $$ = LOCAL_CHECK_OPTION; }
+		| /* EMPTY */					{ $$ = NO_CHECK_OPTION; }
 		;
 
 /*****************************************************************************
@@ -23469,17 +24187,25 @@ UpdateStmt: opt_with_clause UPDATE hint_string opt_ignore from_list
 				{
 					UpdateStmt *n = makeNode(UpdateStmt);
 					n->relation = NULL;
-					if (list_length($5) > 1) {
 #ifdef ENABLE_MULTIPLE_NODES
+					if (list_length($5) > 1) {
 						ereport(errstate, 
 							    (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
 								 errmsg("multi-relation update is not yet supported.")));
-#endif
-						if (u_sess->attr.attr_sql.sql_compatibility != B_FORMAT)
+					}
+					if (!IsA(linitial($5), RangeVar)) {
+							ereport(errstate,
+								    (errcode(ERRCODE_SYNTAX_ERROR),
+								     errmsg("invalid target relation name."),
+								     parser_errposition(@5)));
+					}
+#else
+					if (u_sess->attr.attr_sql.sql_compatibility != B_FORMAT) {
+						if (list_length($5) > 1) {
 							ereport(errstate, 
 									(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
 									 errmsg("multi-relation update only support in B-format database")));
-					} else {
+						}
 						if (!IsA(linitial($5), RangeVar)) {
 							ereport(errstate,
 								    (errcode(ERRCODE_SYNTAX_ERROR),
@@ -23487,6 +24213,7 @@ UpdateStmt: opt_with_clause UPDATE hint_string opt_ignore from_list
 								     parser_errposition(@5)));
 						}
 					}
+#endif
 					n->relationClause = $5;
 					n->targetList = $7;
 					n->fromClause = $8;
@@ -23868,14 +24595,29 @@ select_with_parens:
 										yyscanner);
 					$$ = $1;
 				}
-			| select_clause opt_sort_clause for_locking_clause opt_select_limit
+			| select_clause opt_sort_clause for_locking_clause opt_select_limit opt_into_clause
 				{
-                                        FilterStartWithUseCases((SelectStmt *) $1, $3, yyscanner, @3);
+					FilterStartWithUseCases((SelectStmt *) $1, $3, yyscanner, @3);
 					insertSelectOptions((SelectStmt *) $1, $2, $3,
 										(Node*)list_nth($4, 0), (Node*)list_nth($4, 1),
 										NULL,
 										yyscanner);
-					$$ = $1;
+					SelectStmt *stmt = (SelectStmt *) $1;
+					if ($5 != NULL) {
+						if (stmt->intoClause != NULL) {
+							ereport(errstate,
+									(errcode(ERRCODE_SYNTAX_ERROR),
+									errmsg("select statement can contain only one into_clause")));
+						}
+						IntoClause *itc = (IntoClause *) $5;
+						if (itc->rel != NULL && u_sess->attr.attr_sql.sql_compatibility != B_FORMAT) {
+							ereport(errstate, 
+								(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+								errmsg("into new table here only support in B-format database")));
+						}
+						stmt->intoClause = itc;
+					}
+					$$ = (Node *)stmt;
 				}
 			| select_clause opt_sort_clause select_limit opt_for_locking_clause
 				{
@@ -23885,6 +24627,50 @@ select_with_parens:
 										NULL,
 										yyscanner);
 					$$ = $1;
+				}
+			| select_clause opt_sort_clause select_limit for_locking_clause into_clause
+				{
+					FilterStartWithUseCases((SelectStmt *) $1, $4, yyscanner, @4);
+					insertSelectOptions((SelectStmt *) $1, $2, $4,
+										(Node*)list_nth($3, 0), (Node*)list_nth($3, 1),
+										NULL,
+										yyscanner);
+					SelectStmt *stmt = (SelectStmt *) $1;
+					if (stmt->intoClause != NULL) {
+						ereport(errstate,
+								(errcode(ERRCODE_SYNTAX_ERROR),
+								errmsg("select statement can contain only one into_clause")));
+					}
+					IntoClause *itc = (IntoClause *) $5;
+					if (itc->rel != NULL && u_sess->attr.attr_sql.sql_compatibility != B_FORMAT) {
+						ereport(errstate,
+							(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+							errmsg("into new table here only support in B-format database")));
+					}
+					stmt->intoClause = itc;
+					$$ = (Node *)stmt;
+				}
+			| select_clause opt_sort_clause opt_select_limit into_clause opt_for_locking_clause
+				{
+					FilterStartWithUseCases((SelectStmt *) $1, $5, yyscanner, @5);
+					insertSelectOptions((SelectStmt *) $1, $2, $5,
+										(Node*)list_nth($3, 0), (Node*)list_nth($3, 1),
+										NULL,
+										yyscanner);
+					SelectStmt *stmt = (SelectStmt *) $1;
+					if (stmt->intoClause != NULL) {
+						ereport(errstate,
+								(errcode(ERRCODE_SYNTAX_ERROR),
+								errmsg("select statement can contain only one into_clause")));
+					}
+					IntoClause *itc = (IntoClause *) $4;
+					if (itc->rel != NULL && u_sess->attr.attr_sql.sql_compatibility != B_FORMAT) {
+						ereport(errstate,
+							(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+							errmsg("into new table here only support in B-format database")));
+					}
+					stmt->intoClause = itc;
+					$$ = (Node *)stmt;
 				}
  		;
 
@@ -23906,14 +24692,73 @@ select_no_parens:
 										yyscanner);
 					$$ = $2;
 				}
-			| with_clause select_clause opt_sort_clause for_locking_clause opt_select_limit
+			| with_clause select_clause opt_sort_clause for_locking_clause opt_select_limit opt_into_clause
 				{
-                                        FilterStartWithUseCases((SelectStmt *) $2, $4, yyscanner, @4);
+					FilterStartWithUseCases((SelectStmt *) $2, $4, yyscanner, @4);
 					insertSelectOptions((SelectStmt *) $2, $3, $4,
 										(Node*)list_nth($5, 0), (Node*)list_nth($5, 1),
 										$1,
 										yyscanner);
-					$$ = $2;
+					SelectStmt *stmt = (SelectStmt *) $2;
+					if ($6 != NULL) {
+						if (stmt->intoClause != NULL) {
+							ereport(errstate,
+									(errcode(ERRCODE_SYNTAX_ERROR),
+									errmsg("select statement can contain only one into_clause")));
+						}
+						IntoClause *itc = (IntoClause *) $6;
+						if (itc->rel != NULL && u_sess->attr.attr_sql.sql_compatibility != B_FORMAT) {
+							ereport(errstate,
+								(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+								errmsg("into new table here only support in B-format database")));
+						}
+						stmt->intoClause = itc;
+					}
+					$$ = (Node *)stmt;
+				}
+			| with_clause select_clause opt_sort_clause select_limit for_locking_clause into_clause
+				{
+                                        FilterStartWithUseCases((SelectStmt *) $2, $5, yyscanner, @5);
+					insertSelectOptions((SelectStmt *) $2, $3, $5,
+										(Node*)list_nth($4, 0), (Node*)list_nth($4, 1),
+										$1,
+										yyscanner);
+					SelectStmt *stmt = (SelectStmt *) $2;
+					if (stmt->intoClause != NULL) {
+						ereport(errstate,
+								(errcode(ERRCODE_SYNTAX_ERROR),
+								errmsg("select statement can contain only one into_clause")));
+					}
+					IntoClause *itc = (IntoClause *) $6;
+					if (itc->rel != NULL && u_sess->attr.attr_sql.sql_compatibility != B_FORMAT) {
+						ereport(errstate,
+							(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+							errmsg("into new table here only support in B-format database")));
+					}
+					stmt->intoClause = itc;
+					$$ = (Node *)stmt;
+				}
+			| with_clause select_clause opt_sort_clause opt_select_limit into_clause opt_for_locking_clause
+				{
+                                        FilterStartWithUseCases((SelectStmt *) $2, $6, yyscanner, @6);
+					insertSelectOptions((SelectStmt *) $2, $3, $6,
+										(Node*)list_nth($4, 0), (Node*)list_nth($4, 1),
+										$1,
+										yyscanner);
+					SelectStmt *stmt = (SelectStmt *) $2;
+					if (stmt->intoClause != NULL) {
+						ereport(errstate,
+								(errcode(ERRCODE_SYNTAX_ERROR),
+								errmsg("select statement can contain only one into_clause")));
+					}
+					IntoClause *itc = (IntoClause *) $5;
+					if (itc->rel != NULL && u_sess->attr.attr_sql.sql_compatibility != B_FORMAT) {
+						ereport(errstate,
+							(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+							errmsg("into new table here only support in B-format database")));
+					}
+					stmt->intoClause = itc;
+					$$ = (Node *)stmt;
 				}
 			| with_clause select_clause opt_sort_clause select_limit opt_for_locking_clause
 				{
@@ -23956,7 +24801,7 @@ select_clause:
  */
 simple_select:
 			SELECT hint_string opt_distinct target_list
-			into_clause from_clause where_clause start_with_clause
+			opt_into_clause from_clause where_clause start_with_clause
 			group_clause having_clause window_clause
 				{
 					SelectStmt *n = makeNode(SelectStmt);
@@ -24076,6 +24921,12 @@ opt_with_clause:
 		| /*EMPTY*/								{ $$ = NULL; }
 		;
 
+opt_into_clause:
+		into_clause								{ $$ = $1; }
+		| /*EMPTY*/								%prec INTO
+			{ $$ = NULL; }
+		;
+
 opt_ignore:
 		IGNORE								    {  $$ = TRUE; }
 		| /*EMPTY*/							    {  $$ = FALSE; }
@@ -24095,9 +24946,25 @@ into_clause:
 					$$->skipData = false;
 					$$->relkind = INTO_CLAUSE_RELKIND_DEFAULT;
 				}
-			| /*EMPTY*/
-				{ $$ = NULL; }
-		;
+			| INTO into_user_var_list
+				{
+					$$ = makeNode(IntoClause);
+					$$->rel = NULL;
+					$$->colNames = NIL;
+					$$->options = NIL;
+					$$->onCommit = ONCOMMIT_NOOP;
+					$$->row_compress = REL_CMPRS_PAGE_PLAIN;
+					$$->tableSpaceName = NULL;
+					$$->skipData = false;
+					$$->relkind = INTO_CLAUSE_RELKIND_DEFAULT;
+					$$->userVarList = $2;
+				}
+	;
+
+into_user_var_list:
+		uservar_name									{ $$ = list_make1($1); }
+		| into_user_var_list ',' uservar_name			{ $$ = lappend($1,$3); }
+	;
 
 /*
  * Redundancy here is needed to avoid shift/reduce conflicts,
@@ -24637,7 +25504,8 @@ values_clause:
 
 from_clause:
 			FROM from_list							{ $$ = $2; }
-			| /*EMPTY*/								{ $$ = NIL; }
+			| /*EMPTY*/								%prec EMPTY_FROM_CLAUSE
+				{ $$ = NIL; }
 		;
 
 from_list:
@@ -25541,6 +26409,10 @@ GenericType:
 					/* for B_FORMAT compatibility, float4(n) refers to float4 */
 					if (($1 != NULL) && (strcmp($1, "float4") == 0 || strcmp($1, "float") == 0)) {
 						$$ = transferFloat4TypeInBFormat($1, $2, @2, yyscanner);
+					} else if (($1 != NULL) && (strcmp($1, "double") == 0) && ($2 != NULL) && (list_length($2) == 2)) {
+						$$ = SystemTypeName("numeric");
+						$$->typmods = $2;
+						$$->location = @1;
 						/* for B_FORMAT compatibility, real and double refer to float8 */
 					} else if (($1 != NULL) && ((strcmp($1, "real") == 0 || strcmp($1, "double") == 0))) {
 						$$ = makeTypeName("float8");
@@ -25692,6 +26564,11 @@ Numeric:	INT_P opt_type_modifiers field_unsigned
 					$$ = SystemTypeName("float4");
 					$$->location = @1;
 				}
+			| REAL dolphin_float
+				{
+					$$ = $2;
+					$$->location = @1;
+				}
 			| FLOAT_P opt_float
 				{
 					$$ = $2;
@@ -25710,6 +26587,11 @@ Numeric:	INT_P opt_type_modifiers field_unsigned
 			| DOUBLE_P PRECISION
 				{
 					$$ = SystemTypeName("float8");
+					$$->location = @1;
+				}
+			| DOUBLE_P PRECISION dolphin_float
+				{
+					$$ = $3;
 					$$->location = @1;
 				}
 			| DECIMAL_P opt_type_modifiers
@@ -25769,6 +26651,13 @@ Numeric:	INT_P opt_type_modifiers field_unsigned
 				}
 		;
 
+dolphin_float: '(' Iconst ',' Iconst ')'
+				{
+					$$ = SystemTypeName("numeric");
+					$$->typmods = list_make2(makeIntConst($2, @2), makeIntConst($4, @4));
+				}
+		;
+
 opt_float:	'(' Iconst ')'
 				{
 					/*
@@ -25777,6 +26666,7 @@ opt_float:	'(' Iconst ')'
 					 */
 					$$ = parseFloatTypeByPrecision($2, @2, yyscanner);
 				}
+			| dolphin_float {$$ = $1;}
 			| /*EMPTY*/
 				{
 					/* for B_FORMAT compatibility, float refers to float4 */
@@ -27949,10 +28839,6 @@ func_expr_windowless:
             func_application            { $$ = $1; }
             | func_expr_common_subexpr  { $$ = $1; }
         ;
-convert_list:
-            a_expr USING name   {$$ = list_make2($1, makeStringConst($3,-1));}
-            | a_expr USING Sconst   {$$ = list_make2($1, makeStringConst($3,-1));}
-        ;
 
 /*
  * Special expressions that are considered to be functions;
@@ -28013,20 +28899,46 @@ func_expr_common_subexpr:
 					n->call_func = false;
 					$$ = (Node *)n;
 				}
-			| CONVERT '(' convert_list ')'
-            {
-                    FuncCall *n = makeNode(FuncCall);
-                    n->funcname = SystemFuncName("convert");
-                    n->args = $3;
-                    n->agg_order = NIL;
-                    n->agg_star = FALSE;
-                    n->agg_distinct = FALSE;
-                    n->func_variadic = FALSE;
-                    n->over = NULL;
-                    n->location = @1;
-                    n->call_func = false;
-                    $$ = (Node *)n;
-            }
+			| CONVERT '(' a_expr USING Typename ')'
+			{
+			        TypeName* typname = (TypeName*)$5;
+				Type typtup = LookupTypeName(NULL, typname, NULL);
+				FuncCall *n = makeNode(FuncCall);
+				if (NULL == typtup) {
+				        n->funcname = SystemFuncName("convert");
+					n->args = list_make2($3, makeStringConst(strVal(linitial(typname->names)), -1));
+					n->agg_order = NIL;
+					n->agg_star = FALSE;
+					n->agg_distinct = FALSE;
+					n->func_variadic = FALSE;
+					n->over = NULL;
+					n->location = @1;
+					n->call_func = false;
+					$$ = (Node *)n;
+				} else {
+				        ReleaseSysCache(typtup);
+				        $$ = makeTypeCast($3, $5, @1);
+				}
+
+			}
+			| CONVERT '(' a_expr USING Sconst ')'
+			{
+			        FuncCall *n = makeNode(FuncCall);
+				n->funcname = SystemFuncName("convert");
+				n->args = list_make2($3, makeStringConst($5, -1));
+				n->agg_order = NIL;
+				n->agg_star = FALSE;
+				n->agg_distinct = FALSE;
+				n->func_variadic = FALSE;
+				n->over = NULL;
+				n->location = @1;
+				n->call_func = false;
+				$$ = (Node *)n;
+			}
+			| CONVERT '(' a_expr ',' Typename ')'
+			{
+			        $$ = makeTypeCast($3, $5, @1);
+			}
 			| CURRENT_TIME
 				{
 					FuncCall *n = makeNode(FuncCall);
@@ -29637,6 +30549,7 @@ get_format_time_type:
 			DATE_P									{ $$ = makeIntConst(DTK_DATE, @1); }
 			| TIME									{ $$ = makeIntConst(DTK_TIME, @1); }
 			| DATETIME								{ $$ = makeIntConst(DTK_DATE_TIME, @1); }
+			| TIMESTAMP								{ $$ = makeIntConst(DTK_DATE_TIME, @1); }
 		;
 
 /* OVERLAY() arguments
@@ -30682,16 +31595,16 @@ unreserved_keyword_without_key:
 			| AT
 			| ATTRIBUTE
 			| AUDIT
-			| AUTO_INCREMENT
 			| AUTOEXTEND
 			| AUTOMAPPED
+			| AUTO_INCREMENT
 			| BACKWARD
 /* PGXC_BEGIN */
 			| BARRIER
 /* PGXC_END */
 			| BEFORE
-			| BEGIN_NON_ANOYBLOCK
 			| BEGIN_P
+			| BEGIN_NON_ANOYBLOCK
 			| BLANKS
 			| BLOB_P
 			| BLOCKCHAIN
@@ -30738,9 +31651,10 @@ unreserved_keyword_without_key:
 			| CONTAINS
 			| CONTENT_P
 			| CONTINUE_P
+			| CONTVIEW
 			| CONVERSION_P
-            | CONTVIEW
 			| COORDINATOR
+			| COORDINATORS
 			| COPY
 			| COST
 			| CSV
@@ -30789,6 +31703,7 @@ unreserved_keyword_without_key:
 			| DROP
 			| DUPLICATE
 			| EACH
+			| ELASTIC
 			| ENABLE_P
 			| ENCLOSED
 			| ENCODING
@@ -30817,10 +31732,11 @@ unreserved_keyword_without_key:
 			| FAMILY
 			| FAST
 			| FEATURES 			// DB4AI
+			| FENCED
 			| FIELDS
 			| FILEHEADER_P
-			| FILL_MISSING_FIELDS
 			| FILLER
+			| FILL_MISSING_FIELDS
 			| FILTER
 			| FIRST_P
 			| FLUSH
@@ -30861,10 +31777,10 @@ unreserved_keyword_without_key:
 			| INITRANS
 			| INLINE_P
 			| INPUT_P
-			| INTERNAL
 			| INSENSITIVE
 			| INSERT
 			| INSTEAD
+			| INTERNAL
 			| INVOKER
 			| IP
 			| ISNULL
@@ -30892,8 +31808,8 @@ unreserved_keyword_without_key:
 			| LOG_P
 			| LOGGING
 			| LOGIN_ANY
-			| LOGIN_SUCCESS
 			| LOGIN_FAILURE
+			| LOGIN_SUCCESS
 			| LOGOUT
 			| LOGS
 			| LOOP
@@ -30976,6 +31892,7 @@ unreserved_keyword_without_key:
 			| PREPARED
 			| PRESERVE
 			| PRIOR
+			| PRIORER
 			| PRIVATE
 			| PRIVILEGE
 			| PRIVILEGES
@@ -31011,6 +31928,7 @@ unreserved_keyword_without_key:
 			| REMOVE
 			| RENAME
 			| REORGANIZE
+			| REPEAT
 			| REPEATABLE
 			| REPLACE
 			| REPLICA
@@ -31041,6 +31959,7 @@ unreserved_keyword_without_key:
 			| SECOND_MICROSECOND_P
 			| SECOND_P
 			| SECURITY
+			| SEPARATOR_P
 			| SEQUENCE
 			| SEQUENCES
 			| SERIALIZABLE
@@ -31048,7 +31967,6 @@ unreserved_keyword_without_key:
 			| SESSION
 			| SET
 			| SETS
-			| SEPARATOR_P
 			| SHARE
 			| SHIPPABLE
 			| SHOW
@@ -31086,8 +32004,8 @@ unreserved_keyword_without_key:
 			| SUBPARTITION
 			| SUBSCRIPTION
 			| SYNONYM
-			| SYS_REFCURSOR					{ $$ = "refcursor"; }
 			| SYSID
+			| SYS_REFCURSOR					{ $$ = "refcursor"; }
 			| SYSTEM_P
 			| TABLES
 			| TABLESPACE
@@ -31097,8 +32015,8 @@ unreserved_keyword_without_key:
 			| TEMPORARY
 			| TERMINATED
 			| THAN
-			| TIME_FORMAT_P
 			| TIMESTAMP_FORMAT_P
+			| TIME_FORMAT_P
 			| TRANSACTION
 			| TRANSFORM
 			| TRIGGER
@@ -31131,11 +32049,13 @@ unreserved_keyword_without_key:
 			| VALUE_P
 			| VARIABLES
 			| VARYING
+			| VCGROUP
 			| VERSION_P
 			| VIEW
 			| VOLATILE
 			| WAIT
 			| WEAK
+			| WHILE_P
 			| WHITESPACE_P
 			| WITHIN
 			| WITHOUT
@@ -31372,8 +32292,8 @@ reserved_keyword:
 			| MAXVALUE
 			| MINUS_P
 			| MODIFY_P
-			| NOT
 			| NOCYCLE
+			| NOT
 			| NOW_FUNC
 			| NULL_P
 			| OFFSET
@@ -32539,6 +33459,20 @@ get_outarg_num (List *fun_args)
 	}
 	return count;
 }
+/* To Transform expr stirng into an ANONYMOUS BLOCK*/
+static char* DoStmtPreformGet(int& start_pos, int& end_pos, base_yy_extra_type* yyextra)
+{
+	int length = end_pos - start_pos + 1;
+	char* delimiter_str = u_sess->attr.attr_common.delimiter_name;
+	int delimiter_len = strlen(delimiter_str);
+	char* block_str = (char *)palloc0(length + 1 + 21 + delimiter_len);
+	strncpy(block_str, " begin perform ", 15);
+	strncpy(block_str + 15,yyextra->core_yy_extra.scanbuf + start_pos - 1, length);
+	strncpy(block_str + 15 + length, delimiter_str, delimiter_len);
+	strncpy(block_str + length + 15 + delimiter_len,"  end; ", 6);
+	block_str[length + 21 + delimiter_len] = '\0';
+	return block_str;
+}
 
 // To make a node for anonymous block
 static Node *
@@ -32738,6 +33672,7 @@ makeCallFuncStmt(List* funcname,List* parameters, bool is_call)
 	ColumnRef *column = NULL;
 	ResTarget *resTarget = NULL;
 	FuncCall *funcCall = NULL;
+	List *userVarList = NIL;
 	RangeFunction *rangeFunction = NULL;
 	char *schemaname = NULL;
 	char *name = NULL;
@@ -32864,6 +33799,15 @@ makeCallFuncStmt(List* funcname,List* parameters, bool is_call)
 			{
 				get_arg_mode_by_pos(i, p_argmodes, narg, have_assigend, &argmode);
 				in_parameters = append_inarg_list(argmode, cell, in_parameters);
+
+				if (argmode == FUNC_PARAM_OUT || argmode == FUNC_PARAM_INOUT) {
+					if (IsA(arg, TypeCast)) {
+						arg = (*(TypeCast *)arg).arg;
+					}
+					if (IsA(arg, UserVar)) {
+						userVarList = lappend(userVarList,arg);
+					}
+				}
 			}
 
 			i++;
@@ -32920,6 +33864,11 @@ makeCallFuncStmt(List* funcname,List* parameters, bool is_call)
 	newm->whereClause = NULL;
 	newm->havingClause= NULL;
     newm->groupClause = NIL;
+	if (userVarList != NIL) {
+		IntoClause *n = makeNode(IntoClause);
+		n->userVarList = userVarList;
+		newm->intoClause  = n;
+	}
 	return (Node*)newm;
 }
 
@@ -33551,6 +34500,45 @@ static void checkDeleteRelationError()
 					errmsg("multi-relation delete only support in B-format database")));
 }
 
+#ifndef MAX_SUPPORTED_FUNC_FOR_PART_EXPR
+#define MAX_SUPPORTED_FUNC_FOR_PART_EXPR 23
+#endif
+static void CheckPartitionExpr(Node* expr, int* colCount)
+{
+	if (expr == NULL)
+		ereport(ERROR, (errcode(ERRCODE_NULL_VALUE_NOT_ALLOWED), errmsg("The expr can't be NULL")));
+	if (expr->type == T_A_Expr) {
+		char* name = strVal(linitial(((A_Expr*)expr)->name));
+		if (strcmp(name, "+") != 0 && strcmp(name, "-") != 0 && strcmp(name, "*") != 0)
+			ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("The %s operator is not supported for Partition Expr", name)));
+		CheckPartitionExpr(((A_Expr*)expr)->lexpr, colCount);
+		CheckPartitionExpr(((A_Expr*)expr)->rexpr, colCount);
+	} else if (expr->type == T_FuncCall) {
+		char* validFuncName[MAX_SUPPORTED_FUNC_FOR_PART_EXPR] = {"abs","ceiling","datediff","day","dayofmonth","dayofweek","dayofyear","extract","floor","hour",
+		"microsecond","minute","mod","month","quarter","second","time_to_sec","to_days","to_seconds","unix_timestamp","weekday","year","yearweek"};
+		char* funcname = strVal(linitial(((FuncCall*)expr)->funcname));
+		int count = 0;
+		for (;count < MAX_SUPPORTED_FUNC_FOR_PART_EXPR;count++) {
+			if (strcmp(funcname, validFuncName[count]) == 0)
+				break;
+			else
+				continue;
+		}
+		if (count == MAX_SUPPORTED_FUNC_FOR_PART_EXPR)
+			ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("The %s func is not supported for Partition Expr", funcname)));
+		ListCell* cell = NULL;
+		foreach (cell, ((FuncCall*)expr)->args) {
+			CheckPartitionExpr((Node*)(lfirst(cell)),colCount);
+		}
+	} else if (expr->type == T_ColumnRef) {
+		(*colCount)++;
+	} else if (expr->type == T_A_Const) {
+		return;
+	} else {
+		ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("The Partition Expr can't be %d type", expr->type)));
+	}
+}
+
 static CreateTableOptions* MakeCreateTableOptions(CreateTableOptions *tableOptions, SingleTableOption *tableOption)
 {
 	if (tableOptions == NULL) {
@@ -34023,12 +35011,106 @@ static bool DolphinObjNameCmp(const char* s1, const char* s2, bool is_quoted)
 	return true;
 }
 
+static char* SingleLineProcedureQueryGet(int& start_pos, int& end_pos, base_yy_extra_type* yyextra)
+{
+	char* delimiter_str = u_sess->attr.attr_common.delimiter_name;
+	StringInfoData select_query;
+	initStringInfo(&select_query);
+	appendStringInfo(&select_query, "\n");
+	appendBinaryStringInfo(&select_query, yyextra->core_yy_extra.scanbuf + start_pos - 1, end_pos - start_pos + 1);
+	if (delimiter_str == NULL)
+		appendStringInfo(&select_query, ";");
+	else
+		appendStringInfoString(&select_query, delimiter_str);
+	appendStringInfo(&select_query, "\n");
+
+	return select_query.data;
+}
+
 DolphinIdent* CreateDolphinIdent(char* ident, bool is_quoted)
 {
     DolphinIdent* dolphinIdent = (DolphinIdent*)palloc(sizeof(DolphinIdent));
     dolphinIdent->str = ident;
     dolphinIdent->is_quoted = is_quoted;
     return dolphinIdent;
+}
+
+DolphinProcBodyInfo* InitDolphinProcBodyInfo()
+{
+	DolphinProcBodyInfo* binfo = (DolphinProcBodyInfo*)palloc(sizeof(DolphinProcBodyInfo));
+	binfo->m_begin_b = binfo->m_begin_e = binfo->m_declare_len = binfo->m_block_level = 0;
+	binfo->m_begin_len = binfo->m_declare_b = binfo->m_declare_e = 0;
+	return binfo;
+}
+
+void DolphinDealProcBodyStr(char* target, char* scanbuf, List* infol, int begin, int len)
+{
+	ListCell* lc;
+	DolphinProcBodyInfo* preinfo = NULL;
+	DolphinProcBodyInfo* info = NULL;
+	int offset = 0;
+	int rc;
+	foreach (lc, infol) {
+		preinfo = info;
+		info = (DolphinProcBodyInfo*)lfirst(lc);
+		if (info->m_block_level == 1) {
+			rc = strncpy_s(target, len, scanbuf + begin - 1, info->m_declare_len + 1);
+			securec_check(rc, "", "");
+			offset += info->m_declare_len + 1;
+			rc = strncpy_s(target + offset, len - offset, " begin ", 7);
+			securec_check(rc, "", "");
+			offset += 7;
+		}
+		if (preinfo != NULL)
+		{
+			rc = strncpy_s(target + offset, len - offset, scanbuf + preinfo->m_declare_e + 1,
+				info->m_begin_b - preinfo->m_declare_e - 1);
+			securec_check(rc, "", "");
+			offset += info->m_begin_b - preinfo->m_declare_e - 1;
+			rc = strncpy_s(target + offset, len - offset, scanbuf + info->m_declare_b,
+                                info->m_declare_len + 1);
+			securec_check(rc, "", "");
+			offset += info->m_declare_len + 1;
+			if (info->m_begin_len > 2)
+			{
+				rc = strncpy_s(target + offset, len - offset, scanbuf + info->m_begin_b ,
+                                info->m_begin_len - 2);
+				securec_check(rc, "", "");
+				offset += info->m_begin_len - 2;
+			}
+		}
+	}
+	rc = strncpy_s(target + offset, len - offset, scanbuf + info->m_declare_e + 1,
+                                 len - offset - 1);
+	securec_check(rc, "", "");
+}
+
+static char* TriggerBodyGet(int& start_pos, int& end_pos, base_yy_extra_type* yyextra)
+{
+	StringInfoData select_query;
+	char* delimiter_str = u_sess->attr.attr_common.delimiter_name;
+	initStringInfo(&select_query);
+	appendStringInfo(&select_query, "begin");
+	appendStringInfo(&select_query, "\n ");
+	int copy_len = end_pos - start_pos + 1;
+	bool append_delimiter = false;
+	if (yyextra->core_yy_extra.scanbuf[end_pos] == '\0')
+	{
+		append_delimiter = true;
+		copy_len--;
+	}
+	appendBinaryStringInfo(&select_query, yyextra->core_yy_extra.scanbuf + start_pos, copy_len);
+	if (strncasecmp(yyextra->core_yy_extra.scanbuf + start_pos, "call ", 5) == 0 || append_delimiter)
+	{
+		if (delimiter_str == NULL)
+			appendStringInfo(&select_query, ";");
+		else
+			appendStringInfo(&select_query, "%s", delimiter_str);
+	}
+	appendStringInfo(&select_query, "\n");
+	appendStringInfo(&select_query, "end");
+
+	return select_query.data;
 }
 
 /*

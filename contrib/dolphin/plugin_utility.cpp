@@ -520,8 +520,9 @@ static void check_xact_readonly(Node* parse_tree)
             break;
         }
         case T_AlterRoleStmt: {
-            AlterRoleStmt* stmt = (AlterRoleStmt*)parse_tree;
-            if (!(DO_NOTHING != stmt->lockstatus && t_thrd.postmaster_cxt.HaShmData->current_mode == STANDBY_MODE)) {
+            AlterRoleStmt *stmt = (AlterRoleStmt *)parse_tree;
+            if (!(DO_NOTHING != stmt->lockstatus &&
+                (t_thrd.postmaster_cxt.HaShmData->current_mode == STANDBY_MODE || SS_STANDBY_MODE))) {
                 PreventCommandIfReadOnly(CreateCommandTag(parse_tree));
             }
             break;
@@ -540,6 +541,13 @@ static void check_xact_readonly(Node* parse_tree)
  */
 void PreventCommandIfReadOnly(const char* cmd_name)
 {
+    if (SSIsServerModeReadOnly()) {
+        ereport(ERROR,
+            (errcode(ERRCODE_READ_ONLY_SQL_TRANSACTION),
+                /* translator: %s is name of a SQL command, eg CREATE */
+                errmsg("cannot execute %s at Standby node while DMS enabled", cmd_name)));
+    }
+
     if (u_sess->attr.attr_common.XactReadOnly && u_sess->attr.attr_storage.replorigin_sesssion_origin == 0)
         ereport(ERROR,
             (errcode(ERRCODE_READ_ONLY_SQL_TRANSACTION),
@@ -557,6 +565,13 @@ void PreventCommandIfReadOnly(const char* cmd_name)
  */
 void PreventCommandDuringRecovery(const char* cmd_name)
 {
+    if (SSIsServerModeReadOnly()) {
+        ereport(ERROR,
+            (errcode(ERRCODE_READ_ONLY_SQL_TRANSACTION),
+                /* translator: %s is name of a SQL command, eg CREATE */
+                errmsg("cannot execute %s at Standby node while DMS enabled", cmd_name)));
+    }
+
     if (RecoveryInProgress())
         ereport(ERROR,
             (errcode(ERRCODE_READ_ONLY_SQL_TRANSACTION),
@@ -1475,6 +1490,19 @@ void ProcessUtility(Node* parse_tree, const char* query_string, ParamListInfo pa
 #endif /* PGXC */
             completion_tag,
             isCTAS);
+    
+    /* 
+     * Record the number of rows affected into the session, but only support 
+     * DML statement now, for DDL statement, always set to 0
+     */
+    if(nodeTag(parse_tree) != T_ExecuteStmt) {
+        u_sess->statement_cxt.current_row_count = 0;
+        u_sess->statement_cxt.last_row_count = u_sess->statement_cxt.current_row_count;
+        /* If it is an EXECUTE statement here, the PortalRun function will be
+           called twice nested, and the right data will be modified when it is 
+           first executed (Generally in function ExecutorRun), so there do 
+           nothing when it is called again to avoid overwriting */
+    }
 }
 
 // @Temp Table.
@@ -5738,9 +5766,19 @@ void standard_ProcessUtility(Node* parse_tree, const char* query_string, ParamLi
         } break;
 
         case T_VariableShowStmt: {
-            VariableShowStmt* n = (VariableShowStmt*)parse_tree;
+            VariableShowStmt *n = (VariableShowStmt *)parse_tree;
 
-            GetPGVariable(n->name, n->likename, dest);
+            if (strcmp(n->name, "show_warnings") == 0) {
+                gramShowWarningsErrors(n->offset, n->count, dest, FALSE);
+            } else if (strcmp(n->name, "show_warnings_count") == 0) {
+                gramShowWarningsErrorsCount(dest, FALSE);
+            } else if (strcmp(n->name, "show_errors") == 0) {
+                gramShowWarningsErrors(n->offset, n->count, dest, TRUE);
+            } else if (strcmp(n->name, "show_errors_count") == 0) {
+                gramShowWarningsErrorsCount(dest, TRUE);
+            } else {
+                GetPGVariable(n->name, n->likename, dest);
+            }
         } break;
         case T_ShutdownStmt: {
             ShutdownStmt* n = (ShutdownStmt*)parse_tree;
@@ -7076,7 +7114,11 @@ void standard_ProcessUtility(Node* parse_tree, const char* query_string, ParamLi
         }
 
         case T_CreatePublicationStmt:
-#ifdef ENABLE_MULTIPLE_NODES
+            if (ENABLE_DMS) {
+                ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+                        errmsg("Not support CreatePublication while DMS and DSS enabled")));
+            }
+#if defined(ENABLE_MULTIPLE_NODES)
             ereport(ERROR,
                 (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
                     errmsg("PUBLICATION is not currently supported"),
@@ -7085,7 +7127,11 @@ void standard_ProcessUtility(Node* parse_tree, const char* query_string, ParamLi
             CreatePublication((CreatePublicationStmt *) parse_tree);
             break;
         case T_AlterPublicationStmt:
-#ifdef ENABLE_MULTIPLE_NODES
+            if (ENABLE_DMS) {
+                ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+                        errmsg("Not support AlterPublication while DMS and DSS enabled")));
+            }
+#if defined(ENABLE_MULTIPLE_NODES)
             ereport(ERROR,
                 (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
                     errmsg("PUBLICATION is not currently supported"),
@@ -7094,7 +7140,11 @@ void standard_ProcessUtility(Node* parse_tree, const char* query_string, ParamLi
             AlterPublication((AlterPublicationStmt *) parse_tree);
             break;
         case T_CreateSubscriptionStmt:
-#ifdef ENABLE_MULTIPLE_NODES
+            if (ENABLE_DMS) {
+                ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+                        errmsg("Not support CreateSubscription while DMS and DSS enabled")));
+            }
+#if defined(ENABLE_MULTIPLE_NODES)
             ereport(ERROR,
                 (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
                     errmsg("SUBSCRIPTION is not currently supported"),
@@ -7103,7 +7153,11 @@ void standard_ProcessUtility(Node* parse_tree, const char* query_string, ParamLi
             CreateSubscription((CreateSubscriptionStmt *) parse_tree, is_top_level);
             break;
         case T_AlterSubscriptionStmt:
-#ifdef ENABLE_MULTIPLE_NODES
+            if (ENABLE_DMS) {
+                ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+                        errmsg("Not support AlterSubscription while DMS and DSS enabled")));
+            }
+#if defined(ENABLE_MULTIPLE_NODES)
             ereport(ERROR,
                 (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
                     errmsg("SUBSCRIPTION is not currently supported"),
@@ -7112,7 +7166,11 @@ void standard_ProcessUtility(Node* parse_tree, const char* query_string, ParamLi
             AlterSubscription((AlterSubscriptionStmt *) parse_tree, is_top_level);
             break;
         case T_DropSubscriptionStmt:
-#ifdef ENABLE_MULTIPLE_NODES
+            if (ENABLE_DMS) {
+                ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+                        errmsg("Not support DropSubscription while DMS and DSS enabled")));
+            }
+#if defined(ENABLE_MULTIPLE_NODES)
             ereport(ERROR,
                 (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
                     errmsg("SUBSCRIPTION is not currently supported"),
@@ -7991,7 +8049,12 @@ const char* CreateCommandTag(Node* parse_tree)
             break;
 
         case T_SelectStmt:
-            tag = "SELECT";
+            if (((SelectStmt *)parse_tree)->intoClause != NULL &&
+                ((SelectStmt *)parse_tree)->intoClause->userVarList != NIL) {
+                tag = "SELECT INTO";
+            } else {
+                tag = "SELECT";
+            }
             break;
 
             /* utility statements --- same whether raw or cooked */

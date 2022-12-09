@@ -151,5 +151,83 @@ select * from test_part_segment partition(m2);
 select * from test_part_segment partition(m1);
 explain select /*+ indexscan(test_part_segment test_part_segment_pkey) */ * from test_part_segment where a > 0;
 select * from test_part_segment;
+
+
+-------test table with local index
+drop table if exists b_range_hash_t01;
+create table b_range_hash_t01(c1 int primary key,c2 int,c3 text)
+partition by range(c1) subpartition by hash(c2)
+(
+partition p1 values less than (100)
+(
+subpartition p1_1,
+subpartition p1_2
+),
+partition p2 values less than (200)
+(
+subpartition p2_1,
+subpartition p2_2
+),
+partition p3 values less than (300)
+(
+subpartition p3_1,
+subpartition p3_2
+)
+);
+create index on b_range_hash_t01 (c1) global;
+create index on b_range_hash_t01 (c2) local;
+insert into b_range_hash_t01 values(1,2,3),(51,3,4);
+select pg_get_tabledef('b_range_hash_t01');
+alter table b_range_hash_t01 reorganize partition p1 into (partition m1 values less than(50) (subpartition m1_1,subpartition m1_2,subpartition m1_3),partition m2 values less than(100));
+select pg_get_tabledef('b_range_hash_t01');
+select * from b_range_hash_t01 partition(m1);
+select * from b_range_hash_t01 partition(m2);
+
+
+
+--test some error cases
+alter table b_range_hash_t01 reorganize partition m1 into (partition k1 values less than(2) (subpartition k1_1 values less than(2)));
+alter table b_range_hash_t01 reorganize partition m1 into (partition k1 values less than(2) (subpartition k1_1 values (1)));
+drop table if exists b_interval_t1;
+create table b_interval_t1(c1 int primary key,c2 timestamp)
+partition by range(c2)
+interval('1 day')
+(
+partition p1 values less than ('1990-01-01 00:00:00'),
+partition p2 values less than ('1990-01-02 00:00:00'),
+partition p3 values less than ('1990-01-03 00:00:00'),
+partition p4 values less than ('1990-01-04 00:00:00'),
+partition p5 values less than ('1990-01-05 00:00:00'),
+partition p6 values less than ('1990-01-06 00:00:00'),
+partition p7 values less than ('1990-01-07 00:00:00'),
+partition p8 values less than ('1990-01-08 00:00:00'),
+partition p9 values less than ('1990-01-09 00:00:00'),
+partition p10 values less than ('1990-01-10 00:00:00')
+);
+alter table b_interval_t1 reorganize partition p2,p3 into (partition m1 values less than('1990-01-03 00:00:00'));
+alter table b_interval_t1 reorganize partition p4 into (partition m2 values less than('1990-01-03 12:00:00'),partition m3 values less than('1990-01-04 00:00:00'));
+drop table if exists b_range_range_t01;
+create table b_range_range_t01(c1 int primary key,c2 int,c3 int)
+partition by range(c1) subpartition by range(c2)
+(
+partition p1 values less than (100)
+(
+subpartition p1_1 values less than (50),
+subpartition p1_2 values less than (100)
+),
+partition p2 values less than (200)
+(
+subpartition p2_1 values less than (150),
+subpartition p2_2 values less than (200)
+),
+partition p3 values less than (300)
+(
+subpartition p3_1 values less than (250),
+subpartition p3_2 values less than (300)
+)
+);
+alter table b_range_range_t01 reorganize partition p1 into (partition m1 values less than(100) (subpartition m1_1 values less than(50),subpartition m1_2 values less than(100)));
+alter table b_range_range_t01 reorganize partition p1 into (partition m1 values less than(100) (subpartition m1_1));
+
 \c postgres;
 drop DATABASE if exists partition_test4;

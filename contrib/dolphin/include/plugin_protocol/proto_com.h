@@ -27,7 +27,6 @@
 extern THR_LOCAL uint8 next_seqid;
 
 typedef struct dolphin_proto_ctx {
-    int port;
     char *server_name;
     NameData database_name;
     int32 connect_id;
@@ -211,6 +210,14 @@ enum dolphin_attr_type {
 #define DOLPHIN_TYPE_STRING       254
 #define DOLPHIN_TYPE_GEOMETRY     255
 
+/* flag number */
+#define BLOB_FLAG 16
+#define UNSIGNED_FLAG 32
+#define BINARY_FLAG 128
+
+/* charset number */
+#define COLLATE_BINARY 63
+
 typedef struct dolphin_data_field {
   const char *name;
   char *org_name;
@@ -234,5 +241,23 @@ typedef struct dolphin_data_field {
   uint type; 
   void *extension;
 } dolphin_data_field;
+
+#define MAX_TYPE_NAME_LEN 64
+extern struct HTAB* b_typoid2DolphinMarcoHash;
+typedef struct TypeItem {
+    char* og_typname;             // type name of openGauss
+    uint dolphin_type_id;         // the type Marco in M* database
+    Oid og_type_oid;              // type oid
+    uint flags;                   // type flag, such as unsigned flag or others
+    uint charset_flag;            // charset
+} TypeItem;
+
+typedef struct HashEntryTypoid2TypeItem {
+    Oid oid;
+    const TypeItem* item;
+} HashEntryTypoid2TypeItem;
+
+extern void InitTypoid2DolphinMacroHtab();
+extern const TypeItem* GetItemByTypeOid(Oid oid);
 
 #endif /* proto_com.h */

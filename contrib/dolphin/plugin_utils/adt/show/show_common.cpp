@@ -65,6 +65,34 @@ void CallSPIAndCheck(char *query)
 }
 
 /**
+ * make sure you called SPI_connect already
+ * @return sql_mode value
+ */
+char *GetSqlMode()
+{
+    if (SPI_execute("show dolphin.sql_mode", false, 0) != SPI_OK_UTILITY || SPI_processed != 1) {
+        ereport(ERROR, (errcode(ERRCODE_DATA_EXCEPTION), errmsg("failed to exec query 'show dolphin.sql_mode'")));
+    }
+
+    return SPI_getvalue(SPI_tuptable->vals[0], SPI_tuptable->tupdesc, 1);
+}
+
+/**
+ * make sure you called SPI_connect already
+ * @param sql_mode value
+ */
+void SetSqlMode(const char* sqlMode)
+{
+    char query[SCAN_SQL_LEN];
+    int rc = sprintf_s(query, SCAN_SQL_LEN, "set dolphin.sql_mode = '%s'", sqlMode);
+    securec_check_ss(rc, "", "");
+
+    if (SPI_execute(query, false, 0) != SPI_OK_UTILITY) {
+        ereport(ERROR, (errcode(ERRCODE_DATA_EXCEPTION), errmsg("failed to exec query '%s'", query)));
+    }
+}
+
+/**
  * common function select
  * @param functionName function name  
  * @param args args pf function

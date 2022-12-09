@@ -20,7 +20,47 @@ select set_native_password('proto_user', 'Gauss@123');
  676a8fd5633248f6f59e17d4939f7f6e7093c350
 (1 row)
 
+\! $THIRD_PARTY_LIBS/kernel/platform/openjdk8/jdk/bin/javac @abs_builddir@/proto_jdbc/class/MySQLJdbcTest.java
 \! @abs_bindir@/../jre/bin/java -cp $CLASSPATH:@abs_builddir@/proto_jdbc/class/mysql-connector-java-5.1.47.jar:@abs_builddir@/proto_jdbc/class/. MySQLJdbcTest localhost $dp db_jdbc proto_user Gauss@123
+c1:INT
+c2:INT UNSIGNED
+c3:TINYINT
+c4:TINYINT UNSIGNED
+c5:SMALLINT
+c6:SMALLINT UNSIGNED
+c7:BIGINT
+c8:BIGINT UNSIGNED
+c9:FLOAT
+c10:DOUBLE
+c11:BIT
+c12:TINYINT
+c13:CHAR
+c15:BINARY
+c16:VARCHAR
+c17:VARCHAR
+c18:VARBINARY
+c19:YEAR
+c20:DATE
+c21:TIME
+c22:TIMESTAMP
+c23:DATETIME
+c24:TINYBLOB
+c25:BLOB
+c26:MEDIUMBLOB
+c27:LONGBLOB
+c28:GEOMETRY
+c30:GEOMETRY
+c31:VARCHAR
+c32:DECIMAL
+c33:JSON
+c34:ENUM
+c35:SET
+res_getBoolean: true
+res_getInt: 1
+res_getString: 1
+res_getBoolean: false
+res_getInt: 0
+res_getString: 0
 1
 mysql
 2
@@ -37,3 +77,5 @@ select * from t3 order by id;
 
 RESET ROLE;
 DROP USER IF EXISTS proto_user CASCADE;
+--?.*
+\! rm @abs_builddir@/proto_jdbc/class/MySQLJdbcTest.class

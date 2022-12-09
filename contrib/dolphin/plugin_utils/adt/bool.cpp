@@ -154,7 +154,15 @@ Datum boolout(PG_FUNCTION_ARGS)
     bool b = PG_GETARG_BOOL(0);
     char* result = (char*)palloc(2);
 
-    result[0] = (b) ? 't' : 'f';
+    if (strcmp(u_sess->attr.attr_common.application_name, "gs_dump") == 0 ||
+        strcmp(u_sess->attr.attr_common.application_name, "gs_dumpall") == 0 ||
+        strcmp(u_sess->attr.attr_common.application_name, "gsql") == 0 ||
+        strcmp(u_sess->attr.attr_common.application_name, "gs_probackup") == 0 ||
+        strcmp(u_sess->attr.attr_common.application_name, "gs_rewind") == 0 ||
+        strcmp(u_sess->attr.attr_common.application_name, "gs_clean") == 0)
+        result[0] = (b) ? 't' : 'f';
+    else
+        result[0] = (b) ? '1' : '0';
     result[1] = '\0';
     PG_RETURN_CSTRING(result);
 }
@@ -276,4 +284,9 @@ Datum booland_statefunc(PG_FUNCTION_ARGS)
 Datum boolor_statefunc(PG_FUNCTION_ARGS)
 {
     PG_RETURN_BOOL(PG_GETARG_BOOL(0) || PG_GETARG_BOOL(1));
+}
+
+Datum boolum(PG_FUNCTION_ARGS)
+{
+    PG_RETURN_BOOL(PG_GETARG_BOOL(0));
 }
