@@ -37,5 +37,16 @@ alter table alter_table_tbl1 drop column key, drop key alter_table_tbl_b_ind;
 
 drop table alter_table_tbl1, alter_table_tbl2;
 
+set dolphin.sql_mode='pipes_as_concat';
+
+create table table_ddl_0030_01(col1 int primary key,col2 varchar(20));
+create table table_ddl_0030_02(col1 int,col2 int);
+ALTER TABLE table_ddl_0030_02 ADD CONSTRAINT FOREIGN KEY idx_ddl_0030(col1) REFERENCES table_ddl_0030_01(col1);
+show dolphin.sql_mode;
+
+reset dolphin.sql_mode;
+\d+ table_ddl_0030_02
+drop table table_ddl_0030_01,table_ddl_0030_02;
+
 \c postgres
 drop database if exists db_alter_table;

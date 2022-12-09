@@ -114,5 +114,9 @@ insert into t1 values(1, 'true');
 
 select a = 1 xor b = 'true' from t1;
 
+select acos(11);
+select acos(1.000001);
+select acos(-1.000001);
+
 \c postgres
 drop database if exists db_b_parser3;
