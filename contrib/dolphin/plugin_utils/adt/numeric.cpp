@@ -48,7 +48,6 @@
 #include "vectorsonic/vsonichashagg.h"
 #ifdef DOLPHIN
 #include "plugin_commands/mysqlmode.h"
-#define NEG_PG_UINT64_MAX -18446744073709551615
 
 #ifndef CRCMASK
 #define CRCMASK 0xEDB88320
@@ -19664,7 +19663,7 @@ int conv_n(char *result, int128 data, int from_base_s, int to_base_s)
     if (from_base_s > 0) {
         if (data > PG_UINT64_MAX) {
             data = PG_UINT64_MAX;
-        } else if (data < NEG_PG_UINT64_MAX) {
+        } else if (data < (-(int128)PG_UINT64_MAX)) {
             data = PG_UINT64_MAX;
         }
     } else {
