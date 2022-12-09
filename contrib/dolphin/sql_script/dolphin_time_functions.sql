@@ -459,6 +459,62 @@ CREATE OR REPLACE FUNCTION pg_catalog.from_unixtime (numeric) RETURNS timestamp(
 CREATE OR REPLACE FUNCTION pg_catalog.from_unixtime (numeric, text) RETURNS TEXT LANGUAGE C STABLE RETURNS NULL ON NULL INPUT as '$libdir/dolphin', 'from_unixtime_with_two_arg';
 
 
+-- support bit_xor for date
+
+DROP FUNCTION IF EXISTS pg_catalog.date_xor_transfn(int16, date) CASCADE;
+CREATE OR REPLACE FUNCTION pg_catalog.date_xor_transfn (
+int16, date
+) RETURNS int16 LANGUAGE C as '$libdir/dolphin',  'date_xor_transfn';
+
+DROP FUNCTION IF EXISTS pg_catalog.date_agg_finalfn(int16) CASCADE;
+CREATE OR REPLACE FUNCTION pg_catalog.date_agg_finalfn (
+int16
+) RETURNS int16 LANGUAGE C as '$libdir/dolphin',  'date_agg_finalfn';
+
+drop aggregate if exists pg_catalog.bit_xor(date);
+create aggregate pg_catalog.bit_xor(date) (SFUNC=date_xor_transfn, finalfunc = date_agg_finalfn,  STYPE= int16);
+
+-- support bit_xor aggregate for year
+
+DROP FUNCTION IF EXISTS pg_catalog.year_xor_transfn(integer, year) CASCADE;
+CREATE OR REPLACE FUNCTION pg_catalog.year_xor_transfn (
+integer, year
+) RETURNS integer LANGUAGE C as '$libdir/dolphin',  'year_xor_transfn';
+
+drop aggregate if exists pg_catalog.bit_xor(year);
+create aggregate pg_catalog.bit_xor(year) (SFUNC=year_xor_transfn, STYPE= integer);
+
+-- support bit_xor for datetime and timestamp
+DROP FUNCTION IF EXISTS pg_catalog.timestamp_xor_transfn(int16, timestamp(0) with time zone) CASCADE;
+CREATE OR REPLACE FUNCTION pg_catalog.timestamp_xor_transfn (
+int16, timestamp(0) with time zone
+) RETURNS int16 LANGUAGE C as '$libdir/dolphin',  'timestamp_xor_transfn';
+
+DROP FUNCTION IF EXISTS pg_catalog.timestamp_agg_finalfn(int16) CASCADE;
+CREATE OR REPLACE FUNCTION pg_catalog.timestamp_agg_finalfn (
+int16
+) RETURNS int16 LANGUAGE C as '$libdir/dolphin',  'timestamp_agg_finalfn';
+
+drop aggregate if exists pg_catalog.bit_xor(timestamp(0) with time zone);
+create aggregate pg_catalog.bit_xor(timestamp(0) with time zone) (SFUNC=timestamp_xor_transfn, finalfunc=timestamp_agg_finalfn, STYPE=int16);
+
+-- support bit_xor aggregate for time
+
+DROP FUNCTION IF EXISTS pg_catalog.time_xor_transfn(int16, time) CASCADE;
+CREATE OR REPLACE FUNCTION pg_catalog.time_xor_transfn (
+int16, time
+) RETURNS int16 LANGUAGE C as '$libdir/dolphin',  'time_xor_transfn';
+
+create aggregate pg_catalog.bit_xor(time) (SFUNC=time_xor_transfn, STYPE= int16);
+
+DROP FUNCTION IF EXISTS pg_catalog.timetz_xor_transfn(int16, time with time zone) CASCADE;
+CREATE OR REPLACE FUNCTION pg_catalog.timetz_xor_transfn (
+int16, time with time zone
+) RETURNS int16 LANGUAGE C as '$libdir/dolphin',  'timetz_xor_transfn';
+
+create aggregate pg_catalog.bit_xor(time with time zone) (SFUNC=timetz_xor_transfn, STYPE= int16);
+
+
 DROP FUNCTION IF EXISTS pg_catalog.year_any_value (year, year) CASCADE;
 CREATE OR REPLACE FUNCTION pg_catalog.year_any_value (year, year) RETURNS year LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'year_any_value';
 

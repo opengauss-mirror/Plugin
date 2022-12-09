@@ -1,0 +1,765 @@
+drop database if exists test_bit_xor;
+NOTICE:  database "test_bit_xor" does not exist, skipping
+create database test_bit_xor dbcompatibility 'B';
+\c test_bit_xor
+-- test datetime
+create table test_datetime (t datetime);
+select bit_xor(t) from test_datetime;
+ bit_xor 
+---------
+       0
+(1 row)
+
+insert into test_datetime values ('1000-01-01 00:00:00');
+select bit_xor(t) from test_datetime;
+    bit_xor     
+----------------
+ 10000101000000
+(1 row)
+
+insert into test_datetime values ('9999-12-31 23:59:59');
+select bit_xor(t) from test_datetime;
+    bit_xor     
+----------------
+ 92261562336311
+(1 row)
+
+insert into test_datetime values ('2000-01-30 -01:-10:-59');
+select bit_xor(t) from test_datetime;
+    bit_xor     
+----------------
+ 72404374342532
+(1 row)
+
+insert into test_datetime values (null);
+select bit_xor(t) from test_datetime;
+    bit_xor     
+----------------
+ 72404374342532
+(1 row)
+
+create table test_timestamp (t timestamp);
+select bit_xor(t) from test_timestamp;
+ bit_xor 
+---------
+       0
+(1 row)
+
+insert into test_timestamp values ('1979-01-01 00:00:00');
+select bit_xor(t) from test_timestamp;
+    bit_xor     
+----------------
+ 19790101000000
+(1 row)
+
+insert into test_timestamp values ('2038-01-19 03:14:08');
+select bit_xor(t) from test_timestamp;
+    bit_xor    
+---------------
+ 3808028651824
+(1 row)
+
+insert into test_timestamp values ('2000-01-30 -23:-59:-59');
+select bit_xor(t) from test_timestamp;
+    bit_xor     
+----------------
+ 18992422555399
+(1 row)
+
+insert into test_timestamp values (null);
+select bit_xor(t) from test_timestamp;
+    bit_xor     
+----------------
+ 18992422555399
+(1 row)
+
+drop table test_datetime;
+drop table test_timestamp;
+--test int
+CREATE TABLE bit_xor_int1(a TINYINT);
+INSERT INTO bit_xor_int1(a) values(-1.11);
+SELECT BIT_XOR(a) from bit_xor_int1;
+       bit_xor        
+----------------------
+ 18446744073709551615
+(1 row)
+
+INSERT INTO bit_xor_int1(a) values(1.11);
+SELECT BIT_XOR(a) from bit_xor_int1;
+       bit_xor        
+----------------------
+ 18446744073709551614
+(1 row)
+
+INSERT INTO bit_xor_int1(a) values(NULL);
+SELECT BIT_XOR(a) from bit_xor_int1;
+       bit_xor        
+----------------------
+ 18446744073709551614
+(1 row)
+
+DROP TABLE if exists bit_xor_int1;
+-- test smallint
+CREATE TABLE bit_xor_int2(a SMALLINT);
+INSERT INTO bit_xor_int2(a) values(-1.11);
+SELECT BIT_XOR(a) from bit_xor_int2;
+       bit_xor        
+----------------------
+ 18446744073709551615
+(1 row)
+
+INSERT INTO bit_xor_int2(a) values(1.11);
+SELECT BIT_XOR(a) from bit_xor_int2;
+       bit_xor        
+----------------------
+ 18446744073709551614
+(1 row)
+
+INSERT INTO bit_xor_int2(a) values(NULL);
+SELECT BIT_XOR(a) from bit_xor_int2;
+       bit_xor        
+----------------------
+ 18446744073709551614
+(1 row)
+
+DROP TABLE if exists bit_xor_int2;
+--test mediumint
+CREATE TABLE bit_xor_int3(a MEDIUMINT);
+INSERT INTO bit_xor_int3(a) values(-1.11);
+SELECT BIT_XOR(a) from bit_xor_int3;
+       bit_xor        
+----------------------
+ 18446744073709551615
+(1 row)
+
+INSERT INTO bit_xor_int3(a) values(1.11);
+SELECT BIT_XOR(a) from bit_xor_int3;
+       bit_xor        
+----------------------
+ 18446744073709551614
+(1 row)
+
+INSERT INTO bit_xor_int3(a) values(NULL);
+SELECT BIT_XOR(a) from bit_xor_int3;
+       bit_xor        
+----------------------
+ 18446744073709551614
+(1 row)
+
+DROP TABLE if exists bit_xor_int3;
+-- test int
+CREATE TABLE bit_xor_int4(a INT);
+INSERT INTO bit_xor_int4(a) values(-1.11);
+SELECT BIT_XOR(a) from bit_xor_int4;
+       bit_xor        
+----------------------
+ 18446744073709551615
+(1 row)
+
+INSERT INTO bit_xor_int4(a) values(1.11);
+SELECT BIT_XOR(a) from bit_xor_int4;
+       bit_xor        
+----------------------
+ 18446744073709551614
+(1 row)
+
+INSERT INTO bit_xor_int4(a) values(NULL);
+SELECT BIT_XOR(a) from bit_xor_int4;
+       bit_xor        
+----------------------
+ 18446744073709551614
+(1 row)
+
+DROP TABLE if exists bit_xor_int4;
+-- test bigint
+CREATE TABLE bit_xor_int8(a BIGINT);
+INSERT INTO bit_xor_int8(a) values(-1.11);
+SELECT BIT_XOR(a) from bit_xor_int8;
+       bit_xor        
+----------------------
+ 18446744073709551615
+(1 row)
+
+INSERT INTO bit_xor_int8(a) values(1.11);
+SELECT BIT_XOR(a) from bit_xor_int8;
+       bit_xor        
+----------------------
+ 18446744073709551614
+(1 row)
+
+INSERT INTO bit_xor_int8(a) values(NULL);
+SELECT BIT_XOR(a) from bit_xor_int8;
+       bit_xor        
+----------------------
+ 18446744073709551614
+(1 row)
+
+DROP TABLE if exists bit_xor_int8;
+-- test float
+CREATE TABLE bit_xor_float(a FLOAT);
+INSERT INTO bit_xor_float(a) values(-1.11);
+SELECT BIT_XOR(a) from bit_xor_float;
+       bit_xor        
+----------------------
+ 18446744073709551615
+(1 row)
+
+INSERT INTO bit_xor_float(a) values(1.11);
+SELECT BIT_XOR(a) from bit_xor_float;
+       bit_xor        
+----------------------
+ 18446744073709551614
+(1 row)
+
+INSERT INTO bit_xor_float(a) values(NULL);
+SELECT BIT_XOR(a) from bit_xor_float;
+       bit_xor        
+----------------------
+ 18446744073709551614
+(1 row)
+
+DROP TABLE if exists bit_xor_float;
+-- test double
+CREATE TABLE bit_xor_double(a DOUBLE);
+INSERT INTO bit_xor_double(a) values(-1.11);
+SELECT BIT_XOR(a) from bit_xor_double;
+       bit_xor        
+----------------------
+ 18446744073709551615
+(1 row)
+
+INSERT INTO bit_xor_double(a) values(1.11);
+SELECT BIT_XOR(a) from bit_xor_double;
+       bit_xor        
+----------------------
+ 18446744073709551614
+(1 row)
+
+INSERT INTO bit_xor_double(a) values(NULL);
+SELECT BIT_XOR(a) from bit_xor_double;
+       bit_xor        
+----------------------
+ 18446744073709551614
+(1 row)
+
+DROP TABLE if exists bit_xor_double;
+-- test decimal
+CREATE TABLE bit_xor_dec(a DECIMAL(5,2));
+INSERT INTO bit_xor_dec(a) values(-1.11);
+INSERT INTO bit_xor_dec(a) values(NULL);
+SELECT BIT_XOR(a) from bit_xor_dec;
+       bit_xor        
+----------------------
+ 18446744073709551615
+(1 row)
+
+DROP TABLE if exists bit_xor_dec;
+-- test char
+CREATE TABLE bit_xor_char(a CHAR(5));
+INSERT INTO bit_xor_char(a) values('-1.11');
+SELECT BIT_XOR(a) from bit_xor_char;
+       bit_xor        
+----------------------
+ 18446744073709551615
+(1 row)
+
+INSERT INTO bit_xor_char(a) values('1.11');
+SELECT BIT_XOR(a) from bit_xor_char;
+       bit_xor        
+----------------------
+ 18446744073709551614
+(1 row)
+
+INSERT INTO bit_xor_char(a) values(NULL);
+SELECT BIT_XOR(a) from bit_xor_char;
+       bit_xor        
+----------------------
+ 18446744073709551614
+(1 row)
+
+DROP TABLE if exists bit_xor_char;
+--test varchar
+CREATE TABLE bit_xor_varchar(a VARCHAR(5));
+INSERT INTO bit_xor_varchar(a) values('-1.11');
+SELECT BIT_XOR(a) from bit_xor_varchar;
+       bit_xor        
+----------------------
+ 18446744073709551615
+(1 row)
+
+INSERT INTO bit_xor_varchar(a) values('1.11');
+SELECT BIT_XOR(a) from bit_xor_varchar;
+       bit_xor        
+----------------------
+ 18446744073709551614
+(1 row)
+
+INSERT INTO bit_xor_varchar(a) values(NULL);
+SELECT BIT_XOR(a) from bit_xor_varchar;
+       bit_xor        
+----------------------
+ 18446744073709551614
+(1 row)
+
+DROP TABLE if exists bit_xor_varchar;
+-- test tinyblob
+CREATE TABLE bit_xor_tinyblob(a TINYBLOB);
+INSERT INTO bit_xor_tinyblob(a) values('111');
+SELECT BIT_XOR(a) from bit_xor_tinyblob;
+ bit_xor 
+---------
+ 111
+(1 row)
+
+INSERT INTO bit_xor_tinyblob(a) values('101');
+SELECT BIT_XOR(a) from bit_xor_tinyblob;
+ bit_xor 
+---------
+ 10
+(1 row)
+
+INSERT INTO bit_xor_tinyblob(a) values(NULL);
+SELECT BIT_XOR(a) from bit_xor_tinyblob;
+ bit_xor 
+---------
+ 10
+(1 row)
+
+DROP TABLE if exists bit_xor_tinyblob;
+-- test tinytext
+CREATE TABLE bit_xor_tinytext(a TINYTEXT);
+INSERT INTO bit_xor_tinytext(a) values('-1.11');
+SELECT BIT_XOR(a) from bit_xor_tinytext;
+       bit_xor        
+----------------------
+ 18446744073709551615
+(1 row)
+
+INSERT INTO bit_xor_tinytext(a) values('1.11');
+SELECT BIT_XOR(a) from bit_xor_tinytext;
+       bit_xor        
+----------------------
+ 18446744073709551614
+(1 row)
+
+INSERT INTO bit_xor_tinytext(a) values(NULL);
+SELECT BIT_XOR(a) from bit_xor_tinytext;
+       bit_xor        
+----------------------
+ 18446744073709551614
+(1 row)
+
+DROP TABLE if exists bit_xor_tinytext;
+-- test text
+CREATE TABLE bit_xor_text(a TEXT);
+INSERT INTO bit_xor_text(a) values('-1.11');
+SELECT BIT_XOR(a) from bit_xor_text;
+       bit_xor        
+----------------------
+ 18446744073709551615
+(1 row)
+
+INSERT INTO bit_xor_text(a) values('1.11');
+SELECT BIT_XOR(a) from bit_xor_text;
+       bit_xor        
+----------------------
+ 18446744073709551614
+(1 row)
+
+INSERT INTO bit_xor_text(a) values(NULL);
+SELECT BIT_XOR(a) from bit_xor_text;
+       bit_xor        
+----------------------
+ 18446744073709551614
+(1 row)
+
+DROP TABLE if exists bit_xor_text;
+CREATE TABLE bit_xor_mediumtext(a MEDIUMTEXT);
+INSERT INTO bit_xor_mediumtext(a) values('-1.11');
+SELECT BIT_XOR(a) from bit_xor_mediumtext;
+       bit_xor        
+----------------------
+ 18446744073709551615
+(1 row)
+
+INSERT INTO bit_xor_mediumtext(a) values('1.11');
+SELECT BIT_XOR(a) from bit_xor_mediumtext;
+       bit_xor        
+----------------------
+ 18446744073709551614
+(1 row)
+
+INSERT INTO bit_xor_mediumtext(a) values(NULL);
+SELECT BIT_XOR(a) from bit_xor_mediumtext;
+       bit_xor        
+----------------------
+ 18446744073709551614
+(1 row)
+
+DROP TABLE if exists bit_xor_mediumtext;
+CREATE TABLE bit_xor_longtext(a LONGTEXT);
+INSERT INTO bit_xor_longtext(a) values('-1.11');
+SELECT BIT_XOR(a) from bit_xor_longtext;
+       bit_xor        
+----------------------
+ 18446744073709551615
+(1 row)
+
+INSERT INTO bit_xor_longtext(a) values('1.11');
+SELECT BIT_XOR(a) from bit_xor_longtext;
+       bit_xor        
+----------------------
+ 18446744073709551614
+(1 row)
+
+INSERT INTO bit_xor_longtext(a) values(NULL);
+SELECT BIT_XOR(a) from bit_xor_longtext;
+       bit_xor        
+----------------------
+ 18446744073709551614
+(1 row)
+
+DROP TABLE if exists bit_xor_longtext;
+-- test blob
+CREATE TABLE bit_xor_blob(a BLOB);
+INSERT INTO bit_xor_blob(a) values('111');
+SELECT BIT_XOR(a) from bit_xor_blob;
+ bit_xor 
+---------
+ 111
+(1 row)
+
+INSERT INTO bit_xor_blob(a) values('101');
+SELECT BIT_XOR(a) from bit_xor_blob;
+ bit_xor 
+---------
+ 10
+(1 row)
+
+INSERT INTO bit_xor_blob(a) values(NULL);
+SELECT BIT_XOR(a) from bit_xor_blob;
+ bit_xor 
+---------
+ 10
+(1 row)
+
+DROP TABLE if exists bit_xor_blob;
+CREATE TABLE bit_xor_mediumblob(a MEDIUMBLOB);
+INSERT INTO bit_xor_mediumblob(a) values('111');
+SELECT BIT_XOR(a) from bit_xor_mediumblob;
+ bit_xor 
+---------
+ 111
+(1 row)
+
+INSERT INTO bit_xor_mediumblob(a) values('101');
+SELECT BIT_XOR(a) from bit_xor_mediumblob;
+ bit_xor 
+---------
+ 10
+(1 row)
+
+INSERT INTO bit_xor_mediumblob(a) values(NULL);
+SELECT BIT_XOR(a) from bit_xor_mediumblob;
+ bit_xor 
+---------
+ 10
+(1 row)
+
+DROP TABLE if exists bit_xor_mediumblob;
+CREATE TABLE bit_xor_longblob(a LONGBLOB);
+INSERT INTO bit_xor_longblob(a) values('111');
+SELECT BIT_XOR(a) from bit_xor_longblob;
+ bit_xor 
+---------
+ 111
+(1 row)
+
+INSERT INTO bit_xor_longblob(a) values('101');
+SELECT BIT_XOR(a) from bit_xor_longblob;
+ bit_xor 
+---------
+ 10
+(1 row)
+
+INSERT INTO bit_xor_longblob(a) values(NULL);
+SELECT BIT_XOR(a) from bit_xor_longblob;
+ bit_xor 
+---------
+ 10
+(1 row)
+
+DROP TABLE if exists bit_xor_longblob;
+-- test raw
+CREATE TABLE bit_xor_raw(a raw);
+INSERT INTO bit_xor_raw(a) values('111');
+SELECT BIT_XOR(a) from bit_xor_raw;
+ bit_xor 
+---------
+ 111
+(1 row)
+
+INSERT INTO bit_xor_raw(a) values('101');
+SELECT BIT_XOR(a) from bit_xor_raw;
+ bit_xor 
+---------
+ 10
+(1 row)
+
+INSERT INTO bit_xor_raw(a) values(NULL);
+SELECT BIT_XOR(a) from bit_xor_raw;
+ bit_xor 
+---------
+ 10
+(1 row)
+
+DROP TABLE if exists bit_xor_raw;
+create table test_time (t time);
+insert into test_time values('-00:00:01');
+select bit_xor(t) from test_time;
+       bit_xor        
+----------------------
+ 18446744073709551615
+(1 row)
+
+insert into test_time values('12:59:59.999');
+insert into test_time values('00:00:01');
+insert into test_time values('838:59:59');
+-- 表中数据为
+select * from test_time;
+     t     
+-----------
+ -00:00:01
+ 13:00:00
+ 00:00:01
+ 838:59:59
+(4 rows)
+
+-- 测试不含时区的time类型
+select bit_xor(t) from test_time;
+       bit_xor        
+----------------------
+ 18446744073701290377
+(1 row)
+
+create table test_time_with_zone (t time with time zone);
+insert into test_time_with_zone values('00:00:01 UTC');
+insert into test_time_with_zone values('00:00:02 PST');
+insert into test_time_with_zone values('00:10:00 CST');
+insert into test_time_with_zone values('10:00:01 JST');
+insert into test_time_with_zone values('23:59:59 CCT');
+-- 表中数据为
+select * from test_time_with_zone;
+      t      
+-------------
+ 00:00:01+00
+ 00:00:02-08
+ 00:10:00-06
+ 10:00:01+09
+ 23:59:59+08
+(5 rows)
+
+-- 测试含时区的time类型
+select bit_xor(t) from test_time_with_zone;
+ bit_xor 
+---------
+  138493
+(1 row)
+
+-- 测试空值
+create table test_time_with_null (t time);
+insert into test_time_with_null values(NULL);
+insert into test_time_with_null values('12:34:56');
+insert into test_time_with_null values(NULL);
+select * from test_time_with_null;
+    t     
+----------
+ 
+ 12:34:56
+ 
+(3 rows)
+
+select bit_xor(t) from test_time_with_null;
+ bit_xor 
+---------
+  123456
+(1 row)
+
+create table test_time_with_zone_with_null (t time with time zone);
+insert into test_time_with_zone_with_null values(NULL);
+insert into test_time_with_zone_with_null values('12:34:56 UTC');
+insert into test_time_with_zone_with_null values(NULL);
+select * from test_time_with_zone_with_null;
+      t      
+-------------
+ 
+ 12:34:56+00
+ 
+(3 rows)
+
+select bit_xor(t) from test_time_with_zone_with_null;
+ bit_xor 
+---------
+  123456
+(1 row)
+
+-- test date
+create table test_date(col date);
+insert into test_date values('2022-01-01');
+select bit_xor(col) from test_date;
+ bit_xor  
+----------
+ 20220101
+(1 row)
+
+insert into test_date values('2022-01-02');
+select bit_xor(col) from test_date;
+ bit_xor 
+---------
+       3
+(1 row)
+
+insert into test_date values(null);
+select bit_xor(col) from test_date;
+ bit_xor 
+---------
+       3
+(1 row)
+
+drop table test_date;
+create table test_date(col date);
+insert into test_date values('22-01-01');
+select bit_xor(col) from test_date;
+ bit_xor  
+----------
+ 20220101
+(1 row)
+
+insert into test_date values('22-01-02');
+select bit_xor(col) from test_date;
+ bit_xor 
+---------
+       3
+(1 row)
+
+-- test year
+create table test_year(col year);
+insert into test_year values('2022');
+select bit_xor(col) from test_year;
+ bit_xor 
+---------
+    2022
+(1 row)
+
+insert into test_year values('2021');
+select bit_xor(col) from test_year;
+ bit_xor 
+---------
+       3
+(1 row)
+
+insert into test_year values(null);
+select bit_xor(col) from test_year;
+ bit_xor 
+---------
+       3
+(1 row)
+
+drop table test_year;
+create table test_year(col year);
+insert into test_year values('22');
+select bit_xor(col) from test_year;
+ bit_xor 
+---------
+    2022
+(1 row)
+
+insert into test_year values('21');
+select bit_xor(col) from test_year;
+ bit_xor 
+---------
+       3
+(1 row)
+
+drop table test_year;
+-- test bit
+create table test_bit(col bit);
+insert into test_bit values(b'1');
+select bit_xor(col) from test_bit;
+ bit_xor 
+---------
+       1
+(1 row)
+
+insert into test_bit values(b'0');
+select bit_xor(col) from test_bit;
+ bit_xor 
+---------
+       1
+(1 row)
+
+insert into test_bit values(null);
+select bit_xor(col) from test_bit;
+ bit_xor 
+---------
+       1
+(1 row)
+
+drop table test_bit;
+create table test_bit(col bit(8));
+insert into test_bit values(b'11');
+select bit_xor(col) from test_bit;
+ bit_xor 
+---------
+       3
+(1 row)
+
+insert into test_bit values(b'101');
+select bit_xor(col) from test_bit;
+ bit_xor 
+---------
+       6
+(1 row)
+
+-- test varbit
+create table test_varbit(col varbit);
+insert into test_varbit values(b'1');
+select bit_xor(col) from test_varbit;
+ bit_xor 
+---------
+       1
+(1 row)
+
+insert into test_varbit values(b'0');
+select bit_xor(col) from test_varbit;
+ bit_xor 
+---------
+       1
+(1 row)
+
+insert into test_varbit values(null);
+select bit_xor(col) from test_varbit;
+ bit_xor 
+---------
+       1
+(1 row)
+
+drop table test_varbit;
+create table test_varbit(col bit(8));
+insert into test_varbit values(b'11');
+select bit_xor(col) from test_varbit;
+ bit_xor 
+---------
+       3
+(1 row)
+
+insert into test_varbit values(b'101');
+select bit_xor(col) from test_varbit;
+ bit_xor 
+---------
+       6
+(1 row)
+
+drop table test_varbit;
+\c postgres
+drop database test_bit_xor;

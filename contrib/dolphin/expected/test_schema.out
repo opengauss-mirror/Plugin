@@ -1,0 +1,12 @@
+drop database if exists schema_test;
+NOTICE:  database "schema_test" does not exist, skipping
+create database schema_test dbcompatibility 'b';
+\c schema_test
+SELECT SCHEMA();
+ schema 
+--------
+ public
+(1 row)
+
+\c postgres
+drop database if exists schema_test;

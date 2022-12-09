@@ -147,6 +147,18 @@ PG_FUNCTION_INFO_V1_PUBLIC(b_extract_text);
 extern "C" DLL_PUBLIC Datum b_extract_text(PG_FUNCTION_ARGS);
 PG_FUNCTION_INFO_V1_PUBLIC(b_extract_numeric);
 extern "C" DLL_PUBLIC Datum b_extract_numeric(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1_PUBLIC(time_xor_transfn);
+extern "C" DLL_PUBLIC Datum time_xor_transfn(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(timetz_xor_transfn);
+extern "C" DLL_PUBLIC Datum timetz_xor_transfn(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1_PUBLIC(date_xor_transfn);
+extern "C" DLL_PUBLIC Datum date_xor_transfn(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1_PUBLIC(date_agg_finalfn);
+extern "C" DLL_PUBLIC Datum date_agg_finalfn(PG_FUNCTION_ARGS);
+
 PG_FUNCTION_INFO_V1_PUBLIC(b_extract);
 extern "C" DLL_PUBLIC Datum b_extract(PG_FUNCTION_ARGS);
 PG_FUNCTION_INFO_V1_PUBLIC(time_float);
@@ -5049,6 +5061,98 @@ static inline int64 extract_internal(b_units enum_unit, struct pg_tm* tm, fsec_t
     }
     return result;
 }
+
+Datum time_xor_transfn(PG_FUNCTION_ARGS)
+{
+    TimeADT time;
+    uint64 internal;
+    /* On the first time through, we ignore the delimiter. */
+    if (PG_ARGISNULL(0) && PG_ARGISNULL(1)) {
+        PG_RETURN_INT128(0);
+    } else if (!PG_ARGISNULL(0) && PG_ARGISNULL(1)) {
+        internal = (uint64)PG_GETARG_INT128(0);
+        PG_RETURN_INT128((int128)internal);
+    }
+    time = PG_GETARG_TIMEADT(1);
+    struct pg_tm tt, *tm = &tt;
+    fsec_t fsec;
+    time2tm(time, tm, &fsec);
+
+    int hour = tm->tm_hour;
+    int minute = tm->tm_min;
+    int second = tm->tm_sec;
+    uint64 res = hour * 1e4 + minute * 1e2 + second;
+    if (!PG_ARGISNULL(0)) {
+        internal = (uint64)PG_GETARG_INT128(0);
+        PG_RETURN_INT128((int128)(res ^ internal));
+    } else {
+        PG_RETURN_INT128((int128)res);
+    }
+}
+
+Datum timetz_xor_transfn(PG_FUNCTION_ARGS)
+{
+    TimeTzADT* time;
+    uint64 internal;
+    /* On the first time through, we ignore the delimiter. */
+    if (PG_ARGISNULL(0) && PG_ARGISNULL(1)) {
+        PG_RETURN_INT128(0);
+    } else if (!PG_ARGISNULL(0) && PG_ARGISNULL(1)) {
+        internal = (uint64)PG_GETARG_INT128(0);
+        PG_RETURN_INT128((int128)internal);
+    }
+    time = PG_GETARG_TIMETZADT_P(1);
+    struct pg_tm tt, *tm = &tt;
+    fsec_t fsec;
+    int tz;
+    timetz2tm(time, tm, &fsec, &tz);
+
+    int hour = tm->tm_hour;
+    int minute = tm->tm_min;
+    int second = tm->tm_sec;
+    uint64 res = hour * 1e4 + minute * 1e2 + second;
+    if (!PG_ARGISNULL(0)) {
+        internal = (uint64)PG_GETARG_INT128(0);
+        PG_RETURN_INT128((int128)(res ^ internal));
+    } else {
+        PG_RETURN_INT128((int128)res);
+    }
+}
+
+Datum date_xor_transfn(PG_FUNCTION_ARGS) 
+{
+    int128 internal = 0;
+    DateADT dateVal = 0;
+    int128 res = 0;
+    int year = 0;
+    int month = 0;
+    int day = 0;
+
+    /* On the first time through, we ignore the delimiter. */
+    if (!PG_ARGISNULL(0)) {
+        internal = PG_GETARG_INT128(0);
+    }
+
+    if (!PG_ARGISNULL(1)) {
+        dateVal = PG_GETARG_DATEADT(1);
+        j2date(dateVal + POSTGRES_EPOCH_JDATE, &year, &month, &day);
+        res = year*1e4+month*1e2+day;
+    }
+
+    PG_RETURN_INT128(res ^ internal);
+}
+
+Datum date_agg_finalfn(PG_FUNCTION_ARGS)
+{
+    int128 finalResult;
+    /* cannot be called directly because of internal-type argument */
+    Assert(AggCheckCallContext(fcinfo, NULL));
+
+    finalResult = PG_ARGISNULL(0) ? 0 : (int128)PG_GETARG_INT128(0);
+
+    PG_RETURN_INT128(finalResult);
+}
+
 
 Datum b_extract_text(PG_FUNCTION_ARGS)
 {

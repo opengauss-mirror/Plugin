@@ -1,0 +1,36 @@
+drop database if exists test_system_user;
+NOTICE:  database "test_system_user" does not exist, skipping
+create database test_system_user dbcompatibility 'b';
+\c test_system_user
+select session_user;
+ session_user 
+--------------
+--?.*
+(1 row)
+
+select session_user();
+ session_user 
+--------------
+--?.*
+(1 row)
+
+select user;
+ current_user 
+--------------
+--?.*
+(1 row)
+
+select user();
+ current_user 
+--------------
+--?.*
+(1 row)
+
+select system_user();
+ system_user 
+-------------
+--?.*
+(1 row)
+
+\c postgres
+drop database test_system_user;
