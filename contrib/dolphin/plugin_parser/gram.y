@@ -27496,7 +27496,14 @@ a_expr:		c_expr									{ $$ = $1; }
 					}
 				}
 			| a_expr qual_Op					%prec POSTFIXOP
-				{ $$ = (Node *) makeA_Expr(AEXPR_OP, $2, $1, NULL, @2); }
+				{
+					char* op_str = ((Value*)lfirst($2->head))->val.str;
+					/* deprecate use of expr! when b_compatibility_mode is on */
+					if (GetSessionContext()->enableBCmptMode && $2->length == 1 && strcmp("!", op_str) == 0) {
+						ereport(ERROR, (errcode(ERRCODE_SYNTAX_ERROR), errmsg("Operator '!' behind expression is deprecated when b_compatibility_mode is on. Please use function factorial().")));
+					}
+					$$ = (Node *) makeA_Expr(AEXPR_OP, $2, $1, NULL, @2);
+				}
 
 			| a_expr AND a_expr
 				{ $$ = (Node *) makeA_Expr(AEXPR_AND, NIL, $1, $3, @2); }
