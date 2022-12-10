@@ -107,7 +107,7 @@ extra_clean:
 	make clean -C $(catalog)
 clean: extra_clean
 
-dolphin--1.0.sql: sql_script/*
+dolphin--1.0.sql: sql_script/* sql_script_post/*
 	cat $^ > $@
 DATA_built = dolphin--1.0.sql openGauss_expr_dolphin.ir
 
