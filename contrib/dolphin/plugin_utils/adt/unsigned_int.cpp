@@ -67,7 +67,7 @@ Datum uint1in(PG_FUNCTION_ARGS)
 {
     char *num = PG_GETARG_CSTRING(0);
 
-    PG_RETURN_UINT8((uint8)PgAtoiInternal(num, sizeof(uint8), '\0', SQL_MODE_STRICT(), true));
+    PG_RETURN_UINT8((uint8)PgAtoiInternal(num, sizeof(uint8), '\0', SQL_MODE_STRICT(), fcinfo->can_ignore, true));
 }
 
 /*
@@ -591,7 +591,7 @@ Datum uint2in(PG_FUNCTION_ARGS)
 {
     char *num = PG_GETARG_CSTRING(0);
 
-    PG_RETURN_UINT16(PgStrtouint16Internal(num, SQL_MODE_STRICT()));
+    PG_RETURN_UINT16(PgStrtouint16Internal(num, SQL_MODE_STRICT(), fcinfo->can_ignore));
 }
 
 Datum uint2out(PG_FUNCTION_ARGS)
@@ -1116,7 +1116,7 @@ Datum uint4in(PG_FUNCTION_ARGS)
 {
     char *num = PG_GETARG_CSTRING(0);
 
-    PG_RETURN_UINT32(PgStrtouint32Internal(num, SQL_MODE_STRICT()));
+    PG_RETURN_UINT32(PgStrtouint32Internal(num, SQL_MODE_STRICT(), fcinfo->can_ignore));
 }
 
 Datum uint4out(PG_FUNCTION_ARGS)
@@ -2269,7 +2269,7 @@ Datum int4_uint4_ge(PG_FUNCTION_ARGS)
     PG_RETURN_BOOL((int64)arg1 >= (int64)arg2);
 }
 
-bool scanuint8(const char *str, bool errorOK, uint64 *result)
+bool scanuint8(const char *str, bool errorOK, uint64 *result, bool can_ignore)
 {
     const char *ptr = str;
     uint64 tmp = 0;
@@ -2280,7 +2280,7 @@ bool scanuint8(const char *str, bool errorOK, uint64 *result)
 
     /* handle sign */
     if (*ptr == '-') {
-        if (SQL_MODE_STRICT()) {
+        if (!can_ignore && SQL_MODE_STRICT()) {
             ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE),
                 errmsg("value \"%s\" is out of range for type bigint unsigned", str)));
         }
@@ -2293,7 +2293,7 @@ bool scanuint8(const char *str, bool errorOK, uint64 *result)
     if (unlikely(!isdigit((unsigned char)*ptr))) {
         if (errorOK)
             return false;
-        else if (!SQL_MODE_STRICT()) {
+        else if (can_ignore || !SQL_MODE_STRICT()) {
             *result = tmp;
             return true;
         }
@@ -2306,14 +2306,12 @@ bool scanuint8(const char *str, bool errorOK, uint64 *result)
         if ((newtmp / 10) != tmp) { /* overflow? */
             if (errorOK)
                 return false;
-            else if (SQL_MODE_STRICT()) {
+            else if (!can_ignore && SQL_MODE_STRICT()) {
                 ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE),
                     errmsg("value \"%s\" is out of range for type bigint unsigned", str)));
-            } else if (neg) {
-                *result = 0;
-                return true;
-            } else {
-                *result = PG_UINT64_MAX;
+            }
+            else {
+                *result = neg ? 0 : PG_UINT64_MAX;
                 return true;
             }
         }
@@ -2327,7 +2325,7 @@ bool scanuint8(const char *str, bool errorOK, uint64 *result)
     if (unlikely(*ptr != '\0')) {
         if (errorOK)
             return false;
-        else if (SQL_MODE_STRICT())
+        else if (!can_ignore && SQL_MODE_STRICT())
             ereport(ERROR,
                 (errcode(ERRCODE_INVALID_TEXT_REPRESENTATION),
                     errmsg("invalid input syntax for type %s: \"%s\"", "bigint unsigned", str)));
@@ -2346,7 +2344,7 @@ Datum uint8in(PG_FUNCTION_ARGS)
 {
     char *str = PG_GETARG_CSTRING(0);
     uint64 result;
-    (void)scanuint8(str, false, &result);
+    (void)scanuint8(str, false, &result, fcinfo->can_ignore);
     PG_RETURN_UINT64(result);
 }
 

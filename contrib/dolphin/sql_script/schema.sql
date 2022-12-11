@@ -1,0 +1,11 @@
+DROP FUNCTION IF EXISTS pg_catalog.schema () CASCADE;
+
+CREATE OR REPLACE FUNCTION pg_catalog.schema ()
+RETURNS text
+AS
+$$
+BEGIN
+    RETURN (SELECT CURRENT_SCHEMA());
+END;
+$$
+LANGUAGE plpgsql;

@@ -564,7 +564,7 @@ Datum float8in(PG_FUNCTION_ARGS)
              * to see if the result is zero or huge.
              */
             if (val == 0.0 || val >= HUGE_VAL || val <= -HUGE_VAL) {
-                if (SQL_MODE_STRICT() || val == 0.0) {
+                if (!fcinfo->can_ignore && SQL_MODE_STRICT() || val == 0.0) {
                     ereport(ERROR,
                         (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE),
                             errmsg("\"%s\" is out of range for type double precision", orig_num)));
@@ -574,7 +574,7 @@ Datum float8in(PG_FUNCTION_ARGS)
                     val = -__DBL_MAX__;
                 }
             }
-        } else if (SQL_MODE_STRICT())
+        } else if (!fcinfo->can_ignore && SQL_MODE_STRICT())
             ereport(ERROR,
                 (errcode(ERRCODE_INVALID_TEXT_REPRESENTATION),
                     errmsg("invalid input syntax for type double precision: \"%s\"", orig_num)));
@@ -617,13 +617,13 @@ Datum float8in(PG_FUNCTION_ARGS)
         endptr++;
 
     /* if there is any junk left at the end of the string, bail out */
-    if (SQL_MODE_STRICT() && (*endptr != '\0')) {
+    if (!fcinfo->can_ignore && SQL_MODE_STRICT() && (*endptr != '\0')) {
         ereport(ERROR,
             (errcode(ERRCODE_INVALID_TEXT_REPRESENTATION),
                 errmsg("invalid input syntax for type double precision: \"%s\"", orig_num)));
     }
 
-    if (!SQL_MODE_STRICT()) {
+    if (fcinfo->can_ignore || !SQL_MODE_STRICT()) {
         if (val > __DBL_MAX__)
             val = __DBL_MAX__;
         else if(val < -__DBL_MAX__)

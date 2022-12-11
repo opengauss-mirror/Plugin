@@ -898,7 +898,12 @@ select !(10.345::float8);
 select !('2012-01-01'::date);
 select !('23:59:59'::time);
 select !b'1001';
+select 10!;
 
 set dolphin.b_compatibility_mode = 0;
+select !10;
+select !!10;
+select 10!;
+
 \c postgres
 drop database if exists like_test;

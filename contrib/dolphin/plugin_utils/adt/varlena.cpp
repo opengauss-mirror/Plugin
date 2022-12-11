@@ -9258,7 +9258,6 @@ static int64 NumericToLongLongNoOverflow(Numeric num)
                 (errcode(ERRCODE_INVALID_TEXT_REPRESENTATION),
                  errmsg("invalid input syntax for type long long precision: \"%s\"", tmp)));
     }
-    int64 val_int = floor(val);
     pfree_ext(tmp);
     return val;
 }

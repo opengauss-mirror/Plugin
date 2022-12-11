@@ -16643,14 +16643,16 @@ b_proc_body:
 								if (!(tok == ';' || tok == 0)
 										&& tok != IF_P
 										&& tok != CASE
-										&& tok != LOOP)
+										&& tok != LOOP
+										&& tok != WHILE_P
+										&& tok != REPEAT)
 								{
 										tok = END_P;
 										continue;
 								}
-
+								/*pre_tok = 0 for begin (nothing) end;*/
 								if (blocklevel == 1
-										&& (pre_tok == ';' || pre_tok == BEGIN_P)
+										&& (pre_tok == ';' || pre_tok == BEGIN_P || pre_tok == 0)
 										&& (tok == ';' || tok == 0))
 								{
 										/* Save the end of procedure body. */
@@ -16675,8 +16677,8 @@ b_proc_body:
 								 * In fact the tok can not be 0
 								 */
 								if (blocklevel > 1
-										 && (pre_tok == ';' || pre_tok == BEGIN_P)
-										 && (tok == ';' || tok == 0))
+									&& (pre_tok == ';' || pre_tok == BEGIN_P)
+									&& (tok == ';' || tok == 0))
 								{
 										blocklevel--;
 								}
@@ -27494,7 +27496,14 @@ a_expr:		c_expr									{ $$ = $1; }
 					}
 				}
 			| a_expr qual_Op					%prec POSTFIXOP
-				{ $$ = (Node *) makeA_Expr(AEXPR_OP, $2, $1, NULL, @2); }
+				{
+					char* op_str = ((Value*)lfirst($2->head))->val.str;
+					/* deprecate use of expr! when b_compatibility_mode is on */
+					if (GetSessionContext()->enableBCmptMode && $2->length == 1 && strcmp("!", op_str) == 0) {
+						ereport(ERROR, (errcode(ERRCODE_SYNTAX_ERROR), errmsg("Operator '!' behind expression is deprecated when b_compatibility_mode is on. Please use function factorial().")));
+					}
+					$$ = (Node *) makeA_Expr(AEXPR_OP, $2, $1, NULL, @2);
+				}
 
 			| a_expr AND a_expr
 				{ $$ = (Node *) makeA_Expr(AEXPR_AND, NIL, $1, $3, @2); }
@@ -29388,7 +29397,7 @@ func_expr_common_subexpr:
 					n->call_func = false;
 					$$ = (Node *)n;
 				}
-			| SESSION_USER
+			| SESSION_USER opt_bracket
 				{
 					FuncCall *n = makeNode(FuncCall);
 					n->funcname = SystemFuncName("session_user");
@@ -29402,7 +29411,7 @@ func_expr_common_subexpr:
 					n->call_func = false;
 					$$ = (Node *)n;
 				}
-			| USER
+			| USER opt_bracket
 				{
 					FuncCall *n = makeNode(FuncCall);
 					n->funcname = SystemFuncName("current_user");

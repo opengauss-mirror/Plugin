@@ -1,6 +1,6 @@
 test: float_numeric_test/db_b_log_test float_numeric_test/db_b_sqrt_test
 
-test: keyword_ignore_test/ignore_no_matched_partition keyword_ignore_test/ignore_not_null_constraints keyword_ignore_test/ignore_type_transform keyword_ignore_test/ignore_unique_constraints
+test: keyword_ignore_test/ignore_no_matched_partition keyword_ignore_test/ignore_not_null_constraints keyword_ignore_test/ignore_type_transform keyword_ignore_test/ignore_unique_constraints keyword_ignore_test/ignore_invalid_input
 
 test: string_func_test/db_b_ascii_test string_func_test/db_b_left_right_test string_func_test/db_b_quote_test string_func_test/db_b_string_length_test string_func_test/db_b_substr_test string_func_test/db_b_trim_test string_func_test/db_b_insert_test
 
@@ -157,6 +157,8 @@ test: load
 test: like_default_test conv_cast_test read_only_guc_test
 
 test: string_func_test/db_b_to_base64_test string_func_test/db_b_unhex_test bit_count test_current_user
+
+test: test_schema connection_id test_system_user test_bit_xor
 
 test: builtin_funcs/cast any_value_test
 

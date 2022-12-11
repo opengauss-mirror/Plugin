@@ -150,6 +150,18 @@ PG_FUNCTION_INFO_V1_PUBLIC(b_extract_text);
 extern "C" DLL_PUBLIC Datum b_extract_text(PG_FUNCTION_ARGS);
 PG_FUNCTION_INFO_V1_PUBLIC(b_extract_numeric);
 extern "C" DLL_PUBLIC Datum b_extract_numeric(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1_PUBLIC(time_xor_transfn);
+extern "C" DLL_PUBLIC Datum time_xor_transfn(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(timetz_xor_transfn);
+extern "C" DLL_PUBLIC Datum timetz_xor_transfn(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1_PUBLIC(date_xor_transfn);
+extern "C" DLL_PUBLIC Datum date_xor_transfn(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1_PUBLIC(date_agg_finalfn);
+extern "C" DLL_PUBLIC Datum date_agg_finalfn(PG_FUNCTION_ARGS);
+
 PG_FUNCTION_INFO_V1_PUBLIC(b_extract);
 extern "C" DLL_PUBLIC Datum b_extract(PG_FUNCTION_ARGS);
 PG_FUNCTION_INFO_V1_PUBLIC(time_float);
@@ -384,8 +396,13 @@ Datum date_in(PG_FUNCTION_ARGS)
         if (dterr == 0)
             dterr = DecodeDateTime(field, ftype, nf, &dtype, tm, &fsec, &tzp);
 #else
-        if (dterr != 0)
-            DateTimeParseError(dterr, str, "date");
+        if (dterr != 0) {
+            DateTimeParseError(dterr, str, "date", fcinfo->can_ignore);
+            /*
+             * if reporting warning in DateTimeParseError, return 1970-01-01
+             */
+            PG_RETURN_DATEADT(UNIX_EPOCH_JDATE - POSTGRES_EPOCH_JDATE);
+        }
         if (dterr == 0) {
             if (ftype[0] == DTK_NUMBER && nf == 1) {
                 dterr = NumberDate(field[0], tm);
@@ -395,8 +412,10 @@ Datum date_in(PG_FUNCTION_ARGS)
             }
         }
 #endif
-        if (dterr != 0)
-            DateTimeParseError(dterr, str, "date");
+        if (dterr != 0) {
+            DateTimeParseError(dterr, str, "date", fcinfo->can_ignore);
+            PG_RETURN_DATEADT(UNIX_EPOCH_JDATE - POSTGRES_EPOCH_JDATE);
+        }
         switch (dtype) {
             case DTK_DATE:
                 break;
@@ -1456,7 +1475,20 @@ Datum time_in(PG_FUNCTION_ARGS)
                  * otherwise we can return tt which stores M*'s parsing result.
                  */
                 if (SQL_MODE_STRICT()) {
-                    DateTimeParseError(dterr, str, "time");
+                    DateTimeParseError(dterr, str, "time", fcinfo->can_ignore);
+                    /*
+                     * can_ignore == true means hint string "ignore_error" used. warning report instead of error.
+                     * then we will return 00:00:xx if the first 1 or 2 character is lower than 60, otherwise return 00:00:00
+                     */
+                    char* field_str = field[0];
+                    if (*field_str == '+') {
+                        field_str++;
+                    }
+                    int trunc_val = getStartingDigits(field_str);
+                    if (trunc_val < 0 || trunc_val >= 60) {
+                        PG_RETURN_TIMEADT(0);
+                    }
+                    PG_RETURN_TIMEADT(trunc_val * 1000 * 1000);
                 } else {
                     tm = &tt; // switch to M*'s parsing result
                 }
@@ -1469,8 +1501,21 @@ Datum time_in(PG_FUNCTION_ARGS)
         dterr = ParseDateTime(str, workbuf, sizeof(workbuf), field, ftype, MAXDATEFIELDS, &nf);
         if (dterr == 0)
             dterr = DecodeTimeOnly(field, ftype, nf, &dtype, tm, &fsec, &tz);
-        if (dterr != 0){
-            DateTimeParseError(dterr, str, "time");
+        if (dterr != 0) {
+            DateTimeParseError(dterr, str, "time", fcinfo->can_ignore);
+            /*
+             * can_ignore == true means hint string "ignore_error" used. warning report instead of error.
+             * then we will return 00:00:xx if the first 1 or 2 character is lower than 60, otherwise return 00:00:00
+             */
+            char* field_str = field[0];
+            if (*field_str == '+') {
+                field_str++;
+            }
+            int trunc_val = getStartingDigits(field_str);
+            if (trunc_val < 0 || trunc_val >= 60) {
+                PG_RETURN_TIMEADT(0);
+            }
+            PG_RETURN_TIMEADT(trunc_val * 1000 * 1000);
         }
 #endif
     }
@@ -2378,8 +2423,22 @@ Datum timetz_in(PG_FUNCTION_ARGS)
     dterr = ParseDateTime(str, workbuf, sizeof(workbuf), field, ftype, MAXDATEFIELDS, &nf);
     if (dterr == 0)
         dterr = DecodeTimeOnly(field, ftype, nf, &dtype, tm, &fsec, &tz);
-    if (dterr != 0)
-        DateTimeParseError(dterr, str, "time with time zone");
+    if (dterr != 0) {
+        DateTimeParseError(dterr, str, "time with time zone", fcinfo->can_ignore);
+        /*
+         * can_ignore == true means hint string "ignore_error" used. warning report instead of error.
+         * then we will return 00:00:xx if the first 1 or 2 character is lower than 60, otherwise return 00:00:00
+         */
+        char* field_str = field[0];
+        if (*field_str == '+') {
+            field_str++;
+        }
+        tm->tm_hour = 0;
+        tm->tm_min = 0;
+        int trunc_val = getStartingDigits(field_str);
+        tm->tm_sec = (trunc_val < 0 || trunc_val >= 60) ? 0 : trunc_val;
+        fsec = 0;
+    }
 
     result = (TimeTzADT*)palloc(sizeof(TimeTzADT));
     tm2timetz(tm, fsec, tz, result);
@@ -5242,6 +5301,98 @@ static inline int64 extract_internal(b_units enum_unit, struct pg_tm* tm, fsec_t
     }
     return result;
 }
+
+Datum time_xor_transfn(PG_FUNCTION_ARGS)
+{
+    TimeADT time;
+    uint64 internal;
+    /* On the first time through, we ignore the delimiter. */
+    if (PG_ARGISNULL(0) && PG_ARGISNULL(1)) {
+        PG_RETURN_INT128(0);
+    } else if (!PG_ARGISNULL(0) && PG_ARGISNULL(1)) {
+        internal = (uint64)PG_GETARG_INT128(0);
+        PG_RETURN_INT128((int128)internal);
+    }
+    time = PG_GETARG_TIMEADT(1);
+    struct pg_tm tt, *tm = &tt;
+    fsec_t fsec;
+    time2tm(time, tm, &fsec);
+
+    int hour = tm->tm_hour;
+    int minute = tm->tm_min;
+    int second = tm->tm_sec;
+    uint64 res = hour * 1e4 + minute * 1e2 + second;
+    if (!PG_ARGISNULL(0)) {
+        internal = (uint64)PG_GETARG_INT128(0);
+        PG_RETURN_INT128((int128)(res ^ internal));
+    } else {
+        PG_RETURN_INT128((int128)res);
+    }
+}
+
+Datum timetz_xor_transfn(PG_FUNCTION_ARGS)
+{
+    TimeTzADT* time;
+    uint64 internal;
+    /* On the first time through, we ignore the delimiter. */
+    if (PG_ARGISNULL(0) && PG_ARGISNULL(1)) {
+        PG_RETURN_INT128(0);
+    } else if (!PG_ARGISNULL(0) && PG_ARGISNULL(1)) {
+        internal = (uint64)PG_GETARG_INT128(0);
+        PG_RETURN_INT128((int128)internal);
+    }
+    time = PG_GETARG_TIMETZADT_P(1);
+    struct pg_tm tt, *tm = &tt;
+    fsec_t fsec;
+    int tz;
+    timetz2tm(time, tm, &fsec, &tz);
+
+    int hour = tm->tm_hour;
+    int minute = tm->tm_min;
+    int second = tm->tm_sec;
+    uint64 res = hour * 1e4 + minute * 1e2 + second;
+    if (!PG_ARGISNULL(0)) {
+        internal = (uint64)PG_GETARG_INT128(0);
+        PG_RETURN_INT128((int128)(res ^ internal));
+    } else {
+        PG_RETURN_INT128((int128)res);
+    }
+}
+
+Datum date_xor_transfn(PG_FUNCTION_ARGS) 
+{
+    int128 internal = 0;
+    DateADT dateVal = 0;
+    int128 res = 0;
+    int year = 0;
+    int month = 0;
+    int day = 0;
+
+    /* On the first time through, we ignore the delimiter. */
+    if (!PG_ARGISNULL(0)) {
+        internal = PG_GETARG_INT128(0);
+    }
+
+    if (!PG_ARGISNULL(1)) {
+        dateVal = PG_GETARG_DATEADT(1);
+        j2date(dateVal + POSTGRES_EPOCH_JDATE, &year, &month, &day);
+        res = year*1e4+month*1e2+day;
+    }
+
+    PG_RETURN_INT128(res ^ internal);
+}
+
+Datum date_agg_finalfn(PG_FUNCTION_ARGS)
+{
+    int128 finalResult;
+    /* cannot be called directly because of internal-type argument */
+    Assert(AggCheckCallContext(fcinfo, NULL));
+
+    finalResult = PG_ARGISNULL(0) ? 0 : (int128)PG_GETARG_INT128(0);
+
+    PG_RETURN_INT128(finalResult);
+}
+
 
 Datum b_extract_text(PG_FUNCTION_ARGS)
 {

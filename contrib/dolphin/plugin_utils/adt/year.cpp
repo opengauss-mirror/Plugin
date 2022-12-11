@@ -72,6 +72,12 @@ extern "C" DLL_PUBLIC Datum period_add(PG_FUNCTION_ARGS);
 PG_FUNCTION_INFO_V1_PUBLIC(period_diff);
 extern "C" DLL_PUBLIC Datum period_diff(PG_FUNCTION_ARGS);
 
+#ifdef DOLPHIN
+PG_FUNCTION_INFO_V1_PUBLIC(year_xor_transfn);
+extern "C" DLL_PUBLIC Datum year_xor_transfn(PG_FUNCTION_ARGS);
+
+#endif
+
 /*****************************************************************************
  *	 Year4 
  *****************************************************************************/
@@ -503,6 +509,26 @@ Datum year_hash(PG_FUNCTION_ARGS)
 {
     return hashint8(fcinfo);
 }
+
+Datum year_xor_transfn(PG_FUNCTION_ARGS)
+{
+    uint internal = 0;
+    YearADT yearVal = 0;
+    uint year = 0;
+    /* On the first time through, we ignore the delimiter. */
+
+    if (!PG_ARGISNULL(0)) {
+        internal = PG_GETARG_UINT32(0);
+    }
+
+    if (!PG_ARGISNULL(1)) {
+        yearVal = PG_GETARG_YEARADT(1);
+        year = (uint)YearADT_to_Year(yearVal);
+    }
+
+    PG_RETURN_UINT32(year ^ internal);
+}
+
 
 PG_FUNCTION_INFO_V1_PUBLIC(year_any_value);
 extern "C" DLL_PUBLIC Datum year_any_value(PG_FUNCTION_ARGS);
