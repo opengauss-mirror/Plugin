@@ -96,5 +96,6 @@ extern char* getTmptableIndexName(const char* srcSchema, const char* srcIndex);
 extern IndexStmt* generateClonedIndexStmt(
     CreateStmtContext* cxt, Relation source_idx, const AttrNumber* attmap, int attmap_length, Relation rel,
     TransformTableType transformType);
+extern char* transformIndexOptions(List* list);
 
 #endif /* PARSE_UTILCMD_H */

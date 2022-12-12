@@ -165,7 +165,6 @@ static int128 TransformAutoIncStart(CreateStmt* stmt);
 #ifdef DOLPHIN
 static void transformTableIndex(CreateStmtContext* cxt);
 static void transformIndexNode(IndexStmt* index, CreateStmtContext* cxt, bool mustGlobal);
-static char* transformIndexOptions(List* list);
 #endif
 
 /*
@@ -3287,7 +3286,7 @@ static void transformIndexNode(IndexStmt* index, CreateStmtContext* cxt, bool mu
     list_free(indexElementsExpr);
 }
 
-static char* transformIndexOptions(List* list)
+char* transformIndexOptions(List* list)
 {
     char* method = NULL;
     ListCell* cell = NULL;
