@@ -38,9 +38,7 @@
 #include "plugin_utils/json.h"
 #include "plugin_utils/jsonapi.h"
 #include "utils/pg_locale.h"
-#endif
 
-#ifdef DOLPHIN
 /* for String fuzzy matching and escape conversion */
 #define NextByte(p, plen) ((p)++, (plen)--)
 #define CHAREQ(p1, p2) (*(p1) == *(p2))
@@ -49,9 +47,49 @@
 #define do_like_escape MB_do_like_escape
 #define MatchText MB_MatchText
 #include "like_match.cpp"
-#endif
+#include "plugin_parser/parse_coerce.h"
+#include "catalog/pg_cast.h"
+/* fake type category for JSON so we can distinguish it in datum_to_json */
+#define TYPCATEGORY_JSON 'j'
+/* fake category for types that have a cast to json */
+#define TYPCATEGORY_JSON_CAST 'c'
 
-#ifdef DOLPHIN
+TYPCATEGORY get_value_type(Oid val_type, Oid typoutput)
+{
+    TYPCATEGORY tcategory;
+    Oid castfunc = InvalidOid;
+
+    if (val_type == InvalidOid) {
+        ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("could not determine input data type")));
+    }
+    if (val_type > FirstNormalObjectId) {
+        HeapTuple tuple;
+        Form_pg_cast castForm;
+
+        tuple = SearchSysCache2(CASTSOURCETARGET, ObjectIdGetDatum(val_type), ObjectIdGetDatum(JSONOID));
+        if (HeapTupleIsValid(tuple)) {
+            castForm = (Form_pg_cast)GETSTRUCT(tuple);
+            if (castForm->castmethod == COERCION_METHOD_FUNCTION) {
+                castfunc = typoutput = castForm->castfunc;
+            }
+            ReleaseSysCache(tuple);
+        }
+    }
+    if (castfunc != InvalidOid) {
+        tcategory = TYPCATEGORY_JSON_CAST;
+    } else if (val_type == RECORDARRAYOID) {
+        tcategory = TYPCATEGORY_ARRAY;
+    } else if (val_type == RECORDOID) {
+        tcategory = TYPCATEGORY_COMPOSITE;
+    } else if (val_type == JSONOID) {
+        tcategory = TYPCATEGORY_JSON;
+    } else {
+        tcategory = TypeCategory(val_type);
+    }
+
+    return tcategory;
+}
+
 typedef enum {
     cJSON_JsonPath_Start,
     cJSON_JsonPath_Key,
@@ -83,9 +121,7 @@ typedef struct LinkNode {
     ElemType data;
     struct LinkNode *next;
 } * search_LinkStack;
-#endif
 
-#ifdef DOLPHIN
 static cJSON *input_to_cjson(Oid valtype, const char *funcName, int pos, Datum arg);
 
 /* funcstions for creating wrapper to restore cJsonPath*/
@@ -4666,6 +4702,7 @@ Datum json_array_append(PG_FUNCTION_ARGS)
     text *res = NULL;
     char *s = NULL;
     int error_pos = -1;
+    TYPCATEGORY tcategory;
     if (nargs < 3 || nargs % 2 == 0) {
         ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("Invalid arg number")));
     }
@@ -4703,17 +4740,20 @@ Datum json_array_append(PG_FUNCTION_ARGS)
             arg = PG_GETARG_DATUM(i + 1);
             getTypeOutputInfo(valtype, &typOutput, &typIsVarlena);
             valueString = OidOutputFunctionCall(typOutput, arg);
-            switch (valtype) {
-                case UNKNOWNOID:
-                case TEXTOID:
-                case CSTRINGOID:
-                    value = cJSON_CreateString(valueString);
+            tcategory = get_value_type(valtype, typOutput);
+            switch (tcategory) {
+                case TYPCATEGORY_JSON:
+                case TYPCATEGORY_JSON_CAST:
+                case TYPCATEGORY_ARRAY:
+                case TYPCATEGORY_COMPOSITE:
+                case TYPCATEGORY_NUMERIC:
+                    value = cJSON_Parse(valueString);
                     break;
-                case BOOLOID:
+                case TYPCATEGORY_BOOLEAN:
                     value = cJSON_CreateBool(DatumGetBool(arg));
                     break;
                 default:
-                    value = cJSON_Parse(valueString);
+                    value = cJSON_CreateString(valueString);
                     break;
             }
             pfree(valueString);
@@ -4896,16 +4936,18 @@ static void json_regular_format(StringInfo result, cJSON *json)
             if (json->valuedouble == (double)(json->valueint)) {
                 appendStringInfo(result, "%d", json->valueint);
             } else {
-                appendStringInfo(result, "%d.", (int)json->valuedouble);
-                int i = 10;
-                int div = (int)json->valuedouble * 10;
-                int pos = (int)(json->valuedouble * 10) % div;
-                while (pos != 0) {
-                    appendStringInfo(result, "%d", pos);
-                    div = (div + pos) * 10;
-                    i *= 10;
-                    pos = (int)(json->valuedouble * i) % div;
+                errno_t sprintf_rc = 0;
+                char *cJSON_double = (char *)palloc(64 * sizeof(char));
+                int pos;
+                sprintf_rc = sprintf_s(cJSON_double, 64, "%.15f", json->valuedouble);
+                securec_check_ss_c(sprintf_rc, "\0", "\0");
+                pos = strlen(cJSON_double) - 1;
+                while (cJSON_double[pos] == '0') {
+                    cJSON_double[pos] = '\0';
+                    pos--;
                 }
+
+                appendStringInfo(result, "%s", cJSON_double);
             }
             break;
         }
@@ -5374,6 +5416,7 @@ Datum json_insert(PG_FUNCTION_ARGS)
     Datum arg = 0;
     bool typIsVarlena = false;
     int error_pos = -1;
+    TYPCATEGORY tcategory;
 
     if (nargs < 3 || nargs % 2 == 0) {
         ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
@@ -5416,17 +5459,20 @@ Datum json_insert(PG_FUNCTION_ARGS)
             arg = PG_GETARG_DATUM(i + 1);
             getTypeOutputInfo(valtype, &typOutput, &typIsVarlena);
             data = OidOutputFunctionCall(typOutput, arg);
-            switch (valtype) {
-                case UNKNOWNOID:
-                case TEXTOID:
-                case CSTRINGOID:
-                    value = cJSON_CreateString(data);
+            tcategory = get_value_type(valtype, typOutput);
+            switch (tcategory) {
+                case TYPCATEGORY_JSON:
+                case TYPCATEGORY_JSON_CAST:
+                case TYPCATEGORY_ARRAY:
+                case TYPCATEGORY_COMPOSITE:
+                case TYPCATEGORY_NUMERIC:
+                    value = cJSON_Parse(data);
                     break;
-                case BOOLOID:
+                case TYPCATEGORY_BOOLEAN:
                     value = cJSON_CreateBool(DatumGetBool(arg));
                     break;
                 default:
-                    value = cJSON_Parse(data);
+                    value = cJSON_CreateString(data);
                     break;
             }
             pfree(data);
@@ -5459,6 +5505,7 @@ Datum json_replace(PG_FUNCTION_ARGS)
     bool invalidPath = false;
     StringInfo result = NULL;
     int error_pos = -1;
+    TYPCATEGORY tcategory;
 
     if (nargs < 3 || nargs % 2 == 0) {
         ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
@@ -5497,22 +5544,26 @@ Datum json_replace(PG_FUNCTION_ARGS)
             arg = PG_GETARG_DATUM(i + 1);
             getTypeOutputInfo(valtype, &typOutput, &typIsVarlena);
             valueString = OidOutputFunctionCall(typOutput, arg);
-            switch (valtype) {
-                case UNKNOWNOID:
-                case TEXTOID:
-                case CSTRINGOID:
-                    value = cJSON_CreateString(valueString);
+            tcategory = get_value_type(valtype, typOutput);
+            switch (tcategory) {
+                case TYPCATEGORY_JSON:
+                case TYPCATEGORY_JSON_CAST:
+                case TYPCATEGORY_ARRAY:
+                case TYPCATEGORY_COMPOSITE:
+                case TYPCATEGORY_NUMERIC:
+                    value = cJSON_Parse(valueString);
                     break;
-                case BOOLOID:
+                case TYPCATEGORY_BOOLEAN:
                     value = cJSON_CreateBool(DatumGetBool(arg));
                     break;
                 default:
-                    value = cJSON_Parse(valueString);
+                    value = cJSON_CreateString(valueString);
                     break;
             }
             pfree(valueString);
         }
-        if (jp->next == NULL && jp->type == cJSON_JsonPath_Start) {
+        if (jp->next == NULL || (!cJSON_IsArray(root) && jp->next->next == NULL &&
+                                 jp->next->type == cJSON_JsonPath_Index && jp->next->index == 0)) {
             cJSON_Delete(root);
             cJSON_DeleteJsonPath(jp);
             root = value;
@@ -5619,6 +5670,7 @@ Datum json_array_insert(PG_FUNCTION_ARGS)
     bool isArray = false;
     StringInfo result = NULL;
     int error_pos = -1;
+    TYPCATEGORY tcategory;
 
     if (nargs < 3 || nargs % 2 == 0) {
         ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
@@ -5663,17 +5715,20 @@ Datum json_array_insert(PG_FUNCTION_ARGS)
             arg = PG_GETARG_DATUM(i + 1);
             getTypeOutputInfo(valtype, &typOutput, &typIsVarlena);
             valueString = OidOutputFunctionCall(typOutput, arg);
-            switch (valtype) {
-                case UNKNOWNOID:
-                case TEXTOID:
-                case CSTRINGOID:
-                    value = cJSON_CreateString(valueString);
+            tcategory = get_value_type(valtype, typOutput);
+            switch (tcategory) {
+                case TYPCATEGORY_JSON:
+                case TYPCATEGORY_JSON_CAST:
+                case TYPCATEGORY_ARRAY:
+                case TYPCATEGORY_COMPOSITE:
+                case TYPCATEGORY_NUMERIC:
+                    value = cJSON_Parse(valueString);
                     break;
-                case BOOLOID:
+                case TYPCATEGORY_BOOLEAN:
                     value = cJSON_CreateBool(DatumGetBool(arg));
                     break;
                 default:
-                    value = cJSON_Parse(valueString);
+                    value = cJSON_CreateString(valueString);
                     break;
             }
             pfree(valueString);
@@ -5718,6 +5773,7 @@ Datum json_set(PG_FUNCTION_ARGS)
     bool typIsVarlena = false;
     bool invalidPath = false;
     int error_pos = -1;
+    TYPCATEGORY tcategory;
 
     if (nargs < 3 || nargs % 2 == 0) {
         ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
@@ -5756,20 +5812,30 @@ Datum json_set(PG_FUNCTION_ARGS)
             arg = PG_GETARG_DATUM(i + 1);
             getTypeOutputInfo(valtype, &typOutput, &typIsVarlena);
             valueString = OidOutputFunctionCall(typOutput, arg);
-            switch (valtype) {
-                case UNKNOWNOID:
-                case TEXTOID:
-                case CSTRINGOID:
-                    value = cJSON_CreateString(valueString);
+            tcategory = get_value_type(valtype, typOutput);
+            switch (tcategory) {
+                case TYPCATEGORY_JSON:
+                case TYPCATEGORY_JSON_CAST:
+                case TYPCATEGORY_ARRAY:
+                case TYPCATEGORY_COMPOSITE:
+                case TYPCATEGORY_NUMERIC:
+                    value = cJSON_Parse(valueString);
                     break;
-                case BOOLOID:
+                case TYPCATEGORY_BOOLEAN:
                     value = cJSON_CreateBool(DatumGetBool(arg));
                     break;
                 default:
-                    value = cJSON_Parse(valueString);
+                    value = cJSON_CreateString(valueString);
                     break;
             }
             pfree(valueString);
+        }
+        if (jp->next == NULL || (!cJSON_IsArray(root) && jp->next->next == NULL &&
+                                 jp->next->type == cJSON_JsonPath_Index && jp->next->index == 0)) {
+            cJSON_Delete(root);
+            cJSON_DeleteJsonPath(jp);
+            root = value;
+            continue;
         }
         if (!cJSON_JsonReplace(root, jp, value, invalidPath)) {
             cJSON_JsonInsert(root, jp, value);
@@ -5946,6 +6012,7 @@ static text *prettyJsondoc(char *str)
                 case ':':
                     appendStringInfoChar(buf, ':');
                     appendStringInfoChar(buf, ' ');
+                    break;
                 case '{':
                     if (*(str + 1) != '}') {
                         depth += 2;

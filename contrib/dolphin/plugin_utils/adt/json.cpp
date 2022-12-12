@@ -37,9 +37,7 @@
 #include "plugin_parser/scansup.h"
 #include "plugin_utils/json.h"
 #include "plugin_utils/jsonapi.h"
-#endif
 
-#ifdef DOLPHIN
 static void DelChar(char *inStr, char *outStr, int &a, int &b);
 static void CheckSign(char *inStr, int &x);
 static void depth_object_field(JsonLexContext *lex, JsonSemAction *sem, int &depth);
@@ -48,6 +46,29 @@ static void depth_object(JsonLexContext *lex, JsonSemAction *sem, int &depth);
 static void depth_array(JsonLexContext *lex, JsonSemAction *sem, int &depth);
 static void sort_json(JsonLexContext *lex, JsonSemAction *sem, int &depth);
 static char *type_case(JsonTokenType tok);
+PG_FUNCTION_INFO_V1_PUBLIC(json_array);
+extern "C" DLL_PUBLIC Datum json_array(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1_PUBLIC(json_object_mysql);
+extern "C" DLL_PUBLIC Datum json_object_mysql(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1_PUBLIC(json_object_noarg);
+extern "C" DLL_PUBLIC Datum json_object_noarg(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1_PUBLIC(json_unquote);
+extern "C" DLL_PUBLIC Datum json_unquote(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1_PUBLIC(json_quote);
+extern "C" DLL_PUBLIC Datum json_quote(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1_PUBLIC(json_depth);
+extern "C" DLL_PUBLIC Datum json_depth(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1_PUBLIC(json_valid);
+extern "C" DLL_PUBLIC Datum json_valid(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1_PUBLIC(json_type);
+extern "C" DLL_PUBLIC Datum json_type(PG_FUNCTION_ARGS);
 #endif
 
 /*
@@ -91,31 +112,6 @@ static JsonSemAction nullSemAction = {NULL, NULL, NULL, NULL, NULL, NULL, NULL, 
 static inline bool lex_accept(JsonLexContext *lex, JsonTokenType token, char **lexeme);
 static inline void lex_expect(JsonParseContext ctx, JsonLexContext *lex, JsonTokenType token);
 
-#ifdef DOLPHIN
-PG_FUNCTION_INFO_V1_PUBLIC(json_array);
-extern "C" DLL_PUBLIC Datum json_array(PG_FUNCTION_ARGS);
-
-PG_FUNCTION_INFO_V1_PUBLIC(json_object_mysql);
-extern "C" DLL_PUBLIC Datum json_object_mysql(PG_FUNCTION_ARGS);
-
-PG_FUNCTION_INFO_V1_PUBLIC(json_object_noarg);
-extern "C" DLL_PUBLIC Datum json_object_noarg(PG_FUNCTION_ARGS);
-
-PG_FUNCTION_INFO_V1_PUBLIC(json_unquote);
-extern "C" DLL_PUBLIC Datum json_unquote(PG_FUNCTION_ARGS);
-
-PG_FUNCTION_INFO_V1_PUBLIC(json_quote);
-extern "C" DLL_PUBLIC Datum json_quote(PG_FUNCTION_ARGS);
-
-PG_FUNCTION_INFO_V1_PUBLIC(json_depth);
-extern "C" DLL_PUBLIC Datum json_depth(PG_FUNCTION_ARGS);
-
-PG_FUNCTION_INFO_V1_PUBLIC(json_valid);
-extern "C" DLL_PUBLIC Datum json_valid(PG_FUNCTION_ARGS);
-
-PG_FUNCTION_INFO_V1_PUBLIC(json_type);
-extern "C" DLL_PUBLIC Datum json_type(PG_FUNCTION_ARGS);
-#endif
 
 /* Recursive Descent parser support routines */
 /*
@@ -2380,7 +2376,7 @@ static void DelChar(char *inStr, char *outStr, int &a, int &b)
     tmp = outStr;
     tep = inStr;
     while (*tep != '\0') {
-        if (*tep == '\"') {
+        if (*tep == '"') {
             tep++;
             a++;
         }
@@ -2410,6 +2406,22 @@ static void CheckSign(char *inStr, int &x)
     }
 }
 
+void CheckSingleSign(char *inStr, int &x)
+{
+    char *tmp;
+    tmp = inStr;
+    if (*tmp == '\'') {
+        x++;
+    }
+    while (*tmp != '\0') {
+        tmp++;
+    }
+    tmp--;
+    if (*tmp == '\'') {
+        x++;
+    }
+}
+
 Datum json_unquote(PG_FUNCTION_ARGS)
 {
     Oid valtype;
@@ -2417,6 +2429,7 @@ Datum json_unquote(PG_FUNCTION_ARGS)
     bool typIsVarlena = false;
     Datum arg = 0;
     char *str = NULL;
+    text *result = NULL;
     valtype = get_fn_expr_argtype(fcinfo->flinfo, 0);
     if (VALTYPE_IS_JSON(valtype)) {
         arg = PG_GETARG_DATUM(0);
@@ -2431,28 +2444,39 @@ Datum json_unquote(PG_FUNCTION_ARGS)
     int a = 0;
     int b = 0;
     int x = 0;
-    CheckSign(str, x);
-    if (x == 2) {
-        DelChar(str, str1, a, b);
-        if ((a == 2 && b == 1) || a >= 3) {
-            pfree(str1);
-            PG_RETURN_TEXT_P(NULL);
-        } else {
-            char *str2 = scanstr(str1);
-            char *str3 = scanstr(str2);
-            pfree(str1);
-            text *result = cstring_to_text(str3);
-            PG_RETURN_TEXT_P(result);
-        }
-    } else if (x == 0 || x == 1) {
-        char *str2 = scanstr(str);
-        text *result = cstring_to_text(str2);
-        pfree(str1);
-        PG_RETURN_TEXT_P(result);
+    int singleSign = 0;
+    CheckSingleSign(str, singleSign);
+    if (singleSign == 2) {
+        result = cstring_to_text(str);
     } else {
-        pfree(str1);
-        PG_RETURN_TEXT_P(NULL);
+        CheckSign(str, x);
+        if (x < 0 || x > 2) {
+            pfree(str1);
+            ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+                            errmsg("Invalid data type for JSON data in argument 1 to function json_unquote")));
+        }
+        if (x == 2) {
+            DelChar(str, str1, a, b);
+            if ((a == 2 && b == 1) || a >= 3) {
+                pfree(str1);
+                ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+                                errmsg("Invalid data type for JSON data in argument 1 to function json_unquote")));
+            } else {
+                char *str2 = scanstr(str1);
+                char *str3 = scanstr(str2);
+                result = cstring_to_text(str3);
+            }
+        } else if (x == 0 || x == 1) {
+            char *str2 = scanstr(str);
+            result = cstring_to_text(str2);
+        } else {
+            pfree(str1);
+            ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+                            errmsg("Invalid data type for JSON data in argument 1 to function json_unquote")));
+        }
     }
+    pfree(str1);
+    PG_RETURN_TEXT_P(result);
 }
 
 static void depth_object_field(JsonLexContext *lex, JsonSemAction *sem, int &depth)

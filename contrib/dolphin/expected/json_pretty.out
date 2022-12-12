@@ -7,9 +7,8 @@ select JSON_PRETTY('{"a": 43}');
  json_pretty 
 -------------
    {        +
-   "a": {   +
-     43     +
-   }
+   "a": 43  +
+ }
 (1 row)
 
 select JSON_PRETTY('true');
@@ -94,27 +93,25 @@ select JSON_PRETTY('["a", ["a"]]');
 (1 row)
 
 select JSON_PRETTY('["a", {"a": "hello"}]');
-  json_pretty  
----------------
-   [          +
-   "a",       +
-   {          +
-     "a": {   +
-       "hello"+
-     }        +
-   ]
+   json_pretty    
+------------------
+   [             +
+   "a",          +
+   {             +
+     "a": "hello"+
+   }             +
+ ]
 (1 row)
 
 select JSON_PRETTY('[111, {"a": "hello"}]');
-  json_pretty  
----------------
-   [          +
-   111,       +
-   {          +
-     "a": {   +
-       "hello"+
-     }        +
-   ]
+   json_pretty    
+------------------
+   [             +
+   111,          +
+   {             +
+     "a": "hello"+
+   }             +
+ ]
 (1 row)
 
 -- test for empty object and array
@@ -134,18 +131,16 @@ select JSON_PRETTY('{"a": {}}');
  json_pretty 
 -------------
    {        +
-   "a": {   +
-     {}     +
-   }
+   "a": {}  +
+ }
 (1 row)
 
 select JSON_PRETTY('{"a": []}');
  json_pretty 
 -------------
    {        +
-   "a": {   +
-     []     +
-   }
+   "a": []  +
+ }
 (1 row)
 
 select JSON_PRETTY('[{}]');
@@ -223,80 +218,69 @@ SELECT JSON_PRETTY('{
        "Hobbies": ["Eating", "Sleeping"]  
     }
  }');
-       json_pretty        
---------------------------
-   {                     +
-   "Person": {           +
-     {                   +
-       "Age": {          +
-         39,             +
-         "Name": {       +
-           "Homer",      +
-           "Hobbies": {  +
-             [           +
-               "Eating", +
-               "Sleeping"+
-             ]           +
-           }             +
-         }
+     json_pretty      
+----------------------
+   {                 +
+   "Person": {       +
+     "Age": 39,      +
+     "Name": "Homer",+
+     "Hobbies": [    +
+       "Eating",     +
+       "Sleeping"    +
+     ]               +
+   }                 +
+ }
 (1 row)
 
 select JSON_PRETTY('{"a":[{"age": 43, "name": "lihua"}, [[[[43,33, []]]]], "hello"]}');
       json_pretty      
 -----------------------
    {                  +
-   "a": {             +
+   "a": [             +
+     {                +
+       "age": 43,     +
+       "name": "lihua"+
+     },               +
      [                +
-       {              +
-         "age": {     +
-           43,        +
-           "name": {  +
-             "lihua"  +
-           },         +
+       [              +
+         [            +
            [          +
-             [        +
-               [      +
-                 [    +
-                   43,+
-                   33,+
-                   [] +
-                 ]    +
-               ]      +
-             ]        +
-           ],         +
-           "hello"    +
+             43,      +
+             33,      +
+             []       +
+           ]          +
          ]            +
-       }
+       ]              +
+     ],               +
+     "hello"          +
+   ]                  +
+ }
 (1 row)
 
 -- test for call other functions
 SELECT JSON_PRETTY(json_build_object('name', 'Lihua'));
- json_pretty 
--------------
-   {        +
-   "name": {+
-     "Lihua"+
-   }
+    json_pretty    
+-------------------
+   {              +
+   "name": "Lihua"+
+ }
 (1 row)
 
 select JSON_PRETTY(json_build_object('name', 'Lihua', 'age', '43'));
-  json_pretty  
----------------
-   {          +
-   "age": {   +
-     "43",    +
-     "name": {+
-       "Lihua"+
-     }
+    json_pretty    
+-------------------
+   {              +
+   "age": "43",   +
+   "name": "Lihua"+
+ }
 (1 row)
 
 select json_build_object('ob',JSON_PRETTY('{"a": 43}'));
  json_build_object 
 -------------------
  {"ob" :   {      +
-   "a": {         +
-     43           +
-   }}
+   "a": 43        +
+ }}
 (1 row)
 
 -- test for table
@@ -309,46 +293,36 @@ insert into test values
 ('["pig", "dog", {"a": "there"}]'),
 ('{"a": "abc","b": {"b": "abc", "a": "abc"}}');
 select JSON_PRETTY(textjson) from test;
-    json_pretty    
--------------------
-   {              +
-   "a": {         +
-     {            +
-       "b": {     +
-         32,      +
-         "c": {   +
-           "hello"+
-         },       +
-         "d": {   +
-           0.3443 +
-         }
-   [              +
-   "dog",         +
-   "pig",         +
-   {              +
-     "a": {       +
-       "here"     +
-     }            +
-   ]
-   [              +
-   "pig",         +
-   "dog",         +
-   {              +
-     "a": {       +
-       "there"    +
-     }            +
-   ]
-   {              +
-   "a": {         +
-     "abc",       +
-     "b": {       +
-       {          +
-         "a": {   +
-           "abc", +
-           "b": { +
-             "abc"+
-           }      +
-         }
+   json_pretty    
+------------------
+   {             +
+   "a": {        +
+     "b": 32,    +
+     "c": "hello"+
+   },            +
+   "d": 0.3443   +
+ }
+   [             +
+   "dog",        +
+   "pig",        +
+   {             +
+     "a": "here" +
+   }             +
+ ]
+   [             +
+   "pig",        +
+   "dog",        +
+   {             +
+     "a": "there"+
+   }             +
+ ]
+   {             +
+   "a": "abc",   +
+   "b": {        +
+     "a": "abc", +
+     "b": "abc"  +
+   }             +
+ }
 (4 rows)
 
 insert into test values
@@ -361,14 +335,11 @@ select * from test;
  ["pig", "dog", {"a": "there"}]
  {"a": "abc","b": {"b": "abc", "a": "abc"}}
    {                                       +
-   "a": {                                  +
-     43,                                   +
-     "b": {                                +
-       {                                   +
-         "c": {                            +
-           true                            +
-         }                                 +
-       }
+   "a": 43,                                +
+   "b": {                                  +
+     "c": true                             +
+   }                                       +
+ }
 (5 rows)
 
 \c postgres

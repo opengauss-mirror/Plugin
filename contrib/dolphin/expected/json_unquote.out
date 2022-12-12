@@ -57,7 +57,8 @@ select json_unquote('"abc"\\t');
 (1 row)
 
 select json_unquote('"ab"djoada"c"');
-ERROR:  NULL input for detoast datum
+ERROR:  Invalid data type for JSON data in argument 1 to function json_unquote
+CONTEXT:  referenced column: json_unquote
 select json_unquote('a"bdw\tc');
  json_unquote 
 --------------
@@ -77,7 +78,8 @@ select json_unquote('abc\\t"dwaj');
 (1 row)
 
 select json_unquote('"abcmdw\tmdkw"');
-ERROR:  NULL input for detoast datum
+ERROR:  Invalid data type for JSON data in argument 1 to function json_unquote
+CONTEXT:  referenced column: json_unquote
 select json_unquote('"abs""c"\t');
    json_unquote   
 ------------------
