@@ -72,19 +72,19 @@ DROP FUNCTION IF EXISTS pg_catalog.db_b_format("any", int4, "any") cascade;
 CREATE OR REPLACE FUNCTION pg_catalog.db_b_format("any", int4) RETURNS text LANGUAGE C IMMUTABLE as '$libdir/dolphin', 'db_b_format';
 CREATE OR REPLACE FUNCTION pg_catalog.db_b_format("any", int4, "any") RETURNS text LANGUAGE C IMMUTABLE as '$libdir/dolphin', 'db_b_format_locale';
 
-CREATE OR REPLACE FUNCTION pg_catalog.float8_bool(float8) returns boolean LANGUAGE C immutable as '$libdir/dolphin', 'float8_bool';
+CREATE OR REPLACE FUNCTION pg_catalog.float8_bool(float8) returns boolean LANGUAGE C immutable strict as '$libdir/dolphin', 'float8_bool';
 CREATE CAST (float8 as boolean) WITH FUNCTION float8_bool(float8) AS IMPLICIT;
 
-CREATE OR REPLACE FUNCTION pg_catalog.float4_bool(float4) returns boolean LANGUAGE C immutable as '$libdir/dolphin', 'float4_bool';
+CREATE OR REPLACE FUNCTION pg_catalog.float4_bool(float4) returns boolean LANGUAGE C immutable strict as '$libdir/dolphin', 'float4_bool';
 CREATE CAST (float4 as boolean) WITH FUNCTION float4_bool(float4) AS IMPLICIT;
 
-CREATE OR REPLACE FUNCTION pg_catalog.date_bool(date) returns boolean LANGUAGE C immutable as '$libdir/dolphin', 'date_bool';
+CREATE OR REPLACE FUNCTION pg_catalog.date_bool(date) returns boolean LANGUAGE C immutable strict as '$libdir/dolphin', 'date_bool';
 CREATE CAST (date as boolean) WITH FUNCTION date_bool(date) AS IMPLICIT;
 
-CREATE OR REPLACE FUNCTION pg_catalog.time_bool(time) returns boolean LANGUAGE C immutable as '$libdir/dolphin', 'time_bool';
+CREATE OR REPLACE FUNCTION pg_catalog.time_bool(time) returns boolean LANGUAGE C immutable strict as '$libdir/dolphin', 'time_bool';
 CREATE CAST (time as boolean) WITH FUNCTION time_bool(time) AS IMPLICIT;
 
-CREATE OR REPLACE FUNCTION pg_catalog.bit_bool(bit) returns boolean LANGUAGE C immutable as '$libdir/dolphin', 'bit_bool';
+CREATE OR REPLACE FUNCTION pg_catalog.bit_bool(bit) returns boolean LANGUAGE C immutable strict as '$libdir/dolphin', 'bit_bool';
 CREATE CAST (bit as boolean) WITH FUNCTION bit_bool(bit) AS IMPLICIT;
 
 CREATE FUNCTION pg_catalog.boolboollike(

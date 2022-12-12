@@ -127,9 +127,9 @@ select a&&b from testforfloat;
  f
  f
  f
+ 
  f
- f
- f
+ 
 (9 rows)
 
 select a||b from testforfloat;
@@ -142,17 +142,25 @@ select a||b from testforfloat;
  t
  f
  t
- f
- f
+ 
+ 
 (9 rows)
 
----正常报错，openGauss中本身的bit类型做and操作即返回此错误
 select a&&b from testforbit;
-ERROR:  NULL input for detoast datum
----正常报错，openGauss中本身的bit类型做or操作即返回此错误
+ ?column? 
+----------
+ t
+ t
+ t
+ f
+ f
+ f
+ 
+ f
+ 
+(9 rows)
+
 select a||b from testforbit;
-ERROR:  NULL input for detoast datum
-select a&&b from testfordate;
  ?column? 
 ----------
  t
@@ -160,7 +168,21 @@ select a&&b from testfordate;
  t
  t
  t
+ f
  t
+ 
+ 
+(9 rows)
+
+select a&&b from testfordate;
+ ?column? 
+----------
+ t
+ t
+ t
+ t
+ 
+ 
 (6 rows)
 
 select a||b from testfordate;
@@ -171,7 +193,7 @@ select a||b from testfordate;
  t
  t
  t
- t
+ 
 (6 rows)
 
 select a&&b from testfortime;
@@ -184,9 +206,9 @@ select a&&b from testfortime;
  f
  f
  f
+ 
  f
- f
- f
+ 
 (10 rows)
 
 select a||b from testfortime;
@@ -200,8 +222,8 @@ select a||b from testfortime;
  t
  f
  t
- f
- f
+ 
+ 
 (10 rows)
 
 ---正常报错，&&的输入类型不能为字符串
@@ -364,9 +386,9 @@ select a&&b from testforfloat;
  f
  f
  f
+ 
  f
- f
- f
+ 
 (9 rows)
 
 select a||b from testforfloat;
@@ -379,16 +401,38 @@ select a||b from testforfloat;
  t
  f
  t
- f
- f
+ 
+ 
 (9 rows)
 
----正常报错，openGauss中本身的bit类型做and操作即返回此错误
 select a&&b from testforbit;
-ERROR:  NULL input for detoast datum
----正常报错，openGauss中本身的bit类型做or操作即返回此错误
+ ?column? 
+----------
+ t
+ t
+ t
+ f
+ f
+ f
+ 
+ f
+ 
+(9 rows)
+
 select a||b from testforbit;
-ERROR:  NULL input for detoast datum
+ ?column? 
+----------
+ t
+ t
+ t
+ t
+ t
+ f
+ t
+ 
+ 
+(9 rows)
+
 select a&&b from testforboolean_u;
  ?column? 
 ----------

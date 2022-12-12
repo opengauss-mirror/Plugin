@@ -84,9 +84,7 @@ select a||b from testforint;
 select a&&b from testforfloat;
 select a||b from testforfloat;
 
----正常报错，openGauss中本身的bit类型做and操作即返回此错误
 select a&&b from testforbit;
----正常报错，openGauss中本身的bit类型做or操作即返回此错误
 select a||b from testforbit;
 
 select a&&b from testfordate;
@@ -217,9 +215,7 @@ select a||b from testforint;
 select a&&b from testforfloat;
 select a||b from testforfloat;
 
----正常报错，openGauss中本身的bit类型做and操作即返回此错误
 select a&&b from testforbit;
----正常报错，openGauss中本身的bit类型做or操作即返回此错误
 select a||b from testforbit;
 
 select a&&b from testforboolean_u;
