@@ -87,6 +87,15 @@ CREATE CAST (time as boolean) WITH FUNCTION time_bool(time) AS IMPLICIT;
 CREATE OR REPLACE FUNCTION pg_catalog.bit_bool(bit) returns boolean LANGUAGE C immutable strict as '$libdir/dolphin', 'bit_bool';
 CREATE CAST (bit as boolean) WITH FUNCTION bit_bool(bit) AS IMPLICIT;
 
+CREATE OR REPLACE FUNCTION pg_catalog.text_bool(text) returns boolean LANGUAGE C immutable strict as '$libdir/dolphin', 'text_bool';
+CREATE CAST (text as boolean) WITH FUNCTION text_bool(text) AS IMPLICIT;
+
+CREATE OR REPLACE FUNCTION pg_catalog.varchar_bool(varchar) returns boolean LANGUAGE C immutable strict as '$libdir/dolphin', 'varchar_bool';
+CREATE CAST (varchar as boolean) WITH FUNCTION varchar_bool(varchar) AS IMPLICIT;
+
+CREATE OR REPLACE FUNCTION pg_catalog.char_bool(char) returns boolean LANGUAGE C immutable strict as '$libdir/dolphin', 'char_bool';
+CREATE CAST (char as boolean) WITH FUNCTION char_bool(char) AS IMPLICIT;
+
 CREATE FUNCTION pg_catalog.boolboollike(
 bool,
 bool

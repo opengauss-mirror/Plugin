@@ -1251,9 +1251,24 @@ static Node* transformAExprAnd(ParseState* pstate, A_Expr* a)
 {
     Node* lexpr = transformExpr(pstate, a->lexpr);
     Node* rexpr = transformExpr(pstate, a->rexpr);
-
-    lexpr = coerce_to_boolean(pstate, lexpr, "AND");
-    rexpr = coerce_to_boolean(pstate, rexpr, "AND");
+#ifdef DOLPHIN
+    if (exprType(lexpr) == UNKNOWNOID) {
+        lexpr = coerce_to_target_type(
+            pstate, lexpr, UNKNOWNOID, TEXTOID, -1, COERCION_ASSIGNMENT, COERCE_IMPLICIT_CAST, -1);
+        lexpr = coerce_to_boolean(pstate, lexpr, "AND");
+    }
+    else
+#endif
+        lexpr = coerce_to_boolean(pstate, lexpr, "AND");
+#ifdef DOLPHIN
+    if (exprType(rexpr) == UNKNOWNOID) {
+        rexpr = coerce_to_target_type(
+            pstate, rexpr, UNKNOWNOID, TEXTOID, -1, COERCION_ASSIGNMENT, COERCE_IMPLICIT_CAST, -1);
+        rexpr = coerce_to_boolean(pstate, rexpr, "AND");
+    }
+    else
+#endif
+        rexpr = coerce_to_boolean(pstate, rexpr, "AND");
 
     return (Node*)makeBoolExpr(AND_EXPR, list_make2(lexpr, rexpr), a->location);
 }
@@ -1262,9 +1277,24 @@ static Node* transformAExprOr(ParseState* pstate, A_Expr* a)
 {
     Node* lexpr = transformExpr(pstate, a->lexpr);
     Node* rexpr = transformExpr(pstate, a->rexpr);
-
-    lexpr = coerce_to_boolean(pstate, lexpr, "OR");
-    rexpr = coerce_to_boolean(pstate, rexpr, "OR");
+#ifdef DOLPHIN
+    if (exprType(lexpr) == UNKNOWNOID) {
+        lexpr = coerce_to_target_type(
+            pstate, lexpr, UNKNOWNOID, TEXTOID, -1, COERCION_ASSIGNMENT, COERCE_IMPLICIT_CAST, -1);
+        lexpr = coerce_to_boolean(pstate, lexpr, "OR");
+    }
+    else
+#endif
+        lexpr = coerce_to_boolean(pstate, lexpr, "OR");
+#ifdef DOLPHIN
+    if (exprType(rexpr) == UNKNOWNOID) {
+        rexpr = coerce_to_target_type(
+            pstate, rexpr, UNKNOWNOID, TEXTOID, -1, COERCION_ASSIGNMENT, COERCE_IMPLICIT_CAST, -1);
+        rexpr = coerce_to_boolean(pstate, rexpr, "OR");
+    }
+    else
+#endif
+        rexpr = coerce_to_boolean(pstate, rexpr, "OR");
 
     return (Node*)makeBoolExpr(OR_EXPR, list_make2(lexpr, rexpr), a->location);
 }

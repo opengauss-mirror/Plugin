@@ -226,16 +226,22 @@ select a||b from testfortime;
  
 (10 rows)
 
----正常报错，&&的输入类型不能为字符串
 select a&&b from testforstring;
-ERROR:  argument of AND must be type boolean, not type character varying
-LINE 1: select a&&b from testforstring;
-               ^
----正常报错，||的输入类型不能为字符串
+ ?column? 
+----------
+ t
+ t
+ t
+(3 rows)
+
 select a||b from testforstring;
-ERROR:  argument of OR must be type boolean, not type character varying
-LINE 1: select a||b from testforstring;
-               ^
+ ?column? 
+----------
+ t
+ t
+ t
+(3 rows)
+
 ---drop table
 drop table testforboolean;
 drop table testforint;
@@ -613,21 +619,24 @@ select char_length('asbjhc')&&char_length('askjdhkj');
  t
 (1 row)
 
----正常报错，&&的输入类型不能为text
 select left('1023jasdzlxc',5)&&left('1023jasdnzxc',5);
-ERROR:  argument of AND must be type boolean, not type text
-LINE 1: select left('1023jasdzlxc',5)&&left('1023jasdnzxc',5);
-               ^
----正常报错，&&的输入类型不能为text
+ ?column? 
+----------
+ t
+(1 row)
+
 select substring('as1dz34lcas',3)&&substring('zxcbkj1shd',5);
-ERROR:  argument of AND must be type boolean, not type text
-LINE 1: select substring('as1dz34lcas',3)&&substring('zxcbkj1shd',5)...
-               ^
----正常报错，&&的输入类型不能为text
+ ?column? 
+----------
+ f
+(1 row)
+
 select replace('123456789','234','asd')&&replace('123456789','234','asd');
-ERROR:  argument of AND must be type boolean, not type text
-LINE 1: select replace('123456789','234','asd')&&replace('123456789'...
-               ^
+ ?column? 
+----------
+ t
+(1 row)
+
 select count(tem) from (select a||b tem from testforboolean);
  count 
 -------
@@ -652,21 +661,24 @@ select char_length('asbjhc')||char_length('askjdhkj');
  t
 (1 row)
 
----正常报错，||的输入类型不能为text
 select left('1023jasdzlxc',5)||left('1023jasdnzxc',5);
-ERROR:  argument of OR must be type boolean, not type text
-LINE 1: select left('1023jasdzlxc',5)||left('1023jasdnzxc',5);
-               ^
----正常报错，||的输入类型不能为text
+ ?column? 
+----------
+ t
+(1 row)
+
 select substring('as1dz34lcas',3)||substring('zxcbkj1shd',5);
-ERROR:  argument of OR must be type boolean, not type text
-LINE 1: select substring('as1dz34lcas',3)||substring('zxcbkj1shd',5)...
-               ^
----正常报错，||的输入类型不能为text
+ ?column? 
+----------
+ t
+(1 row)
+
 select replace('123456789','234','asd')||replace('123456789','234','asd');
-ERROR:  argument of OR must be type boolean, not type text
-LINE 1: select replace('123456789','234','asd')||replace('123456789'...
-               ^
+ ?column? 
+----------
+ t
+(1 row)
+
 --- test for arithmetic op
 select 1+1 && 1;
  ?column? 

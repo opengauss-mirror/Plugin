@@ -1923,3 +1923,50 @@ ScalarVector* vbpcharlen(PG_FUNCTION_ARGS)
     vresult->m_rows = nvalues;
     return vresult;
 }
+
+#ifdef DOLPHIN
+PG_FUNCTION_INFO_V1_PUBLIC(text_bool);
+extern "C" DLL_PUBLIC Datum text_bool(PG_FUNCTION_ARGS);
+
+Datum text_bool(PG_FUNCTION_ARGS)
+{
+    text *input = PG_GETARG_TEXT_PP(0);
+    char *a1p = NULL;
+    double tmp;
+
+    a1p = VARDATA_ANY(input);
+    tmp = atof(a1p);
+
+    PG_RETURN_BOOL(tmp ? true : false);
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(varchar_bool);
+extern "C" DLL_PUBLIC Datum varchar_bool(PG_FUNCTION_ARGS);
+
+Datum varchar_bool(PG_FUNCTION_ARGS)
+{
+    VarChar *input = PG_GETARG_VARCHAR_PP(0);
+    char *a1p = NULL;
+    double tmp;
+
+    a1p = VARDATA_ANY(input);
+    tmp = atof(a1p);
+
+    PG_RETURN_BOOL(tmp ? true : false);
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(char_bool);
+extern "C" DLL_PUBLIC Datum char_bool(PG_FUNCTION_ARGS);
+
+Datum char_bool(PG_FUNCTION_ARGS)
+{
+    VarChar *input = PG_GETARG_VARCHAR_PP(0);
+    char *a1p = NULL;
+    double tmp;
+
+    a1p = VARDATA_ANY(input);
+    tmp = atof(a1p);
+
+    PG_RETURN_BOOL(tmp ? true : false);
+}
+#endif
