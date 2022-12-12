@@ -1,7 +1,7 @@
 drop database if exists make_set;
 create database make_set dbcompatibility 'b';
 \c make_set
-
+set dolphin.sql_mode = '';
 select make_set(3, 'a', 'b', 'c');
 select make_set(2,'a','b','c','d','e');
 select make_set(1|4, 'hello', 'nice', 'world');

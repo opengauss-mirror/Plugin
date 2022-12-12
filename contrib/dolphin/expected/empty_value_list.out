@@ -190,6 +190,8 @@ select *from test3;
 (1 row)
 
 insert into test4 values();
+WARNING:  invalid input syntax for numeric: ""
+CONTEXT:  referenced column: num
 select *from test4;
  num 
 -----
@@ -443,6 +445,8 @@ select *from test38;
 (1 row)
 
 insert into test39 values();
+WARNING:  invalid input syntax for numeric: ""
+CONTEXT:  referenced column: num
 select *from test39;
  num 
 -----

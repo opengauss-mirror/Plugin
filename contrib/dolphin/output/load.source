@@ -322,5 +322,50 @@ select * from t6;
  after_delete_statement
 (14 rows)
 
+--extra data
+delete t1;
+load data infile '@abs_builddir@/data/load7.csv' into table t1;
+select * from t1;
+ a | b 
+---+---
+ 1 | 1
+ 2 | 2
+(2 rows)
+
+--less data
+create table t7(a int1, b int2, c int4, d int8);
+load data infile '@abs_builddir@/data/load7.csv' into table t7;
+ERROR:  missing data for column "d"
+CONTEXT:  COPY t7, line 1: "1	1	1"
+set dolphin.sql_mode = '';
+load data infile '@abs_builddir@/data/load7.csv' into table t7;
+select * from t7;
+ a | b | c | d 
+---+---+---+---
+ 1 | 1 | 1 |  
+ 2 | 2 | 2 |  
+(2 rows)
+
+--/N and empty string
+create table t8(id int, a varchar(10), b varchar(10));
+load data infile '@abs_builddir@/data/load8.csv' into table t8;
+select *, a is null, b is null from t8;
+ id | a | b | ?column? | ?column? 
+----+---+---+----------+----------
+  1 |   |   | t        | f
+  2 |   |   | t        | t
+(2 rows)
+
+--escape data
+create table t9(a int, b varchar(10));
+load data infile '@abs_builddir@/data/load9.csv' into table t9 fields terminated by ',';
+select * from t9;
+ a |    b     
+---+----------
+ 1 |         
+ 2 |         +
+   | 
+(2 rows)
+
 \c postgres
 drop database if exists load;

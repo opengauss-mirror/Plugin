@@ -239,6 +239,16 @@ int16 PgStrtoint16Internal(const char* s, bool sqlModeStrict, bool can_ignore)
     bool neg = false;
     char digitAfterDot = '\0';
 
+#ifdef DOLPHIN
+    if (*s == 0) {
+        ereport(sqlModeStrict ? ERROR : WARNING,
+            (errmodule(MOD_FUNCTION),
+                errcode(ERRCODE_INVALID_TEXT_REPRESENTATION),
+                errmsg("invalid input syntax for smallint: \"%s\"", s)));
+        return tmp;
+    }
+#endif
+
     /* skip leading spaces */
     while (likely(*ptr) && isspace((unsigned char)*ptr)) {
         ptr++;
@@ -326,6 +336,16 @@ int32 PgStrtoint32Internal(const char* s, bool sqlModeStrict, bool can_ignore)
     int32 tmp = 0;
     bool neg = false;
     char digitAfterDot = '\0';
+
+#ifdef DOLPHIN
+    if (*s == 0) {
+        ereport(sqlModeStrict ? ERROR : WARNING,
+            (errmodule(MOD_FUNCTION),
+                errcode(ERRCODE_INVALID_TEXT_REPRESENTATION),
+                errmsg("invalid input syntax for integer: \"%s\"", s)));
+        return tmp;
+    }
+#endif
 
     /* skip leading spaces */
     while (likely(*ptr) && isspace((unsigned char)*ptr)) {

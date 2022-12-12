@@ -115,6 +115,7 @@
 #include "access/ustore/knl_uscan.h"
 #include "access/ustore/knl_uheap.h"
 #include "access/ustore/knl_whitebox_test.h"
+#include "plugin_commands/mysqlmode.h"
 
 #define ISOCTAL(c) (((c) >= '0') && ((c) <= '7'))
 #define OCTVALUE(c) ((c) - '0')
@@ -341,6 +342,7 @@ static int CopyGetColumnListIndex(CopyState cstate, List *attnamelist, const cha
 static List* ExecInsertIndexTuplesWithoutCheck(TupleTableSlot* slot, ItemPointer tupleid, EState* estate,
     Relation targetPartRel, Partition p, int2 bucketId);
 static bool DoReplace(TupleTableSlot* myslot, EState* estate, ResultRelInfo* resultRelInfo, ReplaceData* replaceData, CopyState cstate);
+static char DeEscape(char** cur_ptr, char** line_end_ptr, bool* saw_non_ascii);
 #endif
 const char *gds_protocol_version_gaussdb = "1.0";
 /*
@@ -1487,6 +1489,9 @@ void ProcessCopyOptions(CopyState cstate, bool is_from, List* options)
             if (cstate->escape)
                 ereport(ERROR, (errcode(ERRCODE_SYNTAX_ERROR), errmsg("conflicting or redundant options")));
             cstate->escape = defGetString(defel);
+#ifdef DOLPHIN
+            cstate->has_escape = true;
+#endif
         } else if (strcmp(defel->defname, "force_quote") == 0) {
             if (cstate->force_quote || cstate->force_quote_all)
                 ereport(ERROR, (errcode(ERRCODE_SYNTAX_ERROR), errmsg("conflicting or redundant options")));
@@ -1736,7 +1741,19 @@ void ProcessCopyOptions(CopyState cstate, bool is_from, List* options)
         cstate->delim = (char*)((IS_CSV(cstate) && !cstate->is_compatible) ? "," : "\t");
 
     if (!cstate->null_print)
+#ifdef DOLPHIN
+        cstate->null_print = (char*)((IS_CSV(cstate) && !cstate->is_compatible) ? "" : "\\N");
+
+    if (cstate->is_compatible) {
+        if (!SQL_MODE_STRICT()) {
+            cstate->fill_missing_fields = -1;
+        }
+        cstate->ignore_extra_data = true;
+    }
+#else
         cstate->null_print = (char*)(IS_CSV(cstate) ? "" : "\\N");
+#endif
+
     cstate->null_print_len = strlen(cstate->null_print);
 
     if (IS_CSV(cstate)) {
@@ -6279,7 +6296,11 @@ bool NextCopyFrom(CopyState cstate, ExprContext* econtext, Datum* values, bool* 
             if (!NextCopyFromRawFields(cstate, &field_strings, &fldct))
                 return false;
             /* trailing nullcols */
+#ifdef DOLPHIN
+            if (cstate->fill_missing_fields != -1 || cstate->is_compatible)
+#else
             if (cstate->fill_missing_fields != -1)
+#endif
                 break;
             for (i = 0; i < fldct; i++) {
                 /* treat empty C string as NULL */
@@ -6305,6 +6326,19 @@ bool NextCopyFrom(CopyState cstate, ExprContext* econtext, Datum* values, bool* 
         }
 
         BulkloadIllegalCharsErrorCheck(cstate, attr, field_strings);
+
+#ifdef DOLPHIN
+        if (cstate->is_compatible && cstate->hit_eof) {
+            for (i = fldct - 1; i >= 0; i--) {
+                if (field_strings[i] != NULL ) {
+                    if (field_strings[i][0] == '\0') {
+                        field_strings[i] = NULL;
+                    }
+                    break;
+                }
+            }
+        }
+#endif
 
         fieldno = 0;
 
@@ -6352,7 +6386,11 @@ bool NextCopyFrom(CopyState cstate, ExprContext* econtext, Datum* values, bool* 
                  * 1. A db SQL compatibility requires; or
                  * 2. This column donesn't accept any empty string.
                  */
+#ifdef DOLPHIN
+                if (!cstate->is_compatible && (u_sess->attr.attr_sql.sql_compatibility == A_FORMAT || !accept_empty_str[m]) &&
+#else
                 if ((u_sess->attr.attr_sql.sql_compatibility == A_FORMAT || !accept_empty_str[m]) &&
+#endif
                     (string != NULL && string[0] == '\0')) {
                     /* for any type, '' = null */
                     string = NULL;
@@ -6674,6 +6712,11 @@ retry:
          * after \. up to the protocol end of copy data.  (XXX maybe better
          * not to treat \. as special?)
          */
+
+#ifdef DOLPHIN
+        cstate->hit_eof = true;
+#endif
+
         if (cstate->copy_dest == COPY_NEW_FE) {
             do {
                 cstate->raw_buf_index = cstate->raw_buf_len;
@@ -7388,86 +7431,7 @@ static int CopyReadAttributesTextT(CopyState cstate)
                 if (cur_ptr >= line_end_ptr) {
                     break;
                 }
-                c = *cur_ptr++;
-                switch (c) {
-                    case '0':
-                    case '1':
-                    case '2':
-                    case '3':
-                    case '4':
-                    case '5':
-                    case '6':
-                    case '7': {
-                        /* handle \013 */
-                        int val;
-
-                        val = OCTVALUE(c);
-                        if (cur_ptr < line_end_ptr) {
-                            c = *cur_ptr;
-                            if (ISOCTAL(c)) {
-                                cur_ptr++;
-                                val = (val << 3) + OCTVALUE(c);
-                                if (cur_ptr < line_end_ptr) {
-                                    c = *cur_ptr;
-                                    if (ISOCTAL(c)) {
-                                        cur_ptr++;
-                                        val = (val << 3) + OCTVALUE(c);
-                                    }
-                                }
-                            }
-                        }
-                        c = val & 0377;
-                        if (c == '\0' || IS_HIGHBIT_SET(c))
-                            saw_non_ascii = true;
-                    } break;
-                    case 'x':
-                        /* Handle \x3F */
-                        if (cur_ptr < line_end_ptr) {
-                            char hexchar = *cur_ptr;
-
-                            if (isxdigit((unsigned char)hexchar)) {
-                                int val = GetDecimalFromHex(hexchar);
-
-                                cur_ptr++;
-                                if (cur_ptr < line_end_ptr) {
-                                    hexchar = *cur_ptr;
-                                    if (isxdigit((unsigned char)hexchar)) {
-                                        cur_ptr++;
-                                        val = (val << 4) + GetDecimalFromHex(hexchar);
-                                    }
-                                }
-                                c = val & 0xff;
-                                if (c == '\0' || IS_HIGHBIT_SET(c))
-                                    saw_non_ascii = true;
-                            }
-                        }
-                        break;
-                    case 'b':
-                        c = '\b';
-                        break;
-                    case 'f':
-                        c = '\f';
-                        break;
-                    case 'n':
-                        c = '\n';
-                        break;
-                    case 'r':
-                        c = '\r';
-                        break;
-                    case 't':
-                        c = '\t';
-                        break;
-                    case 'v':
-                        c = '\v';
-                        break;
-
-                        /*
-                         * in all other cases, take the char after '\'
-                         * literally
-                         */
-                    default:
-                        break;
-                }
+                c = DeEscape(&cur_ptr, &line_end_ptr, &saw_non_ascii);
             }
 
             /*
@@ -7654,6 +7618,7 @@ static int CopyReadAttributesCSVT(CopyState cstate)
         char* start_ptr = NULL;
         char* end_ptr = NULL;
         int input_len;
+        bool saw_non_ascii = false;
         proc_col_num++;
 
         /* Make sure there is enough space for the next value */
@@ -7712,6 +7677,16 @@ static int CopyReadAttributesCSVT(CopyState cstate)
                     found_delim = true;
                     goto endfield;
                 }
+                if (cstate->is_compatible) {
+                    bool escape_verified = cstate->has_escape && c == escapec;
+                    if ((!cstate->has_escape && c == '\\') || escape_verified) {
+                        if (cur_ptr >= line_end_ptr) {
+                            *output_ptr++ = c;
+                            goto endfield;
+                        }
+                        c = DeEscape(&cur_ptr, &line_end_ptr, &saw_non_ascii);
+                    }
+                }
                 /* ""ab"",""b"" error for gs_load */
                 if (cstate->is_load_copy && saw_quote) {
                     ereport(ERROR,
@@ -7733,6 +7708,16 @@ static int CopyReadAttributesCSVT(CopyState cstate)
                     ereport(ERROR, (errcode(ERRCODE_BAD_COPY_FILE_FORMAT), errmsg("unterminated CSV quoted field")));
 
                 c = *cur_ptr++;
+                if (cstate->is_compatible) {
+                    bool escape_verified = cstate->has_escape && c == escapec && escapec != quotec;
+                    if ((!cstate->has_escape && c == '\\') || escape_verified) {
+                        if (cur_ptr >= line_end_ptr) {
+                            *output_ptr++ = c;
+                            goto endfield;
+                        }
+                        c = DeEscape(&cur_ptr, &line_end_ptr, &saw_non_ascii);
+                    }
+                }
 
                 /* escape within a quoted field */
                 if (c == escapec) {
@@ -10921,4 +10906,91 @@ static bool DoReplace(TupleTableSlot* myslot, EState* estate, ResultRelInfo* res
     }
     return has_after_statement_delete_trigger;
 }
+
+static char DeEscape(char** cur_ptr, char** line_end_ptr, bool* saw_non_ascii)
+{
+    char c = **cur_ptr;
+    (*cur_ptr)++;
+    switch (c) {
+        case '0':
+        case '1':
+        case '2':
+        case '3':
+        case '4':
+        case '5':
+        case '6':
+        case '7': {
+            /* handle \013 */
+            int val;
+
+            val = OCTVALUE(c);
+            if (*cur_ptr < *line_end_ptr) {
+                c = **cur_ptr;
+                if (ISOCTAL(c)) {
+                    (*cur_ptr)++;
+                    val = (val << 3) + OCTVALUE(c);
+                    if (*cur_ptr < *line_end_ptr) {
+                        c = **cur_ptr;
+                        if (ISOCTAL(c)) {
+                            (*cur_ptr)++;
+                            val = (val << 3) + OCTVALUE(c);
+                        }
+                    }
+                }
+            }
+            c = val & 0377;
+            if (c == '\0' || IS_HIGHBIT_SET(c))
+                *saw_non_ascii = true;
+        } break;
+        case 'x':
+            /* Handle \x3F */
+            if (*cur_ptr < *line_end_ptr) {
+                char hexchar = **cur_ptr;
+
+                if (isxdigit((unsigned char)hexchar)) {
+                    int val = GetDecimalFromHex(hexchar);
+
+                    (*cur_ptr)++;
+                    if (*cur_ptr < *line_end_ptr) {
+                        hexchar = **cur_ptr;
+                        if (isxdigit((unsigned char)hexchar)) {
+                            (*cur_ptr)++;
+                            val = (val << 4) + GetDecimalFromHex(hexchar);
+                        }
+                    }
+                    c = val & 0xff;
+                    if (c == '\0' || IS_HIGHBIT_SET(c))
+                        *saw_non_ascii = true;
+                }
+            }
+            break;
+        case 'b':
+            c = '\b';
+            break;
+        case 'f':
+            c = '\f';
+            break;
+        case 'n':
+            c = '\n';
+            break;
+        case 'r':
+            c = '\r';
+            break;
+        case 't':
+            c = '\t';
+            break;
+        case 'v':
+            c = '\v';
+            break;
+
+            /*
+                * in all other cases, take the char after '\'
+                * literally
+                */
+        default:
+            break;
+    }
+    return c;
+}
+
 #endif
