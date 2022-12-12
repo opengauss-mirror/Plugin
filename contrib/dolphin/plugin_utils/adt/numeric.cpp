@@ -380,11 +380,10 @@ Datum numeric_in(PG_FUNCTION_ARGS)
     /* the first parameter is null, we should convert to 0 if u_sess->attr.attr_sql.sql_compatibility == C_FORMAT */
 #ifdef DOLPHIN
     if ('\0' == *cp) {
-        if (SQL_MODE_STRICT())
-            ereport(ERROR,
-                (errmodule(MOD_FUNCTION),
-                    errcode(ERRCODE_INVALID_TEXT_REPRESENTATION),
-                    errmsg("invalid input syntax for numeric: \"%s\"", str)));
+        ereport(SQL_MODE_STRICT() ? ERROR : WARNING,
+            (errmodule(MOD_FUNCTION),
+                errcode(ERRCODE_INVALID_TEXT_REPRESENTATION),
+                errmsg("invalid input syntax for numeric: \"%s\"", str)));
 #else
     if (u_sess->attr.attr_sql.sql_compatibility == C_FORMAT && '\0' == *cp) {
 #endif

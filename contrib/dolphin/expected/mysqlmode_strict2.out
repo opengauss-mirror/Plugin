@@ -850,6 +850,8 @@ select * from test_notnull_double;
 (1 row)
 
 insert into test_notnull_numeric(a) values(1);
+WARNING:  invalid input syntax for numeric: ""
+CONTEXT:  referenced column: b
 select * from test_notnull_numeric;
   a   |  b   
 ------+------
@@ -1006,6 +1008,8 @@ select * from test_notnull_double;
 (2 rows)
 
 insert into test_notnull_numeric values(2,default);
+WARNING:  invalid input syntax for numeric: ""
+CONTEXT:  referenced column: b
 select * from test_notnull_numeric;
   a   |  b   
 ------+------
@@ -1015,6 +1019,10 @@ select * from test_notnull_numeric;
 
 create table test_multi_default(a numeric not null,b decimal not null,c real not null,d double precision not null, e float not null, f varchar(20) not null);
 insert into test_multi_default values(default,default,default,default,default,default);
+WARNING:  invalid input syntax for numeric: ""
+CONTEXT:  referenced column: a
+WARNING:  invalid input syntax for numeric: ""
+CONTEXT:  referenced column: b
 select * from test_multi_default;
  a | b | c | d | e | f 
 ---+---+---+---+---+---
@@ -1133,6 +1141,12 @@ select * from test_notnull_double;
 (5 rows)
 
 insert into test_notnull_numeric(a) values(3),(4),(5);
+WARNING:  invalid input syntax for numeric: ""
+CONTEXT:  referenced column: b
+WARNING:  invalid input syntax for numeric: ""
+CONTEXT:  referenced column: b
+WARNING:  invalid input syntax for numeric: ""
+CONTEXT:  referenced column: b
 select * from test_notnull_numeric;
   a   |  b   
 ------+------

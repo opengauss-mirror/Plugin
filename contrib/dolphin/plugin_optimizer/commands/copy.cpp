@@ -7681,7 +7681,8 @@ static int CopyReadAttributesCSVT(CopyState cstate)
                     bool escape_verified = cstate->has_escape && c == escapec;
                     if ((!cstate->has_escape && c == '\\') || escape_verified) {
                         if (cur_ptr >= line_end_ptr) {
-                            break;
+                            *output_ptr++ = c;
+                            goto endfield;
                         }
                         c = DeEscape(&cur_ptr, &line_end_ptr, &saw_non_ascii);
                     }
@@ -7711,7 +7712,8 @@ static int CopyReadAttributesCSVT(CopyState cstate)
                     bool escape_verified = cstate->has_escape && c == escapec && escapec != quotec;
                     if ((!cstate->has_escape && c == '\\') || escape_verified) {
                         if (cur_ptr >= line_end_ptr) {
-                            break;
+                            *output_ptr++ = c;
+                            goto endfield;
                         }
                         c = DeEscape(&cur_ptr, &line_end_ptr, &saw_non_ascii);
                     }

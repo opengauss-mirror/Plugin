@@ -782,12 +782,20 @@ SELECT ifnull(''::text, '100'::int2);
 (1 row)
 
 SELECT ifnull(''::int2, 'hello!'::text)L;
+WARNING:  invalid input syntax for smallint: ""
+LINE 1: SELECT ifnull(''::int2, 'hello!'::text)L;
+                      ^
+CONTEXT:  referenced column: l
  l 
 ---
  0
 (1 row)
 
 SELECT ifnull('hello!'::text, ''::int2);
+WARNING:  invalid input syntax for smallint: ""
+LINE 1: SELECT ifnull('hello!'::text, ''::int2);
+                                      ^
+CONTEXT:  referenced column: ifnull
  ifnull 
 --------
  hello!
@@ -818,12 +826,20 @@ SELECT ifnull(''::text, '100.001'::numeric);
 (1 row)
 
 SELECT ifnull(''::numeric, 'hello!'::text);
+WARNING:  invalid input syntax for numeric: ""
+LINE 1: SELECT ifnull(''::numeric, 'hello!'::text);
+                      ^
+CONTEXT:  referenced column: ifnull
  ifnull 
 --------
       0
 (1 row)
 
 SELECT ifnull('hello!'::text, ''::numeric);
+WARNING:  invalid input syntax for numeric: ""
+LINE 1: SELECT ifnull('hello!'::text, ''::numeric);
+                                      ^
+CONTEXT:  referenced column: ifnull
  ifnull 
 --------
  hello!
@@ -1074,24 +1090,36 @@ SELECT isnull(''::char);
 (1 row)
 
 SELECT isnull(''::int2);
+WARNING:  invalid input syntax for smallint: ""
+LINE 1: SELECT isnull(''::int2);
+                      ^
  ?column? 
 ----------
  f
 (1 row)
 
 SELECT isnull(''::int4);
+WARNING:  invalid input syntax for integer: ""
+LINE 1: SELECT isnull(''::int4);
+                      ^
  ?column? 
 ----------
  f
 (1 row)
 
 SELECT isnull(''::int8);
+WARNING:  invalid input syntax for bigint: ""
+LINE 1: SELECT isnull(''::int8);
+                      ^
  ?column? 
 ----------
  f
 (1 row)
 
 SELECT isnull(''::numeric);
+WARNING:  invalid input syntax for numeric: ""
+LINE 1: SELECT isnull(''::numeric);
+                      ^
  ?column? 
 ----------
  f
@@ -3036,12 +3064,20 @@ SELECT ifnull(''::text, '100'::int2);
 (1 row)
 
 SELECT ifnull(''::int2, 'hello!'::text)L;
+WARNING:  invalid input syntax for smallint: ""
+LINE 1: SELECT ifnull(''::int2, 'hello!'::text)L;
+                      ^
+CONTEXT:  referenced column: l
  l 
 ---
  0
 (1 row)
 
 SELECT ifnull('hello!'::text, ''::int2);
+WARNING:  invalid input syntax for smallint: ""
+LINE 1: SELECT ifnull('hello!'::text, ''::int2);
+                                      ^
+CONTEXT:  referenced column: ifnull
  ifnull 
 --------
  hello!
@@ -3072,12 +3108,20 @@ SELECT ifnull(''::text, '100.001'::numeric);
 (1 row)
 
 SELECT ifnull(''::numeric, 'hello!'::text);
+WARNING:  invalid input syntax for numeric: ""
+LINE 1: SELECT ifnull(''::numeric, 'hello!'::text);
+                      ^
+CONTEXT:  referenced column: ifnull
  ifnull 
 --------
       0
 (1 row)
 
 SELECT ifnull('hello!'::text, ''::numeric);
+WARNING:  invalid input syntax for numeric: ""
+LINE 1: SELECT ifnull('hello!'::text, ''::numeric);
+                                      ^
+CONTEXT:  referenced column: ifnull
  ifnull 
 --------
  hello!
@@ -3328,24 +3372,36 @@ SELECT isnull(''::char);
 (1 row)
 
 SELECT isnull(''::int2);
+WARNING:  invalid input syntax for smallint: ""
+LINE 1: SELECT isnull(''::int2);
+                      ^
  ?column? 
 ----------
  f
 (1 row)
 
 SELECT isnull(''::int4);
+WARNING:  invalid input syntax for integer: ""
+LINE 1: SELECT isnull(''::int4);
+                      ^
  ?column? 
 ----------
  f
 (1 row)
 
 SELECT isnull(''::int8);
+WARNING:  invalid input syntax for bigint: ""
+LINE 1: SELECT isnull(''::int8);
+                      ^
  ?column? 
 ----------
  f
 (1 row)
 
 SELECT isnull(''::numeric);
+WARNING:  invalid input syntax for numeric: ""
+LINE 1: SELECT isnull(''::numeric);
+                      ^
  ?column? 
 ----------
  f

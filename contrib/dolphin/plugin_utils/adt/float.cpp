@@ -273,8 +273,12 @@ Datum float4in(PG_FUNCTION_ARGS)
     if (*num == '\0') {
 
 #ifdef DOLPHIN
-        if (!SQL_MODE_STRICT())
+        if (!SQL_MODE_STRICT()) {
+            ereport(WARNING,
+                (errcode(ERRCODE_INVALID_TEXT_REPRESENTATION),
+                    errmsg("invalid input syntax for type real: \"%s\"", orig_num)));
             PG_RETURN_FLOAT4((float4)0);
+        }
 #endif
 
         ereport(ERROR,
@@ -530,13 +534,16 @@ Datum float8in(PG_FUNCTION_ARGS)
     if (*num == '\0') {
 
 #ifdef DOLPHIN
-        if (!SQL_MODE_STRICT())
-            PG_RETURN_FLOAT8((float8)0);
-#endif
+        ereport(SQL_MODE_STRICT() ? ERROR : WARNING,
+            (errcode(ERRCODE_INVALID_TEXT_REPRESENTATION),
+                errmsg("invalid input syntax for type double precision: \"%s\"", orig_num)));
+        PG_RETURN_FLOAT8((float8)0);
+#else
 
         ereport(ERROR,
             (errcode(ERRCODE_INVALID_TEXT_REPRESENTATION),
                 errmsg("invalid input syntax for type double precision: \"%s\"", orig_num)));
+#endif
     }
 
     /* skip leading whitespace */
