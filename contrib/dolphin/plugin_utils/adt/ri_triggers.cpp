@@ -39,8 +39,11 @@
 #include "executor/executor.h"
 #include "executor/spi.h"
 #include "executor/spi_priv.h"
+#ifdef DOLPHIN
 #include "plugin_parser/parse_coerce.h"
 #include "plugin_parser/parse_relation.h"
+#include "plugin_utils/show_common.h"
+#endif
 #include "miscadmin.h"
 #include "utils/acl.h"
 #include "utils/builtins.h"
@@ -2258,12 +2261,19 @@ bool RI_Initial_Check(Trigger* trigger, Relation fk_rel, Relation pk_rel)
     if (SPI_connect() != SPI_OK_CONNECT)
         ereport(ERROR, (errcode(ERRCODE_SPI_CONNECTION_FAILURE), errmsg("SPI_connect failed")));
 
+#ifdef DOLPHIN
+    char *sqlMode = GetSqlMode();
+    SetSqlMode("ansi_quotes");
+#endif
     /*
      * Generate the plan.  We don't need to cache it, and there are no
      * arguments to the plan.
      */
     qplan = SPI_prepare(querybuf.data, 0, NULL);
-
+#ifdef DOLPHIN
+    SetSqlMode(sqlMode);
+    pfree(sqlMode);
+#endif
     if (qplan == NULL)
         ereport(ERROR,
             (errcode(ERRCODE_SPI_PREPARE_FAILURE),

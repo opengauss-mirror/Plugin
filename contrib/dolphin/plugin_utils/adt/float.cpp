@@ -1758,7 +1758,11 @@ Datum dacos(PG_FUNCTION_ARGS)
 {
     float8 arg1 = PG_GETARG_FLOAT8(0);
     float8 result;
-
+#ifdef DOLPHIN
+    if (arg1 > 1.0 || arg1 < -1.0) {
+        PG_RETURN_NULL();
+    }
+#endif
     /*
      * We use errno here because the trigonometric functions are cyclic and
      * hard to check for underflow.

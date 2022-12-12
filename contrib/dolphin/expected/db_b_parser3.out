@@ -398,5 +398,23 @@ select a = 1 xor b = 'true' from t1;
    0
 (1 row)
 
+select acos(11);
+ acos 
+------
+     
+(1 row)
+
+select acos(1.000001);
+ acos 
+------
+     
+(1 row)
+
+select acos(-1.000001);
+ acos 
+------
+     
+(1 row)
+
 \c postgres
 drop database if exists db_b_parser3;
