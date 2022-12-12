@@ -5274,6 +5274,7 @@ bool cstring_to_datetime(const char* str,  time_flags flags, int &tm_type,
                 }
             }
         }
+        warnings = true;
         goto ERROR_STRING_DATETIME;
     }
 
@@ -5304,8 +5305,9 @@ bool cstring_to_datetime(const char* str,  time_flags flags, int &tm_type,
 
 ERROR_STRING_DATETIME:
     tm_type = DTK_ERROR;
-    errno_t rc = memset_s(&tm, sizeof(struct pg_tm), 0, sizeof(struct pg_tm));
+    errno_t rc = memset_s(tm, sizeof(struct pg_tm), 0, sizeof(struct pg_tm));
     securec_check(rc, "\0", "\0");
+    fsec = 0;
     return false;
 }
 

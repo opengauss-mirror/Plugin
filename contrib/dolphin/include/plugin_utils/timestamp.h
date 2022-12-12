@@ -112,6 +112,8 @@ extern int64 b_db_weekmode(int64 mode);
 extern int b_db_cal_week(struct pg_tm* tm, int64 mode, uint* year);
 extern bool datetime_in_with_sql_mode(char *str, struct pg_tm *tm, fsec_t *fsec, unsigned int date_flag);
 extern void add_currentdate_to_time(TimeADT time, Timestamp *result);
+
+extern "C" DLL_PUBLIC Datum int64_b_format_datetime(PG_FUNCTION_ARGS);
 #endif
 
 extern Datum datetime_text(PG_FUNCTION_ARGS);
