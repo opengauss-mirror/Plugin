@@ -202,7 +202,9 @@ vector <ScanSingleSql> Scan::GetNextSql()
 
             /* fall out of loop if lexer reached EOL */
             if (scan_result == PSCAN_INCOMPLETE || scan_result == PSCAN_EOL) {
-                continueSearch = true;
+                if (query_buf->len > 0) {
+                    continueSearch = true;
+                }
                 break;
             }
         }

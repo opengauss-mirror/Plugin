@@ -139,14 +139,15 @@ void InstallPlugins(OpenGaussConnection* conn)
         extensionSql = extensionSql + "\'" + pluginName + "\'";
         const char* sql = extensionSql.c_str();
         string result = conn->ExecQuery(sql);
-        if (result.compare("f") == 0) {
+        /* with dolphin, boolean value in result set is '0' or '1' */
+        if (result.compare("f") == 0 || result.compare("0") == 0) {
             g_assessmentSettings.plugin = true;
             fprintf(stdout, _("%s: Create plugin[%s] automatically.\n"), pset.progname, pluginName);
             if (!conn->ExecDDLCommand((string("create extension ") + pluginName).c_str())) {
                 fprintf(stderr, "%s", conn->GetExecError().c_str());
                 exit(EXIT_FAILURE);
             }
-        } else if (result.compare("t") == 0) {
+        } else if (result.compare("t") == 0 || result.compare("1") == 0) {
             g_assessmentSettings.plugin = true;
         } else {
             fprintf(stdout, _("%s: %s is recommendeded in database %s.\n"), pset.progname,
@@ -158,14 +159,14 @@ void InstallPlugins(OpenGaussConnection* conn)
     if (result.compare("") == 0) {
         fprintf(stderr, _("%s: \"assessment\" extension is needed.\n"), pset.progname);
         exit(EXIT_FAILURE);
-    } else if (result.compare("f") == 0) {
+    } else if (result.compare("f") == 0 || result.compare("0") == 0) {
         fprintf(stdout, _("%s: Create extension[assessment] automatically.\n"), pset.progname);
         g_assessmentSettings.extension = true;
         if (!conn->ExecDDLCommand("create extension assessment")) {
             fprintf(stderr, "%s", conn->GetExecError().c_str());
             exit(EXIT_FAILURE);
         }
-    } else if (result.compare("t") == 0) {
+    } else if (result.compare("t") == 0 || result.compare("1") == 0) {
         g_assessmentSettings.extension = true;
     }
 

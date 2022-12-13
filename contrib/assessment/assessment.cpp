@@ -180,4 +180,10 @@ void DDLTagInit()
     BitMapSetIndex(ddlSet, T_ViewStmt);
     BitMapSetIndex(ddlSet, T_DoStmt);
     BitMapSetIndex(ddlSet, T_IndexStmt);
+    BitMapSetIndex(ddlSet, T_CreateTrigStmt);
+    BitMapSetIndex(ddlSet, T_CommentStmt); 
+    BitMapSetIndex(ddlSet, T_RenameStmt); 
+    BitMapSetIndex(ddlSet, T_CreateTableAsStmt); 
+    BitMapSetIndex(ddlSet, T_CreateSeqStmt); 
+    BitMapSetIndex(ddlSet, T_CreateSynonymStmt); 
 }
