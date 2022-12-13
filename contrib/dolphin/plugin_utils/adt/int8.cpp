@@ -94,7 +94,7 @@ bool Scanint8Internal(const char* str, bool errorOK, int64* result, bool sqlMode
 
 #ifdef DOLPHIN
     if (*str == 0) {
-        ereport(sqlModeStrict ? ERROR : WARNING,
+        ereport((!can_ignore && sqlModeStrict) ? ERROR : WARNING,
             (errmodule(MOD_FUNCTION),
                 errcode(ERRCODE_INVALID_TEXT_REPRESENTATION),
                 errmsg("invalid input syntax for bigint: \"%s\"", str)));
