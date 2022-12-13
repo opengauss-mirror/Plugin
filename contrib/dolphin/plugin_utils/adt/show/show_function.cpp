@@ -46,37 +46,47 @@ void ShowFunctionStatusFirstCall(PG_FUNCTION_ARGS)
 
     fctx->user_fctx = GetSqlMode();
     SetSqlMode("ansi_quotes");
-    char query[SCAN_SQL_LEN];
-    int ret = sprintf_s(query, sizeof(query),
-                        "SELECT "
-                        " n.nspname AS \"Db\", "
-                        " p.proname AS \"Name\", "
-                        " CASE WHEN p.prokind = 'f' THEN 'FUNCTION' ELSE 'PROCEDURE' END AS \"Type\", "
-                        " r.rolname AS \"Definer\", "
-                        " o.mtime AS \"Modified\", "
-                        " O.ctime AS \"Created\", "
-                        " CASE WHEN p.prosecdef THEN 'DEFINER' ELSE 'INVOKER' END AS \"Security_type\", "
-                        " d.description AS \"Comment\", "
-                        " null AS \"character_set_client\", "
-                        " null AS \"collation_connection\", "
-                        " b.datcollate AS \"Database Collation\"  "
-                        "FROM "
-                        " pg_namespace n, "
-                        " pg_database b, "
-                        " pg_proc p "
-                        " LEFT JOIN pg_description d ON d.objoid = p.oid "
-                        " LEFT JOIN pg_object o ON o.object_oid = p.oid "
-                        " LEFT JOIN pg_roles r ON p.proowner = r.oid  "
-                        "WHERE "
-                        " n.oid = p.pronamespace  "
-                        " AND b.datname = Current_database () "
-                        "AND "
-                        " p.prokind = '%c'",
-                        VARDATA_ANY(searchType)[0]);
-    securec_check_ss(ret, "\0", "\0");
-    if (SPI_execute(query, true, 0) != SPI_OK_SELECT) {
-        ereport(ERROR, (errcode(ERRCODE_DATA_EXCEPTION), errmsg("failed to exec query '%s'", query)));
+
+    PG_TRY();
+    {
+        char query[SCAN_SQL_LEN];
+        int ret = sprintf_s(query, sizeof(query),
+                            "SELECT "
+                            " n.nspname AS \"Db\", "
+                            " p.proname AS \"Name\", "
+                            " CASE WHEN p.prokind = 'f' THEN 'FUNCTION' ELSE 'PROCEDURE' END AS \"Type\", "
+                            " r.rolname AS \"Definer\", "
+                            " o.mtime AS \"Modified\", "
+                            " O.ctime AS \"Created\", "
+                            " CASE WHEN p.prosecdef THEN 'DEFINER' ELSE 'INVOKER' END AS \"Security_type\", "
+                            " d.description AS \"Comment\", "
+                            " null AS \"character_set_client\", "
+                            " null AS \"collation_connection\", "
+                            " b.datcollate AS \"Database Collation\"  "
+                            "FROM "
+                            " pg_namespace n, "
+                            " pg_database b, "
+                            " pg_proc p "
+                            " LEFT JOIN pg_description d ON d.objoid = p.oid "
+                            " LEFT JOIN pg_object o ON o.object_oid = p.oid "
+                            " LEFT JOIN pg_roles r ON p.proowner = r.oid  "
+                            "WHERE "
+                            " n.oid = p.pronamespace  "
+                            " AND b.datname = Current_database () "
+                            "AND "
+                            " p.prokind = '%c'",
+                            VARDATA_ANY(searchType)[0]);
+        securec_check_ss(ret, "\0", "\0");
+        if (SPI_execute(query, true, 0) != SPI_OK_SELECT) {
+            ereport(ERROR, (errcode(ERRCODE_DATA_EXCEPTION), errmsg("failed to exec query '%s'", query)));
+        }
     }
+    PG_CATCH();
+    {
+        SetSqlMode((const char*)fctx->user_fctx);
+        PG_RE_THROW();
+    }
+    PG_END_TRY();
     fctx->max_calls = SPI_processed;
     fctx->call_cntr = 0;
     MemoryContextSwitchTo(oldContext);
@@ -90,25 +100,43 @@ Datum ShowFunctionStatus(PG_FUNCTION_ARGS)
     }
 
     FuncCallContext *fctx = SRF_PERCALL_SETUP();
+    bool setSqlMode = true;
+    HeapTuple returnTuple = NULL;
 
-    if (fctx->call_cntr < fctx->max_calls) {
-        HeapTuple tuple = SPI_tuptable->vals[fctx->call_cntr];
-        static const int FUNCTION_STATUS_ATTR_NUM = fctx->tuple_desc->natts;
-        Datum values[FUNCTION_STATUS_ATTR_NUM];
-        bool nulls[FUNCTION_STATUS_ATTR_NUM];
-        for (int columnIndex = 0; columnIndex < FUNCTION_STATUS_ATTR_NUM; columnIndex++) {
-            bool isNull;
-            values[columnIndex] = SPI_getbinval(tuple, SPI_tuptable->tupdesc, columnIndex + 1, &isNull);
-            nulls[columnIndex] = isNull;
+    PG_TRY();
+    {
+        if (fctx->call_cntr < fctx->max_calls) {
+            HeapTuple tuple = SPI_tuptable->vals[fctx->call_cntr];
+            static const int FUNCTION_STATUS_ATTR_NUM = fctx->tuple_desc->natts;
+            Datum values[FUNCTION_STATUS_ATTR_NUM];
+            bool nulls[FUNCTION_STATUS_ATTR_NUM];
+            for (int columnIndex = 0; columnIndex < FUNCTION_STATUS_ATTR_NUM; columnIndex++) {
+                bool isNull;
+                values[columnIndex] = SPI_getbinval(tuple, SPI_tuptable->tupdesc, columnIndex + 1, &isNull);
+                nulls[columnIndex] = isNull;
+            }
+            returnTuple = heap_form_tuple(fctx->tuple_desc, values, nulls);
+        } else {
+            setSqlMode = false;
+            SetSqlMode((const char *)fctx->user_fctx);
+            SPI_STACK_LOG("finish", NULL, NULL);
+            if (SPI_finish() != SPI_OK_FINISH) {
+                ereport(ERROR, (errcode(ERRCODE_SPI_FINISH_FAILURE), errmsg("SPI_finish failed")));
+            }
         }
-        HeapTuple returnTuple = heap_form_tuple(fctx->tuple_desc, values, nulls);
+    }
+    PG_CATCH();
+    {
+        if (setSqlMode) {
+            SetSqlMode((const char *)fctx->user_fctx);
+        }
+        PG_RE_THROW();
+    }
+    PG_END_TRY();
+
+    if (returnTuple != NULL) {
         SRF_RETURN_NEXT(fctx, HeapTupleGetDatum(returnTuple));
     } else {
-        SetSqlMode((const char*)fctx->user_fctx);
-        SPI_STACK_LOG("finish", NULL, NULL);
-        if (SPI_finish() != SPI_OK_FINISH) {
-            ereport(ERROR, (errcode(ERRCODE_SPI_FINISH_FAILURE), errmsg("SPI_finish failed")));
-        }
         SRF_RETURN_DONE(fctx);
     }
 }
