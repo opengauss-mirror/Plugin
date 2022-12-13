@@ -31,14 +31,14 @@ insert into test values('datediff(''2021-11-12'', null)', datediff('2021-11-12',
 insert into test values('datediff(null, null)', datediff(null, null));
 
 -- 非严格模式，参数不合法，报warning，返回NULL或者对应值
-set dolphin.sql_mode = 'sql_mode_full_group,pipes_as_concat,ansi_quotes';
+set dolphin.sql_mode = 'sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date';
 insert into test values('datediff(''10000-01-01'', ''2021-11-12'')', datediff('10000-01-01', '2021-11-12'));
 insert into test values('datediff(100000101, 20211112)', datediff(100000101, 20211112));
 insert into test values('datediff(99991231235959.9999995, 20211112)', datediff(99991231235959.9999995, 20211112));
 insert into test values('datediff(9999999999999999999999, 20211112)', datediff(9999999999999999999999, 20211112));
 
 -- 严格模式，参数不合法，抛出错误
-set dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes';
+set dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date';
 insert into test values('datediff(''10000-01-01'', ''2021-11-12'')', datediff('10000-01-01', '2021-11-12'));
 insert into test values('datediff(100000101, 20211112)', datediff(100000101, 20211112));
 insert into test values('datediff(99991231235959.9999995, 20211112)', datediff(99991231235959.9999995, 20211112));
@@ -113,13 +113,13 @@ insert into test values('timestampdiff(week, ''9999-12-31'', null)', timestampdi
 insert into test values('timestampdiff(week, null, null)', timestampdiff(week, null, null));
 
 -- 非严格模式，参数不合法，报warning，返回NULL或者对应值
-set dolphin.sql_mode = 'sql_mode_full_group,pipes_as_concat,ansi_quotes';
+set dolphin.sql_mode = 'sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date';
 insert into test values('timestampdiff(microsecond, ''abc'', ''2021-11-12'')', timestampdiff(microsecond, 'abc', '2021-11-12'));
 insert into test values('timestampdiff(microsecond, ''2021-11-12'', ''10000-1-1'')', timestampdiff(microsecond, '2021-11-12', '10000-1-1'));
 insert into test values('timestampdiff(microsecond, ''10000-1-1'', ''2021-11-12'')', timestampdiff(microsecond, '10000-1-1', '2021-11-12'));
 
 -- 严格模式，参数不合法，抛出错误
-set dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes';
+set dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date';
 insert into test values('timestampdiff(microsecond, ''abc'', ''2021-11-12'')', timestampdiff(microsecond, 'abc', '2021-11-12'));
 insert into test values('timestampdiff(microsecond, ''2021-11-12'', ''10000-1-1'')', timestampdiff(microsecond, '2021-11-12', '10000-1-1'));
 insert into test values('timestampdiff(microsecond, ''10000-1-1'', ''2021-11-12'')', timestampdiff(microsecond, '10000-1-1', '2021-11-12'));
@@ -168,11 +168,11 @@ insert into test values('convert_tz(''2021-11-12 12:12:12'', ''+1:00'', ''abc'')
 insert into test values('convert_tz(''2021-11-12 12:12:12'', ''+13:01'', ''+0:00'')', convert_tz('2021-11-12 12:12:12', '+13:01', '+0:00'));
 insert into test values('convert_tz(''2021-11-12 12:12:12'', ''+0:00'', ''-13:00'')', convert_tz('2021-11-12 12:12:12', '+0:00', '-13:00'));
 -- 非严格模式，参数不合法，报warning，返回NULL或者对应值
-set dolphin.sql_mode = 'sql_mode_full_group,pipes_as_concat,ansi_quotes';
+set dolphin.sql_mode = 'sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date';
 insert into test values('convert_tz(''10000-1-1 10:10:10'', ''+1:00'', ''+0:00'')', convert_tz('10000-1-1 10:10:10', '+1:00', '+0:00'));
 
 -- 严格模式，参数不合法，抛出错误
-set dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes';
+set dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date';
 insert into test values('convert_tz(''10000-1-1 10:10:10'', ''+1:00'', ''+0:00'')', convert_tz('10000-1-1 10:10:10', '+1:00', '+0:00'));
 
 
@@ -233,7 +233,7 @@ insert into test values('adddate(''2021-11-12'', null)', adddate('2021-11-12', n
 insert into test values('adddate(null, null)', adddate(null, null));
 
 -- 非严格模式，参数或者结果不合法，报warning，返回NULL或者对应值
-set dolphin.sql_mode = 'sql_mode_full_group,pipes_as_concat,ansi_quotes';
+set dolphin.sql_mode = 'sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date';
 insert into test values('adddate(0, INTERVAL 100 second)', adddate(0, INTERVAL 100 second));
 insert into test values('adddate(''10000-1-1'', INTERVAL -1 day)', adddate('10000-1-1', INTERVAL -1 day));
 insert into test values('adddate(''9999-12-31'', INTERVAL 1 day)', adddate('9999-12-31', INTERVAL 1 day));
@@ -249,7 +249,7 @@ insert into test values('adddate(''0001-1-1'', INTERVAL -1 day)', adddate('0001-
 insert into test values('adddate(''0001-1-1 00:00:00'', INTERVAL -1 second)', adddate('0001-1-1', INTERVAL -1 second));
 
 -- 严格模式，参数不合法，抛出错误
-set dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes';
+set dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date';
 insert into test values('adddate(0, INTERVAL 100 second)', adddate(0, INTERVAL 100 second));
 insert into test values('adddate(''10000-1-1'', INTERVAL -1 day)', adddate('10000-1-1', INTERVAL -1 day));
 insert into test values('adddate(''9999-12-31'', INTERVAL 1 day)', adddate('9999-12-31', INTERVAL 1 day));
@@ -314,7 +314,7 @@ insert into test values('date_add(101, INTERVAL 100 second)', date_add(101, INTE
 insert into test values('date_add(null, INTERVAL 1 day)', date_add(null, INTERVAL 1 day));
 
 -- 非严格模式，参数或者结果不合法，报warning，返回NULL或者对应值
-set dolphin.sql_mode = 'sql_mode_full_group,pipes_as_concat,ansi_quotes';
+set dolphin.sql_mode = 'sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date';
 insert into test values('date_add(0, INTERVAL 100 second)', date_add(0, INTERVAL 100 second));
 insert into test values('date_add(''10000-1-1'', INTERVAL -1 day)', date_add('10000-1-1', INTERVAL -1 day));
 insert into test values('date_add(''9999-12-31'', INTERVAL 1 day)', date_add('9999-12-31', INTERVAL 1 day));
@@ -330,7 +330,7 @@ insert into test values('date_add(''0001-1-1'', INTERVAL -1 day)', date_add('000
 insert into test values('date_add(''0001-1-1 00:00:00'', INTERVAL -1 second)', date_add('0001-1-1', INTERVAL -1 second));
 
 -- 严格模式，参数不合法，抛出错误
-set dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes';
+set dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date';
 insert into test values('date_add(0, INTERVAL 100 second)', date_add(0, INTERVAL 100 second));
 insert into test values('date_add(''10000-1-1'', INTERVAL -1 day)', date_add('10000-1-1', INTERVAL -1 day));
 insert into test values('date_add(''9999-12-31'', INTERVAL 1 day)', date_add('9999-12-31', INTERVAL 1 day));
@@ -396,7 +396,7 @@ insert into test values('date_sub(101, INTERVAL 100 second)', date_sub(101, INTE
 insert into test values('date_sub(null, INTERVAL 1 day)', date_sub(null, INTERVAL 1 day));
 
 -- 非严格模式，参数或者结果不合法，报warning，返回NULL或者对应值
-set dolphin.sql_mode = 'sql_mode_full_group,pipes_as_concat,ansi_quotes';
+set dolphin.sql_mode = 'sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date';
 insert into test values('date_sub(0, INTERVAL 100 second)', date_sub(0, INTERVAL 100 second));
 insert into test values('date_sub(''10000-1-1'', INTERVAL 1 day)', date_sub('10000-1-1', INTERVAL 1 day));
 insert into test values('date_sub(''9999-12-31'', INTERVAL -1 day)', date_sub('9999-12-31', INTERVAL -1 day));
@@ -412,7 +412,7 @@ insert into test values('date_sub(''0001-1-1'', INTERVAL 1 day)', date_sub('0001
 insert into test values('date_sub(''0001-1-1 00:00:00'', INTERVAL 1 second)', date_sub('0001-1-1 00:00:00', INTERVAL 1 second));
 
 -- 严格模式，参数不合法，抛出错误
-set dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes';
+set dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date';
 insert into test values('date_sub(0, INTERVAL 100 second)', date_sub(0, INTERVAL 100 second));
 insert into test values('date_sub(''10000-1-1'', INTERVAL 1 day)', date_sub('10000-1-1', INTERVAL 1 day));
 insert into test values('date_sub(''9999-12-31'', INTERVAL -1 day)', date_sub('9999-12-31', INTERVAL -1 day));
@@ -455,7 +455,7 @@ insert into test values('addtime(''12:12:12'', ''2021-11-12 12:12:12'')', addtim
 insert into test values('addtime(''0001-1-1 00:00:00'', ''-00:00:01'')', addtime('0001-1-1 00:00:00', '-00:00:01'));
 
 -- 非严格模式，参数或者结果不合法，报warning，返回NULL或者对应值
-set dolphin.sql_mode = 'sql_mode_full_group,pipes_as_concat,ansi_quotes';
+set dolphin.sql_mode = 'sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date';
 insert into test values('addtime(''839:00:00'', ''00:00:00'')', addtime('839:00:00', '00:00:00'));
 insert into test values('addtime(''838:59:59'', ''00:00:01'')', addtime('838:59:59', '00:00:01'));
 insert into test values('addtime(''838:59:59.1'', ''00:00:00'')', addtime('838:59:59.1', '00:00:00'));
@@ -466,7 +466,7 @@ insert into test values('addtime(''9999-12-31 23:59:59'', ''00:00:01'')', addtim
 insert into test values('addtime(''10000-1-1 00:00:00'', ''00:00:00'')', addtime('10000-1-1 00:00:00', '00:00:00'));
 
 -- 严格模式，参数或结果不合法，抛出错误
-set dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes';
+set dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date';
 insert into test values('addtime(''839:00:00'', ''00:00:00'')', addtime('839:00:00', '00:00:00'));
 insert into test values('addtime(''838:59:59'', ''00:00:01'')', addtime('838:59:59', '00:00:01'));
 insert into test values('addtime(''838:59:59.1'', ''00:00:00'')', addtime('838:59:59.1', '00:00:00'));
