@@ -656,7 +656,7 @@ static SelectStmt *MakeShowGrantStmt(char *arg, int location, core_yyscan_t yysc
 %type <node>	TriggerWhen
 
 %type <str>		copy_file_name
-				database_name access_method_clause access_method attr_name
+				database_name access_method_clause access_method access_method_clause_without_keyword attr_name
 				name namedata_string fdwName cursor_name file_name
 				index_name cluster_index_specification dolphin_index_name
 				pgxcnode_name pgxcgroup_name resource_pool_name workload_group_name
@@ -5565,9 +5565,9 @@ table_index_option:
 					n->comment = $3;
 					$$ = (Node*)n;
 			 }
-			 | USING access_method
+			 | USING IDENT
 			 {
-					$$ = makeStringConst($2, -1);
+					$$ = makeStringConst(downcase_str($2->str, $2->is_quoted), -1);
 			 }
 		;
 
@@ -8482,7 +8482,7 @@ table_index_elem:	ColId opt_asc_desc
 		;
 
 TableIndexClause:
-			index_key_opt index_name access_method_clause '(' table_index_elems ')' opt_table_index_options
+			index_key_opt index_name access_method_clause_without_keyword '(' table_index_elems ')' opt_table_index_options
 			{
 					IndexStmt *n = makeNode(IndexStmt);
 					n->unique = false;
@@ -8510,7 +8510,7 @@ TableIndexClause:
 					/* n->internal_index_flag = true; */
 					$$ = (Node *)n;
 			}
-			| index_key_opt access_method_clause '(' table_index_elems ')' opt_table_index_options
+			| index_key_opt access_method_clause_without_keyword '(' table_index_elems ')' opt_table_index_options
 			{
 					IndexStmt *n = makeNode(IndexStmt);
 					n->unique = false;
@@ -9326,7 +9326,7 @@ ConstraintElem:
 					n->initially_valid = !n->skip_validation;
 					$$ = (Node *)n;
 				}
-			| UNIQUE unique_name access_method_clause '(' constraint_params ')' opt_c_include opt_definition OptConsTableSpace opt_table_index_options
+			| UNIQUE unique_name access_method_clause_without_keyword '(' constraint_params ')' opt_c_include opt_definition OptConsTableSpace opt_table_index_options
 				ConstraintAttributeSpec InformationalConstraintElem
 				{
 					Constraint *n = makeNode(Constraint);
@@ -9347,7 +9347,7 @@ ConstraintElem:
 					setAccessMethod(n);
 					$$ = (Node *)n;
 				}
-			| UNIQUE unique_name access_method_clause '(' constraint_params ')' opt_c_include opt_definition opt_table_index_options
+			| UNIQUE unique_name access_method_clause_without_keyword '(' constraint_params ')' opt_c_include opt_definition opt_table_index_options
 				ConstraintAttributeSpec InformationalConstraintElem
 				{
 					Constraint *n = makeNode(Constraint);
@@ -9368,13 +9368,13 @@ ConstraintElem:
 					setAccessMethod(n);
 					$$ = (Node *)n;
 				}
-			| UNIQUE USING access_method '(' constraint_params ')' opt_c_include opt_definition OptConsTableSpace opt_table_index_options
+			| UNIQUE USING IDENT '(' constraint_params ')' opt_c_include opt_definition OptConsTableSpace opt_table_index_options
 				ConstraintAttributeSpec InformationalConstraintElem
 				{
 					Constraint *n = makeNode(Constraint);
 					n->contype = CONSTR_UNIQUE;
 					n->location = @1;
-					n->access_method = $3;
+					n->access_method = downcase_str($3->str, $3->is_quoted);
 					n->keys = $5;
 					n->including = $7;
 					n->options = $8;
@@ -9388,13 +9388,13 @@ ConstraintElem:
 					setAccessMethod(n);
 					$$ = (Node *)n;
 				}	
-			| UNIQUE USING access_method '(' constraint_params ')' opt_c_include opt_definition opt_table_index_options
+			| UNIQUE USING IDENT '(' constraint_params ')' opt_c_include opt_definition opt_table_index_options
 				ConstraintAttributeSpec InformationalConstraintElem
 				{
 					Constraint *n = makeNode(Constraint);
 					n->contype = CONSTR_UNIQUE;
 					n->location = @1;
-					n->access_method = $3;
+					n->access_method = downcase_str($3->str, $3->is_quoted);
 					n->keys = $5;
 					n->including = $7;
 					n->options = $8;
@@ -9448,7 +9448,7 @@ ConstraintElem:
 					setAccessMethod(n);
 					$$ = (Node *)n;
 				}
-			| UNIQUE index_key_opt unique_name access_method_clause '(' constraint_params ')' opt_c_include opt_definition OptConsTableSpace opt_table_index_options
+			| UNIQUE index_key_opt unique_name access_method_clause_without_keyword '(' constraint_params ')' opt_c_include opt_definition OptConsTableSpace opt_table_index_options
 				ConstraintAttributeSpec InformationalConstraintElem
 				{
 					Constraint *n = makeNode(Constraint);
@@ -9469,7 +9469,7 @@ ConstraintElem:
 					setAccessMethod(n);
 					$$ = (Node *)n;	
 				}
-			| UNIQUE index_key_opt unique_name access_method_clause '(' constraint_params ')' opt_c_include opt_definition opt_table_index_options
+			| UNIQUE index_key_opt unique_name access_method_clause_without_keyword '(' constraint_params ')' opt_c_include opt_definition opt_table_index_options
 				ConstraintAttributeSpec InformationalConstraintElem
 				{
 					Constraint *n = makeNode(Constraint);
@@ -9490,13 +9490,13 @@ ConstraintElem:
 					setAccessMethod(n);
 					$$ = (Node *)n;	
 				}
-			| UNIQUE index_key_opt USING access_method '(' constraint_params ')' opt_c_include opt_definition OptConsTableSpace opt_table_index_options
+			| UNIQUE index_key_opt USING IDENT '(' constraint_params ')' opt_c_include opt_definition OptConsTableSpace opt_table_index_options
 				ConstraintAttributeSpec InformationalConstraintElem
 				{
 					Constraint *n = makeNode(Constraint);
 					n->contype = CONSTR_UNIQUE;
 					n->location = @1;
-					n->access_method = $4;
+					n->access_method = downcase_str($4->str, $4->is_quoted);
 					n->keys = $6;
 					n->including = $8;
 					n->options = $9;
@@ -9510,13 +9510,13 @@ ConstraintElem:
 					setAccessMethod(n);
 					$$ = (Node *)n;
 				}
-			| UNIQUE index_key_opt USING access_method '(' constraint_params ')' opt_c_include opt_definition opt_table_index_options
+			| UNIQUE index_key_opt USING IDENT '(' constraint_params ')' opt_c_include opt_definition opt_table_index_options
 				ConstraintAttributeSpec InformationalConstraintElem
 				{
 					Constraint *n = makeNode(Constraint);
 					n->contype = CONSTR_UNIQUE;
 					n->location = @1;
-					n->access_method = $4;
+					n->access_method = downcase_str($4->str, $4->is_quoted);
 					n->keys = $6;
 					n->including = $8;
 					n->options = $9;
@@ -9585,13 +9585,13 @@ ConstraintElem:
 					n->constraintOptions = $5;
 					$$ = (Node *)n;
 				}
-			| PRIMARY KEY USING access_method '(' constraint_params ')' opt_c_include opt_definition OptConsTableSpace opt_table_index_options
+			| PRIMARY KEY USING IDENT '(' constraint_params ')' opt_c_include opt_definition OptConsTableSpace opt_table_index_options
 				ConstraintAttributeSpec InformationalConstraintElem
 				{
 					Constraint *n = makeNode(Constraint);
 					n->contype = CONSTR_PRIMARY;
 					n->location = @1;
-					n->access_method = $4;
+					n->access_method = downcase_str($4->str, $4->is_quoted);
 					n->keys = $6;
 					n->including = $8;
 					n->options = $9;
@@ -9605,13 +9605,13 @@ ConstraintElem:
 					setAccessMethod(n);
 					$$ = (Node *)n;
 				}
-			| PRIMARY KEY USING access_method '(' constraint_params ')' opt_c_include opt_definition opt_table_index_options
+			| PRIMARY KEY USING IDENT '(' constraint_params ')' opt_c_include opt_definition opt_table_index_options
 				ConstraintAttributeSpec InformationalConstraintElem
 				{
 					Constraint *n = makeNode(Constraint);
 					n->contype = CONSTR_PRIMARY;
 					n->location = @1;
-					n->access_method = $4;
+					n->access_method = downcase_str($4->str, $4->is_quoted);
 					n->keys = $6;
 					n->including = $8;
 					n->options = $9;
@@ -16188,6 +16188,11 @@ opt_index_name:
 
 access_method_clause:
 			USING access_method						{ $$ = $2; }
+			| /*EMPTY*/								{ $$ = NULL; }
+		;
+
+access_method_clause_without_keyword:
+			USING IDENT								{ $$ = downcase_str($2->str, $2->is_quoted); }
 			| /*EMPTY*/								{ $$ = NULL; }
 		;
 
