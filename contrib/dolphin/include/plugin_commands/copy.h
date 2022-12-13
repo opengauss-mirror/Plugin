@@ -367,6 +367,7 @@ typedef struct CopyStateData {
     bool is_compatible;
     bool hit_eof;
     bool has_escape;
+    bool* verified;
 #endif
 } CopyStateData;
 

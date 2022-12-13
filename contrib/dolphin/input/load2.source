@@ -1,0 +1,24 @@
+drop database if exists load2;
+create database load2 dbcompatibility 'B';
+\c load2
+
+--not null constraint data
+create table t1(a int, b int8 not null, c uint4 not null, d numeric not null);
+load data infile '@abs_builddir@/data/load_null.csv' into table t1 fields terminated by ',';
+set dolphin.sql_mode = '';
+load data infile '@abs_builddir@/data/load_null.csv' into table t1 fields terminated by ',';
+select * from t1;
+delete t1;
+load data infile '@abs_builddir@/data/load_null.csv' into table t1 fields terminated by ','(b, c);
+select * from t1;
+
+--not null constraint and default data
+create table t2(a int default 4, b int8 not null, c uint4 not null default 2, d numeric not null default 3);
+load data infile '@abs_builddir@/data/load_null.csv' into table t2 fields terminated by ',';
+select * from t2;
+delete t2;
+load data infile '@abs_builddir@/data/load_null.csv' into table t2 fields terminated by ','(b, c);
+select * from t2;
+
+\c postgres
+drop database if exists load2;

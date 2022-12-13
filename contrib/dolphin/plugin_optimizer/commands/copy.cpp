@@ -98,6 +98,11 @@
 #include "utils/rel_gs.h"
 #include "utils/sec_rls_utils.h"
 #include "utils/snapmgr.h"
+#include "utils/geo_decls.h"
+#include "utils/json.h"
+#include "utils/jsonb.h"
+#include "utils/varbit.h"
+#include "utils/xml.h"
 #include "access/heapam.h"
 #include "parser/parsetree.h"
 #include "utils/partitionmap_gs.h"
@@ -343,6 +348,10 @@ static List* ExecInsertIndexTuplesWithoutCheck(TupleTableSlot* slot, ItemPointer
     Relation targetPartRel, Partition p, int2 bucketId);
 static bool DoReplace(TupleTableSlot* myslot, EState* estate, ResultRelInfo* resultRelInfo, ReplaceData* replaceData, CopyState cstate);
 static char DeEscape(char** cur_ptr, char** line_end_ptr, bool* saw_non_ascii);
+static bool IsInvalidNull(TupleDesc tupDesc, int index);
+static char* RepalceInvalidNull(TupleDesc tupDesc, int index);
+static bool IsValidDefault(TupleDesc tupDesc, int index);
+static Datum getValue(CopyState cstate, TupleDesc tupDesc, char* string, int index, FmgrInfo* in_functions);
 #endif
 const char *gds_protocol_version_gaussdb = "1.0";
 /*
@@ -5832,6 +5841,18 @@ CopyState BeginCopyFrom(Relation rel, const char* filename, List* attnamelist,
         }
     }
 
+#ifdef DOLPHIN
+    /* get the column that added for load, the reset need extra check for null constaint*/
+    if (cstate->is_compatible) {
+        cstate->verified = (bool*)palloc0(num_phys_attrs * sizeof(bool));
+        ListCell* attr_cur = NULL;
+        foreach (attr_cur, cstate->attnumlist) {
+            int attnum = lfirst_int(attr_cur);
+            cstate->verified[attnum - 1] = true;
+        }
+    }
+#endif
+
     /* We keep those variables in cstate. */
     cstate->in_functions = in_functions;
     cstate->typioparams = typioparams;
@@ -6405,6 +6426,17 @@ bool NextCopyFrom(CopyState cstate, ExprContext* econtext, Datum* values, bool* 
                 string = cstate->null_print;
             }
 
+
+#ifdef DOLPHIN
+            if (cstate->is_compatible && string == NULL && !SQL_MODE_STRICT() && IsInvalidNull(tupDesc, m)) {
+                string = RepalceInvalidNull(tupDesc, m);
+            }
+            values[m] = getValue(cstate, tupDesc, string, m, in_functions);
+
+            if (string != NULL) {
+                nulls[m] = false;
+            }
+#else
             cstate->cur_attname = NameStr(attr[m]->attname);
             cstate->cur_attval = string;
             atttypmod = (asTypemods != NULL && asTypemods[m].assign) ? asTypemods[m].typemod : attr[m]->atttypmod;
@@ -6414,8 +6446,21 @@ bool NextCopyFrom(CopyState cstate, ExprContext* econtext, Datum* values, bool* 
                 nulls[m] = false;
             cstate->cur_attname = NULL;
             cstate->cur_attval = NULL;
+#endif
         }
 
+
+#ifdef DOLPHIN
+        for (i = 0; i < num_phys_attrs; i++) {
+            if (cstate->is_compatible && !cstate->verified[i] && !SQL_MODE_STRICT() && IsInvalidNull(tupDesc, i) && !IsValidDefault(tupDesc, i)) {
+                string = RepalceInvalidNull(tupDesc, i);
+                values[i] = getValue(cstate, tupDesc, string, i, in_functions);
+                if (string != NULL) {
+                    nulls[i] = false;
+                }
+            }
+        }
+#endif
         Assert(fieldno == nfields);
     } else {
         /* binary */
@@ -10993,4 +11038,120 @@ static char DeEscape(char** cur_ptr, char** line_end_ptr, bool* saw_non_ascii)
     return c;
 }
 
+static bool IsInvalidNull(TupleDesc tupDesc, int index)
+{
+    Form_pg_attribute* attr = tupDesc->attrs;
+    return !(attr[index]->attisdropped || ISGENERATEDCOL(tupDesc, index) || !attr[index]->attnotnull);
+
+}
+
+static bool IsValidDefault(TupleDesc tupDesc, int index)
+{
+    Form_pg_attribute* attr = tupDesc->attrs;
+    return !(attr[index]->attisdropped || ISGENERATEDCOL(tupDesc, index) || !attr[index]->atthasdef);
+}
+
+static char* RepalceInvalidNull(TupleDesc tupDesc, int index)
+{
+    Form_pg_attribute* attr = tupDesc->attrs;
+    Form_pg_attribute att_tup = attr[index];
+    Oid targetType = att_tup->atttypid;
+    int16 targetLen = att_tup->attlen;
+    bool targetByval = att_tup->attbyval;
+    bool targetIsTimetype = (targetType == DATEOID || targetType == TIMESTAMPOID || targetType == TIMESTAMPTZOID ||
+                             targetType == TIMETZOID || targetType == INTERVALOID || targetType == TINTERVALOID || 
+                             targetType == SMALLDATETIMEOID);
+    char* string;
+    if (!targetIsTimetype) {
+        switch (targetType) {
+                    case UUIDOID: {
+                        string = "00000000-0000-0000-0000-000000000000";
+                        break;
+                    }
+                    case POINTOID:
+                    case POLYGONOID: {
+                        string = "(0,0)";
+                        break;
+                    }
+                    case PATHOID: {
+                        string = "0,0";
+                        break;
+                    }                   
+                    case CIRCLEOID: {
+                        string = "0,0,0";
+                        break;
+                    }
+                    case LSEGOID:
+                    case BOXOID: {
+                        string = "0,0,0,0";
+                        break;
+                    }
+                    case JSONOID:
+                    case JSONBOID: {
+                        string = "0";
+                        break;    
+                    }
+                    case NAMEOID:
+                    case XMLOID:
+                    case BITOID: {
+                        string = "";
+                        break;    
+                    }                
+                    default: {
+                        bool targetIsVarlena = (!targetByval) && (targetLen == -1);
+                        if (targetIsVarlena) {
+                            string = "";
+                        }
+                        else {
+                            string = "0";
+                        }
+                        break;
+                    }
+                }
+    } else {
+        switch (targetType) {
+            case TIMESTAMPOID:
+            case TIMESTAMPTZOID: {
+                string = "now";
+                break;
+            }
+            case TIMETZOID:
+            case INTERVALOID: {
+                string = "00:00:00";
+                break;
+            }
+            case TINTERVALOID: {
+                string = "['epoch' 'epoch']";
+                break;
+            }
+            case SMALLDATETIMEOID: {
+                string = "1970-01-01 08:00:00";
+                break;
+            }
+            default: {
+                string = "epoch";
+                break;
+            }
+        }
+    }
+    return string;
+}
+
+static Datum getValue(CopyState cstate, TupleDesc tupDesc, char* string, int index, FmgrInfo* in_functions)
+{
+    Form_pg_attribute* attr = NULL;
+    attr = tupDesc->attrs;
+    AssignTypmod* asTypemods = cstate->as_typemods;
+    Oid* typioparams = cstate->typioparams;
+    int32 atttypmod;
+    Datum value;
+    cstate->cur_attname = NameStr(attr[index]->attname);
+    cstate->cur_attval = string;
+    atttypmod = (asTypemods != NULL && asTypemods[index].assign) ? asTypemods[index].typemod : attr[index]->atttypmod;
+    value =
+        InputFunctionCallForBulkload(cstate, &in_functions[index], string, typioparams[index], atttypmod);
+    cstate->cur_attname = NULL;
+    cstate->cur_attval = NULL;
+    return value;
+}
 #endif
