@@ -12011,6 +12011,13 @@ generic_option_name:
 /* We could use def_arg here, but the spec only requires string literals */
 generic_option_arg:
 				Sconst				{ $$ = (Node *) makeString($1); }
+				| Iconst
+					{
+						char buf[64];
+						errno_t rc = snprintf_s(buf, sizeof(buf), sizeof(buf) - 1, "%d", $1);
+						securec_check_ss(rc, "\0", "\0");
+						$$ = (Node *) makeString(pstrdup(buf));
+					}
 		;
 
 /*****************************************************************************
