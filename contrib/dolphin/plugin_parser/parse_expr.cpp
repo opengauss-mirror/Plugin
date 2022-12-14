@@ -1737,7 +1737,10 @@ static Node* HandleDefaultFunction(ParseState* pstate, FuncCall* fn)
             systable_endscan(adscan);
             heap_close(adrel, RowExclusiveLock);
         } else {
-            return (Node*)con;
+            ereport(ERROR,
+                (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmodule(MOD_OPT),
+                    errmsg("Invalid default value."),
+                        errdetail("the %d cloumn of table doesn't have a default value", attnum)));
         }
 
         Expr* expr = (Expr*)stringToNode_skip_extern_fields(TextDatumGetCString(val));
