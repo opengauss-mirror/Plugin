@@ -93,9 +93,7 @@ select a||b from testfordate;
 select a&&b from testfortime;
 select a||b from testfortime;
 
----正常报错，&&的输入类型不能为字符串
 select a&&b from testforstring;
----正常报错，||的输入类型不能为字符串
 select a||b from testforstring;
 
 ---drop table
@@ -250,22 +248,16 @@ select count(tem) from (select a&&b tem from testforboolean);
 select a&&b,b from testforboolean order by b;
 
 select char_length('asbjhc')&&char_length('askjdhkj');
----正常报错，&&的输入类型不能为text
 select left('1023jasdzlxc',5)&&left('1023jasdnzxc',5);
----正常报错，&&的输入类型不能为text
 select substring('as1dz34lcas',3)&&substring('zxcbkj1shd',5);
----正常报错，&&的输入类型不能为text
 select replace('123456789','234','asd')&&replace('123456789','234','asd');
 
 select count(tem) from (select a||b tem from testforboolean);
 select a||b,b from testforboolean order by b;
 
 select char_length('asbjhc')||char_length('askjdhkj');
----正常报错，||的输入类型不能为text
 select left('1023jasdzlxc',5)||left('1023jasdnzxc',5);
----正常报错，||的输入类型不能为text
 select substring('as1dz34lcas',3)||substring('zxcbkj1shd',5);
----正常报错，||的输入类型不能为text
 select replace('123456789','234','asd')||replace('123456789','234','asd');
 
 --- test for arithmetic op
