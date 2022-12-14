@@ -285,3 +285,15 @@ CREATE OPERATOR pg_catalog.!~~*(leftarg = bytea, rightarg = bytea, procedure = p
 
 CREATE OPERATOR pg_catalog.~~*(leftarg=raw, rightarg=raw, procedure=pg_catalog.rawlike);
 CREATE OPERATOR pg_catalog.!~~*(leftarg=raw, rightarg=raw, procedure=pg_catalog.rawnlike);
+
+DROP FUNCTION IF EXISTS pg_catalog.b_between_and("any","any","any") cascade;
+CREATE OR REPLACE FUNCTION pg_catalog.b_between_and("any","any","any") returns boolean LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'between_and';
+
+DROP FUNCTION IF EXISTS pg_catalog.b_sym_between_and("any","any","any") cascade;
+CREATE OR REPLACE FUNCTION pg_catalog.b_sym_between_and("any","any","any") returns boolean LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'sym_between_and';
+
+DROP FUNCTION IF EXISTS pg_catalog.b_not_between_and("any","any","any") cascade;
+CREATE OR REPLACE FUNCTION pg_catalog.b_not_between_and("any","any","any") returns boolean LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'not_between_and';
+
+DROP FUNCTION IF EXISTS pg_catalog.b_not_sym_between_and("any","any","any") cascade;
+CREATE OR REPLACE FUNCTION pg_catalog.b_not_sym_between_and("any","any","any") returns boolean LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'not_sym_between_and';

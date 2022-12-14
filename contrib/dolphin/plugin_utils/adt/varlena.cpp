@@ -243,6 +243,18 @@ extern "C" DLL_PUBLIC Datum find_in_set_integer(PG_FUNCTION_ARGS);
 PG_FUNCTION_INFO_V1_PUBLIC(find_in_set_string);
 extern "C" DLL_PUBLIC Datum find_in_set_string(PG_FUNCTION_ARGS);
 
+PG_FUNCTION_INFO_V1_PUBLIC(between_and);
+extern "C" DLL_PUBLIC Datum between_and(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1_PUBLIC(sym_between_and);
+extern "C" DLL_PUBLIC Datum sym_between_and(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1_PUBLIC(not_between_and);
+extern "C" DLL_PUBLIC Datum not_between_and(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1_PUBLIC(not_sym_between_and);
+extern "C" DLL_PUBLIC Datum not_sym_between_and(PG_FUNCTION_ARGS);
+
 PG_FUNCTION_INFO_V1_PUBLIC(soundex);
 extern "C" DLL_PUBLIC Datum soundex(PG_FUNCTION_ARGS);
 
@@ -8900,6 +8912,110 @@ Datum soundex_difference(PG_FUNCTION_ARGS)
     pfree_ext(result1);
     pfree_ext(result2);
     PG_RETURN_INT32(1);
+}
+
+const char* build_pure_num(Oid type, int index, PG_FUNCTION_ARGS)
+{
+    Oid typeOutput;
+    bool typIsVarlena;
+    const char* result = NULL;
+
+    switch (type) {
+        case INT4OID:
+        case INT8OID:
+        case BITOID:
+        case NUMERICOID:
+        case FLOAT8OID:
+        case BOOLOID:
+        case DATEOID:
+        case TIMESTAMPOID:
+        case TIMESTAMPTZOID:
+        case ABSTIMEOID:
+        case INTERVALOID:
+        case RELTIMEOID:
+        case TINTERVALOID:
+        case TIMEOID:
+        case TIMETZOID:
+            result = db_b_format_get_cstring(PG_GETARG_DATUM(index), type);
+            break;
+        case TEXTOID:
+        default:
+            getTypeOutputInfo(fcinfo->argTypes[index], &typeOutput, &typIsVarlena);
+            result = extract_numericstr(OidOutputFunctionCall(typeOutput, fcinfo->arg[index]));
+            break;
+    }
+
+    return result;
+}
+
+Datum between_and(PG_FUNCTION_ARGS)
+{
+    text* arg1 = cstring_to_text(build_pure_num(fcinfo->argTypes[0], 0, fcinfo));
+    text* arg2 = cstring_to_text(build_pure_num(fcinfo->argTypes[1], 1, fcinfo));
+    text* arg3 = cstring_to_text(build_pure_num(fcinfo->argTypes[2], 2, fcinfo));
+    int result_1_2;
+    int result_1_3;
+    result_1_2 = internal_text_pattern_compare(arg1, arg2);
+    result_1_3 = internal_text_pattern_compare(arg1, arg3);
+
+    if ((0 == result_1_2 || 1 == result_1_2) && (0 == result_1_3 || -1 == result_1_3)) {
+        PG_RETURN_BOOL(1);
+    } else {
+        PG_RETURN_BOOL(0);
+    }
+}
+
+Datum sym_between_and(PG_FUNCTION_ARGS)
+{
+    text* arg1 = cstring_to_text(build_pure_num(fcinfo->argTypes[0], 0, fcinfo));
+    text* arg2 = cstring_to_text(build_pure_num(fcinfo->argTypes[1], 1, fcinfo));
+    text* arg3 = cstring_to_text(build_pure_num(fcinfo->argTypes[2], 2, fcinfo));
+    int result_1_2;
+    int result_1_3;
+    result_1_2 = internal_text_pattern_compare(arg1, arg2);
+    result_1_3 = internal_text_pattern_compare(arg1, arg3);
+
+    if (((0 == result_1_2 || 1 == result_1_2) && (0 == result_1_3 || -1 == result_1_3)) ||
+        ((0 == result_1_3 || 1 == result_1_3) && (0 == result_1_2 || -1 == result_1_2))) {
+        PG_RETURN_BOOL(1);
+    } else {
+        PG_RETURN_BOOL(0);
+    }
+}
+
+Datum not_between_and(PG_FUNCTION_ARGS)
+{
+    text* arg1 = cstring_to_text(build_pure_num(fcinfo->argTypes[0], 0, fcinfo));
+    text* arg2 = cstring_to_text(build_pure_num(fcinfo->argTypes[1], 1, fcinfo));
+    text* arg3 = cstring_to_text(build_pure_num(fcinfo->argTypes[2], 2, fcinfo));
+    int result_1_2;
+    int result_1_3;
+    result_1_2 = internal_text_pattern_compare(arg1, arg2);
+    result_1_3 = internal_text_pattern_compare(arg1, arg3);
+
+    if (-1 == result_1_2 || 1 == result_1_3) {
+        PG_RETURN_BOOL(1);
+    } else {
+        PG_RETURN_BOOL(0);
+    }
+}
+
+Datum not_sym_between_and(PG_FUNCTION_ARGS)
+{
+    text* arg1 = cstring_to_text(build_pure_num(fcinfo->argTypes[0], 0, fcinfo));
+    text* arg2 = cstring_to_text(build_pure_num(fcinfo->argTypes[1], 1, fcinfo));
+    text* arg3 = cstring_to_text(build_pure_num(fcinfo->argTypes[2], 2, fcinfo));
+    int result_1_2;
+    int result_1_3;
+    result_1_2 = internal_text_pattern_compare(arg1, arg2);
+    result_1_3 = internal_text_pattern_compare(arg1, arg3);
+
+    if ((-1 == result_1_2 || 1 == result_1_3) ||
+        (-1 == result_1_3 || 1 == result_1_2) ) {
+        PG_RETURN_BOOL(1);
+    } else {
+        PG_RETURN_BOOL(0);
+    }
 }
 
 #ifdef DOLPHIN
