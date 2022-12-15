@@ -325,6 +325,10 @@ select * from t6;
 --extra data
 delete t1;
 load data infile '@abs_builddir@/data/load7.csv' into table t1;
+ERROR:  extra data after last expected column
+CONTEXT:  COPY t1, line 1: "1	1	1"
+set dolphin.sql_mode = '';
+load data infile '@abs_builddir@/data/load7.csv' into table t1;
 select * from t1;
  a | b 
 ---+---
@@ -334,6 +338,7 @@ select * from t1;
 
 --less data
 create table t7(a int1, b int2, c int4, d int8);
+set dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes';
 load data infile '@abs_builddir@/data/load7.csv' into table t7;
 ERROR:  missing data for column "d"
 CONTEXT:  COPY t7, line 1: "1	1	1"
@@ -365,6 +370,27 @@ select * from t9;
  1 |         
  2 |         +
    | 
+(2 rows)
+
+--more quote case
+create table t10(a char(20), b char(20));
+load data infile '@abs_builddir@/data/load_quote.csv' into table t10 fields terminated by ',' enclosed by '"' lines terminated by '#';
+select * from t10;
+          a           |          b           
+----------------------+----------------------
+ a,b,c                | 
+ a"                   | b                   
+ a                    | b,c,d"e#"a,"b"c     
+(3 rows)
+
+--same quote and delimiter
+delete t10;
+load data infile '@abs_builddir@/data/load_quote2.csv' into table t10 fields terminated by ',' enclosed by '"' escaped by '"' lines terminated by '#';
+select * from t10;
+          a           |          b           
+----------------------+----------------------
+ a"t"n                | hello"world         
+ "tab                 | "nan                
 (2 rows)
 
 \c postgres
