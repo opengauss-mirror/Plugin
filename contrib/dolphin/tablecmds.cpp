@@ -1966,7 +1966,7 @@ void UpdatePartKeyExpr(Relation rel, PartitionState *partTableState, Oid partOid
     if (!partTuple)
         ereport(ERROR,(errcode(ERRCODE_PARTITION_ERROR),errmsg("The partition can't be found")));
     bool isnull = false;
-    Datum val = fastgetattr(partTuple, Anum_pg_partition_partkeyexpr, RelationGetDescr(pgPartitionRel), &isnull);
+    fastgetattr(partTuple, Anum_pg_partition_partkeyexpr, RelationGetDescr(pgPartitionRel), &isnull);
     if (isnull) {
         if (OidIsValid(partOid))
             ReleaseSysCache(partTuple);
@@ -3991,6 +3991,47 @@ static void DropRelationPermissionCheck(char relkind, Oid relOid, Oid nspOid, co
         aclcheck_error(aclresult, ACL_KIND_CLASS, relname);
     }
 }
+
+static bool IsPartitionDeltaCudesc(Oid relOid)
+{
+#define PARTITION_DELTA_NAME "pg_delta_part_"
+#define PARTITION_CUDESC_NAME "pg_cudesc_part_"
+
+    int attnum;
+    bool found = false;
+    ScanKeyData scanKey[1];
+    TableScanDesc scan;
+    Relation pgpartition = NULL;
+    Relation rel = NULL;
+
+    rel = try_relation_open(relOid, AccessShareLock);
+    if (!RelationIsValid(rel)) {
+        return false;
+    }
+
+    const char *relname = RelationGetRelationName(rel);
+    if (strncmp(relname, PARTITION_DELTA_NAME, strlen(PARTITION_DELTA_NAME)) == 0) {
+        attnum = Anum_pg_partition_reltoastrelid;
+    } else if (strncmp(relname, PARTITION_CUDESC_NAME, strlen(PARTITION_CUDESC_NAME)) == 0) {
+        attnum = Anum_pg_partition_relcudescrelid;
+    } else {
+        heap_close(rel, AccessShareLock);
+        return false;
+    }
+
+    ScanKeyInit(&scanKey[0], attnum, BTEqualStrategyNumber, F_OIDEQ, ObjectIdGetDatum(rel->rd_id));
+    pgpartition = heap_open(PartitionRelationId, AccessShareLock);
+    scan = tableam_scan_begin(pgpartition, SnapshotNow, 1, scanKey);
+    if (tableam_scan_getnexttuple(scan, ForwardScanDirection)) {
+        found = true;
+    }
+    tableam_scan_end(scan);
+    heap_close(pgpartition, AccessShareLock);
+    heap_close(rel, AccessShareLock);
+
+    return found;
+}
+
 /*
  * Before acquiring a table lock, check whether we have sufficient rights.
  * In the case of DROP INDEX, also try to lock the table before the index.
@@ -4069,6 +4110,11 @@ static void RangeVarCallbackForDropRelation(
             invalid_system_index = true;
     }
 
+    if (IsPartitionDeltaCudesc(relOid)) {
+        ereport(ERROR,
+            (errcode(ERRCODE_WRONG_OBJECT_TYPE),
+                errmsg("cannot drop relation \"%s\", it is a partition delta/cudesc table", rel->relname)));
+    }
 
     /* Permission Check */
     DropRelationPermissionCheck(relkind, relOid, classform->relnamespace, rel->relname);
@@ -5959,6 +6005,30 @@ void renameatt(RenameStmt* stmt)
             errmsg("Column: %s has bound some masking policies, can not be renamed.", stmt->subname),
                 errdetail("cannot rename masking column")));
     }
+
+#ifdef ENABLE_MOT
+    if (rel->rd_rel->relkind == RELKIND_FOREIGN_TABLE && isMOTFromTblOid(RelationGetRelid(rel))) {
+        RenameForeingTableCmd cmd = {
+            T_RenameForeingTableCmd,
+            relid,
+            stmt->renameType,
+            stmt->subname,
+            stmt->newname
+        };
+        FdwRoutine* fdwroutine;
+
+        if (rel->rd_fdwroutine != nullptr) {
+            fdwroutine = rel->rd_fdwroutine;
+        } else {
+            fdwroutine = GetFdwRoutineByRelId(RelationGetRelid(rel));
+        }
+
+        if (fdwroutine->ValidateTableDef != nullptr) {
+            fdwroutine->ValidateTableDef((Node*)&cmd);
+        }
+    }
+#endif
+
     relation_close(rel, AccessShareLock);
 
     renameatt_internal(relid,
@@ -6460,6 +6530,23 @@ void RenameRelation(RenameStmt* stmt)
         if (is_ledger_usertable(relid)) {
             rename_hist_by_usertable(relid, stmt->newname);
         }
+
+#ifdef ENABLE_MOT
+        if (stmt->renameType == OBJECT_INDEX) {
+            Oid relOid = IndexGetRelation(relid, false);
+            Relation rel = RelationIdGetRelation(relOid);
+            if (RelationIsForeignTable(rel) && isMOTFromTblOid(RelationGetRelid(rel))) {
+                FdwRoutine* fdwroutine = rel->rd_fdwroutine;
+                if (fdwroutine == nullptr) {
+                    fdwroutine = GetFdwRoutineByRelId(RelationGetRelid(rel));
+                }
+                if (fdwroutine->ValidateTableDef != nullptr) {
+                    fdwroutine->ValidateTableDef((Node*)stmt);
+                } 
+            }
+            RelationClose(rel);
+        }
+#endif
 
         /* Do the work */
         RenameRelationInternal(relid, stmt->newname);
@@ -10131,6 +10218,23 @@ static FORCE_INLINE void ATExecAppendDefValExpr(_in_ AttrNumber attnum, _in_ Exp
     tab->rewrite = true;
 }
 
+#ifdef ENABLE_MOT
+static void ATExecMOTAlterTable(AlterForeingTableCmd* cmd)
+{
+    FdwRoutine* fdwroutine;
+
+    if (cmd->rel->rd_fdwroutine != nullptr) {
+        fdwroutine = cmd->rel->rd_fdwroutine;
+    } else {
+        fdwroutine = GetFdwRoutineByRelId(RelationGetRelid(cmd->rel));
+    }
+
+    if (fdwroutine->ValidateTableDef != nullptr) {
+        fdwroutine->ValidateTableDef((Node*)cmd);
+    }
+}
+#endif
+
 static void ATExecAddColumn(List** wqueue, AlteredTableInfo* tab, Relation rel, ColumnDef* colDef, bool isOid,
     bool recurse, bool recursing, LOCKMODE lockmode)
 {
@@ -10413,8 +10517,14 @@ static void ATExecAddColumn(List** wqueue, AlteredTableInfo* tab, Relation rel, 
      * case we mustn't invoke Phase 3 on a view or foreign table, since they
      * have no storage.
      */
+#ifdef ENABLE_MOT
+    if ((relkind == RELKIND_FOREIGN_TABLE && isMOTFromTblOid(RelationGetRelid(rel)) && attribute.attnum > 0) ||
+        (relkind != RELKIND_VIEW && relkind != RELKIND_COMPOSITE_TYPE && relkind != RELKIND_FOREIGN_TABLE &&
+        relkind != RELKIND_STREAM && relkind != RELKIND_CONTQUERY && attribute.attnum > 0)) {
+#else
     if (relkind != RELKIND_VIEW && relkind != RELKIND_COMPOSITE_TYPE && relkind != RELKIND_FOREIGN_TABLE &&
         relkind != RELKIND_STREAM && relkind != RELKIND_CONTQUERY && attribute.attnum > 0) {
+#endif
         /* test whether new column is null or not*/
         bool testNotNull = colDef->is_not_null;
 
@@ -10530,6 +10640,21 @@ static void ATExecAddColumn(List** wqueue, AlteredTableInfo* tab, Relation rel, 
      */
     add_column_datatype_dependency(myrelid, newattnum, attribute.atttypid);
     add_column_collation_dependency(myrelid, newattnum, attribute.attcollation);
+
+#ifdef ENABLE_MOT
+    if (relkind == RELKIND_FOREIGN_TABLE && isMOTFromTblOid(RelationGetRelid(rel))) {
+        AlterForeingTableCmd fcmd = {
+            T_AlterForeingTableCmd,
+            AT_AddColumn,
+            rel,
+            nullptr,
+            (Node*)colDef,
+            typeOid,
+            defval
+        };
+        ATExecMOTAlterTable(&fcmd);
+    }
+#endif
 
 #ifdef ENABLE_MULTIPLE_NODES
     if (unlikely(RelationIsTsStore(rel))) {
@@ -11570,6 +11695,22 @@ static void ATExecDropColumn(List** wqueue, Relation rel, const char* colName, D
         CStoreRelDropColumn(rel, attnum, rel->rd_rel->relowner);
     }
     ResetTempAutoIncrement(rel, attnum);
+
+#ifdef ENABLE_MOT
+    if (rel->rd_rel->relkind == RELKIND_FOREIGN_TABLE && isMOTFromTblOid(RelationGetRelid(rel))) {
+        AlterForeingTableCmd fcmd = {
+            T_AlterForeingTableCmd,
+            AT_DropColumn,
+            rel,
+            colName,
+            nullptr,
+            InvalidOid,
+            nullptr
+        };
+        ATExecMOTAlterTable(&fcmd);
+    }
+#endif
+
 #ifdef ENABLE_MULTIPLE_NODES
     if (unlikely(RelationIsTsStore(rel))) {
         /* drop column in tag table */
@@ -18820,6 +18961,13 @@ void AlterTableNamespace(AlterObjectSchemaStmt* stmt)
         return;
     }
 
+#ifdef ENABLE_MOT
+    if (IsMOTForeignTable(relid)) {
+        ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("Un-support feature"),
+                        errdetail("target table is a mot table")));
+    }
+#endif
+    
     TrForbidAccessRbObject(RelationRelationId, relid, stmt->relation->relname);
 
     rel = relation_open(relid, NoLock);
@@ -19511,7 +19659,8 @@ static void RangeVarCallbackForAlterRelation(
 #ifdef ENABLE_MOT
         if (isMOTFromTblOid(relid)) {
             ereport(ERROR, (errcode(ERRCODE_WRONG_OBJECT_TYPE),
-                errmsg("\"%s\" is a mot, which does not support alter table.", rv->relname)));
+                errmsg("\"%s\" is not a table", rv->relname),
+                errhint("Use ALTER FOREIGN TABLE to alter a foreign table.")));
         } else {
 #endif
             ereport(ERROR,
@@ -21983,6 +22132,22 @@ static void ATExecUnusableIndex(Relation rel)
     // the index is already lock by AccessExclusive lock, do not lock again.
     // AccessExclusiveLock on heap already held by call AlterTableLookupRelation().
     heapRelation = relation_open(heapOid, NoLock);
+
+#ifdef ENABLE_MOT
+    if (heapRelation->rd_rel->relkind == RELKIND_FOREIGN_TABLE && isMOTFromTblOid(heapOid)) {
+        AlterForeingTableCmd fcmd = {
+            T_AlterForeingTableCmd,
+            AT_UnusableIndex,
+            heapRelation,
+            nullptr,
+            nullptr,
+            InvalidOid,
+            nullptr
+        };
+        ATExecMOTAlterTable(&fcmd);
+    }
+#endif
+
     // call the internal function, update pg_index system table
     ATExecSetIndexUsableState(IndexRelationId, rel->rd_id, false);
 
