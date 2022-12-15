@@ -21,37 +21,46 @@ select * from t1;
 (2 rows)
 
 insert into t2 values('');
+ERROR:  invalid input syntax for smallint unsigned: ""
+LINE 1: insert into t2 values('');
+                              ^
+CONTEXT:  referenced column: a
 insert into t2 values('1.4');
 insert into t2 values('1.5');
 select * from t2;
  a 
 ---
- 0
  1
  2
-(3 rows)
+(2 rows)
 
 insert into t3 values('');
+ERROR:  invalid input syntax for int unsigned: ""
+LINE 1: insert into t3 values('');
+                              ^
+CONTEXT:  referenced column: a
 insert into t3 values('1.4');
 insert into t3 values('1.5');
 select * from t3;
  a 
 ---
- 0
  1
  2
-(3 rows)
+(2 rows)
 
 insert into t4 values('');
+ERROR:  invalid input syntax for type bigint unsigned: ""
+LINE 1: insert into t4 values('');
+                              ^
+CONTEXT:  referenced column: a
 insert into t4 values('1.4');
 insert into t4 values('1.5');
 select * from t4;
  a 
 ---
- 0
  1
  2
-(3 rows)
+(2 rows)
 
 \c postgres
 drop database uint_in

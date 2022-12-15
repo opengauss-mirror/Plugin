@@ -20,6 +20,10 @@ CONTEXT:  referenced column: c
 insert ignore into t_tinyint values('aaa123a34');
 insert ignore into t_tinyint values('abcde');
 insert ignore into t_tinyint values('');
+WARNING:  invalid input syntax for integer: ""
+LINE 1: insert ignore into t_tinyint values('');
+                                            ^
+CONTEXT:  referenced column: c
 select * from t_tinyint;
   c   
 ------
@@ -50,6 +54,10 @@ CONTEXT:  referenced column: c
 insert ignore into t_tinyint_unsigned values('aaa123a34');
 insert ignore into t_tinyint_unsigned values('abcde');
 insert ignore into t_tinyint_unsigned values('');
+WARNING:  invalid input syntax for integer: ""
+LINE 1: insert ignore into t_tinyint_unsigned values('');
+                                                     ^
+CONTEXT:  referenced column: c
 select * from t_tinyint_unsigned;
   c  
 -----
@@ -96,8 +104,20 @@ insert ignore into t_smallint_unsigned values ('12a34');
 insert ignore into t_smallint_unsigned values ('123333333333333a34');
 insert ignore into t_smallint_unsigned values ('-123333333333333a34');
 insert ignore into t_smallint_unsigned values ('aaa1234a5');
+WARNING:  invalid input syntax for smallint unsigned: "aaa1234a5"
+LINE 1: insert ignore into t_smallint_unsigned values ('aaa1234a5');
+                                                       ^
+CONTEXT:  referenced column: c
 insert ignore into t_smallint_unsigned values ('abcde');
+WARNING:  invalid input syntax for smallint unsigned: "abcde"
+LINE 1: insert ignore into t_smallint_unsigned values ('abcde');
+                                                       ^
+CONTEXT:  referenced column: c
 insert ignore into t_smallint_unsigned values ('');
+WARNING:  invalid input syntax for smallint unsigned: ""
+LINE 1: insert ignore into t_smallint_unsigned values ('');
+                                                       ^
+CONTEXT:  referenced column: c
 select * from t_smallint_unsigned;
    c   
 -------
@@ -144,8 +164,20 @@ insert ignore into t_int_unsigned values ('12a34');
 insert ignore into t_int_unsigned values ('123333333333333333333333333a34');
 insert ignore into t_int_unsigned values ('-123333333333333333333333333a34');
 insert ignore into t_int_unsigned values ('aaa123a45');
+WARNING:  invalid input syntax for int unsigned: "aaa123a45"
+LINE 1: insert ignore into t_int_unsigned values ('aaa123a45');
+                                                  ^
+CONTEXT:  referenced column: c
 insert ignore into t_int_unsigned values ('abcde');
+WARNING:  invalid input syntax for int unsigned: "abcde"
+LINE 1: insert ignore into t_int_unsigned values ('abcde');
+                                                  ^
+CONTEXT:  referenced column: c
 insert ignore into t_int_unsigned values ('');
+WARNING:  invalid input syntax for int unsigned: ""
+LINE 1: insert ignore into t_int_unsigned values ('');
+                                                  ^
+CONTEXT:  referenced column: c
 select * from t_int_unsigned;
      c      
 ------------
@@ -192,8 +224,20 @@ insert ignore into t_bigint_unsigned values ('12a34');
 insert ignore into t_bigint_unsigned values ('123333333333333333333333333333333333333333333333333333333333333333333333333333333333333a34');
 insert ignore into t_bigint_unsigned values ('-123333333333333333333333333333333333333333333333333333333333333333333333333333333333333a34');
 insert ignore into t_bigint_unsigned values ('aaa123a45');
+WARNING:  invalid input syntax for type bigint unsigned: "aaa123a45"
+LINE 1: insert ignore into t_bigint_unsigned values ('aaa123a45');
+                                                     ^
+CONTEXT:  referenced column: c
 insert ignore into t_bigint_unsigned values ('abcde');
+WARNING:  invalid input syntax for type bigint unsigned: "abcde"
+LINE 1: insert ignore into t_bigint_unsigned values ('abcde');
+                                                     ^
+CONTEXT:  referenced column: c
 insert ignore into t_bigint_unsigned values ('');
+WARNING:  invalid input syntax for type bigint unsigned: ""
+LINE 1: insert ignore into t_bigint_unsigned values ('');
+                                                     ^
+CONTEXT:  referenced column: c
 select * from t_bigint_unsigned;
           c           
 ----------------------

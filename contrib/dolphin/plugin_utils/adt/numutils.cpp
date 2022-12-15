@@ -103,6 +103,12 @@ int32 PgAtoiInternal(char* s, int size, int c, bool sqlModeStrict, bool can_igno
         /* In B compatibility, when not sql_mode_strict, or sql has keyword IGNORE, empty str is treated as 0 */
         if (can_ignore || !sqlModeStrict) {
             long l = 0;
+#ifdef DOLPHIN
+            ereport(WARNING,
+                (errmodule(MOD_FUNCTION),
+                    errcode(ERRCODE_INVALID_TEXT_REPRESENTATION),
+                    errmsg("invalid input syntax for integer: \"%s\"", s)));
+#endif
             return (int32)l;
         }
     }
@@ -735,7 +741,10 @@ uint16 PgStrtouint16Internal(const char* s, bool sqlModeStrict, bool can_ignore)
 
     /* require at least one digit */
     if (unlikely(!isdigit((unsigned char)*ptr))) {
-        if (can_ignore || !sqlModeStrict)
+        ereport((can_ignore || !sqlModeStrict) ? WARNING : ERROR,
+            (errcode(ERRCODE_INVALID_TEXT_REPRESENTATION),
+                errmsg("invalid input syntax for smallint unsigned: \"%s\"", s)));
+
             return tmp;
     }
 
@@ -786,7 +795,7 @@ out_of_range:
 
 invalid_syntax:
     ereport(ERROR,
-        (errcode(ERRCODE_INVALID_TEXT_REPRESENTATION), errmsg("invalid input syntax for %s: \"%s\"", "integer", s)));
+        (errcode(ERRCODE_INVALID_TEXT_REPRESENTATION), errmsg("invalid input syntax for %s: \"%s\"", "smallint unsigned", s)));
     return 0;
 }
 
@@ -811,8 +820,11 @@ uint32 PgStrtouint32Internal(const char* s, bool sqlModeStrict, bool can_ignore)
 
     /* require at least one digit */
     if (unlikely(!isdigit((unsigned char)*ptr))) {
-        if (can_ignore || !sqlModeStrict)
-            return tmp;
+        ereport((can_ignore || !sqlModeStrict) ? WARNING : ERROR,
+            (errcode(ERRCODE_INVALID_TEXT_REPRESENTATION),
+                errmsg("invalid input syntax for int unsigned: \"%s\"", s)));
+
+        return tmp;
     }
 
     /* process digits */
@@ -862,7 +874,7 @@ out_of_range:
 
 invalid_syntax:
     ereport(ERROR,
-        (errcode(ERRCODE_INVALID_TEXT_REPRESENTATION), errmsg("invalid input syntax for %s: \"%s\"", "integer", s)));
+        (errcode(ERRCODE_INVALID_TEXT_REPRESENTATION), errmsg("invalid input syntax for %s: \"%s\"", "int unsigned", s)));
     return 0;
 }
 

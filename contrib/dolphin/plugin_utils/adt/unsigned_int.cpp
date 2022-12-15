@@ -2291,12 +2291,14 @@ bool scanuint8(const char *str, bool errorOK, uint64 *result, bool can_ignore)
 
     /* require at least one digit */
     if (unlikely(!isdigit((unsigned char)*ptr))) {
-        if (errorOK)
+        if (errorOK) {
             return false;
-        else if (can_ignore || !SQL_MODE_STRICT()) {
-            *result = tmp;
-            return true;
         }
+        ereport((can_ignore || !SQL_MODE_STRICT()) ? WARNING : ERROR,
+            (errcode(ERRCODE_INVALID_TEXT_REPRESENTATION),
+                errmsg("invalid input syntax for type %s: \"%s\"", "bigint unsigned", str)));           
+        *result = tmp;
+        return true;
     }
 
     /* process digits */

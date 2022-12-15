@@ -54,6 +54,10 @@ insert into test_sint(a) values(55);
 insert into test_sint(a) values(35589898923423423423423423);
 insert into test_sint(a) values(-3553434343434343432434);
 insert into test_sint(a) values('a888');
+WARNING:  invalid input syntax for smallint unsigned: "a888"
+LINE 1: insert into test_sint(a) values('a888');
+                                        ^
+CONTEXT:  referenced column: a
 insert into test_sint(a) values('88123423433834343423434aa');
 insert into test_sint(a) values('-88aa');
 insert into test_sint(a) values(1234233434343434343434343434343.55);
@@ -85,6 +89,10 @@ insert into test_int(a) values(55);
 insert into test_int(a) values(35589898923423423423423423);
 insert into test_int(a) values(-3553434343434343432434);
 insert into test_int(a) values('a888');
+WARNING:  invalid input syntax for int unsigned: "a888"
+LINE 1: insert into test_int(a) values('a888');
+                                       ^
+CONTEXT:  referenced column: a
 insert into test_int(a) values('88123423433834343423434aa');
 insert into test_int(a) values('-88aa');
 insert into test_int(a) values(1234233434343434343434343434343.55);
@@ -116,6 +124,10 @@ insert into test_bint(a) values(55);
 insert into test_bint(a) values(35589898923423423423423423);
 insert into test_bint(a) values(-3553434343434343432434);
 insert into test_bint(a) values('a888');
+WARNING:  invalid input syntax for type bigint unsigned: "a888"
+LINE 1: insert into test_bint(a) values('a888');
+                                        ^
+CONTEXT:  referenced column: a
 insert into test_bint(a) values('88123423433834343423434aa');
 insert into test_bint(a) values('-88aa');
 insert into test_bint(a) values(1234233434343434343434343434343.55);
@@ -1246,7 +1258,7 @@ insert into test_sint_strict(a) values(-3553434343434343432434);
 ERROR:  smallint unsigned out of range
 CONTEXT:  referenced column: a
 insert into test_sint_strict(a) values('a888');
-ERROR:  invalid input syntax for integer: "a888"
+ERROR:  invalid input syntax for smallint unsigned: "a888"
 LINE 1: insert into test_sint_strict(a) values('a888');
                                                ^
 CONTEXT:  referenced column: a
@@ -1256,7 +1268,7 @@ LINE 1: insert into test_sint_strict(a) values('88123423433834343423...
                                                ^
 CONTEXT:  referenced column: a
 insert into test_sint_strict(a) values('-88aa');
-ERROR:  invalid input syntax for integer: "-88aa"
+ERROR:  invalid input syntax for smallint unsigned: "-88aa"
 LINE 1: insert into test_sint_strict(a) values('-88aa');
                                                ^
 CONTEXT:  referenced column: a
@@ -1295,7 +1307,7 @@ insert into test_int_strict(a) values(-3553434343434343432434);
 ERROR:  unsigned int out of range
 CONTEXT:  referenced column: a
 insert into test_int_strict(a) values('a888');
-ERROR:  invalid input syntax for integer: "a888"
+ERROR:  invalid input syntax for int unsigned: "a888"
 LINE 1: insert into test_int_strict(a) values('a888');
                                               ^
 CONTEXT:  referenced column: a
@@ -1305,7 +1317,7 @@ LINE 1: insert into test_int_strict(a) values('881234234338343434234...
                                               ^
 CONTEXT:  referenced column: a
 insert into test_int_strict(a) values('-88aa');
-ERROR:  invalid input syntax for integer: "-88aa"
+ERROR:  invalid input syntax for int unsigned: "-88aa"
 LINE 1: insert into test_int_strict(a) values('-88aa');
                                               ^
 CONTEXT:  referenced column: a
