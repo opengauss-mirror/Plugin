@@ -2264,13 +2264,23 @@ bool RI_Initial_Check(Trigger* trigger, Relation fk_rel, Relation pk_rel)
 #ifdef DOLPHIN
     char *sqlMode = GetSqlMode();
     SetSqlMode("ansi_quotes");
+    PG_TRY();
+    {
 #endif
-    /*
-     * Generate the plan.  We don't need to cache it, and there are no
-     * arguments to the plan.
-     */
-    qplan = SPI_prepare(querybuf.data, 0, NULL);
+        /*
+         * Generate the plan.  We don't need to cache it, and there are no
+         * arguments to the plan.
+         */
+        qplan = SPI_prepare(querybuf.data, 0, NULL);
 #ifdef DOLPHIN
+    }
+    PG_CATCH();
+    {
+        SetSqlMode(sqlMode);
+        pfree(sqlMode);
+        PG_RE_THROW();
+    }
+    PG_END_TRY();
     SetSqlMode(sqlMode);
     pfree(sqlMode);
 #endif
@@ -2733,8 +2743,8 @@ static void ri_FetchConstraintInfo(RI_ConstraintInfo* riinfo, Trigger* trigger, 
  * If cache_plan is true, the plan is saved into our plan hashtable
  * so that we don't need to plan it again.
  */
-static SPIPlanPtr ri_PlanCheck(const char* querystr, int nargs, Oid* argtypes, RI_QueryKey* qkey, Relation fk_rel,
-    Relation pk_rel, bool cache_plan)
+static SPIPlanPtr ri_PlanCheck(const char *querystr, int nargs, Oid *argtypes, RI_QueryKey *qkey, Relation fk_rel,
+                               Relation pk_rel, bool cache_plan)
 {
     SPIPlanPtr qplan;
     Relation query_rel;
@@ -2754,10 +2764,26 @@ static SPIPlanPtr ri_PlanCheck(const char* querystr, int nargs, Oid* argtypes, R
     /* Switch to proper UID to perform check as */
     GetUserIdAndSecContext(&save_userid, &save_sec_context);
     SetUserIdAndSecContext(RelationGetForm(query_rel)->relowner, save_sec_context | SECURITY_LOCAL_USERID_CHANGE);
-
-    /* Create the plan */
-    qplan = SPI_prepare(querystr, nargs, argtypes);
-
+#ifdef DOLPHIN
+    char *sqlMode = GetSqlMode();
+    SetSqlMode("ansi_quotes");
+    PG_TRY();
+    {
+#endif
+        /* Create the plan */
+        qplan = SPI_prepare(querystr, nargs, argtypes);
+#ifdef DOLPHIN
+    }
+    PG_CATCH();
+    {
+        SetSqlMode(sqlMode);
+        pfree(sqlMode);
+        PG_RE_THROW();
+    }
+    PG_END_TRY();
+    SetSqlMode(sqlMode);
+    pfree(sqlMode);
+#endif
     if (qplan == NULL)
         ereport(ERROR,
             (errcode(ERRCODE_SPI_PREPARE_FAILURE), errmsg("SPI_prepare returned %d for %s", SPI_result, querystr)));

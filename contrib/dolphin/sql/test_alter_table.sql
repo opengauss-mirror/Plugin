@@ -44,6 +44,39 @@ create table table_ddl_0030_02(col1 int,col2 int);
 ALTER TABLE table_ddl_0030_02 ADD CONSTRAINT FOREIGN KEY idx_ddl_0030(col1) REFERENCES table_ddl_0030_01(col1);
 show dolphin.sql_mode;
 
+create table foreign_key_table_001(
+COL_1 smallint primary key,
+COL_2 char(30),
+COL_3 int,
+COL_4 TIMESTAMP WITH TIME ZONE ,
+COL_5 boolean,
+COL_6 nchar(30),
+COL_7 float
+);
+
+create table foreign_key_table_002(
+COL_1 smallint default 3,
+COL_2 char(30),
+COL_3 int,
+COL_4 TIMESTAMP WITH TIME ZONE ,
+COL_5 boolean,
+COL_6 nchar(30),
+COL_7 float,
+foreign key(COL_1) REFERENCES foreign_key_table_001 on delete set default
+);
+
+insert into foreign_key_table_001 values(1,'aaaa',1,'2020-07-20',true,'aaaa',1.1);
+insert into foreign_key_table_001 values(2,'bbbb',2,'2020-07-20',true,'bbbb',1.1);
+insert into foreign_key_table_001 values(3,'cccc',3,'2020-07-20',true,'cccc',1.1);
+
+insert into foreign_key_table_002 values(1,'dddd',1,'2020-07-20',true,'dddd',2.2);
+insert into foreign_key_table_002 values(2,'eeee',2,'2020-07-20',true,'eeee',2.2);
+
+delete from foreign_key_table_001 where COL_1=1;
+select * from foreign_key_table_002 order by 1,2,3;
+drop table foreign_key_table_001,foreign_key_table_002;
+show dolphin.sql_mode;
+
 reset dolphin.sql_mode;
 \d+ table_ddl_0030_02
 drop table table_ddl_0030_01,table_ddl_0030_02;
