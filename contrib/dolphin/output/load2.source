@@ -30,6 +30,8 @@ WARNING:  invalid input syntax for numeric: ""
 CONTEXT:  COPY t1, line 1, column d: ""
 WARNING:  invalid input syntax for bigint: ""
 CONTEXT:  COPY t1, line 2, column b: ""
+WARNING:  invalid input syntax for int unsigned: ""
+CONTEXT:  COPY t1, line 2, column c: ""
 WARNING:  invalid input syntax for numeric: ""
 CONTEXT:  COPY t1, line 2, column d: ""
 select * from t1;
@@ -61,6 +63,8 @@ delete t2;
 load data infile '@abs_builddir@/data/load_null.csv' into table t2 fields terminated by ','(b, c);
 WARNING:  invalid input syntax for bigint: ""
 CONTEXT:  COPY t2, line 2, column b: ""
+WARNING:  invalid input syntax for int unsigned: ""
+CONTEXT:  COPY t2, line 2, column c: ""
 select * from t2;
  a | b | c | d 
 ---+---+---+---
