@@ -1,0 +1,72 @@
+drop database if exists load2;
+NOTICE:  database "load2" does not exist, skipping
+create database load2 dbcompatibility 'B';
+\c load2
+--not null constraint data
+create table t1(a int, b int8 not null, c uint4 not null, d numeric not null);
+load data infile '@abs_builddir@/data/load_null.csv' into table t1 fields terminated by ',';
+ERROR:  missing data for column "c"
+CONTEXT:  COPY t1, line 1: "\N,\N"
+set dolphin.sql_mode = '';
+load data infile '@abs_builddir@/data/load_null.csv' into table t1 fields terminated by ',';
+WARNING:  invalid input syntax for numeric: ""
+CONTEXT:  COPY t1, line 1, column d: ""
+WARNING:  invalid input syntax for integer: ""
+CONTEXT:  COPY t1, line 2, column a: ""
+WARNING:  invalid input syntax for bigint: ""
+CONTEXT:  COPY t1, line 2, column b: ""
+WARNING:  invalid input syntax for numeric: ""
+CONTEXT:  COPY t1, line 2, column d: ""
+select * from t1;
+ a | b | c | d 
+---+---+---+---
+   | 0 | 0 | 0
+ 0 | 0 | 0 | 0
+(2 rows)
+
+delete t1;
+load data infile '@abs_builddir@/data/load_null.csv' into table t1 fields terminated by ','(b, c);
+WARNING:  invalid input syntax for numeric: ""
+CONTEXT:  COPY t1, line 1, column d: ""
+WARNING:  invalid input syntax for bigint: ""
+CONTEXT:  COPY t1, line 2, column b: ""
+WARNING:  invalid input syntax for numeric: ""
+CONTEXT:  COPY t1, line 2, column d: ""
+select * from t1;
+ a | b | c | d 
+---+---+---+---
+   | 0 | 0 | 0
+   | 0 | 0 | 0
+(2 rows)
+
+--not null constraint and default data
+create table t2(a int default 4, b int8 not null, c uint4 not null default 2, d numeric not null default 3);
+load data infile '@abs_builddir@/data/load_null.csv' into table t2 fields terminated by ',';
+WARNING:  invalid input syntax for numeric: ""
+CONTEXT:  COPY t2, line 1, column d: ""
+WARNING:  invalid input syntax for integer: ""
+CONTEXT:  COPY t2, line 2, column a: ""
+WARNING:  invalid input syntax for bigint: ""
+CONTEXT:  COPY t2, line 2, column b: ""
+WARNING:  invalid input syntax for numeric: ""
+CONTEXT:  COPY t2, line 2, column d: ""
+select * from t2;
+ a | b | c | d 
+---+---+---+---
+   | 0 | 0 | 0
+ 0 | 0 | 0 | 0
+(2 rows)
+
+delete t2;
+load data infile '@abs_builddir@/data/load_null.csv' into table t2 fields terminated by ','(b, c);
+WARNING:  invalid input syntax for bigint: ""
+CONTEXT:  COPY t2, line 2, column b: ""
+select * from t2;
+ a | b | c | d 
+---+---+---+---
+ 4 | 0 | 0 | 3
+ 4 | 0 | 0 | 3
+(2 rows)
+
+\c postgres
+drop database if exists load2;
