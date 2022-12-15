@@ -273,7 +273,7 @@ Datum float4in(PG_FUNCTION_ARGS)
     if (*num == '\0') {
 
 #ifdef DOLPHIN
-        if (!SQL_MODE_STRICT()) {
+        if (fcinfo->can_ignore || !SQL_MODE_STRICT()) {
             ereport(WARNING,
                 (errcode(ERRCODE_INVALID_TEXT_REPRESENTATION),
                     errmsg("invalid input syntax for type real: \"%s\"", orig_num)));
@@ -534,7 +534,7 @@ Datum float8in(PG_FUNCTION_ARGS)
     if (*num == '\0') {
 
 #ifdef DOLPHIN
-        ereport(SQL_MODE_STRICT() ? ERROR : WARNING,
+        ereport((!fcinfo->can_ignore && SQL_MODE_STRICT()) ? ERROR : WARNING,
             (errcode(ERRCODE_INVALID_TEXT_REPRESENTATION),
                 errmsg("invalid input syntax for type double precision: \"%s\"", orig_num)));
         PG_RETURN_FLOAT8((float8)0);
@@ -585,7 +585,7 @@ Datum float8in(PG_FUNCTION_ARGS)
              * to see if the result is zero or huge.
              */
             if (val == 0.0 || val >= HUGE_VAL || val <= -HUGE_VAL) {
-                if (!fcinfo->can_ignore && SQL_MODE_STRICT() || val == 0.0) {
+                if ((!fcinfo->can_ignore && SQL_MODE_STRICT()) || val == 0.0) {
                     ereport(ERROR,
                         (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE),
                             errmsg("\"%s\" is out of range for type double precision", orig_num)));

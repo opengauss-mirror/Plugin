@@ -241,7 +241,7 @@ int16 PgStrtoint16Internal(const char* s, bool sqlModeStrict, bool can_ignore)
 
 #ifdef DOLPHIN
     if (*s == 0) {
-        ereport(sqlModeStrict ? ERROR : WARNING,
+        ereport((!can_ignore && sqlModeStrict) ? ERROR : WARNING,
             (errmodule(MOD_FUNCTION),
                 errcode(ERRCODE_INVALID_TEXT_REPRESENTATION),
                 errmsg("invalid input syntax for smallint: \"%s\"", s)));
@@ -339,7 +339,7 @@ int32 PgStrtoint32Internal(const char* s, bool sqlModeStrict, bool can_ignore)
 
 #ifdef DOLPHIN
     if (*s == 0) {
-        ereport(sqlModeStrict ? ERROR : WARNING,
+        ereport((!can_ignore && sqlModeStrict) ? ERROR : WARNING,
             (errmodule(MOD_FUNCTION),
                 errcode(ERRCODE_INVALID_TEXT_REPRESENTATION),
                 errmsg("invalid input syntax for integer: \"%s\"", s)));
