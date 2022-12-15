@@ -176,6 +176,42 @@ select 1 between '1测' and '1';
  t
 (1 row)
 
+select 'xyzhi'::text between 'xyzhi'::text and 'xyzhi'::text;
+ ?column? 
+----------
+ t
+(1 row)
+
+select 'xyzhi'::text between 'xyzhi'::text and 'xyzhi';
+ ?column? 
+----------
+ t
+(1 row)
+
+select 'xyzhi'::text between 'xyzhi' and 'xyzhi'::text;
+ ?column? 
+----------
+ t
+(1 row)
+
+select repeat('Pg', 4) between 0 and 'PgPgPgPg';
+ b_between_and 
+---------------
+ t
+(1 row)
+
+select replace('mm','mm',1) between 0 and 1;
+ b_between_and 
+---------------
+ t
+(1 row)
+
+select lpad('hi', 5, 'xyza') between 'xyzhi' and 10;
+ b_between_and 
+---------------
+ t
+(1 row)
+
 drop table if exists t_between_and_0007;
 NOTICE:  table "t_between_and_0007" does not exist, skipping
 create table t_between_and_0007(

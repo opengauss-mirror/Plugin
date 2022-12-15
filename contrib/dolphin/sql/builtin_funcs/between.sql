@@ -30,6 +30,12 @@ select b'1111111111111111111111111' between 0 and 999999999;
 select 0 between '测' and '15.2';
 select 1 between '测1' and '1';
 select 1 between '1测' and '1';
+select 'xyzhi'::text between 'xyzhi'::text and 'xyzhi'::text;
+select 'xyzhi'::text between 'xyzhi'::text and 'xyzhi';
+select 'xyzhi'::text between 'xyzhi' and 'xyzhi'::text;
+select repeat('Pg', 4) between 0 and 'PgPgPgPg';
+select replace('mm','mm',1) between 0 and 1;
+select lpad('hi', 5, 'xyza') between 'xyzhi' and 10;
 drop table if exists t_between_and_0007;
 create table t_between_and_0007(
 c_id int(11) not null,

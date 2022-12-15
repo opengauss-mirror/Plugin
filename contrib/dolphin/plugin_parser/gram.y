@@ -143,10 +143,12 @@ IntervalStylePack g_interStyleVal = {"a"};
 
 #define RESET_BOOL(Arg, T) \
 	if (T == T_TypeCast) { \
-        if (0 == strcmp(((A_Const *)(((TypeCast*)(Arg))->arg))->val.val.str, "t")) { \
+		if (0 == strcmp(((A_Const *)(((TypeCast*)(Arg))->arg))->val.val.str, "t")) { \
 			Arg = makeIntConst(1,-1); \
-        } else if (0 == strcmp(((A_Const *)(((TypeCast*)(Arg))->arg))->val.val.str, "f")) { \
+		} else if (0 == strcmp(((A_Const *)(((TypeCast*)(Arg))->arg))->val.val.str, "f")) { \
 			Arg = makeIntConst(0,-1); \
+		} else if (NULL != extract_numericstr(((A_Const *)(((TypeCast*)(Arg))->arg))->val.val.str)) { \
+			((A_Const *)(((TypeCast*)(Arg))->arg))->val.val.str = extract_numericstr(((A_Const *)(((TypeCast*)(Arg))->arg))->val.val.str); \
 		} \
 	}
 
@@ -28001,61 +28003,121 @@ a_expr:		c_expr									{ $$ = $1; }
 			 *	issues make this difficult:
 			 *	http://archives.postgresql.org/pgsql-hackers/2008-08/msg01142.php
 			 */
-			| a_expr BETWEEN opt_asymmetric b_expr AND b_expr		%prec BETWEEN
+			| a_expr BETWEEN opt_asymmetric b_expr AND b_expr       %prec BETWEEN
 				{
 					if ((($1)->type != T_ColumnRef) && (($4)->type != T_ColumnRef) && (($6)->type != T_ColumnRef)) {
 						fix_bw_bool(&($1), &($4), &($6));
 						fix_bw_type($1, $4, $6);
 					}
-					$$ = (Node *) makeA_Expr(AEXPR_AND, NIL,
-						(Node *) makeSimpleA_Expr(AEXPR_OP, ">=", $1, $4, @2),
-						(Node *) makeSimpleA_Expr(AEXPR_OP, "<=", $1, $6, @2),
-											 @2);
+
+					if ((($1)->type == T_FuncCall) || (($4)->type == T_FuncCall) || (($6)->type == T_FuncCall)) {
+						FuncCall *n = makeNode(FuncCall);
+						n->funcname = SystemFuncName("b_between_and");
+						n->args = list_make3($1, $4, $6);
+						n->agg_order = NIL;
+						n->agg_star = FALSE;
+						n->agg_distinct = FALSE;
+						n->func_variadic = FALSE;
+						n->over = NULL;
+						n->location = @1;
+						n->call_func = false;
+						$$ = (Node *)n;
+					} else {
+						$$ = (Node *) makeA_Expr(AEXPR_AND, NIL,
+							(Node *) makeSimpleA_Expr(AEXPR_OP, ">=", $1, $4, @2),
+							(Node *) makeSimpleA_Expr(AEXPR_OP, "<=", $1, $6, @2),
+							@2);
+					}
 				}
-			| a_expr NOT BETWEEN opt_asymmetric b_expr AND b_expr	%prec BETWEEN
+			| a_expr NOT BETWEEN opt_asymmetric b_expr AND b_expr   %prec BETWEEN
 				{
 					if ((($1)->type != T_ColumnRef) && (($5)->type != T_ColumnRef) && (($7)->type != T_ColumnRef)) {
 						fix_bw_bool(&($1), &($5), &($7));
 						fix_bw_type($1, $5, $7);
 					}
-					$$ = (Node *) makeA_Expr(AEXPR_OR, NIL,
-						(Node *) makeSimpleA_Expr(AEXPR_OP, "<", $1, $5, @2),
-						(Node *) makeSimpleA_Expr(AEXPR_OP, ">", $1, $7, @2),
-											 @2);
+
+					if ((($1)->type == T_FuncCall) || (($5)->type == T_FuncCall) || (($7)->type == T_FuncCall)) {
+						FuncCall *n = makeNode(FuncCall);
+						n->funcname = SystemFuncName("b_not_between_and");
+						n->args = list_make3($1, $5, $7);
+						n->agg_order = NIL;
+						n->agg_star = FALSE;
+						n->agg_distinct = FALSE;
+						n->func_variadic = FALSE;
+						n->over = NULL;
+						n->location = @1;
+						n->call_func = false;
+						$$ = (Node *)n;
+					} else {
+						$$ = (Node *) makeA_Expr(AEXPR_OR, NIL,
+							(Node *) makeSimpleA_Expr(AEXPR_OP, "<", $1, $5, @2),
+							(Node *) makeSimpleA_Expr(AEXPR_OP, ">", $1, $7, @2),
+							@2);
+					}
 				}
-			| a_expr BETWEEN SYMMETRIC b_expr AND b_expr			%prec BETWEEN
+			| a_expr BETWEEN SYMMETRIC b_expr AND b_expr            %prec BETWEEN
 				{
 					if ((($1)->type != T_ColumnRef) && (($4)->type != T_ColumnRef) && (($6)->type != T_ColumnRef)) {
 						fix_bw_bool(&($1), &($4), &($6));
 						fix_bw_type($1, $4, $6);
 					}
-					$$ = (Node *) makeA_Expr(AEXPR_OR, NIL,
+
+					if ((($1)->type == T_FuncCall) || (($4)->type == T_FuncCall) || (($6)->type == T_FuncCall)) {
+						FuncCall *n = makeNode(FuncCall);
+						n->funcname = SystemFuncName("b_sym_between_and");
+						n->args = list_make3($1, $4, $6);
+						n->agg_order = NIL;
+						n->agg_star = FALSE;
+						n->agg_distinct = FALSE;
+						n->func_variadic = FALSE;
+						n->over = NULL;
+						n->location = @1;
+						n->call_func = false;
+						$$ = (Node *)n;
+					} else {
+						$$ = (Node *) makeA_Expr(AEXPR_OR, NIL,
 						(Node *) makeA_Expr(AEXPR_AND, NIL,
 							(Node *) makeSimpleA_Expr(AEXPR_OP, ">=", $1, $4, @2),
 							(Node *) makeSimpleA_Expr(AEXPR_OP, "<=", $1, $6, @2),
-											@2),
+							@2),
 						(Node *) makeA_Expr(AEXPR_AND, NIL,
 							(Node *) makeSimpleA_Expr(AEXPR_OP, ">=", $1, $6, @2),
 							(Node *) makeSimpleA_Expr(AEXPR_OP, "<=", $1, $4, @2),
-											@2),
-											 @2);
+							@2),
+						@2);
+					}
 				}
-			| a_expr NOT BETWEEN SYMMETRIC b_expr AND b_expr		%prec BETWEEN
+			| a_expr NOT BETWEEN SYMMETRIC b_expr AND b_expr        %prec BETWEEN
 				{
 					if ((($1)->type != T_ColumnRef) && (($5)->type != T_ColumnRef) && (($7)->type != T_ColumnRef)) {
 						fix_bw_bool(&($1), &($5), &($7));
 						fix_bw_type($1, $5, $7);
 					}
-					$$ = (Node *) makeA_Expr(AEXPR_AND, NIL,
+	
+					if ((($1)->type == T_FuncCall) || (($5)->type == T_FuncCall) || (($7)->type == T_FuncCall)) {
+						FuncCall *n = makeNode(FuncCall);
+						n->funcname = SystemFuncName("b_not_sym_between_and");
+						n->args = list_make3($1, $5, $7);
+						n->agg_order = NIL;
+						n->agg_star = FALSE;
+						n->agg_distinct = FALSE;
+						n->func_variadic = FALSE;
+						n->over = NULL;
+						n->location = @1;
+						n->call_func = false;
+						$$ = (Node *)n;
+					} else {
+						$$ = (Node *) makeA_Expr(AEXPR_AND, NIL,
 						(Node *) makeA_Expr(AEXPR_OR, NIL,
 							(Node *) makeSimpleA_Expr(AEXPR_OP, "<", $1, $5, @2),
 							(Node *) makeSimpleA_Expr(AEXPR_OP, ">", $1, $7, @2),
-											@2),
+							@2),
 						(Node *) makeA_Expr(AEXPR_OR, NIL,
 							(Node *) makeSimpleA_Expr(AEXPR_OP, "<", $1, $7, @2),
 							(Node *) makeSimpleA_Expr(AEXPR_OP, ">", $1, $5, @2),
-											@2),
-											 @2);
+							@2),
+						@2);
+					}
 				}
 			| a_expr IN_P in_expr
 				{
