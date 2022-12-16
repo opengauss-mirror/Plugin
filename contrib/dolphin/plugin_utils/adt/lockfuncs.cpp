@@ -60,13 +60,14 @@
      (locktag).locktag_field4 = (id4), (locktag).locktag_field5 = (id5), (locktag).locktag_type = LOCKTAG_ADVISORY, \
      (locktag).locktag_lockmethodid = USER_LOCKMETHOD)
 #define MAX_ADVISORY_LOCK_NAME_LENTH 64
+#define DATABASE_ID_LENTH 32
 
 struct HTAB* lockNameHash = NULL;
 
 pthread_mutex_t gNameHashLock;
 
 typedef struct LockName {
-    char name[MAX_ADVISORY_LOCK_NAME_LENTH+1];
+    char name[MAX_ADVISORY_LOCK_NAME_LENTH+DATABASE_ID_LENTH+1];
     int64 nlocks;
 } LockName;
 
@@ -100,7 +101,7 @@ extern "C" DLL_PUBLIC Datum ClearInvalidLockName(PG_FUNCTION_ARGS);
 void InitLockNameHash()
 {
     HASHCTL info = {0};
-    info.keysize = MAX_ADVISORY_LOCK_NAME_LENTH+1;
+    info.keysize = MAX_ADVISORY_LOCK_NAME_LENTH+DATABASE_ID_LENTH+1;
     info.entrysize = sizeof(LockName);
     info.hash = string_hash;
     info.hcxt = g_instance.builtin_proc_context;
@@ -157,9 +158,13 @@ Datum ClearInvalidLockNameInner()
     AutoMutexLock nameHashLock(&gNameHashLock);
     nameHashLock.lock();
     hash_seq_init(&status, lockNameHash);
-
+    char dataBaseId[DATABASE_ID_LENTH+1] = {0};
+    errno_t rc = snprintf_s((char*)dataBaseId, DATABASE_ID_LENTH+1, DATABASE_ID_LENTH, "%u", u_sess->proc_cxt.MyDatabaseId);
+    securec_check_ss(rc, "\0", "\0");
     while ((lockName = (LockName *)hash_seq_search(&status)) != NULL) {
-        if (IsFreeAdvisoryLockInner(lockName->name)) {
+        if (pg_strncasecmp(dataBaseId, lockName->name, strlen((char*)dataBaseId)) != 0)
+            continue;
+        if (IsFreeAdvisoryLockInner((char*)(lockName->name)+strlen((char*)dataBaseId))) {
             sumLocks += lockName->nlocks;
             lockName->nlocks = 0;
             hash_search(lockNameHash, (void *)&(lockName->name), HASH_REMOVE, NULL);
@@ -172,9 +177,9 @@ Datum ClearInvalidLockNameInner()
 
 void SetLockNameHash(const char* name, bool nlockInitialFlag = false, bool releaseFlag = false)
 {
-    char tempName[MAX_ADVISORY_LOCK_NAME_LENTH+1] = {0};
-    int rc = strncpy_s((char*)tempName, MAX_ADVISORY_LOCK_NAME_LENTH+1, name, strlen(name));
-    securec_check(rc, "\0", "\0");
+    char tempName[MAX_ADVISORY_LOCK_NAME_LENTH+1+DATABASE_ID_LENTH] = {0};
+    errno_t rc = snprintf_s(tempName, sizeof(tempName), sizeof(tempName) - 1, "%u%s", u_sess->proc_cxt.MyDatabaseId, name);
+    securec_check_ss(rc, "\0", "\0");
     LockName *result = NULL;
     bool found = false;
 
@@ -1679,7 +1684,12 @@ Datum GetAllAdvisoryLock(PG_FUNCTION_ARGS)
     LockName *lockName = NULL;
     status = (HASH_SEQ_STATUS*)(funcctx->user_fctx);
 
+    char dataBaseId[DATABASE_ID_LENTH+1] = {0};
+    errno_t rc = snprintf_s((char*)dataBaseId, DATABASE_ID_LENTH+1, DATABASE_ID_LENTH, "%u", u_sess->proc_cxt.MyDatabaseId);
+    securec_check_ss(rc, "\0", "\0");
     while ((lockName = (LockName *)hash_seq_search(status)) != NULL) {
+        if (pg_strncasecmp(dataBaseId, lockName->name, strlen((char*)dataBaseId)) != 0)
+            continue;
         Datum values[2];
         bool nulls[2];
         HeapTuple tuple;
@@ -1691,7 +1701,7 @@ Datum GetAllAdvisoryLock(PG_FUNCTION_ARGS)
         securec_check(rc, "\0", "\0");
         rc = memset_s(nulls, sizeof(nulls), false, sizeof(nulls));
         securec_check(rc, "\0", "\0");
-        values[0] = CStringGetTextDatum(lockName->name);
+        values[0] = CStringGetTextDatum((char*)(lockName->name)+strlen((char*)dataBaseId));
         fcinfo->arg[0] = values[0];
         Datum datum1 = IsUsedAdvisoryLock(fcinfo);
         if (datum1 == 0) {
