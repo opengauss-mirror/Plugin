@@ -228,6 +228,14 @@ subpartition p3_2 values less than (300)
 );
 alter table b_range_range_t01 reorganize partition p1 into (partition m1 values less than(100) (subpartition m1_1 values less than(50),subpartition m1_2 values less than(100)));
 alter table b_range_range_t01 reorganize partition p1 into (partition m1 values less than(100) (subpartition m1_1));
-
+drop table if exists b_range_mt1;
+create table b_range_mt1(c1 int primary key,c2 int)
+partition by range(c1) (
+partition p0 start (0) end (100),
+partition p1 start (100) end (200),
+partition p2 start (200) end (300),
+partition p3 start (300) end (maxvalue)
+);
+alter table b_range_mt1 reorganize partition p3 into (partition m1 start(300) end(400),partition m2 start(400) end(maxvalue));
 \c postgres;
 drop DATABASE if exists partition_test4;
