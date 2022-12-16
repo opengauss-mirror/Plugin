@@ -675,5 +675,14 @@ partition p3 start (300) end (maxvalue)
 NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "b_range_mt1_pkey" for table "b_range_mt1"
 alter table b_range_mt1 reorganize partition p3 into (partition m1 start(300) end(400),partition m2 start(400) end(maxvalue));
 ERROR:  Reorganize Partition not support start_end_def syntax
+drop table if exists b_range_mt2;
+NOTICE:  table "b_range_mt2" does not exist, skipping
+create table b_range_mt2(c1 int primary key,c2 int)
+partition by range(2 div c1) (
+partition p1 values less than(200),
+partition p2 values less than(300),
+partition p3 values less than (maxvalue)
+);
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "b_range_mt2_pkey" for table "b_range_mt2"
 \c postgres;
 drop DATABASE if exists partition_test4;
