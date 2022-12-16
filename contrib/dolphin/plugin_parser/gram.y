@@ -31327,14 +31327,14 @@ dolphin_qualified_name:
 							$$->catalogname = NULL;
 							$$->schemaname = downcase_str($1->str, $1->is_quoted);
 							first = (DolphinString*)linitial($2);
-							$$->relname = strVal(first->node);
+							$$->relname = GetDolphinObjName(first->str, first->is_quoted);
 							break;
 						case 2:
 							$$->catalogname = downcase_str($1->str, $1->is_quoted);
 							first = (DolphinString*)linitial($2);
 							second = (DolphinString*)lsecond($2);
 							$$->schemaname = downcase_str(strVal(first->node), first->is_quoted);
-							$$->relname = strVal(second->node);
+							$$->relname = GetDolphinObjName(second->str, second->is_quoted);
 							break;
 						default:
 							InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);
@@ -35056,6 +35056,7 @@ static List* GetNameListFromDolphinString(List* dolphinStringList)
 	ListCell* cell = NULL;
 	foreach (cell, dolphinStringList) {
 		DolphinString* element = (DolphinString*)lfirst(cell);
+		element->str = downcase_str(element->str, element->is_quoted);
 		result = lappend(result, element->node);
 	}
 	return result;

@@ -24,3 +24,17 @@ select * from T2;
 
 update T1,T2 set T1.aa=1, T2.aa=2;
 DELETE FROM T1, T2 USING T1, T2 WHERE T1.aa = T2.aa;
+select count(*) from pg_catalog.PG_Class where relname='pg_class';
+select count(*) from table_name_test_db.pg_catalog.PG_ClaSS where relname='pg_class';
+select count(*) from pg_cATAlog.pg_class where relname='pg_class';
+select count(*) from table_NAME_test_DB.pg_cATAloG.pg_class where relname='pg_class';
+select PG_cataLOG.TIMESTAMPTZ_out('2022-12-31 23:11:11');
+select table_NAME_TEST_DB.PG_CATALOg.TIMESTAMptz_OUT('2022-12-31 23:11:11');
+select '2022-12-31 23:59:59'::timestamp::smalldatetime;
+
+set dolphin.lower_case_table_names = 1;
+select count(*) from pg_cATAlog.PG_Class where relname='pg_class';
+select count(*) from table_NAME_test_DB.pg_cATAloG.PG_ClaSS where relname='pg_class';
+select PG_cataLOG.TIMESTAMPTZ_out('2022-12-31 23:11:11');
+select table_NAME_TEST_DB.PG_CATALOg.TIMESTAMptz_OUT('2022-12-31 23:11:11');
+select '2022-12-31 23:59:59'::timestamp::smalldatetime;
