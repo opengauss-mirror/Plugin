@@ -382,3 +382,21 @@ CREATE AGGREGATE pg_catalog.any_value(text) (
         sfunc = text_any_value,
         stype = text
 );
+
+DROP FUNCTION IF EXISTS pg_catalog.bytea_any_value (bytea, bytea) CASCADE;
+CREATE OR REPLACE FUNCTION pg_catalog.bytea_any_value (bytea, bytea) RETURNS bytea LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'bytea_any_value';
+
+drop aggregate if exists pg_catalog.any_value(bytea);
+CREATE AGGREGATE pg_catalog.any_value(bytea) (
+        sfunc = bytea_any_value,
+        stype = bytea
+);
+
+DROP FUNCTION IF EXISTS pg_catalog.blob_any_value (blob, blob) CASCADE;
+CREATE OR REPLACE FUNCTION pg_catalog.blob_any_value (blob, blob) RETURNS blob LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'blob_any_value';
+
+drop aggregate if exists pg_catalog.any_value(blob);
+CREATE AGGREGATE pg_catalog.any_value(blob) (
+        sfunc = blob_any_value,
+        stype = blob
+);

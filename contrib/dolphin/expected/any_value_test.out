@@ -172,5 +172,25 @@ select any_value(a),b from test_set group by b;
          4 | 2
 (2 rows)
 
+--test blob and bytea type
+create table test_blob_bytea(a int, b blob, c bytea);
+insert into test_blob_bytea values(1,'9abc',E'\\xeabc');
+insert into test_blob_bytea values(1,'abcd',E'\\xdabc');
+insert into test_blob_bytea values(2,'9abc',E'\\xdabc');
+insert into test_blob_bytea values(2,'abcd',E'\\xeabc');
+select any_value(b) from test_blob_bytea group by a;
+ any_value 
+-----------
+ 9ABC
+ 9ABC
+(2 rows)
+
+select any_value(c) from test_blob_bytea group by a;
+ any_value 
+-----------
+ \xeabc
+ \xdabc
+(2 rows)
+
 \c postgres;
 drop DATABASE if exists any_value_test;
