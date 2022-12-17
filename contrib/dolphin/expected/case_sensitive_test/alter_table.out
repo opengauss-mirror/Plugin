@@ -474,3 +474,32 @@ ALTER TABLE FKTABLE ADD FOREIGN KEY(ftest2, ftest1)
 ERROR:  foreign key constraint "FKTABLE_ftest2_fkey" cannot be implemented
 DETAIL:  Key columns "ftest2" and "ptest1" are of incompatible types: inet and integer.
 -- temp tables should go away by themselves, need not drop them.
+DROP TABLE IF EXISTS T2;
+create table T2(AA int);
+set dolphin.lower_case_table_names = 1;
+-- rename to "t2"
+ALTER TABLE "T2" RENAME TO T2;
+ALTER TABLE IF EXISTS "T3" RENAME TO T3;
+NOTICE:  relation "T3" does not exist, skipping
+create table "T3"(AA int);
+-- rename to "t3"
+ALTER TABLE IF EXISTS "T3" RENAME TO T3;
+SELECT relname FROM pg_class WHERE relname = 'T2' OR relname = 'T3' OR relname = 't2' OR relname = 't3';
+ relname 
+---------
+ t2
+ t3
+(2 rows)
+
+set dolphin.lower_case_table_names = 0;
+ALTER TABLE t2 RENAME TO T2;
+ALTER TABLE IF EXISTS t3 RENAME TO T3;
+SELECT relname FROM pg_class WHERE relname = 'T2' OR relname = 'T3' OR relname = 't2' OR relname = 't3';
+ relname 
+---------
+ T2
+ T3
+(2 rows)
+
+DROP TABLE T2;
+DROP TABLE T3;
