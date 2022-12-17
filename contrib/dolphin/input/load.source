@@ -174,10 +174,13 @@ select * from t6;
 --extra data
 delete t1;
 load data infile '@abs_builddir@/data/load7.csv' into table t1;
+set dolphin.sql_mode = '';
+load data infile '@abs_builddir@/data/load7.csv' into table t1;
 select * from t1;
 
 --less data
 create table t7(a int1, b int2, c int4, d int8);
+set dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes';
 load data infile '@abs_builddir@/data/load7.csv' into table t7;
 set dolphin.sql_mode = '';
 load data infile '@abs_builddir@/data/load7.csv' into table t7;
@@ -192,5 +195,15 @@ select *, a is null, b is null from t8;
 create table t9(a int, b varchar(10));
 load data infile '@abs_builddir@/data/load9.csv' into table t9 fields terminated by ',';
 select * from t9;
+
+--more quote case
+create table t10(a char(20), b char(20));
+load data infile '@abs_builddir@/data/load_quote.csv' into table t10 fields terminated by ',' enclosed by '"' lines terminated by '#';
+select * from t10;
+
+--same quote and delimiter
+delete t10;
+load data infile '@abs_builddir@/data/load_quote2.csv' into table t10 fields terminated by ',' enclosed by '"' escaped by '"' lines terminated by '#';
+select * from t10;
 \c postgres
 drop database if exists load;

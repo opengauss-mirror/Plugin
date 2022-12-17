@@ -1756,8 +1756,8 @@ void ProcessCopyOptions(CopyState cstate, bool is_from, List* options)
     if (cstate->is_compatible) {
         if (!SQL_MODE_STRICT()) {
             cstate->fill_missing_fields = -1;
+            cstate->ignore_extra_data = true;
         }
-        cstate->ignore_extra_data = true;
     }
 #else
         cstate->null_print = (char*)(IS_CSV(cstate) ? "" : "\\N");
@@ -6335,7 +6335,11 @@ bool NextCopyFrom(CopyState cstate, ExprContext* econtext, Datum* values, bool* 
         }
 
         /* check for overflowing fields. if cstate->ignore_extra_data is true,  ignore overflowing fields */
+#ifdef DOLPHIN
+        if (nfields > 0 && fldct > nfields && !cstate->ignore_extra_data && !cstate->hit_eof)
+#else
         if (nfields > 0 && fldct > nfields && !cstate->ignore_extra_data)
+#endif
             ereport(ERROR, (errcode(ERRCODE_BAD_COPY_FILE_FORMAT), errmsg("extra data after last expected column")));
 
         /*
@@ -6890,6 +6894,13 @@ static bool CopyReadLineTextTemplate(CopyState cstate)
     bool last_was_esc = false;
     char quotec = '\0';
     char escapec = '\0';
+#ifdef DOLPHIN
+    char delimc = cstate->delim[0];
+    char* delimiter = cstate->delim;
+    if (cstate->is_compatible && cstate->eol_type == EOL_UNKNOWN) {
+            cstate->eol_type = EOL_NL;
+    }
+#endif
 
     if (csv_mode) {
         quotec = cstate->quote[0];
@@ -7013,7 +7024,51 @@ static bool CopyReadLineTextTemplate(CopyState cstate)
                 last_was_esc = !last_was_esc;
             }
             if (c == quotec && !last_was_esc) {
+#ifndef DOLPHIN
                 in_quote = !in_quote;
+#else
+                if (cstate->is_compatible && in_quote) {
+                    char c2;
+                    IF_NEED_REFILL_AND_NOT_EOF_CONTINUE(0);
+                    c2 = copy_raw_buf[raw_buf_ptr];
+                    if (c2 == delimc) {
+                        if (cstate->delim_len == 1) {
+                            in_quote = !in_quote;
+                        } else {
+                            IF_NEED_REFILL_AND_NOT_EOF_CONTINUE(cstate->delim_len - 2);
+                            if (strncmp(&copy_raw_buf[raw_buf_ptr], delimiter, cstate->delim_len) == 0) {
+                                in_quote = !in_quote;
+                            }
+                        }
+                    } else if (cstate->eol_type == EOL_UD && c2 == cstate->eol[0]) {
+                        /* Process user-define EOL string */
+                        int remainLen = strlen(cstate->eol) - 1;
+                        int pos = 0;
+
+                        /*
+                        *  If the length of EOL string is above one,
+                        *  we need to look ahead several characters and check
+                        *  if these characters equal remaining EOL string.
+                        */
+                        if (remainLen > 0) {
+                            IF_NEED_REFILL_AND_NOT_EOF_CONTINUE(remainLen - 1);
+
+                            for (; pos < remainLen; pos++) {
+                                if (copy_raw_buf[raw_buf_ptr + pos] != cstate->eol[pos + 1])
+                                    break;
+                            }
+                        }
+                        /* If reach here, we have found the line terminator */
+                        if (pos == remainLen) {
+                            in_quote = !in_quote;
+                        }
+                    } else if (cstate->eol_type == EOL_NL && c2 == '\n') {
+                        in_quote = !in_quote;
+                    }
+                } else {
+                    in_quote = !in_quote;
+                }
+#endif
             }
             if (c != escapec) {
                 last_was_esc = false;
@@ -7664,6 +7719,10 @@ static int CopyReadAttributesCSVT(CopyState cstate)
         char* end_ptr = NULL;
         int input_len;
         bool saw_non_ascii = false;
+#ifdef DOLPHIN
+        bool field_start = true;
+        char* temp_ptr = NULL;
+#endif
         proc_col_num++;
 
         /* Make sure there is enough space for the next value */
@@ -7697,6 +7756,12 @@ static int CopyReadAttributesCSVT(CopyState cstate)
         start_ptr = cur_ptr;
         cstate->raw_fields[fieldno] = output_ptr;
 
+#ifdef DOLPHIN
+        if (cstate->is_compatible) {
+            temp_ptr = output_ptr;
+        }
+#endif
+
         /*
          * Scan data for field,
          *
@@ -7722,16 +7787,31 @@ static int CopyReadAttributesCSVT(CopyState cstate)
                     found_delim = true;
                     goto endfield;
                 }
+#ifdef DOLPHIN
                 if (cstate->is_compatible) {
-                    bool escape_verified = cstate->has_escape && c == escapec;
-                    if ((!cstate->has_escape && c == '\\') || escape_verified) {
+                    bool escape_verified = cstate->has_escape && c == escapec && !field_start;
+                    if ((!cstate->has_escape && c == '\\') || (escape_verified && escapec != quotec)) {
                         if (cur_ptr >= line_end_ptr) {
                             *output_ptr++ = c;
                             goto endfield;
                         }
                         c = DeEscape(&cur_ptr, &line_end_ptr, &saw_non_ascii);
+                    } else if (escape_verified && escapec == quotec) {
+                        /*
+                        * peek at the next char if available, and escape it if it
+                        * is an escape char or a quote char
+                        */
+                        if (cur_ptr < line_end_ptr) {
+                            char nextc = *cur_ptr;
+                            if (nextc == escapec) {
+                                *output_ptr++ = nextc;
+                                cur_ptr++;
+                                continue;
+                            }
+                        }
                     }
                 }
+#endif
                 /* ""ab"",""b"" error for gs_load */
                 if (cstate->is_load_copy && saw_quote) {
                     ereport(ERROR,
@@ -7739,9 +7819,18 @@ static int CopyReadAttributesCSVT(CopyState cstate)
                 }
                 /* start of quoted field (or part of field) */
                 if (c == quotec) {
+#ifndef DOLPHIN
                     saw_quote = true;
                     break;
                 }
+#else
+                    if (!cstate->is_compatible || field_start) {
+                        saw_quote = true;
+                        break;
+                    }
+                }
+                field_start = false;
+#endif
                 /* Add c to output string */
                 *output_ptr++ = c;
             }
@@ -7749,8 +7838,14 @@ static int CopyReadAttributesCSVT(CopyState cstate)
             /* In quote */
             for (;;) {
                 end_ptr = cur_ptr;
-                if (cur_ptr >= line_end_ptr)
+                if (cur_ptr >= line_end_ptr) {
+#ifdef DOLPHIN
+                    if (cstate->is_compatible) {
+                        goto endfield;
+                    }
+#endif
                     ereport(ERROR, (errcode(ERRCODE_BAD_COPY_FILE_FORMAT), errmsg("unterminated CSV quoted field")));
+                }
 
                 c = *cur_ptr++;
                 if (cstate->is_compatible) {
@@ -7787,7 +7882,29 @@ static int CopyReadAttributesCSVT(CopyState cstate)
                  * (which is the common case).
                  */
                 if (c == quotec) {
+#ifdef DOLPHIN
+                    if (cstate->is_compatible) {
+                        char nextc = *cur_ptr;
+                        if (cur_ptr == line_end_ptr) {
+                            saw_quote = false;
+                            goto endfield;
+                        }
+                        if ((nextc == delimc && (!multbyteDelim ||
+                            (cur_ptr + cstate->delim_len <= line_end_ptr && strncmp(cur_ptr, delimiter, cstate->delim_len) == 0)))) {
+                            if (multbyteDelim) {
+                                cur_ptr += cstate->delim_len;
+                            } else {
+                                cur_ptr++;
+                            }
+                            found_delim = true;
+                            goto endfield;
+                        }
+                    } else {
+                        break;                        
+                    }
+#else
                     break;
+#endif
                 }
 
                 /* Add c to output string */
@@ -7836,6 +7953,17 @@ static int CopyReadAttributesCSVT(CopyState cstate)
 
         /* Done if we hit EOL instead of a delim */
         if (!found_delim) {
+#ifdef DOLPHIN
+            if (cstate->is_compatible) {
+                if (saw_quote) {
+                    int str_len = strlen(temp_ptr) + strlen(cstate->quote) + 1;
+                    char* temp_ptr_with_quote  = (char*)palloc(str_len);
+                    errno_t rc = sprintf_s(temp_ptr_with_quote, str_len, "%s%s", cstate->quote, temp_ptr);
+                    securec_check_ss(rc, "\0", "\0");
+                    cstate->raw_fields[fieldno - 1] = temp_ptr_with_quote;
+                }
+            }
+#endif
             break;
         }
     }
