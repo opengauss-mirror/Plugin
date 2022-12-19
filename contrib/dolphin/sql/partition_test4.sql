@@ -186,6 +186,35 @@ select * from b_range_hash_t01 partition(m2);
 
 
 --test some error cases
+create table b_range_hash_t05(c1 int primary key,c2 int,c3 text)
+with (segment=on)
+partition by range(c1) subpartition by hash(c2)
+(
+partition p1 values less than (100)
+(
+subpartition p1_1,
+subpartition p1_2
+),
+partition p2 values less than (200)
+(
+subpartition p2_1,
+subpartition p2_2
+),
+partition p3 values less than (300)
+(
+subpartition p3_1,
+subpartition p3_2
+)
+);
+create index on b_range_hash_t05 (c1) global;
+create index on b_range_hash_t05 (c2) local;
+alter table b_range_hash_t05 reorganize partition p1 into 
+(
+	partition m1 values less than(50) 
+	(subpartition m1_1 tablespace pg_global,subpartition m1_2,subpartition m1_3),
+	partition m2 values less than(100) 
+	(subpartition m2_1)
+);
 alter table b_range_hash_t01 reorganize partition m1 into (partition k1 values less than(2) (subpartition k1_1 values less than(2)));
 alter table b_range_hash_t01 reorganize partition m1 into (partition k1 values less than(2) (subpartition k1_1 values (1)));
 drop table if exists b_interval_t1;

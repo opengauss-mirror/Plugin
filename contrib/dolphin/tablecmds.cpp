@@ -25384,10 +25384,12 @@ static void ATExecReorganizePartition(Relation partTableRel, AlterTableCmd* cmd)
             RangePartitionDefState* rangePartDef = (RangePartitionDefState*)lfirst(cell);
             CheckSubPartDef(rangePartDef->subPartitionDefState);
             tablespacename = rangePartDef->tablespacename;
+            check_sub_part_tbl_space(partTableRel->rd_rel->relowner, tablespacename, rangePartDef->subPartitionDefState);
         } else if (partTableRel->partMap->type == PART_TYPE_LIST) {
             ListPartitionDefState* listPartDef = (ListPartitionDefState*)lfirst(cell);
             CheckSubPartDef(listPartDef->subPartitionDefState);
             tablespacename = listPartDef->tablespacename;
+            check_sub_part_tbl_space(partTableRel->rd_rel->relowner, tablespacename, listPartDef->subPartitionDefState);
         }
         CheckPartitionTablespace(tablespacename, partTableRel->rd_rel->relowner);
     }
