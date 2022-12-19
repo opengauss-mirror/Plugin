@@ -457,7 +457,7 @@ CREATE TABLE public.Test_indirection1(a int);
 CREATE TABLE table_name_test_db.public.Test_indirection2(a int);
 -- error
 CREATE TABLE unknown_obj.table_name_test_db.public.Test_indirection3(a int);
-ERROR:  improper qualified name (too many dotted names): unknown_obj.table_name_test_db.public.Test_indirection3
+ERROR:  improper qualified name (too many dotted names): unknown_obj.table_name_test_db.public.test_indirection3
 LINE 1: CREATE TABLE unknown_obj.table_name_test_db.public.Test_indi...
                      ^
 drop table "TEST"."Test_Table";
