@@ -105,7 +105,6 @@ DROP TABLE Tmp;
 --
 CREATE TABLE Tmp (regtable int);
 -- Enforce use of COMMIT instead of 2PC for temporary objects
-\set VERBOSITY verbose
 -- CREATE TEMP TABLE Tmp (tmptable int);
 ALTER TABLE Tmp RENAME TO Tmp_new;
 -- SELECT * FROM Tmp;
@@ -113,16 +112,12 @@ ALTER TABLE Tmp RENAME TO Tmp_new;
 -- ALTER TABLE Tmp RENAME TO Tmp_new2;
 SELECT * FROM Tmp;		-- should fail
 ERROR:  relation "Tmp" does not exist on datanode1
-SQLSTATE: 42P01
 LINE 1: SELECT * FROM Tmp;
                       ^
---?.*
 SELECT *, FROM Tmp;		-- should fail
 ERROR:  syntax error at or near "FROM"
-SQLSTATE: 42601
 LINE 1: SELECT *, FROM Tmp;
                   ^
---?.*
 SELECT * FROM Tmp_new;
  regtable 
 ----------
@@ -134,9 +129,7 @@ DROP TABLE Tmp_new;
 CREATE TABLE Tmp (ch1 character(1));
 insert into Tmp values ('asdv');
 ERROR:  value too long for type character(1)
-SQLSTATE: 22001
 CONTEXT:  referenced column: ch1
---?.*
 DROP TABLE Tmp;
 \set VERBOSITY default
 -- ALTER TABLE ... RENAME on non-table relations

@@ -156,7 +156,6 @@ DROP TABLE `Tmp`;
 --
 CREATE TABLE `Tmp` (`regtable` int);
 -- Enforce use of COMMIT instead of 2PC for temporary objects
-\set VERBOSITY verbose
 -- CREATE TEMP TABLE `Tmp` (tmptable int);
 
 ALTER TABLE `Tmp` RENAME TO `Tmp_new`;
