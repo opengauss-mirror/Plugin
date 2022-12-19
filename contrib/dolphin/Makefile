@@ -16,6 +16,7 @@ top_builddir = ../..
 base_dir = contrib/dolphin
 MODULE_big = dolphin
 p=25432
+PART=
 
 OBJS = $(protocol)/password.o $(protocol)/server_startup.o $(protocol)/auth.o $(protocol)/handler.o \
 $(protocol)/dqformat.o $(protocol)/bytestream.o $(protocol)/printtup.o
@@ -131,7 +132,7 @@ ifdef MJDBC_TEST
 	REGRESS+=b_proto_jdbc
 endif
 
-REGRESS_OPTS = --dlpath=$(top_builddir)/src/test/regress -c 0 -d 1 --single_node -p ${p} --schedule=./parallel_schedule_dolphin --regconf=regress.conf -r 1 -n --keep_last_data=false --temp-config=./make_check_postgresql.conf
+REGRESS_OPTS = --dlpath=$(top_builddir)/src/test/regress -c 0 -d 1 --single_node -p ${p} --schedule=./parallel_schedule_dolphin${PART} --regconf=regress.conf -r 1 -n --keep_last_data=false --temp-config=./make_check_postgresql.conf
 export dp = $(shell expr $(p) + 3)
 
 export THIRD_PARTY_LIBS = $(with_3rd)

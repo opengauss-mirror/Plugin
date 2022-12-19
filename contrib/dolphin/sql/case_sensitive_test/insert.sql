@@ -1,4 +1,4 @@
-\c table_name_test_db;te_test
+\c table_name_test_db;
 set dolphin.lower_case_table_names TO 0;
 --
 -- insert with DEFAULT in the target_list

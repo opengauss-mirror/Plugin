@@ -18823,17 +18823,17 @@ RenameStmt: ALTER AGGREGATE func_name aggr_args RENAME TO name
 					n->renameType = OBJECT_TABLE;
 					n->relation = $3;
 					n->subname = NULL;
-					n->newname = $6->str;
+					n->newname = GetDolphinObjName($6->str, $6->is_quoted);
 					n->missing_ok = false;
 					$$ = (Node *)n;
 				}
-			| ALTER TABLE IF_P EXISTS relation_expr RENAME to_or_as name
+			| ALTER TABLE IF_P EXISTS relation_expr RENAME to_or_as DolphinColId
 				{
 					RenameStmt *n = makeNode(RenameStmt);
 					n->renameType = OBJECT_TABLE;
 					n->relation = $5;
 					n->subname = NULL;
-					n->newname = $8;
+					n->newname = GetDolphinObjName($8->str, $8->is_quoted);
 					n->missing_ok = true;
 					$$ = (Node *)n;
 				}
@@ -26202,14 +26202,14 @@ relation_expr_opt_alias: relation_expr					%prec UMINUS
 			| relation_expr DolphinColId
 				{
 					Alias *alias = makeNode(Alias);
-					alias->aliasname = $2->str;
+					alias->aliasname = GetDolphinObjName($2->str, $2->is_quoted);
 					$1->alias = alias;
 					$$ = $1;
 				}
 			| relation_expr AS DolphinColId
 				{
 					Alias *alias = makeNode(Alias);
-					alias->aliasname = $3->str;
+					alias->aliasname = GetDolphinObjName($3->str, $3->is_quoted);
 					$1->alias = alias;
 					$$ = $1;
 				}
@@ -26234,7 +26234,7 @@ relation_expr_opt_alias: relation_expr					%prec UMINUS
 						$1->issubpartition = $2->issubpartition;
 					}
 					Alias *alias = makeNode(Alias);
-					alias->aliasname = $3->str;
+					alias->aliasname = GetDolphinObjName($3->str, $3->is_quoted);
 					$1->alias = alias;
 					$$ = $1;
 				}
@@ -26248,7 +26248,7 @@ relation_expr_opt_alias: relation_expr					%prec UMINUS
 						$1->issubpartition = $2->issubpartition;
 					}
 					Alias *alias = makeNode(Alias);
-					alias->aliasname = $4->str;
+					alias->aliasname = GetDolphinObjName($4->str, $4->is_quoted);
 					$1->alias = alias;
 					$$ = $1;
 				}
@@ -30971,9 +30971,10 @@ columnref:	DolphinColId
 							Value* value = (Value*)(dolphinString->node);
 							char* text = strVal(value);
 							bool is_quoted = dolphinString->is_quoted;
-							if (count != table_index || (count == table_index &&
-								GetSessionContext()->lower_case_table_names > 0)) {
+							if (count != table_index) {
 								text = downcase_str(text, is_quoted);
+							} else {
+								text = GetDolphinObjName(text, is_quoted);
 							}
 							count++;
 							result = lappend(result, (Node*)makeString(text));

@@ -417,3 +417,25 @@ ALTER TABLE FKTABLE ADD FOREIGN KEY(ftest2, ftest1)
      references PKTABLE(ptest1, ptest2);
 
 -- temp tables should go away by themselves, need not drop them.
+
+DROP TABLE IF EXISTS T2;
+create table T2(AA int);
+set dolphin.lower_case_table_names = 1;
+
+-- rename to "t2"
+ALTER TABLE "T2" RENAME TO T2;
+ALTER TABLE IF EXISTS "T3" RENAME TO T3;
+create table "T3"(AA int);
+-- rename to "t3"
+ALTER TABLE IF EXISTS "T3" RENAME TO T3;
+
+SELECT relname FROM pg_class WHERE relname = 'T2' OR relname = 'T3' OR relname = 't2' OR relname = 't3';
+
+set dolphin.lower_case_table_names = 0;
+ALTER TABLE t2 RENAME TO T2;
+ALTER TABLE IF EXISTS t3 RENAME TO T3;
+
+SELECT relname FROM pg_class WHERE relname = 'T2' OR relname = 'T3' OR relname = 't2' OR relname = 't3';
+
+DROP TABLE T2;
+DROP TABLE T3;
