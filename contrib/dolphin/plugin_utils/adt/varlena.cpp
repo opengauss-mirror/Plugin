@@ -9472,4 +9472,20 @@ Datum text_any_value(PG_FUNCTION_ARGS)
 {
     return PG_GETARG_DATUM(0);
 }
+
+PG_FUNCTION_INFO_V1_PUBLIC(bytea_any_value);
+extern "C" DLL_PUBLIC Datum bytea_any_value(PG_FUNCTION_ARGS);
+Datum bytea_any_value(PG_FUNCTION_ARGS)
+{
+    bytea* vlena = PG_GETARG_BYTEA_P_COPY(0);
+    PG_RETURN_BYTEA_P(vlena);
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(blob_any_value);
+extern "C" DLL_PUBLIC Datum blob_any_value(PG_FUNCTION_ARGS);
+Datum blob_any_value(PG_FUNCTION_ARGS)
+{
+    bytea* vlena = PG_GETARG_BYTEA_P_COPY(0);
+    PG_RETURN_BYTEA_P(vlena);
+}
 #endif

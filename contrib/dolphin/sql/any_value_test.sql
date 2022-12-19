@@ -76,5 +76,14 @@ create table test_set(a set('set1','set2','set3','set4'), b int);
 insert into test_set values('set1',1),('set2',1),('set3',2),('set4',2);
 select any_value(a),b from test_set group by b;
 
+--test blob and bytea type
+create table test_blob_bytea(a int, b blob, c bytea);
+insert into test_blob_bytea values(1,'9abc',E'\\xeabc');
+insert into test_blob_bytea values(1,'abcd',E'\\xdabc');
+insert into test_blob_bytea values(2,'9abc',E'\\xdabc');
+insert into test_blob_bytea values(2,'abcd',E'\\xeabc');
+select any_value(b) from test_blob_bytea group by a;
+select any_value(c) from test_blob_bytea group by a;
+
 \c postgres;
 drop DATABASE if exists any_value_test;
