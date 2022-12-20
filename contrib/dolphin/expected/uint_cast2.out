@@ -360,11 +360,11 @@ CONTEXT:  referenced column: a
 insert into t1 values(1.0::float8);
 insert into t1 values(0.0::float8);
 insert into t1 values((-1.0)::float8);
-ERROR:  tinyint unsignedout of range
+ERROR:  tinyint unsigned out of range
 CONTEXT:  referenced column: a
 insert into t1 values(255::float8);
 insert into t1 values(256::float8);
-ERROR:  tinyint unsignedout of range
+ERROR:  tinyint unsigned out of range
 CONTEXT:  referenced column: a
 insert into t1 values(1::numeric);
 insert into t1 values(0::numeric);

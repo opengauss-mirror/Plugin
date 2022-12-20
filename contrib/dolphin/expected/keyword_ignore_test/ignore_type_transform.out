@@ -60,10 +60,10 @@ CONTEXT:  referenced column: num
 WARNING:  tinyint out of range
 CONTEXT:  referenced column: num
 select * from t_tinyint;
- num 
------
- -1
- 0
+ num  
+------
+ 127
+ -128
 (2 rows)
 
 -- test for smallint

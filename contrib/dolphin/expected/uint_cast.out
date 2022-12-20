@@ -123,7 +123,7 @@ select (-922337203685477580999.0)::float4::uint1;
 ERROR:  tinyint unsigned out of range
 CONTEXT:  referenced column: uint1
 select (-922337203685477580999.0)::float8::uint1;
-ERROR:  tinyint unsignedout of range
+ERROR:  tinyint unsigned out of range
 CONTEXT:  referenced column: uint1
 select (-922337203685477580999.0)::float4::uint2;
 ERROR:  smallint unsigned out of range

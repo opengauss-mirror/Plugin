@@ -1,0 +1,2576 @@
+---- b compatibility case
+drop database if exists none_strict_warning_test;
+NOTICE:  database "none_strict_warning_test" does not exist, skipping
+create database none_strict_warning_test dbcompatibility 'b';
+\c none_strict_warning_test
+reset dolphin.sql_mode;
+create table test_int1(c1 int1);
+create table test_int8(c1 int8);
+---- numeric__int1
+---- over float8_max 严格模式error，非严格模式warning, 结果127
+select cast(2e308 as int1);
+ERROR:  tinyint out of range
+CONTEXT:  referenced column: int1
+---- int8_max~float8_max 严格模式error，非严格模式warning，结果127
+select cast(1e308 as int1);
+ERROR:  tinyint out of range
+CONTEXT:  referenced column: int1
+---- float4in
+---- over float8_max 严格模式error，非严格模式warning，结果float4_max
+select cast(3.5e308 as float4);
+ERROR:  "350000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000" is out of range for type real
+CONTEXT:  referenced column: float4
+---- float4_max~float8_max 严格模式error，非严格模式warning，结果float4_max
+select cast(3.5e38 as float4);
+ERROR:  value out of range: overflow
+CONTEXT:  referenced column: float4
+---- float8in
+---- over float8_max 严格模式error，非严格模式warning，结果float8_max
+select cast(3.5e308 as float8);
+ERROR:  "350000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000" is out of range for type double precision
+CONTEXT:  referenced column: float8
+---- dtoi4
+create table test_int4(c1 int4);
+---- over int4_max 严格模式error，非严格模式warning，结果int4_max
+insert into test_int4 values(3.5e38::float8);
+ERROR:  integer out of range
+CONTEXT:  referenced column: c1
+---- over float8_max 严格模式error，非严格模式双warning，结果int4_max
+insert into test_int4 values(3.5e308::float8);
+ERROR:  "350000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000" is out of range for type double precision
+CONTEXT:  referenced column: c1
+---- dtoi2
+create table test_int2(c1 int2);
+---- over int2_max 严格模式error，非严格模式warning，结果int2_max
+insert into test_int2 values(3.5e38::float8);
+ERROR:  smallint out of range
+CONTEXT:  referenced column: c1
+---- over float8_max 严格模式error，非严格模式双warning，结果int2_max
+insert into test_int2 values(3.5e308::float8);
+ERROR:  "350000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000" is out of range for type double precision
+CONTEXT:  referenced column: c1
+---- ftoi4
+---- over int2_max 严格模式error，非严格模式warning，结果int4_max
+insert into test_int4 values(3.4e38::float4);
+ERROR:  integer out of range
+CONTEXT:  referenced column: c1
+---- over float4_max 严格模式error，非严格模式双warning，结果int4_max
+insert into test_int4 values(3.5e38::float4);
+ERROR:  value out of range: overflow
+CONTEXT:  referenced column: c1
+---- over float8_max 严格模式error，非严格模式双warning，结果int4_max
+insert into test_int4 values(3.5e308::float4);
+ERROR:  "350000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000" is out of range for type real
+CONTEXT:  referenced column: c1
+---- ftoi2
+---- over int2_max 严格模式error，非严格模式warning，结果int2_max
+insert into test_int2 values(3.4e38::float4);
+ERROR:  smallint out of range
+CONTEXT:  referenced column: c1
+---- over float4_max 严格模式error，非严格模式双warning，结果int2_max
+insert into test_int2 values(3.5e38::float4);
+ERROR:  value out of range: overflow
+CONTEXT:  referenced column: c1
+---- over float8_max 严格模式error，非严格模式双warning，结果int2_max
+insert into test_int2 values(3.5e308::float4);
+ERROR:  "350000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000" is out of range for type real
+CONTEXT:  referenced column: c1
+---- PgStrtoint16Internal
+---- over int2_max 严格模式error，非严格模式warning，结果int2_max
+insert into test_int2 values('32768');
+ERROR:  value "32768" is out of range for type smallint
+LINE 1: insert into test_int2 values('32768');
+                                     ^
+CONTEXT:  referenced column: c1
+---- PgStrtoint32Internal
+---- over int4_max 严格模式error，非严格模式warning，结果int4_max
+insert into test_int4 values('2147483648');
+ERROR:  value "2147483648" is out of range for type integer
+LINE 1: insert into test_int4 values('2147483648');
+                                     ^
+CONTEXT:  referenced column: c1
+---- PgAtoiInternal 暂未找到如何调用
+---- Scanint8Internal
+---- over int8_max 严格模式error，非严格模式warning，结果int8_max
+insert into test_int8 values('9223372036854775808');
+ERROR:  value "9223372036854775808" is out of range for type bigint
+LINE 1: insert into test_int8 values('9223372036854775808');
+                                     ^
+CONTEXT:  referenced column: c1
+---- i4toi2
+---- over int2_max 严格模式error，非严格模式warning，结果int2_max
+insert into test_int2 values(2147483647::int4);
+ERROR:  smallint out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_int2 values(2147483647::int4);
+WARNING:  smallint out of range
+CONTEXT:  referenced column: c1
+---- i2toi1
+---- over int1_max 严格模式error，非严格模式warning，结果int1_max
+insert into test_int1 values(32767::int2);
+ERROR:  tinyint out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_int1 values(32767::int2);
+WARNING:  tinyint out of range
+CONTEXT:  referenced column: c1
+---- i4toi1
+---- over int1_max 严格模式error，非严格模式warning，结果int1_max
+insert into test_int1 values(2147483647::int4);
+ERROR:  tinyint out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_int1 values(2147483647::int4);
+WARNING:  tinyint out of range
+CONTEXT:  referenced column: c1
+---- i8toi1
+---- over int1_max 严格模式error，非严格模式warning，结果int1_max
+insert into test_int1 values(9223372036854775807::int8);
+ERROR:  tinyint out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_int1 values(9223372036854775807::int8);
+WARNING:  tinyint out of range
+CONTEXT:  referenced column: c1
+---- f4toi1
+---- over int1_max 严格模式error，非严格模式warning，结果int1_max
+insert into test_int1 values(3e38::float4);
+ERROR:  tinyint out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_int1 values(3e38::float4);
+WARNING:  tinyint out of range
+CONTEXT:  referenced column: c1
+---- f8toi1
+---- over int1_max 严格模式error，非严格模式warning，结果int1_max
+insert into test_int1 values(1e308::float8);
+ERROR:  tinyint out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_int1 values(1e308::float8);
+WARNING:  tinyint out of range
+CONTEXT:  referenced column: c1
+---- int84
+---- over int4_max 严格模式error，非严格模式warning，结果int4_max
+insert into test_int4 values(2147483648::int8);
+ERROR:  integer out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_int4 values(9223372036854775808::int8);
+WARNING:  bigint out of range
+CONTEXT:  referenced column: c1
+WARNING:  integer out of range
+CONTEXT:  referenced column: c1
+---- over int8_max 严格模式error，非严格模式warning，结果int4_max
+insert into test_int8 values(2147483648::int4);
+ERROR:  integer out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_int8 values(2147483648::int4);
+WARNING:  integer out of range
+CONTEXT:  referenced column: c1
+---- int82
+---- over int2_max 严格模式error，非严格模式warning，结果int2_max
+insert into test_int2 values(32768::int8);
+ERROR:  smallint out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_int2 values(9223372036854775808::int8);
+WARNING:  bigint out of range
+CONTEXT:  referenced column: c1
+WARNING:  smallint out of range
+CONTEXT:  referenced column: c1
+---- over int8_max 严格模式error，非严格模式warning，结果int2_max
+insert into test_int8 values(2147483648::int2);
+ERROR:  smallint out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_int8 values(32768::int2);
+WARNING:  smallint out of range
+CONTEXT:  referenced column: c1
+---- dtoi8
+---- over int8_max 严格模式error，非严格模式warning，结果int8_max
+insert into test_int8 values(9223372036854775807.5::double);
+ERROR:  bigint out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_int8 values(9223372036854775807.5::double);
+WARNING:  bigint out of range
+CONTEXT:  referenced column: c1
+---- ftoi8
+---- over int8_max 严格模式error，非严格模式warning，结果int8_max
+insert into test_int8 values(9223372036854775807.5::float);
+ERROR:  bigint out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_int8 values(9223372036854775807.5::float);
+WARNING:  bigint out of range
+CONTEXT:  referenced column: c1
+---- numeric_int1
+---- over int1_max 严格模式error，非严格模式warning，结果int1_max
+insert into test_int1 values(1e30);
+ERROR:  tinyint out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_int1 values(1e30);
+WARNING:  tinyint out of range
+CONTEXT:  referenced column: c1
+---- numeric_int2
+---- over int2_max 严格模式error，非严格模式warning，结果int2_max
+insert into test_int2 values(1e30);
+ERROR:  smallint out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_int2 values(1e30);
+WARNING:  smallint out of range
+CONTEXT:  referenced column: c1
+---- numericvar_to_int32
+---- over int4_max 严格模式error，非严格模式warning，结果int4_max
+insert into test_int4 values(1e30);
+ERROR:  integer out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_int4 values(1e30);
+WARNING:  integer out of range
+CONTEXT:  referenced column: c1
+---- numeric_int8
+---- over int8_max 严格模式error，非严格模式warning，结果int8_max
+insert into test_int8 values(1e30);
+ERROR:  bigint out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_int8 values(1e30);
+WARNING:  bigint out of range
+CONTEXT:  referenced column: c1
+---- numeric_uint1
+---- over uint1_max 严格模式error，非严格模式warning，结果uint1_max
+create table test_uint1(c1 uint1);
+insert into test_uint1 values(1e30);
+ERROR:  tinyint unsigned out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_uint1 values(1e30);
+WARNING:  tinyint unsigned out of range
+CONTEXT:  referenced column: c1
+---- numeric_uint2
+---- over uint2_max 严格模式error，非严格模式warning，结果uint2_max
+create table test_uint2(c1 uint2);
+insert into test_uint2 values(1e30);
+ERROR:  smallint unsigned out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_uint2 values(1e30);
+WARNING:  smallint unsigned out of range
+CONTEXT:  referenced column: c1
+---- numeric_uint4
+---- over uint4_max 严格模式error，非严格模式warning，结果uint4_max
+create table test_uint4(c1 uint4);
+insert into test_uint4 values(1e30);
+ERROR:  unsigned int out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_uint4 values(1e30);
+WARNING:  unsigned int out of range
+CONTEXT:  referenced column: c1
+---- numeric_uint8
+---- over uint8_max 严格模式error，非严格模式warning，结果uint8_max
+create table test_uint8(c1 uint8);
+insert into test_uint8 values(1e30);
+ERROR:  bigint unsigned out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_uint8 values(1e30);
+WARNING:  bigint unsigned out of range
+CONTEXT:  referenced column: c1
+---- numeric_cast_uint1
+select cast(1e30 as uint1);
+ERROR:  tinyint unsigned out of range
+CONTEXT:  referenced column: uint1
+---- numeric_cast_uint2
+select cast(1e30 as uint2);
+ERROR:  smallint unsigned out of range
+CONTEXT:  referenced column: uint2
+---- numeric_cast_uint4
+select cast(1e30 as uint4);
+ERROR:  unsigned int out of range
+CONTEXT:  referenced column: uint4
+---- numeric_cast_uint8
+select cast(1e30 as uint8);
+ERROR:  bigint unsigned out of range
+CONTEXT:  referenced column: uint8
+---- i2toui1
+---- over uint1_max 严格模式error，非严格模式warning，结果uint1_max
+insert into test_uint1 values(256::int2);
+ERROR:  tinyint unsigned out of range
+CONTEXT:  referenced column: c1
+insert into test_uint1 values(-1::int2);
+ERROR:  tinyint unsigned out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_uint1 values(256::int2);
+WARNING:  tinyint unsigned out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_uint1 values(-1::int2);
+WARNING:  tinyint unsigned out of range
+CONTEXT:  referenced column: c1
+---- i4toui1
+---- over uint1_max 严格模式error，非严格模式warning，结果uint1_max
+insert into test_uint1 values(256::int4);
+ERROR:  tinyint unsigned out of range
+CONTEXT:  referenced column: c1
+insert into test_uint1 values(-1::int4);
+ERROR:  tinyint unsigned out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_uint1 values(256::int4);
+WARNING:  tinyint unsigned out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_uint1 values(-1::int4);
+WARNING:  tinyint unsigned out of range
+CONTEXT:  referenced column: c1
+---- i8toui1
+---- over uint1_max 严格模式error，非严格模式warning，结果uint1_max
+insert into test_uint1 values(256::int8);
+ERROR:  tinyint unsigned out of range
+CONTEXT:  referenced column: c1
+insert into test_uint1 values(-1::int8);
+ERROR:  tinyint unsigned out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_uint1 values(256::int8);
+WARNING:  tinyint unsigned out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_uint1 values(-1::int8);
+WARNING:  tinyint unsigned out of range
+CONTEXT:  referenced column: c1
+---- f4toui1
+---- over uint1_max 严格模式error，非严格模式warning，结果uint1_max
+insert into test_uint1 values(256.5::float4);
+ERROR:  tinyint unsigned out of range
+CONTEXT:  referenced column: c1
+insert into test_uint1 values(-1.5::float4);
+ERROR:  tinyint unsigned out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_uint1 values(256.5::float4);
+WARNING:  tinyint unsigned out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_uint1 values(-1.5::float4);
+WARNING:  tinyint unsigned out of range
+CONTEXT:  referenced column: c1
+---- f8toui1
+---- over uint1_max 严格模式error，非严格模式warning，结果uint1_max
+insert into test_uint1 values(256.5::float8);
+ERROR:  tinyint unsigned out of range
+CONTEXT:  referenced column: c1
+insert into test_uint1 values(-1.5::float8);
+ERROR:  tinyint unsigned out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_uint1 values(256.5::float8);
+WARNING:  tinyint unsigned out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_uint1 values(-1.5::float8);
+WARNING:  tinyint unsigned out of range
+CONTEXT:  referenced column: c1
+---- ui2toui1
+---- over uint1_max 严格模式error，非严格模式warning，结果uint1_max
+insert into test_uint1 values(256::uint2);
+ERROR:  tinyint unsigned out of range
+CONTEXT:  referenced column: c1
+insert into test_uint1 values(-1::uint2);
+ERROR:  tinyint unsigned out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_uint1 values(256::uint2);
+WARNING:  tinyint unsigned out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_uint1 values(-1::uint2);
+WARNING:  tinyint unsigned out of range
+CONTEXT:  referenced column: c1
+---- ui2toi2
+---- over int2_max 严格模式error，非严格模式warning，结果int2_max
+insert into test_int2 values(32768::uint2);
+ERROR:  smallint out of range
+CONTEXT:  referenced column: c1
+insert into test_int2 values(-32769::uint2);
+ERROR:  smallint out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_int2 values(32768::uint2);
+WARNING:  smallint out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_int2 values(-32769::uint2);
+WARNING:  smallint out of range
+CONTEXT:  referenced column: c1
+---- i2toui2
+---- over uint2_max 严格模式error，非严格模式warning，结果int2_max
+insert into test_uint2 values(65536::int2);
+ERROR:  smallint out of range
+CONTEXT:  referenced column: c1
+insert into test_uint2 values(-1::int2);
+ERROR:  smallint unsigned out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_uint2 values(65536::int2);
+WARNING:  smallint out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_uint2 values(-1::int2);
+WARNING:  smallint unsigned out of range
+CONTEXT:  referenced column: c1
+---- i4toui2
+---- over uint2_max 严格模式error，非严格模式warning，结果uint2_max
+insert into test_uint2 values(65536::int4);
+ERROR:  smallint unsigned out of range
+CONTEXT:  referenced column: c1
+insert into test_uint2 values(-1::int4);
+ERROR:  smallint unsigned out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_uint2 values(65536::int4);
+WARNING:  smallint unsigned out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_uint2 values(-1::int4);
+WARNING:  smallint unsigned out of range
+CONTEXT:  referenced column: c1
+---- i8toui2
+---- over uint2_max 严格模式error，非严格模式warning，结果uint2_max
+insert into test_uint2 values(65536::int8);
+ERROR:  smallint unsigned out of range
+CONTEXT:  referenced column: c1
+insert into test_uint2 values(-1::int8);
+ERROR:  smallint unsigned out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_uint2 values(65536::int8);
+WARNING:  smallint unsigned out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_uint2 values(-1::int8);
+WARNING:  smallint unsigned out of range
+CONTEXT:  referenced column: c1
+---- f4toui2
+---- over uint2_max 严格模式error，非严格模式warning，结果uint2_max
+insert into test_uint2 values(65536.5::float4);
+ERROR:  smallint unsigned out of range
+CONTEXT:  referenced column: c1
+insert into test_uint2 values(-1.5::float4);
+ERROR:  smallint unsigned out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_uint2 values(65536.5::float4);
+WARNING:  smallint unsigned out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_uint2 values(-1.5::float4);
+WARNING:  smallint unsigned out of range
+CONTEXT:  referenced column: c1
+---- f8toui2
+---- over uint2_max 严格模式error，非严格模式warning，结果uint2_max
+insert into test_uint2 values(65536.5::float8);
+ERROR:  smallint unsigned out of range
+CONTEXT:  referenced column: c1
+insert into test_uint2 values(-1.5::float8);
+ERROR:  smallint unsigned out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_uint2 values(65536.5::float8);
+WARNING:  smallint unsigned out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_uint2 values(-1.5::float8);
+WARNING:  smallint unsigned out of range
+CONTEXT:  referenced column: c1
+---- ui4toui1
+---- over uint1_max 严格模式error，非严格模式warning，结果uint1_max
+insert into test_uint1 values(256::uint4);
+ERROR:  tinyint unsigned out of range
+CONTEXT:  referenced column: c1
+insert into test_uint1 values(-1::uint4);
+ERROR:  tinyint unsigned out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_uint1 values(256::uint4);
+WARNING:  tinyint unsigned out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_uint1 values(-1::uint4);
+WARNING:  tinyint unsigned out of range
+CONTEXT:  referenced column: c1
+---- ui4toi1
+---- over int1_max 严格模式error，非严格模式warning，结果int1_max
+insert into test_int1 values(128::uint4);
+ERROR:  tinyint out of range
+CONTEXT:  referenced column: c1
+insert into test_int1 values(-129::uint4);
+ERROR:  tinyint out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_int1 values(128::uint4);
+WARNING:  tinyint out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_int1 values(-129::uint4);
+WARNING:  tinyint out of range
+CONTEXT:  referenced column: c1
+---- i1toui4
+---- over uint4_max 严格模式error，非严格模式warning，结果int1_max
+insert into test_uint4 values(2147483648::int1);
+ERROR:  tinyint out of range
+CONTEXT:  referenced column: c1
+insert into test_uint4 values(-129::int1);
+ERROR:  tinyint out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_uint4 values(2147483648::int1);
+WARNING:  tinyint out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_uint4 values(-129::int1);
+WARNING:  tinyint out of range
+CONTEXT:  referenced column: c1
+WARNING:  int unsigned out of range
+CONTEXT:  referenced column: c1
+---- ui2toi1
+---- over int1_max 严格模式error，非严格模式warning，结果int1_max
+insert into test_int1 values(128::uint2);
+ERROR:  tinyint out of range
+CONTEXT:  referenced column: c1
+insert into test_int1 values(-129::uint2);
+ERROR:  tinyint out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_int1 values(128::uint2);
+WARNING:  tinyint out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_int1 values(-129::uint2);
+WARNING:  tinyint out of range
+CONTEXT:  referenced column: c1
+---- i1toui2
+---- over uint2_max 严格模式error，非严格模式warning，结果int1_max
+insert into test_uint2 values(65536::int1);
+ERROR:  tinyint out of range
+CONTEXT:  referenced column: c1
+insert into test_uint2 values(-1::int1);
+ERROR:  smallint unsigned out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_uint2 values(65536::int1);
+WARNING:  tinyint out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_uint2 values(-1::int1);
+WARNING:  smallint unsigned out of range
+CONTEXT:  referenced column: c1
+---- ui1toi1
+---- over int1_max 严格模式error，非严格模式warning，结果int1_max
+insert into test_int1 values(128::uint1);
+ERROR:  tinyint out of range
+CONTEXT:  referenced column: c1
+insert into test_int1 values(-129::uint1);
+ERROR:  tinyint out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_int1 values(128::uint1);
+WARNING:  tinyint out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_int1 values(-129::uint1);
+WARNING:  tinyint out of range
+CONTEXT:  referenced column: c1
+---- i1toui1
+---- over uint1_max 严格模式error，非严格模式warning，结果int1_max
+insert into test_uint1 values(256::int1);
+ERROR:  tinyint out of range
+CONTEXT:  referenced column: c1
+insert into test_uint1 values(-1::int1);
+ERROR:  tinyint unsigned out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_uint1 values(256::int1);
+WARNING:  tinyint out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_uint1 values(-1::int1);
+WARNING:  tinyint unsigned out of range
+CONTEXT:  referenced column: c1
+---- ui4toui2
+---- over uint2_max 严格模式error，非严格模式warning，结果uint2_max
+insert into test_uint2 values(65536::uint4);
+ERROR:  smallint unsigned out of range
+CONTEXT:  referenced column: c1
+insert into test_uint2 values(-1::uint4);
+ERROR:  smallint unsigned out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_uint2 values(65536::uint4);
+WARNING:  smallint unsigned out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_uint2 values(-1::uint4);
+WARNING:  smallint unsigned out of range
+CONTEXT:  referenced column: c1
+---- ui4toi2
+---- over int2_max 严格模式error，非严格模式warning，结果int2_max
+insert into test_int2 values(32768::uint4);
+ERROR:  smallint out of range
+CONTEXT:  referenced column: c1
+insert into test_int2 values(-32769::uint4);
+ERROR:  smallint out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_int2 values(32768::uint4);
+WARNING:  smallint out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_int2 values(-32769::uint4);
+WARNING:  smallint out of range
+CONTEXT:  referenced column: c1
+---- i2toui4
+---- over uint4_max 严格模式error，非严格模式warning，结果int2_max
+insert into test_uint4 values(4294967296::int2);
+ERROR:  smallint out of range
+CONTEXT:  referenced column: c1
+insert into test_uint4 values(-129::int2);
+ERROR:  int unsigned out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_uint4 values(4294967296::int2);
+WARNING:  smallint out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_uint4 values(-129::int2);
+WARNING:  int unsigned out of range
+CONTEXT:  referenced column: c1
+---- ui4toi4
+---- over int4_max 严格模式error，非严格模式warning，结果int4_max
+insert into test_int4 values(2147483648::uint4);
+ERROR:  int out of range
+CONTEXT:  referenced column: c1
+insert into test_int4 values(-2147483649::uint4);
+ERROR:  integer out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_int4 values(2147483648::uint4);
+WARNING:  int out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_int4 values(-2147483649::uint4);
+WARNING:  integer out of range
+CONTEXT:  referenced column: c1
+---- i4toui4
+---- over uint4_max 严格模式error，非严格模式warning，结果int4_max
+insert into test_uint4 values(4294967296::int4);
+ERROR:  integer out of range
+CONTEXT:  referenced column: c1
+insert into test_uint4 values(-129::int4);
+ERROR:  int unsigned out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_uint4 values(4294967296::int4);
+WARNING:  integer out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_uint4 values(-129::int4);
+WARNING:  int unsigned out of range
+CONTEXT:  referenced column: c1
+---- ui4toi4
+---- over int4_max 严格模式error，非严格模式warning，结果int4_max
+insert into test_int4 values(4294967296::uint4);
+ERROR:   int unsigned out of range
+CONTEXT:  referenced column: c1
+insert into test_int4 values(-2147483649::uint4);
+ERROR:  integer out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_int4 values(4294967296::uint4);
+WARNING:   int unsigned out of range
+CONTEXT:  referenced column: c1
+WARNING:  int out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_int4 values(-2147483649::uint4);
+WARNING:  integer out of range
+CONTEXT:  referenced column: c1
+---- f4toui4
+---- over uint4_max 严格模式error，非严格模式warning，结果uint4_max
+insert into test_uint4 values(4294967296.5::float4);
+ERROR:  int unsigned out of range
+CONTEXT:  referenced column: c1
+insert into test_uint4 values(-129.5::float4);
+ERROR:  int unsigned out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_uint4 values(4294967296.5::float4);
+WARNING:  int unsigned out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_uint4 values(-129.5::float4);
+WARNING:  int unsigned out of range
+CONTEXT:  referenced column: c1
+---- f4toui4
+---- over uint4_max 严格模式error，非严格模式warning，结果uint4_max
+insert into test_uint4 values(4294967296.5::float8);
+ERROR:  int unsigned out of range
+CONTEXT:  referenced column: c1
+insert into test_uint4 values(-129.5::float8);
+ERROR:  int unsigned out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_uint4 values(4294967296.5::float8);
+WARNING:  int unsigned out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_uint4 values(-129.5::float8);
+WARNING:  int unsigned out of range
+CONTEXT:  referenced column: c1
+---- ui8toui1
+---- over uint1_max 严格模式error，非严格模式warning，结果uint1_max
+insert into test_uint1 values(256::uint8);
+ERROR:  tinyint unsigned out of range
+CONTEXT:  referenced column: c1
+insert into test_uint1 values(-1::uint8);
+ERROR:  tinyint unsigned out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_uint1 values(256::uint8);
+WARNING:  tinyint unsigned out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_uint1 values(-1::uint8);
+WARNING:  tinyint unsigned out of range
+CONTEXT:  referenced column: c1
+---- ui8toi1
+---- over int1_max 严格模式error，非严格模式warning，结果int1_max
+insert into test_int1 values(128::uint8);
+ERROR:  tinyint out of range
+CONTEXT:  referenced column: c1
+insert into test_int1 values(-129::uint8);
+ERROR:  tinyint out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_int1 values(128::uint8);
+WARNING:  tinyint out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_int1 values(-129::uint8);
+WARNING:  tinyint out of range
+CONTEXT:  referenced column: c1
+---- i1toui8
+---- over int1_max 严格模式error，非严格模式warning，结果int1_max
+insert into test_uint8 values(256::int1);
+ERROR:  tinyint out of range
+CONTEXT:  referenced column: c1
+insert into test_uint8 values(-129::int1);
+ERROR:  tinyint out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_uint8 values(256::int1);
+WARNING:  tinyint out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_uint8 values(-129::int1);
+WARNING:  tinyint out of range
+CONTEXT:  referenced column: c1
+WARNING:  bigint unsigned out of range
+CONTEXT:  referenced column: c1
+---- ui8toui2
+---- over uint2_max 严格模式error，非严格模式warning，结果uint2_max
+insert into test_uint2 values(65536::uint8);
+ERROR:  smallint unsigned out of range
+CONTEXT:  referenced column: c1
+insert into test_uint2 values(-1::uint8);
+ERROR:  smallint unsigned out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_uint2 values(65536::uint8);
+WARNING:  smallint unsigned out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_uint2 values(-1::uint8);
+WARNING:  smallint unsigned out of range
+CONTEXT:  referenced column: c1
+---- ui8toi2
+---- over int2_max 严格模式error，非严格模式warning，结果int2_max
+insert into test_int2 values(32768::uint8);
+ERROR:  smallint out of range
+CONTEXT:  referenced column: c1
+insert into test_int2 values(-32769::uint8);
+ERROR:  smallint out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_int2 values(32768::uint8);
+WARNING:  smallint out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_int2 values(-32769::uint8);
+WARNING:  smallint out of range
+CONTEXT:  referenced column: c1
+---- i2toui8
+---- over int2_max 严格模式error，非严格模式warning，结果int2_max
+insert into test_uint8 values(32768::int2);
+ERROR:  smallint out of range
+CONTEXT:  referenced column: c1
+insert into test_uint8 values(-32769::int2);
+ERROR:  smallint out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_uint8 values(32768::int2);
+WARNING:  smallint out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_uint8 values(-32769::int2);
+WARNING:  smallint out of range
+CONTEXT:  referenced column: c1
+WARNING:  bigint unsigned out of range
+CONTEXT:  referenced column: c1
+---- ui8toi4
+---- over int4_max 严格模式error，非严格模式warning，结果int4_max
+insert into test_int4 values(4294967296::uint8);
+ERROR:  int out of range
+CONTEXT:  referenced column: c1
+insert into test_int4 values(-2147483649::uint8);
+ERROR:  integer out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_int4 values(4294967296::uint8);
+WARNING:  int out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_int4 values(-2147483649::uint8);
+WARNING:  integer out of range
+CONTEXT:  referenced column: c1
+---- i4toui8
+---- over int4_max 严格模式error，非严格模式warning，结果int4_max
+insert into test_uint8 values(4294967296::int4);
+ERROR:  integer out of range
+CONTEXT:  referenced column: c1
+insert into test_uint8 values(-2147483649::int4);
+ERROR:  integer out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_uint8 values(4294967296::int4);
+WARNING:  integer out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_uint8 values(-2147483649::int4);
+WARNING:  integer out of range
+CONTEXT:  referenced column: c1
+WARNING:  bigint unsigned out of range
+CONTEXT:  referenced column: c1
+---- ui8toui4
+---- over uint4_max 严格模式error，非严格模式warning，结果uint4_max
+insert into test_uint4 values(4294967296::uint8);
+ERROR:  int unsigned out of range
+CONTEXT:  referenced column: c1
+insert into test_uint4 values(-129::uint8);
+ERROR:  int unsigned out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_uint4 values(4294967296::uint8);
+WARNING:  int unsigned out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_uint4 values(-129::uint8);
+WARNING:  int unsigned out of range
+CONTEXT:  referenced column: c1
+---- ui8toi8
+---- over int8_max 严格模式error，非严格模式warning，结果int8_max
+insert into test_int8 values(9223372036854775808::uint8);
+ERROR:  bigint out of range
+CONTEXT:  referenced column: c1
+insert into test_int8 values(-9223372036854775809::uint8);
+ERROR:  bigint unsigned out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_int8 values(9223372036854775808::uint8);
+WARNING:  bigint out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_int8 values(-9223372036854775808::uint8);
+ERROR:  bigint unsigned out of range
+CONTEXT:  referenced column: c1
+---- i8toui8
+---- over int8_max 严格模式error，非严格模式warning，结果int8_max
+insert into test_uint8 values(9223372036854775808::int8);
+ERROR:  bigint out of range
+CONTEXT:  referenced column: c1
+insert into test_uint8 values(-2147483649::int8);
+ERROR:  bigint unsigned out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_uint8 values(9223372036854775808::int8);
+WARNING:  bigint out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_uint8 values(-2147483649::int8);
+WARNING:  bigint unsigned out of range
+CONTEXT:  referenced column: c1
+---- f4toui8
+---- over uint8_max 严格模式error，非严格模式warning，结果uint8_max
+insert into test_uint8 values(18446744073709551616::float4);
+ERROR:  bigint unsigned out of range
+CONTEXT:  referenced column: c1
+insert into test_uint8 values(-2147483649::float4);
+ERROR:  bigint unsigned out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_uint8 values(18446744073709551616::float4);
+WARNING:  bigint unsigned out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_uint8 values(-2147483649::float4);
+WARNING:  bigint unsigned out of range
+CONTEXT:  referenced column: c1
+---- f8toui8
+---- over uint8_max 严格模式error，非严格模式warning，结果uint8_max
+insert into test_uint8 values(18446744073709551616::float8);
+ERROR:  bigint unsigned out of range
+CONTEXT:  referenced column: c1
+insert into test_uint8 values(-2147483649::float8);
+ERROR:  bigint unsigned out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_uint8 values(18446744073709551616::float8);
+WARNING:  bigint unsigned out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_uint8 values(-2147483649::float8);
+WARNING:  bigint unsigned out of range
+CONTEXT:  referenced column: c1
+---- i1_cast_ui1
+---- 127
+select cast(128::int1 as uint1);
+ERROR:  tinyint out of range
+CONTEXT:  referenced column: uint1
+---- 246
+select cast(-10::int1 as uint1);
+ uint1 
+-------
+ 246
+(1 row)
+
+---- i4_cast_ui1
+---- 255
+select cast(2147483648::int4 as uint1);
+ERROR:  integer out of range
+CONTEXT:  referenced column: uint1
+---- 246
+select cast(-10::int4 as uint1);
+ uint1 
+-------
+ 246
+(1 row)
+
+---- i8_cast_ui1
+---- 255
+select cast(9223372036854775808::int8 as uint1);
+ERROR:  bigint out of range
+CONTEXT:  referenced column: uint1
+---- 246
+select cast(-10::int8 as uint1);
+ uint1 
+-------
+ 246
+(1 row)
+
+---- i4_cast_ui2
+---- 65535
+select cast(2147483648::int4 as uint2);
+ERROR:  integer out of range
+CONTEXT:  referenced column: uint2
+---- 65526
+select cast(-10::int4 as uint2);
+ uint2 
+-------
+ 65526
+(1 row)
+
+---- i8_cast_ui2
+---- 65535
+select cast(9223372036854775808::int8 as uint2);
+ERROR:  bigint out of range
+CONTEXT:  referenced column: uint2
+---- 65526
+select cast(-10::int8 as uint2);
+ uint2 
+-------
+ 65526
+(1 row)
+
+---- i8_cast_ui4
+---- 4294967295
+select cast(9223372036854775808::int8 as uint4);
+ERROR:  bigint out of range
+CONTEXT:  referenced column: uint4
+---- 4294967286
+select cast(-10::int8 as uint4);
+   uint4    
+------------
+ 4294967286
+(1 row)
+
+---- f4_cast_ui1
+---- 255
+select cast(9223372036854775808.5::float4 as uint1);
+ERROR:  tinyint unsigned out of range
+CONTEXT:  referenced column: uint1
+---- 245
+select cast(-10.5::float4 as uint1);
+ uint1 
+-------
+ 245
+(1 row)
+
+---- f8_cast_ui1
+---- 255
+select cast(9223372036854775808.5::float8 as uint1);
+ERROR:  tinyint unsigned out of range
+CONTEXT:  referenced column: uint1
+---- 245
+select cast(-10.5::float8 as uint1);
+ uint1 
+-------
+ 245
+(1 row)
+
+---- f4_cast_ui2
+---- 65535
+select cast(65535.5::float4 as uint2);
+ERROR:  smallint unsigned out of range
+CONTEXT:  referenced column: uint2
+---- 65525
+select cast(-10.5::float4 as uint2);
+ uint2 
+-------
+ 65525
+(1 row)
+
+---- f8_cast_ui2
+---- 65535
+select cast(65535.5::float8 as uint2);
+ERROR:  smallint unsigned out of range
+CONTEXT:  referenced column: uint2
+---- 65525
+select cast(-10.5::float8 as uint2);
+ uint2 
+-------
+ 65525
+(1 row)
+
+---- f4_cast_ui4
+---- 65535
+select cast(4294967295.5::float4 as uint4);
+ERROR:  int unsigned out of range
+CONTEXT:  referenced column: uint4
+---- 65525
+select cast(-10.5::float4 as uint4);
+   uint4    
+------------
+ 4294967285
+(1 row)
+
+---- f8_cast_ui4
+---- 65535
+select cast(4294967295.5::float8 as uint4);
+ERROR:  int unsigned out of range
+CONTEXT:  referenced column: uint4
+---- 65525
+select cast(-10.5::float8 as uint4);
+   uint4    
+------------
+ 4294967285
+(1 row)
+
+---- unexpected
+---- f4_cast_ui8
+---- 65535
+select cast(18446744073709551615.5::float4 as uint8);
+ERROR:  bigint unsigned out of range
+CONTEXT:  referenced column: uint8
+---- 65525
+select cast(-10.5::float4 as uint8);
+        uint8         
+----------------------
+ 18446744073709551605
+(1 row)
+
+---- f8_cast_ui8
+---- 65535
+select cast(18446744073709551615.5::float8 as uint8);
+ERROR:  bigint unsigned out of range
+CONTEXT:  referenced column: uint8
+---- 65525
+select cast(-10.5::float8 as uint8);
+        uint8         
+----------------------
+ 18446744073709551605
+(1 row)
+
+select * from test_int1;
+  c1  
+------
+ 127
+ 127
+ 127
+ 127
+ 127
+ 127
+ 127
+ -128
+ 127
+ -128
+ 127
+ -128
+ 127
+ -128
+(14 rows)
+
+select * from test_int2;
+   c1   
+--------
+  32767
+  32767
+  32767
+  32767
+ -32768
+  32767
+ -32768
+  32767
+ -32768
+(9 rows)
+
+select * from test_int4;
+     c1      
+-------------
+  2147483647
+  2147483647
+  2147483647
+ -2147483648
+  2147483647
+ -2147483648
+  2147483647
+ -2147483648
+(8 rows)
+
+select * from test_int8;
+         c1          
+---------------------
+          2147483647
+               32767
+ 9223372036854775807
+ 9223372036854775807
+ 9223372036854775807
+ 9223372036854775807
+(6 rows)
+
+select * from test_uint1;
+ c1  
+-----
+ 255
+ 255
+ 0
+ 255
+ 0
+ 255
+ 0
+ 255
+ 0
+ 255
+ 0
+ 255
+ 0
+ 255
+ 0
+ 127
+ 0
+ 255
+ 0
+(19 rows)
+
+select * from test_uint2;
+  c1   
+-------
+ 65535
+ 32767
+ 0
+ 65535
+ 0
+ 65535
+ 0
+ 65535
+ 0
+ 65535
+ 0
+ 127
+ 0
+ 65535
+ 0
+ 65535
+ 0
+(17 rows)
+
+select * from test_uint4;
+     c1     
+------------
+ 4294967295
+ 127
+ 0
+ 32767
+ 0
+ 2147483647
+ 0
+ 4294967295
+ 0
+ 4294967295
+ 0
+ 4294967295
+ 0
+(13 rows)
+
+select * from test_uint8;
+          c1          
+----------------------
+ 18446744073709551615
+ 127
+ 0
+ 32767
+ 0
+ 2147483647
+ 0
+ 9223372036854775807
+ 0
+ 18446744073709551615
+ 0
+ 18446744073709551615
+ 0
+(13 rows)
+
+drop table if exists test_int1,test_int2,test_int4,test_int8,test_uint1,test_uint2,test_uint4,test_uint8;
+set dolphin.sql_mode = sql_mode_full_group,pipes_as_concat,ansi_quotes;
+create table test_int1(c1 int1);
+create table test_int8(c1 int8);
+---- numeric__int1
+---- over float8_max 严格模式error，非严格模式warning, 结果127
+select cast(2e308 as int1);
+WARNING:  tinyint out of range
+CONTEXT:  referenced column: int1
+ int1 
+------
+ 127
+(1 row)
+
+---- int8_max~float8_max 严格模式error，非严格模式warning，结果127
+select cast(1e308 as int1);
+WARNING:  tinyint out of range
+CONTEXT:  referenced column: int1
+ int1 
+------
+ 127
+(1 row)
+
+---- float4in
+---- over float8_max 严格模式error，非严格模式warning，结果float4_max
+select cast(3.5e308 as float4);
+WARNING:  "350000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000" is out of range for type real
+CONTEXT:  referenced column: float4
+   float4    
+-------------
+ 3.40282e+38
+(1 row)
+
+---- float4_max~float8_max 严格模式error，非严格模式warning，结果float4_max
+select cast(3.5e38 as float4);
+WARNING:  value out of range: overflow
+CONTEXT:  referenced column: float4
+   float4    
+-------------
+ 3.40282e+38
+(1 row)
+
+---- float8in
+---- over float8_max 严格模式error，非严格模式warning，结果float8_max
+select cast(3.5e308 as float8);
+WARNING:  "350000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000" is out of range for type double precision
+CONTEXT:  referenced column: float8
+        float8         
+-----------------------
+ 1.79769313486232e+308
+(1 row)
+
+---- dtoi4
+create table test_int4(c1 int4);
+---- over int4_max 严格模式error，非严格模式warning，结果int4_max
+insert into test_int4 values(3.5e38::float8);
+WARNING:  integer out of range
+CONTEXT:  referenced column: c1
+---- over float8_max 严格模式error，非严格模式双warning，结果int4_max
+insert into test_int4 values(3.5e308::float8);
+WARNING:  "350000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000" is out of range for type double precision
+CONTEXT:  referenced column: c1
+WARNING:  integer out of range
+CONTEXT:  referenced column: c1
+---- dtoi2
+create table test_int2(c1 int2);
+---- over int2_max 严格模式error，非严格模式warning，结果int2_max
+insert into test_int2 values(3.5e38::float8);
+WARNING:  smallint out of range
+CONTEXT:  referenced column: c1
+---- over float8_max 严格模式error，非严格模式双warning，结果int2_max
+insert into test_int2 values(3.5e308::float8);
+WARNING:  "350000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000" is out of range for type double precision
+CONTEXT:  referenced column: c1
+WARNING:  smallint out of range
+CONTEXT:  referenced column: c1
+---- ftoi4
+---- over int2_max 严格模式error，非严格模式warning，结果int4_max
+insert into test_int4 values(3.4e38::float4);
+WARNING:  integer out of range
+CONTEXT:  referenced column: c1
+---- over float4_max 严格模式error，非严格模式双warning，结果int4_max
+insert into test_int4 values(3.5e38::float4);
+WARNING:  value out of range: overflow
+CONTEXT:  referenced column: c1
+WARNING:  integer out of range
+CONTEXT:  referenced column: c1
+---- over float8_max 严格模式error，非严格模式双warning，结果int4_max
+insert into test_int4 values(3.5e308::float4);
+WARNING:  "350000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000" is out of range for type real
+CONTEXT:  referenced column: c1
+WARNING:  integer out of range
+CONTEXT:  referenced column: c1
+---- ftoi2
+---- over int2_max 严格模式error，非严格模式warning，结果int2_max
+insert into test_int2 values(3.4e38::float4);
+WARNING:  smallint out of range
+CONTEXT:  referenced column: c1
+---- over float4_max 严格模式error，非严格模式双warning，结果int2_max
+insert into test_int2 values(3.5e38::float4);
+WARNING:  value out of range: overflow
+CONTEXT:  referenced column: c1
+WARNING:  smallint out of range
+CONTEXT:  referenced column: c1
+---- over float8_max 严格模式error，非严格模式双warning，结果int2_max
+insert into test_int2 values(3.5e308::float4);
+WARNING:  "350000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000" is out of range for type real
+CONTEXT:  referenced column: c1
+WARNING:  smallint out of range
+CONTEXT:  referenced column: c1
+---- PgStrtoint16Internal
+---- over int2_max 严格模式error，非严格模式warning，结果int2_max
+insert into test_int2 values('32768');
+WARNING:  value "32768" is out of range for type smallint
+LINE 1: insert into test_int2 values('32768');
+                                     ^
+CONTEXT:  referenced column: c1
+---- PgStrtoint32Internal
+---- over int4_max 严格模式error，非严格模式warning，结果int4_max
+insert into test_int4 values('2147483648');
+WARNING:  value "2147483648" is out of range for type integer
+LINE 1: insert into test_int4 values('2147483648');
+                                     ^
+CONTEXT:  referenced column: c1
+---- PgAtoiInternal 暂未找到如何调用
+---- Scanint8Internal
+---- over int8_max 严格模式error，非严格模式warning，结果int8_max
+insert into test_int8 values('9223372036854775808');
+WARNING:  value "9223372036854775808" is out of range for type bigint
+LINE 1: insert into test_int8 values('9223372036854775808');
+                                     ^
+CONTEXT:  referenced column: c1
+---- i4toi2
+---- over int2_max 严格模式error，非严格模式warning，结果int2_max
+insert into test_int2 values(2147483647::int4);
+WARNING:  smallint out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_int2 values(2147483647::int4);
+WARNING:  smallint out of range
+CONTEXT:  referenced column: c1
+---- i2toi1
+---- over int1_max 严格模式error，非严格模式warning，结果int1_max
+insert into test_int1 values(32767::int2);
+WARNING:  tinyint out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_int1 values(32767::int2);
+WARNING:  tinyint out of range
+CONTEXT:  referenced column: c1
+---- i4toi1
+---- over int1_max 严格模式error，非严格模式warning，结果int1_max
+insert into test_int1 values(2147483647::int4);
+WARNING:  tinyint out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_int1 values(2147483647::int4);
+WARNING:  tinyint out of range
+CONTEXT:  referenced column: c1
+---- i8toi1
+---- over int1_max 严格模式error，非严格模式warning，结果int1_max
+insert into test_int1 values(9223372036854775807::int8);
+WARNING:  tinyint out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_int1 values(9223372036854775807::int8);
+WARNING:  tinyint out of range
+CONTEXT:  referenced column: c1
+---- f4toi1
+---- over int1_max 严格模式error，非严格模式warning，结果int1_max
+insert into test_int1 values(3e38::float4);
+WARNING:  tinyint out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_int1 values(3e38::float4);
+WARNING:  tinyint out of range
+CONTEXT:  referenced column: c1
+---- f8toi1
+---- over int1_max 严格模式error，非严格模式warning，结果int1_max
+insert into test_int1 values(1e308::float8);
+WARNING:  tinyint out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_int1 values(1e308::float8);
+WARNING:  tinyint out of range
+CONTEXT:  referenced column: c1
+---- int84
+---- over int4_max 严格模式error，非严格模式warning，结果int4_max
+insert into test_int4 values(2147483648::int8);
+WARNING:  integer out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_int4 values(9223372036854775808::int8);
+WARNING:  bigint out of range
+CONTEXT:  referenced column: c1
+WARNING:  integer out of range
+CONTEXT:  referenced column: c1
+---- over int8_max 严格模式error，非严格模式warning，结果int4_max
+insert into test_int8 values(2147483648::int4);
+WARNING:  integer out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_int8 values(2147483648::int4);
+WARNING:  integer out of range
+CONTEXT:  referenced column: c1
+---- int82
+---- over int2_max 严格模式error，非严格模式warning，结果int2_max
+insert into test_int2 values(32768::int8);
+WARNING:  smallint out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_int2 values(9223372036854775808::int8);
+WARNING:  bigint out of range
+CONTEXT:  referenced column: c1
+WARNING:  smallint out of range
+CONTEXT:  referenced column: c1
+---- over int8_max 严格模式error，非严格模式warning，结果int2_max
+insert into test_int8 values(2147483648::int2);
+WARNING:  smallint out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_int8 values(32768::int2);
+WARNING:  smallint out of range
+CONTEXT:  referenced column: c1
+---- dtoi8
+---- over int8_max 严格模式error，非严格模式warning，结果int8_max
+insert into test_int8 values(9223372036854775807.5::double);
+WARNING:  bigint out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_int8 values(9223372036854775807.5::double);
+WARNING:  bigint out of range
+CONTEXT:  referenced column: c1
+---- ftoi8
+---- over int8_max 严格模式error，非严格模式warning，结果int8_max
+insert into test_int8 values(9223372036854775807.5::float);
+WARNING:  bigint out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_int8 values(9223372036854775807.5::float);
+WARNING:  bigint out of range
+CONTEXT:  referenced column: c1
+---- numeric_int1
+---- over int1_max 严格模式error，非严格模式warning，结果int1_max
+insert into test_int1 values(1e30);
+WARNING:  tinyint out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_int1 values(1e30);
+WARNING:  tinyint out of range
+CONTEXT:  referenced column: c1
+---- numeric_int2
+---- over int2_max 严格模式error，非严格模式warning，结果int2_max
+insert into test_int2 values(1e30);
+WARNING:  smallint out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_int2 values(1e30);
+WARNING:  smallint out of range
+CONTEXT:  referenced column: c1
+---- numericvar_to_int32
+---- over int4_max 严格模式error，非严格模式warning，结果int4_max
+insert into test_int4 values(1e30);
+WARNING:  integer out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_int4 values(1e30);
+WARNING:  integer out of range
+CONTEXT:  referenced column: c1
+---- numeric_int8
+---- over int8_max 严格模式error，非严格模式warning，结果int8_max
+insert into test_int8 values(1e30);
+WARNING:  bigint out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_int8 values(1e30);
+WARNING:  bigint out of range
+CONTEXT:  referenced column: c1
+---- numeric_uint1
+---- over uint1_max 严格模式error，非严格模式warning，结果uint1_max
+create table test_uint1(c1 uint1);
+insert into test_uint1 values(1e30);
+WARNING:  tinyint unsigned out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_uint1 values(1e30);
+WARNING:  tinyint unsigned out of range
+CONTEXT:  referenced column: c1
+---- numeric_uint2
+---- over uint2_max 严格模式error，非严格模式warning，结果uint2_max
+create table test_uint2(c1 uint2);
+insert into test_uint2 values(1e30);
+WARNING:  smallint unsigned out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_uint2 values(1e30);
+WARNING:  smallint unsigned out of range
+CONTEXT:  referenced column: c1
+---- numeric_uint4
+---- over uint4_max 严格模式error，非严格模式warning，结果uint4_max
+create table test_uint4(c1 uint4);
+insert into test_uint4 values(1e30);
+WARNING:  unsigned int out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_uint4 values(1e30);
+WARNING:  unsigned int out of range
+CONTEXT:  referenced column: c1
+---- numeric_uint8
+---- over uint8_max 严格模式error，非严格模式warning，结果uint8_max
+create table test_uint8(c1 uint8);
+insert into test_uint8 values(1e30);
+WARNING:  bigint unsigned out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_uint8 values(1e30);
+WARNING:  bigint unsigned out of range
+CONTEXT:  referenced column: c1
+---- numeric_cast_uint1
+select cast(1e30 as uint1);
+WARNING:  tinyint unsigned out of range
+CONTEXT:  referenced column: uint1
+ uint1 
+-------
+ 255
+(1 row)
+
+---- numeric_cast_uint2
+select cast(1e30 as uint2);
+WARNING:  smallint unsigned out of range
+CONTEXT:  referenced column: uint2
+ uint2 
+-------
+ 65535
+(1 row)
+
+---- numeric_cast_uint4
+select cast(1e30 as uint4);
+WARNING:  unsigned int out of range
+CONTEXT:  referenced column: uint4
+   uint4    
+------------
+ 4294967295
+(1 row)
+
+---- numeric_cast_uint8
+select cast(1e30 as uint8);
+WARNING:  bigint unsigned out of range
+CONTEXT:  referenced column: uint8
+        uint8         
+----------------------
+ 18446744073709551615
+(1 row)
+
+---- i2toui1
+---- over uint1_max 严格模式error，非严格模式warning，结果uint1_max
+insert into test_uint1 values(256::int2);
+WARNING:  tinyint unsigned out of range
+CONTEXT:  referenced column: c1
+insert into test_uint1 values(-1::int2);
+WARNING:  tinyint unsigned out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_uint1 values(256::int2);
+WARNING:  tinyint unsigned out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_uint1 values(-1::int2);
+WARNING:  tinyint unsigned out of range
+CONTEXT:  referenced column: c1
+---- i4toui1
+---- over uint1_max 严格模式error，非严格模式warning，结果uint1_max
+insert into test_uint1 values(256::int4);
+WARNING:  tinyint unsigned out of range
+CONTEXT:  referenced column: c1
+insert into test_uint1 values(-1::int4);
+WARNING:  tinyint unsigned out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_uint1 values(256::int4);
+WARNING:  tinyint unsigned out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_uint1 values(-1::int4);
+WARNING:  tinyint unsigned out of range
+CONTEXT:  referenced column: c1
+---- i8toui1
+---- over uint1_max 严格模式error，非严格模式warning，结果uint1_max
+insert into test_uint1 values(256::int8);
+WARNING:  tinyint unsigned out of range
+CONTEXT:  referenced column: c1
+insert into test_uint1 values(-1::int8);
+WARNING:  tinyint unsigned out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_uint1 values(256::int8);
+WARNING:  tinyint unsigned out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_uint1 values(-1::int8);
+WARNING:  tinyint unsigned out of range
+CONTEXT:  referenced column: c1
+---- f4toui1
+---- over uint1_max 严格模式error，非严格模式warning，结果uint1_max
+insert into test_uint1 values(256.5::float4);
+WARNING:  tinyint unsigned out of range
+CONTEXT:  referenced column: c1
+insert into test_uint1 values(-1.5::float4);
+WARNING:  tinyint unsigned out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_uint1 values(256.5::float4);
+WARNING:  tinyint unsigned out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_uint1 values(-1.5::float4);
+WARNING:  tinyint unsigned out of range
+CONTEXT:  referenced column: c1
+---- f8toui1
+---- over uint1_max 严格模式error，非严格模式warning，结果uint1_max
+insert into test_uint1 values(256.5::float8);
+WARNING:  tinyint unsigned out of range
+CONTEXT:  referenced column: c1
+insert into test_uint1 values(-1.5::float8);
+WARNING:  tinyint unsigned out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_uint1 values(256.5::float8);
+WARNING:  tinyint unsigned out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_uint1 values(-1.5::float8);
+WARNING:  tinyint unsigned out of range
+CONTEXT:  referenced column: c1
+---- ui2toui1
+---- over uint1_max 严格模式error，非严格模式warning，结果uint1_max
+insert into test_uint1 values(256::uint2);
+WARNING:  tinyint unsigned out of range
+CONTEXT:  referenced column: c1
+insert into test_uint1 values(-1::uint2);
+WARNING:  tinyint unsigned out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_uint1 values(256::uint2);
+WARNING:  tinyint unsigned out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_uint1 values(-1::uint2);
+WARNING:  tinyint unsigned out of range
+CONTEXT:  referenced column: c1
+---- ui2toi2
+---- over int2_max 严格模式error，非严格模式warning，结果int2_max
+insert into test_int2 values(32768::uint2);
+WARNING:  smallint out of range
+CONTEXT:  referenced column: c1
+insert into test_int2 values(-32769::uint2);
+WARNING:  smallint out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_int2 values(32768::uint2);
+WARNING:  smallint out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_int2 values(-32769::uint2);
+WARNING:  smallint out of range
+CONTEXT:  referenced column: c1
+---- i2toui2
+---- over uint2_max 严格模式error，非严格模式warning，结果int2_max
+insert into test_uint2 values(65536::int2);
+WARNING:  smallint out of range
+CONTEXT:  referenced column: c1
+insert into test_uint2 values(-1::int2);
+WARNING:  smallint unsigned out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_uint2 values(65536::int2);
+WARNING:  smallint out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_uint2 values(-1::int2);
+WARNING:  smallint unsigned out of range
+CONTEXT:  referenced column: c1
+---- i4toui2
+---- over uint2_max 严格模式error，非严格模式warning，结果uint2_max
+insert into test_uint2 values(65536::int4);
+WARNING:  smallint unsigned out of range
+CONTEXT:  referenced column: c1
+insert into test_uint2 values(-1::int4);
+WARNING:  smallint unsigned out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_uint2 values(65536::int4);
+WARNING:  smallint unsigned out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_uint2 values(-1::int4);
+WARNING:  smallint unsigned out of range
+CONTEXT:  referenced column: c1
+---- i8toui2
+---- over uint2_max 严格模式error，非严格模式warning，结果uint2_max
+insert into test_uint2 values(65536::int8);
+WARNING:  smallint unsigned out of range
+CONTEXT:  referenced column: c1
+insert into test_uint2 values(-1::int8);
+WARNING:  smallint unsigned out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_uint2 values(65536::int8);
+WARNING:  smallint unsigned out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_uint2 values(-1::int8);
+WARNING:  smallint unsigned out of range
+CONTEXT:  referenced column: c1
+---- f4toui2
+---- over uint2_max 严格模式error，非严格模式warning，结果uint2_max
+insert into test_uint2 values(65536.5::float4);
+WARNING:  smallint unsigned out of range
+CONTEXT:  referenced column: c1
+insert into test_uint2 values(-1.5::float4);
+WARNING:  smallint unsigned out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_uint2 values(65536.5::float4);
+WARNING:  smallint unsigned out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_uint2 values(-1.5::float4);
+WARNING:  smallint unsigned out of range
+CONTEXT:  referenced column: c1
+---- f8toui2
+---- over uint2_max 严格模式error，非严格模式warning，结果uint2_max
+insert into test_uint2 values(65536.5::float8);
+WARNING:  smallint unsigned out of range
+CONTEXT:  referenced column: c1
+insert into test_uint2 values(-1.5::float8);
+WARNING:  smallint unsigned out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_uint2 values(65536.5::float8);
+WARNING:  smallint unsigned out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_uint2 values(-1.5::float8);
+WARNING:  smallint unsigned out of range
+CONTEXT:  referenced column: c1
+---- ui4toui1
+---- over uint1_max 严格模式error，非严格模式warning，结果uint1_max
+insert into test_uint1 values(256::uint4);
+WARNING:  tinyint unsigned out of range
+CONTEXT:  referenced column: c1
+insert into test_uint1 values(-1::uint4);
+WARNING:  tinyint unsigned out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_uint1 values(256::uint4);
+WARNING:  tinyint unsigned out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_uint1 values(-1::uint4);
+WARNING:  tinyint unsigned out of range
+CONTEXT:  referenced column: c1
+---- ui4toi1
+---- over int1_max 严格模式error，非严格模式warning，结果int1_max
+insert into test_int1 values(128::uint4);
+WARNING:  tinyint out of range
+CONTEXT:  referenced column: c1
+insert into test_int1 values(-129::uint4);
+WARNING:  tinyint out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_int1 values(128::uint4);
+WARNING:  tinyint out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_int1 values(-129::uint4);
+WARNING:  tinyint out of range
+CONTEXT:  referenced column: c1
+---- i1toui4
+---- over uint4_max 严格模式error，非严格模式warning，结果int1_max
+insert into test_uint4 values(2147483648::int1);
+WARNING:  tinyint out of range
+CONTEXT:  referenced column: c1
+insert into test_uint4 values(-129::int1);
+WARNING:  tinyint out of range
+CONTEXT:  referenced column: c1
+WARNING:  int unsigned out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_uint4 values(2147483648::int1);
+WARNING:  tinyint out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_uint4 values(-129::int1);
+WARNING:  tinyint out of range
+CONTEXT:  referenced column: c1
+WARNING:  int unsigned out of range
+CONTEXT:  referenced column: c1
+---- ui2toi1
+---- over int1_max 严格模式error，非严格模式warning，结果int1_max
+insert into test_int1 values(128::uint2);
+WARNING:  tinyint out of range
+CONTEXT:  referenced column: c1
+insert into test_int1 values(-129::uint2);
+WARNING:  tinyint out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_int1 values(128::uint2);
+WARNING:  tinyint out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_int1 values(-129::uint2);
+WARNING:  tinyint out of range
+CONTEXT:  referenced column: c1
+---- i1toui2
+---- over uint2_max 严格模式error，非严格模式warning，结果int1_max
+insert into test_uint2 values(65536::int1);
+WARNING:  tinyint out of range
+CONTEXT:  referenced column: c1
+insert into test_uint2 values(-1::int1);
+WARNING:  smallint unsigned out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_uint2 values(65536::int1);
+WARNING:  tinyint out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_uint2 values(-1::int1);
+WARNING:  smallint unsigned out of range
+CONTEXT:  referenced column: c1
+---- ui1toi1
+---- over int1_max 严格模式error，非严格模式warning，结果int1_max
+insert into test_int1 values(128::uint1);
+WARNING:  tinyint out of range
+CONTEXT:  referenced column: c1
+insert into test_int1 values(-129::uint1);
+WARNING:  tinyint out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_int1 values(128::uint1);
+WARNING:  tinyint out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_int1 values(-129::uint1);
+WARNING:  tinyint out of range
+CONTEXT:  referenced column: c1
+---- i1toui1
+---- over uint1_max 严格模式error，非严格模式warning，结果int1_max
+insert into test_uint1 values(256::int1);
+WARNING:  tinyint out of range
+CONTEXT:  referenced column: c1
+insert into test_uint1 values(-1::int1);
+WARNING:  tinyint unsigned out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_uint1 values(256::int1);
+WARNING:  tinyint out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_uint1 values(-1::int1);
+WARNING:  tinyint unsigned out of range
+CONTEXT:  referenced column: c1
+---- ui4toui2
+---- over uint2_max 严格模式error，非严格模式warning，结果uint2_max
+insert into test_uint2 values(65536::uint4);
+WARNING:  smallint unsigned out of range
+CONTEXT:  referenced column: c1
+insert into test_uint2 values(-1::uint4);
+WARNING:  smallint unsigned out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_uint2 values(65536::uint4);
+WARNING:  smallint unsigned out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_uint2 values(-1::uint4);
+WARNING:  smallint unsigned out of range
+CONTEXT:  referenced column: c1
+---- ui4toi2
+---- over int2_max 严格模式error，非严格模式warning，结果int2_max
+insert into test_int2 values(32768::uint4);
+WARNING:  smallint out of range
+CONTEXT:  referenced column: c1
+insert into test_int2 values(-32769::uint4);
+WARNING:  smallint out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_int2 values(32768::uint4);
+WARNING:  smallint out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_int2 values(-32769::uint4);
+WARNING:  smallint out of range
+CONTEXT:  referenced column: c1
+---- i2toui4
+---- over uint4_max 严格模式error，非严格模式warning，结果int2_max
+insert into test_uint4 values(4294967296::int2);
+WARNING:  smallint out of range
+CONTEXT:  referenced column: c1
+insert into test_uint4 values(-129::int2);
+WARNING:  int unsigned out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_uint4 values(4294967296::int2);
+WARNING:  smallint out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_uint4 values(-129::int2);
+WARNING:  int unsigned out of range
+CONTEXT:  referenced column: c1
+---- ui4toi4
+---- over int4_max 严格模式error，非严格模式warning，结果int4_max
+insert into test_int4 values(2147483648::uint4);
+WARNING:  int out of range
+CONTEXT:  referenced column: c1
+insert into test_int4 values(-2147483649::uint4);
+WARNING:  integer out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_int4 values(2147483648::uint4);
+WARNING:  int out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_int4 values(-2147483649::uint4);
+WARNING:  integer out of range
+CONTEXT:  referenced column: c1
+---- i4toui4
+---- over uint4_max 严格模式error，非严格模式warning，结果int4_max
+insert into test_uint4 values(4294967296::int4);
+WARNING:  integer out of range
+CONTEXT:  referenced column: c1
+insert into test_uint4 values(-129::int4);
+WARNING:  int unsigned out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_uint4 values(4294967296::int4);
+WARNING:  integer out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_uint4 values(-129::int4);
+WARNING:  int unsigned out of range
+CONTEXT:  referenced column: c1
+---- ui4toi4
+---- over int4_max 严格模式error，非严格模式warning，结果int4_max
+insert into test_int4 values(4294967296::uint4);
+WARNING:   int unsigned out of range
+CONTEXT:  referenced column: c1
+WARNING:  int out of range
+CONTEXT:  referenced column: c1
+insert into test_int4 values(-2147483649::uint4);
+WARNING:  integer out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_int4 values(4294967296::uint4);
+WARNING:   int unsigned out of range
+CONTEXT:  referenced column: c1
+WARNING:  int out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_int4 values(-2147483649::uint4);
+WARNING:  integer out of range
+CONTEXT:  referenced column: c1
+---- f4toui4
+---- over uint4_max 严格模式error，非严格模式warning，结果uint4_max
+insert into test_uint4 values(4294967296.5::float4);
+WARNING:  int unsigned out of range
+CONTEXT:  referenced column: c1
+insert into test_uint4 values(-129.5::float4);
+WARNING:  int unsigned out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_uint4 values(4294967296.5::float4);
+WARNING:  int unsigned out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_uint4 values(-129.5::float4);
+WARNING:  int unsigned out of range
+CONTEXT:  referenced column: c1
+---- f4toui4
+---- over uint4_max 严格模式error，非严格模式warning，结果uint4_max
+insert into test_uint4 values(4294967296.5::float8);
+WARNING:  int unsigned out of range
+CONTEXT:  referenced column: c1
+insert into test_uint4 values(-129.5::float8);
+WARNING:  int unsigned out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_uint4 values(4294967296.5::float8);
+WARNING:  int unsigned out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_uint4 values(-129.5::float8);
+WARNING:  int unsigned out of range
+CONTEXT:  referenced column: c1
+---- ui8toui1
+---- over uint1_max 严格模式error，非严格模式warning，结果uint1_max
+insert into test_uint1 values(256::uint8);
+WARNING:  tinyint unsigned out of range
+CONTEXT:  referenced column: c1
+insert into test_uint1 values(-1::uint8);
+WARNING:  tinyint unsigned out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_uint1 values(256::uint8);
+WARNING:  tinyint unsigned out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_uint1 values(-1::uint8);
+WARNING:  tinyint unsigned out of range
+CONTEXT:  referenced column: c1
+---- ui8toi1
+---- over int1_max 严格模式error，非严格模式warning，结果int1_max
+insert into test_int1 values(128::uint8);
+WARNING:  tinyint out of range
+CONTEXT:  referenced column: c1
+insert into test_int1 values(-129::uint8);
+WARNING:  tinyint out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_int1 values(128::uint8);
+WARNING:  tinyint out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_int1 values(-129::uint8);
+WARNING:  tinyint out of range
+CONTEXT:  referenced column: c1
+---- i1toui8
+---- over int1_max 严格模式error，非严格模式warning，结果int1_max
+insert into test_uint8 values(256::int1);
+WARNING:  tinyint out of range
+CONTEXT:  referenced column: c1
+insert into test_uint8 values(-129::int1);
+WARNING:  tinyint out of range
+CONTEXT:  referenced column: c1
+WARNING:  bigint unsigned out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_uint8 values(256::int1);
+WARNING:  tinyint out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_uint8 values(-129::int1);
+WARNING:  tinyint out of range
+CONTEXT:  referenced column: c1
+WARNING:  bigint unsigned out of range
+CONTEXT:  referenced column: c1
+---- ui8toui2
+---- over uint2_max 严格模式error，非严格模式warning，结果uint2_max
+insert into test_uint2 values(65536::uint8);
+WARNING:  smallint unsigned out of range
+CONTEXT:  referenced column: c1
+insert into test_uint2 values(-1::uint8);
+WARNING:  smallint unsigned out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_uint2 values(65536::uint8);
+WARNING:  smallint unsigned out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_uint2 values(-1::uint8);
+WARNING:  smallint unsigned out of range
+CONTEXT:  referenced column: c1
+---- ui8toi2
+---- over int2_max 严格模式error，非严格模式warning，结果int2_max
+insert into test_int2 values(32768::uint8);
+WARNING:  smallint out of range
+CONTEXT:  referenced column: c1
+insert into test_int2 values(-32769::uint8);
+WARNING:  smallint out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_int2 values(32768::uint8);
+WARNING:  smallint out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_int2 values(-32769::uint8);
+WARNING:  smallint out of range
+CONTEXT:  referenced column: c1
+---- i2toui8
+---- over int2_max 严格模式error，非严格模式warning，结果int2_max
+insert into test_uint8 values(32768::int2);
+WARNING:  smallint out of range
+CONTEXT:  referenced column: c1
+insert into test_uint8 values(-32769::int2);
+WARNING:  smallint out of range
+CONTEXT:  referenced column: c1
+WARNING:  bigint unsigned out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_uint8 values(32768::int2);
+WARNING:  smallint out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_uint8 values(-32769::int2);
+WARNING:  smallint out of range
+CONTEXT:  referenced column: c1
+WARNING:  bigint unsigned out of range
+CONTEXT:  referenced column: c1
+---- ui8toi4
+---- over int4_max 严格模式error，非严格模式warning，结果int4_max
+insert into test_int4 values(4294967296::uint8);
+WARNING:  int out of range
+CONTEXT:  referenced column: c1
+insert into test_int4 values(-2147483649::uint8);
+WARNING:  integer out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_int4 values(4294967296::uint8);
+WARNING:  int out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_int4 values(-2147483649::uint8);
+WARNING:  integer out of range
+CONTEXT:  referenced column: c1
+---- i4toui8
+---- over int4_max 严格模式error，非严格模式warning，结果int4_max
+insert into test_uint8 values(4294967296::int4);
+WARNING:  integer out of range
+CONTEXT:  referenced column: c1
+insert into test_uint8 values(-2147483649::int4);
+WARNING:  integer out of range
+CONTEXT:  referenced column: c1
+WARNING:  bigint unsigned out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_uint8 values(4294967296::int4);
+WARNING:  integer out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_uint8 values(-2147483649::int4);
+WARNING:  integer out of range
+CONTEXT:  referenced column: c1
+WARNING:  bigint unsigned out of range
+CONTEXT:  referenced column: c1
+---- ui8toui4
+---- over uint4_max 严格模式error，非严格模式warning，结果uint4_max
+insert into test_uint4 values(4294967296::uint8);
+WARNING:  int unsigned out of range
+CONTEXT:  referenced column: c1
+insert into test_uint4 values(-129::uint8);
+WARNING:  int unsigned out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_uint4 values(4294967296::uint8);
+WARNING:  int unsigned out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_uint4 values(-129::uint8);
+WARNING:  int unsigned out of range
+CONTEXT:  referenced column: c1
+---- ui8toi8
+---- over int8_max 严格模式error，非严格模式warning，结果int8_max
+insert into test_int8 values(9223372036854775808::uint8);
+WARNING:  bigint out of range
+CONTEXT:  referenced column: c1
+insert into test_int8 values(-9223372036854775809::uint8);
+ERROR:  bigint unsigned out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_int8 values(9223372036854775808::uint8);
+WARNING:  bigint out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_int8 values(-9223372036854775808::uint8);
+ERROR:  bigint unsigned out of range
+CONTEXT:  referenced column: c1
+---- i8toui8
+---- over int8_max 严格模式error，非严格模式warning，结果int8_max
+insert into test_uint8 values(9223372036854775808::int8);
+WARNING:  bigint out of range
+CONTEXT:  referenced column: c1
+insert into test_uint8 values(-2147483649::int8);
+WARNING:  bigint unsigned out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_uint8 values(9223372036854775808::int8);
+WARNING:  bigint out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_uint8 values(-2147483649::int8);
+WARNING:  bigint unsigned out of range
+CONTEXT:  referenced column: c1
+---- f4toui8
+---- over uint8_max 严格模式error，非严格模式warning，结果uint8_max
+insert into test_uint8 values(18446744073709551616::float4);
+WARNING:  bigint unsigned out of range
+CONTEXT:  referenced column: c1
+insert into test_uint8 values(-2147483649::float4);
+WARNING:  bigint unsigned out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_uint8 values(18446744073709551616::float4);
+WARNING:  bigint unsigned out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_uint8 values(-2147483649::float4);
+WARNING:  bigint unsigned out of range
+CONTEXT:  referenced column: c1
+---- f8toui8
+---- over uint8_max 严格模式error，非严格模式warning，结果uint8_max
+insert into test_uint8 values(18446744073709551616::float8);
+WARNING:  bigint unsigned out of range
+CONTEXT:  referenced column: c1
+insert into test_uint8 values(-2147483649::float8);
+WARNING:  bigint unsigned out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_uint8 values(18446744073709551616::float8);
+WARNING:  bigint unsigned out of range
+CONTEXT:  referenced column: c1
+insert ignore into test_uint8 values(-2147483649::float8);
+WARNING:  bigint unsigned out of range
+CONTEXT:  referenced column: c1
+---- i1_cast_ui1
+---- 127
+select cast(128::int1 as uint1);
+WARNING:  tinyint out of range
+CONTEXT:  referenced column: uint1
+ uint1 
+-------
+ 127
+(1 row)
+
+---- 246
+select cast(-10::int1 as uint1);
+ uint1 
+-------
+ 246
+(1 row)
+
+---- i4_cast_ui1
+---- 255
+select cast(2147483648::int4 as uint1);
+WARNING:  integer out of range
+CONTEXT:  referenced column: uint1
+WARNING:  tinyint unsigned out of range
+CONTEXT:  referenced column: uint1
+ uint1 
+-------
+ 255
+(1 row)
+
+---- 246
+select cast(-10::int4 as uint1);
+ uint1 
+-------
+ 246
+(1 row)
+
+---- i8_cast_ui1
+---- 255
+select cast(9223372036854775808::int8 as uint1);
+WARNING:  bigint out of range
+CONTEXT:  referenced column: uint1
+WARNING:  tinyint unsigned out of range
+CONTEXT:  referenced column: uint1
+ uint1 
+-------
+ 255
+(1 row)
+
+---- 246
+select cast(-10::int8 as uint1);
+ uint1 
+-------
+ 246
+(1 row)
+
+---- i4_cast_ui2
+---- 65535
+select cast(2147483648::int4 as uint2);
+WARNING:  integer out of range
+CONTEXT:  referenced column: uint2
+WARNING:  smallint unsigned out of range
+CONTEXT:  referenced column: uint2
+ uint2 
+-------
+ 65535
+(1 row)
+
+---- 65526
+select cast(-10::int4 as uint2);
+ uint2 
+-------
+ 65526
+(1 row)
+
+---- i8_cast_ui2
+---- 65535
+select cast(9223372036854775808::int8 as uint2);
+WARNING:  bigint out of range
+CONTEXT:  referenced column: uint2
+WARNING:  smallint unsigned out of range
+CONTEXT:  referenced column: uint2
+ uint2 
+-------
+ 65535
+(1 row)
+
+---- 65526
+select cast(-10::int8 as uint2);
+ uint2 
+-------
+ 65526
+(1 row)
+
+---- i8_cast_ui4
+---- 4294967295
+select cast(9223372036854775808::int8 as uint4);
+WARNING:  bigint out of range
+CONTEXT:  referenced column: uint4
+WARNING:   int unsigned out of range
+CONTEXT:  referenced column: uint4
+   uint4    
+------------
+ 4294967295
+(1 row)
+
+---- 4294967286
+select cast(-10::int8 as uint4);
+   uint4    
+------------
+ 4294967286
+(1 row)
+
+---- f4_cast_ui1
+---- 255
+select cast(9223372036854775808.5::float4 as uint1);
+WARNING:  tinyint unsigned out of range
+CONTEXT:  referenced column: uint1
+ uint1 
+-------
+ 255
+(1 row)
+
+---- 245
+select cast(-10.5::float4 as uint1);
+ uint1 
+-------
+ 245
+(1 row)
+
+---- f8_cast_ui1
+---- 255
+select cast(9223372036854775808.5::float8 as uint1);
+WARNING:  tinyint unsigned out of range
+CONTEXT:  referenced column: uint1
+ uint1 
+-------
+ 255
+(1 row)
+
+---- 245
+select cast(-10.5::float8 as uint1);
+ uint1 
+-------
+ 245
+(1 row)
+
+---- f4_cast_ui2
+---- 65535
+select cast(65535.5::float4 as uint2);
+WARNING:  smallint unsigned out of range
+CONTEXT:  referenced column: uint2
+ uint2 
+-------
+ 65535
+(1 row)
+
+---- 65525
+select cast(-10.5::float4 as uint2);
+ uint2 
+-------
+ 65525
+(1 row)
+
+---- f8_cast_ui2
+---- 65535
+select cast(65535.5::float8 as uint2);
+WARNING:  smallint unsigned out of range
+CONTEXT:  referenced column: uint2
+ uint2 
+-------
+ 65535
+(1 row)
+
+---- 65525
+select cast(-10.5::float8 as uint2);
+ uint2 
+-------
+ 65525
+(1 row)
+
+---- f4_cast_ui4
+---- 65535
+select cast(4294967295.5::float4 as uint4);
+WARNING:  int unsigned out of range
+CONTEXT:  referenced column: uint4
+   uint4    
+------------
+ 4294967295
+(1 row)
+
+---- 65525
+select cast(-10.5::float4 as uint4);
+   uint4    
+------------
+ 4294967285
+(1 row)
+
+---- f8_cast_ui4
+---- 65535
+select cast(4294967295.5::float8 as uint4);
+WARNING:  int unsigned out of range
+CONTEXT:  referenced column: uint4
+   uint4    
+------------
+ 4294967295
+(1 row)
+
+---- 65525
+select cast(-10.5::float8 as uint4);
+   uint4    
+------------
+ 4294967285
+(1 row)
+
+---- unexpected
+---- f4_cast_ui8
+---- 65535
+select cast(18446744073709551615.5::float4 as uint8);
+WARNING:  bigint unsigned out of range
+CONTEXT:  referenced column: uint8
+        uint8         
+----------------------
+ 18446744073709551615
+(1 row)
+
+---- 65525
+select cast(-10.5::float4 as uint8);
+        uint8         
+----------------------
+ 18446744073709551605
+(1 row)
+
+---- f8_cast_ui8
+---- 65535
+select cast(18446744073709551615.5::float8 as uint8);
+WARNING:  bigint unsigned out of range
+CONTEXT:  referenced column: uint8
+        uint8         
+----------------------
+ 18446744073709551615
+(1 row)
+
+---- 65525
+select cast(-10.5::float8 as uint8);
+        uint8         
+----------------------
+ 18446744073709551605
+(1 row)
+
+select * from test_int1;
+  c1  
+------
+ 127
+ 127
+ 127
+ 127
+ 127
+ 127
+ 127
+ 127
+ 127
+ 127
+ 127
+ 127
+ 127
+ -128
+ 127
+ -128
+ 127
+ -128
+ 127
+ -128
+ 127
+ -128
+ 127
+ -128
+ 127
+ -128
+ 127
+ -128
+(28 rows)
+
+select * from test_int2;
+   c1   
+--------
+  32767
+  32767
+  32767
+  32767
+  32767
+  32767
+  32767
+  32767
+  32767
+  32767
+  32767
+  32767
+  32767
+ -32768
+  32767
+ -32768
+  32767
+ -32768
+  32767
+ -32768
+  32767
+ -32768
+  32767
+ -32768
+(24 rows)
+
+select * from test_int4;
+     c1      
+-------------
+  2147483647
+  2147483647
+  2147483647
+  2147483647
+  2147483647
+  2147483647
+  2147483647
+  2147483647
+  2147483647
+  2147483647
+  2147483647
+ -2147483648
+  2147483647
+ -2147483648
+  2147483647
+ -2147483648
+  2147483647
+ -2147483648
+  2147483647
+ -2147483648
+  2147483647
+ -2147483648
+(22 rows)
+
+select * from test_int8;
+         c1          
+---------------------
+ 9223372036854775807
+          2147483647
+          2147483647
+               32767
+               32767
+ 9223372036854775807
+ 9223372036854775807
+ 9223372036854775807
+ 9223372036854775807
+ 9223372036854775807
+ 9223372036854775807
+ 9223372036854775807
+ 9223372036854775807
+(13 rows)
+
+select * from test_uint1;
+ c1  
+-----
+ 255
+ 255
+ 255
+ 0
+ 255
+ 0
+ 255
+ 0
+ 255
+ 0
+ 255
+ 0
+ 255
+ 0
+ 255
+ 0
+ 255
+ 0
+ 255
+ 0
+ 255
+ 0
+ 255
+ 0
+ 255
+ 0
+ 255
+ 0
+ 255
+ 0
+ 127
+ 0
+ 127
+ 0
+ 255
+ 0
+ 255
+ 0
+(38 rows)
+
+select * from test_uint2;
+  c1   
+-------
+ 65535
+ 65535
+ 32767
+ 0
+ 32767
+ 0
+ 65535
+ 0
+ 65535
+ 0
+ 65535
+ 0
+ 65535
+ 0
+ 65535
+ 0
+ 65535
+ 0
+ 65535
+ 0
+ 65535
+ 0
+ 127
+ 0
+ 127
+ 0
+ 65535
+ 0
+ 65535
+ 0
+ 65535
+ 0
+ 65535
+ 0
+(34 rows)
+
+select * from test_uint4;
+     c1     
+------------
+ 4294967295
+ 4294967295
+ 127
+ 0
+ 127
+ 0
+ 32767
+ 0
+ 32767
+ 0
+ 2147483647
+ 0
+ 2147483647
+ 0
+ 4294967295
+ 0
+ 4294967295
+ 0
+ 4294967295
+ 0
+ 4294967295
+ 0
+ 4294967295
+ 0
+ 4294967295
+ 0
+(26 rows)
+
+select * from test_uint8;
+          c1          
+----------------------
+ 18446744073709551615
+ 18446744073709551615
+ 127
+ 0
+ 127
+ 0
+ 32767
+ 0
+ 32767
+ 0
+ 2147483647
+ 0
+ 2147483647
+ 0
+ 9223372036854775807
+ 0
+ 9223372036854775807
+ 0
+ 18446744073709551615
+ 0
+ 18446744073709551615
+ 0
+ 18446744073709551615
+ 0
+ 18446744073709551615
+ 0
+(26 rows)
+
+---- drop database
+\c contrib_regression
+DROP DATABASE none_strict_warning_test;

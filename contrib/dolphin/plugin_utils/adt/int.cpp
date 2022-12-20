@@ -354,18 +354,13 @@ Datum i4toi2(PG_FUNCTION_ARGS)
     int32 arg1 = PG_GETARG_INT32(0);
 
     // keyword IGNORE has higher priority than sql mode
-    if (fcinfo->can_ignore && (unlikely(arg1 < SHRT_MIN) || unlikely(arg1 > SHRT_MAX))) {
-        ereport(WARNING, (errmsg("smallint out of range")));
-        PG_RETURN_INT16((int16)(arg1 < SHRT_MIN ? SHRT_MIN : SHRT_MAX));
-    }
-    
-    if (SQL_MODE_STRICT()) {
-        if (unlikely(arg1 < SHRT_MIN) || unlikely(arg1 > SHRT_MAX))
+    if (unlikely(arg1 < SHRT_MIN) || unlikely(arg1 > SHRT_MAX)) {
+        if (fcinfo->can_ignore || !SQL_MODE_STRICT()) {
+            ereport(WARNING, (errmsg("smallint out of range")));
+            PG_RETURN_INT16((int16)(arg1 < SHRT_MIN ? SHRT_MIN : SHRT_MAX));
+        } else {
             ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("smallint out of range")));
-    } else if (arg1 > SHRT_MAX) {
-        arg1 = SHRT_MAX;
-    } else if (arg1 < SHRT_MIN) {
-        arg1 = SHRT_MIN;
+        }
     }
 
     PG_RETURN_INT16((int16)arg1);
@@ -1633,21 +1628,13 @@ Datum i2toi1(PG_FUNCTION_ARGS)
     int16 arg1 = PG_GETARG_INT16(0);
 
 #ifdef DOLPHIN
-    if (arg1 < CHAR_MIN || arg1 > CHAR_MAX) {
-        if (fcinfo->can_ignore) {
+    if (unlikely(arg1 < CHAR_MIN) || unlikely(arg1 > CHAR_MAX)) {
+        if (fcinfo->can_ignore || !SQL_MODE_STRICT()) {
             ereport(WARNING, (errmsg("tinyint out of range")));
             PG_RETURN_UINT8((uint8)(arg1 < 0 ? CHAR_MIN : CHAR_MAX));
-        }
-        ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("tinyint out of range")));
-    }
-
-    if (SQL_MODE_STRICT()) {
-        if (unlikely(arg1 < CHAR_MIN) || unlikely(arg1 > CHAR_MAX))
+        } else {
             ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("tinyint out of range")));
-    } else if (arg1 > CHAR_MAX) {
-        arg1 = CHAR_MAX;
-    } else if (arg1 < CHAR_MIN) {
-        arg1 = CHAR_MIN;
+        }
     }
 
     PG_RETURN_INT8((int8)arg1);
@@ -1680,21 +1667,13 @@ Datum i4toi1(PG_FUNCTION_ARGS)
     int32 arg1 = PG_GETARG_INT32(0);
 
 #ifdef DOLPHIN
-    if (arg1 < CHAR_MIN || arg1 > CHAR_MAX) {
-        if (fcinfo->can_ignore) {
+    if (unlikely(arg1 < CHAR_MIN) || unlikely(arg1 > CHAR_MAX)) {
+        if (fcinfo->can_ignore || !SQL_MODE_STRICT()) {
             ereport(WARNING, (errmsg("tinyint out of range")));
             PG_RETURN_INT8((int8)(arg1 < 0 ? CHAR_MIN : CHAR_MAX));
-        }
-        ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("tinyint out of range")));
-    }
-
-    if (SQL_MODE_STRICT()) {
-        if (unlikely(arg1 < CHAR_MIN) || unlikely(arg1 > CHAR_MAX))
+        } else {
             ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("tinyint out of range")));
-    } else if (arg1 > CHAR_MAX) {
-        arg1 = CHAR_MAX;
-    } else if (arg1 < CHAR_MIN) {
-        arg1 = CHAR_MIN;
+        }
     }
 
     PG_RETURN_INT8((int8)arg1);
@@ -1727,21 +1706,13 @@ Datum i8toi1(PG_FUNCTION_ARGS)
     int64 arg1 = PG_GETARG_INT64(0);
 
 #ifdef DOLPHIN
-    if (arg1 < CHAR_MIN || arg1 > CHAR_MAX) {
-        if (fcinfo->can_ignore) {
+    if (unlikely(arg1 < CHAR_MIN) || unlikely(arg1 > CHAR_MAX)) {
+        if (fcinfo->can_ignore || !SQL_MODE_STRICT()) {
             ereport(WARNING, (errmsg("tinyint out of range")));
             PG_RETURN_INT8((int8)(arg1 < 0 ? CHAR_MIN : CHAR_MAX));
-        }
-        ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("tinyint out of range")));
-    }
-
-    if (SQL_MODE_STRICT()) {
-        if (unlikely(arg1 < CHAR_MIN) || unlikely(arg1 > CHAR_MAX))
+        } else {
             ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("tinyint out of range")));
-    } else if (arg1 > CHAR_MAX) {
-        arg1 = CHAR_MAX;
-    } else if (arg1 < CHAR_MIN) {
-        arg1 = CHAR_MIN;
+        }
     }
 
     PG_RETURN_INT8((int8)arg1);
@@ -1790,21 +1761,13 @@ Datum f4toi1(PG_FUNCTION_ARGS)
     if (isnan(arg1))
         ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("smallint out of range")));
 
-    if (arg1 < CHAR_MIN || arg1 > CHAR_MAX) {
-        if (fcinfo->can_ignore) {
+    if (unlikely(arg1 < CHAR_MIN) || unlikely(arg1 > CHAR_MAX)) {
+        if (fcinfo->can_ignore || !SQL_MODE_STRICT()) {
             ereport(WARNING, (errmsg("tinyint out of range")));
             PG_RETURN_INT8((int8)(arg1 < 0 ? CHAR_MIN : CHAR_MAX));
-        }
-        ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("tinyint out of range")));
-    }
-
-    if (SQL_MODE_STRICT()) {
-        if (unlikely(arg1 < CHAR_MIN) || unlikely(arg1 > CHAR_MAX))
+        } else {
             ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("tinyint out of range")));
-    } else if (arg1 > CHAR_MAX) {
-        arg1 = CHAR_MAX;
-    } else if (arg1 < CHAR_MIN) {
-        arg1 = CHAR_MIN;
+        }
     }
 
     PG_RETURN_INT8((int8)round(arg1));
@@ -1831,21 +1794,13 @@ Datum f8toi1(PG_FUNCTION_ARGS)
     if (isnan(arg1))
         ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("smallint out of range")));
 
-    if (arg1 < CHAR_MIN || arg1 > CHAR_MAX) {
-        if (fcinfo->can_ignore) {
+    if (unlikely(arg1 < CHAR_MIN) || unlikely(arg1 > CHAR_MAX)) {
+        if (fcinfo->can_ignore || !SQL_MODE_STRICT()) {
             ereport(WARNING, (errmsg("tinyint out of range")));
             PG_RETURN_INT8((int8)(arg1 < 0 ? CHAR_MIN : CHAR_MAX));
-        }
-        ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("tinyint out of range")));
-    }
-
-    if (SQL_MODE_STRICT()) {
-        if (unlikely(arg1 < CHAR_MIN) || unlikely(arg1 > CHAR_MAX))
+        } else {
             ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("tinyint out of range")));
-    } else if (arg1 > CHAR_MAX) {
-        arg1 = CHAR_MAX;
-    } else if (arg1 < CHAR_MIN) {
-        arg1 = CHAR_MIN;
+        }
     }
 
     PG_RETURN_INT8((int8)round(arg1));
