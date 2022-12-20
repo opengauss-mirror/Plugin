@@ -101,5 +101,16 @@ select default(c3) from t5;
 (1 row)
 
 drop table t5;
+create table a(a int default 10, b int primary key);
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "a_pkey" for table "a"
+insert into a set a=1, b=1;
+update a set a = default(b);
+ERROR:  Invalid default value.
+DETAIL:  the 2th column of a doesn't have a default value
+CONTEXT:  referenced column: a
+select default(b) from a;
+ERROR:  Invalid default value.
+DETAIL:  the 2th column of a doesn't have a default value
+CONTEXT:  referenced column: mode_b_default
 \c postgres
 drop database if exists db_default;

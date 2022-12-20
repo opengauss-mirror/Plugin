@@ -1664,11 +1664,13 @@ static Node* HandleDefaultFunction(ParseState* pstate, FuncCall* fn)
     DefaultFuncType* dft = DefaultFuncTransformColumnRef(pstate, (ColumnRef*)lfirst(list_head(fn->args)));
     reloid = dft->tableOid;
     attnum = dft->colNumber;
+    bool attnotnull;
 
     HeapTuple attTuple = SearchSysCache2(ATTNUM, ObjectIdGetDatum(reloid), Int16GetDatum(attnum));
     if (HeapTupleIsValid(attTuple)) {
         attnum = ((Form_pg_attribute)GETSTRUCT(attTuple))->attnum;
         hasDefault = ((Form_pg_attribute)GETSTRUCT(attTuple))->atthasdef;
+        attnotnull = ((Form_pg_attribute)GETSTRUCT(attTuple))->attnotnull;
     }
     ReleaseSysCache(attTuple);
 
@@ -1736,11 +1738,13 @@ static Node* HandleDefaultFunction(ParseState* pstate, FuncCall* fn)
             }
             systable_endscan(adscan);
             heap_close(adrel, RowExclusiveLock);
-        } else {
+        } else if (attnotnull) {
             ereport(ERROR,
                 (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmodule(MOD_OPT),
                     errmsg("Invalid default value."),
-                        errdetail("the %d cloumn of table doesn't have a default value", attnum)));
+                        errdetail("the %dth column of %s doesn't have a default value", attnum, get_rel_name(reloid))));
+        } else {
+            return (Node*)con;
         }
 
         Expr* expr = (Expr*)stringToNode_skip_extern_fields(TextDatumGetCString(val));

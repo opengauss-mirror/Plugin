@@ -36,5 +36,10 @@ insert into t5 values(1, 2);
 select default(c3) from t5;
 drop table t5;
 
+create table a(a int default 10, b int primary key);
+insert into a set a=1, b=1;
+update a set a = default(b);
+select default(b) from a;
+
 \c postgres
 drop database if exists db_default;
