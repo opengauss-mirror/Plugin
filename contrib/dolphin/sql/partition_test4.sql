@@ -217,6 +217,7 @@ alter table b_range_hash_t05 reorganize partition p1 into
 );
 alter table b_range_hash_t01 reorganize partition m1 into (partition k1 values less than(2) (subpartition k1_1 values less than(2)));
 alter table b_range_hash_t01 reorganize partition m1 into (partition k1 values less than(2) (subpartition k1_1 values (1)));
+alter table b_range_hash_t01 reorganize partition m1 into (partition m11 values (1,2,3));
 drop table if exists b_interval_t1;
 create table b_interval_t1(c1 int primary key,c2 timestamp)
 partition by range(c2)

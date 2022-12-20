@@ -25381,11 +25381,15 @@ static void ATExecReorganizePartition(Relation partTableRel, AlterTableCmd* cmd)
     foreach (cell, destPartDefList) {
         char* tablespacename = NULL;
         if (partTableRel->partMap->type == PART_TYPE_RANGE) {
+            if (!IsA(lfirst(cell), RangePartitionDefState))
+                ereport(ERROR, (errcode(ERRCODE_WRONG_OBJECT_TYPE), errmsg("The dest partdef type must be range")));
             RangePartitionDefState* rangePartDef = (RangePartitionDefState*)lfirst(cell);
             CheckSubPartDef(rangePartDef->subPartitionDefState);
             tablespacename = rangePartDef->tablespacename;
             check_sub_part_tbl_space(partTableRel->rd_rel->relowner, tablespacename, rangePartDef->subPartitionDefState);
         } else if (partTableRel->partMap->type == PART_TYPE_LIST) {
+            if (!IsA(lfirst(cell), ListPartitionDefState))
+                ereport(ERROR, (errcode(ERRCODE_WRONG_OBJECT_TYPE), errmsg("The dest partdef type must be list")));
             ListPartitionDefState* listPartDef = (ListPartitionDefState*)lfirst(cell);
             CheckSubPartDef(listPartDef->subPartitionDefState);
             tablespacename = listPartDef->tablespacename;
