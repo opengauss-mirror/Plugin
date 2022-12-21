@@ -213,6 +213,8 @@ DROP TABLE if exists bit_xor_raw;
 
 create table test_time (t time);
 insert into test_time values('-00:00:01');
+insert into test_time values('-01:00:00');
+insert into test_time values('-01:00:01');
 select bit_xor(t) from test_time;
 insert into test_time values('12:59:59.999');
 insert into test_time values('00:00:01');
