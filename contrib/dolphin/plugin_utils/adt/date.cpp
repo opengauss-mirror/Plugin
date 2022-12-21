@@ -1434,6 +1434,8 @@ Datum time_in(PG_FUNCTION_ARGS)
     char* time_fmt = NULL;
 #ifdef DOLPHIN
     int timeSign = 1;
+    /* tt2 stores openGauss's parsing result while tt stores M*'s parsing result */
+    struct pg_tm tt2;
 #endif
     /*
      * this case is used for time format is specified.
@@ -1455,8 +1457,6 @@ Datum time_in(PG_FUNCTION_ARGS)
         cstring_to_time(str, tm, fsec, timeSign, tm_type, warnings);
 
         if (warnings) {
-            /* tt2 stores openGauss's parsing result while tt stores M*'s parsing result */
-            struct pg_tm tt2;
             tm = &tt2;
             int D = 0;
             bool hasD = false;
