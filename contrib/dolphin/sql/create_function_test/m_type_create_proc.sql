@@ -1,6 +1,5 @@
-drop database if exists m_create_proc_type;
-create database m_create_proc_type dbcompatibility 'B';
-\c m_create_proc_type
+create schema m_create_proc_type;
+set current_schema to 'm_create_proc_type';
 
 --test create procedure 
 delimiter //
@@ -275,7 +274,6 @@ call doempty();
 
 
 
-\c postgres
-
-drop database m_create_proc_type;
+drop schema m_create_proc_type cascade;
+reset current_schema;
 

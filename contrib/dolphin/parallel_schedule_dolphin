@@ -4,36 +4,27 @@ test: keyword_ignore_test/ignore_no_matched_partition keyword_ignore_test/ignore
 
 test: string_func_test/db_b_ascii_test string_func_test/db_b_left_right_test string_func_test/db_b_quote_test string_func_test/db_b_string_length_test string_func_test/db_b_substr_test string_func_test/db_b_trim_test string_func_test/db_b_insert_test
 
-test: ast b_compatibility_time_type db_b_new_gram_test
-
-test: test_condition vec_engine
-
-test: group_concat_test
+test: ast b_compatibility_time_type db_b_new_gram_test group_concat_test test_condition vec_engine
 
 test: db_b_parser1 db_b_parser2 db_b_parser3 db_b_parser4 second_microsecond
 
-test: db_b_plpgsql_test default_guc describe explain_desc
+test: db_b_plpgsql_test default_guc describe explain_desc kill set_password network
 
 test: empty_value_list empty_value_lists empty_value_support_value
 
 test: greatest_least join_without_on mysqlmode_fullgroup mysqlmode_strict mysqlmode_strict2 none_strict_warning test_alter_table
-
-test: kill set_password network
 
 # must be single test group, cause other connection will affect the result
 test: test_shows
 
 test: test_shows_1 test_shows_2
 
-test: test_shows_3 test_shows_4
+# must be single test group, cause other connection will affect the result
+test: test_shows_3
 
-test: test_shows_5
+test: test_shows_4 test_shows_5
 
-test: test_optimize
-
-test: test_set_charset
-
-test: nvarchar regexp upsert zerofill
+test: nvarchar regexp upsert zerofill test_set_charset test_optimize
 
 test: test_binary test_blob test_datatype test_fixed test_mysql_enum
 
@@ -42,10 +33,6 @@ test: test_char_tail_blank test_char_tail_blank_2 test_char_tail_blank_3
 test: builtin_funcs/bin builtin_funcs/char builtin_funcs/char_length builtin_funcs/character_length builtin_funcs/conv builtin_funcs/convert builtin_funcs/crc32 builtin_funcs/db_b_format
 
 test: builtin_funcs/db_b_hex builtin_funcs/db_b_if builtin_funcs/elt builtin_funcs/field builtin_funcs/find_in_set builtin_funcs/soundex builtin_funcs/space builtin_funcs/make_set builtin_funcs/between builtin_funcs/not_between
-
-test: revoke
-
-test: option
 
 test: uint_agg uint_and uint_cast uint_cast2 uint_div uint_mi uint_mod uint_mod2 uint_mul uint_numeric uint_operator uint_or uint_partition uint_pl uint_xor 
 
@@ -77,23 +64,13 @@ test: create_function_test/m_type_create_proc
 
 test: create_function_test/deterministic create_function_test/language_sql create_function_test/sql_options create_function_test/sql_security create_function_test/call_function create_function_test/commentsharp   create_function_test/single_line_proc
 
-test: b_do_statment
+test: b_do_statment revoke option test_table_index test_float_double_real_double_precision_MD single_line_trigger prefixkey_index
 
 test: alter_function_test/alter_function  alter_function_test/alter_procedure alter_function_test/language_sql replace_test/replace
 
-test: network2 use_dbname show_create view_definer_test insert_set show_create_database show_variables
+test: network2 use_dbname show_create view_definer_test insert_set show_create_database show_variables b_auto_increment
 
 test: partition_test1 partition_test2 partition_test3 partition_test4 partition_maxvalue_test
-
-test: test_table_index
-
-test: test_float_double_real_double_precision_MD
-
-test: single_line_trigger
-
-test: db_b_date_time_functions
-
-test: prefixkey_index b_auto_increment
 
 test: builtin_funcs/b_compatibility_time_funcs builtin_funcs/b_compatibility_time_funcs2 builtin_funcs/b_compatibility_time_funcs3
 
@@ -133,26 +110,15 @@ test: test_mysql_operator test_op_xor_unsignedint test_op_blob test_op_xor_boola
 
 test: json_array json_object json_quote json_contains json_contains_path json_extract json_unquote  json_keys json_search json_array_append
 
-test: db_b_date_time_functions2
-test: show b_comments
+test: show b_comments ansi_quotes_start
 
-test: ansi_quotes_start
+test: pl_debugger_server pl_debugger_client load load2 flush ansi_quotes_test
 
-test: pl_debugger_server pl_debugger_client
-
-test: ansi_quotes_test
-
-test: db_b_date_time_functions3
+test: db_b_date_time_functions db_b_date_time_functions2 db_b_date_time_functions3 db_b_date_time_functions4
 
 test: json_array_insert json_insert json_merge_patch  json_merge_preserve json_remove json_replace json_set json_depth
 
-test: flush
-
 test: oct string_func_test/db_b_from_base64_test string_func_test/test_substring_index string_func_test/db_b_ord_test
-
-test: db_b_date_time_functions4
-
-test: load load2
 
 test: like_default_test conv_cast_test read_only_guc_test
 
@@ -160,8 +126,6 @@ test: string_func_test/db_b_to_base64_test string_func_test/db_b_unhex_test bit_
 
 test: test_schema connection_id test_system_user test_bit_xor
 
-test: builtin_funcs/cast any_value_test
-
-test: default_function get_b_database
+test: builtin_funcs/cast any_value_test default_function get_b_database
 
 test: json_type json_pretty json_valid json_length json_objectagg json_arrayagg json_operator json_storage_size

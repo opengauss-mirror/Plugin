@@ -1,3 +1,7 @@
+drop database if exists db_b_trim_test;
+NOTICE:  database "db_b_trim_test" does not exist, skipping
+create database db_b_trim_test dbcompatibility 'A';
+\c db_b_trim_test
 SELECT TRIM('  bar   ');
  btrim 
 -------
@@ -40,10 +44,10 @@ SELECT TRIM(TRAILING 'xyz' FROM 'xyzxbarxxyz');
  xyzxbar
 (1 row)
 
-drop database if exists db_b_trim_test;
-NOTICE:  database "db_b_trim_test" does not exist, skipping
-create database db_b_trim_test dbcompatibility 'B';
-\c db_b_trim_test
+\c contrib_regression
+drop database db_b_trim_test;
+create schema db_b_trim_test;
+set current_schema to 'db_b_trim_test';
 SELECT TRIM('  bar   ');
  trim 
 ------
@@ -141,5 +145,5 @@ SELECT TRIM(TRAILING '   X  '::bytea);
     X
 (1 row)
 
-\c postgres
-drop database db_b_trim_test;
+drop schema db_b_trim_test cascade;
+reset current_schema;

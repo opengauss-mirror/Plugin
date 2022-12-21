@@ -1,7 +1,5 @@
-drop database if exists db_b_plpgsql_test;
-NOTICE:  database "db_b_plpgsql_test" does not exist, skipping
-create database db_b_plpgsql_test dbcompatibility 'b';
-\c db_b_plpgsql_test
+create schema db_b_plpgsql_test;
+set current_schema to 'db_b_plpgsql_test';
 create table tb_b_grammar_0038(a text(10)) engine = 表1;
 create or replace procedure proc_01()
 as
@@ -47,5 +45,11 @@ SELECT * from tb_b_grammar_0038;
  tom
 (1 row)
 
-\c postgres
-drop database if exists db_b_plpgsql_test;
+drop schema db_b_plpgsql_test cascade;
+NOTICE:  drop cascades to 5 other objects
+DETAIL:  drop cascades to table tb_b_grammar_0038
+drop cascades to function proc_01()
+drop cascades to table j1_tbl
+drop cascades to table j2_tbl
+drop cascades to function peoc_165()
+reset current_schema;

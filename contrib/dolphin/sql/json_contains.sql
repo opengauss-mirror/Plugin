@@ -1,6 +1,5 @@
-drop database if exists test_json_contains;
-create database test_json_contains dbcompatibility 'b';
-\c test_json_contains
+create schema test_json_contains;
+set current_schema to 'test_json_contains';
 
 select json_contains('1',null);
 select json_contains(null,'1');
@@ -87,5 +86,5 @@ insert into json_contains_test values('[1,2,3,4]','[2,4]','$');
 select *, json_contains(target, candidate, path) from json_contains_test;
 drop table json_contains_test;
 
-\c postgres;
-drop database if exists test_json_contains;
+drop schema test_json_contains cascade;
+reset current_schema;

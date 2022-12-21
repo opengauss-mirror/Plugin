@@ -1,7 +1,5 @@
-drop database if exists export_set;
-NOTICE:  database "export_set" does not exist, skipping
-create database export_set dbcompatibility 'b';
-\c export_set
+create schema export_set;
+set current_schema to 'export_set';
 -- 测试缺省值
 SELECT EXPORT_SET(5,'Y','N',',',5);
  export_set 
@@ -122,5 +120,5 @@ SELECT EXPORT_SET(5,'Y','N',',,,,,,,,,,,,',5);
  Y,,,,,,,,,,,,N,,,,,,,,,,,,Y,,,,,,,,,,,,N,,,,,,,,,,,,N
 (1 row)
 
-\c postgres
-drop database if exists export_set;
+drop schema export_set cascade;
+reset current_schema;

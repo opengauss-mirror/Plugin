@@ -1,6 +1,5 @@
-drop database if exists default_guc;
-create database default_guc dbcompatibility 'b';
-\c default_guc
+create schema default_guc;
+set current_schema to 'default_guc';
 
 show behavior_compat_options;
 select 0.123;
@@ -13,5 +12,5 @@ select 0.123;
 select md5(0.123);
 select md5('0.123');
 
-\c postgres
-drop database if exists default_guc;
+drop schema default_guc cascade;
+reset current_schema;

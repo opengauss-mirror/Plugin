@@ -1,6 +1,5 @@
-drop database if exists export_set;
-create database export_set dbcompatibility 'b';
-\c export_set
+create schema export_set;
+set current_schema to 'export_set';
 
 -- 测试缺省值
 SELECT EXPORT_SET(5,'Y','N',',',5);
@@ -33,5 +32,5 @@ SELECT EXPORT_SET(5,'YYYYYYYYYYYYYYYY','N',',',5);
 SELECT EXPORT_SET(5,'Y','NNNNNNNNNNNNNNN',',',5);
 SELECT EXPORT_SET(5,'Y','N',',,,,,,,,,,,,',5);
 
-\c postgres
-drop database if exists export_set;
+drop schema export_set cascade;
+reset current_schema;

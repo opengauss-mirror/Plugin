@@ -1,6 +1,5 @@
-drop database if exists db_flush;
-create database db_flush dbcompatibility 'b';
-\c db_flush
+create schema db_flush;
+set current_schema to 'db_flush';
 FLUSH BINARY LOGS;
-\c postgres
-drop database if exists db_flush;
+drop schema db_flush cascade;
+reset current_schema;

@@ -1,6 +1,6 @@
 -- test for insert/update ignore.
-create database sql_ignore_not_null_test dbcompatibility 'B';
-\c sql_ignore_not_null_test;
+create schema sql_ignore_not_null_test;
+set current_schema to 'sql_ignore_not_null_test';
 drop table if exists t_ignore;
 create table t_ignore(col1 int, col2 int not null, col3 varchar not null);
 
@@ -547,5 +547,5 @@ update ignore t_ignore set num = null where num = 1;
 select * from t_ignore;
 
 -- restore context
-\c postgres
-drop database if exists sql_ignore_not_null_test;
+drop schema sql_ignore_not_null_test cascade;
+reset current_schema;

@@ -1,6 +1,5 @@
-drop database if exists test_json_quote;
-create database test_json_quote dbcompatibility'B';
-\c test_json_quote
+create schema test_json_quote;
+set current_schema to 'test_json_quote';
 
 select json_quote(E'a\tb');
 select json_quote('a    b');
@@ -21,5 +20,5 @@ insert into student (name) value(json_quote('lc'));
 select name from student;
 drop table student;
 
-\c postgres
-drop database test_json_quote;
+drop schema test_json_quote cascade;
+reset current_schema;

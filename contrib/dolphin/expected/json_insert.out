@@ -1,7 +1,5 @@
-drop database if exists test_json_insert;
-NOTICE:  database "test_json_insert" does not exist, skipping
-create database test_json_insert dbcompatibility'B';
-\c test_json_insert
+create schema test_json_insert;
+set current_schema to 'test_json_insert';
 -- test for basic functionality of json_replace
 select JSON_INSERT('{"a": 43}', '$.b', 55);
     json_insert     
@@ -206,5 +204,5 @@ select * from test;
  {"a": 43, "b": [{"c": true}, "Test"]}
 (5 rows)
 
-\c postgres
-drop database if exists test_json_insert;
+drop schema test_json_insert cascade;
+reset current_schema;

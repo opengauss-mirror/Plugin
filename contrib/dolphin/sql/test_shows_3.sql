@@ -1,6 +1,5 @@
-drop database if exists db_show_3;
-create database db_show_3 dbcompatibility 'b';
-\c db_show_3
+create schema db_show_3;
+set current_schema to 'db_show_3';
 show databases;
 create schema aa1;
 create schema aa2;
@@ -18,7 +17,8 @@ set role u1 password 'abc@1234';
 show databases;
 set role u2 password 'abc@1234';
 show databases;
-\c postgres
-drop database if exists db_show_3;
+\c contrib_regression
 drop user u1;
 drop user u2;
+drop schema db_show_3 cascade;
+reset current_schema;

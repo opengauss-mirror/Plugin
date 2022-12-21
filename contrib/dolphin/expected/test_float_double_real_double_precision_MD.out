@@ -1,10 +1,8 @@
-drop database if exists float_double_real_double_precision_MD;
-NOTICE:  database "float_double_real_double_precision_md" does not exist, skipping
-create database float_double_real_double_precision_MD dbcompatibility 'b';
-\c float_double_real_double_precision_MD;
+create schema double_precision;
+set current_schema to 'double_precision';
 create table test(a float(20, 2), b double(20, 2), c real(20, 2), d double precision(20, 2));
 \d test;
-        Table "public.test"
+   Table "double_precision.test"
  Column |     Type      | Modifiers 
 --------+---------------+-----------
  a      | numeric(20,2) | 
@@ -118,8 +116,15 @@ LINE 1: create table test3(a double precision(3.6, 1.6));
                                               ^
 create table test3(a double(3.6, 1.6));
 \d test3;
-       Table "public.test3"
+  Table "double_precision.test3"
  Column |     Type     | Modifiers 
 --------+--------------+-----------
  a      | numeric(4,2) | 
 
+drop schema double_precision cascade;
+NOTICE:  drop cascades to 4 other objects
+DETAIL:  drop cascades to table test
+drop cascades to table test1
+drop cascades to table test2
+drop cascades to table test3
+reset current_schema;

@@ -34,6 +34,13 @@ Gitee 是 OSCHINA 推出的基于 Git 的代码托管平台（同时支持 SVN�
 2.  修改如涉及文档，需要同步在docs仓提交文档修改，插件相关文档入口： https://gitee.com/opengauss/docs/tree/master/content/zh/docs/Developerguide/dolphin-Extension.md 。注意添加SQL语法时，需要增加必要的示例。
 3.  新增/修改的代码需要使用宏 DOLPHIN 进行控制，方便后续回合openGauss-server仓代码时，区分哪些是插件修改的代码，哪些是内核修改的代码。修改的代码通过宏的IF/ELSE分支保留原始代码。主要控制 ```.h/.cpp``` 文件， ```.y``` 文件不太好使用宏控制，可以不处理。
 
+### check用例编写规范
+1. check用例默认使用的数据库为contrib_regression数据库，B兼容类型。编写用例时无需自己手动创建B类型数据库。
+2. 建议通过schema的方式隔离不同用例间的结果影响。可参考现有用例的写法。
+3. 单个用例执行时间不宜太长，建议不超过10s，超过的应当考虑优化用例或进行拆分。
+4. 非必要不新增测试组，一个测试组可允许5~10个用例一起并行执行。
+5. 对于SELECT语句强烈建议增加order by子句，保证SELECT语句查询结果稳定。
+
 #### 特技
 
 1.  使用 Readme\_XXX.md 来支持不同的语言，例如 Readme\_en.md, Readme\_zh.md

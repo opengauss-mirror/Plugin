@@ -1,7 +1,5 @@
-drop database if exists greatest_least;
-NOTICE:  database "greatest_least" does not exist, skipping
-create database greatest_least dbcompatibility 'b';
-\c greatest_least
+create schema greatest_least;
+set current_schema to 'greatest_least';
 --return null if input include null
 select GREATEST(null,1,2), GREATEST(null,1,2) is null;
  greatest | ?column? 
@@ -28,5 +26,5 @@ select LEAST(1,2);
      1
 (1 row)
 
-\c postgres
-drop database if exists greatest_least;
+drop schema greatest_least cascade;
+reset current_schema;

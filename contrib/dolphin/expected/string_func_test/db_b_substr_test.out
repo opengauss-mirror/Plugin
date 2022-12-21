@@ -1,3 +1,7 @@
+drop database if exists db_b_substr_test;
+NOTICE:  database "db_b_substr_test" does not exist, skipping
+create database db_b_substr_test dbcompatibility 'A';
+\c db_b_substr_test
 DROP TABLE IF EXISTS template_string;
 NOTICE:  table "template_string" does not exist, skipping
 CREATE TABLE template_string(a TEXT, b BYTEA);
@@ -55,10 +59,10 @@ FROM template_string;
 (1 row)
 
 DROP TABLE IF EXISTS template_string;
-drop database if exists db_b_substr_test;
-NOTICE:  database "db_b_substr_test" does not exist, skipping
-create database db_b_substr_test dbcompatibility 'B';
-\c db_b_substr_test
+\c contrib_regression
+drop database db_b_substr_test;
+create schema db_b_substr_test;
+set current_schema to 'db_b_substr_test';
 set bytea_output to escape;
 DROP TABLE IF EXISTS template_string;
 NOTICE:  table "template_string" does not exist, skipping
@@ -567,5 +571,9 @@ select c1, c2, substr(c1 for c2) from test_row order by c1;
  abcdefg | -2 | 
 (3 rows)
 
-\c postgres
-drop database db_b_substr_test;
+drop schema db_b_substr_test cascade;
+NOTICE:  drop cascades to 3 other objects
+DETAIL:  drop cascades to table template_string
+drop cascades to table test_column
+drop cascades to table test_row
+reset current_schema;

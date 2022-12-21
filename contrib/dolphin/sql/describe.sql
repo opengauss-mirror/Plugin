@@ -1,6 +1,5 @@
-drop database if exists db_describe;
-create database db_describe dbcompatibility 'b';
-\c db_describe
+create schema db_describe;
+set current_schema to 'db_describe';
 CREATE TABLE test2
 (
 id int PRIMARY KEY
@@ -51,9 +50,9 @@ primary key (a)
 );
 desc test;
 describe test;
-desc public.test;
+desc db_describe.test;
 desc sc.test;
 desc public.test4;
 desc sc.test4;
-\c postgres
-drop database if exists db_describe;
+drop schema db_describe cascade;
+reset current_schema;

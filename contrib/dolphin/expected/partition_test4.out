@@ -1,7 +1,5 @@
-drop DATABASE if exists partition_test4;
-NOTICE:  database "partition_test4" does not exist, skipping
-CREATE DATABASE partition_test4 dbcompatibility 'B';
-\c partition_test4;
+create schema partition_test4;
+set current_schema to 'partition_test4';
 CREATE TABLE test_range_subpart
 (
     a INT4 PRIMARY KEY,
@@ -70,7 +68,7 @@ alter table test_range_subpart reorganize partition p1,p2 into (partition m1 val
 select pg_get_tabledef('test_range_subpart');
                                                     pg_get_tabledef                                                     
 ------------------------------------------------------------------------------------------------------------------------
- SET search_path = public;                                                                                             +
+ SET search_path = partition_test4;                                                                                    +
  CREATE TABLE test_range_subpart (                                                                                     +
      a integer NOT NULL,                                                                                               +
      b integer                                                                                                         +
@@ -142,7 +140,7 @@ alter table test_range_part reorganize partition p1,p2 into (partition m1 values
 select pg_get_tabledef('test_range_part');
                                         pg_get_tabledef                                        
 -----------------------------------------------------------------------------------------------
- SET search_path = public;                                                                    +
+ SET search_path = partition_test4;                                                           +
  CREATE TABLE test_range_part (                                                               +
      a integer NOT NULL,                                                                      +
      b integer                                                                                +
@@ -201,7 +199,7 @@ alter table test_list_part reorganize partition p1,p2 into (partition m1 values(
 select pg_get_tabledef('test_list_part');
                                        pg_get_tabledef                                       
 ---------------------------------------------------------------------------------------------
- SET search_path = public;                                                                  +
+ SET search_path = partition_test4;                                                         +
  CREATE TABLE test_list_part (                                                              +
      a integer NOT NULL,                                                                    +
      b integer                                                                              +
@@ -258,7 +256,7 @@ alter table test_list_subpart reorganize partition p1,p2 into (partition m1 valu
 select pg_get_tabledef('test_list_subpart');
                                                    pg_get_tabledef                                                    
 ----------------------------------------------------------------------------------------------------------------------
- SET search_path = public;                                                                                           +
+ SET search_path = partition_test4;                                                                                  +
  CREATE TABLE test_list_subpart (                                                                                    +
      a integer NOT NULL,                                                                                             +
      b integer                                                                                                       +
@@ -349,7 +347,7 @@ alter table test_part_ustore reorganize partition p1,p2 into (partition m1 value
 select pg_get_tabledef('test_part_ustore');
                                                        pg_get_tabledef                                                       
 -----------------------------------------------------------------------------------------------------------------------------
- SET search_path = public;                                                                                                  +
+ SET search_path = partition_test4;                                                                                         +
  CREATE TABLE test_part_ustore (                                                                                            +
      a integer NOT NULL,                                                                                                    +
      b integer                                                                                                              +
@@ -420,7 +418,7 @@ alter table test_part_segment reorganize partition p1,p2 into (partition m1 valu
 select pg_get_tabledef('test_part_segment');
                                           pg_get_tabledef                                          
 ---------------------------------------------------------------------------------------------------
- SET search_path = public;                                                                        +
+ SET search_path = partition_test4;                                                               +
  CREATE TABLE test_part_segment (                                                                 +
      a integer NOT NULL,                                                                          +
      b integer                                                                                    +
@@ -497,7 +495,7 @@ insert into b_range_hash_t01 values(1,2,3),(51,3,4);
 select pg_get_tabledef('b_range_hash_t01');
                                                    pg_get_tabledef                                                   
 ---------------------------------------------------------------------------------------------------------------------
- SET search_path = public;                                                                                          +
+ SET search_path = partition_test4;                                                                                 +
  CREATE TABLE b_range_hash_t01 (                                                                                    +
      c1 integer NOT NULL,                                                                                           +
      c2 integer,                                                                                                    +
@@ -545,7 +543,7 @@ alter table b_range_hash_t01 reorganize partition p1 into (partition m1 values l
 select pg_get_tabledef('b_range_hash_t01');
                                                    pg_get_tabledef                                                   
 ---------------------------------------------------------------------------------------------------------------------
- SET search_path = public;                                                                                          +
+ SET search_path = partition_test4;                                                                                 +
  CREATE TABLE b_range_hash_t01 (                                                                                    +
      c1 integer NOT NULL,                                                                                           +
      c2 integer,                                                                                                    +
@@ -717,5 +715,19 @@ partition p2 values less than(300),
 partition p3 values less than (maxvalue)
 );
 NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "b_range_mt2_pkey" for table "b_range_mt2"
-\c postgres;
-drop DATABASE if exists partition_test4;
+drop schema partition_test4 cascade;
+NOTICE:  drop cascades to 13 other objects
+DETAIL:  drop cascades to table test_range_subpart
+drop cascades to table test_range_part
+drop cascades to table test_list_part
+drop cascades to table test_list_subpart
+drop cascades to table test_no_part
+drop cascades to table test_part_ustore
+drop cascades to table test_part_segment
+drop cascades to table b_range_hash_t01
+drop cascades to table b_range_hash_t05
+drop cascades to table b_interval_t1
+drop cascades to table b_range_range_t01
+drop cascades to table b_range_mt1
+drop cascades to table b_range_mt2
+reset current_schema;

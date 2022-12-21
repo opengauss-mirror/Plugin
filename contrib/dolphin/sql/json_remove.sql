@@ -1,6 +1,5 @@
-drop database if exists test_json_remove;
-create database test_json_remove dbcompatibility'B';
-\c test_json_remove
+create schema test_json_remove;
+set current_schema to 'test_json_remove';
 
 SELECT JSON_REMOVE('[0, 1, 2, [3, 4]]', '$[0]', '$[2]');
 SELECT JSON_REMOVE('{"x": 1, "y": 2}', '$.x');
@@ -30,5 +29,5 @@ insert into info1 values ('{"x": {"z":2,"a":3}, "y": 2}', '$.x.z');
 insert into tab_json1 SELECT JSON_REMOVE(name,address) from info1;
 select * from tab_json1;
 
-\c postgres
-drop database if exists test_json_remove;
+drop schema test_json_remove cascade;
+reset current_schema;

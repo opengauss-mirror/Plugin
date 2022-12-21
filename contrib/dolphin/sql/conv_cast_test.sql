@@ -1,8 +1,5 @@
--- b compatibility case
-drop database if exists conv_cast_test;
--- create database conv_cast_test dbcompatibility 'b';
-create database conv_cast_test with DBCOMPATIBILITY = 'B';
-\c conv_cast_test
+create schema conv_cast_test;
+set current_schema to 'conv_cast_test';
 
 select conv(-211111111111111111111111111111111111111111111111111111111177777,10,8);
 select conv(-366666666666666666666666666666666666666, 10, 8);
@@ -73,5 +70,5 @@ select cast(b'111111111111111111111111111111111111111111111111111111111111111' a
 select cast(b'11111111111111111111111111111111111111111111111111111111111111111' as unsigned);
 select cast(b'11111111111111111111111111111111111111111111111111111111111111111' as signed);
 
-\c postgres
-drop database conv_cast_test;
+drop schema conv_cast_test cascade;
+reset current_schema;

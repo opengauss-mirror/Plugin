@@ -1,7 +1,5 @@
-drop database if exists test_enum;
-NOTICE:  database "test_enum" does not exist, skipping
-CREATE DATABASE test_enum with dbcompatibility='B';
-\c test_enum
+create schema test_enum;
+set current_schema to 'test_enum';
 -- create extension dolphin;
 show sql_compatibility;
  sql_compatibility 
@@ -113,10 +111,10 @@ CREATE TABLE testtttttttttttttttttttttttttttttttttt (
     age INT,
     myjobbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb enum('x','y')
 );
-SELECT * FROM pg_type WHERE typname like '%anonymous_enum%';
-                             typname                             | typnamespace | typowner | typlen | typbyval | typtype | typcategory | typispreferred | typisdefined | typdelim | typrelid | typelem | typarray | typinput | typoutput | typreceive |  typsend  | typmodin | typmodout | typanalyze | typalign | typstorage | typnotnull | typbasetype | typtypmod | typndims | typcollation | typdefaultbin | typdefault | typacl 
------------------------------------------------------------------+--------------+----------+--------+----------+---------+-------------+----------------+--------------+----------+----------+---------+----------+----------+-----------+------------+-----------+----------+-----------+------------+----------+------------+------------+-------------+-----------+----------+--------------+---------------+------------+--------
- testtttttttttttttttt_myjobbbbbbbbbbbbbbbb_2200_anonymous_enum_1 |         2200 |       10 |      4 | t        | e       | E           | f              | t            | ,        |        0 |       0 |        0 | enum_in  | enum_out  | enum_recv  | enum_send | -        | -         | -          | i        | p          | f          |           0 |        -1 |        0 |            0 |               |            | 
+SELECT count(*) FROM pg_type WHERE typname like 'testtttttttttttttttt_myjobbbbbbbbbbbbbbb%_anonymous_enum_1';
+ count 
+-------
+     1
 (1 row)
 
 drop table testtttttttttttttttttttttttttttttttttt;
@@ -240,5 +238,6 @@ W_COUNTRY VARCHAR(20) ,
 W_GMT_OFFSET DECIMAL(5,2)
 );
 ERROR:  anoymous enum type does not support foreign key
-\c postgres
-DROP DATABASE test_enum;
+drop schema test_enum cascade;
+--?.*
+reset current_schema;

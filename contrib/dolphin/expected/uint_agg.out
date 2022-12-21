@@ -1,7 +1,5 @@
-drop database if exists uint_agg;
-NOTICE:  database "uint_agg" does not exist, skipping
-create database uint_agg dbcompatibility 'b';
-\c uint_agg
+create schema uint_agg;
+set current_schema to 'uint_agg';
 --uint1
 create table u1(a uint1, b int2);
 insert into u1 values(null, null),(255, 255),(0, 0),(255, 255),(null, null);
@@ -411,7 +409,7 @@ explain(costs off, verbose) select avg(a), avg(b) from smp_test;
          Output: (avg(a)), (avg(b))
          ->  Aggregate
                Output: avg(a), avg(b)
-               ->  Seq Scan on public.smp_test
+               ->  Seq Scan on uint_agg.smp_test
                      Output: a, b
 (8 rows)
 
@@ -424,7 +422,7 @@ explain(costs off, verbose) select bit_and(a), bit_and(b) from smp_test;
          Output: (bit_and(a)), (bit_and(b))
          ->  Aggregate
                Output: bit_and(a), bit_and(b)
-               ->  Seq Scan on public.smp_test
+               ->  Seq Scan on uint_agg.smp_test
                      Output: a, b
 (8 rows)
 
@@ -437,20 +435,20 @@ explain(costs off, verbose) select bit_or(a), bit_or(b) from smp_test;
          Output: (bit_or(a)), (bit_or(b))
          ->  Aggregate
                Output: bit_or(a), bit_or(b)
-               ->  Seq Scan on public.smp_test
+               ->  Seq Scan on uint_agg.smp_test
                      Output: a, b
 (8 rows)
 
 explain(costs off, verbose) select count(a), count(b) from smp_test;
-                   QUERY PLAN                   
-------------------------------------------------
+                   QUERY PLAN                    
+-------------------------------------------------
  Aggregate
    Output: count((count(a))), count((count(b)))
    ->  Streaming(type: LOCAL GATHER dop: 1/2)
          Output: (count(a)), (count(b))
          ->  Aggregate
                Output: count(a), count(b)
-               ->  Seq Scan on public.smp_test
+               ->  Seq Scan on uint_agg.smp_test
                      Output: a, b
 (8 rows)
 
@@ -459,33 +457,33 @@ explain(costs off, verbose) select count(distinct a), count(distinct b) from smp
 ------------------------------------------------
  Aggregate
    Output: count(DISTINCT a), count(DISTINCT b)
-   ->  Seq Scan on public.smp_test
+   ->  Seq Scan on uint_agg.smp_test
          Output: a, b
 (4 rows)
 
 explain(costs off, verbose) select max(a), max(b) from smp_test;
-                  QUERY PLAN                   
------------------------------------------------
+                   QUERY PLAN                    
+-------------------------------------------------
  Aggregate
    Output: max((max(a))), max((max(b)))
    ->  Streaming(type: LOCAL GATHER dop: 1/2)
          Output: (max(a)), (max(b))
          ->  Aggregate
                Output: max(a), max(b)
-               ->  Seq Scan on public.smp_test
+               ->  Seq Scan on uint_agg.smp_test
                      Output: a, b
 (8 rows)
 
 explain(costs off, verbose) select min(a), min(b) from smp_test;
-                  QUERY PLAN                   
------------------------------------------------
+                   QUERY PLAN                    
+-------------------------------------------------
  Aggregate
    Output: min((min(a))), min((min(b)))
    ->  Streaming(type: LOCAL GATHER dop: 1/2)
          Output: (min(a)), (min(b))
          ->  Aggregate
                Output: min(a), min(b)
-               ->  Seq Scan on public.smp_test
+               ->  Seq Scan on uint_agg.smp_test
                      Output: a, b
 (8 rows)
 
@@ -498,7 +496,7 @@ explain(costs off, verbose) select stddev(a), stddev(b) from smp_test;
          Output: (stddev(a)), (stddev(b))
          ->  Aggregate
                Output: stddev(a), stddev(b)
-               ->  Seq Scan on public.smp_test
+               ->  Seq Scan on uint_agg.smp_test
                      Output: a, b
 (8 rows)
 
@@ -511,7 +509,7 @@ explain(costs off, verbose) select stddev_pop(a), stddev_pop(b) from smp_test;
          Output: (stddev_pop(a)), (stddev_pop(b))
          ->  Aggregate
                Output: stddev_pop(a), stddev_pop(b)
-               ->  Seq Scan on public.smp_test
+               ->  Seq Scan on uint_agg.smp_test
                      Output: a, b
 (8 rows)
 
@@ -524,7 +522,7 @@ explain(costs off, verbose) select stddev_samp(a), stddev_samp(b) from smp_test;
          Output: (stddev_samp(a)), (stddev_samp(b))
          ->  Aggregate
                Output: stddev_samp(a), stddev_samp(b)
-               ->  Seq Scan on public.smp_test
+               ->  Seq Scan on uint_agg.smp_test
                      Output: a, b
 (8 rows)
 
@@ -537,7 +535,7 @@ explain(costs off, verbose) select sum(a), sum(b) from smp_test;
          Output: (sum(a)), (sum(b))
          ->  Aggregate
                Output: sum(a), sum(b)
-               ->  Seq Scan on public.smp_test
+               ->  Seq Scan on uint_agg.smp_test
                      Output: a, b
 (8 rows)
 
@@ -550,7 +548,7 @@ explain(costs off, verbose) select var_pop(a), var_pop(b) from smp_test;
          Output: (var_pop(a)), (var_pop(b))
          ->  Aggregate
                Output: var_pop(a), var_pop(b)
-               ->  Seq Scan on public.smp_test
+               ->  Seq Scan on uint_agg.smp_test
                      Output: a, b
 (8 rows)
 
@@ -563,7 +561,7 @@ explain(costs off, verbose) select var_samp(a), var_samp(b) from smp_test;
          Output: (var_samp(a)), (var_samp(b))
          ->  Aggregate
                Output: var_samp(a), var_samp(b)
-               ->  Seq Scan on public.smp_test
+               ->  Seq Scan on uint_agg.smp_test
                      Output: a, b
 (8 rows)
 
@@ -576,7 +574,7 @@ explain(costs off, verbose) select variance(a), variance(b) from smp_test;
          Output: (variance(a)), (variance(b))
          ->  Aggregate
                Output: variance(a), variance(b)
-               ->  Seq Scan on public.smp_test
+               ->  Seq Scan on uint_agg.smp_test
                      Output: a, b
 (8 rows)
 
@@ -585,7 +583,7 @@ explain(costs off, verbose) select listagg(a) within group(order by a) from smp_
 --------------------------------------------------
  Aggregate
    Output: listagg(a ) WITHIN GROUP ( ORDER BY a)
-   ->  Seq Scan on public.smp_test
+   ->  Seq Scan on uint_agg.smp_test
          Output: a, b
 (4 rows)
 
@@ -594,9 +592,15 @@ explain(costs off, verbose) select listagg(a, ',') within group(order by a) from
 -------------------------------------------------------------
  Aggregate
    Output: listagg(a, ','::text ) WITHIN GROUP ( ORDER BY a)
-   ->  Seq Scan on public.smp_test
+   ->  Seq Scan on uint_agg.smp_test
          Output: a, b
 (4 rows)
 
-\c postgres
-drop database uint_agg;
+drop schema uint_agg cascade;
+NOTICE:  drop cascades to 5 other objects
+DETAIL:  drop cascades to table u1
+drop cascades to table u2
+drop cascades to table u4
+drop cascades to table u8
+drop cascades to table smp_test
+reset current_schema;

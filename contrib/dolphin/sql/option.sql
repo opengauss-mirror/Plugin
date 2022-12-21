@@ -1,6 +1,5 @@
-drop database if exists option;
-create database option dbcompatibility = 'b';
-\c option
+create schema option;
+set current_schema to 'option';
 
 create global temp table test1(a int primary key, b text) on commit delete rows engine = InnoDB with(STORAGE_TYPE = ASTORE);
 
@@ -141,6 +140,5 @@ drop table test8;
 drop table test9;
 drop table test10;
 
-\c postgres
-
-drop database option;
+drop schema option cascade;
+reset current_schema;

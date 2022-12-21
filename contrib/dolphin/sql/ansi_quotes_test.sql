@@ -1,4 +1,4 @@
-\c test_ansi_quotes
+set current_schema to 'test_ansi_quotes';
 CREATE TABLE test_quotes (a text);
 show dolphin.sql_mode;
 
@@ -38,5 +38,5 @@ select "test" != "test";
 select * from test_quotes where a like "%test%";
 select * from test_quotes where a = "test1";
 
-\c postgres
-DROP DATABASE test_ansi_quotes;
+drop schema test_ansi_quotes cascade;
+reset current_schema;

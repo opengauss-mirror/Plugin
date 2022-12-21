@@ -1,6 +1,5 @@
-drop database if exists db_b_new_gram_test;
-create database db_b_new_gram_test dbcompatibility 'B';
-\c db_b_new_gram_test
+create schema db_b_new_gram_test;
+set current_schema to 'db_b_new_gram_test';
 
 -- CREATE TABLE engine test
 CREATE TABLE test_engine_1 (a int) engine = InnoDB;
@@ -389,9 +388,8 @@ SELECT COUNT(*) FROM t_ctas_new;
 DROP TABLE t_ctas_new;
 DROP TABLE t_ctas;
 
-drop database if exists test_m;
-create database test_m dbcompatibility 'b';
-\c test_m
+create schema test_m;
+set current_schema to 'test_m';
 create table test_unique(
     f1 int,
     f2 int,
@@ -470,6 +468,6 @@ select * from ignore_range_range partition (p_201901, p_201905_a);
 select * from ignore_range_range partition (p_201901, p_201905_b);
 drop table ignore_range_range;
 
-\c postgres
-drop database if exists test_m;
-drop database db_b_new_gram_test;
+drop schema test_m cascade;
+drop schema db_b_new_gram_test cascade;
+reset current_schema;

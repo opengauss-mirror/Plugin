@@ -1,7 +1,5 @@
-drop database if exists to_base64_test;
-NOTICE:  database "to_base64_test" does not exist, skipping
-create database to_base64_test dbcompatibility 'b';
-\c to_base64_test
+create schema to_base64_test;
+set current_schema to 'to_base64_test';
 --测试字符串作为输入，返回base64编码的编码结果
 SELECT TO_BASE64('123456');
  to_base64 
@@ -124,5 +122,6 @@ SELECT TO_BASE64(name) from test_base64;
  dG9fYmFzZTY0
 (2 rows)
 
-\c postgres
-drop database if exists to_base64_test;
+drop schema to_base64_test cascade;
+NOTICE:  drop cascades to table test_base64
+reset current_schema;

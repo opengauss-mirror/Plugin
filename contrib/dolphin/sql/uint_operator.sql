@@ -1,6 +1,5 @@
-drop database if exists uint_operator;
-create database uint_operator dbcompatibility 'b';
-\c uint_operator
+create schema uint_operator;
+set current_schema to 'uint_operator';
 
 -- >
 select 1::uint1 > 1::uint1;
@@ -367,6 +366,6 @@ select ~0::uint2;
 select ~0::uint4;
 select ~0::uint8;
 
-\c postgres
-drop database uint_operator;
+drop schema uint_operator cascade;
+reset current_schema;
 

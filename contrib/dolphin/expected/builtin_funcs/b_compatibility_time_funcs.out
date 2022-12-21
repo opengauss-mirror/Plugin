@@ -1,10 +1,5 @@
---
--- Test All Time function under 'b' compatibility
---
-drop database if exists b_time_funcs;
-NOTICE:  database "b_time_funcs" does not exist, skipping
-create database b_time_funcs dbcompatibility 'b';
-\c b_time_funcs
+create schema b_time_funcs;
+set current_schema to 'b_time_funcs';
 create table func_test(functionName varchar(256),result varchar(256));
 truncate table func_test;
 -- makedate()
@@ -488,5 +483,6 @@ select * from func_test;
  subdate('2022-01-01 01:01:01', interval 1.999 second)                  | Sat Jan 01 01:00:59.001 2022
 --?.*
 
-\c postgres
-drop database if exists b_time_funcs;
+drop schema b_time_funcs cascade;
+NOTICE:  drop cascades to table func_test
+reset current_schema;

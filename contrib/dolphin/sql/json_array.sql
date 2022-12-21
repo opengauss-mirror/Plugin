@@ -1,6 +1,5 @@
-drop database if exists test_json_array;
-create database test_json_array dbcompatibility 'B';
-\c test_json_array
+create schema test_json_array;
+set current_schema to 'test_json_array';
 
 select json_array(1,2,3,4);
 select json_array(1,3,4);
@@ -19,5 +18,5 @@ insert into dataa(name) value(json_array('sjy'));
 select name from dataa;
 drop table dataa;
 
-\c postgres
-drop database if exists test_json_array;
+drop schema test_json_array cascade;
+reset current_schema;

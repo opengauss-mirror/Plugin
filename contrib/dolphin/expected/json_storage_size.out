@@ -1,7 +1,5 @@
-drop database if exists test_json_storage_size;
-NOTICE:  database "test_json_storage_size" does not exist, skipping
-create database test_json_storage_size dbcompatibility'B';
-\c test_json_storage_size
+create schema test_json_storage_size;
+set current_schema to 'test_json_storage_size';
 set enable_set_variable_b_format to on;
 SELECT JSON_STORAGE_SIZE('0');
  json_storage_size 
@@ -141,5 +139,6 @@ FROM
 SELECT JSON_STORAGE_SIZE('{0,1}');
 ERROR:  Invalid JSON text in argument 1 to function json_storage_size.
 CONTEXT:  referenced column: json_storage_size
-\c postgres
-drop database test_json_storage_size
+drop schema test_json_storage_size cascade;
+NOTICE:  drop cascades to table test_json_storage_size
+reset current_schema;

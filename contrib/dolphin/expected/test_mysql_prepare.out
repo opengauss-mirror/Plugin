@@ -1,7 +1,5 @@
-drop database if exists test_mysql_prepare;
-NOTICE:  database "test_mysql_prepare" does not exist, skipping
-create database test_mysql_prepare dbcompatibility 'b';
-\c test_mysql_prepare
+create schema test_mysql_prepare;
+set current_schema to 'test_mysql_prepare';
 create table test(name text, age int);
 insert into test values('a',18);
 prepare s1 as select * from test;
@@ -95,11 +93,11 @@ explain (costs off, verbose on) execute p1;
  Nested Loop
    Output: prepare_table_01.a, prepare_table_01.b, prepare_table_02.a, prepare_table_02.b
    Join Filter: (prepare_table_01.a = prepare_table_02.a)
-   ->  Seq Scan on public.prepare_table_01
+   ->  Seq Scan on test_mysql_prepare.prepare_table_01
          Output: prepare_table_01.a, prepare_table_01.b
    ->  Materialize
          Output: prepare_table_02.a, prepare_table_02.b
-         ->  Seq Scan on public.prepare_table_02
+         ->  Seq Scan on test_mysql_prepare.prepare_table_02
                Output: prepare_table_02.a, prepare_table_02.b
 (9 rows)
 
@@ -123,12 +121,12 @@ explain (costs off, verbose on) execute p2(1);
  Nested Loop
    Output: prepare_table_01.a, prepare_table_01.b, prepare_table_02.a, prepare_table_02.b
    Join Filter: (prepare_table_01.a = prepare_table_02.a)
-   ->  Seq Scan on public.prepare_table_01
+   ->  Seq Scan on test_mysql_prepare.prepare_table_01
          Output: prepare_table_01.a, prepare_table_01.b
          Filter: (prepare_table_01.b = ($1)::numeric)
    ->  Materialize
          Output: prepare_table_02.a, prepare_table_02.b
-         ->  Seq Scan on public.prepare_table_02
+         ->  Seq Scan on test_mysql_prepare.prepare_table_02
                Output: prepare_table_02.a, prepare_table_02.b
 (10 rows)
 
@@ -188,8 +186,8 @@ ERROR:  wrong number of parameters for prepared statement "p2"
 DETAIL:  Expected 1 parameters but got 2.
 prepare p5 as 'select a from prepare_table_01 INTERSECT select a from prepare_table_02 order by 1 limit 1';
 explain (costs off, verbose on) execute p5;
-                            QUERY PLAN                             
--------------------------------------------------------------------
+                                  QUERY PLAN                                   
+-------------------------------------------------------------------------------
  Limit
    Output: "*SELECT* 1".a, (0)
    ->  Sort
@@ -200,11 +198,11 @@ explain (costs off, verbose on) execute p5;
                ->  Append
                      ->  Subquery Scan on "*SELECT* 1"
                            Output: "*SELECT* 1".a, 0
-                           ->  Seq Scan on public.prepare_table_01
+                           ->  Seq Scan on test_mysql_prepare.prepare_table_01
                                  Output: prepare_table_01.a
                      ->  Subquery Scan on "*SELECT* 2"
                            Output: "*SELECT* 2".a, 1
-                           ->  Seq Scan on public.prepare_table_02
+                           ->  Seq Scan on test_mysql_prepare.prepare_table_02
                                  Output: prepare_table_02.a
 (16 rows)
 
@@ -222,11 +220,11 @@ explain (costs off, verbose on) execute p6;
    Output: prepare_table_01.a, prepare_table_01.b
    Group By Key: prepare_table_01.a, prepare_table_01.b
    ->  Append
-         ->  Seq Scan on public.prepare_table_01
+         ->  Seq Scan on test_mysql_prepare.prepare_table_01
                Output: prepare_table_01.a, prepare_table_01.b
          ->  Subquery Scan on "*SELECT* 2"
                Output: "*SELECT* 2".a, "*SELECT* 2".b
-               ->  Seq Scan on public.prepare_table_02
+               ->  Seq Scan on test_mysql_prepare.prepare_table_02
                      Output: prepare_table_02.a, prepare_table_02.b
 (10 rows)
 
@@ -328,16 +326,16 @@ insert into t1_xc_fqs values (1,1,1), (2,2,2), (3,3,3), (4,4,4), (5,5,5);
 explain (costs off, verbose on) execute s using 1,@a;
                         QUERY PLAN                         
 -----------------------------------------------------------
- Seq Scan on public.t1_xc_fqs
+ Seq Scan on test_mysql_prepare.t1_xc_fqs
    Output: id1, id2, num
    Filter: ((t1_xc_fqs.id1 = $1) AND (t1_xc_fqs.id2 = $2))
 (3 rows)
 
 explain (costs off, verbose on) execute i using 6,6,6;
-         QUERY PLAN         
-----------------------------
+               QUERY PLAN               
+----------------------------------------
  [Bypass]
- Insert on public.t1_xc_fqs
+ Insert on test_mysql_prepare.t1_xc_fqs
    ->  Result
          Output: $1, $2, $3
 (4 rows)
@@ -345,8 +343,8 @@ explain (costs off, verbose on) execute i using 6,6,6;
 explain (costs off, verbose on) execute u using 2,@b;
                            QUERY PLAN                            
 -----------------------------------------------------------------
- Update on public.t1_xc_fqs
-   ->  Seq Scan on public.t1_xc_fqs
+ Update on test_mysql_prepare.t1_xc_fqs
+   ->  Seq Scan on test_mysql_prepare.t1_xc_fqs
          Output: id1, id2, 0, ctid
          Filter: ((t1_xc_fqs.id1 = $1) AND (t1_xc_fqs.id2 = $2))
 (4 rows)
@@ -354,8 +352,8 @@ explain (costs off, verbose on) execute u using 2,@b;
 explain (costs off, verbose on) execute d using @c,@c;
                            QUERY PLAN                            
 -----------------------------------------------------------------
- Delete on public.t1_xc_fqs
-   ->  Seq Scan on public.t1_xc_fqs
+ Delete on test_mysql_prepare.t1_xc_fqs
+   ->  Seq Scan on test_mysql_prepare.t1_xc_fqs
          Output: ctid
          Filter: ((t1_xc_fqs.id1 = $1) AND (t1_xc_fqs.id2 = $2))
 (4 rows)
@@ -414,16 +412,16 @@ insert into t1_xc_fqs values (1,1,1), (2,2,2), (3,3,3), (4,4,4), (5,5,5);
 explain (costs off, verbose on) execute s using @a;
                         QUERY PLAN                        
 ----------------------------------------------------------
- Seq Scan on public.t1_xc_fqs
+ Seq Scan on test_mysql_prepare.t1_xc_fqs
    Output: id1, id2, num
    Filter: ((t1_xc_fqs.id1 = $1) AND (t1_xc_fqs.id2 = 2))
 (3 rows)
 
 explain (costs off, verbose on) execute i using 6;
-         QUERY PLAN         
-----------------------------
+               QUERY PLAN               
+----------------------------------------
  [Bypass]
- Insert on public.t1_xc_fqs
+ Insert on test_mysql_prepare.t1_xc_fqs
    ->  Result
          Output: $1, 2, 3
 (4 rows)
@@ -431,8 +429,8 @@ explain (costs off, verbose on) execute i using 6;
 explain (costs off, verbose on) execute u using 2;
                            QUERY PLAN                           
 ----------------------------------------------------------------
- Update on public.t1_xc_fqs
-   ->  Seq Scan on public.t1_xc_fqs
+ Update on test_mysql_prepare.t1_xc_fqs
+   ->  Seq Scan on test_mysql_prepare.t1_xc_fqs
          Output: id1, id2, 1, ctid
          Filter: ((t1_xc_fqs.id1 = $1) AND (t1_xc_fqs.id2 = 2))
 (4 rows)
@@ -440,8 +438,8 @@ explain (costs off, verbose on) execute u using 2;
 explain (costs off, verbose on) execute d using @c;
                            QUERY PLAN                           
 ----------------------------------------------------------------
- Delete on public.t1_xc_fqs
-   ->  Seq Scan on public.t1_xc_fqs
+ Delete on test_mysql_prepare.t1_xc_fqs
+   ->  Seq Scan on test_mysql_prepare.t1_xc_fqs
          Output: ctid
          Filter: ((t1_xc_fqs.id1 = $1) AND (t1_xc_fqs.id2 = 2))
 (4 rows)
@@ -510,12 +508,12 @@ explain (costs off, verbose on) execute s0 using @a,@a;
 ----------------------------------------------------------
  Nested Loop
    Output: t1.id1, t1.id2, t1.num, t2.id1, t2.id2, t2.num
-   ->  Seq Scan on public.t1_xc_fqs t1
+   ->  Seq Scan on test_mysql_prepare.t1_xc_fqs t1
          Output: t1.id1, t1.id2, t1.num
          Filter: (t1.id1 = $1)
    ->  Materialize
          Output: t2.id1, t2.id2, t2.num
-         ->  Seq Scan on public.t2_xc_fqs t2
+         ->  Seq Scan on test_mysql_prepare.t2_xc_fqs t2
                Output: t2.id1, t2.id2, t2.num
                Filter: (t2.id1 = $2)
 (10 rows)
@@ -525,33 +523,33 @@ explain (costs off, verbose on) execute s0 using @a,3;
 ----------------------------------------------------------
  Nested Loop
    Output: t1.id1, t1.id2, t1.num, t2.id1, t2.id2, t2.num
-   ->  Seq Scan on public.t1_xc_fqs t1
+   ->  Seq Scan on test_mysql_prepare.t1_xc_fqs t1
          Output: t1.id1, t1.id2, t1.num
          Filter: (t1.id1 = $1)
    ->  Materialize
          Output: t2.id1, t2.id2, t2.num
-         ->  Seq Scan on public.t2_xc_fqs t2
+         ->  Seq Scan on test_mysql_prepare.t2_xc_fqs t2
                Output: t2.id1, t2.id2, t2.num
                Filter: (t2.id1 = $2)
 (10 rows)
 
 explain (costs off, verbose on) execute s1 using 2,@b,2;
-                     QUERY PLAN                     
-----------------------------------------------------
+                          QUERY PLAN                           
+---------------------------------------------------------------
  Nested Loop
    Output: t3.id11
    ->  Nested Loop
-         ->  Seq Scan on public.t1_xc_fqs t1
+         ->  Seq Scan on test_mysql_prepare.t1_xc_fqs t1
                Output: t1.id1, t1.id2, t1.num
                Filter: (t1.id1 = $1)
          ->  Materialize
                Output: t2.id1, t2.id2, t2.num
-               ->  Seq Scan on public.t2_xc_fqs t2
+               ->  Seq Scan on test_mysql_prepare.t2_xc_fqs t2
                      Output: t2.id1, t2.id2, t2.num
                      Filter: (t2.id1 = $2)
    ->  Materialize
          Output: t3.id11
-         ->  Seq Scan on public.t3_xc_fqs t3
+         ->  Seq Scan on test_mysql_prepare.t3_xc_fqs t3
                Output: t3.id11
                Filter: (t3.id11 = $3)
 (16 rows)
@@ -561,55 +559,55 @@ explain (costs off, verbose on) execute s2 using @c;
 ----------------------------------------------------------
  Nested Loop
    Output: t1.id1, t1.id2, t1.num, t2.id1, t2.id2, t2.num
-   ->  Seq Scan on public.t1_xc_fqs t1
+   ->  Seq Scan on test_mysql_prepare.t1_xc_fqs t1
          Output: t1.id1, t1.id2, t1.num
          Filter: (t1.id1 = $1)
    ->  Materialize
          Output: t2.id1, t2.id2, t2.num
-         ->  Seq Scan on public.t2_xc_fqs t2
+         ->  Seq Scan on test_mysql_prepare.t2_xc_fqs t2
                Output: t2.id1, t2.id2, t2.num
                Filter: (t2.id1 = $1)
 (10 rows)
 
 explain (costs off, verbose on) execute s3 using 4;
-                    QUERY PLAN                     
----------------------------------------------------
+                          QUERY PLAN                           
+---------------------------------------------------------------
  Hash Join
    Output: t3.id11
    Hash Cond: (t1.id1 = t2.id1)
    ->  Nested Loop
          Output: t3.id11, t1.id1
-         ->  Seq Scan on public.t1_xc_fqs t1
+         ->  Seq Scan on test_mysql_prepare.t1_xc_fqs t1
                Output: t1.id1, t1.id2, t1.num
          ->  Materialize
                Output: t3.id11
-               ->  Seq Scan on public.t3_xc_fqs t3
+               ->  Seq Scan on test_mysql_prepare.t3_xc_fqs t3
                      Output: t3.id11
                      Filter: (t3.id11 = $1)
    ->  Hash
          Output: t2.id1
-         ->  Seq Scan on public.t2_xc_fqs t2
+         ->  Seq Scan on test_mysql_prepare.t2_xc_fqs t2
                Output: t2.id1
 (16 rows)
 
 explain (costs off, verbose on) execute s4 using 5;
-                    QUERY PLAN                     
----------------------------------------------------
+                          QUERY PLAN                           
+---------------------------------------------------------------
  Nested Loop
    Output: t3.id11
    ->  Nested Loop
          Output: t1.id1
-         ->  Seq Scan on public.t1_xc_fqs t1
+         ->  Seq Scan on test_mysql_prepare.t1_xc_fqs t1
                Output: t1.id1, t1.id2, t1.num
                Filter: (t1.id1 = $1)
          ->  Materialize
                Output: t2.id1
-               ->  Seq Scan on public.t2_xc_fqs t2
+               ->  Seq Scan on test_mysql_prepare.t2_xc_fqs t2
                      Output: t2.id1
                      Filter: (t2.id1 = $1)
    ->  Materialize
          Output: t3.id11
-         ->  Seq Scan on public.t3_xc_fqs t3
+         ->  Seq Scan on test_mysql_prepare.t3_xc_fqs t3
                Output: t3.id11
                Filter: (t3.id11 = $1)
 (17 rows)
@@ -619,10 +617,10 @@ explain (costs off, verbose on) execute s5 using 4,5;
 ----------------------------------------------------------
  Nested Loop
    Output: t1.id1, t1.id2, t1.num, t2.id1, t2.id2, t2.num
-   ->  Seq Scan on public.t2_xc_fqs t2
+   ->  Seq Scan on test_mysql_prepare.t2_xc_fqs t2
          Output: t2.id1, t2.id2, t2.num
          Filter: ((t2.id2 = $2) AND (t2.id1 = $1))
-   ->  Seq Scan on public.t1_xc_fqs t1
+   ->  Seq Scan on test_mysql_prepare.t1_xc_fqs t1
          Output: t1.id1, t1.id2, t1.num
          Filter: (t1.id1 = $2)
 (8 rows)
@@ -691,12 +689,12 @@ explain (costs off, verbose on) execute s0 using @a,@a;
 ----------------------------------------------------------
  Nested Loop
    Output: t1.id1, t1.id2, t1.num, t2.id1, t2.id2, t2.num
-   ->  Seq Scan on public.t1_xc_fqs t1
+   ->  Seq Scan on test_mysql_prepare.t1_xc_fqs t1
          Output: t1.id1, t1.id2, t1.num
          Filter: (t1.id1 = $1)
    ->  Materialize
          Output: t2.id1, t2.id2, t2.num
-         ->  Seq Scan on public.t2_xc_fqs t2
+         ->  Seq Scan on test_mysql_prepare.t2_xc_fqs t2
                Output: t2.id1, t2.id2, t2.num
                Filter: (t2.id1 = $2)
 (10 rows)
@@ -706,33 +704,33 @@ explain (costs off, verbose on) execute s0 using @a,@c;
 ----------------------------------------------------------
  Nested Loop
    Output: t1.id1, t1.id2, t1.num, t2.id1, t2.id2, t2.num
-   ->  Seq Scan on public.t1_xc_fqs t1
+   ->  Seq Scan on test_mysql_prepare.t1_xc_fqs t1
          Output: t1.id1, t1.id2, t1.num
          Filter: (t1.id1 = $1)
    ->  Materialize
          Output: t2.id1, t2.id2, t2.num
-         ->  Seq Scan on public.t2_xc_fqs t2
+         ->  Seq Scan on test_mysql_prepare.t2_xc_fqs t2
                Output: t2.id1, t2.id2, t2.num
                Filter: (t2.id1 = $2)
 (10 rows)
 
 explain (costs off, verbose on) execute s1 using 2,@b,2;
-                     QUERY PLAN                     
-----------------------------------------------------
+                          QUERY PLAN                           
+---------------------------------------------------------------
  Nested Loop
    Output: t3.id11
    ->  Nested Loop
-         ->  Seq Scan on public.t1_xc_fqs t1
+         ->  Seq Scan on test_mysql_prepare.t1_xc_fqs t1
                Output: t1.id1, t1.id2, t1.num
                Filter: (t1.id1 = $1)
          ->  Materialize
                Output: t2.id1, t2.id2, t2.num
-               ->  Seq Scan on public.t2_xc_fqs t2
+               ->  Seq Scan on test_mysql_prepare.t2_xc_fqs t2
                      Output: t2.id1, t2.id2, t2.num
                      Filter: (t2.id1 = $2)
    ->  Materialize
          Output: t3.id11
-         ->  Seq Scan on public.t3_xc_fqs t3
+         ->  Seq Scan on test_mysql_prepare.t3_xc_fqs t3
                Output: t3.id11
                Filter: (t3.id11 = $3)
 (16 rows)
@@ -742,55 +740,55 @@ explain (costs off, verbose on) execute s2 using @c;
 ----------------------------------------------------------
  Nested Loop
    Output: t1.id1, t1.id2, t1.num, t2.id1, t2.id2, t2.num
-   ->  Seq Scan on public.t1_xc_fqs t1
+   ->  Seq Scan on test_mysql_prepare.t1_xc_fqs t1
          Output: t1.id1, t1.id2, t1.num
          Filter: (t1.id1 = $1)
    ->  Materialize
          Output: t2.id1, t2.id2, t2.num
-         ->  Seq Scan on public.t2_xc_fqs t2
+         ->  Seq Scan on test_mysql_prepare.t2_xc_fqs t2
                Output: t2.id1, t2.id2, t2.num
                Filter: (t2.id1 = $1)
 (10 rows)
 
 explain (costs off, verbose on) execute s3 using 4;
-                    QUERY PLAN                     
----------------------------------------------------
+                          QUERY PLAN                           
+---------------------------------------------------------------
  Hash Join
    Output: t3.id11
    Hash Cond: (t1.id1 = t2.id1)
    ->  Nested Loop
          Output: t3.id11, t1.id1
-         ->  Seq Scan on public.t1_xc_fqs t1
+         ->  Seq Scan on test_mysql_prepare.t1_xc_fqs t1
                Output: t1.id1, t1.id2, t1.num
          ->  Materialize
                Output: t3.id11
-               ->  Seq Scan on public.t3_xc_fqs t3
+               ->  Seq Scan on test_mysql_prepare.t3_xc_fqs t3
                      Output: t3.id11
                      Filter: (t3.id11 = $1)
    ->  Hash
          Output: t2.id1
-         ->  Seq Scan on public.t2_xc_fqs t2
+         ->  Seq Scan on test_mysql_prepare.t2_xc_fqs t2
                Output: t2.id1
 (16 rows)
 
 explain (costs off, verbose on) execute s4 using 5;
-                    QUERY PLAN                     
----------------------------------------------------
+                          QUERY PLAN                           
+---------------------------------------------------------------
  Nested Loop
    Output: t3.id11
    ->  Nested Loop
          Output: t1.id1
-         ->  Seq Scan on public.t1_xc_fqs t1
+         ->  Seq Scan on test_mysql_prepare.t1_xc_fqs t1
                Output: t1.id1, t1.id2, t1.num
                Filter: (t1.id1 = $1)
          ->  Materialize
                Output: t2.id1
-               ->  Seq Scan on public.t2_xc_fqs t2
+               ->  Seq Scan on test_mysql_prepare.t2_xc_fqs t2
                      Output: t2.id1
                      Filter: (t2.id1 = $1)
    ->  Materialize
          Output: t3.id11
-         ->  Seq Scan on public.t3_xc_fqs t3
+         ->  Seq Scan on test_mysql_prepare.t3_xc_fqs t3
                Output: t3.id11
                Filter: (t3.id11 = $1)
 (17 rows)
@@ -800,10 +798,10 @@ explain (costs off, verbose on) execute s5 using 4,5;
 ----------------------------------------------------------
  Nested Loop
    Output: t1.id1, t1.id2, t1.num, t2.id1, t2.id2, t2.num
-   ->  Seq Scan on public.t2_xc_fqs t2
+   ->  Seq Scan on test_mysql_prepare.t2_xc_fqs t2
          Output: t2.id1, t2.id2, t2.num
          Filter: ((t2.id2 = $2) AND (t2.id1 = $1))
-   ->  Seq Scan on public.t1_xc_fqs t1
+   ->  Seq Scan on test_mysql_prepare.t1_xc_fqs t1
          Output: t1.id1, t1.id2, t1.num
          Filter: (t1.id1 = $2)
 (8 rows)
@@ -872,12 +870,12 @@ explain (costs off, verbose on) execute s0 using @a;
    ->  Sort
          Output: t1.id1, t1.id2, t1.num
          Sort Key: t1.id1
-         ->  Seq Scan on public.t1_xc_fqs t1
+         ->  Seq Scan on test_mysql_prepare.t1_xc_fqs t1
                Output: t1.id1, t1.id2, t1.num
    ->  Sort
          Output: t2.id1, t2.id2, t2.num
          Sort Key: t2.id1
-         ->  Seq Scan on public.t2_xc_fqs t2
+         ->  Seq Scan on test_mysql_prepare.t2_xc_fqs t2
                Output: t2.id1, t2.id2, t2.num
                Filter: (t2.id1 = $1)
 (14 rows)
@@ -892,11 +890,11 @@ explain (costs off, verbose on) execute s1 using 1;
          Output: t1.id1, t1.id2, t1.num, t2.id1, t2.id2, t2.num, t2.id1
          Hash Cond: (t2.id1 = t1.id1)
          Join Filter: (t2.id1 = $1)
-         ->  Seq Scan on public.t2_xc_fqs t2
+         ->  Seq Scan on test_mysql_prepare.t2_xc_fqs t2
                Output: t2.id1, t2.id2, t2.num
          ->  Hash
                Output: t1.id1, t1.id2, t1.num
-               ->  Seq Scan on public.t1_xc_fqs t1
+               ->  Seq Scan on test_mysql_prepare.t1_xc_fqs t1
                      Output: t1.id1, t1.id2, t1.num
 (13 rows)
 
@@ -910,11 +908,11 @@ explain (costs off, verbose on) execute s2 using 1;
          Output: t1.id1, t1.id2, t1.num, t2.id1, t2.id2, t2.num, t1.id1, t2.id1
          Hash Cond: (t1.id1 = t2.id1)
          Join Filter: (t2.id1 = $1)
-         ->  Seq Scan on public.t1_xc_fqs t1
+         ->  Seq Scan on test_mysql_prepare.t1_xc_fqs t1
                Output: t1.id1, t1.id2, t1.num
          ->  Hash
                Output: t2.id1, t2.id2, t2.num
-               ->  Seq Scan on public.t2_xc_fqs t2
+               ->  Seq Scan on test_mysql_prepare.t2_xc_fqs t2
                      Output: t2.id1, t2.id2, t2.num
 (13 rows)
 
@@ -957,5 +955,9 @@ deallocate s1;
 deallocate s2;
 reset dolphin.b_compatibility_mode;
 reset enable_set_variable_b_format;
-\c postgres
-drop database test_mysql_prepare;
+drop schema test_mysql_prepare cascade;
+NOTICE:  drop cascades to 3 other objects
+DETAIL:  drop cascades to table t1_xc_fqs
+drop cascades to table t2_xc_fqs
+drop cascades to table t3_xc_fqs
+reset current_schema;

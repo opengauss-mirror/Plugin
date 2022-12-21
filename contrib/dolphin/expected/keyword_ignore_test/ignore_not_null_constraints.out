@@ -1,6 +1,6 @@
 -- test for insert/update ignore.
-create database sql_ignore_not_null_test dbcompatibility 'B';
-\c sql_ignore_not_null_test;
+create schema sql_ignore_not_null_test;
+set current_schema to 'sql_ignore_not_null_test';
 drop table if exists t_ignore;
 NOTICE:  table "t_ignore" does not exist, skipping
 create table t_ignore(col1 int, col2 int not null, col3 varchar not null);
@@ -1482,5 +1482,39 @@ select * from t_ignore;
 (2 rows)
 
 -- restore context
-\c postgres
-drop database if exists sql_ignore_not_null_test;
+drop schema sql_ignore_not_null_test cascade;
+NOTICE:  drop cascades to 33 other objects
+DETAIL:  drop cascades to table t_from
+drop cascades to table t_timestamp
+drop cascades to table t_timetz
+drop cascades to table t_time
+drop cascades to table t_interval
+drop cascades to table t_tinterval
+drop cascades to table t_smalldatetime
+drop cascades to table t_date
+drop cascades to table t_uuid
+drop cascades to table t_name
+drop cascades to table t_point
+drop cascades to table t_path
+drop cascades to table t_polygon
+drop cascades to table t_circle
+drop cascades to table t_box
+drop cascades to table t_json
+drop cascades to table t_jsonb
+drop cascades to table t_bit
+drop cascades to table t_tinyint
+drop cascades to table t_smallint
+drop cascades to table t_int
+drop cascades to table t_bigint
+drop cascades to table t_float
+drop cascades to table t_float8
+drop cascades to table t_numeric
+drop cascades to table t_serial
+drop cascades to table t_bool
+drop cascades to table t_charn
+drop cascades to table t_varcharn
+drop cascades to table t_text
+drop cascades to table t_not_null_key_partition
+drop cascades to table ignore_range_range
+drop cascades to table t_ignore
+reset current_schema;

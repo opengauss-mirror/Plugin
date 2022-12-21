@@ -1,7 +1,5 @@
-drop database if exists make_set;
-NOTICE:  database "make_set" does not exist, skipping
-create database make_set dbcompatibility 'b';
-\c make_set
+create schema make_set;
+set current_schema to 'make_set';
 set dolphin.sql_mode = '';
 select make_set(3, 'a', 'b', 'c');
  make_set 
@@ -141,5 +139,5 @@ select make_set(3,01/02/03, false, true, false);
  0.166666666666667,0
 (1 row)
 
-\c postgres
-drop database make_set
+drop schema make_set cascade;
+reset current_schema;

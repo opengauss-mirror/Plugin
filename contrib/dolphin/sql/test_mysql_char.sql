@@ -1,6 +1,5 @@
-drop database if exists test_char;
-create database test_char with dbcompatibility='B';
-\c test_char
+create schema test_char;
+set current_schema to 'test_char';
 set dolphin.b_compatibility_mode=1;
 set dolphin.sql_mode = '';
 
@@ -126,5 +125,5 @@ select '0.0100abc' || 1;
 select '0.0100abc' || 0;
 select '0.0100abc' || null;
 
-\c postgres
-drop database test_char;
+drop schema test_char cascade;
+reset current_schema;

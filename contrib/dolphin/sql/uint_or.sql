@@ -1,6 +1,5 @@
-drop database if exists uint_or;
-create database uint_or dbcompatibility 'b';
-\c uint_or
+create schema uint_or;
+set current_schema to 'uint_or';
 
 --uint8
 select 18446744073709551615::uint8 | 0::int1;
@@ -174,5 +173,5 @@ select 127::int1 | 1::uint2;
 select 127::int1 | 1::uint4;
 select 127::int1 | 1::uint8;
 
-\c postgres
-drop database uint_or
+drop schema uint_or cascade;
+reset current_schema;

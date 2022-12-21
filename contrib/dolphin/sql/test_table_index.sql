@@ -1,7 +1,5 @@
----- b compatibility case
-drop database if exists test_table_index;
-create database test_table_index dbcompatibility 'b';
-\c test_table_index
+create schema test_table_index;
+set current_schema to 'test_table_index';
 
 -- test crate normal table
 create table t1(f1 int , index(f1));
@@ -374,5 +372,5 @@ alter table test_option1 add key ixd_at12 using btree (b) using aaa;
 alter table test_option1 add key ixd_at13 using btree (b) using aaa using btree;
 alter table test_option1 add key ixd_at14 using btree (b) comment 'xx' using aaa using btree;
 
-\c contrib_regression
-DROP DATABASE test_table_index;
+drop schema test_table_index cascade;
+reset current_schema;

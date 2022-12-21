@@ -1,7 +1,5 @@
-drop database if exists tinyint_smp;
-NOTICE:  database "tinyint_smp" does not exist, skipping
-create database tinyint_smp dbcompatibility 'b';
-\c tinyint_smp
+create schema tinyint_smp;
+set current_schema to 'tinyint_smp';
 set enable_opfusion = on;
 set opfusion_debug_mode = log;
 drop table if exists t1;
@@ -16,7 +14,7 @@ explain(costs off, verbose) select * from t2 where a = 2;
                                      QUERY PLAN                                     
 ------------------------------------------------------------------------------------
  [No Bypass]reason: Bypass not executed because query's scan operator is not index.
- Seq Scan on public.t2
+ Seq Scan on tinyint_smp.t2
    Output: a
    Filter: (t2.a = 2)
 (4 rows)
@@ -26,15 +24,15 @@ explain(costs off, verbose) select * from t2 where a = 2 and t2.a in (select a f
 ------------------------------------------------------------------------------------
  [No Bypass]reason: Bypass not executed because query's scan operator is not index.
  Nested Loop Semi Join
-   Output: public.t2.a
-   ->  Seq Scan on public.t2
-         Output: public.t2.a
-         Filter: ((public.t2.a = 2) AND (public.t2.a > 500))
+   Output: tinyint_smp.t2.a
+   ->  Seq Scan on tinyint_smp.t2
+         Output: tinyint_smp.t2.a
+         Filter: ((tinyint_smp.t2.a = 2) AND (tinyint_smp.t2.a > 500))
    ->  Materialize
-         Output: public.t2.a
-         ->  Seq Scan on public.t2
-               Output: public.t2.a
-               Filter: ((public.t2.a > 500) AND (public.t2.a = 2))
+         Output: tinyint_smp.t2.a
+         ->  Seq Scan on tinyint_smp.t2
+               Output: tinyint_smp.t2.a
+               Filter: ((tinyint_smp.t2.a > 500) AND (tinyint_smp.t2.a = 2))
 (11 rows)
 
  set query_dop = 4;
@@ -44,7 +42,7 @@ explain(costs off, verbose)  select * from t2 where a = 2;
  [No Bypass]reason: Bypass not executed because query's scan operator is not index.
  Streaming(type: LOCAL GATHER dop: 1/4)
    Output: a
-   ->  Seq Scan on public.t2
+   ->  Seq Scan on tinyint_smp.t2
          Output: a
          Filter: (t2.a = 2)
 (6 rows)
@@ -54,19 +52,19 @@ explain(costs off, verbose) select * from t2 where a = 2 and t2.a in (select a f
 ------------------------------------------------------------------------------------
  [No Bypass]reason: Bypass not executed because query's scan operator is not index.
  Nested Loop Semi Join
-   Output: public.t2.a
+   Output: tinyint_smp.t2.a
    ->  Streaming(type: LOCAL GATHER dop: 1/4)
-         Output: public.t2.a
-         ->  Seq Scan on public.t2
-               Output: public.t2.a
-               Filter: ((public.t2.a = 2) AND (public.t2.a > 500))
+         Output: tinyint_smp.t2.a
+         ->  Seq Scan on tinyint_smp.t2
+               Output: tinyint_smp.t2.a
+               Filter: ((tinyint_smp.t2.a = 2) AND (tinyint_smp.t2.a > 500))
    ->  Materialize
-         Output: public.t2.a
+         Output: tinyint_smp.t2.a
          ->  Streaming(type: LOCAL GATHER dop: 1/4)
-               Output: public.t2.a
-               ->  Seq Scan on public.t2
-                     Output: public.t2.a
-                     Filter: ((public.t2.a > 500) AND (public.t2.a = 2))
+               Output: tinyint_smp.t2.a
+               ->  Seq Scan on tinyint_smp.t2
+                     Output: tinyint_smp.t2.a
+                     Filter: ((tinyint_smp.t2.a > 500) AND (tinyint_smp.t2.a = 2))
 (15 rows)
 
 set query_dop = 1;
@@ -83,13 +81,13 @@ explain(costs off, verbose) select * from join_1 join join_2;
    Output: join_1.a, join_2.a
    ->  Streaming(type: LOCAL GATHER dop: 1/2)
          Output: join_1.a
-         ->  Seq Scan on public.join_1
+         ->  Seq Scan on tinyint_smp.join_1
                Output: join_1.a
    ->  Materialize
          Output: join_2.a
          ->  Streaming(type: LOCAL GATHER dop: 1/2)
                Output: join_2.a
-               ->  Seq Scan on public.join_2
+               ->  Seq Scan on tinyint_smp.join_2
                      Output: join_2.a
 (12 rows)
 
@@ -104,14 +102,14 @@ explain(costs off, verbose) select * from join_1 join join_2 on join_1.a = join_
          ->  Streaming(type: LOCAL REDISTRIBUTE dop: 2/2)
                Output: join_1.a
                Distribute Key: join_1.a
-               ->  Seq Scan on public.join_1
+               ->  Seq Scan on tinyint_smp.join_1
                      Output: join_1.a
          ->  Hash
                Output: join_2.a
                ->  Streaming(type: LOCAL REDISTRIBUTE dop: 2/2)
                      Output: join_2.a
                      Distribute Key: join_2.a
-                     ->  Seq Scan on public.join_2
+                     ->  Seq Scan on tinyint_smp.join_2
                            Output: join_2.a
 (17 rows)
 
@@ -126,14 +124,14 @@ explain(costs off, verbose) select * from join_1 left join join_2 on join_1.a = 
          ->  Streaming(type: LOCAL REDISTRIBUTE dop: 2/2)
                Output: join_1.a
                Distribute Key: join_1.a
-               ->  Seq Scan on public.join_1
+               ->  Seq Scan on tinyint_smp.join_1
                      Output: join_1.a
          ->  Hash
                Output: join_2.a
                ->  Streaming(type: LOCAL REDISTRIBUTE dop: 2/2)
                      Output: join_2.a
                      Distribute Key: join_2.a
-                     ->  Seq Scan on public.join_2
+                     ->  Seq Scan on tinyint_smp.join_2
                            Output: join_2.a
 (17 rows)
 
@@ -148,14 +146,14 @@ explain(costs off, verbose) select * from join_1 right join join_2 on join_1.a =
          ->  Streaming(type: LOCAL REDISTRIBUTE dop: 2/2)
                Output: join_2.a
                Distribute Key: join_2.a
-               ->  Seq Scan on public.join_2
+               ->  Seq Scan on tinyint_smp.join_2
                      Output: join_2.a
          ->  Hash
                Output: join_1.a
                ->  Streaming(type: LOCAL REDISTRIBUTE dop: 2/2)
                      Output: join_1.a
                      Distribute Key: join_1.a
-                     ->  Seq Scan on public.join_1
+                     ->  Seq Scan on tinyint_smp.join_1
                            Output: join_1.a
 (17 rows)
 
@@ -170,14 +168,14 @@ explain(costs off, verbose) select * from join_1 inner join join_2 on join_1.a =
          ->  Streaming(type: LOCAL REDISTRIBUTE dop: 2/2)
                Output: join_1.a
                Distribute Key: join_1.a
-               ->  Seq Scan on public.join_1
+               ->  Seq Scan on tinyint_smp.join_1
                      Output: join_1.a
          ->  Hash
                Output: join_2.a
                ->  Streaming(type: LOCAL REDISTRIBUTE dop: 2/2)
                      Output: join_2.a
                      Distribute Key: join_2.a
-                     ->  Seq Scan on public.join_2
+                     ->  Seq Scan on tinyint_smp.join_2
                            Output: join_2.a
 (17 rows)
 
@@ -192,14 +190,14 @@ explain(costs off, verbose) select /*+ nestloop(join_1 join_2)*/ * from join_1 l
          ->  Streaming(type: LOCAL REDISTRIBUTE dop: 2/2)
                Output: join_1.a
                Distribute Key: join_1.a
-               ->  Seq Scan on public.join_1
+               ->  Seq Scan on tinyint_smp.join_1
                      Output: join_1.a
          ->  Materialize
                Output: join_2.a
                ->  Streaming(type: LOCAL REDISTRIBUTE dop: 2/2)
                      Output: join_2.a
                      Distribute Key: join_2.a
-                     ->  Seq Scan on public.join_2
+                     ->  Seq Scan on tinyint_smp.join_2
                            Output: join_2.a
 (17 rows)
 
@@ -214,14 +212,14 @@ explain(costs off, verbose) select /*+ hashjoin(join_1 join_2)*/ * from join_1 l
          ->  Streaming(type: LOCAL REDISTRIBUTE dop: 2/2)
                Output: join_1.a
                Distribute Key: join_1.a
-               ->  Seq Scan on public.join_1
+               ->  Seq Scan on tinyint_smp.join_1
                      Output: join_1.a
          ->  Hash
                Output: join_2.a
                ->  Streaming(type: LOCAL REDISTRIBUTE dop: 2/2)
                      Output: join_2.a
                      Distribute Key: join_2.a
-                     ->  Seq Scan on public.join_2
+                     ->  Seq Scan on tinyint_smp.join_2
                            Output: join_2.a
 (17 rows)
 
@@ -237,14 +235,14 @@ WARNING:  unused hint: MergeJoin(join_1 join_2)
          ->  Streaming(type: LOCAL REDISTRIBUTE dop: 2/2)
                Output: join_1.a
                Distribute Key: join_1.a
-               ->  Seq Scan on public.join_1
+               ->  Seq Scan on tinyint_smp.join_1
                      Output: join_1.a
          ->  Hash
                Output: join_2.a
                ->  Streaming(type: LOCAL REDISTRIBUTE dop: 2/2)
                      Output: join_2.a
                      Distribute Key: join_2.a
-                     ->  Seq Scan on public.join_2
+                     ->  Seq Scan on tinyint_smp.join_2
                            Output: join_2.a
 (17 rows)
 
@@ -275,5 +273,12 @@ select * from test1;
  -4
 (2 rows)
 
-\c postgres
-drop database tinyint_smp;
+drop schema tinyint_smp cascade;
+NOTICE:  drop cascades to 6 other objects
+DETAIL:  drop cascades to table t1
+drop cascades to table t2
+drop cascades to table join_1
+drop cascades to table join_2
+drop cascades to function test_p1(tinyint,tinyint)
+drop cascades to table test1
+reset current_schema;

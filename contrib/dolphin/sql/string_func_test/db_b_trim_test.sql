@@ -1,3 +1,7 @@
+drop database if exists db_b_trim_test;
+create database db_b_trim_test dbcompatibility 'A';
+\c db_b_trim_test
+
 SELECT TRIM('  bar   ');
 SELECT TRIM(LEADING 'x' FROM 'xxxbarxxx');
 SELECT TRIM(BOTH 'x' FROM 'xxxbarxxx');
@@ -6,9 +10,11 @@ SELECT TRIM(LEADING 'xyz' FROM 'xyzxbarxxyz');
 SELECT TRIM(BOTH 'xyz' FROM 'xyzxbarxxyz');
 SELECT TRIM(TRAILING 'xyz' FROM 'xyzxbarxxyz');
 
-drop database if exists db_b_trim_test;
-create database db_b_trim_test dbcompatibility 'B';
-\c db_b_trim_test
+\c contrib_regression
+drop database db_b_trim_test;
+
+create schema db_b_trim_test;
+set current_schema to 'db_b_trim_test';
 
 SELECT TRIM('  bar   ');
 SELECT TRIM(LEADING 'x' FROM 'xxxbarxxx');
@@ -31,5 +37,5 @@ SELECT TRIM('   X  '::bytea);
 SELECT TRIM(LEADING '   X  '::bytea);
 SELECT TRIM(TRAILING '   X  '::bytea);
 
-\c postgres
-drop database db_b_trim_test;
+drop schema db_b_trim_test cascade;
+reset current_schema;

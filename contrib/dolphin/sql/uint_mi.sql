@@ -1,6 +1,5 @@
-drop database if exists uint_mi;
-create database uint_mi dbcompatibility 'b';
-\c uint_mi
+create schema uint_mi;
+set current_schema to 'uint_mi';
 
 --uint8
 select 18446744073709551615::uint8 - 0::int1;
@@ -221,5 +220,5 @@ select 0::int1 - 1::uint2;
 select 0::int1 - 1::uint4;
 select 0::int1 - 1::uint8;
 
-\c postgres
-drop database uint_mi
+drop schema uint_mi cascade;
+reset current_schema;

@@ -1,6 +1,6 @@
 -- test for insert/update ignore.
-create database sql_ignore_invalid_input_test dbcompatibility 'B';
-\c sql_ignore_invalid_input_test;
+create schema sql_ignore_invalid_input_test;
+set current_schema to 'sql_ignore_invalid_input_test';
 set timezone to 'PRC';
 
 -- type: tinyint
@@ -310,5 +310,5 @@ select * from t_bit;
 -- restore context
 reset timezone;
 show timezone;
-\c postgres
-drop database if exists sql_ignore_invalid_input_test;
+drop schema sql_ignore_invalid_input_test cascade;
+reset current_schema;

@@ -1,6 +1,5 @@
-drop database if exists uint_index;
-create database uint_index dbcompatibility 'b';
-\c uint_index
+create schema uint_index;
+set current_schema to 'uint_index';
 
 create table t1(a uint1);
 insert into t1 select generate_series(1, 255);
@@ -220,5 +219,5 @@ explain(costs off, verbose)select * from t4 where a = 1::int2;
 explain(costs off, verbose)select * from t4 where a = 1::int4;
 explain(costs off, verbose)select * from t4 where a = 1::int8;
 
-\c postgres
-drop database uint_index;
+drop schema uint_index cascade;
+reset current_schema;

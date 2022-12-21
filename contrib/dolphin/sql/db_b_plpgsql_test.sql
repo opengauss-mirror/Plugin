@@ -1,6 +1,5 @@
-drop database if exists db_b_plpgsql_test;
-create database db_b_plpgsql_test dbcompatibility 'b';
-\c db_b_plpgsql_test
+create schema db_b_plpgsql_test;
+set current_schema to 'db_b_plpgsql_test';
 
 create table tb_b_grammar_0038(a text(10)) engine = 表1;
 
@@ -44,5 +43,5 @@ end;
 SELECT * from proc_01();
 SELECT * from tb_b_grammar_0038;
 
-\c postgres
-drop database if exists db_b_plpgsql_test;
+drop schema db_b_plpgsql_test cascade;
+reset current_schema;

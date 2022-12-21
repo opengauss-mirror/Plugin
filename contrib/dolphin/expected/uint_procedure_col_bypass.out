@@ -1,7 +1,5 @@
-drop database if exists uint_procedure_col;
-NOTICE:  database "uint_procedure_col" does not exist, skipping
-create database uint_procedure_col dbcompatibility 'b';
-\c uint_procedure_col
+create schema uint_procedure_col;
+set current_schema to 'uint_procedure_col';
  create procedure test_p1(uint2, uint4)
 SHIPPABLE VOLATILE
 as
@@ -46,36 +44,40 @@ explain(costs off, verbose) insert into bypass values(1, 10);
                QUERY PLAN                
 -----------------------------------------
  [Bypass]
- Insert on public.bypass
+ Insert on uint_procedure_col.bypass
    ->  Result
          Output: '1'::uint2, '10'::uint4
 (4 rows)
 
 explain(costs off, verbose) select b from bypass where a = 1;
-        QUERY PLAN         
----------------------------
- Seq Scan on public.bypass
+              QUERY PLAN               
+---------------------------------------
+ Seq Scan on uint_procedure_col.bypass
    Output: b
    Filter: (bypass.a = 1)
 (3 rows)
 
 explain(costs off, verbose) delete from bypass where b = 10;
-           QUERY PLAN            
----------------------------------
- Delete on public.bypass
-   ->  Seq Scan on public.bypass
+                 QUERY PLAN                  
+---------------------------------------------
+ Delete on uint_procedure_col.bypass
+   ->  Seq Scan on uint_procedure_col.bypass
          Output: ctid
          Filter: (bypass.b = 10)
 (4 rows)
 
 explain(costs off, verbose) update bypass set b = b + 1 where a = 1;
-            QUERY PLAN            
-----------------------------------
- Update on public.bypass
-   ->  Seq Scan on public.bypass
+                 QUERY PLAN                  
+---------------------------------------------
+ Update on uint_procedure_col.bypass
+   ->  Seq Scan on uint_procedure_col.bypass
          Output: a, (b + 1), ctid
          Filter: (bypass.a = 1)
 (4 rows)
 
-\c postgres
-drop database uint_procedure_col;
+drop schema uint_procedure_col cascade;
+NOTICE:  drop cascades to 3 other objects
+DETAIL:  drop cascades to function test_p1(uint2,uint4)
+drop cascades to table test1
+drop cascades to table bypass
+reset current_schema;

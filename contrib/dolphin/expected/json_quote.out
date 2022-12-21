@@ -1,7 +1,5 @@
-drop database if exists test_json_quote;
-NOTICE:  database "test_json_quote" does not exist, skipping
-create database test_json_quote dbcompatibility'B';
-\c test_json_quote
+create schema test_json_quote;
+set current_schema to 'test_json_quote';
 select json_quote(E'a\tb');
  json_quote 
 ------------
@@ -82,5 +80,5 @@ select name from student;
 (1 row)
 
 drop table student;
-\c postgres
-drop database test_json_quote;
+drop schema test_json_quote cascade;
+reset current_schema;

@@ -1,6 +1,5 @@
-drop database if exists db_alter_table;
-create database db_alter_table dbcompatibility 'b';
-\c db_alter_table
+create schema db_alter_table;
+set current_schema to 'db_alter_table';
 
 create table alter_table_tbl1 (a int primary key, b int);
 create table alter_table_tbl2 (c int primary key, d int);
@@ -135,5 +134,5 @@ create table test_primary(f11 int, f12 varchar(20), f13 bool, constraint con_t_p
 \d+ test_primary
 drop table test_primary;
 
-\c postgres
-drop database if exists db_alter_table;
+drop schema db_alter_table cascade;
+reset current_schema;

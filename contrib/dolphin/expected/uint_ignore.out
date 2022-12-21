@@ -1,7 +1,5 @@
-drop database if exists uint_ignore;
-NOTICE:  database "uint_ignore" does not exist, skipping
-create database uint_ignore dbcompatibility 'b';
-\c uint_ignore
+create schema uint_ignore;
+set current_schema to 'uint_ignore';
 drop table if exists t1 ;
 NOTICE:  table "t1" does not exist, skipping
 create table t1(a uint8);
@@ -661,5 +659,6 @@ select * from t1;
  255
 (61 rows)
 
-\c postgres
-drop database uint_ignore;
+drop schema uint_ignore cascade;
+NOTICE:  drop cascades to table t1
+reset current_schema;

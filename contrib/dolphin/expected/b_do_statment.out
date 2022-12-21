@@ -1,5 +1,5 @@
-create database db_do_stmt dbcompatibility = 'B';
-\c db_do_stmt
+create schema db_do_stmt;
+set current_schema to 'db_do_stmt';
 create table t1 (a int);
 insert into t1 values(1),(4),(7);
 select a from t1;
@@ -57,5 +57,6 @@ do sin(a) from t1;
 ERROR:  syntax error at or near "from"
 LINE 1: do sin(a) from t1;
                   ^
-\c regress
-\connect: FATAL:  database "regress" does not exist
+drop schema db_do_stmt cascade;
+NOTICE:  drop cascades to table t1
+reset current_schema;

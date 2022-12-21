@@ -1,6 +1,5 @@
-drop database if exists db_soundex;
-create database db_soundex dbcompatibility 'B';
-\c db_soundex
+create schema db_soundex;
+set current_schema to 'db_soundex';
 select soundex('abc');
 select soundex(10);
 select soundex('afdsbfdlsafs');
@@ -42,5 +41,5 @@ select soundex('ш');
 select soundex('я такая шчасліваяwjdkadskdjk');
 select soundex('测T测h测试o测masёння я такая шчасліваяhello');
 
-\c postgres
-drop database if exists db_soundex;
+drop schema db_soundex cascade;
+reset current_schema;

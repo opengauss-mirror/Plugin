@@ -1,6 +1,5 @@
-drop database if exists db_db_b_format;
-create database db_db_b_format dbcompatibility 'B';
-\c db_db_b_format
+create schema db_db_b_format;
+set current_schema to 'db_db_b_format';
 -- test for b_compatibility_mode = false
 select format(1234.456, 2);
 select format(1234.456, 2, 'en_US');
@@ -137,8 +136,8 @@ select format('%s, %s', variadic array[true, false]::text[]);
 select format('%2$s, %1$s', variadic array['first', 'second']);
 select format('%2$s, %1$s', variadic array[1, 2]);
 
-\c postgres
-drop database db_db_b_format;
+drop schema db_db_b_format cascade;
+reset current_schema;
 
 -- test for A compatibility to ensure the original functionality is good.
 create database db_db_b_format dbcompatibility 'A';

@@ -1,11 +1,9 @@
-drop database if exists get_db;
-NOTICE:  database "get_db" does not exist, skipping
-create database get_db dbcompatibility 'b';
-\c get_db
+create schema get_db;
+set current_schema to 'get_db';
 select database();
  database 
 ----------
- public
+ get_db
 (1 row)
 
 create schema testdb;
@@ -30,5 +28,5 @@ select database();
  testdb1
 (1 row)
 
-\c postgres
-drop database if exists get_db;
+drop schema get_db cascade;
+reset current_schema;

@@ -1,6 +1,5 @@
-drop database if exists insert_set;
-create database insert_set dbcompatibility 'B';
-\c insert_set
+create schema insert_set;
+set current_schema to 'insert_set';
 
 create table test_figure(tinyint tinyint, smallint smallint, integer integer, binary_integer binary_integer, bigint bigint);
 insert into test_figure set bigint = 7234134, binary_integer = 1011101, integer = 10000, smallint = 1, tinyint = 3;
@@ -40,5 +39,5 @@ select * from test_error;
 insert into test_error set name = 23;
 select * from test_error;
 
-\c postgres
-drop database insert_set;
+drop schema insert_set cascade;
+reset current_schema;

@@ -1,6 +1,5 @@
-drop database if exists db_b_rename_user_test;
-create database db_b_rename_user_test dbcompatibility 'b';
-\c db_b_rename_user_test
+create schema db_b_rename_user_test;
+set current_schema to 'db_b_rename_user_test';
 
 CREATE USER user1 WITH ENCRYPTED PASSWORD 'user1@1234';
 CREATE USER user2 WITH ENCRYPTED PASSWORD 'user2@1234';
@@ -35,5 +34,5 @@ drop user user4;
 drop user user5;
 drop user user6;
 
-\c postgres
-drop database if exists db_b_rename_user_test;
+drop schema db_b_rename_user_test cascade;
+reset current_schema;

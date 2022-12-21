@@ -1,9 +1,5 @@
--- b compatibility case
-drop database if exists read_only_guc_test;
-NOTICE:  database "read_only_guc_test" does not exist, skipping
--- create database read_only_guc_test dbcompatibility 'b';
-create database read_only_guc_test with DBCOMPATIBILITY = 'B';
-\c read_only_guc_test
+create schema read_only_guc_test;
+set current_schema to 'read_only_guc_test';
 
 show version_comment;
         version_comment         
@@ -235,5 +231,5 @@ SELECT * FROM pg_settings WHERE NAME='wait_timeout';
 (1 row)
 
 
-\c postgres
-drop database if exists read_only_guc_test;
+drop schema read_only_guc_test cascade;
+reset current_schema;

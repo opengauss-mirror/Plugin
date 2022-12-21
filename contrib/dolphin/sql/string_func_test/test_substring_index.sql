@@ -1,6 +1,5 @@
-drop database if exists test_substring_index;
-create database test_substring_index dbcompatibility 'b';
-\c test_substring_index
+create schema test_substring_index;
+set current_schema to 'test_substring_index';
 SELECT SUBSTRING_INDEX('www.opengauss.com','.',0);
 SELECT SUBSTRING_INDEX('www.opengauss.com','',2);
 SELECT SUBSTRING_INDEX('','.',2);
@@ -44,5 +43,5 @@ SELECT SUBSTRING_INDEX(myFloat,'.',1) FROM myTable;
 SELECT SUBSTRING_INDEX(myBool,'1',1) FROM myTable;
 SELECT SUBSTRING_INDEX(myDate,'-',1) FROM myTable;
 drop table myTable;
-\c postgres
-drop database test_substring_index;
+drop schema test_substring_index cascade;
+reset current_schema;

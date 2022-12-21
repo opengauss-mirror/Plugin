@@ -1,5 +1,5 @@
-CREATE DATABASE sql_mode_full_group dbcompatibility 'B';
-\c sql_mode_full_group;
+create schema sql_mode_full_group;
+set current_schema to 'sql_mode_full_group';
 create table test_group(a int, b int, c int, d int);
 create table test_group1(a int, b int, c int, d int);
 insert into test_group values(1,2,3,4);
@@ -18,5 +18,5 @@ set dolphin.sql_mode = '';
 select a, b from test_group group by a;
 select a, d as items, (select count(*) from test_group t where t.a = i.a and b in (select b from test_group1 where c = 4)) as third from test_group i group by a;
 select t.a, (select sum(b) from test_group i where i.b = t.b ) from test_group t where t.a > 1+1 or (t.b < 8 and t.b > 1) group by t.a;
-\c contrib_regression;
-drop DATABASE if exists sql_mode_full_group;
+drop schema sql_mode_full_group cascade;
+reset current_schema;

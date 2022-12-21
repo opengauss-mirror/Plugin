@@ -1,6 +1,5 @@
-drop database if exists tinyint_index;
-create database tinyint_index dbcompatibility 'b';
-\c tinyint_index
+create schema tinyint_index;
+set current_schema to 'tinyint_index';
 
 create table t1(a int1);
 insert into t1 select generate_series(-128, 127);
@@ -77,3 +76,6 @@ explain(costs off, verbose)select * from t1 where a >= -1::int1 and a <= 0::int1
 explain(costs off, verbose)select * from t1 where a >= -1::int2 and a <= 0::int2;
 explain(costs off, verbose)select * from t1 where a >= -1::int4 and a <= 0::int4;
 explain(costs off, verbose)select * from t1 where a >= -1::int8 and a <= 0::int8;
+
+drop schema tinyint_index cascade;
+reset current_schema;

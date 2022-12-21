@@ -1,6 +1,6 @@
 -- test for ignore error of no partition matched
-create database sql_ignore_no_matched_partition_test dbcompatibility 'B';
-\c sql_ignore_no_matched_partition_test;
+create schema sql_ignore_no_matched_partition_test;
+set current_schema to 'sql_ignore_no_matched_partition_test';
 
 -- sqlbypass
 set enable_opfusion = on;
@@ -157,5 +157,5 @@ set enable_opfusion = on;
 set enable_partition_opfusion = off;
 drop table t_ignore;
 drop table t_from;
-\c postgres
-drop database if exists sql_ignore_no_matched_partition_test;
+drop schema sql_ignore_no_matched_partition_test cascade;
+reset current_schema;

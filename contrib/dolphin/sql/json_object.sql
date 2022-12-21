@@ -1,6 +1,5 @@
-drop database if exists test_json_object;
-create database test_json_object dbcompatibility 'B';
-\c test_json_object
+create schema test_json_object;
+set current_schema to 'test_json_object';
 
 -- test for b_compatibility_mode = false
 select json_object('{a,1,b,2,3,NULL,"d e f","a b c"}');
@@ -111,5 +110,5 @@ set dolphin.b_compatibility_mode = 0;
 select json_object('{a,1,b,2,3,NULL,"d e f","a b c"}');
 select json_object('{a,b,"a b c"}', '{a,1,1}');
 
-\c postgres
-drop database if exists test_json_object;
+drop schema test_json_object cascade;
+reset current_schema;

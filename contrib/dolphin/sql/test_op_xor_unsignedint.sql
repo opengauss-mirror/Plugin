@@ -1,6 +1,5 @@
-drop database if exists test_op_xor_unsignedint;
-create database test_op_xor_unsignedint with dbcompatibility='B';
-\c test_op_xor_unsignedint
+create schema test_op_xor_unsignedint;
+set current_schema to 'test_op_xor_unsignedint';
 
 select (-1)::uint1 ^ 2::int1;
 select (-1)::uint1 ^ 2::int2;
@@ -150,5 +149,5 @@ select 2 ::uint8 ^ 2::bool;
 select 2 ::uint8 ^ 2::char;
 select 2 ::uint8 ^ 2::varchar;
 
-\c postgres
-drop database test_op_xor_unsignedint;
+drop schema test_op_xor_unsignedint cascade;
+reset current_schema;

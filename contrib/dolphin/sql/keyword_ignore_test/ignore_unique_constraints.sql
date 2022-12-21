@@ -1,5 +1,5 @@
-create database sql_ignore_unique_test dbcompatibility 'B';
-\c sql_ignore_unique_test;
+create schema sql_ignore_unique_test;
+set current_schema to 'sql_ignore_unique_test';
 drop table if exists t_ignore;
 create table t_ignore(col1 int, col2 int unique, col3 int unique);
 
@@ -177,5 +177,5 @@ insert into t_ignore values(2);
 update ignore t_ignore set num = 1 where num = 2;
 select * from t_ignore;
 
-\c postgres
-drop database if exists sql_ignore_unique_test;
+drop schema sql_ignore_unique_test cascade;
+reset current_schema;

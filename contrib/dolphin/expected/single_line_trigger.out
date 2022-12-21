@@ -1,9 +1,7 @@
 --create trigger
 -- test mysql compatibility trigger 
-drop database if exists db_mysql;
-NOTICE:  database "db_mysql" does not exist, skipping
-create database db_mysql dbcompatibility 'B';
-\c db_mysql
+create schema db_mysql;
+set current_schema to 'db_mysql';
 create table t (id int);
 create table t1 (id int);
 create table animals (id int, name char(30));
@@ -309,5 +307,5 @@ NOTICE:  trigger "ins_call100" already exists, skipping
 drop table t, t1;
 drop procedure proc;
 reset enable_set_variable_b_format;
-\c postgres
-drop database db_mysql;
+drop schema db_mysql cascade;
+reset current_schema;

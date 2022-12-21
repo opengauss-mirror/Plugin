@@ -1,7 +1,5 @@
-drop DATABASE if exists partition_test3;
-NOTICE:  database "partition_test3" does not exist, skipping
-CREATE DATABASE partition_test3 dbcompatibility 'B';
-\c partition_test3;
+create schema partition_test3;
+set current_schema to 'partition_test3';
 --test add and drop
 CREATE TABLE IF NOT EXISTS test_part2
 (
@@ -213,5 +211,10 @@ LINE 1: ALTER TABLE test_part2_1 add PARTITION p2 VALUES (add(600,10...
 HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
 ALTER TABLE test_part2_1 add PARTITION p3 VALUES (DEFAULT) (SUBPARTITION p3_0 VALUES LESS THAN (100));
 ERROR:  can not add none-range partition to range partition table
-\c postgres;
-drop DATABASE if exists partition_test3;
+drop schema partition_test3 cascade;
+NOTICE:  drop cascades to 4 other objects
+DETAIL:  drop cascades to table test_part2
+drop cascades to table test_subpart2
+drop cascades to table test_part2_1
+drop cascades to table test_subpart2_1
+reset current_schema;

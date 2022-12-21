@@ -2,10 +2,8 @@
 -- Test Time functions(Stage 2) under 'b' compatibility
 -- Contains subtime()、timediff()、time()、time_format()、timestamp()、timestampadd()
 --
-drop database if exists b_time_funcs2;
-NOTICE:  database "b_time_funcs2" does not exist, skipping
-create database b_time_funcs2 dbcompatibility 'b';
-\c b_time_funcs2
+create schema b_time_funcs2;
+set current_schema to 'b_time_funcs2';
 create table func_test2(functionName varchar(256),result varchar(256));
 truncate table func_test2;
 -- SUBTIME()
@@ -1039,5 +1037,6 @@ select * from func_test2;
  TIMESTAMPADD(SECOND,-0.001,'2022-07-27 00:00:00')                                           | Tue Jul 26 23:59:59.999 2022
 --?.*
 
-\c postgres
-drop database if exists b_time_funcs2;
+drop schema b_time_funcs2 cascade;
+NOTICE:  drop cascades to table func_test2
+reset current_schema;

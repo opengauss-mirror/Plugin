@@ -1,7 +1,5 @@
-drop database if exists option;
-NOTICE:  database "option" does not exist, skipping
-create database option dbcompatibility = 'b';
-\c option
+create schema option;
+set current_schema to 'option';
 create global temp table test1(a int primary key, b text) on commit delete rows engine = InnoDB with(STORAGE_TYPE = ASTORE);
 NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "test1_pkey" for table "test1"
 create global temp table test2(id int,vname varchar(48),remark text) engine = InnoDB on commit PRESERVE rows ;
@@ -123,5 +121,8 @@ drop table test7;
 drop table test8;
 drop table test9;
 drop table test10;
-\c postgres
-drop database option;
+drop schema option cascade;
+NOTICE:  drop cascades to 2 other objects
+DETAIL:  drop cascades to table test11
+drop cascades to table test13
+reset current_schema;

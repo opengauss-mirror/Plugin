@@ -1,5 +1,5 @@
-create database sql_ignore_type_transform_test dbcompatibility 'B';
-\c sql_ignore_type_transform_test;
+create schema sql_ignore_type_transform_test;
+set current_schema to 'sql_ignore_type_transform_test';
 
 -- test for tinyint
 drop table if exists t;
@@ -343,5 +343,5 @@ insert into t_text values(123456789123456789);
 insert ignore into t_nvarchar2 select cont from t_text;
 select * from t_nvarchar2;
 
-\c postgres
-drop database if exists sql_ignore_type_transform_test;
+drop schema sql_ignore_type_transform_test cascade;
+reset current_schema;

@@ -1,7 +1,5 @@
-drop database if exists db_char;
-NOTICE:  database "db_char" does not exist, skipping
-create database db_char dbcompatibility 'B';
-\c db_char
+create schema db_char;
+set current_schema to 'db_char';
 select char(67,66,67);
  char 
 ------
@@ -128,5 +126,5 @@ select char('hiu158','测试',125.99,146);
  ~
 (1 row)
 
-\c postgres
-drop database if exists db_char;
+drop schema db_char cascade;
+reset current_schema;

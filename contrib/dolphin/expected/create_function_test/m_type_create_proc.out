@@ -1,7 +1,5 @@
-drop database if exists m_create_proc_type;
-NOTICE:  database "m_create_proc_type" does not exist, skipping
-create database m_create_proc_type dbcompatibility 'B';
-\c m_create_proc_type
+create schema m_create_proc_type;
+set current_schema to 'm_create_proc_type';
 --test create procedure 
 delimiter //
 CREATE PROCEDURE p()
@@ -347,5 +345,24 @@ call doempty();
  
 (1 row)
 
-\c postgres
-drop database m_create_proc_type;
+drop schema m_create_proc_type cascade;
+NOTICE:  drop cascades to 18 other objects
+DETAIL:  drop cascades to function p()
+drop cascades to function proc1()
+drop cascades to table item
+drop cascades to function procedure_1(integer,integer)
+drop cascades to function procedure_1_m(integer,integer)
+drop cascades to table test
+drop cascades to function testpro(integer)
+drop cascades to function testpro_m(integer)
+drop cascades to function testpro_m6(integer)
+drop cascades to function testpro_m7(integer)
+drop cascades to function procedure_1_m_o(integer,integer)
+drop cascades to function procedure_2_m_o()
+drop cascades to table test9
+drop cascades to function test_proc()
+drop cascades to function doiterate(integer)
+drop cascades to function dorepeat(integer)
+drop cascades to function docase(integer)
+drop cascades to function doempty()
+reset current_schema;

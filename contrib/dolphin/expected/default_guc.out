@@ -1,7 +1,5 @@
-drop database if exists default_guc;
-NOTICE:  database "default_guc" does not exist, skipping
-create database default_guc dbcompatibility 'b';
-\c default_guc
+create schema default_guc;
+set current_schema to 'default_guc';
 show behavior_compat_options;
  behavior_compat_options 
 -------------------------
@@ -51,5 +49,5 @@ select md5('0.123');
  677738b969d6037efce2c328c6814580
 (1 row)
 
-\c postgres
-drop database if exists default_guc;
+drop schema default_guc cascade;
+reset current_schema;

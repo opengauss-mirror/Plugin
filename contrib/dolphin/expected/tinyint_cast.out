@@ -1,7 +1,5 @@
-drop database if exists tinyint_cast;
-NOTICE:  database "tinyint_cast" does not exist, skipping
-create database tinyint_cast dbcompatibility 'b';
-\c tinyint_cast
+create schema tinyint_cast;
+set current_schema to 'tinyint_cast';
 create table t1(a int1);
 insert into t1 values('');
 ERROR:  invalid input syntax for integer: ""
@@ -382,5 +380,6 @@ select '-128'::text::int1;
  -128
 (1 row)
 
-\c postgres
-drop database tinyint_cast;
+drop schema tinyint_cast cascade;
+NOTICE:  drop cascades to table t1
+reset current_schema;

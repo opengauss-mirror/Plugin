@@ -1,6 +1,5 @@
-drop database if exists db_between;
-create database db_between dbcompatibility 'B';
-\c db_between
+create schema db_between;
+set current_schema to 'db_between';
 select 2 between 2 and 23;
 select 2.1 between 2.1 and 12.3;
 select true between false and true;
@@ -85,5 +84,5 @@ select * from t_between_and_0023;
 select distinct c_town from t_between_and_0023 where c_town between 'b' and 'n';
 select distinct c_town from t_between_and_0023 where c_town between 'b' and 'nz';
 drop table t_between_and_0023;
-\c postgres
-drop database if exists db_between;
+drop schema db_between cascade;
+reset current_schema;

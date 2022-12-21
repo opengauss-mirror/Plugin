@@ -1,5 +1,5 @@
-create database vec_engine_test dbcompatibility 'b';
-\c vec_engine_test
+create schema vec_engine_test;
+set current_schema to 'vec_engine_test';
 CREATE TABLE customer (
     c_custkey integer NOT NULL,
     c_name character varying(25) NOT NULL,
@@ -128,5 +128,12 @@ explain (costs off) select
                                                    Filter: (r_name = 'ASIA'::bpchar)
 (23 rows)
 
-\c postgres
-drop database vec_engine_test;
+drop schema vec_engine_test cascade;
+NOTICE:  drop cascades to 6 other objects
+DETAIL:  drop cascades to table customer
+drop cascades to table orders
+drop cascades to table lineitem
+drop cascades to table supplier
+drop cascades to table nation
+drop cascades to table region
+reset current_schema;

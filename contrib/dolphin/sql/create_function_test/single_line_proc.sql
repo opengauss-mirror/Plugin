@@ -1,7 +1,5 @@
-
-drop database if exists db_func_call_2;
-create database db_func_call_2 dbcompatibility 'B';
-\c db_func_call_2
+create schema db_func_call_2;
+set current_schema to 'db_func_call_2';
 
 
 create table t1 (a int);
@@ -151,7 +149,6 @@ create procedure proc33 () select z from tz;
 
 
 
-\c regress
-
-drop database  db_func_call_2;
+drop schema db_func_call_2 cascade;
+reset current_schema;
 

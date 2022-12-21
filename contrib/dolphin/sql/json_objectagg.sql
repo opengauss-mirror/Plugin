@@ -1,6 +1,5 @@
-drop database if exists json_objectagg_test;
-create database json_objectagg_test dbcompatibility 'B';
-\c json_objectagg_test
+create schema json_objectagg_test;
+set current_schema to 'json_objectagg_test';
 -- create table for test
 create table City(District varchar(30), Name varchar(30), Population int);
 insert into City values ('Capital Region','Canberra',322723);
@@ -42,5 +41,5 @@ insert into time_table values(20211001, 2);
 insert into time_table values(20221204, 3);
 select json_objectagg(b, a) from time_table;
 
-\c postgres
-drop database json_objectagg_test;
+drop schema json_objectagg_test cascade;
+reset current_schema;

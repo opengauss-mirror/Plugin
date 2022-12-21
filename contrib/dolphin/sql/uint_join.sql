@@ -1,6 +1,5 @@
-drop database if exists uint_join;
-create database uint_join dbcompatibility 'b';
-\c uint_join
+create schema uint_join;
+set current_schema to 'uint_join';
 
 create table t1(a int2, b uint2);
 create table t2(a uint4, b uint4);
@@ -22,5 +21,5 @@ select /*+ nestloop(t1 t2)*/ * from t1 join t2;
 select /*+ hashjoin(t1 t2)*/ * from t1 join t2;
 select /*+ mergejoin(t1 t2)*/ * from t1 join t2;
 
-\c postgres
-drop database uint_join;
+drop schema uint_join cascade;
+reset current_schema;

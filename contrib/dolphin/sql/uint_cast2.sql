@@ -1,6 +1,5 @@
-drop database if exists uint_cast2;
-create database uint_cast2 dbcompatibility 'b';
-\c uint_cast2
+create schema uint_cast2;
+set current_schema to 'uint_cast2';
 
 drop table if exists t1 ;
 create table t1(a uint8);
@@ -313,5 +312,5 @@ insert into t1 values((-1)::uint1);
 insert into t1 values(255::uint1);
 insert into t1 values(256::uint1);
 
-\c postgres
-drop database uint_cast2;
+drop schema uint_cast2 cascade;
+reset current_schema;

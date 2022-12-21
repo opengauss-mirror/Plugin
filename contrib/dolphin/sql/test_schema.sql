@@ -1,8 +1,7 @@
-drop database if exists schema_test;
-create database schema_test dbcompatibility 'b';
-\c schema_test
+create schema schema_test;
+set current_schema to 'schema_test';
 
 SELECT SCHEMA();
 
-\c postgres
-drop database if exists schema_test;
+drop schema schema_test cascade;
+reset current_schema;

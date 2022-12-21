@@ -1,7 +1,5 @@
-drop database if exists tinyint_index;
-NOTICE:  database "tinyint_index" does not exist, skipping
-create database tinyint_index dbcompatibility 'b';
-\c tinyint_index
+create schema tinyint_index;
+set current_schema to 'tinyint_index';
 create table t1(a int1);
 insert into t1 select generate_series(-128, 127);
 insert into t1 select generate_series(-128, 127);
@@ -18,7 +16,7 @@ analyze t1;
 explain(costs off, verbose)select * from t1 where a = 1::int1;
                 QUERY PLAN                 
 -------------------------------------------
- Bitmap Heap Scan on public.t1
+ Bitmap Heap Scan on tinyint_index.t1
    Output: a
    Recheck Cond: (t1.a = '1'::tinyint)
    ->  Bitmap Index Scan on idx1
@@ -28,7 +26,7 @@ explain(costs off, verbose)select * from t1 where a = 1::int1;
 explain(costs off, verbose)select * from t1 where a = 1::int2;
                 QUERY PLAN                
 ------------------------------------------
- Bitmap Heap Scan on public.t1
+ Bitmap Heap Scan on tinyint_index.t1
    Output: a
    Recheck Cond: (t1.a = 1::smallint)
    ->  Bitmap Index Scan on idx1
@@ -36,9 +34,9 @@ explain(costs off, verbose)select * from t1 where a = 1::int2;
 (5 rows)
 
 explain(costs off, verbose)select * from t1 where a = 1::int4;
-           QUERY PLAN            
----------------------------------
- Bitmap Heap Scan on public.t1
+              QUERY PLAN              
+--------------------------------------
+ Bitmap Heap Scan on tinyint_index.t1
    Output: a
    Recheck Cond: (t1.a = 1)
    ->  Bitmap Index Scan on idx1
@@ -48,7 +46,7 @@ explain(costs off, verbose)select * from t1 where a = 1::int4;
 explain(costs off, verbose)select * from t1 where a = 1::int8;
                QUERY PLAN               
 ----------------------------------------
- Bitmap Heap Scan on public.t1
+ Bitmap Heap Scan on tinyint_index.t1
    Output: a
    Recheck Cond: (t1.a = 1::bigint)
    ->  Bitmap Index Scan on idx1
@@ -118,7 +116,7 @@ select * from t1 where a = 1::int8;
 explain(costs off, verbose)select * from t1 where a > 1::int1 and a < 3::int1;
                               QUERY PLAN                               
 -----------------------------------------------------------------------
- Bitmap Heap Scan on public.t1
+ Bitmap Heap Scan on tinyint_index.t1
    Output: a
    Recheck Cond: ((t1.a > '1'::tinyint) AND (t1.a < '3'::tinyint))
    ->  Bitmap Index Scan on idx1
@@ -128,7 +126,7 @@ explain(costs off, verbose)select * from t1 where a > 1::int1 and a < 3::int1;
 explain(costs off, verbose)select * from t1 where a > 1::int2 and a < 3::int2;
                              QUERY PLAN                              
 ---------------------------------------------------------------------
- Bitmap Heap Scan on public.t1
+ Bitmap Heap Scan on tinyint_index.t1
    Output: a
    Recheck Cond: ((t1.a > 1::smallint) AND (t1.a < 3::smallint))
    ->  Bitmap Index Scan on idx1
@@ -138,7 +136,7 @@ explain(costs off, verbose)select * from t1 where a > 1::int2 and a < 3::int2;
 explain(costs off, verbose)select * from t1 where a > 1::int4 and a < 3::int4;
                    QUERY PLAN                    
 -------------------------------------------------
- Bitmap Heap Scan on public.t1
+ Bitmap Heap Scan on tinyint_index.t1
    Output: a
    Recheck Cond: ((t1.a > 1) AND (t1.a < 3))
    ->  Bitmap Index Scan on idx1
@@ -148,7 +146,7 @@ explain(costs off, verbose)select * from t1 where a > 1::int4 and a < 3::int4;
 explain(costs off, verbose)select * from t1 where a > 1::int8 and a < 3::int8;
                            QUERY PLAN                            
 -----------------------------------------------------------------
- Bitmap Heap Scan on public.t1
+ Bitmap Heap Scan on tinyint_index.t1
    Output: a
    Recheck Cond: ((t1.a > 1::bigint) AND (t1.a < 3::bigint))
    ->  Bitmap Index Scan on idx1
@@ -218,7 +216,7 @@ select * from t1 where a > 1::int8 and a < 3::int8;
 explain(costs off, verbose)select * from t1 where a >= -2::int1 and a <= -1::int1;
                                 QUERY PLAN                                 
 ---------------------------------------------------------------------------
- Bitmap Heap Scan on public.t1
+ Bitmap Heap Scan on tinyint_index.t1
    Output: a
    Recheck Cond: ((t1.a >= '-2'::tinyint) AND (t1.a <= '-1'::tinyint))
    ->  Bitmap Index Scan on idx1
@@ -228,7 +226,7 @@ explain(costs off, verbose)select * from t1 where a >= -2::int1 and a <= -1::int
 explain(costs off, verbose)select * from t1 where a >= -2::int2 and a <= -1::int2;
                                  QUERY PLAN                                  
 -----------------------------------------------------------------------------
- Bitmap Heap Scan on public.t1
+ Bitmap Heap Scan on tinyint_index.t1
    Output: a
    Recheck Cond: ((t1.a >= (-2)::smallint) AND (t1.a <= (-1)::smallint))
    ->  Bitmap Index Scan on idx1
@@ -238,7 +236,7 @@ explain(costs off, verbose)select * from t1 where a >= -2::int2 and a <= -1::int
 explain(costs off, verbose)select * from t1 where a >= -2::int4 and a <= -1::int4;
                        QUERY PLAN                        
 ---------------------------------------------------------
- Bitmap Heap Scan on public.t1
+ Bitmap Heap Scan on tinyint_index.t1
    Output: a
    Recheck Cond: ((t1.a >= (-2)) AND (t1.a <= (-1)))
    ->  Bitmap Index Scan on idx1
@@ -248,7 +246,7 @@ explain(costs off, verbose)select * from t1 where a >= -2::int4 and a <= -1::int
 explain(costs off, verbose)select * from t1 where a >= -2::int8 and a <= -1::int8;
                                QUERY PLAN                                
 -------------------------------------------------------------------------
- Bitmap Heap Scan on public.t1
+ Bitmap Heap Scan on tinyint_index.t1
    Output: a
    Recheck Cond: ((t1.a >= (-2)::bigint) AND (t1.a <= (-1)::bigint))
    ->  Bitmap Index Scan on idx1
@@ -361,7 +359,7 @@ analyze t1;
 explain(costs off, verbose)select * from t1 where a = 1::int1;
                 QUERY PLAN                 
 -------------------------------------------
- Bitmap Heap Scan on public.t1
+ Bitmap Heap Scan on tinyint_index.t1
    Output: a
    Recheck Cond: (t1.a = '1'::tinyint)
    ->  Bitmap Index Scan on idx1
@@ -371,7 +369,7 @@ explain(costs off, verbose)select * from t1 where a = 1::int1;
 explain(costs off, verbose)select * from t1 where a = 1::int2;
                 QUERY PLAN                
 ------------------------------------------
- Bitmap Heap Scan on public.t1
+ Bitmap Heap Scan on tinyint_index.t1
    Output: a
    Recheck Cond: (t1.a = 1::smallint)
    ->  Bitmap Index Scan on idx1
@@ -379,9 +377,9 @@ explain(costs off, verbose)select * from t1 where a = 1::int2;
 (5 rows)
 
 explain(costs off, verbose)select * from t1 where a = 1::int4;
-           QUERY PLAN            
----------------------------------
- Bitmap Heap Scan on public.t1
+              QUERY PLAN              
+--------------------------------------
+ Bitmap Heap Scan on tinyint_index.t1
    Output: a
    Recheck Cond: (t1.a = 1)
    ->  Bitmap Index Scan on idx1
@@ -391,7 +389,7 @@ explain(costs off, verbose)select * from t1 where a = 1::int4;
 explain(costs off, verbose)select * from t1 where a = 1::int8;
                QUERY PLAN               
 ----------------------------------------
- Bitmap Heap Scan on public.t1
+ Bitmap Heap Scan on tinyint_index.t1
    Output: a
    Recheck Cond: (t1.a = 1::bigint)
    ->  Bitmap Index Scan on idx1
@@ -470,7 +468,7 @@ explain(costs off, verbose)select * from t1 where a >= -1::int1 and a <= 0::int1
 ----------------------------------------------------------------------
  Row Adapter
    Output: a
-   ->  CStore Scan on public.t1
+   ->  CStore Scan on tinyint_index.t1
          Output: a
          Filter: ((t1.a >= '-1'::tinyint) AND (t1.a <= '0'::tinyint))
 (5 rows)
@@ -480,17 +478,17 @@ explain(costs off, verbose)select * from t1 where a >= -1::int2 and a <= 0::int2
 --------------------------------------------------------------------------
  Row Adapter
    Output: a
-   ->  CStore Index Only Scan using idx1 on public.t1
+   ->  CStore Index Only Scan using idx1 on tinyint_index.t1
          Output: a
          Index Cond: ((t1.a >= (-1)::smallint) AND (t1.a <= 0::smallint))
 (5 rows)
 
 explain(costs off, verbose)select * from t1 where a >= -1::int4 and a <= 0::int4;
-                      QUERY PLAN                      
-------------------------------------------------------
+                         QUERY PLAN                          
+-------------------------------------------------------------
  Row Adapter
    Output: a
-   ->  CStore Index Only Scan using idx1 on public.t1
+   ->  CStore Index Only Scan using idx1 on tinyint_index.t1
          Output: a
          Index Cond: ((t1.a >= (-1)) AND (t1.a <= 0))
 (5 rows)
@@ -500,8 +498,13 @@ explain(costs off, verbose)select * from t1 where a >= -1::int8 and a <= 0::int8
 ----------------------------------------------------------------------
  Row Adapter
    Output: a
-   ->  CStore Index Only Scan using idx1 on public.t1
+   ->  CStore Index Only Scan using idx1 on tinyint_index.t1
          Output: a
          Index Cond: ((t1.a >= (-1)::bigint) AND (t1.a <= 0::bigint))
 (5 rows)
 
+drop schema tinyint_index cascade;
+NOTICE:  drop cascades to 2 other objects
+DETAIL:  drop cascades to table t1
+drop cascades to table t2
+reset current_schema;

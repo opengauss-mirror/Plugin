@@ -1,6 +1,5 @@
-drop database if exists test_json_merge_preserve;
-create database test_json_merge_preserve dbcompatibility 'B';
-\c test_json_merge_preserve
+create schema test_json_merge_preserve;
+set current_schema to 'test_json_merge_preserve';
 
 select json_merge_preserve(NULL);
 select json_merge_preserve(NULL,NULL);
@@ -75,5 +74,5 @@ insert into test1 values
  json_merge_preserve('[{"a":"abc"},"bcd"]','{"1":"jks"}'));
  select * from test1;
 
-\c postgres;
-drop database if exists test_json_merge_preserve;
+drop schema test_json_merge_preserve cascade;
+reset current_schema;

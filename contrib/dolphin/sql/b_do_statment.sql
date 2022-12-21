@@ -1,5 +1,5 @@
-create database db_do_stmt dbcompatibility = 'B';
-\c db_do_stmt
+create schema db_do_stmt;
+set current_schema to 'db_do_stmt';
 
 create table t1 (a int);
 insert into t1 values(1),(4),(7);
@@ -49,5 +49,5 @@ LANGUAGE SQL;
 do sin(a) from t1;
 
 
-\c regress
-drop database db_do_stmt;
+drop schema db_do_stmt cascade;
+reset current_schema;

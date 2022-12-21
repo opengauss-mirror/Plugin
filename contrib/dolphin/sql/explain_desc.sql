@@ -1,12 +1,12 @@
-create database db_explain_desc with dbcompatibility 'B';
-\c db_explain_desc
+create schema db_explain_desc;
+set current_schema to 'db_explain_desc';
 
 create table ed_t(c1 int, c2 varchar(100), c3 int default 10);
 insert into ed_t values(generate_series(1, 10), 'hello', 100);
 
 -- 1.use explain to query table's info
 explain ed_t;
-explain public.ed_t;
+explain db_explain_desc.ed_t;
 
 -- 2.use desc to query plan info
 desc select c1, c2, c3 from ed_t;
@@ -44,6 +44,5 @@ explain format='TraDitional' delete from ed_t where c1 < 5;
 
 drop table ed_t;
 
-\c postgres
-
-drop database db_explain_desc;
+drop schema db_explain_desc cascade;
+reset current_schema;

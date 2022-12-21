@@ -1,8 +1,5 @@
--- b compatibility case
-drop database if exists empty_value_lists;
-create database empty_value_lists dbcompatibility 'b';
-
-\c empty_value_lists
+create schema empty_value_lists;
+set current_schema to 'empty_value_lists';
 
 create table test1(num int);
 create table test2(num int default 3);
@@ -191,5 +188,5 @@ select * from m3;
 insert into m4 values(),();
 select * from m4;
 
-\c postgres
-drop database if exists empty_value_lists;
+drop schema empty_value_lists cascade;
+reset current_schema;

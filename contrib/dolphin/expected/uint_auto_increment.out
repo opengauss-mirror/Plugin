@@ -1,6 +1,5 @@
--- create b db
-create database uint_auto_increment with dbcompatibility = 'B';
-\c uint_auto_increment
+create schema uint_auto_increment;
+set current_schema to 'uint_auto_increment';
 -- test CREATE TABLE with AUTO_INCREMENT
 -- syntax error
 CREATE TABLE test_create_autoinc_err(id int unsigned auto_increment key, name varchar(200),a int unsigned);
@@ -240,7 +239,7 @@ SELECT id, col FROM test_alter_autoinc ORDER BY 1, 2;
 SELECT pg_catalog.pg_get_tabledef('test_alter_autoinc');
                      pg_get_tabledef                     
 ---------------------------------------------------------
- SET search_path = public;                              +
+ SET search_path = uint_auto_increment;                 +
  CREATE TABLE test_alter_autoinc (                      +
      col uint4,                                         +
      id uint4 AUTO_INCREMENT NOT NULL,                  +
@@ -446,7 +445,7 @@ SELECT col FROM single_autoinc_pk ORDER BY 1;
 SELECT pg_catalog.pg_get_tabledef('single_autoinc_pk');
                      pg_get_tabledef                     
 ---------------------------------------------------------
- SET search_path = public;                              +
+ SET search_path = uint_auto_increment;                 +
  CREATE TABLE single_autoinc_pk (                       +
      col uint4 AUTO_INCREMENT NOT NULL,                 +
      CONSTRAINT single_autoinc_pk_pkey PRIMARY KEY (col)+
@@ -461,7 +460,7 @@ NOTICE:  ALTER TABLE / ADD UNIQUE will create implicit index "test_alter_single_
 SELECT pg_catalog.pg_get_tabledef('single_autoinc_pk');
                                             pg_get_tabledef                                             
 --------------------------------------------------------------------------------------------------------
- SET search_path = public;                                                                             +
+ SET search_path = uint_auto_increment;                                                                +
  CREATE TABLE single_autoinc_pk (                                                                      +
      col uint4 AUTO_INCREMENT NOT NULL,                                                                +
      CONSTRAINT test_alter_single_autoinc_pk_u2 UNIQUE (col)                                           +
@@ -475,7 +474,7 @@ ALTER TABLE single_autoinc_pk DROP CONSTRAINT test_alter_single_autoinc_pk_u2;
 SELECT pg_catalog.pg_get_tabledef('single_autoinc_pk');
                                            pg_get_tabledef                                           
 -----------------------------------------------------------------------------------------------------
- SET search_path = public;                                                                          +
+ SET search_path = uint_auto_increment;                                                             +
  CREATE TABLE single_autoinc_pk (                                                                   +
      col uint4 AUTO_INCREMENT NOT NULL,                                                             +
      CONSTRAINT test_alter_single_autoinc_pk_u1 UNIQUE (col)                                        +
@@ -614,7 +613,7 @@ SELECT col FROM single_autoinc_uk ORDER BY 1;
 SELECT pg_catalog.pg_get_tabledef('single_autoinc_uk');
                     pg_get_tabledef                    
 -------------------------------------------------------
- SET search_path = public;                            +
+ SET search_path = uint_auto_increment;               +
  CREATE TABLE single_autoinc_uk (                     +
      col uint4 AUTO_INCREMENT,                        +
      CONSTRAINT single_autoinc_uk_col_key UNIQUE (col)+
@@ -1607,7 +1606,7 @@ SELECT col FROM gtemp_single_autoinc ORDER BY 1;
 SELECT pg_catalog.pg_get_tabledef('gtemp_single_autoinc');
                            pg_get_tabledef                            
 ----------------------------------------------------------------------
- SET search_path = public;                                           +
+ SET search_path = uint_auto_increment;                              +
  CREATE GLOBAL TEMPORARY TABLE gtemp_single_autoinc (                +
      col uint4 AUTO_INCREMENT NOT NULL,                              +
      CONSTRAINT gtemp_single_autoinc_pkey PRIMARY KEY (col)          +
@@ -1873,7 +1872,7 @@ SELECT col FROM unlog_single_autoinc ORDER BY 1;
 SELECT pg_catalog.pg_get_tabledef('unlog_single_autoinc');
                       pg_get_tabledef                       
 ------------------------------------------------------------
- SET search_path = public;                                 +
+ SET search_path = uint_auto_increment;                    +
  CREATE UNLOGGED TABLE unlog_single_autoinc (              +
      col uint4 AUTO_INCREMENT NOT NULL,                    +
      CONSTRAINT unlog_single_autoinc_pkey PRIMARY KEY (col)+
@@ -2160,7 +2159,7 @@ SELECT col1 FROM test_part_autoinc_pk ORDER BY 1;
 SELECT pg_catalog.pg_get_tabledef('test_part_autoinc_pk');
                                   pg_get_tabledef                                  
 -----------------------------------------------------------------------------------
- SET search_path = public;                                                        +
+ SET search_path = uint_auto_increment;                                           +
  CREATE TABLE test_part_autoinc_pk (                                              +
      col1 integer AUTO_INCREMENT NOT NULL,                                        +
      col2 integer NOT NULL,                                                       +
@@ -2475,7 +2474,7 @@ SELECT col1 FROM test_part_autoinc_unique ORDER BY 1;
 SELECT pg_catalog.pg_get_tabledef('test_part_autoinc_unique');
                                    pg_get_tabledef                                    
 --------------------------------------------------------------------------------------
- SET search_path = public;                                                           +
+ SET search_path = uint_auto_increment;                                              +
  CREATE TABLE test_part_autoinc_unique (                                             +
      col1 integer AUTO_INCREMENT,                                                    +
      col2 integer NOT NULL,                                                          +
@@ -3134,5 +3133,6 @@ SELECT col1,col2 FROM test_autoinc_insert_select ORDER BY 1;
 
 drop table test_autoinc_source;
 drop table test_autoinc_insert_select;
-\c postgres
-drop database if exists uint_auto_increment;
+drop schema uint_auto_increment cascade;
+NOTICE:  drop cascades to table uint_auto_increment.test_create_autoinc_err
+reset current_schema;

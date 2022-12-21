@@ -1,7 +1,14 @@
-SELECT LOG(10);
 drop database if exists db_b_log_test;
-create database db_b_log_test dbcompatibility 'B';
+create database db_b_log_test dbcompatibility 'A';
 \c db_b_log_test
+
+SELECT LOG(10);
+
+\c contrib_regression
+drop database db_b_log_test;
+
+create schema db_b_log_test;
+set current_schema to 'db_b_log_test';
 
 SELECT LOG(10);
 SELECT LOG10(100);
@@ -47,5 +54,5 @@ select log(b'111'::int);
 select log2(b'111'::int);
 select log10(b'111'::int);
 
-\c postgres
-drop database db_b_log_test;
+drop schema db_b_log_test cascade;
+reset current_schema;

@@ -1,7 +1,5 @@
-drop database if exists db_optimize;
-NOTICE:  database "db_optimize" does not exist, skipping
-create database db_optimize dbcompatibility 'b';
-\c db_optimize
+create schema db_optimize;
+set current_schema to 'db_optimize';
 create table doc(id serial primary key, content varchar(255));
 NOTICE:  CREATE TABLE will create implicit sequence "doc_id_seq" for serial column "doc.id"
 NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "doc_pkey" for table "doc"
@@ -12,5 +10,5 @@ drop table doc;
 set xc_maintenance_mode = on;
 optimize table pg_class;
 set xc_maintenance_mode = off;
-\c postgres
-drop database if exists db_optimize;
+drop schema db_optimize cascade;
+reset current_schema;

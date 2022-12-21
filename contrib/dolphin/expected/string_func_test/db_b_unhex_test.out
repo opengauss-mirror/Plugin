@@ -1,7 +1,5 @@
-drop database if exists unhex_test;
-NOTICE:  database "unhex_test" does not exist, skipping
-create database unhex_test dbcompatibility 'b';
-\c unhex_test
+create schema unhex_test;
+set current_schema to 'unhex_test';
 --测试字符串作为输入，返回十六进制编码的编码结果
 SELECT UNHEX('6f70656e4761757373');
    unhex   
@@ -101,5 +99,6 @@ SELECT UNHEX(name) from test_unhex;
  openGauss
 (2 rows)
 
-\c postgres
-drop database if exists unhex_test;
+drop schema unhex_test cascade;
+NOTICE:  drop cascades to table test_unhex
+reset current_schema;

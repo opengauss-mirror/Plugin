@@ -1,6 +1,5 @@
-drop database if exists test_enum;
-CREATE DATABASE test_enum with dbcompatibility='B';
-\c test_enum
+create schema test_enum;
+set current_schema to 'test_enum';
 -- create extension dolphin;
 show sql_compatibility;
 CREATE TABLE test (
@@ -77,7 +76,7 @@ CREATE TABLE testtttttttttttttttttttttttttttttttttt (
     myjobbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb enum('x','y')
 );
 
-SELECT * FROM pg_type WHERE typname like '%anonymous_enum%';
+SELECT count(*) FROM pg_type WHERE typname like 'testtttttttttttttttt_myjobbbbbbbbbbbbbbb%_anonymous_enum_1';
 drop table testtttttttttttttttttttttttttttttttttt;
 
 
@@ -171,5 +170,5 @@ W_COUNTRY VARCHAR(20) ,
 W_GMT_OFFSET DECIMAL(5,2)
 );
 
-\c postgres
-DROP DATABASE test_enum;
+drop schema test_enum cascade;
+reset current_schema;

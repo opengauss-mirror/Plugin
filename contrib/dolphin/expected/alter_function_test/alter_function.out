@@ -1,7 +1,5 @@
-drop database if exists db_alter_func_1;
-NOTICE:  database "db_alter_func_1" does not exist, skipping
-create database db_alter_func_1 dbcompatibility 'B';
-\c db_alter_func_1
+create schema db_alter_func_1;
+set current_schema to 'db_alter_func_1';
 CREATE FUNCTION f1 (s CHAR(20)) RETURNS int  AS $$ select 1 $$ ;
 ALTER FUNCTION f1 (s char(20)) NO SQL;
 ALTER FUNCTION f1 (s char(20)) CONTAINS SQL;
@@ -103,5 +101,12 @@ select * from t1;
  1
 (3 rows)
 
-\c postgres
-drop database db_alter_func_1;
+drop schema db_alter_func_1 cascade;
+NOTICE:  drop cascades to 6 other objects
+DETAIL:  drop cascades to function f1(character)
+drop cascades to function f3()
+drop cascades to function f5(integer)
+drop cascades to function f5(real)
+drop cascades to function f5()
+drop cascades to table t1
+reset current_schema;

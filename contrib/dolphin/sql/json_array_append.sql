@@ -1,6 +1,5 @@
-drop database if exists test_json_array_append;
-create database test_json_array_append dbcompatibility'B';
-\c test_json_array_append
+create schema test_json_array_append;
+set current_schema to 'test_json_array_append';
 
 select JSON_ARRAY_APPEND('[1, [2, 3]]', '$[1]', 4);
 select JSON_ARRAY_APPEND('[1, [2, 3]]', '$[0]', 4);
@@ -37,5 +36,5 @@ select JSON_ARRAY_APPEND('[1, [2, 3]]', '$[*]', 4);
 select JSON_ARRAY_APPEND('[1, [2, 3]]', '$[*]', 日);
 select JSON_ARRAY_APPEND('[1, [2, 3]]', ' ', 4);
 
-\c postgres
-drop database if exists test_json_array_append;
+drop schema test_json_array_append cascade;
+reset current_schema;

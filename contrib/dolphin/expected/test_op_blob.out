@@ -1,7 +1,5 @@
-drop database if exists test_op_blob;
-NOTICE:  database "test_op_blob" does not exist, skipping
-create database test_op_blob dbcompatibility 'b';
-\c test_op_blob
+create schema test_op_blob;
+set current_schema to 'test_op_blob';
 select '1'::blob ^ '1'::blob;
  ?column? 
 ----------
@@ -81,5 +79,5 @@ select '1'::blob ^ 11::numeric;
        10
 (1 row)
 
-\c postgres
-drop database test_op_blob;
+drop schema test_op_blob cascade;
+reset current_schema;

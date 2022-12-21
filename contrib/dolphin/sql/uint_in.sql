@@ -1,6 +1,5 @@
-drop database if exists uint_in;
-create database uint_in dbcompatibility 'b';
-\c uint_in
+create schema uint_in;
+set current_schema to 'uint_in';
 
 create table t1(a uint1);
 create table t2(a uint2);
@@ -31,5 +30,5 @@ insert into t4 values('1.5');
 
 select * from t4;
 
-\c postgres
-drop database uint_in
+drop schema uint_in cascade;
+reset current_schema;

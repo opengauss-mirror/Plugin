@@ -1,6 +1,5 @@
-drop database if exists db_func_1;
-create database db_func_1 dbcompatibility 'B';
-\c db_func_1
+create schema db_func_1;
+set current_schema to 'db_func_1';
 
 CREATE FUNCTION f1 (s CHAR(20)) RETURNS int  NOT DETERMINISTIC AS $$ select 1 $$ ;
 
@@ -22,6 +21,6 @@ call f3(3);
 call f4(4);
 
 
-\c postgres
-drop database if exists db_func_1;
+drop schema db_func_1 cascade;
+reset current_schema;
 

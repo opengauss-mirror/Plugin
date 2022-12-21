@@ -1,6 +1,5 @@
-drop database if exists tinyint_partition;
-create database tinyint_partition dbcompatibility 'b';
-\c tinyint_partition
+create schema tinyint_partition;
+set current_schema to 'tinyint_partition';
 
 CREATE TABLE t1
 (
@@ -205,5 +204,5 @@ insert into start_end1 values(1);
 insert into start_end1 values(127);
 select * from start_end1;
 
-\c postgres
-drop database tinyint_partition;
+drop schema tinyint_partition cascade;
+reset current_schema;

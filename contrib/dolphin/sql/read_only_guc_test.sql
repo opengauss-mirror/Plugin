@@ -1,8 +1,5 @@
--- b compatibility case
-drop database if exists read_only_guc_test;
--- create database read_only_guc_test dbcompatibility 'b';
-create database read_only_guc_test with DBCOMPATIBILITY = 'B';
-\c read_only_guc_test
+create schema read_only_guc_test;
+set current_schema to 'read_only_guc_test';
 
 show version_comment;
 show auto_increment_increment;
@@ -44,5 +41,5 @@ SELECT * FROM pg_settings WHERE NAME='system_time_zone';
 SELECT * FROM pg_settings WHERE NAME='time_zone';
 SELECT * FROM pg_settings WHERE NAME='wait_timeout';
 
-\c postgres
-drop database if exists read_only_guc_test;
+drop schema read_only_guc_test cascade;
+reset current_schema;

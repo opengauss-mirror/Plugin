@@ -1,6 +1,5 @@
-drop database if exists uint_smp;
-create database uint_smp dbcompatibility 'b';
-\c uint_smp
+create schema uint_smp;
+set current_schema to 'uint_smp';
 
 set enable_opfusion = on;
 set opfusion_debug_mode = log;
@@ -85,5 +84,5 @@ explain(costs off, verbose) select /*+ nestloop(join_1 join_2)*/ * from join_1 l
 explain(costs off, verbose) select /*+ hashjoin(join_1 join_2)*/ * from join_1 left join join_2 on join_1.a = join_2.a;
 explain(costs off, verbose) select /*+ mergejoin(join_1 join_2)*/ * from join_1 left join join_2 on join_1.a = join_2.a;
 
-\c postgres
-drop database uint_smp;
+drop schema uint_smp cascade;
+reset current_schema;

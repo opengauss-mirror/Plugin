@@ -1,7 +1,5 @@
-drop database if exists show_createdatabase;
-NOTICE:  database "show_createdatabase" does not exist, skipping
-create database show_createdatabase dbcompatibility 'b';
-\c show_createdatabase
+create schema show_createdatabase;
+set current_schema to 'show_createdatabase';
 CREATE USER test_showcreate_database WITH PASSWORD 'openGauss@123';
 NOTICE:  The iteration value of password is not recommended.Setting the iteration value too small reduces the security of the password, and setting it too large results in performance degradation.
 GRANT ALL PRIVILEGES TO test_showcreate_database;
@@ -64,5 +62,5 @@ CONTEXT:  referenced column: Create Database
 drop schema test_get_database cascade;
 RESET ROLE;
 DROP USER test_showcreate_database;
-\c postgres
-drop database if exists show_createdatabase;
+drop schema show_createdatabase cascade;
+reset current_schema;

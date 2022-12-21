@@ -1,7 +1,5 @@
-drop database if exists db_b_if;
-NOTICE:  database "db_b_if" does not exist, skipping
-create database db_b_if dbcompatibility 'B';
-\c db_b_if
+create schema db_b_if;
+set current_schema to 'db_b_if';
 select if(TRUE, 1, 2);
  case 
 ------
@@ -23,7 +21,7 @@ CONTEXT:  referenced column: case
 -- '2022-01-30' is text, date '2022-01-30' is date
 CREATE VIEW test_view as select '2022-01-30' as text_type, date '2022-01-30' as date_type;
 \d+ test_view
-                View "public.test_view"
+               View "db_b_if.test_view"
   Column   | Type | Modifiers | Storage  | Description 
 -----------+------+-----------+----------+-------------
  text_type | text |           | extended | 
@@ -193,5 +191,6 @@ ERROR:  CASE types boolean and numeric cannot be matched
 LINE 1: select if (true, 2.2::numeric(10, 2), true) as a, if (false,...
                          ^
 CONTEXT:  referenced column: a
-\c postgres
-drop database if exists db_b_if;
+drop schema db_b_if cascade;
+NOTICE:  drop cascades to view test_view
+reset current_schema;

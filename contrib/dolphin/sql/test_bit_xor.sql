@@ -1,6 +1,5 @@
-drop database if exists test_bit_xor;
-create database test_bit_xor dbcompatibility 'B';
-\c test_bit_xor
+create schema test_bit_xor;
+set current_schema to 'test_bit_xor';
 
 -- test datetime
 create table test_datetime (t datetime);
@@ -344,5 +343,5 @@ insert into test_varbit values(b'101');
 select bit_xor(col) from test_varbit;
 drop table test_varbit;
 
-\c postgres
-drop database test_bit_xor;
+drop schema test_bit_xor cascade;
+reset current_schema;

@@ -1,6 +1,5 @@
-drop database if exists uint_ignore;
-create database uint_ignore dbcompatibility 'b';
-\c uint_ignore
+create schema uint_ignore;
+set current_schema to 'uint_ignore';
 
 drop table if exists t1 ;
 create table t1(a uint8);
@@ -295,5 +294,5 @@ insert ignore into t1 values(256::uint1);
 
 select * from t1;
 
-\c postgres
-drop database uint_ignore;
+drop schema uint_ignore cascade;
+reset current_schema;

@@ -1,6 +1,5 @@
-drop database if exists test_operator;
-create database test_operator dbcompatibility 'B';
-\c test_operator
+create schema test_operator;
+set current_schema to 'test_operator';
 
 drop table if exists test1;
 create table test1(data json);
@@ -30,6 +29,6 @@ select data->>'b' from test2;
 select data->>'c' from test2;
 
 
-\c postgres
-drop database test_operator;
+drop schema test_operator cascade;
+reset current_schema;
 

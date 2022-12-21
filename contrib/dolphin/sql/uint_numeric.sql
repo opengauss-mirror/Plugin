@@ -1,6 +1,5 @@
-drop database if exists uint_numeric;
-create database uint_numeric dbcompatibility 'b';
-\c uint_numeric
+create schema uint_numeric;
+set current_schema to 'uint_numeric';
 
 select (-1)::numeric::uint1;
 select (-1)::numeric::uint2;
@@ -103,5 +102,5 @@ insert into t4 select b from num;
 insert into t4 select c from num;
 
 
-\c postgres
-drop database uint_numeric;
+drop schema uint_numeric cascade;
+reset current_schema;

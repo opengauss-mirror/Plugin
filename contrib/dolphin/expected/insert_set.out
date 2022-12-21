@@ -1,7 +1,5 @@
-drop database if exists insert_set;
-NOTICE:  database "insert_set" does not exist, skipping
-create database insert_set dbcompatibility 'B';
-\c insert_set
+create schema insert_set;
+set current_schema to 'insert_set';
 create table test_figure(tinyint tinyint, smallint smallint, integer integer, binary_integer binary_integer, bigint bigint);
 insert into test_figure set bigint = 7234134, binary_integer = 1011101, integer = 10000, smallint = 1, tinyint = 3;
 select * from test_figure;
@@ -95,5 +93,14 @@ select * from test_error;
     | 23
 (1 row)
 
-\c postgres
-drop database insert_set;
+drop schema insert_set cascade;
+NOTICE:  drop cascades to 8 other objects
+DETAIL:  drop cascades to table test_figure
+drop cascades to table test_money
+drop cascades to table test_boolean
+drop cascades to table test_char
+drop cascades to table test_binary
+drop cascades to table test_time
+drop cascades to table test_netid
+drop cascades to table test_error
+reset current_schema;

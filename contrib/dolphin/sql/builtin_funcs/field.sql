@@ -1,6 +1,5 @@
-drop database if exists db_field;
-create database db_field dbcompatibility 'B';
-\c db_field
+create schema db_field;
+set current_schema to 'db_field';
 
 select field(4,1,2,3,4);
 select field(2,1.1,2.1,3.1);
@@ -18,5 +17,5 @@ select field('sdhfgs','dhgf', '2');
 select field('sdhfgs',null,1,'dhgf', '2');
 select field('测试',null,1,'dhgf', '2');
 select field(' ','@',null,' ','',' ');
-\c postgres
-drop database if exists db_field;
+drop schema db_field cascade;
+reset current_schema;

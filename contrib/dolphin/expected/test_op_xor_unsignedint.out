@@ -1,7 +1,5 @@
-drop database if exists test_op_xor_unsignedint;
-NOTICE:  database "test_op_xor_unsignedint" does not exist, skipping
-create database test_op_xor_unsignedint with dbcompatibility='B';
-\c test_op_xor_unsignedint
+create schema test_op_xor_unsignedint;
+set current_schema to 'test_op_xor_unsignedint';
 select (-1)::uint1 ^ 2::int1;
  ?column? 
 ----------
@@ -740,5 +738,5 @@ select 2 ::uint8 ^ 2::varchar;
  0
 (1 row)
 
-\c postgres
-drop database test_op_xor_unsignedint;
+drop schema test_op_xor_unsignedint cascade;
+reset current_schema;

@@ -1,8 +1,5 @@
--- b compatibility case
-drop database if exists like_default_test;
--- create database like_default_test dbcompatibility 'b';
-create database like_default_test with DBCOMPATIBILITY = 'B';
-\c like_default_test
+create schema like_default_test;
+set current_schema to 'like_default_test';
 
 create table test_nv (name national varchar(10));
 \d test_nv
@@ -395,11 +392,5 @@ insert into test_insert(c1, c2, c3, c4) values(8, null, 'e', null);
 
 select * from test_insert;
 
-\c postgres
-drop database if exists like_default_test;
-
-
-
-
-
-
+drop schema like_default_test cascade;
+reset current_schema;

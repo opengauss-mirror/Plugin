@@ -1,7 +1,5 @@
-drop database if exists db_not_between;
-NOTICE:  database "db_not_between" does not exist, skipping
-create database db_not_between dbcompatibility 'B';
-\c db_not_between
+create schema db_not_between;
+set current_schema to 'db_not_between';
 select 2 not between 2 and 23;
  ?column? 
 ----------
@@ -176,5 +174,5 @@ select 1 not between '1测' and '1';
  f
 (1 row)
 
-\c postgres
-drop database if exists db_not_between;
+drop schema db_not_between cascade;
+reset current_schema;

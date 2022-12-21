@@ -1,6 +1,5 @@
-drop database if exists db_b_insert_test;
-create database db_b_insert_test dbcompatibility 'B';
-\c db_b_insert_test
+create schema db_b_insert_test;
+set current_schema to 'db_b_insert_test';
 
 select insert('abcdefg', 2, 4, 'yyy');
 select insert(1234567, 2, 4, 'yyy');
@@ -26,5 +25,5 @@ select insert('abcdefg', -4123213214212123123123123, 4, 'yyy');
 select insert('abcdefg', 412321321421, 4, 'yyy');
 select insert('abcdefg', -412321321421, 4, 'yyy');
 
-\c postgres
-drop database db_b_insert_test;
+drop schema db_b_insert_test cascade;
+reset current_schema;

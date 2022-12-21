@@ -1,7 +1,5 @@
-drop database if exists uint_partition;
-NOTICE:  database "uint_partition" does not exist, skipping
-create database uint_partition dbcompatibility 'b';
-\c uint_partition
+create schema uint_partition;
+set current_schema to 'uint_partition';
 CREATE TABLE t1
 (
     col1 uint4 NOT NULL,
@@ -255,5 +253,18 @@ insert into t_unsigned_0030_7 values(1);
 create table t_unsigned_0030_8(col01 bigint unsigned)
 partition by range(col01)(partition p start(1) end(255) every(50));
 insert into t_unsigned_0030_8 values(1);
-\c postgres
-drop database uint_partition;
+drop schema uint_partition cascade;
+NOTICE:  drop cascades to 12 other objects
+DETAIL:  drop cascades to table t1
+drop cascades to table t2
+drop cascades to table t3
+drop cascades to table a1
+drop cascades to table a2
+drop cascades to table subpartition_01
+drop cascades to table subpartition_02
+drop cascades to table subpartition_03
+drop cascades to table t_unsigned_0030_5
+drop cascades to table t_unsigned_0030_6
+drop cascades to table t_unsigned_0030_7
+drop cascades to table t_unsigned_0030_8
+reset current_schema;

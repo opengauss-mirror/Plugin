@@ -1,6 +1,5 @@
-drop database if exists db_replace;
-create database db_replace dbcompatibility 'B';
-\c db_replace;
+create schema db_replace;
+set current_schema to 'db_replace';
 
 create table t1 (a int);
 create table t2 (a int);
@@ -56,5 +55,5 @@ replace DELAYED into Parts partition(p1) values(4);
 replace DELAYED into Parts partition(p1) values(4);
 replace DELAYED into Parts partition(p1) select A from T2 where A >=2 ;
 
-\c postgres
-drop database db_replace;
+drop schema db_replace cascade;
+reset current_schema;

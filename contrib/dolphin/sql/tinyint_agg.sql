@@ -1,6 +1,5 @@
-drop database if exists tinyint_agg;
-create database tinyint_agg dbcompatibility 'b';
-\c tinyint_agg
+create schema tinyint_agg;
+set current_schema to 'tinyint_agg';
 
 
 create table u1(a int1, b int2);
@@ -48,5 +47,5 @@ explain(costs off, verbose) select variance(a)from smp_test;
 explain(costs off, verbose) select listagg(a) within group(order by a) from smp_test;
 explain(costs off, verbose) select listagg(a, ',') within group(order by a) from smp_test;
 
-\c postgres
-drop database tinyint_agg;
+drop schema tinyint_agg cascade;
+reset current_schema;

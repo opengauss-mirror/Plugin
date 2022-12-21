@@ -1,7 +1,5 @@
-
--- create b db
-create database uint_auto_increment with dbcompatibility = 'B';
-\c uint_auto_increment
+create schema uint_auto_increment;
+set current_schema to 'uint_auto_increment';
 -- test CREATE TABLE with AUTO_INCREMENT
 -- syntax error
 CREATE TABLE test_create_autoinc_err(id int unsigned auto_increment key, name varchar(200),a int unsigned);
@@ -802,5 +800,5 @@ SELECT col1,col2 FROM test_autoinc_insert_select ORDER BY 1;
 drop table test_autoinc_source;
 drop table test_autoinc_insert_select;
 
-\c postgres
-drop database if exists uint_auto_increment;
+drop schema uint_auto_increment cascade;
+reset current_schema;

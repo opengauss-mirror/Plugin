@@ -1,11 +1,10 @@
-DROP DATABASE IF EXISTS db_show_5;
-CREATE DATABASE db_show_5 DBCOMPATIBILITY 'b';
-\c db_show_5
+create schema db_show_5;
+set current_schema to 'db_show_5';
 
 CREATE SCHEMA tst_schema5;
 
 --orientation=row, normal primary key
-CREATE TABLE public.t1
+CREATE TABLE db_show_5.t1
 (
 id int primary key,
 name varchar(20),
@@ -13,7 +12,7 @@ phone text
 ) WITH(ORIENTATION=ROW, STORAGE_TYPE=USTORE);
 
 --orientation=column, serial primary key
-CREATE TABLE public.t2
+CREATE TABLE db_show_5.t2
 (
 id serial primary key,
 name varchar(20),
@@ -70,5 +69,5 @@ REVOKE SELECT ON ALL TABLES IN SCHEMA tst_schema5 FROM tst_shows_u5;
 REVOKE SELECT ON ALL SEQUENCES IN SCHEMA tst_schema5 FROM tst_shows_u5;
 DROP USER tst_shows_u5;
 
-\c postgres
-DROP DATABASE IF EXISTS db_show_5;
+drop schema db_show_5 cascade;
+reset current_schema;

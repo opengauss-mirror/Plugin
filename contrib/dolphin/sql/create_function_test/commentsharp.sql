@@ -1,6 +1,5 @@
-drop database if exists db_comment_sharp;
-create database db_comment_sharp dbcompatibility 'B';
-\c db_comment_sharp
+create schema db_comment_sharp;
+set current_schema to 'db_comment_sharp';
 
 create table t1(a int,b int);
 
@@ -155,6 +154,5 @@ drop table t_test2;
 drop table t_test3;
 
 
-\c postgres
-
-drop database if exists db_comment_sharp;
+drop schema db_comment_sharp cascade;
+reset current_schema;

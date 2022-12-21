@@ -1,3 +1,7 @@
+drop database if exists db_b_left_right_test;
+NOTICE:  database "db_b_left_right_test" does not exist, skipping
+create database db_b_left_right_test dbcompatibility 'A';
+\c db_b_left_right_test
 SELECT left('abcdefg', 3);
  left 
 ------
@@ -22,10 +26,10 @@ SELECT right('abcdefg', -3);
  defg
 (1 row)
 
-drop database if exists db_b_left_right_test;
-NOTICE:  database "db_b_left_right_test" does not exist, skipping
-create database db_b_left_right_test dbcompatibility 'B';
-\c db_b_left_right_test
+\c contrib_regression
+drop database db_b_left_right_test;
+create schema db_b_left_right_test;
+set current_schema to 'db_b_left_right_test';
 set bytea_output to escape;
 SELECT left('abcdefg', 3);
  left 
@@ -303,5 +307,5 @@ select right('abc',5/2);
  abc
 (1 row)
 
-\c postgres
-drop database db_b_left_right_test;
+drop schema db_b_left_right_test cascade;
+reset current_schema;

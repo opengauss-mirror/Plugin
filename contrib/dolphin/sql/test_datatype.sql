@@ -1,6 +1,5 @@
-drop database if exists b_datatype_test;
-create database b_datatype_test dbcompatibility 'B';
-\c b_datatype_test
+create schema b_datatype_test;
+set current_schema to 'b_datatype_test';
 
 -- bit(n), when insert into bit, support the length less than n, which must be equal to n in normal case
 create table bit_test(a bit);
@@ -91,5 +90,5 @@ create table all_int_test(a tinyint(9999999999), b smallint(9999999999), c mediu
 \d all_int_test
 
 drop table all_int_test;
-\c postgres
-drop database b_datatype_test;
+drop schema b_datatype_test cascade;
+reset current_schema;

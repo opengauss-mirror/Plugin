@@ -1,7 +1,5 @@
-drop DATABASE if exists sql_mode_strict;
-
-CREATE DATABASE sql_mode_strict dbcompatibility 'B';
-\c sql_mode_strict;
+create schema sql_mode_strict;
+set current_schema to 'sql_mode_strict';
 set dolphin.sql_mode = '';
 
 create table test_tint(a tinyint);
@@ -748,5 +746,5 @@ insert into test_notnull_numeric_strict(b) values(null);
 
 
 
-\c contrib_regression;
-drop DATABASE if exists sql_mode_strict;
+drop schema sql_mode_strict cascade;
+reset current_schema;

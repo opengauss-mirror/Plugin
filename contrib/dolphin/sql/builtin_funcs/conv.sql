@@ -1,6 +1,5 @@
-drop database if exists db_conv;
-create database db_conv dbcompatibility 'B';
-\c db_conv
+create schema db_conv;
+set current_schema to 'db_conv';
 
 select conv('a',16,2);
 select conv('6e',18,8);
@@ -97,5 +96,5 @@ select conv(-9544646155975628532428411,10,-10);
 select conv(-9544646155975628532428411,-10,10);
 select conv(-9544646155975628532428411,-10,-10);
 
-\c postgres
-drop database if exists db_conv;
+drop schema db_conv cascade;
+reset current_schema;

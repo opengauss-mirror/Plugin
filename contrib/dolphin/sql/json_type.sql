@@ -1,6 +1,5 @@
-drop database if exists test_json_type;
-create database test_json_type dbcompatibility'B';
-\c test_json_type
+create schema test_json_type;
+set current_schema to 'test_json_type';
 
 
 ---string 
@@ -59,5 +58,5 @@ insert into test_type values('{"a":1}',3,null,null);
 
 select json_type(t1) from test_type;
 
-\c postgres
-drop database test_json_type;
+drop schema test_json_type cascade;
+reset current_schema;

@@ -1,6 +1,5 @@
-drop database if exists db_chk_tbl;
-create database db_chk_tbl dbcompatibility 'b';
-\c db_chk_tbl
+create schema db_chk_tbl;
+set current_schema to 'db_chk_tbl';
 
 CREATE SCHEMA tst_schema1;
 SET SEARCH_PATH TO tst_schema1;
@@ -190,6 +189,5 @@ INSERT INTO t_same_cmp VALUES(2022001, 'same check');
 
 CHECKSUM TABLE t_same, t_same_cmp;
 
-\c postgres
-drop database if exists db_chk_tbl;
-
+drop schema db_chk_tbl cascade;
+reset current_schema;

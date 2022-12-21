@@ -1,7 +1,5 @@
-drop DATABASE if exists partition_test1;
-NOTICE:  database "partition_test1" does not exist, skipping
-CREATE DATABASE partition_test1 dbcompatibility 'B';
-\c partition_test1;
+create schema partition_test1;
+set current_schema to 'partition_test1';
 -------test range partition tables
 ----test partition table
 CREATE TABLE IF NOT EXISTS test_part
@@ -714,7 +712,7 @@ NOTICE:  ALTER TABLE / ADD UNIQUE will create implicit index "uidx_d" for table 
 alter table test_part_list add constraint uidx_c unique using index idx_c;
 NOTICE:  ALTER TABLE / ADD CONSTRAINT USING INDEX will rename index "idx_c" to "uidx_c"
 insert into test_part_list values(2000,1,2,3),(3000,2,3,4),(4000,3,4,5),(5000,4,5,6);
-select * from test_part_list;
+select * from test_part_list order by a desc;
   a   | b | c | d 
 ------+---+---+---
  5000 | 4 | 5 | 6
@@ -735,7 +733,7 @@ ALTER TABLE test_part_list REBUILD PARTITION p1, p2;
  test_part_list
 (1 row)
 
-select * from test_part_list;
+select * from test_part_list order by a desc;
   a   | b | c | d 
 ------+---+---+---
  5000 | 4 | 5 | 6
@@ -758,7 +756,7 @@ ALTER TABLE test_part_list REBUILD PARTITION all;
  test_part_list
 (1 row)
 
-select * from test_part_list;
+select * from test_part_list order by a desc;
   a   | b | c | d 
 ------+---+---+---
  5000 | 4 | 5 | 6
@@ -1510,5 +1508,11 @@ select * from test_part_segment where ((980 < b and b < 1000) or (2180 < b and b
 alter table test_part_segment remove partitioning;
 ERROR:  The segment table test_part_segment is not supported
 CONTEXT:  referenced column: remove_partitioning
-\c postgres;
-drop DATABASE if exists partition_test1;
+drop schema partition_test1 cascade;
+NOTICE:  drop cascades to 5 other objects
+DETAIL:  drop cascades to table test_part_list
+drop cascades to table test_part_hash
+drop cascades to table test_nopart
+drop cascades to table test_part_ustore
+drop cascades to table test_part_segment
+reset current_schema;

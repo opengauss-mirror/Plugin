@@ -1,6 +1,5 @@
-drop database if exists get_db;
-create database get_db dbcompatibility 'b';
-\c get_db
+create schema get_db;
+set current_schema to 'get_db';
 select database();
 create schema testdb;
 use testdb;
@@ -9,5 +8,5 @@ create schema testdb1;
 select database();
 use testdb1;
 select database();
-\c postgres
-drop database if exists get_db;
+drop schema get_db cascade;
+reset current_schema;

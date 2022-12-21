@@ -1,7 +1,5 @@
-drop database if exists uint_mi;
-NOTICE:  database "uint_mi" does not exist, skipping
-create database uint_mi dbcompatibility 'b';
-\c uint_mi
+create schema uint_mi;
+set current_schema to 'uint_mi';
 --uint8
 select 18446744073709551615::uint8 - 0::int1;
        ?column?       
@@ -772,5 +770,5 @@ select 0::int1 - 1::uint4;
 ERROR:   int unsigned out of range
 select 0::int1 - 1::uint8;
 ERROR:  bigint unsigned out of range
-\c postgres
-drop database uint_mi
+drop schema uint_mi cascade;
+reset current_schema;

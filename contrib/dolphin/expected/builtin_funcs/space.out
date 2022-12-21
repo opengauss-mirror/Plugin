@@ -1,7 +1,5 @@
-drop database if exists db_space;
-NOTICE:  database "db_space" does not exist, skipping
-create database db_space dbcompatibility 'B';
-\c db_space
+create schema db_space;
+set current_schema to 'db_space';
 select space('a');
  space 
 -------
@@ -68,5 +66,5 @@ select space(b'111');
         
 (1 row)
 
-\c postgres
-drop database if exists db_space;
+drop schema db_space cascade;
+reset current_schema;

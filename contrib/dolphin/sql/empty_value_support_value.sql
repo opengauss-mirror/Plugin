@@ -1,7 +1,5 @@
-drop database if exists empty_value_support_value;
-create database empty_value_support_value dbcompatibility 'b';
-
-\c empty_value_support_value
+create schema empty_value_support_value;
+set current_schema to 'empty_value_support_value';
 create table test1(num int not null);
 insert into test1 value();
 insert into test1 value(),();
@@ -11,5 +9,5 @@ select * from test1;
 insert into test1 value(),();
 select * from test1;
 
-\c postgres
-drop database if exists empty_value_support_value;
+drop schema empty_value_support_value cascade;
+reset current_schema;

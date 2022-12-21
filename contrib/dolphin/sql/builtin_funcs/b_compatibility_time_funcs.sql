@@ -1,9 +1,5 @@
---
--- Test All Time function under 'b' compatibility
---
-drop database if exists b_time_funcs;
-create database b_time_funcs dbcompatibility 'b';
-\c b_time_funcs
+create schema b_time_funcs;
+set current_schema to 'b_time_funcs';
 
 create table func_test(functionName varchar(256),result varchar(256));
 truncate table func_test;
@@ -243,5 +239,5 @@ insert into insert_subdate(date_col, datetime_col) values (subdate('2021-1-1', 1
 drop table insert_subdate;
 
 select * from func_test;
-\c postgres
-drop database if exists b_time_funcs;
+drop schema b_time_funcs cascade;
+reset current_schema;

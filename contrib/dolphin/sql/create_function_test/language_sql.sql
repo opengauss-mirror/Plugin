@@ -1,6 +1,5 @@
-drop database if exists db_func_2;
-create database db_func_2 dbcompatibility 'B';
-\c db_func_2
+create schema db_func_2;
+set current_schema to 'db_func_2';
 
 CREATE FUNCTION f1 (s CHAR(20)) RETURNS int  AS $$ select 1 $$ ;
 
@@ -144,5 +143,5 @@ call f4(4);
 
 
 
-\c postgres
-drop database if exists db_func_2;
+drop schema db_func_2 cascade;
+reset current_schema;

@@ -1,6 +1,5 @@
-drop database if exists test_json_array_insert;
-create database test_json_array_insert dbcompatibility 'B';
-\c test_json_array_insert
+create schema test_json_array_insert;
+set current_schema to 'test_json_array_insert';
 
 SELECT JSON_ARRAY_INSERT('[1, [2, 3], {"a": [4, 5]}]', '$[0]', 0);
 SELECT JSON_ARRAY_INSERT('[1, [2, 3], {"a": [4, 5]}]', '$[2]', 4);
@@ -45,5 +44,5 @@ SELECT JSON_ARRAY_INSERT('[1, [2, 3]]', '$..1', 4);
 SELECT JSON_ARRAY_INSERT('[1, [2, 3]]', '$[*]', 4);
 SELECT JSON_ARRAY_INSERT('[1, [2, 3]]', ' ', 4);
  
-\c postgres
-drop database if exists test_json_array_insert;
+drop schema test_json_array_insert cascade;
+reset current_schema;

@@ -1,7 +1,5 @@
-drop database if exists db_alter_table;
-NOTICE:  database "db_alter_table" does not exist, skipping
-create database db_alter_table dbcompatibility 'b';
-\c db_alter_table
+create schema db_alter_table;
+set current_schema to 'db_alter_table';
 create table alter_table_tbl1 (a int primary key, b int);
 NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "alter_table_tbl1_pkey" for table "alter_table_tbl1"
 create table alter_table_tbl2 (c int primary key, d int);
@@ -81,7 +79,7 @@ show dolphin.sql_mode;
 
 reset dolphin.sql_mode;
 \d+ table_ddl_0030_02
-                  Table "public.table_ddl_0030_02"
+              Table "db_alter_table.table_ddl_0030_02"
  Column |  Type   | Modifiers | Storage | Stats target | Description 
 --------+---------+-----------+---------+--------------+-------------
  col1   | integer |           | plain   |              | 
@@ -96,7 +94,7 @@ create table test_primary(f11 int, f12 varchar(20), f13 bool);
 alter table test_primary add primary key using btree(f11 desc, f12 asc) comment 'primary key' using btree;
 NOTICE:  ALTER TABLE / ADD PRIMARY KEY will create implicit index "test_primary_pkey" for table "test_primary"
 \d+ test_primary
-                            Table "public.test_primary"
+                        Table "db_alter_table.test_primary"
  Column |         Type          | Modifiers | Storage  | Stats target | Description 
 --------+-----------------------+-----------+----------+--------------+-------------
  f11    | integer               | not null  | plain    |              | 
@@ -112,7 +110,7 @@ create table test_primary(f11 int, f12 varchar(20), f13 bool);
 alter table test_primary add primary key (f11 desc, f12 asc) comment 'primary key' using btree;
 NOTICE:  ALTER TABLE / ADD PRIMARY KEY will create implicit index "test_primary_pkey" for table "test_primary"
 \d+ test_primary
-                            Table "public.test_primary"
+                        Table "db_alter_table.test_primary"
  Column |         Type          | Modifiers | Storage  | Stats target | Description 
 --------+-----------------------+-----------+----------+--------------+-------------
  f11    | integer               | not null  | plain    |              | 
@@ -128,7 +126,7 @@ create table test_primary(f11 int, f12 varchar(20), f13 bool);
 alter table test_primary add primary key using btree(f11 desc, f12 asc) comment 'primary key' using btree using btree;
 NOTICE:  ALTER TABLE / ADD PRIMARY KEY will create implicit index "test_primary_pkey" for table "test_primary"
 \d+ test_primary
-                            Table "public.test_primary"
+                        Table "db_alter_table.test_primary"
  Column |         Type          | Modifiers | Storage  | Stats target | Description 
 --------+-----------------------+-----------+----------+--------------+-------------
  f11    | integer               | not null  | plain    |              | 
@@ -144,7 +142,7 @@ create table test_unique(f31 int, f32 varchar(20));
 alter table test_unique add unique using btree(f31) comment 'unique index' using btree;
 NOTICE:  ALTER TABLE / ADD UNIQUE will create implicit index "test_unique_f31_key" for table "test_unique"
 \d+ test_unique
-                             Table "public.test_unique"
+                         Table "db_alter_table.test_unique"
  Column |         Type          | Modifiers | Storage  | Stats target | Description 
 --------+-----------------------+-----------+----------+--------------+-------------
  f31    | integer               |           | plain    |              | 
@@ -159,7 +157,7 @@ create table test_unique(f31 int, f32 varchar(20));
 alter table test_unique add unique (f31) comment 'unique index' using btree;
 NOTICE:  ALTER TABLE / ADD UNIQUE will create implicit index "test_unique_f31_key" for table "test_unique"
 \d+ test_unique
-                             Table "public.test_unique"
+                         Table "db_alter_table.test_unique"
  Column |         Type          | Modifiers | Storage  | Stats target | Description 
 --------+-----------------------+-----------+----------+--------------+-------------
  f31    | integer               |           | plain    |              | 
@@ -174,7 +172,7 @@ create table test_unique(f31 int, f32 varchar(20));
 alter table test_unique add unique using btree(f31) comment 'unique index' using btree using btree;
 NOTICE:  ALTER TABLE / ADD UNIQUE will create implicit index "test_unique_f31_key" for table "test_unique"
 \d+ test_unique
-                             Table "public.test_unique"
+                         Table "db_alter_table.test_unique"
  Column |         Type          | Modifiers | Storage  | Stats target | Description 
 --------+-----------------------+-----------+----------+--------------+-------------
  f31    | integer               |           | plain    |              | 
@@ -188,7 +186,7 @@ drop table test_unique;
 create table test_unique(f31 int, f32 varchar(20), constraint con_t_unique unique using btree(f31, f32) comment 'unique index' using btree);
 NOTICE:  CREATE TABLE / UNIQUE will create implicit index "con_t_unique" for table "test_unique"
 \d+ test_unique
-                             Table "public.test_unique"
+                         Table "db_alter_table.test_unique"
  Column |         Type          | Modifiers | Storage  | Stats target | Description 
 --------+-----------------------+-----------+----------+--------------+-------------
  f31    | integer               |           | plain    |              | 
@@ -202,7 +200,7 @@ drop table test_unique;
 create table test_unique(f31 int, f32 varchar(20), constraint con_t_unique unique (f31, f32) comment 'unique index' using btree);
 NOTICE:  CREATE TABLE / UNIQUE will create implicit index "con_t_unique" for table "test_unique"
 \d+ test_unique
-                             Table "public.test_unique"
+                         Table "db_alter_table.test_unique"
  Column |         Type          | Modifiers | Storage  | Stats target | Description 
 --------+-----------------------+-----------+----------+--------------+-------------
  f31    | integer               |           | plain    |              | 
@@ -216,7 +214,7 @@ drop table test_unique;
 create table test_unique(f31 int, f32 varchar(20), constraint con_t_unique unique (f31, f32) comment 'unique index' using btree using btree);
 NOTICE:  CREATE TABLE / UNIQUE will create implicit index "con_t_unique" for table "test_unique"
 \d+ test_unique
-                             Table "public.test_unique"
+                         Table "db_alter_table.test_unique"
  Column |         Type          | Modifiers | Storage  | Stats target | Description 
 --------+-----------------------+-----------+----------+--------------+-------------
  f31    | integer               |           | plain    |              | 
@@ -230,7 +228,7 @@ drop table test_unique;
 create table test_primary(f11 int, f12 varchar(20), f13 bool, constraint con_t_pri primary key using btree(f11 desc, f12 asc) comment 'primary key' using btree);
 NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "con_t_pri" for table "test_primary"
 \d+ test_primary
-                            Table "public.test_primary"
+                        Table "db_alter_table.test_primary"
  Column |         Type          | Modifiers | Storage  | Stats target | Description 
 --------+-----------------------+-----------+----------+--------------+-------------
  f11    | integer               | not null  | plain    |              | 
@@ -245,7 +243,7 @@ drop table test_primary;
 create table test_primary(f11 int, f12 varchar(20), f13 bool, constraint con_t_pri primary key (f11 desc, f12 asc) comment 'primary key' using btree);
 NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "con_t_pri" for table "test_primary"
 \d+ test_primary
-                            Table "public.test_primary"
+                        Table "db_alter_table.test_primary"
  Column |         Type          | Modifiers | Storage  | Stats target | Description 
 --------+-----------------------+-----------+----------+--------------+-------------
  f11    | integer               | not null  | plain    |              | 
@@ -260,7 +258,7 @@ drop table test_primary;
 create table test_primary(f11 int, f12 varchar(20), f13 bool, constraint con_t_pri primary key using btree(f11 desc, f12 asc) comment 'primary key' using btree using btree);
 NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "con_t_pri" for table "test_primary"
 \d+ test_primary
-                            Table "public.test_primary"
+                        Table "db_alter_table.test_primary"
  Column |         Type          | Modifiers | Storage  | Stats target | Description 
 --------+-----------------------+-----------+----------+--------------+-------------
  f11    | integer               | not null  | plain    |              | 
@@ -272,5 +270,5 @@ Has OIDs: no
 Options: orientation=row, compression=no
 
 drop table test_primary;
-\c postgres
-drop database if exists db_alter_table;
+drop schema db_alter_table cascade;
+reset current_schema;

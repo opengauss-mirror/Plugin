@@ -1,6 +1,5 @@
-drop database if exists db_b_parser3;
-create database db_b_parser3 dbcompatibility 'b';
-\c db_b_parser3
+create schema db_b_parser3;
+set current_schema to 'db_b_parser3';
 
 --测试点一：验证lcase函数
 select lcase('ABc'), lcase('哈哈'), lcase('123456'),lcase('哈市&%%￥#'),lcase(null);
@@ -118,5 +117,5 @@ select acos(11);
 select acos(1.000001);
 select acos(-1.000001);
 
-\c postgres
-drop database if exists db_b_parser3;
+drop schema db_b_parser3 cascade;
+reset current_schema;

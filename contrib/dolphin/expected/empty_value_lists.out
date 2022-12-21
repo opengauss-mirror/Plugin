@@ -1,8 +1,5 @@
--- b compatibility case
-drop database if exists empty_value_lists;
-NOTICE:  database "empty_value_lists" does not exist, skipping
-create database empty_value_lists dbcompatibility 'b';
-\c empty_value_lists
+create schema empty_value_lists;
+set current_schema to 'empty_value_lists';
 create table test1(num int);
 create table test2(num int default 3);
 create table test3(num int not null);
@@ -551,5 +548,51 @@ select * from m4;
    |   | abc | bcd
 (2 rows)
 
-\c postgres
-drop database if exists empty_value_lists;
+drop schema empty_value_lists cascade;
+NOTICE:  drop cascades to 45 other objects
+DETAIL:  drop cascades to table test1
+drop cascades to table test2
+drop cascades to table test3
+drop cascades to table test4
+drop cascades to table test5
+drop cascades to table test6
+drop cascades to table test7
+drop cascades to table test8
+drop cascades to table test9
+drop cascades to table test10
+drop cascades to table test11
+drop cascades to table test12
+drop cascades to table test13
+drop cascades to table test14
+drop cascades to table test15
+drop cascades to table test16
+drop cascades to table test17
+drop cascades to table test18
+drop cascades to table test19
+drop cascades to table test20
+drop cascades to table test21
+drop cascades to table test22
+drop cascades to table test23
+drop cascades to table test24
+drop cascades to table test25
+drop cascades to table test26
+drop cascades to table test27
+drop cascades to table test28
+drop cascades to table test29
+drop cascades to table test30
+drop cascades to table test31
+drop cascades to table test32
+drop cascades to table test33
+drop cascades to table test34
+drop cascades to table test35
+drop cascades to table test36
+drop cascades to table test37
+drop cascades to table test38
+drop cascades to table test39
+drop cascades to table test40
+drop cascades to table test41
+drop cascades to table m1
+drop cascades to table m2
+drop cascades to table m3
+drop cascades to table m4
+reset current_schema;

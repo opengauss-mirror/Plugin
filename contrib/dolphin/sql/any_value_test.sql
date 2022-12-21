@@ -1,6 +1,5 @@
-drop DATABASE if exists any_value_test;
-CREATE DATABASE any_value_test dbcompatibility 'B';
-\c any_value_test;
+create schema any_value_test;
+set current_schema to 'any_value_test';
 
 --test int type
 create table test_int1(a tinyint, b int);
@@ -85,5 +84,5 @@ insert into test_blob_bytea values(2,'abcd',E'\\xeabc');
 select any_value(b) from test_blob_bytea group by a;
 select any_value(c) from test_blob_bytea group by a;
 
-\c postgres;
-drop DATABASE if exists any_value_test;
+drop schema any_value_test cascade;
+reset current_schema;

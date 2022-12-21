@@ -1,7 +1,5 @@
-drop database if exists uint_in;
-NOTICE:  database "uint_in" does not exist, skipping
-create database uint_in dbcompatibility 'b';
-\c uint_in
+create schema uint_in;
+set current_schema to 'uint_in';
 create table t1(a uint1);
 create table t2(a uint2);
 create table t3(a uint4);
@@ -62,5 +60,10 @@ select * from t4;
  2
 (2 rows)
 
-\c postgres
-drop database uint_in
+drop schema uint_in cascade;
+NOTICE:  drop cascades to 4 other objects
+DETAIL:  drop cascades to table t1
+drop cascades to table t2
+drop cascades to table t3
+drop cascades to table t4
+reset current_schema;

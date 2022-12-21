@@ -1,6 +1,5 @@
-drop database if exists db_proxy;
-create database db_proxy dbcompatibility 'b';
-\c db_proxy
+create schema db_proxy;
+set current_schema to 'db_proxy';
 
 CREATE SCHEMA tst_schema1;
 SET SEARCH_PATH TO tst_schema1;
@@ -72,6 +71,6 @@ drop role test_proxy_u1;
 drop role test_proxy_u2;
 drop role test_proxy_u3;
 
-\c postgres
-drop database if exists db_proxy;
+drop schema db_proxy cascade;
+reset current_schema;
 

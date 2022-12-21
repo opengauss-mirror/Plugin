@@ -1,7 +1,5 @@
----- b compatibility case
-drop database if exists b_datetime_func_test;
-create database b_datetime_func_test dbcompatibility 'b';
-\c b_datetime_func_test
+create schema b_datetime_func_test1;
+set current_schema to 'b_datetime_func_test1';
 set datestyle = 'ISO,ymd';
 set time zone "Asia/Shanghai";
 -- test part-one function
@@ -155,5 +153,5 @@ insert into test_datetime values(sysdate(0));
 insert into test_datetime values(sysdate(6));
 select * from test_datetime;
 drop table test_datetime;
-\c contrib_regression
-DROP DATABASE b_datetime_func_test;
+drop schema b_datetime_func_test1 cascade;
+reset current_schema;

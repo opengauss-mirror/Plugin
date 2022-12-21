@@ -1,7 +1,5 @@
-drop database if exists db_soundex;
-NOTICE:  database "db_soundex" does not exist, skipping
-create database db_soundex dbcompatibility 'B';
-\c db_soundex
+create schema db_soundex;
+set current_schema to 'db_soundex';
 select soundex('abc');
  soundex 
 ---------
@@ -236,5 +234,5 @@ select soundex('测T测h测试o测masёння я такая шчасліваяhe
  测3524
 (1 row)
 
-\c postgres
-drop database if exists db_soundex;
+drop schema db_soundex cascade;
+reset current_schema;

@@ -1,6 +1,5 @@
-drop database if exists test_op_and;
-CREATE DATABASE test_op_and with dbcompatibility='B';
-\c test_op_and
+create schema test_op_and;
+set current_schema to 'test_op_and';
 set dolphin.b_compatibility_mode = 1;
 set dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group';
 
@@ -380,13 +379,12 @@ drop table testforint2_p5;
 ---drop database
 set dolphin.b_compatibility_mode = 0;
 set dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat';
-\c postgres
-drop database test_op_and;
+drop schema test_op_and cascade;
+reset current_schema;
 
 
-drop database if exists test_op_xor;
-CREATE DATABASE test_op_xor with dbcompatibility='B';
-\c test_op_xor
+create schema test_op_xor;
+set current_schema to 'test_op_xor';
 set dolphin.b_compatibility_mode = 1;
 
 select null^1;
@@ -622,13 +620,12 @@ drop table testforint2_p5;
 
 ---drop database
 set dolphin.b_compatibility_mode = 0;
-\c postgres
-drop database test_op_xor;
+drop schema test_op_xor cascade;
+reset current_schema;
 
 
-drop database if exists like_test;
-create database like_test DBCOMPATIBILITY 'b';
-\c like_test
+create schema like_test;
+set current_schema to 'like_test';
 set dolphin.b_compatibility_mode = 1;
 
 select 'a' like 'A';
@@ -893,5 +890,5 @@ select !10;
 select !!10;
 select 10!;
 
-\c postgres
-drop database if exists like_test;
+drop schema like_test cascade;
+reset current_schema;

@@ -1,5 +1,5 @@
-create database sql_ignore_type_transform_test dbcompatibility 'B';
-\c sql_ignore_type_transform_test;
+create schema sql_ignore_type_transform_test;
+set current_schema to 'sql_ignore_type_transform_test';
 -- test for tinyint
 drop table if exists t;
 NOTICE:  table "t" does not exist, skipping
@@ -788,5 +788,20 @@ select * from t_nvarchar2;
  123456789123456789
 (3 rows)
 
-\c postgres
-drop database if exists sql_ignore_type_transform_test;
+drop schema sql_ignore_type_transform_test cascade;
+NOTICE:  drop cascades to 14 other objects
+DETAIL:  drop cascades to table t
+drop cascades to table t_tinyint
+drop cascades to table t_smallint
+drop cascades to table t_int
+drop cascades to table t_bigint
+drop cascades to table t_numeric
+drop cascades to table t_float4
+drop cascades to table t_char
+drop cascades to table t_varchar
+drop cascades to table t_nchar
+drop cascades to table t_character
+drop cascades to table t_varchar2
+drop cascades to table t_nvarchar2
+drop cascades to table t_text
+reset current_schema;

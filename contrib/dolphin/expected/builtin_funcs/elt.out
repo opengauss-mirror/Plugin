@@ -1,7 +1,5 @@
-drop database if exists db_elt;
-NOTICE:  database "db_elt" does not exist, skipping
-create database db_elt dbcompatibility 'B';
-\c db_elt
+create schema db_elt;
+set current_schema to 'db_elt';
 select elt(1,1);
  elt 
 -----
@@ -110,5 +108,5 @@ select elt(1,'a',2);
  a
 (1 row)
 
-\c postgres
-drop database if exists db_elt;
+drop schema db_elt cascade;
+reset current_schema;

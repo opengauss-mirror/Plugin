@@ -1,4 +1,6 @@
 /* unsupported */
+create database b_comments dbcompatibility 'A';
+\c b_comments
 create schema b_comments;
 set search_path to 'b_comments';
 create table test_row(a int not null comment 'test_row.a');
@@ -32,10 +34,9 @@ create procedure test_alter_procedure(int,int) as begin select $1 + $2;end;
 /
 alter procedure test_alter_procedure(int,int) comment 'test_alter_procedure';
 drop schema b_comments cascade;
+\c contrib_regression
+drop database b_comments;
 
-
-create database b_comments dbcompatibility 'B';
-\c b_comments
 create schema b_comments;
 set search_path to 'b_comments';
 /* unsupported */
@@ -178,5 +179,3 @@ from pg_description pd
 where pc.relname = 'uq_0034';
 drop schema b_comments cascade;
 reset search_path;
-\c postgres
-drop database b_comments;

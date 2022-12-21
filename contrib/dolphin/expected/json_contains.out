@@ -1,7 +1,5 @@
-drop database if exists test_json_contains;
-NOTICE:  database "test_json_contains" does not exist, skipping
-create database test_json_contains dbcompatibility 'b';
-\c test_json_contains
+create schema test_json_contains;
+set current_schema to 'test_json_contains';
 select json_contains('1',null);
  json_contains 
 ---------------
@@ -369,5 +367,5 @@ select *, json_contains(target, candidate, path) from json_contains_test;
 (8 rows)
 
 drop table json_contains_test;
-\c postgres;
-drop database if exists test_json_contains;
+drop schema test_json_contains cascade;
+reset current_schema;

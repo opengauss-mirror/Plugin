@@ -1,7 +1,5 @@
-drop database if exists db_bin;
-NOTICE:  database "db_bin" does not exist, skipping
-create database db_bin dbcompatibility 'B';
-\c db_bin
+create schema db_bin;
+set current_schema to 'db_bin';
 select bin(1);
  bin 
 -----
@@ -62,5 +60,5 @@ select bin('测试');
  0
 (1 row)
 
-\c postgres
-drop database if exists db_bin;
+drop schema db_bin cascade;
+reset current_schema;
