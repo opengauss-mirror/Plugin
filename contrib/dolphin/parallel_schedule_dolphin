@@ -93,7 +93,7 @@ test: single_line_trigger
 
 test: db_b_date_time_functions
 
-test: prefixkey_index
+test: prefixkey_index b_auto_increment
 
 test: builtin_funcs/b_compatibility_time_funcs builtin_funcs/b_compatibility_time_funcs2 builtin_funcs/b_compatibility_time_funcs3
 
