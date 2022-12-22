@@ -162,8 +162,6 @@ extern "C" DLL_PUBLIC Datum date_xor_transfn(PG_FUNCTION_ARGS);
 PG_FUNCTION_INFO_V1_PUBLIC(date_agg_finalfn);
 extern "C" DLL_PUBLIC Datum date_agg_finalfn(PG_FUNCTION_ARGS);
 
-PG_FUNCTION_INFO_V1_PUBLIC(b_extract);
-extern "C" DLL_PUBLIC Datum b_extract(PG_FUNCTION_ARGS);
 PG_FUNCTION_INFO_V1_PUBLIC(time_float);
 extern "C" DLL_PUBLIC Datum time_float(PG_FUNCTION_ARGS);
 PG_FUNCTION_INFO_V1_PUBLIC(date_int);
@@ -1436,6 +1434,7 @@ Datum time_in(PG_FUNCTION_ARGS)
     int timeSign = 1;
     /* tt2 stores openGauss's parsing result while tt stores M*'s parsing result */
     struct pg_tm tt2;
+    bool null_func_result = false;
 #endif
     /*
      * this case is used for time format is specified.
@@ -1454,7 +1453,7 @@ Datum time_in(PG_FUNCTION_ARGS)
         bool warnings;
         errno_t rc = memset_s(tm, sizeof(struct pg_tm), 0, sizeof(struct pg_tm));
         securec_check(rc, "\0", "\0");
-        cstring_to_time(str, tm, fsec, timeSign, tm_type, warnings);
+        cstring_to_time(str, tm, fsec, timeSign, tm_type, warnings, &null_func_result);
 
         if (warnings) {
             tm = &tt2;
@@ -3442,7 +3441,7 @@ ScalarVector* vtimestamp_part(PG_FUNCTION_ARGS)
  *
  * @return true if success, otherwise false.
  */
-bool cstring_to_time(const char *str, pg_tm *tm, fsec_t &fsec, int &timeSign, int &tm_type, bool &warnings)
+bool cstring_to_time(const char *str, pg_tm *tm, fsec_t &fsec, int &timeSign, int &tm_type, bool &warnings, bool* null_func_result)
 {
     size_t length = strlen(str);
     ulong date[4]; /* 0~3 correspond to: days, hours, minutes, seconds in turn*/
@@ -3476,7 +3475,7 @@ bool cstring_to_time(const char *str, pg_tm *tm, fsec_t &fsec, int &timeSign, in
 
     /* Check first if str is a full TIMESTAMP */
     if (length >= 12) {
-        cstring_to_datetime(str, (TIME_FUZZY_DATE | TIME_DATETIME_ONLY), tm_type, tm, fsec, nano, warnings);
+        cstring_to_datetime(str, (TIME_FUZZY_DATE | TIME_DATETIME_ONLY), tm_type, tm, fsec, nano, warnings, null_func_result);
         if (nano >= 500) {
             fsec += 1; /* round */
         }
@@ -3494,6 +3493,7 @@ bool cstring_to_time(const char *str, pg_tm *tm, fsec_t &fsec, int &timeSign, in
     }
 
     if (value > UINT_MAX) {
+        *null_func_result = true;
         return false;
     }
 
@@ -3559,6 +3559,7 @@ bool cstring_to_time(const char *str, pg_tm *tm, fsec_t &fsec, int &timeSign, in
 
     /* field overflow checks */
     if (date[0] > INT_MAX || date[1] > INT_MAX || date[2] > INT_MAX || date[3] > INT_MAX) {
+        *null_func_result = true;
         return false; // overflow error
     }
     /* set pg_tm and type*/
@@ -3571,6 +3572,7 @@ bool cstring_to_time(const char *str, pg_tm *tm, fsec_t &fsec, int &timeSign, in
     tm_type = DTK_TIME;
 
     if (!check_pg_tm_time_part(tm, fsec)) {
+        *null_func_result = true;
         warnings = true; // warning: MYSQL_TIME_WARN_OUT_OF_RANGE
         return false;    // error: out of range
     }
@@ -4556,48 +4558,28 @@ Datum time_bool(PG_FUNCTION_ARGS)
 /**
  * The function is similar to time_in, but uses flag to control the parsing process.
  */
-void time_in_with_flag_internal(char *str, struct pg_tm *tm, fsec_t *fsec, int *timeSign, unsigned int date_flag)
+void time_in_with_flag_internal(char *str, struct pg_tm *result_tm, fsec_t *result_fsec, int *result_timeSign, unsigned int date_flag)
 {
-    int tz;
-    int nf;
-    int dterr;
-    char workbuf[MAXDATELEN + 1];
-    char* field[MAXDATEFIELDS];
-    int dtype;
-    int ftype[MAXDATEFIELDS];
-    *timeSign = 1;
-    int D = 0;
-    *fsec = 0;
-    errno_t rc = memset_s(tm, sizeof(*tm), 0, sizeof(*tm));
+    struct pg_tm tt1, *tm = &tt1;
+    fsec_t fsec = 0;
+    int tm_type;
+    bool warnings;
+    int timeSign = 1;
+    bool null_func_result = false;
+    errno_t rc = memset_s(tm, sizeof(struct pg_tm), 0, sizeof(struct pg_tm));
     securec_check(rc, "\0", "\0");
-    /* check if empty */
-    if (strlen(str) == 0) {
-        return;
-    }
-    bool hasD = false;
-    char *adjusted = adjust_b_format_time(str, timeSign, &D, &hasD);
-    dterr = ParseDateTime(adjusted, workbuf, sizeof(workbuf), field, ftype, MAXDATEFIELDS, &nf);
-    if (dterr != 0)
-        DateTimeParseError(dterr, str, "time");
-    if (dterr == 0) {
-        if (ftype[0] == DTK_NUMBER && nf == 1) {
-            /* for example: str = "2 121212" , "231034.1234" */
-            if (NumberTime(false, field[0], tm, fsec, D, hasD)) {
-                ereport(ERROR,
-                    (errcode(ERRCODE_INVALID_DATETIME_FORMAT),
-                        errmsg("invalid input syntax for type %s: \"%s\"", "time", str)));
-            }
-        } else {
-            dterr = DecodeTimeOnlyForBDatabase(field, ftype, nf, &dtype, tm, fsec, &tz, D, date_flag);
-            if (dterr != 0)
-                DateTimeParseError(dterr, str, "time");
-        }
-    }
+    cstring_to_time(str, tm, fsec, timeSign, tm_type, warnings, &null_func_result);
 
-    if (tm->tm_year > B_FORMAT_MAX_YEAR_OF_DATE || (tm->tm_year == B_FORMAT_MIN_YEAR_OF_DATE && tm->tm_mon == FEBRUARY && tm->tm_mday == DAYNUM_FEB_LEAPYEAR)) {
-        ereport(ERROR,
+    if (warnings) {
+        int errlevel = (SQL_MODE_STRICT() || null_func_result) ? ERROR : WARNING;
+        ereport(errlevel,
                 (errcode(DTERR_BAD_FORMAT), errmsg("Truncated incorrect time value: \"%s\"", str)));
     }
+
+    rc = memcpy_s(result_tm, sizeof(struct pg_tm), tm, sizeof(struct pg_tm));
+    securec_check(rc, "\0", "\0");
+    *result_fsec = fsec;
+    *result_timeSign = timeSign;
     return;
 }
 
@@ -5407,7 +5389,7 @@ Datum b_extract_text(PG_FUNCTION_ARGS)
     char *lowunits = downcase_truncate_identifier(VARDATA_ANY(units), VARSIZE_ANY_EXHDR(units), false);
     resolve_units(lowunits, &enum_unit);
     if (find_type(enum_unit)) {
-        if (!datetime_in_with_sql_mode(str, tm, &fsec, (ENABLE_ZERO_DAY | ENABLE_ZERO_MONTH))) {
+        if (!datetime_in_with_sql_mode(str, tm, &fsec, NORMAL_DATE)) {
             PG_RETURN_NULL();
         }
     } else {
@@ -5438,7 +5420,7 @@ Datum b_extract_numeric(PG_FUNCTION_ARGS)
             fsec = 0;
             errno_t rc = memset_s(&tt, sizeof(tt), 0, sizeof(tt));
             securec_check(rc, "\0", "\0");
-        } else if (!lldiv_decode_datetime(num, &div, tm, &fsec, (ENABLE_ZERO_DAY | ENABLE_ZERO_MONTH), &date_type)) {
+        } else if (!lldiv_decode_datetime(num, &div, tm, &fsec, NORMAL_DATE, &date_type)) {
             PG_RETURN_NULL();
         }
     } else {

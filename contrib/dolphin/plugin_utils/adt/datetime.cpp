@@ -5102,7 +5102,7 @@ bool CheckDatetimeRange(const pg_tm *tm, const fsec_t fsec, const int tm_type)
 */
 
 bool cstring_to_datetime(const char* str,  time_flags flags, int &tm_type, 
-                        pg_tm *tm, fsec_t &fsec, int &nano, bool &warnings)
+                        pg_tm *tm, fsec_t &fsec, int &nano, bool &warnings, bool *null_func_result)
 {
     size_t length = strlen(str);
     unsigned int field_length = 0, year_length = 0, digits, i, number_of_fields;
@@ -5240,6 +5240,7 @@ bool cstring_to_datetime(const char* str,  time_flags flags, int &tm_type,
     }
     if (found_delimitier && !found_space && (flags & TIME_DATETIME_ONLY)) {
         tm_type = DTK_NONE;
+        *null_func_result = true;
         return false; /* Can't be a datetime */
     }
 
@@ -5256,6 +5257,7 @@ bool cstring_to_datetime(const char* str,  time_flags flags, int &tm_type,
         /* Year must be specified */
         if (!year_length) {
             tm_type = DTK_NONE;
+            *null_func_result = true;
             return false;
         }
 
@@ -5309,10 +5311,12 @@ bool cstring_to_datetime(const char* str,  time_flags flags, int &tm_type,
             }
         }
         warnings = true;
+        *null_func_result = true;
         goto ERROR_STRING_DATETIME;
     }
 
     if (!CheckDateRange(tm, not_zero_date != 0, flags)) {
+        *null_func_result = true;
         goto ERROR_STRING_DATETIME;
     }
 
@@ -5401,7 +5405,8 @@ bool cstring_to_tm(const char *expr, pg_tm *tm, fsec_t &fsec)
 {
     int nano = 0, tm_type = DTK_NONE;
     bool warnings = false;
-    if (!cstring_to_datetime(expr, TIME_NO_ZERO_DATE, tm_type, tm, fsec, nano, warnings) ||
+    bool null_func_result = false;
+    if (!cstring_to_datetime(expr, TIME_NO_ZERO_DATE, tm_type, tm, fsec, nano, warnings, &null_func_result) ||
         !datetime_add_nanoseconds_with_round(tm, fsec, nano)) {
             return false;
         }

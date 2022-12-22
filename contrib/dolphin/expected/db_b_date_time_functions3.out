@@ -613,19 +613,19 @@ insert into test values('addtime(''0001-1-1 00:00:00'', ''-00:00:01'')', addtime
 -- 非严格模式，参数或者结果不合法，报warning，返回NULL或者对应值
 set dolphin.sql_mode = 'sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date';
 insert into test values('addtime(''839:00:00'', ''00:00:00'')', addtime('839:00:00', '00:00:00'));
-WARNING:  Truncated incorrect time value.
+WARNING:  Truncated incorrect time value: "839:00:00"
 CONTEXT:  referenced column: result
 insert into test values('addtime(''838:59:59'', ''00:00:01'')', addtime('838:59:59', '00:00:01'));
 WARNING:  date/time field overflow
 CONTEXT:  referenced column: result
 insert into test values('addtime(''838:59:59.1'', ''00:00:00'')', addtime('838:59:59.1', '00:00:00'));
-WARNING:  Truncated incorrect time value.
+WARNING:  Truncated incorrect time value: "838:59:59.1"
 CONTEXT:  referenced column: result
 insert into test values('addtime(''-838:59:59.1'', ''00:00:00'')', addtime('-838:59:59.1', '00:00:00'));
-WARNING:  Truncated incorrect time value.
+WARNING:  Truncated incorrect time value: "-838:59:59.1"
 CONTEXT:  referenced column: result
 insert into test values('addtime(''-839:00:00'', ''00:00:00'')', addtime('-839:00:00', '00:00:00'));
-WARNING:  Truncated incorrect time value.
+WARNING:  Truncated incorrect time value: "-839:00:00"
 CONTEXT:  referenced column: result
 insert into test values('addtime(''-838:59:59'', ''-00:00:01'')', addtime('-838:59:59', '-00:00:01'));
 WARNING:  date/time field overflow
@@ -639,19 +639,19 @@ CONTEXT:  referenced column: result
 -- 严格模式，参数或结果不合法，抛出错误
 set dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date';
 insert into test values('addtime(''839:00:00'', ''00:00:00'')', addtime('839:00:00', '00:00:00'));
-ERROR:  date/time field value out of range: "839:00:00"
+ERROR:  Truncated incorrect time value: "839:00:00"
 CONTEXT:  referenced column: result
 insert into test values('addtime(''838:59:59'', ''00:00:01'')', addtime('838:59:59', '00:00:01'));
 ERROR:  date/time field overflow
 CONTEXT:  referenced column: result
 insert into test values('addtime(''838:59:59.1'', ''00:00:00'')', addtime('838:59:59.1', '00:00:00'));
-ERROR:  date/time field value out of range: "838:59:59.1"
+ERROR:  Truncated incorrect time value: "838:59:59.1"
 CONTEXT:  referenced column: result
 insert into test values('addtime(''-838:59:59.1'', ''00:00:00'')', addtime('-838:59:59.1', '00:00:00'));
-ERROR:  date/time field value out of range: "-838:59:59.1"
+ERROR:  Truncated incorrect time value: "-838:59:59.1"
 CONTEXT:  referenced column: result
 insert into test values('addtime(''-839:00:00'', ''00:00:00'')', addtime('-839:00:00', '00:00:00'));
-ERROR:  date/time field value out of range: "-839:00:00"
+ERROR:  Truncated incorrect time value: "-839:00:00"
 CONTEXT:  referenced column: result
 insert into test values('addtime(''-838:59:59'', ''-00:00:01'')', addtime('-838:59:59', '-00:00:01'));
 ERROR:  date/time field overflow

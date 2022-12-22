@@ -257,66 +257,66 @@ insert into test values('time_to_sec(null)', time_to_sec(null));
 -- 非严格模式，参数不合法，报warning，返回NULL或者对应值边界值
 set dolphin.sql_mode = 'sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date';
 insert into test values('time_to_sec(''00:00:60'')', time_to_sec('00:00:60'));
-WARNING:  date/time field value out of range: "00:00:60"
+WARNING:  Truncated incorrect time value: "00:00:60"
 CONTEXT:  referenced column: result
 insert into test values('time_to_sec(''00:60:00'')', time_to_sec('00:60:00'));
-WARNING:  date/time field value out of range: "00:60:00"
+WARNING:  Truncated incorrect time value: "00:60:00"
 CONTEXT:  referenced column: result
 insert into test values('time_to_sec(''838:59:59.1'')', time_to_sec('838:59:59.1'));
-WARNING:  Truncated incorrect time value.
+WARNING:  Truncated incorrect time value: "838:59:59.1"
 CONTEXT:  referenced column: result
 insert into test values('time_to_sec(''-838:59:59.1'')', time_to_sec('-838:59:59.1'));
-WARNING:  Truncated incorrect time value.
+WARNING:  Truncated incorrect time value: "-838:59:59.1"
 CONTEXT:  referenced column: result
 insert into test values('time_to_sec(''839:00:00'')', time_to_sec('839:00:00'));
-WARNING:  Truncated incorrect time value.
+WARNING:  Truncated incorrect time value: "839:00:00"
 CONTEXT:  referenced column: result
 insert into test values('time_to_sec(''-839:00:00'')', time_to_sec('-839:00:00'));
-WARNING:  Truncated incorrect time value.
+WARNING:  Truncated incorrect time value: "-839:00:00"
 CONTEXT:  referenced column: result
 insert into test values('time_to_sec(''34 22:59:59.1'')', time_to_sec('34 22:59:59.1'));
-WARNING:  Truncated incorrect time value.
+WARNING:  Truncated incorrect time value: "34 22:59:59.1"
 CONTEXT:  referenced column: result
 insert into test values('time_to_sec(''-34 22:59:59.1'')', time_to_sec('-34 22:59:59.1'));
-WARNING:  Truncated incorrect time value.
+WARNING:  Truncated incorrect time value: "-34 22:59:59.1"
 CONTEXT:  referenced column: result
 insert into test values('time_to_sec(''34 23:00:00'')', time_to_sec('34 23:00:00'));
-WARNING:  Truncated incorrect time value.
+WARNING:  Truncated incorrect time value: "34 23:00:00"
 CONTEXT:  referenced column: result
 insert into test values('time_to_sec(''-34 23:00:00'')', time_to_sec('-34 23:00:00'));
-WARNING:  Truncated incorrect time value.
+WARNING:  Truncated incorrect time value: "-34 23:00:00"
 CONTEXT:  referenced column: result
 -- 严格模式，参数不合法，抛出错误
 set dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date';
 insert into test values('time_to_sec(''00:00:60'')', time_to_sec('00:00:60'));
-ERROR:  date/time field value out of range: "00:00:60"
+ERROR:  Truncated incorrect time value: "00:00:60"
 CONTEXT:  referenced column: result
 insert into test values('time_to_sec(''00:60:00'')', time_to_sec('00:60:00'));
-ERROR:  date/time field value out of range: "00:60:00"
+ERROR:  Truncated incorrect time value: "00:60:00"
 CONTEXT:  referenced column: result
 insert into test values('time_to_sec(''838:59:59.1'')', time_to_sec('838:59:59.1'));
-ERROR:  date/time field value out of range: "838:59:59.1"
+ERROR:  Truncated incorrect time value: "838:59:59.1"
 CONTEXT:  referenced column: result
 insert into test values('time_to_sec(''-838:59:59.1'')', time_to_sec('-838:59:59.1'));
-ERROR:  date/time field value out of range: "-838:59:59.1"
+ERROR:  Truncated incorrect time value: "-838:59:59.1"
 CONTEXT:  referenced column: result
 insert into test values('time_to_sec(''839:00:00'')', time_to_sec('839:00:00'));
-ERROR:  date/time field value out of range: "839:00:00"
+ERROR:  Truncated incorrect time value: "839:00:00"
 CONTEXT:  referenced column: result
 insert into test values('time_to_sec(''-839:00:00'')', time_to_sec('-839:00:00'));
-ERROR:  date/time field value out of range: "-839:00:00"
+ERROR:  Truncated incorrect time value: "-839:00:00"
 CONTEXT:  referenced column: result
 insert into test values('time_to_sec(''34 22:59:59.1'')', time_to_sec('34 22:59:59.1'));
-ERROR:  date/time field value out of range: "34 22:59:59.1"
+ERROR:  Truncated incorrect time value: "34 22:59:59.1"
 CONTEXT:  referenced column: result
 insert into test values('time_to_sec(''-34 22:59:59.1'')', time_to_sec('-34 22:59:59.1'));
-ERROR:  date/time field value out of range: "-34 22:59:59.1"
+ERROR:  Truncated incorrect time value: "-34 22:59:59.1"
 CONTEXT:  referenced column: result
 insert into test values('time_to_sec(''34 23:00:00'')', time_to_sec('34 23:00:00'));
-ERROR:  date/time field value out of range: "34 23:00:00"
+ERROR:  Truncated incorrect time value: "34 23:00:00"
 CONTEXT:  referenced column: result
 insert into test values('time_to_sec(''-34 23:00:00'')', time_to_sec('-34 23:00:00'));
-ERROR:  date/time field value out of range: "-34 23:00:00"
+ERROR:  Truncated incorrect time value: "-34 23:00:00"
 CONTEXT:  referenced column: result
 -- test month
 -- 严格模式或者非严格模式都有值
