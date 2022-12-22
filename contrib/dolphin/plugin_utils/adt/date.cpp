@@ -5325,10 +5325,7 @@ Datum time_xor_transfn(PG_FUNCTION_ARGS)
     fsec_t fsec;
     time2tm(time, tm, &fsec);
 
-    int hour = tm->tm_hour;
-    int minute = tm->tm_min;
-    int second = tm->tm_sec;
-    uint64 res = hour * 1e4 + minute * 1e2 + second;
+    uint64 res = tmfsec2uint(tm);;
     if (!PG_ARGISNULL(0)) {
         internal = (uint64)PG_GETARG_INT128(0);
         PG_RETURN_INT128((int128)(res ^ internal));
@@ -5354,10 +5351,7 @@ Datum timetz_xor_transfn(PG_FUNCTION_ARGS)
     int tz;
     timetz2tm(time, tm, &fsec, &tz);
 
-    int hour = tm->tm_hour;
-    int minute = tm->tm_min;
-    int second = tm->tm_sec;
-    uint64 res = hour * 1e4 + minute * 1e2 + second;
+    uint64 res = tmfsec2uint(tm);
     if (!PG_ARGISNULL(0)) {
         internal = (uint64)PG_GETARG_INT128(0);
         PG_RETURN_INT128((int128)(res ^ internal));
