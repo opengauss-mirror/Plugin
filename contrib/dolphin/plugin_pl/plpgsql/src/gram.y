@@ -35,6 +35,7 @@
 #include "plugin_parser/parse_type.h"
 #include "plugin_parser/scanner.h"
 #include "plugin_parser/scansup.h"
+#include "plugin_postgres.h"
 #include "utils/builtins.h"
 #include "utils/fmgroids.h"
 #include "utils/guc.h"
@@ -352,7 +353,7 @@ static void processFunctionRecordOutParam(int varno, Oid funcoid, int* outparam)
 %type <nsitem>	decl_aliasitem
 
 %type <expr>	expr_until_semi expr_until_rightbracket
-%type <expr>	expr_until_then expr_until_loop opt_expr_until_when
+%type <expr>	expr_until_then expr_until_loop opt_expr_until_when expr_until_from
 %type <expr_until_while_loop> expr_until_while_loop
 %type <expr>	opt_exitcond
 %type <expr>	repeat_condition_expr
@@ -2328,6 +2329,25 @@ label_stmt		: stmt_assign
                 ;
 
 stmt_perform	: K_PERFORM {u_sess->parser_cxt.isPerform = true;} expr_until_semi
+                    {
+                        PLpgSQL_stmt *stmt;
+                        if (enable_out_param_override() && u_sess->parser_cxt.stmt != NULL) {
+                            stmt = (PLpgSQL_stmt*)u_sess->parser_cxt.stmt;
+                            ((PLpgSQL_stmt_execsql *)stmt)->sqlstmt->is_funccall = true;
+                        } else {
+                            PLpgSQL_stmt_perform *newp;
+                            newp = (PLpgSQL_stmt_perform *)palloc0(sizeof(PLpgSQL_stmt_perform));
+                            newp->cmd_type = PLPGSQL_STMT_PERFORM;
+                            newp->lineno   = plpgsql_location_to_lineno(@1);
+                            newp->expr  = $3;
+                            newp->sqlString = plpgsql_get_curline_query();
+                            stmt = (PLpgSQL_stmt*)newp;
+                        }
+                        u_sess->parser_cxt.stmt = NULL;
+                        u_sess->parser_cxt.isPerform = false;
+                        $$ = stmt;
+                    }
+                  | K_DO {u_sess->parser_cxt.isPerform = true;} expr_until_from
                     {
                         PLpgSQL_stmt *stmt;
                         if (enable_out_param_override() && u_sess->parser_cxt.stmt != NULL) {
@@ -5568,6 +5588,15 @@ expr_until_then :
 
 expr_until_loop :
                     { $$ = read_sql_expression(K_LOOP, "LOOP"); }
+                ;
+expr_until_from :
+                    { 
+                      int tok = -1;
+                      $$ = read_sql_expression2(K_FROM, ';', "FROM or ;", &tok); 
+                      if (tok == K_FROM)
+                          ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+                                errmsg("'DO Stmt' is only supported expr without relation'.")));
+                    }
                 ;
 
 expr_until_while_loop:
