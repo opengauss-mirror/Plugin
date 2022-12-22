@@ -417,6 +417,9 @@ ALTER TABLE FKTABLE ADD FOREIGN KEY(ftest2, ftest1)
 
 -- temp tables should go away by themselves, need not drop them.
 
+CREATE SCHEMA test_rename;
+SET current_schema TO test_rename;
+
 DROP TABLE IF EXISTS T2;
 create table T2(AA int);
 set dolphin.lower_case_table_names = 1;
@@ -428,13 +431,15 @@ create table "T3"(AA int);
 -- rename to "t3"
 ALTER TABLE IF EXISTS "T3" RENAME TO T3;
 
-SELECT relname FROM pg_class WHERE relname = 'T2' OR relname = 'T3' OR relname = 't2' OR relname = 't3';
+SELECT relname FROM pg_class WHERE (relname = 'T2' OR relname = 'T3' OR relname = 't2' OR relname = 't3') AND relnamespace IN (SELECT oid FROM pg_namespace WHERE nspname = 'test_rename') ORDER BY 1;
 
 set dolphin.lower_case_table_names = 0;
 ALTER TABLE t2 RENAME TO T2;
 ALTER TABLE IF EXISTS t3 RENAME TO T3;
 
-SELECT relname FROM pg_class WHERE relname = 'T2' OR relname = 'T3' OR relname = 't2' OR relname = 't3';
+SELECT relname FROM pg_class WHERE (relname = 'T2' OR relname = 'T3' OR relname = 't2' OR relname = 't3') AND relnamespace IN (SELECT oid FROM pg_namespace WHERE nspname = 'test_rename') ORDER BY 1;
 
 DROP TABLE T2;
 DROP TABLE T3;
+SET current_schema TO public;
+DROP SCHEMA test_rename CASCADE;
