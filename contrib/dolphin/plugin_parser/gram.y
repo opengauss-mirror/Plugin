@@ -17047,6 +17047,7 @@ CreatePackageStmt:
 			CREATE opt_or_replace PACKAGE pkg_name invoker_rights as_is {pg_yyget_extra(yyscanner)->core_yy_extra.include_ora_comment = true;}
 				{
                     u_sess->plsql_cxt.package_as_line = GetLineNumber(t_thrd.postgres_cxt.debug_query_string, @6);
+                    CreatePackageStmt *n = makeNode(CreatePackageStmt);
 					char *pkgNameBegin = NULL;
 					char *pkgNameEnd = NULL;
                     char *pkgName = NULL;
@@ -17079,7 +17080,7 @@ CreatePackageStmt:
                         tok = yychar;
                         yychar = YYEMPTY;
                     }
-                    int proc_start_pos = yylloc;
+                    int proc_start_pos = n->pkgspec_location = yylloc;
                     u_sess->plsql_cxt.package_first_line = GetLineNumber(t_thrd.postgres_cxt.debug_query_string, yylloc);
 
                     // Scan whole stmt.        
@@ -17146,6 +17147,8 @@ CreatePackageStmt:
                     initStringInfo(&content_info);
                     appendStringInfo(&content_info, "%s", PACKAGE_STR);
                     appendStringInfo(&content_info, "%s", DECLARE_STR);
+                    n->pkgspec_prefix_len = content_info.len;
+                    n->pkgspec_location -= 1;
                     appendBinaryStringInfo(&content_info, yyextra->core_yy_extra.scanbuf + proc_start_pos - 1, name_start_pos - proc_start_pos + 1);
                     char* pkg_spec_str = content_info.data;
 
@@ -17187,7 +17190,6 @@ CreatePackageStmt:
 						parser_yyerror("package name end is not match the one begin!");
 					}
 #endif
-					CreatePackageStmt *n = makeNode(CreatePackageStmt);
 					n->replace = $2;
 					n->pkgname = $4;
 					n->pkgspec = pkg_spec_str;
@@ -24659,9 +24661,12 @@ select_with_parens:
 
  select_no_parens_without_withclause:
 			simple_select						{ $$ = $1; }
-                        | select_clause siblings_clause
+                        | select_clause siblings_clause opt_select_limit
                                 {
                                         SelectStmt* stmt = (SelectStmt *) $1;
+                                        insertSelectOptions((SelectStmt *) $1, NIL, NIL,
+                                            (Node*)list_nth($3, 0), (Node*)list_nth($3, 1), NULL,
+                                            yyscanner);
                                         StartWithClause* swc = (StartWithClause*) stmt->startWithClause;
                                         if (swc == NULL) {
                                             ereport(errstate,
@@ -24673,11 +24678,11 @@ select_with_parens:
                                         }
                                         $$ = $1;
                                 }
-                        | select_clause siblings_clause sort_clause
+                        | select_clause siblings_clause sort_clause opt_select_limit
                                 {
                                         SelectStmt* stmt = (SelectStmt *) $1;
 					insertSelectOptions((SelectStmt *) $1, $3, NIL,
-										NULL, NULL, NULL,
+										(Node*)list_nth($4, 0), (Node*)list_nth($4, 1), NULL,
 										yyscanner);
                                         StartWithClause* swc = (StartWithClause*) stmt->startWithClause;
                                         if (swc == NULL) {

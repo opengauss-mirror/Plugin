@@ -215,7 +215,9 @@ typedef struct tableInfo {
     AttrNumber autoinc_attnum;
     Oid autoinc_consoid;
     Oid autoinc_seqoid;
+#ifdef DOLPHIN
     Oid autoinc_idxoid;
+#endif
 } tableInfo;
 
 typedef struct SubpartitionInfo {
@@ -1666,10 +1668,10 @@ static int get_table_attribute(
                         isDefault = true;
                     }
                     Datum onUpdateExpr = fastgetattr(tup, Anum_pg_attrdef_adsrc_on_update, attrdefDesc->rd_att, &isnull);
-                    if (onUpdateExpr && pg_strcasecmp(TextDatumGetCString(onUpdateExpr), "") == 0) {
-                        isOnUpdate = false;
-                    } else {
+                    if (onUpdateExpr && pg_strcasecmp(TextDatumGetCString(onUpdateExpr), "") != 0) {
                         isOnUpdate = true;
+                    } else {
+                        isOnUpdate = false;
                     }
 
                     if (attrdef->adnum == att_tup->attnum) {
@@ -2220,7 +2222,11 @@ static void get_index_list_info(Oid tableoid, StringInfo buf, const char* relnam
                 /* Cleanup */
                 ReleaseSysCache(tup);
             }
+#ifdef DOLPHIN
         } else if (tableinfo->autoinc_consoid > 0 || tableinfo->autoinc_idxoid != index->indexrelid) {
+#else
+        } else {
+#endif
             appendStringInfo(buf, "\n%s;", pg_get_indexdef_worker(index->indexrelid, 0, NULL, false, true, 0));
 
             /* If the index is clustered, we need to record that. */
@@ -2671,8 +2677,9 @@ static char* pg_get_tabledef_worker(Oid tableoid)
     tableinfo.autoinc_attnum = 0;
     tableinfo.autoinc_consoid = 0;
     tableinfo.autoinc_seqoid = 0;
+#ifdef DOLPHIN
     tableinfo.autoinc_idxoid = 0;
-
+#endif
     ReleaseSysCache(tuple);
 
     relname = quote_identifier(tableinfo.relname);
@@ -2824,7 +2831,7 @@ static char* pg_get_tabledef_worker(Oid tableoid)
 
         systable_endscan(scan);
         heap_close(pg_constraint, AccessShareLock);
-
+#ifdef DOLPHIN
         /* If auto_increment column has no constraints, try find an index. */
         if (tableinfo.autoinc_attnum > 0 && tableinfo.autoinc_consoid == 0 && tableinfo.autoinc_idxoid == 0) {
             Relation pg_idx_rel = heap_open(IndexRelationId, AccessShareLock);
@@ -2866,7 +2873,7 @@ static char* pg_get_tabledef_worker(Oid tableoid)
             systable_endscan(scan);
             heap_close(pg_idx_rel, AccessShareLock);
         }
-
+#endif
         if (actual_atts) {
             appendStringInfo(&buf, "\n)");
         }

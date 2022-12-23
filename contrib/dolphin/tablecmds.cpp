@@ -90,6 +90,7 @@
 #include "commands/vacuum.h"
 #include "commands/verify.h"
 #include "commands/matview.h"
+#include "commands/view.h"
 #include "executor/executor.h"
 #include "executor/node/nodeModifyTable.h"
 #include "foreign/fdwapi.h"
@@ -3463,9 +3464,10 @@ void RemoveRelations(DropStmt* drop, StringInfo tmp_queryString, RemoteQueryExec
     StringInfo relation_namelist = makeStringInfo();
     char relPersistence;
     List *typlist = NULL;
+#ifdef DOLPHIN
     int indrelid;
     Bitmapset* indreloids = NULL;
-
+#endif
     /* DROP CONCURRENTLY uses a weaker lock, and has some restrictions */
     if (drop->concurrent) {
         lockmode = ShareUpdateExclusiveLock;
@@ -3732,6 +3734,7 @@ void RemoveRelations(DropStmt* drop, StringInfo tmp_queryString, RemoteQueryExec
         char* relation_name = NameListToQuotedString((List*)lfirst(cell));
         appendStringInfo(relation_namelist, relation_namelist->data[0] ? ", %s" : "%s", relation_name);
         pfree_ext(relation_name);
+#ifdef DOLPHIN
         /* Record table relid for checking. */
         if (relkind == RELKIND_INDEX) {
             HeapTuple idx_tup = SearchSysCache1(INDEXRELID, ObjectIdGetDatum(obj.objectId));
@@ -3744,6 +3747,7 @@ void RemoveRelations(DropStmt* drop, StringInfo tmp_queryString, RemoteQueryExec
                 indreloids = bms_add_member(indreloids, indrelid);
             }
         }
+#endif
     }
 
     /*
@@ -3772,11 +3776,13 @@ void RemoveRelations(DropStmt* drop, StringInfo tmp_queryString, RemoteQueryExec
     free_object_addresses(objects);
     pfree_ext(relation_namelist->data);
     pfree_ext(relation_namelist);
+#ifdef DOLPHIN
     /* check after dropping index */
     while ((indrelid = bms_first_member(indreloids)) > 0) {
         CheckRelAutoIncrementIndex(indrelid, AccessShareLock);
     }
     bms_free(indreloids);
+#endif
 }
 
 /*
@@ -8520,6 +8526,11 @@ static void ATRewriteCatalogs(List** wqueue, LOCKMODE lockmode)
             AlterTableCreateToastTable(tab->relid, toast_reloptions);
             relation_close(rel, NoLock);
         }
+#ifndef DOLPHIN
+        if (tab->relkind == RELKIND_RELATION) {
+            CheckRelAutoIncrementIndex(tab->relid, NoLock);
+        }
+#endif
     }
 }
 
@@ -16014,9 +16025,9 @@ static void ATExecSetRelOptions(Relation rel, List* defList, AlterTableType oper
         }
 
         /*
-        * If the check option is specified, look to see if the view is
-        * actually auto-updatable or not.
-        */
+         * If the check option is specified, look to see if the view is
+         * actually auto-updatable or not.
+         */
         if (check_option) {
             const char *view_updatable_error = view_query_is_auto_updatable(view_query, true);
 
@@ -16025,6 +16036,15 @@ static void ATExecSetRelOptions(Relation rel, List* defList, AlterTableType oper
                         (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
                         errmsg("WITH CHECK OPTION is supported only on auto-updatable views"),
                         errhint("%s", view_updatable_error)));
+
+            /* 
+             * Views based on MySQL foreign table is not allowed to add check option,
+             * because returning clause which check option dependend on is not supported
+             * on MySQL.
+             */
+            if (CheckMySQLFdwForWCO(view_query))
+                ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+                    errmsg("WITH CHECK OPTION is not supported on views that base on MySQL foreign table")));
         }
     }
 
@@ -29388,7 +29408,11 @@ void CheckRelAutoIncrementIndex(Oid relid, LOCKMODE lockmode)
         Relation idxrel = index_open(lfirst_oid(l), AccessShareLock);
         Form_pg_index index = idxrel->rd_index;
 
-        if (IndexIsValid(index) && index->indkey.values[0] == autoinc_attnum) {
+        if (IndexIsValid(index) &&
+#ifndef DOLPHIN
+            (index->indisunique || index->indisprimary) &&
+#endif
+            index->indkey.values[0] == autoinc_attnum) {
             found = true;
             index_close(idxrel, AccessShareLock);
             break;
