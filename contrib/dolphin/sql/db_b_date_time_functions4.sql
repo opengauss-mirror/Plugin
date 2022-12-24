@@ -67,6 +67,10 @@ insert into test values('extract(HOUR_MINUTE FROM ''2019-07-02 12:12:12.12121'')
 insert into test values('extract(HOUR_MINUTE FROM ''12:12:12.12121'')', extract(HOUR_MINUTE FROM '12:12:12.12121'));
 insert into test values('extract(HOUR_MICROSECOND FROM ''2019-07-02 12:12:12.12121'')', extract(HOUR_MICROSECOND FROM '2019-07-02 12:12:12.12121'));
 insert into test values('extract(HOUR_MICROSECOND FROM ''12:12:12.12121'')', extract(HOUR_MICROSECOND FROM '12:12:12.12121'));
+insert into test values('extract(day_hour from ''838:59:59'')',extract(day_hour from '838:59:59'));
+insert into test values('extract(day_minute from ''838:59:59'')',extract(day_minute from '838:59:59'));
+insert into test values('extract(day_second from ''838:59:59'')',extract(day_second from '838:59:59'));
+insert into test values('extract(day_microsecond from ''838:59:59'')',extract(day_microsecond from '838:59:59'));
 -- 边界
 insert into test values('extract(YEAR FROM ''9999-12-31'')', extract(YEAR FROM '9999-12-31'));
 insert into test values('extract(YEAR FROM ''0000-1-1'')', extract(YEAR FROM '0000-1-1'));
@@ -98,6 +102,7 @@ insert into test values('extract(hour FROM 0)', extract(hour FROM 0));
 insert into test values('extract(minute FROM 0)', extract(minute FROM 0));
 insert into test values('extract(second FROM 0)', extract(second FROM 0));
 insert into test values('extract(microsecond FROM 0)', extract(microsecond FROM 0));
+insert into test values('extract(microsecond from 99991231235959.999999)', extract(microsecond from 99991231235959.999999));
 -- 特异
 insert into test values('extract(hour from null)', extract(hour from null));
 
@@ -111,7 +116,10 @@ insert into test values('extract(hour from ''-838:59:59.1'')', extract(hour from
 insert into test values('extract(hour from ''-839:00:00'')', extract(hour from '-839:00:00'));
 insert into test values('extract(hour from ''40 1:1:0'')', extract(hour from '40 1:1:0'));
 insert into test values('extract(hour from ''-40 1:1:0'')', extract(hour from '-40 1:1:0'));
-
+insert into test values('extract(day_hour from ''2022-01-01'')', extract(day_hour from '2022-01-01'));
+insert into test values('extract(day_minute from ''2022-01-01'')', extract(day_minute from '2022-01-01'));
+insert into test values('extract(day_second from ''2022-01-01'')', extract(day_second from '2022-01-01'));
+insert into test values('extract(day_microsecond from ''2022-01-01'')', extract(day_microsecond from '2022-01-01'));
 -- 严格模式，参数不合法，抛出错误
 set dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes';
 insert into test values('extract(DAY FROM ''10000-01-01'')', extract(DAY FROM '10000-01-01'));
@@ -122,6 +130,10 @@ insert into test values('extract(hour from ''-838:59:59.1'')', extract(hour from
 insert into test values('extract(hour from ''-839:00:00'')', extract(hour from '-839:00:00'));
 insert into test values('extract(hour from ''40 1:1:0'')', extract(hour from '40 1:1:0'));
 insert into test values('extract(hour from ''-40 1:1:0'')', extract(hour from '-40 1:1:0'));
+insert into test values('extract(day_hour from ''2022-01-01'')', extract(day_hour from '2022-01-01'));
+insert into test values('extract(day_minute from ''2022-01-01'')', extract(day_minute from '2022-01-01'));
+insert into test values('extract(day_second from ''2022-01-01'')', extract(day_second from '2022-01-01'));
+insert into test values('extract(day_microsecond from ''2022-01-01'')', extract(day_microsecond from '2022-01-01'));
 set dolphin.b_compatibility_mode = false;
 
 -- test date_format

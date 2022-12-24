@@ -70,6 +70,10 @@ insert into test values('extract(HOUR_MINUTE FROM ''2019-07-02 12:12:12.12121'')
 insert into test values('extract(HOUR_MINUTE FROM ''12:12:12.12121'')', extract(HOUR_MINUTE FROM '12:12:12.12121'));
 insert into test values('extract(HOUR_MICROSECOND FROM ''2019-07-02 12:12:12.12121'')', extract(HOUR_MICROSECOND FROM '2019-07-02 12:12:12.12121'));
 insert into test values('extract(HOUR_MICROSECOND FROM ''12:12:12.12121'')', extract(HOUR_MICROSECOND FROM '12:12:12.12121'));
+insert into test values('extract(day_hour from ''838:59:59'')',extract(day_hour from '838:59:59'));
+insert into test values('extract(day_minute from ''838:59:59'')',extract(day_minute from '838:59:59'));
+insert into test values('extract(day_second from ''838:59:59'')',extract(day_second from '838:59:59'));
+insert into test values('extract(day_microsecond from ''838:59:59'')',extract(day_microsecond from '838:59:59'));
 -- 边界
 insert into test values('extract(YEAR FROM ''9999-12-31'')', extract(YEAR FROM '9999-12-31'));
 insert into test values('extract(YEAR FROM ''0000-1-1'')', extract(YEAR FROM '0000-1-1'));
@@ -101,6 +105,7 @@ insert into test values('extract(hour FROM 0)', extract(hour FROM 0));
 insert into test values('extract(minute FROM 0)', extract(minute FROM 0));
 insert into test values('extract(second FROM 0)', extract(second FROM 0));
 insert into test values('extract(microsecond FROM 0)', extract(microsecond FROM 0));
+insert into test values('extract(microsecond from 99991231235959.999999)', extract(microsecond from 99991231235959.999999));
 -- 特异
 insert into test values('extract(hour from null)', extract(hour from null));
 -- 非严格模式，参数不合法，报warning，返回NULL或者对应值
@@ -112,22 +117,34 @@ insert into test values('extract(year from 100000101)', extract(year from 100000
 WARNING:  Incorrect datetime value: "100000101"
 CONTEXT:  referenced column: result
 insert into test values('extract(hour from ''838:59:59.1'')', extract(hour from '838:59:59.1'));
-WARNING:  Truncated incorrect time value.
+WARNING:  Truncated incorrect time value: "838:59:59.1"
 CONTEXT:  referenced column: result
 insert into test values('extract(hour from ''839:00:00'')', extract(hour from '839:00:00'));
-WARNING:  Truncated incorrect time value.
+WARNING:  Truncated incorrect time value: "839:00:00"
 CONTEXT:  referenced column: result
 insert into test values('extract(hour from ''-838:59:59.1'')', extract(hour from '-838:59:59.1'));
-WARNING:  Truncated incorrect time value.
+WARNING:  Truncated incorrect time value: "-838:59:59.1"
 CONTEXT:  referenced column: result
 insert into test values('extract(hour from ''-839:00:00'')', extract(hour from '-839:00:00'));
-WARNING:  Truncated incorrect time value.
+WARNING:  Truncated incorrect time value: "-839:00:00"
 CONTEXT:  referenced column: result
 insert into test values('extract(hour from ''40 1:1:0'')', extract(hour from '40 1:1:0'));
-WARNING:  Truncated incorrect time value.
+WARNING:  Truncated incorrect time value: "40 1:1:0"
 CONTEXT:  referenced column: result
 insert into test values('extract(hour from ''-40 1:1:0'')', extract(hour from '-40 1:1:0'));
-WARNING:  Truncated incorrect time value.
+WARNING:  Truncated incorrect time value: "-40 1:1:0"
+CONTEXT:  referenced column: result
+insert into test values('extract(day_hour from ''2022-01-01'')', extract(day_hour from '2022-01-01'));
+WARNING:  Truncated incorrect time value: "2022-01-01"
+CONTEXT:  referenced column: result
+insert into test values('extract(day_minute from ''2022-01-01'')', extract(day_minute from '2022-01-01'));
+WARNING:  Truncated incorrect time value: "2022-01-01"
+CONTEXT:  referenced column: result
+insert into test values('extract(day_second from ''2022-01-01'')', extract(day_second from '2022-01-01'));
+WARNING:  Truncated incorrect time value: "2022-01-01"
+CONTEXT:  referenced column: result
+insert into test values('extract(day_microsecond from ''2022-01-01'')', extract(day_microsecond from '2022-01-01'));
+WARNING:  Truncated incorrect time value: "2022-01-01"
 CONTEXT:  referenced column: result
 -- 严格模式，参数不合法，抛出错误
 set dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes';
@@ -138,22 +155,34 @@ insert into test values('extract(year from 100000101)', extract(year from 100000
 ERROR:  Incorrect datetime value: "100000101"
 CONTEXT:  referenced column: result
 insert into test values('extract(hour from ''838:59:59.1'')', extract(hour from '838:59:59.1'));
-ERROR:  date/time field value out of range: "838:59:59.1"
+ERROR:  Truncated incorrect time value: "838:59:59.1"
 CONTEXT:  referenced column: result
 insert into test values('extract(hour from ''839:00:00'')', extract(hour from '839:00:00'));
-ERROR:  date/time field value out of range: "839:00:00"
+ERROR:  Truncated incorrect time value: "839:00:00"
 CONTEXT:  referenced column: result
 insert into test values('extract(hour from ''-838:59:59.1'')', extract(hour from '-838:59:59.1'));
-ERROR:  date/time field value out of range: "-838:59:59.1"
+ERROR:  Truncated incorrect time value: "-838:59:59.1"
 CONTEXT:  referenced column: result
 insert into test values('extract(hour from ''-839:00:00'')', extract(hour from '-839:00:00'));
-ERROR:  date/time field value out of range: "-839:00:00"
+ERROR:  Truncated incorrect time value: "-839:00:00"
 CONTEXT:  referenced column: result
 insert into test values('extract(hour from ''40 1:1:0'')', extract(hour from '40 1:1:0'));
-ERROR:  date/time field value out of range: "40 1:1:0"
+ERROR:  Truncated incorrect time value: "40 1:1:0"
 CONTEXT:  referenced column: result
 insert into test values('extract(hour from ''-40 1:1:0'')', extract(hour from '-40 1:1:0'));
-ERROR:  date/time field value out of range: "-40 1:1:0"
+ERROR:  Truncated incorrect time value: "-40 1:1:0"
+CONTEXT:  referenced column: result
+insert into test values('extract(day_hour from ''2022-01-01'')', extract(day_hour from '2022-01-01'));
+ERROR:  Truncated incorrect time value: "2022-01-01"
+CONTEXT:  referenced column: result
+insert into test values('extract(day_minute from ''2022-01-01'')', extract(day_minute from '2022-01-01'));
+ERROR:  Truncated incorrect time value: "2022-01-01"
+CONTEXT:  referenced column: result
+insert into test values('extract(day_second from ''2022-01-01'')', extract(day_second from '2022-01-01'));
+ERROR:  Truncated incorrect time value: "2022-01-01"
+CONTEXT:  referenced column: result
+insert into test values('extract(day_microsecond from ''2022-01-01'')', extract(day_microsecond from '2022-01-01'));
+ERROR:  Truncated incorrect time value: "2022-01-01"
 CONTEXT:  referenced column: result
 set dolphin.b_compatibility_mode = false;
 -- test date_format
@@ -592,10 +621,18 @@ select * from test order by funcname;
  extract(day_hour FROM 0)                                                                                                                                                                                                                                                      | 0
  extract(day_hour FROM 101)                                                                                                                                                                                                                                                    | 0
  extract(DAY_HOUR FROM '2019-07-02 12:12:12')                                                                                                                                                                                                                                  | 212
+ extract(day_hour from '2022-01-01')                                                                                                                                                                                                                                           | 0
+ extract(day_hour from '838:59:59')                                                                                                                                                                                                                                            | 838
  extract(day_microsecond FROM 0)                                                                                                                                                                                                                                               | 0
  extract(day_microsecond FROM 101)                                                                                                                                                                                                                                             | 101000000
  extract(DAY_MICROSECOND FROM '2019-07-02 12:12:12.12121')                                                                                                                                                                                                                     | 2121212121210
+ extract(day_microsecond from '2022-01-01')                                                                                                                                                                                                                                    | 2022000000
+ extract(day_microsecond from '838:59:59')                                                                                                                                                                                                                                     | 8385959000000
  extract(DAY_MINUTE FROM '2019-07-02 12:12:12')                                                                                                                                                                                                                                | 21212
+ extract(day_minute from '2022-01-01')                                                                                                                                                                                                                                         | 20
+ extract(day_minute from '838:59:59')                                                                                                                                                                                                                                          | 83859
+ extract(day_second from '2022-01-01')                                                                                                                                                                                                                                         | 2022
+ extract(day_second from '838:59:59')                                                                                                                                                                                                                                          | 8385959
  extract(hour FROM 0)                                                                                                                                                                                                                                                          | 0
  extract(hour FROM 101)                                                                                                                                                                                                                                                        | 0
  extract(HOUR FROM '12:12:12')                                                                                                                                                                                                                                                 | 12
@@ -621,6 +658,7 @@ select * from test order by funcname;
  extract(microsecond FROM 101)                                                                                                                                                                                                                                                 | 0
  extract(MICROSECOND FROM '12:12:12.12121')                                                                                                                                                                                                                                    | 121210
  extract(MICROSECOND FROM '2019-07-02 12:12:12.12121')                                                                                                                                                                                                                         | 121210
+ extract(microsecond from 99991231235959.999999)                                                                                                                                                                                                                               | 999999
  extract(minute FROM 0)                                                                                                                                                                                                                                                        | 0
  extract(minute FROM 101)                                                                                                                                                                                                                                                      | 1
  extract(MINUTE FROM '12:12:12')                                                                                                                                                                                                                                               | 12
@@ -796,7 +834,7 @@ select * from test order by funcname;
  str_to_date('9999 12 31', '%Y %m %d')                                                                                                                                                                                                                                         | 9999-12-31
  str_to_date('9999-12-31', '%Y-%m-%d')                                                                                                                                                                                                                                         | 9999-12-31
  str_to_date(null, '%Y %m %d')                                                                                                                                                                                                                                                 | 
-(269 rows)
+(278 rows)
 
 drop table test;
 \c contrib_regression

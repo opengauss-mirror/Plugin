@@ -6608,6 +6608,7 @@ Oid convert_cstring_to_datetime_time(const char* str, Timestamp *datetime, TimeA
     size_t len = strlen(str);
     const char *start;
     const char *end = str + len;
+    bool null_func_result = false;
 
     /* Skip space at start */
     for (; str != end && isspace((unsigned char)*str); str++)
@@ -6624,7 +6625,7 @@ Oid convert_cstring_to_datetime_time(const char* str, Timestamp *datetime, TimeA
         struct pg_tm tt, *tm = &tt;
         bool warnings = false;
         /* Check whether the string is a full timestamp */
-        cstring_to_datetime(str, (TIME_FUZZY_DATE | TIME_DATETIME_ONLY), tm_type, tm, fsec, nano, warnings);
+        cstring_to_datetime(str, (TIME_FUZZY_DATE | TIME_DATETIME_ONLY), tm_type, tm, fsec, nano, warnings, &null_func_result);
         if (warnings && SQL_MODE_STRICT()) {
             ereport(ERROR, (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE),
                             errmsg("date/time field value out of range: \"%s\"", str)));
