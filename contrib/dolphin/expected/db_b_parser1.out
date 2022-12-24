@@ -1,7 +1,5 @@
-drop database if exists db_b_parser1;
-NOTICE:  database "db_b_parser1" does not exist, skipping
-create database db_b_parser1 dbcompatibility 'b';
-\c db_b_parser1
+create schema db_b_parser1;
+set current_schema to 'db_b_parser1';
 select 'bbbbb' regexp '^([bc])\1*$' as t, 'bbbbb' not regexp '^([bc])\1*$' as t2, 'bbbbb' rlike '^([bc])\1*$' as t;
  t | t2 | t 
 ---+----+---
@@ -356,5 +354,5 @@ select '-12.3abc' rlike 'null';
      0
 (1 row)
 
-\c postgres
-drop database if exists db_b_parser1;
+drop schema db_b_parser1 cascade;
+reset current_schema;

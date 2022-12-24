@@ -1,4 +1,6 @@
 /* unsupported */
+create database b_comments dbcompatibility 'A';
+\c b_comments
 create schema b_comments;
 set search_path to 'b_comments';
 create table test_row(a int not null comment 'test_row.a');
@@ -51,8 +53,8 @@ NOTICE:  drop cascades to 3 other objects
 DETAIL:  drop cascades to table test_alter
 drop cascades to function test_alter_function(integer)
 drop cascades to function test_alter_procedure(integer,integer)
-create database b_comments dbcompatibility 'B';
-\c b_comments
+\c contrib_regression
+drop database b_comments;
 create schema b_comments;
 set search_path to 'b_comments';
 /* unsupported */
@@ -267,5 +269,3 @@ drop cascades to table fvt_distribute_query_tables_02
 drop cascades to table t_comment_0032
 drop cascades to table t_comment_0034
 reset search_path;
-\c postgres
-drop database b_comments;

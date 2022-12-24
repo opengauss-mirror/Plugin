@@ -1,7 +1,5 @@
-drop database if exists test_kill;
-NOTICE:  database "test_kill" does not exist, skipping
-create database test_kill dbcompatibility 'b';
-\c test_kill
+create schema test_kill;
+set current_schema to 'test_kill';
 kill query (select sessionid from pg_stat_activity where application_name = 'JobScheduler');
  result 
 --------
@@ -20,5 +18,5 @@ kill (select sessionid from pg_stat_activity where application_name = 'Percentil
  t
 (1 row)
 
-\c postgres
-drop database if exists test_kill;
+drop schema test_kill cascade;
+reset current_schema;

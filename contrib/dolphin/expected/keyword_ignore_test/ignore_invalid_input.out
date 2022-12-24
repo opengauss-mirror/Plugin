@@ -1,6 +1,6 @@
 -- test for insert/update ignore.
-create database sql_ignore_invalid_input_test dbcompatibility 'B';
-\c sql_ignore_invalid_input_test;
+create schema sql_ignore_invalid_input_test;
+set current_schema to 'sql_ignore_invalid_input_test';
 set timezone to 'PRC';
 -- type: tinyint
 drop table if exists t_tinyint;
@@ -1143,5 +1143,35 @@ show timezone;
  PST8PDT
 (1 row)
 
-\c postgres
-drop database if exists sql_ignore_invalid_input_test;
+drop schema sql_ignore_invalid_input_test cascade;
+NOTICE:  drop cascades to 29 other objects
+DETAIL:  drop cascades to table t_tinyint
+drop cascades to table t_tinyint_unsigned
+drop cascades to table t_smallint
+drop cascades to table t_smallint_unsigned
+drop cascades to table t_int
+drop cascades to table t_int_unsigned
+drop cascades to table t_bigint
+drop cascades to table t_bigint_unsigned
+drop cascades to table t_float4
+drop cascades to table t_float8
+drop cascades to table t_numeric
+drop cascades to table t_date
+drop cascades to table t_time
+drop cascades to table t_timestamp
+drop cascades to table t_timestamptz
+drop cascades to table t_timetz
+drop cascades to table t_interval
+drop cascades to table t_tinterval
+drop cascades to table t_smalldatetime
+drop cascades to table t_uuid
+drop cascades to table t_point
+drop cascades to table t_path
+drop cascades to table t_polygon
+drop cascades to table t_circle
+drop cascades to table t_lseg
+drop cascades to table t_box
+drop cascades to table t_json
+drop cascades to table t_jsonb
+drop cascades to table t_bit
+reset current_schema;

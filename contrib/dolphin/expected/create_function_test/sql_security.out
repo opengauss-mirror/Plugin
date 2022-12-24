@@ -1,7 +1,5 @@
-drop database if exists db_func_4;
-NOTICE:  database "db_func_4" does not exist, skipping
-create database db_func_4 dbcompatibility 'B';
-\c db_func_4
+create schema db_func_4;
+set current_schema to 'db_func_4';
 CREATE FUNCTION f1 (s CHAR(20)) RETURNS int SQL SECURITY DEFINER AS $$ select 1 $$ ;
 CREATE FUNCTION f2 (s int) RETURNS int NO SQL SQL SECURITY DEFINER AS $$ select s; $$ ;
 CREATE FUNCTION f3 (s int) RETURNS int  SQL SECURITY INVOKER  READS SQL DATA LANGUAGE SQL AS $$ select s; $$ ;
@@ -30,5 +28,10 @@ call f4(4);
   4
 (1 row)
 
-\c postgres
-drop database if exists db_func_4;
+drop schema db_func_4 cascade;
+NOTICE:  drop cascades to 4 other objects
+DETAIL:  drop cascades to function f1(character)
+drop cascades to function f2(integer)
+drop cascades to function f3(integer)
+drop cascades to function f4(integer)
+reset current_schema;

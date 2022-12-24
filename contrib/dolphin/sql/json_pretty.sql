@@ -1,6 +1,5 @@
-drop database if exists test_json_pretty;
-create database test_json_pretty dbcompatibility'B';
-\c test_json_pretty
+create schema test_json_pretty;
+set current_schema to 'test_json_pretty';
 
 -- test for basic functionality of json_replace
 select JSON_PRETTY('{"a": 43}');
@@ -65,5 +64,5 @@ select JSON_PRETTY(textjson) from test;
 insert into test values
 (JSON_PRETTY('{"a": 43, "b": {"c": true}}'));
 select * from test;
-\c postgres
-drop database test_json_pretty;
+drop schema test_json_pretty cascade;
+reset current_schema;

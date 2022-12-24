@@ -1,6 +1,5 @@
-drop database if exists make_set;
-create database make_set dbcompatibility 'b';
-\c make_set
+create schema make_set;
+set current_schema to 'make_set';
 set dolphin.sql_mode = '';
 select make_set(3, 'a', 'b', 'c');
 select make_set(2,'a','b','c','d','e');
@@ -35,6 +34,6 @@ select make_set(-4294967296*1024*1024*1024,'1','2','3','4','5','6','7','8','9','
 select make_set(3, true, false);
 select make_set(3,01/02/03, false, true, false);
 
-\c postgres
-drop database make_set
+drop schema make_set cascade;
+reset current_schema;
 

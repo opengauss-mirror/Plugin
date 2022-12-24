@@ -1,6 +1,5 @@
-drop database if exists uint_mod;
-create database uint_mod dbcompatibility 'b';
-\c uint_mod
+create schema uint_mod;
+set current_schema to 'uint_mod';
 
 --uint8
 select 18446744073709551615::uint8 % 0::int1;
@@ -210,5 +209,5 @@ select 127::int1 % 1::uint2;
 select 127::int1 % 1::uint4;
 select 127::int1 % 1::uint8;
 
-\c postgres
-drop database uint_mod
+drop schema uint_mod cascade;
+reset current_schema;

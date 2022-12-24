@@ -1,4 +1,7 @@
 -- the test case of A format
+drop database if exists test;
+create database test dbcompatibility 'A';
+\c test
 SELECT 2.5::float4::int1;
 SELECT 2.5::float8::int1;
 SELECT 2.5::int1;
@@ -27,11 +30,13 @@ SELECT 3.5::int8;
 
 SELECT dround(2.5);
 SELECT dround(3.5);
+
+\c contrib_regression
+drop database test;
 
 -- the test case of dolphin plugin
-drop database if exists test;
-create database test dbcompatibility 'B';
-\c test
+create schema test;
+set current_schema to 'test';
 
 SELECT 2.5::float4::int1;
 SELECT 2.5::float8::int1;
@@ -62,5 +67,5 @@ SELECT 3.5::int8;
 SELECT dround(2.5);
 SELECT dround(3.5);
 
-\c postgres
-drop database test;
+drop schema test cascade;
+reset current_schema;

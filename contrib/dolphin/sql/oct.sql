@@ -1,6 +1,5 @@
-drop database if exists db_oct;
-create database db_oct dbcompatibility 'b';
-\c db_oct
+create schema db_oct;
+set current_schema to 'db_oct';
 
 -- 测试正常数字十进制转八进制
 SELECT OCT(10);
@@ -35,5 +34,5 @@ insert into test_oct values('10'),('11');
 select oct(name) from test_oct;
 drop table if exists test_oct;
 
-\c postgres
-drop database if exists db_oct;
+drop schema db_oct cascade;
+reset current_schema;

@@ -1,7 +1,5 @@
-drop DATABASE if exists partition_test1;
-
-CREATE DATABASE partition_test1 dbcompatibility 'B';
-\c partition_test1;
+create schema partition_test1;
+set current_schema to 'partition_test1';
 
 -------test range partition tables
 ----test partition table
@@ -143,13 +141,13 @@ create index idx_b on test_part_list using btree(b) local;
 alter table test_part_list add constraint uidx_d unique(d);
 alter table test_part_list add constraint uidx_c unique using index idx_c;
 insert into test_part_list values(2000,1,2,3),(3000,2,3,4),(4000,3,4,5),(5000,4,5,6);
-select * from test_part_list;
+select * from test_part_list order by a desc;
 select relname, parttype from pg_partition where (parentid in (select oid from pg_class where relname = 'test_part_list')) and oid != relfilenode order by relname;
 ALTER TABLE test_part_list REBUILD PARTITION p1, p2;
-select * from test_part_list;
+select * from test_part_list order by a desc;
 select relname, parttype from pg_partition where (parentid in (select oid from pg_class where relname = 'test_part_list')) and oid != relfilenode order by relname;
 ALTER TABLE test_part_list REBUILD PARTITION all;
-select * from test_part_list;
+select * from test_part_list order by a desc;
 select relname, parttype from pg_partition where (parentid in (select oid from pg_class where relname = 'test_part_list')) and oid != relfilenode order by relname;
 
 
@@ -323,5 +321,5 @@ select * from test_part_segment where ((980 < d and d < 1000) or (2180 < d and d
 select * from test_part_segment where ((980 < b and b < 1000) or (2180 < b and b < 2200));
 --test remove partitioning
 alter table test_part_segment remove partitioning;
-\c postgres;
-drop DATABASE if exists partition_test1;
+drop schema partition_test1 cascade;
+reset current_schema;

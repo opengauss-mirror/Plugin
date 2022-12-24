@@ -1,6 +1,5 @@
-drop database if exists show_createdatabase;
-create database show_createdatabase dbcompatibility 'b';
-\c show_createdatabase
+create schema show_createdatabase;
+set current_schema to 'show_createdatabase';
 CREATE USER test_showcreate_database WITH PASSWORD 'openGauss@123';
 GRANT ALL PRIVILEGES TO test_showcreate_database;
 SET ROLE test_showcreate_database PASSWORD 'openGauss@123';
@@ -20,5 +19,5 @@ show create database aa;
 drop schema test_get_database cascade;
 RESET ROLE;
 DROP USER test_showcreate_database;
-\c postgres
-drop database if exists show_createdatabase;
+drop schema show_createdatabase cascade;
+reset current_schema;

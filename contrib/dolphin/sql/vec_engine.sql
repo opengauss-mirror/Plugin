@@ -1,5 +1,5 @@
-create database vec_engine_test dbcompatibility 'b';
-\c vec_engine_test
+create schema vec_engine_test;
+set current_schema to 'vec_engine_test';
 CREATE TABLE customer (
     c_custkey integer NOT NULL,
     c_name character varying(25) NOT NULL,
@@ -102,5 +102,5 @@ explain (costs off) select
                 n_name
         order by
                 revenue desc;
-\c postgres
-drop database vec_engine_test;
+drop schema vec_engine_test cascade;
+reset current_schema;

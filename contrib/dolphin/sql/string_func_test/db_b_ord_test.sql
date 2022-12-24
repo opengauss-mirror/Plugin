@@ -1,6 +1,5 @@
-drop database if exists db_b_ord_test;
-create database db_b_ord_test dbcompatibility 'B';
-\c db_b_ord_test
+create schema db_b_ord_test;
+set current_schema to 'db_b_ord_test';
 
 -- test 1 byte
 select ord('1111');
@@ -32,5 +31,5 @@ insert into test_ord values('1234'), ('嬴政'), ('𓃔𓃘𓃲𓃰');
 
 select ord(name) from test_ord;
 
-\c postgres
-drop database if exists db_b_ord_test;
+drop schema db_b_ord_test cascade;
+reset current_schema;

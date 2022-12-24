@@ -1,10 +1,8 @@
-DROP DATABASE IF EXISTS db_show_5;
-NOTICE:  database "db_show_5" does not exist, skipping
-CREATE DATABASE db_show_5 DBCOMPATIBILITY 'b';
-\c db_show_5
+create schema db_show_5;
+set current_schema to 'db_show_5';
 CREATE SCHEMA tst_schema5;
 --orientation=row, normal primary key
-CREATE TABLE public.t1
+CREATE TABLE db_show_5.t1
 (
 id int primary key,
 name varchar(20),
@@ -12,7 +10,7 @@ phone text
 ) WITH(ORIENTATION=ROW, STORAGE_TYPE=USTORE);
 NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "t1_pkey" for table "t1"
 --orientation=column, serial primary key
-CREATE TABLE public.t2
+CREATE TABLE db_show_5.t2
 (
 id serial primary key,
 name varchar(20),
@@ -50,9 +48,7 @@ SHOW TABLE STATUS;
 --?.*
 --?.*
 --?.*
---?.*
---?.*
-(4 rows)
+(2 rows)
 
 SHOW TABLE STATUS FROM tst_schema5;
 --?  Name  | Engine | Version | Row_format | Rows | Avg_row_length | Data_length | Max_data_length | Index_length | Data_free | Auto_increment |       Create_time        |       Update_time        | Check_time |  Collation  | Checksum |                    Create_options                    |     Comment     
@@ -119,5 +115,8 @@ RESET ROLE;
 REVOKE SELECT ON ALL TABLES IN SCHEMA tst_schema5 FROM tst_shows_u5;
 REVOKE SELECT ON ALL SEQUENCES IN SCHEMA tst_schema5 FROM tst_shows_u5;
 DROP USER tst_shows_u5;
-\c postgres
-DROP DATABASE IF EXISTS db_show_5;
+drop schema db_show_5 cascade;
+NOTICE:  drop cascades to 2 other objects
+DETAIL:  drop cascades to table t1
+drop cascades to table t2
+reset current_schema;

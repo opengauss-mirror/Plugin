@@ -1,7 +1,5 @@
-drop database if exists test_json_remove;
-NOTICE:  database "test_json_remove" does not exist, skipping
-create database test_json_remove dbcompatibility'B';
-\c test_json_remove
+create schema test_json_remove;
+set current_schema to 'test_json_remove';
 SELECT JSON_REMOVE('[0, 1, 2, [3, 4]]', '$[0]', '$[2]');
  json_remove 
 -------------
@@ -114,5 +112,8 @@ select * from tab_json1;
  {"x": {"a": 3}, "y": 2}
 (1 row)
 
-\c postgres
-drop database if exists test_json_remove;
+drop schema test_json_remove cascade;
+NOTICE:  drop cascades to 2 other objects
+DETAIL:  drop cascades to table tab_json1
+drop cascades to table info1
+reset current_schema;

@@ -1,7 +1,5 @@
-drop DATABASE if exists partition_maxvalue_test;
-NOTICE:  database "partition_maxvalue_test" does not exist, skipping
-CREATE DATABASE partition_maxvalue_test dbcompatibility 'B';
-\c partition_maxvalue_test;
+create schema partition_maxvalue_test;
+set current_schema to 'partition_maxvalue_test';
 --test MAXVALUE syntax
 CREATE TABLE IF NOT EXISTS testsubpart
 (
@@ -84,5 +82,9 @@ DETAIL:  The distributed capability is not supported currently.
 create table testpart5(a int) DISTRIBUTE by range(a) (SLICE p0 start MAXVALUE end (200), SLICE p1 end(300));
 ERROR:  Un-support feature
 DETAIL:  The distributed capability is not supported currently.
-\c postgres;
-drop DATABASE if exists partition_maxvalue_test;
+drop schema partition_maxvalue_test cascade;
+NOTICE:  drop cascades to 3 other objects
+DETAIL:  drop cascades to table testsubpart
+drop cascades to table testpart
+drop cascades to table testpart1
+reset current_schema;

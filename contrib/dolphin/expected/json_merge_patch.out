@@ -1,7 +1,5 @@
-drop database if exists test_json_merge_patch;
-NOTICE:  database "test_json_merge_patch" does not exist, skipping
-create database test_json_merge_patch dbcompatibility 'B';
-\c test_json_merge_patch
+create schema test_json_merge_patch;
+set current_schema to 'test_json_merge_patch';
 select json_merge_patch(NULL);
 ERROR:  Incorrect parameter count
 CONTEXT:  referenced column: json_merge_patch
@@ -340,5 +338,8 @@ insert into test1 values
  {"a": [1, 2], "colin": "huawei", "colinew": "handsome"} | {"1": "jks"}
 (1 row)
 
-\c postgres;
-drop database if exists test_json_merge_patch;
+drop schema test_json_merge_patch cascade;
+NOTICE:  drop cascades to 2 other objects
+DETAIL:  drop cascades to table test
+drop cascades to table test1
+reset current_schema;

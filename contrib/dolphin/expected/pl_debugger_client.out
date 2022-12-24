@@ -1,4 +1,4 @@
-\c test_ansi_quotes
+set current_schema to 'test_ansi_quotes';
 SET dolphin.sql_mode TO 'sql_mode_strict,sql_mode_full_group,pipes_as_concat';
 -- wait for server establishment
 select pg_sleep(3);

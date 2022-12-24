@@ -1,7 +1,5 @@
-drop database if exists join_without_on;
-NOTICE:  database "join_without_on" does not exist, skipping
-create database join_without_on dbcompatibility 'b';
-\c join_without_on
+create schema join_without_on;
+set current_schema to 'join_without_on';
 CREATE TABLE J1_TBL (
   i integer,
   j integer,
@@ -136,5 +134,10 @@ SELECT  * FROM J1_TBL  JOIN J2_TBL INNER JOIN J3_TBL INNER JOIN J4_TBL ON J1_TBL
  1 | 4 | one | 1 | -1 | 2 |  2 | 1 | -1
 (4 rows)
 
-\c postgres
-drop database if exists join_without_on;
+drop schema join_without_on cascade;
+NOTICE:  drop cascades to 4 other objects
+DETAIL:  drop cascades to table j1_tbl
+drop cascades to table j2_tbl
+drop cascades to table j3_tbl
+drop cascades to table j4_tbl
+reset current_schema;

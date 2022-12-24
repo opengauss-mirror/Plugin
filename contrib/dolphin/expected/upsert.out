@@ -1,7 +1,5 @@
-drop database if exists upsert;
-NOTICE:  database "upsert" does not exist, skipping
-create database upsert dbcompatibility 'b';
-\c upsert
+create schema upsert;
+set current_schema to 'upsert';
 --normal test
 --primary key and unique on multiple column 
 create table normal_01(c1 int, c2 int, c3 int, c4 int unique, c5 int primary key, unique(c2,c3));
@@ -805,5 +803,28 @@ select * from subpartition_03;
      2 |     2 | 1     |     1
 (1 row)
 
-\c postgres
-drop database upsert
+drop schema upsert cascade;
+NOTICE:  drop cascades to 22 other objects
+DETAIL:  drop cascades to table normal_01
+drop cascades to table normal_02
+drop cascades to table normal_03
+drop cascades to table normal_04
+drop cascades to table ustore_01
+drop cascades to table ustore_02
+drop cascades to table ustore_03
+drop cascades to table ustore_04
+drop cascades to table t6
+drop cascades to table segment_01
+drop cascades to table segment_02
+drop cascades to table segment_03
+drop cascades to table segment_04
+drop cascades to table partition_01
+drop cascades to table partition_02
+drop cascades to table partition_03
+drop cascades to table partition_04
+drop cascades to table partition_05
+drop cascades to table partition_06
+drop cascades to table subpartition_01
+drop cascades to table subpartition_02
+drop cascades to table subpartition_03
+reset current_schema;

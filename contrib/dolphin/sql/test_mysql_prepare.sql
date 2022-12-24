@@ -1,6 +1,5 @@
-drop database if exists test_mysql_prepare;
-create database test_mysql_prepare dbcompatibility 'b';
-\c test_mysql_prepare
+create schema test_mysql_prepare;
+set current_schema to 'test_mysql_prepare';
 create table test(name text, age int);
 insert into test values('a',18);
 prepare s1 as select * from test;
@@ -239,5 +238,5 @@ deallocate s2;
 
 reset dolphin.b_compatibility_mode;
 reset enable_set_variable_b_format;
-\c postgres
-drop database test_mysql_prepare;
+drop schema test_mysql_prepare cascade;
+reset current_schema;

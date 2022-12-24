@@ -1,7 +1,5 @@
-drop database if exists test_bit_count;
-NOTICE:  database "test_bit_count" does not exist, skipping
-create database test_bit_count dbcompatibility 'b';
-\c test_bit_count
+create schema test_bit_count;
+set current_schema to 'test_bit_count';
 -- 测试数字，字符串，二进制输入
 SELECT bit_count(29);
  bit_count 
@@ -204,5 +202,5 @@ select bit_count(b'1000000011111111111111111111111111111111111111111111111111111
         64
 (1 row)
 
-\c postgres
-drop database test_bit_count;
+drop schema test_bit_count cascade;
+reset current_schema;

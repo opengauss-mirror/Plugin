@@ -1,6 +1,5 @@
-drop database if exists uint_cast3;
-create database uint_cast3 dbcompatibility 'b';
-\c uint_cast3
+create schema uint_cast3;
+set current_schema to 'uint_cast3';
 select 1::uint1::int16;
 select 1::int16::uint1;
 select 1::uint2::int16;
@@ -95,5 +94,5 @@ select '65536'::text::uint2;
 select '4294967296'::text::uint4;
 select '18446744073709551616'::text::uint8;
 
-\c postgres
-drop database uint_cast3;
+drop schema uint_cast3 cascade;
+reset current_schema;

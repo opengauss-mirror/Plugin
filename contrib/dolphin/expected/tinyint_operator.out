@@ -1,7 +1,5 @@
-drop database if exists tinyint_operator;
-NOTICE:  database "tinyint_operator" does not exist, skipping
-create database tinyint_operator dbcompatibility 'b';
-\c tinyint_operator
+create schema tinyint_operator;
+set current_schema to 'tinyint_operator';
 select 1::int1 + 1::int1;
  ?column? 
 ----------
@@ -258,5 +256,5 @@ select @127::int1;
 
 select @(-128)::int1;
 ERROR:  tinyint out of range
-\c postgres
-drop database tinyint_operator;
+drop schema tinyint_operator cascade;
+reset current_schema;

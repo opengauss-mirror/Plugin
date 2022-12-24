@@ -1,6 +1,5 @@
-drop database if exists test_binary;
-create database test_binary dbcompatibility 'B';
-\c test_binary
+create schema test_binary;
+set current_schema to 'test_binary';
 create table binary_templates (a bytea, b binary(5), c varbinary(5));
 
 -- invalid typmod
@@ -83,5 +82,5 @@ select * from t_varbinary_061;
 drop table if exists t_binary_061;
 drop table if exists t_varbinary_061;
 
-\c postgres
-drop database test_binary;
+drop schema test_binary cascade;
+reset current_schema;

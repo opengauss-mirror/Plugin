@@ -1,6 +1,5 @@
-drop database if exists test_json_keys;
-create database test_json_keys dbcompatibility'B';
-\c test_json_keys
+create schema test_json_keys;
+set current_schema to 'test_json_keys';
 
 SELECT JSON_KEYS('{"a":"t1"}');
 SELECT JSON_KEYS('{"a":"t1","b":"t2"}');
@@ -31,5 +30,5 @@ create table student(name json);
 insert into student (name) value(json_keys('{"a":123,"b":{"c":"qwe"}}'));
 select name from student;
 
-\c postgres
-drop database if exists test_json_keys;
+drop schema test_json_keys cascade;
+reset current_schema;

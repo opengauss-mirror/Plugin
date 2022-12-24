@@ -1,7 +1,5 @@
-drop database if exists test_json_replace;
-NOTICE:  database "test_json_replace" does not exist, skipping
-create database test_json_replace dbcompatibility 'B';
-\c test_json_replace
+create schema test_json_replace;
+set current_schema to 'test_json_replace';
 -- test for basic functionality of json_replace
 SELECT JSON_REPLACE('{"a": 1, "b": 2, "c": 3}', '$.b', 9);
        json_replace       
@@ -243,5 +241,5 @@ CONTEXT:  referenced column: json_replace
 SELECT JSON_REPLACE('x',2,2);
 ERROR:  Invalid JSON text in argument 1 to function json_replace.
 CONTEXT:  referenced column: json_replace
-\c postgres
-drop database if exists test_json_replace;
+drop schema test_json_replace cascade;
+reset current_schema;

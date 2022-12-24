@@ -1,5 +1,5 @@
-create database t dbcompatibility 'B';
-\c t;
+create schema t;
+set current_schema to 't';
 create table t(id text, v text);
 insert into t(id, v) values('1','a'),('2','b'),('1','c'),('2','d');
 select group_concat(id,v separator ';') into tmp_table from t;
@@ -19,9 +19,12 @@ explain verbose select id, group_concat(VARIADIC ARRAY[id,':',v] order by id) as
    ->  Sort  (cost=61.11..63.28 rows=869 width=64)
          Output: id, v
          Sort Key: t.id
-         ->  Seq Scan on public.t  (cost=0.00..18.69 rows=869 width=64)
+         ->  Seq Scan on t.t  (cost=0.00..18.69 rows=869 width=64)
                Output: id, v
 (8 rows)
 
-\c postgres
-drop database t;
+drop schema t cascade;
+NOTICE:  drop cascades to 2 other objects
+DETAIL:  drop cascades to table t
+drop cascades to table tmp_table
+reset current_schema;

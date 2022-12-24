@@ -1,8 +1,5 @@
----- b compatibility case
-drop database if exists test_table_index;
-NOTICE:  database "test_table_index" does not exist, skipping
-create database test_table_index dbcompatibility 'b';
-\c test_table_index
+create schema test_table_index;
+set current_schema to 'test_table_index';
 -- test crate normal table
 create table t1(f1 int , index(f1));
 create table t2(f1 int , index idx_f2(f1));
@@ -10,7 +7,7 @@ create table t3(f1 int , index idx_f3 using btree (f1));
 create table t4(f1 int , index idx_f4 using btree (f1 desc));
 create table t5(f1 int , key idx_f5 using btree (f1 asc));
 \d+ t1
-                          Table "public.t1"
+                     Table "test_table_index.t1"
  Column |  Type   | Modifiers | Storage | Stats target | Description 
 --------+---------+-----------+---------+--------------+-------------
  f1     | integer |           | plain   |              | 
@@ -20,7 +17,7 @@ Has OIDs: no
 Options: orientation=row, compression=no
 
 \d+ t2
-                          Table "public.t2"
+                     Table "test_table_index.t2"
  Column |  Type   | Modifiers | Storage | Stats target | Description 
 --------+---------+-----------+---------+--------------+-------------
  f1     | integer |           | plain   |              | 
@@ -30,7 +27,7 @@ Has OIDs: no
 Options: orientation=row, compression=no
 
 \d+ t3
-                          Table "public.t3"
+                     Table "test_table_index.t3"
  Column |  Type   | Modifiers | Storage | Stats target | Description 
 --------+---------+-----------+---------+--------------+-------------
  f1     | integer |           | plain   |              | 
@@ -40,7 +37,7 @@ Has OIDs: no
 Options: orientation=row, compression=no
 
 \d+ t4
-                          Table "public.t4"
+                     Table "test_table_index.t4"
  Column |  Type   | Modifiers | Storage | Stats target | Description 
 --------+---------+-----------+---------+--------------+-------------
  f1     | integer |           | plain   |              | 
@@ -50,7 +47,7 @@ Has OIDs: no
 Options: orientation=row, compression=no
 
 \d+ t5
-                          Table "public.t5"
+                     Table "test_table_index.t5"
  Column |  Type   | Modifiers | Storage | Stats target | Description 
 --------+---------+-----------+---------+--------------+-------------
  f1     | integer |           | plain   |              | 
@@ -68,7 +65,7 @@ create table test_expr1(f1 int, f2 int, f3 int, index tbl_idx1 using btree(f1 de
 create table test_expr2(f1 int, f2 int, f3 int, index tbl_idx2 using btree((abs(f1)) desc, f2 asc));
 create table test_expr3(f1 int, f2 int, f3 int, index tbl_idx3 using btree((abs(f1)+10) desc, f2 asc));
 \d+ test_expr1
-                      Table "public.test_expr1"
+                 Table "test_table_index.test_expr1"
  Column |  Type   | Modifiers | Storage | Stats target | Description 
 --------+---------+-----------+---------+--------------+-------------
  f1     | integer |           | plain   |              | 
@@ -80,7 +77,7 @@ Has OIDs: no
 Options: orientation=row, compression=no
 
 \d+ test_expr2
-                      Table "public.test_expr2"
+                 Table "test_table_index.test_expr2"
  Column |  Type   | Modifiers | Storage | Stats target | Description 
 --------+---------+-----------+---------+--------------+-------------
  f1     | integer |           | plain   |              | 
@@ -92,7 +89,7 @@ Has OIDs: no
 Options: orientation=row, compression=no
 
 \d+ test_expr3
-                      Table "public.test_expr3"
+                 Table "test_table_index.test_expr3"
  Column |  Type   | Modifiers | Storage | Stats target | Description 
 --------+---------+-----------+---------+--------------+-------------
  f1     | integer |           | plain   |              | 
@@ -113,12 +110,12 @@ create table text_column_table(f11 int, f12 varchar(20), f13 bool, index (f11)) 
 create table test_gist (t tsquery, s tsvector,index using gist(t));
 create table test_gin (t tsquery, s tsvector,index using gin(s));
 create table text_column_table(f1 int, index(f1)) with (orientation=column);
-ERROR:  relation "text_column_table" already exists in schema "public"
+ERROR:  relation "text_column_table" already exists in schema "test_table_index"
 DETAIL:  creating new table with existing name in the same schema
 create table text_column_table_expr(f1 int, unique((f1+1))) with (orientation=column);
 ERROR:  access method "cbtree" does not support index expressions
 \d+ test_ubtree
-                     Table "public.test_ubtree"
+                Table "test_table_index.test_ubtree"
  Column |  Type   | Modifiers | Storage | Stats target | Description 
 --------+---------+-----------+---------+--------------+-------------
  f1     | integer |           | plain   |              | 
@@ -130,7 +127,7 @@ Has OIDs: no
 Options: orientation=row, storage_type=ustore, compression=no
 
 \d+ test_gist
-                       Table "public.test_gist"
+                  Table "test_table_index.test_gist"
  Column |   Type   | Modifiers | Storage  | Stats target | Description 
 --------+----------+-----------+----------+--------------+-------------
  t      | tsquery  |           | plain    |              | 
@@ -141,7 +138,7 @@ Has OIDs: no
 Options: orientation=row, compression=no
 
 \d+ test_gin
-                        Table "public.test_gin"
+                   Table "test_table_index.test_gin"
  Column |   Type   | Modifiers | Storage  | Stats target | Description 
 --------+----------+-----------+----------+--------------+-------------
  t      | tsquery  |           | plain    |              | 
@@ -152,7 +149,7 @@ Has OIDs: no
 Options: orientation=row, compression=no
 
 \d+ text_column_table
-                          Table "public.text_column_table"
+                     Table "test_table_index.text_column_table"
  Column |         Type          | Modifiers | Storage  | Stats target | Description 
 --------+-----------------------+-----------+----------+--------------+-------------
  f11    | integer               |           | plain    |              | 
@@ -185,7 +182,7 @@ PARTITION BY RANGE(f1)
         PARTITION P4 VALUES LESS THAN(MAXVALUE)
 );
 \d+ test_partition_btree
-                 Table "public.test_partition_btree"
+            Table "test_table_index.test_partition_btree"
  Column |  Type   | Modifiers | Storage | Stats target | Description 
 --------+---------+-----------+---------+--------------+-------------
  f1     | integer |           | plain   |              | 
@@ -214,7 +211,7 @@ PARTITION BY RANGE(f1)
         PARTITION P4 VALUES LESS THAN(MAXVALUE)
 );
 \d+ test_partition_index
-                 Table "public.test_partition_index"
+            Table "test_table_index.test_partition_index"
  Column |  Type   | Modifiers | Storage | Stats target | Description 
 --------+---------+-----------+---------+--------------+-------------
  f1     | integer |           | plain   |              | 
@@ -243,7 +240,7 @@ PARTITION BY RANGE(f1)
         PARTITION P4 VALUES LESS THAN(MAXVALUE)
 );
 \d+ test_partition_func
-                 Table "public.test_partition_func"
+            Table "test_table_index.test_partition_func"
  Column |  Type   | Modifiers | Storage | Stats target | Description 
 --------+---------+-----------+---------+--------------+-------------
  f1     | integer |           | plain   |              | 
@@ -272,7 +269,7 @@ PARTITION BY RANGE(f1)
         PARTITION P4 VALUES LESS THAN(MAXVALUE)
 );
 \d+ test_partition_expr
-                 Table "public.test_partition_expr"
+            Table "test_table_index.test_partition_expr"
  Column |  Type   | Modifiers | Storage | Stats target | Description 
 --------+---------+-----------+---------+--------------+-------------
  f1     | integer |           | plain   |              | 
@@ -301,7 +298,7 @@ PARTITION BY RANGE(f1)
         PARTITION P4 VALUES LESS THAN(MAXVALUE)
 );
 \d+ test_partition_column
-                Table "public.test_partition_column"
+           Table "test_table_index.test_partition_column"
  Column |  Type   | Modifiers | Storage | Stats target | Description 
 --------+---------+-----------+---------+--------------+-------------
  f1     | integer |           | plain   |              | 
@@ -338,7 +335,7 @@ SUBPARTITION p_201902_b VALUES ( '2' )
 )
 );
 \d+ test_subpartition_btree
-                         Table "public.test_subpartition_btree"
+                    Table "test_table_index.test_subpartition_btree"
    Column   |         Type          | Modifiers | Storage  | Stats target | Description 
 ------------+-----------------------+-----------+----------+--------------+-------------
  month_code | character varying(30) | not null  | extended |              | 
@@ -376,7 +373,7 @@ SUBPARTITION p_201902_b VALUES ( '2' )
 )
 );
 \d+ test_subpartition_btree
-                         Table "public.test_subpartition_btree"
+                    Table "test_table_index.test_subpartition_btree"
    Column   |         Type          | Modifiers | Storage  | Stats target | Description 
 ------------+-----------------------+-----------+----------+--------------+-------------
  month_code | character varying(30) | not null  | extended |              | 
@@ -427,7 +424,7 @@ create table t1(a int , b int, index (a, b));
 alter table  t1 add index (a);
 alter table  t1 add index idx_a_1(a);
 \d+ t1
-                          Table "public.t1"
+                     Table "test_table_index.t1"
  Column |  Type   | Modifiers | Storage | Stats target | Description 
 --------+---------+-----------+---------+--------------+-------------
  a      | integer |           | plain   |              | 
@@ -445,7 +442,7 @@ alter table  t1 add index using btree(a), add index (b desc);
 alter table  t1 add index idx_a_t1 using btree(a);
 alter table  t1 add index idx_a_b_t1 using btree(a, b desc);
 \d+ t1
-                          Table "public.t1"
+                     Table "test_table_index.t1"
  Column |  Type   | Modifiers | Storage | Stats target | Description 
 --------+---------+-----------+---------+--------------+-------------
  a      | integer |           | plain   |              | 
@@ -464,7 +461,7 @@ create table t1(a int , b int, index (a, b));
 alter table  t1 add key idx_a_b_t1 using btree(a, b desc);
 alter table  t1 add key idx_a_b_expr_t1 using btree((abs(a+b) + a) desc);
 \d+ t1
-                          Table "public.t1"
+                     Table "test_table_index.t1"
  Column |  Type   | Modifiers | Storage | Stats target | Description 
 --------+---------+-----------+---------+--------------+-------------
  a      | integer |           | plain   |              | 
@@ -486,7 +483,7 @@ ERROR:  syntax error at or near "idx1"
 LINE 1: alter table  t1 add index using btree idx1 (a);
                                               ^
 \d+ t1
-                          Table "public.t1"
+                     Table "test_table_index.t1"
  Column |  Type   | Modifiers | Storage | Stats target | Description 
 --------+---------+-----------+---------+--------------+-------------
  a      | integer |           | plain   |              | 
@@ -507,7 +504,7 @@ alter table test_normal_index add key(f11 desc, f12 asc);
 alter table test_normal_index add key using btree(f11, f12),add unique(f11, f12),add primary key(f11, f12);
 NOTICE:  ALTER TABLE / ADD PRIMARY KEY will create implicit index "test_normal_index_pkey" for table "test_normal_index"
 \d+ test_normal_index
-                          Table "public.test_normal_index"
+                     Table "test_table_index.test_normal_index"
  Column |         Type          | Modifiers | Storage  | Stats target | Description 
 --------+-----------------------+-----------+----------+--------------+-------------
  f11    | integer               | not null  | plain    |              | 
@@ -536,7 +533,7 @@ alter table text_column_table add key (f11,f12);
 alter table text_column_table add key using btree(f11);
 alter table text_column_table add key using cbtree(f11);
 \d+ text_column_table
-                          Table "public.text_column_table"
+                     Table "test_table_index.text_column_table"
  Column |         Type          | Modifiers | Storage  | Stats target | Description 
 --------+-----------------------+-----------+----------+--------------+-------------
  f11    | integer               |           | plain    |              | 
@@ -575,7 +572,7 @@ alter table test_partition_btree add index (f1 desc);
 alter table test_partition_btree add key using btree(f1 desc, f2 asc, f3);
 alter table test_partition_btree add key using btree((abs(f1)) desc, (f2 * 2 + 1) asc, f3);
 \d+ test_partition_btree
-                 Table "public.test_partition_btree"
+            Table "test_table_index.test_partition_btree"
  Column |  Type   | Modifiers | Storage | Stats target | Description 
 --------+---------+-----------+---------+--------------+-------------
  f1     | integer |           | plain   |              | 
@@ -606,7 +603,7 @@ drop table if exists test_temporary_index1;
 create table test_option1(a int, b int, index idx_op1 using btree(a) comment 'yy');
 alter table test_option1 add key ixd_at1 (b) comment 'aa';
 \d+ test_option1
-                     Table "public.test_option1"
+                Table "test_table_index.test_option1"
  Column |  Type   | Modifiers | Storage | Stats target | Description 
 --------+---------+-----------+---------+--------------+-------------
  a      | integer |           | plain   |              | 
@@ -650,7 +647,7 @@ alter table test_option2 add index ixd_at2 using hash(b) comment 'aa' comment 'b
 create table test_option3(a int, b int, index idx_op3 (a) using btree);
 alter table test_option3 add index ixd_at3(b) using btree;
 \d+ test_option3
-                     Table "public.test_option3"
+                Table "test_table_index.test_option3"
  Column |  Type   | Modifiers | Storage | Stats target | Description 
 --------+---------+-----------+---------+--------------+-------------
  a      | integer |           | plain   |              | 
@@ -666,7 +663,7 @@ alter table test_option4 add index ixd_at4 using hash (b) using btree using hash
 NOTICE:  ALTER TABLE / ADD PRIMARY KEY will create implicit index "test_option4_pkey" for table "test_option4"
 NOTICE:  ALTER TABLE / ADD UNIQUE will create implicit index "test_option4_a_key" for table "test_option4"
 \d+ test_option4
-                     Table "public.test_option4"
+                Table "test_table_index.test_option4"
  Column |  Type   | Modifiers | Storage | Stats target | Description 
 --------+---------+-----------+---------+--------------+-------------
  a      | integer |           | plain   |              | 
@@ -685,7 +682,7 @@ alter table test_option5 add index ixd_at5 using hash (b) using btree comment 'y
 NOTICE:  ALTER TABLE / ADD PRIMARY KEY will create implicit index "test_option5_pkey" for table "test_option5"
 NOTICE:  ALTER TABLE / ADD UNIQUE will create implicit index "test_option5_a_key" for table "test_option5"
 \d+ test_option5
-                     Table "public.test_option5"
+                Table "test_table_index.test_option5"
  Column |  Type   | Modifiers | Storage | Stats target | Description 
 --------+---------+-----------+---------+--------------+-------------
  a      | integer |           | plain   |              | 
@@ -715,7 +712,7 @@ Options: orientation=row, compression=no
 
 create table test_option6(a int, b int, key idx_op6 using hash(a) using btree comment 'yy' using hash comment 'xx');
 \d+ test_option6
-                     Table "public.test_option6"
+                Table "test_table_index.test_option6"
  Column |  Type   | Modifiers | Storage | Stats target | Description 
 --------+---------+-----------+---------+--------------+-------------
  a      | integer |           | plain   |              | 
@@ -734,7 +731,7 @@ Options: orientation=row, compression=no
 
 create table test_option7(a int, b int, index idx_op7 (a) using btree comment 'yy' using hash comment 'xx');
 \d+ test_option7
-                     Table "public.test_option7"
+                Table "test_table_index.test_option7"
  Column |  Type   | Modifiers | Storage | Stats target | Description 
 --------+---------+-----------+---------+--------------+-------------
  a      | integer |           | plain   |              | 
@@ -747,7 +744,7 @@ Options: orientation=row, compression=no
 create table test_option8(a int, b int, c int, key idx_op8_a (a) using btree comment 'yy' using hash comment 'xx', index idx_op8_b (b) using btree comment 'yy' using hash comment 'xx');
 alter table test_option8 add index ixd_at8_b(b) using btree comment 'yy' using hash comment 'xx', add index ixd_at8_c (c) using btree comment 'yy' using hash comment 'xx';
 \d+ test_option8
-                     Table "public.test_option8"
+                Table "test_table_index.test_option8"
  Column |  Type   | Modifiers | Storage | Stats target | Description 
 --------+---------+-----------+---------+--------------+-------------
  a      | integer |           | plain   |              | 
@@ -776,7 +773,7 @@ PARTITION BY RANGE(f1)
         PARTITION P4 VALUES LESS THAN(MAXVALUE)
 );
 \d+ test_option9
-                     Table "public.test_option9"
+                Table "test_table_index.test_option9"
  Column |  Type   | Modifiers | Storage | Stats target | Description 
 --------+---------+-----------+---------+--------------+-------------
  f1     | integer |           | plain   |              | 
@@ -811,7 +808,7 @@ PARTITION BY RANGE(f1)
         PARTITION P4 VALUES LESS THAN(MAXVALUE)
 );
 \d+ test_option10
-                    Table "public.test_option10"
+               Table "test_table_index.test_option10"
  Column |  Type   | Modifiers | Storage | Stats target | Description 
 --------+---------+-----------+---------+--------------+-------------
  f1     | integer |           | plain   |              | 
@@ -850,5 +847,17 @@ alter table test_option1 add key ixd_at13 using btree (b) using aaa using btree;
 ERROR:  access method "aaa" does not exist
 alter table test_option1 add key ixd_at14 using btree (b) comment 'xx' using aaa using btree;
 ERROR:  access method "aaa" does not exist
-\c contrib_regression
-DROP DATABASE test_table_index;
+drop schema test_table_index cascade;
+NOTICE:  drop cascades to 11 other objects
+DETAIL:  drop cascades to table test_option1
+drop cascades to table test_option2
+drop cascades to table test_option3
+drop cascades to table test_option4
+drop cascades to table test_option5
+drop cascades to table test_option6
+drop cascades to table test_option7
+drop cascades to table test_option8
+drop cascades to table test_option9
+drop cascades to table test_option10
+drop cascades to table test_option11
+reset current_schema;

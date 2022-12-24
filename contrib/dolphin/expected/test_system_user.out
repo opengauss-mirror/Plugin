@@ -1,7 +1,5 @@
-drop database if exists test_system_user;
-NOTICE:  database "test_system_user" does not exist, skipping
-create database test_system_user dbcompatibility 'b';
-\c test_system_user
+create schema test_system_user;
+set current_schema to 'test_system_user';
 select session_user;
  session_user 
 --------------
@@ -32,5 +30,5 @@ select system_user();
 --?.*
 (1 row)
 
-\c postgres
-drop database test_system_user;
+drop schema test_system_user cascade;
+reset current_schema;

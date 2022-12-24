@@ -1,6 +1,5 @@
-drop database if exists test_json_storage_size;
-create database test_json_storage_size dbcompatibility'B';
-\c test_json_storage_size
+create schema test_json_storage_size;
+set current_schema to 'test_json_storage_size';
 
 set enable_set_variable_b_format to on;
 
@@ -72,6 +71,5 @@ FROM
 
 SELECT JSON_STORAGE_SIZE('{0,1}');
 
-\c postgres
-
-drop database test_json_storage_size
+drop schema test_json_storage_size cascade;
+reset current_schema;

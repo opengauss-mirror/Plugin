@@ -1,6 +1,5 @@
-drop database if exists db_b_parser1;
-create database db_b_parser1 dbcompatibility 'b';
-\c db_b_parser1
+create schema db_b_parser1;
+set current_schema to 'db_b_parser1';
 select 'bbbbb' regexp '^([bc])\1*$' as t, 'bbbbb' not regexp '^([bc])\1*$' as t2, 'bbbbb' rlike '^([bc])\1*$' as t;
 select 'ccc' regexp '^([bc])\1*$' as t, 'ccc' not regexp '^([bc])\1*$' as t2, 'ccc' rlike '^([bc])\1*$' as t;
 select 'xxx' regexp '^([bc])\1*$' as f, 'xxx' not regexp '^([bc])\1*$' as f2, 'xxx' rlike '^([bc])\1*$' as f;
@@ -64,5 +63,5 @@ select '-12.3abc' rlike true;
 select '-12.3abc' rlike false;
 select '-12.3abc' rlike 'null';
 
-\c postgres
-drop database if exists db_b_parser1;
+drop schema db_b_parser1 cascade;
+reset current_schema;

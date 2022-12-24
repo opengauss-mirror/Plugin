@@ -1,6 +1,5 @@
-drop database if exists test_json_merge_patch;
-create database test_json_merge_patch dbcompatibility 'B';
-\c test_json_merge_patch
+create schema test_json_merge_patch;
+set current_schema to 'test_json_merge_patch';
 
 select json_merge_patch(NULL);
 select json_merge_patch(NULL,NULL);
@@ -75,5 +74,5 @@ insert into test1 values
  json_merge_patch('[{"a":"abc"},"bcd"]','{"1":"jks"}'));
  select * from test1;
 
-\c postgres;
-drop database if exists test_json_merge_patch;
+drop schema test_json_merge_patch cascade;
+reset current_schema;

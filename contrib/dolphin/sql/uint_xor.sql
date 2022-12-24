@@ -1,6 +1,5 @@
-drop database if exists uint_xor;
-create database uint_xor dbcompatibility 'b';
-\c uint_xor
+create schema uint_xor;
+set current_schema to 'uint_xor';
 
 --uint8
 select 18446744073709551615::uint8 # 0::int1;
@@ -174,5 +173,5 @@ select 127::int1 # 1::uint2;
 select 127::int1 # 1::uint4;
 select 127::int1 # 1::uint8;
 
-\c postgres
-drop database uint_xor
+drop schema uint_xor cascade;
+reset current_schema;

@@ -1,5 +1,5 @@
-create database show_test dbcompatibility 'b';
-\c show_test
+create schema show_test;
+set current_schema to 'show_test';
 create user grant_test identified by 'H&*#^DH85@#(J';
 NOTICE:  The iteration value of password is not recommended.Setting the iteration value too small reduces the security of the password, and setting it too large results in performance degradation.
 set search_path = 'grant_test';
@@ -270,5 +270,5 @@ drop cascades to function grant_test.tri_insert_func()
 drop cascades to function grant_test.tri_update_func()
 drop cascades to function grant_test.tri_delete_func()
 drop cascades to function grant_test.tri_truncate_func0010()
-\c postgres
-drop database show_test;
+drop schema show_test cascade;
+reset current_schema;

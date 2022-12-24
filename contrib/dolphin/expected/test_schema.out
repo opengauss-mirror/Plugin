@@ -1,12 +1,10 @@
-drop database if exists schema_test;
-NOTICE:  database "schema_test" does not exist, skipping
-create database schema_test dbcompatibility 'b';
-\c schema_test
+create schema schema_test;
+set current_schema to 'schema_test';
 SELECT SCHEMA();
- schema 
---------
- public
+   schema    
+-------------
+ schema_test
 (1 row)
 
-\c postgres
-drop database if exists schema_test;
+drop schema schema_test cascade;
+reset current_schema;

@@ -1,5 +1,5 @@
-create database second_microsecond dbcompatibility = 'b';
-\c second_microsecond
+create schema second_microsecond;
+set current_schema to 'second_microsecond';
 select microsecond(timestamp '2021-11-4 16:30:44.3411');
 select second(timestamp(6) '2021-11-4 16:30:44.3411');
 select microsecond(datetime '2021-11-4 16:30:44.3411');
@@ -11,5 +11,5 @@ select second(time(6) '2021-11-4 16:30:44.3411');
 select microsecond(timetz '2021-11-4 16:30:44.3411');
 select second(timetz(6) '2021-11-4 16:30:44.3411');
 
-\c postgres
-drop database second_microsecond;
+drop schema second_microsecond cascade;
+reset current_schema;

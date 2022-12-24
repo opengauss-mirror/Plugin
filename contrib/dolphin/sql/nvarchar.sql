@@ -1,8 +1,5 @@
--- b compatibility case
-drop database if exists db_nvarchar;
-create database db_nvarchar dbcompatibility 'b';
-
-\c db_nvarchar
+create schema db_nvarchar;
+set current_schema to 'db_nvarchar';
 --
 -- VARCHAR
 --
@@ -69,5 +66,5 @@ INSERT INTO NVARCHAR_TBL (f1) VALUES ('abcde');
 INSERT INTO NVARCHAR_TBL (f1) VALUES ('abcd    ');
 
 SELECT '' AS four, * FROM NVARCHAR_TBL;
-\c postgres
-drop database if exists db_nvarchar;
+drop schema db_nvarchar cascade;
+reset current_schema;

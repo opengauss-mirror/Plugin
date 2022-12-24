@@ -1,6 +1,5 @@
-drop DATABASE if exists partition_maxvalue_test;
-CREATE DATABASE partition_maxvalue_test dbcompatibility 'B';
-\c partition_maxvalue_test;
+create schema partition_maxvalue_test;
+set current_schema to 'partition_maxvalue_test';
 --test MAXVALUE syntax
 CREATE TABLE IF NOT EXISTS testsubpart
 (
@@ -60,5 +59,5 @@ CREATE TABLE testpart3 (a int) DISTRIBUTE BY RANGE(a)
 );
 create table testpart4(a int) DISTRIBUTE by range(a) (SLICE p0 start (1) end MAXVALUE);
 create table testpart5(a int) DISTRIBUTE by range(a) (SLICE p0 start MAXVALUE end (200), SLICE p1 end(300));
-\c postgres;
-drop DATABASE if exists partition_maxvalue_test;
+drop schema partition_maxvalue_test cascade;
+reset current_schema;

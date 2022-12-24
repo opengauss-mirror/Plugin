@@ -1,6 +1,5 @@
-drop database if exists tinyint_smp;
-create database tinyint_smp dbcompatibility 'b';
-\c tinyint_smp
+create schema tinyint_smp;
+set current_schema to 'tinyint_smp';
 
 set enable_opfusion = on;
 set opfusion_debug_mode = log;
@@ -52,5 +51,5 @@ select test_p1(1, 3);
 select test_p1(-1, -3);
 select * from test1;
 
-\c postgres
-drop database tinyint_smp;
+drop schema tinyint_smp cascade;
+reset current_schema;

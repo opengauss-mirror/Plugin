@@ -1,6 +1,5 @@
-drop database if exists db_character_length;
-create database db_character_length dbcompatibility 'B';
-\c db_character_length
+create schema db_character_length;
+set current_schema to 'db_character_length';
 
 select character_length(1234);
 select character_length(1234.5);
@@ -18,8 +17,8 @@ select character_length('测试');
 select character_length('测试123.45');
 select character_length(true);
 
-\c postgres
-drop database if exists db_character_length;
+drop schema db_character_length cascade;
+reset current_schema;
 drop database if exists db_character_length_gbk;
 create database db_character_length_gbk dbcompatibility 'B' encoding 'GBK' LC_CTYPE 'zh_CN.gbk' lc_collate 'zh_CN.gbk';
 \c db_character_length_gbk

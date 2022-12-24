@@ -1,3 +1,7 @@
+drop database if exists db_b_substr_test;
+create database db_b_substr_test dbcompatibility 'A';
+\c db_b_substr_test
+
 DROP TABLE IF EXISTS template_string;
 CREATE TABLE template_string(a TEXT, b BYTEA);
 INSERT INTO template_string VALUES('abcdefghijklmnopqrstuvwxyz', 'abcdefghijklmnopqrstuvwxyz');
@@ -39,9 +43,11 @@ FROM template_string;
 
 DROP TABLE IF EXISTS template_string;
 
-drop database if exists db_b_substr_test;
-create database db_b_substr_test dbcompatibility 'B';
-\c db_b_substr_test
+\c contrib_regression
+drop database db_b_substr_test;
+
+create schema db_b_substr_test;
+set current_schema to 'db_b_substr_test';
 
 set bytea_output to escape;
 
@@ -193,5 +199,5 @@ select c1, c2, substr(c1 from c2) from test_row order by c1;
 select c1, c2, substr(c1 for c2) from test_column order by c1;
 select c1, c2, substr(c1 for c2) from test_row order by c1;
 
-\c postgres
-drop database db_b_substr_test;
+drop schema db_b_substr_test cascade;
+reset current_schema;

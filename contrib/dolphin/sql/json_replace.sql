@@ -1,6 +1,5 @@
-drop database if exists test_json_replace;
-create database test_json_replace dbcompatibility 'B';
-\c test_json_replace
+create schema test_json_replace;
+set current_schema to 'test_json_replace';
 
 -- test for basic functionality of json_replace
 SELECT JSON_REPLACE('{"a": 1, "b": 2, "c": 3}', '$.b', 9);
@@ -70,5 +69,5 @@ SELECT JSON_REPLACE('x','a',3,true);
 -- test for invalid json document
 SELECT JSON_REPLACE('x',2,2);
 
-\c postgres
-drop database if exists test_json_replace;
+drop schema test_json_replace cascade;
+reset current_schema;

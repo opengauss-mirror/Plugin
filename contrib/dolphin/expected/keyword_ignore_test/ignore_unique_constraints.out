@@ -1,5 +1,5 @@
-create database sql_ignore_unique_test dbcompatibility 'B';
-\c sql_ignore_unique_test;
+create schema sql_ignore_unique_test;
+set current_schema to 'sql_ignore_unique_test';
 drop table if exists t_ignore;
 NOTICE:  table "t_ignore" does not exist, skipping
 create table t_ignore(col1 int, col2 int unique, col3 int unique);
@@ -365,5 +365,10 @@ select * from t_ignore;
    2
 (2 rows)
 
-\c postgres
-drop database if exists sql_ignore_unique_test;
+drop schema sql_ignore_unique_test cascade;
+NOTICE:  drop cascades to 4 other objects
+DETAIL:  drop cascades to table t_unique_upsert
+drop cascades to table t_unique_key_partition
+drop cascades to table ignore_range_range
+drop cascades to table t_ignore
+reset current_schema;

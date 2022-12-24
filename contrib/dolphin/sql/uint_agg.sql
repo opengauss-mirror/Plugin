@@ -1,6 +1,5 @@
-drop database if exists uint_agg;
-create database uint_agg dbcompatibility 'b';
-\c uint_agg
+create schema uint_agg;
+set current_schema to 'uint_agg';
 
 --uint1
 create table u1(a uint1, b int2);
@@ -104,5 +103,5 @@ explain(costs off, verbose) select variance(a), variance(b) from smp_test;
 explain(costs off, verbose) select listagg(a) within group(order by a) from smp_test;
 explain(costs off, verbose) select listagg(a, ',') within group(order by a) from smp_test;
 
-\c postgres
-drop database uint_agg;
+drop schema uint_agg cascade;
+reset current_schema;

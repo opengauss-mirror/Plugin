@@ -1,6 +1,5 @@
-drop database if exists uint_partition;
-create database uint_partition dbcompatibility 'b';
-\c uint_partition
+create schema uint_partition;
+set current_schema to 'uint_partition';
 
 CREATE TABLE t1
 (
@@ -217,5 +216,5 @@ create table t_unsigned_0030_8(col01 bigint unsigned)
 partition by range(col01)(partition p start(1) end(255) every(50));
 insert into t_unsigned_0030_8 values(1);
 
-\c postgres
-drop database uint_partition;
+drop schema uint_partition cascade;
+reset current_schema;

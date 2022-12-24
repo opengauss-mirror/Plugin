@@ -1,6 +1,5 @@
-drop database if exists uint_sql_mode;
-create database uint_sql_mode dbcompatibility 'b';
-\c uint_sql_mode
+create schema uint_sql_mode;
+set current_schema to 'uint_sql_mode';
 
 set dolphin.sql_mode = '';
 
@@ -563,5 +562,5 @@ insert into t1 values(256::uint1);
 
 select * from t1;
 
-\c postgres
-drop database uint_sql_mode;
+drop schema uint_sql_mode cascade;
+reset current_schema;

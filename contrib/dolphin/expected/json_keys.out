@@ -1,7 +1,5 @@
-drop database if exists test_json_keys;
-NOTICE:  database "test_json_keys" does not exist, skipping
-create database test_json_keys dbcompatibility'B';
-\c test_json_keys
+create schema test_json_keys;
+set current_schema to 'test_json_keys';
 SELECT JSON_KEYS('{"a":"t1"}');
  json_keys 
 -----------
@@ -139,5 +137,6 @@ select name from student;
  ["a", "b"]
 (1 row)
 
-\c postgres
-drop database if exists test_json_keys;
+drop schema test_json_keys cascade;
+NOTICE:  drop cascades to table student
+reset current_schema;

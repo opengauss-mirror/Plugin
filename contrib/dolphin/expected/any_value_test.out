@@ -1,7 +1,5 @@
-drop DATABASE if exists any_value_test;
-NOTICE:  database "any_value_test" does not exist, skipping
-CREATE DATABASE any_value_test dbcompatibility 'B';
-\c any_value_test;
+create schema any_value_test;
+set current_schema to 'any_value_test';
 --test int type
 create table test_int1(a tinyint, b int);
 create table test_int2(a smallint, b int);
@@ -192,5 +190,26 @@ select any_value(c) from test_blob_bytea group by a;
  \xdabc
 (2 rows)
 
-\c postgres;
-drop DATABASE if exists any_value_test;
+drop schema any_value_test cascade;
+NOTICE:  drop cascades to 20 other objects
+DETAIL:  drop cascades to table test_int1
+drop cascades to table test_int2
+drop cascades to table test_int4
+drop cascades to table test_int8
+drop cascades to table test_uint1
+drop cascades to table test_uint2
+drop cascades to table test_uint4
+drop cascades to table test_uint8
+drop cascades to table test_float
+drop cascades to table test_double
+drop cascades to table test_numeric
+drop cascades to table test_char
+drop cascades to table test_varchar
+drop cascades to table test_text
+drop cascades to table test_date
+drop cascades to table test_bool
+drop cascades to table test_year
+drop cascades to type test_set_a_set
+drop cascades to table test_set
+drop cascades to table test_blob_bytea
+reset current_schema;

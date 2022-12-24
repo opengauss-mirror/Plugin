@@ -1,6 +1,5 @@
-drop database if exists test_bool_float;
-create database test_bool_float dbcompatibility 'b';
-\c test_bool_float
+create schema test_bool_float;
+set current_schema to 'test_bool_float';
 set dolphin.b_compatibility_mode = true;
 
 select 1::bool ^ 2::int1;
@@ -159,5 +158,5 @@ select (-1)::numeric ^ (-2)::float8;
 select (-1)::numeric ^ (-2)::numeric;
 
 set dolphin.b_compatibility_mode = false;
-\c postgres
-drop database test_bool_float;
+drop schema test_bool_float cascade;
+reset current_schema;

@@ -1,7 +1,5 @@
-drop database if exists db_describe;
-NOTICE:  database "db_describe" does not exist, skipping
-create database db_describe dbcompatibility 'b';
-\c db_describe
+create schema db_describe;
+set current_schema to 'db_describe';
 CREATE TABLE test2
 (
 id int PRIMARY KEY
@@ -141,7 +139,7 @@ describe test;
  c     | character varying(10) | NO   |     | NULL                            | 
 (3 rows)
 
-desc public.test;
+desc db_describe.test;
  Field |         Type          | Null | Key |             Default             | Extra 
 -------+-----------------------+------+-----+---------------------------------+-------
  a     | integer               | NO   | PRI | nextval('test_a_seq'::regclass) | 
@@ -177,5 +175,9 @@ desc sc.test4;
 -------+------+------+-----+---------+-------
 (0 rows)
 
-\c postgres
-drop database if exists db_describe;
+drop schema db_describe cascade;
+NOTICE:  drop cascades to 3 other objects
+DETAIL:  drop cascades to table db_describe.test2
+drop cascades to table db_describe.test3
+drop cascades to table db_describe.test
+reset current_schema;

@@ -1,6 +1,5 @@
-drop database if exists db_b_parser2;
-create database db_b_parser2 dbcompatibility 'b';
-\c db_b_parser2
+create schema db_b_parser2;
+set current_schema to 'db_b_parser2';
 --验证DAYOFMONTH() DAYOFWEEK() DAYOFYEAR() HOUR() MICROSECOND() MINUTE() QUARTER() SECOND() WEEKDAY() WEEKOFYEAR() YEAR()
 select DAYOFMONTH(datetime '2021-11-4 16:30:44.341191');
 
@@ -159,5 +158,5 @@ insert into fchar_test values('零一二三四五六七八九十');
 select fchar,length(fchar) from fchar_test order by 1,2;
 drop table fchar_test;
 
-\c postgres
-drop database if exists db_b_parser2;
+drop schema db_b_parser2 cascade;
+reset current_schema;

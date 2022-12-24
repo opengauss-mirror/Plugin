@@ -1,6 +1,5 @@
-drop DATABASE if exists partition_test4;
-CREATE DATABASE partition_test4 dbcompatibility 'B';
-\c partition_test4;
+create schema partition_test4;
+set current_schema to 'partition_test4';
 CREATE TABLE test_range_subpart
 (
     a INT4 PRIMARY KEY,
@@ -275,5 +274,5 @@ partition p1 values less than(200),
 partition p2 values less than(300),
 partition p3 values less than (maxvalue)
 );
-\c postgres;
-drop DATABASE if exists partition_test4;
+drop schema partition_test4 cascade;
+reset current_schema;

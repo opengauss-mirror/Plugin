@@ -1,7 +1,5 @@
-drop database if exists test_substring_index;
-NOTICE:  database "test_substring_index" does not exist, skipping
-create database test_substring_index dbcompatibility 'b';
-\c test_substring_index
+create schema test_substring_index;
+set current_schema to 'test_substring_index';
 SELECT SUBSTRING_INDEX('www.opengauss.com','.',0);
  substring_index 
 -----------------
@@ -245,5 +243,5 @@ SELECT SUBSTRING_INDEX(myDate,'-',1) FROM myTable;
 (1 row)
 
 drop table myTable;
-\c postgres
-drop database test_substring_index;
+drop schema test_substring_index cascade;
+reset current_schema;

@@ -1,11 +1,17 @@
+drop database if exists db_b_left_right_test;
+create database db_b_left_right_test dbcompatibility 'A';
+\c db_b_left_right_test
+
 SELECT left('abcdefg', 3);
 SELECT left('abcdefg', -3);
 SELECT right('abcdefg', 3);
 SELECT right('abcdefg', -3);
 
-drop database if exists db_b_left_right_test;
-create database db_b_left_right_test dbcompatibility 'B';
-\c db_b_left_right_test
+\c contrib_regression
+drop database db_b_left_right_test;
+
+create schema db_b_left_right_test;
+set current_schema to 'db_b_left_right_test';
 
 set bytea_output to escape;
 
@@ -68,5 +74,5 @@ select left('abc',5/2);
 select right('abc',2.5);
 select right('abc',5/2);
 
-\c postgres
-drop database db_b_left_right_test;
+drop schema db_b_left_right_test cascade;
+reset current_schema;

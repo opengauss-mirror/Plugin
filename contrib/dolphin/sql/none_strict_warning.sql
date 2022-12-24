@@ -1,7 +1,5 @@
----- b compatibility case
-drop database if exists none_strict_warning_test;
-create database none_strict_warning_test dbcompatibility 'b';
-\c none_strict_warning_test
+create schema none_strict_warning_test;
+set current_schema to 'none_strict_warning_test';
 
 reset dolphin.sql_mode;
 create table test_int1(c1 int1);
@@ -1101,6 +1099,5 @@ select * from test_uint1;
 select * from test_uint2;
 select * from test_uint4;
 select * from test_uint8;
----- drop database
-\c contrib_regression
-DROP DATABASE none_strict_warning_test;
+drop schema none_strict_warning_test cascade;
+reset current_schema;

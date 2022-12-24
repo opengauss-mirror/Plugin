@@ -1,6 +1,5 @@
-drop database if exists db_alter_func_sql;
-create database db_alter_func_sql dbcompatibility 'B';
-\c db_alter_func_sql
+create schema db_alter_func_sql;
+set current_schema to 'db_alter_func_sql';
 
 
 -- test func
@@ -173,5 +172,5 @@ call pro_2(1,2,'a');
 call pro_3(1,2,'a');
 
 
-\c postgres
-drop database db_alter_func_sql;
+drop schema db_alter_func_sql cascade;
+reset current_schema;

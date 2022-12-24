@@ -1,3 +1,7 @@
+drop database if exists db_b_sqrt_test;
+NOTICE:  database "db_b_sqrt_test" does not exist, skipping
+create database db_b_sqrt_test dbcompatibility 'A';
+\c db_b_sqrt_test
 SELECT SQRT(64);
  sqrt 
 ------
@@ -7,10 +11,10 @@ SELECT SQRT(64);
 SELECT SQRT(-64);
 ERROR:  cannot take square root of a negative number
 CONTEXT:  referenced column: sqrt
-drop database if exists db_b_sqrt_test;
-NOTICE:  database "db_b_sqrt_test" does not exist, skipping
-create database db_b_sqrt_test dbcompatibility 'B';
-\c db_b_sqrt_test
+\c contrib_regression
+drop database db_b_sqrt_test;
+create schema db_b_sqrt_test;
+set current_schema to 'db_b_sqrt_test';
 SELECT SQRT(64);
  sqrt 
 ------
@@ -59,5 +63,5 @@ select sqrt(b'111'::int);
  2.64575131106459
 (1 row)
 
-\c postgres
-drop database db_b_sqrt_test;
+drop schema db_b_sqrt_test cascade;
+reset current_schema;

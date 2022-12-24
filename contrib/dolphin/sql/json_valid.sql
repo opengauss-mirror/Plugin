@@ -1,6 +1,5 @@
-drop database if exists test_json_valid;
-create database test_json_valid dbcompatibility 'b';
-\c test_json_valid
+create schema test_json_valid;
+set current_schema to 'test_json_valid';
 
 select json_valid(NULL);
 
@@ -221,7 +220,7 @@ select target, json_valid(target) from json_valid_test;
 
 drop table json_valid_test;
 
-\c postgres
-drop database if exists test_json_valid;
+drop schema test_json_valid cascade;
+reset current_schema;
 
 

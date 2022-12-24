@@ -1,6 +1,5 @@
-drop database if exists db_b_parser4;
-create database db_b_parser4 dbcompatibility 'b';
-\c db_b_parser4
+create schema db_b_parser4;
+set current_schema to 'db_b_parser4';
 --验证text类型
 drop table if exists tb_db_b_parser_0001;
 create table tb_db_b_parser_0001(a text(10),b tinytext,c mediumtext,d longtext);
@@ -30,5 +29,5 @@ drop table if exists tb_default_double;
 drop table if exists tb_real_float;
 
 
-\c postgres
-drop database if exists db_b_parser4;
+drop schema db_b_parser4 cascade;
+reset current_schema;

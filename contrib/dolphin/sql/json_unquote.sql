@@ -1,6 +1,5 @@
-drop database if exists test_json_unquote;
-create database test_json_unquote dbcompatibility 'B';
-\c test_json_unquote
+create schema test_json_unquote;
+set current_schema to 'test_json_unquote';
 
 select json_unquote('"abc"');
 select json_unquote('abc');
@@ -32,5 +31,5 @@ insert into data (name) value(json_unquote('"sjy"'));
 select name from data;
 drop table data;
 
-\c postgres
-drop database if exists test_json_unquote;
+drop schema test_json_unquote cascade;
+reset current_schema;

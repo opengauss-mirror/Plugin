@@ -1,6 +1,5 @@
-drop database if exists test_current_user;
-create database test_current_user dbcompatibility 'b';
-\c test_current_user
+create schema test_current_user;
+set current_schema to 'test_current_user';
 select current_user;
 select current_user();
 create user u1 password 'Gauss123';
@@ -70,5 +69,5 @@ DROP USER MAPPING FOR USER SERVER s1;
 CREATE USER MAPPING FOR u1 SERVER s1;
 DROP USER MAPPING FOR u1 SERVER s1;
 drop user u1;
-\c postgres
-drop database test_current_user;
+drop schema test_current_user cascade;
+reset current_schema;

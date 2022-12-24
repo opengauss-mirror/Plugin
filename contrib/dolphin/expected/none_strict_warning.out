@@ -1,8 +1,5 @@
----- b compatibility case
-drop database if exists none_strict_warning_test;
-NOTICE:  database "none_strict_warning_test" does not exist, skipping
-create database none_strict_warning_test dbcompatibility 'b';
-\c none_strict_warning_test
+create schema none_strict_warning_test;
+set current_schema to 'none_strict_warning_test';
 reset dolphin.sql_mode;
 create table test_int1(c1 int1);
 create table test_int8(c1 int8);
@@ -2571,6 +2568,14 @@ select * from test_uint8;
  0
 (26 rows)
 
----- drop database
-\c contrib_regression
-DROP DATABASE none_strict_warning_test;
+drop schema none_strict_warning_test cascade;
+NOTICE:  drop cascades to 8 other objects
+DETAIL:  drop cascades to table test_int1
+drop cascades to table test_int8
+drop cascades to table test_int4
+drop cascades to table test_int2
+drop cascades to table test_uint1
+drop cascades to table test_uint2
+drop cascades to table test_uint4
+drop cascades to table test_uint8
+reset current_schema;

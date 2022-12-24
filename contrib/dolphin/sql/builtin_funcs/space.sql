@@ -1,6 +1,5 @@
-drop database if exists db_space;
-create database db_space dbcompatibility 'B';
-\c db_space
+create schema db_space;
+set current_schema to 'db_space';
 select space('a');
 select space(10);
 select space(-1);
@@ -12,5 +11,5 @@ select space(true);
 select space(1,2,3);
 select space(2147483647111);
 select space(b'111');
-\c postgres
-drop database if exists db_space;
+drop schema db_space cascade;
+reset current_schema;

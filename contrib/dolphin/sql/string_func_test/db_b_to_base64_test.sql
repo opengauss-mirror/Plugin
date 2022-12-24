@@ -1,6 +1,5 @@
-drop database if exists to_base64_test;
-create database to_base64_test dbcompatibility 'b';
-\c to_base64_test
+create schema to_base64_test;
+set current_schema to 'to_base64_test';
 
 --测试字符串作为输入，返回base64编码的编码结果
 SELECT TO_BASE64('123456');
@@ -33,5 +32,5 @@ CREATE TABLE test_base64 (name text);
 INSERT INTO test_base64 values('123456'), ('to_base64');
 SELECT TO_BASE64(name) from test_base64;
 
-\c postgres
-drop database if exists to_base64_test;
+drop schema to_base64_test cascade;
+reset current_schema;

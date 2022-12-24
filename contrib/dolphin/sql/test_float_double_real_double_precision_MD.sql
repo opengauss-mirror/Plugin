@@ -1,6 +1,5 @@
-drop database if exists float_double_real_double_precision_MD;
-create database float_double_real_double_precision_MD dbcompatibility 'b';
-\c float_double_real_double_precision_MD;
+create schema double_precision;
+set current_schema to 'double_precision';
 
 create table test(a float(20, 2), b double(20, 2), c real(20, 2), d double precision(20, 2));
 \d test;
@@ -44,3 +43,6 @@ create table test3(a real(3.6, 1.6));
 create table test3(a double precision(3.6, 1.6));
 create table test3(a double(3.6, 1.6));
 \d test3;
+
+drop schema double_precision cascade;
+reset current_schema;

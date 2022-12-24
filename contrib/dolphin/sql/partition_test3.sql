@@ -1,7 +1,5 @@
-drop DATABASE if exists partition_test3;
-
-CREATE DATABASE partition_test3 dbcompatibility 'B';
-\c partition_test3;
+create schema partition_test3;
+set current_schema to 'partition_test3';
 --test add and drop
 CREATE TABLE IF NOT EXISTS test_part2
 (
@@ -108,5 +106,5 @@ PARTITION BY RANGE(a) SUBPARTITION BY RANGE(b)
 ALTER TABLE test_part2_1 add PARTITION p1 VALUES LESS THAN (200) (SUBPARTITION p1_0 VALUES LESS THAN (100));
 ALTER TABLE test_part2_1 add PARTITION p2 VALUES (add(600,100)) (SUBPARTITION p2_0 VALUES LESS THAN (100));
 ALTER TABLE test_part2_1 add PARTITION p3 VALUES (DEFAULT) (SUBPARTITION p3_0 VALUES LESS THAN (100));
-\c postgres;
-drop DATABASE if exists partition_test3;
+drop schema partition_test3 cascade;
+reset current_schema;

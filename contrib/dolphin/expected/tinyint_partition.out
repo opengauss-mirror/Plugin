@@ -1,7 +1,5 @@
-drop database if exists tinyint_partition;
-NOTICE:  database "tinyint_partition" does not exist, skipping
-create database tinyint_partition dbcompatibility 'b';
-\c tinyint_partition
+create schema tinyint_partition;
+set current_schema to 'tinyint_partition';
 CREATE TABLE t1
 (
     col1 int1 NOT NULL,
@@ -248,5 +246,15 @@ select * from start_end1;
  1
 (1 row)
 
-\c postgres
-drop database tinyint_partition;
+drop schema tinyint_partition cascade;
+NOTICE:  drop cascades to 9 other objects
+DETAIL:  drop cascades to table t1
+drop cascades to table t2
+drop cascades to table t3
+drop cascades to table a1
+drop cascades to table a2
+drop cascades to table subpartition_01
+drop cascades to table subpartition_02
+drop cascades to table subpartition_03
+drop cascades to table start_end1
+reset current_schema;

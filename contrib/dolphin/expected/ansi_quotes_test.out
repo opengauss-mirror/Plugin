@@ -1,4 +1,4 @@
-\c test_ansi_quotes
+set current_schema to 'test_ansi_quotes';
 CREATE TABLE test_quotes (a text);
 show dolphin.sql_mode;
                                dolphin.sql_mode                               
@@ -67,27 +67,23 @@ desc test_quotes_2;
 
 -- test show
 show tables;
-       Tables_in_public        
--------------------------------
- index_statistic
- pg_type_nonstrict_basic_value
+ Tables_in_test_ansi_quotes 
+----------------------------
  test_quotes
  test_quotes_2
-(4 rows)
+(2 rows)
 
 show full tables;
-       Tables_in_public        | Table_type 
--------------------------------+------------
- index_statistic               | VIEW
- pg_type_nonstrict_basic_value | VIEW
- test_quotes                   | BASE TABLE
- test_quotes_2                 | BASE TABLE
-(4 rows)
+ Tables_in_test_ansi_quotes | Table_type 
+----------------------------+------------
+ test_quotes                | BASE TABLE
+ test_quotes_2              | BASE TABLE
+(2 rows)
 
 show create table test_quotes_2;
      Table     |              Create Table               
 ---------------+-----------------------------------------
- test_quotes_2 | SET search_path = public;              +
+ test_quotes_2 | SET search_path = test_ansi_quotes;    +
                | CREATE TABLE test_quotes_2 (           +
                |     a text                             +
                | )                                      +
@@ -147,5 +143,8 @@ select * from test_quotes where a = "test1";
  test1
 (1 row)
 
-\c postgres
-DROP DATABASE test_ansi_quotes;
+drop schema test_ansi_quotes cascade;
+NOTICE:  drop cascades to 2 other objects
+DETAIL:  drop cascades to table test_quotes
+drop cascades to table test_quotes_2
+reset current_schema;

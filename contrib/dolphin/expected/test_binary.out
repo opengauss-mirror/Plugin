@@ -1,7 +1,5 @@
-drop database if exists test_binary;
-NOTICE:  database "test_binary" does not exist, skipping
-create database test_binary dbcompatibility 'B';
-\c test_binary
+create schema test_binary;
+set current_schema to 'test_binary';
 create table binary_templates (a bytea, b binary(5), c varbinary(5));
 -- invalid typmod
 create table invalid_table (b binary(-1));
@@ -56,7 +54,7 @@ create index on test_index using btree (b);
 create index on test_index using hash (b);
 create index on test_index using gin (to_tsvector(b::text));
 \d test_index
-      Table "public.test_index"
+    Table "test_binary.test_index"
  Column |      Type       | Modifiers 
 --------+-----------------+-----------
  a      | "binary"(10)    | 
@@ -121,5 +119,6 @@ select * from t_varbinary_061;
 
 drop table if exists t_binary_061;
 drop table if exists t_varbinary_061;
-\c postgres
-drop database test_binary;
+drop schema test_binary cascade;
+NOTICE:  drop cascades to table test_bytea
+reset current_schema;

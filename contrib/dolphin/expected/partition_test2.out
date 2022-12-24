@@ -1,7 +1,5 @@
-drop DATABASE if exists partition_test2;
-NOTICE:  database "partition_test2" does not exist, skipping
-CREATE DATABASE partition_test2 dbcompatibility 'B';
-\c partition_test2;
+create schema partition_test2;
+set current_schema to 'partition_test2';
 CREATE TABLE IF NOT EXISTS test_part1
 (
 a int,
@@ -565,5 +563,14 @@ alter table test_part_hash analyze partition p0,p1;
 (1 row)
 
 alter table test_part_hash analyze partition all;
-\c postgres;
-drop DATABASE if exists partition_test2;
+drop schema partition_test2 cascade;
+NOTICE:  drop cascades to 8 other objects
+DETAIL:  drop cascades to table test_part1
+drop cascades to table test_subpart
+drop cascades to table test_no_part1
+drop cascades to table test_part_ustore
+drop cascades to table test_no_part2
+drop cascades to table test_part_segment
+drop cascades to table test_part_list
+drop cascades to table test_part_hash
+reset current_schema;

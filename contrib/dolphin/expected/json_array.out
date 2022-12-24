@@ -1,7 +1,5 @@
-drop database if exists test_json_array;
-NOTICE:  database "test_json_array" does not exist, skipping
-create database test_json_array dbcompatibility 'B';
-\c test_json_array
+create schema test_json_array;
+set current_schema to 'test_json_array';
 select json_array(1,2,3,4);
   json_array  
 --------------
@@ -77,5 +75,5 @@ select name from dataa;
 (1 row)
 
 drop table dataa;
-\c postgres
-drop database if exists test_json_array;
+drop schema test_json_array cascade;
+reset current_schema;

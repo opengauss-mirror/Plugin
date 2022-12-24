@@ -1,7 +1,5 @@
-drop database if exists test_json_pretty;
-NOTICE:  database "test_json_pretty" does not exist, skipping
-create database test_json_pretty dbcompatibility'B';
-\c test_json_pretty
+create schema test_json_pretty;
+set current_schema to 'test_json_pretty';
 -- test for basic functionality of json_replace
 select JSON_PRETTY('{"a": 43}');
  json_pretty 
@@ -342,5 +340,5 @@ select * from test;
  }
 (5 rows)
 
-\c postgres
-drop database test_json_pretty;
+drop schema test_json_pretty cascade;
+reset current_schema;

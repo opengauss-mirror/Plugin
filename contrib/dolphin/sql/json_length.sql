@@ -1,6 +1,5 @@
-drop database if exists test_json_length;
-create database test_json_length dbcompatibility 'B';
-\c test_json_length
+create schema test_json_length;
+set current_schema to 'test_json_length';
 
 select json_length(NULL);
 select json_length('NULL');
@@ -52,5 +51,5 @@ insert into test values
  select * from test;
  drop table test;
 
-\c postgres;
-drop database if exists test_json_length;
+drop schema test_json_length cascade;
+reset current_schema;

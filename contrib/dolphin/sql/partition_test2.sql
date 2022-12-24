@@ -1,7 +1,5 @@
-drop DATABASE if exists partition_test2;
-
-CREATE DATABASE partition_test2 dbcompatibility 'B';
-\c partition_test2;
+create schema partition_test2;
+set current_schema to 'partition_test2';
 CREATE TABLE IF NOT EXISTS test_part1
 (
 a int,
@@ -206,5 +204,5 @@ select * from test_part_hash;
 select * from test_no_part1;
 alter table test_part_hash analyze partition p0,p1;
 alter table test_part_hash analyze partition all;
-\c postgres;
-drop DATABASE if exists partition_test2;
+drop schema partition_test2 cascade;
+reset current_schema;

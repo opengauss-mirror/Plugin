@@ -1,6 +1,5 @@
-drop database if exists uint_cast;
-create database uint_cast dbcompatibility 'b';
-\c uint_cast
+create schema uint_cast;
+set current_schema to 'uint_cast';
 
 select (-1)::bool::uint8;
 select (0)::bool::uint8;
@@ -284,5 +283,5 @@ select (1)::uint4::bool;
 select (0)::uint8::bool;
 select (1)::uint8::bool;
 
-\c postgres
-drop database uint_cast;
+drop schema uint_cast cascade;
+reset current_schema;

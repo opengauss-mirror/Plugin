@@ -2,9 +2,8 @@
 -- Test Time functions(Stage 2) under 'b' compatibility
 -- Contains subtime()、timediff()、time()、time_format()、timestamp()、timestampadd()
 --
-drop database if exists b_time_funcs2;
-create database b_time_funcs2 dbcompatibility 'b';
-\c b_time_funcs2
+create schema b_time_funcs2;
+set current_schema to 'b_time_funcs2';
 
 create table func_test2(functionName varchar(256),result varchar(256));
 truncate table func_test2;
@@ -516,5 +515,5 @@ drop table t1;
 drop table t2;
 
 select * from func_test2;
-\c postgres
-drop database if exists b_time_funcs2;
+drop schema b_time_funcs2 cascade;
+reset current_schema;

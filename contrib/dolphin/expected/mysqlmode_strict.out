@@ -1,7 +1,5 @@
-drop DATABASE if exists sql_mode_strict;
-NOTICE:  database "sql_mode_strict" does not exist, skipping
-CREATE DATABASE sql_mode_strict dbcompatibility 'B';
-\c sql_mode_strict;
+create schema sql_mode_strict;
+set current_schema to 'sql_mode_strict';
 set dolphin.sql_mode = '';
 create table test_tint(a tinyint);
 create table test_sint(a smallint);
@@ -2183,5 +2181,57 @@ DETAIL:  Failing row contains (null, null).
 insert into test_notnull_numeric_strict(b) values(null);
 ERROR:  null value in column "b" violates not-null constraint
 DETAIL:  Failing row contains (null, null).
-\c contrib_regression;
-drop DATABASE if exists sql_mode_strict;
+drop schema sql_mode_strict cascade;
+NOTICE:  drop cascades to 51 other objects
+DETAIL:  drop cascades to table test_tint
+drop cascades to table test_sint
+drop cascades to table test_int
+drop cascades to table test_bint
+drop cascades to table test_float4
+drop cascades to table test_float8
+drop cascades to table test_char
+drop cascades to table test_varchar7
+drop cascades to table test_tint1
+drop cascades to table test_sint1
+drop cascades to table test_int1
+drop cascades to table test_bint1
+drop cascades to table test_char1
+drop cascades to table test_varchar7_1
+drop cascades to table test_notnull_tint
+drop cascades to table test_notnull_sint
+drop cascades to table test_notnull_int
+drop cascades to table test_notnull_bint
+drop cascades to table test_notnull_char
+drop cascades to table test_notnull_varchar
+drop cascades to table test_notnull_clob
+drop cascades to table test_notnull_text
+drop cascades to table test_notnull_real
+drop cascades to table test_notnull_double
+drop cascades to table test_notnull_numeric
+drop cascades to table test_multi_default
+drop cascades to table test_tint_strict
+drop cascades to table test_sint_strict
+drop cascades to table test_int_strict
+drop cascades to table test_bint_strict
+drop cascades to table test_float4_strict
+drop cascades to table test_float8_strict
+drop cascades to table test_char_strict
+drop cascades to table test_varchar7_strict
+drop cascades to table test_tint_strict1
+drop cascades to table test_sint_strict1
+drop cascades to table test_int_strict1
+drop cascades to table test_bint_strict1
+drop cascades to table test_char_strict1
+drop cascades to table test_varchar7_strict_1
+drop cascades to table test_notnull_tint_strict
+drop cascades to table test_notnull_sint_strict
+drop cascades to table test_notnull_int_strict
+drop cascades to table test_notnull_bint_strict
+drop cascades to table test_notnull_char_strict
+drop cascades to table test_notnull_varchar_strict
+drop cascades to table test_notnull_clob_strict
+drop cascades to table test_notnull_text_strict
+drop cascades to table test_notnull_real_strict
+drop cascades to table test_notnull_double_strict
+drop cascades to table test_notnull_numeric_strict
+reset current_schema;

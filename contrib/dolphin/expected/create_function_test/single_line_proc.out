@@ -1,7 +1,5 @@
-drop database if exists db_func_call_2;
-NOTICE:  database "db_func_call_2" does not exist, skipping
-create database db_func_call_2 dbcompatibility 'B';
-\c db_func_call_2
+create schema db_func_call_2;
+set current_schema to 'db_func_call_2';
 create table t1 (a int);
 create table t2 (a int);
 insert into t1 values(1),(2),(3);
@@ -231,5 +229,22 @@ LINE 2:  select z from tz;
 QUERY:  
  select z from tz;
 
-\c regress
-\connect: FATAL:  database "regress" does not exist
+drop schema db_func_call_2 cascade;
+NOTICE:  drop cascades to 16 other objects
+DETAIL:  drop cascades to table t1
+drop cascades to table t2
+drop cascades to function proc1()
+drop cascades to function proc2()
+drop cascades to function proc3()
+drop cascades to function proc4()
+drop cascades to function proc5(integer)
+drop cascades to function proc6()
+drop cascades to function proc7()
+drop cascades to function proc8()
+drop cascades to function proc9()
+drop cascades to table pbu_trade_collect_mbr_m
+drop cascades to function proc10()
+drop cascades to table base_info_pbu_trade
+drop cascades to table base_info_pbu_org
+drop cascades to function proc11()
+reset current_schema;

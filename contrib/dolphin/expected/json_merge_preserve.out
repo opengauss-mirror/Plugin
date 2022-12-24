@@ -1,7 +1,5 @@
-drop database if exists test_json_merge_preserve;
-NOTICE:  database "test_json_merge_preserve" does not exist, skipping
-create database test_json_merge_preserve dbcompatibility 'B';
-\c test_json_merge_preserve
+create schema test_json_merge_preserve;
+set current_schema to 'test_json_merge_preserve';
 select json_merge_preserve(NULL);
 ERROR:  Incorrect parameter count
 CONTEXT:  referenced column: json_merge_preserve
@@ -340,5 +338,8 @@ insert into test1 values
  {"a": [1, 2], "colin": [{"a": "abc"}, "bcd", "huawei"], "colinew": "handsome"} | [{"a": "abc"}, "bcd", {"1": "jks"}]
 (1 row)
 
-\c postgres;
-drop database if exists test_json_merge_preserve;
+drop schema test_json_merge_preserve cascade;
+NOTICE:  drop cascades to 2 other objects
+DETAIL:  drop cascades to table test
+drop cascades to table test1
+reset current_schema;

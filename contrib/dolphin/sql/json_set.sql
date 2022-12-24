@@ -1,6 +1,5 @@
-drop database if exists test_json_set;
-create database test_json_set dbcompatibility 'B';
-\c test_json_set
+create schema test_json_set;
+set current_schema to 'test_json_set';
 
 select json_set('{"1":2}','$."1"',6);
 select json_set('{"1":2,"b":"r","q":0}','$.b',6);
@@ -27,5 +26,5 @@ insert into dataa (name) value(json_set('{"s":1}','$.s',3,'$.w',5));
 select name from dataa;
 drop table dataa;
 
-\c postgres
-drop database if exists test_json_set;
+drop schema test_json_set cascade;
+reset current_schema;

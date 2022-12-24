@@ -1,8 +1,7 @@
-drop database if exists db_show;
-create database db_show dbcompatibility 'b';
-\c db_show
+create schema db_show;
+set current_schema to 'db_show';
 show processlist;
 show full processlist;
 
-\c postgres
-drop database if exists db_show;
+drop schema db_show cascade;
+reset current_schema;

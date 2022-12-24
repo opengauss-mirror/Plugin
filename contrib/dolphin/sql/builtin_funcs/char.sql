@@ -1,6 +1,5 @@
-drop database if exists db_char;
-create database db_char dbcompatibility 'B';
-\c db_char
+create schema db_char;
+set current_schema to 'db_char';
 select char(67,66,67);
 select char('65','66','67');
 select char('A','B','C');
@@ -22,5 +21,5 @@ select char('hiu78','-156nfjl',175.99,'测试');
 select char('侧四',-156,55.99,'ceshi');
 select char('hi测试u158','ceshi',135.99,146);
 select char('hiu158','测试',125.99,146);
-\c postgres
-drop database if exists db_char;
+drop schema db_char cascade;
+reset current_schema;

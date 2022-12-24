@@ -1,6 +1,5 @@
-drop database if exists join_without_on;
-create database join_without_on dbcompatibility 'b';
-\c join_without_on
+create schema join_without_on;
+set current_schema to 'join_without_on';
 
 CREATE TABLE J1_TBL (
   i integer,
@@ -61,5 +60,5 @@ SELECT  * FROM J1_TBL  JOIN J2_TBL JOIN J3_TBL ON J1_TBL.i = J3_TBL.i;
 SELECT  * FROM J1_TBL  JOIN J2_TBL JOIN J3_TBL JOIN J4_TBL ON J1_TBL.i = J4_TBL.i;
 SELECT  * FROM J1_TBL  JOIN J2_TBL INNER JOIN J3_TBL INNER JOIN J4_TBL ON J1_TBL.i = J4_TBL.i;
 
-\c postgres
-drop database if exists join_without_on;
+drop schema join_without_on cascade;
+reset current_schema;

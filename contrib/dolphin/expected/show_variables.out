@@ -1,7 +1,5 @@
-drop database if exists show_variables;
-NOTICE:  database "show_variables" does not exist, skipping
-create database show_variables dbcompatibility 'b';
-\c show_variables
+create schema show_variables;
+set current_schema to 'show_variables';
 SET datestyle TO postgres, dmy;
 show variables like 'DateSty%';
  Variable_name |     Value     
@@ -71,5 +69,5 @@ show global variables where variable_name = 'DateStyle';
 (1 row)
 
 RESET datestyle;
-\c postgres
-drop database if exists show_variables;
+drop schema show_variables cascade;
+reset current_schema;

@@ -1,6 +1,5 @@
-drop database if exists db_zerofill;
-create database db_zerofill dbcompatibility 'b';
-\c db_zerofill
+create schema db_zerofill;
+set current_schema to 'db_zerofill';
 
 create table t1_zerofill (
     a int(5) zerofill,
@@ -20,5 +19,5 @@ create table t1_zerofill (
 create table t2_zerofill (a float zerofill);
 create table t2_zerofill (a double precision zerofill);
 
-\c postgres
-drop database if exists db_zerofill;
+drop schema db_zerofill cascade;
+reset current_schema;

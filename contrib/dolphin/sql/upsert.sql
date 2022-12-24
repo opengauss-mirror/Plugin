@@ -1,6 +1,5 @@
-drop database if exists upsert;
-create database upsert dbcompatibility 'b';
-\c upsert
+create schema upsert;
+set current_schema to 'upsert';
 
 --normal test
 
@@ -469,5 +468,5 @@ INSERT INTO subpartition_03 VALUES (1, 1, '1', 1) ON DUPLICATE KEY UPDATE col_2 
 select * from subpartition_03;
 INSERT INTO subpartition_03 VALUES (1, 2, '1', 1) ON DUPLICATE KEY UPDATE col_1 = 2;
 select * from subpartition_03;
-\c postgres
-drop database upsert
+drop schema upsert cascade;
+reset current_schema;

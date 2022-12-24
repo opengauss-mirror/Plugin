@@ -1,7 +1,5 @@
-drop database if exists test_json_array_append;
-NOTICE:  database "test_json_array_append" does not exist, skipping
-create database test_json_array_append dbcompatibility'B';
-\c test_json_array_append
+create schema test_json_array_append;
+set current_schema to 'test_json_array_append';
 select JSON_ARRAY_APPEND('[1, [2, 3]]', '$[1]', 4);
  json_array_append 
 -------------------
@@ -184,5 +182,5 @@ CONTEXT:  referenced column: json_array_append
 select JSON_ARRAY_APPEND('[1, [2, 3]]', ' ', 4);
 ERROR:  Invalid JSON path expression. The error is around argument 1.
 CONTEXT:  referenced column: json_array_append
-\c postgres
-drop database if exists test_json_array_append;
+drop schema test_json_array_append cascade;
+reset current_schema;

@@ -1,7 +1,5 @@
-drop database if exists implicit_cast;
-NOTICE:  database "implicit_cast" does not exist, skipping
-create database implicit_cast dbcompatibility 'b';
-\c implicit_cast
+create schema implicit_cast;
+set current_schema to 'implicit_cast';
 select 1::int1 % 1::float4;
  ?column? 
 ----------
@@ -290,5 +288,5 @@ select 1::int8 | 1::text;
         1
 (1 row)
 
-\c postgres
-drop database if exists implicit_cast;
+drop schema implicit_cast cascade;
+reset current_schema;

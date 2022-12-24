@@ -1,6 +1,5 @@
-drop database if exists test_json_contains_path;
-create database test_json_contains_path dbcompatibility 'b';
-\c test_json_contains_path
+create schema test_json_contains_path;
+set current_schema to 'test_json_contains_path';
 
 select json_contains_path(null,'one','$[0]');
 select json_contains_path('[1,2,3]',null,'$[0]');
@@ -40,5 +39,5 @@ insert into json_contains_path_test values('{"a": 1, "b": 2, "c": {"d": 4}}', 'a
 select *, json_contains_path(target, mode, '$.a.d', '$.c.d') from json_contains_path_test;
 drop table json_contains_path_test;
 
-\c postgres;
-drop database if exists test_json_contains_path;
+drop schema test_json_contains_path cascade;
+reset current_schema;

@@ -1,6 +1,5 @@
-drop database if exists test_json_search;
-create database test_json_search dbcompatibility'B';
-\c test_json_search
+create schema test_json_search;
+set current_schema to 'test_json_search';
 
 select json_search('null','one','null','&','$');
 select json_search(null,'one','null','&','$');
@@ -191,5 +190,5 @@ insert into json_search_test values
 select * from json_search_test;
 drop table json_search_test;
 
-\c postgres;
-drop database if exists test_json_search;
+drop schema test_json_search cascade;
+reset current_schema;

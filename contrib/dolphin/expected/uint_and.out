@@ -1,7 +1,5 @@
-drop database if exists uint_and;
-NOTICE:  database "uint_and" does not exist, skipping
-create database uint_and dbcompatibility 'b';
-\c uint_and
+create schema uint_and;
+set current_schema to 'uint_and';
 --uint8
 select 18446744073709551615::uint8 & 0::int1;
  ?column? 
@@ -826,5 +824,5 @@ select 127::int1 & 1::uint8;
  1
 (1 row)
 
-\c postgres
-drop database uint_and
+drop schema uint_and cascade;
+reset current_schema;

@@ -1,7 +1,5 @@
-drop database if exists uint_numeric;
-NOTICE:  database "uint_numeric" does not exist, skipping
-create database uint_numeric dbcompatibility 'b';
-\c uint_numeric
+create schema uint_numeric;
+set current_schema to 'uint_numeric';
 select (-1)::numeric::uint1;
  uint1 
 -------
@@ -323,5 +321,11 @@ CONTEXT:  referenced column: a
 insert into t4 select c from num;
 ERROR:  bigint unsigned out of range
 CONTEXT:  referenced column: a
-\c postgres
-drop database uint_numeric;
+drop schema uint_numeric cascade;
+NOTICE:  drop cascades to 5 other objects
+DETAIL:  drop cascades to table t1
+drop cascades to table t2
+drop cascades to table t3
+drop cascades to table t4
+drop cascades to table num
+reset current_schema;

@@ -1,6 +1,5 @@
-drop database if exists db_b_hex;
-create database db_b_hex dbcompatibility 'B';
-\c db_b_hex
+create schema db_b_hex;
+set current_schema to 'db_b_hex';
 
 select hex(int1(255));
 select hex(int1(256));
@@ -56,5 +55,5 @@ create table bytea_to_hex_test(c1 bytea);
 insert into bytea_to_hex_test values (E'\\xDEADBEEF');
 select hex(c1) from bytea_to_hex_test;
 
-\c postgres
-drop database if exists db_b_hex;
+drop schema db_b_hex cascade;
+reset current_schema;

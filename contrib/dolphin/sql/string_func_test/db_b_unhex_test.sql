@@ -1,6 +1,5 @@
-drop database if exists unhex_test;
-create database unhex_test dbcompatibility 'b';
-\c unhex_test
+create schema unhex_test;
+set current_schema to 'unhex_test';
 
 --测试字符串作为输入，返回十六进制编码的编码结果
 SELECT UNHEX('6f70656e4761757373');
@@ -31,5 +30,5 @@ CREATE TABLE test_unhex (name text);
 INSERT INTO test_unhex values('4142'), ('6f70656e4761757373');
 SELECT UNHEX(name) from test_unhex;
 
-\c postgres
-drop database if exists unhex_test;
+drop schema unhex_test cascade;
+reset current_schema;

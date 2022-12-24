@@ -1,7 +1,5 @@
-drop database if exists db_func_2;
-NOTICE:  database "db_func_2" does not exist, skipping
-create database db_func_2 dbcompatibility 'B';
-\c db_func_2
+create schema db_func_2;
+set current_schema to 'db_func_2';
 CREATE FUNCTION f1 (s CHAR(20)) RETURNS int  AS $$ select 1 $$ ;
 CREATE FUNCTION f2 (s int) RETURNS int AS $$ select s; $$ ;
 CREATE FUNCTION f3 (s int) RETURNS int  LANGUAGE SQL AS $$ select s; $$ ;
@@ -164,5 +162,17 @@ call f4(4);
   4
 (1 row)
 
-\c postgres
-drop database if exists db_func_2;
+drop schema db_func_2 cascade;
+NOTICE:  drop cascades to 11 other objects
+DETAIL:  drop cascades to function f1(character)
+drop cascades to function f2(integer)
+drop cascades to function f3(integer)
+drop cascades to function f4(integer)
+drop cascades to table language_1093039
+drop cascades to function fun_1(integer,integer,character varying)
+drop cascades to function fun_2(integer,integer,character varying)
+drop cascades to function fun_3(integer,integer,character varying)
+drop cascades to function pro_1(integer,integer,character varying)
+drop cascades to function pro_2(integer,integer,character varying)
+drop cascades to function pro_3(integer,integer,character varying)
+reset current_schema;

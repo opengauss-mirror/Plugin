@@ -1,6 +1,5 @@
-drop database if exists uint_div;
-create database uint_div dbcompatibility 'b';
-\c uint_div
+create schema uint_div;
+set current_schema to 'uint_div';
 
 --uint8
 select 18446744073709551615::uint8 / 0::int1;
@@ -138,5 +137,5 @@ select 127::int1 / 1::uint2;
 select 127::int1 / 1::uint4;
 select 127::int1 / 1::uint8;
 
-\c postgres
-drop database uint_div
+drop schema uint_div cascade;
+reset current_schema;

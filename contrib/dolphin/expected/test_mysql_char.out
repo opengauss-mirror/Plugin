@@ -1,7 +1,5 @@
-drop database if exists test_char;
-NOTICE:  database "test_char" does not exist, skipping
-create database test_char with dbcompatibility='B';
-\c test_char
+create schema test_char;
+set current_schema to 'test_char';
 set dolphin.b_compatibility_mode=1;
 set dolphin.sql_mode = '';
 ---create table
@@ -559,5 +557,5 @@ select '0.0100abc' || null;
  t
 (1 row)
 
-\c postgres
-drop database test_char;
+drop schema test_char cascade;
+reset current_schema;

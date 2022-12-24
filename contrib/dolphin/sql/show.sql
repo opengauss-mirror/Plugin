@@ -1,5 +1,5 @@
-create database show_test dbcompatibility 'b';
-\c show_test
+create schema show_test;
+set current_schema to 'show_test';
 create user grant_test identified by 'H&*#^DH85@#(J';
 set search_path = 'grant_test';
 create table test(id int);
@@ -75,5 +75,5 @@ SHOW COLLATION WHERE charset = 'win1251';
 
 reset search_path;
 drop user grant_test cascade;
-\c postgres
-drop database show_test;
+drop schema show_test cascade;
+reset current_schema;

@@ -1,6 +1,5 @@
-drop database if exists tinyint_cast;
-create database tinyint_cast dbcompatibility 'b';
-\c tinyint_cast
+create schema tinyint_cast;
+set current_schema to 'tinyint_cast';
 
 create table t1(a int1);
 
@@ -99,5 +98,5 @@ select (-1)::text::int1;
 select '127'::text::int1;
 select '-128'::text::int1;
 
-\c postgres
-drop database tinyint_cast;
+drop schema tinyint_cast cascade;
+reset current_schema;

@@ -1,6 +1,5 @@
-drop database if exists db_bin;
-create database db_bin dbcompatibility 'B';
-\c db_bin
+create schema db_bin;
+set current_schema to 'db_bin';
 select bin(1);
 select bin(0);
 select bin('2');
@@ -11,5 +10,5 @@ select bin(null);
 select bin(true);
 select bin(false);
 select bin('测试');
-\c postgres
-drop database if exists db_bin;
+drop schema db_bin cascade;
+reset current_schema;

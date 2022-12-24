@@ -1,7 +1,5 @@
-drop database if exists db_zerofill;
-NOTICE:  database "db_zerofill" does not exist, skipping
-create database db_zerofill dbcompatibility 'b';
-\c db_zerofill
+create schema db_zerofill;
+set current_schema to 'db_zerofill';
 create table t1_zerofill (
     a int(5) zerofill,
     b integer(5) zerofill unsigned,
@@ -14,7 +12,7 @@ create table t1_zerofill (
     i int4 unsigned zerofill,
     j int8 zerofill);
 \d+ t1_zerofill
-                    Table "public.t1_zerofill"
+                  Table "db_zerofill.t1_zerofill"
  Column | Type  | Modifiers | Storage | Stats target | Description 
 --------+-------+-----------+---------+--------------+-------------
  a      | uint4 |           | plain   |              | 
@@ -39,5 +37,6 @@ create table t2_zerofill (a double precision zerofill);
 ERROR:  syntax error at or near "zerofill"
 LINE 1: create table t2_zerofill (a double precision zerofill);
                                                      ^
-\c postgres
-drop database if exists db_zerofill;
+drop schema db_zerofill cascade;
+NOTICE:  drop cascades to table t1_zerofill
+reset current_schema;

@@ -1,7 +1,5 @@
-drop database if exists empty_value_support_value;
-NOTICE:  database "empty_value_support_value" does not exist, skipping
-create database empty_value_support_value dbcompatibility 'b';
-\c empty_value_support_value
+create schema empty_value_support_value;
+set current_schema to 'empty_value_support_value';
 create table test1(num int not null);
 insert into test1 value();
 ERROR:  null value in column "num" violates not-null constraint
@@ -26,5 +24,6 @@ select * from test1;
    0
 (3 rows)
 
-\c postgres
-drop database if exists empty_value_support_value;
+drop schema empty_value_support_value cascade;
+NOTICE:  drop cascades to table test1
+reset current_schema;

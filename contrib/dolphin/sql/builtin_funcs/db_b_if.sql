@@ -1,6 +1,6 @@
-drop database if exists db_b_if;
-create database db_b_if dbcompatibility 'B';
-\c db_b_if
+create schema db_b_if;
+set current_schema to 'db_b_if';
+
 
 select if(TRUE, 1, 2);
 select if(FALSE, 1, 2);
@@ -77,5 +77,5 @@ select if (true, 1.1::float8, true) as a, if (false, 1.1::float8, true) as b;
 -- numeric to boolean
 select if (true, 2.2::numeric(10, 2), true) as a, if (false, 2.2::numeric(10, 2), true) as b;
 
-\c postgres
-drop database if exists db_b_if;
+drop schema db_b_if cascade;
+reset current_schema;

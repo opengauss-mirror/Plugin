@@ -1,6 +1,5 @@
-drop database if exists uint_procedure_col;
-create database uint_procedure_col dbcompatibility 'b';
-\c uint_procedure_col
+create schema uint_procedure_col;
+set current_schema to 'uint_procedure_col';
 
  create procedure test_p1(uint2, uint4)
 SHIPPABLE VOLATILE
@@ -32,5 +31,5 @@ explain(costs off, verbose) select b from bypass where a = 1;
 explain(costs off, verbose) delete from bypass where b = 10;
 explain(costs off, verbose) update bypass set b = b + 1 where a = 1;
 
-\c postgres
-drop database uint_procedure_col;
+drop schema uint_procedure_col cascade;
+reset current_schema;

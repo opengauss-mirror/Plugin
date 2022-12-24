@@ -1,7 +1,5 @@
-drop database if exists test_json_type;
-NOTICE:  database "test_json_type" does not exist, skipping
-create database test_json_type dbcompatibility'B';
-\c test_json_type
+create schema test_json_type;
+set current_schema to 'test_json_type';
 ---string 
 select json_type('"aa"');
  json_type 
@@ -182,5 +180,6 @@ select json_type(t1) from test_type;
  object
 (1 row)
 
-\c postgres
-drop database test_json_type;
+drop schema test_json_type cascade;
+NOTICE:  drop cascades to table test_type
+reset current_schema;

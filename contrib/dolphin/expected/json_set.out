@@ -1,7 +1,5 @@
-drop database if exists test_json_set;
-NOTICE:  database "test_json_set" does not exist, skipping
-create database test_json_set dbcompatibility 'B';
-\c test_json_set
+create schema test_json_set;
+set current_schema to 'test_json_set';
 select json_set('{"1":2}','$."1"',6);
  json_set 
 ----------
@@ -108,5 +106,5 @@ select name from dataa;
 (1 row)
 
 drop table dataa;
-\c postgres
-drop database if exists test_json_set;
+drop schema test_json_set cascade;
+reset current_schema;

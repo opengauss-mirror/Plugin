@@ -1,7 +1,5 @@
-drop database if exists test_json_object;
-NOTICE:  database "test_json_object" does not exist, skipping
-create database test_json_object dbcompatibility 'B';
-\c test_json_object
+create schema test_json_object;
+set current_schema to 'test_json_object';
 -- test for b_compatibility_mode = false
 select json_object('{a,1,b,2,3,NULL,"d e f","a b c"}');
                       json_object                      
@@ -364,5 +362,8 @@ select json_object('{a,b,"a b c"}', '{a,1,1}');
  {"a" : "a", "b" : "1", "a b c" : "1"}
 (1 row)
 
-\c postgres
-drop database if exists test_json_object;
+drop schema test_json_object cascade;
+NOTICE:  drop cascades to 2 other objects
+DETAIL:  drop cascades to table tab_json1
+drop cascades to table info1
+reset current_schema;

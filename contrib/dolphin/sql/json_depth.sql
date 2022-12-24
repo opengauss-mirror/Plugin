@@ -1,6 +1,5 @@
-drop database if exists test_json_depth;
-create database test_json_depth dbcompatibility 'B';
-\c test_json_depth
+create schema test_json_depth;
+set current_schema to 'test_json_depth';
 
 select json_depth('{}');
 select json_depth('[]');
@@ -32,5 +31,5 @@ select *from test1;
 select json_depth(data) from test1;
 drop table test1;
 
-\c postgres
-drop database if exists test_json_depth;
+drop schema test_json_depth cascade;
+reset current_schema;

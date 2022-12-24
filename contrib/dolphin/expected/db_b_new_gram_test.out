@@ -1,7 +1,5 @@
-drop database if exists db_b_new_gram_test;
-NOTICE:  database "db_b_new_gram_test" does not exist, skipping
-create database db_b_new_gram_test dbcompatibility 'B';
-\c db_b_new_gram_test
+create schema db_b_new_gram_test;
+set current_schema to 'db_b_new_gram_test';
 -- CREATE TABLE engine test
 CREATE TABLE test_engine_1 (a int) engine = InnoDB;
 CREATE TABLE  IF NOT EXISTS test_engine_2 (a int) engine = InnoDB;
@@ -19,7 +17,7 @@ CREATE TABLE test_engine_as engine = InnoDB as select a from test_engine_1;
 -- CREATE TABLE COMPRESSION test
 CREATE TABLE test_compression_1_pglz (a int) COMPRESSION = pglz;
 \d+ test_compression_1_pglz
-               Table "public.test_compression_1_pglz"
+         Table "db_b_new_gram_test.test_compression_1_pglz"
  Column |  Type   | Modifiers | Storage | Stats target | Description 
 --------+---------+-----------+---------+--------------+-------------
  a      | integer |           | plain   |              | 
@@ -28,7 +26,7 @@ Options: orientation=row, compresstype=1
 
 CREATE TABLE  IF NOT EXISTS test_compression_create_2_pglz (a int) COMPRESSION = pglz;
 \d+ test_compression_create_2_pglz
-            Table "public.test_compression_create_2_pglz"
+      Table "db_b_new_gram_test.test_compression_create_2_pglz"
  Column |  Type   | Modifiers | Storage | Stats target | Description 
 --------+---------+-----------+---------+--------------+-------------
  a      | integer |           | plain   |              | 
@@ -37,7 +35,7 @@ Options: orientation=row, compresstype=1
 
 CREATE TABLE test_compression_type_table_1_pglz OF test_engine_type1 COMPRESSION = pglz;
 \d+ test_compression_type_table_1_pglz
-          Table "public.test_compression_type_table_1_pglz"
+    Table "db_b_new_gram_test.test_compression_type_table_1_pglz"
  Column |  Type   | Modifiers | Storage  | Stats target | Description 
 --------+---------+-----------+----------+--------------+-------------
  a      | integer |           | plain    |              | 
@@ -48,7 +46,7 @@ Options: orientation=row, compresstype=1
 
 CREATE TABLE IF NOT EXISTS test_compression_create_type_table_2_pglz OF test_engine_type2 COMPRESSION = pglz;
 \d+ test_compression_create_type_table_2_pglz
-       Table "public.test_compression_create_type_table_2_pglz"
+ Table "db_b_new_gram_test.test_compression_create_type_table_2_pglz"
  Column |  Type   | Modifiers | Storage  | Stats target | Description 
 --------+---------+-----------+----------+--------------+-------------
  a      | integer |           | plain    |              | 
@@ -59,7 +57,7 @@ Options: orientation=row, compresstype=1
 
 CREATE TABLE test_compression_as_pglz COMPRESSION = pglz as select a from test_compression_1_pglz;
 \d+ test_compression_as_pglz
-               Table "public.test_compression_as_pglz"
+         Table "db_b_new_gram_test.test_compression_as_pglz"
  Column |  Type   | Modifiers | Storage | Stats target | Description 
 --------+---------+-----------+---------+--------------+-------------
  a      | integer |           | plain   |              | 
@@ -68,7 +66,7 @@ Options: orientation=row, compresstype=1
 
 CREATE TABLE test_compression_1_zstd (a int) COMPRESSION = zstd;
 \d+ test_compression_1_zstd
-               Table "public.test_compression_1_zstd"
+         Table "db_b_new_gram_test.test_compression_1_zstd"
  Column |  Type   | Modifiers | Storage | Stats target | Description 
 --------+---------+-----------+---------+--------------+-------------
  a      | integer |           | plain   |              | 
@@ -77,7 +75,7 @@ Options: orientation=row, compresstype=2
 
 CREATE TABLE  IF NOT EXISTS test_compression_create_2_zstd (a int) COMPRESSION = zstd;
 \d+ test_compression_create_2_zstd
-            Table "public.test_compression_create_2_zstd"
+      Table "db_b_new_gram_test.test_compression_create_2_zstd"
  Column |  Type   | Modifiers | Storage | Stats target | Description 
 --------+---------+-----------+---------+--------------+-------------
  a      | integer |           | plain   |              | 
@@ -86,7 +84,7 @@ Options: orientation=row, compresstype=2
 
 CREATE TABLE test_compression_type_table_1_zstd OF test_engine_type1 COMPRESSION = zstd;
 \d+ test_compression_type_table_1_zstd
-          Table "public.test_compression_type_table_1_zstd"
+    Table "db_b_new_gram_test.test_compression_type_table_1_zstd"
  Column |  Type   | Modifiers | Storage  | Stats target | Description 
 --------+---------+-----------+----------+--------------+-------------
  a      | integer |           | plain    |              | 
@@ -97,7 +95,7 @@ Options: orientation=row, compresstype=2
 
 CREATE TABLE IF NOT EXISTS test_compression_create_type_table_2_zstd OF test_engine_type2 COMPRESSION = zstd;
 \d+ test_compression_create_type_table_2_zstd
-       Table "public.test_compression_create_type_table_2_zstd"
+ Table "db_b_new_gram_test.test_compression_create_type_table_2_zstd"
  Column |  Type   | Modifiers | Storage  | Stats target | Description 
 --------+---------+-----------+----------+--------------+-------------
  a      | integer |           | plain    |              | 
@@ -108,7 +106,7 @@ Options: orientation=row, compresstype=2
 
 CREATE TABLE test_compression_as_zstd COMPRESSION = zstd as select a from test_compression_1_zstd;
 \d+ test_compression_as_zstd
-               Table "public.test_compression_as_zstd"
+         Table "db_b_new_gram_test.test_compression_as_zstd"
  Column |  Type   | Modifiers | Storage | Stats target | Description 
 --------+---------+-----------+---------+--------------+-------------
  a      | integer |           | plain   |              | 
@@ -117,7 +115,7 @@ Options: orientation=row, compresstype=2
 
 CREATE TABLE test_compression_1_none (a int) COMPRESSION = 'none';
 \d+ test_compression_1_none
-               Table "public.test_compression_1_none"
+         Table "db_b_new_gram_test.test_compression_1_none"
  Column |  Type   | Modifiers | Storage | Stats target | Description 
 --------+---------+-----------+---------+--------------+-------------
  a      | integer |           | plain   |              | 
@@ -126,7 +124,7 @@ Options: orientation=row, compresstype=0, compression=no
 
 CREATE TABLE  IF NOT EXISTS test_compression_create_2_none (a int) COMPRESSION = 'none';
 \d+ test_compression_create_2_none
-            Table "public.test_compression_create_2_none"
+      Table "db_b_new_gram_test.test_compression_create_2_none"
  Column |  Type   | Modifiers | Storage | Stats target | Description 
 --------+---------+-----------+---------+--------------+-------------
  a      | integer |           | plain   |              | 
@@ -135,7 +133,7 @@ Options: orientation=row, compresstype=0, compression=no
 
 CREATE TABLE test_compression_type_table_1_none OF test_engine_type1 COMPRESSION = 'none';
 \d+ test_compression_type_table_1_none
-          Table "public.test_compression_type_table_1_none"
+    Table "db_b_new_gram_test.test_compression_type_table_1_none"
  Column |  Type   | Modifiers | Storage  | Stats target | Description 
 --------+---------+-----------+----------+--------------+-------------
  a      | integer |           | plain    |              | 
@@ -146,7 +144,7 @@ Options: orientation=row, compresstype=0, compression=no
 
 CREATE TABLE IF NOT EXISTS test_compression_create_type_table_2_none OF test_engine_type2 COMPRESSION = 'none';
 \d+ test_compression_create_type_table_2_none
-       Table "public.test_compression_create_type_table_2_none"
+ Table "db_b_new_gram_test.test_compression_create_type_table_2_none"
  Column |  Type   | Modifiers | Storage  | Stats target | Description 
 --------+---------+-----------+----------+--------------+-------------
  a      | integer |           | plain    |              | 
@@ -157,7 +155,7 @@ Options: orientation=row, compresstype=0, compression=no
 
 CREATE TABLE test_compression_as_none COMPRESSION = none as select a from test_compression_1_none;
 \d+ test_compression_as_none
-               Table "public.test_compression_as_none"
+         Table "db_b_new_gram_test.test_compression_as_none"
  Column |  Type   | Modifiers | Storage | Stats target | Description 
 --------+---------+-----------+---------+--------------+-------------
  a      | integer |           | plain   |              | 
@@ -196,7 +194,7 @@ PARTITION p3 VALUES (4000),
 PARTITION p4 VALUES (5000)
 );
 \d+ test_list1
-                      Table "public.test_list1"
+                Table "db_b_new_gram_test.test_list1"
  Column |  Type   | Modifiers | Storage | Stats target | Description 
 --------+---------+-----------+---------+--------------+-------------
  col1   | integer |           | plain   |              | 
@@ -215,7 +213,7 @@ PARTITION p3 VALUES IN (4000),
 PARTITION p4 VALUES IN (5000)
 );
 \d+ test_list2
-                      Table "public.test_list2"
+                Table "db_b_new_gram_test.test_list2"
  Column |  Type   | Modifiers | Storage | Stats target | Description 
 --------+---------+-----------+---------+--------------+-------------
  col1   | integer |           | plain   |              | 
@@ -294,29 +292,29 @@ DROP TEMPORARY TABLE test_engine_1 CASCADE;
 -- new grammar test for analyze table
 CREATE TABLE t_new_analyze(c1 int, c2 text);
 ANALYZE NO_WRITE_TO_BINLOG TABLE t_new_analyze;
-        Table         |   Op    | Msg_type | Msg_text 
-----------------------+---------+----------+----------
- public.t_new_analyze | analyze | status   | OK
+              Table               |   Op    | Msg_type | Msg_text 
+----------------------------------+---------+----------+----------
+ db_b_new_gram_test.t_new_analyze | analyze | status   | OK
 (1 row)
 
 ANALYZE LOCAL TABLE t_new_analyze;
-        Table         |   Op    | Msg_type | Msg_text 
-----------------------+---------+----------+----------
- public.t_new_analyze | analyze | status   | OK
+              Table               |   Op    | Msg_type | Msg_text 
+----------------------------------+---------+----------+----------
+ db_b_new_gram_test.t_new_analyze | analyze | status   | OK
 (1 row)
 
 ANALYZE TABLE t_new_analyze;
-        Table         |   Op    | Msg_type | Msg_text 
-----------------------+---------+----------+----------
- public.t_new_analyze | analyze | status   | OK
+              Table               |   Op    | Msg_type | Msg_text 
+----------------------------------+---------+----------+----------
+ db_b_new_gram_test.t_new_analyze | analyze | status   | OK
 (1 row)
 
 ANALYZE TABLE t_not_exist, t_new_analyze;
-        Table         |   Op    | Msg_type |                   Msg_text                   
-----------------------+---------+----------+----------------------------------------------
- public.t_not_exist   | analyze | Error    | relation "public.t_not_exist" does not exist
- public.t_not_exist   | analyze | status   | Operation failed
- public.t_new_analyze | analyze | status   | OK
+              Table               |   Op    | Msg_type |                         Msg_text                         
+----------------------------------+---------+----------+----------------------------------------------------------
+ db_b_new_gram_test.t_not_exist   | analyze | Error    | relation "db_b_new_gram_test.t_not_exist" does not exist
+ db_b_new_gram_test.t_not_exist   | analyze | status   | Operation failed
+ db_b_new_gram_test.t_new_analyze | analyze | status   | OK
 (3 rows)
 
 -- new grammar test for CREATE TABLESPACE
@@ -535,7 +533,7 @@ drop user u_test_tbspace2;
 CREATE TABLESPACE test_tbspace ADD DATAFILE 'test_tbspace1';
 CREATE TABLE t_tbspace(num int) TABLESPACE test_tbspace;
 \d t_tbspace
-   Table "public.t_tbspace"
+Table "db_b_new_gram_test.t_tbspace"
  Column |  Type   | Modifiers 
 --------+---------+-----------
  num    | integer | 
@@ -547,7 +545,7 @@ CREATE TABLESPACE test_tbspace_ibd ADD DATAFILE 'test_tbspace1.ibd';
 WARNING:  Suffix ".ibd" of datafile path detected. The actual path will be renamed as "test_tbspace1_ibd"
 CREATE TABLE t_tbspace(num int) TABLESPACE test_tbspace_ibd;
 \d t_tbspace
-   Table "public.t_tbspace"
+Table "db_b_new_gram_test.t_tbspace"
  Column |  Type   | Modifiers 
 --------+---------+-----------
  num    | integer | 
@@ -564,21 +562,21 @@ ERROR:  Tablespace "test_tbspace_ibd_2" does not exist.
 -- new grammar test for RENAME [TO | AS]
 CREATE TABLE t_rename(c int);
 \d t_rename
-   Table "public.t_rename"
+Table "db_b_new_gram_test.t_rename"
  Column |  Type   | Modifiers 
 --------+---------+-----------
  c      | integer | 
 
 ALTER TABLE t_rename RENAME TO t_rename_to;
 \d t_rename_to
-  Table "public.t_rename_to"
+Table "db_b_new_gram_test.t_rename_to"
  Column |  Type   | Modifiers 
 --------+---------+-----------
  c      | integer | 
 
 ALTER TABLE t_rename_to RENAME AS t_rename_as;
 \d t_rename_as
-  Table "public.t_rename_as"
+Table "db_b_new_gram_test.t_rename_as"
  Column |  Type   | Modifiers 
 --------+---------+-----------
  c      | integer | 
@@ -591,7 +589,7 @@ CREATE TABLE t_index_new_grammar(c1 int, c2 int);
 CREATE INDEX test_index_btree_1 ON t_index_new_grammar USING btree(c1);
 CREATE INDEX test_index_btree_2 USING btree ON t_index_new_grammar(c2);
 \d t_index_new_grammar
-Table "public.t_index_new_grammar"
+Table "db_b_new_gram_test.t_index_new_grammar"
  Column |  Type   | Modifiers 
 --------+---------+-----------
  c1     | integer | 
@@ -935,7 +933,7 @@ SELECT COUNT(*) FROM t_ctas_new;
 (1 row)
 
 \d t_ctas_new
-   Table "public.t_ctas_new"
+Table "db_b_new_gram_test.t_ctas_new"
  Column  |  Type   | Modifiers 
 ---------+---------+-----------
  new_c_a | integer | 
@@ -950,7 +948,7 @@ SELECT COUNT(*) FROM t_ctas_new;
 (1 row)
 
 \d t_ctas_new
-   Table "public.t_ctas_new"
+Table "db_b_new_gram_test.t_ctas_new"
  Column  |  Type   | Modifiers 
 ---------+---------+-----------
  new_c_a | integer | 
@@ -966,7 +964,7 @@ SELECT COUNT(*) FROM t_like;
 (1 row)
 
 \d t_like
-    Table "public.t_like"
+Table "db_b_new_gram_test.t_like"
  Column |  Type   | Modifiers 
 --------+---------+-----------
  a      | integer | 
@@ -999,7 +997,7 @@ SELECT COUNT(*) FROM t_like2;
 (1 row)
 
 \d t_like2
-    Table "public.t_like2"
+Table "db_b_new_gram_test.t_like2"
  Column |  Type   | Modifiers 
 --------+---------+-----------
  a      | integer | 
@@ -1029,10 +1027,8 @@ SELECT COUNT(*) FROM t_ctas_new;
 
 DROP TABLE t_ctas_new;
 DROP TABLE t_ctas;
-drop database if exists test_m;
-NOTICE:  database "test_m" does not exist, skipping
-create database test_m dbcompatibility 'b';
-\c test_m
+create schema test_m;
+set current_schema to 'test_m';
 create table test_unique(
     f1 int,
     f2 int,
@@ -1044,7 +1040,7 @@ create table test_unique(
 NOTICE:  CREATE TABLE / UNIQUE will create implicit index "u_idx_name" for table "test_unique"
 NOTICE:  CREATE TABLE / UNIQUE will create implicit index "u_key_name" for table "test_unique"
 \d+ test_unique
-                     Table "public.test_unique"
+                     Table "test_m.test_unique"
  Column |  Type   | Modifiers | Storage | Stats target | Description 
 --------+---------+-----------+---------+--------------+-------------
  f1     | integer |           | plain   |              | 
@@ -1207,6 +1203,8 @@ select * from ignore_range_range partition (p_201901, p_201905_b);
 (2 rows)
 
 drop table ignore_range_range;
-\c postgres
-drop database if exists test_m;
-drop database db_b_new_gram_test;
+drop schema test_m cascade;
+NOTICE:  drop cascades to table test_unique
+drop schema db_b_new_gram_test cascade;
+--?.*
+reset current_schema;

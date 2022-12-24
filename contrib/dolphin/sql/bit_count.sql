@@ -1,6 +1,5 @@
-drop database if exists test_bit_count;
-create database test_bit_count dbcompatibility 'b';
-\c test_bit_count
+create schema test_bit_count;
+set current_schema to 'test_bit_count';
 
 -- 测试数字，字符串，二进制输入
 SELECT bit_count(29);
@@ -51,5 +50,5 @@ select bit_count(b'1111111111111111111111111111111111111111111111111111111111111
 select bit_count(b'1111111111111111111111111111111111111111111111111111111111111111');
 select bit_count(b'10000000111111111111111111111111111111111111111111111111111111111111111');
 
-\c postgres
-drop database test_bit_count;
+drop schema test_bit_count cascade;
+reset current_schema;

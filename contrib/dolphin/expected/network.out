@@ -1,7 +1,5 @@
-drop database if exists test_network;
-NOTICE:  database "test_network" does not exist, skipping
-create database test_network dbcompatibility 'b';
-\c test_network
+create schema test_network;
+set current_schema to 'test_network';
 create table test (ip1 varchar(20),ip2 char(20),ip3 nvarchar2(20),ip4 text,ip5 clob);
 insert into test (ip1,ip2,ip3,ip4,ip5) values ('192.168.1.1','127.0.0.1','10.0.0.10','172.0.0.1','0.0.0.0'),('fe80::1','a::f','a::c','a::d','a::e'),('192.168.1.256','192.168.1','256.168.1.1','192.256.1.1','192.168.1.-1');
 select is_ipv4(ip1),is_ipv4(ip2),is_ipv4(ip3),is_ipv4(ip4),is_ipv4(ip5) from test;
@@ -140,5 +138,6 @@ select is_ipv6(NULL);
        0
 (1 row)
 
-\c postgres
-drop database if exists test_network;
+drop schema test_network cascade;
+NOTICE:  drop cascades to table test
+reset current_schema;

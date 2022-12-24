@@ -1,6 +1,6 @@
-drop database if exists db_func_call1;
-create database db_func_call1 dbcompatibility 'B';
-\c db_func_call1
+create schema db_func_call1;
+set current_schema to 'db_func_call1';
+
 
 CREATE FUNCTION f1 (s CHAR(20)) RETURNS int  CONTAINS SQL AS $$ select 1 $$ ;
 
@@ -59,6 +59,6 @@ END;
 $$ LANGUAGE plpgsql;
 call f_3();
 
-\c postgres
-drop database if exists db_func_call1;
+drop schema db_func_call1 cascade;
+reset current_schema;
 

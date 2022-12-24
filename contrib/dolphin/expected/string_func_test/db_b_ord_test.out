@@ -1,7 +1,5 @@
-drop database if exists db_b_ord_test;
-NOTICE:  database "db_b_ord_test" does not exist, skipping
-create database db_b_ord_test dbcompatibility 'B';
-\c db_b_ord_test
+create schema db_b_ord_test;
+set current_schema to 'db_b_ord_test';
 -- test 1 byte
 select ord('1111');
  ord 
@@ -85,5 +83,6 @@ select ord(name) from test_ord;
  4036199316
 (3 rows)
 
-\c postgres
-drop database if exists db_b_ord_test;
+drop schema db_b_ord_test cascade;
+NOTICE:  drop cascades to table test_ord
+reset current_schema;

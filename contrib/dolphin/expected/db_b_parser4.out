@@ -1,7 +1,5 @@
-drop database if exists db_b_parser4;
-NOTICE:  database "db_b_parser4" does not exist, skipping
-create database db_b_parser4 dbcompatibility 'b';
-\c db_b_parser4
+create schema db_b_parser4;
+set current_schema to 'db_b_parser4';
 --验证text类型
 drop table if exists tb_db_b_parser_0001;
 NOTICE:  table "tb_db_b_parser_0001" does not exist, skipping
@@ -11,7 +9,7 @@ drop table if exists tb_db_b_parser_0002;
 NOTICE:  table "tb_db_b_parser_0002" does not exist, skipping
 create table tb_db_b_parser_0002(a decimal, b number, c dec, d numeric, e fixed);
 \d tb_db_b_parser_0002
- Table "public.tb_db_b_parser_0002"
+Table "db_b_parser4.tb_db_b_parser_0002"
  Column |     Type      | Modifiers 
 --------+---------------+-----------
  a      | numeric(10,0) | 
@@ -25,7 +23,7 @@ drop table if exists tb_default_float;
 NOTICE:  table "tb_default_float" does not exist, skipping
 create table tb_default_float(a float4(10));
 \d tb_default_float
-Table "public.tb_default_float"
+Table "db_b_parser4.tb_default_float"
  Column | Type | Modifiers 
 --------+------+-----------
  a      | real | 
@@ -34,7 +32,7 @@ drop table if exists tb_default_double;
 NOTICE:  table "tb_default_double" does not exist, skipping
 create table tb_default_double(a double);
 \d tb_default_double
-   Table "public.tb_default_double"
+Table "db_b_parser4.tb_default_double"
  Column |       Type       | Modifiers 
 --------+------------------+-----------
  a      | double precision | 
@@ -44,7 +42,7 @@ drop table if exists tb_real_float;
 NOTICE:  table "tb_real_float" does not exist, skipping
 create table tb_real_float(a real, b float);
 \d tb_real_float
-Table "public.tb_real_float"
+Table "db_b_parser4.tb_real_float"
  Column | Type | Modifiers 
 --------+------+-----------
  a      | real | 
@@ -54,5 +52,6 @@ drop table if exists tb_db_b_parser_0002;
 drop table if exists tb_default_float;
 drop table if exists tb_default_double;
 drop table if exists tb_real_float;
-\c postgres
-drop database if exists db_b_parser4;
+drop schema db_b_parser4 cascade;
+NOTICE:  drop cascades to table tb_db_b_parser_0001
+reset current_schema;

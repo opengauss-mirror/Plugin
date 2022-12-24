@@ -1,6 +1,5 @@
-drop database if exists db_alter_func_2;
-create database db_alter_func_2 dbcompatibility 'B';
-\c db_alter_func_2
+create schema db_alter_func_2;
+set current_schema to 'db_alter_func_2';
 
 CREATE OR REPLACE PROCEDURE proc1() 
 AS
@@ -50,5 +49,5 @@ END;
 -- 修改不存在的存储过程
 ALTER PROCEDURE proc2  READS SQL DATA;
 
-\c postgres
-drop database db_alter_func_2;
+drop schema db_alter_func_2 cascade;
+reset current_schema;

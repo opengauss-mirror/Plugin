@@ -2,9 +2,8 @@
 -- Test Time functions(Stage 3) under 'b' compatibility
 -- Contains to_days(), to_seconds(), unix_timestamp(), utc_date(), utc_time()、timestampadd()
 --
-drop database if exists b_time_funcs3;
-create database b_time_funcs3 dbcompatibility 'b';
-\c b_time_funcs3
+create schema b_time_funcs3;
+set current_schema to 'b_time_funcs3';
 
 create table func_test3(functionName varchar(256),result varchar(256));
 truncate table func_test3;
@@ -189,5 +188,5 @@ insert into func_test3(functionName, result) values('UTC_TIMESTAMP(6)', UTC_TIME
 insert into func_test3(functionName, result) values('UTC_TIMESTAMP(-1)', UTC_TIMESTAMP(-1));
 
 select * from func_test3;
-\c postgres
-drop database if exists b_time_funcs3;
+drop schema b_time_funcs3 cascade;
+reset current_schema;

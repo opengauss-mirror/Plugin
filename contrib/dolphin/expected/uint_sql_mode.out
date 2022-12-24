@@ -1,7 +1,5 @@
-drop database if exists uint_sql_mode;
-NOTICE:  database "uint_sql_mode" does not exist, skipping
-create database uint_sql_mode dbcompatibility 'b';
-\c uint_sql_mode
+create schema uint_sql_mode;
+set current_schema to 'uint_sql_mode';
 set dolphin.sql_mode = '';
 select (-1)::bool::uint8;
  uint8 
@@ -2210,5 +2208,6 @@ select * from t1;
  255
 (61 rows)
 
-\c postgres
-drop database uint_sql_mode;
+drop schema uint_sql_mode cascade;
+NOTICE:  drop cascades to table t1
+reset current_schema;

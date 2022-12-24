@@ -1,6 +1,5 @@
-drop database if exists test_json_extract;
-create database test_json_extract dbcompatibility'B';
-\c test_json_extract
+create schema test_json_extract;
+set current_schema to 'test_json_extract';
 
 select json_extract('{"a": "lihua"}', '$.a');
 select json_extract('{"a"}', '$.a');
@@ -31,5 +30,5 @@ insert into test values
 (json_extract('{"a": 43, "b": {"c": true}}', '$.b'));
 select * from test;
 
-\c postgres
-drop database if exists test_json_extract;
+drop schema test_json_extract cascade;
+reset current_schema;

@@ -1,7 +1,5 @@
-drop database if exists uint_cast;
-NOTICE:  database "uint_cast" does not exist, skipping
-create database uint_cast dbcompatibility 'b';
-\c uint_cast
+create schema uint_cast;
+set current_schema to 'uint_cast';
 select (-1)::bool::uint8;
  uint8 
 -------
@@ -1223,5 +1221,5 @@ select (1)::uint8::bool;
  t
 (1 row)
 
-\c postgres
-drop database uint_cast;
+drop schema uint_cast cascade;
+reset current_schema;

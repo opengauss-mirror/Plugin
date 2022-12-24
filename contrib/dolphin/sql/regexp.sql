@@ -1,7 +1,6 @@
-drop database if exists db_regexp;
-create database db_regexp dbcompatibility 'b';
-\c db_regexp
+create schema db_regexp;
+set current_schema to 'db_regexp';
 select regexp('a', true);
 
-\c postgres
-drop database if exists db_regexp;
+drop schema db_regexp cascade;
+reset current_schema;

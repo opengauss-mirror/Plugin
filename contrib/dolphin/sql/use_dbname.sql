@@ -1,6 +1,5 @@
-drop database if exists use_dbname;
-create database use_dbname dbcompatibility 'b';
-\c use_dbname
+create schema use_dbname;
+set current_schema to 'use_dbname';
 CREATE schema db1;
 CREATE schema db2;
 USE db1;
@@ -14,5 +13,5 @@ select a from db2.test;
 select a from test;
 USE db1;
 select a from test;
-\c postgres
-drop database if exists use_dbname;
+drop schema use_dbname cascade;
+reset current_schema;
