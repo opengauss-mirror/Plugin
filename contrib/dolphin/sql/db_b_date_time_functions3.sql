@@ -1,5 +1,7 @@
-create schema b_datetime_func_test3;
-set current_schema to 'b_datetime_func_test3';
+---- b compatibility case
+drop database if exists b_datetime_func_test3;
+create database b_datetime_func_test3 encoding 'UTF-8' lc_collate 'C' lc_ctype 'C' dbcompatibility 'B';
+\c b_datetime_func_test3
 set datestyle = 'ISO,ymd';
 set time zone "Asia/Shanghai";
 create table test(funcname text, result text);
@@ -476,5 +478,5 @@ insert into test values('addtime(''10000-1-1 00:00:00'', ''00:00:00'')', addtime
 
 select * from test order by funcname;
 drop table test;
-drop schema b_datetime_func_test3 cascade;
-reset current_schema;
+\c contrib_regression
+DROP DATABASE b_datetime_func_test3;

@@ -1,5 +1,7 @@
-create schema b_datetime_func_test2;
-set current_schema to 'b_datetime_func_test2';
+---- b compatibility case
+drop database if exists b_datetime_func_test2;
+create database b_datetime_func_test2 encoding 'UTF-8' lc_collate 'C' lc_ctype 'C' dbcompatibility 'B';
+\c b_datetime_func_test2
 set datestyle = 'ISO,ymd';
 set time zone "Asia/Shanghai";
 create table test(funcname text, result text);
@@ -610,5 +612,5 @@ insert into test values('yearweek(''0000-12-31 22:59:59.9999995'', 0)', yearweek
 -- 结果
 select * from test order by funcname;
 drop table test;
-drop schema b_datetime_func_test2 cascade;
-reset current_schema;
+\c contrib_regression
+DROP DATABASE b_datetime_func_test2;
