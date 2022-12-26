@@ -86,7 +86,7 @@ select pg_get_tabledef('test_list_part');
 select * from test_list_part partition(m2);
 select * from test_list_part partition(m1);
 explain select /*+ indexscan(test_list_part test_list_part_pkey) */ * from test_list_part where a > 0;
-select * from test_list_part where a > 0;
+select * from test_list_part where a > 0 order by a;
 
 /*test test_list_subpart*/
 alter table test_list_subpart reorganize partition p1,p2 into (partition m1 values(2,3),partition m2 values(4));
@@ -99,7 +99,7 @@ select * from test_list_subpart partition(m1);
 select * from test_list_subpart subpartition(m11);
 select * from test_list_subpart subpartition(m12);
 explain select /*+ indexscan(test_list_subpart test_list_subpart_pkey) */ * from test_list_subpart where a > 0;
-select * from test_list_subpart where a > 0;
+select * from test_list_subpart where a > 0 order by a desc;
 
 -------test no-partitioned table
 create table test_no_part(a int,b int);

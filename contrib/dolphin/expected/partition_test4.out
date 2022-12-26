@@ -237,7 +237,7 @@ explain select /*+ indexscan(test_list_part test_list_part_pkey) */ * from test_
          Selected Partitions:  1..3
 (5 rows)
 
-select * from test_list_part where a > 0;
+select * from test_list_part where a > 0 order by a;
  a | b 
 ---+---
  1 | 1
@@ -312,7 +312,7 @@ explain select /*+ indexscan(test_list_subpart test_list_subpart_pkey) */ * from
    Index Cond: (a > 0)
 (2 rows)
 
-select * from test_list_subpart where a > 0;
+select * from test_list_subpart where a > 0 order by a desc;
  a | b 
 ---+---
  9 | 1
