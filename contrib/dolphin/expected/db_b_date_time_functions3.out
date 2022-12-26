@@ -1,5 +1,8 @@
-create schema b_datetime_func_test3;
-set current_schema to 'b_datetime_func_test3';
+---- b compatibility case
+drop database if exists b_datetime_func_test3;
+NOTICE:  database "b_datetime_func_test3" does not exist, skipping
+create database b_datetime_func_test3 encoding 'UTF-8' lc_collate 'C' lc_ctype 'C' dbcompatibility 'B';
+\c b_datetime_func_test3
 set datestyle = 'ISO,ymd';
 set time zone "Asia/Shanghai";
 create table test(funcname text, result text);
@@ -675,11 +678,7 @@ select * from test order by funcname;
  adddate('0001-1-1', INTERVAL -1 day)                                                             | 
  adddate('0001-12-31',INTERVAL 1 day)                                                             | 0002-01-01
  adddate('0001-12-31',INTERVAL 1 month)                                                           | 0002-01-31
- adddate(0, INTERVAL 100 second)                                                                  | 
  adddate('10000-1-1', INTERVAL -1 day)                                                            | 
- adddate(101, 1)                                                                                  | 2000-01-02
- adddate(101, INTERVAL 100 second)                                                                | 2000-01-01 00:01:40
- adddate(101, INTERVAL 1 year)                                                                    | 2001-01-01
  adddate('1999-12-31 23:00:00',INTERVAL 1 hour)                                                   | 2000-01-01 00:00:00
  adddate('1999-12-31 23:59:00',INTERVAL 1 minute)                                                 | 2000-01-01 00:00:00
  adddate('1999-12-31 23:59:59',INTERVAL 1 second)                                                 | 2000-01-01 00:00:00
@@ -697,66 +696,69 @@ select * from test order by funcname;
  adddate('9999-12-31 23:59:00', INTERVAL 1 minute)                                                | 
  adddate('9999-12-31 23:59:59', INTERVAL 1 second)                                                | 
  adddate('9999-12-31', INTERVAL 1 day)                                                            | 
+ adddate('9999-12-31', INTERVAL 1 month)                                                          | 
+ adddate('9999-12-31', INTERVAL 1 year)                                                           | 
  adddate('9999-12-31',INTERVAL -1 day)                                                            | 9999-12-30
  adddate('9999-12-31',INTERVAL -1 hour)                                                           | 9999-12-30 23:00:00
  adddate('9999-12-31',INTERVAL -1 minute)                                                         | 9999-12-30 23:59:00
- adddate('9999-12-31', INTERVAL 1 month)                                                          | 
  adddate('9999-12-31',INTERVAL -1 month)                                                          | 9999-11-30
  adddate('9999-12-31',INTERVAL -1 second)                                                         | 9999-12-30 23:59:59
- adddate('9999-12-31', INTERVAL 1 year)                                                           | 
  adddate('9999-12-31',INTERVAL -1 year)                                                           | 9998-12-31
+ adddate(0, INTERVAL 100 second)                                                                  | 
+ adddate(101, 1)                                                                                  | 2000-01-02
+ adddate(101, INTERVAL 1 year)                                                                    | 2001-01-01
+ adddate(101, INTERVAL 100 second)                                                                | 2000-01-01 00:01:40
  adddate(cast('9999-12-31 12:12:12' as datetime),INTERVAL -1 second)                              | 9999-12-31 12:12:11
  adddate(date'0001-01-01',INTERVAL 1 year)                                                        | 0002-01-01
  adddate(null, INTERVAL 1 day)                                                                    | 
  adddate(null, null)                                                                              | 
+ adddate(time'-838:59:59', INTERVAL -1 second)                                                    | 
  adddate(time'12:12:12', -1)                                                                      | -11:47:48
  adddate(time'12:12:12', 1)                                                                       | 36:12:12
  adddate(time'12:12:12', INTERVAL -1 day)                                                         | -11:47:48
- adddate(time'12:12:12', INTERVAL 1 day)                                                          | 36:12:12
  adddate(time'12:12:12', INTERVAL -1 hour)                                                        | 11:12:12
- adddate(time'12:12:12', INTERVAL 1 hour)                                                         | 13:12:12
  adddate(time'12:12:12', INTERVAL -1 minute)                                                      | 12:11:12
- adddate(time'12:12:12', INTERVAL 1 minute)                                                       | 12:13:12
  adddate(time'12:12:12', INTERVAL -1 second)                                                      | 12:12:11
+ adddate(time'12:12:12', INTERVAL 1 day)                                                          | 36:12:12
+ adddate(time'12:12:12', INTERVAL 1 hour)                                                         | 13:12:12
+ adddate(time'12:12:12', INTERVAL 1 minute)                                                       | 12:13:12
  adddate(time'12:12:12', INTERVAL 1 second)                                                       | 12:12:13
- adddate(time'-838:59:59', INTERVAL -1 second)                                                    | 
  adddate(time'838:59:59', INTERVAL -1 second)                                                     | 838:59:58
  adddate(time'838:59:59', INTERVAL 1 second)                                                      | 
- addtime('00:00:00', '00:00:00')                                                                  | 00:00:00
- addtime(0, '00:00:01')                                                                           | 00:00:01
- addtime('00:00:01', null)                                                                        | 
+ addtime('-8385959', '00:00:01')                                                                  | -838:59:58
+ addtime('-838:59:58', '-00:00:01')                                                               | -838:59:59
+ addtime('-838:59:59', '-00:00:01')                                                               | -838:59:59
+ addtime('-838:59:59', '00:00:01')                                                                | -838:59:58
+ addtime('-838:59:59.1', '00:00:00')                                                              | -838:59:59
+ addtime('-839:00:00', '00:00:00')                                                                | -838:59:59
  addtime('0001-1-1 00:00:00', '-00:00:01')                                                        | 
+ addtime('00:00:00', '00:00:00')                                                                  | 00:00:00
+ addtime('00:00:01', null)                                                                        | 
  addtime('10000-1-1 00:00:00', '00:00:00')                                                        | 
  addtime('11:22:33', '20:20:20')                                                                  | 31:42:53
  addtime('11:22:33.999999', '00:00:00.000001')                                                    | 11:22:34
  addtime('12:12:12', '2021-11-12 12:12:12')                                                       | 
  addtime('2021-11-12 23:59:59', '23:59:10')                                                       | 2021-11-13 23:59:09
- addtime('-838:59:58', '-00:00:01')                                                               | -838:59:59
  addtime('838:59:58', '00:00:01')                                                                 | 838:59:59
- addtime('-838:59:59', '-00:00:01')                                                               | -838:59:59
- addtime('-838:59:59', '00:00:01')                                                                | -838:59:58
- addtime('-8385959', '00:00:01')                                                                  | -838:59:58
  addtime('838:59:59', '-00:00:01')                                                                | 838:59:58
  addtime('838:59:59', '00:00:01')                                                                 | 838:59:59
- addtime(-8385959, '00:00:01')                                                                    | -838:59:58
- addtime('-838:59:59.1', '00:00:00')                                                              | -838:59:59
  addtime('838:59:59.1', '00:00:00')                                                               | 838:59:59
- addtime('-839:00:00', '00:00:00')                                                                | -838:59:59
  addtime('839:00:00', '00:00:00')                                                                 | 838:59:59
  addtime('9999-12-31 23:59:59', '00:00:01')                                                       | 
- addtime('9999-12-31 23:59:59.999999', '00:00:00')                                                | 9999-12-31 23:59:59.999999
  addtime('9999-12-31 23:59:59.999999', '-00:00:01')                                               | 9999-12-31 23:59:59.999999
  addtime('9999-12-31 23:59:59.999999', '-838:59:59')                                              | 9999-11-27 01:00:00.999999
+ addtime('9999-12-31 23:59:59.999999', '00:00:00')                                                | 9999-12-31 23:59:59.999999
+ addtime(-8385959, '00:00:01')                                                                    | -838:59:58
+ addtime(0, '00:00:01')                                                                           | 00:00:01
  addtime(cast('9999-12-31 23:59:59.999999' as datetime(6)), '00:00:00')                           | 9999-12-31 23:59:59.999999
  addtime(null, '00:00:01')                                                                        | 
  addtime(null, null)                                                                              | 
  addtime(time'12:12:12.999999', '00:00:00.000001')                                                | 12:12:13
  convert_tz('10000-1-1 10:10:10', '+1:00', '+0:00')                                               | 
- convert_tz(101, 'GMT', '+7:00')                                                                  | 2000-01-01 07:00:00
  convert_tz('1234-1-1 00:00:00', 'MET', 'GMT')                                                    | 1234-01-01 00:00:00
  convert_tz('1970-1-1 00:00:01.000000', '+1:00', '+0:00')                                         | 1970-01-01 00:00:01
- convert_tz('1970-1-1 00:00:01.000000', '-1:00', '+0:00')                                         | 1970-01-01 01:00:01
  convert_tz('1970-1-1 00:00:01.000000', '-10:00', '+0:00')                                        | 1970-01-01 10:00:01
+ convert_tz('1970-1-1 00:00:01.000000', '-1:00', '+0:00')                                         | 1970-01-01 01:00:01
  convert_tz('1970-1-1 00:00:01.000000', '-1:00', 'GMT')                                           | 1970-01-01 01:00:01
  convert_tz('1970-1-1 00:00:01.000000', '-2:00', '+0:00')                                         | 1970-01-01 02:00:01
  convert_tz('1970-1-1 00:00:01.000000', 'CCT', 'GMT')                                             | 1970-01-01 00:00:01
@@ -769,23 +771,24 @@ select * from test order by funcname;
  convert_tz('1970-1-1 00:00:01.000000', 'MET', 'GMT')                                             | 1970-01-01 00:00:01
  convert_tz('1970-1-1 00:00:01.000000', 'MST', 'GMT')                                             | 1970-01-01 07:00:01
  convert_tz('2021-11-12 12:12:12', '+0:00', '-13:00')                                             | 
+ convert_tz('2021-11-12 12:12:12', '+13:01', '+0:00')                                             | 
  convert_tz('2021-11-12 12:12:12', '+1:00', 'abc')                                                | 
  convert_tz('2021-11-12 12:12:12', '+1:00', null)                                                 | 
- convert_tz('2021-11-12 12:12:12', '+13:01', '+0:00')                                             | 
  convert_tz('2021-11-12 12:12:12', 'abc', '+0:00')                                                | 
  convert_tz('2021-11-12 12:12:12', null, '+0:00')                                                 | 
- convert_tz('2038-01-19 03:14:07.999999', '+1:00', '+0:00')                                       | 2038-01-19 02:14:07.999999
- convert_tz('2038-01-19 03:14:07.999999', '-1:00', '+0:00')                                       | 1970-01-01 00:00:01
  convert_tz('2038-01-19 03:14:07.999999', '+10:00', '+0:00')                                      | 2038-01-18 17:14:07.999999
+ convert_tz('2038-01-19 03:14:07.999999', '+1:00', '+0:00')                                       | 2038-01-19 02:14:07.999999
  convert_tz('2038-01-19 03:14:07.999999', '+2:00', '+0:00')                                       | 2038-01-19 01:14:07.999999
  convert_tz('2038-01-19 03:14:07.999999', '+2:00', 'GMT')                                         | 2038-01-19 01:14:07.999999
+ convert_tz('2038-01-19 03:14:07.999999', '-1:00', '+0:00')                                       | 1970-01-01 00:00:01
  convert_tz('2038-01-19 03:14:07.999999', 'CCT', 'GMT')                                           | 2038-01-18 19:14:07.999999
  convert_tz('2038-01-19 03:14:07.999999', 'EDT', 'GMT')                                           | 2038-01-19 03:14:07.999999
  convert_tz('2038-01-19 03:14:07.999999', 'GMT', '+7:00')                                         | 2038-01-19 10:14:07.999999
  convert_tz('2038-01-19 03:14:07.999999', 'JST', 'GMT')                                           | 2038-01-18 18:14:07.999999
  convert_tz('2038-01-19 03:14:07.999999', 'KST', 'GMT')                                           | 2038-01-18 18:14:07.999999
+ convert_tz(101, 'GMT', '+7:00')                                                                  | 2000-01-01 07:00:00
  convert_tz(null, '+1:00', '+0:00')                                                               | 
---?.*
+ convert_tz(time'10:10:10', 'GMT', '+7:00')                                                       | 2022-12-26 17:10:10
  date_add('0001-01-01 12:12:12',INTERVAL 1 hour)                                                  | 0001-01-01 13:12:12
  date_add('0001-01-01 12:12:12',INTERVAL 1 minute)                                                | 0001-01-01 12:13:12
  date_add('0001-01-01 12:12:12',INTERVAL 1 second)                                                | 0001-01-01 12:12:13
@@ -799,10 +802,7 @@ select * from test order by funcname;
  date_add('0001-1-1', INTERVAL -1 day)                                                            | 
  date_add('0001-12-31',INTERVAL 1 day)                                                            | 0002-01-01
  date_add('0001-12-31',INTERVAL 1 month)                                                          | 0002-01-31
- date_add(0, INTERVAL 100 second)                                                                 | 
  date_add('10000-1-1', INTERVAL -1 day)                                                           | 
- date_add(101, INTERVAL 100 second)                                                               | 2000-01-01 00:01:40
- date_add(101, INTERVAL 1 year)                                                                   | 2001-01-01
  date_add('1999-12-31 23:00:00',INTERVAL 1 hour)                                                  | 2000-01-01 00:00:00
  date_add('1999-12-31 23:59:00',INTERVAL 1 minute)                                                | 2000-01-01 00:00:00
  date_add('1999-12-31 23:59:59',INTERVAL 1 second)                                                | 2000-01-01 00:00:00
@@ -817,50 +817,31 @@ select * from test order by funcname;
  date_add('9999-12-31 23:59:00', INTERVAL 1 minute)                                               | 
  date_add('9999-12-31 23:59:59', INTERVAL 1 second)                                               | 
  date_add('9999-12-31', INTERVAL 1 day)                                                           | 
+ date_add('9999-12-31', INTERVAL 1 month)                                                         | 
+ date_add('9999-12-31', INTERVAL 1 year)                                                          | 
  date_add('9999-12-31',INTERVAL -1 day)                                                           | 9999-12-30
  date_add('9999-12-31',INTERVAL -1 hour)                                                          | 9999-12-30 23:00:00
  date_add('9999-12-31',INTERVAL -1 minute)                                                        | 9999-12-30 23:59:00
- date_add('9999-12-31', INTERVAL 1 month)                                                         | 
  date_add('9999-12-31',INTERVAL -1 month)                                                         | 9999-11-30
  date_add('9999-12-31',INTERVAL -1 second)                                                        | 9999-12-30 23:59:59
- date_add('9999-12-31', INTERVAL 1 year)                                                          | 
  date_add('9999-12-31',INTERVAL -1 year)                                                          | 9998-12-31
+ date_add(0, INTERVAL 100 second)                                                                 | 
+ date_add(101, INTERVAL 1 year)                                                                   | 2001-01-01
+ date_add(101, INTERVAL 100 second)                                                               | 2000-01-01 00:01:40
  date_add(cast('9999-12-31 12:12:12' as datetime),INTERVAL -1 second)                             | 9999-12-31 12:12:11
  date_add(date'0001-01-01',INTERVAL 1 year)                                                       | 0002-01-01
  date_add(null, INTERVAL 1 day)                                                                   | 
- date_add(time'12:12:12', INTERVAL -1 day)                                                        | -11:47:48
- date_add(time'12:12:12', INTERVAL 1 day)                                                         | 36:12:12
- date_add(time'12:12:12', INTERVAL -1 hour)                                                       | 11:12:12
- date_add(time'12:12:12', INTERVAL 1 hour)                                                        | 13:12:12
- date_add(time'12:12:12', INTERVAL -1 minute)                                                     | 12:11:12
- date_add(time'12:12:12', INTERVAL 1 minute)                                                      | 12:13:12
- date_add(time'12:12:12', INTERVAL -1 second)                                                     | 12:12:11
- date_add(time'12:12:12', INTERVAL 1 second)                                                      | 12:12:13
  date_add(time'-838:59:59', INTERVAL -1 second)                                                   | 
+ date_add(time'12:12:12', INTERVAL -1 day)                                                        | -11:47:48
+ date_add(time'12:12:12', INTERVAL -1 hour)                                                       | 11:12:12
+ date_add(time'12:12:12', INTERVAL -1 minute)                                                     | 12:11:12
+ date_add(time'12:12:12', INTERVAL -1 second)                                                     | 12:12:11
+ date_add(time'12:12:12', INTERVAL 1 day)                                                         | 36:12:12
+ date_add(time'12:12:12', INTERVAL 1 hour)                                                        | 13:12:12
+ date_add(time'12:12:12', INTERVAL 1 minute)                                                      | 12:13:12
+ date_add(time'12:12:12', INTERVAL 1 second)                                                      | 12:12:13
  date_add(time'838:59:59', INTERVAL -1 second)                                                    | 838:59:58
  date_add(time'838:59:59', INTERVAL 1 second)                                                     | 
- datediff('0000-01-01', '9999-12-31')                                                             | -3652424
- datediff('10000-01-01', '2021-11-12')                                                            | 
- datediff(100000101, 20211112)                                                                    | 
- datediff(101, '2021-11-12')                                                                      | -7986
- datediff('2021-01-01', '2021-12-31')                                                             | -364
- datediff('2021-11-12', 101)                                                                      | 7986
- datediff('2021-11-12', 101)                                                                      | 7986
- datediff('2021-11-12', '2021-11-13')                                                             | -1
- datediff(20211112, 20211113)                                                                     | -1
- datediff('2021-11-12', null)                                                                     | 
- datediff('2021-12-31 12:12:12', '2022-01-01 10:10:10')                                           | -1
- datediff('2021-12-31', '2022-01-01')                                                             | -1
---?.*
- datediff('9999-12-31', '0000-01-01')                                                             | 3652424
- datediff(99991231235959.9999995, 20211112)                                                       | 
- datediff(9999999999999999999999, 20211112)                                                       | 
- datediff(cast('2021-12-31 12:12:12' as datetime), cast('2022-01-01 10:10:10' as datetime))       | -1
- datediff(date'2021-11-12', date'2021-11-13')                                                     | 0
- datediff(null, '2021-11-12')                                                                     | 
- datediff(null, null)                                                                             | 
---?.*
- datediff(time'10:10:10', time'10:10:10')                                                         | 0
  date_sub('0001-01-01 12:12:12',INTERVAL -1 hour)                                                 | 0001-01-01 13:12:12
  date_sub('0001-01-01 12:12:12',INTERVAL -1 minute)                                               | 0001-01-01 12:13:12
  date_sub('0001-01-01 12:12:12',INTERVAL -1 second)                                               | 0001-01-01 12:12:13
@@ -874,10 +855,7 @@ select * from test order by funcname;
  date_sub('0001-1-1', INTERVAL 1 day)                                                             | 
  date_sub('0001-12-31',INTERVAL -1 day)                                                           | 0002-01-01
  date_sub('0001-12-31',INTERVAL -1 month)                                                         | 0002-01-31
- date_sub(0, INTERVAL 100 second)                                                                 | 
  date_sub('10000-1-1', INTERVAL 1 day)                                                            | 
- date_sub(101, INTERVAL 100 second)                                                               | 1999-12-31 23:58:20
- date_sub(101, INTERVAL 1 year)                                                                   | 1999-01-01
  date_sub('1999-12-31 23:00:00',INTERVAL -1 hour)                                                 | 2000-01-01 00:00:00
  date_sub('1999-12-31 23:59:00',INTERVAL -1 minute)                                               | 2000-01-01 00:00:00
  date_sub('1999-12-31 23:59:59',INTERVAL -1 second)                                               | 2000-01-01 00:00:00
@@ -892,38 +870,63 @@ select * from test order by funcname;
  date_sub('9999-12-31 23:59:00', INTERVAL -1 minute)                                              | 
  date_sub('9999-12-31 23:59:59', INTERVAL -1 second)                                              | 
  date_sub('9999-12-31', INTERVAL -1 day)                                                          | 
+ date_sub('9999-12-31', INTERVAL -1 month)                                                        | 
+ date_sub('9999-12-31', INTERVAL -1 year)                                                         | 
  date_sub('9999-12-31',INTERVAL 1 day)                                                            | 9999-12-30
  date_sub('9999-12-31',INTERVAL 1 hour)                                                           | 9999-12-30 23:00:00
  date_sub('9999-12-31',INTERVAL 1 minute)                                                         | 9999-12-30 23:59:00
- date_sub('9999-12-31', INTERVAL -1 month)                                                        | 
  date_sub('9999-12-31',INTERVAL 1 month)                                                          | 9999-11-30
  date_sub('9999-12-31',INTERVAL 1 second)                                                         | 9999-12-30 23:59:59
- date_sub('9999-12-31', INTERVAL -1 year)                                                         | 
  date_sub('9999-12-31',INTERVAL 1 year)                                                           | 9998-12-31
+ date_sub(0, INTERVAL 100 second)                                                                 | 
+ date_sub(101, INTERVAL 1 year)                                                                   | 1999-01-01
+ date_sub(101, INTERVAL 100 second)                                                               | 1999-12-31 23:58:20
  date_sub(cast('9999-12-31 12:12:12' as datetime),INTERVAL -1 second)                             | 9999-12-31 12:12:13
  date_sub(date'0001-01-01',INTERVAL -1 year)                                                      | 0002-01-01
  date_sub(null, INTERVAL 1 day)                                                                   | 
- date_sub(time'12:12:12', INTERVAL -1 day)                                                        | 36:12:12
- date_sub(time'12:12:12', INTERVAL 1 day)                                                         | -11:47:48
- date_sub(time'12:12:12', INTERVAL -1 hour)                                                       | 13:12:12
- date_sub(time'12:12:12', INTERVAL 1 hour)                                                        | 11:12:12
- date_sub(time'12:12:12', INTERVAL -1 minute)                                                     | 12:13:12
- date_sub(time'12:12:12', INTERVAL 1 minute)                                                      | 12:11:12
- date_sub(time'12:12:12', INTERVAL -1 second)                                                     | 12:12:13
- date_sub(time'12:12:12', INTERVAL 1 second)                                                      | 12:12:11
  date_sub(time'-838:59:59', INTERVAL 1 second)                                                    | 
+ date_sub(time'12:12:12', INTERVAL -1 day)                                                        | 36:12:12
+ date_sub(time'12:12:12', INTERVAL -1 hour)                                                       | 13:12:12
+ date_sub(time'12:12:12', INTERVAL -1 minute)                                                     | 12:13:12
+ date_sub(time'12:12:12', INTERVAL -1 second)                                                     | 12:12:13
+ date_sub(time'12:12:12', INTERVAL 1 day)                                                         | -11:47:48
+ date_sub(time'12:12:12', INTERVAL 1 hour)                                                        | 11:12:12
+ date_sub(time'12:12:12', INTERVAL 1 minute)                                                      | 12:11:12
+ date_sub(time'12:12:12', INTERVAL 1 second)                                                      | 12:12:11
  date_sub(time'838:59:59', INTERVAL -1 second)                                                    | 
  date_sub(time'838:59:59', INTERVAL 1 second)                                                     | 838:59:58
- from_days(0)                                                                                     | 0000-00-00
- from_days(-1)                                                                                    | 0000-00-00
+ datediff('0000-01-01', '9999-12-31')                                                             | -3652424
+ datediff('10000-01-01', '2021-11-12')                                                            | 
+ datediff('2021-01-01', '2021-12-31')                                                             | -364
+ datediff('2021-11-12', '2021-11-13')                                                             | -1
+ datediff('2021-11-12', 101)                                                                      | 7986
+ datediff('2021-11-12', 101)                                                                      | 7986
+ datediff('2021-11-12', null)                                                                     | 
+ datediff('2021-12-31 12:12:12', '2022-01-01 10:10:10')                                           | -1
+ datediff('2021-12-31', '2022-01-01')                                                             | -1
+ datediff('2022-11-30', time'10:10:10')                                                           | -26
+ datediff('9999-12-31', '0000-01-01')                                                             | 3652424
+ datediff(100000101, 20211112)                                                                    | 
+ datediff(101, '2021-11-12')                                                                      | -7986
+ datediff(20211112, 20211113)                                                                     | -1
+ datediff(99991231235959.9999995, 20211112)                                                       | 
+ datediff(9999999999999999999999, 20211112)                                                       | 
+ datediff(cast('2021-12-31 12:12:12' as datetime), cast('2022-01-01 10:10:10' as datetime))       | -1
+ datediff(date'2021-11-12', date'2021-11-13')                                                     | 0
+ datediff(null, '2021-11-12')                                                                     | 
+ datediff(null, null)                                                                             | 
+ datediff(time'10:10:10', '2022-11-30')                                                           | 26
+ datediff(time'10:10:10', time'10:10:10')                                                         | 0
  from_days('1111111111111111111')                                                                 | 0000-00-00
- from_days(1111111111111111111)                                                                   | 0000-00-00
  from_days('2000000')                                                                             | 5475-10-25
+ from_days('3652499')                                                                             | 10000-03-15
+ from_days('366')                                                                                 | 0001-01-01
+ from_days(-1)                                                                                    | 0000-00-00
+ from_days(0)                                                                                     | 0000-00-00
+ from_days(1111111111111111111)                                                                   | 0000-00-00
  from_days(2000000)                                                                               | 5475-10-25
  from_days(365)                                                                                   | 0000-00-00
- from_days('3652499')                                                                             | 10000-03-15
  from_days(3652499)                                                                               | 10000-03-15
- from_days('366')                                                                                 | 0001-01-01
  from_days(366)                                                                                   | 0001-01-01
  from_days(null)                                                                                  | 
  timestampdiff(day, '0000-1-1', '9999-12-31')                                                     | 3652423
@@ -935,21 +938,21 @@ select * from test order by funcname;
  timestampdiff(microsecond, '0000-1-1 00:00:00', '0000-1-2')                                      | 86400000000
  timestampdiff(microsecond, '0000-1-1', '9999-12-31')                                             | 315569433257000000
  timestampdiff(microsecond, '10000-1-1', '2021-11-12')                                            | 
+ timestampdiff(microsecond, '2021-11-12', '10000-1-1')                                            | 
+ timestampdiff(microsecond, '20211112121212.999999', '20220912111111.999999')                     | 26261939000000
+ timestampdiff(microsecond, '20211112121212.999999', 101)                                         | -690034332999999
+ timestampdiff(microsecond, '2022-9-12 12:12:12', time'838:59:59')                                | 12048467000000
+ timestampdiff(microsecond, '2022-9-12', time'12:12:12')                                          | 9115932000000
+ timestampdiff(microsecond, 'abc', '2021-11-12')                                                  | 
  timestampdiff(microsecond, 101, '20211112121212.999999')                                         | 690034332999999
  timestampdiff(microsecond, 101, 99991231235959.999999)                                           | 252455615999999999
- timestampdiff(microsecond, '2021-11-12', '10000-1-1')                                            | 
- timestampdiff(microsecond, '20211112121212.999999', 101)                                         | -690034332999999
- timestampdiff(microsecond, '20211112121212.999999', '20220912111111.999999')                     | 26261939000000
---?.*
---?.*
  timestampdiff(microsecond, 99991231235959.999999, 101)                                           | -252455615999999999
- timestampdiff(microsecond, 'abc', '2021-11-12')                                                  | 
---?.*
---?.*
---?.*
---?.*
---?.*
+ timestampdiff(microsecond, cast('2022-9-12 12:12:12.999999' as datetime), time'12:12:12.999999') | 9071999999999
+ timestampdiff(microsecond, date'2022-9-12', time'12:12:12.999999')                               | 9115932999999
  timestampdiff(microsecond, time'-838:59:59', time'838:59:59')                                    | 6040798000000
+ timestampdiff(microsecond, time'12:12:12', '2022-9-12')                                          | -9115932000000
+ timestampdiff(microsecond, time'12:12:12.999999', cast('2022-9-12 12:12:12.999999' as datetime)) | -9071999999999
+ timestampdiff(microsecond, time'12:12:12.999999', date'2022-9-12')                               | -9115932999999
  timestampdiff(minute, '0000-1-1 00:00:00', '0000-1-2')                                           | 1440
  timestampdiff(minute, '0000-1-1', '9999-12-31')                                                  | 5259490554
  timestampdiff(minute, time'-838:59:59', time'838:59:59')                                         | 100679
@@ -974,5 +977,5 @@ select * from test order by funcname;
 (309 rows)
 
 drop table test;
-drop schema b_datetime_func_test3 cascade;
-reset current_schema;
+\c contrib_regression
+DROP DATABASE b_datetime_func_test3;
