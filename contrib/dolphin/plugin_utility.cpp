@@ -9365,6 +9365,15 @@ const char* CreateAlterTableCommandTag(const AlterTableType subtype)
         case AT_SetTableCollate:
             tag = "SET TABLE COLLATE";
             break;
+        case AT_CheckPartition:
+            tag = "CHECK PARTITION";
+            break;
+        case AT_RepairPartition:
+            tag = "REPAIR PARTITION";
+            break;
+        case AT_OptimizePartition:
+            tag = "OPTIMIZE PARTITION";
+            break;
 #endif
         default:
             tag = "?\?\?";

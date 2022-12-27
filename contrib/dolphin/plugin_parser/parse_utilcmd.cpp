@@ -5050,6 +5050,15 @@ List* transformAlterTableStmt(Oid relid, AlterTableStmt* stmt, const char* query
             case AT_SetTableCollate:
                 ereport(WARNING, (errmsg("COLLATE for TABLE is not supported for current version. skipped")));
                 break;
+            case AT_CheckPartition:
+                ereport(WARNING, (errmsg("PARTITION CHECK is not supported for current version. skipped")));
+                break;
+            case AT_RepairPartition:
+                ereport(WARNING, (errmsg("PARTITION REPAIR is not supported for current version. skipped")));
+                break;
+            case AT_OptimizePartition:
+                ereport(WARNING, (errmsg("PARTITION OPTIMIZE is not supported for current version. skipped")));
+                break;
             #endif
             case AT_SplitPartition:
                 if (!RELATION_IS_PARTITIONED(rel)) {

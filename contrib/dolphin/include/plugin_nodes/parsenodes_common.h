@@ -871,7 +871,10 @@ typedef enum AlterTableType {
     AT_ReorganizePartition,
     AT_SetTableRowFormat,
     AT_SetTableCharset,
-    AT_SetTableCollate
+    AT_SetTableCollate,
+    AT_CheckPartition,
+    AT_RepairPartition,
+    AT_OptimizePartition
 #endif
 } AlterTableType;
 

@@ -268,11 +268,17 @@ select * from test_part where ((980 < b and b < 1000) or (2180 < b and b < 2200)
 
 --test repair check optimize partition syntax
 ALTER TABLE test_part repair PARTITION p0,p1;
+WARNING:  PARTITION REPAIR is not supported for current version. skipped
 ALTER TABLE test_part check PARTITION p0,p1;
+WARNING:  PARTITION CHECK is not supported for current version. skipped
 ALTER TABLE test_part optimize PARTITION p0,p1;
+WARNING:  PARTITION OPTIMIZE is not supported for current version. skipped
 ALTER TABLE test_part repair PARTITION all;
+WARNING:  PARTITION REPAIR is not supported for current version. skipped
 ALTER TABLE test_part check PARTITION all;
+WARNING:  PARTITION CHECK is not supported for current version. skipped
 ALTER TABLE test_part optimize PARTITION all;
+WARNING:  PARTITION OPTIMIZE is not supported for current version. skipped
 --test remove partitioning syntax
 select relname, boundaries from pg_partition where parentid in (select parentid from pg_partition where relname = 'test_part') order by relname;
   relname  | boundaries 
@@ -629,11 +635,17 @@ select * from test_subpart where ((980 < b and b < 1000) or (2180 < b and b < 22
 
 --test repair check optimize partition syntax
 ALTER TABLE test_subpart repair PARTITION P_2021,P_2022;
+WARNING:  PARTITION REPAIR is not supported for current version. skipped
 ALTER TABLE test_subpart check PARTITION P_2021,P_2022;
+WARNING:  PARTITION CHECK is not supported for current version. skipped
 ALTER TABLE test_subpart optimize PARTITION P_2021,P_2022;
+WARNING:  PARTITION OPTIMIZE is not supported for current version. skipped
 ALTER TABLE test_subpart repair PARTITION all;
+WARNING:  PARTITION REPAIR is not supported for current version. skipped
 ALTER TABLE test_subpart check PARTITION all;
+WARNING:  PARTITION CHECK is not supported for current version. skipped
 ALTER TABLE test_subpart optimize PARTITION all;
+WARNING:  PARTITION OPTIMIZE is not supported for current version. skipped
 --test remove partitioning syntax
 select relname, boundaries from pg_partition where parentid in (select parentid from pg_partition where relname = 'test_subpart') order by relname;
    relname    | boundaries 
