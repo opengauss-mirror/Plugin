@@ -146,7 +146,27 @@ void dolphin_invoke(void)
 
 void set_default_guc()
 {
-    set_config_option("behavior_compat_options", "display_leading_zero", PGC_USERSET, PGC_S_SESSION, GUC_ACTION_SET, true, 0, false);
+    /* add display_leading_zero to behavior_compat_options */
+    if ((u_sess->utils_cxt.behavior_compat_flags & OPT_DISPLAY_LEADING_ZERO) == 0) {
+        char* displayLeadingZero = "display_leading_zero";
+        int originLen = strlen(u_sess->attr.attr_sql.behavior_compat_string);
+        int optionLen = originLen + strlen(displayLeadingZero) + 2;
+
+        if (originLen == 0) {
+            set_config_option("behavior_compat_options", displayLeadingZero, PGC_USERSET,
+                              PGC_S_SESSION, GUC_ACTION_SET, true, 0, false);
+        } else {
+            char* options = (char*)palloc0(optionLen);
+            errno_t rc = snprintf_s(options, optionLen, optionLen - 1, "%s,%s",
+                u_sess->attr.attr_sql.behavior_compat_string, displayLeadingZero);
+            securec_check_ss(rc, "\0", "\0");
+
+            set_config_option("behavior_compat_options", options, PGC_USERSET,
+                              PGC_S_SESSION, GUC_ACTION_SET, true, 0, false);
+            pfree(options);
+        }
+    }
+
     set_config_option("enable_custom_parser", "true", PGC_USERSET, PGC_S_SESSION, GUC_ACTION_SET, true, 0, false);
 }
 

@@ -1,0 +1,14 @@
+\! @abs_bindir@/gs_guc reload -D @abs_srcdir@/tmp_check/datanode1/ -c "behavior_compat_options='convert_string_digit_to_numeric,plstmt_implicit_savepoint'" > /dev/null 2>&1
+select pg_sleep(1);
+
+\c postgres
+show behavior_compat_options;
+
+\c contrib_regression
+show behavior_compat_options;
+
+\! @abs_bindir@/gs_guc reload -D @abs_srcdir@/tmp_check/datanode1/ -c "behavior_compat_options=''" > /dev/null 2>&1
+select pg_sleep(1);
+
+\c contrib_regression
+show behavior_compat_options;

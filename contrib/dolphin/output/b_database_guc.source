@@ -1,0 +1,35 @@
+\! @abs_bindir@/gs_guc reload -D @abs_srcdir@/tmp_check/datanode1/ -c "behavior_compat_options='convert_string_digit_to_numeric,plstmt_implicit_savepoint'" > /dev/null 2>&1
+select pg_sleep(1);
+ pg_sleep 
+----------
+ 
+(1 row)
+
+\c postgres
+show behavior_compat_options;
+                  behavior_compat_options                  
+-----------------------------------------------------------
+ convert_string_digit_to_numeric,plstmt_implicit_savepoint
+(1 row)
+
+\c contrib_regression
+show behavior_compat_options;
+                            behavior_compat_options                             
+--------------------------------------------------------------------------------
+ convert_string_digit_to_numeric,plstmt_implicit_savepoint,display_leading_zero
+(1 row)
+
+\! @abs_bindir@/gs_guc reload -D @abs_srcdir@/tmp_check/datanode1/ -c "behavior_compat_options=''" > /dev/null 2>&1
+select pg_sleep(1);
+ pg_sleep 
+----------
+ 
+(1 row)
+
+\c contrib_regression
+show behavior_compat_options;
+ behavior_compat_options 
+-------------------------
+ display_leading_zero
+(1 row)
+
