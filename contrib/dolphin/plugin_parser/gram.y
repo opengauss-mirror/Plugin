@@ -612,7 +612,7 @@ static SelectStmt *MakeShowGrantStmt(char *arg, int location, core_yyscan_t yysc
 
 %type <list>	alter_partition_cmds_for_bdatabase alter_subpartition_cmds_for_bdatabase drop_partition_cmds_for_bdatabase drop_subpartition_cmds_for_bdatabase drop_partition_cmds drop_subpartition_cmds add_partition_cmds_for_bdatabase
 
-%type <list>	partition_name_list
+%type <list>	partition_name_list partition_name_list_all
 
 %type <node>	exchange_partition_cmd_for_bdatabase truncate_partition_cmd truncate_partition_cmd_for_bdatabase
 
@@ -5837,19 +5837,53 @@ AlterPartitionRemoveStmt:
 				}
 		;
 
+partition_name_list_all:
+			partition_name_list
+			{
+				$$ = $1;
+			}
+			| ALL
+			{
+				$$ = NULL;
+			}
+
 AlterPartitionCheckStmt:
-			ALTER TABLE dolphin_qualified_name CHECK PARTITION partition_name_list { $$=NULL; }
-			| ALTER TABLE dolphin_qualified_name CHECK PARTITION ALL { $$=NULL; }
+			ALTER TABLE dolphin_qualified_name CHECK PARTITION partition_name_list_all
+			{
+				AlterTableStmt *n = makeNode(AlterTableStmt);
+				AlterTableCmd *cmd = makeNode(AlterTableCmd);
+				cmd->subtype = AT_CheckPartition;
+				n->relation = $3;
+				n->relkind = OBJECT_PARTITION;
+				n->cmds = list_make1(cmd);
+				$$ = (Node *) n;
+			}
 		;
 
 AlterPartitionRepairStmt:
-			ALTER TABLE dolphin_qualified_name REPAIR PARTITION partition_name_list { $$=NULL; }
-			| ALTER TABLE dolphin_qualified_name REPAIR PARTITION ALL { $$=NULL; }
+			ALTER TABLE dolphin_qualified_name REPAIR PARTITION partition_name_list_all
+			{
+				AlterTableStmt *n = makeNode(AlterTableStmt);
+				AlterTableCmd *cmd = makeNode(AlterTableCmd);
+				cmd->subtype = AT_RepairPartition;
+				n->relation = $3;
+				n->relkind = OBJECT_PARTITION;
+				n->cmds = list_make1(cmd);
+				$$ = (Node *) n;
+			}
 		;
 
 AlterPartitionOptimizeStmt:
-			ALTER TABLE dolphin_qualified_name OPTIMIZE PARTITION partition_name_list { $$=NULL; }
-			| ALTER TABLE dolphin_qualified_name OPTIMIZE PARTITION ALL { $$=NULL; }
+			ALTER TABLE dolphin_qualified_name OPTIMIZE PARTITION partition_name_list_all
+			{
+				AlterTableStmt *n = makeNode(AlterTableStmt);
+				AlterTableCmd *cmd = makeNode(AlterTableCmd);
+				cmd->subtype = AT_OptimizePartition;
+				n->relation = $3;
+				n->relkind = OBJECT_PARTITION;
+				n->cmds = list_make1(cmd);
+				$$ = (Node *) n;
+			}
 		;
 
 AnalyzePartitionStmt:

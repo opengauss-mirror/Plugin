@@ -788,7 +788,7 @@ select * from test order by funcname;
  convert_tz('2038-01-19 03:14:07.999999', 'KST', 'GMT')                                           | 2038-01-18 18:14:07.999999
  convert_tz(101, 'GMT', '+7:00')                                                                  | 2000-01-01 07:00:00
  convert_tz(null, '+1:00', '+0:00')                                                               | 
- convert_tz(time'10:10:10', 'GMT', '+7:00')                                                       | 2022-12-26 17:10:10
+--?.*
  date_add('0001-01-01 12:12:12',INTERVAL 1 hour)                                                  | 0001-01-01 13:12:12
  date_add('0001-01-01 12:12:12',INTERVAL 1 minute)                                                | 0001-01-01 12:13:12
  date_add('0001-01-01 12:12:12',INTERVAL 1 second)                                                | 0001-01-01 12:12:13
@@ -904,7 +904,7 @@ select * from test order by funcname;
  datediff('2021-11-12', null)                                                                     | 
  datediff('2021-12-31 12:12:12', '2022-01-01 10:10:10')                                           | -1
  datediff('2021-12-31', '2022-01-01')                                                             | -1
- datediff('2022-11-30', time'10:10:10')                                                           | -26
+--?.*
  datediff('9999-12-31', '0000-01-01')                                                             | 3652424
  datediff(100000101, 20211112)                                                                    | 
  datediff(101, '2021-11-12')                                                                      | -7986
@@ -915,7 +915,7 @@ select * from test order by funcname;
  datediff(date'2021-11-12', date'2021-11-13')                                                     | 0
  datediff(null, '2021-11-12')                                                                     | 
  datediff(null, null)                                                                             | 
- datediff(time'10:10:10', '2022-11-30')                                                           | 26
+--?.*
  datediff(time'10:10:10', time'10:10:10')                                                         | 0
  from_days('1111111111111111111')                                                                 | 0000-00-00
  from_days('2000000')                                                                             | 5475-10-25
@@ -941,18 +941,18 @@ select * from test order by funcname;
  timestampdiff(microsecond, '2021-11-12', '10000-1-1')                                            | 
  timestampdiff(microsecond, '20211112121212.999999', '20220912111111.999999')                     | 26261939000000
  timestampdiff(microsecond, '20211112121212.999999', 101)                                         | -690034332999999
- timestampdiff(microsecond, '2022-9-12 12:12:12', time'838:59:59')                                | 12048467000000
- timestampdiff(microsecond, '2022-9-12', time'12:12:12')                                          | 9115932000000
+--?.*
+--?.*
  timestampdiff(microsecond, 'abc', '2021-11-12')                                                  | 
  timestampdiff(microsecond, 101, '20211112121212.999999')                                         | 690034332999999
  timestampdiff(microsecond, 101, 99991231235959.999999)                                           | 252455615999999999
  timestampdiff(microsecond, 99991231235959.999999, 101)                                           | -252455615999999999
- timestampdiff(microsecond, cast('2022-9-12 12:12:12.999999' as datetime), time'12:12:12.999999') | 9071999999999
- timestampdiff(microsecond, date'2022-9-12', time'12:12:12.999999')                               | 9115932999999
+--?.*
+--?.*
  timestampdiff(microsecond, time'-838:59:59', time'838:59:59')                                    | 6040798000000
- timestampdiff(microsecond, time'12:12:12', '2022-9-12')                                          | -9115932000000
- timestampdiff(microsecond, time'12:12:12.999999', cast('2022-9-12 12:12:12.999999' as datetime)) | -9071999999999
- timestampdiff(microsecond, time'12:12:12.999999', date'2022-9-12')                               | -9115932999999
+--?.*
+--?.*
+--?.*
  timestampdiff(minute, '0000-1-1 00:00:00', '0000-1-2')                                           | 1440
  timestampdiff(minute, '0000-1-1', '9999-12-31')                                                  | 5259490554
  timestampdiff(minute, time'-838:59:59', time'838:59:59')                                         | 100679
