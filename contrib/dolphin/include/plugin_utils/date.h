@@ -70,6 +70,7 @@ extern bool date_sub_interval(DateADT date, Interval *span, DateADT *result);
 extern void convert_to_time(Datum value, Oid valuetypid, TimeADT *time);
 
 #ifdef DOLPHIN
+extern int tm2time(struct pg_tm* tm, fsec_t fsec, TimeADT* result);
 extern bool cstring_to_time(const char *str, pg_tm *tm, fsec_t &fsec, int &timeSign, int &tm_type, bool &warnings, bool *null_func_result);
 extern void check_b_format_time_range_with_ereport(TimeADT &time);
 extern void check_b_format_date_range_with_ereport(DateADT &date);
