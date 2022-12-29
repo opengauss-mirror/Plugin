@@ -46,3 +46,32 @@ drop table ed_t;
 
 drop schema db_explain_desc cascade;
 reset current_schema;
+
+-- 5.use special word as table name
+create table explain(c1 int, explain varchar(10));
+create table describe(explain int, c2 varchar(10));
+insert into explain values(1, 'explain');
+insert into describe values(1, 'explain');
+select * from explain;
+select * from describe;
+
+explain explain;
+explain describe;
+desc explain;
+desc describe;
+describe explain;
+describe describe;
+
+explain (costs off) select * from explain;
+explain (costs off) select * from describe;
+desc (costs off) select * from explain;
+desc (costs off) select * from describe;
+describe (costs off) select * from explain;
+describe (costs off) select * from describe;
+
+-- 6.test desc&explain with shell
+\! gsql -d contrib_regression -r -p @portstring@ -c "describe explain"
+\! gsql -d contrib_regression -r -p @portstring@ -c "explain describe"
+\! gsql -d contrib_regression -r -p @portstring@ -c "desc explain"
+
+drop table explain, describe;
