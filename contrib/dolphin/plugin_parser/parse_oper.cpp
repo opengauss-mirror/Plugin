@@ -406,7 +406,7 @@ Operator oper(ParseState* pstate, List* opname, Oid ltypeId, Oid rtypeId, bool n
         }
     }
     /**
-     * the result of 'bool like unknown' is wrong, which we should change into 'bool like text' 
+     * the result of 'bool like unknown' is wrong, which we should change into 'bool like text'
      */
     if (GetSessionContext()->enableBCmptMode) {
         if (ltypeId == UNKNOWNOID && rtypeId == BOOLOID) {
@@ -417,6 +417,26 @@ Operator oper(ParseState* pstate, List* opname, Oid ltypeId, Oid rtypeId, bool n
             rtypeId = RAWOID;
         } else if (ltypeId == UNKNOWNOID && rtypeId == BLOBOID) {
             rtypeId = RAWOID;
+        }
+    }
+    /**
+    * In order to make 'date ^ unknown' operate as date_text_xor(), we change unknown into text
+    */
+    if (GetSessionContext()->enableBCmptMode) {
+        if (ltypeId == UNKNOWNOID && rtypeId == DATEOID) {
+            ltypeId = TEXTOID;
+        } else if (ltypeId == DATEOID && rtypeId == UNKNOWNOID) {
+            rtypeId = TEXTOID;
+        }
+    }
+    /**
+    * In order to make 'time ^ unknown' operate as time_text_xor(), we change unknown into text
+    */
+    if (GetSessionContext()->enableBCmptMode) {
+        if (ltypeId == UNKNOWNOID && rtypeId == TIMEOID) {
+            ltypeId = TEXTOID;
+        } else if (ltypeId == TIMEOID && rtypeId == UNKNOWNOID) {
+            rtypeId = TEXTOID;
         }
     }
 #endif

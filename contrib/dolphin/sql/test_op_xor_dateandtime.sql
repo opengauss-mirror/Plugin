@@ -1,0 +1,200 @@
+create schema test_date_time;
+set current_schema to 'test_date_time';
+set dolphin.b_compatibility_mode = true;
+
+select '11:11:11'::time ^ '11:11:11'::time;
+select '11:11:11'::time ^ '12:59:59'::time;
+select '11:11:11'::time ^ '10:01:01'::time;
+select '11:11:11'::time ^ '11:01:01'::time;
+select '11:11:11'::time ^ '11:11:01'::time;
+select '11:11:11'::time ^ '11:11:10'::time;
+
+select '2022-10-01'::date ^ '11:11:11'::time;
+select '2022-10-01'::date ^ '10:11:11'::time;
+select '2022-10-01'::date ^ '1:11:11'::time;
+select '2022-10-01'::date ^ '11:10:11'::time;
+select '2022-10-01'::date ^ '11:01:11'::time;
+select '2022-10-01'::date ^ '11:11:10'::time;
+select '2022-10-01'::date ^ '11:11:01'::time;
+
+select '10:11:11'::time ^ '2022-10-01'::date;
+select '1:11:11'::time ^ '2022-10-01'::date;
+select '11:10:11'::time ^ '2022-10-01'::date;
+select '11:01:11'::time ^ '2022-10-01'::date;
+select '11:11:10'::time ^ '2022-10-01'::date;
+select '11:11:01'::time ^ '2022-10-01'::date;
+
+select '2022-10-01'::date ^ '2022-10-01'::date;
+select '2022-12-01'::date ^ '2022-10-01'::date;
+select '2022-10-02'::date ^ '2022-10-01'::date;
+select '2020-10-01'::date ^ '2022-10-01'::date;
+select '2022-10-01'::date ^ '2022-12-01'::date;
+select '2022-10-01'::date ^ '2022-10-02'::date;
+select '2022-10-01'::date ^ '2020-10-01'::date;
+
+select '2022-10-01'::date ^ '2022-10-01'::text;
+select '2022-10-01'::date ^ '2022-10-01';
+select '2022-10-01'::text ^ '2022-10-01'::date;
+select '2022-10-01' ^ '2022-10-01'::date;
+select '11:11:11'::time ^ '11:11:11';
+select '11:11:11'::time ^ '10:59:59';
+select '11:11:11' ^ '11:11:11'::time;
+select '10:59:59' ^ '11:11:11'::time;
+
+select '2022-10-01'::date ^ 1;
+select '2022-10-01'::date ^ 1::int1;
+select '2022-10-01'::date ^ 1::uint1;
+select '2022-10-01'::date ^ 1::int2;
+select '2022-10-01'::date ^ 1::int4;
+select '2022-10-01'::date ^ 1::int8;
+select '2022-10-01'::date ^ 1::uint2;
+select '2022-10-01'::date ^ 1::uint4;
+select '2022-10-01'::date ^ 1::uint8;
+select '2022-10-01'::date ^ 2022.0;
+select '2022-10-01'::date ^ 2022.0::float;
+select '2022-10-01'::date ^ 2022.0::float8;
+select '2022-10-01'::date ^ 2022.0::numeric;
+
+select 1 ^ '2022-10-01'::date;
+select 1::int1 ^ '2022-10-01'::date;
+select 1::uint1 ^ '2022-10-01'::date;
+select 1::int2 ^ '2022-10-01'::date;
+select 1::int4 ^ '2022-10-01'::date;
+select 1::int8 ^ '2022-10-01'::date;
+select 1::uint2 ^ '2022-10-01'::date;
+select 1::uint4 ^ '2022-10-01'::date;
+select 1::uint8 ^ '2022-10-01'::date;
+select 2022.0 ^ '2022-10-01'::date;
+select 2022.0::float ^ '2022-10-01'::date;
+select 2022.0::float8 ^ '2022-10-01'::date;
+select 2022.0::numeric ^ '2022-10-01'::date;
+
+select '11:11:11'::time ^ 1;
+select '11:11:11'::time ^ 1::int1;
+select '11:11:11'::time ^ 1::uint1;
+select '11:11:11'::time ^ 1::int2;
+select '11:11:11'::time ^ 1::int4;
+select '11:11:11'::time ^ 1::int8;
+select '11:11:11'::time ^ 1::uint2;
+select '11:11:11'::time ^ 1::uint4;
+select '11:11:11'::time ^ 1::uint8;
+select '11:11:11'::time ^ 2022.0;
+select '11:11:11'::time ^ 2022.0::float;
+select '11:11:11'::time ^ 2022.0::float8;
+select '11:11:11'::time ^ 2022.0::numeric;
+
+select 1 ^ '11:11:11'::time;
+select 1::int1 ^ '11:11:11'::time;
+select 1::uint1 ^ '11:11:11'::time;
+select 1::int2 ^ '11:11:11'::time;
+select 1::int4 ^ '11:11:11'::time;
+select 1::int8 ^ '11:11:11'::time;
+select 1::uint2 ^ '11:11:11'::time;
+select 1::uint4 ^ '11:11:11'::time;
+select 1::uint8 ^ '11:11:11'::time;
+select 2022.0 ^ '11:11:11'::time;
+select 2022.0::float ^ '11:11:11'::time;
+select 2022.0::float8 ^ '11:11:11'::time;
+select 2022.0::numeric ^ '11:11:11'::time;
+
+select '2022-10-01 11:11:10'::datetime ^ '2022-10-01 11:11:11'::datetime;
+select '2022-12-01 11:11:10'::datetime ^ '2022-10-01 11:11:11'::datetime;
+select '2022-10-02 11:11:10'::datetime ^ '2022-10-01 11:11:11'::datetime;
+select '2020-10-01 11:11:11'::datetime ^ '2022-10-01 11:11:11'::datetime;
+select '2022-10-01 11:11:11'::datetime ^ '2022-12-01 11:11:11'::datetime;
+select '2022-10-01 11:11:11'::datetime ^ '2022-10-02 11:11:11'::datetime;
+select '2022-10-01 11:11:11'::datetime ^ '2020-10-01 11:11:11'::datetime;
+
+select '2022-10-01 11:11:10'::timestamp ^ '2022-10-01 11:11:11'::timestamp;
+select '2022-12-01 11:11:10'::timestamp ^ '2022-10-01 11:11:11'::timestamp;
+select '2022-10-02 11:11:10'::timestamp ^ '2022-10-01 11:11:11'::timestamp;
+select '2020-10-01 11:11:11'::timestamp ^ '2022-10-01 11:11:11'::timestamp;
+select '2022-10-01 11:11:11'::timestamp ^ '2022-12-01 11:11:11'::timestamp;
+select '2022-10-01 11:11:11'::timestamp ^ '2022-10-02 11:11:11'::timestamp;
+select '2022-10-01 11:11:11'::timestamp ^ '2020-10-01 11:11:11'::timestamp;
+
+select '2022-10-01 11:11:10'::timestamp ^ '2022-10-01 11:11:11'::datetime;
+select '2022-12-01 11:11:10'::timestamp ^ '2022-10-01 11:11:11'::datetime;
+select '2022-10-02 11:11:10'::timestamp ^ '2022-10-01 11:11:11'::datetime;
+select '2020-10-01 11:11:11'::timestamp ^ '2022-10-01 11:11:11'::datetime;
+select '2022-10-01 11:11:11'::timestamp ^ '2022-12-01 11:11:11'::datetime;
+select '2022-10-01 11:11:11'::timestamp ^ '2022-10-02 11:11:11'::datetime;
+select '2022-10-01 11:11:11'::timestamp ^ '2020-10-01 11:11:11'::datetime;
+
+select '2022-10-01 11:11:11'::datetime ^ 1;
+select '2022-10-01 11:11:11'::datetime ^ 1::int1;
+select '2022-10-01 11:11:11'::datetime ^ 1::uint1;
+select '2022-10-01 11:11:11'::datetime ^ 1::int2;
+select '2022-10-01 11:11:11'::datetime ^ 1::int4;
+select '2022-10-01 11:11:11'::datetime ^ 1::int8;
+select '2022-10-01 11:11:11'::datetime ^ 1::uint2;
+select '2022-10-01 11:11:11'::datetime ^ 1::uint4;
+select '2022-10-01 11:11:11'::datetime ^ 1::uint8;
+select '2022-10-01 11:11:11'::datetime ^ 2022.0;
+select '2022-10-01 11:11:11'::datetime ^ 2022.0::float;
+select '2022-10-01 11:11:11'::datetime ^ 2022.0::float8;
+select '2022-10-01 11:11:11'::datetime ^ 2022.0::numeric;
+
+select 1 ^ '2022-10-01'::datetime;
+select 1::int1 ^ '2022-10-01'::datetime;
+select 1::uint1 ^ '2022-10-01 11:11:11'::datetime;
+select 1::int2 ^ '2022-10-01 11:11:11'::datetime;
+select 1::int4 ^ '2022-10-01 11:11:11'::datetime;
+select 1::int8 ^ '2022-10-01 11:11:11'::datetime;
+select 1::uint2 ^ '2022-10-01 11:11:11'::datetime;
+select 1::uint4 ^ '2022-10-01 11:11:11'::datetime;
+select 1::uint8 ^ '2022-10-01 11:11:11'::datetime;
+select 2022.0 ^ '2022-10-01 11:11:11'::datetime;
+select 2022.0::float ^ '2022-10-01 11:11:11'::datetime;
+select 2022.0::float8 ^ '2022-10-01 11:11:11'::datetime;
+select 2022.0::numeric ^ '2022-10-01 11:11:11'::datetime;
+
+select '2022-10-01 11:11:11'::timestamp ^ 1;
+select '2022-10-01 11:11:11'::timestamp ^ 1::int1;
+select '2022-10-01 11:11:11'::timestamp ^ 1::uint1;
+select '2022-10-01 11:11:11'::timestamp ^ 1::int2;
+select '2022-10-01 11:11:11'::timestamp ^ 1::int4;
+select '2022-10-01 11:11:11'::timestamp ^ 1::int8;
+select '2022-10-01 11:11:11'::timestamp ^ 1::uint2;
+select '2022-10-01 11:11:11'::timestamp ^ 1::uint4;
+select '2022-10-01 11:11:11'::timestamp ^ 1::uint8;
+select '2022-10-01 11:11:11'::timestamp ^ 2022.0;
+select '2022-10-01 11:11:11'::timestamp ^ 2022.0::float;
+select '2022-10-01 11:11:11'::timestamp ^ 2022.0::float8;
+select '2022-10-01 11:11:11'::timestamp ^ 2022.0::numeric;
+
+select 1 ^ '2022-10-01'::timestamp;
+select 1::int1 ^ '2022-10-01'::timestamp;
+select 1::uint1 ^ '2022-10-01 11:11:11'::timestamp;
+select 1::int2 ^ '2022-10-01 11:11:11'::timestamp;
+select 1::int4 ^ '2022-10-01 11:11:11'::timestamp;
+select 1::int8 ^ '2022-10-01 11:11:11'::timestamp;
+select 1::uint2 ^ '2022-10-01 11:11:11'::timestamp;
+select 1::uint4 ^ '2022-10-01 11:11:11'::timestamp;
+select 1::uint8 ^ '2022-10-01 11:11:11'::timestamp;
+select 2022.0 ^ '2022-10-01 11:11:11'::timestamp;
+select 2022.0::float ^ '2022-10-01 11:11:11'::timestamp;
+select 2022.0::float8 ^ '2022-10-01 11:11:11'::timestamp;
+select 2022.0::numeric ^ '2022-10-01 11:11:11'::timestamp;
+
+select '2022-10-01 11:11:11'::datetime ^ '2022-10-01'::date;
+select '2022-10-01 11:11:11'::timestamp ^ '2022-10-01'::date;
+select '2022-10-01 11:11:11'::datetime ^ '11:11:11'::time;
+select '2022-10-01 11:11:11'::timestamp ^ '11:11:11'::time;
+select '2022-10-01'::datetime ^ '2022-10-02 11:11:11';
+select '2022-10-01'::timestamp ^ '2022-10-02 11:11:11';
+select '2022-10-01'::datetime ^ '2022-10-02 11:11:11'::text;
+select '2022-10-01'::timestamp ^ '2022-10-02 11:11:11'::text;
+
+select '2022-10-01'::date ^ '2022-10-01 11:11:11'::datetime;
+select '2022-10-01'::date ^ '2022-10-01 11:11:11'::timestamp;
+select '11:11:11'::time ^ '2022-10-01 11:11:11'::datetime;
+select '11:11:11'::time ^ '2022-10-01 11:11:11'::timestamp;
+select '2022-10-01 11:11:11'^ '2022-10-01 11:11:11'::datetime;
+select '2022-10-01 11:11:11' ^ '2022-10-01 11:11:11'::timestamp;
+select '2022-10-01 11:11:11'::text^ '2022-10-01 11:11:11'::datetime;
+select '2022-10-01 11:11:11'::text ^ '2022-10-01 11:11:11'::timestamp;
+
+set dolphin.b_compatibility_mode = false;
+drop schema test_date_time cascade;
+reset current_schema;

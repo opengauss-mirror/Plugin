@@ -200,7 +200,7 @@ select a&&b from testfortime;
  t
  t
  t
- f
+ t
  f
  f
  f
@@ -1183,7 +1183,7 @@ select a^b from testfordate;
  ?column? 
 ----------
         0
-        0
+        3
 (2 rows)
 
 drop table testfordate;

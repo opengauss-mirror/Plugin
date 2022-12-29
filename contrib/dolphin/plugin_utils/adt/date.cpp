@@ -4515,18 +4515,16 @@ Datum date_bool(PG_FUNCTION_ARGS)
 {
     DateADT dateVal = PG_GETARG_DATEADT(0);
     Timestamp timestamp;
-    float8 result = 0;
     fsec_t fsec;
     struct pg_tm tt, *tm = &tt;
 
     timestamp = date2timestamp(dateVal);
 
     if (timestamp2tm(timestamp, NULL, tm, &fsec, NULL, NULL) == 0) {
-        result = tm->tm_year;
-        if (result > 0)
+        if (tm->tm_year > 0 || tm->tm_mon > 0 || tm->tm_mday > 0)
             PG_RETURN_BOOL(true);
-        else 
-            PG_RETURN_BOOL(false);
+        else
+            PG_RETURN_NULL();
     } else {
         ereport(ERROR, (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE), errmsg("timestamp out of range")));
     }
@@ -4539,13 +4537,11 @@ extern "C" DLL_PUBLIC Datum time_bool(PG_FUNCTION_ARGS);
 Datum time_bool(PG_FUNCTION_ARGS)
 {
     TimeADT timeVal = PG_GETARG_TIMEADT(0);
-    float8 result = 0;
     fsec_t fsec;
     struct pg_tm tt, *tm = &tt;
 
-    if(time2tm(timeVal, tm, &fsec) == 0) {
-        result = tm->tm_hour;
-        if(result > 0)
+    if (time2tm(timeVal, tm, &fsec) == 0) {
+        if (tm->tm_hour > 0 || tm->tm_min > 0 || tm->tm_sec > 0)
             PG_RETURN_BOOL(true);
         else
             PG_RETURN_BOOL(false);
@@ -5088,11 +5084,11 @@ bool time_in_with_sql_mode(char *str, TimeADT *result, unsigned int date_flag)
 
 static DateTimeFormat date_time_formats[] =
 {
-  {"usa", "%m.%d.%Y", "%Y-%m-%d %H.%i.%s", "%h:%i:%s %p" },
-  {"jis", "%Y-%m-%d", "%Y-%m-%d %H:%i:%s", "%H:%i:%s" },
-  {"iso", "%Y-%m-%d", "%Y-%m-%d %H:%i:%s", "%H:%i:%s" },
-  {"eur", "%d.%m.%Y", "%Y-%m-%d %H.%i.%s", "%H.%i.%s" },
-  {"internal", "%Y%m%d", "%Y%m%d%H%i%s", "%H%i%s" }
+    {"usa", "%m.%d.%Y", "%Y-%m-%d %H.%i.%s", "%h:%i:%s %p" },
+    {"jis", "%Y-%m-%d", "%Y-%m-%d %H:%i:%s", "%H:%i:%s" },
+    {"iso", "%Y-%m-%d", "%Y-%m-%d %H:%i:%s", "%H:%i:%s" },
+    {"eur", "%d.%m.%Y", "%Y-%m-%d %H.%i.%s", "%H.%i.%s" },
+    {"internal", "%Y%m%d", "%Y%m%d%H%i%s", "%H%i%s" }
 };
 static int szdate_time_formats = sizeof date_time_formats / sizeof date_time_formats[0];
 
@@ -5468,5 +5464,221 @@ Datum date_int(PG_FUNCTION_ARGS)
 
     int32 res = tm->tm_year*10000 + tm->tm_mon*100 + tm->tm_mon;
     PG_RETURN_INT32(res);
+}
+#endif
+
+#ifdef DOLPHIN
+PG_FUNCTION_INFO_V1_PUBLIC(datexor);
+extern "C" DLL_PUBLIC Datum datexor(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(timexor);
+extern "C" DLL_PUBLIC Datum timexor(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(date_time_xor);
+extern "C" DLL_PUBLIC Datum date_time_xor(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(time_date_xor);
+extern "C" DLL_PUBLIC Datum time_date_xor(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(time_text_xor);
+extern "C" DLL_PUBLIC Datum time_text_xor(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(text_time_xor);
+extern "C" DLL_PUBLIC Datum text_time_xor(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(date_text_xor);
+extern "C" DLL_PUBLIC Datum date_text_xor(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(text_date_xor);
+extern "C" DLL_PUBLIC Datum text_date_xor(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(int8_date_xor);
+extern "C" DLL_PUBLIC Datum int8_date_xor(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(date_int8_xor);
+extern "C" DLL_PUBLIC Datum date_int8_xor(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(int8_time_xor);
+extern "C" DLL_PUBLIC Datum int8_time_xor(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(time_int8_xor);
+extern "C" DLL_PUBLIC Datum time_int8_xor(PG_FUNCTION_ARGS);
+extern "C" DLL_PUBLIC Datum float8_date_xor(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(date_float8_xor);
+extern "C" DLL_PUBLIC Datum date_float8_xor(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(float8_date_xor);
+
+int128 date_int128(DateADT dateVal)
+{
+    int128 res_date = 0;
+    int year = 0;
+    int month = 0;
+    int day = 0;
+    j2date(dateVal + POSTGRES_EPOCH_JDATE, &year, &month, &day);
+    res_date = year*10000 + month*100 + day;
+    return res_date;
+}
+
+uint64 time_uint64(TimeADT time)
+{
+    struct pg_tm tt, *tm = &tt;
+    fsec_t fsec;
+    time2tm(time, tm, &fsec);
+    uint64 res_time = tmfsec2uint(tm);
+    return res_time;
+}
+
+static int128 text_int128(Datum textValue)
+{
+    char* tmp = NULL;
+    tmp = DatumGetCString(DirectFunctionCall1(textout, textValue));
+    errno = 0;
+    char* endptr = NULL;
+    int128 temp = strtoll(tmp, &endptr, 10);
+    if (errno != 0 || (temp == 0 && tmp == endptr))
+        ereport(ERROR,
+            (errcode(DTERR_BAD_FORMAT), errmsg("invalid INTERGER: \"%s\"", tmp)));
+    pfree(tmp);
+    return temp;
+}
+
+Datum datexor(PG_FUNCTION_ARGS)
+{
+    DateADT dateVal = 0;
+    dateVal = PG_GETARG_DATEADT(0);
+    int128 res1 = date_int128(dateVal);
+    dateVal = PG_GETARG_DATEADT(1);
+    int128 res2 = date_int128(dateVal);
+    PG_RETURN_INT128(res1 ^ res2);
+}
+
+Datum date_time_xor(PG_FUNCTION_ARGS)
+{
+    DateADT dateVal = 0;
+    dateVal = PG_GETARG_DATEADT(0);
+    int128 res_date = date_int128(dateVal);
+    TimeADT time = PG_GETARG_TIMEADT(1);
+    uint64 res_time = time_uint64(time);
+    PG_RETURN_INT128((int128)(res_time ^ res_date));
+}
+
+Datum timexor(PG_FUNCTION_ARGS)
+{
+    TimeADT time = PG_GETARG_TIMEADT(0);
+    uint64 res_time0 = time_uint64(time);
+    time = PG_GETARG_TIMEADT(1);
+    uint64 res_time1 = time_uint64(time);
+    PG_RETURN_INT128((int128)(res_time0 ^ res_time1));
+}
+
+Datum time_date_xor(PG_FUNCTION_ARGS)
+{
+    DateADT dateVal = 0;
+    dateVal = PG_GETARG_DATEADT(1);
+    int128 res_date = date_int128(dateVal);
+    TimeADT time = PG_GETARG_TIMEADT(0);
+    uint64 res_time = time_uint64(time);
+    PG_RETURN_INT128((int128)(res_time ^ res_date));
+}
+
+Datum date_text_xor(PG_FUNCTION_ARGS)
+{
+    DateADT dateVal = 0;
+    int128 res_date = 0;
+    dateVal = PG_GETARG_DATEADT(0);
+    res_date = date_int128(dateVal);
+
+    Datum textValue = PG_GETARG_DATUM(1);
+    int128 temp = text_int128(textValue);
+    int128 res = temp ^ res_date;
+    PG_RETURN_INT128(res);
+}
+
+Datum text_date_xor(PG_FUNCTION_ARGS)
+{
+    DateADT dateVal = 0;
+    int128 res_date = 0;
+    dateVal = PG_GETARG_DATEADT(1);
+    res_date = date_int128(dateVal);
+
+    Datum textValue = PG_GETARG_DATUM(0);
+    int128 temp = text_int128(textValue);
+    int128 res = temp ^ res_date;
+    PG_RETURN_INT128(res);
+}
+
+Datum time_text_xor(PG_FUNCTION_ARGS)
+{
+    TimeADT time = PG_GETARG_TIMEADT(0);
+    uint64 res_time = time_uint64(time);
+    Datum textValue = PG_GETARG_DATUM(1);
+    int128 temp = text_int128(textValue);
+    int128 res = res_time ^ temp;
+    PG_RETURN_INT128(res);
+}
+
+Datum text_time_xor(PG_FUNCTION_ARGS)
+{
+    TimeADT time = PG_GETARG_TIMEADT(1);
+    uint64 res_time = time_uint64(time);
+    Datum textValue = PG_GETARG_DATUM(0);
+    int128 temp = text_int128(textValue);
+    int128 res = res_time ^ temp;
+    PG_RETURN_INT128(res);
+}
+
+Datum date_int8_xor(PG_FUNCTION_ARGS)
+{
+    DateADT dateVal = 0;
+    int128 res_date = 0;
+    dateVal = PG_GETARG_DATEADT(0);
+    res_date = date_int128(dateVal);
+
+    int64 res_int8 = PG_GETARG_INT64(1);
+    PG_RETURN_INT128(res_date ^ res_int8);
+}
+
+Datum int8_date_xor(PG_FUNCTION_ARGS)
+{
+    DateADT dateVal = 0;
+    int128 res_date = 0;
+    dateVal = PG_GETARG_DATEADT(1);
+    res_date = date_int128(dateVal);
+
+    int64 res_int8 = PG_GETARG_INT64(0);
+    PG_RETURN_INT128(res_date ^ res_int8);
+}
+
+Datum time_int8_xor(PG_FUNCTION_ARGS)
+{
+    TimeADT time = PG_GETARG_TIMEADT(0);
+    uint64 res_time = time_uint64(time);
+
+    int64 res_int8 = PG_GETARG_INT64(1);
+    PG_RETURN_INT128(res_time ^ res_int8);
+}
+
+Datum int8_time_xor(PG_FUNCTION_ARGS)
+{
+    TimeADT time = PG_GETARG_TIMEADT(1);
+    uint64 res_time = time_uint64(time);
+
+    int64 res_int8 = PG_GETARG_INT64(0);
+    PG_RETURN_INT128(res_time ^ res_int8);
+}
+
+Datum float8_date_xor(PG_FUNCTION_ARGS)
+{
+    float8 num = PG_GETARG_FLOAT8(0);
+    int32 arg = DatumGetInt32(DirectFunctionCall1(dtoi4, Float8GetDatum(num)));
+
+    DateADT dateVal = 0;
+    int128 res_date = 0;
+    dateVal = PG_GETARG_DATEADT(1);
+    res_date = date_int128(dateVal);
+
+    PG_RETURN_INT128(arg ^ res_date);
+}
+
+Datum date_float8_xor(PG_FUNCTION_ARGS)
+{
+    float8 num = PG_GETARG_FLOAT8(1);
+    int32 arg = DatumGetInt32(DirectFunctionCall1(dtoi4, Float8GetDatum(num)));
+
+    DateADT dateVal = 0;
+    int128 res_date = 0;
+    dateVal = PG_GETARG_DATEADT(0);
+    res_date = date_int128(dateVal);
+
+    PG_RETURN_INT128(arg ^ res_date);
 }
 #endif
