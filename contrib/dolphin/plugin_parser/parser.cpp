@@ -170,9 +170,14 @@ static inline bool IsDescStmtSymbol(int token)
     return (token == ASCII_DOT || token == ASCII_SEMICOLON || token == 0);
 }
 
-static inline bool IsDescribeStmt(char* scanbuf) 
+static inline bool IsDescribeStmt(char* scanbuf)
 {
-    return(scanbuf && (!pg_strcasecmp(scanbuf, "desc") || !pg_strcasecmp(scanbuf, "describe")));
+    return (scanbuf && (pg_strcasecmp(scanbuf, "desc") == 0 || pg_strcasecmp(scanbuf, "describe") == 0));
+}
+
+static inline bool IsExplainStmt(char* scanbuf)
+{
+    return (scanbuf && pg_strcasecmp(scanbuf, "explain") == 0);
 }
 #endif
 
@@ -598,12 +603,14 @@ int base_yylex(YYSTYPE* lvalp, YYLTYPE* llocp, core_yyscan_t yyscanner)
             break;
 #ifdef DOLPHIN
         case EXPLAIN:
-            READ_TWO_TOKEN();
-            if (IsDescStmtSymbol(next_token)) {
-                cur_token = DESC;
+            if (IsExplainStmt(yyextra->core_yy_extra.scanbuf)) {
+                READ_TWO_TOKEN();
+                if (IsDescStmtSymbol(next_token)) {
+                    cur_token = DESC;
+                }
+                lvalp->core_yystype = cur_yylval;
+                *llocp = cur_yylloc;
             }
-            lvalp->core_yystype = cur_yylval;
-            *llocp = cur_yylloc;
             break;
         case DESC:
         case DESCRIBE:

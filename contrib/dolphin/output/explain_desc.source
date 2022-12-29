@@ -426,3 +426,121 @@ explain format='TraDitional' delete from ed_t where c1 < 5;
 drop table ed_t;
 drop schema db_explain_desc cascade;
 reset current_schema;
+-- 5.use special word as table name
+create table explain(c1 int, explain varchar(10));
+create table describe(explain int, c2 varchar(10));
+insert into explain values(1, 'explain');
+insert into describe values(1, 'explain');
+select * from explain;
+ c1 | explain 
+----+---------
+  1 | explain
+(1 row)
+
+select * from describe;
+ explain |   c2    
+---------+---------
+       1 | explain
+(1 row)
+
+explain explain;
+  Field  |         Type          | Null | Key | Default | Extra 
+---------+-----------------------+------+-----+---------+-------
+ c1      | integer               | YES  |     | NULL    | 
+ explain | character varying(10) | YES  |     | NULL    | 
+(2 rows)
+
+explain describe;
+  Field  |         Type          | Null | Key | Default | Extra 
+---------+-----------------------+------+-----+---------+-------
+ explain | integer               | YES  |     | NULL    | 
+ c2      | character varying(10) | YES  |     | NULL    | 
+(2 rows)
+
+desc explain;
+  Field  |         Type          | Null | Key | Default | Extra 
+---------+-----------------------+------+-----+---------+-------
+ c1      | integer               | YES  |     | NULL    | 
+ explain | character varying(10) | YES  |     | NULL    | 
+(2 rows)
+
+desc describe;
+  Field  |         Type          | Null | Key | Default | Extra 
+---------+-----------------------+------+-----+---------+-------
+ explain | integer               | YES  |     | NULL    | 
+ c2      | character varying(10) | YES  |     | NULL    | 
+(2 rows)
+
+describe explain;
+  Field  |         Type          | Null | Key | Default | Extra 
+---------+-----------------------+------+-----+---------+-------
+ c1      | integer               | YES  |     | NULL    | 
+ explain | character varying(10) | YES  |     | NULL    | 
+(2 rows)
+
+describe describe;
+  Field  |         Type          | Null | Key | Default | Extra 
+---------+-----------------------+------+-----+---------+-------
+ explain | integer               | YES  |     | NULL    | 
+ c2      | character varying(10) | YES  |     | NULL    | 
+(2 rows)
+
+explain (costs off) select * from explain;
+     QUERY PLAN      
+---------------------
+ Seq Scan on explain
+(1 row)
+
+explain (costs off) select * from describe;
+      QUERY PLAN      
+----------------------
+ Seq Scan on describe
+(1 row)
+
+desc (costs off) select * from explain;
+     QUERY PLAN      
+---------------------
+ Seq Scan on explain
+(1 row)
+
+desc (costs off) select * from describe;
+      QUERY PLAN      
+----------------------
+ Seq Scan on describe
+(1 row)
+
+describe (costs off) select * from explain;
+     QUERY PLAN      
+---------------------
+ Seq Scan on explain
+(1 row)
+
+describe (costs off) select * from describe;
+      QUERY PLAN      
+----------------------
+ Seq Scan on describe
+(1 row)
+
+-- 6.test desc&explain with shell
+\! gsql -d contrib_regression -r -p @portstring@ -c "describe explain"
+  Field  |         Type          | Null | Key | Default | Extra 
+---------+-----------------------+------+-----+---------+-------
+ c1      | integer               | YES  |     | NULL    | 
+ explain | character varying(10) | YES  |     | NULL    | 
+(2 rows)
+
+\! gsql -d contrib_regression -r -p @portstring@ -c "explain describe"
+  Field  |         Type          | Null | Key | Default | Extra 
+---------+-----------------------+------+-----+---------+-------
+ explain | integer               | YES  |     | NULL    | 
+ c2      | character varying(10) | YES  |     | NULL    | 
+(2 rows)
+
+\! gsql -d contrib_regression -r -p @portstring@ -c "desc explain"
+  Field  |         Type          | Null | Key | Default | Extra 
+---------+-----------------------+------+-----+---------+-------
+ c1      | integer               | YES  |     | NULL    | 
+ explain | character varying(10) | YES  |     | NULL    | 
+(2 rows)
+
+drop table explain, describe;
