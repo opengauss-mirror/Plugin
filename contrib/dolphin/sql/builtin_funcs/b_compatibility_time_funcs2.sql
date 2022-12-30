@@ -19,6 +19,7 @@ insert into func_test2(functionName, result) values('SUBTIME(''2007-12-31 0:0:0.
 insert into func_test2(functionName, result) values('SUBTIME(''2007-12-31 23:59:59.999999'',''1 1:1:1.000002'')', SUBTIME('2007-12-31 23:59:59.999999','1 1:1:1.000002'));
 insert into func_test2(functionName, result) values('SUBTIME(''2007-13-31 23:59:59.999999'',''1 1:1:1.000002'')', SUBTIME('2007-13-31 23:59:59.999999','1 1:1:1.000002'));
 insert into func_test2(functionName, result) values('SUBTIME(''2007-12-40 23:59:59.999999'',''1 1:1:1.000002'')', SUBTIME('2007-12-40 23:59:59.999999','1 1:1:1.000002'));
+insert into func_test2(functionName, result) values('SUBTIME(''2017-2-29 12:00:00'',''12:00:00'')', SUBTIME('2017-2-29 12:00:00','12:00:00'));
     -- 数值格式
 insert into func_test2(functionName, result) values('subtime(''20000228205959'', ''250000'')', subtime('20000228205959', '250000') );
 insert into func_test2(functionName, result) values('subtime(''20000228205959.000002'', ''250000.000001'')', subtime('20000228205959.000002', '250000.000001') );

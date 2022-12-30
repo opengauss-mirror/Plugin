@@ -13,15 +13,18 @@ insert into func_test2(functionName, result) values('subtime(''2000-02-28 20:59:
 insert into func_test2(functionName, result) values('subtime(''2000-02-28 20:59:59'', ''25:00'')', subtime('2000-02-28 20:59:59', '25:00') );
 insert into func_test2(functionName, result) values('SUBTIME(''2007-12-31 23:59:59.999999'',''1 1:1:1.000002'')', SUBTIME('2007-12-31 23:59:59.999999','1 1:1:1.000002'));
 insert into func_test2(functionName, result) values('SUBTIME(''2007-12-31 23:59:59.999999'',''100 1:1:1.000002'')',SUBTIME('2007-12-31 23:59:59.999999','100 1:1:1.000002'));
-ERROR:  invalid input syntax "100 1:1:1.000002"
+ERROR:  invalid input syntax for type time: "100 1:1:1.000002"
 CONTEXT:  referenced column: result
 insert into func_test2(functionName, result) values('SUBTIME(''2007-12-31 0:0:0.999999'',''1 1:1:1.000002'')', SUBTIME('2007-12-31 0:0:0.999999','1 1:1:1.000002'));
 insert into func_test2(functionName, result) values('SUBTIME(''2007-12-31 23:59:59.999999'',''1 1:1:1.000002'')', SUBTIME('2007-12-31 23:59:59.999999','1 1:1:1.000002'));
 insert into func_test2(functionName, result) values('SUBTIME(''2007-13-31 23:59:59.999999'',''1 1:1:1.000002'')', SUBTIME('2007-13-31 23:59:59.999999','1 1:1:1.000002'));
-ERROR:  invalid input syntax "2007-13-31 23:59:59.999999"
+ERROR:  date/time field value out of range: "2007-13-31 23:59:59.999999"
 CONTEXT:  referenced column: result
 insert into func_test2(functionName, result) values('SUBTIME(''2007-12-40 23:59:59.999999'',''1 1:1:1.000002'')', SUBTIME('2007-12-40 23:59:59.999999','1 1:1:1.000002'));
-ERROR:  invalid input syntax "2007-12-40 23:59:59.999999"
+ERROR:  date/time field value out of range: "2007-12-40 23:59:59.999999"
+CONTEXT:  referenced column: result
+insert into func_test2(functionName, result) values('SUBTIME(''2017-2-29 12:00:00'',''12:00:00'')', SUBTIME('2017-2-29 12:00:00','12:00:00'));
+ERROR:  date/time field value out of range: "2017-2-29 12:00:00"
 CONTEXT:  referenced column: result
     -- 数值格式
 insert into func_test2(functionName, result) values('subtime(''20000228205959'', ''250000'')', subtime('20000228205959', '250000') );
@@ -32,10 +35,10 @@ insert into func_test2(functionName, result) values('subtime(20000228205959.0000
 insert into func_test2(functionName, result) values('subtime(''2000-02-28 20:59:59'', NULL)', subtime('2000-02-28 20:59:59', NULL) );
 insert into func_test2(functionName, result) values('subtime(NULL, ''-25:00'')', subtime(NULL, '-25:00') );
 insert into func_test2(functionName, result) values('subtime(''abcd'', ''-25:00'')', subtime('abcd', '-25:00') );
-ERROR:  invalid input syntax "abcd"
+ERROR:  invalid input syntax for type time: "abcd"
 CONTEXT:  referenced column: result
 insert into func_test2(functionName, result) values('subtime(''2000-02-28 20:59:59'', ''abcd'')', subtime('2000-02-28 20:59:59', 'abcd') );
-ERROR:  invalid input syntax "abcd"
+ERROR:  invalid input syntax for type time: "abcd"
 CONTEXT:  referenced column: result
     -- 边界测试
 insert into func_test2(functionName, result) values('subtime(''0001-01-1 20:59:59'', ''21:00'');', subtime('0001-01-1 20:59:59', '21:00')   );
@@ -43,10 +46,10 @@ insert into func_test2(functionName, result) values('subtime(''9999-12-31 20:59:
 ERROR:  date/time field overflow
 CONTEXT:  referenced column: result
 insert into func_test2(functionName, result) values('subtime(''10000-1-1 20:59:59'', ''30:00:1'')', subtime('10000-1-1 20:59:59', '30:00:1') );
-ERROR:  date/time field overflow
+ERROR:  date/time field value out of range: "10000-1-1 20:59:59"
 CONTEXT:  referenced column: result
 insert into func_test2(functionName, result) values('subtime(''9999-12-31 20:59:59'', ''839:59:59'')', subtime('9999-12-31 20:59:59', '839:59:59') );
-ERROR:  invalid input syntax "839:59:59"
+ERROR:  date/time field value out of range: "839:59:59"
 CONTEXT:  referenced column: result
 -- SUBTIME ( time, time )
     -- 正常测试
@@ -58,10 +61,10 @@ insert into func_test2(functionName, result) values('SUBTIME(''010000.999999'', 
 insert into func_test2(functionName, result) values('SUBTIME(''24:00:00.999999'', ''02:00:00.999998'')', SUBTIME('24:00:00.999999', '02:00:00.999998'));
 insert into func_test2(functionName, result) values('SUBTIME(''01:00:00.000000'', ''02:00:00.999999'')', SUBTIME('01:00:00.000000', '02:00:00.999999'));
 insert into func_test2(functionName, result) values('SUBTIME(''02:00:61.000000'', ''02:00:00.999999'')', SUBTIME('02:00:61.000000', '02:00:00.999999'));
-ERROR:  invalid input syntax "02:00:61.000000"
+ERROR:  date/time field value out of range: "02:00:61.000000"
 CONTEXT:  referenced column: result
 insert into func_test2(functionName, result) values('SUBTIME(''02:61:00.000000'', ''02:00:00.999999'')', SUBTIME('02:61:00.000000', '02:00:00.999999'));
-ERROR:  invalid input syntax "02:61:00.000000"
+ERROR:  date/time field value out of range: "02:61:00.000000"
 CONTEXT:  referenced column: result
 insert into func_test2(functionName, result) values('SUBTIME(''60:00:00.000000'', ''02:00:00.999999'')', SUBTIME('60:00:00.000000', '02:00:00.999999'));
     -- 数值格式
@@ -73,31 +76,33 @@ insert into func_test2(functionName, result) values('subtime(-375959.000001, 395
 insert into func_test2(functionName, result) values('subtime(NULL, ''-839:59:59'')', subtime(NULL, '-839:59:59') );
 insert into func_test2(functionName, result) values('subtime(''-837:59:59'', NULL)', subtime('-837:59:59', NULL) );
 insert into func_test2(functionName, result) values('subtime(''abcd'', ''-839:59:59'')', subtime('abcd', '-839:59:59') );
-ERROR:  invalid input syntax "-839:59:59"
+ERROR:  invalid input syntax for type time: "abcd"
 CONTEXT:  referenced column: result
 insert into func_test2(functionName, result) values('subtime(''-837:59:59'', ''abcd'')', subtime('-837:59:59', 'abcd') );
-ERROR:  invalid input syntax "abcd"
+ERROR:  invalid input syntax for type time: "abcd"
 CONTEXT:  referenced column: result
     -- 边界测试
 insert into func_test2(functionName, result) values('subtime(''838:59:59'', ''-25:00'')', subtime('838:59:59', '-25:00') );
-ERROR:  date/time field overflow
+ERROR:  time field value out of range
 CONTEXT:  referenced column: result
 insert into func_test2(functionName, result) values('subtime(''-838:59:59'', ''25:00'')', subtime('-838:59:59', '25:00') );
-ERROR:  date/time field overflow
+ERROR:  time field value out of range
 CONTEXT:  referenced column: result
 insert into func_test2(functionName, result) values('subtime(''839:59:59'', ''837:59:59'')', subtime('839:59:59', '837:59:59') );
-ERROR:  invalid input syntax "839:59:59"
+ERROR:  date/time field value out of range: "839:59:59"
 CONTEXT:  referenced column: result
 insert into func_test2(functionName, result) values('subtime(''-837:59:59'', ''-839:59:59'')', subtime('-837:59:59', '-839:59:59') );
-ERROR:  invalid input syntax "-839:59:59"
+ERROR:  date/time field value out of range: "-839:59:59"
 CONTEXT:  referenced column: result
 -- date格式字符串
 insert into func_test2(functionName, result) values('subtime(''2000-01-01'', ''2022-01-01'')', subtime('2000-01-01', '2022-01-01') ); 
-ERROR:  invalid input syntax "2022-01-01"
+ERROR:  invalid input syntax for type time: "2000-01-01"
 CONTEXT:  referenced column: result
 -- 非字符串类型参数用例
 insert into func_test2(functionName, result) values('subtime(false, true)', subtime(false, true) );
 insert into func_test2(functionName, result) values('subtime(B''0'', B''1'')', subtime(B'0', B'1'));
+ERROR:  unsupported input data type: bit
+CONTEXT:  referenced column: result
 insert into func_test2(functionName, result) values('SUBTIME(cast(''2000-02-28 20:59:59'' as datetime), time''-25:00'')', SUBTIME(cast('2000-02-28 20:59:59' as datetime), time'-25:00') );
 insert into func_test2(functionName, result) values('SUBTIME(date''2000-02-28'', time''-25:00'')', SUBTIME(date'2000-02-28', time'-25:00') );
 insert into func_test2(functionName, result) values('SUBTIME(time''20:59:59'', time''-25:00'')', SUBTIME(time'20:59:59', time'-25:00') );
@@ -776,7 +781,6 @@ select * from func_test2;
  subtime(NULL, '-839:59:59')                                                                 | 
  subtime('-837:59:59', NULL)                                                                 | 
  subtime(false, true)                                                                        | -00:00:01
- subtime(B'0', B'1')                                                                         | -00:00:01
  SUBTIME(cast('2000-02-28 20:59:59' as datetime), time'-25:00')                              | Tue Feb 29 21:59:59 2000
  SUBTIME(date'2000-02-28', time'-25:00')                                                     | 25:00:00
  SUBTIME(time'20:59:59', time'-25:00')                                                       | 45:59:59
