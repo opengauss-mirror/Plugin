@@ -53,7 +53,9 @@
 static void EncodeSpecialDate(DateADT dt, char* str, int strlen);
 static int time2tm(TimeADT time, struct pg_tm* tm, fsec_t* fsec);
 static int timetz2tm(TimeTzADT* time, struct pg_tm* tm, fsec_t* fsec, int* tzp);
+#ifndef DOLPHIN
 static int tm2time(struct pg_tm* tm, fsec_t fsec, TimeADT* result);
+#endif
 static int tm2timetz(struct pg_tm* tm, fsec_t fsec, int tz, TimeTzADT* result);
 static void AdjustTimeForTypmod(TimeADT* time, int32 typmod);
 static int getStartingDigits(char* str);
@@ -1682,7 +1684,11 @@ Datum negetive_time(PG_FUNCTION_ARGS) {
 /* tm2time()
  * Convert a tm structure to a time data type.
  */
+#ifdef DOLPHIN
+int tm2time(struct pg_tm* tm, fsec_t fsec, TimeADT* result)
+#else
 static int tm2time(struct pg_tm* tm, fsec_t fsec, TimeADT* result)
+#endif
 {
 #ifdef HAVE_INT64_TIMESTAMP
     *result = ((((tm->tm_hour * MINS_PER_HOUR + tm->tm_min) * SECS_PER_MINUTE) + tm->tm_sec) * USECS_PER_SEC) + fsec;
@@ -3470,8 +3476,11 @@ bool cstring_to_time(const char *str, pg_tm *tm, fsec_t &fsec, int &timeSign, in
         str++;
         length--;
     }
-    if (str == end)
+    if (str == end) {
+        *null_func_result = true;
+        warnings = true;
         return false; // error format
+    }
 
     /* Check first if str is a full TIMESTAMP */
     if (length >= 12) {
@@ -3479,12 +3488,13 @@ bool cstring_to_time(const char *str, pg_tm *tm, fsec_t &fsec, int &timeSign, in
         if (nano >= 500) {
             fsec += 1; /* round */
         }
-        if (tm_type != DTK_NONE) {
+        if (tm_type >= DTK_ERROR) {
             return tm_type != DTK_ERROR;
         }
         fsec = 0;
         nano = 0;
         warnings = false;
+        *null_func_result = false;
     }
 
     /* Not a timestamp. Try to get this as a DAYS_TO_SECOND string */

@@ -441,12 +441,14 @@ insert into test values('addtime(''9999-12-31 23:59:59.999999'', ''00:00:00'')',
 insert into test values('addtime(''9999-12-31 23:59:59.999999'', ''-00:00:01'')', addtime('9999-12-31 23:59:59.999999','00:00:00'));
 insert into test values('addtime(''9999-12-31 23:59:59.999999'', ''-838:59:59'')', addtime('9999-12-31 23:59:59.999999','-838:59:59'));
 insert into test values('addtime(''2021-11-12 23:59:59'', ''23:59:10'')', addtime('2021-11-12 23:59:59', '23:59:10'));
+insert into test values('addtime(''11:11:11'', ''11:11:11'')', addtime('11:11:11', '11:11:11'));
 -- 类型
 insert into test values('addtime(cast(''9999-12-31 23:59:59.999999'' as datetime(6)), ''00:00:00'')', addtime(cast('9999-12-31 23:59:59.999999' as datetime(6)),'00:00:00'));
 insert into test values('addtime(time''12:12:12.999999'', ''00:00:00.000001'')', addtime(time'12:12:12.999999', '00:00:00.000001'));
 insert into test values('addtime(''-8385959'', ''00:00:01'')', addtime('-8385959', '00:00:01'));
 insert into test values('addtime(-8385959, ''00:00:01'')', addtime(-8385959, '00:00:01'));
 insert into test values('addtime(0, ''00:00:01'')', addtime(0, '00:00:01'));
+insert into test values('addtime(121112, ''10:00:00'')', addtime(121112, '10:00:00'));
 -- 特异
 insert into test values('addtime(null, ''00:00:01'')', addtime(null, '00:00:01'));
 insert into test values('addtime(''00:00:01'', null)', addtime('00:00:01', null));
@@ -464,6 +466,8 @@ insert into test values('addtime(''-839:00:00'', ''00:00:00'')', addtime('-839:0
 insert into test values('addtime(''-838:59:59'', ''-00:00:01'')', addtime('-838:59:59', '-00:00:01'));
 insert into test values('addtime(''9999-12-31 23:59:59'', ''00:00:01'')', addtime('9999-12-31 23:59:59', '00:00:01'));
 insert into test values('addtime(''10000-1-1 00:00:00'', ''00:00:00'')', addtime('10000-1-1 00:00:00', '00:00:00'));
+insert into test values('addtime(''2022-01-01'', ''11:11:11'')', addtime('2022-01-01', '11:11:11'));
+insert into test values('addtime(99991231, ''10:00:00'')', addtime(99991231, '10:00:00'));
 
 -- 严格模式，参数或结果不合法，抛出错误
 set dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date';
@@ -475,6 +479,8 @@ insert into test values('addtime(''-839:00:00'', ''00:00:00'')', addtime('-839:0
 insert into test values('addtime(''-838:59:59'', ''-00:00:01'')', addtime('-838:59:59', '-00:00:01'));
 insert into test values('addtime(''9999-12-31 23:59:59'', ''00:00:01'')', addtime('9999-12-31 23:59:59', '00:00:01'));
 insert into test values('addtime(''10000-1-1 00:00:00'', ''00:00:00'')', addtime('10000-1-1 00:00:00', '00:00:00'));
+insert into test values('addtime(''2022-01-01'', ''11:11:11'')', addtime('2022-01-01', '11:11:11'));
+insert into test values('addtime(99991231, ''10:00:00'')', addtime(99991231, '10:00:00'));
 
 select * from test order by funcname;
 drop table test;

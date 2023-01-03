@@ -82,8 +82,8 @@ enum b_units
 #define TIME_MAX_SECOND 59
 
 #ifdef DOLPHIN
-#define DTK_NONE -1
-#define DTK_ERROR -2
+#define DTK_NONE -2
+#define DTK_ERROR -1
 
 #define DATETIME_MAX_DECIMALS 6
 #define MAX_DATE_PARTS 8

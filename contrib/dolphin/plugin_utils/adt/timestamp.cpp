@@ -8643,46 +8643,62 @@ bool datetime_add_interval(Timestamp datetime, Interval *span, Timestamp *result
 }
 
 /**
- * To help addtime_text to make sure if arg2 is a datetime format str.
- * No err or warnings will be raised.
-*/
-static inline bool datetime_in_no_err_with_flag(char *str, struct pg_tm *tm, fsec_t *fsec, unsigned int date_flag)
-{
-    bool ret = true;
-    PG_TRY();
-    {
-        datetime_in_with_flag_internal(str, tm, fsec, date_flag);
-    }
-    PG_CATCH();
-    {
-        ret = false;
-        FlushErrorState();
-    }
-    PG_END_TRY();
-    return ret;
-}
-
-/**
  * addtime(date/datetime/time, time)
 */
 Datum addtime_text(PG_FUNCTION_ARGS)
 {
-    int errlevel = (SQL_MODE_STRICT() ? ERROR : WARNING);
+    int errlevel = (SQL_MODE_STRICT()) ? ERROR : WARNING;
     char *str1 = text_to_cstring(PG_GETARG_TEXT_PP(0));
     char *str2 = text_to_cstring(PG_GETARG_TEXT_PP(1));
-    struct pg_tm tt, *tm = &tt;
-    fsec_t fsec;
-    TimeADT time1, time2;
-    Timestamp datetime;
+    struct pg_tm tt1, *tm1 = &tt1;
+    struct pg_tm tt2, *tm2 = &tt2;
+    fsec_t fsec1 = 0, fsec2 = 0;
+    int timeSign1 = 1, timeSign2 = 1;
+    int tm_type1, tm_type2;
+    bool warnings1 = false, warnings2 = false;
+    bool null_func_result1 = false, null_func_result2 = false;
+    TimeADT time2;
 
-    if (!time_in_with_sql_mode(str2, &time2, (ENABLE_ZERO_DAY | ENABLE_ZERO_MONTH)) || 
-        datetime_in_no_err_with_flag(str2, tm, &fsec, (ENABLE_ZERO_DAY | ENABLE_ZERO_MONTH))) {
-        PG_RETURN_NULL();
+    /* decode arg1 */
+    errno_t rc = memset_s(tm1, sizeof(tt1), 0, sizeof(tt1));
+    securec_check(rc, "\0", "\0");
+    cstring_to_time(str1, tm1, fsec1, timeSign1, tm_type1, warnings1, &null_func_result1);
+    if (warnings1 || null_func_result1) {
+        ereport(errlevel,
+                (errcode(DTERR_BAD_FORMAT), errmsg("Truncated incorrect time value: \"%s\"", str1)));
+        if (null_func_result1) {
+            PG_RETURN_NULL();
+        }
     }
 
-    if (datetime_in_no_ereport(str1, &datetime)) {
-        Timestamp result;
-        if (datetime_sub_time(datetime, -time2, &result)) {
+    /* decode arg2 */
+    rc = memset_s(tm2, sizeof(tt2), 0, sizeof(tt2));
+    securec_check(rc, "\0", "\0");
+    cstring_to_time(str2, tm2, fsec2, timeSign2, tm_type2, warnings2, &null_func_result2);
+    /* If arg2 is a datetime, the function returns NULL. */
+    if (tm_type2 == DTK_DATE_TIME) {
+        if (warnings2) {
+            ereport(errlevel,
+                    (errcode(DTERR_BAD_FORMAT), errmsg("Truncated incorrect time value: \"%s\"", str2)));
+        }
+        PG_RETURN_NULL();
+    }
+    /* If arg2 is a time format but not normal format.*/
+    if (warnings2 || null_func_result2) {
+        ereport(errlevel,
+                (errcode(DTERR_BAD_FORMAT), errmsg("Truncated incorrect time value: \"%s\"", str2)));
+        if (null_func_result2) {    // field overflow, for example '10:10:60'
+            PG_RETURN_NULL();
+        }
+    }
+    tm2time(tm2, fsec2, &time2);
+    time2 *= timeSign2;
+
+    /* calculate result */
+    if (tm_type1 == DTK_DATE_TIME) {
+        Timestamp datetime1, result;
+        tm2timestamp(tm1, fsec1, NULL, &datetime1);
+        if (datetime_sub_time(datetime1, -time2, &result)) {
             /* The variable datetime or result does not exceed the specified
              * range*/
             if (result >= B_FORMAT_TIMESTAMP_FIRST_YEAR)
@@ -8693,8 +8709,10 @@ Datum addtime_text(PG_FUNCTION_ARGS)
         }
         ereport(errlevel, (errcode(ERRCODE_DATETIME_FIELD_OVERFLOW),
                         errmsg("date/time field overflow")));
-    } else if (time_in_with_sql_mode(str1, &time1, NORMAL_DATE)) {
-        TimeADT result;
+    } else {
+        TimeADT time1, result;
+        tm2time(tm1, fsec1, &time1);
+        time1*= timeSign1;
         result = time1 + time2;
         if (!time_in_range(result)) {
             ereport(errlevel, (errcode(ERRCODE_DATETIME_FIELD_OVERFLOW), errmsg("date/time field overflow")));
