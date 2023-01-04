@@ -50,7 +50,8 @@
 #include "pgxc/groupmgr.h"
 #include "libpq/pqformat.h"
 #include "optimizer/nodegroups.h"
-#include "optimizer/pgxcplan.h"
+#include "plugin_optimizer/pgxcplan.h"
+#include "plugin_optimizer/planner.h"
 #include "pgstat.h"
 #include "client_logic/client_logic.h"
 #include "db4ai/create_model.h"
@@ -189,6 +190,7 @@ void init_plugin_object()
     u_sess->hook_cxt.aggSmpHook = (void*)check_plugin_function;
     u_sess->hook_cxt.standardProcessUtilityHook = (void*)standard_ProcessUtility;
     u_sess->hook_cxt.searchFuncHook = (void*)SearchFuncByOid;
+    u_sess->hook_cxt.plannerHook = (void*)planner;
     set_default_guc();
 
     if (g_instance.attr.attr_network.enable_dolphin_proto && u_sess->proc_cxt.MyProcPort && u_sess->proc_cxt.MyProcPort->database_name) {

@@ -73,7 +73,7 @@
 #include "pgxc/groupmgr.h"
 #include "pgxc/locator.h"
 #include "pgxc/pgxc.h"
-#include "optimizer/pgxcplan.h"
+#include "plugin_optimizer/pgxcplan.h"
 #include "optimizer/nodegroups.h"
 #include "pgxc/execRemote.h"
 #include "pgxc/redistrib.h"

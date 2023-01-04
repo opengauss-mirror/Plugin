@@ -129,7 +129,7 @@
 #include "optimizer/restrictinfo.h"
 #include "optimizer/streamplan.h"
 #include "optimizer/var.h"
-#include "optimizer/planner.h"
+#include "plugin_optimizer/planner.h"
 #include "plugin_parser/parse_clause.h"
 #include "plugin_parser/parse_coerce.h"
 #include "plugin_parser/parsetree.h"

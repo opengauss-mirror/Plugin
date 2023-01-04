@@ -79,7 +79,7 @@
 #include "plugin_parser/parse_expr.h"
 #ifdef PGXC
 #include "pgxc/pgxc.h"
-#include "optimizer/pgxcplan.h"
+#include "plugin_optimizer/pgxcplan.h"
 #include "optimizer/pgxcship.h"
 #endif
 #include "rewrite/rewriteHandler.h"
