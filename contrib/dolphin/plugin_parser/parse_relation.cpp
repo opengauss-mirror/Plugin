@@ -54,7 +54,7 @@
 #include "storage/lmgr.h"
 #include "tcop/utility.h"
 #include "optimizer/bucketinfo.h"
-#include "optimizer/planner.h"
+#include "plugin_optimizer/planner.h"
 #include "storage/tcap.h"
 #include "gs_ledger/ledger_utils.h"
 #ifdef ENABLE_MOT

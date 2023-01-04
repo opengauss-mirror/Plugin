@@ -51,7 +51,7 @@
 #include "miscadmin.h"
 #include "nodes/makefuncs.h"
 #include "nodes/nodeFuncs.h"
-#include "optimizer/planner.h"
+#include "plugin_optimizer/planner.h"
 #include "plugin_parser/parse_coerce.h"
 #include "pgstat.h"
 #include "utils/acl.h"

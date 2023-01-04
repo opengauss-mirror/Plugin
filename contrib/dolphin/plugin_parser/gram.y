@@ -72,7 +72,7 @@
 #include "nodes/makefuncs.h"
 #include "nodes/nodeFuncs.h"
 #include "nodes/print.h"
-#include "optimizer/planner.h"
+#include "plugin_optimizer/planner.h"
 #include "plugin_postgres.h"
 #include "plugin_parser/gramparse.h"
 #include "plugin_parser/parse_type.h"

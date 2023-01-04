@@ -105,7 +105,7 @@
 #include "nodes/nodeFuncs.h"
 #include "nodes/parsenodes.h"
 #include "optimizer/clauses.h"
-#include "optimizer/planner.h"
+#include "plugin_optimizer/planner.h"
 #include "optimizer/var.h"
 #include "plugin_parser/parse_clause.h"
 #include "plugin_parser/parse_coerce.h"

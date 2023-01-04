@@ -22,8 +22,8 @@
 #include "optimizer/pgxcship.h"
 #include "optimizer/streamplan.h"
 #include "utils/lsyscache.h"
-#include "parser/parsetree.h"
-#include "parser/parse_merge.h"
+#include "plugin_parser/parsetree.h"
+#include "plugin_parser/parse_merge.h"
 #include "utils/syscache.h"
 #include "pgxc/locator.h"
 
@@ -869,6 +869,11 @@ bool check_plugin_function(Oid funcId)
 static bool contain_unsupport_function(Oid funcId)
 {
     if (funcId >= FirstNormalObjectId) {
+#if (!defined(ENABLE_MULTIPLE_NODES)) && (!defined(ENABLE_PRIVATEGAUSS))
+        if (u_sess->hook_cxt.aggSmpHook != NULL) {
+            return ((aggSmpFunc)(u_sess->hook_cxt.aggSmpHook))(funcId);
+        }
+#endif
         return true;
     }
 

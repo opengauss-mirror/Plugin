@@ -4,12 +4,13 @@ parser = plugin_parser
 utils = plugin_utils
 executor = plugin_executor
 commands = plugin_optimizer/commands
+plan = plugin_optimizer/plan
+prep = plugin_optimizer/prep
 pl = plugin_pl/plpgsql/src
 adt = $(utils)/adt
 mb = $(utils)/mb
 vector = plugin_vector
 storage = plugin_storage
-optimizer = plugin_optimizer
 catalog = plugin_catalog
 subdir = contrib/dolphin
 top_builddir = ../..
@@ -54,7 +55,9 @@ OBJS += $(executor)/execQual.o
 
 OBJS += $(storage)/hashfunc.o
 
-OBJS += $(optimizer)/streamwalker.o
+OBJS += $(plan)/pgxcplan_single.o $(plan)/planner.o $(plan)/streamwalker.o
+
+OBJS += $(prep)/prepunion.o
 
 OBJS += $(commands)/functioncmds.o $(commands)/foreigncmds.o $(commands)/copy.o
 
@@ -62,7 +65,7 @@ OBJS += $(pl)/pl_gram.o $(pl)/pl_scanner.o $(pl)/pl_comp.o $(pl)/pl_handler.o
 
 OBJS += $(catalog)/heap.o
 
-all $(OBJS): protocol parser utils executor vector commands storage optimizer pl catalog;
+all $(OBJS): protocol parser utils executor vector plan prep commands storage pl catalog;
 
 protocol:
 	make -C $(protocol)
@@ -82,8 +85,11 @@ executor:
 storage:
 	make -C $(storage)
 
-optimizer:
-	make -C $(optimizer)
+plan:
+	make -C $(plan)
+
+prep:
+	make -C $(prep)
 
 commands:
 	make -C $(commands)
@@ -102,7 +108,8 @@ extra_clean:
 	make clean -C $(vector)
 	make clean -C $(executor)
 	make clean -C $(storage)
-	make clean -C $(optimizer)
+	make clean -C $(plan)
+	make clean -C $(prep)
 	make clean -C $(commands)
 	make clean -C $(pl)
 	make clean -C $(catalog)

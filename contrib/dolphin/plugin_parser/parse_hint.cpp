@@ -28,7 +28,7 @@
 #include "nodes/nodeFuncs.h"
 #include "plugin_parser/parse_hint.h"
 #include "plugin_parser/scansup.h"
-#include "optimizer/prep.h"
+#include "plugin_optimizer/prep.h"
 #include "utils/builtins.h"
 #include "utils/lsyscache.h"
 #include "utils/numeric.h"

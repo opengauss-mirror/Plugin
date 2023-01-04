@@ -30,7 +30,7 @@
 #include "nodes/nodeFuncs.h"
 #include "optimizer/clauses.h"
 #include "optimizer/tlist.h"
-#include "optimizer/planner.h"
+#include "plugin_optimizer/planner.h"
 #include "plugin_parser/analyze.h"
 #include "plugin_parser/parsetree.h"
 #include "plugin_parser/parse_clause.h"

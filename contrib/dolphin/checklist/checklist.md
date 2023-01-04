@@ -102,10 +102,13 @@
 |plugin_vector|timestamp.inl   |src\gausskernel\runtime\vecexecutor\vecprimitive\timestamp.inl   |
 |plugin_vector|varchar.inl   |src\gausskernel\runtime\vecexecutor\vecprimitive\varchar.inl   |
 |plugin_vector|vecfuncache.cpp   |src\gausskernel\runtime\vecexecutor\vecfuncache.cpp   |
-|plugin_optimizer|streamwalker.cpp   |src\gausskernel\optimizer\plan\streamwalker.cpp  |
 |plugin_optimizer\commands|copy.cpp   |src\gausskernel\optimizer\commands\copy.cpp  |
 |plugin_optimizer\commands|functioncmds.cpp   |src\gausskernel\optimizer\commands\functioncmds.cpp  |
 |plugin_optimizer\commands|foreigncmds.cpp   |src\gausskernel\optimizer\commands\foreigncmds.cpp  |
+|plugin_optimizer\plan|pgxcplan_single.cpp   |src\gausskernel\optimizer\plan\pgxcplan_single.cpp  |
+|plugin_optimizer\plan|planner.cpp   |src\gausskernel\optimizer\plan\planner.cpp  |
+|plugin_optimizer\plan|streamwalker.cpp   |src\gausskernel\optimizer\plan\streamwalker.cpp  |
+|plugin_optimizer\prep|prepunion.cpp   |src\gausskernel\optimizer\prep\prepunion.cpp  |
 |plugin_storage|hashfunc.cpp   |src\gausskernel\storage\access\hash\hashfunc.cpp  |
 |plugin_pl\plpgsql\src|gram.y   |src\common\pl\plpgsql\src\gram.y  |
 |plugin_pl\plpgsql\src|pl_scanner.cpp   |src\common\pl\plpgsql\src\pl_scanner.cpp  |
@@ -162,6 +165,9 @@
 |plugin_utils|plpgsql.h  |src\include\utils\plpgsql.h   |
 |plugin_vector|vecfunc.h  |src\include\vecexecutor\vecfunc.h   |
 |plugin_catalog|heap.h  |src\include\catalog\heap.h   |
+|plugin_optimizer|pgxcplan.h  |src\include\optimizer\pgxcplan.h   |
+|plugin_optimizer|planner.h  |src\include\optimizer\planner.h   |
+|plugin_optimizer|prep.h  |src\include\optimizer\prep.h   |
 |./|builtin_funcs.ini  |src\common\backend\catalog\builtin_funcs.ini   |
 |./|fmgrtab.h  |src\include\utils\fmgrtab.h   |
 |./|int8.h  |src\include\utils\int8.h   |

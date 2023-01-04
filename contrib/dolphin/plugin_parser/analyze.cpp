@@ -70,7 +70,7 @@
 #include "access/gtm.h"
 #include "utils/distribute_test.h"
 #include "utils/lsyscache.h"
-#include "optimizer/pgxcplan.h"
+#include "plugin_optimizer/pgxcplan.h"
 #include "tcop/tcopprot.h"
 #include "nodes/nodes.h"
 #include "pgxc/poolmgr.h"
