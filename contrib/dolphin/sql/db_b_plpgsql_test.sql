@@ -43,5 +43,48 @@ end;
 SELECT * from proc_01();
 SELECT * from tb_b_grammar_0038;
 
+-- test "set"
+create procedure proc1(x int) as
+v int;
+begin
+set x=x+1;
+set v=x+1;
+raise notice '%',v;
+end;
+/
+call proc1(1);
+call proc1(2);
+drop procedure proc1;
+
+declare
+i int;
+begin
+set j=1;
+raise notice '%',j;
+end;
+/
+
+declare
+i int;
+begin
+set j=1;
+raise notice '%',j;
+end;
+/
+
+begin
+set enable_set_variable_b_format = on;
+end;
+/
+show enable_set_variable_b_format;
+
+begin
+set @i=0;
+end;
+/
+select @i;
+
+reset enable_set_variable_b_format;
+
 drop schema db_b_plpgsql_test cascade;
 reset current_schema;

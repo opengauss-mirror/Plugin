@@ -45,6 +45,71 @@ SELECT * from tb_b_grammar_0038;
  tom
 (1 row)
 
+-- test "set"
+create procedure proc1(x int) as
+v int;
+begin
+set x=x+1;
+set v=x+1;
+raise notice '%',v;
+end;
+/
+call proc1(1);
+NOTICE:  3
+ proc1 
+-------
+ 
+(1 row)
+
+call proc1(2);
+NOTICE:  4
+ proc1 
+-------
+ 
+(1 row)
+
+drop procedure proc1;
+declare
+i int;
+begin
+set j=1;
+raise notice '%',j;
+end;
+/
+ERROR:  unrecognized configuration parameter "j"
+CONTEXT:  SQL statement "set j=1"
+PL/pgSQL function inline_code_block line 4 at SQL statement
+declare
+i int;
+begin
+set j=1;
+raise notice '%',j;
+end;
+/
+ERROR:  unrecognized configuration parameter "j"
+CONTEXT:  SQL statement "set j=1"
+PL/pgSQL function inline_code_block line 4 at SQL statement
+begin
+set enable_set_variable_b_format = on;
+end;
+/
+show enable_set_variable_b_format;
+ enable_set_variable_b_format 
+------------------------------
+ on
+(1 row)
+
+begin
+set @i=0;
+end;
+/
+select @i;
+ @i 
+----
+  0
+(1 row)
+
+reset enable_set_variable_b_format;
 drop schema db_b_plpgsql_test cascade;
 NOTICE:  drop cascades to 5 other objects
 DETAIL:  drop cascades to table tb_b_grammar_0038
