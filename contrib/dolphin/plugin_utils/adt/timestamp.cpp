@@ -6666,7 +6666,7 @@ Oid convert_cstring_to_datetime_time(const char* str, Timestamp *datetime, TimeA
  * Error will be reported if the above range is exceeded.
  * @return: Actual time type oid. 
  */
-Oid convert_to_datetime_time(Datum value, Oid valuetypid, Timestamp *datetime, TimeADT *time) 
+Oid convert_to_datetime_time(Datum value, Oid valuetypid, Timestamp *datetime, TimeADT *time)
 {
     switch (valuetypid) {
         case UNKNOWNOID:
@@ -6806,7 +6806,8 @@ bool datetime_sub_time(Timestamp datetime, TimeADT time_sub, Timestamp* result)
  * The return type is the same as the type of the first parameter (datetime/time). (The actual return 
  * type is CString, and the return type is distinguished by a string in datetime or time format)
  */
-Datum subtime(PG_FUNCTION_ARGS) {
+Datum subtime(PG_FUNCTION_ARGS)
+{
     TimeADT time1, time2, res_time;
     Timestamp datetime1, datetime2, res_datetime;
     Oid val_type1, val_type2;
@@ -6826,15 +6827,14 @@ Datum subtime(PG_FUNCTION_ARGS) {
             break;
         default:
             val_type2 = convert_to_datetime_time(PG_GETARG_DATUM(1), val_type2, &datetime2, &time2);
-    }
-
-    if (val_type2 == TIMESTAMPOID) {
-        PG_RETURN_NULL();
+            if (val_type2 == TIMESTAMPOID) {
+                PG_RETURN_NULL();
+            }
     }
 
     switch (val_type1) {
         case DATEOID:
-            /* The calculation method is the same as TIMEOID, so break is not required*/
+            /* The calculation method is the same as TIMEOID, so break is not required */
             time1 = 0; /* time set to 00:00:00 */
         case TIMEOID: {
             res_time = time1 - time2;
@@ -6843,7 +6843,7 @@ Datum subtime(PG_FUNCTION_ARGS) {
         }
         case TIMESTAMPOID: {
             if (datetime_sub_time(datetime1, time2, &res_datetime)) {
-                /* The variable datetime or result does not exceed the specified range*/
+                /* The variable datetime or result does not exceed the specified range */
                 if (res_datetime >= B_FORMAT_TIMESTAMP_FIRST_YEAR) {
                     return DirectFunctionCall1(datetime_text, TimestampGetDatum(res_datetime));
                 }
@@ -7661,7 +7661,7 @@ Datum dayname_text(PG_FUNCTION_ARGS)
     PG_RETURN_DATUM(result);
 }
 
-//int8, int4 and float8 date input for dayname
+// int8, int4 and float8 date input for dayname
 Datum dayname_numeric(PG_FUNCTION_ARGS)
 {
     Numeric num = PG_GETARG_NUMERIC(0);
@@ -9413,9 +9413,9 @@ static inline bool week_year_to_date(struct pg_tm *tm, bool sunday_first_without
      * 
      * case2: %U or %u is used with %X or %x
     */
-    if ((strict_week_range && 
-        (strict_week_year < 0 || 
-        is_strict_week_year != sunday_first_without_iso)) || 
+    if ((strict_week_range &&
+        (strict_week_year < 0 ||
+        is_strict_week_year != sunday_first_without_iso)) ||
         (!strict_week_range && strict_week_year >= 0))
         return false;
 
@@ -9660,7 +9660,8 @@ Datum str_to_date(PG_FUNCTION_ARGS)
                     break;
                 case 'w':
                     tmp_len = 1;
-                    if ((weekday = (int)str2ll_with_endptr(str, tmp_len, &true_len, &error)) < 0 || weekday >= DAYS_PER_WEEK)
+                    weekday = (int)str2ll_with_endptr(str, tmp_len, &true_len, &error);
+                    if (weekday < 0 || weekday >= DAYS_PER_WEEK)
                         goto err;
                     if (!weekday)
                         weekday = DAYS_PER_WEEK;
@@ -9755,7 +9756,7 @@ Datum str_to_date(PG_FUNCTION_ARGS)
         goto err;
 
     // a simple quick range check
-    if (tm->tm_mon > MONTHS_PER_YEAR || tm->tm_mday > DAYNUM_BIGMON || 
+    if (tm->tm_mon > MONTHS_PER_YEAR || tm->tm_mday > DAYNUM_BIGMON ||
         tm->tm_hour >= HOURS_PER_DAY || tm->tm_min >= MINS_PER_HOUR || tm->tm_sec >= SECS_PER_MINUTE)
         goto err;
     
