@@ -155,7 +155,7 @@ void SplitWholeStrWithoutSeparator(const char* dateString, struct pg_tm* tm);
 void AnalyseDate(const char* dateString, struct pg_tm* tm_date);
 void SplitDatestrBySeparator(
     const char* dateString, int strLength, const int* separatorPosition, struct pg_tm* tm_date);
-void SplitDatestrWithoutSeparator(const char* dateString, struct pg_tm* tm_time);
+void SplitDatestrWithoutSeparator(const char* dateString, struct pg_tm* tm_date);
 void AnalyseTime(const char* timeString, struct pg_tm* tm_time);
 void SplitTimestrWithoutSeparator(const char* timeString, struct pg_tm* tm_time);
 void SplitTimestrBySeparator(
@@ -9926,5 +9926,191 @@ Datum timestamp_agg_finalfn(PG_FUNCTION_ARGS)
     finalResult = PG_ARGISNULL(0) ? 0 : PG_GETARG_INT128(0);
 
     PG_RETURN_INT128(finalResult);
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(timestampxor);
+extern "C" DLL_PUBLIC Datum timestampxor(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(timestamp_int8_xor);
+extern "C" DLL_PUBLIC Datum timestamp_int8_xor(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(int8_timestamp_xor);
+extern "C" DLL_PUBLIC Datum int8_timestamp_xor(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(timestamp_float8_xor);
+extern "C" DLL_PUBLIC Datum timestamp_float8_xor(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(float8_timestamp_xor);
+extern "C" DLL_PUBLIC Datum float8_timestamp_xor(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(timestamptzxor);
+extern "C" DLL_PUBLIC Datum timestamptzxor(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(timestamptz_int8_xor);
+extern "C" DLL_PUBLIC Datum timestamptz_int8_xor(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(int8_timestamptz_xor);
+extern "C" DLL_PUBLIC Datum int8_timestamptz_xor(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(timestamptz_float8_xor);
+extern "C" DLL_PUBLIC Datum timestamptz_float8_xor(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(float8_timestamptz_xor);
+extern "C" DLL_PUBLIC Datum float8_timestamptz_xor(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(text_timestamp_xor);
+extern "C" DLL_PUBLIC Datum text_timestamp_xor(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(timestamp_text_xor);
+extern "C" DLL_PUBLIC Datum timestamp_text_xor(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(timestamptz_text_xor);
+extern "C" DLL_PUBLIC Datum timestamptz_text_xor(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(text_timestamptz_xor);
+extern "C" DLL_PUBLIC Datum text_timestamptz_xor(PG_FUNCTION_ARGS);
+
+static int128 text_int128(Datum textValue)
+{
+    char* tmp = NULL;
+    tmp = DatumGetCString(DirectFunctionCall1(textout, textValue));
+    errno = 0;
+    char* endptr = NULL;
+    int128 temp = strtoll(tmp, &endptr, 10);
+    if (errno != 0 || (temp == 0 && tmp == endptr))
+        ereport(ERROR,
+            (errcode(DTERR_BAD_FORMAT), errmsg("invalid INTERGER: \"%s\"", tmp)));
+    pfree(tmp);
+    return temp;
+}
+
+int128 timestamp_int128(Timestamp timestamp)
+{
+    struct pg_tm tt, *tm = &tt;
+    fsec_t fsec;
+    timestamp2tm(timestamp, NULL, tm, &fsec, NULL, NULL);
+    int128 ts_int = timestamp2int(tm);
+    return ts_int;
+}
+
+int128 timestamptz_int128(TimestampTz timestampTz)
+{
+    struct pg_tm tt, *tm = &tt;
+    int tz;
+    fsec_t fsec;
+    const char* tzn = NULL;
+    timestamp2tm(timestampTz, &tz, tm, &fsec, &tzn, NULL);
+    int128 ts_int = timestamp2int(tm);
+    return ts_int;
+
+}
+
+Datum timestampxor(PG_FUNCTION_ARGS)
+{
+    Timestamp timestamp1 = PG_GETARG_TIMESTAMP(0);
+    Timestamp timestamp2 = PG_GETARG_TIMESTAMP(1);
+    int128 ts_int1 = timestamp_int128(timestamp1);
+    int128 ts_int2 = timestamp_int128(timestamp2);
+    PG_RETURN_INT128(ts_int1 ^ ts_int2);
+}
+
+Datum timestamp_int8_xor(PG_FUNCTION_ARGS)
+{
+    Timestamp timestamp = PG_GETARG_TIMESTAMP(0);
+    int128 ts_int = timestamp_int128(timestamp);
+    int64 res = PG_GETARG_INT64(1);
+    PG_RETURN_INT128(ts_int ^ res);
+}
+
+Datum int8_timestamp_xor(PG_FUNCTION_ARGS)
+{
+    Timestamp timestamp = PG_GETARG_TIMESTAMP(1);
+    int128 ts_int = timestamp_int128(timestamp);
+    int64 res = PG_GETARG_INT64(0);
+    PG_RETURN_INT128(ts_int ^ res);
+}
+
+Datum timestamp_float8_xor(PG_FUNCTION_ARGS)
+{
+    Timestamp timestamp = PG_GETARG_TIMESTAMP(0);
+    int128 ts_int = timestamp_int128(timestamp);
+    float8 num = PG_GETARG_FLOAT8(1);
+    int32 arg = DatumGetInt32(DirectFunctionCall1(dtoi4, Float8GetDatum(num)));
+    PG_RETURN_INT128(ts_int ^ arg);
+}
+
+Datum float8_timestamp_xor(PG_FUNCTION_ARGS)
+{
+    Timestamp timestamp = PG_GETARG_TIMESTAMP(1);
+    int128 ts_int = timestamp_int128(timestamp);
+    float8 num = PG_GETARG_FLOAT8(0);
+    int32 arg = DatumGetInt32(DirectFunctionCall1(dtoi4, Float8GetDatum(num)));
+    PG_RETURN_INT128(ts_int ^ arg);
+}
+
+Datum timestamptzxor(PG_FUNCTION_ARGS)
+{
+    TimestampTz timestampTz1 = PG_GETARG_TIMESTAMPTZ(0);
+    int128 ts_int1 = timestamptz_int128(timestampTz1);
+    TimestampTz timestampTz2 = PG_GETARG_TIMESTAMPTZ(1);
+    int128 ts_int2 = timestamptz_int128(timestampTz2);
+    PG_RETURN_INT128(ts_int1 ^ ts_int2);
+}
+
+Datum timestamptz_int8_xor(PG_FUNCTION_ARGS)
+{
+    TimestampTz timestampTz = PG_GETARG_TIMESTAMPTZ(0);
+    int128 ts_int = timestamptz_int128(timestampTz);
+    int64 res = PG_GETARG_INT64(1);
+    PG_RETURN_INT128(ts_int ^ res);
+}
+
+Datum int8_timestamptz_xor(PG_FUNCTION_ARGS)
+{
+    TimestampTz timestampTz = PG_GETARG_TIMESTAMPTZ(1);
+    int128 ts_int = timestamptz_int128(timestampTz);
+    int64 res = PG_GETARG_INT64(0);
+    PG_RETURN_INT128(ts_int ^ res);
+}
+
+Datum timestamptz_float8_xor(PG_FUNCTION_ARGS)
+{
+    TimestampTz timestampTz = PG_GETARG_TIMESTAMPTZ(0);
+    int128 ts_int = timestamptz_int128(timestampTz);
+    float8 num = PG_GETARG_FLOAT8(1);
+    int32 arg = DatumGetInt32(DirectFunctionCall1(dtoi4, Float8GetDatum(num)));
+    PG_RETURN_INT128(ts_int ^ arg);
+}
+
+Datum float8_timestamptz_xor(PG_FUNCTION_ARGS)
+{
+    TimestampTz timestampTz = PG_GETARG_TIMESTAMPTZ(1);
+    int128 ts_int = timestamptz_int128(timestampTz);
+    float8 num = PG_GETARG_FLOAT8(0);
+    int32 arg = DatumGetInt32(DirectFunctionCall1(dtoi4, Float8GetDatum(num)));
+    PG_RETURN_INT128(ts_int ^ arg);
+}
+
+Datum timestamp_text_xor(PG_FUNCTION_ARGS)
+{
+    Datum textValue = PG_GETARG_DATUM(1);
+    int128 temp = text_int128(textValue);
+    Timestamp timestamp = PG_GETARG_TIMESTAMP(0);
+    int128 ts_int = timestamp_int128(timestamp);
+    PG_RETURN_INT128(ts_int ^ temp);
+}
+
+Datum text_timestamp_xor(PG_FUNCTION_ARGS)
+{
+    Datum textValue = PG_GETARG_DATUM(0);
+    int128 temp = text_int128(textValue);
+    Timestamp timestamp = PG_GETARG_TIMESTAMP(1);
+    int128 ts_int = timestamp_int128(timestamp);
+    PG_RETURN_INT128(ts_int ^ temp);
+}
+
+Datum timestamptz_text_xor(PG_FUNCTION_ARGS)
+{
+    Datum textValue = PG_GETARG_DATUM(1);
+    int128 temp = text_int128(textValue);
+    TimestampTz timestampTz = PG_GETARG_TIMESTAMPTZ(0);
+    int128 ts_int = timestamptz_int128(timestampTz);
+    PG_RETURN_INT128(ts_int ^ temp);
+}
+
+Datum text_timestamptz_xor(PG_FUNCTION_ARGS)
+{
+    Datum textValue = PG_GETARG_DATUM(0);
+    int128 temp = text_int128(textValue);
+    TimestampTz timestampTz = PG_GETARG_TIMESTAMPTZ(1);
+    int128 ts_int = timestamptz_int128(timestampTz);
+    PG_RETURN_INT128(ts_int ^ temp);
 }
 #endif
