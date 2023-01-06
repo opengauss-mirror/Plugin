@@ -2162,11 +2162,6 @@ static Query* transformInsertStmt(ParseState* pstate, InsertStmt* stmt)
         col = (ResTarget*)lfirst(icols);
         AssertEreport(IsA(col, ResTarget), MOD_OPT, "nodeType inconsistant");
         attr_num = (AttrNumber)lfirst_int(attnos);
-#ifdef DOLPHIN
-        if (!SQL_MODE_STRICT()) {
-            CheckNullValue(targetrel, expr, attr_num);
-        }
-#endif
         tle = makeTargetEntry(expr, attr_num, col->name, false);
         qry->targetList = lappend(qry->targetList, tle);
 

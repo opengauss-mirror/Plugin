@@ -541,6 +541,49 @@ SELECT pg_get_tabledef('test_alter_autoinc'::regclass);
 (1 row)
 
 DROP TABLE test_alter_autoinc;
+set dolphin.sql_mode='sql_mode_strict';
+drop table if exists test9;
+NOTICE:  table "test9" does not exist, skipping
+create table test9(id int not null auto_increment, primary key (id));
+NOTICE:  CREATE TABLE will create implicit sequence "test9_id_seq" for serial column "test9.id"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "test9_pkey" for table "test9"
+insert into test9 values(null);
+insert into test9 values(null);
+SELECT LAST_INSERT_ID();
+ last_insert_id 
+----------------
+              2
+(1 row)
+
+select * from test9 order by 1;
+ id 
+----
+  1
+  2
+(2 rows)
+
+set dolphin.sql_mode='';
+drop table if exists test9;
+create table test9(id int not null auto_increment, primary key (id));
+NOTICE:  CREATE TABLE will create implicit sequence "test9_id_seq" for serial column "test9.id"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "test9_pkey" for table "test9"
+insert into test9 values(null);
+insert into test9 values(null);
+select * from test9 order by 1;
+ id 
+----
+  1
+  2
+(2 rows)
+
+SELECT LAST_INSERT_ID();
+ last_insert_id 
+----------------
+              2
+(1 row)
+
+reset dolphin.sql_mode;
+drop table if exists test9;
 \c postgres
 drop database if exists dolphin_autoinc;
 drop database if exists dolphin_autoinc_restore;

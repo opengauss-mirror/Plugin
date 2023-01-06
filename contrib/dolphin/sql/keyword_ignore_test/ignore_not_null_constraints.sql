@@ -546,6 +546,35 @@ insert into t_ignore values(1);
 update ignore t_ignore set num = null where num = 1;
 select * from t_ignore;
 
+-- sql mode doesn't affect ignore
+set sql_ignore_strategy = 'overwrite_null';
+set dolphin.sql_mode='sql_mode_strict';
+drop table if exists t_ignore;
+create table t_ignore(id int not null, primary key (id));
+insert ignore into t_ignore values(null);
+select * from t_ignore order by 1;
+set dolphin.sql_mode='';
+drop table if exists t_ignore;
+create table t_ignore(id int not null, primary key (id));
+insert ignore into t_ignore values(null);
+select * from t_ignore order by 1;
+drop table if exists t_ignore;
+reset dolphin.sql_mode;
+
+set sql_ignore_strategy = 'ignore_null';
+set dolphin.sql_mode='sql_mode_strict';
+drop table if exists t_ignore;
+create table t_ignore(id int not null, primary key (id));
+insert ignore into t_ignore values(null);
+select * from t_ignore order by 1;
+set dolphin.sql_mode='';
+drop table if exists t_ignore;
+create table t_ignore(id int not null, primary key (id));
+insert ignore into t_ignore values(null);
+select * from t_ignore order by 1;
+drop table if exists t_ignore;
+reset dolphin.sql_mode;
+
 -- restore context
 drop schema sql_ignore_not_null_test cascade;
 reset current_schema;

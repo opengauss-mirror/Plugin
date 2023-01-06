@@ -1023,26 +1023,37 @@ select * from test_notnull_numeric;
 --insert into table values(null)
 insert into test_notnull_tint(b) values(null);
 ERROR:  null value in column "b" violates not-null constraint
+DETAIL:  Failing row contains (null, null).
 insert into test_notnull_sint(b) values(null);
 ERROR:  null value in column "b" violates not-null constraint
+DETAIL:  Failing row contains (null, null).
 insert into test_notnull_int(b) values(null);
 ERROR:  null value in column "b" violates not-null constraint
+DETAIL:  Failing row contains (null, null).
 insert into test_notnull_bint(b) values(null);
 ERROR:  null value in column "b" violates not-null constraint
+DETAIL:  Failing row contains (null, null).
 insert into test_notnull_char(b) values(null);
 ERROR:  null value in column "b" violates not-null constraint
+DETAIL:  Failing row contains (null, null).
 insert into test_notnull_varchar(b) values(null);
 ERROR:  null value in column "b" violates not-null constraint
+DETAIL:  Failing row contains (null, null).
 insert into test_notnull_clob(b) values(null);
 ERROR:  null value in column "b" violates not-null constraint
+DETAIL:  Failing row contains (null, null).
 insert into test_notnull_text(b) values(null);
 ERROR:  null value in column "b" violates not-null constraint
+DETAIL:  Failing row contains (null, null).
 insert into test_notnull_real(b) values(null);
 ERROR:  null value in column "b" violates not-null constraint
+DETAIL:  Failing row contains (null, null).
 insert into test_notnull_double(b) values(null);
 ERROR:  null value in column "b" violates not-null constraint
+DETAIL:  Failing row contains (null, null).
 insert into test_notnull_numeric(b) values(null);
 ERROR:  null value in column "b" violates not-null constraint
+DETAIL:  Failing row contains (null, null).
 --insert into table(a) values(...,...)
 insert into test_notnull_tint(a) values(2,2);
 ERROR:  INSERT has more expressions than target columns
