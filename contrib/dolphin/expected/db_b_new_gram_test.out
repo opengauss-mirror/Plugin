@@ -1203,6 +1203,30 @@ select * from ignore_range_range partition (p_201901, p_201905_b);
 (2 rows)
 
 drop table ignore_range_range;
+--test "authid"
+create table authid(authid int);
+insert into authid(authid) values(1);
+insert into authid(authid) values(2);
+select authid from authid where authid = 1;
+ authid 
+--------
+      1
+(1 row)
+
+create table authid_t1(c1 int);
+insert into authid_t1(c1) values(1);
+select c1 as authid from authid_t1 as authid;
+ authid 
+--------
+      1
+(1 row)
+
+drop table authid;
+drop table authid_t1;
+create table body(body int);
+ERROR:  syntax error at or near "body"
+LINE 1: create table body(body int);
+                     ^
 drop schema test_m cascade;
 NOTICE:  drop cascades to table test_unique
 drop schema db_b_new_gram_test cascade;
