@@ -71,7 +71,7 @@ begin
 end;
 $$;
 select * from show_code_table;
- lineno |                                       code                                       | canbreak 
+ lineno |                                       code                                       | canBreak 
 --------+----------------------------------------------------------------------------------+----------
 --?        | CREATE DEFINER = .* FUNCTION pl_debugger.test_debug(x integer)             | f
         |  RETURNS SETOF test                                                              | f

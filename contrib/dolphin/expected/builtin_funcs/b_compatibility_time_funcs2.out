@@ -754,7 +754,7 @@ ERROR:  table "t1" does not exist
 drop table t2;
 ERROR:  table "t2" does not exist
 select * from func_test2;
-                                        functionname                                         |                        result                        
+                                        functionName                                         |                        result                        
 ---------------------------------------------------------------------------------------------+------------------------------------------------------
  subtime('2000-02-28 20:59:59', '-25:00')                                                    | 2000-02-29 21:59:59
  subtime('2000-02-28 20:59:59', '25:00')                                                     | 2000-02-27 19:59:59

@@ -64,7 +64,7 @@ insert into foreign_key_table_002 values(1,'dddd',1,'2020-07-20',true,'dddd',2.2
 insert into foreign_key_table_002 values(2,'eeee',2,'2020-07-20',true,'eeee',2.2);
 delete from foreign_key_table_001 where COL_1=1;
 select * from foreign_key_table_002 order by 1,2,3;
- col_1 |             col_2              | col_3 |            col_4             | col_5 |             col_6              | col_7 
+ COL_1 |             COL_2              | COL_3 |            COL_4             | COL_5 |             COL_6              | COL_7 
 -------+--------------------------------+-------+------------------------------+-------+--------------------------------+-------
      2 | eeee                           |     2 | Mon Jul 20 00:00:00 2020 PDT | t     | eeee                           |   2.2
      3 | dddd                           |     1 | Mon Jul 20 00:00:00 2020 PDT | t     | dddd                           |   2.2

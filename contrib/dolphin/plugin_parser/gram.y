@@ -941,7 +941,7 @@ static char* appendString(char* source, char* target, int offset);
 %type <boolean> opt_varying opt_timezone opt_no_inherit
 
 %type <ival>	Iconst SignedIconst opt_partitions_num opt_subpartitions_num
-%type <str>		Sconst comment_text notify_payload
+%type <str>		Sconst comment_text notify_payload DolphinColColId 
 %type <str>		RoleId RoleIdWithOutCurrentUser TypeOwner opt_granted_by opt_boolean_or_string ColId_or_Sconst Dolphin_ColId_or_Sconst definer_user definer_expression UserId
 %type <list>	var_list guc_value_extension_list
 %type <str>		ColId ColLabel var_name type_function_name param_name charset_collate_name opt_password opt_replace show_index_schema_opt ColIdForTableElement PrivilegeColId
@@ -4428,7 +4428,7 @@ modify_column_cmds:
 			| modify_column_cmds ',' modify_column_cmd	{ $$ = lappend($$, $3); }
 			;
 modify_column_cmd:
-			ColId Typename opt_charset ColQualList add_column_first_after
+			DolphinColColId Typename opt_charset ColQualList add_column_first_after
 				{
 					AlterTableCmd *n = (AlterTableCmd *)$5;
 					if ($4 == NULL && n->is_first == false && n->after_name == NULL && !ENABLE_MODIFY_COLUMN) {
@@ -4483,21 +4483,21 @@ modify_column_cmd:
 						$$ = (Node *)n;						
 					}
 				}
-			| ColId NOT NULL_P opt_enable
+			| DolphinColColId NOT NULL_P opt_enable
 				{
 					AlterTableCmd *n = makeNode(AlterTableCmd);
 					n->subtype = AT_SetNotNull;
 					n->name = $1;
 					$$ = (Node *)n;
 				}
-			| ColId NULL_P
+			| DolphinColColId NULL_P
 				{
 					AlterTableCmd *n = makeNode(AlterTableCmd);
 					n->subtype = AT_DropNotNull;
 					n->name = $1;
 					$$ = (Node *)n;
 				}
-			| ColId CONSTRAINT name NOT NULL_P opt_enable
+			| DolphinColColId CONSTRAINT name NOT NULL_P opt_enable
 				{
 					AlterTableCmd *n = makeNode(AlterTableCmd);
 					ColumnDef *def = makeNode(ColumnDef);
@@ -4511,7 +4511,7 @@ modify_column_cmd:
 					cons->location = @2;
 					$$ = (Node *)n;
 				}
-			| ColId CONSTRAINT name NULL_P
+			| DolphinColColId CONSTRAINT name NULL_P
 				{
 					AlterTableCmd *n = makeNode(AlterTableCmd);
 					ColumnDef *def = makeNode(ColumnDef);
@@ -4526,7 +4526,7 @@ modify_column_cmd:
 					$$ = (Node *)n;
 				}
 			/* modify column comments start */
-			| COLUMN ColId column_options
+			| COLUMN DolphinColColId column_options
 				{
 					AlterTableCmd *n = makeNode(AlterTableCmd);
 					ColumnDef *def = makeNode(ColumnDef);
@@ -4538,7 +4538,7 @@ modify_column_cmd:
 					$$ = (Node *)n;
 				}
 			;
-			| ColId column_options
+			| DolphinColColId column_options
 				{
 					AlterTableCmd *n = makeNode(AlterTableCmd);
 					ColumnDef *def = makeNode(ColumnDef);
@@ -5130,7 +5130,7 @@ alter_table_cmd:
 					$$ = (Node *)n;
 				}
 			/* ALTER TABLE <name> ALTER [COLUMN] <colname> {SET DEFAULT <expr>|DROP DEFAULT} */
-			| ALTER opt_column ColId alter_column_default
+			| ALTER opt_column DolphinColColId alter_column_default
 				{
 					AlterTableCmd *n = makeNode(AlterTableCmd);
 					n->subtype = AT_ColumnDefault;
@@ -5139,7 +5139,7 @@ alter_table_cmd:
 					$$ = (Node *)n;
 				}
 			/* ALTER TABLE <name> ALTER [COLUMN] <colname> DROP NOT NULL */
-			| ALTER opt_column ColId DROP NOT NULL_P
+			| ALTER opt_column DolphinColColId DROP NOT NULL_P
 				{
 					AlterTableCmd *n = makeNode(AlterTableCmd);
 					n->subtype = AT_DropNotNull;
@@ -5147,7 +5147,7 @@ alter_table_cmd:
 					$$ = (Node *)n;
 				}
 			/* ALTER TABLE <name> ALTER [COLUMN] <colname> SET NOT NULL */
-			| ALTER opt_column ColId SET NOT NULL_P
+			| ALTER opt_column DolphinColColId SET NOT NULL_P
 				{
 					AlterTableCmd *n = makeNode(AlterTableCmd);
 					n->subtype = AT_SetNotNull;
@@ -5155,7 +5155,7 @@ alter_table_cmd:
 					$$ = (Node *)n;
 				}
 			/* ALTER TABLE <name> ALTER [COLUMN] <colname> SET STATISTICS <SignedIconst> */
-			| ALTER opt_column ColId SET STATISTICS SignedIconst
+			| ALTER opt_column DolphinColColId SET STATISTICS SignedIconst
 				{
 					AlterTableCmd *n = makeNode(AlterTableCmd);
 					n->subtype = AT_SetStatistics;
@@ -5165,7 +5165,7 @@ alter_table_cmd:
 					$$ = (Node *)n;
 				}
 			/* ALTER TABLE <name> ALTER [COLUMN] <colname> SET STATISTICS PERCENT <SignedIconst> */
-			| ALTER opt_column ColId SET STATISTICS PERCENT SignedIconst
+			| ALTER opt_column DolphinColColId SET STATISTICS PERCENT SignedIconst
 				{
 					AlterTableCmd *n = makeNode(AlterTableCmd);
 					n->subtype = AT_SetStatistics;
@@ -5189,7 +5189,7 @@ alter_table_cmd:
 					$$ = (Node *)n;
 				}
 			/* ALTER TABLE <name> ALTER [COLUMN] <colname> SET ( column_parameter = value [, ... ] ) */
-			| ALTER opt_column ColId SET reloptions
+			| ALTER opt_column DolphinColColId SET reloptions
 				{
 					AlterTableCmd *n = makeNode(AlterTableCmd);
 					n->subtype = AT_SetOptions;
@@ -5198,7 +5198,7 @@ alter_table_cmd:
 					$$ = (Node *)n;
 				}
 			/* ALTER TABLE <name> ALTER [COLUMN] <colname> SET ( column_parameter = value [, ... ] ) */
-			| ALTER opt_column ColId RESET reloptions
+			| ALTER opt_column DolphinColColId RESET reloptions
 				{
 					AlterTableCmd *n = makeNode(AlterTableCmd);
 					n->subtype = AT_ResetOptions;
@@ -5207,7 +5207,7 @@ alter_table_cmd:
 					$$ = (Node *)n;
 				}
 			/* ALTER TABLE <name> ALTER [COLUMN] <colname> SET STORAGE <storagemode> */
-			| ALTER opt_column ColId SET STORAGE ColId
+			| ALTER opt_column DolphinColColId SET STORAGE ColId
 				{
 					AlterTableCmd *n = makeNode(AlterTableCmd);
 					n->subtype = AT_SetStorage;
@@ -5216,7 +5216,7 @@ alter_table_cmd:
 					$$ = (Node *)n;
 				}
 			/* ALTER TABLE <name> DROP [COLUMN] IF EXISTS <colname> [RESTRICT|CASCADE] */
-			| DROP opt_column IF_P EXISTS ColId opt_drop_behavior
+			| DROP opt_column IF_P EXISTS DolphinColColId opt_drop_behavior
 				{
 					AlterTableCmd *n = makeNode(AlterTableCmd);
 					n->subtype = AT_DropColumn;
@@ -5226,7 +5226,7 @@ alter_table_cmd:
 					$$ = (Node *)n;
 				}
 			/* ALTER TABLE <name> DROP [COLUMN] <colname> [RESTRICT|CASCADE] */
-			| DROP opt_column ColId opt_drop_behavior
+			| DROP opt_column DolphinColColId opt_drop_behavior
 				{
 					AlterTableCmd *n = makeNode(AlterTableCmd);
 					n->subtype = AT_DropColumn;
@@ -5239,7 +5239,7 @@ alter_table_cmd:
 			 * ALTER TABLE <name> ALTER [COLUMN] <colname> [SET DATA] TYPE <typename>
 			 *		[ USING <expression> ]
 			 */
-			| ALTER opt_column ColId opt_set_data TYPE_P Typename opt_collate_clause alter_using
+			| ALTER opt_column DolphinColColId opt_set_data TYPE_P Typename opt_collate_clause alter_using
 				{
 					AlterTableCmd *n = makeNode(AlterTableCmd);
 					ColumnDef *def = makeNode(ColumnDef);
@@ -5254,7 +5254,7 @@ alter_table_cmd:
 					$$ = (Node *)n;
 				}
 			/* ALTER FOREIGN TABLE <name> ALTER [COLUMN] <colname> OPTIONS */
-			| ALTER opt_column ColId alter_generic_options
+			| ALTER opt_column DolphinColColId alter_generic_options
 				{
 					AlterTableCmd *n = makeNode(AlterTableCmd);
 					n->subtype = AT_AlterColumnGenericOptions;
@@ -5345,7 +5345,7 @@ alter_table_cmd:
 				{
 					$$ = $2;
 				}
-			| MODIFY_P COLUMN ColId Typename opt_charset ColQualList add_column_first_after
+			| MODIFY_P COLUMN DolphinColColId Typename opt_charset ColQualList add_column_first_after
 				{
 #ifdef ENABLE_MULTIPLE_NODES
 					const char* message = "Un-support feature";
@@ -5385,7 +5385,7 @@ alter_table_cmd:
 					n->def = (Node *)def;
 					$$ = (Node *)n;
 				}
-			| CHANGE opt_column ColId ColId Typename opt_charset ColQualList add_column_first_after
+			| CHANGE opt_column ColId DolphinColColId Typename opt_charset ColQualList add_column_first_after
 				{
 #ifdef ENABLE_MULTIPLE_NODES
 					const char* message = "Un-support feature";
@@ -9390,9 +9390,9 @@ TypedTableElement:
 			| TableConstraint	 				{ $$ = $1; }
 		;
 
-ColIdForTableElement:	normal_ident				{ $$ = $1; }
-			| unreserved_keyword_without_key		{ $$ = downcase_str(pstrdup($1), false); }
-			| col_name_keyword						{ $$ = downcase_str(pstrdup($1), false); }
+ColIdForTableElement:	IDENT				{ $$ = $1->str; }
+			| unreserved_keyword_without_key		{ $$ = pstrdup($1); }
+			| col_name_keyword				{ $$ = pstrdup($1); }
 		;
 
 columnDefForTableElement:	ColIdForTableElement Typename opt_charset KVType ColCmprsMode create_generic_options ColQualList opt_column_options
@@ -9425,7 +9425,7 @@ columnDefForTableElement:	ColIdForTableElement Typename opt_charset KVType ColCm
 				}
 		;
 
-columnDef:	ColId Typename opt_charset KVType ColCmprsMode create_generic_options ColQualList opt_column_options
+columnDef:	DolphinColColId Typename opt_charset KVType ColCmprsMode create_generic_options ColQualList opt_column_options
 				{
 					ColumnDef *n = makeNode(ColumnDef);
 					n->colname = $1;
@@ -23313,8 +23313,8 @@ DropSubscriptionStmt: DROP SUBSCRIPTION name opt_drop_behavior
 		;
 
 TypeOwner:	RoleIdWithOutCurrentUser			{ $$ = $1; }
-			| CURRENT_USER opt_bracket			{ $$ = pstrdup($1); }
-			| SESSION_USER						{ $$ = pstrdup($1); }
+			| CURRENT_USER opt_bracket			{ $$ = downcase_str(pstrdup($1), false); }
+			| SESSION_USER						{ $$ = downcase_str(pstrdup($1), false); }
 		;
 
 /*****************************************************************************
@@ -34340,7 +34340,7 @@ case_arg:	a_expr									{ $$ = $1; }
 
 columnref:	DolphinColId
 				{
-					$$ = makeColumnRef(downcase_str($1->str, $1->is_quoted), NIL, @1, yyscanner);
+					$$ = makeColumnRef($1->str, NIL, @1, yyscanner);
 				}
 			| DolphinColId dolphin_indirection
 				{
@@ -34348,6 +34348,7 @@ columnref:	DolphinColId
 					ListCell* cell = NULL;
 					char* first_word = NULL;
 					int table_index = -1;
+					int col_index = -1;
 					int count = 0;
 					int indices = 0;
 					foreach (cell, $2) {
@@ -34361,20 +34362,23 @@ columnref:	DolphinColId
 					{
 						case 0:
 							/* column */
-							first_word = downcase_str($1->str, $1->is_quoted);
+							first_word = $1->str;
 							break;
 						case 1:
 							/* table.column */
 							first_word = GetDolphinObjName($1->str, $1->is_quoted);
+							col_index = 0;
 							break;
 						case 2:
 							/* schema.table.column */
 							first_word = downcase_str($1->str, $1->is_quoted);
+							col_index = 1;
 							table_index = 0;
 							break;
 						default:
 							/* catalog.schema.table.column. ... */
 							first_word = downcase_str($1->str, $1->is_quoted);
+							col_index = 2;
 							table_index = 1;
 							break;
 					}
@@ -34385,7 +34389,8 @@ columnref:	DolphinColId
 							char* text = strVal(value);
 							bool is_quoted = dolphinString->is_quoted;
 							if (count != table_index) {
-								text = downcase_str(text, is_quoted);
+								if (count != col_index)
+									text = downcase_str(text, is_quoted);
 							} else {
 								text = GetDolphinObjName(text, is_quoted);
 							}
@@ -35047,6 +35052,12 @@ DolphinColId:		IDENT							{ $$ = MakeDolphinStringByChar($1->str, $1->is_quoted
 					| unreserved_keyword			{ $$ = MakeDolphinStringByChar(pstrdup($1), false); }
 					| col_name_keyword				{ $$ = MakeDolphinStringByChar(pstrdup($1), false); }
 		;
+
+DolphinColColId:
+			IDENT								{ $$ = $1->str; }
+					| unreserved_keyword			{ $$ = pstrdup($1); }
+					| col_name_keyword				{ $$ = pstrdup($1); }
+			;
 
 PrivilegeColId:         normal_ident                                                    { $$ = $1; }
                         | unreserved_keyword_without_proxy                              { $$ = downcase_str(pstrdup($1), false); }

@@ -403,3 +403,6 @@ CREATE AGGREGATE pg_catalog.any_value(blob) (
         sfunc = blob_any_value,
         stype = blob
 );
+
+DROP FUNCTION IF EXISTS  pg_catalog.dolphin_attname_eq(name, name) CASCADE;
+CREATE FUNCTION pg_catalog.dolphin_attname_eq(name, name) RETURNS bool LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'dolphin_attname_eq';

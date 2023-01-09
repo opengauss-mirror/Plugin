@@ -1116,20 +1116,20 @@ insert into multi_partition_select_test values(111);
 insert into multi_partition_select_test values(555);
 insert into multi_partition_select_test values(888);
 select a.* from multi_partition_select_test partition (test_part1) a;
- c_int 
+ C_INT 
 -------
    111
 (1 row)
 
 select a.* from multi_partition_select_test partition (test_part1, test_part2) a;
- c_int 
+ C_INT 
 -------
    111
    555
 (2 rows)
 
 select a.* from multi_partition_select_test partition (test_part1, test_part2, test_part3) a;
- c_int 
+ C_INT 
 -------
    111
    555
@@ -1137,7 +1137,7 @@ select a.* from multi_partition_select_test partition (test_part1, test_part2, t
 (3 rows)
 
 select * from multi_partition_select_test partition (test_part2, test_part3);
- c_int 
+ C_INT 
 -------
    555
    888

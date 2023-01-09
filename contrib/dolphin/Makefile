@@ -29,7 +29,7 @@ OBJS += $(parser)/analyze.o $(parser)/gram.o $(parser)/hint_gram.o $(parser)/key
 $(parser)/parse_agg.o $(parser)/parse_clause.o $(parser)/parse_coerce.o $(parser)/parse_collate.o $(parser)/parse_cte.o \
 $(parser)/parse_expr.o $(parser)/parse_func.o $(parser)/parse_hint.o $(parser)/parse_merge.o $(parser)/parse_node.o $(parser)/parse_oper.o $(parser)/parse_param.o \
 $(parser)/parse_relation.o $(parser)/parse_target.o $(parser)/parse_type.o $(parser)/parse_utilcmd.o $(parser)/scansup.o $(parser)/parse_compatibility.o \
-$(parser)/parse_describe.o $(parser)/parse_show.o $(parser)/parse_show_create.o $(parser)/parse_checksum.o $(parser)/parse_flush.o
+$(parser)/parse_describe.o $(parser)/parse_show.o $(parser)/parse_show_create.o $(parser)/parse_checksum.o $(parser)/parse_flush.o $(parser)/parse_startwith.o
 
 OBJS += $(adt)/acl.o $(adt)/arrayfuncs.o $(adt)/array_selfuncs.o $(adt)/array_typanalyze.o\
 $(adt)/array_userfuncs.o $(adt)/arrayutils.o $(adt)/bool.o\

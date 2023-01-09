@@ -691,7 +691,11 @@ static Node* replaceExprAliasIfNecessary(ParseState* pstate, char* colname, Colu
         bool isArrayParam = IsA(tle->expr, ArrayRef) && ((ArrayRef*)tle->expr)->refexpr != NULL &&
                             IsA(((ArrayRef*)tle->expr)->refexpr, Param);
         if (tle->resname != NULL && !IsA(tle->expr, Param) && !isArrayParam &&
+#ifdef DOLPHIN
+            strncasecmp(tle->resname, colname, strlen(colname) + 1) == 0) {
+#else
             strncmp(tle->resname, colname, strlen(colname) + 1) == 0) {
+#endif
             if (checkExprHasWindowFuncs((Node*)tle->expr)) {
                 ereport(ERROR,
                     (errcode(ERRCODE_UNDEFINED_COLUMN),
@@ -3726,7 +3730,11 @@ static char *ColumnRefFindRelname(ParseState *pstate, const char *colname)
 
                 foreach(lc2, colnames) {
                     Value *col = (Value *)lfirst(lc2);
+#ifdef DOLPHIN
+                    if (strcasecmp(colname, strVal(col)) == 0) {
+#else
                     if (strcmp(colname, strVal(col)) == 0) {
+#endif
                         if (rte->rtekind == RTE_RELATION) {
                             relname = (rte->alias && rte->alias->aliasname) ?
                                        rte->alias->aliasname : rte->relname;

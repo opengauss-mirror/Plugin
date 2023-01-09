@@ -1566,7 +1566,7 @@ extern PLpgSQL_function* plpgsql_compile(FunctionCallInfo fcinfo, bool forValida
 extern void delete_function(PLpgSQL_function* func, bool fromPackage = false);
 extern PLpgSQL_function* plpgsql_compile_nohashkey(FunctionCallInfo fcinfo); /* parse trigger func */
 extern PLpgSQL_function* plpgsql_compile_inline(char* proc_source);
-extern void plpgsql_parser_setup(struct ParseState* pstate, PLpgSQL_expr* expr);
+extern void b_plpgsql_parser_setup(struct ParseState* pstate, PLpgSQL_expr* expr);
 extern void plpgsql_parser_setup_bind(struct ParseState* pstate, List** expr);
 extern void plpgsql_parser_setup_describe(struct ParseState* pstate, List** expr);
 

@@ -449,7 +449,11 @@ Form_pg_attribute SystemAttributeByName(const char* attname, bool relhasoids)
         Form_pg_attribute att = SysAtt[j];
 
         if (relhasoids || att->attnum != ObjectIdAttributeNumber) {
+#ifdef DOLPHIN
+            if (strcasecmp(NameStr(att->attname), attname) == 0)
+#else
             if (strcmp(NameStr(att->attname), attname) == 0)
+#endif
                 return att;
         }
     }
@@ -2255,7 +2259,11 @@ HashBucketInfo* GetRelationBucketInfo(DistributeBy* distributeby,
             colname = strVal(lfirst(cell));
             for (j = 0; j < nattr; j++) {
                 attr = &tupledsc->attrs[j];
+#ifdef DOLPHIN
+                if (strcasecmp(colname, attr->attname.data) == 0) {
+#else
                 if (strcmp(colname, attr->attname.data) == 0) {
+#endif
                     local_attnum = attr->attnum;
                     break;
                 }
@@ -5355,7 +5363,11 @@ int2vector* buildPartitionKey(List* keys, TupleDesc tupledsc)
         columName = ((Value*)linitial(col->fields))->val.str;
         finded = false;
         for (j = 0; j < attnum; j++) {
+#ifdef DOLPHIN
+            if (strcasecmp(columName, attrs[j].attname.data) == 0) {
+#else
             if (strcmp(columName, attrs[j].attname.data) == 0) {
+#endif
                 partkey->values[i] = attrs[j].attnum;
                 finded = true;
                 break;
