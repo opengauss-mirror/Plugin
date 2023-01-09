@@ -1,7 +1,17 @@
-/*
- * contrib/tidrangescan/tidrangescan.cpp
+/*-------------------------------------------------------------------------
+ *
+ * tidrangescan.cpp
  *	  Routines to support TID range scans of relations
  *
+ * Portions Copyright (c) 1996-2022, PostgreSQL Global Development Group
+ * Portions Copyright (c) 1994, Regents of the University of California
+ * Portions Copyright (c) 2021, openGauss Contributors
+ *
+ *
+ * IDENTIFICATION
+ *	  contrib/tidrangescan/tidrangescan.cpp
+ *
+ *-------------------------------------------------------------------------
  */
 #include "postgres.h"
 #include "access/relscan.h"
