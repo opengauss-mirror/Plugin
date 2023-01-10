@@ -218,6 +218,27 @@ typedef struct CreateTableOptions {
   char relkind;       /* type of object */
   Node *autoIncStart; /* DefElem for AUTO_INCREMENT = value*/
   CommentStmt *comment;
+  bool autoextend_size_option;
+  bool avg_row_length_option;
+  bool checksum_option;
+  bool connection_option;
+  bool directory_option;
+  bool delay_key_write_option;
+  bool encryption_option;
+  bool engine_attribute_option; 
+  bool insert_method_option;
+  bool key_block_size_option;
+  bool max_rows_option;
+  bool min_rows_option;
+  bool pack_keys_option;
+  bool password_option;
+  bool start_transaction_option;
+  bool secondary_engine_attribute_option; 
+  bool stats_auto_recalc_option;
+  bool stats_persistent_option;
+  bool stats_sample_pages_option;
+  bool union_option;
+  bool tablespace_option;
 } CreateTableOptions;
 
 typedef enum {
@@ -238,7 +259,28 @@ typedef enum {
     OPT_CHARSET,
     OPT_ROW_FORMAT,
     OPT_AUTO_INC,
-    OPT_COMMENT_TAB
+    OPT_COMMENT_TAB,
+    OPT_AUTOEXTEND_SIZE,
+    OPT_AVG_ROW_LENGTH,
+    OPT_CHECKSUM,
+    OPT_CONNECTION,
+    OPT_DIRECTORY,
+    OPT_DELAY_KEY_WRITE,
+    OPT_ENCRYPTION,
+    OPT_ENGINE_ATTRIBUTE,
+    OPT_INSERT_METHOD,
+    OPT_KEY_BLOCK_SIZE,
+    OPT_MAX_ROWS,
+    OPT_MIN_ROWS,
+    OPT_PACK_KEYS,
+    OPT_PASSWORD,
+    OPT_START_TRANSACTION,
+    OPT_SECONDARY_ENGINE_ATTRIBUTE,
+    OPT_STATS_AUTO_RECALC,
+    OPT_STATS_PERSISTENT,
+    OPT_STATS_SAMPLE_PAGES,
+    OPT_UNION,
+    OPT_TABLESPACE_STORAGE
 } TableOptionType;
 
 typedef struct SingleTableOption {
@@ -378,6 +420,7 @@ static long long get_pid(const char *strsid);
 static Node *MakeAnonyBlockFuncStmt(int flag, const char * str);
 static CreateTableOptions* MakeCreateTableOptions(CreateTableOptions *tableOptions, SingleTableOption *tableOption);
 static CreateIndexOptions* MakeCreateIndexOptions(CreateIndexOptions *indexOptions, SingleIndexOption *indexOption);
+static SingleTableOption* CreateSingleTableOption(TableOptionType tableOptionType);
 #define  TYPE_LEN     4 /* strlen("TYPE") */
 #define  DATE_LEN     4 /* strlen("DATE") */
 #define  DECLARE_LEN     9 /* strlen(" DECLARE ") */
@@ -1059,7 +1102,7 @@ static SelectStmt *MakeShowGrantStmt(char *arg, int location, core_yyscan_t yysc
 /* PGXC - added DISTRIBUTE, DIRECT, COORDINATOR, CLEAN,  NODE, BARRIER, SLICE, DATANODE */
 %token <keyword> ABORT_P ABSOLUTE_P ACCESS ACCOUNT ACTION ADD_P ADMIN AFTER
 	AGGREGATE ALGORITHM ALL ALSO ALTER ALWAYS ANALYSE ANALYZE AND ANY APP APPEND ARCHIVE ARRAY AS ASC
-        ASSERTION ASSIGNMENT ASYMMETRIC AT ATTRIBUTE AUDIT AUTHID AUTHORIZATION AUTOEXTEND AUTOMAPPED AUTO_INCREMENT
+        ASSERTION ASSIGNMENT ASYMMETRIC AT ATTRIBUTE AUDIT AUTHID AUTHORIZATION AUTOEXTEND AUTOEXTEND_SIZE AUTOMAPPED AUTO_INCREMENT AVG_ROW_LENGTH
 
 	BACKWARD BARRIER BEFORE BEGIN_NON_ANOYBLOCK BEGIN_P BETWEEN BIGINT BINARY BINARY_P BINARY_DOUBLE BINARY_INTEGER BIT BLANKS
 	BLOB_P BLOCKCHAIN BODY_P BOGUS BOOLEAN_P BOTH BUCKETCNT BUCKETS BY BYTEAWITHOUTORDER BYTEAWITHOUTORDERWITHEQUAL
@@ -1075,13 +1118,13 @@ static SelectStmt *MakeShowGrantStmt(char *arg, int location, core_yyscan_t yysc
 	SHRINK
 
 	DATA_P DATABASE DATABASES DATAFILE DATANODE DATANODES DATATYPE_CL DATE_P DATETIME DATE_FORMAT_P DAY_P DAY_HOUR_P DAY_MICROSECOND_P DAY_MINUTE_P DAY_SECOND_P DAYOFMONTH DAYOFWEEK DAYOFYEAR DBCOMPATIBILITY_P DB_B_FORMAT DB_B_JSOBJ DEALLOCATE DEC DECIMAL_P DECLARE DECODE DEFAULT DEFAULTS DEFAULT_FUNC
-	DEFERRABLE DEFERRED DEFINER DELAYED DELETE_P DELIMITER DELIMITERS DELTA DELTAMERGE DESC DESCRIBE DETERMINISTIC DIV
+	DEFERRABLE DEFERRED DEFINER DELAYED DELAY_KEY_WRITE DELETE_P DELIMITER DELIMITERS DELTA DELTAMERGE DESC DESCRIBE DETERMINISTIC DISK DIV
 /* PGXC_BEGIN */
 	DICTIONARY DIRECT DIRECTORY DISABLE_P DISCARD DISTINCT DISTINCTROW DISTRIBUTE DISTRIBUTION DO DOCUMENT_P DOMAIN_P DOUBLE_P
 /* PGXC_END */
 	DROP DUPLICATE DISCONNECT
 
-	EACH ELASTIC ELSE ENABLE_P ENCLOSED ENCODING ENCRYPTED ENCRYPTED_VALUE ENCRYPTION ENCRYPTION_TYPE END_P ENFORCED ENGINE_P ENUM_P ERRORS ESCAPE ESCAPED EOL ESCAPING EVERY EXCEPT EXCHANGE
+	EACH ELASTIC ELSE ENABLE_P ENCLOSED ENCODING ENCRYPTED ENCRYPTED_VALUE ENCRYPTION ENCRYPTION_TYPE END_P ENFORCED ENGINE_ATTRIBUTE ENGINE_P ENUM_P ERRORS ESCAPE ESCAPED EOL ESCAPING EVERY EXCEPT EXCHANGE
 	EXCLUDE EXCLUDED EXCLUDING EXCLUSIVE EXECUTE EXISTS EXPIRED_P EXPLAIN
 	EXTENDED EXTENSION EXTERNAL EXTRACT
 
@@ -1096,17 +1139,17 @@ static SelectStmt *MakeShowGrantStmt(char *arg, int location, core_yyscan_t yysc
 	IDENTIFIED IDENTITY_P IF_P IFNULL IGNORE IGNORE_EXTRA_DATA ILIKE IMMEDIATE IMMUTABLE IMPLICIT_P IN_P INCLUDE
 	INCLUDING INCREMENT INCREMENTAL INDEX INDEXES INFILE INHERIT INHERITS INITIAL_P INITIALLY INITRANS INLINE_P
 
-	INNER_P INOUT INPUT_P INSENSITIVE INSERT INSTEAD INT_P INTEGER INTERNAL
+	INNER_P INOUT INPUT_P INSENSITIVE INSERT INSERT_METHOD INSTEAD INT_P INTEGER INTERNAL
 	INTERSECT INTERVAL INTO INVOKER IP IS ISNULL ISOLATION
 
 	JOIN
 
-	KEY KEYS KILL KEY_PATH KEY_STORE
+	KEY KEY_BLOCK_SIZE KEYS KILL KEY_PATH KEY_STORE
 
 	LABEL LANGUAGE LARGE_P LAST_DAY_FUNC LAST_P LC_COLLATE_P LC_CTYPE_P LEADING LEAKPROOF
 	LEAST LESS LEFT LEVEL LIKE LINES LIMIT LIST LISTEN LOAD LOCAL LOCALTIME LOCALTIMESTAMP
 	LOCATE LOCATION LOCK_P LOCKED LOG_P LOGGING LOGIN_ANY LOGIN_FAILURE LOGIN_SUCCESS LOGOUT LOGS LOOP LOW_PRIORITY
-	MAPPING MASKING MASTER MATCH MATERIALIZED MATCHED MAXEXTENTS MAXSIZE MAXTRANS MAXVALUE MEDIUMINT MERGE MICROSECOND_P MID MINUS_P MINUTE_P MINUTE_MICROSECOND_P MINUTE_SECOND_P MINVALUE MINEXTENTS MOD MODE MODIFY_P MONTH_P MOVE MOVEMENT
+	MAPPING MASKING MASTER MATCH MATERIALIZED MATCHED MAXEXTENTS MAX_ROWS MAXSIZE MAXTRANS MAXVALUE MEDIUMINT MEMORY MERGE MICROSECOND_P MID MIN_ROWS MINUS_P MINUTE_P MINUTE_MICROSECOND_P MINUTE_SECOND_P MINVALUE MINEXTENTS MOD MODE MODIFY_P MONTH_P MOVE MOVEMENT
 	MODEL // DB4AI
 	MODIFIES
 	NAME_P NAMES NATIONAL NATURAL NCHAR NEXT NO NOCOMPRESS NOCYCLE NODE NOLOGGING NOMAXVALUE NOMINVALUE NONE
@@ -1116,7 +1159,7 @@ static SelectStmt *MakeShowGrantStmt(char *arg, int location, core_yyscan_t yysc
 	OBJECT_P OF OFF OFFSET OIDS ON ONLY OPERATOR OPTIMIZATION OPTIMIZE OPTION OPTIONALLY OPTIONS OR
 	ORDER OUT_P OUTER_P OVER OVERLAPS OVERLAY OWNED OWNER
 
-	PACKAGE PACKAGES PARSER PARTIAL PARTITION PARTITIONING PARTITIONS PASSING PASSWORD PCTFREE PER_P PERCENT PERFORMANCE PERM PLACING PLAN PLANS POLICY POSITION
+	PACKAGE PACKAGES PACK_KEYS PARSER PARTIAL PARTITION PARTITIONING PARTITIONS PASSING PASSWORD PCTFREE PER_P PERCENT PERFORMANCE PERM PLACING PLAN PLANS POLICY POSITION
 /* PGXC_BEGIN */
 	POOL PRECEDING PRECISION
 /* PGXC_END */
@@ -1133,10 +1176,10 @@ static SelectStmt *MakeShowGrantStmt(char *arg, int location, core_yyscan_t yysc
 	RESET RESIZE RESOURCE RESTART RESTRICT RETURN RETURNING RETURNS REUSE REVOKE RIGHT RLIKE ROLE ROLES ROLLBACK ROLLUP
 	ROTATION ROUTINE ROW ROWNUM ROWS ROWTYPE_P ROW_FORMAT RULE
 
-	SAMPLE SAVEPOINT SCHEMA SCHEMAS SCROLL SEARCH SECOND_P SECOND_MICROSECOND_P SECURITY SELECT SEPARATOR_P SEQUENCE SEQUENCES
+	SAMPLE SAVEPOINT SCHEMA SCHEMAS SCROLL SEARCH SECONDARY_ENGINE_ATTRIBUTE SECOND_P SECOND_MICROSECOND_P SECURITY SELECT SEPARATOR_P SEQUENCE SEQUENCES
 	SERIALIZABLE SERVER SESSION SESSION_USER SET SETS SETOF SHARE SHIPPABLE SHOW SHUTDOWN SIBLINGS SIGNED
 	SIMILAR SIMPLE SIZE SKIP SLAVE SLICE SMALLDATETIME SMALLDATETIME_FORMAT_P SMALLINT SNAPSHOT SOME SOUNDS SOURCE_P SPACE SPILL SPLIT SQL STABLE STANDALONE_P START STARTING STARTWITH
-	STATEMENT STATEMENT_ID STATISTICS STATUS STDIN STDOUT STORAGE STORE_P STORED STRATIFY STREAM STRICT_P STRIP_P SUBPARTITION SUBSCRIPTION SUBSTR SUBSTRING
+	STATEMENT STATEMENT_ID STATISTICS STATS_AUTO_RECALC STATS_PERSISTENT STATS_SAMPLE_PAGES STATUS STDIN STDOUT STORAGE STORE_P STORED STRATIFY STREAM STRICT_P STRIP_P SUBPARTITION SUBSCRIPTION SUBSTR SUBSTRING
 	SYMMETRIC SYNONYM SYSDATE SYSID SYSTEM_P SYS_REFCURSOR SHOW_ERRORS
 
 	TABLE TABLES TABLESAMPLE TABLESPACE TARGET TEMP TEMPLATE TEMPORARY TERMINATED TEXT_P THAN THEN TIME TIME_FORMAT_P TIMECAPSULE TIMESTAMP TIMESTAMP_FORMAT_P TIMESTAMPADD TIMESTAMPDIFF TINYINT
@@ -5330,6 +5373,139 @@ alter_table_cmd:
 				n->subtype = AT_SetTableCollate;
 				$$ = (Node *) n;
 			}
+			| autoextend_size_option
+				{
+					AlterTableCmd *n = makeNode(AlterTableCmd);
+					n->subtype = AT_AUTOEXTEND_SIZE;
+					$$ = (Node *) n;
+				}
+			| avg_row_length_option
+				{
+					AlterTableCmd *n = makeNode(AlterTableCmd);
+					n->subtype = AT_AVG_ROW_LENGTH;
+					$$ = (Node *) n;
+				}
+			| checksum_option
+				{
+					AlterTableCmd *n = makeNode(AlterTableCmd);
+					n->subtype = AT_CHECKSUM;
+					$$ = (Node *) n;
+				}
+			| CONNECTION opt_equal Sconst
+				{
+					AlterTableCmd *n = makeNode(AlterTableCmd);
+					n->subtype = AT_CONNECTION;
+					$$ = (Node *) n;
+				}
+			| directory_option
+				{
+					AlterTableCmd *n = makeNode(AlterTableCmd);
+					n->subtype = AT_DIRECTORY;
+					$$ = (Node *) n;
+				}
+			| delay_key_write_option
+				{
+					AlterTableCmd *n = makeNode(AlterTableCmd);
+					n->subtype = AT_DELAY_KEY_WRITE;
+					$$ = (Node *) n;
+				}
+			| ENCRYPTION opt_equal Sconst
+				{
+					AlterTableCmd *n = makeNode(AlterTableCmd);
+					n->subtype = AT_ENCRYPTION;
+					$$ = (Node *) n;
+				}
+			| ENGINE_ATTRIBUTE opt_equal Sconst
+				{
+					AlterTableCmd *n = makeNode(AlterTableCmd);
+					n->subtype = AT_ENGINE_ATTRIBUTE;
+					$$ = (Node *) n;
+				}
+			| insert_method_option
+				{
+					AlterTableCmd *n = makeNode(AlterTableCmd);
+					n->subtype = AT_INSERT_METHOD;
+					$$ = (Node *) n;
+				}
+			| key_block_size_option
+				{
+					AlterTableCmd *n = makeNode(AlterTableCmd);
+					n->subtype = AT_KEY_BLOCK_SIZE;
+					$$ = (Node *) n;
+				}
+			| max_rows_option
+				{
+					AlterTableCmd *n = makeNode(AlterTableCmd);
+					n->subtype = AT_MAX_ROWS;
+					$$ = (Node *) n;
+				}
+			| min_rows_option
+				{
+					AlterTableCmd *n = makeNode(AlterTableCmd);
+					n->subtype = AT_MIN_ROWS;
+					$$ = (Node *) n;
+				}
+			| pack_keys_option
+				{
+					AlterTableCmd *n = makeNode(AlterTableCmd);
+					n->subtype = AT_PACK_KEYS;
+					$$ = (Node *) n;
+				}
+			| PASSWORD opt_equal Sconst
+				{
+					AlterTableCmd *n = makeNode(AlterTableCmd);
+					n->subtype = AT_PASSWORD;
+					$$ = (Node *) n;
+				}
+			| START TRANSACTION
+				{
+					AlterTableCmd *n = makeNode(AlterTableCmd);
+					n->subtype = AT_START_TRANSACTION;
+					$$ = (Node *) n;
+				}
+			| SECONDARY_ENGINE_ATTRIBUTE opt_equal Sconst
+				{
+					AlterTableCmd *n = makeNode(AlterTableCmd);
+					n->subtype = AT_SECONDARY_ENGINE_ATTRIBUTE;
+					$$ = (Node *) n;
+				}
+			| stats_auto_recalc_option
+				{
+					AlterTableCmd *n = makeNode(AlterTableCmd);
+					n->subtype = AT_STATS_AUTO_RECALC;
+					$$ = (Node *) n;
+				}
+			| stats_persistent_option
+				{
+					AlterTableCmd *n = makeNode(AlterTableCmd);
+					n->subtype = AT_STATS_PERSISTENT;
+					$$ = (Node *) n;
+				}
+			| stats_sample_pages_option
+				{
+					AlterTableCmd *n = makeNode(AlterTableCmd);
+					n->subtype = AT_STATS_SAMPLE_PAGES;
+					$$ = (Node *) n;
+				}
+			| UNION opt_equal '(' dolphin_qualified_name_list ')'
+				{
+					AlterTableCmd *n = makeNode(AlterTableCmd);
+					n->subtype = AT_UNION;
+					$$ = (Node *) n;
+				}
+			| OptTableSpace_without_empty tablespace_storage_option
+				{
+					AlterTableCmd *n = makeNode(AlterTableCmd);
+					n->subtype = AT_TABLESPACE;
+					n->name = $1;
+					$$ = (Node *) n;
+				}
+			| tablespace_storage_option_without_empty
+				{
+					AlterTableCmd *n = makeNode(AlterTableCmd);
+					n->subtype = AT_TABLESPACE_STORAGE;
+					$$ = (Node *) n;
+				}
 			;
 
 /* PGXC_BEGIN */
@@ -7402,6 +7578,179 @@ CreateAsOption:
 					n->option_type = OPT_ROW_FORMAT;
 					$$ = n;
 				}
+			| autoextend_size_option
+				{
+					$$ = CreateSingleTableOption(OPT_AUTOEXTEND_SIZE);
+				}
+			| avg_row_length_option
+				{
+					$$ = CreateSingleTableOption(OPT_AVG_ROW_LENGTH);
+				}
+			| checksum_option
+				{
+					$$ = CreateSingleTableOption(OPT_CHECKSUM);
+				}
+			| CONNECTION opt_equal Sconst
+				{
+					$$ = CreateSingleTableOption(OPT_CONNECTION);
+				}
+			| directory_option
+				{
+					$$ = CreateSingleTableOption(OPT_DIRECTORY);
+				}
+			| delay_key_write_option
+				{
+					$$ = CreateSingleTableOption(OPT_DELAY_KEY_WRITE);
+				}
+			| ENCRYPTION opt_equal Sconst
+				{
+					$$ = CreateSingleTableOption(OPT_ENCRYPTION);
+				}
+			| ENGINE_ATTRIBUTE opt_equal Sconst
+				{
+					$$ = CreateSingleTableOption(OPT_ENGINE_ATTRIBUTE);
+				}
+			| insert_method_option
+				{
+					$$ = CreateSingleTableOption(OPT_INSERT_METHOD);
+				}
+			| key_block_size_option
+				{
+					$$ = CreateSingleTableOption(OPT_KEY_BLOCK_SIZE);
+				}
+			| max_rows_option
+				{
+					$$ = CreateSingleTableOption(OPT_MAX_ROWS);
+				}
+			| min_rows_option
+				{
+					$$ = CreateSingleTableOption(OPT_MIN_ROWS);
+				}
+			| pack_keys_option
+				{
+					$$ = CreateSingleTableOption(OPT_PACK_KEYS);
+				}
+			| PASSWORD opt_equal Sconst
+				{
+					$$ = CreateSingleTableOption(OPT_PASSWORD);
+				}
+			| START TRANSACTION
+				{
+					$$ = CreateSingleTableOption(OPT_START_TRANSACTION);
+				}
+			| SECONDARY_ENGINE_ATTRIBUTE opt_equal Sconst
+				{
+					$$ = CreateSingleTableOption(OPT_SECONDARY_ENGINE_ATTRIBUTE);
+				}
+			| stats_auto_recalc_option
+				{
+					$$ = CreateSingleTableOption(OPT_STATS_AUTO_RECALC);
+				}
+			| stats_persistent_option
+				{
+					$$ = CreateSingleTableOption(OPT_STATS_PERSISTENT);
+				}
+			| stats_sample_pages_option
+				{
+					$$ = CreateSingleTableOption(OPT_STATS_SAMPLE_PAGES);
+				}
+			| UNION opt_equal '(' dolphin_qualified_name_list ')'
+				{
+					$$ = CreateSingleTableOption(OPT_UNION);
+				}
+			| tablespace_storage_option_without_empty
+				{
+					$$ = CreateSingleTableOption(OPT_TABLESPACE_STORAGE);
+				}
+			;
+
+autoextend_size_option:
+		AUTOEXTEND_SIZE opt_equal Iconst	{}
+		| AUTOEXTEND_SIZE opt_equal FCONST	{}
+		| AUTOEXTEND_SIZE opt_equal Iconst normal_ident	{}
+		| AUTOEXTEND_SIZE opt_equal FCONST normal_ident	{}
+		| AUTOEXTEND_SIZE opt_equal normal_ident	{}
+		;
+
+avg_row_length_option:
+		AVG_ROW_LENGTH opt_equal Iconst	{}
+		| AVG_ROW_LENGTH opt_equal FCONST	{}
+		;
+
+checksum_option:
+		CHECKSUM opt_equal Iconst	{}
+		| CHECKSUM opt_equal FCONST	{}
+		| CHECKSUM opt_equal XCONST	{}
+		;
+
+directory_option:
+		DATA_P DIRECTORY opt_equal Sconst	{}
+		| INDEX DIRECTORY opt_equal Sconst	{}
+		;
+
+delay_key_write_option:
+		DELAY_KEY_WRITE opt_equal Iconst	{}
+		| DELAY_KEY_WRITE opt_equal FCONST	{}
+		| DELAY_KEY_WRITE opt_equal XCONST	{}
+		;
+
+insert_method_option:
+		INSERT_METHOD opt_equal NO	{}
+		| INSERT_METHOD opt_equal FIRST_P	{}
+		| INSERT_METHOD opt_equal LAST_P	{}
+		;
+
+key_block_size_option:
+		KEY_BLOCK_SIZE opt_equal Iconst	{}
+		| KEY_BLOCK_SIZE opt_equal FCONST	{}
+		;
+
+max_rows_option:
+		MAX_ROWS opt_equal Iconst	{}
+		| MAX_ROWS opt_equal FCONST	{}
+		;
+
+min_rows_option:
+		MIN_ROWS opt_equal Iconst	{}
+		| MIN_ROWS opt_equal FCONST	{}
+		;
+
+pack_keys_option:
+		PACK_KEYS opt_equal Iconst	{}
+		| PACK_KEYS opt_equal FCONST	{}
+		| PACK_KEYS opt_equal XCONST	{}
+		| PACK_KEYS opt_equal DEFAULT	{}
+		;
+
+stats_auto_recalc_option:
+		STATS_AUTO_RECALC opt_equal Iconst	{}
+		| STATS_AUTO_RECALC opt_equal FCONST	{}
+		| STATS_AUTO_RECALC opt_equal XCONST	{}
+		| STATS_AUTO_RECALC opt_equal DEFAULT	{}
+		;
+
+stats_persistent_option:
+		STATS_PERSISTENT opt_equal Iconst	{}
+		| STATS_PERSISTENT opt_equal FCONST	{}
+		| STATS_PERSISTENT opt_equal XCONST	{}
+		| STATS_PERSISTENT opt_equal DEFAULT	{}
+		;
+
+stats_sample_pages_option:
+		STATS_SAMPLE_PAGES opt_equal Iconst	{}
+		| STATS_SAMPLE_PAGES opt_equal FCONST	{}
+		| STATS_SAMPLE_PAGES opt_equal XCONST	{}
+		;
+
+tablespace_storage_option_without_empty:
+		STORAGE DISK	{}
+		| STORAGE MEMORY	{}
+		;
+
+tablespace_storage_option:
+		STORAGE DISK	{}
+		| STORAGE MEMORY    {}
+		| /*EMPTY*/	{}
 		;
 
 charset_with_opt_equal:
@@ -34757,6 +35106,7 @@ static CreateTableOptions* MakeCreateTableOptions(CreateTableOptions *tableOptio
 		tableOptions->row_compress = REL_CMPRS_PAGE_PLAIN;
 		tableOptions->relkind = OBJECT_TABLE;
 	}
+
 	switch (tableOption->option_type) {
 	case OPT_INHERIT:
 		tableOptions->inhRelations = tableOption->option.list_content;
@@ -34806,6 +35156,175 @@ static CreateTableOptions* MakeCreateTableOptions(CreateTableOptions *tableOptio
 	case OPT_COLLATE:
 	case OPT_CHARSET:
 	case OPT_ROW_FORMAT:
+		break;
+	case OPT_AUTOEXTEND_SIZE:
+		{
+			if(!tableOptions->autoextend_size_option) {
+				tableOptions->autoextend_size_option = true;
+				ereport(WARNING, (errmsg("AUTOEXTEND_SIZE for TABLE is not supported for current version. skipped")));
+			}
+		}
+		break;
+	case OPT_AVG_ROW_LENGTH:
+		{
+			if(!tableOptions->avg_row_length_option) {
+				tableOptions->avg_row_length_option = true;
+				ereport(WARNING, (errmsg("AVG_ROW_LENGTH for TABLE is not supported for current version. skipped")));
+			}
+		}
+		break;
+	case OPT_CHECKSUM:
+		{
+			if(!tableOptions->checksum_option) {
+				tableOptions->checksum_option = true;
+				ereport(WARNING, (errmsg("CHECKSUM for TABLE is not supported for current version. skipped")));
+			}
+		}
+		break;
+	case OPT_CONNECTION:
+		{
+			if(!tableOptions->connection_option) {
+				tableOptions->connection_option = true;
+				ereport(WARNING, (errmsg("CONNECTION for TABLE is not supported for current version. skipped")));
+			}
+		}
+		break;
+	case OPT_DIRECTORY:
+		{
+			if(!tableOptions->directory_option) {
+				tableOptions->directory_option = true;
+				ereport(WARNING, (errmsg("DIRECTORY for TABLE is not supported for current version. skipped")));
+			}
+		}
+		break;
+	case OPT_DELAY_KEY_WRITE:
+		{
+			if(!tableOptions->delay_key_write_option) {
+				tableOptions->delay_key_write_option = true;
+				ereport(WARNING, (errmsg("DELAY_KEY_WRITE for TABLE is not supported for current version. skipped")));
+			}
+		}
+		break;
+	case OPT_ENCRYPTION:
+		{
+			if(!tableOptions->encryption_option) {
+				tableOptions->encryption_option = true;
+				ereport(WARNING, (errmsg("ENCRYPTION for TABLE is not supported for current version. skipped")));
+			}
+		}
+		break;
+	case OPT_ENGINE_ATTRIBUTE:
+		{
+			if(!tableOptions->engine_attribute_option) {
+				tableOptions->engine_attribute_option = true;
+				ereport(WARNING, (errmsg("ENGINE_ATTRIBUTE for TABLE is not supported for current version. skipped")));
+			}
+		}
+		break;
+	case OPT_INSERT_METHOD:
+		{
+			if(!tableOptions->insert_method_option) {
+				tableOptions->insert_method_option = true;
+				ereport(WARNING, (errmsg("INSERT_METHOD for TABLE is not supported for current version. skipped")));
+			}
+		}
+		break;
+	case OPT_KEY_BLOCK_SIZE:
+		{
+			if(!tableOptions->key_block_size_option) {
+				tableOptions->key_block_size_option = true;
+				ereport(WARNING, (errmsg("KEY_BLOCK_SIZE for TABLE is not supported for current version. skipped")));
+			}
+		}
+		break;
+	case OPT_MAX_ROWS:
+		{
+			if(!tableOptions->max_rows_option) {
+				tableOptions->max_rows_option = true;
+				ereport(WARNING, (errmsg("MAX_ROWS for TABLE is not supported for current version. skipped")));
+			}
+		}
+		break;
+	case OPT_MIN_ROWS:
+		{
+			if(!tableOptions->min_rows_option) {
+				tableOptions->min_rows_option = true;
+				ereport(WARNING, (errmsg("MIN_ROWS for TABLE is not supported for current version. skipped")));
+			}
+		}
+		break;
+	case OPT_PACK_KEYS:
+		{
+			if(!tableOptions->pack_keys_option) {
+				tableOptions->pack_keys_option = true;
+				ereport(WARNING, (errmsg("PACK_KEYS for TABLE is not supported for current version. skipped")));
+			}
+		}
+		break;
+	case OPT_PASSWORD:
+		{
+			if(!tableOptions->password_option) {
+				tableOptions->password_option = true;
+				ereport(WARNING, (errmsg("PASSWORD for TABLE is not supported for current version. skipped")));
+			}
+		}
+		break;
+	case OPT_START_TRANSACTION:
+		{
+			if(!tableOptions->start_transaction_option) {
+				tableOptions->start_transaction_option = true;
+				ereport(WARNING, (errmsg("START_TRANSACTION for TABLE is not supported for current version. skipped")));
+			}
+		}
+		break;
+	case OPT_SECONDARY_ENGINE_ATTRIBUTE:
+		{
+			if(!tableOptions->secondary_engine_attribute_option) {
+				tableOptions->secondary_engine_attribute_option = true;
+				ereport(WARNING, (errmsg("SECONDARY_ENGINE_ATTRIBUTE for TABLE is not supported for current version. skipped")));
+			}
+		}
+		break;
+	case OPT_STATS_AUTO_RECALC:
+		{
+			if(!tableOptions->stats_auto_recalc_option) {
+				tableOptions->stats_auto_recalc_option = true;
+				ereport(WARNING, (errmsg("STATS_AUTO_RECALC for TABLE is not supported for current version. skipped")));
+			}
+		}
+		break;
+	case OPT_STATS_PERSISTENT:
+		{
+			if(!tableOptions->stats_persistent_option) {
+				tableOptions->stats_persistent_option = true;
+				ereport(WARNING, (errmsg("STATS_PERSISTENT for TABLE is not supported for current version. skipped")));
+			}
+		}
+		break;
+	case OPT_STATS_SAMPLE_PAGES:
+		{
+			if(!tableOptions->stats_sample_pages_option) {
+				tableOptions->stats_sample_pages_option = true;
+				ereport(WARNING, (errmsg("STATS_SAMPLE_PAGES for TABLE is not supported for current version. skipped")));
+			}
+		}
+		break;
+	case OPT_UNION:
+		{
+			if(!tableOptions->union_option) {
+				tableOptions->union_option = true;
+				ereport(WARNING, (errmsg("UNION for TABLE is not supported for current version. skipped")));
+			}
+		}
+		break;
+	case OPT_TABLESPACE_STORAGE:
+		{
+			if(!tableOptions->tablespace_option) {
+				tableOptions->tablespace_option = true;
+				ereport(WARNING, (errmsg("TABLESPACE_OPTION for TABLE is not supported for current version. skipped")));
+			}
+		}
+		break;
 	default:
 		break;
 	}
@@ -35321,6 +35840,13 @@ static char* TriggerBodyGet(int& start_pos, int& end_pos, base_yy_extra_type* yy
 	appendStringInfo(&select_query, "end");
 
 	return select_query.data;
+}
+
+static SingleTableOption* CreateSingleTableOption(TableOptionType tableOptionType)
+{
+    SingleTableOption *n = (SingleTableOption*)palloc0(sizeof(SingleTableOption));
+    n->option_type = tableOptionType;
+    return n;
 }
 
 static void setAccessMethod(Constraint *n)

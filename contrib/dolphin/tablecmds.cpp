@@ -423,6 +423,32 @@ struct RenameTableNameData {
 
 typedef OldToNewChunkIdMappingData* OldToNewChunkIdMapping;
 
+#ifdef DOLPHIN
+struct AlterTableOptions {
+    bool autoextend_size_option;
+    bool avg_row_length_option;
+    bool checksum_option;
+    bool connection_option;
+    bool delay_key_write_option;
+    bool directory_option;
+    bool encryption_option;
+    bool engine_attribute_option;
+    bool insert_method_option;
+    bool key_block_size_option;
+    bool max_rows_option;
+    bool min_rows_option;
+    bool pack_keys_option;
+    bool password_option;
+    bool start_transaction_option;
+    bool secondary_engine_attribute_option;
+    bool stats_auto_recalc_option;
+    bool stats_persistent_option;
+    bool stats_sample_pages_option;
+    bool union_option;
+    bool tablespace_option;
+};
+#endif
+
 /* Alter table target-type flags for ATSimplePermissions */
 #define ATT_NULL 0x0000
 #define ATT_TABLE 0x0001
@@ -781,6 +807,7 @@ static void CopyTempAutoIncrement(Relation oldrel, Relation newrel);
 #ifdef DOLPHIN
 static List* ATGetNonUniqueKeyList(Relation rel);
 static char* ATGetPKName(Relation rel);
+static void CheckTableOptions(AlterTableOptions *tableOptions, AlterTableCmd *cmd);
 #endif
 inline static bool CStoreSupportATCmd(AlterTableType cmdtype)
 {
@@ -7680,7 +7707,11 @@ void AlterTable(Oid relid, LOCKMODE lockmode, AlterTableStmt* stmt)
                         errdetail("It is not supported to alter a DFS table.")));
             }
 
-            if (AT_SetTableSpace == cmd->subtype) {
+            if (AT_SetTableSpace == cmd->subtype
+#ifdef DOLPHIN
+                || AT_TABLESPACE == cmd->subtype
+#endif
+            ) {
                 char* tblspcName = cmd->name;
                 Oid tblspcOid = get_tablespace_oid(tblspcName, false);
                 if (IsSpecifiedTblspc(tblspcOid, FILESYSTEM_HDFS)) {
@@ -7703,6 +7734,7 @@ void AlterTable(Oid relid, LOCKMODE lockmode, AlterTableStmt* stmt)
     HeapTuple tuple;
     Form_pg_attribute targetAtt;
     List* enumOidList = NIL;
+    AlterTableOptions *tableOptions = (AlterTableOptions*)palloc0(sizeof(AlterTableOptions));
     foreach (lc, stmt->cmds) {
         AlterTableCmd* cmd = (AlterTableCmd*)lfirst(lc);
         if (AT_AlterColumnType == cmd->subtype) {
@@ -7734,7 +7766,11 @@ void AlterTable(Oid relid, LOCKMODE lockmode, AlterTableStmt* stmt)
             ReleaseSysCache(typeTuple);
             ReleaseSysCache(tuple);
         }
+
+        CheckTableOptions(tableOptions, cmd);
     }
+
+    pfree(tableOptions);
 #endif
     // Next version remove hack patch for 'ALTER FOREIGN TABLE ... ADD NODE'
     if (stmt->cmds != NIL) {
@@ -8392,6 +8428,32 @@ static void ATPrepCmd(List** wqueue, Relation rel, AlterTableCmd* cmd, bool recu
             pass = AT_COMMENT;
             break;
 #endif
+#ifdef DOLPHIN
+        case AT_AUTOEXTEND_SIZE:
+        case AT_AVG_ROW_LENGTH:
+        case AT_CHECKSUM:
+        case AT_CONNECTION:
+        case AT_DIRECTORY:
+        case AT_DELAY_KEY_WRITE:
+        case AT_ENCRYPTION:
+        case AT_ENGINE_ATTRIBUTE:
+        case AT_INSERT_METHOD:
+        case AT_KEY_BLOCK_SIZE:
+        case AT_MAX_ROWS:
+        case AT_MIN_ROWS:
+        case AT_PACK_KEYS:
+        case AT_PASSWORD:
+        case AT_START_TRANSACTION:
+        case AT_SECONDARY_ENGINE_ATTRIBUTE:
+        case AT_STATS_AUTO_RECALC:
+        case AT_STATS_PERSISTENT:
+        case AT_STATS_SAMPLE_PAGES:
+        case AT_UNION:
+        case AT_TABLESPACE:
+        case AT_TABLESPACE_STORAGE:
+            pass = AT_PASS_MISC;
+            break;
+#endif
         default: /* oops */
             ereport(ERROR,
                 (errcode(ERRCODE_UNRECOGNIZED_NODE_TYPE),
@@ -8918,6 +8980,31 @@ static void ATExecCmd(List** wqueue, AlteredTableInfo* tab, Relation rel, AlterT
                 CreateComments(rel->rd_id, RelationRelationId, 0, cmd->name);
             }
             break;
+#ifdef DOLPHIN
+        case AT_AUTOEXTEND_SIZE:
+        case AT_AVG_ROW_LENGTH:
+        case AT_CHECKSUM:
+        case AT_CONNECTION:
+        case AT_DIRECTORY:
+        case AT_DELAY_KEY_WRITE:
+        case AT_ENCRYPTION:
+        case AT_ENGINE_ATTRIBUTE:
+        case AT_INSERT_METHOD:
+        case AT_KEY_BLOCK_SIZE:
+        case AT_MAX_ROWS:
+        case AT_MIN_ROWS:
+        case AT_PACK_KEYS:
+        case AT_PASSWORD:
+        case AT_START_TRANSACTION:
+        case AT_SECONDARY_ENGINE_ATTRIBUTE:
+        case AT_STATS_AUTO_RECALC:
+        case AT_STATS_PERSISTENT:
+        case AT_STATS_SAMPLE_PAGES:
+        case AT_UNION:
+        case AT_TABLESPACE:
+        case AT_TABLESPACE_STORAGE:
+            break;
+#endif
         default: /* oops */
             ereport(ERROR,
                 (errcode(ERRCODE_UNRECOGNIZED_NODE_TYPE),
@@ -29556,6 +29643,143 @@ void ExecRemovePartition(Oid relid, char* tableName)
     RelationForgetRelation(relid);
     list_free_ext(tempTableOidList);
     list_free_ext(indexOidList);
+}
+
+static void CheckTableOptions(AlterTableOptions* tableOptions, AlterTableCmd* cmd)
+{
+    switch (cmd->subtype) {
+        case AT_AUTOEXTEND_SIZE:
+            if (!tableOptions->autoextend_size_option) {
+                tableOptions->autoextend_size_option = true;
+                ereport(WARNING, (errmsg("AUTOEXTEND_SIZE for TABLE is not supported for current version. skipped")));
+            }
+            break;
+        case AT_AVG_ROW_LENGTH:
+            if (!tableOptions->avg_row_length_option) {
+                tableOptions->avg_row_length_option = true;
+                ereport(WARNING, (errmsg("AVG_ROW_LENGTH for TABLE is not supported for current version. skipped")));
+            }
+            break;
+        case AT_CHECKSUM:
+            if (!tableOptions->checksum_option) {
+                tableOptions->checksum_option = true;
+                ereport(WARNING, (errmsg("CHECKSUM for TABLE is not supported for current version. skipped")));
+            }
+            break;
+        case AT_CONNECTION:
+            if (!tableOptions->connection_option) {
+                tableOptions->connection_option = true;
+                ereport(WARNING, (errmsg("CONNECTION for TABLE is not supported for current version. skipped")));
+            }
+            break;
+        case AT_DIRECTORY:
+            if (!tableOptions->directory_option) {
+                tableOptions->directory_option = true;
+                ereport(WARNING, (errmsg("DIRECTORY for TABLE is not supported for current version. skipped")));
+            }
+            break;
+        case AT_DELAY_KEY_WRITE:
+            if (!tableOptions->delay_key_write_option) {
+                tableOptions->delay_key_write_option = true;
+                ereport(WARNING, (errmsg("DELAY_KEY_WRITE for TABLE is not supported for current version. skipped")));
+            }
+            break;
+        case AT_ENCRYPTION:
+            if (!tableOptions->encryption_option) {
+                tableOptions->encryption_option = true;
+                ereport(WARNING, (errmsg("ENCRYPTION for TABLE is not supported for current version. skipped")));
+            }
+            break;
+        case AT_ENGINE_ATTRIBUTE:
+            if (!tableOptions->engine_attribute_option) {
+                tableOptions->engine_attribute_option = true;
+                ereport(WARNING, (errmsg("ENGINE_ATTRIBUTE for TABLE is not supported for current version. skipped")));
+            }
+            break;
+        case AT_INSERT_METHOD:
+            if (!tableOptions->insert_method_option) {
+                tableOptions->insert_method_option = true;
+                ereport(WARNING, (errmsg("INSERT_METHOD for TABLE is not supported for current version. skipped")));
+            }
+            break;
+        case AT_KEY_BLOCK_SIZE:
+            if (!tableOptions->key_block_size_option) {
+                tableOptions->key_block_size_option = true;
+                ereport(WARNING, (errmsg("KEY_BLOCK_SIZE for TABLE is not supported for current version. skipped")));
+            }
+            break;
+        case AT_MAX_ROWS:
+            if (!tableOptions->max_rows_option) {
+                tableOptions->max_rows_option = true;
+                ereport(WARNING, (errmsg("MAX_ROWS for TABLE is not supported for current version. skipped")));
+            }
+            break;
+        case AT_MIN_ROWS:
+            if (!tableOptions->min_rows_option) {
+                tableOptions->min_rows_option = true;
+                ereport(WARNING, (errmsg("MIN_ROWS for TABLE is not supported for current version. skipped")));
+            }
+            break;
+        case AT_PACK_KEYS:
+            if (!tableOptions->pack_keys_option) {
+                tableOptions->pack_keys_option = true;
+                ereport(WARNING, (errmsg("PACK_KEYS for TABLE is not supported for current version. skipped")));
+            }
+            break;
+        case AT_PASSWORD:
+            if (!tableOptions->password_option) {
+                tableOptions->password_option = true;
+                ereport(WARNING, (errmsg("PASSWORD for TABLE is not supported for current version. skipped")));
+            }
+            break;
+        case AT_START_TRANSACTION:
+            if (!tableOptions->start_transaction_option) {
+                tableOptions->start_transaction_option = true;
+                ereport(WARNING, (errmsg("START TRANSACTION for TABLE is not supported for current version. skipped")));
+            }
+            break;
+        case AT_SECONDARY_ENGINE_ATTRIBUTE:
+            if (!tableOptions->secondary_engine_attribute_option) {
+                tableOptions->secondary_engine_attribute_option = true;
+                ereport(WARNING, (errmsg
+                    ("SECONDARY_ENGINE_ATTRIBUTE for TABLE is not supported for current version. skipped")));
+            }
+            break;
+        case AT_STATS_AUTO_RECALC:
+            if (!tableOptions->stats_auto_recalc_option) {
+                tableOptions->stats_auto_recalc_option = true;
+                ereport(WARNING, (errmsg("STATS_AUTO_RECALC is not supported for current version. skipped")));
+            }
+            break;
+        case AT_STATS_PERSISTENT:
+            if (!tableOptions->stats_persistent_option) {
+                tableOptions->stats_persistent_option = true;
+                ereport(WARNING, (errmsg("STATS_PERSISTENT for TABLE is not supported for current version. skipped")));
+            }
+            break;
+        case AT_STATS_SAMPLE_PAGES:
+            if (!tableOptions->stats_sample_pages_option) {
+                tableOptions->stats_sample_pages_option = true;
+                ereport(WARNING, (errmsg
+                    ("STATS_SAMPLE_PAGES for TABLE is not supported for current version. skipped")));
+            }
+            break;
+        case AT_UNION:
+            if (!tableOptions->union_option) {
+                tableOptions->union_option = true;
+                ereport(WARNING, (errmsg("UNION for TABLE is not supported for current version. skipped")));
+            }
+            break;
+        case AT_TABLESPACE:
+        case AT_TABLESPACE_STORAGE:
+            if (!tableOptions->tablespace_option) {
+                tableOptions->tablespace_option = true;
+                ereport(WARNING, (errmsg("TABLESPACE_OPTION for TABLE is not supported for current version. skipped")));
+            }
+            break;
+        default:
+            break;
+    }
 }
 
 void ExecRebuildPartition(List* partList, Relation rel) {

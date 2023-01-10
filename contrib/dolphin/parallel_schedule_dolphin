@@ -4,7 +4,7 @@ test: keyword_ignore_test/ignore_no_matched_partition keyword_ignore_test/ignore
 
 test: string_func_test/db_b_ascii_test string_func_test/db_b_left_right_test string_func_test/db_b_quote_test string_func_test/db_b_string_length_test string_func_test/db_b_substr_test string_func_test/db_b_trim_test string_func_test/db_b_insert_test
 
-test: ast b_compatibility_time_type db_b_new_gram_test group_concat_test test_condition vec_engine
+test: ast b_compatibility_time_type db_b_new_gram_test group_concat_test test_condition vec_engine test_uncommon_table_option
 
 test: db_b_parser1 db_b_parser2 db_b_parser3 db_b_parser4 second_microsecond
 
