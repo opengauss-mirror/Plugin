@@ -6429,7 +6429,7 @@ Datum float8_timestamptz(PG_FUNCTION_ARGS)
  */
 void check_b_format_datetime_range_with_ereport(Timestamp &datetime)
 {
-    if (datetime < B_FORMAT_TIMESTAMP_FIRST_YEAR || datetime > B_FORMAT_TIMESTAMP_MAX_VALUE) {
+    if (datetime < B_FORMAT_TIMESTAMP_MIN_VALUE || datetime > B_FORMAT_TIMESTAMP_MAX_VALUE) {
         ereport(ERROR, (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE),
                         errmsg("date/time field value out of range")));
     }
