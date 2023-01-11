@@ -202,6 +202,24 @@ DROP TABLE test_create_autoinc;
 SELECT pg_get_tabledef('test_alter_autoinc'::regclass);
 DROP TABLE test_alter_autoinc;
 
+set dolphin.sql_mode='sql_mode_strict';
+drop table if exists test9;
+create table test9(id int not null auto_increment, primary key (id));
+insert into test9 values(null);
+insert into test9 values(null);
+SELECT LAST_INSERT_ID();
+select * from test9 order by 1;
+
+set dolphin.sql_mode='';
+drop table if exists test9;
+create table test9(id int not null auto_increment, primary key (id));
+insert into test9 values(null);
+insert into test9 values(null);
+select * from test9 order by 1;
+SELECT LAST_INSERT_ID();
+reset dolphin.sql_mode;
+drop table if exists test9;
+
 \c postgres
 drop database if exists dolphin_autoinc;
 drop database if exists dolphin_autoinc_restore;

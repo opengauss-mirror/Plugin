@@ -1481,9 +1481,67 @@ select * from t_ignore;
    0
 (2 rows)
 
+-- sql mode doesn't affect ignore
+set sql_ignore_strategy = 'overwrite_null';
+set dolphin.sql_mode='sql_mode_strict';
+drop table if exists t_ignore;
+create table t_ignore(id int not null, primary key (id));
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "t_ignore_pkey" for table "t_ignore"
+insert ignore into t_ignore values(null);
+WARNING:  null value in column "id" violates not-null constraint
+DETAIL:  Failing row contains (null).
+select * from t_ignore order by 1;
+ id 
+----
+  0
+(1 row)
+
+set dolphin.sql_mode='';
+drop table if exists t_ignore;
+create table t_ignore(id int not null, primary key (id));
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "t_ignore_pkey" for table "t_ignore"
+insert ignore into t_ignore values(null);
+WARNING:  null value in column "id" violates not-null constraint
+DETAIL:  Failing row contains (null).
+select * from t_ignore order by 1;
+ id 
+----
+  0
+(1 row)
+
+drop table if exists t_ignore;
+reset dolphin.sql_mode;
+set sql_ignore_strategy = 'ignore_null';
+set dolphin.sql_mode='sql_mode_strict';
+drop table if exists t_ignore;
+NOTICE:  table "t_ignore" does not exist, skipping
+create table t_ignore(id int not null, primary key (id));
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "t_ignore_pkey" for table "t_ignore"
+insert ignore into t_ignore values(null);
+WARNING:  null value in column "id" violates not-null constraint
+DETAIL:  Failing row contains (null).
+select * from t_ignore order by 1;
+ id 
+----
+(0 rows)
+
+set dolphin.sql_mode='';
+drop table if exists t_ignore;
+create table t_ignore(id int not null, primary key (id));
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "t_ignore_pkey" for table "t_ignore"
+insert ignore into t_ignore values(null);
+WARNING:  null value in column "id" violates not-null constraint
+DETAIL:  Failing row contains (null).
+select * from t_ignore order by 1;
+ id 
+----
+(0 rows)
+
+drop table if exists t_ignore;
+reset dolphin.sql_mode;
 -- restore context
 drop schema sql_ignore_not_null_test cascade;
-NOTICE:  drop cascades to 33 other objects
+NOTICE:  drop cascades to 32 other objects
 DETAIL:  drop cascades to table t_from
 drop cascades to table t_timestamp
 drop cascades to table t_timetz
@@ -1516,5 +1574,4 @@ drop cascades to table t_varcharn
 drop cascades to table t_text
 drop cascades to table t_not_null_key_partition
 drop cascades to table ignore_range_range
-drop cascades to table t_ignore
 reset current_schema;
