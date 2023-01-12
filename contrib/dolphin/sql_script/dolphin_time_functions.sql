@@ -527,6 +527,10 @@ CREATE OR REPLACE FUNCTION pg_catalog.time_float (time) RETURNS float8 LANGUAGE 
 DROP CAST IF EXISTS (time AS float8) CASCADE;
 CREATE CAST(time AS float8) WITH FUNCTION time_float(time) AS IMPLICIT;
 
+CREATE OR REPLACE FUNCTION pg_catalog.time_integer (time) RETURNS integer LANGUAGE SQL STABLE STRICT as 'select cast(pg_catalog.time_float($1) as integer)';
+DROP CAST IF EXISTS (time AS integer) CASCADE;
+CREATE CAST(time AS integer) WITH FUNCTION time_integer(time);
+
 CREATE OR REPLACE FUNCTION pg_catalog.time_pl_float (time, float8) RETURNS float8 LANGUAGE SQL STABLE STRICT as 'select pg_catalog.time_float($1) + $2';
 -- DROP OPERATOR IF EXISTS + (time, float8);
 CREATE OPERATOR + (
@@ -547,6 +551,10 @@ CREATE OR REPLACE FUNCTION pg_catalog.datetime_float (timestamp(0) without time 
 DROP CAST IF EXISTS (timestamp(0) without time zone AS float8) CASCADE;
 CREATE CAST(timestamp(0) without time zone AS float8) WITH FUNCTION datetime_float(timestamp(0) without time zone) AS IMPLICIT;
 
+CREATE OR REPLACE FUNCTION pg_catalog.datetime_bigint (timestamp(0) without time zone) RETURNS bigint LANGUAGE SQL STABLE STRICT as 'select cast(pg_catalog.datetime_float($1) as bigint)';
+DROP CAST IF EXISTS (timestamp(0) without time zone AS bigint) CASCADE;
+CREATE CAST(timestamp(0) without time zone AS bigint) WITH FUNCTION datetime_bigint(timestamp(0) without time zone);
+
 CREATE OR REPLACE FUNCTION pg_catalog.datetime_pl_float (timestamp(0) without time zone, float8) RETURNS float8 LANGUAGE SQL STABLE STRICT as 'select pg_catalog.datetime_float($1) + $2';
 -- DROP OPERATOR IF EXISTS + (timestamp(0) without time zone, float8);
 CREATE OPERATOR + (
@@ -563,9 +571,9 @@ CREATE OPERATOR - (
     RIGHTARG = float8
 );
 
--- CREATE OR REPLACE FUNCTION pg_catalog.date_int (date) RETURNS int4 LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'date_int';
--- DROP CAST IF EXISTS (date AS integer) CASCADE;
--- CREATE CAST(date AS integer) WITH FUNCTION date_int(date) AS IMPLICIT;
+CREATE OR REPLACE FUNCTION pg_catalog.date_int (date) RETURNS int4 LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'date_int';
+DROP CAST IF EXISTS (date AS integer) CASCADE;
+CREATE CAST(date AS integer) WITH FUNCTION date_int(date);
 
 -- CREATE OR REPLACE FUNCTION pg_catalog.date_pl_int (date, integer) RETURNS integer LANGUAGE SQL STABLE STRICT as 'select pg_catalog.date_int($1) + $2';
 -- -- DROP OPERATOR + (date, integer);
