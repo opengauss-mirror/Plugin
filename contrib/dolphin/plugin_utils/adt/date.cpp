@@ -507,6 +507,8 @@ int int32_b_format_date_internal(struct pg_tm *tm, int4 date, bool mayBe2Digit, 
     /* validate b format date */
     if (tm->tm_year > B_FORMAT_MAX_YEAR_OF_DATE) {
         dterr = DTERR_FIELD_OVERFLOW;
+    } else if (is2digits && !date_flag && date == 0 && (!SQL_MODE_NO_ZERO_DATE() && SQL_MODE_STRICT())) {
+        return 0;
     } else {
         dterr = ValidateDateForBDatabase(is2digits, tm, date_flag);
     }

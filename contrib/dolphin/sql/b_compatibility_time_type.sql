@@ -544,6 +544,7 @@ CREATE TABLE t_NO_ZERO_DATE_date(v date);
 CREATE TABLE t_NO_ZERO_DATE_datetime(v datetime);
 CREATE TABLE t_NO_ZERO_DATE_timestamp(v timestamp);
 
+INSERT INTO t_NO_ZERO_DATE_date(v) VALUES(0);
 INSERT INTO t_NO_ZERO_DATE_date(v) VALUES('0000-00-00');
 INSERT INTO t_NO_ZERO_DATE_date(v) VALUES('0000-00-01');
 INSERT INTO t_NO_ZERO_DATE_date(v) VALUES('0000-01-00');
@@ -558,6 +559,7 @@ INSERT INTO t_NO_ZERO_DATE_timestamp(v) VALUES('0000-01-00 10:01');
 INSERT INTO t_NO_ZERO_DATE_timestamp(v) VALUES('2000-00-00 10:01');
 
 SET dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group';
+INSERT INTO t_NO_ZERO_DATE_date(v) VALUES(0);
 INSERT INTO t_NO_ZERO_DATE_date(v) VALUES('0000-00-00');
 INSERT INTO t_NO_ZERO_DATE_date(v) VALUES('0000-00-01');
 INSERT INTO t_NO_ZERO_DATE_date(v) VALUES('0000-01-00');
