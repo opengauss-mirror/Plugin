@@ -210,16 +210,16 @@ NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "t4_pkey" for tab
 NOTICE:  CREATE TABLE / UNIQUE will create implicit index "t4_b_tableoid_key" for table "t4"
 insert into t4 values(1, 'a'), (2, 'b');
 load data infile '@abs_builddir@/data/load6.csv' ignore into table t4;
-select * from t4;
+select * from t4 order by a;
  a | b 
 ---+---
  1 | a
- 3 | c
  2 | b
+ 3 | c
 (3 rows)
 
 load data infile '@abs_builddir@/data/load6.csv' replace into table t4;
-select * from t4;
+select * from t4 order by a;
  a | b 
 ---+---
  1 | b
@@ -252,16 +252,16 @@ NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "t4_pkey" for tab
 NOTICE:  CREATE TABLE / UNIQUE will create implicit index "t4_b_tableoid_key" for table "t4"
 insert into t4 values(1, 'a'), (2, 'b');
 load data infile '@abs_builddir@/data/load6.csv' ignore into table t4;
-select * from t4;
+select * from t4 order by a;
  a | b 
 ---+---
  1 | a
- 3 | c
  2 | b
+ 3 | c
 (3 rows)
 
 load data infile '@abs_builddir@/data/load6.csv' replace into table t4;
-select * from t4;
+select * from t4 order by a;
  a | b 
 ---+---
  1 | b
