@@ -564,6 +564,7 @@ static void processFunctionRecordOutParam(int varno, Oid funcoid, int* outparam)
 %token <keyword>	K_SAVEPOINT
 %token <keyword>	K_SELECT
 %token <keyword>	K_SCROLL
+%token <keyword>        K_SET
 %token <keyword>	K_SLICE
 %token <keyword>	K_SQLSTATE
 %token <keyword>	K_STACKED
@@ -4333,6 +4334,13 @@ stmt_execsql			: K_ALTER
                         $$ = make_execsql_stmt(K_CALL, @1);
                     }
                 }
+            }
+        | K_SET
+            {
+                if(plpgsql_is_token_match(T_RECORD) || plpgsql_is_token_match(T_VARRAY_VAR) || plpgsql_is_token_match(T_TABLE_VAR) || plpgsql_is_token_match(T_DATUM) || plpgsql_is_token_match(T_PACKAGE_VARIABLE))
+                    $$ = NULL;
+                else
+                    $$ = make_execsql_stmt(K_SET, @1);
             }
         | T_WORD    /*C-style function call */
             {
