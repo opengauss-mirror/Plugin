@@ -31817,7 +31817,6 @@ unreserved_keyword_without_key:
 			| BLANKS
 			| BLOB_P
 			| BLOCKCHAIN
-			| BODY_P
 			| BY
 			| CACHE
 			| CALL
@@ -32341,7 +32340,8 @@ col_name_keyword:
  * are used to distinguish index prefix keys from function keys.
  */
 col_name_keyword_nonambiguous:
-			  BETWEEN
+			  AUTHID
+			| BETWEEN
 			| BIGINT
 			| BINARY
 			| BINARY_DOUBLE
@@ -32448,7 +32448,7 @@ reserved_keyword:
 			| AS
 			| ASC
 			| ASYMMETRIC
-			| AUTHID
+			| BODY_P
 			| BOTH
 			| BUCKETS
 			| CASE

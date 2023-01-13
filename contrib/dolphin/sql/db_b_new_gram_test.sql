@@ -468,6 +468,18 @@ select * from ignore_range_range partition (p_201901, p_201905_a);
 select * from ignore_range_range partition (p_201901, p_201905_b);
 drop table ignore_range_range;
 
+--test "authid"
+create table authid(authid int);
+insert into authid(authid) values(1);
+insert into authid(authid) values(2);
+select authid from authid where authid = 1;
+create table authid_t1(c1 int);
+insert into authid_t1(c1) values(1);
+select c1 as authid from authid_t1 as authid;
+drop table authid;
+drop table authid_t1;
+create table body(body int);
+
 drop schema test_m cascade;
 drop schema db_b_new_gram_test cascade;
 reset current_schema;
