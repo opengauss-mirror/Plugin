@@ -33,6 +33,11 @@ static int uuid_internal_cmp(const pg_uuid_t* arg1, const pg_uuid_t* arg2);
 PG_FUNCTION_INFO_V1_PUBLIC(uuid_generate);
 extern "C" DLL_PUBLIC Datum uuid_generate(PG_FUNCTION_ARGS);
 
+#ifdef DOLPHIN
+PG_FUNCTION_INFO_V1_PUBLIC(uuid_short);
+extern "C" DLL_PUBLIC Datum uuid_short(PG_FUNCTION_ARGS);
+#endif
+
 Datum uuid_in(PG_FUNCTION_ARGS)
 {
     char* uuid_str = PG_GETARG_CSTRING(0);
@@ -560,5 +565,35 @@ Datum uuid_generate(PG_FUNCTION_ARGS)
 
     VarChar* result = (VarChar*)cstring_to_text_with_len(res, FORMATTED_UUID_LEN);
     PG_RETURN_VARCHAR_P(result);
+}
+
+uint64 uuidShortInit()
+{
+    int transBits = 24;
+    int timeMultiple = 10;
+    int timeMultipleToSecond = 1000;
+    uint64 uuid = 0;
+    uint64 curr_time = 0;
+    uint64 start_time = 0;
+    uint64 start_timeup = 0;
+    TimestampTz startTimeStampTz = t_thrd.time_cxt.pg_start_time;
+#ifdef HAVE_INT64_TIMESTAMP
+    curr_time = GetCurrentTimestamp() * timeMultiple;
+    start_time = startTimeStampTz * timeMultiple;
+#else
+    curr_time = GetCurrentTimestamp() * timeMultipleToSecond * timeMultipleToSecond * timeMultiple;
+    start_time = startTimeStampTz * timeMultipleToSecond * timeMultipleToSecond * timeMultiple;
+#endif
+    start_timeup = curr_time-start_time;
+    uuid = start_timeup << transBits;
+    return uuid;
+}
+
+uint64 uuid_value = uuidShortInit();
+Datum uuid_short(PG_FUNCTION_ARGS)
+{
+    uint64 uuid = 0;
+    uuid = pg_atomic_fetch_add_u64(&uuid_value, 1);
+    PG_RETURN_UINT64(uuid);
 }
 #endif
