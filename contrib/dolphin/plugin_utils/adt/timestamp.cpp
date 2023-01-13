@@ -203,8 +203,8 @@ extern "C" DLL_PUBLIC Datum b_db_statement_start_timestamp(PG_FUNCTION_ARGS);
 
 /* b compatibility time function */
 #ifdef DOLPHIN
-PG_FUNCTION_INFO_V1_PUBLIC(subtime_text);
-extern "C" DLL_PUBLIC Datum subtime_text(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(subtime);
+extern "C" DLL_PUBLIC Datum subtime(PG_FUNCTION_ARGS);
 PG_FUNCTION_INFO_V1_PUBLIC(time_format);
 extern "C" DLL_PUBLIC Datum time_format(PG_FUNCTION_ARGS);
 PG_FUNCTION_INFO_V1_PUBLIC(time_format_date);
@@ -227,8 +227,6 @@ PG_FUNCTION_INFO_V1_PUBLIC(unix_timestamp);
 extern "C" DLL_PUBLIC Datum unix_timestamp(PG_FUNCTION_ARGS);
 PG_FUNCTION_INFO_V1_PUBLIC(utc_timestamp_func);
 extern "C" DLL_PUBLIC Datum utc_timestamp_func(PG_FUNCTION_ARGS);
-PG_FUNCTION_INFO_V1_PUBLIC(func_return_null);
-extern "C" DLL_PUBLIC Datum func_return_null(PG_FUNCTION_ARGS);
 
 PG_FUNCTION_INFO_V1_PUBLIC(dayname_text);
 extern "C" DLL_PUBLIC Datum dayname_text(PG_FUNCTION_ARGS);
@@ -6668,7 +6666,7 @@ Oid convert_cstring_to_datetime_time(const char* str, Timestamp *datetime, TimeA
  * Error will be reported if the above range is exceeded.
  * @return: Actual time type oid. 
  */
-Oid convert_to_datetime_time(Datum value, Oid valuetypid, Timestamp *datetime, TimeADT *time) 
+Oid convert_to_datetime_time(Datum value, Oid valuetypid, Timestamp *datetime, TimeADT *time)
 {
     switch (valuetypid) {
         case UNKNOWNOID:
@@ -6803,67 +6801,64 @@ bool datetime_sub_time(Timestamp datetime, TimeADT time_sub, Timestamp* result)
     return true;
 }
 
-/* subtime(Text, time)
+/* subtime(expr1, expr2)
  * @Description: Subtract time from a datetime/time converted from text, giving a new datetime/time.
  * The return type is the same as the type of the first parameter (datetime/time). (The actual return 
  * type is CString, and the return type is distinguished by a string in datetime or time format)
  */
-Datum subtime_text(PG_FUNCTION_ARGS)
+Datum subtime(PG_FUNCTION_ARGS)
 {
-    text *expr1 = PG_GETARG_TEXT_PP(0);
-    text *expr2 = PG_GETARG_TEXT_PP(1);
-    TimeADT time1, time2;
-    Timestamp datetime1;
-    char *str1, *str2;
-    str1 = text_to_cstring(expr1);
-    str2 = text_to_cstring(expr2);
-    if (!time_in_no_ereport(str2, &time2)) {
-        ereport(ERROR, (errcode(ERRCODE_INVALID_DATETIME_FORMAT),
-                        errmsg("invalid input syntax \"%s\"", str2)));
-    }
+    TimeADT time1, time2, res_time;
+    Timestamp datetime1, datetime2, res_datetime;
+    Oid val_type1, val_type2;
 
-    if (!time_in_range(time2)) {
-        ereport(ERROR, (errcode(ERRCODE_DATETIME_FIELD_OVERFLOW),
-                        errmsg("datetime/time field value out of range: \"%s\"",
-                               str2)));
-    }
+    val_type1 = get_fn_expr_argtype(fcinfo->flinfo, 0);
+    val_type2 = get_fn_expr_argtype(fcinfo->flinfo, 1);
+    val_type1 = convert_to_datetime_time(PG_GETARG_DATUM(0), val_type1, &datetime1, &time1);
 
-    if (datetime_in_no_ereport(str1, &datetime1)) {
-        Timestamp result;
-        if (datetime_sub_time(datetime1, time2, &result)) {
-            /* The variable datetime or result does not exceed the specified
-             * range*/
-            if (result >= B_FORMAT_TIMESTAMP_FIRST_YEAR)
-                return DirectFunctionCall1(datetime_text, result);
-            else {
+    switch (val_type2) {
+        case TIMESTAMPOID:
+        case TIMESTAMPTZOID:
+        case ABSTIMEOID:
+        case DATEOID:
+            convert_to_time(PG_GETARG_DATUM(1), val_type2, &time2);
+            check_b_format_time_range_with_ereport(time2);
+            val_type2 = TIMEOID;
+            break;
+        default:
+            val_type2 = convert_to_datetime_time(PG_GETARG_DATUM(1), val_type2, &datetime2, &time2);
+            if (val_type2 == TIMESTAMPOID) {
                 PG_RETURN_NULL();
             }
-        }
-        ereport(ERROR, (errcode(ERRCODE_DATETIME_FIELD_OVERFLOW),
-                        errmsg("date/time field overflow")));
-    } else if (time_in_no_ereport(str1, &time1)) {
-        TimeADT result;
-        if (!time_in_range(time1)) {
-            ereport(ERROR,
-                    (errcode(ERRCODE_DATETIME_FIELD_OVERFLOW),
-                     errmsg("datetime/time field value out of range: \"%s\"",
-                            str1)));
-        }
-        result = time1 - time2;
-        if (!time_in_range(result)) {
-            ereport(ERROR, (errcode(ERRCODE_DATETIME_FIELD_OVERFLOW),
-                            errmsg("date/time field overflow")));
-        }
-        return DirectFunctionCall1(time_text, result);
     }
 
-    ereport(ERROR, (errcode(ERRCODE_INVALID_DATETIME_FORMAT),
-                    errmsg("invalid input syntax \"%s\"", str1)));
-    PG_RETURN_NULL();
-}
+    switch (val_type1) {
+        case DATEOID:
+            /* The calculation method is the same as TIMEOID, so break is not required */
+            time1 = 0; /* time set to 00:00:00 */
+        case TIMEOID: {
+            res_time = time1 - time2;
+            check_b_format_time_range_with_ereport(res_time);
+            return DirectFunctionCall1(time_text, TimeGetDatum(res_time));
+        }
+        case TIMESTAMPOID: {
+            if (datetime_sub_time(datetime1, time2, &res_datetime)) {
+                /* The variable datetime or result does not exceed the specified range */
+                if (res_datetime >= B_FORMAT_TIMESTAMP_FIRST_YEAR) {
+                    return DirectFunctionCall1(datetime_text, TimestampGetDatum(res_datetime));
+                }
+                PG_RETURN_NULL();
+            }
+            ereport(ERROR, (errcode(ERRCODE_DATETIME_FIELD_OVERFLOW),
+                            errmsg("date/time field overflow")));
+            break;
+        }
+        default: {
+            ereport(ERROR, (errcode(ERRCODE_DATATYPE_MISMATCH),
+                            errmsg("unsupported input data type: %s", format_type_be(val_type1))));
+        }
+    }
 
-Datum func_return_null(PG_FUNCTION_ARGS)
-{
     PG_RETURN_NULL();
 }
 
@@ -7666,7 +7661,7 @@ Datum dayname_text(PG_FUNCTION_ARGS)
     PG_RETURN_DATUM(result);
 }
 
-//int8, int4 and float8 date input for dayname
+// int8, int4 and float8 date input for dayname
 Datum dayname_numeric(PG_FUNCTION_ARGS)
 {
     Numeric num = PG_GETARG_NUMERIC(0);
@@ -9436,9 +9431,9 @@ static inline bool week_year_to_date(struct pg_tm *tm, bool sunday_first_without
      * 
      * case2: %U or %u is used with %X or %x
     */
-    if ((strict_week_range && 
-        (strict_week_year < 0 || 
-        is_strict_week_year != sunday_first_without_iso)) || 
+    if ((strict_week_range &&
+        (strict_week_year < 0 ||
+        is_strict_week_year != sunday_first_without_iso)) ||
         (!strict_week_range && strict_week_year >= 0))
         return false;
 
@@ -9683,7 +9678,8 @@ Datum str_to_date(PG_FUNCTION_ARGS)
                     break;
                 case 'w':
                     tmp_len = 1;
-                    if ((weekday = (int)str2ll_with_endptr(str, tmp_len, &true_len, &error)) < 0 || weekday >= DAYS_PER_WEEK)
+                    weekday = (int)str2ll_with_endptr(str, tmp_len, &true_len, &error);
+                    if (weekday < 0 || weekday >= DAYS_PER_WEEK)
                         goto err;
                     if (!weekday)
                         weekday = DAYS_PER_WEEK;
@@ -9778,7 +9774,7 @@ Datum str_to_date(PG_FUNCTION_ARGS)
         goto err;
 
     // a simple quick range check
-    if (tm->tm_mon > MONTHS_PER_YEAR || tm->tm_mday > DAYNUM_BIGMON || 
+    if (tm->tm_mon > MONTHS_PER_YEAR || tm->tm_mday > DAYNUM_BIGMON ||
         tm->tm_hour >= HOURS_PER_DAY || tm->tm_min >= MINS_PER_HOUR || tm->tm_sec >= SECS_PER_MINUTE)
         goto err;
     
