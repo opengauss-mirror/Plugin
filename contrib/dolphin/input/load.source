@@ -105,9 +105,9 @@ create table t4(a int primary key, b char unique) partition by range(a) subparti
 );
 insert into t4 values(1, 'a'), (2, 'b');
 load data infile '@abs_builddir@/data/load6.csv' ignore into table t4;
-select * from t4;
+select * from t4 order by a;
 load data infile '@abs_builddir@/data/load6.csv' replace into table t4;
-select * from t4;
+select * from t4 order by a;
 
 drop table t4;
 create table t4(a int primary key, b char unique) partition by range(a) subpartition by list(b)
@@ -133,9 +133,9 @@ create table t4(a int primary key, b char unique) partition by range(a) subparti
 ) with(segment = on);
 insert into t4 values(1, 'a'), (2, 'b');
 load data infile '@abs_builddir@/data/load6.csv' ignore into table t4;
-select * from t4;
+select * from t4 order by a;
 load data infile '@abs_builddir@/data/load6.csv' replace into table t4;
-select * from t4;
+select * from t4 order by a;
 
 --trigger
 create table t5(a int primary key, b char unique);

@@ -513,7 +513,7 @@ create table testforint2_p4(a int2,b int2) partition by list(a)(partition p1 val
 insert into testforint2_p4 values(-1,-1);
 insert into testforint2_p4 values(1,0);
 insert into testforint2_p4 values(2,123);
-select a^b from testforint2_p4;
+select a^b from testforint2_p4 order by 1;
 
 create table testforint2_p5(a int2,b int2) partition by hash(a)(partition p1,partition p2,partition p3);
 insert into testforint2_p5 values(-1,-1);

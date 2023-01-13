@@ -1503,15 +1503,15 @@ INSERT INTO y_list VALUES(2011);
 ERROR:  inserted partition key does not map to any table partition
 INSERT INTO y_list VALUES(1990);
 ERROR:  inserted partition key does not map to any table partition
-SELECT * FROM y_list;
+SELECT * FROM y_list ORDER BY y;
   y   
 ------
- 1992
- 1998
- 2010
  1991
+ 1992
  1997
+ 1998
  2000
+ 2010
 (6 rows)
 
 SELECT * FROM y_list PARTITION(P1);
