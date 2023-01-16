@@ -523,14 +523,17 @@ DROP TABLE ti_hash;
 -- test cast function
 SELECT cast(-232323.555 as time);
 SELECT cast('20121010101010.555' as datetime);
+select cast(('2001-10-10 11:11:59.123456'::time(6)) as int);
+select cast(('2001-10-10 11:11:59.123456'::date) as int);
+select cast(('2001-10-10 11:11:59.123456'::datetime(6)) as bigint);
 
 -- test time type operations
 select ('2001-10-10 11:11:59.123456'::time(6) + 1);
 select ('2001-10-10 11:11:59.123456'::time(6) - 1);
-select ('2001-10-10 11:11:59.123456'::time(6) / 2);
+select ('2001-10-10 11:11:59.123456'::time(6) / 2.0);
 select ('2001-10-10 11:11:59.123456'::datetime(6) + 1);
 select ('2001-10-10 11:11:59.123456'::datetime(6) - 1);
-select ('2001-10-10 11:11:59.123456'::datetime(6) / 2);
+select ('2001-10-10 11:11:59.123456'::datetime(6) / 2.0);
 
 -- no strict mode
 set dolphin.sql_mode = '';
