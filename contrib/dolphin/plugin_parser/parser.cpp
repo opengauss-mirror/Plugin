@@ -20,6 +20,7 @@
  */
 
 #include "postgres.h"
+#include "plugin_postgres.h"
 #include "knl/knl_variable.h"
 #include "nodes/parsenodes.h"
 
@@ -793,6 +794,19 @@ int base_yylex(YYSTYPE* lvalp, YYLTYPE* llocp, core_yyscan_t yyscanner)
                 default:
                     break;
             }
+            break;
+        case CREATE:
+            GetSessionContext()->dolphin_kw_mask |= B_KWMASK_CREATE;
+            break;
+        case TRIGGER:
+            GetSessionContext()->dolphin_kw_mask |= B_KWMASK_TRIGGER;
+            break;
+        case BEGIN_P:
+            /*use delimiter and is create trigger grammar we should use mysql style*/
+            if (GetSessionContext()->dolphin_kw_mask == B_KWMASK_CREATE_TRIGGER &&
+                    (strcmp(";", u_sess->attr.attr_common.delimiter_name) != 0 ||
+                        GetSessionContext()->enableBCmptMode))
+                cur_token = BEGIN_B_BLOCK;
             break;
 #endif
         default:

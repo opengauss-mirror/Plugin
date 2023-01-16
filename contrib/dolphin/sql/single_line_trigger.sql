@@ -238,6 +238,94 @@ CREATE TRIGGER if not exists ins_call100 after INSERT ON t FOR EACH ROW call pro
 drop table t, t1;
 drop procedure proc;
 
+create table if not exists t(id int);
+create table if not exists t1 (id int);
+drop table if exists animals;
+drop table if exists food;
+create table if not exists animals (id int, name char(30));
+create table if not exists food (id int, foodtype varchar(32), remark varchar(32), time_flag timestamp);
+
+delimiter //
+
+create trigger animal_d_trigger1
+after insert on animals
+for each row
+begin
+    insert into food (id ,foodtype, remark, time_flag) values(1,'ice','avcs', now());
+end;
+//
+
+delimiter ;
+
+delimiter //
+create trigger animal_d_trigger2
+after insert on animals
+for each row
+follows animal_d_trigger1
+begin
+    insert into food values(2,'pad','asdfg',now());
+end;
+//
+
+delimiter ;
+
+delimiter //
+create trigger animal_d_trigger3
+after insert on animals
+for each row
+follows animal_d_trigger1
+begin
+    declare abc int;
+    abc := 222;
+    insert into food values(abc,'cake','parm',now());
+end;
+//
+
+delimiter ;
+
+insert into animals (id, name) values(1,'lion');
+select * from animals;
+select id, foodtype  from food;
+
+
+delimiter //
+create trigger animal_d_trigger4
+after insert on animals
+for each row
+follows animal_d_trigger1
+begin
+    declare a_var int;
+    a_var := 3;
+    while a_var > 1 do
+      a_var := a_var - 1;
+      insert into food values(111,'dogs','parm2',now());
+    end while;
+end;
+//
+
+delimiter ;
+
+delimiter //
+create trigger animal_d_trigger5
+after insert on animals
+for each row
+follows animal_d_trigger1
+begin
+    declare a_var int;
+    a_var := 3;
+      repeat a_var := a_var - 1 ;
+      until a_var < 0 end repeat;
+      insert into food values(a_var,'apple','parm3',now());
+end;
+//
+
+delimiter ;
+
+insert into animals (id, name) values(2,'cat');
+select * from animals;
+select id, foodtype  from food;
+
+
 reset enable_set_variable_b_format;
 
 drop schema db_mysql cascade;

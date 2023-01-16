@@ -153,6 +153,7 @@ typedef struct BSqlPluginContext {
     char* optimizer_switch_string;
     unsigned int optimizer_switch_flags;
     int div_precision_increment;
+    int dolphin_kw_mask;
 #endif
 } bSqlPluginContext;
 
@@ -209,6 +210,9 @@ static const struct optimizer_switch_entry optimizer_switch_options[OPT_OPTIMIZE
 #define DEFAULT_DIV_PRECISION_INC 4
 #define MIN_DIV_PRECISION_INC 0
 #define MAX_DIV_PRECISION_INC 30
+#define B_KWMASK_CREATE 0x01
+#define B_KWMASK_TRIGGER (0x01<<1)
+#define B_KWMASK_CREATE_TRIGGER  (0x01 | (0x01<<1))
 #endif
 
 typedef enum {
