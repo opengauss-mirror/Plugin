@@ -3150,7 +3150,11 @@ set_expr_extension:
 UseStmt:
 			USE ColId
 				{
-					core_yy_extra_type yyextra = pg_yyget_extra(yyscanner)->core_yy_extra;
+					if (!OidIsValid(get_namespace_oid($2, true))) {
+						ereport(errstate,
+							(errcode(ERRCODE_UNDEFINED_SCHEMA),
+								errmsg("Unknown database \'%s\'", $2)));
+					}
 					VariableSetStmt *n = makeNode(VariableSetStmt);
 					n->kind = VAR_SET_VALUE;
 					n->name = "search_path";
@@ -23405,7 +23409,7 @@ ExplainStmt:
 				}
 		| describe_command dolphin_qualified_name
 				{
-					SelectStmt *n = makeDescribeQuery($2->schemaname, $2->relname);
+					SelectStmt *n = checkTableExistence($2);
 					$$ = (Node *) n;
 				}
 		;

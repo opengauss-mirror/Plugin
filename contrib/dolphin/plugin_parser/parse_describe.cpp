@@ -1,7 +1,9 @@
 #include "postgres.h"
+#include "catalog/namespace.h"
 #include "commands/dbcommands.h"
 #include "nodes/makefuncs.h"
 #include "utils/builtins.h"
+#include "utils/lsyscache.h"
 #include "plugin_parser/parse_show.h"
 
 static Node* makeTypeColumn(bool smallcase = FALSE);
@@ -677,4 +679,19 @@ SelectStmt* makeShowColumnsQuery(char *schemaname, char *tablename, char *optDbN
 
     SelectStmt* stmt = plpsMakeSelectStmt(tl, fl, NULL, NULL);
     return stmt;
+}
+
+SelectStmt *checkTableExistence(RangeVar *classrel)
+{
+    Oid namespaceId = InvalidOid;
+    Oid classoid = InvalidOid;
+    SelectStmt *n = NULL;
+    char *nspname = NULL;
+    recomputeNamespacePath();
+    nspname = (classrel->schemaname != NULL) ? classrel->schemaname : get_namespace_name(getCurrentNamespace());
+ 
+    (void)plps_check_schema_or_table_valid(nspname, classrel->relname, false, true);
+
+    n = makeDescribeQuery(classrel->schemaname, classrel->relname);
+    return n;
 }

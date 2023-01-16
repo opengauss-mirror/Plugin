@@ -33,5 +33,7 @@ select a from test;
  db1
 (1 row)
 
+use db3;
+ERROR:  Unknown database 'db3'
 drop schema use_dbname cascade;
 reset current_schema;
