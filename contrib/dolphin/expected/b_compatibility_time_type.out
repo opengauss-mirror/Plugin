@@ -1776,6 +1776,9 @@ DROP TABLE time_tbl;
 CREATE TABLE t_NO_ZERO_DATE_date(v date);
 CREATE TABLE t_NO_ZERO_DATE_datetime(v datetime);
 CREATE TABLE t_NO_ZERO_DATE_timestamp(v timestamp);
+INSERT INTO t_NO_ZERO_DATE_date(v) VALUES(0);
+ERROR:  Out of range value for date
+CONTEXT:  referenced column: v
 INSERT INTO t_NO_ZERO_DATE_date(v) VALUES('0000-00-00');
 ERROR:  date/time field value out of range: "0000-00-00"
 LINE 1: INSERT INTO t_NO_ZERO_DATE_date(v) VALUES('0000-00-00');
@@ -1849,6 +1852,7 @@ LINE 1: INSERT INTO t_NO_ZERO_DATE_timestamp(v) VALUES('2000-00-00 1...
 HINT:  Perhaps you need a different "datestyle" setting.
 CONTEXT:  referenced column: v
 SET dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group';
+INSERT INTO t_NO_ZERO_DATE_date(v) VALUES(0);
 INSERT INTO t_NO_ZERO_DATE_date(v) VALUES('0000-00-00');
 INSERT INTO t_NO_ZERO_DATE_date(v) VALUES('0000-00-01');
 ERROR:  date/time field value out of range: "0000-00-01"
@@ -1901,7 +1905,8 @@ SELECT * FROM t_NO_ZERO_DATE_date;
      v      
 ------------
  00-00-0000
-(1 row)
+ 00-00-0000
+(2 rows)
 
 SELECT * FROM t_NO_ZERO_DATE_datetime;
           v          
