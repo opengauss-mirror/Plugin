@@ -114,6 +114,10 @@ create schema sc;
 set search_path to 'sc';
 drop table if exists test;
 NOTICE:  table "test" does not exist, skipping
+desc test;
+ERROR:  Table 'sc.test' doesn't exist.
+describe test;
+ERROR:  Table 'sc.test' doesn't exist.
 create table test
 (
 a SERIAL,
@@ -166,15 +170,9 @@ desc sc.test;
 (3 rows)
 
 desc public.test4;
- Field | Type | Null | Key | Default | Extra 
--------+------+------+-----+---------+-------
-(0 rows)
-
+ERROR:  Table 'public.test4' doesn't exist.
 desc sc.test4;
- Field | Type | Null | Key | Default | Extra 
--------+------+------+-----+---------+-------
-(0 rows)
-
+ERROR:  Table 'sc.test4' doesn't exist.
 drop schema db_describe cascade;
 NOTICE:  drop cascades to 3 other objects
 DETAIL:  drop cascades to table db_describe.test2

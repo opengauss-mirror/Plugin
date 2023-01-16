@@ -48,7 +48,7 @@ extern char** get_next_snippet(
 
 extern void fixResTargetNameWithAlias(List* clause_list, const char* aliasname);
 
-SelectStmt* makeDescribeQuery(char* schemaName, char* tableName);
+SelectStmt *checkTableExistence(RangeVar *classrel);
 SelectStmt* makeShowProcesslistQuery(bool isFull);
 SelectStmt* makeShowColumnsDirectQuery(char* schemaname, char* tablename,
                                        bool fullmode, bool smallcase, Node* likeWhereOpt = NULL);

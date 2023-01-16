@@ -602,7 +602,7 @@ static Node* makeShowTablesWhereTarget(char *schemaname, Node *likeWhereOpt)
     return cond;
 }
 
-bool plps_check_schema_or_table_valid(char *schemaname, char *tablename, bool is_missingok)
+bool plps_check_schema_or_table_valid(char *schemaname, char *tablename, bool is_missingok, bool check_temp)
 {
     Oid nspid = InvalidOid;
     Oid relid = InvalidOid;
@@ -628,6 +628,8 @@ bool plps_check_schema_or_table_valid(char *schemaname, char *tablename, bool is
 
         relid = get_relname_relid(tablename, nspid);
         if (!OidIsValid(relid)) {
+            if (check_temp && OidIsValid(get_relname_relid(tablename, u_sess->catalog_cxt.myTempNamespace)))
+                break;
             ret = FALSE;
         }
     } while(0);

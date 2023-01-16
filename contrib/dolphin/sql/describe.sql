@@ -41,6 +41,8 @@ describe test;
 create schema sc;
 set search_path to 'sc';
 drop table if exists test;
+desc test;
+describe test;
 create table test
 (
 a SERIAL,

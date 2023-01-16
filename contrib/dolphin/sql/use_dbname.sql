@@ -13,5 +13,6 @@ select a from db2.test;
 select a from test;
 USE db1;
 select a from test;
+use db3;
 drop schema use_dbname cascade;
 reset current_schema;

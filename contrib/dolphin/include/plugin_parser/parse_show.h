@@ -62,8 +62,9 @@
 
 #define PLPS_LOC_UNKNOWN (-1)
 
-extern bool plps_check_schema_or_table_valid(char* schemaname, char* tablename, bool is_missingok);
-extern Node* plpsMakeIntConst(int val);
+extern bool plps_check_schema_or_table_valid(char *schemaname, char *tablename, bool is_missingok,
+                                             bool check_temp = FALSE);
+extern Node *plpsMakeIntConst(int val);
 extern Node* plpsMakeStringConst(char* str);
 extern Node* plpsMakeSubLink(Node* stmt);
 extern Node* plpsAddCond(Node* left, Node* right, int location = PLPS_LOC_UNKNOWN);
