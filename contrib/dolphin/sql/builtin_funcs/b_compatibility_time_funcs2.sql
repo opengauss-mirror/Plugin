@@ -470,6 +470,9 @@ insert into func_test2(functionName, result) values('TIMESTAMPADD(DAY,1,''9999-1
 -- 最小值
 insert into func_test2(functionName, result) values('TIMESTAMPADD(DAY,-1,''0001-01-01'')', TIMESTAMPADD(DAY,-1,'0001-01-01'));
 insert into func_test2(functionName, result) values('TIMESTAMPADD(DAY,-1,''0001-01-01 00:00:00'')', TIMESTAMPADD(DAY,-1,'0001-01-01 00:00:00'));
+insert into func_test2(functionName, result) values('TIMESTAMPADD(YEAR,1,''0000-01-01 00:00:00'')', TIMESTAMPADD(YEAR, 1,'0000-01-01 00:00:00'));
+insert into func_test2(functionName, result) values('TIMESTAMPADD(qtr,1,''0000-01-01 00:00:00'')', TIMESTAMPADD(qtr, 1,'0000-01-01 00:00:00'));
+insert into func_test2(functionName, result) values('TIMESTAMPADD(MONTH,1,''0000-01-01 14:25:59'')', TIMESTAMPADD(MONTH, 1,'0000-01-01 14:25:59'));
 -- 大月的最后一天跨至小月
 insert into func_test2(functionName, result) values('TIMESTAMPADD(MONTH,2,''2022-07-31'')', TIMESTAMPADD(MONTH,2,'2022-07-31'));
 -- 闰年到非闰年

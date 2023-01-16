@@ -695,6 +695,9 @@ CONTEXT:  referenced column: result
 insert into func_test2(functionName, result) values('TIMESTAMPADD(DAY,-1,''0001-01-01 00:00:00'')', TIMESTAMPADD(DAY,-1,'0001-01-01 00:00:00'));
 ERROR:  date/time field overflow
 CONTEXT:  referenced column: result
+insert into func_test2(functionName, result) values('TIMESTAMPADD(YEAR,1,''0000-01-01 00:00:00'')', TIMESTAMPADD(YEAR, 1,'0000-01-01 00:00:00'));
+insert into func_test2(functionName, result) values('TIMESTAMPADD(qtr,1,''0000-01-01 00:00:00'')', TIMESTAMPADD(qtr, 1,'0000-01-01 00:00:00'));
+insert into func_test2(functionName, result) values('TIMESTAMPADD(MONTH,1,''0000-01-01 14:25:59'')', TIMESTAMPADD(MONTH, 1,'0000-01-01 14:25:59'));
 -- 大月的最后一天跨至小月
 insert into func_test2(functionName, result) values('TIMESTAMPADD(MONTH,2,''2022-07-31'')', TIMESTAMPADD(MONTH,2,'2022-07-31'));
 -- 闰年到非闰年
@@ -1012,6 +1015,9 @@ select * from func_test2;
  TIMESTAMPADD(HOUR,1,date'2022-04-05')                                                       | Tue Apr 05 01:00:00 2022
  TIMESTAMPADD(DAY,1,cast('2022-04-05' as datetime))                                          | Wed Apr 06 00:00:00 2022
  TIMESTAMPADD(DAY,1,time'14:30:00')                                                          | 38:30:00
+ TIMESTAMPADD(YEAR,1,'0000-01-01 00:00:00')                                                  | Mon Jan 01 00:00:00 0001
+ TIMESTAMPADD(qtr,1,'0000-01-01 00:00:00')                                                   | Sat Apr 01 00:00:00 0000
+ TIMESTAMPADD(MONTH,1,'0000-01-01 14:25:59')                                                 | Tue Feb 01 14:25:59 0000
  TIMESTAMPADD(MONTH,2,'2022-07-31')                                                          | 09-30-2022
  TIMESTAMPADD(YEAR,1,'2020-02-29')                                                           | 02-28-2021
  TIMESTAMPADD(MONTH,3,'2019-12-31')                                                          | 03-31-2020
