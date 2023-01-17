@@ -128,13 +128,3 @@ LANGUAGE plpgsql;
 DROP FUNCTION IF EXISTS pg_catalog.database() CASCADE;
 CREATE OR REPLACE FUNCTION pg_catalog.database(
 ) RETURNS name LANGUAGE C STABLE STRICT AS '$libdir/dolphin','get_b_database';
-
-DROP FUNCTION IF EXISTS pg_catalog.sleep(int) CASCADE;
-CREATE FUNCTION pg_catalog.sleep (t int) RETURNS int  AS
-$$
-BEGIN
-    PERFORM pg_sleep(t);
-    RETURN 0;
-END;
-$$
-LANGUAGE plpgsql;

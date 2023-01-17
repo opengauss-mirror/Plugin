@@ -750,3 +750,7 @@ text,
 timestampTz
 ) RETURNS int16 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'text_timestamptz_xor';
 create operator pg_catalog.^(leftarg = text, rightarg = timestampTz, procedure = pg_catalog.text_timestamptz_xor);
+
+DROP FUNCTION IF EXISTS pg_catalog.sleep(float8) CASCADE;
+CREATE FUNCTION pg_catalog.sleep (float8)
+RETURNS int LANGUAGE C STABLE CALLED ON NULL INPUT as '$libdir/dolphin', 'db_b_sleep';
