@@ -2800,7 +2800,7 @@ CoercionPathType find_coercion_pathway(Oid targetTypeId, Oid sourceTypeId, Coerc
         return COERCION_PATH_RELABELTYPE;
     }
 
-    /* target is an actual set type, change it to anyset to find the path */
+    /* target is an actual set or enum type, change it to anyset or anyenum to find the path */
     if (targetTypeId != ANYSETOID && type_is_set(targetTypeId)) {
         targetTypeId = ANYSETOID;
     }
@@ -2808,6 +2808,16 @@ CoercionPathType find_coercion_pathway(Oid targetTypeId, Oid sourceTypeId, Coerc
     if (sourceTypeId != ANYSETOID && type_is_set(sourceTypeId)) {
         sourceTypeId = ANYSETOID;
     }
+
+#ifdef DOLPHIN
+    if (sourceTypeId != ANYENUMOID && type_is_enum(sourceTypeId)) {
+        sourceTypeId = ANYENUMOID;
+    }
+
+    if (targetTypeId != ANYENUMOID && type_is_enum(targetTypeId)) {
+        targetTypeId = ANYENUMOID;
+    }
+#endif
 
     /* Look in pg_cast */
     tuple = SearchSysCache2(CASTSOURCETARGET, ObjectIdGetDatum(sourceTypeId), ObjectIdGetDatum(targetTypeId));

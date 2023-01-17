@@ -26,6 +26,9 @@
 #include "utils/snapmgr.h"
 #include "utils/syscache.h"
 #include "utils/typcache.h"
+#ifdef DOLPHIN
+#include "plugin_postgres.h"
+#endif
 
 static Oid enum_endpoint(Oid enumtypoid, ScanDirection direction);
 static ArrayType* enum_range_internal(Oid enumtypoid, Oid lower, Oid upper);
@@ -456,3 +459,27 @@ static ArrayType* enum_range_internal(Oid enumtypoid, Oid lower, Oid upper)
 
     return result;
 }
+
+#ifdef DOLPHIN
+PG_FUNCTION_INFO_V1_PUBLIC(Enum2Float8);
+extern "C" DLL_PUBLIC Datum Enum2Float8(PG_FUNCTION_ARGS);
+Datum Enum2Float8(PG_FUNCTION_ARGS)
+{
+    Oid enumval = PG_GETARG_OID(0);
+    double result = 0.0;
+    HeapTuple tup;
+    Form_pg_enum en;
+
+    tup = SearchSysCache1(ENUMOID, ObjectIdGetDatum(enumval));
+    if (!HeapTupleIsValid(tup))
+        ereport(ERROR,
+            (errcode(ERRCODE_INVALID_BINARY_REPRESENTATION), errmsg("invalid internal value for enum: %u", enumval)));
+    en = (Form_pg_enum)GETSTRUCT(tup);
+
+    result = en->enumsortorder;
+
+    ReleaseSysCache(tup);
+
+    PG_RETURN_FLOAT8(result);
+}
+#endif

@@ -776,58 +776,6 @@ Expr* make_op(ParseState* pstate, List* opname, Node* ltree, Node* rtree, int lo
         /* otherwise, binary operator */
         ltypeId = exprType(ltree);
         rtypeId = exprType(rtree);
-#ifdef DOLPHIN
-        /* transform from int to enum label */
-        if(u_sess->attr.attr_sql.sql_compatibility == B_FORMAT && type_is_enum(ltypeId) && rtypeId==INT4OID) {
-            char *enumLable = NULL;
-            int nElems;
-            int i = 0;
-            Const* con = makeNode(Const);;
-            baseTypeId = getBaseTypeAndTypmod(ltypeId, &baseTypeMod);
-            targetType = typeidType(baseTypeId);
-
-            con->consttype = UNKNOWNOID;
-            con->consttypmod = -1;
-            con->constcollid = InvalidOid;
-            con->constlen = typeLen(targetType);
-            con->constbyval = typeByVal(targetType);
-            ReleaseSysCache(targetType);
-            con->constisnull = false;
-            con->cursor_data.cur_dno = -1;
-            enumOrder = DatumGetInt32(((Const*) rtree)->constvalue);
-            Type colType = typeidType(baseTypeId);;
-            if (enumOrder == 0) {
-                con->constvalue = ((Datum)NULL);
-                con->constisnull = true;
-            } else {
-                list = SearchSysCacheList1(ENUMTYPOIDNAME, ObjectIdGetDatum(ltypeId));
-                nElems = list->n_members;
-                if (nElems == 0) {
-                    con->constvalue = ((Datum)NULL);
-                    con->constisnull = true;
-                }
-                if (enumOrder > nElems||enumOrder < 0) {
-                    con->constvalue = ((Datum)NULL);
-                    con->constisnull = true;
-                } else {
-                    // const is not null.
-                    for (i = 0; i < nElems; i++) {
-                        enumTup = t_thrd.lsc_cxt.FetchTupleFromCatCList(list, i);
-                        en = (Form_pg_enum)GETSTRUCT(enumTup);
-                        if(enumOrder ==  en->enumsortorder) {
-                            enumLable = NameStr(en->enumlabel);
-                            break;
-                        }
-                    }
-                    con->constvalue = (Datum)enumLable;
-                }
-                ReleaseSysCacheList(list);
-            }
-            ReleaseSysCache(colType);
-            rtypeId = UNKNOWNOID;
-            rtree = (Node*)con;
-        }
-#endif
         /* if one of the types is a encrypted type and we are in a function/procedure creation flow */
         if (IsClientLogicType(ltypeId) || IsClientLogicType(rtypeId)) {
             if(pstate != NULL && pstate->p_create_proc_operator_hook) {
