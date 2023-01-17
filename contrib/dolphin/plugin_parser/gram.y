@@ -589,7 +589,7 @@ static char* appendString(char* source, char* target, int offset);
 %type <createtableoptions> CreateOptionList CreateIfNotExistsOptionList CreateAsOptionList
 %type <singleindexoption> TableIndexOption PartitionTableIndexOption
 %type <createindexoptions> TableIndexOptionList PartitionTableIndexOptionList
-%type <indexmethodrelationclause> index_method_relation_clause
+%type <indexmethodrelationclause> index_method_relation_clause fulltext_index_method_relation_clause
 %type <node>	stmt schema_stmt
 		AlterEventTrigStmt
 		AlterDatabaseStmt AlterDatabaseSetStmt AlterDataSourceStmt AlterDomainStmt AlterEnumStmt AlterEventStmt
@@ -776,7 +776,7 @@ static char* appendString(char* source, char* target, int offset);
 				oper_argtypes RuleActionList RuleActionMulti
 				opt_column_list columnList opt_name_list opt_analyze_column_define opt_multi_name_list
 				opt_include_without_empty opt_c_include index_including_params
-				sort_clause opt_sort_clause sortby_list index_params table_index_elems constraint_params
+				sort_clause opt_sort_clause sortby_list index_params fulltext_index_params table_index_elems constraint_params
 				name_list UserIdList from_clause from_list opt_array_bounds dolphin_name_list
 				qualified_name_list any_name type_name_list collate_name any_name_or_sconst any_name_list dolphin_qualified_name_list dolphin_any_name dolphin_any_name_list
 				any_operator expr_list attrs callfunc_args callfunc_args_or_empty dolphin_attrs rename_user_clause rename_list
@@ -886,7 +886,7 @@ static char* appendString(char* source, char* target, int offset);
 %type <node>	def_arg columnElem where_clause where_or_current_clause start_with_expr connect_by_expr
                                 a_expr b_expr c_expr c_expr_noparen AexprConst indirection_el siblings_clause
                                 columnref in_expr start_with_clause having_clause func_table array_expr set_ident_expr set_expr set_expr_extension
-				ExclusionWhereClause
+				ExclusionWhereClause fulltext_match_params
 %type <list>	ExclusionConstraintList ExclusionConstraintElem
 %type <list>	func_arg_list
 %type <node>	func_arg_expr
@@ -899,7 +899,7 @@ static char* appendString(char* source, char* target, int offset);
 %type <list>	NumericOnly_list
 %type <alias>	alias_clause opt_alias_clause dolphin_alias_clause opt_dolphin_alias_clause
 %type <sortby>	sortby
-%type <ielem>	index_elem table_index_elem constraint_elem
+%type <ielem>	index_elem table_index_elem constraint_elem fulltext_index_elem
 %type <node>	table_ref
 %type <jexpr>	joined_table
 %type <range>	relation_expr
@@ -1138,7 +1138,7 @@ static char* appendString(char* source, char* target, int offset);
 /* PGXC - added DISTRIBUTE, DIRECT, COORDINATOR, CLEAN,  NODE, BARRIER, SLICE, DATANODE */
 %token <keyword> ABORT_P ABSOLUTE_P ACCESS ACCOUNT ACTION ADD_P ADMIN AFTER
 	AGGREGATE ALGORITHM ALL ALSO ALTER ALWAYS ANALYSE ANALYZE AND ANY APP APPEND ARCHIVE ARRAY AS ASC
-        ASSERTION ASSIGNMENT ASYMMETRIC AT ATTRIBUTE AUDIT AUTHID AUTHORIZATION AUTOEXTEND AUTOEXTEND_SIZE AUTOMAPPED AUTO_INCREMENT AVG_ROW_LENGTH
+        ASSERTION ASSIGNMENT ASYMMETRIC AT ATTRIBUTE AUDIT AUTHID AUTHORIZATION AUTOEXTEND AUTOEXTEND_SIZE AUTOMAPPED AUTO_INCREMENT AVG_ROW_LENGTH AGAINST
 
 	BACKWARD BARRIER BEFORE BEGIN_NON_ANOYBLOCK BEGIN_P BETWEEN BIGINT BINARY BINARY_P BINARY_DOUBLE BINARY_INTEGER BIT BLANKS
 	BLOB_P BLOCKCHAIN BODY_P BOGUS BOOLEAN_P BOTH BUCKETCNT BUCKETS BY BYTEAWITHOUTORDER BYTEAWITHOUTORDERWITHEQUAL
@@ -1166,7 +1166,7 @@ static char* appendString(char* source, char* target, int offset);
 
 	FALSE_P FAMILY FAST FENCED FETCH FIELDS FILEHEADER_P FILL_MISSING_FIELDS FILLER FILTER FIRST_P FIXED_P FLOAT_P FLUSH FOLLOWING FOLLOWS_P FOR FORCE FOREIGN FORMATTER FORWARD
 	FEATURES // DB4AI
-	FREEZE FROM FULL FUNCTION FUNCTIONS
+	FREEZE FROM FULL FULLTEXT FUNCTION FUNCTIONS
 
 	GENERATED GET_FORMAT GLOBAL GRANT GRANTED GREATEST GROUP_P GROUPING_P GROUPPARENT GRANTS TRIGGERS
 
@@ -1188,7 +1188,7 @@ static char* appendString(char* source, char* target, int offset);
 	MAPPING MASKING MASTER MATCH MATERIALIZED MATCHED MAXEXTENTS MAX_ROWS MAXSIZE MAXTRANS MAXVALUE MEDIUMINT MEMORY MERGE MICROSECOND_P MID MIN_ROWS MINUS_P MINUTE_P MINUTE_MICROSECOND_P MINUTE_SECOND_P MINVALUE MINEXTENTS MOD MODE MODIFY_P MONTH_P MOVE MOVEMENT
 	MODEL // DB4AI
 	MODIFIES
-	NAME_P NAMES NATIONAL NATURAL NCHAR NEXT NO NOCOMPRESS NOCYCLE NODE NOLOGGING NOMAXVALUE NOMINVALUE NONE
+	NAME_P NAMES NATIONAL NATURAL NCHAR NEXT NGRAM NO NOCOMPRESS NOCYCLE NODE NOLOGGING NOMAXVALUE NOMINVALUE NONE
 	NOT NOTHING NOTIFY NOTNULL NOWAIT NULL_P NULLCOLS NULLIF NULLS_P NUMBER_P NUMERIC NUMSTR NVARCHAR NVARCHAR2 NVL
 	NO_WRITE_TO_BINLOG
 
@@ -1265,7 +1265,7 @@ static char* appendString(char* source, char* target, int offset);
 			END_OF_PROC
 			EVENT_TRIGGER
 			NOT_IN NOT_BETWEEN NOT_LIKE NOT_ILIKE NOT_SIMILAR
-			DEFAULT_FUNC
+			DEFAULT_FUNC MATCH_FUNC
 			DO_SCONST DO_LANGUAGE SHOW_STATUS BEGIN_B_BLOCK
 			FORCE_INDEX USE_INDEX LOCK_TABLES
 
@@ -5277,6 +5277,36 @@ alter_table_cmd:
 				n->subtype = AT_AddIndex;
 				n->def = $2;
 				$$ = (Node *)n;
+			}
+			/* ALTER TABLE <name> ADD FULLTEXT INDEX ... */
+			| ADD_P FULLTEXT INDEX index_name '(' fulltext_index_params ')' WITH PARSER NGRAM
+			{
+				IndexStmt *n = makeNode(IndexStmt);
+				n->unique = false;
+				n->concurrent = false;
+				n->idxname = $4;
+				n->relation = NULL;
+				n->accessMethod = "gin";
+				n->indexParams = $6;
+				n->excludeOpNames = NIL;
+				n->idxcomment = NULL;
+				n->indexOid = InvalidOid;
+				n->oldNode = InvalidOid;
+				n->partClause = NULL;
+				n->isPartitioned = false;
+				n->isGlobal = false;
+				n->primary = false;
+				n->isconstraint = false;
+				n->deferrable = false;
+				n->initdeferred = false;
+				n->indexIncludingParams = NIL;
+				n->options = NIL;
+				n->tableSpace = NULL;
+
+				AlterTableCmd *ati = makeNode(AlterTableCmd);
+				ati->subtype = AT_AddIndex;
+				ati->def = (Node *)n;
+				$$ = (Node *)ati;
 			}
 			/* ALTER TABLE <name> VALIDATE CONSTRAINT ... */
 			| VALIDATE CONSTRAINT name
@@ -9344,7 +9374,6 @@ TableIndexClause:
 					n->isconstraint = false;
 					n->deferrable = false;
 					n->initdeferred = false;
-					/* n->internal_index_flag = true; */
 					$$ = (Node *)n;
 			}
 			| index_key_opt access_method_clause_without_keyword '(' table_index_elems ')' opt_table_index_options
@@ -9372,8 +9401,32 @@ TableIndexClause:
 					n->isconstraint = false;
 					n->deferrable = false;
 					n->initdeferred = false;
-					/* n->internal_index_flag = true; */
 					$$ = (Node *)n;	
+			}
+			| FULLTEXT '(' fulltext_index_params ')' WITH PARSER NGRAM
+			{
+					IndexStmt *n = makeNode(IndexStmt);
+					n->unique = false;
+					n->concurrent = false;
+					n->idxname = NULL;
+					n->relation = NULL;
+					n->accessMethod = "gin";
+					n->indexParams = $3;
+					n->excludeOpNames = NIL;
+					n->idxcomment = NULL;
+					n->indexOid = InvalidOid;
+					n->oldNode = InvalidOid;
+					n->partClause = NULL;
+					n->isPartitioned = false;
+					n->isGlobal = false;
+					n->primary = false;
+					n->isconstraint = false;
+					n->deferrable = false;
+					n->initdeferred = false;
+					n->indexIncludingParams = NIL;
+					n->options = NIL;
+					n->tableSpace = NULL;
+					$$ = (Node *)n;
 			}
 		;
 
@@ -17221,6 +17274,33 @@ IndexStmt:	CREATE opt_unique INDEX opt_concurrently opt_index_name
 					n->tableSpace = NULL;
 					$$ = (Node *)n;
 				}
+				| CREATE FULLTEXT INDEX opt_index_name
+					fulltext_index_method_relation_clause '(' fulltext_index_params ')' WITH PARSER NGRAM
+				{
+					IndexStmt *n = makeNode(IndexStmt);
+					n->unique = false;
+					n->concurrent = false;
+					n->schemaname = $4->schemaname;
+					n->idxname = $4->relname;
+					n->relation = $5->relation;
+					n->accessMethod = "gin";
+					n->indexParams = $7;
+					n->excludeOpNames = NIL;
+					n->idxcomment = NULL;
+					n->indexOid = InvalidOid;
+					n->oldNode = InvalidOid;
+					n->partClause = NULL;
+					n->isPartitioned = false;
+					n->isGlobal = false;
+					n->primary = false;
+					n->isconstraint = false;
+					n->deferrable = false;
+					n->initdeferred = false;
+					n->indexIncludingParams = NIL;
+					n->options = NIL;
+					n->tableSpace = NULL;
+					$$ = (Node *)n;
+				}
 				| CREATE opt_unique INDEX opt_concurrently opt_index_name
 			index_method_relation_clause '(' index_params ')'
 			idx_algo_expr
@@ -18363,6 +18443,50 @@ access_method_clause_without_keyword:
 
 index_params:	index_elem							{ $$ = list_make1($1); }
 			| index_params ',' index_elem			{ $$ = lappend($1, $3); }
+		;
+
+fulltext_index_params:
+			fulltext_index_elem											{ $$ = list_make1($1); }
+			| fulltext_index_params ',' fulltext_index_elem				{ $$ = lappend($1, $3); }
+	;
+
+fulltext_index_elem:
+			ColId
+				{
+					ColumnRef *fulltext_col = makeNode(ColumnRef);
+					fulltext_col->fields = list_make1(makeString($1));
+
+					FuncCall *n = makeNode(FuncCall);
+					n->funcname = SystemFuncName("to_tsvector");
+					n->args = lappend(n->args, makeStringConst("ngram", -1));
+					n->args = lappend(n->args, (Node*)fulltext_col);
+					n->agg_order = NIL;
+					n->agg_star = FALSE;
+					n->agg_distinct = FALSE;
+					n->func_variadic = FALSE;
+					n->over = NULL;
+					n->location = @1;
+					n->call_func = false;
+
+					$$ = makeNode(IndexElem);
+					$$->name = NULL;
+					$$->expr = (Node *)n;
+					$$->indexcolname = NULL;
+					$$->collation = NIL;
+					$$->opclass = NIL;
+					$$->ordering = SORTBY_DEFAULT;
+					$$->nulls_ordering = SORTBY_NULLS_DEFAULT;
+				}
+		;
+
+fulltext_index_method_relation_clause:
+			ON dolphin_qualified_name
+				{
+					 IndexMethodRelationClause* result = (IndexMethodRelationClause*)palloc0(sizeof(IndexMethodRelationClause));
+					 result->relation = $2;
+					 result->accessMethod = "gin";
+					 $$ = result;
+				}
 		;
 
 index_method_relation_clause:
@@ -31030,8 +31154,8 @@ a_expr:		c_expr									{ $$ = $1; }
 				{ $$ = (Node *) makeSimpleA_Expr(AEXPR_OP, ">", $1, $3, @2); }
 			| a_expr '=' a_expr
 				{ $$ = (Node *) makeSimpleA_Expr(AEXPR_OP, "=", $1, $3, @2); }
-                        | a_expr '@' a_expr
-                                { $$ = (Node *) makeSimpleA_Expr(AEXPR_OP, "@", $1, $3, @2); }
+			 | a_expr '@' a_expr
+				 { $$ = (Node *) makeSimpleA_Expr(AEXPR_OP, "@", $1, $3, @2); }
 			| a_expr CmpNullOp a_expr    %prec IS
 				{
 					if (u_sess->attr.attr_sql.sql_compatibility == B_FORMAT)
@@ -31721,6 +31845,19 @@ a_expr:		c_expr									{ $$ = $1; }
 					c->fields = lcons((Node *)makeString("excluded"), c->fields);
 					$$ = (Node *) $3;
 				}
+			| MATCH_FUNC fulltext_match_params ')' AGAINST '(' Sconst ')'
+				{
+					FuncCall *lexpr_func = makeNode(FuncCall);
+					lexpr_func->funcname = SystemFuncName("to_tsvector");
+					lexpr_func->args = lappend(lexpr_func->args, makeStringConst("ngram", -1));
+					lexpr_func->args = lappend(lexpr_func->args, $2);
+					FuncCall *rexpr_func = makeNode(FuncCall);
+					rexpr_func->funcname = SystemFuncName("to_tsquery");
+					rexpr_func->args = lappend(rexpr_func->args, makeStringConst("ngram", -1));
+					rexpr_func->args = lappend(rexpr_func->args, makeStringConst($6, @6));
+					A_Expr *match_against = makeSimpleA_Expr(AEXPR_OP, "@@", (Node *)lexpr_func, (Node *)rexpr_func, -1);
+					$$ = (Node *)match_against;
+				}
 		;
 
 /*
@@ -32131,7 +32268,18 @@ c_expr_noparen:		columnref								{ $$ = $1; }
 			  }
 		;
 
-
+fulltext_match_params:
+			columnref
+			{
+				ColumnRef *fulltext_col = (ColumnRef *)$1;
+				$$ = (Node *)fulltext_col;
+			}
+			| fulltext_match_params ',' columnref
+			{
+				A_Expr *matchFollowCol =  makeSimpleA_Expr(AEXPR_OP, "||", (Node *)$1, (Node *)$3, @2);
+				$$ = (Node *)matchFollowCol;
+			}
+		;
 
 /*
  * func_expr and its cousin func_expr_windowless are split out from c_expr just
@@ -35494,6 +35642,7 @@ unreserved_keyword_without_key:
 			| NAME_P
 			| NAMES
 			| NEXT
+			| NGRAM
 			| NO
 			| NO_WRITE_TO_BINLOG
 			| NOCOMPRESS
@@ -35853,7 +36002,8 @@ col_name_keyword_nonambiguous:
  * - thomas 2000-11-28
  */
 type_func_name_keyword:
-			 AUTHORIZATION
+			 AGAINST
+			| AUTHORIZATION
 			| COLLATION
 			| COMPACT
 			| CONCURRENTLY
@@ -35864,6 +36014,7 @@ type_func_name_keyword:
 			| DIV
 			| FREEZE
 			| FULL
+			| FULLTEXT
 			| HDFSDIRECTORY
 			| ILIKE
 			| INDEX
