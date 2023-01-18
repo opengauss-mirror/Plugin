@@ -2,6 +2,9 @@
 CREATE FUNCTION pg_catalog.dolphin_invoke()
     RETURNS VOID AS '$libdir/dolphin','dolphin_invoke' LANGUAGE C STRICT;
 
+CREATE FUNCTION pg_catalog.dolphin_version()
+    RETURNS text AS '$libdir/dolphin','dolphin_version' LANGUAGE C IMMUTABLE STRICT;
+
 CREATE OR REPLACE FUNCTION pg_catalog.curdate()
 returns date
 as
