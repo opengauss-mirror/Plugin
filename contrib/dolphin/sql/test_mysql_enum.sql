@@ -170,5 +170,34 @@ W_COUNTRY VARCHAR(20) ,
 W_GMT_OFFSET DECIMAL(5,2)
 );
 
+create table enum_test_table(a enum('a', 'b', 'c'));
+insert into enum_test_table values('a'), ('b'), ('c');
+select * from enum_test_table where a = 1;
+select * from enum_test_table where a = 2;
+select * from enum_test_table where a = 3;
+select * from enum_test_table where 1 = a;
+select * from enum_test_table where 2 = a;
+select * from enum_test_table where 3 = a;
+select * from enum_test_table where 1 > a;
+select * from enum_test_table where 2 > a;
+select * from enum_test_table where 3 > a;
+select * from enum_test_table where 1 >= a;
+select * from enum_test_table where 2 >= a;
+select * from enum_test_table where 3 >= a;
+select * from enum_test_table where 1 < a;
+select * from enum_test_table where 2 < a;
+select * from enum_test_table where 3 < a;
+select * from enum_test_table where 1 <= a;
+select * from enum_test_table where 2 <= a;
+select * from enum_test_table where 3 <= a;
+select * from enum_test_table where 1 != a;
+select * from enum_test_table where 2 != a;
+select * from enum_test_table where 3 != a;
+
+select a + 1 from enum_test_table;
+select a - 1 from enum_test_table;
+select a * 1 from enum_test_table;
+select a / 1 from enum_test_table;
+
 drop schema test_enum cascade;
 reset current_schema;
