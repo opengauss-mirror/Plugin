@@ -1,3 +1,4 @@
 .vscode
 .idea
 .gitee
+contrib/dolphin/include/plugin_config.h

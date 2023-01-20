@@ -18,6 +18,8 @@ base_dir = contrib/dolphin
 MODULE_big = dolphin
 p=25432
 PART=
+git_repo_path=
+git_commit = $(shell if test -d $(git_repo_path); then cd $(git_repo_path) && git log 2>/dev/null | grep commit | head -1 | awk '{print $$2}' | cut -b 1-8; fi)
 
 OBJS = $(protocol)/password.o $(protocol)/server_startup.o $(protocol)/auth.o $(protocol)/handler.o \
 $(protocol)/dqformat.o $(protocol)/bytestream.o $(protocol)/printtup.o
@@ -65,7 +67,7 @@ OBJS += $(pl)/pl_gram.o $(pl)/pl_scanner.o $(pl)/pl_comp.o $(pl)/pl_handler.o
 
 OBJS += $(catalog)/heap.o
 
-all $(OBJS): protocol parser utils executor vector plan prep commands storage pl catalog;
+all $(OBJS): write_git_commit protocol parser utils executor vector plan prep commands storage pl catalog;
 
 protocol:
 	make -C $(protocol)
@@ -100,6 +102,8 @@ pl:
 catalog:
 	make -C $(catalog)
 
+write_git_commit:
+	if [ x$(git_commit) != x'' ]; then sed -i 's/#define DOLPHIN_VERSION_STR.*/#define DOLPHIN_VERSION_STR "dolphin build ${git_commit}"/g' ./include/plugin_config.h; fi
 
 extra_clean:
 	make clean -C $(protocol)

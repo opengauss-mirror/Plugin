@@ -17,6 +17,19 @@
 
 #include "utils/builtins.h"
 
+#ifdef DOLPHIN
+#include "plugin_postgres.h"
+#include "plugin_config.h"
+
+PG_FUNCTION_INFO_V1_PUBLIC(dolphin_version);
+extern "C" DLL_PUBLIC Datum dolphin_version(PG_FUNCTION_ARGS);
+
+Datum dolphin_version(PG_FUNCTION_ARGS)
+{
+    PG_RETURN_TEXT_P(cstring_to_text(DOLPHIN_VERSION_STR));
+}
+#endif
+
 Datum pgsql_version(PG_FUNCTION_ARGS)
 {
     PG_RETURN_TEXT_P(cstring_to_text(PG_VERSION_STR));
