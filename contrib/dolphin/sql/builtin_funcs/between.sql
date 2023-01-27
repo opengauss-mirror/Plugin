@@ -35,6 +35,17 @@ select 'xyzhi'::text between 'xyzhi' and 'xyzhi'::text;
 select repeat('Pg', 4) between 0 and 'PgPgPgPg';
 select replace('mm','mm',1) between 0 and 1;
 select lpad('hi', 5, 'xyza') between 'xyzhi' and 10;
+select 11 between '' and 0;
+select '' between 34 and 110;
+select 11 between 66 and '';
+select (sqrt(81) between log10(100) and 20)+('2' between log2(4) and sqrt(4));
+select (sqrt(81) between log10(100) and 20)-('22' between log2(4) and sqrt(4));
+select sqrt(1000) > 3.14 and sqrt(2000) <= 4 between sqrt(1212) <= 3 and sqrt(5757) = sqrt(5757);
+drop table if exists t_between_and_0015;
+create table t_between_and_0015(c_0015_nn numeric);
+insert into t_between_and_0015 values(0.123),(21.215),(12.5),(268/7),(5.0001),(-11.111);
+select c_0015_nn from t_between_and_0015 where abs(c_0015_nn) between 10 and 20 and c_0015_nn is not null order by c_0015_nn;
+select c_0015_nn from t_between_and_0015 where abs(c_0015_nn) not between 10 and 20 and c_0015_nn is not null order by c_0015_nn;
 drop table if exists t_between_and_0007;
 create table t_between_and_0007(
 c_id int(11) not null,
