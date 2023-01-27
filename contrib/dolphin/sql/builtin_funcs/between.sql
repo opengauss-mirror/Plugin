@@ -46,6 +46,7 @@ create table t_between_and_0015(c_0015_nn numeric);
 insert into t_between_and_0015 values(0.123),(21.215),(12.5),(268/7),(5.0001),(-11.111);
 select c_0015_nn from t_between_and_0015 where abs(c_0015_nn) between 10 and 20 and c_0015_nn is not null order by c_0015_nn;
 select c_0015_nn from t_between_and_0015 where abs(c_0015_nn) not between 10 and 20 and c_0015_nn is not null order by c_0015_nn;
+drop table t_between_and_0015;
 drop table if exists t_between_and_0007;
 create table t_between_and_0007(
 c_id int(11) not null,

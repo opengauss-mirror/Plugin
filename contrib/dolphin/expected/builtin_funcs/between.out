@@ -266,6 +266,7 @@ select c_0015_nn from t_between_and_0015 where abs(c_0015_nn) not between 10 and
         38
 (4 rows)
 
+drop table t_between_and_0015;
 drop table if exists t_between_and_0007;
 NOTICE:  table "t_between_and_0007" does not exist, skipping
 create table t_between_and_0007(
