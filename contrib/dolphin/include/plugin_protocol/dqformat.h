@@ -55,6 +55,20 @@ typedef struct network_mysqld_auth_request {
     bool ssl_request;
 } network_mysqld_auth_request;
 
+typedef struct com_stmt_param {
+    uint32 type;
+    char *value;
+} com_stmt_param;
+
+typedef struct com_stmt_exec_request {
+    uint32 statement_id;
+    uint8 flags;
+    uint32 iteration_count;
+    uint8 new_params_bind_flag;
+    char *null_bitmap;
+    com_stmt_param *parameter_values;
+} com_stmt_exec_request; 
+
 typedef struct {
     uint64 affected_rows;
     uint64 insert_id;
@@ -87,5 +101,7 @@ void send_field_count_packet(StringInfo buf, int count);
 dolphin_data_field* make_dolphin_data_field(const char *name, char *tableName = NULL);
 
 void send_column_definition41_packet(StringInfo buf, dolphin_data_field *field);
+
+void send_com_stmt_prepare_ok_packet(StringInfo buf, int statementId, int columns, int params);
 
 #endif /* DQ_FORMAT_H */

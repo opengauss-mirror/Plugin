@@ -183,3 +183,17 @@ void send_column_definition41_packet(StringInfo buf, dolphin_data_field *field)
     
     dq_putmessage(buf->data, buf->len);
 }
+
+void send_com_stmt_prepare_ok_packet(StringInfo buf, int statementId, int columns, int params)
+{
+   resetStringInfo(buf); 
+
+   dq_append_int1(buf, 0x00);
+   dq_append_int4(buf, statementId);
+   dq_append_int2(buf, columns);
+   dq_append_int2(buf, params);
+   dq_append_int1(buf, 0x00);
+   dq_append_int2(buf, 0x00);
+
+   dq_putmessage(buf->data, buf->len);
+}

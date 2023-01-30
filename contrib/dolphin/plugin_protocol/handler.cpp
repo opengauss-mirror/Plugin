@@ -25,13 +25,18 @@
 #include "libpq/libpq.h"
 #include "executor/spi_priv.h"
 
+#include "plugin_postgres.h"
 #include "plugin_protocol/dqformat.h"
 #include "plugin_protocol/handler.h"
 
 static int execute_sql(const char* sql);
+static int execute_prepare_sql(const char *sql);
+static int execute_prepare_plan(com_stmt_exec_request *request);
 static void execute_show_variables();
 static int execute_show_columns_from(char *tableName);
 static void execute_fetch_server_config();
+
+SPIPlanPtr plan;
 
 void dophin_send_ready_for_query(CommandDest dest)
 {
@@ -142,9 +147,40 @@ int dolphin_process_command(StringInfo buf)
             break;
         }
         case COM_STMT_PREPARE: {
+            GetSessionContext()->enableBCmptMode = true;
+            char *sql = dq_get_string_eof(buf);
+            execute_prepare_sql(sql);
             break;
         }
         case COM_STMT_EXECUTE: {
+            com_stmt_exec_request *req = (com_stmt_exec_request *)palloc0(sizeof(com_stmt_exec_request));
+            dq_get_int4(buf, &req->statement_id);
+            dq_get_int1(buf, &req->flags);
+            dq_get_int4(buf, &req->iteration_count);
+
+            // if parameter count > 0
+            int parameter_count = 2;
+            int len = (parameter_count + 7) / 8;
+            req->null_bitmap = dq_get_string_len(buf, len);
+            
+            dq_get_int1(buf, &req->new_params_bind_flag);
+
+            if (req->new_params_bind_flag) {
+                com_stmt_param *parameters = (com_stmt_param *)palloc0(sizeof(com_stmt_param) * parameter_count);
+                for (int i = 0; i < parameter_count; i++) {
+                    dq_get_int2(buf, &parameters[i].type);
+                }
+                 for (int i = 0; i < parameter_count; i++) {
+                     // should get value by type
+                     parameters[i].value = dq_get_string_lenenc(buf);
+                }
+                req->parameter_values = parameters;
+            }
+
+            execute_prepare_plan(req);
+
+            // execute cache plan
+            
             break;
         }
         default:
@@ -154,7 +190,7 @@ int dolphin_process_command(StringInfo buf)
     return 0;
 }
 
-int execute_sql(const char* sql)
+int execute_sql(const char *sql)
 {
     int rc;
     
@@ -189,6 +225,87 @@ int execute_sql(const char* sql)
 
     return 0;
 }
+
+int execute_prepare_sql(const char *sql)
+{
+    int rc;
+    
+    start_xact_command();
+
+    SPI_STACK_LOG("connect", NULL, NULL);
+    if ((rc = SPI_connect()) != SPI_OK_CONNECT) {
+        ereport(ERROR, (errcode(ERRCODE_INTERNAL_ERROR),
+            errmsg("dolphin SPI_connect failed: %s", SPI_result_code_string(rc)),
+            errdetail("SPI_connect failed"),
+            errcause("System error."),
+            erraction("Check whether the snapshot retry is successful")));
+    }
+
+    Oid argtypes[2];
+    // SPIPlanPtr plan;
+
+    argtypes[0] = VARCHAROID;
+    argtypes[1] = VARCHAROID;
+
+    plan = SPI_prepare(sql, 2, argtypes);
+    // SPI_keepplan(plan);
+
+    // todo send response packet
+    StringInfo buf = makeStringInfo();
+    send_com_stmt_prepare_ok_packet(buf, 1, 2, 2);
+
+    for (int i = 0; i < 2; i++) {
+        dolphin_data_field* param_field = make_dolphin_data_field("param");
+        send_column_definition41_packet(buf, param_field);
+    }
+    send_network_eof_packet(buf);
+    
+    for (int i = 0; i < 2; i++) {
+        dolphin_data_field* column_field = make_dolphin_data_field("column");
+        send_column_definition41_packet(buf, column_field);
+    }
+    send_network_eof_packet(buf);
+
+    SPI_STACK_LOG("finish", NULL, NULL);
+    SPI_finish();
+    finish_xact_command();
+
+    return 0;
+}
+
+int execute_prepare_plan(com_stmt_exec_request *request)
+{
+    int rc;
+    
+    start_xact_command();
+
+    SPI_STACK_LOG("connect", NULL, NULL);
+    if ((rc = SPI_connect(DestRemote)) != SPI_OK_CONNECT) {
+        ereport(ERROR, (errcode(ERRCODE_INTERNAL_ERROR),
+            errmsg("dolphin SPI_connect failed: %s", SPI_result_code_string(rc)),
+            errdetail("SPI_connect failed"),
+            errcause("System error."),
+            erraction("Check whether the snapshot retry is successful")));
+    }
+
+    Datum args[2];
+    char nulls[2];
+    int spirc;
+
+    args[0] = PointerGetDatum(request->parameter_values[0].value);
+    args[1] = PointerGetDatum(request->parameter_values[1].value); 
+    nulls[0] = ' ';
+    nulls[1] = ' ';
+
+    spirc = SPI_execute_plan(plan, args, nulls, false, 1);
+
+    SPI_STACK_LOG("finish", NULL, NULL);
+    SPI_finish();
+    finish_xact_command();
+
+    return 0;
+}
+
 
 int execute_show_columns_from(char *tableName)
 {
