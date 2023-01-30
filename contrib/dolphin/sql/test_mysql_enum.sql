@@ -170,6 +170,21 @@ W_COUNTRY VARCHAR(20) ,
 W_GMT_OFFSET DECIMAL(5,2)
 );
 
+drop table if exists chameleon_case6;
+create table chameleon_case6(c1 enum('男','女','无'));
+insert into chameleon_case6 values('女'), ('男');
+select * from chameleon_case6 order by 1;
+update chameleon_case6 set c1 ='无' where c1 = '女';
+select * from chameleon_case6 order by 1;
+
+drop table if exists test_abc;
+create table test_abc (c1 enum('c', 'b', 'a'));
+insert into test_abc values('a'), ('b'), ('c');
+select c1,
+c1 = 'b' AS "c1 = b", c1 <> 'b' AS "c1 <> b", c1 > 'b' AS "c1 > b", c1 >= 'b' AS "c1 >= b", c1 < 'b' AS "c1 < b", c1 <= 'b' AS "c1 <= b",
+'b' = c1 AS "b = c1", 'b' <> c1 AS "b <> c1", 'b' > c1 AS "b > c1", 'b' >= c1 AS "b >= c1", 'b' < c1 AS "b < c1", 'b' <= c1 AS "b <= c1"
+from test_abc order by 1;
+
 create table enum_test_table(a enum('a', 'b', 'c'));
 insert into enum_test_table values('a'), ('b'), ('c');
 select * from enum_test_table where a = 1;

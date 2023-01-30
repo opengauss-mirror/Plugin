@@ -482,4 +482,110 @@ Datum Enum2Float8(PG_FUNCTION_ARGS)
 
     PG_RETURN_FLOAT8(result);
 }
+
+Datum enumtotext(PG_FUNCTION_ARGS)
+{
+    Datum enumLabels = DirectFunctionCall1(enum_out, PG_GETARG_DATUM(0));
+    return DirectFunctionCall1(textin, PointerGetDatum(enumLabels));
+}
+
+/* enum compare with text */
+PG_FUNCTION_INFO_V1_PUBLIC(enumtexteq);
+extern "C" DLL_PUBLIC Datum enumtexteq(PG_FUNCTION_ARGS);
+Datum enumtexteq(PG_FUNCTION_ARGS)
+{
+    Datum enumDatum = DirectFunctionCall1(enumtotext, PG_GETARG_DATUM(0));
+    return DirectFunctionCall2(texteq, PointerGetDatum(enumDatum), PG_GETARG_DATUM(1));
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(enumtextne);
+extern "C" DLL_PUBLIC Datum enumtextne(PG_FUNCTION_ARGS);
+Datum enumtextne(PG_FUNCTION_ARGS)
+{
+    Datum enumDatum = DirectFunctionCall1(enumtotext, PG_GETARG_DATUM(0));
+    return DirectFunctionCall2(textne, PointerGetDatum(enumDatum), PG_GETARG_DATUM(1));
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(enumtextgt);
+extern "C" DLL_PUBLIC Datum enumtextgt(PG_FUNCTION_ARGS);
+Datum enumtextgt(PG_FUNCTION_ARGS)
+{
+    Datum enumDatum = DirectFunctionCall1(enumtotext, PG_GETARG_DATUM(0));
+    return DirectFunctionCall2Coll(text_gt, PG_GET_COLLATION(), PointerGetDatum(enumDatum), PG_GETARG_DATUM(1));
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(enumtextge);
+extern "C" DLL_PUBLIC Datum enumtextge(PG_FUNCTION_ARGS);
+Datum enumtextge(PG_FUNCTION_ARGS)
+{
+    Datum enumDatum = DirectFunctionCall1(enumtotext, PG_GETARG_DATUM(0));
+    return DirectFunctionCall2Coll(text_ge, PG_GET_COLLATION(), PointerGetDatum(enumDatum), PG_GETARG_DATUM(1));
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(enumtextlt);
+extern "C" DLL_PUBLIC Datum enumtextlt(PG_FUNCTION_ARGS);
+Datum enumtextlt(PG_FUNCTION_ARGS)
+{
+    Datum enumDatum = DirectFunctionCall1(enumtotext, PG_GETARG_DATUM(0));
+    return DirectFunctionCall2Coll(text_lt, PG_GET_COLLATION(), PointerGetDatum(enumDatum), PG_GETARG_DATUM(1));
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(enumtextle);
+extern "C" DLL_PUBLIC Datum enumtextle(PG_FUNCTION_ARGS);
+Datum enumtextle(PG_FUNCTION_ARGS)
+{
+    Datum enumDatum = DirectFunctionCall1(enumtotext, PG_GETARG_DATUM(0));
+    return DirectFunctionCall2Coll(text_le, PG_GET_COLLATION(), PointerGetDatum(enumDatum), PG_GETARG_DATUM(1));
+}
+
+/* text compare with enum */
+PG_FUNCTION_INFO_V1_PUBLIC(textenumeq);
+extern "C" DLL_PUBLIC Datum textenumeq(PG_FUNCTION_ARGS);
+Datum textenumeq(PG_FUNCTION_ARGS)
+{
+    Datum enumDatum = DirectFunctionCall1(enumtotext, PG_GETARG_DATUM(1));
+    return DirectFunctionCall2(texteq, PG_GETARG_DATUM(0), PointerGetDatum(enumDatum));
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(textenumne);
+extern "C" DLL_PUBLIC Datum textenumne(PG_FUNCTION_ARGS);
+Datum textenumne(PG_FUNCTION_ARGS)
+{
+    Datum enumDatum = DirectFunctionCall1(enumtotext, PG_GETARG_DATUM(1));
+    return DirectFunctionCall2(textne, PG_GETARG_DATUM(0), PointerGetDatum(enumDatum));
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(textenumgt);
+extern "C" DLL_PUBLIC Datum textenumgt(PG_FUNCTION_ARGS);
+Datum textenumgt(PG_FUNCTION_ARGS)
+{
+    Datum enumDatum = DirectFunctionCall1(enumtotext, PG_GETARG_DATUM(1));
+    return DirectFunctionCall2Coll(text_gt, PG_GET_COLLATION(), PG_GETARG_DATUM(0), PointerGetDatum(enumDatum));
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(textenumge);
+extern "C" DLL_PUBLIC Datum textenumge(PG_FUNCTION_ARGS);
+Datum textenumge(PG_FUNCTION_ARGS)
+{
+    Datum enumDatum = DirectFunctionCall1(enumtotext, PG_GETARG_DATUM(1));
+    return DirectFunctionCall2Coll(text_ge, PG_GET_COLLATION(), PG_GETARG_DATUM(0), PointerGetDatum(enumDatum));
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(textenumlt);
+extern "C" DLL_PUBLIC Datum textenumlt(PG_FUNCTION_ARGS);
+Datum textenumlt(PG_FUNCTION_ARGS)
+{
+    Datum enumDatum = DirectFunctionCall1(enumtotext, PG_GETARG_DATUM(1));
+    return DirectFunctionCall2Coll(text_lt, PG_GET_COLLATION(), PG_GETARG_DATUM(0), PointerGetDatum(enumDatum));
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(textenumle);
+extern "C" DLL_PUBLIC Datum textenumle(PG_FUNCTION_ARGS);
+Datum textenumle(PG_FUNCTION_ARGS)
+{
+    Datum enumDatum = DirectFunctionCall1(enumtotext, PG_GETARG_DATUM(1));
+    return DirectFunctionCall2Coll(text_le, PG_GET_COLLATION(), PG_GETARG_DATUM(0), PointerGetDatum(enumDatum));
+}
+
+
 #endif
