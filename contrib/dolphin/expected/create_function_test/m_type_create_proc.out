@@ -14,16 +14,7 @@ CREATE PROCEDURE p()
   END CASE;
 END;
 //
-ERROR:  unexpected end of function definition at end of input
-LINE 7:   BEGIN
-               ^
-QUERY:   DECLARE v INT DEFAULT 1; begin 
-  CASE v
-  WHEN 2 THEN SELECT v;
-  WHEN 3 THEN SELECT 0;
-  ELSE
-  CREATE PROCEDURE p()
-  BEGIN
+DROP PROCEDURE IF EXISTS p//
 CREATE PROCEDURE p()
   BEGIN
   END;
@@ -146,6 +137,8 @@ select * from test;
 
 --testmulti declare
  delimiter //
+ DROP PROCEDURE IF EXISTS testpro_m6//
+NOTICE:  function testpro_m6() does not exist, skipping
  CREATE PROCEDURE testpro_m6(a int)
  begin
  declare b int;
@@ -158,6 +151,17 @@ select * from test;
     end;
  end;
  //
+DROP PROCEDURE IF EXISTS testpro_m6//
+CREATE PROCEDURE testpro_m6(a int)
+    begin
+        declare b int;
+        declare c int;
+        b:= 9;
+        insert into test values (a + b);
+        begin
+            insert into test values (a + b);
+        end;
+end//
  delimiter ;
  delimiter //
  CREATE PROCEDURE testpro_m7(a int)

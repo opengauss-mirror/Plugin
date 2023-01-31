@@ -17,6 +17,7 @@ CREATE PROCEDURE p()
 END;
 //
 
+DROP PROCEDURE IF EXISTS p//
 CREATE PROCEDURE p()
   BEGIN
   END;
@@ -112,6 +113,7 @@ select * from test;
 --testmulti declare
 
  delimiter //
+ DROP PROCEDURE IF EXISTS testpro_m6//
  CREATE PROCEDURE testpro_m6(a int)
  begin
  declare b int;
@@ -124,6 +126,18 @@ select * from test;
     end;
  end;
  //
+
+DROP PROCEDURE IF EXISTS testpro_m6//
+CREATE PROCEDURE testpro_m6(a int)
+    begin
+        declare b int;
+        declare c int;
+        b:= 9;
+        insert into test values (a + b);
+        begin
+            insert into test values (a + b);
+        end;
+end//
 
  delimiter ;
 
