@@ -69,6 +69,9 @@ extern "C" DLL_PUBLIC Datum json_valid(PG_FUNCTION_ARGS);
 
 PG_FUNCTION_INFO_V1_PUBLIC(json_type);
 extern "C" DLL_PUBLIC Datum json_type(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1_PUBLIC(json_objectagg_mysql_transfn);
+extern "C" DLL_PUBLIC Datum json_objectagg_mysql_transfn(PG_FUNCTION_ARGS);
 #endif
 
 /*
@@ -104,14 +107,13 @@ static void array_dim_to_json(StringInfo result, int dim, int ndims, int *dims, 
                               TYPCATEGORY tcategory, Oid typoutputfunc, bool use_line_feeds);
 static void array_to_json_internal(Datum array, StringInfo result, bool use_line_feeds);
 static void datum_to_json(Datum val, bool is_null, StringInfo result, TYPCATEGORY tcategory, Oid typoutputfunc,
-                          bool key_scalar);
-static void add_json(Datum val, bool is_null, StringInfo result, Oid val_type, bool key_scalar);
+                          bool key_scalar, bool mysql_format);
+static void add_json(Datum val, bool is_null, StringInfo result, Oid val_type, bool key_scalar, bool mysql_format);
 
 /* the null action object used for pure validation */
 static JsonSemAction nullSemAction = {NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL};
 static inline bool lex_accept(JsonLexContext *lex, JsonTokenType token, char **lexeme);
 static inline void lex_expect(JsonParseContext ctx, JsonLexContext *lex, JsonTokenType token);
-
 
 /* Recursive Descent parser support routines */
 /*
@@ -204,8 +206,7 @@ Datum json_in(PG_FUNCTION_ARGS)
             (void)MemoryContextSwitchTo(oldcxt);
             ErrorData *edata = CopyErrorData();
             ereport(WARNING,
-                    (errcode(ERRCODE_INVALID_TEXT_REPRESENTATION),
-                            errmsg("invalid input syntax for type json")));
+                    (errcode(ERRCODE_INVALID_TEXT_REPRESENTATION), errmsg("invalid input syntax for type json")));
             FlushErrorState();
             FreeErrorData(edata);
             PG_RETURN_DATUM((Datum)DirectFunctionCall1(json_in, CStringGetDatum("null")));
@@ -1174,7 +1175,7 @@ static char *extract_mb_char(const char *s)
  * as appropriate.
  */
 static void datum_to_json(Datum val, bool is_null, StringInfo result, TYPCATEGORY tcategory, Oid typoutputfunc,
-                          bool key_scalar)
+                          bool key_scalar, bool mysql_format)
 {
     char *outputstr = NULL;
     text *jsontext = NULL;
@@ -1187,7 +1188,15 @@ static void datum_to_json(Datum val, bool is_null, StringInfo result, TYPCATEGOR
         appendStringInfoString(result, "null");
         return;
     }
-
+    if (key_scalar && mysql_format) {
+        outputstr = OidOutputFunctionCall(typoutputfunc, val);
+        if (key_scalar && *outputstr == '\0') {
+            ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("key value must not be empty")));
+        }
+        escape_json(result, outputstr);
+        pfree(outputstr);
+        return;
+    }
     switch (tcategory) {
         case TYPCATEGORY_ARRAY:
             array_to_json_internal(val, result, false);
@@ -1267,7 +1276,7 @@ static void array_dim_to_json(StringInfo result, int dim, int ndims, int *dims, 
         }
 
         if (dim + 1 == ndims) {
-            datum_to_json(vals[*valcount], nulls[*valcount], result, tcategory, typoutputfunc, false);
+            datum_to_json(vals[*valcount], nulls[*valcount], result, tcategory, typoutputfunc, false, false);
             (*valcount)++;
         } else {
             /*
@@ -1425,7 +1434,7 @@ static void composite_to_json(Datum composite, StringInfo result, bool use_line_
         } else {
             tcategory = TypeCategory(tupdesc->attrs[i]->atttypid);
         }
-        datum_to_json(val, isnull, result, tcategory, typoutput, false);
+        datum_to_json(val, isnull, result, tcategory, typoutput, false, false);
     }
     appendStringInfoChar(result, '}');
     ReleaseTupleDesc(tupdesc);
@@ -1435,7 +1444,7 @@ static void composite_to_json(Datum composite, StringInfo result, bool use_line_
  * append Json for orig_val to result. If it's a field key, make sure it's
  * of an acceptable type and is quoted.
  */
-static void add_json(Datum val, bool is_null, StringInfo result, Oid val_type, bool key_scalar)
+static void add_json(Datum val, bool is_null, StringInfo result, Oid val_type, bool key_scalar, bool mysql_format)
 {
     TYPCATEGORY tcategory;
     Oid typoutput;
@@ -1472,13 +1481,14 @@ static void add_json(Datum val, bool is_null, StringInfo result, Oid val_type, b
         tcategory = TypeCategory(val_type);
     }
 
-    if (key_scalar && (tcategory == TYPCATEGORY_ARRAY || tcategory == TYPCATEGORY_COMPOSITE ||
-                       tcategory == TYPCATEGORY_JSON || tcategory == TYPCATEGORY_JSON_CAST)) {
+    if (key_scalar && !mysql_format &&
+        (tcategory == TYPCATEGORY_ARRAY || tcategory == TYPCATEGORY_COMPOSITE || tcategory == TYPCATEGORY_JSON ||
+         tcategory == TYPCATEGORY_JSON_CAST)) {
         ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
                         errmsg("key value must be scalar, not array, composite or json")));
     }
 
-    datum_to_json(val, is_null, result, tcategory, typoutput, key_scalar);
+    datum_to_json(val, is_null, result, tcategory, typoutput, key_scalar, mysql_format);
 }
 
 /*
@@ -1579,7 +1589,7 @@ Datum to_json(PG_FUNCTION_ARGS)
     } else {
         tcategory = TypeCategory(val_type);
     }
-    datum_to_json(val, false, result, tcategory, typoutput, false);
+    datum_to_json(val, false, result, tcategory, typoutput, false, false);
     PG_RETURN_TEXT_P(cstring_to_text_with_len(result->data, result->len));
 }
 
@@ -1626,7 +1636,7 @@ Datum json_agg_transfn(PG_FUNCTION_ARGS)
     /* fast path for NULLs */
     if (PG_ARGISNULL(1)) {
         val = (Datum)0;
-        datum_to_json(val, true, state, 0, InvalidOid, false);
+        datum_to_json(val, true, state, 0, InvalidOid, false, false);
         PG_RETURN_POINTER(state);
     }
 
@@ -1660,7 +1670,7 @@ Datum json_agg_transfn(PG_FUNCTION_ARGS)
     if (!PG_ARGISNULL(0) && (tcategory == TYPCATEGORY_ARRAY || tcategory == TYPCATEGORY_COMPOSITE)) {
         appendStringInfoString(state, "\n ");
     }
-    datum_to_json(val, false, state, tcategory, typoutput, false);
+    datum_to_json(val, false, state, tcategory, typoutput, false, false);
     /*
      * The transition type for array_agg() is declared to be "internal", which
      * is a pass-by-value type the same size as a pointer.    So we can safely
@@ -1737,7 +1747,7 @@ Datum json_object_agg_transfn(PG_FUNCTION_ARGS)
     if (val_type == InvalidOid || val_type == UNKNOWNOID) {
         ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("arg 1: could not determine data type")));
     }
-    add_json(arg, false, state, val_type, true);
+    add_json(arg, false, state, val_type, true, false);
     appendStringInfoString(state, " : ");
     val_type = get_fn_expr_argtype(fcinfo->flinfo, 2);
     /* see comments above */
@@ -1755,7 +1765,7 @@ Datum json_object_agg_transfn(PG_FUNCTION_ARGS)
     if (val_type == InvalidOid || val_type == UNKNOWNOID) {
         ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("arg 2: could not determine data type")));
     }
-    add_json(arg, PG_ARGISNULL(2), state, val_type, false);
+    add_json(arg, PG_ARGISNULL(2), state, val_type, false, false);
 
     PG_RETURN_POINTER(state);
 }
@@ -1824,7 +1834,7 @@ Datum json_build_object(PG_FUNCTION_ARGS)
         }
         appendStringInfoString(result, sep);
         sep = ", ";
-        add_json(arg, false, result, val_type, true);
+        add_json(arg, false, result, val_type, true, false);
         appendStringInfoString(result, " : ");
         /* process value */
         val_type = get_fn_expr_argtype(fcinfo->flinfo, i + 1);
@@ -1843,7 +1853,7 @@ Datum json_build_object(PG_FUNCTION_ARGS)
             ereport(ERROR,
                     (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("arg %d: could not determine data type", i + 2)));
         }
-        add_json(arg, PG_ARGISNULL(i + 1), result, val_type, false);
+        add_json(arg, PG_ARGISNULL(i + 1), result, val_type, false, false);
     }
     appendStringInfoChar(result, '}');
     PG_RETURN_TEXT_P(cstring_to_text_with_len(result->data, result->len));
@@ -1891,7 +1901,7 @@ Datum json_build_array(PG_FUNCTION_ARGS)
         }
         appendStringInfoString(result, sep);
         sep = ", ";
-        add_json(arg, PG_ARGISNULL(i), result, val_type, false);
+        add_json(arg, PG_ARGISNULL(i), result, val_type, false, false);
     }
     appendStringInfoChar(result, ']');
     PG_RETURN_TEXT_P(cstring_to_text_with_len(result->data, result->len));
@@ -2259,11 +2269,6 @@ Datum json_object_mysql(PG_FUNCTION_ARGS)
         } else {
             tcategory = TypeCategory(val_type);
         }
-        if (true && (tcategory == TYPCATEGORY_ARRAY || tcategory == TYPCATEGORY_COMPOSITE ||
-                     tcategory == TYPCATEGORY_JSON || tcategory == TYPCATEGORY_JSON_CAST)) {
-            ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
-                            errmsg("key value must be scalar, not array, composite or json")));
-        }
         switch (tcategory) {
             case TYPCATEGORY_BOOLEAN:
                 tempstr = makeStringInfo();
@@ -2365,7 +2370,7 @@ Datum json_quote(PG_FUNCTION_ARGS)
     result = makeStringInfo();
     getTypeOutputInfo(val_type, &typoutput, &typisvarlena);
     tcategory = TypeCategory(val_type);
-    datum_to_json(val, false, result, tcategory, typoutput, false);
+    datum_to_json(val, false, result, tcategory, typoutput, false, false);
     PG_RETURN_TEXT_P(cstring_to_text_with_len(result->data, result->len));
 }
 
@@ -2780,5 +2785,74 @@ Datum json_type(PG_FUNCTION_ARGS)
     type = type_case(tok);
     pfree(lex);
     PG_RETURN_TEXT_P(cstring_to_text(type));
+}
+
+Datum json_objectagg_mysql_transfn(PG_FUNCTION_ARGS)
+{
+    Oid val_type;
+    MemoryContext aggcontext, oldcontext;
+    StringInfo state;
+    Datum arg;
+
+    if (!AggCheckCallContext(fcinfo, &aggcontext)) {
+        /* cannot be called directly because of internal-type argument */
+        elog(ERROR, "json_agg_transfn called in non-aggregate context");
+    }
+
+    if (PG_ARGISNULL(0)) {
+        /*
+         * Make this StringInfo in a context where it will persist for the
+         * duration off the aggregate call. It's only needed for this initial
+         * piece, as the StringInfo routines make sure they use the right
+         * context to enlarge the object if necessary.
+         */
+        oldcontext = MemoryContextSwitchTo(aggcontext);
+        state = makeStringInfo();
+        MemoryContextSwitchTo(oldcontext);
+        appendStringInfoString(state, "{ ");
+    } else {
+        state = (StringInfo)PG_GETARG_POINTER(0);
+        appendStringInfoString(state, ", ");
+    }
+
+    if (PG_ARGISNULL(1)) {
+        ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("field name must not be null")));
+    }
+    val_type = get_fn_expr_argtype(fcinfo->flinfo, 1);
+    /*
+     * turn a constant (more or less literal) value that's of unknown type
+     * into text. Unknowns come in as a cstring pointer.
+     */
+    if (val_type == UNKNOWNOID && get_fn_expr_arg_stable(fcinfo->flinfo, 1)) {
+        val_type = TEXTOID;
+        arg = CStringGetTextDatum(PG_GETARG_POINTER(1));
+    } else {
+        arg = PG_GETARG_DATUM(1);
+    }
+
+    if (val_type == InvalidOid || val_type == UNKNOWNOID) {
+        ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("arg 1: could not determine data type")));
+    }
+    add_json(arg, false, state, val_type, true, true);
+    appendStringInfoString(state, " : ");
+    val_type = get_fn_expr_argtype(fcinfo->flinfo, 2);
+    /* see comments above */
+    if (val_type == UNKNOWNOID && get_fn_expr_arg_stable(fcinfo->flinfo, 2)) {
+        val_type = TEXTOID;
+        if (PG_ARGISNULL(2)) {
+            arg = (Datum)0;
+        } else {
+            arg = CStringGetTextDatum(PG_GETARG_POINTER(2));
+        }
+    } else {
+        arg = PG_GETARG_DATUM(2);
+    }
+
+    if (val_type == InvalidOid || val_type == UNKNOWNOID) {
+        ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("arg 2: could not determine data type")));
+    }
+    add_json(arg, PG_ARGISNULL(2), state, val_type, false, false);
+
+    PG_RETURN_POINTER(state);
 }
 #endif
