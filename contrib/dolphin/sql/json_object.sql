@@ -16,6 +16,11 @@ select json_object('City', 'Cairns', 'Population', 139693);
 select json_object(1234,234,212,333);
 select json_object(1, 'Json', 2, 'MyContex');
 
+--test for json key
+select json_object('{"a": "b"}'::json, true, '{"json": {"abc": "cde"}}'::json, 'TEXT');
+select json_object('{"a": "b"}'::jsonb, 12.32, '{"json": {"abc": "cde"}}'::jsonb, null);
+select json_object(json_object('name', 'Jim', 'age', 20), 'MyContex');
+
 -- test for type date and time
 select json_object('2022-09-26'::date,20221001::date);
 select json_object('12:12:58'::time,'24:00:00'::time);
@@ -104,6 +109,9 @@ insert into info1 values ('Tobbo','Meiguo',132333394);
 insert into info1 values ('Hnana','Riben',3403234);
 insert into tab_json1 select json_object('name',name,'address',address,'tel',tel) from info1;
 select * from tab_json1;
+create table tab_json2(data json, my_text text);
+insert into tab_json2 values('{"abc": 1234}', 'MyText');
+select json_object(data, my_text) from tab_json2;
 
 -- test for setting b_compatibility_mode back to false
 set dolphin.b_compatibility_mode = 0;

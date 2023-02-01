@@ -1,5 +1,6 @@
 create schema json_objectagg_test;
 set current_schema to 'json_objectagg_test';
+set dolphin.b_compatibility_mode = 1;
 -- create table for test
 create table City(District varchar(30), Name varchar(30), Population int);
 insert into City values ('Capital Region','Canberra',322723);
@@ -40,6 +41,13 @@ insert into time_table values(20200822, 1);
 insert into time_table values(20211001, 2);
 insert into time_table values(20221204, 3);
 select json_objectagg(b, a) from time_table;
+
+--test for json key
+create temp table json_table(a json, b text);
+insert into json_table values ('{"a": "b"}', 'Json');
+insert into json_table values (json_object('name', 'Jim', 'age', 20, 'name', 'Tim'), 'Text');
+insert into json_table values ('{"Number": 123, "Bool": false}', null);
+select json_objectagg(a, b) from json_table;
 
 drop schema json_objectagg_test cascade;
 reset current_schema;

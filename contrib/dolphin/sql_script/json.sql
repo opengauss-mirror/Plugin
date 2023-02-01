@@ -64,5 +64,3 @@ CREATE OR REPLACE FUNCTION pg_catalog.json_storage_size("any") RETURNS int LANGU
 CREATE OR REPLACE FUNCTION pg_catalog.json_pretty("any") RETURNS json LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'json_pretty';
 
 CREATE OR REPLACE FUNCTION pg_catalog.json_type("any") RETURNS text LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'json_type';
-
-
