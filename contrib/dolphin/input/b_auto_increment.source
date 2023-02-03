@@ -4,6 +4,9 @@ create database dolphin_autoinc dbcompatibility 'b';
 create database dolphin_autoinc_restore dbcompatibility 'b';
 \c dolphin_autoinc
 
+-- bool auto_increment is not supported because there is only two valid value for bool
+CREATE TABLE test_create_autoinc(id bool auto_increment primary key, name varchar(200),a int) auto_increment=1; -- ERROR
+
 -- test create table
 CREATE TABLE test_create_autoinc(
     a int AUTO_INCREMENT INDEX,
