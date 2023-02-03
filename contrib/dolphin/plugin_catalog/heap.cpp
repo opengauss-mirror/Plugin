@@ -4040,7 +4040,6 @@ static void StoreConstraints(Relation rel, List* cooked_constraints)
 static void CheckAutoIncrementDataType(Form_pg_attribute attr)
 {
     switch (attr->atttypid) {
-        case BOOLOID:
         case INT1OID:
         case INT2OID:
         case INT4OID:
