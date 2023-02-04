@@ -722,7 +722,7 @@ SELECT text(10);
 SELECT text(true);
  text 
 ------
- true
+ 1
 (1 row)
 
 SELECT text('jack'::name);

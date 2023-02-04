@@ -93,8 +93,8 @@ WARNING:  lineno must be within the range of [1, MaxLineNumber] Please use dbe_p
 CONTEXT:  SQL statement "insert into tmp_holder select * from dbe_pldebugger.add_breakpoint(funcoid, 50)"
 PL/pgSQL function inline_code_block line 19 at SQL statement
 select * from tmp_holder;
-                                            res                                             
---------------------------------------------------------------------------------------------
+                                           res                                           
+-----------------------------------------------------------------------------------------
  -1
  -1
  0
@@ -105,18 +105,18 @@ select * from tmp_holder;
  3
  4
  5
- true
- true
- true
+ 1
+ 1
+ 1
  -1
- true
- true
+ 1
+ 1
  6
- 2:29:        INSERT INTO test VALUES (index_1, 'Happy Children''s Day!', '2021-6-1');:true
- 3:32:    sql_stmt := 'select a from test where b = :1;';:true
- 4:35:        FETCH cur INTO a_tmp;:false
- 5:39:    CLOSE cur;:true
- 6:15:    cnt := 0;:true
+ 2:29:        INSERT INTO test VALUES (index_1, 'Happy Children''s Day!', '2021-6-1');:1
+ 3:32:    sql_stmt := 'select a from test where b = :1;';:1
+ 4:35:        FETCH cur INTO a_tmp;:0
+ 5:39:    CLOSE cur;:1
+ 6:15:    cnt := 0;:1
 (22 rows)
 
 select * from dbe_pldebugger.print_var('test.c');

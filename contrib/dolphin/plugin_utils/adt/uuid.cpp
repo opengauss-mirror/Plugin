@@ -571,7 +571,9 @@ uint64 uuidShortInit()
 {
     int transBits = 24;
     int timeMultiple = 10;
+#ifndef HAVE_INT64_TIMESTAMP
     int timeMultipleToSecond = 1000;
+#endif
     uint64 uuid = 0;
     uint64 curr_time = 0;
     uint64 start_time = 0;

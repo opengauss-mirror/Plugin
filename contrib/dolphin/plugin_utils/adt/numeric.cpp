@@ -20891,7 +20891,6 @@ Datum bit_count_numeric(PG_FUNCTION_ARGS)
 {
     Numeric num = PG_GETARG_NUMERIC(0);
     NumericVar x;
-    uint64 value;
     int128 bits = 0;
     uint16 numFlags = NUMERIC_NB_FLAGBITS(num);
     int64 maxNum = 63, minNum = 1;

@@ -205,12 +205,14 @@ Datum booltext(PG_FUNCTION_ARGS)
 {
     bool arg1 = PG_GETARG_BOOL(0);
     const char* str = NULL;
-
+#ifdef DOLPHIN
+    str = arg1 ? "1" : "0";
+#else
     if (arg1)
         str = "true";
     else
         str = "false";
-
+#endif
     PG_RETURN_TEXT_P(cstring_to_text(str));
 }
 
