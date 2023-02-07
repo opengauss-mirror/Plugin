@@ -2389,6 +2389,56 @@ select '1010'::blob not like null;
  
 (1 row)
 
+set client_encoding = 'sql_ascii';
+select 'siudh'::char(10) not like 'SIUDH'::char(10);
+ ?column? 
+----------
+ f
+(1 row)
+
+select 'siudh'::char(10) like 'SIUDH'::char(10);
+ ?column? 
+----------
+ t
+(1 row)
+
+select 'siudh'::char(5) like 'SIUDH'::char(10);
+ ?column? 
+----------
+ t
+(1 row)
+
+select 'siudh'::char(10) like 'SIUDH'::char(5);
+ ?column? 
+----------
+ t
+(1 row)
+
+set client_encoding = 'UTF8';
+select 'siudh'::char(10) not like 'SIUDH'::char(10);
+ ?column? 
+----------
+ f
+(1 row)
+
+select 'siudh'::char(10) like 'SIUDH'::char(10);
+ ?column? 
+----------
+ t
+(1 row)
+
+select 'siudh'::char(5) like 'SIUDH'::char(10);
+ ?column? 
+----------
+ t
+(1 row)
+
+select 'siudh'::char(10) like 'SIUDH'::char(5);
+ ?column? 
+----------
+ t
+(1 row)
+
 drop table testlike1;
 drop table testlike2;
 drop table testlike3;

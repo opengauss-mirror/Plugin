@@ -235,7 +235,11 @@ static inline int Generic_Text_IC_like(text* str, text* pat, Oid collation,bool 
         p = VARDATA_ANY(pat);
         plen = VARSIZE_ANY_EXHDR(pat);
         s = VARDATA_ANY(str);
+#ifdef DOLPHIN
+        slen = ifbpchar ? bcTruelen(str) : VARSIZE_ANY_EXHDR(str);
+#else
         slen = VARSIZE_ANY_EXHDR(str);
+#endif
         return SB_IMatchText(s, slen, p, plen, locale, locale_is_c);
     }
 }

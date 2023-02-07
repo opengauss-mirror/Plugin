@@ -853,6 +853,17 @@ select '1010'::blob not like '1100';
 select '1010'::blob not like '1100'::blob;
 select '1010'::blob not like null;
 
+set client_encoding = 'sql_ascii';
+select 'siudh'::char(10) not like 'SIUDH'::char(10);
+select 'siudh'::char(10) like 'SIUDH'::char(10);
+select 'siudh'::char(5) like 'SIUDH'::char(10);
+select 'siudh'::char(10) like 'SIUDH'::char(5);
+set client_encoding = 'UTF8';
+select 'siudh'::char(10) not like 'SIUDH'::char(10);
+select 'siudh'::char(10) like 'SIUDH'::char(10);
+select 'siudh'::char(5) like 'SIUDH'::char(10);
+select 'siudh'::char(10) like 'SIUDH'::char(5);
+
 drop table testlike1;
 drop table testlike2;
 drop table testlike3;
