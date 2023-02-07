@@ -47,11 +47,15 @@ CREATE OR REPLACE FUNCTION pg_catalog.json_length("any") RETURNS int LANGUAGE C 
 CREATE OR REPLACE FUNCTION pg_catalog.json_length("any",text) RETURNS int LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'json_length';
 create aggregate pg_catalog.json_arrayagg("any") (SFUNC = json_agg_transfn, STYPE = internal, finalfunc = json_agg_finalfn);
 
+CREATE FUNCTION pg_catalog.json_objectagg_mysql_transfn (
+    internal, "any", "any"
+) RETURNS internal LANGUAGE C as '$libdir/dolphin', 'json_objectagg_mysql_transfn';
+
 CREATE OR REPLACE FUNCTION pg_catalog.json_objectagg_finalfn(
     internal
 ) RETURNS json LANGUAGE C as '$libdir/dolphin', 'json_objectagg_finalfn';
 
-create aggregate pg_catalog.json_objectagg("any", "any") (SFUNC = json_object_agg_transfn, STYPE = internal, finalfunc = json_objectagg_finalfn);
+create aggregate pg_catalog.json_objectagg("any", "any") (SFUNC = json_objectagg_mysql_transfn, STYPE = internal, finalfunc = json_objectagg_finalfn);
 
 CREATE OR REPLACE FUNCTION pg_catalog.json_valid("any") RETURNS boolean LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'json_valid';
 
@@ -60,5 +64,3 @@ CREATE OR REPLACE FUNCTION pg_catalog.json_storage_size("any") RETURNS int LANGU
 CREATE OR REPLACE FUNCTION pg_catalog.json_pretty("any") RETURNS json LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'json_pretty';
 
 CREATE OR REPLACE FUNCTION pg_catalog.json_type("any") RETURNS text LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'json_type';
-
-

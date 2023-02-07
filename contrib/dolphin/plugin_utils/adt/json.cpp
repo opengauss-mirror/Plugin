@@ -69,6 +69,9 @@ extern "C" DLL_PUBLIC Datum json_valid(PG_FUNCTION_ARGS);
 
 PG_FUNCTION_INFO_V1_PUBLIC(json_type);
 extern "C" DLL_PUBLIC Datum json_type(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1_PUBLIC(json_objectagg_mysql_transfn);
+extern "C" DLL_PUBLIC Datum json_objectagg_mysql_transfn(PG_FUNCTION_ARGS);
 #endif
 
 /*
@@ -111,7 +114,6 @@ static void add_json(Datum val, bool is_null, StringInfo result, Oid val_type, b
 static JsonSemAction nullSemAction = {NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL};
 static inline bool lex_accept(JsonLexContext *lex, JsonTokenType token, char **lexeme);
 static inline void lex_expect(JsonParseContext ctx, JsonLexContext *lex, JsonTokenType token);
-
 
 /* Recursive Descent parser support routines */
 /*
@@ -2215,6 +2217,7 @@ Datum json_object_mysql(PG_FUNCTION_ARGS)
     Oid castfunc = InvalidOid;
     char *outputstr = NULL;
     StringInfo tempstr;
+    bool is_null = false;
     for (i = 0; i < cnt; i++) {
         if (PG_ARGISNULL(i * 2)) {
             ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("arg %d: key cannot be null", 2 * i + 1)));
@@ -2258,11 +2261,6 @@ Datum json_object_mysql(PG_FUNCTION_ARGS)
             tcategory = TYPCATEGORY_JSON;
         } else {
             tcategory = TypeCategory(val_type);
-        }
-        if (true && (tcategory == TYPCATEGORY_ARRAY || tcategory == TYPCATEGORY_COMPOSITE ||
-                     tcategory == TYPCATEGORY_JSON || tcategory == TYPCATEGORY_JSON_CAST)) {
-            ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
-                            errmsg("key value must be scalar, not array, composite or json")));
         }
         switch (tcategory) {
             case TYPCATEGORY_BOOLEAN:
@@ -2323,6 +2321,7 @@ Datum json_object_mysql(PG_FUNCTION_ARGS)
             val_type = TEXTOID;
             if (PG_ARGISNULL(2 * pos[order] + 1)) {
                 arg = (Datum)0;
+                is_null = true;
             } else {
                 arg = CStringGetTextDatum(PG_GETARG_POINTER(2 * pos[order] + 1));
             }
@@ -2333,7 +2332,7 @@ Datum json_object_mysql(PG_FUNCTION_ARGS)
             ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
                             errmsg("arg %d: could not determine data type", 2 * pos[order] + 2)));
         }
-        add_json(arg, PG_ARGISNULL(2 * pos[order] + 1), result, val_type, false);
+        add_json(arg, is_null, result, val_type, false);
     }
     appendStringInfoChar(result, '}');
     for (int i = 0; i < cnt; i++) {
@@ -2780,5 +2779,120 @@ Datum json_type(PG_FUNCTION_ARGS)
     type = type_case(tok);
     pfree(lex);
     PG_RETURN_TEXT_P(cstring_to_text(type));
+}
+
+static void parse_json_key(Datum val, bool is_null, StringInfo result, Oid val_type)
+{
+    TYPCATEGORY tcategory;
+    Oid typoutput;
+    bool typisvarlena = false;
+    Oid castfunc = InvalidOid;
+    char *outputstr = NULL;
+
+    if (val_type == InvalidOid) {
+        ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("could not determine input data type")));
+    }
+
+    getTypeOutputInfo(val_type, &typoutput, &typisvarlena);
+    if (val_type > FirstNormalObjectId) {
+        HeapTuple tuple;
+        Form_pg_cast castForm;
+
+        tuple = SearchSysCache2(CASTSOURCETARGET, ObjectIdGetDatum(val_type), ObjectIdGetDatum(JSONOID));
+        if (HeapTupleIsValid(tuple)) {
+            castForm = (Form_pg_cast)GETSTRUCT(tuple);
+            if (castForm->castmethod == COERCION_METHOD_FUNCTION) {
+                castfunc = typoutput = castForm->castfunc;
+            }
+            ReleaseSysCache(tuple);
+        }
+    }
+    tcategory = TypeCategory(val_type);
+    check_stack_depth();
+
+    if (is_null) {
+        appendStringInfoString(result, "null");
+        return;
+    }
+    outputstr = OidOutputFunctionCall(typoutput, val);
+    if (*outputstr == '\0') {
+        ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("key value must not be empty")));
+    }
+    escape_json(result, outputstr);
+    pfree(outputstr);
+    return;
+}
+
+Datum json_objectagg_mysql_transfn(PG_FUNCTION_ARGS)
+{
+    Oid val_type;
+    MemoryContext aggcontext, oldcontext;
+    StringInfo state;
+    Datum arg;
+    bool is_null = false;
+
+    if (!AggCheckCallContext(fcinfo, &aggcontext)) {
+        /* cannot be called directly because of internal-type argument */
+        elog(ERROR, "json_agg_transfn called in non-aggregate context");
+    }
+
+    if (PG_ARGISNULL(0)) {
+        /*
+         * Make this StringInfo in a context where it will persist for the
+         * duration off the aggregate call. It's only needed for this initial
+         * piece, as the StringInfo routines make sure they use the right
+         * context to enlarge the object if necessary.
+         */
+        oldcontext = MemoryContextSwitchTo(aggcontext);
+        state = makeStringInfo();
+        MemoryContextSwitchTo(oldcontext);
+        appendStringInfoString(state, "{ ");
+    } else {
+        state = (StringInfo)PG_GETARG_POINTER(0);
+        appendStringInfoString(state, ", ");
+    }
+
+    if (PG_ARGISNULL(1)) {
+        ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("field name must not be null")));
+    }
+    val_type = get_fn_expr_argtype(fcinfo->flinfo, 1);
+    /*
+     * turn a constant (more or less literal) value that's of unknown type
+     * into text. Unknowns come in as a cstring pointer.
+     */
+    if (val_type == UNKNOWNOID && get_fn_expr_arg_stable(fcinfo->flinfo, 1)) {
+        val_type = TEXTOID;
+        arg = CStringGetTextDatum(PG_GETARG_POINTER(1));
+    } else {
+        arg = PG_GETARG_DATUM(1);
+    }
+
+    if (val_type == InvalidOid || val_type == UNKNOWNOID) {
+        ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("arg 1: could not determine data type")));
+    }
+    parse_json_key(arg, false, state, val_type);
+    appendStringInfoString(state, " : ");
+    val_type = get_fn_expr_argtype(fcinfo->flinfo, 2);
+    /* see comments above */
+    if (val_type == UNKNOWNOID && get_fn_expr_arg_stable(fcinfo->flinfo, 2)) {
+        val_type = TEXTOID;
+        if (PG_ARGISNULL(2)) {
+            arg = (Datum)0;
+        } else {
+            arg = CStringGetTextDatum(PG_GETARG_POINTER(2));
+        }
+    } else {
+        arg = PG_GETARG_DATUM(2);
+    }
+
+    if (val_type == InvalidOid || val_type == UNKNOWNOID) {
+        ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("arg 2: could not determine data type")));
+    }
+    if (PG_ARGISNULL(2)) {
+        is_null = true;
+    }
+    add_json(arg, is_null, state, val_type, false);
+
+    PG_RETURN_POINTER(state);
 }
 #endif

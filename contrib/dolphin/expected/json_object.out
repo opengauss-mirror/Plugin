@@ -52,6 +52,25 @@ select json_object(1, 'Json', 2, 'MyContex');
  {"1": "Json", "2": "MyContex"}
 (1 row)
 
+--test for json key
+select json_object('{"a": "b"}'::json, true, '{"json": {"abc": "cde"}}'::json, 'TEXT');
+                            json_object                             
+--------------------------------------------------------------------
+ {"{\"a\": \"b\"}": true, "{\"json\": {\"abc\": \"cde\"}}": "TEXT"}
+(1 row)
+
+select json_object('{"a": "b"}'::jsonb, 12.32, '{"json": {"abc": "cde"}}'::jsonb, null);
+                            json_object                            
+-------------------------------------------------------------------
+ {"{\"a\": \"b\"}": 12.32, "{\"json\": {\"abc\": \"cde\"}}": null}
+(1 row)
+
+select json_object(json_object('name', 'Jim', 'age', 20), 'MyContex');
+                   json_object                    
+--------------------------------------------------
+ {"{\"age\": 20, \"name\": \"Jim\"}": "MyContex"}
+(1 row)
+
 -- test for type date and time
 select json_object('2022-09-26'::date,20221001::date);
          json_object          
@@ -348,6 +367,14 @@ select * from tab_json1;
  {"tel": 3403234, "name": "Hnana", "address": "Riben"}
 (4 rows)
 
+create table tab_json2(data json, my_text text);
+insert into tab_json2 values('{"abc": 1234}', 'MyText');
+select json_object(data, my_text) from tab_json2;
+          json_object          
+-------------------------------
+ {"{\"abc\": 1234}": "MyText"}
+(1 row)
+
 -- test for setting b_compatibility_mode back to false
 set dolphin.b_compatibility_mode = 0;
 select json_object('{a,1,b,2,3,NULL,"d e f","a b c"}');
@@ -363,7 +390,8 @@ select json_object('{a,b,"a b c"}', '{a,1,1}');
 (1 row)
 
 drop schema test_json_object cascade;
-NOTICE:  drop cascades to 2 other objects
+NOTICE:  drop cascades to 3 other objects
 DETAIL:  drop cascades to table tab_json1
 drop cascades to table info1
+drop cascades to table tab_json2
 reset current_schema;
