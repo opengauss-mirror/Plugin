@@ -30,6 +30,7 @@ typedef struct dolphin_proto_ctx {
     char *server_name;
     NameData database_name;
     int32 connect_id;
+    int32 statement_id;
 } dolphin_proto_ctx; 
 
 extern dolphin_proto_ctx g_proto_ctx;
@@ -218,7 +219,7 @@ enum dolphin_attr_type {
 /* charset number */
 #define COLLATE_BINARY 63
 
-typedef struct dolphin_data_field {
+typedef struct dolphin_column_definition {
   const char *name;
   char *org_name;
   char *table;
@@ -241,7 +242,7 @@ typedef struct dolphin_data_field {
   uint type; 
   void *extension;
   char *default_value;
-} dolphin_data_field;
+} dolphin_column_definition;
 
 #define MAX_TYPE_NAME_LEN 64
 extern struct HTAB* b_typoid2DolphinMarcoHash;

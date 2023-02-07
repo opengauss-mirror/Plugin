@@ -24,19 +24,21 @@
 #include "libpq/pqformat.h"
 #include "libpq/libpq.h"
 #include "executor/spi_priv.h"
+#include "commands/prepare.h"
 
 #include "plugin_postgres.h"
 #include "plugin_protocol/dqformat.h"
 #include "plugin_protocol/handler.h"
 
-static int execute_sql(const char* sql);
-static int execute_prepare_sql(const char *sql);
-static int execute_prepare_plan(com_stmt_exec_request *request);
-static void execute_show_variables();
-static int execute_show_columns_from(char *tableName);
-static void execute_fetch_server_config();
+// #define param_isnull(ATT, BITS) (!((BITS)[(uint32)(int32)(ATT) >> 3] & (1 << ((ATT)&0x07))))
 
-SPIPlanPtr plan;
+static int execute_text_protocol_sql(const char* sql);
+static int execute_com_stmt_prepare(const char *sql);
+static int execute_binary_protocol_req(com_stmt_exec_request *request);
+static void execute_show_variables();
+static void execute_show_transaction_read_only();
+static void execute_com_field_list(char *tableName);
+static void execute_fetch_server_config();
 
 void dophin_send_ready_for_query(CommandDest dest)
 {
@@ -91,6 +93,8 @@ int dophin_read_command(StringInfo buf)
 
 int dolphin_process_command(StringInfo buf)
 {
+    GetSessionContext()->enableBCmptMode = true;
+
     uint8 command = pq_getmsgbyte(buf);
 
     switch (command) {
@@ -111,7 +115,7 @@ int dolphin_process_command(StringInfo buf)
             char *schemaName = dq_get_string_eof(buf);
             StringInfo sql = makeStringInfo();
             appendStringInfo(sql, "use %s", schemaName);
-            execute_sql(sql->data);
+            execute_text_protocol_sql(sql->data);
             break;
         }
         case COM_QUERY: {
@@ -132,10 +136,12 @@ int dolphin_process_command(StringInfo buf)
                 execute_show_variables();
             } else if (strncasecmp(sql, "SET", 3) == 0) {
                 send_general_ok_packet();
+            } else if (strcasestr(sql, "select @@session.transaction_read_only")) {
+                execute_show_transaction_read_only();
             } else if (strcmp(sql, "select @@version_comment limit 1") == 0) {
-                execute_sql("select \'dolphin\'");
+                execute_text_protocol_sql("select \'dolphin\'");
             } else {
-                execute_sql(sql);
+                execute_text_protocol_sql(sql);
             }
             break;
         }
@@ -143,54 +149,30 @@ int dolphin_process_command(StringInfo buf)
         // maybe desc & show columns sql result is the root cause.
         case COM_FIELD_LIST: {
             char *tableName = dq_get_string_null(buf);
-            execute_show_columns_from(tableName);
+            execute_com_field_list(tableName);
             break;
         }
         case COM_STMT_PREPARE: {
-            GetSessionContext()->enableBCmptMode = true;
+            // GetSessionContext()->enableBCmptMode = true;
             char *sql = dq_get_string_eof(buf);
-            execute_prepare_sql(sql);
+            execute_com_stmt_prepare(sql);
+
             break;
         }
         case COM_STMT_EXECUTE: {
-            com_stmt_exec_request *req = (com_stmt_exec_request *)palloc0(sizeof(com_stmt_exec_request));
-            dq_get_int4(buf, &req->statement_id);
-            dq_get_int1(buf, &req->flags);
-            dq_get_int4(buf, &req->iteration_count);
+            com_stmt_exec_request *req = read_com_stmt_exec_request(buf);
+            execute_binary_protocol_req(req);
 
-            // if parameter count > 0
-            int parameter_count = 2;
-            int len = (parameter_count + 7) / 8;
-            req->null_bitmap = dq_get_string_len(buf, len);
-            
-            dq_get_int1(buf, &req->new_params_bind_flag);
-
-            if (req->new_params_bind_flag) {
-                com_stmt_param *parameters = (com_stmt_param *)palloc0(sizeof(com_stmt_param) * parameter_count);
-                for (int i = 0; i < parameter_count; i++) {
-                    dq_get_int2(buf, &parameters[i].type);
-                }
-                 for (int i = 0; i < parameter_count; i++) {
-                     // should get value by type
-                     parameters[i].value = dq_get_string_lenenc(buf);
-                }
-                req->parameter_values = parameters;
-            }
-
-            execute_prepare_plan(req);
-
-            // execute cache plan
-            
             break;
         }
         default:
-            // COM_CREATE_DB, COM_DROP_DB have deprecated by mysql-server
+           // COM_CREATE_DB, COM_DROP_DB have deprecated by mysql-server
            ereport(ERROR, (errcode(ERRCODE_INTERNAL_ERROR), errmsg("dolphin server protocol not supported."))); 
     }
     return 0;
 }
 
-int execute_sql(const char *sql)
+int execute_text_protocol_sql(const char *sql)
 {
     int rc;
     
@@ -226,7 +208,61 @@ int execute_sql(const char *sql)
     return 0;
 }
 
-int execute_prepare_sql(const char *sql)
+int execute_com_stmt_prepare(const char *client_sql)
+{
+    int rc;
+    char stmt_name[NAMEDATALEN];
+    
+    start_xact_command();
+
+    SPI_STACK_LOG("connect", NULL, NULL);
+    if ((rc = SPI_connect()) != SPI_OK_CONNECT) {
+        ereport(ERROR, (errcode(ERRCODE_INTERNAL_ERROR),
+            errmsg("dolphin SPI_connect failed: %s", SPI_result_code_string(rc)),
+            errdetail("SPI_connect failed"),
+            errcause("System error."),
+            erraction("Check whether the snapshot retry is successful")));
+    }
+
+    StringInfo sql = makeStringInfo();
+    int32 statement_id = gs_atomic_add_32(&g_proto_ctx.statement_id, 1);
+    rc = snprintf_s(stmt_name, NAMEDATALEN + 1, NAMEDATALEN, "p%d", statement_id);
+    securec_check_ss(rc, "\0", "\0");
+
+    appendStringInfo(sql, "prepare %s from '%s'", stmt_name, client_sql);
+
+    rc = SPI_execute(sql->data, false, 0);
+
+    // TODO plan_name should be unique
+    PreparedStatement *pstmt = FetchPreparedStatement(stmt_name, true, true);
+    Query *query = (Query *)linitial(pstmt->plansource->query_list);
+    int column_count = list_length(query->targetList);
+    int param_count = pstmt->plansource->num_params; 
+
+    StringInfo buf = makeStringInfo();
+    // TODO convert planName to int id
+    send_com_stmt_prepare_ok_packet(buf, statement_id, column_count, param_count);
+
+    for (int i = 0; i < param_count; i++) {
+        dolphin_column_definition* param_field = make_dolphin_column_definition("?");
+        send_column_definition41_packet(buf, param_field);
+    }
+    send_network_eof_packet(buf);
+    
+    for (int i = 0; i < column_count; i++) {
+        dolphin_column_definition* column_field = make_dolphin_column_definition("");
+        send_column_definition41_packet(buf, column_field);
+    }
+    send_network_eof_packet(buf);
+
+    SPI_STACK_LOG("finish", NULL, NULL);
+    SPI_finish();
+    finish_xact_command();
+
+    return 0;
+}
+
+int execute_binary_protocol_req(com_stmt_exec_request *request)
 {
     int rc;
     
@@ -241,30 +277,54 @@ int execute_prepare_sql(const char *sql)
             erraction("Check whether the snapshot retry is successful")));
     }
 
-    Oid argtypes[2];
-    // SPIPlanPtr plan;
+    StringInfo sql = makeStringInfo();
+    appendStringInfo(sql, "execute p%d using ", request->statement_id);
 
-    argtypes[0] = VARCHAROID;
-    argtypes[1] = VARCHAROID;
+    for (uint i = 0; i < request->param_count; i++) {
+        appendStringInfo(sql, "%s", request->parameter_values[i].value);
+        if (i < request->param_count - 1) {
+            appendStringInfoString(sql, ",");
+        }
+    }
 
-    plan = SPI_prepare(sql, 2, argtypes);
-    // SPI_keepplan(plan);
+    rc = SPI_execute(sql->data, false, 0);
 
-    // todo send response packet
     StringInfo buf = makeStringInfo();
-    send_com_stmt_prepare_ok_packet(buf, 1, 2, 2);
 
-    for (int i = 0; i < 2; i++) {
-        dolphin_data_field* param_field = make_dolphin_data_field("param");
-        send_column_definition41_packet(buf, param_field);
+    if (SPI_tuptable) {
+        TupleDesc spi_tupdesc = SPI_tuptable->tupdesc;
+        int natts = spi_tupdesc->natts; 
+        Form_pg_attribute *attrs = spi_tupdesc->attrs;
+
+        // FIELD_COUNT packet
+        send_field_count_packet(buf, natts);
+
+        // send column_count * column_definition packet
+        for (int i = 0; i < natts; ++i) {
+            // FIELD packet
+            dolphin_column_definition *field = make_dolphin_column_definition(attrs[i]);
+            send_column_definition41_packet(buf, field);
+            pfree(field);
+        }
+
+        // EOF packet
+        send_network_eof_packet(buf);
+
+        // send None or many Binary Protocol Resultset Row packet
+        if (SPI_processed > 0) {
+            send_binary_protocol_resultset_row(buf, SPI_tuptable);
+        }
+
+        // EOF packet
+        send_network_eof_packet(buf);
+    } else {
+        network_mysqld_ok_packet_t *ok_packet = make_ok_packet(SPI_processed);
+        send_network_ok_packet(buf, ok_packet); 
+        pfree(ok_packet);
     }
-    send_network_eof_packet(buf);
-    
-    for (int i = 0; i < 2; i++) {
-        dolphin_data_field* column_field = make_dolphin_data_field("column");
-        send_column_definition41_packet(buf, column_field);
-    }
-    send_network_eof_packet(buf);
+
+    DestroyStringInfo(sql);
+    DestroyStringInfo(buf);
 
     SPI_STACK_LOG("finish", NULL, NULL);
     SPI_finish();
@@ -273,41 +333,7 @@ int execute_prepare_sql(const char *sql)
     return 0;
 }
 
-int execute_prepare_plan(com_stmt_exec_request *request)
-{
-    int rc;
-    
-    start_xact_command();
-
-    SPI_STACK_LOG("connect", NULL, NULL);
-    if ((rc = SPI_connect(DestRemote)) != SPI_OK_CONNECT) {
-        ereport(ERROR, (errcode(ERRCODE_INTERNAL_ERROR),
-            errmsg("dolphin SPI_connect failed: %s", SPI_result_code_string(rc)),
-            errdetail("SPI_connect failed"),
-            errcause("System error."),
-            erraction("Check whether the snapshot retry is successful")));
-    }
-
-    Datum args[2];
-    char nulls[2];
-    int spirc;
-
-    args[0] = PointerGetDatum(request->parameter_values[0].value);
-    args[1] = PointerGetDatum(request->parameter_values[1].value); 
-    nulls[0] = ' ';
-    nulls[1] = ' ';
-
-    spirc = SPI_execute_plan(plan, args, nulls, false, 1);
-
-    SPI_STACK_LOG("finish", NULL, NULL);
-    SPI_finish();
-    finish_xact_command();
-
-    return 0;
-}
-
-
-int execute_show_columns_from(char *tableName)
+void execute_com_field_list(char *tableName)
 {
     int rc;
     
@@ -334,7 +360,7 @@ int execute_show_columns_from(char *tableName)
             HeapTuple spi_tuple = SPI_tuptable->vals[i];
             char *name = SPI_getvalue(spi_tuple, spi_tupdesc, SPI_fnumber(spi_tupdesc, "Field"));
             char *default_value = SPI_getvalue(spi_tuple, spi_tupdesc, SPI_fnumber(spi_tupdesc, "Default"));
-            dolphin_data_field *field = make_dolphin_data_field(name, tableName);
+            dolphin_column_definition *field = make_dolphin_column_definition(name, tableName);
             field->default_value = default_value; 
             send_column_definition41_packet(buf, field);
 
@@ -345,15 +371,13 @@ int execute_show_columns_from(char *tableName)
        send_network_eof_packet(buf); 
     }
     
-    DestroyStringInfo(sql);
+    DestroyStringInfo(sql); 
     DestroyStringInfo(buf);
 
     SPI_STACK_LOG("finish", NULL, NULL);
     SPI_finish();
 
     finish_xact_command();
-
-    return 0;
 }
 
 void execute_show_variables()
@@ -361,8 +385,8 @@ void execute_show_variables()
     StringInfo buf = makeStringInfo();
     send_field_count_packet(buf, 2);
 
-    dolphin_data_field *name_field = make_dolphin_data_field("Variable_name");
-    dolphin_data_field *value_field = make_dolphin_data_field("Value");
+    dolphin_column_definition *name_field = make_dolphin_column_definition("Variable_name");
+    dolphin_column_definition *value_field = make_dolphin_column_definition("Value");
     send_column_definition41_packet(buf, name_field);
     send_column_definition41_packet(buf, value_field);
     send_network_eof_packet(buf);
@@ -379,33 +403,52 @@ void execute_show_variables()
     DestroyStringInfo(buf);
 }
 
+void execute_show_transaction_read_only()
+{
+    StringInfo buf = makeStringInfo();
+    send_field_count_packet(buf, 1);
+
+    dolphin_column_definition *field = make_dolphin_column_definition("@@session.transaction_read_only");
+    send_column_definition41_packet(buf, field);
+    send_network_eof_packet(buf);
+
+    resetStringInfo(buf);
+    dq_append_string_lenenc(buf, "0");
+    dq_putmessage(buf->data, buf->len);
+
+    send_network_eof_packet(buf); 
+
+    pfree(field);
+    DestroyStringInfo(buf);
+}
+
 void execute_fetch_server_config()
 {
     StringInfo buf = makeStringInfo();
     send_field_count_packet(buf, 21);
 
     // prepare data field
-    dolphin_data_field *auto_increment_increment = make_dolphin_data_field("auto_increment_increment");
-    dolphin_data_field *character_set_client = make_dolphin_data_field("character_set_client");
-    dolphin_data_field *character_set_connection = make_dolphin_data_field("character_set_connection");
-    dolphin_data_field *character_set_results = make_dolphin_data_field("character_set_results");
-    dolphin_data_field *character_set_server = make_dolphin_data_field("character_set_server");
-    dolphin_data_field *collation_server = make_dolphin_data_field("collation_server");
-    dolphin_data_field *collation_connection = make_dolphin_data_field("collation_connection");
-    dolphin_data_field *init_connect = make_dolphin_data_field("init_connect");
-    dolphin_data_field *interactive_timeout = make_dolphin_data_field("interactive_timeout");
-    dolphin_data_field *license = make_dolphin_data_field("license");
-    dolphin_data_field *lower_case_table_names = make_dolphin_data_field("lower_case_table_names");
-    dolphin_data_field *max_allowed_packet = make_dolphin_data_field("max_allowed_packet");
-    dolphin_data_field *net_buffer_length = make_dolphin_data_field("net_buffer_length");
-    dolphin_data_field *net_write_timeout = make_dolphin_data_field("net_write_timeout");
-    dolphin_data_field *query_cache_size = make_dolphin_data_field("query_cache_size");
-    dolphin_data_field *query_cache_type = make_dolphin_data_field("query_cache_type");
-    dolphin_data_field *sql_mode = make_dolphin_data_field("sql_mode");
-    dolphin_data_field *system_time_zone = make_dolphin_data_field("system_time_zone");
-    dolphin_data_field *time_zone = make_dolphin_data_field("time_zone");
-    dolphin_data_field *transaction_isolation = make_dolphin_data_field("transaction_isolation");
-    dolphin_data_field *wait_timeout = make_dolphin_data_field("wait_timeout");
+    dolphin_column_definition *auto_increment_increment = make_dolphin_column_definition("auto_increment_increment");
+    dolphin_column_definition *character_set_client = make_dolphin_column_definition("character_set_client");
+    dolphin_column_definition *character_set_connection = make_dolphin_column_definition("character_set_connection");
+    dolphin_column_definition *character_set_results = make_dolphin_column_definition("character_set_results");
+    dolphin_column_definition *character_set_server = make_dolphin_column_definition("character_set_server");
+    dolphin_column_definition *collation_server = make_dolphin_column_definition("collation_server");
+    dolphin_column_definition *collation_connection = make_dolphin_column_definition("collation_connection");
+    dolphin_column_definition *init_connect = make_dolphin_column_definition("init_connect");
+    dolphin_column_definition *interactive_timeout = make_dolphin_column_definition("interactive_timeout");
+    dolphin_column_definition *license = make_dolphin_column_definition("license");
+    dolphin_column_definition *lower_case_table_names = make_dolphin_column_definition("lower_case_table_names");
+    dolphin_column_definition *max_allowed_packet = make_dolphin_column_definition("max_allowed_packet");
+    dolphin_column_definition *net_buffer_length = make_dolphin_column_definition("net_buffer_length");
+    dolphin_column_definition *net_write_timeout = make_dolphin_column_definition("net_write_timeout");
+    dolphin_column_definition *query_cache_size = make_dolphin_column_definition("query_cache_size");
+    dolphin_column_definition *query_cache_type = make_dolphin_column_definition("query_cache_type");
+    dolphin_column_definition *sql_mode = make_dolphin_column_definition("sql_mode");
+    dolphin_column_definition *system_time_zone = make_dolphin_column_definition("system_time_zone");
+    dolphin_column_definition *time_zone = make_dolphin_column_definition("time_zone");
+    dolphin_column_definition *transaction_isolation = make_dolphin_column_definition("transaction_isolation");
+    dolphin_column_definition *wait_timeout = make_dolphin_column_definition("wait_timeout");
     
     // send column definition41 packet
     send_column_definition41_packet(buf, auto_increment_increment);

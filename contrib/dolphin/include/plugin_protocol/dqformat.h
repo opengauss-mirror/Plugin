@@ -25,7 +25,11 @@
 #include "plugin_protocol/proto_com.h"
 #include "plugin_protocol/bytestream.h"
 
+#include "executor/spi.h"
+#include "commands/prepare.h"
+
 #define C(x) x, sizeof(x) - 1
+#define param_isnull(PARAM, BITS) ((BITS)[PARAM / 8] & (1 << ((PARAM) % 8)))
 
 typedef enum {
     NETWORK_MYSQLD_PROTOCOL_VERSION_41
@@ -66,6 +70,7 @@ typedef struct com_stmt_exec_request {
     uint32 iteration_count;
     uint8 new_params_bind_flag;
     char *null_bitmap;
+    uint32 param_count;
     com_stmt_param *parameter_values;
 } com_stmt_exec_request; 
 
@@ -84,9 +89,13 @@ typedef struct {
     network_mysqld_protocol_t version;
 } network_mysqld_err_packet_t;
 
+network_mysqld_auth_challenge* make_mysqld_handshakev10_packet(char *scramble);
+
+network_mysqld_auth_request* read_login_request(StringInfo buf);
+
 network_mysqld_ok_packet_t* make_ok_packet(uint64 affected_rows = 0, uint64 insert_id = 0, char *msg = "");
 
-void append_auth_challenge_packet(StringInfo buf, network_mysqld_auth_challenge *shake);
+void send_auth_challenge_packet(StringInfo buf, network_mysqld_auth_challenge *shake);
 
 void send_network_ok_packet(StringInfo buf, network_mysqld_ok_packet_t *ok_packet);
 
@@ -98,10 +107,16 @@ void send_network_err_packet(StringInfo buf, network_mysqld_err_packet_t *err_pa
 
 void send_field_count_packet(StringInfo buf, int count);
 
-dolphin_data_field* make_dolphin_data_field(const char *name, char *tableName = NULL);
+dolphin_column_definition* make_dolphin_column_definition(const char *name, char *tableName = NULL);
 
-void send_column_definition41_packet(StringInfo buf, dolphin_data_field *field);
+dolphin_column_definition* make_dolphin_column_definition(Form_pg_attribute attr, char *tableName = NULL);
+
+void send_column_definition41_packet(StringInfo buf, dolphin_column_definition *field);
 
 void send_com_stmt_prepare_ok_packet(StringInfo buf, int statementId, int columns, int params);
+
+com_stmt_exec_request* read_com_stmt_exec_request(StringInfo buf);
+
+void send_binary_protocol_resultset_row(StringInfo buf, SPITupleTable *SPI_tuptable);
 
 #endif /* DQ_FORMAT_H */
