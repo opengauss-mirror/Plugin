@@ -1716,8 +1716,16 @@ static Oid choose_expr_type(ParseState* pstate, List* exprs, const char* context
                 /*
                  * both types in different categories? then not much hope...
                  */
+#ifdef DOLPHIN
+                if (context == NULL) {
+                    return InvalidOid;
+                } else if (strcmp(context, "UNION") == 0) {
+                    return TEXTOID;
+                }
+#else
                 if (context == NULL)
                     return InvalidOid;
+#endif
                 else
                     ereport(ERROR,
                         (errcode(ERRCODE_DATATYPE_MISMATCH),
@@ -1743,6 +1751,12 @@ static Oid choose_expr_type(ParseState* pstate, List* exprs, const char* context
                     pcategory = ncategory;
                     pispreferred = nispreferred;
                 }
+#ifdef DOLPHIN
+            } else if (context != NULL && strcmp(context, "UNION") == 0 &&
+                !can_coerce_type(1, &ptype, &ntype, COERCION_IMPLICIT) &&
+                !can_coerce_type(1, &ntype, &ptype, COERCION_IMPLICIT)) {
+                return TEXTOID;
+#endif
             }
         }
     }
@@ -2005,6 +2019,10 @@ Node* coerce_to_common_type(ParseState* pstate, Node* node, Oid targetTypeId, co
     }
     if (can_coerce_type(1, &inputTypeId, &targetTypeId, COERCION_IMPLICIT)) {
         node = coerce_type(pstate, node, inputTypeId, targetTypeId, -1, COERCION_IMPLICIT, COERCE_IMPLICIT_CAST, -1);
+#ifdef DOLPHIN
+    } else if (strcmp(context, "UNION") == 0 && can_coerce_type(1, &inputTypeId, &targetTypeId, COERCION_EXPLICIT)) {
+        node = coerce_type(pstate, node, inputTypeId, targetTypeId, -1, COERCION_EXPLICIT, COERCE_EXPLICIT_CAST, -1);
+#endif
     } else {
         ereport(ERROR,
             (errcode(ERRCODE_CANNOT_COERCE),
