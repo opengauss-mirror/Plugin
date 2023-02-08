@@ -6419,6 +6419,8 @@ static void RenameTableFeature(RenameStmt* stmt)
             ereport(ERROR, (errcode(ERRCODE_INVALID_TABLE_DEFINITION), errmsg("relation \"%s.%s\" already exists", get_namespace_name(modfyNameSpace), modfytable)));
         } else if (pg_class_aclcheck(relid, GetUserId(), ACL_ALTER) == ACLCHECK_NO_PRIV) {
             ereport(ERROR, (errcode(ERRCODE_INVALID_TABLE_DEFINITION), errmsg("permission denied for relation %s.%s", get_namespace_name(orgiNameSpace), orgitable)));
+        } else if (OidIsValid(get_relname_relid(modfytable, modfyNameSpace))) {
+            ereport(ERROR, (errcode(ERRCODE_INVALID_TABLE_DEFINITION), errmsg("relation \"%s.%s\" already exists", get_namespace_name(modfyNameSpace), modfytable)));
         }
 
         /* Rename regular table */
@@ -6640,6 +6642,15 @@ void RenameRelationInternal(Oid myrelid, const char* newrelname)
     }
 
     relform = (Form_pg_class)GETSTRUCT(reltup);
+
+    /* 
+     * Check relation name to ensure that it doesn't conflict with existing synonym.
+     */
+    if (!IsInitdb && GetSynonymOid(newrelname, namespaceId, true) != InvalidOid) {
+        ereport(ERROR,
+                (errmsg("relation name is already used by an existing synonym in schema \"%s\"",
+                    get_namespace_name(namespaceId))));
+    }
 
     if (get_relname_relid(newrelname, namespaceId) != InvalidOid)
         ereport(ERROR, (errcode(ERRCODE_DUPLICATE_TABLE), errmsg("relation \"%s\" already exists", newrelname)));
@@ -19111,6 +19122,14 @@ void AlterRelationNamespaceInternal(
      * Do nothing when there's nothing to do.
      */
     if (!object_address_present(&thisobj, objsMoved)) {
+        /* 
+         * Check relation name to ensure that it doesn't conflict with existing synonym.
+         */
+        if (!IsInitdb && GetSynonymOid(NameStr(classForm->relname), newNspOid, true) != InvalidOid) {
+            ereport(ERROR,
+                    (errmsg("relation name is already used by an existing synonym in schema \"%s\"",
+                        get_namespace_name(newNspOid))));
+        }
         /* check for duplicate name (more friendly than unique-index failure) */
         if (get_relname_relid(NameStr(classForm->relname), newNspOid) != InvalidOid)
             ereport(ERROR,
@@ -21817,7 +21836,7 @@ static Oid GetPartOidByATcmd(Relation rel, AlterTableCmd *cmd, const char *comma
     RangePartitionDefState *rangePartDef = (RangePartitionDefState*)cmd->def;
     switch (rel->partMap->type) {
         case PART_TYPE_RANGE:
-        case PART_AREA_INTERVAL:
+        case PART_TYPE_INTERVAL:
             rangePartDef->boundary = transformConstIntoTargetType(rel->rd_att->attrs,
                 ((RangePartitionMap*)rel->partMap)->partitionKey,
                 rangePartDef->boundary);
@@ -29068,12 +29087,6 @@ void DropWeakPasswordDictionary()
     }
 
     Relation rel = heap_open(GsGlobalConfigRelationId, RowExclusiveLock);
-    if (!OidIsValid(rel)) {
-        ereport(ERROR, 
-            (errcode(ERRCODE_SYSTEM_ERROR),
-                errmsg("could not open gs_global_config")));
-        return;
-    }
 
     HeapTuple tuple = NULL;
     bool is_null = false;

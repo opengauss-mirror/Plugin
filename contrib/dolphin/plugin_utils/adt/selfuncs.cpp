@@ -6090,7 +6090,7 @@ static Selectivity regex_selectivity(const char* patt, int pattlen, bool case_in
  */
 static bool byte_increment(unsigned char* ptr, int len)
 {
-    if (*ptr >= 255)
+    if (*ptr == 255)
         return false;
     (*ptr)++;
     return true;
