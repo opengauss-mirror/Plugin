@@ -62,6 +62,7 @@
 #include "catalog/pg_proc.h"
 #include "catalog/pg_statistic.h"
 #include "catalog/pg_statistic_ext.h"
+#include "catalog/pg_synonym.h"
 #include "catalog/pg_tablespace.h"
 #include "catalog/pg_type.h"
 #include "catalog/pg_type_fn.h"
@@ -2639,6 +2640,15 @@ Oid heap_create_with_catalog(const char *relname, Oid relnamespace, Oid reltable
 
     CheckAttributeNamesTypes(tupdesc, relkind, allow_system_table_mods);
 
+    /* 
+     * Check relation name to ensure that it doesn't conflict with existing synonym.
+     */
+    if (!IsInitdb && GetSynonymOid(relname, relnamespace, true) != InvalidOid) {
+        ereport(ERROR,
+                (errmsg("relation name is already used by an existing synonym in schema \"%s\"",
+                    get_namespace_name(relnamespace))));
+    }
+
     /*
      * This would fail later on anyway, if the relation already exists.  But
      * by catching it here we can emit a nicer error message.
@@ -4040,6 +4050,9 @@ static void StoreConstraints(Relation rel, List* cooked_constraints)
 static void CheckAutoIncrementDataType(Form_pg_attribute attr)
 {
     switch (attr->atttypid) {
+#ifndef DOLPHIN
+        case BOOLOID:
+#endif
         case INT1OID:
         case INT2OID:
         case INT4OID:
@@ -7136,7 +7149,6 @@ Node *MakeDefaultSubpartition(PartitionState *partitionState, Node *partitionDef
             MakeRangeDefaultSubpartition(partitionState, partitionName, tablespacename);
         return (Node *)subPartitionDefState;
     }
-    return NULL;
 }
 
 List *addNewSubPartitionTuplesForPartition(Relation pgPartRel, Oid partTableOid, Oid partTablespace,
