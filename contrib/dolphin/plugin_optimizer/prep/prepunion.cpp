@@ -62,7 +62,12 @@ typedef struct {
 } adjust_appendrel_attrs_context;
 
 static Plan* recurse_set_operations(Node* setOp, PlannerInfo* root, double tuple_fraction, List* colTypes,
+#ifdef DOLPHIN
+    List* colCollations, bool junkOK, int flag, List* refnames_tlist, List** sortClauses, double* pNumGroups,
+    const char* context = NULL);
+#else
     List* colCollations, bool junkOK, int flag, List* refnames_tlist, List** sortClauses, double* pNumGroups);
+#endif
 static Plan* generate_recursion_plan(
     SetOperationStmt* setOp, PlannerInfo* root, double tuple_fraction, List* refnames_tlist, List** sortClauses);
 static Plan* generate_union_plan(SetOperationStmt* op, PlannerInfo* root, double tuple_fraction, List* refnames_tlist,
@@ -76,7 +81,11 @@ static Plan* make_union_unique(
 static bool choose_hashed_setop(PlannerInfo* root, List* groupClauses, Plan* input_plan, double dNumGroups,
     double dNumOutputRows, double tuple_fraction, const char* construct, OpMemInfo* mem_info = NULL);
 static List* generate_setop_tlist(List* colTypes, List* colCollations, int flag, Index varno, bool hack_constants,
+#ifdef DOLPHIN
+    List* input_tlist, List* refnames_tlist, const char* context = NULL);
+#else
     List* input_tlist, List* refnames_tlist);
+#endif
 static List* generate_append_tlist(
     List* colTypes, List* colCollations, bool flag, List* input_plans, List* refnames_tlist);
 static List* generate_setop_grouplist(SetOperationStmt* op, List* targetlist);
@@ -208,7 +217,12 @@ Plan* plan_set_operations(PlannerInfo* root, double tuple_fraction, List** sortC
  * and output is -1, and that does not require a coercion.
  */
 static Plan* recurse_set_operations(Node* setOp, PlannerInfo* root, double tuple_fraction, List* colTypes,
+#ifdef DOLPHIN
+    List* colCollations, bool junkOK, int flag, List* refnames_tlist, List** sortClauses, double* pNumGroups,
+    const char* context)
+#else
     List* colCollations, bool junkOK, int flag, List* refnames_tlist, List** sortClauses, double* pNumGroups)
+#endif
 {
     /* Guard against stack overflow due to overly complex setop nests */
     check_stack_depth();
@@ -296,7 +310,11 @@ static Plan* recurse_set_operations(Node* setOp, PlannerInfo* root, double tuple
          * Add a SubqueryScan with the caller-requested targetlist
          */
         targetlist = generate_setop_tlist(
+#ifdef DOLPHIN
+            colTypes, colCollations, flag, rtr->rtindex, hack_constants, subplan->targetlist, refnames_tlist, context);
+#else
             colTypes, colCollations, flag, rtr->rtindex, hack_constants, subplan->targetlist, refnames_tlist);
+#endif
 #ifdef STREAMPLAN
         if (IS_STREAM_PLAN && is_execute_on_datanodes(subplan) && is_hashed_plan(subplan)) {
             /* Get distribute key index from subplan */
@@ -922,7 +940,12 @@ static List* recurse_union_children(
         -1,
         refnames_tlist,
         &child_sortclauses,
+#ifdef DOLPHIN
+        NULL,
+        "UNION"));
+#else
         NULL));
+#endif
 }
 
 /*
@@ -1135,7 +1158,11 @@ static bool choose_hashed_setop(PlannerInfo* root, List* groupClauses, Plan* inp
  * refnames_tlist: targetlist to take column names from
  */
 static List* generate_setop_tlist(List* colTypes, List* colCollations, int flag, Index varno, bool hack_constants,
+#ifdef DOLPHIN
+    List* input_tlist, List* refnames_tlist, const char* context)
+#else
     List* input_tlist, List* refnames_tlist)
+#endif
 {
     List* tlist = NIL;
     int resno = 1;
@@ -1194,10 +1221,19 @@ static List* generate_setop_tlist(List* colTypes, List* colCollations, int flag,
              * It would likely be best to make the parser generate the correct
              * output tlist for every set-op to begin with, though.
              */
+#ifdef DOLPHIN
+            if (context == NULL) {
+                context = "UNION/INTERSECT/EXCEPT";
+            }
+#endif
             expr = coerce_to_common_type(NULL, /* no UNKNOWNs here */
                 expr,
                 colType,
+#ifdef DOLPHIN
+                context);
+#else
                 "UNION/INTERSECT/EXCEPT");
+#endif
         }
 
         /*

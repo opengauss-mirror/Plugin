@@ -120,13 +120,13 @@ test: json_array_insert json_insert json_merge_patch  json_merge_preserve json_r
 
 test: oct string_func_test/db_b_from_base64_test string_func_test/test_substring_index string_func_test/db_b_ord_test
 
-test: like_default_test conv_cast_test read_only_guc_test b_database_guc
+test: like_default_test conv_cast_test read_only_guc_test b_database_guc union_all
 
 test: string_func_test/db_b_to_base64_test string_func_test/db_b_unhex_test bit_count test_current_user
 
-test: test_schema connection_id test_system_user test_bit_xor
+test: test_schema connection_id test_system_user test_bit_xor union
 
-test: builtin_funcs/cast any_value_test default_function get_b_database
+test: builtin_funcs/cast any_value_test default_function get_b_database union2
 
 test: json_type json_pretty json_valid json_length json_objectagg json_arrayagg json_operator json_storage_size
 

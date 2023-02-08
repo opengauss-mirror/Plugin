@@ -1,0 +1,5592 @@
+create schema union_all;
+set current_schema to 'union_all';
+CREATE TYPE rainbow AS ENUM ('red', 'orange', 'yellow', 'green', 'blue', 'purple');
+select null::int1 union all select null::int16;
+ int1 
+------
+     
+     
+(2 rows)
+
+select null::int1 union all select null::record;
+ int1 
+------
+ 
+ 
+(2 rows)
+
+select null::int1 union all select null::cstring;
+ int1 
+------
+ 
+ 
+(2 rows)
+
+select null::int1 union all select null::anyarray;
+ int1 
+------
+ 
+ 
+(2 rows)
+
+select null::int1 union all select null::void;
+ int1 
+------
+ 
+ 
+(2 rows)
+
+select null::int1 union all select null::anyelement;
+ int1 
+------
+ 
+ 
+(2 rows)
+
+select null::int1 union all select null::anynonarray;
+ int1 
+------
+ 
+ 
+(2 rows)
+
+select null::int1 union all select 'red'::rainbow::anyenum;
+ int1 
+------
+ 
+ red
+(2 rows)
+
+select null::int1 union all select null::anyrange;
+ int1 
+------
+ 
+ 
+(2 rows)
+
+select null::int1 union all select null::hll_hashval;
+ int1 
+------
+ 
+ 
+(2 rows)
+
+select null::int1 union all select null::hll_trans_type;
+ int1 
+------
+ 
+ 
+(2 rows)
+
+select null::int1 union all select null::byteawithoutorderwithequalcol;
+ int1 
+------
+ 
+ 
+(2 rows)
+
+select null::int1 union all select null::byteawithoutordercol;
+ int1 
+------
+ 
+ 
+(2 rows)
+
+select null::int1 union all select null::anyset;
+ int1 
+------
+ 
+ 
+(2 rows)
+
+select null::int2 union all select null::int16;
+ int2 
+------
+     
+     
+(2 rows)
+
+select null::int2 union all select null::record;
+ int2 
+------
+ 
+ 
+(2 rows)
+
+select null::int2 union all select null::cstring;
+ int2 
+------
+ 
+ 
+(2 rows)
+
+select null::int2 union all select null::anyarray;
+ int2 
+------
+ 
+ 
+(2 rows)
+
+select null::int2 union all select null::void;
+ int2 
+------
+ 
+ 
+(2 rows)
+
+select null::int2 union all select null::anyelement;
+ int2 
+------
+     
+     
+(2 rows)
+
+select null::int2 union all select null::anynonarray;
+ int2 
+------
+     
+     
+(2 rows)
+
+select null::int2 union all select 'red'::rainbow::anyenum;
+ int2 
+------
+ 
+ red
+(2 rows)
+
+select null::int2 union all select null::anyrange;
+ int2 
+------
+ 
+ 
+(2 rows)
+
+select null::int2 union all select null::hll_hashval;
+ int2 
+------
+ 
+ 
+(2 rows)
+
+select null::int2 union all select null::hll_trans_type;
+ int2 
+------
+ 
+ 
+(2 rows)
+
+select null::int2 union all select null::byteawithoutorderwithequalcol;
+ int2 
+------
+ 
+ 
+(2 rows)
+
+select null::int2 union all select null::byteawithoutordercol;
+ int2 
+------
+ 
+ 
+(2 rows)
+
+select null::int2 union all select null::anyset;
+ int2 
+------
+ 
+ 
+(2 rows)
+
+select null::int4 union all select null::int16;
+ int4 
+------
+     
+     
+(2 rows)
+
+select null::int4 union all select null::record;
+ int4 
+------
+ 
+ 
+(2 rows)
+
+select null::int4 union all select null::cstring;
+ int4 
+------
+ 
+ 
+(2 rows)
+
+select null::int4 union all select null::anyarray;
+ int4 
+------
+ 
+ 
+(2 rows)
+
+select null::int4 union all select null::void;
+ int4 
+------
+ 
+ 
+(2 rows)
+
+select null::int4 union all select null::anyelement;
+ int4 
+------
+     
+     
+(2 rows)
+
+select null::int4 union all select null::anynonarray;
+ int4 
+------
+     
+     
+(2 rows)
+
+select null::int4 union all select 'red'::rainbow::anyenum;
+ int4 
+------
+ 
+ red
+(2 rows)
+
+select null::int4 union all select null::anyrange;
+ int4 
+------
+ 
+ 
+(2 rows)
+
+select null::int4 union all select null::hll_hashval;
+ int4 
+------
+ 
+ 
+(2 rows)
+
+select null::int4 union all select null::hll_trans_type;
+ int4 
+------
+ 
+ 
+(2 rows)
+
+select null::int4 union all select null::byteawithoutorderwithequalcol;
+ int4 
+------
+ 
+ 
+(2 rows)
+
+select null::int4 union all select null::byteawithoutordercol;
+ int4 
+------
+ 
+ 
+(2 rows)
+
+select null::int4 union all select null::anyset;
+ int4 
+------
+ 
+ 
+(2 rows)
+
+select null::int8 union all select null::int16;
+ int8 
+------
+     
+     
+(2 rows)
+
+select null::int8 union all select null::record;
+ int8 
+------
+ 
+ 
+(2 rows)
+
+select null::int8 union all select null::cstring;
+ int8 
+------
+ 
+ 
+(2 rows)
+
+select null::int8 union all select null::anyarray;
+ int8 
+------
+ 
+ 
+(2 rows)
+
+select null::int8 union all select null::void;
+ int8 
+------
+ 
+ 
+(2 rows)
+
+select null::int8 union all select null::anyelement;
+ int8 
+------
+     
+     
+(2 rows)
+
+select null::int8 union all select null::anynonarray;
+ int8 
+------
+     
+     
+(2 rows)
+
+select null::int8 union all select 'red'::rainbow::anyenum;
+ int8 
+------
+ 
+ red
+(2 rows)
+
+select null::int8 union all select null::anyrange;
+ int8 
+------
+ 
+ 
+(2 rows)
+
+select null::int8 union all select null::hll_hashval;
+ int8 
+------
+ 
+ 
+(2 rows)
+
+select null::int8 union all select null::hll_trans_type;
+ int8 
+------
+ 
+ 
+(2 rows)
+
+select null::int8 union all select null::byteawithoutorderwithequalcol;
+ int8 
+------
+ 
+ 
+(2 rows)
+
+select null::int8 union all select null::byteawithoutordercol;
+ int8 
+------
+ 
+ 
+(2 rows)
+
+select null::int8 union all select null::anyset;
+ int8 
+------
+ 
+ 
+(2 rows)
+
+select null::bool union all select null::int16;
+ bool 
+------
+ 
+ 
+(2 rows)
+
+select null::bool union all select null::record;
+ bool 
+------
+ 
+ 
+(2 rows)
+
+select null::bool union all select null::cstring;
+ bool 
+------
+ 
+ 
+(2 rows)
+
+select null::bool union all select null::anyarray;
+ bool 
+------
+ 
+ 
+(2 rows)
+
+select null::bool union all select null::void;
+ bool 
+------
+ 
+ 
+(2 rows)
+
+select null::bool union all select null::anyelement;
+ bool 
+------
+ 
+ 
+(2 rows)
+
+select null::bool union all select null::anynonarray;
+ bool 
+------
+ 
+ 
+(2 rows)
+
+select null::bool union all select 'red'::rainbow::anyenum;
+ bool 
+------
+ 
+ red
+(2 rows)
+
+select null::bool union all select null::anyrange;
+ bool 
+------
+ 
+ 
+(2 rows)
+
+select null::bool union all select null::hll_hashval;
+ bool 
+------
+ 
+ 
+(2 rows)
+
+select null::bool union all select null::hll_trans_type;
+ bool 
+------
+ 
+ 
+(2 rows)
+
+select null::bool union all select null::byteawithoutorderwithequalcol;
+ bool 
+------
+ 
+ 
+(2 rows)
+
+select null::bool union all select null::byteawithoutordercol;
+ bool 
+------
+ 
+ 
+(2 rows)
+
+select null::bool union all select null::anyset;
+ bool 
+------
+ 
+ 
+(2 rows)
+
+select null::bytea union all select null::int16;
+ bytea 
+-------
+ 
+ 
+(2 rows)
+
+select null::bytea union all select null::record;
+ bytea 
+-------
+ 
+ 
+(2 rows)
+
+select null::bytea union all select null::cstring;
+ bytea 
+-------
+ 
+ 
+(2 rows)
+
+select null::bytea union all select null::anyarray;
+ bytea 
+-------
+ 
+ 
+(2 rows)
+
+select null::bytea union all select null::void;
+ bytea 
+-------
+ 
+ 
+(2 rows)
+
+select null::bytea union all select null::anyelement;
+ bytea 
+-------
+ 
+ 
+(2 rows)
+
+select null::bytea union all select null::anynonarray;
+ bytea 
+-------
+ 
+ 
+(2 rows)
+
+select null::bytea union all select 'red'::rainbow::anyenum;
+ bytea 
+-------
+ 
+ red
+(2 rows)
+
+select null::bytea union all select null::anyrange;
+ bytea 
+-------
+ 
+ 
+(2 rows)
+
+select null::bytea union all select null::hll_hashval;
+ bytea 
+-------
+ 
+ 
+(2 rows)
+
+select null::bytea union all select null::hll_trans_type;
+ bytea 
+-------
+ 
+ 
+(2 rows)
+
+select null::bytea union all select null::byteawithoutorderwithequalcol;
+ bytea 
+-------
+ 
+ 
+(2 rows)
+
+select null::bytea union all select null::byteawithoutordercol;
+ bytea 
+-------
+ 
+ 
+(2 rows)
+
+select null::bytea union all select null::anyset;
+ bytea 
+-------
+ 
+ 
+(2 rows)
+
+select null::char union all select null::int16;
+ bpchar 
+--------
+ 
+ 
+(2 rows)
+
+select null::char union all select null::record;
+ bpchar 
+--------
+ 
+ 
+(2 rows)
+
+select null::char union all select null::cstring;
+ bpchar 
+--------
+ 
+ 
+(2 rows)
+
+select null::char union all select null::anyarray;
+ bpchar 
+--------
+ 
+ 
+(2 rows)
+
+select null::char union all select null::void;
+ bpchar 
+--------
+ 
+ 
+(2 rows)
+
+select null::char union all select null::anyelement;
+ bpchar 
+--------
+ 
+ 
+(2 rows)
+
+select null::char union all select null::anynonarray;
+ bpchar 
+--------
+ 
+ 
+(2 rows)
+
+select null::char union all select 'red'::rainbow::anyenum;
+ bpchar 
+--------
+ 
+ red
+(2 rows)
+
+select null::char union all select null::anyrange;
+ bpchar 
+--------
+ 
+ 
+(2 rows)
+
+select null::char union all select null::hll_hashval;
+ bpchar 
+--------
+ 
+ 
+(2 rows)
+
+select null::char union all select null::hll_trans_type;
+ bpchar 
+--------
+ 
+ 
+(2 rows)
+
+select null::char union all select null::byteawithoutorderwithequalcol;
+ bpchar 
+--------
+ 
+ 
+(2 rows)
+
+select null::char union all select null::byteawithoutordercol;
+ bpchar 
+--------
+ 
+ 
+(2 rows)
+
+select null::char union all select null::anyset;
+ bpchar 
+--------
+ 
+ 
+(2 rows)
+
+select null::name union all select null::int16;
+ name 
+------
+ 
+ 
+(2 rows)
+
+select null::name union all select null::record;
+ name 
+------
+ 
+ 
+(2 rows)
+
+select null::name union all select null::cstring;
+ name 
+------
+ 
+ 
+(2 rows)
+
+select null::name union all select null::anyarray;
+ name 
+------
+ 
+ 
+(2 rows)
+
+select null::name union all select null::void;
+ name 
+------
+ 
+ 
+(2 rows)
+
+select null::name union all select null::anyelement;
+ name 
+------
+ 
+ 
+(2 rows)
+
+select null::name union all select null::anynonarray;
+ name 
+------
+ 
+ 
+(2 rows)
+
+select null::name union all select 'red'::rainbow::anyenum;
+ name 
+------
+ 
+ red
+(2 rows)
+
+select null::name union all select null::anyrange;
+ name 
+------
+ 
+ 
+(2 rows)
+
+select null::name union all select null::hll_hashval;
+ name 
+------
+ 
+ 
+(2 rows)
+
+select null::name union all select null::hll_trans_type;
+ name 
+------
+ 
+ 
+(2 rows)
+
+select null::name union all select null::byteawithoutorderwithequalcol;
+ name 
+------
+ 
+ 
+(2 rows)
+
+select null::name union all select null::byteawithoutordercol;
+ name 
+------
+ 
+ 
+(2 rows)
+
+select null::name union all select null::anyset;
+ name 
+------
+ 
+ 
+(2 rows)
+
+select null::numeric union all select null::int16;
+ numeric 
+---------
+        
+        
+(2 rows)
+
+select null::numeric union all select null::record;
+ numeric 
+---------
+ 
+ 
+(2 rows)
+
+select null::numeric union all select null::cstring;
+ numeric 
+---------
+ 
+ 
+(2 rows)
+
+select null::numeric union all select null::anyarray;
+ numeric 
+---------
+ 
+ 
+(2 rows)
+
+select null::numeric union all select null::void;
+ numeric 
+---------
+ 
+ 
+(2 rows)
+
+select null::numeric union all select null::anyelement;
+ numeric 
+---------
+        
+        
+(2 rows)
+
+select null::numeric union all select null::anynonarray;
+ numeric 
+---------
+        
+        
+(2 rows)
+
+select null::numeric union all select 'red'::rainbow::anyenum;
+ numeric 
+---------
+ 
+ red
+(2 rows)
+
+select null::numeric union all select null::anyrange;
+ numeric 
+---------
+ 
+ 
+(2 rows)
+
+select null::numeric union all select null::hll_hashval;
+ numeric 
+---------
+ 
+ 
+(2 rows)
+
+select null::numeric union all select null::hll_trans_type;
+ numeric 
+---------
+ 
+ 
+(2 rows)
+
+select null::numeric union all select null::byteawithoutorderwithequalcol;
+ numeric 
+---------
+ 
+ 
+(2 rows)
+
+select null::numeric union all select null::byteawithoutordercol;
+ numeric 
+---------
+ 
+ 
+(2 rows)
+
+select null::numeric union all select null::anyset;
+ numeric 
+---------
+ 
+ 
+(2 rows)
+
+select null::text union all select null::int16;
+ text 
+------
+ 
+ 
+(2 rows)
+
+select null::text union all select null::record;
+ text 
+------
+ 
+ 
+(2 rows)
+
+select null::text union all select null::cstring;
+ text 
+------
+ 
+ 
+(2 rows)
+
+select null::text union all select null::anyarray;
+ text 
+------
+ 
+ 
+(2 rows)
+
+select null::text union all select null::void;
+ text 
+------
+ 
+ 
+(2 rows)
+
+select null::text union all select null::anyelement;
+ text 
+------
+ 
+ 
+(2 rows)
+
+select null::text union all select null::anynonarray;
+ text 
+------
+ 
+ 
+(2 rows)
+
+select null::text union all select 'red'::rainbow::anyenum;
+ text 
+------
+ 
+ red
+(2 rows)
+
+select null::text union all select null::anyrange;
+ text 
+------
+ 
+ 
+(2 rows)
+
+select null::text union all select null::hll_hashval;
+ text 
+------
+ 
+ 
+(2 rows)
+
+select null::text union all select null::hll_trans_type;
+ text 
+------
+ 
+ 
+(2 rows)
+
+select null::text union all select null::byteawithoutorderwithequalcol;
+ text 
+------
+ 
+ 
+(2 rows)
+
+select null::text union all select null::byteawithoutordercol;
+ text 
+------
+ 
+ 
+(2 rows)
+
+select null::text union all select null::anyset;
+ text 
+------
+ 
+ 
+(2 rows)
+
+select null::raw union all select null::int16;
+ raw 
+-----
+ 
+ 
+(2 rows)
+
+select null::raw union all select null::record;
+ raw 
+-----
+ 
+ 
+(2 rows)
+
+select null::raw union all select null::cstring;
+ raw 
+-----
+ 
+ 
+(2 rows)
+
+select null::raw union all select null::anyarray;
+ raw 
+-----
+ 
+ 
+(2 rows)
+
+select null::raw union all select null::void;
+ raw 
+-----
+ 
+ 
+(2 rows)
+
+select null::raw union all select null::anyelement;
+ raw 
+-----
+ 
+ 
+(2 rows)
+
+select null::raw union all select null::anynonarray;
+ raw 
+-----
+ 
+ 
+(2 rows)
+
+select null::raw union all select 'red'::rainbow::anyenum;
+ raw 
+-----
+ 
+ red
+(2 rows)
+
+select null::raw union all select null::anyrange;
+ raw 
+-----
+ 
+ 
+(2 rows)
+
+select null::raw union all select null::hll_hashval;
+ raw 
+-----
+ 
+ 
+(2 rows)
+
+select null::raw union all select null::hll_trans_type;
+ raw 
+-----
+ 
+ 
+(2 rows)
+
+select null::raw union all select null::byteawithoutorderwithequalcol;
+ raw 
+-----
+ 
+ 
+(2 rows)
+
+select null::raw union all select null::byteawithoutordercol;
+ raw 
+-----
+ 
+ 
+(2 rows)
+
+select null::raw union all select null::anyset;
+ raw 
+-----
+ 
+ 
+(2 rows)
+
+select null::blob union all select null::int16;
+ blob 
+------
+ 
+ 
+(2 rows)
+
+select null::blob union all select null::record;
+ blob 
+------
+ 
+ 
+(2 rows)
+
+select null::blob union all select null::cstring;
+ blob 
+------
+ 
+ 
+(2 rows)
+
+select null::blob union all select null::anyarray;
+ blob 
+------
+ 
+ 
+(2 rows)
+
+select null::blob union all select null::void;
+ blob 
+------
+ 
+ 
+(2 rows)
+
+select null::blob union all select null::anyelement;
+ blob 
+------
+ 
+ 
+(2 rows)
+
+select null::blob union all select null::anynonarray;
+ blob 
+------
+ 
+ 
+(2 rows)
+
+select null::blob union all select 'red'::rainbow::anyenum;
+ blob 
+------
+ 
+ red
+(2 rows)
+
+select null::blob union all select null::anyrange;
+ blob 
+------
+ 
+ 
+(2 rows)
+
+select null::blob union all select null::hll_hashval;
+ blob 
+------
+ 
+ 
+(2 rows)
+
+select null::blob union all select null::hll_trans_type;
+ blob 
+------
+ 
+ 
+(2 rows)
+
+select null::blob union all select null::byteawithoutorderwithequalcol;
+ blob 
+------
+ 
+ 
+(2 rows)
+
+select null::blob union all select null::byteawithoutordercol;
+ blob 
+------
+ 
+ 
+(2 rows)
+
+select null::blob union all select null::anyset;
+ blob 
+------
+ 
+ 
+(2 rows)
+
+select null::clob union all select null::int16;
+ clob 
+------
+ 
+ 
+(2 rows)
+
+select null::clob union all select null::record;
+ clob 
+------
+ 
+ 
+(2 rows)
+
+select null::clob union all select null::cstring;
+ clob 
+------
+ 
+ 
+(2 rows)
+
+select null::clob union all select null::anyarray;
+ clob 
+------
+ 
+ 
+(2 rows)
+
+select null::clob union all select null::void;
+ clob 
+------
+ 
+ 
+(2 rows)
+
+select null::clob union all select null::anyelement;
+ clob 
+------
+ 
+ 
+(2 rows)
+
+select null::clob union all select null::anynonarray;
+ clob 
+------
+ 
+ 
+(2 rows)
+
+select null::clob union all select 'red'::rainbow::anyenum;
+ clob 
+------
+ 
+ red
+(2 rows)
+
+select null::clob union all select null::anyrange;
+ clob 
+------
+ 
+ 
+(2 rows)
+
+select null::clob union all select null::hll_hashval;
+ clob 
+------
+ 
+ 
+(2 rows)
+
+select null::clob union all select null::hll_trans_type;
+ clob 
+------
+ 
+ 
+(2 rows)
+
+select null::clob union all select null::byteawithoutorderwithequalcol;
+ clob 
+------
+ 
+ 
+(2 rows)
+
+select null::clob union all select null::byteawithoutordercol;
+ clob 
+------
+ 
+ 
+(2 rows)
+
+select null::clob union all select null::anyset;
+ clob 
+------
+ 
+ 
+(2 rows)
+
+select null::json union all select null::int16;
+ json 
+------
+ 
+ 
+(2 rows)
+
+select null::json union all select null::record;
+ json 
+------
+ 
+ 
+(2 rows)
+
+select null::json union all select null::cstring;
+ json 
+------
+ 
+ 
+(2 rows)
+
+select null::json union all select null::anyarray;
+ json 
+------
+ 
+ 
+(2 rows)
+
+select null::json union all select null::void;
+ json 
+------
+ 
+ 
+(2 rows)
+
+select null::json union all select null::anyelement;
+ json 
+------
+ 
+ 
+(2 rows)
+
+select null::json union all select null::anynonarray;
+ json 
+------
+ 
+ 
+(2 rows)
+
+select null::json union all select 'red'::rainbow::anyenum;
+ json 
+------
+ 
+ red
+(2 rows)
+
+select null::json union all select null::anyrange;
+ json 
+------
+ 
+ 
+(2 rows)
+
+select null::json union all select null::hll_hashval;
+ json 
+------
+ 
+ 
+(2 rows)
+
+select null::json union all select null::hll_trans_type;
+ json 
+------
+ 
+ 
+(2 rows)
+
+select null::json union all select null::byteawithoutorderwithequalcol;
+ json 
+------
+ 
+ 
+(2 rows)
+
+select null::json union all select null::byteawithoutordercol;
+ json 
+------
+ 
+ 
+(2 rows)
+
+select null::json union all select null::anyset;
+ json 
+------
+ 
+ 
+(2 rows)
+
+select null::jsonb union all select null::int16;
+ jsonb 
+-------
+ 
+ 
+(2 rows)
+
+select null::jsonb union all select null::record;
+ jsonb 
+-------
+ 
+ 
+(2 rows)
+
+select null::jsonb union all select null::cstring;
+ jsonb 
+-------
+ 
+ 
+(2 rows)
+
+select null::jsonb union all select null::anyarray;
+ jsonb 
+-------
+ 
+ 
+(2 rows)
+
+select null::jsonb union all select null::void;
+ jsonb 
+-------
+ 
+ 
+(2 rows)
+
+select null::jsonb union all select null::anyelement;
+ jsonb 
+-------
+ 
+ 
+(2 rows)
+
+select null::jsonb union all select null::anynonarray;
+ jsonb 
+-------
+ 
+ 
+(2 rows)
+
+select null::jsonb union all select 'red'::rainbow::anyenum;
+ jsonb 
+-------
+ 
+ red
+(2 rows)
+
+select null::jsonb union all select null::anyrange;
+ jsonb 
+-------
+ 
+ 
+(2 rows)
+
+select null::jsonb union all select null::hll_hashval;
+ jsonb 
+-------
+ 
+ 
+(2 rows)
+
+select null::jsonb union all select null::hll_trans_type;
+ jsonb 
+-------
+ 
+ 
+(2 rows)
+
+select null::jsonb union all select null::byteawithoutorderwithequalcol;
+ jsonb 
+-------
+ 
+ 
+(2 rows)
+
+select null::jsonb union all select null::byteawithoutordercol;
+ jsonb 
+-------
+ 
+ 
+(2 rows)
+
+select null::jsonb union all select null::anyset;
+ jsonb 
+-------
+ 
+ 
+(2 rows)
+
+select null::point union all select null::int16;
+ point 
+-------
+ 
+ 
+(2 rows)
+
+select null::point union all select null::record;
+ point 
+-------
+ 
+ 
+(2 rows)
+
+select null::point union all select null::cstring;
+ point 
+-------
+ 
+ 
+(2 rows)
+
+select null::point union all select null::anyarray;
+ point 
+-------
+ 
+ 
+(2 rows)
+
+select null::point union all select null::void;
+ point 
+-------
+ 
+ 
+(2 rows)
+
+select null::point union all select null::anyelement;
+ point 
+-------
+ 
+ 
+(2 rows)
+
+select null::point union all select null::anynonarray;
+ point 
+-------
+ 
+ 
+(2 rows)
+
+select null::point union all select 'red'::rainbow::anyenum;
+ point 
+-------
+ 
+ red
+(2 rows)
+
+select null::point union all select null::anyrange;
+ point 
+-------
+ 
+ 
+(2 rows)
+
+select null::point union all select null::hll_hashval;
+ point 
+-------
+ 
+ 
+(2 rows)
+
+select null::point union all select null::hll_trans_type;
+ point 
+-------
+ 
+ 
+(2 rows)
+
+select null::point union all select null::byteawithoutorderwithequalcol;
+ point 
+-------
+ 
+ 
+(2 rows)
+
+select null::point union all select null::byteawithoutordercol;
+ point 
+-------
+ 
+ 
+(2 rows)
+
+select null::point union all select null::anyset;
+ point 
+-------
+ 
+ 
+(2 rows)
+
+select null::lseg union all select null::int16;
+ lseg 
+------
+ 
+ 
+(2 rows)
+
+select null::lseg union all select null::record;
+ lseg 
+------
+ 
+ 
+(2 rows)
+
+select null::lseg union all select null::cstring;
+ lseg 
+------
+ 
+ 
+(2 rows)
+
+select null::lseg union all select null::anyarray;
+ lseg 
+------
+ 
+ 
+(2 rows)
+
+select null::lseg union all select null::void;
+ lseg 
+------
+ 
+ 
+(2 rows)
+
+select null::lseg union all select null::anyelement;
+ lseg 
+------
+ 
+ 
+(2 rows)
+
+select null::lseg union all select null::anynonarray;
+ lseg 
+------
+ 
+ 
+(2 rows)
+
+select null::lseg union all select 'red'::rainbow::anyenum;
+ lseg 
+------
+ 
+ red
+(2 rows)
+
+select null::lseg union all select null::anyrange;
+ lseg 
+------
+ 
+ 
+(2 rows)
+
+select null::lseg union all select null::hll_hashval;
+ lseg 
+------
+ 
+ 
+(2 rows)
+
+select null::lseg union all select null::hll_trans_type;
+ lseg 
+------
+ 
+ 
+(2 rows)
+
+select null::lseg union all select null::byteawithoutorderwithequalcol;
+ lseg 
+------
+ 
+ 
+(2 rows)
+
+select null::lseg union all select null::byteawithoutordercol;
+ lseg 
+------
+ 
+ 
+(2 rows)
+
+select null::lseg union all select null::anyset;
+ lseg 
+------
+ 
+ 
+(2 rows)
+
+select null::path union all select null::int16;
+ path 
+------
+ 
+ 
+(2 rows)
+
+select null::path union all select null::record;
+ path 
+------
+ 
+ 
+(2 rows)
+
+select null::path union all select null::cstring;
+ path 
+------
+ 
+ 
+(2 rows)
+
+select null::path union all select null::anyarray;
+ path 
+------
+ 
+ 
+(2 rows)
+
+select null::path union all select null::void;
+ path 
+------
+ 
+ 
+(2 rows)
+
+select null::path union all select null::anyelement;
+ path 
+------
+ 
+ 
+(2 rows)
+
+select null::path union all select null::anynonarray;
+ path 
+------
+ 
+ 
+(2 rows)
+
+select null::path union all select 'red'::rainbow::anyenum;
+ path 
+------
+ 
+ red
+(2 rows)
+
+select null::path union all select null::anyrange;
+ path 
+------
+ 
+ 
+(2 rows)
+
+select null::path union all select null::hll_hashval;
+ path 
+------
+ 
+ 
+(2 rows)
+
+select null::path union all select null::hll_trans_type;
+ path 
+------
+ 
+ 
+(2 rows)
+
+select null::path union all select null::byteawithoutorderwithequalcol;
+ path 
+------
+ 
+ 
+(2 rows)
+
+select null::path union all select null::byteawithoutordercol;
+ path 
+------
+ 
+ 
+(2 rows)
+
+select null::path union all select null::anyset;
+ path 
+------
+ 
+ 
+(2 rows)
+
+select null::box union all select null::int16;
+ box 
+-----
+ 
+ 
+(2 rows)
+
+select null::box union all select null::record;
+ box 
+-----
+ 
+ 
+(2 rows)
+
+select null::box union all select null::cstring;
+ box 
+-----
+ 
+ 
+(2 rows)
+
+select null::box union all select null::anyarray;
+ box 
+-----
+ 
+ 
+(2 rows)
+
+select null::box union all select null::void;
+ box 
+-----
+ 
+ 
+(2 rows)
+
+select null::box union all select null::anyelement;
+ box 
+-----
+ 
+ 
+(2 rows)
+
+select null::box union all select null::anynonarray;
+ box 
+-----
+ 
+ 
+(2 rows)
+
+select null::box union all select 'red'::rainbow::anyenum;
+ box 
+-----
+ 
+ red
+(2 rows)
+
+select null::box union all select null::anyrange;
+ box 
+-----
+ 
+ 
+(2 rows)
+
+select null::box union all select null::hll_hashval;
+ box 
+-----
+ 
+ 
+(2 rows)
+
+select null::box union all select null::hll_trans_type;
+ box 
+-----
+ 
+ 
+(2 rows)
+
+select null::box union all select null::byteawithoutorderwithequalcol;
+ box 
+-----
+ 
+ 
+(2 rows)
+
+select null::box union all select null::byteawithoutordercol;
+ box 
+-----
+ 
+ 
+(2 rows)
+
+select null::box union all select null::anyset;
+ box 
+-----
+ 
+ 
+(2 rows)
+
+select null::polygon union all select null::int16;
+ polygon 
+---------
+ 
+ 
+(2 rows)
+
+select null::polygon union all select null::record;
+ polygon 
+---------
+ 
+ 
+(2 rows)
+
+select null::polygon union all select null::cstring;
+ polygon 
+---------
+ 
+ 
+(2 rows)
+
+select null::polygon union all select null::anyarray;
+ polygon 
+---------
+ 
+ 
+(2 rows)
+
+select null::polygon union all select null::void;
+ polygon 
+---------
+ 
+ 
+(2 rows)
+
+select null::polygon union all select null::anyelement;
+ polygon 
+---------
+ 
+ 
+(2 rows)
+
+select null::polygon union all select null::anynonarray;
+ polygon 
+---------
+ 
+ 
+(2 rows)
+
+select null::polygon union all select 'red'::rainbow::anyenum;
+ polygon 
+---------
+ 
+ red
+(2 rows)
+
+select null::polygon union all select null::anyrange;
+ polygon 
+---------
+ 
+ 
+(2 rows)
+
+select null::polygon union all select null::hll_hashval;
+ polygon 
+---------
+ 
+ 
+(2 rows)
+
+select null::polygon union all select null::hll_trans_type;
+ polygon 
+---------
+ 
+ 
+(2 rows)
+
+select null::polygon union all select null::byteawithoutorderwithequalcol;
+ polygon 
+---------
+ 
+ 
+(2 rows)
+
+select null::polygon union all select null::byteawithoutordercol;
+ polygon 
+---------
+ 
+ 
+(2 rows)
+
+select null::polygon union all select null::anyset;
+ polygon 
+---------
+ 
+ 
+(2 rows)
+
+select null::hash16 union all select null::int16;
+ hash16 
+--------
+ 
+ 
+(2 rows)
+
+select null::hash16 union all select null::record;
+ hash16 
+--------
+ 
+ 
+(2 rows)
+
+select null::hash16 union all select null::cstring;
+ hash16 
+--------
+ 
+ 
+(2 rows)
+
+select null::hash16 union all select null::anyarray;
+ hash16 
+--------
+ 
+ 
+(2 rows)
+
+select null::hash16 union all select null::void;
+ hash16 
+--------
+ 
+ 
+(2 rows)
+
+select null::hash16 union all select null::anyelement;
+ hash16 
+--------
+ 
+ 
+(2 rows)
+
+select null::hash16 union all select null::anynonarray;
+ hash16 
+--------
+ 
+ 
+(2 rows)
+
+select null::hash16 union all select 'red'::rainbow::anyenum;
+ hash16 
+--------
+ 
+ red
+(2 rows)
+
+select null::hash16 union all select null::anyrange;
+ hash16 
+--------
+ 
+ 
+(2 rows)
+
+select null::hash16 union all select null::hll_hashval;
+ hash16 
+--------
+ 
+ 
+(2 rows)
+
+select null::hash16 union all select null::hll_trans_type;
+ hash16 
+--------
+ 
+ 
+(2 rows)
+
+select null::hash16 union all select null::byteawithoutorderwithequalcol;
+ hash16 
+--------
+ 
+ 
+(2 rows)
+
+select null::hash16 union all select null::byteawithoutordercol;
+ hash16 
+--------
+ 
+ 
+(2 rows)
+
+select null::hash16 union all select null::anyset;
+ hash16 
+--------
+ 
+ 
+(2 rows)
+
+select null::smalldatetime union all select null::int16;
+ smalldatetime 
+---------------
+ 
+ 
+(2 rows)
+
+select null::smalldatetime union all select null::record;
+ smalldatetime 
+---------------
+ 
+ 
+(2 rows)
+
+select null::smalldatetime union all select null::cstring;
+ smalldatetime 
+---------------
+ 
+ 
+(2 rows)
+
+select null::smalldatetime union all select null::anyarray;
+ smalldatetime 
+---------------
+ 
+ 
+(2 rows)
+
+select null::smalldatetime union all select null::void;
+ smalldatetime 
+---------------
+ 
+ 
+(2 rows)
+
+select null::smalldatetime union all select null::anyelement;
+ smalldatetime 
+---------------
+ 
+ 
+(2 rows)
+
+select null::smalldatetime union all select null::anynonarray;
+ smalldatetime 
+---------------
+ 
+ 
+(2 rows)
+
+select null::smalldatetime union all select 'red'::rainbow::anyenum;
+ smalldatetime 
+---------------
+ 
+ red
+(2 rows)
+
+select null::smalldatetime union all select null::anyrange;
+ smalldatetime 
+---------------
+ 
+ 
+(2 rows)
+
+select null::smalldatetime union all select null::hll_hashval;
+ smalldatetime 
+---------------
+ 
+ 
+(2 rows)
+
+select null::smalldatetime union all select null::hll_trans_type;
+ smalldatetime 
+---------------
+ 
+ 
+(2 rows)
+
+select null::smalldatetime union all select null::byteawithoutorderwithequalcol;
+ smalldatetime 
+---------------
+ 
+ 
+(2 rows)
+
+select null::smalldatetime union all select null::byteawithoutordercol;
+ smalldatetime 
+---------------
+ 
+ 
+(2 rows)
+
+select null::smalldatetime union all select null::anyset;
+ smalldatetime 
+---------------
+ 
+ 
+(2 rows)
+
+select null::abstime union all select null::int16;
+ abstime 
+---------
+ 
+ 
+(2 rows)
+
+select null::abstime union all select null::record;
+ abstime 
+---------
+ 
+ 
+(2 rows)
+
+select null::abstime union all select null::cstring;
+ abstime 
+---------
+ 
+ 
+(2 rows)
+
+select null::abstime union all select null::anyarray;
+ abstime 
+---------
+ 
+ 
+(2 rows)
+
+select null::abstime union all select null::void;
+ abstime 
+---------
+ 
+ 
+(2 rows)
+
+select null::abstime union all select null::anyelement;
+ abstime 
+---------
+ 
+ 
+(2 rows)
+
+select null::abstime union all select null::anynonarray;
+ abstime 
+---------
+ 
+ 
+(2 rows)
+
+select null::abstime union all select 'red'::rainbow::anyenum;
+ abstime 
+---------
+ 
+ red
+(2 rows)
+
+select null::abstime union all select null::anyrange;
+ abstime 
+---------
+ 
+ 
+(2 rows)
+
+select null::abstime union all select null::hll_hashval;
+ abstime 
+---------
+ 
+ 
+(2 rows)
+
+select null::abstime union all select null::hll_trans_type;
+ abstime 
+---------
+ 
+ 
+(2 rows)
+
+select null::abstime union all select null::byteawithoutorderwithequalcol;
+ abstime 
+---------
+ 
+ 
+(2 rows)
+
+select null::abstime union all select null::byteawithoutordercol;
+ abstime 
+---------
+ 
+ 
+(2 rows)
+
+select null::abstime union all select null::anyset;
+ abstime 
+---------
+ 
+ 
+(2 rows)
+
+select null::reltime union all select null::int16;
+ reltime 
+---------
+ 
+ 
+(2 rows)
+
+select null::reltime union all select null::record;
+ reltime 
+---------
+ 
+ 
+(2 rows)
+
+select null::reltime union all select null::cstring;
+ reltime 
+---------
+ 
+ 
+(2 rows)
+
+select null::reltime union all select null::anyarray;
+ reltime 
+---------
+ 
+ 
+(2 rows)
+
+select null::reltime union all select null::void;
+ reltime 
+---------
+ 
+ 
+(2 rows)
+
+select null::reltime union all select null::anyelement;
+ reltime 
+---------
+ 
+ 
+(2 rows)
+
+select null::reltime union all select null::anynonarray;
+ reltime 
+---------
+ 
+ 
+(2 rows)
+
+select null::reltime union all select 'red'::rainbow::anyenum;
+ reltime 
+---------
+ 
+ red
+(2 rows)
+
+select null::reltime union all select null::anyrange;
+ reltime 
+---------
+ 
+ 
+(2 rows)
+
+select null::reltime union all select null::hll_hashval;
+ reltime 
+---------
+ 
+ 
+(2 rows)
+
+select null::reltime union all select null::hll_trans_type;
+ reltime 
+---------
+ 
+ 
+(2 rows)
+
+select null::reltime union all select null::byteawithoutorderwithequalcol;
+ reltime 
+---------
+ 
+ 
+(2 rows)
+
+select null::reltime union all select null::byteawithoutordercol;
+ reltime 
+---------
+ 
+ 
+(2 rows)
+
+select null::reltime union all select null::anyset;
+ reltime 
+---------
+ 
+ 
+(2 rows)
+
+select null::tinterval union all select null::int16;
+ tinterval 
+-----------
+ 
+ 
+(2 rows)
+
+select null::tinterval union all select null::record;
+ tinterval 
+-----------
+ 
+ 
+(2 rows)
+
+select null::tinterval union all select null::cstring;
+ tinterval 
+-----------
+ 
+ 
+(2 rows)
+
+select null::tinterval union all select null::anyarray;
+ tinterval 
+-----------
+ 
+ 
+(2 rows)
+
+select null::tinterval union all select null::void;
+ tinterval 
+-----------
+ 
+ 
+(2 rows)
+
+select null::tinterval union all select null::anyelement;
+ tinterval 
+-----------
+ 
+ 
+(2 rows)
+
+select null::tinterval union all select null::anynonarray;
+ tinterval 
+-----------
+ 
+ 
+(2 rows)
+
+select null::tinterval union all select 'red'::rainbow::anyenum;
+ tinterval 
+-----------
+ 
+ red
+(2 rows)
+
+select null::tinterval union all select null::anyrange;
+ tinterval 
+-----------
+ 
+ 
+(2 rows)
+
+select null::tinterval union all select null::hll_hashval;
+ tinterval 
+-----------
+ 
+ 
+(2 rows)
+
+select null::tinterval union all select null::hll_trans_type;
+ tinterval 
+-----------
+ 
+ 
+(2 rows)
+
+select null::tinterval union all select null::byteawithoutorderwithequalcol;
+ tinterval 
+-----------
+ 
+ 
+(2 rows)
+
+select null::tinterval union all select null::byteawithoutordercol;
+ tinterval 
+-----------
+ 
+ 
+(2 rows)
+
+select null::tinterval union all select null::anyset;
+ tinterval 
+-----------
+ 
+ 
+(2 rows)
+
+select null::circle union all select null::int16;
+ circle 
+--------
+ 
+ 
+(2 rows)
+
+select null::circle union all select null::record;
+ circle 
+--------
+ 
+ 
+(2 rows)
+
+select null::circle union all select null::cstring;
+ circle 
+--------
+ 
+ 
+(2 rows)
+
+select null::circle union all select null::anyarray;
+ circle 
+--------
+ 
+ 
+(2 rows)
+
+select null::circle union all select null::void;
+ circle 
+--------
+ 
+ 
+(2 rows)
+
+select null::circle union all select null::anyelement;
+ circle 
+--------
+ 
+ 
+(2 rows)
+
+select null::circle union all select null::anynonarray;
+ circle 
+--------
+ 
+ 
+(2 rows)
+
+select null::circle union all select 'red'::rainbow::anyenum;
+ circle 
+--------
+ 
+ red
+(2 rows)
+
+select null::circle union all select null::anyrange;
+ circle 
+--------
+ 
+ 
+(2 rows)
+
+select null::circle union all select null::hll_hashval;
+ circle 
+--------
+ 
+ 
+(2 rows)
+
+select null::circle union all select null::hll_trans_type;
+ circle 
+--------
+ 
+ 
+(2 rows)
+
+select null::circle union all select null::byteawithoutorderwithequalcol;
+ circle 
+--------
+ 
+ 
+(2 rows)
+
+select null::circle union all select null::byteawithoutordercol;
+ circle 
+--------
+ 
+ 
+(2 rows)
+
+select null::circle union all select null::anyset;
+ circle 
+--------
+ 
+ 
+(2 rows)
+
+select null::money union all select null::int16;
+ money 
+-------
+ 
+ 
+(2 rows)
+
+select null::money union all select null::record;
+ money 
+-------
+ 
+ 
+(2 rows)
+
+select null::money union all select null::cstring;
+ money 
+-------
+ 
+ 
+(2 rows)
+
+select null::money union all select null::anyarray;
+ money 
+-------
+ 
+ 
+(2 rows)
+
+select null::money union all select null::void;
+ money 
+-------
+ 
+ 
+(2 rows)
+
+select null::money union all select null::anyelement;
+ money 
+-------
+      
+      
+(2 rows)
+
+select null::money union all select null::anynonarray;
+ money 
+-------
+      
+      
+(2 rows)
+
+select null::money union all select 'red'::rainbow::anyenum;
+ money 
+-------
+ 
+ red
+(2 rows)
+
+select null::money union all select null::anyrange;
+ money 
+-------
+ 
+ 
+(2 rows)
+
+select null::money union all select null::hll_hashval;
+ money 
+-------
+ 
+ 
+(2 rows)
+
+select null::money union all select null::hll_trans_type;
+ money 
+-------
+ 
+ 
+(2 rows)
+
+select null::money union all select null::byteawithoutorderwithequalcol;
+ money 
+-------
+ 
+ 
+(2 rows)
+
+select null::money union all select null::byteawithoutordercol;
+ money 
+-------
+ 
+ 
+(2 rows)
+
+select null::money union all select null::anyset;
+ money 
+-------
+ 
+ 
+(2 rows)
+
+select null::bpchar union all select null::int16;
+ bpchar 
+--------
+ 
+ 
+(2 rows)
+
+select null::bpchar union all select null::record;
+ bpchar 
+--------
+ 
+ 
+(2 rows)
+
+select null::bpchar union all select null::cstring;
+ bpchar 
+--------
+ 
+ 
+(2 rows)
+
+select null::bpchar union all select null::anyarray;
+ bpchar 
+--------
+ 
+ 
+(2 rows)
+
+select null::bpchar union all select null::void;
+ bpchar 
+--------
+ 
+ 
+(2 rows)
+
+select null::bpchar union all select null::anyelement;
+ bpchar 
+--------
+ 
+ 
+(2 rows)
+
+select null::bpchar union all select null::anynonarray;
+ bpchar 
+--------
+ 
+ 
+(2 rows)
+
+select null::bpchar union all select 'red'::rainbow::anyenum;
+ bpchar 
+--------
+ 
+ red
+(2 rows)
+
+select null::bpchar union all select null::anyrange;
+ bpchar 
+--------
+ 
+ 
+(2 rows)
+
+select null::bpchar union all select null::hll_hashval;
+ bpchar 
+--------
+ 
+ 
+(2 rows)
+
+select null::bpchar union all select null::hll_trans_type;
+ bpchar 
+--------
+ 
+ 
+(2 rows)
+
+select null::bpchar union all select null::byteawithoutorderwithequalcol;
+ bpchar 
+--------
+ 
+ 
+(2 rows)
+
+select null::bpchar union all select null::byteawithoutordercol;
+ bpchar 
+--------
+ 
+ 
+(2 rows)
+
+select null::bpchar union all select null::anyset;
+ bpchar 
+--------
+ 
+ 
+(2 rows)
+
+select null::varchar union all select null::int16;
+ varchar 
+---------
+ 
+ 
+(2 rows)
+
+select null::varchar union all select null::record;
+ varchar 
+---------
+ 
+ 
+(2 rows)
+
+select null::varchar union all select null::cstring;
+ varchar 
+---------
+ 
+ 
+(2 rows)
+
+select null::varchar union all select null::anyarray;
+ varchar 
+---------
+ 
+ 
+(2 rows)
+
+select null::varchar union all select null::void;
+ varchar 
+---------
+ 
+ 
+(2 rows)
+
+select null::varchar union all select null::anyelement;
+ varchar 
+---------
+ 
+ 
+(2 rows)
+
+select null::varchar union all select null::anynonarray;
+ varchar 
+---------
+ 
+ 
+(2 rows)
+
+select null::varchar union all select 'red'::rainbow::anyenum;
+ varchar 
+---------
+ 
+ red
+(2 rows)
+
+select null::varchar union all select null::anyrange;
+ varchar 
+---------
+ 
+ 
+(2 rows)
+
+select null::varchar union all select null::hll_hashval;
+ varchar 
+---------
+ 
+ 
+(2 rows)
+
+select null::varchar union all select null::hll_trans_type;
+ varchar 
+---------
+ 
+ 
+(2 rows)
+
+select null::varchar union all select null::byteawithoutorderwithequalcol;
+ varchar 
+---------
+ 
+ 
+(2 rows)
+
+select null::varchar union all select null::byteawithoutordercol;
+ varchar 
+---------
+ 
+ 
+(2 rows)
+
+select null::varchar union all select null::anyset;
+ varchar 
+---------
+ 
+ 
+(2 rows)
+
+select null::nvarchar2 union all select null::int16;
+ nvarchar2 
+-----------
+ 
+ 
+(2 rows)
+
+select null::nvarchar2 union all select null::record;
+ nvarchar2 
+-----------
+ 
+ 
+(2 rows)
+
+select null::nvarchar2 union all select null::cstring;
+ nvarchar2 
+-----------
+ 
+ 
+(2 rows)
+
+select null::nvarchar2 union all select null::anyarray;
+ nvarchar2 
+-----------
+ 
+ 
+(2 rows)
+
+select null::nvarchar2 union all select null::void;
+ nvarchar2 
+-----------
+ 
+ 
+(2 rows)
+
+select null::nvarchar2 union all select null::anyelement;
+ nvarchar2 
+-----------
+ 
+ 
+(2 rows)
+
+select null::nvarchar2 union all select null::anynonarray;
+ nvarchar2 
+-----------
+ 
+ 
+(2 rows)
+
+select null::nvarchar2 union all select 'red'::rainbow::anyenum;
+ nvarchar2 
+-----------
+ 
+ red
+(2 rows)
+
+select null::nvarchar2 union all select null::anyrange;
+ nvarchar2 
+-----------
+ 
+ 
+(2 rows)
+
+select null::nvarchar2 union all select null::hll_hashval;
+ nvarchar2 
+-----------
+ 
+ 
+(2 rows)
+
+select null::nvarchar2 union all select null::hll_trans_type;
+ nvarchar2 
+-----------
+ 
+ 
+(2 rows)
+
+select null::nvarchar2 union all select null::byteawithoutorderwithequalcol;
+ nvarchar2 
+-----------
+ 
+ 
+(2 rows)
+
+select null::nvarchar2 union all select null::byteawithoutordercol;
+ nvarchar2 
+-----------
+ 
+ 
+(2 rows)
+
+select null::nvarchar2 union all select null::anyset;
+ nvarchar2 
+-----------
+ 
+ 
+(2 rows)
+
+select null::date union all select null::int16;
+ date 
+------
+ 
+ 
+(2 rows)
+
+select null::date union all select null::record;
+ date 
+------
+ 
+ 
+(2 rows)
+
+select null::date union all select null::cstring;
+ date 
+------
+ 
+ 
+(2 rows)
+
+select null::date union all select null::anyarray;
+ date 
+------
+ 
+ 
+(2 rows)
+
+select null::date union all select null::void;
+ date 
+------
+ 
+ 
+(2 rows)
+
+select null::date union all select null::anyelement;
+ date 
+------
+ 
+ 
+(2 rows)
+
+select null::date union all select null::anynonarray;
+ date 
+------
+ 
+ 
+(2 rows)
+
+select null::date union all select 'red'::rainbow::anyenum;
+ date 
+------
+ 
+ red
+(2 rows)
+
+select null::date union all select null::anyrange;
+ date 
+------
+ 
+ 
+(2 rows)
+
+select null::date union all select null::hll_hashval;
+ date 
+------
+ 
+ 
+(2 rows)
+
+select null::date union all select null::hll_trans_type;
+ date 
+------
+ 
+ 
+(2 rows)
+
+select null::date union all select null::byteawithoutorderwithequalcol;
+ date 
+------
+ 
+ 
+(2 rows)
+
+select null::date union all select null::byteawithoutordercol;
+ date 
+------
+ 
+ 
+(2 rows)
+
+select null::date union all select null::anyset;
+ date 
+------
+ 
+ 
+(2 rows)
+
+select null::time union all select null::int16;
+ time 
+------
+ 
+ 
+(2 rows)
+
+select null::time union all select null::record;
+ time 
+------
+ 
+ 
+(2 rows)
+
+select null::time union all select null::cstring;
+ time 
+------
+ 
+ 
+(2 rows)
+
+select null::time union all select null::anyarray;
+ time 
+------
+ 
+ 
+(2 rows)
+
+select null::time union all select null::void;
+ time 
+------
+ 
+ 
+(2 rows)
+
+select null::time union all select null::anyelement;
+ time 
+------
+ 
+ 
+(2 rows)
+
+select null::time union all select null::anynonarray;
+ time 
+------
+ 
+ 
+(2 rows)
+
+select null::time union all select 'red'::rainbow::anyenum;
+ time 
+------
+ 
+ red
+(2 rows)
+
+select null::time union all select null::anyrange;
+ time 
+------
+ 
+ 
+(2 rows)
+
+select null::time union all select null::hll_hashval;
+ time 
+------
+ 
+ 
+(2 rows)
+
+select null::time union all select null::hll_trans_type;
+ time 
+------
+ 
+ 
+(2 rows)
+
+select null::time union all select null::byteawithoutorderwithequalcol;
+ time 
+------
+ 
+ 
+(2 rows)
+
+select null::time union all select null::byteawithoutordercol;
+ time 
+------
+ 
+ 
+(2 rows)
+
+select null::time union all select null::anyset;
+ time 
+------
+ 
+ 
+(2 rows)
+
+select null::timestamp union all select null::int16;
+ timestamptz 
+-------------
+ 
+ 
+(2 rows)
+
+select null::timestamp union all select null::record;
+ timestamptz 
+-------------
+ 
+ 
+(2 rows)
+
+select null::timestamp union all select null::cstring;
+ timestamptz 
+-------------
+ 
+ 
+(2 rows)
+
+select null::timestamp union all select null::anyarray;
+ timestamptz 
+-------------
+ 
+ 
+(2 rows)
+
+select null::timestamp union all select null::void;
+ timestamptz 
+-------------
+ 
+ 
+(2 rows)
+
+select null::timestamp union all select null::anyelement;
+ timestamptz 
+-------------
+ 
+ 
+(2 rows)
+
+select null::timestamp union all select null::anynonarray;
+ timestamptz 
+-------------
+ 
+ 
+(2 rows)
+
+select null::timestamp union all select 'red'::rainbow::anyenum;
+ timestamptz 
+-------------
+ 
+ red
+(2 rows)
+
+select null::timestamp union all select null::anyrange;
+ timestamptz 
+-------------
+ 
+ 
+(2 rows)
+
+select null::timestamp union all select null::hll_hashval;
+ timestamptz 
+-------------
+ 
+ 
+(2 rows)
+
+select null::timestamp union all select null::hll_trans_type;
+ timestamptz 
+-------------
+ 
+ 
+(2 rows)
+
+select null::timestamp union all select null::byteawithoutorderwithequalcol;
+ timestamptz 
+-------------
+ 
+ 
+(2 rows)
+
+select null::timestamp union all select null::byteawithoutordercol;
+ timestamptz 
+-------------
+ 
+ 
+(2 rows)
+
+select null::timestamp union all select null::anyset;
+ timestamptz 
+-------------
+ 
+ 
+(2 rows)
+
+select null::timestamptz union all select null::int16;
+ timestamptz 
+-------------
+ 
+ 
+(2 rows)
+
+select null::timestamptz union all select null::record;
+ timestamptz 
+-------------
+ 
+ 
+(2 rows)
+
+select null::timestamptz union all select null::cstring;
+ timestamptz 
+-------------
+ 
+ 
+(2 rows)
+
+select null::timestamptz union all select null::anyarray;
+ timestamptz 
+-------------
+ 
+ 
+(2 rows)
+
+select null::timestamptz union all select null::void;
+ timestamptz 
+-------------
+ 
+ 
+(2 rows)
+
+select null::timestamptz union all select null::anyelement;
+ timestamptz 
+-------------
+ 
+ 
+(2 rows)
+
+select null::timestamptz union all select null::anynonarray;
+ timestamptz 
+-------------
+ 
+ 
+(2 rows)
+
+select null::timestamptz union all select 'red'::rainbow::anyenum;
+ timestamptz 
+-------------
+ 
+ red
+(2 rows)
+
+select null::timestamptz union all select null::anyrange;
+ timestamptz 
+-------------
+ 
+ 
+(2 rows)
+
+select null::timestamptz union all select null::hll_hashval;
+ timestamptz 
+-------------
+ 
+ 
+(2 rows)
+
+select null::timestamptz union all select null::hll_trans_type;
+ timestamptz 
+-------------
+ 
+ 
+(2 rows)
+
+select null::timestamptz union all select null::byteawithoutorderwithequalcol;
+ timestamptz 
+-------------
+ 
+ 
+(2 rows)
+
+select null::timestamptz union all select null::byteawithoutordercol;
+ timestamptz 
+-------------
+ 
+ 
+(2 rows)
+
+select null::timestamptz union all select null::anyset;
+ timestamptz 
+-------------
+ 
+ 
+(2 rows)
+
+select null::interval union all select null::int16;
+ interval 
+----------
+ 
+ 
+(2 rows)
+
+select null::interval union all select null::record;
+ interval 
+----------
+ 
+ 
+(2 rows)
+
+select null::interval union all select null::cstring;
+ interval 
+----------
+ 
+ 
+(2 rows)
+
+select null::interval union all select null::anyarray;
+ interval 
+----------
+ 
+ 
+(2 rows)
+
+select null::interval union all select null::void;
+ interval 
+----------
+ 
+ 
+(2 rows)
+
+select null::interval union all select null::anyelement;
+ interval 
+----------
+ 
+ 
+(2 rows)
+
+select null::interval union all select null::anynonarray;
+ interval 
+----------
+ 
+ 
+(2 rows)
+
+select null::interval union all select 'red'::rainbow::anyenum;
+ interval 
+----------
+ 
+ red
+(2 rows)
+
+select null::interval union all select null::anyrange;
+ interval 
+----------
+ 
+ 
+(2 rows)
+
+select null::interval union all select null::hll_hashval;
+ interval 
+----------
+ 
+ 
+(2 rows)
+
+select null::interval union all select null::hll_trans_type;
+ interval 
+----------
+ 
+ 
+(2 rows)
+
+select null::interval union all select null::byteawithoutorderwithequalcol;
+ interval 
+----------
+ 
+ 
+(2 rows)
+
+select null::interval union all select null::byteawithoutordercol;
+ interval 
+----------
+ 
+ 
+(2 rows)
+
+select null::interval union all select null::anyset;
+ interval 
+----------
+ 
+ 
+(2 rows)
+
+select null::timetz union all select null::int16;
+ timetz 
+--------
+ 
+ 
+(2 rows)
+
+select null::timetz union all select null::record;
+ timetz 
+--------
+ 
+ 
+(2 rows)
+
+select null::timetz union all select null::cstring;
+ timetz 
+--------
+ 
+ 
+(2 rows)
+
+select null::timetz union all select null::anyarray;
+ timetz 
+--------
+ 
+ 
+(2 rows)
+
+select null::timetz union all select null::void;
+ timetz 
+--------
+ 
+ 
+(2 rows)
+
+select null::timetz union all select null::anyelement;
+ timetz 
+--------
+ 
+ 
+(2 rows)
+
+select null::timetz union all select null::anynonarray;
+ timetz 
+--------
+ 
+ 
+(2 rows)
+
+select null::timetz union all select 'red'::rainbow::anyenum;
+ timetz 
+--------
+ 
+ red
+(2 rows)
+
+select null::timetz union all select null::anyrange;
+ timetz 
+--------
+ 
+ 
+(2 rows)
+
+select null::timetz union all select null::hll_hashval;
+ timetz 
+--------
+ 
+ 
+(2 rows)
+
+select null::timetz union all select null::hll_trans_type;
+ timetz 
+--------
+ 
+ 
+(2 rows)
+
+select null::timetz union all select null::byteawithoutorderwithequalcol;
+ timetz 
+--------
+ 
+ 
+(2 rows)
+
+select null::timetz union all select null::byteawithoutordercol;
+ timetz 
+--------
+ 
+ 
+(2 rows)
+
+select null::timetz union all select null::anyset;
+ timetz 
+--------
+ 
+ 
+(2 rows)
+
+select null::bit union all select null::int16;
+ bit 
+-----
+ 
+ 
+(2 rows)
+
+select null::bit union all select null::record;
+ bit 
+-----
+ 
+ 
+(2 rows)
+
+select null::bit union all select null::cstring;
+ bit 
+-----
+ 
+ 
+(2 rows)
+
+select null::bit union all select null::anyarray;
+ bit 
+-----
+ 
+ 
+(2 rows)
+
+select null::bit union all select null::void;
+ bit 
+-----
+ 
+ 
+(2 rows)
+
+select null::bit union all select null::anyelement;
+ bit 
+-----
+ 
+ 
+(2 rows)
+
+select null::bit union all select null::anynonarray;
+ bit 
+-----
+ 
+ 
+(2 rows)
+
+select null::bit union all select 'red'::rainbow::anyenum;
+ bit 
+-----
+ 
+ red
+(2 rows)
+
+select null::bit union all select null::anyrange;
+ bit 
+-----
+ 
+ 
+(2 rows)
+
+select null::bit union all select null::hll_hashval;
+ bit 
+-----
+ 
+ 
+(2 rows)
+
+select null::bit union all select null::hll_trans_type;
+ bit 
+-----
+ 
+ 
+(2 rows)
+
+select null::bit union all select null::byteawithoutorderwithequalcol;
+ bit 
+-----
+ 
+ 
+(2 rows)
+
+select null::bit union all select null::byteawithoutordercol;
+ bit 
+-----
+ 
+ 
+(2 rows)
+
+select null::bit union all select null::anyset;
+ bit 
+-----
+ 
+ 
+(2 rows)
+
+select null::varbit union all select null::int16;
+ varbit 
+--------
+ 
+ 
+(2 rows)
+
+select null::varbit union all select null::record;
+ varbit 
+--------
+ 
+ 
+(2 rows)
+
+select null::varbit union all select null::cstring;
+ varbit 
+--------
+ 
+ 
+(2 rows)
+
+select null::varbit union all select null::anyarray;
+ varbit 
+--------
+ 
+ 
+(2 rows)
+
+select null::varbit union all select null::void;
+ varbit 
+--------
+ 
+ 
+(2 rows)
+
+select null::varbit union all select null::anyelement;
+ varbit 
+--------
+ 
+ 
+(2 rows)
+
+select null::varbit union all select null::anynonarray;
+ varbit 
+--------
+ 
+ 
+(2 rows)
+
+select null::varbit union all select 'red'::rainbow::anyenum;
+ varbit 
+--------
+ 
+ red
+(2 rows)
+
+select null::varbit union all select null::anyrange;
+ varbit 
+--------
+ 
+ 
+(2 rows)
+
+select null::varbit union all select null::hll_hashval;
+ varbit 
+--------
+ 
+ 
+(2 rows)
+
+select null::varbit union all select null::hll_trans_type;
+ varbit 
+--------
+ 
+ 
+(2 rows)
+
+select null::varbit union all select null::byteawithoutorderwithequalcol;
+ varbit 
+--------
+ 
+ 
+(2 rows)
+
+select null::varbit union all select null::byteawithoutordercol;
+ varbit 
+--------
+ 
+ 
+(2 rows)
+
+select null::varbit union all select null::anyset;
+ varbit 
+--------
+ 
+ 
+(2 rows)
+
+select null::year union all select null::int16;
+ year 
+------
+ 
+ 
+(2 rows)
+
+select null::year union all select null::record;
+ year 
+------
+ 
+ 
+(2 rows)
+
+select null::year union all select null::cstring;
+ year 
+------
+ 
+ 
+(2 rows)
+
+select null::year union all select null::anyarray;
+ year 
+------
+ 
+ 
+(2 rows)
+
+select null::year union all select null::void;
+ year 
+------
+ 
+ 
+(2 rows)
+
+select null::year union all select null::anyelement;
+ year 
+------
+ 
+ 
+(2 rows)
+
+select null::year union all select null::anynonarray;
+ year 
+------
+ 
+ 
+(2 rows)
+
+select null::year union all select 'red'::rainbow::anyenum;
+ year 
+------
+ 
+ red
+(2 rows)
+
+select null::year union all select null::anyrange;
+ year 
+------
+ 
+ 
+(2 rows)
+
+select null::year union all select null::hll_hashval;
+ year 
+------
+ 
+ 
+(2 rows)
+
+select null::year union all select null::hll_trans_type;
+ year 
+------
+ 
+ 
+(2 rows)
+
+select null::year union all select null::byteawithoutorderwithequalcol;
+ year 
+------
+ 
+ 
+(2 rows)
+
+select null::year union all select null::byteawithoutordercol;
+ year 
+------
+ 
+ 
+(2 rows)
+
+select null::year union all select null::anyset;
+ year 
+------
+ 
+ 
+(2 rows)
+
+select null::uuid union all select null::int16;
+ uuid 
+------
+ 
+ 
+(2 rows)
+
+select null::uuid union all select null::record;
+ uuid 
+------
+ 
+ 
+(2 rows)
+
+select null::uuid union all select null::cstring;
+ uuid 
+------
+ 
+ 
+(2 rows)
+
+select null::uuid union all select null::anyarray;
+ uuid 
+------
+ 
+ 
+(2 rows)
+
+select null::uuid union all select null::void;
+ uuid 
+------
+ 
+ 
+(2 rows)
+
+select null::uuid union all select null::anyelement;
+ uuid 
+------
+ 
+ 
+(2 rows)
+
+select null::uuid union all select null::anynonarray;
+ uuid 
+------
+ 
+ 
+(2 rows)
+
+select null::uuid union all select 'red'::rainbow::anyenum;
+ uuid 
+------
+ 
+ red
+(2 rows)
+
+select null::uuid union all select null::anyrange;
+ uuid 
+------
+ 
+ 
+(2 rows)
+
+select null::uuid union all select null::hll_hashval;
+ uuid 
+------
+ 
+ 
+(2 rows)
+
+select null::uuid union all select null::hll_trans_type;
+ uuid 
+------
+ 
+ 
+(2 rows)
+
+select null::uuid union all select null::byteawithoutorderwithequalcol;
+ uuid 
+------
+ 
+ 
+(2 rows)
+
+select null::uuid union all select null::byteawithoutordercol;
+ uuid 
+------
+ 
+ 
+(2 rows)
+
+select null::uuid union all select null::anyset;
+ uuid 
+------
+ 
+ 
+(2 rows)
+
+select null::uint1 union all select null::int16;
+ uint1 
+-------
+ 
+ 
+(2 rows)
+
+select null::uint1 union all select null::record;
+ uint1 
+-------
+ 
+ 
+(2 rows)
+
+select null::uint1 union all select null::cstring;
+ uint1 
+-------
+ 
+ 
+(2 rows)
+
+select null::uint1 union all select null::anyarray;
+ uint1 
+-------
+ 
+ 
+(2 rows)
+
+select null::uint1 union all select null::void;
+ uint1 
+-------
+ 
+ 
+(2 rows)
+
+select null::uint1 union all select null::anyelement;
+ uint1 
+-------
+ 
+ 
+(2 rows)
+
+select null::uint1 union all select null::anynonarray;
+ uint1 
+-------
+ 
+ 
+(2 rows)
+
+select null::uint1 union all select 'red'::rainbow::anyenum;
+ uint1 
+-------
+ 
+ red
+(2 rows)
+
+select null::uint1 union all select null::anyrange;
+ uint1 
+-------
+ 
+ 
+(2 rows)
+
+select null::uint1 union all select null::hll_hashval;
+ uint1 
+-------
+ 
+ 
+(2 rows)
+
+select null::uint1 union all select null::hll_trans_type;
+ uint1 
+-------
+ 
+ 
+(2 rows)
+
+select null::uint1 union all select null::byteawithoutorderwithequalcol;
+ uint1 
+-------
+ 
+ 
+(2 rows)
+
+select null::uint1 union all select null::byteawithoutordercol;
+ uint1 
+-------
+ 
+ 
+(2 rows)
+
+select null::uint1 union all select null::anyset;
+ uint1 
+-------
+ 
+ 
+(2 rows)
+
+select null::uint2 union all select null::int16;
+ uint2 
+-------
+ 
+ 
+(2 rows)
+
+select null::uint2 union all select null::record;
+ uint2 
+-------
+ 
+ 
+(2 rows)
+
+select null::uint2 union all select null::cstring;
+ uint2 
+-------
+ 
+ 
+(2 rows)
+
+select null::uint2 union all select null::anyarray;
+ uint2 
+-------
+ 
+ 
+(2 rows)
+
+select null::uint2 union all select null::void;
+ uint2 
+-------
+ 
+ 
+(2 rows)
+
+select null::uint2 union all select null::anyelement;
+ uint2 
+-------
+ 
+ 
+(2 rows)
+
+select null::uint2 union all select null::anynonarray;
+ uint2 
+-------
+ 
+ 
+(2 rows)
+
+select null::uint2 union all select 'red'::rainbow::anyenum;
+ uint2 
+-------
+ 
+ red
+(2 rows)
+
+select null::uint2 union all select null::anyrange;
+ uint2 
+-------
+ 
+ 
+(2 rows)
+
+select null::uint2 union all select null::hll_hashval;
+ uint2 
+-------
+ 
+ 
+(2 rows)
+
+select null::uint2 union all select null::hll_trans_type;
+ uint2 
+-------
+ 
+ 
+(2 rows)
+
+select null::uint2 union all select null::byteawithoutorderwithequalcol;
+ uint2 
+-------
+ 
+ 
+(2 rows)
+
+select null::uint2 union all select null::byteawithoutordercol;
+ uint2 
+-------
+ 
+ 
+(2 rows)
+
+select null::uint2 union all select null::anyset;
+ uint2 
+-------
+ 
+ 
+(2 rows)
+
+select null::uint4 union all select null::int16;
+ uint4 
+-------
+ 
+ 
+(2 rows)
+
+select null::uint4 union all select null::record;
+ uint4 
+-------
+ 
+ 
+(2 rows)
+
+select null::uint4 union all select null::cstring;
+ uint4 
+-------
+ 
+ 
+(2 rows)
+
+select null::uint4 union all select null::anyarray;
+ uint4 
+-------
+ 
+ 
+(2 rows)
+
+select null::uint4 union all select null::void;
+ uint4 
+-------
+ 
+ 
+(2 rows)
+
+select null::uint4 union all select null::anyelement;
+ uint4 
+-------
+ 
+ 
+(2 rows)
+
+select null::uint4 union all select null::anynonarray;
+ uint4 
+-------
+ 
+ 
+(2 rows)
+
+select null::uint4 union all select 'red'::rainbow::anyenum;
+ uint4 
+-------
+ 
+ red
+(2 rows)
+
+select null::uint4 union all select null::anyrange;
+ uint4 
+-------
+ 
+ 
+(2 rows)
+
+select null::uint4 union all select null::hll_hashval;
+ uint4 
+-------
+ 
+ 
+(2 rows)
+
+select null::uint4 union all select null::hll_trans_type;
+ uint4 
+-------
+ 
+ 
+(2 rows)
+
+select null::uint4 union all select null::byteawithoutorderwithequalcol;
+ uint4 
+-------
+ 
+ 
+(2 rows)
+
+select null::uint4 union all select null::byteawithoutordercol;
+ uint4 
+-------
+ 
+ 
+(2 rows)
+
+select null::uint4 union all select null::anyset;
+ uint4 
+-------
+ 
+ 
+(2 rows)
+
+select null::uint8 union all select null::int16;
+ uint8 
+-------
+ 
+ 
+(2 rows)
+
+select null::uint8 union all select null::record;
+ uint8 
+-------
+ 
+ 
+(2 rows)
+
+select null::uint8 union all select null::cstring;
+ uint8 
+-------
+ 
+ 
+(2 rows)
+
+select null::uint8 union all select null::anyarray;
+ uint8 
+-------
+ 
+ 
+(2 rows)
+
+select null::uint8 union all select null::void;
+ uint8 
+-------
+ 
+ 
+(2 rows)
+
+select null::uint8 union all select null::anyelement;
+ uint8 
+-------
+ 
+ 
+(2 rows)
+
+select null::uint8 union all select null::anynonarray;
+ uint8 
+-------
+ 
+ 
+(2 rows)
+
+select null::uint8 union all select 'red'::rainbow::anyenum;
+ uint8 
+-------
+ 
+ red
+(2 rows)
+
+select null::uint8 union all select null::anyrange;
+ uint8 
+-------
+ 
+ 
+(2 rows)
+
+select null::uint8 union all select null::hll_hashval;
+ uint8 
+-------
+ 
+ 
+(2 rows)
+
+select null::uint8 union all select null::hll_trans_type;
+ uint8 
+-------
+ 
+ 
+(2 rows)
+
+select null::uint8 union all select null::byteawithoutorderwithequalcol;
+ uint8 
+-------
+ 
+ 
+(2 rows)
+
+select null::uint8 union all select null::byteawithoutordercol;
+ uint8 
+-------
+ 
+ 
+(2 rows)
+
+select null::uint8 union all select null::anyset;
+ uint8 
+-------
+ 
+ 
+(2 rows)
+
+select null::float4 union all select null::int16;
+ float4 
+--------
+       
+       
+(2 rows)
+
+select null::float4 union all select null::record;
+ float4 
+--------
+ 
+ 
+(2 rows)
+
+select null::float4 union all select null::cstring;
+ float4 
+--------
+ 
+ 
+(2 rows)
+
+select null::float4 union all select null::anyarray;
+ float4 
+--------
+ 
+ 
+(2 rows)
+
+select null::float4 union all select null::void;
+ float4 
+--------
+ 
+ 
+(2 rows)
+
+select null::float4 union all select null::anyelement;
+ float4 
+--------
+       
+       
+(2 rows)
+
+select null::float4 union all select null::anynonarray;
+ float4 
+--------
+       
+       
+(2 rows)
+
+select null::float4 union all select 'red'::rainbow::anyenum;
+ float4 
+--------
+ 
+ red
+(2 rows)
+
+select null::float4 union all select null::anyrange;
+ float4 
+--------
+ 
+ 
+(2 rows)
+
+select null::float4 union all select null::hll_hashval;
+ float4 
+--------
+ 
+ 
+(2 rows)
+
+select null::float4 union all select null::hll_trans_type;
+ float4 
+--------
+ 
+ 
+(2 rows)
+
+select null::float4 union all select null::byteawithoutorderwithequalcol;
+ float4 
+--------
+ 
+ 
+(2 rows)
+
+select null::float4 union all select null::byteawithoutordercol;
+ float4 
+--------
+ 
+ 
+(2 rows)
+
+select null::float4 union all select null::anyset;
+ float4 
+--------
+ 
+ 
+(2 rows)
+
+select null::float8 union all select null::int16;
+ float8 
+--------
+       
+       
+(2 rows)
+
+select null::float8 union all select null::record;
+ float8 
+--------
+ 
+ 
+(2 rows)
+
+select null::float8 union all select null::cstring;
+ float8 
+--------
+ 
+ 
+(2 rows)
+
+select null::float8 union all select null::anyarray;
+ float8 
+--------
+ 
+ 
+(2 rows)
+
+select null::float8 union all select null::void;
+ float8 
+--------
+ 
+ 
+(2 rows)
+
+select null::float8 union all select null::anyelement;
+ float8 
+--------
+       
+       
+(2 rows)
+
+select null::float8 union all select null::anynonarray;
+ float8 
+--------
+       
+       
+(2 rows)
+
+select null::float8 union all select 'red'::rainbow::anyenum;
+ float8 
+--------
+ 
+ red
+(2 rows)
+
+select null::float8 union all select null::anyrange;
+ float8 
+--------
+ 
+ 
+(2 rows)
+
+select null::float8 union all select null::hll_hashval;
+ float8 
+--------
+ 
+ 
+(2 rows)
+
+select null::float8 union all select null::hll_trans_type;
+ float8 
+--------
+ 
+ 
+(2 rows)
+
+select null::float8 union all select null::byteawithoutorderwithequalcol;
+ float8 
+--------
+ 
+ 
+(2 rows)
+
+select null::float8 union all select null::byteawithoutordercol;
+ float8 
+--------
+ 
+ 
+(2 rows)
+
+select null::float8 union all select null::anyset;
+ float8 
+--------
+ 
+ 
+(2 rows)
+
+select null::datetime union all select null::int16;
+ timestamp 
+-----------
+ 
+ 
+(2 rows)
+
+select null::datetime union all select null::record;
+ timestamp 
+-----------
+ 
+ 
+(2 rows)
+
+select null::datetime union all select null::cstring;
+ timestamp 
+-----------
+ 
+ 
+(2 rows)
+
+select null::datetime union all select null::anyarray;
+ timestamp 
+-----------
+ 
+ 
+(2 rows)
+
+select null::datetime union all select null::void;
+ timestamp 
+-----------
+ 
+ 
+(2 rows)
+
+select null::datetime union all select null::anyelement;
+ timestamp 
+-----------
+ 
+ 
+(2 rows)
+
+select null::datetime union all select null::anynonarray;
+ timestamp 
+-----------
+ 
+ 
+(2 rows)
+
+select null::datetime union all select 'red'::rainbow::anyenum;
+ timestamp 
+-----------
+ 
+ red
+(2 rows)
+
+select null::datetime union all select null::anyrange;
+ timestamp 
+-----------
+ 
+ 
+(2 rows)
+
+select null::datetime union all select null::hll_hashval;
+ timestamp 
+-----------
+ 
+ 
+(2 rows)
+
+select null::datetime union all select null::hll_trans_type;
+ timestamp 
+-----------
+ 
+ 
+(2 rows)
+
+select null::datetime union all select null::byteawithoutorderwithequalcol;
+ timestamp 
+-----------
+ 
+ 
+(2 rows)
+
+select null::datetime union all select null::byteawithoutordercol;
+ timestamp 
+-----------
+ 
+ 
+(2 rows)
+
+select null::datetime union all select null::anyset;
+ timestamp 
+-----------
+ 
+ 
+(2 rows)
+
+select null::int2vector union all select null::int16;
+ int2vector 
+------------
+ 
+ 
+(2 rows)
+
+select null::int2vector union all select null::record;
+ int2vector 
+------------
+ 
+ 
+(2 rows)
+
+select null::int2vector union all select null::cstring;
+ int2vector 
+------------
+ 
+ 
+(2 rows)
+
+select null::int2vector union all select null::anyarray;
+ int2vector 
+------------
+ 
+ 
+(2 rows)
+
+select null::int2vector union all select null::void;
+ int2vector 
+------------
+ 
+ 
+(2 rows)
+
+select null::int2vector union all select null::anyelement;
+ int2vector 
+------------
+ 
+ 
+(2 rows)
+
+select null::int2vector union all select null::anynonarray;
+ int2vector 
+------------
+ 
+ 
+(2 rows)
+
+select null::int2vector union all select 'red'::rainbow::anyenum;
+ int2vector 
+------------
+ 
+ red
+(2 rows)
+
+select null::int2vector union all select null::anyrange;
+ int2vector 
+------------
+ 
+ 
+(2 rows)
+
+select null::int2vector union all select null::hll_hashval;
+ int2vector 
+------------
+ 
+ 
+(2 rows)
+
+select null::int2vector union all select null::hll_trans_type;
+ int2vector 
+------------
+ 
+ 
+(2 rows)
+
+select null::int2vector union all select null::byteawithoutorderwithequalcol;
+ int2vector 
+------------
+ 
+ 
+(2 rows)
+
+select null::int2vector union all select null::byteawithoutordercol;
+ int2vector 
+------------
+ 
+ 
+(2 rows)
+
+select null::int2vector union all select null::anyset;
+ int2vector 
+------------
+ 
+ 
+(2 rows)
+
+select null::regproc union all select null::int16;
+ regproc 
+---------
+ 
+ 
+(2 rows)
+
+select null::regproc union all select null::record;
+ regproc 
+---------
+ 
+ 
+(2 rows)
+
+select null::regproc union all select null::cstring;
+ regproc 
+---------
+ 
+ 
+(2 rows)
+
+select null::regproc union all select null::anyarray;
+ regproc 
+---------
+ 
+ 
+(2 rows)
+
+select null::regproc union all select null::void;
+ regproc 
+---------
+ 
+ 
+(2 rows)
+
+select null::regproc union all select null::anyelement;
+ regproc 
+---------
+ 
+ 
+(2 rows)
+
+select null::regproc union all select null::anynonarray;
+ regproc 
+---------
+ 
+ 
+(2 rows)
+
+select null::regproc union all select 'red'::rainbow::anyenum;
+ regproc 
+---------
+ 
+ red
+(2 rows)
+
+select null::regproc union all select null::anyrange;
+ regproc 
+---------
+ 
+ 
+(2 rows)
+
+select null::regproc union all select null::hll_hashval;
+ regproc 
+---------
+ 
+ 
+(2 rows)
+
+select null::regproc union all select null::hll_trans_type;
+ regproc 
+---------
+ 
+ 
+(2 rows)
+
+select null::regproc union all select null::byteawithoutorderwithequalcol;
+ regproc 
+---------
+ 
+ 
+(2 rows)
+
+select null::regproc union all select null::byteawithoutordercol;
+ regproc 
+---------
+ 
+ 
+(2 rows)
+
+select null::regproc union all select null::anyset;
+ regproc 
+---------
+ 
+ 
+(2 rows)
+
+select null::oid union all select null::int16;
+ oid 
+-----
+    
+    
+(2 rows)
+
+select null::oid union all select null::record;
+ oid 
+-----
+ 
+ 
+(2 rows)
+
+select null::oid union all select null::cstring;
+ oid 
+-----
+ 
+ 
+(2 rows)
+
+select null::oid union all select null::anyarray;
+ oid 
+-----
+ 
+ 
+(2 rows)
+
+select null::oid union all select null::void;
+ oid 
+-----
+ 
+ 
+(2 rows)
+
+select null::oid union all select null::anyelement;
+ oid 
+-----
+    
+    
+(2 rows)
+
+select null::oid union all select null::anynonarray;
+ oid 
+-----
+    
+    
+(2 rows)
+
+select null::oid union all select 'red'::rainbow::anyenum;
+ oid 
+-----
+ 
+ red
+(2 rows)
+
+select null::oid union all select null::anyrange;
+ oid 
+-----
+ 
+ 
+(2 rows)
+
+select null::oid union all select null::hll_hashval;
+ oid 
+-----
+ 
+ 
+(2 rows)
+
+select null::oid union all select null::hll_trans_type;
+ oid 
+-----
+ 
+ 
+(2 rows)
+
+select null::oid union all select null::byteawithoutorderwithequalcol;
+ oid 
+-----
+ 
+ 
+(2 rows)
+
+select null::oid union all select null::byteawithoutordercol;
+ oid 
+-----
+ 
+ 
+(2 rows)
+
+select null::oid union all select null::anyset;
+ oid 
+-----
+ 
+ 
+(2 rows)
+
+select null::tid union all select null::int16;
+ tid 
+-----
+ 
+ 
+(2 rows)
+
+select null::tid union all select null::record;
+ tid 
+-----
+ 
+ 
+(2 rows)
+
+select null::tid union all select null::cstring;
+ tid 
+-----
+ 
+ 
+(2 rows)
+
+select null::tid union all select null::anyarray;
+ tid 
+-----
+ 
+ 
+(2 rows)
+
+select null::tid union all select null::void;
+ tid 
+-----
+ 
+ 
+(2 rows)
+
+select null::tid union all select null::anyelement;
+ tid 
+-----
+ 
+ 
+(2 rows)
+
+select null::tid union all select null::anynonarray;
+ tid 
+-----
+ 
+ 
+(2 rows)
+
+select null::tid union all select 'red'::rainbow::anyenum;
+ tid 
+-----
+ 
+ red
+(2 rows)
+
+select null::tid union all select null::anyrange;
+ tid 
+-----
+ 
+ 
+(2 rows)
+
+select null::tid union all select null::hll_hashval;
+ tid 
+-----
+ 
+ 
+(2 rows)
+
+select null::tid union all select null::hll_trans_type;
+ tid 
+-----
+ 
+ 
+(2 rows)
+
+select null::tid union all select null::byteawithoutorderwithequalcol;
+ tid 
+-----
+ 
+ 
+(2 rows)
+
+select null::tid union all select null::byteawithoutordercol;
+ tid 
+-----
+ 
+ 
+(2 rows)
+
+select null::tid union all select null::anyset;
+ tid 
+-----
+ 
+ 
+(2 rows)
+
+select null::xid union all select null::int16;
+ xid 
+-----
+ 
+ 
+(2 rows)
+
+select null::xid union all select null::record;
+ xid 
+-----
+ 
+ 
+(2 rows)
+
+select null::xid union all select null::cstring;
+ xid 
+-----
+ 
+ 
+(2 rows)
+
+select null::xid union all select null::anyarray;
+ xid 
+-----
+ 
+ 
+(2 rows)
+
+select null::xid union all select null::void;
+ xid 
+-----
+ 
+ 
+(2 rows)
+
+select null::xid union all select null::anyelement;
+ xid 
+-----
+    
+    
+(2 rows)
+
+select null::xid union all select null::anynonarray;
+ xid 
+-----
+    
+    
+(2 rows)
+
+select null::xid union all select 'red'::rainbow::anyenum;
+ xid 
+-----
+ 
+ red
+(2 rows)
+
+select null::xid union all select null::anyrange;
+ xid 
+-----
+ 
+ 
+(2 rows)
+
+select null::xid union all select null::hll_hashval;
+ xid 
+-----
+ 
+ 
+(2 rows)
+
+select null::xid union all select null::hll_trans_type;
+ xid 
+-----
+ 
+ 
+(2 rows)
+
+select null::xid union all select null::byteawithoutorderwithequalcol;
+ xid 
+-----
+ 
+ 
+(2 rows)
+
+select null::xid union all select null::byteawithoutordercol;
+ xid 
+-----
+ 
+ 
+(2 rows)
+
+select null::xid union all select null::anyset;
+ xid 
+-----
+ 
+ 
+(2 rows)
+
+select null::cid union all select null::int16;
+ cid 
+-----
+ 
+ 
+(2 rows)
+
+select null::cid union all select null::record;
+ cid 
+-----
+ 
+ 
+(2 rows)
+
+select null::cid union all select null::cstring;
+ cid 
+-----
+ 
+ 
+(2 rows)
+
+select null::cid union all select null::anyarray;
+ cid 
+-----
+ 
+ 
+(2 rows)
+
+select null::cid union all select null::void;
+ cid 
+-----
+ 
+ 
+(2 rows)
+
+select null::cid union all select null::anyelement;
+ cid 
+-----
+    
+    
+(2 rows)
+
+select null::cid union all select null::anynonarray;
+ cid 
+-----
+    
+    
+(2 rows)
+
+select null::cid union all select 'red'::rainbow::anyenum;
+ cid 
+-----
+ 
+ red
+(2 rows)
+
+select null::cid union all select null::anyrange;
+ cid 
+-----
+ 
+ 
+(2 rows)
+
+select null::cid union all select null::hll_hashval;
+ cid 
+-----
+ 
+ 
+(2 rows)
+
+select null::cid union all select null::hll_trans_type;
+ cid 
+-----
+ 
+ 
+(2 rows)
+
+select null::cid union all select null::byteawithoutorderwithequalcol;
+ cid 
+-----
+ 
+ 
+(2 rows)
+
+select null::cid union all select null::byteawithoutordercol;
+ cid 
+-----
+ 
+ 
+(2 rows)
+
+select null::cid union all select null::anyset;
+ cid 
+-----
+ 
+ 
+(2 rows)
+
+select null::xid32 union all select null::int16;
+ xid32 
+-------
+ 
+ 
+(2 rows)
+
+select null::xid32 union all select null::record;
+ xid32 
+-------
+ 
+ 
+(2 rows)
+
+select null::xid32 union all select null::cstring;
+ xid32 
+-------
+ 
+ 
+(2 rows)
+
+select null::xid32 union all select null::anyarray;
+ xid32 
+-------
+ 
+ 
+(2 rows)
+
+select null::xid32 union all select null::void;
+ xid32 
+-------
+ 
+ 
+(2 rows)
+
+select null::xid32 union all select null::anyelement;
+ xid32 
+-------
+ 
+ 
+(2 rows)
+
+select null::xid32 union all select null::anynonarray;
+ xid32 
+-------
+ 
+ 
+(2 rows)
+
+select null::xid32 union all select 'red'::rainbow::anyenum;
+ xid32 
+-------
+ 
+ red
+(2 rows)
+
+select null::xid32 union all select null::anyrange;
+ xid32 
+-------
+ 
+ 
+(2 rows)
+
+select null::xid32 union all select null::hll_hashval;
+ xid32 
+-------
+ 
+ 
+(2 rows)
+
+select null::xid32 union all select null::hll_trans_type;
+ xid32 
+-------
+ 
+ 
+(2 rows)
+
+select null::xid32 union all select null::byteawithoutorderwithequalcol;
+ xid32 
+-------
+ 
+ 
+(2 rows)
+
+select null::xid32 union all select null::byteawithoutordercol;
+ xid32 
+-------
+ 
+ 
+(2 rows)
+
+select null::xid32 union all select null::anyset;
+ xid32 
+-------
+ 
+ 
+(2 rows)
+
+select null::oidvector union all select null::int16;
+ oidvector 
+-----------
+ 
+ 
+(2 rows)
+
+select null::oidvector union all select null::record;
+ oidvector 
+-----------
+ 
+ 
+(2 rows)
+
+select null::oidvector union all select null::cstring;
+ oidvector 
+-----------
+ 
+ 
+(2 rows)
+
+select null::oidvector union all select null::anyarray;
+ oidvector 
+-----------
+ 
+ 
+(2 rows)
+
+select null::oidvector union all select null::void;
+ oidvector 
+-----------
+ 
+ 
+(2 rows)
+
+select null::oidvector union all select null::anyelement;
+ oidvector 
+-----------
+ 
+ 
+(2 rows)
+
+select null::oidvector union all select null::anynonarray;
+ oidvector 
+-----------
+ 
+ 
+(2 rows)
+
+select null::oidvector union all select 'red'::rainbow::anyenum;
+ oidvector 
+-----------
+ 
+ red
+(2 rows)
+
+select null::oidvector union all select null::anyrange;
+ oidvector 
+-----------
+ 
+ 
+(2 rows)
+
+select null::oidvector union all select null::hll_hashval;
+ oidvector 
+-----------
+ 
+ 
+(2 rows)
+
+select null::oidvector union all select null::hll_trans_type;
+ oidvector 
+-----------
+ 
+ 
+(2 rows)
+
+select null::oidvector union all select null::byteawithoutorderwithequalcol;
+ oidvector 
+-----------
+ 
+ 
+(2 rows)
+
+select null::oidvector union all select null::byteawithoutordercol;
+ oidvector 
+-----------
+ 
+ 
+(2 rows)
+
+select null::oidvector union all select null::anyset;
+ oidvector 
+-----------
+ 
+ 
+(2 rows)
+
+select null::oidvector_extend union all select null::int16;
+ oidvector_extend 
+------------------
+ 
+ 
+(2 rows)
+
+select null::oidvector_extend union all select null::record;
+ oidvector_extend 
+------------------
+ 
+ 
+(2 rows)
+
+select null::oidvector_extend union all select null::cstring;
+ oidvector_extend 
+------------------
+ 
+ 
+(2 rows)
+
+select null::oidvector_extend union all select null::anyarray;
+ oidvector_extend 
+------------------
+ 
+ 
+(2 rows)
+
+select null::oidvector_extend union all select null::void;
+ oidvector_extend 
+------------------
+ 
+ 
+(2 rows)
+
+select null::oidvector_extend union all select null::anyelement;
+ oidvector_extend 
+------------------
+ 
+ 
+(2 rows)
+
+select null::oidvector_extend union all select null::anynonarray;
+ oidvector_extend 
+------------------
+ 
+ 
+(2 rows)
+
+select null::oidvector_extend union all select 'red'::rainbow::anyenum;
+ oidvector_extend 
+------------------
+ 
+ red
+(2 rows)
+
+select null::oidvector_extend union all select null::anyrange;
+ oidvector_extend 
+------------------
+ 
+ 
+(2 rows)
+
+select null::oidvector_extend union all select null::hll_hashval;
+ oidvector_extend 
+------------------
+ 
+ 
+(2 rows)
+
+select null::oidvector_extend union all select null::hll_trans_type;
+ oidvector_extend 
+------------------
+ 
+ 
+(2 rows)
+
+select null::oidvector_extend union all select null::byteawithoutorderwithequalcol;
+ oidvector_extend 
+------------------
+ 
+ 
+(2 rows)
+
+select null::oidvector_extend union all select null::byteawithoutordercol;
+ oidvector_extend 
+------------------
+ 
+ 
+(2 rows)
+
+select null::oidvector_extend union all select null::anyset;
+ oidvector_extend 
+------------------
+ 
+ 
+(2 rows)
+
+select null::int2vector_extend union all select null::int16;
+ int2vector_extend 
+-------------------
+ 
+ 
+(2 rows)
+
+select null::int2vector_extend union all select null::record;
+ int2vector_extend 
+-------------------
+ 
+ 
+(2 rows)
+
+select null::int2vector_extend union all select null::cstring;
+ int2vector_extend 
+-------------------
+ 
+ 
+(2 rows)
+
+select null::int2vector_extend union all select null::anyarray;
+ int2vector_extend 
+-------------------
+ 
+ 
+(2 rows)
+
+select null::int2vector_extend union all select null::void;
+ int2vector_extend 
+-------------------
+ 
+ 
+(2 rows)
+
+select null::int2vector_extend union all select null::anyelement;
+ int2vector_extend 
+-------------------
+ 
+ 
+(2 rows)
+
+select null::int2vector_extend union all select null::anynonarray;
+ int2vector_extend 
+-------------------
+ 
+ 
+(2 rows)
+
+select null::int2vector_extend union all select 'red'::rainbow::anyenum;
+ int2vector_extend 
+-------------------
+ 
+ red
+(2 rows)
+
+select null::int2vector_extend union all select null::anyrange;
+ int2vector_extend 
+-------------------
+ 
+ 
+(2 rows)
+
+select null::int2vector_extend union all select null::hll_hashval;
+ int2vector_extend 
+-------------------
+ 
+ 
+(2 rows)
+
+select null::int2vector_extend union all select null::hll_trans_type;
+ int2vector_extend 
+-------------------
+ 
+ 
+(2 rows)
+
+select null::int2vector_extend union all select null::byteawithoutorderwithequalcol;
+ int2vector_extend 
+-------------------
+ 
+ 
+(2 rows)
+
+select null::int2vector_extend union all select null::byteawithoutordercol;
+ int2vector_extend 
+-------------------
+ 
+ 
+(2 rows)
+
+select null::int2vector_extend union all select null::anyset;
+ int2vector_extend 
+-------------------
+ 
+ 
+(2 rows)
+
+drop schema union_all cascade;
+NOTICE:  drop cascades to type rainbow
+reset current_schema;

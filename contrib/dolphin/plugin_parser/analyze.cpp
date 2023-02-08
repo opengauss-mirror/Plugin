@@ -107,6 +107,7 @@
 #include "utils/json.h"
 #include "utils/jsonb.h"
 #include "utils/xml.h"
+#include "utils/typcache.h"
 /* Hook for plugins to get control at end of parse analysis */
 THR_LOCAL post_parse_analyze_hook_type post_parse_analyze_hook = NULL;
 static const int MILLISECONDS_PER_SECONDS = 1000;
@@ -3864,10 +3865,31 @@ static Node* transformSetOperationTree(ParseState* pstate, SelectStmt* stmt, boo
             } else if (IsA(rcolnode, SetToDefault) && ((SetToDefault*)rcolnode)->lrchild_unknown && lcoltype != UNKNOWNOID) {
                 rescoltype = lcoltype;
                 bestexpr = lcolnode;
+#ifdef DOLPHIN
+            } else if (lcoltype == UNKNOWNOID && TypeCategory(rcoltype) != TYPCATEGORY_STRING &&
+                !IsA(lcolnode, Const) && !IsA(lcolnode, Param)) {
+                rescoltype = TEXTOID;
+            } else if (rcoltype == UNKNOWNOID && TypeCategory(lcoltype) != TYPCATEGORY_STRING &&
+                !IsA(rcolnode, Const) && !IsA(rcolnode, Param)) {
+                rescoltype = TEXTOID;
+#endif
             } else {
                 /* select common type, same as CASE et al */
                 rescoltype = select_common_type(pstate, list_make2(lcolnode, rcolnode), context, &bestexpr);
             }
+#ifdef DOLPHIN
+            if (op->op == SETOP_UNION && !op->all) {
+                int cache_flags = TYPECACHE_LT_OPR | TYPECACHE_EQ_OPR | TYPECACHE_HASH_PROC;
+                TypeCacheEntry* typentry = NULL;
+                typentry = lookup_type_cache(rescoltype, cache_flags);
+                Oid eq_opr = typentry->eq_opr;
+                Oid lt_opr = typentry->lt_opr;
+                bool hashable = OidIsValid(typentry->hash_proc);
+                if (!OidIsValid(eq_opr) || (!OidIsValid(lt_opr) && !hashable)) {
+                    rescoltype = TEXTOID;
+                }
+            }
+#endif
             bestlocation = exprLocation(bestexpr);
             /* if same type and same typmod, use typmod; else default */
             if (lcoltype == rcoltype && lcoltypmod == rcoltypmod) {
