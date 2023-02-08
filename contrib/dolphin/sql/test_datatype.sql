@@ -90,5 +90,23 @@ create table all_int_test(a tinyint(9999999999), b smallint(9999999999), c mediu
 \d all_int_test
 
 drop table all_int_test;
+
+CREATE TABLE t0(c0 VARCHAR, c1 VARCHAR);
+INSERT INTO t0 VALUES (0,0);
+UPDATE t0 SET c0=0;
+select * from t0 order by 1,2;
+UPDATE t0 SET c0=true,c1='true';
+select * from t0 order by 1,2;
+
+INSERT INTO t0 VALUES (1,'1'),(true,'true'),(false,'false');
+SELECT * FROM t0 WHERE t0.c0 = true order by 1,2;
+SELECT * FROM t0 WHERE t0.c0 is true order by 1,2;
+SELECT * FROM t0 WHERE t0.c0 is false order by 1,2;
+
+SELECT * FROM t0 WHERE t0.c1 = true order by 1,2;
+SELECT * FROM t0 WHERE t0.c1 is true order by 1,2;
+SELECT * FROM t0 WHERE t0.c1 is false order by 1,2;
+drop table t0;
+
 drop schema b_datatype_test cascade;
 reset current_schema;

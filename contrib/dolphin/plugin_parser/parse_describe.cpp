@@ -683,8 +683,6 @@ SelectStmt* makeShowColumnsQuery(char *schemaname, char *tablename, char *optDbN
 
 SelectStmt *checkTableExistence(RangeVar *classrel)
 {
-    Oid namespaceId = InvalidOid;
-    Oid classoid = InvalidOid;
     SelectStmt *n = NULL;
     char *nspname = NULL;
     recomputeNamespacePath();
