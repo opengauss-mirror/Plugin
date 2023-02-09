@@ -214,5 +214,11 @@ select a - 1 from enum_test_table;
 select a * 1 from enum_test_table;
 select a / 1 from enum_test_table;
 
+create table test_enum_d(ssl_type enum('','any','X509','SPECIFIED') not null default '');
+
+\d test_enum_d
+ 
+\d+ test_enum_d
+
 drop schema test_enum cascade;
 reset current_schema;

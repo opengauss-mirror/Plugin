@@ -752,15 +752,6 @@ Expr* make_op(ParseState* pstate, List* opname, Node* ltree, Node* rtree, int lo
     List* args = NIL;
     Oid rettype;
     OpExpr* result = NULL;
-#ifdef DOLPHIN
-    int32 baseTypeMod;
-    Oid baseTypeId;
-    float8 enumOrder;
-    Form_pg_enum en = NULL;
-    HeapTuple enumTup = NULL;
-    CatCList* list = NULL;
-    Type targetType;
-#endif
     /* Select the operator */
     if (rtree == NULL) {
         /* right operator */

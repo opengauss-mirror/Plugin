@@ -10845,7 +10845,20 @@ static void get_const_expr(Const* constval, deparse_context* context, int showty
         }
         return;
     }
-
+#ifdef DOLPHIN
+    else if ((!constval->constisnull) && constval->constvalue == 0 && type_is_enum(constval->consttype)) {
+        HeapTuple enumTup;
+        Oid enumOid;
+        enumTup = SearchSysCache2(ENUMTYPOIDNAME, ObjectIdGetDatum(constval->consttype), CStringGetDatum(""));
+        if (!HeapTupleIsValid(enumTup))
+            ereport(ERROR,
+                (errcode(ERRCODE_INVALID_TEXT_REPRESENTATION),
+                    errmsg("invalid input value for enum %s: \"%s\"", format_type_be(constval->consttype), "")));
+        enumOid = HeapTupleGetOid(enumTup);
+        constval->constvalue = enumOid;
+        ReleaseSysCache(enumTup);
+    }
+#endif
     getTypeOutputInfo(constval->consttype, &typoutput, &typIsVarlena);
     if (u_sess->exec_cxt.under_auto_explain)
         extval = pstrdup("***");
