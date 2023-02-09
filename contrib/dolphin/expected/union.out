@@ -215,11 +215,10 @@ select * from test1 union select * from test4;
 (1 row)
 
 select * from test1 union select * from test5;
-  num  
--------
+ num 
+-----
  0
- false
-(2 rows)
+(1 row)
 
 select * from test1 union select * from test6;
  num 
@@ -826,11 +825,10 @@ select * from test2 union select * from test4;
 (1 row)
 
 select * from test2 union select * from test5;
-  num  
--------
+ num 
+-----
  0
- false
-(2 rows)
+(1 row)
 
 select * from test2 union select * from test6;
  num 
@@ -1437,11 +1435,10 @@ select * from test3 union select * from test4;
 (1 row)
 
 select * from test3 union select * from test5;
-  num  
--------
+ num 
+-----
  0
- false
-(2 rows)
+(1 row)
 
 select * from test3 union select * from test6;
  num 
@@ -2048,11 +2045,10 @@ select * from test4 union select * from test4;
 (1 row)
 
 select * from test4 union select * from test5;
-  num  
--------
+ num 
+-----
  0
- false
-(2 rows)
+(1 row)
 
 select * from test4 union select * from test6;
  num 
@@ -2635,32 +2631,28 @@ select * from test4 union select * from test91;
 (2 rows)
 
 select * from test5 union select * from test1;
-  num  
--------
+ num 
+-----
  0
- false
-(2 rows)
+(1 row)
 
 select * from test5 union select * from test2;
-  num  
--------
+ num 
+-----
  0
- false
-(2 rows)
+(1 row)
 
 select * from test5 union select * from test3;
-  num  
--------
+ num 
+-----
  0
- false
-(2 rows)
+(1 row)
 
 select * from test5 union select * from test4;
-  num  
--------
+ num 
+-----
  0
- false
-(2 rows)
+(1 row)
 
 select * from test5 union select * from test5;
  num 
@@ -2669,121 +2661,118 @@ select * from test5 union select * from test5;
 (1 row)
 
 select * from test5 union select * from test6;
-  num  
--------
+ num 
+-----
+ 0
  \x
- false
 (2 rows)
 
 select * from test5 union select * from test7;
-  num  
--------
+ num 
+-----
  
- false
+ 0
 (2 rows)
 
 select * from test5 union select * from test8;
-  num  
--------
+ num 
+-----
+ 0
  
- false
 (2 rows)
 
 select * from test5 union select * from test9;
-  num  
--------
+ num 
+-----
  0
- false
-(2 rows)
+(1 row)
 
 select * from test5 union select * from test10;
-  num  
--------
+ num 
+-----
+ 0
  
- false
 (2 rows)
 
 select * from test5 union select * from test11;
-  num  
--------
+ num 
+-----
+ 0
  
- false
 (2 rows)
 
 select * from test5 union select * from test12;
-  num  
--------
+ num 
+-----
+ 0
  
- false
 (2 rows)
 
 select * from test5 union select * from test13;
-  num  
--------
+ num 
+-----
+ 0
  
- false
 (2 rows)
 
 select * from test5 union select * from test14;
-  num  
--------
+ num 
+-----
  0
- false
-(2 rows)
+(1 row)
 
 select * from test5 union select * from test15;
-  num  
--------
+ num 
+-----
  0
- false
-(2 rows)
+(1 row)
 
 select * from test5 union select * from test16;
   num  
 -------
+ 0
  (0,0)
- false
 (2 rows)
 
 select * from test5 union select * from test17;
       num      
 ---------------
- false
+ 0
  [(0,0),(0,0)]
 (2 rows)
 
 select * from test5 union select * from test18;
    num   
 ---------
+ 0
  ((0,0))
- false
 (2 rows)
 
 select * from test5 union select * from test19;
      num     
 -------------
  (0,0),(0,0)
- false
+ 0
 (2 rows)
 
 select * from test5 union select * from test20;
    num   
 ---------
+ 0
  ((0,0))
- false
 (2 rows)
 
 select * from test5 union select * from test21;
        num        
 ------------------
+ 0
  0000000000000000
- false
 (2 rows)
 
 select * from test5 union select * from test22;
            num            
 --------------------------
- false
+ 0
  Thu Jan 01 08:00:00 1970
 (2 rows)
 
@@ -2791,69 +2780,69 @@ select * from test5 union select * from test23;
              num              
 ------------------------------
  Thu Jan 01 08:00:00 1970 CST
- false
+ 0
 (2 rows)
 
 select * from test5 union select * from test24;
-  num  
--------
+ num 
+-----
  @ 0
- false
+ 0
 (2 rows)
 
 select * from test5 union select * from test25;
                                num                               
 -----------------------------------------------------------------
  ["Thu Jan 01 00:00:00 1970 CST" "Thu Jan 01 00:00:00 1970 CST"]
- false
+ 0
 (2 rows)
 
 select * from test5 union select * from test26;
     num    
 -----------
  <(0,0),0>
- false
+ 0
 (2 rows)
 
 select * from test5 union select * from test27;
   num  
 -------
  $0.00
- false
+ 0
 (2 rows)
 
 select * from test5 union select * from test28;
-  num  
--------
+ num 
+-----
+ 0
  
- false
 (2 rows)
 
 select * from test5 union select * from test29;
-  num  
--------
+ num 
+-----
+ 0
  
- false
 (2 rows)
 
 select * from test5 union select * from test30;
-  num  
--------
+ num 
+-----
+ 0
  
- false
 (2 rows)
 
 select * from test5 union select * from test31;
     num     
 ------------
  01-01-1970
- false
+ 0
 (2 rows)
 
 select * from test5 union select * from test32;
    num    
 ----------
- false
+ 0
  00:00:00
 (2 rows)
 
@@ -2861,413 +2850,400 @@ select * from test5 union select * from test33;
              num              
 ------------------------------
  Thu Jan 01 08:00:00 1970 CST
- false
+ 0
 (2 rows)
 
 select * from test5 union select * from test34;
              num              
 ------------------------------
  Thu Jan 01 08:00:00 1970 CST
- false
+ 0
 (2 rows)
 
 select * from test5 union select * from test35;
-  num  
--------
+ num 
+-----
  @ 0
- false
+ 0
 (2 rows)
 
 select * from test5 union select * from test36;
      num     
 -------------
  00:00:00+08
- false
+ 0
 (2 rows)
 
 select * from test5 union select * from test37;
-  num  
--------
+ num 
+-----
  
- false
+ 0
 (2 rows)
 
 select * from test5 union select * from test38;
-  num  
--------
+ num 
+-----
+ 0
  
- false
 (2 rows)
 
 select * from test5 union select * from test39;
-  num  
--------
+ num 
+-----
  0
- false
-(2 rows)
+(1 row)
 
 select * from test5 union select * from test40;
                  num                  
 --------------------------------------
  00000000-0000-0000-0000-000000000000
- false
+ 0
 (2 rows)
 
 select * from test5 union select * from test41;
-  num  
--------
+ num 
+-----
  0
- false
-(2 rows)
+(1 row)
 
 select * from test5 union select * from test42;
-  num  
--------
+ num 
+-----
  0
- false
-(2 rows)
+(1 row)
 
 select * from test5 union select * from test43;
-  num  
--------
+ num 
+-----
  0
- false
-(2 rows)
+(1 row)
 
 select * from test5 union select * from test44;
-  num  
--------
+ num 
+-----
  0
- false
-(2 rows)
+(1 row)
 
 select * from test5 union select * from test45;
-  num  
--------
+ num 
+-----
  0
- false
-(2 rows)
+(1 row)
 
 select * from test5 union select * from test46;
-  num  
--------
+ num 
+-----
  0
- false
-(2 rows)
+(1 row)
 
 select * from test5 union select * from test47;
            num            
 --------------------------
- false
+ 0
  Thu Jan 01 00:00:00 1970
 (2 rows)
 
 select * from test5 union select * from test48;
-  num  
--------
+ num 
+-----
+ 0
  a
- false
 (2 rows)
 
 select * from test5 union select * from test49;
-  num  
--------
+ num 
+-----
+ 0
  a
- false
 (2 rows)
 
 select * from test5 union select * from test50;
-  num  
--------
+ num 
+-----
  
- false
+ 0
 (2 rows)
 
 select * from test5 union select * from test51;
-  num  
--------
+ num 
+-----
  -
- false
+ 0
 (2 rows)
 
 select * from test5 union select * from test52;
-  num  
--------
+ num 
+-----
  0
- false
-(2 rows)
+(1 row)
 
 select * from test5 union select * from test53;
-  num  
--------
+ num 
+-----
  
- false
+ 0
 (2 rows)
 
 select * from test5 union select * from test54;
-  num  
--------
+ num 
+-----
  0
- false
-(2 rows)
+(1 row)
 
 select * from test5 union select * from test55;
-  num  
--------
+ num 
+-----
  0
- false
-(2 rows)
+(1 row)
 
 select * from test5 union select * from test56;
-  num  
--------
+ num 
+-----
  0
- false
-(2 rows)
+(1 row)
 
 select * from test5 union select * from test57;
-  num  
--------
+ num 
+-----
+ 0
  
- false
 (2 rows)
 
 select * from test5 union select * from test58;
-  num  
--------
+ num 
+-----
  
- false
+ 0
 (2 rows)
 
 select * from test5 union select * from test59;
-  num  
--------
+ num 
+-----
  
- false
+ 0
 (2 rows)
 
 select * from test5 union select * from test60;
-  num  
--------
+ num 
+-----
  
- false
+ 0
 (2 rows)
 
 select * from test5 union select * from test61;
-  num  
--------
+ num 
+-----
  
- false
+ 0
 (2 rows)
 
 select * from test5 union select * from test62;
-  num  
--------
+ num 
+-----
  
- false
+ 0
 (2 rows)
 
 select * from test5 union select * from test63;
-  num  
--------
+ num 
+-----
  
- false
+ 0
 (2 rows)
 
 select * from test5 union select * from test64;
-  num  
--------
+ num 
+-----
  
- false
+ 0
 (2 rows)
 
 select * from test5 union select * from test65;
-  num  
--------
+ num 
+-----
  
- false
+ 0
 (2 rows)
 
 select * from test5 union select * from test66;
-  num  
--------
+ num 
+-----
  
- false
+ 0
 (2 rows)
 
 select * from test5 union select * from test67;
       num      
 ---------------
  magnetic disk
- false
+ 0
 (2 rows)
 
 select * from test5 union select * from test68;
        num        
 ------------------
+ 0
  0000000000000000
- false
 (2 rows)
 
 select * from test5 union select * from test69;
-  num  
--------
+ num 
+-----
  
- false
+ 0
 (2 rows)
 
 select * from test5 union select * from test70;
-  num  
--------
+ num 
+-----
  
- false
+ 0
 (2 rows)
 
 select * from test5 union select * from test71;
-  num  
--------
+ num 
+-----
  
- false
+ 0
 (2 rows)
 
 select * from test5 union select * from test72;
-  num  
--------
+ num 
+-----
  
- false
+ 0
 (2 rows)
 
 select * from test5 union select * from test73;
-  num  
--------
+ num 
+-----
  
- false
+ 0
 (2 rows)
 
 select * from test5 union select * from test74;
-  num  
--------
+ num 
+-----
+ 0
  
- false
 (2 rows)
 
 select * from test5 union select * from test75;
-  num  
--------
+ num 
+-----
  -
- false
+ 0
 (2 rows)
 
 select * from test5 union select * from test76;
-  num  
--------
+ num 
+-----
  0
- false
-(2 rows)
+(1 row)
 
 select * from test5 union select * from test77;
-  num  
--------
+ num 
+-----
  0
- false
-(2 rows)
+(1 row)
 
 select * from test5 union select * from test78;
-  num  
--------
+ num 
+-----
  -
- false
+ 0
 (2 rows)
 
 select * from test5 union select * from test79;
-  num  
--------
+ num 
+-----
  -
- false
+ 0
 (2 rows)
 
 select * from test5 union select * from test80;
-  num  
--------
+ num 
+-----
+ 0
  
- false
 (2 rows)
 
 select * from test5 union select * from test81;
-  num  
--------
+ num 
+-----
  
- false
+ 0
 (2 rows)
 
 select * from test5 union select * from test82;
-  num  
--------
+ num 
+-----
  
- false
+ 0
 (2 rows)
 
 select * from test5 union select * from test83;
-  num  
--------
+ num 
+-----
  -
- false
+ 0
 (2 rows)
 
 select * from test5 union select * from test84;
-  num  
--------
+ num 
+-----
  -
- false
+ 0
 (2 rows)
 
 select * from test5 union select * from test85;
-  num  
--------
+ num 
+-----
  
- false
+ 0
 (2 rows)
 
 select * from test5 union select * from test86;
-  num  
--------
+ num 
+-----
  
- false
+ 0
 (2 rows)
 
 select * from test5 union select * from test87;
-  num  
--------
+ num 
+-----
  
- false
+ 0
 (2 rows)
 
 select * from test5 union select * from test88;
-  num  
--------
+ num 
+-----
  
- false
+ 0
 (2 rows)
 
 select * from test5 union select * from test89;
-  num  
--------
+ num 
+-----
  
- false
+ 0
 (2 rows)
 
 select * from test5 union select * from test90;
-  num  
--------
+ num 
+-----
  
- false
+ 0
 (2 rows)
 
 select * from test5 union select * from test91;
-  num  
--------
+ num 
+-----
  
- false
+ 0
 (2 rows)
 
 select * from test6 union select * from test1;
@@ -3299,10 +3275,10 @@ select * from test6 union select * from test4;
 (2 rows)
 
 select * from test6 union select * from test5;
-  num  
--------
+ num 
+-----
+ 0
  \x
- false
 (2 rows)
 
 select * from test6 union select * from test6;
@@ -3935,10 +3911,10 @@ select * from test7 union select * from test4;
 (2 rows)
 
 select * from test7 union select * from test5;
-  num  
--------
+ num 
+-----
  
- false
+ 0
 (2 rows)
 
 select * from test7 union select * from test6;
@@ -4558,10 +4534,10 @@ select * from test8 union select * from test4;
 (2 rows)
 
 select * from test8 union select * from test5;
-  num  
--------
+ num 
+-----
+ 0
  
- false
 (2 rows)
 
 select * from test8 union select * from test6;
@@ -5177,11 +5153,10 @@ select * from test9 union select * from test4;
 (1 row)
 
 select * from test9 union select * from test5;
-  num  
--------
+ num 
+-----
  0
- false
-(2 rows)
+(1 row)
 
 select * from test9 union select * from test6;
  num 
@@ -5798,10 +5773,10 @@ select * from test10 union select * from test4;
 (2 rows)
 
 select * from test10 union select * from test5;
-  num  
--------
+ num 
+-----
+ 0
  
- false
 (2 rows)
 
 select * from test10 union select * from test6;
@@ -6421,10 +6396,10 @@ select * from test11 union select * from test4;
 (2 rows)
 
 select * from test11 union select * from test5;
-  num  
--------
+ num 
+-----
+ 0
  
- false
 (2 rows)
 
 select * from test11 union select * from test6;
@@ -7044,10 +7019,10 @@ select * from test12 union select * from test4;
 (2 rows)
 
 select * from test12 union select * from test5;
-  num  
--------
+ num 
+-----
+ 0
  
- false
 (2 rows)
 
 select * from test12 union select * from test6;
@@ -7667,10 +7642,10 @@ select * from test13 union select * from test4;
 (2 rows)
 
 select * from test13 union select * from test5;
-  num  
--------
+ num 
+-----
+ 0
  
- false
 (2 rows)
 
 select * from test13 union select * from test6;
@@ -8286,11 +8261,10 @@ select * from test14 union select * from test4;
 (1 row)
 
 select * from test14 union select * from test5;
-  num  
--------
+ num 
+-----
  0
- false
-(2 rows)
+(1 row)
 
 select * from test14 union select * from test6;
  num 
@@ -8903,11 +8877,10 @@ select * from test15 union select * from test4;
 (1 row)
 
 select * from test15 union select * from test5;
-  num  
--------
+ num 
+-----
  0
- false
-(2 rows)
+(1 row)
 
 select * from test15 union select * from test6;
  num 
@@ -9526,8 +9499,8 @@ select * from test16 union select * from test4;
 select * from test16 union select * from test5;
   num  
 -------
+ 0
  (0,0)
- false
 (2 rows)
 
 select * from test16 union select * from test6;
@@ -10162,7 +10135,7 @@ select * from test17 union select * from test4;
 select * from test17 union select * from test5;
       num      
 ---------------
- false
+ 0
  [(0,0),(0,0)]
 (2 rows)
 
@@ -10798,8 +10771,8 @@ select * from test18 union select * from test4;
 select * from test18 union select * from test5;
    num   
 ---------
+ 0
  ((0,0))
- false
 (2 rows)
 
 select * from test18 union select * from test6;
@@ -11434,7 +11407,7 @@ select * from test19 union select * from test5;
      num     
 -------------
  (0,0),(0,0)
- false
+ 0
 (2 rows)
 
 select * from test19 union select * from test6;
@@ -12069,8 +12042,8 @@ select * from test20 union select * from test4;
 select * from test20 union select * from test5;
    num   
 ---------
+ 0
  ((0,0))
- false
 (2 rows)
 
 select * from test20 union select * from test6;
@@ -12704,8 +12677,8 @@ select * from test21 union select * from test4;
 select * from test21 union select * from test5;
        num        
 ------------------
+ 0
  0000000000000000
- false
 (2 rows)
 
 select * from test21 union select * from test6;
@@ -13339,7 +13312,7 @@ select * from test22 union select * from test4;
 select * from test22 union select * from test5;
            num            
 --------------------------
- false
+ 0
  Thu Jan 01 08:00:00 1970
 (2 rows)
 
@@ -13972,7 +13945,7 @@ select * from test23 union select * from test5;
              num              
 ------------------------------
  Thu Jan 01 08:00:00 1970 CST
- false
+ 0
 (2 rows)
 
 select * from test23 union select * from test6;
@@ -14602,10 +14575,10 @@ select * from test24 union select * from test4;
 (2 rows)
 
 select * from test24 union select * from test5;
-  num  
--------
+ num 
+-----
  @ 0
- false
+ 0
 (2 rows)
 
 select * from test24 union select * from test6;
@@ -15240,7 +15213,7 @@ select * from test25 union select * from test5;
                                num                               
 -----------------------------------------------------------------
  ["Thu Jan 01 00:00:00 1970 CST" "Thu Jan 01 00:00:00 1970 CST"]
- false
+ 0
 (2 rows)
 
 select * from test25 union select * from test6;
@@ -15876,7 +15849,7 @@ select * from test26 union select * from test5;
     num    
 -----------
  <(0,0),0>
- false
+ 0
 (2 rows)
 
 select * from test26 union select * from test6;
@@ -16512,7 +16485,7 @@ select * from test27 union select * from test5;
   num  
 -------
  $0.00
- false
+ 0
 (2 rows)
 
 select * from test27 union select * from test6;
@@ -17145,10 +17118,10 @@ select * from test28 union select * from test4;
 (2 rows)
 
 select * from test28 union select * from test5;
-  num  
--------
+ num 
+-----
+ 0
  
- false
 (2 rows)
 
 select * from test28 union select * from test6;
@@ -17768,10 +17741,10 @@ select * from test29 union select * from test4;
 (2 rows)
 
 select * from test29 union select * from test5;
-  num  
--------
+ num 
+-----
+ 0
  
- false
 (2 rows)
 
 select * from test29 union select * from test6;
@@ -18391,10 +18364,10 @@ select * from test30 union select * from test4;
 (2 rows)
 
 select * from test30 union select * from test5;
-  num  
--------
+ num 
+-----
+ 0
  
- false
 (2 rows)
 
 select * from test30 union select * from test6;
@@ -19017,7 +18990,7 @@ select * from test31 union select * from test5;
     num     
 ------------
  01-01-1970
- false
+ 0
 (2 rows)
 
 select * from test31 union select * from test6;
@@ -19651,7 +19624,7 @@ select * from test32 union select * from test4;
 select * from test32 union select * from test5;
    num    
 ----------
- false
+ 0
  00:00:00
 (2 rows)
 
@@ -20286,7 +20259,7 @@ select * from test33 union select * from test5;
              num              
 ------------------------------
  Thu Jan 01 08:00:00 1970 CST
- false
+ 0
 (2 rows)
 
 select * from test33 union select * from test6;
@@ -20919,7 +20892,7 @@ select * from test34 union select * from test5;
              num              
 ------------------------------
  Thu Jan 01 08:00:00 1970 CST
- false
+ 0
 (2 rows)
 
 select * from test34 union select * from test6;
@@ -21549,10 +21522,10 @@ select * from test35 union select * from test4;
 (2 rows)
 
 select * from test35 union select * from test5;
-  num  
--------
+ num 
+-----
  @ 0
- false
+ 0
 (2 rows)
 
 select * from test35 union select * from test6;
@@ -22187,7 +22160,7 @@ select * from test36 union select * from test5;
      num     
 -------------
  00:00:00+08
- false
+ 0
 (2 rows)
 
 select * from test36 union select * from test6;
@@ -22819,10 +22792,10 @@ select * from test37 union select * from test4;
 (2 rows)
 
 select * from test37 union select * from test5;
-  num  
--------
+ num 
+-----
  
- false
+ 0
 (2 rows)
 
 select * from test37 union select * from test6;
@@ -23442,10 +23415,10 @@ select * from test38 union select * from test4;
 (2 rows)
 
 select * from test38 union select * from test5;
-  num  
--------
+ num 
+-----
+ 0
  
- false
 (2 rows)
 
 select * from test38 union select * from test6;
@@ -24061,11 +24034,10 @@ select * from test39 union select * from test4;
 (1 row)
 
 select * from test39 union select * from test5;
-  num  
--------
+ num 
+-----
  0
- false
-(2 rows)
+(1 row)
 
 select * from test39 union select * from test6;
  num 
@@ -24685,7 +24657,7 @@ select * from test40 union select * from test5;
                  num                  
 --------------------------------------
  00000000-0000-0000-0000-000000000000
- false
+ 0
 (2 rows)
 
 select * from test40 union select * from test6;
@@ -25314,11 +25286,10 @@ select * from test41 union select * from test4;
 (1 row)
 
 select * from test41 union select * from test5;
-  num  
--------
+ num 
+-----
  0
- false
-(2 rows)
+(1 row)
 
 select * from test41 union select * from test6;
  num 
@@ -25931,11 +25902,10 @@ select * from test42 union select * from test4;
 (1 row)
 
 select * from test42 union select * from test5;
-  num  
--------
+ num 
+-----
  0
- false
-(2 rows)
+(1 row)
 
 select * from test42 union select * from test6;
  num 
@@ -26548,11 +26518,10 @@ select * from test43 union select * from test4;
 (1 row)
 
 select * from test43 union select * from test5;
-  num  
--------
+ num 
+-----
  0
- false
-(2 rows)
+(1 row)
 
 select * from test43 union select * from test6;
  num 
@@ -27165,11 +27134,10 @@ select * from test44 union select * from test4;
 (1 row)
 
 select * from test44 union select * from test5;
-  num  
--------
+ num 
+-----
  0
- false
-(2 rows)
+(1 row)
 
 select * from test44 union select * from test6;
  num 
@@ -27782,11 +27750,10 @@ select * from test45 union select * from test4;
 (1 row)
 
 select * from test45 union select * from test5;
-  num  
--------
+ num 
+-----
  0
- false
-(2 rows)
+(1 row)
 
 select * from test45 union select * from test6;
  num 
@@ -28399,11 +28366,10 @@ select * from test46 union select * from test4;
 (1 row)
 
 select * from test46 union select * from test5;
-  num  
--------
+ num 
+-----
  0
- false
-(2 rows)
+(1 row)
 
 select * from test46 union select * from test6;
  num 
@@ -29022,7 +28988,7 @@ select * from test47 union select * from test4;
 select * from test47 union select * from test5;
            num            
 --------------------------
- false
+ 0
  Thu Jan 01 00:00:00 1970
 (2 rows)
 
@@ -29655,10 +29621,10 @@ select * from test48 union select * from test4;
 (2 rows)
 
 select * from test48 union select * from test5;
-  num  
--------
+ num 
+-----
+ 0
  a
- false
 (2 rows)
 
 select * from test48 union select * from test6;
@@ -30290,10 +30256,10 @@ select * from test49 union select * from test4;
 (2 rows)
 
 select * from test49 union select * from test5;
-  num  
--------
+ num 
+-----
+ 0
  a
- false
 (2 rows)
 
 select * from test49 union select * from test6;
@@ -30925,10 +30891,10 @@ select * from test50 union select * from test4;
 (2 rows)
 
 select * from test50 union select * from test5;
-  num  
--------
+ num 
+-----
  
- false
+ 0
 (2 rows)
 
 select * from test50 union select * from test6;
@@ -31533,10 +31499,10 @@ select * from test51 union select * from test4;
 (1 row)
 
 select * from test51 union select * from test5;
-  num  
--------
+ num 
+-----
  -
- false
+ 0
 (2 rows)
 
 select * from test51 union select * from test6;
@@ -32159,11 +32125,10 @@ select * from test52 union select * from test4;
 (1 row)
 
 select * from test52 union select * from test5;
-  num  
--------
+ num 
+-----
  0
- false
-(2 rows)
+(1 row)
 
 select * from test52 union select * from test6;
  num 
@@ -32774,10 +32739,10 @@ select * from test53 union select * from test4;
 (2 rows)
 
 select * from test53 union select * from test5;
-  num  
--------
+ num 
+-----
  
- false
+ 0
 (2 rows)
 
 select * from test53 union select * from test6;
@@ -33382,11 +33347,10 @@ select * from test54 union select * from test4;
 (1 row)
 
 select * from test54 union select * from test5;
-  num  
--------
+ num 
+-----
  0
- false
-(2 rows)
+(1 row)
 
 select * from test54 union select * from test6;
  num 
@@ -33999,11 +33963,10 @@ select * from test55 union select * from test4;
 (1 row)
 
 select * from test55 union select * from test5;
-  num  
--------
+ num 
+-----
  0
- false
-(2 rows)
+(1 row)
 
 select * from test55 union select * from test6;
  num 
@@ -34616,11 +34579,10 @@ select * from test56 union select * from test4;
 (1 row)
 
 select * from test56 union select * from test5;
-  num  
--------
+ num 
+-----
  0
- false
-(2 rows)
+(1 row)
 
 select * from test56 union select * from test6;
  num 
@@ -35237,10 +35199,10 @@ select * from test57 union select * from test4;
 (2 rows)
 
 select * from test57 union select * from test5;
-  num  
--------
+ num 
+-----
+ 0
  
- false
 (2 rows)
 
 select * from test57 union select * from test6;
@@ -35860,10 +35822,10 @@ select * from test58 union select * from test4;
 (2 rows)
 
 select * from test58 union select * from test5;
-  num  
--------
+ num 
+-----
  
- false
+ 0
 (2 rows)
 
 select * from test58 union select * from test6;
@@ -36472,10 +36434,10 @@ select * from test59 union select * from test4;
 (2 rows)
 
 select * from test59 union select * from test5;
-  num  
--------
+ num 
+-----
  
- false
+ 0
 (2 rows)
 
 select * from test59 union select * from test6;
@@ -37084,10 +37046,10 @@ select * from test60 union select * from test4;
 (2 rows)
 
 select * from test60 union select * from test5;
-  num  
--------
+ num 
+-----
  
- false
+ 0
 (2 rows)
 
 select * from test60 union select * from test6;
@@ -37696,10 +37658,10 @@ select * from test61 union select * from test4;
 (2 rows)
 
 select * from test61 union select * from test5;
-  num  
--------
+ num 
+-----
  
- false
+ 0
 (2 rows)
 
 select * from test61 union select * from test6;
@@ -38308,10 +38270,10 @@ select * from test62 union select * from test4;
 (2 rows)
 
 select * from test62 union select * from test5;
-  num  
--------
+ num 
+-----
  
- false
+ 0
 (2 rows)
 
 select * from test62 union select * from test6;
@@ -38920,10 +38882,10 @@ select * from test63 union select * from test4;
 (2 rows)
 
 select * from test63 union select * from test5;
-  num  
--------
+ num 
+-----
  
- false
+ 0
 (2 rows)
 
 select * from test63 union select * from test6;
@@ -39532,10 +39494,10 @@ select * from test64 union select * from test4;
 (2 rows)
 
 select * from test64 union select * from test5;
-  num  
--------
+ num 
+-----
  
- false
+ 0
 (2 rows)
 
 select * from test64 union select * from test6;
@@ -40144,10 +40106,10 @@ select * from test65 union select * from test4;
 (2 rows)
 
 select * from test65 union select * from test5;
-  num  
--------
+ num 
+-----
  
- false
+ 0
 (2 rows)
 
 select * from test65 union select * from test6;
@@ -40756,10 +40718,10 @@ select * from test66 union select * from test4;
 (2 rows)
 
 select * from test66 union select * from test5;
-  num  
--------
+ num 
+-----
  
- false
+ 0
 (2 rows)
 
 select * from test66 union select * from test6;
@@ -41371,7 +41333,7 @@ select * from test67 union select * from test5;
       num      
 ---------------
  magnetic disk
- false
+ 0
 (2 rows)
 
 select * from test67 union select * from test6;
@@ -42006,8 +41968,8 @@ select * from test68 union select * from test4;
 select * from test68 union select * from test5;
        num        
 ------------------
+ 0
  0000000000000000
- false
 (2 rows)
 
 select * from test68 union select * from test6;
@@ -42639,10 +42601,10 @@ select * from test69 union select * from test4;
 (2 rows)
 
 select * from test69 union select * from test5;
-  num  
--------
+ num 
+-----
  
- false
+ 0
 (2 rows)
 
 select * from test69 union select * from test6;
@@ -43251,10 +43213,10 @@ select * from test70 union select * from test4;
 (2 rows)
 
 select * from test70 union select * from test5;
-  num  
--------
+ num 
+-----
  
- false
+ 0
 (2 rows)
 
 select * from test70 union select * from test6;
@@ -43863,10 +43825,10 @@ select * from test71 union select * from test4;
 (2 rows)
 
 select * from test71 union select * from test5;
-  num  
--------
+ num 
+-----
  
- false
+ 0
 (2 rows)
 
 select * from test71 union select * from test6;
@@ -44475,10 +44437,10 @@ select * from test72 union select * from test4;
 (2 rows)
 
 select * from test72 union select * from test5;
-  num  
--------
+ num 
+-----
  
- false
+ 0
 (2 rows)
 
 select * from test72 union select * from test6;
@@ -45087,10 +45049,10 @@ select * from test73 union select * from test4;
 (2 rows)
 
 select * from test73 union select * from test5;
-  num  
--------
+ num 
+-----
  
- false
+ 0
 (2 rows)
 
 select * from test73 union select * from test6;
@@ -45699,10 +45661,10 @@ select * from test74 union select * from test4;
 (2 rows)
 
 select * from test74 union select * from test5;
-  num  
--------
+ num 
+-----
+ 0
  
- false
 (2 rows)
 
 select * from test74 union select * from test6;
@@ -46318,10 +46280,10 @@ select * from test75 union select * from test4;
 (1 row)
 
 select * from test75 union select * from test5;
-  num  
--------
+ num 
+-----
  -
- false
+ 0
 (2 rows)
 
 select * from test75 union select * from test6;
@@ -46944,11 +46906,10 @@ select * from test76 union select * from test4;
 (1 row)
 
 select * from test76 union select * from test5;
-  num  
--------
+ num 
+-----
  0
- false
-(2 rows)
+(1 row)
 
 select * from test76 union select * from test6;
  num 
@@ -47561,11 +47522,10 @@ select * from test77 union select * from test4;
 (1 row)
 
 select * from test77 union select * from test5;
-  num  
--------
+ num 
+-----
  0
- false
-(2 rows)
+(1 row)
 
 select * from test77 union select * from test6;
  num 
@@ -48178,10 +48138,10 @@ select * from test78 union select * from test4;
 (1 row)
 
 select * from test78 union select * from test5;
-  num  
--------
+ num 
+-----
  -
- false
+ 0
 (2 rows)
 
 select * from test78 union select * from test6;
@@ -48804,10 +48764,10 @@ select * from test79 union select * from test4;
 (1 row)
 
 select * from test79 union select * from test5;
-  num  
--------
+ num 
+-----
  -
- false
+ 0
 (2 rows)
 
 select * from test79 union select * from test6;
@@ -49434,10 +49394,10 @@ select * from test80 union select * from test4;
 (2 rows)
 
 select * from test80 union select * from test5;
-  num  
--------
+ num 
+-----
+ 0
  
- false
 (2 rows)
 
 select * from test80 union select * from test6;
@@ -50057,10 +50017,10 @@ select * from test81 union select * from test4;
 (2 rows)
 
 select * from test81 union select * from test5;
-  num  
--------
+ num 
+-----
  
- false
+ 0
 (2 rows)
 
 select * from test81 union select * from test6;
@@ -50669,10 +50629,10 @@ select * from test82 union select * from test4;
 (2 rows)
 
 select * from test82 union select * from test5;
-  num  
--------
+ num 
+-----
  
- false
+ 0
 (2 rows)
 
 select * from test82 union select * from test6;
@@ -51277,10 +51237,10 @@ select * from test83 union select * from test4;
 (1 row)
 
 select * from test83 union select * from test5;
-  num  
--------
+ num 
+-----
  -
- false
+ 0
 (2 rows)
 
 select * from test83 union select * from test6;
@@ -51903,10 +51863,10 @@ select * from test84 union select * from test4;
 (1 row)
 
 select * from test84 union select * from test5;
-  num  
--------
+ num 
+-----
  -
- false
+ 0
 (2 rows)
 
 select * from test84 union select * from test6;
@@ -52533,10 +52493,10 @@ select * from test85 union select * from test4;
 (2 rows)
 
 select * from test85 union select * from test5;
-  num  
--------
+ num 
+-----
  
- false
+ 0
 (2 rows)
 
 select * from test85 union select * from test6;
@@ -53145,10 +53105,10 @@ select * from test86 union select * from test4;
 (2 rows)
 
 select * from test86 union select * from test5;
-  num  
--------
+ num 
+-----
  
- false
+ 0
 (2 rows)
 
 select * from test86 union select * from test6;
@@ -53757,10 +53717,10 @@ select * from test87 union select * from test4;
 (2 rows)
 
 select * from test87 union select * from test5;
-  num  
--------
+ num 
+-----
  
- false
+ 0
 (2 rows)
 
 select * from test87 union select * from test6;
@@ -54369,10 +54329,10 @@ select * from test88 union select * from test4;
 (2 rows)
 
 select * from test88 union select * from test5;
-  num  
--------
+ num 
+-----
  
- false
+ 0
 (2 rows)
 
 select * from test88 union select * from test6;
@@ -54981,10 +54941,10 @@ select * from test89 union select * from test4;
 (2 rows)
 
 select * from test89 union select * from test5;
-  num  
--------
+ num 
+-----
  
- false
+ 0
 (2 rows)
 
 select * from test89 union select * from test6;
@@ -55593,10 +55553,10 @@ select * from test90 union select * from test4;
 (2 rows)
 
 select * from test90 union select * from test5;
-  num  
--------
+ num 
+-----
  
- false
+ 0
 (2 rows)
 
 select * from test90 union select * from test6;
@@ -56205,10 +56165,10 @@ select * from test91 union select * from test4;
 (2 rows)
 
 select * from test91 union select * from test5;
-  num  
--------
+ num 
+-----
  
- false
+ 0
 (2 rows)
 
 select * from test91 union select * from test6;
