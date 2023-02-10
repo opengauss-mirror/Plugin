@@ -35,6 +35,9 @@ select JSON_ARRAY_APPEND('[1, [2, 3]]', '$..1', 4);
 select JSON_ARRAY_APPEND('[1, [2, 3]]', '$[*]', 4);
 select JSON_ARRAY_APPEND('[1, [2, 3]]', '$[*]', 日);
 select JSON_ARRAY_APPEND('[1, [2, 3]]', ' ', 4);
+select JSON_ARRAY_APPEND('[1, [2, 3]]'::varchar(20), '$[1]', null);
+select JSON_ARRAY_APPEND('[1, [2, 3]]'::bpchar, '$[1]', null);
+select JSON_ARRAY_APPEND('[1, [2, 3]]', '$[0]', null);
 
 drop schema test_json_array_append cascade;
 reset current_schema;
