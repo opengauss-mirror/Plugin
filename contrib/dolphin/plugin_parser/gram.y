@@ -386,8 +386,12 @@ static CreateIndexOptions* MakeCreateIndexOptions(CreateIndexOptions *indexOptio
 #define  PACKAGE_LEN     9 /* strlen(" PACKAGE ") */
 #define  INSTANTIATION_STR   " INSTANTIATION "
 #define  INSTANTIATION_LEN     15
+#define  BEGIN_STR       "BEGIN\n"
+#define  BEGIN_LEN       6
 #define  END_STR         "\nEND\n"
 #define  END_LEN         6
+/* if delimiter is multiple characters like '$$', token will be set as END_OF_PROC. */
+#define  TOKEN_IS_DELIMITER	(tok == END_OF_PROC || (strlen(u_sess->attr.attr_common.delimiter_name) == 1 && tok == u_sess->attr.attr_common.delimiter_name[0]))
 static int get_outarg_num(List *fun_args);
 static int get_table_modes(int nargs, const char *p_argmodes);
 static void get_arg_mode_by_name(const char *argname, const char * const *argnames,
@@ -454,6 +458,8 @@ static char* SingleLineProcedureQueryGet(int& start_pos, int& end_pos, base_yy_e
 static void setAccessMethod(Constraint *n);
 static SelectStmt *MakeFunctionSelect(char *funcCall, List* args, core_yyscan_t yyscanner);
 static SelectStmt *MakeShowGrantStmt(char *arg, int location, core_yyscan_t yyscanner);
+static void handleCreateDolphinFuncOptions(List** options);
+static char* appendString(char* source, char* target, int offset);
 %}
 
 %define api.pure
@@ -702,7 +708,7 @@ static SelectStmt *MakeShowGrantStmt(char *arg, int location, core_yyscan_t yysc
 				reloptions opt_reloptions opt_reloptions_without_empty opt_tblspc_options tblspc_options opt_cfoptions cfoptions
 				OptWith OptWith_without_empty opt_distinct opt_definition func_args func_args_list
 				func_args_with_defaults func_args_with_defaults_list proc_args
-				func_as createfunc_opt_list opt_createproc_opt_list alterfunc_opt_list
+				func_as createfunc_opt_list opt_createproc_opt_list alterfunc_opt_list opt_createfunc_opt_list
 				aggr_args old_aggr_definition old_aggr_list
 				oper_argtypes RuleActionList RuleActionMulti
 				opt_column_list columnList opt_name_list opt_analyze_column_define opt_multi_name_list
@@ -916,7 +922,7 @@ static SelectStmt *MakeShowGrantStmt(char *arg, int location, core_yyscan_t yysc
 %type <chr>		OptCompress OptCompress_without_empty
 %type <ival>	KVType
 %type <ival>		ColCmprsMode
-%type <fun_src>		subprogram_body b_proc_body triggerbody_subprogram_or_single
+%type <fun_src>		subprogram_body b_proc_body triggerbody_subprogram_or_single dolphin_flow_control flow_control_func_body
 %type <node>    trigger_body_stmt
 %type <keyword> as_is as_empty
 %type <node>	column_item opt_table_partitioning_clause_without_empty
@@ -16634,11 +16640,82 @@ CreateFunctionStmt:
 										(Node *)list_make1(makeString(funSource->bodySrc))));
 
 					n->withClause = NIL;
-					n->withClause = NIL;
 					n->isProcedure = false;
-                    u_sess->parser_cxt.isCreateFuncOrProc = false;
+					u_sess->parser_cxt.isCreateFuncOrProc = false;
 					$$ = (Node *)n;
 				}
+			| CREATE opt_or_replace definer_user FUNCTION func_name_opt_arg proc_args
+				RETURNS func_return opt_createfunc_opt_list {
+					u_sess->parser_cxt.eaten_declare = false;
+					u_sess->parser_cxt.eaten_begin = false;
+					pg_yyget_extra(yyscanner)->core_yy_extra.include_ora_comment = true;
+			  		u_sess->parser_cxt.isCreateFuncOrProc = true;
+                        	} BEGIN_P b_proc_body
+                        	{
+					int rc = 0;
+					rc = CompileWhich();
+					if (rc == PLPGSQL_COMPILE_PROC || rc == PLPGSQL_COMPILE_NULL) {
+					    u_sess->plsql_cxt.procedure_first_line = GetLineNumber(t_thrd.postgres_cxt.debug_query_string, @9);
+					}
+					CreateFunctionStmt *n = makeNode(CreateFunctionStmt);
+					FunctionSources *funSource = (FunctionSources*)$12;
+					n->isOraStyle = false;
+					n->isPrivate = false;
+					n->replace = $2;
+					n->definer = $3;
+					if (n->replace && NULL != n->definer) {
+						parser_yyerror("not support DEFINER function");
+					}
+					n->funcname = $5;
+					n->parameters = $6;
+					n->inputHeaderSrc = FormatFuncArgType(yyscanner, funSource->headerSrc, n->parameters);
+					n->returnType = $8;
+					n->options = $9;
+					handleCreateDolphinFuncOptions(&n->options);
+					n->options = lappend(n->options, makeDefElem("as", (Node*)list_make1(makeString(funSource->bodySrc))));
+					n->options = lappend(n->options, makeDefElem("language", (Node*)makeString("plpgsql")));
+
+					n->withClause = NIL;
+					n->isProcedure = false;
+		    			u_sess->parser_cxt.isCreateFuncOrProc = false;
+					$$ = (Node*)n;
+				}
+			| CREATE opt_or_replace definer_user FUNCTION func_name_opt_arg proc_args
+				RETURNS func_return opt_createfunc_opt_list {
+					u_sess->parser_cxt.eaten_declare = false;
+					u_sess->parser_cxt.eaten_begin = false;
+					pg_yyget_extra(yyscanner)->core_yy_extra.include_ora_comment = true;
+			  		u_sess->parser_cxt.isCreateFuncOrProc = true;
+				} dolphin_flow_control
+				{
+					int rc = 0;
+					rc = CompileWhich();
+					if (rc == PLPGSQL_COMPILE_PROC || rc == PLPGSQL_COMPILE_NULL) {
+					    u_sess->plsql_cxt.procedure_first_line = GetLineNumber(t_thrd.postgres_cxt.debug_query_string, @9);
+					}
+					CreateFunctionStmt *n = makeNode(CreateFunctionStmt);
+					FunctionSources *funSource = (FunctionSources*)$11;
+					n->isOraStyle = false;
+					n->isPrivate = false;
+					n->replace = $2;
+					n->definer = $3;
+					if (n->replace && NULL != n->definer) {
+						parser_yyerror("not support DEFINER function");
+					}
+					n->funcname = $5;
+					n->parameters = $6;
+					n->inputHeaderSrc = FormatFuncArgType(yyscanner, funSource->headerSrc, n->parameters);
+					n->returnType = $8;
+					n->options = $9;
+					handleCreateDolphinFuncOptions(&n->options);
+					n->options = lappend(n->options, makeDefElem("as", (Node*)list_make1(makeString(funSource->bodySrc))));
+					n->options = lappend(n->options, makeDefElem("language", (Node*)makeString("plpgsql")));
+
+					n->withClause = NIL;
+					n->isProcedure = false;
+					u_sess->parser_cxt.isCreateFuncOrProc = false;
+					$$ = (Node*)n;
+                        	}
 		;
 
 CallFuncStmt:    CALL func_name_opt_arg callfunc_args_or_empty
@@ -16780,7 +16857,7 @@ b_proc_body:
 								tok = YYLEX;
 								end_parsed = true;
 								/* adapt A db's label */
-								if (!(tok == ';' || tok == 0)
+								if (!(tok == ';' || tok == YYEOF || TOKEN_IS_DELIMITER)
 										&& tok != IF_P
 										&& tok != CASE
 										&& tok != LOOP
@@ -16791,9 +16868,8 @@ b_proc_body:
 										continue;
 								}
 								/*pre_tok = 0 for begin (nothing) end;*/
-								if (blocklevel == 1
-										&& (pre_tok == ';' || pre_tok == BEGIN_P || pre_tok == 0)
-										&& (tok == ';' || tok == 0))
+								if (blocklevel == 1 && (pre_tok == ';' || pre_tok == BEGIN_P || pre_tok == 0)
+									&& (tok == ';' || tok == YYEOF || TOKEN_IS_DELIMITER))
 								{
 										/* Save the end of procedure body. */
 										proc_e = yylloc;
@@ -16826,6 +16902,14 @@ b_proc_body:
 
 						pre_tok = tok;
 						tok = YYLEX;
+						/* in case of lacking DECLARE within nested begin-end statement */
+						if (tok != DECLARE && bdinfo->m_begin_b != 0 && bdinfo->m_begin_e == 0
+								&& bdinfo->m_declare_b == 0 && bdinfo->m_declare_e == 0) {
+							bdinfo->m_begin_e = yylloc;
+							bdinfo->m_begin_len = bdinfo->m_begin_e - bdinfo->m_begin_b + 1;
+							bdinfo->m_declare_b = yylloc;
+							bdinfo->m_declare_e = yylloc;
+						}
 				}
 				
 				if (infolist == NIL)
@@ -17736,12 +17820,16 @@ func_arg_with_default:
 				}
 		;
 
-
 createfunc_opt_list:
 			/* Must be at least one to prevent conflict */
 			createfunc_opt_item						{ $$ = list_make1($1); }
 			| createfunc_opt_list createfunc_opt_item { $$ = lappend($1, $2); }
 	;
+
+opt_createfunc_opt_list:
+			createfunc_opt_list		{ $$ = $1; }
+			| /* EMPTY */			{ $$ = NIL; }
+
 opt_createproc_opt_list:
 			opt_createproc_opt_list createproc_opt_item
 				{
@@ -18072,6 +18160,179 @@ subprogram_body: 	{
 				$$ = funSrc;
 			}
 		;
+
+dolphin_flow_control:
+			RETURN flow_control_func_body
+				{
+					char* result = appendString("RETURN", $2->bodySrc, BEGIN_LEN);
+					pfree($2->bodySrc);
+					$2->bodySrc = result;
+					$$ = $2;
+				}
+			| REPEAT flow_control_func_body
+				{
+					char* result = appendString("REPEAT", $2->bodySrc, BEGIN_LEN);
+					pfree($2->bodySrc);
+					$2->bodySrc = result;
+					$$ = $2;
+				}
+			| LOOP flow_control_func_body
+				{
+					char* result = appendString("LOOP", $2->bodySrc, BEGIN_LEN);
+					pfree($2->bodySrc);
+					$2->bodySrc = result;
+					$$ = $2;
+				}
+			| WHILE_P flow_control_func_body
+				{
+					char* result = appendString("WHILE", $2->bodySrc, BEGIN_LEN);
+					pfree($2->bodySrc);
+					$2->bodySrc = result;
+					$$ = $2;
+				}
+			| CASE flow_control_func_body
+				{
+					char* result = appendString("CASE", $2->bodySrc, BEGIN_LEN);
+					pfree($2->bodySrc);
+					$2->bodySrc = result;
+					$$ = $2;
+				}
+			| IF_P flow_control_func_body
+				{
+					char* result = appendString("IF", $2->bodySrc, BEGIN_LEN);
+					pfree($2->bodySrc);
+					$2->bodySrc = result;
+					$$ = $2;
+				}
+
+flow_control_func_body:
+			{
+				int proc_b = 0;
+				int proc_e = 0;
+				char* proc_body_str = NULL;
+				int proc_body_len = 0;
+				int blocklevel = 1;
+				FunctionSources *funSrc = NULL;
+				char *proc_header_str = NULL;
+				int rc = 0;
+				rc = CompileWhich();
+				int tok = YYEMPTY;
+				int pre_tok = 0;
+				base_yy_extra_type *yyextra = pg_yyget_extra(yyscanner);
+				yyextra->core_yy_extra.in_slash_proc_body = true;
+				if (yychar == YYEOF || yychar == YYEMPTY) {
+					tok = YYLEX;
+				} else {
+					tok = yychar;
+					yychar = YYEMPTY;
+				}
+
+				/* Save procedure header str,start with param exclude brackets */
+				proc_header_str = ParseFunctionArgSrc(yyscanner);
+
+				/* Save the beginning of procedure body. */
+				proc_b = yylloc;
+				if (rc != PLPGSQL_COMPILE_NULL && rc != PLPGSQL_COMPILE_PROC) {
+					u_sess->plsql_cxt.procedure_first_line = GetLineNumber(yyextra->core_yy_extra.scanbuf, yylloc);
+				}
+				/* start procedure body scan */
+				while(true) {
+					/* handle single SQL body like "return xxx" */
+					if (tok == YYEOF || tok == END_OF_PROC) {
+						proc_e = (tok == END_OF_PROC ? yylloc + 1 : yylloc);
+						break;
+					}
+
+					if (tok == BEGIN_P) {
+						blocklevel++;
+					}
+
+					if (tok == END_P) {
+						tok = YYLEX;
+					 	if (blocklevel == 1
+							&& (pre_tok == ';' || pre_tok == BEGIN_P)
+							&& (tok == ';' || (tok == 0 || tok == END_OF_PROC))) {
+							/* Save the end of procedure body. */
+							proc_e = yylloc;
+
+							if (tok == ';' ) {
+								if (yyextra->lookahead_num != 0) {
+									parser_yyerror("subprogram body is not ended correctly");
+									break;
+								} else {
+									yyextra->lookahead_token[0] = tok;
+									yyextra->lookahead_num = 1;
+								}
+							}
+							break;
+						}
+
+						/* Cope with nested BEGIN/END pairs.
+						 * In fact the tok can not be 0
+						 */
+						if (blocklevel > 1
+							 && (pre_tok == ';' || pre_tok == BEGIN_P)
+							 && (tok == ';' || tok == 0)) {
+							blocklevel--;
+						}
+					}
+
+					pre_tok = tok;
+					tok = YYLEX;
+				}
+
+				if (proc_e == 0) {
+					ereport(errstate, (errcode(ERRCODE_SYNTAX_ERROR), errmsg("subprogram body is not ended correctly")));
+				}
+
+				proc_body_len = proc_e - proc_b + 1 ;
+				rc = EOK;
+
+				/*
+				 * We surround function body with begin-end, and add a RETURN in front of function body.
+				 * The final body str will be like:
+				 *   BEGIN
+				 *     RETURN func_body;
+				 *   END
+				 */
+				proc_body_str = (char*)palloc0(proc_body_len + BEGIN_LEN + END_LEN + 1);
+				rc = strncpy_s(proc_body_str, proc_body_len + BEGIN_LEN + END_LEN + 1, BEGIN_STR, BEGIN_LEN);
+				securec_check(rc, "\0", "\0");
+				rc = strncpy_s(proc_body_str + BEGIN_LEN, proc_body_len + BEGIN_LEN + END_LEN + 1,
+						yyextra->core_yy_extra.scanbuf + proc_b - 1, proc_body_len);
+				securec_check(rc, "\0", "\0");
+				/*
+				 * replace laster character of func body in case of delimiter changed.
+				 * since we keep only one char for delimiter in proc_body_str, we should not concern
+				 * about the length of delimiter.
+				 */
+				proc_body_str[BEGIN_LEN + proc_body_len - 1] = ';';
+
+				rc = strncpy_s(proc_body_str + BEGIN_LEN + proc_body_len,
+						proc_body_len + BEGIN_LEN + END_LEN + 1, END_STR, END_LEN);
+				securec_check(rc, "\0", "\0");
+				proc_body_len = BEGIN_LEN + proc_body_len + END_LEN;
+				proc_body_str[proc_body_len] = '\0';
+
+				/* Reset the flag which mark whether we are in slash proc. */
+				yyextra->core_yy_extra.in_slash_proc_body = false;
+				yyextra->core_yy_extra.dolqstart = NULL;
+
+				/*
+				 * Add the end location of slash proc to the locationlist for the multi-query
+				 * processed.
+				 */
+				yyextra->core_yy_extra.query_string_locationlist =
+					lappend_int(yyextra->core_yy_extra.query_string_locationlist, yylloc);
+
+				funSrc = (FunctionSources*)palloc0(sizeof(FunctionSources));
+				funSrc->bodySrc   = proc_body_str;
+				funSrc->headerSrc = proc_header_str;
+
+				$$ = funSrc;
+			}
+		;
+
 opt_definition:
 			WITH definition							{ $$ = $2; }
 			| /*EMPTY*/								{ $$ = NIL; }
@@ -35281,10 +35542,12 @@ void DolphinDealProcBodyStr(char* target, char* scanbuf, List* infol, int begin,
 				info->m_begin_b - preinfo->m_declare_e - 1);
 			securec_check(rc, "", "");
 			offset += info->m_begin_b - preinfo->m_declare_e - 1;
-			rc = strncpy_s(target + offset, len - offset, scanbuf + info->m_declare_b,
-                                info->m_declare_len + 1);
-			securec_check(rc, "", "");
-			offset += info->m_declare_len + 1;
+			if (info->m_declare_len != 0) {
+				rc = strncpy_s(target + offset, len - offset, scanbuf + info->m_declare_b,
+					info->m_declare_len + 1);
+				securec_check(rc, "", "");
+				offset += info->m_declare_len + 1;
+			}
 			if (info->m_begin_len > 2)
 			{
 				rc = strncpy_s(target + offset, len - offset, scanbuf + info->m_begin_b ,
@@ -35294,8 +35557,17 @@ void DolphinDealProcBodyStr(char* target, char* scanbuf, List* infol, int begin,
 			}
 		}
 	}
-	rc = strncpy_s(target + offset, len - offset, scanbuf + info->m_declare_e + 1,
-                                 len - offset - 1);
+	/*
+	 * If the last begin-end stmt contains no DECLARE clause, info->m_declare_e will locate at the next token after BEGIN.
+	 * If the last begin-end stmt contains DECLAURE clause, info->m_declare_e will be at ";" at the end of DECLARE clause,
+	 * which means in this case, we need to copy the rest of scanbuf with cursor starting at info->mdeclare_e + 1 to ensure
+	 * the cursor will be at the next token after DECLARE clause.
+	 */
+	if (info->m_declare_len == 0) {
+		rc = strncpy_s(target + offset, len - offset, scanbuf + info->m_declare_e, len - offset - 2);
+	} else {
+		rc = strncpy_s(target + offset, len - offset, scanbuf + info->m_declare_e + 1, len - offset - 1);
+	}
 	securec_check(rc, "", "");
 }
 
@@ -35339,6 +35611,56 @@ static void setAccessMethod(Constraint *n)
 			n->access_method = method;
 		}
 	}
+}
+
+static void handleCreateDolphinFuncOptions(List** options)
+{
+	ListCell *cell = NULL;
+	DefElem* language_option = NULL;
+	foreach (cell, *options) {
+		void* pointer = lfirst(cell);
+		if (!IsA(pointer, DefElem)) {
+		/* should never happen */
+			ereport(ERROR,
+				(errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+				errmsg("Type error for function options. Please ensure function option is type DefElem.")));
+		}
+		DefElem* defel = (DefElem*)lfirst(cell);
+		if (strcmp(defel->defname, "as") == 0) {
+			/* just prevent duplicate here . we will add this option later.*/
+			ereport(ERROR, (errcode(ERRCODE_SYNTAX_ERROR), errmsg("conflicting or redundant options")));
+		} else if (strcmp(defel->defname, "language") == 0) {
+			language_option = defel;
+		} else if (strcmp(defel->defname, "comment") == 0) {
+			/* valid option. no need to do anything */
+		} else if (strcmp(defel->defname, "deterministic") == 0) {
+			/* valid option. do nothing */
+		} else if (strcmp(defel->defname, "sql_opt") == 0) {
+			/* valid option. do nothing */
+		} else if (strcmp(defel->defname, "security") == 0) {
+			/* valid option. do nothing */
+                } else {
+                	ereport(ERROR, (errcode(ERRCODE_SYNTAX_ERROR), errmsg("invalid option input")));
+                }
+	}
+	if (language_option != NULL) {
+		/* remove language option. we will add language option manually outside the function */
+		*options = list_delete(*options, language_option);
+	}
+}
+
+/* append source string to target string with offset */
+static char* appendString(char* source, char* target, int offset)
+{
+	int source_len = strlen(source);
+	int target_len = strlen(target);
+	errno_t rc = 0;
+	Assert(offset <= target_len);
+	StringInfoData result_info;
+	initStringInfo(&result_info);
+	appendBinaryStringInfo(&result_info, target, offset);
+	appendStringInfo(&result_info, "%s%s", source, target + offset);
+	return result_info.data;
 }
 
 /*

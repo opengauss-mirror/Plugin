@@ -1,0 +1,372 @@
+create schema b_compat_create_func;
+set current_schema to 'b_compat_create_func';
+
+create function func(n int) returns varchar(50) return (select n+1);
+select func(100);
+drop function if exists func(int);
+create function func(n int) returns varchar(50) return (select (n+1)::text);
+select func(100);
+drop function if exists func(int);
+create function func(s char(20)) returns char(50) return concat('Hello, ', s, '!');
+select func('me');
+drop function if exists func(char(20));
+create function func(s date) returns timestamp return current_timestamp;
+select func('2023-01-28'::date);
+drop function if exists func(date);
+create function func(p1 datetime, p2 int) returns time return null;
+select func('2023-01-28 00:00:00'::datetime, 1);
+drop function if exists func(datetime, int);
+
+
+create table test11(
+    name varchar(50) not null,
+    current_value int not null,
+    increment int not null default 1,
+    primary key (name)
+) engine=innodb;
+insert into test11 values ('a', 999, 999);
+
+drop function if exists currval(varchar(50));
+delimiter /
+create function currval(seq_name varchar(50)) returns integer
+language sql
+deterministic
+contains sql
+sql security definer
+comment ''
+begin
+    declare value integer;
+    set value = 0;
+    select current_value into value from test11 where name = seq_name;
+    return value;
+end/
+delimiter ;
+select currval('a');
+
+drop function if exists currval(varchar(50));
+delimiter //
+create function currval(seq_name varchar(50)) returns integer
+comment 'abcdefghijk'
+begin
+    declare value integer;
+    set value = 0;
+    select current_value into value from test11 where name = seq_name;
+    return value;
+end //
+delimiter ;
+select currval('a');
+
+drop function if exists currval(varchar(50));
+delimiter /
+create function currval(seq_name varchar(50)) returns integer
+language sql
+begin
+    declare value integer;
+    set value = 0;
+    select current_value into value from test11 where name = seq_name;
+    return value;
+end /
+delimiter ;
+select currval('a');
+
+drop function if exists currval(varchar(50));
+delimiter /
+create function currval(seq_name varchar(50)) returns integer
+deterministic
+begin
+    declare value integer;
+    set value = 0;
+    select current_value into value from test11 where name = seq_name;
+    return value;
+end /
+delimiter ;
+select currval('a');
+
+drop function if exists currval(varchar(50));
+delimiter /
+create function currval(seq_name varchar(50)) returns integer
+contains sql
+begin
+    declare value integer;
+    set value = 0;
+select current_value into value from test11 where name = seq_name;
+return value;
+end /
+delimiter ;
+select currval('a');
+
+drop function if exists currval(varchar(50));
+delimiter /
+create function currval(seq_name varchar(50)) returns integer
+sql security definer
+begin
+    declare value integer;
+    set value = 0;
+select current_value into value from test11 where name = seq_name;
+return value;
+end /
+delimiter ;
+select currval('a');
+
+drop function if exists simplecompare;
+delimiter /
+create function simplecompare(n int, m int) returns varchar(20)
+begin
+    declare s varchar(20);
+    if n > m then set s = '>';
+    elseif n = m then set s = '=';
+    else set s = '<';
+    end if;
+    set s = concat(n, ' ', s, ' ', m);
+    return s;
+end/
+delimiter ;
+select simplecompare(1, 2);
+
+drop function if exists func_ddl_0011;
+delimiter |
+create function func_ddl_0011(n1 int, n2 int) returns int
+begin
+    declare num int;
+    set num = n1 + n2;
+    return num;
+END|
+delimiter ;
+call func_ddl_0011(1, 5);
+
+drop function if exists simplecompare;
+delimiter //
+create function simplecompare(n int, m int) returns varchar(20)
+begin
+    declare s varchar(20);
+    if n > m then set s = '>';
+    elseif n = m then set s = '=';
+    else set s = '<';
+    end if;
+
+    set s = concat(n, ' ', s, ' ', m);
+
+    return s;
+end //
+delimiter ;
+call simplecompare(1, 2);
+
+-- test for function body with flow control stmt
+drop function if exists func1;
+delimiter |
+create function func1(b int, c int) returns int
+    if b < c then return b;
+    else return c;
+end if|
+select func1(2,3)|
+
+drop function if exists func2|
+create function func2(b int) returns int
+    case b
+	when 1 then return 9;
+    when 2 then return 99;
+    when 3 then return 999;
+    else return 0;
+end case|
+select func2(3)|
+
+drop function if exists func3|
+create function func3(b int) returns int
+loop
+    if b < 10 then set b = b + 10;
+    return b;
+    end if;
+end loop|
+select func3(3)|
+
+drop function if exists func4|
+create function func4(b int) returns int
+    repeat
+	set b = b + 10;
+    return b;
+until b > 10 end repeat|
+select func4(3)|
+
+drop function if exists func5|
+create function func5(b int) returns int
+while b < 10 do
+    set b = b + 10;
+    return b;
+end while|
+select func5(3)|
+
+-- test for begin-end statement compound by flow control statement
+drop function if exists func6|
+create function func6(b int) returns int
+loop
+    begin
+        if b > 0 then
+            return b + 10;
+        else return -1;
+        end if;
+    end;
+end loop|
+select func6(3)|
+
+-- test for nested begin-end within begin-end
+drop function if exists func7 |
+create function func7(b int) returns int
+begin
+    declare num int;
+    set num = 0;
+    begin
+        num = num - b;
+        num = num * 10;
+    end;
+    return num;
+end|
+select func7(5)|
+
+drop function if exists func8|
+create function func8(b int) returns int
+BEGIN
+    IF b = 1 THEN
+        BEGIN
+            set b = b + 10;
+            return b;
+        END;
+    ELSE
+        BEGIN
+            set b = b - 10;
+            return b;
+        END;
+    END IF;
+END|
+select func8(3)|
+
+drop function if exists func9|
+create function func9(b int) returns int
+BEGIN
+    BEGIN
+        set b = b + 10;
+        return b;
+    END;
+END|
+select func9(5)|
+
+-- test for function body with begin-end stmt
+drop function if exists currval(varchar(50))|
+delimiter /
+create function currval(seq_name varchar(50))
+    returns integer
+begin
+    declare value integer;
+    set value = 0;
+    select current_value into value from test11 where name = seq_name;
+    return value;
+end/
+delimiter ;
+select currval('a');
+
+-- test for flow control statement compound by begin-end stmt
+drop function if exists func10;
+delimiter //
+create function func10(b int) returns int
+begin
+    if b > 0 then return b + 10;
+    else return -1;
+    end if;
+end//
+delimiter ;
+select func10(9);
+
+drop function if exists hello;
+CREATE FUNCTION hello (s CHAR(20)) RETURNS CHAR(50)
+    RETURN CONCAT('Hello, ', s, '!');
+select hello('me');
+
+drop function if exists hello;
+delimiter |
+CREATE FUNCTION hello (s CHAR(20)) RETURNS CHAR(50)
+    RETURN CONCAT('Hello, ', s, '!')|
+delimiter ;
+select hello('me');
+
+drop function if exists hello;
+delimiter /
+CREATE FUNCTION hello (s CHAR(20)) RETURNS CHAR(50)
+BEGIN
+RETURN CONCAT('Hello, ', s, '!');
+END/
+delimiter ;
+select hello('me');
+
+drop function if exists func(int);
+create function func(n int) returns varchar(50) return (select (n+1)::text);
+
+-- test for function options
+drop function if exists currval(varchar(50));
+delimiter /
+create function currval(seq_name varchar(50))
+    returns integer
+language sql
+deterministic
+comment 'me'
+begin
+    declare value integer;
+    set value = 0;
+    select current_value into value from test11 where name = seq_name;
+    return value;
+end/
+delimiter ;
+
+-- test for invalid function options
+drop function if exists currval(varchar(50));
+delimiter /
+create function currval(seq_name varchar(50)) returns integer
+strict
+comment 'test'
+immutable
+return 1/
+delimiter ;
+
+-- testcase for mysql
+drop table if exists t1;
+create table t1(c int);
+delimiter |
+create function m_func(n int) returns int(11)
+begin
+    insert into t1 values (null);
+    return n;
+end|
+delimiter ;
+call m_func(6);
+drop function if exists m_func(int);
+
+insert into t1 values(1);
+delimiter |
+create function m_func() returns int
+begin
+    declare j int;
+    select c from t1 where c = 1 into j;
+    return j;
+end|
+delimiter ;
+call m_func();
+drop function if exists m_func();
+
+drop table if exists t1;
+create table t1(c int);
+CREATE OR REPLACE PROCEDURE proc1()
+AS
+BEGIN
+    INSERT INTO t1 VALUES (1);
+END;
+/
+delimiter |
+create function func_call_proc1(a int) returns int
+begin
+    call proc1();
+    return 1;
+end|
+delimiter ;
+call func_call_proc1(1);
+drop function if exists func_call_proc1(int);
+
+drop schema b_compat_create_func cascade;
+reset current_schema;
