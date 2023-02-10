@@ -874,7 +874,29 @@ typedef enum AlterTableType {
     AT_SetTableCollate,
     AT_CheckPartition,
     AT_RepairPartition,
-    AT_OptimizePartition
+    AT_OptimizePartition,
+    AT_AUTOEXTEND_SIZE,
+    AT_AVG_ROW_LENGTH,
+    AT_CHECKSUM,
+    AT_CONNECTION,
+    AT_DIRECTORY,
+    AT_DELAY_KEY_WRITE,
+    AT_ENCRYPTION,
+    AT_ENGINE_ATTRIBUTE,
+    AT_INSERT_METHOD,
+    AT_KEY_BLOCK_SIZE,
+    AT_MAX_ROWS,
+    AT_MIN_ROWS,
+    AT_PACK_KEYS,
+    AT_PASSWORD,
+    AT_START_TRANSACTION,
+    AT_SECONDARY_ENGINE_ATTRIBUTE,
+    AT_STATS_AUTO_RECALC,
+    AT_STATS_PERSISTENT,
+    AT_STATS_SAMPLE_PAGES,
+    AT_UNION,
+    AT_TABLESPACE,
+    AT_TABLESPACE_STORAGE
 #endif
 } AlterTableType;
 
