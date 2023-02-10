@@ -245,6 +245,9 @@ int execute_com_stmt_prepare(const char *client_sql)
 
     for (int i = 0; i < param_count; i++) {
         dolphin_column_definition* param_field = make_dolphin_column_definition("?");
+        const TypeItem* item = GetItemByTypeOid(pstmt->plansource->param_types[i]);
+        param_field->type = item->dolphin_type_id; 
+        param_field->charsetnr = item->charset_flag;
         send_column_definition41_packet(buf, param_field);
     }
     send_network_eof_packet(buf);
@@ -281,7 +284,36 @@ int execute_binary_protocol_req(com_stmt_exec_request *request)
     appendStringInfo(sql, "execute p%d using ", request->statement_id);
 
     for (uint i = 0; i < request->param_count; i++) {
-        appendStringInfo(sql, "%s", request->parameter_values[i].value);
+        switch (request->parameter_values[i].type) {
+            case TYPE_STRING: {
+                appendStringInfo(sql, "%s", request->parameter_values[i].value.text);
+                break;
+            }
+            case TYPE_INT1: {
+                appendStringInfo(sql, "%d", request->parameter_values[i].value.i1);
+                break;
+            }
+            case TYPE_INT2:
+            case TYPE_INT4: {
+                appendStringInfo(sql, "%d", request->parameter_values[i].value.i4);
+                break;
+            }
+            case TYPE_INT8: {
+                appendStringInfo(sql, "%d", request->parameter_values[i].value.i8);
+                break;
+            }
+            case TYPE_FLOAT: {
+                appendStringInfo(sql, "%f", request->parameter_values[i].value.f.f4);
+                break;
+            } 
+            case TYPE_DOUBLE: {
+                appendStringInfo(sql, "%lf", request->parameter_values[i].value.d.f8);
+                break;
+            } 
+            default:
+                break; 
+        }
+        
         if (i < request->param_count - 1) {
             appendStringInfoString(sql, ",");
         }

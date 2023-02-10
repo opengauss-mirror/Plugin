@@ -157,6 +157,7 @@ typedef struct BSqlPluginContext {
     bool is_schema_name;
     bool is_first_lable;
     bool is_b_declare;
+    struct HTAB* b_stmtInputTypeHash;
 #endif
 } bSqlPluginContext;
 

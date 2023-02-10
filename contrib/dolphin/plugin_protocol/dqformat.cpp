@@ -265,7 +265,7 @@ void send_column_definition41_packet(StringInfo buf, dolphin_column_definition *
 
     /* length of the following block, 12 byte */
     dq_append_int_lenenc(buf, 0x0c);        /* next_length (lenenc_int) */
-    dq_append_int2(buf, field->charsetnr);               /* character_set (2) */
+    dq_append_int2(buf, field->charsetnr);  /* character_set (2) */
     dq_append_int4(buf, field->length);       /* column_length (4) */
     dq_append_int1(buf, field->type);        /* column_type (1) */
     dq_append_int2(buf, field->flags);       /* flags (2) */ 
@@ -320,15 +320,73 @@ com_stmt_exec_request* read_com_stmt_exec_request(StringInfo buf)
     if (param_count > 0) {
         com_stmt_param *parameters = (com_stmt_param *)palloc0(sizeof(com_stmt_param) * param_count);
         if (req->new_params_bind_flag) {
-            // TODO reset parameter typte
+            InputStmtParam *parameter_types = (InputStmtParam *)palloc0(sizeof(InputStmtParam));
+            parameter_types->count = param_count;
+            parameter_types->itypes = (uint32 *)palloc0(sizeof(uint32) * param_count);
             for (int i = 0; i < param_count; i++) {
-                dq_get_int2(buf, &parameters[i].type);
+                dq_get_int2(buf, &parameter_types->itypes[i]);
             }
+            SaveCachedInputStmtParamTypes(req->statement_id, parameter_types);
         }
         for (int i = 0; i < param_count; i++) {
             if (!param_isnull(i, req->null_bitmap)) {
+                const InputStmtParam *stmt_param = GetCachedInputStmtParamTypes(req->statement_id);     
+                switch (stmt_param->itypes[i]) {
+                    case DOLPHIN_TYPE_LONG:
+                    case DOLPHIN_TYPE_INT24: {
+                        parameters[i].type = TYPE_INT4;
+                        dq_get_int4(buf, &parameters[i].value.i4);
+                        break;
+                    }
+                    case DOLPHIN_TYPE_LONGLONG: {
+                        parameters[i].type = TYPE_INT8;
+                        dq_get_int8(buf, &parameters[i].value.i8);
+                        break;
+                    }
+                    case DOLPHIN_TYPE_SHORT:
+                    case DOLPHIN_TYPE_YEAR: {
+                        parameters[i].type = TYPE_INT2;
+                        dq_get_int2(buf, &parameters[i].value.i4);
+                        break;
+                    }
+                    case DOLPHIN_TYPE_TINY: {
+                        parameters[i].type = TYPE_INT1;
+                        dq_get_int1(buf, &parameters[i].value.i1);
+                        break;
+                    }
+                    case DOLPHIN_TYPE_DOUBLE: {
+                        parameters[i].type = TYPE_DOUBLE;
+                        dq_get_int8(buf, &parameters[i].value.d.i8);
+                        // TODO
+                        break;
+                    }
+                    case DOLPHIN_TYPE_FLOAT: {
+                        parameters[i].type = TYPE_FLOAT;
+                        dq_get_int4(buf, &parameters[i].value.f.i4);
+                        break;
+                    }
+                    case DOLPHIN_TYPE_STRING:
+                    case DOLPHIN_TYPE_VARCHAR:
+                    case DOLPHIN_TYPE_VAR_STRING:
+                    case DOLPHIN_TYPE_ENUM:
+                    case DOLPHIN_TYPE_SET:
+                    case DOLPHIN_TYPE_LONG_BLOB:
+                    case DOLPHIN_TYPE_MEDIUM_BLOB:
+                    case DOLPHIN_TYPE_BLOB:
+                    case DOLPHIN_TYPE_TINY_BLOB:
+                    case DOLPHIN_TYPE_GEOMETRY:
+                    case DOLPHIN_TYPE_BIT:
+                    case DOLPHIN_TYPE_DECIMAL:
+                    case DOLPHIN_TYPE_NEWDECIMAL: {
+                        parameters[i].type = TYPE_STRING;
+                        parameters[i].value.text = dq_get_string_lenenc(buf);
+                        break;
+                    }
+                    default:
+                        break;
+                }
                 // should get value by type
-                parameters[i].value = dq_get_string_lenenc(buf);
+                // parameters[i].value = dq_get_string_lenenc(buf);
             } 
         }
         req->parameter_values = parameters;

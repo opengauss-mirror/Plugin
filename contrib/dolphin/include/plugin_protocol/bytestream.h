@@ -227,6 +227,11 @@ static inline void dq_get_int4(StringInfo buf, uint32 *num)
     dq_get_int_len(buf, (void *)num, BYTE_4_LEN);
 }
 
+static inline void dq_get_int8(StringInfo buf, uint64 *num)
+{
+    dq_get_int_len(buf, (void *)num, BYTE_8_LEN);
+}
+
 static inline uint8 dq_get_int_lenenc(StringInfo buf, void *num)
 {
     uint8 first;

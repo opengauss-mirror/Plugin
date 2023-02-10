@@ -327,3 +327,37 @@ static void InitDolphinMicroHashTable(int size)
     b_typoid2DolphinMarcoHash = hash_create("Dolphin Micro Type Oid Lookup Table", size, &info,
                                                 HASH_ELEM | HASH_FUNCTION | HASH_CONTEXT);
 }
+
+static void InitStmtParamTypesTable(int size)
+{
+    HASHCTL info = {0};
+    info.keysize = sizeof(Oid);
+    info.entrysize = sizeof(HashEntryStmtParamType);
+    info.hash = oid_hash;
+    info.hcxt = u_sess->cache_mem_cxt; 
+    GetSessionContext()->b_stmtInputTypeHash = hash_create("Dolphin Micro Type Oid Lookup Table", size, &info,
+                                                HASH_ELEM | HASH_FUNCTION | HASH_CONTEXT);
+}
+
+const InputStmtParam* GetCachedInputStmtParamTypes(int32 stmt_id)
+{
+    if (GetSessionContext()->b_stmtInputTypeHash == NULL) {
+        InitStmtParamTypesTable(16);
+    }
+
+    bool found = false;
+    HashEntryStmtParamType *entry = (HashEntryStmtParamType *)hash_search(GetSessionContext()->b_stmtInputTypeHash,
+                                                                     &stmt_id, HASH_FIND, &found);
+    return found ? entry->value : NULL;
+}
+
+void SaveCachedInputStmtParamTypes(int32 stmt_id, InputStmtParam* value)
+{
+    if (GetSessionContext()->b_stmtInputTypeHash == NULL) {
+        InitStmtParamTypesTable(16);
+    }
+
+    HashEntryStmtParamType *entry = (HashEntryStmtParamType *)hash_search(GetSessionContext()->b_stmtInputTypeHash,
+                                                                     &stmt_id, HASH_ENTER, NULL);
+    entry->value = value;
+}

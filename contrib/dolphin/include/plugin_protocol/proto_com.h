@@ -259,7 +259,20 @@ typedef struct HashEntryTypoid2TypeItem {
     const TypeItem* item;
 } HashEntryTypoid2TypeItem;
 
+typedef struct InputStmtParam {
+    uint32* itypes;
+    uint32 count;
+} InputStmtParam;
+
+typedef struct HashEntryStmtParamType {
+    int32 stmt_id;
+    const InputStmtParam* value;
+} HashEntryStmtParamType;
+
 extern void InitTypoid2DolphinMacroHtab();
 extern const TypeItem* GetItemByTypeOid(Oid oid);
+
+extern const InputStmtParam* GetCachedInputStmtParamTypes(int32 stmt_id);
+extern void SaveCachedInputStmtParamTypes(int32 stmt_id, InputStmtParam* value);
 
 #endif /* proto_com.h */

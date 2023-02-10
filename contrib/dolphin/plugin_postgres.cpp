@@ -660,6 +660,7 @@ void init_session_vars(void)
     cxt->do_sconst = NULL;
     cxt->single_line_proc_begin = 0;
     cxt->is_schema_name = false;
+    cxt->b_stmtInputTypeHash = NULL;
 
     DefineCustomBoolVariable("dolphin.b_compatibility_mode",
                              "Enable mysql behavior override opengauss's when collision happens.",

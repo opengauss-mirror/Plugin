@@ -59,9 +59,37 @@ typedef struct network_mysqld_auth_request {
     bool ssl_request;
 } network_mysqld_auth_request;
 
+enum proto_data_type {
+    TYPE_STRING,
+    TYPE_INT8,
+    TYPE_INT4,
+    TYPE_INT2,
+    TYPE_INT1,
+    TYPE_DOUBLE,
+    TYPE_FLOAT,
+    TYPE_DATE,
+    TYPE_DATETIME,
+    TYPE_NULL
+};
+
 typedef struct com_stmt_param {
-    uint32 type;
-    char *value;
+    proto_data_type type;
+    union {
+        char *text;
+        uint64 i8;
+        uint32 i4;        
+        // uint16 i2; 
+        uint8 i1;
+        union {
+            float4 f4;
+            uint32 i4;
+        } f;
+        union {
+            float8 f8;
+            uint64 i8;
+        } d;
+    } value;
+    // char *value;
 } com_stmt_param;
 
 typedef struct com_stmt_exec_request {
