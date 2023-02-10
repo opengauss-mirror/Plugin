@@ -1,5 +1,6 @@
 create schema b_time_funcs;
 set current_schema to 'b_time_funcs';
+set datestyle to 'ISO,YMD';
 create table func_test(functionName varchar(256),result varchar(256));
 truncate table func_test;
 -- makedate()
@@ -206,9 +207,6 @@ LINE 1: ...sult) values ('subdate(''2022-1-1'', bytea''1'')',subdate('2...
                                                              ^
 HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
 insert into func_test(functionName, result) values ('subdate(date''2022-1-1'', 1)',subdate(date'2022-1-1', 1));
-ERROR:  date/time field value out of range: "01-01-2022"
-HINT:  Perhaps you need a different "datestyle" setting.
-CONTEXT:  referenced column: result
 insert into func_test(functionName, result) values ('subdate(cast(''2022-1-1 1:1:1'' as datetime), 1)',subdate(cast('2022-1-1 1:1:1' as datetime), 1));
     -- 特殊/非法参数测试
 insert into func_test(functionName, result) values ('subdate(NULL, 20)',subdate(NULL, 20));
@@ -319,28 +317,25 @@ insert into func_test(functionName, result) values('subdate(''2022-01-01 01:01:0
 -- insert test
 create table insert_subdate(date_col date, datetime_col datetime);
 insert into insert_subdate(date_col, datetime_col) values (subdate('2021-1-1', 1), subdate('2021-1-1 01:01:01', 1));
-ERROR:  date/time field value out of range: "12-31-2020"
-HINT:  Perhaps you need a different "datestyle" setting.
-CONTEXT:  referenced column: date_col
 drop table insert_subdate;
 select * from func_test;
-                              functionname                              |             result              
-------------------------------------------------------------------------+---------------------------------
- makedate('2003','61')                                                  | 03-02-2003
- makedate('12.4','12.5')                                                | 01-13-2012
- makedate(12.4,12.5)                                                    | 01-13-2012
- makedate(false, true)                                                  | 01-01-2000
- makedate(B'101', B'101')                                               | 01-05-2005
+                              functionname                              |           result           
+------------------------------------------------------------------------+----------------------------
+ makedate('2003','61')                                                  | 2003-03-02
+ makedate('12.4','12.5')                                                | 2012-01-13
+ makedate(12.4,12.5)                                                    | 2012-01-13
+ makedate(false, true)                                                  | 2000-01-01
+ makedate(B'101', B'101')                                               | 2005-01-05
  makedate(null, 10)                                                     | 
  makedate(2000, null)                                                   | 
  makedate(-1, 20)                                                       | 
  makedate(10000, 20)                                                    | 
  makedate(2000, 0)                                                      | 
- makedate(2000, 60)                                                     | 02-29-2000
- makedate(2000, 380)                                                    | 01-14-2001
- makedate(69, 32)                                                       | 02-01-2069
- makedate(70, 32)                                                       | 02-01-1970
- makedate(100,32)                                                       | 02-01-0100
+ makedate(2000, 60)                                                     | 2000-02-29
+ makedate(2000, 380)                                                    | 2001-01-14
+ makedate(69, 32)                                                       | 2069-02-01
+ makedate(70, 32)                                                       | 1970-02-01
+ makedate(100,32)                                                       | 0100-02-01
  makedate(9999,366)                                                     | 
  makedate(pow(2,62),366)                                                | 
  makedate(2001, 9223372036854775807)                                    | 
@@ -448,39 +443,40 @@ select * from func_test;
  sec_to_time(10000000000000000000)                                      | 838:59:59
  sec_to_time(-10000000000000000000)                                     | -838:59:59
  sec_to_time(-9223372036854775808)                                      | -838:59:59
- subdate('2022-1-1', 20)                                                | 12-12-2021
- subdate('2022-1-1', '20.5')                                            | 12-11-2021
- subdate('2022-1-1', 20.5)                                              | 12-11-2021
- subdate('2022-1-1', true)                                              | 12-31-2021
- subdate('2022-1-1', B'1111')                                           | 12-17-2021
- subdate(cast('2022-1-1 1:1:1' as datetime), 1)                         | Fri Dec 31 01:01:01 2021
+ subdate('2022-1-1', 20)                                                | 2021-12-12
+ subdate('2022-1-1', '20.5')                                            | 2021-12-11
+ subdate('2022-1-1', 20.5)                                              | 2021-12-11
+ subdate('2022-1-1', true)                                              | 2021-12-31
+ subdate('2022-1-1', B'1111')                                           | 2021-12-17
+ subdate(date'2022-1-1', 1)                                             | 2021-12-31
+ subdate(cast('2022-1-1 1:1:1' as datetime), 1)                         | 2021-12-31 01:01:01
  subdate(NULL, 20)                                                      | 
  subdate('2022-1-1', NULL)                                              | 
- subdate('2022-1-1 6:05:05', INTERVAL '10 20:20' DAY TO SECOND)         | Tue Dec 21 09:45:05 2021
- subdate(20220101010101.555, 1)                                         | Fri Dec 31 01:01:01.555 2021
- subdate(20220101, 1)                                                   | 12-31-2021
- subdate('2022-1-1 6:05:05', INTERVAL '6' SECOND)                       | Sat Jan 01 06:05:11 2022
- subdate('2022-6-1 6:05:05.5555555', INTERVAL 6.444444 SECOND)          | Wed Jun 01 06:04:59.111112 2022
- subdate('2022-6-1 6:05:05.444444', INTERVAL '6.555555' HOUR TO SECOND) | Wed Jun 01 05:03:58.888889 2022
- subdate('0001-1-1 00:00:01', INTERVAL 1 SECOND)                        | Mon Jan 01 00:00:00 0001
- subdate('2020-2-28 23:59:59', INTERVAL '-1:1' MINUTE TO SECOND)        | Sat Feb 29 00:01:00 2020
- subdate('2020-2-29', INTERVAL '366' DAY)                               | 02-28-2019
- subdate('2020-2-29', INTERVAL '-366' DAY)                              | 03-01-2021
- subdate('0001-1-2 1:1:1', INTERVAL '1' DAY)                            | Mon Jan 01 01:01:01 0001
- subdate('2020-2-29', INTERVAL '-365' MONTH)                            | 07-29-2050
- subdate('0001-1-31', INTERVAL '1' MONTH)                               | 12-31-0000
- subdate('0001-2-1', INTERVAL '1' MONTH)                                | 01-01-0001
- subdate('2020-2-29', INTERVAL 3 YEAR)                                  | 02-28-2017
- subdate('2020-2-29', INTERVAL -3 YEAR)                                 | 02-28-2023
- subdate('0001-12-31', INTERVAL '1' YEAR)                               | 12-31-0000
+ subdate('2022-1-1 6:05:05', INTERVAL '10 20:20' DAY TO SECOND)         | 2021-12-21 09:45:05
+ subdate(20220101010101.555, 1)                                         | 2021-12-31 01:01:01.555
+ subdate(20220101, 1)                                                   | 2021-12-31
+ subdate('2022-1-1 6:05:05', INTERVAL '6' SECOND)                       | 2022-01-01 06:05:11
+ subdate('2022-6-1 6:05:05.5555555', INTERVAL 6.444444 SECOND)          | 2022-06-01 06:04:59.111112
+ subdate('2022-6-1 6:05:05.444444', INTERVAL '6.555555' HOUR TO SECOND) | 2022-06-01 05:03:58.888889
+ subdate('0001-1-1 00:00:01', INTERVAL 1 SECOND)                        | 0001-01-01 00:00:00
+ subdate('2020-2-28 23:59:59', INTERVAL '-1:1' MINUTE TO SECOND)        | 2020-02-29 00:01:00
+ subdate('2020-2-29', INTERVAL '366' DAY)                               | 2019-02-28
+ subdate('2020-2-29', INTERVAL '-366' DAY)                              | 2021-03-01
+ subdate('0001-1-2 1:1:1', INTERVAL '1' DAY)                            | 0001-01-01 01:01:01
+ subdate('2020-2-29', INTERVAL '-365' MONTH)                            | 2050-07-29
+ subdate('0001-1-31', INTERVAL '1' MONTH)                               | 0000-12-31
+ subdate('0001-2-1', INTERVAL '1' MONTH)                                | 0001-01-01
+ subdate('2020-2-29', INTERVAL 3 YEAR)                                  | 2017-02-28
+ subdate('2020-2-29', INTERVAL -3 YEAR)                                 | 2023-02-28
+ subdate('0001-12-31', INTERVAL '1' YEAR)                               | 0000-12-31
  subdate(time'100:59:59', INTERVAL '1 20:50:50.888888' DAY To SECOND)   | 56:09:08.111112
  subdate(time'100:59:59', INTERVAL '-1 20:50:50.888888' HOUR To SECOND) | 121:50:49.888888
  subdate(time(6)'100:59:59.555', 2                                      | 52:59:59.555
- subdate('2022-01-01', interval 21.9 year)                              | 01-01-2000
- subdate('2022-01-01 01:01:01', interval 1.5 month)                     | Mon Nov 01 01:01:01 2021
+ subdate('2022-01-01', interval 21.9 year)                              | 2000-01-01
+ subdate('2022-01-01 01:01:01', interval 1.5 month)                     | 2021-11-01 01:01:01
  subdate(time'838:59:59', interval 1.999 hour)                          | 836:59:59
- subdate('2022-01-01 01:01:01', interval 1.999 minute)                  | Sat Jan 01 00:59:01 2022
- subdate('2022-01-01 01:01:01', interval 1.999 second)                  | Sat Jan 01 01:00:59.001 2022
+ subdate('2022-01-01 01:01:01', interval 1.999 minute)                  | 2022-01-01 00:59:01
+ subdate('2022-01-01 01:01:01', interval 1.999 second)                  | 2022-01-01 01:00:59.001
 --?.*
 
 drop schema b_time_funcs cascade;

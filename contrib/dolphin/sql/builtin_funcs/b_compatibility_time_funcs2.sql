@@ -4,6 +4,7 @@
 --
 create schema b_time_funcs2;
 set current_schema to 'b_time_funcs2';
+set datestyle to 'ISO,YMD';
 
 create table func_test2(functionName varchar(256),result varchar(256));
 truncate table func_test2;
