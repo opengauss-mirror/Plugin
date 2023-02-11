@@ -8,6 +8,8 @@ CREATE TYPE test_engine_type1 AS (a int, b text);
 CREATE TABLE test_engine_type_table1 OF test_engine_type1 engine = InnoDB;
 CREATE TYPE test_engine_type2 AS (a int, b text);
 CREATE TABLE IF NOT EXISTS test_engine_type_table2 OF test_engine_type2 engine = InnoDB;
+CREATE TABLE test_engine_unreserved_keyword (a int) engine = memory;
+CREATE TABLE test_engine_colname_keyword (a int) engine = between;
 
 CREATE TABLE test_engine_1_1 (a int) engine = 'InnoDB';
 CREATE TABLE  IF NOT EXISTS test_engine_2_1 (a int) engine = 'InnoDB';

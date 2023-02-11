@@ -7984,7 +7984,7 @@ CreateStmt:	CREATE OptTemp TABLE dolphin_qualified_name '(' OptTableElementList 
 		;
 
 engine_option:
-	ENGINE_P opt_equal normal_ident
+	ENGINE_P opt_equal ColId
 		{
 			$$ = NULL;
 		}
@@ -8039,7 +8039,7 @@ opt_row_format:
 	;
 
 opt_engine_without_empty:
-	ENGINE_P opt_equal normal_ident
+	ENGINE_P opt_equal ColId
 		{
 			$$ = NULL;
 		}
@@ -32644,6 +32644,7 @@ unreserved_keyword_without_key:
 			| MAXEXTENTS
 			| MAXSIZE
 			| MAXTRANS
+			| MEMORY
 			| MERGE
 			| MICROSECOND_P
 			| MINEXTENTS
