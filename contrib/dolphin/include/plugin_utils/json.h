@@ -15,7 +15,8 @@
 #ifndef PLUGIN_JSON_H
 #define PLUGIN_JSON_H
 #define VALTYPE_IS_JSON(v) \
-    ((v) == UNKNOWNOID || (v) == JSONOID || (v) == JSONBOID || (v) == CSTRINGOID || (v) == TEXTOID)
+    ((v) == UNKNOWNOID || (v) == JSONOID || (v) == JSONBOID || (v) == CSTRINGOID || (v) == TEXTOID || \
+     (v) == CHAROID || (v) == VARCHAROID || (v) == BPCHAROID)
 
 extern void get_keys_order(char **a, int l, int r, int pos[]);
 #endif   /* PLUGIN_JSON_H */

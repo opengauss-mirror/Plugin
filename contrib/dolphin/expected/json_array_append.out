@@ -129,7 +129,7 @@ select JSON_ARRAY_APPEND('[1, [2, 3]]', '$[1]', 4, '$[1]', 5);
 select JSON_ARRAY_APPEND('[1, [2, 3]]', '$[1]', null);
  json_array_append 
 -------------------
- 
+ [1, [2, 3, null]]
 (1 row)
 
 select JSON_ARRAY_APPEND('[1, [2, 3]]', '$[1]', true);
@@ -182,5 +182,23 @@ CONTEXT:  referenced column: json_array_append
 select JSON_ARRAY_APPEND('[1, [2, 3]]', ' ', 4);
 ERROR:  Invalid JSON path expression. The error is around argument 1.
 CONTEXT:  referenced column: json_array_append
+select JSON_ARRAY_APPEND('[1, [2, 3]]'::varchar(20), '$[1]', null);
+ json_array_append 
+-------------------
+ [1, [2, 3, null]]
+(1 row)
+
+select JSON_ARRAY_APPEND('[1, [2, 3]]'::bpchar, '$[1]', null);
+ json_array_append 
+-------------------
+ [1, [2, 3, null]]
+(1 row)
+
+select JSON_ARRAY_APPEND('[1, [2, 3]]', '$[0]', null);
+  json_array_append  
+---------------------
+ [[1, null], [2, 3]]
+(1 row)
+
 drop schema test_json_array_append cascade;
 reset current_schema;
