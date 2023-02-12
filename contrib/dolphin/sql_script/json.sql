@@ -31,7 +31,7 @@ CREATE OR REPLACE FUNCTION pg_catalog.json_merge(variadic arr "any") RETURNS jso
 
 CREATE OR REPLACE FUNCTION pg_catalog.json_merge_patch(variadic arr "any") RETURNS json LANGUAGE C IMMUTABLE as '$libdir/dolphin', 'json_merge_patch';
 
-CREATE OR REPLACE FUNCTION pg_catalog.json_insert(variadic "any") RETURNS json LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'json_insert';
+CREATE OR REPLACE FUNCTION pg_catalog.json_insert(variadic "any") RETURNS json LANGUAGE C IMMUTABLE as '$libdir/dolphin', 'json_insert';
 
 CREATE OR REPLACE FUNCTION pg_catalog.json_depth("any") RETURNS int LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'json_depth';
 
