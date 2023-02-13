@@ -374,3 +374,37 @@ alter table test_option1 add key ixd_at14 using btree (b) comment 'xx' using aaa
 
 drop schema test_table_index cascade;
 reset current_schema;
+
+-- B_FORMAT Database non-unique index create foreign key.
+create table t1(id int, name varchar);
+create table t2(id int, a_id int);
+-- create non-unique index on table t1.
+create index a_index_1 on t1(id);
+-- create foreign key on non-unique index
+alter table t2 add constraint t2_fk foreign key (a_id) references t1(id);
+\d t1
+\d t2
+insert into t1 values(1,'a'),(2,'b');
+select * from t1;
+insert into t2 values(1,1);
+select * from t2;
+insert into t2 values(1,3);
+select * from t2;
+alter table t2 drop constraint t2_fk;
+alter table t2 add constraint t2_fk foreign key (a_id) references t1(id) on update cascade;
+select * from t1;
+insert into t1 values(1,'s');
+select * from t1;
+insert into t2 values(2,1);
+select * from t2;
+update t1 set id = 11 where name = 'a';
+select * from t1;
+select * from t2;
+update t1 set id =1 where name = 'a';
+alter table t2 drop constraint t2_fk;
+alter table t2 add constraint t2_fk foreign key (a_id) references t1(id) on delete cascade;
+select * from t1;
+select * from t2;
+delete from t1 where name = 's';
+select * from t1;
+select * from t2;
