@@ -8648,44 +8648,46 @@ Datum field(PG_FUNCTION_ARGS)
 
     if (PG_NARGS() < 2) {
         elog(ERROR, "Incorrect parameter count in the call to native function 'field'");
-    } else {
-        if (PG_ARGISNULL(0)) {
-            PG_RETURN_INT64(0);
-        } else {
-            for (int i = 0; i < PG_NARGS(); i++) {
-                if (INT4OID == fcinfo->argTypes[i] || NUMERICOID == fcinfo->argTypes[i] || BOOLOID == fcinfo->argTypes[i]) {
-                    number_cnt++;
-                }
-            }
-            if (number_cnt <= PG_NARGS() && number_cnt > 0) {
-                first_arg = conv_typ_to_double(fcinfo, 0);
-                for (int i = 1; i < PG_NARGS(); i++) {
-                    if (!PG_ARGISNULL(i)) {
-                        match_arg = conv_typ_to_double(fcinfo, i);
-                        if (first_arg == match_arg) {
-                            result = i;
-                            break;
-                        }
-                    }
-                }
-
-            } else if (number_cnt == 0) {
-                for (int i = 1; i < PG_NARGS(); i++) {
-                    if (!PG_ARGISNULL(i)) {
-                        getTypeOutputInfo(fcinfo->argTypes[i], &typeOutput, &typIsVarlena);
-                        if (0 == internal_text_pattern_compare(cstring_to_text(OidOutputFunctionCall(typeOutput, fcinfo->arg[0])),
-                                                               cstring_to_text(OidOutputFunctionCall(typeOutput, fcinfo->arg[i])))) {
-                            result = i;
-                            break;
-                        }
-                    }
-                }
-
-            }
-
-        }
+    }
+    if (PG_ARGISNULL(0)) {
+        PG_RETURN_INT64(0);
     }
 
+    for (int i = 0; i < PG_NARGS(); i++) {
+        if (INT4OID == fcinfo->argTypes[i] || NUMERICOID == fcinfo->argTypes[i] || BOOLOID == fcinfo->argTypes[i]) {
+            number_cnt++;
+        }
+    }
+    if (number_cnt <= PG_NARGS() && number_cnt > 0) {
+        first_arg = conv_typ_to_double(fcinfo, 0);
+        for (int i = 1; i < PG_NARGS(); i++) {
+            if (PG_ARGISNULL(i)) {
+                continue;
+            }
+            match_arg = conv_typ_to_double(fcinfo, i);
+            if (first_arg == match_arg) {
+                result = i;
+                break;
+            }
+        }
+    } else if (number_cnt == 0) {
+        getTypeOutputInfo(fcinfo->argTypes[0], &typeOutput, &typIsVarlena);
+        text* arg0 = cstring_to_text(OidOutputFunctionCall(typeOutput, PG_GETARG_DATUM(0)));
+        for (int i = 1; i < PG_NARGS(); i++) {
+            if (PG_ARGISNULL(i)) {
+                continue;
+            }
+            getTypeOutputInfo(fcinfo->argTypes[i], &typeOutput, &typIsVarlena);
+            text* argi = cstring_to_text(OidOutputFunctionCall(typeOutput, PG_GETARG_DATUM(i)));
+            if (internal_text_pattern_compare(arg0, argi) == 0) {
+                result = i;
+                pfree(argi);
+                break;
+            }
+            pfree(argi);
+        }
+        pfree(arg0);
+    }
     PG_RETURN_INT64(result);
 }
 
