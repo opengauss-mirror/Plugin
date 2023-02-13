@@ -18588,7 +18588,16 @@ flow_control_func_body:
 				while(true) {
 					/* handle single SQL body like "return xxx" */
 					if (tok == YYEOF || tok == END_OF_PROC) {
-						proc_e = (tok == END_OF_PROC ? yylloc + 1 : yylloc);
+						proc_e = yylloc;
+						if (strlen(u_sess->attr.attr_common.delimiter_name) > 1
+								|| pre_tok != u_sess->attr.attr_common.delimiter_name[0]) {
+							/*
+							 * if length of delimiter is greater than 1, which means tok is END_OF_PROC,
+							 * or token is EOF and SQL has no delimiter ended, we extend function body
+							 * string so that we could correctly add ';' to the end later.
+							 */
+							proc_e++;
+						}
 						break;
 					}
 
