@@ -1,0 +1,6 @@
+\! gsql -d contrib_regression -r -p @portstring@ -c "create function gsql_func_test_1(n int) returns varchar(50) return (select n+1)"
+\! gsql -d contrib_regression -r -p @portstring@ -c "select gsql_func_test_1(2)"
+\! gsql -d contrib_regression -r -p @portstring@ -c "drop function gsql_func_test_1"
+\! gsql -d contrib_regression -r -p @portstring@ -c "create function gsql_func_test_2(n int) returns varchar(50) return (select n+1);"
+\! gsql -d contrib_regression -r -p @portstring@ -c "select gsql_func_test_2(2);"
+\! gsql -d contrib_regression -r -p @portstring@ -c "drop function gsql_func_test_2;"
