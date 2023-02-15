@@ -41,6 +41,17 @@ insert into time_table values(20200822, 1);
 insert into time_table values(20211001, 2);
 insert into time_table values(20221204, 3);
 select json_objectagg(b, a) from time_table;
+CREATE TEMP TABLE null_value (a int, b int);
+SELECT json_objectagg(a, b) FROM null_value;
+select json_objectagg(true,null);
+select json_objectagg(FALSE,'null');
+select json_objectagg('id',87);
+select json_objectagg('哈哈哈','select');
+select json_objectagg('["a", ["b", "c"], "d"]', null);
+select json_objectagg('["a", ["b", "c"], "d"]', '[]');
+select json_objectagg('{"a": 1}', null);
+select json_objectagg('{"b": [1, 2]}', '{"c":{"c1":[11,null]}}');
+select json_objectagg('', null);
 
 --test for json key
 create temp table json_table(a json, b text);

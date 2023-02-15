@@ -15,6 +15,7 @@ select json_object('name', 'Tim', 'age', 20, 'friend', json_object('name', 'Jim'
 select json_object('City', 'Cairns', 'Population', 139693);
 select json_object(1234,234,212,333);
 select json_object(1, 'Json', 2, 'MyContex');
+select json_object('{"a":1}', null, '{"b":[1,2]}', '{"c":{"c1":[11,null]}}', true, 87);
 
 --test for json key
 select json_object('{"a": "b"}'::json, true, '{"json": {"abc": "cde"}}'::json, 'TEXT');

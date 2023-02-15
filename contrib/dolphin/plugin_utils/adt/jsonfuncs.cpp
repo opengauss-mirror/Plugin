@@ -4656,6 +4656,10 @@ Datum json_keys(PG_FUNCTION_ARGS)
                     (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
                      errmsg("Invalid JSON path expression. The error is around character position %d.", error_pos)));
         }
+        if (jp->next!=NULL && jp->next->key == NULL && (root->type & 0xFF) == cJSON_Object &&
+            jp->next->index == 0 && jp->next->next == NULL) {
+            PG_RETURN_NULL();
+        }
         cJSON_JsonPathMatch(root, jp, res);
         if (res->len == 1) {
             root = res->head->next->node;
@@ -5959,7 +5963,7 @@ Datum json_objectagg_finalfn(PG_FUNCTION_ARGS)
     Assert(AggCheckCallContext(fcinfo, NULL));
     state = PG_ARGISNULL(0) ? NULL : (StringInfo)PG_GETARG_POINTER(0);
     if (state == NULL) {
-        PG_RETURN_TEXT_P(cstring_to_text("{}"));
+        PG_RETURN_NULL();
     }
 
     appendStringInfoString(state, " }");
