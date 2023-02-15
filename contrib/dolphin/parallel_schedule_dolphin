@@ -130,4 +130,4 @@ test: builtin_funcs/cast any_value_test default_function get_b_database union2
 
 test: json_type json_pretty json_valid json_length json_objectagg json_arrayagg json_operator json_storage_size
 
-test: test_uuid_short test_sleep
+test: test_uuid_short test_sleep distinct
