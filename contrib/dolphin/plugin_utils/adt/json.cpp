@@ -2265,7 +2265,7 @@ Datum json_object_mysql(PG_FUNCTION_ARGS)
         switch (tcategory) {
             case TYPCATEGORY_BOOLEAN:
                 tempstr = makeStringInfo();
-                escape_json(tempstr, DatumGetBool(arg) ? "true" : "false");
+                escape_json(tempstr, DatumGetBool(arg) ? "1" : "0");
                 keys[i] = tempstr->data;
                 break;
             case TYPCATEGORY_NUMERIC:
@@ -2305,6 +2305,7 @@ Datum json_object_mysql(PG_FUNCTION_ARGS)
     result = makeStringInfo();
     appendStringInfoChar(result, '{');
     for (i = 0; i < nargs; i += 2) {
+        is_null = false;
         order = i / 2;
         if (isValid[pos[order]] == false) {
             continue;
@@ -2814,12 +2815,14 @@ static void parse_json_key(Datum val, bool is_null, StringInfo result, Oid val_t
         appendStringInfoString(result, "null");
         return;
     }
-    outputstr = OidOutputFunctionCall(typoutput, val);
-    if (*outputstr == '\0') {
-        ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("key value must not be empty")));
+    if (tcategory == TYPCATEGORY_BOOLEAN) {
+        escape_json(result, DatumGetBool(val) ? "1" : "0");
+    } else {
+        outputstr = OidOutputFunctionCall(typoutput, val);
+        escape_json(result, outputstr);
+        pfree(outputstr);
     }
-    escape_json(result, outputstr);
-    pfree(outputstr);
+    
     return;
 }
 
@@ -2867,7 +2870,7 @@ Datum json_objectagg_mysql_transfn(PG_FUNCTION_ARGS)
         arg = PG_GETARG_DATUM(1);
     }
 
-    if (val_type == InvalidOid || val_type == UNKNOWNOID) {
+    if (val_type == InvalidOid) {
         ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("arg 1: could not determine data type")));
     }
     parse_json_key(arg, false, state, val_type);
@@ -2885,7 +2888,7 @@ Datum json_objectagg_mysql_transfn(PG_FUNCTION_ARGS)
         arg = PG_GETARG_DATUM(2);
     }
 
-    if (val_type == InvalidOid || val_type == UNKNOWNOID) {
+    if (val_type == InvalidOid) {
         ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("arg 2: could not determine data type")));
     }
     if (PG_ARGISNULL(2)) {

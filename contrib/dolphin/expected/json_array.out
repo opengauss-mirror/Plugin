@@ -65,6 +65,12 @@ ERROR:  column "adjiw" does not exist
 LINE 1: select json_array(1,2,adjiw,4);
                               ^
 CONTEXT:  referenced column: json_array
+select json_array();
+ json_array 
+------------
+ []
+(1 row)
+
 create table dataa(name VARCHAR(20) PRIMARY KEY);
 NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "dataa_pkey" for table "dataa"
 insert into dataa(name) value(json_array('sjy'));

@@ -24,6 +24,8 @@ SELECT JSON_KEYS('{"a":1,"b":{"c":{"d":114},"d":514}}','$.b.c');
 SELECT JSON_KEYS('[1,2,{"a":1,"b":{"c":2}},4]','$[2]');
 SELECT JSON_KEYS('{"a":1,"b":{"c":2}}','$.z');
 SELECT JSON_KEYS('[1,2,{"a":1,"b":{"c":2}},4]','$[8]');
+SELECT JSON_KEYS('{"a":1,"b":{"c":2}}','$[0]');
+SELECT JSON_KEYS('{"a":1,"b":{"c":2}}','$');
 
 
 create table student(name json);

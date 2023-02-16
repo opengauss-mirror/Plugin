@@ -52,6 +52,12 @@ select json_object(1, 'Json', 2, 'MyContex');
  {"1": "Json", "2": "MyContex"}
 (1 row)
 
+select json_object('{"a":1}', null, '{"b":[1,2]}', '{"c":{"c1":[11,null]}}', true, 87);
+                                 json_object                                 
+-----------------------------------------------------------------------------
+ {"1": 87, "{\"a\":1}": null, "{\"b\":[1,2]}": "{\"c\":{\"c1\":[11,null]}}"}
+(1 row)
+
 --test for json key
 select json_object('{"a": "b"}'::json, true, '{"json": {"abc": "cde"}}'::json, 'TEXT');
                             json_object                             
@@ -268,15 +274,15 @@ select json_object('Red', true, 'Blue', false);
 (1 row)
 
 select json_object(true, 1, false, 0);
-       json_object       
--------------------------
- {"true": 1, "false": 0}
+   json_object    
+------------------
+ {"0": 0, "1": 1}
 (1 row)
 
 select json_object(true, false, false, true);
-          json_object           
---------------------------------
- {"true": false, "false": true}
+       json_object       
+-------------------------
+ {"0": true, "1": false}
 (1 row)
 
 -- test for lots of pairs

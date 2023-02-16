@@ -63,6 +63,67 @@ select json_objectagg(b, a) from time_table;
  {"1": "08-22-2020", "2": "10-01-2021", "3": "12-04-2022"}
 (1 row)
 
+CREATE TEMP TABLE null_value (a int, b int);
+SELECT json_objectagg(a, b) FROM null_value;
+ json_objectagg 
+----------------
+ 
+(1 row)
+
+select json_objectagg(true,null);
+ json_objectagg 
+----------------
+ {"1": null}
+(1 row)
+
+select json_objectagg(FALSE,'null');
+ json_objectagg 
+----------------
+ {"0": "null"}
+(1 row)
+
+select json_objectagg('id',87);
+ json_objectagg 
+----------------
+ {"id": 87}
+(1 row)
+
+select json_objectagg('哈哈哈','select');
+    json_objectagg    
+----------------------
+ {"哈哈哈": "select"}
+(1 row)
+
+select json_objectagg('["a", ["b", "c"], "d"]', null);
+              json_objectagg              
+------------------------------------------
+ {"[\"a\", [\"b\", \"c\"], \"d\"]": null}
+(1 row)
+
+select json_objectagg('["a", ["b", "c"], "d"]', '[]');
+              json_objectagg              
+------------------------------------------
+ {"[\"a\", [\"b\", \"c\"], \"d\"]": "[]"}
+(1 row)
+
+select json_objectagg('{"a": 1}', null);
+    json_objectagg    
+----------------------
+ {"{\"a\": 1}": null}
+(1 row)
+
+select json_objectagg('{"b": [1, 2]}', '{"c":{"c1":[11,null]}}');
+                  json_objectagg                   
+---------------------------------------------------
+ {"{\"b\": [1, 2]}": "{\"c\":{\"c1\":[11,null]}}"}
+(1 row)
+
+select json_objectagg('', null);
+ json_objectagg 
+----------------
+ {"": null}
+(1 row)
+
 --test for json key
 create temp table json_table(a json, b text);
 insert into json_table values ('{"a": "b"}', 'Json');

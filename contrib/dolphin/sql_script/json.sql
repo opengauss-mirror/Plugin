@@ -1,6 +1,7 @@
 CREATE OR REPLACE FUNCTION pg_catalog.json_quote(text) RETURNS json LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'json_quote';
 
 CREATE OR REPLACE FUNCTION pg_catalog.json_array(variadic "any") RETURNS json LANGUAGE C IMMUTABLE as '$libdir/dolphin', 'json_array';
+CREATE OR REPLACE FUNCTION pg_catalog.json_array() RETURNS json LANGUAGE C IMMUTABLE as '$libdir/dolphin', 'json_array';
 
 create or replace function pg_catalog.json_object_mysql(variadic arr "any") returns json language C immutable as '$libdir/dolphin', 'json_object_mysql';
 create or replace function pg_catalog.json_object_noarg() returns json language C immutable as '$libdir/dolphin', 'json_object_noarg';
