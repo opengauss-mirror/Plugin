@@ -476,7 +476,7 @@ static void with_rollup_check_elems_count(Node* expr);
 static void CheckIconstType(Node* node);
 
 /* B Compatibility Check */
-static void BCompatibilityOptionSupportCheck();
+static void BCompatibilityOptionSupportCheck(const char* keyword);
 
 static char* TriggerBodyGet(int& start_pos, int& end_pos, base_yy_extra_type* yyextra);
 
@@ -1146,7 +1146,7 @@ static char* appendString(char* source, char* target, int offset);
 	INCLUDING INCREMENT INCREMENTAL INDEX INDEXES INFILE INHERIT INHERITS INITIAL_P INITIALLY INITRANS INLINE_P
 
 	INNER_P INOUT INPUT_P INSENSITIVE INSERT INSERT_METHOD INSTEAD INT_P INTEGER INTERNAL
-	INTERSECT INTERVAL INTO INVOKER IP IS ISNULL ISOLATION
+	INTERSECT INTERVAL INTO INVISIBLE INVOKER IP IS ISNULL ISOLATION
 
 	JOIN
 
@@ -1196,7 +1196,7 @@ static char* appendString(char* source, char* target, int offset);
 	UNTIL UNUSABLE UPDATE USE USEEOF USER USING UTC_DATE UTC_TIME UTC_TIMESTAMP
 
 	VACUUM VALID VALIDATE VALIDATION VALIDATOR VALUE_P VALUES VARBINARY VARCHAR VARCHAR2 VARIABLES VARIADIC VARRAY VARYING VCGROUP
-	VERBOSE VERIFY VERSION_P VIEW VOLATILE
+	VERBOSE VERIFY VERSION_P VIEW VISIBLE VOLATILE
 
 	WAIT WARNINGS WEAK WHEN WHERE WHILE_P WHITESPACE_P WINDOW WITH WITHIN WITHOUT WORK WORKLOAD WRAPPER WRITE
 
@@ -4882,6 +4882,24 @@ alter_table_cmd:
 					$$ = (Node *)n;
 				}
 			|
+			ALTER INDEX index_name INVISIBLE
+				{
+					BCompatibilityOptionSupportCheck($4);
+					AlterTableCmd *n = makeNode(AlterTableCmd);
+					n->subtype = AT_InvisibleIndex;
+					n->name = $3;
+					$$ = (Node *)n;
+				}
+			|
+			ALTER INDEX index_name VISIBLE
+				{
+					BCompatibilityOptionSupportCheck($4);
+					AlterTableCmd *n = makeNode(AlterTableCmd);
+					n->subtype = AT_VisibleIndex;
+					n->name = $3;
+					$$ = (Node *)n;
+				}
+			|
 			/* ALTER TABLE <name> DISABLE KEYS */
 			DISABLE_P KEYS
 				{
@@ -5616,7 +5634,7 @@ alter_table_cmd:
 /* table comments start */
             | COMMENT opt_equal Sconst
             {
-            		BCompatibilityOptionSupportCheck();
+                    BCompatibilityOptionSupportCheck($1);
                     AlterTableCmd *n = makeNode(AlterTableCmd);
                     n->subtype = AT_COMMENTS;
                     n->name = $3;
@@ -5708,7 +5726,6 @@ opt_index_options:
 index_options:
 			 index_option
 			 {
-					BCompatibilityOptionSupportCheck();
 					$$ = list_make1($1);
 			 }
 			 | index_options index_option
@@ -5719,6 +5736,7 @@ index_options:
 index_option:
 			 COMMENT opt_equal Sconst
 			 {
+					BCompatibilityOptionSupportCheck($1);
 					CommentStmt *n = makeNode(CommentStmt);
 					n->objtype = OBJECT_INDEX;
 					n->objname = NIL;
@@ -5735,7 +5753,6 @@ opt_table_index_options:
 table_index_options:
 			 table_index_option
 			 {
-					BCompatibilityOptionSupportCheck();
 					$$ = list_make1($1);
 			 }
 			 | table_index_options table_index_option
@@ -5746,6 +5763,7 @@ table_index_options:
 table_index_option:
 			 COMMENT opt_equal Sconst
 			 {
+					BCompatibilityOptionSupportCheck($1);
 					CommentStmt *n = makeNode(CommentStmt);
 					n->objtype = OBJECT_INDEX;
 					n->objname = NIL;
@@ -5755,7 +5773,20 @@ table_index_option:
 			 }
 			 | USING IDENT
 			 {
+					BCompatibilityOptionSupportCheck($1);
 					$$ = makeStringConst(downcase_str($2->str, $2->is_quoted), -1);
+			 }
+			 | INVISIBLE
+			 {
+					BCompatibilityOptionSupportCheck($1);
+					Value *n = makeString("invisible");
+					$$ = (Node*)n;
+			 }
+			 | VISIBLE
+			 {
+					BCompatibilityOptionSupportCheck($1);
+					Value *n = makeString("visible");
+					$$ = (Node*)n;
 			 }
 		;
 
@@ -5766,7 +5797,6 @@ opt_table_options:
 table_options:
 			 table_option
 			 {
-					BCompatibilityOptionSupportCheck();
 					$$ = list_make1($1);
 			 }
 			 | table_options opt_comma table_option
@@ -5778,6 +5808,7 @@ table_options:
 table_option:
 			 COMMENT opt_equal Sconst
 			 {
+				BCompatibilityOptionSupportCheck($1);
 				CommentStmt *n = makeNode(CommentStmt);
 				n->objtype = OBJECT_TABLE;
 				n->objname = NIL;
@@ -5787,22 +5818,27 @@ table_option:
 			 }
 			| set_compress_type
 			 {
+				BCompatibilityOptionSupportCheck("compression");
 				$$ = $1;
 			 }
 			| engine_option
 			 {
+				BCompatibilityOptionSupportCheck("engine");
 				$$ = $1;
 			 }
 			| row_format_option
 			 {
+				BCompatibilityOptionSupportCheck("row_format");
 				$$ = $1;
 			 }
 			| charset_option
 			 {
+				BCompatibilityOptionSupportCheck("charset");
 				$$ = NULL;
 			 }
 			| collate_option
 			 {
+				BCompatibilityOptionSupportCheck("collate");
 				$$ = NULL;
 			 }
 			 ;
@@ -5819,7 +5855,6 @@ opt_column_options:
 column_options:
 			 column_option
 			 {
-					BCompatibilityOptionSupportCheck();
 					$$ = list_make1($1);
 			 }
 			 | column_options column_option
@@ -5830,6 +5865,7 @@ column_options:
 column_option:
 			 COMMENT Sconst
 			 {
+					BCompatibilityOptionSupportCheck($1);
 					CommentStmt *n = makeNode(CommentStmt);
 					n->objtype = OBJECT_COLUMN;
 					n->objname = NIL;
@@ -5847,7 +5883,6 @@ opt_part_options:
 part_options:
 			 part_option
 			 {
-					BCompatibilityOptionSupportCheck();
 					$$ = NULL;
 			 }
 			 | part_options part_option
@@ -5858,6 +5893,7 @@ part_options:
 part_option:
 			 COMMENT opt_equal Sconst
 			 {
+					BCompatibilityOptionSupportCheck($1);
 					u_sess->parser_cxt.hasPartitionComment = true;
 					$$ = (Node*)NULL;
 			 }
@@ -18321,7 +18357,7 @@ common_func_opt_item:
 			    }
 			| COMMENT Sconst
 				{
-					BCompatibilityOptionSupportCheck();
+					BCompatibilityOptionSupportCheck($1);
 					$$ = makeDefElem("comment", (Node *)makeString($2));
 				}
 		;
@@ -32612,6 +32648,7 @@ unreserved_keyword_without_key:
 			| INSERT
 			| INSTEAD
 			| INTERNAL
+			| INVISIBLE
 			| INVOKER
 			| IP
 			| ISNULL
@@ -32884,6 +32921,7 @@ unreserved_keyword_without_key:
 			| VCGROUP
 			| VERSION_P
 			| VIEW
+			| VISIBLE
 			| VOLATILE
 			| WAIT
 			| WEAK
@@ -35226,15 +35264,16 @@ static bool CheckWhetherInColList(char *colname, List *col_list)
 }
 #endif
 
-static void BCompatibilityOptionSupportCheck()
+static void BCompatibilityOptionSupportCheck(const char* keyword)
 {
 #ifdef ENABLE_MULTIPLE_NODES
-    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("Comment is not yet supported.")));
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("%s is not yet supported.", keyword)));
 #endif
     if (DB_IS_CMPT(B_FORMAT)) {
         return;
     }
-    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("Comment is supported only in B compatible database.")));
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+        errmsg("%s is supported only in B compatible database.", keyword)));
 }
 
 static int GetFillerColIndex(char *filler_col_name, List *col_list)
