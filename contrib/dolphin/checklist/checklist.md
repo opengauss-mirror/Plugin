@@ -108,7 +108,11 @@
 |plugin_optimizer\plan|pgxcplan_single.cpp   |src\gausskernel\optimizer\plan\pgxcplan_single.cpp  |
 |plugin_optimizer\plan|planner.cpp   |src\gausskernel\optimizer\plan\planner.cpp  |
 |plugin_optimizer\plan|streamwalker.cpp   |src\gausskernel\optimizer\plan\streamwalker.cpp  |
+|plugin_optimizer\plan|initsplan.cpp   |src\gausskernel\optimizer\plan\initsplan.cpp  |
+|plugin_optimizer\plan|planner.cpp   |src\gausskernel\optimizer\plan\planner.cpp  |
 |plugin_optimizer\prep|prepunion.cpp   |src\gausskernel\optimizer\prep\prepunion.cpp  |
+|plugin_optimizer\util|plancat.cpp   |src\gausskernel\optimizer\util\plancat.cpp  |
+|plugin_optimizer\util|relnode.cpp   |src\gausskernel\optimizer\util\relnode.cpp  |
 |plugin_storage|hashfunc.cpp   |src\gausskernel\storage\access\hash\hashfunc.cpp  |
 |plugin_pl\plpgsql\src|gram.y   |src\common\pl\plpgsql\src\gram.y  |
 |plugin_pl\plpgsql\src|pl_scanner.cpp   |src\common\pl\plpgsql\src\pl_scanner.cpp  |
@@ -168,6 +172,8 @@
 |plugin_optimizer|pgxcplan.h  |src\include\optimizer\pgxcplan.h   |
 |plugin_optimizer|planner.h  |src\include\optimizer\planner.h   |
 |plugin_optimizer|prep.h  |src\include\optimizer\prep.h   |
+|plugin_optimizer|plancat.h  |src\include\optimizer\plancat.h   |
+|plugin_optimizer|planmain.h  |src\include\optimizer\planmain.h   |
 |./|builtin_funcs.ini  |src\common\backend\catalog\builtin_funcs.ini   |
 |./|fmgrtab.h  |src\include\utils\fmgrtab.h   |
 |./|int8.h  |src\include\utils\int8.h   |

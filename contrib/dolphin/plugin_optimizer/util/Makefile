@@ -5,7 +5,7 @@
 #
 # ---------------------------------------------------------------------------------------
 
-subdir = contrib/dolphin/plugin_optimizer/plan
+subdir = contrib/dolphin/plugin_optimizer/util
 top_builddir = ../../../..
 base_dir = contrib/dolphin
 include $(top_builddir)/src/Makefile.global
@@ -19,7 +19,7 @@ ifneq "$(MAKECMDGOALS)" "clean"
 endif
 
 
-OBJS = planner.o streamwalker.o pgxcplan_single.o initsplan.o planmain.o
+OBJS = plancat.o relnode.o
 
 include $(top_srcdir)/src/gausskernel/common.mk
 

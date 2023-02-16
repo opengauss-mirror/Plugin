@@ -45,7 +45,7 @@
 #include "optimizer/cost.h"
 #include "plugin_optimizer/pgxcplan.h"
 #include "optimizer/pgxcship.h"
-#include "optimizer/planmain.h"
+#include "plugin_optimizer/planmain.h"
 #include "plugin_optimizer/planner.h"
 #include "optimizer/restrictinfo.h"
 #include "optimizer/tlist.h"

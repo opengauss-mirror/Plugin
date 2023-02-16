@@ -6,6 +6,7 @@ executor = plugin_executor
 commands = plugin_optimizer/commands
 plan = plugin_optimizer/plan
 prep = plugin_optimizer/prep
+optimizer_util = plugin_optimizer/util
 pl = plugin_pl/plpgsql/src
 adt = $(utils)/adt
 mb = $(utils)/mb
@@ -57,9 +58,11 @@ OBJS += $(executor)/execQual.o
 
 OBJS += $(storage)/hashfunc.o
 
-OBJS += $(plan)/pgxcplan_single.o $(plan)/planner.o $(plan)/streamwalker.o
+OBJS += $(plan)/pgxcplan_single.o $(plan)/planner.o $(plan)/streamwalker.o $(plan)/initsplan.o $(plan)/planmain.o
 
 OBJS += $(prep)/prepunion.o
+
+OBJS += $(optimizer_util)/plancat.o $(optimizer_util)/relnode.o
 
 OBJS += $(commands)/functioncmds.o $(commands)/foreigncmds.o $(commands)/copy.o
 
@@ -67,7 +70,7 @@ OBJS += $(pl)/pl_gram.o $(pl)/pl_scanner.o $(pl)/pl_comp.o $(pl)/pl_handler.o
 
 OBJS += $(catalog)/heap.o
 
-all $(OBJS): write_git_commit protocol parser utils executor vector plan prep commands storage pl catalog;
+all $(OBJS): write_git_commit protocol parser utils executor vector plan prep optimizer_util commands storage pl catalog;
 
 protocol:
 	make -C $(protocol)
@@ -93,6 +96,9 @@ plan:
 prep:
 	make -C $(prep)
 
+optimizer_util:
+	make -C $(optimizer_util)
+
 commands:
 	make -C $(commands)
 
@@ -114,6 +120,7 @@ extra_clean:
 	make clean -C $(storage)
 	make clean -C $(plan)
 	make clean -C $(prep)
+	make clean -C $(optimizer_util)
 	make clean -C $(commands)
 	make clean -C $(pl)
 	make clean -C $(catalog)
