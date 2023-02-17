@@ -996,8 +996,18 @@ Datum float8mul(PG_FUNCTION_ARGS)
     float8 arg2 = PG_GETARG_FLOAT8(1);
     float8 result;
 
+#ifdef DOLPHIN
+    if (arg1 == 0.0 || arg2 == 0.0) {
+        if (GetSessionContext()->enableBCmptMode && (arg1 < 0.0 || arg2 < 0.0)) {
+            PG_RETURN_FLOAT8(-0.0);
+        } else {
+            PG_RETURN_FLOAT8(0);
+        }
+    }
+#else
     if (arg1 == 0.0 || arg2 == 0.0)
         PG_RETURN_FLOAT8(0);
+#endif
 
     result = arg1 * arg2;
 
@@ -1014,8 +1024,18 @@ Datum float8div(PG_FUNCTION_ARGS)
     if (arg2 == 0.0)
         ereport(ERROR, (errcode(ERRCODE_DIVISION_BY_ZERO), errmsg("division by zero")));
 
+#ifdef DOLPHIN
+    if (arg1 == 0.0) {
+        if (GetSessionContext()->enableBCmptMode && arg2 < 0) {
+            PG_RETURN_FLOAT8(-0.0);
+        } else {
+            PG_RETURN_FLOAT8(0);
+        }
+    }
+#else
     if (arg1 == 0.0)
         PG_RETURN_FLOAT8(0);
+#endif
 
     result = arg1 / arg2;
 

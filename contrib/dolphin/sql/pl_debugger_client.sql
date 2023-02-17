@@ -407,7 +407,7 @@ select * from dbe_pldebugger.set_var('vrow', '$$select * from test order by 1 li
 -- row should be changed by assignment member by member
 select * from dbe_pldebugger.set_var('test.a', '1');
 select * from dbe_pldebugger.set_var('test.b', '$$now$$');
-select * from dbe_pldebugger.set_var('test.c', '$$2021-07-31$$::timestamp + now() - now()'); -- function call is not ok
+select * from dbe_pldebugger.set_var('test.c', '$$2021-07-31$$::timestamp + now() - now()');
 select * from dbe_pldebugger.set_var('test.c', '$$2021-07-31$$::timestamp'); -- function call is ok
 
 select * from dbe_pldebugger.set_var('vrec', '(1,1,1)::test%rowtype'); -- not ok

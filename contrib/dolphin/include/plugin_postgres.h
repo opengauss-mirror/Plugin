@@ -56,6 +56,53 @@ extern "C" DLL_PUBLIC void init_plugin_object();
 extern "C" DLL_PUBLIC void init_session_vars(void);
 extern "C" DLL_PUBLIC void create_dolphin_extension();
 
+#define FLOAT8PLOID 591
+#define FLOAT8MIOID 592
+#define FLOAT8MULOID 594
+#define FLOAT8DIVOID 593
+#define TINYINT_LENGTH 3
+#define SMALLINT_LENGTH 5
+#define INTEGER_LENGTH 10
+#define BIGINT_LENGTH 20
+
+/*
+ * "+", "-", "*", "/"
+ */
+typedef enum A_ExprSubKind {
+    OTHERS = -1,
+    AEXPR_PLUS_INT4,
+    AEXPR_PLUS_INT8,
+    AEXPR_MINUS_INT4,
+    AEXPR_MINUS_INT8,
+    AEXPR_MUL_INT4,
+    AEXPR_MUL_INT8,
+    AEXPR_DIV_INT4,
+    AEXPR_DIV_INT8,
+    SUB_KIND_LENGTH
+} A_ExprSubKind;
+
+typedef enum DataKind {
+    INVALID_OP = -1,
+    INT_OP,
+    INT_UINT_OP,
+    UINT_INT_OP,
+    UINT_OP,
+    REAL_OP,
+    DECIMAL_OP,
+    DATA_KIND_LENGTH
+} DataKind;
+
+#define TINYBLOBOID (GetSessionContext()->tinyblobOid)
+#define MEDIUMBLOBOID (GetSessionContext()->mediumblobOid)
+#define LONGBLOBOID (GetSessionContext()->longblobOid)
+#define BINARYOID (GetSessionContext()->binaryOid)
+#define VARBINARYOID (GetSessionContext()->varbinaryOid)
+#define UINT1OID (GetSessionContext()->uint1Oid)
+#define UINT2OID (GetSessionContext()->uint2Oid)
+#define UINT4OID (GetSessionContext()->uint4Oid)
+#define UINT8OID (GetSessionContext()->uint8Oid)
+#define YEAROID (GetSessionContext()->yearOid)
+
 typedef struct BSqlPluginContext {
     bool enableBCmptMode;
     char* sqlModeString;
@@ -70,6 +117,17 @@ typedef struct BSqlPluginContext {
     int paramIdx;
     bool isUpsert;
 #ifdef DOLPHIN
+    Oid tinyblobOid;
+    Oid mediumblobOid;
+    Oid longblobOid;
+    Oid binaryOid;
+    Oid varbinaryOid;
+    Oid uint1Oid;
+    Oid uint2Oid;
+    Oid uint4Oid;
+    Oid uint8Oid;
+    Oid yearOid;
+    Oid dolphin_oprs[SUB_KIND_LENGTH][DATA_KIND_LENGTH];
     char* version_comment;
     int auto_increment_increment;
     char* character_set_client;
@@ -92,6 +150,7 @@ typedef struct BSqlPluginContext {
     int single_line_trigger_begin;
     char* do_sconst;
     int single_line_proc_begin;
+    int div_precision_increment;
 #endif
 } bSqlPluginContext;
 
@@ -130,6 +189,9 @@ BSqlPluginContext* GetSessionContext();
 #define DEFAULT_WAIT_TIMEOUT 28800
 #define MIN_WAIT_TIMEOUT 1
 #define MAX_WAIT_TIMEOUT 31536000
+#define DEFAULT_DIV_PRECISION_INC 4
+#define MIN_DIV_PRECISION_INC 0
+#define MAX_DIV_PRECISION_INC 30
 #endif
 
 typedef enum {

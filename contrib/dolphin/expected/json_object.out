@@ -254,9 +254,9 @@ select json_object('City', '', 'Population', 0.123);
 (1 row)
 
 select json_object('City', '', 'Population', 5/7);
-                  json_object                  
------------------------------------------------
- {"City": "", "Population": 0.714285714285714}
+                    json_object                     
+----------------------------------------------------
+ {"City": "", "Population": 0.71428571428571428571}
 (1 row)
 
 -- test for enormous number

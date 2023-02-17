@@ -1,6 +1,7 @@
 #include "postgres.h"
 #include "plugin_parser/parser.h"
 #include "plugin_parser/analyze.h"
+#include "plugin_parser/parse_oper.h"
 #include "plugin_storage/hash.h"
 #include "plugin_postgres.h"
 #include "plugin_utils/plpgsql.h"
@@ -41,6 +42,7 @@
 #include "catalog/gs_matview.h"
 #include "catalog/gs_db_privilege.h"
 #include "catalog/pg_extension.h"
+#include "catalog/pg_operator.h"
 #include "executor/spi_priv.h"
 #include "tcop/utility.h"
 #include "gs_ledger/ledger_utils.h"
@@ -138,6 +140,9 @@ static bool global_hook_inited = false;
 extern "C" DLL_PUBLIC void _PG_init(void);
 extern "C" DLL_PUBLIC void _PG_fini(void);
 
+static void InitDolphinTypeId(BSqlPluginContext* cxt);
+static void InitDolphinOperator(BSqlPluginContext* cxt);
+
 PG_FUNCTION_INFO_V1_PUBLIC(dolphin_invoke);
 void dolphin_invoke(void)
 {
@@ -206,6 +211,11 @@ void init_plugin_object()
             define_dolphin_server_guc();
         }
     }
+
+    /* init types and operators */
+    BSqlPluginContext* cxt = GetSessionContext();
+    InitDolphinTypeId(cxt);
+    InitDolphinOperator(cxt);
 }
 
 void _PG_init(void)
@@ -671,6 +681,19 @@ void init_session_vars(void)
                             NULL,
                             NULL,
                             NULL);
+    DefineCustomIntVariable("dolphin.div_precision_increment",
+                            gettext_noop("This variable indicates the number of digits by which to increase"
+                            "the scale of the result of division operations performed with the \"/\" operator."),
+                            NULL,
+                            &GetSessionContext()->div_precision_increment,
+                            DEFAULT_DIV_PRECISION_INC,
+                            MIN_DIV_PRECISION_INC,
+                            MAX_DIV_PRECISION_INC,
+                            PGC_USERSET,
+                            0,
+                            NULL,
+                            NULL,
+                            NULL);
 #endif
 
 }
@@ -721,4 +744,96 @@ PGFunction SearchFuncByOid(Oid funcId)
     PGFunction func = fmgrInfo->fn_addr;
     pfree(fmgrInfo);
     return func;
+}
+
+static void InitDolphinTypeId(BSqlPluginContext* cxt)
+{
+    cxt->uint1Oid = get_typeoid(PG_CATALOG_NAMESPACE, "uint1");
+    cxt->uint2Oid = get_typeoid(PG_CATALOG_NAMESPACE, "uint2");
+    cxt->uint4Oid = get_typeoid(PG_CATALOG_NAMESPACE, "uint4");
+    cxt->uint8Oid = get_typeoid(PG_CATALOG_NAMESPACE, "uint8");
+    cxt->binaryOid = get_typeoid(PG_CATALOG_NAMESPACE, "binary");
+    cxt->varbinaryOid = get_typeoid(PG_CATALOG_NAMESPACE, "varbinary");
+    cxt->tinyblobOid = get_typeoid(PG_CATALOG_NAMESPACE, "tinyblob");
+    cxt->mediumblobOid = get_typeoid(PG_CATALOG_NAMESPACE, "mediumblob");
+    cxt->longblobOid = get_typeoid(PG_CATALOG_NAMESPACE, "longblob");
+    cxt->yearOid = get_typeoid(PG_CATALOG_NAMESPACE, "year");
+}
+
+static void InitUintOprs(BSqlPluginContext* cxt)
+{
+    cxt->dolphin_oprs[AEXPR_PLUS_INT4][UINT_INT_OP] =
+        binary_oper_exact_extern(list_make1(makeString("+")), cxt->uint4Oid, INT4OID, false);
+    cxt->dolphin_oprs[AEXPR_MINUS_INT4][UINT_INT_OP] =
+        binary_oper_exact_extern(list_make1(makeString("-")), cxt->uint4Oid, INT4OID, false);
+    cxt->dolphin_oprs[AEXPR_MUL_INT4][UINT_INT_OP] =
+        binary_oper_exact_extern(list_make1(makeString("*")), cxt->uint4Oid, INT4OID, false);
+    cxt->dolphin_oprs[AEXPR_PLUS_INT8][UINT_INT_OP] =
+        binary_oper_exact_extern(list_make1(makeString("+")), cxt->uint8Oid, INT8OID, false);
+    cxt->dolphin_oprs[AEXPR_MINUS_INT8][UINT_INT_OP] =
+        binary_oper_exact_extern(list_make1(makeString("-")), cxt->uint8Oid, INT8OID, false);
+    cxt->dolphin_oprs[AEXPR_MUL_INT8][UINT_INT_OP] =
+        binary_oper_exact_extern(list_make1(makeString("*")), cxt->uint8Oid, INT8OID, false);
+    cxt->dolphin_oprs[AEXPR_PLUS_INT4][INT_UINT_OP] =
+        binary_oper_exact_extern(list_make1(makeString("+")), INT4OID, cxt->uint4Oid, false);
+    cxt->dolphin_oprs[AEXPR_MINUS_INT4][INT_UINT_OP] =
+        binary_oper_exact_extern(list_make1(makeString("-")), INT4OID, cxt->uint4Oid, false);
+    cxt->dolphin_oprs[AEXPR_MUL_INT4][INT_UINT_OP] =
+        binary_oper_exact_extern(list_make1(makeString("*")), INT4OID, cxt->uint4Oid, false);
+    cxt->dolphin_oprs[AEXPR_PLUS_INT8][INT_UINT_OP] =
+        binary_oper_exact_extern(list_make1(makeString("+")), INT8OID, cxt->uint8Oid, false);
+    cxt->dolphin_oprs[AEXPR_MINUS_INT8][INT_UINT_OP] =
+        binary_oper_exact_extern(list_make1(makeString("-")), INT8OID, cxt->uint8Oid, false);
+    cxt->dolphin_oprs[AEXPR_MUL_INT8][INT_UINT_OP] =
+        binary_oper_exact_extern(list_make1(makeString("*")), INT8OID, cxt->uint8Oid, false);
+    cxt->dolphin_oprs[AEXPR_PLUS_INT4][UINT_OP] =
+        binary_oper_exact_extern(list_make1(makeString("+")), cxt->uint4Oid, cxt->uint4Oid, false);
+    cxt->dolphin_oprs[AEXPR_MINUS_INT4][UINT_OP] =
+        binary_oper_exact_extern(list_make1(makeString("-")), cxt->uint4Oid, cxt->uint4Oid, false);
+    cxt->dolphin_oprs[AEXPR_MUL_INT4][UINT_OP] =
+        binary_oper_exact_extern(list_make1(makeString("*")), cxt->uint4Oid, cxt->uint4Oid, false);
+    cxt->dolphin_oprs[AEXPR_PLUS_INT8][UINT_OP] =
+        binary_oper_exact_extern(list_make1(makeString("+")), cxt->uint8Oid, cxt->uint8Oid, false);
+    cxt->dolphin_oprs[AEXPR_MINUS_INT8][UINT_OP] =
+        binary_oper_exact_extern(list_make1(makeString("-")), cxt->uint8Oid, cxt->uint8Oid, false);
+    cxt->dolphin_oprs[AEXPR_MUL_INT8][UINT_OP] =
+        binary_oper_exact_extern(list_make1(makeString("*")), cxt->uint8Oid, cxt->uint8Oid, false);
+}
+
+static void InitDolphinOperator(BSqlPluginContext* cxt)
+{
+    cxt->dolphin_oprs[AEXPR_PLUS_INT4][INT_OP] = INT4PLOID;
+    cxt->dolphin_oprs[AEXPR_PLUS_INT8][INT_OP] = INT8PLOID;
+    cxt->dolphin_oprs[AEXPR_MINUS_INT4][INT_OP] = INT4MIOID;
+    cxt->dolphin_oprs[AEXPR_MINUS_INT8][INT_OP] = INT8MIOID;
+    cxt->dolphin_oprs[AEXPR_MUL_INT4][INT_OP] = INT4MULOID;
+    cxt->dolphin_oprs[AEXPR_MUL_INT8][INT_OP] = INT8MULOID;
+    cxt->dolphin_oprs[AEXPR_DIV_INT4][INT_OP] = NUMERICDIVOID;
+    cxt->dolphin_oprs[AEXPR_DIV_INT8][INT_OP] = NUMERICDIVOID;
+
+    cxt->dolphin_oprs[AEXPR_PLUS_INT4][REAL_OP] = FLOAT8PLOID;
+    cxt->dolphin_oprs[AEXPR_PLUS_INT8][REAL_OP] = FLOAT8PLOID;
+    cxt->dolphin_oprs[AEXPR_MINUS_INT4][REAL_OP] = FLOAT8MIOID;
+    cxt->dolphin_oprs[AEXPR_MINUS_INT8][REAL_OP] = FLOAT8MIOID;
+    cxt->dolphin_oprs[AEXPR_MUL_INT4][REAL_OP] = FLOAT8MULOID;
+    cxt->dolphin_oprs[AEXPR_MUL_INT8][REAL_OP] = FLOAT8MULOID;
+    cxt->dolphin_oprs[AEXPR_DIV_INT4][REAL_OP] = FLOAT8DIVOID;
+    cxt->dolphin_oprs[AEXPR_DIV_INT8][REAL_OP] = FLOAT8DIVOID;
+
+    cxt->dolphin_oprs[AEXPR_PLUS_INT4][DECIMAL_OP] = NUMERICADDOID;
+    cxt->dolphin_oprs[AEXPR_PLUS_INT8][DECIMAL_OP] = NUMERICADDOID;
+    cxt->dolphin_oprs[AEXPR_MINUS_INT4][DECIMAL_OP] = NUMERICSUBOID;
+    cxt->dolphin_oprs[AEXPR_MINUS_INT8][DECIMAL_OP] = NUMERICSUBOID;
+    cxt->dolphin_oprs[AEXPR_MUL_INT4][DECIMAL_OP] = NUMERICMULOID;
+    cxt->dolphin_oprs[AEXPR_MUL_INT8][DECIMAL_OP] = NUMERICMULOID;
+    cxt->dolphin_oprs[AEXPR_DIV_INT4][DECIMAL_OP] = NUMERICDIVOID;
+    cxt->dolphin_oprs[AEXPR_DIV_INT8][DECIMAL_OP] = NUMERICDIVOID;
+
+    cxt->dolphin_oprs[AEXPR_DIV_INT4][INT_UINT_OP] = NUMERICDIVOID;
+    cxt->dolphin_oprs[AEXPR_DIV_INT8][INT_UINT_OP] = NUMERICDIVOID;
+    cxt->dolphin_oprs[AEXPR_DIV_INT4][UINT_INT_OP] = NUMERICDIVOID;
+    cxt->dolphin_oprs[AEXPR_DIV_INT8][UINT_INT_OP] = NUMERICDIVOID;
+    cxt->dolphin_oprs[AEXPR_DIV_INT4][UINT_OP] = NUMERICDIVOID;
+    cxt->dolphin_oprs[AEXPR_DIV_INT8][UINT_OP] = NUMERICDIVOID;
+    InitUintOprs(cxt);
 }

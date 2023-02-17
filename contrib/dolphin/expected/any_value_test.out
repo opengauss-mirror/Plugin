@@ -140,6 +140,42 @@ select any_value(a),b from test_date group by b;
  11-10-2022 | 2
 (2 rows)
 
+create table test_datetime(a datetime, b int);
+insert into test_datetime values('2022-11-08',1),('2022-11-09',1),('2022-11-10',2),('2022-11-11',2);
+select any_value(a),b from test_datetime group by b;
+        any_value         | b 
+--------------------------+---
+ Tue Nov 08 00:00:00 2022 | 1
+ Thu Nov 10 00:00:00 2022 | 2
+(2 rows)
+
+create table test_timestamp(a timestamp, b int);
+insert into test_timestamp values('2022-11-08',1),('2022-11-09',1),('2022-11-10',2),('2022-11-11',2);
+select any_value(a),b from test_timestamp group by b;
+          any_value           | b 
+------------------------------+---
+ Tue Nov 08 00:00:00 2022 PST | 1
+ Thu Nov 10 00:00:00 2022 PST | 2
+(2 rows)
+
+create table test_time(a time, b int);
+insert into test_time values('10:10:10',1),('11:11:11',1),('12:12:12',2),('13:13:13',2);
+select any_value(a),b from test_time group by b;
+ any_value | b 
+-----------+---
+ 10:10:10  | 1
+ 12:12:12  | 2
+(2 rows)
+
+create table test_timetz(a timetz, b int);
+insert into test_timetz values('10:10:10',1),('11:11:11',1),('12:12:12',2),('13:13:13',2);
+select any_value(a),b from test_timetz group by b;
+  any_value  | b 
+-------------+---
+ 10:10:10-08 | 1
+ 12:12:12-08 | 2
+(2 rows)
+
 --test bool type
 create table test_bool(a bool, b int);
 insert into test_bool values('true',1),('false',1),('false',2),('true',2);
@@ -191,7 +227,7 @@ select any_value(c) from test_blob_bytea group by a;
 (2 rows)
 
 drop schema any_value_test cascade;
-NOTICE:  drop cascades to 20 other objects
+NOTICE:  drop cascades to 24 other objects
 DETAIL:  drop cascades to table test_int1
 drop cascades to table test_int2
 drop cascades to table test_int4
@@ -207,6 +243,10 @@ drop cascades to table test_char
 drop cascades to table test_varchar
 drop cascades to table test_text
 drop cascades to table test_date
+drop cascades to table test_datetime
+drop cascades to table test_timestamp
+drop cascades to table test_time
+drop cascades to table test_timetz
 drop cascades to table test_bool
 drop cascades to table test_year
 drop cascades to type test_set_a_set

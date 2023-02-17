@@ -1466,12 +1466,12 @@ select a^b from testforbit group by a,b having a>0;
  0
 (1 row)
 
-select A1.a^A1.b,A2.a^A2.b from testforbit A1 join testforint2 A2 on A1.b>0 and A2.b>0;
+select A1.a^A1.b,A2.a^A2.b from testforbit A1 join testforint2 A2 on A1.b>0 and A2.b>0 order by 1, 2;
  ?column? | ?column? 
 ----------+----------
  0        |        0
- 1        |        0
  0        |      903
+ 1        |        0
  1        |      903
 (4 rows)
 
@@ -1488,8 +1488,7 @@ from testforbit;
 select a^b from testforbit where b%a^1=1;
  ?column? 
 ----------
- 0
-(1 row)
+(0 rows)
 
 select a^b from testforbit where a/b^1<1;
 ERROR:  division by zero

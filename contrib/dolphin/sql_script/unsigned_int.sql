@@ -4352,7 +4352,12 @@ drop CAST IF EXISTS (uint4 AS year) CASCADE;
 CREATE CAST (uint4 AS year) WITH FUNCTION int32_year(uint4);
 
 drop CAST IF EXISTS (year AS uint4) CASCADE;
-CREATE CAST (year AS uint4) WITH FUNCTION year_uint4(year);
+CREATE CAST (year AS uint4) WITH FUNCTION year_uint4(year) AS IMPLICIT;
+
+DROP FUNCTION IF EXISTS pg_catalog.year_uint8("year") cascade;
+CREATE OR REPLACE FUNCTION pg_catalog.year_uint8("year") RETURNS uint8 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'year_uint8';;
+drop CAST IF EXISTS (year AS uint8) CASCADE;
+CREATE CAST ("year" as uint8) with function pg_catalog.year_uint8("year") AS IMPLICIT;
 
 -- uint <-> bit
 DROP FUNCTION IF EXISTS pg_catalog.bittouint4(bit) CASCADE;
@@ -4377,8 +4382,8 @@ drop CAST IF EXISTS (bit AS uint8) CASCADE;
 drop CAST IF EXISTS (uint4 AS bit) CASCADE;
 drop CAST IF EXISTS (uint8 AS bit) CASCADE;
 
-CREATE CAST (bit AS uint4) WITH FUNCTION bittouint4(bit);
-CREATE CAST (bit AS uint8) WITH FUNCTION bittouint8(bit);
+CREATE CAST (bit AS uint4) WITH FUNCTION bittouint4(bit) AS IMPLICIT;
+CREATE CAST (bit AS uint8) WITH FUNCTION bittouint8(bit) AS IMPLICIT;
 CREATE CAST (uint4 AS bit) WITH FUNCTION bitfromuint4(uint4, int4);
 CREATE CAST (uint8 AS bit) WITH FUNCTION bitfromuint8(uint8, int4);
 
@@ -4670,3 +4675,44 @@ CREATE AGGREGATE pg_catalog.any_value(uint8) (
         sfunc = uint_any_value,
         stype = uint8
 );
+
+create function pg_catalog.date_int8_xor(
+    date,
+    uint8
+) RETURNS int16 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'date_int8_xor';
+create operator pg_catalog.^(leftarg = date, rightarg = uint8, procedure = pg_catalog.date_int8_xor);
+create function pg_catalog.int8_date_xor(
+    uint8,
+    date
+) RETURNS int16 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'int8_date_xor';
+create operator pg_catalog.^(leftarg = uint8, rightarg = date, procedure = pg_catalog.int8_date_xor);
+create function pg_catalog.time_int8_xor(
+    time,
+    uint8
+) RETURNS int16 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'time_int8_xor';
+create operator pg_catalog.^(leftarg = time, rightarg = uint8, procedure = pg_catalog.time_int8_xor);
+create function pg_catalog.int8_time_xor(
+    uint8,
+    time
+) RETURNS int16 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'int8_time_xor';
+create operator pg_catalog.^(leftarg = uint8, rightarg = time, procedure = pg_catalog.int8_time_xor);
+create function pg_catalog.timestamp_int8_xor(
+    timestamp,
+    uint8
+) RETURNS int16 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'timestamp_int8_xor';
+create operator pg_catalog.^(leftarg = timestamp, rightarg = uint8, procedure = pg_catalog.timestamp_int8_xor);
+create function pg_catalog.int8_timestamp_xor(
+    uint8,
+    timestamp
+) RETURNS int16 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'int8_timestamp_xor';
+create operator pg_catalog.^(leftarg = uint8, rightarg = timestamp, procedure = pg_catalog.int8_timestamp_xor);
+create function pg_catalog.timestamptz_int8_xor(
+    timestampTz,
+    uint8
+) RETURNS int16 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'timestamptz_int8_xor';
+create operator pg_catalog.^(leftarg = timestampTz, rightarg = uint8, procedure = pg_catalog.timestamptz_int8_xor);
+create function pg_catalog.int8_timestamptz_xor(
+    uint8,
+    timestampTz
+) RETURNS int16 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'int8_timestamptz_xor';
+create operator pg_catalog.^(leftarg = uint8, rightarg = timestampTz, procedure = pg_catalog.int8_timestamptz_xor);

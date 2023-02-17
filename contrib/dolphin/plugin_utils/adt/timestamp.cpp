@@ -10109,4 +10109,100 @@ Datum text_timestamptz_xor(PG_FUNCTION_ARGS)
     int128 ts_int = timestamptz_int128(timestampTz);
     PG_RETURN_INT128(ts_int ^ temp);
 }
+
+/* cast timestamp to numeric */
+PG_FUNCTION_INFO_V1_PUBLIC(timestamp_numeric);
+extern "C" DLL_PUBLIC Datum timestamp_numeric(PG_FUNCTION_ARGS);
+Datum timestamp_numeric(PG_FUNCTION_ARGS)
+{
+    Timestamp timestamp = PG_GETARG_TIMESTAMP(0);
+    Numeric res = NULL;
+    struct pg_tm tt;
+    struct pg_tm* tm = &tt;
+    fsec_t fsec;
+    if (timestamp2tm(timestamp, NULL, tm, &fsec, NULL, NULL) != 0) {
+        ereport(ERROR, (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE), errmsg("timestamp out of range")));
+    }
+    int64 quot = timestamp2int(tm);
+    char *str = AppendFsec(quot, fsec);
+    res =
+        DatumGetNumeric(DirectFunctionCall3(numeric_in, CStringGetDatum(str), ObjectIdGetDatum(0), Int32GetDatum(-1)));
+
+    PG_RETURN_NUMERIC(res);
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(timestamp_any_value);
+extern "C" DLL_PUBLIC Datum timestamp_any_value(PG_FUNCTION_ARGS);
+Datum timestamp_any_value(PG_FUNCTION_ARGS)
+{
+    Timestamp timestamp = PG_GETARG_TIMESTAMP(0);
+    PG_RETURN_TIMESTAMP(timestamp);
+}
+
+/* cast timestamptz to int8 */
+PG_FUNCTION_INFO_V1_PUBLIC(timestamptz_int8);
+extern "C" DLL_PUBLIC Datum timestamptz_int8(PG_FUNCTION_ARGS);
+Datum timestamptz_int8(PG_FUNCTION_ARGS)
+{
+    TimestampTz dt = PG_GETARG_TIMESTAMPTZ(0);
+    struct pg_tm tt;
+    struct pg_tm* tm = &tt;
+    fsec_t fsec;
+    int tz;
+    const char *tzn = NULL;
+    if (timestamp2tm(dt, &tz, tm, &fsec, &tzn, NULL) != 0) {
+        ereport(ERROR, (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE), errmsg("timestamp out of range")));
+    }
+    PG_RETURN_INT64(timestamp2int(tm));
+}
+
+/* cast timestamptz to float8 */
+PG_FUNCTION_INFO_V1_PUBLIC(timestamptz_float8);
+extern "C" DLL_PUBLIC Datum timestamptz_float8(PG_FUNCTION_ARGS);
+Datum timestamptz_float8(PG_FUNCTION_ARGS)
+{
+    TimestampTz dt = PG_GETARG_TIMESTAMPTZ(0);
+    struct pg_tm tt;
+    struct pg_tm* tm = &tt;
+    fsec_t fsec;
+    int tz;
+    const char *tzn = NULL;
+    if (timestamp2tm(dt, &tz, tm, &fsec, &tzn, NULL) != 0) {
+         ereport(ERROR, (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE), errmsg("timestamp out of range")));
+    }
+
+    double res =  timestamp2int(tm) + fsec / 1e6;
+    PG_RETURN_FLOAT8(res);
+}
+
+/* cast timestamptz to numeric */
+PG_FUNCTION_INFO_V1_PUBLIC(timestamptz_numeric);
+extern "C" DLL_PUBLIC Datum timestamptz_numeric(PG_FUNCTION_ARGS);
+Datum timestamptz_numeric(PG_FUNCTION_ARGS)
+{
+    TimestampTz dt = PG_GETARG_TIMESTAMPTZ(0);
+    Numeric res = NULL;
+    struct pg_tm tt;
+    struct pg_tm* tm = &tt;
+    fsec_t fsec;
+    int tz;
+    const char *tzn = NULL;
+    if (timestamp2tm(dt, &tz, tm, &fsec, &tzn, NULL) != 0) {
+        ereport(ERROR, (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE), errmsg("timestamp out of range")));
+    }
+    int64 quot = timestamp2int(tm);
+    char *str = AppendFsec(quot, fsec);
+    res =
+        DatumGetNumeric(DirectFunctionCall3(numeric_in, CStringGetDatum(str), ObjectIdGetDatum(0), Int32GetDatum(-1)));
+
+    PG_RETURN_NUMERIC(res);
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(timestamptz_any_value);
+extern "C" DLL_PUBLIC Datum timestamptz_any_value(PG_FUNCTION_ARGS);
+Datum timestamptz_any_value(PG_FUNCTION_ARGS)
+{
+    TimestampTz dt = PG_GETARG_TIMESTAMPTZ(0);
+    PG_RETURN_TIMESTAMPTZ(dt);
+}
 #endif

@@ -51,6 +51,8 @@
 
 #ifndef CRCMASK
 #define CRCMASK 0xEDB88320
+#define DIG_PER_DEC1 9
+#define ROUND_UP(X) (((X) + DIG_PER_DEC1 - 1) / DIG_PER_DEC1)
 #endif
 
 #ifndef CONV_MAX_CHAR_LEN
@@ -2445,11 +2447,36 @@ Datum numeric_div(PG_FUNCTION_ARGS)
      * Select scale for division result
      */
     rscale = select_div_scale(&arg1, &arg2);
+#ifdef DOLPHIN
+    /*
+     * The actual precision calculation method in M* is simulated here.
+     * The result is compared with the actual precision of openGauss,
+     * and the larger one is used as the calculation precision.
+     * This ensures that the precision of openGauss is greater than or equal to
+     * that of MySQL.
+     */
+    bool enableBCmptMode = GetSessionContext()->enableBCmptMode;
+    int div_precision_increment = GetSessionContext()->div_precision_increment;
+    int oldScale = rscale;
+    if (enableBCmptMode) {
+        int scale1 = ROUND_UP(arg1.dscale) * DIG_PER_DEC1;
+        int scale2 = ROUND_UP(arg2.dscale) * DIG_PER_DEC1;
+        int tempScale = ROUND_UP(scale1 + scale2 + GetSessionContext()->div_precision_increment) * DIG_PER_DEC1;
+        rscale = tempScale > rscale ? tempScale : rscale;
+    }
+#endif
 
     /*
      * Do the divide and return the result
      */
     div_var(&arg1, &arg2, &result, rscale, true);
+
+#ifdef DOLPHIN
+    if (enableBCmptMode) {
+        int outputScale = arg1.dscale + div_precision_increment;
+        round_var(&result, outputScale > oldScale ? outputScale : oldScale);
+    }
+#endif
 
     res = make_result(&result);
 

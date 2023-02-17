@@ -31,6 +31,7 @@ extern int ValidateTimeForBDatabase(bool timeIn24, struct pg_tm* tm, fsec_t* fse
 extern int DecodeTimeOnlyForBDatabase(char** field, int* ftype, int nf, int* dtype, struct pg_tm* tm, fsec_t* fsec, int* tzp, int D, unsigned int date_flag = 0);
 extern int DecodeDateTimeForBDatabase(char** field, int* ftype, int nf, int* dtype, struct pg_tm* tm, fsec_t* fsec, int* tzp, unsigned int date_flag = 0);
 extern void EncodeDateOnlyForBDatabase(struct pg_tm* tm, int style, char* str, unsigned int date_flag = 0);
+extern char* AppendFsec(int64 quot, fsec_t fsec);
 #else
 extern int DecodeTimeOnlyForBDatabase(char** field, int* ftype, int nf, int* dtype, struct pg_tm* tm, fsec_t* fsec, int* tzp, int D);
 extern int DecodeDateTimeForBDatabase(char** field, int* ftype, int nf, int* dtype, struct pg_tm* tm, fsec_t* fsec, int* tzp);
@@ -123,6 +124,7 @@ extern bool cstring_to_tm(const char *expr, pg_tm *tm, fsec_t &fsec);
 
 #define tmfsec2float(tm, fsec) ((tm)->tm_hour * 10000 + (tm)->tm_min * 100 + (tm)->tm_sec + (fsec) / 1000000.0)
 
+#define date2int(tm) ((tm)->tm_year * 10000 + (tm)->tm_mon * 100 + (tm)->tm_mday)
 #define tmfsec2uint(tm) ((tm)->tm_hour * 10000 + (tm)->tm_min * 100 + (tm)->tm_sec)
 #define timestamp2int(tm) ((tm)->tm_year * 10000000000 + (tm)->tm_mon * 100000000 + (tm)->tm_mday * 1000000 + \
                            (tm)->tm_hour * 10000 + (tm)->tm_min * 100 + (tm)->tm_sec)

@@ -49,10 +49,18 @@ extern Oid oprfuncid(Operator op);
 
 extern bool IsIntType(Oid typeoid);
 extern bool IsCharType(Oid typeoid);
+#ifdef DOLPHIN
+extern inline bool IsUnsignedIntType(Oid typeoid);
+extern inline bool IsFloatType(Oid typeoid);
+extern inline bool IsNumericType(Oid typeoid);
+extern inline bool IsDolphinStringType(Oid typeoid);
+extern inline bool IsDatetimeType(Oid typeoid);
+#endif
 
 /* Build expression tree for an operator invocation */
 extern Expr* make_op(ParseState* pstate, List* opname, Node* ltree, Node* rtree, int location, bool inNumeric = false);
 extern Expr* make_scalar_array_op(ParseState* pstate, List* opname, bool useOr, Node* ltree, Node* rtree, int location);
 extern Oid OperatorLookup(List* operatorName, Oid leftObjectId, Oid rightObjectId, bool* defined);
 extern void InvalidateOprCacheCallBack(Datum arg, int cacheid, uint32 hashvalue);
+extern Oid binary_oper_exact_extern(List* opname, Oid arg1, Oid arg2, bool use_a_style_coercion);
 #endif /* PARSE_OPER_H */
