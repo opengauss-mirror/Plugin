@@ -460,6 +460,11 @@ CREATE TABLE unknown_obj.table_name_test_db.public.Test_indirection3(a int);
 ERROR:  improper qualified name (too many dotted names): unknown_obj.table_name_test_db.public.test_indirection3
 LINE 1: CREATE TABLE unknown_obj.table_name_test_db.public.Test_indi...
                      ^
+select * from public.Test_indirection1, table_name_test_db.public.Test_indirection2 where public.Test_indirection1.a=table_name_test_db.public.Test_indirection2.a(+);
+ a | a 
+---+---
+(0 rows)
+
 drop table "TEST"."Test_Table";
 drop table "SCHEMA_TEST"."Table";
 drop schema "TEST";
