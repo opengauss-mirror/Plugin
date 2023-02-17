@@ -79,7 +79,20 @@ typedef struct TransformOperatorInformation {
     int32 rightTypmod;
 } TransformOperatorInformation;
 
-static Operator GetDolphinOperatorTup(List* opname, Oid ltypeId, Oid rtypeId, Node* ltree, Node* rtree);
+typedef struct GetDolphinOperatorTupInfo {
+    ParseState* pstate;
+    List* opname;
+    Oid ltypeId;
+    Oid rtypeId;
+    Node* ltree;
+    Node* rtree;
+    int location;
+    bool inNumeric;
+} GetDolphinOperatorTupInfo;
+
+static Operator GetDolphinOperatorTup(GetDolphinOperatorTupInfo* info);
+static Operator GetNumericDolphinOperatorTup(
+    ParseState* pstate, List* opername, Oid ltypeId, Oid rtypeId, int location, bool inNumeric);
 static void TransformDolphinType(Oid& type, int32& typmod);
 static bool IsNumericCatalogByOid(Oid oid);
 static int32 GetTypmod(Oid typeoid, Node* node);
@@ -877,7 +890,17 @@ Expr* make_op(ParseState* pstate, List* opname, Node* ltree, Node* rtree, int lo
             }
         }
 #ifdef DOLPHIN
-        if ((tup = GetDolphinOperatorTup(opname, ltypeId, rtypeId, ltree, rtree)) == NULL) {
+        GetDolphinOperatorTupInfo info;
+        info.pstate = pstate;
+        info.opname = opname;
+        info.ltypeId = ltypeId;
+        info.rtypeId = rtypeId;
+        info.ltree = ltree;
+        info.rtree = rtree;
+        info.location = location;
+        info.inNumeric = inNumeric;
+        tup = GetDolphinOperatorTup(&info);
+        if (!HeapTupleIsValid(tup)) {
             tup = oper(pstate, opname, ltypeId, rtypeId, false, location, inNumeric);
         }
 #else
@@ -1189,15 +1212,59 @@ void InvalidateOprCacheCallBack(Datum arg, int cacheid, uint32 hashvalue)
 }
 
 #ifdef DOLPHIN
-static Operator GetDolphinOperatorTup(List* opname, Oid ltypeId, Oid rtypeId, Node* ltree, Node* rtree)
+static Operator GetNumericDolphinOperatorTup(
+    ParseState* pstate, List* opname, Oid ltypeId, Oid rtypeId, int location, bool inNumeric)
+{
+    HeapTuple tup = NULL;
+    Oid operOid;
+    OprCacheKey key;
+    bool key_ok = false;
+    bool use_a_style_coercion = false;
+
+    if (pstate != NULL) {
+        use_a_style_coercion = pstate->p_is_case_when && ENABLE_SQL_BETA_FEATURE(A_STYLE_COERCE);
+    }
+
+    key_ok = make_oper_cache_key(&key, opname, ltypeId, rtypeId, use_a_style_coercion);
+    tup = find_mapping_in_cache(key, key_ok);
+    if (HeapTupleIsValid(tup)) {
+        return (Operator)tup;
+    }
+
+    operOid = binary_oper_exact(opname, ltypeId, rtypeId, use_a_style_coercion);
+    if (OidIsValid(operOid)) {
+        tup = SearchSysCache1(OPEROID, ObjectIdGetDatum(operOid));
+    }
+
+    if (HeapTupleIsValid(tup) && key_ok) {
+        make_oper_cache_entry(&key, operOid);
+    }
+    return (Operator)tup;
+}
+
+static Operator GetDolphinOperatorTup(GetDolphinOperatorTupInfo* info)
 {
     if (!GetSessionContext()->enableBCmptMode) {
         return NULL;
     }
-    Oid leftType = ltypeId;
-    Oid rightType = rtypeId;
-    int32 leftTypmod = GetTypmod(leftType, ltree);
-    int32 rightTypmod = GetTypmod(rightType, rtree);
+    ParseState* pstate = info->pstate;
+    List* opname = info->opname;
+    Oid leftType = info->ltypeId;
+    Oid rightType = info->rtypeId;
+    int location = info->location;
+    bool inNumeric = info->inNumeric;
+    int32 leftTypmod = GetTypmod(leftType, info->ltree);
+    int32 rightTypmod = GetTypmod(rightType, info->rtree);
+    char* schemaname = NULL;
+    char* opername = NULL;
+    DeconstructQualifiedName(opname, &schemaname, &opername);
+    List *newOpList = list_make2(makeString("dolphin_catalog"), makeString(opername));
+    if (IsNumericCatalogByOid(leftType) && IsNumericCatalogByOid(rightType)) {
+        Operator tup = GetNumericDolphinOperatorTup(pstate, newOpList, leftType, rightType, location, inNumeric);
+        if (tup != NULL) {
+            return tup;
+        }
+    }
 
     /*
      * Converts a non-numeric type to a numeric type
@@ -1208,9 +1275,6 @@ static Operator GetDolphinOperatorTup(List* opname, Oid ltypeId, Oid rtypeId, No
     /* Only numeric types can go through the following process */
     if (IsNumericCatalogByOid(leftType) && IsNumericCatalogByOid(rightType)) {
         TransformOperatorInformation info;
-        char* schemaname = NULL;
-        char* opername = NULL;
-        DeconstructQualifiedName(opname, &schemaname, &opername);
         info.oprname = opername;
         info.leftOid = leftType;
         info.rightOid = rightType;
