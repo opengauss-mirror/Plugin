@@ -83,7 +83,7 @@
 #include "gs_policy/gs_policy_masking.h"
 #include "miscadmin.h"
 #include "optimizer/cost.h"
-#include "optimizer/plancat.h"
+#include "plugin_optimizer/plancat.h"
 #include "nodes/makefuncs.h"
 #include "plugin_parser/parse_utilcmd.h"
 #include "plugin_parser/analyze.h"

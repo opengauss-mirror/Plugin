@@ -40,7 +40,7 @@
 #include "nodes/nodeFuncs.h"
 #include "optimizer/cost.h"
 #include "optimizer/pathnode.h"
-#include "optimizer/planmain.h"
+#include "plugin_optimizer/planmain.h"
 #include "plugin_optimizer/planner.h"
 #include "plugin_optimizer/prep.h"
 #include "optimizer/tlist.h"

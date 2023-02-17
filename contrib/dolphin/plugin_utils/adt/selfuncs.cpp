@@ -124,7 +124,7 @@
 #include "optimizer/cost.h"
 #include "optimizer/pathnode.h"
 #include "optimizer/paths.h"
-#include "optimizer/plancat.h"
+#include "plugin_optimizer/plancat.h"
 #include "optimizer/predtest.h"
 #include "optimizer/restrictinfo.h"
 #include "optimizer/streamplan.h"
