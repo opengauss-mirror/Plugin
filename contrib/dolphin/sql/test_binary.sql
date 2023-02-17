@@ -82,5 +82,102 @@ select * from t_varbinary_061;
 drop table if exists t_binary_061;
 drop table if exists t_varbinary_061;
 
+-- binary test enhance
+select binary '\t';
+select binary '\\';
+select binary '\a';
+select binary '\b';
+select binary '\n';
+select binary '\r';
+select binary '\v';
+select binary '\f';
+select binary '\"';
+select binary '\%';
+select binary '\_';
+select binary '\0';
+select binary '\z';
+select binary '\pqy';
+select binary '数据库';
+select binary E'\t';
+select binary E'\\';
+select binary E'\a';
+select binary E'\b';
+select binary E'\n';
+select binary E'\r';
+select binary E'\v';
+select binary E'\f';
+select binary E'\"';
+select binary E'\%';
+select binary E'\_';
+select binary E'\0';
+select binary E'\z';
+select binary E'\pqy';
+select binary E'数据库';
+-- binary type cast test
+select 'abc'::binary;
+select 'abcdefgh'::binary;
+select 'abc'::binary(20);
+select 'a啊填啊'::binary;
+-- other type
+select 123::binary;
+select 123.456::binary;
+select '2020-01-01'::date::binary;
+select '12:13:13'::time::binary;
+
+--errreport
+select 'abc'::binary(-1);
+select 'abc'::binary(1);
+--binary in like and escape
+
+select 'abcd' like binary 'abc%';
+select 'abcd' like binary 'abc\%';
+select 'abcd' like binary 'abc\%' escape '\';
+select 'abcd' like binary 'abc|%' escape '|';
+select 'abc%' like binary 'abc|%' escape '|';
+select 'abcd' like binary 'abc_';
+select 'abcd' like binary 'abc\_';
+select 'abcd' like binary 'abc\_' escape '\';
+select 'abcd' like binary 'abc|_' escape '|';
+select 'abc%' like binary 'abc|_' escape '|';
+
+-- test binary expr gram;
+select binary sin(1);
+drop table if exists t1;
+create table t1(a int, b text);
+insert into t1 values(1,'test');
+select binary a from t1;
+select binary b from t1;
+select binary a =  binary '3' from t1;
+
+--test create binary table 
+
+drop table if exists t1;
+create table t1(a binary, b text);
+insert into t1 values('a','name1');
+insert into t1 values('ad','name2');
+select * from t1;
+
+-- enhase origin request 
+SELECT BINARY 'Geeksforgeeks';
+select binary repeat('a', 3);
+create table test33 (c binary(3));
+insert into test33 set c = 'a';
+select hex(c), c = 'a', c = 'a\0\0' from test33;
+-- binary operator
+select c > 'a\0\0' from test33;
+select c <> 'a\0\0' from test33;
+select c >= 'a\0\0' from test33;
+select c <= 'a\0\0' from test33;
+select c != 'a\0\0' from test33;
+
+--test binary core dump bug
+select cast('a' as binary(0));
+select cast(''	as binary(0));
+select cast('ab' as binary(12));
+create table test34 (a binary(0));
+insert into test34 values('a');
+insert into test34 values('');
+
+
 drop schema test_binary cascade;
 reset current_schema;

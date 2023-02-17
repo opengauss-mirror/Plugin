@@ -630,6 +630,131 @@ Datum byteain(PG_FUNCTION_ARGS)
     PG_RETURN_BYTEA_P(result);
 }
 
+#ifdef DOLPHIN
+PG_FUNCTION_INFO_V1_PUBLIC(dolphin_binaryin);
+extern "C" DLL_PUBLIC Datum dolphin_binaryin(PG_FUNCTION_ARGS);
+Datum dolphin_binaryin(PG_FUNCTION_ARGS)
+{
+    char* inputText = PG_GETARG_CSTRING(0);
+    char* tp = NULL;
+    char* rp = NULL;
+    int bc;
+    int cl;
+    bytea* result = NULL;
+
+    /* Recognize hex input */
+    if (inputText[0] == '\\' && inputText[1] == 'x') {
+        size_t len = strlen(inputText);
+
+        bc = (len - 2) / 2 + VARHDRSZ; /* maximum possible length */
+        result = (bytea*)palloc(bc);
+        bc = hex_decode(inputText + 2, len - 2, VARDATA(result));
+        SET_VARSIZE(result, bc + VARHDRSZ); /* actual length */
+
+        PG_RETURN_BYTEA_P(result);
+    }
+
+    /* Else, it's the traditional escaped style */
+    bc = 0;
+    tp = inputText;
+    while (*tp != '\0') {
+        if (tp[0] != '\\') {
+            cl = pg_mblen(tp);
+            tp += cl;
+            bc += cl;
+        } else {
+            switch (tp[1]) {
+                case '%':
+                    tp += 2;
+                    bc += 2;
+                    break;
+                case '_':
+                    tp += 2;
+                    bc += 2;
+                    break;
+                case '\0':
+                    tp += 1;
+                    bc++;
+                    break;
+                default:
+                    tp += 2;
+                    bc++;
+                    break;
+            }
+        }
+    }
+
+    bc += VARHDRSZ;
+
+    result = (bytea*)palloc(bc);
+    SET_VARSIZE(result, bc);
+
+    tp = inputText;
+    rp = VARDATA(result);
+    while (*tp != '\0') {
+        if (tp[0] != '\\') {
+            cl = pg_mblen(tp);
+            for (int i = 0; i < cl; i++)
+                *rp++ = *tp++;
+        } else {
+            switch (tp[1]) {
+                case '\\':
+                    *rp++ = '\\';
+                    tp += 2;
+                    break;
+                case '0':
+                    *rp++ = VAL('0');
+                    tp += 2;
+                    break;
+                case 't':
+                    *rp++ = '\t';
+                    tp += 2;
+                    break;
+                case 'b':
+                    *rp++ = '\b';
+                    tp += 2;
+                    break;
+                case 'n':
+                    *rp++ = '\n';
+                    tp += 2;
+                    break;
+                case 'r':
+                    *rp++ = '\r';
+                    tp += 2;
+                    break;
+                case '\'':
+                    *rp++ = '\'';
+                    tp += 2;
+                    break;
+                case '\"':
+                    *rp++ = '\"';
+                    tp += 2;
+                    break;
+                case '%':
+                    *rp++ = '\\';
+                    *rp++ = '%';
+                    tp += 2;
+                    break;
+                case '_':
+                    *rp++ = '\\';
+                    *rp++ = '_';
+                    tp += 2;
+                    break;
+                case '\0':
+                    *rp++ = '\\';
+                    tp += 1;
+                    break;
+                default:
+                    *rp++ = tp[1];
+                    tp += 2;
+                    break;
+            }
+        }
+    }
+
+    PG_RETURN_BYTEA_P(result);
+}
+#endif
 /*
  *		byteaout		- converts to printable representation of byte array
  *
@@ -8134,6 +8259,14 @@ Datum bytea2binary(PG_FUNCTION_ARGS)
 {
     bytea* source = PG_GETARG_BYTEA_P(0);
     int32 maxlen = PG_GETARG_INT32(1);
+    if (maxlen == VARHDRSZ) {
+        int length = VARSIZE(PointerGetDatum(source)) - VARHDRSZ;
+        if (length == 0)
+            PG_RETURN_NULL();
+        else
+            ereport(ERROR, (errmsg("The input length:%d exceeds the maximum length:0.", length)));
+    }
+    
     return copy_binary(PointerGetDatum(source), maxlen, false);
 }
 

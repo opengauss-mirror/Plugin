@@ -4,8 +4,12 @@ create table binary_templates (a bytea, b binary(5), c varbinary(5));
 -- invalid typmod
 create table invalid_table (b binary(-1));
 ERROR:  length for type binary must be at least 0
+LINE 1: create table invalid_table (b binary(-1));
+                                      ^
 create table invalid_table (b binary(256));
 ERROR:  length for type binary cannot exceed 255
+LINE 1: create table invalid_table (b binary(256));
+                                      ^
 create table invalid_table (b varbinary(-1));
 ERROR:  length for type varbinary must be at least 0
 create table invalid_table (b varbinary(65536));
@@ -119,6 +123,422 @@ select * from t_varbinary_061;
 
 drop table if exists t_binary_061;
 drop table if exists t_varbinary_061;
+-- binary test enhance
+select binary '\t';
+ binary 
+--------
+ \x09
+(1 row)
+
+select binary '\\';
+ binary 
+--------
+ \x5c
+(1 row)
+
+select binary '\a';
+ binary 
+--------
+ \x61
+(1 row)
+
+select binary '\b';
+ binary 
+--------
+ \x08
+(1 row)
+
+select binary '\n';
+ binary 
+--------
+ \x0a
+(1 row)
+
+select binary '\r';
+ binary 
+--------
+ \x0d
+(1 row)
+
+select binary '\v';
+ binary 
+--------
+ \x76
+(1 row)
+
+select binary '\f';
+ binary 
+--------
+ \x66
+(1 row)
+
+select binary '\"';
+ binary 
+--------
+ \x22
+(1 row)
+
+select binary '\%';
+ binary 
+--------
+ \x5c25
+(1 row)
+
+select binary '\_';
+ binary 
+--------
+ \x5c5f
+(1 row)
+
+select binary '\0';
+ binary 
+--------
+ \x00
+(1 row)
+
+select binary '\z';
+ binary 
+--------
+ \x7a
+(1 row)
+
+select binary '\pqy';
+  binary  
+----------
+ \x707179
+(1 row)
+
+select binary '数据库';
+        binary        
+----------------------
+ \xe695b0e68daee5ba93
+(1 row)
+
+select binary E'\t';
+ binary 
+--------
+ \x09
+(1 row)
+
+select binary E'\\';
+ binary 
+--------
+ \x5c
+(1 row)
+
+select binary E'\a';
+ binary 
+--------
+ \x61
+(1 row)
+
+select binary E'\b';
+ binary 
+--------
+ \x08
+(1 row)
+
+select binary E'\n';
+ binary 
+--------
+ \x0a
+(1 row)
+
+select binary E'\r';
+ binary 
+--------
+ \x0d
+(1 row)
+
+select binary E'\v';
+ binary 
+--------
+ \x76
+(1 row)
+
+select binary E'\f';
+ binary 
+--------
+ \x0c
+(1 row)
+
+select binary E'\"';
+ binary 
+--------
+ \x22
+(1 row)
+
+select binary E'\%';
+ binary 
+--------
+ \x25
+(1 row)
+
+select binary E'\_';
+ binary 
+--------
+ \x5f
+(1 row)
+
+select binary E'\0';
+ERROR:  invalid byte sequence for encoding "UTF8": 0x00
+select binary E'\z';
+ binary 
+--------
+ \x7a
+(1 row)
+
+select binary E'\pqy';
+  binary  
+----------
+ \x707179
+(1 row)
+
+select binary E'数据库';
+        binary        
+----------------------
+ \xe695b0e68daee5ba93
+(1 row)
+
+-- binary type cast test
+select 'abc'::binary;
+  binary  
+----------
+ \x616263
+(1 row)
+
+select 'abcdefgh'::binary;
+       binary       
+--------------------
+ \x6162636465666768
+(1 row)
+
+select 'abc'::binary(20);
+                   binary                   
+--------------------------------------------
+ \x6162630000000000000000000000000000000000
+(1 row)
+
+select 'a啊填啊'::binary;
+         binary         
+------------------------
+ \x61e5958ae5a1abe5958a
+(1 row)
+
+-- other type
+select 123::binary;
+  binary  
+----------
+ \x313233
+(1 row)
+
+select 123.456::binary;
+      binary      
+------------------
+ \x3132332e343536
+(1 row)
+
+select '2020-01-01'::date::binary;
+         binary         
+------------------------
+ \x30312d30312d32303230
+(1 row)
+
+select '12:13:13'::time::binary;
+       binary       
+--------------------
+ \x31323a31333a3133
+(1 row)
+
+--errreport
+select 'abc'::binary(-1);
+ERROR:  length for type binary must be at least 0
+LINE 1: select 'abc'::binary(-1);
+                      ^
+CONTEXT:  referenced column: binary
+select 'abc'::binary(1);
+ERROR:  The input length:3 exceeds the maximum length:1.
+CONTEXT:  referenced column: binary
+--binary in like and escape
+select 'abcd' like binary 'abc%';
+ ?column? 
+----------
+ t
+(1 row)
+
+select 'abcd' like binary 'abc\%';
+ ?column? 
+----------
+ f
+(1 row)
+
+select 'abcd' like binary 'abc\%' escape '\';
+ ?column? 
+----------
+ f
+(1 row)
+
+select 'abcd' like binary 'abc|%' escape '|';
+ ?column? 
+----------
+ f
+(1 row)
+
+select 'abc%' like binary 'abc|%' escape '|';
+ ?column? 
+----------
+ t
+(1 row)
+
+select 'abcd' like binary 'abc_';
+ ?column? 
+----------
+ t
+(1 row)
+
+select 'abcd' like binary 'abc\_';
+ ?column? 
+----------
+ f
+(1 row)
+
+select 'abcd' like binary 'abc\_' escape '\';
+ ?column? 
+----------
+ f
+(1 row)
+
+select 'abcd' like binary 'abc|_' escape '|';
+ ?column? 
+----------
+ f
+(1 row)
+
+select 'abc%' like binary 'abc|_' escape '|';
+ ?column? 
+----------
+ f
+(1 row)
+
+-- test binary expr gram;
+select binary sin(1);
+                 sin                  
+--------------------------------------
+ \x302e383431343730393834383037383937
+(1 row)
+
+drop table if exists t1;
+NOTICE:  table "t1" does not exist, skipping
+create table t1(a int, b text);
+insert into t1 values(1,'test');
+select binary a from t1;
+  a   
+------
+ \x31
+(1 row)
+
+select binary b from t1;
+     b      
+------------
+ \x74657374
+(1 row)
+
+select binary a =  binary '3' from t1;
+ ?column? 
+----------
+ f
+(1 row)
+
+--test create binary table 
+drop table if exists t1;
+create table t1(a binary, b text);
+insert into t1 values('a','name1');
+insert into t1 values('ad','name2');
+ERROR:  The input length:2 exceeds the maximum length:1.
+CONTEXT:  referenced column: a
+select * from t1;
+  a   |   b   
+------+-------
+ \x61 | name1
+(1 row)
+
+-- enhase origin request 
+SELECT BINARY 'Geeksforgeeks';
+            binary            
+------------------------------
+ \x4765656b73666f726765656b73
+(1 row)
+
+select binary repeat('a', 3);
+  repeat  
+----------
+ \x616161
+(1 row)
+
+create table test33 (c binary(3));
+insert into test33 set c = 'a';
+select hex(c), c = 'a', c = 'a\0\0' from test33;
+  hex   | ?column? | ?column? 
+--------+----------+----------
+ 610000 | f        | t
+(1 row)
+
+-- binary operator
+select c > 'a\0\0' from test33;
+ ?column? 
+----------
+ f
+(1 row)
+
+select c <> 'a\0\0' from test33;
+ ?column? 
+----------
+ f
+(1 row)
+
+select c >= 'a\0\0' from test33;
+ ?column? 
+----------
+ t
+(1 row)
+
+select c <= 'a\0\0' from test33;
+ ?column? 
+----------
+ t
+(1 row)
+
+select c != 'a\0\0' from test33;
+ ?column? 
+----------
+ f
+(1 row)
+
+--test binary core dump bug
+select cast('a' as binary(0));
+ERROR:  The input length:1 exceeds the maximum length:0.
+CONTEXT:  referenced column: binary
+select cast(''	as binary(0));
+ binary 
+--------
+ 
+(1 row)
+
+select cast('ab' as binary(12));
+           binary           
+----------------------------
+ \x616200000000000000000000
+(1 row)
+
+create table test34 (a binary(0));
+insert into test34 values('a');
+ERROR:  The input length:1 exceeds the maximum length:0.
+CONTEXT:  referenced column: a
+insert into test34 values('');
 drop schema test_binary cascade;
-NOTICE:  drop cascades to table test_bytea
+NOTICE:  drop cascades to 4 other objects
+DETAIL:  drop cascades to table test_bytea
+drop cascades to table t1
+drop cascades to table test33
+drop cascades to table test34
 reset current_schema;
