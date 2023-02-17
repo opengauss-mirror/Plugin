@@ -1232,5 +1232,38 @@ LINE 1: create table body(body int);
 drop schema test_m cascade;
 NOTICE:  drop cascades to table test_unique
 drop schema db_b_new_gram_test cascade;
---?.*
+NOTICE:  drop cascades to 33 other objects
+DETAIL:  drop cascades to table db_b_new_gram_test.test_engine_2
+drop cascades to type db_b_new_gram_test.test_engine_type1
+drop cascades to table db_b_new_gram_test.test_engine_type_table1
+drop cascades to type db_b_new_gram_test.test_engine_type2
+drop cascades to table db_b_new_gram_test.test_engine_type_table2
+drop cascades to table db_b_new_gram_test.test_engine_unreserved_keyword
+drop cascades to table db_b_new_gram_test.test_engine_colname_keyword
+drop cascades to table db_b_new_gram_test.test_engine_1_1
+drop cascades to table db_b_new_gram_test.test_engine_2_1
+drop cascades to type db_b_new_gram_test.test_engine_type1_1
+drop cascades to table db_b_new_gram_test.test_engine_type_table1_1
+drop cascades to type db_b_new_gram_test.test_engine_type2_1
+drop cascades to table db_b_new_gram_test.test_engine_type_table2_1
+drop cascades to table db_b_new_gram_test.test_engine_as
+drop cascades to table db_b_new_gram_test.test_compression_1_pglz
+drop cascades to table db_b_new_gram_test.test_compression_create_2_pglz
+drop cascades to table db_b_new_gram_test.test_compression_type_table_1_pglz
+drop cascades to table db_b_new_gram_test.test_compression_create_type_table_2_pglz
+drop cascades to table db_b_new_gram_test.test_compression_as_pglz
+drop cascades to table db_b_new_gram_test.test_compression_1_zstd
+drop cascades to table db_b_new_gram_test.test_compression_create_2_zstd
+drop cascades to table db_b_new_gram_test.test_compression_type_table_1_zstd
+drop cascades to table db_b_new_gram_test.test_compression_create_type_table_2_zstd
+drop cascades to table db_b_new_gram_test.test_compression_as_zstd
+drop cascades to table db_b_new_gram_test.test_compression_1_none
+drop cascades to table db_b_new_gram_test.test_compression_create_2_none
+drop cascades to table db_b_new_gram_test.test_compression_type_table_1_none
+drop cascades to table db_b_new_gram_test.test_compression_create_type_table_2_none
+drop cascades to table db_b_new_gram_test.test_compression_as_none
+drop cascades to table db_b_new_gram_test.test_list1
+drop cascades to table db_b_new_gram_test.test_list2
+drop cascades to table db_b_new_gram_test.t_new_analyze
+drop cascades to table db_b_new_gram_test.t_quote_test
 reset current_schema;
