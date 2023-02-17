@@ -1231,6 +1231,7 @@ static char* appendString(char* source, char* target, int offset);
 			END_OF_INPUT
 			END_OF_INPUT_COLON
 			END_OF_PROC
+			NOT_IN
 			DEFAULT_FUNC
 	                DO_SCONST DO_LANGUAGE
 
@@ -1261,7 +1262,7 @@ static char* appendString(char* source, char* target, int offset);
 %nonassoc	ESCAPE
 %nonassoc	OVERLAPS
 %nonassoc	BETWEEN
-%nonassoc	IN_P
+%nonassoc	IN_P NOT_IN
 %left		DIV MOD
 %nonassoc	REGEXP RLIKE
 %left		POSTFIXOP		/* dummy for postfix Op rules */
@@ -28836,25 +28837,25 @@ a_expr:		c_expr									{ $$ = $1; }
 						$$ = (Node *) makeSimpleA_Expr(AEXPR_IN, "=", $1, $3, @2);
 					}
 				}
-			| a_expr NOT IN_P in_expr
+			| a_expr NOT_IN in_expr		%prec NOT_IN
 				{
 					/* in_expr returns a SubLink or a list of a_exprs */
-					if (IsA($4, SubLink))
+					if (IsA($3, SubLink))
 					{
 						/* generate NOT (foo = ANY (subquery)) */
 						/* Make an = ANY node */
-						SubLink *n = (SubLink *) $4;
+						SubLink *n = (SubLink *) $3;
 						n->subLinkType = ANY_SUBLINK;
 						n->testexpr = $1;
 						n->operName = list_make1(makeString("="));
-						n->location = @3;
+						n->location = @2;
 						/* Stick a NOT on top */
 						$$ = (Node *) makeA_Expr(AEXPR_NOT, NIL, NULL, (Node *) n, @2);
 					}
 					else
 					{
 						/* generate scalar NOT IN expression */
-						$$ = (Node *) makeSimpleA_Expr(AEXPR_IN, "<>", $1, $4, @2);
+						$$ = (Node *) makeSimpleA_Expr(AEXPR_IN, "<>", $1, $3, @2);
 					}
 				}
 			| a_expr subquery_Op sub_type select_with_parens	%prec Op
