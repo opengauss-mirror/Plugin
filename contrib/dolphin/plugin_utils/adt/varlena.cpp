@@ -8582,7 +8582,7 @@ const char* extract_numericstr(const char* str)
     char* dest = NULL;
     int len_of_numericstr = 0;
     cp = str;
-    if (*cp && !isdigit((unsigned char)*cp) && *cp != '.') {
+    if ((*cp == '\0') || (!isdigit((unsigned char)*cp) && *cp != '.')) {
         return "0";
     }
     while (*cp) {
@@ -8920,7 +8920,7 @@ Datum soundex_difference(PG_FUNCTION_ARGS)
     PG_RETURN_INT32(1);
 }
 
-const char* build_pure_num(Oid type, int index, PG_FUNCTION_ARGS)
+const char* build_pure_num(Oid type, int index, bool* is_contain_num, PG_FUNCTION_ARGS)
 {
     Oid typeOutput;
     bool typIsVarlena;
@@ -8929,10 +8929,11 @@ const char* build_pure_num(Oid type, int index, PG_FUNCTION_ARGS)
     switch (type) {
         case INT4OID:
         case INT8OID:
-        case BITOID:
         case NUMERICOID:
         case FLOAT8OID:
         case BOOLOID:
+            *is_contain_num = true;
+        case BITOID:
         case DATEOID:
         case TIMESTAMPOID:
         case TIMESTAMPTZOID:
@@ -8956,71 +8957,135 @@ const char* build_pure_num(Oid type, int index, PG_FUNCTION_ARGS)
 
 Datum between_and(PG_FUNCTION_ARGS)
 {
-    text* arg1 = cstring_to_text(build_pure_num(fcinfo->argTypes[0], 0, fcinfo));
-    text* arg2 = cstring_to_text(build_pure_num(fcinfo->argTypes[1], 1, fcinfo));
-    text* arg3 = cstring_to_text(build_pure_num(fcinfo->argTypes[2], 2, fcinfo));
-    int result_1_2;
-    int result_1_3;
-    result_1_2 = internal_text_pattern_compare(arg1, arg2);
-    result_1_3 = internal_text_pattern_compare(arg1, arg3);
+    bool is_contain_num = false;
+    const char* s_arg1 = build_pure_num(fcinfo->argTypes[0], 0, &is_contain_num, fcinfo);
+    const char* s_arg2 = build_pure_num(fcinfo->argTypes[1], 1, &is_contain_num, fcinfo);
+    const char* s_arg3 = build_pure_num(fcinfo->argTypes[2], 2, &is_contain_num, fcinfo);
+    text* t_arg1 = NULL;
+    text* t_arg2 = NULL;
+    text* t_arg3 = NULL;
 
-    if ((0 == result_1_2 || 1 == result_1_2) && (0 == result_1_3 || -1 == result_1_3)) {
-        PG_RETURN_BOOL(1);
+    if (is_contain_num) {
+        if ((strtod(s_arg1, NULL) >= strtod(s_arg2, NULL)) &&
+            (strtod(s_arg1, NULL) <= strtod(s_arg3, NULL))) {
+            PG_RETURN_BOOL(1);
+        } else {
+            PG_RETURN_BOOL(0);
+        }
     } else {
-        PG_RETURN_BOOL(0);
+        t_arg1 = cstring_to_text(s_arg1);
+        t_arg2 = cstring_to_text(s_arg2);
+        t_arg3 = cstring_to_text(s_arg3);
+        if ((internal_text_pattern_compare(t_arg1, t_arg2) == 0 ||
+            internal_text_pattern_compare(t_arg1, t_arg2) == 1) &&
+            (internal_text_pattern_compare(t_arg1, t_arg3) == 0 ||
+            internal_text_pattern_compare(t_arg1, t_arg3) == -1)) {
+            PG_RETURN_BOOL(1);
+        }
+        else {
+            PG_RETURN_BOOL(0);
+        }
     }
+
 }
 
 Datum sym_between_and(PG_FUNCTION_ARGS)
 {
-    text* arg1 = cstring_to_text(build_pure_num(fcinfo->argTypes[0], 0, fcinfo));
-    text* arg2 = cstring_to_text(build_pure_num(fcinfo->argTypes[1], 1, fcinfo));
-    text* arg3 = cstring_to_text(build_pure_num(fcinfo->argTypes[2], 2, fcinfo));
-    int result_1_2;
-    int result_1_3;
-    result_1_2 = internal_text_pattern_compare(arg1, arg2);
-    result_1_3 = internal_text_pattern_compare(arg1, arg3);
+    bool is_contain_num = false;
+    const char* s_arg1 = build_pure_num(fcinfo->argTypes[0], 0, &is_contain_num, fcinfo);
+    const char* s_arg2 = build_pure_num(fcinfo->argTypes[1], 1, &is_contain_num, fcinfo);
+    const char* s_arg3 = build_pure_num(fcinfo->argTypes[2], 2, &is_contain_num, fcinfo);
+    text* t_arg1 = NULL;
+    text* t_arg2 = NULL;
+    text* t_arg3 = NULL;
 
-    if (((0 == result_1_2 || 1 == result_1_2) && (0 == result_1_3 || -1 == result_1_3)) ||
-        ((0 == result_1_3 || 1 == result_1_3) && (0 == result_1_2 || -1 == result_1_2))) {
-        PG_RETURN_BOOL(1);
+    if (is_contain_num) {
+        if (((strtod(s_arg1, NULL) >= strtod(s_arg2, NULL)) && (strtod(s_arg1, NULL) <= strtod(s_arg3, NULL))) ||
+            ((strtod(s_arg1, NULL) >= strtod(s_arg3, NULL)) && (strtod(s_arg1, NULL) <= strtod(s_arg2, NULL)))) {
+            PG_RETURN_BOOL(1);
+        } else {
+            PG_RETURN_BOOL(0);
+        }
     } else {
-        PG_RETURN_BOOL(0);
+        t_arg1 = cstring_to_text(s_arg1);
+        t_arg2 = cstring_to_text(s_arg2);
+        t_arg3 = cstring_to_text(s_arg3);
+        if (((internal_text_pattern_compare(t_arg1, t_arg2) == 0 ||
+            internal_text_pattern_compare(t_arg1, t_arg2) == 1) &&
+            (internal_text_pattern_compare(t_arg1, t_arg3) == 0 ||
+            internal_text_pattern_compare(t_arg1, t_arg3) == -1))||
+            ((internal_text_pattern_compare(t_arg1, t_arg3) == 0 ||
+            internal_text_pattern_compare(t_arg1, t_arg3) == 1) &&
+            (internal_text_pattern_compare(t_arg1, t_arg2) == 0 ||
+            internal_text_pattern_compare(t_arg1, t_arg2) == -1))) {
+            PG_RETURN_BOOL(1);
+        }
+        else {
+            PG_RETURN_BOOL(0);
+        }
     }
 }
 
 Datum not_between_and(PG_FUNCTION_ARGS)
 {
-    text* arg1 = cstring_to_text(build_pure_num(fcinfo->argTypes[0], 0, fcinfo));
-    text* arg2 = cstring_to_text(build_pure_num(fcinfo->argTypes[1], 1, fcinfo));
-    text* arg3 = cstring_to_text(build_pure_num(fcinfo->argTypes[2], 2, fcinfo));
-    int result_1_2;
-    int result_1_3;
-    result_1_2 = internal_text_pattern_compare(arg1, arg2);
-    result_1_3 = internal_text_pattern_compare(arg1, arg3);
+    bool is_contain_num = false;
+    const char* s_arg1 = build_pure_num(fcinfo->argTypes[0], 0, &is_contain_num, fcinfo);
+    const char* s_arg2 = build_pure_num(fcinfo->argTypes[1], 1, &is_contain_num, fcinfo);
+    const char* s_arg3 = build_pure_num(fcinfo->argTypes[2], 2, &is_contain_num, fcinfo);
+    text* t_arg1 = NULL;
+    text* t_arg2 = NULL;
+    text* t_arg3 = NULL;
 
-    if (-1 == result_1_2 || 1 == result_1_3) {
-        PG_RETURN_BOOL(1);
+    if (is_contain_num) {
+        if ((strtod(s_arg1, NULL) < strtod(s_arg2, NULL)) ||
+            (strtod(s_arg1, NULL) > strtod(s_arg3, NULL))) {
+            PG_RETURN_BOOL(1);
+        } else {
+            PG_RETURN_BOOL(0);
+        }
     } else {
-        PG_RETURN_BOOL(0);
+        t_arg1 = cstring_to_text(s_arg1);
+        t_arg2 = cstring_to_text(s_arg2);
+        t_arg3 = cstring_to_text(s_arg3);
+        if (internal_text_pattern_compare(t_arg1, t_arg2) == -1 || internal_text_pattern_compare(t_arg1, t_arg3) == 1) {
+            PG_RETURN_BOOL(1);
+        }
+        else {
+            PG_RETURN_BOOL(0);
+        }
     }
 }
 
 Datum not_sym_between_and(PG_FUNCTION_ARGS)
 {
-    text* arg1 = cstring_to_text(build_pure_num(fcinfo->argTypes[0], 0, fcinfo));
-    text* arg2 = cstring_to_text(build_pure_num(fcinfo->argTypes[1], 1, fcinfo));
-    text* arg3 = cstring_to_text(build_pure_num(fcinfo->argTypes[2], 2, fcinfo));
-    int result_1_2;
-    int result_1_3;
-    result_1_2 = internal_text_pattern_compare(arg1, arg2);
-    result_1_3 = internal_text_pattern_compare(arg1, arg3);
+    bool is_contain_num = false;
+    const char* s_arg1 = build_pure_num(fcinfo->argTypes[0], 0, &is_contain_num, fcinfo);
+    const char* s_arg2 = build_pure_num(fcinfo->argTypes[1], 1, &is_contain_num, fcinfo);
+    const char* s_arg3 = build_pure_num(fcinfo->argTypes[2], 2, &is_contain_num, fcinfo);
+    text* t_arg1 = NULL;
+    text* t_arg2 = NULL;
+    text* t_arg3 = NULL;
 
-    if ((-1 == result_1_2 || 1 == result_1_3) ||
-        (-1 == result_1_3 || 1 == result_1_2) ) {
-        PG_RETURN_BOOL(1);
+    if (is_contain_num) {
+        if ((strtod(s_arg1, NULL) < strtod(s_arg2, NULL)) || (strtod(s_arg1, NULL) > strtod(s_arg3, NULL)) ||
+            (strtod(s_arg1, NULL) < strtod(s_arg3, NULL)) || (strtod(s_arg1, NULL) > strtod(s_arg2, NULL))) {
+            PG_RETURN_BOOL(1);
+        } else {
+            PG_RETURN_BOOL(0);
+        }
     } else {
-        PG_RETURN_BOOL(0);
+        t_arg1 = cstring_to_text(s_arg1);
+        t_arg2 = cstring_to_text(s_arg2);
+        t_arg3 = cstring_to_text(s_arg3);
+        if ((internal_text_pattern_compare(t_arg1, t_arg2) == -1 ||
+            internal_text_pattern_compare(t_arg1, t_arg3) == 1) ||
+            (internal_text_pattern_compare(t_arg1, t_arg3) == -1 ||
+            internal_text_pattern_compare(t_arg1, t_arg2) == 1)) {
+            PG_RETURN_BOOL(1);
+        }
+        else {
+            PG_RETURN_BOOL(0);
+        }
     }
 }
 

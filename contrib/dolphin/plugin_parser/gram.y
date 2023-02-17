@@ -35757,7 +35757,7 @@ static char* extract_numericstr(const char* str)
     int digitBeginIndex = 0;
     
     cp = str;
-    if (*cp && !isdigit((unsigned char)*cp) && *cp != '.') {
+    if ((*cp == '\0') || (!isdigit((unsigned char)*cp) && *cp != '.')) {
         return "0";
     }
 
