@@ -13105,7 +13105,7 @@ static Oid transformFkeyCheckAttrs(Relation pkrel, int numattrs, int16* attnums,
             Datum indclassDatum;
             bool isnull = false;
             oidvector* indclass = NULL;
-
+#ifdef DOLPHIN
             /* is B_FORMAT or is unique index on non-B_FORMAT */
             if (DB_IS_CMPT(B_FORMAT) || indexStruct->indisunique) {
                 indclassDatum = SysCacheGetAttr(INDEXRELID, indexTuple, Anum_pg_index_indclass, &isnull);
@@ -13157,6 +13157,7 @@ static Oid transformFkeyCheckAttrs(Relation pkrel, int numattrs, int16* attnums,
                 }
             }
         }
+#endif
         ReleaseSysCache(indexTuple);
         if (found)
             break;
