@@ -134,6 +134,7 @@ extern bool check_plugin_function(Oid funcId);
 extern PGFunction SearchFuncByOid(Oid funcId);
 static bool protocol_inited;
 static bool global_hook_inited = false;
+static pthread_mutex_t gInitPluginObjectLock;
 
 extern "C" DLL_PUBLIC void _PG_init(void);
 extern "C" DLL_PUBLIC void _PG_fini(void);
@@ -171,6 +172,48 @@ void set_default_guc()
     set_config_option("enable_custom_parser", "true", PGC_USERSET, PGC_S_SESSION, GUC_ACTION_SET, true, 0, false);
 }
 
+static void init_dolphin_proto()
+{
+    if (protocol_inited) {
+        define_dolphin_server_guc();
+        return;
+    }
+
+    AutoMutexLock protoLock(&gInitPluginObjectLock);
+    protoLock.lock();
+    /* double check and quick exit */
+    if (protocol_inited) {
+        protoLock.unLock();
+        define_dolphin_server_guc();
+        return;
+    }
+
+    /* use try-catch to unlock if error happend */
+    PG_TRY();
+    {
+        int ret = strcpy_s(g_proto_ctx.database_name.data, NAMEDATALEN,
+            u_sess->proc_cxt.MyProcPort->database_name);
+        securec_check(ret, "\0", "\0");
+
+        define_dolphin_server_guc();
+        server_listen_init();
+        protocol_inited = true;
+        g_instance.listen_cxt.reload_fds = true;
+    }
+    PG_CATCH();
+    {
+        protoLock.unLock();
+        PG_RE_THROW();
+    }
+    PG_END_TRY();
+
+    protoLock.unLock();
+}
+
+/*
+ * NOTE: this function will be called concurently, when you add code here, please make sure your code is thread-safe.
+ * If not, please use gInitPluginObjectLock to control your code.
+ */
 void init_plugin_object()
 {
     if (!global_hook_inited) {
@@ -193,18 +236,9 @@ void init_plugin_object()
     u_sess->hook_cxt.plannerHook = (void*)planner;
     set_default_guc();
 
-    if (g_instance.attr.attr_network.enable_dolphin_proto && u_sess->proc_cxt.MyProcPort && u_sess->proc_cxt.MyProcPort->database_name) {
-        if (!protocol_inited) {
-            int ret = strcpy_s(g_proto_ctx.database_name.data, NAMEDATALEN, u_sess->proc_cxt.MyProcPort->database_name);
-            securec_check(ret, "\0", "\0");
-
-            define_dolphin_server_guc();
-            server_listen_init();
-            protocol_inited = true;
-            g_instance.listen_cxt.reload_fds = true;
-        } else {
-            define_dolphin_server_guc();
-        }
+    if (g_instance.attr.attr_network.enable_dolphin_proto && u_sess->proc_cxt.MyProcPort &&
+        u_sess->proc_cxt.MyProcPort->database_name) {
+        init_dolphin_proto();
     }
 }
 
