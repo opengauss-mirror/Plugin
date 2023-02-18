@@ -55,12 +55,13 @@ static double convert_to_numeric(Node *value);
 	no_gpc_hint
 %type <list> relation_list join_hint_list relation_item relation_list_with_p ident_list skew_relist
              column_list_p column_list value_list_p value_list value_list_item value_type value_list_with_bracket
+%type <str> dolphin_guc
 %token <str>	IDENT FCONST SCONST BCONST XCONST
 %token <ival>	ICONST
 
 %token <keyword> NestLoop_P MergeJoin_P HashJoin_P No_P Leading_P Rows_P Broadcast_P Redistribute_P BlockName_P
 	TableScan_P IndexScan_P IndexOnlyScan_P Skew_P HINT_MULTI_NODE_P NULL_P TRUE_P FALSE_P Predpush_P
-	PredpushSameLevel_P Rewrite_P Gather_P Set_P USE_CPLAN_P USE_GPLAN_P ON_P OFF_P No_expand_P SQL_IGNORE_P NO_GPC_P
+	PredpushSameLevel_P Rewrite_P Gather_P Set_P Set_Var_P USE_CPLAN_P USE_GPLAN_P ON_P OFF_P No_expand_P SQL_IGNORE_P NO_GPC_P
 	CHOOSE_ADAPTIVE_GPLAN_P
 
 %nonassoc	IDENT NULL_P
@@ -277,6 +278,42 @@ set_hint:
 		setHint->name = name;
 		setHint->value = strVal(guc_val);
 		$$ = (Node *) setHint;
+	}
+	|
+	Set_Var_P '(' dolphin_guc '=' guc_value ')'
+	{
+		char* name = $3;
+		if (!check_set_hint_in_white_list(name)) {
+			ereport(WARNING, (errmsg("SetHint is invalid. Parameter [%s] is not in whitelist.", name)));
+			$$ = NULL;
+		} else {
+			Value* guc_val = NULL;
+			if (IsA($5, Integer)) {
+				guc_val = integerToString((Value*)$5);
+			} else {
+				guc_val = (Value*)$5;
+			}
+			SetHint *setHint = makeNode(SetHint);
+			setHint->base.hint_keyword = HINT_KEYWORD_SET_VAR;
+			setHint->base.state = HINT_STATE_NOTUSED;
+			setHint->name = name;
+			setHint->value = strVal(guc_val);
+			$$ = (Node *) setHint;
+		}
+	}
+
+dolphin_guc:
+	IDENT '.' IDENT
+	{
+		int len = strlen($1) + strlen($3) + 2;
+		char* str = (char*)palloc0(len);
+		errno_t rc = sprintf_s(str, len, "%s.%s", $1, $3);
+		securec_check_ss(rc, "\0", "\0");
+		$$ = str;
+	}
+	| IDENT
+	{
+		$$ = $1;
 	}
 
 plancache_hint:

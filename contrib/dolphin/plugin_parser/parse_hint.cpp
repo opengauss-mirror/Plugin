@@ -186,7 +186,11 @@ static void append_value(StringInfo buf, Value* value, Node* node)
 }
 
 #define HINT_NUM 17
+#ifdef DOLPHIN
+#define HINT_KEYWORD_NUM 24
+#else
 #define HINT_KEYWORD_NUM 23
+#endif
 
 typedef struct {
     HintKeyword keyword;
@@ -217,6 +221,9 @@ const char* G_HINT_KEYWORD[HINT_KEYWORD_NUM] = {
     (char*) HINT_SQL_IGNORE,
     (char*) HINT_CHOOSE_ADAPTIVE_GPLAN,
     (char*) HINT_NO_GPC,
+#ifdef DOLPHIN
+    (char*) HINT_SET_VAR,
+#endif
 };
 
 /*
@@ -227,7 +234,11 @@ static const char* KeywordDesc(HintKeyword keyword)
 {
     const char* value = NULL;
     /* In case new tag is added within the old range. Keep the LFS as the newest keyword */
+#ifdef DOLPHIN
+    Assert(HINT_KEYWORD_SET_VAR == HINT_KEYWORD_NUM - 1);
+#else
     Assert(HINT_KEYWORD_NO_GPC == HINT_KEYWORD_NUM - 1);
+#endif
     if ((int)keyword >= HINT_KEYWORD_NUM || (int)keyword < 0) {
         elog(WARNING, "unrecognized keyword %d", (int)keyword);
     } else {
@@ -3819,7 +3830,11 @@ bool permit_predpush(PlannerInfo *root)
     return !predpushHint->negative;
 }
 
+#ifdef DOLPHIN
+const unsigned int G_NUM_SET_HINT_WHITE_LIST = 39;
+#else
 const unsigned int G_NUM_SET_HINT_WHITE_LIST = 38;
+#endif
 const char* G_SET_HINT_WHITE_LIST[G_NUM_SET_HINT_WHITE_LIST] = {
     /* keep in the ascending alphabetical order of frequency */
     (char*)"best_agg_plan",
@@ -3828,6 +3843,9 @@ const char* G_SET_HINT_WHITE_LIST[G_NUM_SET_HINT_WHITE_LIST] = {
     (char*)"cpu_operator_cost",
     (char*)"cpu_tuple_cost",
     (char*)"default_limit_rows",
+#ifdef DOLPHIN
+    (char*)"dolphin.optimizer_switch",
+#endif
     (char*)"effective_cache_size",
     (char*)"enable_bitmapscan",
     (char*)"enable_broadcast",

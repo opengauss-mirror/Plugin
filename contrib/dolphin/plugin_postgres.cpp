@@ -359,7 +359,6 @@ static bool check_lc_time_names(char** newval, void** extra, GucSource source)
     }
     return true;
 }
-#endif
 
 BSqlPluginContext* GetSessionContext()
 {
@@ -373,6 +372,135 @@ void set_extension_index(uint32 index)
 {
     dolphin_index = index;
 }
+
+static bool check_optimizer_switch(char** newval, void** extra, GucSource source)
+{
+    char* rawstring = NULL;
+    List* elemlist = NULL;
+    ListCell* cell = NULL;
+    int start = 0;
+    unsigned int hasSet = 0;
+
+    /* Need a modifiable copy of string */
+    rawstring = pstrdup(*newval);
+    if (strcmp(rawstring, "default") == 0) {
+        pfree(rawstring);
+        return true;
+    }
+
+    /* Parse string into list of identifiers */
+    if (!SplitIdentifierString(rawstring, ',', &elemlist)) {
+        /* syntax error in list */
+        GUC_check_errdetail("invalid paramater for optimizer_switch.");
+        pfree(rawstring);
+        list_free(elemlist);
+
+        return false;
+    }
+
+    foreach (cell, elemlist) {
+        char* item = (char*)lfirst(cell);
+        bool nfound = true;
+        List* kv = NULL;
+
+        if (!SplitIdentifierString(item, '=', &kv)) {
+            /* syntax error in list */
+            GUC_check_errdetail("invalid paramater for optimizer_switch.");
+            pfree(rawstring);
+            list_free(elemlist);
+
+            return false;
+        }
+
+        const char* key = (const char*)linitial(kv);
+        const char* value = (const char*)lsecond(kv);
+
+        for (start = 0; start < OPT_OPTIMIZER_SWITCH_MAX; start++) {
+            if (strcmp(key, optimizer_switch_options[start].name) == 0) {
+                nfound = false;
+                break;
+            }
+        }
+
+        if (nfound) {
+            GUC_check_errdetail("invalid optimizer switch option \"%s\"", item);
+            pfree(rawstring);
+            list_free(elemlist);
+            return false;
+        }
+
+        if ((hasSet & optimizer_switch_options[start].flag) != 0) {
+            GUC_check_errdetail("duplicate optimizer switch option \"%s\"", item);
+            pfree(rawstring);
+            list_free(elemlist);
+            return false;
+        }
+
+        /* value must be on/off/default */
+        if (strcmp(value, "on") != 0 && strcmp(value, "off") != 0 && strcmp(value, "default") != 0) {
+            GUC_check_errdetail("invalid optimizer switch value \"%s\"", value);
+            pfree(rawstring);
+            list_free(elemlist);
+            return false;
+        }
+
+        hasSet |= optimizer_switch_options[start].flag;
+    }
+
+    pfree(rawstring);
+    list_free(elemlist);
+
+    return true;
+}
+
+static void assign_optimizer_switch(const char* newval, void* extra)
+{
+    char* rawstring = NULL;
+    List* elemlist = NULL;
+    ListCell* cell = NULL;
+    int start = 0;
+    unsigned int result = 0;
+
+    if (strcmp(newval, "default") == 0) {
+        for (start = 0; start < OPT_OPTIMIZER_SWITCH_MAX; start++) {
+            if (optimizer_switch_options[start].defaultValue) {
+                result += optimizer_switch_options[start].flag;
+            }
+        }
+        GetSessionContext()->optimizer_switch_flags = result;
+        return;
+    }
+
+    rawstring = pstrdup(newval);
+    (void)SplitIdentifierString(rawstring, ',', &elemlist);
+
+    GetSessionContext()->optimizer_switch_flags = 0;
+    foreach (cell, elemlist) {
+        char* item = (char*)lfirst(cell);
+        List* kv = NULL;
+
+        (void)!SplitIdentifierString(item, '=', &kv);
+
+        const char* key = (const char*)linitial(kv);
+        const char* value = (const char*)lsecond(kv);
+
+        for (start = 0; start < OPT_OPTIMIZER_SWITCH_MAX; start++) {
+            if (strcmp(key, optimizer_switch_options[start].name) == 0) {
+                if (strcmp(value, "on") == 0 || (strcmp(value, "default") == 0 &&
+                    optimizer_switch_options[start].defaultValue)) {
+                    result += optimizer_switch_options[start].flag;
+                }
+                break;
+            }
+        }
+    }
+
+    pfree(rawstring);
+    list_free(elemlist);
+
+    GetSessionContext()->optimizer_switch_flags = result;
+}
+#endif
 
 void init_session_vars(void)
 {
@@ -671,6 +799,16 @@ void init_session_vars(void)
                             NULL,
                             NULL,
                             NULL);
+    DefineCustomStringVariable("dolphin.optimizer_switch",
+                               gettext_noop("Control over optimizer behavior."),
+                               NULL,
+                               &GetSessionContext()->optimizer_switch_string,
+                               "default",
+                               PGC_USERSET,
+                               0,
+                               check_optimizer_switch,
+                               assign_optimizer_switch,
+                               NULL);
 #endif
 
 }

@@ -56,6 +56,9 @@
 #define HINT_GATHER "Gather"
 #define HINT_NO_EXPAND "No_expand"
 #define HINT_SET "Set"
+#ifdef DOLPHIN
+#define HINT_SET_VAR "Set_var"
+#endif
 #define HINT_CPLAN "Use_cplan"
 #define HINT_GPLAN "Use_gplan"
 #define HINT_CHOOSE_ADAPTIVE_GPLAN "Choose_adaptive_gplan"
@@ -111,6 +114,9 @@ typedef enum HintKeyword {
     HINT_KEYWORD_IGNORE,
     HINT_KEYWORD_CHOOSE_ADAPTIVE_GPLAN,
     HINT_KEYWORD_NO_GPC,
+#ifdef DOLPHIN
+    HINT_KEYWORD_SET_VAR,
+#endif
 } HintKeyword;
 
 /* hint status */

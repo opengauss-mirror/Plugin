@@ -92,6 +92,8 @@ typedef struct BSqlPluginContext {
     int single_line_trigger_begin;
     char* do_sconst;
     int single_line_proc_begin;
+    char* optimizer_switch_string;
+    unsigned int optimizer_switch_flags;
 #endif
 } bSqlPluginContext;
 
@@ -130,6 +132,21 @@ BSqlPluginContext* GetSessionContext();
 #define DEFAULT_WAIT_TIMEOUT 28800
 #define MIN_WAIT_TIMEOUT 1
 #define MAX_WAIT_TIMEOUT 31536000
+
+typedef struct optimizer_switch_entry {
+    const char* name; /* name of optimizer_switch entry */
+    int flag;         /* bit flag position */
+    bool defaultValue;
+} optimizer_switch_entry;
+
+#define OPT_USE_INVISIBLE_INDEXES 1
+#define OPT_OPTIMIZER_SWITCH_MAX 1
+
+#define USE_INVISIBLE_INDEXES (GetSessionContext()->optimizer_switch_flags & OPT_USE_INVISIBLE_INDEXES)
+
+static const struct optimizer_switch_entry optimizer_switch_options[OPT_OPTIMIZER_SWITCH_MAX] = {
+    {"use_invisible_indexes", OPT_USE_INVISIBLE_INDEXES, false}
+};
 #endif
 
 typedef enum {

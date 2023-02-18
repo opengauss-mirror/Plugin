@@ -307,7 +307,8 @@ typedef enum {
     OPT_RELOPTIONS,
     OPT_TABLESPACE_INDEX,
     OPT_PARTITIONELEMENT_INDEX,
-    OPT_COMMENT_INDEX
+    OPT_COMMENT_INDEX,
+    OPT_VISIBLE_INDEX
 } IndexOptionType;
 
 typedef struct CreateIndexOptions {
@@ -316,6 +317,7 @@ typedef struct CreateIndexOptions {
     List *indexIncludingParams; /* additional columns to index: a list of IndexElem */ 
     List *options;              /* WITH clause options: a list of DefElem */
     CommentStmt *comment;
+    bool visible;
 } CreateIndexOptions;
 
 typedef struct SingleIndexOption {
@@ -324,6 +326,7 @@ IndexOptionType option_type;
         List *list_content;
         char *char_content;
         CommentStmt *comment;
+        bool visible;
     } option;
 } SingleIndexOption;
 
@@ -16339,6 +16342,7 @@ IndexStmt:	CREATE opt_unique INDEX opt_concurrently opt_index_name
 						if ($10->comment != NULL) {
 							n->indexOptions = lappend(n->indexOptions, $10->comment);
 						}
+						n->indexOptions = lappend(n->indexOptions, makeString((char*)($10->visible ? "visible" : "invisible")));
 					}
 					$$ = (Node *)n;
 				}
@@ -16580,6 +16584,20 @@ PartitionTableIndexOption:
 					SingleIndexOption *n = (SingleIndexOption*)palloc(sizeof(SingleIndexOption));
 					n->option_type = OPT_COMMENT_INDEX;
 					n->option.comment = node;
+					$$ = n;
+				}
+			| INVISIBLE
+				{
+					SingleIndexOption *n = (SingleIndexOption*)palloc(sizeof(SingleIndexOption));
+					n->option_type = OPT_VISIBLE_INDEX;
+					n->option.visible = false;
+					$$ = n;
+				}
+			| VISIBLE
+				{
+					SingleIndexOption *n = (SingleIndexOption*)palloc(sizeof(SingleIndexOption));
+					n->option_type = OPT_VISIBLE_INDEX;
+					n->option.visible = true;
 					$$ = n;
 				}
 			;
@@ -35651,6 +35669,7 @@ static CreateIndexOptions *MakeCreateIndexOptions(CreateIndexOptions *indexOptio
         /* Initialize struct*/
         indexOptions = (CreateIndexOptions *)palloc0(sizeof(CreateIndexOptions));
     }
+    indexOptions->visible = true;
     switch (indexOption->option_type) {
         case OPT_INCLUDE:
             if (indexOptions->indexIncludingParams != NIL) {
@@ -35671,6 +35690,10 @@ static CreateIndexOptions *MakeCreateIndexOptions(CreateIndexOptions *indexOptio
             break;
         case OPT_COMMENT_INDEX:
             indexOptions->comment = indexOption->option.comment;
+            break;
+        case OPT_VISIBLE_INDEX:
+            indexOptions->visible = indexOption->option.visible;
+            break;
         default:
             break;
     }
