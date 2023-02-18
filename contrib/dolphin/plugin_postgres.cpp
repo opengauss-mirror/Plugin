@@ -94,6 +94,24 @@ static const struct sql_mode_entry sql_mode_options[OPT_SQL_MODE_MAX] = {
     {"no_zero_date", OPT_SQL_MODE_NO_ZERO_DATE},
 };
 
+#define DOLPHIN_TYPES_NUM 12
+#define TYPE_ATTRIBUTES_NUM 3
+
+/* typname, enable precision, enable scale */
+static const char* dolphinTypes[DOLPHIN_TYPES_NUM][TYPE_ATTRIBUTES_NUM] = {
+    {"uint1", "false", "false"},
+    {"uint2", "false", "false"},
+    {"uint4", "false", "false"},
+    {"uint8", "false", "false"},
+    {"year", "true", "false"},
+    {"binary", "true", "false"},
+    {"varbinary", "true", "false"},
+    {"tinyblob", "false", "false"},
+    {"mediumblob", "false", "false"},
+    {"longblob", "false", "false"},
+    {"set", "false", "false"},
+    {"enum", "false", "false"}
+};
 /*
  * For loading plpgsql function.
  */
@@ -137,6 +155,9 @@ static bool global_hook_inited = false;
 
 extern "C" DLL_PUBLIC void _PG_init(void);
 extern "C" DLL_PUBLIC void _PG_fini(void);
+
+PG_FUNCTION_INFO_V1_PUBLIC(dolphin_types);
+extern "C" DLL_PUBLIC Datum dolphin_types();
 
 PG_FUNCTION_INFO_V1_PUBLIC(dolphin_invoke);
 void dolphin_invoke(void)
@@ -721,4 +742,28 @@ PGFunction SearchFuncByOid(Oid funcId)
     PGFunction func = fmgrInfo->fn_addr;
     pfree(fmgrInfo);
     return func;
+}
+
+Datum dolphin_types()
+{
+    Datum* datums = NULL;
+    ArrayType* dolphinTypesArray = NULL;
+    int dimension = 2;
+    int cstringLength = -2;
+    datums = (Datum*)palloc(DOLPHIN_TYPES_NUM * TYPE_ATTRIBUTES_NUM * sizeof(Datum));
+    for (int row = 0; row < DOLPHIN_TYPES_NUM; row++) {
+        for (int col = 0; col < TYPE_ATTRIBUTES_NUM; col++) {
+            datums[row * TYPE_ATTRIBUTES_NUM + col] = CStringGetDatum(dolphinTypes[row][col]);
+        }
+    }
+    int dims[dimension];
+    int lbs[dimension];
+    dims[0] = DOLPHIN_TYPES_NUM;
+    dims[1] = TYPE_ATTRIBUTES_NUM;
+    lbs[0] = 1;
+    lbs[1] = 1;
+
+    dolphinTypesArray = construct_md_array(datums, NULL, dimension, dims, lbs, CSTRINGOID, cstringLength, false, 'c');
+    pfree_ext(datums);
+    PG_RETURN_ARRAYTYPE_P(dolphinTypesArray);
 }

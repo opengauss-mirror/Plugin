@@ -43,6 +43,9 @@ CREATE VIEW public.pg_type_nonstrict_basic_value AS
 REVOKE ALL ON public.pg_type_nonstrict_basic_value  FROM PUBLIC;
 GRANT SELECT, REFERENCES ON public.pg_type_nonstrict_basic_value  TO PUBLIC;
 
+CREATE OR REPLACE FUNCTION pg_catalog.dolphin_types()
+RETURNS text[][] LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'dolphin_types';
+
 DROP FUNCTION IF EXISTS pg_catalog.gs_master_status(OUT "Xlog_File_Name" text, OUT "Xlog_File_Offset" int4, OUT "Xlog_Lsn" text) CASCADE;
 
 CREATE OR REPLACE FUNCTION pg_catalog.gs_master_status (
