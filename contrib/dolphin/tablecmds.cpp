@@ -13143,15 +13143,15 @@ static Oid transformFkeyCheckAttrs(Relation pkrel, int numattrs, int16* attnums,
                 }
 
                 /*
-                * Refuse to use a deferrable unique/primary key.  This is per SQL
-                * spec, and there would be a lot of interesting semantic problems
-                * if we tried to allow it.
-                */
+                 * Refuse to use a deferrable unique/primary key.  This is per SQL
+                 * spec, and there would be a lot of interesting semantic problems
+                 * if we tried to allow it.
+                 */
                 if (found && !indexStruct->indimmediate && !DB_IS_CMPT(B_FORMAT)) {
                     /*
-                    * Remember that we found an otherwise matching index, so that
-                    * we can generate a more appropriate error message.
-                    */
+                     * Remember that we found an otherwise matching index, so that
+                     * we can generate a more appropriate error message.
+                     */
                     found_deferrable = true;
                     found = false;
                 }
