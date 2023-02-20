@@ -64,7 +64,7 @@ test: create_function_test/m_type_create_proc create_function_test/b_compat_crea
 
 test: create_function_test/deterministic create_function_test/language_sql create_function_test/sql_options create_function_test/sql_security create_function_test/call_function create_function_test/commentsharp   create_function_test/single_line_proc
 
-test: b_do_statment revoke option test_table_index test_float_double_real_double_precision_MD single_line_trigger prefixkey_index
+test: b_do_statment revoke option test_table_index test_float_double_real_double_precision_MD single_line_trigger prefixkey_index invisible_index
 
 test: alter_function_test/alter_function  alter_function_test/alter_procedure alter_function_test/language_sql replace_test/replace
 

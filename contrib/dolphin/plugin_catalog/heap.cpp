@@ -135,6 +135,7 @@
 #include "utils/pl_package.h"
 #endif
 
+#include "plugin_postgres.h"
 
 static void AddNewRelationTuple(Relation pg_class_desc, Relation new_rel_desc, Oid new_rel_oid, Oid new_type_oid,
     Oid reloftype, Oid relowner, char relkind, char relpersistence, Datum relacl, Datum reloptions,
@@ -8145,6 +8146,11 @@ int GetIndexKeyAttsByTuple(Relation relation, HeapTuple indexTuple)
 
 bool GetIndexVisibleStateByTuple(HeapTuple indexTuple)
 {
+#ifdef DOLPHIN
+    if (USE_INVISIBLE_INDEXES) {
+        return true;
+    }
+#endif
     bool isnull = false;
     Datum visibleDatum = heap_getattr(indexTuple, Anum_pg_index_indisvisible, GetDefaultPgIndexDesc(), &isnull);
 
