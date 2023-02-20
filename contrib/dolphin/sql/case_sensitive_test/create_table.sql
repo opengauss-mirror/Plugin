@@ -449,6 +449,8 @@ CREATE TABLE table_name_test_db.public.Test_indirection2(a int);
 -- error
 CREATE TABLE unknown_obj.table_name_test_db.public.Test_indirection3(a int);
 
+select * from public.Test_indirection1, table_name_test_db.public.Test_indirection2 where public.Test_indirection1.a=table_name_test_db.public.Test_indirection2.a(+);
+
 drop table "TEST"."Test_Table";
 drop table "SCHEMA_TEST"."Table";
 drop schema "TEST";

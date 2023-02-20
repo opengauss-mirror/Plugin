@@ -31760,7 +31760,7 @@ dolphin_indirection_el:
 				}
 			| ORA_JOINOP
 				{
-					$$ = MakeDolphinStringByNode((Node *) makeString("(+)"), false);
+					$$ = MakeDolphinStringByNode((Node *) makeString(pstrdup("(+)")), false);
 				}
 			| '.' '*'
 				{
