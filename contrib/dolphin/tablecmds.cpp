@@ -13109,39 +13109,28 @@ static Oid transformFkeyCheckAttrs(Relation pkrel, int numattrs, int16* attnums,
          * partial index; forget it if there are any expressions, too. Invalid
          * indexes are out as well.
          */
-        if (indnkeyatts == numattrs && indexStruct->indisunique && IndexIsValid(indexStruct) &&
+        if (indnkeyatts == numattrs && IndexIsValid(indexStruct) &&
             tableam_tops_tuple_attisnull(indexTuple, Anum_pg_index_indpred, NULL) &&
             tableam_tops_tuple_attisnull(indexTuple, Anum_pg_index_indexprs, NULL)) {
             /* Must get indclass the hard way */
             Datum indclassDatum;
             bool isnull = false;
             oidvector* indclass = NULL;
+#ifdef DOLPHIN
+            /* is B_FORMAT or is unique index on non-B_FORMAT */
+            if (DB_IS_CMPT(B_FORMAT) || indexStruct->indisunique) {
+                indclassDatum = SysCacheGetAttr(INDEXRELID, indexTuple, Anum_pg_index_indclass, &isnull);
+                Assert(!isnull);
+                indclass = (oidvector*)DatumGetPointer(indclassDatum);
 
-            indclassDatum = SysCacheGetAttr(INDEXRELID, indexTuple, Anum_pg_index_indclass, &isnull);
-            Assert(!isnull);
-            indclass = (oidvector*)DatumGetPointer(indclassDatum);
-
-            /*
-             * The given attnum list may match the index columns in any order.
-             * Check that each list is a subset of the other.
-             */
-            for (i = 0; i < numattrs; i++) {
-                found = false;
-                for (j = 0; j < numattrs; j++) {
-                    if (attnums[i] == indexStruct->indkey.values[j]) {
-                        found = true;
-                        break;
-                    }
-                }
-                if (!found)
-                    break;
-            }
-            if (found) {
+                /*
+                * The given attnum list may match the index columns in any order.
+                * Check that each list is a subset of the other.
+                */
                 for (i = 0; i < numattrs; i++) {
                     found = false;
                     for (j = 0; j < numattrs; j++) {
-                        if (attnums[j] == indexStruct->indkey.values[i]) {
-                            opclasses[j] = indclass->values[i];
+                        if (attnums[i] == indexStruct->indkey.values[j]) {
                             found = true;
                             break;
                         }
@@ -13149,22 +13138,37 @@ static Oid transformFkeyCheckAttrs(Relation pkrel, int numattrs, int16* attnums,
                     if (!found)
                         break;
                 }
-            }
+                if (found) {
+                    for (i = 0; i < numattrs; i++) {
+                        found = false;
+                        for (j = 0; j < numattrs; j++) {
+                            if (attnums[j] == indexStruct->indkey.values[i]) {
+                                opclasses[j] = indclass->values[i];
+                                found = true;
+                                break;
+                            }
+                        }
+                        if (!found)
+                            break;
+                    }
+                }
 
-            /*
-             * Refuse to use a deferrable unique/primary key.  This is per SQL
-             * spec, and there would be a lot of interesting semantic problems
-             * if we tried to allow it.
-             */
-            if (found && !indexStruct->indimmediate) {
                 /*
-                 * Remember that we found an otherwise matching index, so that
-                 * we can generate a more appropriate error message.
+                 * Refuse to use a deferrable unique/primary key.  This is per SQL
+                 * spec, and there would be a lot of interesting semantic problems
+                 * if we tried to allow it.
                  */
-                found_deferrable = true;
-                found = false;
+                if (found && !indexStruct->indimmediate && !DB_IS_CMPT(B_FORMAT)) {
+                    /*
+                     * Remember that we found an otherwise matching index, so that
+                     * we can generate a more appropriate error message.
+                     */
+                    found_deferrable = true;
+                    found = false;
+                }
             }
         }
+#endif
         ReleaseSysCache(indexTuple);
         if (found)
             break;
