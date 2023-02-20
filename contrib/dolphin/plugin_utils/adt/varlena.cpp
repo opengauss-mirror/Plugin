@@ -347,6 +347,9 @@ extern "C" DLL_PUBLIC Datum substring_index_bool_2(PG_FUNCTION_ARGS);
 PG_FUNCTION_INFO_V1_PUBLIC(substring_index_2bool);
 extern "C" DLL_PUBLIC Datum substring_index_2bool(PG_FUNCTION_ARGS);
 
+PG_FUNCTION_INFO_V1_PUBLIC(Varlena2Float8);
+extern "C" DLL_PUBLIC Datum Varlena2Float8(PG_FUNCTION_ARGS);
+
 #endif
 
 /*****************************************************************************
@@ -9558,5 +9561,19 @@ Datum blob_any_value(PG_FUNCTION_ARGS)
 {
     bytea* vlena = PG_GETARG_BYTEA_P_COPY(0);
     PG_RETURN_BYTEA_P(vlena);
+}
+
+Datum Varlena2Float8(PG_FUNCTION_ARGS)
+{
+    struct varlena* attr = (struct varlena*)PG_GETARG_POINTER(0);
+    char* data = VARDATA_ANY(attr);
+    bool hasError = false;
+    double result = float8in_internal(data, &data, &hasError);
+    if (hasError) {
+        ereport((!fcinfo->can_ignore && SQL_MODE_STRICT()) ? ERROR : WARNING,
+            (errcode(ERRCODE_INVALID_TEXT_REPRESENTATION),
+                errmsg("invalid input syntax for type double precision: \"%s\"", data)));
+    }
+    PG_RETURN_FLOAT8(result);
 }
 #endif

@@ -1,0 +1,873 @@
+drop schema if exists time_operator_test_schema cascade;
+NOTICE:  schema "time_operator_test_schema" does not exist, skipping
+create schema time_operator_test_schema;
+set current_schema to 'time_operator_test_schema';
+---------- head ----------
+set dolphin.b_compatibility_mode to on;
+drop table if exists test_time_table;
+NOTICE:  table "test_time_table" does not exist, skipping
+CREATE TABLE test_time_table
+(
+    `date` date,
+    `time` time,
+    `time(4)` time(4),
+    `datetime` datetime,
+    `datetime(4)` datetime(4),
+    `timestamp` timestamp,
+    `timestamp(4)` timestamp(4),
+    `year` year
+);
+-- type test
+drop table if exists test_time_type;
+NOTICE:  table "test_time_type" does not exist, skipping
+CREATE TABLE test_time_type AS SELECT
+`date` + `date` AS `date+date`,
+`date` - `date` AS `date-date`,
+`date` * `date` AS `date*date`,
+`date` / `date` AS `date/date`,
+`date` + `time` AS `date+time`,
+`date` - `time` AS `date-time`,
+`date` * `time` AS `date*time`,
+`date` / `time` AS `date/time`,
+`date` + `time(4)` AS `date+time(4)`,
+`date` - `time(4)` AS `date-time(4)`,
+`date` * `time(4)` AS `date*time(4)`,
+`date` / `time(4)` AS `date/time(4)`,
+`date` + `datetime` AS `date+datetime`,
+`date` - `datetime` AS `date-datetime`,
+`date` * `datetime` AS `date*datetime`,
+`date` / `datetime` AS `date/datetime`,
+`date` + `datetime(4)` AS `date+datetime(4)`,
+`date` - `datetime(4)` AS `date-datetime(4)`,
+`date` * `datetime(4)` AS `date*datetime(4)`,
+`date` / `datetime(4)` AS `date/datetime(4)`,
+`date` + `timestamp` AS `date+timestamp`,
+`date` - `timestamp` AS `date-timestamp`,
+`date` * `timestamp` AS `date*timestamp`,
+`date` / `timestamp` AS `date/timestamp`,
+`date` + `timestamp(4)` AS `date+timestamp(4)`,
+`date` - `timestamp(4)` AS `date-timestamp(4)`,
+`date` * `timestamp(4)` AS `date*timestamp(4)`,
+`date` / `timestamp(4)` AS `date/timestamp(4)`,
+`date` + `year` AS `date+year`,
+`date` - `year` AS `date-year`,
+`date` * `year` AS `date*year`,
+`date` / `year` AS `date/year`,
+`time` + `date` AS `time+date`,
+`time` - `date` AS `time-date`,
+`time` * `date` AS `time*date`,
+`time` / `date` AS `time/date`,
+`time` + `time` AS `time+time`,
+`time` - `time` AS `time-time`,
+`time` * `time` AS `time*time`,
+`time` / `time` AS `time/time`,
+`time` + `time(4)` AS `time+time(4)`,
+`time` - `time(4)` AS `time-time(4)`,
+`time` * `time(4)` AS `time*time(4)`,
+`time` / `time(4)` AS `time/time(4)`,
+`time` + `datetime` AS `time+datetime`,
+`time` - `datetime` AS `time-datetime`,
+`time` * `datetime` AS `time*datetime`,
+`time` / `datetime` AS `time/datetime`,
+`time` + `datetime(4)` AS `time+datetime(4)`,
+`time` - `datetime(4)` AS `time-datetime(4)`,
+`time` * `datetime(4)` AS `time*datetime(4)`,
+`time` / `datetime(4)` AS `time/datetime(4)`,
+`time` + `timestamp` AS `time+timestamp`,
+`time` - `timestamp` AS `time-timestamp`,
+`time` * `timestamp` AS `time*timestamp`,
+`time` / `timestamp` AS `time/timestamp`,
+`time` + `timestamp(4)` AS `time+timestamp(4)`,
+`time` - `timestamp(4)` AS `time-timestamp(4)`,
+`time` * `timestamp(4)` AS `time*timestamp(4)`,
+`time` / `timestamp(4)` AS `time/timestamp(4)`,
+`time` + `year` AS `time+year`,
+`time` - `year` AS `time-year`,
+`time` * `year` AS `time*year`,
+`time` / `year` AS `time/year`,
+`time(4)` + `date` AS `time(4)+date`,
+`time(4)` - `date` AS `time(4)-date`,
+`time(4)` * `date` AS `time(4)*date`,
+`time(4)` / `date` AS `time(4)/date`,
+`time(4)` + `time` AS `time(4)+time`,
+`time(4)` - `time` AS `time(4)-time`,
+`time(4)` * `time` AS `time(4)*time`,
+`time(4)` / `time` AS `time(4)/time`,
+`time(4)` + `time(4)` AS `time(4)+time(4)`,
+`time(4)` - `time(4)` AS `time(4)-time(4)`,
+`time(4)` * `time(4)` AS `time(4)*time(4)`,
+`time(4)` / `time(4)` AS `time(4)/time(4)`,
+`time(4)` + `datetime` AS `time(4)+datetime`,
+`time(4)` - `datetime` AS `time(4)-datetime`,
+`time(4)` * `datetime` AS `time(4)*datetime`,
+`time(4)` / `datetime` AS `time(4)/datetime`,
+`time(4)` + `datetime(4)` AS `time(4)+datetime(4)`,
+`time(4)` - `datetime(4)` AS `time(4)-datetime(4)`,
+`time(4)` * `datetime(4)` AS `time(4)*datetime(4)`,
+`time(4)` / `datetime(4)` AS `time(4)/datetime(4)`,
+`time(4)` + `timestamp` AS `time(4)+timestamp`,
+`time(4)` - `timestamp` AS `time(4)-timestamp`,
+`time(4)` * `timestamp` AS `time(4)*timestamp`,
+`time(4)` / `timestamp` AS `time(4)/timestamp`,
+`time(4)` + `timestamp(4)` AS `time(4)+timestamp(4)`,
+`time(4)` - `timestamp(4)` AS `time(4)-timestamp(4)`,
+`time(4)` * `timestamp(4)` AS `time(4)*timestamp(4)`,
+`time(4)` / `timestamp(4)` AS `time(4)/timestamp(4)`,
+`time(4)` + `year` AS `time(4)+year`,
+`time(4)` - `year` AS `time(4)-year`,
+`time(4)` * `year` AS `time(4)*year`,
+`time(4)` / `year` AS `time(4)/year`,
+`datetime` + `date` AS `datetime+date`,
+`datetime` - `date` AS `datetime-date`,
+`datetime` * `date` AS `datetime*date`,
+`datetime` / `date` AS `datetime/date`,
+`datetime` + `time` AS `datetime+time`,
+`datetime` - `time` AS `datetime-time`,
+`datetime` * `time` AS `datetime*time`,
+`datetime` / `time` AS `datetime/time`,
+`datetime` + `time(4)` AS `datetime+time(4)`,
+`datetime` - `time(4)` AS `datetime-time(4)`,
+`datetime` * `time(4)` AS `datetime*time(4)`,
+`datetime` / `time(4)` AS `datetime/time(4)`,
+`datetime` + `datetime` AS `datetime+datetime`,
+`datetime` - `datetime` AS `datetime-datetime`,
+`datetime` * `datetime` AS `datetime*datetime`,
+`datetime` / `datetime` AS `datetime/datetime`,
+`datetime` + `datetime(4)` AS `datetime+datetime(4)`,
+`datetime` - `datetime(4)` AS `datetime-datetime(4)`,
+`datetime` * `datetime(4)` AS `datetime*datetime(4)`,
+`datetime` / `datetime(4)` AS `datetime/datetime(4)`,
+`datetime` + `timestamp` AS `datetime+timestamp`,
+`datetime` - `timestamp` AS `datetime-timestamp`,
+`datetime` * `timestamp` AS `datetime*timestamp`,
+`datetime` / `timestamp` AS `datetime/timestamp`,
+`datetime` + `timestamp(4)` AS `datetime+timestamp(4)`,
+`datetime` - `timestamp(4)` AS `datetime-timestamp(4)`,
+`datetime` * `timestamp(4)` AS `datetime*timestamp(4)`,
+`datetime` / `timestamp(4)` AS `datetime/timestamp(4)`,
+`datetime` + `year` AS `datetime+year`,
+`datetime` - `year` AS `datetime-year`,
+`datetime` * `year` AS `datetime*year`,
+`datetime` / `year` AS `datetime/year`,
+`datetime(4)` + `date` AS `datetime(4)+date`,
+`datetime(4)` - `date` AS `datetime(4)-date`,
+`datetime(4)` * `date` AS `datetime(4)*date`,
+`datetime(4)` / `date` AS `datetime(4)/date`,
+`datetime(4)` + `time` AS `datetime(4)+time`,
+`datetime(4)` - `time` AS `datetime(4)-time`,
+`datetime(4)` * `time` AS `datetime(4)*time`,
+`datetime(4)` / `time` AS `datetime(4)/time`,
+`datetime(4)` + `time(4)` AS `datetime(4)+time(4)`,
+`datetime(4)` - `time(4)` AS `datetime(4)-time(4)`,
+`datetime(4)` * `time(4)` AS `datetime(4)*time(4)`,
+`datetime(4)` / `time(4)` AS `datetime(4)/time(4)`,
+`datetime(4)` + `datetime` AS `datetime(4)+datetime`,
+`datetime(4)` - `datetime` AS `datetime(4)-datetime`,
+`datetime(4)` * `datetime` AS `datetime(4)*datetime`,
+`datetime(4)` / `datetime` AS `datetime(4)/datetime`,
+`datetime(4)` + `datetime(4)` AS `datetime(4)+datetime(4)`,
+`datetime(4)` - `datetime(4)` AS `datetime(4)-datetime(4)`,
+`datetime(4)` * `datetime(4)` AS `datetime(4)*datetime(4)`,
+`datetime(4)` / `datetime(4)` AS `datetime(4)/datetime(4)`,
+`datetime(4)` + `timestamp` AS `datetime(4)+timestamp`,
+`datetime(4)` - `timestamp` AS `datetime(4)-timestamp`,
+`datetime(4)` * `timestamp` AS `datetime(4)*timestamp`,
+`datetime(4)` / `timestamp` AS `datetime(4)/timestamp`,
+`datetime(4)` + `timestamp(4)` AS `datetime(4)+timestamp(4)`,
+`datetime(4)` - `timestamp(4)` AS `datetime(4)-timestamp(4)`,
+`datetime(4)` * `timestamp(4)` AS `datetime(4)*timestamp(4)`,
+`datetime(4)` / `timestamp(4)` AS `datetime(4)/timestamp(4)`,
+`datetime(4)` + `year` AS `datetime(4)+year`,
+`datetime(4)` - `year` AS `datetime(4)-year`,
+`datetime(4)` * `year` AS `datetime(4)*year`,
+`datetime(4)` / `year` AS `datetime(4)/year`,
+`timestamp` + `date` AS `timestamp+date`,
+`timestamp` - `date` AS `timestamp-date`,
+`timestamp` * `date` AS `timestamp*date`,
+`timestamp` / `date` AS `timestamp/date`,
+`timestamp` + `time` AS `timestamp+time`,
+`timestamp` - `time` AS `timestamp-time`,
+`timestamp` * `time` AS `timestamp*time`,
+`timestamp` / `time` AS `timestamp/time`,
+`timestamp` + `time(4)` AS `timestamp+time(4)`,
+`timestamp` - `time(4)` AS `timestamp-time(4)`,
+`timestamp` * `time(4)` AS `timestamp*time(4)`,
+`timestamp` / `time(4)` AS `timestamp/time(4)`,
+`timestamp` + `datetime` AS `timestamp+datetime`,
+`timestamp` - `datetime` AS `timestamp-datetime`,
+`timestamp` * `datetime` AS `timestamp*datetime`,
+`timestamp` / `datetime` AS `timestamp/datetime`,
+`timestamp` + `datetime(4)` AS `timestamp+datetime(4)`,
+`timestamp` - `datetime(4)` AS `timestamp-datetime(4)`,
+`timestamp` * `datetime(4)` AS `timestamp*datetime(4)`,
+`timestamp` / `datetime(4)` AS `timestamp/datetime(4)`,
+`timestamp` + `timestamp` AS `timestamp+timestamp`,
+`timestamp` - `timestamp` AS `timestamp-timestamp`,
+`timestamp` * `timestamp` AS `timestamp*timestamp`,
+`timestamp` / `timestamp` AS `timestamp/timestamp`,
+`timestamp` + `timestamp(4)` AS `timestamp+timestamp(4)`,
+`timestamp` - `timestamp(4)` AS `timestamp-timestamp(4)`,
+`timestamp` * `timestamp(4)` AS `timestamp*timestamp(4)`,
+`timestamp` / `timestamp(4)` AS `timestamp/timestamp(4)`,
+`timestamp` + `year` AS `timestamp+year`,
+`timestamp` - `year` AS `timestamp-year`,
+`timestamp` * `year` AS `timestamp*year`,
+`timestamp` / `year` AS `timestamp/year`,
+`timestamp(4)` + `date` AS `timestamp(4)+date`,
+`timestamp(4)` - `date` AS `timestamp(4)-date`,
+`timestamp(4)` * `date` AS `timestamp(4)*date`,
+`timestamp(4)` / `date` AS `timestamp(4)/date`,
+`timestamp(4)` + `time` AS `timestamp(4)+time`,
+`timestamp(4)` - `time` AS `timestamp(4)-time`,
+`timestamp(4)` * `time` AS `timestamp(4)*time`,
+`timestamp(4)` / `time` AS `timestamp(4)/time`,
+`timestamp(4)` + `time(4)` AS `timestamp(4)+time(4)`,
+`timestamp(4)` - `time(4)` AS `timestamp(4)-time(4)`,
+`timestamp(4)` * `time(4)` AS `timestamp(4)*time(4)`,
+`timestamp(4)` / `time(4)` AS `timestamp(4)/time(4)`,
+`timestamp(4)` + `datetime` AS `timestamp(4)+datetime`,
+`timestamp(4)` - `datetime` AS `timestamp(4)-datetime`,
+`timestamp(4)` * `datetime` AS `timestamp(4)*datetime`,
+`timestamp(4)` / `datetime` AS `timestamp(4)/datetime`,
+`timestamp(4)` + `datetime(4)` AS `timestamp(4)+datetime(4)`,
+`timestamp(4)` - `datetime(4)` AS `timestamp(4)-datetime(4)`,
+`timestamp(4)` * `datetime(4)` AS `timestamp(4)*datetime(4)`,
+`timestamp(4)` / `datetime(4)` AS `timestamp(4)/datetime(4)`,
+`timestamp(4)` + `timestamp` AS `timestamp(4)+timestamp`,
+`timestamp(4)` - `timestamp` AS `timestamp(4)-timestamp`,
+`timestamp(4)` * `timestamp` AS `timestamp(4)*timestamp`,
+`timestamp(4)` / `timestamp` AS `timestamp(4)/timestamp`,
+`timestamp(4)` + `timestamp(4)` AS `timestamp(4)+timestamp(4)`,
+`timestamp(4)` - `timestamp(4)` AS `timestamp(4)-timestamp(4)`,
+`timestamp(4)` * `timestamp(4)` AS `timestamp(4)*timestamp(4)`,
+`timestamp(4)` / `timestamp(4)` AS `timestamp(4)/timestamp(4)`,
+`timestamp(4)` + `year` AS `timestamp(4)+year`,
+`timestamp(4)` - `year` AS `timestamp(4)-year`,
+`timestamp(4)` * `year` AS `timestamp(4)*year`,
+`timestamp(4)` / `year` AS `timestamp(4)/year`,
+`year` + `date` AS `year+date`,
+`year` - `date` AS `year-date`,
+`year` * `date` AS `year*date`,
+`year` / `date` AS `year/date`,
+`year` + `time` AS `year+time`,
+`year` - `time` AS `year-time`,
+`year` * `time` AS `year*time`,
+`year` / `time` AS `year/time`,
+`year` + `time(4)` AS `year+time(4)`,
+`year` - `time(4)` AS `year-time(4)`,
+`year` * `time(4)` AS `year*time(4)`,
+`year` / `time(4)` AS `year/time(4)`,
+`year` + `datetime` AS `year+datetime`,
+`year` - `datetime` AS `year-datetime`,
+`year` * `datetime` AS `year*datetime`,
+`year` / `datetime` AS `year/datetime`,
+`year` + `datetime(4)` AS `year+datetime(4)`,
+`year` - `datetime(4)` AS `year-datetime(4)`,
+`year` * `datetime(4)` AS `year*datetime(4)`,
+`year` / `datetime(4)` AS `year/datetime(4)`,
+`year` + `timestamp` AS `year+timestamp`,
+`year` - `timestamp` AS `year-timestamp`,
+`year` * `timestamp` AS `year*timestamp`,
+`year` / `timestamp` AS `year/timestamp`,
+`year` + `timestamp(4)` AS `year+timestamp(4)`,
+`year` - `timestamp(4)` AS `year-timestamp(4)`,
+`year` * `timestamp(4)` AS `year*timestamp(4)`,
+`year` / `timestamp(4)` AS `year/timestamp(4)`,
+`year` + `year` AS `year+year`,
+`year` - `year` AS `year-year`,
+`year` * `year` AS `year*year`,
+`year` / `year` AS `year/year`
+FROM test_time_table;
+SHOW COLUMNS FROM test_time_type;
+           Field           |  Type   | Null | Key | Default | Extra 
+---------------------------+---------+------+-----+---------+-------
+ date+date                 | integer | YES  |     | NULL    | 
+ date-date                 | integer | YES  |     | NULL    | 
+ date*date                 | bigint  | YES  |     | NULL    | 
+ date/date                 | numeric | YES  |     | NULL    | 
+ date+time                 | integer | YES  |     | NULL    | 
+ date-time                 | integer | YES  |     | NULL    | 
+ date*time                 | bigint  | YES  |     | NULL    | 
+ date/time                 | numeric | YES  |     | NULL    | 
+ date+time(4)              | numeric | YES  |     | NULL    | 
+ date-time(4)              | numeric | YES  |     | NULL    | 
+ date*time(4)              | numeric | YES  |     | NULL    | 
+ date/time(4)              | numeric | YES  |     | NULL    | 
+ date+datetime             | bigint  | YES  |     | NULL    | 
+ date-datetime             | bigint  | YES  |     | NULL    | 
+ date*datetime             | bigint  | YES  |     | NULL    | 
+ date/datetime             | numeric | YES  |     | NULL    | 
+ date+datetime(4)          | numeric | YES  |     | NULL    | 
+ date-datetime(4)          | numeric | YES  |     | NULL    | 
+ date*datetime(4)          | numeric | YES  |     | NULL    | 
+ date/datetime(4)          | numeric | YES  |     | NULL    | 
+ date+timestamp            | bigint  | YES  |     | NULL    | 
+ date-timestamp            | bigint  | YES  |     | NULL    | 
+ date*timestamp            | bigint  | YES  |     | NULL    | 
+ date/timestamp            | numeric | YES  |     | NULL    | 
+ date+timestamp(4)         | numeric | YES  |     | NULL    | 
+ date-timestamp(4)         | numeric | YES  |     | NULL    | 
+ date*timestamp(4)         | numeric | YES  |     | NULL    | 
+ date/timestamp(4)         | numeric | YES  |     | NULL    | 
+ date+year                 | uint4   | YES  |     | NULL    | 
+ date-year                 | uint4   | YES  |     | NULL    | 
+ date*year                 | uint8   | YES  |     | NULL    | 
+ date/year                 | numeric | YES  |     | NULL    | 
+ time+date                 | integer | YES  |     | NULL    | 
+ time-date                 | integer | YES  |     | NULL    | 
+ time*date                 | bigint  | YES  |     | NULL    | 
+ time/date                 | numeric | YES  |     | NULL    | 
+ time+time                 | integer | YES  |     | NULL    | 
+ time-time                 | integer | YES  |     | NULL    | 
+ time*time                 | bigint  | YES  |     | NULL    | 
+ time/time                 | numeric | YES  |     | NULL    | 
+ time+time(4)              | numeric | YES  |     | NULL    | 
+ time-time(4)              | numeric | YES  |     | NULL    | 
+ time*time(4)              | numeric | YES  |     | NULL    | 
+ time/time(4)              | numeric | YES  |     | NULL    | 
+ time+datetime             | bigint  | YES  |     | NULL    | 
+ time-datetime             | bigint  | YES  |     | NULL    | 
+ time*datetime             | bigint  | YES  |     | NULL    | 
+ time/datetime             | numeric | YES  |     | NULL    | 
+ time+datetime(4)          | numeric | YES  |     | NULL    | 
+ time-datetime(4)          | numeric | YES  |     | NULL    | 
+ time*datetime(4)          | numeric | YES  |     | NULL    | 
+ time/datetime(4)          | numeric | YES  |     | NULL    | 
+ time+timestamp            | bigint  | YES  |     | NULL    | 
+ time-timestamp            | bigint  | YES  |     | NULL    | 
+ time*timestamp            | bigint  | YES  |     | NULL    | 
+ time/timestamp            | numeric | YES  |     | NULL    | 
+ time+timestamp(4)         | numeric | YES  |     | NULL    | 
+ time-timestamp(4)         | numeric | YES  |     | NULL    | 
+ time*timestamp(4)         | numeric | YES  |     | NULL    | 
+ time/timestamp(4)         | numeric | YES  |     | NULL    | 
+ time+year                 | uint4   | YES  |     | NULL    | 
+ time-year                 | uint4   | YES  |     | NULL    | 
+ time*year                 | uint8   | YES  |     | NULL    | 
+ time/year                 | numeric | YES  |     | NULL    | 
+ time(4)+date              | numeric | YES  |     | NULL    | 
+ time(4)-date              | numeric | YES  |     | NULL    | 
+ time(4)*date              | numeric | YES  |     | NULL    | 
+ time(4)/date              | numeric | YES  |     | NULL    | 
+ time(4)+time              | numeric | YES  |     | NULL    | 
+ time(4)-time              | numeric | YES  |     | NULL    | 
+ time(4)*time              | numeric | YES  |     | NULL    | 
+ time(4)/time              | numeric | YES  |     | NULL    | 
+ time(4)+time(4)           | numeric | YES  |     | NULL    | 
+ time(4)-time(4)           | numeric | YES  |     | NULL    | 
+ time(4)*time(4)           | numeric | YES  |     | NULL    | 
+ time(4)/time(4)           | numeric | YES  |     | NULL    | 
+ time(4)+datetime          | numeric | YES  |     | NULL    | 
+ time(4)-datetime          | numeric | YES  |     | NULL    | 
+ time(4)*datetime          | numeric | YES  |     | NULL    | 
+ time(4)/datetime          | numeric | YES  |     | NULL    | 
+ time(4)+datetime(4)       | numeric | YES  |     | NULL    | 
+ time(4)-datetime(4)       | numeric | YES  |     | NULL    | 
+ time(4)*datetime(4)       | numeric | YES  |     | NULL    | 
+ time(4)/datetime(4)       | numeric | YES  |     | NULL    | 
+ time(4)+timestamp         | numeric | YES  |     | NULL    | 
+ time(4)-timestamp         | numeric | YES  |     | NULL    | 
+ time(4)*timestamp         | numeric | YES  |     | NULL    | 
+ time(4)/timestamp         | numeric | YES  |     | NULL    | 
+ time(4)+timestamp(4)      | numeric | YES  |     | NULL    | 
+ time(4)-timestamp(4)      | numeric | YES  |     | NULL    | 
+ time(4)*timestamp(4)      | numeric | YES  |     | NULL    | 
+ time(4)/timestamp(4)      | numeric | YES  |     | NULL    | 
+ time(4)+year              | numeric | YES  |     | NULL    | 
+ time(4)-year              | numeric | YES  |     | NULL    | 
+ time(4)*year              | numeric | YES  |     | NULL    | 
+ time(4)/year              | numeric | YES  |     | NULL    | 
+ datetime+date             | bigint  | YES  |     | NULL    | 
+ datetime-date             | bigint  | YES  |     | NULL    | 
+ datetime*date             | bigint  | YES  |     | NULL    | 
+ datetime/date             | numeric | YES  |     | NULL    | 
+ datetime+time             | bigint  | YES  |     | NULL    | 
+ datetime-time             | bigint  | YES  |     | NULL    | 
+ datetime*time             | bigint  | YES  |     | NULL    | 
+ datetime/time             | numeric | YES  |     | NULL    | 
+ datetime+time(4)          | numeric | YES  |     | NULL    | 
+ datetime-time(4)          | numeric | YES  |     | NULL    | 
+ datetime*time(4)          | numeric | YES  |     | NULL    | 
+ datetime/time(4)          | numeric | YES  |     | NULL    | 
+ datetime+datetime         | bigint  | YES  |     | NULL    | 
+ datetime-datetime         | bigint  | YES  |     | NULL    | 
+ datetime*datetime         | bigint  | YES  |     | NULL    | 
+ datetime/datetime         | numeric | YES  |     | NULL    | 
+ datetime+datetime(4)      | numeric | YES  |     | NULL    | 
+ datetime-datetime(4)      | numeric | YES  |     | NULL    | 
+ datetime*datetime(4)      | numeric | YES  |     | NULL    | 
+ datetime/datetime(4)      | numeric | YES  |     | NULL    | 
+ datetime+timestamp        | bigint  | YES  |     | NULL    | 
+ datetime-timestamp        | bigint  | YES  |     | NULL    | 
+ datetime*timestamp        | bigint  | YES  |     | NULL    | 
+ datetime/timestamp        | numeric | YES  |     | NULL    | 
+ datetime+timestamp(4)     | numeric | YES  |     | NULL    | 
+ datetime-timestamp(4)     | numeric | YES  |     | NULL    | 
+ datetime*timestamp(4)     | numeric | YES  |     | NULL    | 
+ datetime/timestamp(4)     | numeric | YES  |     | NULL    | 
+ datetime+year             | uint8   | YES  |     | NULL    | 
+ datetime-year             | uint8   | YES  |     | NULL    | 
+ datetime*year             | uint8   | YES  |     | NULL    | 
+ datetime/year             | numeric | YES  |     | NULL    | 
+ datetime(4)+date          | numeric | YES  |     | NULL    | 
+ datetime(4)-date          | numeric | YES  |     | NULL    | 
+ datetime(4)*date          | numeric | YES  |     | NULL    | 
+ datetime(4)/date          | numeric | YES  |     | NULL    | 
+ datetime(4)+time          | numeric | YES  |     | NULL    | 
+ datetime(4)-time          | numeric | YES  |     | NULL    | 
+ datetime(4)*time          | numeric | YES  |     | NULL    | 
+ datetime(4)/time          | numeric | YES  |     | NULL    | 
+ datetime(4)+time(4)       | numeric | YES  |     | NULL    | 
+ datetime(4)-time(4)       | numeric | YES  |     | NULL    | 
+ datetime(4)*time(4)       | numeric | YES  |     | NULL    | 
+ datetime(4)/time(4)       | numeric | YES  |     | NULL    | 
+ datetime(4)+datetime      | numeric | YES  |     | NULL    | 
+ datetime(4)-datetime      | numeric | YES  |     | NULL    | 
+ datetime(4)*datetime      | numeric | YES  |     | NULL    | 
+ datetime(4)/datetime      | numeric | YES  |     | NULL    | 
+ datetime(4)+datetime(4)   | numeric | YES  |     | NULL    | 
+ datetime(4)-datetime(4)   | numeric | YES  |     | NULL    | 
+ datetime(4)*datetime(4)   | numeric | YES  |     | NULL    | 
+ datetime(4)/datetime(4)   | numeric | YES  |     | NULL    | 
+ datetime(4)+timestamp     | numeric | YES  |     | NULL    | 
+ datetime(4)-timestamp     | numeric | YES  |     | NULL    | 
+ datetime(4)*timestamp     | numeric | YES  |     | NULL    | 
+ datetime(4)/timestamp     | numeric | YES  |     | NULL    | 
+ datetime(4)+timestamp(4)  | numeric | YES  |     | NULL    | 
+ datetime(4)-timestamp(4)  | numeric | YES  |     | NULL    | 
+ datetime(4)*timestamp(4)  | numeric | YES  |     | NULL    | 
+ datetime(4)/timestamp(4)  | numeric | YES  |     | NULL    | 
+ datetime(4)+year          | numeric | YES  |     | NULL    | 
+ datetime(4)-year          | numeric | YES  |     | NULL    | 
+ datetime(4)*year          | numeric | YES  |     | NULL    | 
+ datetime(4)/year          | numeric | YES  |     | NULL    | 
+ timestamp+date            | bigint  | YES  |     | NULL    | 
+ timestamp-date            | bigint  | YES  |     | NULL    | 
+ timestamp*date            | bigint  | YES  |     | NULL    | 
+ timestamp/date            | numeric | YES  |     | NULL    | 
+ timestamp+time            | bigint  | YES  |     | NULL    | 
+ timestamp-time            | bigint  | YES  |     | NULL    | 
+ timestamp*time            | bigint  | YES  |     | NULL    | 
+ timestamp/time            | numeric | YES  |     | NULL    | 
+ timestamp+time(4)         | numeric | YES  |     | NULL    | 
+ timestamp-time(4)         | numeric | YES  |     | NULL    | 
+ timestamp*time(4)         | numeric | YES  |     | NULL    | 
+ timestamp/time(4)         | numeric | YES  |     | NULL    | 
+ timestamp+datetime        | bigint  | YES  |     | NULL    | 
+ timestamp-datetime        | bigint  | YES  |     | NULL    | 
+ timestamp*datetime        | bigint  | YES  |     | NULL    | 
+ timestamp/datetime        | numeric | YES  |     | NULL    | 
+ timestamp+datetime(4)     | numeric | YES  |     | NULL    | 
+ timestamp-datetime(4)     | numeric | YES  |     | NULL    | 
+ timestamp*datetime(4)     | numeric | YES  |     | NULL    | 
+ timestamp/datetime(4)     | numeric | YES  |     | NULL    | 
+ timestamp+timestamp       | bigint  | YES  |     | NULL    | 
+ timestamp-timestamp       | bigint  | YES  |     | NULL    | 
+ timestamp*timestamp       | bigint  | YES  |     | NULL    | 
+ timestamp/timestamp       | numeric | YES  |     | NULL    | 
+ timestamp+timestamp(4)    | numeric | YES  |     | NULL    | 
+ timestamp-timestamp(4)    | numeric | YES  |     | NULL    | 
+ timestamp*timestamp(4)    | numeric | YES  |     | NULL    | 
+ timestamp/timestamp(4)    | numeric | YES  |     | NULL    | 
+ timestamp+year            | uint8   | YES  |     | NULL    | 
+ timestamp-year            | uint8   | YES  |     | NULL    | 
+ timestamp*year            | uint8   | YES  |     | NULL    | 
+ timestamp/year            | numeric | YES  |     | NULL    | 
+ timestamp(4)+date         | numeric | YES  |     | NULL    | 
+ timestamp(4)-date         | numeric | YES  |     | NULL    | 
+ timestamp(4)*date         | numeric | YES  |     | NULL    | 
+ timestamp(4)/date         | numeric | YES  |     | NULL    | 
+ timestamp(4)+time         | numeric | YES  |     | NULL    | 
+ timestamp(4)-time         | numeric | YES  |     | NULL    | 
+ timestamp(4)*time         | numeric | YES  |     | NULL    | 
+ timestamp(4)/time         | numeric | YES  |     | NULL    | 
+ timestamp(4)+time(4)      | numeric | YES  |     | NULL    | 
+ timestamp(4)-time(4)      | numeric | YES  |     | NULL    | 
+ timestamp(4)*time(4)      | numeric | YES  |     | NULL    | 
+ timestamp(4)/time(4)      | numeric | YES  |     | NULL    | 
+ timestamp(4)+datetime     | numeric | YES  |     | NULL    | 
+ timestamp(4)-datetime     | numeric | YES  |     | NULL    | 
+ timestamp(4)*datetime     | numeric | YES  |     | NULL    | 
+ timestamp(4)/datetime     | numeric | YES  |     | NULL    | 
+ timestamp(4)+datetime(4)  | numeric | YES  |     | NULL    | 
+ timestamp(4)-datetime(4)  | numeric | YES  |     | NULL    | 
+ timestamp(4)*datetime(4)  | numeric | YES  |     | NULL    | 
+ timestamp(4)/datetime(4)  | numeric | YES  |     | NULL    | 
+ timestamp(4)+timestamp    | numeric | YES  |     | NULL    | 
+ timestamp(4)-timestamp    | numeric | YES  |     | NULL    | 
+ timestamp(4)*timestamp    | numeric | YES  |     | NULL    | 
+ timestamp(4)/timestamp    | numeric | YES  |     | NULL    | 
+ timestamp(4)+timestamp(4) | numeric | YES  |     | NULL    | 
+ timestamp(4)-timestamp(4) | numeric | YES  |     | NULL    | 
+ timestamp(4)*timestamp(4) | numeric | YES  |     | NULL    | 
+ timestamp(4)/timestamp(4) | numeric | YES  |     | NULL    | 
+ timestamp(4)+year         | numeric | YES  |     | NULL    | 
+ timestamp(4)-year         | numeric | YES  |     | NULL    | 
+ timestamp(4)*year         | numeric | YES  |     | NULL    | 
+ timestamp(4)/year         | numeric | YES  |     | NULL    | 
+ year+date                 | uint4   | YES  |     | NULL    | 
+ year-date                 | uint4   | YES  |     | NULL    | 
+ year*date                 | uint8   | YES  |     | NULL    | 
+ year/date                 | numeric | YES  |     | NULL    | 
+ year+time                 | uint4   | YES  |     | NULL    | 
+ year-time                 | uint4   | YES  |     | NULL    | 
+ year*time                 | uint8   | YES  |     | NULL    | 
+ year/time                 | numeric | YES  |     | NULL    | 
+ year+time(4)              | numeric | YES  |     | NULL    | 
+ year-time(4)              | numeric | YES  |     | NULL    | 
+ year*time(4)              | numeric | YES  |     | NULL    | 
+ year/time(4)              | numeric | YES  |     | NULL    | 
+ year+datetime             | uint8   | YES  |     | NULL    | 
+ year-datetime             | uint8   | YES  |     | NULL    | 
+ year*datetime             | uint8   | YES  |     | NULL    | 
+ year/datetime             | numeric | YES  |     | NULL    | 
+ year+datetime(4)          | numeric | YES  |     | NULL    | 
+ year-datetime(4)          | numeric | YES  |     | NULL    | 
+ year*datetime(4)          | numeric | YES  |     | NULL    | 
+ year/datetime(4)          | numeric | YES  |     | NULL    | 
+ year+timestamp            | uint8   | YES  |     | NULL    | 
+ year-timestamp            | uint8   | YES  |     | NULL    | 
+ year*timestamp            | uint8   | YES  |     | NULL    | 
+ year/timestamp            | numeric | YES  |     | NULL    | 
+ year+timestamp(4)         | numeric | YES  |     | NULL    | 
+ year-timestamp(4)         | numeric | YES  |     | NULL    | 
+ year*timestamp(4)         | numeric | YES  |     | NULL    | 
+ year/timestamp(4)         | numeric | YES  |     | NULL    | 
+ year+year                 | uint4   | YES  |     | NULL    | 
+ year-year                 | uint4   | YES  |     | NULL    | 
+ year*year                 | uint4   | YES  |     | NULL    | 
+ year/year                 | numeric | YES  |     | NULL    | 
+(256 rows)
+
+-- test normal value
+delete from test_time_type;
+delete from test_time_table;
+insert into test_time_type values(null);
+insert into test_time_table values
+('2023-02-05',
+'19:10:50', '19:10:50.3456',
+'2023-02-05 19:10:50', '2023-02-05 19:10:50.456',
+'2023-02-05 19:10:50', '2023-02-05 19:10:50.456',
+'2023');
+UPDATE test_time_type, test_time_table SET test_time_type.`date+date` = test_time_table.`date`+test_time_table.`date`;
+UPDATE test_time_type, test_time_table SET test_time_type.`date-date` = test_time_table.`date`-test_time_table.`date`;
+UPDATE test_time_type, test_time_table SET test_time_type.`date*date` = test_time_table.`date`*test_time_table.`date`;
+UPDATE test_time_type, test_time_table SET test_time_type.`date/date` = test_time_table.`date`/test_time_table.`date`;
+UPDATE test_time_type, test_time_table SET test_time_type.`date+time` = test_time_table.`date`+test_time_table.`time`;
+UPDATE test_time_type, test_time_table SET test_time_type.`date-time` = test_time_table.`date`-test_time_table.`time`;
+UPDATE test_time_type, test_time_table SET test_time_type.`date*time` = test_time_table.`date`*test_time_table.`time`;
+UPDATE test_time_type, test_time_table SET test_time_type.`date/time` = test_time_table.`date`/test_time_table.`time`;
+UPDATE test_time_type, test_time_table SET test_time_type.`date+time(4)` = test_time_table.`date`+test_time_table.`time(4)`;
+UPDATE test_time_type, test_time_table SET test_time_type.`date-time(4)` = test_time_table.`date`-test_time_table.`time(4)`;
+UPDATE test_time_type, test_time_table SET test_time_type.`date*time(4)` = test_time_table.`date`*test_time_table.`time(4)`;
+UPDATE test_time_type, test_time_table SET test_time_type.`date/time(4)` = test_time_table.`date`/test_time_table.`time(4)`;
+UPDATE test_time_type, test_time_table SET test_time_type.`date+datetime` = test_time_table.`date`+test_time_table.`datetime`;
+UPDATE test_time_type, test_time_table SET test_time_type.`date-datetime` = test_time_table.`date`-test_time_table.`datetime`;
+UPDATE test_time_type, test_time_table SET test_time_type.`date*datetime` = test_time_table.`date`*test_time_table.`datetime`;
+ERROR:  bigint out of range
+CONTEXT:  referenced column: date*datetime
+UPDATE test_time_type, test_time_table SET test_time_type.`date/datetime` = test_time_table.`date`/test_time_table.`datetime`;
+UPDATE test_time_type, test_time_table SET test_time_type.`date+datetime(4)` = test_time_table.`date`+test_time_table.`datetime(4)`;
+UPDATE test_time_type, test_time_table SET test_time_type.`date-datetime(4)` = test_time_table.`date`-test_time_table.`datetime(4)`;
+UPDATE test_time_type, test_time_table SET test_time_type.`date*datetime(4)` = test_time_table.`date`*test_time_table.`datetime(4)`;
+UPDATE test_time_type, test_time_table SET test_time_type.`date/datetime(4)` = test_time_table.`date`/test_time_table.`datetime(4)`;
+UPDATE test_time_type, test_time_table SET test_time_type.`date+timestamp` = test_time_table.`date`+test_time_table.`timestamp`;
+UPDATE test_time_type, test_time_table SET test_time_type.`date-timestamp` = test_time_table.`date`-test_time_table.`timestamp`;
+UPDATE test_time_type, test_time_table SET test_time_type.`date*timestamp` = test_time_table.`date`*test_time_table.`timestamp`;
+ERROR:  bigint out of range
+CONTEXT:  referenced column: date*timestamp
+UPDATE test_time_type, test_time_table SET test_time_type.`date/timestamp` = test_time_table.`date`/test_time_table.`timestamp`;
+UPDATE test_time_type, test_time_table SET test_time_type.`date+timestamp(4)` = test_time_table.`date`+test_time_table.`timestamp(4)`;
+UPDATE test_time_type, test_time_table SET test_time_type.`date-timestamp(4)` = test_time_table.`date`-test_time_table.`timestamp(4)`;
+UPDATE test_time_type, test_time_table SET test_time_type.`date*timestamp(4)` = test_time_table.`date`*test_time_table.`timestamp(4)`;
+UPDATE test_time_type, test_time_table SET test_time_type.`date/timestamp(4)` = test_time_table.`date`/test_time_table.`timestamp(4)`;
+UPDATE test_time_type, test_time_table SET test_time_type.`date+year` = test_time_table.`date`+test_time_table.`year`;
+UPDATE test_time_type, test_time_table SET test_time_type.`date-year` = test_time_table.`date`-test_time_table.`year`;
+UPDATE test_time_type, test_time_table SET test_time_type.`date*year` = test_time_table.`date`*test_time_table.`year`;
+UPDATE test_time_type, test_time_table SET test_time_type.`date/year` = test_time_table.`date`/test_time_table.`year`;
+UPDATE test_time_type, test_time_table SET test_time_type.`time+date` = test_time_table.`time`+test_time_table.`date`;
+UPDATE test_time_type, test_time_table SET test_time_type.`time-date` = test_time_table.`time`-test_time_table.`date`;
+UPDATE test_time_type, test_time_table SET test_time_type.`time*date` = test_time_table.`time`*test_time_table.`date`;
+UPDATE test_time_type, test_time_table SET test_time_type.`time/date` = test_time_table.`time`/test_time_table.`date`;
+UPDATE test_time_type, test_time_table SET test_time_type.`time+time` = test_time_table.`time`+test_time_table.`time`;
+UPDATE test_time_type, test_time_table SET test_time_type.`time-time` = test_time_table.`time`-test_time_table.`time`;
+UPDATE test_time_type, test_time_table SET test_time_type.`time*time` = test_time_table.`time`*test_time_table.`time`;
+UPDATE test_time_type, test_time_table SET test_time_type.`time/time` = test_time_table.`time`/test_time_table.`time`;
+UPDATE test_time_type, test_time_table SET test_time_type.`time+time(4)` = test_time_table.`time`+test_time_table.`time(4)`;
+UPDATE test_time_type, test_time_table SET test_time_type.`time-time(4)` = test_time_table.`time`-test_time_table.`time(4)`;
+UPDATE test_time_type, test_time_table SET test_time_type.`time*time(4)` = test_time_table.`time`*test_time_table.`time(4)`;
+UPDATE test_time_type, test_time_table SET test_time_type.`time/time(4)` = test_time_table.`time`/test_time_table.`time(4)`;
+UPDATE test_time_type, test_time_table SET test_time_type.`time+datetime` = test_time_table.`time`+test_time_table.`datetime`;
+UPDATE test_time_type, test_time_table SET test_time_type.`time-datetime` = test_time_table.`time`-test_time_table.`datetime`;
+UPDATE test_time_type, test_time_table SET test_time_type.`time*datetime` = test_time_table.`time`*test_time_table.`datetime`;
+UPDATE test_time_type, test_time_table SET test_time_type.`time/datetime` = test_time_table.`time`/test_time_table.`datetime`;
+UPDATE test_time_type, test_time_table SET test_time_type.`time+datetime(4)` = test_time_table.`time`+test_time_table.`datetime(4)`;
+UPDATE test_time_type, test_time_table SET test_time_type.`time-datetime(4)` = test_time_table.`time`-test_time_table.`datetime(4)`;
+UPDATE test_time_type, test_time_table SET test_time_type.`time*datetime(4)` = test_time_table.`time`*test_time_table.`datetime(4)`;
+UPDATE test_time_type, test_time_table SET test_time_type.`time/datetime(4)` = test_time_table.`time`/test_time_table.`datetime(4)`;
+UPDATE test_time_type, test_time_table SET test_time_type.`time+timestamp` = test_time_table.`time`+test_time_table.`timestamp`;
+UPDATE test_time_type, test_time_table SET test_time_type.`time-timestamp` = test_time_table.`time`-test_time_table.`timestamp`;
+UPDATE test_time_type, test_time_table SET test_time_type.`time*timestamp` = test_time_table.`time`*test_time_table.`timestamp`;
+UPDATE test_time_type, test_time_table SET test_time_type.`time/timestamp` = test_time_table.`time`/test_time_table.`timestamp`;
+UPDATE test_time_type, test_time_table SET test_time_type.`time+timestamp(4)` = test_time_table.`time`+test_time_table.`timestamp(4)`;
+UPDATE test_time_type, test_time_table SET test_time_type.`time-timestamp(4)` = test_time_table.`time`-test_time_table.`timestamp(4)`;
+UPDATE test_time_type, test_time_table SET test_time_type.`time*timestamp(4)` = test_time_table.`time`*test_time_table.`timestamp(4)`;
+UPDATE test_time_type, test_time_table SET test_time_type.`time/timestamp(4)` = test_time_table.`time`/test_time_table.`timestamp(4)`;
+UPDATE test_time_type, test_time_table SET test_time_type.`time+year` = test_time_table.`time`+test_time_table.`year`;
+UPDATE test_time_type, test_time_table SET test_time_type.`time-year` = test_time_table.`time`-test_time_table.`year`;
+UPDATE test_time_type, test_time_table SET test_time_type.`time*year` = test_time_table.`time`*test_time_table.`year`;
+UPDATE test_time_type, test_time_table SET test_time_type.`time/year` = test_time_table.`time`/test_time_table.`year`;
+UPDATE test_time_type, test_time_table SET test_time_type.`time(4)+date` = test_time_table.`time(4)`+test_time_table.`date`;
+UPDATE test_time_type, test_time_table SET test_time_type.`time(4)-date` = test_time_table.`time(4)`-test_time_table.`date`;
+UPDATE test_time_type, test_time_table SET test_time_type.`time(4)*date` = test_time_table.`time(4)`*test_time_table.`date`;
+UPDATE test_time_type, test_time_table SET test_time_type.`time(4)/date` = test_time_table.`time(4)`/test_time_table.`date`;
+UPDATE test_time_type, test_time_table SET test_time_type.`time(4)+time` = test_time_table.`time(4)`+test_time_table.`time`;
+UPDATE test_time_type, test_time_table SET test_time_type.`time(4)-time` = test_time_table.`time(4)`-test_time_table.`time`;
+UPDATE test_time_type, test_time_table SET test_time_type.`time(4)*time` = test_time_table.`time(4)`*test_time_table.`time`;
+UPDATE test_time_type, test_time_table SET test_time_type.`time(4)/time` = test_time_table.`time(4)`/test_time_table.`time`;
+UPDATE test_time_type, test_time_table SET test_time_type.`time(4)+time(4)` = test_time_table.`time(4)`+test_time_table.`time(4)`;
+UPDATE test_time_type, test_time_table SET test_time_type.`time(4)-time(4)` = test_time_table.`time(4)`-test_time_table.`time(4)`;
+UPDATE test_time_type, test_time_table SET test_time_type.`time(4)*time(4)` = test_time_table.`time(4)`*test_time_table.`time(4)`;
+UPDATE test_time_type, test_time_table SET test_time_type.`time(4)/time(4)` = test_time_table.`time(4)`/test_time_table.`time(4)`;
+UPDATE test_time_type, test_time_table SET test_time_type.`time(4)+datetime` = test_time_table.`time(4)`+test_time_table.`datetime`;
+UPDATE test_time_type, test_time_table SET test_time_type.`time(4)-datetime` = test_time_table.`time(4)`-test_time_table.`datetime`;
+UPDATE test_time_type, test_time_table SET test_time_type.`time(4)*datetime` = test_time_table.`time(4)`*test_time_table.`datetime`;
+UPDATE test_time_type, test_time_table SET test_time_type.`time(4)/datetime` = test_time_table.`time(4)`/test_time_table.`datetime`;
+UPDATE test_time_type, test_time_table SET test_time_type.`time(4)+datetime(4)` = test_time_table.`time(4)`+test_time_table.`datetime(4)`;
+UPDATE test_time_type, test_time_table SET test_time_type.`time(4)-datetime(4)` = test_time_table.`time(4)`-test_time_table.`datetime(4)`;
+UPDATE test_time_type, test_time_table SET test_time_type.`time(4)*datetime(4)` = test_time_table.`time(4)`*test_time_table.`datetime(4)`;
+UPDATE test_time_type, test_time_table SET test_time_type.`time(4)/datetime(4)` = test_time_table.`time(4)`/test_time_table.`datetime(4)`;
+UPDATE test_time_type, test_time_table SET test_time_type.`time(4)+timestamp` = test_time_table.`time(4)`+test_time_table.`timestamp`;
+UPDATE test_time_type, test_time_table SET test_time_type.`time(4)-timestamp` = test_time_table.`time(4)`-test_time_table.`timestamp`;
+UPDATE test_time_type, test_time_table SET test_time_type.`time(4)*timestamp` = test_time_table.`time(4)`*test_time_table.`timestamp`;
+UPDATE test_time_type, test_time_table SET test_time_type.`time(4)/timestamp` = test_time_table.`time(4)`/test_time_table.`timestamp`;
+UPDATE test_time_type, test_time_table SET test_time_type.`time(4)+timestamp(4)` = test_time_table.`time(4)`+test_time_table.`timestamp(4)`;
+UPDATE test_time_type, test_time_table SET test_time_type.`time(4)-timestamp(4)` = test_time_table.`time(4)`-test_time_table.`timestamp(4)`;
+UPDATE test_time_type, test_time_table SET test_time_type.`time(4)*timestamp(4)` = test_time_table.`time(4)`*test_time_table.`timestamp(4)`;
+UPDATE test_time_type, test_time_table SET test_time_type.`time(4)/timestamp(4)` = test_time_table.`time(4)`/test_time_table.`timestamp(4)`;
+UPDATE test_time_type, test_time_table SET test_time_type.`time(4)+year` = test_time_table.`time(4)`+test_time_table.`year`;
+UPDATE test_time_type, test_time_table SET test_time_type.`time(4)-year` = test_time_table.`time(4)`-test_time_table.`year`;
+UPDATE test_time_type, test_time_table SET test_time_type.`time(4)*year` = test_time_table.`time(4)`*test_time_table.`year`;
+UPDATE test_time_type, test_time_table SET test_time_type.`time(4)/year` = test_time_table.`time(4)`/test_time_table.`year`;
+UPDATE test_time_type, test_time_table SET test_time_type.`datetime+date` = test_time_table.`datetime`+test_time_table.`date`;
+UPDATE test_time_type, test_time_table SET test_time_type.`datetime-date` = test_time_table.`datetime`-test_time_table.`date`;
+UPDATE test_time_type, test_time_table SET test_time_type.`datetime*date` = test_time_table.`datetime`*test_time_table.`date`;
+ERROR:  bigint out of range
+CONTEXT:  referenced column: datetime*date
+UPDATE test_time_type, test_time_table SET test_time_type.`datetime/date` = test_time_table.`datetime`/test_time_table.`date`;
+UPDATE test_time_type, test_time_table SET test_time_type.`datetime+time` = test_time_table.`datetime`+test_time_table.`time`;
+UPDATE test_time_type, test_time_table SET test_time_type.`datetime-time` = test_time_table.`datetime`-test_time_table.`time`;
+UPDATE test_time_type, test_time_table SET test_time_type.`datetime*time` = test_time_table.`datetime`*test_time_table.`time`;
+UPDATE test_time_type, test_time_table SET test_time_type.`datetime/time` = test_time_table.`datetime`/test_time_table.`time`;
+UPDATE test_time_type, test_time_table SET test_time_type.`datetime+time(4)` = test_time_table.`datetime`+test_time_table.`time(4)`;
+UPDATE test_time_type, test_time_table SET test_time_type.`datetime-time(4)` = test_time_table.`datetime`-test_time_table.`time(4)`;
+UPDATE test_time_type, test_time_table SET test_time_type.`datetime*time(4)` = test_time_table.`datetime`*test_time_table.`time(4)`;
+UPDATE test_time_type, test_time_table SET test_time_type.`datetime/time(4)` = test_time_table.`datetime`/test_time_table.`time(4)`;
+UPDATE test_time_type, test_time_table SET test_time_type.`datetime+datetime` = test_time_table.`datetime`+test_time_table.`datetime`;
+UPDATE test_time_type, test_time_table SET test_time_type.`datetime-datetime` = test_time_table.`datetime`-test_time_table.`datetime`;
+UPDATE test_time_type, test_time_table SET test_time_type.`datetime*datetime` = test_time_table.`datetime`*test_time_table.`datetime`;
+ERROR:  bigint out of range
+CONTEXT:  referenced column: datetime*datetime
+UPDATE test_time_type, test_time_table SET test_time_type.`datetime/datetime` = test_time_table.`datetime`/test_time_table.`datetime`;
+UPDATE test_time_type, test_time_table SET test_time_type.`datetime+datetime(4)` = test_time_table.`datetime`+test_time_table.`datetime(4)`;
+UPDATE test_time_type, test_time_table SET test_time_type.`datetime-datetime(4)` = test_time_table.`datetime`-test_time_table.`datetime(4)`;
+UPDATE test_time_type, test_time_table SET test_time_type.`datetime*datetime(4)` = test_time_table.`datetime`*test_time_table.`datetime(4)`;
+UPDATE test_time_type, test_time_table SET test_time_type.`datetime/datetime(4)` = test_time_table.`datetime`/test_time_table.`datetime(4)`;
+UPDATE test_time_type, test_time_table SET test_time_type.`datetime+timestamp` = test_time_table.`datetime`+test_time_table.`timestamp`;
+UPDATE test_time_type, test_time_table SET test_time_type.`datetime-timestamp` = test_time_table.`datetime`-test_time_table.`timestamp`;
+UPDATE test_time_type, test_time_table SET test_time_type.`datetime*timestamp` = test_time_table.`datetime`*test_time_table.`timestamp`;
+ERROR:  bigint out of range
+CONTEXT:  referenced column: datetime*timestamp
+UPDATE test_time_type, test_time_table SET test_time_type.`datetime/timestamp` = test_time_table.`datetime`/test_time_table.`timestamp`;
+UPDATE test_time_type, test_time_table SET test_time_type.`datetime+timestamp(4)` = test_time_table.`datetime`+test_time_table.`timestamp(4)`;
+UPDATE test_time_type, test_time_table SET test_time_type.`datetime-timestamp(4)` = test_time_table.`datetime`-test_time_table.`timestamp(4)`;
+UPDATE test_time_type, test_time_table SET test_time_type.`datetime*timestamp(4)` = test_time_table.`datetime`*test_time_table.`timestamp(4)`;
+UPDATE test_time_type, test_time_table SET test_time_type.`datetime/timestamp(4)` = test_time_table.`datetime`/test_time_table.`timestamp(4)`;
+UPDATE test_time_type, test_time_table SET test_time_type.`datetime+year` = test_time_table.`datetime`+test_time_table.`year`;
+UPDATE test_time_type, test_time_table SET test_time_type.`datetime-year` = test_time_table.`datetime`-test_time_table.`year`;
+UPDATE test_time_type, test_time_table SET test_time_type.`datetime*year` = test_time_table.`datetime`*test_time_table.`year`;
+UPDATE test_time_type, test_time_table SET test_time_type.`datetime/year` = test_time_table.`datetime`/test_time_table.`year`;
+UPDATE test_time_type, test_time_table SET test_time_type.`datetime(4)+date` = test_time_table.`datetime(4)`+test_time_table.`date`;
+UPDATE test_time_type, test_time_table SET test_time_type.`datetime(4)-date` = test_time_table.`datetime(4)`-test_time_table.`date`;
+UPDATE test_time_type, test_time_table SET test_time_type.`datetime(4)*date` = test_time_table.`datetime(4)`*test_time_table.`date`;
+UPDATE test_time_type, test_time_table SET test_time_type.`datetime(4)/date` = test_time_table.`datetime(4)`/test_time_table.`date`;
+UPDATE test_time_type, test_time_table SET test_time_type.`datetime(4)+time` = test_time_table.`datetime(4)`+test_time_table.`time`;
+UPDATE test_time_type, test_time_table SET test_time_type.`datetime(4)-time` = test_time_table.`datetime(4)`-test_time_table.`time`;
+UPDATE test_time_type, test_time_table SET test_time_type.`datetime(4)*time` = test_time_table.`datetime(4)`*test_time_table.`time`;
+UPDATE test_time_type, test_time_table SET test_time_type.`datetime(4)/time` = test_time_table.`datetime(4)`/test_time_table.`time`;
+UPDATE test_time_type, test_time_table SET test_time_type.`datetime(4)+time(4)` = test_time_table.`datetime(4)`+test_time_table.`time(4)`;
+UPDATE test_time_type, test_time_table SET test_time_type.`datetime(4)-time(4)` = test_time_table.`datetime(4)`-test_time_table.`time(4)`;
+UPDATE test_time_type, test_time_table SET test_time_type.`datetime(4)*time(4)` = test_time_table.`datetime(4)`*test_time_table.`time(4)`;
+UPDATE test_time_type, test_time_table SET test_time_type.`datetime(4)/time(4)` = test_time_table.`datetime(4)`/test_time_table.`time(4)`;
+UPDATE test_time_type, test_time_table SET test_time_type.`datetime(4)+datetime` = test_time_table.`datetime(4)`+test_time_table.`datetime`;
+UPDATE test_time_type, test_time_table SET test_time_type.`datetime(4)-datetime` = test_time_table.`datetime(4)`-test_time_table.`datetime`;
+UPDATE test_time_type, test_time_table SET test_time_type.`datetime(4)*datetime` = test_time_table.`datetime(4)`*test_time_table.`datetime`;
+UPDATE test_time_type, test_time_table SET test_time_type.`datetime(4)/datetime` = test_time_table.`datetime(4)`/test_time_table.`datetime`;
+UPDATE test_time_type, test_time_table SET test_time_type.`datetime(4)+datetime(4)` = test_time_table.`datetime(4)`+test_time_table.`datetime(4)`;
+UPDATE test_time_type, test_time_table SET test_time_type.`datetime(4)-datetime(4)` = test_time_table.`datetime(4)`-test_time_table.`datetime(4)`;
+UPDATE test_time_type, test_time_table SET test_time_type.`datetime(4)*datetime(4)` = test_time_table.`datetime(4)`*test_time_table.`datetime(4)`;
+UPDATE test_time_type, test_time_table SET test_time_type.`datetime(4)/datetime(4)` = test_time_table.`datetime(4)`/test_time_table.`datetime(4)`;
+UPDATE test_time_type, test_time_table SET test_time_type.`datetime(4)+timestamp` = test_time_table.`datetime(4)`+test_time_table.`timestamp`;
+UPDATE test_time_type, test_time_table SET test_time_type.`datetime(4)-timestamp` = test_time_table.`datetime(4)`-test_time_table.`timestamp`;
+UPDATE test_time_type, test_time_table SET test_time_type.`datetime(4)*timestamp` = test_time_table.`datetime(4)`*test_time_table.`timestamp`;
+UPDATE test_time_type, test_time_table SET test_time_type.`datetime(4)/timestamp` = test_time_table.`datetime(4)`/test_time_table.`timestamp`;
+UPDATE test_time_type, test_time_table SET test_time_type.`datetime(4)+timestamp(4)` = test_time_table.`datetime(4)`+test_time_table.`timestamp(4)`;
+UPDATE test_time_type, test_time_table SET test_time_type.`datetime(4)-timestamp(4)` = test_time_table.`datetime(4)`-test_time_table.`timestamp(4)`;
+UPDATE test_time_type, test_time_table SET test_time_type.`datetime(4)*timestamp(4)` = test_time_table.`datetime(4)`*test_time_table.`timestamp(4)`;
+UPDATE test_time_type, test_time_table SET test_time_type.`datetime(4)/timestamp(4)` = test_time_table.`datetime(4)`/test_time_table.`timestamp(4)`;
+UPDATE test_time_type, test_time_table SET test_time_type.`datetime(4)+year` = test_time_table.`datetime(4)`+test_time_table.`year`;
+UPDATE test_time_type, test_time_table SET test_time_type.`datetime(4)-year` = test_time_table.`datetime(4)`-test_time_table.`year`;
+UPDATE test_time_type, test_time_table SET test_time_type.`datetime(4)*year` = test_time_table.`datetime(4)`*test_time_table.`year`;
+UPDATE test_time_type, test_time_table SET test_time_type.`datetime(4)/year` = test_time_table.`datetime(4)`/test_time_table.`year`;
+UPDATE test_time_type, test_time_table SET test_time_type.`timestamp+date` = test_time_table.`timestamp`+test_time_table.`date`;
+UPDATE test_time_type, test_time_table SET test_time_type.`timestamp-date` = test_time_table.`timestamp`-test_time_table.`date`;
+UPDATE test_time_type, test_time_table SET test_time_type.`timestamp*date` = test_time_table.`timestamp`*test_time_table.`date`;
+ERROR:  bigint out of range
+CONTEXT:  referenced column: timestamp*date
+UPDATE test_time_type, test_time_table SET test_time_type.`timestamp/date` = test_time_table.`timestamp`/test_time_table.`date`;
+UPDATE test_time_type, test_time_table SET test_time_type.`timestamp+time` = test_time_table.`timestamp`+test_time_table.`time`;
+UPDATE test_time_type, test_time_table SET test_time_type.`timestamp-time` = test_time_table.`timestamp`-test_time_table.`time`;
+UPDATE test_time_type, test_time_table SET test_time_type.`timestamp*time` = test_time_table.`timestamp`*test_time_table.`time`;
+UPDATE test_time_type, test_time_table SET test_time_type.`timestamp/time` = test_time_table.`timestamp`/test_time_table.`time`;
+UPDATE test_time_type, test_time_table SET test_time_type.`timestamp+time(4)` = test_time_table.`timestamp`+test_time_table.`time(4)`;
+UPDATE test_time_type, test_time_table SET test_time_type.`timestamp-time(4)` = test_time_table.`timestamp`-test_time_table.`time(4)`;
+UPDATE test_time_type, test_time_table SET test_time_type.`timestamp*time(4)` = test_time_table.`timestamp`*test_time_table.`time(4)`;
+UPDATE test_time_type, test_time_table SET test_time_type.`timestamp/time(4)` = test_time_table.`timestamp`/test_time_table.`time(4)`;
+UPDATE test_time_type, test_time_table SET test_time_type.`timestamp+datetime` = test_time_table.`timestamp`+test_time_table.`datetime`;
+UPDATE test_time_type, test_time_table SET test_time_type.`timestamp-datetime` = test_time_table.`timestamp`-test_time_table.`datetime`;
+UPDATE test_time_type, test_time_table SET test_time_type.`timestamp*datetime` = test_time_table.`timestamp`*test_time_table.`datetime`;
+ERROR:  bigint out of range
+CONTEXT:  referenced column: timestamp*datetime
+UPDATE test_time_type, test_time_table SET test_time_type.`timestamp/datetime` = test_time_table.`timestamp`/test_time_table.`datetime`;
+UPDATE test_time_type, test_time_table SET test_time_type.`timestamp+datetime(4)` = test_time_table.`timestamp`+test_time_table.`datetime(4)`;
+UPDATE test_time_type, test_time_table SET test_time_type.`timestamp-datetime(4)` = test_time_table.`timestamp`-test_time_table.`datetime(4)`;
+UPDATE test_time_type, test_time_table SET test_time_type.`timestamp*datetime(4)` = test_time_table.`timestamp`*test_time_table.`datetime(4)`;
+UPDATE test_time_type, test_time_table SET test_time_type.`timestamp/datetime(4)` = test_time_table.`timestamp`/test_time_table.`datetime(4)`;
+UPDATE test_time_type, test_time_table SET test_time_type.`timestamp+timestamp` = test_time_table.`timestamp`+test_time_table.`timestamp`;
+UPDATE test_time_type, test_time_table SET test_time_type.`timestamp-timestamp` = test_time_table.`timestamp`-test_time_table.`timestamp`;
+UPDATE test_time_type, test_time_table SET test_time_type.`timestamp*timestamp` = test_time_table.`timestamp`*test_time_table.`timestamp`;
+ERROR:  bigint out of range
+CONTEXT:  referenced column: timestamp*timestamp
+UPDATE test_time_type, test_time_table SET test_time_type.`timestamp/timestamp` = test_time_table.`timestamp`/test_time_table.`timestamp`;
+UPDATE test_time_type, test_time_table SET test_time_type.`timestamp+timestamp(4)` = test_time_table.`timestamp`+test_time_table.`timestamp(4)`;
+UPDATE test_time_type, test_time_table SET test_time_type.`timestamp-timestamp(4)` = test_time_table.`timestamp`-test_time_table.`timestamp(4)`;
+UPDATE test_time_type, test_time_table SET test_time_type.`timestamp*timestamp(4)` = test_time_table.`timestamp`*test_time_table.`timestamp(4)`;
+UPDATE test_time_type, test_time_table SET test_time_type.`timestamp/timestamp(4)` = test_time_table.`timestamp`/test_time_table.`timestamp(4)`;
+UPDATE test_time_type, test_time_table SET test_time_type.`timestamp+year` = test_time_table.`timestamp`+test_time_table.`year`;
+UPDATE test_time_type, test_time_table SET test_time_type.`timestamp-year` = test_time_table.`timestamp`-test_time_table.`year`;
+UPDATE test_time_type, test_time_table SET test_time_type.`timestamp*year` = test_time_table.`timestamp`*test_time_table.`year`;
+UPDATE test_time_type, test_time_table SET test_time_type.`timestamp/year` = test_time_table.`timestamp`/test_time_table.`year`;
+UPDATE test_time_type, test_time_table SET test_time_type.`timestamp(4)+date` = test_time_table.`timestamp(4)`+test_time_table.`date`;
+UPDATE test_time_type, test_time_table SET test_time_type.`timestamp(4)-date` = test_time_table.`timestamp(4)`-test_time_table.`date`;
+UPDATE test_time_type, test_time_table SET test_time_type.`timestamp(4)*date` = test_time_table.`timestamp(4)`*test_time_table.`date`;
+UPDATE test_time_type, test_time_table SET test_time_type.`timestamp(4)/date` = test_time_table.`timestamp(4)`/test_time_table.`date`;
+UPDATE test_time_type, test_time_table SET test_time_type.`timestamp(4)+time` = test_time_table.`timestamp(4)`+test_time_table.`time`;
+UPDATE test_time_type, test_time_table SET test_time_type.`timestamp(4)-time` = test_time_table.`timestamp(4)`-test_time_table.`time`;
+UPDATE test_time_type, test_time_table SET test_time_type.`timestamp(4)*time` = test_time_table.`timestamp(4)`*test_time_table.`time`;
+UPDATE test_time_type, test_time_table SET test_time_type.`timestamp(4)/time` = test_time_table.`timestamp(4)`/test_time_table.`time`;
+UPDATE test_time_type, test_time_table SET test_time_type.`timestamp(4)+time(4)` = test_time_table.`timestamp(4)`+test_time_table.`time(4)`;
+UPDATE test_time_type, test_time_table SET test_time_type.`timestamp(4)-time(4)` = test_time_table.`timestamp(4)`-test_time_table.`time(4)`;
+UPDATE test_time_type, test_time_table SET test_time_type.`timestamp(4)*time(4)` = test_time_table.`timestamp(4)`*test_time_table.`time(4)`;
+UPDATE test_time_type, test_time_table SET test_time_type.`timestamp(4)/time(4)` = test_time_table.`timestamp(4)`/test_time_table.`time(4)`;
+UPDATE test_time_type, test_time_table SET test_time_type.`timestamp(4)+datetime` = test_time_table.`timestamp(4)`+test_time_table.`datetime`;
+UPDATE test_time_type, test_time_table SET test_time_type.`timestamp(4)-datetime` = test_time_table.`timestamp(4)`-test_time_table.`datetime`;
+UPDATE test_time_type, test_time_table SET test_time_type.`timestamp(4)*datetime` = test_time_table.`timestamp(4)`*test_time_table.`datetime`;
+UPDATE test_time_type, test_time_table SET test_time_type.`timestamp(4)/datetime` = test_time_table.`timestamp(4)`/test_time_table.`datetime`;
+UPDATE test_time_type, test_time_table SET test_time_type.`timestamp(4)+datetime(4)` = test_time_table.`timestamp(4)`+test_time_table.`datetime(4)`;
+UPDATE test_time_type, test_time_table SET test_time_type.`timestamp(4)-datetime(4)` = test_time_table.`timestamp(4)`-test_time_table.`datetime(4)`;
+UPDATE test_time_type, test_time_table SET test_time_type.`timestamp(4)*datetime(4)` = test_time_table.`timestamp(4)`*test_time_table.`datetime(4)`;
+UPDATE test_time_type, test_time_table SET test_time_type.`timestamp(4)/datetime(4)` = test_time_table.`timestamp(4)`/test_time_table.`datetime(4)`;
+UPDATE test_time_type, test_time_table SET test_time_type.`timestamp(4)+timestamp` = test_time_table.`timestamp(4)`+test_time_table.`timestamp`;
+UPDATE test_time_type, test_time_table SET test_time_type.`timestamp(4)-timestamp` = test_time_table.`timestamp(4)`-test_time_table.`timestamp`;
+UPDATE test_time_type, test_time_table SET test_time_type.`timestamp(4)*timestamp` = test_time_table.`timestamp(4)`*test_time_table.`timestamp`;
+UPDATE test_time_type, test_time_table SET test_time_type.`timestamp(4)/timestamp` = test_time_table.`timestamp(4)`/test_time_table.`timestamp`;
+UPDATE test_time_type, test_time_table SET test_time_type.`timestamp(4)+timestamp(4)` = test_time_table.`timestamp(4)`+test_time_table.`timestamp(4)`;
+UPDATE test_time_type, test_time_table SET test_time_type.`timestamp(4)-timestamp(4)` = test_time_table.`timestamp(4)`-test_time_table.`timestamp(4)`;
+UPDATE test_time_type, test_time_table SET test_time_type.`timestamp(4)*timestamp(4)` = test_time_table.`timestamp(4)`*test_time_table.`timestamp(4)`;
+UPDATE test_time_type, test_time_table SET test_time_type.`timestamp(4)/timestamp(4)` = test_time_table.`timestamp(4)`/test_time_table.`timestamp(4)`;
+UPDATE test_time_type, test_time_table SET test_time_type.`timestamp(4)+year` = test_time_table.`timestamp(4)`+test_time_table.`year`;
+UPDATE test_time_type, test_time_table SET test_time_type.`timestamp(4)-year` = test_time_table.`timestamp(4)`-test_time_table.`year`;
+UPDATE test_time_type, test_time_table SET test_time_type.`timestamp(4)*year` = test_time_table.`timestamp(4)`*test_time_table.`year`;
+UPDATE test_time_type, test_time_table SET test_time_type.`timestamp(4)/year` = test_time_table.`timestamp(4)`/test_time_table.`year`;
+UPDATE test_time_type, test_time_table SET test_time_type.`year+date` = test_time_table.`year`+test_time_table.`date`;
+UPDATE test_time_type, test_time_table SET test_time_type.`year-date` = test_time_table.`year`-test_time_table.`date`;
+ERROR:   int unsigned out of range
+CONTEXT:  referenced column: year-date
+UPDATE test_time_type, test_time_table SET test_time_type.`year*date` = test_time_table.`year`*test_time_table.`date`;
+UPDATE test_time_type, test_time_table SET test_time_type.`year/date` = test_time_table.`year`/test_time_table.`date`;
+UPDATE test_time_type, test_time_table SET test_time_type.`year+time` = test_time_table.`year`+test_time_table.`time`;
+UPDATE test_time_type, test_time_table SET test_time_type.`year-time` = test_time_table.`year`-test_time_table.`time`;
+ERROR:   int unsigned out of range
+CONTEXT:  referenced column: year-time
+UPDATE test_time_type, test_time_table SET test_time_type.`year*time` = test_time_table.`year`*test_time_table.`time`;
+UPDATE test_time_type, test_time_table SET test_time_type.`year/time` = test_time_table.`year`/test_time_table.`time`;
+UPDATE test_time_type, test_time_table SET test_time_type.`year+time(4)` = test_time_table.`year`+test_time_table.`time(4)`;
+UPDATE test_time_type, test_time_table SET test_time_type.`year-time(4)` = test_time_table.`year`-test_time_table.`time(4)`;
+UPDATE test_time_type, test_time_table SET test_time_type.`year*time(4)` = test_time_table.`year`*test_time_table.`time(4)`;
+UPDATE test_time_type, test_time_table SET test_time_type.`year/time(4)` = test_time_table.`year`/test_time_table.`time(4)`;
+UPDATE test_time_type, test_time_table SET test_time_type.`year+datetime` = test_time_table.`year`+test_time_table.`datetime`;
+UPDATE test_time_type, test_time_table SET test_time_type.`year-datetime` = test_time_table.`year`-test_time_table.`datetime`;
+ERROR:  bigint unsigned out of range
+CONTEXT:  referenced column: year-datetime
+UPDATE test_time_type, test_time_table SET test_time_type.`year*datetime` = test_time_table.`year`*test_time_table.`datetime`;
+UPDATE test_time_type, test_time_table SET test_time_type.`year/datetime` = test_time_table.`year`/test_time_table.`datetime`;
+UPDATE test_time_type, test_time_table SET test_time_type.`year+datetime(4)` = test_time_table.`year`+test_time_table.`datetime(4)`;
+UPDATE test_time_type, test_time_table SET test_time_type.`year-datetime(4)` = test_time_table.`year`-test_time_table.`datetime(4)`;
+UPDATE test_time_type, test_time_table SET test_time_type.`year*datetime(4)` = test_time_table.`year`*test_time_table.`datetime(4)`;
+UPDATE test_time_type, test_time_table SET test_time_type.`year/datetime(4)` = test_time_table.`year`/test_time_table.`datetime(4)`;
+UPDATE test_time_type, test_time_table SET test_time_type.`year+timestamp` = test_time_table.`year`+test_time_table.`timestamp`;
+UPDATE test_time_type, test_time_table SET test_time_type.`year-timestamp` = test_time_table.`year`-test_time_table.`timestamp`;
+ERROR:  bigint unsigned out of range
+CONTEXT:  referenced column: year-timestamp
+UPDATE test_time_type, test_time_table SET test_time_type.`year*timestamp` = test_time_table.`year`*test_time_table.`timestamp`;
+UPDATE test_time_type, test_time_table SET test_time_type.`year/timestamp` = test_time_table.`year`/test_time_table.`timestamp`;
+UPDATE test_time_type, test_time_table SET test_time_type.`year+timestamp(4)` = test_time_table.`year`+test_time_table.`timestamp(4)`;
+UPDATE test_time_type, test_time_table SET test_time_type.`year-timestamp(4)` = test_time_table.`year`-test_time_table.`timestamp(4)`;
+UPDATE test_time_type, test_time_table SET test_time_type.`year*timestamp(4)` = test_time_table.`year`*test_time_table.`timestamp(4)`;
+UPDATE test_time_type, test_time_table SET test_time_type.`year/timestamp(4)` = test_time_table.`year`/test_time_table.`timestamp(4)`;
+UPDATE test_time_type, test_time_table SET test_time_type.`year+year` = test_time_table.`year`+test_time_table.`year`;
+UPDATE test_time_type, test_time_table SET test_time_type.`year-year` = test_time_table.`year`-test_time_table.`year`;
+UPDATE test_time_type, test_time_table SET test_time_type.`year*year` = test_time_table.`year`*test_time_table.`year`;
+UPDATE test_time_type, test_time_table SET test_time_type.`year/year` = test_time_table.`year`/test_time_table.`year`;
+select * from test_time_type;
+ date+date | date-date |    date*date    |       date/date        | date+time | date-time |   date*time   |      date/time       |  date+time(4)   |  date-time(4)   |     date*time(4)     |     date/time(4)     | date+datetime  |  date-datetime  | date*datetime |       date/datetime        |   date+datetime(4)    |    date-datetime(4)    |       date*datetime(4)       |      date/datetime(4)      | date+timestamp | date-timestamp  | date*timestamp |       date/timestamp       |   date+timestamp(4)   |   date-timestamp(4)    |      date*timestamp(4)       |     date/timestamp(4)      | date+year | date-year |  date*year  |       date/year        | time+date | time-date |   time*date   |       time/date        | time+time | time-time |  time*time  |       time/time        | time+time(4)  | time-time(4) |    time*time(4)    |      time/time(4)      | time+datetime  |  time-datetime  |    time*datetime    |         time/datetime          |   time+datetime(4)    |    time-datetime(4)    |      time*datetime(4)      |        time/datetime(4)        | time+timestamp | time-timestamp  |   time*timestamp    |         time/timestamp         |   time+timestamp(4)   |   time-timestamp(4)    |     time*timestamp(4)      |       time/timestamp(4)        | time+year | time-year | time*year |      time/year      |  time(4)+date   |   time(4)-date   |     time(4)*date     |      time(4)/date      | time(4)+time  | time(4)-time |    time(4)*time    |      time(4)/time      | time(4)+time(4) | time(4)-time(4) |     time(4)*time(4)      |    time(4)/time(4)     |   time(4)+datetime    |    time(4)-datetime    |      time(4)*datetime      |        time(4)/datetime        |  time(4)+datetime(4)  |  time(4)-datetime(4)   |       time(4)*datetime(4)        |      time(4)/datetime(4)       |   time(4)+timestamp   |   time(4)-timestamp    |     time(4)*timestamp      |       time(4)/timestamp        | time(4)+timestamp(4)  |  time(4)-timestamp(4)  |       time(4)*timestamp(4)       |      time(4)/timestamp(4)      | time(4)+year  | time(4)-year  |   time(4)*year   |    time(4)/year     | datetime+date  | datetime-date  | datetime*date |    datetime/date     | datetime+time  | datetime-time  |    datetime*time    |   datetime/time    |   datetime+time(4)    |   datetime-time(4)    |      datetime*time(4)      |  datetime/time(4)  | datetime+datetime | datetime-datetime | datetime*datetime |   datetime/datetime    | datetime+datetime(4)  | datetime-datetime(4) |        datetime*datetime(4)        |  datetime/datetime(4)  | datetime+timestamp | datetime-timestamp | datetime*timestamp |   datetime/timestamp   | datetime+timestamp(4) | datetime-timestamp(4) |       datetime*timestamp(4)        | datetime/timestamp(4)  | datetime+year  | datetime-year  |   datetime*year   |    datetime/year     |   datetime(4)+date    |   datetime(4)-date    |       datetime(4)*date       |   datetime(4)/date   |   datetime(4)+time    |   datetime(4)-time    |      datetime(4)*time      |   datetime(4)/time   |  datetime(4)+time(4)  |  datetime(4)-time(4)  |       datetime(4)*time(4)        | datetime(4)/time(4)  | datetime(4)+datetime  | datetime(4)-datetime |        datetime(4)*datetime        |  datetime(4)/datetime  | datetime(4)+datetime(4) | datetime(4)-datetime(4) |         datetime(4)*datetime(4)          | datetime(4)/datetime(4) | datetime(4)+timestamp | datetime(4)-timestamp |       datetime(4)*timestamp        | datetime(4)/timestamp  | datetime(4)+timestamp(4) | datetime(4)-timestamp(4) |         datetime(4)*timestamp(4)         | datetime(4)/timestamp(4) |   datetime(4)+year    |   datetime(4)-year    |     datetime(4)*year     |    datetime(4)/year    | timestamp+date | timestamp-date | timestamp*date |    timestamp/date    | timestamp+time | timestamp-time |   timestamp*time    |   timestamp/time   |   timestamp+time(4)   |   timestamp-time(4)   |     timestamp*time(4)      | timestamp/time(4)  | timestamp+datetime | timestamp-datetime | timestamp*datetime |   timestamp/datetime   | timestamp+datetime(4) | timestamp-datetime(4) |       timestamp*datetime(4)        | timestamp/datetime(4)  | timestamp+timestamp | timestamp-timestamp | timestamp*timestamp |  timestamp/timestamp   | timestamp+timestamp(4) | timestamp-timestamp(4) |       timestamp*timestamp(4)       | timestamp/timestamp(4) | timestamp+year | timestamp-year |  timestamp*year   |    timestamp/year    |   timestamp(4)+date   |   timestamp(4)-date   |      timestamp(4)*date       |  timestamp(4)/date   |   timestamp(4)+time   |   timestamp(4)-time   |     timestamp(4)*time      |  timestamp(4)/time   | timestamp(4)+time(4)  | timestamp(4)-time(4)  |       timestamp(4)*time(4)       | timestamp(4)/time(4) | timestamp(4)+datetime | timestamp(4)-datetime |       timestamp(4)*datetime        | timestamp(4)/datetime  | timestamp(4)+datetime(4) | timestamp(4)-datetime(4) |         timestamp(4)*datetime(4)         | timestamp(4)/datetime(4) | timestamp(4)+timestamp | timestamp(4)-timestamp |       timestamp(4)*timestamp       | timestamp(4)/timestamp | timestamp(4)+timestamp(4) | timestamp(4)-timestamp(4) |        timestamp(4)*timestamp(4)         | timestamp(4)/timestamp(4) |   timestamp(4)+year   |   timestamp(4)-year   |    timestamp(4)*year     |   timestamp(4)/year    | year+date | year-date |  year*date  |         year/date          | year+time | year-time | year*time |       year/time        | year+time(4)  |  year-time(4)  |   year*time(4)   |      year/time(4)      | year+datetime  | year-datetime |   year*datetime   |         year/datetime          |   year+datetime(4)    |    year-datetime(4)    |     year*datetime(4)     |        year/datetime(4)        | year+timestamp | year-timestamp |  year*timestamp   |         year/timestamp         |   year+timestamp(4)   |   year-timestamp(4)    |    year*timestamp(4)     |       year/timestamp(4)        | year+year | year-year | year*year |       year/year        
+-----------+-----------+-----------------+------------------------+-----------+-----------+---------------+----------------------+-----------------+-----------------+----------------------+----------------------+----------------+-----------------+---------------+----------------------------+-----------------------+------------------------+------------------------------+----------------------------+----------------+-----------------+----------------+----------------------------+-----------------------+------------------------+------------------------------+----------------------------+-----------+-----------+-------------+------------------------+-----------+-----------+---------------+------------------------+-----------+-----------+-------------+------------------------+---------------+--------------+--------------------+------------------------+----------------+-----------------+---------------------+--------------------------------+-----------------------+------------------------+----------------------------+--------------------------------+----------------+-----------------+---------------------+--------------------------------+-----------------------+------------------------+----------------------------+--------------------------------+-----------+-----------+-----------+---------------------+-----------------+------------------+----------------------+------------------------+---------------+--------------+--------------------+------------------------+-----------------+-----------------+--------------------------+------------------------+-----------------------+------------------------+----------------------------+--------------------------------+-----------------------+------------------------+----------------------------------+--------------------------------+-----------------------+------------------------+----------------------------+--------------------------------+-----------------------+------------------------+----------------------------------+--------------------------------+---------------+---------------+------------------+---------------------+----------------+----------------+---------------+----------------------+----------------+----------------+---------------------+--------------------+-----------------------+-----------------------+----------------------------+--------------------+-------------------+-------------------+-------------------+------------------------+-----------------------+----------------------+------------------------------------+------------------------+--------------------+--------------------+--------------------+------------------------+-----------------------+-----------------------+------------------------------------+------------------------+----------------+----------------+-------------------+----------------------+-----------------------+-----------------------+------------------------------+----------------------+-----------------------+-----------------------+----------------------------+----------------------+-----------------------+-----------------------+----------------------------------+----------------------+-----------------------+----------------------+------------------------------------+------------------------+-------------------------+-------------------------+------------------------------------------+-------------------------+-----------------------+-----------------------+------------------------------------+------------------------+--------------------------+--------------------------+------------------------------------------+--------------------------+-----------------------+-----------------------+--------------------------+------------------------+----------------+----------------+----------------+----------------------+----------------+----------------+---------------------+--------------------+-----------------------+-----------------------+----------------------------+--------------------+--------------------+--------------------+--------------------+------------------------+-----------------------+-----------------------+------------------------------------+------------------------+---------------------+---------------------+---------------------+------------------------+------------------------+------------------------+------------------------------------+------------------------+----------------+----------------+-------------------+----------------------+-----------------------+-----------------------+------------------------------+----------------------+-----------------------+-----------------------+----------------------------+----------------------+-----------------------+-----------------------+----------------------------------+----------------------+-----------------------+-----------------------+------------------------------------+------------------------+--------------------------+--------------------------+------------------------------------------+--------------------------+------------------------+------------------------+------------------------------------+------------------------+---------------------------+---------------------------+------------------------------------------+---------------------------+-----------------------+-----------------------+--------------------------+------------------------+-----------+-----------+-------------+----------------------------+-----------+-----------+-----------+------------------------+---------------+----------------+------------------+------------------------+----------------+---------------+-------------------+--------------------------------+-----------------------+------------------------+--------------------------+--------------------------------+----------------+----------------+-------------------+--------------------------------+-----------------------+------------------------+--------------------------+--------------------------------+-----------+-----------+-----------+------------------------
+  40460410 |         0 | 409261194342025 | 1.00000000000000000000 |  20421255 |  20039155 | 3864980665250 | 105.8895838785658205 | 20421255.345600 | 20039154.654400 | 3864987656808.848000 | 105.8893923298927547 | 20230225421255 | -20230184960845 |               | 0.000000999999990556200582 | 20230225421255.456000 | -20230184960845.456000 | 409261198207014890223.480000 | 0.000000999999990556178042 | 20230225421255 | -20230184960845 |                | 0.000000999999990556200582 | 20230225421255.456000 | -20230184960845.456000 | 409261198207014890223.480000 | 0.000000999999990556178042 | 20232228  | 20228182  | 40925704715 | 10000.1013346515076619 |  20421255 | -20039155 | 3864980665250 | 0.00944379950672768763 |    382100 |         0 | 36500102500 | 1.00000000000000000000 | 382100.345600 |    -0.345600 | 36500168526.880000 | 0.99999819105273578736 | 20230205382100 | -20230205000000 | 3864980701750102500 | 0.0000000094437994175423393524 | 20230205382100.456000 | -20230205000000.456000 | 3864980701750189618.800000 | 0.0000000094437994175421264839 | 20230205382100 | -20230205000000 | 3864980701750102500 | 0.0000000094437994175423393524 | 20230205382100.456000 | -20230205000000.456000 | 3864980701750189618.800000 | 0.0000000094437994175421264839 | 193073    | 189027    | 386494150 | 94.4389520514087988 | 20421255.345600 | -20039154.654400 | 3864987656808.848000 | 0.00944381659009387201 | 382100.345600 |     0.345600 | 36500168526.880000 | 1.00000180895053650877 |   382100.691200 |        0.000000 | 36500234553.879439360000 | 1.00000000000000000000 | 20230205382100.345600 | -20230204999999.654400 | 3864987693309016526.880000 | 0.0000000094438165009083623968 | 20230205382100.801600 | -20230205000000.110400 | 3864987693309103645.837593600000 | 0.0000000094438165009081495280 | 20230205382100.345600 | -20230204999999.654400 | 3864987693309016526.880000 | 0.0000000094438165009083623968 | 20230205382100.801600 | -20230205000000.110400 | 3864987693309103645.837593600000 | 0.0000000094438165009081495280 | 193073.345600 | 189027.345600 | 386494849.148800 | 94.4391228868017795 | 20230225421255 | 20230184960845 |               | 1000000.009443799507 | 20230205382100 | 20230205000000 | 3864980701750102500 | 105889584.87856582 | 20230205382100.345600 | 20230204999999.654400 | 3864987693309016526.880000 | 105889393.32989095 |    40460410382100 |                 0 |                   | 1.00000000000000000000 | 40460410382100.456000 |            -0.456000 | 409261202071995591973669618.800000 | 0.99999999999997745945 |     40460410382100 |                  0 |                    | 1.00000000000000000000 | 40460410382100.456000 |             -0.456000 | 409261202071995591973669618.800000 | 0.99999999999997745945 | 20230205193073 | 20230205189027 | 40925705101494150 | 10000101429.09045971 | 20230225421255.456000 | 20230184960845.456000 | 409261198207014890223.480000 | 1000000.009443822047 | 20230205382100.456000 | 20230205000000.456000 | 3864980701750189618.800000 | 105889584.8785682073 | 20230205382100.801600 | 20230205000000.110400 | 3864987693309103645.837593600000 | 105889393.3298933326 | 40460410382100.456000 |             0.456000 | 409261202071995591973669618.800000 | 1.00000000000002254055 |   40460410382100.912000 |                0.000000 | 409261202072004816947236737.807936000000 |  1.00000000000000000000 | 40460410382100.456000 |              0.456000 | 409261202071995591973669618.800000 | 1.00000000000002254055 |    40460410382100.912000 |                 0.000000 | 409261202072004816947236737.807936000000 |   1.00000000000000000000 | 20230205193073.456000 | 20230205189027.456000 | 40925705101495072.488000 | 10000101429.0906851211 | 20230225421255 | 20230184960845 |                | 1000000.009443799507 | 20230205382100 | 20230205000000 | 3864980701750102500 | 105889584.87856582 | 20230205382100.345600 | 20230204999999.654400 | 3864987693309016526.880000 | 105889393.32989095 |     40460410382100 |                  0 |                    | 1.00000000000000000000 | 40460410382100.456000 |             -0.456000 | 409261202071995591973669618.800000 | 0.99999999999997745945 |      40460410382100 |                   0 |                     | 1.00000000000000000000 |  40460410382100.456000 |              -0.456000 | 409261202071995591973669618.800000 | 0.99999999999997745945 | 20230205193073 | 20230205189027 | 40925705101494150 | 10000101429.09045971 | 20230225421255.456000 | 20230184960845.456000 | 409261198207014890223.480000 | 1000000.009443822047 | 20230205382100.456000 | 20230205000000.456000 | 3864980701750189618.800000 | 105889584.8785682073 | 20230205382100.801600 | 20230205000000.110400 | 3864987693309103645.837593600000 | 105889393.3298933326 | 40460410382100.456000 |              0.456000 | 409261202071995591973669618.800000 | 1.00000000000002254055 |    40460410382100.912000 |                 0.000000 | 409261202072004816947236737.807936000000 |   1.00000000000000000000 |  40460410382100.456000 |               0.456000 | 409261202071995591973669618.800000 | 1.00000000000002254055 |     40460410382100.912000 |                  0.000000 | 409261202072004816947236737.807936000000 |    1.00000000000000000000 | 20230205193073.456000 | 20230205189027.456000 | 40925705101495072.488000 | 10000101429.0906851211 | 20232228  |           | 40925704715 | 0.000099998986663753530921 | 193073    |           | 386494150 | 0.01058885108610311437 | 193073.345600 | -189027.345600 | 386494849.148800 | 0.01058883193142991101 | 20230205193073 |               | 40925705101494150 | 0.0000000000999989857193831589 | 20230205193073.456000 | -20230205189027.456000 | 40925705101495072.488000 | 0.0000000000999989857193809049 | 20230205193073 |                | 40925705101494150 | 0.0000000000999989857193831589 | 20230205193073.456000 | -20230205189027.456000 | 40925705101495072.488000 | 0.0000000000999989857193809049 | 4046      | 0         | 4092529   | 1.00000000000000000000
+(1 row)
+
+select pg_typeof(current_date());
+ pg_typeof 
+-----------
+ date
+(1 row)
+
+select date '2022-02-01' + 1 AS result;
+  result  
+----------
+ 20220202
+(1 row)
+
+select date '2022-02-01' - 2 AS result;
+  result  
+----------
+ 20220199
+(1 row)
+
+select date '2022-02-01' * 2 AS result;
+  result  
+----------
+ 40440402
+(1 row)
+
+select date '2022-02-01' / 2 AS result;
+        result         
+-----------------------
+ 10110100.500000000000
+(1 row)
+
+---------- tail ----------
+drop schema time_operator_test_schema cascade;
+NOTICE:  drop cascades to 2 other objects
+DETAIL:  drop cascades to table test_time_table
+drop cascades to table test_time_type
+reset current_schema;

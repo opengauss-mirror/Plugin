@@ -4393,4 +4393,396 @@ Datum bool_xor_uint8(PG_FUNCTION_ARGS)
     uint64 arg2 = temp ? 1 : 0;
     PG_RETURN_UINT64(arg1 ^ arg2);
 }
+
+PG_FUNCTION_INFO_V1_PUBLIC(dolphin_uint1pl);
+extern "C" DLL_PUBLIC Datum dolphin_uint1pl(PG_FUNCTION_ARGS);
+Datum dolphin_uint1pl(PG_FUNCTION_ARGS)
+{
+    uint8 arg1 = PG_GETARG_UINT8(0);
+    uint8 arg2 = PG_GETARG_UINT8(1);
+    uint32 result;
+
+    result = (uint32)arg1 + (uint32)arg2;
+    PG_RETURN_UINT32(result);
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(dolphin_uint1mi);
+extern "C" DLL_PUBLIC Datum dolphin_uint1mi(PG_FUNCTION_ARGS);
+Datum dolphin_uint1mi(PG_FUNCTION_ARGS)
+{
+    uint8 arg1 = PG_GETARG_UINT8(0);
+    uint8 arg2 = PG_GETARG_UINT8(1);
+
+    uint32 result;
+
+    if (arg1 < arg2) {
+        ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("int unsigned out of range")));
+    }
+
+    result = arg1 - arg2;
+
+    PG_RETURN_UINT32(result);
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(dolphin_uint1mul);
+extern "C" DLL_PUBLIC Datum dolphin_uint1mul(PG_FUNCTION_ARGS);
+Datum dolphin_uint1mul(PG_FUNCTION_ARGS)
+{
+    uint8 arg1 = PG_GETARG_UINT8(0);
+    uint8 arg2 = PG_GETARG_UINT8(1);
+
+    uint32 result32;
+
+    result32 = (uint32)arg1 * (uint32)arg2;
+    PG_RETURN_UINT32(result32);
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(dolphin_int1_pl_uint1);
+extern "C" DLL_PUBLIC Datum dolphin_int1_pl_uint1(PG_FUNCTION_ARGS);
+Datum dolphin_int1_pl_uint1(PG_FUNCTION_ARGS)
+{
+    int8 arg1 = PG_GETARG_INT8(0);
+    uint8 arg2 = PG_GETARG_UINT8(1);
+    int32 result = (int32)arg1 + (int32)arg2;
+
+    if (result < 0) {
+        ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg(" int unsigned out of range")));
+    }
+
+    PG_RETURN_UINT32(result);
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(dolphin_int1_mi_uint1);
+extern "C" DLL_PUBLIC Datum dolphin_int1_mi_uint1(PG_FUNCTION_ARGS);
+Datum dolphin_int1_mi_uint1(PG_FUNCTION_ARGS)
+{
+    int8 arg1 = PG_GETARG_INT8(0);
+    uint8 arg2 = PG_GETARG_UINT8(1);
+    int32 result = (int32)arg1 - (int32)arg2;
+    if (result < 0) {
+        ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg(" int unsigned out of range")));
+    }
+
+    PG_RETURN_UINT32(result);
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(dolphin_int1_mul_uint1);
+extern "C" DLL_PUBLIC Datum dolphin_int1_mul_uint1(PG_FUNCTION_ARGS);
+Datum dolphin_int1_mul_uint1(PG_FUNCTION_ARGS)
+{
+    int8 arg1 = PG_GETARG_INT8(0);
+    uint8 arg2 = PG_GETARG_UINT8(1);
+    int32 result = (int32)arg1 * (int32)arg2;
+    if (result < 0) {
+        ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("int unsigned out of range")));
+    }
+    PG_RETURN_UINT32(result);
+}
+
+/* uint1_int1 */
+PG_FUNCTION_INFO_V1_PUBLIC(dolphin_uint1_pl_int1);
+extern "C" DLL_PUBLIC Datum dolphin_uint1_pl_int1(PG_FUNCTION_ARGS);
+Datum dolphin_uint1_pl_int1(PG_FUNCTION_ARGS)
+{
+    uint8 arg1 = PG_GETARG_UINT8(0);
+    int8 arg2 = PG_GETARG_INT8(1);
+    int32 result = (int32)arg1 + (int32)arg2;
+
+    if (result < 0) {
+        ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg(" int unsigned out of range")));
+    }
+
+    PG_RETURN_UINT32(result);
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(dolphin_uint1_mi_int1);
+extern "C" DLL_PUBLIC Datum dolphin_uint1_mi_int1(PG_FUNCTION_ARGS);
+Datum dolphin_uint1_mi_int1(PG_FUNCTION_ARGS)
+{
+    uint8 arg1 = PG_GETARG_UINT8(0);
+    int8 arg2 = PG_GETARG_INT8(1);
+    int32 result = (int32)arg1 - (int32)arg2;
+    if (result < 0) {
+        ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg(" int unsigned out of range")));
+    }
+
+    PG_RETURN_UINT32(result);
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(dolphin_uint1_mul_int1);
+extern "C" DLL_PUBLIC Datum dolphin_uint1_mul_int1(PG_FUNCTION_ARGS);
+Datum dolphin_uint1_mul_int1(PG_FUNCTION_ARGS)
+{
+    uint8 arg1 = PG_GETARG_UINT8(0);
+    int8 arg2 = PG_GETARG_INT8(1);
+    int32 result = (int32)arg1 * (int32)arg2;
+    if (result < 0) {
+        ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("int unsigned out of range")));
+    }
+    PG_RETURN_UINT32(result);
+}
+
+/* int2_uint2 */
+PG_FUNCTION_INFO_V1_PUBLIC(dolphin_int2_pl_uint2);
+extern "C" DLL_PUBLIC Datum dolphin_int2_pl_uint2(PG_FUNCTION_ARGS);
+Datum dolphin_int2_pl_uint2(PG_FUNCTION_ARGS)
+{
+    int16 arg1 = PG_GETARG_INT16(0);
+    uint16 arg2 = PG_GETARG_UINT16(1);
+    int32 result;
+
+    result = (int32)arg1 + (int32)arg2;
+    if (result < 0) {
+        ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg(" int unsigned out of range")));
+    }
+    PG_RETURN_UINT32(result);
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(dolphin_int2_mi_uint2);
+extern "C" DLL_PUBLIC Datum dolphin_int2_mi_uint2(PG_FUNCTION_ARGS);
+Datum dolphin_int2_mi_uint2(PG_FUNCTION_ARGS)
+{
+    int16 arg1 = PG_GETARG_INT16(0);
+    uint16 arg2 = PG_GETARG_UINT16(1);
+    int32 result;
+    result = (int32)arg1 - (int32)arg2;
+    if (result < 0) {
+        ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg(" int unsigned out of range")));
+    }
+
+    PG_RETURN_UINT32(result);
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(dolphin_int2_mul_uint2);
+extern "C" DLL_PUBLIC Datum dolphin_int2_mul_uint2(PG_FUNCTION_ARGS);
+Datum dolphin_int2_mul_uint2(PG_FUNCTION_ARGS)
+{
+    int16 arg1 = PG_GETARG_INT16(0);
+    uint16 arg2 = PG_GETARG_UINT16(1);
+    int64 result;
+    result = (int64)arg1 * (int64)arg2;
+    if (result < 0) {
+        ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("bigint unsigned out of range")));
+    }
+    PG_RETURN_UINT64(result);
+}
+
+/* int4_uint4 */
+PG_FUNCTION_INFO_V1_PUBLIC(dolphin_int4_pl_uint4);
+extern "C" DLL_PUBLIC Datum dolphin_int4_pl_uint4(PG_FUNCTION_ARGS);
+Datum dolphin_int4_pl_uint4(PG_FUNCTION_ARGS)
+{
+    int32 arg1 = PG_GETARG_INT32(0);
+    uint32 arg2 = PG_GETARG_UINT32(1);
+    int64 result;
+
+    result = (int64)arg1 + (int64)arg2;
+    if (result < 0) {
+        ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("bigint unsigned out of range")));
+    }
+
+    PG_RETURN_UINT64(result);
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(dolphin_int4_mi_uint4);
+extern "C" DLL_PUBLIC Datum dolphin_int4_mi_uint4(PG_FUNCTION_ARGS);
+Datum dolphin_int4_mi_uint4(PG_FUNCTION_ARGS)
+{
+    int32 arg1 = PG_GETARG_INT32(0);
+    uint32 arg2 = PG_GETARG_UINT32(1);
+    int64 result;
+    result = (int64)arg1 - (int64)arg2;
+    if (result < 0) {
+        ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("bigint unsigned out of range")));
+    }
+
+    PG_RETURN_UINT64(result);
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(dolphin_int4_mul_uint4);
+extern "C" DLL_PUBLIC Datum dolphin_int4_mul_uint4(PG_FUNCTION_ARGS);
+Datum dolphin_int4_mul_uint4(PG_FUNCTION_ARGS)
+{
+    int32 arg1 = PG_GETARG_INT32(0);
+    uint32 arg2 = PG_GETARG_UINT32(1);
+    int64 result;
+    result = (int64)arg1 * (int64)arg2;
+    if (result < 0) {
+        ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("bigint unsigned out of range")));
+    }
+    PG_RETURN_UINT64(result);
+}
+
+/* uint2_int2 */
+PG_FUNCTION_INFO_V1_PUBLIC(dolphin_uint2_pl_int2);
+extern "C" DLL_PUBLIC Datum dolphin_uint2_pl_int2(PG_FUNCTION_ARGS);
+Datum dolphin_uint2_pl_int2(PG_FUNCTION_ARGS)
+{
+    uint16 arg1 = PG_GETARG_UINT16(0);
+    int16 arg2 = PG_GETARG_INT16(1);
+    int32 result;
+
+    result = (int32)arg1 + (int32)arg2;
+    if (result < 0) {
+        ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg(" int unsigned out of range")));
+    }
+    PG_RETURN_UINT32(result);
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(dolphin_uint2_mi_int2);
+extern "C" DLL_PUBLIC Datum dolphin_uint2_mi_int2(PG_FUNCTION_ARGS);
+Datum dolphin_uint2_mi_int2(PG_FUNCTION_ARGS)
+{
+    uint16 arg1 = PG_GETARG_UINT16(0);
+    int16 arg2 = PG_GETARG_INT16(1);
+    int32 result;
+    result = (int32)arg1 - (int32)arg2;
+    if (result < 0) {
+        ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg(" int unsigned out of range")));
+    }
+
+    PG_RETURN_UINT32(result);
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(dolphin_uint2_mul_int2);
+extern "C" DLL_PUBLIC Datum dolphin_uint2_mul_int2(PG_FUNCTION_ARGS);
+Datum dolphin_uint2_mul_int2(PG_FUNCTION_ARGS)
+{
+    uint16 arg1 = PG_GETARG_UINT16(0);
+    int16 arg2 = PG_GETARG_INT16(1);
+    int64 result;
+    result = (int64)arg1 * (int64)arg2;
+    if (result < 0) {
+        ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("bigint unsigned out of range")));
+    }
+    PG_RETURN_UINT64(result);
+}
+
+/* uint2 */
+PG_FUNCTION_INFO_V1_PUBLIC(dolphin_uint2pl);
+extern "C" DLL_PUBLIC Datum dolphin_uint2pl(PG_FUNCTION_ARGS);
+Datum dolphin_uint2pl(PG_FUNCTION_ARGS)
+{
+    uint16 arg1 = PG_GETARG_UINT16(0);
+    uint16 arg2 = PG_GETARG_UINT16(1);
+    uint32 result;
+
+    result = (uint32)arg1 + (uint32)arg2;
+    PG_RETURN_UINT32(result);
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(dolphin_uint2mi);
+extern "C" DLL_PUBLIC Datum dolphin_uint2mi(PG_FUNCTION_ARGS);
+Datum dolphin_uint2mi(PG_FUNCTION_ARGS)
+{
+    uint16 arg1 = PG_GETARG_UINT16(0);
+    uint16 arg2 = PG_GETARG_UINT16(1);
+
+    uint32 result;
+    if (arg1 < arg2) {
+        ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("int unsigned out of range")));
+    }
+    result = arg1 - arg2;
+
+    PG_RETURN_UINT32(result);
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(dolphin_uint2mul);
+extern "C" DLL_PUBLIC Datum dolphin_uint2mul(PG_FUNCTION_ARGS);
+Datum dolphin_uint2mul(PG_FUNCTION_ARGS)
+{
+    uint16 arg1 = PG_GETARG_UINT16(0);
+    uint16 arg2 = PG_GETARG_UINT16(1);
+    uint64 result;
+
+    result = (uint64)arg1 * (uint64)arg2;
+    PG_RETURN_UINT64(result);
+}
+
+/* uint4 */
+PG_FUNCTION_INFO_V1_PUBLIC(dolphin_uint4pl);
+extern "C" DLL_PUBLIC Datum dolphin_uint4pl(PG_FUNCTION_ARGS);
+Datum dolphin_uint4pl(PG_FUNCTION_ARGS)
+{
+    uint32 arg1 = PG_GETARG_UINT32(0);
+    uint32 arg2 = PG_GETARG_UINT32(1);
+    uint64 result;
+
+    result = (uint64)arg1 + (uint64)arg2;
+    PG_RETURN_UINT64(result);
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(dolphin_uint4mi);
+extern "C" DLL_PUBLIC Datum dolphin_uint4mi(PG_FUNCTION_ARGS);
+Datum dolphin_uint4mi(PG_FUNCTION_ARGS)
+{
+    uint32 arg1 = PG_GETARG_UINT32(0);
+    uint32 arg2 = PG_GETARG_UINT32(1);
+
+    uint64 result;
+    if (arg1 < arg2) {
+        ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("int unsigned out of range")));
+    }
+    result = arg1 - arg2;
+
+    PG_RETURN_UINT64(result);
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(dolphin_uint4mul);
+extern "C" DLL_PUBLIC Datum dolphin_uint4mul(PG_FUNCTION_ARGS);
+Datum dolphin_uint4mul(PG_FUNCTION_ARGS)
+{
+    uint32 arg1 = PG_GETARG_UINT32(0);
+    uint32 arg2 = PG_GETARG_UINT32(1);
+    uint64 result;
+
+    result = (uint64)arg1 * (uint64)arg2;
+    PG_RETURN_UINT64(result);
+}
+
+/* uint4_int4 */
+PG_FUNCTION_INFO_V1_PUBLIC(dolphin_uint4_pl_int4);
+extern "C" DLL_PUBLIC Datum dolphin_uint4_pl_int4(PG_FUNCTION_ARGS);
+Datum dolphin_uint4_pl_int4(PG_FUNCTION_ARGS)
+{
+    uint32 arg1 = PG_GETARG_UINT32(0);
+    int32 arg2 = PG_GETARG_INT32(1);
+    int64 result;
+
+    result = (int64)arg1 + (int64)arg2;
+    if (result < 0) {
+        ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("bigint unsigned out of range")));
+    }
+
+    PG_RETURN_UINT64(result);
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(dolphin_uint4_mi_int4);
+extern "C" DLL_PUBLIC Datum dolphin_uint4_mi_int4(PG_FUNCTION_ARGS);
+Datum dolphin_uint4_mi_int4(PG_FUNCTION_ARGS)
+{
+    uint32 arg1 = PG_GETARG_UINT32(0);
+    int32 arg2 = PG_GETARG_INT32(1);
+    int64 result;
+    result = (int64)arg1 - (int64)arg2;
+    if (result < 0) {
+        ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("bigint unsigned out of range")));
+    }
+
+    PG_RETURN_UINT64(result);
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(dolphin_uint4_mul_int4);
+extern "C" DLL_PUBLIC Datum dolphin_uint4_mul_int4(PG_FUNCTION_ARGS);
+Datum dolphin_uint4_mul_int4(PG_FUNCTION_ARGS)
+{
+    uint32 arg1 = PG_GETARG_UINT32(0);
+    int32 arg2 = PG_GETARG_INT32(1);
+    int128 result;
+    result = (int128)arg1 * (int128)arg2;
+    if (result < 0) {
+        ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("bigint unsigned out of range")));
+    }
+    PG_RETURN_UINT64(result);
+}
 #endif

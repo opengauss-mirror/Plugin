@@ -19,6 +19,7 @@
 #include "catalog/pg_operator.h"
 #ifdef DOLPHIN
 #include "catalog/pg_enum.h"
+#include "executor/executor.h"
 #endif
 #include "catalog/pg_type.h"
 #include "lib/stringinfo.h"
@@ -64,6 +65,39 @@ typedef struct OprCacheEntry {
 
     Oid opr_oid; /* OID of the resolved operator */
 } OprCacheEntry;
+
+#ifdef DOLPHIN
+#define YEAR_TO_INT_TYPMOD 4
+#define TIME_TO_INT_TYPMOD 6
+#define DATE_TO_INT_TYPMOD 8
+#define TIMESTAMP_TO_INT_TYMOD 14
+typedef struct TransformOperatorInformation {
+    char *oprname;
+    Oid leftOid;
+    Oid rightOid;
+    int32 leftTypmod;
+    int32 rightTypmod;
+} TransformOperatorInformation;
+
+typedef struct GetDolphinOperatorTupInfo {
+    ParseState* pstate;
+    List* opname;
+    Oid ltypeId;
+    Oid rtypeId;
+    Node* ltree;
+    Node* rtree;
+    int location;
+    bool inNumeric;
+} GetDolphinOperatorTupInfo;
+
+static Operator GetDolphinOperatorTup(GetDolphinOperatorTupInfo* info);
+static Operator GetNumericDolphinOperatorTup(
+    ParseState* pstate, List* opername, Oid ltypeId, Oid rtypeId, int location, bool inNumeric);
+static void TransformDolphinType(Oid& type, int32& typmod);
+static bool IsNumericCatalogByOid(Oid oid);
+static int32 GetTypmod(Oid typeoid, Node* node);
+static Oid TransformDolphinOperator(TransformOperatorInformation* info);
+#endif
 
 static Oid binary_oper_exact(List* opname, Oid arg1, Oid arg2, bool use_a_style_coercion);
 static FuncDetailCode oper_select_candidate(int nargs, Oid* input_typeids, FuncCandidateList candidates, Oid* operOid);
@@ -361,6 +395,88 @@ bool IsIntType(Oid typeoid)
             return false;
     }
 }
+
+#ifdef DOLPHIN
+bool IsUnsignedIntType(Oid typeoid)
+{
+    if (typeoid == InvalidOid) {
+        return false;
+    }
+
+    if (typeoid == UINT1OID ||
+        typeoid == UINT2OID ||
+        typeoid == UINT4OID ||
+        typeoid == UINT8OID) {
+        return true;
+    }
+    return false;
+}
+
+bool IsFloatType(Oid typeoid)
+{
+    switch (typeoid) {
+        case FLOAT8OID:
+        case FLOAT4OID:
+            return true;
+        default:
+            return false;
+    }
+}
+
+bool IsDolphinStringType(Oid typeoid)
+{
+    if (typeoid == InvalidOid) {
+        return false;
+    }
+    switch (typeoid) {
+        case BLOBOID:
+        case VARCHAROID:
+        case BPCHAROID:
+        case NVARCHAR2OID:
+        case TEXTOID:
+        case BYTEAOID:
+        case JSONOID:
+        case UNKNOWNOID:
+            return true;
+        default:
+            if (typeoid == TINYBLOBOID ||
+                typeoid == MEDIUMBLOBOID ||
+                typeoid == LONGBLOBOID ||
+                typeoid == BINARYOID ||
+                typeoid == VARBINARYOID) {
+                return true;
+            }
+            return false;
+    }
+}
+
+bool IsNumericType(Oid typeoid)
+{
+    return typeoid == NUMERICOID;
+}
+
+bool IsDatetimeType(Oid typeoid)
+{
+    switch (typeoid) {
+        case TIMESTAMPOID:
+        case TIMESTAMPTZOID:
+        case TIMEOID:
+        case TIMETZOID:
+            return true;
+        default:
+            return false;
+    }
+}
+
+static bool IsDolphinUnsignedIntType(Oid typeoid)
+{
+    if (typeoid == BITOID) {
+        return true;
+    } else {
+        return IsUnsignedIntType(typeoid);
+    }
+}
+#endif
 
 /* oper() -- search for a binary operator
  * Given operator name, types of arg1 and arg2, return oper struct.
@@ -773,7 +889,23 @@ Expr* make_op(ParseState* pstate, List* opname, Node* ltree, Node* rtree, int lo
                 pstate->p_create_proc_operator_hook(pstate, ltree, rtree, &ltypeId, &rtypeId);
             }
         }
+#ifdef DOLPHIN
+        GetDolphinOperatorTupInfo info;
+        info.pstate = pstate;
+        info.opname = opname;
+        info.ltypeId = ltypeId;
+        info.rtypeId = rtypeId;
+        info.ltree = ltree;
+        info.rtree = rtree;
+        info.location = location;
+        info.inNumeric = inNumeric;
+        tup = GetDolphinOperatorTup(&info);
+        if (!HeapTupleIsValid(tup)) {
+            tup = oper(pstate, opname, ltypeId, rtypeId, false, location, inNumeric);
+        }
+#else
         tup = oper(pstate, opname, ltypeId, rtypeId, false, location, inNumeric);
+#endif
     }
 
     opform = check_operator_is_shell(opname, pstate, location, tup);
@@ -1078,3 +1210,204 @@ void InvalidateOprCacheCallBack(Datum arg, int cacheid, uint32 hashvalue)
             ereport(ERROR, (errcode(ERRCODE_DATA_EXCEPTION), errmsg("hash table corrupted")));
     }
 }
+
+#ifdef DOLPHIN
+static Operator GetNumericDolphinOperatorTup(
+    ParseState* pstate, List* opname, Oid ltypeId, Oid rtypeId, int location, bool inNumeric)
+{
+    HeapTuple tup = NULL;
+    Oid operOid;
+    OprCacheKey key;
+    bool key_ok = false;
+    bool use_a_style_coercion = false;
+
+    if (pstate != NULL) {
+        use_a_style_coercion = pstate->p_is_case_when && ENABLE_SQL_BETA_FEATURE(A_STYLE_COERCE);
+    }
+
+    key_ok = make_oper_cache_key(&key, opname, ltypeId, rtypeId, use_a_style_coercion);
+    tup = find_mapping_in_cache(key, key_ok);
+    if (HeapTupleIsValid(tup)) {
+        return (Operator)tup;
+    }
+
+    operOid = binary_oper_exact(opname, ltypeId, rtypeId, use_a_style_coercion);
+    if (OidIsValid(operOid)) {
+        tup = SearchSysCache1(OPEROID, ObjectIdGetDatum(operOid));
+    }
+
+    if (HeapTupleIsValid(tup) && key_ok) {
+        make_oper_cache_entry(&key, operOid);
+    }
+    return (Operator)tup;
+}
+
+static Operator GetDolphinOperatorTup(GetDolphinOperatorTupInfo* info)
+{
+    if (!GetSessionContext()->enableBCmptMode) {
+        return NULL;
+    }
+    ParseState* pstate = info->pstate;
+    List* opname = info->opname;
+    Oid leftType = info->ltypeId;
+    Oid rightType = info->rtypeId;
+    int location = info->location;
+    bool inNumeric = info->inNumeric;
+    int32 leftTypmod = GetTypmod(leftType, info->ltree);
+    int32 rightTypmod = GetTypmod(rightType, info->rtree);
+    char* schemaname = NULL;
+    char* opername = NULL;
+    DeconstructQualifiedName(opname, &schemaname, &opername);
+    List *newOpList = list_make2(makeString("dolphin_catalog"), makeString(opername));
+    if (IsNumericCatalogByOid(leftType) && IsNumericCatalogByOid(rightType)) {
+        Operator tup = GetNumericDolphinOperatorTup(pstate, newOpList, leftType, rightType, location, inNumeric);
+        if (tup != NULL) {
+            return tup;
+        }
+    }
+
+    /*
+     * Converts a non-numeric type to a numeric type
+     */
+    TransformDolphinType(leftType, leftTypmod);
+    TransformDolphinType(rightType, rightTypmod);
+
+    /* Only numeric types can go through the following process */
+    if (IsNumericCatalogByOid(leftType) && IsNumericCatalogByOid(rightType)) {
+        TransformOperatorInformation info;
+        info.oprname = opername;
+        info.leftOid = leftType;
+        info.rightOid = rightType;
+        info.leftTypmod = leftTypmod;
+        info.rightTypmod = rightTypmod;
+        Oid transformId = TransformDolphinOperator(&info);
+        if (transformId != InvalidOid) {
+            return SearchSysCache1(OPEROID, ObjectIdGetDatum(transformId));
+        }
+    }
+    return NULL;
+}
+
+static bool IsNumericCatalogByOid(Oid oid)
+{
+    return IsIntType(oid) || IsDolphinUnsignedIntType(oid) || IsFloatType(oid) || IsNumericType(oid);
+}
+
+static void TransformDolphinType(Oid& type, int32& typmod)
+{
+    if (IsDolphinStringType(type) || type_is_enum(type) || type_is_set(type)) {
+        type = FLOAT8OID;
+    }
+
+    if (type == YEAROID) {
+        /* year type */
+        type = UINT4OID;
+        typmod = YEAR_TO_INT_TYPMOD;
+    } else if (type == TIMESTAMPOID || type == TIMESTAMPTZOID) {
+        /* timestamp, timestamptz */
+        type = typmod > 0 ? NUMERICOID : INT8OID;
+        typmod = TIMESTAMP_TO_INT_TYMOD;
+    } else if (type == TIMEOID || type == TIMETZOID) {
+        /* time, timetz */
+        type = typmod > 0 ? NUMERICOID : INT4OID;
+        typmod = TIME_TO_INT_TYPMOD;
+    } else if (type == DATEOID) {
+        /* date type */
+        type = INT4OID;
+        typmod = DATE_TO_INT_TYPMOD;
+    }
+}
+
+static int32 GetTypmod(Oid typeoid, Node* node)
+{
+    if (typeoid == INT1OID || typeoid == UINT1OID) {
+        return TINYINT_LENGTH;
+    } else if (typeoid == INT2OID || typeoid == UINT2OID) {
+        return SMALLINT_LENGTH;
+    } else if (typeoid == INT4OID || typeoid == UINT4OID) {
+        return INTEGER_LENGTH;
+    } else if (typeoid == INT8OID || typeoid == UINT8OID) {
+        return BIGINT_LENGTH;
+    }
+    return exprTypmod(node);
+}
+
+static Oid TransformDolphinOperator(TransformOperatorInformation* info)
+{
+    Assert(info);
+    char* oprname = info->oprname;
+    Oid leftOid = info->leftOid;
+    Oid rightOid = info->rightOid;
+    int32 leftTypmod = info->leftTypmod;
+    int32 rightTypmod = info->rightTypmod;
+    if (!OidIsValid(leftOid) || !OidIsValid(rightOid)) {
+        return InvalidOid;
+    }
+
+    int subKind = OTHERS;
+
+    /* get the operator type */
+    if (strcmp("+", oprname) == 0) {
+        subKind = AEXPR_PLUS_INT4;
+    } else if (strcmp("-", oprname) == 0) {
+        subKind = AEXPR_MINUS_INT4;
+    } else if (strcmp("*", oprname) == 0) {
+        subKind = AEXPR_MUL_INT4;
+    } else if (strcmp("/", oprname) == 0) {
+        subKind = AEXPR_DIV_INT4;
+    } else {
+        return InvalidOid;
+    }
+
+    int dataKind = INVALID_OP;
+    bool leftIsUnsigned = IsDolphinUnsignedIntType(leftOid);
+    bool rightIsUnsigned = IsDolphinUnsignedIntType(rightOid);
+    /* get the result type */
+    if (IsFloatType(leftOid) || IsFloatType(rightOid)) {
+        dataKind = REAL_OP;
+    } else if (IsNumericType(leftOid) || IsNumericType(rightOid)) {
+        dataKind = DECIMAL_OP;
+    } else if (leftIsUnsigned && rightIsUnsigned) {
+        dataKind = UINT_OP;
+    } else if (leftIsUnsigned && !rightIsUnsigned) {
+        dataKind = UINT_INT_OP;
+    } else if (!leftIsUnsigned && rightIsUnsigned) {
+        dataKind = INT_UINT_OP;
+    } else {
+        dataKind = INT_OP;
+    }
+
+    if (dataKind == UINT_OP ||
+        dataKind == INT_UINT_OP ||
+        dataKind == UINT_INT_OP ||
+        dataKind == INT_OP) {
+        if (leftTypmod == -1 || rightTypmod == -1) {
+            subKind++;
+        } else {
+            int precision = 0;
+            switch (subKind) {
+                case AEXPR_PLUS_INT4:
+                case AEXPR_MINUS_INT4:
+                    precision = Max(leftTypmod, rightTypmod) + 1;
+                    break;
+                case AEXPR_MUL_INT4:
+                    precision = leftTypmod + rightTypmod;
+                    break;
+                default:
+                    break;
+            }
+            /* Use the length to determine whether the return value is int4 or int8 */
+            if (precision >= INTEGER_LENGTH) {
+                subKind++;
+            }
+        }
+    }
+
+    return GetSessionContext()->dolphin_oprs[subKind][dataKind];
+}
+
+Oid binary_oper_exact_extern(List* opname, Oid arg1, Oid arg2, bool use_a_style_coercion)
+{
+    return binary_oper_exact(opname, arg1, arg2, use_a_style_coercion);
+}
+#endif

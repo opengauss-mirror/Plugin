@@ -1,0 +1,1753 @@
+drop schema if exists numeric_operator_test_schema_min cascade;
+NOTICE:  schema "numeric_operator_test_schema_min" does not exist, skipping
+create schema numeric_operator_test_schema_min;
+set current_schema to 'numeric_operator_test_schema_min';
+---------- head ----------
+drop table if exists test_numeric_table_min;
+NOTICE:  table "test_numeric_table_min" does not exist, skipping
+CREATE TABLE test_numeric_table_min
+(
+    `int1` tinyint,
+    `uint1` tinyint unsigned,
+    `int2` smallint,
+    `uint2` smallint unsigned,
+    `int4` integer,
+    `uint4` integer unsigned,
+    `int8` bigint,
+    `uint8` bigint unsigned,
+    `float4` float4,
+    `float8` float8,
+    `numeric` decimal(20, 6),
+    `bit1` bit(1),
+    `bit64` bit(64)
+);
+-- type test when b_compatibility_mode is on
+set dolphin.b_compatibility_mode to on;
+drop table if exists test_numeric_type_min;
+NOTICE:  table "test_numeric_type_min" does not exist, skipping
+CREATE TABLE test_numeric_type_min AS SELECT
+`int1` + `int1` AS `int1+int1`,
+`int1` - `int1` AS `int1-int1`,
+`int1` * `int1` AS `int1*int1`,
+`int1` / `int1` AS `int1/int1`,
+`int1` + `uint1` AS `int1+uint1`,
+`int1` - `uint1` AS `int1-uint1`,
+`int1` * `uint1` AS `int1*uint1`,
+`int1` / `uint1` AS `int1/uint1`,
+`int1` + `int2` AS `int1+int2`,
+`int1` - `int2` AS `int1-int2`,
+`int1` * `int2` AS `int1*int2`,
+`int1` / `int2` AS `int1/int2`,
+`int1` + `uint2` AS `int1+uint2`,
+`int1` - `uint2` AS `int1-uint2`,
+`int1` * `uint2` AS `int1*uint2`,
+`int1` / `uint2` AS `int1/uint2`,
+`int1` + `int4` AS `int1+int4`,
+`int1` - `int4` AS `int1-int4`,
+`int1` * `int4` AS `int1*int4`,
+`int1` / `int4` AS `int1/int4`,
+`int1` + `uint4` AS `int1+uint4`,
+`int1` - `uint4` AS `int1-uint4`,
+`int1` * `uint4` AS `int1*uint4`,
+`int1` / `uint4` AS `int1/uint4`,
+`int1` + `int8` AS `int1+int8`,
+`int1` - `int8` AS `int1-int8`,
+`int1` * `int8` AS `int1*int8`,
+`int1` / `int8` AS `int1/int8`,
+`int1` + `uint8` AS `int1+uint8`,
+`int1` - `uint8` AS `int1-uint8`,
+`int1` * `uint8` AS `int1*uint8`,
+`int1` / `uint8` AS `int1/uint8`,
+`int1` + `float4` AS `int1+float4`,
+`int1` - `float4` AS `int1-float4`,
+`int1` * `float4` AS `int1*float4`,
+`int1` / `float4` AS `int1/float4`,
+`int1` + `float8` AS `int1+float8`,
+`int1` - `float8` AS `int1-float8`,
+`int1` * `float8` AS `int1*float8`,
+`int1` / `float8` AS `int1/float8`,
+`int1` + `numeric` AS `int1+numeric`,
+`int1` - `numeric` AS `int1-numeric`,
+`int1` * `numeric` AS `int1*numeric`,
+`int1` / `numeric` AS `int1/numeric`,
+`int1` + `bit1` AS `int1+bit1`,
+`int1` - `bit1` AS `int1-bit1`,
+`int1` * `bit1` AS `int1*bit1`,
+`int1` / `bit1` AS `int1/bit1`,
+`int1` + `bit64` AS `int1+bit64`,
+`int1` - `bit64` AS `int1-bit64`,
+`int1` * `bit64` AS `int1*bit64`,
+`int1` / `bit64` AS `int1/bit64`,
+`uint1` + `int1` AS `uint1+int1`,
+`uint1` - `int1` AS `uint1-int1`,
+`uint1` * `int1` AS `uint1*int1`,
+`uint1` / `int1` AS `uint1/int1`,
+`uint1` + `uint1` AS `uint1+uint1`,
+`uint1` - `uint1` AS `uint1-uint1`,
+`uint1` * `uint1` AS `uint1*uint1`,
+`uint1` / `uint1` AS `uint1/uint1`,
+`uint1` + `int2` AS `uint1+int2`,
+`uint1` - `int2` AS `uint1-int2`,
+`uint1` * `int2` AS `uint1*int2`,
+`uint1` / `int2` AS `uint1/int2`,
+`uint1` + `uint2` AS `uint1+uint2`,
+`uint1` - `uint2` AS `uint1-uint2`,
+`uint1` * `uint2` AS `uint1*uint2`,
+`uint1` / `uint2` AS `uint1/uint2`,
+`uint1` + `int4` AS `uint1+int4`,
+`uint1` - `int4` AS `uint1-int4`,
+`uint1` * `int4` AS `uint1*int4`,
+`uint1` / `int4` AS `uint1/int4`,
+`uint1` + `uint4` AS `uint1+uint4`,
+`uint1` - `uint4` AS `uint1-uint4`,
+`uint1` * `uint4` AS `uint1*uint4`,
+`uint1` / `uint4` AS `uint1/uint4`,
+`uint1` + `int8` AS `uint1+int8`,
+`uint1` - `int8` AS `uint1-int8`,
+`uint1` * `int8` AS `uint1*int8`,
+`uint1` / `int8` AS `uint1/int8`,
+`uint1` + `uint8` AS `uint1+uint8`,
+`uint1` - `uint8` AS `uint1-uint8`,
+`uint1` * `uint8` AS `uint1*uint8`,
+`uint1` / `uint8` AS `uint1/uint8`,
+`uint1` + `float4` AS `uint1+float4`,
+`uint1` - `float4` AS `uint1-float4`,
+`uint1` * `float4` AS `uint1*float4`,
+`uint1` / `float4` AS `uint1/float4`,
+`uint1` + `float8` AS `uint1+float8`,
+`uint1` - `float8` AS `uint1-float8`,
+`uint1` * `float8` AS `uint1*float8`,
+`uint1` / `float8` AS `uint1/float8`,
+`uint1` + `numeric` AS `uint1+numeric`,
+`uint1` - `numeric` AS `uint1-numeric`,
+`uint1` * `numeric` AS `uint1*numeric`,
+`uint1` / `numeric` AS `uint1/numeric`,
+`uint1` + `bit1` AS `uint1+bit1`,
+`uint1` - `bit1` AS `uint1-bit1`,
+`uint1` * `bit1` AS `uint1*bit1`,
+`uint1` / `bit1` AS `uint1/bit1`,
+`uint1` + `bit64` AS `uint1+bit64`,
+`uint1` - `bit64` AS `uint1-bit64`,
+`uint1` * `bit64` AS `uint1*bit64`,
+`uint1` / `bit64` AS `uint1/bit64`,
+`int2` + `int1` AS `int2+int1`,
+`int2` - `int1` AS `int2-int1`,
+`int2` * `int1` AS `int2*int1`,
+`int2` / `int1` AS `int2/int1`,
+`int2` + `uint1` AS `int2+uint1`,
+`int2` - `uint1` AS `int2-uint1`,
+`int2` * `uint1` AS `int2*uint1`,
+`int2` / `uint1` AS `int2/uint1`,
+`int2` + `int2` AS `int2+int2`,
+`int2` - `int2` AS `int2-int2`,
+`int2` * `int2` AS `int2*int2`,
+`int2` / `int2` AS `int2/int2`,
+`int2` + `uint2` AS `int2+uint2`,
+`int2` - `uint2` AS `int2-uint2`,
+`int2` * `uint2` AS `int2*uint2`,
+`int2` / `uint2` AS `int2/uint2`,
+`int2` + `int4` AS `int2+int4`,
+`int2` - `int4` AS `int2-int4`,
+`int2` * `int4` AS `int2*int4`,
+`int2` / `int4` AS `int2/int4`,
+`int2` + `uint4` AS `int2+uint4`,
+`int2` - `uint4` AS `int2-uint4`,
+`int2` * `uint4` AS `int2*uint4`,
+`int2` / `uint4` AS `int2/uint4`,
+`int2` + `int8` AS `int2+int8`,
+`int2` - `int8` AS `int2-int8`,
+`int2` * `int8` AS `int2*int8`,
+`int2` / `int8` AS `int2/int8`,
+`int2` + `uint8` AS `int2+uint8`,
+`int2` - `uint8` AS `int2-uint8`,
+`int2` * `uint8` AS `int2*uint8`,
+`int2` / `uint8` AS `int2/uint8`,
+`int2` + `float4` AS `int2+float4`,
+`int2` - `float4` AS `int2-float4`,
+`int2` * `float4` AS `int2*float4`,
+`int2` / `float4` AS `int2/float4`,
+`int2` + `float8` AS `int2+float8`,
+`int2` - `float8` AS `int2-float8`,
+`int2` * `float8` AS `int2*float8`,
+`int2` / `float8` AS `int2/float8`,
+`int2` + `numeric` AS `int2+numeric`,
+`int2` - `numeric` AS `int2-numeric`,
+`int2` * `numeric` AS `int2*numeric`,
+`int2` / `numeric` AS `int2/numeric`,
+`int2` + `bit1` AS `int2+bit1`,
+`int2` - `bit1` AS `int2-bit1`,
+`int2` * `bit1` AS `int2*bit1`,
+`int2` / `bit1` AS `int2/bit1`,
+`int2` + `bit64` AS `int2+bit64`,
+`int2` - `bit64` AS `int2-bit64`,
+`int2` * `bit64` AS `int2*bit64`,
+`int2` / `bit64` AS `int2/bit64`,
+`uint2` + `int1` AS `uint2+int1`,
+`uint2` - `int1` AS `uint2-int1`,
+`uint2` * `int1` AS `uint2*int1`,
+`uint2` / `int1` AS `uint2/int1`,
+`uint2` + `uint1` AS `uint2+uint1`,
+`uint2` - `uint1` AS `uint2-uint1`,
+`uint2` * `uint1` AS `uint2*uint1`,
+`uint2` / `uint1` AS `uint2/uint1`,
+`uint2` + `int2` AS `uint2+int2`,
+`uint2` - `int2` AS `uint2-int2`,
+`uint2` * `int2` AS `uint2*int2`,
+`uint2` / `int2` AS `uint2/int2`,
+`uint2` + `uint2` AS `uint2+uint2`,
+`uint2` - `uint2` AS `uint2-uint2`,
+`uint2` * `uint2` AS `uint2*uint2`,
+`uint2` / `uint2` AS `uint2/uint2`,
+`uint2` + `int4` AS `uint2+int4`,
+`uint2` - `int4` AS `uint2-int4`,
+`uint2` * `int4` AS `uint2*int4`,
+`uint2` / `int4` AS `uint2/int4`,
+`uint2` + `uint4` AS `uint2+uint4`,
+`uint2` - `uint4` AS `uint2-uint4`,
+`uint2` * `uint4` AS `uint2*uint4`,
+`uint2` / `uint4` AS `uint2/uint4`,
+`uint2` + `int8` AS `uint2+int8`,
+`uint2` - `int8` AS `uint2-int8`,
+`uint2` * `int8` AS `uint2*int8`,
+`uint2` / `int8` AS `uint2/int8`,
+`uint2` + `uint8` AS `uint2+uint8`,
+`uint2` - `uint8` AS `uint2-uint8`,
+`uint2` * `uint8` AS `uint2*uint8`,
+`uint2` / `uint8` AS `uint2/uint8`,
+`uint2` + `float4` AS `uint2+float4`,
+`uint2` - `float4` AS `uint2-float4`,
+`uint2` * `float4` AS `uint2*float4`,
+`uint2` / `float4` AS `uint2/float4`,
+`uint2` + `float8` AS `uint2+float8`,
+`uint2` - `float8` AS `uint2-float8`,
+`uint2` * `float8` AS `uint2*float8`,
+`uint2` / `float8` AS `uint2/float8`,
+`uint2` + `numeric` AS `uint2+numeric`,
+`uint2` - `numeric` AS `uint2-numeric`,
+`uint2` * `numeric` AS `uint2*numeric`,
+`uint2` / `numeric` AS `uint2/numeric`,
+`uint2` + `bit1` AS `uint2+bit1`,
+`uint2` - `bit1` AS `uint2-bit1`,
+`uint2` * `bit1` AS `uint2*bit1`,
+`uint2` / `bit1` AS `uint2/bit1`,
+`uint2` + `bit64` AS `uint2+bit64`,
+`uint2` - `bit64` AS `uint2-bit64`,
+`uint2` * `bit64` AS `uint2*bit64`,
+`uint2` / `bit64` AS `uint2/bit64`,
+`int4` + `int1` AS `int4+int1`,
+`int4` - `int1` AS `int4-int1`,
+`int4` * `int1` AS `int4*int1`,
+`int4` / `int1` AS `int4/int1`,
+`int4` + `uint1` AS `int4+uint1`,
+`int4` - `uint1` AS `int4-uint1`,
+`int4` * `uint1` AS `int4*uint1`,
+`int4` / `uint1` AS `int4/uint1`,
+`int4` + `int2` AS `int4+int2`,
+`int4` - `int2` AS `int4-int2`,
+`int4` * `int2` AS `int4*int2`,
+`int4` / `int2` AS `int4/int2`,
+`int4` + `uint2` AS `int4+uint2`,
+`int4` - `uint2` AS `int4-uint2`,
+`int4` * `uint2` AS `int4*uint2`,
+`int4` / `uint2` AS `int4/uint2`,
+`int4` + `int4` AS `int4+int4`,
+`int4` - `int4` AS `int4-int4`,
+`int4` * `int4` AS `int4*int4`,
+`int4` / `int4` AS `int4/int4`,
+`int4` + `uint4` AS `int4+uint4`,
+`int4` - `uint4` AS `int4-uint4`,
+`int4` * `uint4` AS `int4*uint4`,
+`int4` / `uint4` AS `int4/uint4`,
+`int4` + `int8` AS `int4+int8`,
+`int4` - `int8` AS `int4-int8`,
+`int4` * `int8` AS `int4*int8`,
+`int4` / `int8` AS `int4/int8`,
+`int4` + `uint8` AS `int4+uint8`,
+`int4` - `uint8` AS `int4-uint8`,
+`int4` * `uint8` AS `int4*uint8`,
+`int4` / `uint8` AS `int4/uint8`,
+`int4` + `float4` AS `int4+float4`,
+`int4` - `float4` AS `int4-float4`,
+`int4` * `float4` AS `int4*float4`,
+`int4` / `float4` AS `int4/float4`,
+`int4` + `float8` AS `int4+float8`,
+`int4` - `float8` AS `int4-float8`,
+`int4` * `float8` AS `int4*float8`,
+`int4` / `float8` AS `int4/float8`,
+`int4` + `numeric` AS `int4+numeric`,
+`int4` - `numeric` AS `int4-numeric`,
+`int4` * `numeric` AS `int4*numeric`,
+`int4` / `numeric` AS `int4/numeric`,
+`int4` + `bit1` AS `int4+bit1`,
+`int4` - `bit1` AS `int4-bit1`,
+`int4` * `bit1` AS `int4*bit1`,
+`int4` / `bit1` AS `int4/bit1`,
+`int4` + `bit64` AS `int4+bit64`,
+`int4` - `bit64` AS `int4-bit64`,
+`int4` * `bit64` AS `int4*bit64`,
+`int4` / `bit64` AS `int4/bit64`,
+`uint4` + `int1` AS `uint4+int1`,
+`uint4` - `int1` AS `uint4-int1`,
+`uint4` * `int1` AS `uint4*int1`,
+`uint4` / `int1` AS `uint4/int1`,
+`uint4` + `uint1` AS `uint4+uint1`,
+`uint4` - `uint1` AS `uint4-uint1`,
+`uint4` * `uint1` AS `uint4*uint1`,
+`uint4` / `uint1` AS `uint4/uint1`,
+`uint4` + `int2` AS `uint4+int2`,
+`uint4` - `int2` AS `uint4-int2`,
+`uint4` * `int2` AS `uint4*int2`,
+`uint4` / `int2` AS `uint4/int2`,
+`uint4` + `uint2` AS `uint4+uint2`,
+`uint4` - `uint2` AS `uint4-uint2`,
+`uint4` * `uint2` AS `uint4*uint2`,
+`uint4` / `uint2` AS `uint4/uint2`,
+`uint4` + `int4` AS `uint4+int4`,
+`uint4` - `int4` AS `uint4-int4`,
+`uint4` * `int4` AS `uint4*int4`,
+`uint4` / `int4` AS `uint4/int4`,
+`uint4` + `uint4` AS `uint4+uint4`,
+`uint4` - `uint4` AS `uint4-uint4`,
+`uint4` * `uint4` AS `uint4*uint4`,
+`uint4` / `uint4` AS `uint4/uint4`,
+`uint4` + `int8` AS `uint4+int8`,
+`uint4` - `int8` AS `uint4-int8`,
+`uint4` * `int8` AS `uint4*int8`,
+`uint4` / `int8` AS `uint4/int8`,
+`uint4` + `uint8` AS `uint4+uint8`,
+`uint4` - `uint8` AS `uint4-uint8`,
+`uint4` * `uint8` AS `uint4*uint8`,
+`uint4` / `uint8` AS `uint4/uint8`,
+`uint4` + `float4` AS `uint4+float4`,
+`uint4` - `float4` AS `uint4-float4`,
+`uint4` * `float4` AS `uint4*float4`,
+`uint4` / `float4` AS `uint4/float4`,
+`uint4` + `float8` AS `uint4+float8`,
+`uint4` - `float8` AS `uint4-float8`,
+`uint4` * `float8` AS `uint4*float8`,
+`uint4` / `float8` AS `uint4/float8`,
+`uint4` + `numeric` AS `uint4+numeric`,
+`uint4` - `numeric` AS `uint4-numeric`,
+`uint4` * `numeric` AS `uint4*numeric`,
+`uint4` / `numeric` AS `uint4/numeric`,
+`uint4` + `bit1` AS `uint4+bit1`,
+`uint4` - `bit1` AS `uint4-bit1`,
+`uint4` * `bit1` AS `uint4*bit1`,
+`uint4` / `bit1` AS `uint4/bit1`,
+`uint4` + `bit64` AS `uint4+bit64`,
+`uint4` - `bit64` AS `uint4-bit64`,
+`uint4` * `bit64` AS `uint4*bit64`,
+`uint4` / `bit64` AS `uint4/bit64`,
+`int8` + `int1` AS `int8+int1`,
+`int8` - `int1` AS `int8-int1`,
+`int8` * `int1` AS `int8*int1`,
+`int8` / `int1` AS `int8/int1`,
+`int8` + `uint1` AS `int8+uint1`,
+`int8` - `uint1` AS `int8-uint1`,
+`int8` * `uint1` AS `int8*uint1`,
+`int8` / `uint1` AS `int8/uint1`,
+`int8` + `int2` AS `int8+int2`,
+`int8` - `int2` AS `int8-int2`,
+`int8` * `int2` AS `int8*int2`,
+`int8` / `int2` AS `int8/int2`,
+`int8` + `uint2` AS `int8+uint2`,
+`int8` - `uint2` AS `int8-uint2`,
+`int8` * `uint2` AS `int8*uint2`,
+`int8` / `uint2` AS `int8/uint2`,
+`int8` + `int4` AS `int8+int4`,
+`int8` - `int4` AS `int8-int4`,
+`int8` * `int4` AS `int8*int4`,
+`int8` / `int4` AS `int8/int4`,
+`int8` + `uint4` AS `int8+uint4`,
+`int8` - `uint4` AS `int8-uint4`,
+`int8` * `uint4` AS `int8*uint4`,
+`int8` / `uint4` AS `int8/uint4`,
+`int8` + `int8` AS `int8+int8`,
+`int8` - `int8` AS `int8-int8`,
+`int8` * `int8` AS `int8*int8`,
+`int8` / `int8` AS `int8/int8`,
+`int8` + `uint8` AS `int8+uint8`,
+`int8` - `uint8` AS `int8-uint8`,
+`int8` * `uint8` AS `int8*uint8`,
+`int8` / `uint8` AS `int8/uint8`,
+`int8` + `float4` AS `int8+float4`,
+`int8` - `float4` AS `int8-float4`,
+`int8` * `float4` AS `int8*float4`,
+`int8` / `float4` AS `int8/float4`,
+`int8` + `float8` AS `int8+float8`,
+`int8` - `float8` AS `int8-float8`,
+`int8` * `float8` AS `int8*float8`,
+`int8` / `float8` AS `int8/float8`,
+`int8` + `numeric` AS `int8+numeric`,
+`int8` - `numeric` AS `int8-numeric`,
+`int8` * `numeric` AS `int8*numeric`,
+`int8` / `numeric` AS `int8/numeric`,
+`int8` + `bit1` AS `int8+bit1`,
+`int8` - `bit1` AS `int8-bit1`,
+`int8` * `bit1` AS `int8*bit1`,
+`int8` / `bit1` AS `int8/bit1`,
+`int8` + `bit64` AS `int8+bit64`,
+`int8` - `bit64` AS `int8-bit64`,
+`int8` * `bit64` AS `int8*bit64`,
+`int8` / `bit64` AS `int8/bit64`,
+`uint8` + `int1` AS `uint8+int1`,
+`uint8` - `int1` AS `uint8-int1`,
+`uint8` * `int1` AS `uint8*int1`,
+`uint8` / `int1` AS `uint8/int1`,
+`uint8` + `uint1` AS `uint8+uint1`,
+`uint8` - `uint1` AS `uint8-uint1`,
+`uint8` * `uint1` AS `uint8*uint1`,
+`uint8` / `uint1` AS `uint8/uint1`,
+`uint8` + `int2` AS `uint8+int2`,
+`uint8` - `int2` AS `uint8-int2`,
+`uint8` * `int2` AS `uint8*int2`,
+`uint8` / `int2` AS `uint8/int2`,
+`uint8` + `uint2` AS `uint8+uint2`,
+`uint8` - `uint2` AS `uint8-uint2`,
+`uint8` * `uint2` AS `uint8*uint2`,
+`uint8` / `uint2` AS `uint8/uint2`,
+`uint8` + `int4` AS `uint8+int4`,
+`uint8` - `int4` AS `uint8-int4`,
+`uint8` * `int4` AS `uint8*int4`,
+`uint8` / `int4` AS `uint8/int4`,
+`uint8` + `uint4` AS `uint8+uint4`,
+`uint8` - `uint4` AS `uint8-uint4`,
+`uint8` * `uint4` AS `uint8*uint4`,
+`uint8` / `uint4` AS `uint8/uint4`,
+`uint8` + `int8` AS `uint8+int8`,
+`uint8` - `int8` AS `uint8-int8`,
+`uint8` * `int8` AS `uint8*int8`,
+`uint8` / `int8` AS `uint8/int8`,
+`uint8` + `uint8` AS `uint8+uint8`,
+`uint8` - `uint8` AS `uint8-uint8`,
+`uint8` * `uint8` AS `uint8*uint8`,
+`uint8` / `uint8` AS `uint8/uint8`,
+`uint8` + `float4` AS `uint8+float4`,
+`uint8` - `float4` AS `uint8-float4`,
+`uint8` * `float4` AS `uint8*float4`,
+`uint8` / `float4` AS `uint8/float4`,
+`uint8` + `float8` AS `uint8+float8`,
+`uint8` - `float8` AS `uint8-float8`,
+`uint8` * `float8` AS `uint8*float8`,
+`uint8` / `float8` AS `uint8/float8`,
+`uint8` + `numeric` AS `uint8+numeric`,
+`uint8` - `numeric` AS `uint8-numeric`,
+`uint8` * `numeric` AS `uint8*numeric`,
+`uint8` / `numeric` AS `uint8/numeric`,
+`uint8` + `bit1` AS `uint8+bit1`,
+`uint8` - `bit1` AS `uint8-bit1`,
+`uint8` * `bit1` AS `uint8*bit1`,
+`uint8` / `bit1` AS `uint8/bit1`,
+`uint8` + `bit64` AS `uint8+bit64`,
+`uint8` - `bit64` AS `uint8-bit64`,
+`uint8` * `bit64` AS `uint8*bit64`,
+`uint8` / `bit64` AS `uint8/bit64`,
+`float4` + `int1` AS `float4+int1`,
+`float4` - `int1` AS `float4-int1`,
+`float4` * `int1` AS `float4*int1`,
+`float4` / `int1` AS `float4/int1`,
+`float4` + `uint1` AS `float4+uint1`,
+`float4` - `uint1` AS `float4-uint1`,
+`float4` * `uint1` AS `float4*uint1`,
+`float4` / `uint1` AS `float4/uint1`,
+`float4` + `int2` AS `float4+int2`,
+`float4` - `int2` AS `float4-int2`,
+`float4` * `int2` AS `float4*int2`,
+`float4` / `int2` AS `float4/int2`,
+`float4` + `uint2` AS `float4+uint2`,
+`float4` - `uint2` AS `float4-uint2`,
+`float4` * `uint2` AS `float4*uint2`,
+`float4` / `uint2` AS `float4/uint2`,
+`float4` + `int4` AS `float4+int4`,
+`float4` - `int4` AS `float4-int4`,
+`float4` * `int4` AS `float4*int4`,
+`float4` / `int4` AS `float4/int4`,
+`float4` + `uint4` AS `float4+uint4`,
+`float4` - `uint4` AS `float4-uint4`,
+`float4` * `uint4` AS `float4*uint4`,
+`float4` / `uint4` AS `float4/uint4`,
+`float4` + `int8` AS `float4+int8`,
+`float4` - `int8` AS `float4-int8`,
+`float4` * `int8` AS `float4*int8`,
+`float4` / `int8` AS `float4/int8`,
+`float4` + `uint8` AS `float4+uint8`,
+`float4` - `uint8` AS `float4-uint8`,
+`float4` * `uint8` AS `float4*uint8`,
+`float4` / `uint8` AS `float4/uint8`,
+`float4` + `float4` AS `float4+float4`,
+`float4` - `float4` AS `float4-float4`,
+`float4` * `float4` AS `float4*float4`,
+`float4` / `float4` AS `float4/float4`,
+`float4` + `float8` AS `float4+float8`,
+`float4` - `float8` AS `float4-float8`,
+`float4` * `float8` AS `float4*float8`,
+`float4` / `float8` AS `float4/float8`,
+`float4` + `numeric` AS `float4+numeric`,
+`float4` - `numeric` AS `float4-numeric`,
+`float4` * `numeric` AS `float4*numeric`,
+`float4` / `numeric` AS `float4/numeric`,
+`float4` + `bit1` AS `float4+bit1`,
+`float4` - `bit1` AS `float4-bit1`,
+`float4` * `bit1` AS `float4*bit1`,
+`float4` / `bit1` AS `float4/bit1`,
+`float4` + `bit64` AS `float4+bit64`,
+`float4` - `bit64` AS `float4-bit64`,
+`float4` * `bit64` AS `float4*bit64`,
+`float4` / `bit64` AS `float4/bit64`,
+`float8` + `int1` AS `float8+int1`,
+`float8` - `int1` AS `float8-int1`,
+`float8` * `int1` AS `float8*int1`,
+`float8` / `int1` AS `float8/int1`,
+`float8` + `uint1` AS `float8+uint1`,
+`float8` - `uint1` AS `float8-uint1`,
+`float8` * `uint1` AS `float8*uint1`,
+`float8` / `uint1` AS `float8/uint1`,
+`float8` + `int2` AS `float8+int2`,
+`float8` - `int2` AS `float8-int2`,
+`float8` * `int2` AS `float8*int2`,
+`float8` / `int2` AS `float8/int2`,
+`float8` + `uint2` AS `float8+uint2`,
+`float8` - `uint2` AS `float8-uint2`,
+`float8` * `uint2` AS `float8*uint2`,
+`float8` / `uint2` AS `float8/uint2`,
+`float8` + `int4` AS `float8+int4`,
+`float8` - `int4` AS `float8-int4`,
+`float8` * `int4` AS `float8*int4`,
+`float8` / `int4` AS `float8/int4`,
+`float8` + `uint4` AS `float8+uint4`,
+`float8` - `uint4` AS `float8-uint4`,
+`float8` * `uint4` AS `float8*uint4`,
+`float8` / `uint4` AS `float8/uint4`,
+`float8` + `int8` AS `float8+int8`,
+`float8` - `int8` AS `float8-int8`,
+`float8` * `int8` AS `float8*int8`,
+`float8` / `int8` AS `float8/int8`,
+`float8` + `uint8` AS `float8+uint8`,
+`float8` - `uint8` AS `float8-uint8`,
+`float8` * `uint8` AS `float8*uint8`,
+`float8` / `uint8` AS `float8/uint8`,
+`float8` + `float4` AS `float8+float4`,
+`float8` - `float4` AS `float8-float4`,
+`float8` * `float4` AS `float8*float4`,
+`float8` / `float4` AS `float8/float4`,
+`float8` + `float8` AS `float8+float8`,
+`float8` - `float8` AS `float8-float8`,
+`float8` * `float8` AS `float8*float8`,
+`float8` / `float8` AS `float8/float8`,
+`float8` + `numeric` AS `float8+numeric`,
+`float8` - `numeric` AS `float8-numeric`,
+`float8` * `numeric` AS `float8*numeric`,
+`float8` / `numeric` AS `float8/numeric`,
+`float8` + `bit1` AS `float8+bit1`,
+`float8` - `bit1` AS `float8-bit1`,
+`float8` * `bit1` AS `float8*bit1`,
+`float8` / `bit1` AS `float8/bit1`,
+`float8` + `bit64` AS `float8+bit64`,
+`float8` - `bit64` AS `float8-bit64`,
+`float8` * `bit64` AS `float8*bit64`,
+`float8` / `bit64` AS `float8/bit64`,
+`numeric` + `int1` AS `numeric+int1`,
+`numeric` - `int1` AS `numeric-int1`,
+`numeric` * `int1` AS `numeric*int1`,
+`numeric` / `int1` AS `numeric/int1`,
+`numeric` + `uint1` AS `numeric+uint1`,
+`numeric` - `uint1` AS `numeric-uint1`,
+`numeric` * `uint1` AS `numeric*uint1`,
+`numeric` / `uint1` AS `numeric/uint1`,
+`numeric` + `int2` AS `numeric+int2`,
+`numeric` - `int2` AS `numeric-int2`,
+`numeric` * `int2` AS `numeric*int2`,
+`numeric` / `int2` AS `numeric/int2`,
+`numeric` + `uint2` AS `numeric+uint2`,
+`numeric` - `uint2` AS `numeric-uint2`,
+`numeric` * `uint2` AS `numeric*uint2`,
+`numeric` / `uint2` AS `numeric/uint2`,
+`numeric` + `int4` AS `numeric+int4`,
+`numeric` - `int4` AS `numeric-int4`,
+`numeric` * `int4` AS `numeric*int4`,
+`numeric` / `int4` AS `numeric/int4`,
+`numeric` + `uint4` AS `numeric+uint4`,
+`numeric` - `uint4` AS `numeric-uint4`,
+`numeric` * `uint4` AS `numeric*uint4`,
+`numeric` / `uint4` AS `numeric/uint4`,
+`numeric` + `int8` AS `numeric+int8`,
+`numeric` - `int8` AS `numeric-int8`,
+`numeric` * `int8` AS `numeric*int8`,
+`numeric` / `int8` AS `numeric/int8`,
+`numeric` + `uint8` AS `numeric+uint8`,
+`numeric` - `uint8` AS `numeric-uint8`,
+`numeric` * `uint8` AS `numeric*uint8`,
+`numeric` / `uint8` AS `numeric/uint8`,
+`numeric` + `float4` AS `numeric+float4`,
+`numeric` - `float4` AS `numeric-float4`,
+`numeric` * `float4` AS `numeric*float4`,
+`numeric` / `float4` AS `numeric/float4`,
+`numeric` + `float8` AS `numeric+float8`,
+`numeric` - `float8` AS `numeric-float8`,
+`numeric` * `float8` AS `numeric*float8`,
+`numeric` / `float8` AS `numeric/float8`,
+`numeric` + `numeric` AS `numeric+numeric`,
+`numeric` - `numeric` AS `numeric-numeric`,
+`numeric` * `numeric` AS `numeric*numeric`,
+`numeric` / `numeric` AS `numeric/numeric`,
+`numeric` + `bit1` AS `numeric+bit1`,
+`numeric` - `bit1` AS `numeric-bit1`,
+`numeric` * `bit1` AS `numeric*bit1`,
+`numeric` / `bit1` AS `numeric/bit1`,
+`numeric` + `bit64` AS `numeric+bit64`,
+`numeric` - `bit64` AS `numeric-bit64`,
+`numeric` * `bit64` AS `numeric*bit64`,
+`numeric` / `bit64` AS `numeric/bit64`,
+`bit1` + `int1` AS `bit1+int1`,
+`bit1` - `int1` AS `bit1-int1`,
+`bit1` * `int1` AS `bit1*int1`,
+`bit1` / `int1` AS `bit1/int1`,
+`bit1` + `uint1` AS `bit1+uint1`,
+`bit1` - `uint1` AS `bit1-uint1`,
+`bit1` * `uint1` AS `bit1*uint1`,
+`bit1` / `uint1` AS `bit1/uint1`,
+`bit1` + `int2` AS `bit1+int2`,
+`bit1` - `int2` AS `bit1-int2`,
+`bit1` * `int2` AS `bit1*int2`,
+`bit1` / `int2` AS `bit1/int2`,
+`bit1` + `uint2` AS `bit1+uint2`,
+`bit1` - `uint2` AS `bit1-uint2`,
+`bit1` * `uint2` AS `bit1*uint2`,
+`bit1` / `uint2` AS `bit1/uint2`,
+`bit1` + `int4` AS `bit1+int4`,
+`bit1` - `int4` AS `bit1-int4`,
+`bit1` * `int4` AS `bit1*int4`,
+`bit1` / `int4` AS `bit1/int4`,
+`bit1` + `uint4` AS `bit1+uint4`,
+`bit1` - `uint4` AS `bit1-uint4`,
+`bit1` * `uint4` AS `bit1*uint4`,
+`bit1` / `uint4` AS `bit1/uint4`,
+`bit1` + `int8` AS `bit1+int8`,
+`bit1` - `int8` AS `bit1-int8`,
+`bit1` * `int8` AS `bit1*int8`,
+`bit1` / `int8` AS `bit1/int8`,
+`bit1` + `uint8` AS `bit1+uint8`,
+`bit1` - `uint8` AS `bit1-uint8`,
+`bit1` * `uint8` AS `bit1*uint8`,
+`bit1` / `uint8` AS `bit1/uint8`,
+`bit1` + `float4` AS `bit1+float4`,
+`bit1` - `float4` AS `bit1-float4`,
+`bit1` * `float4` AS `bit1*float4`,
+`bit1` / `float4` AS `bit1/float4`,
+`bit1` + `float8` AS `bit1+float8`,
+`bit1` - `float8` AS `bit1-float8`,
+`bit1` * `float8` AS `bit1*float8`,
+`bit1` / `float8` AS `bit1/float8`,
+`bit1` + `numeric` AS `bit1+numeric`,
+`bit1` - `numeric` AS `bit1-numeric`,
+`bit1` * `numeric` AS `bit1*numeric`,
+`bit1` / `numeric` AS `bit1/numeric`,
+`bit1` + `bit1` AS `bit1+bit1`,
+`bit1` - `bit1` AS `bit1-bit1`,
+`bit1` * `bit1` AS `bit1*bit1`,
+`bit1` / `bit1` AS `bit1/bit1`,
+`bit1` + `bit64` AS `bit1+bit64`,
+`bit1` - `bit64` AS `bit1-bit64`,
+`bit1` * `bit64` AS `bit1*bit64`,
+`bit1` / `bit64` AS `bit1/bit64`,
+`bit64` + `int1` AS `bit64+int1`,
+`bit64` - `int1` AS `bit64-int1`,
+`bit64` * `int1` AS `bit64*int1`,
+`bit64` / `int1` AS `bit64/int1`,
+`bit64` + `uint1` AS `bit64+uint1`,
+`bit64` - `uint1` AS `bit64-uint1`,
+`bit64` * `uint1` AS `bit64*uint1`,
+`bit64` / `uint1` AS `bit64/uint1`,
+`bit64` + `int2` AS `bit64+int2`,
+`bit64` - `int2` AS `bit64-int2`,
+`bit64` * `int2` AS `bit64*int2`,
+`bit64` / `int2` AS `bit64/int2`,
+`bit64` + `uint2` AS `bit64+uint2`,
+`bit64` - `uint2` AS `bit64-uint2`,
+`bit64` * `uint2` AS `bit64*uint2`,
+`bit64` / `uint2` AS `bit64/uint2`,
+`bit64` + `int4` AS `bit64+int4`,
+`bit64` - `int4` AS `bit64-int4`,
+`bit64` * `int4` AS `bit64*int4`,
+`bit64` / `int4` AS `bit64/int4`,
+`bit64` + `uint4` AS `bit64+uint4`,
+`bit64` - `uint4` AS `bit64-uint4`,
+`bit64` * `uint4` AS `bit64*uint4`,
+`bit64` / `uint4` AS `bit64/uint4`,
+`bit64` + `int8` AS `bit64+int8`,
+`bit64` - `int8` AS `bit64-int8`,
+`bit64` * `int8` AS `bit64*int8`,
+`bit64` / `int8` AS `bit64/int8`,
+`bit64` + `uint8` AS `bit64+uint8`,
+`bit64` - `uint8` AS `bit64-uint8`,
+`bit64` * `uint8` AS `bit64*uint8`,
+`bit64` / `uint8` AS `bit64/uint8`,
+`bit64` + `float4` AS `bit64+float4`,
+`bit64` - `float4` AS `bit64-float4`,
+`bit64` * `float4` AS `bit64*float4`,
+`bit64` / `float4` AS `bit64/float4`,
+`bit64` + `float8` AS `bit64+float8`,
+`bit64` - `float8` AS `bit64-float8`,
+`bit64` * `float8` AS `bit64*float8`,
+`bit64` / `float8` AS `bit64/float8`,
+`bit64` + `numeric` AS `bit64+numeric`,
+`bit64` - `numeric` AS `bit64-numeric`,
+`bit64` * `numeric` AS `bit64*numeric`,
+`bit64` / `numeric` AS `bit64/numeric`,
+`bit64` + `bit1` AS `bit64+bit1`,
+`bit64` - `bit1` AS `bit64-bit1`,
+`bit64` * `bit1` AS `bit64*bit1`,
+`bit64` / `bit1` AS `bit64/bit1`,
+`bit64` + `bit64` AS `bit64+bit64`,
+`bit64` - `bit64` AS `bit64-bit64`,
+`bit64` * `bit64` AS `bit64*bit64`,
+`bit64` / `bit64` AS `bit64/bit64`
+FROM
+	test_numeric_table_min;
+INSERT INTO test_numeric_type_min VALUES(null);
+-- min value test
+INSERT INTO test_numeric_table_min VALUES (-128, 0, -32768, 0, -2147483648, 0, -9223372036854775808, 0, -3.402e+38, -1.79e+308, -99999999999999.999999, '0'::bit, repeat('0', 64)::bit(64));
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int1+int1` = test_numeric_table_min.`int1`+test_numeric_table_min.`int1`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int1-int1` = test_numeric_table_min.`int1`-test_numeric_table_min.`int1`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int1*int1` = test_numeric_table_min.`int1`*test_numeric_table_min.`int1`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int1/int1` = test_numeric_table_min.`int1`/test_numeric_table_min.`int1`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int1+uint1` = test_numeric_table_min.`int1`+test_numeric_table_min.`uint1`;
+ERROR:   int unsigned out of range
+CONTEXT:  referenced column: int1+uint1
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int1-uint1` = test_numeric_table_min.`int1`-test_numeric_table_min.`uint1`;
+ERROR:   int unsigned out of range
+CONTEXT:  referenced column: int1-uint1
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int1*uint1` = test_numeric_table_min.`int1`*test_numeric_table_min.`uint1`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int1/uint1` = test_numeric_table_min.`int1`/test_numeric_table_min.`uint1`;
+ERROR:  division by zero
+CONTEXT:  referenced column: int1/uint1
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int1+int2` = test_numeric_table_min.`int1`+test_numeric_table_min.`int2`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int1-int2` = test_numeric_table_min.`int1`-test_numeric_table_min.`int2`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int1*int2` = test_numeric_table_min.`int1`*test_numeric_table_min.`int2`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int1/int2` = test_numeric_table_min.`int1`/test_numeric_table_min.`int2`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int1+uint2` = test_numeric_table_min.`int1`+test_numeric_table_min.`uint2`;
+ERROR:   int unsigned out of range
+CONTEXT:  referenced column: int1+uint2
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int1-uint2` = test_numeric_table_min.`int1`-test_numeric_table_min.`uint2`;
+ERROR:   int unsigned out of range
+CONTEXT:  referenced column: int1-uint2
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int1*uint2` = test_numeric_table_min.`int1`*test_numeric_table_min.`uint2`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int1/uint2` = test_numeric_table_min.`int1`/test_numeric_table_min.`uint2`;
+ERROR:  division by zero
+CONTEXT:  referenced column: int1/uint2
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int1+int4` = test_numeric_table_min.`int1`+test_numeric_table_min.`int4`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int1-int4` = test_numeric_table_min.`int1`-test_numeric_table_min.`int4`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int1*int4` = test_numeric_table_min.`int1`*test_numeric_table_min.`int4`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int1/int4` = test_numeric_table_min.`int1`/test_numeric_table_min.`int4`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int1+uint4` = test_numeric_table_min.`int1`+test_numeric_table_min.`uint4`;
+ERROR:  bigint unsigned out of range
+CONTEXT:  referenced column: int1+uint4
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int1-uint4` = test_numeric_table_min.`int1`-test_numeric_table_min.`uint4`;
+ERROR:  bigint unsigned out of range
+CONTEXT:  referenced column: int1-uint4
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int1*uint4` = test_numeric_table_min.`int1`*test_numeric_table_min.`uint4`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int1/uint4` = test_numeric_table_min.`int1`/test_numeric_table_min.`uint4`;
+ERROR:  division by zero
+CONTEXT:  referenced column: int1/uint4
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int1+int8` = test_numeric_table_min.`int1`+test_numeric_table_min.`int8`;
+ERROR:  bigint out of range
+CONTEXT:  referenced column: int1+int8
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int1-int8` = test_numeric_table_min.`int1`-test_numeric_table_min.`int8`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int1*int8` = test_numeric_table_min.`int1`*test_numeric_table_min.`int8`;
+ERROR:  bigint out of range
+CONTEXT:  referenced column: int1*int8
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int1/int8` = test_numeric_table_min.`int1`/test_numeric_table_min.`int8`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int1+uint8` = test_numeric_table_min.`int1`+test_numeric_table_min.`uint8`;
+ERROR:  bigint unsigned out of range
+CONTEXT:  referenced column: int1+uint8
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int1-uint8` = test_numeric_table_min.`int1`-test_numeric_table_min.`uint8`;
+ERROR:  bigint unsigned out of range
+CONTEXT:  referenced column: int1-uint8
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int1*uint8` = test_numeric_table_min.`int1`*test_numeric_table_min.`uint8`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int1/uint8` = test_numeric_table_min.`int1`/test_numeric_table_min.`uint8`;
+ERROR:  division by zero
+CONTEXT:  referenced column: int1/uint8
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int1+float4` = test_numeric_table_min.`int1`+test_numeric_table_min.`float4`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int1-float4` = test_numeric_table_min.`int1`-test_numeric_table_min.`float4`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int1*float4` = test_numeric_table_min.`int1`*test_numeric_table_min.`float4`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int1/float4` = test_numeric_table_min.`int1`/test_numeric_table_min.`float4`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int1+float8` = test_numeric_table_min.`int1`+test_numeric_table_min.`float8`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int1-float8` = test_numeric_table_min.`int1`-test_numeric_table_min.`float8`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int1*float8` = test_numeric_table_min.`int1`*test_numeric_table_min.`float8`;
+ERROR:  value out of range: overflow
+CONTEXT:  referenced column: int1*float8
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int1/float8` = test_numeric_table_min.`int1`/test_numeric_table_min.`float8`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int1+numeric` = test_numeric_table_min.`int1`+test_numeric_table_min.`numeric`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int1-numeric` = test_numeric_table_min.`int1`-test_numeric_table_min.`numeric`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int1*numeric` = test_numeric_table_min.`int1`*test_numeric_table_min.`numeric`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int1/numeric` = test_numeric_table_min.`int1`/test_numeric_table_min.`numeric`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int1+bit1` = test_numeric_table_min.`int1`+test_numeric_table_min.`bit1`;
+ERROR:   int unsigned out of range
+CONTEXT:  referenced column: int1+bit1
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int1-bit1` = test_numeric_table_min.`int1`-test_numeric_table_min.`bit1`;
+ERROR:   int unsigned out of range
+CONTEXT:  referenced column: int1-bit1
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int1*bit1` = test_numeric_table_min.`int1`*test_numeric_table_min.`bit1`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int1/bit1` = test_numeric_table_min.`int1`/test_numeric_table_min.`bit1`;
+ERROR:  division by zero
+CONTEXT:  referenced column: int1/bit1
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int1+bit64` = test_numeric_table_min.`int1`+test_numeric_table_min.`bit64`;
+ERROR:  bigint unsigned out of range
+CONTEXT:  referenced column: int1+bit64
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int1-bit64` = test_numeric_table_min.`int1`-test_numeric_table_min.`bit64`;
+ERROR:  bigint unsigned out of range
+CONTEXT:  referenced column: int1-bit64
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int1*bit64` = test_numeric_table_min.`int1`*test_numeric_table_min.`bit64`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int1/bit64` = test_numeric_table_min.`int1`/test_numeric_table_min.`bit64`;
+ERROR:  division by zero
+CONTEXT:  referenced column: int1/bit64
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint1+int1` = test_numeric_table_min.`uint1`+test_numeric_table_min.`int1`;
+ERROR:   int unsigned out of range
+CONTEXT:  referenced column: uint1+int1
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint1-int1` = test_numeric_table_min.`uint1`-test_numeric_table_min.`int1`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint1*int1` = test_numeric_table_min.`uint1`*test_numeric_table_min.`int1`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint1/int1` = test_numeric_table_min.`uint1`/test_numeric_table_min.`int1`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint1+uint1` = test_numeric_table_min.`uint1`+test_numeric_table_min.`uint1`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint1-uint1` = test_numeric_table_min.`uint1`-test_numeric_table_min.`uint1`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint1*uint1` = test_numeric_table_min.`uint1`*test_numeric_table_min.`uint1`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint1/uint1` = test_numeric_table_min.`uint1`/test_numeric_table_min.`uint1`;
+ERROR:  division by zero
+CONTEXT:  referenced column: uint1/uint1
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint1+int2` = test_numeric_table_min.`uint1`+test_numeric_table_min.`int2`;
+ERROR:   int unsigned out of range
+CONTEXT:  referenced column: uint1+int2
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint1-int2` = test_numeric_table_min.`uint1`-test_numeric_table_min.`int2`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint1*int2` = test_numeric_table_min.`uint1`*test_numeric_table_min.`int2`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint1/int2` = test_numeric_table_min.`uint1`/test_numeric_table_min.`int2`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint1+uint2` = test_numeric_table_min.`uint1`+test_numeric_table_min.`uint2`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint1-uint2` = test_numeric_table_min.`uint1`-test_numeric_table_min.`uint2`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint1*uint2` = test_numeric_table_min.`uint1`*test_numeric_table_min.`uint2`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint1/uint2` = test_numeric_table_min.`uint1`/test_numeric_table_min.`uint2`;
+ERROR:  division by zero
+CONTEXT:  referenced column: uint1/uint2
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint1+int4` = test_numeric_table_min.`uint1`+test_numeric_table_min.`int4`;
+ERROR:  bigint unsigned out of range
+CONTEXT:  referenced column: uint1+int4
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint1-int4` = test_numeric_table_min.`uint1`-test_numeric_table_min.`int4`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint1*int4` = test_numeric_table_min.`uint1`*test_numeric_table_min.`int4`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint1/int4` = test_numeric_table_min.`uint1`/test_numeric_table_min.`int4`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint1+uint4` = test_numeric_table_min.`uint1`+test_numeric_table_min.`uint4`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint1-uint4` = test_numeric_table_min.`uint1`-test_numeric_table_min.`uint4`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint1*uint4` = test_numeric_table_min.`uint1`*test_numeric_table_min.`uint4`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint1/uint4` = test_numeric_table_min.`uint1`/test_numeric_table_min.`uint4`;
+ERROR:  division by zero
+CONTEXT:  referenced column: uint1/uint4
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint1+int8` = test_numeric_table_min.`uint1`+test_numeric_table_min.`int8`;
+ERROR:  bigint unsigned out of range
+CONTEXT:  referenced column: uint1+int8
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint1-int8` = test_numeric_table_min.`uint1`-test_numeric_table_min.`int8`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint1*int8` = test_numeric_table_min.`uint1`*test_numeric_table_min.`int8`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint1/int8` = test_numeric_table_min.`uint1`/test_numeric_table_min.`int8`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint1+uint8` = test_numeric_table_min.`uint1`+test_numeric_table_min.`uint8`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint1-uint8` = test_numeric_table_min.`uint1`-test_numeric_table_min.`uint8`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint1*uint8` = test_numeric_table_min.`uint1`*test_numeric_table_min.`uint8`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint1/uint8` = test_numeric_table_min.`uint1`/test_numeric_table_min.`uint8`;
+ERROR:  division by zero
+CONTEXT:  referenced column: uint1/uint8
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint1+float4` = test_numeric_table_min.`uint1`+test_numeric_table_min.`float4`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint1-float4` = test_numeric_table_min.`uint1`-test_numeric_table_min.`float4`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint1*float4` = test_numeric_table_min.`uint1`*test_numeric_table_min.`float4`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint1/float4` = test_numeric_table_min.`uint1`/test_numeric_table_min.`float4`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint1+float8` = test_numeric_table_min.`uint1`+test_numeric_table_min.`float8`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint1-float8` = test_numeric_table_min.`uint1`-test_numeric_table_min.`float8`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint1*float8` = test_numeric_table_min.`uint1`*test_numeric_table_min.`float8`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint1/float8` = test_numeric_table_min.`uint1`/test_numeric_table_min.`float8`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint1+numeric` = test_numeric_table_min.`uint1`+test_numeric_table_min.`numeric`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint1-numeric` = test_numeric_table_min.`uint1`-test_numeric_table_min.`numeric`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint1*numeric` = test_numeric_table_min.`uint1`*test_numeric_table_min.`numeric`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint1/numeric` = test_numeric_table_min.`uint1`/test_numeric_table_min.`numeric`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint1+bit1` = test_numeric_table_min.`uint1`+test_numeric_table_min.`bit1`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint1-bit1` = test_numeric_table_min.`uint1`-test_numeric_table_min.`bit1`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint1*bit1` = test_numeric_table_min.`uint1`*test_numeric_table_min.`bit1`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint1/bit1` = test_numeric_table_min.`uint1`/test_numeric_table_min.`bit1`;
+ERROR:  division by zero
+CONTEXT:  referenced column: uint1/bit1
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint1+bit64` = test_numeric_table_min.`uint1`+test_numeric_table_min.`bit64`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint1-bit64` = test_numeric_table_min.`uint1`-test_numeric_table_min.`bit64`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint1*bit64` = test_numeric_table_min.`uint1`*test_numeric_table_min.`bit64`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint1/bit64` = test_numeric_table_min.`uint1`/test_numeric_table_min.`bit64`;
+ERROR:  division by zero
+CONTEXT:  referenced column: uint1/bit64
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int2+int1` = test_numeric_table_min.`int2`+test_numeric_table_min.`int1`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int2-int1` = test_numeric_table_min.`int2`-test_numeric_table_min.`int1`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int2*int1` = test_numeric_table_min.`int2`*test_numeric_table_min.`int1`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int2/int1` = test_numeric_table_min.`int2`/test_numeric_table_min.`int1`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int2+uint1` = test_numeric_table_min.`int2`+test_numeric_table_min.`uint1`;
+ERROR:   int unsigned out of range
+CONTEXT:  referenced column: int2+uint1
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int2-uint1` = test_numeric_table_min.`int2`-test_numeric_table_min.`uint1`;
+ERROR:   int unsigned out of range
+CONTEXT:  referenced column: int2-uint1
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int2*uint1` = test_numeric_table_min.`int2`*test_numeric_table_min.`uint1`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int2/uint1` = test_numeric_table_min.`int2`/test_numeric_table_min.`uint1`;
+ERROR:  division by zero
+CONTEXT:  referenced column: int2/uint1
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int2+int2` = test_numeric_table_min.`int2`+test_numeric_table_min.`int2`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int2-int2` = test_numeric_table_min.`int2`-test_numeric_table_min.`int2`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int2*int2` = test_numeric_table_min.`int2`*test_numeric_table_min.`int2`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int2/int2` = test_numeric_table_min.`int2`/test_numeric_table_min.`int2`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int2+uint2` = test_numeric_table_min.`int2`+test_numeric_table_min.`uint2`;
+ERROR:   int unsigned out of range
+CONTEXT:  referenced column: int2+uint2
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int2-uint2` = test_numeric_table_min.`int2`-test_numeric_table_min.`uint2`;
+ERROR:   int unsigned out of range
+CONTEXT:  referenced column: int2-uint2
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int2*uint2` = test_numeric_table_min.`int2`*test_numeric_table_min.`uint2`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int2/uint2` = test_numeric_table_min.`int2`/test_numeric_table_min.`uint2`;
+ERROR:  division by zero
+CONTEXT:  referenced column: int2/uint2
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int2+int4` = test_numeric_table_min.`int2`+test_numeric_table_min.`int4`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int2-int4` = test_numeric_table_min.`int2`-test_numeric_table_min.`int4`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int2*int4` = test_numeric_table_min.`int2`*test_numeric_table_min.`int4`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int2/int4` = test_numeric_table_min.`int2`/test_numeric_table_min.`int4`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int2+uint4` = test_numeric_table_min.`int2`+test_numeric_table_min.`uint4`;
+ERROR:  bigint unsigned out of range
+CONTEXT:  referenced column: int2+uint4
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int2-uint4` = test_numeric_table_min.`int2`-test_numeric_table_min.`uint4`;
+ERROR:  bigint unsigned out of range
+CONTEXT:  referenced column: int2-uint4
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int2*uint4` = test_numeric_table_min.`int2`*test_numeric_table_min.`uint4`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int2/uint4` = test_numeric_table_min.`int2`/test_numeric_table_min.`uint4`;
+ERROR:  division by zero
+CONTEXT:  referenced column: int2/uint4
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int2+int8` = test_numeric_table_min.`int2`+test_numeric_table_min.`int8`;
+ERROR:  bigint out of range
+CONTEXT:  referenced column: int2+int8
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int2-int8` = test_numeric_table_min.`int2`-test_numeric_table_min.`int8`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int2*int8` = test_numeric_table_min.`int2`*test_numeric_table_min.`int8`;
+ERROR:  bigint out of range
+CONTEXT:  referenced column: int2*int8
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int2/int8` = test_numeric_table_min.`int2`/test_numeric_table_min.`int8`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int2+uint8` = test_numeric_table_min.`int2`+test_numeric_table_min.`uint8`;
+ERROR:  bigint unsigned out of range
+CONTEXT:  referenced column: int2+uint8
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int2-uint8` = test_numeric_table_min.`int2`-test_numeric_table_min.`uint8`;
+ERROR:  bigint unsigned out of range
+CONTEXT:  referenced column: int2-uint8
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int2*uint8` = test_numeric_table_min.`int2`*test_numeric_table_min.`uint8`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int2/uint8` = test_numeric_table_min.`int2`/test_numeric_table_min.`uint8`;
+ERROR:  division by zero
+CONTEXT:  referenced column: int2/uint8
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int2+float4` = test_numeric_table_min.`int2`+test_numeric_table_min.`float4`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int2-float4` = test_numeric_table_min.`int2`-test_numeric_table_min.`float4`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int2*float4` = test_numeric_table_min.`int2`*test_numeric_table_min.`float4`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int2/float4` = test_numeric_table_min.`int2`/test_numeric_table_min.`float4`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int2+float8` = test_numeric_table_min.`int2`+test_numeric_table_min.`float8`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int2-float8` = test_numeric_table_min.`int2`-test_numeric_table_min.`float8`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int2*float8` = test_numeric_table_min.`int2`*test_numeric_table_min.`float8`;
+ERROR:  value out of range: overflow
+CONTEXT:  referenced column: int2*float8
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int2/float8` = test_numeric_table_min.`int2`/test_numeric_table_min.`float8`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int2+numeric` = test_numeric_table_min.`int2`+test_numeric_table_min.`numeric`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int2-numeric` = test_numeric_table_min.`int2`-test_numeric_table_min.`numeric`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int2*numeric` = test_numeric_table_min.`int2`*test_numeric_table_min.`numeric`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int2/numeric` = test_numeric_table_min.`int2`/test_numeric_table_min.`numeric`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int2+bit1` = test_numeric_table_min.`int2`+test_numeric_table_min.`bit1`;
+ERROR:   int unsigned out of range
+CONTEXT:  referenced column: int2+bit1
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int2-bit1` = test_numeric_table_min.`int2`-test_numeric_table_min.`bit1`;
+ERROR:   int unsigned out of range
+CONTEXT:  referenced column: int2-bit1
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int2*bit1` = test_numeric_table_min.`int2`*test_numeric_table_min.`bit1`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int2/bit1` = test_numeric_table_min.`int2`/test_numeric_table_min.`bit1`;
+ERROR:  division by zero
+CONTEXT:  referenced column: int2/bit1
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int2+bit64` = test_numeric_table_min.`int2`+test_numeric_table_min.`bit64`;
+ERROR:  bigint unsigned out of range
+CONTEXT:  referenced column: int2+bit64
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int2-bit64` = test_numeric_table_min.`int2`-test_numeric_table_min.`bit64`;
+ERROR:  bigint unsigned out of range
+CONTEXT:  referenced column: int2-bit64
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int2*bit64` = test_numeric_table_min.`int2`*test_numeric_table_min.`bit64`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int2/bit64` = test_numeric_table_min.`int2`/test_numeric_table_min.`bit64`;
+ERROR:  division by zero
+CONTEXT:  referenced column: int2/bit64
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint2+int1` = test_numeric_table_min.`uint2`+test_numeric_table_min.`int1`;
+ERROR:   int unsigned out of range
+CONTEXT:  referenced column: uint2+int1
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint2-int1` = test_numeric_table_min.`uint2`-test_numeric_table_min.`int1`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint2*int1` = test_numeric_table_min.`uint2`*test_numeric_table_min.`int1`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint2/int1` = test_numeric_table_min.`uint2`/test_numeric_table_min.`int1`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint2+uint1` = test_numeric_table_min.`uint2`+test_numeric_table_min.`uint1`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint2-uint1` = test_numeric_table_min.`uint2`-test_numeric_table_min.`uint1`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint2*uint1` = test_numeric_table_min.`uint2`*test_numeric_table_min.`uint1`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint2/uint1` = test_numeric_table_min.`uint2`/test_numeric_table_min.`uint1`;
+ERROR:  division by zero
+CONTEXT:  referenced column: uint2/uint1
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint2+int2` = test_numeric_table_min.`uint2`+test_numeric_table_min.`int2`;
+ERROR:   int unsigned out of range
+CONTEXT:  referenced column: uint2+int2
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint2-int2` = test_numeric_table_min.`uint2`-test_numeric_table_min.`int2`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint2*int2` = test_numeric_table_min.`uint2`*test_numeric_table_min.`int2`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint2/int2` = test_numeric_table_min.`uint2`/test_numeric_table_min.`int2`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint2+uint2` = test_numeric_table_min.`uint2`+test_numeric_table_min.`uint2`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint2-uint2` = test_numeric_table_min.`uint2`-test_numeric_table_min.`uint2`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint2*uint2` = test_numeric_table_min.`uint2`*test_numeric_table_min.`uint2`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint2/uint2` = test_numeric_table_min.`uint2`/test_numeric_table_min.`uint2`;
+ERROR:  division by zero
+CONTEXT:  referenced column: uint2/uint2
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint2+int4` = test_numeric_table_min.`uint2`+test_numeric_table_min.`int4`;
+ERROR:  bigint unsigned out of range
+CONTEXT:  referenced column: uint2+int4
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint2-int4` = test_numeric_table_min.`uint2`-test_numeric_table_min.`int4`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint2*int4` = test_numeric_table_min.`uint2`*test_numeric_table_min.`int4`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint2/int4` = test_numeric_table_min.`uint2`/test_numeric_table_min.`int4`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint2+uint4` = test_numeric_table_min.`uint2`+test_numeric_table_min.`uint4`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint2-uint4` = test_numeric_table_min.`uint2`-test_numeric_table_min.`uint4`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint2*uint4` = test_numeric_table_min.`uint2`*test_numeric_table_min.`uint4`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint2/uint4` = test_numeric_table_min.`uint2`/test_numeric_table_min.`uint4`;
+ERROR:  division by zero
+CONTEXT:  referenced column: uint2/uint4
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint2+int8` = test_numeric_table_min.`uint2`+test_numeric_table_min.`int8`;
+ERROR:  bigint unsigned out of range
+CONTEXT:  referenced column: uint2+int8
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint2-int8` = test_numeric_table_min.`uint2`-test_numeric_table_min.`int8`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint2*int8` = test_numeric_table_min.`uint2`*test_numeric_table_min.`int8`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint2/int8` = test_numeric_table_min.`uint2`/test_numeric_table_min.`int8`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint2+uint8` = test_numeric_table_min.`uint2`+test_numeric_table_min.`uint8`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint2-uint8` = test_numeric_table_min.`uint2`-test_numeric_table_min.`uint8`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint2*uint8` = test_numeric_table_min.`uint2`*test_numeric_table_min.`uint8`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint2/uint8` = test_numeric_table_min.`uint2`/test_numeric_table_min.`uint8`;
+ERROR:  division by zero
+CONTEXT:  referenced column: uint2/uint8
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint2+float4` = test_numeric_table_min.`uint2`+test_numeric_table_min.`float4`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint2-float4` = test_numeric_table_min.`uint2`-test_numeric_table_min.`float4`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint2*float4` = test_numeric_table_min.`uint2`*test_numeric_table_min.`float4`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint2/float4` = test_numeric_table_min.`uint2`/test_numeric_table_min.`float4`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint2+float8` = test_numeric_table_min.`uint2`+test_numeric_table_min.`float8`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint2-float8` = test_numeric_table_min.`uint2`-test_numeric_table_min.`float8`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint2*float8` = test_numeric_table_min.`uint2`*test_numeric_table_min.`float8`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint2/float8` = test_numeric_table_min.`uint2`/test_numeric_table_min.`float8`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint2+numeric` = test_numeric_table_min.`uint2`+test_numeric_table_min.`numeric`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint2-numeric` = test_numeric_table_min.`uint2`-test_numeric_table_min.`numeric`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint2*numeric` = test_numeric_table_min.`uint2`*test_numeric_table_min.`numeric`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint2/numeric` = test_numeric_table_min.`uint2`/test_numeric_table_min.`numeric`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint2+bit1` = test_numeric_table_min.`uint2`+test_numeric_table_min.`bit1`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint2-bit1` = test_numeric_table_min.`uint2`-test_numeric_table_min.`bit1`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint2*bit1` = test_numeric_table_min.`uint2`*test_numeric_table_min.`bit1`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint2/bit1` = test_numeric_table_min.`uint2`/test_numeric_table_min.`bit1`;
+ERROR:  division by zero
+CONTEXT:  referenced column: uint2/bit1
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint2+bit64` = test_numeric_table_min.`uint2`+test_numeric_table_min.`bit64`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint2-bit64` = test_numeric_table_min.`uint2`-test_numeric_table_min.`bit64`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint2*bit64` = test_numeric_table_min.`uint2`*test_numeric_table_min.`bit64`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint2/bit64` = test_numeric_table_min.`uint2`/test_numeric_table_min.`bit64`;
+ERROR:  division by zero
+CONTEXT:  referenced column: uint2/bit64
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int4+int1` = test_numeric_table_min.`int4`+test_numeric_table_min.`int1`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int4-int1` = test_numeric_table_min.`int4`-test_numeric_table_min.`int1`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int4*int1` = test_numeric_table_min.`int4`*test_numeric_table_min.`int1`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int4/int1` = test_numeric_table_min.`int4`/test_numeric_table_min.`int1`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int4+uint1` = test_numeric_table_min.`int4`+test_numeric_table_min.`uint1`;
+ERROR:  bigint unsigned out of range
+CONTEXT:  referenced column: int4+uint1
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int4-uint1` = test_numeric_table_min.`int4`-test_numeric_table_min.`uint1`;
+ERROR:  bigint unsigned out of range
+CONTEXT:  referenced column: int4-uint1
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int4*uint1` = test_numeric_table_min.`int4`*test_numeric_table_min.`uint1`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int4/uint1` = test_numeric_table_min.`int4`/test_numeric_table_min.`uint1`;
+ERROR:  division by zero
+CONTEXT:  referenced column: int4/uint1
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int4+int2` = test_numeric_table_min.`int4`+test_numeric_table_min.`int2`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int4-int2` = test_numeric_table_min.`int4`-test_numeric_table_min.`int2`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int4*int2` = test_numeric_table_min.`int4`*test_numeric_table_min.`int2`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int4/int2` = test_numeric_table_min.`int4`/test_numeric_table_min.`int2`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int4+uint2` = test_numeric_table_min.`int4`+test_numeric_table_min.`uint2`;
+ERROR:  bigint unsigned out of range
+CONTEXT:  referenced column: int4+uint2
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int4-uint2` = test_numeric_table_min.`int4`-test_numeric_table_min.`uint2`;
+ERROR:  bigint unsigned out of range
+CONTEXT:  referenced column: int4-uint2
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int4*uint2` = test_numeric_table_min.`int4`*test_numeric_table_min.`uint2`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int4/uint2` = test_numeric_table_min.`int4`/test_numeric_table_min.`uint2`;
+ERROR:  division by zero
+CONTEXT:  referenced column: int4/uint2
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int4+int4` = test_numeric_table_min.`int4`+test_numeric_table_min.`int4`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int4-int4` = test_numeric_table_min.`int4`-test_numeric_table_min.`int4`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int4*int4` = test_numeric_table_min.`int4`*test_numeric_table_min.`int4`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int4/int4` = test_numeric_table_min.`int4`/test_numeric_table_min.`int4`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int4+uint4` = test_numeric_table_min.`int4`+test_numeric_table_min.`uint4`;
+ERROR:  bigint unsigned out of range
+CONTEXT:  referenced column: int4+uint4
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int4-uint4` = test_numeric_table_min.`int4`-test_numeric_table_min.`uint4`;
+ERROR:  bigint unsigned out of range
+CONTEXT:  referenced column: int4-uint4
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int4*uint4` = test_numeric_table_min.`int4`*test_numeric_table_min.`uint4`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int4/uint4` = test_numeric_table_min.`int4`/test_numeric_table_min.`uint4`;
+ERROR:  division by zero
+CONTEXT:  referenced column: int4/uint4
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int4+int8` = test_numeric_table_min.`int4`+test_numeric_table_min.`int8`;
+ERROR:  bigint out of range
+CONTEXT:  referenced column: int4+int8
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int4-int8` = test_numeric_table_min.`int4`-test_numeric_table_min.`int8`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int4*int8` = test_numeric_table_min.`int4`*test_numeric_table_min.`int8`;
+ERROR:  bigint out of range
+CONTEXT:  referenced column: int4*int8
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int4/int8` = test_numeric_table_min.`int4`/test_numeric_table_min.`int8`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int4+uint8` = test_numeric_table_min.`int4`+test_numeric_table_min.`uint8`;
+ERROR:  bigint unsigned out of range
+CONTEXT:  referenced column: int4+uint8
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int4-uint8` = test_numeric_table_min.`int4`-test_numeric_table_min.`uint8`;
+ERROR:  bigint unsigned out of range
+CONTEXT:  referenced column: int4-uint8
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int4*uint8` = test_numeric_table_min.`int4`*test_numeric_table_min.`uint8`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int4/uint8` = test_numeric_table_min.`int4`/test_numeric_table_min.`uint8`;
+ERROR:  division by zero
+CONTEXT:  referenced column: int4/uint8
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int4+float4` = test_numeric_table_min.`int4`+test_numeric_table_min.`float4`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int4-float4` = test_numeric_table_min.`int4`-test_numeric_table_min.`float4`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int4*float4` = test_numeric_table_min.`int4`*test_numeric_table_min.`float4`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int4/float4` = test_numeric_table_min.`int4`/test_numeric_table_min.`float4`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int4+float8` = test_numeric_table_min.`int4`+test_numeric_table_min.`float8`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int4-float8` = test_numeric_table_min.`int4`-test_numeric_table_min.`float8`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int4*float8` = test_numeric_table_min.`int4`*test_numeric_table_min.`float8`;
+ERROR:  value out of range: overflow
+CONTEXT:  referenced column: int4*float8
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int4/float8` = test_numeric_table_min.`int4`/test_numeric_table_min.`float8`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int4+numeric` = test_numeric_table_min.`int4`+test_numeric_table_min.`numeric`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int4-numeric` = test_numeric_table_min.`int4`-test_numeric_table_min.`numeric`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int4*numeric` = test_numeric_table_min.`int4`*test_numeric_table_min.`numeric`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int4/numeric` = test_numeric_table_min.`int4`/test_numeric_table_min.`numeric`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int4+bit1` = test_numeric_table_min.`int4`+test_numeric_table_min.`bit1`;
+ERROR:  bigint unsigned out of range
+CONTEXT:  referenced column: int4+bit1
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int4-bit1` = test_numeric_table_min.`int4`-test_numeric_table_min.`bit1`;
+ERROR:  bigint unsigned out of range
+CONTEXT:  referenced column: int4-bit1
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int4*bit1` = test_numeric_table_min.`int4`*test_numeric_table_min.`bit1`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int4/bit1` = test_numeric_table_min.`int4`/test_numeric_table_min.`bit1`;
+ERROR:  division by zero
+CONTEXT:  referenced column: int4/bit1
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int4+bit64` = test_numeric_table_min.`int4`+test_numeric_table_min.`bit64`;
+ERROR:  bigint unsigned out of range
+CONTEXT:  referenced column: int4+bit64
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int4-bit64` = test_numeric_table_min.`int4`-test_numeric_table_min.`bit64`;
+ERROR:  bigint unsigned out of range
+CONTEXT:  referenced column: int4-bit64
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int4*bit64` = test_numeric_table_min.`int4`*test_numeric_table_min.`bit64`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int4/bit64` = test_numeric_table_min.`int4`/test_numeric_table_min.`bit64`;
+ERROR:  division by zero
+CONTEXT:  referenced column: int4/bit64
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint4+int1` = test_numeric_table_min.`uint4`+test_numeric_table_min.`int1`;
+ERROR:  bigint unsigned out of range
+CONTEXT:  referenced column: uint4+int1
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint4-int1` = test_numeric_table_min.`uint4`-test_numeric_table_min.`int1`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint4*int1` = test_numeric_table_min.`uint4`*test_numeric_table_min.`int1`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint4/int1` = test_numeric_table_min.`uint4`/test_numeric_table_min.`int1`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint4+uint1` = test_numeric_table_min.`uint4`+test_numeric_table_min.`uint1`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint4-uint1` = test_numeric_table_min.`uint4`-test_numeric_table_min.`uint1`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint4*uint1` = test_numeric_table_min.`uint4`*test_numeric_table_min.`uint1`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint4/uint1` = test_numeric_table_min.`uint4`/test_numeric_table_min.`uint1`;
+ERROR:  division by zero
+CONTEXT:  referenced column: uint4/uint1
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint4+int2` = test_numeric_table_min.`uint4`+test_numeric_table_min.`int2`;
+ERROR:  bigint unsigned out of range
+CONTEXT:  referenced column: uint4+int2
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint4-int2` = test_numeric_table_min.`uint4`-test_numeric_table_min.`int2`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint4*int2` = test_numeric_table_min.`uint4`*test_numeric_table_min.`int2`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint4/int2` = test_numeric_table_min.`uint4`/test_numeric_table_min.`int2`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint4+uint2` = test_numeric_table_min.`uint4`+test_numeric_table_min.`uint2`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint4-uint2` = test_numeric_table_min.`uint4`-test_numeric_table_min.`uint2`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint4*uint2` = test_numeric_table_min.`uint4`*test_numeric_table_min.`uint2`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint4/uint2` = test_numeric_table_min.`uint4`/test_numeric_table_min.`uint2`;
+ERROR:  division by zero
+CONTEXT:  referenced column: uint4/uint2
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint4+int4` = test_numeric_table_min.`uint4`+test_numeric_table_min.`int4`;
+ERROR:  bigint unsigned out of range
+CONTEXT:  referenced column: uint4+int4
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint4-int4` = test_numeric_table_min.`uint4`-test_numeric_table_min.`int4`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint4*int4` = test_numeric_table_min.`uint4`*test_numeric_table_min.`int4`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint4/int4` = test_numeric_table_min.`uint4`/test_numeric_table_min.`int4`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint4+uint4` = test_numeric_table_min.`uint4`+test_numeric_table_min.`uint4`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint4-uint4` = test_numeric_table_min.`uint4`-test_numeric_table_min.`uint4`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint4*uint4` = test_numeric_table_min.`uint4`*test_numeric_table_min.`uint4`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint4/uint4` = test_numeric_table_min.`uint4`/test_numeric_table_min.`uint4`;
+ERROR:  division by zero
+CONTEXT:  referenced column: uint4/uint4
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint4+int8` = test_numeric_table_min.`uint4`+test_numeric_table_min.`int8`;
+ERROR:  bigint unsigned out of range
+CONTEXT:  referenced column: uint4+int8
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint4-int8` = test_numeric_table_min.`uint4`-test_numeric_table_min.`int8`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint4*int8` = test_numeric_table_min.`uint4`*test_numeric_table_min.`int8`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint4/int8` = test_numeric_table_min.`uint4`/test_numeric_table_min.`int8`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint4+uint8` = test_numeric_table_min.`uint4`+test_numeric_table_min.`uint8`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint4-uint8` = test_numeric_table_min.`uint4`-test_numeric_table_min.`uint8`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint4*uint8` = test_numeric_table_min.`uint4`*test_numeric_table_min.`uint8`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint4/uint8` = test_numeric_table_min.`uint4`/test_numeric_table_min.`uint8`;
+ERROR:  division by zero
+CONTEXT:  referenced column: uint4/uint8
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint4+float4` = test_numeric_table_min.`uint4`+test_numeric_table_min.`float4`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint4-float4` = test_numeric_table_min.`uint4`-test_numeric_table_min.`float4`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint4*float4` = test_numeric_table_min.`uint4`*test_numeric_table_min.`float4`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint4/float4` = test_numeric_table_min.`uint4`/test_numeric_table_min.`float4`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint4+float8` = test_numeric_table_min.`uint4`+test_numeric_table_min.`float8`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint4-float8` = test_numeric_table_min.`uint4`-test_numeric_table_min.`float8`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint4*float8` = test_numeric_table_min.`uint4`*test_numeric_table_min.`float8`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint4/float8` = test_numeric_table_min.`uint4`/test_numeric_table_min.`float8`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint4+numeric` = test_numeric_table_min.`uint4`+test_numeric_table_min.`numeric`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint4-numeric` = test_numeric_table_min.`uint4`-test_numeric_table_min.`numeric`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint4*numeric` = test_numeric_table_min.`uint4`*test_numeric_table_min.`numeric`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint4/numeric` = test_numeric_table_min.`uint4`/test_numeric_table_min.`numeric`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint4+bit1` = test_numeric_table_min.`uint4`+test_numeric_table_min.`bit1`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint4-bit1` = test_numeric_table_min.`uint4`-test_numeric_table_min.`bit1`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint4*bit1` = test_numeric_table_min.`uint4`*test_numeric_table_min.`bit1`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint4/bit1` = test_numeric_table_min.`uint4`/test_numeric_table_min.`bit1`;
+ERROR:  division by zero
+CONTEXT:  referenced column: uint4/bit1
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint4+bit64` = test_numeric_table_min.`uint4`+test_numeric_table_min.`bit64`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint4-bit64` = test_numeric_table_min.`uint4`-test_numeric_table_min.`bit64`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint4*bit64` = test_numeric_table_min.`uint4`*test_numeric_table_min.`bit64`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint4/bit64` = test_numeric_table_min.`uint4`/test_numeric_table_min.`bit64`;
+ERROR:  division by zero
+CONTEXT:  referenced column: uint4/bit64
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int8+int1` = test_numeric_table_min.`int8`+test_numeric_table_min.`int1`;
+ERROR:  bigint out of range
+CONTEXT:  referenced column: int8+int1
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int8-int1` = test_numeric_table_min.`int8`-test_numeric_table_min.`int1`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int8*int1` = test_numeric_table_min.`int8`*test_numeric_table_min.`int1`;
+ERROR:  bigint out of range
+CONTEXT:  referenced column: int8*int1
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int8/int1` = test_numeric_table_min.`int8`/test_numeric_table_min.`int1`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int8+uint1` = test_numeric_table_min.`int8`+test_numeric_table_min.`uint1`;
+ERROR:  bigint unsigned out of range
+CONTEXT:  referenced column: int8+uint1
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int8-uint1` = test_numeric_table_min.`int8`-test_numeric_table_min.`uint1`;
+ERROR:  bigint unsigned out of range
+CONTEXT:  referenced column: int8-uint1
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int8*uint1` = test_numeric_table_min.`int8`*test_numeric_table_min.`uint1`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int8/uint1` = test_numeric_table_min.`int8`/test_numeric_table_min.`uint1`;
+ERROR:  division by zero
+CONTEXT:  referenced column: int8/uint1
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int8+int2` = test_numeric_table_min.`int8`+test_numeric_table_min.`int2`;
+ERROR:  bigint out of range
+CONTEXT:  referenced column: int8+int2
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int8-int2` = test_numeric_table_min.`int8`-test_numeric_table_min.`int2`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int8*int2` = test_numeric_table_min.`int8`*test_numeric_table_min.`int2`;
+ERROR:  bigint out of range
+CONTEXT:  referenced column: int8*int2
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int8/int2` = test_numeric_table_min.`int8`/test_numeric_table_min.`int2`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int8+uint2` = test_numeric_table_min.`int8`+test_numeric_table_min.`uint2`;
+ERROR:  bigint unsigned out of range
+CONTEXT:  referenced column: int8+uint2
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int8-uint2` = test_numeric_table_min.`int8`-test_numeric_table_min.`uint2`;
+ERROR:  bigint unsigned out of range
+CONTEXT:  referenced column: int8-uint2
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int8*uint2` = test_numeric_table_min.`int8`*test_numeric_table_min.`uint2`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int8/uint2` = test_numeric_table_min.`int8`/test_numeric_table_min.`uint2`;
+ERROR:  division by zero
+CONTEXT:  referenced column: int8/uint2
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int8+int4` = test_numeric_table_min.`int8`+test_numeric_table_min.`int4`;
+ERROR:  bigint out of range
+CONTEXT:  referenced column: int8+int4
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int8-int4` = test_numeric_table_min.`int8`-test_numeric_table_min.`int4`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int8*int4` = test_numeric_table_min.`int8`*test_numeric_table_min.`int4`;
+ERROR:  bigint out of range
+CONTEXT:  referenced column: int8*int4
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int8/int4` = test_numeric_table_min.`int8`/test_numeric_table_min.`int4`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int8+uint4` = test_numeric_table_min.`int8`+test_numeric_table_min.`uint4`;
+ERROR:  bigint unsigned out of range
+CONTEXT:  referenced column: int8+uint4
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int8-uint4` = test_numeric_table_min.`int8`-test_numeric_table_min.`uint4`;
+ERROR:  bigint unsigned out of range
+CONTEXT:  referenced column: int8-uint4
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int8*uint4` = test_numeric_table_min.`int8`*test_numeric_table_min.`uint4`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int8/uint4` = test_numeric_table_min.`int8`/test_numeric_table_min.`uint4`;
+ERROR:  division by zero
+CONTEXT:  referenced column: int8/uint4
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int8+int8` = test_numeric_table_min.`int8`+test_numeric_table_min.`int8`;
+ERROR:  bigint out of range
+CONTEXT:  referenced column: int8+int8
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int8-int8` = test_numeric_table_min.`int8`-test_numeric_table_min.`int8`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int8*int8` = test_numeric_table_min.`int8`*test_numeric_table_min.`int8`;
+ERROR:  bigint out of range
+CONTEXT:  referenced column: int8*int8
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int8/int8` = test_numeric_table_min.`int8`/test_numeric_table_min.`int8`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int8+uint8` = test_numeric_table_min.`int8`+test_numeric_table_min.`uint8`;
+ERROR:  bigint unsigned out of range
+CONTEXT:  referenced column: int8+uint8
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int8-uint8` = test_numeric_table_min.`int8`-test_numeric_table_min.`uint8`;
+ERROR:  bigint unsigned out of range
+CONTEXT:  referenced column: int8-uint8
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int8*uint8` = test_numeric_table_min.`int8`*test_numeric_table_min.`uint8`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int8/uint8` = test_numeric_table_min.`int8`/test_numeric_table_min.`uint8`;
+ERROR:  division by zero
+CONTEXT:  referenced column: int8/uint8
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int8+float4` = test_numeric_table_min.`int8`+test_numeric_table_min.`float4`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int8-float4` = test_numeric_table_min.`int8`-test_numeric_table_min.`float4`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int8*float4` = test_numeric_table_min.`int8`*test_numeric_table_min.`float4`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int8/float4` = test_numeric_table_min.`int8`/test_numeric_table_min.`float4`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int8+float8` = test_numeric_table_min.`int8`+test_numeric_table_min.`float8`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int8-float8` = test_numeric_table_min.`int8`-test_numeric_table_min.`float8`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int8*float8` = test_numeric_table_min.`int8`*test_numeric_table_min.`float8`;
+ERROR:  value out of range: overflow
+CONTEXT:  referenced column: int8*float8
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int8/float8` = test_numeric_table_min.`int8`/test_numeric_table_min.`float8`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int8+numeric` = test_numeric_table_min.`int8`+test_numeric_table_min.`numeric`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int8-numeric` = test_numeric_table_min.`int8`-test_numeric_table_min.`numeric`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int8*numeric` = test_numeric_table_min.`int8`*test_numeric_table_min.`numeric`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int8/numeric` = test_numeric_table_min.`int8`/test_numeric_table_min.`numeric`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int8+bit1` = test_numeric_table_min.`int8`+test_numeric_table_min.`bit1`;
+ERROR:  bigint unsigned out of range
+CONTEXT:  referenced column: int8+bit1
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int8-bit1` = test_numeric_table_min.`int8`-test_numeric_table_min.`bit1`;
+ERROR:  bigint unsigned out of range
+CONTEXT:  referenced column: int8-bit1
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int8*bit1` = test_numeric_table_min.`int8`*test_numeric_table_min.`bit1`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int8/bit1` = test_numeric_table_min.`int8`/test_numeric_table_min.`bit1`;
+ERROR:  division by zero
+CONTEXT:  referenced column: int8/bit1
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int8+bit64` = test_numeric_table_min.`int8`+test_numeric_table_min.`bit64`;
+ERROR:  bigint unsigned out of range
+CONTEXT:  referenced column: int8+bit64
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int8-bit64` = test_numeric_table_min.`int8`-test_numeric_table_min.`bit64`;
+ERROR:  bigint unsigned out of range
+CONTEXT:  referenced column: int8-bit64
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int8*bit64` = test_numeric_table_min.`int8`*test_numeric_table_min.`bit64`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int8/bit64` = test_numeric_table_min.`int8`/test_numeric_table_min.`bit64`;
+ERROR:  division by zero
+CONTEXT:  referenced column: int8/bit64
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint8+int1` = test_numeric_table_min.`uint8`+test_numeric_table_min.`int1`;
+ERROR:  bigint unsigned out of range
+CONTEXT:  referenced column: uint8+int1
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint8-int1` = test_numeric_table_min.`uint8`-test_numeric_table_min.`int1`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint8*int1` = test_numeric_table_min.`uint8`*test_numeric_table_min.`int1`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint8/int1` = test_numeric_table_min.`uint8`/test_numeric_table_min.`int1`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint8+uint1` = test_numeric_table_min.`uint8`+test_numeric_table_min.`uint1`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint8-uint1` = test_numeric_table_min.`uint8`-test_numeric_table_min.`uint1`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint8*uint1` = test_numeric_table_min.`uint8`*test_numeric_table_min.`uint1`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint8/uint1` = test_numeric_table_min.`uint8`/test_numeric_table_min.`uint1`;
+ERROR:  division by zero
+CONTEXT:  referenced column: uint8/uint1
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint8+int2` = test_numeric_table_min.`uint8`+test_numeric_table_min.`int2`;
+ERROR:  bigint unsigned out of range
+CONTEXT:  referenced column: uint8+int2
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint8-int2` = test_numeric_table_min.`uint8`-test_numeric_table_min.`int2`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint8*int2` = test_numeric_table_min.`uint8`*test_numeric_table_min.`int2`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint8/int2` = test_numeric_table_min.`uint8`/test_numeric_table_min.`int2`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint8+uint2` = test_numeric_table_min.`uint8`+test_numeric_table_min.`uint2`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint8-uint2` = test_numeric_table_min.`uint8`-test_numeric_table_min.`uint2`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint8*uint2` = test_numeric_table_min.`uint8`*test_numeric_table_min.`uint2`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint8/uint2` = test_numeric_table_min.`uint8`/test_numeric_table_min.`uint2`;
+ERROR:  division by zero
+CONTEXT:  referenced column: uint8/uint2
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint8+int4` = test_numeric_table_min.`uint8`+test_numeric_table_min.`int4`;
+ERROR:  bigint unsigned out of range
+CONTEXT:  referenced column: uint8+int4
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint8-int4` = test_numeric_table_min.`uint8`-test_numeric_table_min.`int4`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint8*int4` = test_numeric_table_min.`uint8`*test_numeric_table_min.`int4`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint8/int4` = test_numeric_table_min.`uint8`/test_numeric_table_min.`int4`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint8+uint4` = test_numeric_table_min.`uint8`+test_numeric_table_min.`uint4`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint8-uint4` = test_numeric_table_min.`uint8`-test_numeric_table_min.`uint4`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint8*uint4` = test_numeric_table_min.`uint8`*test_numeric_table_min.`uint4`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint8/uint4` = test_numeric_table_min.`uint8`/test_numeric_table_min.`uint4`;
+ERROR:  division by zero
+CONTEXT:  referenced column: uint8/uint4
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint8+int8` = test_numeric_table_min.`uint8`+test_numeric_table_min.`int8`;
+ERROR:  bigint unsigned out of range
+CONTEXT:  referenced column: uint8+int8
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint8-int8` = test_numeric_table_min.`uint8`-test_numeric_table_min.`int8`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint8*int8` = test_numeric_table_min.`uint8`*test_numeric_table_min.`int8`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint8/int8` = test_numeric_table_min.`uint8`/test_numeric_table_min.`int8`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint8+uint8` = test_numeric_table_min.`uint8`+test_numeric_table_min.`uint8`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint8-uint8` = test_numeric_table_min.`uint8`-test_numeric_table_min.`uint8`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint8*uint8` = test_numeric_table_min.`uint8`*test_numeric_table_min.`uint8`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint8/uint8` = test_numeric_table_min.`uint8`/test_numeric_table_min.`uint8`;
+ERROR:  division by zero
+CONTEXT:  referenced column: uint8/uint8
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint8+float4` = test_numeric_table_min.`uint8`+test_numeric_table_min.`float4`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint8-float4` = test_numeric_table_min.`uint8`-test_numeric_table_min.`float4`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint8*float4` = test_numeric_table_min.`uint8`*test_numeric_table_min.`float4`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint8/float4` = test_numeric_table_min.`uint8`/test_numeric_table_min.`float4`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint8+float8` = test_numeric_table_min.`uint8`+test_numeric_table_min.`float8`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint8-float8` = test_numeric_table_min.`uint8`-test_numeric_table_min.`float8`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint8*float8` = test_numeric_table_min.`uint8`*test_numeric_table_min.`float8`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint8/float8` = test_numeric_table_min.`uint8`/test_numeric_table_min.`float8`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint8+numeric` = test_numeric_table_min.`uint8`+test_numeric_table_min.`numeric`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint8-numeric` = test_numeric_table_min.`uint8`-test_numeric_table_min.`numeric`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint8*numeric` = test_numeric_table_min.`uint8`*test_numeric_table_min.`numeric`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint8/numeric` = test_numeric_table_min.`uint8`/test_numeric_table_min.`numeric`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint8+bit1` = test_numeric_table_min.`uint8`+test_numeric_table_min.`bit1`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint8-bit1` = test_numeric_table_min.`uint8`-test_numeric_table_min.`bit1`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint8*bit1` = test_numeric_table_min.`uint8`*test_numeric_table_min.`bit1`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint8/bit1` = test_numeric_table_min.`uint8`/test_numeric_table_min.`bit1`;
+ERROR:  division by zero
+CONTEXT:  referenced column: uint8/bit1
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint8+bit64` = test_numeric_table_min.`uint8`+test_numeric_table_min.`bit64`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint8-bit64` = test_numeric_table_min.`uint8`-test_numeric_table_min.`bit64`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint8*bit64` = test_numeric_table_min.`uint8`*test_numeric_table_min.`bit64`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`uint8/bit64` = test_numeric_table_min.`uint8`/test_numeric_table_min.`bit64`;
+ERROR:  division by zero
+CONTEXT:  referenced column: uint8/bit64
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`float4+int1` = test_numeric_table_min.`float4`+test_numeric_table_min.`int1`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`float4-int1` = test_numeric_table_min.`float4`-test_numeric_table_min.`int1`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`float4*int1` = test_numeric_table_min.`float4`*test_numeric_table_min.`int1`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`float4/int1` = test_numeric_table_min.`float4`/test_numeric_table_min.`int1`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`float4+uint1` = test_numeric_table_min.`float4`+test_numeric_table_min.`uint1`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`float4-uint1` = test_numeric_table_min.`float4`-test_numeric_table_min.`uint1`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`float4*uint1` = test_numeric_table_min.`float4`*test_numeric_table_min.`uint1`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`float4/uint1` = test_numeric_table_min.`float4`/test_numeric_table_min.`uint1`;
+ERROR:  division by zero
+CONTEXT:  referenced column: float4/uint1
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`float4+int2` = test_numeric_table_min.`float4`+test_numeric_table_min.`int2`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`float4-int2` = test_numeric_table_min.`float4`-test_numeric_table_min.`int2`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`float4*int2` = test_numeric_table_min.`float4`*test_numeric_table_min.`int2`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`float4/int2` = test_numeric_table_min.`float4`/test_numeric_table_min.`int2`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`float4+uint2` = test_numeric_table_min.`float4`+test_numeric_table_min.`uint2`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`float4-uint2` = test_numeric_table_min.`float4`-test_numeric_table_min.`uint2`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`float4*uint2` = test_numeric_table_min.`float4`*test_numeric_table_min.`uint2`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`float4/uint2` = test_numeric_table_min.`float4`/test_numeric_table_min.`uint2`;
+ERROR:  division by zero
+CONTEXT:  referenced column: float4/uint2
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`float4+int4` = test_numeric_table_min.`float4`+test_numeric_table_min.`int4`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`float4-int4` = test_numeric_table_min.`float4`-test_numeric_table_min.`int4`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`float4*int4` = test_numeric_table_min.`float4`*test_numeric_table_min.`int4`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`float4/int4` = test_numeric_table_min.`float4`/test_numeric_table_min.`int4`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`float4+uint4` = test_numeric_table_min.`float4`+test_numeric_table_min.`uint4`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`float4-uint4` = test_numeric_table_min.`float4`-test_numeric_table_min.`uint4`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`float4*uint4` = test_numeric_table_min.`float4`*test_numeric_table_min.`uint4`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`float4/uint4` = test_numeric_table_min.`float4`/test_numeric_table_min.`uint4`;
+ERROR:  division by zero
+CONTEXT:  referenced column: float4/uint4
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`float4+int8` = test_numeric_table_min.`float4`+test_numeric_table_min.`int8`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`float4-int8` = test_numeric_table_min.`float4`-test_numeric_table_min.`int8`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`float4*int8` = test_numeric_table_min.`float4`*test_numeric_table_min.`int8`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`float4/int8` = test_numeric_table_min.`float4`/test_numeric_table_min.`int8`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`float4+uint8` = test_numeric_table_min.`float4`+test_numeric_table_min.`uint8`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`float4-uint8` = test_numeric_table_min.`float4`-test_numeric_table_min.`uint8`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`float4*uint8` = test_numeric_table_min.`float4`*test_numeric_table_min.`uint8`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`float4/uint8` = test_numeric_table_min.`float4`/test_numeric_table_min.`uint8`;
+ERROR:  division by zero
+CONTEXT:  referenced column: float4/uint8
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`float4+float4` = test_numeric_table_min.`float4`+test_numeric_table_min.`float4`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`float4-float4` = test_numeric_table_min.`float4`-test_numeric_table_min.`float4`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`float4*float4` = test_numeric_table_min.`float4`*test_numeric_table_min.`float4`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`float4/float4` = test_numeric_table_min.`float4`/test_numeric_table_min.`float4`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`float4+float8` = test_numeric_table_min.`float4`+test_numeric_table_min.`float8`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`float4-float8` = test_numeric_table_min.`float4`-test_numeric_table_min.`float8`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`float4*float8` = test_numeric_table_min.`float4`*test_numeric_table_min.`float8`;
+ERROR:  value out of range: overflow
+CONTEXT:  referenced column: float4*float8
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`float4/float8` = test_numeric_table_min.`float4`/test_numeric_table_min.`float8`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`float4+numeric` = test_numeric_table_min.`float4`+test_numeric_table_min.`numeric`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`float4-numeric` = test_numeric_table_min.`float4`-test_numeric_table_min.`numeric`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`float4*numeric` = test_numeric_table_min.`float4`*test_numeric_table_min.`numeric`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`float4/numeric` = test_numeric_table_min.`float4`/test_numeric_table_min.`numeric`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`float4+bit1` = test_numeric_table_min.`float4`+test_numeric_table_min.`bit1`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`float4-bit1` = test_numeric_table_min.`float4`-test_numeric_table_min.`bit1`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`float4*bit1` = test_numeric_table_min.`float4`*test_numeric_table_min.`bit1`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`float4/bit1` = test_numeric_table_min.`float4`/test_numeric_table_min.`bit1`;
+ERROR:  division by zero
+CONTEXT:  referenced column: float4/bit1
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`float4+bit64` = test_numeric_table_min.`float4`+test_numeric_table_min.`bit64`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`float4-bit64` = test_numeric_table_min.`float4`-test_numeric_table_min.`bit64`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`float4*bit64` = test_numeric_table_min.`float4`*test_numeric_table_min.`bit64`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`float4/bit64` = test_numeric_table_min.`float4`/test_numeric_table_min.`bit64`;
+ERROR:  division by zero
+CONTEXT:  referenced column: float4/bit64
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`float8+int1` = test_numeric_table_min.`float8`+test_numeric_table_min.`int1`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`float8-int1` = test_numeric_table_min.`float8`-test_numeric_table_min.`int1`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`float8*int1` = test_numeric_table_min.`float8`*test_numeric_table_min.`int1`;
+ERROR:  value out of range: overflow
+CONTEXT:  referenced column: float8*int1
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`float8/int1` = test_numeric_table_min.`float8`/test_numeric_table_min.`int1`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`float8+uint1` = test_numeric_table_min.`float8`+test_numeric_table_min.`uint1`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`float8-uint1` = test_numeric_table_min.`float8`-test_numeric_table_min.`uint1`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`float8*uint1` = test_numeric_table_min.`float8`*test_numeric_table_min.`uint1`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`float8/uint1` = test_numeric_table_min.`float8`/test_numeric_table_min.`uint1`;
+ERROR:  division by zero
+CONTEXT:  referenced column: float8/uint1
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`float8+int2` = test_numeric_table_min.`float8`+test_numeric_table_min.`int2`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`float8-int2` = test_numeric_table_min.`float8`-test_numeric_table_min.`int2`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`float8*int2` = test_numeric_table_min.`float8`*test_numeric_table_min.`int2`;
+ERROR:  value out of range: overflow
+CONTEXT:  referenced column: float8*int2
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`float8/int2` = test_numeric_table_min.`float8`/test_numeric_table_min.`int2`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`float8+uint2` = test_numeric_table_min.`float8`+test_numeric_table_min.`uint2`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`float8-uint2` = test_numeric_table_min.`float8`-test_numeric_table_min.`uint2`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`float8*uint2` = test_numeric_table_min.`float8`*test_numeric_table_min.`uint2`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`float8/uint2` = test_numeric_table_min.`float8`/test_numeric_table_min.`uint2`;
+ERROR:  division by zero
+CONTEXT:  referenced column: float8/uint2
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`float8+int4` = test_numeric_table_min.`float8`+test_numeric_table_min.`int4`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`float8-int4` = test_numeric_table_min.`float8`-test_numeric_table_min.`int4`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`float8*int4` = test_numeric_table_min.`float8`*test_numeric_table_min.`int4`;
+ERROR:  value out of range: overflow
+CONTEXT:  referenced column: float8*int4
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`float8/int4` = test_numeric_table_min.`float8`/test_numeric_table_min.`int4`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`float8+uint4` = test_numeric_table_min.`float8`+test_numeric_table_min.`uint4`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`float8-uint4` = test_numeric_table_min.`float8`-test_numeric_table_min.`uint4`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`float8*uint4` = test_numeric_table_min.`float8`*test_numeric_table_min.`uint4`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`float8/uint4` = test_numeric_table_min.`float8`/test_numeric_table_min.`uint4`;
+ERROR:  division by zero
+CONTEXT:  referenced column: float8/uint4
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`float8+int8` = test_numeric_table_min.`float8`+test_numeric_table_min.`int8`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`float8-int8` = test_numeric_table_min.`float8`-test_numeric_table_min.`int8`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`float8*int8` = test_numeric_table_min.`float8`*test_numeric_table_min.`int8`;
+ERROR:  value out of range: overflow
+CONTEXT:  referenced column: float8*int8
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`float8/int8` = test_numeric_table_min.`float8`/test_numeric_table_min.`int8`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`float8+uint8` = test_numeric_table_min.`float8`+test_numeric_table_min.`uint8`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`float8-uint8` = test_numeric_table_min.`float8`-test_numeric_table_min.`uint8`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`float8*uint8` = test_numeric_table_min.`float8`*test_numeric_table_min.`uint8`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`float8/uint8` = test_numeric_table_min.`float8`/test_numeric_table_min.`uint8`;
+ERROR:  division by zero
+CONTEXT:  referenced column: float8/uint8
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`float8+float4` = test_numeric_table_min.`float8`+test_numeric_table_min.`float4`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`float8-float4` = test_numeric_table_min.`float8`-test_numeric_table_min.`float4`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`float8*float4` = test_numeric_table_min.`float8`*test_numeric_table_min.`float4`;
+ERROR:  value out of range: overflow
+CONTEXT:  referenced column: float8*float4
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`float8/float4` = test_numeric_table_min.`float8`/test_numeric_table_min.`float4`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`float8+float8` = test_numeric_table_min.`float8`+test_numeric_table_min.`float8`;
+ERROR:  value out of range: overflow
+CONTEXT:  referenced column: float8+float8
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`float8-float8` = test_numeric_table_min.`float8`-test_numeric_table_min.`float8`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`float8*float8` = test_numeric_table_min.`float8`*test_numeric_table_min.`float8`;
+ERROR:  value out of range: overflow
+CONTEXT:  referenced column: float8*float8
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`float8/float8` = test_numeric_table_min.`float8`/test_numeric_table_min.`float8`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`float8+numeric` = test_numeric_table_min.`float8`+test_numeric_table_min.`numeric`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`float8-numeric` = test_numeric_table_min.`float8`-test_numeric_table_min.`numeric`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`float8*numeric` = test_numeric_table_min.`float8`*test_numeric_table_min.`numeric`;
+ERROR:  value out of range: overflow
+CONTEXT:  referenced column: float8*numeric
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`float8/numeric` = test_numeric_table_min.`float8`/test_numeric_table_min.`numeric`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`float8+bit1` = test_numeric_table_min.`float8`+test_numeric_table_min.`bit1`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`float8-bit1` = test_numeric_table_min.`float8`-test_numeric_table_min.`bit1`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`float8*bit1` = test_numeric_table_min.`float8`*test_numeric_table_min.`bit1`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`float8/bit1` = test_numeric_table_min.`float8`/test_numeric_table_min.`bit1`;
+ERROR:  division by zero
+CONTEXT:  referenced column: float8/bit1
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`float8+bit64` = test_numeric_table_min.`float8`+test_numeric_table_min.`bit64`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`float8-bit64` = test_numeric_table_min.`float8`-test_numeric_table_min.`bit64`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`float8*bit64` = test_numeric_table_min.`float8`*test_numeric_table_min.`bit64`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`float8/bit64` = test_numeric_table_min.`float8`/test_numeric_table_min.`bit64`;
+ERROR:  division by zero
+CONTEXT:  referenced column: float8/bit64
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`numeric+int1` = test_numeric_table_min.`numeric`+test_numeric_table_min.`int1`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`numeric-int1` = test_numeric_table_min.`numeric`-test_numeric_table_min.`int1`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`numeric*int1` = test_numeric_table_min.`numeric`*test_numeric_table_min.`int1`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`numeric/int1` = test_numeric_table_min.`numeric`/test_numeric_table_min.`int1`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`numeric+uint1` = test_numeric_table_min.`numeric`+test_numeric_table_min.`uint1`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`numeric-uint1` = test_numeric_table_min.`numeric`-test_numeric_table_min.`uint1`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`numeric*uint1` = test_numeric_table_min.`numeric`*test_numeric_table_min.`uint1`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`numeric/uint1` = test_numeric_table_min.`numeric`/test_numeric_table_min.`uint1`;
+ERROR:  division by zero
+CONTEXT:  referenced column: numeric/uint1
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`numeric+int2` = test_numeric_table_min.`numeric`+test_numeric_table_min.`int2`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`numeric-int2` = test_numeric_table_min.`numeric`-test_numeric_table_min.`int2`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`numeric*int2` = test_numeric_table_min.`numeric`*test_numeric_table_min.`int2`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`numeric/int2` = test_numeric_table_min.`numeric`/test_numeric_table_min.`int2`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`numeric+uint2` = test_numeric_table_min.`numeric`+test_numeric_table_min.`uint2`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`numeric-uint2` = test_numeric_table_min.`numeric`-test_numeric_table_min.`uint2`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`numeric*uint2` = test_numeric_table_min.`numeric`*test_numeric_table_min.`uint2`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`numeric/uint2` = test_numeric_table_min.`numeric`/test_numeric_table_min.`uint2`;
+ERROR:  division by zero
+CONTEXT:  referenced column: numeric/uint2
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`numeric+int4` = test_numeric_table_min.`numeric`+test_numeric_table_min.`int4`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`numeric-int4` = test_numeric_table_min.`numeric`-test_numeric_table_min.`int4`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`numeric*int4` = test_numeric_table_min.`numeric`*test_numeric_table_min.`int4`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`numeric/int4` = test_numeric_table_min.`numeric`/test_numeric_table_min.`int4`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`numeric+uint4` = test_numeric_table_min.`numeric`+test_numeric_table_min.`uint4`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`numeric-uint4` = test_numeric_table_min.`numeric`-test_numeric_table_min.`uint4`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`numeric*uint4` = test_numeric_table_min.`numeric`*test_numeric_table_min.`uint4`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`numeric/uint4` = test_numeric_table_min.`numeric`/test_numeric_table_min.`uint4`;
+ERROR:  division by zero
+CONTEXT:  referenced column: numeric/uint4
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`numeric+int8` = test_numeric_table_min.`numeric`+test_numeric_table_min.`int8`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`numeric-int8` = test_numeric_table_min.`numeric`-test_numeric_table_min.`int8`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`numeric*int8` = test_numeric_table_min.`numeric`*test_numeric_table_min.`int8`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`numeric/int8` = test_numeric_table_min.`numeric`/test_numeric_table_min.`int8`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`numeric+uint8` = test_numeric_table_min.`numeric`+test_numeric_table_min.`uint8`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`numeric-uint8` = test_numeric_table_min.`numeric`-test_numeric_table_min.`uint8`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`numeric*uint8` = test_numeric_table_min.`numeric`*test_numeric_table_min.`uint8`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`numeric/uint8` = test_numeric_table_min.`numeric`/test_numeric_table_min.`uint8`;
+ERROR:  division by zero
+CONTEXT:  referenced column: numeric/uint8
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`numeric+float4` = test_numeric_table_min.`numeric`+test_numeric_table_min.`float4`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`numeric-float4` = test_numeric_table_min.`numeric`-test_numeric_table_min.`float4`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`numeric*float4` = test_numeric_table_min.`numeric`*test_numeric_table_min.`float4`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`numeric/float4` = test_numeric_table_min.`numeric`/test_numeric_table_min.`float4`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`numeric+float8` = test_numeric_table_min.`numeric`+test_numeric_table_min.`float8`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`numeric-float8` = test_numeric_table_min.`numeric`-test_numeric_table_min.`float8`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`numeric*float8` = test_numeric_table_min.`numeric`*test_numeric_table_min.`float8`;
+ERROR:  value out of range: overflow
+CONTEXT:  referenced column: numeric*float8
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`numeric/float8` = test_numeric_table_min.`numeric`/test_numeric_table_min.`float8`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`numeric+numeric` = test_numeric_table_min.`numeric`+test_numeric_table_min.`numeric`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`numeric-numeric` = test_numeric_table_min.`numeric`-test_numeric_table_min.`numeric`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`numeric*numeric` = test_numeric_table_min.`numeric`*test_numeric_table_min.`numeric`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`numeric/numeric` = test_numeric_table_min.`numeric`/test_numeric_table_min.`numeric`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`numeric+bit1` = test_numeric_table_min.`numeric`+test_numeric_table_min.`bit1`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`numeric-bit1` = test_numeric_table_min.`numeric`-test_numeric_table_min.`bit1`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`numeric*bit1` = test_numeric_table_min.`numeric`*test_numeric_table_min.`bit1`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`numeric/bit1` = test_numeric_table_min.`numeric`/test_numeric_table_min.`bit1`;
+ERROR:  division by zero
+CONTEXT:  referenced column: numeric/bit1
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`numeric+bit64` = test_numeric_table_min.`numeric`+test_numeric_table_min.`bit64`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`numeric-bit64` = test_numeric_table_min.`numeric`-test_numeric_table_min.`bit64`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`numeric*bit64` = test_numeric_table_min.`numeric`*test_numeric_table_min.`bit64`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`numeric/bit64` = test_numeric_table_min.`numeric`/test_numeric_table_min.`bit64`;
+ERROR:  division by zero
+CONTEXT:  referenced column: numeric/bit64
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`bit1+int1` = test_numeric_table_min.`bit1`+test_numeric_table_min.`int1`;
+ERROR:   int unsigned out of range
+CONTEXT:  referenced column: bit1+int1
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`bit1-int1` = test_numeric_table_min.`bit1`-test_numeric_table_min.`int1`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`bit1*int1` = test_numeric_table_min.`bit1`*test_numeric_table_min.`int1`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`bit1/int1` = test_numeric_table_min.`bit1`/test_numeric_table_min.`int1`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`bit1+uint1` = test_numeric_table_min.`bit1`+test_numeric_table_min.`uint1`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`bit1-uint1` = test_numeric_table_min.`bit1`-test_numeric_table_min.`uint1`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`bit1*uint1` = test_numeric_table_min.`bit1`*test_numeric_table_min.`uint1`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`bit1/uint1` = test_numeric_table_min.`bit1`/test_numeric_table_min.`uint1`;
+ERROR:  division by zero
+CONTEXT:  referenced column: bit1/uint1
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`bit1+int2` = test_numeric_table_min.`bit1`+test_numeric_table_min.`int2`;
+ERROR:   int unsigned out of range
+CONTEXT:  referenced column: bit1+int2
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`bit1-int2` = test_numeric_table_min.`bit1`-test_numeric_table_min.`int2`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`bit1*int2` = test_numeric_table_min.`bit1`*test_numeric_table_min.`int2`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`bit1/int2` = test_numeric_table_min.`bit1`/test_numeric_table_min.`int2`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`bit1+uint2` = test_numeric_table_min.`bit1`+test_numeric_table_min.`uint2`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`bit1-uint2` = test_numeric_table_min.`bit1`-test_numeric_table_min.`uint2`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`bit1*uint2` = test_numeric_table_min.`bit1`*test_numeric_table_min.`uint2`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`bit1/uint2` = test_numeric_table_min.`bit1`/test_numeric_table_min.`uint2`;
+ERROR:  division by zero
+CONTEXT:  referenced column: bit1/uint2
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`bit1+int4` = test_numeric_table_min.`bit1`+test_numeric_table_min.`int4`;
+ERROR:  bigint unsigned out of range
+CONTEXT:  referenced column: bit1+int4
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`bit1-int4` = test_numeric_table_min.`bit1`-test_numeric_table_min.`int4`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`bit1*int4` = test_numeric_table_min.`bit1`*test_numeric_table_min.`int4`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`bit1/int4` = test_numeric_table_min.`bit1`/test_numeric_table_min.`int4`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`bit1+uint4` = test_numeric_table_min.`bit1`+test_numeric_table_min.`uint4`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`bit1-uint4` = test_numeric_table_min.`bit1`-test_numeric_table_min.`uint4`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`bit1*uint4` = test_numeric_table_min.`bit1`*test_numeric_table_min.`uint4`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`bit1/uint4` = test_numeric_table_min.`bit1`/test_numeric_table_min.`uint4`;
+ERROR:  division by zero
+CONTEXT:  referenced column: bit1/uint4
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`bit1+int8` = test_numeric_table_min.`bit1`+test_numeric_table_min.`int8`;
+ERROR:  bigint unsigned out of range
+CONTEXT:  referenced column: bit1+int8
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`bit1-int8` = test_numeric_table_min.`bit1`-test_numeric_table_min.`int8`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`bit1*int8` = test_numeric_table_min.`bit1`*test_numeric_table_min.`int8`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`bit1/int8` = test_numeric_table_min.`bit1`/test_numeric_table_min.`int8`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`bit1+uint8` = test_numeric_table_min.`bit1`+test_numeric_table_min.`uint8`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`bit1-uint8` = test_numeric_table_min.`bit1`-test_numeric_table_min.`uint8`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`bit1*uint8` = test_numeric_table_min.`bit1`*test_numeric_table_min.`uint8`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`bit1/uint8` = test_numeric_table_min.`bit1`/test_numeric_table_min.`uint8`;
+ERROR:  division by zero
+CONTEXT:  referenced column: bit1/uint8
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`bit1+float4` = test_numeric_table_min.`bit1`+test_numeric_table_min.`float4`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`bit1-float4` = test_numeric_table_min.`bit1`-test_numeric_table_min.`float4`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`bit1*float4` = test_numeric_table_min.`bit1`*test_numeric_table_min.`float4`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`bit1/float4` = test_numeric_table_min.`bit1`/test_numeric_table_min.`float4`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`bit1+float8` = test_numeric_table_min.`bit1`+test_numeric_table_min.`float8`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`bit1-float8` = test_numeric_table_min.`bit1`-test_numeric_table_min.`float8`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`bit1*float8` = test_numeric_table_min.`bit1`*test_numeric_table_min.`float8`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`bit1/float8` = test_numeric_table_min.`bit1`/test_numeric_table_min.`float8`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`bit1+numeric` = test_numeric_table_min.`bit1`+test_numeric_table_min.`numeric`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`bit1-numeric` = test_numeric_table_min.`bit1`-test_numeric_table_min.`numeric`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`bit1*numeric` = test_numeric_table_min.`bit1`*test_numeric_table_min.`numeric`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`bit1/numeric` = test_numeric_table_min.`bit1`/test_numeric_table_min.`numeric`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`bit1+bit1` = test_numeric_table_min.`bit1`+test_numeric_table_min.`bit1`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`bit1-bit1` = test_numeric_table_min.`bit1`-test_numeric_table_min.`bit1`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`bit1*bit1` = test_numeric_table_min.`bit1`*test_numeric_table_min.`bit1`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`bit1/bit1` = test_numeric_table_min.`bit1`/test_numeric_table_min.`bit1`;
+ERROR:  division by zero
+CONTEXT:  referenced column: bit1/bit1
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`bit1+bit64` = test_numeric_table_min.`bit1`+test_numeric_table_min.`bit64`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`bit1-bit64` = test_numeric_table_min.`bit1`-test_numeric_table_min.`bit64`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`bit1*bit64` = test_numeric_table_min.`bit1`*test_numeric_table_min.`bit64`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`bit1/bit64` = test_numeric_table_min.`bit1`/test_numeric_table_min.`bit64`;
+ERROR:  division by zero
+CONTEXT:  referenced column: bit1/bit64
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`bit64+int1` = test_numeric_table_min.`bit64`+test_numeric_table_min.`int1`;
+ERROR:  bigint unsigned out of range
+CONTEXT:  referenced column: bit64+int1
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`bit64-int1` = test_numeric_table_min.`bit64`-test_numeric_table_min.`int1`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`bit64*int1` = test_numeric_table_min.`bit64`*test_numeric_table_min.`int1`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`bit64/int1` = test_numeric_table_min.`bit64`/test_numeric_table_min.`int1`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`bit64+uint1` = test_numeric_table_min.`bit64`+test_numeric_table_min.`uint1`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`bit64-uint1` = test_numeric_table_min.`bit64`-test_numeric_table_min.`uint1`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`bit64*uint1` = test_numeric_table_min.`bit64`*test_numeric_table_min.`uint1`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`bit64/uint1` = test_numeric_table_min.`bit64`/test_numeric_table_min.`uint1`;
+ERROR:  division by zero
+CONTEXT:  referenced column: bit64/uint1
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`bit64+int2` = test_numeric_table_min.`bit64`+test_numeric_table_min.`int2`;
+ERROR:  bigint unsigned out of range
+CONTEXT:  referenced column: bit64+int2
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`bit64-int2` = test_numeric_table_min.`bit64`-test_numeric_table_min.`int2`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`bit64*int2` = test_numeric_table_min.`bit64`*test_numeric_table_min.`int2`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`bit64/int2` = test_numeric_table_min.`bit64`/test_numeric_table_min.`int2`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`bit64+uint2` = test_numeric_table_min.`bit64`+test_numeric_table_min.`uint2`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`bit64-uint2` = test_numeric_table_min.`bit64`-test_numeric_table_min.`uint2`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`bit64*uint2` = test_numeric_table_min.`bit64`*test_numeric_table_min.`uint2`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`bit64/uint2` = test_numeric_table_min.`bit64`/test_numeric_table_min.`uint2`;
+ERROR:  division by zero
+CONTEXT:  referenced column: bit64/uint2
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`bit64+int4` = test_numeric_table_min.`bit64`+test_numeric_table_min.`int4`;
+ERROR:  bigint unsigned out of range
+CONTEXT:  referenced column: bit64+int4
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`bit64-int4` = test_numeric_table_min.`bit64`-test_numeric_table_min.`int4`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`bit64*int4` = test_numeric_table_min.`bit64`*test_numeric_table_min.`int4`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`bit64/int4` = test_numeric_table_min.`bit64`/test_numeric_table_min.`int4`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`bit64+uint4` = test_numeric_table_min.`bit64`+test_numeric_table_min.`uint4`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`bit64-uint4` = test_numeric_table_min.`bit64`-test_numeric_table_min.`uint4`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`bit64*uint4` = test_numeric_table_min.`bit64`*test_numeric_table_min.`uint4`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`bit64/uint4` = test_numeric_table_min.`bit64`/test_numeric_table_min.`uint4`;
+ERROR:  division by zero
+CONTEXT:  referenced column: bit64/uint4
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`bit64+int8` = test_numeric_table_min.`bit64`+test_numeric_table_min.`int8`;
+ERROR:  bigint unsigned out of range
+CONTEXT:  referenced column: bit64+int8
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`bit64-int8` = test_numeric_table_min.`bit64`-test_numeric_table_min.`int8`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`bit64*int8` = test_numeric_table_min.`bit64`*test_numeric_table_min.`int8`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`bit64/int8` = test_numeric_table_min.`bit64`/test_numeric_table_min.`int8`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`bit64+uint8` = test_numeric_table_min.`bit64`+test_numeric_table_min.`uint8`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`bit64-uint8` = test_numeric_table_min.`bit64`-test_numeric_table_min.`uint8`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`bit64*uint8` = test_numeric_table_min.`bit64`*test_numeric_table_min.`uint8`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`bit64/uint8` = test_numeric_table_min.`bit64`/test_numeric_table_min.`uint8`;
+ERROR:  division by zero
+CONTEXT:  referenced column: bit64/uint8
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`bit64+float4` = test_numeric_table_min.`bit64`+test_numeric_table_min.`float4`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`bit64-float4` = test_numeric_table_min.`bit64`-test_numeric_table_min.`float4`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`bit64*float4` = test_numeric_table_min.`bit64`*test_numeric_table_min.`float4`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`bit64/float4` = test_numeric_table_min.`bit64`/test_numeric_table_min.`float4`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`bit64+float8` = test_numeric_table_min.`bit64`+test_numeric_table_min.`float8`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`bit64-float8` = test_numeric_table_min.`bit64`-test_numeric_table_min.`float8`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`bit64*float8` = test_numeric_table_min.`bit64`*test_numeric_table_min.`float8`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`bit64/float8` = test_numeric_table_min.`bit64`/test_numeric_table_min.`float8`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`bit64+numeric` = test_numeric_table_min.`bit64`+test_numeric_table_min.`numeric`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`bit64-numeric` = test_numeric_table_min.`bit64`-test_numeric_table_min.`numeric`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`bit64*numeric` = test_numeric_table_min.`bit64`*test_numeric_table_min.`numeric`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`bit64/numeric` = test_numeric_table_min.`bit64`/test_numeric_table_min.`numeric`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`bit64+bit1` = test_numeric_table_min.`bit64`+test_numeric_table_min.`bit1`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`bit64-bit1` = test_numeric_table_min.`bit64`-test_numeric_table_min.`bit1`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`bit64*bit1` = test_numeric_table_min.`bit64`*test_numeric_table_min.`bit1`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`bit64/bit1` = test_numeric_table_min.`bit64`/test_numeric_table_min.`bit1`;
+ERROR:  division by zero
+CONTEXT:  referenced column: bit64/bit1
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`bit64+bit64` = test_numeric_table_min.`bit64`+test_numeric_table_min.`bit64`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`bit64-bit64` = test_numeric_table_min.`bit64`-test_numeric_table_min.`bit64`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`bit64*bit64` = test_numeric_table_min.`bit64`*test_numeric_table_min.`bit64`;
+UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`bit64/bit64` = test_numeric_table_min.`bit64`/test_numeric_table_min.`bit64`;
+ERROR:  division by zero
+CONTEXT:  referenced column: bit64/bit64
+SELECT * FROM test_numeric_type_min;
+ int1+int1 | int1-int1 | int1*int1 |       int1/int1        | int1+uint1 | int1-uint1 | int1*uint1 | int1/uint1 | int1+int2 | int1-int2 | int1*int2 |       int1/int2        | int1+uint2 | int1-uint2 | int1*uint2 | int1/uint2 |  int1+int4  | int1-int4  |  int1*int4   |         int1/int4          | int1+uint4 | int1-uint4 | int1*uint4 | int1/uint4 | int1+int8 |      int1-int8      | int1*int8 |               int1/int8                | int1+uint8 | int1-uint8 | int1*uint8 | int1/uint8 |      int1+float4      |     int1-float4      |     int1*float4      |     int1/float4      | int1+float8 | int1-float8 | int1*float8 |      int1/float8      |      int1+numeric       |     int1-numeric      |       int1*numeric       |          int1/numeric          | int1+bit1 | int1-bit1 | int1*bit1 | int1/bit1 | int1+bit64 | int1-bit64 | int1*bit64 | int1/bit64 | uint1+int1 | uint1-int1 | uint1*int1 |       uint1/int1       | uint1+uint1 | uint1-uint1 | uint1*uint1 | uint1/uint1 | uint1+int2 | uint1-int2 | uint1*int2 |         uint1/int2         | uint1+uint2 | uint1-uint2 | uint1*uint2 | uint1/uint2 | uint1+int4 | uint1-int4 | uint1*int4 |           uint1/int4           | uint1+uint4 | uint1-uint4 | uint1*uint4 | uint1/uint4 | uint1+int8 |     uint1-int8      | uint1*int8 |               uint1/int8               | uint1+uint8 | uint1-uint8 | uint1*uint8 | uint1/uint8 |     uint1+float4      |     uint1-float4     | uint1*float4 | uint1/float4 | uint1+float8 | uint1-float8 | uint1*float8 | uint1/float8 |     uint1+numeric      |     uint1-numeric     | uint1*numeric |           uint1/numeric            | uint1+bit1 | uint1-bit1 | uint1*bit1 | uint1/bit1 | uint1+bit64 | uint1-bit64 | uint1*bit64 | uint1/bit64 | int2+int1 | int2-int1 | int2*int1 |      int2/int1       | int2+uint1 | int2-uint1 | int2*uint1 | int2/uint1 | int2+int2 | int2-int2 | int2*int2  |       int2/int2        | int2+uint2 | int2-uint2 | int2*uint2 | int2/uint2 |  int2+int4  | int2-int4  |   int2*int4    |         int2/int4          | int2+uint4 | int2-uint4 | int2*uint4 | int2/uint4 | int2+int8 |      int2-int8      | int2*int8 |             int2/int8              | int2+uint8 | int2-uint8 | int2*uint8 | int2/uint8 |      int2+float4      |     int2-float4      |     int2*float4      |     int2/float4      | int2+float8 | int2-float8 | int2*float8 |      int2/float8      |      int2+numeric       |     int2-numeric      |        int2*numeric        |          int2/numeric          | int2+bit1 | int2-bit1 | int2*bit1 | int2/bit1 | int2+bit64 | int2-bit64 | int2*bit64 | int2/bit64 | uint2+int1 | uint2-int1 | uint2*int1 |       uint2/int1       | uint2+uint1 | uint2-uint1 | uint2*uint1 | uint2/uint1 | uint2+int2 | uint2-int2 | uint2*int2 |         uint2/int2         | uint2+uint2 | uint2-uint2 | uint2*uint2 | uint2/uint2 | uint2+int4 | uint2-int4 | uint2*int4 |           uint2/int4           | uint2+uint4 | uint2-uint4 | uint2*uint4 | uint2/uint4 | uint2+int8 |     uint2-int8      | uint2*int8 |               uint2/int8               | uint2+uint8 | uint2-uint8 | uint2*uint8 | uint2/uint8 |     uint2+float4      |     uint2-float4     | uint2*float4 | uint2/float4 | uint2+float8 | uint2-float8 | uint2*float8 | uint2/float8 |     uint2+numeric      |     uint2-numeric     | uint2*numeric |           uint2/numeric            | uint2+bit1 | uint2-bit1 | uint2*bit1 | uint2/bit1 | uint2+bit64 | uint2-bit64 | uint2*bit64 | uint2/bit64 |  int4+int1  |  int4-int1  |  int4*int1   |       int4/int1       | int4+uint1 | int4-uint1 | int4*uint1 | int4/uint1 |  int4+int2  |  int4-int2  |   int4*int2    |     int4/int2      | int4+uint2 | int4-uint2 | int4*uint2 | int4/uint2 |  int4+int4  | int4-int4 |      int4*int4      |       int4/int4        | int4+uint4 | int4-uint4 | int4*uint4 | int4/uint4 | int4+int8 |      int4-int8      | int4*int8 |           int4/int8            | int4+uint8 | int4-uint8 | int4*uint8 | int4/uint8 |      int4+float4      |     int4-float4      |     int4*float4      |     int4/float4      | int4+float8 | int4-float8 | int4*float8 |      int4/float8      |      int4+numeric       |     int4-numeric      |          int4*numeric           |        int4/numeric        | int4+bit1 | int4-bit1 | int4*bit1 | int4/bit1 | int4+bit64 | int4-bit64 | int4*bit64 | int4/bit64 | uint4+int1 | uint4-int1 | uint4*int1 |       uint4/int1       | uint4+uint1 | uint4-uint1 | uint4*uint1 | uint4/uint1 | uint4+int2 | uint4-int2 | uint4*int2 |         uint4/int2         | uint4+uint2 | uint4-uint2 | uint4*uint2 | uint4/uint2 | uint4+int4 | uint4-int4 | uint4*int4 |           uint4/int4           | uint4+uint4 | uint4-uint4 | uint4*uint4 | uint4/uint4 | uint4+int8 |     uint4-int8      | uint4*int8 |               uint4/int8               | uint4+uint8 | uint4-uint8 | uint4*uint8 | uint4/uint8 |     uint4+float4      |     uint4-float4     | uint4*float4 | uint4/float4 | uint4+float8 | uint4-float8 | uint4*float8 | uint4/float8 |     uint4+numeric      |     uint4-numeric     | uint4*numeric |           uint4/numeric            | uint4+bit1 | uint4-bit1 | uint4*bit1 | uint4/bit1 | uint4+bit64 | uint4-bit64 | uint4*bit64 | uint4/bit64 | int8+int1 |      int8-int1       | int8*int1 |       int8/int1        | int8+uint1 | int8-uint1 | int8*uint1 | int8/uint1 | int8+int2 |      int8-int2       | int8*int2 |      int8/int2       | int8+uint2 | int8-uint2 | int8*uint2 | int8/uint2 | int8+int4 |      int8-int4       | int8*int4 |      int8/int4      | int8+uint4 | int8-uint4 | int8*uint4 | int8/uint4 | int8+int8 | int8-int8 | int8*int8 |       int8/int8        | int8+uint8 | int8-uint8 | int8*uint8 | int8/uint8 |      int8+float4      |     int8-float4      |     int8*float4      |     int8/float4      | int8+float8 | int8-float8 | int8*float8 |      int8/float8      |        int8+numeric         |        int8-numeric         |               int8*numeric               |    int8/numeric    | int8+bit1 | int8-bit1 | int8*bit1 | int8/bit1 | int8+bit64 | int8-bit64 | int8*bit64 | int8/bit64 | uint8+int1 | uint8-int1 | uint8*int1 |       uint8/int1       | uint8+uint1 | uint8-uint1 | uint8*uint1 | uint8/uint1 | uint8+int2 | uint8-int2 | uint8*int2 |         uint8/int2         | uint8+uint2 | uint8-uint2 | uint8*uint2 | uint8/uint2 | uint8+int4 | uint8-int4 | uint8*int4 |           uint8/int4           | uint8+uint4 | uint8-uint4 | uint8*uint4 | uint8/uint4 | uint8+int8 |     uint8-int8      | uint8*int8 |               uint8/int8               | uint8+uint8 | uint8-uint8 | uint8*uint8 | uint8/uint8 |     uint8+float4      |     uint8-float4     | uint8*float4 | uint8/float4 | uint8+float8 | uint8-float8 | uint8*float8 | uint8/float8 |     uint8+numeric      |     uint8-numeric     | uint8*numeric |           uint8/numeric            | uint8+bit1 | uint8-bit1 | uint8*bit1 | uint8/bit1 | uint8+bit64 | uint8-bit64 | uint8*bit64 | uint8/bit64 |      float4+int1      |      float4-int1      |     float4*int1      |     float4/int1      |     float4+uint1      |     float4-uint1      | float4*uint1 | float4/uint1 |      float4+int2      |      float4-int2      |     float4*int2      |     float4/int2      |     float4+uint2      |     float4-uint2      | float4*uint2 | float4/uint2 |      float4+int4      |      float4-int4      |     float4*int4      |     float4/int4      |     float4+uint4      |     float4-uint4      | float4*uint4 | float4/uint4 |      float4+int8      |      float4-int8      |     float4*int8      |     float4/int8      |     float4+uint8      |     float4-uint8      | float4*uint8 | float4/uint8 |     float4+float4     | float4-float4 |    float4*float4     | float4/float4 | float4+float8 | float4-float8 | float4*float8 |     float4/float8     |    float4+numeric     |    float4-numeric     |    float4*numeric    |    float4/numeric    |      float4+bit1      |      float4-bit1      | float4*bit1 | float4/bit1 |     float4+bit64      |     float4-bit64      | float4*bit64 | float4/bit64 | float8+int1 | float8-int1 | float8*int1 |  float8/int1   | float8+uint1 | float8-uint1 | float8*uint1 | float8/uint1 | float8+int2 | float8-int2 | float8*int2 |     float8/int2     | float8+uint2 | float8-uint2 | float8*uint2 | float8/uint2 | float8+int4 | float8-int4 | float8*int4 |      float8/int4      | float8+uint4 | float8-uint4 | float8*uint4 | float8/uint4 | float8+int8 | float8-int8 | float8*int8 |      float8/int8      | float8+uint8 | float8-uint8 | float8*uint8 | float8/uint8 | float8+float4 | float8-float4 | float8*float4 |     float8/float4     | float8+float8 | float8-float8 | float8*float8 | float8/float8 | float8+numeric | float8-numeric | float8*numeric | float8/numeric | float8+bit1 | float8-bit1 | float8*bit1 | float8/bit1 | float8+bit64 | float8-bit64 | float8*bit64 | float8/bit64 |      numeric+int1       |      numeric-int1      |       numeric*int1       |      numeric/int1       |     numeric+uint1      |     numeric-uint1      | numeric*uint1 | numeric/uint1 |      numeric+int2       |      numeric-int2      |        numeric*int2        |     numeric/int2      |     numeric+uint2      |     numeric-uint2      | numeric*uint2 | numeric/uint2 |      numeric+int4       |      numeric-int4      |          numeric*int4           |    numeric/int4    |     numeric+uint4      |     numeric-uint4      | numeric*uint4 | numeric/uint4 |        numeric+int8         |        numeric-int8        |               numeric*int8               |        numeric/int8        |     numeric+uint8      |     numeric-uint8      | numeric*uint8 | numeric/uint8 |    numeric+float4     |    numeric-float4    |    numeric*float4    |    numeric/float4    | numeric+float8 | numeric-float8 | numeric*float8 |    numeric/float8     |     numeric+numeric     | numeric-numeric |              numeric*numeric              |    numeric/numeric     |      numeric+bit1      |      numeric-bit1      | numeric*bit1 | numeric/bit1 |     numeric+bit64      |     numeric-bit64      | numeric*bit64 | numeric/bit64 | bit1+int1 | bit1-int1 | bit1*int1 |       bit1/int1        | bit1+uint1 | bit1-uint1 | bit1*uint1 | bit1/uint1 | bit1+int2 | bit1-int2 | bit1*int2 |         bit1/int2          | bit1+uint2 | bit1-uint2 | bit1*uint2 | bit1/uint2 | bit1+int4 | bit1-int4  | bit1*int4 |           bit1/int4            | bit1+uint4 | bit1-uint4 | bit1*uint4 | bit1/uint4 | bit1+int8 |      bit1-int8      | bit1*int8 |               bit1/int8                | bit1+uint8 | bit1-uint8 | bit1*uint8 | bit1/uint8 |      bit1+float4      |     bit1-float4      | bit1*float4 | bit1/float4 | bit1+float8 | bit1-float8 | bit1*float8 | bit1/float8 |      bit1+numeric      |     bit1-numeric      | bit1*numeric |            bit1/numeric            | bit1+bit1 | bit1-bit1 | bit1*bit1 | bit1/bit1 | bit1+bit64 | bit1-bit64 | bit1*bit64 | bit1/bit64 | bit64+int1 | bit64-int1 | bit64*int1 |       bit64/int1       | bit64+uint1 | bit64-uint1 | bit64*uint1 | bit64/uint1 | bit64+int2 | bit64-int2 | bit64*int2 |         bit64/int2         | bit64+uint2 | bit64-uint2 | bit64*uint2 | bit64/uint2 | bit64+int4 | bit64-int4 | bit64*int4 |           bit64/int4           | bit64+uint4 | bit64-uint4 | bit64*uint4 | bit64/uint4 | bit64+int8 |     bit64-int8      | bit64*int8 |               bit64/int8               | bit64+uint8 | bit64-uint8 | bit64*uint8 | bit64/uint8 |     bit64+float4      |     bit64-float4     | bit64*float4 | bit64/float4 | bit64+float8 | bit64-float8 | bit64*float8 | bit64/float8 |     bit64+numeric      |     bit64-numeric     | bit64*numeric |           bit64/numeric            | bit64+bit1 | bit64-bit1 | bit64*bit1 | bit64/bit1 | bit64+bit64 | bit64-bit64 | bit64*bit64 | bit64/bit64 
+-----------+-----------+-----------+------------------------+------------+------------+------------+------------+-----------+-----------+-----------+------------------------+------------+------------+------------+------------+-------------+------------+--------------+----------------------------+------------+------------+------------+------------+-----------+---------------------+-----------+----------------------------------------+------------+------------+------------+------------+-----------------------+----------------------+----------------------+----------------------+-------------+-------------+-------------+-----------------------+-------------------------+-----------------------+--------------------------+--------------------------------+-----------+-----------+-----------+-----------+------------+------------+------------+------------+------------+------------+------------+------------------------+-------------+-------------+-------------+-------------+------------+------------+------------+----------------------------+-------------+-------------+-------------+-------------+------------+------------+------------+--------------------------------+-------------+-------------+-------------+-------------+------------+---------------------+------------+----------------------------------------+-------------+-------------+-------------+-------------+-----------------------+----------------------+--------------+--------------+--------------+--------------+--------------+--------------+------------------------+-----------------------+---------------+------------------------------------+------------+------------+------------+------------+-------------+-------------+-------------+-------------+-----------+-----------+-----------+----------------------+------------+------------+------------+------------+-----------+-----------+------------+------------------------+------------+------------+------------+------------+-------------+------------+----------------+----------------------------+------------+------------+------------+------------+-----------+---------------------+-----------+------------------------------------+------------+------------+------------+------------+-----------------------+----------------------+----------------------+----------------------+-------------+-------------+-------------+-----------------------+-------------------------+-----------------------+----------------------------+--------------------------------+-----------+-----------+-----------+-----------+------------+------------+------------+------------+------------+------------+------------+------------------------+-------------+-------------+-------------+-------------+------------+------------+------------+----------------------------+-------------+-------------+-------------+-------------+------------+------------+------------+--------------------------------+-------------+-------------+-------------+-------------+------------+---------------------+------------+----------------------------------------+-------------+-------------+-------------+-------------+-----------------------+----------------------+--------------+--------------+--------------+--------------+--------------+--------------+------------------------+-----------------------+---------------+------------------------------------+------------+------------+------------+------------+-------------+-------------+-------------+-------------+-------------+-------------+--------------+-----------------------+------------+------------+------------+------------+-------------+-------------+----------------+--------------------+------------+------------+------------+------------+-------------+-----------+---------------------+------------------------+------------+------------+------------+------------+-----------+---------------------+-----------+--------------------------------+------------+------------+------------+------------+-----------------------+----------------------+----------------------+----------------------+-------------+-------------+-------------+-----------------------+-------------------------+-----------------------+---------------------------------+----------------------------+-----------+-----------+-----------+-----------+------------+------------+------------+------------+------------+------------+------------+------------------------+-------------+-------------+-------------+-------------+------------+------------+------------+----------------------------+-------------+-------------+-------------+-------------+------------+------------+------------+--------------------------------+-------------+-------------+-------------+-------------+------------+---------------------+------------+----------------------------------------+-------------+-------------+-------------+-------------+-----------------------+----------------------+--------------+--------------+--------------+--------------+--------------+--------------+------------------------+-----------------------+---------------+------------------------------------+------------+------------+------------+------------+-------------+-------------+-------------+-------------+-----------+----------------------+-----------+------------------------+------------+------------+------------+------------+-----------+----------------------+-----------+----------------------+------------+------------+------------+------------+-----------+----------------------+-----------+---------------------+------------+------------+------------+------------+-----------+-----------+-----------+------------------------+------------+------------+------------+------------+-----------------------+----------------------+----------------------+----------------------+-------------+-------------+-------------+-----------------------+-----------------------------+-----------------------------+------------------------------------------+--------------------+-----------+-----------+-----------+-----------+------------+------------+------------+------------+------------+------------+------------+------------------------+-------------+-------------+-------------+-------------+------------+------------+------------+----------------------------+-------------+-------------+-------------+-------------+------------+------------+------------+--------------------------------+-------------+-------------+-------------+-------------+------------+---------------------+------------+----------------------------------------+-------------+-------------+-------------+-------------+-----------------------+----------------------+--------------+--------------+--------------+--------------+--------------+--------------+------------------------+-----------------------+---------------+------------------------------------+------------+------------+------------+------------+-------------+-------------+-------------+-------------+-----------------------+-----------------------+----------------------+----------------------+-----------------------+-----------------------+--------------+--------------+-----------------------+-----------------------+----------------------+----------------------+-----------------------+-----------------------+--------------+--------------+-----------------------+-----------------------+----------------------+----------------------+-----------------------+-----------------------+--------------+--------------+-----------------------+-----------------------+----------------------+----------------------+-----------------------+-----------------------+--------------+--------------+-----------------------+---------------+----------------------+---------------+---------------+---------------+---------------+-----------------------+-----------------------+-----------------------+----------------------+----------------------+-----------------------+-----------------------+-------------+-------------+-----------------------+-----------------------+--------------+--------------+-------------+-------------+-------------+----------------+--------------+--------------+--------------+--------------+-------------+-------------+-------------+---------------------+--------------+--------------+--------------+--------------+-------------+-------------+-------------+-----------------------+--------------+--------------+--------------+--------------+-------------+-------------+-------------+-----------------------+--------------+--------------+--------------+--------------+---------------+---------------+---------------+-----------------------+---------------+---------------+---------------+---------------+----------------+----------------+----------------+----------------+-------------+-------------+-------------+-------------+--------------+--------------+--------------+--------------+-------------------------+------------------------+--------------------------+-------------------------+------------------------+------------------------+---------------+---------------+-------------------------+------------------------+----------------------------+-----------------------+------------------------+------------------------+---------------+---------------+-------------------------+------------------------+---------------------------------+--------------------+------------------------+------------------------+---------------+---------------+-----------------------------+----------------------------+------------------------------------------+----------------------------+------------------------+------------------------+---------------+---------------+-----------------------+----------------------+----------------------+----------------------+----------------+----------------+----------------+-----------------------+-------------------------+-----------------+-------------------------------------------+------------------------+------------------------+------------------------+--------------+--------------+------------------------+------------------------+---------------+---------------+-----------+-----------+-----------+------------------------+------------+------------+------------+------------+-----------+-----------+-----------+----------------------------+------------+------------+------------+------------+-----------+------------+-----------+--------------------------------+------------+------------+------------+------------+-----------+---------------------+-----------+----------------------------------------+------------+------------+------------+------------+-----------------------+----------------------+-------------+-------------+-------------+-------------+-------------+-------------+------------------------+-----------------------+--------------+------------------------------------+-----------+-----------+-----------+-----------+------------+------------+------------+------------+------------+------------+------------+------------------------+-------------+-------------+-------------+-------------+------------+------------+------------+----------------------------+-------------+-------------+-------------+-------------+------------+------------+------------+--------------------------------+-------------+-------------+-------------+-------------+------------+---------------------+------------+----------------------------------------+-------------+-------------+-------------+-------------+-----------------------+----------------------+--------------+--------------+--------------+--------------+--------------+--------------+------------------------+-----------------------+---------------+------------------------------------+------------+------------+------------+------------+-------------+-------------+-------------+-------------
+      -256 |         0 |     16384 | 1.00000000000000000000 |            |            | 0          |            |    -32896 |     32640 |   4194304 | 0.00390625000000000000 |            |            | 0          |            | -2147483776 | 2147483520 | 274877906944 | 0.000000059604644775390625 |            |            | 0          |            |           | 9223372036854775680 |           | 0.000000000000000013877787807814456755 |            |            | 0          |            | -3.40200000055538e+38 | 3.40200000055538e+38 | 4.35456000071089e+40 | 3.76249265076731e-37 |  -1.79e+308 |   1.79e+308 |             | 7.15083798882682e-307 | -100000000000127.999999 | 99999999999871.999999 | 12799999999999999.999872 | 0.0000000000012800000000000000 |           |           | 0         |           |            |            | 0          |            |            | 128        | 0          | 0.00000000000000000000 | 0           | 0           | 0           |             |            | 32768      | 0          | 0.000000000000000000000000 | 0           | 0           | 0           |             |            | 2147483648 | 0          | 0.0000000000000000000000000000 | 0           | 0           | 0           |             |            | 9223372036854775808 | 0          | 0.000000000000000000000000000000000000 | 0           | 0           | 0           |             | -3.40200000055538e+38 | 3.40200000055538e+38 |           -0 |           -0 |   -1.79e+308 |    1.79e+308 |           -0 |           -0 | -99999999999999.999999 | 99999999999999.999999 |      0.000000 | 0.00000000000000000000000000000000 | 0          | 0          | 0          |            | 0           | 0           | 0           |             |    -32896 |    -32640 |   4194304 | 256.0000000000000000 |            |            | 0          |            |    -65536 |         0 | 1073741824 | 1.00000000000000000000 |            |            | 0          |            | -2147516416 | 2147450880 | 70368744177664 | 0.000015258789062500000000 |            |            | 0          |            |           | 9223372036854743040 |           | 0.00000000000000355271367880050093 |            |            | 0          |            | -3.40200000055538e+38 | 3.40200000055538e+38 | 1.11476736018199e+43 | 9.63198118596431e-35 |  -1.79e+308 |   1.79e+308 |             | 1.83061452513966e-304 | -100000000032767.999999 | 99999999967231.999999 | 3276799999999999999.967232 | 0.0000000003276800000000000000 |           |           | 0         |           |            |            | 0          |            |            | 128        | 0          | 0.00000000000000000000 | 0           | 0           | 0           |             |            | 32768      | 0          | 0.000000000000000000000000 | 0           | 0           | 0           |             |            | 2147483648 | 0          | 0.0000000000000000000000000000 | 0           | 0           | 0           |             |            | 9223372036854775808 | 0          | 0.000000000000000000000000000000000000 | 0           | 0           | 0           |             | -3.40200000055538e+38 | 3.40200000055538e+38 |           -0 |           -0 |   -1.79e+308 |    1.79e+308 |           -0 |           -0 | -99999999999999.999999 | 99999999999999.999999 |      0.000000 | 0.00000000000000000000000000000000 | 0          | 0          | 0          |            | 0           | 0           | 0           |             | -2147483776 | -2147483520 | 274877906944 | 16777216.000000000000 |            |            | 0          |            | -2147516416 | -2147450880 | 70368744177664 | 65536.000000000000 |            |            | 0          |            | -4294967296 |         0 | 4611686018427387904 | 1.00000000000000000000 |            |            | 0          |            |           | 9223372034707292160 |           | 0.0000000002328306436538696289 |            |            | 0          |            | -3.40200000055538e+38 | 3.40200000055538e+38 | 7.30573937168867e+47 | 6.31241519003357e-30 |  -1.79e+308 |   1.79e+308 |             | 1.19971153519553e-299 | -100002147483647.999999 | 99997852516351.999999 | 214748364799999999997852.516352 | 0.000021474836480000000000 |           |           | 0         |           |            |            | 0          |            |            | 128        | 0          | 0.00000000000000000000 | 0           | 0           | 0           |             |            | 32768      | 0          | 0.000000000000000000000000 | 0           | 0           | 0           |             |            | 2147483648 | 0          | 0.0000000000000000000000000000 | 0           | 0           | 0           |             |            | 9223372036854775808 | 0          | 0.000000000000000000000000000000000000 | 0           | 0           | 0           |             | -3.40200000055538e+38 | 3.40200000055538e+38 |           -0 |           -0 |   -1.79e+308 |    1.79e+308 |           -0 |           -0 | -99999999999999.999999 | 99999999999999.999999 |      0.000000 | 0.00000000000000000000000000000000 | 0          | 0          | 0          |            | 0           | 0           | 0           |             |           | -9223372036854775680 |           | 72057594037927936.0000 |            |            | 0          |            |           | -9223372036854743040 |           | 281474976710656.0000 |            |            | 0          |            |           | -9223372034707292160 |           | 4294967296.00000000 |            |            | 0          |            |           |         0 |           | 1.00000000000000000000 |            |            | 0          |            | -3.40200000055538e+38 | 3.40200000055538e+38 | 3.13779116745024e+57 | 2.71116167999678e-20 |  -1.79e+308 |   1.79e+308 |             | 5.15272180829876e-290 | -9223472036854775807.999999 | -9223272036854775808.000001 | 922337203685477580790776627963145.224192 | 92233.720368547758 |           |           | 0         |           |            |            | 0          |            |            | 128        | 0          | 0.00000000000000000000 | 0           | 0           | 0           |             |            | 32768      | 0          | 0.000000000000000000000000 | 0           | 0           | 0           |             |            | 2147483648 | 0          | 0.0000000000000000000000000000 | 0           | 0           | 0           |             |            | 9223372036854775808 | 0          | 0.000000000000000000000000000000000000 | 0           | 0           | 0           |             | -3.40200000055538e+38 | 3.40200000055538e+38 |           -0 |           -0 |   -1.79e+308 |    1.79e+308 |           -0 |           -0 | -99999999999999.999999 | 99999999999999.999999 |      0.000000 | 0.00000000000000000000000000000000 | 0          | 0          | 0          |            | 0           | 0           | 0           |             | -3.40200000055538e+38 | -3.40200000055538e+38 | 4.35456000071089e+40 | 2.65781250043389e+36 | -3.40200000055538e+38 | -3.40200000055538e+38 |           -0 |              | -3.40200000055538e+38 | -3.40200000055538e+38 | 1.11476736018199e+43 | 1.03820800798199e+34 | -3.40200000055538e+38 | -3.40200000055538e+38 |           -0 |              | -3.40200000055538e+38 | -3.40200000055538e+38 | 7.30573937168867e+47 | 1.58417969967955e+29 | -3.40200000055538e+38 | -3.40200000055538e+38 |           -0 |              | -3.40200000055538e+38 | -3.40200000055538e+38 | 3.13779116745024e+57 | 3.68845579139783e+19 | -3.40200000055538e+38 | -3.40200000055538e+38 |           -0 |              | -6.80400000111076e+38 |             0 | 1.15736040037788e+77 |             1 |    -1.79e+308 |     1.79e+308 |               | 1.90055865952815e-270 | -3.40200000055538e+38 | -3.40200000055538e+38 | 3.40200000055538e+52 | 3.40200000055538e+24 | -3.40200000055538e+38 | -3.40200000055538e+38 |          -0 |             | -3.40200000055538e+38 | -3.40200000055538e+38 |           -0 |              |  -1.79e+308 |  -1.79e+308 |             | 1.3984375e+306 |   -1.79e+308 |   -1.79e+308 |           -0 |              |  -1.79e+308 |  -1.79e+308 |             | 5.462646484375e+303 |   -1.79e+308 |   -1.79e+308 |           -0 |              |  -1.79e+308 |  -1.79e+308 |             | 8.33533704280853e+298 |   -1.79e+308 |   -1.79e+308 |           -0 |              |  -1.79e+308 |  -1.79e+308 |             | 1.94072188874905e+289 |   -1.79e+308 |   -1.79e+308 |           -0 |              |    -1.79e+308 |    -1.79e+308 |               | 5.26161081630741e+269 |               |             0 |               |             1 |     -1.79e+308 |     -1.79e+308 |                |      1.79e+294 |  -1.79e+308 |  -1.79e+308 |          -0 |             |   -1.79e+308 |   -1.79e+308 |           -0 |              | -100000000000127.999999 | -99999999999871.999999 | 12799999999999999.999872 | 781249999999.9999999922 | -99999999999999.999999 | -99999999999999.999999 |      0.000000 |               | -100000000032767.999999 | -99999999967231.999999 | 3276799999999999999.967232 | 3051757812.5000000000 | -99999999999999.999999 | -99999999999999.999999 |      0.000000 |               | -100002147483647.999999 | -99997852516351.999999 | 214748364799999999997852.516352 | 46566.128730773926 | -99999999999999.999999 | -99999999999999.999999 |      0.000000 |               | -9223472036854775807.999999 | 9223272036854775808.000001 | 922337203685477580790776627963145.224192 | 0.000010842021724855044340 | -99999999999999.999999 | -99999999999999.999999 |      0.000000 |               | -3.40200000055538e+38 | 3.40200000055538e+38 | 3.40200000055538e+52 | 2.93944738341196e-25 |     -1.79e+308 |      1.79e+308 |                | 5.58659217877095e-295 | -199999999999999.999998 |        0.000000 | 9999999999999999999800000000.000000000001 | 1.00000000000000000000 | -99999999999999.999999 | -99999999999999.999999 |     0.000000 |              | -99999999999999.999999 | -99999999999999.999999 |      0.000000 |               |           | 128       | 0         | 0.00000000000000000000 | 0          | 0          | 0          |            |           | 32768     | 0         | 0.000000000000000000000000 | 0          | 0          | 0          |            |           | 2147483648 | 0         | 0.0000000000000000000000000000 | 0          | 0          | 0          |            |           | 9223372036854775808 | 0         | 0.000000000000000000000000000000000000 | 0          | 0          | 0          |            | -3.40200000055538e+38 | 3.40200000055538e+38 |          -0 |          -0 |  -1.79e+308 |   1.79e+308 |          -0 |          -0 | -99999999999999.999999 | 99999999999999.999999 |     0.000000 | 0.00000000000000000000000000000000 | 0         | 0         | 0         |           | 0          | 0          | 0          |            |            | 128        | 0          | 0.00000000000000000000 | 0           | 0           | 0           |             |            | 32768      | 0          | 0.000000000000000000000000 | 0           | 0           | 0           |             |            | 2147483648 | 0          | 0.0000000000000000000000000000 | 0           | 0           | 0           |             |            | 9223372036854775808 | 0          | 0.000000000000000000000000000000000000 | 0           | 0           | 0           |             | -3.40200000055538e+38 | 3.40200000055538e+38 |           -0 |           -0 |   -1.79e+308 |    1.79e+308 |           -0 |           -0 | -99999999999999.999999 | 99999999999999.999999 |      0.000000 | 0.00000000000000000000000000000000 | 0          | 0          | 0          |            | 0           | 0           | 0           |            
+(1 row)
+
+---------- tail ----------
+drop schema numeric_operator_test_schema_min cascade;
+NOTICE:  drop cascades to 2 other objects
+DETAIL:  drop cascades to table test_numeric_table_min
+drop cascades to table test_numeric_type_min
+reset current_schema;

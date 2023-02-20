@@ -2191,3 +2191,148 @@ Datum text_int4(PG_FUNCTION_ARGS)
 
     PG_RETURN_DATUM(result);
 }
+
+#ifdef DOLPHIN
+/* int4 */
+PG_FUNCTION_INFO_V1_PUBLIC(dolphin_int4pl);
+extern "C" DLL_PUBLIC Datum dolphin_int4pl(PG_FUNCTION_ARGS);
+Datum dolphin_int4pl(PG_FUNCTION_ARGS)
+{
+    int64 arg1 = PG_GETARG_INT32(0);
+    int64 arg2 = PG_GETARG_INT32(1);
+
+    PG_RETURN_INT64(arg1 + arg2);
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(dolphin_int4mi);
+extern "C" DLL_PUBLIC Datum dolphin_int4mi(PG_FUNCTION_ARGS);
+Datum dolphin_int4mi(PG_FUNCTION_ARGS)
+{
+    int64 arg1 = PG_GETARG_INT32(0);
+    int64 arg2 = PG_GETARG_INT32(1);
+
+    PG_RETURN_INT64(arg1 - arg2);
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(dolphin_int4mul);
+extern "C" DLL_PUBLIC Datum dolphin_int4mul(PG_FUNCTION_ARGS);
+Datum dolphin_int4mul(PG_FUNCTION_ARGS)
+{
+    int64 arg1 = PG_GETARG_INT32(0);
+    int64 arg2 = PG_GETARG_INT32(1);
+
+    PG_RETURN_INT64(arg1 * arg2);
+}
+
+/* int2 */
+PG_FUNCTION_INFO_V1_PUBLIC(dolphin_int2pl);
+extern "C" DLL_PUBLIC Datum dolphin_int2pl(PG_FUNCTION_ARGS);
+Datum dolphin_int2pl(PG_FUNCTION_ARGS)
+{
+    int32 arg1 = PG_GETARG_INT16(0);
+    int32 arg2 = PG_GETARG_INT16(1);
+    PG_RETURN_INT32(arg1 + arg2);
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(dolphin_int2mi);
+extern "C" DLL_PUBLIC Datum dolphin_int2mi(PG_FUNCTION_ARGS);
+Datum dolphin_int2mi(PG_FUNCTION_ARGS)
+{
+    int32 arg1 = PG_GETARG_INT16(0);
+    int32 arg2 = PG_GETARG_INT16(1);
+    PG_RETURN_INT32(arg1 - arg2);
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(dolphin_int2mul);
+extern "C" DLL_PUBLIC Datum dolphin_int2mul(PG_FUNCTION_ARGS);
+Datum dolphin_int2mul(PG_FUNCTION_ARGS)
+{
+    int64 arg1 = PG_GETARG_INT16(0);
+    int64 arg2 = PG_GETARG_INT16(1);
+    PG_RETURN_INT64(arg1 * arg2);
+}
+
+/* int1 */
+PG_FUNCTION_INFO_V1_PUBLIC(dolphin_int1pl);
+extern "C" DLL_PUBLIC Datum dolphin_int1pl(PG_FUNCTION_ARGS);
+Datum dolphin_int1pl(PG_FUNCTION_ARGS)
+{
+    int32 arg1 = PG_GETARG_INT8(0);
+    int32 arg2 = PG_GETARG_INT8(1);
+    PG_RETURN_INT32(arg1 + arg2);
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(dolphin_int1mi);
+extern "C" DLL_PUBLIC Datum dolphin_int1mi(PG_FUNCTION_ARGS);
+Datum dolphin_int1mi(PG_FUNCTION_ARGS)
+{
+    int32 arg1 = PG_GETARG_INT8(0);
+    int32 arg2 = PG_GETARG_INT8(1);
+    PG_RETURN_INT32(arg1 - arg2);
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(dolphin_int1mul);
+extern "C" DLL_PUBLIC Datum dolphin_int1mul(PG_FUNCTION_ARGS);
+Datum dolphin_int1mul(PG_FUNCTION_ARGS)
+{
+    int32 arg1 = PG_GETARG_INT8(0);
+    int32 arg2 = PG_GETARG_INT8(1);
+    PG_RETURN_INT32(arg1 * arg2);
+}
+
+/* int2_int4 */
+PG_FUNCTION_INFO_V1_PUBLIC(dolphin_int24pl);
+extern "C" DLL_PUBLIC Datum dolphin_int24pl(PG_FUNCTION_ARGS);
+Datum dolphin_int24pl(PG_FUNCTION_ARGS)
+{
+    int64 arg1 = PG_GETARG_INT16(0);
+    int64 arg2 = PG_GETARG_INT32(1);
+    PG_RETURN_INT64(arg1 + arg2);
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(dolphin_int24mi);
+extern "C" DLL_PUBLIC Datum dolphin_int24mi(PG_FUNCTION_ARGS);
+Datum dolphin_int24mi(PG_FUNCTION_ARGS)
+{
+    int64 arg1 = PG_GETARG_INT16(0);
+    int64 arg2 = PG_GETARG_INT32(1);
+    PG_RETURN_INT64(arg1 - arg2);
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(dolphin_int24mul);
+extern "C" DLL_PUBLIC Datum dolphin_int24mul(PG_FUNCTION_ARGS);
+Datum dolphin_int24mul(PG_FUNCTION_ARGS)
+{
+    int64 arg1 = PG_GETARG_INT16(0);
+    int64 arg2 = PG_GETARG_INT32(1);
+    PG_RETURN_INT64(arg1 * arg2);
+}
+
+/* int4_int2 */
+PG_FUNCTION_INFO_V1_PUBLIC(dolphin_int42pl);
+extern "C" DLL_PUBLIC Datum dolphin_int42pl(PG_FUNCTION_ARGS);
+Datum dolphin_int42pl(PG_FUNCTION_ARGS)
+{
+    int64 arg1 = PG_GETARG_INT32(0);
+    int64 arg2 = PG_GETARG_INT16(1);
+    PG_RETURN_INT64(arg1 + arg2);
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(dolphin_int42mi);
+extern "C" DLL_PUBLIC Datum dolphin_int42mi(PG_FUNCTION_ARGS);
+Datum dolphin_int42mi(PG_FUNCTION_ARGS)
+{
+    int64 arg1 = PG_GETARG_INT32(0);
+    int64 arg2 = PG_GETARG_INT16(1);
+    PG_RETURN_INT64(arg1 - arg2);
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(dolphin_int42mul);
+extern "C" DLL_PUBLIC Datum dolphin_int42mul(PG_FUNCTION_ARGS);
+Datum dolphin_int42mul(PG_FUNCTION_ARGS)
+{
+    int64 arg1 = PG_GETARG_INT32(0);
+    int64 arg2 = PG_GETARG_INT16(1);
+    PG_RETURN_INT64(arg1 * arg2);
+}
+#endif
