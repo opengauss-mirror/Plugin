@@ -16269,6 +16269,7 @@ IndexStmt:	CREATE opt_unique INDEX opt_concurrently opt_index_name
 					IndexStmt *n = makeNode(IndexStmt);
 					n->unique = $2;
 					n->concurrent = $4;
+					n->missing_ok = false;
                     n->schemaname = $5->schemaname;
 					n->idxname = $5->relname;
 					n->relation = $6->relation;
@@ -16303,6 +16304,7 @@ IndexStmt:	CREATE opt_unique INDEX opt_concurrently opt_index_name
 					IndexStmt *n = makeNode(IndexStmt);
 					n->unique = $2;
 					n->concurrent = $4;
+					n->missing_ok = false;
                     n->schemaname = $5->schemaname;
 					n->idxname = $5->relname;
 					n->relation = $6->relation;
@@ -16333,6 +16335,7 @@ IndexStmt:	CREATE opt_unique INDEX opt_concurrently opt_index_name
 					IndexStmt *n = makeNode(IndexStmt);
 					n->unique = $2;
 					n->concurrent = $4;
+					n->missing_ok = false;
                     n->schemaname = $5->schemaname;
 					n->idxname = $5->relname;
 					n->relation = $6->relation;
@@ -16367,6 +16370,7 @@ IndexStmt:	CREATE opt_unique INDEX opt_concurrently opt_index_name
 					IndexStmt *n = makeNode(IndexStmt);
 					n->unique = $2;
 					n->concurrent = $4;
+					n->missing_ok = false;
                     n->schemaname = $5->schemaname;
 					n->idxname = $5->relname;
 					n->relation = $6->relation;
@@ -16395,6 +16399,7 @@ IndexStmt:	CREATE opt_unique INDEX opt_concurrently opt_index_name
 					IndexStmt *n = makeNode(IndexStmt);
 					n->unique = $2;
 					n->concurrent = $4;
+					n->missing_ok = false;
                     n->schemaname = $5->schemaname;
 					n->idxname = $5->relname;
 					n->relation = $6->relation;
@@ -16428,11 +16433,203 @@ IndexStmt:	CREATE opt_unique INDEX opt_concurrently opt_index_name
 					IndexStmt *n = makeNode(IndexStmt);
 					n->unique = $2;
 					n->concurrent = $4;
+					n->missing_ok = false;
                     n->schemaname = $5->schemaname;
 					n->idxname = $5->relname;
 					n->relation = $6->relation;
 					n->accessMethod = $6->accessMethod;
 					n->indexParams = $8;
+					n->partClause  = NULL;
+					n->isPartitioned = true;
+					n->isGlobal = true;
+					n->excludeOpNames = NIL;
+					n->idxcomment = NULL;
+					n->indexOid = InvalidOid;
+					n->oldNode = InvalidOid;
+					n->primary = false;
+					n->isconstraint = false;
+					n->deferrable = false;
+					n->initdeferred = false;
+					n->indexIncludingParams = NIL;
+					n->options = NIL;
+					n->tableSpace = NULL;
+					$$ = (Node *)n;
+				}
+				| CREATE opt_unique INDEX opt_concurrently IF_P NOT EXISTS opt_index_name
+					index_method_relation_clause '(' index_params ')'
+					TableIndexOptionList where_clause
+				{
+					IndexStmt *n = makeNode(IndexStmt);
+					n->unique = $2;
+					n->concurrent = $4;
+					n->missing_ok = true;
+					n->schemaname = $8->schemaname;
+					n->idxname = $8->relname;
+					n->relation = $9->relation;
+					n->accessMethod = $9->accessMethod;
+					n->indexParams = $11;
+					n->excludeOpNames = NIL;
+					n->idxcomment = NULL;
+					n->indexOid = InvalidOid;
+					n->oldNode = InvalidOid;
+					n->partClause = NULL;
+					n->isPartitioned = false;
+					n->isGlobal = false;
+					n->primary = false;
+					n->isconstraint = false;
+					n->deferrable = false;
+					n->initdeferred = false;
+					n->whereClause = $14;
+					if ($13 != NULL) {
+					    n->indexIncludingParams = $13->indexIncludingParams;
+					    n->options = $13->options;
+					    n->tableSpace = $13->tableSpace;
+					    if ($13->comment != NULL) {
+					        n->indexOptions = lappend(n->indexOptions, $13->comment);
+					    }
+					}
+					$$ = (Node *)n;
+				}
+				| CREATE opt_unique INDEX opt_concurrently IF_P NOT EXISTS opt_index_name
+					index_method_relation_clause '(' index_params ')'
+					where_clause
+				{
+					IndexStmt *n = makeNode(IndexStmt);
+					n->unique = $2;
+					n->concurrent = $4;
+					n->missing_ok = true;
+					n->schemaname = $8->schemaname;
+					n->idxname = $8->relname;
+					n->relation = $9->relation;
+					n->accessMethod = $9->accessMethod;
+					n->indexParams = $11;
+					n->excludeOpNames = NIL;
+					n->idxcomment = NULL;
+					n->indexOid = InvalidOid;
+					n->oldNode = InvalidOid;
+					n->partClause = NULL;
+					n->isPartitioned = false;
+					n->isGlobal = false;
+					n->primary = false;
+					n->isconstraint = false;
+					n->deferrable = false;
+					n->initdeferred = false;
+					n->whereClause = $13;
+					n->indexIncludingParams = NIL;
+					n->options = NIL;
+					n->tableSpace = NULL;
+					$$ = (Node *)n;
+				}
+				| CREATE opt_unique INDEX opt_concurrently IF_P NOT EXISTS opt_index_name
+					index_method_relation_clause '(' index_params ')'
+					LOCAL opt_partition_index_def PartitionTableIndexOptionList
+				{
+					IndexStmt *n = makeNode(IndexStmt);
+					n->unique = $2;
+					n->concurrent = $4;
+					n->missing_ok = true;
+					n->schemaname = $8->schemaname;
+					n->idxname = $8->relname;
+					n->relation = $9->relation;
+					n->accessMethod = $9->accessMethod;
+					n->indexParams = $11;
+					n->isPartitioned = true;
+					n->isGlobal = false;
+					n->excludeOpNames = NIL;
+					n->idxcomment = NULL;
+					n->indexOid = InvalidOid;
+					n->oldNode = InvalidOid;
+					n->primary = false;
+					n->isconstraint = false;
+					n->deferrable = false;
+					n->initdeferred = false;
+					n->partClause  = $14;
+					if ($15 != NULL) {
+					    n->indexIncludingParams = $15->indexIncludingParams;
+					    n->options = $15->options;
+					    n->tableSpace = $15->tableSpace;
+					    if ($15->comment != NULL) {
+					        n->indexOptions = lappend(n->indexOptions, $15->comment);
+					    }
+					}
+					$$ = (Node *)n;
+				}
+				| CREATE opt_unique INDEX opt_concurrently IF_P NOT EXISTS opt_index_name
+					index_method_relation_clause '(' index_params ')'
+					LOCAL opt_partition_index_def
+				{
+					IndexStmt *n = makeNode(IndexStmt);
+					n->unique = $2;
+					n->concurrent = $4;
+					n->missing_ok = true;
+					n->schemaname = $8->schemaname;
+					n->idxname = $8->relname;
+					n->relation = $9->relation;
+					n->accessMethod = $9->accessMethod;
+					n->indexParams = $11;
+					n->isPartitioned = true;
+					n->isGlobal = false;
+					n->excludeOpNames = NIL;
+					n->idxcomment = NULL;
+					n->indexOid = InvalidOid;
+					n->oldNode = InvalidOid;
+					n->primary = false;
+					n->isconstraint = false;
+					n->deferrable = false;
+					n->initdeferred = false;
+					n->partClause  = $14;
+					n->indexIncludingParams = NIL;
+					n->options = NIL;
+					n->tableSpace = NULL;
+					$$ = (Node *)n;
+				}
+				| CREATE opt_unique INDEX opt_concurrently IF_P NOT EXISTS opt_index_name
+					index_method_relation_clause '(' index_params ')'
+					GLOBAL PartitionTableIndexOptionList
+				{
+					IndexStmt *n = makeNode(IndexStmt);
+					n->unique = $2;
+					n->concurrent = $4;
+					n->missing_ok = true;
+					n->schemaname = $8->schemaname;
+					n->idxname = $8->relname;
+					n->relation = $9->relation;
+					n->accessMethod = $9->accessMethod;
+					n->indexParams = $11;
+					n->partClause  = NULL;
+					n->isPartitioned = true;
+					n->isGlobal = true;
+					n->excludeOpNames = NIL;
+					n->idxcomment = NULL;
+					n->indexOid = InvalidOid;
+					n->oldNode = InvalidOid;
+					n->primary = false;
+					n->isconstraint = false;
+					n->deferrable = false;
+					n->initdeferred = false;
+					if ($14 != NULL) {
+					    n->indexIncludingParams = $14->indexIncludingParams;
+					    n->options = $14->options;
+					    n->tableSpace = $14->tableSpace;
+					    if ($14->comment != NULL) {
+					        n->indexOptions = lappend(n->indexOptions, $14->comment);
+					    }
+					}
+					$$ = (Node *)n;
+				}
+				| CREATE opt_unique INDEX opt_concurrently IF_P NOT EXISTS opt_index_name
+					index_method_relation_clause '(' index_params ')'
+					GLOBAL
+				{
+					IndexStmt *n = makeNode(IndexStmt);
+					n->unique = $2;
+					n->concurrent = $4;
+					n->missing_ok = true;
+					n->schemaname = $8->schemaname;
+					n->idxname = $8->relname;
+					n->relation = $9->relation;
+					n->accessMethod = $9->accessMethod;
+					n->indexParams = $11;
 					n->partClause  = NULL;
 					n->isPartitioned = true;
 					n->isGlobal = true;
