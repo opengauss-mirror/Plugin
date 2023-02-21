@@ -66,8 +66,8 @@
 |plugin_utils\adt|mac.cpp   |src\common\backend\utils\adt\mac.cpp   |
 |plugin_utils\adt|median_aggs.cpp   |src\common\backend\utils\adt\median_aggs.cpp   |
 |plugin_utils\adt|misc.cpp   |src\common\backend\utils\adt\misc.cpp   |
-|plugin_utils\adt|nabstime.cpp   |src\common\backend\utils\adt\   |
-|plugin_utils\adt|name.cpp   |src\common\backend\utils\adt\nabstime.cpp   |
+|plugin_utils\adt|nabstime.cpp   |src\common\backend\utils\adt\nabstime.cpp   |
+|plugin_utils\adt|name.cpp   |src\common\backend\utils\adt\name.cpp   |
 |plugin_utils\adt|network.cpp   |src\common\backend\utils\adt\network.cpp   |
 |plugin_utils\adt|nlssort.cpp   |src\common\backend\utils\adt\nlssort.cpp   |
 |plugin_utils\adt|numeric.cpp   |src\common\backend\utils\adt\numeric.cpp   |
