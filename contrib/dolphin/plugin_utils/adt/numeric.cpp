@@ -51,6 +51,8 @@
 
 #ifndef CRCMASK
 #define CRCMASK 0xEDB88320
+#define DIG_PER_DEC1 9
+#define ROUND_UP(X) (((X) + DIG_PER_DEC1 - 1) / DIG_PER_DEC1)
 #endif
 
 #ifndef CONV_MAX_CHAR_LEN
@@ -2445,11 +2447,36 @@ Datum numeric_div(PG_FUNCTION_ARGS)
      * Select scale for division result
      */
     rscale = select_div_scale(&arg1, &arg2);
+#ifdef DOLPHIN
+    /*
+     * The actual precision calculation method in M* is simulated here.
+     * The result is compared with the actual precision of openGauss,
+     * and the larger one is used as the calculation precision.
+     * This ensures that the precision of openGauss is greater than or equal to
+     * that of MySQL.
+     */
+    bool enableBCmptMode = GetSessionContext()->enableBCmptMode;
+    int div_precision_increment = GetSessionContext()->div_precision_increment;
+    int oldScale = rscale;
+    if (enableBCmptMode) {
+        int scale1 = ROUND_UP(arg1.dscale) * DIG_PER_DEC1;
+        int scale2 = ROUND_UP(arg2.dscale) * DIG_PER_DEC1;
+        int tempScale = ROUND_UP(scale1 + scale2 + GetSessionContext()->div_precision_increment) * DIG_PER_DEC1;
+        rscale = tempScale > rscale ? tempScale : rscale;
+    }
+#endif
 
     /*
      * Do the divide and return the result
      */
     div_var(&arg1, &arg2, &result, rscale, true);
+
+#ifdef DOLPHIN
+    if (enableBCmptMode) {
+        int outputScale = arg1.dscale + div_precision_increment;
+        round_var(&result, outputScale > oldScale ? outputScale : oldScale);
+    }
+#endif
 
     res = make_result(&result);
 
@@ -20984,4 +21011,448 @@ Datum bit_count_bit(PG_FUNCTION_ARGS)
     PG_RETURN_INT64(count);
 }
 
+static Numeric numeric_div_internal(NumericVar arg1, NumericVar arg2)
+{
+    NumericVar result;
+    Numeric res;
+    int rscale;
+
+    init_var(&result);
+
+    /*
+     * Select scale for division result
+     */
+    rscale = select_div_scale(&arg1, &arg2);
+#ifdef DOLPHIN
+    /*
+     * The actual precision calculation method in M* is simulated here.
+     * The result is compared with the actual precision of openGauss,
+     * and the larger one is used as the calculation precision.
+     * This ensures that the precision of openGauss is greater than or equal to
+     * that of MySQL.
+     */
+    bool enableBCmptMode = GetSessionContext()->enableBCmptMode;
+    int div_precision_increment = GetSessionContext()->div_precision_increment;
+    int oldScale = rscale;
+    if (enableBCmptMode) {
+        int scale1 = ROUND_UP(arg1.dscale) * DIG_PER_DEC1;
+        int scale2 = ROUND_UP(arg2.dscale) * DIG_PER_DEC1;
+        int tempScale = ROUND_UP(scale1 + scale2 + GetSessionContext()->div_precision_increment) * DIG_PER_DEC1;
+        rscale = tempScale > rscale ? tempScale : rscale;
+    }
+#endif
+
+    /*
+     * Do the divide and return the result
+     */
+    div_var(&arg1, &arg2, &result, rscale, true);
+
+#ifdef DOLPHIN
+    if (enableBCmptMode) {
+        int outputScale = arg1.dscale + div_precision_increment;
+        round_var(&result, outputScale > oldScale ? outputScale : oldScale);
+    }
+#endif
+
+    res = make_result(&result);
+
+    free_var(&result);
+    return res;
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(dolphin_int4div);
+extern "C" DLL_PUBLIC Datum dolphin_int4div(PG_FUNCTION_ARGS);
+Datum dolphin_int4div(PG_FUNCTION_ARGS)
+{
+    NumericVar arg1_var;
+    NumericVar arg2_var;
+
+    init_var(&arg1_var);
+    int64_to_numericvar((int64)PG_GETARG_INT32(0), &arg1_var);
+
+    init_var(&arg2_var);
+    int64_to_numericvar((int64)PG_GETARG_INT32(1), &arg2_var);
+
+    Numeric result = numeric_div_internal(arg1_var, arg2_var);
+
+    PG_RETURN_NUMERIC(result);
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(dolphin_int2div);
+extern "C" DLL_PUBLIC Datum dolphin_int2div(PG_FUNCTION_ARGS);
+Datum dolphin_int2div(PG_FUNCTION_ARGS)
+{
+    NumericVar arg1_var;
+    NumericVar arg2_var;
+
+    init_var(&arg1_var);
+    int64_to_numericvar((int64)PG_GETARG_INT16(0), &arg1_var);
+
+    init_var(&arg2_var);
+    int64_to_numericvar((int64)PG_GETARG_INT16(1), &arg2_var);
+
+    Numeric result = numeric_div_internal(arg1_var, arg2_var);
+
+    PG_RETURN_NUMERIC(result);
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(dolphin_int1div);
+extern "C" DLL_PUBLIC Datum dolphin_int1div(PG_FUNCTION_ARGS);
+Datum dolphin_int1div(PG_FUNCTION_ARGS)
+{
+    NumericVar arg1_var;
+    NumericVar arg2_var;
+
+    init_var(&arg1_var);
+    int64_to_numericvar((int64)PG_GETARG_INT8(0), &arg1_var);
+
+    init_var(&arg2_var);
+    int64_to_numericvar((int64)PG_GETARG_INT8(1), &arg2_var);
+
+    Numeric result = numeric_div_internal(arg1_var, arg2_var);
+
+    PG_RETURN_NUMERIC(result);
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(dolphin_int8div);
+extern "C" DLL_PUBLIC Datum dolphin_int8div(PG_FUNCTION_ARGS);
+Datum dolphin_int8div(PG_FUNCTION_ARGS)
+{
+    NumericVar arg1_var;
+    NumericVar arg2_var;
+
+    init_var(&arg1_var);
+    int64_to_numericvar(PG_GETARG_INT64(0), &arg1_var);
+
+    init_var(&arg2_var);
+    int64_to_numericvar(PG_GETARG_INT64(1), &arg2_var);
+
+    Numeric result = numeric_div_internal(arg1_var, arg2_var);
+
+    PG_RETURN_NUMERIC(result);
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(dolphin_uint1div);
+extern "C" DLL_PUBLIC Datum dolphin_uint1div(PG_FUNCTION_ARGS);
+Datum dolphin_uint1div(PG_FUNCTION_ARGS)
+{
+    NumericVar arg1_var;
+    NumericVar arg2_var;
+
+    init_var(&arg1_var);
+    int64_to_numericvar((int64)PG_GETARG_UINT8(0), &arg1_var);
+
+    init_var(&arg2_var);
+    int64_to_numericvar((int64)PG_GETARG_UINT8(1), &arg2_var);
+
+    Numeric result = numeric_div_internal(arg1_var, arg2_var);
+
+    PG_RETURN_NUMERIC(result);
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(dolphin_int1_div_uint1);
+extern "C" DLL_PUBLIC Datum dolphin_int1_div_uint1(PG_FUNCTION_ARGS);
+Datum dolphin_int1_div_uint1(PG_FUNCTION_ARGS)
+{
+    NumericVar arg1_var;
+    NumericVar arg2_var;
+
+    init_var(&arg1_var);
+    int64_to_numericvar((int64)PG_GETARG_INT8(0), &arg1_var);
+
+    init_var(&arg2_var);
+    int64_to_numericvar((int64)PG_GETARG_UINT8(1), &arg2_var);
+
+    Numeric result = numeric_div_internal(arg1_var, arg2_var);
+
+    PG_RETURN_NUMERIC(result);
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(dolphin_uint1_div_int1);
+extern "C" DLL_PUBLIC Datum dolphin_uint1_div_int1(PG_FUNCTION_ARGS);
+Datum dolphin_uint1_div_int1(PG_FUNCTION_ARGS)
+{
+    NumericVar arg1_var;
+    NumericVar arg2_var;
+
+    init_var(&arg1_var);
+    int64_to_numericvar((int64)PG_GETARG_UINT8(0), &arg1_var);
+
+    init_var(&arg2_var);
+    int64_to_numericvar((int64)PG_GETARG_INT8(1), &arg2_var);
+
+    Numeric result = numeric_div_internal(arg1_var, arg2_var);
+
+    PG_RETURN_NUMERIC(result);
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(dolphin_int24div);
+extern "C" DLL_PUBLIC Datum dolphin_int24div(PG_FUNCTION_ARGS);
+Datum dolphin_int24div(PG_FUNCTION_ARGS)
+{
+    NumericVar arg1_var;
+    NumericVar arg2_var;
+
+    init_var(&arg1_var);
+    int64_to_numericvar((int64)PG_GETARG_INT16(0), &arg1_var);
+
+    init_var(&arg2_var);
+    int64_to_numericvar((int64)PG_GETARG_INT32(1), &arg2_var);
+
+    Numeric result = numeric_div_internal(arg1_var, arg2_var);
+
+    PG_RETURN_NUMERIC(result);
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(dolphin_int28div);
+extern "C" DLL_PUBLIC Datum dolphin_int28div(PG_FUNCTION_ARGS);
+Datum dolphin_int28div(PG_FUNCTION_ARGS)
+{
+    NumericVar arg1_var;
+    NumericVar arg2_var;
+
+    init_var(&arg1_var);
+    int64_to_numericvar((int64)PG_GETARG_INT16(0), &arg1_var);
+
+    init_var(&arg2_var);
+    int64_to_numericvar(PG_GETARG_INT64(1), &arg2_var);
+
+    Numeric result = numeric_div_internal(arg1_var, arg2_var);
+
+    PG_RETURN_NUMERIC(result);
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(dolphin_int2_div_uint2);
+extern "C" DLL_PUBLIC Datum dolphin_int2_div_uint2(PG_FUNCTION_ARGS);
+Datum dolphin_int2_div_uint2(PG_FUNCTION_ARGS)
+{
+    NumericVar arg1_var;
+    NumericVar arg2_var;
+
+    init_var(&arg1_var);
+    int64_to_numericvar((int64)PG_GETARG_INT16(0), &arg1_var);
+
+    init_var(&arg2_var);
+    int64_to_numericvar((int64)PG_GETARG_UINT16(1), &arg2_var);
+
+    Numeric result = numeric_div_internal(arg1_var, arg2_var);
+
+    PG_RETURN_NUMERIC(result);
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(dolphin_int42div);
+extern "C" DLL_PUBLIC Datum dolphin_int42div(PG_FUNCTION_ARGS);
+Datum dolphin_int42div(PG_FUNCTION_ARGS)
+{
+    NumericVar arg1_var;
+    NumericVar arg2_var;
+
+    init_var(&arg1_var);
+    int64_to_numericvar((int64)PG_GETARG_INT32(0), &arg1_var);
+
+    init_var(&arg2_var);
+    int64_to_numericvar((int64)PG_GETARG_INT16(1), &arg2_var);
+
+    Numeric result = numeric_div_internal(arg1_var, arg2_var);
+
+    PG_RETURN_NUMERIC(result);
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(dolphin_int48div);
+extern "C" DLL_PUBLIC Datum dolphin_int48div(PG_FUNCTION_ARGS);
+Datum dolphin_int48div(PG_FUNCTION_ARGS)
+{
+    NumericVar arg1_var;
+    NumericVar arg2_var;
+
+    init_var(&arg1_var);
+    int64_to_numericvar((int64)PG_GETARG_INT32(0), &arg1_var);
+
+    init_var(&arg2_var);
+    int64_to_numericvar(PG_GETARG_INT64(1), &arg2_var);
+
+    Numeric result = numeric_div_internal(arg1_var, arg2_var);
+
+    PG_RETURN_NUMERIC(result);
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(dolphin_int4_div_uint4);
+extern "C" DLL_PUBLIC Datum dolphin_int4_div_uint4(PG_FUNCTION_ARGS);
+Datum dolphin_int4_div_uint4(PG_FUNCTION_ARGS)
+{
+    NumericVar arg1_var;
+    NumericVar arg2_var;
+
+    init_var(&arg1_var);
+    int64_to_numericvar((int64)PG_GETARG_INT32(0), &arg1_var);
+
+    init_var(&arg2_var);
+    int64_to_numericvar((int64)PG_GETARG_UINT32(1), &arg2_var);
+
+    Numeric result = numeric_div_internal(arg1_var, arg2_var);
+
+    PG_RETURN_NUMERIC(result);
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(dolphin_int82div);
+extern "C" DLL_PUBLIC Datum dolphin_int82div(PG_FUNCTION_ARGS);
+Datum dolphin_int82div(PG_FUNCTION_ARGS)
+{
+    NumericVar arg1_var;
+    NumericVar arg2_var;
+
+    init_var(&arg1_var);
+    int64_to_numericvar(PG_GETARG_INT64(0), &arg1_var);
+
+    init_var(&arg2_var);
+    int64_to_numericvar((int64)PG_GETARG_INT16(1), &arg2_var);
+
+    Numeric result = numeric_div_internal(arg1_var, arg2_var);
+
+    PG_RETURN_NUMERIC(result);
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(dolphin_int84div);
+extern "C" DLL_PUBLIC Datum dolphin_int84div(PG_FUNCTION_ARGS);
+Datum dolphin_int84div(PG_FUNCTION_ARGS)
+{
+    NumericVar arg1_var;
+    NumericVar arg2_var;
+
+    init_var(&arg1_var);
+    int64_to_numericvar(PG_GETARG_INT64(0), &arg1_var);
+
+    init_var(&arg2_var);
+    int64_to_numericvar((int64)PG_GETARG_INT32(1), &arg2_var);
+
+    Numeric result = numeric_div_internal(arg1_var, arg2_var);
+
+    PG_RETURN_NUMERIC(result);
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(dolphin_uint2_div_int2);
+extern "C" DLL_PUBLIC Datum dolphin_uint2_div_int2(PG_FUNCTION_ARGS);
+Datum dolphin_uint2_div_int2(PG_FUNCTION_ARGS)
+{
+    NumericVar arg1_var;
+    NumericVar arg2_var;
+
+    init_var(&arg1_var);
+    int64_to_numericvar((int64)PG_GETARG_UINT16(0), &arg1_var);
+
+    init_var(&arg2_var);
+    int64_to_numericvar((int64)PG_GETARG_INT16(1), &arg2_var);
+
+    Numeric result = numeric_div_internal(arg1_var, arg2_var);
+
+    PG_RETURN_NUMERIC(result);
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(dolphin_uint2div);
+extern "C" DLL_PUBLIC Datum dolphin_uint2div(PG_FUNCTION_ARGS);
+Datum dolphin_uint2div(PG_FUNCTION_ARGS)
+{
+    NumericVar arg1_var;
+    NumericVar arg2_var;
+
+    init_var(&arg1_var);
+    int64_to_numericvar((int64)PG_GETARG_UINT16(0), &arg1_var);
+
+    init_var(&arg2_var);
+    int64_to_numericvar((int64)PG_GETARG_UINT16(1), &arg2_var);
+
+    Numeric result = numeric_div_internal(arg1_var, arg2_var);
+
+    PG_RETURN_NUMERIC(result);
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(dolphin_uint4div);
+extern "C" DLL_PUBLIC Datum dolphin_uint4div(PG_FUNCTION_ARGS);
+Datum dolphin_uint4div(PG_FUNCTION_ARGS)
+{
+    NumericVar arg1_var;
+    NumericVar arg2_var;
+
+    init_var(&arg1_var);
+    int64_to_numericvar((int64)PG_GETARG_UINT32(0), &arg1_var);
+
+    init_var(&arg2_var);
+    int64_to_numericvar((int64)PG_GETARG_UINT32(1), &arg2_var);
+
+    Numeric result = numeric_div_internal(arg1_var, arg2_var);
+
+    PG_RETURN_NUMERIC(result);
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(dolphin_uint4_div_int4);
+extern "C" DLL_PUBLIC Datum dolphin_uint4_div_int4(PG_FUNCTION_ARGS);
+Datum dolphin_uint4_div_int4(PG_FUNCTION_ARGS)
+{
+    NumericVar arg1_var;
+    NumericVar arg2_var;
+
+    init_var(&arg1_var);
+    int64_to_numericvar((int64)PG_GETARG_UINT32(0), &arg1_var);
+
+    init_var(&arg2_var);
+    int64_to_numericvar((int64)PG_GETARG_INT32(1), &arg2_var);
+
+    Numeric result = numeric_div_internal(arg1_var, arg2_var);
+
+    PG_RETURN_NUMERIC(result);
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(dolphin_uint8_div_int8);
+extern "C" DLL_PUBLIC Datum dolphin_uint8_div_int8(PG_FUNCTION_ARGS);
+Datum dolphin_uint8_div_int8(PG_FUNCTION_ARGS)
+{
+    NumericVar arg1_var;
+    NumericVar arg2_var;
+
+    init_var(&arg1_var);
+    uint8_to_numericvar(PG_GETARG_UINT64(0), &arg1_var);
+
+    init_var(&arg2_var);
+    int64_to_numericvar(PG_GETARG_INT64(1), &arg2_var);
+
+    Numeric result = numeric_div_internal(arg1_var, arg2_var);
+
+    PG_RETURN_NUMERIC(result);
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(dolphin_int8_div_uint8);
+extern "C" DLL_PUBLIC Datum dolphin_int8_div_uint8(PG_FUNCTION_ARGS);
+Datum dolphin_int8_div_uint8(PG_FUNCTION_ARGS)
+{
+    NumericVar arg1_var;
+    NumericVar arg2_var;
+
+    init_var(&arg1_var);
+    int64_to_numericvar(PG_GETARG_INT64(0), &arg1_var);
+
+    init_var(&arg2_var);
+    uint8_to_numericvar(PG_GETARG_UINT64(1), &arg2_var);
+
+    Numeric result = numeric_div_internal(arg1_var, arg2_var);
+
+    PG_RETURN_NUMERIC(result);
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(dolphin_uint8div);
+extern "C" DLL_PUBLIC Datum dolphin_uint8div(PG_FUNCTION_ARGS);
+Datum dolphin_uint8div(PG_FUNCTION_ARGS)
+{
+    NumericVar arg1_var;
+    NumericVar arg2_var;
+
+    init_var(&arg1_var);
+    uint8_to_numericvar(PG_GETARG_UINT64(0), &arg1_var);
+
+    init_var(&arg2_var);
+    uint8_to_numericvar(PG_GETARG_UINT64(1), &arg2_var);
+
+    Numeric result = numeric_div_internal(arg1_var, arg2_var);
+
+    PG_RETURN_NUMERIC(result);
+}
 #endif

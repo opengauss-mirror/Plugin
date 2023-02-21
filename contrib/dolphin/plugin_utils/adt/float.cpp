@@ -996,8 +996,18 @@ Datum float8mul(PG_FUNCTION_ARGS)
     float8 arg2 = PG_GETARG_FLOAT8(1);
     float8 result;
 
+#ifdef DOLPHIN
+    if (arg1 == 0.0 || arg2 == 0.0) {
+        if (GetSessionContext()->enableBCmptMode && (arg1 < 0.0 || arg2 < 0.0)) {
+            PG_RETURN_FLOAT8(-0.0);
+        } else {
+            PG_RETURN_FLOAT8(0);
+        }
+    }
+#else
     if (arg1 == 0.0 || arg2 == 0.0)
         PG_RETURN_FLOAT8(0);
+#endif
 
     result = arg1 * arg2;
 
@@ -1014,8 +1024,18 @@ Datum float8div(PG_FUNCTION_ARGS)
     if (arg2 == 0.0)
         ereport(ERROR, (errcode(ERRCODE_DIVISION_BY_ZERO), errmsg("division by zero")));
 
+#ifdef DOLPHIN
+    if (arg1 == 0.0) {
+        if (GetSessionContext()->enableBCmptMode && arg2 < 0) {
+            PG_RETURN_FLOAT8(-0.0);
+        } else {
+            PG_RETURN_FLOAT8(0);
+        }
+    }
+#else
     if (arg1 == 0.0)
         PG_RETURN_FLOAT8(0);
+#endif
 
     result = arg1 / arg2;
 
@@ -2625,8 +2645,18 @@ Datum float48mul(PG_FUNCTION_ARGS)
     float8 arg2 = PG_GETARG_FLOAT8(1);
     float8 result;
 
+#ifdef DOLPHIN
+    if (arg1 == 0.0 || arg2 == 0.0) {
+        if (GetSessionContext()->enableBCmptMode && (arg1 < 0.0 || arg2 < 0.0)) {
+            PG_RETURN_FLOAT8(-0.0);
+        } else {
+            PG_RETURN_FLOAT8(0);
+        }
+    }
+#else
     if (arg1 == 0.0 || arg2 == 0.0)
         PG_RETURN_FLOAT8(0);
+#endif
 
     result = arg1 * arg2;
     CHECKFLOATVAL(result, isinf(arg1) || isinf(arg2), arg1 == 0 || arg2 == 0);
@@ -2642,8 +2672,18 @@ Datum float48div(PG_FUNCTION_ARGS)
     if (arg2 == 0.0)
         ereport(ERROR, (errcode(ERRCODE_DIVISION_BY_ZERO), errmsg("division by zero")));
 
+#ifdef DOLPHIN
+    if (arg1 == 0.0) {
+        if (GetSessionContext()->enableBCmptMode && arg2 < 0) {
+            PG_RETURN_FLOAT8(-0.0);
+        } else {
+            PG_RETURN_FLOAT8(0);
+        }
+    }
+#else
     if (arg1 == 0.0)
         PG_RETURN_FLOAT8(0);
+#endif
 
     result = arg1 / arg2;
     CHECKFLOATVAL(result, isinf(arg1) || isinf(arg2), arg1 == 0);
@@ -2686,8 +2726,18 @@ Datum float84mul(PG_FUNCTION_ARGS)
     float4 arg2 = PG_GETARG_FLOAT4(1);
     float8 result;
 
+#ifdef DOLPHIN
+    if (arg1 == 0.0 || arg2 == 0.0) {
+        if (GetSessionContext()->enableBCmptMode && (arg1 < 0.0 || arg2 < 0.0)) {
+            PG_RETURN_FLOAT8(-0.0);
+        } else {
+            PG_RETURN_FLOAT8(0);
+        }
+    }
+#else
     if (arg1 == 0.0 || arg2 == 0.0)
         PG_RETURN_FLOAT8(0);
+#endif
 
     result = arg1 * arg2;
 
@@ -2704,8 +2754,18 @@ Datum float84div(PG_FUNCTION_ARGS)
     if (arg2 == 0.0)
         ereport(ERROR, (errcode(ERRCODE_DIVISION_BY_ZERO), errmsg("division by zero")));
 
+#ifdef DOLPHIN
+    if (arg1 == 0.0) {
+        if (GetSessionContext()->enableBCmptMode && arg2 < 0) {
+            PG_RETURN_FLOAT8(-0.0);
+        } else {
+            PG_RETURN_FLOAT8(0);
+        }
+    }
+#else
     if (arg1 == 0.0)
         PG_RETURN_FLOAT8(0);
+#endif
 
     result = arg1 / arg2;
 
@@ -3092,5 +3152,82 @@ Datum float8_bool_xor(PG_FUNCTION_ARGS)
     int32 arg1 = temp ? 1 : 0;
     int32 arg2 = DatumGetInt32(DirectFunctionCall1(dtoi4, Float8GetDatum(num)));
     PG_RETURN_INT32(arg1 ^ arg2);
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC (dolphin_float4pl);
+extern "C" DLL_PUBLIC Datum dolphin_float4pl(PG_FUNCTION_ARGS);
+Datum dolphin_float4pl(PG_FUNCTION_ARGS)
+{
+    float8 arg1 = PG_GETARG_FLOAT4(0);
+    float8 arg2 = PG_GETARG_FLOAT4(1);
+    float8 result;
+
+    result = arg1 + arg2;
+
+    /*
+     * There isn't any way to check for underflow of addition/subtraction
+     * because numbers near the underflow value have already been rounded to
+     * the point where we can't detect that the two values were originally
+     * different, e.g. on x86, '1e-45'::float4 == '2e-45'::float4 ==
+     * 1.4013e-45.
+     */
+    CHECKFLOATVAL(result, isinf(arg1) || isinf(arg2), true);
+    PG_RETURN_FLOAT8(result);
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC (dolphin_float4mi);
+extern "C" DLL_PUBLIC Datum dolphin_float4mi(PG_FUNCTION_ARGS);
+Datum dolphin_float4mi(PG_FUNCTION_ARGS)
+{
+    float8 arg1 = PG_GETARG_FLOAT4(0);
+    float8 arg2 = PG_GETARG_FLOAT4(1);
+    float8 result;
+
+    result = arg1 - arg2;
+    CHECKFLOATVAL(result, isinf(arg1) || isinf(arg2), true);
+    PG_RETURN_FLOAT8(result);
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC (dolphin_float4mul);
+extern "C" DLL_PUBLIC Datum dolphin_float4mul(PG_FUNCTION_ARGS);
+Datum dolphin_float4mul(PG_FUNCTION_ARGS)
+{
+    float8 arg1 = PG_GETARG_FLOAT4(0);
+    float8 arg2 = PG_GETARG_FLOAT4(1);
+    float8 result;
+
+    if (arg1 == 0.0 || arg2 == 0.0) {
+        if (arg1 < 0.0 || arg2 < 0.0) {
+            PG_RETURN_FLOAT8(-0.0);
+        } else {
+            PG_RETURN_FLOAT8(0);
+        }
+    }
+
+    result = arg1 * arg2;
+    CHECKFLOATVAL(result, isinf(arg1) || isinf(arg2), arg1 == 0 || arg2 == 0);
+    PG_RETURN_FLOAT8(result);
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC (dolphin_float4div);
+extern "C" DLL_PUBLIC Datum dolphin_float4div(PG_FUNCTION_ARGS);
+Datum dolphin_float4div(PG_FUNCTION_ARGS)
+{
+    float8 arg1 = PG_GETARG_FLOAT4(0);
+    float8 arg2 = PG_GETARG_FLOAT4(1);
+    float8 result;
+
+    if (arg2 == 0.0) {
+        ereport(ERROR, (errcode(ERRCODE_DIVISION_BY_ZERO), errmsg("division by zero")));
+    }
+
+    if (arg1 == 0.0) {
+        PG_RETURN_FLOAT8(arg2 < 0 ? -0.0 : 0);
+    }
+
+    result = arg1 / arg2;
+
+    CHECKFLOATVAL(result, isinf(arg1) || isinf(arg2), arg1 == 0);
+    PG_RETURN_FLOAT8(result);
 }
 #endif

@@ -5474,7 +5474,7 @@ Datum date_int(PG_FUNCTION_ARGS)
     }
     j2date(date + POSTGRES_EPOCH_JDATE, &(tm->tm_year), &(tm->tm_mon), &(tm->tm_mday));
 
-    int32 res = tm->tm_year*10000 + tm->tm_mon*100 + tm->tm_mon;
+    int32 res = date2int(tm);
     PG_RETURN_INT32(res);
 }
 #endif
@@ -5692,5 +5692,171 @@ Datum date_float8_xor(PG_FUNCTION_ARGS)
     res_date = date_int128(dateVal);
 
     PG_RETURN_INT128(arg ^ res_date);
+}
+
+/* cast date to int8 */
+PG_FUNCTION_INFO_V1_PUBLIC(date_int8);
+extern "C" DLL_PUBLIC Datum date_int8(PG_FUNCTION_ARGS);
+Datum date_int8(PG_FUNCTION_ARGS)
+{
+    DateADT date = PG_GETARG_DATEADT(0);
+    struct pg_tm tt;
+    struct pg_tm* tm = &tt;
+
+    if (unlikely(date > 0 && (INT_MAX - date < POSTGRES_EPOCH_JDATE))) {
+        ereport(ERROR,
+            (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+                errmsg("input julian date is overflow")));
+    }
+    j2date(date + POSTGRES_EPOCH_JDATE, &(tm->tm_year), &(tm->tm_mon), &(tm->tm_mday));
+    int64 res = date2int(tm);
+    PG_RETURN_INT64(res);
+}
+
+/* cast date to numeric */
+PG_FUNCTION_INFO_V1_PUBLIC(date_numeric);
+extern "C" DLL_PUBLIC Datum date_numeric(PG_FUNCTION_ARGS);
+Datum date_numeric(PG_FUNCTION_ARGS)
+{
+    DateADT date = PG_GETARG_DATEADT(0);
+    struct pg_tm tt;
+    struct pg_tm* tm = &tt;
+
+    if (unlikely(date > 0 && (INT_MAX - date < POSTGRES_EPOCH_JDATE))) {
+        ereport(ERROR,
+            (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+                errmsg("input julian date is overflow")));
+    }
+    j2date(date + POSTGRES_EPOCH_JDATE, &(tm->tm_year), &(tm->tm_mon), &(tm->tm_mday));
+    int64 val = date2int(tm);
+    Numeric res = NULL;
+    res = DatumGetNumeric(DirectFunctionCall1(int8_numeric, Int64GetDatum(val)));
+
+    PG_RETURN_NUMERIC(res);
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(date_any_value);
+extern "C" DLL_PUBLIC Datum date_any_value(PG_FUNCTION_ARGS);
+Datum date_any_value(PG_FUNCTION_ARGS)
+{
+    DateADT date = PG_GETARG_DATEADT(0);
+    PG_RETURN_DATEADT(date);
+}
+
+/* cast time to int8 */
+PG_FUNCTION_INFO_V1_PUBLIC(time_int8);
+extern "C" DLL_PUBLIC Datum time_int8(PG_FUNCTION_ARGS);
+Datum time_int8(PG_FUNCTION_ARGS)
+{
+    TimeADT time = PG_GETARG_TIMEADT(0);
+    struct pg_tm tt;
+    struct pg_tm* tm = &tt;
+    fsec_t fsec;
+    time2tm(time, tm, &fsec);
+    int64 res = tmfsec2uint(tm);
+    PG_RETURN_INT64(res);
+}
+
+/* cast time to float8 */
+PG_FUNCTION_INFO_V1_PUBLIC(time_float8);
+extern "C" DLL_PUBLIC Datum time_float8(PG_FUNCTION_ARGS);
+Datum time_float8(PG_FUNCTION_ARGS)
+{
+    TimeADT time = PG_GETARG_TIMEADT(0);
+    struct pg_tm tt;
+    struct pg_tm* tm = &tt;
+    fsec_t fsec;
+    time2tm(time, tm, &fsec);
+    int64 temp = tmfsec2uint (tm);
+    double res = temp + fsec / 1e6;
+
+    PG_RETURN_INT64(res);
+}
+
+/* cast time to numeric */
+PG_FUNCTION_INFO_V1_PUBLIC(time_numeric);
+extern "C" DLL_PUBLIC Datum time_numeric(PG_FUNCTION_ARGS);
+Datum time_numeric(PG_FUNCTION_ARGS)
+{
+    TimeADT time = PG_GETARG_TIMEADT(0);
+    Numeric res = NULL;
+    struct pg_tm tt;
+    struct pg_tm* tm = &tt;
+    fsec_t fsec;
+    time2tm(time, tm, &fsec);
+    int64 quot = tmfsec2uint (tm);
+    char *str = AppendFsec(quot, fsec);
+    res =
+        DatumGetNumeric(DirectFunctionCall3(numeric_in, CStringGetDatum(str), ObjectIdGetDatum(0), Int32GetDatum(-1)));
+
+    PG_RETURN_NUMERIC(res);
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(time_any_value);
+extern "C" DLL_PUBLIC Datum time_any_value(PG_FUNCTION_ARGS);
+Datum time_any_value(PG_FUNCTION_ARGS)
+{
+    TimeADT time = PG_GETARG_TIMEADT(0);
+    PG_RETURN_TIMEADT(time);
+}
+
+/* cast timetz to int8 */
+PG_FUNCTION_INFO_V1_PUBLIC(timetz_int8);
+extern "C" DLL_PUBLIC Datum timetz_int8(PG_FUNCTION_ARGS);
+Datum timetz_int8(PG_FUNCTION_ARGS)
+{
+    TimeTzADT* time = PG_GETARG_TIMETZADT_P(0);
+    struct pg_tm tt;
+    struct pg_tm* tm = &tt;
+    fsec_t fsec;
+    int tz;
+    timetz2tm(time, tm, &fsec, &tz);
+    int64 res = tmfsec2uint(tm);
+    PG_RETURN_INT64(res);
+}
+
+/* cast timetz to float8 */
+PG_FUNCTION_INFO_V1_PUBLIC(timetz_float8);
+extern "C" DLL_PUBLIC Datum timetz_float8(PG_FUNCTION_ARGS);
+Datum timetz_float8(PG_FUNCTION_ARGS)
+{
+    TimeTzADT* time = PG_GETARG_TIMETZADT_P(0);
+    struct pg_tm tt;
+    struct pg_tm* tm = &tt;
+    fsec_t fsec;
+    int tz;
+    timetz2tm(time, tm, &fsec, &tz);
+    int64 temp = tmfsec2uint (tm);
+    double res = temp + fsec / 1e6;
+
+    PG_RETURN_INT64(res);
+}
+
+/* cast timetz to numeric */
+PG_FUNCTION_INFO_V1_PUBLIC(timetz_numeric);
+extern "C" DLL_PUBLIC Datum timetz_numeric(PG_FUNCTION_ARGS);
+Datum timetz_numeric(PG_FUNCTION_ARGS)
+{
+    TimeTzADT *time = PG_GETARG_TIMETZADT_P(0);
+    Numeric res = NULL;
+    struct pg_tm tt;
+    struct pg_tm* tm = &tt;
+    fsec_t fsec;
+    int tz;
+    timetz2tm(time, tm, &fsec, &tz);
+    int64 quot = tmfsec2uint (tm);
+    char *str = AppendFsec(quot, fsec);
+    res =
+        DatumGetNumeric(DirectFunctionCall3(numeric_in, CStringGetDatum(str), ObjectIdGetDatum(0), Int32GetDatum(-1)));
+
+    PG_RETURN_NUMERIC(res);
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(timetz_any_value);
+extern "C" DLL_PUBLIC Datum timetz_any_value(PG_FUNCTION_ARGS);
+Datum timetz_any_value(PG_FUNCTION_ARGS)
+{
+    TimeTzADT* time = PG_GETARG_TIMETZADT_P(0);
+    PG_RETURN_TIMETZADT_P(time);
 }
 #endif

@@ -251,6 +251,7 @@ static datetkn deltatktbl[] = {
 
 static int szdeltatktbl = sizeof deltatktbl / sizeof deltatktbl[0];
 #ifdef DOLPHIN
+#define NUMERIC_MAX_STRING_LENGTH (NUMERIC_MAX_PRECISION + 2)
 /* Position for YYYY-DD-MM HH-MM-DD.FFFFFF AM in default format */
 static unsigned char internal_format_positions[]=
 {0, 1, 2, 3, 4, 5, 6, (unsigned char) 255};
@@ -5412,5 +5413,22 @@ bool cstring_to_tm(const char *expr, pg_tm *tm, fsec_t &fsec)
         }
 
     return true;
+}
+
+char* AppendFsec(int64 quot, fsec_t fsec)
+{
+    errno_t rc = EOK;
+    char* result = (char*)palloc(NUMERIC_MAX_STRING_LENGTH);
+    if (fsec == 0) {
+        rc = sprintf_s(result, NUMERIC_MAX_STRING_LENGTH, "%ld", quot);
+    } else {
+#ifdef HAVE_INT64_TIMESTAMP
+        rc = sprintf_s(result, NUMERIC_MAX_STRING_LENGTH, "%ld.%d", quot, (int)Abs(fsec));
+#else
+        rc = sprintf_s(result, NUMERIC_MAX_STRING_LENGTH, "%f", fabs(((double)quot) + fsec));
+#endif
+    }
+    securec_check_ss(rc, "\0", "\0");
+    return result;
 }
 #endif

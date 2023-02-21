@@ -529,6 +529,28 @@ Datum year_xor_transfn(PG_FUNCTION_ARGS)
     PG_RETURN_UINT32(year ^ internal);
 }
 
+PG_FUNCTION_INFO_V1_PUBLIC(year_uint8);
+extern "C" DLL_PUBLIC Datum year_uint8(PG_FUNCTION_ARGS);
+Datum year_uint8(PG_FUNCTION_ARGS)
+{
+    uint64 res = DatumGetInt32(DirectFunctionCall1(year_integer, PG_GETARG_DATUM(0)));
+    PG_RETURN_UINT64(res);
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(year_float8);
+extern "C" DLL_PUBLIC Datum year_float8(PG_FUNCTION_ARGS);
+Datum year_float8(PG_FUNCTION_ARGS)
+{
+    double res = DatumGetInt32(DirectFunctionCall1(year_integer, PG_GETARG_DATUM(0)));
+    PG_RETURN_FLOAT8(res);
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(year_numeric);
+extern "C" DLL_PUBLIC Datum year_numeric(PG_FUNCTION_ARGS);
+Datum year_numeric(PG_FUNCTION_ARGS)
+{
+    return DirectFunctionCall1(int4_numeric, DirectFunctionCall1(year_integer, PG_GETARG_DATUM(0)));
+}
 
 PG_FUNCTION_INFO_V1_PUBLIC(year_any_value);
 extern "C" DLL_PUBLIC Datum year_any_value(PG_FUNCTION_ARGS);

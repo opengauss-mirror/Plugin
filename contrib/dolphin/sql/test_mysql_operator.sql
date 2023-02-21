@@ -585,7 +585,7 @@ delete testforbit where b=b'1'^b'1';
 
 select a^b,b from testforbit order by b;
 select a^b from testforbit group by a,b having a>0;
-select A1.a^A1.b,A2.a^A2.b from testforbit A1 join testforint2 A2 on A1.b>0 and A2.b>0;
+select A1.a^A1.b,A2.a^A2.b from testforbit A1 join testforint2 A2 on A1.b>0 and A2.b>0 order by 1, 2;
 select a^b,
    (case b when b>0 then 'good'
     when b<=0 then 'bad' end) as quality

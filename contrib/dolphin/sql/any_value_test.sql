@@ -60,6 +60,21 @@ create table test_date(a date, b int);
 insert into test_date values('2022-11-08',1),('2022-11-09',1),('2022-11-10',2),('2022-11-11',2);
 select any_value(a),b from test_date group by b;
 
+create table test_datetime(a datetime, b int);
+insert into test_datetime values('2022-11-08',1),('2022-11-09',1),('2022-11-10',2),('2022-11-11',2);
+select any_value(a),b from test_datetime group by b;
+
+create table test_timestamp(a timestamp, b int);
+insert into test_timestamp values('2022-11-08',1),('2022-11-09',1),('2022-11-10',2),('2022-11-11',2);
+select any_value(a),b from test_timestamp group by b;
+
+create table test_time(a time, b int);
+insert into test_time values('10:10:10',1),('11:11:11',1),('12:12:12',2),('13:13:13',2);
+select any_value(a),b from test_time group by b;
+
+create table test_timetz(a timetz, b int);
+insert into test_timetz values('10:10:10',1),('11:11:11',1),('12:12:12',2),('13:13:13',2);
+select any_value(a),b from test_timetz group by b;
 
 --test bool type
 create table test_bool(a bool, b int);

@@ -2,6 +2,7 @@ DROP FUNCTION IF EXISTS pg_catalog.unhex (text) CASCADE;
 DROP FUNCTION IF EXISTS pg_catalog.unhex (numeric) CASCADE;
 DROP FUNCTION IF EXISTS pg_catalog.unhex (bool) CASCADE;
 DROP FUNCTION IF EXISTS pg_catalog.unhex (bytea) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.unhex ("timestamp") CASCADE;
 
 CREATE OR REPLACE FUNCTION pg_catalog.unhex (text)  RETURNS text LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'unhex';
 
@@ -26,6 +27,16 @@ $$
 LANGUAGE plpgsql;
 
 CREATE OR REPLACE FUNCTION pg_catalog.unhex (bin1 bytea)
+RETURNS text
+AS
+$$
+BEGIN
+    RETURN NULL;
+END;
+$$
+LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION pg_catalog.unhex (datetime1 "timestamp")
 RETURNS text
 AS
 $$
