@@ -1,6 +1,41 @@
 create schema union_all;
 set current_schema to 'union_all';
 CREATE TYPE rainbow AS ENUM ('red', 'orange', 'yellow', 'green', 'blue', 'purple');
+select 1 union all select '';
+ ?column? 
+----------
+ 1
+ 
+(2 rows)
+
+select 1 union all select ' ';
+ ?column? 
+----------
+ 1
+  
+(2 rows)
+
+select 'a' union all select 1;
+ ?column? 
+----------
+ a
+ 1
+(2 rows)
+
+select b'1' union all select '';
+ ?column? 
+----------
+ 1
+ 
+(2 rows)
+
+select b'1' union all select ' ';
+ ?column? 
+----------
+ 1
+  
+(2 rows)
+
 select null::int1 union all select null::int16;
  int1 
 ------
@@ -137,15 +172,15 @@ select null::int2 union all select null::void;
 select null::int2 union all select null::anyelement;
  int2 
 ------
-     
-     
+ 
+ 
 (2 rows)
 
 select null::int2 union all select null::anynonarray;
  int2 
 ------
-     
-     
+ 
+ 
 (2 rows)
 
 select null::int2 union all select 'red'::rainbow::anyenum;
@@ -235,15 +270,15 @@ select null::int4 union all select null::void;
 select null::int4 union all select null::anyelement;
  int4 
 ------
-     
-     
+ 
+ 
 (2 rows)
 
 select null::int4 union all select null::anynonarray;
  int4 
 ------
-     
-     
+ 
+ 
 (2 rows)
 
 select null::int4 union all select 'red'::rainbow::anyenum;
@@ -333,15 +368,15 @@ select null::int8 union all select null::void;
 select null::int8 union all select null::anyelement;
  int8 
 ------
-     
-     
+ 
+ 
 (2 rows)
 
 select null::int8 union all select null::anynonarray;
  int8 
 ------
-     
-     
+ 
+ 
 (2 rows)
 
 select null::int8 union all select 'red'::rainbow::anyenum;
@@ -823,15 +858,15 @@ select null::numeric union all select null::void;
 select null::numeric union all select null::anyelement;
  numeric 
 ---------
-        
-        
+ 
+ 
 (2 rows)
 
 select null::numeric union all select null::anynonarray;
  numeric 
 ---------
-        
-        
+ 
+ 
 (2 rows)
 
 select null::numeric union all select 'red'::rainbow::anyenum;
@@ -2587,15 +2622,15 @@ select null::money union all select null::void;
 select null::money union all select null::anyelement;
  money 
 -------
-      
-      
+ 
+ 
 (2 rows)
 
 select null::money union all select null::anynonarray;
  money 
 -------
-      
-      
+ 
+ 
 (2 rows)
 
 select null::money union all select 'red'::rainbow::anyenum;
@@ -4351,15 +4386,15 @@ select null::float4 union all select null::void;
 select null::float4 union all select null::anyelement;
  float4 
 --------
-       
-       
+ 
+ 
 (2 rows)
 
 select null::float4 union all select null::anynonarray;
  float4 
 --------
-       
-       
+ 
+ 
 (2 rows)
 
 select null::float4 union all select 'red'::rainbow::anyenum;
@@ -4449,15 +4484,15 @@ select null::float8 union all select null::void;
 select null::float8 union all select null::anyelement;
  float8 
 --------
-       
-       
+ 
+ 
 (2 rows)
 
 select null::float8 union all select null::anynonarray;
  float8 
 --------
-       
-       
+ 
+ 
 (2 rows)
 
 select null::float8 union all select 'red'::rainbow::anyenum;
@@ -4841,15 +4876,15 @@ select null::oid union all select null::void;
 select null::oid union all select null::anyelement;
  oid 
 -----
-    
-    
+ 
+ 
 (2 rows)
 
 select null::oid union all select null::anynonarray;
  oid 
 -----
-    
-    
+ 
+ 
 (2 rows)
 
 select null::oid union all select 'red'::rainbow::anyenum;
@@ -5037,15 +5072,15 @@ select null::xid union all select null::void;
 select null::xid union all select null::anyelement;
  xid 
 -----
-    
-    
+ 
+ 
 (2 rows)
 
 select null::xid union all select null::anynonarray;
  xid 
 -----
-    
-    
+ 
+ 
 (2 rows)
 
 select null::xid union all select 'red'::rainbow::anyenum;
@@ -5135,15 +5170,15 @@ select null::cid union all select null::void;
 select null::cid union all select null::anyelement;
  cid 
 -----
-    
-    
+ 
+ 
 (2 rows)
 
 select null::cid union all select null::anynonarray;
  cid 
 -----
-    
-    
+ 
+ 
 (2 rows)
 
 select null::cid union all select 'red'::rainbow::anyenum;

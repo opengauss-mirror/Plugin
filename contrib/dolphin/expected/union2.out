@@ -1,6 +1,41 @@
 create schema union2;
 set current_schema to 'union2';
 CREATE TYPE rainbow AS ENUM ('red', 'orange', 'yellow', 'green', 'blue', 'purple');
+select 1 union select '';
+ ?column? 
+----------
+ 
+ 1
+(2 rows)
+
+select 1 union select ' ';
+ ?column? 
+----------
+  
+ 1
+(2 rows)
+
+select 'a' union select 1;
+ ?column? 
+----------
+ 1
+ a
+(2 rows)
+
+select b'1' union select '';
+ ?column? 
+----------
+ 
+ 1
+(2 rows)
+
+select b'1' union select ' ';
+ ?column? 
+----------
+  
+ 1
+(2 rows)
+
 select null::int1 union select null::int16;
  int1 
 ------
@@ -119,13 +154,13 @@ select null::int2 union select null::void;
 select null::int2 union select null::anyelement;
  int2 
 ------
-     
+ 
 (1 row)
 
 select null::int2 union select null::anynonarray;
  int2 
 ------
-     
+ 
 (1 row)
 
 select null::int2 union select 'red'::rainbow::anyenum;
@@ -204,13 +239,13 @@ select null::int4 union select null::void;
 select null::int4 union select null::anyelement;
  int4 
 ------
-     
+ 
 (1 row)
 
 select null::int4 union select null::anynonarray;
  int4 
 ------
-     
+ 
 (1 row)
 
 select null::int4 union select 'red'::rainbow::anyenum;
@@ -289,13 +324,13 @@ select null::int8 union select null::void;
 select null::int8 union select null::anyelement;
  int8 
 ------
-     
+ 
 (1 row)
 
 select null::int8 union select null::anynonarray;
  int8 
 ------
-     
+ 
 (1 row)
 
 select null::int8 union select 'red'::rainbow::anyenum;
@@ -714,13 +749,13 @@ select null::numeric union select null::void;
 select null::numeric union select null::anyelement;
  numeric 
 ---------
-        
+ 
 (1 row)
 
 select null::numeric union select null::anynonarray;
  numeric 
 ---------
-        
+ 
 (1 row)
 
 select null::numeric union select 'red'::rainbow::anyenum;
@@ -2244,13 +2279,13 @@ select null::money union select null::void;
 select null::money union select null::anyelement;
  money 
 -------
-      
+ 
 (1 row)
 
 select null::money union select null::anynonarray;
  money 
 -------
-      
+ 
 (1 row)
 
 select null::money union select 'red'::rainbow::anyenum;
@@ -3774,13 +3809,13 @@ select null::float4 union select null::void;
 select null::float4 union select null::anyelement;
  float4 
 --------
-       
+ 
 (1 row)
 
 select null::float4 union select null::anynonarray;
  float4 
 --------
-       
+ 
 (1 row)
 
 select null::float4 union select 'red'::rainbow::anyenum;
@@ -3859,13 +3894,13 @@ select null::float8 union select null::void;
 select null::float8 union select null::anyelement;
  float8 
 --------
-       
+ 
 (1 row)
 
 select null::float8 union select null::anynonarray;
  float8 
 --------
-       
+ 
 (1 row)
 
 select null::float8 union select 'red'::rainbow::anyenum;
@@ -4199,13 +4234,13 @@ select null::oid union select null::void;
 select null::oid union select null::anyelement;
  oid 
 -----
-    
+ 
 (1 row)
 
 select null::oid union select null::anynonarray;
  oid 
 -----
-    
+ 
 (1 row)
 
 select null::oid union select 'red'::rainbow::anyenum;
@@ -4369,13 +4404,13 @@ select null::xid union select null::void;
 select null::xid union select null::anyelement;
  xid 
 -----
-    
+ 
 (1 row)
 
 select null::xid union select null::anynonarray;
  xid 
 -----
-    
+ 
 (1 row)
 
 select null::xid union select 'red'::rainbow::anyenum;
@@ -4454,13 +4489,13 @@ select null::cid union select null::void;
 select null::cid union select null::anyelement;
  cid 
 -----
-    
+ 
 (1 row)
 
 select null::cid union select null::anynonarray;
  cid 
 -----
-    
+ 
 (1 row)
 
 select null::cid union select 'red'::rainbow::anyenum;
@@ -10953,19 +10988,19 @@ select null::anyelement union select null::int1;
 select null::anyelement union select null::int2;
  anyelement 
 ------------
-           
+ 
 (1 row)
 
 select null::anyelement union select null::int;
  anyelement 
 ------------
-           
+ 
 (1 row)
 
 select null::anyelement union select null::int8;
  anyelement 
 ------------
-           
+ 
 (1 row)
 
 select null::anyelement union select null::bool;
@@ -10995,7 +11030,7 @@ select null::anyelement union select null::name;
 select null::anyelement union select null::numeric;
  anyelement 
 ------------
-           
+ 
 (1 row)
 
 select null::anyelement union select null::text;
@@ -11103,7 +11138,7 @@ select null::anyelement union select null::circle;
 select null::anyelement union select null::money;
  anyelement 
 ------------
-           
+ 
 (1 row)
 
 select null::anyelement union select null::bpchar;
@@ -11211,13 +11246,13 @@ select null::anyelement union select null::uint8;
 select null::anyelement union select null::float4;
  anyelement 
 ------------
-           
+ 
 (1 row)
 
 select null::anyelement union select null::float8;
  anyelement 
 ------------
-           
+ 
 (1 row)
 
 select null::anyelement union select null::datetime;
@@ -11241,7 +11276,7 @@ select null::anyelement union select null::regproc;
 select null::anyelement union select null::oid;
  anyelement 
 ------------
-           
+ 
 (1 row)
 
 select null::anyelement union select null::tid;
@@ -11253,7 +11288,7 @@ select null::anyelement union select null::tid;
 select null::anyelement union select null::xid;
  anyelement 
 ------------
-           
+ 
 (1 row)
 
 select null::anyelement union select null::xid32;
@@ -11265,7 +11300,7 @@ select null::anyelement union select null::xid32;
 select null::anyelement union select null::cid;
  anyelement 
 ------------
-           
+ 
 (1 row)
 
 select null::anyelement union select null::oidvector;
@@ -11586,19 +11621,19 @@ select null::anynonarray union select null::int1;
 select null::anynonarray union select null::int2;
  anynonarray 
 -------------
-            
+ 
 (1 row)
 
 select null::anynonarray union select null::int;
  anynonarray 
 -------------
-            
+ 
 (1 row)
 
 select null::anynonarray union select null::int8;
  anynonarray 
 -------------
-            
+ 
 (1 row)
 
 select null::anynonarray union select null::bool;
@@ -11628,7 +11663,7 @@ select null::anynonarray union select null::name;
 select null::anynonarray union select null::numeric;
  anynonarray 
 -------------
-            
+ 
 (1 row)
 
 select null::anynonarray union select null::text;
@@ -11736,7 +11771,7 @@ select null::anynonarray union select null::circle;
 select null::anynonarray union select null::money;
  anynonarray 
 -------------
-            
+ 
 (1 row)
 
 select null::anynonarray union select null::bpchar;
@@ -11844,13 +11879,13 @@ select null::anynonarray union select null::uint8;
 select null::anynonarray union select null::float4;
  anynonarray 
 -------------
-            
+ 
 (1 row)
 
 select null::anynonarray union select null::float8;
  anynonarray 
 -------------
-            
+ 
 (1 row)
 
 select null::anynonarray union select null::datetime;
@@ -11874,7 +11909,7 @@ select null::anynonarray union select null::regproc;
 select null::anynonarray union select null::oid;
  anynonarray 
 -------------
-            
+ 
 (1 row)
 
 select null::anynonarray union select null::tid;
@@ -11886,7 +11921,7 @@ select null::anynonarray union select null::tid;
 select null::anynonarray union select null::xid;
  anynonarray 
 -------------
-            
+ 
 (1 row)
 
 select null::anynonarray union select null::xid32;
@@ -11898,7 +11933,7 @@ select null::anynonarray union select null::xid32;
 select null::anynonarray union select null::cid;
  anynonarray 
 -------------
-            
+ 
 (1 row)
 
 select null::anynonarray union select null::oidvector;
@@ -16750,19 +16785,19 @@ select null union select null::int1;
 select null union select null::int2;
  ?column? 
 ----------
-         
+ 
 (1 row)
 
 select null union select null::int;
  ?column? 
 ----------
-         
+ 
 (1 row)
 
 select null union select null::int8;
  ?column? 
 ----------
-         
+ 
 (1 row)
 
 select null union select null::bool;
@@ -16792,7 +16827,7 @@ select null union select null::name;
 select null union select null::numeric;
  ?column? 
 ----------
-         
+ 
 (1 row)
 
 select null union select null::text;
@@ -16900,7 +16935,7 @@ select null union select null::circle;
 select null union select null::money;
  ?column? 
 ----------
-         
+ 
 (1 row)
 
 select null union select null::bpchar;
@@ -17008,13 +17043,13 @@ select null union select null::uint8;
 select null union select null::float4;
  ?column? 
 ----------
-         
+ 
 (1 row)
 
 select null union select null::float8;
  ?column? 
 ----------
-         
+ 
 (1 row)
 
 select null union select null::datetime;
@@ -17038,7 +17073,7 @@ select null union select null::regproc;
 select null union select null::oid;
  ?column? 
 ----------
-         
+ 
 (1 row)
 
 select null union select null::tid;
@@ -17050,7 +17085,7 @@ select null union select null::tid;
 select null union select null::xid;
  ?column? 
 ----------
-         
+ 
 (1 row)
 
 select null union select null::xid32;
@@ -17062,7 +17097,7 @@ select null union select null::xid32;
 select null union select null::cid;
  ?column? 
 ----------
-         
+ 
 (1 row)
 
 select null union select null::oidvector;
@@ -17383,19 +17418,19 @@ select null::int1 union select null;
 select null::int2 union select null;
  int2 
 ------
-     
+ 
 (1 row)
 
 select null::int union select null;
  int4 
 ------
-     
+ 
 (1 row)
 
 select null::int8 union select null;
  int8 
 ------
-     
+ 
 (1 row)
 
 select null::bool union select null;
@@ -17425,7 +17460,7 @@ select null::name union select null;
 select null::numeric union select null;
  numeric 
 ---------
-        
+ 
 (1 row)
 
 select null::text union select null;
@@ -17533,7 +17568,7 @@ select null::circle union select null;
 select null::money union select null;
  money 
 -------
-      
+ 
 (1 row)
 
 select null::bpchar union select null;
@@ -17641,13 +17676,13 @@ select null::uint8 union select null;
 select null::float4 union select null;
  float4 
 --------
-       
+ 
 (1 row)
 
 select null::float8 union select null;
  float8 
 --------
-       
+ 
 (1 row)
 
 select null::datetime union select null;
@@ -17671,7 +17706,7 @@ select null::regproc union select null;
 select null::oid union select null;
  oid 
 -----
-    
+ 
 (1 row)
 
 select null::tid union select null;
@@ -17683,7 +17718,7 @@ select null::tid union select null;
 select null::xid union select null;
  xid 
 -----
-    
+ 
 (1 row)
 
 select null::xid32 union select null;
@@ -17695,7 +17730,7 @@ select null::xid32 union select null;
 select null::cid union select null;
  cid 
 -----
-    
+ 
 (1 row)
 
 select null::oidvector union select null;

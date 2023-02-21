@@ -4350,7 +4350,7 @@ select * from test7 union select * from test69;
  num 
 -----
  
-  
+ 
 (2 rows)
 
 select * from test7 union select * from test70;
@@ -42618,7 +42618,7 @@ select * from test69 union select * from test7;
  num 
 -----
  
-  
+ 
 (2 rows)
 
 select * from test69 union select * from test8;

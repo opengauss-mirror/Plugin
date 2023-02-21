@@ -3879,11 +3879,7 @@ static Node* transformSetOperationTree(ParseState* pstate, SelectStmt* stmt, boo
                 rescoltype = lcoltype;
                 bestexpr = lcolnode;
 #ifdef DOLPHIN
-            } else if (lcoltype == UNKNOWNOID && TypeCategory(rcoltype) != TYPCATEGORY_STRING &&
-                !IsA(lcolnode, Const) && !IsA(lcolnode, Param)) {
-                rescoltype = TEXTOID;
-            } else if (rcoltype == UNKNOWNOID && TypeCategory(lcoltype) != TYPCATEGORY_STRING &&
-                !IsA(rcolnode, Const) && !IsA(rcolnode, Param)) {
+            } else if (lcoltype == UNKNOWNOID || rcoltype == UNKNOWNOID) {
                 rescoltype = TEXTOID;
 #endif
             } else {
