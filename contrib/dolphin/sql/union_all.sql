@@ -3,6 +3,12 @@ set current_schema to 'union_all';
 
 CREATE TYPE rainbow AS ENUM ('red', 'orange', 'yellow', 'green', 'blue', 'purple');
 
+select 1 union all select '';
+select 1 union all select ' ';
+select 'a' union all select 1;
+select b'1' union all select '';
+select b'1' union all select ' ';
+
 select null::int1 union all select null::int16;
 select null::int1 union all select null::record;
 select null::int1 union all select null::cstring;
