@@ -222,3 +222,20 @@ create table test_enum_d(ssl_type enum('','any','X509','SPECIFIED') not null def
 
 drop schema test_enum cascade;
 reset current_schema;
+
+create schema db_b_new_gram_test3;
+set current_schema to 'db_b_new_gram_test3';
+create table t_charset_enum_column(c enum('a', 'b', 'c') charset test_character_set);
+drop table t_charset_enum_column;
+create table t_enum_column_drop(c1 int, c2 enum('a', 'b'));
+alter table t_enum_column_drop drop c2;
+drop table t_enum_column_drop;
+create table t_enum_column_alter_type(c1 int, c2 enum('a', 'b'));
+alter table t_enum_column_alter_type drop c2;
+drop table t_enum_column_alter_type;
+create table t_drop_view(c1 int, c2 enum('a'));
+create view my_view as select * from t_drop_view;
+drop view my_view;
+drop table t_drop_view;
+drop schema db_b_new_gram_test3 cascade;
+reset current_schema;

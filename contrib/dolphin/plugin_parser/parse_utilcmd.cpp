@@ -114,6 +114,7 @@ typedef struct {
 #define CREATE_FOREIGN_TABLE "CREATE FOREIGN TABLE"
 #define ALTER_TABLE "ALTER TABLE"
 #define CREATE_TABLE "CREATE TABLE"
+#define TYPE_IS_ANONYMOUS_ENUM(typid, typname) (type_is_enum(atttypid) && strstr(typname, "anonymous_enum"))
 
 #define RELATION_ISNOT_REGULAR_PARTITIONED(relation)                                                              \
     (((relation)->rd_rel->relkind != RELKIND_RELATION && (relation)->rd_rel->relkind != RELKIND_FOREIGN_TABLE && \
@@ -832,23 +833,24 @@ static void CreateSetOwnedByTable(CreateStmtContext* cxt, ColumnDef* column, cha
     lappend(column->typname->names, makeString(setname));
 }
 
-static bool DropSetOwnedByTable(CreateStmtContext* cxt, char *colname)
+/* drop type that is owned by table column, such as set or enum */
+static bool DropTypeOwnedByTable(CreateStmtContext* cxt, char *colname)
 {
     /* Look up the attribute type id */
     HeapTuple attTuple = SearchSysCache2(ATTNAME, ObjectIdGetDatum(RelationGetRelid(cxt->rel)),
         PointerGetDatum(colname));
 
     if (!HeapTupleIsValid(attTuple)) {
-        /* can not find the columns, take it as not-set type */
+        /* can not find the columns, take it as type that is not owned by table */
         return false;
     }
 
     Oid atttypid = ((Form_pg_attribute)GETSTRUCT(attTuple))->atttypid;
     ReleaseSysCache(attTuple);
 
-    if (type_is_set(atttypid)) {
+    char *typname = get_typename(atttypid);
+    if (type_is_set(atttypid) || TYPE_IS_ANONYMOUS_ENUM(atttypid, typname)) {
         char *nspace = get_typenamespace(atttypid);
-        char *typname = get_typename(atttypid);
 
         DropStmt *stmt = makeNode(DropStmt);
         stmt->removeType = OBJECT_TYPE;
@@ -5124,7 +5126,7 @@ List* transformAlterTableStmt(Oid relid, AlterTableStmt* stmt, const char* query
                 ColumnDef *def = (ColumnDef *)cmd->def;
 
                 /* pre-alter column type is an set, should drop it after */
-                bool oldIsSet = DropSetOwnedByTable(&cxt, cmd->name);
+                bool oldIsSet = DropTypeOwnedByTable(&cxt, cmd->name);
 
                 /* alter the column to a new set type, should create it before */
                 Value *v = (Value *)linitial(def->typname->names);
@@ -5155,7 +5157,7 @@ List* transformAlterTableStmt(Oid relid, AlterTableStmt* stmt, const char* query
             case AT_DropColumn:
             {
                 /* if the dropped column type is an set, should drop it after */
-                DropSetOwnedByTable(&cxt, cmd->name);
+                DropTypeOwnedByTable(&cxt, cmd->name);
                 newcmds = lappend(newcmds, cmd);
                 break;
             }

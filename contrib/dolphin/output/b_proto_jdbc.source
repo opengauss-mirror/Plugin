@@ -77,5 +77,4 @@ select * from t3 order by id;
 
 RESET ROLE;
 DROP USER IF EXISTS proto_user CASCADE;
---?.*
 \! rm @abs_builddir@/proto_jdbc/class/MySQLJdbcTest.class

@@ -7,7 +7,6 @@ show databases;
  blockchain
  cstore
  db4ai
- db_b_new_gram_test
  db_show_3
  dbe_perf
  dbe_pldebugger
@@ -21,7 +20,7 @@ show databases;
  sc
  snapshot
  sqladvisor
-(18 rows)
+(17 rows)
 
 create schema aa1;
 create schema aa2;
