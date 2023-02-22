@@ -17,6 +17,26 @@ create function func(p1 datetime, p2 int) returns time return null;
 select func('2023-01-28 00:00:00'::datetime, 1);
 drop function if exists func(datetime, int);
 
+-- test for duplicated options
+create function func(s int)
+    returns char(50)
+    deterministic
+    sql security invoker
+sql security invoker
+return s;
+select func(20);
+drop function if exists func;
+create function func(s int)
+returns char(50)
+deterministic
+sql security invoker
+language C
+not deterministic
+language sql
+sql security definer
+return s;
+select func(20);
+drop function if exists func;
 
 create table test11(
     name varchar(50) not null,
