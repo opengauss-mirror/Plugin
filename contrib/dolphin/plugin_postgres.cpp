@@ -268,8 +268,10 @@ void init_plugin_object()
 
     /* init types and operators */
     BSqlPluginContext* cxt = GetSessionContext();
+    start_xact_command();
     InitDolphinTypeId(cxt);
     InitDolphinOperator(cxt);
+    finish_xact_command();
 }
 
 void _PG_init(void)
