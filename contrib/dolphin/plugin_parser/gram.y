@@ -1257,7 +1257,7 @@ static char* appendString(char* source, char* target, int offset);
 			END_OF_PROC
 			NOT_IN NOT_BETWEEN NOT_LIKE NOT_ILIKE NOT_SIMILAR
 			DEFAULT_FUNC
-	                DO_SCONST DO_LANGUAGE
+			DO_SCONST DO_LANGUAGE SHOW_STATUS
 			FORCE_INDEX USE_INDEX
 
 /* Precedence: lowest to highest */
@@ -3738,9 +3738,9 @@ VariableShowStmt:
 					}  else if (pg_strcasecmp($2, "collation") == 0) {
 						$$ = (Node *) MakeShowCollationQuery(NIL, NULL, NULL);
 					} else if (pg_strcasecmp($2, "privileges") == 0) {
-                                                SelectStmt *n = makeShowPrivilegesQuery();
-                                                $$ = (Node *) n;
-                                        } else {
+                        SelectStmt *n = makeShowPrivilegesQuery();
+                        $$ = (Node *) n;
+                    } else {
 						VariableShowStmt *n = makeNode(VariableShowStmt);
 						n->name = $2;
 						$$ = (Node *) n;
@@ -3965,6 +3965,24 @@ VariableShowStmt:
 		{
 		    SelectStmt *n = MakeShowCollationQuery(NIL, $3->like_or_where, $3->is_like);
 		    $$ = (Node *) n;
+		}
+		| SHOW_STATUS
+		{
+			SelectStmt *n = makeNode(SelectStmt);
+			/* Make Target List */
+			ColumnRef *columnRef = makeNode(ColumnRef);
+			columnRef->fields = list_make1(makeNode(A_Star));
+			ResTarget *resTarget = makeNode(ResTarget);
+			resTarget->val = (Node *)columnRef;
+			n->targetList = list_make1(resTarget);
+
+			/* Make RageFunction Call */
+			FuncCall *funcCall = makeNode(FuncCall);
+			funcCall->funcname = SystemFuncName("show_status");
+			RangeFunction *rangeFunction = makeNode(RangeFunction);
+			rangeFunction->funccallnode = (Node *)funcCall;
+			n->fromClause = list_make1(rangeFunction);
+			$$ = (Node *)n;
 		}
 		;
 

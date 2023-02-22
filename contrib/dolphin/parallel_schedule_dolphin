@@ -133,3 +133,5 @@ test: json_type json_pretty json_valid json_length json_objectagg json_arrayagg 
 test: test_uuid_short test_sleep distinct dual_test
 
 test: operator_compatibility_test/numeric_operator_test_normal operator_compatibility_test/numeric_operator_test_min operator_compatibility_test/numeric_operator_test_max operator_compatibility_test/time_operator_test operator_compatibility_test/string_operator_test operator_compatibility_test/multi_type_operator_test
+
+test: test_show_status
