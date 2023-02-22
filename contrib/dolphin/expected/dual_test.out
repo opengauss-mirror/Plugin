@@ -1,0 +1,106 @@
+create schema dual_test;
+set current_schema to 'dual_test';
+select 1 ;
+ ?column? 
+----------
+        1
+(1 row)
+
+select 1 from dual;
+ ?column? 
+----------
+        1
+(1 row)
+
+select 1+1 from dual;
+ ?column? 
+----------
+        2
+(1 row)
+
+select sin(1),sin(2),1+3+4 from dual;
+        sin        |        sin        | ?column? 
+-------------------+-------------------+----------
+ 0.841470984807897 | 0.909297426825682 |        8
+(1 row)
+
+select 1*4 from dual;
+ ?column? 
+----------
+        4
+(1 row)
+
+-- update
+create table t1 (a int);
+insert into t1 values(1),(2),(3);
+select * from t1;
+ a 
+---
+ 1
+ 2
+ 3
+(3 rows)
+
+update t1 set a = 3 from dual where a < 2 ;
+select * from t1;
+ a 
+---
+ 2
+ 3
+ 3
+(3 rows)
+
+-- error
+select * from dual;
+ERROR:  SELECT * with no tables specified is not valid
+LINE 1: select * from dual;
+               ^
+-- keyword
+create table t2 (dual int);
+ERROR:  syntax error at or near "dual"
+LINE 1: create table t2 (dual int);
+                         ^
+insert into t2 values(1),(10);
+ERROR:  relation "t2" does not exist on datanode1
+LINE 1: insert into t2 values(1),(10);
+                    ^
+select * from t2;
+ERROR:  relation "t2" does not exist on datanode1
+LINE 1: select * from t2;
+                      ^
+select dual from t2;
+ERROR:  syntax error at or near "dual"
+LINE 1: select dual from t2;
+               ^
+create table dual(a int);
+ERROR:  syntax error at or near "dual"
+LINE 1: create table dual(a int);
+                     ^
+-- keyword quoted 
+create table t3 (`dual` int);
+insert into t3 values(1);
+select `dual` from t3;
+ dual 
+------
+    1
+(1 row)
+
+create table `dual` (a int);
+insert into `dual` values(9);
+select * from `dual`;
+ a 
+---
+ 9
+(1 row)
+
+select a from dual;
+ERROR:  column "a" does not exist
+LINE 1: select a from dual;
+               ^
+CONTEXT:  referenced column: a
+drop schema dual_test cascade;
+NOTICE:  drop cascades to 3 other objects
+DETAIL:  drop cascades to table t1
+drop cascades to table t3
+drop cascades to table dual
+reset current_schema;
