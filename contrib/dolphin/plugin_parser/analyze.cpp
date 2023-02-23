@@ -1574,17 +1574,17 @@ static void SetUpsertAttrnoState(ParseState* pstate, List *targetList)
     rstate->usExplicitAttrNos = (int*)palloc0(sizeof(int) * len);
 
     Relation relation = (Relation)linitial(pstate->p_target_relation);
-    Form_pg_attribute* attr = relation->rd_att->attrs;
+    FormData_pg_attribute* attr = relation->rd_att->attrs;
     int colNum = RelationGetNumberOfAttributes(relation);
     ListCell* target = list_head(targetList);
     for (int ni = 0; ni < len; ++ni) {
         ResTarget* res = (ResTarget*)lfirst(target);
         const char* name = res->name;
         for (int ci = 0; ci < colNum; ++ci) {
-            if (attr[ci]->attisdropped) {
+            if (attr[ci].attisdropped) {
                 continue;
             }
-            if (strcmp(name, attr[ci]->attname.data) == 0) {
+            if (strcmp(name, attr[ci].attname.data) == 0) {
                 rstate->usExplicitAttrNos[ni] = ci + 1;
                 break;
             }
@@ -2163,6 +2163,7 @@ static Query* transformInsertStmt(ParseState* pstate, InsertStmt* stmt)
         col = (ResTarget*)lfirst(icols);
         AssertEreport(IsA(col, ResTarget), MOD_OPT, "nodeType inconsistant");
         attr_num = (AttrNumber)lfirst_int(attnos);
+
         tle = makeTargetEntry(expr, attr_num, col->name, false);
         qry->targetList = lappend(qry->targetList, tle);
 
@@ -2247,24 +2248,24 @@ static Query* transformInsertStmt(ParseState* pstate, InsertStmt* stmt)
 static List* makeValueLists(ParseState* pstate)
 {
     Relation target_relation = (Relation)linitial(pstate->p_target_relation);
-    Form_pg_attribute* attr = target_relation->rd_att->attrs;
+    FormData_pg_attribute* attr = target_relation->rd_att->attrs;
     auto numsRelationAttr = RelationGetNumberOfAttributes(target_relation);
     List* valuesLists = NULL;
     for (int i = 0; i < numsRelationAttr; i++) {
         SetToDefault* expr = NULL;
-        if (SQL_MODE_STRICT() || !attr[i]->attnotnull) {
+        if (SQL_MODE_STRICT() || !attr[i].attnotnull) {
             expr = makeNode(SetToDefault);
             valuesLists = lappend(valuesLists, expr);
             continue;
         }
         /* Judge if relation has a default for this column. */
-        if (attr[i]->atthasdef) {
+        if (attr[i].atthasdef) {
             expr = makeNode(SetToDefault);
             valuesLists = lappend(valuesLists, expr);
             break;
         }
         if (expr == NULL) {
-            valuesLists = lappend(valuesLists, makeConstByType(attr[i]));
+            valuesLists = lappend(valuesLists, makeConstByType(&attr[i]));
         }
     }
     valuesLists = list_make1(valuesLists);
@@ -2550,7 +2551,7 @@ List* BuildExcludedTargetlist(Relation targetrel, Index exclRelIndex)
      * underlying relation, hence we need entries for dropped columns too.
      */
     for (attno = 0; attno < RelationGetNumberOfAttributes(targetrel); attno++) {
-        Form_pg_attribute attr = targetrel->rd_att->attrs[attno];
+        Form_pg_attribute attr = &targetrel->rd_att->attrs[attno];
         char* name = NULL;
 
         if (attr->attisdropped) {
@@ -2727,10 +2728,10 @@ void CheckDefaultForNotnullCols(ParseState* pstate, List* exprlist, List* attrno
     Relation target_relation = (Relation)linitial(pstate->p_target_relation);
     auto rd_att = target_relation->rd_att;
     foreach (exprCell, exprlist) {
-        Form_pg_attribute attr = rd_att->attrs[lfirst_int(attrn)-1];
+        FormData_pg_attribute attr = rd_att->attrs[lfirst_int(attrn)-1];
         Node* expr = (Node*)lfirst(exprCell);
-        if (IsA(expr, SetToDefault) && attr->attnotnull && !attr->atthasdef) {
-            lfirst(exprCell) = makeConstByType(attr);
+        if (IsA(expr, SetToDefault) && attr.attnotnull && !attr.atthasdef) {
+            lfirst(exprCell) = makeConstByType(&attr);
             pfree(expr);
         }
         attrn = attrn->next;
@@ -2756,8 +2757,8 @@ void AppendValueForColOfNotnull(ParseState* pstate, List* exprlist, List* icolum
             }
             colCell = colCell->next;
             Relation target_relation = (Relation)linitial(pstate->p_target_relation);
-            Form_pg_attribute attr = target_relation->rd_att->attrs[lfirst_int(attrCell)-1];
-            exprlist = lappend(exprlist, makeConstByType(attr));
+            FormData_pg_attribute attr = target_relation->rd_att->attrs[lfirst_int(attrCell)-1];
+            exprlist = lappend(exprlist, makeConstByType(&attr));
         }
     }
     if (list_length(exprlist) < list_length(icolumns)) {

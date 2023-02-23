@@ -25,7 +25,7 @@ static void prepare_rsinfo_tupledesc(ReturnSetInfo *rsinfo, TupleDesc& tupdesc)
             errmsg("materialize mode required, but it is not allowed in this context")));
     }
 
-    tupdesc = CreateTemplateTupleDesc(ANALYZE_TABLES_COLS, false, TAM_HEAP);
+    tupdesc = CreateTemplateTupleDesc(ANALYZE_TABLES_COLS, false);
     TupleDescInitEntry(tupdesc, (AttrNumber)++idx, "Table", TEXTOID, -1, 0);
     TupleDescInitEntry(tupdesc, (AttrNumber)++idx, "Op", TEXTOID, -1, 0);
     TupleDescInitEntry(tupdesc, (AttrNumber)++idx, "Msg_type", TEXTOID, -1, 0);

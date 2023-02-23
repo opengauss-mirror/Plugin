@@ -103,7 +103,7 @@ static void printtup_startup(DestReceiver *self, int operation, TupleDesc typein
 
 static void SendRowDescriptionMessage(StringInfo buf, TupleDesc typeinfo, List *targetlist)
 {
-    Form_pg_attribute *attrs = typeinfo->attrs;
+    FormData_pg_attribute *attrs = typeinfo->attrs;
     int natts = typeinfo->natts;
     int i;
     ListCell *tlist_item = list_head(targetlist);
@@ -120,13 +120,13 @@ static void SendRowDescriptionMessage(StringInfo buf, TupleDesc typeinfo, List *
         // FIELD packet
         dolphin_data_field *field = (dolphin_data_field *) palloc0(sizeof(dolphin_data_field));
         // db, table, org_table (tle->resorigtbl), org_name, character_set, decimals will implement later
-        field->name = attrs[i]->attname.data;
-        const TypeItem* item = GetItemByTypeOid(attrs[i]->atttypid);
+        field->name = attrs[i].attname.data;
+        const TypeItem* item = GetItemByTypeOid(attrs[i].atttypid);
         field->type = item->dolphin_type_id; // map to atttypid
         field->flags = item->flags;
         field->charsetnr = item->charset_flag;
-        if (attrs[i]->atttypid != BLOBOID) {
-            field->length = attrs[i]->attlen;
+        if (attrs[i].atttypid != BLOBOID) {
+            field->length = attrs[i].attlen;
         } else {
             field->length = DOLPHIN_BLOB_LENGTH;
         }
@@ -257,16 +257,16 @@ static void printtup_prepare_info(DR_printtup *myState, TupleDesc typeinfo, int 
          * if we encounter droped columns, we should send it to CN. but atttypid of dropped column
          * is invalid in pg_attribute, it will generate error, so we should do special process for the reason.
          */
-        if (typeinfo->attrs[i]->attisdropped) {
-            typeinfo->attrs[i]->atttypid = UNKNOWNOID;
+        if (typeinfo->attrs[i].attisdropped) {
+            typeinfo->attrs[i].atttypid = UNKNOWNOID;
         }
 
         thisState->format = format;
         if (format == 0) {
-            getTypeOutputInfo(typeinfo->attrs[i]->atttypid, &thisState->typoutput, &thisState->typisvarlena);
+            getTypeOutputInfo(typeinfo->attrs[i].atttypid, &thisState->typoutput, &thisState->typisvarlena);
             fmgr_info(thisState->typoutput, &thisState->finfo);
         } else if (format == 1) {
-            getTypeBinaryOutputInfo(typeinfo->attrs[i]->atttypid, &thisState->typsend, &thisState->typisvarlena);
+            getTypeBinaryOutputInfo(typeinfo->attrs[i].atttypid, &thisState->typsend, &thisState->typisvarlena);
             fmgr_info(thisState->typsend, &thisState->finfo);
         } else {
             ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("unsupported format code: %d", format)));
