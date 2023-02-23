@@ -52,6 +52,7 @@
 #include "plugin_optimizer/prep.h"
 #include "optimizer/subselect.h"
 #include "optimizer/tlist.h"
+#include "optimizer/planswcb.h"
 #include "plugin_parser/analyze.h"
 #include "optimizer/gtmfree.h"
 #include "plugin_parser/parsetree.h"
@@ -4223,8 +4224,8 @@ static Plan* grouping_planner(PlannerInfo* root, double tuple_fraction)
                         current_pathkeys = root->sort_pathkeys;
                         /* AssertEreport checks that parser didn't mess up... */
                         AssertEreport(pathkeys_contained_in(root->distinct_pathkeys, current_pathkeys),
-                                      MOD_OPT,
-                                      "the parser does not mess up when adding sort for pathkeys.");
+                            MOD_OPT,
+                            "the parser does not mess up when adding sort for pathkeys.");
                     }
 
                     result_plan = (Plan*)make_sort_from_pathkeys(root, result_plan, current_pathkeys, -1.0);
@@ -6941,6 +6942,14 @@ static List* make_subplanTargetList(PlannerInfo* root, List* tlist, AttrNumber**
     }
 
     /*
+     * Pull out all the connect-by funcs such as SYS_CONNECT_BY_PATH, and
+     * add them to the result tlist if not already present, so the internal
+     * pseudo columns could be found in subplan nodes.
+     */
+    List* funcExprs = pullUpConnectByFuncExprs((Node*)non_group_cols);
+    sub_tlist = add_to_flat_tlist(sub_tlist, funcExprs);
+
+    /*
      * Pull out all the Vars mentioned in non-group cols (plus HAVING), and
      * add them to the result tlist if not already present.  (A Var used
      * directly as a GROUP BY item will be present already.)  Note this
@@ -6954,6 +6963,7 @@ static List* make_subplanTargetList(PlannerInfo* root, List* tlist, AttrNumber**
     /* clean up cruft */
     list_free_ext(non_group_vars);
     list_free_ext(non_group_cols);
+    list_free_ext(funcExprs);
 
     return sub_tlist;
 }

@@ -385,6 +385,9 @@ static void check_xact_readonly(Node* parse_tree)
 {
     if (!u_sess->attr.attr_common.XactReadOnly)
         return;
+    if (libpqsw_skip_check_readonly()) {
+        return;
+    }
 
     /*
      *Note:Disk space usage reach the threshold causing database open read-only.
@@ -1438,6 +1441,7 @@ static char* get_drop_seq_query_string(AlterTableStmt* stmt, Oid rel_id)
  *
  *	parse_tree: the parse tree for the utility statement
  *	query_string: original source text of command
+ *	readOnlyTree: if true, pstmt's node tree must not be modified
  *	params: parameters to use during execution
  *	is_top_level: true if executing a "top level" (interactively issued) command
  *	dest: where to send results
@@ -7306,7 +7310,6 @@ static bool is_stmt_allowed_in_locked_mode(Node* parse_tree, const char* query_s
         default:
             return DISALLOW;
     }
-    return DISALLOW;
 }
 
 /*
@@ -9297,6 +9300,7 @@ const char* CreateAlterTableCommandTag(const AlterTableType subtype)
             break;
         case AT_EncryptionKeyRotation:
             tag = "ENCRYPTION KEY ROTATION";
+            break;
         case AT_AddInherit:
             tag = "ADD INHERIT";
             break;
