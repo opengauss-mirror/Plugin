@@ -4012,7 +4012,10 @@ void standard_ProcessUtility(processutility_context* processutility_cxt,
              * Since the lock would just get dropped immediately, LOCK TABLE
              * outside a transaction block is presumed to be user error.
              */
-            RequireTransactionChain(is_top_level, "LOCK TABLE");
+            #ifdef DOLPHIN
+            if (!((LockStmt*)parse_tree)->isLockTables)
+            #endif
+                RequireTransactionChain(is_top_level, "LOCK TABLE");
 #ifdef PGXC
             /* only lock local table if cm_agent do Lock Stmt */
             if (IS_PGXC_COORDINATOR && !IsConnFromCoord() &&

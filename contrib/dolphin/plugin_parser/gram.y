@@ -697,7 +697,7 @@ static char* appendString(char* source, char* target, int offset);
 
 %type <list>	opt_fields_options fields_list opt_lines_options lines_list expr_do_list
 %type <defelt>	opt_ignore_number opt_character fields_option lines_option conflict_option opt_do_language
-%type <ival>	opt_lock lock_type cast_context opt_wait kill_opt
+%type <ival>	opt_lock lock_type cast_context opt_wait opt_lock_for_b kill_opt
 %type <ival>	vacuum_option_list vacuum_option_elem opt_verify_options
 %type <boolean>	opt_check opt_force opt_or_replace
 				opt_grant_grant_option opt_grant_admin_option
@@ -1267,7 +1267,7 @@ static char* appendString(char* source, char* target, int offset);
 			NOT_IN NOT_BETWEEN NOT_LIKE NOT_ILIKE NOT_SIMILAR
 			DEFAULT_FUNC
 			DO_SCONST DO_LANGUAGE SHOW_STATUS BEGIN_B_BLOCK
-			FORCE_INDEX USE_INDEX
+			FORCE_INDEX USE_INDEX LOCK_TABLES
 
 /* Precedence: lowest to highest */
 %nonassoc COMMENT
@@ -23509,6 +23509,13 @@ TransactionStmt:
 					n->options = NIL;
 					$$ = (Node *)n;
 				}
+			| UNLOCK TABLES
+				{
+					TransactionStmt *n = makeNode(TransactionStmt);
+					n->kind = TRANS_STMT_COMMIT;
+					n->options = NIL;
+					$$ = (Node *)n;
+				}
 			| END_P opt_transaction
 				{
 					TransactionStmt *n = makeNode(TransactionStmt);
@@ -23591,6 +23598,13 @@ TransactionStmt:
 					TransactionStmt *n = makeNode(TransactionStmt);
 					n->kind = TRANS_STMT_ROLLBACK_PREPARED;
 					n->gid = $3;
+					$$ = (Node *)n;
+				}
+			| FLUSH TABLES WITH READ LOCK_P
+				{
+					TransactionStmt *n = makeNode(TransactionStmt);
+					n->kind = TRANS_STMT_START;
+					n->options = list_make1(makeDefElem("transaction_read_only", makeIntConst(TRUE, @3)));
 					$$ = (Node *)n;
 				}
 		;
@@ -27556,6 +27570,23 @@ LockStmt:	LOCK_P opt_table relation_expr_list opt_lock opt_nowait opt_cancelable
 					n->cancelable = $6;
 					$$ = (Node *)n;
 				}
+			| LOCK_TABLES relation_expr_list opt_lock_for_b opt_nowait opt_cancelable
+				{
+					LockStmt *n = makeNode(LockStmt);
+
+					n->relations = $2;
+					n->mode = $3;
+					n->nowait = $4;
+					n->cancelable = $5;
+					n->isLockTables = true;
+					$$ = (Node *)n;
+				}
+		;
+
+opt_lock_for_b:
+			READ					{ $$ = AccessShareLock; }
+			| WRITE					{ $$ = AccessExclusiveLock; }
+		;
 		;
 
 opt_lock:	IN_P lock_type MODE				{ $$ = $2; }

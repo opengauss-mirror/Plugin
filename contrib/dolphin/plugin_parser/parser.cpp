@@ -808,6 +808,25 @@ int base_yylex(YYSTYPE* lvalp, YYLTYPE* llocp, core_yyscan_t yyscanner)
                         GetSessionContext()->enableBCmptMode))
                 cur_token = BEGIN_B_BLOCK;
             break;
+        case LOCK_P:
+            /*
+             * LOCK TABLES must be reduced to one token.
+             */
+            GET_NEXT_TOKEN();
+
+            switch (next_token) {
+                case TABLES:
+                    cur_token = LOCK_TABLES;
+                    break;
+                default:
+                    /* save the lookahead token for next time */
+                    SET_LOOKAHEAD_TOKEN();
+                    /* and back up the output info to cur_token */
+                    lvalp->core_yystype = cur_yylval;
+                    *llocp = cur_yylloc;
+                    break;
+            }
+            break;
 #endif
         default:
             break;
