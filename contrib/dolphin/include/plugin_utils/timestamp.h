@@ -61,6 +61,14 @@
 #define FIRST_FULL_WEEK 4
 #define FOUR_DAYS_IN_YEAR 4
 #define WEEKS_PER_YEAR 52
+#define SUFFIX_ST 1
+#define SUFFIX_ND 2
+#define SUFFIX_RD 3
+#define SUFFIX_TH_BEGIN 10
+#define SUFFIX_TH_END 19
+#define YEAR_100 100
+#define YEAR_2000 2000
+#define YEAR_1900 1900
 
 #define HOURS_HALF_DAY 12
 #define MAX_UNIXTIMESTAMP_VALUE INT32_MAX
@@ -112,6 +120,8 @@ extern int64 b_db_weekmode(int64 mode);
 extern int b_db_cal_week(struct pg_tm* tm, int64 mode, uint* year);
 extern bool datetime_in_with_sql_mode(char *str, struct pg_tm *tm, fsec_t *fsec, unsigned int date_flag);
 extern void add_currentdate_to_time(TimeADT time, Timestamp *result);
+extern bool datetime_in_with_sql_mode_internal(char *str, struct pg_tm *tm, fsec_t *fsec, int &tm_type,
+    unsigned int date_flag);
 
 extern "C" DLL_PUBLIC Datum int64_b_format_datetime(PG_FUNCTION_ARGS);
 #endif

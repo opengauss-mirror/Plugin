@@ -48,7 +48,7 @@ insert into test values('dayname(''10000-1-1'')', dayname('10000-1-1'));
 WARNING:  Incorrect datetime value: "10000-1-1"
 CONTEXT:  referenced column: result
 insert into test values('dayname(''9999-12-31 23:59:59.9999995'')', dayname('9999-12-31 23:59:59.9999995'));
-WARNING:  Truncated incorrect datetime value: "9999-12-31 23:59:59.9999995"
+WARNING:  Incorrect datetime value: "9999-12-31 23:59:59.9999995"
 CONTEXT:  referenced column: result
 insert into test values('dayname(-1)', dayname(-1));
 WARNING:  Incorrect datetime value: "-1"
@@ -71,7 +71,7 @@ insert into test values('dayname(''10000-1-1'')', dayname('10000-1-1'));
 ERROR:  Incorrect datetime value: "10000-1-1"
 CONTEXT:  referenced column: result
 insert into test values('dayname(''9999-12-31 23:59:59.9999995'')', dayname('9999-12-31 23:59:59.9999995'));
-ERROR:  Truncated incorrect datetime value: "9999-12-31 23:59:59.9999995"
+ERROR:  Incorrect datetime value: "9999-12-31 23:59:59.9999995"
 CONTEXT:  referenced column: result
 insert into test values('dayname(-1)', dayname(-1));
 ERROR:  Incorrect datetime value: "-1"
@@ -129,7 +129,11 @@ insert into test values('monthname(20211112235959.9999999)', monthname(202111122
 -- 特异
 insert into test values('monthname(null)', monthname(null));
 insert into test values('monthname(''2021-00-01'')', monthname('2021-00-01'));
+ERROR:  Incorrect datetime value: "2021-00-01"
+CONTEXT:  referenced column: result
 insert into test values('monthname(20210001)', monthname(20210001));
+ERROR:  Incorrect datetime value: "20210001"
+CONTEXT:  referenced column: result
 insert into test values('monthname(0)', monthname(0));
 -- 非严格模式，参数不合法，报warning，返回NULL或者对应值
 set dolphin.sql_mode = 'sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date';
@@ -137,7 +141,7 @@ insert into test values('monthname(''10000-1-1'')', monthname('10000-1-1'));
 WARNING:  Incorrect datetime value: "10000-1-1"
 CONTEXT:  referenced column: result
 insert into test values('monthname(''9999-12-31 23:59:59.9999995'')', monthname('9999-12-31 23:59:59.9999995'));
-WARNING:  Truncated incorrect datetime value: "9999-12-31 23:59:59.9999995"
+WARNING:  Incorrect datetime value: "9999-12-31 23:59:59.9999995"
 CONTEXT:  referenced column: result
 insert into test values('monthname(-1)', monthname(-1));
 WARNING:  Incorrect datetime value: "-1"
@@ -157,7 +161,7 @@ insert into test values('monthname(''10000-1-1'')', monthname('10000-1-1'));
 ERROR:  Incorrect datetime value: "10000-1-1"
 CONTEXT:  referenced column: result
 insert into test values('monthname(''9999-12-31 23:59:59.9999995'')', monthname('9999-12-31 23:59:59.9999995'));
-ERROR:  Truncated incorrect datetime value: "9999-12-31 23:59:59.9999995"
+ERROR:  Incorrect datetime value: "9999-12-31 23:59:59.9999995"
 CONTEXT:  referenced column: result
 insert into test values('monthname(-1)', monthname(-1));
 ERROR:  Incorrect datetime value: "-1"
@@ -351,11 +355,23 @@ insert into test values('month(20211112235959.9999999)', month(20211112235959.99
 -- 特异
 insert into test values('month(null)', month(null));
 insert into test values('month(''2021-00-01'')', month('2021-00-01'));
+ERROR:  Incorrect datetime value: "2021-00-01"
+CONTEXT:  referenced column: result
 insert into test values('month(''2021-01-00'')', month('2021-01-00'));
+ERROR:  Incorrect datetime value: "2021-01-00"
+CONTEXT:  referenced column: result
 insert into test values('month(''2021-00-00'')', month('2021-00-00'));
+ERROR:  Incorrect datetime value: "2021-00-00"
+CONTEXT:  referenced column: result
 insert into test values('month(20210001)', month(20210001));
+ERROR:  Incorrect datetime value: "20210001"
+CONTEXT:  referenced column: result
 insert into test values('month(20210100)', month(20210100));
+ERROR:  Incorrect datetime value: "20210100"
+CONTEXT:  referenced column: result
 insert into test values('month(20210000)', month(20210000));
+ERROR:  Incorrect datetime value: "20210000"
+CONTEXT:  referenced column: result
 insert into test values('month(0)', month(0));
 -- 非严格模式，参数不合法，报warning，返回NULL或者对应值
 set dolphin.sql_mode = 'sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date';
@@ -363,7 +379,7 @@ insert into test values('month(''10000-1-1'')', month('10000-1-1'));
 WARNING:  Incorrect datetime value: "10000-1-1"
 CONTEXT:  referenced column: result
 insert into test values('month(''9999-12-31 23:59:59.9999995'')', month('9999-12-31 23:59:59.9999995'));
-WARNING:  Truncated incorrect datetime value: "9999-12-31 23:59:59.9999995"
+WARNING:  Incorrect datetime value: "9999-12-31 23:59:59.9999995"
 CONTEXT:  referenced column: result
 insert into test values('month(-1)', month(-1));
 WARNING:  Incorrect datetime value: "-1"
@@ -383,7 +399,7 @@ insert into test values('month(''10000-1-1'')', month('10000-1-1'));
 ERROR:  Incorrect datetime value: "10000-1-1"
 CONTEXT:  referenced column: result
 insert into test values('month(''9999-12-31 23:59:59.9999995'')', month('9999-12-31 23:59:59.9999995'));
-ERROR:  Truncated incorrect datetime value: "9999-12-31 23:59:59.9999995"
+ERROR:  Incorrect datetime value: "9999-12-31 23:59:59.9999995"
 CONTEXT:  referenced column: result
 insert into test values('month(-1)', month(-1));
 ERROR:  Incorrect datetime value: "-1"
@@ -431,26 +447,26 @@ insert into test values('last_day(20211112235959.9999999)', last_day(20211112235
 -- 特异
 insert into test values('last_day(null)', last_day(null));
 insert into test values('last_day(''2021-01-00'')', last_day('2021-01-00'));
+ERROR:  Incorrect datetime value: "2021-01-00"
+CONTEXT:  referenced column: result
 insert into test values('last_day(20210100)', last_day(20210100));
+ERROR:  Incorrect datetime value: "20210100"
+CONTEXT:  referenced column: result
 -- 非严格模式，参数不合法，报warning，返回NULL或者对应值
 set dolphin.sql_mode = 'sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date';
 insert into test values('last_day(''2021-00-01'')', last_day('2021-00-01'));
-WARNING:  date/time field value out of range: "2021-00-01"
+WARNING:  Incorrect datetime value: "2021-00-01"
 CONTEXT:  referenced column: result
 insert into test values('last_day(20210001)', last_day(20210001));
 WARNING:  Incorrect datetime value: "20210001"
 CONTEXT:  referenced column: result
 insert into test values('last_day(''0000-1-1 23:59:59.9999995'')', last_day('0000-1-1 23:59:59.9999995'));
-WARNING:  Incorrect datetime value: '0000-00-00'
-CONTEXT:  referenced column: result
 insert into test values('last_day(''0000-12-31 22:59:59.9999995'')', last_day('0000-12-31 22:59:59.9999995'));
-WARNING:  Incorrect datetime value: '0000-00-00'
-CONTEXT:  referenced column: result
 insert into test values('last_day(''10000-1-1'')', last_day('10000-1-1'));
 WARNING:  Incorrect datetime value: "10000-1-1"
 CONTEXT:  referenced column: result
 insert into test values('last_day(''9999-12-31 23:59:59.9999995'')', last_day('9999-12-31 23:59:59.9999995'));
-WARNING:  Truncated incorrect datetime value: "9999-12-31 23:59:59.9999995"
+WARNING:  Incorrect datetime value: "9999-12-31 23:59:59.9999995"
 CONTEXT:  referenced column: result
 insert into test values('last_day(-1)', last_day(-1));
 WARNING:  Incorrect datetime value: "-1"
@@ -470,23 +486,18 @@ CONTEXT:  referenced column: result
 -- 严格模式，参数不合法，抛出错误
 set dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date';
 insert into test values('last_day(''2021-00-01'')', last_day('2021-00-01'));
-ERROR:  date/time field value out of range: "2021-00-01"
-HINT:  Perhaps you need a different "datestyle" setting.
+ERROR:  Incorrect datetime value: "2021-00-01"
 CONTEXT:  referenced column: result
 insert into test values('last_day(20210001)', last_day(20210001));
 ERROR:  Incorrect datetime value: "20210001"
 CONTEXT:  referenced column: result
 insert into test values('last_day(''0000-1-1 23:59:59.9999995'')', last_day('0000-1-1 23:59:59.9999995'));
-ERROR:  Incorrect datetime value: '0000-00-00'
-CONTEXT:  referenced column: result
 insert into test values('last_day(''0000-12-31 22:59:59.9999995'')', last_day('0000-12-31 22:59:59.9999995'));
-ERROR:  Incorrect datetime value: '0000-00-00'
-CONTEXT:  referenced column: result
 insert into test values('last_day(''10000-1-1'')', last_day('10000-1-1'));
 ERROR:  Incorrect datetime value: "10000-1-1"
 CONTEXT:  referenced column: result
 insert into test values('last_day(''9999-12-31 23:59:59.9999995'')', last_day('9999-12-31 23:59:59.9999995'));
-ERROR:  Truncated incorrect datetime value: "9999-12-31 23:59:59.9999995"
+ERROR:  Incorrect datetime value: "9999-12-31 23:59:59.9999995"
 CONTEXT:  referenced column: result
 insert into test values('last_day(-1)', last_day(-1));
 ERROR:  Incorrect datetime value: "-1"
@@ -529,19 +540,33 @@ insert into test values('date(20211112235959.9999999)', date(20211112235959.9999
 -- 特异
 insert into test values('date(null)', date(null));
 insert into test values('date(''2021-1-0'')', date('2021-1-0'));
+ERROR:  Incorrect datetime value: "2021-1-0"
+CONTEXT:  referenced column: result
 insert into test values('date(''2021-0-1'')', date('2021-0-1'));
+ERROR:  Incorrect datetime value: "2021-0-1"
+CONTEXT:  referenced column: result
 insert into test values('date(''2021-0-0'')', date('2021-0-0'));
+ERROR:  Incorrect datetime value: "2021-0-0"
+CONTEXT:  referenced column: result
 insert into test values('date(0)', date(0));
+ERROR:  Incorrect datetime value: "0"
+CONTEXT:  referenced column: result
 insert into test values('date(20210031)', date(20210031));
+ERROR:  Incorrect datetime value: "20210031"
+CONTEXT:  referenced column: result
 insert into test values('date(20210100)', date(20210100));
+ERROR:  Incorrect datetime value: "20210100"
+CONTEXT:  referenced column: result
 insert into test values('date(20210100)', date(20210100));
+ERROR:  Incorrect datetime value: "20210100"
+CONTEXT:  referenced column: result
 -- 非严格模式，参数不合法，报warning，返回NULL或者对应值
 set dolphin.sql_mode = 'sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date';
 insert into test values('date(''10000-1-1'')', date('10000-1-1'));
 WARNING:  Incorrect datetime value: "10000-1-1"
 CONTEXT:  referenced column: result
 insert into test values('date(''9999-12-31 23:59:59.9999995'')', date('9999-12-31 23:59:59.9999995'));
-WARNING:  Truncated incorrect datetime value: "9999-12-31 23:59:59.9999995"
+WARNING:  Incorrect datetime value: "9999-12-31 23:59:59.9999995"
 CONTEXT:  referenced column: result
 insert into test values('date(-1)', date(-1));
 WARNING:  Incorrect datetime value: "-1"
@@ -561,7 +586,7 @@ insert into test values('date(''10000-1-1'')', date('10000-1-1'));
 ERROR:  Incorrect datetime value: "10000-1-1"
 CONTEXT:  referenced column: result
 insert into test values('date(''9999-12-31 23:59:59.9999995'')', date('9999-12-31 23:59:59.9999995'));
-ERROR:  Truncated incorrect datetime value: "9999-12-31 23:59:59.9999995"
+ERROR:  Incorrect datetime value: "9999-12-31 23:59:59.9999995"
 CONTEXT:  referenced column: result
 insert into test values('date(-1)', date(-1));
 ERROR:  Incorrect datetime value: "-1"
@@ -600,11 +625,23 @@ insert into test values('day(20211112235959.9999999)', day(20211112235959.999999
 -- 特异
 insert into test values('day(null)', day(null));
 insert into test values('day(''2021-00-01'')', day('2021-00-01'));
+ERROR:  Incorrect datetime value: "2021-00-01"
+CONTEXT:  referenced column: result
 insert into test values('day(''2021-01-00'')', day('2021-01-00'));
+ERROR:  Incorrect datetime value: "2021-01-00"
+CONTEXT:  referenced column: result
 insert into test values('day(''2021-00-00'')', day('2021-00-00'));
+ERROR:  Incorrect datetime value: "2021-00-00"
+CONTEXT:  referenced column: result
 insert into test values('day(20210001)', day(20210001));
+ERROR:  Incorrect datetime value: "20210001"
+CONTEXT:  referenced column: result
 insert into test values('day(20210100)', day(20210100));
+ERROR:  Incorrect datetime value: "20210100"
+CONTEXT:  referenced column: result
 insert into test values('day(20210000)', day(20210000));
+ERROR:  Incorrect datetime value: "20210000"
+CONTEXT:  referenced column: result
 insert into test values('day(0)', day(0));
 -- 非严格模式，参数不合法，报warning，返回NULL或者对应值
 set dolphin.sql_mode = 'sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date';
@@ -612,7 +649,7 @@ insert into test values('day(''10000-1-1'')', day('10000-1-1'));
 WARNING:  Incorrect datetime value: "10000-1-1"
 CONTEXT:  referenced column: result
 insert into test values('day(''9999-12-31 23:59:59.9999995'')', day('9999-12-31 23:59:59.9999995'));
-WARNING:  Truncated incorrect datetime value: "9999-12-31 23:59:59.9999995"
+WARNING:  Incorrect datetime value: "9999-12-31 23:59:59.9999995"
 CONTEXT:  referenced column: result
 insert into test values('day(-1)', day(-1));
 WARNING:  Incorrect datetime value: "-1"
@@ -632,7 +669,7 @@ insert into test values('day(''10000-1-1'')', day('10000-1-1'));
 ERROR:  Incorrect datetime value: "10000-1-1"
 CONTEXT:  referenced column: result
 insert into test values('day(''9999-12-31 23:59:59.9999995'')', day('9999-12-31 23:59:59.9999995'));
-ERROR:  Truncated incorrect datetime value: "9999-12-31 23:59:59.9999995"
+ERROR:  Incorrect datetime value: "9999-12-31 23:59:59.9999995"
 CONTEXT:  referenced column: result
 insert into test values('day(-1)', day(-1));
 ERROR:  Incorrect datetime value: "-1"
@@ -796,7 +833,7 @@ insert into test values('week(''10000-1-1'')', week('10000-1-1'));
 WARNING:  Incorrect datetime value: "10000-1-1"
 CONTEXT:  referenced column: result
 insert into test values('week(''9999-12-31 23:59:59.9999995'')', week('9999-12-31 23:59:59.9999995'));
-WARNING:  Truncated incorrect datetime value: "9999-12-31 23:59:59.9999995"
+WARNING:  Incorrect datetime value: "9999-12-31 23:59:59.9999995"
 CONTEXT:  referenced column: result
 insert into test values('week(0)', week(0));
 WARNING:  Incorrect datetime value: "0"
@@ -814,18 +851,14 @@ insert into test values('week(9999999999999999999999)', week(9999999999999999999
 WARNING:  Incorrect datetime value: "9999999999999999999999"
 CONTEXT:  referenced column: result
 insert into test values('week(''0000-1-1 23:59:59.9999995'')', week('0000-1-1 23:59:59.9999995'));
-WARNING:  Truncated incorrect datetime value: "0000-1-1 23:59:59.9999995"
-CONTEXT:  referenced column: result
 insert into test values('week(''0000-12-31 22:59:59.9999995'')', week('0000-12-31 22:59:59.9999995'));
-WARNING:  Truncated incorrect datetime value: "0000-12-31 22:59:59.9999995"
-CONTEXT:  referenced column: result
 -- 单参数-严格模式，参数不合法，抛出错误
 set dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date';
 insert into test values('week(''10000-1-1'')', week('10000-1-1'));
 ERROR:  Incorrect datetime value: "10000-1-1"
 CONTEXT:  referenced column: result
 insert into test values('week(''9999-12-31 23:59:59.9999995'')', week('9999-12-31 23:59:59.9999995'));
-ERROR:  Truncated incorrect datetime value: "9999-12-31 23:59:59.9999995"
+ERROR:  Incorrect datetime value: "9999-12-31 23:59:59.9999995"
 CONTEXT:  referenced column: result
 insert into test values('week(0)', week(0));
 ERROR:  Incorrect datetime value: "0"
@@ -843,11 +876,7 @@ insert into test values('week(9999999999999999999999)', week(9999999999999999999
 ERROR:  Incorrect datetime value: "9999999999999999999999"
 CONTEXT:  referenced column: result
 insert into test values('week(''0000-1-1 23:59:59.9999995'')', week('0000-1-1 23:59:59.9999995'));
-ERROR:  Truncated incorrect datetime value: "0000-1-1 23:59:59.9999995"
-CONTEXT:  referenced column: result
 insert into test values('week(''0000-12-31 22:59:59.9999995'')', week('0000-12-31 22:59:59.9999995'));
-ERROR:  Truncated incorrect datetime value: "0000-12-31 22:59:59.9999995"
-CONTEXT:  referenced column: result
 -- 双参数-功能
 insert into test values('week(''2000-1-1'', 0)', week('2000-1-1', 0));
 insert into test values('week(''2000-1-1'', 1)', week('2000-1-1', 1));
@@ -868,7 +897,7 @@ insert into test values('week(''10000-1-1'', 0)', week('10000-1-1', 0));
 WARNING:  Incorrect datetime value: "10000-1-1"
 CONTEXT:  referenced column: result
 insert into test values('week(''9999-12-31 23:59:59.9999995'', 0)', week('9999-12-31 23:59:59.9999995', 0));
-WARNING:  Truncated incorrect datetime value: "9999-12-31 23:59:59.9999995"
+WARNING:  Incorrect datetime value: "9999-12-31 23:59:59.9999995"
 CONTEXT:  referenced column: result
 insert into test values('week(0, 0)', week(0, 0));
 WARNING:  Incorrect datetime value: "0"
@@ -886,18 +915,14 @@ insert into test values('week(9999999999999999999999, 0)', week(9999999999999999
 WARNING:  Incorrect datetime value: "9999999999999999999999"
 CONTEXT:  referenced column: result
 insert into test values('week(''0000-1-1 23:59:59.9999995'', 0)', week('0000-1-1 23:59:59.9999995', 0));
-WARNING:  Truncated incorrect datetime value: "0000-1-1 23:59:59.9999995"
-CONTEXT:  referenced column: result
 insert into test values('week(''0000-12-31 22:59:59.9999995'', 0)', week('0000-12-31 22:59:59.9999995', 0));
-WARNING:  Truncated incorrect datetime value: "0000-12-31 22:59:59.9999995"
-CONTEXT:  referenced column: result
 -- 双参数-严格模式，参数不合法，抛出错误
 set dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date';
 insert into test values('week(''10000-1-1'', 0)', week('10000-1-1', 0));
 ERROR:  Incorrect datetime value: "10000-1-1"
 CONTEXT:  referenced column: result
 insert into test values('week(''9999-12-31 23:59:59.9999995'', 0)', week('9999-12-31 23:59:59.9999995', 0));
-ERROR:  Truncated incorrect datetime value: "9999-12-31 23:59:59.9999995"
+ERROR:  Incorrect datetime value: "9999-12-31 23:59:59.9999995"
 CONTEXT:  referenced column: result
 insert into test values('week(0, 0)', week(0, 0));
 ERROR:  Incorrect datetime value: "0"
@@ -915,11 +940,7 @@ insert into test values('week(9999999999999999999999, 0)', week(9999999999999999
 ERROR:  Incorrect datetime value: "9999999999999999999999"
 CONTEXT:  referenced column: result
 insert into test values('week(''0000-1-1 23:59:59.9999995'', 0)', week('0000-1-1 23:59:59.9999995', 0));
-ERROR:  Truncated incorrect datetime value: "0000-1-1 23:59:59.9999995"
-CONTEXT:  referenced column: result
 insert into test values('week(''0000-12-31 22:59:59.9999995'', 0)', week('0000-12-31 22:59:59.9999995', 0));
-ERROR:  Truncated incorrect datetime value: "0000-12-31 22:59:59.9999995"
-CONTEXT:  referenced column: result
 --test yearweek
 -- 严格模式或者非严格模式都有值
 -- 单参数-功能
@@ -946,7 +967,7 @@ insert into test values('yearweek(''10000-1-1'')', yearweek('10000-1-1'));
 WARNING:  Incorrect datetime value: "10000-1-1"
 CONTEXT:  referenced column: result
 insert into test values('yearweek(''9999-12-31 23:59:59.9999995'')', yearweek('9999-12-31 23:59:59.9999995'));
-WARNING:  Truncated incorrect datetime value: "9999-12-31 23:59:59.9999995"
+WARNING:  Incorrect datetime value: "9999-12-31 23:59:59.9999995"
 CONTEXT:  referenced column: result
 insert into test values('yearweek(0)', yearweek(0));
 WARNING:  Incorrect datetime value: "0"
@@ -964,18 +985,14 @@ insert into test values('yearweek(9999999999999999999999)', yearweek(99999999999
 WARNING:  Incorrect datetime value: "9999999999999999999999"
 CONTEXT:  referenced column: result
 insert into test values('yearweek(''0000-1-1 23:59:59.9999995'')', yearweek('0000-1-1 23:59:59.9999995'));
-WARNING:  Incorrect datetime value: '0000-00-00'
-CONTEXT:  referenced column: result
 insert into test values('yearweek(''0000-12-31 22:59:59.9999995'')', yearweek('0000-12-31 22:59:59.9999995'));
-WARNING:  Incorrect datetime value: '0000-00-00'
-CONTEXT:  referenced column: result
 -- 单参数-严格模式，参数不合法，抛出错误
 set dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date';
 insert into test values('yearweek(''10000-1-1'')', yearweek('10000-1-1'));
 ERROR:  Incorrect datetime value: "10000-1-1"
 CONTEXT:  referenced column: result
 insert into test values('yearweek(''9999-12-31 23:59:59.9999995'')', yearweek('9999-12-31 23:59:59.9999995'));
-ERROR:  Truncated incorrect datetime value: "9999-12-31 23:59:59.9999995"
+ERROR:  Incorrect datetime value: "9999-12-31 23:59:59.9999995"
 CONTEXT:  referenced column: result
 insert into test values('yearweek(0)', yearweek(0));
 ERROR:  Incorrect datetime value: "0"
@@ -993,11 +1010,7 @@ insert into test values('yearweek(9999999999999999999999)', yearweek(99999999999
 ERROR:  Incorrect datetime value: "9999999999999999999999"
 CONTEXT:  referenced column: result
 insert into test values('yearweek(''0000-1-1 23:59:59.9999995'')', yearweek('0000-1-1 23:59:59.9999995'));
-ERROR:  Incorrect datetime value: '0000-00-00'
-CONTEXT:  referenced column: result
 insert into test values('yearweek(''0000-12-31 22:59:59.9999995'')', yearweek('0000-12-31 22:59:59.9999995'));
-ERROR:  Incorrect datetime value: '0000-00-00'
-CONTEXT:  referenced column: result
 -- 双参数-功能
 insert into test values('yearweek(''2000-1-1'', 0)', yearweek('2000-1-1', 0));
 insert into test values('yearweek(''2000-1-1'', 1)', yearweek('2000-1-1', 1));
@@ -1018,7 +1031,7 @@ insert into test values('yearweek(''10000-1-1'', 0)', yearweek('10000-1-1', 0));
 WARNING:  Incorrect datetime value: "10000-1-1"
 CONTEXT:  referenced column: result
 insert into test values('yearweek(''9999-12-31 23:59:59.9999995'', 0)', yearweek('9999-12-31 23:59:59.9999995', 0));
-WARNING:  Truncated incorrect datetime value: "9999-12-31 23:59:59.9999995"
+WARNING:  Incorrect datetime value: "9999-12-31 23:59:59.9999995"
 CONTEXT:  referenced column: result
 insert into test values('yearweek(0, 0)', yearweek(0, 0));
 WARNING:  Incorrect datetime value: "0"
@@ -1036,18 +1049,14 @@ insert into test values('yearweek(9999999999999999999999, 0)', yearweek(99999999
 WARNING:  Incorrect datetime value: "9999999999999999999999"
 CONTEXT:  referenced column: result
 insert into test values('yearweek(''0000-1-1 23:59:59.9999995'', 0)', yearweek('0000-1-1 23:59:59.9999995', 0));
-WARNING:  Incorrect datetime value: '0000-00-00'
-CONTEXT:  referenced column: result
 insert into test values('yearweek(''0000-12-31 22:59:59.9999995'', 0)', yearweek('0000-12-31 22:59:59.9999995', 0));
-WARNING:  Incorrect datetime value: '0000-00-00'
-CONTEXT:  referenced column: result
 -- 双参数-严格模式，参数不合法，抛出错误
 set dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date';
 insert into test values('yearweek(''10000-1-1'', 0)', yearweek('10000-1-1', 0));
 ERROR:  Incorrect datetime value: "10000-1-1"
 CONTEXT:  referenced column: result
 insert into test values('yearweek(''9999-12-31 23:59:59.9999995'', 0)', yearweek('9999-12-31 23:59:59.9999995', 0));
-ERROR:  Truncated incorrect datetime value: "9999-12-31 23:59:59.9999995"
+ERROR:  Incorrect datetime value: "9999-12-31 23:59:59.9999995"
 CONTEXT:  referenced column: result
 insert into test values('yearweek(0, 0)', yearweek(0, 0));
 ERROR:  Incorrect datetime value: "0"
@@ -1065,24 +1074,17 @@ insert into test values('yearweek(9999999999999999999999, 0)', yearweek(99999999
 ERROR:  Incorrect datetime value: "9999999999999999999999"
 CONTEXT:  referenced column: result
 insert into test values('yearweek(''0000-1-1 23:59:59.9999995'', 0)', yearweek('0000-1-1 23:59:59.9999995', 0));
-ERROR:  Incorrect datetime value: '0000-00-00'
-CONTEXT:  referenced column: result
 insert into test values('yearweek(''0000-12-31 22:59:59.9999995'', 0)', yearweek('0000-12-31 22:59:59.9999995', 0));
-ERROR:  Incorrect datetime value: '0000-00-00'
-CONTEXT:  referenced column: result
 -- 结果
 select * from test order by funcname;
                        funcname                       |   result   
 ------------------------------------------------------+------------
  date('0000-1-1 00:00:00')                            | 0000-01-01
- date('0000-1-1 23:59:59.9999995')                    | 0000-00-00
+ date('0000-1-1 23:59:59.9999995')                    | 0000-01-02
  date('0000-1-1')                                     | 0000-01-01
- date('0000-12-31 22:59:59.9999995')                  | 0000-00-00
+ date('0000-12-31 22:59:59.9999995')                  | 0000-12-31
  date('0000-12-31 23:59:59.9999995')                  | 0001-01-01
  date('10000-1-1')                                    | 
- date('2021-0-0')                                     | 2021-00-00
- date('2021-0-1')                                     | 2021-00-01
- date('2021-1-0')                                     | 2021-01-00
  date('2021-1-1 23:59:59')                            | 2021-01-01
  date('2021-1-1 23:59:59.9999995')                    | 2021-01-02
  date('2021-1-1')                                     | 2021-01-01
@@ -1090,12 +1092,8 @@ select * from test order by funcname;
  date('9999-12-31 23:59:59.9999995')                  | 
  date('9999-12-31')                                   | 9999-12-31
  date(-1)                                             | 
- date(0)                                              | 0000-00-00
  date(100000101)                                      | 
  date(101)                                            | 2000-01-01
- date(20210031)                                       | 2021-00-31
- date(20210100)                                       | 2021-01-00
- date(20210100)                                       | 2021-01-00
  date(20211112235959.999999)                          | 2021-11-12
  date(20211112235959.9999999)                         | 2021-11-13
  date(99991231)                                       | 9999-12-31
@@ -1106,14 +1104,11 @@ select * from test order by funcname;
  date(date'0000-1-1')                                 | 0000-01-01
  date(null)                                           | 
  day('0000-1-1 00:00:00')                             | 1
- day('0000-1-1 23:59:59.9999995')                     | 0
+ day('0000-1-1 23:59:59.9999995')                     | 2
  day('0000-1-1')                                      | 1
- day('0000-12-31 22:59:59.9999995')                   | 0
+ day('0000-12-31 22:59:59.9999995')                   | 31
  day('0000-12-31 23:59:59.9999995')                   | 1
  day('10000-1-1')                                     | 
- day('2021-00-00')                                    | 0
- day('2021-00-01')                                    | 1
- day('2021-01-00')                                    | 0
  day('2021-1-1 00:00:00')                             | 1
  day('2021-1-1 23:59:59.9999995')                     | 2
  day('2021-1-1')                                      | 1
@@ -1124,9 +1119,6 @@ select * from test order by funcname;
  day(0)                                               | 0
  day(100000101)                                       | 
  day(101)                                             | 1
- day(20210000)                                        | 0
- day(20210001)                                        | 1
- day(20210100)                                        | 0
  day(20211112235959.999999)                           | 12
  day(20211112235959.9999999)                          | 13
  day(99991231)                                        | 31
@@ -1137,9 +1129,9 @@ select * from test order by funcname;
  day(date'0000-1-1')                                  | 1
  day(null)                                            | 
  dayname('0000-1-1 00:00:00')                         | Sunday
- dayname('0000-1-1 23:59:59.9999995')                 | Saturday
+ dayname('0000-1-1 23:59:59.9999995')                 | Monday
  dayname('0000-1-1')                                  | Sunday
- dayname('0000-12-31 22:59:59.9999995')               | Saturday
+ dayname('0000-12-31 22:59:59.9999995')               | Sunday
  dayname('0000-12-31 23:59:59.9999995')               | Monday
  dayname('10000-1-1')                                 | 
  dayname('2021-11-12')                                | Friday
@@ -1166,14 +1158,15 @@ select * from test order by funcname;
  dayname(date'0000-1-1')                              | Sunday
  dayname(null)                                        | 
  last_day('0000-1-1 00:00:00')                        | 0000-01-31
- last_day('0000-1-1 23:59:59.9999995')                | 
+ last_day('0000-1-1 23:59:59.9999995')                | 0000-01-31
+ last_day('0000-1-1 23:59:59.9999995')                | 0000-01-31
  last_day('0000-1-1')                                 | 0000-01-31
- last_day('0000-12-31 22:59:59.9999995')              | 
+ last_day('0000-12-31 22:59:59.9999995')              | 0000-12-31
+ last_day('0000-12-31 22:59:59.9999995')              | 0000-12-31
  last_day('0000-12-31 23:59:59.9999995')              | 0001-01-31
  last_day('0000-2-1')                                 | 0000-02-28
  last_day('10000-1-1')                                | 
  last_day('2021-00-01')                               | 
- last_day('2021-01-00')                               | 2021-01-31
  last_day('2021-1-1')                                 | 2021-01-31
  last_day('2021-10-1')                                | 2021-10-31
  last_day('2021-11-1')                                | 2021-11-30
@@ -1194,7 +1187,6 @@ select * from test order by funcname;
  last_day(100000101)                                  | 
  last_day(101)                                        | 2000-01-31
  last_day(20210001)                                   | 
- last_day(20210100)                                   | 2021-01-31
  last_day(20211112235959.999999)                      | 2021-11-30
  last_day(20211112235959.9999999)                     | 2021-11-30
  last_day(99991231)                                   | 9999-12-31
@@ -1205,14 +1197,11 @@ select * from test order by funcname;
  last_day(date'0000-1-1')                             | 0000-01-31
  last_day(null)                                       | 
  month('0000-1-1 00:00:00')                           | 1
- month('0000-1-1 23:59:59.9999995')                   | 0
+ month('0000-1-1 23:59:59.9999995')                   | 1
  month('0000-1-1')                                    | 1
- month('0000-12-31 22:59:59.9999995')                 | 0
+ month('0000-12-31 22:59:59.9999995')                 | 12
  month('0000-12-31 23:59:59.9999995')                 | 1
  month('10000-1-1')                                   | 
- month('2021-00-00')                                  | 0
- month('2021-00-01')                                  | 0
- month('2021-01-00')                                  | 1
  month('2021-1-1')                                    | 1
  month('2021-10-1')                                   | 10
  month('2021-11-1')                                   | 11
@@ -1232,9 +1221,6 @@ select * from test order by funcname;
  month(0)                                             | 0
  month(100000101)                                     | 
  month(101)                                           | 1
- month(20210000)                                      | 0
- month(20210001)                                      | 0
- month(20210100)                                      | 1
  month(20211112235959.999999)                         | 11
  month(20211112235959.9999999)                        | 11
  month(99991231)                                      | 12
@@ -1245,12 +1231,11 @@ select * from test order by funcname;
  month(date'0000-1-1')                                | 1
  month(null)                                          | 
  monthname('0000-1-1 00:00:00')                       | January
- monthname('0000-1-1 23:59:59.9999995')               | 
+ monthname('0000-1-1 23:59:59.9999995')               | January
  monthname('0000-1-1')                                | January
- monthname('0000-12-31 22:59:59.9999995')             | 
+ monthname('0000-12-31 22:59:59.9999995')             | December
  monthname('0000-12-31 23:59:59.9999995')             | January
  monthname('10000-1-1')                               | 
- monthname('2021-00-01')                              | 
  monthname('2021-1-1')                                | January
  monthname('2021-10-1')                               | October
  monthname('2021-11-1')                               | November
@@ -1270,7 +1255,6 @@ select * from test order by funcname;
  monthname(0)                                         | 
  monthname(100000101)                                 | 
  monthname(101)                                       | January
- monthname(20210001)                                  | 
  monthname(20211112235959.999999)                     | November
  monthname(20211112235959.9999999)                    | November
  monthname(99991231)                                  | December
@@ -1314,22 +1298,26 @@ select * from test order by funcname;
  time_to_sec(date'2021-11-12')                        | 0
  time_to_sec(null)                                    | 
  week('0000-1-1 00:00:00')                            | 1
- week('0000-1-1 23:59:59.9999995')                    | 
- week('0000-1-1 23:59:59.9999995', 0)                 | 
+ week('0000-1-1 23:59:59.9999995')                    | 1
+ week('0000-1-1 23:59:59.9999995')                    | 1
+ week('0000-1-1 23:59:59.9999995', 0)                 | 1
+ week('0000-1-1 23:59:59.9999995', 0)                 | 1
  week('0000-1-1')                                     | 1
- week('0000-12-31 22:59:59.9999995')                  | 
- week('0000-12-31 22:59:59.9999995', 0)               | 
+ week('0000-12-31 22:59:59.9999995')                  | 53
+ week('0000-12-31 22:59:59.9999995')                  | 53
+ week('0000-12-31 22:59:59.9999995', 0)               | 53
+ week('0000-12-31 22:59:59.9999995', 0)               | 53
  week('0000-12-31 23:59:59.9999995')                  | 0
  week('0000-12-31 23:59:59.9999995', 0)               | 0
  week('10000-1-1')                                    | 
  week('10000-1-1', 0)                                 | 
  week('2000-1-1')                                     | 52
- week('2000-1-1')                                     | 52
+ week('2000-1-1')                                     | 0
  week('2000-1-1')                                     | 0
  week('2000-1-1')                                     | 52
  week('2000-1-1')                                     | 0
  week('2000-1-1')                                     | 52
- week('2000-1-1')                                     | 0
+ week('2000-1-1')                                     | 52
  week('2000-1-1')                                     | 0
  week('2000-1-1', 0)                                  | 0
  week('2000-1-1', 1)                                  | 0
@@ -1365,11 +1353,15 @@ select * from test order by funcname;
  week(null, 0)                                        | 
  week(null, null)                                     | 
  yearweek('0000-1-1 00:00:00')                        | 1
- yearweek('0000-1-1 23:59:59.9999995')                | 
- yearweek('0000-1-1 23:59:59.9999995', 0)             | 
+ yearweek('0000-1-1 23:59:59.9999995')                | 1
+ yearweek('0000-1-1 23:59:59.9999995')                | 1
+ yearweek('0000-1-1 23:59:59.9999995', 0)             | 1
+ yearweek('0000-1-1 23:59:59.9999995', 0)             | 1
  yearweek('0000-1-1')                                 | 1
- yearweek('0000-12-31 22:59:59.9999995')              | 
- yearweek('0000-12-31 22:59:59.9999995', 0)           | 
+ yearweek('0000-12-31 22:59:59.9999995')              | 53
+ yearweek('0000-12-31 22:59:59.9999995')              | 53
+ yearweek('0000-12-31 22:59:59.9999995', 0)           | 53
+ yearweek('0000-12-31 22:59:59.9999995', 0)           | 53
  yearweek('0000-12-31 23:59:59.9999995')              | 53
  yearweek('0000-12-31 23:59:59.9999995', 0)           | 53
  yearweek('10000-1-1')                                | 
@@ -1408,7 +1400,7 @@ select * from test order by funcname;
  yearweek(null)                                       | 
  yearweek(null, 0)                                    | 
  yearweek(null, null)                                 | 
-(334 rows)
+(321 rows)
 
 drop table test;
 \c contrib_regression

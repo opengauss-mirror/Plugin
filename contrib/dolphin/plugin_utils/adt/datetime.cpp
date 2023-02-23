@@ -4951,6 +4951,7 @@ static bool lldiv_decode_tm_internal(lldiv_t *div,  struct pg_tm *tm, fsec_t *fs
 
 void lldiv_decode_tm(Numeric num, lldiv_t *div, struct pg_tm *tm, fsec_t *fsec, unsigned int date_flag, int *date_type)
 {
+    int errlevel = (SQL_MODE_STRICT() ? ERROR : WARNING);
     if (!lldiv_decode_tm_internal(div, tm, fsec, date_flag, date_type)) {
         char * str = DatumGetCString(DirectFunctionCall1(numeric_out, NumericGetDatum(num)));
         ereport(ERROR,
@@ -4963,7 +4964,7 @@ void lldiv_decode_tm(Numeric num, lldiv_t *div, struct pg_tm *tm, fsec_t *fsec, 
                 (errcode(DTERR_BAD_FORMAT), errmsg("Truncated incorrect datetime value: \"%s\"", str)));
     } else if (*date_type == DTK_DATE && *fsec) {
         char * str = DatumGetCString(DirectFunctionCall1(numeric_out, NumericGetDatum(num)));
-        ereport(ERROR,
+        ereport(errlevel,
                 (errcode(DTERR_BAD_FORMAT), errmsg("Truncated incorrect date value: \"%s\"", str)));
     }
     return;
@@ -5385,7 +5386,10 @@ bool datetime_add_nanoseconds_with_round(pg_tm *tm, fsec_t &fsec, int nano)
     if (tm2timestamp(tm, fsec, NULL, &datetime) == -1) {
         return false;
     }
-    if (datetime >= B_FORMAT_TIMESTAMP_MIN_VALUE || datetime <= B_FORMAT_TIMESTAMP_MAX_VALUE) {
+    if (datetime >= B_FORMAT_TIMESTAMP_MIN_VALUE && datetime <= B_FORMAT_TIMESTAMP_MAX_VALUE) {
+        fsec_t tmp_fsec = fsec;
+        timestamp2tm(datetime, NULL, tm, &tmp_fsec, NULL, NULL);
+        fsec = tmp_fsec;
         return true;
     }
     return false;

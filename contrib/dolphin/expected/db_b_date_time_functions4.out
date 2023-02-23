@@ -244,15 +244,21 @@ insert into test values('date_format(null, ''%Y'')', date_format(null, '%Y'));
 insert into test values('date_format(''2021-11-12'', null)', date_format('2021-11-12', null));
 insert into test values('date_format(null, null)', date_format(null, null));
 insert into test values('date_format(''2021-0-12 12:12:12'', ''%Y %m %d %T'')', date_format('2021-0-12 12:12:12', '%Y %m %d %T'));
+ERROR:  Incorrect datetime value: "2021-0-12 12:12:12"
+CONTEXT:  referenced column: result
 insert into test values('date_format(''2021-1-0 12:12:12'', ''%Y %m %d %T'')', date_format('2021-1-0 12:12:12', '%Y %m %d %T'));
+ERROR:  Incorrect datetime value: "2021-1-0 12:12:12"
+CONTEXT:  referenced column: result
 insert into test values('date_format(''2021-0-0 12:12:12'', ''%Y %m %d %T'')', date_format('2021-0-0 12:12:12', '%Y %m %d %T'));
+ERROR:  Incorrect datetime value: "2021-0-0 12:12:12"
+CONTEXT:  referenced column: result
 -- 非严格模式，参数不合法，报warning，返回NULL或者对应值
 set dolphin.sql_mode = 'sql_mode_full_group,pipes_as_concat,ansi_quotes';
 insert into test values('date_format(''10000-01-01 12:12:12'',''%Y %m %d %T'')', date_format('10000-01-01 12:12:12','%Y %m %d %T'));
 WARNING:  Incorrect datetime value: "10000-01-01 12:12:12"
 CONTEXT:  referenced column: result
 insert into test values('date_format(''2001-01-32 12:12:12'',''%Y %m %d %T'')', date_format('2001-01-32 12:12:12','%Y %m %d %T'));
-WARNING:  date/time field value out of range: "2001-01-32 12:12:12"
+WARNING:  Incorrect datetime value: "2001-01-32 12:12:12"
 CONTEXT:  referenced column: result
 insert into test values('date_format(100000101, ''%b'')', date_format(100000101, '%b'));
 WARNING:  Incorrect datetime value: "100000101"
@@ -263,8 +269,7 @@ insert into test values('date_format(''10000-01-01 12:12:12'',''%Y %m %d %T'')',
 ERROR:  Incorrect datetime value: "10000-01-01 12:12:12"
 CONTEXT:  referenced column: result
 insert into test values('date_format(''2001-01-32 12:12:12'',''%Y %m %d %T'')', date_format('2001-01-32 12:12:12','%Y %m %d %T'));
-ERROR:  date/time field value out of range: "2001-01-32 12:12:12"
-HINT:  Perhaps you need a different "datestyle" setting.
+ERROR:  Incorrect datetime value: "2001-01-32 12:12:12"
 CONTEXT:  referenced column: result
 insert into test values('date_format(100000101, ''%b'')', date_format(100000101, '%b'));
 ERROR:  Incorrect datetime value: "100000101"
@@ -599,9 +604,6 @@ select * from test order by funcname;
  date_format(20010101,'%Y')                                                                                                                                                                                                                                                    | 2001
  date_format(20010101,'%Y')                                                                                                                                                                                                                                                    | 2001
  date_format('2001-01-32 12:12:12','%Y %m %d %T')                                                                                                                                                                                                                              | 
- date_format('2021-0-0 12:12:12', '%Y %m %d %T')                                                                                                                                                                                                                               | 2021 00 00 12:12:12
- date_format('2021-0-12 12:12:12', '%Y %m %d %T')                                                                                                                                                                                                                              | 2021 00 12 12:12:12
- date_format('2021-1-0 12:12:12', '%Y %m %d %T')                                                                                                                                                                                                                               | 2021 01 00 12:12:12
  date_format('2021-11-12', null)                                                                                                                                                                                                                                               | 
  date_format('2021-11-12','%U %u %V %v %X %x %j')                                                                                                                                                                                                                              | 45 45 45 45 2021 2021 316
  date_format('9999-12-31 23:59:59.999999','%Y %m %d %T %f')                                                                                                                                                                                                                    | 9999 12 31 23:59:59 999999
@@ -831,7 +833,7 @@ select * from test order by funcname;
  str_to_date('9999 12 31', '%Y %m %d')                                                                                                                                                                                                                                         | 9999-12-31
  str_to_date('9999-12-31', '%Y-%m-%d')                                                                                                                                                                                                                                         | 9999-12-31
  str_to_date(null, '%Y %m %d')                                                                                                                                                                                                                                                 | 
-(278 rows)
+(275 rows)
 
 drop table test;
 drop schema b_datetime_func_test4 cascade;
