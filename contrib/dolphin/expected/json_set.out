@@ -3,49 +3,49 @@ set current_schema to 'test_json_set';
 select json_set('{"1":2}','$."1"',6);
  json_set 
 ----------
- {"1":6}
+ {"1": 6}
 (1 row)
 
 select json_set('{"1":2,"b":"r","q":0}','$.b',6);
-      json_set       
----------------------
- {"1":2,"b":6,"q":0}
+         json_set         
+--------------------------
+ {"1": 2, "b": 6, "q": 0}
 (1 row)
 
 select json_set('[1,2,[3,4,5]]','$[2]',9,'$[3]','[1,2]');
-    json_set     
------------------
- [1,2,9,"[1,2]"]
+      json_set      
+--------------------
+ [1, 2, 9, "[1,2]"]
 (1 row)
 
 select json_set('[1,2,[3,4,5]]','$[1]',9,'$[2][3]',22);
-     json_set     
-------------------
- [1,9,[3,4,5,22]]
+       json_set        
+-----------------------
+ [1, 9, [3, 4, 5, 22]]
 (1 row)
 
 select json_set('[1,2,[3,4,5]]','$[2]',9,'$[2][3]',22);
-   json_set   
---------------
- [1,2,[9,22]]
+    json_set     
+-----------------
+ [1, 2, [9, 22]]
 (1 row)
 
 select json_set('{"student":{"id":1,"gender":"man"}}','$.age',23);
-                   json_set                   
-----------------------------------------------
- {"age":23,"student":{"id":1,"gender":"man"}}
+                      json_set                      
+----------------------------------------------------
+ {"age": 23, "student": {"id": 1, "gender": "man"}}
 (1 row)
 
 select json_set('{"student":{"id":1,"gender":"man"}}','$.student.age',23);
-                   json_set                   
-----------------------------------------------
- {"student":{"id":1,"age":23,"gender":"man"}}
+                      json_set                      
+----------------------------------------------------
+ {"student": {"id": 1, "age": 23, "gender": "man"}}
 (1 row)
 
 select json_set('{"student":{"id":1,"gender":"man"}}','$.age',23,'$.student.id',3);
-                   json_set                   
-----------------------------------------------
- {"age":23,"student":{"id":3,"gender":"man"}}
+                      json_set                      
+----------------------------------------------------
+ {"age": 23, "student": {"id": 3, "gender": "man"}}
 (1 row)
 
 select json_set('[1,2]','$.[1]');
@@ -67,9 +67,9 @@ select json_set(null,2);
 ERROR:  Incorrect parameter count in the call to native function 'JSON_SET'
 CONTEXT:  referenced column: json_set
 select json_set('{"name":"lc"}','$.name','lcc','$.id',45);
-        json_set        
-------------------------
- {"id":45,"name":"lcc"}
+         json_set          
+---------------------------
+ {"id": 45, "name": "lcc"}
 (1 row)
 
 select json_set('x',2,2);
@@ -85,24 +85,24 @@ select json_set('{"s":3}',null,4);
 (1 row)
 
 select json_set('{"s":3}','$.s',null);
-  json_set  
-------------
- {"s":null}
+  json_set   
+-------------
+ {"s": null}
 (1 row)
 
 select json_set('{"s":3}','$.s','d');
- json_set  
------------
- {"s":"d"}
+  json_set  
+------------
+ {"s": "d"}
 (1 row)
 
 create table dataa(name VARCHAR(20) PRIMARY KEY);
 NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "dataa_pkey" for table "dataa"
 insert into dataa (name) value(json_set('{"s":1}','$.s',3,'$.w',5));
 select name from dataa;
-     name      
----------------
- {"s":3,"w":5}
+       name       
+------------------
+ {"s": 3, "w": 5}
 (1 row)
 
 drop table dataa;

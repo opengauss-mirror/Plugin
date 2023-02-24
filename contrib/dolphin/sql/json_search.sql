@@ -1,6 +1,23 @@
 create schema test_json_search;
 set current_schema to 'test_json_search';
 
+--含NULL和错误参数
+select json_search(1,'one',NULL);
+select json_search('1','on',NULL);
+select json_search('"1"','one',NULL,NULL,'$..');
+
+--转义符含中文
+select json_search('["aset%3165adq",["asedwq_dqwet%3165adq"]]', 'all', '%a%', '且') as res;
+select json_search('["aset%3165adq",["asedwq_dqwet%3165adq"]]', 'all', '%a%', '且是') as res;
+
+--json文档为对象，path为数组索引
+select json_search('{"a":["1","asd138%96qwed<>?,.","asd196qwed《》？！@#￥"]}', 'all', '%s%', null, '$[0]') as res;
+
+--返回数组
+select json_search('["a", ["a", "b", "c"], {"d":"ab"}]', 'all', '%a%') as res;
+select json_search('["a", ["a", "b", "c"], {"d":"ab"}]', 'all', '%a') as res;
+select json_search('["aset%3165adq",["asedwq_dqwet%3165adq"]]','all', '%\%%');
+
 select json_search('null','one','null','&','$');
 select json_search(null,'one','null','&','$');
 select json_search('"null"',null,'null','&','$');
