@@ -504,7 +504,7 @@ static char* SingleLineProcedureQueryGet(int& start_pos, int& end_pos, base_yy_e
 static void setAccessMethod(Constraint *n);
 static SelectStmt *MakeFunctionSelect(char *funcCall, List* args, core_yyscan_t yyscanner);
 static SelectStmt *MakeShowGrantStmt(char *arg, int location, core_yyscan_t yyscanner);
-static void handleCreateDolphinFuncOptions(List** options);
+static List* handleCreateDolphinFuncOptions(List* input_options);
 static char* appendString(char* source, char* target, int offset);
 %}
 
@@ -17271,8 +17271,8 @@ CreateFunctionStmt:
 					n->parameters = $6;
 					n->inputHeaderSrc = FormatFuncArgType(yyscanner, funSource->headerSrc, n->parameters);
 					n->returnType = $8;
-					n->options = $9;
-					handleCreateDolphinFuncOptions(&n->options);
+					List* filtered_options = NIL;
+					n->options = handleCreateDolphinFuncOptions($9);
 					n->options = lappend(n->options, makeDefElem("as", (Node*)list_make1(makeString(funSource->bodySrc))));
 					n->options = lappend(n->options, makeDefElem("language", (Node*)makeString("plpgsql")));
 
@@ -17307,8 +17307,8 @@ CreateFunctionStmt:
 					n->parameters = $6;
 					n->inputHeaderSrc = FormatFuncArgType(yyscanner, funSource->headerSrc, n->parameters);
 					n->returnType = $8;
-					n->options = $9;
-					handleCreateDolphinFuncOptions(&n->options);
+					List* filtered_options = NIL;
+					n->options = handleCreateDolphinFuncOptions($9);
 					n->options = lappend(n->options, makeDefElem("as", (Node*)list_make1(makeString(funSource->bodySrc))));
 					n->options = lappend(n->options, makeDefElem("language", (Node*)makeString("plpgsql")));
 
@@ -36383,40 +36383,54 @@ static void setAccessMethod(Constraint *n)
 	}
 }
 
-static void handleCreateDolphinFuncOptions(List** options)
+/* return a function option list that is filtered. */
+static List* handleCreateDolphinFuncOptions(List* input_options)
 {
 	ListCell *cell = NULL;
-	DefElem* language_option = NULL;
-	foreach (cell, *options) {
+	DefElem* comment_option = NULL;
+	DefElem* determination_option = NULL;
+	DefElem* sql_opt_option = NULL;
+	DefElem* security_option = NULL;
+	foreach (cell, input_options) {
 		void* pointer = lfirst(cell);
 		if (!IsA(pointer, DefElem)) {
-		/* should never happen */
+			/* should never happen */
 			ereport(ERROR,
 				(errcode(ERRCODE_INVALID_PARAMETER_VALUE),
 				errmsg("Type error for function options. Please ensure function option is type DefElem.")));
 		}
 		DefElem* defel = (DefElem*)lfirst(cell);
 		if (strcmp(defel->defname, "as") == 0) {
-			/* just prevent duplicate here . we will add this option later.*/
-			ereport(ERROR, (errcode(ERRCODE_SYNTAX_ERROR), errmsg("conflicting or redundant options")));
+			/* we don't allow as option. just prevent duplicate here . we will add this option later.*/
+			ereport(ERROR, (errcode(ERRCODE_SYNTAX_ERROR), errmsg("invalid function options \"AS\" provided.")));
 		} else if (strcmp(defel->defname, "language") == 0) {
-			language_option = defel;
+			/* ignore language option. we will set it in caller */
 		} else if (strcmp(defel->defname, "comment") == 0) {
-			/* valid option. no need to do anything */
+			comment_option = defel;
 		} else if (strcmp(defel->defname, "deterministic") == 0) {
-			/* valid option. do nothing */
+			determination_option = defel;
 		} else if (strcmp(defel->defname, "sql_opt") == 0) {
-			/* valid option. do nothing */
+			sql_opt_option = defel;
 		} else if (strcmp(defel->defname, "security") == 0) {
-			/* valid option. do nothing */
+			security_option = defel;
                 } else {
                 	ereport(ERROR, (errcode(ERRCODE_SYNTAX_ERROR), errmsg("invalid option input")));
                 }
 	}
-	if (language_option != NULL) {
-		/* remove language option. we will add language option manually outside the function */
-		*options = list_delete(*options, language_option);
+	List* result_options = NIL;
+	if (comment_option != NULL) {
+		result_options = lappend(result_options, comment_option);
 	}
+	if (determination_option != NULL) {
+		result_options = lappend(result_options, determination_option);
+	}
+	if (sql_opt_option != NULL) {
+		result_options = lappend(result_options, sql_opt_option);
+	}
+	if (security_option != NULL) {
+		result_options = lappend(result_options, security_option);
+	}
+	return result_options;
 }
 
 /* append source string to target string with offset */
