@@ -30,7 +30,7 @@ Oid SearchRoleIdFromAuthId(char *role)
  */
 TupleDesc ConstructTupleDesc(TupleDescEntry *tupleDescEntries, int size)
 {
-    TupleDesc tupleDesc = CreateTemplateTupleDesc(size, false, TAM_HEAP);
+    TupleDesc tupleDesc = CreateTemplateTupleDesc(size, false);
     for (int i = 0; i < size; i++) {
         TupleDescEntry entry = tupleDescEntries[i];
         AttrNumber attrNumber = (AttrNumber)(i + 1);

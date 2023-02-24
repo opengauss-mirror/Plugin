@@ -1635,6 +1635,7 @@ FuncDetailCode func_get_detail(List* funcname, List* fargs, List* fargnames, int
     }
 
     if (best_candidate == NULL) {
+#ifdef DOLPHIN
         /*
          * didn't find an exact match, so now try to match up candidates...
          */
@@ -1661,7 +1662,7 @@ FuncDetailCode func_get_detail(List* funcname, List* fargs, List* fargnames, int
                     return FUNCDETAIL_MULTIPLE;
             }
         }
-
+#endif
         /*
          * If we didn't find an exact match, next consider the possibility
          * that this is really a type-coercion request: a single-argument
@@ -1979,7 +1980,7 @@ static Node* ParseComplexProjection(ParseState* pstate, char* funcname, Node* fi
     AssertEreport(tupdesc, MOD_OPT, "");
 
     for (i = 0; i < tupdesc->natts; i++) {
-        Form_pg_attribute att = tupdesc->attrs[i];
+        Form_pg_attribute att = &tupdesc->attrs[i];
 
         if (strcmp(funcname, NameStr(att->attname)) == 0 && !att->attisdropped) {
             /* Success, so generate a FieldSelect expression */
