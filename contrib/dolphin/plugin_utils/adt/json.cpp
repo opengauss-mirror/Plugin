@@ -45,7 +45,7 @@ static void depth_array_element(JsonLexContext *lex, JsonSemAction *sem, int &de
 static void depth_object(JsonLexContext *lex, JsonSemAction *sem, int &depth);
 static void depth_array(JsonLexContext *lex, JsonSemAction *sem, int &depth);
 static void sort_json(JsonLexContext *lex, JsonSemAction *sem, int &depth);
-static char *type_case(JsonTokenType tok);
+static const char *type_case(JsonTokenType tok, bool flag = false);
 PG_FUNCTION_INFO_V1_PUBLIC(json_array);
 extern "C" DLL_PUBLIC Datum json_array(PG_FUNCTION_ARGS);
 
@@ -206,8 +206,7 @@ Datum json_in(PG_FUNCTION_ARGS)
             (void)MemoryContextSwitchTo(oldcxt);
             ErrorData *edata = CopyErrorData();
             ereport(WARNING,
-                    (errcode(ERRCODE_INVALID_TEXT_REPRESENTATION),
-                            errmsg("invalid input syntax for type json")));
+                    (errcode(ERRCODE_INVALID_TEXT_REPRESENTATION), errmsg("invalid input syntax for type json")));
             FlushErrorState();
             FreeErrorData(edata);
             PG_RETURN_DATUM((Datum)DirectFunctionCall1(json_in, CStringGetDatum("null")));
@@ -1402,12 +1401,12 @@ static void composite_to_json(Datum composite, StringInfo result, bool use_line_
         getTypeOutputInfo(tupdesc->attrs[i].atttypid, &typoutput, &typisvarlena);
 
         if (tupdesc->attrs[i].atttypid > FirstNormalObjectId) {
-            HeapTuple    cast_tuple;
+            HeapTuple cast_tuple;
             Form_pg_cast castForm;
             cast_tuple = SearchSysCache2(CASTSOURCETARGET, ObjectIdGetDatum(tupdesc->attrs[i].atttypid),
                                          ObjectIdGetDatum(JSONOID));
             if (HeapTupleIsValid(cast_tuple)) {
-                castForm = (Form_pg_cast) GETSTRUCT(cast_tuple);
+                castForm = (Form_pg_cast)GETSTRUCT(cast_tuple);
 
                 if (castForm->castmethod == COERCION_METHOD_FUNCTION) {
                     castfunc = typoutput = castForm->castfunc;
@@ -2115,24 +2114,22 @@ void escape_json(StringInfo buf, const char *str)
  */
 
 #ifdef DOLPHIN
-static char *type_case(JsonTokenType tok)
-
+static const char *type_case(JsonTokenType tok, bool flag)
 {
-
     switch (tok) {
         case JSON_TOKEN_OBJECT_START:
-            return "object";
+            return flag ? "OBJECT":"object";
         case JSON_TOKEN_ARRAY_START:
-            return "array";
+            return flag ? "ARRAY":"array";
         case JSON_TOKEN_STRING:
-            return "string";
+            return flag ? "STRING":"string";
         case JSON_TOKEN_NUMBER:
-            return "number";
+            return flag ? "NUMBER":"number";
         case JSON_TOKEN_TRUE:
         case JSON_TOKEN_FALSE:
-            return "boolean";
+            return flag ? "BOOLEAN":"boolean";
         case JSON_TOKEN_NULL:
-            return "null";
+            return flag ? "NULL":"null";
         case JSON_TOKEN_INTEGER:
             return "INTEGER";
         case JSON_TOKEN_DOUBLE:
@@ -2150,7 +2147,7 @@ Datum json_typeof(PG_FUNCTION_ARGS)
 
     JsonLexContext *lex = NULL;
     JsonTokenType tok;
-    char *type = NULL;
+    const char *type = NULL;
 
     json = PG_GETARG_TEXT_P(0);
     lex = makeJsonLexContext(json, false);
@@ -2766,7 +2763,7 @@ Datum json_type(PG_FUNCTION_ARGS)
 
     JsonLexContext *lex = NULL;
     JsonTokenType tok;
-    char *type = NULL;
+    const char *type = NULL;
 
     if (!json_valid(fcinfo)) {
         ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
@@ -2777,7 +2774,7 @@ Datum json_type(PG_FUNCTION_ARGS)
     /* Lex exactly one token from the input and check its type. */
     json_lex(lex, true);
     tok = lex_peek(lex);
-    type = type_case(tok);
+    type = type_case(tok, true);
     pfree(lex);
     PG_RETURN_TEXT_P(cstring_to_text(type));
 }
@@ -2822,7 +2819,7 @@ static void parse_json_key(Datum val, bool is_null, StringInfo result, Oid val_t
         escape_json(result, outputstr);
         pfree(outputstr);
     }
-    
+
     return;
 }
 
