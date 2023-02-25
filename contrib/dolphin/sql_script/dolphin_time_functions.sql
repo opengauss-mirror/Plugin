@@ -328,9 +328,9 @@ CREATE OR REPLACE FUNCTION pg_catalog.b_db_last_day(text) RETURNS date LANGUAGE 
 CREATE OR REPLACE FUNCTION pg_catalog.b_db_last_day(numeric) RETURNS date LANGUAGE C STABLE RETURNS NULL ON NULL INPUT as '$libdir/dolphin', 'last_day_numeric';
 CREATE OR REPLACE FUNCTION pg_catalog.b_db_last_day(date) RETURNS date AS $$ SELECT pg_catalog.b_db_last_day(cast($1 as text)) $$ LANGUAGE SQL;
 
-CREATE OR REPLACE FUNCTION pg_catalog.b_db_date(text) RETURNS text LANGUAGE C STABLE RETURNS NULL ON NULL INPUT as '$libdir/dolphin', 'b_db_date_text';
-CREATE OR REPLACE FUNCTION pg_catalog.b_db_date(numeric) RETURNS text LANGUAGE C STABLE RETURNS NULL ON NULL INPUT as '$libdir/dolphin', 'b_db_date_numeric';
-CREATE OR REPLACE FUNCTION pg_catalog.b_db_date(date) RETURNS text AS $$ SELECT pg_catalog.b_db_date(cast($1 as text)) $$ LANGUAGE SQL;
+CREATE OR REPLACE FUNCTION pg_catalog.b_db_date(text) RETURNS date LANGUAGE C STABLE RETURNS NULL ON NULL INPUT as '$libdir/dolphin', 'b_db_date_text';
+CREATE OR REPLACE FUNCTION pg_catalog.b_db_date(numeric) RETURNS date LANGUAGE C STABLE RETURNS NULL ON NULL INPUT as '$libdir/dolphin', 'b_db_date_numeric';
+CREATE OR REPLACE FUNCTION pg_catalog.b_db_date(date) RETURNS date AS $$ SELECT pg_catalog.b_db_date(cast($1 as text)) $$ LANGUAGE SQL;
 
 CREATE OR REPLACE FUNCTION pg_catalog.day(text) RETURNS int4 LANGUAGE C STABLE RETURNS NULL ON NULL INPUT as '$libdir/dolphin', 'dayofmonth_text';
 CREATE OR REPLACE FUNCTION pg_catalog.day(numeric) RETURNS int4 LANGUAGE C STABLE RETURNS NULL ON NULL INPUT as '$libdir/dolphin', 'dayofmonth_numeric';

@@ -127,7 +127,7 @@ insert into test values('timestampdiff(week, null, null)', timestampdiff(week, n
 -- 非严格模式，参数不合法，报warning，返回NULL或者对应值
 set dolphin.sql_mode = 'sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date';
 insert into test values('timestampdiff(microsecond, ''abc'', ''2021-11-12'')', timestampdiff(microsecond, 'abc', '2021-11-12'));
-WARNING:  invalid input syntax for type timestamp: "abc"
+WARNING:  Incorrect datetime value: "abc"
 CONTEXT:  referenced column: result
 insert into test values('timestampdiff(microsecond, ''2021-11-12'', ''10000-1-1'')', timestampdiff(microsecond, '2021-11-12', '10000-1-1'));
 WARNING:  Incorrect datetime value: "10000-1-1"
@@ -138,7 +138,7 @@ CONTEXT:  referenced column: result
 -- 严格模式，参数不合法，抛出错误
 set dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date';
 insert into test values('timestampdiff(microsecond, ''abc'', ''2021-11-12'')', timestampdiff(microsecond, 'abc', '2021-11-12'));
-ERROR:  invalid input syntax for type timestamp: "abc"
+ERROR:  Incorrect datetime value: "abc"
 CONTEXT:  referenced column: result
 insert into test values('timestampdiff(microsecond, ''2021-11-12'', ''10000-1-1'')', timestampdiff(microsecond, '2021-11-12', '10000-1-1'));
 ERROR:  Incorrect datetime value: "10000-1-1"
@@ -222,6 +222,9 @@ insert into test values('adddate(''9999-12-31 12:12:12'',INTERVAL -1 minute)', a
 insert into test values('adddate(''9999-12-31 12:12:12'',INTERVAL -1 second)', adddate('9999-12-31 12:12:12',INTERVAL -1 second));
 insert into test values('adddate(''2021-11-12'', -1)', adddate('2021-11-12', -1));
 insert into test values('adddate(''2021-11-12'', 1)', adddate('2021-11-12', 1));
+insert into test values('adddate(''11:11:11'', 2)', adddate('11:11:11', 2));
+insert into test values('adddate(''11:11:11'', INTERVAL 2 day)', adddate('11:11:11', INTERVAL 2 day));
+insert into test values('adddate(''11:11:11'', INTERVAL 2 second)', adddate('11:11:11', INTERVAL 2 second));
 -- 功能-一些进位情况
 insert into test values('adddate(''0001-12-31'',INTERVAL 1 day)',adddate('0001-12-31',INTERVAL 1 day));
 insert into test values('adddate(''2021-12-31'',INTERVAL 1 day)',adddate('2021-12-31',INTERVAL 1 day));
@@ -286,13 +289,6 @@ CONTEXT:  referenced column: result
 insert into test values('adddate(time''-838:59:59'', INTERVAL -1 second)', adddate(time'-838:59:59', INTERVAL -1 second));
 WARNING:  time field value out of range
 CONTEXT:  referenced column: result
--- 结果小于'0001-1-1 00:00:00'时，MSQ日期部分总为'0000-00-00'，openGauss中非严格模式下返回NULL
-insert into test values('adddate(''0001-1-1'', INTERVAL -1 day)', adddate('0001-1-1', INTERVAL -1 second));
-WARNING:  date/time field value out of range
-CONTEXT:  referenced column: result
-insert into test values('adddate(''0001-1-1 00:00:00'', INTERVAL -1 second)', adddate('0001-1-1', INTERVAL -1 second));
-WARNING:  date/time field value out of range
-CONTEXT:  referenced column: result
 -- 严格模式，参数不合法，抛出错误
 set dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date';
 insert into test values('adddate(0, INTERVAL 100 second)', adddate(0, INTERVAL 100 second));
@@ -325,13 +321,26 @@ CONTEXT:  referenced column: result
 insert into test values('adddate(time''-838:59:59'', INTERVAL -1 second)', adddate(time'-838:59:59', INTERVAL -1 second));
 ERROR:  time field value out of range
 CONTEXT:  referenced column: result
--- 结果小于'0001-1-1 00:00:00'时，MSQ日期部分总为'0000-00-00'，openGauss中严格模式下抛出错误。
+-- 结果小于'0001-1-1 00:00:00'时，在dolphin.sql_mode中含有'sql_mode_strict'和'no_zero_date'时，函数报错
+set dolphin.sql_mode = 'sql_mode_strict,no_zero_date';
 insert into test values('adddate(''0001-1-1'', INTERVAL -1 day)', adddate('0001-1-1', INTERVAL -1 day));
 ERROR:  date/time field value out of range
 CONTEXT:  referenced column: result
 insert into test values('adddate(''0001-1-1 00:00:00'', INTERVAL -1 second)', adddate('0001-1-1 00:00:00', INTERVAL -1 second));
 ERROR:  date/time field value out of range
 CONTEXT:  referenced column: result
+-- 结果小于'0001-1-1 00:00:00'时，在dolphin.sql_mode中不含'sql_mode_strict'，但含有'no_zero_date'时，函数报warning，返回null
+set dolphin.sql_mode = 'no_zero_date';
+insert into test values('adddate(''0001-1-1'', INTERVAL -1 day)', adddate('0001-1-1', INTERVAL -1 day));
+WARNING:  date/time field value out of range
+CONTEXT:  referenced column: result
+insert into test values('adddate(''0001-1-1 00:00:00'', INTERVAL -1 second)', adddate('0001-1-1 00:00:00', INTERVAL -1 second));
+WARNING:  date/time field value out of range
+CONTEXT:  referenced column: result
+-- 结果小于'0001-1-1 00:00:00'时，在dolphin.sql_mode中含有'sql_mode_strict'，但不含'no_zero_date'时，函数将日期部分置为'0000-00-00'
+set dolphin.sql_mode = 'sql_mode_strict';
+insert into test values('adddate(''0001-1-1'', INTERVAL -1 day)', adddate('0001-1-1', INTERVAL -1 day));
+insert into test values('adddate(''0001-1-1 00:00:00'', INTERVAL -1 second)', adddate('0001-1-1 00:00:00', INTERVAL -1 second));
 -- test date_add(date/datetime/time, INTERVAL)
 -- 严格模式或者非严格模式都有值
 -- 功能-unit
@@ -412,13 +421,6 @@ CONTEXT:  referenced column: result
 insert into test values('date_add(time''-838:59:59'', INTERVAL -1 second)', date_add(time'-838:59:59', INTERVAL -1 second));
 WARNING:  time field value out of range
 CONTEXT:  referenced column: result
--- 结果小于'0001-1-1 00:00:00'时，MSQ日期部分总为'0000-00-00'，openGauss中非严格模式下返回NULL
-insert into test values('date_add(''0001-1-1'', INTERVAL -1 day)', date_add('0001-1-1', INTERVAL -1 second));
-WARNING:  date/time field value out of range
-CONTEXT:  referenced column: result
-insert into test values('date_add(''0001-1-1 00:00:00'', INTERVAL -1 second)', date_add('0001-1-1', INTERVAL -1 second));
-WARNING:  date/time field value out of range
-CONTEXT:  referenced column: result
 -- 严格模式，参数不合法，抛出错误
 set dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date';
 insert into test values('date_add(0, INTERVAL 100 second)', date_add(0, INTERVAL 100 second));
@@ -451,13 +453,26 @@ CONTEXT:  referenced column: result
 insert into test values('date_add(time''-838:59:59'', INTERVAL -1 second)', date_add(time'-838:59:59', INTERVAL -1 second));
 ERROR:  time field value out of range
 CONTEXT:  referenced column: result
--- 结果小于'0001-1-1 00:00:00'时，MSQ日期部分总为'0000-00-00'，openGauss中严格模式下抛出错误。
+-- 结果小于'0001-1-1 00:00:00'时，在dolphin.sql_mode中含有'sql_mode_strict'和'no_zero_date'时，函数报错
+set dolphin.sql_mode = 'sql_mode_strict,no_zero_date';
 insert into test values('date_add(''0001-1-1'', INTERVAL -1 day)', date_add('0001-1-1', INTERVAL -1 day));
 ERROR:  date/time field value out of range
 CONTEXT:  referenced column: result
 insert into test values('date_add(''0001-1-1 00:00:00'', INTERVAL -1 second)', date_add('0001-1-1 00:00:00', INTERVAL -1 second));
 ERROR:  date/time field value out of range
 CONTEXT:  referenced column: result
+-- 结果小于'0001-1-1 00:00:00'时，在dolphin.sql_mode中不含'sql_mode_strict'，但含有'no_zero_date'时，函数报warning，返回null
+set dolphin.sql_mode = 'no_zero_date';
+insert into test values('date_add(''0001-1-1'', INTERVAL -1 day)', date_add('0001-1-1', INTERVAL -1 day));
+WARNING:  date/time field value out of range
+CONTEXT:  referenced column: result
+insert into test values('date_add(''0001-1-1 00:00:00'', INTERVAL -1 second)', date_add('0001-1-1 00:00:00', INTERVAL -1 second));
+WARNING:  date/time field value out of range
+CONTEXT:  referenced column: result
+-- 结果小于'0001-1-1 00:00:00'时，在dolphin.sql_mode中含有'sql_mode_strict'，但不含'no_zero_date'时，函数将日期部分置为'0000-00-00'
+set dolphin.sql_mode = 'sql_mode_strict';
+insert into test values('date_add(''0001-1-1'', INTERVAL -1 day)', date_add('0001-1-1', INTERVAL -1 day));
+insert into test values('date_add(''0001-1-1 00:00:00'', INTERVAL -1 second)', date_add('0001-1-1 00:00:00', INTERVAL -1 second));
 -- test date_sub(date/datetime/time, INTERVAL)
 -- 严格模式或者非严格模式都有值
 -- 功能-unit
@@ -538,13 +553,6 @@ CONTEXT:  referenced column: result
 insert into test values('date_sub(time''-838:59:59'', INTERVAL 1 second)', date_sub(time'-838:59:59', INTERVAL 1 second));
 WARNING:  time field value out of range
 CONTEXT:  referenced column: result
--- 结果小于'0001-1-1 00:00:00'时，MSQ日期部分总为'0000-00-00'，openGauss中非严格模式下返回NULL
-insert into test values('date_sub(''0001-1-1'', INTERVAL 1 day)', date_sub('0001-1-1', INTERVAL 1 day));
-WARNING:  date/time field value out of range
-CONTEXT:  referenced column: result
-insert into test values('date_sub(''0001-1-1 00:00:00'', INTERVAL 1 second)', date_sub('0001-1-1 00:00:00', INTERVAL 1 second));
-WARNING:  date/time field value out of range
-CONTEXT:  referenced column: result
 -- 严格模式，参数不合法，抛出错误
 set dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date';
 insert into test values('date_sub(0, INTERVAL 100 second)', date_sub(0, INTERVAL 100 second));
@@ -577,13 +585,26 @@ CONTEXT:  referenced column: result
 insert into test values('date_sub(time''-838:59:59'', INTERVAL 1 second)', date_sub(time'-838:59:59', INTERVAL 1 second));
 ERROR:  time field value out of range
 CONTEXT:  referenced column: result
--- 结果小于'0001-1-1 00:00:00'时，MSQ日期部分总为'0000-00-00'，openGauss中非严格模式下返回NULL
+-- 结果小于'0001-1-1 00:00:00'时，在dolphin.sql_mode中含有'sql_mode_strict'和'no_zero_date'时，函数报错
+set dolphin.sql_mode = 'sql_mode_strict,no_zero_date';
 insert into test values('date_sub(''0001-1-1'', INTERVAL 1 day)', date_sub('0001-1-1', INTERVAL 1 day));
 ERROR:  date/time field value out of range
 CONTEXT:  referenced column: result
 insert into test values('date_sub(''0001-1-1 00:00:00'', INTERVAL 1 second)', date_sub('0001-1-1 00:00:00', INTERVAL 1 second));
 ERROR:  date/time field value out of range
 CONTEXT:  referenced column: result
+-- 结果小于'0001-1-1 00:00:00'时，在dolphin.sql_mode中不含'sql_mode_strict'，但含有'no_zero_date'时，函数报warning，返回null
+set dolphin.sql_mode = 'no_zero_date';
+insert into test values('date_sub(''0001-1-1'', INTERVAL 1 day)', date_sub('0001-1-1', INTERVAL 1 day));
+WARNING:  date/time field value out of range
+CONTEXT:  referenced column: result
+insert into test values('date_sub(''0001-1-1 00:00:00'', INTERVAL 1 second)', date_sub('0001-1-1 00:00:00', INTERVAL 1 second));
+WARNING:  date/time field value out of range
+CONTEXT:  referenced column: result
+-- 结果小于'0001-1-1 00:00:00'时，在dolphin.sql_mode中含有'sql_mode_strict'，但不含'no_zero_date'时，函数将日期部分置为'0000-00-00'
+set dolphin.sql_mode = 'sql_mode_strict';
+insert into test values('date_sub(''0001-1-1'', INTERVAL 1 day)', date_sub('0001-1-1', INTERVAL 1 day));
+insert into test values('date_sub(''0001-1-1 00:00:00'', INTERVAL 1 second)', date_sub('0001-1-1 00:00:00', INTERVAL 1 second));
 -- test addtime(datetime/time, time)
 -- 严格模式或者非严格模式都有值
 -- 功能
@@ -691,10 +712,15 @@ select * from test order by funcname;
  adddate('0001-01-01',INTERVAL 1 second)                                                          | 0001-01-01 00:00:01
  adddate('0001-01-01',INTERVAL 1 year)                                                            | 0002-01-01
  adddate('0001-1-1 00:00:00', INTERVAL -1 second)                                                 | 
+ adddate('0001-1-1 00:00:00', INTERVAL -1 second)                                                 | 0000-00-00 23:59:59
  adddate('0001-1-1', INTERVAL -1 day)                                                             | 
+ adddate('0001-1-1', INTERVAL -1 day)                                                             | 0000-00-00
  adddate('0001-12-31',INTERVAL 1 day)                                                             | 0002-01-01
  adddate('0001-12-31',INTERVAL 1 month)                                                           | 0002-01-31
  adddate('10000-1-1', INTERVAL -1 day)                                                            | 
+ adddate('11:11:11', 2)                                                                           | 2011-11-13
+ adddate('11:11:11', INTERVAL 2 day)                                                              | 2011-11-13
+ adddate('11:11:11', INTERVAL 2 second)                                                           | 2011-11-11 00:00:02
  adddate('1999-12-31 23:00:00',INTERVAL 1 hour)                                                   | 2000-01-01 00:00:00
  adddate('1999-12-31 23:59:00',INTERVAL 1 minute)                                                 | 2000-01-01 00:00:00
  adddate('1999-12-31 23:59:59',INTERVAL 1 second)                                                 | 2000-01-01 00:00:00
@@ -819,6 +845,8 @@ select * from test order by funcname;
  date_add('0001-01-01',INTERVAL 1 second)                                                         | 0001-01-01 00:00:01
  date_add('0001-01-01',INTERVAL 1 year)                                                           | 0002-01-01
  date_add('0001-1-1 00:00:00', INTERVAL -1 second)                                                | 
+ date_add('0001-1-1 00:00:00', INTERVAL -1 second)                                                | 0000-00-00 23:59:59
+ date_add('0001-1-1', INTERVAL -1 day)                                                            | 0000-00-00
  date_add('0001-1-1', INTERVAL -1 day)                                                            | 
  date_add('0001-12-31',INTERVAL 1 day)                                                            | 0002-01-01
  date_add('0001-12-31',INTERVAL 1 month)                                                          | 0002-01-31
@@ -872,7 +900,9 @@ select * from test order by funcname;
  date_sub('0001-01-01',INTERVAL -1 second)                                                        | 0001-01-01 00:00:01
  date_sub('0001-01-01',INTERVAL -1 year)                                                          | 0002-01-01
  date_sub('0001-1-1 00:00:00', INTERVAL 1 second)                                                 | 
+ date_sub('0001-1-1 00:00:00', INTERVAL 1 second)                                                 | 0000-00-00 23:59:59
  date_sub('0001-1-1', INTERVAL 1 day)                                                             | 
+ date_sub('0001-1-1', INTERVAL 1 day)                                                             | 0000-00-00
  date_sub('0001-12-31',INTERVAL -1 day)                                                           | 0002-01-01
  date_sub('0001-12-31',INTERVAL -1 month)                                                         | 0002-01-31
  date_sub('10000-1-1', INTERVAL 1 day)                                                            | 
@@ -994,7 +1024,7 @@ select * from test order by funcname;
  timestampdiff(year, '0000-1-1', '9999-12-31')                                                    | 9999
  timestampdiff(year, '9999-12-31', '0000-12-31')                                                  | -9998
  timestampdiff(year, time'-838:59:59', time'838:59:59')                                           | 0
-(313 rows)
+(322 rows)
 
 drop table test;
 \c contrib_regression

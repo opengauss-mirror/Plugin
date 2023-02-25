@@ -3982,8 +3982,14 @@ bool date_sub_days(DateADT date, int days, DateADT *result)
     if (date < B_FORMAT_DATEADT_MIN_VALUE || date > B_FORMAT_DATEADT_MAX_VALUE)
         return false;
     *result = date - days;
-    if (*result < B_FORMAT_DATEADT_FIRST_YEAR || *result > B_FORMAT_DATEADT_MAX_VALUE)
+    if (*result < B_FORMAT_DATEADT_FIRST_YEAR || *result > B_FORMAT_DATEADT_MAX_VALUE) {
+        if (*result < B_FORMAT_DATEADT_FIRST_YEAR && !SQL_MODE_NO_ZERO_DATE() && SQL_MODE_STRICT()) {
+            *result = DATE_ALL_ZERO_VALUE;
+            return true;
+        }
         return false;
+    }
+
     return true;
 }
 
@@ -4004,8 +4010,13 @@ bool date_sub_interval(DateADT date, Interval *span, DateADT *result)
     if (span->time == 0 && span->day == 0)
         return true;
 
-    if (*result < B_FORMAT_DATEADT_FIRST_YEAR)
+    if (*result < B_FORMAT_DATEADT_FIRST_YEAR) {
+        if (!SQL_MODE_NO_ZERO_DATE() && SQL_MODE_STRICT()) {
+            *result = DATE_ALL_ZERO_VALUE;
+            return true;
+        }
         return false;
+    }
     return true;
 }
 
@@ -4848,13 +4859,14 @@ Datum adddate_datetime_days_t(PG_FUNCTION_ARGS)
     char *expr;
     struct pg_tm tt, *tm = &tt;
     fsec_t fsec;
+    int tm_type = DTK_NONE;
 
     expr = text_to_cstring(tmp);
-    if (!datetime_in_with_sql_mode(expr, tm, &fsec, NORMAL_DATE)) {
+    if (!datetime_in_with_sql_mode_internal(expr, tm, &fsec, tm_type, NORMAL_DATE)) {
         PG_RETURN_NULL();
     }
 
-    if (is_date_format(expr)) {
+    if (tm_type == DTK_DATE) {
         DateADT date, result;
         date = date2j(tm->tm_year, tm->tm_mon, tm->tm_mday) - POSTGRES_EPOCH_JDATE;
         if (date_sub_days(date, -days, &result)) {
@@ -4922,13 +4934,14 @@ Datum adddate_datetime_interval_t(PG_FUNCTION_ARGS)
     char *expr;
     struct pg_tm tt, *tm = &tt;
     fsec_t fsec;
+    int tm_type = DTK_NONE;
 
     expr = text_to_cstring(tmp);
-    if (!datetime_in_with_sql_mode(expr, tm, &fsec, NORMAL_DATE)) {
+    if (!datetime_in_with_sql_mode_internal(expr, tm, &fsec, tm_type, NORMAL_DATE)) {
         PG_RETURN_NULL();
     }
 
-    if (is_date_format(expr) && span->time == 0) {
+    if (tm_type == DTK_DATE && span->time == 0) {
         DateADT date, result;
         date = date2j(tm->tm_year, tm->tm_mon, tm->tm_mday) - POSTGRES_EPOCH_JDATE;
         if (date_add_interval(date, span, &result))
