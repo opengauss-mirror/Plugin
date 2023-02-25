@@ -871,3 +871,1007 @@ NOTICE:  drop cascades to 2 other objects
 DETAIL:  drop cascades to table test_time_table
 drop cascades to table test_time_type
 reset current_schema;
+-- test the original type and function
+set dolphin.b_compatibility_mode to off;
+select curdate() + 10;
+--?.*
+--?.*
+--?.*
+(1 row)
+
+select pg_typeof(curdate() + 10);
+ pg_typeof 
+-----------
+ date
+(1 row)
+
+select curdate() + 10.5;
+--?.*
+--?.*
+--?.*
+(1 row)
+
+select pg_typeof(curdate() + 10.5);
+ pg_typeof 
+-----------
+ date
+(1 row)
+
+select curdate() + 10.3;
+--?.*
+--?.*
+--?.*
+(1 row)
+
+select pg_typeof(curdate() + 10.3);
+ pg_typeof 
+-----------
+ date
+(1 row)
+
+select curdate() - 10;
+--?.*
+--?.*
+--?.*
+(1 row)
+
+select pg_typeof(curdate() - 10);
+ pg_typeof 
+-----------
+ date
+(1 row)
+
+select curdate() - 10.5;
+--?.*
+--?.*
+--?.*
+(1 row)
+
+select pg_typeof(curdate() - 10.5);
+ pg_typeof 
+-----------
+ date
+(1 row)
+
+select curdate() - 10.3;
+--?.*
+--?.*
+--?.*
+(1 row)
+
+select pg_typeof(curdate() - 10.3);
+ pg_typeof 
+-----------
+ date
+(1 row)
+
+select pg_typeof(curtime() + 10);
+    pg_typeof     
+------------------
+ double precision
+(1 row)
+
+select curtime() + 10.5;
+--?.*
+--?.*
+--?.*
+(1 row)
+
+select pg_typeof(curtime() + 10.5);
+    pg_typeof     
+------------------
+ double precision
+(1 row)
+
+select curtime() + 10.3;
+--?.*
+--?.*
+--?.*
+(1 row)
+
+select pg_typeof(curtime() + 10.3);
+    pg_typeof     
+------------------
+ double precision
+(1 row)
+
+select curtime() - 10;
+--?.*
+--?.*
+--?.*
+(1 row)
+
+select pg_typeof(curtime() - 10);
+    pg_typeof     
+------------------
+ double precision
+(1 row)
+
+select curtime() - 10.5;
+--?.*
+--?.*
+--?.*
+(1 row)
+
+select pg_typeof(curtime() - 10.5);
+    pg_typeof     
+------------------
+ double precision
+(1 row)
+
+select curtime() - 10.3;
+--?.*
+--?.*
+--?.*
+(1 row)
+
+select pg_typeof(curtime() - 10.3);
+    pg_typeof     
+------------------
+ double precision
+(1 row)
+
+select curtime() * 2;
+--?.*
+--?.*
+--?.*
+(1 row)
+
+select pg_typeof(curtime() * 10.3);
+    pg_typeof     
+------------------
+ double precision
+(1 row)
+
+select curtime() / 10.3;
+--?.*
+--?.*
+--?.*
+(1 row)
+
+select pg_typeof(curtime() / 10.3);
+    pg_typeof     
+------------------
+ double precision
+(1 row)
+
+select pg_typeof(current_timestamp + 10);
+    pg_typeof     
+------------------
+ double precision
+(1 row)
+
+select current_timestamp + 10.5;
+--?.*
+--?.*
+--?.*
+(1 row)
+
+select pg_typeof(current_timestamp + 10.5);
+    pg_typeof     
+------------------
+ double precision
+(1 row)
+
+select current_timestamp + 10.3;
+--?.*
+--?.*
+--?.*
+(1 row)
+
+select pg_typeof(current_timestamp + 10.3);
+    pg_typeof     
+------------------
+ double precision
+(1 row)
+
+select current_timestamp - 10;
+--?.*
+--?.*
+--?.*
+(1 row)
+
+select pg_typeof(current_timestamp - 10);
+    pg_typeof     
+------------------
+ double precision
+(1 row)
+
+select current_timestamp - 10.5;
+--?.*
+--?.*
+--?.*
+(1 row)
+
+select pg_typeof(current_timestamp - 10.5);
+    pg_typeof     
+------------------
+ double precision
+(1 row)
+
+select current_timestamp - 10.3;
+--?.*
+--?.*
+--?.*
+(1 row)
+
+select pg_typeof(current_timestamp - 10.3);
+    pg_typeof     
+------------------
+ double precision
+(1 row)
+
+select current_timestamp * 2;
+--?.*
+--?.*
+--?.*
+(1 row)
+
+select pg_typeof(current_timestamp * 10.3);
+    pg_typeof     
+------------------
+ double precision
+(1 row)
+
+select current_timestamp / 10.3;
+--?.*
+--?.*
+--?.*
+(1 row)
+
+select pg_typeof(current_timestamp / 10.3);
+    pg_typeof     
+------------------
+ double precision
+(1 row)
+
+select current_timestamp(0);
+--?.*
+--?.*
+--?.*
+(1 row)
+
+select pg_typeof(current_timestamp(0));
+          pg_typeof          
+-----------------------------
+ timestamp without time zone
+(1 row)
+
+select current_timestamp(3);
+--?.*
+--?.*
+--?.*
+(1 row)
+
+select pg_typeof(current_timestamp(3));
+          pg_typeof          
+-----------------------------
+ timestamp without time zone
+(1 row)
+
+select current_timestamp(6);
+--?.*
+--?.*
+--?.*
+(1 row)
+
+select pg_typeof(current_timestamp(6));
+          pg_typeof          
+-----------------------------
+ timestamp without time zone
+(1 row)
+
+select current_timestamp( );
+--?.*
+--?.*
+--?.*
+(1 row)
+
+select pg_typeof(current_timestamp( ));
+          pg_typeof          
+-----------------------------
+ timestamp without time zone
+(1 row)
+
+select current_timestamp(-1);
+ERROR:  syntax error at or near "-"
+LINE 1: select current_timestamp(-1);
+                                 ^
+select current_timestamp(3.5);
+ERROR:  syntax error at or near "3.5"
+LINE 1: select current_timestamp(3.5);
+                                 ^
+select current_timestamp(10);
+ERROR:  Too-big precision 10 specified for 'now'. Maximum is 6.
+CONTEXT:  referenced column: current_timestamp(10)
+select current_timestamp('abc');
+ERROR:  syntax error at or near "'abc'"
+LINE 1: select current_timestamp('abc');
+                                 ^
+select current_timestamp('汉字');
+ERROR:  syntax error at or near "'汉字'"
+LINE 1: select current_timestamp('汉字');
+                                 ^
+select current_timestamp('@');
+ERROR:  syntax error at or near "'@'"
+LINE 1: select current_timestamp('@');
+                                 ^
+select current_timestamp('!');
+ERROR:  syntax error at or near "'!'"
+LINE 1: select current_timestamp('!');
+                                 ^
+select pg_typeof(localtimestamp + 10);
+    pg_typeof     
+------------------
+ double precision
+(1 row)
+
+select localtimestamp + 10.5;
+--?.*
+--?.*
+--?.*
+(1 row)
+
+select pg_typeof(localtimestamp + 10.5);
+    pg_typeof     
+------------------
+ double precision
+(1 row)
+
+select localtimestamp + 10.3;
+--?.*
+--?.*
+--?.*
+(1 row)
+
+select pg_typeof(localtimestamp + 10.3);
+    pg_typeof     
+------------------
+ double precision
+(1 row)
+
+select localtimestamp - 10;
+--?.*
+--?.*
+--?.*
+(1 row)
+
+select pg_typeof(localtimestamp - 10);
+    pg_typeof     
+------------------
+ double precision
+(1 row)
+
+select localtimestamp - 10.5;
+--?.*
+--?.*
+--?.*
+(1 row)
+
+select pg_typeof(localtimestamp - 10.5);
+    pg_typeof     
+------------------
+ double precision
+(1 row)
+
+select localtimestamp - 10.3;
+--?.*
+--?.*
+--?.*
+(1 row)
+
+select pg_typeof(localtimestamp - 10.3);
+    pg_typeof     
+------------------
+ double precision
+(1 row)
+
+select localtimestamp * 2;
+--?.*
+--?.*
+--?.*
+(1 row)
+
+select pg_typeof(localtimestamp * 10.3);
+    pg_typeof     
+------------------
+ double precision
+(1 row)
+
+select localtimestamp / 10.3;
+--?.*
+--?.*
+--?.*
+(1 row)
+
+select pg_typeof(localtimestamp / 10.3);
+    pg_typeof     
+------------------
+ double precision
+(1 row)
+
+select localtimestamp(0);
+--?.*
+--?.*
+--?.*
+(1 row)
+
+select pg_typeof(localtimestamp(0));
+          pg_typeof          
+-----------------------------
+ timestamp without time zone
+(1 row)
+
+select localtimestamp(3);
+--?.*
+--?.*
+--?.*
+(1 row)
+
+select pg_typeof(localtimestamp(3));
+          pg_typeof          
+-----------------------------
+ timestamp without time zone
+(1 row)
+
+select localtimestamp(6);
+--?.*
+--?.*
+--?.*
+(1 row)
+
+select pg_typeof(localtimestamp(6));
+          pg_typeof          
+-----------------------------
+ timestamp without time zone
+(1 row)
+
+select localtimestamp( );
+--?.*
+--?.*
+--?.*
+(1 row)
+
+select pg_typeof(localtimestamp( ));
+          pg_typeof          
+-----------------------------
+ timestamp without time zone
+(1 row)
+
+select localtimestamp(-1);
+ERROR:  syntax error at or near "-"
+LINE 1: select localtimestamp(-1);
+                              ^
+select localtimestamp(3.5);
+ERROR:  syntax error at or near "3.5"
+LINE 1: select localtimestamp(3.5);
+                              ^
+select localtimestamp(10);
+ERROR:  Too-big precision 10 specified for 'now'. Maximum is 6.
+CONTEXT:  referenced column: localtimestamp(10)
+select localtimestamp('abc');
+ERROR:  syntax error at or near "'abc'"
+LINE 1: select localtimestamp('abc');
+                              ^
+select localtimestamp('汉字');
+ERROR:  syntax error at or near "'汉字'"
+LINE 1: select localtimestamp('汉字');
+                              ^
+select localtimestamp('@');
+ERROR:  syntax error at or near "'@'"
+LINE 1: select localtimestamp('@');
+                              ^
+select localtimestamp('!');
+ERROR:  syntax error at or near "'!'"
+LINE 1: select localtimestamp('!');
+                              ^
+select pg_typeof(localtimestamp() + 10);
+    pg_typeof     
+------------------
+ double precision
+(1 row)
+
+select localtimestamp() + 10.5;
+--?.*
+--?.*
+--?.*
+(1 row)
+
+select pg_typeof(localtimestamp() + 10.5);
+    pg_typeof     
+------------------
+ double precision
+(1 row)
+
+select localtimestamp() + 10.3;
+--?.*
+--?.*
+--?.*
+(1 row)
+
+select pg_typeof(localtimestamp() + 10.3);
+    pg_typeof     
+------------------
+ double precision
+(1 row)
+
+select localtimestamp() - 10;
+--?.*
+--?.*
+--?.*
+(1 row)
+
+select pg_typeof(localtimestamp() - 10);
+    pg_typeof     
+------------------
+ double precision
+(1 row)
+
+select localtimestamp() - 10.5;
+--?.*
+--?.*
+--?.*
+(1 row)
+
+select pg_typeof(localtimestamp() - 10.5);
+    pg_typeof     
+------------------
+ double precision
+(1 row)
+
+select localtimestamp() - 10.3;
+--?.*
+--?.*
+--?.*
+(1 row)
+
+select pg_typeof(localtimestamp() - 10.3);
+    pg_typeof     
+------------------
+ double precision
+(1 row)
+
+select localtimestamp() * 2;
+--?.*
+--?.*
+--?.*
+(1 row)
+
+select pg_typeof(localtimestamp() * 2);
+    pg_typeof     
+------------------
+ double precision
+(1 row)
+
+select localtimestamp() / 10.3;
+--?.*
+--?.*
+--?.*
+(1 row)
+
+select pg_typeof(localtimestamp() / 10.3);
+    pg_typeof     
+------------------
+ double precision
+(1 row)
+
+select pg_typeof(localtimestamp(3) + 10);
+    pg_typeof     
+------------------
+ double precision
+(1 row)
+
+select localtimestamp(3) + 10.5;
+--?.*
+--?.*
+--?.*
+(1 row)
+
+select pg_typeof(localtimestamp(3) + 10.5);
+    pg_typeof     
+------------------
+ double precision
+(1 row)
+
+select localtimestamp(3) + 10.3;
+--?.*
+--?.*
+--?.*
+(1 row)
+
+select pg_typeof(localtimestamp(3) + 10.3);
+    pg_typeof     
+------------------
+ double precision
+(1 row)
+
+select localtimestamp(3) - 10;
+--?.*
+--?.*
+--?.*
+(1 row)
+
+select pg_typeof(localtimestamp(3) - 10);
+    pg_typeof     
+------------------
+ double precision
+(1 row)
+
+select localtimestamp(3) - 10.5;
+--?.*
+--?.*
+--?.*
+(1 row)
+
+select pg_typeof(localtimestamp(3) - 10.5);
+    pg_typeof     
+------------------
+ double precision
+(1 row)
+
+select localtimestamp(3) - 10.3;
+--?.*
+--?.*
+--?.*
+(1 row)
+
+select pg_typeof(localtimestamp(3) - 10.3);
+    pg_typeof     
+------------------
+ double precision
+(1 row)
+
+select localtimestamp(3) * 2;
+--?.*
+--?.*
+--?.*
+(1 row)
+
+select pg_typeof(localtimestamp(3) * 10.3);
+    pg_typeof     
+------------------
+ double precision
+(1 row)
+
+select localtimestamp(3) / 10.3;
+--?.*
+--?.*
+--?.*
+(1 row)
+
+select pg_typeof(localtimestamp(3) / 10.3);
+    pg_typeof     
+------------------
+ double precision
+(1 row)
+
+select now(0);
+--?.*
+--?.*
+--?.*
+(1 row)
+
+select pg_typeof(now(0));
+          pg_typeof          
+-----------------------------
+ timestamp without time zone
+(1 row)
+
+select now(3);
+--?.*
+--?.*
+--?.*
+(1 row)
+
+select pg_typeof(now(3));
+          pg_typeof          
+-----------------------------
+ timestamp without time zone
+(1 row)
+
+select now(6);
+--?.*
+--?.*
+--?.*
+(1 row)
+
+select pg_typeof(now(6));
+          pg_typeof          
+-----------------------------
+ timestamp without time zone
+(1 row)
+
+select now( );
+--?.*
+--?.*
+--?.*
+(1 row)
+
+select pg_typeof(now( ));
+          pg_typeof          
+-----------------------------
+ timestamp without time zone
+(1 row)
+
+select now(-1);
+ERROR:  syntax error at or near "-"
+LINE 1: select now(-1);
+                   ^
+select now(3.5);
+ERROR:  syntax error at or near "3.5"
+LINE 1: select now(3.5);
+                   ^
+select now(10);
+ERROR:  Too-big precision 10 specified for 'now'. Maximum is 6.
+CONTEXT:  referenced column: now(10)
+select now('abc');
+ERROR:  syntax error at or near "'abc'"
+LINE 1: select now('abc');
+                   ^
+select now('汉字');
+ERROR:  syntax error at or near "'汉字'"
+LINE 1: select now('汉字');
+                   ^
+select now('@');
+ERROR:  syntax error at or near "'@'"
+LINE 1: select now('@');
+                   ^
+select now('!');
+ERROR:  syntax error at or near "'!'"
+LINE 1: select now('!');
+                   ^
+select pg_typeof(now(3) + 10);
+    pg_typeof     
+------------------
+ double precision
+(1 row)
+
+select now(3) + 10.5;
+--?.*
+--?.*
+--?.*
+(1 row)
+
+select pg_typeof(now(3) + 10.5);
+    pg_typeof     
+------------------
+ double precision
+(1 row)
+
+select now(3) + 10.3;
+--?.*
+--?.*
+--?.*
+(1 row)
+
+select pg_typeof(now(3) + 10.3);
+    pg_typeof     
+------------------
+ double precision
+(1 row)
+
+select now(3) - 10;
+--?.*
+--?.*
+--?.*
+(1 row)
+
+select pg_typeof(now(3) - 10);
+    pg_typeof     
+------------------
+ double precision
+(1 row)
+
+select now(3) - 10.5;
+--?.*
+--?.*
+--?.*
+(1 row)
+
+select pg_typeof(now(3) - 10.5);
+    pg_typeof     
+------------------
+ double precision
+(1 row)
+
+select now(3) - 10.3;
+--?.*
+--?.*
+--?.*
+(1 row)
+
+select pg_typeof(now(3) - 10.3);
+    pg_typeof     
+------------------
+ double precision
+(1 row)
+
+select now(3) * 2;
+--?.*
+--?.*
+--?.*
+(1 row)
+
+select pg_typeof(now(3) * 2);
+    pg_typeof     
+------------------
+ double precision
+(1 row)
+
+select now(3) / 2;
+--?.*
+--?.*
+--?.*
+(1 row)
+
+select pg_typeof(now(3) / 2);
+    pg_typeof     
+------------------
+ double precision
+(1 row)
+
+select sysdate(0);
+--?.*
+--?.*
+--?.*
+(1 row)
+
+select pg_typeof(sysdate(0));
+          pg_typeof          
+-----------------------------
+ timestamp without time zone
+(1 row)
+
+select sysdate(3);
+--?.*
+--?.*
+--?.*
+(1 row)
+
+select pg_typeof(sysdate(3));
+          pg_typeof          
+-----------------------------
+ timestamp without time zone
+(1 row)
+
+select sysdate(6);
+--?.*
+--?.*
+--?.*
+(1 row)
+
+select pg_typeof(sysdate(6));
+          pg_typeof          
+-----------------------------
+ timestamp without time zone
+(1 row)
+
+select sysdate( );
+--?.*
+--?.*
+--?.*
+(1 row)
+
+select pg_typeof(sysdate( ));
+          pg_typeof          
+-----------------------------
+ timestamp without time zone
+(1 row)
+
+select sysdate(-1);
+ERROR:  syntax error at or near "-"
+LINE 1: select sysdate(-1);
+                       ^
+select sysdate(3.5);
+ERROR:  syntax error at or near "3.5"
+LINE 1: select sysdate(3.5);
+                       ^
+select sysdate(10);
+ERROR:  Too-big precision 10 specified for 'sysdate'. Maximum is 6.
+CONTEXT:  referenced column: sysdate(10)
+select sysdate('abc');
+ERROR:  syntax error at or near "'abc'"
+LINE 1: select sysdate('abc');
+                       ^
+select sysdate('汉字');
+ERROR:  syntax error at or near "'汉字'"
+LINE 1: select sysdate('汉字');
+                       ^
+select sysdate('@');
+ERROR:  syntax error at or near "'@'"
+LINE 1: select sysdate('@');
+                       ^
+select sysdate('!');
+ERROR:  syntax error at or near "'!'"
+LINE 1: select sysdate('!');
+                       ^
+select pg_typeof(sysdate(3) + 10);
+    pg_typeof     
+------------------
+ double precision
+(1 row)
+
+select sysdate(3) + 10.5;
+--?.*
+--?.*
+--?.*
+(1 row)
+
+select pg_typeof(sysdate(3) + 10.5);
+    pg_typeof     
+------------------
+ double precision
+(1 row)
+
+select sysdate(3) + 10.3;
+--?.*
+--?.*
+--?.*
+(1 row)
+
+select pg_typeof(sysdate(3) + 10.3);
+    pg_typeof     
+------------------
+ double precision
+(1 row)
+
+select sysdate(3) - 10;
+--?.*
+--?.*
+--?.*
+(1 row)
+
+select pg_typeof(sysdate(3) - 10);
+    pg_typeof     
+------------------
+ double precision
+(1 row)
+
+select sysdate(3) - 10.5;
+--?.*
+--?.*
+--?.*
+(1 row)
+
+select pg_typeof(sysdate(3) - 10.5);
+    pg_typeof     
+------------------
+ double precision
+(1 row)
+
+select sysdate(3) - 10.3;
+--?.*
+--?.*
+--?.*
+(1 row)
+
+select pg_typeof(sysdate(3) - 10.3);
+    pg_typeof     
+------------------
+ double precision
+(1 row)
+
+select sysdate(3) * 2;
+--?.*
+--?.*
+--?.*
+(1 row)
+
+select pg_typeof(sysdate(3) * 2);
+    pg_typeof     
+------------------
+ double precision
+(1 row)
+
+select sysdate(3) / 2;
+--?.*
+--?.*
+--?.*
+(1 row)
+
+select pg_typeof(sysdate(3) / 2);
+    pg_typeof     
+------------------
+ double precision
+(1 row)
+

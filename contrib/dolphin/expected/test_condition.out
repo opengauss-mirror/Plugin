@@ -5328,9 +5328,9 @@ LINE 1: select ifnull(anint, bt) from typeset;
                              ^
 CONTEXT:  referenced column: ifnull
 select ifnull(anint, dt) from typeset;
- ifnull 
---------
-    127
+   ifnull   
+------------
+ 01-27-2000
 (1 row)
 
 select ifnull(anint, tmstp) from typeset;
@@ -5340,9 +5340,9 @@ select ifnull(anint, tmstp) from typeset;
 (1 row)
 
 select ifnull(anint, tm) from typeset;
- ifnull 
---------
-    127
+  ifnull  
+----------
+ 00:01:27
 (1 row)
 
 select ifnull(anint, ch) from typeset;
@@ -5392,21 +5392,20 @@ LINE 1: select ifnull(bgint, bt) from typeset;
                              ^
 CONTEXT:  referenced column: ifnull
 select ifnull(bgint, dt) from typeset;
- ifnull 
---------
-    127
-(1 row)
-
+ERROR:  NVL types bigint and date cannot be matched
+LINE 1: select ifnull(bgint, dt) from typeset;
+                             ^
+CONTEXT:  referenced column: ifnull
 select ifnull(bgint, tmstp) from typeset;
- ifnull 
---------
-    127
+            ifnull            
+------------------------------
+ Thu Jan 27 00:00:00 2000 PST
 (1 row)
 
 select ifnull(bgint, tm) from typeset;
- ifnull 
---------
-    127
+  ifnull  
+----------
+ 00:01:27
 (1 row)
 
 select ifnull(bgint, ch) from typeset;
@@ -5451,21 +5450,20 @@ select ifnull(dcmal, bt) from typeset;
 (1 row)
 
 select ifnull(dcmal, dt) from typeset;
- ifnull 
---------
-    127
-(1 row)
-
+ERROR:  NVL types numeric and date cannot be matched
+LINE 1: select ifnull(dcmal, dt) from typeset;
+                             ^
+CONTEXT:  referenced column: ifnull
 select ifnull(dcmal, tmstp) from typeset;
- ifnull 
---------
-    127
+            ifnull            
+------------------------------
+ Thu Jan 27 00:00:00 2000 PST
 (1 row)
 
 select ifnull(dcmal, tm) from typeset;
- ifnull 
---------
-    127
+  ifnull  
+----------
+ 00:01:27
 (1 row)
 
 select ifnull(dcmal, ch) from typeset;
@@ -5504,21 +5502,20 @@ select ifnull(nmric, bt) from typeset;
 (1 row)
 
 select ifnull(nmric, dt) from typeset;
- ifnull 
---------
-    127
-(1 row)
-
+ERROR:  NVL types numeric and date cannot be matched
+LINE 1: select ifnull(nmric, dt) from typeset;
+                             ^
+CONTEXT:  referenced column: ifnull
 select ifnull(nmric, tmstp) from typeset;
- ifnull 
---------
-    127
+            ifnull            
+------------------------------
+ Thu Jan 27 00:00:00 2000 PST
 (1 row)
 
 select ifnull(nmric, tm) from typeset;
- ifnull 
---------
-    127
+  ifnull  
+----------
+ 00:01:27
 (1 row)
 
 select ifnull(nmric, ch) from typeset;

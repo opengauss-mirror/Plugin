@@ -1015,25 +1015,65 @@ UPDATE test_string_type, test_string_table SET test_string_type.`char-varchar` =
 UPDATE test_string_type, test_string_table SET test_string_type.`char*varchar` = test_string_table.`char`*test_string_table.`varchar`;
 UPDATE test_string_type, test_string_table SET test_string_type.`char/varchar` = test_string_table.`char`/test_string_table.`varchar`;
 UPDATE test_string_type, test_string_table SET test_string_type.`char+binary` = test_string_table.`char`+test_string_table.`binary`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: char+binary
 UPDATE test_string_type, test_string_table SET test_string_type.`char-binary` = test_string_table.`char`-test_string_table.`binary`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: char-binary
 UPDATE test_string_type, test_string_table SET test_string_type.`char*binary` = test_string_table.`char`*test_string_table.`binary`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: char*binary
 UPDATE test_string_type, test_string_table SET test_string_type.`char/binary` = test_string_table.`char`/test_string_table.`binary`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: char/binary
 UPDATE test_string_type, test_string_table SET test_string_type.`char+varbinary` = test_string_table.`char`+test_string_table.`varbinary`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: char+varbinary
 UPDATE test_string_type, test_string_table SET test_string_type.`char-varbinary` = test_string_table.`char`-test_string_table.`varbinary`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: char-varbinary
 UPDATE test_string_type, test_string_table SET test_string_type.`char*varbinary` = test_string_table.`char`*test_string_table.`varbinary`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: char*varbinary
 UPDATE test_string_type, test_string_table SET test_string_type.`char/varbinary` = test_string_table.`char`/test_string_table.`varbinary`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: char/varbinary
 UPDATE test_string_type, test_string_table SET test_string_type.`char+tinyblob` = test_string_table.`char`+test_string_table.`tinyblob`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: char+tinyblob
 UPDATE test_string_type, test_string_table SET test_string_type.`char-tinyblob` = test_string_table.`char`-test_string_table.`tinyblob`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: char-tinyblob
 UPDATE test_string_type, test_string_table SET test_string_type.`char*tinyblob` = test_string_table.`char`*test_string_table.`tinyblob`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: char*tinyblob
 UPDATE test_string_type, test_string_table SET test_string_type.`char/tinyblob` = test_string_table.`char`/test_string_table.`tinyblob`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: char/tinyblob
 UPDATE test_string_type, test_string_table SET test_string_type.`char+mediumblob` = test_string_table.`char`+test_string_table.`mediumblob`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: char+mediumblob
 UPDATE test_string_type, test_string_table SET test_string_type.`char-mediumblob` = test_string_table.`char`-test_string_table.`mediumblob`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: char-mediumblob
 UPDATE test_string_type, test_string_table SET test_string_type.`char*mediumblob` = test_string_table.`char`*test_string_table.`mediumblob`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: char*mediumblob
 UPDATE test_string_type, test_string_table SET test_string_type.`char/mediumblob` = test_string_table.`char`/test_string_table.`mediumblob`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: char/mediumblob
 UPDATE test_string_type, test_string_table SET test_string_type.`char+longblob` = test_string_table.`char`+test_string_table.`longblob`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: char+longblob
 UPDATE test_string_type, test_string_table SET test_string_type.`char-longblob` = test_string_table.`char`-test_string_table.`longblob`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: char-longblob
 UPDATE test_string_type, test_string_table SET test_string_type.`char*longblob` = test_string_table.`char`*test_string_table.`longblob`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: char*longblob
 UPDATE test_string_type, test_string_table SET test_string_type.`char/longblob` = test_string_table.`char`/test_string_table.`longblob`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: char/longblob
 UPDATE test_string_type, test_string_table SET test_string_type.`char+text` = test_string_table.`char`+test_string_table.`text`;
 UPDATE test_string_type, test_string_table SET test_string_type.`char-text` = test_string_table.`char`-test_string_table.`text`;
 UPDATE test_string_type, test_string_table SET test_string_type.`char*text` = test_string_table.`char`*test_string_table.`text`;
@@ -1069,25 +1109,65 @@ UPDATE test_string_type, test_string_table SET test_string_type.`varchar-varchar
 UPDATE test_string_type, test_string_table SET test_string_type.`varchar*varchar` = test_string_table.`varchar`*test_string_table.`varchar`;
 UPDATE test_string_type, test_string_table SET test_string_type.`varchar/varchar` = test_string_table.`varchar`/test_string_table.`varchar`;
 UPDATE test_string_type, test_string_table SET test_string_type.`varchar+binary` = test_string_table.`varchar`+test_string_table.`binary`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: varchar+binary
 UPDATE test_string_type, test_string_table SET test_string_type.`varchar-binary` = test_string_table.`varchar`-test_string_table.`binary`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: varchar-binary
 UPDATE test_string_type, test_string_table SET test_string_type.`varchar*binary` = test_string_table.`varchar`*test_string_table.`binary`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: varchar*binary
 UPDATE test_string_type, test_string_table SET test_string_type.`varchar/binary` = test_string_table.`varchar`/test_string_table.`binary`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: varchar/binary
 UPDATE test_string_type, test_string_table SET test_string_type.`varchar+varbinary` = test_string_table.`varchar`+test_string_table.`varbinary`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: varchar+varbinary
 UPDATE test_string_type, test_string_table SET test_string_type.`varchar-varbinary` = test_string_table.`varchar`-test_string_table.`varbinary`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: varchar-varbinary
 UPDATE test_string_type, test_string_table SET test_string_type.`varchar*varbinary` = test_string_table.`varchar`*test_string_table.`varbinary`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: varchar*varbinary
 UPDATE test_string_type, test_string_table SET test_string_type.`varchar/varbinary` = test_string_table.`varchar`/test_string_table.`varbinary`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: varchar/varbinary
 UPDATE test_string_type, test_string_table SET test_string_type.`varchar+tinyblob` = test_string_table.`varchar`+test_string_table.`tinyblob`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: varchar+tinyblob
 UPDATE test_string_type, test_string_table SET test_string_type.`varchar-tinyblob` = test_string_table.`varchar`-test_string_table.`tinyblob`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: varchar-tinyblob
 UPDATE test_string_type, test_string_table SET test_string_type.`varchar*tinyblob` = test_string_table.`varchar`*test_string_table.`tinyblob`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: varchar*tinyblob
 UPDATE test_string_type, test_string_table SET test_string_type.`varchar/tinyblob` = test_string_table.`varchar`/test_string_table.`tinyblob`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: varchar/tinyblob
 UPDATE test_string_type, test_string_table SET test_string_type.`varchar+mediumblob` = test_string_table.`varchar`+test_string_table.`mediumblob`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: varchar+mediumblob
 UPDATE test_string_type, test_string_table SET test_string_type.`varchar-mediumblob` = test_string_table.`varchar`-test_string_table.`mediumblob`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: varchar-mediumblob
 UPDATE test_string_type, test_string_table SET test_string_type.`varchar*mediumblob` = test_string_table.`varchar`*test_string_table.`mediumblob`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: varchar*mediumblob
 UPDATE test_string_type, test_string_table SET test_string_type.`varchar/mediumblob` = test_string_table.`varchar`/test_string_table.`mediumblob`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: varchar/mediumblob
 UPDATE test_string_type, test_string_table SET test_string_type.`varchar+longblob` = test_string_table.`varchar`+test_string_table.`longblob`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: varchar+longblob
 UPDATE test_string_type, test_string_table SET test_string_type.`varchar-longblob` = test_string_table.`varchar`-test_string_table.`longblob`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: varchar-longblob
 UPDATE test_string_type, test_string_table SET test_string_type.`varchar*longblob` = test_string_table.`varchar`*test_string_table.`longblob`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: varchar*longblob
 UPDATE test_string_type, test_string_table SET test_string_type.`varchar/longblob` = test_string_table.`varchar`/test_string_table.`longblob`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: varchar/longblob
 UPDATE test_string_type, test_string_table SET test_string_type.`varchar+text` = test_string_table.`varchar`+test_string_table.`text`;
 UPDATE test_string_type, test_string_table SET test_string_type.`varchar-text` = test_string_table.`varchar`-test_string_table.`text`;
 UPDATE test_string_type, test_string_table SET test_string_type.`varchar*text` = test_string_table.`varchar`*test_string_table.`text`;
@@ -1115,271 +1195,911 @@ CONTEXT:  referenced column: varchar/json
 ERROR:  division by zero
 CONTEXT:  referenced column: varchar/json
 UPDATE test_string_type, test_string_table SET test_string_type.`binary+char` = test_string_table.`binary`+test_string_table.`char`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: binary+char
 UPDATE test_string_type, test_string_table SET test_string_type.`binary-char` = test_string_table.`binary`-test_string_table.`char`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: binary-char
 UPDATE test_string_type, test_string_table SET test_string_type.`binary*char` = test_string_table.`binary`*test_string_table.`char`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: binary*char
 UPDATE test_string_type, test_string_table SET test_string_type.`binary/char` = test_string_table.`binary`/test_string_table.`char`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: binary/char
 UPDATE test_string_type, test_string_table SET test_string_type.`binary+varchar` = test_string_table.`binary`+test_string_table.`varchar`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: binary+varchar
 UPDATE test_string_type, test_string_table SET test_string_type.`binary-varchar` = test_string_table.`binary`-test_string_table.`varchar`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: binary-varchar
 UPDATE test_string_type, test_string_table SET test_string_type.`binary*varchar` = test_string_table.`binary`*test_string_table.`varchar`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: binary*varchar
 UPDATE test_string_type, test_string_table SET test_string_type.`binary/varchar` = test_string_table.`binary`/test_string_table.`varchar`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: binary/varchar
 UPDATE test_string_type, test_string_table SET test_string_type.`binary+binary` = test_string_table.`binary`+test_string_table.`binary`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: binary+binary
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: binary+binary
 UPDATE test_string_type, test_string_table SET test_string_type.`binary-binary` = test_string_table.`binary`-test_string_table.`binary`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: binary-binary
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: binary-binary
 UPDATE test_string_type, test_string_table SET test_string_type.`binary*binary` = test_string_table.`binary`*test_string_table.`binary`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: binary*binary
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: binary*binary
 UPDATE test_string_type, test_string_table SET test_string_type.`binary/binary` = test_string_table.`binary`/test_string_table.`binary`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: binary/binary
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: binary/binary
 UPDATE test_string_type, test_string_table SET test_string_type.`binary+varbinary` = test_string_table.`binary`+test_string_table.`varbinary`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: binary+varbinary
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: binary+varbinary
 UPDATE test_string_type, test_string_table SET test_string_type.`binary-varbinary` = test_string_table.`binary`-test_string_table.`varbinary`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: binary-varbinary
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: binary-varbinary
 UPDATE test_string_type, test_string_table SET test_string_type.`binary*varbinary` = test_string_table.`binary`*test_string_table.`varbinary`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: binary*varbinary
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: binary*varbinary
 UPDATE test_string_type, test_string_table SET test_string_type.`binary/varbinary` = test_string_table.`binary`/test_string_table.`varbinary`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: binary/varbinary
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: binary/varbinary
 UPDATE test_string_type, test_string_table SET test_string_type.`binary+tinyblob` = test_string_table.`binary`+test_string_table.`tinyblob`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: binary+tinyblob
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: binary+tinyblob
 UPDATE test_string_type, test_string_table SET test_string_type.`binary-tinyblob` = test_string_table.`binary`-test_string_table.`tinyblob`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: binary-tinyblob
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: binary-tinyblob
 UPDATE test_string_type, test_string_table SET test_string_type.`binary*tinyblob` = test_string_table.`binary`*test_string_table.`tinyblob`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: binary*tinyblob
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: binary*tinyblob
 UPDATE test_string_type, test_string_table SET test_string_type.`binary/tinyblob` = test_string_table.`binary`/test_string_table.`tinyblob`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: binary/tinyblob
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: binary/tinyblob
 UPDATE test_string_type, test_string_table SET test_string_type.`binary+mediumblob` = test_string_table.`binary`+test_string_table.`mediumblob`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: binary+mediumblob
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: binary+mediumblob
 UPDATE test_string_type, test_string_table SET test_string_type.`binary-mediumblob` = test_string_table.`binary`-test_string_table.`mediumblob`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: binary-mediumblob
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: binary-mediumblob
 UPDATE test_string_type, test_string_table SET test_string_type.`binary*mediumblob` = test_string_table.`binary`*test_string_table.`mediumblob`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: binary*mediumblob
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: binary*mediumblob
 UPDATE test_string_type, test_string_table SET test_string_type.`binary/mediumblob` = test_string_table.`binary`/test_string_table.`mediumblob`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: binary/mediumblob
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: binary/mediumblob
 UPDATE test_string_type, test_string_table SET test_string_type.`binary+longblob` = test_string_table.`binary`+test_string_table.`longblob`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: binary+longblob
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: binary+longblob
 UPDATE test_string_type, test_string_table SET test_string_type.`binary-longblob` = test_string_table.`binary`-test_string_table.`longblob`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: binary-longblob
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: binary-longblob
 UPDATE test_string_type, test_string_table SET test_string_type.`binary*longblob` = test_string_table.`binary`*test_string_table.`longblob`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: binary*longblob
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: binary*longblob
 UPDATE test_string_type, test_string_table SET test_string_type.`binary/longblob` = test_string_table.`binary`/test_string_table.`longblob`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: binary/longblob
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: binary/longblob
 UPDATE test_string_type, test_string_table SET test_string_type.`binary+text` = test_string_table.`binary`+test_string_table.`text`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: binary+text
 UPDATE test_string_type, test_string_table SET test_string_type.`binary-text` = test_string_table.`binary`-test_string_table.`text`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: binary-text
 UPDATE test_string_type, test_string_table SET test_string_type.`binary*text` = test_string_table.`binary`*test_string_table.`text`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: binary*text
 UPDATE test_string_type, test_string_table SET test_string_type.`binary/text` = test_string_table.`binary`/test_string_table.`text`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: binary/text
 UPDATE test_string_type, test_string_table SET test_string_type.`binary+enum_t` = test_string_table.`binary`+test_string_table.`enum_t`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: binary+enum_t
 UPDATE test_string_type, test_string_table SET test_string_type.`binary-enum_t` = test_string_table.`binary`-test_string_table.`enum_t`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: binary-enum_t
 UPDATE test_string_type, test_string_table SET test_string_type.`binary*enum_t` = test_string_table.`binary`*test_string_table.`enum_t`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: binary*enum_t
 UPDATE test_string_type, test_string_table SET test_string_type.`binary/enum_t` = test_string_table.`binary`/test_string_table.`enum_t`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: binary/enum_t
 UPDATE test_string_type, test_string_table SET test_string_type.`binary+set_t` = test_string_table.`binary`+test_string_table.`set_t`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: binary+set_t
 UPDATE test_string_type, test_string_table SET test_string_type.`binary-set_t` = test_string_table.`binary`-test_string_table.`set_t`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: binary-set_t
 UPDATE test_string_type, test_string_table SET test_string_type.`binary*set_t` = test_string_table.`binary`*test_string_table.`set_t`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: binary*set_t
 UPDATE test_string_type, test_string_table SET test_string_type.`binary/set_t` = test_string_table.`binary`/test_string_table.`set_t`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: binary/set_t
 UPDATE test_string_type, test_string_table SET test_string_type.`binary+json` = test_string_table.`binary`+test_string_table.`json`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: binary+json
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: binary+json
 UPDATE test_string_type, test_string_table SET test_string_type.`binary-json` = test_string_table.`binary`-test_string_table.`json`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: binary-json
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: binary-json
 UPDATE test_string_type, test_string_table SET test_string_type.`binary*json` = test_string_table.`binary`*test_string_table.`json`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: binary*json
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: binary*json
 UPDATE test_string_type, test_string_table SET test_string_type.`binary/json` = test_string_table.`binary`/test_string_table.`json`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: binary/json
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: binary/json
 ERROR:  division by zero
 CONTEXT:  referenced column: binary/json
 UPDATE test_string_type, test_string_table SET test_string_type.`varbinary+char` = test_string_table.`varbinary`+test_string_table.`char`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: varbinary+char
 UPDATE test_string_type, test_string_table SET test_string_type.`varbinary-char` = test_string_table.`varbinary`-test_string_table.`char`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: varbinary-char
 UPDATE test_string_type, test_string_table SET test_string_type.`varbinary*char` = test_string_table.`varbinary`*test_string_table.`char`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: varbinary*char
 UPDATE test_string_type, test_string_table SET test_string_type.`varbinary/char` = test_string_table.`varbinary`/test_string_table.`char`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: varbinary/char
 UPDATE test_string_type, test_string_table SET test_string_type.`varbinary+varchar` = test_string_table.`varbinary`+test_string_table.`varchar`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: varbinary+varchar
 UPDATE test_string_type, test_string_table SET test_string_type.`varbinary-varchar` = test_string_table.`varbinary`-test_string_table.`varchar`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: varbinary-varchar
 UPDATE test_string_type, test_string_table SET test_string_type.`varbinary*varchar` = test_string_table.`varbinary`*test_string_table.`varchar`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: varbinary*varchar
 UPDATE test_string_type, test_string_table SET test_string_type.`varbinary/varchar` = test_string_table.`varbinary`/test_string_table.`varchar`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: varbinary/varchar
 UPDATE test_string_type, test_string_table SET test_string_type.`varbinary+binary` = test_string_table.`varbinary`+test_string_table.`binary`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: varbinary+binary
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: varbinary+binary
 UPDATE test_string_type, test_string_table SET test_string_type.`varbinary-binary` = test_string_table.`varbinary`-test_string_table.`binary`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: varbinary-binary
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: varbinary-binary
 UPDATE test_string_type, test_string_table SET test_string_type.`varbinary*binary` = test_string_table.`varbinary`*test_string_table.`binary`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: varbinary*binary
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: varbinary*binary
 UPDATE test_string_type, test_string_table SET test_string_type.`varbinary/binary` = test_string_table.`varbinary`/test_string_table.`binary`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: varbinary/binary
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: varbinary/binary
 UPDATE test_string_type, test_string_table SET test_string_type.`varbinary+varbinary` = test_string_table.`varbinary`+test_string_table.`varbinary`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: varbinary+varbinary
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: varbinary+varbinary
 UPDATE test_string_type, test_string_table SET test_string_type.`varbinary-varbinary` = test_string_table.`varbinary`-test_string_table.`varbinary`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: varbinary-varbinary
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: varbinary-varbinary
 UPDATE test_string_type, test_string_table SET test_string_type.`varbinary*varbinary` = test_string_table.`varbinary`*test_string_table.`varbinary`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: varbinary*varbinary
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: varbinary*varbinary
 UPDATE test_string_type, test_string_table SET test_string_type.`varbinary/varbinary` = test_string_table.`varbinary`/test_string_table.`varbinary`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: varbinary/varbinary
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: varbinary/varbinary
 UPDATE test_string_type, test_string_table SET test_string_type.`varbinary+tinyblob` = test_string_table.`varbinary`+test_string_table.`tinyblob`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: varbinary+tinyblob
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: varbinary+tinyblob
 UPDATE test_string_type, test_string_table SET test_string_type.`varbinary-tinyblob` = test_string_table.`varbinary`-test_string_table.`tinyblob`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: varbinary-tinyblob
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: varbinary-tinyblob
 UPDATE test_string_type, test_string_table SET test_string_type.`varbinary*tinyblob` = test_string_table.`varbinary`*test_string_table.`tinyblob`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: varbinary*tinyblob
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: varbinary*tinyblob
 UPDATE test_string_type, test_string_table SET test_string_type.`varbinary/tinyblob` = test_string_table.`varbinary`/test_string_table.`tinyblob`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: varbinary/tinyblob
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: varbinary/tinyblob
 UPDATE test_string_type, test_string_table SET test_string_type.`varbinary+mediumblob` = test_string_table.`varbinary`+test_string_table.`mediumblob`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: varbinary+mediumblob
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: varbinary+mediumblob
 UPDATE test_string_type, test_string_table SET test_string_type.`varbinary-mediumblob` = test_string_table.`varbinary`-test_string_table.`mediumblob`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: varbinary-mediumblob
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: varbinary-mediumblob
 UPDATE test_string_type, test_string_table SET test_string_type.`varbinary*mediumblob` = test_string_table.`varbinary`*test_string_table.`mediumblob`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: varbinary*mediumblob
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: varbinary*mediumblob
 UPDATE test_string_type, test_string_table SET test_string_type.`varbinary/mediumblob` = test_string_table.`varbinary`/test_string_table.`mediumblob`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: varbinary/mediumblob
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: varbinary/mediumblob
 UPDATE test_string_type, test_string_table SET test_string_type.`varbinary+longblob` = test_string_table.`varbinary`+test_string_table.`longblob`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: varbinary+longblob
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: varbinary+longblob
 UPDATE test_string_type, test_string_table SET test_string_type.`varbinary-longblob` = test_string_table.`varbinary`-test_string_table.`longblob`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: varbinary-longblob
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: varbinary-longblob
 UPDATE test_string_type, test_string_table SET test_string_type.`varbinary*longblob` = test_string_table.`varbinary`*test_string_table.`longblob`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: varbinary*longblob
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: varbinary*longblob
 UPDATE test_string_type, test_string_table SET test_string_type.`varbinary/longblob` = test_string_table.`varbinary`/test_string_table.`longblob`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: varbinary/longblob
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: varbinary/longblob
 UPDATE test_string_type, test_string_table SET test_string_type.`varbinary+text` = test_string_table.`varbinary`+test_string_table.`text`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: varbinary+text
 UPDATE test_string_type, test_string_table SET test_string_type.`varbinary-text` = test_string_table.`varbinary`-test_string_table.`text`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: varbinary-text
 UPDATE test_string_type, test_string_table SET test_string_type.`varbinary*text` = test_string_table.`varbinary`*test_string_table.`text`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: varbinary*text
 UPDATE test_string_type, test_string_table SET test_string_type.`varbinary/text` = test_string_table.`varbinary`/test_string_table.`text`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: varbinary/text
 UPDATE test_string_type, test_string_table SET test_string_type.`varbinary+enum_t` = test_string_table.`varbinary`+test_string_table.`enum_t`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: varbinary+enum_t
 UPDATE test_string_type, test_string_table SET test_string_type.`varbinary-enum_t` = test_string_table.`varbinary`-test_string_table.`enum_t`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: varbinary-enum_t
 UPDATE test_string_type, test_string_table SET test_string_type.`varbinary*enum_t` = test_string_table.`varbinary`*test_string_table.`enum_t`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: varbinary*enum_t
 UPDATE test_string_type, test_string_table SET test_string_type.`varbinary/enum_t` = test_string_table.`varbinary`/test_string_table.`enum_t`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: varbinary/enum_t
 UPDATE test_string_type, test_string_table SET test_string_type.`varbinary+set_t` = test_string_table.`varbinary`+test_string_table.`set_t`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: varbinary+set_t
 UPDATE test_string_type, test_string_table SET test_string_type.`varbinary-set_t` = test_string_table.`varbinary`-test_string_table.`set_t`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: varbinary-set_t
 UPDATE test_string_type, test_string_table SET test_string_type.`varbinary*set_t` = test_string_table.`varbinary`*test_string_table.`set_t`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: varbinary*set_t
 UPDATE test_string_type, test_string_table SET test_string_type.`varbinary/set_t` = test_string_table.`varbinary`/test_string_table.`set_t`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: varbinary/set_t
 UPDATE test_string_type, test_string_table SET test_string_type.`varbinary+json` = test_string_table.`varbinary`+test_string_table.`json`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: varbinary+json
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: varbinary+json
 UPDATE test_string_type, test_string_table SET test_string_type.`varbinary-json` = test_string_table.`varbinary`-test_string_table.`json`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: varbinary-json
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: varbinary-json
 UPDATE test_string_type, test_string_table SET test_string_type.`varbinary*json` = test_string_table.`varbinary`*test_string_table.`json`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: varbinary*json
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: varbinary*json
 UPDATE test_string_type, test_string_table SET test_string_type.`varbinary/json` = test_string_table.`varbinary`/test_string_table.`json`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: varbinary/json
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: varbinary/json
 ERROR:  division by zero
 CONTEXT:  referenced column: varbinary/json
 UPDATE test_string_type, test_string_table SET test_string_type.`tinyblob+char` = test_string_table.`tinyblob`+test_string_table.`char`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: tinyblob+char
 UPDATE test_string_type, test_string_table SET test_string_type.`tinyblob-char` = test_string_table.`tinyblob`-test_string_table.`char`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: tinyblob-char
 UPDATE test_string_type, test_string_table SET test_string_type.`tinyblob*char` = test_string_table.`tinyblob`*test_string_table.`char`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: tinyblob*char
 UPDATE test_string_type, test_string_table SET test_string_type.`tinyblob/char` = test_string_table.`tinyblob`/test_string_table.`char`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: tinyblob/char
 UPDATE test_string_type, test_string_table SET test_string_type.`tinyblob+varchar` = test_string_table.`tinyblob`+test_string_table.`varchar`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: tinyblob+varchar
 UPDATE test_string_type, test_string_table SET test_string_type.`tinyblob-varchar` = test_string_table.`tinyblob`-test_string_table.`varchar`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: tinyblob-varchar
 UPDATE test_string_type, test_string_table SET test_string_type.`tinyblob*varchar` = test_string_table.`tinyblob`*test_string_table.`varchar`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: tinyblob*varchar
 UPDATE test_string_type, test_string_table SET test_string_type.`tinyblob/varchar` = test_string_table.`tinyblob`/test_string_table.`varchar`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: tinyblob/varchar
 UPDATE test_string_type, test_string_table SET test_string_type.`tinyblob+binary` = test_string_table.`tinyblob`+test_string_table.`binary`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: tinyblob+binary
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: tinyblob+binary
 UPDATE test_string_type, test_string_table SET test_string_type.`tinyblob-binary` = test_string_table.`tinyblob`-test_string_table.`binary`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: tinyblob-binary
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: tinyblob-binary
 UPDATE test_string_type, test_string_table SET test_string_type.`tinyblob*binary` = test_string_table.`tinyblob`*test_string_table.`binary`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: tinyblob*binary
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: tinyblob*binary
 UPDATE test_string_type, test_string_table SET test_string_type.`tinyblob/binary` = test_string_table.`tinyblob`/test_string_table.`binary`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: tinyblob/binary
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: tinyblob/binary
 UPDATE test_string_type, test_string_table SET test_string_type.`tinyblob+varbinary` = test_string_table.`tinyblob`+test_string_table.`varbinary`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: tinyblob+varbinary
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: tinyblob+varbinary
 UPDATE test_string_type, test_string_table SET test_string_type.`tinyblob-varbinary` = test_string_table.`tinyblob`-test_string_table.`varbinary`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: tinyblob-varbinary
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: tinyblob-varbinary
 UPDATE test_string_type, test_string_table SET test_string_type.`tinyblob*varbinary` = test_string_table.`tinyblob`*test_string_table.`varbinary`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: tinyblob*varbinary
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: tinyblob*varbinary
 UPDATE test_string_type, test_string_table SET test_string_type.`tinyblob/varbinary` = test_string_table.`tinyblob`/test_string_table.`varbinary`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: tinyblob/varbinary
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: tinyblob/varbinary
 UPDATE test_string_type, test_string_table SET test_string_type.`tinyblob+tinyblob` = test_string_table.`tinyblob`+test_string_table.`tinyblob`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: tinyblob+tinyblob
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: tinyblob+tinyblob
 UPDATE test_string_type, test_string_table SET test_string_type.`tinyblob-tinyblob` = test_string_table.`tinyblob`-test_string_table.`tinyblob`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: tinyblob-tinyblob
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: tinyblob-tinyblob
 UPDATE test_string_type, test_string_table SET test_string_type.`tinyblob*tinyblob` = test_string_table.`tinyblob`*test_string_table.`tinyblob`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: tinyblob*tinyblob
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: tinyblob*tinyblob
 UPDATE test_string_type, test_string_table SET test_string_type.`tinyblob/tinyblob` = test_string_table.`tinyblob`/test_string_table.`tinyblob`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: tinyblob/tinyblob
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: tinyblob/tinyblob
 UPDATE test_string_type, test_string_table SET test_string_type.`tinyblob+mediumblob` = test_string_table.`tinyblob`+test_string_table.`mediumblob`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: tinyblob+mediumblob
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: tinyblob+mediumblob
 UPDATE test_string_type, test_string_table SET test_string_type.`tinyblob-mediumblob` = test_string_table.`tinyblob`-test_string_table.`mediumblob`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: tinyblob-mediumblob
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: tinyblob-mediumblob
 UPDATE test_string_type, test_string_table SET test_string_type.`tinyblob*mediumblob` = test_string_table.`tinyblob`*test_string_table.`mediumblob`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: tinyblob*mediumblob
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: tinyblob*mediumblob
 UPDATE test_string_type, test_string_table SET test_string_type.`tinyblob/mediumblob` = test_string_table.`tinyblob`/test_string_table.`mediumblob`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: tinyblob/mediumblob
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: tinyblob/mediumblob
 UPDATE test_string_type, test_string_table SET test_string_type.`tinyblob+longblob` = test_string_table.`tinyblob`+test_string_table.`longblob`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: tinyblob+longblob
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: tinyblob+longblob
 UPDATE test_string_type, test_string_table SET test_string_type.`tinyblob-longblob` = test_string_table.`tinyblob`-test_string_table.`longblob`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: tinyblob-longblob
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: tinyblob-longblob
 UPDATE test_string_type, test_string_table SET test_string_type.`tinyblob*longblob` = test_string_table.`tinyblob`*test_string_table.`longblob`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: tinyblob*longblob
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: tinyblob*longblob
 UPDATE test_string_type, test_string_table SET test_string_type.`tinyblob/longblob` = test_string_table.`tinyblob`/test_string_table.`longblob`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: tinyblob/longblob
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: tinyblob/longblob
 UPDATE test_string_type, test_string_table SET test_string_type.`tinyblob+text` = test_string_table.`tinyblob`+test_string_table.`text`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: tinyblob+text
 UPDATE test_string_type, test_string_table SET test_string_type.`tinyblob-text` = test_string_table.`tinyblob`-test_string_table.`text`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: tinyblob-text
 UPDATE test_string_type, test_string_table SET test_string_type.`tinyblob*text` = test_string_table.`tinyblob`*test_string_table.`text`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: tinyblob*text
 UPDATE test_string_type, test_string_table SET test_string_type.`tinyblob/text` = test_string_table.`tinyblob`/test_string_table.`text`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: tinyblob/text
 UPDATE test_string_type, test_string_table SET test_string_type.`tinyblob+enum_t` = test_string_table.`tinyblob`+test_string_table.`enum_t`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: tinyblob+enum_t
 UPDATE test_string_type, test_string_table SET test_string_type.`tinyblob-enum_t` = test_string_table.`tinyblob`-test_string_table.`enum_t`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: tinyblob-enum_t
 UPDATE test_string_type, test_string_table SET test_string_type.`tinyblob*enum_t` = test_string_table.`tinyblob`*test_string_table.`enum_t`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: tinyblob*enum_t
 UPDATE test_string_type, test_string_table SET test_string_type.`tinyblob/enum_t` = test_string_table.`tinyblob`/test_string_table.`enum_t`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: tinyblob/enum_t
 UPDATE test_string_type, test_string_table SET test_string_type.`tinyblob+set_t` = test_string_table.`tinyblob`+test_string_table.`set_t`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: tinyblob+set_t
 UPDATE test_string_type, test_string_table SET test_string_type.`tinyblob-set_t` = test_string_table.`tinyblob`-test_string_table.`set_t`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: tinyblob-set_t
 UPDATE test_string_type, test_string_table SET test_string_type.`tinyblob*set_t` = test_string_table.`tinyblob`*test_string_table.`set_t`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: tinyblob*set_t
 UPDATE test_string_type, test_string_table SET test_string_type.`tinyblob/set_t` = test_string_table.`tinyblob`/test_string_table.`set_t`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: tinyblob/set_t
 UPDATE test_string_type, test_string_table SET test_string_type.`tinyblob+json` = test_string_table.`tinyblob`+test_string_table.`json`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: tinyblob+json
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: tinyblob+json
 UPDATE test_string_type, test_string_table SET test_string_type.`tinyblob-json` = test_string_table.`tinyblob`-test_string_table.`json`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: tinyblob-json
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: tinyblob-json
 UPDATE test_string_type, test_string_table SET test_string_type.`tinyblob*json` = test_string_table.`tinyblob`*test_string_table.`json`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: tinyblob*json
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: tinyblob*json
 UPDATE test_string_type, test_string_table SET test_string_type.`tinyblob/json` = test_string_table.`tinyblob`/test_string_table.`json`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: tinyblob/json
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: tinyblob/json
 ERROR:  division by zero
 CONTEXT:  referenced column: tinyblob/json
 UPDATE test_string_type, test_string_table SET test_string_type.`mediumblob+char` = test_string_table.`mediumblob`+test_string_table.`char`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: mediumblob+char
 UPDATE test_string_type, test_string_table SET test_string_type.`mediumblob-char` = test_string_table.`mediumblob`-test_string_table.`char`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: mediumblob-char
 UPDATE test_string_type, test_string_table SET test_string_type.`mediumblob*char` = test_string_table.`mediumblob`*test_string_table.`char`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: mediumblob*char
 UPDATE test_string_type, test_string_table SET test_string_type.`mediumblob/char` = test_string_table.`mediumblob`/test_string_table.`char`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: mediumblob/char
 UPDATE test_string_type, test_string_table SET test_string_type.`mediumblob+varchar` = test_string_table.`mediumblob`+test_string_table.`varchar`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: mediumblob+varchar
 UPDATE test_string_type, test_string_table SET test_string_type.`mediumblob-varchar` = test_string_table.`mediumblob`-test_string_table.`varchar`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: mediumblob-varchar
 UPDATE test_string_type, test_string_table SET test_string_type.`mediumblob*varchar` = test_string_table.`mediumblob`*test_string_table.`varchar`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: mediumblob*varchar
 UPDATE test_string_type, test_string_table SET test_string_type.`mediumblob/varchar` = test_string_table.`mediumblob`/test_string_table.`varchar`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: mediumblob/varchar
 UPDATE test_string_type, test_string_table SET test_string_type.`mediumblob+binary` = test_string_table.`mediumblob`+test_string_table.`binary`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: mediumblob+binary
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: mediumblob+binary
 UPDATE test_string_type, test_string_table SET test_string_type.`mediumblob-binary` = test_string_table.`mediumblob`-test_string_table.`binary`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: mediumblob-binary
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: mediumblob-binary
 UPDATE test_string_type, test_string_table SET test_string_type.`mediumblob*binary` = test_string_table.`mediumblob`*test_string_table.`binary`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: mediumblob*binary
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: mediumblob*binary
 UPDATE test_string_type, test_string_table SET test_string_type.`mediumblob/binary` = test_string_table.`mediumblob`/test_string_table.`binary`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: mediumblob/binary
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: mediumblob/binary
 UPDATE test_string_type, test_string_table SET test_string_type.`mediumblob+varbinary` = test_string_table.`mediumblob`+test_string_table.`varbinary`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: mediumblob+varbinary
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: mediumblob+varbinary
 UPDATE test_string_type, test_string_table SET test_string_type.`mediumblob-varbinary` = test_string_table.`mediumblob`-test_string_table.`varbinary`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: mediumblob-varbinary
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: mediumblob-varbinary
 UPDATE test_string_type, test_string_table SET test_string_type.`mediumblob*varbinary` = test_string_table.`mediumblob`*test_string_table.`varbinary`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: mediumblob*varbinary
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: mediumblob*varbinary
 UPDATE test_string_type, test_string_table SET test_string_type.`mediumblob/varbinary` = test_string_table.`mediumblob`/test_string_table.`varbinary`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: mediumblob/varbinary
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: mediumblob/varbinary
 UPDATE test_string_type, test_string_table SET test_string_type.`mediumblob+tinyblob` = test_string_table.`mediumblob`+test_string_table.`tinyblob`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: mediumblob+tinyblob
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: mediumblob+tinyblob
 UPDATE test_string_type, test_string_table SET test_string_type.`mediumblob-tinyblob` = test_string_table.`mediumblob`-test_string_table.`tinyblob`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: mediumblob-tinyblob
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: mediumblob-tinyblob
 UPDATE test_string_type, test_string_table SET test_string_type.`mediumblob*tinyblob` = test_string_table.`mediumblob`*test_string_table.`tinyblob`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: mediumblob*tinyblob
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: mediumblob*tinyblob
 UPDATE test_string_type, test_string_table SET test_string_type.`mediumblob/tinyblob` = test_string_table.`mediumblob`/test_string_table.`tinyblob`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: mediumblob/tinyblob
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: mediumblob/tinyblob
 UPDATE test_string_type, test_string_table SET test_string_type.`mediumblob+mediumblob` = test_string_table.`mediumblob`+test_string_table.`mediumblob`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: mediumblob+mediumblob
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: mediumblob+mediumblob
 UPDATE test_string_type, test_string_table SET test_string_type.`mediumblob-mediumblob` = test_string_table.`mediumblob`-test_string_table.`mediumblob`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: mediumblob-mediumblob
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: mediumblob-mediumblob
 UPDATE test_string_type, test_string_table SET test_string_type.`mediumblob*mediumblob` = test_string_table.`mediumblob`*test_string_table.`mediumblob`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: mediumblob*mediumblob
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: mediumblob*mediumblob
 UPDATE test_string_type, test_string_table SET test_string_type.`mediumblob/mediumblob` = test_string_table.`mediumblob`/test_string_table.`mediumblob`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: mediumblob/mediumblob
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: mediumblob/mediumblob
 UPDATE test_string_type, test_string_table SET test_string_type.`mediumblob+longblob` = test_string_table.`mediumblob`+test_string_table.`longblob`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: mediumblob+longblob
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: mediumblob+longblob
 UPDATE test_string_type, test_string_table SET test_string_type.`mediumblob-longblob` = test_string_table.`mediumblob`-test_string_table.`longblob`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: mediumblob-longblob
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: mediumblob-longblob
 UPDATE test_string_type, test_string_table SET test_string_type.`mediumblob*longblob` = test_string_table.`mediumblob`*test_string_table.`longblob`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: mediumblob*longblob
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: mediumblob*longblob
 UPDATE test_string_type, test_string_table SET test_string_type.`mediumblob/longblob` = test_string_table.`mediumblob`/test_string_table.`longblob`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: mediumblob/longblob
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: mediumblob/longblob
 UPDATE test_string_type, test_string_table SET test_string_type.`mediumblob+text` = test_string_table.`mediumblob`+test_string_table.`text`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: mediumblob+text
 UPDATE test_string_type, test_string_table SET test_string_type.`mediumblob-text` = test_string_table.`mediumblob`-test_string_table.`text`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: mediumblob-text
 UPDATE test_string_type, test_string_table SET test_string_type.`mediumblob*text` = test_string_table.`mediumblob`*test_string_table.`text`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: mediumblob*text
 UPDATE test_string_type, test_string_table SET test_string_type.`mediumblob/text` = test_string_table.`mediumblob`/test_string_table.`text`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: mediumblob/text
 UPDATE test_string_type, test_string_table SET test_string_type.`mediumblob+enum_t` = test_string_table.`mediumblob`+test_string_table.`enum_t`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: mediumblob+enum_t
 UPDATE test_string_type, test_string_table SET test_string_type.`mediumblob-enum_t` = test_string_table.`mediumblob`-test_string_table.`enum_t`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: mediumblob-enum_t
 UPDATE test_string_type, test_string_table SET test_string_type.`mediumblob*enum_t` = test_string_table.`mediumblob`*test_string_table.`enum_t`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: mediumblob*enum_t
 UPDATE test_string_type, test_string_table SET test_string_type.`mediumblob/enum_t` = test_string_table.`mediumblob`/test_string_table.`enum_t`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: mediumblob/enum_t
 UPDATE test_string_type, test_string_table SET test_string_type.`mediumblob+set_t` = test_string_table.`mediumblob`+test_string_table.`set_t`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: mediumblob+set_t
 UPDATE test_string_type, test_string_table SET test_string_type.`mediumblob-set_t` = test_string_table.`mediumblob`-test_string_table.`set_t`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: mediumblob-set_t
 UPDATE test_string_type, test_string_table SET test_string_type.`mediumblob*set_t` = test_string_table.`mediumblob`*test_string_table.`set_t`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: mediumblob*set_t
 UPDATE test_string_type, test_string_table SET test_string_type.`mediumblob/set_t` = test_string_table.`mediumblob`/test_string_table.`set_t`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: mediumblob/set_t
 UPDATE test_string_type, test_string_table SET test_string_type.`mediumblob+json` = test_string_table.`mediumblob`+test_string_table.`json`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: mediumblob+json
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: mediumblob+json
 UPDATE test_string_type, test_string_table SET test_string_type.`mediumblob-json` = test_string_table.`mediumblob`-test_string_table.`json`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: mediumblob-json
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: mediumblob-json
 UPDATE test_string_type, test_string_table SET test_string_type.`mediumblob*json` = test_string_table.`mediumblob`*test_string_table.`json`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: mediumblob*json
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: mediumblob*json
 UPDATE test_string_type, test_string_table SET test_string_type.`mediumblob/json` = test_string_table.`mediumblob`/test_string_table.`json`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: mediumblob/json
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: mediumblob/json
 ERROR:  division by zero
 CONTEXT:  referenced column: mediumblob/json
 UPDATE test_string_type, test_string_table SET test_string_type.`longblob+char` = test_string_table.`longblob`+test_string_table.`char`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: longblob+char
 UPDATE test_string_type, test_string_table SET test_string_type.`longblob-char` = test_string_table.`longblob`-test_string_table.`char`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: longblob-char
 UPDATE test_string_type, test_string_table SET test_string_type.`longblob*char` = test_string_table.`longblob`*test_string_table.`char`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: longblob*char
 UPDATE test_string_type, test_string_table SET test_string_type.`longblob/char` = test_string_table.`longblob`/test_string_table.`char`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: longblob/char
 UPDATE test_string_type, test_string_table SET test_string_type.`longblob+varchar` = test_string_table.`longblob`+test_string_table.`varchar`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: longblob+varchar
 UPDATE test_string_type, test_string_table SET test_string_type.`longblob-varchar` = test_string_table.`longblob`-test_string_table.`varchar`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: longblob-varchar
 UPDATE test_string_type, test_string_table SET test_string_type.`longblob*varchar` = test_string_table.`longblob`*test_string_table.`varchar`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: longblob*varchar
 UPDATE test_string_type, test_string_table SET test_string_type.`longblob/varchar` = test_string_table.`longblob`/test_string_table.`varchar`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: longblob/varchar
 UPDATE test_string_type, test_string_table SET test_string_type.`longblob+binary` = test_string_table.`longblob`+test_string_table.`binary`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: longblob+binary
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: longblob+binary
 UPDATE test_string_type, test_string_table SET test_string_type.`longblob-binary` = test_string_table.`longblob`-test_string_table.`binary`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: longblob-binary
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: longblob-binary
 UPDATE test_string_type, test_string_table SET test_string_type.`longblob*binary` = test_string_table.`longblob`*test_string_table.`binary`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: longblob*binary
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: longblob*binary
 UPDATE test_string_type, test_string_table SET test_string_type.`longblob/binary` = test_string_table.`longblob`/test_string_table.`binary`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: longblob/binary
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: longblob/binary
 UPDATE test_string_type, test_string_table SET test_string_type.`longblob+varbinary` = test_string_table.`longblob`+test_string_table.`varbinary`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: longblob+varbinary
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: longblob+varbinary
 UPDATE test_string_type, test_string_table SET test_string_type.`longblob-varbinary` = test_string_table.`longblob`-test_string_table.`varbinary`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: longblob-varbinary
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: longblob-varbinary
 UPDATE test_string_type, test_string_table SET test_string_type.`longblob*varbinary` = test_string_table.`longblob`*test_string_table.`varbinary`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: longblob*varbinary
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: longblob*varbinary
 UPDATE test_string_type, test_string_table SET test_string_type.`longblob/varbinary` = test_string_table.`longblob`/test_string_table.`varbinary`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: longblob/varbinary
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: longblob/varbinary
 UPDATE test_string_type, test_string_table SET test_string_type.`longblob+tinyblob` = test_string_table.`longblob`+test_string_table.`tinyblob`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: longblob+tinyblob
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: longblob+tinyblob
 UPDATE test_string_type, test_string_table SET test_string_type.`longblob-tinyblob` = test_string_table.`longblob`-test_string_table.`tinyblob`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: longblob-tinyblob
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: longblob-tinyblob
 UPDATE test_string_type, test_string_table SET test_string_type.`longblob*tinyblob` = test_string_table.`longblob`*test_string_table.`tinyblob`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: longblob*tinyblob
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: longblob*tinyblob
 UPDATE test_string_type, test_string_table SET test_string_type.`longblob/tinyblob` = test_string_table.`longblob`/test_string_table.`tinyblob`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: longblob/tinyblob
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: longblob/tinyblob
 UPDATE test_string_type, test_string_table SET test_string_type.`longblob+mediumblob` = test_string_table.`longblob`+test_string_table.`mediumblob`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: longblob+mediumblob
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: longblob+mediumblob
 UPDATE test_string_type, test_string_table SET test_string_type.`longblob-mediumblob` = test_string_table.`longblob`-test_string_table.`mediumblob`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: longblob-mediumblob
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: longblob-mediumblob
 UPDATE test_string_type, test_string_table SET test_string_type.`longblob*mediumblob` = test_string_table.`longblob`*test_string_table.`mediumblob`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: longblob*mediumblob
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: longblob*mediumblob
 UPDATE test_string_type, test_string_table SET test_string_type.`longblob/mediumblob` = test_string_table.`longblob`/test_string_table.`mediumblob`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: longblob/mediumblob
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: longblob/mediumblob
 UPDATE test_string_type, test_string_table SET test_string_type.`longblob+longblob` = test_string_table.`longblob`+test_string_table.`longblob`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: longblob+longblob
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: longblob+longblob
 UPDATE test_string_type, test_string_table SET test_string_type.`longblob-longblob` = test_string_table.`longblob`-test_string_table.`longblob`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: longblob-longblob
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: longblob-longblob
 UPDATE test_string_type, test_string_table SET test_string_type.`longblob*longblob` = test_string_table.`longblob`*test_string_table.`longblob`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: longblob*longblob
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: longblob*longblob
 UPDATE test_string_type, test_string_table SET test_string_type.`longblob/longblob` = test_string_table.`longblob`/test_string_table.`longblob`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: longblob/longblob
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: longblob/longblob
 UPDATE test_string_type, test_string_table SET test_string_type.`longblob+text` = test_string_table.`longblob`+test_string_table.`text`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: longblob+text
 UPDATE test_string_type, test_string_table SET test_string_type.`longblob-text` = test_string_table.`longblob`-test_string_table.`text`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: longblob-text
 UPDATE test_string_type, test_string_table SET test_string_type.`longblob*text` = test_string_table.`longblob`*test_string_table.`text`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: longblob*text
 UPDATE test_string_type, test_string_table SET test_string_type.`longblob/text` = test_string_table.`longblob`/test_string_table.`text`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: longblob/text
 UPDATE test_string_type, test_string_table SET test_string_type.`longblob+enum_t` = test_string_table.`longblob`+test_string_table.`enum_t`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: longblob+enum_t
 UPDATE test_string_type, test_string_table SET test_string_type.`longblob-enum_t` = test_string_table.`longblob`-test_string_table.`enum_t`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: longblob-enum_t
 UPDATE test_string_type, test_string_table SET test_string_type.`longblob*enum_t` = test_string_table.`longblob`*test_string_table.`enum_t`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: longblob*enum_t
 UPDATE test_string_type, test_string_table SET test_string_type.`longblob/enum_t` = test_string_table.`longblob`/test_string_table.`enum_t`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: longblob/enum_t
 UPDATE test_string_type, test_string_table SET test_string_type.`longblob+set_t` = test_string_table.`longblob`+test_string_table.`set_t`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: longblob+set_t
 UPDATE test_string_type, test_string_table SET test_string_type.`longblob-set_t` = test_string_table.`longblob`-test_string_table.`set_t`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: longblob-set_t
 UPDATE test_string_type, test_string_table SET test_string_type.`longblob*set_t` = test_string_table.`longblob`*test_string_table.`set_t`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: longblob*set_t
 UPDATE test_string_type, test_string_table SET test_string_type.`longblob/set_t` = test_string_table.`longblob`/test_string_table.`set_t`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: longblob/set_t
 UPDATE test_string_type, test_string_table SET test_string_type.`longblob+json` = test_string_table.`longblob`+test_string_table.`json`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: longblob+json
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: longblob+json
 UPDATE test_string_type, test_string_table SET test_string_type.`longblob-json` = test_string_table.`longblob`-test_string_table.`json`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: longblob-json
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: longblob-json
 UPDATE test_string_type, test_string_table SET test_string_type.`longblob*json` = test_string_table.`longblob`*test_string_table.`json`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: longblob*json
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: longblob*json
 UPDATE test_string_type, test_string_table SET test_string_type.`longblob/json` = test_string_table.`longblob`/test_string_table.`json`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: longblob/json
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: longblob/json
 ERROR:  division by zero
@@ -1393,25 +2113,65 @@ UPDATE test_string_type, test_string_table SET test_string_type.`text-varchar` =
 UPDATE test_string_type, test_string_table SET test_string_type.`text*varchar` = test_string_table.`text`*test_string_table.`varchar`;
 UPDATE test_string_type, test_string_table SET test_string_type.`text/varchar` = test_string_table.`text`/test_string_table.`varchar`;
 UPDATE test_string_type, test_string_table SET test_string_type.`text+binary` = test_string_table.`text`+test_string_table.`binary`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: text+binary
 UPDATE test_string_type, test_string_table SET test_string_type.`text-binary` = test_string_table.`text`-test_string_table.`binary`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: text-binary
 UPDATE test_string_type, test_string_table SET test_string_type.`text*binary` = test_string_table.`text`*test_string_table.`binary`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: text*binary
 UPDATE test_string_type, test_string_table SET test_string_type.`text/binary` = test_string_table.`text`/test_string_table.`binary`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: text/binary
 UPDATE test_string_type, test_string_table SET test_string_type.`text+varbinary` = test_string_table.`text`+test_string_table.`varbinary`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: text+varbinary
 UPDATE test_string_type, test_string_table SET test_string_type.`text-varbinary` = test_string_table.`text`-test_string_table.`varbinary`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: text-varbinary
 UPDATE test_string_type, test_string_table SET test_string_type.`text*varbinary` = test_string_table.`text`*test_string_table.`varbinary`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: text*varbinary
 UPDATE test_string_type, test_string_table SET test_string_type.`text/varbinary` = test_string_table.`text`/test_string_table.`varbinary`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: text/varbinary
 UPDATE test_string_type, test_string_table SET test_string_type.`text+tinyblob` = test_string_table.`text`+test_string_table.`tinyblob`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: text+tinyblob
 UPDATE test_string_type, test_string_table SET test_string_type.`text-tinyblob` = test_string_table.`text`-test_string_table.`tinyblob`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: text-tinyblob
 UPDATE test_string_type, test_string_table SET test_string_type.`text*tinyblob` = test_string_table.`text`*test_string_table.`tinyblob`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: text*tinyblob
 UPDATE test_string_type, test_string_table SET test_string_type.`text/tinyblob` = test_string_table.`text`/test_string_table.`tinyblob`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: text/tinyblob
 UPDATE test_string_type, test_string_table SET test_string_type.`text+mediumblob` = test_string_table.`text`+test_string_table.`mediumblob`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: text+mediumblob
 UPDATE test_string_type, test_string_table SET test_string_type.`text-mediumblob` = test_string_table.`text`-test_string_table.`mediumblob`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: text-mediumblob
 UPDATE test_string_type, test_string_table SET test_string_type.`text*mediumblob` = test_string_table.`text`*test_string_table.`mediumblob`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: text*mediumblob
 UPDATE test_string_type, test_string_table SET test_string_type.`text/mediumblob` = test_string_table.`text`/test_string_table.`mediumblob`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: text/mediumblob
 UPDATE test_string_type, test_string_table SET test_string_type.`text+longblob` = test_string_table.`text`+test_string_table.`longblob`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: text+longblob
 UPDATE test_string_type, test_string_table SET test_string_type.`text-longblob` = test_string_table.`text`-test_string_table.`longblob`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: text-longblob
 UPDATE test_string_type, test_string_table SET test_string_type.`text*longblob` = test_string_table.`text`*test_string_table.`longblob`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: text*longblob
 UPDATE test_string_type, test_string_table SET test_string_type.`text/longblob` = test_string_table.`text`/test_string_table.`longblob`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: text/longblob
 UPDATE test_string_type, test_string_table SET test_string_type.`text+text` = test_string_table.`text`+test_string_table.`text`;
 UPDATE test_string_type, test_string_table SET test_string_type.`text-text` = test_string_table.`text`-test_string_table.`text`;
 UPDATE test_string_type, test_string_table SET test_string_type.`text*text` = test_string_table.`text`*test_string_table.`text`;
@@ -1447,25 +2207,65 @@ UPDATE test_string_type, test_string_table SET test_string_type.`enum_t-varchar`
 UPDATE test_string_type, test_string_table SET test_string_type.`enum_t*varchar` = test_string_table.`enum_t`*test_string_table.`varchar`;
 UPDATE test_string_type, test_string_table SET test_string_type.`enum_t/varchar` = test_string_table.`enum_t`/test_string_table.`varchar`;
 UPDATE test_string_type, test_string_table SET test_string_type.`enum_t+binary` = test_string_table.`enum_t`+test_string_table.`binary`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: enum_t+binary
 UPDATE test_string_type, test_string_table SET test_string_type.`enum_t-binary` = test_string_table.`enum_t`-test_string_table.`binary`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: enum_t-binary
 UPDATE test_string_type, test_string_table SET test_string_type.`enum_t*binary` = test_string_table.`enum_t`*test_string_table.`binary`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: enum_t*binary
 UPDATE test_string_type, test_string_table SET test_string_type.`enum_t/binary` = test_string_table.`enum_t`/test_string_table.`binary`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: enum_t/binary
 UPDATE test_string_type, test_string_table SET test_string_type.`enum_t+varbinary` = test_string_table.`enum_t`+test_string_table.`varbinary`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: enum_t+varbinary
 UPDATE test_string_type, test_string_table SET test_string_type.`enum_t-varbinary` = test_string_table.`enum_t`-test_string_table.`varbinary`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: enum_t-varbinary
 UPDATE test_string_type, test_string_table SET test_string_type.`enum_t*varbinary` = test_string_table.`enum_t`*test_string_table.`varbinary`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: enum_t*varbinary
 UPDATE test_string_type, test_string_table SET test_string_type.`enum_t/varbinary` = test_string_table.`enum_t`/test_string_table.`varbinary`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: enum_t/varbinary
 UPDATE test_string_type, test_string_table SET test_string_type.`enum_t+tinyblob` = test_string_table.`enum_t`+test_string_table.`tinyblob`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: enum_t+tinyblob
 UPDATE test_string_type, test_string_table SET test_string_type.`enum_t-tinyblob` = test_string_table.`enum_t`-test_string_table.`tinyblob`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: enum_t-tinyblob
 UPDATE test_string_type, test_string_table SET test_string_type.`enum_t*tinyblob` = test_string_table.`enum_t`*test_string_table.`tinyblob`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: enum_t*tinyblob
 UPDATE test_string_type, test_string_table SET test_string_type.`enum_t/tinyblob` = test_string_table.`enum_t`/test_string_table.`tinyblob`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: enum_t/tinyblob
 UPDATE test_string_type, test_string_table SET test_string_type.`enum_t+mediumblob` = test_string_table.`enum_t`+test_string_table.`mediumblob`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: enum_t+mediumblob
 UPDATE test_string_type, test_string_table SET test_string_type.`enum_t-mediumblob` = test_string_table.`enum_t`-test_string_table.`mediumblob`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: enum_t-mediumblob
 UPDATE test_string_type, test_string_table SET test_string_type.`enum_t*mediumblob` = test_string_table.`enum_t`*test_string_table.`mediumblob`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: enum_t*mediumblob
 UPDATE test_string_type, test_string_table SET test_string_type.`enum_t/mediumblob` = test_string_table.`enum_t`/test_string_table.`mediumblob`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: enum_t/mediumblob
 UPDATE test_string_type, test_string_table SET test_string_type.`enum_t+longblob` = test_string_table.`enum_t`+test_string_table.`longblob`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: enum_t+longblob
 UPDATE test_string_type, test_string_table SET test_string_type.`enum_t-longblob` = test_string_table.`enum_t`-test_string_table.`longblob`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: enum_t-longblob
 UPDATE test_string_type, test_string_table SET test_string_type.`enum_t*longblob` = test_string_table.`enum_t`*test_string_table.`longblob`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: enum_t*longblob
 UPDATE test_string_type, test_string_table SET test_string_type.`enum_t/longblob` = test_string_table.`enum_t`/test_string_table.`longblob`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: enum_t/longblob
 UPDATE test_string_type, test_string_table SET test_string_type.`enum_t+text` = test_string_table.`enum_t`+test_string_table.`text`;
 UPDATE test_string_type, test_string_table SET test_string_type.`enum_t-text` = test_string_table.`enum_t`-test_string_table.`text`;
 UPDATE test_string_type, test_string_table SET test_string_type.`enum_t*text` = test_string_table.`enum_t`*test_string_table.`text`;
@@ -1501,25 +2301,65 @@ UPDATE test_string_type, test_string_table SET test_string_type.`set_t-varchar` 
 UPDATE test_string_type, test_string_table SET test_string_type.`set_t*varchar` = test_string_table.`set_t`*test_string_table.`varchar`;
 UPDATE test_string_type, test_string_table SET test_string_type.`set_t/varchar` = test_string_table.`set_t`/test_string_table.`varchar`;
 UPDATE test_string_type, test_string_table SET test_string_type.`set_t+binary` = test_string_table.`set_t`+test_string_table.`binary`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: set_t+binary
 UPDATE test_string_type, test_string_table SET test_string_type.`set_t-binary` = test_string_table.`set_t`-test_string_table.`binary`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: set_t-binary
 UPDATE test_string_type, test_string_table SET test_string_type.`set_t*binary` = test_string_table.`set_t`*test_string_table.`binary`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: set_t*binary
 UPDATE test_string_type, test_string_table SET test_string_type.`set_t/binary` = test_string_table.`set_t`/test_string_table.`binary`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: set_t/binary
 UPDATE test_string_type, test_string_table SET test_string_type.`set_t+varbinary` = test_string_table.`set_t`+test_string_table.`varbinary`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: set_t+varbinary
 UPDATE test_string_type, test_string_table SET test_string_type.`set_t-varbinary` = test_string_table.`set_t`-test_string_table.`varbinary`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: set_t-varbinary
 UPDATE test_string_type, test_string_table SET test_string_type.`set_t*varbinary` = test_string_table.`set_t`*test_string_table.`varbinary`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: set_t*varbinary
 UPDATE test_string_type, test_string_table SET test_string_type.`set_t/varbinary` = test_string_table.`set_t`/test_string_table.`varbinary`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: set_t/varbinary
 UPDATE test_string_type, test_string_table SET test_string_type.`set_t+tinyblob` = test_string_table.`set_t`+test_string_table.`tinyblob`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: set_t+tinyblob
 UPDATE test_string_type, test_string_table SET test_string_type.`set_t-tinyblob` = test_string_table.`set_t`-test_string_table.`tinyblob`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: set_t-tinyblob
 UPDATE test_string_type, test_string_table SET test_string_type.`set_t*tinyblob` = test_string_table.`set_t`*test_string_table.`tinyblob`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: set_t*tinyblob
 UPDATE test_string_type, test_string_table SET test_string_type.`set_t/tinyblob` = test_string_table.`set_t`/test_string_table.`tinyblob`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: set_t/tinyblob
 UPDATE test_string_type, test_string_table SET test_string_type.`set_t+mediumblob` = test_string_table.`set_t`+test_string_table.`mediumblob`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: set_t+mediumblob
 UPDATE test_string_type, test_string_table SET test_string_type.`set_t-mediumblob` = test_string_table.`set_t`-test_string_table.`mediumblob`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: set_t-mediumblob
 UPDATE test_string_type, test_string_table SET test_string_type.`set_t*mediumblob` = test_string_table.`set_t`*test_string_table.`mediumblob`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: set_t*mediumblob
 UPDATE test_string_type, test_string_table SET test_string_type.`set_t/mediumblob` = test_string_table.`set_t`/test_string_table.`mediumblob`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: set_t/mediumblob
 UPDATE test_string_type, test_string_table SET test_string_type.`set_t+longblob` = test_string_table.`set_t`+test_string_table.`longblob`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: set_t+longblob
 UPDATE test_string_type, test_string_table SET test_string_type.`set_t-longblob` = test_string_table.`set_t`-test_string_table.`longblob`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: set_t-longblob
 UPDATE test_string_type, test_string_table SET test_string_type.`set_t*longblob` = test_string_table.`set_t`*test_string_table.`longblob`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: set_t*longblob
 UPDATE test_string_type, test_string_table SET test_string_type.`set_t/longblob` = test_string_table.`set_t`/test_string_table.`longblob`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: set_t/longblob
 UPDATE test_string_type, test_string_table SET test_string_type.`set_t+text` = test_string_table.`set_t`+test_string_table.`text`;
 UPDATE test_string_type, test_string_table SET test_string_type.`set_t-text` = test_string_table.`set_t`-test_string_table.`text`;
 UPDATE test_string_type, test_string_table SET test_string_type.`set_t*text` = test_string_table.`set_t`*test_string_table.`text`;
@@ -1573,62 +2413,102 @@ CONTEXT:  referenced column: json/varchar
 UPDATE test_string_type, test_string_table SET test_string_type.`json+binary` = test_string_table.`json`+test_string_table.`binary`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: json+binary
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: json+binary
 UPDATE test_string_type, test_string_table SET test_string_type.`json-binary` = test_string_table.`json`-test_string_table.`binary`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: json-binary
+WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  referenced column: json-binary
 UPDATE test_string_type, test_string_table SET test_string_type.`json*binary` = test_string_table.`json`*test_string_table.`binary`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: json*binary
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: json*binary
 UPDATE test_string_type, test_string_table SET test_string_type.`json/binary` = test_string_table.`json`/test_string_table.`binary`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: json/binary
+WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  referenced column: json/binary
 UPDATE test_string_type, test_string_table SET test_string_type.`json+varbinary` = test_string_table.`json`+test_string_table.`varbinary`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: json+varbinary
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: json+varbinary
 UPDATE test_string_type, test_string_table SET test_string_type.`json-varbinary` = test_string_table.`json`-test_string_table.`varbinary`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: json-varbinary
+WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  referenced column: json-varbinary
 UPDATE test_string_type, test_string_table SET test_string_type.`json*varbinary` = test_string_table.`json`*test_string_table.`varbinary`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: json*varbinary
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: json*varbinary
 UPDATE test_string_type, test_string_table SET test_string_type.`json/varbinary` = test_string_table.`json`/test_string_table.`varbinary`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: json/varbinary
+WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  referenced column: json/varbinary
 UPDATE test_string_type, test_string_table SET test_string_type.`json+tinyblob` = test_string_table.`json`+test_string_table.`tinyblob`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: json+tinyblob
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: json+tinyblob
 UPDATE test_string_type, test_string_table SET test_string_type.`json-tinyblob` = test_string_table.`json`-test_string_table.`tinyblob`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: json-tinyblob
+WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  referenced column: json-tinyblob
 UPDATE test_string_type, test_string_table SET test_string_type.`json*tinyblob` = test_string_table.`json`*test_string_table.`tinyblob`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: json*tinyblob
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: json*tinyblob
 UPDATE test_string_type, test_string_table SET test_string_type.`json/tinyblob` = test_string_table.`json`/test_string_table.`tinyblob`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: json/tinyblob
+WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  referenced column: json/tinyblob
 UPDATE test_string_type, test_string_table SET test_string_type.`json+mediumblob` = test_string_table.`json`+test_string_table.`mediumblob`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: json+mediumblob
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: json+mediumblob
 UPDATE test_string_type, test_string_table SET test_string_type.`json-mediumblob` = test_string_table.`json`-test_string_table.`mediumblob`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: json-mediumblob
+WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  referenced column: json-mediumblob
 UPDATE test_string_type, test_string_table SET test_string_type.`json*mediumblob` = test_string_table.`json`*test_string_table.`mediumblob`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: json*mediumblob
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: json*mediumblob
 UPDATE test_string_type, test_string_table SET test_string_type.`json/mediumblob` = test_string_table.`json`/test_string_table.`mediumblob`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: json/mediumblob
+WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  referenced column: json/mediumblob
 UPDATE test_string_type, test_string_table SET test_string_type.`json+longblob` = test_string_table.`json`+test_string_table.`longblob`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: json+longblob
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: json+longblob
 UPDATE test_string_type, test_string_table SET test_string_type.`json-longblob` = test_string_table.`json`-test_string_table.`longblob`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: json-longblob
+WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  referenced column: json-longblob
 UPDATE test_string_type, test_string_table SET test_string_type.`json*longblob` = test_string_table.`json`*test_string_table.`longblob`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: json*longblob
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: json*longblob
 UPDATE test_string_type, test_string_table SET test_string_type.`json/longblob` = test_string_table.`json`/test_string_table.`longblob`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: json/longblob
+WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  referenced column: json/longblob
 UPDATE test_string_type, test_string_table SET test_string_type.`json+text` = test_string_table.`json`+test_string_table.`text`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"

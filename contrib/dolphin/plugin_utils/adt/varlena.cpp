@@ -9838,15 +9838,18 @@ Datum blob_any_value(PG_FUNCTION_ARGS)
 
 Datum Varlena2Float8(PG_FUNCTION_ARGS)
 {
-    struct varlena* attr = (struct varlena*)PG_GETARG_POINTER(0);
-    char* data = VARDATA_ANY(attr);
+    char* data = NULL;
+    data = DatumGetCString(DirectFunctionCall1(textout, PG_GETARG_DATUM(0)));
     bool hasError = false;
-    double result = float8in_internal(data, &data, &hasError);
-    if (hasError) {
+    char* endptr = NULL;
+
+    double result = float8in_internal(data, &endptr, &hasError);
+    if (hasError || (endptr != NULL && *endptr != '\0')) {
         ereport((!fcinfo->can_ignore && SQL_MODE_STRICT()) ? ERROR : WARNING,
             (errcode(ERRCODE_INVALID_TEXT_REPRESENTATION),
                 errmsg("invalid input syntax for type double precision: \"%s\"", data)));
     }
+    pfree_ext(data);
     PG_RETURN_FLOAT8(result);
 }
 #endif
