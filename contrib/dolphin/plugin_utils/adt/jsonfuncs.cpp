@@ -702,11 +702,13 @@ Datum jsonb_object_field(PG_FUNCTION_ARGS)
     bool skipNested = false;
 
     if (JB_ROOT_IS_SCALAR(jb)) {
-        ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
-                        errmsg("cannot call jsonb_object_field (jsonb -> text operator) on a scalar")));
+        ereport(ERROR,
+                (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("cannot call jsonb_object_field (jsonb -> text "
+                                                                  "operator) on a scalar")));
     } else if (JB_ROOT_IS_ARRAY(jb)) {
-        ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
-                        errmsg("cannot call jsonb_object_field (jsonb -> text operator) on an array")));
+        ereport(ERROR,
+                (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("cannot call jsonb_object_field (jsonb -> text "
+                                                                  "operator) on an array")));
     }
 
     Assert(JB_ROOT_IS_OBJECT(jb));
@@ -863,11 +865,13 @@ Datum jsonb_object_field_text(PG_FUNCTION_ARGS)
     bool skipNested = false;
 
     if (JB_ROOT_IS_SCALAR(jb)) {
-        ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
-                        errmsg("cannot call jsonb_object_field_text (jsonb ->> text operator) on a scalar")));
+        ereport(ERROR,
+                (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("cannot call jsonb_object_field_text (jsonb ->> "
+                                                                  "text operator) on a scalar")));
     } else if (JB_ROOT_IS_ARRAY(jb)) {
-        ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
-                        errmsg("cannot call jsonb_object_field_text (jsonb ->> text operator) on an array")));
+        ereport(ERROR,
+                (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("cannot call jsonb_object_field_text (jsonb ->> "
+                                                                  "text operator) on an array")));
     }
 
     Assert(JB_ROOT_IS_OBJECT(jb));
@@ -933,11 +937,13 @@ Datum jsonb_array_element(PG_FUNCTION_ARGS)
     int element_number = 0;
 
     if (JB_ROOT_IS_SCALAR(jb)) {
-        ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
-                        errmsg("cannot call jsonb_array_element (jsonb -> int operator) on a scalar")));
+        ereport(ERROR,
+                (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("cannot call jsonb_array_element (jsonb -> int "
+                                                                  "operator) on a scalar")));
     } else if (JB_ROOT_IS_OBJECT(jb)) {
-        ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
-                        errmsg("cannot call jsonb_array_element (jsonb -> int operator) on an object")));
+        ereport(ERROR,
+                (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("cannot call jsonb_array_element (jsonb -> int "
+                                                                  "operator) on an object")));
     }
 
     Assert(JB_ROOT_IS_ARRAY(jb));
@@ -2225,7 +2231,7 @@ static inline Datum populate_record_worker(FunctionCallInfo fcinfo, bool have_re
 
     for (i = 0; i < ncolumns; ++i) {
         ColumnIOData *column_info = &my_extra->columns[i];
-        Oid         column_type = tupdesc->attrs[i].atttypid;
+        Oid column_type = tupdesc->attrs[i].atttypid;
         JsonbValue *v = NULL;
         char fname[NAMEDATALEN];
         JsonHashEntry *hashentry = NULL;
@@ -2243,7 +2249,7 @@ static inline Datum populate_record_worker(FunctionCallInfo fcinfo, bool have_re
             securec_check(rc, "\0", "\0");
             hashentry = (JsonHashEntry *)hash_search(json_hash, fname, HASH_FIND, NULL);
         } else {
-            char       *key = NameStr(tupdesc->attrs[i].attname);
+            char *key = NameStr(tupdesc->attrs[i].attname);
             v = findJsonbValueFromSuperHeaderLen(VARDATA(jb), JB_FOBJECT, key, strlen(key));
         }
 
@@ -2273,8 +2279,8 @@ static inline Datum populate_record_worker(FunctionCallInfo fcinfo, bool have_re
              * need InputFunctionCall to happen even for nulls, so that domain
              * checks are done
              */
-            values[i] = InputFunctionCall(&column_info->proc, NULL, column_info->typioparam,
-                                          tupdesc->attrs[i].atttypmod);
+            values[i] =
+                InputFunctionCall(&column_info->proc, NULL, column_info->typioparam, tupdesc->attrs[i].atttypmod);
             nulls[i] = true;
         } else {
             char *s = NULL;
@@ -2291,7 +2297,8 @@ static inline Datum populate_record_worker(FunctionCallInfo fcinfo, bool have_re
                     s = DatumGetCString(DirectFunctionCall1(numeric_out, PointerGetDatum(v->numeric)));
                 } else if (!use_json_as_text) {
                     ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
-                                    errmsg("cannot populate with a nested object unless use_json_as_text is true")));
+                                    errmsg("cannot populate with a nested object unless "
+                                           "use_json_as_text is true")));
                 } else if (v->type == jbvBinary) {
                     s = JsonbToCString(NULL, v->binary.data, v->binary.len);
                 } else {
@@ -2299,8 +2306,7 @@ static inline Datum populate_record_worker(FunctionCallInfo fcinfo, bool have_re
                 }
             }
 
-            values[i] = InputFunctionCall(&column_info->proc, s,
-                                          column_info->typioparam, tupdesc->attrs[i].atttypmod);
+            values[i] = InputFunctionCall(&column_info->proc, s, column_info->typioparam, tupdesc->attrs[i].atttypmod);
             nulls[i] = false;
         }
     }
@@ -2489,9 +2495,9 @@ static void make_row_from_rec_and_jsonb(Jsonb *element, PopulateRecordsetState *
 
     for (i = 0; i < ncolumns; ++i) {
         ColumnIOData *column_info = &my_extra->columns[i];
-        Oid           column_type = tupdesc->attrs[i].atttypid;
-        JsonbValue   *v = NULL;
-        char         *key = NULL;
+        Oid column_type = tupdesc->attrs[i].atttypid;
+        JsonbValue *v = NULL;
+        char *key = NULL;
 
         /* Ignore dropped columns in datatype */
         if (tupdesc->attrs[i].attisdropped) {
@@ -2526,8 +2532,8 @@ static void make_row_from_rec_and_jsonb(Jsonb *element, PopulateRecordsetState *
              * Need InputFunctionCall to happen even for nulls, so that domain
              * checks are done
              */
-            values[i] = InputFunctionCall(&column_info->proc, NULL, column_info->typioparam,
-                                          tupdesc->attrs[i].atttypmod);
+            values[i] =
+                InputFunctionCall(&column_info->proc, NULL, column_info->typioparam, tupdesc->attrs[i].atttypmod);
             nulls[i] = true;
         } else {
             char *s = NULL;
@@ -2539,8 +2545,9 @@ static void make_row_from_rec_and_jsonb(Jsonb *element, PopulateRecordsetState *
             } else if (v->type == jbvNumeric) {
                 s = DatumGetCString(DirectFunctionCall1(numeric_out, PointerGetDatum(v->numeric)));
             } else if (!state->use_json_as_text) {
-                ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
-                                errmsg("cannot populate with a nested object unless use_json_as_text is true")));
+                ereport(ERROR,
+                        (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("cannot populate with a nested object unless "
+                                                                          "use_json_as_text is true")));
             } else if (v->type == jbvBinary) {
                 s = JsonbToCString(NULL, v->binary.data, v->binary.len);
             } else {
@@ -2589,8 +2596,8 @@ static inline Datum populate_recordset_worker(FunctionCallInfo fcinfo, bool have
         argtype = get_fn_expr_argtype(fcinfo->flinfo, 0);
         use_json_as_text = PG_ARGISNULL(2) ? false : PG_GETARG_BOOL(2);
         if (!type_is_rowtype(argtype)) {
-            ereport(ERROR, (errcode(ERRCODE_DATATYPE_MISMATCH),
-                            errmsg("first argument of json_populate_recordset must be a row type")));
+            ereport(ERROR, (errcode(ERRCODE_DATATYPE_MISMATCH), errmsg("first argument of json_populate_recordset must "
+                                                                       "be a row type")));
         }
     } else {
         argtype = InvalidOid;
@@ -2622,7 +2629,8 @@ static inline Datum populate_recordset_worker(FunctionCallInfo fcinfo, bool have
         if (PG_ARGISNULL(0)) {
             rec = NULL;
         } else {
-            /* using the arg tupdesc, because it may not be the same as the result tupdesc. */
+            /* using the arg tupdesc, because it may not be the same as the result
+             * tupdesc. */
             rec = PG_GETARG_HEAPTUPLEHEADER(0);
             tupdesc = lookup_rowtype_tupdesc(HeapTupleHeaderGetTypeId(rec), HeapTupleHeaderGetTypMod(rec));
             needforget = true;
@@ -2714,7 +2722,8 @@ static inline Datum populate_recordset_worker(FunctionCallInfo fcinfo, bool have
                 Jsonb *element = JsonbValueToJsonb(&v);
                 if (!JB_ROOT_IS_OBJECT(element)) {
                     ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
-                                    errmsg("jsonb_populate_recordset argument must be an array of objects")));
+                                    errmsg("jsonb_populate_recordset argument must be an "
+                                           "array of objects")));
                 }
                 make_row_from_rec_and_jsonb(element, state);
             }
@@ -2786,8 +2795,8 @@ static void populate_recordset_object_end(void *state)
 
     for (i = 0; i < ncolumns; ++i) {
         ColumnIOData *column_info = &my_extra->columns[i];
-        Oid           column_type = tupdesc->attrs[i].atttypid;
-        char         *value = NULL;
+        Oid column_type = tupdesc->attrs[i].atttypid;
+        char *value = NULL;
 
         /* Ignore dropped columns in datatype */
         if (tupdesc->attrs[i].attisdropped) {
@@ -2826,13 +2835,13 @@ static void populate_recordset_object_end(void *state)
              * need InputFunctionCall to happen even for nulls, so that domain
              * checks are done
              */
-            values[i] = InputFunctionCall(&column_info->proc, NULL, column_info->typioparam,
-                                          tupdesc->attrs[i].atttypmod);
+            values[i] =
+                InputFunctionCall(&column_info->proc, NULL, column_info->typioparam, tupdesc->attrs[i].atttypmod);
             nulls[i] = true;
         } else {
             value = hashentry->val;
-            values[i] = InputFunctionCall(&column_info->proc, value, column_info->typioparam,
-                                          tupdesc->attrs[i].atttypmod);
+            values[i] =
+                InputFunctionCall(&column_info->proc, value, column_info->typioparam, tupdesc->attrs[i].atttypmod);
             nulls[i] = false;
         }
     }
@@ -3918,8 +3927,9 @@ Datum json_contains(PG_FUNCTION_ARGS)
         path = TextDatumGetCString(PG_GETARG_DATUM(2));
 
         if (containsAsterisk(path) > 0) {
-            ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
-                            errmsg("in this situation, path expressions may not contain the * and ** tokens")));
+            ereport(ERROR,
+                    (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("in this situation, path expressions may not "
+                                                                      "contain the * and ** tokens")));
         }
 
         cJSON_ResultWrapper *res = cJSON_CreateResultWrapper();
@@ -3931,8 +3941,9 @@ Datum json_contains(PG_FUNCTION_ARGS)
             cJSON_Delete(target_cJSON);
             cJSON_Delete(candidate_cJSON);
             ereport(ERROR,
-                    (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
-                     errmsg("Invalid JSON path expression. The error is around character position %d.", error_pos)));
+                    (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("Invalid JSON path expression. The error is "
+                                                                      "around character position %d.",
+                                                                      error_pos)));
         }
         cJSON_JsonPathMatch(target_cJSON, jp, res);
         cJSON_DeleteJsonPath(jp);
@@ -4000,9 +4011,10 @@ Datum json_contains_path(PG_FUNCTION_ARGS)
                 cJSON_DeleteJsonPath(jp);
                 cJSON_DeleteResultWrapper(res);
                 cJSON_Delete(root);
-                ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
-                                errmsg("Invalid JSON path expression. The error is around character position %d.",
-                                       error_pos)));
+                ereport(ERROR,
+                        (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("Invalid JSON path expression. The error is "
+                                                                          "around character position %d.",
+                                                                          error_pos)));
             }
 
             cJSON_JsonPathMatch(root, jp, res);
@@ -4038,9 +4050,10 @@ Datum json_contains_path(PG_FUNCTION_ARGS)
                 cJSON_DeleteJsonPath(jp);
                 cJSON_DeleteResultWrapper(res);
                 cJSON_Delete(root);
-                ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
-                                errmsg("Invalid JSON path expression. The error is around character position %d.",
-                                       error_pos)));
+                ereport(ERROR,
+                        (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("Invalid JSON path expression. The error is "
+                                                                          "around character position %d.",
+                                                                          error_pos)));
             }
 
             cJSON_JsonPathMatch(root, jp, res);
@@ -4062,8 +4075,9 @@ Datum json_contains_path(PG_FUNCTION_ARGS)
     } else {
         cJSON_DeleteResultWrapper(res);
         cJSON_Delete(root);
-        ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
-                        errmsg("the oneOrAll argument to json_contains_path may take these values: 'one' or 'all'")));
+        ereport(ERROR,
+                (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("the oneOrAll argument to json_contains_path may "
+                                                                  "take these values: 'one' or 'all'")));
     }
 
     PG_RETURN_NULL();
@@ -4106,8 +4120,9 @@ Datum json_extract(PG_FUNCTION_ARGS)
             cJSON_DeleteResultWrapper(res);
             cJSON_Delete(root);
             ereport(ERROR,
-                    (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
-                     errmsg("Invalid JSON path expression. The error is around character position %d.", error_pos)));
+                    (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("Invalid JSON path expression. The error is "
+                                                                      "around character position %d.",
+                                                                      error_pos)));
         }
         many |= cJSON_JsonPathCanMatchMany(jp);
         cJSON_JsonPathMatch(root, jp, res);
@@ -4207,8 +4222,10 @@ static cJSON *jp_match_array_record(cJSON *doc_cJSON, char *path, int wildchar_p
     int end = 0;
     char *path_part;
     errno_t rc;
-    if ((doc_cJSON->type & 0xFF) != cJSON_Array && wildchar_position > i) {
-        return NULL;
+    if (wildchar_position > i || wildchar_position == -1) {
+        if ((doc_cJSON->type & 0xFF) != cJSON_Array) {
+            return NULL;
+        }
     }
     start = get_space_skipped_index(path, ++i);
     i = start;
@@ -4291,11 +4308,6 @@ static cJSON *jp_match_record(cJSON *doc_cJSON, char *path, StringInfo &position
     bool type_flag = false;
     cJSON_JsonPath *jp = NULL;
     jp = jp_parse(path, error_pos);
-    if (!jp) {
-        cJSON_DeleteJsonPath(jp);
-        ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
-                        errmsg("Invalid JSON path expression. The error is around character position %d.", error_pos)));
-    }
 
     appendStringInfoString(position, "\"$");
     if (wildchar_position > 0) {
@@ -4442,8 +4454,10 @@ static bool json_search_unit(const cJSON *doc_cJSON, const text *search_text, bo
             int flen = VARSIZE_ANY_EXHDR(value);
             int blen = VARSIZE_ANY_EXHDR(search_text);
             if (MB_MatchText(f, flen, b, blen, 0, true) == LIKE_TRUE) {
-                /* After successful matching, judge whether there are wildcards in the path, and if there are wildcards,
-                compare the return path with the parameter path to judge whether the return path conforms to the range
+                /* After successful matching, judge whether there are wildcards in the
+                path, and if there are wildcards,
+                compare the return path with the parameter path to judge whether the
+                return path conforms to the range
                 of the parameter path. */
                 if (*wildchar != '\0') {
                     text *wildchar_text = cstring_to_text(wildchar);
@@ -4478,7 +4492,7 @@ static text *remove_duplicate_path(search_LinkStack &stk)
     while (stk != NULL) {
         if (strcmp(stk->data, ",") != 0) {
             if (strstr(rpath->data, stk->data) == NULL) {
-                appendStringInfo(rpath, ",%s", stk->data);
+                appendStringInfo(rpath, ", %s", stk->data);
                 flag = true;
             }
         }
@@ -4496,11 +4510,7 @@ static text *remove_duplicate_path(search_LinkStack &stk)
 
 Datum json_search(PG_FUNCTION_ARGS)
 {
-    if (PG_ARGISNULL(0) || PG_ARGISNULL(1) || PG_ARGISNULL(2)) {
-        PG_RETURN_NULL();
-    }
-
-    char *one_or_all = text_to_cstring(PG_GETARG_TEXT_P(1));
+    bool one_or_all_flag = false;
     int nargs = PG_NARGS();
     int path_num;
     int i = 0;
@@ -4515,17 +4525,39 @@ Datum json_search(PG_FUNCTION_ARGS)
     cJSON *result = NULL;
     cJSON *doc_cJSON = NULL;
     search_LinkStack stk = NULL;
+    ArrayType *path_array;
+    int error_pos = -1;
+    cJSON_JsonPath *jp = NULL;
+    constexpr int Chinese_Char = 3;
+    constexpr int RightShift_Judge_Chinese = 8;
 
-    valtype = get_fn_expr_argtype(fcinfo->flinfo, 0);
-    arg = PG_GETARG_DATUM(0);
-    doc_cJSON = input_to_cjson(valtype, "json_search", 1, arg);
+    if (!PG_ARGISNULL(0)) {
+        valtype = get_fn_expr_argtype(fcinfo->flinfo, 0);
+        arg = PG_GETARG_DATUM(0);
+        doc_cJSON = input_to_cjson(valtype, "json_search", 1, arg);
+    }
 
-    valtype = get_fn_expr_argtype(fcinfo->flinfo, 2);
-    arg = PG_GETARG_DATUM(2);
-    getTypeOutputInfo(valtype, &typOutput, &typIsVarlena);
-    search_text = cstring_to_text(OidOutputFunctionCall(typOutput, arg));
+    if (!PG_ARGISNULL(1)) {
+        char *one_or_all = text_to_cstring(PG_GETARG_TEXT_P(1));
+        if (strcmp(one_or_all, "one") == 0) {
+            one_or_all_flag = true;
+        } else if (strcmp(one_or_all, "all") == 0) {
+            one_or_all_flag = false;
+        } else {
+            ereport(ERROR,
+                    (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("The oneOrAll argument to json_search may take "
+                                                                      "these values:'one'or'all'.")));
+        }
+    }
 
-    if (nargs > 3 && PG_ARGISNULL(3) == 0) {
+    if (!PG_ARGISNULL(ARG_2)) {
+        valtype = get_fn_expr_argtype(fcinfo->flinfo, 2);
+        arg = PG_GETARG_DATUM(2);
+        getTypeOutputInfo(valtype, &typOutput, &typIsVarlena);
+        search_text = cstring_to_text(OidOutputFunctionCall(typOutput, arg));
+    }
+
+    if (nargs > ARG_3 && !PG_ARGISNULL(ARG_3)) {
         valtype = get_fn_expr_argtype(fcinfo->flinfo, 3);
         if (valtype != BOOLOID) {
             Datum escape_datum = 0;
@@ -4541,19 +4573,49 @@ Datum json_search(PG_FUNCTION_ARGS)
                                     errhint("Escape string must be empty or one character.")));
             }
             text *escape = DatumGetTextP(escape_datum);
-            search_text = MB_do_like_escape(search_text, escape);
+            char *escape_char = text_to_cstring(escape);
+            if (strlen(escape_char) > Chinese_Char) {
+                ereport(ERROR, (errcode(ERRCODE_INVALID_ESCAPE_SEQUENCE), errmsg("invalid escape string"),
+                                errhint("Escape string must be empty or one character.")));
+            }
+            if ((*escape_char >> RightShift_Judge_Chinese) != 0x00) {
+                goto Work;
+            }
+            if (strlen(escape_char) > 1) {
+                ereport(ERROR, (errcode(ERRCODE_INVALID_ESCAPE_SEQUENCE), errmsg("invalid escape string"),
+                                errhint("Escape string must be empty or one character.")));
+            }
+            if (!PG_ARGISNULL(ARG_2)) {
+                search_text = MB_do_like_escape(search_text, escape);
+            }
         }
     }
+
+Work:
 
     if (nargs > 4) {
-        ArrayType *path_array = PG_GETARG_ARRAYTYPE_P(4);
-        if (array_contains_nulls(path_array)) {
-            PG_RETURN_NULL();
-        }
+        path_array = PG_GETARG_ARRAYTYPE_P(ARG_4);
         deconstruct_array(path_array, TEXTOID, -1, false, 'i', &pathtext, &pathnulls, &path_num);
+        for (i = 0; i < path_num; i++) {
+            if (pathtext[i] == 0) {
+                PG_RETURN_NULL();
+            }
+            jp = jp_parse(TextDatumGetCString(pathtext[i]), error_pos);
+            if (!jp) {
+                cJSON_DeleteJsonPath(jp);
+                ereport(ERROR,
+                        (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("Invalid JSON path expression. The error is "
+                                                                          "around character position %d.",
+                                                                          error_pos)));
+            }
+        }
     }
 
-    if (strcmp(one_or_all, "one") == 0) {
+    if (PG_ARGISNULL(0) || PG_ARGISNULL(1) || PG_ARGISNULL(2)) {
+        PG_RETURN_NULL();
+    }
+
+    if (one_or_all_flag) {
         if (nargs < 5) {
             char *position = "\"$";
             char *wildchar = "";
@@ -4583,7 +4645,7 @@ Datum json_search(PG_FUNCTION_ARGS)
             DestroyStringInfo(wildchar);
             DestroyStringInfo(position);
         }
-    } else if (strcmp(one_or_all, "all") == 0) {
+    } else {
         if (nargs < 5) {
             char *position = "\"$";
             char *wildchar = "";
@@ -4617,9 +4679,6 @@ Datum json_search(PG_FUNCTION_ARGS)
                 PG_RETURN_TEXT_P(res);
             }
         }
-    } else {
-        ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
-                        errmsg("The oneOrAll argument to json_search may take these values:'one'or'all'.")));
     }
     PG_RETURN_NULL();
 }
@@ -4645,8 +4704,9 @@ Datum json_keys(PG_FUNCTION_ARGS)
 
         res = cJSON_CreateResultWrapper();
         if (containsAsterisk(path) > 0) {
-            ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
-                            errmsg("in this situation, path expressions may not contain the * and ** tokens")));
+            ereport(ERROR,
+                    (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("in this situation, path expressions may not "
+                                                                      "contain the * and ** tokens")));
         }
 
         jp = jp_parse(path, error_pos);
@@ -4654,11 +4714,12 @@ Datum json_keys(PG_FUNCTION_ARGS)
             cJSON_DeleteResultWrapper(res);
             cJSON_Delete(root);
             ereport(ERROR,
-                    (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
-                     errmsg("Invalid JSON path expression. The error is around character position %d.", error_pos)));
+                    (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("Invalid JSON path expression. The error is "
+                                                                      "around character position %d.",
+                                                                      error_pos)));
         }
-        if (jp->next!=NULL && jp->next->key == NULL && (root->type & 0xFF) == cJSON_Object &&
-            jp->next->index == 0 && jp->next->next == NULL) {
+        if (jp->next != NULL && jp->next->key == NULL && (root->type & 0xFF) == cJSON_Object && jp->next->index == 0 &&
+            jp->next->next == NULL) {
             PG_RETURN_NULL();
         }
         cJSON_JsonPathMatch(root, jp, res);
@@ -4783,8 +4844,9 @@ Datum json_array_append(PG_FUNCTION_ARGS)
             if (cJSON_JsonPathCanMatchMany(jp)) {
                 cJSON_DeleteJsonPath(jp);
                 cJSON_Delete(root);
-                ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
-                                errmsg("In this situation, path expressions may not contain the * and ** tokens.")));
+                ereport(ERROR,
+                        (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("In this situation, path expressions may not "
+                                                                          "contain the * and ** tokens.")));
             }
         }
         cJSON_DeleteJsonPath(jp);
@@ -5296,7 +5358,8 @@ Datum json_merge_patch(PG_FUNCTION_ARGS)
         jsondoc[iter] = input_to_cjson(valtype, "json_merge_patch", iter + null_pos + 2, arg);
     }
 
-    // If args contain null, find location that cannot be null from the front to the back
+    // If args contain null, find location that cannot be null from the front to
+    // the back
     if (contain_null) {
         for (iter = 0; iter < jsondoc_num; iter++) {
             if ((jsondoc[iter]->type & 0xFF) != cJSON_Object) {
@@ -5424,8 +5487,9 @@ Datum json_insert(PG_FUNCTION_ARGS)
     TYPCATEGORY tcategory;
 
     if (nargs < 3 || nargs % 2 == 0) {
-        ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
-                        errmsg("Incorrect parameter count in the call to native function 'JSON_INSERT'")));
+        ereport(ERROR,
+                (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("Incorrect parameter count in the call to native "
+                                                                  "function 'JSON_INSERT'")));
     }
     if (PG_ARGISNULL(0)) {
         PG_RETURN_NULL();
@@ -5453,8 +5517,9 @@ Datum json_insert(PG_FUNCTION_ARGS)
         if (cJSON_JsonPathCanMatchMany(jp)) {
             cJSON_DeleteJsonPath(jp);
             cJSON_Delete(root);
-            ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
-                            errmsg("In this situation, path expressions may not contain the * and ** tokens.")));
+            ereport(ERROR,
+                    (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("In this situation, path expressions may not "
+                                                                      "contain the * and ** tokens.")));
         }
         /* process json to add */
         if (PG_ARGISNULL(i + 1)) {
@@ -5513,8 +5578,9 @@ Datum json_replace(PG_FUNCTION_ARGS)
     TYPCATEGORY tcategory;
 
     if (nargs < 3 || nargs % 2 == 0) {
-        ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
-                        errmsg("Incorrect parameter count in the call to native function 'JSON_REPLACE'")));
+        ereport(ERROR,
+                (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("Incorrect parameter count in the call to native "
+                                                                  "function 'JSON_REPLACE'")));
     }
     if (PG_ARGISNULL(0)) {
         cJSON_Delete(root);
@@ -5579,8 +5645,9 @@ Datum json_replace(PG_FUNCTION_ARGS)
             if (invalidPath) {
                 cJSON_DeleteJsonPath(jp);
                 cJSON_Delete(root);
-                ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
-                                errmsg("In this situation, path expressions may not contain the * and ** tokens.")));
+                ereport(ERROR,
+                        (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("In this situation, path expressions may not "
+                                                                          "contain the * and ** tokens.")));
             }
         };
         cJSON_DeleteJsonPath(jp);
@@ -5607,8 +5674,9 @@ Datum json_remove(PG_FUNCTION_ARGS)
     int error_pos = -1;
 
     if (nargs < 2) {
-        ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
-                        errmsg("Incorrect parameter count in the call to native function 'json_remove'")));
+        ereport(ERROR,
+                (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("Incorrect parameter count in the call to native "
+                                                                  "function 'json_remove'")));
     }
     if (PG_ARGISNULL(0)) {
         cJSON_Delete(root);
@@ -5647,8 +5715,9 @@ Datum json_remove(PG_FUNCTION_ARGS)
         if (invalidPath) {
             cJSON_DeleteJsonPath(jp);
             cJSON_Delete(root);
-            ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
-                            errmsg("In this situation, path expressions may not contain the * and ** tokens.")));
+            ereport(ERROR,
+                    (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("In this situation, path expressions may not "
+                                                                      "contain the * and ** tokens.")));
         }
         cJSON_DeleteJsonPath(jp);
     }
@@ -5678,8 +5747,9 @@ Datum json_array_insert(PG_FUNCTION_ARGS)
     TYPCATEGORY tcategory;
 
     if (nargs < 3 || nargs % 2 == 0) {
-        ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
-                        errmsg("Incorrect parameter count in the call to native function 'json_array_insert'")));
+        ereport(ERROR,
+                (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("Incorrect parameter count in the call to native "
+                                                                  "function 'json_array_insert'")));
     }
     if (PG_ARGISNULL(0)) {
         cJSON_Delete(root);
@@ -5744,8 +5814,9 @@ Datum json_array_insert(PG_FUNCTION_ARGS)
         if (invalidPath) {
             cJSON_DeleteJsonPath(jp);
             cJSON_Delete(root);
-            ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
-                            errmsg("In this situation, path expressions may not contain the * and ** tokens.")));
+            ereport(ERROR,
+                    (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("In this situation, path expressions may not "
+                                                                      "contain the * and ** tokens.")));
         }
         if (isArray) {
             cJSON_DeleteJsonPath(jp);
@@ -5781,8 +5852,9 @@ Datum json_set(PG_FUNCTION_ARGS)
     TYPCATEGORY tcategory;
 
     if (nargs < 3 || nargs % 2 == 0) {
-        ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
-                        errmsg("Incorrect parameter count in the call to native function 'JSON_SET'")));
+        ereport(ERROR,
+                (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("Incorrect parameter count in the call to native "
+                                                                  "function 'JSON_SET'")));
     }
     if (PG_ARGISNULL(0)) {
         cJSON_Delete(root);
@@ -5847,15 +5919,16 @@ Datum json_set(PG_FUNCTION_ARGS)
             if (invalidPath) {
                 cJSON_DeleteJsonPath(jp);
                 cJSON_Delete(root);
-                ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
-                                errmsg("In this situation, path expressions may not contain the * and ** tokens.")));
+                ereport(ERROR,
+                        (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("In this situation, path expressions may not "
+                                                                          "contain the * and ** tokens.")));
             }
         };
         cJSON_DeleteJsonPath(jp);
     }
     cJSON_SortObject(root);
     s = cJSON_PrintUnformatted(root);
-    res = cstring_to_text(s);
+    res = formatJsondoc(s);
     cJSON_Delete(root);
     pfree(s);
     PG_RETURN_TEXT_P(res);
@@ -5896,6 +5969,9 @@ Datum json_length(PG_FUNCTION_ARGS)
     char *data = NULL;
     int error_pos = -1;
 
+    if (PG_ARGISNULL(0)) {
+        PG_RETURN_NULL();
+    }
     valtype = get_fn_expr_argtype(fcinfo->flinfo, 0);
     if (VALTYPE_IS_JSON(valtype)) {
         arg = PG_GETARG_DATUM(0);
@@ -5903,11 +5979,15 @@ Datum json_length(PG_FUNCTION_ARGS)
         data = OidOutputFunctionCall(typOutput, arg);
         json = cstring_to_text(data);
     } else {
-        ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
-                        errmsg("Invalid data type for JSON data in argument 1 to function json_length")));
+        ereport(ERROR,
+                (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("Invalid data type for JSON data in argument 1 to "
+                                                                  "function json_length")));
     }
 
     if (PG_NARGS() == 2) {
+        if (PG_ARGISNULL(1)) {
+            PG_RETURN_NULL();
+        }
         cJSON *root = NULL;
         char *path = text_to_cstring(PG_GETARG_TEXT_P(1));
         cJSON_JsonPath *jp = NULL;
@@ -5916,8 +5996,9 @@ Datum json_length(PG_FUNCTION_ARGS)
         root = cJSON_ParseWithOpts(data, 0, 1);
         res = cJSON_CreateResultWrapper();
         if (containsAsterisk(path) > 0) {
-            ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
-                            errmsg("in this situation, path expressions may not contain the * and ** tokens")));
+            ereport(ERROR,
+                    (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("in this situation, path expressions may not "
+                                                                      "contain the * and ** tokens")));
         }
 
         jp = jp_parse(path, error_pos);
@@ -5925,8 +6006,9 @@ Datum json_length(PG_FUNCTION_ARGS)
             cJSON_DeleteResultWrapper(res);
             cJSON_Delete(root);
             ereport(ERROR,
-                    (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
-                     errmsg("Invalid JSON path expression. The error is around character position %d.", error_pos)));
+                    (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("Invalid JSON path expression. The error is "
+                                                                      "around character position %d.",
+                                                                      error_pos)));
         }
         cJSON_JsonPathMatch(root, jp, res);
         if (res->len == 1) {

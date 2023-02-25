@@ -16,7 +16,7 @@ CREATE OR REPLACE FUNCTION pg_catalog.json_extract("any", variadic text[]) RETUR
 CREATE OR REPLACE FUNCTION pg_catalog.json_keys("any") RETURNS json LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin','json_keys';
 CREATE OR REPLACE FUNCTION pg_catalog.json_keys("any",text) RETURNS json LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin','json_keys';
 
-CREATE OR REPLACE FUNCTION pg_catalog.json_search("any",text,"any") RETURNS text LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'json_search';
+CREATE OR REPLACE FUNCTION pg_catalog.json_search("any",text,"any") RETURNS text LANGUAGE C IMMUTABLE as '$libdir/dolphin', 'json_search';
 CREATE OR REPLACE FUNCTION pg_catalog.json_search("any",text,"any","any") RETURNS text LANGUAGE C IMMUTABLE as '$libdir/dolphin', 'json_search';
 CREATE OR REPLACE FUNCTION pg_catalog.json_search("any",text,"any","any",variadic text[]) RETURNS text LANGUAGE C IMMUTABLE as '$libdir/dolphin', 'json_search';
 
@@ -44,8 +44,8 @@ CREATE OR REPLACE FUNCTION pg_catalog.json_array_insert(variadic arr "any") RETU
 
 CREATE OR REPLACE FUNCTION pg_catalog.json_set(variadic "any") RETURNS json LANGUAGE C IMMUTABLE as '$libdir/dolphin', 'json_set';
 
-CREATE OR REPLACE FUNCTION pg_catalog.json_length("any") RETURNS int LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'json_length';
-CREATE OR REPLACE FUNCTION pg_catalog.json_length("any",text) RETURNS int LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'json_length';
+CREATE OR REPLACE FUNCTION pg_catalog.json_length("any") RETURNS int LANGUAGE C IMMUTABLE as '$libdir/dolphin', 'json_length';
+CREATE OR REPLACE FUNCTION pg_catalog.json_length("any",text) RETURNS int LANGUAGE C IMMUTABLE as '$libdir/dolphin', 'json_length';
 create aggregate pg_catalog.json_arrayagg("any") (SFUNC = json_agg_transfn, STYPE = internal, finalfunc = json_agg_finalfn);
 
 CREATE FUNCTION pg_catalog.json_objectagg_mysql_transfn (

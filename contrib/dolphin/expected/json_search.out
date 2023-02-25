@@ -1,5 +1,52 @@
 create schema test_json_search;
 set current_schema to 'test_json_search';
+--含NULL和错误参数
+select json_search(1,'one',NULL);
+ERROR:  Invalid data type for JSON data in argument 1 to function json_search
+CONTEXT:  referenced column: json_search
+select json_search('1','on',NULL);
+ERROR:  The oneOrAll argument to json_search may take these values:'one'or'all'.
+CONTEXT:  referenced column: json_search
+select json_search('"1"','one',NULL,NULL,'$..');
+ERROR:  Invalid JSON path expression. The error is around character position 2.
+CONTEXT:  referenced column: json_search
+--转义符含中文
+select json_search('["aset%3165adq",["asedwq_dqwet%3165adq"]]', 'all', '%a%', '且') as res;
+         res         
+---------------------
+ ["$[0]", "$[1][0]"]
+(1 row)
+
+select json_search('["aset%3165adq",["asedwq_dqwet%3165adq"]]', 'all', '%a%', '且是') as res;
+ERROR:  invalid escape string
+HINT:  Escape string must be empty or one character.
+CONTEXT:  referenced column: res
+--json文档为对象，path为数组索引
+select json_search('{"a":["1","asd138%96qwed<>?,.","asd196qwed《》？！@#￥"]}', 'all', '%s%', null, '$[0]') as res;
+ res 
+-----
+ 
+(1 row)
+
+--返回数组
+select json_search('["a", ["a", "b", "c"], {"d":"ab"}]', 'all', '%a%') as res;
+              res              
+-------------------------------
+ ["$[0]", "$[1][0]", "$[2].d"]
+(1 row)
+
+select json_search('["a", ["a", "b", "c"], {"d":"ab"}]', 'all', '%a') as res;
+         res         
+---------------------
+ ["$[0]", "$[1][0]"]
+(1 row)
+
+select json_search('["aset%3165adq",["asedwq_dqwet%3165adq"]]','all', '%\%%');
+     json_search     
+---------------------
+ ["$[0]", "$[1][0]"]
+(1 row)
+
 select json_search('null','one','null','&','$');
  json_search 
 -------------
@@ -360,15 +407,15 @@ select json_search('{"a":"abc","b":"bcd"}','one','bcd');
 (1 row)
 
 select json_search('{"a":"abc","b":"abc"}','all','abc');
-  json_search  
----------------
- ["$.a","$.b"]
+  json_search   
+----------------
+ ["$.a", "$.b"]
 (1 row)
 
 select json_search('{"a":"abc","b":"abc","c":"abc"}','all','abc');
-     json_search     
----------------------
- ["$.a","$.b","$.c"]
+      json_search      
+-----------------------
+ ["$.a", "$.b", "$.c"]
 (1 row)
 
 select json_search('["a"."abc"]','one','abc');
@@ -426,15 +473,15 @@ select json_search('["abc","abc","abc"]','one','abc');
 (1 row)
 
 select json_search('["abc","abc","abc"]','all','abc');
-      json_search       
-------------------------
- ["$[0]","$[1]","$[2]"]
+       json_search        
+--------------------------
+ ["$[0]", "$[1]", "$[2]"]
 (1 row)
 
 select json_search('{"a":["abc","bcd"],"b":"bcd"}','all','bcd');
-   json_search    
-------------------
- ["$.a[1]","$.b"]
+    json_search    
+-------------------
+ ["$.a[1]", "$.b"]
 (1 row)
 
 select json_search('[{"a":"abc"},"bcd"]','one','abc');
@@ -462,27 +509,27 @@ select json_search('{"a":{"b":["abc"]}}','all','abc');
 (1 row)
 
 select json_search('{"a":{"b":["abc","abc"]}}','all','abc');
-       json_search       
--------------------------
- ["$.a.b[0]","$.a.b[1]"]
+       json_search        
+--------------------------
+ ["$.a.b[0]", "$.a.b[1]"]
 (1 row)
 
 select json_search('{"a":[{"b":["abc","abc"]}]}','all','abc');
-          json_search          
--------------------------------
- ["$.a[0].b[0]","$.a[0].b[1]"]
+          json_search           
+--------------------------------
+ ["$.a[0].b[0]", "$.a[0].b[1]"]
 (1 row)
 
 select json_search('{"a":[{"b":["abc","abc"]},"ced"]}','all','abc');
-          json_search          
--------------------------------
- ["$.a[0].b[0]","$.a[0].b[1]"]
+          json_search           
+--------------------------------
+ ["$.a[0].b[0]", "$.a[0].b[1]"]
 (1 row)
 
 select json_search('{"a":[{"b":["abc","abc"]},"ced"],"c":["abc","hij"]}','all','abc');
-              json_search               
-----------------------------------------
- ["$.a[0].b[0]","$.a[0].b[1]","$.c[0]"]
+               json_search                
+------------------------------------------
+ ["$.a[0].b[0]", "$.a[0].b[1]", "$.c[0]"]
 (1 row)
 
 select json_search('{"abc.bcd":"hello"}', 'one','hello',NULL,'$.    "abc.bcd"    ');
@@ -537,9 +584,9 @@ select json_search('[{"a":"abc"},"bcd"]','one','abc',null,'$');
 (1 row)
 
 select json_search('{"a":"abc","b":"abc"}','all','abc',null,'$');
-  json_search  
----------------
- ["$.a","$.b"]
+  json_search   
+----------------
+ ["$.a", "$.b"]
 (1 row)
 
 select json_search('"abc"','one','abc',NULL,'$','$.a');
@@ -561,21 +608,21 @@ select json_search('{"a":["abc","bcd"],"b":"bcd"}','all','bcd',null,'$.b');
 (1 row)
 
 select json_search('{"a":["abc","bcd"],"b":"bcd"}','all','bcd',null,'$.b','$','$.a');
-   json_search    
-------------------
- ["$.b","$.a[1]"]
+    json_search    
+-------------------
+ ["$.b", "$.a[1]"]
 (1 row)
 
 select json_search('{"abc":["abc","bcd"],"abc":"bcd"}','all','bcd',null,'$.abc','$','$[1]');
-     json_search     
----------------------
- ["$.abc[1]","$[1]"]
+ json_search 
+-------------
+ "$.abc[1]"
 (1 row)
 
 select json_search('{"a": "abc","b": {"b": "abc", "a": "abc"}}','all','abc');
-       json_search       
--------------------------
- ["$.a","$.b.b","$.b.a"]
+        json_search        
+---------------------------
+ ["$.a", "$.b.b", "$.b.a"]
 (1 row)
 
 select json_search('{"a":"abc"}','all','abc',NULL,'$','$');
@@ -660,9 +707,9 @@ select json_search('[{"a":"abc"},{"a":"abc"}]','one','abc',null,'$**.a');
 (1 row)
 
 select json_search('[{"a":"abc"},{"a":"abc"}]','all','abc',null,'$**.a');
-     json_search     
----------------------
- ["$[0].a","$[1].a"]
+     json_search      
+----------------------
+ ["$[0].a", "$[1].a"]
 (1 row)
 
 select json_search('[{"a":"abc"},{"a":"abc"}]','all','abc',null,'$**.b');
@@ -672,27 +719,27 @@ select json_search('[{"a":"abc"},{"a":"abc"}]','all','abc',null,'$**.b');
 (1 row)
 
 select json_search('{"a":[{"b":["abc","abc"]},"ced"],"c":["efg","abc"]}','all','abc',null,'$','$');
-              json_search               
-----------------------------------------
- ["$.a[0].b[0]","$.a[0].b[1]","$.c[1]"]
+               json_search                
+------------------------------------------
+ ["$.a[0].b[0]", "$.a[0].b[1]", "$.c[1]"]
 (1 row)
 
 select json_search('{"a":[{"b":["abc","bcd"]},"ced"],"c":["efg","abc"]}','all','abc',null,'$');
-       json_search        
---------------------------
- ["$.a[0].b[0]","$.c[1]"]
+        json_search        
+---------------------------
+ ["$.a[0].b[0]", "$.c[1]"]
 (1 row)
 
 select json_search('{"a":[{"b":["abc","abc"]},"ced"],"c":["efg","abc"]}','all','abc',null,'$**[1]');
-       json_search        
---------------------------
- ["$.a[0].b[1]","$.c[1]"]
+        json_search        
+---------------------------
+ ["$.a[0].b[1]", "$.c[1]"]
 (1 row)
 
 select json_search('{"a":[{"b":["abc","abc"]},"ced"],"c":["efg","abc"]}','all','abc',null,'$**.*[*].*[*]');
-          json_search          
--------------------------------
- ["$.a[0].b[0]","$.a[0].b[1]"]
+          json_search           
+--------------------------------
+ ["$.a[0].b[0]", "$.a[0].b[1]"]
 (1 row)
 
 select json_search('{"a":[{"b":["abc","abc"]},"ced"],"c":["efg","abc"]}','all','abc',null,'$**.*[*].*[*].*');
@@ -702,9 +749,9 @@ select json_search('{"a":[{"b":["abc","abc"]},"ced"],"c":["efg","abc"]}','all','
 (1 row)
 
 select json_search('{"a":[{"b":["abc","abc"]},"ced"],"c":["efg","abc"]}','all','abc',null,'$**.*[*].*[*].*','$**.*[*].*[*]');
-          json_search          
--------------------------------
- ["$.a[0].b[0]","$.a[0].b[1]"]
+          json_search           
+--------------------------------
+ ["$.a[0].b[0]", "$.a[0].b[1]"]
 (1 row)
 
 select json_search('{"a":[{"b":["abc","abc"]},"ced"],"c":["efg","abc"]}','all','abc',null,'$**.*[*].*[*].*','$.');
@@ -717,15 +764,15 @@ select json_search('{"a":[{"b":["abc","abc"]},"ced"],"c":["efg","abc"]}','one','
 (1 row)
 
 select json_search('[{"a":"abc","b":"abc"},"abc"]','all','abc',NULL,'$**.b','$[*]','$**.a');
-        json_search         
-----------------------------
- ["$[0].b","$[0].a","$[1]"]
+         json_search          
+------------------------------
+ ["$[0].b", "$[0].a", "$[1]"]
 (1 row)
 
 select json_search('[{"a":"abc","b":"abc"},"abc"]','all','abc',NULL,'$**.b','$[*]','$**.a','$[0]','$[1]','$[0].a','$[0].b');
-        json_search         
-----------------------------
- ["$[0].b","$[0].a","$[1]"]
+         json_search          
+------------------------------
+ ["$[0].b", "$[0].a", "$[1]"]
 (1 row)
 
 create table student(name VARCHAR(20) PRIMARY KEY);
@@ -777,12 +824,12 @@ insert into test1 values
 ('["pig", "there", {"a": "there"}]','all','$'),
 ('{"a": "abc","b": {"b": "abc", "a": "abc"}}','all','$**.a');
 select *,json_search(doc, one_or_all,'abc',NULL,path) from test1;
-                    doc                     | one_or_all | path  |   json_search   
---------------------------------------------+------------+-------+-----------------
+                    doc                     | one_or_all | path  |   json_search    
+--------------------------------------------+------------+-------+------------------
  {"a": {"b": 32, "c":"hello"}, "d": 0.3443} | one        | $**.c | 
  ["dog", "pig", {"a": "here"}]              | one        | $     | 
  ["pig", "there", {"a": "there"}]           | all        | $     | 
- {"a": "abc","b": {"b": "abc", "a": "abc"}} | all        | $**.a | ["$.a","$.b.a"]
+ {"a": "abc","b": {"b": "abc", "a": "abc"}} | all        | $**.a | ["$.a", "$.b.a"]
 (4 rows)
 
 create table json_search_test (
