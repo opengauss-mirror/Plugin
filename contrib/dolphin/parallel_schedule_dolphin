@@ -10,7 +10,7 @@ test: db_b_parser1 db_b_parser2 db_b_parser3 db_b_parser4 second_microsecond
 
 test: db_b_plpgsql_test default_guc describe explain_desc kill set_password network
 
-test: empty_value_list empty_value_lists empty_value_support_value
+test: empty_value_list empty_value_lists empty_value_support_value create_index
 
 test: greatest_least join_without_on mysqlmode_fullgroup mysqlmode_strict mysqlmode_strict2 none_strict_warning test_alter_table
 

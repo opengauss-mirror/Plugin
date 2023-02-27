@@ -16348,6 +16348,43 @@ IndexStmt:	CREATE opt_unique INDEX opt_concurrently opt_index_name
 					}
 					$$ = (Node *)n;
 				}
+
+				| CREATE opt_unique INDEX opt_concurrently opt_index_name
+			ON dolphin_qualified_name '(' index_params ')'
+			TableIndexOptionList where_clause
+				{
+					IndexStmt *n = makeNode(IndexStmt);
+					n->unique = $2;
+					n->concurrent = $4;
+					n->missing_ok = false;
+                    n->schemaname = $5->schemaname;
+					n->idxname = $5->relname;
+					n->relation = $7;
+					n->accessMethod = NULL;
+					n->indexParams = $9;
+					n->excludeOpNames = NIL;
+					n->idxcomment = NULL;
+					n->indexOid = InvalidOid;
+					n->oldNode = InvalidOid;
+					n->partClause = NULL;
+					n->isPartitioned = false;
+					n->isGlobal = false;
+					n->primary = false;
+					n->isconstraint = false;
+					n->deferrable = false;
+					n->initdeferred = false;
+					n->whereClause = $12;
+					if ($11 != NULL) {
+						n->indexIncludingParams = $11->indexIncludingParams;
+						n->options = $11->options;
+						n->tableSpace = $11->tableSpace;
+						if ($11->comment != NULL) {
+							n->indexOptions = lappend(n->indexOptions, $11->comment);
+						}
+						n->indexOptions = lappend(n->indexOptions, makeString((char*)($11->visible ? "visible" : "invisible")));
+					}
+					$$ = (Node *)n;
+				}
 				| CREATE opt_unique INDEX opt_concurrently opt_index_name
 			index_method_relation_clause '(' index_params ')'
 			where_clause
@@ -16379,10 +16416,84 @@ IndexStmt:	CREATE opt_unique INDEX opt_concurrently opt_index_name
 					$$ = (Node *)n;
 				}
 				| CREATE opt_unique INDEX opt_concurrently opt_index_name
+			ON dolphin_qualified_name '(' index_params ')'
+			where_clause
+				{
+					IndexStmt *n = makeNode(IndexStmt);
+					n->unique = $2;
+					n->concurrent = $4;
+					n->missing_ok = false;
+                    n->schemaname = $5->schemaname;
+					n->idxname = $5->relname;
+					n->relation = $7;
+					n->accessMethod = NULL;
+					n->indexParams = $9;
+					n->excludeOpNames = NIL;
+					n->idxcomment = NULL;
+					n->indexOid = InvalidOid;
+					n->oldNode = InvalidOid;
+					n->partClause = NULL;
+					n->isPartitioned = false;
+					n->isGlobal = false;
+					n->primary = false;
+					n->isconstraint = false;
+					n->deferrable = false;
+					n->initdeferred = false;
+					n->whereClause = $11;
+					n->indexIncludingParams = NIL;
+					n->options = NIL;
+					n->tableSpace = NULL;
+					$$ = (Node *)n;
+				}
+				| CREATE opt_unique INDEX opt_concurrently opt_index_name
+			ON dolphin_qualified_name '(' index_params ')' USING access_method 
+				{
+					if ($4) {
+						ereport(errstate,
+						(errcode(ERRCODE_SYNTAX_ERROR),
+							errmsg("syntax error"),
+								parser_errposition(@4)));
+					} else if ($5->schemaname != NULL) {
+						ereport(errstate,
+						(errcode(ERRCODE_SYNTAX_ERROR),
+							errmsg("syntax error"),
+								parser_errposition(@5)));
+					} else if (strcasecmp($12, "BTREE") != 0 && strcasecmp($12, "HASH") != 0) {
+						ereport(errstate,
+						(errcode(ERRCODE_SYNTAX_ERROR),
+							errmsg("syntax error"),
+								parser_errposition(@12)));
+					}
+					IndexStmt *n = makeNode(IndexStmt);
+					n->unique = $2;
+					n->concurrent = false;
+					n->missing_ok = false;
+                    n->schemaname = $5->schemaname;
+					n->idxname = $5->relname;
+					n->relation = $7;
+					n->accessMethod = $12;
+					n->indexParams = $9;
+					n->excludeOpNames = NIL;
+					n->idxcomment = NULL;
+					n->indexOid = InvalidOid;
+					n->oldNode = InvalidOid;
+					n->partClause = NULL;
+					n->isPartitioned = false;
+					n->isGlobal = false;
+					n->primary = false;
+					n->isconstraint = false;
+					n->deferrable = false;
+					n->initdeferred = false;
+					n->whereClause = NULL;
+					n->indexIncludingParams = NIL;
+					n->options = NIL;
+					n->tableSpace = NULL;
+					$$ = (Node *)n;
+				}
+				| CREATE opt_unique INDEX opt_concurrently opt_index_name
 					index_method_relation_clause '(' index_params ')'
 					LOCAL opt_partition_index_def PartitionTableIndexOptionList
 				{
-
 					IndexStmt *n = makeNode(IndexStmt);
 					n->unique = $2;
 					n->concurrent = $4;
@@ -16414,10 +16525,43 @@ IndexStmt:	CREATE opt_unique INDEX opt_concurrently opt_index_name
 					$$ = (Node *)n;
 				}
 				| CREATE opt_unique INDEX opt_concurrently opt_index_name
+					ON dolphin_qualified_name '(' index_params ')'
+					LOCAL opt_partition_index_def PartitionTableIndexOptionList
+				{
+					IndexStmt *n = makeNode(IndexStmt);
+					n->unique = $2;
+					n->concurrent = $4;
+					n->missing_ok = false;
+                    n->schemaname = $5->schemaname;
+					n->idxname = $5->relname;
+					n->relation = $7;
+					n->accessMethod = NULL;
+					n->indexParams = $9;
+					n->isPartitioned = true;
+					n->isGlobal = false;
+					n->excludeOpNames = NIL;
+					n->idxcomment = NULL;
+					n->indexOid = InvalidOid;
+					n->oldNode = InvalidOid;
+					n->primary = false;
+					n->isconstraint = false;
+					n->deferrable = false;
+					n->initdeferred = false;
+					n->partClause  = $12;
+					if ($13 != NULL) {
+						n->indexIncludingParams = $13->indexIncludingParams;
+						n->options = $13->options;
+						n->tableSpace = $13->tableSpace;
+						if ($13->comment != NULL) {
+							n->indexOptions = lappend(n->indexOptions, $13->comment);
+						}
+					}
+					$$ = (Node *)n;
+				}
+				| CREATE opt_unique INDEX opt_concurrently opt_index_name
 					index_method_relation_clause '(' index_params ')'
 					LOCAL opt_partition_index_def
 				{
-
 					IndexStmt *n = makeNode(IndexStmt);
 					n->unique = $2;
 					n->concurrent = $4;
@@ -16438,6 +16582,35 @@ IndexStmt:	CREATE opt_unique INDEX opt_concurrently opt_index_name
 					n->deferrable = false;
 					n->initdeferred = false;
 					n->partClause  = $11;
+					n->indexIncludingParams = NIL;
+					n->options = NIL;
+					n->tableSpace = NULL;
+					$$ = (Node *)n;
+				}
+				| CREATE opt_unique INDEX opt_concurrently opt_index_name
+					ON dolphin_qualified_name '(' index_params ')'
+					LOCAL opt_partition_index_def
+				{
+					IndexStmt *n = makeNode(IndexStmt);
+					n->unique = $2;
+					n->concurrent = $4;
+					n->missing_ok = false;
+                    n->schemaname = $5->schemaname;
+					n->idxname = $5->relname;
+					n->relation = $7;
+					n->accessMethod = NULL;
+					n->indexParams = $9;
+					n->isPartitioned = true;
+					n->isGlobal = false;
+					n->excludeOpNames = NIL;
+					n->idxcomment = NULL;
+					n->indexOid = InvalidOid;
+					n->oldNode = InvalidOid;
+					n->primary = false;
+					n->isconstraint = false;
+					n->deferrable = false;
+					n->initdeferred = false;
+					n->partClause  = $12;
 					n->indexIncludingParams = NIL;
 					n->options = NIL;
 					n->tableSpace = NULL;
@@ -16478,6 +16651,40 @@ IndexStmt:	CREATE opt_unique INDEX opt_concurrently opt_index_name
 					$$ = (Node *)n;
 				}
 				| CREATE opt_unique INDEX opt_concurrently opt_index_name
+					ON dolphin_qualified_name '(' index_params ')'
+					GLOBAL PartitionTableIndexOptionList
+				{
+					IndexStmt *n = makeNode(IndexStmt);
+					n->unique = $2;
+					n->concurrent = $4;
+					n->missing_ok = false;
+                    n->schemaname = $5->schemaname;
+					n->idxname = $5->relname;
+					n->relation = $7;
+					n->accessMethod = NULL;
+					n->indexParams = $9;
+					n->partClause  = NULL;
+					n->isPartitioned = true;
+					n->isGlobal = true;
+					n->excludeOpNames = NIL;
+					n->idxcomment = NULL;
+					n->indexOid = InvalidOid;
+					n->oldNode = InvalidOid;
+					n->primary = false;
+					n->isconstraint = false;
+					n->deferrable = false;
+					n->initdeferred = false;
+					if ($12 != NULL) {
+						n->indexIncludingParams = $12->indexIncludingParams;
+						n->options = $12->options;
+						n->tableSpace = $12->tableSpace;
+						if ($12->comment != NULL) {
+							n->indexOptions = lappend(n->indexOptions, $12->comment);
+						}
+					}
+					$$ = (Node *)n;
+				}
+				| CREATE opt_unique INDEX opt_concurrently opt_index_name
 					index_method_relation_clause '(' index_params ')'
 					GLOBAL
 				{
@@ -16490,6 +16697,35 @@ IndexStmt:	CREATE opt_unique INDEX opt_concurrently opt_index_name
 					n->relation = $6->relation;
 					n->accessMethod = $6->accessMethod;
 					n->indexParams = $8;
+					n->partClause  = NULL;
+					n->isPartitioned = true;
+					n->isGlobal = true;
+					n->excludeOpNames = NIL;
+					n->idxcomment = NULL;
+					n->indexOid = InvalidOid;
+					n->oldNode = InvalidOid;
+					n->primary = false;
+					n->isconstraint = false;
+					n->deferrable = false;
+					n->initdeferred = false;
+					n->indexIncludingParams = NIL;
+					n->options = NIL;
+					n->tableSpace = NULL;
+					$$ = (Node *)n;
+				}
+				| CREATE opt_unique INDEX opt_concurrently opt_index_name
+					ON dolphin_qualified_name '(' index_params ')'
+					GLOBAL
+				{
+					IndexStmt *n = makeNode(IndexStmt);
+					n->unique = $2;
+					n->concurrent = $4;
+					n->missing_ok = false;
+                    n->schemaname = $5->schemaname;
+					n->idxname = $5->relname;
+					n->relation = $7;
+					n->accessMethod = NULL;
+					n->indexParams = $9;
 					n->partClause  = NULL;
 					n->isPartitioned = true;
 					n->isGlobal = true;
@@ -16542,6 +16778,41 @@ IndexStmt:	CREATE opt_unique INDEX opt_concurrently opt_index_name
 					$$ = (Node *)n;
 				}
 				| CREATE opt_unique INDEX opt_concurrently IF_P NOT EXISTS opt_index_name
+					ON dolphin_qualified_name '(' index_params ')'
+					TableIndexOptionList where_clause
+				{
+					IndexStmt *n = makeNode(IndexStmt);
+					n->unique = $2;
+					n->concurrent = $4;
+					n->missing_ok = true;
+					n->schemaname = $8->schemaname;
+					n->idxname = $8->relname;
+					n->relation = $10;
+					n->accessMethod = NULL;
+					n->indexParams = $12;
+					n->excludeOpNames = NIL;
+					n->idxcomment = NULL;
+					n->indexOid = InvalidOid;
+					n->oldNode = InvalidOid;
+					n->partClause = NULL;
+					n->isPartitioned = false;
+					n->isGlobal = false;
+					n->primary = false;
+					n->isconstraint = false;
+					n->deferrable = false;
+					n->initdeferred = false;
+					n->whereClause = $15;
+					if ($14 != NULL) {
+					    n->indexIncludingParams = $14->indexIncludingParams;
+					    n->options = $14->options;
+					    n->tableSpace = $14->tableSpace;
+					    if ($14->comment != NULL) {
+					        n->indexOptions = lappend(n->indexOptions, $14->comment);
+					    }
+					}
+					$$ = (Node *)n;
+				}
+				| CREATE opt_unique INDEX opt_concurrently IF_P NOT EXISTS opt_index_name
 					index_method_relation_clause '(' index_params ')'
 					where_clause
 				{
@@ -16566,6 +16837,36 @@ IndexStmt:	CREATE opt_unique INDEX opt_concurrently opt_index_name
 					n->deferrable = false;
 					n->initdeferred = false;
 					n->whereClause = $13;
+					n->indexIncludingParams = NIL;
+					n->options = NIL;
+					n->tableSpace = NULL;
+					$$ = (Node *)n;
+				}
+				| CREATE opt_unique INDEX opt_concurrently IF_P NOT EXISTS opt_index_name
+					ON dolphin_qualified_name '(' index_params ')'
+					where_clause
+				{
+					IndexStmt *n = makeNode(IndexStmt);
+					n->unique = $2;
+					n->concurrent = $4;
+					n->missing_ok = true;
+					n->schemaname = $8->schemaname;
+					n->idxname = $8->relname;
+					n->relation = $10;
+					n->accessMethod = NULL;
+					n->indexParams = $12;
+					n->excludeOpNames = NIL;
+					n->idxcomment = NULL;
+					n->indexOid = InvalidOid;
+					n->oldNode = InvalidOid;
+					n->partClause = NULL;
+					n->isPartitioned = false;
+					n->isGlobal = false;
+					n->primary = false;
+					n->isconstraint = false;
+					n->deferrable = false;
+					n->initdeferred = false;
+					n->whereClause = $14;
 					n->indexIncludingParams = NIL;
 					n->options = NIL;
 					n->tableSpace = NULL;
@@ -16606,6 +16907,40 @@ IndexStmt:	CREATE opt_unique INDEX opt_concurrently opt_index_name
 					$$ = (Node *)n;
 				}
 				| CREATE opt_unique INDEX opt_concurrently IF_P NOT EXISTS opt_index_name
+					ON dolphin_qualified_name '(' index_params ')'
+					LOCAL opt_partition_index_def PartitionTableIndexOptionList
+				{
+					IndexStmt *n = makeNode(IndexStmt);
+					n->unique = $2;
+					n->concurrent = $4;
+					n->missing_ok = true;
+					n->schemaname = $8->schemaname;
+					n->idxname = $8->relname;
+					n->relation = $10;
+					n->accessMethod = NULL;
+					n->indexParams = $12;
+					n->isPartitioned = true;
+					n->isGlobal = false;
+					n->excludeOpNames = NIL;
+					n->idxcomment = NULL;
+					n->indexOid = InvalidOid;
+					n->oldNode = InvalidOid;
+					n->primary = false;
+					n->isconstraint = false;
+					n->deferrable = false;
+					n->initdeferred = false;
+					n->partClause  = $15;
+					if ($16 != NULL) {
+					    n->indexIncludingParams = $16->indexIncludingParams;
+					    n->options = $16->options;
+					    n->tableSpace = $16->tableSpace;
+					    if ($16->comment != NULL) {
+					        n->indexOptions = lappend(n->indexOptions, $16->comment);
+					    }
+					}
+					$$ = (Node *)n;
+				}
+				| CREATE opt_unique INDEX opt_concurrently IF_P NOT EXISTS opt_index_name
 					index_method_relation_clause '(' index_params ')'
 					LOCAL opt_partition_index_def
 				{
@@ -16629,6 +16964,35 @@ IndexStmt:	CREATE opt_unique INDEX opt_concurrently opt_index_name
 					n->deferrable = false;
 					n->initdeferred = false;
 					n->partClause  = $14;
+					n->indexIncludingParams = NIL;
+					n->options = NIL;
+					n->tableSpace = NULL;
+					$$ = (Node *)n;
+				}
+				| CREATE opt_unique INDEX opt_concurrently IF_P NOT EXISTS opt_index_name
+					ON dolphin_qualified_name '(' index_params ')'
+					LOCAL opt_partition_index_def
+				{
+					IndexStmt *n = makeNode(IndexStmt);
+					n->unique = $2;
+					n->concurrent = $4;
+					n->missing_ok = true;
+					n->schemaname = $8->schemaname;
+					n->idxname = $8->relname;
+					n->relation = $10;
+					n->accessMethod = NULL;
+					n->indexParams = $12;
+					n->isPartitioned = true;
+					n->isGlobal = false;
+					n->excludeOpNames = NIL;
+					n->idxcomment = NULL;
+					n->indexOid = InvalidOid;
+					n->oldNode = InvalidOid;
+					n->primary = false;
+					n->isconstraint = false;
+					n->deferrable = false;
+					n->initdeferred = false;
+					n->partClause  = $15;
 					n->indexIncludingParams = NIL;
 					n->options = NIL;
 					n->tableSpace = NULL;
@@ -16669,6 +17033,40 @@ IndexStmt:	CREATE opt_unique INDEX opt_concurrently opt_index_name
 					$$ = (Node *)n;
 				}
 				| CREATE opt_unique INDEX opt_concurrently IF_P NOT EXISTS opt_index_name
+					ON dolphin_qualified_name '(' index_params ')'
+					GLOBAL PartitionTableIndexOptionList
+				{
+					IndexStmt *n = makeNode(IndexStmt);
+					n->unique = $2;
+					n->concurrent = $4;
+					n->missing_ok = true;
+					n->schemaname = $8->schemaname;
+					n->idxname = $8->relname;
+					n->relation = $10;
+					n->accessMethod = NULL;
+					n->indexParams = $12;
+					n->partClause  = NULL;
+					n->isPartitioned = true;
+					n->isGlobal = true;
+					n->excludeOpNames = NIL;
+					n->idxcomment = NULL;
+					n->indexOid = InvalidOid;
+					n->oldNode = InvalidOid;
+					n->primary = false;
+					n->isconstraint = false;
+					n->deferrable = false;
+					n->initdeferred = false;
+					if ($15 != NULL) {
+					    n->indexIncludingParams = $15->indexIncludingParams;
+					    n->options = $15->options;
+					    n->tableSpace = $15->tableSpace;
+					    if ($15->comment != NULL) {
+					        n->indexOptions = lappend(n->indexOptions, $15->comment);
+					    }
+					}
+					$$ = (Node *)n;
+				}
+				| CREATE opt_unique INDEX opt_concurrently IF_P NOT EXISTS opt_index_name
 					index_method_relation_clause '(' index_params ')'
 					GLOBAL
 				{
@@ -16681,6 +17079,35 @@ IndexStmt:	CREATE opt_unique INDEX opt_concurrently opt_index_name
 					n->relation = $9->relation;
 					n->accessMethod = $9->accessMethod;
 					n->indexParams = $11;
+					n->partClause  = NULL;
+					n->isPartitioned = true;
+					n->isGlobal = true;
+					n->excludeOpNames = NIL;
+					n->idxcomment = NULL;
+					n->indexOid = InvalidOid;
+					n->oldNode = InvalidOid;
+					n->primary = false;
+					n->isconstraint = false;
+					n->deferrable = false;
+					n->initdeferred = false;
+					n->indexIncludingParams = NIL;
+					n->options = NIL;
+					n->tableSpace = NULL;
+					$$ = (Node *)n;
+				}
+				| CREATE opt_unique INDEX opt_concurrently IF_P NOT EXISTS opt_index_name
+					ON dolphin_qualified_name '(' index_params ')'
+					GLOBAL
+				{
+					IndexStmt *n = makeNode(IndexStmt);
+					n->unique = $2;
+					n->concurrent = $4;
+					n->missing_ok = true;
+					n->schemaname = $8->schemaname;
+					n->idxname = $8->relname;
+					n->relation = $10;
+					n->accessMethod = NULL;
+					n->indexParams = $12;
 					n->partClause  = NULL;
 					n->isPartitioned = true;
 					n->isGlobal = true;
@@ -16860,13 +17287,6 @@ index_method_relation_clause:
 					 IndexMethodRelationClause* result = (IndexMethodRelationClause*)palloc0(sizeof(IndexMethodRelationClause));
 					 result->relation = $2;
 					 result->accessMethod = $4;
-					 $$ = result;
-				}
-			| ON dolphin_qualified_name
-				{
-					 IndexMethodRelationClause* result = (IndexMethodRelationClause*)palloc0(sizeof(IndexMethodRelationClause));
-					 result->relation = $2;
-					 result->accessMethod = NULL;
 					 $$ = result;
 				}
 			| USING access_method ON dolphin_qualified_name
