@@ -16953,6 +16953,7 @@ IndexStmt:	CREATE opt_unique INDEX opt_concurrently opt_index_name
 						if ($12->comment != NULL) {
 							n->indexOptions = lappend(n->indexOptions, $12->comment);
 						}
+						n->indexOptions = lappend(n->indexOptions, makeString((char*)($12->visible ? "visible" : "invisible")));
 					}
 					$$ = (Node *)n;
 				}
@@ -16987,6 +16988,7 @@ IndexStmt:	CREATE opt_unique INDEX opt_concurrently opt_index_name
 						if ($13->comment != NULL) {
 							n->indexOptions = lappend(n->indexOptions, $13->comment);
 						}
+						n->indexOptions = lappend(n->indexOptions, makeString((char*)($13->visible ? "visible" : "invisible")));
 					}
 					$$ = (Node *)n;
 				}
@@ -17079,6 +17081,7 @@ IndexStmt:	CREATE opt_unique INDEX opt_concurrently opt_index_name
 						if ($11->comment != NULL) {
 							n->indexOptions = lappend(n->indexOptions, $11->comment);
 						}
+						n->indexOptions = lappend(n->indexOptions, makeString((char*)($11->visible ? "visible" : "invisible")));
 					}
 					$$ = (Node *)n;
 				}
@@ -17113,6 +17116,7 @@ IndexStmt:	CREATE opt_unique INDEX opt_concurrently opt_index_name
 						if ($12->comment != NULL) {
 							n->indexOptions = lappend(n->indexOptions, $12->comment);
 						}
+						n->indexOptions = lappend(n->indexOptions, makeString((char*)($12->visible ? "visible" : "invisible")));
 					}
 					$$ = (Node *)n;
 				}
@@ -17206,6 +17210,7 @@ IndexStmt:	CREATE opt_unique INDEX opt_concurrently opt_index_name
 					    if ($13->comment != NULL) {
 					        n->indexOptions = lappend(n->indexOptions, $13->comment);
 					    }
+					    n->indexOptions = lappend(n->indexOptions, makeString((char*)($13->visible ? "visible" : "invisible")));
 					}
 					$$ = (Node *)n;
 				}
@@ -17241,6 +17246,7 @@ IndexStmt:	CREATE opt_unique INDEX opt_concurrently opt_index_name
 					    if ($14->comment != NULL) {
 					        n->indexOptions = lappend(n->indexOptions, $14->comment);
 					    }
+					    n->indexOptions = lappend(n->indexOptions, makeString((char*)($14->visible ? "visible" : "invisible")));
 					}
 					$$ = (Node *)n;
 				}
@@ -17335,6 +17341,7 @@ IndexStmt:	CREATE opt_unique INDEX opt_concurrently opt_index_name
 					    if ($15->comment != NULL) {
 					        n->indexOptions = lappend(n->indexOptions, $15->comment);
 					    }
+					    n->indexOptions = lappend(n->indexOptions, makeString((char*)($15->visible ? "visible" : "invisible")));
 					}
 					$$ = (Node *)n;
 				}
@@ -17369,6 +17376,7 @@ IndexStmt:	CREATE opt_unique INDEX opt_concurrently opt_index_name
 					    if ($16->comment != NULL) {
 					        n->indexOptions = lappend(n->indexOptions, $16->comment);
 					    }
+					    n->indexOptions = lappend(n->indexOptions, makeString((char*)($16->visible ? "visible" : "invisible")));
 					}
 					$$ = (Node *)n;
 				}
@@ -17461,6 +17469,7 @@ IndexStmt:	CREATE opt_unique INDEX opt_concurrently opt_index_name
 					    if ($14->comment != NULL) {
 					        n->indexOptions = lappend(n->indexOptions, $14->comment);
 					    }
+					    n->indexOptions = lappend(n->indexOptions, makeString((char*)($14->visible ? "visible" : "invisible")));
 					}
 					$$ = (Node *)n;
 				}
@@ -17495,6 +17504,7 @@ IndexStmt:	CREATE opt_unique INDEX opt_concurrently opt_index_name
 					    if ($15->comment != NULL) {
 					        n->indexOptions = lappend(n->indexOptions, $15->comment);
 					    }
+					    n->indexOptions = lappend(n->indexOptions, makeString((char*)($15->visible ? "visible" : "invisible")));
 					}
 					$$ = (Node *)n;
 				}
