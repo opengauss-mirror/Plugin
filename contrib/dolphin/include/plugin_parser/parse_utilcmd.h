@@ -60,6 +60,8 @@ typedef struct {
 typedef enum TransformTableType { TRANSFORM_INVALID = 0, TRANSFORM_TO_HASHBUCKET, TRANSFORM_TO_NONHASHBUCKET} TransformTableType;
 
 extern void checkPartitionSynax(CreateStmt *stmt);
+extern Oid fill_relation_collation(const char* collate, int charset, List** options,
+    Oid nsp_coll_oid = InvalidOid);
 extern List* transformCreateStmt(CreateStmt* stmt, const char* queryString, const List* uuids,
     bool preCheck, Oid *namespaceid, bool isFirstNode = true);
 extern List* transformAlterTableStmt(Oid relid, AlterTableStmt* stmt, const char* queryString);
@@ -96,6 +98,12 @@ extern char* getTmptableIndexName(const char* srcSchema, const char* srcIndex);
 extern IndexStmt* generateClonedIndexStmt(
     CreateStmtContext* cxt, Relation source_idx, const AttrNumber* attmap, int attmap_length, Relation rel,
     TransformTableType transformType);
+extern int get_charset_by_collation(Oid colloid);
+extern Oid get_default_collation_by_charset(int charset);
+extern Oid transform_default_collation(const char* collate, int charset, Oid def_coll_oid = InvalidOid,
+    bool is_attr = false);
+#ifdef DOLPHIN
 extern char* transformIndexOptions(List* list);
+#endif
 
 #endif /* PARSE_UTILCMD_H */

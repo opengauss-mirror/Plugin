@@ -233,7 +233,7 @@ select a||b from testforint2_p3;
 select a&&b from testforint2_p4;
 select a||b from testforint2_p4;
 
-select a&&b from testforint2_p5;
+select a,b,a&&b from testforint2_p5 order by 1,2;
 select a||b from testforint2_p5;
 
 ---create view
@@ -519,7 +519,7 @@ create table testforint2_p5(a int2,b int2) partition by hash(a)(partition p1,par
 insert into testforint2_p5 values(-1,-1);
 insert into testforint2_p5 values(1,0);
 insert into testforint2_p5 values(2,123);
-select a^b from testforint2_p5;
+select a,b,a^b from testforint2_p5 order by 1,2;
 
 
 create view testforbit_v as select * from testforbit;

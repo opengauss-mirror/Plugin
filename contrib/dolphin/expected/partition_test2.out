@@ -508,46 +508,46 @@ PARTITION BY HASH(a)
     PARTITION p2
 );
 insert into test_part_hash (with RECURSIVE t_r(i,j) as(values(0,1) union all select i+1,j+2 from t_r where i < 20) select * from t_r);
-select * from test_part_hash;
+select * from test_part_hash order by 1,2;
  a  | b  
 ----+----
-  3 |  7
-  5 | 11
- 17 | 35
- 19 | 39
   0 |  1
+  1 |  3
   2 |  5
+  3 |  7
+  4 |  9
+  5 | 11
   6 | 13
   7 | 15
- 11 | 23
- 12 | 25
- 14 | 29
- 15 | 31
- 18 | 37
- 20 | 41
-  1 |  3
-  4 |  9
   8 | 17
   9 | 19
  10 | 21
+ 11 | 23
+ 12 | 25
  13 | 27
+ 14 | 29
+ 15 | 31
  16 | 33
+ 17 | 35
+ 18 | 37
+ 19 | 39
+ 20 | 41
 (21 rows)
 
 ALTER TABLE test_part_hash truncate PARTITION all;
-select * from test_part_hash;
+select * from test_part_hash order by 1,2;
  a | b 
 ---+---
 (0 rows)
 
 insert into test_part_hash values(99,1),(199,1),(299,1);
 alter table test_part_hash exchange partition p2 with table test_no_part1 without validation;
-select * from test_part_hash;
+select * from test_part_hash order by 1,2;
   a   | b 
 ------+---
- 3000 | 2
-  199 | 1
    99 | 1
+  199 | 1
+ 3000 | 2
 (3 rows)
 
 select * from test_no_part1;

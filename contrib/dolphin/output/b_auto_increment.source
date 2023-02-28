@@ -43,10 +43,19 @@ DROP TABLE test_create_autoinc;
 CREATE TABLE test_create_autoinc(
     a int AUTO_INCREMENT UNIQUE KEY,
     b varchar(32)
-); -- ERROR
-ERROR:  syntax error at or near "KEY"
-LINE 2:     a int AUTO_INCREMENT UNIQUE KEY,
-                                        ^
+);
+NOTICE:  CREATE TABLE will create implicit sequence "test_create_autoinc_a_seq" for serial column "test_create_autoinc.a"
+NOTICE:  CREATE TABLE / UNIQUE will create implicit index "test_create_autoinc_a_key" for table "test_create_autoinc"
+\d test_create_autoinc;
+            Table "public.test_create_autoinc"
+ Column |         Type          |        Modifiers        
+--------+-----------------------+-------------------------
+ a      | integer               | not null AUTO_INCREMENT
+ b      | character varying(32) | 
+Indexes:
+    "test_create_autoinc_a_key" UNIQUE CONSTRAINT, btree (a) TABLESPACE pg_default
+
+DROP TABLE test_create_autoinc;
 CREATE TABLE test_create_autoinc(
     a int AUTO_INCREMENT UNIQUE,
     b varchar(32)
@@ -164,9 +173,8 @@ CREATE TABLE test_alter_autoinc(
     KEY (b,a)
 );
 ALTER TABLE test_alter_autoinc MODIFY a int AUTO_INCREMENT; -- ERROR
-ERROR:  syntax error at or near "AUTO_INCREMENT"
-LINE 1: ALTER TABLE test_alter_autoinc MODIFY a int AUTO_INCREMENT;
-                                                    ^
+NOTICE:  ALTER TABLE will create implicit sequence "test_alter_autoinc_a_seq" for serial column "test_alter_autoinc.a"
+ERROR:  auto_increment column must be defined as a unique or primary key
 DROP TABLE test_alter_autoinc;
 CREATE TABLE test_alter_autoinc(
     a int,
@@ -174,9 +182,7 @@ CREATE TABLE test_alter_autoinc(
     KEY (a,b)
 );
 ALTER TABLE test_alter_autoinc MODIFY a int AUTO_INCREMENT; -- ERROR
-ERROR:  syntax error at or near "AUTO_INCREMENT"
-LINE 1: ALTER TABLE test_alter_autoinc MODIFY a int AUTO_INCREMENT;
-                                                    ^
+NOTICE:  ALTER TABLE will create implicit sequence "test_alter_autoinc_a_seq" for serial column "test_alter_autoinc.a"
 DROP TABLE test_alter_autoinc;
 -- test alter table add column, add/drop index
 CREATE TABLE test_alter_autoinc(
@@ -185,7 +191,7 @@ CREATE TABLE test_alter_autoinc(
 );
 ALTER TABLE test_alter_autoinc ADD COLUMN seq int AUTO_INCREMENT, ADD INDEX test_alter_autoinc_idx (a,seq); -- ERROR
 NOTICE:  ALTER TABLE will create implicit sequence "test_alter_autoinc_seq_seq" for serial column "test_alter_autoinc.seq"
-ERROR:  Incorrect table definition, auto_increment column must be defined as a key
+ERROR:  auto_increment column must be defined as a unique or primary key
 ALTER TABLE test_alter_autoinc ADD COLUMN seq int AUTO_INCREMENT, ADD INDEX test_alter_autoinc_idx ((seq + 1), seq), ADD INDEX test_alter_autoinc_idx1 (seq,a);
 NOTICE:  ALTER TABLE will create implicit sequence "test_alter_autoinc_seq_seq" for serial column "test_alter_autoinc.seq"
 SELECT pg_get_tabledef('test_alter_autoinc'::regclass);
@@ -203,7 +209,7 @@ SELECT pg_get_tabledef('test_alter_autoinc'::regclass);
 (1 row)
 
 ALTER TABLE test_alter_autoinc DROP INDEX test_alter_autoinc_idx1, ADD INDEX test_alter_autoinc_idx2 (seq,b); -- ERROR
-ERROR:  Incorrect table definition, auto_increment column must be defined as a key
+ERROR:  auto_increment column must be defined as a unique or primary key
 ALTER TABLE test_alter_autoinc ADD INDEX test_alter_autoinc_idx2 (seq,b);
 SELECT pg_get_tabledef('test_alter_autoinc'::regclass);
                                                  pg_get_tabledef                                                 
@@ -241,7 +247,7 @@ ALTER TABLE test_alter_autoinc DROP CONSTRAINT test_alter_autoinc_uk, ADD CONSTR
 NOTICE:  ALTER TABLE / ADD PRIMARY KEY will create implicit index "test_alter_autoinc_pk" for table "test_alter_autoinc"
 ALTER TABLE test_alter_autoinc DROP INDEX test_alter_autoinc_idx1;
 ALTER TABLE test_alter_autoinc DROP CONSTRAINT test_alter_autoinc_pk; -- ERROR
-ERROR:  Incorrect table definition, auto_increment column must be defined as a key
+ERROR:  auto_increment column must be defined as a unique or primary key
 CREATE INDEX test_alter_autoinc_idx1 ON test_alter_autoinc(seq,a);
 ALTER TABLE test_alter_autoinc DROP CONSTRAINT test_alter_autoinc_pk;
 SELECT pg_get_tabledef('test_alter_autoinc'::regclass);
@@ -259,7 +265,7 @@ SELECT pg_get_tabledef('test_alter_autoinc'::regclass);
 (1 row)
 
 DROP INDEX test_alter_autoinc_idx1; -- ERROR
-ERROR:  Incorrect table definition, auto_increment column must be defined as a key
+ERROR:  auto_increment column must be defined as a unique or primary key
 DROP TABLE test_alter_autoinc;
 -- auto_increment in table with single column NULL index
 CREATE TABLE single_autoinc_idx(
@@ -277,7 +283,7 @@ SELECT LAST_INSERT_ID();
 SELECT col FROM single_autoinc_idx ORDER BY 1;
  col 
 -----
-    
+  10
 (1 row)
 
 INSERT INTO single_autoinc_idx VALUES(1 - 1);
@@ -290,17 +296,17 @@ SELECT LAST_INSERT_ID();
 SELECT col FROM single_autoinc_idx ORDER BY 1;
  col 
 -----
+  10
   11
-    
 (2 rows)
 
 INSERT INTO single_autoinc_idx VALUES(100);
 SELECT col FROM single_autoinc_idx ORDER BY 1;
  col 
 -----
+  10
   11
  100
-    
 (3 rows)
 
 INSERT INTO single_autoinc_idx VALUES(DEFAULT);
@@ -313,10 +319,10 @@ SELECT LAST_INSERT_ID();
 SELECT col FROM single_autoinc_idx ORDER BY 1;
  col 
 -----
+  10
   11
  100
-    
-    
+ 101
 (4 rows)
 
 ALTER TABLE single_autoinc_idx AUTO_INCREMENT = 1000;
@@ -330,22 +336,24 @@ SELECT LAST_INSERT_ID();
 SELECT col FROM single_autoinc_idx ORDER BY 1;
  col  
 ------
+   10
    11
   100
+  101
  1000
-     
-     
 (5 rows)
 
 UPDATE single_autoinc_idx SET col=NULL WHERE col=11;
+ERROR:  null value in column "col" violates not-null constraint
+DETAIL:  Failing row contains (null).
 SELECT col FROM single_autoinc_idx ORDER BY 1;
  col  
 ------
+   10
+   11
   100
+  101
  1000
-     
-     
-     
 (5 rows)
 
 UPDATE single_autoinc_idx SET col=0 WHERE col=100;
@@ -353,10 +361,10 @@ SELECT col FROM single_autoinc_idx ORDER BY 1;
  col  
 ------
     0
+   10
+   11
+  101
  1000
-     
-     
-     
 (5 rows)
 
 UPDATE single_autoinc_idx SET col=DEFAULT WHERE col=1000;
@@ -364,10 +372,10 @@ SELECT col FROM single_autoinc_idx ORDER BY 1;
  col 
 -----
    0
-    
-    
-    
-    
+   0
+  10
+  11
+ 101
 (5 rows)
 
 UPDATE single_autoinc_idx SET col=3000 WHERE col=0;
@@ -381,12 +389,12 @@ SELECT LAST_INSERT_ID();
 SELECT col FROM single_autoinc_idx ORDER BY 1;
  col  
 ------
+   10
+   11
+  101
+ 3000
  3000
  3001
-     
-     
-     
-     
 (6 rows)
 
 INSERT INTO single_autoinc_idx VALUES(3000);
@@ -394,14 +402,14 @@ INSERT INTO single_autoinc_idx VALUES(0);
 SELECT col FROM single_autoinc_idx ORDER BY 1;
  col  
 ------
+   10
+   11
+  101
+ 3000
  3000
  3000
  3001
  3002
-     
-     
-     
-     
 (8 rows)
 
 DROP TABLE single_autoinc_idx;
@@ -415,7 +423,6 @@ CREATE TABLE test_create_autoinc(
     KEY "INDEX_WX_ACTIVITY_EXCCODE_AT" ("ACTIVITY_TYPE"),
     KEY "INDEX_WX_ACTIVITY_EXCCODE_SEQ" ("SEQ")
 ) ENGINE=InnoDB AUTO_INCREMENT=600001 DEFAULT CHARSET=utf8;
-WARNING:  CHARACTER SET for TABLE is not supported for current version. skipped
 NOTICE:  CREATE TABLE will create implicit sequence "test_create_autoinc_SEQ_seq" for serial column "test_create_autoinc.SEQ"
 NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "test_create_autoinc_pkey" for table "test_create_autoinc"
 CREATE INDEX "INDEX_WX_ACTIVITY_EXCCODE_SEQ_AT" ON test_create_autoinc ("SEQ", "ACTIVITY_TYPE", ("SEQ"+1));
@@ -433,10 +440,11 @@ SELECT pg_get_tabledef('test_create_autoinc'::regclass);
  CREATE TABLE test_create_autoinc (                                                                                     +
      "ID" bigint NOT NULL,                                                                                              +
      "SEQ" bigint AUTO_INCREMENT NOT NULL,                                                                              +
-     "CODE" character varying(100) NOT NULL,                                                                            +
-     "ACTIVITY_TYPE" character varying(50) NOT NULL,                                                                    +
+     "CODE" character varying(100) CHARACTER SET "UTF8" COLLATE utf8mb4_general_ci NOT NULL,                            +
+     "ACTIVITY_TYPE" character varying(50) CHARACTER SET "UTF8" COLLATE utf8mb4_general_ci NOT NULL,                    +
      INDEX "INDEX_WX_ACTIVITY_EXCCODE_SEQ_AT" USING btree ("SEQ", "ACTIVITY_TYPE", (("SEQ" + 1)))                       +
  ) AUTO_INCREMENT = 600002                                                                                              +
+ CHARACTER SET = "UTF8" COLLATE = "utf8mb4_general_ci"                                                                  +
  WITH (orientation=row, compression=no);                                                                                +
  COMMENT ON COLUMN test_create_autoinc."ID" IS '主键id';                                                                +
  COMMENT ON COLUMN test_create_autoinc."SEQ" IS '序号';                                                                 +
@@ -482,13 +490,13 @@ SELECT * FROM test_create_autoinc;
 (1 row)
 
 \d test_create_autoinc;
-                Table "public.test_create_autoinc"
-    Column     |          Type          |        Modifiers        
----------------+------------------------+-------------------------
+                      Table "public.test_create_autoinc"
+    Column     |          Type          |              Modifiers              
+---------------+------------------------+-------------------------------------
  ID            | bigint                 | not null
  SEQ           | bigint                 | not null AUTO_INCREMENT
- CODE          | character varying(100) | not null
- ACTIVITY_TYPE | character varying(50)  | not null
+ CODE          | character varying(100) | collate utf8mb4_general_ci not null
+ ACTIVITY_TYPE | character varying(50)  | collate utf8mb4_general_ci not null
 Indexes:
     "test_create_autoinc_pkey" PRIMARY KEY, btree ("ID") TABLESPACE pg_default
     "INDEX_WX_ACTIVITY_EXCCODE_AT" btree ("ACTIVITY_TYPE") TABLESPACE pg_default
@@ -502,10 +510,11 @@ SELECT pg_get_tabledef('test_create_autoinc'::regclass);
  CREATE TABLE test_create_autoinc (                                                                                     +
      "ID" bigint NOT NULL,                                                                                              +
      "SEQ" bigint AUTO_INCREMENT NOT NULL,                                                                              +
-     "CODE" character varying(100) NOT NULL,                                                                            +
-     "ACTIVITY_TYPE" character varying(50) NOT NULL,                                                                    +
+     "CODE" character varying(100) CHARACTER SET "UTF8" COLLATE utf8mb4_general_ci NOT NULL,                            +
+     "ACTIVITY_TYPE" character varying(50) CHARACTER SET "UTF8" COLLATE utf8mb4_general_ci NOT NULL,                    +
      INDEX "INDEX_WX_ACTIVITY_EXCCODE_SEQ_AT" USING btree ("SEQ", "ACTIVITY_TYPE", (("SEQ" + 1)))                       +
  ) AUTO_INCREMENT = 600002                                                                                              +
+ CHARACTER SET = "UTF8" COLLATE = "utf8mb4_general_ci"                                                                  +
  WITH (orientation=row, compression=no);                                                                                +
  COMMENT ON COLUMN test_create_autoinc."ID" IS '主键id';                                                                +
  COMMENT ON COLUMN test_create_autoinc."SEQ" IS '序号';                                                                 +

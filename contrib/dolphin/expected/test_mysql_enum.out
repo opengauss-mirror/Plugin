@@ -475,7 +475,7 @@ reset current_schema;
 create schema db_b_new_gram_test3;
 set current_schema to 'db_b_new_gram_test3';
 create table t_charset_enum_column(c enum('a', 'b', 'c') charset test_character_set);
-WARNING:  character set "test_character_set" for type ENUM is not supported yet. default value set
+WARNING:  test_character_set is not a valid encoding name. default value set
 drop table t_charset_enum_column;
 create table t_enum_column_drop(c1 int, c2 enum('a', 'b'));
 alter table t_enum_column_drop drop c2;

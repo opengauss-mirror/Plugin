@@ -303,6 +303,7 @@ DROP TABLE t_quote_test;
 CREATE TABLE t_quote_test(c text CHARSET 'test_charset' COLLATE 'test_collate');
 DROP TABLE t_quote_test;
 CREATE TABLE t_quote_test(c text CHARSET "test_charset" COLLATE "test_collate");
+CREATE TABLE t_quote_test(c text CHARSET "default" COLLATE "default");
 ALTER TABLE t_quote_test ROW_FORMAT = 'COMPACT', COLLATE = 'test_collate', CHARACTER SET 'test_charset';
 ALTER TABLE t_quote_test ROW_FORMAT = "COMPACT", COLLATE = "test_collate", CHARACTER SET "test_charset";
 -- test for integrity of function text

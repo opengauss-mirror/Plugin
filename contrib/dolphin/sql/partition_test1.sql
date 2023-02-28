@@ -169,15 +169,15 @@ PARTITION BY HASH(a)
 );
 insert into test_part_hash (with RECURSIVE t_r(i,j,k,m) as(values(0,1,2,3) union all select i+1,j+2,k+3,m+4 from t_r where i < 2500) select * from t_r);
 explain select * from test_part_hash where ((980 < c and c < 1000) or (2180 < c and c < 2200));
-select * from test_part_hash where ((980 < c and c < 1000) or (2180 < c and c < 2200));
+select * from test_part_hash where ((980 < c and c < 1000) or (2180 < c and c < 2200)) order by 1,2,3,4;
 select relname, parttype from pg_partition where (parentid in (select oid from pg_class where relname = 'test_part_hash')) and oid != relfilenode order by relname;
 ALTER TABLE test_part_hash REBUILD PARTITION p0, p1;
 explain select * from test_part_hash where ((980 < c and c < 1000) or (2180 < c and c < 2200));
-select * from test_part_hash where ((980 < c and c < 1000) or (2180 < c and c < 2200));
+select * from test_part_hash where ((980 < c and c < 1000) or (2180 < c and c < 2200)) order by 1,2,3,4;
 select relname, parttype from pg_partition where (parentid in (select oid from pg_class where relname = 'test_part_hash')) and oid != relfilenode order by relname;
 ALTER TABLE test_part_hash REBUILD PARTITION all;
 explain select * from test_part_hash where ((980 < c and c < 1000) or (2180 < c and c < 2200));
-select * from test_part_hash where ((980 < c and c < 1000) or (2180 < c and c < 2200));
+select * from test_part_hash where ((980 < c and c < 1000) or (2180 < c and c < 2200)) order by 1,2,3,4;
 select relname, parttype from pg_partition where (parentid in (select oid from pg_class where relname = 'test_part_hash')) and oid != relfilenode order by relname;
 
 

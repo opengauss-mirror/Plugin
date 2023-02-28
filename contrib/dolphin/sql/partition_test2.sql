@@ -195,12 +195,12 @@ PARTITION BY HASH(a)
     PARTITION p2
 );
 insert into test_part_hash (with RECURSIVE t_r(i,j) as(values(0,1) union all select i+1,j+2 from t_r where i < 20) select * from t_r);
-select * from test_part_hash;
+select * from test_part_hash order by 1,2;
 ALTER TABLE test_part_hash truncate PARTITION all;
-select * from test_part_hash;
+select * from test_part_hash order by 1,2;
 insert into test_part_hash values(99,1),(199,1),(299,1);
 alter table test_part_hash exchange partition p2 with table test_no_part1 without validation;
-select * from test_part_hash;
+select * from test_part_hash order by 1,2;
 select * from test_no_part1;
 alter table test_part_hash analyze partition p0,p1;
 alter table test_part_hash analyze partition all;

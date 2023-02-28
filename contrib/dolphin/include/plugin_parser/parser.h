@@ -47,7 +47,7 @@ extern char** get_next_snippet(
     char** query_string_single, const char* query_string, List* query_string_locationlist, int* stmt_num);
 
 extern void fixResTargetNameWithAlias(List* clause_list, const char* aliasname);
-
+#ifdef DOLPHIN
 SelectStmt *checkTableExistence(RangeVar *classrel);
 SelectStmt* makeShowProcesslistQuery(bool isFull);
 SelectStmt* makeShowColumnsDirectQuery(char* schemaname, char* tablename,
@@ -62,12 +62,11 @@ SelectStmt* makeShowPrivilegesQuery(void);
 SelectStmt* makeShowDatabasesQuery(Node* likeNode, Node* whereExpr);
 SelectStmt* makeShowMasterStatusQuery(void);
 SelectStmt* makeShowSlaveHostsQuery(void);
-#ifdef DOLPHIN
+
 SelectStmt *MakeShowTriggersQuery(List *args, Node *likeWhereOpt, bool isLikeExpr);
 SelectStmt *MakeShowFuncProQuery(List *args, Node *likeWhereOpt, bool isLikeExpr);
 SelectStmt *MakeShowCharacterQuery(List *args, Node *likeWhereOpt, bool isLikeExpr);
 SelectStmt *MakeShowCollationQuery(List *args, Node *likeWhereOpt, bool isLikeExpr);
-#endif
 
 SelectStmt* makeShowIndexQuery(char *schemaName, char *tableName, Node *whereClause);
 SelectStmt *makeShowVariablesQuery(bool globalMode, Node *likeWhereOpt, bool isLikeExpr);
@@ -77,5 +76,6 @@ SelectStmt *findCreateTrigger(RangeVar *trel);
 
 SelectStmt* makeShowTableStatusQuery(char* schemaName, Node* likeWhereOpt, bool isLikeExpr);
 SelectStmt* makeFlushBinaryLogsQuery(void);
+#endif
 
 #endif /* PARSER_H */

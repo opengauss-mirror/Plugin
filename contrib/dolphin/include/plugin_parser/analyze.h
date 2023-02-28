@@ -33,6 +33,8 @@ extern Query* parse_analyze_varparams(Node* parseTree, const char* sourceText, O
 
 extern Query* parse_sub_analyze(Node* parseTree, ParseState* parentParseState, CommonTableExpr* parentCTE,
     bool locked_from_parent, bool resolve_unknowns);
+extern Node* parse_into_claues(Node* parse_tree, IntoClause* intoClause);
+
 #ifdef DOLPHIN
 extern void AppendValueForColOfNotnull(ParseState* pstate, List* exprlist, List* icolumns, List* attrnos);
 extern void CheckDefaultForNotnullCols(List* exprlist);
@@ -84,6 +86,8 @@ typedef struct AnalyzerRoutine {
     transformSelectStmtHook transSelect;
 } AnalyzerRoutine;
 
+typedef Query* (*transformStmtFunc)(ParseState* pstate, Node* parseTree, bool isFirstNode, bool isCreateView);
+
 extern void transformOperatorPlus(ParseState* pstate, Node** whereClause);
 extern bool IsColumnRefPlusOuterJoin(const ColumnRef* cf);
 extern PlusJoinRTEItem* makePlusJoinRTEItem(RangeTblEntry* rte, bool hasplus);
@@ -92,6 +96,7 @@ extern void resetOperatorPlusFlag();
 
 extern void fixResTargetNameWithTableNameRef(Relation rd, RangeVar* rel, ResTarget* res);
 extern void fixResTargetListWithTableNameRef(Relation rd, RangeVar* rel, List* clause_list);
+extern void UpdateParseCheck(ParseState *pstate, Node *qry);
 #endif /* !FRONTEND_PARSER */
 
 extern bool getOperatorPlusFlag();

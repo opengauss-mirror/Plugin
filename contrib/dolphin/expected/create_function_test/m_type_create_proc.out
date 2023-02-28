@@ -229,7 +229,6 @@ id int(11) unsigned not null auto_increment,
 sname varchar(255) not null,
   primary key (id)
 )engine=innodb default charset=utf8;
-WARNING:  CHARACTER SET for TABLE is not supported for current version. skipped
 NOTICE:  CREATE TABLE will create implicit sequence "test9_id_seq" for serial column "test9.id"
 NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "test9_pkey" for table "test9"
 drop procedure if exists test_proc;

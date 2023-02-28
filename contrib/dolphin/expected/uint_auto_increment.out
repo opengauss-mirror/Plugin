@@ -7,9 +7,9 @@ ERROR:  syntax error at or near "key"
 LINE 1: ...create_autoinc_err(id int unsigned auto_increment key, name ...
                                                              ^
 CREATE TABLE test_create_autoinc_err(id int unsigned auto_increment unique key, name varchar(200),a int unsigned);
-ERROR:  syntax error at or near "key"
-LINE 1: ...autoinc_err(id int unsigned auto_increment unique key, name ...
-                                                             ^
+NOTICE:  CREATE TABLE will create implicit sequence "test_create_autoinc_err_id_seq" for serial column "test_create_autoinc_err.id"
+NOTICE:  CREATE TABLE / UNIQUE will create implicit index "test_create_autoinc_err_id_key" for table "test_create_autoinc_err"
+drop table test_create_autoinc_err;
 -- constraint error
 CREATE TABLE test_create_autoinc_err(id int unsigned auto_increment, name varchar(200),a int unsigned, primary key(name, id));
 NOTICE:  CREATE TABLE will create implicit sequence "test_create_autoinc_err_id_seq" for serial column "test_create_autoinc_err.id"

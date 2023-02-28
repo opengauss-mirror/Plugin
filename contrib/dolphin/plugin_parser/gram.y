@@ -218,6 +218,8 @@ typedef struct CreateTableOptions {
   char relkind;       /* type of object */
   Node *autoIncStart; /* DefElem for AUTO_INCREMENT = value*/
   CommentStmt *comment;
+  int charset;
+  char *collate;
   bool autoextend_size_option;
   bool avg_row_length_option;
   bool checksum_option;
@@ -255,8 +257,8 @@ typedef enum {
     OPT_TABLESPACE,
     OPT_ENGINE,
     OPT_PARTITIONELEMENT,
-    OPT_COLLATE,
-    OPT_CHARSET,
+    OPT_DOLPHIN_COLLATE,
+    OPT_DOLPHIN_CHARSET,
     OPT_ROW_FORMAT,
     OPT_AUTO_INC,
     OPT_COMMENT_TAB,
@@ -299,6 +301,8 @@ typedef struct SingleTableOption {
 #endif
         Node *autoIncStart;
         CommentStmt *comment;
+        int charset;
+        char* collate;
     } option;
 }SingleTableOption;
 
@@ -414,6 +418,7 @@ static void SplitColQualList(List *qualList,
 static void processCASbits(int cas_bits, int location, const char *constrType,
 			   bool *deferrable, bool *initdeferred, bool *not_valid,
 			   bool *no_inherit, core_yyscan_t yyscanner);
+static Node *processIntoClauseInSelectStmt(SelectStmt *stmt, IntoClause *itc);
 static char* GetPkgName(char* pkgName);
 static Expr *makeNodeDecodeCondtion(Expr* firstCond,Expr* secondCond);
 static List *make_action_func(List *arguments);
@@ -421,6 +426,7 @@ static List *get_func_args(char *sid);
 static char *pg_strsep(char **stringp, const char *delim);
 static long long get_pid(const char *strsid);
 static Node *MakeAnonyBlockFuncStmt(int flag, const char * str);
+static CharsetCollateOptions* MakeCharsetCollateOptions(CharsetCollateOptions *options, CharsetCollateOptions *option);
 static CreateTableOptions* MakeCreateTableOptions(CreateTableOptions *tableOptions, SingleTableOption *tableOption);
 static CreateIndexOptions* MakeCreateIndexOptions(CreateIndexOptions *indexOptions, SingleIndexOption *indexOption);
 static SingleTableOption* CreateSingleTableOption(TableOptionType tableOptionType);
@@ -566,6 +572,7 @@ static char* appendString(char* source, char* target, int offset);
 	UpsertClause *upsert;
 	EncryptionType algtype;
 	LockClauseStrength lockstrength;
+	CharsetCollateOptions *charsetcollateopt;
 	struct CreateTableOptions	*createtableoptions;
 	struct SingleTableOption	*singletableoption;
 	struct CreateIndexOptions	*createindexoptions;
@@ -580,7 +587,7 @@ static char* appendString(char* source, char* target, int offset);
 %type <createindexoptions> TableIndexOptionList PartitionTableIndexOptionList
 %type <indexmethodrelationclause> index_method_relation_clause
 %type <node>	stmt schema_stmt
-		AlterDatabaseStmt AlterDatabaseSetStmt AlterDataSourceStmt AlterDomainStmt AlterEnumStmt
+		AlterDatabaseStmt AlterDatabaseSetStmt AlterDataSourceStmt AlterDomainStmt AlterEnumStmt AlterEventStmt
 		AlterFdwStmt AlterForeignServerStmt AlterGroupStmt AlterSchemaStmt
 		AlterObjectSchemaStmt AlterOwnerStmt AlterSeqStmt AlterTableStmt
 		AlterExtensionStmt AlterExtensionContentsStmt AlterForeignTableStmt
@@ -598,13 +605,13 @@ static char* appendString(char* source, char* target, int offset);
 		CreateAssertStmt CreateTrigStmt
 		CreateUserStmt CreateUserMappingStmt CreateRoleStmt CreateRlsPolicyStmt CreateSynonymStmt
 		CreatedbStmt DeclareCursorStmt DefineStmt DeleteStmt DiscardStmt DoStmt
-		DropGroupStmt DropOpClassStmt DropOpFamilyStmt DropPLangStmt DropStmt
+		DropGroupStmt DropOpClassStmt DropOpFamilyStmt DropPLangStmt DropStmt DropEventStmt ShowEventStmt
 		DropAssertStmt DropSynonymStmt DropTrigStmt DropRuleStmt DropCastStmt DropRoleStmt DropRlsPolicyStmt
 		DropUserStmt DropdbStmt DropTableSpaceStmt DropDataSourceStmt DropDirectoryStmt DropFdwStmt
 		DropForeignServerStmt DropUserMappingStmt ExplainStmt ExecDirectStmt FetchStmt
 		GrantStmt GrantRoleStmt GrantDbStmt IndexStmt InsertStmt KillStmt ListenStmt LoadStmt
 		LockStmt NotifyStmt ExplainableStmt PreparableStmt
-		CreateFunctionStmt CreateProcedureStmt CreatePackageStmt CreatePackageBodyStmt AlterFunctionStmt AlterProcedureStmt ReindexStmt RemoveAggrStmt
+		CreateFunctionStmt CreateEventStmt CreateProcedureStmt CreatePackageStmt CreatePackageBodyStmt AlterFunctionStmt AlterProcedureStmt ReindexStmt RemoveAggrStmt
 		RemoveFuncStmt RemoveOperStmt RemovePackageStmt RenameStmt RevokeStmt RevokeRoleStmt RevokeDbStmt
 		RuleActionStmt RuleActionStmtOrEmpty RuleStmt
 		SecLabelStmt SelectStmt SelectStmtWithoutWithClause TimeCapsuleStmt TransactionStmt TruncateStmt CallFuncStmt
@@ -654,8 +661,8 @@ static char* appendString(char* source, char* target, int offset);
 %type <str>	unique_name
 
 %type <node>	alter_table_cmd alter_partition_cmd alter_type_cmd opt_collate_clause exchange_partition_cmd move_partition_cmd
-				modify_column_cmd
-				replica_identity
+				modify_column_cmd reset_partition_cmd
+				replica_identity add_column_first_after event_from_clause 
 %type <list>	alter_table_cmds alter_partition_cmds alter_table_or_partition alter_index_or_partition alter_type_cmds add_column_cmds modify_column_cmds alter_index_rebuild_partition
 
 %type <node>	AlterPartitionRebuildStmt AlterPartitionRemoveStmt AlterPartitionCheckStmt AlterPartitionRepairStmt AlterPartitionOptimizeStmt
@@ -675,11 +682,13 @@ static char* appendString(char* source, char* target, int offset);
 %type <list>	createdb_opt_list alterdb_opt_list copy_opt_list
 				transaction_mode_list weak_password_string_list
 				create_extension_opt_list alter_extension_opt_list
-				pgxcnode_list pgxcnodes bucket_maps bucket_list
-				opt_pgxcnodes
-%type <defelt>	createdb_opt_item alterdb_opt_item copy_opt_item
-				transaction_mode_item
+				pgxcnode_list pgxcnodes bucket_maps bucket_list lines_options_fin
+				opt_pgxcnodes fields_options_list fields_options_fin lines_options_list
+%type <defelt>	createdb_opt_item alterdb_opt_item copy_opt_item characterset_option
+				transaction_mode_item lines_option_item fields_options_item
 				create_extension_opt_item alter_extension_opt_item
+				start_opt preserve_opt rename_opt status_opt comments_opt action_opt
+				end_opt definer_name_opt
 
 %type <list>	opt_fields_options fields_list opt_lines_options lines_list expr_do_list
 %type <defelt>	opt_ignore_number opt_character fields_option lines_option conflict_option opt_do_language
@@ -709,7 +718,7 @@ static char* appendString(char* source, char* target, int offset);
 %type <value>	TriggerFuncArg
 %type <node>	TriggerWhen
 
-%type <str>		copy_file_name
+%type <str>		copy_file_name definer_opt user ev_body ev_where_body event_where_clause
 				database_name access_method_clause access_method access_method_clause_without_keyword attr_name
 				name namedata_string fdwName cursor_name file_name
 				index_name cluster_index_specification dolphin_index_name
@@ -717,7 +726,7 @@ static char* appendString(char* source, char* target, int offset);
 				application_name password_string hint_string
 %type <list>	func_name func_name_opt_arg pkg_name  handler_name qual_Op qual_all_Op subquery_Op dolphin_func_name
 				opt_class opt_inline_handler opt_validator validator_clause
-				opt_collate collate_option
+				opt_collation collate_option
 
 %type <range>	qualified_name insert_target OptConstrFromTable opt_index_name insert_partition_clause update_delete_partition_clause dolphin_qualified_name
 
@@ -761,7 +770,7 @@ static char* appendString(char* source, char* target, int offset);
 				opt_include_without_empty opt_c_include index_including_params
 				sort_clause opt_sort_clause sortby_list index_params table_index_elems constraint_params
 				name_list from_clause from_list opt_array_bounds dolphin_name_list
-				qualified_name_list any_name any_name_or_sconst any_name_list dolphin_qualified_name_list dolphin_any_name dolphin_any_name_list
+				qualified_name_list any_name collate_name any_name_or_sconst any_name_list dolphin_qualified_name_list dolphin_any_name dolphin_any_name_list
 				any_operator expr_list attrs callfunc_args callfunc_args_or_empty dolphin_attrs rename_user_clause rename_list
 				target_list insert_column_list set_target_list rename_clause_list rename_clause
 				set_clause_list set_clause multiple_set_clause
@@ -827,7 +836,7 @@ static char* appendString(char* source, char* target, int offset);
 %type <boolean> opt_instead opt_incremental
 %type <boolean> opt_unique opt_concurrently opt_verbose opt_full opt_deltamerge opt_compact opt_hdfsdirectory opt_verify opt_global OptQuickExt
 %type <boolean> opt_freeze opt_default opt_recheck opt_cascade
-%type <defelt>	opt_binary opt_oids copy_delimiter opt_noescaping
+%type <defelt>	opt_oids copy_delimiter opt_noescaping
 %type <defelt>	OptCopyLogError OptCopyRejectLimit opt_load
 
 %type <boolean> opt_processed
@@ -886,7 +895,7 @@ static char* appendString(char* source, char* target, int offset);
 %type <range>	relation_expr
 %type <range>	relation_expr_opt_alias delete_relation_expr_opt_alias
 %type <target>	target_el single_set_clause set_target insert_column_item connect_by_root_expr
-%type <node>	tablesample_clause timecapsule_clause opt_timecapsule_clause opt_repeatable_clause
+%type <node>	tablesample_clause timecapsule_clause opt_timecapsule_clause opt_repeatable_clause end_expr start_expr
 
 %type <str>		generic_option_name
 %type <node>	generic_option_arg
@@ -912,15 +921,20 @@ static char* appendString(char* source, char* target, int offset);
 %type <str>		character
 %type <str>		extract_arg msq_extract_arg
 %type <str>		timestamp_units
-%type <str>		opt_charset charset_option
 %type <str>		selected_timezone
+
+%type <keyword> character_set
+%type <ival>	charset opt_charset convert_charset default_charset
+%type <str>		collate opt_collate default_collate
+%type <charsetcollateopt> CharsetCollate charset_collate optCharsetCollate
+
 %type <boolean> opt_varying opt_timezone opt_no_inherit
 
-%type <ival>	Iconst SignedIconst
+%type <ival>	Iconst SignedIconst opt_partitions_num opt_subpartitions_num
 %type <str>		Sconst comment_text notify_payload
 %type <str>		RoleId RoleIdWithOutCurrentUser TypeOwner opt_granted_by opt_boolean_or_string ColId_or_Sconst Dolphin_ColId_or_Sconst definer_user definer_expression
 %type <list>	var_list guc_value_extension_list
-%type <str>		ColId ColLabel var_name type_function_name param_name user opt_password opt_replace show_index_schema_opt ColIdForTableElement PrivilegeColId
+%type <str>		ColId ColLabel var_name type_function_name param_name charset_collate_name opt_password opt_replace show_index_schema_opt ColIdForTableElement PrivilegeColId
 %type <node>	var_value zone_value
 %type <dolphinString>	DolphinColId DolphinColLabel dolphin_indirection_el
 
@@ -929,7 +943,7 @@ static char* appendString(char* source, char* target, int offset);
 
 %type <node>	TableConstraint TableIndexClause TableLikeClause ForeignTableLikeClause
 %type <ival>	excluding_option_list TableLikeOptionList TableLikeIncludingOption TableLikeExcludingOption
-%type <list>	ColQualList WithOptions
+%type <list>	ColQualList
 %type <node>	ColConstraint ColConstraintElem ConstraintAttr InformationalConstraintElem
 %type <ival>	key_actions key_delete key_match key_update key_action
 %type <ival>	ConstraintAttributeSpec ConstraintAttributeElem
@@ -951,7 +965,7 @@ static char* appendString(char* source, char* target, int offset);
 %type <ival>	document_or_content
 %type <boolean> xml_whitespace_option
 
-%type <node>	func_application func_with_separator func_expr_common_subexpr index_functional_expr_key func_application_special
+%type <node>	func_application func_with_separator func_expr_common_subexpr index_functional_expr_key func_application_special functime_app
 %type <node>	func_expr func_expr_windowless
 %type <node>	common_table_expr
 %type <with>	with_clause opt_with_clause
@@ -963,9 +977,9 @@ static char* appendString(char* source, char* target, int offset);
 %type <list>	window_clause window_definition_list opt_partition_clause
 %type <windef>	window_definition over_clause window_specification
 				opt_frame_clause frame_extent frame_bound
-%type <str>		opt_existing_window_name
+%type <str>		opt_existing_window_name opt_unique_key
 %type <boolean>	opt_if_not_exists
-%type <chr>		OptCompress OptCompress_without_empty
+%type <chr>		OptCompress OptCompress_without_empty generated_column_option
 %type <ival>	KVType
 %type <ival>		ColCmprsMode
 %type <fun_src>		subprogram_body b_proc_body triggerbody_subprogram_or_single dolphin_flow_control flow_control_func_body
@@ -979,11 +993,12 @@ static char* appendString(char* source, char* target, int offset);
 				subpartitioning_clause range_subpartitioning_clause hash_subpartitioning_clause
 				list_subpartitioning_clause subpartition_item opt_subpartition_index_def
                 range_subpartition_index_list range_subpartition_index_item
-%type <list>	range_partition_definition_list list_partition_definition_list hash_partition_definition_list maxValueList maxValueList_with_opt_parens
-			column_item_list tablespaceList opt_interval_tablespaceList
+%type <list>	range_partition_definition_list list_partition_definition_list hash_partition_definition_list maxValueList maxValueList_with_opt_parens listValueList
+			column_item_list tablespaceList opt_interval_tablespaceList opt_hash_partition_definition_list
 			split_dest_partition_define_list split_dest_listsubpartition_define_list split_dest_rangesubpartition_define_list
 			range_start_end_list range_less_than_list opt_range_every_list subpartition_definition_list
 %type <range> partition_name
+%type <str>	opt_columns
 
 %type <ival> opt_row_movement_clause
 /* PGXC_BEGIN */
@@ -993,7 +1008,8 @@ static char* appendString(char* source, char* target, int offset);
 %type <list>	range_slice_definition_list range_slice_less_than_list range_slice_start_end_list
 				list_distribution_rules_list list_distribution_rule_row list_distribution_rule_single
 %type <node>	range_slice_less_than_item range_slice_start_end_item
-				list_dist_state OptListDistribution list_dist_value
+				list_dist_state OptListDistribution list_dist_value  interval_intexpr functime_expr initime
+				interval_list every_interval interval_cell ev_timeexpr 
 
 %type <subclus> OptSubCluster OptSubCluster_without_empty OptSubClusterInternal
 /* PGXC_END */
@@ -1041,7 +1057,7 @@ static char* appendString(char* source, char* target, int offset);
 %type <list> alter_policy_filter_list alter_policy_privileges_list alter_policy_access_list
 %type <str> policy_name policy_privilege_type policy_access_type policy_filter_type policy_filter_name policy_target_type
 %type <range> policy_target_name
-%type <boolean> policy_status_opt
+%type <boolean> policy_status_opt opt_ev_on_completion 
 %type <defelt> policy_privilege_elem policy_access_elem policy_target_elem_opt
 %type <node> policy_filter_elem pp_policy_filter_elem filter_term pp_filter_term filter_expr pp_filter_expr filter_paren filter_expr_list filter_set policy_filter_value 
 %type <list> policy_filters_list policy_filter_opt policy_privileges_list policy_access_list policy_targets_list
@@ -1062,7 +1078,7 @@ static char* appendString(char* source, char* target, int offset);
 
 /* LOAD DATA */
 %type <list>	load_options_list load_table_options_list opt_load_data_options_list load_when_option_list
-%type <ival>	load_type_set load_oper_table_type
+%type <ival>	load_type_set load_oper_table_type opt_ev_status
 %type <defelt>	load_table_options_item opt_load_data_options_item load_when_option load_options_item
 %type <str>     load_quote_str load_col_nullif_spec
 
@@ -1071,6 +1087,7 @@ static char* appendString(char* source, char* target, int offset);
 %type <list>    load_column_expr_list copy_column_sequence_list copy_column_filler_list copy_column_constant_list 
 %type <typnam>  load_col_data_type
 %type <ival64>  load_col_sequence_item_sart column_sequence_item_step column_sequence_item_sart
+%type <str>  comment_opt
 %type <trgcharacter> trigger_order
 %type <str> delimiter_str_name delimiter_str_names
 %type <node>	on_table opt_engine engine_option opt_engine_without_empty opt_compression opt_compression_without_empty set_compress_type opt_row_format row_format_option
@@ -1116,24 +1133,24 @@ static char* appendString(char* source, char* target, int offset);
 	BACKWARD BARRIER BEFORE BEGIN_NON_ANOYBLOCK BEGIN_P BETWEEN BIGINT BINARY BINARY_P BINARY_DOUBLE BINARY_INTEGER BIT BLANKS
 	BLOB_P BLOCKCHAIN BODY_P BOGUS BOOLEAN_P BOTH BUCKETCNT BUCKETS BY BYTEAWITHOUTORDER BYTEAWITHOUTORDERWITHEQUAL
 
-	CACHE CALL CALLED CANCELABLE CASCADE CASCADED CASE CAST CATALOG_P CHAIN CHAR_P
+	CACHE CALL CALLED CANCELABLE CASCADE CASCADED CASE CAST CATALOG_P CHAIN CHANGE CHAR_P
 	CHARACTER CHARACTERISTICS CHARACTERSET CHARSET CHECK CHECKPOINT CHECKSUM CLASS CLEAN CLIENT CLIENT_MASTER_KEY CLIENT_MASTER_KEYS CLOB CLOSE
-	CLUSTER COALESCE COLLATE COLLATION COLUMN COLUMNS COLUMN_ENCRYPTION_KEY COLUMN_ENCRYPTION_KEYS COMMENT COMMENTS COMMIT
-	COMMITTED COMPACT COMPATIBLE_ILLEGAL_CHARS COMPLETE COMPRESS COMPRESSION CONCURRENTLY CONDITION CONFIGURATION CONNECTION CONSTANT CONSTRAINT CONSTRAINTS
+	CLUSTER COALESCE COLLATE COLLATION COLUMN COLUMN_ENCRYPTION_KEY COLUMN_ENCRYPTION_KEYS COLUMNS COMMENT COMMENTS COMMIT
+	COMMITTED COMPACT COMPATIBLE_ILLEGAL_CHARS COMPLETE COMPLETION COMPRESS COMPRESSION CONCURRENTLY CONDITION CONFIGURATION CONNECTION CONSTANT CONSTRAINT CONSTRAINTS
 	CONTAINS CONTENT_P CONTINUE_P CONTVIEW CONVERSION_P CONVERT CONNECT COORDINATOR COORDINATORS COPY COST CREATE
 	CROSS CSN CSV CUBE CURRENT_P
 	CURRENT_CATALOG CURRENT_DATE CURRENT_ROLE CURRENT_SCHEMA
 	CURRENT_TIME CURTIME CURRENT_TIMESTAMP CURRENT_USER CURSOR CYCLE NOW_FUNC
 	SHRINK
 
-	DATA_P DATABASE DATABASES DATAFILE DATANODE DATANODES DATATYPE_CL DATE_P DATETIME DATE_FORMAT_P DAY_P DAY_HOUR_P DAY_MICROSECOND_P DAY_MINUTE_P DAY_SECOND_P DAYOFMONTH DAYOFWEEK DAYOFYEAR DBCOMPATIBILITY_P DB_B_FORMAT DB_B_JSOBJ DEALLOCATE DEC DECIMAL_P DECLARE DECODE DEFAULT DEFAULTS DEFAULT_FUNC
+	DATA_P DATABASE DATABASES DATAFILE DATANODE DATANODES DATATYPE_CL DATE_P DATETIME DATE_FORMAT_P DAY_P DAY_HOUR_P DAY_MICROSECOND_P DAY_MINUTE_P DAY_SECOND_P DAYOFMONTH DAYOFWEEK DAYOFYEAR DBCOMPATIBILITY_P DB_B_FORMAT DB_B_JSOBJ DEALLOCATE DEC DECIMAL_P DECLARE DECODE DEFAULT DEFAULTS
 	DEFERRABLE DEFERRED DEFINER DELAYED DELAY_KEY_WRITE DELETE_P DELIMITER DELIMITERS DELTA DELTAMERGE DESC DESCRIBE DETERMINISTIC DISK DIV
 /* PGXC_BEGIN */
 	DICTIONARY DIRECT DIRECTORY DISABLE_P DISCARD DISTINCT DISTINCTROW DISTRIBUTE DISTRIBUTION DO DOCUMENT_P DOMAIN_P DOUBLE_P DUAL_P
 /* PGXC_END */
-	DROP DUPLICATE DISCONNECT
+	DROP DUPLICATE DISCONNECT DUMPFILE
 
-	EACH ELASTIC ELSE ENABLE_P ENCLOSED ENCODING ENCRYPTED ENCRYPTED_VALUE ENCRYPTION ENCRYPTION_TYPE END_P ENFORCED ENGINE_ATTRIBUTE ENGINE_P ENUM_P ERRORS ESCAPE ESCAPED EOL ESCAPING EVERY EXCEPT EXCHANGE
+	EACH ELASTIC ELSE ENABLE_P ENCLOSED ENCODING ENCRYPTED ENCRYPTED_VALUE ENCRYPTION ENCRYPTION_TYPE END_P ENDS ENFORCED ENGINE_ATTRIBUTE ENGINE_P ENUM_P ERRORS ESCAPE ESCAPED EOL ESCAPING EVENT EVENTS EVERY EXCEPT EXCHANGE
 	EXCLUDE EXCLUDED EXCLUDING EXCLUSIVE EXECUTE EXISTS EXPIRED_P EXPLAIN
 	EXTENDED EXTENSION EXTERNAL EXTRACT
 
@@ -1166,7 +1183,7 @@ static char* appendString(char* source, char* target, int offset);
 	NO_WRITE_TO_BINLOG
 
 	OBJECT_P OF OFF OFFSET OIDS ON ONLY OPERATOR OPTIMIZATION OPTIMIZE OPTION OPTIONALLY OPTIONS OR
-	ORDER OUT_P OUTER_P OVER OVERLAPS OVERLAY OWNED OWNER
+	ORDER OUT_P OUTER_P OVER OVERLAPS OVERLAY OWNED OWNER OUTFILE
 
 	PACKAGE PACKAGES PACK_KEYS PARSER PARTIAL PARTITION PARTITIONING PARTITIONS PASSING PASSWORD PCTFREE PER_P PERCENT PERFORMANCE PERM PLACING PLAN PLANS POLICY POSITION
 /* PGXC_BEGIN */
@@ -1185,11 +1202,11 @@ static char* appendString(char* source, char* target, int offset);
 	RESET RESIZE RESOURCE RESTART RESTRICT RETURN RETURNING RETURNS REUSE REVOKE RIGHT RLIKE ROLE ROLES ROLLBACK ROLLUP
 	ROTATION ROUTINE ROW ROWNUM ROWS ROWTYPE_P ROW_FORMAT RULE
 
-	SAMPLE SAVEPOINT SCHEMA SCHEMAS SCROLL SEARCH SECONDARY_ENGINE_ATTRIBUTE SECOND_P SECOND_MICROSECOND_P SECURITY SELECT SEPARATOR_P SEQUENCE SEQUENCES
+	SAMPLE SAVEPOINT SCHEDULE SCHEMA SCHEMAS SCROLL SEARCH SECONDARY_ENGINE_ATTRIBUTE SECOND_P SECOND_MICROSECOND_P SECURITY SELECT SEPARATOR_P SEQUENCE SEQUENCES
 	SERIALIZABLE SERVER SESSION SESSION_USER SET SETS SETOF SHARE SHIPPABLE SHOW SHUTDOWN SIBLINGS SIGNED
-	SIMILAR SIMPLE SIZE SKIP SLAVE SLICE SMALLDATETIME SMALLDATETIME_FORMAT_P SMALLINT SNAPSHOT SOME SOUNDS SOURCE_P SPACE SPILL SPLIT SQL STABLE STANDALONE_P START STARTING STARTWITH
-	STATEMENT STATEMENT_ID STATISTICS STATS_AUTO_RECALC STATS_PERSISTENT STATS_SAMPLE_PAGES STATUS STDIN STDOUT STORAGE STORE_P STORED STRATIFY STREAM STRICT_P STRIP_P SUBPARTITION SUBSCRIPTION SUBSTR SUBSTRING
-	SYMMETRIC SYNONYM SYSDATE SYSID SYSTEM_P SYS_REFCURSOR SHOW_ERRORS
+	SIMILAR SIMPLE SIZE SKIP SLAVE SLICE SMALLDATETIME SMALLDATETIME_FORMAT_P SMALLINT SNAPSHOT SOME SOUNDS SOURCE_P SPACE SPILL SPLIT SQL STABLE STANDALONE_P START STARTS STARTING STARTWITH
+	STATEMENT STATEMENT_ID STATISTICS STATS_AUTO_RECALC STATS_PERSISTENT STATS_SAMPLE_PAGES STATUS STDIN STDOUT STORAGE STORE_P STORED STRATIFY STREAM STRICT_P STRIP_P SUBPARTITION SUBPARTITIONS SUBSCRIPTION SUBSTR SUBSTRING
+	SYMMETRIC SYNONYM SYSDATE SYSID SYSTEM_P SYS_REFCURSOR
 
 	TABLE TABLES TABLESAMPLE TABLESPACE TARGET TEMP TEMPLATE TEMPORARY TERMINATED TEXT_P THAN THEN TIME TIME_FORMAT_P TIMECAPSULE TIMESTAMP TIMESTAMP_FORMAT_P TIMESTAMPADD TIMESTAMPDIFF TINYINT
 	TO TRAILING TRANSACTION TRANSFORM TREAT TRIGGER TRIM TRUE_P
@@ -1240,6 +1257,7 @@ static char* appendString(char* source, char* target, int offset);
 
 /* Precedence: lowest to highest */
 %nonassoc COMMENT
+%nonassoc   FIRST_P AFTER
 %nonassoc lower_than_key
 %nonassoc KEY
 %nonassoc lower_than_row
@@ -1487,6 +1505,10 @@ stmt :
 			| CreateForeignTableStmt
 			| CreateDataSourceStmt
 			| CreateFunctionStmt
+			| CreateEventStmt
+			| AlterEventStmt
+			| DropEventStmt
+			| ShowEventStmt
 			| CreatePackageStmt
 			| CreatePackageBodyStmt
 			| CreateGroupStmt
@@ -2336,6 +2358,7 @@ CreateSchemaStmt:
 					n->authid = $5;
 					n->hasBlockChain = $6;
 					n->schemaElts = $7;
+					n->charset = PG_INVALID_ENCODING;
 					$$ = (Node *)n;
 				}
 			| CREATE SCHEMA ColId OptBlockchainWith OptSchemaEltList
@@ -2347,6 +2370,7 @@ CreateSchemaStmt:
 					n->authid = NULL;
 					n->hasBlockChain = $4;
 					n->schemaElts = $5;
+					n->charset = PG_INVALID_ENCODING;
 					$$ = (Node *)n;
 				}
 			| CREATE SCHEMA IF_P NOT EXISTS ColId OptBlockchainWith OptSchemaEltList
@@ -2373,7 +2397,18 @@ CreateSchemaStmt:
 					n->hasBlockChain = $9;
 					n->schemaElts = $10;
 					$$ = (Node *)n;
-				}                
+				}
+			| CREATE SCHEMA ColId CharsetCollate
+				{
+					CreateSchemaStmt *n = makeNode(CreateSchemaStmt);
+					n->schemaname = $3;
+					n->authid = NULL;
+					n->hasBlockChain = false;
+					n->schemaElts = NULL;
+					n->charset = $4->charset;
+					n->collate = $4->collate;
+					$$ = (Node *)n;
+				}
 		;
 
 OptSchemaName:
@@ -2414,6 +2449,18 @@ AlterSchemaStmt:
 					n->schemaname = $3;
 					n->authid = NULL;
 					n->hasBlockChain = $4;
+					n->charset = PG_INVALID_ENCODING;
+					n->collate = NULL;
+					$$ = (Node *)n;
+				}
+			| ALTER SCHEMA ColId CharsetCollate
+				{
+					AlterSchemaStmt *n = makeNode(AlterSchemaStmt);
+					n->schemaname = $3;
+					n->authid = NULL;
+					n->hasBlockChain = false;
+					n->charset = $4->charset;
+					n->collate = $4->collate;
 					$$ = (Node *)n;
 				}
 			;
@@ -2505,6 +2552,26 @@ VariableSetStmt:
 					n->is_local = false;
 					$$ = (Node *) n;
 				}
+			| SET GLOBAL TRANSACTION transaction_mode_list
+				{
+#ifdef ENABLE_MULTIPLE_NODES
+					const char* message = "SET GLOBAL TRANSACTION is not yet supported in distributed database.";
+					InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);
+					ereport(errstate,
+						(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+							errmsg("SET GLOBAL TRANSACTION is not yet supported in distributed database.")));
+#endif
+					if (u_sess->attr.attr_sql.sql_compatibility != B_FORMAT) {
+						ereport(errstate,
+							(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+								errmsg("SET GLOBAL TRANSACTION is only supported in B_FORMAT.")));
+					}
+					VariableSetStmt *n = makeNode(VariableSetStmt);
+					n->kind = VAR_SET_MULTI;
+					n->name = "GLOBAL TRANSACTION";
+					n->args = $4;
+					$$ = (Node *)n;
+				}
 			| SET PASSWORD '=' opt_password opt_replace
                         	{
                         		$$ = MakeSetPasswdStmt(GetUserNameFromId(GetUserId()), $4, $5);
@@ -2533,7 +2600,7 @@ VariableSetStmt:
 						(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
 							errmsg("SET config_parameter = expr is not yet supported in distributed database.")));
 #endif
-					if (DB_IS_CMPT(B_FORMAT) && u_sess->attr.attr_common.enable_set_variable_b_format) {
+					if (DB_IS_CMPT(B_FORMAT) && (u_sess->attr.attr_common.enable_set_variable_b_format || ENABLE_SET_VARIABLES)) {
 						VariableSetStmt *n = $2;
 						n->is_local = false;
 						$$ = (Node *) n;
@@ -2554,7 +2621,7 @@ VariableSetStmt:
 						(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
 							errmsg("SET config_parameter = expr is not yet supported in distributed database.")));
 #endif
-					if (DB_IS_CMPT(B_FORMAT) && u_sess->attr.attr_common.enable_set_variable_b_format) {
+					if (DB_IS_CMPT(B_FORMAT) && (u_sess->attr.attr_common.enable_set_variable_b_format || ENABLE_SET_VARIABLES)) {
 						VariableSetStmt *n = $3;
 						n->is_local = false;
 						$$ = (Node *) n;
@@ -2804,7 +2871,7 @@ VariableMultiSetStmt:	SET VariableSetElemsList
 								(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
 									errmsg("set multiple variables is not yet supported in distributed database.")));
 #endif
-							if (DB_IS_CMPT(B_FORMAT) && u_sess->attr.attr_common.enable_set_variable_b_format)
+							if (DB_IS_CMPT(B_FORMAT) && (u_sess->attr.attr_common.enable_set_variable_b_format || ENABLE_SET_VARIABLES))
 							{
 								VariableMultiSetStmt* n = makeNode(VariableMultiSetStmt);
 								n->args = $2;
@@ -3128,7 +3195,7 @@ set_expr_extension:
 						(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
 							errmsg("@var_name is not yet supported in distributed database.")));
 #endif
-					if (u_sess->attr.attr_sql.sql_compatibility == B_FORMAT && u_sess->attr.attr_common.enable_set_variable_b_format) {
+					if (DB_IS_CMPT(B_FORMAT) && (u_sess->attr.attr_common.enable_set_variable_b_format || ENABLE_SET_VARIABLES)) {
 						$$ = $1;
 					} else {
 						const char* message = "@var_name is supported only in B-format database, and enable_set_variable_b_format = on.";
@@ -3589,8 +3656,30 @@ VariableShowStmt:
 #endif
 				}
 			| SHOW var_name
-				{
-					if (pg_strcasecmp($2, "processlist") == 0) {
+			{
+					if(strcmp($2, "events") == 0) {
+	#ifdef ENABLE_MULTIPLE_NODES
+						const char* message = "SHOW EVENTS is not yet supported in distributed database.";
+						InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);
+						ereport(ERROR,
+						(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+							errmsg("SHOW EVENTS is not yet supported in distributed database.")));
+	#endif
+						if (u_sess->attr.attr_sql.sql_compatibility != B_FORMAT) {
+							const char* message = "show events statement is only supported in B format.";
+							InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);
+							ereport(errstate,
+									(errmodule(MOD_PARSER),
+										errcode(ERRCODE_SYNTAX_ERROR),
+										errmsg("SHOW EVENTS is supported only in B-format database."),
+										parser_errposition(@1)));
+							$$ = NULL;
+						}
+						ShowEventStmt *n = makeNode(ShowEventStmt);
+						n->from_clause = NULL;
+						n->where_clause = NULL;
+						$$ = (Node *)n;
+					} else if (pg_strcasecmp($2, "processlist") == 0) {
 						SelectStmt *n = makeShowProcesslistQuery(FALSE);
 						$$ = (Node *) n;
 					} else if (pg_strcasecmp($2, "tables") == 0) {
@@ -4275,51 +4364,60 @@ modify_column_cmds:
 			| modify_column_cmds ',' modify_column_cmd	{ $$ = lappend($$, $3); }
 			;
 modify_column_cmd:
-			ColId Typename
+			ColId Typename opt_charset ColQualList add_column_first_after
 				{
-					AlterTableCmd *n = makeNode(AlterTableCmd);
-					ColumnDef *def = makeNode(ColumnDef);
-					n->subtype = AT_AlterColumnType;
-					n->name = $1;
-					n->def = (Node *) def;
-					/* We only use these three fields of the ColumnDef node */
-					def->typname = $2;
-					def->collClause = NULL;
-					def->raw_default = NULL;
-					def->update_default = NULL;
-					def->clientLogicColumnRef=NULL;
-					$$ = (Node *)n;
-				}
-			| ColId Typename ON_UPDATE_TIME UPDATE b_expr
-				{
-#ifndef ENABLE_MULTIPLE_NODES
-					if (u_sess->attr.attr_sql.sql_compatibility == B_FORMAT)
-					{
-						AlterTableCmd *n = makeNode(AlterTableCmd);
+					AlterTableCmd *n = (AlterTableCmd *)$5;
+					if ($4 == NULL && n->is_first == false && n->after_name == NULL && !ENABLE_MODIFY_COLUMN) {
 						ColumnDef *def = makeNode(ColumnDef);
-						Constraint *cons = makeNode(Constraint);
 						n->subtype = AT_AlterColumnType;
 						n->name = $1;
 						n->def = (Node *) def;
 						/* We only use these three fields of the ColumnDef node */
 						def->typname = $2;
-						def->constraints = list_make1(cons);
-						cons->contype = CONSTR_DEFAULT;
-						cons->location = @3;
-						cons->update_expr = $5;
-						cons->cooked_expr = NULL;
+						def->typname->charset = $3;
+						def->collClause = NULL;
+						def->raw_default = NULL;
+						def->update_default = NULL;
+						def->clientLogicColumnRef=NULL;
 						$$ = (Node *)n;
 					} else {
-						const char* message = "on update syntax be supported dbcompatibility B.";
+#ifdef ENABLE_MULTIPLE_NODES
+						const char* message = "Un-support feature";
 						InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);
 						ereport(errstate,
-								(errmodule(MOD_PARSER),
-                                                                 errcode(ERRCODE_SYNTAX_ERROR),
-                                                                 errmsg("on update syntax is supported in dbcompatibility B."),
-                                                                 parser_errposition(@1)));
-						$$ = NULL;
-					}
+							(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+								errmsg("Un-support feature"),
+								errdetail("The distributed capability is not supported currently.")));
 #endif
+						if (u_sess->attr.attr_sql.sql_compatibility != B_FORMAT) {
+							ereport(errstate, (errmodule(MOD_PARSER),
+								errcode(ERRCODE_SYNTAX_ERROR),
+								errmsg("Un-support feature"),
+								parser_errposition(@4),
+								errdetail("this modify syntax is supported only in B compatibility")));
+						}
+						ColumnDef *def = makeNode(ColumnDef);
+						def->colname = $1;
+						def->typname = $2;
+						def->typname->charset = $3;
+						def->kvtype = ATT_KV_UNDEFINED;
+						def->inhcount = 0;
+						def->is_local = true;
+						def->is_not_null = false;
+						def->is_from_type = false;
+						def->storage = 0;
+						def->cmprs_mode = ATT_CMPR_UNDEFINED;
+						def->raw_default = NULL;
+						def->cooked_default = NULL;
+						def->collOid = InvalidOid;
+						def->fdwoptions = NULL;
+						def->update_default = NULL;
+						SplitColQualList($4, &def->constraints, &def->collClause, &def->clientLogicColumnRef, yyscanner);
+						n->subtype = AT_ModifyColumn;
+						n->name = $1;
+						n->def = (Node *)def;
+						$$ = (Node *)n;						
+					}
 				}
 			| ColId NOT NULL_P opt_enable
 				{
@@ -4446,6 +4544,7 @@ alter_partition_cmds:
 			| alter_partition_cmds ',' alter_partition_cmd { $$ = lappend($1, $3); }
 			| move_partition_cmd                           { $$ = list_make1($1); }
 			| exchange_partition_cmd                       { $$ = list_make1($1); }
+			| reset_partition_cmd                          { $$ = list_make1($1); }
 			| exchange_partition_cmd_for_bdatabase             { $$ = list_make1($1); }
 		;
 
@@ -4877,6 +4976,18 @@ exchange_partition_cmd:
 			}
 		;
 
+reset_partition_cmd:
+		RESET PARTITION
+			{
+				AlterTableCmd *n = makeNode(AlterTableCmd);
+
+				n->subtype = AT_ResetPartitionno;
+				n->missing_ok = FALSE;
+				$$ = (Node *) n;
+
+			}
+		;
+
 alter_table_cmd:
 			/*ALTER INDEX index_name UNUSABLE*/
 			UNUSABLE
@@ -4930,17 +5041,17 @@ alter_table_cmd:
 
 			|
 			/* ALTER TABLE <name> ADD <coldef> */
-			ADD_P columnDefForTableElement
+			ADD_P columnDefForTableElement add_column_first_after
 				{
-					AlterTableCmd *n = makeNode(AlterTableCmd);
+					AlterTableCmd *n = (AlterTableCmd *)$3;
 					n->subtype = AT_AddColumn;
 					n->def = $2;
 					$$ = (Node *)n;
 				}
 			/* ALTER TABLE <name> ADD COLUMN <coldef> */
-			| ADD_P COLUMN columnDef
+			| ADD_P COLUMN columnDef add_column_first_after
 				{
-					AlterTableCmd *n = makeNode(AlterTableCmd);
+					AlterTableCmd *n = (AlterTableCmd *)$4;
 					n->subtype = AT_AddColumn;
 					n->def = $3;
 					$$ = (Node *)n;
@@ -5170,6 +5281,86 @@ alter_table_cmd:
 				{
 					$$ = $2;
 				}
+			| MODIFY_P COLUMN ColId Typename opt_charset ColQualList add_column_first_after
+				{
+#ifdef ENABLE_MULTIPLE_NODES
+					const char* message = "Un-support feature";
+					InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);
+					ereport(errstate,
+						(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+							errmsg("Un-support feature"),
+							errdetail("The distributed capability is not supported currently.")));
+#endif
+					if (u_sess->attr.attr_sql.sql_compatibility != B_FORMAT) {
+						ereport(errstate, (errmodule(MOD_PARSER),
+							errcode(ERRCODE_SYNTAX_ERROR),
+							errmsg("Un-support feature"),
+							parser_errposition(@1),
+							errdetail("ALTER TABLE MODIFY COLUMN syntax is supported only in B compatibility")));
+					}
+					ColumnDef *def = makeNode(ColumnDef);
+					def->colname = $3;
+					def->typname = $4;
+					def->typname->charset = $5;
+					def->kvtype = ATT_KV_UNDEFINED;
+					def->inhcount = 0;
+					def->is_local = true;
+					def->is_not_null = false;
+					def->is_from_type = false;
+					def->storage = 0;
+					def->cmprs_mode = ATT_CMPR_UNDEFINED;
+					def->raw_default = NULL;
+					def->update_default = NULL;
+					def->cooked_default = NULL;
+					def->collOid = InvalidOid;
+					def->fdwoptions = NULL;
+					SplitColQualList($6, &def->constraints, &def->collClause, &def->clientLogicColumnRef, yyscanner);
+					AlterTableCmd *n = (AlterTableCmd *)$7;
+					n->subtype = AT_ModifyColumn;
+					n->name = $3;
+					n->def = (Node *)def;
+					$$ = (Node *)n;
+				}
+			| CHANGE opt_column ColId ColId Typename opt_charset ColQualList add_column_first_after
+				{
+#ifdef ENABLE_MULTIPLE_NODES
+					const char* message = "Un-support feature";
+					InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);
+					ereport(errstate,
+						(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+							errmsg("Un-support feature"),
+							errdetail("The distributed capability is not supported currently.")));
+#endif
+					if (u_sess->attr.attr_sql.sql_compatibility != B_FORMAT) {
+						ereport(errstate, (errmodule(MOD_PARSER),
+							errcode(ERRCODE_SYNTAX_ERROR),
+							errmsg("Un-support feature"),
+							parser_errposition(@1),
+							errdetail("ALTER TABLE CHANGE syntax is supported only in B compatibility")));
+					}
+					ColumnDef *def = makeNode(ColumnDef);
+					def->colname = $4;
+					def->typname = $5;
+					def->typname->charset = $6;
+					def->kvtype = ATT_KV_UNDEFINED;
+					def->inhcount = 0;
+					def->is_local = true;
+					def->is_not_null = false;
+					def->is_from_type = false;
+					def->storage = 0;
+					def->cmprs_mode = ATT_CMPR_UNDEFINED;
+					def->raw_default = NULL;
+					def->update_default = NULL;
+					def->cooked_default = NULL;
+					def->collOid = InvalidOid;
+					def->fdwoptions = NULL;
+					SplitColQualList($7, &def->constraints, &def->collClause, &def->clientLogicColumnRef, yyscanner);
+					AlterTableCmd *n = (AlterTableCmd *)$8;
+					n->subtype = AT_ModifyColumn;
+					n->name = $3;
+					n->def = (Node *)def;
+					$$ = (Node *)n;
+				}
 			/* ALTER TABLE <name> SET WITH OIDS  */
 			| SET WITH OIDS
 				{
@@ -5393,18 +5584,6 @@ alter_table_cmd:
 				n->subtype = AT_SetTableRowFormat;
 				$$ = (Node *) n;
 			}
-			| opt_default charset_with_opt_equal
-			{
-				AlterTableCmd *n = makeNode(AlterTableCmd);
-				n->subtype = AT_SetTableCharset;
-				$$ = (Node *) n;
-			}
-			| opt_default COLLATE opt_equal any_name_or_sconst
-			{
-				AlterTableCmd *n = makeNode(AlterTableCmd);
-				n->subtype = AT_SetTableCollate;
-				$$ = (Node *) n;
-			}
 			| autoextend_size_option
 				{
 					AlterTableCmd *n = makeNode(AlterTableCmd);
@@ -5538,8 +5717,6 @@ alter_table_cmd:
 					n->subtype = AT_TABLESPACE_STORAGE;
 					$$ = (Node *) n;
 				}
-			;
-
 /* PGXC_BEGIN */
 			/* ALTER TABLE <name> DISTRIBUTE BY ... */
 			| OptDistributeByInternal
@@ -5634,6 +5811,24 @@ alter_table_cmd:
                     n->def = $1;
 					$$ = (Node *)n;
                 }
+			| CharsetCollate
+				{
+					AlterTableCmd *n = makeNode(AlterTableCmd);
+					n->subtype = AT_SetCharsetCollate;
+					n->def = (Node *)$1;
+					$$ = (Node*)n;					
+				}
+			| CONVERT TO convert_charset opt_collate
+				{
+					AlterTableCmd *n = makeNode(AlterTableCmd);
+					n->subtype = AT_ConvertCharset;
+					CharsetCollateOptions *cc = makeNode(CharsetCollateOptions);
+					cc->cctype = OPT_CHARSETCOLLATE;
+					cc->charset = $3;
+					cc->collate = $4;
+					n->def = (Node *)cc;
+					$$ = (Node*)n;
+				}
 /* PGXC_END */
 /* table comments start */
             | COMMENT opt_equal Sconst
@@ -5665,7 +5860,7 @@ opt_drop_behavior:
 		;
 
 opt_collate_clause:
-			COLLATE any_name
+			COLLATE collate_name
 				{
 					CollateClause *n = makeNode(CollateClause);
 					n->arg = NULL;
@@ -5835,12 +6030,12 @@ table_option:
 				BCompatibilityOptionSupportCheck("row_format");
 				$$ = $1;
 			 }
-			| charset_option
+			| default_charset
 			 {
 				BCompatibilityOptionSupportCheck("charset");
 				$$ = NULL;
 			 }
-			| collate_option
+			| default_collate
 			 {
 				BCompatibilityOptionSupportCheck("collate");
 				$$ = NULL;
@@ -7607,18 +7802,18 @@ CreateAsOption:
 					n->option_type = OPT_ENGINE;
 					$$ = n;
 				}
-			| opt_default COLLATE opt_equal any_name_or_sconst
+			| default_collate
 				{
-					ereport(WARNING, (errmsg("COLLATE for TABLE is not supported for current version. skipped")));
 					SingleTableOption *n = (SingleTableOption*)palloc0(sizeof(SingleTableOption));
-					n->option_type = OPT_COLLATE;
+					n->option_type = OPT_DOLPHIN_COLLATE;
+					n->option.collate = $1;
 					$$ = n;
 				}
-			| opt_default charset_with_opt_equal
+			| default_charset
 				{
-					ereport(WARNING, (errmsg("CHARACTER SET for TABLE is not supported for current version. skipped")));
 					SingleTableOption *n = (SingleTableOption*)palloc0(sizeof(SingleTableOption));
-					n->option_type = OPT_CHARSET;
+					n->option_type = OPT_DOLPHIN_CHARSET;
+					n->option.charset = $1;
 					$$ = n;
 				}
 			| row_format_option
@@ -7817,6 +8012,7 @@ CreateStmt:	CREATE OptTemp TABLE dolphin_qualified_name '(' OptTableElementList 
 					n->tableElts = $6;
 					n->constraints = NIL;
 					n->if_not_exists = false;
+					n->charset = PG_INVALID_ENCODING;
 					if ($8 != NULL) {
 						n->relkind = $8->relkind;
 						n->inhRelations = $8->inhRelations;
@@ -7836,6 +8032,12 @@ CreateStmt:	CREATE OptTemp TABLE dolphin_qualified_name '(' OptTableElementList 
 						}
 						if ($8->comment != NULL) {
 							n->tableOptions = lappend(n->tableOptions, $8->comment);
+						}
+						if ($8->collate != NULL) {
+							n->collate = $8->collate;
+						}
+						if ($8->charset != 0) {
+							n->charset = $8->charset;
 						}
 					}
 					$$ = (Node *)n;
@@ -7860,6 +8062,7 @@ CreateStmt:	CREATE OptTemp TABLE dolphin_qualified_name '(' OptTableElementList 
 /* PGXC_END */
 					n->partTableState = NULL;
 					n->internalData = NULL;
+					n->charset = PG_INVALID_ENCODING;
 					$$ = (Node *)n;
 				}
 		| CREATE OptTemp TABLE IF_P NOT EXISTS dolphin_qualified_name '('
@@ -7871,6 +8074,7 @@ CreateStmt:	CREATE OptTemp TABLE dolphin_qualified_name '(' OptTableElementList 
 					n->tableElts = $9;
 					n->constraints = NIL;
 					n->if_not_exists = true;
+					n->charset = PG_INVALID_ENCODING;
 					if ($11 != NULL) {
 						n->inhRelations = $11->inhRelations;
 						n->options = $11->options;
@@ -7889,6 +8093,12 @@ CreateStmt:	CREATE OptTemp TABLE dolphin_qualified_name '(' OptTableElementList 
 						}
 						if ($11->comment != NULL) {
 							n->tableOptions = lappend(n->tableOptions, $11->comment);
+						}
+						if ($11->collate != NULL) {
+							n->collate = $11->collate;
+						}
+						if ($11->charset != 0) {
+							n->charset = $11->charset;
 						}
 						$$ = (Node *)n;
 					}
@@ -7913,6 +8123,7 @@ CreateStmt:	CREATE OptTemp TABLE dolphin_qualified_name '(' OptTableElementList 
 /* PGXC_END */
 					n->partTableState = NULL;
 					n->internalData = NULL;
+					n->charset = PG_INVALID_ENCODING;
 					$$ = (Node *)n;
 				}
 		| CREATE OptTemp TABLE dolphin_qualified_name OF any_name
@@ -7920,7 +8131,7 @@ CreateStmt:	CREATE OptTemp TABLE dolphin_qualified_name '(' OptTableElementList 
 /* PGXC_BEGIN */
 			OptDistributeBy OptSubCluster
 /* PGXC_END */
-			opt_compression opt_engine opt_row_format opt_charset opt_collate
+			opt_compression opt_engine opt_row_format
 				{
 					CreateStmt *n = makeNode(CreateStmt);
 					$4->relpersistence = $2;
@@ -7940,6 +8151,7 @@ CreateStmt:	CREATE OptTemp TABLE dolphin_qualified_name '(' OptTableElementList 
 /* PGXC_END */
 					n->partTableState = NULL;
 					n->internalData = NULL;
+					n->charset = PG_INVALID_ENCODING;
 					if ($14 != NULL) {
 						n->options = lappend(n->options, $14);
 					}
@@ -7950,7 +8162,7 @@ CreateStmt:	CREATE OptTemp TABLE dolphin_qualified_name '(' OptTableElementList 
 /* PGXC_BEGIN */
 			OptDistributeBy OptSubCluster
 /* PGXC_END */
-			opt_compression opt_engine opt_row_format opt_charset opt_collate
+			opt_compression opt_engine opt_row_format
 				{
 					CreateStmt *n = makeNode(CreateStmt);
 					$7->relpersistence = $2;
@@ -7970,6 +8182,7 @@ CreateStmt:	CREATE OptTemp TABLE dolphin_qualified_name '(' OptTableElementList 
 /* PGXC_END */
 					n->partTableState = NULL;
 					n->internalData = NULL;
+					n->charset = PG_INVALID_ENCODING;
 					if ($17 != NULL) {
 						n->options = lappend(n->options, $17);
 					}
@@ -8158,17 +8371,17 @@ opt_table_partitioning_clause_without_empty:
 		;
 
 range_partitioning_clause:
-		PARTITION BY RANGE '(' column_item_list ')'
-		opt_interval_partition_clause subpartitioning_clause '(' range_partition_definition_list ')' opt_row_movement_clause
+		PARTITION BY RANGE opt_columns '(' column_item_list ')'
+		opt_interval_partition_clause opt_partitions_num subpartitioning_clause '(' range_partition_definition_list ')' opt_row_movement_clause
 			{
 				PartitionState *n = makeNode(PartitionState);
-				if ($8 != NULL && list_length($5) != 1) {
+				if ($10 != NULL && list_length($6) != 1) {
 					ereport(ERROR,
 						(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
 							errmsg("Un-support feature"),
 							errdetail("The partition key's length should be 1.")));
 				}
-				if ($8 != NULL && $7 != NULL) {
+				if ($10 != NULL && $8 != NULL) {
 					const char* message = "Un-support feature";
 					InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);
 					ereport(errstate,
@@ -8177,24 +8390,32 @@ range_partitioning_clause:
 							errdetail("Subpartitions do not support interval partition."),
 							errcause("System error."), erraction("Contact engineer to support.")));
 				}
-				n->partitionKey = $5;
-				n->intervalPartDef = (IntervalPartitionDefState *)$7;
-				n->partitionList = $10;
+				if ($9 > 0 && u_sess->attr.attr_sql.sql_compatibility != B_FORMAT) {
+					ereport(errstate, (errmodule(MOD_PARSER),
+						errcode(ERRCODE_SYNTAX_ERROR),
+						errmsg("Un-support syntax in current compatibility"),
+						parser_errposition(@9),
+						errdetail("range partition with partitions clause is supported only in B compatibility")));
+				}
+				n->partitionKey = $6;
+				n->intervalPartDef = (IntervalPartitionDefState *)$8;
+				n->partitionsNum = $9;
+				n->partitionList = $12;
 
 				if (n->intervalPartDef)
 					n->partitionStrategy = 'i';
 				else
 					n->partitionStrategy = 'r';
 
-				n->rowMovement = (RowMovementValue)$12;
-				n->subPartitionState = (PartitionState *)$8;
+				n->rowMovement = (RowMovementValue)$14;
+				n->subPartitionState = (PartitionState *)$10;
 
 				$$ = (Node *)n;
 			}
 		;
 
 list_partitioning_clause:
-		PARTITION BY LIST '(' column_item_list ')' subpartitioning_clause
+		PARTITION BY LIST opt_columns '(' column_item_list ')' opt_partitions_num subpartitioning_clause
 		'(' list_partition_definition_list ')' opt_row_movement_clause
 			{
 #ifdef ENABLE_MULTIPLE_NODES
@@ -8205,21 +8426,29 @@ list_partitioning_clause:
 						errmsg("Un-support feature"),
 						errdetail("The distributed capability is not supported currently.")));
 #endif
-				if (list_length($5) != 1) {
-            		const char* message = "Un-support feature";
-            		InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);
-					ereport(errstate,
-						(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
-							errmsg("Un-support feature"),
-							errdetail("The partition key's length should be 1.")));
+				if (list_length($6) != 1 && $9 != NULL) {
+					const char* message = "Un-support feature";
+					InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);
+						ereport(errstate,
+							(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+								errmsg("Un-support feature"),
+								errdetail("The partition key's length should be 1.")));
+				}
+				if ($8 > 0 && u_sess->attr.attr_sql.sql_compatibility != B_FORMAT) {
+					ereport(errstate, (errmodule(MOD_PARSER),
+						errcode(ERRCODE_SYNTAX_ERROR),
+						errmsg("Un-support syntax in current compatibility"),
+						parser_errposition(@8),
+						errdetail("list partition with partitions clause is supported only in B compatibility")));
 				}
 				PartitionState *n = makeNode(PartitionState);
-				n->partitionKey = $5;
+				n->partitionKey = $6;
 				n->intervalPartDef = NULL;
-				n->partitionList = $9;
+				n->partitionList = $11;
 				n->partitionStrategy = 'l';
-				n->subPartitionState = (PartitionState *)$7;
-				n->rowMovement = (RowMovementValue)$11;
+				n->partitionsNum = $8;
+				n->subPartitionState = (PartitionState *)$9;
+				n->rowMovement = (RowMovementValue)$13;
 
 				$$ = (Node *)n;
 
@@ -8227,8 +8456,8 @@ list_partitioning_clause:
 		;
 
 hash_partitioning_clause:
-		PARTITION BY normal_ident '(' column_item_list ')' subpartitioning_clause
-		'(' hash_partition_definition_list ')' opt_row_movement_clause
+		PARTITION BY normal_ident '(' column_item_list ')' opt_partitions_num subpartitioning_clause
+		opt_hash_partition_definition_list opt_row_movement_clause
 			{
 #ifdef ENABLE_MULTIPLE_NODES
             	const char* message = "Un-support feature";
@@ -8257,8 +8486,9 @@ hash_partitioning_clause:
 				n->intervalPartDef = NULL;
 				n->partitionList = $9;
 				n->partitionStrategy = 'h';
-				n->subPartitionState = (PartitionState *)$7;;
-				n->rowMovement = (RowMovementValue)$11;
+				n->partitionsNum = $7;
+				n->subPartitionState = (PartitionState *)$8;
+				n->rowMovement = (RowMovementValue)$10;
 				int i = 0;
 				ListCell *elem = NULL;
 				List *parts = n->partitionList;
@@ -8270,6 +8500,101 @@ hash_partitioning_clause:
 				$$ = (Node *)n;
 
 			}
+		| PARTITION BY KEY '(' column_item_list ')' opt_partitions_num subpartitioning_clause
+		opt_hash_partition_definition_list opt_row_movement_clause
+			{
+				if (u_sess->attr.attr_sql.sql_compatibility != B_FORMAT) {
+					ereport(errstate, (errmodule(MOD_PARSER),
+						errcode(ERRCODE_SYNTAX_ERROR),
+						errmsg("Un-support syntax in current compatibility"),
+						parser_errposition(@3),
+						errdetail("PARTITION BY KEY is supported only in B compatibility")));
+				}
+#ifdef ENABLE_MULTIPLE_NODES
+		            	const char* message = "Un-support feature";
+		            	InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);
+				ereport(errstate,
+					(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+						errmsg("Un-support feature"),
+						errdetail("The distributed capability is not supported currently.")));
+#endif
+				if (list_length($5) != 1) {
+					const char* message = "Un-support feature";
+					InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);
+					ereport(errstate,
+						(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+							errmsg("Un-support feature"),
+							errdetail("The partition key's length should be 1.")));
+				}
+				PartitionState *n = makeNode(PartitionState);
+				n->partitionKey = $5;
+				n->intervalPartDef = NULL;
+				n->partitionList = $9;
+				n->partitionStrategy = 'h';
+				n->partitionsNum = $7;
+				n->subPartitionState = (PartitionState *)$8;
+				n->rowMovement = (RowMovementValue)$10;
+				int i = 0;
+				ListCell *elem = NULL;
+				List *parts = n->partitionList;
+				foreach(elem, parts) {
+					HashPartitionDefState *hashPart = (HashPartitionDefState*)lfirst(elem);
+					hashPart->boundary = list_make1(makeIntConst(i, -1));
+					i++;
+				}
+				$$ = (Node *)n;
+
+			}
+		;
+
+opt_columns:
+		COLUMNS
+			{
+				if (u_sess->attr.attr_sql.sql_compatibility != B_FORMAT) {
+					ereport(errstate, (errmodule(MOD_PARSER),
+						errcode(ERRCODE_SYNTAX_ERROR),
+						errmsg("Un-support syntax in current compatibility"),
+						parser_errposition(@1),
+						errdetail("COLUMNS is supported only in B compatibility")));
+				}
+				$$ = NULL;
+			}
+		| /* empty */			{ $$ = NULL; }
+		;
+
+opt_partitions_num:
+		PARTITIONS Iconst
+			{
+				if ($2 <= 0) {
+					ereport(errstate, (errmodule(MOD_PARSER),
+						errcode(ERRCODE_SYNTAX_ERROR),
+						errmsg("Invalid number of partitions"),
+						parser_errposition(@2),
+						errdetail("partitions number must be a positive integer")));
+				}
+				$$ = $2;
+			}
+		| /* empty */			{ $$ = 0; }
+		;
+
+opt_subpartitions_num:
+		SUBPARTITIONS Iconst
+			{
+				if ($2 <= 0) {
+					ereport(errstate, (errmodule(MOD_PARSER),
+						errcode(ERRCODE_SYNTAX_ERROR),
+						errmsg("Invalid number of partitions"),
+						parser_errposition(@2),
+						errdetail("subpartitions number must be a positive integer")));
+				}
+				$$ = $2;
+			}
+		| /* empty */			{ $$ = 0; }
+		;
+
+opt_hash_partition_definition_list:
+		'(' hash_partition_definition_list ')' { $$ = $2; }
+		| /* empty */			{ $$ = NIL; }
 		;
 
 value_partitioning_clause:
@@ -8357,7 +8682,7 @@ list_subpartitioning_clause:
 		;
 
 hash_subpartitioning_clause:
-		SUBPARTITION BY normal_ident '(' column_item_list ')'
+		SUBPARTITION BY normal_ident '(' column_item_list ')' opt_subpartitions_num
 			{
 #ifdef ENABLE_MULTIPLE_NODES
             	const char* message = "Un-support feature";
@@ -8387,9 +8712,43 @@ hash_subpartitioning_clause:
 				n->partitionList = NIL;
 				n->partitionStrategy = 'h';
 				n->subPartitionState = NULL;
-
+				n->partitionsNum = $7;
 				$$ = (Node *)n;
 
+			}
+		| SUBPARTITION BY KEY '(' column_item_list ')' opt_subpartitions_num
+			{
+				if (u_sess->attr.attr_sql.sql_compatibility != B_FORMAT) {
+					ereport(errstate, (errmodule(MOD_PARSER),
+						errcode(ERRCODE_SYNTAX_ERROR),
+						errmsg("Un-support syntax in current compatibility"),
+						parser_errposition(@3),
+						errdetail("SUBPARTITION BY KEY is supported only in B compatibility")));
+				}
+#ifdef ENABLE_MULTIPLE_NODES
+				const char* message = "Un-support feature";
+				InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);
+				ereport(ERROR,
+					(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+						errmsg("Un-support feature"),
+						errdetail("The distributed capability is not supported currently.")));
+#endif
+				if (list_length($5) != 1) {
+					const char* message = "Un-support feature";
+					InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);
+					ereport(errstate,
+						(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+							errmsg("Un-support feature"),
+							errdetail("The partition key's length should be 1.")));
+				}
+				PartitionState *n = makeNode(PartitionState);
+				n->partitionKey = $5;
+				n->intervalPartDef = NULL;
+				n->partitionList = NIL;
+				n->partitionStrategy = 'h';
+				n->subPartitionState = NULL;
+				n->partitionsNum = $7;
+				$$ = (Node *)n;
 			}
 		;
 
@@ -8405,24 +8764,13 @@ subpartition_definition_list:
 		;
 
 subpartition_item:
-		SUBPARTITION name VALUES '(' expr_list ')' opt_part_options
+		SUBPARTITION name VALUES '(' listValueList ')' opt_part_options
 			{
 				ListPartitionDefState *n = makeNode(ListPartitionDefState);
 				n->partitionName = $2;
 				n->boundary = $5;
 				n->tablespacename = $7;
 
-				$$ = (Node *)n;
-			}
-		| SUBPARTITION name VALUES '(' DEFAULT ')' opt_part_options
-			{
-				ListPartitionDefState *n = makeNode(ListPartitionDefState);
-				n->partitionName = $2;
-				Const *n_default = makeNode(Const);
-				n_default->ismaxvalue = true;
-				n_default->location = -1;
-				n->boundary = list_make1(n_default);
-				n->tablespacename = $7;
 				$$ = (Node *)n;
 			}
 		| SUBPARTITION name opt_part_options
@@ -8558,7 +8906,7 @@ opt_values_in:
 	;
 
 list_partition_item:
-		PARTITION name opt_values_in '(' expr_list ')' opt_part_options
+		PARTITION name opt_values_in '(' listValueList ')' opt_part_options
 			{
 				ListPartitionDefState *n = makeNode(ListPartitionDefState);
 				n->partitionName = $2;
@@ -8567,45 +8915,11 @@ list_partition_item:
 
 				$$ = (Node *)n;
 			}
-		| PARTITION name opt_values_in '(' DEFAULT ')' opt_part_options
-			{
-				ListPartitionDefState *n = makeNode(ListPartitionDefState);
-				n->partitionName = $2;
-				Const *n_default = makeNode(Const);
-				n_default->ismaxvalue = true;
-				n_default->location = -1;
-				n->boundary = list_make1(n_default);
-				n->tablespacename = $7;
-				$$ = (Node *)n;
-			}
-		| PARTITION name opt_values_in '(' expr_list ')' opt_part_options '(' subpartition_definition_list ')'
+		| PARTITION name opt_values_in '(' listValueList ')' opt_part_options '(' subpartition_definition_list ')'
 			{
 				ListPartitionDefState *n = makeNode(ListPartitionDefState);
 				n->partitionName = $2;
 				n->boundary = $5;
-				n->tablespacename = $7;
-				n->subPartitionDefState = $9;
-				int i = 0;
-				ListCell *elem = NULL;
-				List *parts = n->subPartitionDefState;
-				foreach(elem, parts) {
-					if (!IsA((Node*)lfirst(elem), HashPartitionDefState)) {
-						break;
-					}
-					HashPartitionDefState *hashPart = (HashPartitionDefState*)lfirst(elem);
-					hashPart->boundary = list_make1(makeIntConst(i, -1));
-					i++;
-				}
-				$$ = (Node *)n;
-			}
-		| PARTITION name opt_values_in '(' DEFAULT ')' opt_part_options '(' subpartition_definition_list ')'
-			{
-				ListPartitionDefState *n = makeNode(ListPartitionDefState);
-				n->partitionName = $2;
-				Const *n_default = makeNode(Const);
-				n_default->ismaxvalue = true;
-				n_default->location = -1;
-				n->boundary = list_make1(n_default);
 				n->tablespacename = $7;
 				n->subPartitionDefState = $9;
 				int i = 0;
@@ -8793,6 +9107,21 @@ maxValueItem:
 			}
 		;
 
+listValueList:
+		expr_list
+			{
+				$$ = $1;
+			}
+		| DEFAULT
+			{
+				Const *n = makeNode(Const);
+ 
+				n->ismaxvalue = true;
+				n->location = @1;
+ 
+				$$ = list_make1(n);
+			}
+		;
 
 opt_row_movement_clause: ENABLE_P ROW MOVEMENT		{ $$ = ROWMOVEMENT_ENABLE; }
 			| DISABLE_P ROW MOVEMENT					{ $$ = ROWMOVEMENT_DISABLE; }
@@ -8993,62 +9322,105 @@ ColIdForTableElement:	normal_ident				{ $$ = $1; }
 			| col_name_keyword						{ $$ = downcase_str(pstrdup($1), false); }
 		;
 
-columnDefForTableElement:	ColIdForTableElement Typename KVType ColCmprsMode create_generic_options ColQualList opt_column_options
+columnDefForTableElement:	ColIdForTableElement Typename opt_charset KVType ColCmprsMode create_generic_options ColQualList opt_column_options
 				{
 					ColumnDef *n = makeNode(ColumnDef);
 					n->colname = $1;
 					n->typname = $2;
-					n->kvtype = $3;
+					n->typname->charset = $3;
+					n->kvtype = $4;
 					n->inhcount = 0;
 					n->is_local = true;
 					n->is_not_null = false;
 					n->is_from_type = false;
 					n->storage = 0;
-					n->cmprs_mode = $4;
+					n->cmprs_mode = $5;
 					n->raw_default = NULL;
 					n->update_default = NULL;
 					n->cooked_default = NULL;
 					n->collOid = InvalidOid;
-					n->fdwoptions = $5;
-					if ($3 == ATT_KV_UNDEFINED) {
-						SplitColQualList($6, &n->constraints, &n->collClause, &n->clientLogicColumnRef,
+					n->fdwoptions = $6;
+					if ($4 == ATT_KV_UNDEFINED) {
+						SplitColQualList($7, &n->constraints, &n->collClause, &n->clientLogicColumnRef,
 									 yyscanner);
 					} else {
-						SplitColQualList($6, &n->constraints, &n->collClause,
+						SplitColQualList($7, &n->constraints, &n->collClause,
 										yyscanner);
 					}
-					n->columnOptions = $7;
+					n->columnOptions = $8;
 					$$ = (Node *)n;
 				}
 		;
 
-columnDef:	ColId Typename KVType ColCmprsMode create_generic_options ColQualList opt_column_options
+columnDef:	ColId Typename opt_charset KVType ColCmprsMode create_generic_options ColQualList opt_column_options
 				{
 					ColumnDef *n = makeNode(ColumnDef);
 					n->colname = $1;
 					n->typname = $2;
-					n->kvtype = $3;
+					n->typname->charset = $3;
+					n->kvtype = $4;
 					n->inhcount = 0;
 					n->is_local = true;
 					n->is_not_null = false;
 					n->is_from_type = false;
 					n->storage = 0;
-					n->cmprs_mode = $4;
+					n->cmprs_mode = $5;
 					n->raw_default = NULL;
+					n->update_default = NULL;
 					n->cooked_default = NULL;
 					n->collOid = InvalidOid;
-					n->fdwoptions = $5;
-					if ($3 == ATT_KV_UNDEFINED) {
-						SplitColQualList($6, &n->constraints, &n->collClause, &n->clientLogicColumnRef,
+					n->fdwoptions = $6;
+					if ($4 == ATT_KV_UNDEFINED) {
+						SplitColQualList($7, &n->constraints, &n->collClause, &n->clientLogicColumnRef,
 									 yyscanner);
 					} else {
-						SplitColQualList($6, &n->constraints, &n->collClause,
+						SplitColQualList($7, &n->constraints, &n->collClause,
 										yyscanner);
 					}
-					n->columnOptions = $7;
+					n->columnOptions = $8;
 					$$ = (Node *)n;
 				}
 		;
+
+add_column_first_after:
+				FIRST_P
+				{
+#ifdef ENABLE_MULTIPLE_NODES
+					const char* message = "ALTER TABLE ... ADD ... FIRST is not yet supported";
+					InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);
+					ereport(errstate,
+						(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+							errmsg("Un-support feature"),
+							errdetail("ALTER TABLE ... ADD ... FIRST is not yet supported")));
+#endif
+					AlterTableCmd *n = makeNode(AlterTableCmd);
+					n->is_first = true;
+					n->after_name = NULL;
+					$$ = (Node *)n;
+				}
+				| AFTER ColId
+				{
+#ifdef ENABLE_MULTIPLE_NODES
+					const char* message = "ALTER TABLE ... ADD ... AFTER column_name is not yet supported";
+					InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);
+					ereport(errstate,
+						(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+							errmsg("Un-support feature"),
+							errdetail("ALTER TABLE ... ADD ... AFTER column_name is not yet supported")));
+#endif
+					AlterTableCmd *n = makeNode(AlterTableCmd);
+					n->is_first = false;
+					n->after_name = $2;
+					$$ = (Node *)n;
+				}
+				| /* EMPTY */
+				{
+					AlterTableCmd *n = makeNode(AlterTableCmd);
+					n->is_first = false;
+					n->after_name = NULL;
+					$$ = (Node *)n;
+				}
+			;
 
 KVType: TSTAG		{$$ = ATT_KV_TAG;}  /* tag for kv storage */
 		| TSFIELD	{$$ = ATT_KV_FIELD;}  /* field for kv storage */
@@ -9110,7 +9482,7 @@ ColConstraint:
 				}
 			| ColConstraintElem						{ $$ = $1; }
 			| ConstraintAttr						{ $$ = $1; }
-			| COLLATE any_name_or_sconst
+			| COLLATE collate_name
 				{
 					/*
 					 * Note: the CollateClause is momentarily included in
@@ -9384,7 +9756,7 @@ ColConstraintElem:
 					n->location = @1;
 					$$ = (Node *)n;
 				}
-			| UNIQUE opt_definition OptConsTableSpaceWithEmpty InformationalConstraintElem
+			| opt_unique_key opt_definition OptConsTableSpaceWithEmpty InformationalConstraintElem
 				{
 					Constraint *n = makeNode(Constraint);
 					n->contype = CONSTR_UNIQUE;
@@ -9396,7 +9768,7 @@ ColConstraintElem:
 					n->inforConstraint = (InformationalConstraint *) $4;
 					$$ = (Node *)n;
 				}
-			| UNIQUE opt_definition OptConsTableSpaceWithEmpty ENABLE_P InformationalConstraintElem
+			| opt_unique_key opt_definition OptConsTableSpaceWithEmpty ENABLE_P InformationalConstraintElem
 				{
 					Constraint *n = makeNode(Constraint);
 					n->contype = CONSTR_UNIQUE;
@@ -9484,7 +9856,7 @@ ColConstraintElem:
 					}
 #endif
 				}
-			| GENERATED ALWAYS AS '(' a_expr ')' STORED
+			| GENERATED ALWAYS AS '(' a_expr ')' generated_column_option
 				{
 #ifdef ENABLE_MULTIPLE_NODES
             		const char* message = "Generated column is not yet supported";
@@ -9543,6 +9915,26 @@ ColConstraintElem:
 					$$ = (Node *)n;
 				}
 		;
+ 
+opt_unique_key:
+			UNIQUE { $$ = NULL; }
+			| UNIQUE KEY
+			{
+				if (u_sess->attr.attr_sql.sql_compatibility != B_FORMAT) {
+					ereport(errstate, (errmodule(MOD_PARSER),
+						errcode(ERRCODE_SYNTAX_ERROR),
+						errmsg("Un-support feature"),
+						parser_errposition(@1),
+						errdetail("UNIQUE KEY is supported only in B compatibility")));
+				}
+				$$ = NULL;
+			}
+			;
+ 
+generated_column_option:
+			STORED { $$ = 's'; }
+			| /* EMPTY */ { $$ = '\0'; }
+			;
 
 /*
  * ConstraintAttr represents constraint attributes, which we parse as if
@@ -14641,6 +15033,11 @@ rename_list:
 
 rename_user_clause:
                        RoleId TO RoleId                                        {$$ = list_make2($1, $3); }
+
+collate_name:	any_name					{ $$ = $1; }
+				| Sconst					{ $$ = list_make1(makeString($1)); }
+		;
+
 any_name_list:
 			any_name								{ $$ = list_make1($1); }
 			| any_name_list ',' any_name			{ $$ = lappend($1, $3); }
@@ -16320,7 +16717,7 @@ IndexStmt:	CREATE opt_unique INDEX opt_concurrently opt_index_name
 					n->unique = $2;
 					n->concurrent = $4;
 					n->missing_ok = false;
-                    n->schemaname = $5->schemaname;
+					n->schemaname = $5->schemaname;
 					n->idxname = $5->relname;
 					n->relation = $6->relation;
 					n->accessMethod = $6->accessMethod;
@@ -16387,7 +16784,7 @@ IndexStmt:	CREATE opt_unique INDEX opt_concurrently opt_index_name
 					n->unique = $2;
 					n->concurrent = $4;
 					n->missing_ok = false;
-                    n->schemaname = $5->schemaname;
+					n->schemaname = $5->schemaname;
 					n->idxname = $5->relname;
 					n->relation = $6->relation;
 					n->accessMethod = $6->accessMethod;
@@ -16485,7 +16882,7 @@ IndexStmt:	CREATE opt_unique INDEX opt_concurrently opt_index_name
 					n->unique = $2;
 					n->concurrent = $4;
 					n->missing_ok = false;
-                    n->schemaname = $5->schemaname;
+					n->schemaname = $5->schemaname;
 					n->idxname = $5->relname;
 					n->relation = $6->relation;
 					n->accessMethod = $6->accessMethod;
@@ -16882,7 +17279,7 @@ index_method_relation_clause:
  * expressions in parens.  For backwards-compatibility reasons, we allow
  * an expression that's just a function call to be written without parens.
  */
-index_elem:	DolphinColId opt_collate opt_class opt_asc_desc opt_nulls_order
+index_elem:	DolphinColId opt_collation opt_class opt_asc_desc opt_nulls_order
 				{
 					$$ = makeNode(IndexElem);
 					$$->name = downcase_str($1->str, $1->is_quoted);
@@ -16893,7 +17290,7 @@ index_elem:	DolphinColId opt_collate opt_class opt_asc_desc opt_nulls_order
 					$$->ordering = (SortByDir)$4;
 					$$->nulls_ordering = (SortByNulls)$5;
 				}
-			| index_functional_expr_key opt_collate opt_class opt_asc_desc opt_nulls_order
+			| index_functional_expr_key opt_collation opt_class opt_asc_desc opt_nulls_order
 				{
 					$$ = makeNode(IndexElem);
 					$$->name = NULL;
@@ -16904,7 +17301,7 @@ index_elem:	DolphinColId opt_collate opt_class opt_asc_desc opt_nulls_order
 					$$->ordering = (SortByDir)$4;
 					$$->nulls_ordering = (SortByNulls)$5;
 				}
-			| '(' a_expr ')' opt_collate opt_class opt_asc_desc opt_nulls_order
+			| '(' a_expr ')' opt_collation opt_class opt_asc_desc opt_nulls_order
 				{
 					$$ = makeNode(IndexElem);
 					$$->name = NULL;
@@ -16998,11 +17395,7 @@ constraint_elem: ColId con_asc_desc
 		;
 
 index_functional_expr_key:	col_name_keyword_nonambiguous '(' Iconst ')'
-			{
-						if (u_sess->attr.attr_sql.sql_compatibility != B_FORMAT) {
-							ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
-								errmsg("prefix key is supported only in B-format database")));
-						}
+					{
 						PrefixKey* pk = makeNode(PrefixKey);
 						pk->arg = (Expr*)makeColumnRef(pstrdup($1), NIL, @1, yyscanner);
 						pk->length = $3;
@@ -17017,8 +17410,7 @@ index_functional_expr_key:	col_name_keyword_nonambiguous '(' Iconst ')'
 						 * This syntax branch can be parsed either as a column prefix or as a function.
 						 * In B-compatible mode, it is preferentially treated as a column prefix.
 						 */
-						if (u_sess->attr.attr_sql.sql_compatibility == B_FORMAT &&
-							$4 == NIL && list_length(elist) == 1 && list_length(nlist) == 1) {
+						if ($4 == NIL && list_length(elist) == 1 && list_length(nlist) == 1) {
 							Node* arg = (Node*)linitial(elist);
 							if (IsA(arg, A_Const) && ((A_Const*)arg)->val.type == T_Integer) {
 								PrefixKey* pk = makeNode(PrefixKey);
@@ -17055,9 +17447,38 @@ index_including_params:	index_elem						{ $$ = list_make1($1); }
 collate_option: opt_default COLLATE opt_equal any_name_or_sconst			{ $$ = $4; }
 		;
 
-opt_collate: collate_option							{ $$ = $1; }
-			| /*EMPTY*/								{ $$ = NIL; }
+collate:
+			COLLATE opt_equal charset_collate_name
+			{
+#ifdef ENABLE_MULTIPLE_NODES
+				const char* message = "specifying character sets and collations is not yet supported";
+				InsertErrorMessage(message, u_sess->plsql_cxt.gsplsql_yylloc);
+				ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+					errmsg("Un-support feature"),
+					errdetail(specifying character sets and collations is not yet supported)));
+#endif
+				if (u_sess->attr.attr_sql.sql_compatibility != B_FORMAT) {
+					ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+						errmsg("specifying character sets and collations is supported only in B-format database")));
+				}
+				$$ = $3;
+			}
 		;
+
+opt_collate:
+				collate								{ $$ = $1; }
+				| /*EMPTY*/							{ $$ = NULL; }
+			;
+
+default_collate:
+				collate								{ $$ = $1; }
+				| DEFAULT collate					{ $$ = $2; }
+			;
+
+opt_collation: 
+				COLLATE collate_name				{ $$ = $2; }
+				| /*EMPTY*/							{ $$ = NIL; }
+			;
 
 opt_class:	any_name								{ $$ = $1; }
 			| USING any_name						{ $$ = $2; }
@@ -17349,6 +17770,810 @@ callfunc_args:   func_arg_expr
 					$$ = NULL;
 				}
 			;
+			
+/*****************************************************************************
+ *
+ *             QUERY:
+ *                             create [definer_name] event [IF NOT EXIST] <ename>
+ *                                             on schedule schedule_time
+ *                                             [ON COMPLETION [NOT] PRESERVE]
+ *                                             [ENABLE | DISABLE | DISABLE ON SLAVE]
+ *                                             [COMMENT 'string']
+ *                                             do event_body
+ *
+ *****************************************************************************/
+ 
+ CreateEventStmt:
+                CREATE opt_or_replace definer_opt EVENT qualified_name ON SCHEDULE start_expr opt_ev_on_completion
+                opt_ev_status comment_opt DO ev_body
+				{
+#ifdef ENABLE_MULTIPLE_NODES
+					const char* message = "create event statement is not yet supported in distributed database.";
+					InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);
+					ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+							errmsg("CREATE EVENT is not yet supported in distributed database.")));
+#endif
+					if (u_sess->attr.attr_sql.sql_compatibility != B_FORMAT) {
+						const char* message = "create event statement is only supported in B format.";
+						InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);
+						ereport(errstate, (errmodule(MOD_PARSER),
+								errcode(ERRCODE_SYNTAX_ERROR),
+								errmsg("CREATE EVENT is supported only in B-format database"),
+								parser_errposition(@1)));
+						$$ = NULL;
+					} 
+					if($2) {
+						parser_yyerror("EVENT not support REPLACE function");
+					}
+					CreateEventStmt *n = makeNode(CreateEventStmt);
+					n->def_name = $3;
+					n->if_not_exists = false;
+					n->event_name = $5;
+					n->start_time_expr = $8;
+					n->end_time_expr = NULL;
+					n->interval_time = NULL;
+					n->complete_preserve = $9;
+					n->event_status = (EventStatus)$10;
+					n->event_comment_str = $11;
+					n->event_query_str = $13;
+					$$ = (Node *)n;
+				}
+				| CREATE opt_or_replace definer_opt EVENT IF_P NOT EXISTS qualified_name ON SCHEDULE start_expr opt_ev_on_completion
+                opt_ev_status comment_opt DO ev_body
+				{
+#ifdef ENABLE_MULTIPLE_NODES
+					const char* message = "create event statement is not yet supported in distributed database.";
+					InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);
+					ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+							errmsg("CREATE EVENT is not yet supported in distributed database.")));
+#endif
+					if (u_sess->attr.attr_sql.sql_compatibility != B_FORMAT) {
+						const char* message = "create event statement is only supported in B format.";
+						InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);
+						ereport(errstate,
+							(errmodule(MOD_PARSER),
+								errcode(ERRCODE_SYNTAX_ERROR),
+								errmsg("CREATE EVENT is supported only in B-format database."),
+								parser_errposition(@1)));
+						$$ = NULL;
+					} 
+					if($2) {
+						parser_yyerror("EVENT not support REPLACE function");
+					}
+					CreateEventStmt *n = makeNode(CreateEventStmt);
+					n->def_name = $3;
+					n->if_not_exists = true;
+					n->event_name = $8;
+					n->start_time_expr = $11;
+					n->end_time_expr = NULL;
+					n->interval_time = NULL;
+					n->complete_preserve = $12;
+					n->event_status = (EventStatus)$12;
+					n->event_comment_str = $14;
+					n->event_query_str = $16;
+					$$ = (Node *)n;
+				}
+				| CREATE opt_or_replace definer_opt EVENT qualified_name ON SCHEDULE EVERY every_interval start_expr end_expr opt_ev_on_completion
+				opt_ev_status comment_opt DO ev_body
+				{
+#ifdef ENABLE_MULTIPLE_NODES
+					const char* message = "create event statement is not yet supported in distributed database.";
+					InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);
+					ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+							errmsg("CREATE EVENT is not yet supported in distributed database.")));
+#endif
+					if (u_sess->attr.attr_sql.sql_compatibility != B_FORMAT) {
+						const char* message = "create event statement is only supported in B format.";
+						InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);
+						ereport(errstate,
+							(errmodule(MOD_PARSER),
+								errcode(ERRCODE_SYNTAX_ERROR),
+								errmsg("CREATE EVENT is supported only in B-format database."),
+								parser_errposition(@1)));
+						$$ = NULL;
+					}
+					if($2) {
+						parser_yyerror("EVENT not support REPLACE function");
+					}
+					CreateEventStmt *n = makeNode(CreateEventStmt);
+					n->def_name = $3;
+					n->if_not_exists = false;
+					n->event_name = $5;
+					n->start_time_expr = $10;
+					n->end_time_expr = $11;
+					n->interval_time = $9;
+					n->complete_preserve = $12;
+					n->event_status = (EventStatus)$13;
+					n->event_comment_str = $14;
+					n->event_query_str = $16;
+					$$ = (Node *)n;
+				}
+				| CREATE opt_or_replace definer_opt EVENT IF_P NOT EXISTS qualified_name ON SCHEDULE EVERY every_interval start_expr end_expr opt_ev_on_completion
+				opt_ev_status comment_opt DO ev_body
+				{
+#ifdef ENABLE_MULTIPLE_NODES
+					const char* message = "create event statement is not yet supported in distributed database.";
+					InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc); 
+					ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+							errmsg("CREATE EVENT is not yet supported in distributed database.")));
+#endif
+					if (u_sess->attr.attr_sql.sql_compatibility != B_FORMAT) {
+						const char* message = "create event statement is only supported in B format.";
+						InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);
+						ereport(errstate,
+							(errmodule(MOD_PARSER),
+								errcode(ERRCODE_SYNTAX_ERROR),
+								errmsg("CREATE EVENT is supported only in B-format database."),
+								parser_errposition(@1)));
+						$$ = NULL;
+					}
+					if($2) {
+						parser_yyerror("EVENT not support REPLACE function");
+					}
+					CreateEventStmt *n = makeNode(CreateEventStmt);
+					n->def_name = $3;
+					n->if_not_exists = true;
+					n->event_name = $8;
+					n->start_time_expr = $13;
+					n->end_time_expr = $14;
+					n->interval_time = $12;
+					n->complete_preserve = $15;
+					n->event_status = (EventStatus)$16;
+					n->event_comment_str = $17;
+					n->event_query_str = $19;
+					$$ = (Node *)n;
+				}
+			;
+
+
+definer_opt:
+			DEFINER '=' user                        { $$ = $3; }
+			| /* EMPTY */                           { $$ = NULL; }
+		;
+
+every_interval:
+                Iconst opt_interval			
+				{
+					TypeName *t;
+					t = SystemTypeName("interval");
+					t->typmods = $2;
+					Node *num = makeIntConst($1, @1);
+		            $$ = makeTypeCast(num, t, -1);	
+				}
+				| Sconst opt_interval
+				{
+					TypeName *t;
+					t = SystemTypeName("interval");
+					t->typmods = $2;
+					Node *num = makeStringConst($1, @1);
+					$$ = makeTypeCast(num, t, -1);
+				}
+				| FCONST opt_interval
+				{
+					TypeName *t;
+					t = SystemTypeName("interval");
+					t->typmods = $2;
+					Node *num = makeStringConst($1, @1);
+					$$ = makeTypeCast(num, t, -1);
+				}
+			;
+
+start_expr:		STARTS ev_timeexpr
+			{ $$ = $2; }
+				| AT ev_timeexpr  		
+			{ $$ = $2; }
+				| /* EMPTY */               { $$ = NULL; }
+			;
+
+end_expr:		ENDS ev_timeexpr		
+			{ $$ = $2; }
+				| /* EMPTY */ 				{ $$ = NULL; }
+			;
+
+ev_timeexpr:		initime	{ $$ = $1; }
+			| initime '+' interval_list
+			{ $$ = (Node *) makeSimpleA_Expr(AEXPR_OP, "+", $1, $3, @2);}
+			| initime '-' interval_list
+			{ $$ = (Node *) makeSimpleA_Expr(AEXPR_OP, "-", $1, $3, @2);}
+		;
+
+interval_list: interval_cell						{ $$ = $1; }
+			| interval_list '+' interval_list
+            	{ $$ = (Node *) makeSimpleA_Expr(AEXPR_OP, "+", $1, $3, @2); }
+            | interval_list '-' interval_list
+            	{ $$ = (Node *) makeSimpleA_Expr(AEXPR_OP, "-", $1, $3, @2); }
+	;
+
+interval_cell:  INTERVAL ICONST opt_interval
+				{
+					char* a = NULL;
+					a = (char*)palloc(8);
+					pg_itoa($2, a);
+					TypeName *t = SystemTypeName("interval");
+					t->location = @1;
+					t->typmods = $3;
+					$$ = makeStringConstCast(a, @2, t);
+				}
+				| INTERVAL Sconst opt_interval
+				{
+					TypeName *t = SystemTypeName("interval");
+					t->location = @1;
+					t->typmods = $3;
+					$$ = makeStringConstCast($2, @2, t);
+				}
+				| INTERVAL FCONST opt_interval
+				{
+					$$  = makeFloatConst($2, @2);
+				}
+				| /* EMPTY */ 				{ $$ = NULL; }
+			;
+
+initime: 		interval_intexpr			{$$ = $1; }
+				| functime_expr				{$$ = $1; }
+				| functime_app				{$$ = $1; }
+			;
+
+functime_app:			normal_ident '(' ')'
+				{
+					FuncCall *n = makeNode(FuncCall);
+					
+					n->funcname = list_make1(makeString($1));
+					n->args = NIL;
+					n->agg_order = NIL;
+					n->agg_star = FALSE;
+					n->agg_distinct = FALSE;
+					n->func_variadic = FALSE;
+					n->over = NULL;
+					n->location = @1;
+					n->call_func = false;
+					$$ = (Node *)n;
+				}
+				| normal_ident '(' func_arg_list ')'
+				{
+					FuncCall *n = makeNode(FuncCall);
+					n->funcname = list_make1(makeString($1));
+					n->args = $3;
+					n->agg_order = NIL;
+					n->agg_star = FALSE;
+					n->agg_distinct = FALSE;
+					n->func_variadic = FALSE;
+					n->over = NULL;
+					n->location = @1;
+					n->call_func = false;
+					$$ = (Node *)n;
+				}
+			;
+
+functime_expr: 
+			CURRENT_TIMESTAMP
+				{
+					FuncCall *n = makeNode(FuncCall);
+					n->funcname = SystemFuncName("pg_systimestamp");
+					n->args = NIL;
+					n->agg_order = NIL;
+					n->agg_star = FALSE;
+					n->agg_distinct = FALSE;
+					n->func_variadic = FALSE;
+					n->over = NULL;
+					n->location = @1;
+					n->call_func = false;
+					$$ = (Node *)n;
+				}
+			| CURRENT_TIMESTAMP '(' Iconst ')'
+				{
+					Node *n;
+					TypeName *d;
+					n = makeStringConstCast("now", -1, SystemTypeName("text"));
+					d = SystemTypeName("timestamptz");
+					d->typmods = list_make1(makeIntConst($3, @3));
+					$$ = makeTypeCast(n, d, @1);
+				}
+			| LOCALTIMESTAMP
+				{
+					Node *n;
+					n = makeStringConstCast("now", -1, SystemTypeName("text"));
+					$$ = makeTypeCast(n, SystemTypeName("timestamp"), @1);
+				}
+			| LOCALTIMESTAMP '(' Iconst ')'
+				{
+					Node *n;
+					TypeName *d;
+					n = makeStringConstCast("now", -1, SystemTypeName("text"));
+					d = SystemTypeName("timestamp");
+					d->typmods = list_make1(makeIntConst($3, @3));
+					$$ = makeTypeCast(n, d, @1);
+				}
+			| SYSDATE
+				{
+					FuncCall *n = makeNode(FuncCall);
+					n->funcname = SystemFuncName("sysdate");
+					n->args = NIL;
+					n->agg_order = NIL;
+					n->agg_star = FALSE;
+					n->agg_distinct = FALSE;
+					n->func_variadic = FALSE;
+					n->over = NULL;
+					n->location = @1;
+					n->call_func = false;
+					$$ = (Node *)n;
+				}
+			;
+
+interval_intexpr:
+		 Sconst
+		{
+			$$ = makeStringConstCast($1, @1, SystemTypeName("timestamp"));
+		}
+	;
+
+opt_ev_on_completion:
+                       ON COMPLETION PRESERVE                  { $$ = FALSE; }
+                       | ON COMPLETION NOT PRESERVE            { $$ = TRUE; }
+                       | /*EMPTY*/                             	   { $$ = TRUE; }
+               	;
+
+opt_ev_status:
+                       ENABLE_P                        				{ $$ = EVENT_ENABLE; }
+                       | DISABLE_P                            		{ $$ = EVENT_DISABLE; }
+                       | DISABLE_P ON SLAVE         				{ $$ = EVENT_DISABLE_ON_SLAVE; }
+                       | /*EMPTY*/                                	{ $$ = EVENT_ENABLE; }
+               ;
+
+
+
+comment_opt:    COMMENT SCONST                                  { $$ = $2; }
+                | /*EMPTY*/                                     { $$ = NULL; }
+	;
+
+ev_body:    {
+				char    *ev_body_str = NULL;
+				int     ev_body_len = 0;
+				int     tok = YYEMPTY;
+				int     proc_b = 0;
+				int     proc_e = 0;
+				int     rc = 0;
+				int     pre_tok = 0;
+				int    	ploc = 0;
+				int     pre_loc = 0;
+				int     next_tok = 0;
+				int  	flag = 0;
+				rc = CompileWhich();
+				base_yy_extra_type *yyextra = pg_yyget_extra(yyscanner);
+				if (yychar == YYEOF || yychar == YYEMPTY) {
+					tok = YYLEX;
+				}
+				else {
+					tok = yychar;
+					yychar = YYEMPTY;
+				}
+				proc_b = yylloc;
+				/* start event body scan */
+				while (true) {
+					if(tok == ';') {
+						++flag;
+					}
+
+					if(tok == YYEOF ) {
+						tok = YYLEX;
+						if(flag) {
+							proc_e = pre_loc;
+						} else {
+							proc_e = yylloc;
+						}	
+						break;
+					}
+					ploc = yylloc;
+					if(tok != 0) {
+						pre_loc = ploc;
+					}
+					pre_tok = tok;
+					tok = YYLEX;
+				}
+				if (proc_e == 0) {
+					ereport(ERROR, (errcode(ERRCODE_SYNTAX_ERROR), errmsg("event body is not ended correctly.")));
+				}
+				ev_body_len = proc_e - proc_b + 1;
+				ev_body_str = (char*)palloc0(ev_body_len + 1);
+				rc = strncpy_s(ev_body_str, ev_body_len + 1, yyextra->core_yy_extra.scanbuf + proc_b - 1, ev_body_len);
+				securec_check(rc, "\0", "\0");
+				ev_body_str[ev_body_len] = '\0';
+				/* Reset the flag which mark whether we are in slash proc. */
+				yyextra->core_yy_extra.in_slash_proc_body = false;
+				yyextra->core_yy_extra.dolqstart = NULL;
+				$$ = ev_body_str;
+		}
+	;
+
+
+/*****************************************************************************
+ *
+ *             QUERY:
+ *                  ALTER
+ *						[DEFINER = user]
+ *						EVENT event_name
+ *						[ON SCHEDULE schedule]
+ *						[ON COMPLETION [NOT] PRESERVE]
+ *						[RENAME TO new_event_name]
+ *						[ENABLE | DISABLE | DISABLE ON SLAVE]
+ *						[COMMENT 'string']
+ *						[DO event_body]
+ *
+ *****************************************************************************/
+AlterEventStmt:
+					ALTER definer_name_opt EVENT qualified_name  preserve_opt rename_opt status_opt comments_opt action_opt
+					{
+#ifdef ENABLE_MULTIPLE_NODES
+					const char* message = "alter event statement is not yet supported in distributed database.";
+					InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);
+					ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+							errmsg("ALTER EVENT is not yet supported in distributed database.")));
+#endif
+						if (u_sess->attr.attr_sql.sql_compatibility != B_FORMAT) {
+							const char* message = "alter event statement is only supported in B format.";
+							InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);
+							ereport(errstate, (errmodule(MOD_PARSER),
+									errcode(ERRCODE_SYNTAX_ERROR),
+									errmsg("ALTER EVENT is supported only in B-format database."),
+									parser_errposition(@1)));
+							$$ = NULL;
+						}
+						AlterEventStmt *n = makeNode(AlterEventStmt);
+						n->def_name = $2;
+						n->event_name = $4;
+						n->start_time_expr = NULL;
+						n->end_time_expr = NULL;
+						n->interval_time = NULL;
+						n->complete_preserve = $5;
+						n->new_name = $6;
+						n->event_status = $7;
+						n->event_comment_str = $8;
+						n->event_query_str = $9;
+						$$ = (Node*)n;
+					}
+					| ALTER definer_name_opt EVENT qualified_name ON SCHEDULE AT ev_timeexpr preserve_opt 
+					rename_opt status_opt comments_opt action_opt
+					{
+#ifdef ENABLE_MULTIPLE_NODES
+					const char* message = "alter event statement is not yet supported in distributed database.";
+					InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);
+					ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+							errmsg("ALTER EVENT is not yet supported in distributed database.")));
+#endif
+						if (u_sess->attr.attr_sql.sql_compatibility != B_FORMAT) {
+							const char* message = "alter event statement is only supported in B format.";
+							InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);
+							ereport(errstate,
+							(errmodule(MOD_PARSER),
+								errcode(ERRCODE_SYNTAX_ERROR),
+								errmsg("ALTER EVENT is supported only in B-format database."),
+								parser_errposition(@1)));
+							$$ = NULL;
+						}
+						AlterEventStmt *n = makeNode(AlterEventStmt);
+						n->def_name = $2;
+						n->event_name = $4;
+						n->start_time_expr = makeDefElem("start_date", (Node *)$8);
+						n->end_time_expr = NULL;
+						n->interval_time = makeDefElem("repeat_interval", NULL);
+						n->complete_preserve = $9;
+						n->new_name = $10;
+						n->event_status = $11;
+						n->event_comment_str = $12;
+						n->event_query_str = $13;
+						$$ = (Node*)n;
+					}
+					| ALTER definer_name_opt EVENT qualified_name ON SCHEDULE EVERY every_interval start_opt
+					end_opt preserve_opt rename_opt status_opt comments_opt action_opt
+					{
+#ifdef ENABLE_MULTIPLE_NODES
+					const char* message = "alter event statement is not yet supported in distributed database.";
+					InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);
+					ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+							errmsg("ALTER EVENT is not yet supported in distributed database.")));
+#endif
+						if (u_sess->attr.attr_sql.sql_compatibility != B_FORMAT) {
+							const char* message = "alter event statement is only supported in B format.";
+							InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);
+							ereport(errstate, (errmodule(MOD_PARSER),
+									errcode(ERRCODE_SYNTAX_ERROR),
+									errmsg("ALTER EVENT is supported only in B-format database."),
+									parser_errposition(@1)));
+							$$ = NULL;
+							
+						}
+						AlterEventStmt *n = makeNode(AlterEventStmt);
+						n->def_name = $2;
+						n->event_name = $4;
+						n->start_time_expr = $9;
+						n->end_time_expr = $10;
+						n->interval_time = makeDefElem("repeat_interval", (Node *)$8);
+						n->complete_preserve = $11;
+						n->new_name = $12;
+						n->event_status = $13;
+						n->event_comment_str = $14;
+						n->event_query_str = $15;
+						$$ = (Node*)n;
+					}
+                        ;
+
+definer_name_opt:	DEFINER '=' user
+			{ 
+				$$ = makeDefElem("owner", (Node *)makeString($3));
+			} 
+                        | /* EMPTY */                           { $$ = NULL; }
+                ;
+
+
+end_opt:                ENDS ev_timeexpr 
+                                {
+                                        $$ = makeDefElem("end_date", (Node *)$2);
+                                }
+                                |/*EMPTY*/                      { $$ = NULL; }
+                        ;
+
+start_opt:
+                                STARTS  ev_timeexpr
+                                {
+                                        $$ = makeDefElem("start_date", (Node *)$2);
+                                }
+                                | /*EMPTY*/                     { $$ = NULL; }
+                        ;
+preserve_opt:   ON COMPLETION PRESERVE
+                                {
+                                        $$ = makeDefElem("auto_drop", (Node *)makeInteger(0));
+                                }
+                                | ON COMPLETION NOT PRESERVE
+                                {
+                                        $$ = makeDefElem("auto_drop", (Node *)makeInteger(1));
+                                }
+                                | /*EMPTY*/                     { $$ = NULL; }
+                        ;
+
+rename_opt:		RENAME TO qualified_name
+				{
+					$$ = makeDefElem("rename", (Node *)$3);
+				}
+				| /*EMPTY*/			{ $$ = NULL; }
+			;
+status_opt:		ENABLE_P			{$$ = makeDefElem("enabled", (Node *)makeInteger(0));}
+				| DISABLE_P			{$$ = makeDefElem("enabled", (Node *)makeInteger(1));}
+				| DISABLE_P ON SLAVE{$$ = makeDefElem("enabled", (Node *)makeInteger(2));}
+				| /*EMPTY*/			{ $$ = NULL; }
+			;
+
+comments_opt:	COMMENT Sconst					{$$ = makeDefElem("comments", (Node *)makeString($2));}
+				| /*EMPTY*/			{ $$ = NULL; }
+			;
+
+action_opt:		DO ev_body				{$$ = makeDefElem("program_action", (Node *)makeString($2));}
+				| /*EMPTY*/			{ $$ = NULL; }
+			;
+
+
+/*****************************************************************************
+ *
+ *             QUERY:
+ *                             DROP EVENT [IF EXISTS] event_name
+ *
+ *****************************************************************************/
+DropEventStmt:
+			DROP EVENT IF_P EXISTS qualified_name
+			{
+#ifdef ENABLE_MULTIPLE_NODES
+					const char* message = "drop event statement is not yet supported in distributed database.";
+					InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);
+					ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+							errmsg("DROP EVENT is not yet supported in distributed database.")));
+#endif
+				if (u_sess->attr.attr_sql.sql_compatibility != B_FORMAT) {
+					const char* message = "drop event statement is only supported in B format.";
+					InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);
+					ereport(errstate, (errmodule(MOD_PARSER),
+							errcode(ERRCODE_SYNTAX_ERROR),
+							errmsg("DROP EVENT is supported only in B-format database."),
+							parser_errposition(@1)));
+					$$ = NULL;
+				}
+				DropEventStmt *n = makeNode(DropEventStmt);
+				n->missing_ok = true;
+				n->event_name = $5;
+				$$ = (Node*)n; 
+			}
+			| DROP EVENT qualified_name
+			{
+#ifdef ENABLE_MULTIPLE_NODES
+					const char* message = "drop event statement is not yet supported in distributed database.";
+					InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);
+					ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+							errmsg("DROP EVENT is not yet supported in distributed database.")));
+#endif
+				if (u_sess->attr.attr_sql.sql_compatibility != B_FORMAT) {
+					const char* message = "drop event statement is only supported in B format.";
+					InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);
+					ereport(errstate,
+							(errmodule(MOD_PARSER),
+								errcode(ERRCODE_SYNTAX_ERROR),
+								errmsg("DROP EVENT is supported only in B-format database"),
+								parser_errposition(@1)));
+					$$ = NULL;
+				}
+				DropEventStmt *n = makeNode(DropEventStmt);
+				n->missing_ok = false;
+				n->event_name = $3;
+				$$ = (Node*)n; 
+			}
+		;
+
+/*****************************************************************************
+ *
+ *             QUERY:
+ *                             SHOW EVENTS
+ *   							[{FROM | IN} schema_name]
+ *  							[LIKE 'pattern' | WHERE expr]
+ *
+ *****************************************************************************/
+
+ShowEventStmt:
+			 SHOW EVENTS event_from_clause event_where_clause
+			{
+#ifdef ENABLE_MULTIPLE_NODES
+					const char* message = "show events statement is not yet supported in distributed database.";
+					InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);
+					ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+							errmsg("SHOW EVENTS is not yet supported in distributed database.")));
+#endif
+				if (u_sess->attr.attr_sql.sql_compatibility != B_FORMAT) {
+					const char* message = "show events statement is only supported in B format.";
+					InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);
+					ereport(errstate, (errmodule(MOD_PARSER),
+							errcode(ERRCODE_SYNTAX_ERROR),
+							errmsg("SHOW EVENTS is supported only in B-format database."),
+							parser_errposition(@1)));
+					$$ = NULL;
+				}
+				ShowEventStmt *n = makeNode(ShowEventStmt);
+				n->from_clause = $3;
+				n->where_clause = $4;
+				$$ = (Node*)n;
+            }
+			| SHOW EVENTS event_from_clause
+			{
+#ifdef ENABLE_MULTIPLE_NODES
+					const char* message = "show events is not yet supported in distributed database.";
+					InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);
+					ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+							errmsg("SHOW EVENTS is not yet supported in distributed database.")));
+#endif
+				if (u_sess->attr.attr_sql.sql_compatibility != B_FORMAT) {
+					const char* message = "show events statement is only supported in B format.";
+					InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);
+					ereport(errstate, (errmodule(MOD_PARSER),
+							errcode(ERRCODE_SYNTAX_ERROR),
+							errmsg("SHOW EVENTS is supported only in B-format database."),
+							parser_errposition(@1)));
+					$$ = NULL;
+				}
+				ShowEventStmt *n = makeNode(ShowEventStmt);
+					n->from_clause = $3;
+					n->where_clause = NULL;	
+					$$ = (Node*)n;
+			}
+			| SHOW EVENTS event_where_clause
+			{
+#ifdef ENABLE_MULTIPLE_NODES
+					const char* message = "show events is not yet supported in distributed database.";
+					InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);
+					ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+							errmsg("SHOW EVENTS is not yet supported in distributed database.")));
+#endif
+				if (u_sess->attr.attr_sql.sql_compatibility != B_FORMAT) {
+					const char* message = "show events statement is only supported in B format.";
+					InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);
+					ereport(errstate, (errmodule(MOD_PARSER),
+							errcode(ERRCODE_SYNTAX_ERROR),
+							errmsg("SHOW EVENTS is supported only in B-format database."),
+							parser_errposition(@1)));
+					$$ = NULL;
+				}
+				ShowEventStmt *n = makeNode(ShowEventStmt);
+				n->from_clause = NULL;
+				n->where_clause = $3;
+				$$ = (Node*)n;
+			}
+		;
+
+
+event_from_clause:
+			FROM ColId
+			{
+				$$ = makeStringConst($2, @2);
+			}
+			| IN_P ColId
+			{
+				$$ = makeStringConst($2, @2);
+			}
+        ;
+
+event_where_clause:
+			WHERE ev_where_body 
+			{
+				$$ = $2;
+			}
+			| LIKE Sconst
+			{
+				errno_t	rc = EOK;
+				char* event_where_str;
+				event_where_str = (char *)palloc(1024 + strlen($2));
+				rc = strcpy_s(event_where_str, 1024 + strlen($2), "job_name like '");
+				securec_check(rc, "\0", "\0");
+				rc = strcat_s(event_where_str, 1024 + strlen($2), $2);
+				securec_check(rc, "\0", "\0");
+				rc = strcat_s(event_where_str, 1024 + strlen($2), "\'");
+				securec_check(rc, "\0", "\0");
+				$$ = event_where_str;
+			}
+        ;
+
+ev_where_body:	{
+				char    *ev_body_str = NULL;
+				int     ev_body_len = 0;
+				int     tok = YYEMPTY;
+				int     proc_b = 0;
+				int     proc_e = 0;
+				int     rc = 0;
+				int     pre_tok = 0;
+				int    	ploc = 0;
+				int     pre_loc = 0;
+				int     next_tok = 0;
+				int  	flag = 0;
+				rc = CompileWhich();
+				base_yy_extra_type *yyextra = pg_yyget_extra(yyscanner);
+				if (yychar == YYEOF || yychar == YYEMPTY) {
+					tok = YYLEX;
+				}
+				else {
+					tok = yychar;
+					yychar = YYEMPTY;
+				}
+				proc_b = yylloc;
+				/* start event body scan */
+				while (true) {
+					if(tok == ';') {
+						++flag;
+					}
+
+					if(tok == YYEOF ) {
+						tok = YYLEX;
+						if(flag) {
+							proc_e = pre_loc;
+						} else {
+							proc_e = yylloc;
+						}
+						break;
+					}
+					ploc = yylloc;
+					if(tok != 0) {
+						pre_loc = ploc;
+					}
+					pre_tok = tok;
+					tok = YYLEX;
+				}
+				if (proc_e == 0) {
+					ereport(ERROR, (errcode(ERRCODE_SYNTAX_ERROR), errmsg("where body is not ended correctly.")));
+				}
+				ev_body_len = proc_e - proc_b + 1;
+				ev_body_str = (char*)palloc0(ev_body_len + 1);
+				rc = strncpy_s(ev_body_str, ev_body_len + 1, yyextra->core_yy_extra.scanbuf + proc_b - 1, ev_body_len);
+				securec_check(rc, "\0", "\0");
+				ev_body_str[ev_body_len] = '\0';
+				/* Reset the flag which mark whether we are in slash proc. */
+				yyextra->core_yy_extra.in_slash_proc_body = false;
+				yyextra->core_yy_extra.dolqstart = NULL;
+				$$ = ev_body_str;
+			}
+		;
+
+
 b_proc_body:
 			{
 				int     proc_b  = 0;
@@ -24475,7 +25700,7 @@ PreparableStmt:
 						(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
 							errmsg("@var_name is not yet supported in distributed database.")));
 #endif
-					if (u_sess->attr.attr_sql.sql_compatibility == B_FORMAT && u_sess->attr.attr_common.enable_set_variable_b_format) {
+					if (DB_IS_CMPT(B_FORMAT) && (u_sess->attr.attr_common.enable_set_variable_b_format || ENABLE_SET_VARIABLES)) {
 						$$ = $1;
 					} else {
 						const char* message = "@var_name is supported only in B-format database, and enable_set_variable_b_format = on.";
@@ -25590,26 +26815,11 @@ select_with_parens:
 										(Node*)list_nth($4, 0), (Node*)list_nth($4, 1),
 										NULL,
 										yyscanner);
-					SelectStmt *stmt = (SelectStmt *) $1;
-					if ($5 != NULL) {
-						if (stmt->intoClause != NULL) {
-							ereport(errstate,
-									(errcode(ERRCODE_SYNTAX_ERROR),
-									errmsg("select statement can contain only one into_clause")));
-						}
-						IntoClause *itc = (IntoClause *) $5;
-						if (itc->rel != NULL && u_sess->attr.attr_sql.sql_compatibility != B_FORMAT) {
-							ereport(errstate, 
-								(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
-								errmsg("into new table here only support in B-format database")));
-						}
-						stmt->intoClause = itc;
-					}
-					$$ = (Node *)stmt;
+					$$ = processIntoClauseInSelectStmt((SelectStmt *) $1, (IntoClause *) $5);
 				}
 			| select_clause opt_sort_clause select_limit opt_for_locking_clause
 				{
-                                        FilterStartWithUseCases((SelectStmt *) $1, $4, yyscanner, @4);
+					FilterStartWithUseCases((SelectStmt *) $1, $4, yyscanner, @4);
 					insertSelectOptions((SelectStmt *) $1, $2, $4,
 										(Node*)list_nth($3, 0), (Node*)list_nth($3, 1),
 										NULL,
@@ -25623,20 +26833,7 @@ select_with_parens:
 										(Node*)list_nth($3, 0), (Node*)list_nth($3, 1),
 										NULL,
 										yyscanner);
-					SelectStmt *stmt = (SelectStmt *) $1;
-					if (stmt->intoClause != NULL) {
-						ereport(errstate,
-								(errcode(ERRCODE_SYNTAX_ERROR),
-								errmsg("select statement can contain only one into_clause")));
-					}
-					IntoClause *itc = (IntoClause *) $5;
-					if (itc->rel != NULL && u_sess->attr.attr_sql.sql_compatibility != B_FORMAT) {
-						ereport(errstate,
-							(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
-							errmsg("into new table here only support in B-format database")));
-					}
-					stmt->intoClause = itc;
-					$$ = (Node *)stmt;
+					$$ = processIntoClauseInSelectStmt((SelectStmt *) $1, (IntoClause *) $5);
 				}
 			| select_clause opt_sort_clause opt_select_limit into_clause opt_for_locking_clause
 				{
@@ -25645,20 +26842,7 @@ select_with_parens:
 										(Node*)list_nth($3, 0), (Node*)list_nth($3, 1),
 										NULL,
 										yyscanner);
-					SelectStmt *stmt = (SelectStmt *) $1;
-					if (stmt->intoClause != NULL) {
-						ereport(errstate,
-								(errcode(ERRCODE_SYNTAX_ERROR),
-								errmsg("select statement can contain only one into_clause")));
-					}
-					IntoClause *itc = (IntoClause *) $4;
-					if (itc->rel != NULL && u_sess->attr.attr_sql.sql_compatibility != B_FORMAT) {
-						ereport(errstate,
-							(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
-							errmsg("into new table here only support in B-format database")));
-					}
-					stmt->intoClause = itc;
-					$$ = (Node *)stmt;
+					$$ = processIntoClauseInSelectStmt((SelectStmt *) $1, (IntoClause *) $4);
 				}
  		;
 
@@ -25687,70 +26871,29 @@ select_no_parens:
 										(Node*)list_nth($5, 0), (Node*)list_nth($5, 1),
 										$1,
 										yyscanner);
-					SelectStmt *stmt = (SelectStmt *) $2;
-					if ($6 != NULL) {
-						if (stmt->intoClause != NULL) {
-							ereport(errstate,
-									(errcode(ERRCODE_SYNTAX_ERROR),
-									errmsg("select statement can contain only one into_clause")));
-						}
-						IntoClause *itc = (IntoClause *) $6;
-						if (itc->rel != NULL && u_sess->attr.attr_sql.sql_compatibility != B_FORMAT) {
-							ereport(errstate,
-								(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
-								errmsg("into new table here only support in B-format database")));
-						}
-						stmt->intoClause = itc;
-					}
-					$$ = (Node *)stmt;
+					$$ = processIntoClauseInSelectStmt((SelectStmt *) $1, (IntoClause *) $6);
 				}
 			| with_clause select_clause opt_sort_clause select_limit for_locking_clause into_clause
 				{
-                                        FilterStartWithUseCases((SelectStmt *) $2, $5, yyscanner, @5);
+                    FilterStartWithUseCases((SelectStmt *) $2, $5, yyscanner, @5);
 					insertSelectOptions((SelectStmt *) $2, $3, $5,
 										(Node*)list_nth($4, 0), (Node*)list_nth($4, 1),
 										$1,
 										yyscanner);
-					SelectStmt *stmt = (SelectStmt *) $2;
-					if (stmt->intoClause != NULL) {
-						ereport(errstate,
-								(errcode(ERRCODE_SYNTAX_ERROR),
-								errmsg("select statement can contain only one into_clause")));
-					}
-					IntoClause *itc = (IntoClause *) $6;
-					if (itc->rel != NULL && u_sess->attr.attr_sql.sql_compatibility != B_FORMAT) {
-						ereport(errstate,
-							(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
-							errmsg("into new table here only support in B-format database")));
-					}
-					stmt->intoClause = itc;
-					$$ = (Node *)stmt;
+					$$ = processIntoClauseInSelectStmt((SelectStmt *) $1, (IntoClause *) $6);
 				}
 			| with_clause select_clause opt_sort_clause opt_select_limit into_clause opt_for_locking_clause
 				{
-                                        FilterStartWithUseCases((SelectStmt *) $2, $6, yyscanner, @6);
+                    FilterStartWithUseCases((SelectStmt *) $2, $6, yyscanner, @6);
 					insertSelectOptions((SelectStmt *) $2, $3, $6,
 										(Node*)list_nth($4, 0), (Node*)list_nth($4, 1),
 										$1,
 										yyscanner);
-					SelectStmt *stmt = (SelectStmt *) $2;
-					if (stmt->intoClause != NULL) {
-						ereport(errstate,
-								(errcode(ERRCODE_SYNTAX_ERROR),
-								errmsg("select statement can contain only one into_clause")));
-					}
-					IntoClause *itc = (IntoClause *) $5;
-					if (itc->rel != NULL && u_sess->attr.attr_sql.sql_compatibility != B_FORMAT) {
-						ereport(errstate,
-							(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
-							errmsg("into new table here only support in B-format database")));
-					}
-					stmt->intoClause = itc;
-					$$ = (Node *)stmt;
+					$$ = processIntoClauseInSelectStmt((SelectStmt *) $1, (IntoClause *) $5);
 				}
 			| with_clause select_clause opt_sort_clause select_limit opt_for_locking_clause
 				{
-                                        FilterStartWithUseCases((SelectStmt *) $2, $5, yyscanner, @5);
+                    FilterStartWithUseCases((SelectStmt *) $2, $5, yyscanner, @5);
 					insertSelectOptions((SelectStmt *) $2, $3, $5,
 										(Node*)list_nth($4, 0), (Node*)list_nth($4, 1),
 										$1,
@@ -25947,8 +27090,108 @@ into_clause:
 					$$->relkind = INTO_CLAUSE_RELKIND_DEFAULT;
 					$$->userVarList = $2;
 				}
-	;
-
+			| INTO OUTFILE Sconst characterset_option fields_options_fin lines_options_fin
+				{
+#ifdef ENABLE_MULTIPLE_NODES
+					const char* message = "SELECT INTO OUTFILE is not yet supported in distributed database.";
+					InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);
+					ereport(errstate,
+						(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+							errmsg("SELECT INTO OUTFILE is not yet supported in distributed database.")));
+#endif
+					if (u_sess->attr.attr_sql.sql_compatibility != B_FORMAT) {
+						ereport(errstate,
+							(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+								errmsg("SELECT INTO OUTFILE is only supported in B_FORMAT.")));
+					}
+					IntoClause *n = makeNode(IntoClause);
+					n->filename = $3;
+					n->copyOption = $5;
+					n->is_outfile = true;
+					if ($4)
+						n->copyOption = lappend(n->copyOption, $4);
+					if ($6)
+						n->copyOption = lappend3(n->copyOption, $6);
+					n->rel = NULL;
+					n->colNames = NIL;
+					n->options = NIL;
+					n->onCommit = ONCOMMIT_NOOP;
+					n->row_compress = REL_CMPRS_PAGE_PLAIN;
+					n->tableSpaceName = NULL;
+					n->skipData = false;
+					n->relkind = INTO_CLAUSE_RELKIND_DEFAULT;
+					$$ = n;
+				}
+			| INTO DUMPFILE Sconst
+				{
+#ifdef ENABLE_MULTIPLE_NODES
+					const char* message = "SELECT INTO DUMPFILE is not yet supported in distributed database.";
+					gsplsql_insert_error_msg(message, u_sess->plsql_cxt.plpgsql_yylloc);
+					ereport(errstate,
+						(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+							errmsg("SELECT INTO DUMPFILE is not yet supported in distributed database.")));
+#endif
+					if (u_sess->attr.attr_sql.sql_compatibility != B_FORMAT) {
+						ereport(errstate,
+							(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+								errmsg("SELECT INTO DUMPFILE is only supported in B_FORMAT.")));
+					}
+					$$ = makeNode(IntoClause);
+					$$->is_outfile = false;
+					$$->filename = $3;
+				}
+		;
+characterset_option:
+			CHARACTER SET Sconst
+				{
+					$$ = makeDefElem("encoding", (Node *)makeString($3));
+				}
+			| /*EMPTY*/			{ $$ = NULL; }
+		;
+fields_options_fin:
+			FIELDS fields_options_list			{ $$ = $2; }
+			| /*EMPTY*/							{ $$ = NIL; }
+		;
+fields_options_list:
+			fields_options_list fields_options_item		{ $$ = lappend($1, $2); }
+			| /*EMPTY*/			{ $$ = NIL; }
+		;
+fields_options_item:
+			TERMINATED BY Sconst
+				{
+					$$ = makeDefElem("delimiter", (Node *)makeString($3));
+				}
+			| OPTIONALLY ENCLOSED BY Sconst
+				{
+					$$ = makeDefElem("o_enclosed", (Node *)makeString($4));
+				}
+			| ENCLOSED BY Sconst
+				{
+					$$ = makeDefElem("enclosed", (Node *)makeString($3));
+				}
+			| ESCAPED BY Sconst
+				{
+					$$ = makeDefElem("escape", (Node *)makeString($3));
+				}
+		;
+lines_options_fin:
+			LINES lines_options_list	{ $$ = $2; }
+			| /*EMPTY*/			{ $$ = NIL; }
+		;
+lines_options_list:
+			lines_options_list lines_option_item	{ $$ = lappend($1, $2); }
+			| /*EMPTY*/			{ $$ = NIL; }
+		;
+lines_option_item:
+			STARTING BY Sconst
+				{
+					$$ = makeDefElem("line_start", (Node *)makeString($3));
+				}
+			| TERMINATED BY Sconst
+				{
+					$$ = makeDefElem("eol", (Node *)makeString($3));
+				}
+ 		;
 into_user_var_list:
 		uservar_name									{ $$ = list_make1($1); }
 		| into_user_var_list ',' uservar_name			{ $$ = lappend($1,$3); }
@@ -27355,11 +28598,8 @@ SimpleTypename:
 						ReleaseSysCache(typtup);
 					}
 				}
-			| EnumType  '(' opt_enum_val_list ')' opt_charset
+			| EnumType  '(' opt_enum_val_list ')'
 				{
-					if ($5 != NULL) {
-						ereport(WARNING, (errmsg("character set \"%s\" for type ENUM is not supported yet. default value set", $5)));
-					}
 					$$ = $1;
 					$$->typmods = $3;
 				}
@@ -27751,61 +28991,39 @@ ConstCharacter:  CharacterWithLength
 				}
 		;
 
-CharacterWithLength:  character '(' a_expr ')' opt_charset
+CharacterWithLength:  character '(' a_expr ')'
 				{
-					if (($5 != NULL) && (strcmp($5, "sql_text") != 0))
-					{
-						ereport(WARNING, (errmsg("character set \"%s\" for type %s is not supported yet. default value set", $5, $1)));
-					}
-
 					$$ = SystemTypeName($1);
 					$$->typmods = list_make1($3);
 					$$->location = @1;
 				}
-			| CHAR_P '(' a_expr ')' opt_charset
+			| CHAR_P '(' a_expr ')'
 			{
 				// If the type of $3 is not Iconst, an error is reported
 				CheckIconstType($3);
-				if (($5 != NULL) && (strcmp($5, "sql_text") != 0))
-				{
-					ereport(WARNING, (errmsg("character set \"%s\" for type %s is not supported yet. default value set", $5, $1)));
-				}
 
 				$$ = SystemTypeName((char *)("bpchar"));
 				$$->typmods = list_make1($3);
 				$$->location = @1;
 			}
-			| CHAR_P VARYING '(' a_expr ')' opt_charset
+			| CHAR_P VARYING '(' a_expr ')'
 			{
 				// If the type of $4 is not Iconst, an error is reported
 				CheckIconstType($4);
-				if (($6 != NULL) && (strcmp($6, "sql_text") != 0))
-				{
-					ereport(WARNING, (errmsg("character set \"%s\" for type %s is not supported yet. default value set", $6, $1)));
-				}
 
 				$$ = SystemTypeName((char *)("varchar"));
 				$$->typmods = list_make1($4);
 				$$->location = @1;
 			}
-			| TEXT_P '(' a_expr ')' opt_charset
+			| TEXT_P '(' a_expr ')'
 			{
-				if (($5 != NULL) && (strcmp($5, "sql_text") != 0))
-				{
-					ereport(WARNING, (errmsg("character set \"%s\" for type %s is not supported yet. default value set", $5, $1)));
-				}
 				$$ = SystemTypeName("text");
 				$$->location = @1;
 			}
 		;
 
-CharacterWithoutLength:	 character opt_charset
+CharacterWithoutLength:	 character
 				{
-					if (($2 != NULL) && (strcmp($2, "sql_text") != 0))
-					{
-						ereport(WARNING, (errmsg("character set \"%s\" for type %s is not supported yet. default value set", $2, $1)));
-					}
-
 					$$ = SystemTypeName($1);
 
 					/* char defaults to char(1), varchar to no limit */
@@ -27814,13 +29032,8 @@ CharacterWithoutLength:	 character opt_charset
 
 					$$->location = @1;
 				}
-			| CHAR_P opt_charset
+			| CHAR_P
 				{
-					if (($2 != NULL) && (strcmp($2, "sql_text") != 0))
-					{
-						ereport(WARNING, (errmsg("character set \"%s\" for type %s is not supported yet. default value set", $2, $1)));
-					}
-
 					$$ = SystemTypeName((char *)("bpchar"));
 
 					/* char defaults to char(1), varchar to no limit */
@@ -27828,23 +29041,14 @@ CharacterWithoutLength:	 character opt_charset
 
 					$$->location = @1;
 				}
-			| CHAR_P VARYING opt_charset
+			| CHAR_P VARYING
 				{
-					if (($3 != NULL) && (strcmp($3, "sql_text") != 0))
-					{
-						ereport(WARNING, (errmsg("character set \"%s\" for type %s is not supported yet. default value set", $3, $1)));
-					}
-
 					$$ = SystemTypeName((char *)("varchar"));
 
 					$$->location = @1;
 				}
-			| TEXT_P opt_charset
+			| TEXT_P
 				{
-					if (($2 != NULL) && (strcmp($2, "sql_text") != 0))
-					{
-						ereport(WARNING, (errmsg("character set \"%s\" for type %s is not supported yet. default value set", $2, $1)));
-					}
 					$$ = SystemTypeName("text");
 					$$->location = @1;
 				}
@@ -27875,13 +29079,125 @@ opt_varying:
 			| /*EMPTY*/								{ $$ = FALSE; }
 		;
 
-opt_charset:
-			charset_option							{ $$ = $1; }
-			| /*EMPTY*/								{ $$ = NULL; }
+character_set:
+			CHARACTER SET
+			| CHARSET
 		;
-charset_option:
-			CHARACTER SET ColId_or_Sconst					{ $$ = $3; }
-			| CHARSET ColId_or_Sconst					{ $$ = $2; }
+
+charset_collate_name:
+			ColId									{ $$ = $1; }
+			| Sconst								{ $$ = $1; }
+		;
+
+charset:
+			character_set charset_collate_name
+			{
+#ifdef ENABLE_MULTIPLE_NODES
+				const char* message = "specifying character sets and collations is not yet supported";
+				InsertErrorMessage(message, u_sess->plsql_cxt.gsplsql_yylloc);
+				ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+					errmsg("specifying character sets and collations is not yet supported")));
+#endif
+				if (u_sess->attr.attr_sql.sql_compatibility != B_FORMAT) {
+					ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+						errmsg("specifying character sets and collations is supported only in B-format database")));
+				}
+				int encoding = pg_valid_server_encoding($2);
+				if (encoding < 0) {
+					ereport(WARNING, (errmsg("%s is not a valid encoding name. default value set", $2)));
+					$$ = PG_INVALID_ENCODING;
+				} else {
+					$$ = encoding;
+				}
+			}
+		;
+
+convert_charset:
+			charset
+			{
+				$$ = $1;
+			}
+			| character_set DEFAULT
+			{
+#ifdef ENABLE_MULTIPLE_NODES
+				const char* message = "specifying character sets and collations is not yet supported";
+				InsertErrorMessage(message, u_sess->plsql_cxt.gsplsql_yylloc);
+				ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+					errmsg("specifying character sets and collations is not yet supported")));
+#endif
+				if (u_sess->attr.attr_sql.sql_compatibility != B_FORMAT) {
+					ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+						errmsg("specifying character sets and collations is supported only in B-format database")));
+				}
+				$$ = PG_INVALID_ENCODING;
+			}
+		;
+
+opt_charset:
+			charset
+			{
+				$$ = $1;
+			}
+			| /*EMPTY*/
+			{
+				$$ = PG_INVALID_ENCODING;
+			}
+		;
+
+default_charset:
+			DEFAULT character_set opt_equal charset_collate_name
+			{
+				int encoding = pg_valid_server_encoding($4);
+				if (encoding < 0) {		
+					ereport(WARNING, (errmsg("%s is not a valid encoding name. default value set", $4)));
+					$$ = PG_INVALID_ENCODING;
+				} else {
+					$$ = encoding;
+				}
+			}
+			| character_set opt_equal charset_collate_name
+			{
+				int encoding = pg_valid_server_encoding($3);
+				if (encoding < 0) {
+					ereport(WARNING, (errmsg("%s is not a valid encoding name. default value set", $3)));
+					$$ = PG_INVALID_ENCODING;
+				} else {
+					$$ = encoding;
+				}
+			}
+		;
+
+optCharsetCollate:
+			CharsetCollate			{ $$ = $1; }
+			| /* EMPTY */			{ $$ = NULL;}
+		;
+
+CharsetCollate:
+			charset_collate
+			{
+				$$ = MakeCharsetCollateOptions(NULL, $1);
+			}
+			| CharsetCollate charset_collate
+			{
+				$$ = MakeCharsetCollateOptions($1, $2);
+			}
+		;
+
+charset_collate:
+			default_charset
+			{
+				CharsetCollateOptions *n = (CharsetCollateOptions*)palloc0(sizeof(CharsetCollateOptions));
+				n->cctype = OPT_CHARSET;
+				n->charset = $1;
+				$$ = n;
+			}
+			| default_collate
+			{
+				CharsetCollateOptions *n = (CharsetCollateOptions*)palloc0(sizeof(CharsetCollateOptions));
+				n->cctype = OPT_COLLATE;
+				n->collate = $1;
+				$$ = n;
+			}
 		;
 
 /*
@@ -28366,7 +29682,7 @@ a_expr:		c_expr									{ $$ = $1; }
                                 }
 			| a_expr TYPECAST Typename
 					{ $$ = makeTypeCast($1, $3, @2); }
-			| a_expr COLLATE any_name
+			| a_expr COLLATE collate_name
 				{
 					CollateClause *n = makeNode(CollateClause);
 					n->arg = $1;
@@ -28451,7 +29767,7 @@ a_expr:		c_expr									{ $$ = $1; }
 						(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
 							errmsg("@var_name := expr is not yet supported in distributed database.")));
 #endif
-					if (u_sess->attr.attr_sql.sql_compatibility == B_FORMAT && u_sess->attr.attr_common.enable_set_variable_b_format) {
+					if (DB_IS_CMPT(B_FORMAT) && (u_sess->attr.attr_common.enable_set_variable_b_format || ENABLE_SET_VARIABLES)) {
 						UserSetElem *n = makeNode(UserSetElem);
 						n->name = list_make1((Node *)$1);
 						n->val = (Expr *)$3;
@@ -29423,7 +30739,7 @@ c_expr:		columnref %prec UMINUS						        { $$ = $1; }
 						(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
 							errmsg("@var_name is not yet supported in distributed database.")));
 #endif
-					if (u_sess->attr.attr_sql.sql_compatibility == B_FORMAT && u_sess->attr.attr_common.enable_set_variable_b_format) {
+					if (DB_IS_CMPT(B_FORMAT) && (u_sess->attr.attr_common.enable_set_variable_b_format || ENABLE_SET_VARIABLES)) {
 						$$ = $1;
 					} else {
 						const char* message = "@var_name is supported only in B-format database, and enable_set_variable_b_format = on.";
@@ -29668,16 +30984,6 @@ func_expr:	func_application within_group_clause over_clause
 								(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
 								errmsg("group_concat is not yet supported in distributed database.")));
 #endif
-						if (u_sess->attr.attr_sql.sql_compatibility != B_FORMAT)
-						{
-							const char* message = "group_concat is supported only in B-format database";
-							InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);
-							ereport(errstate,
-									(errmodule(MOD_PARSER),
-									errcode(ERRCODE_SYNTAX_ERROR),
-									errmsg("group_concat is supported only in B-format database"),
-									parser_errposition(@1)));
-						}
 						WindowDef *wd = (WindowDef*) $3;
 						if (wd != NULL) {
 							ereport(errstate,
@@ -29697,16 +31003,6 @@ func_expr:	func_application within_group_clause over_clause
 							(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
 							errmsg("group_concat is not yet supported in distributed database.")));
 #endif
-					if (u_sess->attr.attr_sql.sql_compatibility != B_FORMAT)
-					{
-						const char* message = "group_concat is supported only in B-format database";
-						InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);
-						ereport(errstate,
-								(errmodule(MOD_PARSER),
-								errcode(ERRCODE_SYNTAX_ERROR),
-								errmsg("group_concat is supported only in B-format database"),
-								parser_errposition(@1)));
-					}
 					$$ = $1; 
 				}
 			| func_expr_common_subexpr
@@ -31762,6 +33058,7 @@ case_expr:	CASE case_arg when_clause_list case_default END_P
 						c->arg = NULL;
 						c->args = NULL;
 						c->defresult = NULL;
+						c->fromDecode = true;
 
 						foreach(cell,$5)
 						{
@@ -32674,6 +33971,7 @@ unreserved_keyword_without_key:
 			| CASCADED
 			| CATALOG_P
 			| CHAIN
+			| CHANGE
 			| CHARACTERISTICS
 			| CHARACTERSET
 			| CHARSET
@@ -32696,6 +33994,7 @@ unreserved_keyword_without_key:
 			| COMMITTED
 			| COMPATIBLE_ILLEGAL_CHARS
 			| COMPLETE
+			| COMPLETION
 			| COMPRESS
 			| COMPRESSION
 			| CONDITION
@@ -32757,6 +34056,7 @@ unreserved_keyword_without_key:
 			| DOMAIN_P
 			| DOUBLE_P
 			| DROP
+			| DUMPFILE
 			| DUPLICATE
 			| EACH
 			| ELASTIC
@@ -32767,6 +34067,7 @@ unreserved_keyword_without_key:
             | ENCRYPTED_VALUE
 			| ENCRYPTION
             | ENCRYPTION_TYPE
+			| ENDS
 			| ENGINE_P
 			| ENFORCED
 			| EOL
@@ -32774,6 +34075,8 @@ unreserved_keyword_without_key:
 			| ESCAPE
 			| ESCAPED
 			| ESCAPING
+			| EVENT
+			| EVENTS
 			| EVERY
 			| EXCHANGE
 			| EXCLUDE
@@ -32921,6 +34224,7 @@ unreserved_keyword_without_key:
 			| OPTIONALLY
 			| OPTIONS
 			| OVER
+			| OUTFILE
 			| OWNED
 			| OWNER
 			| PACKAGE
@@ -33010,6 +34314,7 @@ unreserved_keyword_without_key:
 			| ROW_FORMAT
 			| SAMPLE
 			| SAVEPOINT
+			| SCHEDULE
 			| SCHEMA
 			| SCHEMAS
 			| SCROLL
@@ -33046,6 +34351,7 @@ unreserved_keyword_without_key:
 			| STANDALONE_P
 			| START
 			| STARTING
+			| STARTS
 			| STATEMENT
 			| STATEMENT_ID
 			| STATISTICS
@@ -33060,6 +34366,7 @@ unreserved_keyword_without_key:
 			| STRICT_P
 			| STRIP_P
 			| SUBPARTITION
+			| SUBPARTITIONS
 			| SUBSCRIPTION
 			| SYNONYM
 			| SYSID
@@ -34310,6 +35617,7 @@ makeNodeDecodeCondtion(Expr* firstCond,Expr* secondCond)
 	c->args = NULL;
 	c->args = lappend(c->args,w);
 	c->defresult = (Expr*)equal_oper;
+	c->fromDecode = true;
 
 	return (Expr*)c;
 }
@@ -35398,6 +36706,22 @@ static void FilterStartWithUseCases(SelectStmt* stmt, List* locking_clause, core
     }
 }
 
+static Node *processIntoClauseInSelectStmt(SelectStmt *stmt, IntoClause *itc)
+{
+	if (itc != NULL) {
+		if (stmt->intoClause != NULL) {
+			ereport(errstate,
+					(errcode(ERRCODE_SYNTAX_ERROR),
+					errmsg("select statement can contain only one into_clause")));
+		}
+		if (itc->rel != NULL && u_sess->attr.attr_sql.sql_compatibility != B_FORMAT) {
+			ereport(errstate,
+					(errcode(ERRCODE_SYNTAX_ERROR),
+					errmsg("select statement can contain only one into_clause")));	}
+		stmt->intoClause = itc;
+	}
+	return (Node *)stmt;
+}
 
 static Node* MakeConnectByRootNode(ColumnRef* cr, int location)
 {
@@ -35523,8 +36847,11 @@ static void setDelimiterName(core_yyscan_t yyscanner, char*input, VariableSetStm
 	errno_t rc = 0;
 	base_yy_extra_type *yyextra = pg_yyget_extra(yyscanner);
 	if (u_sess->attr.attr_sql.sql_compatibility == B_FORMAT) {
+		if(strlen(input) == 0) {
+			parser_yyerror("DELIMITER must be followed by a 'delimiter' character or string");
+		}
 		if (strlen(input) >= DELIMITER_LENGTH) {
-			parser_yyerror("syntax error");
+			parser_yyerror("'delimiter' length should less than 16");
 		}
 		n->is_local = false;
 		n->kind = VAR_SET_VALUE;
@@ -35657,8 +36984,12 @@ static CreateTableOptions* MakeCreateTableOptions(CreateTableOptions *tableOptio
     case OPT_COMMENT_TAB:
         tableOptions->comment = tableOption->option.comment;
         break;
-	case OPT_COLLATE:
-	case OPT_CHARSET:
+	case OPT_DOLPHIN_COLLATE:
+        tableOptions->collate = tableOption->option.collate;
+        break;
+	case OPT_DOLPHIN_CHARSET:
+        tableOptions->charset = tableOption->option.charset;
+        break;
 	case OPT_ROW_FORMAT:
 		break;
 	case OPT_AUTOEXTEND_SIZE:
@@ -36381,6 +37712,27 @@ static void setAccessMethod(Constraint *n)
 			n->access_method = method;
 		}
 	}
+}
+
+static CharsetCollateOptions* MakeCharsetCollateOptions(CharsetCollateOptions *options, CharsetCollateOptions *option)
+{
+	if (options == NULL) {
+		options = makeNode(CharsetCollateOptions);
+		options->cctype = OPT_CHARSETCOLLATE;
+		options->charset = PG_INVALID_ENCODING;
+		options->collate = NULL;
+	}
+	switch (option->cctype) {
+		case OPT_CHARSET:
+			options->charset = option->charset;
+			break;
+		case OPT_COLLATE:
+			options->collate = option->collate;
+			break;
+		default:
+			break;
+	}
+	return options;
 }
 
 /* return a function option list that is filtered. */

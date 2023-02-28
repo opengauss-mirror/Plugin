@@ -988,20 +988,21 @@ other			.
 					char   *slashstar = strstr(yytext, "/*");
 					char   *dashdash = strstr(yytext, "--");
 
-                                        if (u_sess->attr.attr_sql.sql_compatibility == B_FORMAT && u_sess->attr.attr_common.enable_set_variable_b_format)
-                                        {
-                                                if(nchars > 3 && yytext[0] == '@' && yytext[1] == '`' && yytext[nchars-1] == '`')
-                                                {
+					if (u_sess->attr.attr_sql.sql_compatibility == B_FORMAT &&
+						(u_sess->attr.attr_common.enable_set_variable_b_format || ENABLE_SET_VARIABLES))
+					{
+						if(nchars > 3 && yytext[0] == '@' && yytext[1] == '`' && yytext[nchars-1] == '`')
+						{
 							char	*subtext = strstr(yytext + 2, "`");
-							if(strlen(subtext) == 1)
+							if (strlen(subtext) == 1)
 							{
-                                                        	SET_YYLLOC();
-                                                        	yylval->str = pstrdup(yytext + 1);
-                                                        	yyextra->is_hint_str = false;
-                                                        	return SET_USER_IDENT;
+								SET_YYLLOC();
+								yylval->str = pstrdup(yytext + 1);
+								yyextra->is_hint_str = false;
+								return SET_USER_IDENT;
 							}
-                                                }
-                                        }
+						}
+					}
 
 					if (slashstar && dashdash)
 					{
@@ -1233,7 +1234,8 @@ other			.
 				}
 
 {set_identifier} {
-					if (u_sess->attr.attr_sql.sql_compatibility == B_FORMAT && u_sess->attr.attr_common.enable_set_variable_b_format) {
+					if (u_sess->attr.attr_sql.sql_compatibility == B_FORMAT &&
+						(u_sess->attr.attr_common.enable_set_variable_b_format || ENABLE_SET_VARIABLES)) {
 						char		   *set_ident;
 						SET_YYLLOC();
  
@@ -1361,7 +1363,8 @@ other			.
 
 {setUserIdentifier}	{
 					SET_YYLLOC();
-					if (u_sess->attr.attr_sql.sql_compatibility == B_FORMAT && u_sess->attr.attr_common.enable_set_variable_b_format) {
+					if (u_sess->attr.attr_sql.sql_compatibility == B_FORMAT &&
+						(u_sess->attr.attr_common.enable_set_variable_b_format || ENABLE_SET_VARIABLES)) {
 						yylval->str = pstrdup(yytext + 1);
 						yyextra->is_hint_str = false;
 						return SET_USER_IDENT;

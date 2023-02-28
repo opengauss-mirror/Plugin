@@ -4,6 +4,7 @@ set current_schema to 'uint_auto_increment';
 -- syntax error
 CREATE TABLE test_create_autoinc_err(id int unsigned auto_increment key, name varchar(200),a int unsigned);
 CREATE TABLE test_create_autoinc_err(id int unsigned auto_increment unique key, name varchar(200),a int unsigned);
+drop table test_create_autoinc_err;
 -- constraint error
 CREATE TABLE test_create_autoinc_err(id int unsigned auto_increment, name varchar(200),a int unsigned, primary key(name, id));
 CREATE TABLE test_create_autoinc_err(id int unsigned auto_increment, name varchar(200),a int unsigned, unique(name, id));

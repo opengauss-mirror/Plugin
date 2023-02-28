@@ -523,16 +523,16 @@ select pg_get_tabledef('b_range_hash_t01');
  ENABLE ROW MOVEMENT;                                                                                               +
  CREATE INDEX b_range_hash_t01_c2_idx ON b_range_hash_t01 USING btree (c2) LOCAL(                                   +
      PARTITION partition_name(                                                                                      +
-         SUBPARTITION p1_2_c2_idx,                                                                                  +
-         SUBPARTITION p1_1_c2_idx                                                                                   +
+         SUBPARTITION p1_1_c2_idx,                                                                                  +
+         SUBPARTITION p1_2_c2_idx                                                                                   +
      ),                                                                                                             +
      PARTITION partition_name(                                                                                      +
-         SUBPARTITION p2_2_c2_idx,                                                                                  +
-         SUBPARTITION p2_1_c2_idx                                                                                   +
+         SUBPARTITION p2_1_c2_idx,                                                                                  +
+         SUBPARTITION p2_2_c2_idx                                                                                   +
      ),                                                                                                             +
      PARTITION partition_name(                                                                                      +
-         SUBPARTITION p3_2_c2_idx,                                                                                  +
-         SUBPARTITION p3_1_c2_idx                                                                                   +
+         SUBPARTITION p3_1_c2_idx,                                                                                  +
+         SUBPARTITION p3_2_c2_idx                                                                                   +
      )                                                                                                              +
  )  TABLESPACE pg_default;                                                                                          +
  CREATE INDEX b_range_hash_t01_c1_tableoid_idx ON b_range_hash_t01 USING btree (c1) TABLESPACE pg_default;          +
@@ -576,20 +576,20 @@ select pg_get_tabledef('b_range_hash_t01');
  ENABLE ROW MOVEMENT;                                                                                               +
  CREATE INDEX b_range_hash_t01_c2_idx ON b_range_hash_t01 USING btree (c2) LOCAL(                                   +
      PARTITION partition_name(                                                                                      +
-         SUBPARTITION m1_3_c2_idx,                                                                                  +
+         SUBPARTITION m1_1_c2_idx,                                                                                  +
          SUBPARTITION m1_2_c2_idx,                                                                                  +
-         SUBPARTITION m1_1_c2_idx                                                                                   +
+         SUBPARTITION m1_3_c2_idx                                                                                   +
      ),                                                                                                             +
      PARTITION partition_name(                                                                                      +
          SUBPARTITION m2_subpartdefault1_c2_idx                                                                     +
      ),                                                                                                             +
      PARTITION partition_name(                                                                                      +
-         SUBPARTITION p2_2_c2_idx,                                                                                  +
-         SUBPARTITION p2_1_c2_idx                                                                                   +
+         SUBPARTITION p2_1_c2_idx,                                                                                  +
+         SUBPARTITION p2_2_c2_idx                                                                                   +
      ),                                                                                                             +
      PARTITION partition_name(                                                                                      +
-         SUBPARTITION p3_2_c2_idx,                                                                                  +
-         SUBPARTITION p3_1_c2_idx                                                                                   +
+         SUBPARTITION p3_1_c2_idx,                                                                                  +
+         SUBPARTITION p3_2_c2_idx                                                                                   +
      )                                                                                                              +
  )  TABLESPACE pg_default;                                                                                          +
  CREATE INDEX b_range_hash_t01_c1_tableoid_idx ON b_range_hash_t01 USING btree (c1) TABLESPACE pg_default;          +

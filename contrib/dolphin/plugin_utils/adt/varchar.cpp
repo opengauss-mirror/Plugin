@@ -25,6 +25,8 @@
 #include "plugin_commands/mysqlmode.h"
 #include "utils/sortsupport.h"
 #include "vecexecutor/vectorbatch.h"
+#include "utils/pg_locale.h"
+#include "catalog/gs_utf8_collation.h"
 
 #include "miscadmin.h"
 
@@ -38,6 +40,7 @@
         }                                                       \
     } while (0)
 
+int bpcharcase(PG_FUNCTION_ARGS);
 
 /* common code for bpchartypmodin and varchartypmodin */
 static int32 anychar_typmodin(ArrayType* ta, const char* typname)
@@ -752,10 +755,16 @@ Datum bpcharoctetlen(PG_FUNCTION_ARGS)
 
 Datum bpchareq(PG_FUNCTION_ARGS)
 {
+    bool result = false;
+    if (is_b_format_collation(PG_GET_COLLATION())) {
+        /* use varstr_cmp to compare, return 0 means equal */
+        result = (bpcharcase(fcinfo) == 0);
+        PG_RETURN_BOOL(result);
+    }
+
     BpChar* arg1 = PG_GETARG_BPCHAR_PP(0);
     BpChar* arg2 = PG_GETARG_BPCHAR_PP(1);
     int len1, len2;
-    bool result = false;
 
     len1 = bcTruelen(arg1);
     len2 = bcTruelen(arg2);
@@ -777,10 +786,15 @@ Datum bpchareq(PG_FUNCTION_ARGS)
 
 Datum bpcharne(PG_FUNCTION_ARGS)
 {
+    bool result = false;
+    if (is_b_format_collation(PG_GET_COLLATION())) {
+        result = !(bpcharcase(fcinfo) == 0);
+        PG_RETURN_BOOL(result);
+    }
+
     BpChar* arg1 = PG_GETARG_BPCHAR_PP(0);
     BpChar* arg2 = PG_GETARG_BPCHAR_PP(1);
     int len1, len2;
-    bool result = false;
 
     len1 = bcTruelen(arg1);
     len2 = bcTruelen(arg2);
@@ -998,11 +1012,16 @@ Datum hashbpchar(PG_FUNCTION_ARGS)
     char* keydata = NULL;
     int keylen;
     Datum result;
+    Oid collid = PG_GET_COLLATION();
 
     keydata = VARDATA_ANY(key);
     keylen = bcTruelen(key);
 
-    result = hash_any((unsigned char*)keydata, keylen);
+    if (!is_b_format_collation(collid)) {
+        result = hash_any((unsigned char*)keydata, keylen);
+    } else {
+        result = hash_text_by_builtin_colltions((unsigned char *)VARDATA_ANY(key), VARSIZE_ANY_EXHDR(key), collid);
+    }
 
     /* Avoid leaking memory for toasted inputs */
     PG_FREE_IF_COPY(key, 0);
