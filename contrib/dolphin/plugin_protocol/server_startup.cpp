@@ -153,16 +153,15 @@ static bool isNotWildcard(void *val1, void *val2)
 void server_listen_init(void)
 {
     int     status;
-    bool    listen_addr_saved = false;
 
-    if (g_instance.attr.attr_network.ListenAddresses && !dummyStandbyMode) {
+    if (u_sess->attr.attr_network.ListenAddresses && !dummyStandbyMode) {
         char* rawstring = NULL;
         List* elemlist = NULL;
         ListCell* l = NULL;
         int success = 0;
 
         /* Need a modifiable copy of g_instance.attr.attr_network.ListenAddresses */
-        rawstring = pstrdup(g_instance.attr.attr_network.ListenAddresses);
+        rawstring = pstrdup(u_sess->attr.attr_network.ListenAddresses);
 
         /* Parse string into list of identifiers */
         if (!SplitIdentifierString(rawstring, ',', &elemlist)) {
@@ -195,9 +194,10 @@ void server_listen_init(void)
                     g_instance.attr.attr_network.UnixSocketDir,
                     g_instance.listen_cxt.ListenSocket,
                     MAXLISTEN,
-                    true,
+                    false,  /* listen_addresses not changed, no need to add IP to localaddr array, use 'false'  */
                     true,
                     false,
+                    DOLPHIN_LISTEN_CHANEL,
                     &dolphin_protocol_config);
             } else {
                 status = StreamServerPort(AF_UNSPEC,
@@ -206,9 +206,10 @@ void server_listen_init(void)
                     g_instance.attr.attr_network.UnixSocketDir,
                     g_instance.listen_cxt.ListenSocket,
                     MAXLISTEN,
-                    true,
+                    false,  /* listen_addresses not changed, no need to add IP to localaddr array, use 'false'  */
                     true,
                     false,
+                    DOLPHIN_LISTEN_CHANEL,
                     &dolphin_protocol_config);
             }
 
@@ -219,12 +220,6 @@ void server_listen_init(void)
                     (errmsg("could not create listen socket for \"%s:%d\"",
                         curhost,
                         g_instance.attr.attr_network.dolphin_server_port)));
-            }
-
-            /* record the first successful host addr in lockfile */
-            if (!listen_addr_saved) {
-                AddToDataDirLockFile(LOCK_FILE_LINE_LISTEN_ADDR, curhost);
-                listen_addr_saved = true;
             }
         }
 

@@ -42,6 +42,8 @@
 #include "catalog/gs_global_config.h"
 #include "catalog/gs_matview_dependency.h"
 #include "catalog/gs_matview.h"
+#include "catalog/pg_job.h"
+#include "catalog/gs_job_attribute.h"
 #include "commands/alter.h"
 #include "commands/async.h"
 #include "commands/cluster.h"
@@ -429,6 +431,10 @@ static void check_xact_readonly(Node* parse_tree)
         case T_CreatedbStmt:
         case T_CreateDomainStmt:
         case T_CreateFunctionStmt:
+	    case T_CreateEventStmt:
+	    case T_AlterEventStmt:
+	    case T_DropEventStmt:
+	    case T_ShowEventStmt:
         case T_CreateRoleStmt:
         case T_IndexStmt:
         case T_CreatePLangStmt:
@@ -1494,7 +1500,7 @@ void ProcessUtility(processutility_context* processutility_cxt,
      * Record the number of rows affected into the session, but only support 
      * DML statement now, for DDL statement, always set to 0
      */
-    if (nodeTag(processutility_cxt->parse_tree) != T_ExecuteStmt) {
+    if(nodeTag(processutility_cxt->parse_tree) != T_ExecuteStmt) {
         u_sess->statement_cxt.current_row_count = 0;
         u_sess->statement_cxt.last_row_count = u_sess->statement_cxt.current_row_count;
         /* If it is an EXECUTE statement here, the PortalRun function will be
@@ -4188,9 +4194,11 @@ void standard_ProcessUtility(processutility_context* processutility_cxt,
                     if (lnext(l) != NULL)
                         CommandCounterIncrement();
                 }
+#ifdef DOLPHIN
                 if (atstmt->relkind == OBJECT_TABLE) {
                     CheckRelAutoIncrementIndex(rel_id, NoLock);
                 }
+#endif
 #ifdef ENABLE_MULTIPLE_NODES
                 if (drop_seq_string != NULL) {
                     Assert(exec_nodes != NULL);
@@ -4792,6 +4800,19 @@ void standard_ProcessUtility(processutility_context* processutility_cxt,
             }
 #endif
         } break;
+
+        case T_CreateEventStmt: /* CREATE EVENT */
+            CreateEventCommand((CreateEventStmt*)parse_tree);
+            break;
+        case T_AlterEventStmt: /* CREATE EVENT */
+            AlterEventCommand((AlterEventStmt*)parse_tree);
+            break;
+        case T_DropEventStmt: /* DROP EVENT */
+            DropEventCommand((DropEventStmt*)parse_tree);
+            break;
+        case T_ShowEventStmt: /* SHOW EVENTS */
+            ShowEventCommand((ShowEventStmt*)parse_tree, dest);
+            break;
 
         case T_CreatePackageStmt: /* CREATE PACKAGE SPECIFICATION*/
         {
@@ -7305,6 +7326,10 @@ static bool is_stmt_allowed_in_locked_mode(Node* parse_tree, const char* query_s
         case T_RemoteQuery:
         case T_CleanConnStmt:
         case T_CreateFunctionStmt:  // @Temp Table. create function's lock check is moved in CreateFunction
+        case T_CreateEventStmt:
+        case T_AlterEventStmt:
+        case T_DropEventStmt:
+        case T_ShowEventStmt:
             return ALLOW;
 
         default:
@@ -7726,6 +7751,7 @@ bool UtilityReturnsTuples(Node* parse_tree)
             return true;
 
         case T_VariableShowStmt:
+        case T_ShowEventStmt:
             return true;
 
         default:
@@ -7774,6 +7800,9 @@ TupleDesc UtilityTupleDescriptor(Node* parse_tree)
 
             return GetPGVariableResultDesc(n->name);
         }
+       
+        case T_ShowEventStmt:
+            return GetEventResultDesc();
 
         default:
             return NULL;
@@ -8573,6 +8602,22 @@ const char* CreateCommandTag(Node* parse_tree)
             tag = "CREATE PACKAGE BODY";
             break;
         }
+        case T_CreateEventStmt: {
+            tag = "CREATE EVENT";
+            break;
+        }
+        case T_AlterEventStmt: {
+            tag = "ALTER EVENT";
+            break;
+        }
+        case T_DropEventStmt:	{
+            tag = "DROP EVENT";
+            break;
+        }
+        case T_ShowEventStmt:	{
+            tag = "SHOW";
+            break;
+        }
         case T_IndexStmt:
             tag = "CREATE INDEX";
             break;
@@ -9362,6 +9407,12 @@ const char* CreateAlterTableCommandTag(const AlterTableType subtype)
         case AT_ReAddConstraint:
             tag = "RE ADD CONSTRAINT";
             break;
+        case AT_ResetPartitionno:
+            tag = "RESET PARTITIONNO";
+            break;
+        case AT_ModifyColumn:
+            tag = "MODIFY COLUMN";
+            break;
 #ifdef DOLPHIN
         case AT_DropIndex:
             tag = "DROP INDEX";
@@ -9611,7 +9662,14 @@ LogStmtLevel GetCommandLogLevel(Node* parse_tree)
             break;
 
         case T_AlterFunctionStmt:
+        case T_CreateEventStmt:
+        case T_AlterEventStmt:
+        case T_DropEventStmt:
             lev = LOGSTMT_DDL;
+            break;
+
+        case T_ShowEventStmt:
+            lev = LOGSTMT_ALL;
             break;
 
         case T_IndexStmt:

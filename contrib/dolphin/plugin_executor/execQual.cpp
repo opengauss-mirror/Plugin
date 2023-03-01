@@ -74,6 +74,8 @@
 #include "catalog/pg_proc_fn.h"
 #include "access/tuptoaster.h"
 #include "plugin_parser/parse_expr.h"
+#include "auditfuncs.h"
+#include "rewrite/rewriteHandler.h"
 
 /* static function decls */
 static bool isAssignmentIndirectionExpr(ExprState* exprstate);
@@ -1139,6 +1141,35 @@ static Datum ExecEvalRownum(RownumState* exprstate, ExprContext* econtext, bool*
 }
 
 /* ----------------------------------------------------------------
+ * ExecEvalUserSetElm: set and Returns the user_define variable value
+ * ----------------------------------------------------------------
+ */
+static Datum ExecEvalUserSetElm(ExprState* exprstate, ExprContext* econtext, bool* isNull, ExprDoneCond* isDone)
+{
+    UserSetElemState* usestate = (UserSetElemState*)exprstate;
+    UserSetElem* elem = usestate->use;
+    Node* node = NULL;
+    UserSetElem elemcopy;
+    elemcopy.xpr = elem->xpr;
+    elemcopy.name = elem->name;
+
+    if (isDone != NULL)
+        *isDone = ExprSingleResult;
+    Assert(isNull);
+    *isNull = false;
+
+    node = eval_const_expression_value(NULL, (Node*)elem->val, NULL);
+    if (nodeTag(node) == T_Const) {
+        elemcopy.val = (Expr*)const_expression_to_const(node);
+    } else {
+        elemcopy.val = (Expr*)const_expression_to_const(QueryRewriteNonConstant(node));
+    }
+
+    check_set_user_message(&elemcopy);
+
+    return ((Const*)elemcopy.val)->constvalue;
+}
+/* ----------------------------------------------------------------
  *		ExecEvalParamExec
  *
  *		Returns the value of a PARAM_EXEC parameter.
@@ -2153,6 +2184,9 @@ restart:
                 fcinfo->isnull = false;
                 rsinfo.isDone = ExprSingleResult;
                 result = FunctionCallInvoke(fcinfo);
+                if (AUDIT_SYSTEM_EXEC_ENABLED) {
+                    audit_system_function(fcinfo, AUDIT_OK);
+                }
                 *isNull = fcinfo->isnull;
                 *isDone = rsinfo.isDone;
 
@@ -2577,6 +2611,9 @@ static Datum ExecMakeFunctionResultNoSets(
         result = FunctionCallInvoke(fcinfo);
     }
     *isNull = fcinfo->isnull;
+    if (AUDIT_SYSTEM_EXEC_ENABLED) {
+        audit_system_function(fcinfo, AUDIT_OK);
+    }
 
     if (has_refcursor && econtext->plpgsql_estate != NULL) {
         PLpgSQL_execstate* estate = econtext->plpgsql_estate;
@@ -2931,6 +2968,9 @@ Tuplestorestate* ExecMakeTableFunctionResult(
             fcinfo.isnull = false;
             rsinfo.isDone = ExprSingleResult;
             result = FunctionCallInvoke(&fcinfo);
+            if (AUDIT_SYSTEM_EXEC_ENABLED) {
+                audit_system_function(&fcinfo, AUDIT_OK);
+            }
 
             if (econtext->plpgsql_estate != NULL) {
                 PLpgSQL_execstate* estate = econtext->plpgsql_estate;
@@ -5964,6 +6004,13 @@ ExprState* ExecInitExpr(Expr* node, PlanState* parent)
             gstate->arg = ExecInitExpr(pkey->arg, parent);
             state = (ExprState*)gstate;
         } break;
+        case T_UserSetElem: {
+            UserSetElem* useexpr = (UserSetElem*)node;
+            UserSetElemState* usestate = (UserSetElemState*)makeNode(UserSetElemState);
+            usestate->use = useexpr;
+            state = (ExprState*)usestate;
+            state->evalfunc = (ExprStateEvalFunc)ExecEvalUserSetElm;
+        } break;
         default:
             ereport(ERROR,
                 (errcode(ERRCODE_UNRECOGNIZED_NODE_TYPE),
@@ -5980,6 +6027,21 @@ ExprState* ExecInitExpr(Expr* node, PlanState* parent)
 
     gstrace_exit(GS_TRC_ID_ExecInitExpr);
     return state;
+}
+
+/*
+ * ExecInitExprList: call ExecInitExpr on a repression list, return a list of ExprStates.
+ */
+List* ExecInitExprList(List* nodes, PlanState *parent)
+{
+    List* result = NIL;
+    ListCell* lc = NULL;
+
+    foreach (lc, nodes) {
+        Expr* experssion = (Expr*)lfirst(lc);
+        result = lappend(result, ExecInitExpr(experssion, parent));
+    }
+    return result;
 }
 
 /*

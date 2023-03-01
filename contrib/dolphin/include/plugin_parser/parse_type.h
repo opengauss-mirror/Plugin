@@ -32,7 +32,8 @@ extern char* TypeNameToString(const TypeName* typname);
 extern char* TypeNameListToString(List* typenames);
 
 extern Oid LookupCollation(ParseState* pstate, List* collnames, int location);
-extern Oid GetColumnDefCollation(ParseState* pstate, ColumnDef* coldef, Oid typeOid);
+extern Oid GetColumnDefCollation(ParseState* pstate, ColumnDef* coldef, Oid typeOid,
+    Oid rel_coll_oid = InvalidOid);
 
 extern Type typeidType(Oid id);
 
@@ -43,8 +44,10 @@ extern char* typeTypeName(Type t);
 extern Oid typeTypeRelid(Type typ);
 extern Oid typeTypeCollation(Type typ);
 extern Datum stringTypeDatum(Type tp, char* string, int32 atttypmod, bool can_ignore = false);
+#ifdef DOLPHIN
 char* makeEnumTypeName(const char* relname, const char *colname, const char* schemaname);
 void DefineAnonymousEnum(TypeName * typname);
+#endif
 
 extern Oid typeidTypeRelid(Oid type_id);
 extern bool IsTypeSupportedByCStore(_in_ Oid typeOid);

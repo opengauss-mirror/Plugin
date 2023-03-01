@@ -72,8 +72,10 @@ extern CoercionPathType find_coercion_pathway(
 extern CoercionPathType find_typmod_coercion_function(Oid typeId, Oid* funcid);
 
 extern void expression_error_callback(void* arg);
+extern Node* coerce_to_target_charset(Node* expr, int target_charset, Oid targetTypeId);
+#ifdef DOLPHIN
 extern char *getEnumLableByOrder(Oid enumOid, int order);
-
+#endif
 extern Node *transferConstToAconst(Node *node);
 
 extern Const* setValueToConstExpr(SetVariableExpr* set);

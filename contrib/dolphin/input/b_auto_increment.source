@@ -28,7 +28,9 @@ DROP TABLE test_create_autoinc;
 CREATE TABLE test_create_autoinc(
     a int AUTO_INCREMENT UNIQUE KEY,
     b varchar(32)
-); -- ERROR
+);
+\d test_create_autoinc;
+DROP TABLE test_create_autoinc;
 
 CREATE TABLE test_create_autoinc(
     a int AUTO_INCREMENT UNIQUE,

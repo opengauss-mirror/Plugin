@@ -549,12 +549,12 @@ select a||b from testforint2_p4;
  t
 (3 rows)
 
-select a&&b from testforint2_p5;
- ?column? 
-----------
- t
- t
- f
+select a,b,a&&b from testforint2_p5 order by 1,2;
+ a  |  b  | ?column? 
+----+-----+----------
+ -1 |  -1 | t
+  1 |   0 | f
+  2 | 123 | t
 (3 rows)
 
 select a||b from testforint2_p5;
@@ -1305,12 +1305,12 @@ create table testforint2_p5(a int2,b int2) partition by hash(a)(partition p1,par
 insert into testforint2_p5 values(-1,-1);
 insert into testforint2_p5 values(1,0);
 insert into testforint2_p5 values(2,123);
-select a^b from testforint2_p5;
- ?column? 
-----------
-      121
-        0
-        1
+select a,b,a^b from testforint2_p5 order by 1,2;
+ a  |  b  | ?column? 
+----+-----+----------
+ -1 |  -1 |        0
+  1 |   0 |        1
+  2 | 123 |      121
 (3 rows)
 
 create view testforbit_v as select * from testforbit;

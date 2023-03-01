@@ -1996,6 +1996,8 @@ typedef struct AlterSchemaStmt {
     char *schemaname; /* the name of the schema to create */
     char *authid;      /* the owner of the created schema */
     bool hasBlockChain;  /* whether this schema has blockchain */
+    int charset;
+    char *collate;
 } AlterSchemaStmt;
 
 /*
@@ -2161,6 +2163,7 @@ typedef struct LockStmt {
     bool nowait;     /* no wait mode */
     bool cancelable; /* send term to lock holder */
     int waitSec;      /* WAIT time Sec */
+    bool isLockTables; /* lock tables flag */
 } LockStmt;
 
 /* ----------------------
