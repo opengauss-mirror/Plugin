@@ -2163,6 +2163,7 @@ typedef struct LockStmt {
     bool nowait;     /* no wait mode */
     bool cancelable; /* send term to lock holder */
     int waitSec;      /* WAIT time Sec */
+    bool isLockTables; /* lock tables flag */
 } LockStmt;
 
 /* ----------------------

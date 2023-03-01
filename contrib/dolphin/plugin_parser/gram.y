@@ -496,6 +496,8 @@ static int GetFillerColIndex(char *filler_col_name, List *col_list);
 static void RemoveFillerCol(List *filler_list, List *col_list);
 static int errstate;
 static void CheckPartitionExpr(Node* expr, int* colCount);
+static void CheckHostId(char* hostId);
+static void CheckUserHostIsValid();
 
 static char* DoStmtPreformGet(int& start_pos, int& end_pos, base_yy_extra_type* yyextra);
 static void setDelimiterName(core_yyscan_t yyscanner, char*input, VariableSetStmt*n);
@@ -769,7 +771,7 @@ static char* appendString(char* source, char* target, int offset);
 				opt_column_list columnList opt_name_list opt_analyze_column_define opt_multi_name_list
 				opt_include_without_empty opt_c_include index_including_params
 				sort_clause opt_sort_clause sortby_list index_params table_index_elems constraint_params
-				name_list from_clause from_list opt_array_bounds dolphin_name_list
+				name_list UserIdList from_clause from_list opt_array_bounds dolphin_name_list
 				qualified_name_list any_name collate_name any_name_or_sconst any_name_list dolphin_qualified_name_list dolphin_any_name dolphin_any_name_list
 				any_operator expr_list attrs callfunc_args callfunc_args_or_empty dolphin_attrs rename_user_clause rename_list
 				target_list insert_column_list set_target_list rename_clause_list rename_clause
@@ -797,6 +799,8 @@ static char* appendString(char* source, char* target, int offset);
 %type <node>    part_option
 /* b compatibility: comment end */
 
+%type <list>	key_usage_list index_hint_list opt_index_hint_list
+%type <node>	index_hint_definition
 %type <list>	group_by_list
 %type <node>	group_by_item empty_grouping_set rollup_clause cube_clause
 %type <node>	grouping_sets_clause OptAutoIncrement_without_empty
@@ -932,7 +936,7 @@ static char* appendString(char* source, char* target, int offset);
 
 %type <ival>	Iconst SignedIconst opt_partitions_num opt_subpartitions_num
 %type <str>		Sconst comment_text notify_payload
-%type <str>		RoleId RoleIdWithOutCurrentUser TypeOwner opt_granted_by opt_boolean_or_string ColId_or_Sconst Dolphin_ColId_or_Sconst definer_user definer_expression
+%type <str>		RoleId RoleIdWithOutCurrentUser TypeOwner opt_granted_by opt_boolean_or_string ColId_or_Sconst Dolphin_ColId_or_Sconst definer_user definer_expression UserId
 %type <list>	var_list guc_value_extension_list
 %type <str>		ColId ColLabel var_name type_function_name param_name charset_collate_name opt_password opt_replace show_index_schema_opt ColIdForTableElement PrivilegeColId
 %type <node>	var_value zone_value
@@ -1100,7 +1104,7 @@ static char* appendString(char* source, char* target, int offset);
 %type <list>	alter_tblspc_option_list
 %type <node>	alter_tblspc_option
 
-%type <dolphinIdent>	DolphinRoleId DolphinRoleIdWithOutCurrentUser
+%type <dolphinIdent>	DolphinRoleId DolphinRoleIdWithOutCurrentUser DolphinUserId
 
 /*
  * Non-keyword token types.  These are hard-wired into the "flex" lexer.
@@ -1254,6 +1258,7 @@ static char* appendString(char* source, char* target, int offset);
 			NOT_IN NOT_BETWEEN NOT_LIKE NOT_ILIKE NOT_SIMILAR
 			DEFAULT_FUNC
 	                DO_SCONST DO_LANGUAGE
+			FORCE_INDEX USE_INDEX
 
 /* Precedence: lowest to highest */
 %nonassoc COMMENT
@@ -1984,23 +1989,53 @@ CreateOptRoleElem:
  *
  *****************************************************************************/
 
+UserId:
+			SCONST '@' SCONST
+					{
+						CheckUserHostIsValid();
+						CheckHostId($3);
+						StringInfoData buf;
+						initStringInfo(&buf);
+						appendStringInfoString(&buf, $1);
+						appendStringInfoString(&buf, "@");
+						appendStringInfoString(&buf, $3);
+						$$ = buf.data;
+					}
+			| SCONST
+					{
+						CheckUserHostIsValid();
+						if (strchr($1,'@'))
+							CheckHostId(strchr($1,'@') + 1);
+						$$ = $1;
+					}
+			| RoleId
+					{
+						IsValidIdentUsername($1);
+						$$ = $1;
+					}
+		;
+
+UserIdList:	UserId
+					{ $$ = list_make1(makeString($1)); }
+			| UserIdList ',' UserId
+					{ $$ = lappend($1, makeString($3)); }
+		;
+
 CreateUserStmt:
-			CREATE USER RoleId opt_with {u_sess->parser_cxt.isForbidTruncate = true;} OptRoleList
+			CREATE USER UserId opt_with {u_sess->parser_cxt.isForbidTruncate = true;} OptRoleList
 				{
 					CreateRoleStmt *n = makeNode(CreateRoleStmt);
 					n->stmt_type = ROLESTMT_USER;
-					IsValidIdentUsername($3);
 					n->role = $3;
 					n->options = $6;
 					n->missing_ok = false;
 					$$ = (Node *)n;
 					u_sess->parser_cxt.isForbidTruncate = false;
 				}
-			| CREATE USER IF_P NOT EXISTS RoleId opt_with {u_sess->parser_cxt.isForbidTruncate = true;} OptRoleList
+			| CREATE USER IF_P NOT EXISTS UserId opt_with {u_sess->parser_cxt.isForbidTruncate = true;} OptRoleList
 				{
 					CreateRoleStmt *n = makeNode(CreateRoleStmt);
 					n->stmt_type = ROLESTMT_USER;
-					IsValidIdentUsername($6);
 					n->role = $6;
 					n->options = $9;
 					n->missing_ok = true;
@@ -2071,7 +2106,7 @@ AlterRoleSetStmt:
  *****************************************************************************/
 
 AlterUserStmt:
-			ALTER USER RoleId opt_with {u_sess->parser_cxt.isForbidTruncate = true;} AlterOptRoleList
+			ALTER USER UserId opt_with {u_sess->parser_cxt.isForbidTruncate = true;} AlterOptRoleList
 				 {
 					AlterRoleStmt *n = makeNode(AlterRoleStmt);
 					n->missing_ok = FALSE;
@@ -2082,7 +2117,7 @@ AlterUserStmt:
 					$$ = (Node *)n;
 					u_sess->parser_cxt.isForbidTruncate = false;
 				 }
-			| ALTER USER IF_P EXISTS RoleId opt_with AlterOptRoleList
+			| ALTER USER IF_P EXISTS UserId opt_with AlterOptRoleList
 				 {
 					AlterRoleStmt *n = makeNode(AlterRoleStmt);
 					n->missing_ok = TRUE;
@@ -2092,7 +2127,7 @@ AlterUserStmt:
 					n->lockstatus = DO_NOTHING;
 					$$ = (Node *)n;
 				 }     
-			| ALTER USER RoleId opt_with ACCOUNT LOCK_P
+			| ALTER USER UserId opt_with ACCOUNT LOCK_P
 				{
 					AlterRoleStmt *n = makeNode(AlterRoleStmt);
 					n->role = $3;
@@ -2101,7 +2136,7 @@ AlterUserStmt:
 					n->lockstatus = LOCK_ROLE;
 					$$ = (Node *)n;
 				}
-			| ALTER USER RoleId opt_with ACCOUNT UNLOCK
+			| ALTER USER UserId opt_with ACCOUNT UNLOCK
 				{
 					AlterRoleStmt *n = makeNode(AlterRoleStmt);
 					n->role = $3;
@@ -2114,7 +2149,7 @@ AlterUserStmt:
 
 
 AlterUserSetStmt:
-			ALTER USER RoleId opt_in_database SetResetClause
+			ALTER USER UserId opt_in_database SetResetClause
 				{
 					AlterRoleSetStmt *n = makeNode(AlterRoleSetStmt);
 					n->role = $3;
@@ -2161,7 +2196,7 @@ DropRoleStmt:
  *****************************************************************************/
 
 DropUserStmt:
-			DROP USER dolphin_name_list opt_drop_behavior
+			DROP USER UserIdList opt_drop_behavior
 				{
 					DropRoleStmt *n = makeNode(DropRoleStmt);
 					n->missing_ok = FALSE;
@@ -2170,7 +2205,7 @@ DropUserStmt:
 					n->behavior = $4;
 					$$ = (Node *)n;
 				}
-			| DROP USER IF_P EXISTS dolphin_name_list opt_drop_behavior
+			| DROP USER IF_P EXISTS UserIdList opt_drop_behavior
 				{
 					DropRoleStmt *n = makeNode(DropRoleStmt);
 					n->roles = $5;
@@ -5517,7 +5552,7 @@ alter_table_cmd:
 					$$ = (Node *)n;
 				}
 			/* ALTER TABLE <name> OWNER TO RoleId */
-			| OWNER TO RoleId
+			| OWNER TO UserId
 				{
 					AlterTableCmd *n = makeNode(AlterTableCmd);
 					n->subtype = AT_ChangeOwner;
@@ -15664,7 +15699,7 @@ GrantStmt:	GRANT privileges ON privilege_target TO grantee_list
 					$$ = (Node*)n;
 				}
 			| GRANT CREATE USER ON '*' '.' '*'
-			TO RoleId
+			TO UserId
 				{
 					AlterRoleStmt *n = makeNode(AlterRoleStmt);
 					n->role = $9;
@@ -15674,7 +15709,7 @@ GrantStmt:	GRANT privileges ON privilege_target TO grantee_list
 					$$ = (Node *)n;
 				}
 			| GRANT CREATE TABLESPACE ON '*' '.' '*'
-			TO RoleId
+			TO UserId
 				{
 					GrantRoleStmt *n = makeNode(GrantRoleStmt);
 					n->is_grant = true;
@@ -15686,7 +15721,7 @@ GrantStmt:	GRANT privileges ON privilege_target TO grantee_list
 					n->grantee_roles = list_make1(makeString($9));
 					$$ = (Node*)n;
 				}
-			| GRANT ALL privilege_str TO RoleId
+			| GRANT ALL privilege_str TO UserId
 				{
 					AlterRoleStmt *n = makeNode(AlterRoleStmt);
 					n->role = $5;
@@ -15790,7 +15825,7 @@ RevokeStmt:
 					n->behavior = $10;
 					$$ = (Node *)n;
 				}
-			| REVOKE ALL privilege_str FROM RoleId
+			| REVOKE ALL privilege_str FROM UserId
 				{
 					AlterRoleStmt *n = makeNode(AlterRoleStmt);
 					n->role = $5;
@@ -15803,7 +15838,7 @@ privilege_str: PRIVILEGES { $$ = NULL;}
 	| PRIVILEGE { $$ = NULL;}
 		;
 
-definer_expression: DEFINER '=' RoleId
+definer_expression: DEFINER '=' UserId
 				{
 					if (u_sess->attr.attr_sql.sql_compatibility ==  B_FORMAT) {
 						$$ = $3;
@@ -16236,7 +16271,7 @@ grantee_list:
 			| grantee_list ',' grantee				{ $$ = lappend($1, $3); }
 		;
 
-grantee:	DolphinRoleId
+grantee:	DolphinUserId
 				{
 					PrivGrantee *n = makeNode(PrivGrantee);
 					/* This hack lets us avoid reserving PUBLIC as a keyword*/
@@ -16246,7 +16281,7 @@ grantee:	DolphinRoleId
 						n->rolname = $1->str;
 					$$ = (Node *)n;
 				}
-			| GROUP_P DolphinRoleId
+			| GROUP_P DolphinUserId
 				{
 					PrivGrantee *n = makeNode(PrivGrantee);
 					/* Treat GROUP PUBLIC as a synonym for PUBLIC */
@@ -16364,7 +16399,7 @@ opt_grant_admin_option: WITH ADMIN OPTION				{ $$ = TRUE; }
 			| /*EMPTY*/									{ $$ = FALSE; }
 		;
 
-opt_granted_by: GRANTED BY RoleId						{ $$ = $3; }
+opt_granted_by: GRANTED BY UserId						{ $$ = $3; }
 			| /*EMPTY*/									{ $$ = NULL; }
 		;
 
@@ -17237,6 +17272,70 @@ opt_index_name:
 			| /*EMPTY*/								{ $$ = makeRangeVar(NULL, NULL, -1); }
 		;
 
+/* b compatibility index hint part */
+key_usage_list:
+			index_name
+			{
+				$$ = list_make1(makeString($1));
+			}
+			| key_usage_list ',' index_name
+			{
+				$$ = lappend($1,makeString($3));
+			}
+		;
+
+index_hint_definition:
+			USE_INDEX '(' key_usage_list ')'
+			{
+				IndexHintDefinition* n = makeNode(IndexHintDefinition);
+				n->index_type = INDEX_HINT_USE;
+				n->indexnames = $3;
+				$$ = (Node*)n;
+			}
+			| USE_INDEX '(' ')'
+			{
+				IndexHintDefinition* n = makeNode(IndexHintDefinition);
+				n->index_type = INDEX_HINT_USE;
+				n->indexnames = NIL;
+				$$ = (Node*)n;
+			}
+			| FORCE_INDEX '(' key_usage_list ')'
+			{
+				IndexHintDefinition* n = makeNode(IndexHintDefinition);
+				n->index_type = INDEX_HINT_FORCE;
+				n->indexnames = $3;
+				$$ = (Node*)n;
+			}
+		;
+
+index_hint_list:
+			index_hint_definition
+			{
+				if (u_sess->attr.attr_sql.sql_compatibility != B_FORMAT)
+				{
+					const char* message = "index_hint is supported only in B-format database";
+					InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);
+					ereport(errstate,
+							(errmodule(MOD_PARSER),
+							errcode(ERRCODE_SYNTAX_ERROR),
+							errmsg("index_hint is supported only in B-format database"),
+							parser_errposition(@1)));
+				}
+				$$ = list_make1($1);
+			}
+			| index_hint_list index_hint_definition
+			{
+				$$ = lappend($1,$2);
+			}
+		;
+
+opt_index_hint_list:
+			index_hint_list {$$ = $1;}
+			| /*Empty*/ {$$ = NIL;}
+		;
+/* b compatibility index hint part end*/
+
+
 access_method_clause:
 			USING access_method						{ $$ = $2; }
 			| /*EMPTY*/								{ $$ = NULL; }
@@ -17927,7 +18026,7 @@ callfunc_args:   func_arg_expr
 
 
 definer_opt:
-			DEFINER '=' user                        { $$ = $3; }
+			DEFINER '=' UserId                        { $$ = $3; }
 			| /* EMPTY */                           { $$ = NULL; }
 		;
 
@@ -18296,7 +18395,7 @@ AlterEventStmt:
 					}
                         ;
 
-definer_name_opt:	DEFINER '=' user
+definer_name_opt:	DEFINER '=' UserId
 			{ 
 				$$ = makeDefElem("owner", (Node *)makeString($3));
 			} 
@@ -21301,12 +21400,11 @@ RenameStmt: ALTER AGGREGATE func_name aggr_args RENAME TO name
 					n->missing_ok = false;
 					$$ = (Node *)n;
 				}
-			| ALTER USER RoleId RENAME TO RoleId
+			| ALTER USER UserId RENAME TO UserId
 				{
 					RenameStmt *n = makeNode(RenameStmt);
 					n->renameType = OBJECT_USER;
 					n->subname = $3;
-					IsValidIdentUsername($6);
 					n->newname = $6;
 					n->missing_ok = false;
 					$$ = (Node *)n;
@@ -27784,9 +27882,15 @@ table_ref:	relation_expr		%prec UMINUS
 #endif
 					$$ = (Node *) $1;
 				}
-			| relation_expr dolphin_alias_clause
+			| relation_expr dolphin_alias_clause opt_index_hint_list
 				{
 					$1->alias = $2;
+					$1->indexhints = $3;
+					$$ = (Node *) $1;
+				}
+			| relation_expr index_hint_list
+				{
+					$1->indexhints = $2;
 					$$ = (Node *) $1;
 				}
 			| relation_expr opt_dolphin_alias_clause tablesample_clause
@@ -27840,31 +27944,69 @@ table_ref:	relation_expr		%prec UMINUS
 					$1->issubpartition = true;
 					$$ = (Node *)$1;
 				}
-			| relation_expr PARTITION '(' name_list ')' dolphin_alias_clause
+			| relation_expr PARTITION '(' name_list ')' index_hint_list
+				{
+					$1->partitionNameList = $4;
+					$1->indexhints = $6;
+					$$ = (Node *)$1;
+				}
+			| relation_expr SUBPARTITION '(' name ')' index_hint_list
+				{
+					$1->subpartitionname = $4;
+					$1->issubpartition = true;
+					$1->indexhints = $6;
+					$$ = (Node *)$1;
+				}
+			| relation_expr BUCKETS '(' bucket_list ')' index_hint_list
+				{
+					$1->buckets = $4;
+					$1->isbucket = true;
+					$1->indexhints = $6;
+					$$ = (Node *)$1;
+				}
+			| relation_expr PARTITION_FOR '(' expr_list ')' index_hint_list
+				{
+					$1->partitionKeyValuesList = $4;
+					$1->ispartition = true;
+					$1->indexhints = $6;
+					$$ = (Node *)$1;
+				}
+			| relation_expr SUBPARTITION_FOR '(' expr_list ')' index_hint_list
+				{
+					$1->partitionKeyValuesList = $4;
+					$1->issubpartition = true;
+					$1->indexhints = $6;
+					$$ = (Node *)$1;
+				}
+			| relation_expr PARTITION '(' name_list ')' dolphin_alias_clause opt_index_hint_list
 				{
 					$1->alias = $6;
 					$1->partitionNameList = $4;
+					$1->indexhints = $7;
 					$$ = (Node *)$1;
 				}
-			| relation_expr SUBPARTITION '(' name ')' dolphin_alias_clause
+			| relation_expr SUBPARTITION '(' name ')' dolphin_alias_clause opt_index_hint_list
 				{
 					$1->subpartitionname = $4;
 					$1->alias = $6;
 					$1->issubpartition = true;
+					$1->indexhints = $7;
 					$$ = (Node *)$1;
 				}
-			| relation_expr PARTITION_FOR '(' expr_list ')' dolphin_alias_clause
+			| relation_expr PARTITION_FOR '(' expr_list ')' dolphin_alias_clause opt_index_hint_list
 				{
 					$1->partitionKeyValuesList = $4;
 					$1->alias = $6;
 					$1->ispartition = true;
+					$1->indexhints = $7;
 					$$ = (Node *)$1;
 				}
-			| relation_expr SUBPARTITION_FOR '(' expr_list ')' dolphin_alias_clause
+			| relation_expr SUBPARTITION_FOR '(' expr_list ')' dolphin_alias_clause opt_index_hint_list
 				{
 					$1->partitionKeyValuesList = $4;
 					$1->alias = $6;
 					$1->issubpartition = true;
+					$1->indexhints = $7;
 					$$ = (Node *)$1;
 				}
 			| func_table		%prec UMINUS
@@ -33752,6 +33894,27 @@ AexprConst: Iconst
 Iconst:		ICONST									{ $$ = $1; };
 Sconst:		SCONST									{ $$ = $1; };
 
+DolphinUserId:		DolphinRoleId					{ $$ = $1; }
+					| SCONST '@' SCONST
+						{
+							CheckUserHostIsValid();
+							CheckHostId($3);
+							StringInfoData buf;
+							initStringInfo(&buf);
+							appendStringInfoString(&buf, $1);
+							appendStringInfoString(&buf, "@");
+							appendStringInfoString(&buf, $3);
+							$$ = CreateDolphinIdent(buf.data, false);
+						}
+					| SCONST
+						{
+							CheckUserHostIsValid();
+							if (strchr($1,'@'))
+								CheckHostId(strchr($1,'@') + 1);
+							$$ = CreateDolphinIdent(pstrdup($1), false);
+						}
+					;
+
 DolphinRoleId:		DolphinRoleIdWithOutCurrentUser			{ $$ = $1; }
 					| CURRENT_USER  opt_bracket				{ $$ = CreateDolphinIdent(GetUserNameFromId(GetUserId()), false); }
 		;
@@ -37733,6 +37896,22 @@ static CharsetCollateOptions* MakeCharsetCollateOptions(CharsetCollateOptions *o
 			break;
 	}
 	return options;
+}
+
+static void CheckHostId(char* hostId)
+{
+	char* tmp = hostId;
+	for (; *tmp != '\0'; tmp++) {
+		if (((*tmp < '0') || (*tmp > '9')) && (*tmp != '%') && (*tmp != '.'))
+			ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("The hostname %s is not supported, it only support IP.", hostId)));
+	}
+}
+
+static void CheckUserHostIsValid()
+{
+	if (u_sess->attr.attr_sql.sql_compatibility == B_FORMAT && u_sess->attr.attr_common.test_user_host)
+		return;
+	ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("user@host is only supported in b database when the test_user_host is on")));
 }
 
 /* return a function option list that is filtered. */
