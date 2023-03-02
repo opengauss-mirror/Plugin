@@ -1,0 +1,491 @@
+create user algorithm with password 'algorithm@123';
+NOTICE:  The iteration value of password is not recommended.Setting the iteration value too small reduces the security of the password, and setting it too large results in performance degradation.
+grant usage on schema public to algorithm;
+grant create on schema public to algorithm;
+-- -------- test create view cases --------
+create table va_1_t(
+	c1 int,
+    c2 varchar(20),
+    c3 date
+);
+insert into va_1_t values(1, 'hello', '2022-01-02');
+insert into va_1_t values(2, 'hello2', '2022-01-02');
+insert into va_1_t values(3, 'hello3', '2022-01-02');
+select * from va_1_t;
+ c1 |   c2   |     c3     
+----+--------+------------
+  1 | hello  | 01-02-2022
+  2 | hello2 | 01-02-2022
+  3 | hello3 | 01-02-2022
+(3 rows)
+
+-- test basic create
+create algorithm=UNDEFINED view algo_c_v1 as select * from va_1_t;
+select * from algo_c_v1;
+ c1 |   c2   |     c3     
+----+--------+------------
+  1 | hello  | 01-02-2022
+  2 | hello2 | 01-02-2022
+  3 | hello3 | 01-02-2022
+(3 rows)
+
+create algorithm=MERGE view algo_c_v2 as select * from va_1_t;
+select * from algo_c_v2;
+ c1 |   c2   |     c3     
+----+--------+------------
+  1 | hello  | 01-02-2022
+  2 | hello2 | 01-02-2022
+  3 | hello3 | 01-02-2022
+(3 rows)
+
+create algorithm=TEMPTABLE view algo_c_v3 as select * from va_1_t;
+select * from algo_c_v3;
+ c1 |   c2   |     c3     
+----+--------+------------
+  1 | hello  | 01-02-2022
+  2 | hello2 | 01-02-2022
+  3 | hello3 | 01-02-2022
+(3 rows)
+
+-- test replace view
+create   Or  ReplacE algorithm=UNDEFINED view algo_c_v1 as select * from va_1_t;
+select  * from algo_c_v1;
+ c1 |   c2   |     c3     
+----+--------+------------
+  1 | hello  | 01-02-2022
+  2 | hello2 | 01-02-2022
+  3 | hello3 | 01-02-2022
+(3 rows)
+
+-- test irregular space
+create    Or                        
+    RepLacE ALgorIthM   =   MERGE LOCAL TEMP view algo_c_v2 as select * from va_1_t;
+select * from algo_c_v2;
+ c1 |   c2   |     c3     
+----+--------+------------
+  1 | hello  | 01-02-2022
+  2 | hello2 | 01-02-2022
+  3 | hello3 | 01-02-2022
+(3 rows)
+
+   create  		  OR  REPLACE    alGoRithM		
+    =
+        TEmPtABlE view algo_c_v3 as select * from va_1_t;
+select * from algo_c_v3;
+ c1 |   c2   |     c3     
+----+--------+------------
+  1 | hello  | 01-02-2022
+  2 | hello2 | 01-02-2022
+  3 | hello3 | 01-02-2022
+(3 rows)
+
+-- test definer case
+create or replace algorithm=TEMPTABLE definer= algorithm TEMPORARY view algo_c_v4 as select c1, c2 from va_1_t;
+\d algo_c_v4
+--?      View "pg_temp_.*.algo_c_v4"
+ Column |         Type          | Modifiers 
+--------+-----------------------+-----------
+ c1     | integer               | 
+ c2     | character varying(20) | 
+
+-- test should error
+create algorithm TEMPTABLE view algo_c_v5 as select * from va_1_t;
+ERROR:  syntax error at or near "TEMPTABLE"
+LINE 1: create algorithm TEMPTABLE view algo_c_v5 as select * from v...
+                         ^
+create algorithm='TEMPTABLE' view algo_c_v6 as select * from va_1_t;
+ERROR:  syntax error at or near "'TEMPTABLE'"
+LINE 1: create algorithm='TEMPTABLE' view algo_c_v6 as select * from...
+                         ^
+create view algorithm=MERge algo_c_v7 as select * from va_1_t;
+ERROR:  syntax error at or near "="
+LINE 1: create view algorithm=MERge algo_c_v7 as select * from va_1_...
+                             ^
+create algorithm='hello' view algo_c_v8 as select * from va_1_t;
+ERROR:  syntax error at or near "'hello'"
+LINE 1: create algorithm='hello' view algo_c_v8 as select * from va_...
+                         ^
+-- test coincident
+create table algorithm (
+    algorithm int default 100,
+    UNDEFINED int default 100,
+    MERGE int not null,
+    TEMPTABLE int
+);
+insert into algorithm values(1, 1, 1, 1);
+insert into algorithm values(2, 2, 2, 2);
+select * from algorithm t;
+ algorithm | undefined | merge | temptable 
+-----------+-----------+-------+-----------
+         1 |         1 |     1 |         1
+         2 |         2 |     2 |         2
+(2 rows)
+
+select algorithm=UNDEFINED, algorithm=MERGE, algorithm = TEMPTABLE from algorithm;
+ ?column? | ?column? | ?column? 
+----------+----------+----------
+ t        | t        | t
+ t        | t        | t
+(2 rows)
+
+create algorithm=merge view algorithm_v as 
+    select algorithm=UNDEFINED as algorithm, 
+           algorithm=merge as UNDEFINED,
+           algorithm = temptable as temptable 
+        from algorithm;
+select * from algorithm_v;
+ algorithm | undefined | temptable 
+-----------+-----------+-----------
+ t         | t         | t
+ t         | t         | t
+(2 rows)
+
+create table UNDEFINED(
+    algorithm int
+);
+create table MERGE(
+    algorithm int
+);
+create table TEMPTABLE(
+    algorithm int
+);
+-- ----- test alter view cases -------------
+-- test basic case
+alter algorithm=UNDEFINED view algo_c_v1 as select * from va_1_t;
+alter algorithm=MERGE view algo_c_v2 as select * from va_1_t;
+select * from algo_c_v2;
+ c1 |   c2   |     c3     
+----+--------+------------
+  1 | hello  | 01-02-2022
+  2 | hello2 | 01-02-2022
+  3 | hello3 | 01-02-2022
+(3 rows)
+
+-- test irregular space
+	  			alter 			  
+			
+		
+		algorithm			 =temptable view algo_c_v1 as select * from va_1_t;
+select * from algo_c_v1;
+ c1 |   c2   |     c3     
+----+--------+------------
+  1 | hello  | 01-02-2022
+  2 | hello2 | 01-02-2022
+  3 | hello3 | 01-02-2022
+(3 rows)
+
+ALTER algorithm=UNDEFINED VIEW  algo_c_v1 RENAME TO algo_c_v1_2;
+alter algorithm=MERGE view algo_c_v2 as select * from va_1_t;
+alter algorithm=MERGE definer = algorithm view algo_c_v2 as select * from va_1_t;
+-- test should error
+alter algorithm=TEMPTABLE view algo_c_v3 as select c3 from va_1_t; -- openGauss does not support drop columns currently
+ERROR:  cannot drop columns from view
+alter algorithm TEMPTABLE view algo_c_v3 as select c3 from algo_t;
+ERROR:  syntax error at or near "TEMPTABLE view"
+LINE 1: alter algorithm TEMPTABLE view algo_c_v3 as select c3 from a...
+                        ^
+alter algorithm='TEMPTABLE' view algo_c_v3 as select c3 from algo_t;
+ERROR:  syntax error at or near "'TEMPTABLE'"
+LINE 1: alter algorithm='TEMPTABLE' view algo_c_v3 as select c3 from...
+                        ^
+alter algorithm='' view algo_c_v3 as select c3 from algo_t;
+ERROR:  syntax error at or near "''"
+LINE 1: alter algorithm='' view algo_c_v3 as select c3 from algo_t;
+                        ^
+alter view algorithm=TEMPTABLE algo_c_v3 as select c3 from algo_t;
+ERROR:  syntax error at or near "="
+LINE 1: alter view algorithm=TEMPTABLE algo_c_v3 as select c3 from a...
+                            ^
+-- test schema/set/reset/error place
+create table vv_t (c1 int, c2 varchar(30));
+create algorithm=UNDEFINED view vv_v as select * from vv_t;
+alter view vv_v alter c1 set default 1;
+alter view vv_v alter c1 set default 1 algorithm default;
+ERROR:  syntax error at or near "algorithm"
+LINE 1: alter view vv_v alter c1 set default 1 algorithm default;
+                                               ^
+alter algorithm =merge  view vv_v alter c1 set default 1;
+alter algorithm =merge  view vv_v alter c1 drop default;
+alter algorithm =  view vv_v alter c1 set default 1;
+ERROR:  syntax error at or near "view"
+LINE 1: alter algorithm =  view vv_v alter c1 set default 1;
+                           ^
+alter algorithm = 1 view vv_v alter c1 set default 1;
+ERROR:  syntax error at or near "1"
+LINE 1: alter algorithm = 1 view vv_v alter c1 set default 1;
+                          ^
+create user nu with password 'newUser@123';
+NOTICE:  The iteration value of password is not recommended.Setting the iteration value too small reduces the security of the password, and setting it too large results in performance degradation.
+create or replace algorithm = bad view vv_v2 as select * from vv_t;
+ERROR:  syntax error at or near "bad"
+LINE 1: create or replace algorithm = bad view vv_v2 as select * fro...
+                                      ^
+create or replace algorithm = merge view vv_v2 as select * from vv_t;
+alter algorithm =merge  view vv_v2 owner to nu;
+alter algorithm =TEMPTABLE  view vv_v2 rename to vv_nv;
+create schema vs;
+alter algorithm =undifined  view vv_nv set schema vs;
+ERROR:  syntax error at or near "undifined"
+LINE 1: alter algorithm =undifined  view vv_nv set schema vs;
+                         ^
+alter algorithm =undefined  view vv_nv set schema vs;
+alter view if exists vv_v set (check_option=local);
+alter algorithm=temptable view if exists vv_v set (check_option=local);
+alter algorithm=temptable view if exists vv_v reset (check_option);
+drop table vv_t cascade;
+NOTICE:  drop cascades to 2 other objects
+DETAIL:  drop cascades to view vv_v
+drop cascades to view vs.vv_nv
+drop user nu cascade;
+drop schema vs cascade;
+drop table UNDEFINED, MERGE, TEMPTABLE cascade;
+drop table va_1_t, algorithm cascade;
+NOTICE:  drop cascades to 6 other objects
+DETAIL:  drop cascades to view algorithm_v
+drop cascades to view algo_c_v2
+drop cascades to view algo_c_v3
+drop cascades to view algo_c_v4
+drop cascades to view algo_c_v1_2
+drop cascades to view public.algo_c_v2
+-- ---------- test create/drop index cases -----------------
+create table algo_idx_t(
+	c1 int,
+    c2 varchar(20),
+    c3 date,
+    c4 int,
+    c5 int
+);
+insert into algo_idx_t values(1, 'dsfdsg', '2022-01-02');
+insert into algo_idx_t values(2, 'dsfds', '2022-01-04');
+insert into algo_idx_t values(3, 'sdgsdf', '2022-01-06');
+-- basic cases
+create index algo_idx_c1 on algo_idx_t(c1) algorithm COPY;
+\d algo_idx_c1
+  Index "public.algo_idx_c1"
+ Column |  Type   | Definition 
+--------+---------+------------
+ c1     | integer | c1
+btree, for table "public.algo_idx_t"
+
+create index CONCURRENTLY algo_idx_c1_2 on algo_idx_t(c1) algorithm=COPY;
+\d algo_idx_c1_2
+ Index "public.algo_idx_c1_2"
+ Column |  Type   | Definition 
+--------+---------+------------
+ c1     | integer | c1
+btree, for table "public.algo_idx_t"
+
+create index algo_idx_c1_3 on algo_idx_t(c1) algorithm DEFAULT;
+create index algo_idx_c1_4 on algo_idx_t(c1) algorithm = DEFAULT;
+create index algo_idx_c1_5 on algo_idx_t(c1) algorithm INPLACE;
+create index algo_idx_c1_6 on algo_idx_t(c1) algorithm = INPLACE;
+create index on algo_idx_t(c1) algorithm = INPLACE;
+create unique index CONCURRENTLY algo_idx_c2c1 using btree on algo_idx_t(c2, c1);
+create unique index CONCURRENTLY algo_idx_c3 on algo_idx_t using btree(c3) algorithm copy;
+create index CONCURRENTLY algo_idx_c4 on algo_idx_t using btree (c4) algorithm INPLACE;
+drop index algo_idx_c1_3 on algo_idx_t algorithm DEFAULT;
+drop index algo_idx_c1_4 on algo_idx_t algorithm = copy;
+drop index algo_idx_c1_5 on algo_idx_t algorithm INPLACE;
+drop index algo_idx_c1_6 on algo_idx_t algorithm = INPLACE;
+-- if not exists
+create index if not exists algo_idx_c1_3 on algo_idx_t(c1) algorithm DEFAULT;
+create index if not exists algo_idx_c1_4 on algo_idx_t(c1) algorithm = copy;
+create index if not exists algo_idx_c1_5 on algo_idx_t(c1) algorithm INPLACE;
+create index if not exists algo_idx_c1_6 on algo_idx_t(c1) algorithm = INPLACE;
+create unique index CONCURRENTLY if not exists algo_idx_c2c1 using btree on algo_idx_t(c2, c1) ;
+NOTICE:  relation "algo_idx_c2c1" already exists, skipping
+create unique index CONCURRENTLY if not exists algo_idx_c3 on algo_idx_t using btree (c3) algorithm copy;
+NOTICE:  relation "algo_idx_c3" already exists, skipping
+create index CONCURRENTLY if not exists algo_idx_c4 on algo_idx_t using btree (c4) algorithm INPLACE;
+NOTICE:  relation "algo_idx_c4" already exists, skipping
+drop index algo_idx_c1_3 on algo_idx_t algorithm DEFAULT;
+drop index algo_idx_c1_4 on algo_idx_t algorithm = DEFAULT;
+drop index algo_idx_c1_5 on algo_idx_t algorithm INPLACE;
+drop index algo_idx_c1_6 on algo_idx_t algorithm = INPLACE;
+drop index algo_idx_c2c1 on algo_idx_t algorithm = INPLACE;
+drop index algo_idx_c3 on algo_idx_t algorithm = coPy;
+drop index algo_idx_c4 on algo_idx_t algorithm coPy;
+-- test unique
+create unique index algo_idx_c1c2_1 on algo_idx_t(c1, c2, c3) algorithm = INPLACE;
+\d algo_idx_c1c2_1
+       Index "public.algo_idx_c1c2_1"
+ Column |         Type          | Definition 
+--------+-----------------------+------------
+ c1     | integer               | c1
+ c2     | character varying(20) | c2
+ c3     | date                  | c3
+unique, btree, for table "public.algo_idx_t"
+
+create unique index CONCURRENTLY algo_idx_c1c2c3 on algo_idx_t(c1, c2, c3) algorithm = COPY;
+\d algo_idx_c1c2c3
+       Index "public.algo_idx_c1c2c3"
+ Column |         Type          | Definition 
+--------+-----------------------+------------
+ c1     | integer               | c1
+ c2     | character varying(20) | c2
+ c3     | date                  | c3
+unique, btree, for table "public.algo_idx_t"
+
+drop index algo_idx_c1c2_1 on algo_idx_t algorithm = COPY;
+drop index algo_idx_c1c2c3 algorithm  default;
+-- test comment
+create index algo_idx_c1c2 on algo_idx_t(c1, c2) comment 'hello index' algorithm inplace;
+\d algo_idx_c1c2
+        Index "public.algo_idx_c1c2"
+ Column |         Type          | Definition 
+--------+-----------------------+------------
+ c1     | integer               | c1
+ c2     | character varying(20) | c2
+btree, for table "public.algo_idx_t"
+
+-- test global、local、if not cases
+create table algo_idx_gl_t(
+	c1 int,
+    c2 varchar(20),
+    c3 date,
+    c4 int,
+    c5 int
+) PARTITION BY RANGE(c5)
+(
+    PARTITION p0 VALUES LESS THAN (1000),
+    PARTITION p1 VALUES LESS THAN (2000),
+    PARTITION p2 VALUES LESS THAN MAXVALUE
+);
+insert into algo_idx_gl_t values(1, 'dsfdsg', '2022-01-02');
+insert into algo_idx_gl_t values(2, 'dsfds', '2022-01-04');
+insert into algo_idx_gl_t values(3, 'sdgsdf', '2022-01-06');
+create index algo_idx_c4_2 on algo_idx_gl_t using btree (c4) LOCAL COMMENT='algorithm' algorithm INPLACE;
+create index algo_idx_c4_3 on algo_idx_gl_t (c4) LOCAL invisible algorithm default;
+create index algo_idx_c4_4 on algo_idx_gl_t using btree (c4) LOCAL algorithm =  DEFAULT;
+create index algo_idx_c3_5 on algo_idx_gl_t using btree (c3) algorithm INPLACE;
+create index algo_idx_c4_6 on algo_idx_gl_t(c4) LOCAL algorithm = copy;
+\d+ algo_idx_c4_6
+      Index "public.algo_idx_c4_6"
+ Column |  Type   | Definition | Storage 
+--------+---------+------------+---------
+ c4     | integer | c4         | plain
+btree, for table "public.algo_idx_gl_t"
+
+create index algo_idx_c5_2 on algo_idx_gl_t using btree (c5) GLOBAL COMMENT='algorithm' algorithm = INPLACE;
+create index algo_idx_c5_3 on algo_idx_gl_t (c5) GLOBAL invisible algorithm default;
+create index algo_idx_c5_4 on algo_idx_gl_t using btree (c5) GLOBAL algorithm = DEFAULT;
+create index algo_idx_c5_5 on algo_idx_gl_t using btree (c5) algorithm INPLACE;
+create unique index algo_idx_c5_6 on algo_idx_gl_t(c5) GLOBAL algorithm copy;
+\d+ algo_idx_c5_2
+      Index "public.algo_idx_c5_2"
+ Column |  Type   | Definition | Storage 
+--------+---------+------------+---------
+ c5     | integer | c5         | plain
+btree, for table "public.algo_idx_gl_t"
+
+drop index algo_idx_c4_2 on algo_idx_gl_t algorithm coPy;
+drop index algo_idx_c4_3 on algo_idx_gl_t algorithm default;
+drop index algo_idx_c4_4 on algo_idx_gl_t algorithm = INPLACE;
+drop index algo_idx_c3_5 on algo_idx_gl_t algorithm INPLACE;
+drop index algo_idx_c4_6 on algo_idx_gl_t algorithm =default;
+drop index algo_idx_c5_2 on algo_idx_gl_t algorithm = coPy;
+drop index algo_idx_c5_3 on algo_idx_gl_t algorithm default;
+drop index algo_idx_c5_4 on algo_idx_gl_t algorithm INPLACE;
+drop index algo_idx_c5_5 algorithm = INPLACE;
+drop index algo_idx_c5_6 algorithm default;
+-- if not exists 2
+create index if not exists algo_idx_c5_2 on algo_idx_gl_t using btree (c5) GLOBAL COMMENT='algorithm' algorithm INPLACE;
+create index if not exists algo_idx_c5_3 on algo_idx_gl_t (c5) GLOBAL invisible algorithm = default;
+create index if not exists algo_idx_c5_4 on algo_idx_gl_t using btree (c5) GLOBAL algorithm DEFAULT;
+create index if not exists algo_idx_c5_5 on algo_idx_gl_t using btree (c5) algorithm =copy;
+create index if not exists algo_idx_c5_6 on algo_idx_gl_t(c5) GLOBAL algorithm DEFAULT;
+drop index algo_idx_c5_2 on algo_idx_gl_t algorithm;  -- should error
+ERROR:  syntax error at or near ";"
+LINE 1: drop index algo_idx_c5_2 on algo_idx_gl_t algorithm;
+                                                           ^
+drop index algo_idx_c5_2 on algo_idx_gl_t algorithm 'COPy';  -- should error
+ERROR:  syntax error at or near "'COPy'"
+LINE 1: drop index algo_idx_c5_2 on algo_idx_gl_t algorithm 'COPy';
+                                                            ^
+drop index algo_idx_c5_2 on algo_idx_gl_t algorithm coPy;
+drop index algo_idx_c5_3 on algo_idx_gl_t algorithm merge; -- should error
+ERROR:  syntax error at or near "merge"
+LINE 1: drop index algo_idx_c5_3 on algo_idx_gl_t algorithm merge;
+                                                            ^
+drop index algo_idx_c5_3 on algo_idx_gl_t algorithm=default;
+drop index algo_idx_c5_4 on algo_idx_gl_t algorithm INPLACE;
+drop index algo_idx_c5_5 algorithm INPLACE;
+drop index algo_idx_c5_6 algorithm default;
+-- should error
+create index if not exists algo_idx_c5_6 on algo_idx_gl_t(c5) GLOBAL algorithm temptable;
+ERROR:  syntax error at or near "temptable"
+LINE 1: ...go_idx_c5_6 on algo_idx_gl_t(c5) GLOBAL algorithm temptable;
+                                                             ^
+create index if not exists algo_idx_c5_6 on algo_idx_gl_t(c5) GLOBAL algorithm=merge;
+ERROR:  syntax error at or near "merge"
+LINE 1: ...s algo_idx_c5_6 on algo_idx_gl_t(c5) GLOBAL algorithm=merge;
+                                                                 ^
+create index if not exists algo_idx_c5_6 on algo_idx_gl_t(c5) algorithm=INPLACE GLOBAL;
+ERROR:  syntax error at or near "GLOBAL"
+LINE 1: ...algo_idx_c5_6 on algo_idx_gl_t(c5) algorithm=INPLACE GLOBAL;
+                                                                ^
+create index if not exists algo_idx_c5_6 on algo_idx_gl_t(c5) GLOBAL algorithm=INPLACE algorithm=default;
+ERROR:  syntax error at or near "algorithm"
+LINE 1: ...5_6 on algo_idx_gl_t(c5) GLOBAL algorithm=INPLACE algorithm=...
+                                                             ^
+create index if not exists algo_idx_c5_6 on algo_idx_gl_t(c5) GLOBAL algorithm;
+ERROR:  syntax error at or near ";"
+LINE 1: ... exists algo_idx_c5_6 on algo_idx_gl_t(c5) GLOBAL algorithm;
+                                                                      ^
+alter table algo_idx_t  drop index algo_idx_c1c2 ALGORITHM = COPY; -- not support
+ERROR:  syntax error at or near "ALGORITHM"
+LINE 1: alter table algo_idx_t  drop index algo_idx_c1c2 ALGORITHM =...
+                                                         ^
+-- passed
+drop index algo_idx_c1c2 ALGORITHM = COPY;
+drop table algo_idx_t cascade;
+drop table algo_idx_gl_t cascade;
+-- test where case & coincidence
+create table algorithm (
+    algorithm varchar(20),
+    INPLACE varchar(20),
+    COPY varchar(20)
+);
+insert into algorithm values('algorithm', 'INPLACE', 'COPY');
+insert into algorithm values('INPLACE', 'INPLACE', 'COPY');
+insert into algorithm values('COPY', 'INPLACE', 'COPY');
+insert into algorithm values('default', 'INPLACE', 'COPY');
+create unique index CONCURRENTLY algorithm_idx on algorithm (algorithm) where algorithm=INPLACE;
+\d+ algorithm_idx
+               Index "public.algorithm_idx"
+  Column   |         Type          | Definition | Storage  
+-----------+-----------------------+------------+----------
+ algorithm | character varying(20) | algorithm  | extended
+unique, btree, for table "public.algorithm", predicate (algorithm::text = inplace::text)
+
+create unique index CONCURRENTLY algorithm_idx_2 on algorithm (algorithm, INPLACE)
+    where algorithm=INPLACE
+    and algorithm= 'default'
+    or algorithm=COPY;
+\d+ algorithm_idx_2
+              Index "public.algorithm_idx_2"
+  Column   |         Type          | Definition | Storage  
+-----------+-----------------------+------------+----------
+ algorithm | character varying(20) | algorithm  | extended
+ inplace   | character varying(20) | inplace    | extended
+unique, btree, for table "public.algorithm", predicate (algorithm::text = inplace::text AND algorithm::text = 'default'::text OR algorithm::text = copy::text)
+
+create unique index CONCURRENTLY algorithm_idx_3 on algorithm (algorithm, COPY) algorithm copy;
+\d+ algorithm_idx_3
+              Index "public.algorithm_idx_3"
+  Column   |         Type          | Definition | Storage  
+-----------+-----------------------+------------+----------
+ algorithm | character varying(20) | algorithm  | extended
+ copy      | character varying(20) | copy       | extended
+unique, btree, for table "public.algorithm"
+
+drop index algorithm_idx algorithm=copy;
+drop index algorithm_idx_2 on algorithm;
+drop index algorithm_idx_3 on algorithm algorithm default;
+-- test should error:cannot spesify where clause and algorithm at the same time;
+create unique index CONCURRENTLY algorithm_idx_88 on algorithm (algorithm) where algorithm=INPLACE algorithm copy;
+ERROR:  syntax error at or near "algorithm"
+LINE 1: ... on algorithm (algorithm) where algorithm=INPLACE algorithm ...
+                                                             ^
+drop table algorithm cascade;
+drop user algorithm cascade;

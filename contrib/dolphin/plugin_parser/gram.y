@@ -620,7 +620,7 @@ static char* appendString(char* source, char* target, int offset);
 		UnlistenStmt UpdateStmt VacuumStmt
 		VariableResetStmt VariableSetStmt VariableShowStmt VerifyStmt ShutdownStmt VariableMultiSetStmt
 		UseStmt
-		ViewStmt CheckPointStmt CreateConversionStmt
+		ViewStmt ViewStmtBaseBody CheckPointStmt CreateConversionStmt
 		DeallocateStmt PrepareStmt ExecuteStmt
 		DropOwnedStmt ReassignOwnedStmt
 		AlterTSConfigurationStmt AlterTSDictionaryStmt AnonyBlockStmt
@@ -819,7 +819,7 @@ static char* appendString(char* source, char* target, int offset);
 %type <typnam>	func_return func_type
 
 %type <boolean>  opt_trusted opt_restart_seqs opt_purge invoker_rights
-%type <ival>	 OptTemp OptKind_without_empty
+%type <ival>	 OptTemp TempExpr OptKind_without_empty
 %type <oncommit> OnCommitOption OnCommitOption_without_empty
 
 %type <lockstrength> for_locking_strength
@@ -958,7 +958,7 @@ static char* appendString(char* source, char* target, int offset);
 %type <boolean> OptRelative
 %type <boolean> OptGPI
 %type <str>		OptTableSpace OptTableSpace_without_empty OptConsTableSpace OptConsTableSpaceWithEmpty OptTableSpaceOwner LoggingStr size_clause OptMaxSize OptDatafileSize OptReuse OptAuto OptNextStr OptDatanodeName
-%type <ival>	opt_check_option
+%type <ival>	opt_check_option view_algo_expr view_algo_shift_expr opt_view_algo idx_algo_expr opt_idx_algo
 
 %type <str>		opt_provider security_label
 
@@ -1169,7 +1169,7 @@ static char* appendString(char* source, char* target, int offset);
 	IDENTIFIED IDENTITY_P IF_P IFNULL IGNORE IGNORE_EXTRA_DATA ILIKE IMMEDIATE IMMUTABLE IMPLICIT_P IN_P INCLUDE
 	INCLUDING INCREMENT INCREMENTAL INDEX INDEXES INFILE INHERIT INHERITS INITIAL_P INITIALLY INITRANS INLINE_P
 
-	INNER_P INOUT INPUT_P INSENSITIVE INSERT INSERT_METHOD INSTEAD INT_P INTEGER INTERNAL
+	INNER_P INOUT INPLACE INPUT_P INSENSITIVE INSERT INSERT_METHOD INSTEAD INT_P INTEGER INTERNAL
 	INTERSECT INTERVAL INTO INVISIBLE INVOKER IP IS ISNULL ISOLATION
 
 	JOIN
@@ -1212,11 +1212,11 @@ static char* appendString(char* source, char* target, int offset);
 	STATEMENT STATEMENT_ID STATISTICS STATS_AUTO_RECALC STATS_PERSISTENT STATS_SAMPLE_PAGES STATUS STDIN STDOUT STORAGE STORE_P STORED STRATIFY STREAM STRICT_P STRIP_P SUBPARTITION SUBPARTITIONS SUBSCRIPTION SUBSTR SUBSTRING
 	SYMMETRIC SYNONYM SYSDATE SYSID SYSTEM_P SYS_REFCURSOR
 
-	TABLE TABLES TABLESAMPLE TABLESPACE TARGET TEMP TEMPLATE TEMPORARY TERMINATED TEXT_P THAN THEN TIME TIME_FORMAT_P TIMECAPSULE TIMESTAMP TIMESTAMP_FORMAT_P TIMESTAMPADD TIMESTAMPDIFF TINYINT
+	TABLE TABLES TABLESAMPLE TABLESPACE TARGET TEMP TEMPLATE TEMPORARY TEMPTABLE TERMINATED TEXT_P THAN THEN TIME TIME_FORMAT_P TIMECAPSULE TIMESTAMP TIMESTAMP_FORMAT_P TIMESTAMPADD TIMESTAMPDIFF TINYINT
 	TO TRAILING TRANSACTION TRANSFORM TREAT TRIGGER TRIM TRUE_P
 	TRUNCATE TRUSTED TSFIELD TSTAG TSTIME TYPE_P TYPES_P
 
-	UNBOUNDED UNCOMMITTED UNENCRYPTED UNION UNIQUE UNKNOWN UNLIMITED UNLISTEN UNLOCK UNLOGGED UNSIGNED
+	UNBOUNDED UNCOMMITTED UNDEFINED UNENCRYPTED UNION UNIQUE UNKNOWN UNLIMITED UNLISTEN UNLOCK UNLOGGED UNSIGNED
 	UNTIL UNUSABLE UPDATE USE USEEOF USER USING UTC_DATE UTC_TIME UTC_TIMESTAMP
 
 	VACUUM VALID VALIDATE VALIDATION VALIDATOR VALUE_P VALUES VARBINARY VARCHAR VARCHAR2 VARIABLES VARIADIC VARRAY VARYING VCGROUP
@@ -1232,6 +1232,8 @@ static char* appendString(char* source, char* target, int offset);
 	ZEROFILL ZONE
 
 	AST
+
+%token ALGORITHM_UNDEFINED ALGORITHM_MERGE ALGORITHM_TEMPTABLE ALGORITHM_TEMPTABLE
 
 /*
  * The grammar thinks these are keywords, but they are not in the kwlist.h
@@ -4347,20 +4349,20 @@ AlterTableStmt:
 					n->missing_ok = true;
 					$$ = (Node *)n;
 				}
-		|	ALTER VIEW qualified_name alter_table_cmds
+		|	ALTER opt_view_algo VIEW  qualified_name alter_table_cmds
 				{
 					AlterTableStmt *n = makeNode(AlterTableStmt);
-					n->relation = $3;
-					n->cmds = $4;
+					n->relation = $4;
+					n->cmds = $5;
 					n->relkind = OBJECT_VIEW;
 					n->missing_ok = false;
 					$$ = (Node *)n;
 				}
-		|	ALTER VIEW IF_P EXISTS qualified_name alter_table_cmds
+		|	ALTER opt_view_algo VIEW IF_P EXISTS qualified_name alter_table_cmds
 				{
 					AlterTableStmt *n = makeNode(AlterTableStmt);
-					n->relation = $5;
-					n->cmds = $6;
+					n->relation = $6;
+					n->cmds = $7;
 					n->relkind = OBJECT_VIEW;
 					n->missing_ok = true;
 					$$ = (Node *)n;
@@ -9174,7 +9176,17 @@ opt_row_movement_clause: ENABLE_P ROW MOVEMENT		{ $$ = ROWMOVEMENT_ENABLE; }
  * implement LOCAL as meaning the same as our default temp table behavior,
  * so we'll probably continue to treat LOCAL as a noise word.
  */
-OptTemp:	TEMPORARY					{ $$ = RELPERSISTENCE_TEMP; }
+OptTemp: TempExpr
+		{
+			$$ = $1;
+		}
+		| /*EMPTY*/	
+		{
+			$$ = RELPERSISTENCE_PERMANENT;
+		}
+	;
+
+TempExpr: TEMPORARY						{ $$ = RELPERSISTENCE_TEMP; }
 			| TEMP						{ $$ = RELPERSISTENCE_TEMP; }
 			| LOCAL TEMPORARY			{ $$ = RELPERSISTENCE_TEMP; }
 			| LOCAL TEMP				{ $$ = RELPERSISTENCE_TEMP; }
@@ -9205,7 +9217,6 @@ OptTemp:	TEMPORARY					{ $$ = RELPERSISTENCE_TEMP; }
 #endif
 				}
 			| UNLOGGED					{ $$ = RELPERSISTENCE_UNLOGGED; }
-			| /*EMPTY*/					{ $$ = RELPERSISTENCE_PERMANENT; }
 		;
 
 OptTableElementList:
@@ -14961,7 +14972,7 @@ DropStmt:	DROP drop_type IF_P EXISTS any_name_list opt_drop_behavior opt_purge
 					n->purge = $6;
 					$$ = (Node *)n;
 				}
-			| DROP INDEX IF_P EXISTS any_name_list opt_drop_behavior opt_purge on_table
+			| DROP INDEX IF_P EXISTS any_name_list opt_drop_behavior opt_purge on_table opt_idx_algo
 				{
 					DropStmt *n = makeNode(DropStmt);
 					n->removeType = OBJECT_INDEX;
@@ -14982,7 +14993,7 @@ DropStmt:	DROP drop_type IF_P EXISTS any_name_list opt_drop_behavior opt_purge
 
 					$$ = (Node *)n;
 				}
-			| DROP INDEX any_name_list opt_drop_behavior opt_purge on_table
+			| DROP INDEX any_name_list opt_drop_behavior opt_purge on_table opt_idx_algo
 				{
 					DropStmt *n = makeNode(DropStmt);
 					n->removeType = OBJECT_INDEX;
@@ -15002,7 +15013,7 @@ DropStmt:	DROP drop_type IF_P EXISTS any_name_list opt_drop_behavior opt_purge
 					}
 					$$ = (Node *)n;
 				}
-			| DROP INDEX CONCURRENTLY any_name_list opt_drop_behavior on_table
+			| DROP INDEX CONCURRENTLY any_name_list opt_drop_behavior on_table opt_idx_algo
 				{
 					DropStmt *n = makeNode(DropStmt);
 					n->removeType = OBJECT_INDEX;
@@ -15013,7 +15024,7 @@ DropStmt:	DROP drop_type IF_P EXISTS any_name_list opt_drop_behavior opt_purge
 					n->concurrent = true;
 					$$ = (Node *)n;
 				}
-			| DROP INDEX CONCURRENTLY IF_P EXISTS any_name_list opt_drop_behavior on_table
+			| DROP INDEX CONCURRENTLY IF_P EXISTS any_name_list opt_drop_behavior on_table opt_idx_algo
 				{
 					DropStmt *n = makeNode(DropStmt);
 					n->removeType = OBJECT_INDEX;
@@ -16780,7 +16791,42 @@ IndexStmt:	CREATE opt_unique INDEX opt_concurrently opt_index_name
 					}
 					$$ = (Node *)n;
 				}
-
+				| CREATE opt_unique INDEX opt_concurrently opt_index_name
+			index_method_relation_clause '(' index_params ')'
+			TableIndexOptionList idx_algo_expr
+				{
+					IndexStmt *n = makeNode(IndexStmt);
+					n->unique = $2;
+					n->concurrent = $4;
+					n->missing_ok = false;
+					n->schemaname = $5->schemaname;
+					n->idxname = $5->relname;
+					n->relation = $6->relation;
+					n->accessMethod = $6->accessMethod;
+					n->indexParams = $8;
+					n->excludeOpNames = NIL;
+					n->idxcomment = NULL;
+					n->indexOid = InvalidOid;
+					n->oldNode = InvalidOid;
+					n->partClause = NULL;
+					n->isPartitioned = false;
+					n->isGlobal = false;
+					n->primary = false;
+					n->isconstraint = false;
+					n->deferrable = false;
+					n->initdeferred = false;
+					n->whereClause = NULL;
+					if ($10 != NULL) {
+						n->indexIncludingParams = $10->indexIncludingParams;
+						n->options = $10->options;
+						n->tableSpace = $10->tableSpace;
+						if ($10->comment != NULL) {
+							n->indexOptions = lappend(n->indexOptions, $10->comment);
+						}
+						n->indexOptions = lappend(n->indexOptions, makeString((char*)($10->visible ? "visible" : "invisible")));
+					}
+					$$ = (Node *)n;
+				}
 				| CREATE opt_unique INDEX opt_concurrently opt_index_name
 			ON dolphin_qualified_name '(' index_params ')'
 			TableIndexOptionList where_clause
@@ -16806,6 +16852,42 @@ IndexStmt:	CREATE opt_unique INDEX opt_concurrently opt_index_name
 					n->deferrable = false;
 					n->initdeferred = false;
 					n->whereClause = $12;
+					if ($11 != NULL) {
+						n->indexIncludingParams = $11->indexIncludingParams;
+						n->options = $11->options;
+						n->tableSpace = $11->tableSpace;
+						if ($11->comment != NULL) {
+							n->indexOptions = lappend(n->indexOptions, $11->comment);
+						}
+						n->indexOptions = lappend(n->indexOptions, makeString((char*)($11->visible ? "visible" : "invisible")));
+					}
+					$$ = (Node *)n;
+				}
+				| CREATE opt_unique INDEX opt_concurrently opt_index_name
+			ON dolphin_qualified_name '(' index_params ')'
+			TableIndexOptionList idx_algo_expr
+				{
+					IndexStmt *n = makeNode(IndexStmt);
+					n->unique = $2;
+					n->concurrent = $4;
+					n->missing_ok = false;
+					n->schemaname = $5->schemaname;
+					n->idxname = $5->relname;
+					n->relation = $7;
+					n->accessMethod = NULL;
+					n->indexParams = $9;
+					n->excludeOpNames = NIL;
+					n->idxcomment = NULL;
+					n->indexOid = InvalidOid;
+					n->oldNode = InvalidOid;
+					n->partClause = NULL;
+					n->isPartitioned = false;
+					n->isGlobal = false;
+					n->primary = false;
+					n->isconstraint = false;
+					n->deferrable = false;
+					n->initdeferred = false;
+					n->whereClause = NULL;
 					if ($11 != NULL) {
 						n->indexIncludingParams = $11->indexIncludingParams;
 						n->options = $11->options;
@@ -16848,6 +16930,36 @@ IndexStmt:	CREATE opt_unique INDEX opt_concurrently opt_index_name
 					$$ = (Node *)n;
 				}
 				| CREATE opt_unique INDEX opt_concurrently opt_index_name
+			index_method_relation_clause '(' index_params ')'
+			idx_algo_expr
+				{
+					IndexStmt *n = makeNode(IndexStmt);
+					n->unique = $2;
+					n->concurrent = $4;
+					n->missing_ok = false;
+					n->schemaname = $5->schemaname;
+					n->idxname = $5->relname;
+					n->relation = $6->relation;
+					n->accessMethod = $6->accessMethod;
+					n->indexParams = $8;
+					n->excludeOpNames = NIL;
+					n->idxcomment = NULL;
+					n->indexOid = InvalidOid;
+					n->oldNode = InvalidOid;
+					n->partClause = NULL;
+					n->isPartitioned = false;
+					n->isGlobal = false;
+					n->primary = false;
+					n->isconstraint = false;
+					n->deferrable = false;
+					n->initdeferred = false;
+					n->whereClause = NULL;
+					n->indexIncludingParams = NIL;
+					n->options = NIL;
+					n->tableSpace = NULL;
+					$$ = (Node *)n;
+				}
+				| CREATE opt_unique INDEX opt_concurrently opt_index_name
 			ON dolphin_qualified_name '(' index_params ')'
 			where_clause
 				{
@@ -16878,7 +16990,37 @@ IndexStmt:	CREATE opt_unique INDEX opt_concurrently opt_index_name
 					$$ = (Node *)n;
 				}
 				| CREATE opt_unique INDEX opt_concurrently opt_index_name
-			ON dolphin_qualified_name '(' index_params ')' USING access_method 
+			ON dolphin_qualified_name '(' index_params ')'
+			idx_algo_expr
+				{
+					IndexStmt *n = makeNode(IndexStmt);
+					n->unique = $2;
+					n->concurrent = $4;
+					n->missing_ok = false;
+					n->schemaname = $5->schemaname;
+					n->idxname = $5->relname;
+					n->relation = $7;
+					n->accessMethod = NULL;
+					n->indexParams = $9;
+					n->excludeOpNames = NIL;
+					n->idxcomment = NULL;
+					n->indexOid = InvalidOid;
+					n->oldNode = InvalidOid;
+					n->partClause = NULL;
+					n->isPartitioned = false;
+					n->isGlobal = false;
+					n->primary = false;
+					n->isconstraint = false;
+					n->deferrable = false;
+					n->initdeferred = false;
+					n->whereClause = NULL;
+					n->indexIncludingParams = NIL;
+					n->options = NIL;
+					n->tableSpace = NULL;
+					$$ = (Node *)n;
+				}
+				| CREATE opt_unique INDEX opt_concurrently opt_index_name
+			ON dolphin_qualified_name '(' index_params ')' USING access_method opt_idx_algo
 				{
 					if ($4) {
 						ereport(errstate,
@@ -16924,7 +17066,7 @@ IndexStmt:	CREATE opt_unique INDEX opt_concurrently opt_index_name
 				}
 				| CREATE opt_unique INDEX opt_concurrently opt_index_name
 					index_method_relation_clause '(' index_params ')'
-					LOCAL opt_partition_index_def PartitionTableIndexOptionList
+					LOCAL opt_partition_index_def PartitionTableIndexOptionList opt_idx_algo
 				{
 					IndexStmt *n = makeNode(IndexStmt);
 					n->unique = $2;
@@ -16958,7 +17100,7 @@ IndexStmt:	CREATE opt_unique INDEX opt_concurrently opt_index_name
 				}
 				| CREATE opt_unique INDEX opt_concurrently opt_index_name
 					ON dolphin_qualified_name '(' index_params ')'
-					LOCAL opt_partition_index_def PartitionTableIndexOptionList
+					LOCAL opt_partition_index_def PartitionTableIndexOptionList opt_idx_algo
 				{
 					IndexStmt *n = makeNode(IndexStmt);
 					n->unique = $2;
@@ -16992,7 +17134,7 @@ IndexStmt:	CREATE opt_unique INDEX opt_concurrently opt_index_name
 				}
 				| CREATE opt_unique INDEX opt_concurrently opt_index_name
 					index_method_relation_clause '(' index_params ')'
-					LOCAL opt_partition_index_def
+					LOCAL opt_partition_index_def opt_idx_algo
 				{
 					IndexStmt *n = makeNode(IndexStmt);
 					n->unique = $2;
@@ -17021,7 +17163,7 @@ IndexStmt:	CREATE opt_unique INDEX opt_concurrently opt_index_name
 				}
 				| CREATE opt_unique INDEX opt_concurrently opt_index_name
 					ON dolphin_qualified_name '(' index_params ')'
-					LOCAL opt_partition_index_def
+					LOCAL opt_partition_index_def opt_idx_algo
 				{
 					IndexStmt *n = makeNode(IndexStmt);
 					n->unique = $2;
@@ -17050,7 +17192,7 @@ IndexStmt:	CREATE opt_unique INDEX opt_concurrently opt_index_name
 				}
 				| CREATE opt_unique INDEX opt_concurrently opt_index_name
 					index_method_relation_clause '(' index_params ')'
-					GLOBAL PartitionTableIndexOptionList
+					GLOBAL PartitionTableIndexOptionList opt_idx_algo
 				{
 					IndexStmt *n = makeNode(IndexStmt);
 					n->unique = $2;
@@ -17084,7 +17226,7 @@ IndexStmt:	CREATE opt_unique INDEX opt_concurrently opt_index_name
 				}
 				| CREATE opt_unique INDEX opt_concurrently opt_index_name
 					ON dolphin_qualified_name '(' index_params ')'
-					GLOBAL PartitionTableIndexOptionList
+					GLOBAL PartitionTableIndexOptionList opt_idx_algo
 				{
 					IndexStmt *n = makeNode(IndexStmt);
 					n->unique = $2;
@@ -17118,7 +17260,7 @@ IndexStmt:	CREATE opt_unique INDEX opt_concurrently opt_index_name
 				}
 				| CREATE opt_unique INDEX opt_concurrently opt_index_name
 					index_method_relation_clause '(' index_params ')'
-					GLOBAL
+					GLOBAL opt_idx_algo
 				{
 					IndexStmt *n = makeNode(IndexStmt);
 					n->unique = $2;
@@ -17147,7 +17289,7 @@ IndexStmt:	CREATE opt_unique INDEX opt_concurrently opt_index_name
 				}
 				| CREATE opt_unique INDEX opt_concurrently opt_index_name
 					ON dolphin_qualified_name '(' index_params ')'
-					GLOBAL
+					GLOBAL opt_idx_algo
 				{
 					IndexStmt *n = makeNode(IndexStmt);
 					n->unique = $2;
@@ -17210,6 +17352,41 @@ IndexStmt:	CREATE opt_unique INDEX opt_concurrently opt_index_name
 					$$ = (Node *)n;
 				}
 				| CREATE opt_unique INDEX opt_concurrently IF_P NOT EXISTS opt_index_name
+					index_method_relation_clause '(' index_params ')'
+					TableIndexOptionList idx_algo_expr
+				{
+					IndexStmt *n = makeNode(IndexStmt);
+					n->unique = $2;
+					n->concurrent = $4;
+					n->missing_ok = true;
+					n->schemaname = $8->schemaname;
+					n->idxname = $8->relname;
+					n->relation = $9->relation;
+					n->accessMethod = $9->accessMethod;
+					n->indexParams = $11;
+					n->excludeOpNames = NIL;
+					n->idxcomment = NULL;
+					n->indexOid = InvalidOid;
+					n->oldNode = InvalidOid;
+					n->partClause = NULL;
+					n->isPartitioned = false;
+					n->isGlobal = false;
+					n->primary = false;
+					n->isconstraint = false;
+					n->deferrable = false;
+					n->initdeferred = false;
+					n->whereClause = NULL;
+					if ($13 != NULL) {
+					    n->indexIncludingParams = $13->indexIncludingParams;
+					    n->options = $13->options;
+					    n->tableSpace = $13->tableSpace;
+					    if ($13->comment != NULL) {
+					        n->indexOptions = lappend(n->indexOptions, $13->comment);
+					    }
+					}
+					$$ = (Node *)n;
+				}
+				| CREATE opt_unique INDEX opt_concurrently IF_P NOT EXISTS opt_index_name
 					ON dolphin_qualified_name '(' index_params ')'
 					TableIndexOptionList where_clause
 				{
@@ -17234,6 +17411,41 @@ IndexStmt:	CREATE opt_unique INDEX opt_concurrently opt_index_name
 					n->deferrable = false;
 					n->initdeferred = false;
 					n->whereClause = $15;
+					if ($14 != NULL) {
+					    n->indexIncludingParams = $14->indexIncludingParams;
+					    n->options = $14->options;
+					    n->tableSpace = $14->tableSpace;
+					    if ($14->comment != NULL) {
+					        n->indexOptions = lappend(n->indexOptions, $14->comment);
+					    }
+					}
+					$$ = (Node *)n;
+				}
+				| CREATE opt_unique INDEX opt_concurrently IF_P NOT EXISTS opt_index_name
+					ON dolphin_qualified_name '(' index_params ')'
+					TableIndexOptionList idx_algo_expr
+				{
+					IndexStmt *n = makeNode(IndexStmt);
+					n->unique = $2;
+					n->concurrent = $4;
+					n->missing_ok = true;
+					n->schemaname = $8->schemaname;
+					n->idxname = $8->relname;
+					n->relation = $10;
+					n->accessMethod = NULL;
+					n->indexParams = $12;
+					n->excludeOpNames = NIL;
+					n->idxcomment = NULL;
+					n->indexOid = InvalidOid;
+					n->oldNode = InvalidOid;
+					n->partClause = NULL;
+					n->isPartitioned = false;
+					n->isGlobal = false;
+					n->primary = false;
+					n->isconstraint = false;
+					n->deferrable = false;
+					n->initdeferred = false;
+					n->whereClause = NULL;
 					if ($14 != NULL) {
 					    n->indexIncludingParams = $14->indexIncludingParams;
 					    n->options = $14->options;
@@ -17275,6 +17487,36 @@ IndexStmt:	CREATE opt_unique INDEX opt_concurrently opt_index_name
 					$$ = (Node *)n;
 				}
 				| CREATE opt_unique INDEX opt_concurrently IF_P NOT EXISTS opt_index_name
+					index_method_relation_clause '(' index_params ')'
+					idx_algo_expr
+				{
+					IndexStmt *n = makeNode(IndexStmt);
+					n->unique = $2;
+					n->concurrent = $4;
+					n->missing_ok = true;
+					n->schemaname = $8->schemaname;
+					n->idxname = $8->relname;
+					n->relation = $9->relation;
+					n->accessMethod = $9->accessMethod;
+					n->indexParams = $11;
+					n->excludeOpNames = NIL;
+					n->idxcomment = NULL;
+					n->indexOid = InvalidOid;
+					n->oldNode = InvalidOid;
+					n->partClause = NULL;
+					n->isPartitioned = false;
+					n->isGlobal = false;
+					n->primary = false;
+					n->isconstraint = false;
+					n->deferrable = false;
+					n->initdeferred = false;
+					n->whereClause = NULL;
+					n->indexIncludingParams = NIL;
+					n->options = NIL;
+					n->tableSpace = NULL;
+					$$ = (Node *)n;
+				}
+				| CREATE opt_unique INDEX opt_concurrently IF_P NOT EXISTS opt_index_name
 					ON dolphin_qualified_name '(' index_params ')'
 					where_clause
 				{
@@ -17305,8 +17547,38 @@ IndexStmt:	CREATE opt_unique INDEX opt_concurrently opt_index_name
 					$$ = (Node *)n;
 				}
 				| CREATE opt_unique INDEX opt_concurrently IF_P NOT EXISTS opt_index_name
+					ON dolphin_qualified_name '(' index_params ')'
+					idx_algo_expr
+				{
+					IndexStmt *n = makeNode(IndexStmt);
+					n->unique = $2;
+					n->concurrent = $4;
+					n->missing_ok = true;
+					n->schemaname = $8->schemaname;
+					n->idxname = $8->relname;
+					n->relation = $10;
+					n->accessMethod = NULL;
+					n->indexParams = $12;
+					n->excludeOpNames = NIL;
+					n->idxcomment = NULL;
+					n->indexOid = InvalidOid;
+					n->oldNode = InvalidOid;
+					n->partClause = NULL;
+					n->isPartitioned = false;
+					n->isGlobal = false;
+					n->primary = false;
+					n->isconstraint = false;
+					n->deferrable = false;
+					n->initdeferred = false;
+					n->whereClause = NULL;
+					n->indexIncludingParams = NIL;
+					n->options = NIL;
+					n->tableSpace = NULL;
+					$$ = (Node *)n;
+				}
+				| CREATE opt_unique INDEX opt_concurrently IF_P NOT EXISTS opt_index_name
 					index_method_relation_clause '(' index_params ')'
-					LOCAL opt_partition_index_def PartitionTableIndexOptionList
+					LOCAL opt_partition_index_def PartitionTableIndexOptionList opt_idx_algo
 				{
 					IndexStmt *n = makeNode(IndexStmt);
 					n->unique = $2;
@@ -17340,7 +17612,7 @@ IndexStmt:	CREATE opt_unique INDEX opt_concurrently opt_index_name
 				}
 				| CREATE opt_unique INDEX opt_concurrently IF_P NOT EXISTS opt_index_name
 					ON dolphin_qualified_name '(' index_params ')'
-					LOCAL opt_partition_index_def PartitionTableIndexOptionList
+					LOCAL opt_partition_index_def PartitionTableIndexOptionList opt_idx_algo
 				{
 					IndexStmt *n = makeNode(IndexStmt);
 					n->unique = $2;
@@ -17374,7 +17646,7 @@ IndexStmt:	CREATE opt_unique INDEX opt_concurrently opt_index_name
 				}
 				| CREATE opt_unique INDEX opt_concurrently IF_P NOT EXISTS opt_index_name
 					index_method_relation_clause '(' index_params ')'
-					LOCAL opt_partition_index_def
+					LOCAL opt_partition_index_def opt_idx_algo
 				{
 					IndexStmt *n = makeNode(IndexStmt);
 					n->unique = $2;
@@ -17403,7 +17675,7 @@ IndexStmt:	CREATE opt_unique INDEX opt_concurrently opt_index_name
 				}
 				| CREATE opt_unique INDEX opt_concurrently IF_P NOT EXISTS opt_index_name
 					ON dolphin_qualified_name '(' index_params ')'
-					LOCAL opt_partition_index_def
+					LOCAL opt_partition_index_def opt_idx_algo
 				{
 					IndexStmt *n = makeNode(IndexStmt);
 					n->unique = $2;
@@ -17432,7 +17704,7 @@ IndexStmt:	CREATE opt_unique INDEX opt_concurrently opt_index_name
 				}
 				| CREATE opt_unique INDEX opt_concurrently IF_P NOT EXISTS opt_index_name
 					index_method_relation_clause '(' index_params ')'
-					GLOBAL PartitionTableIndexOptionList
+					GLOBAL PartitionTableIndexOptionList opt_idx_algo
 				{
 					IndexStmt *n = makeNode(IndexStmt);
 					n->unique = $2;
@@ -17466,7 +17738,7 @@ IndexStmt:	CREATE opt_unique INDEX opt_concurrently opt_index_name
 				}
 				| CREATE opt_unique INDEX opt_concurrently IF_P NOT EXISTS opt_index_name
 					ON dolphin_qualified_name '(' index_params ')'
-					GLOBAL PartitionTableIndexOptionList
+					GLOBAL PartitionTableIndexOptionList opt_idx_algo
 				{
 					IndexStmt *n = makeNode(IndexStmt);
 					n->unique = $2;
@@ -17500,7 +17772,7 @@ IndexStmt:	CREATE opt_unique INDEX opt_concurrently opt_index_name
 				}
 				| CREATE opt_unique INDEX opt_concurrently IF_P NOT EXISTS opt_index_name
 					index_method_relation_clause '(' index_params ')'
-					GLOBAL
+					GLOBAL opt_idx_algo
 				{
 					IndexStmt *n = makeNode(IndexStmt);
 					n->unique = $2;
@@ -17529,7 +17801,7 @@ IndexStmt:	CREATE opt_unique INDEX opt_concurrently opt_index_name
 				}
 				| CREATE opt_unique INDEX opt_concurrently IF_P NOT EXISTS opt_index_name
 					ON dolphin_qualified_name '(' index_params ')'
-					GLOBAL
+					GLOBAL opt_idx_algo
 				{
 					IndexStmt *n = makeNode(IndexStmt);
 					n->unique = $2;
@@ -17668,6 +17940,30 @@ opt_concurrently:
 			CONCURRENTLY							{ $$ = TRUE; }
 			| /*EMPTY*/								{ $$ = FALSE; }
 		;
+
+idx_algo_expr:
+	ALGORITHM opt_equal DEFAULT
+	{
+		$$ = 0;
+	}
+	| ALGORITHM opt_equal INPLACE
+	{
+		$$ = 1;
+	}
+	| ALGORITHM opt_equal COPY
+	{
+		$$ = 2;
+	}
+
+opt_idx_algo:
+	idx_algo_expr
+	{
+		$$ = $1;
+	}
+	| /* EMPTY */
+	{
+		$$ = 0;
+	}
 
 opt_index_name:
 			index_name
@@ -21532,27 +21828,27 @@ RenameStmt: ALTER AGGREGATE func_name aggr_args RENAME TO name
 					n->missing_ok = true;
 					$$ = (Node *)n;
 				}
-			| ALTER VIEW qualified_name RENAME TO name
+			| ALTER opt_view_algo VIEW qualified_name RENAME TO name
 				{
 					RenameStmt *n = makeNode(RenameStmt);
 					n->renameType = OBJECT_VIEW;
-					n->relation = $3;
+					n->relation = $4;
 					n->subname = NULL;
-					n->newname = $6;
+					n->newname = $7;
 					n->missing_ok = false;
 					$$ = (Node *)n;
 				}
-			| ALTER VIEW IF_P EXISTS qualified_name RENAME TO name
+			| ALTER opt_view_algo VIEW IF_P EXISTS qualified_name RENAME TO name
 				{
 					RenameStmt *n = makeNode(RenameStmt);
 					n->renameType = OBJECT_VIEW;
-					n->relation = $5;
+					n->relation = $6;
 					n->subname = NULL;
-					n->newname = $8;
+					n->newname = $9;
 					n->missing_ok = true;
 					$$ = (Node *)n;
 				}
-			| ALTER VIEW qualified_name opt_column_list AS SelectStmt opt_check_option
+			| ALTER opt_view_algo VIEW qualified_name opt_column_list AS SelectStmt opt_check_option
 				{
 #ifndef ENABLE_MULTIPLE_NODES
 					if (u_sess->attr.attr_sql.sql_compatibility !=  B_FORMAT)
@@ -21563,13 +21859,13 @@ RenameStmt: ALTER AGGREGATE func_name aggr_args RENAME TO name
 								 errmsg("ALTER VIEW AS is not supported.")));
 					}
 					ViewStmt *n = makeNode(ViewStmt);
-					n->view = $3;
-					n->aliases = $4;
-					n->query = $6;
+					n->view = $4;
+					n->aliases = $5;
+					n->query = $7;
 					n->replace = true;
 					n->sql_statement = NULL;
 					n->is_alter = true;
-					n->withCheckOption = (ViewCheckOption)$7;
+					n->withCheckOption = (ViewCheckOption)$8;
 					$$ = (Node *) n;
 				}
 			| ALTER definer_expression VIEW qualified_name opt_column_list AS SelectStmt opt_check_option
@@ -21591,6 +21887,27 @@ RenameStmt: ALTER AGGREGATE func_name aggr_args RENAME TO name
 					n->sql_statement = NULL;
 					n->is_alter = true;
 					n->withCheckOption = (ViewCheckOption)$8;
+					$$ = (Node *) n;
+				}
+			| ALTER view_algo_shift_expr definer_expression VIEW qualified_name opt_column_list AS SelectStmt opt_check_option
+				{
+#ifndef ENABLE_MULTIPLE_NODES
+					if (u_sess->attr.attr_sql.sql_compatibility !=  B_FORMAT)
+#endif
+					{
+						ereport(errstate,
+								(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+								 errmsg("ALTER VIEW AS is not supported.")));
+					}
+					ViewStmt *n = makeNode(ViewStmt);
+					n->definer = $3;
+					n->view = $5;
+					n->aliases = $6;
+					n->query = $8;
+					n->replace = true;
+					n->sql_statement = NULL;
+					n->is_alter = true;
+					n->withCheckOption = (ViewCheckOption)$9;
 					$$ = (Node *) n;
 				}
 			| ALTER MATERIALIZED VIEW qualified_name RENAME TO name
@@ -22204,21 +22521,21 @@ AlterObjectSchemaStmt:
 					n->missing_ok = true;
 					$$ = (Node *)n;
 				}
-			| ALTER VIEW qualified_name SET SCHEMA name
+			| ALTER opt_view_algo VIEW qualified_name SET SCHEMA name
 				{
 					AlterObjectSchemaStmt *n = makeNode(AlterObjectSchemaStmt);
 					n->objectType = OBJECT_VIEW;
-					n->relation = $3;
-					n->newschema = $6;
+					n->relation = $4;
+					n->newschema = $7;
 					n->missing_ok = false;
 					$$ = (Node *)n;
 				}
-			| ALTER VIEW IF_P EXISTS qualified_name SET SCHEMA name
+			| ALTER opt_view_algo VIEW IF_P EXISTS qualified_name SET SCHEMA name
 				{
 					AlterObjectSchemaStmt *n = makeNode(AlterObjectSchemaStmt);
 					n->objectType = OBJECT_VIEW;
-					n->relation = $5;
-					n->newschema = $8;
+					n->relation = $6;
+					n->newschema = $9;
 					n->missing_ok = true;
 					$$ = (Node *)n;
 				}
@@ -23050,50 +23367,102 @@ CreateContQueryStmt: CREATE CONTVIEW qualified_name opt_reloptions AS SelectStmt
  *
  *****************************************************************************/
 
-ViewStmt: CREATE OptTemp VIEW qualified_name opt_column_list opt_reloptions
-				AS SelectStmt opt_check_option
+ViewStmt: CREATE OptTemp ViewStmtBaseBody
 				{
-					ViewStmt *n = makeNode(ViewStmt);
-					n->view = $4;
+					ViewStmt *n = (ViewStmt*) $3;
 					n->view->relpersistence = $2;
-					n->aliases = $5;
-					n->query = $8;
-					n->replace = false;
-					n->options = $6;
-					n->sql_statement = NULL;
-					n->withCheckOption = (ViewCheckOption)$9;
-					$$ = (Node *) n;
+					$$ = (Node*) n;
 				}
-		| CREATE OR REPLACE OptTemp VIEW qualified_name opt_column_list opt_reloptions
-				AS SelectStmt opt_check_option
+		| CREATE OR REPLACE OptTemp ViewStmtBaseBody
 				{
-					ViewStmt *n = makeNode(ViewStmt);
-					n->view = $6;
+					ViewStmt *n = (ViewStmt*) $5;
 					n->view->relpersistence = $4;
-					n->aliases = $7;
-					n->query = $10;
 					n->replace = true;
-					n->options = $8;
-					n->sql_statement = NULL;
-					n->withCheckOption = (ViewCheckOption)$11;
-					$$ = (Node *) n;
+					$$ = (Node*) n;
 				}
-		| CREATE opt_or_replace definer_expression OptTemp VIEW qualified_name opt_column_list opt_reloptions
-				AS SelectStmt opt_check_option
+		| CREATE opt_or_replace definer_expression OptTemp ViewStmtBaseBody
 				{
-					ViewStmt *n = makeNode(ViewStmt);
-					n->definer = $3;
-					n->view = $6;
+					ViewStmt *n = (ViewStmt*) $5;
 					n->view->relpersistence = $4;
-					n->aliases = $7;
-					n->query = $10;
+					n->definer = $3;
 					n->replace = $2;
-					n->options = $8;
-					n->sql_statement = NULL;
-					n->withCheckOption = (ViewCheckOption)$11;
-					$$ = (Node *) n;
+					$$ = (Node*) n;
+				}
+		| CREATE opt_or_replace view_algo_expr OptTemp ViewStmtBaseBody
+				{
+					ViewStmt *n = (ViewStmt*) $5;
+					n->view->relpersistence = $4;
+					n->replace = $2;
+					$$ = (Node*) n;
+				}
+		| CREATE opt_or_replace view_algo_expr definer_expression OptTemp ViewStmtBaseBody
+				{
+					ViewStmt *n = (ViewStmt*) $6;
+					n->view->relpersistence = $5;
+					n->definer = $4;
+					n->replace = $2;
+					$$ = (Node*) n;
 				}
 		;
+
+ViewStmtBaseBody: VIEW qualified_name opt_column_list opt_reloptions AS SelectStmt opt_check_option
+	{
+		ViewStmt* stmt = makeNode(ViewStmt);
+		stmt->view = $2;
+		stmt->aliases = $3;
+		stmt->options = $4;
+
+		/* 'AS' is here */
+
+		stmt->query = $6;
+		stmt->withCheckOption = (ViewCheckOption)$7;
+		stmt->replace = false;
+		stmt->sql_statement = NULL;
+		stmt->view->relpersistence = RELPERSISTENCE_PERMANENT;
+		$$ = (Node*)stmt;
+	}
+
+/* algorithm optionals of view statement */
+view_algo_expr:
+	ALGORITHM '=' UNDEFINED
+	{
+		$$ = 0;
+	}
+	| ALGORITHM '=' MERGE
+	{
+		$$ = 1;
+	}
+	| ALGORITHM '=' TEMPTABLE
+	{
+		$$ = 2;
+	}
+	;
+
+view_algo_shift_expr:
+	ALGORITHM_UNDEFINED
+	{
+		$$ = 0;
+	}
+	| ALGORITHM_MERGE
+	{
+		$$ = 1;
+	}
+	| ALGORITHM_TEMPTABLE
+	{
+		$$ = 2;
+	}
+	;
+
+opt_view_algo:
+	view_algo_shift_expr
+	{
+		$$ = $1;
+	}
+	| /* EMPTY */
+	{
+		$$ = 0;
+	}
+
 
 opt_check_option:
 		WITH CHECK OPTION				{ $$ = CASCADED_CHECK_OPTION; }
@@ -34718,6 +35087,7 @@ unreserved_keyword_without_key:
 			| INITIAL_P
 			| INITRANS
 			| INLINE_P
+			| INPLACE
 			| INPUT_P
 			| INSENSITIVE
 			| INSERT
@@ -34961,6 +35331,7 @@ unreserved_keyword_without_key:
 			| TEMP
 			| TEMPLATE
 			| TEMPORARY
+			| TEMPTABLE
 			| TERMINATED
 			| THAN
 			| TIMESTAMP_FORMAT_P
@@ -34979,6 +35350,7 @@ unreserved_keyword_without_key:
 			| UNBOUNDED
 			| UNCOMMITTED
 			| UNENCRYPTED
+			| UNDEFINED
 			| UNKNOWN
 			| UNLIMITED
 			| UNLISTEN
