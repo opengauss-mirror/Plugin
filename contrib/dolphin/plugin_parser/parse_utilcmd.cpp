@@ -1249,7 +1249,17 @@ static void transformColumnDefinition(CreateStmtContext* cxt, ColumnDef* column,
     checkConstraint(cxt, (Node*)column);
 
     cxt->columns = lappend(cxt->columns, (Node*)column);
-
+#ifdef DOLPHIN
+    if (column->typname && list_length(column->typname->names) > 1 &&
+            strcmp(strVal(lsecond(column->typname->names)), "binary") == 0 &&
+                column->typname->typmods == NIL) {
+        A_Const *n = makeNode(A_Const);
+        n->val.type = T_Integer;
+        n->val.val.ival = 1;
+        n->location = -1;
+        column->typname->typmods = list_make1((Node*)n);
+    }
+#endif
     /* Check for SERIAL pseudo-types */
     is_serial = false;
     if (column->typname && list_length(column->typname->names) == 1 && !column->typname->pct_type) {

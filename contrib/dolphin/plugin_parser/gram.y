@@ -29148,17 +29148,24 @@ SimpleTypename:
 						$$->typmods = list_make2(makeIntConst(INTERVAL_FULL_RANGE, -1),
 												 makeIntConst($3, @3));
 				}
-			| Binary opt_type_modifiers
+			| VARBINARY opt_type_modifiers
 				{
-					$$ = $1;
+					$$ = SystemTypeName("varbinary");
+					$$->location = @1;
 					$$->typmods = $2;
-					Type typtup = LookupTypeName(NULL, $1, NULL);
+					Type typtup = LookupTypeName(NULL, $$, NULL);
 					if (typtup) {
 						if ($$->typmods == NIL) {
 							$$->typmods = list_make1((Node*)makeIntConst(1, 1));
 						}
 						ReleaseSysCache(typtup);
 					}
+				}
+			| BINARY opt_type_modifiers
+				{
+					$$ = SystemTypeName("binary");
+                                        $$->typmods = $2;
+					$$->location = @1;
 				}
 			| EnumType  '(' opt_enum_val_list ')'
 				{
@@ -30252,6 +30259,10 @@ a_expr:		c_expr									{ $$ = $1; }
 					n->location = @2;
 					$$ = (Node *) n;
 				}
+			| BINARY a_expr					%prec UMINUS
+				{
+					$$ = makeTypeCast($2, SystemTypeName("binary"), -1); 
+				}
 			| a_expr AT TIME ZONE a_expr			%prec AT
 				{
 					FuncCall *n = makeNode(FuncCall);
@@ -30509,38 +30520,6 @@ a_expr:		c_expr									{ $$ = $1; }
 						$$ = (Node *) makeSimpleA_Expr(AEXPR_OP, "!~~*", $1, (Node *) n, @2); 
 					else 
 						$$ = (Node *) makeSimpleA_Expr(AEXPR_OP, "!~~", $1, (Node *) n, @2);
-				}
-			| a_expr LIKE BINARY a_expr %prec LIKE
-				{ $$ = (Node *) makeSimpleA_Expr(AEXPR_OP, "~~", $1, $4, @2); }
-			| a_expr LIKE BINARY a_expr ESCAPE a_expr %prec LIKE
-				{
-					FuncCall *n = makeNode(FuncCall);
-					n->funcname = SystemFuncName("like_escape");
-					n->args = list_make2($4, $6);
-					n->agg_order = NIL;
-					n->agg_star = FALSE;
-					n->agg_distinct = FALSE;
-					n->func_variadic = FALSE;
-					n->over = NULL;
-					n->location = @2;
-					n->call_func = false;
-					$$ = (Node *) makeSimpleA_Expr(AEXPR_OP, "~~", $1, (Node *) n, @2);
-				}
-			| a_expr NOT_LIKE BINARY a_expr		%prec NOT_LIKE
-				{ $$ = (Node *) makeSimpleA_Expr(AEXPR_OP, "!~~", $1, $4, @2); }
-			| a_expr NOT_LIKE BINARY a_expr ESCAPE a_expr	%prec NOT_LIKE
-				{
-					FuncCall *n = makeNode(FuncCall);
-					n->funcname = SystemFuncName("like_escape");
-					n->args = list_make2($4, $6);
-					n->agg_order = NIL;
-					n->agg_star = FALSE;
-					n->agg_distinct = FALSE;
-					n->func_variadic = FALSE;
-					n->over = NULL;
-					n->location = @2;
-					n->call_func = false;
-					$$ = (Node *) makeSimpleA_Expr(AEXPR_OP, "!~~", $1, (Node *) n, @2);
 				}
 			| a_expr ILIKE a_expr
 				{ $$ = (Node *) makeSimpleA_Expr(AEXPR_OP, "~~*", $1, $3, @2); }

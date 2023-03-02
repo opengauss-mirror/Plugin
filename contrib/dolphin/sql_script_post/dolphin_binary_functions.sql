@@ -6,9 +6,9 @@ CREATE TYPE pg_catalog.binary;
 
 DROP FUNCTION IF EXISTS pg_catalog.binary_in(cstring) CASCADE;
 
-CREATE FUNCTION pg_catalog.binary_in (
+CREATE OR REPLACE FUNCTION pg_catalog.binary_in (
 cstring
-) RETURNS binary LANGUAGE INTERNAL IMMUTABLE STRICT as 'byteain';
+) RETURNS binary  LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'dolphin_binaryin';
 
 DROP FUNCTION IF EXISTS pg_catalog.binary_out(binary) CASCADE;
 
@@ -45,6 +45,162 @@ CREATE TYPE pg_catalog.binary (input=binary_in, output=binary_out,
                                 receive = binary_recv, send = binary_send,
                                 STORAGE=EXTENDED, category='S');
 
+CREATE OR REPLACE FUNCTION pg_catalog.binary_in (
+text
+) RETURNS binary   AS
+$$
+BEGIN
+    RETURN (SELECT binary_in($1::cstring));
+END;
+$$
+LANGUAGE plpgsql;
+
+CREATE FUNCTION pg_catalog.binarytextlike(
+binary,
+text
+) RETURNS bool AS
+$$
+BEGIN
+    RETURN (SELECT bytealike($1::bytea,$2::binary::bytea));
+END;
+$$
+LANGUAGE plpgsql;
+
+CREATE OPERATOR pg_catalog.~~(leftarg = binary, rightarg = text, procedure = pg_catalog.binarytextlike);
+CREATE OPERATOR pg_catalog.~~*(leftarg = binary, rightarg = text, procedure = pg_catalog.binarytextlike);
+
+CREATE FUNCTION pg_catalog.textbinarylike(
+text,
+binary
+) RETURNS bool AS
+$$
+BEGIN
+    RETURN (SELECT bytealike($1::binary::bytea,$2::bytea));
+END;
+$$
+LANGUAGE plpgsql;
+
+CREATE OPERATOR pg_catalog.~~(leftarg = text, rightarg = binary, procedure = pg_catalog.textbinarylike);
+CREATE OPERATOR pg_catalog.~~*(leftarg = text, rightarg = binary, procedure = pg_catalog.textbinarylike);
+
+CREATE FUNCTION pg_catalog.binarytextnlike(
+binary,
+text
+) RETURNS bool AS
+$$
+BEGIN
+    RETURN (SELECT byteanlike($1::bytea,$2::binary::bytea));
+END;
+$$
+LANGUAGE plpgsql;
+
+CREATE OPERATOR pg_catalog.!~~(leftarg = binary, rightarg = text, procedure = pg_catalog.binarytextnlike);
+CREATE OPERATOR pg_catalog.!~~*(leftarg = binary, rightarg = text, procedure = pg_catalog.binarytextnlike);
+
+CREATE FUNCTION pg_catalog.textbinarynlike(
+text,
+binary
+) RETURNS bool AS
+$$
+BEGIN
+    RETURN (SELECT byteanlike($1::binary::bytea,$2::bytea));
+END;
+$$
+LANGUAGE plpgsql;
+
+CREATE OPERATOR pg_catalog.!~~(leftarg = text, rightarg = binary, procedure = pg_catalog.textbinarynlike);
+CREATE OPERATOR pg_catalog.!~~*(leftarg = text, rightarg = binary, procedure = pg_catalog.textbinarynlike);
+
+CREATE FUNCTION pg_catalog.like_escape(
+binary,
+text
+) RETURNS bytea AS
+$$
+BEGIN
+    RETURN (SELECT like_escape($1::bytea,$2::binary::bytea));
+END;
+$$
+LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION pg_catalog.binaryeq(
+binary,
+binary
+) RETURNS bool AS
+$$
+BEGIN
+    RETURN (SELECT byteaeq($1::bytea,$2::bytea));
+END;
+$$
+LANGUAGE plpgsql;
+
+CREATE OPERATOR pg_catalog.=(leftarg = binary, rightarg = binary, procedure = pg_catalog.binaryeq,restrict = eqsel, join = eqjoinsel,
+HASHES, MERGES);
+
+CREATE OR REPLACE FUNCTION pg_catalog.binaryne(
+binary,
+binary
+) RETURNS bool AS
+$$
+BEGIN
+    RETURN (SELECT byteane($1::bytea,$2::bytea));
+END;
+$$
+LANGUAGE plpgsql;
+
+CREATE OPERATOR pg_catalog.<>(leftarg = binary, rightarg = binary, procedure = pg_catalog.binaryne,restrict = neqsel, join = neqjoinsel);
+
+
+CREATE OR REPLACE FUNCTION pg_catalog.binarygt(
+binary,
+binary
+) RETURNS bool AS
+$$
+BEGIN
+    RETURN (SELECT byteagt($1::bytea,$2::bytea));
+END;
+$$
+LANGUAGE plpgsql;
+
+CREATE OPERATOR pg_catalog.>(leftarg = binary, rightarg = binary, procedure = pg_catalog.binarygt,restrict = scalargtsel, join = scalargtjoinsel);
+
+CREATE OR REPLACE FUNCTION pg_catalog.binarylt(
+binary,
+binary
+) RETURNS bool AS
+$$
+BEGIN
+    RETURN (SELECT bytealt($1::bytea,$2::bytea));
+END;
+$$
+LANGUAGE plpgsql;
+
+CREATE OPERATOR pg_catalog.<(leftarg = binary, rightarg = binary, procedure = pg_catalog.binarylt,restrict = scalarltsel, join = scalarltjoinsel);
+
+CREATE OR REPLACE FUNCTION pg_catalog.binaryge(
+binary,
+binary
+) RETURNS bool AS
+$$
+BEGIN
+    RETURN (SELECT byteage($1::bytea,$2::bytea));
+END;
+$$
+LANGUAGE plpgsql;
+
+CREATE OPERATOR pg_catalog.>=(leftarg = binary, rightarg = binary, procedure = pg_catalog.binaryge,restrict = scalargtsel, join = scalargtjoinsel);
+
+CREATE OR REPLACE FUNCTION pg_catalog.binaryle(
+binary,
+binary
+) RETURNS bool AS
+$$
+BEGIN
+    RETURN (SELECT byteale($1::bytea,$2::bytea));
+END;
+$$
+LANGUAGE plpgsql;
+
+CREATE OPERATOR pg_catalog.<=(leftarg = binary, rightarg = binary, procedure = pg_catalog.binaryle,restrict = scalarltsel, join = scalarltjoinsel);
 /* varbinary */
 DROP TYPE IF EXISTS pg_catalog.varbinary CASCADE;
 DROP TYPE IF EXISTS pg_catalog._varbinary CASCADE;
