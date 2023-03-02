@@ -48,6 +48,23 @@
 #define fprintf(file, fmt, msg)  ereport(ERROR, (errmsg_internal("%s", msg)))
 
 /*
+ * Constant data exported from this file.  This array maps from the
+ * zero-based keyword numbers returned by ScanKeywordLookup to the
+ * Bison token numbers needed by gram.y.  This is exported because
+ * callers need to pass it to scanner_init, if they are using the
+ * standard keyword list ScanKeywords.
+ */
+#define PG_KEYWORD(kwname, value, category) value,
+
+const uint16 ScanKeywordTokens[] = {
+#include "plugin_parser/kwlist.h"
+};
+
+#undef PG_KEYWORD
+
+/*
+
+/*
  * Set the type of YYSTYPE.
  */
 #define YYSTYPE core_YYSTYPE
@@ -539,19 +556,18 @@ other			.
 					 * We will pass this along as a normal character string,
 					 * but preceded with an internally-generated "NCHAR".
 					 */
-					const ScanKeyword *keyword;
+					int kwnum;
 
 					SET_YYLLOC();
 					yyless(1);				/* eat only 'n' this time */
 
-					keyword = ScanKeywordLookup("nchar",
-												yyextra->keywords,
-												yyextra->num_keywords);
-					if (keyword != NULL)
+					kwnum = ScanKeywordLookup("nchar",
+											  yyextra->keywordlist);
+					if (kwnum >= 0)
 					{
-						yylval->keyword = keyword->name;
 						yyextra->is_hint_str = false;
-						return keyword->value;
+						yylval->keyword = GetScanKeyword(kwnum, yyextra->keywordlist);
+						return yyextra->keyword_tokens[kwnum];
 					}
 					else
 					{
@@ -1265,8 +1281,8 @@ other			.
 				}
 
 {identifier}	{
-					const ScanKeyword *keyword;
-					char		   *ident;
+					int kwnum;
+                    char *ident;
 
 					SET_YYLLOC();
 
@@ -1280,40 +1296,40 @@ other			.
 						yyleng = nchars;
 					}
 					/* Is it a keyword? */
-					keyword = ScanKeywordLookup(yytext, yyextra->keywords, yyextra->num_keywords, yyleng);
+					kwnum = ScanKeywordLookup(yytext, yyextra->keywordlist, yyleng);
 #else
-					keyword = ScanKeywordLookup(yytext,
-												yyextra->keywords,
-												yyextra->num_keywords);
+					kwnum = ScanKeywordLookup(yytext, yyextra->keywordlist);
 #endif
 					yyextra->is_hint_str = false;
 					bool isPlpgsqlKeyword = yyextra->isPlpgsqlKeyWord;
 
-					if (keyword != NULL)
+					if (kwnum >= 0)
 					{
 #ifdef DOLPHIN
-						yylval->keyword = (GetSessionContext()->lower_case_table_names == 0) ? pstrdup(yytext) : keyword->name;
+						yylval->keyword = (GetSessionContext()->lower_case_table_names == 0) ? pstrdup(yytext) : GetScanKeyword(kwnum, yyextra->keywordlist);
 #else
-						yylval->keyword = keyword->name;
+						yylval->keyword = GetScanKeyword(kwnum, yyextra->keywordlist);
 #endif
+                        uint16 token = yyextra->keyword_tokens[kwnum];
+
 						/* Find the CREATE PROCEDURE syntax and set dolqstart. */
-						if (keyword->value == CREATE)
+						if (token == CREATE)
 						{
 							yyextra->is_createstmt = true;
 						}
-						else if (keyword->value == TRIGGER && yyextra->is_createstmt)
+						else if (token == TRIGGER && yyextra->is_createstmt)
 						{
 							/* Create trigger don't need set dolqstart */
 							yyextra->is_createstmt = false;
 						}
-						else if ((keyword->value == (isPlpgsqlKeyword? yyextra->plKeywordValue->procedure : PROCEDURE) ||
-						    keyword->value == (isPlpgsqlKeyword? yyextra->plKeywordValue->function : FUNCTION))
+						else if ((token == (isPlpgsqlKeyword? yyextra->plKeywordValue->procedure : PROCEDURE) ||
+                           token == (isPlpgsqlKeyword? yyextra->plKeywordValue->function : FUNCTION))
 							&& (yyextra->is_createstmt))
 						{
 							/* Make yyextra->dolqstart not NULL means its in a proc with $$. */
 							yyextra->dolqstart = "";
 						}
-						else if (keyword->value == (isPlpgsqlKeyword? yyextra->plKeywordValue->begin : BEGIN_P))
+						else if (token == (isPlpgsqlKeyword? yyextra->plKeywordValue->begin : BEGIN_P))
 						{
                             if (!(u_sess->parser_cxt.isCreateFuncOrProc || u_sess->plsql_cxt.curr_compile_context != NULL)) {
                                 /* cases that have to be a trans stmt and fall quickly */
@@ -1325,11 +1341,11 @@ other			.
                                     return BEGIN_NON_ANOYBLOCK;
                             }
 						}
-						else if (keyword->value == (isPlpgsqlKeyword? yyextra->plKeywordValue->select : SELECT) ||
-								 keyword->value == (isPlpgsqlKeyword? yyextra->plKeywordValue->update : UPDATE) ||
-								 keyword->value == (isPlpgsqlKeyword? yyextra->plKeywordValue->insert : INSERT) ||
-								 keyword->value == (isPlpgsqlKeyword? yyextra->plKeywordValue->Delete : DELETE_P) ||
-								 keyword->value == MERGE)
+                        else if (token == (isPlpgsqlKeyword? yyextra->plKeywordValue->select : SELECT) ||
+                                 token == (isPlpgsqlKeyword? yyextra->plKeywordValue->update : UPDATE) ||
+                                 token == (isPlpgsqlKeyword? yyextra->plKeywordValue->insert : INSERT) ||
+                                 token == (isPlpgsqlKeyword? yyextra->plKeywordValue->Delete : DELETE_P) ||
+                                 token == MERGE)
 						{
 							yyextra->is_hint_str = true;
 						}
@@ -1337,7 +1353,7 @@ other			.
 #ifdef DOLPHIN
 						yyextra->ident_quoted = false;
 #endif
-						return keyword->value;
+						return token;
 					}
 
 					/*
@@ -1510,8 +1526,8 @@ scanner_yyerror(const char *message, core_yyscan_t yyscanner)
 core_yyscan_t
 scanner_init(const char *str,
 			 core_yy_extra_type *yyext,
-			 const ScanKeyword *keywords,
-			 int num_keywords)
+			 const ScanKeywordList *keywordlist,
+			 const uint16 *keyword_tokens)
 {
 	Size		slen = strlen(str);
 	yyscan_t	scanner;
@@ -1523,8 +1539,8 @@ scanner_init(const char *str,
 
 	core_yyset_extra(yyext, scanner);
 
-	yyext->keywords = keywords;
-	yyext->num_keywords = num_keywords;
+	yyext->keywordlist = keywordlist;
+	yyext->keyword_tokens = keyword_tokens;
 	yyext->in_slash_proc_body = false;
 	yyext->paren_depth = 0;
 	yyext->query_string_locationlist = NIL;

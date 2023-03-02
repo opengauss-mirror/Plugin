@@ -49,6 +49,12 @@ static VecFuncCacheEntry vec_func_table_plugin[] = {{1724,
         {},
         {vnumeric_sum, vnumeric_sum},
         {vsnumeric_sum, vsnumeric_sum}},
+#ifndef ENABLE_MULTIPLE_NODES
+    {5435, /* sum(numeric) */
+        {},
+        {vnumeric_sum, vnumeric_sum},
+        {vsnumeric_sum, vsnumeric_sum}},
+#endif
     {1726,
         {
             vnumeric_op<numeric_mul, BIMUL>,

@@ -118,6 +118,8 @@
 |plugin_pl\plpgsql\src|pl_scanner.cpp   |src\common\pl\plpgsql\src\pl_scanner.cpp  |
 |plugin_pl\plpgsql\src|pl_handler.cpp   |src\common\pl\plpgsql\src\pl_handler.cpp  |
 |plugin_pl\plpgsql\src|pl_comp.cpp   |src\common\pl\plpgsql\src\pl_comp.cpp  |
+|plugin_pl\plpgsql\src\pl_reserved_kwlist.h|src\common\pl\plpgsql\src\pl_reserved_kwlist.h |
+|plugin_pl\plpgsql\src\pl_unreserved_kwlist.h|src\common\pl\plpgsql\src\pl_unreserved_kwlist.h |
 |plugin_catalog|heap.cpp   |src\common\backend\catalog\heap.cpp  |
 |llvmir|openGauss_expr_dolphin_aarch64.ir   |src\gausskernel\runtime\codegen\llvmir\GaussDB_expr_aarch64.ir   |
 |llvmir|openGauss_expr_dolphin_aarch64.ll   |src\gausskernel\runtime\codegen\llvmir\GaussDB_expr_aarch64.ll   |
@@ -136,6 +138,7 @@
 |plugin_commands|defrem.h  |src\include\commands\defrem.h   |
 |plugin_nodes|parsenodes_common.h  |src\include\nodes\parsenodes_common.h   |
 |plugin_nodes|parsenodes.h  |src\include\nodes\parsenodes.h   |
+|plugin_parser|kwlookup.h  |src\include\parser\kwlookup.h   |
 |plugin_parser|analyze.h  |src\include\parser\analyze.h   |
 |plugin_parser|backslash_quotes.h  |src\include\parser\backslash_quotes.h   |
 |plugin_parser|gramparse.h  |src\include\parser\gramparse.h   |

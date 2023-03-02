@@ -13,17 +13,17 @@
  *
  * -------------------------------------------------------------------------
  */
-#include "postgres.h"
-#include "knl/knl_variable.h"
+#include "c.h"
+#include "plugin_parser/keywords.h"
 
-#include "nodes/parsenodes.h"
-#include "plugin_parser/gramparse.h"
+/*ScanKeywordList lookup.data.for.SQL.keywords.*/
+#include "plugin_parser/kwlist_d.h"
 
-#define PG_KEYWORD(a, b, c) {a, b, c},
+#define PG_KEYWORD(kwname,value,category) category,
 
-const ScanKeyword ScanKeywords[] = {
-#include "plugin_parser/kwlist.h"
+const uint8 ScanKeywordCategories[SCANKEYWORDS_NUM_KEYWORDS] = {
+    #include "plugin_parser/kwlist.h"
 };
 
-const int NumScanKeywords = lengthof(ScanKeywords);
+#undef PG_KEYWORD
 
