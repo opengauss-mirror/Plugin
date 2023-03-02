@@ -21,7 +21,7 @@
 
 #include <ctype.h>
 
-#include "plugin_parser/keywords.h"
+#include "plugin_parser/kwlookup.h"
 
 /*
  * ScanKeywordLookup - see if a given word is a keyword
@@ -36,63 +36,66 @@
  * receive a different case-normalization mapping.
  */
 #ifdef DOLPHIN
-const ScanKeyword* ScanKeywordLookup(const char* text, const ScanKeyword* keywords, int num_keywords, int length)
+int ScanKeywordLookup(const char *str, const ScanKeywordList *keywords, int length)
 #else
-const ScanKeyword* ScanKeywordLookup(const char* text, const ScanKeyword* keywords, int num_keywords)
+int ScanKeywordLookup(const char *str, const ScanKeywordList *keywords)
 #endif
 {
-    int len, i;
-    char word[NAMEDATALEN] = {0};
-    const ScanKeyword* low = NULL;
-    const ScanKeyword* high = NULL;
+	size_t len;
+	int	h;
+	const char *kw;
 
-    if (text == NULL) {
-        return NULL;
-    }
+	/*
+	 * Reject immediately if too long to be any keyword.  This saves useless
+	 * hashing and downcasing work on long strings.
+	 */
 #ifdef DOLPHIN
-    if (length > 0)
-        len = length;
-    else 
+	if (length > 0)
+		len = length;
+	else
 #endif
-    len = strlen(text);
-    /* We assume all keywords are shorter than NAMEDATALEN. */
-    if (len >= NAMEDATALEN) {
-        return NULL;
-    }
+	len = strlen(str);
+	if (len > (size_t)keywords->max_kw_len)
+		return -1;
 
-    /*
-     * Apply an ASCII-only downcasing.	We must not use tolower() since it may
-     * produce the wrong translation in some locales (eg, Turkish).
-     */
-    for (i = 0; i < len; i++) {
-        char ch = text[i];
+	/*
+	 * Compute the hash function.  We assume it was generated to produce
+	 * case-insensitive results.  Since it's a perfect hash, we need only
+	 * match to the specific keyword it identifies.
+	 */
+	h = keywords->hash(str, len);
+	/* An out-of-range result implies no match */
+	if (h < 0 || h >= keywords->num_keywords)
+		return -1;
 
-        if (ch >= 'A' && ch <= 'Z') {
-            ch += 'a' - 'A';
-        }
-        word[i] = ch;
-    }
-    word[len] = '\0';
+	/*
+	 * Compare character-by-character to see if we have a match, applying an
+	 * ASCII-only downcasing to the input characters.  We must not use
+	 * tolower() since it may produce the wrong translation in some locales
+	 * (eg, Turkish).
+	 */
+	kw = GetScanKeyword(h, keywords);
+	while (*str != '\0'
+#ifdef DOLPHIN
+            && len > 0
+#endif
+		) {
+		char ch = *str++;
+		if (ch >= 'A' && ch <= 'Z')
+			ch += 'a' - 'A';
+		if (ch != *kw++)
+			return -1;
+#ifdef DOLPHIN
+        len--;
+#endif
+	}
+	if (*kw != '\0'
+#ifdef DOLPHIN
+        && len != 0
+#endif
+    )
+		return -1;
 
-    /*
-     * Now do a binary search using plain strcmp() comparison.
-     */
-    low = keywords;
-    high = keywords + (num_keywords - 1);
-    while (low <= high) {
-        const ScanKeyword* middle = NULL;
-        int difference;
-
-        middle = low + (high - low) / 2;
-        difference = strcmp(middle->name, word);
-        if (difference == 0) {
-            return middle;
-        } else if (difference < 0) {
-            low = middle + 1;
-        } else {
-            high = middle - 1;
-        }
-    }
-
-    return NULL;
+	/* Success! */
+	return h;
 }
