@@ -179,6 +179,25 @@ static inline bool IsExplainStmt(char* scanbuf)
 {
     return (scanbuf && pg_strcasecmp(scanbuf, "explain") == 0);
 }
+
+static bool IsAlterStmtAlgorithm(char* scanbuf)
+{
+    if (!scanbuf) {
+        return false;
+    }
+
+    const int alterSize = 5;
+    if (pg_strncasecmp(scanbuf, "alter", alterSize) != 0) {
+        return false;
+    }
+
+    char* ptr = scanbuf + alterSize;
+    while (isspace((unsigned char)*ptr)) {
+        ++ptr;
+    }
+
+    return (pg_strcasecmp(ptr, "algorithm") == 0);
+}
 #endif
 
 /*
@@ -718,6 +737,35 @@ int base_yylex(YYSTYPE* lvalp, YYLTYPE* llocp, core_yyscan_t yyscanner)
                     /* and back up the output info to cur_token */
                     lvalp->core_yystype = cur_yylval;
                     *llocp = cur_yylloc;
+                    break;
+            }
+            break;
+        case ALGORITHM:
+            if (!IsAlterStmtAlgorithm(yyextra->core_yy_extra.scanbuf)) {
+                break;
+            }
+
+            READ_TWO_TOKEN();
+            if (yyextra->lookahead_token[1] != '=') {
+                lvalp->core_yystype = yyextra->lookahead_yylval[1];
+                *llocp = yyextra->lookahead_yylloc[1];
+                break;
+            }
+
+            switch (next_token) {
+                case UNDEFINED:
+                    cur_token = ALGORITHM_UNDEFINED;
+                    yyextra->lookahead_num = 0;
+                    break;
+                case MERGE:
+                    cur_token = ALGORITHM_MERGE;
+                    yyextra->lookahead_num = 0;
+                    break;
+                case TEMPTABLE:
+                    cur_token = ALGORITHM_TEMPTABLE;
+                    yyextra->lookahead_num = 0;
+                    break;
+                default:
                     break;
             }
             break;
