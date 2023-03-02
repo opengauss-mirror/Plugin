@@ -575,6 +575,7 @@ static char* appendString(char* source, char* target, int offset);
 	EncryptionType algtype;
 	LockClauseStrength lockstrength;
 	CharsetCollateOptions *charsetcollateopt;
+	OnDuplicateAction onduplicate;
 	struct CreateTableOptions	*createtableoptions;
 	struct SingleTableOption	*singletableoption;
 	struct CreateIndexOptions	*createindexoptions;
@@ -821,7 +822,7 @@ static char* appendString(char* source, char* target, int offset);
 %type <boolean>  opt_trusted opt_restart_seqs opt_purge invoker_rights
 %type <ival>	 OptTemp OptKind_without_empty
 %type <oncommit> OnCommitOption OnCommitOption_without_empty
-
+%type <onduplicate>	OptDuplicate
 %type <lockstrength> for_locking_strength
 %type <node>	for_locking_item
 %type <list>	for_locking_clause opt_for_locking_clause for_locking_items
@@ -11356,6 +11357,11 @@ CreateAsStmt:
 				}
 		;
 
+OptDuplicate:
+			IGNORE	{ $$ = DUPLICATE_IGNORE; }
+			| REPLACE	{ $$ = DUPLICATE_REPLACE; }
+		;
+
 create_as_target:
 			create_as_target_dolphin			{ $$ = $1; }
 			| dolphin_qualified_name
@@ -11394,6 +11400,7 @@ create_as_target_dolphin:
 						$$->onCommit = $3->oncommit;
 						$$->row_compress = $3->row_compress;
 						$$->tableSpaceName = $3->tablespacename;
+						$$->autoIncStart = $3->autoIncStart;
 /* PGXC_BEGIN */
 						$$->distributeby = $3->distributeby;
 						$$->subcluster = $3->subcluster;
@@ -11422,6 +11429,81 @@ create_as_target_dolphin:
 					$$->subcluster = NULL;
 /* PGXC_END */
 					 
+				}
+			| dolphin_qualified_name '(' OptTableElementList ')' OptDuplicate CreateAsOptionList
+				{
+					if (u_sess->attr.attr_sql.sql_compatibility != B_FORMAT) {
+						ereport(errstate, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+								errmsg("define column_definition is supported only in B-format database")));
+					}
+					$$ = makeNode(IntoClause);
+					$$->rel = $1;
+					$$->tableElts = $3;
+					if ($$->tableElts == NIL) {
+						ereport(ERROR, (errcode(ERRCODE_SYNTAX_ERROR),
+						errmsg("syntax error at or near \"%s\"", ")"), parser_errposition(@4)));
+					}
+					$$->skipData = false;           /* might get changed later */
+/* PGXC_BEGIN */
+					$$->relkind = INTO_CLAUSE_RELKIND_DEFAULT;
+/* PGXC_END */
+					$$->onduplicate = $5;
+					if ($6 != NULL) {
+						$$->options = $6->options;
+						$$->onCommit = $6->oncommit;
+						$$->row_compress = $6->row_compress;
+						$$->tableSpaceName = $6->tablespacename;
+						$$->autoIncStart = $6->autoIncStart;
+/* PGXC_BEGIN */
+						$$->distributeby = $6->distributeby;
+						$$->subcluster = $6->subcluster;
+/* PGXC_END */
+						if ($6->compress_type != NULL) {
+							$$->options = lappend($$->options, $6->compress_type);
+						}
+					}
+				}
+			| dolphin_qualified_name '(' OptTableElementList ')' OptDuplicate
+				{
+					$$ = makeNode(IntoClause);
+					$$->rel = $1;
+					$$->tableElts = $3;
+					if ($$->tableElts == NIL) {
+						ereport(ERROR, (errcode(ERRCODE_SYNTAX_ERROR),
+						errmsg("syntax error at or near \"%s\"", ")"), parser_errposition(@4)));
+					}
+					$$->skipData = false;           /* might get changed later */
+					$$->onduplicate = $5;
+/* PGXC_BEGIN */
+					$$->relkind = INTO_CLAUSE_RELKIND_DEFAULT;
+					$$->distributeby = NULL;
+					$$->subcluster = NULL;
+/* PGXC_END */
+					$$->options = NIL;
+					$$->onCommit = ONCOMMIT_NOOP;
+					$$->row_compress = REL_CMPRS_PAGE_PLAIN;
+					$$->tableSpaceName = NULL;
+				}
+			| dolphin_qualified_name '(' OptTableElementList ')'
+				{
+					$$ = makeNode(IntoClause);
+					$$->rel = $1;
+					$$->tableElts = $3;
+					if ($$->tableElts == NIL) {
+						ereport(ERROR, (errcode(ERRCODE_SYNTAX_ERROR),
+						errmsg("syntax error at or near \"%s\"", ")"), parser_errposition(@4)));
+					}
+					$$->skipData = false;           /* might get changed later */
+					$$->onduplicate = DUPLICATE_ERROR;
+/* PGXC_BEGIN */
+					$$->relkind = INTO_CLAUSE_RELKIND_DEFAULT;
+					$$->distributeby = NULL;
+					$$->subcluster = NULL;
+/* PGXC_END */
+					$$->options = NIL;
+					$$->onCommit = ONCOMMIT_NOOP;
+					$$->row_compress = REL_CMPRS_PAGE_PLAIN;
+					$$->tableSpaceName = NULL;
 				}
 		;
 
