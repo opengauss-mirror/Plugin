@@ -616,6 +616,7 @@ int base_yylex(YYSTYPE* lvalp, YYLTYPE* llocp, core_yyscan_t yyscanner)
                 break;
             }
             break;
+#ifdef DOLPHIN
         case SHOW:
             /*
              * SHOW ERRORS must be reduced to one token, to allow ERRORS as table / column alias.
@@ -626,6 +627,9 @@ int base_yylex(YYSTYPE* lvalp, YYLTYPE* llocp, core_yyscan_t yyscanner)
                 case ERRORS:
                     cur_token = SHOW_ERRORS;
                     break;
+                case STATUS:
+                    cur_token = SHOW_STATUS;
+                    break;
                 default:
                     /* save the lookahead token for next time */
                     SET_LOOKAHEAD_TOKEN();
@@ -635,6 +639,7 @@ int base_yylex(YYSTYPE* lvalp, YYLTYPE* llocp, core_yyscan_t yyscanner)
                     break;
             }
             break;
+#endif
         case USE:
         /*
         * USE INDEX \USE KEY must be reduced to one token,to allow KEY\USE as table / column alias.
@@ -681,6 +686,7 @@ int base_yylex(YYSTYPE* lvalp, YYLTYPE* llocp, core_yyscan_t yyscanner)
             break;
 
 #ifdef DOLPHIN
+
         case EXPLAIN:
             if (IsExplainStmt(yyextra->core_yy_extra.scanbuf)) {
                 READ_TWO_TOKEN();
