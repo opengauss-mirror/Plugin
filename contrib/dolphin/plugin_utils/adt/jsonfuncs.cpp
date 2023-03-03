@@ -3701,16 +3701,6 @@ static bool cJSON_JsonArrayInsert(cJSON *root, cJSON_JsonPath *jp, cJSON *value,
     if (last->type == cJSON_JsonPath_Index) {
         if (cJSON_IsArray(found)) {
             cJSON_InsertItemInArray(found, last->index, value);
-        } else if (last->index > 0) {
-            // found a scalar or object and the index is not 0, auto wrap it
-            cJSON *n = cJSON_Duplicate(found, false);
-            n->child = found->child;
-            n->next = NULL;
-            n->prev = NULL;
-            found->type = cJSON_Array;
-            found->child = NULL;
-            cJSON_AddItemToArray(found, n);
-            cJSON_AddItemToArray(found, value);
         }
     } else {
         cJSON_DeleteResultWrapper(w);
@@ -4518,7 +4508,7 @@ Datum json_search(PG_FUNCTION_ARGS)
     Oid typOutput;
     bool typIsVarlena = false;
     Datum arg = 0;
-    text *search_text;
+    text *search_text = NULL;
     text *res = NULL;
     Datum *pathtext = NULL;
     bool *pathnulls = NULL;
@@ -4692,12 +4682,23 @@ Datum json_keys(PG_FUNCTION_ARGS)
     Oid valtype;
     Datum arg = 0;
     int error_pos = -1;
+    int i, j;
+    bool repeat_key = false;
+    int *pos = NULL;
 
+    if (PG_ARGISNULL(0)) {
+        PG_RETURN_NULL();
+    }
     valtype = get_fn_expr_argtype(fcinfo->flinfo, 0);
     arg = PG_GETARG_DATUM(0);
     root = input_to_cjson(valtype, "json_keys", 1, arg);
 
     if (PG_NARGS() == 2) {
+        /* process path */
+        if (PG_ARGISNULL(1)) {
+            cJSON_Delete(root);
+            PG_RETURN_NULL();
+        }
         char *path = text_to_cstring(PG_GETARG_TEXT_P(1));
         cJSON_JsonPath *jp = NULL;
         cJSON_ResultWrapper *res = NULL;
@@ -4744,12 +4745,39 @@ Datum json_keys(PG_FUNCTION_ARGS)
         num++;
     }
     appendStringInfoChar(result, '[');
-    for (int k = 0; k < num; k++) {
-        if (k != 0)
+    if (num == 0) {
+        appendStringInfoChar(result, ']');
+        pfree(keys);
+        cJSON_Delete(root);
+        PG_RETURN_TEXT_P(cstring_to_text_with_len(result->data, result->len));
+    }
+    pos = (int *)palloc(num * sizeof(int));
+    for (i = 0; i < num; i++) {
+        pos[i] = i;
+    }
+    get_keys_order(keys, 0, num - 1, pos);
+    for (i = 0; i < num; i++) {
+        repeat_key = false;
+        for (j = 0; j < i; j++) {
+            if (strcmp(keys[pos[i]], keys[pos[j]]) == 0) {
+                repeat_key = true;
+                break;
+            }
+        }
+        if (repeat_key) {
+            continue;
+        }
+        if (i != 0) {
             appendStringInfoString(result, ", ");
-        appendStringInfo(result, "\"%s\"", keys[k]);
+        }
+        appendStringInfo(result, "\"%s\"", keys[pos[i]]);
     }
     appendStringInfoChar(result, ']');
+    if (pos != NULL) {
+        pfree(pos);
+    }
+    pfree(keys);
+    cJSON_Delete(root);
     PG_RETURN_TEXT_P(cstring_to_text_with_len(result->data, result->len));
 }
 

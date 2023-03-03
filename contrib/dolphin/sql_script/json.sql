@@ -13,8 +13,8 @@ CREATE OR REPLACE FUNCTION pg_catalog.json_contains_path("any", text, variadic t
 
 CREATE OR REPLACE FUNCTION pg_catalog.json_extract("any", variadic text[]) RETURNS json LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'json_extract';
 
-CREATE OR REPLACE FUNCTION pg_catalog.json_keys("any") RETURNS json LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin','json_keys';
-CREATE OR REPLACE FUNCTION pg_catalog.json_keys("any",text) RETURNS json LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin','json_keys';
+CREATE OR REPLACE FUNCTION pg_catalog.json_keys("any") RETURNS json LANGUAGE C IMMUTABLE as '$libdir/dolphin','json_keys';
+CREATE OR REPLACE FUNCTION pg_catalog.json_keys("any",text) RETURNS json LANGUAGE C IMMUTABLE as '$libdir/dolphin','json_keys';
 
 CREATE OR REPLACE FUNCTION pg_catalog.json_search("any",text,"any") RETURNS text LANGUAGE C IMMUTABLE as '$libdir/dolphin', 'json_search';
 CREATE OR REPLACE FUNCTION pg_catalog.json_search("any",text,"any","any") RETURNS text LANGUAGE C IMMUTABLE as '$libdir/dolphin', 'json_search';
