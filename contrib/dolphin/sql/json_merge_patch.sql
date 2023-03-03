@@ -54,6 +54,8 @@ select json_merge_patch('1','[]');
 select json_merge_patch('{"a":1}','[]');
 select json_merge_patch('[1,2,3]','[]');
 select json_merge_patch('[]','[1,2,3]');
+select json_merge_patch(1,null);
+select json_merge_patch(1,null,'1');
 
 create table test (
     doc1 text,

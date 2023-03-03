@@ -340,6 +340,18 @@ CONTEXT:  referenced column: json_contains
 select json_contains('[1,2,3,[4,5]]','2','$**[1]');
 ERROR:  in this situation, path expressions may not contain the * and ** tokens
 CONTEXT:  referenced column: json_contains
+select json_contains(1, null) as cons;
+ERROR:  Invalid data type for JSON data in argument 1 to function json_contains
+CONTEXT:  referenced column: cons
+select json_contains('d',null);
+ERROR:  Invalid JSON text in argument 1 to function json_contains.
+CONTEXT:  referenced column: json_contains
+select json_contains('看', null);
+ERROR:  Invalid JSON text in argument 1 to function json_contains.
+CONTEXT:  referenced column: json_contains
+select json_contains('——', null);
+ERROR:  Invalid JSON text in argument 1 to function json_contains.
+CONTEXT:  referenced column: json_contains
 create table json_contains_test (
     target text,
     candidate text,

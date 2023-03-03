@@ -309,6 +309,12 @@ select json_merge_preserve('[]','[1,2,3]');
  [1, 2, 3]
 (1 row)
 
+select json_merge_preserve(1,null);
+ERROR:  Invalid data type for JSON data in argument 1 to function json_merge_preserve
+CONTEXT:  referenced column: json_merge_preserve
+select json_merge_preserve(1,null,'1');
+ERROR:  Invalid data type for JSON data in argument 1 to function json_merge_preserve
+CONTEXT:  referenced column: json_merge_preserve
 create table test (
     doc1 text,
     doc2 text

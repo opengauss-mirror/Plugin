@@ -54,6 +54,8 @@ select json_merge_preserve('1','[]');
 select json_merge_preserve('{"a":1}','[]');
 select json_merge_preserve('[1,2,3]','[]');
 select json_merge_preserve('[]','[1,2,3]');
+select json_merge_preserve(1,null);
+select json_merge_preserve(1,null,'1');
 
 create table test (
     doc1 text,

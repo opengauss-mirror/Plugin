@@ -69,6 +69,10 @@ select json_contains('[1,2,3,4]','2','$1');
 select json_contains('[1,2,3,4]','[2,4]','$');
 select json_contains('[1,2,3,4]','[2,4]','$[*]');
 select json_contains('[1,2,3,[4,5]]','2','$**[1]');
+select json_contains(1, null) as cons;
+select json_contains('d',null);
+select json_contains('看', null);
+select json_contains('——', null);
 
 create table json_contains_test (
     target text,

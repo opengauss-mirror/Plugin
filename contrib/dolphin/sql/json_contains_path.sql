@@ -30,6 +30,9 @@ select json_contains_path('{"a": 1, "b": 2, "c": {"d": 4}}', 'one', '$.', '$.a')
 select json_contains_path('[0,1,2]', 'one', '$[0]','$1]');
 select json_contains_path('[0,1,2]', 'one', '$[0','$[1]');
 select json_contains_path('{"a": 1, "b": 2, "c": {"d": 4}}', 'all', '$.a', '$.b','$."c.d');
+select json_contains_path(1,'one',null);
+select json_contains_path(1,'a',null);
+
 create table json_contains_path_test (
     target text,
     mode text
