@@ -13,6 +13,12 @@
 #ifndef PLUGIN_TIMESTAMP_H
 #define PLUGIN_TIMESTAMP_H
 
+#define COPY_AND_CHECK_TIMESTAMP(targetTimestamp, size, convertTimeStamp)                       \
+do {                                                                                            \
+    errno_t rc = memcpy_s(targetTimestamp, size, timestamptz_to_str(convertTimeStamp), size);   \
+    securec_check(rc, "\0", "\0");                                                              \
+} while (0)
+
 #ifndef FRONTEND_PARSER
 #include "datatype/timestamp.h"
 #include "utils/date.h"

@@ -66,7 +66,7 @@ else
 endif
 
 # Force these dependencies to be known even without dependency info built:
-gram.o keywords.o parser.o: gram.hpp
+gram.o keywords.o parser.o: gram.hpp kwlist_d.h
 
 hint_gram.o: hint_scan.inc
 ifeq ($(GCC),yes)
@@ -89,8 +89,6 @@ TOOLSDIR = $(top_srcdir)/src/tools
 GEN_KEYWORDLIST = $(PERL) -I $(TOOLSDIR) $(TOOLSDIR)/gen_keywordlist.pl
 GEN_KEYWORDLIST_DEPS = $(TOOLSDIR)/gen_keywordlist.pl $(TOOLSDIR)/PerfectHash.pm
 
-distprep: kwlist_d.h
-
 # generate SQL keyword lookup table to be included into keywords*.o.
 kwlist_d.h: $(top_builddir)/$(base_dir)/include/plugin_parser/kwlist.h $(GEN_KEYWORDLIST_DEPS)
 	$(GEN_KEYWORDLIST) --extern -o $(top_builddir)/$(base_dir)/include/plugin_parser $(top_builddir)/$(base_dir)/include/plugin_parser/kwlist.h
@@ -103,7 +101,7 @@ else
 	@$(missing) flex $< $@
 endif
 
-hint_gram.o keywords.o parser.0: hint_gram.hpp kwlist_d.h
+hint_gram.o: hint_gram.hpp
 
 # gram.cpp, gram.hpp, and scan.inc are in the distribution tarball, so they
 # are not cleaned here.
@@ -112,6 +110,5 @@ clean distclean maintainer-clean:
 	rm -f gram.cpp gram.hpp scan.inc hint_gram.hpp hint_gram.cpp
 	rm -f kwlist_d.h
 
- 
 maintainer-check:
 	$(PERL) $(top_srcdir)/src/tools/check_keywords.pl $(top_srcdir)
