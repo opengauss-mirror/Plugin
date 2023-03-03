@@ -46,7 +46,7 @@ $(adt)/ri_triggers.o $(adt)/partitionfuncs.o $(adt)/pg_locale.o $(adt)/formattin
 $(adt)/ascii.o $(adt)/quote.o $(adt)/pgstatfuncs.o $(adt)/encode.o $(adt)/dbsize.o $(adt)/trigfuncs.o\
 $(adt)/uuid.o $(adt)/windowfuncs.o $(adt)/extended_statistics.o $(adt)/clientlogic_bytea.o $(adt)/clientlogicsettings.o\
 $(adt)/median_aggs.o $(adt)/expr_distinct.o $(adt)/nlssort.o $(adt)/first_last_agg.o $(adt)/my_locale.o $(adt)/unsigned_int.o $(adt)/year.o\
-$(adt)/vacuumfuncs.o \
+$(adt)/vacuumfuncs.o $(adt)/set.o\
 $(adt)/show/show_grants.o $(adt)/show/show_common.o $(adt)/show/show_function.o $(adt)/show/show_trigger.o \
 $(adt)/show/show_charset.o $(adt)/show/show_collation.o
 
