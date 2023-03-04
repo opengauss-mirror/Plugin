@@ -214,6 +214,9 @@
 #include "utils/pl_package.h"
 #endif
 
+#ifdef DOLPHIN
+#include "plugin_postgres.h"
+#endif
 
 extern void vacuum_set_xid_limits(Relation rel, int64 freeze_min_age, int64 freeze_table_age, TransactionId* oldestXmin,
     TransactionId* freezeLimit, TransactionId* freezeTableLimit, MultiXactId* multiXactFrzLimit);
@@ -5142,8 +5145,11 @@ static List* MergeAttributes(
             ColumnDef* restdef = (ColumnDef*)lfirst(rest);
             ListCell* next = lnext(rest); /* need to save it in case we
                                            * delete it */
-
+#ifdef DOLPHIN
+            if (strcasecmp(coldef->colname, restdef->colname) == 0) {
+#else
             if (strcmp(coldef->colname, restdef->colname) == 0) {
+#endif
                 if (coldef->is_from_type) {
                     /*
                      * merge the column options into the column from the type
@@ -12687,7 +12693,12 @@ static void check_for_column_name_collision(Relation rel, const char* colname)
      * this test is deliberately not attisdropped-aware, since if one tries to
      * add a column matching a dropped column name, it's gonna fail anyway.
      */
+#ifdef DOLPHIN
+    char* concopy = pstrdup(colname);
+    attTuple = SearchSysCache2(ATTNAME, ObjectIdGetDatum(RelationGetRelid(rel)), PointerGetDatum(concopy));
+#else 
     attTuple = SearchSysCache2(ATTNAME, ObjectIdGetDatum(RelationGetRelid(rel)), PointerGetDatum(colname));
+#endif
     if (!HeapTupleIsValid(attTuple))
         return;
 
@@ -22244,8 +22255,11 @@ List* GetPartitionkeyPos(List* partitionkeys, List* schema, bool* partkeyIsFunc)
             ColumnDef* schema_def = (ColumnDef*)lfirst(schema_cell);
 
             /* find the column that has the same name as the partitionkey */
+#ifdef DOLPHIN
+            if (!strcasecmp(partitonkey_name, schema_def->colname)) {
+#else 
             if (!strcmp(partitonkey_name, schema_def->colname)) {
-
+#endif
                 /*
                  * Generated columns cannot work: They are computed after BEFORE
                  * triggers, but partition routing is done before all triggers.

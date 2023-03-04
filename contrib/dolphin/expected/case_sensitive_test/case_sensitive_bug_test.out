@@ -4,14 +4,14 @@ DROP TABLE IF EXISTS PUBLIC.Test;
 NOTICE:  table "Test" does not exist, skipping
 CREATE TABLE PUBLIC.Test (a int);
 SELECT PUBLIC.Test.A FROM PUBLIC.Test WHERE PUBLIC.Test.A <> 2;
- a 
+ A 
 ---
 (0 rows)
 
 INSERT INTO PUBLIC.Test(A) VALUES(1), (2), (3);
 UPDATE PUBLIC.Test SET Test.A = (PUBLIC.Test.A + 1) WHERE PUBLIC.Test.A > 1;
 SELECT PUBLIC.Test.A FROM PUBLIC.Test;
- a 
+ A 
 ---
  1
  3
@@ -20,7 +20,7 @@ SELECT PUBLIC.Test.A FROM PUBLIC.Test;
 
 DELETE FROM PUBLIC.Test WHERE PUBLIC.Test.A <= 1;
 SELECT PUBLIC.Test.A FROM PUBLIC.Test;
- a 
+ A 
 ---
  3
  4
@@ -31,7 +31,7 @@ insert into T1 values(1);
 update T1 set aa=2 where aa=1;
 insert into T1 set aa=1;
 select * from T1;
- aa 
+ AA 
 ----
   2
   1
@@ -42,7 +42,7 @@ insert into T2 values(1);
 update T2 set aa=2 where aa=1;
 insert into T2 set aa=1;
 select * from T2;
- aa 
+ AA 
 ----
   2
   1

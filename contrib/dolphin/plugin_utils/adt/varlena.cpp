@@ -4093,6 +4093,18 @@ Datum byteaSetBit(PG_FUNCTION_ARGS)
     PG_RETURN_BYTEA_P(res);
 }
 
+#ifdef DOLPHIN
+PG_FUNCTION_INFO_V1_PUBLIC(dolphin_attname_eq);
+extern "C" DLL_PUBLIC Datum dolphin_attname_eq(PG_FUNCTION_ARGS);
+Datum dolphin_attname_eq(PG_FUNCTION_ARGS)
+{
+    Name arg1 = PG_GETARG_NAME(0);
+    Name arg2 = PG_GETARG_NAME(1);
+
+    PG_RETURN_BOOL(strncasecmp(NameStr(*arg1), NameStr(*arg2), NAMEDATALEN) == 0);
+}
+#endif
+
 /* text_name()
  * Converts a text type to a Name type.
  */

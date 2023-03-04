@@ -3420,7 +3420,11 @@ static void transformIndexNode(IndexStmt* index, CreateStmtContext* cxt, bool mu
             foreach (columns, cxt->columns) {
                 column = (ColumnDef*)lfirst(columns);
                 AssertEreport(IsA(column, ColumnDef), MOD_OPT, "");
+#ifdef DOLPHIN
+                if (strcasecmp(column->colname, columnName) == 0) {
+#else
                 if (strcmp(column->colname, columnName) == 0) {
+#endif
                     found = true;
                     break;
                 }
@@ -4041,7 +4045,11 @@ static IndexStmt* transformIndexConstraint(Constraint* constraint, CreateStmtCon
                 foreach (columns, cxt->columns) {
                     column = (ColumnDef*)lfirst(columns);
                     AssertEreport(IsA(column, ColumnDef), MOD_OPT, "");
+#ifdef DOLPHIN
+                    if (strcasecmp(column->colname, idxElem->name) == 0) {
+#else
                     if (strcmp(column->colname, idxElem->name) == 0) {
+#endif
                         found = true;
                         break;
                     }
@@ -4188,7 +4196,11 @@ static IndexStmt* transformIndexConstraint(Constraint* constraint, CreateStmtCon
 
         foreach (columns, cxt->columns) {
             column = lfirst_node(ColumnDef, columns);
+#ifdef DOLPHIN
+            if (strcasecmp(column->colname, key) == 0) {
+#else
             if (strcmp(column->colname, key) == 0) {
+#endif
                 found = true;
                 break;
             }

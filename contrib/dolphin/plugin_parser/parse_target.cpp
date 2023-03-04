@@ -396,7 +396,11 @@ Expr* transformAssignedExpr(ParseState* pstate, Expr* expr, char* colname, int a
      * for relation in ledger schema, the "hash" column is reserved for system.
      * for "hash" column of table in ledger schema, we forbid insert and update
      */
+#ifdef DOLPHIN
     bool is_system_column = (attrno <= 0 || (rd->rd_isblockchain && strcmp(colname, "hash") == 0));
+#else
+    bool is_system_column = (attrno <= 0 || (rd->rd_isblockchain && strcasecmp(colname, "hash") == 0));
+#endif
     if (is_system_column) {
         ereport(ERROR,
             (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),

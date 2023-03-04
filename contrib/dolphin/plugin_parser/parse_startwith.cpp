@@ -577,7 +577,11 @@ static List *ExtractColumnRefStartInfo(ParseState *pstate, ColumnRef *column, ch
         if (relname == NULL) {
             foreach(lc2, start_info->columns) {
                 Value *val = (Value *)lfirst(lc2);
+#ifdef DOLPHIN
+                if (strcasecmp(colname, strVal(val)) == 0) {
+#else
                 if (strcmp(colname, strVal(val)) == 0) {
+#endif
                     column_exist = true;
                     break;
                 }

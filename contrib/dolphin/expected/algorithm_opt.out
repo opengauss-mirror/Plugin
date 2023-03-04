@@ -115,7 +115,7 @@ create table algorithm (
 insert into algorithm values(1, 1, 1, 1);
 insert into algorithm values(2, 2, 2, 2);
 select * from algorithm t;
- algorithm | undefined | merge | temptable 
+ algorithm | UNDEFINED | MERGE | TEMPTABLE 
 -----------+-----------+-------+-----------
          1 |         1 |     1 |         1
          2 |         2 |     2 |         2
@@ -456,7 +456,7 @@ create unique index CONCURRENTLY algorithm_idx on algorithm (algorithm) where al
   Column   |         Type          | Definition | Storage  
 -----------+-----------------------+------------+----------
  algorithm | character varying(20) | algorithm  | extended
-unique, btree, for table "public.algorithm", predicate (algorithm::text = inplace::text)
+unique, btree, for table "public.algorithm", predicate (algorithm::text = "INPLACE"::text)
 
 create unique index CONCURRENTLY algorithm_idx_2 on algorithm (algorithm, INPLACE)
     where algorithm=INPLACE
@@ -467,8 +467,8 @@ create unique index CONCURRENTLY algorithm_idx_2 on algorithm (algorithm, INPLAC
   Column   |         Type          | Definition | Storage  
 -----------+-----------------------+------------+----------
  algorithm | character varying(20) | algorithm  | extended
- inplace   | character varying(20) | inplace    | extended
-unique, btree, for table "public.algorithm", predicate (algorithm::text = inplace::text AND algorithm::text = 'default'::text OR algorithm::text = copy::text)
+ inplace   | character varying(20) | "INPLACE"  | extended
+unique, btree, for table "public.algorithm", predicate (algorithm::text = "INPLACE"::text AND algorithm::text = 'default'::text OR algorithm::text = "COPY"::text)
 
 create unique index CONCURRENTLY algorithm_idx_3 on algorithm (algorithm, COPY) algorithm copy;
 \d+ algorithm_idx_3
@@ -476,7 +476,7 @@ create unique index CONCURRENTLY algorithm_idx_3 on algorithm (algorithm, COPY) 
   Column   |         Type          | Definition | Storage  
 -----------+-----------------------+------------+----------
  algorithm | character varying(20) | algorithm  | extended
- copy      | character varying(20) | copy       | extended
+ copy      | character varying(20) | "COPY"     | extended
 unique, btree, for table "public.algorithm"
 
 drop index algorithm_idx algorithm=copy;

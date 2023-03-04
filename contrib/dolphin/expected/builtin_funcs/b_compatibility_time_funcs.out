@@ -319,7 +319,7 @@ create table insert_subdate(date_col date, datetime_col datetime);
 insert into insert_subdate(date_col, datetime_col) values (subdate('2021-1-1', 1), subdate('2021-1-1 01:01:01', 1));
 drop table insert_subdate;
 select * from func_test;
-                              functionname                              |           result           
+                              functionName                              |           result           
 ------------------------------------------------------------------------+----------------------------
  makedate('2003','61')                                                  | 2003-03-02
  makedate('12.4','12.5')                                                | 2012-01-13

@@ -78,7 +78,7 @@ static PLpgSQL_function* do_compile(FunctionCallInfo fcinfo, HeapTuple proc_tup,
 extern void plpgsql_compile_error_callback(void* arg);
 static void add_parameter_name(int item_type, int item_no, const char* name);
 static void add_dummy_return(PLpgSQL_function* func);
-static Node* plpgsql_pre_column_ref(ParseState* pstate, ColumnRef* cref);
+static Node* b_plpgsql_pre_column_ref(ParseState* pstate, ColumnRef* cref);
 static Node* plpgsql_post_column_ref(ParseState* pstate, ColumnRef* cref, Node* var);
 static Node* plpgsql_param_ref(ParseState* pstate, ParamRef* pref);
 static Node* resolve_column_ref(ParseState* pstate, PLpgSQL_expr* expr, ColumnRef* cref, bool error_if_no_field);
@@ -1611,9 +1611,9 @@ static void add_dummy_return(PLpgSQL_function* func)
  * when we are ready to evaluate a SQL query or expression that has not
  * previously been parsed and planned.
  */
-void plpgsql_parser_setup(struct ParseState* pstate, PLpgSQL_expr* expr)
+void b_plpgsql_parser_setup(struct ParseState* pstate, PLpgSQL_expr* expr)
 {
-    pstate->p_pre_columnref_hook = plpgsql_pre_column_ref;
+    pstate->p_pre_columnref_hook = b_plpgsql_pre_column_ref;
     pstate->p_post_columnref_hook = plpgsql_post_column_ref;
     pstate->p_paramref_hook = plpgsql_param_ref;
     /* no need to use p_coerce_param_hook */
@@ -1623,7 +1623,7 @@ void plpgsql_parser_setup(struct ParseState* pstate, PLpgSQL_expr* expr)
 /*
  * plpgsql_pre_column_ref		parser callback before parsing a ColumnRef
  */
-static Node* plpgsql_pre_column_ref(ParseState* pstate, ColumnRef* cref)
+static Node* b_plpgsql_pre_column_ref(ParseState* pstate, ColumnRef* cref)
 {
     PLpgSQL_expr* expr = (PLpgSQL_expr*)pstate->p_ref_hook_state;
 
@@ -1823,7 +1823,14 @@ static Node* resolve_column_ref(ParseState* pstate, PLpgSQL_expr* expr, ColumnRe
             return NULL;
     }
 
+#ifdef DOLPHIN
+    name1 = pg_strtolower(pstrdup(name1));
+    name2 =  pg_strtolower(pstrdup(name2));
+    name3 = pg_strtolower(pstrdup(name3));
     nse = plpgsql_ns_lookup(expr->ns, false, name1, name2, name3, &nnames);
+#else
+    nse = plpgsql_ns_lookup(expr->ns, false, name1, name2, name3, &nnames);
+#endif
 
     if (nse == NULL) {
         return NULL; /* name not known to plpgsql */
@@ -1885,7 +1892,11 @@ static Node* resolve_column_ref(ParseState* pstate, PLpgSQL_expr* expr, ColumnRe
                         fld = (PLpgSQL_recfield*)estate->datums[i];
                     }
                     if (fld->dtype == PLPGSQL_DTYPE_RECFIELD && fld->recparentno == nse->itemno &&
+#ifdef DOLPHIN
+                        strcasecmp(fld->fieldname, colname) == 0) {
+#else
                         strcmp(fld->fieldname, colname) == 0) {
+#endif
                         return make_datum_param(expr, i, cref->location);
                     }
                 }
@@ -1918,7 +1929,11 @@ static Node* resolve_column_ref(ParseState* pstate, PLpgSQL_expr* expr, ColumnRe
                     row = (PLpgSQL_row*)estate->datums[nse->itemno];
                 }
                 for (i = 0; i < row->nfields; i++) {
+#ifdef DOLPHIN
+                    if (row->fieldnames[i] && strcasecmp(row->fieldnames[i], colname) == 0) {
+#else
                     if (row->fieldnames[i] && strcmp(row->fieldnames[i], colname) == 0) {
+#endif
                         switch (nnames_wholerow) {
                             case 2: /* row.col */
                                 return make_datum_param(expr, row->varnos[i], cref->location);
@@ -4936,7 +4951,7 @@ TupleDesc getCursorTupleDesc(PLpgSQL_expr* expr, bool isOnlySelect, bool isOnlyP
                 }
             }
             queryList = pg_analyze_and_rewrite_params(parsetree, expr->query, 
-                (ParserSetupHook)plpgsql_parser_setup, (void*)expr);
+                (ParserSetupHook)b_plpgsql_parser_setup, (void*)expr);
         }
         Query* query = (Query*)linitial(queryList);
         Assert(IsA(query, Query));
@@ -5000,7 +5015,7 @@ Node* plpgsql_check_match_var(Node* node, ParseState* pstate, ColumnRef* cref)
 {
     Node* ans = NULL;
     if (node != NULL && IsA(node, Var) &&
-        pstate->p_pre_columnref_hook == plpgsql_pre_column_ref &&
+        pstate->p_pre_columnref_hook == b_plpgsql_pre_column_ref &&
         cref->indnum > 0) {
         Var* colvar = (Var*)node;
         if (get_inner_type_ind(colvar->vartype) -1 != cref->indnum) {

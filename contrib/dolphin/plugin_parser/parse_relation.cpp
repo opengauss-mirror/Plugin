@@ -60,6 +60,9 @@
 #ifdef ENABLE_MOT
 #include "storage/mot/jit_def.h"
 #endif
+#ifdef DOLPHIN
+#include "plugin_postgres.h"
+#endif
 
 #define MAXSTRLEN ((1 << 11) - 1)
 static RangeTblEntry* scanNameSpaceForRefname(ParseState* pstate, const char* refname, int location);
@@ -75,6 +78,19 @@ static IndexHintType preCheckIndexHints(ParseState* pstate, List* indexhints, Re
 
 #ifndef PGXC
 static int specialAttNum(const char* attname);
+#endif
+
+#ifdef DOLPHIN
+int namestrnacsecmp(Name name, const char* str)
+{
+    if (name == NULL && str == NULL)
+        return 0;
+    if (name == NULL)
+        return -1; /* NULL < anything */
+    if (str == NULL)
+        return 1; /* NULL < anything */
+    return strncasecmp(NameStr(*name), str, NAMEDATALEN);
+}
 #endif
 
 static char *ReplaceSWCTEOutSrting(ParseState *pstate, RangeTblEntry *rte, char *label)
@@ -581,8 +597,11 @@ Node* scanRTEForColumn(ParseState* pstate, RangeTblEntry* rte, char* colname, in
         if (omit_excluded && rte->isexcluded) {
             continue;
         }
+#ifdef DOLPHIN
+        if (strcasecmp(strVal(lfirst(c)), colname) == 0)  {
+#else
         if (strcmp(strVal(lfirst(c)), colname) == 0) {
-
+#endif
             if (result != NULL) {
                 ereport(ERROR,
                         (errcode(ERRCODE_AMBIGUOUS_COLUMN), errmsg("column reference \"%s\" is ambiguous", colname),
@@ -2786,7 +2805,11 @@ int attnameAttNum(Relation rd, const char* attname, bool sysColOK)
     for (i = 0; i < rd->rd_rel->relnatts; i++) {
         Form_pg_attribute att = &rd->rd_att->attrs[i];
 
+#ifdef DOLPHIN
+        if (namestrnacsecmp(&(att->attname), attname) == 0 && !att->attisdropped) {
+#else
         if (namestrcmp(&(att->attname), attname) == 0 && !att->attisdropped) {
+#endif
             return i + 1;
         }
     }

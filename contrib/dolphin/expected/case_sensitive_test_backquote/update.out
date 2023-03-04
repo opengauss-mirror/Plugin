@@ -241,7 +241,7 @@ select * from `tbl_Update` order by `a1`;
 create table `sub_tab`(`T1` int,`t2` varchar2(100));
 insert into `sub_tab` values(11,'AA');
 select * from `sub_tab`;
- t1 | t2 
+ T1 | t2 
 ----+----
  11 | AA
 (1 row)

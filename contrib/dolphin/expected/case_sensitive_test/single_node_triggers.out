@@ -39,31 +39,30 @@ BEFORE DELETE ON Test_trigger_src_tbl
 FOR EACH ROW
 EXECUTE PROCEDURE tri_delete_func();
 INSERT INTO Test_trigger_src_tbl VALUES(100,200,300);
-ERROR:  missing FROM-clause entry for table "NEW"
-LINE 1: INSERT INTO Test_trigger_des_tbl VALUES(NEW.id1, NEW.id2, NE...
-                                                ^
-QUERY:  INSERT INTO Test_trigger_des_tbl VALUES(NEW.id1, NEW.id2, NEW.id3)
-CONTEXT:  PL/pgSQL function tri_insert_func() line 4 at SQL statement
 SELECT * FROM Test_trigger_src_tbl;
  id1 | id2 | id3 
 -----+-----+-----
-(0 rows)
+ 100 | 200 | 300
+(1 row)
 
 SELECT * FROM Test_trigger_des_tbl;
  id1 | id2 | id3 
 -----+-----+-----
-(0 rows)
+ 100 | 200 | 300
+(1 row)
 
 UPDATE Test_trigger_src_tbl SET id3=400 WHERE id1=100;
 SELECT * FROM Test_trigger_src_tbl;
  id1 | id2 | id3 
 -----+-----+-----
-(0 rows)
+ 100 | 200 | 400
+(1 row)
 
 SELECT * FROM Test_trigger_des_tbl;
  id1 | id2 | id3 
 -----+-----+-----
-(0 rows)
+ 100 | 200 | 400
+(1 row)
 
 DELETE FROM Test_trigger_src_tbl WHERE id1=100;
 SELECT * FROM Test_trigger_src_tbl;

@@ -50,6 +50,7 @@
 #include "utils/inval.h"
 #include "utils/lsyscache.h"
 #include "utils/acl.h"
+#include "utils/knl_catcache.h"
 #include "pgxc/groupmgr.h"
 #include "libpq/pqformat.h"
 #include "optimizer/nodegroups.h"
@@ -98,7 +99,7 @@ static const struct sql_mode_entry sql_mode_options[OPT_SQL_MODE_MAX] = {
 
 #define DOLPHIN_TYPES_NUM 12
 #define TYPE_ATTRIBUTES_NUM 3
-
+#define NAMEEQ_FN_OID 62
 /* typname, enable precision, enable scale */
 static const char* dolphinTypes[DOLPHIN_TYPES_NUM][TYPE_ATTRIBUTES_NUM] = {
     {"uint1", "false", "false"},
@@ -235,6 +236,10 @@ static void init_dolphin_proto()
     protoLock.unLock();
 }
 
+HeapTuple searchCat(Relation relation, Oid indexoid,
+    int cacheId, int nkeys, ScanKeyData* cur_skey, SysScanDesc* scandesc);
+bool ccHashEqFuncs(Oid keytype, CCHashFN *hashfunc,
+    RegProcedure *eqfunc, CCFastEqualFN *fasteqfunc, int cacheId);
 /*
  * NOTE: this function will be called concurently, when you add code here, please make sure your code is thread-safe.
  * If not, please use gInitPluginObjectLock to control your code.
@@ -259,6 +264,9 @@ void init_plugin_object()
     u_sess->hook_cxt.standardProcessUtilityHook = (void*)standard_ProcessUtility;
     u_sess->hook_cxt.searchFuncHook = (void*)SearchFuncByOid;
     u_sess->hook_cxt.plannerHook = (void*)planner;
+    u_sess->hook_cxt.pluginSearchCatHook = (void*)searchCat;
+    u_sess->hook_cxt.pluginCCHashEqFuncs = (void*)ccHashEqFuncs;
+    u_sess->hook_cxt.plpgsqlParserSetHook = (void*)b_plpgsql_parser_setup;
     set_default_guc();
 
     if (g_instance.attr.attr_network.enable_dolphin_proto && u_sess->proc_cxt.MyProcPort &&
@@ -301,6 +309,68 @@ void _PG_fini(void)
     hash_destroy(b_oidHash);
     g_instance.raw_parser_hook[DB_CMPT_B] = NULL;
     g_instance.llvmIrFilePath[DB_CMPT_B] = NULL;
+}
+
+HeapTuple searchCat(Relation relation, Oid indexoid, int cacheId, int nkeys,
+    ScanKeyData* cur_skey, SysScanDesc* scandesc)
+{
+    HeapTuple ntp = NULL;
+    if (cacheId == ATTNAME && nkeys == 2 && cur_skey[1].sk_func.fn_oid == NAMEEQ_FN_OID) {
+        Oid typeId[2];
+        typeId[0] = NAMEOID;
+        typeId[1] = NAMEOID;
+        Oid func_oid = LookupFuncName(list_make1(makeString("dolphin_attname_eq")), 2, typeId, false);
+        if (OidIsValid(func_oid)) {
+            fmgr_info(func_oid, &cur_skey[1].sk_func);
+            *scandesc = systable_beginscan(relation, indexoid, IndexScanOK(cacheId), NULL, 1, cur_skey);
+        }
+    }
+    if (*scandesc == NULL) {
+        *scandesc = systable_beginscan(relation, indexoid, IndexScanOK(cacheId), NULL, nkeys, cur_skey);
+    }
+    while (HeapTupleIsValid(ntp = systable_getnext(*scandesc))) {
+        if (cacheId == ATTNAME && cur_skey[1].sk_func.fn_oid != NAMEEQ_FN_OID) {
+            if (DatumGetBool(FunctionCall2(&cur_skey[1].sk_func, cur_skey[1].sk_argument,
+                NameGetDatum(&((Form_pg_attribute)GETSTRUCT(ntp))->attname)))) {
+                break; /* assume only one match */
+            } else {
+                continue;
+            }
+        }
+        break;
+    }
+    return ntp;
+}
+
+static uint32 dolphinnamehashfast(Datum datum)
+{
+    char* key = NameStr(*DatumGetName(datum));
+    /* to lower change values of datum,but it's ok in dolphin colname match
+     * except alter add column may has affect */
+    char *ckey = (char*)palloc0(NAMEDATALEN);
+    errno_t ss_rc = memcpy_s(ckey, NAMEDATALEN, key, strlen(key) + 1);
+    securec_check(ss_rc, "\0", "\0");
+     
+    pg_strtolower(ckey);
+    return hash_any((unsigned char*)ckey, strlen(ckey));
+}
+
+static bool dolphinnameeqfast(Datum a, Datum b)
+{
+    char* ca = NameStr(*DatumGetName(a));
+    char* cb = NameStr(*DatumGetName(b));
+    return strncasecmp(ca, cb, NAMEDATALEN) == 0;
+}
+
+bool ccHashEqFuncs(Oid keytype, CCHashFN *hashfunc, RegProcedure *eqfunc, CCFastEqualFN *fasteqfunc, int cacheId)
+{
+    if (cacheId == ATTNAME && keytype == NAMEOID) {
+        *hashfunc = dolphinnamehashfast;
+        *fasteqfunc = dolphinnameeqfast;
+        *eqfunc = F_NAMEEQ;
+        return true;
+    }
+    return false;
 }
 
 /*
@@ -918,6 +988,7 @@ void create_dolphin_extension()
     if (u_sess->attr.attr_sql.dolphin) {
         return;
     }
+    u_sess->hook_cxt.pluginCCHashEqFuncs = (void*)ccHashEqFuncs;
     start_xact_command();
     /*
     * change enable_full_encryption to false here to avoid SPI crush

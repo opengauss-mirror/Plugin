@@ -1306,7 +1306,7 @@ other			.
 					if (kwnum >= 0)
 					{
 #ifdef DOLPHIN
-						yylval->keyword = (GetSessionContext()->lower_case_table_names == 0) ? pstrdup(yytext) : GetScanKeyword(kwnum, yyextra->keywordlist);
+						yylval->keyword = pstrdup(yytext);
 #else
 						yylval->keyword = GetScanKeyword(kwnum, yyextra->keywordlist);
 #endif
