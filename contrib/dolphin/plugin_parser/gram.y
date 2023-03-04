@@ -1266,7 +1266,7 @@ static char* appendString(char* source, char* target, int offset);
 			EVENT_TRIGGER
 			NOT_IN NOT_BETWEEN NOT_LIKE NOT_ILIKE NOT_SIMILAR
 			DEFAULT_FUNC
-			DO_SCONST DO_LANGUAGE SHOW_STATUS
+			DO_SCONST DO_LANGUAGE SHOW_STATUS BEGIN_B_BLOCK
 			FORCE_INDEX USE_INDEX
 
 /* Precedence: lowest to highest */
@@ -14188,6 +14188,7 @@ trigger_body_stmt:
 			| VariableSetStmt { $$ = (Node*)$1; }
 			| CallFuncStmt { $$ = (Node*)$1; }
 			| subprogram_body { $$ = (Node*)$1; }
+			| BEGIN_B_BLOCK b_proc_body {$$ = (Node*)$2;}
 			;
 
 TriggerActionTime:

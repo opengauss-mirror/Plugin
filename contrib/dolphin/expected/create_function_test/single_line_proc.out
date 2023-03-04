@@ -229,8 +229,90 @@ LINE 2:  select z from tz;
 QUERY:  
  select z from tz;
 
+-- test delimiter use in create procedure situation
+-- report gram error in server ,not subprogram end error, success in plugin 
+create table test_table (dot_no int);
+insert into test_table values(1);
+insert into test_table values(NULL);
+delimiter //
+create procedure test91()
+begin
+  declare rec_curs_value int;
+  declare curs_dot cursor for select dot_no from test_table;
+    open curs_dot;
+    fetch curs_dot into rec_curs_value;
+    while rec_curs_value is not null do
+      fetch curs_dot into rec_curs_value;
+    end while;
+    close curs_dot;
+end;
+//
+delimiter ;
+call test91();
+ test91 
+--------
+ 
+(1 row)
+
+delimiter //
+create procedure test92()
+begin
+  declare rec_curs_value int;
+  declare curs_dot cursor for select dot_no from test_table;
+    open curs_dot;
+    fetch curs_dot into rec_curs_value;
+    while rec_curs_value is null do
+      fetch curs_dot into rec_curs_value;
+    end while;
+    close curs_dot;
+end;
+//
+delimiter ;
+call test92();
+ test92 
+--------
+ 
+(1 row)
+
+-- test deterministic error
+create function fun2(age1 int)return int DETERMINISTIC 
+NOT SHIPPABLE NOT FENCED EXTERNAL SECURITY INVOKER  
+AS 
+declare
+a1 int;
+begin
+return a1;
+end;
+/
+select fun2(1);
+ fun2 
+------
+     
+(1 row)
+
+-- test create procedure select error 
+create table t1_t (a int);
+insert into t1_t values (1),(2);
+-- server should has gram error,plugin pass
+create procedure pro_test_t() select a from t1_t;
+-- server should has gram error, plugin pass;
+create procedure pro_test_t2() select a as b from t1_t;
+select  pro_test_t();
+ pro_test_t 
+------------
+ (1)
+ (2)
+(2 rows)
+
+select  pro_test_t2();
+ pro_test_t2 
+-------------
+ (1)
+ (2)
+(2 rows)
+
 drop schema db_func_call_2 cascade;
-NOTICE:  drop cascades to 16 other objects
+NOTICE:  drop cascades to 23 other objects
 DETAIL:  drop cascades to table t1
 drop cascades to table t2
 drop cascades to function proc1()
@@ -247,4 +329,11 @@ drop cascades to function proc10()
 drop cascades to table base_info_pbu_trade
 drop cascades to table base_info_pbu_org
 drop cascades to function proc11()
+drop cascades to table test_table
+drop cascades to function test91()
+drop cascades to function test92()
+drop cascades to function fun2(integer)
+drop cascades to table t1_t
+drop cascades to function pro_test_t()
+drop cascades to function pro_test_t2()
 reset current_schema;
