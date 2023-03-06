@@ -199,6 +199,12 @@ static bool IsAlterStmtAlgorithm(char* scanbuf)
 
     return (pg_strcasecmp(ptr, "algorithm") == 0);
 }
+
+static inline bool IsSelectStmt(char* scanbuf)
+{
+    const int selectSize = 6;
+    return (scanbuf && pg_strncasecmp(scanbuf, "select", selectSize) == 0);
+}
 #endif
 
 /*
@@ -818,6 +824,26 @@ int base_yylex(YYSTYPE* lvalp, YYLTYPE* llocp, core_yyscan_t yyscanner)
                 case TABLES:
                     cur_token = LOCK_TABLES;
                     break;
+                default:
+                    /* save the lookahead token for next time */
+                    SET_LOOKAHEAD_TOKEN();
+                    /* and back up the output info to cur_token */
+                    lvalp->core_yystype = cur_yylval;
+                    *llocp = cur_yylloc;
+                    break;
+            }
+            break;
+        case MATCH:
+            /*
+             * DEFAULT must be reduced to one token, to allow START as table / column alias.
+             */
+            GET_NEXT_TOKEN();
+            switch (next_token) {
+                case '(':
+                    if (IsSelectStmt(yyextra->core_yy_extra.scanbuf)) {
+                        cur_token = MATCH_FUNC;
+                        break;
+                    }
                 default:
                     /* save the lookahead token for next time */
                     SET_LOOKAHEAD_TOKEN();
