@@ -56,6 +56,7 @@
 #include "funcapi.h"
 #include "utils/guc.h"
 #include "utils/guc_tables.h"
+#include "plugin_parser/parse_utilcmd.h"
 
 extern Node* build_column_default(Relation rel, int attrno, bool isInsertCmd = false, bool needOnUpdate = false);
 extern Node* makeAConst(Value* v, int location);
@@ -3171,13 +3172,24 @@ static Node* transformCollateClause(ParseState* pstate, CollateClause* c)
      * The unknown type is not collatable, but coerce_type() takes care of it
      * separately, so we'll let it go here.
      */
+#ifdef DOLPHIN
+    if (!IsBinaryType(argtype) && !type_is_collatable(argtype) && argtype != UNKNOWNOID) {
+#else
     if (!type_is_collatable(argtype) && argtype != UNKNOWNOID) {
+#endif
         ereport(ERROR,
             (errcode(ERRCODE_DATATYPE_MISMATCH),
                 errmsg("collations are not supported by type %s", format_type_be(argtype)),
                 parser_errposition(pstate, c->location)));
     }
-    newc->collOid = LookupCollation(pstate, c->collname, c->location);
+    Oid collation = LookupCollation(pstate, c->collname, c->location);
+#ifdef DOLPHIN
+    if (collation == InvalidOid) {
+        collation = DEFAULT_COLLATION_OID;
+        ereport(WARNING, (errmsg("Invalid collation detected. default value set")));
+    }
+#endif
+    newc->collOid = collation;
     newc->location = c->location;
 
     return (Node*)newc;

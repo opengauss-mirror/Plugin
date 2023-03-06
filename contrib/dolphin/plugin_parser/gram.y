@@ -24513,7 +24513,24 @@ load_quote_str:
  *****************************************************************************/
 
 CreatedbStmt:
-			CREATE DATABASE database_name opt_with createdb_opt_list
+			CREATE DATABASE database_name createdb_opt_list
+				{
+					if ($4 != NIL || (GetSessionContext()->enableBCmptMode == false)) {
+						CreatedbStmt *n = makeNode(CreatedbStmt);
+						IsValidIdent($3);
+						n->dbname = $3;
+						n->missing_ok = FALSE;
+						n->options = $4;
+						$$ = (Node *)n;
+					} else {
+						CreateSchemaStmt *n = makeNode(CreateSchemaStmt);
+						n->schemaname = $3;
+						n->authid = NULL;
+						n->missing_ok = FALSE;
+						$$ = (Node *)n;
+					}
+				}
+			| CREATE DATABASE database_name WITH createdb_opt_list
 				{
 					CreatedbStmt *n = makeNode(CreatedbStmt);
 					IsValidIdent($3);
@@ -24522,7 +24539,24 @@ CreatedbStmt:
 					n->options = $5;
 					$$ = (Node *)n;
 				}
-			| CREATE DATABASE IF_P NOT EXISTS database_name opt_with createdb_opt_list
+			| CREATE DATABASE IF_P NOT EXISTS database_name createdb_opt_list
+				{
+					if ($7 != NIL || (GetSessionContext()->enableBCmptMode == false)) {
+						CreatedbStmt *n = makeNode(CreatedbStmt);
+						IsValidIdent($6);
+						n->dbname = $6;
+						n->missing_ok = TRUE;
+						n->options = $7;
+						$$ = (Node *)n;
+					} else {
+						CreateSchemaStmt *n = makeNode(CreateSchemaStmt);
+						n->schemaname = $6;
+						n->authid = NULL;
+						n->missing_ok = TRUE;
+						$$ = (Node *)n;
+					}
+				}
+			| CREATE DATABASE IF_P NOT EXISTS database_name WITH createdb_opt_list
 				{
 					CreatedbStmt *n = makeNode(CreatedbStmt);
 					IsValidIdent($6);
@@ -24530,7 +24564,41 @@ CreatedbStmt:
 					n->missing_ok = TRUE;
 					n->options = $8;
 					$$ = (Node *)n;
-				}                
+				}
+			| CREATE DATABASE database_name CharsetCollate
+				{
+					if (GetSessionContext()->enableBCmptMode) {
+						CreateSchemaStmt *n = makeNode(CreateSchemaStmt);
+						n->schemaname = $3;
+						n->authid = NULL;
+						n->missing_ok = FALSE;
+						n->charset = $4->charset;
+						n->collate = $4->collate;
+						$$ = (Node *)n;
+					} else {
+						const char* message = "create schema/database with charset need to set b_compatibility_mode on.";
+						InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);
+						ereport(errstate, (errcode(ERRCODE_SYNTAX_ERROR),
+							errmsg("create schema/database with charset need to set b_compatibility_mode on.")));
+					}
+				}
+			| CREATE DATABASE IF_P NOT EXISTS database_name CharsetCollate
+				{
+					if (GetSessionContext()->enableBCmptMode) {
+						CreateSchemaStmt *n = makeNode(CreateSchemaStmt);
+						n->schemaname = $6;
+						n->authid = NULL;
+						n->missing_ok = TRUE;
+						n->charset = $7->charset;
+						n->collate = $7->collate;
+						$$ = (Node *)n;
+					} else {
+						const char* message = "create schema/database with charset need to set b_compatibility_mode on.";
+						InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);
+						ereport(errstate, (errcode(ERRCODE_SYNTAX_ERROR),
+							errmsg("create schema/database with charset need to set b_compatibility_mode on.")));
+					}
+				}
 		;
 
 createdb_opt_list:
@@ -24655,6 +24723,23 @@ AlterDatabaseStmt:
 													(Node *)makeString($6)));
 					$$ = (Node *)n;
 				 }
+			| ALTER DATABASE database_name CharsetCollate
+				{
+					if (GetSessionContext()->enableBCmptMode) {
+						AlterSchemaStmt *n = makeNode(AlterSchemaStmt);
+						n->schemaname = $3;
+						n->authid = NULL;
+						n->hasBlockChain = false;
+						n->charset = $4->charset;
+						n->collate = $4->collate;
+						$$ = (Node *)n;
+					} else {
+						const char* message = "alter database with charset need to set b_compatibility_mode on.";
+							InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);
+							ereport(errstate, (errcode(ERRCODE_SYNTAX_ERROR),
+								errmsg("create database with charset need to set b_compatibility_mode on.")));
+					}
+				}
 		;
 
 AlterDatabaseSetStmt:
@@ -24698,17 +24783,37 @@ alterdb_opt_item:
 
 DropdbStmt: DROP DATABASE database_name
 				{
-					DropdbStmt *n = makeNode(DropdbStmt);
-					n->dbname = $3;
-					n->missing_ok = FALSE;
-					$$ = (Node *)n;
+					if (GetSessionContext()->enableBCmptMode) {
+						DropStmt *n = makeNode(DropStmt);
+						n->removeType = OBJECT_SCHEMA;
+						n->missing_ok = FALSE;
+						n->objects = list_make1(list_make1(makeString($3)));
+						n->arguments = NIL;
+						n->concurrent = false;
+						$$ = (Node *)n;
+					} else {
+						DropdbStmt *n = makeNode(DropdbStmt);
+						n->dbname = $3;
+						n->missing_ok = FALSE;
+						$$ = (Node *)n;
+					}
 				}
 			| DROP DATABASE IF_P EXISTS database_name
 				{
-					DropdbStmt *n = makeNode(DropdbStmt);
-					n->dbname = $5;
-					n->missing_ok = TRUE;
-					$$ = (Node *)n;
+					if (GetSessionContext()->enableBCmptMode) {
+						DropStmt *n = makeNode(DropStmt);
+						n->removeType = OBJECT_SCHEMA;
+						n->missing_ok = true;
+						n->objects = list_make1(list_make1(makeString($5)));
+						n->arguments = NIL;
+						n->concurrent = false;
+						$$ = (Node *)n;
+					} else {
+						DropdbStmt *n = makeNode(DropdbStmt);
+						n->dbname = $5;
+						n->missing_ok = TRUE;
+						$$ = (Node *)n;
+					}
 				}
 		;
 
@@ -30707,7 +30812,7 @@ charset:
 				int encoding = pg_valid_server_encoding($2);
 				if (encoding < 0) {
 					ereport(WARNING, (errmsg("%s is not a valid encoding name. default value set", $2)));
-					$$ = PG_INVALID_ENCODING;
+					$$ = GetDatabaseEncoding();
 				} else {
 					$$ = encoding;
 				}
@@ -30752,7 +30857,7 @@ default_charset:
 				int encoding = pg_valid_server_encoding($4);
 				if (encoding < 0) {		
 					ereport(WARNING, (errmsg("%s is not a valid encoding name. default value set", $4)));
-					$$ = PG_INVALID_ENCODING;
+					$$ = GetDatabaseEncoding();
 				} else {
 					$$ = encoding;
 				}
@@ -30762,7 +30867,7 @@ default_charset:
 				int encoding = pg_valid_server_encoding($3);
 				if (encoding < 0) {
 					ereport(WARNING, (errmsg("%s is not a valid encoding name. default value set", $3)));
-					$$ = PG_INVALID_ENCODING;
+					$$ = GetDatabaseEncoding();
 				} else {
 					$$ = encoding;
 				}

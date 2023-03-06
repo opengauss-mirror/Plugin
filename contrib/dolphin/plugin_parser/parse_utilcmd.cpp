@@ -285,9 +285,15 @@ Oid get_default_collation_by_charset(int charset)
     heap_close(rel, AccessShareLock);
 
     if (coll_oid == InvalidOid) {
+#ifdef DOLPHIN
+        ereport(WARNING, (errmsg("default collation for encoding \"%s\" does not exist. default value set",
+            pg_encoding_to_char(charset))));
+        coll_oid = DEFAULT_COLLATION_OID;
+#else
         ereport(ERROR, (errcode(ERRCODE_UNDEFINED_OBJECT),
                 errmsg("default collation for encoding \"%s\" does not exist",
                     pg_encoding_to_char(charset))));
+#endif
     }
     return coll_oid;
 }
@@ -301,9 +307,14 @@ static Oid check_collation_by_charset(const char* collate, int charset)
     if (coll_oid == InvalidOid) {
         coll_oid = get_collation_oid_with_lower_name(collate, charset);
         if (coll_oid == InvalidOid) {
+#ifdef DOLPHIN
+            ereport(WARNING, (errmsg("Invalid collation detected. default value set")));
+            coll_oid = DEFAULT_COLLATION_OID;
+#else
             ereport(ERROR, (errcode(ERRCODE_UNDEFINED_OBJECT),
                     errmsg("collation \"%s\" for encoding \"%s\" does not exist",
                         collate, pg_encoding_to_char(charset))));
+#endif
         }
     }
     return coll_oid;
@@ -311,7 +322,7 @@ static Oid check_collation_by_charset(const char* collate, int charset)
 
 /*
  * transform_default_collation -
- *      Returns the processed collation oid of schema¡¢relation or attribute level.
+ *      Returns the processed collation oid of schema, relation or attribute level.
  */
 Oid transform_default_collation(const char* collate, int charset, Oid def_coll_oid, bool is_attr)
 {
@@ -327,8 +338,13 @@ Oid transform_default_collation(const char* collate, int charset, Oid def_coll_o
             /* If the collate string is in uppercase, change to lowercase and search it again */
             coll_oid = get_collation_oid_with_lower_name(collate, charset);
             if (coll_oid == InvalidOid) {
+#ifdef DOLPHIN
+                coll_oid = DEFAULT_COLLATION_OID;
+                ereport(WARNING, (errmsg("Invalid collation detected. default value set")));
+#else
                 ereport(ERROR, (errcode(ERRCODE_UNDEFINED_OBJECT),
                         errmsg("collation \"%s\" does not exist", collate)));
+#endif
             }
         } else if (list->n_members > 1) {
             /*
@@ -344,11 +360,13 @@ Oid transform_default_collation(const char* collate, int charset, Oid def_coll_o
             }
         } else {
             coll_tup = t_thrd.lsc_cxt.FetchTupleFromCatCList(list, 0);
+#ifndef DOLPHIN
             charset = ((Form_pg_collation)GETSTRUCT(coll_tup))->collencoding;
             if (!is_attr && charset == PG_INVALID_ENCODING) {
                 ereport(ERROR, (errcode(ERRCODE_UNDEFINED_OBJECT),
                         errmsg("collation \"%s\" have no corresponding encoding", collate)));
             }
+#endif
             coll_oid = HeapTupleGetOid(coll_tup);
         }
 
@@ -359,10 +377,12 @@ Oid transform_default_collation(const char* collate, int charset, Oid def_coll_o
         coll_oid = def_coll_oid;
     }
 
+#ifndef DOLPHIN
     if (!is_attr && OidIsValid(coll_oid) && !COLLATION_IN_B_FORMAT(coll_oid)) {
         ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
                 errmsg("this collation only cannot be specified here")));
     }
+#endif
     if (charset != PG_INVALID_ENCODING && charset != PG_SQL_ASCII && charset != GetDatabaseEncoding()) {
         ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
                 errmsg("difference between the charset and the database encoding has not supported")));
@@ -5641,11 +5661,21 @@ static void transformColumnType(CreateStmtContext* cxt, ColumnDef* column)
                 errmsg("can not use existed set type %s for column definition", format_type_be(HeapTupleGetOid(ctype))),
                 parser_errposition(cxt->pstate, column->typname->location)));
     }
-
+#ifdef DOLPHIN
+    if (column->collClause) {
+        column->collOid = LookupCollation(cxt->pstate, column->collClause->collname, column->collClause->location);
+        if (!OidIsValid(column->collOid)) {
+            column->collOid = DEFAULT_COLLATION_OID;
+            column->collClause->collname = list_make1(makeString("default"));
+            ereport(WARNING, (errmsg("Invalid collation for column %s detected. default value set", column->colname)));
+        }
+        if (!IsBinaryType(typeTypeId(ctype)) && !OidIsValid(typtup->typcollation))
+#else
     if (!DB_IS_CMPT(B_FORMAT) && column->collClause) {
         LookupCollation(cxt->pstate, column->collClause->collname, column->collClause->location);
         /* Complain if COLLATE is applied to an uncollatable type */
         if (!OidIsValid(typtup->typcollation))
+#endif
             ereport(ERROR,
                 (errcode(ERRCODE_DATATYPE_MISMATCH),
                     errmsg("collations are not supported by type %s", format_type_be(HeapTupleGetOid(ctype))),
