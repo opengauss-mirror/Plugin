@@ -6,10 +6,10 @@ CREATE OR REPLACE FUNCTION pg_catalog.json_array() RETURNS json LANGUAGE C IMMUT
 create or replace function pg_catalog.json_object_mysql(variadic arr "any") returns json language C immutable as '$libdir/dolphin', 'json_object_mysql';
 create or replace function pg_catalog.json_object_noarg() returns json language C immutable as '$libdir/dolphin', 'json_object_noarg';
 
-CREATE OR REPLACE FUNCTION pg_catalog.json_contains("any", "any", text) RETURNS boolean LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'json_contains';
-CREATE OR REPLACE FUNCTION pg_catalog.json_contains("any", "any") RETURNS boolean LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'json_contains';
+CREATE OR REPLACE FUNCTION pg_catalog.json_contains("any", "any", text) RETURNS boolean LANGUAGE C IMMUTABLE as '$libdir/dolphin', 'json_contains';
+CREATE OR REPLACE FUNCTION pg_catalog.json_contains("any", "any") RETURNS boolean LANGUAGE C IMMUTABLE as '$libdir/dolphin', 'json_contains';
 
-CREATE OR REPLACE FUNCTION pg_catalog.json_contains_path("any", text, variadic text[]) RETURNS boolean LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'json_contains_path';
+CREATE OR REPLACE FUNCTION pg_catalog.json_contains_path("any", text, variadic text[]) RETURNS boolean LANGUAGE C IMMUTABLE as '$libdir/dolphin', 'json_contains_path';
 
 CREATE OR REPLACE FUNCTION pg_catalog.json_extract("any", variadic text[]) RETURNS json LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'json_extract';
 

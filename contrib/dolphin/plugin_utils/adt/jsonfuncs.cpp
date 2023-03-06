@@ -3908,10 +3908,14 @@ Datum json_contains(PG_FUNCTION_ARGS)
     cJSON *target_cJSON = NULL;
     cJSON *candidate_cJSON = NULL;
 
+    if (PG_ARGISNULL(0))
+        PG_RETURN_NULL();
     valtype = get_fn_expr_argtype(fcinfo->flinfo, 0);
     arg = PG_GETARG_DATUM(0);
     target_cJSON = input_to_cjson(valtype, "json_contains", 1, arg);
 
+    if (PG_ARGISNULL(1))
+        PG_RETURN_NULL();
     valtype = get_fn_expr_argtype(fcinfo->flinfo, 1);
     arg = PG_GETARG_DATUM(1);
     candidate_cJSON = input_to_cjson(valtype, "json_contains", 2, arg);
@@ -3924,6 +3928,9 @@ Datum json_contains(PG_FUNCTION_ARGS)
             PG_RETURN_BOOL(true);
     } else {
         cJSON *result = NULL;
+
+        if (PG_ARGISNULL(ARG_2))
+            PG_RETURN_NULL();
         path = TextDatumGetCString(PG_GETARG_DATUM(2));
 
         if (containsAsterisk(path) > 0) {
@@ -3966,7 +3973,19 @@ Datum json_contains(PG_FUNCTION_ARGS)
 
 Datum json_contains_path(PG_FUNCTION_ARGS)
 {
+    Oid valtype;
+    Datum arg = 0;
+    cJSON *root = NULL;
+    if (PG_ARGISNULL(0))
+        PG_RETURN_NULL();
+    valtype = get_fn_expr_argtype(fcinfo->flinfo, 0);
+    arg = PG_GETARG_DATUM(0);
+    root = input_to_cjson(valtype, "json_contains_path", 1, arg);
+
+    if (PG_ARGISNULL(1))
+        PG_RETURN_NULL();
     char *mode = text_to_cstring(PG_GETARG_TEXT_P(1));
+
     ArrayType *path_array = PG_GETARG_ARRAYTYPE_P(2);
 
     Datum *pathtext = NULL;
@@ -3979,21 +3998,14 @@ Datum json_contains_path(PG_FUNCTION_ARGS)
      * If the array is empty, return NULL; this is dubious but it's what 9.3
      * did.
      */
+
     if (path_num <= 0)
         PG_RETURN_NULL();
 
     bool flag;
     char *path = NULL;
-    Oid valtype;
-    Datum arg = 0;
     cJSON_ResultWrapper *res = cJSON_CreateResultWrapper();
     cJSON_JsonPath *jp = NULL;
-    cJSON *root = NULL;
-
-    valtype = get_fn_expr_argtype(fcinfo->flinfo, 0);
-    arg = PG_GETARG_DATUM(0);
-    root = input_to_cjson(valtype, "json_contains_path", 1, arg);
-
     int error_pos = -1;
     int last_len = 0;
 
@@ -4531,23 +4543,25 @@ Datum json_search(PG_FUNCTION_ARGS)
     constexpr int Chinese_Char = 3;
     constexpr int RightShift_Judge_Chinese = 8;
 
-    if (!PG_ARGISNULL(0)) {
-        valtype = get_fn_expr_argtype(fcinfo->flinfo, 0);
-        arg = PG_GETARG_DATUM(0);
-        doc_cJSON = input_to_cjson(valtype, "json_search", 1, arg);
+    if (PG_ARGISNULL(0)) {
+        PG_RETURN_NULL();
     }
+    valtype = get_fn_expr_argtype(fcinfo->flinfo, 0);
+    arg = PG_GETARG_DATUM(0);
+    doc_cJSON = input_to_cjson(valtype, "json_search", 1, arg);
 
-    if (!PG_ARGISNULL(1)) {
-        char *one_or_all = text_to_cstring(PG_GETARG_TEXT_P(1));
-        if (strcmp(one_or_all, "one") == 0) {
-            one_or_all_flag = true;
-        } else if (strcmp(one_or_all, "all") == 0) {
-            one_or_all_flag = false;
-        } else {
-            ereport(ERROR,
-                    (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("The oneOrAll argument to json_search may take "
-                                                                      "these values:'one'or'all'.")));
-        }
+    if (PG_ARGISNULL(1)) {
+        PG_RETURN_NULL();
+    }
+    char *one_or_all = text_to_cstring(PG_GETARG_TEXT_P(1));
+    if (strcmp(one_or_all, "one") == 0) {
+        one_or_all_flag = true;
+    } else if (strcmp(one_or_all, "all") == 0) {
+        one_or_all_flag = false;
+    } else {
+        ereport(ERROR,
+                (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("The oneOrAll argument to json_search may take "
+                                                                  "these values:'one'or'all'.")));
     }
 
     if (!PG_ARGISNULL(ARG_2)) {
@@ -4611,7 +4625,7 @@ Work:
         }
     }
 
-    if (PG_ARGISNULL(0) || PG_ARGISNULL(1) || PG_ARGISNULL(2)) {
+    if (PG_ARGISNULL(ARG_2)) {
         PG_RETURN_NULL();
     }
 
@@ -5335,6 +5349,15 @@ Datum json_merge_patch(PG_FUNCTION_ARGS)
     if (json_num <= 1)
         ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("Incorrect parameter count")));
 
+    for (int i = 0; i < json_num; i++) {
+        if (PG_ARGISNULL(i))
+            continue;
+        Oid tmptype = get_fn_expr_argtype(fcinfo->flinfo, i);
+        Datum tmp_arg = PG_GETARG_DATUM(i);
+        cJSON *tmp = input_to_cjson(tmptype, "json_merge_patch", i + 1, tmp_arg);
+        cJSON_Delete(tmp);
+    }
+
     // To find null argument's position
     for (int i = json_num - 1; i >= 0; i--) {
         if (PG_ARGISNULL(i)) {
@@ -5431,17 +5454,9 @@ Datum json_merge_preserve(PG_FUNCTION_ARGS)
     if (json_num <= 1)
         ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("Incorrect parameter count")));
 
-    /*
-     * If the array is empty, return NULL; this is dubious but it's what 9.3
-     * did.
-     */
-    for (int i = json_num - 1; i >= 0; i--) {
-        if (PG_ARGISNULL(i)) {
-            PG_RETURN_NULL();
-        }
-    }
-
     for (jsondoc_iter = 0; jsondoc_iter < json_num; jsondoc_iter++) {
+        if (PG_ARGISNULL(jsondoc_iter))
+            PG_RETURN_NULL();
         valtype = get_fn_expr_argtype(fcinfo->flinfo, jsondoc_iter);
         arg = PG_GETARG_DATUM(jsondoc_iter);
         jsondoc[jsondoc_iter] = input_to_cjson(valtype, "json_merge_preserve", jsondoc_iter + 1, arg);

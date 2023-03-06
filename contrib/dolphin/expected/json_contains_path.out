@@ -162,6 +162,12 @@ CONTEXT:  referenced column: json_contains_path
 select json_contains_path('{"a": 1, "b": 2, "c": {"d": 4}}', 'all', '$.a', '$.b','$."c.d');
 ERROR:  Invalid JSON path expression. The error is around character position 6.
 CONTEXT:  referenced column: json_contains_path
+select json_contains_path(1,'one',null);
+ERROR:  Invalid data type for JSON data in argument 1 to function json_contains_path
+CONTEXT:  referenced column: json_contains_path
+select json_contains_path(1,'a',null);
+ERROR:  Invalid data type for JSON data in argument 1 to function json_contains_path
+CONTEXT:  referenced column: json_contains_path
 create table json_contains_path_test (
     target text,
     mode text
