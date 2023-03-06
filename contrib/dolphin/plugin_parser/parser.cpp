@@ -202,7 +202,8 @@ static bool IsAlterStmtAlgorithm(char* scanbuf)
 
 static inline bool IsSelectStmt(char* scanbuf)
 {
-    return (scanbuf && pg_strcasecmp(scanbuf, "select") == 0);
+    const int selectSize = 6;
+    return (scanbuf && pg_strncasecmp(scanbuf, "select", selectSize) == 0);
 }
 #endif
 
