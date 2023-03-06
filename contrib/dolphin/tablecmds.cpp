@@ -2075,7 +2075,7 @@ void UpdatePartKeyExpr(Relation rel, PartitionState *partTableState, Oid partOid
         return;
     }
 	// Oid* partitionKeyDataType = NULL;
-    Node* expr = transformExpr(pstate, (Node*)(linitial(partTableState->partitionKey)));
+    Node* expr = transformExpr(pstate, (Node*)(linitial(partTableState->partitionKey)), EXPR_KIND_OTHER);
     assign_expr_collations(pstate, expr);
     bool nulls[Natts_pg_partition] = {false};
     bool replaces[Natts_pg_partition] = {false};
@@ -2617,6 +2617,11 @@ ObjectAddress DefineRelation(CreateStmt* stmt, char relkind, Oid ownerId, Object
                 /* only care heap relation. ignore foreign table and index relation */
                 ForbidToSetOptionsForRowTbl(stmt->options);
             }
+        }
+
+        if (pg_strcasecmp(storeChar, TABLE_ACCESS_METHOD_USTORE) != 0){
+            /* init_td option is valid only when an Ustore table is created */
+            ForbidToSetOptionsForNotUstoreTbl(stmt->options);
         }
         pfree_ext(std_opt);
     }
@@ -15832,7 +15837,7 @@ static void ATPrepAlterColumnType(List** wqueue, AlteredTableInfo* tab, Relation
 
             addRTEtoQuery(pstate, rte, false, true, true);
 
-            transform = transformExpr(pstate, transform);
+            transform = transformExpr(pstate, transform, EXPR_KIND_ALTER_COL_TRANSFORM);
 
             if (RelationIsColStore(rel)) {
                 Bitmapset* attrs_referred = NULL;
@@ -32338,7 +32343,7 @@ static Node* CookRlspolicyQual(Relation rel, Node* src_qual)
     RangeTblEntry* rte = addRangeTableEntryForRelation(pstate, rel, NULL, false, false);
     addRTEtoQuery(pstate, rte, false, true, true);
     /* Transform expr clause */
-    Node *cooked_qual = transformWhereClause(pstate, src_qual, "POLICY");
+    Node *cooked_qual = transformWhereClause(pstate, src_qual, EXPR_KIND_POLICY, "POLICY");
     /* Take care of collations */
     assign_expr_collations(pstate, cooked_qual);
     pfree(pstate);
