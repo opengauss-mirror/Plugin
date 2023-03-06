@@ -66,6 +66,58 @@ explain (costs off) select * from t1 where b < 10;
    Filter: (b < 10)
 (2 rows)
 
+-- test partitioned table
+create table t_invisible_0012(col1 int,col2 numeric,col3 text)
+partition by hash(col1) (partition p1,partition p2);
+create index idx_invisible_0012_01 on t_invisible_0012(col1) local invisible;
+create index idx_invisible_0012_02 on t_invisible_0012(col2,col3) global invisible;
+insert into t_invisible_0012 values (random()*100,generate_series(1,100),random()*100);
+analyze t_invisible_0012;
+explain(costs false) select col1 from t_invisible_0012 where col1<70;
+                   QUERY PLAN                   
+------------------------------------------------
+ Partition Iterator
+   Iterations: 2
+   ->  Partitioned Seq Scan on t_invisible_0012
+         Filter: (col1 < 70)
+         Selected Partitions:  1..2
+(5 rows)
+
+alter table t_invisible_0012 alter index idx_invisible_0012_01 visible;
+explain(costs false) select col1 from t_invisible_0012 where col1<70;
+                             QUERY PLAN                             
+--------------------------------------------------------------------
+ Partition Iterator
+   Iterations: 2
+   ->  Partitioned Bitmap Heap Scan on t_invisible_0012
+         Recheck Cond: (col1 < 70)
+         Selected Partitions:  1..2
+         ->  Partitioned Bitmap Index Scan on idx_invisible_0012_01
+               Index Cond: (col1 < 70)
+               Selected Partitions:  1..2
+(8 rows)
+
+explain(costs false) select col2,col3 from t_invisible_0012 where col2<37125 and col3>50;
+                             QUERY PLAN                              
+---------------------------------------------------------------------
+ Partition Iterator
+   Iterations: 2
+   ->  Partitioned Seq Scan on t_invisible_0012
+         Filter: ((col2 < 37125::numeric) AND ((col3)::bigint > 50))
+         Selected Partitions:  1..2
+(5 rows)
+
+alter table t_invisible_0012 alter index idx_invisible_0012_02 visible;
+explain(costs false) select col2,col3 from t_invisible_0012 where col2<37125 and col3>50;
+                    QUERY PLAN                    
+--------------------------------------------------
+ Bitmap Heap Scan on t_invisible_0012
+   Recheck Cond: (col2 < 37125::numeric)
+   Filter: ((col3)::bigint > 50)
+   ->  Bitmap Index Scan on idx_invisible_0012_02
+         Index Cond: (col2 < 37125::numeric)
+(5 rows)
+
 -- test oriented-column table
 create table c1 (a int, b int, index ckey_a(a) visible) with (orientation = column);
 insert into c1 values (generate_series(1, 100), generate_series(1, 100));
@@ -99,6 +151,12 @@ explain (costs off) select * from t1 where a < 10;
    Index Cond: (a < 10)
 (3 rows)
 
+set dolphin.optimizer_switch = 123;  --error
+ERROR:  invalid value for parameter "dolphin.optimizer_switch": "123"
+DETAIL:  invalid paramater for optimizer_switch.
+set dolphin.optimizer_switch = 'use_invisible_indexes';  --error
+ERROR:  invalid value for parameter "dolphin.optimizer_switch": "use_invisible_indexes"
+DETAIL:  invalid paramater for optimizer_switch.
 set dolphin.optimizer_switch = 'use_invisible_indexes=invalid';  --error
 ERROR:  invalid value for parameter "dolphin.optimizer_switch": "use_invisible_indexes=invalid"
 DETAIL:  invalid optimizer switch value "invalid"

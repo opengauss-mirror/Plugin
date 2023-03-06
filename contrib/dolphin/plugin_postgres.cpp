@@ -539,7 +539,9 @@ static bool check_optimizer_switch(char** newval, void** extra, GucSource source
         bool nfound = true;
         List* kv = NULL;
 
-        if (!SplitIdentifierString(item, '=', &kv)) {
+#define LENGTH_OF_KV 2
+
+        if (!SplitIdentifierString(item, '=', &kv) || list_length(kv) != LENGTH_OF_KV) {
             /* syntax error in list */
             GUC_check_errdetail("invalid paramater for optimizer_switch.");
             pfree(rawstring);
