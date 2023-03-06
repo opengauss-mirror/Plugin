@@ -22,9 +22,9 @@ Indexes:
     "test_to_tsvector_to_tsvector1_idx" gin (to_tsvector('ngram'::regconfig, title::text), to_tsvector('ngram'::regconfig, boby)) TABLESPACE pg_default
 
 \d test_to_tsvector_to_tsvector1_idx
-       Index "fulltext_test.test_to_tsvector_to_tsvector1_idx"
-    Column    | Type |                   Definition                   
---------------+------+------------------------------------------------
+      Index "fulltext_test.test_to_tsvector_to_tsvector1_idx"
+    Column    | Type |                  Definition                  
+--------------+------+----------------------------------------------
  to_tsvector  | text | to_tsvector('ngram'::regconfig, title::text)
  to_tsvector1 | text | to_tsvector('ngram'::regconfig, boby)
 gin, for table "fulltext_test.test"
@@ -34,9 +34,9 @@ ALTER TABLE test ADD FULLTEXT INDEX test_index_1 (title, boby) WITH PARSER ngram
 DROP INDEX test_index_1;
 CREATE FULLTEXT INDEX test_index_1 ON test (title, boby) WITH PARSER ngram;
 \d test_index_1
-                  Index "fulltext_test.test_index_1"
-    Column    | Type |                   Definition                   
---------------+------+------------------------------------------------
+                 Index "fulltext_test.test_index_1"
+    Column    | Type |                  Definition                  
+--------------+------+----------------------------------------------
  to_tsvector  | text | to_tsvector('ngram'::regconfig, title::text)
  to_tsvector1 | text | to_tsvector('ngram'::regconfig, boby)
 gin, for table "fulltext_test.test"
@@ -82,9 +82,9 @@ SELECT * FROM TEST WHERE MATCH (title, boby) AGAINST ('gauss');
 DROP INDEX test_index_1;
 CREATE FULLTEXT INDEX test_index_1 ON test (boby) WITH PARSER ngram;
 \d test_index_1
-              Index "fulltext_test.test_index_1"
-   Column    | Type |               Definition                
--------------+------+-----------------------------------------
+             Index "fulltext_test.test_index_1"
+   Column    | Type |              Definition               
+-------------+------+---------------------------------------
  to_tsvector | text | to_tsvector('ngram'::regconfig, boby)
 gin, for table "fulltext_test.test"
 
@@ -106,9 +106,9 @@ SELECT * FROM test WHERE MATCH (boby) AGAINST ('gauss');
 DROP INDEX test_index_1;
 CREATE FULLTEXT INDEX test_index_1 ON test (title, boby, name) WITH PARSER ngram;
 \d test_index_1
-                  Index "fulltext_test.test_index_1"
-    Column    | Type |                   Definition                   
---------------+------+------------------------------------------------
+                 Index "fulltext_test.test_index_1"
+    Column    | Type |                  Definition                  
+--------------+------+----------------------------------------------
  to_tsvector  | text | to_tsvector('ngram'::regconfig, title::text)
  to_tsvector1 | text | to_tsvector('ngram'::regconfig, boby)
  to_tsvector2 | text | to_tsvector('ngram'::regconfig, name::text)
