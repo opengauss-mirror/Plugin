@@ -19,14 +19,14 @@ NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "test_pkey" for t
  name   | name              | 
 Indexes:
     "test_pkey" PRIMARY KEY, btree (id) TABLESPACE pg_default
-    "test_to_tsvector_to_tsvector1_idx" gin (to_tsvector('"ngram"'::regconfig, title::text), to_tsvector('"ngram"'::regconfig, boby)) TABLESPACE pg_default
+    "test_to_tsvector_to_tsvector1_idx" gin (to_tsvector('ngram'::regconfig, title::text), to_tsvector('ngram'::regconfig, boby)) TABLESPACE pg_default
 
 \d test_to_tsvector_to_tsvector1_idx
        Index "fulltext_test.test_to_tsvector_to_tsvector1_idx"
     Column    | Type |                   Definition                   
 --------------+------+------------------------------------------------
- to_tsvector  | text | to_tsvector('"ngram"'::regconfig, title::text)
- to_tsvector1 | text | to_tsvector('"ngram"'::regconfig, boby)
+ to_tsvector  | text | to_tsvector('ngram'::regconfig, title::text)
+ to_tsvector1 | text | to_tsvector('ngram'::regconfig, boby)
 gin, for table "fulltext_test.test"
 
 DROP INDEX test_to_tsvector_to_tsvector1_idx;
@@ -37,8 +37,8 @@ CREATE FULLTEXT INDEX test_index_1 ON test (title, boby) WITH PARSER ngram;
                   Index "fulltext_test.test_index_1"
     Column    | Type |                   Definition                   
 --------------+------+------------------------------------------------
- to_tsvector  | text | to_tsvector('"ngram"'::regconfig, title::text)
- to_tsvector1 | text | to_tsvector('"ngram"'::regconfig, boby)
+ to_tsvector  | text | to_tsvector('ngram'::regconfig, title::text)
+ to_tsvector1 | text | to_tsvector('ngram'::regconfig, boby)
 gin, for table "fulltext_test.test"
 
 INSERT INTO test(title, boby, name) VALUES('test', '&67575@gauss', 'opengauss');
@@ -85,7 +85,7 @@ CREATE FULLTEXT INDEX test_index_1 ON test (boby) WITH PARSER ngram;
               Index "fulltext_test.test_index_1"
    Column    | Type |               Definition                
 -------------+------+-----------------------------------------
- to_tsvector | text | to_tsvector('"ngram"'::regconfig, boby)
+ to_tsvector | text | to_tsvector('ngram'::regconfig, boby)
 gin, for table "fulltext_test.test"
 
 SELECT * FROM test WHERE MATCH (boby) AGAINST ('test');
@@ -109,9 +109,9 @@ CREATE FULLTEXT INDEX test_index_1 ON test (title, boby, name) WITH PARSER ngram
                   Index "fulltext_test.test_index_1"
     Column    | Type |                   Definition                   
 --------------+------+------------------------------------------------
- to_tsvector  | text | to_tsvector('"ngram"'::regconfig, title::text)
- to_tsvector1 | text | to_tsvector('"ngram"'::regconfig, boby)
- to_tsvector2 | text | to_tsvector('"ngram"'::regconfig, name::text)
+ to_tsvector  | text | to_tsvector('ngram'::regconfig, title::text)
+ to_tsvector1 | text | to_tsvector('ngram'::regconfig, boby)
+ to_tsvector2 | text | to_tsvector('ngram'::regconfig, name::text)
 gin, for table "fulltext_test.test"
 
 SELECT * FROM test WHERE MATCH (title, boby, name) AGAINST ('test');
