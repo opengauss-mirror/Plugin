@@ -13,6 +13,28 @@ select json_extract('{"a": "true", "b":{"a": 43}}', '$."a"');
 select json_extract(json_extract_path('{"a":{"b": [43, {"n": "hello"}]}}', 'a'), '$**.n');
 select json_extract(json_build_object('a',1,'b',1.2,'c',true,'d',null,'e',json '{"x": 3, "y": [1,2,3]}'), '$.a');
 select json_extract(json_build_array('a',1,'b',1.2,'c',true,'d',null,'e',json '{"x": 3, "y": [1,2,3]}'), '$[2]');
+select json_extract(cast('1' as json), '$[0]', '$[1]') as extra;
+select json_extract(cast('"qweqwdas"' as json), '$[1]', '$[0]') as extra;
+
+select json_extract('["a", ["b", "c"], "d"]', '$[1]', '$[2]', '$[3]') as extra;
+select json_extract('["a", ["b", "c"], "d"]', '$.a', '$[2]', '$[3]') as extra;
+select json_extract('["a", ["b", "c"], {"d":"12.587"}]', '$[1][1]', '$[2]') as extra;
+select json_extract('["a", ["b", "c"], {"d":"1"}]', '$[2].d', '$[5]') as extra;
+
+select json_extract('{"a": 1, "b": 2, "c": {"d": 4}, "d":["e","x"]}', '$.a', '$.e');
+select json_extract('{"a": 1, "b": 2, "c": {"d": 4}, "d":["e","x"]}', '$.z', '$.e');
+select json_extract('{"a": 1, "b": 2, "c": {"d": 4}, "d":["e","x"]}', '$.a', '$.c.d', '$.d[1]');
+select json_extract('{"a": 1, "b": 2, "c": {"d": 4}, "d":["e","x"]}', '$.a', '$.e');
+
+select json_extract('"az"', null);
+select json_extract('[1,"a"]', null);
+select json_extract('{"a":1}', null);
+select json_extract(cast('1' as json), null) as extra;
+select json_extract(cast('"qweqwdas"' as json), NULL) as extra;
+select json_extract('["a", ["b", "c"], {"d":"1"}]', null, '$[0]') as extra;
+select json_extract('["a", ["b", "c"], {"d":"1"}]', NULL, '$[2]') as extra;
+
+select json_extract(1, null);
 
 create temp table test (
     textjson json
