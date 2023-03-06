@@ -1160,6 +1160,12 @@ END; $function$;
 
 select * from  func8();
 
+--test as keyword
+select 1 as USER;
+select 1 as ALSO;
+select 1 as ADD;
+select 1 as BIGINT;
+select 1 as COMMON_WORD;
 
 drop schema column_name_case_test cascade;
 reset current_schema;

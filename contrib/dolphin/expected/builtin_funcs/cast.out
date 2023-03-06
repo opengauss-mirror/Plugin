@@ -36,5 +36,25 @@ select cast(cast('2022-11-10 18:03:20'::timestamp as unsigned) as timestamp);
  Fri Nov 11 02:03:20 2022 PST
 (1 row)
 
+SELECT CAST('test' AS CHAR CHARACTER SET utf8);
+ bpchar 
+--------
+ t
+(1 row)
+
+SELECT CAST('test' AS CHAR CHARACTER SET not_exist);
+WARNING:  not_exist is not a valid encoding name. default value set
+ bpchar 
+--------
+ t
+(1 row)
+
+SELECT CAST('test' AS nchar CHARACTER SET not_exist);
+WARNING:  not_exist is not a valid encoding name. default value set
+ bpchar 
+--------
+ t
+(1 row)
+
 drop schema db_cast cascade;
 reset current_schema;
