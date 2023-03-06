@@ -1275,9 +1275,10 @@ select * from dbe_pldebugger.set_var('test.b', '$$now$$');
 (1 row)
 
 select * from dbe_pldebugger.set_var('test.c', '$$2021-07-31$$::timestamp + now() - now()');
+WARNING:  Exception occurs when trying to set variable: operator does not exist: timestamp with time zone + timestamp without time zone
  set_var 
 ---------
- t
+ f
 (1 row)
 
 select * from dbe_pldebugger.set_var('test.c', '$$2021-07-31$$::timestamp'); -- function call is ok

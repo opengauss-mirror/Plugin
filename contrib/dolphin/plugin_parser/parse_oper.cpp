@@ -97,6 +97,8 @@ static void TransformDolphinType(Oid& type, int32& typmod);
 static bool IsNumericCatalogByOid(Oid oid);
 static int32 GetTypmod(Oid typeoid, Node* node);
 static Oid TransformDolphinOperator(TransformOperatorInformation* info);
+static Node* CreateCastForDateType(
+    ParseState *pstate, Oid sourceType, Node *node, HeapTuple tup, int location, bool isLeft);
 #endif
 
 static Oid binary_oper_exact(List* opname, Oid arg1, Oid arg2, bool use_a_style_coercion);
@@ -882,6 +884,10 @@ Expr* make_op(ParseState* pstate, List* opname, Node* ltree, Node* rtree, int lo
     List* args = NIL;
     Oid rettype;
     OpExpr* result = NULL;
+#ifdef DOLPHIN
+    Node* newLeftTree = NULL;
+    Node* newRightTree = NULL;
+#endif
     /* Select the operator */
     if (rtree == NULL) {
         /* right operator */
@@ -916,6 +922,9 @@ Expr* make_op(ParseState* pstate, List* opname, Node* ltree, Node* rtree, int lo
         tup = GetDolphinOperatorTup(&info);
         if (!HeapTupleIsValid(tup)) {
             tup = oper(pstate, opname, ltypeId, rtypeId, false, location, inNumeric);
+        } else {
+            newLeftTree = CreateCastForDateType(pstate, ltypeId, ltree, tup, location, true);
+            newRightTree = CreateCastForDateType(pstate, rtypeId, rtree, tup, location, false);
         }
 #else
         tup = oper(pstate, opname, ltypeId, rtypeId, false, location, inNumeric);
@@ -939,9 +948,21 @@ Expr* make_op(ParseState* pstate, List* opname, Node* ltree, Node* rtree, int lo
         nargs = 1;
     } else {
         /* otherwise, binary operator */
+#ifndef DOLPHIN
         args = list_make2(ltree, rtree);
         actual_arg_types[0] = ltypeId;
         actual_arg_types[1] = rtypeId;
+#else
+        if (newLeftTree != NULL && newRightTree != NULL) {
+            args = list_make2(newLeftTree, newRightTree);
+            actual_arg_types[0] = exprType(newLeftTree);
+            actual_arg_types[1] = exprType(newRightTree);
+        } else {
+            args = list_make2(ltree, rtree);
+            actual_arg_types[0] = ltypeId;
+            actual_arg_types[1] = rtypeId;
+        }
+#endif
         declared_arg_types[0] = opform->oprleft;
         declared_arg_types[1] = opform->oprright;
         nargs = 2;
@@ -1273,7 +1294,7 @@ static Operator GetDolphinOperatorTup(GetDolphinOperatorTupInfo* info)
     char* opername = NULL;
     DeconstructQualifiedName(opname, &schemaname, &opername);
     List *newOpList = list_make2(makeString("dolphin_catalog"), makeString(opername));
-    if (IsNumericCatalogByOid(leftType) && IsNumericCatalogByOid(rightType)) {
+    if (IsNumericCatalogByOid(leftType) && IsNumericCatalogByOid(rightType) && schemaname == NULL) {
         Operator tup = GetNumericDolphinOperatorTup(pstate, newOpList, leftType, rightType, location, inNumeric);
         if (tup != NULL) {
             return tup;
@@ -1423,5 +1444,23 @@ static Oid TransformDolphinOperator(TransformOperatorInformation* info)
 Oid binary_oper_exact_extern(List* opname, Oid arg1, Oid arg2, bool use_a_style_coercion)
 {
     return binary_oper_exact(opname, arg1, arg2, use_a_style_coercion);
+}
+
+static Node* CreateCastForDateType(
+    ParseState* pstate, Oid sourceType, Node* node, HeapTuple tup, int location, bool isLeft)
+{
+    if (!IsDatetimeType(sourceType) && sourceType != DATEOID && sourceType != YEAROID) {
+        return node;
+    }
+    Form_pg_operator op = (Form_pg_operator)GETSTRUCT(tup);
+    Node* cast = coerce_to_target_type(pstate,
+        node,
+        sourceType,
+        isLeft ? op->oprleft : op->oprright,
+        -1,
+        COERCION_EXPLICIT,
+        COERCE_EXPLICIT_CAST,
+        location);
+    return cast;
 }
 #endif
