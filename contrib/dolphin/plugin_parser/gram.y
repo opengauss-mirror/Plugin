@@ -33061,6 +33061,11 @@ func_expr_common_subexpr:
 				}
 			| CAST '(' a_expr AS Typename ')'
 				{ $$ = makeTypeCast($3, $5, @1); }
+			| CAST '(' a_expr AS Character charset ')'
+				{
+					$5->charset = $6;
+					$$ = makeTypeCast($3, $5, @1);
+				}
 			| CAST '(' a_expr AS UNSIGNED ')'
 				{ $$ = makeTypeCast($3, SystemTypeName("uint8"), @1); }
 			| CAST '(' a_expr AS SIGNED ')'
@@ -35121,7 +35126,7 @@ ColLabel:	normal_ident							{ $$ = $1; }
 								errmsg("ROWNUM cannot be used as an alias"),
 										parser_errposition(@1)));
 					}
-					$$ = pstrdup($1);
+					$$ = downcase_str(pstrdup($1), false);
 				}
 		;
 

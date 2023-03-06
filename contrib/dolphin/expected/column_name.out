@@ -1732,6 +1732,37 @@ select * from  func8();
  
 (1 row)
 
+--test as keyword
+select 1 as USER;
+ user 
+------
+    1
+(1 row)
+
+select 1 as ALSO;
+ also 
+------
+    1
+(1 row)
+
+select 1 as ADD;
+ add 
+-----
+   1
+(1 row)
+
+select 1 as BIGINT;
+ bigint 
+--------
+      1
+(1 row)
+
+select 1 as COMMON_WORD;
+ common_word 
+-------------
+           1
+(1 row)
+
 drop schema column_name_case_test cascade;
 NOTICE:  drop cascades to 38 other objects
 DETAIL:  drop cascades to table a1
