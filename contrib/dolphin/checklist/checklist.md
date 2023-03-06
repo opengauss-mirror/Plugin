@@ -85,6 +85,7 @@
 |plugin_utils\adt|rowtypes.cpp   |src\common\backend\utils\adt\rowtypes.cpp   |
 |plugin_utils\adt|ruleutils.cpp   |src\common\backend\utils\adt\ruleutils.cpp   |
 |plugin_utils\adt|selfuncs.cpp   |src\common\backend\utils\adt\selfuncs.cpp   |
+|plugin_utils\adt|set.cpp  |src\common\backend\utils\adt\set.cpp  |
 |plugin_utils\adt|timestamp.cpp   |src\common\backend\utils\adt\timestamp.cpp   |
 |plugin_utils\adt|trigfuncs.cpp   |src\common\backend\utils\adt\trigfuncs.cpp   |
 |plugin_utils\adt|uuid.cpp   |src\common\backend\utils\adt\uuid.cpp   |
