@@ -1,0 +1,29 @@
+select pg_sleep(0.5);
+ pg_sleep 
+----------
+ 
+(1 row)
+
+select * from lock_test1;
+ a 
+---
+(0 rows)
+
+select * from lock_test2;
+ a 
+---
+(0 rows)
+
+select pg_sleep(1);
+ pg_sleep 
+----------
+ 
+(1 row)
+
+select * from lock_test1;
+ a 
+---
+ 1
+ 2
+(2 rows)
+

@@ -1,0 +1,18 @@
+create table lock_test1(a int);
+create table lock_test2(a int);
+lock tables lock_test1, lock_test2 read;
+insert into lock_test1 values(1);
+insert into lock_test2 values(1); 
+select * from lock_test1;
+select * from lock_test2;
+select pg_sleep(1);
+unlock tables;
+lock tables lock_test1 write;
+insert into lock_test1 values(2);
+select * from lock_test1;
+select pg_sleep(1);
+unlock tables;
+flush tables with read lock;
+select * from lock_test1;
+insert into lock_test1 values(3);
+unlock tables;
