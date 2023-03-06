@@ -26,7 +26,9 @@ SELECT JSON_KEYS('{"a":1,"b":{"c":2}}','$.z');
 SELECT JSON_KEYS('[1,2,{"a":1,"b":{"c":2}},4]','$[8]');
 SELECT JSON_KEYS('{"a":1,"b":{"c":2}}','$[0]');
 SELECT JSON_KEYS('{"a":1,"b":{"c":2}}','$');
-
+select json_keys('{"a":1,"b":2,"a":1}');
+select json_keys('{"c":{"a":1,"b":2,"a":1},"z":2}','$.c');
+select json_keys('{"d":1,"b":2,"a":1}');
 
 create table student(name json);
 insert into student (name) value(json_keys('{"a":123,"b":{"c":"qwe"}}'));

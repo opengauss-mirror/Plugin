@@ -43,6 +43,11 @@ SELECT JSON_ARRAY_INSERT('[1, [2, 3]]', '$.1', 4);
 SELECT JSON_ARRAY_INSERT('[1, [2, 3]]', '$..1', 4);
 SELECT JSON_ARRAY_INSERT('[1, [2, 3]]', '$[*]', 4);
 SELECT JSON_ARRAY_INSERT('[1, [2, 3]]', ' ', 4);
- 
+select json_array_insert('{"a":1,"b":{}}', '$[1]', 'add');
+select json_array_insert('{"a":1,"b":{}}', '$[1]', '35416.878');
+select json_array_insert('["a",["b","c"],"d"]', '$[1]', 1,'$[2]','{"add":"s"}','$[2][1]',true);
+SELECT JSON_ARRAY_INSERT('{"name": "Tim", "hobby": ["car"]}', '$.hobby', 'food');
+select json_array_insert('1'::json, '$[1]', '["add","s"]');
+
 drop schema test_json_array_insert cascade;
 reset current_schema;

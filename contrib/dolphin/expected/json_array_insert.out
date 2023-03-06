@@ -42,7 +42,7 @@ SELECT JSON_ARRAY_INSERT('[1, [2, 3], {"a": [4, 5]}]', '$[2].a[0]', 4);
 SELECT JSON_ARRAY_INSERT('null', '$[2]', 4);
  json_array_insert 
 -------------------
- [null, 4]
+ null
 (1 row)
 
 SELECT JSON_ARRAY_INSERT('[1, [2, 3], {"a": [4, 5]}]', 'null', 4);
@@ -201,6 +201,32 @@ CONTEXT:  referenced column: json_array_insert
 SELECT JSON_ARRAY_INSERT('[1, [2, 3]]', ' ', 4);
 ERROR:  Invalid JSON path expression. The error is around argument 1.
 CONTEXT:  referenced column: json_array_insert
- 
+select json_array_insert('{"a":1,"b":{}}', '$[1]', 'add');
+ json_array_insert 
+-------------------
+ {"a": 1, "b": {}}
+(1 row)
+
+select json_array_insert('{"a":1,"b":{}}', '$[1]', '35416.878');
+ json_array_insert 
+-------------------
+ {"a": 1, "b": {}}
+(1 row)
+
+select json_array_insert('["a",["b","c"],"d"]', '$[1]', 1,'$[2]','{"add":"s"}','$[2][1]',true);
+              json_array_insert               
+----------------------------------------------
+ ["a", 1, "{\"add\":\"s\"}", ["b", "c"], "d"]
+(1 row)
+
+SELECT JSON_ARRAY_INSERT('{"name": "Tim", "hobby": ["car"]}', '$.hobby', 'food');
+ERROR:  A path expression is not a path to a cell in an array.
+CONTEXT:  referenced column: json_array_insert
+select json_array_insert('1'::json, '$[1]', '["add","s"]');
+ json_array_insert 
+-------------------
+ 1
+(1 row)
+
 drop schema test_json_array_insert cascade;
 reset current_schema;
