@@ -1914,7 +1914,11 @@ void ProcessCopyOptions(CopyState cstate, bool is_from, List* options)
 
     /* Set defaults for omitted options */
     if (!cstate->delim)
+#ifdef DOLPHIN
         cstate->delim = (char*)((IS_CSV(cstate) && !cstate->is_compatible) ? "," : "\t");
+#else
+        cstate->delim = (char*)(IS_CSV(cstate) ? "," : "\t");
+#endif
 
     if (!cstate->null_print)
 #ifdef DOLPHIN
@@ -2320,7 +2324,7 @@ static ExprState* ExecInitCopyColExpr(CopyState cstate, int attrno, Oid attroid,
     rte->eref->colnames = colnames;
     addRTEtoQuery(pstate, rte, true, true, true);
 
-    expr = transformExpr(pstate, expr);
+    expr = transformExpr(pstate, expr, EXPR_KIND_VALUES);
     exprtype = exprType(expr);
     expr = coerce_to_target_type(pstate, expr, exprtype, attroid, attrmod,
                                  COERCION_EXPLICIT, COERCE_EXPLICIT_CAST, -1);
@@ -4892,7 +4896,7 @@ uint64 CopyFrom(CopyState cstate)
                     tuple = slot->tts_tuple;
                 }
                 if (rel_isblockchain) {
-                    tuple = set_user_tuple_hash((HeapTuple)tuple, resultRelationDesc, true);
+                    tuple = set_user_tuple_hash((HeapTuple)tuple, resultRelationDesc, slot, true);
                 }
 
                 /* Check the constraints of the tuple */
@@ -7910,8 +7914,8 @@ static int CopyReadAttributesCSVT(CopyState cstate)
         char* start_ptr = NULL;
         char* end_ptr = NULL;
         int input_len;
-        bool saw_non_ascii = false;
 #ifdef DOLPHIN
+        bool saw_non_ascii = false;
         bool field_start = true;
         char* temp_ptr = NULL;
 #endif
@@ -8040,6 +8044,7 @@ static int CopyReadAttributesCSVT(CopyState cstate)
                 }
 
                 c = *cur_ptr++;
+#ifdef DOLPHIN
                 if (cstate->is_compatible) {
                     bool escape_verified = cstate->has_escape && c == escapec && escapec != quotec;
                     if ((!cstate->has_escape && c == '\\') || escape_verified) {
@@ -8050,7 +8055,7 @@ static int CopyReadAttributesCSVT(CopyState cstate)
                         c = DeEscape(&cur_ptr, &line_end_ptr, &saw_non_ascii);
                     }
                 }
-
+#endif
                 /* escape within a quoted field */
                 if (c == escapec) {
                     /*

@@ -2012,6 +2012,8 @@ typedef struct Query {
 
     bool canSetTag; /* do I set the command result tag? */
 
+    bool is_flt_frame; /* Indicates whether it is a flattened expr frame */
+
     Node* utilityStmt; /* non-null if this is DECLARE CURSOR or a
                         * non-optimizable statement */
 
@@ -2019,6 +2021,7 @@ typedef struct Query {
 
     bool hasAggs;         /* has aggregates in tlist or havingQual */
     bool hasWindowFuncs;  /* has window functions in tlist */
+    bool hasTargetSRFs;	  /* has set-returning functions in tlist */
     bool hasSubLinks;     /* has subquery SubLink */
     bool hasDistinctOn;   /* distinctClause is from DISTINCT ON */
     bool hasRecursive;    /* WITH RECURSIVE was specified */

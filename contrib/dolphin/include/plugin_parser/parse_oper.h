@@ -58,9 +58,13 @@ extern inline bool IsDatetimeType(Oid typeoid);
 #endif
 
 /* Build expression tree for an operator invocation */
-extern Expr* make_op(ParseState* pstate, List* opname, Node* ltree, Node* rtree, int location, bool inNumeric = false);
+extern Node* parse_get_last_srf(ParseState* pstate);
+extern Expr *make_op(ParseState *pstate, List *opname, Node *ltree, Node *rtree, Node *last_srf, int location,
+                     bool inNumeric = false);
 extern Expr* make_scalar_array_op(ParseState* pstate, List* opname, bool useOr, Node* ltree, Node* rtree, int location);
 extern Oid OperatorLookup(List* operatorName, Oid leftObjectId, Oid rightObjectId, bool* defined);
 extern void InvalidateOprCacheCallBack(Datum arg, int cacheid, uint32 hashvalue);
+#ifdef DOLPHIN
 extern Oid binary_oper_exact_extern(List* opname, Oid arg1, Oid arg2, bool use_a_style_coercion);
+#endif
 #endif /* PARSE_OPER_H */
