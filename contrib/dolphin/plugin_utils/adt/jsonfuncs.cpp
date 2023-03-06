@@ -3239,7 +3239,8 @@ static bool jp_match(cJSON *item, cJSON_JsonPath *jp, cJSON_ResultWrapper *res)
                 jp = NULL;
                 break;
             case cJSON_JsonPath_Any:
-                jp_match(item, jp->next, res);
+                if (!cJSON_IsArray(item) || jp->next->index != 0 || jp->next->type != cJSON_JsonPath_Index)
+                    jp_match(item, jp->next, res);
                 jp_match_any(item, jp, res, 3);
                 jp = NULL;
                 break;
@@ -3298,7 +3299,8 @@ static void jp_match_any(cJSON *item, cJSON_JsonPath *jp, cJSON_ResultWrapper *r
         if (is_last && mode != 3) {
             cJSON_AddItemToResultWrapper(res, ele);
         }
-        jp_match(ele, jp->next, res);
+        if (mode != 3 || !cJSON_IsArray(ele) || jp->next->index != 0 || jp->next->type != cJSON_JsonPath_Index)
+            jp_match(ele, jp->next, res);
         if (mode == 3) {
             jp_match_any(ele, jp, res, mode);
         }
@@ -3323,9 +3325,6 @@ static bool cJSON_AddItemToResultWrapper(cJSON_ResultWrapper *res, cJSON *item)
     tmp->node = item;
     while (head->next) {
         head = head->next;
-        if (head->node == item) {
-            return false;
-        }
     }
     tmp->next = head->next;
     head->next = tmp;
@@ -4102,29 +4101,32 @@ Datum json_extract(PG_FUNCTION_ARGS)
     Oid valtype;
     Datum arg = 0;
 
-    if (array_contains_nulls(in_array)) {
-        ereport(ERROR,
-                (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("cannot call function with null path elements")));
+    if (PG_ARGISNULL(0)) {
+        PG_RETURN_NULL();
     }
-
-    deconstruct_array(in_array, TEXTOID, -1, false, 'i', &in_datums, &in_nulls, &in_count);
-
     valtype = get_fn_expr_argtype(fcinfo->flinfo, 0);
     arg = PG_GETARG_DATUM(0);
     root = input_to_cjson(valtype, "json_extract", 1, arg);
-
     cJSON_SortObject(root);
+
+    deconstruct_array(in_array, TEXTOID, -1, false, 'i', &in_datums, &in_nulls, &in_count);
+    many = in_count > 1;
+
     res = cJSON_CreateResultWrapper();
     for (int i = 0; i < in_count; i++) {
+        if (!in_datums[i]) {
+            cJSON_Delete(root);
+            cJSON_DeleteResultWrapper(res);
+            PG_RETURN_NULL();
+        }
         path = TextDatumGetCString(in_datums[i]);
         jp = jp_parse(path, error_pos);
         if (!jp) {
             cJSON_DeleteResultWrapper(res);
             cJSON_Delete(root);
             ereport(ERROR,
-                    (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("Invalid JSON path expression. The error is "
-                                                                      "around character position %d.",
-                                                                      error_pos)));
+                    (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+                     errmsg("Invalid JSON path expression. The error is around character position %d.", error_pos)));
         }
         many |= cJSON_JsonPathCanMatchMany(jp);
         cJSON_JsonPathMatch(root, jp, res);
