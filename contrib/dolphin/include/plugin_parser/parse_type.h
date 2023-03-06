@@ -16,6 +16,7 @@
 
 #include "access/htup.h"
 #include "plugin_parser/parse_node.h"
+#include "plugin_postgres.h"
 
 typedef HeapTuple Type;
 

@@ -1613,10 +1613,19 @@ Oid LookupTypeInPackage(List* typeNames, const char* typeName, Oid pkgOid, Oid n
 
 }
 
+#ifdef DOLPHIN
 bool IsBinaryType(Oid typid)
 {
-    return (typid == BLOBOID) ? true : false;
+    return (typid == BLOBOID || typid == BINARYOID ||
+            typid == VARBINARYOID || typid == TINYBLOBOID ||
+            typid == MEDIUMBLOBOID || typid == LONGBLOBOID);
 }
+#else
+bool IsBinaryType(Oid typid)
+{
+    return (typid == BLOBOID);
+}
+#endif
 
 #ifdef DOLPHIN
 /*

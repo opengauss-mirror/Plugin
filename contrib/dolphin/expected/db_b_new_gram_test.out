@@ -605,15 +605,13 @@ DROP INDEX test_index_btree_2;
 DROP TABLE t_index_new_grammar;
 -- new grammar test for COLLATE, CHARSET, ROW_FORMAT in column and table level
 CREATE TABLE t_column_collate(c text COLLATE test_collate);
-ERROR:  collation "test_collate" does not exist
+WARNING:  Invalid collation for column c detected. default value set
 DROP TABLE t_column_collate;
-ERROR:  table "t_column_collate" does not exist
 CREATE TABLE t_column_collate(c text COLLATE "en_US");
 DROP TABLE t_column_collate;
 CREATE TABLE t_column_collate(c text COLLATE en_US);
-ERROR:  collation "en_us" does not exist
+WARNING:  Invalid collation for column c detected. default value set
 DROP TABLE t_column_collate;
-ERROR:  table "t_column_collate" does not exist
 CREATE TABLE t_column_charset(c text CHARSET test_charset);
 WARNING:  test_charset is not a valid encoding name. default value set
 DROP TABLE t_column_charset;
@@ -621,13 +619,11 @@ CREATE TABLE t_column_charset(c text CHARSET "test_charset");
 WARNING:  test_charset is not a valid encoding name. default value set
 DROP TABLE t_column_charset;
 CREATE TABLE t_table_collate(c text) COLLATE test_collate;
-ERROR:  collation "test_collate" does not exist
+WARNING:  Invalid collation detected. default value set
 DROP TABLE t_table_collate;
-ERROR:  table "t_table_collate" does not exist
 CREATE TABLE t_table_default_collate(c text) DEFAULT COLLATE test_collate;
-ERROR:  collation "test_collate" does not exist
+WARNING:  Invalid collation detected. default value set
 DROP TABLE t_table_default_collate;
-ERROR:  table "t_table_default_collate" does not exist
 CREATE TABLE t_table_charset(c text) CHARSET test_charset;
 WARNING:  test_charset is not a valid encoding name. default value set
 DROP TABLE t_table_charset;
@@ -652,9 +648,8 @@ DROP TABLE t_table_row_format_default;
 CREATE TABLE t_mixed_table_option(c text) ROW_FORMAT test_row_format CHARSET test_charset COLLATE test_collate;
 WARNING:  ROW_FORMAT for TABLE is not supported for current version. skipped
 WARNING:  test_charset is not a valid encoding name. default value set
-ERROR:  collation "test_collate" does not exist
+WARNING:  Invalid collation detected. default value set
 DROP TABLE t_mixed_table_option;
-ERROR:  table "t_mixed_table_option" does not exist
 CREATE TABLE t_character_set_column(c text CHARACTER SET test_character_set);
 WARNING:  test_character_set is not a valid encoding name. default value set
 DROP TABLE t_character_set_column;
@@ -670,7 +665,7 @@ DROP TABLE t_charset_enum_column;
 -- test for alter statement
 CREATE TABLE t_alter_test(c text);
 ALTER TABLE t_alter_test DEFAULT COLLATE = test_collate;
-ERROR:  collation "test_collate" does not exist
+WARNING:  Invalid collation detected. default value set
 ALTER TABLE t_alter_test DEFAULT CHARACTER SET = test_charset;
 WARNING:  test_charset is not a valid encoding name. default value set
 ALTER TABLE t_alter_test DEFAULT CHARSET = test_charset;
@@ -691,39 +686,38 @@ WARNING:  ROW_FORMAT for TABLE is not supported for current version. skipped
 ALTER TABLE t_alter_test ROW_FORMAT = COMPACT, COLLATE = test_collate, CHARACTER SET test_charset;
 WARNING:  test_charset is not a valid encoding name. default value set
 WARNING:  ROW_FORMAT for TABLE is not supported for current version. skipped
-ERROR:  collation "test_collate" does not exist
+WARNING:  Invalid collation detected. default value set
 DROP TABLE t_alter_test;
 -- test for single quote and double quotes input
 CREATE TABLE t_quote_test(c text) ROW_FORMAT = 'test_row_format' COLLATE = 'test_collate' CHARSET = 'test_charset';
 WARNING:  ROW_FORMAT for TABLE is not supported for current version. skipped
 WARNING:  test_charset is not a valid encoding name. default value set
-ERROR:  collation "test_collate" does not exist
+WARNING:  Invalid collation detected. default value set
 DROP TABLE t_quote_test;
-ERROR:  table "t_quote_test" does not exist
 CREATE TABLE t_quote_test(c text) ROW_FORMAT = "test_row_format" COLLATE = "test_collate" CHARSET = "test_charset";
 WARNING:  ROW_FORMAT for TABLE is not supported for current version. skipped
 WARNING:  test_charset is not a valid encoding name. default value set
-ERROR:  collation "test_collate" does not exist
+WARNING:  Invalid collation detected. default value set
 DROP TABLE t_quote_test;
-ERROR:  table "t_quote_test" does not exist
 CREATE TABLE t_quote_test(c text CHARSET 'test_charset' COLLATE 'test_collate');
 WARNING:  test_charset is not a valid encoding name. default value set
-ERROR:  collation "test_collate" does not exist
+WARNING:  Invalid collation for column c detected. default value set
 DROP TABLE t_quote_test;
-ERROR:  table "t_quote_test" does not exist
 CREATE TABLE t_quote_test(c text CHARSET "test_charset" COLLATE "test_collate");
 WARNING:  test_charset is not a valid encoding name. default value set
-ERROR:  collation "test_collate" does not exist
+WARNING:  Invalid collation for column c detected. default value set
 CREATE TABLE t_quote_test(c text CHARSET "default" COLLATE "default");
 WARNING:  default is not a valid encoding name. default value set
+ERROR:  relation "t_quote_test" already exists in schema "db_b_new_gram_test"
+DETAIL:  creating new table with existing name in the same schema
 ALTER TABLE t_quote_test ROW_FORMAT = 'COMPACT', COLLATE = 'test_collate', CHARACTER SET 'test_charset';
 WARNING:  test_charset is not a valid encoding name. default value set
 WARNING:  ROW_FORMAT for TABLE is not supported for current version. skipped
-ERROR:  collation "test_collate" does not exist
+WARNING:  Invalid collation detected. default value set
 ALTER TABLE t_quote_test ROW_FORMAT = "COMPACT", COLLATE = "test_collate", CHARACTER SET "test_charset";
 WARNING:  test_charset is not a valid encoding name. default value set
 WARNING:  ROW_FORMAT for TABLE is not supported for current version. skipped
-ERROR:  collation "test_collate" does not exist
+WARNING:  Invalid collation detected. default value set
 -- test for integrity of function text
 SELECT text(10);
  text 
