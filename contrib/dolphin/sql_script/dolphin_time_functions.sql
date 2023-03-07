@@ -538,7 +538,7 @@ CREATE CAST(time AS integer) WITH FUNCTION time_integer(time);
 
 CREATE OR REPLACE FUNCTION pg_catalog.time_pl_float (time, float8) RETURNS float8 LANGUAGE SQL STABLE STRICT as 'select pg_catalog.time_float($1) + $2';
 -- DROP OPERATOR IF EXISTS + (time, float8);
-CREATE OPERATOR + (
+CREATE OPERATOR pg_catalog.+ (
     PROCEDURE = time_pl_float,
     LEFTARG = time,
     RIGHTARG = float8
@@ -546,7 +546,7 @@ CREATE OPERATOR + (
 
 CREATE OR REPLACE FUNCTION pg_catalog.time_mi_float (time, float8) RETURNS float8 LANGUAGE SQL STABLE STRICT as 'select pg_catalog.time_float($1) - $2';
 -- DROP OPERATOR IF EXISTS - (time, float8);
-CREATE OPERATOR - (
+CREATE OPERATOR pg_catalog.- (
     PROCEDURE = time_mi_float,
     LEFTARG = time,
     RIGHTARG = float8
@@ -562,7 +562,7 @@ CREATE CAST(timestamp(0) without time zone AS bigint) WITH FUNCTION datetime_big
 
 CREATE OR REPLACE FUNCTION pg_catalog.datetime_pl_float (timestamp(0) without time zone, float8) RETURNS float8 LANGUAGE SQL STABLE STRICT as 'select pg_catalog.datetime_float($1) + $2';
 -- DROP OPERATOR IF EXISTS + (timestamp(0) without time zone, float8);
-CREATE OPERATOR + (
+CREATE OPERATOR pg_catalog.+ (
     PROCEDURE = datetime_pl_float,
     LEFTARG = timestamp(0) without time zone,
     RIGHTARG = float8
@@ -570,7 +570,7 @@ CREATE OPERATOR + (
 
 CREATE OR REPLACE FUNCTION pg_catalog.datetime_mi_float (timestamp(0) without time zone, float8) RETURNS float8 LANGUAGE SQL STABLE STRICT as 'select pg_catalog.datetime_float($1) - $2';
 -- DROP OPERATOR IF EXISTS - (timestamp(0) without time zone, float8);
-CREATE OPERATOR - (
+CREATE OPERATOR pg_catalog.- (
     PROCEDURE = datetime_mi_float,
     LEFTARG = timestamp(0) without time zone,
     RIGHTARG = float8
