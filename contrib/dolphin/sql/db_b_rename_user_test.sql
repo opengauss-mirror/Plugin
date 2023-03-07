@@ -29,7 +29,16 @@ rename user
 select usename from pg_catalog.pg_user 
     where usename='user4' or usename='user5' or usename='user6';
 
+set enable_set_variable_b_format to off;
+set test_user_host to on;
+create User 'ace'@'127.0.0.1' identified by 'Aa@123456';
+select usename from pg_catalog.pg_user 
+    where usename='ace@127.0.0.1';
+RENAME USER 'ace'@'127.0.0.1'TO 'ace1'@'127.0.0.1';
+select usename from pg_catalog.pg_user 
+    where usename='ace@127.0.0.1' or usename='ace1@127.0.0.1';
 
+drop user 'ace1'@'127.0.0.1';
 drop user user4;
 drop user user5;
 drop user user6;

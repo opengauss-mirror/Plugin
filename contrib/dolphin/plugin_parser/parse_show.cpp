@@ -48,7 +48,7 @@ extern Tuplestorestate* BuildTupleResult(FunctionCallInfo fcinfo, TupleDesc* tup
  *    application_name AS "Command",
  *    backend_start AS "BackendStart",
  *    xact_start AS "XactStart",
- *    ABS(ROUND(EXTRACT(EPOCH FROM (now()-state_change)))) AS "Time",
+ *    ABS(ROUND(DATE_PART('EPOCH', timestamptz_mi(now(),state_change)))) AS "Time",
  *    state AS "State",
  *    LEFT(query, 100) AS "Info"
  * FROM
@@ -403,8 +403,9 @@ static List* makeStateChangeIntervalFunc()
 {
     Node* left = plpsMakeFunc("now", NULL);
     Node* right = plpsMakeColumnRef(NULL, "state_change");
-    Node* expr = (Node*)makeSimpleA_Expr(AEXPR_OP, "-", left, right, -1);
-    List* args = list_make2(plpsMakeStringConst("epoch"), expr);
+    List* now_args = list_make2(left, right);
+    Node* timestamptz_mi_func = plpsMakeFunc("timestamptz_mi", now_args);
+    List* args = list_make2(plpsMakeStringConst("epoch"), timestamptz_mi_func);
 
     FuncCall* n = makeNode(FuncCall);
     n->funcname = SystemFuncName("date_part");
