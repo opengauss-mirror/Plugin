@@ -535,6 +535,24 @@ select ('2001-10-10 11:11:59.123456'::datetime(6) + 1);
 select ('2001-10-10 11:11:59.123456'::datetime(6) - 1);
 select ('2001-10-10 11:11:59.123456'::datetime(6) / 2.0);
 
+-- test time type operations in not 'public' schema
+select pg_typeof(year'2010' + interval '2' year);
+select pg_typeof(year'2010' - interval '2' year);
+select pg_typeof(time'01:01:01' + 1);
+select pg_typeof(time'01:01:01' - 1);
+select pg_typeof(datetime'2000-01-01 01:01:01' + 1);
+select pg_typeof(datetime'2000-01-01 01:01:01' - 1);
+create schema if not exists test_schema;
+set current_schema to 'test_schema';
+select pg_typeof(year'2010' + interval '2' year);
+select pg_typeof(year'2010' - interval '2' year);
+select pg_typeof(time'01:01:01' + 1);
+select pg_typeof(time'01:01:01' - 1);
+select pg_typeof(datetime'2000-01-01 01:01:01' + 1);
+select pg_typeof(datetime'2000-01-01 01:01:01' - 1);
+set current_schema to 'public';
+drop schema if exists test_schema;
+
 -- no strict mode
 set dolphin.sql_mode = '';
 CREATE TABLE time_tbl (v time);
