@@ -66,27 +66,27 @@ CREATE OPERATOR - (
 
 -- YEAR AND INTERVAL 
 
-CREATE OPERATOR + (
+CREATE OPERATOR pg_catalog.+ (
    leftarg = year,
    rightarg = interval,
    procedure = year_pl_interval,
-   commutator = +
+   commutator = operator(pg_catalog.+)
 );
 
-CREATE OPERATOR - (
+CREATE OPERATOR pg_catalog.- (
    leftarg = year,
    rightarg = interval,
    procedure = year_mi_interval,
-   commutator = -
+   commutator = operator(pg_catalog.-)
 );
 
 CREATE OR REPLACE FUNCTION pg_catalog.interval_pl_year (interval, year) RETURNS year AS $$ SELECT $2 + $1  $$ LANGUAGE SQL;
 
-CREATE OPERATOR + (
+CREATE OPERATOR pg_catalog.+ (
    leftarg = interval,
    rightarg = year,
    procedure = interval_pl_year,
-   commutator = +
+   commutator = operator(pg_catalog.+)
 );
 
 --CREATE YEAR'S B-TREE SUPPORT FUNCTION

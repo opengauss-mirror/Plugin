@@ -1762,6 +1762,18 @@ select ('2001-10-10 11:11:59.123456'::datetime(6) / 2.0);
 (1 row)
 
 -- test time type operations in not 'public' schema
+select pg_typeof(year'2010' + interval '2' year);
+ pg_typeof 
+-----------
+ year
+(1 row)
+
+select pg_typeof(year'2010' - interval '2' year);
+ pg_typeof 
+-----------
+ year
+(1 row)
+
 select pg_typeof(time'01:01:01' + 1);
     pg_typeof     
 ------------------
@@ -1788,6 +1800,18 @@ select pg_typeof(datetime'2000-01-01 01:01:01' - 1);
 
 create schema if not exists test_schema;
 set current_schema to 'test_schema';
+select pg_typeof(year'2010' + interval '2' year);
+ pg_typeof 
+-----------
+ year
+(1 row)
+
+select pg_typeof(year'2010' - interval '2' year);
+ pg_typeof 
+-----------
+ year
+(1 row)
+
 select pg_typeof(time'01:01:01' + 1);
     pg_typeof     
 ------------------
