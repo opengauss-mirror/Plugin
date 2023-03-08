@@ -19,6 +19,7 @@
 #include "utils/syscache.h"
 #include "storage/ipc.h"
 #include "executor/executor.h"
+#include "plugin_commands/mysqlmode.h"
 /*
  * We maintain a simple linked list caching the fmgr lookup info for the
  * currently selected conversion functions, as well as any that have been
@@ -968,12 +969,22 @@ int pg_mbcharcliplen_orig(const char* mbstr, int len, int limit)
 /* mbcliplen for any single-byte encoding */
 static int cliplen(const char* str, int len, int limit)
 {
+#ifdef DOLPHIN
+    int characterLength = 0;
+    int byteLength = 0;
+    while (characterLength < limit && byteLength < len && str[byteLength]) {
+        byteLength += get_step_len(str[byteLength]);
+        characterLength++;
+    }
+    return byteLength;
+#else
     int l = 0;
     len = Min(len, limit);
     while (l < len && str[l]) {
         l++;
     }
     return l;
+#endif
 }
 
 void SetDatabaseEncoding(int encoding)

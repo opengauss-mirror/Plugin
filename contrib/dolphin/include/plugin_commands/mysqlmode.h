@@ -27,4 +27,5 @@ extern bool Scanint8Internal(const char* str, bool errorOK, int64* result, bool 
 extern void CheckSpaceAndDotInternal(bool errorOK, int c, char* digitAfterDot, const char** ptr);
 extern uint64 pg_getmsguint64(StringInfo msg);
 extern void pg_ctoa(int8 i, char* a);
+extern int get_step_len(unsigned char ch);
 #endif /* MYSQLMODE_H */
