@@ -536,8 +536,37 @@ call func_call_proc1(1);
 (1 row)
 
 drop function if exists func_call_proc1(int);
+-- test for begin-end surrounded body statement without return
+drop table if exists t_create_begin_end_func_no_return;
+NOTICE:  table "t_create_begin_end_func_no_return" does not exist, skipping
+create table t_create_begin_end_func_no_return(c1 int);
+drop function if exists t_create_begin_end_func_no_return;
+NOTICE:  function t_create_begin_end_func_no_return() does not exist, skipping
+delimiter |
+create function t_create_begin_end_func_no_return(num int) returns int
+    no sql
+BEGIN
+declare i int;
+set i = 0;
+while i < num do
+insert into t_create_begin_end_func_no_return values(i);
+set i = i + 1;
+end while;
+end|
+ERROR:  no RETURN found in function body
+delimiter ;
+-- test for flow control body statement without return
+delimiter |
+drop function if exists t_create_flow_control_func_no_return|
+NOTICE:  function t_create_flow_control_func_no_return() does not exist, skipping
+create function t_create_flow_control_func_no_return(b int) returns int
+    repeat
+	set b = b + 10;
+    until b > 10 end repeat|
+ERROR:  no RETURN found in function body
+delimiter ;
 drop schema b_compat_create_func cascade;
-NOTICE:  drop cascades to 17 other objects
+NOTICE:  drop cascades to 18 other objects
 DETAIL:  drop cascades to table test11
 drop cascades to function func_ddl_0011(integer,integer)
 drop cascades to function simplecompare(integer,integer)
@@ -555,4 +584,5 @@ drop cascades to function hello(character)
 drop cascades to function func(integer)
 drop cascades to table t1
 drop cascades to function proc1()
+drop cascades to table t_create_begin_end_func_no_return
 reset current_schema;
