@@ -648,3 +648,51 @@ select fchar,length(fchar) from fchar_test order by 1,2;
 drop table fchar_test;
 drop schema db_b_parser2 cascade;
 reset current_schema;
+drop database if exists db_char_latin1;
+NOTICE:  database "db_char_latin1" does not exist, skipping
+create database db_char_latin1 dbcompatibility 'B' encoding 'latin1' LC_CTYPE 'en_US' lc_collate 'en_US';
+\c db_char_latin1
+\encoding latin1;
+create table t1(a character(4));
+insert into t1 values('四个字符');
+insert into t1 values('四个字0');
+insert into t1 values('一二三四五');
+ERROR:  value too long for type character(4)
+CONTEXT:  referenced column: a
+insert into t1 values('四个字01');
+ERROR:  value too long for type character(4)
+CONTEXT:  referenced column: a
+\c postgres
+drop database if exists db_char_latin1;
+drop database if exists db_char_utf8;
+NOTICE:  database "db_char_utf8" does not exist, skipping
+create database db_char_utf8 dbcompatibility 'b' encoding 'utf8';
+\c db_char_utf8
+\encoding utf8;
+create table t1(a character(4));
+insert into t1 values('四个字符');
+insert into t1 values('四个字0');
+insert into t1 values('一二三四五');
+ERROR:  value too long for type character(4)
+CONTEXT:  referenced column: a
+insert into t1 values('四个字01');
+ERROR:  value too long for type character(4)
+CONTEXT:  referenced column: a
+\c postgres
+drop database if exists db_char_utf8;
+drop database if exists db_char_ascii;
+NOTICE:  database "db_char_ascii" does not exist, skipping
+create database db_char_ascii dbcompatibility 'b' encoding 'sql_ascii';
+\c db_char_ascii
+\encoding sql_ascii;
+create table t1(a character(4));
+insert into t1 values('四个字符');
+insert into t1 values('四个字0');
+insert into t1 values('一二三四五');
+ERROR:  value too long for type character(4)
+CONTEXT:  referenced column: a
+insert into t1 values('四个字01');
+ERROR:  value too long for type character(4)
+CONTEXT:  referenced column: a
+\c postgres
+drop database if exists db_char_ascii;

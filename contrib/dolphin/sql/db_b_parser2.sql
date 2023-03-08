@@ -160,3 +160,41 @@ drop table fchar_test;
 
 drop schema db_b_parser2 cascade;
 reset current_schema;
+
+drop database if exists db_char_latin1;
+create database db_char_latin1 dbcompatibility 'B' encoding 'latin1' LC_CTYPE 'en_US' lc_collate 'en_US';
+\c db_char_latin1
+\encoding latin1;
+create table t1(a character(4));
+insert into t1 values('四个字符');
+insert into t1 values('四个字0');
+insert into t1 values('一二三四五');
+insert into t1 values('四个字01');
+
+\c postgres
+drop database if exists db_char_latin1;
+drop database if exists db_char_utf8;
+create database db_char_utf8 dbcompatibility 'b' encoding 'utf8';
+\c db_char_utf8
+\encoding utf8;
+create table t1(a character(4));
+insert into t1 values('四个字符');
+insert into t1 values('四个字0');
+insert into t1 values('一二三四五');
+insert into t1 values('四个字01');
+
+
+\c postgres
+drop database if exists db_char_utf8;
+drop database if exists db_char_ascii;
+create database db_char_ascii dbcompatibility 'b' encoding 'sql_ascii';
+\c db_char_ascii
+\encoding sql_ascii;
+create table t1(a character(4));
+insert into t1 values('四个字符');
+insert into t1 values('四个字0');
+insert into t1 values('一二三四五');
+insert into t1 values('四个字01');
+
+\c postgres
+drop database if exists db_char_ascii;
