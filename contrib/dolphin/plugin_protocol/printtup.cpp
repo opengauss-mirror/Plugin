@@ -118,7 +118,7 @@ static void SendRowDescriptionMessage(StringInfo buf, TupleDesc typeinfo, List *
 
     for (i = 0; i < natts; ++i) {
         // FIELD packet
-        dolphin_column_definition *field = make_dolphin_column_definition(attrs[i]);
+        dolphin_column_definition *field = make_dolphin_column_definition(&attrs[i]);
 
         while (tlist_item && ((TargetEntry *)lfirst(tlist_item))->resjunk) {
             tlist_item = lnext(tlist_item);

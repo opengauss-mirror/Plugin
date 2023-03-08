@@ -85,7 +85,7 @@ TypeItem b_type_items[] = {
     // text type, og is not support tinytext, meidumtext, longtext
     {"text", DOLPHIN_TYPE_BLOB, TEXTOID, 0, 0x2d},                                // text
     // fixed type
-    {"numeric", DOLPHIN_TYPE_DECIMAL, NUMERICOID, 0, 0x2d},                       // numeric
+    {"numeric", DOLPHIN_TYPE_DECIMAL, NUMERICOID, 0, 0x2d},                       // decimal 
     // json
     {"json", DOLPHIN_TYPE_JSON, JSONOID, 0, 0x2d}                                 // json
 };

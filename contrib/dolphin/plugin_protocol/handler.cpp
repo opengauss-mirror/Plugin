@@ -153,7 +153,6 @@ int dolphin_process_command(StringInfo buf)
             break;
         }
         case COM_STMT_PREPARE: {
-            // GetSessionContext()->enableBCmptMode = true;
             char *sql = dq_get_string_eof(buf);
             execute_com_stmt_prepare(sql);
 
@@ -286,7 +285,12 @@ int execute_binary_protocol_req(com_stmt_exec_request *request)
     for (uint i = 0; i < request->param_count; i++) {
         switch (request->parameter_values[i].type) {
             case TYPE_STRING: {
-                appendStringInfo(sql, "%s", request->parameter_values[i].value.text);
+                if (request->parameter_values[i].value.text) {
+                    appendStringInfo(sql, "'%s'", request->parameter_values[i].value.text);
+                } else {
+                    appendStringInfo(sql, "(null)"); 
+                }
+                
                 break;
             }
             case TYPE_INT1: {
@@ -299,7 +303,7 @@ int execute_binary_protocol_req(com_stmt_exec_request *request)
                 break;
             }
             case TYPE_INT8: {
-                appendStringInfo(sql, "%d", request->parameter_values[i].value.i8);
+                appendStringInfo(sql, "%lu", request->parameter_values[i].value.i8);
                 break;
             }
             case TYPE_FLOAT: {
@@ -310,6 +314,14 @@ int execute_binary_protocol_req(com_stmt_exec_request *request)
                 appendStringInfo(sql, "%lf", request->parameter_values[i].value.d.f8);
                 break;
             } 
+            case TYPE_HEX: {
+                appendStringInfo(sql, "x'");  
+                for (uint j = 0; j < strlen(request->parameter_values[i].value.text); j++) {
+                    appendStringInfo(sql, "%x", request->parameter_values[i].value.text[j]);
+                }
+                appendStringInfo(sql, "'");
+                break;
+            }
             default:
                 break; 
         }
@@ -326,7 +338,7 @@ int execute_binary_protocol_req(com_stmt_exec_request *request)
     if (SPI_tuptable) {
         TupleDesc spi_tupdesc = SPI_tuptable->tupdesc;
         int natts = spi_tupdesc->natts; 
-        Form_pg_attribute *attrs = spi_tupdesc->attrs;
+        Form_pg_attribute attrs = spi_tupdesc->attrs;
 
         // FIELD_COUNT packet
         send_field_count_packet(buf, natts);
@@ -334,7 +346,7 @@ int execute_binary_protocol_req(com_stmt_exec_request *request)
         // send column_count * column_definition packet
         for (int i = 0; i < natts; ++i) {
             // FIELD packet
-            dolphin_column_definition *field = make_dolphin_column_definition(attrs[i]);
+            dolphin_column_definition *field = make_dolphin_column_definition(&attrs[i]);
             send_column_definition41_packet(buf, field);
             pfree(field);
         }

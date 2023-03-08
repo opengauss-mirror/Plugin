@@ -67,10 +67,21 @@ enum proto_data_type {
     TYPE_INT1,
     TYPE_DOUBLE,
     TYPE_FLOAT,
-    TYPE_DATE,
-    TYPE_DATETIME,
+    TYPE_HEX,
     TYPE_NULL
 };
+
+typedef struct proto_tm {
+    uint4 year;
+    uint1 month;
+    uint1 day;
+    uint1 hour;
+    uint1 minute;
+    uint1 second;
+    uint4 microsecond;
+    uint1 is_negative;
+    uint4 days;
+} proto_tm;
 
 typedef struct com_stmt_param {
     proto_data_type type;
@@ -88,6 +99,7 @@ typedef struct com_stmt_param {
             float8 f8;
             uint64 i8;
         } d;
+        proto_tm tm;
     } value;
     // char *value;
 } com_stmt_param;
@@ -137,7 +149,7 @@ void send_field_count_packet(StringInfo buf, int count);
 
 dolphin_column_definition* make_dolphin_column_definition(const char *name, char *tableName = NULL);
 
-dolphin_column_definition* make_dolphin_column_definition(Form_pg_attribute attr, char *tableName = NULL);
+dolphin_column_definition* make_dolphin_column_definition(FormData_pg_attribute *attr, char *tableName = NULL);
 
 void send_column_definition41_packet(StringInfo buf, dolphin_column_definition *field);
 
