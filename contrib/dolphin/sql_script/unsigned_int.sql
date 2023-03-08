@@ -179,7 +179,7 @@ CREATE OR REPLACE FUNCTION pg_catalog.i2toui1 (
 int2
 ) RETURNS uint1 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'i2toui1';
 
-CREATE OR REPLACE FUNCTION  pg_catalog.i4toui1 (
+CREATE OR REPLACE FUNCTION pg_catalog.i4toui1 (
 int4
 ) RETURNS uint1 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'i4toui1';
 
@@ -206,18 +206,18 @@ CREATE OR REPLACE FUNCTION pg_catalog.ui8toui1 (
 uint8
 ) RETURNS uint1 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'ui8toui1';
 
-CREATE OR REPLACE FUNCTION  pg_catalog.numeric_uint1 (
+CREATE OR REPLACE FUNCTION pg_catalog.numeric_uint1 (
 Numeric
 ) RETURNS  uint1 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'numeric_uint1';
 
-CREATE OR REPLACE FUNCTION  pg_catalog.ui1toi1 (
+CREATE OR REPLACE FUNCTION pg_catalog.ui1toi1 (
 uint1
 ) RETURNS int1 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'ui1toi1';
 CREATE OR REPLACE FUNCTION pg_catalog.ui1toi2 (
 uint1
 ) RETURNS int2 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'ui1toi2';
 
-CREATE OR REPLACE FUNCTION  pg_catalog.ui1toi4 (
+CREATE OR REPLACE FUNCTION pg_catalog.ui1toi4 (
 uint1
 ) RETURNS  int4 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'ui1toi4';
 CREATE OR REPLACE FUNCTION pg_catalog.ui1toi8 (
@@ -315,13 +315,13 @@ uint1
 ) RETURNS int4 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'hashuint1';
 
 DROP FUNCTION IF EXISTS pg_catalog.NUMTODAY(uint1) CASCADE;
-CREATE OR REPLACE FUNCTION NUMTODAY(uint1)
+CREATE OR REPLACE FUNCTION pg_catalog.NUMTODAY(uint1)
 RETURNS INTERVAL
 AS $$ SELECT NUMTODSINTERVAL(uint1_numeric($1),'DAY')$$
 LANGUAGE SQL IMMUTABLE STRICT;
 
 DROP FUNCTION IF EXISTS pg_catalog.TO_TEXT(uint1) CASCADE;
-CREATE OR REPLACE FUNCTION TO_TEXT(UINT1)
+CREATE OR REPLACE FUNCTION pg_catalog.TO_TEXT(UINT1)
 RETURNS TEXT
 AS $$ select CAST(uint1out($1) AS VARCHAR2)  $$
 LANGUAGE SQL  STRICT IMMUTABLE;
@@ -594,7 +594,7 @@ CREATE OPERATOR pg_catalog.-(
 rightarg = uint1, procedure = uint1um
 );
 
-CREATE OR REPLACE FUNCTION uint1(text)
+CREATE OR REPLACE FUNCTION pg_catalog.uint1(text)
 RETURNS uint1
 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'text_uint1';
 CREATE CAST (TEXT AS UINT1) WITH FUNCTION UINT1(TEXT) AS IMPLICIT;
@@ -1060,12 +1060,12 @@ CREATE FUNCTION pg_catalog.hashuint2 (
 uint2
 ) RETURNS int4 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'hashuint2';
 
-CREATE OR REPLACE FUNCTION NUMTODAY(uint2)
+CREATE OR REPLACE FUNCTION pg_catalog.NUMTODAY(uint2)
 RETURNS INTERVAL
 AS $$ SELECT NUMTODSINTERVAL(uint2_numeric($1),'DAY')$$
 LANGUAGE SQL IMMUTABLE STRICT;
 
-CREATE OR REPLACE FUNCTION TO_TEXT(uint2)
+CREATE OR REPLACE FUNCTION pg_catalog.TO_TEXT(uint2)
 RETURNS TEXT
 AS $$ select CAST(uint2out($1) AS VARCHAR2)  $$
 LANGUAGE SQL  STRICT IMMUTABLE;
@@ -1300,7 +1300,7 @@ CREATE OPERATOR pg_catalog.-(
 rightarg = uint2, procedure = uint2um
 );
 
-CREATE OR REPLACE FUNCTION uint2(text)
+CREATE OR REPLACE FUNCTION pg_catalog.uint2(text)
 RETURNS uint2
 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'text_uint2';
 CREATE CAST (TEXT AS uint2) WITH FUNCTION uint2(TEXT) AS IMPLICIT;
@@ -1718,11 +1718,11 @@ uint4,int8
 CREATE FUNCTION pg_catalog.hashuint4 (
 uint4
 ) RETURNS int4 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'hashuint4';
-CREATE OR REPLACE FUNCTION NUMTODAY(uint4)
+CREATE OR REPLACE FUNCTION pg_catalog.NUMTODAY(uint4)
 RETURNS INTERVAL
 AS $$ SELECT NUMTODSINTERVAL(uint4_numeric($1),'DAY')$$
 LANGUAGE SQL IMMUTABLE STRICT;
-CREATE OR REPLACE FUNCTION TO_TEXT(uint4)
+CREATE OR REPLACE FUNCTION pg_catalog.TO_TEXT(uint4)
 RETURNS TEXT
 AS $$ select CAST(uint4out($1) AS VARCHAR2)  $$
 LANGUAGE SQL  STRICT IMMUTABLE;
@@ -1942,7 +1942,7 @@ CREATE OPERATOR pg_catalog.-(
 rightarg = uint4, procedure = uint4um
 );
 
-CREATE OR REPLACE FUNCTION uint4(text)
+CREATE OR REPLACE FUNCTION pg_catalog.uint4(text)
 RETURNS uint4
 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'text_uint4';
 
@@ -2362,7 +2362,7 @@ CREATE FUNCTION pg_catalog.hashuint8 (
 uint8
 ) RETURNS int4 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'hashuint8';
 
-CREATE OR REPLACE FUNCTION TO_TEXT(uint8)
+CREATE OR REPLACE FUNCTION pg_catalog.TO_TEXT(uint8)
 RETURNS TEXT
 AS $$ select CAST(uint8out($1) AS VARCHAR2)  $$
 LANGUAGE SQL  STRICT IMMUTABLE;
@@ -2590,7 +2590,7 @@ CREATE OPERATOR pg_catalog.-(
 rightarg = uint8, procedure = uint8um
 );
 
-CREATE OR REPLACE FUNCTION uint8(text)
+CREATE OR REPLACE FUNCTION pg_catalog.uint8(text)
 RETURNS uint8
 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'text_uint8';
 CREATE CAST (TEXT AS uint8) WITH FUNCTION uint8(TEXT) AS IMPLICIT;
@@ -4627,14 +4627,14 @@ commutator=operator(pg_catalog.^)
 );
 COMMENT ON OPERATOR pg_catalog.^(boolean, uint8) IS 'bool_xor_uint8';
 
-DROP FUNCTION IF EXISTS timestamp_uint8(timestamp(0) with time zone) CASCADE;
-CREATE OR REPLACE FUNCTION timestamp_uint8(timestamp(0) with time zone)
+DROP FUNCTION IF EXISTS pg_catalog.timestamp_uint8(timestamp(0) with time zone) CASCADE;
+CREATE OR REPLACE FUNCTION pg_catalog.timestamp_uint8(timestamp(0) with time zone)
 RETURNS uint8 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'timestamp_uint8';
 drop CAST IF EXISTS (timestamp(0) with time zone AS uint8) CASCADE;
 CREATE CAST (timestamp(0) with time zone AS uint8) WITH FUNCTION timestamp_uint8(timestamp(0) with time zone);
 
-DROP FUNCTION IF EXISTS cash_uint(money) CASCADE;
-CREATE OR REPLACE FUNCTION cash_uint(money)
+DROP FUNCTION IF EXISTS pg_catalog.cash_uint(money) CASCADE;
+CREATE OR REPLACE FUNCTION pg_catalog.cash_uint(money)
 RETURNS uint8 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'cash_uint';
 drop CAST IF EXISTS (money AS uint8) CASCADE;
 CREATE CAST (money AS uint8) WITH FUNCTION cash_uint(money) AS ASSIGNMENT;
