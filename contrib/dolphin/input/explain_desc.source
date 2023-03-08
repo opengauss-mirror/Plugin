@@ -30,12 +30,14 @@ explain extended delete from ed_t where c1 < 5;
 explain format=json select c1, c2, c3 from ed_t;
 explain format=json insert into ed_t values(100, 'hello', 100);
 explain format=JSON update ed_t set c2 = 'world' where c1 < 5;
+explain FORMAT=JSON update ed_t set c2 = 'world' where c1 < 5;
 explain format=json delete from ed_t where c1 < 5;
 explain format=Json delete from ed_t where c1 < 5;
 explain format=JsOn delete from ed_t where c1 < 5;
 explain format='JsOn' delete from ed_t where c1 < 5;
 explain format='json' delete from ed_t where c1 < 5;
 explain format=TRADITIONAL select c1, c2, c3 from ed_t;
+explain FORMAT=TRADITIONAL select c1, c2, c3 from ed_t;
 explain format=TRADITIONAL insert into ed_t values(100, 'hello', 100);
 explain format=TRaDITiONAL update ed_t set c2 = 'world' where c1 < 5;
 explain format=traditional delete from ed_t where c1 < 5;
@@ -73,5 +75,8 @@ describe (costs off) select * from describe;
 \! gsql -d contrib_regression -r -p @portstring@ -c "describe explain"
 \! gsql -d contrib_regression -r -p @portstring@ -c "explain describe"
 \! gsql -d contrib_regression -r -p @portstring@ -c "desc explain"
+
+\! gsql -d contrib_regression -r -p @portstring@ -c "show processlist" > /dev/null
+\! gsql -d contrib_regression -r -p @portstring@ -c "show full processlist" > /dev/null
 
 drop table explain, describe;

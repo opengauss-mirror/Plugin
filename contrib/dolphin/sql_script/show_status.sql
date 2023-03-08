@@ -1,7 +1,10 @@
 CREATE OR REPLACE FUNCTION pg_catalog.show_status() 
 RETURNS TABLE (NAME text, VALUE text) AS
 $$
+DECLARE sql_mode text;
 BEGIN
+EXECUTE IMMEDIATE 'show dolphin.sql_mode' into sql_mode;
+set dolphin.sql_mode='ansi_quotes,pipes_as_concat';
 RETURN QUERY
 select 'os_runtime_count' as name , count(*)::text as value from dbe_perf.global_os_runtime
 union
@@ -101,6 +104,7 @@ union
 select 'gid' as name, gid as value from dbe_perf.summary_transactions_prepared_xacts
 union
 select 'prepared' as name, prepared::text as value from dbe_perf.summary_transactions_prepared_xacts order by name;
+EXECUTE IMMEDIATE 'set dolphin.sql_mode=''' || sql_mode || '''';
 END;
 $$
 LANGUAGE plpgsql;

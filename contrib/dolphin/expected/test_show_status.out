@@ -1,5 +1,6 @@
 create schema db_show_status;
 set current_schema to 'db_show_status';
+set dolphin.sql_mode='';
 show status;
                name                |                value                
 -----------------------------------+-------------------------------------
@@ -153,5 +154,12 @@ show status;
 --?.*
 --?.*
 
+show dolphin.sql_mode;
+ dolphin.sql_mode 
+------------------
+ 
+(1 row)
+
+reset dolphin.sql_mode;
 drop schema db_show_status cascade;
 reset current_schema;
