@@ -80,8 +80,6 @@ static int getResultPostionReverse(text* textStr, text* textStrToSearch, int32 b
 static int getResultPostion(text* textStr, text* textStrToSearch, int32 beginIndex, int occurTimes);
 static long convert_bit_to_int (PG_FUNCTION_ARGS, int idx);
 
-static int get_step_len(unsigned char ch);
-
 typedef struct varlena unknown;
 typedef struct varlena VarString;
 
