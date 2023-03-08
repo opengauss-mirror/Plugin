@@ -388,5 +388,31 @@ delimiter ;
 call func_call_proc1(1);
 drop function if exists func_call_proc1(int);
 
+-- test for begin-end surrounded body statement without return
+drop table if exists t_create_begin_end_func_no_return;
+create table t_create_begin_end_func_no_return(c1 int);
+drop function if exists t_create_begin_end_func_no_return;
+delimiter |
+create function t_create_begin_end_func_no_return(num int) returns int
+    no sql
+BEGIN
+declare i int;
+set i = 0;
+while i < num do
+insert into t_create_begin_end_func_no_return values(i);
+set i = i + 1;
+end while;
+end|
+delimiter ;
+
+-- test for flow control body statement without return
+delimiter |
+drop function if exists t_create_flow_control_func_no_return|
+create function t_create_flow_control_func_no_return(b int) returns int
+    repeat
+	set b = b + 10;
+    until b > 10 end repeat|
+delimiter ;
+
 drop schema b_compat_create_func cascade;
 reset current_schema;
