@@ -199,6 +199,24 @@ loop
 end loop|
 select func3(3)|
 
+drop function if exists func3|
+create function func3(b int) returns int
+    label1:loop
+    if b < 10 then set b = b + 10;
+return b;
+end if;
+end loop|
+select func3(3)|
+
+drop function if exists func3|
+create function func3(b int) returns int
+    label1: loop
+    if b < 10 then set b = b + 10;
+return b;
+end if;
+end loop|
+select func3(3)|
+
 drop function if exists func4|
 create function func4(b int) returns int
     repeat
@@ -207,11 +225,43 @@ create function func4(b int) returns int
 until b > 10 end repeat|
 select func4(3)|
 
+drop function if exists func4|
+create function func4(b int) returns int
+    label2:repeat
+	set b = b + 10;
+return b;
+until b > 10 end repeat|
+select func4(3)|
+
+drop function if exists func4|
+create function func4(b int) returns int
+    label2: repeat
+	set b = b + 10;
+return b;
+until b > 10 end repeat|
+select func4(3)|
+
 drop function if exists func5|
 create function func5(b int) returns int
 while b < 10 do
     set b = b + 10;
     return b;
+end while|
+select func5(3)|
+
+drop function if exists func5|
+create function func5(b int) returns int
+    label3:while b < 10 do
+    set b = b + 10;
+return b;
+end while|
+select func5(3)|
+
+drop function if exists func5|
+create function func5(b int) returns int
+    label3: while b < 10 do
+    set b = b + 10;
+return b;
 end while|
 select func5(3)|
 
