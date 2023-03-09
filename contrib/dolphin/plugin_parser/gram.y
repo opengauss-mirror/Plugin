@@ -428,6 +428,8 @@ static char *pg_strsep(char **stringp, const char *delim);
 static long long get_pid(const char *strsid);
 static Node *MakeAnonyBlockFuncStmt(int flag, const char * str);
 static CharsetCollateOptions* MakeCharsetCollateOptions(CharsetCollateOptions *options, CharsetCollateOptions *option);
+static Node *checkNullNode(Node *n);
+
 static CreateTableOptions* MakeCreateTableOptions(CreateTableOptions *tableOptions, SingleTableOption *tableOption);
 static CreateIndexOptions* MakeCreateIndexOptions(CreateIndexOptions *indexOptions, SingleIndexOption *indexOption);
 static SingleTableOption* CreateSingleTableOption(TableOptionType tableOptionType);
@@ -497,6 +499,7 @@ static int GetFillerColIndex(char *filler_col_name, List *col_list);
 static void RemoveFillerCol(List *filler_list, List *col_list);
 static int errstate;
 static void CheckPartitionExpr(Node* expr, int* colCount);
+static char* GetValidUserHostId(char* userName, char* hostId);
 static void CheckHostId(char* hostId);
 static void CheckUserHostIsValid();
 
@@ -2001,23 +2004,24 @@ CreateOptRoleElem:
  *****************************************************************************/
 
 UserId:
-			SCONST '@' SCONST
+			SCONST SET_USER_IDENT
 					{
-						CheckUserHostIsValid();
-						CheckHostId($3);
-						StringInfoData buf;
-						initStringInfo(&buf);
-						appendStringInfoString(&buf, $1);
-						appendStringInfoString(&buf, "@");
-						appendStringInfoString(&buf, $3);
-						$$ = buf.data;
+						$$ = GetValidUserHostId($1, $2);
+					}
+			| SCONST '@' SCONST
+					{
+						$$ = GetValidUserHostId($1, $3);
 					}
 			| SCONST
 					{
 						CheckUserHostIsValid();
 						if (strchr($1,'@'))
-							CheckHostId(strchr($1,'@') + 1);
+							ereport(ERROR,(errcode(ERRCODE_INVALID_NAME),errmsg("@ can't be allowed in username")));
 						$$ = $1;
+					}
+			| RoleId SET_USER_IDENT
+					{
+						$$ = GetValidUserHostId($1, $2);
 					}
 			| RoleId
 					{
@@ -11651,9 +11655,10 @@ SnapshotStmt:
 
 				$$ = makeCallFuncStmt(
 					list_make2(makeString("db4ai"), makeString("create_snapshot")),
-					lcons(makeStringConst($4->schemaname, @4), list_make4(makeStringConst($4->relname, @4),
+					lcons(checkNullNode(makeStringConst($4->schemaname, @4)),
+					list_make4(checkNullNode(makeStringConst($4->relname, @4)),
 					makeAArrayExpr(list_make1(make_node_from_scanbuf(@10, yylloc , yyscanner)), @10),
-					makeStringConst($5, @5),makeStringConst($8, @8))));
+					checkNullNode(makeStringConst($5, @5)), checkNullNode(makeStringConst($8, @8)))));
 			}
 			| CREATE OptTemp SNAPSHOT qualified_name OptSnapshotVersion
 /* PGXC_BEGIN */
@@ -11717,8 +11722,11 @@ SnapshotStmt:
 
 				$$ = makeCallFuncStmt(
 					list_make2(makeString("db4ai"), makeString("prepare_snapshot")),
-					lcons(makeStringConst($4->schemaname, @4), list_make4(makeStringConst($4->relname, @4),
-					makeAArrayExpr($13, @13), makeStringConst($5, @5), makeStringConst($10, @10))));
+					lcons(checkNullNode(makeStringConst($4->schemaname, @4)),
+					list_make4(checkNullNode(makeStringConst($4->relname, @4)),
+					makeAArrayExpr($13, @13),
+					checkNullNode(makeStringConst($5, @5)),
+					checkNullNode(makeStringConst($10, @10)))));
 			}
 			| SAMPLE SNAPSHOT qualified_name SnapshotVersion OptSnapshotStratify SnapshotSampleList
 			{
@@ -11737,7 +11745,8 @@ SnapshotStmt:
 				List *stratify = NIL;
 				foreach_cell (c, $5) {
 					ColumnRef *r = (ColumnRef*)lfirst(c);
-					stratify = lappend(stratify, makeStringConst(((Value *)llast(r->fields))->val.str, @5));
+					stratify = lappend(stratify,
+					checkNullNode(makeStringConst(((Value *)llast(r->fields))->val.str, @5)));
 				}
 
 				List *names = NIL, *ratios = NIL, *comments = NIL;
@@ -11751,8 +11760,8 @@ SnapshotStmt:
 
 				$$ = makeCallFuncStmt(
 					list_make2(makeString("db4ai"), makeString("sample_snapshot")),
-					lcons(makeStringConst($3->schemaname, @3),
-					lcons(makeStringConst($3->relname, @3),
+					lcons(checkNullNode(makeStringConst($3->schemaname, @3)),
+					lcons(checkNullNode(makeStringConst($3->relname, @3)),
 					list_make4(makeAArrayExpr(names, -1), makeAArrayExpr(ratios, -1),
 						(stratify == NIL) ? makeNullAConst(-1) : makeAArrayExpr(stratify, @5),
 						makeAArrayExpr(comments, -1)))));
@@ -11773,7 +11782,8 @@ SnapshotStmt:
 
 				$$ = makeCallFuncStmt(
 					list_make2(makeString("db4ai"), makeString("archive_snapshot")),
-					list_make2(makeStringConst($3->schemaname, @3), makeStringConst($3->relname, @3)));
+					list_make2(checkNullNode(makeStringConst($3->schemaname, @3)),
+					checkNullNode(makeStringConst($3->relname, @3))));
 			}
 			| PUBLISH SNAPSHOT qualified_name SnapshotVersion
 			{
@@ -11791,7 +11801,8 @@ SnapshotStmt:
 
 				$$ = makeCallFuncStmt(
 					list_make2(makeString("db4ai"), makeString("publish_snapshot")),
-					list_make2(makeStringConst($3->schemaname, @3), makeStringConst($3->relname, @3)));
+					list_make2(checkNullNode(makeStringConst($3->schemaname, @3)),
+					checkNullNode(makeStringConst($3->relname, @3))));
 			}
 			| PURGE SNAPSHOT qualified_name SnapshotVersion {}
 			{
@@ -11809,7 +11820,8 @@ SnapshotStmt:
 
 				$$ = makeCallFuncStmt(
 					list_make2(makeString("db4ai"), makeString("purge_snapshot")),
-					list_make2(makeStringConst($3->schemaname, @3), makeStringConst($3->relname, @3)));
+					list_make2(checkNullNode(makeStringConst($3->schemaname, @3)),
+					checkNullNode(makeStringConst($3->relname, @3))));
 			}
 		;
 
@@ -39230,6 +39242,26 @@ static CharsetCollateOptions* MakeCharsetCollateOptions(CharsetCollateOptions *o
 	return options;
 }
 
+static char* GetValidUserHostId(char* userName, char* hostId)
+{
+	CheckUserHostIsValid();
+	char* userHostId = NULL;
+	if (*hostId == '\'') {
+		userHostId = hostId + 1;
+		hostId[strlen(hostId)-1] = '\0';
+	} else {
+		userHostId = hostId;
+	}
+	if (strcmp("localhost", userHostId) != 0)
+		CheckHostId(userHostId);
+	StringInfoData buf;
+	initStringInfo(&buf);
+	appendStringInfoString(&buf, userName);
+	appendStringInfoString(&buf, "@");
+	appendStringInfoString(&buf, userHostId);
+	return buf.data;
+}
+
 static void CheckHostId(char* hostId)
 {
 	char* tmp = hostId;
@@ -39244,6 +39276,20 @@ static void CheckUserHostIsValid()
 	if (u_sess->attr.attr_sql.sql_compatibility == B_FORMAT && u_sess->attr.attr_common.test_user_host)
 		return;
 	ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("user@host is only supported in b database when the test_user_host is on")));
+}
+
+static Node *checkNullNode(Node *n)
+{
+	A_Const *c = (A_Const *)n;
+	A_Const *r = makeNode(A_Const);
+	if (c->val.val.str == NULL || strlen(c->val.val.str) == 0)
+	{
+		r->val.type = T_Null;
+		r->val.val.str = c->val.val.str;
+		r->location = c->location;
+		return (Node *)r;
+	}
+	return n;
 }
 
 /* return a function option list that is filtered. */
