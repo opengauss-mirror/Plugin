@@ -1183,7 +1183,7 @@ static char* appendString(char* source, char* target, int offset);
 	DROP DUPLICATE DISCONNECT DUMPFILE
 
 	EACH ELASTIC ELSE ENABLE_P ENCLOSED ENCODING ENCRYPTED ENCRYPTED_VALUE ENCRYPTION ENCRYPTION_TYPE END_P ENDS ENFORCED ENGINE_ATTRIBUTE ENGINE_P ENUM_P ERRORS ESCAPE ESCAPED EOL ESCAPING EVENT EVENTS EVERY EXCEPT EXCHANGE
-	EXCLUDE EXCLUDED EXCLUDING EXCLUSIVE EXECUTE EXISTS EXPIRED_P EXPLAIN
+	EXCLUDE EXCLUDED EXCLUDING EXCLUSIVE EXECUTE EXISTS EXPANSION EXPIRED_P EXPLAIN
 	EXTENDED EXTENSION EXTERNAL EXTRACT
 
 	FALSE_P FAMILY FAST FENCED FETCH FIELDS FILEHEADER_P FILL_MISSING_FIELDS FILLER FILTER FIRST_P FIXED_P FLOAT_P FLUSH FOLLOWING FOLLOWS_P FOR FORCE FOREIGN FORMATTER FORWARD
@@ -1290,7 +1290,7 @@ static char* appendString(char* source, char* target, int offset);
 			DEFAULT_FUNC MATCH_FUNC
 			DO_SCONST DO_LANGUAGE SHOW_STATUS BEGIN_B_BLOCK
 			FORCE_INDEX USE_INDEX LOCK_TABLES
-			LABEL_LOOP LABEL_REPEAT LABEL_WHILE
+			LABEL_LOOP LABEL_REPEAT LABEL_WHILE WITH_PARSER
 
 /* Precedence: lowest to highest */
 %nonassoc COMMENT
@@ -5323,36 +5323,6 @@ alter_table_cmd:
 				n->def = $2;
 				$$ = (Node *)n;
 			}
-			/* ALTER TABLE <name> ADD FULLTEXT INDEX ... */
-			| ADD_P FULLTEXT INDEX index_name '(' fulltext_index_params ')' WITH PARSER NGRAM
-			{
-				IndexStmt *n = makeNode(IndexStmt);
-				n->unique = false;
-				n->concurrent = false;
-				n->idxname = $4;
-				n->relation = NULL;
-				n->accessMethod = "gin";
-				n->indexParams = $6;
-				n->excludeOpNames = NIL;
-				n->idxcomment = NULL;
-				n->indexOid = InvalidOid;
-				n->oldNode = InvalidOid;
-				n->partClause = NULL;
-				n->isPartitioned = false;
-				n->isGlobal = false;
-				n->primary = false;
-				n->isconstraint = false;
-				n->deferrable = false;
-				n->initdeferred = false;
-				n->indexIncludingParams = NIL;
-				n->options = NIL;
-				n->tableSpace = NULL;
-
-				AlterTableCmd *ati = makeNode(AlterTableCmd);
-				ati->subtype = AT_AddIndex;
-				ati->def = (Node *)n;
-				$$ = (Node *)ati;
-			}
 			/* ALTER TABLE <name> VALIDATE CONSTRAINT ... */
 			| VALIDATE CONSTRAINT name
 				{
@@ -6124,6 +6094,12 @@ table_index_option:
 			 {
 					BCompatibilityOptionSupportCheck($1);
 					Value *n = makeString("visible");
+					$$ = (Node*)n;
+			 }
+			 | WITH_PARSER NGRAM
+			 {
+					BCompatibilityOptionSupportCheck($2);
+					Value *n = makeString("ngram");
 					$$ = (Node*)n;
 			 }
 		;
@@ -9448,7 +9424,137 @@ TableIndexClause:
 					n->initdeferred = false;
 					$$ = (Node *)n;	
 			}
-			| FULLTEXT '(' fulltext_index_params ')' WITH PARSER NGRAM
+			| FULLTEXT INDEX index_name '(' fulltext_index_params ')' opt_table_index_options
+			{
+					IndexStmt *n = makeNode(IndexStmt);
+					n->unique = false;
+					n->concurrent = false;
+					n->idxname = $3;
+					n->relation = NULL;
+					n->accessMethod = "gin";
+					n->indexParams = $5;
+					n->excludeOpNames = NIL;
+					n->idxcomment = NULL;
+					n->indexOid = InvalidOid;
+					n->oldNode = InvalidOid;
+					n->partClause = NULL;
+					n->isPartitioned = false;
+					n->isGlobal = false;
+					n->primary = false;
+					n->isconstraint = false;
+					n->deferrable = false;
+					n->initdeferred = false;
+					n->indexIncludingParams = NIL;
+					n->options = NIL;
+					n->tableSpace = NULL;
+					n->indexOptions = $7;
+					$$ = (Node *)n;
+			}
+			| FULLTEXT INDEX '(' fulltext_index_params ')' opt_table_index_options
+			{
+					IndexStmt *n = makeNode(IndexStmt);
+					n->unique = false;
+					n->concurrent = false;
+					n->idxname = NULL;
+					n->relation = NULL;
+					n->accessMethod = "gin";
+					n->indexParams = $4;
+					n->excludeOpNames = NIL;
+					n->idxcomment = NULL;
+					n->indexOid = InvalidOid;
+					n->oldNode = InvalidOid;
+					n->partClause = NULL;
+					n->isPartitioned = false;
+					n->isGlobal = false;
+					n->primary = false;
+					n->isconstraint = false;
+					n->deferrable = false;
+					n->initdeferred = false;
+					n->indexIncludingParams = NIL;
+					n->options = NIL;
+					n->tableSpace = NULL;
+					n->indexOptions = $6;
+					$$ = (Node *)n;
+			}
+			| FULLTEXT KEY index_name '(' fulltext_index_params ')' opt_table_index_options
+			{
+					IndexStmt *n = makeNode(IndexStmt);
+					n->unique = false;
+					n->concurrent = false;
+					n->idxname = $3;
+					n->relation = NULL;
+					n->accessMethod = "gin";
+					n->indexParams = $5;
+					n->excludeOpNames = NIL;
+					n->idxcomment = NULL;
+					n->indexOid = InvalidOid;
+					n->oldNode = InvalidOid;
+					n->partClause = NULL;
+					n->isPartitioned = false;
+					n->isGlobal = false;
+					n->primary = false;
+					n->isconstraint = false;
+					n->deferrable = false;
+					n->initdeferred = false;
+					n->indexIncludingParams = NIL;
+					n->options = NIL;
+					n->tableSpace = NULL;
+					n->indexOptions = $7;
+					$$ = (Node *)n;
+			}
+			| FULLTEXT KEY '(' fulltext_index_params ')' opt_table_index_options
+			{
+					IndexStmt *n = makeNode(IndexStmt);
+					n->unique = false;
+					n->concurrent = false;
+					n->idxname = NULL;
+					n->relation = NULL;
+					n->accessMethod = "gin";
+					n->indexParams = $4;
+					n->excludeOpNames = NIL;
+					n->idxcomment = NULL;
+					n->indexOid = InvalidOid;
+					n->oldNode = InvalidOid;
+					n->partClause = NULL;
+					n->isPartitioned = false;
+					n->isGlobal = false;
+					n->primary = false;
+					n->isconstraint = false;
+					n->deferrable = false;
+					n->initdeferred = false;
+					n->indexIncludingParams = NIL;
+					n->options = NIL;
+					n->tableSpace = NULL;
+					n->indexOptions = $6;
+					$$ = (Node *)n;
+			}
+			| FULLTEXT index_name '(' fulltext_index_params ')' opt_table_index_options
+			{
+					IndexStmt *n = makeNode(IndexStmt);
+					n->unique = false;
+					n->concurrent = false;
+					n->idxname = $2;
+					n->relation = NULL;
+					n->accessMethod = "gin";
+					n->indexParams = $4;
+					n->excludeOpNames = NIL;
+					n->idxcomment = NULL;
+					n->indexOid = InvalidOid;
+					n->oldNode = InvalidOid;
+					n->partClause = NULL;
+					n->isPartitioned = false;
+					n->isGlobal = false;
+					n->primary = false;
+					n->isconstraint = false;
+					n->deferrable = false;
+					n->initdeferred = false;
+					n->indexIncludingParams = NIL;
+					n->options = NIL;
+					n->tableSpace = NULL;
+					n->indexOptions = $6;
+					$$ = (Node *)n;
+			}
+			| FULLTEXT '(' fulltext_index_params ')' opt_table_index_options
 			{
 					IndexStmt *n = makeNode(IndexStmt);
 					n->unique = false;
@@ -9471,6 +9577,7 @@ TableIndexClause:
 					n->indexIncludingParams = NIL;
 					n->options = NIL;
 					n->tableSpace = NULL;
+					n->indexOptions = $5;
 					$$ = (Node *)n;
 			}
 		;
@@ -17345,7 +17452,7 @@ IndexStmt:	CREATE opt_unique INDEX opt_concurrently opt_index_name
 					$$ = (Node *)n;
 				}
 				| CREATE FULLTEXT INDEX opt_index_name
-					fulltext_index_method_relation_clause '(' fulltext_index_params ')' WITH PARSER NGRAM
+					fulltext_index_method_relation_clause '(' fulltext_index_params ')' opt_table_index_options
 				{
 					IndexStmt *n = makeNode(IndexStmt);
 					n->unique = false;
@@ -17369,6 +17476,7 @@ IndexStmt:	CREATE opt_unique INDEX opt_concurrently opt_index_name
 					n->indexIncludingParams = NIL;
 					n->options = NIL;
 					n->tableSpace = NULL;
+					n->indexOptions = $9;
 					$$ = (Node *)n;
 				}
 				| CREATE opt_unique INDEX opt_concurrently opt_index_name
@@ -18584,6 +18692,15 @@ index_method_relation_clause:
 					 result->accessMethod = $2;
 					 $$ = result;
 				}
+		;
+
+search_modifier:
+			IN_P NATURAL LANGUAGE MODE
+			| IN_P NATURAL LANGUAGE MODE WITH QUERY EXPANSION
+			| IN_P BOOLEAN_P MODE
+			| WITH QUERY EXPANSION
+			| /* EMPTY */
+		;
 
 /*
  * Index attributes can be either simple column references, or arbitrary
@@ -32018,7 +32135,7 @@ a_expr:		c_expr									{ $$ = $1; }
 					c->fields = lcons((Node *)makeString("excluded"), c->fields);
 					$$ = (Node *) $3;
 				}
-			| MATCH_FUNC fulltext_match_params ')' AGAINST '(' Sconst ')'
+			| MATCH_FUNC fulltext_match_params ')' AGAINST '(' Sconst search_modifier ')'
 				{
 					FuncCall *lexpr_func = makeNode(FuncCall);
 					lexpr_func->funcname = SystemFuncName("to_tsvector");
@@ -35722,6 +35839,7 @@ unreserved_keyword_without_key:
 			| EXCLUDING
 			| EXCLUSIVE
 			| EXECUTE
+			| EXPANSION
 			| EXPIRED_P
 			| EXPLAIN
 			| EXTENDED

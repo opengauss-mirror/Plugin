@@ -199,12 +199,6 @@ static bool IsAlterStmtAlgorithm(char* scanbuf)
 
     return (pg_strcasecmp(ptr, "algorithm") == 0);
 }
-
-static inline bool IsSelectStmt(char* scanbuf)
-{
-    const int selectSize = 6;
-    return (scanbuf && pg_strncasecmp(scanbuf, "select", selectSize) == 0);
-}
 #endif
 
 /*
@@ -373,6 +367,9 @@ int base_yylex(YYSTYPE* lvalp, YYLTYPE* llocp, core_yyscan_t yyscanner)
 #ifdef DOLPHIN
                 case ROLLUP:
                     cur_token = WITH_ROLLUP;
+                    break;
+                case PARSER:
+                    cur_token = WITH_PARSER;
                     break;
 #endif
                 default:
@@ -852,10 +849,8 @@ int base_yylex(YYSTYPE* lvalp, YYLTYPE* llocp, core_yyscan_t yyscanner)
             GET_NEXT_TOKEN();
             switch (next_token) {
                 case '(':
-                    if (IsSelectStmt(yyextra->core_yy_extra.scanbuf)) {
-                        cur_token = MATCH_FUNC;
-                        break;
-                    }
+                    cur_token = MATCH_FUNC;
+                    break;
                 default:
                     /* save the lookahead token for next time */
                     SET_LOOKAHEAD_TOKEN();
