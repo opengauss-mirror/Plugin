@@ -372,6 +372,24 @@ typedef struct DolphinString
 #define parser_yyerror(msg)  scanner_yyerror(msg, yyscanner)
 #define parser_errposition(pos)  scanner_errposition(pos, yyscanner)
 
+#define SYS_SCHEMA_COUNT 14
+static const char* sys_schemas[SYS_SCHEMA_COUNT] = {
+	"pg_toast",
+	"cstore",
+	"pkg_service",
+	"dbe_perf",
+	"snapshot",
+	"blockchain",
+	"pg_catalog",
+	"public",
+	"sqladvisor",
+	"dbe_pldebugger",
+	"dbe_pldeveloper",
+	"dbe_sql_util",
+	"information_schema",
+	"db4ai"
+};
+
 static long conv_bit_to_int(A_Const* bitStr);
 static void fix_bw_type(Node* bw_arg1, Node* bw_arg2, Node* bw_arg3);
 static void fix_bw_bool(Node** bw_arg1, Node** bw_arg2, Node** bw_arg3);
@@ -512,6 +530,7 @@ static DolphinString* MakeDolphinStringByNode(Node* node, bool is_quoted);
 static List* GetNameListFromDolphinString(List* dolphinStringList);
 static char* GetDolphinObjName(char* string, bool is_quoted);
 static bool DolphinObjNameCmp(const char* s1, const char* s2, bool is_quoted);
+static char* GetDolphinSchemaName(char* string, bool is_quoted);
 static char* SingleLineProcedureQueryGet(int& start_pos, int& end_pos, base_yy_extra_type* yyextra);
 static void setAccessMethod(Constraint *n);
 static SelectStmt *MakeFunctionSelect(char *funcCall, List* args, core_yyscan_t yyscanner);
@@ -735,7 +754,7 @@ static char* appendString(char* source, char* target, int offset);
 				index_name cluster_index_specification dolphin_index_name
 				pgxcnode_name pgxcgroup_name resource_pool_name workload_group_name
 				application_name password_string hint_string
-%type <list>	func_name func_name_opt_arg pkg_name  handler_name qual_Op qual_all_Op subquery_Op dolphin_func_name
+%type <list>	func_name func_name_opt_arg dolphin_func_name_opt_arg pkg_name  handler_name qual_Op qual_all_Op subquery_Op dolphin_func_name
 				opt_class opt_inline_handler opt_validator validator_clause
 				opt_collation collate_option
 
@@ -780,7 +799,7 @@ static char* appendString(char* source, char* target, int offset);
 				opt_column_list columnList opt_name_list opt_analyze_column_define opt_multi_name_list
 				opt_include_without_empty opt_c_include index_including_params
 				sort_clause opt_sort_clause sortby_list index_params fulltext_index_params table_index_elems constraint_params
-				name_list UserIdList from_clause from_list opt_array_bounds dolphin_name_list
+				name_list UserIdList from_clause from_list opt_array_bounds dolphin_schema_name_list
 				qualified_name_list any_name type_name_list collate_name any_name_or_sconst any_name_list dolphin_qualified_name_list dolphin_any_name dolphin_any_name_list
 				any_operator expr_list attrs callfunc_args callfunc_args_or_empty dolphin_attrs rename_user_clause rename_list
 				target_list insert_column_list set_target_list rename_clause_list rename_clause
@@ -861,7 +880,7 @@ static char* appendString(char* source, char* target, int offset);
 %type <boolean> copy_from
 
 %type <ival>	opt_column event cursor_options opt_hold opt_set_data
-%type <objtype>	reindex_type drop_type comment_type security_label_type dolphin_comment_type dolphin_security_label_type
+%type <objtype>	reindex_type drop_type dolphin_drop_type comment_type security_label_type dolphin_comment_type dolphin_security_label_type
 
 %type <node>	fetch_args limit_clause select_limit_value
 				offset_clause select_offset_value
@@ -930,7 +949,7 @@ static char* appendString(char* source, char* target, int offset);
 				CharacterWithLength CharacterWithoutLength
 				PreciseConstDatetime ConstDatetime ConstSet
 				Bit ConstBit BitWithLength BitWithoutLength client_logic_type
-				datatypecl OptCopyColTypename Binary EnumType
+				datatypecl OptCopyColTypename EnumType
 %type <str>		character
 %type <str>		extract_arg msq_extract_arg
 %type <str>		timestamp_units
@@ -946,8 +965,8 @@ static char* appendString(char* source, char* target, int offset);
 %type <ival>	Iconst SignedIconst opt_partitions_num opt_subpartitions_num
 %type <str>		Sconst comment_text notify_payload DolphinColColId 
 %type <str>		RoleId RoleIdWithOutCurrentUser TypeOwner opt_granted_by opt_boolean_or_string ColId_or_Sconst Dolphin_ColId_or_Sconst definer_user definer_expression UserId
-%type <list>	var_list guc_value_extension_list
-%type <str>		ColId ColLabel var_name type_function_name param_name charset_collate_name opt_password opt_replace show_index_schema_opt ColIdForTableElement PrivilegeColId
+%type <list>	var_list guc_value_extension_list schema_var_list
+%type <str>		ColId ColLabel var_name dolphin_var_name schema_var type_function_name param_name charset_collate_name opt_password opt_replace show_index_schema_opt ColIdForTableElement PrivilegeColId
 %type <node>	var_value zone_value
 %type <dolphinString>	DolphinColId DolphinColLabel dolphin_indirection_el
 
@@ -1242,7 +1261,7 @@ static char* appendString(char* source, char* target, int offset);
 
 	AST
 
-%token ALGORITHM_UNDEFINED ALGORITHM_MERGE ALGORITHM_TEMPTABLE ALGORITHM_TEMPTABLE
+%token ALGORITHM_UNDEFINED ALGORITHM_MERGE ALGORITHM_TEMPTABLE
 
 /*
  * The grammar thinks these are keywords, but they are not in the kwlist.h
@@ -2411,24 +2430,24 @@ CreateSchemaStmt:
 					n->charset = PG_INVALID_ENCODING;
 					$$ = (Node *)n;
 				}
-			| CREATE SCHEMA ColId OptBlockchainWith OptSchemaEltList
+			| CREATE SCHEMA DolphinColId OptBlockchainWith OptSchemaEltList
 				{
 					CreateSchemaStmt *n = makeNode(CreateSchemaStmt);
 					n->missing_ok = FALSE;
 					/* ...but not both */
-					n->schemaname = $3;
+					n->schemaname = GetDolphinSchemaName($3->str, $3->is_quoted);
 					n->authid = NULL;
 					n->hasBlockChain = $4;
 					n->schemaElts = $5;
 					n->charset = PG_INVALID_ENCODING;
 					$$ = (Node *)n;
 				}
-			| CREATE SCHEMA IF_P NOT EXISTS ColId OptBlockchainWith OptSchemaEltList
+			| CREATE SCHEMA IF_P NOT EXISTS DolphinColId OptBlockchainWith OptSchemaEltList
 				{
 					CreateSchemaStmt *n = makeNode(CreateSchemaStmt);
 					n->missing_ok = TRUE;
 					/* ...but not both */
-					n->schemaname = $6;
+					n->schemaname = GetDolphinSchemaName($6->str, $6->is_quoted);
 					n->authid = NULL;
 					n->hasBlockChain = $7;
 					n->schemaElts = $8;
@@ -2448,10 +2467,10 @@ CreateSchemaStmt:
 					n->schemaElts = $10;
 					$$ = (Node *)n;
 				}
-			| CREATE SCHEMA ColId CharsetCollate
+			| CREATE SCHEMA DolphinColId CharsetCollate
 				{
 					CreateSchemaStmt *n = makeNode(CreateSchemaStmt);
-					n->schemaname = $3;
+					n->schemaname = GetDolphinSchemaName($3->str, $3->is_quoted);
 					n->authid = NULL;
 					n->hasBlockChain = false;
 					n->schemaElts = NULL;
@@ -2462,7 +2481,7 @@ CreateSchemaStmt:
 		;
 
 OptSchemaName:
-			ColId									{ $$ = $1; }
+			DolphinColId							{ $$ = GetDolphinSchemaName($1->str, $1->is_quoted); }
 			| /* EMPTY */							{ $$ = NULL; }
 		;
 
@@ -2493,20 +2512,20 @@ OptBlockchainWith:
  *
  *****************************************************************************/
 AlterSchemaStmt:
-			ALTER SCHEMA ColId OptAlterToBlockchain
+			ALTER SCHEMA DolphinColId OptAlterToBlockchain
 				{
 					AlterSchemaStmt *n = makeNode(AlterSchemaStmt);
-					n->schemaname = $3;
+					n->schemaname = GetDolphinSchemaName($3->str, $3->is_quoted);
 					n->authid = NULL;
 					n->hasBlockChain = $4;
 					n->charset = PG_INVALID_ENCODING;
 					n->collate = NULL;
 					$$ = (Node *)n;
 				}
-			| ALTER SCHEMA ColId CharsetCollate
+			| ALTER SCHEMA DolphinColId CharsetCollate
 				{
 					AlterSchemaStmt *n = makeNode(AlterSchemaStmt);
-					n->schemaname = $3;
+					n->schemaname = GetDolphinSchemaName($3->str, $3->is_quoted);
 					n->authid = NULL;
 					n->hasBlockChain = false;
 					n->charset = $4->charset;
@@ -2709,12 +2728,13 @@ set_rest:
 			;
 
 generic_set:
-			var_name TO var_list
+			var_name TO { GetSessionContext()->is_schema_name = (strcmp($1, "search_path") == 0); } var_list
 				{
+					GetSessionContext()->is_schema_name = false;
 					VariableSetStmt *n = makeNode(VariableSetStmt);
 					n->kind = VAR_SET_VALUE;
 					n->name = $1;
-					n->args = $3;
+					n->args = $4;
 					/* if we are setting role, we switch to the new syntax which check the password of role */
 					if(!pg_strcasecmp("role", n->name) || !pg_strcasecmp("session_authorization", n->name))
 					{
@@ -2731,8 +2751,9 @@ generic_set:
 					}
 					$$ = n;
 				}
-			| var_name assign_operator  var_list
+			| dolphin_var_name assign_operator  var_list
 				{
+					GetSessionContext()->is_schema_name = false;
 					VariableSetStmt *n = makeNode(VariableSetStmt);
 					n->kind = VAR_SET_VALUE;
 					n->name = $1;
@@ -2760,14 +2781,15 @@ generic_set:
 					n->name = $1;
 					$$ = n;
 				}
-			| var_name assign_operator  DEFAULT
+			| dolphin_var_name assign_operator  DEFAULT
 				{
+					GetSessionContext()->is_schema_name = false;
 					VariableSetStmt *n = makeNode(VariableSetStmt);
 					n->kind = VAR_SET_DEFAULT;
 					n->name = $1;
 					$$ = n;
 				}
-			| CURRENT_SCHEMA TO var_list
+			| CURRENT_SCHEMA TO schema_var_list
 				{
 					VariableSetStmt *n = makeNode(VariableSetStmt);
 					n->kind = VAR_SET_VALUE;
@@ -2775,7 +2797,7 @@ generic_set:
 					n->args = $3;
 					$$ = n;
 				}
-			| CURRENT_SCHEMA assign_operator  var_list
+			| CURRENT_SCHEMA assign_operator  schema_var_list
 				{
 					VariableSetStmt *n = makeNode(VariableSetStmt);
 					n->kind = VAR_SET_VALUE;
@@ -3001,7 +3023,7 @@ set_global:	 set_global_extension
  				}
 
 generic_set_extension:
-			 var_name assign_operator guc_value_extension_list
+			 dolphin_var_name assign_operator guc_value_extension_list
 				{
 					VariableSetStmt *n = makeNode(VariableSetStmt);
 					n->kind = VAR_SET_VALUE;
@@ -3087,7 +3109,7 @@ set_global_extension:
  		;
  
 guc_variable_set:
-			var_name assign_operator set_expr
+			dolphin_var_name assign_operator set_expr
 				{
 					VariableSetStmt *n = makeNode(VariableSetStmt);
 					n->kind = VAR_SET_VALUE;
@@ -3110,7 +3132,7 @@ guc_variable_set:
 					}
 					$$ = n;
 				}
-			| var_name assign_operator DEFAULT
+			| dolphin_var_name assign_operator DEFAULT
 				{
 					VariableSetStmt *n = makeNode(VariableSetStmt);
 					n->kind = VAR_SET_DEFAULT;
@@ -3377,8 +3399,19 @@ var_name:	ColId								{ $$ = $1; }
 				}
 		;
 
+dolphin_var_name: var_name
+					{ GetSessionContext()->is_schema_name = (strcmp($1, "search_path") == 0); }
+					{ $$ = $1; };
+
 var_list:	var_value								{ $$ = list_make1($1); }
 			| var_list ',' var_value				{ $$ = lappend($1, $3); }
+		;
+
+schema_var_list:	schema_var										{ $$ = list_make1(makeStringConst($1, @1)); }
+					| schema_var_list ',' schema_var				{ $$ = lappend($1, makeStringConst($3, @3)); }
+schema_var:
+			DolphinColId							{ $$ = GetDolphinSchemaName($1->str, $1->is_quoted); }
+			| Sconst								{ $$ = $1; }
 		;
 
 var_value:	opt_boolean_or_string
@@ -3489,7 +3522,14 @@ ColId_or_Sconst:
 		;
 
 Dolphin_ColId_or_Sconst:
-			DolphinColId							{ $$ = downcase_str($1->str, $1->is_quoted); }
+			DolphinColId
+				{
+					if (GetSessionContext()->is_schema_name) {
+						$$ = GetDolphinSchemaName($1->str, $1->is_quoted);
+					} else {
+						$$ = downcase_str($1->str, $1->is_quoted);
+					}
+				}
 			| Sconst								{ $$ = $1; }
 		;
 
@@ -3913,12 +3953,12 @@ VariableShowStmt:
 					}
 					$$ = (Node *) n;
 				}
-			| SHOW CREATE TABLE qualified_name
+			| SHOW CREATE TABLE dolphin_qualified_name
 				{
 					SelectStmt *n = findCreateClass($4,GS_SHOW_CREATE_TABLE);
 					$$ = (Node *) n;
 				}
-			| SHOW CREATE VIEW qualified_name
+			| SHOW CREATE VIEW dolphin_qualified_name
 				{
 					SelectStmt *n = findCreateClass($4,GS_SHOW_CREATE_VIEW);
 					$$ = (Node *) n;
@@ -4380,7 +4420,7 @@ AlterTableStmt:
 					n->missing_ok = true;
 					$$ = (Node *)n;
 				}
-		|	ALTER opt_view_algo VIEW  qualified_name alter_table_cmds
+		|	ALTER opt_view_algo VIEW dolphin_qualified_name alter_table_cmds
 				{
 					AlterTableStmt *n = makeNode(AlterTableStmt);
 					n->relation = $4;
@@ -4389,7 +4429,7 @@ AlterTableStmt:
 					n->missing_ok = false;
 					$$ = (Node *)n;
 				}
-		|	ALTER opt_view_algo VIEW IF_P EXISTS qualified_name alter_table_cmds
+		|	ALTER opt_view_algo VIEW IF_P EXISTS dolphin_qualified_name alter_table_cmds
 				{
 					AlterTableStmt *n = makeNode(AlterTableStmt);
 					n->relation = $6;
@@ -12547,9 +12587,9 @@ create_extension_opt_list:
 		;
 
 create_extension_opt_item:
-			SCHEMA name
+			SCHEMA DolphinColId
 				{
-					$$ = makeDefElem("schema", (Node *)makeString($2));
+					$$ = makeDefElem("schema", (Node *)makeString(GetDolphinSchemaName($2->str, $2->is_quoted)));
 				}
 			| VERSION_P ColId_or_Sconst
 				{
@@ -12746,13 +12786,13 @@ AlterExtensionContentsStmt:
 					n->objname = lcons(makeString($9), $7);
 					$$ = (Node *)n;
 				}
-			| ALTER EXTENSION name add_drop SCHEMA name
+			| ALTER EXTENSION name add_drop SCHEMA DolphinColId
 				{
 					AlterExtensionContentsStmt *n = makeNode(AlterExtensionContentsStmt);
 					n->extname = $3;
 					n->action = $4;
 					n->objtype = OBJECT_SCHEMA;
-					n->objname = list_make1(makeString($6));
+					n->objname = list_make1(makeString(GetDolphinSchemaName($6->str, $6->is_quoted)));
 					$$ = (Node *)n;
 				}
 			| ALTER EXTENSION name add_drop TABLE dolphin_any_name
@@ -15261,29 +15301,29 @@ DropStmt:	DROP drop_type IF_P EXISTS any_name_list opt_drop_behavior opt_purge
 					n->concurrent = false;
 					$$ = (Node *) n;
 				}
-			| DROP opt_temporary TABLE IF_P EXISTS dolphin_any_name_list opt_drop_behavior opt_purge
+			| DROP dolphin_drop_type IF_P EXISTS dolphin_any_name_list opt_drop_behavior opt_purge
 				{
 					DropStmt *n = makeNode(DropStmt);
-					n->removeType = OBJECT_TABLE;
+					n->removeType = $2;
 					n->missing_ok = TRUE;
-					n->objects = $6;
+					n->objects = $5;
 					n->arguments = NIL;
-					n->behavior = $7;
+					n->behavior = $6;
 					n->concurrent = false;
-					n->purge = $8;
+					n->purge = $7;
 
 					$$ = (Node *)n;
 				}
-			| DROP opt_temporary TABLE dolphin_any_name_list opt_drop_behavior opt_purge
+			| DROP dolphin_drop_type dolphin_any_name_list opt_drop_behavior opt_purge
 				{
 					DropStmt *n = makeNode(DropStmt);
-					n->removeType = OBJECT_TABLE;
+					n->removeType = $2;
 					n->missing_ok = FALSE;
-					n->objects = $4;
+					n->objects = $3;
 					n->arguments = NIL;
-					n->behavior = $5;
+					n->behavior = $4;
 					n->concurrent = false;
-					n->purge = $6;
+					n->purge = $5;
 					$$ = (Node *)n;
 				}
 			| DROP INDEX IF_P EXISTS any_name_list opt_drop_behavior opt_purge on_table opt_idx_algo
@@ -15365,17 +15405,19 @@ opt_temporary:
 			TEMPORARY
 			| /* EMPTY */							{ $$ = NULL; }
 		;
+dolphin_drop_type:	opt_temporary TABLE						{ $$ = OBJECT_TABLE; }
+					| SCHEMA								{ $$ = OBJECT_SCHEMA; }
+					| VIEW									{ $$ = OBJECT_VIEW; }
+
 
 drop_type:	 CONTVIEW                              { $$ = OBJECT_CONTQUERY; }
             | STREAM                                { $$ = OBJECT_STREAM; }
 			| SEQUENCE								{ $$ = OBJECT_SEQUENCE; }
 			| LARGE_P SEQUENCE						{ $$ = OBJECT_LARGE_SEQUENCE; }
-			| VIEW									{ $$ = OBJECT_VIEW; }
 			| MATERIALIZED VIEW 					{ $$ = OBJECT_MATVIEW; }
 			| FOREIGN TABLE							{ $$ = OBJECT_FOREIGN_TABLE; }
 			| COLLATION								{ $$ = OBJECT_COLLATION; }
 			| CONVERSION_P							{ $$ = OBJECT_CONVERSION; }
-			| SCHEMA								{ $$ = OBJECT_SCHEMA; }
 			| EVENT_TRIGGER                         { $$ = OBJECT_EVENT_TRIGGER; }
 			| EXTENSION								{ $$ = OBJECT_EXTENSION; }
 			| TEXT_P SEARCH PARSER					{ $$ = OBJECT_TSPARSER; }
@@ -15423,21 +15465,36 @@ dolphin_any_name:	DolphinColId						{ $$ = list_make1(makeString(GetDolphinObjNa
 			| DolphinColId dolphin_attrs
 			{
 				List* list = $2;
-				List* result = list_make1(makeString(downcase_str($1->str, $1->is_quoted)));
+				List* result = NIL;
 				ListCell * cell = NULL;
 				int length = list_length($2);
-				int count = 1;
+				int count = 0;
+				int table_index = -1;
+				int schema_index = -1;
+				switch (length) {
+					case 1:
+						/* schema_name.table_name */
+						result = lappend(result, makeString(GetDolphinSchemaName($1->str, $1->is_quoted)));
+						table_index = 0;
+						break;
+					case 2:
+						/* catalog_name.schema_name.table_name */
+						result = lappend(result, makeString(downcase_str($1->str, $1->is_quoted)));
+						/* fall through */
+					default:
+						schema_index = 0;
+						table_index = 1;
+						break;
+				}
 				foreach (cell, list) {
 					DolphinString* dolphinString = (DolphinString*)lfirst(cell);
 					Value* value = (Value*)(dolphinString->node);
 					char* str = strVal(value);
 					bool is_quoted = dolphinString->is_quoted;
-					if (length == 1 && count == 1) {
-						/* schema_name.table_name */
+					if (count == table_index) {
 						result = lappend(result, makeString(GetDolphinObjName(str, is_quoted)));
-					} else if (count == 2) {
-						/* category_name.schema_name.table_name */
-						result = lappend(result, makeString(GetDolphinObjName(str, is_quoted)));
+					} else if (count == schema_index) {
+						result = lappend(result, makeString(GetDolphinSchemaName(str, is_quoted)));
 					} else {
 						/* other_names */
 						result = lappend(result, makeString(downcase_str(str, is_quoted)));
@@ -16320,7 +16377,7 @@ index_target:
 				n->objs = $2;
 				$$ = n;
 			}
-		| ALL TABLES IN_P SCHEMA name_list
+		| ALL TABLES IN_P SCHEMA dolphin_schema_name_list
 			{
 				PrivTarget *n = (PrivTarget *) palloc(sizeof(PrivTarget));
 				n->targtype = ACL_TARGET_ALL_IN_SCHEMA;
@@ -16368,7 +16425,7 @@ routine_target:
 					n->objs = $2;
 					$$ = n;
 				}
-			| ALL FUNCTIONS IN_P SCHEMA name_list
+			| ALL FUNCTIONS IN_P SCHEMA dolphin_schema_name_list
 				{
 					PrivTarget *n = (PrivTarget *) palloc(sizeof(PrivTarget));
 					n->targtype = ACL_TARGET_ALL_IN_SCHEMA;
@@ -16543,7 +16600,7 @@ privilege_target:
 					n->objs = $3;
 					$$ = n;
 				}
-			| SCHEMA name_list
+			| SCHEMA dolphin_schema_name_list
 				{
 					PrivTarget *n = (PrivTarget *) palloc(sizeof(PrivTarget));
 					n->targtype = ACL_TARGET_OBJECT;
@@ -16575,7 +16632,7 @@ privilege_target:
 					n->objs = $2;
 					$$ = n;
 				}
-			| ALL TABLES IN_P SCHEMA name_list
+			| ALL TABLES IN_P SCHEMA dolphin_schema_name_list
 				{
 					PrivTarget *n = (PrivTarget *) palloc(sizeof(PrivTarget));
 					n->targtype = ACL_TARGET_ALL_IN_SCHEMA;
@@ -16583,7 +16640,7 @@ privilege_target:
 					n->objs = $5;
 					$$ = n;
 				}
-			| ALL SEQUENCES IN_P SCHEMA name_list
+			| ALL SEQUENCES IN_P SCHEMA dolphin_schema_name_list
 				{
 					PrivTarget *n = (PrivTarget *) palloc(sizeof(PrivTarget));
 					n->targtype = ACL_TARGET_ALL_IN_SCHEMA;
@@ -16591,7 +16648,7 @@ privilege_target:
 					n->objs = $5;
 					$$ = n;
 				}
-			| ALL FUNCTIONS IN_P SCHEMA name_list
+			| ALL FUNCTIONS IN_P SCHEMA dolphin_schema_name_list
 				{
 					PrivTarget *n = (PrivTarget *) palloc(sizeof(PrivTarget));
 					n->targtype = ACL_TARGET_ALL_IN_SCHEMA;
@@ -16599,7 +16656,7 @@ privilege_target:
 					n->objs = $5;
 					$$ = n;
 				}
-			| ALL PACKAGES IN_P SCHEMA name_list
+			| ALL PACKAGES IN_P SCHEMA dolphin_schema_name_list
                 {
                     PrivTarget *n = (PrivTarget *)palloc(sizeof(PrivTarget));
 					n->targtype = ACL_TARGET_ALL_IN_SCHEMA;
@@ -17031,7 +17088,7 @@ DefACLOptionList:
 		;
 
 DefACLOption:
-			IN_P SCHEMA name_list
+			IN_P SCHEMA dolphin_schema_name_list
 				{
 					$$ = makeDefElem("schemas", (Node *)$3);
 				}
@@ -21610,7 +21667,7 @@ opt_restrict:
  *****************************************************************************/
 
 RemoveFuncStmt:
-			DROP FUNCTION func_name func_args opt_drop_behavior
+			DROP FUNCTION dolphin_func_name func_args opt_drop_behavior
 				{
 					DropStmt *n = makeNode(DropStmt);
 					n->removeType = OBJECT_FUNCTION;
@@ -21622,7 +21679,7 @@ RemoveFuncStmt:
 					n->isProcedure = false;
 					$$ = (Node *)n;
 				}
-			| DROP FUNCTION IF_P EXISTS func_name func_args opt_drop_behavior
+			| DROP FUNCTION IF_P EXISTS dolphin_func_name func_args opt_drop_behavior
 				{
 					DropStmt *n = makeNode(DropStmt);
 					n->removeType = OBJECT_FUNCTION;
@@ -21634,7 +21691,7 @@ RemoveFuncStmt:
 					n->isProcedure = false;
 					$$ = (Node *)n;
 				}
-            | DROP PROCEDURE func_name func_args opt_drop_behavior
+            | DROP PROCEDURE dolphin_func_name func_args opt_drop_behavior
                 {
                     DropStmt *n = makeNode(DropStmt);
                     n->removeType = OBJECT_FUNCTION;
@@ -21646,7 +21703,7 @@ RemoveFuncStmt:
                     n->isProcedure = true;
                     $$ = (Node *)n;
                 }     
-            | DROP PROCEDURE IF_P EXISTS func_name func_args opt_drop_behavior
+            | DROP PROCEDURE IF_P EXISTS dolphin_func_name func_args opt_drop_behavior
                 {
                     DropStmt *n = makeNode(DropStmt);
                     n->removeType = OBJECT_FUNCTION;
@@ -21658,7 +21715,7 @@ RemoveFuncStmt:
                     n->isProcedure = true;
                     $$ = (Node *)n;
                 } 
-			| DROP PROCEDURE func_name_opt_arg
+			| DROP PROCEDURE dolphin_func_name_opt_arg
 				{
 					DropStmt *n = makeNode(DropStmt);
 					n->removeType = OBJECT_FUNCTION;
@@ -21670,7 +21727,7 @@ RemoveFuncStmt:
 					n->isProcedure = true;
 					$$ = (Node *)n;
 				}
-			| DROP PROCEDURE IF_P EXISTS func_name_opt_arg
+			| DROP PROCEDURE IF_P EXISTS dolphin_func_name_opt_arg
 				{
 					DropStmt *n = makeNode(DropStmt);
 					n->removeType = OBJECT_FUNCTION;
@@ -21682,7 +21739,7 @@ RemoveFuncStmt:
 					n->isProcedure = true;
 					$$ = (Node *)n;
 				}
-			| DROP FUNCTION func_name_opt_arg
+			| DROP FUNCTION dolphin_func_name_opt_arg
 				{
 					DropStmt *n = makeNode(DropStmt);
 					n->removeType = OBJECT_FUNCTION;
@@ -21694,7 +21751,7 @@ RemoveFuncStmt:
 					n->isProcedure = false;
 					$$ = (Node *)n;
 				}
-			| DROP FUNCTION IF_P EXISTS func_name_opt_arg
+			| DROP FUNCTION IF_P EXISTS dolphin_func_name_opt_arg
 				{
 					DropStmt *n = makeNode(DropStmt);
 					n->removeType = OBJECT_FUNCTION;
@@ -22226,12 +22283,12 @@ RenameStmt: ALTER AGGREGATE func_name aggr_args RENAME TO name
 					n->missing_ok = false;
 					$$ = (Node *)n;
 				}
-			| ALTER SCHEMA name RENAME TO name
+			| ALTER SCHEMA DolphinColId RENAME TO DolphinColId
 				{
 					RenameStmt *n = makeNode(RenameStmt);
 					n->renameType = OBJECT_SCHEMA;
-					n->subname = $3;
-					n->newname = $6;
+					n->subname = GetDolphinSchemaName($3->str, $3->is_quoted);
+					n->newname = GetDolphinSchemaName($6->str, $6->is_quoted);
 					n->missing_ok = false;
 					$$ = (Node *)n;
 				}
@@ -22326,27 +22383,27 @@ RenameStmt: ALTER AGGREGATE func_name aggr_args RENAME TO name
 					n->missing_ok = true;
 					$$ = (Node *)n;
 				}
-			| ALTER opt_view_algo VIEW qualified_name RENAME TO name
+			| ALTER opt_view_algo VIEW dolphin_qualified_name RENAME TO DolphinColId
 				{
 					RenameStmt *n = makeNode(RenameStmt);
 					n->renameType = OBJECT_VIEW;
 					n->relation = $4;
 					n->subname = NULL;
-					n->newname = $7;
+					n->newname = GetDolphinObjName($7->str, $7->is_quoted);
 					n->missing_ok = false;
 					$$ = (Node *)n;
 				}
-			| ALTER opt_view_algo VIEW IF_P EXISTS qualified_name RENAME TO name
+			| ALTER opt_view_algo VIEW IF_P EXISTS dolphin_qualified_name RENAME TO DolphinColId
 				{
 					RenameStmt *n = makeNode(RenameStmt);
 					n->renameType = OBJECT_VIEW;
 					n->relation = $6;
 					n->subname = NULL;
-					n->newname = $9;
+					n->newname = GetDolphinObjName($9->str, $9->is_quoted);
 					n->missing_ok = true;
 					$$ = (Node *)n;
 				}
-			| ALTER opt_view_algo VIEW qualified_name opt_column_list AS SelectStmt opt_check_option
+			| ALTER opt_view_algo VIEW dolphin_qualified_name opt_column_list AS SelectStmt opt_check_option
 				{
 #ifndef ENABLE_MULTIPLE_NODES
 					if (u_sess->attr.attr_sql.sql_compatibility !=  B_FORMAT)
@@ -22366,7 +22423,7 @@ RenameStmt: ALTER AGGREGATE func_name aggr_args RENAME TO name
 					n->withCheckOption = (ViewCheckOption)$8;
 					$$ = (Node *) n;
 				}
-			| ALTER definer_expression VIEW qualified_name opt_column_list AS SelectStmt opt_check_option
+			| ALTER definer_expression VIEW dolphin_qualified_name opt_column_list AS SelectStmt opt_check_option
 				{
 #ifndef ENABLE_MULTIPLE_NODES
 					if (u_sess->attr.attr_sql.sql_compatibility !=  B_FORMAT)
@@ -22387,7 +22444,7 @@ RenameStmt: ALTER AGGREGATE func_name aggr_args RENAME TO name
 					n->withCheckOption = (ViewCheckOption)$8;
 					$$ = (Node *) n;
 				}
-			| ALTER view_algo_shift_expr definer_expression VIEW qualified_name opt_column_list AS SelectStmt opt_check_option
+			| ALTER view_algo_shift_expr definer_expression VIEW dolphin_qualified_name opt_column_list AS SelectStmt opt_check_option
 				{
 #ifndef ENABLE_MULTIPLE_NODES
 					if (u_sess->attr.attr_sql.sql_compatibility !=  B_FORMAT)
@@ -22830,250 +22887,250 @@ alter_tblspc_option:
  *****************************************************************************/
 
 AlterObjectSchemaStmt:
-			ALTER AGGREGATE func_name aggr_args SET SCHEMA name
+			ALTER AGGREGATE func_name aggr_args SET SCHEMA DolphinColId
 				{
 					AlterObjectSchemaStmt *n = makeNode(AlterObjectSchemaStmt);
 					n->objectType = OBJECT_AGGREGATE;
 					n->object = $3;
 					n->objarg = $4;
-					n->newschema = $7;
+					n->newschema = GetDolphinSchemaName($7->str, $7->is_quoted);
 					n->missing_ok = false;
 					$$ = (Node *)n;
 				}
-			| ALTER COLLATION any_name SET SCHEMA name
+			| ALTER COLLATION any_name SET SCHEMA DolphinColId
 				{
 					AlterObjectSchemaStmt *n = makeNode(AlterObjectSchemaStmt);
 					n->objectType = OBJECT_COLLATION;
 					n->object = $3;
-					n->newschema = $6;
+					n->newschema = GetDolphinSchemaName($6->str, $6->is_quoted);
 					n->missing_ok = false;
 					$$ = (Node *)n;
 				}
-			| ALTER CONVERSION_P any_name SET SCHEMA name
+			| ALTER CONVERSION_P any_name SET SCHEMA DolphinColId
 				{
 					AlterObjectSchemaStmt *n = makeNode(AlterObjectSchemaStmt);
 					n->objectType = OBJECT_CONVERSION;
 					n->object = $3;
-					n->newschema = $6;
+					n->newschema = GetDolphinSchemaName($6->str, $6->is_quoted);
 					n->missing_ok = false;
 					$$ = (Node *)n;
 				}
-			| ALTER DOMAIN_P any_name SET SCHEMA name
+			| ALTER DOMAIN_P any_name SET SCHEMA DolphinColId
 				{
 					AlterObjectSchemaStmt *n = makeNode(AlterObjectSchemaStmt);
 					n->objectType = OBJECT_DOMAIN;
 					n->object = $3;
-					n->newschema = $6;
+					n->newschema = GetDolphinSchemaName($6->str, $6->is_quoted);
 					n->missing_ok = false;
 					$$ = (Node *)n;
 				}
-			| ALTER EXTENSION any_name SET SCHEMA name
+			| ALTER EXTENSION any_name SET SCHEMA DolphinColId
 				{
 					AlterObjectSchemaStmt *n = makeNode(AlterObjectSchemaStmt);
 					n->objectType = OBJECT_EXTENSION;
 					n->object = $3;
-					n->newschema = $6;
+					n->newschema = GetDolphinSchemaName($6->str, $6->is_quoted);
 					n->missing_ok = false;
 					$$ = (Node *)n;
 				}
-			| ALTER FUNCTION function_with_argtypes SET SCHEMA name
+			| ALTER FUNCTION function_with_argtypes SET SCHEMA DolphinColId
 				{
 					AlterObjectSchemaStmt *n = makeNode(AlterObjectSchemaStmt);
 					n->objectType = OBJECT_FUNCTION;
 					n->object = $3->funcname;
 					n->objarg = $3->funcargs;
-					n->newschema = $6;
+					n->newschema = GetDolphinSchemaName($6->str, $6->is_quoted);
 					n->missing_ok = false;
 					$$ = (Node *)n;
 				}
-			| ALTER PROCEDURE function_with_argtypes SET SCHEMA name
+			| ALTER PROCEDURE function_with_argtypes SET SCHEMA DolphinColId
 				{
 					AlterObjectSchemaStmt *n = makeNode(AlterObjectSchemaStmt);
 					n->objectType = OBJECT_FUNCTION;
 					n->object = $3->funcname;
 					n->objarg = $3->funcargs;
-					n->newschema = $6;
+					n->newschema = GetDolphinSchemaName($6->str, $6->is_quoted);
 					n->missing_ok = false;
 					$$ = (Node *)n;
 				}
-			| ALTER OPERATOR any_operator oper_argtypes SET SCHEMA name
+			| ALTER OPERATOR any_operator oper_argtypes SET SCHEMA DolphinColId
 				{
 					AlterObjectSchemaStmt *n = makeNode(AlterObjectSchemaStmt);
 					n->objectType = OBJECT_OPERATOR;
 					n->object = $3;
 					n->objarg = $4;
-					n->newschema = $7;
+					n->newschema = GetDolphinSchemaName($7->str, $7->is_quoted);
 					n->missing_ok = false;
 					$$ = (Node *)n;
 				}
-			| ALTER OPERATOR CLASS any_name USING access_method SET SCHEMA name
+			| ALTER OPERATOR CLASS any_name USING access_method SET SCHEMA DolphinColId
 				{
 					AlterObjectSchemaStmt *n = makeNode(AlterObjectSchemaStmt);
 					n->objectType = OBJECT_OPCLASS;
 					n->object = lcons(makeString($6), $4);
-					n->newschema = $9;
+					n->newschema = GetDolphinSchemaName($9->str, $9->is_quoted);
 					n->missing_ok = false;
 					$$ = (Node *)n;
 				}
-			| ALTER OPERATOR FAMILY any_name USING access_method SET SCHEMA name
+			| ALTER OPERATOR FAMILY any_name USING access_method SET SCHEMA DolphinColId
 				{
 					AlterObjectSchemaStmt *n = makeNode(AlterObjectSchemaStmt);
 					n->objectType = OBJECT_OPFAMILY;
 					n->object = lcons(makeString($6), $4);
-					n->newschema = $9;
+					n->newschema = GetDolphinSchemaName($9->str, $9->is_quoted);
 					n->missing_ok = false;
 					$$ = (Node *)n;
 				}
-			| ALTER TABLE relation_expr SET SCHEMA name
+			| ALTER TABLE relation_expr SET SCHEMA DolphinColId
 				{
 					AlterObjectSchemaStmt *n = makeNode(AlterObjectSchemaStmt);
 					n->objectType = OBJECT_TABLE;
 					n->relation = $3;
-					n->newschema = $6;
+					n->newschema = GetDolphinSchemaName($6->str, $6->is_quoted);
 					n->missing_ok = false;
 					$$ = (Node *)n;
 				}
-			| ALTER TABLE IF_P EXISTS relation_expr SET SCHEMA name
+			| ALTER TABLE IF_P EXISTS relation_expr SET SCHEMA DolphinColId
 				{
 					AlterObjectSchemaStmt *n = makeNode(AlterObjectSchemaStmt);
 					n->objectType = OBJECT_TABLE;
 					n->relation = $5;
-					n->newschema = $8;
+					n->newschema = GetDolphinSchemaName($8->str, $8->is_quoted);
 					n->missing_ok = true;
 					$$ = (Node *)n;
 				}
-			| ALTER TEXT_P SEARCH PARSER any_name SET SCHEMA name
+			| ALTER TEXT_P SEARCH PARSER any_name SET SCHEMA DolphinColId
 				{
 					AlterObjectSchemaStmt *n = makeNode(AlterObjectSchemaStmt);
 					n->objectType = OBJECT_TSPARSER;
 					n->object = $5;
-					n->newschema = $8;
+					n->newschema = GetDolphinSchemaName($8->str, $8->is_quoted);
 					n->missing_ok = false;
 					$$ = (Node *)n;
 				}
-			| ALTER TEXT_P SEARCH DICTIONARY any_name SET SCHEMA name
+			| ALTER TEXT_P SEARCH DICTIONARY any_name SET SCHEMA DolphinColId
 				{
 					AlterObjectSchemaStmt *n = makeNode(AlterObjectSchemaStmt);
 					n->objectType = OBJECT_TSDICTIONARY;
 					n->object = $5;
-					n->newschema = $8;
+					n->newschema = GetDolphinSchemaName($8->str, $8->is_quoted);
 					n->missing_ok = false;
 					$$ = (Node *)n;
 				}
-			| ALTER TEXT_P SEARCH TEMPLATE any_name SET SCHEMA name
+			| ALTER TEXT_P SEARCH TEMPLATE any_name SET SCHEMA DolphinColId
 				{
 					AlterObjectSchemaStmt *n = makeNode(AlterObjectSchemaStmt);
 					n->objectType = OBJECT_TSTEMPLATE;
 					n->object = $5;
-					n->newschema = $8;
+					n->newschema = GetDolphinSchemaName($8->str, $8->is_quoted);
 					n->missing_ok = false;
 					$$ = (Node *)n;
 				}
-			| ALTER TEXT_P SEARCH CONFIGURATION any_name SET SCHEMA name
+			| ALTER TEXT_P SEARCH CONFIGURATION any_name SET SCHEMA DolphinColId
 				{
 					AlterObjectSchemaStmt *n = makeNode(AlterObjectSchemaStmt);
 					n->objectType = OBJECT_TSCONFIGURATION;
 					n->object = $5;
-					n->newschema = $8;
+					n->newschema = GetDolphinSchemaName($8->str, $8->is_quoted);
 					n->missing_ok = false;
 					$$ = (Node *)n;
 				}
-			| ALTER SEQUENCE qualified_name SET SCHEMA name
+			| ALTER SEQUENCE qualified_name SET SCHEMA DolphinColId
 				{
 					AlterObjectSchemaStmt *n = makeNode(AlterObjectSchemaStmt);
 					n->objectType = OBJECT_SEQUENCE;
 					n->relation = $3;
-					n->newschema = $6;
+					n->newschema = GetDolphinSchemaName($6->str, $6->is_quoted);
 					n->missing_ok = false;
 					$$ = (Node *)n;
 				}
-			| ALTER LARGE_P SEQUENCE qualified_name SET SCHEMA name
+			| ALTER LARGE_P SEQUENCE qualified_name SET SCHEMA DolphinColId
 				{
 					AlterObjectSchemaStmt *n = makeNode(AlterObjectSchemaStmt);
 					n->objectType = OBJECT_LARGE_SEQUENCE;
 					n->relation = $4;
-					n->newschema = $7;
+					n->newschema = GetDolphinSchemaName($7->str, $7->is_quoted);
 					n->missing_ok = false;
 					$$ = (Node *)n;
 				}
-			| ALTER SEQUENCE IF_P EXISTS qualified_name SET SCHEMA name
+			| ALTER SEQUENCE IF_P EXISTS qualified_name SET SCHEMA DolphinColId
 				{
 					AlterObjectSchemaStmt *n = makeNode(AlterObjectSchemaStmt);
 					n->objectType = OBJECT_SEQUENCE;
 					n->relation = $5;
-					n->newschema = $8;
+					n->newschema = GetDolphinSchemaName($8->str, $8->is_quoted);
 					n->missing_ok = true;
 					$$ = (Node *)n;
 				}
-			| ALTER LARGE_P SEQUENCE IF_P EXISTS qualified_name SET SCHEMA name
+			| ALTER LARGE_P SEQUENCE IF_P EXISTS qualified_name SET SCHEMA DolphinColId
 				{
 					AlterObjectSchemaStmt *n = makeNode(AlterObjectSchemaStmt);
 					n->objectType = OBJECT_LARGE_SEQUENCE;
 					n->relation = $6;
-					n->newschema = $9;
+					n->newschema = GetDolphinSchemaName($9->str, $9->is_quoted);
 					n->missing_ok = true;
 					$$ = (Node *)n;
 				}
-			| ALTER opt_view_algo VIEW qualified_name SET SCHEMA name
+			| ALTER opt_view_algo VIEW dolphin_qualified_name SET SCHEMA DolphinColId
 				{
 					AlterObjectSchemaStmt *n = makeNode(AlterObjectSchemaStmt);
 					n->objectType = OBJECT_VIEW;
 					n->relation = $4;
-					n->newschema = $7;
+					n->newschema = GetDolphinSchemaName($7->str, $7->is_quoted);
 					n->missing_ok = false;
 					$$ = (Node *)n;
 				}
-			| ALTER opt_view_algo VIEW IF_P EXISTS qualified_name SET SCHEMA name
+			| ALTER opt_view_algo VIEW IF_P EXISTS dolphin_qualified_name SET SCHEMA DolphinColId
 				{
 					AlterObjectSchemaStmt *n = makeNode(AlterObjectSchemaStmt);
 					n->objectType = OBJECT_VIEW;
 					n->relation = $6;
-					n->newschema = $9;
+					n->newschema = GetDolphinSchemaName($9->str, $9->is_quoted);
 					n->missing_ok = true;
 					$$ = (Node *)n;
 				}
-			| ALTER MATERIALIZED VIEW qualified_name SET SCHEMA name
+			| ALTER MATERIALIZED VIEW qualified_name SET SCHEMA DolphinColId
 				{
 					AlterObjectSchemaStmt *n = makeNode(AlterObjectSchemaStmt);
 					n->objectType = OBJECT_MATVIEW;
 					n->relation = $4;
-					n->newschema = $7;
+					n->newschema = GetDolphinSchemaName($7->str, $7->is_quoted);
 					n->missing_ok = false;
 					$$ = (Node *)n;
 				}
-			| ALTER MATERIALIZED VIEW IF_P EXISTS qualified_name SET SCHEMA name
+			| ALTER MATERIALIZED VIEW IF_P EXISTS qualified_name SET SCHEMA DolphinColId
 				{
 					AlterObjectSchemaStmt *n = makeNode(AlterObjectSchemaStmt);
 					n->objectType = OBJECT_MATVIEW;
 					n->relation = $6;
-					n->newschema = $9;
+					n->newschema = GetDolphinSchemaName($9->str, $9->is_quoted);
 					n->missing_ok = true;
 					$$ = (Node *)n;
 				}
-			| ALTER FOREIGN TABLE relation_expr SET SCHEMA name
+			| ALTER FOREIGN TABLE relation_expr SET SCHEMA DolphinColId
 				{
 					AlterObjectSchemaStmt *n = makeNode(AlterObjectSchemaStmt);
 					n->objectType = OBJECT_FOREIGN_TABLE;
 					n->relation = $4;
-					n->newschema = $7;
+					n->newschema = GetDolphinSchemaName($7->str, $7->is_quoted);
 					n->missing_ok = false;
 					$$ = (Node *)n;
 				}
-			| ALTER FOREIGN TABLE IF_P EXISTS relation_expr SET SCHEMA name
+			| ALTER FOREIGN TABLE IF_P EXISTS relation_expr SET SCHEMA DolphinColId
 				{
 					AlterObjectSchemaStmt *n = makeNode(AlterObjectSchemaStmt);
 					n->objectType = OBJECT_FOREIGN_TABLE;
 					n->relation = $6;
-					n->newschema = $9;
+					n->newschema = GetDolphinSchemaName($9->str, $9->is_quoted);
 					n->missing_ok = true;
 					$$ = (Node *)n;
 				}
-			| ALTER TYPE_P any_name SET SCHEMA name
+			| ALTER TYPE_P any_name SET SCHEMA DolphinColId
 				{
 					AlterObjectSchemaStmt *n = makeNode(AlterObjectSchemaStmt);
 					n->objectType = OBJECT_TYPE;
 					n->object = $3;
-					n->newschema = $6;
+					n->newschema = GetDolphinSchemaName($6->str, $6->is_quoted);
 					n->missing_ok = false;
 					$$ = (Node *)n;
 				}
@@ -23202,11 +23259,11 @@ AlterOwnerStmt: ALTER AGGREGATE func_name aggr_args OWNER TO RoleId
 					n->newowner = $9;
 					$$ = (Node *)n;
 				}
-			| ALTER SCHEMA name OWNER TO RoleId
+			| ALTER SCHEMA DolphinColId OWNER TO RoleId
 				{
 					AlterOwnerStmt *n = makeNode(AlterOwnerStmt);
 					n->objectType = OBJECT_SCHEMA;
-					n->object = list_make1(makeString($3));
+					n->object = list_make1(makeString(GetDolphinSchemaName($3->str, $3->is_quoted)));
 					n->newowner = $6;
 					$$ = (Node *)n;
 				}
@@ -23769,7 +23826,7 @@ TransactionStmt:
 					TransactionStmt *n = makeNode(TransactionStmt);
 					n->kind = TRANS_STMT_COMMIT_PREPARED;
 					n->gid = $3;
-					n->csn = strtoull($5, NULL, 10);;
+					n->csn = strtoull($5, NULL, 10);
 					$$ = (Node *)n;
 				}
 			| ROLLBACK PREPARED Sconst
@@ -23910,7 +23967,7 @@ ViewStmt: CREATE OptTemp ViewStmtBaseBody
 				}
 		;
 
-ViewStmtBaseBody: VIEW qualified_name opt_column_list opt_reloptions AS SelectStmt opt_check_option
+ViewStmtBaseBody: VIEW dolphin_qualified_name opt_column_list opt_reloptions AS SelectStmt opt_check_option
 	{
 		ViewStmt* stmt = makeNode(ViewStmt);
 		stmt->view = $2;
@@ -27935,7 +27992,7 @@ set_target:
 					if ($2 == NIL) {
 						$$->name = downcase_str($1->str, $1->is_quoted);
 					} else {
-						$$->name = GetDolphinObjName($1->str, $1->is_quoted);;
+						$$->name = GetDolphinObjName($1->str, $1->is_quoted);
 					}
 					List* result = NIL;
 					ListCell* cell = NULL;
@@ -30165,17 +30222,6 @@ EnumType:
 opt_type_modifiers: '(' expr_list ')'				{ $$ = $2; }
 					| /* EMPTY */					{ $$ = NIL; }
 		;
-
-Binary:	BINARY
-		{
-			$$ = SystemTypeName("binary");
-			$$->location = @1;
-		}
-		| VARBINARY
-		{
-			$$ = SystemTypeName("varbinary");
-			$$->location = @1;
-		}
 
 field_unsigned:
 		unsigned_list							{ $$ = TRUE; }
@@ -32946,7 +32992,7 @@ func_expr_common_subexpr:
 					FuncCall *n = makeNode(FuncCall);
 					n->funcname = SystemFuncName("utc_timestamp_func");
 					n->colname = pstrdup("utc_timestamp");
-					n->args = list_make1(makeIntConst($3, @3));;
+					n->args = list_make1(makeIntConst($3, @3));
 					n->agg_order = NIL;
 					n->agg_star = FALSE;
 					n->agg_distinct = FALSE;
@@ -34587,6 +34633,7 @@ columnref:	DolphinColId
 					List* result = NIL;
 					ListCell* cell = NULL;
 					char* first_word = NULL;
+					int schema_index = -1;
 					int table_index = -1;
 					int col_index = -1;
 					int count = 0;
@@ -34611,15 +34658,16 @@ columnref:	DolphinColId
 							break;
 						case 2:
 							/* schema.table.column */
-							first_word = downcase_str($1->str, $1->is_quoted);
+							first_word = GetDolphinSchemaName($1->str, $1->is_quoted);
 							col_index = 1;
 							table_index = 0;
 							break;
 						default:
 							/* catalog.schema.table.column. ... */
 							first_word = downcase_str($1->str, $1->is_quoted);
-							col_index = 2;
+							schema_index = 0;
 							table_index = 1;
+							col_index = 2;
 							break;
 					}
 					foreach (cell, $2) {
@@ -34628,11 +34676,12 @@ columnref:	DolphinColId
 							Value* value = (Value*)(dolphinString->node);
 							char* text = strVal(value);
 							bool is_quoted = dolphinString->is_quoted;
-							if (count != table_index) {
-								if (count != col_index)
-									text = downcase_str(text, is_quoted);
-							} else {
+							if (count == schema_index) {
+								text = GetDolphinSchemaName(text, is_quoted);
+							} else if (count == table_index) {
 								text = GetDolphinObjName(text, is_quoted);
+							} else if (count != col_index) {
+								text = downcase_str(text, is_quoted);
 							}
 							count++;
 							result = lappend(result, (Node*)makeString(text));
@@ -34984,7 +35033,7 @@ dolphin_qualified_name:
 					{
 						case 1:
 							$$->catalogname = NULL;
-							$$->schemaname = downcase_str($1->str, $1->is_quoted);
+							$$->schemaname = GetDolphinSchemaName($1->str, $1->is_quoted);
 							first = (DolphinString*)linitial($2);
 							$$->relname = GetDolphinObjName(first->str, first->is_quoted);
 							break;
@@ -34992,7 +35041,7 @@ dolphin_qualified_name:
 							$$->catalogname = downcase_str($1->str, $1->is_quoted);
 							first = (DolphinString*)linitial($2);
 							second = (DolphinString*)lsecond($2);
-							$$->schemaname = downcase_str(strVal(first->node), first->is_quoted);
+							$$->schemaname = GetDolphinSchemaName(first->str, first->is_quoted);
 							$$->relname = GetDolphinObjName(second->str, second->is_quoted);
 							break;
 						default:
@@ -35013,10 +35062,10 @@ name_list:	name
 					{ $$ = lappend($1, makeString($3)); }
 		;
 
-dolphin_name_list:	RoleId
-					{ $$ = list_make1(makeString($1)); }
-			| dolphin_name_list ',' RoleId
-					{ $$ = lappend($1, makeString($3)); }
+dolphin_schema_name_list:	DolphinColId
+						{ $$ = list_make1(makeString(GetDolphinSchemaName($1->str, $1->is_quoted))); }
+					| dolphin_schema_name_list ',' DolphinColId
+						{ $$ = lappend($1, makeString(GetDolphinSchemaName($3->str, $3->is_quoted))); }
 		;
 
 
@@ -35057,8 +35106,18 @@ dolphin_func_name:	type_function_name
 						{ $$ = list_make1(makeString($1)); }
 					| DolphinColId dolphin_indirection
 						{
-							$$ = check_func_name(lcons(makeString(downcase_str($1->str, $1->is_quoted)),
-													GetNameListFromDolphinString($2)), yyscanner);
+							int len = list_length($2);
+							if (len == 1) {
+								/* schema_name.func_name */
+								$$ = check_func_name(lcons(makeString(GetDolphinSchemaName($1->str, $1->is_quoted)),
+														GetNameListFromDolphinString($2)), yyscanner);
+							} else {
+								/* category_name.schema_name.func_name */
+								DolphinString* element = (DolphinString*)lsecond($2);
+								element->str = GetDolphinSchemaName(element->str, element->is_quoted);
+								$$ = check_func_name(lcons(makeString(downcase_str($1->str, $1->is_quoted)),
+														GetNameListFromDolphinString($2)), yyscanner);
+							}
 						}
 		;
 
@@ -35066,6 +35125,12 @@ func_name_opt_arg:
 						func_name
 						/* This rule is never used. */
 						| normal_ident BOGUS							{ $$ = NIL; }
+						/* This rule is never used. */
+						| unreserved_keyword BOGUS				{ $$ = NIL; };
+dolphin_func_name_opt_arg:
+						dolphin_func_name
+						/* This rule is never used. */
+						| IDENT BOGUS							{ $$ = NIL; }
 						/* This rule is never used. */
 						| unreserved_keyword BOGUS				{ $$ = NIL; };
 
@@ -36859,7 +36924,7 @@ makeRangeVarFromAnyName(List *names, int position, core_yyscan_t yyscanner)
 			r->relname = strVal(lsecond(names));
 			break;
 		case 3:
-			r->catalogname = strVal(linitial(names));;
+			r->catalogname = strVal(linitial(names));
 			r->schemaname = strVal(lsecond(names));
 			r->relname = strVal(lthird(names));
 			break;
@@ -37099,6 +37164,7 @@ parser_init(base_yy_extra_type *yyext)
 	yyext->core_yy_extra.query_string_locationlist = NIL;
 	yyext->core_yy_extra.paren_depth = 0;
 	GetSessionContext()->isUpsert = false;
+	GetSessionContext()->is_schema_name = false;
 }
 
 static Expr *
@@ -38990,6 +39056,17 @@ static void with_rollup_check_elems_count(Node* expr)
 static inline char* GetDolphinObjName(char* string, bool is_quoted)
 {
 	return (GetSessionContext()->lower_case_table_names == 0) ? string : downcase_str(string, is_quoted);
+}
+
+static inline char* GetDolphinSchemaName(char* string, bool is_quoted)
+{
+	/* public is a special schema, if it's not quoted, public is lowercase  */
+	for (const char* sys_schema : sys_schemas) {
+		if (DolphinObjNameCmp(string, sys_schema, false)) {
+			return downcase_str(string, is_quoted);
+		}
+	}
+	return GetDolphinObjName(string, is_quoted);
 }
 
 static void CheckIconstType(Node* node) 
