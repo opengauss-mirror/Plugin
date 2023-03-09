@@ -18934,6 +18934,10 @@ CreateFunctionStmt:
 					}
 					CreateFunctionStmt *n = makeNode(CreateFunctionStmt);
 					FunctionSources *funSource = (FunctionSources*)$12;
+					/* check whether function body has RETURN */
+					if (!funSource->hasReturn) {
+						ereport(ERROR, (errcode(ERRCODE_SYNTAX_ERROR), errmsg("no RETURN found in function body")));
+					}
 					n->isOraStyle = false;
 					n->isPrivate = false;
 					n->replace = $2;
@@ -19874,6 +19878,7 @@ b_proc_body:
 						u_sess->plsql_cxt.procedure_first_line = GetLineNumber(yyextra->core_yy_extra.scanbuf, yylloc);
 				}
 				/* start procedure body scan */
+				bool hasReturn = false;
 				while(true)
 				{
 						if (tok == YYEOF) {
@@ -19979,6 +19984,9 @@ b_proc_body:
 								}
 						}
 
+						if (tok == RETURN) {
+							hasReturn = true;
+						}
 						pre_tok = tok;
 						tok = YYLEX;
 						/* in case of lacking DECLARE within nested begin-end statement */
@@ -20036,6 +20044,7 @@ b_proc_body:
 				funSrc = (FunctionSources*)palloc0(sizeof(FunctionSources));
 				funSrc->bodySrc   = proc_body_str;
 				funSrc->headerSrc = proc_header_str;
+				funSrc->hasReturn = hasReturn;
 
 				$$ = funSrc;
 			}
@@ -21250,6 +21259,10 @@ dolphin_flow_control:
 				}
 			| REPEAT flow_control_func_body
 				{
+					/* check whether function body has RETURN */
+					if (!$2->hasReturn) {
+						ereport(ERROR, (errcode(ERRCODE_SYNTAX_ERROR), errmsg("no RETURN found in function body")));
+					}
 					char* result = appendString("REPEAT", $2->bodySrc, BEGIN_LEN);
 					pfree($2->bodySrc);
 					$2->bodySrc = result;
@@ -21257,6 +21270,10 @@ dolphin_flow_control:
 				}
 			| LOOP flow_control_func_body
 				{
+					/* check whether function body has RETURN */
+					if (!$2->hasReturn) {
+						ereport(ERROR, (errcode(ERRCODE_SYNTAX_ERROR), errmsg("no RETURN found in function body")));
+					}
 					char* result = appendString("LOOP", $2->bodySrc, BEGIN_LEN);
 					pfree($2->bodySrc);
 					$2->bodySrc = result;
@@ -21264,6 +21281,10 @@ dolphin_flow_control:
 				}
 			| WHILE_P flow_control_func_body
 				{
+					/* check whether function body has RETURN */
+					if (!$2->hasReturn) {
+						ereport(ERROR, (errcode(ERRCODE_SYNTAX_ERROR), errmsg("no RETURN found in function body")));
+					}
 					char* result = appendString("WHILE", $2->bodySrc, BEGIN_LEN);
 					pfree($2->bodySrc);
 					$2->bodySrc = result;
@@ -21271,6 +21292,10 @@ dolphin_flow_control:
 				}
 			| CASE flow_control_func_body
 				{
+					/* check whether function body has RETURN */
+					if (!$2->hasReturn) {
+						ereport(ERROR, (errcode(ERRCODE_SYNTAX_ERROR), errmsg("no RETURN found in function body")));
+					}
 					char* result = appendString("CASE", $2->bodySrc, BEGIN_LEN);
 					pfree($2->bodySrc);
 					$2->bodySrc = result;
@@ -21278,6 +21303,10 @@ dolphin_flow_control:
 				}
 			| IF_P flow_control_func_body
 				{
+					/* check whether function body has RETURN */
+					if (!$2->hasReturn) {
+						ereport(ERROR, (errcode(ERRCODE_SYNTAX_ERROR), errmsg("no RETURN found in function body")));
+					}
 					char* result = appendString("IF", $2->bodySrc, BEGIN_LEN);
 					pfree($2->bodySrc);
 					$2->bodySrc = result;
@@ -21314,6 +21343,7 @@ flow_control_func_body:
 				if (rc != PLPGSQL_COMPILE_NULL && rc != PLPGSQL_COMPILE_PROC) {
 					u_sess->plsql_cxt.procedure_first_line = GetLineNumber(yyextra->core_yy_extra.scanbuf, yylloc);
 				}
+				bool hasReturn = false;
 				/* start procedure body scan */
 				while(true) {
 					/* handle single SQL body like "return xxx" */
@@ -21365,6 +21395,9 @@ flow_control_func_body:
 						}
 					}
 
+					if (tok == RETURN) {
+						hasReturn = true;
+					}
 					pre_tok = tok;
 					tok = YYLEX;
 				}
@@ -21416,6 +21449,7 @@ flow_control_func_body:
 				funSrc = (FunctionSources*)palloc0(sizeof(FunctionSources));
 				funSrc->bodySrc   = proc_body_str;
 				funSrc->headerSrc = proc_header_str;
+				funSrc->hasReturn = hasReturn;
 
 				$$ = funSrc;
 			}
