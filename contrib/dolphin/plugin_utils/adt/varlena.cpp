@@ -2375,28 +2375,31 @@ int text_cmp(text* arg1, text* arg2, Oid collid)
 
     a1p = VARDATA_ANY(arg1);
     a2p = VARDATA_ANY(arg2);
-
+#ifdef DOLPHIN
     len1 = bcTruelen(arg1);
     len2 = bcTruelen(arg2);
-
+#else
+    len1 = VARSIZE_ANY_EXHDR(arg1);
+    len2 = VARSIZE_ANY_EXHDR(arg2);
+#endif
     return varstr_cmp(a1p, len1, a2p, len2, collid);
 }
 
 bool texteq_with_collation(PG_FUNCTION_ARGS)
 {
-        Datum arg1 = PG_GETARG_DATUM(0);
-        Datum arg2 = PG_GETARG_DATUM(1);
-        bool result = false;
+    Datum arg1 = PG_GETARG_DATUM(0);
+    Datum arg2 = PG_GETARG_DATUM(1);
+    bool result = false;
 
-        text* targ1 = DatumGetTextPP(arg1);
-        text* targ2 = DatumGetTextPP(arg2);
+    text* targ1 = DatumGetTextPP(arg1);
+    text* targ2 = DatumGetTextPP(arg2);
 
-        /* text_cmp return 0 means equal */
-        result = (text_cmp(targ1, targ2, PG_GET_COLLATION()) == 0);
-        PG_FREE_IF_COPY(targ1, 0);
-        PG_FREE_IF_COPY(targ2, 1);
+    /* text_cmp return 0 means equal */
+    result = (text_cmp(targ1, targ2, PG_GET_COLLATION()) == 0);
+    PG_FREE_IF_COPY(targ1, 0);
+    PG_FREE_IF_COPY(targ2, 1);
 
-        return result;
+    return result;
 }
 
 /*
