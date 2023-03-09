@@ -154,6 +154,7 @@ typedef struct BSqlPluginContext {
     unsigned int optimizer_switch_flags;
     int div_precision_increment;
     int dolphin_kw_mask;
+    bool is_schema_name;
 #endif
 } bSqlPluginContext;
 

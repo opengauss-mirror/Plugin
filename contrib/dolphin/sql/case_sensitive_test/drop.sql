@@ -179,7 +179,7 @@ DROP TABLE  Slow_emp4000;
 
 DROP TABLE  Fast_emp4000;
 
-DROP TABLE  Emp;
+DROP TABLE  Emp CASCADE;
 
 DROP TABLE  Person;
 
