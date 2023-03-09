@@ -15379,7 +15379,7 @@ rename_list:
                        | rename_list ',' rename_user_clause                 {$$ = lappend($1, $3);}
 
 rename_user_clause:
-                       RoleId TO RoleId                                        {$$ = list_make2($1, $3); }
+                       UserId TO UserId                                        {$$ = list_make2($1, $3); }
 
 collate_name:	any_name					{ $$ = $1; }
 				| Sconst					{ $$ = list_make1(makeString($1)); }
@@ -22699,7 +22699,6 @@ RenameStmt: ALTER AGGREGATE func_name aggr_args RENAME TO name
 						RenameStmt *n = makeNode(RenameStmt);
 						n->renameType = OBJECT_USER;
 						n->subname = linitial_node(char, names);
-						IsValidIdent(lsecond_node(char, names));
 						n->newname = lsecond_node(char, names);
 						n->missing_ok = false;
 						renamestmts = lappend(renamestmts, (Node*)n);
@@ -26803,12 +26802,12 @@ ExplainStmt:
 					ExplainStmt* stmt = makeNode(ExplainStmt);
 					stmt->query = $5;
 					if (pg_strcasecmp($4, "json") == 0) {
-						DefElem* def = makeDefElem((char*)$2, (Node*)makeString("json"));
+						DefElem* def = makeDefElem(downcase_str((char*)$2, false), (Node*)makeString("json"));
 						stmt->options = list_make1(def);
 					} else if (pg_strcasecmp($4, "traditional") == 0) {
                                          	stmt->options = NIL;
 					} else {
-						DefElem* def = makeDefElem((char*)$2, (Node*)makeString($4));
+						DefElem* def = makeDefElem(downcase_str((char*)$2, false), (Node*)makeString($4));
 						stmt->options = list_make1(def);					
 					}
 

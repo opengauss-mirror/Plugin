@@ -217,6 +217,38 @@ explain format=JSON update ed_t set c2 = 'world' where c1 < 5;
  ]
 (1 row)
 
+explain FORMAT=JSON update ed_t set c2 = 'world' where c1 < 5;
+                 QUERY PLAN                 
+--------------------------------------------
+ [                                         +
+   {                                       +
+     "Plan": {                             +
+       "Node Type": "ModifyTable",         +
+       "Operation": "Update",              +
+       "Relation Name": "ed_t",            +
+       "Alias": "ed_t",                    +
+       "Startup Cost": 0.00,               +
+       "Total Cost": 13.99,                +
+       "Plan Rows": 106,                   +
+       "Plan Width": 14,                   +
+       "Plans": [                          +
+         {                                 +
+           "Node Type": "Seq Scan",        +
+           "Parent Relationship": "Member",+
+           "Relation Name": "ed_t",        +
+           "Alias": "ed_t",                +
+           "Startup Cost": 0.00,           +
+           "Total Cost": 13.99,            +
+           "Plan Rows": 106,               +
+           "Plan Width": 14,               +
+           "Filter": "(c1 < 5)"            +
+         }                                 +
+       ]                                   +
+     }                                     +
+   }                                       +
+ ]
+(1 row)
+
 explain format=json delete from ed_t where c1 < 5;
                  QUERY PLAN                 
 --------------------------------------------
@@ -383,6 +415,12 @@ explain format=TRADITIONAL select c1, c2, c3 from ed_t;
  Seq Scan on ed_t  (cost=0.00..13.19 rows=319 width=226)
 (1 row)
 
+explain FORMAT=TRADITIONAL select c1, c2, c3 from ed_t;
+                       QUERY PLAN                        
+---------------------------------------------------------
+ Seq Scan on ed_t  (cost=0.00..13.19 rows=319 width=226)
+(1 row)
+
 explain format=TRADITIONAL insert into ed_t values(100, 'hello', 100);
                     QUERY PLAN                    
 --------------------------------------------------
@@ -543,4 +581,6 @@ describe (costs off) select * from describe;
  explain | character varying(10) | YES  |     | NULL    | 
 (2 rows)
 
+\! gsql -d contrib_regression -r -p @portstring@ -c "show processlist" > /dev/null
+\! gsql -d contrib_regression -r -p @portstring@ -c "show full processlist" > /dev/null
 drop table explain, describe;

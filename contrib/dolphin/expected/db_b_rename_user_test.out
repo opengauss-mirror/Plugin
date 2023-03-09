@@ -50,6 +50,26 @@ select usename from pg_catalog.pg_user
  user6
 (3 rows)
 
+set enable_set_variable_b_format to off;
+set test_user_host to on;
+create User 'ace'@'127.0.0.1' identified by 'Aa@123456';
+NOTICE:  The iteration value of password is not recommended.Setting the iteration value too small reduces the security of the password, and setting it too large results in performance degradation.
+select usename from pg_catalog.pg_user 
+    where usename='ace@127.0.0.1';
+    usename    
+---------------
+ ace@127.0.0.1
+(1 row)
+
+RENAME USER 'ace'@'127.0.0.1'TO 'ace1'@'127.0.0.1';
+select usename from pg_catalog.pg_user 
+    where usename='ace@127.0.0.1' or usename='ace1@127.0.0.1';
+    usename     
+----------------
+ ace1@127.0.0.1
+(1 row)
+
+drop user 'ace1'@'127.0.0.1';
 drop user user4;
 drop user user5;
 drop user user6;
