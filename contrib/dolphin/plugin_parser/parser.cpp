@@ -267,7 +267,15 @@ int base_yylex(YYSTYPE* lvalp, YYLTYPE* llocp, core_yyscan_t yyscanner)
         yyextra->core_yy_extra.is_delimiter_name = false;
         yyextra->core_yy_extra.is_last_colon = is_last_colon;
     }
-    
+
+    if (cur_token == PARAM && pg_strcasecmp(yyextra->core_yy_extra.scanbuf + *llocp, ":loop") == 0) {
+        cur_token = LABEL_LOOP;
+    } else if (cur_token == PARAM && pg_strcasecmp(yyextra->core_yy_extra.scanbuf + *llocp, ":while") == 0) {
+        cur_token = LABEL_WHILE;
+    } else if (cur_token == PARAM && pg_strcasecmp(yyextra->core_yy_extra.scanbuf + *llocp, ":repeat") == 0) {
+        cur_token = LABEL_REPEAT;
+    }
+
     /* Do we need to look ahead for a possible multiword token? */
     switch (cur_token) {
         case NULLS_P:
