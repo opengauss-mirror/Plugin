@@ -182,7 +182,71 @@ select pg_get_tabledef('b_range_hash_t01');
 select * from b_range_hash_t01 partition(m1);
 select * from b_range_hash_t01 partition(m2);
 
+--test some cases about partition expr key
+create table part_key_range_t1(col1 date, col2 int) partition by range(year(col1))
+(
+    partition p1 values less than(2000),
+    partition p2 values less than(3000)
+);
+select pg_get_tabledef('part_key_range_t1');
+alter table part_key_range_t1 add partition p3 values less than(4000);
+select pg_get_tabledef('part_key_range_t1');
+alter table part_key_range_t1 split partition p1 into (partition m1 values less than(1000), partition m2 values less than(2000));
+select pg_get_tabledef('part_key_range_t1');
+alter table part_key_range_t1 merge partitions m1,m2 into partition p1;
+select pg_get_tabledef('part_key_range_t1');
+alter table part_key_range_t1 reorganize partition p1,p2 into (partition m1 values less than(1000),partition m2 values less than(3000));
+select pg_get_tabledef('part_key_range_t1');
 
+create table part_key_range_t2(col1 date, col2 int) partition by range(to_days(col1))
+(
+    partition p1 values less than(60000),
+    partition p2 values less than(80000)
+);
+select pg_get_tabledef('part_key_range_t2');
+alter table part_key_range_t2 add partition p3 values less than(90000);
+select pg_get_tabledef('part_key_range_t2');
+alter table part_key_range_t2 split partition p1 into (partition m1 values less than(50000), partition m2 values less than(60000));
+select pg_get_tabledef('part_key_range_t2');
+alter table part_key_range_t2 merge partitions m1,m2 into partition p1;
+select pg_get_tabledef('part_key_range_t2');
+alter table part_key_range_t2 reorganize partition p1,p2 into (partition m1 values less than(70000),partition m2 values less than(80000));
+select pg_get_tabledef('part_key_range_t2');
+
+create table part_key_list_t1(col1 date, col2 int) partition by list(year(col1))
+(
+    partition p1 values(2000),
+    partition p2 values(3000)
+);
+select pg_get_tabledef('part_key_list_t1');
+alter table part_key_list_t1 add partition p3 values(4000);
+select pg_get_tabledef('part_key_list_t1');
+
+create table part_key_list_t2(col1 date, col2 int) partition by list(to_days(col1))
+(
+    partition p1 values(60000),
+    partition p2 values(80000)
+);
+select pg_get_tabledef('part_key_list_t2');
+alter table part_key_list_t2 add partition p3 values(90000);
+select pg_get_tabledef('part_key_list_t2');
+
+create table part_key_t1 (col1 date, col2 date) partition by range( year(col2) )
+subpartition by hash( to_days(col1) )
+(
+    partition p1 values less than (2000)
+    (
+        SUBPARTITION p1sub1,
+        SUBPARTITION p1sub2
+    ),
+    partition p2 values less than (3000)
+    (
+        SUBPARTITION p2sub1,
+        SUBPARTITION p2sub2
+    )
+);
+alter table part_key_t1 add partition p3 values less than(4000);
+alter table part_key_t1 reorganize partition p1,p2 into (partition m1 values less than(1000), partition m2 values less than(3000));
 
 --test some error cases
 create table b_range_hash_t05(c1 int primary key,c2 int,c3 text)
