@@ -31,7 +31,7 @@ SELECT
   JSON_OBJECTAGG(Name, Population) AS "City/Population"
 FROM City
 GROUP BY State;
-      state      |                                     City/Population                                     
+      State      |                                     City/Population                                     
 -----------------+-----------------------------------------------------------------------------------------
  West Australia  | {"Perth": 1096829}
  Queensland      | {"Cairns": 92273, "Brisbane": 1291117, "Gold Coast": 311932, "Townsville": 109914}

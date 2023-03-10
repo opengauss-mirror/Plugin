@@ -781,8 +781,8 @@ SELECT ifnull(''::int2, 'hello!'::text)L;
 WARNING:  invalid input syntax for smallint: ""
 LINE 1: SELECT ifnull(''::int2, 'hello!'::text)L;
                       ^
-CONTEXT:  referenced column: l
- l 
+CONTEXT:  referenced column: L
+ L 
 ---
  0
 (1 row)
@@ -3063,8 +3063,8 @@ SELECT ifnull(''::int2, 'hello!'::text)L;
 WARNING:  invalid input syntax for smallint: ""
 LINE 1: SELECT ifnull(''::int2, 'hello!'::text)L;
                       ^
-CONTEXT:  referenced column: l
- l 
+CONTEXT:  referenced column: L
+ L 
 ---
  0
 (1 row)

@@ -1167,5 +1167,113 @@ select 1 as ADD;
 select 1 as BIGINT;
 select 1 as COMMON_WORD;
 
+--test about alias
+drop table if exists t1 cascade;
+create table t1(AaA int, BbBb int);
+insert into t1 values(1,2);
+
+-- alias test
+select * from t1;
+select aaA as Abcd from t1;
+select aaA abcD from t1;
+select aaA as creatE from t1;
+select aaA as duaL from t1;
+select aaA as viEw from t1;
+-- quoted alias test
+select aaA as "Abcd" from t1;
+select aaA "abcD" from t1;
+select aaA as "creatE" from t1;
+select aaA as "duaL" from t1;
+select aaA as "viEw" from t1;
+select "aAA" as "Abcd" from t1;
+select "aaA" "abcD" from t1;
+select "aaA" as "creatE" from t1;
+select "aaA" as "duaL" from t1;
+select "aaA" as "viEw" from t1;
+--ansi quoted
+select `aaA` as "Abcd" from t1;
+select `aaA` "abcD" from t1;
+select `aaA` as "creatE" from t1;
+select `aaA` as "duaL" from t1;
+select `aaA` as "viEw" from t1;
+select `aAA` as `Abcd` from t1;
+select `aaA` `abcD` from t1;
+select `aaA` as `creatE` from t1;
+select `aaA` as `duaL` from t1;
+select `aaA` as `viEw` from t1;
+
+--where test
+insert into t1 values(3,4);
+insert into t1 values(5,6);
+select aaA as Abcd from t1 where AAA > 3;
+select aaA as Abcd from t1 where AbcD > 3;
+select "AaA" as `Abcd` from t1 where AAA > 3;
+select `AaA` as `Abcd` from t1 where AbcD > 3;
+select "AaA" as "Abcd" from t1 where `AAA` > 3;
+select `AaA` as "Abcd" from t1 where "AbcD" > 3;
+
+-- group by test
+select aaA as Abcd from t1 where AAA > 3 group by `aAa`;
+select aaA as Abcd from t1 where AbcD > 3 group by `Abcd`;
+select "AaA" as `Abcd` from t1 where AAA > 3 group by "Abcd";
+select `AaA` as `Abcd` from t1 where AbcD > 3 group by "aAa";
+select "AaA" as "Abcd" from t1 where `AAA` > 3 group by Abcd;
+select `AaA` as "Abcd" from t1 where "AbcD" > 3 group by aAa;
+
+-- having  test
+select aaA as Abcd from t1 where AAA > 1 group by `aAa` having AAA >3 ;
+select aaA as Abcd from t1 where AbcD > 1 group by `Abcd` having Abcd >3;
+select "AaA" as `Abcd` from t1 where AAA > 1 group by "Abcd" having `AAA` >3;
+select `AaA` as `Abcd` from t1 where AbcD > 1 group by "aAa" having `Abcd` >3;
+select "AaA" as "Abcd" from t1 where `AAA` > 1 group by Abcd having "Abcd" >3;
+select `AaA` as "Abcd" from t1 where "AbcD" > 1 group by aAa having "AAA" >3;
+
+-- order by   test
+select aaA as Abcd from t1 where AAA > 1 group by `aAa` having AAA >3 order by AAA;
+select aaA as Abcd from t1 where AbcD > 1 group by `Abcd` having Abcd >3 order by Abcd;
+select "AaA" as `Abcd` from t1 where AAA > 1 group by "Abcd" having `AAA` >3 order by `AAA`;
+select `AaA` as `Abcd` from t1 where AbcD > 1 group by "aAa" having `Abcd` >3 order by `Abcd`;
+select "AaA" as "Abcd" from t1 where `AAA` > 1 group by Abcd having "Abcd" >3 order by "AAA";
+select `AaA` as "Abcd" from t1 where "AbcD" > 1 group by aAa having "AAA" >3 order by "Abcd";
+
+-- create view
+create view v1 as select aaA as Abcd from t1 where AAA > 1 group by `aAa` having AAA >3 order by AAA;
+create view v2 as select aaA as Abcd from t1 where AbcD > 1 group by `Abcd` having Abcd >3 order by Abcd;
+create view v3 as select "AaA" as `Abcd` from t1 where AAA > 1 group by "Abcd" having `AAA` >3 order by `AAA`;
+create view v4 as select `AaA` as `Abcd` from t1 where AbcD > 1 group by "aAa" having `Abcd` >3 order by `Abcd`;
+create view v5 as select "AaA" as "Abcd" from t1 where `AAA` > 1 group by Abcd having "Abcd" >3 order by "AAA";
+create view v6 as select `AaA` as "Abcd" from t1 where "AbcD" > 1 group by aAa having "AAA" >3 order by "Abcd";
+select * from v1;
+select * from v2;
+select * from v3;
+select * from v4;
+select * from v5;
+select * from v6;
+
+drop view v1;
+drop view v2;
+drop view v3;
+drop view v4;
+drop view v5;
+drop view v6;
+
+-- insert select 
+create table t2 (aA int);
+insert into t2 select aaA as Abcd from t1 where AAA > 3;
+insert into t2 select aaA as Abcd from t1 where AbcD > 3;
+insert into t2 select "AaA" as `Abcd` from t1 where AAA > 3;
+insert into t2 select `AaA` as `Abcd` from t1 where AbcD > 3;
+insert into t2 select "AaA" as "Abcd" from t1 where `AAA` > 3;
+insert into t2 select `AaA` as "Abcd" from t1 where "AbcD" > 3;
+select * from t2;
+
+--dML 
+delete from t1 where (select aAA as ABVC where ABVC = 1) = AAa;
+select * from t1;
+
+drop table if exists t1 cascade;
+drop table if exists t2 cascade;
+
+
 drop schema column_name_case_test cascade;
 reset current_schema;
