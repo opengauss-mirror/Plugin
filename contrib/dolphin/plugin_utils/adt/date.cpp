@@ -401,7 +401,7 @@ Datum date_in(PG_FUNCTION_ARGS)
             /*
              * if reporting warning in DateTimeParseError, return 1970-01-01
              */
-            PG_RETURN_DATEADT(UNIX_EPOCH_JDATE - POSTGRES_EPOCH_JDATE);
+            PG_RETURN_DATEADT(DATE_ALL_ZERO_VALUE);
         }
         if (dterr == 0) {
             if (ftype[0] == DTK_NUMBER && nf == 1) {
@@ -414,7 +414,7 @@ Datum date_in(PG_FUNCTION_ARGS)
 #endif
         if (dterr != 0) {
             DateTimeParseError(dterr, str, "date", fcinfo->can_ignore);
-            PG_RETURN_DATEADT(UNIX_EPOCH_JDATE - POSTGRES_EPOCH_JDATE);
+            PG_RETURN_DATEADT(DATE_ALL_ZERO_VALUE);
         }
         switch (dtype) {
             case DTK_DATE:

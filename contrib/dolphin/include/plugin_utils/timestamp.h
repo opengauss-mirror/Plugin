@@ -54,6 +54,7 @@ do {                                                                            
 #define UNIXTIMESTAMP_END_VALUE INT64CONST(1200798847999999)    /* 2038-01-19 03:14:07.999999 */
 #define IZONE_BOUND1 INT64CONST(46740000000) /* 12:59:00 */
 #define IZONE_BOUND2 INT64CONST(46800000000) /* 13:00:00 */
+#define TIMESTAMP_ZERO (-211810291200000000)
 
 #define NORMAL_DATE 0
 #define ENABLE_ZERO_DAY 1

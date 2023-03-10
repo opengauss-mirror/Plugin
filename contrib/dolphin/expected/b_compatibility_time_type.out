@@ -1857,76 +1857,52 @@ INSERT INTO t_NO_ZERO_DATE_date(v) VALUES(0);
 ERROR:  Out of range value for date
 CONTEXT:  referenced column: v
 INSERT INTO t_NO_ZERO_DATE_date(v) VALUES('0000-00-00');
-ERROR:  date/time field value out of range: "0000-00-00"
-LINE 1: INSERT INTO t_NO_ZERO_DATE_date(v) VALUES('0000-00-00');
-                                                  ^
-HINT:  Perhaps you need a different "datestyle" setting.
-CONTEXT:  referenced column: v
 INSERT INTO t_NO_ZERO_DATE_date(v) VALUES('0000-00-01');
 ERROR:  date/time field value out of range: "0000-00-01"
 LINE 1: INSERT INTO t_NO_ZERO_DATE_date(v) VALUES('0000-00-01');
                                                   ^
-HINT:  Perhaps you need a different "datestyle" setting.
 CONTEXT:  referenced column: v
 INSERT INTO t_NO_ZERO_DATE_date(v) VALUES('0000-01-00');
 ERROR:  date/time field value out of range: "0000-01-00"
 LINE 1: INSERT INTO t_NO_ZERO_DATE_date(v) VALUES('0000-01-00');
                                                   ^
-HINT:  Perhaps you need a different "datestyle" setting.
 CONTEXT:  referenced column: v
 INSERT INTO t_NO_ZERO_DATE_date(v) VALUES('2000-00-00');
 ERROR:  date/time field value out of range: "2000-00-00"
 LINE 1: INSERT INTO t_NO_ZERO_DATE_date(v) VALUES('2000-00-00');
                                                   ^
-HINT:  Perhaps you need a different "datestyle" setting.
 CONTEXT:  referenced column: v
 INSERT INTO t_NO_ZERO_DATE_datetime(v) VALUES('0000-00-00 10:01');
-ERROR:  date/time field value out of range: "0000-00-00 10:01"
-LINE 1: INSERT INTO t_NO_ZERO_DATE_datetime(v) VALUES('0000-00-00 10...
-                                                      ^
-HINT:  Perhaps you need a different "datestyle" setting.
-CONTEXT:  referenced column: v
 INSERT INTO t_NO_ZERO_DATE_datetime(v) VALUES('0000-00-01 10:01');
 ERROR:  date/time field value out of range: "0000-00-01 10:01"
 LINE 1: INSERT INTO t_NO_ZERO_DATE_datetime(v) VALUES('0000-00-01 10...
                                                       ^
-HINT:  Perhaps you need a different "datestyle" setting.
 CONTEXT:  referenced column: v
 INSERT INTO t_NO_ZERO_DATE_datetime(v) VALUES('0000-01-00 10:01');
 ERROR:  date/time field value out of range: "0000-01-00 10:01"
 LINE 1: INSERT INTO t_NO_ZERO_DATE_datetime(v) VALUES('0000-01-00 10...
                                                       ^
-HINT:  Perhaps you need a different "datestyle" setting.
 CONTEXT:  referenced column: v
 INSERT INTO t_NO_ZERO_DATE_datetime(v) VALUES('2000-00-00 10:01');
 ERROR:  date/time field value out of range: "2000-00-00 10:01"
 LINE 1: INSERT INTO t_NO_ZERO_DATE_datetime(v) VALUES('2000-00-00 10...
                                                       ^
-HINT:  Perhaps you need a different "datestyle" setting.
 CONTEXT:  referenced column: v
 INSERT INTO t_NO_ZERO_DATE_timestamp(v) VALUES('0000-00-00 10:01');
-ERROR:  date/time field value out of range: "0000-00-00 10:01"
-LINE 1: INSERT INTO t_NO_ZERO_DATE_timestamp(v) VALUES('0000-00-00 1...
-                                                       ^
-HINT:  Perhaps you need a different "datestyle" setting.
-CONTEXT:  referenced column: v
 INSERT INTO t_NO_ZERO_DATE_timestamp(v) VALUES('0000-00-01 10:01');
 ERROR:  date/time field value out of range: "0000-00-01 10:01"
 LINE 1: INSERT INTO t_NO_ZERO_DATE_timestamp(v) VALUES('0000-00-01 1...
                                                        ^
-HINT:  Perhaps you need a different "datestyle" setting.
 CONTEXT:  referenced column: v
 INSERT INTO t_NO_ZERO_DATE_timestamp(v) VALUES('0000-01-00 10:01');
 ERROR:  date/time field value out of range: "0000-01-00 10:01"
 LINE 1: INSERT INTO t_NO_ZERO_DATE_timestamp(v) VALUES('0000-01-00 1...
                                                        ^
-HINT:  Perhaps you need a different "datestyle" setting.
 CONTEXT:  referenced column: v
 INSERT INTO t_NO_ZERO_DATE_timestamp(v) VALUES('2000-00-00 10:01');
 ERROR:  date/time field value out of range: "2000-00-00 10:01"
 LINE 1: INSERT INTO t_NO_ZERO_DATE_timestamp(v) VALUES('2000-00-00 1...
                                                        ^
-HINT:  Perhaps you need a different "datestyle" setting.
 CONTEXT:  referenced column: v
 SET dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group';
 INSERT INTO t_NO_ZERO_DATE_date(v) VALUES(0);
@@ -1983,24 +1959,163 @@ SELECT * FROM t_NO_ZERO_DATE_date;
 ------------
  00-00-0000
  00-00-0000
-(2 rows)
+ 00-00-0000
+(3 rows)
 
 SELECT * FROM t_NO_ZERO_DATE_datetime;
           v          
 ---------------------
  0000-00-00 10:01:00
-(1 row)
+ 0000-00-00 10:01:00
+(2 rows)
 
 SELECT * FROM t_NO_ZERO_DATE_timestamp;
               v               
 ------------------------------
  0000-00-00 10:01:00+08:05:43
-(1 row)
+ 0000-00-00 10:01:00+08:05:43
+(2 rows)
 
 DROP TABLE t_NO_ZERO_DATE_date;
 DROP TABLE t_NO_ZERO_DATE_datetime;
 DROP TABLE t_NO_ZERO_DATE_timestamp;
 RESET dolphin.sql_mode;
+drop table if exists t_date;
+NOTICE:  table "t_date" does not exist, skipping
+drop table if exists t_datetime;
+NOTICE:  table "t_datetime" does not exist, skipping
+create table t_date(a date);
+create table t_datetime(a datetime);
+reset dolphin.sql_mode;
+insert into t_date values('0000-00-00');
+ERROR:  date/time field value out of range: "0000-00-00"
+LINE 1: insert into t_date values('0000-00-00');
+                                  ^
+HINT:  Perhaps you need a different "datestyle" setting.
+CONTEXT:  referenced column: a
+insert into t_datetime values('0000-00-00');
+ERROR:  date/time field value out of range: "0000-00-00"
+LINE 1: insert into t_datetime values('0000-00-00');
+                                      ^
+HINT:  Perhaps you need a different "datestyle" setting.
+CONTEXT:  referenced column: a
+insert ignore into t_date values('0000-00-00');
+WARNING:  date/time field value out of range: "0000-00-00"
+LINE 1: insert ignore into t_date values('0000-00-00');
+                                         ^
+HINT:  Perhaps you need a different "datestyle" setting.
+CONTEXT:  referenced column: a
+insert ignore into t_datetime values('0000-00-00');
+WARNING:  date/time field value out of range: "0000-00-00"
+LINE 1: insert ignore into t_datetime values('0000-00-00');
+                                             ^
+HINT:  Perhaps you need a different "datestyle" setting.
+CONTEXT:  referenced column: a
+select * from t_date;
+     a      
+------------
+ 00-00-0000
+(1 row)
+
+select * from t_datetime;
+          a          
+---------------------
+ 0000-00-00 00:00:00
+(1 row)
+
+set dolphin.sql_mode = 'no_zero_date';
+insert into t_date values('0000-00-00');
+WARNING:  date/time field value out of range: "0000-00-00"
+LINE 1: insert into t_date values('0000-00-00');
+                                  ^
+CONTEXT:  referenced column: a
+insert into t_datetime values('0000-00-00');
+WARNING:  date/time field value out of range: "0000-00-00"
+LINE 1: insert into t_datetime values('0000-00-00');
+                                      ^
+CONTEXT:  referenced column: a
+insert ignore into t_date values('0000-00-00');
+WARNING:  date/time field value out of range: "0000-00-00"
+LINE 1: insert ignore into t_date values('0000-00-00');
+                                         ^
+CONTEXT:  referenced column: a
+insert ignore into t_datetime values('0000-00-00');
+WARNING:  date/time field value out of range: "0000-00-00"
+LINE 1: insert ignore into t_datetime values('0000-00-00');
+                                             ^
+CONTEXT:  referenced column: a
+select * from t_date;
+     a      
+------------
+ 00-00-0000
+ 00-00-0000
+ 00-00-0000
+(3 rows)
+
+select * from t_datetime;
+          a          
+---------------------
+ 0000-00-00 00:00:00
+ 0000-00-00 00:00:00
+ 0000-00-00 00:00:00
+(3 rows)
+
+set dolphin.sql_mode = 'sql_mode_strict';
+insert into t_date values('0000-00-00');
+insert into t_datetime values('0000-00-00');
+insert ignore into t_date values('0000-00-00');
+insert ignore into t_datetime values('0000-00-00');
+select * from t_date;
+     a      
+------------
+ 00-00-0000
+ 00-00-0000
+ 00-00-0000
+ 00-00-0000
+ 00-00-0000
+(5 rows)
+
+select * from t_datetime;
+          a          
+---------------------
+ 0000-00-00 00:00:00
+ 0000-00-00 00:00:00
+ 0000-00-00 00:00:00
+ 0000-00-00 00:00:00
+ 0000-00-00 00:00:00
+(5 rows)
+
+set dolphin.sql_mode = '';
+insert into t_date values('0000-00-00');
+insert into t_datetime values('0000-00-00');
+insert ignore into t_date values('0000-00-00');
+insert ignore into t_datetime values('0000-00-00');
+select * from t_date;
+     a      
+------------
+ 00-00-0000
+ 00-00-0000
+ 00-00-0000
+ 00-00-0000
+ 00-00-0000
+ 00-00-0000
+ 00-00-0000
+(7 rows)
+
+select * from t_datetime;
+          a          
+---------------------
+ 0000-00-00 00:00:00
+ 0000-00-00 00:00:00
+ 0000-00-00 00:00:00
+ 0000-00-00 00:00:00
+ 0000-00-00 00:00:00
+ 0000-00-00 00:00:00
+ 0000-00-00 00:00:00
+(7 rows)
+
+drop table if exists t_date;
+drop table if exists t_datetime;
 \c postgres
 DROP DATABASE b_time_type;
 DROP TABLESPACE b_time_type_example;
