@@ -1734,37 +1734,429 @@ select * from  func8();
 
 --test as keyword
 select 1 as USER;
- user 
+ USER 
 ------
     1
 (1 row)
 
 select 1 as ALSO;
- also 
+ ALSO 
 ------
     1
 (1 row)
 
 select 1 as ADD;
- add 
+ ADD 
 -----
    1
 (1 row)
 
 select 1 as BIGINT;
- bigint 
+ BIGINT 
 --------
       1
 (1 row)
 
 select 1 as COMMON_WORD;
- common_word 
+ COMMON_WORD 
 -------------
            1
 (1 row)
 
+--test about alias
+drop table if exists t1 cascade;
+create table t1(AaA int, BbBb int);
+insert into t1 values(1,2);
+-- alias test
+select * from t1;
+ AaA | BbBb 
+-----+------
+   1 |    2
+(1 row)
+
+select aaA as Abcd from t1;
+ Abcd 
+------
+    1
+(1 row)
+
+select aaA abcD from t1;
+ abcD 
+------
+    1
+(1 row)
+
+select aaA as creatE from t1;
+ creatE 
+--------
+      1
+(1 row)
+
+select aaA as duaL from t1;
+ duaL 
+------
+    1
+(1 row)
+
+select aaA as viEw from t1;
+ viEw 
+------
+    1
+(1 row)
+
+-- quoted alias test
+select aaA as "Abcd" from t1;
+ Abcd 
+------
+    1
+(1 row)
+
+select aaA "abcD" from t1;
+ abcD 
+------
+    1
+(1 row)
+
+select aaA as "creatE" from t1;
+ creatE 
+--------
+      1
+(1 row)
+
+select aaA as "duaL" from t1;
+ duaL 
+------
+    1
+(1 row)
+
+select aaA as "viEw" from t1;
+ viEw 
+------
+    1
+(1 row)
+
+select "aAA" as "Abcd" from t1;
+ Abcd 
+------
+    1
+(1 row)
+
+select "aaA" "abcD" from t1;
+ abcD 
+------
+    1
+(1 row)
+
+select "aaA" as "creatE" from t1;
+ creatE 
+--------
+      1
+(1 row)
+
+select "aaA" as "duaL" from t1;
+ duaL 
+------
+    1
+(1 row)
+
+select "aaA" as "viEw" from t1;
+ viEw 
+------
+    1
+(1 row)
+
+--ansi quoted
+select `aaA` as "Abcd" from t1;
+ Abcd 
+------
+    1
+(1 row)
+
+select `aaA` "abcD" from t1;
+ abcD 
+------
+    1
+(1 row)
+
+select `aaA` as "creatE" from t1;
+ creatE 
+--------
+      1
+(1 row)
+
+select `aaA` as "duaL" from t1;
+ duaL 
+------
+    1
+(1 row)
+
+select `aaA` as "viEw" from t1;
+ viEw 
+------
+    1
+(1 row)
+
+select `aAA` as `Abcd` from t1;
+ Abcd 
+------
+    1
+(1 row)
+
+select `aaA` `abcD` from t1;
+ abcD 
+------
+    1
+(1 row)
+
+select `aaA` as `creatE` from t1;
+ creatE 
+--------
+      1
+(1 row)
+
+select `aaA` as `duaL` from t1;
+ duaL 
+------
+    1
+(1 row)
+
+select `aaA` as `viEw` from t1;
+ viEw 
+------
+    1
+(1 row)
+
+--where test
+insert into t1 values(3,4);
+insert into t1 values(5,6);
+select aaA as Abcd from t1 where AAA > 3;
+ Abcd 
+------
+    5
+(1 row)
+
+select aaA as Abcd from t1 where AbcD > 3;
+ Abcd 
+------
+    5
+(1 row)
+
+select "AaA" as `Abcd` from t1 where AAA > 3;
+ Abcd 
+------
+    5
+(1 row)
+
+select `AaA` as `Abcd` from t1 where AbcD > 3;
+ Abcd 
+------
+    5
+(1 row)
+
+select "AaA" as "Abcd" from t1 where `AAA` > 3;
+ Abcd 
+------
+    5
+(1 row)
+
+select `AaA` as "Abcd" from t1 where "AbcD" > 3;
+ Abcd 
+------
+    5
+(1 row)
+
+-- group by test
+select aaA as Abcd from t1 where AAA > 3 group by `aAa`;
+ Abcd 
+------
+    5
+(1 row)
+
+select aaA as Abcd from t1 where AbcD > 3 group by `Abcd`;
+ Abcd 
+------
+    5
+(1 row)
+
+select "AaA" as `Abcd` from t1 where AAA > 3 group by "Abcd";
+ Abcd 
+------
+    5
+(1 row)
+
+select `AaA` as `Abcd` from t1 where AbcD > 3 group by "aAa";
+ Abcd 
+------
+    5
+(1 row)
+
+select "AaA" as "Abcd" from t1 where `AAA` > 3 group by Abcd;
+ Abcd 
+------
+    5
+(1 row)
+
+select `AaA` as "Abcd" from t1 where "AbcD" > 3 group by aAa;
+ Abcd 
+------
+    5
+(1 row)
+
+-- having  test
+select aaA as Abcd from t1 where AAA > 1 group by `aAa` having AAA >3 ;
+ Abcd 
+------
+    5
+(1 row)
+
+select aaA as Abcd from t1 where AbcD > 1 group by `Abcd` having Abcd >3;
+ Abcd 
+------
+    5
+(1 row)
+
+select "AaA" as `Abcd` from t1 where AAA > 1 group by "Abcd" having `AAA` >3;
+ Abcd 
+------
+    5
+(1 row)
+
+select `AaA` as `Abcd` from t1 where AbcD > 1 group by "aAa" having `Abcd` >3;
+ Abcd 
+------
+    5
+(1 row)
+
+select "AaA" as "Abcd" from t1 where `AAA` > 1 group by Abcd having "Abcd" >3;
+ Abcd 
+------
+    5
+(1 row)
+
+select `AaA` as "Abcd" from t1 where "AbcD" > 1 group by aAa having "AAA" >3;
+ Abcd 
+------
+    5
+(1 row)
+
+-- order by   test
+select aaA as Abcd from t1 where AAA > 1 group by `aAa` having AAA >3 order by AAA;
+ Abcd 
+------
+    5
+(1 row)
+
+select aaA as Abcd from t1 where AbcD > 1 group by `Abcd` having Abcd >3 order by Abcd;
+ Abcd 
+------
+    5
+(1 row)
+
+select "AaA" as `Abcd` from t1 where AAA > 1 group by "Abcd" having `AAA` >3 order by `AAA`;
+ Abcd 
+------
+    5
+(1 row)
+
+select `AaA` as `Abcd` from t1 where AbcD > 1 group by "aAa" having `Abcd` >3 order by `Abcd`;
+ Abcd 
+------
+    5
+(1 row)
+
+select "AaA" as "Abcd" from t1 where `AAA` > 1 group by Abcd having "Abcd" >3 order by "AAA";
+ Abcd 
+------
+    5
+(1 row)
+
+select `AaA` as "Abcd" from t1 where "AbcD" > 1 group by aAa having "AAA" >3 order by "Abcd";
+ Abcd 
+------
+    5
+(1 row)
+
+-- create view
+create view v1 as select aaA as Abcd from t1 where AAA > 1 group by `aAa` having AAA >3 order by AAA;
+create view v2 as select aaA as Abcd from t1 where AbcD > 1 group by `Abcd` having Abcd >3 order by Abcd;
+create view v3 as select "AaA" as `Abcd` from t1 where AAA > 1 group by "Abcd" having `AAA` >3 order by `AAA`;
+create view v4 as select `AaA` as `Abcd` from t1 where AbcD > 1 group by "aAa" having `Abcd` >3 order by `Abcd`;
+create view v5 as select "AaA" as "Abcd" from t1 where `AAA` > 1 group by Abcd having "Abcd" >3 order by "AAA";
+create view v6 as select `AaA` as "Abcd" from t1 where "AbcD" > 1 group by aAa having "AAA" >3 order by "Abcd";
+select * from v1;
+ Abcd 
+------
+    5
+(1 row)
+
+select * from v2;
+ Abcd 
+------
+    5
+(1 row)
+
+select * from v3;
+ Abcd 
+------
+    5
+(1 row)
+
+select * from v4;
+ Abcd 
+------
+    5
+(1 row)
+
+select * from v5;
+ Abcd 
+------
+    5
+(1 row)
+
+select * from v6;
+ Abcd 
+------
+    5
+(1 row)
+
+drop view v1;
+drop view v2;
+drop view v3;
+drop view v4;
+drop view v5;
+drop view v6;
+-- insert select 
+create table t2 (aA int);
+insert into t2 select aaA as Abcd from t1 where AAA > 3;
+insert into t2 select aaA as Abcd from t1 where AbcD > 3;
+insert into t2 select "AaA" as `Abcd` from t1 where AAA > 3;
+insert into t2 select `AaA` as `Abcd` from t1 where AbcD > 3;
+insert into t2 select "AaA" as "Abcd" from t1 where `AAA` > 3;
+insert into t2 select `AaA` as "Abcd" from t1 where "AbcD" > 3;
+select * from t2;
+ aA 
+----
+  5
+  5
+  5
+  5
+  5
+  5
+(6 rows)
+
+--dML 
+delete from t1 where (select aAA as ABVC where ABVC = 1) = AAa;
+select * from t1;
+ AaA | BbBb 
+-----+------
+   3 |    4
+   5 |    6
+(2 rows)
+
+drop table if exists t1 cascade;
+drop table if exists t2 cascade;
 drop schema column_name_case_test cascade;
-NOTICE:  drop cascades to 38 other objects
+NOTICE:  drop cascades to 37 other objects
 DETAIL:  drop cascades to table a1
 drop cascades to table a2
 drop cascades to table warehouse_t22
@@ -1801,6 +2193,5 @@ drop cascades to table testfunc
 drop cascades to function func7()
 drop cascades to table tf1
 drop cascades to function tfun3()
-drop cascades to table t1
 drop cascades to function func8()
 reset current_schema;

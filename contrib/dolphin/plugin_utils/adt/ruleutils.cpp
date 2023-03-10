@@ -1234,7 +1234,7 @@ static void AppendSubPartitionDetail(StringInfo buf, tableInfo tableinfo, Subpar
 
     StringInfo query = makeStringInfo();
     appendStringInfo(query,
-        "SELECT /*+ hashjoin(p t) */ p.relname AS partName, "
+        "SELECT /*+ hashjoin(p t) */ p.relname AS partname, "
         "array_to_string(p.boundaries, ',') as partbound, "
         "array_to_string(p.boundaries, ''',''') as partboundstr, "
         "t.spcname AS reltblspc "
