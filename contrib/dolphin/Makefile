@@ -64,7 +64,7 @@ OBJS += $(prep)/prepunion.o
 
 OBJS += $(optimizer_util)/plancat.o $(optimizer_util)/relnode.o
 
-OBJS += $(commands)/functioncmds.o $(commands)/foreigncmds.o $(commands)/copy.o
+OBJS += $(commands)/functioncmds.o $(commands)/foreigncmds.o $(commands)/copy.o $(commands)/schemacmds.o
 
 OBJS += $(pl)/pl_gram.o $(pl)/pl_scanner.o $(pl)/pl_comp.o $(pl)/pl_handler.o
 
