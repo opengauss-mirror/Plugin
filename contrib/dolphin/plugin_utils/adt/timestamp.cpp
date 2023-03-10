@@ -485,7 +485,7 @@ Datum timestamp_in(PG_FUNCTION_ARGS)
                 /*
                  * if error ignorable, function DateTimeParseError reports warning instead, then return current timestamp.
                  */
-                PG_RETURN_TIMESTAMP(GetCurrentTimestamp());
+                PG_RETURN_TIMESTAMP(TIMESTAMP_ZERO);
             }
             if (dterr == 0) {
                 if (nf == 1 && ftype[0] == DTK_NUMBER) {
@@ -498,7 +498,7 @@ Datum timestamp_in(PG_FUNCTION_ARGS)
             }
             if (dterr != 0) {
                 DateTimeParseError(dterr, str, "timestamp", fcinfo->can_ignore);
-                PG_RETURN_TIMESTAMP(GetCurrentTimestamp());
+                PG_RETURN_TIMESTAMP(TIMESTAMP_ZERO);
             }
             switch (dtype) {
                 case DTK_DATE:
