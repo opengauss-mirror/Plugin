@@ -106,6 +106,7 @@
 |plugin_optimizer\commands|copy.cpp   |src\gausskernel\optimizer\commands\copy.cpp  |
 |plugin_optimizer\commands|functioncmds.cpp   |src\gausskernel\optimizer\commands\functioncmds.cpp  |
 |plugin_optimizer\commands|foreigncmds.cpp   |src\gausskernel\optimizer\commands\foreigncmds.cpp  |
+|plugin_optimizer\commands|schemacmds.cpp   |src\gausskernel\optimizer\commands\schemacmds.cpp  |
 |plugin_optimizer\plan|pgxcplan_single.cpp   |src\gausskernel\optimizer\plan\pgxcplan_single.cpp  |
 |plugin_optimizer\plan|planner.cpp   |src\gausskernel\optimizer\plan\planner.cpp  |
 |plugin_optimizer\plan|streamwalker.cpp   |src\gausskernel\optimizer\plan\streamwalker.cpp  |
