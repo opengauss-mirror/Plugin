@@ -413,6 +413,23 @@ create function t_create_flow_control_func_no_return(b int) returns int
 	set b = b + 10;
     until b > 10 end repeat|
 delimiter ;
+drop table if exists test_table_030;
+create table test_table_030(ID int,NAME text);
+insert into test_table_030 values(1,'a'),(2,'b');
+drop function if exists test_function_030;
+DELIMITER |
+CREATE FUNCTION test_function_030(canshu VARCHAR(16))
+returns INT READS SQL DATA
+BEGIN
+DECLARE test_table_030a int;
+SELECT ID into test_table_030a FROM test_table_030 WHERE NAME = canshu;
+return test_table_030a;
+END |
+DELIMITER ;
+select test_function_030('aaa');
+select test_function_030('aaa') is null;
+drop table if exists test_table_030;
+drop function if exists test_function_030;
 
 drop schema b_compat_create_func cascade;
 reset current_schema;

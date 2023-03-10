@@ -1,9 +1,9 @@
 create schema default_guc;
 set current_schema to 'default_guc';
 show behavior_compat_options;
- behavior_compat_options 
--------------------------
- display_leading_zero
+           behavior_compat_options            
+----------------------------------------------
+ display_leading_zero,select_into_return_null
 (1 row)
 
 select 0.123;
