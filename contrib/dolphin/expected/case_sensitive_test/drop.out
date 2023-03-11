@@ -130,7 +130,8 @@ DROP TABLE  Stud_Emp;
 DROP TABLE  Student;
 DROP TABLE  Slow_emp4000;
 DROP TABLE  Fast_emp4000;
-DROP TABLE  Emp;
+DROP TABLE  Emp CASCADE;
+NOTICE:  drop cascades to view toyemp
 DROP TABLE  Person;
 DROP TABLE  ramp;
 ERROR:  table "ramp" does not exist
