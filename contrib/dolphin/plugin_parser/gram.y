@@ -19977,9 +19977,16 @@ b_proc_body:
 							if (!bdinfo->m_declare_b)
 								bdinfo->m_declare_b = yylloc;
 							add_declare = false;
+							bool next_cursor = true;
 							while (true)
 							{
 								tok = YYLEX;
+								if (next_cursor && tok != CURSOR)
+									next_cursor = false;
+								if (tok == HANDLER || tok == CONDITION || (!next_cursor && tok == CURSOR))
+								{
+									break;
+								}
 								if (tok == ';')
 								{
 									bdinfo->m_declare_e = yylloc;

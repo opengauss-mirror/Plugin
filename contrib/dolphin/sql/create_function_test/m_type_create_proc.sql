@@ -284,8 +284,103 @@ delimiter ;
 
 call doempty();
 
+-- test declare continue handler
+set enable_set_variable_b_format = on;
 
+delimiter //
+CREATE or replace PROCEDURE proc_set_test(a int, b int)
+begin
+declare result int;
+DECLARE CONTINUE HANDLER FOR SQLEXCEPTION set @sum = 1;
+set @x1 = 1;
+result := a/b;
+set @x1 = 2;
+end;
+//
+delimiter ;
+set @sum = 0;
+set @x1 = 0;
+call proc_set_test(1,0);
+select @sum;
+select @x1;
 
+delimiter //
+
+CREATE or replace PROCEDURE proc_set_test(a int, b int)
+begin
+declare result int;
+declare DIVISION_ZERO condition for SQLSTATE "22012";
+DECLARE CONTINUE HANDLER FOR DIVISION_ZERO set @sum = 1;
+set @x1 = 1;
+result := a/b;
+set @x1 = 2;
+end;
+//
+delimiter ;
+
+set @sum = 0;
+set @x1 = 0;
+call proc_set_test(1,0);
+select @sum;
+select @x1;
+
+create table company(name varchar(100), loc varchar(100), no integer PRIMARY KEY);
+insert into company values ('macrosoft',    'usa',          001);
+insert into company values ('oracle',       'usa',          002);
+insert into company values ('backberry',    'canada',       003);
+delimiter //
+create or replace procedure test_cursor_handler() 
+begin
+  declare company_name    varchar(100);
+  declare company_loc varchar(100);
+  declare company_no  integer;
+  DECLARE CONTINUE HANDLER FOR unique_violation set @x = 1;
+  declare c1_all cursor is --cursor without args 
+      select name, loc, no from company order by 1, 2, 3;
+  if not c1_all%isopen then
+      open c1_all;
+  end if;
+  loop
+      fetch c1_all into company_name, company_loc, company_no;
+      exit when c1_all%notfound;
+      insert into company values (company_name,company_loc,company_no);
+      raise notice '% : % : %',company_name,company_loc,company_no;
+  end loop;
+  if c1_all%isopen then
+      close c1_all;
+  end if;
+end;
+//
+delimiter ;
+set @x=0;
+call test_cursor_handler();
+select @x;
+
+create table declare_handler_t_continue (i INT PRIMARY KEY, j INT);
+
+CREATE OR REPLACE PROCEDURE proc_continue_sqlexception()  IS
+BEGIN
+    DECLARE CONTINUE HANDLER FOR unique_violation set @x1 = 1;
+    DECLARE CONTINUE HANDLER FOR not found set @x2 = 2;
+    DECLARE CONTINUE HANDLER FOR SQLEXCEPTION set @x3 = 3;
+
+    create table t_rowcompress_pglz_compresslevel(id int) with (compresstype=1,compress_level=2);
+    INSERT INTO declare_handler_t_continue VALUES (1, 1);
+    INSERT INTO declare_handler_t_continue VALUES (1, 1);
+    INSERT INTO declare_handler_t_continue VALUES (3, 1);
+    set @x4 = 4;
+END;
+/
+set @x1=0;
+set @x2=0;
+set @x3=0;
+set @x4=0;
+call proc_continue_sqlexception();
+select * from declare_handler_t_continue;
+select @x1;
+select @x2;
+select @x3;
+select @x4;
 
 
 drop schema m_create_proc_type cascade;
