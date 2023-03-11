@@ -19023,6 +19023,7 @@ CreateFunctionStmt:
 					u_sess->parser_cxt.eaten_begin = false;
 					pg_yyget_extra(yyscanner)->core_yy_extra.include_ora_comment = true;
 			  		u_sess->parser_cxt.isCreateFuncOrProc = true;
+					GetSessionContext()->is_first_lable = true;
 				} dolphin_flow_control
 				{
 					int rc = 0;
@@ -21435,6 +21436,7 @@ opt_label:
 
 flow_control_func_body:
 			{
+				GetSessionContext()->is_first_lable = false;
 				int proc_b = 0;
 				int proc_e = 0;
 				char* proc_body_str = NULL;

@@ -481,5 +481,11 @@ select test_function_030('aaa') is null;
 drop table if exists test_table_030;
 drop function if exists test_function_030;
 
+-- expect error: there is no parameter $1, other error is wrong!!!
+select :lable;
+select :loop;
+select :repeat;
+select :while;
+
 drop schema b_compat_create_func cascade;
 reset current_schema;

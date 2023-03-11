@@ -668,6 +668,23 @@ select test_function_030('aaa') is null;
 
 drop table if exists test_table_030;
 drop function if exists test_function_030;
+-- expect error: there is no parameter $1, other error is wrong!!!
+select :lable;
+ERROR:  there is no parameter $1
+LINE 1: select :lable;
+               ^
+select :loop;
+ERROR:  there is no parameter $1
+LINE 1: select :loop;
+               ^
+select :repeat;
+ERROR:  there is no parameter $1
+LINE 1: select :repeat;
+               ^
+select :while;
+ERROR:  there is no parameter $1
+LINE 1: select :while;
+               ^
 drop schema b_compat_create_func cascade;
 NOTICE:  drop cascades to 18 other objects
 DETAIL:  drop cascades to table test11
