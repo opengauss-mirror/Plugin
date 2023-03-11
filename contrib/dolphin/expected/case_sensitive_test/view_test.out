@@ -1,0 +1,129 @@
+\c table_name_test_db;
+set dolphin.lower_case_table_names TO 0;
+CREATE SCHEMA test_view_schema_1;
+CREATE SCHEMA Test_View_Schema_1;
+CREATE VIEW Test1 AS SELECT 1 + 1 a;
+CREATE VIEW test_view_schema_1.Test2 AS SELECT 1 + 1 a;
+CREATE VIEW Test_View_Schema_1.Test3 AS SELECT 1 + 1 a;
+SELECT * FROM Test1;                                               -- expected: success
+ a 
+---
+ 2
+(1 row)
+
+SELECT * FROM test_view_schema_1.Test2;                            -- expected: success
+ a 
+---
+ 2
+(1 row)
+
+SELECT * FROM Test_View_Schema_1.Test3;                            -- expected: success
+ a 
+---
+ 2
+(1 row)
+
+SELECT * FROM table_name_test_db.test_view_schema_1.Test2;         -- expected: success
+ a 
+---
+ 2
+(1 row)
+
+SELECT * FROM table_name_test_db.Test_View_Schema_1.Test3;         -- expected: success
+ a 
+---
+ 2
+(1 row)
+
+SELECT t1.a a1, t2.a a2, t3.a a3 FROM                              -- expected: success
+Test1 t1,
+test_view_schema_1.Test2 t2,
+Test_View_Schema_1.Test3 t3;
+ a1 | a2 | a3 
+----+----+----
+  2 |  2 |  2
+(1 row)
+
+SHOW CREATE VIEW Test1;                                            -- expected: success
+ERROR:  relation "test1" does not exist
+CONTEXT:  referenced column: Create View
+SHOW CREATE VIEW test_view_schema_1.Test2;                         -- expected: success
+ERROR:  relation "test_view_schema_1.test2" does not exist
+CONTEXT:  referenced column: Create View
+SHOW CREATE VIEW Test_View_Schema_1.Test3;                         -- expected: success
+ERROR:  relation "test_view_schema_1.test3" does not exist
+CONTEXT:  referenced column: Create View
+SHOW CREATE VIEW test1;                                            -- expected: failed
+ERROR:  Table 'public.test1' doesn't exist
+SHOW CREATE VIEW Test_View_Schema_1.Test2;                         -- expected: failed
+ERROR:  Table 'Test_View_Schema_1.Test2' doesn't exist
+SHOW CREATE VIEW test_view_schema_1.Test3;                         -- expected: failed
+ERROR:  Table 'test_view_schema_1.Test3' doesn't exist
+SHOW CREATE VIEW test_view_schema_1.test2;                         -- expected: failed
+ERROR:  Table 'test_view_schema_1.test2' doesn't exist
+SHOW CREATE VIEW Test_View_Schema_1.test3;                         -- expected: failed
+ERROR:  Table 'Test_View_Schema_1.test3' doesn't exist
+SELECT * FROM test1;                            -- expected: failed
+ERROR:  relation "test1" does not exist on datanode1
+LINE 1: SELECT * FROM test1;
+                      ^
+SELECT * FROM Test_View_Schema_1.Test2;         -- expected: failed
+ERROR:  relation "Test_View_Schema_1.Test2" does not exist on datanode1
+LINE 1: SELECT * FROM Test_View_Schema_1.Test2;
+                      ^
+SELECT * FROM test_view_schema_1.Test3;         -- expected: failed
+ERROR:  relation "test_view_schema_1.Test3" does not exist on datanode1
+LINE 1: SELECT * FROM test_view_schema_1.Test3;
+                      ^
+SELECT * FROM test_view_schema_1.test2;         -- expected: failed
+ERROR:  relation "test_view_schema_1.test2" does not exist on datanode1
+LINE 1: SELECT * FROM test_view_schema_1.test2;
+                      ^
+SELECT * FROM Test_View_Schema_1.test3;         -- expected: failed
+ERROR:  relation "Test_View_Schema_1.test3" does not exist on datanode1
+LINE 1: SELECT * FROM Test_View_Schema_1.test3;
+                      ^
+ALTER VIEW Test1 AS SELECT 2 + 2 a, 3 + 3 b;
+ALTER VIEW test_view_schema_1.Test2 AS SELECT 2 + 2 a, 3 + 3 b;
+ALTER VIEW Test_View_Schema_1.Test3 AS SELECT 2 + 2 a, 3 + 3 b;
+ALTER VIEW test_view_schema_1.Test2 RENAME TO Test_view_schema_1.test2;        --- expected: failed
+ERROR:  syntax error at or near "."
+LINE 1: ...test_view_schema_1.Test2 RENAME TO Test_view_schema_1.test2;
+                                                                ^
+ALTER VIEW Test_View_Schema_1.Test3 RENAME TO test_view_schema_1.test3;        --- expected: failed
+ERROR:  syntax error at or near "."
+LINE 1: ...Test_View_Schema_1.Test3 RENAME TO test_view_schema_1.test3;
+                                                                ^
+ALTER VIEW test_view_schema_1.Test2 RENAME TO test2;        --- expected: success
+ALTER VIEW Test_View_Schema_1.Test3 RENAME TO test3;        --- expected: success
+ALTER VIEW test_view_schema_1.test2 RENAME TO Test2;        --- expected: success
+ALTER VIEW Test_View_Schema_1.test3 RENAME TO Test3;        --- expected: success
+SELECT * FROM test_view_schema_1.Test2;        --- expected: success
+ a | b 
+---+---
+ 4 | 6
+(1 row)
+
+SELECT * FROM Test_View_Schema_1.Test3;        --- expected: success
+ a | b 
+---+---
+ 4 | 6
+(1 row)
+
+SELECT * FROM test_view_schema_1.test2;        --- expected: failed
+ERROR:  relation "test_view_schema_1.test2" does not exist on datanode1
+LINE 1: SELECT * FROM test_view_schema_1.test2;
+                      ^
+SELECT * FROM Test_View_Schema_1.test3;        --- expected: failed
+ERROR:  relation "Test_View_Schema_1.test3" does not exist on datanode1
+LINE 1: SELECT * FROM Test_View_Schema_1.test3;
+                      ^
+DROP VIEW Test1;                                -- expected: success
+DROP VIEW test_view_schema_1.Test2;             -- expected: success
+DROP VIEW Test_View_Schema_1.Test3;             -- expected: success
+DROP VIEW test_view_schema_1.test2;             -- expected: failed
+ERROR:  view "test2" does not exist
+DROP VIEW Test_View_Schema_1.test3;             -- expected: failed
+ERROR:  view "test3" does not exist
+DROP SCHEMA test_view_schema_1 CASCADE;
+DROP SCHEMA Test_View_Schema_1 CASCADE;

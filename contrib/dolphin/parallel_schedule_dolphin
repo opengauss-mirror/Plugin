@@ -83,7 +83,14 @@ test: case_sensitive_test/single_node_foreign_key case_sensitive_test/create_ind
 
 test: case_sensitive_test/alter_table case_sensitive_test/reindex_internal case_sensitive_test/spi_test case_sensitive_test/quoted case_sensitive_test/merge case_sensitive_test/case_sensitive_bug_test
 
+test:  case_sensitive_test/create_view1 case_sensitive_test/create_view2 case_sensitive_test/create_view3 case_sensitive_test/create_view4 case_sensitive_test/create_view5 case_sensitive_test/view_test
+
 test: case_sensitive_test/drop
+
+# This use case uses the \dn command to output all the schemas.
+# If not placed in a separate test case group,
+# the test results will be unstable.
+test: case_sensitive_test/schema_test
 
 test: case_sensitive_test/clean_env
 
