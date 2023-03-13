@@ -1119,7 +1119,7 @@ static char* appendString(char* source, char* target, int offset);
 %type <list>    load_column_expr_list copy_column_sequence_list copy_column_filler_list copy_column_constant_list 
 %type <typnam>  load_col_data_type
 %type <ival64>  load_col_sequence_item_sart column_sequence_item_step column_sequence_item_sart
-%type <str>  comment_opt
+%type <str>  comment_opt opt_label
 %type <trgcharacter> trigger_order
 %type <str> delimiter_str_name delimiter_str_names
 %type <node>	on_table opt_engine engine_option opt_engine_without_empty opt_compression opt_compression_without_empty set_compress_type opt_row_format row_format_option
@@ -1290,6 +1290,7 @@ static char* appendString(char* source, char* target, int offset);
 			DEFAULT_FUNC MATCH_FUNC
 			DO_SCONST DO_LANGUAGE SHOW_STATUS BEGIN_B_BLOCK
 			FORCE_INDEX USE_INDEX LOCK_TABLES
+			LABEL_LOOP LABEL_REPEAT LABEL_WHILE
 
 /* Precedence: lowest to highest */
 %nonassoc COMMENT
@@ -19022,6 +19023,7 @@ CreateFunctionStmt:
 					u_sess->parser_cxt.eaten_begin = false;
 					pg_yyget_extra(yyscanner)->core_yy_extra.include_ora_comment = true;
 			  		u_sess->parser_cxt.isCreateFuncOrProc = true;
+					GetSessionContext()->is_first_lable = true;
 				} dolphin_flow_control
 				{
 					int rc = 0;
@@ -21314,38 +21316,83 @@ dolphin_flow_control:
 					$2->bodySrc = result;
 					$$ = $2;
 				}
-			| REPEAT flow_control_func_body
+			| opt_label REPEAT flow_control_func_body
 				{
 					/* check whether function body has RETURN */
-					if (!$2->hasReturn) {
+					if (!$3->hasReturn) {
 						ereport(ERROR, (errcode(ERRCODE_SYNTAX_ERROR), errmsg("no RETURN found in function body")));
 					}
-					char* result = appendString("REPEAT", $2->bodySrc, BEGIN_LEN);
-					pfree($2->bodySrc);
-					$2->bodySrc = result;
-					$$ = $2;
+					char* result = appendString("REPEAT", $3->bodySrc, BEGIN_LEN);
+					if ($1 != NULL) {
+						result = appendString($1, result, BEGIN_LEN);
+					}
+					pfree($3->bodySrc);
+					$3->bodySrc = result;
+					$$ = $3;
 				}
-			| LOOP flow_control_func_body
+			| IDENT LABEL_REPEAT flow_control_func_body
 				{
 					/* check whether function body has RETURN */
-					if (!$2->hasReturn) {
+					if (!$3->hasReturn) {
 						ereport(ERROR, (errcode(ERRCODE_SYNTAX_ERROR), errmsg("no RETURN found in function body")));
 					}
-					char* result = appendString("LOOP", $2->bodySrc, BEGIN_LEN);
-					pfree($2->bodySrc);
-					$2->bodySrc = result;
-					$$ = $2;
+					char* result = appendString(":REPEAT", $3->bodySrc, BEGIN_LEN);
+					result = appendString($1->str, result, BEGIN_LEN);
+					pfree($3->bodySrc);
+					$3->bodySrc = result;
+					$$ = $3;
 				}
-			| WHILE_P flow_control_func_body
+			| opt_label LOOP flow_control_func_body
 				{
 					/* check whether function body has RETURN */
-					if (!$2->hasReturn) {
+					if (!$3->hasReturn) {
 						ereport(ERROR, (errcode(ERRCODE_SYNTAX_ERROR), errmsg("no RETURN found in function body")));
 					}
-					char* result = appendString("WHILE", $2->bodySrc, BEGIN_LEN);
-					pfree($2->bodySrc);
-					$2->bodySrc = result;
-					$$ = $2;
+					char* result = appendString("LOOP", $3->bodySrc, BEGIN_LEN);
+					if ($1 != NULL) {
+						result = appendString($1, result, BEGIN_LEN);
+					}
+					pfree($3->bodySrc);
+					$3->bodySrc = result;
+					$$ = $3;
+				}
+			| IDENT LABEL_LOOP flow_control_func_body
+				{
+					/* check whether function body has RETURN */
+					if (!$3->hasReturn) {
+						ereport(ERROR, (errcode(ERRCODE_SYNTAX_ERROR), errmsg("no RETURN found in function body")));
+					}
+					char* result = appendString(":LOOP", $3->bodySrc, BEGIN_LEN);
+					result = appendString($1->str, result, BEGIN_LEN);
+					pfree($3->bodySrc);
+					$3->bodySrc = result;
+					$$ = $3;
+				}
+			| opt_label WHILE_P flow_control_func_body
+				{
+					/* check whether function body has RETURN */
+					if (!$3->hasReturn) {
+						ereport(ERROR, (errcode(ERRCODE_SYNTAX_ERROR), errmsg("no RETURN found in function body")));
+					}
+					char* result = appendString("WHILE", $3->bodySrc, BEGIN_LEN);
+					if ($1 != NULL) {
+						result = appendString($1, result, BEGIN_LEN);
+					}
+					pfree($3->bodySrc);
+					$3->bodySrc = result;
+					$$ = $3;
+				}
+			| IDENT LABEL_WHILE flow_control_func_body
+				{
+					/* check whether function body has RETURN */
+					if (!$3->hasReturn) {
+						ereport(ERROR, (errcode(ERRCODE_SYNTAX_ERROR), errmsg("no RETURN found in function body")));
+					}
+					char* result = appendString(":WHILE", $3->bodySrc, BEGIN_LEN);
+					result = appendString($1->str, result, BEGIN_LEN);
+					pfree($3->bodySrc);
+					$3->bodySrc = result;
+					$$ = $3;
 				}
 			| CASE flow_control_func_body
 				{
@@ -21370,8 +21417,26 @@ dolphin_flow_control:
 					$$ = $2;
 				}
 
+opt_label:
+			IDENT ':'
+			{
+				int rc = EOK;
+				int ident_len = strlen($1->str);
+				char* result = (char*)palloc0(ident_len + 2);
+				rc = strcat_s(result, ident_len + 2, $1->str);
+				securec_check(rc, "\0", "\0");
+				rc = strcat_s(result, ident_len + 2, ":");
+                                securec_check(rc, "\0", "\0");
+				$$ = result;
+			}
+			| /* EMPTY */
+			{
+				$$ = NULL;
+			}
+
 flow_control_func_body:
 			{
+				GetSessionContext()->is_first_lable = false;
 				int proc_b = 0;
 				int proc_e = 0;
 				char* proc_body_str = NULL;

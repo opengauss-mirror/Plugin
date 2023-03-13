@@ -155,6 +155,7 @@ typedef struct BSqlPluginContext {
     int div_precision_increment;
     int dolphin_kw_mask;
     bool is_schema_name;
+    bool is_first_lable;
 #endif
 } bSqlPluginContext;
 
