@@ -129,6 +129,7 @@ extern bool cstring_to_tm(const char *expr, pg_tm *tm, fsec_t &fsec);
 #define timestamp2int(tm) ((tm)->tm_year * 10000000000 + (tm)->tm_mon * 100000000 + (tm)->tm_mday * 1000000 + \
                            (tm)->tm_hour * 10000 + (tm)->tm_min * 100 + (tm)->tm_sec)
 
+#define DTERR_ZERO_DATE (-6)
 #endif
 
 #endif // !FRONTEND_PARSER

@@ -2304,10 +2304,10 @@ static int ValidateDate(unsigned int fmask, bool isjulian, bool is2digits, bool 
     /* check for valid month */
     if (fmask & DTK_M(MONTH)) {
 #ifdef DOLPHIN
-        if ((date_flag & ENABLE_ZERO_MONTH) || (!SQL_MODE_NO_ZERO_DATE() && SQL_MODE_STRICT())) {
-            if (tm->tm_mon < 0 || tm->tm_mon > MONTHS_PER_YEAR)
+        if ((date_flag & ENABLE_ZERO_MONTH) || (SQL_MODE_NO_ZERO_DATE() && SQL_MODE_STRICT())) {
+            if (tm->tm_mon < 1 || tm->tm_mon > MONTHS_PER_YEAR)
                 return DTERR_MD_FIELD_OVERFLOW;
-        } else if (tm->tm_mon < 1 || tm->tm_mon > MONTHS_PER_YEAR)
+        } else if (tm->tm_mon < 0 || tm->tm_mon > MONTHS_PER_YEAR)
 #else
         if (tm->tm_mon < 1 || tm->tm_mon > MONTHS_PER_YEAR)
 #endif
@@ -2317,10 +2317,10 @@ static int ValidateDate(unsigned int fmask, bool isjulian, bool is2digits, bool 
     /* minimal check for valid day */
     if (fmask & DTK_M(DAY)) {
 #ifdef DOLPHIN
-        if ((date_flag & ENABLE_ZERO_DAY) || (!SQL_MODE_NO_ZERO_DATE() && SQL_MODE_STRICT())) {
-            if (tm->tm_mday < 0 || tm->tm_mday > 31)
+        if ((date_flag & ENABLE_ZERO_DAY) || (SQL_MODE_NO_ZERO_DATE() && SQL_MODE_STRICT())) {
+            if (tm->tm_mday < 1 || tm->tm_mday > 31)
                 return DTERR_MD_FIELD_OVERFLOW;
-        } else if(tm->tm_mday < 1 || tm->tm_mday > 31)
+        } else if(tm->tm_mday < 0 || tm->tm_mday > 31)
 #else
         if(tm->tm_mday < 1 || tm->tm_mday > 31)
 #endif
@@ -2330,6 +2330,9 @@ static int ValidateDate(unsigned int fmask, bool isjulian, bool is2digits, bool 
 #ifdef DOLPHIN
     if ((date_flag & (ENABLE_ZERO_DAY | ENABLE_ZERO_MONTH)) == 0 && (fmask & (DTK_M(DAY) | DTK_M(MONTH) | DTK_M(YEAR)))) {
         int zero_cnt = (tm->tm_mon == 0) + (tm->tm_mday == 0) + (tm->tm_year == 0);
+        if (zero_cnt == 3 && SQL_MODE_NO_ZERO_DATE() && !SQL_MODE_STRICT()) {
+            return DTERR_ZERO_DATE;
+        }
         if (zero_cnt > 1 && zero_cnt < 3) {
             return DTERR_FIELD_OVERFLOW;
         }
@@ -3503,6 +3506,10 @@ void DateTimeParseError(int dterr, const char* str, const char* datatype, bool c
                 (errcode(ERRCODE_INVALID_TIME_ZONE_DISPLACEMENT_VALUE),
                     errmsg("time zone displacement out of range: \"%s\"", str)));
             break;
+        case DTERR_ZERO_DATE:
+            ereport(WARNING,
+                (errcode(ERRCODE_DATETIME_FIELD_OVERFLOW), errmsg("date/time field value out of range: \"%s\"", str)));
+            break;
         case DTERR_BAD_FORMAT:
         default:
             ereport(level,
@@ -3576,11 +3583,7 @@ void EncodeDateOnlyForBDatabase(struct pg_tm* tm, int style, char* str)
 {
     errno_t rc;
 #ifdef DOLPHIN
-    if (date_flag & ENABLE_ZERO_MONTH || (!SQL_MODE_NO_ZERO_DATE() && SQL_MODE_STRICT())) {
-        Assert(tm->tm_mon >= 0 && tm->tm_mon <= MONTHS_PER_YEAR);
-    } else {
-        Assert(tm->tm_mon >= 1 && tm->tm_mon <= MONTHS_PER_YEAR);
-    }
+    Assert(tm->tm_mon >= 0 && tm->tm_mon <= MONTHS_PER_YEAR);
 #else
     Assert(tm->tm_mon >= 1 && tm->tm_mon <= MONTHS_PER_YEAR);
 #endif
@@ -3708,11 +3711,7 @@ void EncodeDateTimeForBDatabase(struct pg_tm* tm, fsec_t fsec, bool print_tz, in
     int day;
     errno_t rc = EOK;
 #ifdef DOLPHIN
-    if (!SQL_MODE_NO_ZERO_DATE() && SQL_MODE_STRICT()) {
-        Assert(tm->tm_mon >= 0 && tm->tm_mon <= MONTHS_PER_YEAR);
-    } else {
-        Assert(tm->tm_mon >= 1 && tm->tm_mon <= MONTHS_PER_YEAR);
-    }
+    Assert(tm->tm_mon >= 0 && tm->tm_mon <= MONTHS_PER_YEAR);
 #else
     Assert(tm->tm_mon >= 1 && tm->tm_mon <= MONTHS_PER_YEAR);
 #endif
