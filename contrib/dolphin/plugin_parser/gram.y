@@ -8348,6 +8348,7 @@ CreateStmt:	CREATE OptTemp TABLE dolphin_qualified_name '(' OptTableElementList 
 /* PGXC_END */
 					n->partTableState = NULL;
 					n->internalData = NULL;
+					n->charset = PG_INVALID_ENCODING;
 					$$ = (Node *)n;
 				}
 		|  CREATE OptTemp TABLE IF_P NOT EXISTS dolphin_qualified_name TableLikeClause
@@ -8371,6 +8372,7 @@ CreateStmt:	CREATE OptTemp TABLE dolphin_qualified_name '(' OptTableElementList 
 /* PGXC_END */
 					n->partTableState = NULL;
 					n->internalData = NULL;
+					n->charset = PG_INVALID_ENCODING;
 					$$ = (Node *)n;
 				}
 		;
