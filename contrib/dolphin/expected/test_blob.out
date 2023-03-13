@@ -77,5 +77,1181 @@ drop table test_tiny;
 drop table test_blob;
 drop table test_medium;
 drop table test_long;
+set dolphin.b_compatibility_mode to on;
+SELECT 'ab'::blob = 'ab';
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT 'ab'::tinyblob = 'ab';
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT 'ab'::mediumblob = 'ab';
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT 'ab'::longblob = 'ab';
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT 'ab'::blob > 'ab';
+ ?column? 
+----------
+ f
+(1 row)
+
+SELECT 'ab'::tinyblob > 'ab';
+ ?column? 
+----------
+ f
+(1 row)
+
+SELECT 'ab'::mediumblob > 'ab';
+ ?column? 
+----------
+ f
+(1 row)
+
+SELECT 'ab'::longblob > 'ab';
+ ?column? 
+----------
+ f
+(1 row)
+
+SELECT 'ab'::blob >= 'ab';
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT 'ab'::tinyblob >= 'ab';
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT 'ab'::mediumblob >= 'ab';
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT 'ab'::longblob >= 'ab';
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT 'ab'::blob < 'ab';
+ ?column? 
+----------
+ f
+(1 row)
+
+SELECT 'ab'::tinyblob < 'ab';
+ ?column? 
+----------
+ f
+(1 row)
+
+SELECT 'ab'::mediumblob < 'ab';
+ ?column? 
+----------
+ f
+(1 row)
+
+SELECT 'ab'::longblob < 'ab';
+ ?column? 
+----------
+ f
+(1 row)
+
+SELECT 'ab'::blob <= 'ab';
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT 'ab'::tinyblob <= 'ab';
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT 'ab'::mediumblob <= 'ab';
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT 'ab'::longblob <= 'ab';
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT 'ab'::blob <> 'ab';
+ ?column? 
+----------
+ f
+(1 row)
+
+SELECT 'ab'::tinyblob <> 'ab';
+ ?column? 
+----------
+ f
+(1 row)
+
+SELECT 'ab'::mediumblob <> 'ab';
+ ?column? 
+----------
+ f
+(1 row)
+
+SELECT 'ab'::longblob <> 'ab';
+ ?column? 
+----------
+ f
+(1 row)
+
+SELECT 'ab' = 'ab'::blob;
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT 'ab' = 'ab'::tinyblob;
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT 'ab'= 'ab'::mediumblob ;
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT 'ab' = 'ab'::longblob;
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT 'ab' > 'ab'::blob;
+ ?column? 
+----------
+ f
+(1 row)
+
+SELECT 'ab' > 'ab'::tinyblob;
+ ?column? 
+----------
+ f
+(1 row)
+
+SELECT 'ab'> 'ab'::mediumblob ;
+ ?column? 
+----------
+ f
+(1 row)
+
+SELECT 'ab' > 'ab'::longblob;
+ ?column? 
+----------
+ f
+(1 row)
+
+SELECT 'ab' >= 'ab'::blob;
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT 'ab' >= 'ab'::tinyblob;
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT 'ab'>= 'ab'::mediumblob ;
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT 'ab' >= 'ab'::longblob;
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT 'ab' < 'ab'::blob;
+ ?column? 
+----------
+ f
+(1 row)
+
+SELECT 'ab' < 'ab'::tinyblob;
+ ?column? 
+----------
+ f
+(1 row)
+
+SELECT 'ab'< 'ab'::mediumblob ;
+ ?column? 
+----------
+ f
+(1 row)
+
+SELECT 'ab' < 'ab'::longblob;
+ ?column? 
+----------
+ f
+(1 row)
+
+SELECT 'ab' <= 'ab'::blob;
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT 'ab' <= 'ab'::tinyblob;
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT 'ab'<= 'ab'::mediumblob ;
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT 'ab' <= 'ab'::longblob;
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT 'ab' <> 'ab'::blob;
+ ?column? 
+----------
+ f
+(1 row)
+
+SELECT 'ab' <> 'ab'::tinyblob;
+ ?column? 
+----------
+ f
+(1 row)
+
+SELECT 'ab'<> 'ab'::mediumblob ;
+ ?column? 
+----------
+ f
+(1 row)
+
+SELECT 'ab' <> 'ab'::longblob;
+ ?column? 
+----------
+ f
+(1 row)
+
+SELECT 'ab'::blob = 'ab'::raw;
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT 'ab'::tinyblob = 'ab'::raw;
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT 'ab'::mediumblob = 'ab'::raw;
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT 'ab'::longblob = 'ab'::raw;
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT 'ab'::raw = 'ab'::blob;
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT 'ab'::raw = 'ab'::tinyblob;
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT 'ab'::raw = 'ab'::mediumblob;
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT 'ab'::raw = 'ab'::longblob;
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT 'ab'::blob = 'ab'::blob;
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT 'ab'::tinyblob = 'ab'::blob;
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT 'ab'::mediumblob = 'ab'::blob;
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT 'ab'::longblob = 'ab'::blob;
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT 'ab'::blob = 'ab'::tinyblob;
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT 'ab'::tinyblob = 'ab'::tinyblob;
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT 'ab'::mediumblob = 'ab'::tinyblob;
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT 'ab'::longblob = 'ab'::tinyblob;
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT 'ab'::blob = 'ab'::mediumblob;
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT 'ab'::tinyblob = 'ab'::mediumblob;
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT 'ab'::mediumblob = 'ab'::mediumblob;
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT 'ab'::longblob = 'ab'::mediumblob;
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT 'ab'::blob = 'ab'::longblob;
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT 'ab'::tinyblob = 'ab'::longblob;
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT 'ab'::mediumblob = 'ab'::longblob;
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT 'ab'::longblob = 'ab'::longblob;
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT 'ab'::blob < 'ab'::raw;
+ ?column? 
+----------
+ f
+(1 row)
+
+SELECT 'ab'::tinyblob < 'ab'::raw;
+ ?column? 
+----------
+ f
+(1 row)
+
+SELECT 'ab'::mediumblob < 'ab'::raw;
+ ?column? 
+----------
+ f
+(1 row)
+
+SELECT 'ab'::longblob < 'ab'::raw;
+ ?column? 
+----------
+ f
+(1 row)
+
+SELECT 'ab'::raw < 'ab'::blob;
+ ?column? 
+----------
+ f
+(1 row)
+
+SELECT 'ab'::raw < 'ab'::tinyblob;
+ ?column? 
+----------
+ f
+(1 row)
+
+SELECT 'ab'::raw < 'ab'::mediumblob;
+ ?column? 
+----------
+ f
+(1 row)
+
+SELECT 'ab'::raw < 'ab'::longblob;
+ ?column? 
+----------
+ f
+(1 row)
+
+SELECT 'ab'::blob < 'ab'::blob;
+ ?column? 
+----------
+ f
+(1 row)
+
+SELECT 'ab'::tinyblob < 'ab'::blob;
+ ?column? 
+----------
+ f
+(1 row)
+
+SELECT 'ab'::mediumblob < 'ab'::blob;
+ ?column? 
+----------
+ f
+(1 row)
+
+SELECT 'ab'::longblob < 'ab'::blob;
+ ?column? 
+----------
+ f
+(1 row)
+
+SELECT 'ab'::blob < 'ab'::tinyblob;
+ ?column? 
+----------
+ f
+(1 row)
+
+SELECT 'ab'::tinyblob < 'ab'::tinyblob;
+ ?column? 
+----------
+ f
+(1 row)
+
+SELECT 'ab'::mediumblob < 'ab'::tinyblob;
+ ?column? 
+----------
+ f
+(1 row)
+
+SELECT 'ab'::longblob < 'ab'::tinyblob;
+ ?column? 
+----------
+ f
+(1 row)
+
+SELECT 'ab'::blob < 'ab'::mediumblob;
+ ?column? 
+----------
+ f
+(1 row)
+
+SELECT 'ab'::tinyblob < 'ab'::mediumblob;
+ ?column? 
+----------
+ f
+(1 row)
+
+SELECT 'ab'::mediumblob < 'ab'::mediumblob;
+ ?column? 
+----------
+ f
+(1 row)
+
+SELECT 'ab'::longblob < 'ab'::mediumblob;
+ ?column? 
+----------
+ f
+(1 row)
+
+SELECT 'ab'::blob < 'ab'::longblob;
+ ?column? 
+----------
+ f
+(1 row)
+
+SELECT 'ab'::tinyblob < 'ab'::longblob;
+ ?column? 
+----------
+ f
+(1 row)
+
+SELECT 'ab'::mediumblob < 'ab'::longblob;
+ ?column? 
+----------
+ f
+(1 row)
+
+SELECT 'ab'::longblob < 'ab'::longblob;
+ ?column? 
+----------
+ f
+(1 row)
+
+SELECT 'ab'::blob <= 'ab'::raw;
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT 'ab'::tinyblob <= 'ab'::raw;
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT 'ab'::mediumblob <= 'ab'::raw;
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT 'ab'::longblob <= 'ab'::raw;
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT 'ab'::raw <= 'ab'::blob;
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT 'ab'::raw <= 'ab'::tinyblob;
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT 'ab'::raw <= 'ab'::mediumblob;
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT 'ab'::raw <= 'ab'::longblob;
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT 'ab'::blob <= 'ab'::blob;
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT 'ab'::tinyblob <= 'ab'::blob;
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT 'ab'::mediumblob <= 'ab'::blob;
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT 'ab'::longblob <= 'ab'::blob;
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT 'ab'::blob <= 'ab'::tinyblob;
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT 'ab'::tinyblob <= 'ab'::tinyblob;
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT 'ab'::mediumblob <= 'ab'::tinyblob;
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT 'ab'::longblob <= 'ab'::tinyblob;
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT 'ab'::blob <= 'ab'::mediumblob;
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT 'ab'::tinyblob <= 'ab'::mediumblob;
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT 'ab'::mediumblob <= 'ab'::mediumblob;
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT 'ab'::longblob <= 'ab'::mediumblob;
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT 'ab'::blob <= 'ab'::longblob;
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT 'ab'::tinyblob <= 'ab'::longblob;
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT 'ab'::mediumblob <= 'ab'::longblob;
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT 'ab'::longblob <= 'ab'::longblob;
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT 'ab'::blob >= 'ab'::raw;
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT 'ab'::tinyblob >= 'ab'::raw;
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT 'ab'::mediumblob >= 'ab'::raw;
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT 'ab'::longblob >= 'ab'::raw;
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT 'ab'::raw >= 'ab'::blob;
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT 'ab'::raw >= 'ab'::tinyblob;
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT 'ab'::raw >= 'ab'::mediumblob;
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT 'ab'::raw >= 'ab'::longblob;
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT 'ab'::blob >= 'ab'::blob;
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT 'ab'::tinyblob >= 'ab'::blob;
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT 'ab'::mediumblob >= 'ab'::blob;
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT 'ab'::longblob >= 'ab'::blob;
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT 'ab'::blob >= 'ab'::tinyblob;
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT 'ab'::tinyblob >= 'ab'::tinyblob;
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT 'ab'::mediumblob >= 'ab'::tinyblob;
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT 'ab'::longblob >= 'ab'::tinyblob;
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT 'ab'::blob >= 'ab'::mediumblob;
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT 'ab'::tinyblob >= 'ab'::mediumblob;
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT 'ab'::mediumblob >= 'ab'::mediumblob;
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT 'ab'::longblob >= 'ab'::mediumblob;
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT 'ab'::blob >= 'ab'::longblob;
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT 'ab'::tinyblob >= 'ab'::longblob;
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT 'ab'::mediumblob >= 'ab'::longblob;
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT 'ab'::longblob >= 'ab'::longblob;
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT 'ab'::blob > 'ab'::raw;
+ ?column? 
+----------
+ f
+(1 row)
+
+SELECT 'ab'::tinyblob > 'ab'::raw;
+ ?column? 
+----------
+ f
+(1 row)
+
+SELECT 'ab'::mediumblob > 'ab'::raw;
+ ?column? 
+----------
+ f
+(1 row)
+
+SELECT 'ab'::longblob > 'ab'::raw;
+ ?column? 
+----------
+ f
+(1 row)
+
+SELECT 'ab'::raw > 'ab'::blob;
+ ?column? 
+----------
+ f
+(1 row)
+
+SELECT 'ab'::raw > 'ab'::tinyblob;
+ ?column? 
+----------
+ f
+(1 row)
+
+SELECT 'ab'::raw > 'ab'::mediumblob;
+ ?column? 
+----------
+ f
+(1 row)
+
+SELECT 'ab'::raw > 'ab'::longblob;
+ ?column? 
+----------
+ f
+(1 row)
+
+SELECT 'ab'::blob > 'ab'::blob;
+ ?column? 
+----------
+ f
+(1 row)
+
+SELECT 'ab'::tinyblob > 'ab'::blob;
+ ?column? 
+----------
+ f
+(1 row)
+
+SELECT 'ab'::mediumblob > 'ab'::blob;
+ ?column? 
+----------
+ f
+(1 row)
+
+SELECT 'ab'::longblob > 'ab'::blob;
+ ?column? 
+----------
+ f
+(1 row)
+
+SELECT 'ab'::blob > 'ab'::tinyblob;
+ ?column? 
+----------
+ f
+(1 row)
+
+SELECT 'ab'::tinyblob > 'ab'::tinyblob;
+ ?column? 
+----------
+ f
+(1 row)
+
+SELECT 'ab'::mediumblob > 'ab'::tinyblob;
+ ?column? 
+----------
+ f
+(1 row)
+
+SELECT 'ab'::longblob > 'ab'::tinyblob;
+ ?column? 
+----------
+ f
+(1 row)
+
+SELECT 'ab'::blob > 'ab'::mediumblob;
+ ?column? 
+----------
+ f
+(1 row)
+
+SELECT 'ab'::tinyblob > 'ab'::mediumblob;
+ ?column? 
+----------
+ f
+(1 row)
+
+SELECT 'ab'::mediumblob > 'ab'::mediumblob;
+ ?column? 
+----------
+ f
+(1 row)
+
+SELECT 'ab'::longblob > 'ab'::mediumblob;
+ ?column? 
+----------
+ f
+(1 row)
+
+SELECT 'ab'::blob > 'ab'::longblob;
+ ?column? 
+----------
+ f
+(1 row)
+
+SELECT 'ab'::tinyblob > 'ab'::longblob;
+ ?column? 
+----------
+ f
+(1 row)
+
+SELECT 'ab'::mediumblob > 'ab'::longblob;
+ ?column? 
+----------
+ f
+(1 row)
+
+SELECT 'ab'::longblob > 'ab'::longblob;
+ ?column? 
+----------
+ f
+(1 row)
+
+SELECT 'ab'::blob <> 'ab'::raw;
+ ?column? 
+----------
+ f
+(1 row)
+
+SELECT 'ab'::tinyblob <> 'ab'::raw;
+ ?column? 
+----------
+ f
+(1 row)
+
+SELECT 'ab'::mediumblob <> 'ab'::raw;
+ ?column? 
+----------
+ f
+(1 row)
+
+SELECT 'ab'::longblob <> 'ab'::raw;
+ ?column? 
+----------
+ f
+(1 row)
+
+SELECT 'ab'::raw <> 'ab'::blob;
+ ?column? 
+----------
+ f
+(1 row)
+
+SELECT 'ab'::raw <> 'ab'::tinyblob;
+ ?column? 
+----------
+ f
+(1 row)
+
+SELECT 'ab'::raw <> 'ab'::mediumblob;
+ ?column? 
+----------
+ f
+(1 row)
+
+SELECT 'ab'::raw <> 'ab'::longblob;
+ ?column? 
+----------
+ f
+(1 row)
+
+SELECT 'ab'::blob <> 'ab'::blob;
+ ?column? 
+----------
+ f
+(1 row)
+
+SELECT 'ab'::tinyblob <> 'ab'::blob;
+ ?column? 
+----------
+ f
+(1 row)
+
+SELECT 'ab'::mediumblob <> 'ab'::blob;
+ ?column? 
+----------
+ f
+(1 row)
+
+SELECT 'ab'::longblob <> 'ab'::blob;
+ ?column? 
+----------
+ f
+(1 row)
+
+SELECT 'ab'::blob <> 'ab'::tinyblob;
+ ?column? 
+----------
+ f
+(1 row)
+
+SELECT 'ab'::tinyblob <> 'ab'::tinyblob;
+ ?column? 
+----------
+ f
+(1 row)
+
+SELECT 'ab'::mediumblob <> 'ab'::tinyblob;
+ ?column? 
+----------
+ f
+(1 row)
+
+SELECT 'ab'::longblob <> 'ab'::tinyblob;
+ ?column? 
+----------
+ f
+(1 row)
+
+SELECT 'ab'::blob <> 'ab'::mediumblob;
+ ?column? 
+----------
+ f
+(1 row)
+
+SELECT 'ab'::tinyblob <> 'ab'::mediumblob;
+ ?column? 
+----------
+ f
+(1 row)
+
+SELECT 'ab'::mediumblob <> 'ab'::mediumblob;
+ ?column? 
+----------
+ f
+(1 row)
+
+SELECT 'ab'::longblob <> 'ab'::mediumblob;
+ ?column? 
+----------
+ f
+(1 row)
+
+SELECT 'ab'::blob <> 'ab'::longblob;
+ ?column? 
+----------
+ f
+(1 row)
+
+SELECT 'ab'::tinyblob <> 'ab'::longblob;
+ ?column? 
+----------
+ f
+(1 row)
+
+SELECT 'ab'::mediumblob <> 'ab'::longblob;
+ ?column? 
+----------
+ f
+(1 row)
+
+SELECT 'ab'::longblob <> 'ab'::longblob;
+ ?column? 
+----------
+ f
+(1 row)
+
+create table t_dezebium_0007_02(c1 tinyblob,
+c2 mediumblob,
+c3 longblob,
+c4 blob,
+c5 binary(5),
+c23 varbinary(50))default charset=utf8;
+insert t_dezebium_0007_02 values('1010101','1010101','1010101','1010101','ab','ab');
+select * from t_dezebium_0007_02;
+   c1    |   c2    |   c3    |   c4    |       c5       | c23 
+---------+---------+---------+---------+----------------+-----
+ 1010101 | 1010101 | 1010101 | 1010101 | ab\000\000\000 | ab
+(1 row)
+
+set bytea_output=escape;
+select * from t_dezebium_0007_02;
+   c1    |   c2    |   c3    |   c4    |       c5       | c23 
+---------+---------+---------+---------+----------------+-----
+ 1010101 | 1010101 | 1010101 | 1010101 | ab\000\000\000 | ab
+(1 row)
+
+update t_dezebium_0007_02 set c2='101',c5='FG';
+delete from t_dezebium_0007_02 where hex(c23)=6162;
 drop schema test_blob cascade;
+NOTICE:  drop cascades to table t_dezebium_0007_02
 reset current_schema;

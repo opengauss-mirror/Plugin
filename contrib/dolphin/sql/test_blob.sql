@@ -60,5 +60,262 @@ drop table test_tiny;
 drop table test_blob;
 drop table test_medium;
 drop table test_long;
+
+set dolphin.b_compatibility_mode to on;
+
+SELECT 'ab'::blob = 'ab';
+SELECT 'ab'::tinyblob = 'ab';
+SELECT 'ab'::mediumblob = 'ab';
+SELECT 'ab'::longblob = 'ab';
+
+SELECT 'ab'::blob > 'ab';
+SELECT 'ab'::tinyblob > 'ab';
+SELECT 'ab'::mediumblob > 'ab';
+SELECT 'ab'::longblob > 'ab';
+
+SELECT 'ab'::blob >= 'ab';
+SELECT 'ab'::tinyblob >= 'ab';
+SELECT 'ab'::mediumblob >= 'ab';
+SELECT 'ab'::longblob >= 'ab';
+
+SELECT 'ab'::blob < 'ab';
+SELECT 'ab'::tinyblob < 'ab';
+SELECT 'ab'::mediumblob < 'ab';
+SELECT 'ab'::longblob < 'ab';
+
+SELECT 'ab'::blob <= 'ab';
+SELECT 'ab'::tinyblob <= 'ab';
+SELECT 'ab'::mediumblob <= 'ab';
+SELECT 'ab'::longblob <= 'ab';
+
+SELECT 'ab'::blob <> 'ab';
+SELECT 'ab'::tinyblob <> 'ab';
+SELECT 'ab'::mediumblob <> 'ab';
+SELECT 'ab'::longblob <> 'ab';
+
+SELECT 'ab' = 'ab'::blob;
+SELECT 'ab' = 'ab'::tinyblob;
+SELECT 'ab'= 'ab'::mediumblob ;
+SELECT 'ab' = 'ab'::longblob;
+
+SELECT 'ab' > 'ab'::blob;
+SELECT 'ab' > 'ab'::tinyblob;
+SELECT 'ab'> 'ab'::mediumblob ;
+SELECT 'ab' > 'ab'::longblob;
+
+SELECT 'ab' >= 'ab'::blob;
+SELECT 'ab' >= 'ab'::tinyblob;
+SELECT 'ab'>= 'ab'::mediumblob ;
+SELECT 'ab' >= 'ab'::longblob;
+
+SELECT 'ab' < 'ab'::blob;
+SELECT 'ab' < 'ab'::tinyblob;
+SELECT 'ab'< 'ab'::mediumblob ;
+SELECT 'ab' < 'ab'::longblob;
+
+SELECT 'ab' <= 'ab'::blob;
+SELECT 'ab' <= 'ab'::tinyblob;
+SELECT 'ab'<= 'ab'::mediumblob ;
+SELECT 'ab' <= 'ab'::longblob;
+
+SELECT 'ab' <> 'ab'::blob;
+SELECT 'ab' <> 'ab'::tinyblob;
+SELECT 'ab'<> 'ab'::mediumblob ;
+SELECT 'ab' <> 'ab'::longblob;
+
+SELECT 'ab'::blob = 'ab'::raw;
+SELECT 'ab'::tinyblob = 'ab'::raw;
+SELECT 'ab'::mediumblob = 'ab'::raw;
+SELECT 'ab'::longblob = 'ab'::raw;
+
+SELECT 'ab'::raw = 'ab'::blob;
+SELECT 'ab'::raw = 'ab'::tinyblob;
+SELECT 'ab'::raw = 'ab'::mediumblob;
+SELECT 'ab'::raw = 'ab'::longblob;
+
+SELECT 'ab'::blob = 'ab'::blob;
+SELECT 'ab'::tinyblob = 'ab'::blob;
+SELECT 'ab'::mediumblob = 'ab'::blob;
+SELECT 'ab'::longblob = 'ab'::blob;
+
+SELECT 'ab'::blob = 'ab'::tinyblob;
+SELECT 'ab'::tinyblob = 'ab'::tinyblob;
+SELECT 'ab'::mediumblob = 'ab'::tinyblob;
+SELECT 'ab'::longblob = 'ab'::tinyblob;
+
+SELECT 'ab'::blob = 'ab'::mediumblob;
+SELECT 'ab'::tinyblob = 'ab'::mediumblob;
+SELECT 'ab'::mediumblob = 'ab'::mediumblob;
+SELECT 'ab'::longblob = 'ab'::mediumblob;
+
+SELECT 'ab'::blob = 'ab'::longblob;
+SELECT 'ab'::tinyblob = 'ab'::longblob;
+SELECT 'ab'::mediumblob = 'ab'::longblob;
+SELECT 'ab'::longblob = 'ab'::longblob;
+
+SELECT 'ab'::blob < 'ab'::raw;
+SELECT 'ab'::tinyblob < 'ab'::raw;
+SELECT 'ab'::mediumblob < 'ab'::raw;
+SELECT 'ab'::longblob < 'ab'::raw;
+
+SELECT 'ab'::raw < 'ab'::blob;
+SELECT 'ab'::raw < 'ab'::tinyblob;
+SELECT 'ab'::raw < 'ab'::mediumblob;
+SELECT 'ab'::raw < 'ab'::longblob;
+
+SELECT 'ab'::blob < 'ab'::blob;
+SELECT 'ab'::tinyblob < 'ab'::blob;
+SELECT 'ab'::mediumblob < 'ab'::blob;
+SELECT 'ab'::longblob < 'ab'::blob;
+
+SELECT 'ab'::blob < 'ab'::tinyblob;
+SELECT 'ab'::tinyblob < 'ab'::tinyblob;
+SELECT 'ab'::mediumblob < 'ab'::tinyblob;
+SELECT 'ab'::longblob < 'ab'::tinyblob;
+
+SELECT 'ab'::blob < 'ab'::mediumblob;
+SELECT 'ab'::tinyblob < 'ab'::mediumblob;
+SELECT 'ab'::mediumblob < 'ab'::mediumblob;
+SELECT 'ab'::longblob < 'ab'::mediumblob;
+
+SELECT 'ab'::blob < 'ab'::longblob;
+SELECT 'ab'::tinyblob < 'ab'::longblob;
+SELECT 'ab'::mediumblob < 'ab'::longblob;
+SELECT 'ab'::longblob < 'ab'::longblob;
+
+SELECT 'ab'::blob <= 'ab'::raw;
+SELECT 'ab'::tinyblob <= 'ab'::raw;
+SELECT 'ab'::mediumblob <= 'ab'::raw;
+SELECT 'ab'::longblob <= 'ab'::raw;
+
+SELECT 'ab'::raw <= 'ab'::blob;
+SELECT 'ab'::raw <= 'ab'::tinyblob;
+SELECT 'ab'::raw <= 'ab'::mediumblob;
+SELECT 'ab'::raw <= 'ab'::longblob;
+
+SELECT 'ab'::blob <= 'ab'::blob;
+SELECT 'ab'::tinyblob <= 'ab'::blob;
+SELECT 'ab'::mediumblob <= 'ab'::blob;
+SELECT 'ab'::longblob <= 'ab'::blob;
+
+SELECT 'ab'::blob <= 'ab'::tinyblob;
+SELECT 'ab'::tinyblob <= 'ab'::tinyblob;
+SELECT 'ab'::mediumblob <= 'ab'::tinyblob;
+SELECT 'ab'::longblob <= 'ab'::tinyblob;
+
+SELECT 'ab'::blob <= 'ab'::mediumblob;
+SELECT 'ab'::tinyblob <= 'ab'::mediumblob;
+SELECT 'ab'::mediumblob <= 'ab'::mediumblob;
+SELECT 'ab'::longblob <= 'ab'::mediumblob;
+
+SELECT 'ab'::blob <= 'ab'::longblob;
+SELECT 'ab'::tinyblob <= 'ab'::longblob;
+SELECT 'ab'::mediumblob <= 'ab'::longblob;
+SELECT 'ab'::longblob <= 'ab'::longblob;
+
+SELECT 'ab'::blob >= 'ab'::raw;
+SELECT 'ab'::tinyblob >= 'ab'::raw;
+SELECT 'ab'::mediumblob >= 'ab'::raw;
+SELECT 'ab'::longblob >= 'ab'::raw;
+
+SELECT 'ab'::raw >= 'ab'::blob;
+SELECT 'ab'::raw >= 'ab'::tinyblob;
+SELECT 'ab'::raw >= 'ab'::mediumblob;
+SELECT 'ab'::raw >= 'ab'::longblob;
+
+SELECT 'ab'::blob >= 'ab'::blob;
+SELECT 'ab'::tinyblob >= 'ab'::blob;
+SELECT 'ab'::mediumblob >= 'ab'::blob;
+SELECT 'ab'::longblob >= 'ab'::blob;
+
+SELECT 'ab'::blob >= 'ab'::tinyblob;
+SELECT 'ab'::tinyblob >= 'ab'::tinyblob;
+SELECT 'ab'::mediumblob >= 'ab'::tinyblob;
+SELECT 'ab'::longblob >= 'ab'::tinyblob;
+
+SELECT 'ab'::blob >= 'ab'::mediumblob;
+SELECT 'ab'::tinyblob >= 'ab'::mediumblob;
+SELECT 'ab'::mediumblob >= 'ab'::mediumblob;
+SELECT 'ab'::longblob >= 'ab'::mediumblob;
+
+SELECT 'ab'::blob >= 'ab'::longblob;
+SELECT 'ab'::tinyblob >= 'ab'::longblob;
+SELECT 'ab'::mediumblob >= 'ab'::longblob;
+SELECT 'ab'::longblob >= 'ab'::longblob;
+
+SELECT 'ab'::blob > 'ab'::raw;
+SELECT 'ab'::tinyblob > 'ab'::raw;
+SELECT 'ab'::mediumblob > 'ab'::raw;
+SELECT 'ab'::longblob > 'ab'::raw;
+
+SELECT 'ab'::raw > 'ab'::blob;
+SELECT 'ab'::raw > 'ab'::tinyblob;
+SELECT 'ab'::raw > 'ab'::mediumblob;
+SELECT 'ab'::raw > 'ab'::longblob;
+
+SELECT 'ab'::blob > 'ab'::blob;
+SELECT 'ab'::tinyblob > 'ab'::blob;
+SELECT 'ab'::mediumblob > 'ab'::blob;
+SELECT 'ab'::longblob > 'ab'::blob;
+
+SELECT 'ab'::blob > 'ab'::tinyblob;
+SELECT 'ab'::tinyblob > 'ab'::tinyblob;
+SELECT 'ab'::mediumblob > 'ab'::tinyblob;
+SELECT 'ab'::longblob > 'ab'::tinyblob;
+
+SELECT 'ab'::blob > 'ab'::mediumblob;
+SELECT 'ab'::tinyblob > 'ab'::mediumblob;
+SELECT 'ab'::mediumblob > 'ab'::mediumblob;
+SELECT 'ab'::longblob > 'ab'::mediumblob;
+
+SELECT 'ab'::blob > 'ab'::longblob;
+SELECT 'ab'::tinyblob > 'ab'::longblob;
+SELECT 'ab'::mediumblob > 'ab'::longblob;
+SELECT 'ab'::longblob > 'ab'::longblob;
+
+SELECT 'ab'::blob <> 'ab'::raw;
+SELECT 'ab'::tinyblob <> 'ab'::raw;
+SELECT 'ab'::mediumblob <> 'ab'::raw;
+SELECT 'ab'::longblob <> 'ab'::raw;
+
+SELECT 'ab'::raw <> 'ab'::blob;
+SELECT 'ab'::raw <> 'ab'::tinyblob;
+SELECT 'ab'::raw <> 'ab'::mediumblob;
+SELECT 'ab'::raw <> 'ab'::longblob;
+
+SELECT 'ab'::blob <> 'ab'::blob;
+SELECT 'ab'::tinyblob <> 'ab'::blob;
+SELECT 'ab'::mediumblob <> 'ab'::blob;
+SELECT 'ab'::longblob <> 'ab'::blob;
+
+SELECT 'ab'::blob <> 'ab'::tinyblob;
+SELECT 'ab'::tinyblob <> 'ab'::tinyblob;
+SELECT 'ab'::mediumblob <> 'ab'::tinyblob;
+SELECT 'ab'::longblob <> 'ab'::tinyblob;
+
+SELECT 'ab'::blob <> 'ab'::mediumblob;
+SELECT 'ab'::tinyblob <> 'ab'::mediumblob;
+SELECT 'ab'::mediumblob <> 'ab'::mediumblob;
+SELECT 'ab'::longblob <> 'ab'::mediumblob;
+
+SELECT 'ab'::blob <> 'ab'::longblob;
+SELECT 'ab'::tinyblob <> 'ab'::longblob;
+SELECT 'ab'::mediumblob <> 'ab'::longblob;
+SELECT 'ab'::longblob <> 'ab'::longblob;
+
+create table t_dezebium_0007_02(c1 tinyblob,
+c2 mediumblob,
+c3 longblob,
+c4 blob,
+c5 binary(5),
+c23 varbinary(50))default charset=utf8;
+
+insert t_dezebium_0007_02 values('1010101','1010101','1010101','1010101','ab','ab');
+select * from t_dezebium_0007_02;
+set bytea_output=escape;
+select * from t_dezebium_0007_02;
+update t_dezebium_0007_02 set c2='101',c5='FG';
+delete from t_dezebium_0007_02 where hex(c23)=6162;
+
 drop schema test_blob cascade;
 reset current_schema;
