@@ -125,7 +125,7 @@ public class MySQLJdbcPrepareTest {
             p1.setObject(28, "(1000,0,200,3)");
             p1.setString(29, "text");
             p1.setBigDecimal(30, new BigDecimal(20));
-            p1.setString(31, null); // json type could not supported by dolphin well
+            p1.setString(31, "{\"k\": \"v\"}"); 
             p1.setString(32, "a");
             p1.setString(33, "a");
             

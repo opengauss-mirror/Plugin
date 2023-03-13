@@ -332,8 +332,9 @@ com_stmt_exec_request* read_com_stmt_exec_request(StringInfo buf)
     }
 
     if (param_count > 0) {
-        com_stmt_param *parameters = (com_stmt_param *)palloc0(sizeof(com_stmt_param) * param_count);
         if (req->new_params_bind_flag) {
+            /* malloc private data using u_sess->cache_mem_cxt */
+            MemoryContext oldcontext = MemoryContextSwitchTo(u_sess->cache_mem_cxt);
             InputStmtParam *parameter_types = (InputStmtParam *)palloc0(sizeof(InputStmtParam));
             parameter_types->count = param_count;
             parameter_types->itypes = (uint32 *)palloc0(sizeof(uint32) * param_count);
@@ -341,10 +342,13 @@ com_stmt_exec_request* read_com_stmt_exec_request(StringInfo buf)
                 dq_get_int2(buf, &parameter_types->itypes[i]);
             }
             SaveCachedInputStmtParamTypes(req->statement_id, parameter_types);
+            (void)MemoryContextSwitchTo(oldcontext);
         }
+
+        com_stmt_param *parameters = (com_stmt_param *)palloc0(sizeof(com_stmt_param) * param_count);
+        const InputStmtParam *stmt_param = GetCachedInputStmtParamTypes(req->statement_id); 
         for (int i = 0; i < param_count; i++) {
             if (!param_isnull(i, req->null_bitmap)) {
-                const InputStmtParam *stmt_param = GetCachedInputStmtParamTypes(req->statement_id);     
                 switch (stmt_param->itypes[i]) {
                     case DOLPHIN_TYPE_LONG:
                     case DOLPHIN_TYPE_INT24: {
@@ -579,6 +583,7 @@ void send_binary_protocol_resultset_row(StringInfo buf, SPITupleTable *SPI_tupta
                 case DOLPHIN_TYPE_STRING:
                 case DOLPHIN_TYPE_VARCHAR:
                 case DOLPHIN_TYPE_VAR_STRING:
+                case DOLPHIN_TYPE_JSON:
                 case DOLPHIN_TYPE_LONG_BLOB:
                 case DOLPHIN_TYPE_MEDIUM_BLOB:
                 case DOLPHIN_TYPE_BLOB:

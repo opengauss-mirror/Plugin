@@ -232,14 +232,12 @@ int execute_com_stmt_prepare(const char *client_sql)
 
     rc = SPI_execute(sql->data, false, 0);
 
-    // TODO plan_name should be unique
     PreparedStatement *pstmt = FetchPreparedStatement(stmt_name, true, true);
     Query *query = (Query *)linitial(pstmt->plansource->query_list);
     int column_count = list_length(query->targetList);
     int param_count = pstmt->plansource->num_params; 
 
     StringInfo buf = makeStringInfo();
-    // TODO convert planName to int id
     send_com_stmt_prepare_ok_packet(buf, statement_id, column_count, param_count);
 
     for (int i = 0; i < param_count; i++) {
