@@ -35357,25 +35357,26 @@ Iconst:		ICONST									{ $$ = $1; };
 Sconst:		SCONST									{ $$ = $1; };
 
 DolphinUserId:		DolphinRoleId					{ $$ = $1; }
+					| SCONST SET_USER_IDENT
+							{
+								$$ = CreateDolphinIdent(GetValidUserHostId($1, $2), false);
+							}
 					| SCONST '@' SCONST
-						{
-							CheckUserHostIsValid();
-							CheckHostId($3);
-							StringInfoData buf;
-							initStringInfo(&buf);
-							appendStringInfoString(&buf, $1);
-							appendStringInfoString(&buf, "@");
-							appendStringInfoString(&buf, $3);
-							$$ = CreateDolphinIdent(buf.data, false);
-						}
+							{
+								$$ = CreateDolphinIdent(GetValidUserHostId($1, $3), false);
+							}
 					| SCONST
-						{
-							CheckUserHostIsValid();
-							if (strchr($1,'@'))
-								CheckHostId(strchr($1,'@') + 1);
-							$$ = CreateDolphinIdent(pstrdup($1), false);
-						}
-					;
+							{
+								CheckUserHostIsValid();
+								if (strchr($1,'@'))
+									ereport(ERROR,(errcode(ERRCODE_INVALID_NAME),errmsg("@ can't be allowed in username")));
+								$$ = CreateDolphinIdent(pstrdup($1), false);
+							}
+					| RoleId SET_USER_IDENT
+							{
+								$$ = CreateDolphinIdent(GetValidUserHostId($1, $2), false);
+							}
+		;
 
 DolphinRoleId:		DolphinRoleIdWithOutCurrentUser			{ $$ = $1; }
 					| CURRENT_USER  opt_bracket				{ $$ = CreateDolphinIdent(GetUserNameFromId(GetUserId()), false); }
