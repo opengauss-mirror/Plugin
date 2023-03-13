@@ -167,14 +167,22 @@ select any_value(a),b from test_time group by b;
  12:12:12  | 2
 (2 rows)
 
+set timezone to 'PRC';
 create table test_timetz(a timetz, b int);
 insert into test_timetz values('10:10:10',1),('11:11:11',1),('12:12:12',2),('13:13:13',2);
 select any_value(a),b from test_timetz group by b;
   any_value  | b 
 -------------+---
- 10:10:10-08 | 1
- 12:12:12-08 | 2
+ 10:10:10+08 | 1
+ 12:12:12+08 | 2
 (2 rows)
+
+reset timezone;
+show timezone;
+ TimeZone 
+----------
+ PST8PDT
+(1 row)
 
 --test bool type
 create table test_bool(a bool, b int);
