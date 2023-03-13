@@ -242,6 +242,408 @@ CREATE TYPE pg_catalog.varbinary (input=varbinary_in, output=varbinary_out,
                                 receive = varbinary_recv, send = varbinary_send,
                                 STORAGE=EXTENDED, category='S');
 
+CREATE OR REPLACE FUNCTION pg_catalog.text_varbinary_eq(
+text,
+varbinary
+) RETURNS bool AS
+$$
+BEGIN
+    RETURN (SELECT byteaeq($1::bytea,$2::bytea));
+END;
+$$
+LANGUAGE plpgsql;
+
+CREATE OPERATOR pg_catalog.=(leftarg = text, rightarg = varbinary, procedure = pg_catalog.text_varbinary_eq,restrict = eqsel, join = eqjoinsel,
+HASHES, MERGES);
+
+CREATE OR REPLACE FUNCTION pg_catalog.text_varbinary_ne(
+text,
+varbinary
+) RETURNS bool AS
+$$
+BEGIN
+    RETURN (SELECT byteane($1::bytea,$2::bytea));
+END;
+$$
+LANGUAGE plpgsql;
+
+CREATE OPERATOR pg_catalog.<>(leftarg = text, rightarg = varbinary, procedure = pg_catalog.text_varbinary_ne,restrict = neqsel, join = neqjoinsel);
+
+CREATE OR REPLACE FUNCTION pg_catalog.text_varbinary_gt(
+text,
+varbinary
+) RETURNS bool AS
+$$
+BEGIN
+    RETURN (SELECT byteagt($1::bytea,$2::bytea));
+END;
+$$
+LANGUAGE plpgsql;
+
+CREATE OPERATOR pg_catalog.>(leftarg = text, rightarg = varbinary, procedure = pg_catalog.text_varbinary_gt,restrict = scalargtsel, join = scalargtjoinsel);
+
+
+CREATE OR REPLACE FUNCTION pg_catalog.text_varbinary_lt(
+text,
+varbinary
+) RETURNS bool AS
+$$
+BEGIN
+    RETURN (SELECT bytealt($1::bytea,$2::bytea));
+END;
+$$
+LANGUAGE plpgsql;
+
+CREATE OPERATOR pg_catalog.<(leftarg = text, rightarg = varbinary, procedure = pg_catalog.text_varbinary_lt,restrict = scalarltsel, join = scalarltjoinsel);
+
+CREATE OR REPLACE FUNCTION pg_catalog.text_varbinary_ge(
+text,
+varbinary
+) RETURNS bool AS
+$$
+BEGIN
+    RETURN (SELECT byteage($1::bytea,$2::bytea));
+END;
+$$
+LANGUAGE plpgsql;
+
+CREATE OPERATOR pg_catalog.>=(leftarg = text, rightarg = varbinary, procedure = pg_catalog.text_varbinary_ge,restrict = scalargtsel, join = scalargtjoinsel);
+
+CREATE OR REPLACE FUNCTION pg_catalog.text_varbinary_le(
+text,
+varbinary
+) RETURNS bool AS
+$$
+BEGIN
+    RETURN (SELECT byteale($1::bytea,$2::bytea));
+END;
+$$
+LANGUAGE plpgsql;
+
+CREATE OPERATOR pg_catalog.<=(leftarg = text, rightarg = varbinary, procedure = pg_catalog.text_varbinary_le,restrict = scalarltsel, join = scalarltjoinsel);
+
+CREATE OR REPLACE FUNCTION pg_catalog.varbinary_text_eq(
+varbinary,
+text
+) RETURNS bool AS
+$$
+BEGIN
+    RETURN (SELECT byteaeq($1::bytea,$2::bytea));
+END;
+$$
+LANGUAGE plpgsql;
+
+CREATE OPERATOR pg_catalog.=(leftarg = varbinary, rightarg = text, procedure = pg_catalog.varbinary_text_eq,restrict = eqsel, join = eqjoinsel,
+HASHES, MERGES);
+
+CREATE OR REPLACE FUNCTION pg_catalog.varbinary_text_ne(
+varbinary,
+text
+) RETURNS bool AS
+$$
+BEGIN
+    RETURN (SELECT byteane($1::bytea,$2::bytea));
+END;
+$$
+LANGUAGE plpgsql;
+
+CREATE OPERATOR pg_catalog.<>(leftarg = varbinary, rightarg = text, procedure = pg_catalog.varbinary_text_ne,restrict = neqsel, join = neqjoinsel);
+
+CREATE OR REPLACE FUNCTION pg_catalog.varbinary_text_gt(
+varbinary,
+text
+) RETURNS bool AS
+$$
+BEGIN
+    RETURN (SELECT byteagt($1::bytea,$2::bytea));
+END;
+$$
+LANGUAGE plpgsql;
+
+CREATE OPERATOR pg_catalog.>(leftarg = varbinary, rightarg = text, procedure = pg_catalog.varbinary_text_gt,restrict = scalargtsel, join = scalargtjoinsel);
+
+
+CREATE OR REPLACE FUNCTION pg_catalog.varbinary_text_lt(
+varbinary,
+text
+) RETURNS bool AS
+$$
+BEGIN
+    RETURN (SELECT bytealt($1::bytea,$2::bytea));
+END;
+$$
+LANGUAGE plpgsql;
+
+CREATE OPERATOR pg_catalog.<(leftarg = varbinary, rightarg = text, procedure = pg_catalog.varbinary_text_lt,restrict = scalarltsel, join = scalarltjoinsel);
+
+CREATE OR REPLACE FUNCTION pg_catalog.varbinary_text_ge(
+varbinary,
+text
+) RETURNS bool AS
+$$
+BEGIN
+    RETURN (SELECT byteage($1::bytea,$2::bytea));
+END;
+$$
+LANGUAGE plpgsql;
+
+CREATE OPERATOR pg_catalog.>=(leftarg = varbinary, rightarg = text, procedure = pg_catalog.varbinary_text_ge,restrict = scalargtsel, join = scalargtjoinsel);
+
+CREATE OR REPLACE FUNCTION pg_catalog.varbinary_text_le(
+varbinary,
+text
+) RETURNS bool AS
+$$
+BEGIN
+    RETURN (SELECT byteale($1::bytea,$2::bytea));
+END;
+$$
+LANGUAGE plpgsql;
+
+CREATE OPERATOR pg_catalog.<=(leftarg = varbinary, rightarg = text, procedure = pg_catalog.varbinary_text_le,restrict = scalarltsel, join = scalarltjoinsel);
+
+CREATE OR REPLACE FUNCTION pg_catalog.binary_varbinary_eq(
+binary,
+varbinary
+) RETURNS bool AS
+$$
+BEGIN
+    RETURN (SELECT byteaeq($1::bytea,$2::bytea));
+END;
+$$
+LANGUAGE plpgsql;
+
+CREATE OPERATOR pg_catalog.=(leftarg = binary, rightarg = varbinary, procedure = pg_catalog.binary_varbinary_eq,restrict = eqsel, join = eqjoinsel,
+HASHES, MERGES);
+
+CREATE OR REPLACE FUNCTION pg_catalog.binary_varbinary_ne(
+binary,
+varbinary
+) RETURNS bool AS
+$$
+BEGIN
+    RETURN (SELECT byteane($1::bytea,$2::bytea));
+END;
+$$
+LANGUAGE plpgsql;
+
+CREATE OPERATOR pg_catalog.<>(leftarg = binary, rightarg = varbinary, procedure = pg_catalog.binary_varbinary_ne,restrict = neqsel, join = neqjoinsel);
+
+CREATE OR REPLACE FUNCTION pg_catalog.binary_varbinary_gt(
+binary,
+varbinary
+) RETURNS bool AS
+$$
+BEGIN
+    RETURN (SELECT byteagt($1::bytea,$2::bytea));
+END;
+$$
+LANGUAGE plpgsql;
+
+CREATE OPERATOR pg_catalog.>(leftarg = binary, rightarg = varbinary, procedure = pg_catalog.binary_varbinary_gt,restrict = scalargtsel, join = scalargtjoinsel);
+
+CREATE OR REPLACE FUNCTION pg_catalog.binary_varbinary_lt(
+binary,
+varbinary
+) RETURNS bool AS
+$$
+BEGIN
+    RETURN (SELECT bytealt($1::bytea,$2::bytea));
+END;
+$$
+LANGUAGE plpgsql;
+
+CREATE OPERATOR pg_catalog.<(leftarg = binary, rightarg = varbinary, procedure = pg_catalog.binary_varbinary_lt,restrict = scalarltsel, join = scalarltjoinsel);
+
+CREATE OR REPLACE FUNCTION pg_catalog.binary_varbinary_ge(
+binary,
+varbinary
+) RETURNS bool AS
+$$
+BEGIN
+    RETURN (SELECT byteage($1::bytea,$2::bytea));
+END;
+$$
+LANGUAGE plpgsql;
+
+CREATE OPERATOR pg_catalog.>=(leftarg = binary, rightarg = varbinary, procedure = pg_catalog.binary_varbinary_ge,restrict = scalargtsel, join = scalargtjoinsel);
+
+CREATE OR REPLACE FUNCTION pg_catalog.binary_varbinary_le(
+binary,
+varbinary
+) RETURNS bool AS
+$$
+BEGIN
+    RETURN (SELECT byteale($1::bytea,$2::bytea));
+END;
+$$
+LANGUAGE plpgsql;
+
+CREATE OPERATOR pg_catalog.<=(leftarg = binary, rightarg = varbinary, procedure = pg_catalog.binary_varbinary_le,restrict = scalarltsel, join = scalarltjoinsel);
+
+
+
+CREATE OR REPLACE FUNCTION pg_catalog.varbinary_binary_eq(
+varbinary,
+binary
+) RETURNS bool AS
+$$
+BEGIN
+    RETURN (SELECT byteaeq($1::bytea,$2::bytea));
+END;
+$$
+LANGUAGE plpgsql;
+
+CREATE OPERATOR pg_catalog.=(leftarg = varbinary, rightarg = binary, procedure = pg_catalog.varbinary_binary_eq,restrict = eqsel, join = eqjoinsel,
+HASHES, MERGES);
+
+CREATE OR REPLACE FUNCTION pg_catalog.varbinary_binary_ne(
+varbinary,
+binary
+) RETURNS bool AS
+$$
+BEGIN
+    RETURN (SELECT byteane($1::bytea,$2::bytea));
+END;
+$$
+LANGUAGE plpgsql;
+
+CREATE OPERATOR pg_catalog.<>(leftarg = varbinary, rightarg = binary, procedure = pg_catalog.varbinary_binary_ne,restrict = neqsel, join = neqjoinsel);
+
+CREATE OR REPLACE FUNCTION pg_catalog.varbinary_binary_gt(
+varbinary,
+binary
+) RETURNS bool AS
+$$
+BEGIN
+    RETURN (SELECT byteagt($1::bytea,$2::bytea));
+END;
+$$
+LANGUAGE plpgsql;
+
+CREATE OPERATOR pg_catalog.>(leftarg = varbinary, rightarg = binary, procedure = pg_catalog.varbinary_binary_gt,restrict = scalargtsel, join = scalargtjoinsel);
+
+
+CREATE OR REPLACE FUNCTION pg_catalog.varbinary_binary_lt(
+varbinary,
+binary
+) RETURNS bool AS
+$$
+BEGIN
+    RETURN (SELECT bytealt($1::bytea,$2::bytea));
+END;
+$$
+LANGUAGE plpgsql;
+
+CREATE OPERATOR pg_catalog.<(leftarg = varbinary, rightarg = binary, procedure = pg_catalog.varbinary_binary_lt,restrict = scalarltsel, join = scalarltjoinsel);
+
+CREATE OR REPLACE FUNCTION pg_catalog.varbinary_binary_ge(
+varbinary,
+binary
+) RETURNS bool AS
+$$
+BEGIN
+    RETURN (SELECT byteage($1::bytea,$2::bytea));
+END;
+$$
+LANGUAGE plpgsql;
+
+CREATE OPERATOR pg_catalog.>=(leftarg = varbinary, rightarg = binary, procedure = pg_catalog.varbinary_binary_ge,restrict = scalargtsel, join = scalargtjoinsel);
+
+CREATE OR REPLACE FUNCTION pg_catalog.varbinary_binary_le(
+varbinary,
+binary
+) RETURNS bool AS
+$$
+BEGIN
+    RETURN (SELECT byteale($1::bytea,$2::bytea));
+END;
+$$
+LANGUAGE plpgsql;
+
+CREATE OPERATOR pg_catalog.<=(leftarg = varbinary, rightarg = binary, procedure = pg_catalog.varbinary_binary_le,restrict = scalarltsel, join = scalarltjoinsel);
+
+CREATE OR REPLACE FUNCTION pg_catalog.varbinary_varbinary_eq(
+varbinary,
+varbinary
+) RETURNS bool AS
+$$
+BEGIN
+    RETURN (SELECT byteaeq($1::bytea,$2::bytea));
+END;
+$$
+LANGUAGE plpgsql;
+
+CREATE OPERATOR pg_catalog.=(leftarg = varbinary, rightarg = varbinary, procedure = pg_catalog.varbinary_varbinary_eq,restrict = eqsel, join = eqjoinsel,
+HASHES, MERGES);
+
+CREATE OR REPLACE FUNCTION pg_catalog.varbinary_varbinary_ne(
+varbinary,
+varbinary
+) RETURNS bool AS
+$$
+BEGIN
+    RETURN (SELECT byteane($1::bytea,$2::bytea));
+END;
+$$
+LANGUAGE plpgsql;
+
+CREATE OPERATOR pg_catalog.<>(leftarg = varbinary, rightarg = varbinary, procedure = pg_catalog.varbinary_varbinary_ne,restrict = neqsel, join = neqjoinsel);
+
+CREATE OR REPLACE FUNCTION pg_catalog.varbinary_varbinary_gt(
+varbinary,
+varbinary
+) RETURNS bool AS
+$$
+BEGIN
+    RETURN (SELECT byteagt($1::bytea,$2::bytea));
+END;
+$$
+LANGUAGE plpgsql;
+
+CREATE OPERATOR pg_catalog.>(leftarg = varbinary, rightarg = varbinary, procedure = pg_catalog.varbinary_varbinary_gt,restrict = scalargtsel, join = scalargtjoinsel);
+
+
+CREATE OR REPLACE FUNCTION pg_catalog.varbinary_varbinary_lt(
+varbinary,
+varbinary
+) RETURNS bool AS
+$$
+BEGIN
+    RETURN (SELECT bytealt($1::bytea,$2::bytea));
+END;
+$$
+LANGUAGE plpgsql;
+
+CREATE OPERATOR pg_catalog.<(leftarg = varbinary, rightarg = varbinary, procedure = pg_catalog.varbinary_varbinary_lt,restrict = scalarltsel, join = scalarltjoinsel);
+
+CREATE OR REPLACE FUNCTION pg_catalog.varbinary_varbinary_ge(
+varbinary,
+varbinary
+) RETURNS bool AS
+$$
+BEGIN
+    RETURN (SELECT byteage($1::bytea,$2::bytea));
+END;
+$$
+LANGUAGE plpgsql;
+
+CREATE OPERATOR pg_catalog.>=(leftarg = varbinary, rightarg = varbinary, procedure = pg_catalog.varbinary_varbinary_ge,restrict = scalargtsel, join = scalargtjoinsel);
+
+CREATE OR REPLACE FUNCTION pg_catalog.varbinary_varbinary_le(
+varbinary,
+varbinary
+) RETURNS bool AS
+$$
+BEGIN
+    RETURN (SELECT byteale($1::bytea,$2::bytea));
+END;
+$$
+LANGUAGE plpgsql;
+
+CREATE OPERATOR pg_catalog.<=(leftarg = varbinary, rightarg = varbinary, procedure = pg_catalog.varbinary_varbinary_le,restrict = scalarltsel, join = scalarltjoinsel);
+
+
 -- to_binary
 DROP FUNCTION IF EXISTS pg_catalog.to_binary(bytea, int) CASCADE;
 
@@ -525,7 +927,7 @@ CREATE CAST (blob AS float8) WITH FUNCTION pg_catalog.varlena2float8(anyelement)
 CREATE CAST (tinyblob AS float8) WITH FUNCTION pg_catalog.varlena2float8(anyelement) AS IMPLICIT;
 CREATE CAST (mediumblob AS float8) WITH FUNCTION pg_catalog.varlena2float8(anyelement) AS IMPLICIT;
 CREATE CAST (longblob AS float8) WITH FUNCTION pg_catalog.varlena2float8(anyelement) AS IMPLICIT;
-CREATE CAST (json AS float8) WITH FUNCTION pg_catalog.varlena2float8(anyelement) AS IMPLICIT;
+CREATE CAST (json AS float8) WITH FUNCTION pg_catalog.varlena2float8(anyelement);
 
 DROP FUNCTION IF EXISTS pg_catalog.blob_eq(blob, blob) cascade;
 CREATE OR REPLACE FUNCTION pg_catalog.blob_eq(arg1 blob, arg2 blob) RETURNS bool LANGUAGE INTERNAL STRICT AS 'byteaeq';
@@ -540,44 +942,31 @@ CREATE OR REPLACE FUNCTION pg_catalog.blob_gt(arg1 blob, arg2 blob) RETURNS bool
 DROP FUNCTION IF EXISTS pg_catalog.blob_ge(blob, blob) cascade;
 CREATE OR REPLACE FUNCTION pg_catalog.blob_ge(arg1 blob, arg2 blob) RETURNS bool LANGUAGE INTERNAL STRICT AS 'byteage';
 
-DROP FUNCTION IF EXISTS pg_catalog.tinyblob_eq(tinyblob, tinyblob) cascade;
-CREATE OR REPLACE FUNCTION pg_catalog.tinyblob_eq(arg1 tinyblob, arg2 tinyblob) RETURNS bool LANGUAGE INTERNAL STRICT AS 'byteaeq';
-DROP FUNCTION IF EXISTS pg_catalog.tinyblob_ne(tinyblob, tinyblob) cascade;
-CREATE OR REPLACE FUNCTION pg_catalog.tinyblob_ne(arg1 tinyblob, arg2 tinyblob) RETURNS bool LANGUAGE INTERNAL STRICT AS 'byteane';
-DROP FUNCTION IF EXISTS pg_catalog.tinyblob_lt(tinyblob, tinyblob) cascade;
-CREATE OR REPLACE FUNCTION pg_catalog.tinyblob_lt(arg1 tinyblob, arg2 tinyblob) RETURNS bool LANGUAGE INTERNAL STRICT AS 'bytealt';
-DROP FUNCTION IF EXISTS pg_catalog.tinyblob_le(tinyblob, tinyblob) cascade;
-CREATE OR REPLACE FUNCTION pg_catalog.tinyblob_le(arg1 tinyblob, arg2 tinyblob) RETURNS bool LANGUAGE INTERNAL STRICT AS 'byteale';
-DROP FUNCTION IF EXISTS pg_catalog.tinyblob_gt(tinyblob, tinyblob) cascade;
-CREATE OR REPLACE FUNCTION pg_catalog.tinyblob_gt(arg1 tinyblob, arg2 tinyblob) RETURNS bool LANGUAGE INTERNAL STRICT AS 'byteagt';
-DROP FUNCTION IF EXISTS pg_catalog.tinyblob_ge(tinyblob, tinyblob) cascade;
-CREATE OR REPLACE FUNCTION pg_catalog.tinyblob_ge(arg1 tinyblob, arg2 tinyblob) RETURNS bool LANGUAGE INTERNAL STRICT AS 'byteage';
+DROP FUNCTION IF EXISTS pg_catalog.blob_eq_text(blob, text) cascade;
+CREATE OR REPLACE FUNCTION pg_catalog.blob_eq_text(arg1 blob, arg2 text) RETURNS bool LANGUAGE SQL STRICT AS $$ SELECT blob_eq($1, $2::blob) $$;
+DROP FUNCTION IF EXISTS pg_catalog.blob_ne_text(blob, text) cascade;
+CREATE OR REPLACE FUNCTION pg_catalog.blob_ne_text(arg1 blob, arg2 text) RETURNS bool LANGUAGE SQL STRICT AS $$ SELECT blob_ne($1, $2::blob) $$;
+DROP FUNCTION IF EXISTS pg_catalog.blob_lt_text(blob, text) cascade;
+CREATE OR REPLACE FUNCTION pg_catalog.blob_lt_text(arg1 blob, arg2 text) RETURNS bool LANGUAGE SQL STRICT AS $$ SELECT blob_lt($1, $2::blob) $$;
+DROP FUNCTION IF EXISTS pg_catalog.blob_le_text(blob, text) cascade;
+CREATE OR REPLACE FUNCTION pg_catalog.blob_le_text(arg1 blob, arg2 text) RETURNS bool LANGUAGE SQL STRICT AS $$ SELECT blob_le($1, $2::blob) $$;
+DROP FUNCTION IF EXISTS pg_catalog.blob_gt_text(blob, text) cascade;
+CREATE OR REPLACE FUNCTION pg_catalog.blob_gt_text(arg1 blob, arg2 text) RETURNS bool LANGUAGE SQL STRICT AS $$ SELECT blob_gt($1, $2::blob) $$;
+DROP FUNCTION IF EXISTS pg_catalog.blob_ge_text(blob, text) cascade;
+CREATE OR REPLACE FUNCTION pg_catalog.blob_ge_text(arg1 blob, arg2 text) RETURNS bool LANGUAGE SQL STRICT AS $$ SELECT blob_ge($1, $2::blob) $$;
 
-DROP FUNCTION IF EXISTS pg_catalog.mediumblob_eq(mediumblob, mediumblob) cascade;
-CREATE OR REPLACE FUNCTION pg_catalog.mediumblob_eq(arg1 mediumblob, arg2 mediumblob) RETURNS bool LANGUAGE INTERNAL STRICT AS 'byteaeq';
-DROP FUNCTION IF EXISTS pg_catalog.mediumblob_ne(mediumblob, mediumblob) cascade;
-CREATE OR REPLACE FUNCTION pg_catalog.mediumblob_ne(arg1 mediumblob, arg2 mediumblob) RETURNS bool LANGUAGE INTERNAL STRICT AS 'byteane';
-DROP FUNCTION IF EXISTS pg_catalog.mediumblob_lt(mediumblob, mediumblob) cascade;
-CREATE OR REPLACE FUNCTION pg_catalog.mediumblob_lt(arg1 mediumblob, arg2 mediumblob) RETURNS bool LANGUAGE INTERNAL STRICT AS 'bytealt';
-DROP FUNCTION IF EXISTS pg_catalog.mediumblob_le(mediumblob, mediumblob) cascade;
-CREATE OR REPLACE FUNCTION pg_catalog.mediumblob_le(arg1 mediumblob, arg2 mediumblob) RETURNS bool LANGUAGE INTERNAL STRICT AS 'byteale';
-DROP FUNCTION IF EXISTS pg_catalog.mediumblob_gt(mediumblob, mediumblob) cascade;
-CREATE OR REPLACE FUNCTION pg_catalog.mediumblob_gt(arg1 mediumblob, arg2 mediumblob) RETURNS bool LANGUAGE INTERNAL STRICT AS 'byteagt';
-DROP FUNCTION IF EXISTS pg_catalog.mediumblob_ge(mediumblob, mediumblob) cascade;
-CREATE OR REPLACE FUNCTION pg_catalog.mediumblob_ge(arg1 mediumblob, arg2 mediumblob) RETURNS bool LANGUAGE INTERNAL STRICT AS 'byteage';
-
-DROP FUNCTION IF EXISTS pg_catalog.longblob_eq(longblob, longblob) cascade;
-CREATE OR REPLACE FUNCTION pg_catalog.longblob_eq(arg1 longblob, arg2 longblob) RETURNS bool LANGUAGE INTERNAL STRICT AS 'byteaeq';
-DROP FUNCTION IF EXISTS pg_catalog.longblob_ne(longblob, longblob) cascade;
-CREATE OR REPLACE FUNCTION pg_catalog.longblob_ne(arg1 longblob, arg2 longblob) RETURNS bool LANGUAGE INTERNAL STRICT AS 'byteane';
-DROP FUNCTION IF EXISTS pg_catalog.longblob_lt(longblob, longblob) cascade;
-CREATE OR REPLACE FUNCTION pg_catalog.longblob_lt(arg1 longblob, arg2 longblob) RETURNS bool LANGUAGE INTERNAL STRICT AS 'bytealt';
-DROP FUNCTION IF EXISTS pg_catalog.longblob_le(longblob, longblob) cascade;
-CREATE OR REPLACE FUNCTION pg_catalog.longblob_le(arg1 longblob, arg2 longblob) RETURNS bool LANGUAGE INTERNAL STRICT AS 'byteale';
-DROP FUNCTION IF EXISTS pg_catalog.longblob_gt(longblob, longblob) cascade;
-CREATE OR REPLACE FUNCTION pg_catalog.longblob_gt(arg1 longblob, arg2 longblob) RETURNS bool LANGUAGE INTERNAL STRICT AS 'byteagt';
-DROP FUNCTION IF EXISTS pg_catalog.longblob_ge(longblob, longblob) cascade;
-CREATE OR REPLACE FUNCTION pg_catalog.longblob_ge(arg1 longblob, arg2 longblob) RETURNS bool LANGUAGE INTERNAL STRICT AS 'byteage';
+DROP FUNCTION IF EXISTS pg_catalog.text_eq_blob(text, blob) cascade;
+CREATE OR REPLACE FUNCTION pg_catalog.text_eq_blob(arg1 text, arg2 blob) RETURNS bool LANGUAGE SQL STRICT AS $$ SELECT blob_eq($1::blob, $2) $$;
+DROP FUNCTION IF EXISTS pg_catalog.text_ne_blob(text, blob) cascade;
+CREATE OR REPLACE FUNCTION pg_catalog.text_ne_blob(arg1 text, arg2 blob) RETURNS bool LANGUAGE SQL STRICT AS $$ SELECT blob_ne($1::blob, $2) $$;
+DROP FUNCTION IF EXISTS pg_catalog.text_lt_blob(text, blob) cascade;
+CREATE OR REPLACE FUNCTION pg_catalog.text_lt_blob(arg1 text, arg2 blob) RETURNS bool LANGUAGE SQL STRICT AS $$ SELECT blob_lt($1::blob, $2) $$;
+DROP FUNCTION IF EXISTS pg_catalog.text_le_blob(text, blob) cascade;
+CREATE OR REPLACE FUNCTION pg_catalog.text_le_blob(arg1 text, arg2 blob) RETURNS bool LANGUAGE SQL STRICT AS $$ SELECT blob_le($1::blob, $2) $$;
+DROP FUNCTION IF EXISTS pg_catalog.test_gt_blob(text, blob) cascade;
+CREATE OR REPLACE FUNCTION pg_catalog.test_gt_blob(arg1 text, arg2 blob) RETURNS bool LANGUAGE SQL STRICT AS $$ SELECT blob_gt($1::blob, $2) $$;
+DROP FUNCTION IF EXISTS pg_catalog.test_ge_blob(text, blob) cascade;
+CREATE OR REPLACE FUNCTION pg_catalog.test_ge_blob(arg1 text, arg2 blob) RETURNS bool LANGUAGE SQL STRICT AS $$ SELECT blob_ge($1::blob, $2) $$;
 
 CREATE OPERATOR pg_catalog.=(leftarg = blob, rightarg = blob, procedure = blob_eq, restrict = eqsel, join = eqjoinsel);
 CREATE OPERATOR pg_catalog.<>(leftarg = blob, rightarg = blob, procedure = blob_ne, restrict = neqsel, join = neqjoinsel);
@@ -586,23 +975,16 @@ CREATE OPERATOR pg_catalog.<=(leftarg = blob, rightarg = blob, procedure = blob_
 CREATE OPERATOR pg_catalog.>(leftarg = blob, rightarg = blob, procedure = blob_gt, restrict = scalarltsel, join = scalarltjoinsel);
 CREATE OPERATOR pg_catalog.>=(leftarg = blob, rightarg = blob, procedure = blob_ge, restrict = scalarltsel, join = scalarltjoinsel);
 
-CREATE OPERATOR pg_catalog.=(leftarg = tinyblob, rightarg = tinyblob, procedure = tinyblob_eq, restrict = eqsel, join = eqjoinsel);
-CREATE OPERATOR pg_catalog.<>(leftarg = tinyblob, rightarg = tinyblob, procedure = tinyblob_ne, restrict = neqsel, join = neqjoinsel);
-CREATE OPERATOR pg_catalog.<(leftarg = tinyblob, rightarg = tinyblob, procedure = tinyblob_lt, restrict = scalarltsel, join = scalarltjoinsel);
-CREATE OPERATOR pg_catalog.<=(leftarg = tinyblob, rightarg = tinyblob, procedure = tinyblob_le, restrict = scalarltsel, join = scalarltjoinsel);
-CREATE OPERATOR pg_catalog.>(leftarg = tinyblob, rightarg = tinyblob, procedure = tinyblob_gt, restrict = scalarltsel, join = scalarltjoinsel);
-CREATE OPERATOR pg_catalog.>=(leftarg = tinyblob, rightarg = tinyblob, procedure = tinyblob_ge, restrict = scalarltsel, join = scalarltjoinsel);
+CREATE OPERATOR pg_catalog.=(leftarg = blob, rightarg = text, procedure = blob_eq_text, restrict = eqsel, join = eqjoinsel);
+CREATE OPERATOR pg_catalog.<>(leftarg = blob, rightarg = text, procedure = blob_ne_text, restrict = neqsel, join = neqjoinsel);
+CREATE OPERATOR pg_catalog.<(leftarg = blob, rightarg = text, procedure = blob_lt_text, restrict = scalarltsel, join = scalarltjoinsel);
+CREATE OPERATOR pg_catalog.<=(leftarg = blob, rightarg = text, procedure = blob_le_text, restrict = scalarltsel, join = scalarltjoinsel);
+CREATE OPERATOR pg_catalog.>(leftarg = blob, rightarg = text, procedure = blob_gt_text, restrict = scalarltsel, join = scalarltjoinsel);
+CREATE OPERATOR pg_catalog.>=(leftarg = blob, rightarg = text, procedure = blob_ge_text, restrict = scalarltsel, join = scalarltjoinsel);
 
-CREATE OPERATOR pg_catalog.=(leftarg = mediumblob, rightarg = mediumblob, procedure = mediumblob_eq, restrict = eqsel, join = eqjoinsel);
-CREATE OPERATOR pg_catalog.<>(leftarg = mediumblob, rightarg = mediumblob, procedure = mediumblob_ne, restrict = neqsel, join = neqjoinsel);
-CREATE OPERATOR pg_catalog.<(leftarg = mediumblob, rightarg = mediumblob, procedure = mediumblob_lt, restrict = scalarltsel, join = scalarltjoinsel);
-CREATE OPERATOR pg_catalog.<=(leftarg = mediumblob, rightarg = mediumblob, procedure = mediumblob_le, restrict = scalarltsel, join = scalarltjoinsel);
-CREATE OPERATOR pg_catalog.>(leftarg = mediumblob, rightarg = mediumblob, procedure = mediumblob_gt, restrict = scalarltsel, join = scalarltjoinsel);
-CREATE OPERATOR pg_catalog.>=(leftarg = mediumblob, rightarg = mediumblob, procedure = mediumblob_ge, restrict = scalarltsel, join = scalarltjoinsel);
-
-CREATE OPERATOR pg_catalog.=(leftarg = longblob, rightarg = longblob, procedure = longblob_eq, restrict = eqsel, join = eqjoinsel);
-CREATE OPERATOR pg_catalog.<>(leftarg = longblob, rightarg = longblob, procedure = longblob_ne, restrict = neqsel, join = neqjoinsel);
-CREATE OPERATOR pg_catalog.<(leftarg = longblob, rightarg = longblob, procedure = longblob_lt, restrict = scalarltsel, join = scalarltjoinsel);
-CREATE OPERATOR pg_catalog.<=(leftarg = longblob, rightarg = longblob, procedure = longblob_le, restrict = scalarltsel, join = scalarltjoinsel);
-CREATE OPERATOR pg_catalog.>(leftarg = longblob, rightarg = longblob, procedure = longblob_gt, restrict = scalarltsel, join = scalarltjoinsel);
-CREATE OPERATOR pg_catalog.>=(leftarg = longblob, rightarg = longblob, procedure = longblob_ge, restrict = scalarltsel, join = scalarltjoinsel);
+CREATE OPERATOR pg_catalog.=(leftarg = text, rightarg = blob, procedure = text_eq_blob, restrict = eqsel, join = eqjoinsel);
+CREATE OPERATOR pg_catalog.<>(leftarg = text, rightarg = blob, procedure = text_ne_blob, restrict = neqsel, join = neqjoinsel);
+CREATE OPERATOR pg_catalog.<(leftarg = text, rightarg = blob, procedure = text_lt_blob, restrict = scalarltsel, join = scalarltjoinsel);
+CREATE OPERATOR pg_catalog.<=(leftarg = text, rightarg = blob, procedure = text_le_blob, restrict = scalarltsel, join = scalarltjoinsel);
+CREATE OPERATOR pg_catalog.>(leftarg = text, rightarg = blob, procedure = test_gt_blob, restrict = scalarltsel, join = scalarltjoinsel);
+CREATE OPERATOR pg_catalog.>=(leftarg = text, rightarg = blob, procedure = test_ge_blob, restrict = scalarltsel, join = scalarltjoinsel);

@@ -178,6 +178,61 @@ create table test34 (a binary(0));
 insert into test34 values('a');
 insert into test34 values('');
 
+SELECT 'ab'::binary = 'ab';
+SELECT 'ab'::binary < 'ab';
+SELECT 'ab'::binary <= 'ab';
+SELECT 'ab'::binary > 'ab';
+SELECT 'ab'::binary >= 'ab';
+SELECT 'ab'::binary <> 'ab';
+
+SELECT 'ab' = 'ab'::binary;
+SELECT 'ab' < 'ab'::binary;
+SELECT 'ab' <= 'ab'::binary;
+SELECT 'ab' > 'ab'::binary;
+SELECT 'ab' >= 'ab'::binary;
+SELECT 'ab' <> 'ab'::binary;
+
+SELECT 'ab'::binary = 'ab'::binary;
+SELECT 'ab'::binary < 'ab'::binary;
+SELECT 'ab'::binary <= 'ab'::binary;
+SELECT 'ab'::binary > 'ab'::binary;
+SELECT 'ab'::binary >= 'ab'::binary;
+SELECT 'ab'::binary <> 'ab'::binary;
+
+SELECT 'ab'::binary = 'ab'::varbinary(2);
+SELECT 'ab'::binary < 'ab'::varbinary(2);
+SELECT 'ab'::binary <= 'ab'::varbinary(2);
+SELECT 'ab'::binary > 'ab'::varbinary(2);
+SELECT 'ab'::binary >= 'ab'::varbinary(2);
+SELECT 'ab'::binary <> 'ab'::varbinary(2);
+
+SELECT 'ab'::varbinary(2) = 'ab';
+SELECT 'ab'::varbinary(2) < 'ab';
+SELECT 'ab'::varbinary(2) <= 'ab';
+SELECT 'ab'::varbinary(2) > 'ab';
+SELECT 'ab'::varbinary(2) >= 'ab';
+SELECT 'ab'::varbinary(2) <> 'ab';
+
+SELECT 'ab' = 'ab'::varbinary(2);
+SELECT 'ab' < 'ab'::varbinary(2);
+SELECT 'ab' <= 'ab'::varbinary(2);
+SELECT 'ab' > 'ab'::varbinary(2);
+SELECT 'ab' >= 'ab'::varbinary(2);
+SELECT 'ab' <> 'ab'::varbinary(2);
+
+SELECT 'ab'::varbinary(2) = 'ab'::varbinary(2);
+SELECT 'ab'::varbinary(2) < 'ab'::varbinary(2);
+SELECT 'ab'::varbinary(2) <= 'ab'::varbinary(2);
+SELECT 'ab'::varbinary(2) > 'ab'::varbinary(2);
+SELECT 'ab'::varbinary(2) >= 'ab'::varbinary(2);
+SELECT 'ab'::varbinary(2) <> 'ab'::varbinary(2);
+
+SELECT 'ab'::varbinary(2) = 'ab'::binary;
+SELECT 'ab'::varbinary(2) < 'ab'::binary;
+SELECT 'ab'::varbinary(2) <= 'ab'::binary;
+SELECT 'ab'::varbinary(2) > 'ab'::binary;
+SELECT 'ab'::varbinary(2) >= 'ab'::binary;
+SELECT 'ab'::varbinary(2) <> 'ab'::binary;
 
 drop schema test_binary cascade;
 reset current_schema;
