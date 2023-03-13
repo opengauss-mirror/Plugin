@@ -2,29 +2,35 @@ create schema like_default_test;
 set current_schema to 'like_default_test';
 
 create table test_nv (name national varchar(10));
-\d test_nv
- Table "like_default_test.test_nv"
- Column |     Type      | Modifiers 
---------+---------------+-----------
- name   | nvarchar2(10) | 
+\d+ test_nv
+                     Table "like_default_test.test_nv"
+ Column |     Type      | Modifiers | Storage  | Stats target | Description 
+--------+---------------+-----------+----------+--------------+-------------
+ name   | nvarchar2(10) |           | extended |              | 
+Has OIDs: no
+Options: orientation=row, compression=no
 
 drop table if exists test_nv;
 create table test_nv (id int, name national varchar(10));
-\d test_nv
- Table "like_default_test.test_nv"
- Column |     Type      | Modifiers 
---------+---------------+-----------
- id     | integer       | 
- name   | nvarchar2(10) | 
+\d+ test_nv
+                     Table "like_default_test.test_nv"
+ Column |     Type      | Modifiers | Storage  | Stats target | Description 
+--------+---------------+-----------+----------+--------------+-------------
+ id     | integer       |           | plain    |              | 
+ name   | nvarchar2(10) |           | extended |              | 
+Has OIDs: no
+Options: orientation=row, compression=no
 
 drop table if exists test_nv;
 create table test_nv (id int, name nvarchar(10));
-\d test_nv
- Table "like_default_test.test_nv"
- Column |     Type      | Modifiers 
---------+---------------+-----------
- id     | integer       | 
- name   | nvarchar2(10) | 
+\d+ test_nv
+                     Table "like_default_test.test_nv"
+ Column |     Type      | Modifiers | Storage  | Stats target | Description 
+--------+---------------+-----------+----------+--------------+-------------
+ id     | integer       |           | plain    |              | 
+ name   | nvarchar2(10) |           | extended |              | 
+Has OIDs: no
+Options: orientation=row, compression=no
 
 drop table if exists test_nv;
 
@@ -40,138 +46,166 @@ partition by range(id)
     partition p5 values less than(MAXVALUE)
 );
 create table test_non_like1 (like test_non);
-\d test_non_like1
-  Table "like_default_test.test_non_like1"
- Column |         Type          | Modifiers 
---------+-----------------------+-----------
- id     | integer               | 
- name   | character varying(25) | 
+\d+ test_non_like1
+                      Table "like_default_test.test_non_like1"
+ Column |         Type          | Modifiers | Storage  | Stats target | Description 
+--------+-----------------------+-----------+----------+--------------+-------------
+ id     | integer               |           | plain    |              | 
+ name   | character varying(25) |           | extended |              | 
+Has OIDs: no
+Options: orientation=row, compression=no
 
 create table test_non_like2 like test_non;
-\d test_non_like2
-  Table "like_default_test.test_non_like2"
- Column |         Type          | Modifiers 
---------+-----------------------+-----------
- id     | integer               | 
- name   | character varying(25) | 
+\d+ test_non_like2
+                      Table "like_default_test.test_non_like2"
+ Column |         Type          | Modifiers | Storage  | Stats target | Description 
+--------+-----------------------+-----------+----------+--------------+-------------
+ id     | integer               |           | plain    |              | 
+ name   | character varying(25) |           | extended |              | 
+Has OIDs: no
+Options: orientation=row, compression=no
 
 create table test_part_like1 (like test_part);
-\d test_part_like1
- Table "like_default_test.test_part_like1"
- Column |         Type          | Modifiers 
---------+-----------------------+-----------
- id     | integer               | 
- name   | character varying(25) | 
+\d+ test_part_like1
+                     Table "like_default_test.test_part_like1"
+ Column |         Type          | Modifiers | Storage  | Stats target | Description 
+--------+-----------------------+-----------+----------+--------------+-------------
+ id     | integer               |           | plain    |              | 
+ name   | character varying(25) |           | extended |              | 
+Has OIDs: no
+Options: orientation=row, compression=no
 
 create table test_part_like2 like test_part;
-\d test_part_like2
- Table "like_default_test.test_part_like2"
- Column |         Type          | Modifiers 
---------+-----------------------+-----------
- id     | integer               | 
- name   | character varying(25) | 
+\d+ test_part_like2
+                     Table "like_default_test.test_part_like2"
+ Column |         Type          | Modifiers | Storage  | Stats target | Description 
+--------+-----------------------+-----------+----------+--------------+-------------
+ id     | integer               |           | plain    |              | 
+ name   | character varying(25) |           | extended |              | 
 Partition By RANGE(id)
 Number of partitions: 5 (View pg_partition to check each partition range.)
+Has OIDs: no
+Options: orientation=row, compression=no
 
 drop table if exists test_non_like1, test_non_like2, test_part_like1, test_part_like2;
 
 create table if not exists test_non_like1 (like test_non);
-\d test_non_like1
-  Table "like_default_test.test_non_like1"
- Column |         Type          | Modifiers 
---------+-----------------------+-----------
- id     | integer               | 
- name   | character varying(25) | 
+\d+ test_non_like1
+                      Table "like_default_test.test_non_like1"
+ Column |         Type          | Modifiers | Storage  | Stats target | Description 
+--------+-----------------------+-----------+----------+--------------+-------------
+ id     | integer               |           | plain    |              | 
+ name   | character varying(25) |           | extended |              | 
+Has OIDs: no
+Options: orientation=row, compression=no
 
 create table if not exists test_non_like2 like test_non;
-\d test_non_like2
-  Table "like_default_test.test_non_like2"
- Column |         Type          | Modifiers 
---------+-----------------------+-----------
- id     | integer               | 
- name   | character varying(25) | 
+\d+ test_non_like2
+                      Table "like_default_test.test_non_like2"
+ Column |         Type          | Modifiers | Storage  | Stats target | Description 
+--------+-----------------------+-----------+----------+--------------+-------------
+ id     | integer               |           | plain    |              | 
+ name   | character varying(25) |           | extended |              | 
+Has OIDs: no
+Options: orientation=row, compression=no
 
 create table if not exists test_part_like1 (like test_part);
-\d test_part_like1
- Table "like_default_test.test_part_like1"
- Column |         Type          | Modifiers 
---------+-----------------------+-----------
- id     | integer               | 
- name   | character varying(25) | 
+\d+ test_part_like1
+                     Table "like_default_test.test_part_like1"
+ Column |         Type          | Modifiers | Storage  | Stats target | Description 
+--------+-----------------------+-----------+----------+--------------+-------------
+ id     | integer               |           | plain    |              | 
+ name   | character varying(25) |           | extended |              | 
+Has OIDs: no
+Options: orientation=row, compression=no
 
 create table if not exists test_part_like2 like test_part;
-\d test_part_like2
- Table "like_default_test.test_part_like2"
- Column |         Type          | Modifiers 
---------+-----------------------+-----------
- id     | integer               | 
- name   | character varying(25) | 
+\d+ test_part_like2
+                     Table "like_default_test.test_part_like2"
+ Column |         Type          | Modifiers | Storage  | Stats target | Description 
+--------+-----------------------+-----------+----------+--------------+-------------
+ id     | integer               |           | plain    |              | 
+ name   | character varying(25) |           | extended |              | 
 Partition By RANGE(id)
 Number of partitions: 5 (View pg_partition to check each partition range.)
+Has OIDs: no
+Options: orientation=row, compression=no
 
 drop table if exists test_non_like1, test_non_like2, test_part_like1, test_part_like2;
 
 create table test_non_like1 (like test_non including indexes);
-\d test_non_like1
-  Table "like_default_test.test_non_like1"
- Column |         Type          | Modifiers 
---------+-----------------------+-----------
- id     | integer               | 
- name   | character varying(25) | 
+\d+ test_non_like1
+                      Table "like_default_test.test_non_like1"
+ Column |         Type          | Modifiers | Storage  | Stats target | Description 
+--------+-----------------------+-----------+----------+--------------+-------------
+ id     | integer               |           | plain    |              | 
+ name   | character varying(25) |           | extended |              | 
+Has OIDs: no
+Options: orientation=row, compression=no
 
 create table test_non_like2 like test_non including indexes;
-\d test_non_like2
-  Table "like_default_test.test_non_like2"
- Column |         Type          | Modifiers 
---------+-----------------------+-----------
- id     | integer               | 
- name   | character varying(25) | 
+\d+ test_non_like2
+                      Table "like_default_test.test_non_like2"
+ Column |         Type          | Modifiers | Storage  | Stats target | Description 
+--------+-----------------------+-----------+----------+--------------+-------------
+ id     | integer               |           | plain    |              | 
+ name   | character varying(25) |           | extended |              | 
+Has OIDs: no
+Options: orientation=row, compression=no
 
 create table test_part_like1 (like test_part including indexes);
-\d test_part_like1
- Table "like_default_test.test_part_like1"
- Column |         Type          | Modifiers 
---------+-----------------------+-----------
- id     | integer               | 
- name   | character varying(25) | 
+\d+ test_part_like1
+                     Table "like_default_test.test_part_like1"
+ Column |         Type          | Modifiers | Storage  | Stats target | Description 
+--------+-----------------------+-----------+----------+--------------+-------------
+ id     | integer               |           | plain    |              | 
+ name   | character varying(25) |           | extended |              | 
+Has OIDs: no
+Options: orientation=row, compression=no
 
 create table test_part_like2 like test_part including indexes;
-\d test_part_like2
- Table "like_default_test.test_part_like2"
- Column |         Type          | Modifiers 
---------+-----------------------+-----------
- id     | integer               | 
- name   | character varying(25) | 
+\d+ test_part_like2
+                     Table "like_default_test.test_part_like2"
+ Column |         Type          | Modifiers | Storage  | Stats target | Description 
+--------+-----------------------+-----------+----------+--------------+-------------
+ id     | integer               |           | plain    |              | 
+ name   | character varying(25) |           | extended |              | 
 Partition By RANGE(id)
 Number of partitions: 5 (View pg_partition to check each partition range.)
+Has OIDs: no
+Options: orientation=row, compression=no
 
 drop table if exists test_non_like1, test_non_like2, test_part_like1, test_part_like2;
 
 create table test_non_like1 (like test_non including partition);
 ERROR:  could not specify "INCLUDING PARTITION" for non-partitioned-table relation:"test_non"
-\d test_non_like1
+\d+ test_non_like1
 create table test_non_like2 like test_non including partition;
 ERROR:  could not specify "INCLUDING PARTITION" for non-partitioned-table relation:"test_non"
-\d test_non_like2
+\d+ test_non_like2
 create table test_part_like1 (like test_part including partition);
-\d test_part_like1
- Table "like_default_test.test_part_like1"
- Column |         Type          | Modifiers 
---------+-----------------------+-----------
- id     | integer               | 
- name   | character varying(25) | 
+\d+ test_part_like1
+                     Table "like_default_test.test_part_like1"
+ Column |         Type          | Modifiers | Storage  | Stats target | Description 
+--------+-----------------------+-----------+----------+--------------+-------------
+ id     | integer               |           | plain    |              | 
+ name   | character varying(25) |           | extended |              | 
 Partition By RANGE(id)
 Number of partitions: 5 (View pg_partition to check each partition range.)
+Has OIDs: no
+Options: orientation=row, compression=no
 
 create table test_part_like2 like test_part including partition;
-\d test_part_like2
- Table "like_default_test.test_part_like2"
- Column |         Type          | Modifiers 
---------+-----------------------+-----------
- id     | integer               | 
- name   | character varying(25) | 
+\d+ test_part_like2
+                     Table "like_default_test.test_part_like2"
+ Column |         Type          | Modifiers | Storage  | Stats target | Description 
+--------+-----------------------+-----------+----------+--------------+-------------
+ id     | integer               |           | plain    |              | 
+ name   | character varying(25) |           | extended |              | 
 Partition By RANGE(id)
 Number of partitions: 5 (View pg_partition to check each partition range.)
+Has OIDs: no
+Options: orientation=row, compression=no
 
 drop table if exists test_non_like1, test_non_like2, test_part_like1, test_part_like2;
 NOTICE:  table "test_non_like1" does not exist, skipping
@@ -179,441 +213,533 @@ NOTICE:  table "test_non_like2" does not exist, skipping
 
 create table test_non_like1 (like test_non including partition including indexes);
 ERROR:  could not specify "INCLUDING PARTITION" for non-partitioned-table relation:"test_non"
-\d test_non_like1
+\d+ test_non_like1
 create table test_non_like2 like test_non including partition including indexes;
 ERROR:  could not specify "INCLUDING PARTITION" for non-partitioned-table relation:"test_non"
-\d test_non_like2
+\d+ test_non_like2
 create table test_part_like1 (like test_part including partition including indexes);
-\d test_part_like1
- Table "like_default_test.test_part_like1"
- Column |         Type          | Modifiers 
---------+-----------------------+-----------
- id     | integer               | 
- name   | character varying(25) | 
+\d+ test_part_like1
+                     Table "like_default_test.test_part_like1"
+ Column |         Type          | Modifiers | Storage  | Stats target | Description 
+--------+-----------------------+-----------+----------+--------------+-------------
+ id     | integer               |           | plain    |              | 
+ name   | character varying(25) |           | extended |              | 
 Partition By RANGE(id)
 Number of partitions: 5 (View pg_partition to check each partition range.)
+Has OIDs: no
+Options: orientation=row, compression=no
 
 create table test_part_like2 like test_part including partition including indexes;
-\d test_part_like2
- Table "like_default_test.test_part_like2"
- Column |         Type          | Modifiers 
---------+-----------------------+-----------
- id     | integer               | 
- name   | character varying(25) | 
+\d+ test_part_like2
+                     Table "like_default_test.test_part_like2"
+ Column |         Type          | Modifiers | Storage  | Stats target | Description 
+--------+-----------------------+-----------+----------+--------------+-------------
+ id     | integer               |           | plain    |              | 
+ name   | character varying(25) |           | extended |              | 
 Partition By RANGE(id)
 Number of partitions: 5 (View pg_partition to check each partition range.)
+Has OIDs: no
+Options: orientation=row, compression=no
 
 drop table if exists test_non_like1, test_non_like2, test_part_like1, test_part_like2;
 NOTICE:  table "test_non_like1" does not exist, skipping
 NOTICE:  table "test_non_like2" does not exist, skipping
 
 create table test_non_like1 (like test_non including all);
-\d test_non_like1
-  Table "like_default_test.test_non_like1"
- Column |         Type          | Modifiers 
---------+-----------------------+-----------
- id     | integer               | 
- name   | character varying(25) | 
+\d+ test_non_like1
+                      Table "like_default_test.test_non_like1"
+ Column |         Type          | Modifiers | Storage  | Stats target | Description 
+--------+-----------------------+-----------+----------+--------------+-------------
+ id     | integer               |           | plain    |              | 
+ name   | character varying(25) |           | extended |              | 
+Has OIDs: no
+Options: orientation=row, compression=no
 
 create table test_non_like2 like test_non including all;
-\d test_non_like2
-  Table "like_default_test.test_non_like2"
- Column |         Type          | Modifiers 
---------+-----------------------+-----------
- id     | integer               | 
- name   | character varying(25) | 
+\d+ test_non_like2
+                      Table "like_default_test.test_non_like2"
+ Column |         Type          | Modifiers | Storage  | Stats target | Description 
+--------+-----------------------+-----------+----------+--------------+-------------
+ id     | integer               |           | plain    |              | 
+ name   | character varying(25) |           | extended |              | 
+Has OIDs: no
+Options: orientation=row, compression=no
 
 create table test_part_like1 (like test_part including all);
-\d test_part_like1
- Table "like_default_test.test_part_like1"
- Column |         Type          | Modifiers 
---------+-----------------------+-----------
- id     | integer               | 
- name   | character varying(25) | 
+\d+ test_part_like1
+                     Table "like_default_test.test_part_like1"
+ Column |         Type          | Modifiers | Storage  | Stats target | Description 
+--------+-----------------------+-----------+----------+--------------+-------------
+ id     | integer               |           | plain    |              | 
+ name   | character varying(25) |           | extended |              | 
 Partition By RANGE(id)
 Number of partitions: 5 (View pg_partition to check each partition range.)
+Has OIDs: no
+Options: orientation=row, compression=no
 
 create table test_part_like2 like test_part including all;
-\d test_part_like2
- Table "like_default_test.test_part_like2"
- Column |         Type          | Modifiers 
---------+-----------------------+-----------
- id     | integer               | 
- name   | character varying(25) | 
+\d+ test_part_like2
+                     Table "like_default_test.test_part_like2"
+ Column |         Type          | Modifiers | Storage  | Stats target | Description 
+--------+-----------------------+-----------+----------+--------------+-------------
+ id     | integer               |           | plain    |              | 
+ name   | character varying(25) |           | extended |              | 
 Partition By RANGE(id)
 Number of partitions: 5 (View pg_partition to check each partition range.)
+Has OIDs: no
+Options: orientation=row, compression=no
 
 drop table if exists test_non_like1, test_non_like2, test_part_like1, test_part_like2;
 
 create table test_non_like1 (like test_non including all excluding indexes);
-\d test_non_like1
-  Table "like_default_test.test_non_like1"
- Column |         Type          | Modifiers 
---------+-----------------------+-----------
- id     | integer               | 
- name   | character varying(25) | 
+\d+ test_non_like1
+                      Table "like_default_test.test_non_like1"
+ Column |         Type          | Modifiers | Storage  | Stats target | Description 
+--------+-----------------------+-----------+----------+--------------+-------------
+ id     | integer               |           | plain    |              | 
+ name   | character varying(25) |           | extended |              | 
+Has OIDs: no
+Options: orientation=row, compression=no
 
 create table test_non_like2 like test_non including all excluding indexes;
-\d test_non_like2
-  Table "like_default_test.test_non_like2"
- Column |         Type          | Modifiers 
---------+-----------------------+-----------
- id     | integer               | 
- name   | character varying(25) | 
+\d+ test_non_like2
+                      Table "like_default_test.test_non_like2"
+ Column |         Type          | Modifiers | Storage  | Stats target | Description 
+--------+-----------------------+-----------+----------+--------------+-------------
+ id     | integer               |           | plain    |              | 
+ name   | character varying(25) |           | extended |              | 
+Has OIDs: no
+Options: orientation=row, compression=no
 
 create table test_part_like1 (like test_part including all excluding indexes);
-\d test_part_like1
- Table "like_default_test.test_part_like1"
- Column |         Type          | Modifiers 
---------+-----------------------+-----------
- id     | integer               | 
- name   | character varying(25) | 
+\d+ test_part_like1
+                     Table "like_default_test.test_part_like1"
+ Column |         Type          | Modifiers | Storage  | Stats target | Description 
+--------+-----------------------+-----------+----------+--------------+-------------
+ id     | integer               |           | plain    |              | 
+ name   | character varying(25) |           | extended |              | 
 Partition By RANGE(id)
 Number of partitions: 5 (View pg_partition to check each partition range.)
+Has OIDs: no
+Options: orientation=row, compression=no
 
 create table test_part_like2 like test_part including all excluding indexes;
-\d test_part_like2
- Table "like_default_test.test_part_like2"
- Column |         Type          | Modifiers 
---------+-----------------------+-----------
- id     | integer               | 
- name   | character varying(25) | 
+\d+ test_part_like2
+                     Table "like_default_test.test_part_like2"
+ Column |         Type          | Modifiers | Storage  | Stats target | Description 
+--------+-----------------------+-----------+----------+--------------+-------------
+ id     | integer               |           | plain    |              | 
+ name   | character varying(25) |           | extended |              | 
 Partition By RANGE(id)
 Number of partitions: 5 (View pg_partition to check each partition range.)
+Has OIDs: no
+Options: orientation=row, compression=no
 
 drop table if exists test_non_like1, test_non_like2, test_part_like1, test_part_like2;
 
 create table test_non_like1 (like test_non including all excluding partition);
-\d test_non_like1
-  Table "like_default_test.test_non_like1"
- Column |         Type          | Modifiers 
---------+-----------------------+-----------
- id     | integer               | 
- name   | character varying(25) | 
+\d+ test_non_like1
+                      Table "like_default_test.test_non_like1"
+ Column |         Type          | Modifiers | Storage  | Stats target | Description 
+--------+-----------------------+-----------+----------+--------------+-------------
+ id     | integer               |           | plain    |              | 
+ name   | character varying(25) |           | extended |              | 
+Has OIDs: no
+Options: orientation=row, compression=no
 
 create table test_non_like2 like test_non including all excluding partition;
-\d test_non_like2
-  Table "like_default_test.test_non_like2"
- Column |         Type          | Modifiers 
---------+-----------------------+-----------
- id     | integer               | 
- name   | character varying(25) | 
+\d+ test_non_like2
+                      Table "like_default_test.test_non_like2"
+ Column |         Type          | Modifiers | Storage  | Stats target | Description 
+--------+-----------------------+-----------+----------+--------------+-------------
+ id     | integer               |           | plain    |              | 
+ name   | character varying(25) |           | extended |              | 
+Has OIDs: no
+Options: orientation=row, compression=no
 
 create table test_part_like1 (like test_part including all excluding partition);
-\d test_part_like1
- Table "like_default_test.test_part_like1"
- Column |         Type          | Modifiers 
---------+-----------------------+-----------
- id     | integer               | 
- name   | character varying(25) | 
+\d+ test_part_like1
+                     Table "like_default_test.test_part_like1"
+ Column |         Type          | Modifiers | Storage  | Stats target | Description 
+--------+-----------------------+-----------+----------+--------------+-------------
+ id     | integer               |           | plain    |              | 
+ name   | character varying(25) |           | extended |              | 
+Has OIDs: no
+Options: orientation=row, compression=no
 
 create table test_part_like2 like test_part including all excluding partition;
-\d test_part_like2
- Table "like_default_test.test_part_like2"
- Column |         Type          | Modifiers 
---------+-----------------------+-----------
- id     | integer               | 
- name   | character varying(25) | 
+\d+ test_part_like2
+                     Table "like_default_test.test_part_like2"
+ Column |         Type          | Modifiers | Storage  | Stats target | Description 
+--------+-----------------------+-----------+----------+--------------+-------------
+ id     | integer               |           | plain    |              | 
+ name   | character varying(25) |           | extended |              | 
+Has OIDs: no
+Options: orientation=row, compression=no
 
 drop table if exists test_non_like1, test_non_like2, test_part_like1, test_part_like2;
 
 create table test_non_like1 (like test_non including all excluding partition excluding indexes);
-\d test_non_like1
-  Table "like_default_test.test_non_like1"
- Column |         Type          | Modifiers 
---------+-----------------------+-----------
- id     | integer               | 
- name   | character varying(25) | 
+\d+ test_non_like1
+                      Table "like_default_test.test_non_like1"
+ Column |         Type          | Modifiers | Storage  | Stats target | Description 
+--------+-----------------------+-----------+----------+--------------+-------------
+ id     | integer               |           | plain    |              | 
+ name   | character varying(25) |           | extended |              | 
+Has OIDs: no
+Options: orientation=row, compression=no
 
 create table test_non_like2 like test_non including all excluding partition excluding indexes;
-\d test_non_like2
-  Table "like_default_test.test_non_like2"
- Column |         Type          | Modifiers 
---------+-----------------------+-----------
- id     | integer               | 
- name   | character varying(25) | 
+\d+ test_non_like2
+                      Table "like_default_test.test_non_like2"
+ Column |         Type          | Modifiers | Storage  | Stats target | Description 
+--------+-----------------------+-----------+----------+--------------+-------------
+ id     | integer               |           | plain    |              | 
+ name   | character varying(25) |           | extended |              | 
+Has OIDs: no
+Options: orientation=row, compression=no
 
 create table test_part_like1 (like test_part including all excluding partition excluding indexes);
-\d test_part_like1
- Table "like_default_test.test_part_like1"
- Column |         Type          | Modifiers 
---------+-----------------------+-----------
- id     | integer               | 
- name   | character varying(25) | 
+\d+ test_part_like1
+                     Table "like_default_test.test_part_like1"
+ Column |         Type          | Modifiers | Storage  | Stats target | Description 
+--------+-----------------------+-----------+----------+--------------+-------------
+ id     | integer               |           | plain    |              | 
+ name   | character varying(25) |           | extended |              | 
+Has OIDs: no
+Options: orientation=row, compression=no
 
 create table test_part_like2 like test_part including all excluding partition excluding indexes;
-\d test_part_like2
- Table "like_default_test.test_part_like2"
- Column |         Type          | Modifiers 
---------+-----------------------+-----------
- id     | integer               | 
- name   | character varying(25) | 
+\d+ test_part_like2
+                     Table "like_default_test.test_part_like2"
+ Column |         Type          | Modifiers | Storage  | Stats target | Description 
+--------+-----------------------+-----------+----------+--------------+-------------
+ id     | integer               |           | plain    |              | 
+ name   | character varying(25) |           | extended |              | 
+Has OIDs: no
+Options: orientation=row, compression=no
 
 drop table if exists test_non_like1, test_non_like2, test_part_like1, test_part_like2;
 
 create table test_non_like1 (like test_non excluding indexes);
-\d test_non_like1
-  Table "like_default_test.test_non_like1"
- Column |         Type          | Modifiers 
---------+-----------------------+-----------
- id     | integer               | 
- name   | character varying(25) | 
+\d+ test_non_like1
+                      Table "like_default_test.test_non_like1"
+ Column |         Type          | Modifiers | Storage  | Stats target | Description 
+--------+-----------------------+-----------+----------+--------------+-------------
+ id     | integer               |           | plain    |              | 
+ name   | character varying(25) |           | extended |              | 
+Has OIDs: no
+Options: orientation=row, compression=no
 
 create table test_non_like2 like test_non excluding indexes;
-\d test_non_like2
-  Table "like_default_test.test_non_like2"
- Column |         Type          | Modifiers 
---------+-----------------------+-----------
- id     | integer               | 
- name   | character varying(25) | 
+\d+ test_non_like2
+                      Table "like_default_test.test_non_like2"
+ Column |         Type          | Modifiers | Storage  | Stats target | Description 
+--------+-----------------------+-----------+----------+--------------+-------------
+ id     | integer               |           | plain    |              | 
+ name   | character varying(25) |           | extended |              | 
+Has OIDs: no
+Options: orientation=row, compression=no
 
 create table test_part_like1 (like test_part excluding indexes);
-\d test_part_like1
- Table "like_default_test.test_part_like1"
- Column |         Type          | Modifiers 
---------+-----------------------+-----------
- id     | integer               | 
- name   | character varying(25) | 
+\d+ test_part_like1
+                     Table "like_default_test.test_part_like1"
+ Column |         Type          | Modifiers | Storage  | Stats target | Description 
+--------+-----------------------+-----------+----------+--------------+-------------
+ id     | integer               |           | plain    |              | 
+ name   | character varying(25) |           | extended |              | 
+Has OIDs: no
+Options: orientation=row, compression=no
 
 create table test_part_like2 like test_part excluding indexes;
-\d test_part_like2
- Table "like_default_test.test_part_like2"
- Column |         Type          | Modifiers 
---------+-----------------------+-----------
- id     | integer               | 
- name   | character varying(25) | 
+\d+ test_part_like2
+                     Table "like_default_test.test_part_like2"
+ Column |         Type          | Modifiers | Storage  | Stats target | Description 
+--------+-----------------------+-----------+----------+--------------+-------------
+ id     | integer               |           | plain    |              | 
+ name   | character varying(25) |           | extended |              | 
 Partition By RANGE(id)
 Number of partitions: 5 (View pg_partition to check each partition range.)
+Has OIDs: no
+Options: orientation=row, compression=no
 
 drop table if exists test_non_like1, test_non_like2, test_part_like1, test_part_like2;
 
 create table test_non_like1 (like test_non excluding partition);
-\d test_non_like1
-  Table "like_default_test.test_non_like1"
- Column |         Type          | Modifiers 
---------+-----------------------+-----------
- id     | integer               | 
- name   | character varying(25) | 
+\d+ test_non_like1
+                      Table "like_default_test.test_non_like1"
+ Column |         Type          | Modifiers | Storage  | Stats target | Description 
+--------+-----------------------+-----------+----------+--------------+-------------
+ id     | integer               |           | plain    |              | 
+ name   | character varying(25) |           | extended |              | 
+Has OIDs: no
+Options: orientation=row, compression=no
 
 create table test_non_like2 like test_non excluding partition;
-\d test_non_like2
-  Table "like_default_test.test_non_like2"
- Column |         Type          | Modifiers 
---------+-----------------------+-----------
- id     | integer               | 
- name   | character varying(25) | 
+\d+ test_non_like2
+                      Table "like_default_test.test_non_like2"
+ Column |         Type          | Modifiers | Storage  | Stats target | Description 
+--------+-----------------------+-----------+----------+--------------+-------------
+ id     | integer               |           | plain    |              | 
+ name   | character varying(25) |           | extended |              | 
+Has OIDs: no
+Options: orientation=row, compression=no
 
 create table test_part_like1 (like test_part excluding partition);
-\d test_part_like1
- Table "like_default_test.test_part_like1"
- Column |         Type          | Modifiers 
---------+-----------------------+-----------
- id     | integer               | 
- name   | character varying(25) | 
+\d+ test_part_like1
+                     Table "like_default_test.test_part_like1"
+ Column |         Type          | Modifiers | Storage  | Stats target | Description 
+--------+-----------------------+-----------+----------+--------------+-------------
+ id     | integer               |           | plain    |              | 
+ name   | character varying(25) |           | extended |              | 
+Has OIDs: no
+Options: orientation=row, compression=no
 
 create table test_part_like2 like test_part excluding partition;
-\d test_part_like2
- Table "like_default_test.test_part_like2"
- Column |         Type          | Modifiers 
---------+-----------------------+-----------
- id     | integer               | 
- name   | character varying(25) | 
+\d+ test_part_like2
+                     Table "like_default_test.test_part_like2"
+ Column |         Type          | Modifiers | Storage  | Stats target | Description 
+--------+-----------------------+-----------+----------+--------------+-------------
+ id     | integer               |           | plain    |              | 
+ name   | character varying(25) |           | extended |              | 
+Has OIDs: no
+Options: orientation=row, compression=no
 
 drop table if exists test_non_like1, test_non_like2, test_part_like1, test_part_like2;
 
 create table test_non_like1 (like test_non excluding reloptions);
-\d test_non_like1
-  Table "like_default_test.test_non_like1"
- Column |         Type          | Modifiers 
---------+-----------------------+-----------
- id     | integer               | 
- name   | character varying(25) | 
+\d+ test_non_like1
+                      Table "like_default_test.test_non_like1"
+ Column |         Type          | Modifiers | Storage  | Stats target | Description 
+--------+-----------------------+-----------+----------+--------------+-------------
+ id     | integer               |           | plain    |              | 
+ name   | character varying(25) |           | extended |              | 
+Has OIDs: no
+Options: orientation=row, compression=no
 
 create table test_non_like2 like test_non excluding reloptions;
-\d test_non_like2
-  Table "like_default_test.test_non_like2"
- Column |         Type          | Modifiers 
---------+-----------------------+-----------
- id     | integer               | 
- name   | character varying(25) | 
+\d+ test_non_like2
+                      Table "like_default_test.test_non_like2"
+ Column |         Type          | Modifiers | Storage  | Stats target | Description 
+--------+-----------------------+-----------+----------+--------------+-------------
+ id     | integer               |           | plain    |              | 
+ name   | character varying(25) |           | extended |              | 
+Has OIDs: no
+Options: orientation=row, compression=no
 
 create table test_part_like1 (like test_part excluding reloptions);
-\d test_part_like1
- Table "like_default_test.test_part_like1"
- Column |         Type          | Modifiers 
---------+-----------------------+-----------
- id     | integer               | 
- name   | character varying(25) | 
+\d+ test_part_like1
+                     Table "like_default_test.test_part_like1"
+ Column |         Type          | Modifiers | Storage  | Stats target | Description 
+--------+-----------------------+-----------+----------+--------------+-------------
+ id     | integer               |           | plain    |              | 
+ name   | character varying(25) |           | extended |              | 
+Has OIDs: no
+Options: orientation=row, compression=no
 
 create table test_part_like2 like test_part excluding reloptions;
-\d test_part_like2
- Table "like_default_test.test_part_like2"
- Column |         Type          | Modifiers 
---------+-----------------------+-----------
- id     | integer               | 
- name   | character varying(25) | 
+\d+ test_part_like2
+                     Table "like_default_test.test_part_like2"
+ Column |         Type          | Modifiers | Storage  | Stats target | Description 
+--------+-----------------------+-----------+----------+--------------+-------------
+ id     | integer               |           | plain    |              | 
+ name   | character varying(25) |           | extended |              | 
 Partition By RANGE(id)
 Number of partitions: 5 (View pg_partition to check each partition range.)
+Has OIDs: no
+Options: orientation=row, compression=no
 
 drop table if exists test_non_like1, test_non_like2, test_part_like1, test_part_like2;
 
 create table test_non_like1 (like test_non excluding partition excluding indexes);
-\d test_non_like1
-  Table "like_default_test.test_non_like1"
- Column |         Type          | Modifiers 
---------+-----------------------+-----------
- id     | integer               | 
- name   | character varying(25) | 
+\d+ test_non_like1
+                      Table "like_default_test.test_non_like1"
+ Column |         Type          | Modifiers | Storage  | Stats target | Description 
+--------+-----------------------+-----------+----------+--------------+-------------
+ id     | integer               |           | plain    |              | 
+ name   | character varying(25) |           | extended |              | 
+Has OIDs: no
+Options: orientation=row, compression=no
 
 create table test_non_like2 like test_non excluding partition excluding indexes;
-\d test_non_like2
-  Table "like_default_test.test_non_like2"
- Column |         Type          | Modifiers 
---------+-----------------------+-----------
- id     | integer               | 
- name   | character varying(25) | 
+\d+ test_non_like2
+                      Table "like_default_test.test_non_like2"
+ Column |         Type          | Modifiers | Storage  | Stats target | Description 
+--------+-----------------------+-----------+----------+--------------+-------------
+ id     | integer               |           | plain    |              | 
+ name   | character varying(25) |           | extended |              | 
+Has OIDs: no
+Options: orientation=row, compression=no
 
 create table test_part_like1 (like test_part excluding partition excluding indexes);
-\d test_part_like1
- Table "like_default_test.test_part_like1"
- Column |         Type          | Modifiers 
---------+-----------------------+-----------
- id     | integer               | 
- name   | character varying(25) | 
+\d+ test_part_like1
+                     Table "like_default_test.test_part_like1"
+ Column |         Type          | Modifiers | Storage  | Stats target | Description 
+--------+-----------------------+-----------+----------+--------------+-------------
+ id     | integer               |           | plain    |              | 
+ name   | character varying(25) |           | extended |              | 
+Has OIDs: no
+Options: orientation=row, compression=no
 
 create table test_part_like2 like test_part excluding partition excluding indexes;
-\d test_part_like2
- Table "like_default_test.test_part_like2"
- Column |         Type          | Modifiers 
---------+-----------------------+-----------
- id     | integer               | 
- name   | character varying(25) | 
+\d+ test_part_like2
+                     Table "like_default_test.test_part_like2"
+ Column |         Type          | Modifiers | Storage  | Stats target | Description 
+--------+-----------------------+-----------+----------+--------------+-------------
+ id     | integer               |           | plain    |              | 
+ name   | character varying(25) |           | extended |              | 
+Has OIDs: no
+Options: orientation=row, compression=no
 
 drop table if exists test_non_like1, test_non_like2, test_part_like1, test_part_like2;
 
 create table test_non_like1 (like test_non excluding all);
-\d test_non_like1
-  Table "like_default_test.test_non_like1"
- Column |         Type          | Modifiers 
---------+-----------------------+-----------
- id     | integer               | 
- name   | character varying(25) | 
+\d+ test_non_like1
+                      Table "like_default_test.test_non_like1"
+ Column |         Type          | Modifiers | Storage  | Stats target | Description 
+--------+-----------------------+-----------+----------+--------------+-------------
+ id     | integer               |           | plain    |              | 
+ name   | character varying(25) |           | extended |              | 
+Has OIDs: no
+Options: orientation=row, compression=no
 
 create table test_non_like2 like test_non excluding all;
-\d test_non_like2
-  Table "like_default_test.test_non_like2"
- Column |         Type          | Modifiers 
---------+-----------------------+-----------
- id     | integer               | 
- name   | character varying(25) | 
+\d+ test_non_like2
+                      Table "like_default_test.test_non_like2"
+ Column |         Type          | Modifiers | Storage  | Stats target | Description 
+--------+-----------------------+-----------+----------+--------------+-------------
+ id     | integer               |           | plain    |              | 
+ name   | character varying(25) |           | extended |              | 
+Has OIDs: no
+Options: orientation=row, compression=no
 
 create table test_part_like1 (like test_part excluding all);
-\d test_part_like1
- Table "like_default_test.test_part_like1"
- Column |         Type          | Modifiers 
---------+-----------------------+-----------
- id     | integer               | 
- name   | character varying(25) | 
+\d+ test_part_like1
+                     Table "like_default_test.test_part_like1"
+ Column |         Type          | Modifiers | Storage  | Stats target | Description 
+--------+-----------------------+-----------+----------+--------------+-------------
+ id     | integer               |           | plain    |              | 
+ name   | character varying(25) |           | extended |              | 
+Has OIDs: no
+Options: orientation=row, compression=no
 
 create table test_part_like2 like test_part excluding all;
-\d test_part_like2
- Table "like_default_test.test_part_like2"
- Column |         Type          | Modifiers 
---------+-----------------------+-----------
- id     | integer               | 
- name   | character varying(25) | 
+\d+ test_part_like2
+                     Table "like_default_test.test_part_like2"
+ Column |         Type          | Modifiers | Storage  | Stats target | Description 
+--------+-----------------------+-----------+----------+--------------+-------------
+ id     | integer               |           | plain    |              | 
+ name   | character varying(25) |           | extended |              | 
+Has OIDs: no
+Options: orientation=row, compression=no
 
 drop table if exists test_non_like1, test_non_like2, test_part_like1, test_part_like2;
 
 create table test_non_like1 (like test_non excluding all including partition);
 ERROR:  could not specify "INCLUDING PARTITION" for non-partitioned-table relation:"test_non"
-\d test_non_like1
+\d+ test_non_like1
 create table test_non_like2 like test_non excluding all including partition;
 ERROR:  could not specify "INCLUDING PARTITION" for non-partitioned-table relation:"test_non"
-\d test_non_like2
+\d+ test_non_like2
 create table test_part_like1 (like test_part excluding all including partition);
-\d test_part_like1
- Table "like_default_test.test_part_like1"
- Column |         Type          | Modifiers 
---------+-----------------------+-----------
- id     | integer               | 
- name   | character varying(25) | 
+\d+ test_part_like1
+                     Table "like_default_test.test_part_like1"
+ Column |         Type          | Modifiers | Storage  | Stats target | Description 
+--------+-----------------------+-----------+----------+--------------+-------------
+ id     | integer               |           | plain    |              | 
+ name   | character varying(25) |           | extended |              | 
 Partition By RANGE(id)
 Number of partitions: 5 (View pg_partition to check each partition range.)
+Has OIDs: no
+Options: orientation=row, compression=no
 
 create table test_part_like2 like test_part excluding all including partition;
-\d test_part_like2
- Table "like_default_test.test_part_like2"
- Column |         Type          | Modifiers 
---------+-----------------------+-----------
- id     | integer               | 
- name   | character varying(25) | 
+\d+ test_part_like2
+                     Table "like_default_test.test_part_like2"
+ Column |         Type          | Modifiers | Storage  | Stats target | Description 
+--------+-----------------------+-----------+----------+--------------+-------------
+ id     | integer               |           | plain    |              | 
+ name   | character varying(25) |           | extended |              | 
 Partition By RANGE(id)
 Number of partitions: 5 (View pg_partition to check each partition range.)
+Has OIDs: no
+Options: orientation=row, compression=no
 
 drop table if exists test_non_like1, test_non_like2, test_part_like1, test_part_like2;
 NOTICE:  table "test_non_like1" does not exist, skipping
 NOTICE:  table "test_non_like2" does not exist, skipping
 
 create table test_non_like1 (like test_non excluding all including indexes);
-\d test_non_like1
-  Table "like_default_test.test_non_like1"
- Column |         Type          | Modifiers 
---------+-----------------------+-----------
- id     | integer               | 
- name   | character varying(25) | 
+\d+ test_non_like1
+                      Table "like_default_test.test_non_like1"
+ Column |         Type          | Modifiers | Storage  | Stats target | Description 
+--------+-----------------------+-----------+----------+--------------+-------------
+ id     | integer               |           | plain    |              | 
+ name   | character varying(25) |           | extended |              | 
+Has OIDs: no
+Options: orientation=row, compression=no
 
 create table test_non_like2 like test_non excluding all including indexes;
-\d test_non_like2
-  Table "like_default_test.test_non_like2"
- Column |         Type          | Modifiers 
---------+-----------------------+-----------
- id     | integer               | 
- name   | character varying(25) | 
+\d+ test_non_like2
+                      Table "like_default_test.test_non_like2"
+ Column |         Type          | Modifiers | Storage  | Stats target | Description 
+--------+-----------------------+-----------+----------+--------------+-------------
+ id     | integer               |           | plain    |              | 
+ name   | character varying(25) |           | extended |              | 
+Has OIDs: no
+Options: orientation=row, compression=no
 
 create table test_part_like1 (like test_part excluding all including indexes);
-\d test_part_like1
- Table "like_default_test.test_part_like1"
- Column |         Type          | Modifiers 
---------+-----------------------+-----------
- id     | integer               | 
- name   | character varying(25) | 
+\d+ test_part_like1
+                     Table "like_default_test.test_part_like1"
+ Column |         Type          | Modifiers | Storage  | Stats target | Description 
+--------+-----------------------+-----------+----------+--------------+-------------
+ id     | integer               |           | plain    |              | 
+ name   | character varying(25) |           | extended |              | 
+Has OIDs: no
+Options: orientation=row, compression=no
 
 create table test_part_like2 like test_part excluding all including indexes;
-\d test_part_like2
- Table "like_default_test.test_part_like2"
- Column |         Type          | Modifiers 
---------+-----------------------+-----------
- id     | integer               | 
- name   | character varying(25) | 
+\d+ test_part_like2
+                     Table "like_default_test.test_part_like2"
+ Column |         Type          | Modifiers | Storage  | Stats target | Description 
+--------+-----------------------+-----------+----------+--------------+-------------
+ id     | integer               |           | plain    |              | 
+ name   | character varying(25) |           | extended |              | 
+Has OIDs: no
+Options: orientation=row, compression=no
 
 drop table if exists test_non_like1, test_non_like2, test_part_like1, test_part_like2;
 
 create table test_non_like1 (like test_non excluding all including partition including indexes);
 ERROR:  could not specify "INCLUDING PARTITION" for non-partitioned-table relation:"test_non"
-\d test_non_like1
+\d+ test_non_like1
 create table test_non_like2 like test_non excluding all including partition including indexes;
 ERROR:  could not specify "INCLUDING PARTITION" for non-partitioned-table relation:"test_non"
-\d test_non_like2
+\d+ test_non_like2
 create table test_part_like1 (like test_part excluding all including partition including indexes);
-\d test_part_like1
- Table "like_default_test.test_part_like1"
- Column |         Type          | Modifiers 
---------+-----------------------+-----------
- id     | integer               | 
- name   | character varying(25) | 
+\d+ test_part_like1
+                     Table "like_default_test.test_part_like1"
+ Column |         Type          | Modifiers | Storage  | Stats target | Description 
+--------+-----------------------+-----------+----------+--------------+-------------
+ id     | integer               |           | plain    |              | 
+ name   | character varying(25) |           | extended |              | 
 Partition By RANGE(id)
 Number of partitions: 5 (View pg_partition to check each partition range.)
+Has OIDs: no
+Options: orientation=row, compression=no
 
 create table test_part_like2 like test_part excluding all including partition including indexes;
-\d test_part_like2
- Table "like_default_test.test_part_like2"
- Column |         Type          | Modifiers 
---------+-----------------------+-----------
- id     | integer               | 
- name   | character varying(25) | 
+\d+ test_part_like2
+                     Table "like_default_test.test_part_like2"
+ Column |         Type          | Modifiers | Storage  | Stats target | Description 
+--------+-----------------------+-----------+----------+--------------+-------------
+ id     | integer               |           | plain    |              | 
+ name   | character varying(25) |           | extended |              | 
 Partition By RANGE(id)
 Number of partitions: 5 (View pg_partition to check each partition range.)
+Has OIDs: no
+Options: orientation=row, compression=no
 
 drop table if exists test_non_like1, test_non_like2, test_part_like1, test_part_like2;
 NOTICE:  table "test_non_like1" does not exist, skipping
@@ -623,150 +749,176 @@ create index test_non_id_idx on test_non(id);
 create index test_part_id_idx on test_part(id);
 
 create table test_non_like1 (like test_non);
-\d test_non_like1
-  Table "like_default_test.test_non_like1"
- Column |         Type          | Modifiers 
---------+-----------------------+-----------
- id     | integer               | 
- name   | character varying(25) | 
+\d+ test_non_like1
+                      Table "like_default_test.test_non_like1"
+ Column |         Type          | Modifiers | Storage  | Stats target | Description 
+--------+-----------------------+-----------+----------+--------------+-------------
+ id     | integer               |           | plain    |              | 
+ name   | character varying(25) |           | extended |              | 
+Has OIDs: no
+Options: orientation=row, compression=no
 
 create table test_non_like2 like test_non;
-\d test_non_like2
-  Table "like_default_test.test_non_like2"
- Column |         Type          | Modifiers 
---------+-----------------------+-----------
- id     | integer               | 
- name   | character varying(25) | 
+\d+ test_non_like2
+                      Table "like_default_test.test_non_like2"
+ Column |         Type          | Modifiers | Storage  | Stats target | Description 
+--------+-----------------------+-----------+----------+--------------+-------------
+ id     | integer               |           | plain    |              | 
+ name   | character varying(25) |           | extended |              | 
 Indexes:
     "test_non_like2_id_idx" btree (id) TABLESPACE pg_default
+Has OIDs: no
+Options: orientation=row, compression=no
 
 create table test_part_like1 (like test_part);
-\d test_part_like1
- Table "like_default_test.test_part_like1"
- Column |         Type          | Modifiers 
---------+-----------------------+-----------
- id     | integer               | 
- name   | character varying(25) | 
+\d+ test_part_like1
+                     Table "like_default_test.test_part_like1"
+ Column |         Type          | Modifiers | Storage  | Stats target | Description 
+--------+-----------------------+-----------+----------+--------------+-------------
+ id     | integer               |           | plain    |              | 
+ name   | character varying(25) |           | extended |              | 
+Has OIDs: no
+Options: orientation=row, compression=no
 
 create table test_part_like2 like test_part;
-\d test_part_like2
- Table "like_default_test.test_part_like2"
- Column |         Type          | Modifiers 
---------+-----------------------+-----------
- id     | integer               | 
- name   | character varying(25) | 
+\d+ test_part_like2
+                     Table "like_default_test.test_part_like2"
+ Column |         Type          | Modifiers | Storage  | Stats target | Description 
+--------+-----------------------+-----------+----------+--------------+-------------
+ id     | integer               |           | plain    |              | 
+ name   | character varying(25) |           | extended |              | 
 Indexes:
     "test_part_like2_id_tableoid_idx" btree (id) TABLESPACE pg_default
 Partition By RANGE(id)
 Number of partitions: 5 (View pg_partition to check each partition range.)
+Has OIDs: no
+Options: orientation=row, compression=no
 
 drop table if exists test_non_like1, test_non_like2, test_part_like1, test_part_like2;
 
 create table if not exists test_non_like1 (like test_non);
-\d test_non_like1
-  Table "like_default_test.test_non_like1"
- Column |         Type          | Modifiers 
---------+-----------------------+-----------
- id     | integer               | 
- name   | character varying(25) | 
+\d+ test_non_like1
+                      Table "like_default_test.test_non_like1"
+ Column |         Type          | Modifiers | Storage  | Stats target | Description 
+--------+-----------------------+-----------+----------+--------------+-------------
+ id     | integer               |           | plain    |              | 
+ name   | character varying(25) |           | extended |              | 
+Has OIDs: no
+Options: orientation=row, compression=no
 
 create table if not exists test_non_like2 like test_non;
-\d test_non_like2
-  Table "like_default_test.test_non_like2"
- Column |         Type          | Modifiers 
---------+-----------------------+-----------
- id     | integer               | 
- name   | character varying(25) | 
+\d+ test_non_like2
+                      Table "like_default_test.test_non_like2"
+ Column |         Type          | Modifiers | Storage  | Stats target | Description 
+--------+-----------------------+-----------+----------+--------------+-------------
+ id     | integer               |           | plain    |              | 
+ name   | character varying(25) |           | extended |              | 
 Indexes:
     "test_non_like2_id_idx" btree (id) TABLESPACE pg_default
+Has OIDs: no
+Options: orientation=row, compression=no
 
 create table if not exists test_part_like1 (like test_part);
-\d test_part_like1
- Table "like_default_test.test_part_like1"
- Column |         Type          | Modifiers 
---------+-----------------------+-----------
- id     | integer               | 
- name   | character varying(25) | 
+\d+ test_part_like1
+                     Table "like_default_test.test_part_like1"
+ Column |         Type          | Modifiers | Storage  | Stats target | Description 
+--------+-----------------------+-----------+----------+--------------+-------------
+ id     | integer               |           | plain    |              | 
+ name   | character varying(25) |           | extended |              | 
+Has OIDs: no
+Options: orientation=row, compression=no
 
 create table if not exists test_part_like2 like test_part;
-\d test_part_like2
- Table "like_default_test.test_part_like2"
- Column |         Type          | Modifiers 
---------+-----------------------+-----------
- id     | integer               | 
- name   | character varying(25) | 
+\d+ test_part_like2
+                     Table "like_default_test.test_part_like2"
+ Column |         Type          | Modifiers | Storage  | Stats target | Description 
+--------+-----------------------+-----------+----------+--------------+-------------
+ id     | integer               |           | plain    |              | 
+ name   | character varying(25) |           | extended |              | 
 Indexes:
     "test_part_like2_id_tableoid_idx" btree (id) TABLESPACE pg_default
 Partition By RANGE(id)
 Number of partitions: 5 (View pg_partition to check each partition range.)
+Has OIDs: no
+Options: orientation=row, compression=no
 
 drop table if exists test_non_like1, test_non_like2, test_part_like1, test_part_like2;
 
 create table test_non_like1 (like test_non including indexes);
-\d test_non_like1
-  Table "like_default_test.test_non_like1"
- Column |         Type          | Modifiers 
---------+-----------------------+-----------
- id     | integer               | 
- name   | character varying(25) | 
+\d+ test_non_like1
+                      Table "like_default_test.test_non_like1"
+ Column |         Type          | Modifiers | Storage  | Stats target | Description 
+--------+-----------------------+-----------+----------+--------------+-------------
+ id     | integer               |           | plain    |              | 
+ name   | character varying(25) |           | extended |              | 
 Indexes:
     "test_non_like1_id_idx" btree (id) TABLESPACE pg_default
+Has OIDs: no
+Options: orientation=row, compression=no
 
 create table test_non_like2 like test_non including indexes;
-\d test_non_like2
-  Table "like_default_test.test_non_like2"
- Column |         Type          | Modifiers 
---------+-----------------------+-----------
- id     | integer               | 
- name   | character varying(25) | 
+\d+ test_non_like2
+                      Table "like_default_test.test_non_like2"
+ Column |         Type          | Modifiers | Storage  | Stats target | Description 
+--------+-----------------------+-----------+----------+--------------+-------------
+ id     | integer               |           | plain    |              | 
+ name   | character varying(25) |           | extended |              | 
 Indexes:
     "test_non_like2_id_idx" btree (id) TABLESPACE pg_default
+Has OIDs: no
+Options: orientation=row, compression=no
 
 create table test_part_like1 (like test_part including indexes);
 ERROR:  non-partitioned table does not support global partitioned indexes 
-\d test_part_like1
+\d+ test_part_like1
 create table test_part_like2 like test_part including indexes;
-\d test_part_like2
- Table "like_default_test.test_part_like2"
- Column |         Type          | Modifiers 
---------+-----------------------+-----------
- id     | integer               | 
- name   | character varying(25) | 
+\d+ test_part_like2
+                     Table "like_default_test.test_part_like2"
+ Column |         Type          | Modifiers | Storage  | Stats target | Description 
+--------+-----------------------+-----------+----------+--------------+-------------
+ id     | integer               |           | plain    |              | 
+ name   | character varying(25) |           | extended |              | 
 Indexes:
     "test_part_like2_id_tableoid_idx" btree (id) TABLESPACE pg_default
 Partition By RANGE(id)
 Number of partitions: 5 (View pg_partition to check each partition range.)
+Has OIDs: no
+Options: orientation=row, compression=no
 
 drop table if exists test_non_like1, test_non_like2, test_part_like1, test_part_like2;
 NOTICE:  table "test_part_like1" does not exist, skipping
 
 create table test_non_like1 (like test_non including partition);
 ERROR:  could not specify "INCLUDING PARTITION" for non-partitioned-table relation:"test_non"
-\d test_non_like1
+\d+ test_non_like1
 create table test_non_like2 like test_non including partition;
 ERROR:  could not specify "INCLUDING PARTITION" for non-partitioned-table relation:"test_non"
-\d test_non_like2
+\d+ test_non_like2
 create table test_part_like1 (like test_part including partition);
-\d test_part_like1
- Table "like_default_test.test_part_like1"
- Column |         Type          | Modifiers 
---------+-----------------------+-----------
- id     | integer               | 
- name   | character varying(25) | 
+\d+ test_part_like1
+                     Table "like_default_test.test_part_like1"
+ Column |         Type          | Modifiers | Storage  | Stats target | Description 
+--------+-----------------------+-----------+----------+--------------+-------------
+ id     | integer               |           | plain    |              | 
+ name   | character varying(25) |           | extended |              | 
 Partition By RANGE(id)
 Number of partitions: 5 (View pg_partition to check each partition range.)
+Has OIDs: no
+Options: orientation=row, compression=no
 
 create table test_part_like2 like test_part including partition;
-\d test_part_like2
- Table "like_default_test.test_part_like2"
- Column |         Type          | Modifiers 
---------+-----------------------+-----------
- id     | integer               | 
- name   | character varying(25) | 
+\d+ test_part_like2
+                     Table "like_default_test.test_part_like2"
+ Column |         Type          | Modifiers | Storage  | Stats target | Description 
+--------+-----------------------+-----------+----------+--------------+-------------
+ id     | integer               |           | plain    |              | 
+ name   | character varying(25) |           | extended |              | 
 Indexes:
     "test_part_like2_id_tableoid_idx" btree (id) TABLESPACE pg_default
 Partition By RANGE(id)
 Number of partitions: 5 (View pg_partition to check each partition range.)
+Has OIDs: no
+Options: orientation=row, compression=no
 
 drop table if exists test_non_like1, test_non_like2, test_part_like1, test_part_like2;
 NOTICE:  table "test_non_like1" does not exist, skipping
@@ -774,411 +926,485 @@ NOTICE:  table "test_non_like2" does not exist, skipping
 
 create table test_non_like1 (like test_non including partition including indexes);
 ERROR:  could not specify "INCLUDING PARTITION" for non-partitioned-table relation:"test_non"
-\d test_non_like1
+\d+ test_non_like1
 create table test_non_like2 like test_non including partition including indexes;
 ERROR:  could not specify "INCLUDING PARTITION" for non-partitioned-table relation:"test_non"
-\d test_non_like2
+\d+ test_non_like2
 create table test_part_like1 (like test_part including partition including indexes);
-\d test_part_like1
- Table "like_default_test.test_part_like1"
- Column |         Type          | Modifiers 
---------+-----------------------+-----------
- id     | integer               | 
- name   | character varying(25) | 
+\d+ test_part_like1
+                     Table "like_default_test.test_part_like1"
+ Column |         Type          | Modifiers | Storage  | Stats target | Description 
+--------+-----------------------+-----------+----------+--------------+-------------
+ id     | integer               |           | plain    |              | 
+ name   | character varying(25) |           | extended |              | 
 Indexes:
     "test_part_like1_id_tableoid_idx" btree (id) TABLESPACE pg_default
 Partition By RANGE(id)
 Number of partitions: 5 (View pg_partition to check each partition range.)
+Has OIDs: no
+Options: orientation=row, compression=no
 
 create table test_part_like2 like test_part including partition including indexes;
-\d test_part_like2
- Table "like_default_test.test_part_like2"
- Column |         Type          | Modifiers 
---------+-----------------------+-----------
- id     | integer               | 
- name   | character varying(25) | 
+\d+ test_part_like2
+                     Table "like_default_test.test_part_like2"
+ Column |         Type          | Modifiers | Storage  | Stats target | Description 
+--------+-----------------------+-----------+----------+--------------+-------------
+ id     | integer               |           | plain    |              | 
+ name   | character varying(25) |           | extended |              | 
 Indexes:
     "test_part_like2_id_tableoid_idx" btree (id) TABLESPACE pg_default
 Partition By RANGE(id)
 Number of partitions: 5 (View pg_partition to check each partition range.)
+Has OIDs: no
+Options: orientation=row, compression=no
 
 drop table if exists test_non_like1, test_non_like2, test_part_like1, test_part_like2;
 NOTICE:  table "test_non_like1" does not exist, skipping
 NOTICE:  table "test_non_like2" does not exist, skipping
 
 create table test_non_like1 (like test_non including all);
-\d test_non_like1
-  Table "like_default_test.test_non_like1"
- Column |         Type          | Modifiers 
---------+-----------------------+-----------
- id     | integer               | 
- name   | character varying(25) | 
+\d+ test_non_like1
+                      Table "like_default_test.test_non_like1"
+ Column |         Type          | Modifiers | Storage  | Stats target | Description 
+--------+-----------------------+-----------+----------+--------------+-------------
+ id     | integer               |           | plain    |              | 
+ name   | character varying(25) |           | extended |              | 
 Indexes:
     "test_non_like1_id_idx" btree (id) TABLESPACE pg_default
+Has OIDs: no
+Options: orientation=row, compression=no
 
 create table test_non_like2 like test_non including all;
-\d test_non_like2
-  Table "like_default_test.test_non_like2"
- Column |         Type          | Modifiers 
---------+-----------------------+-----------
- id     | integer               | 
- name   | character varying(25) | 
+\d+ test_non_like2
+                      Table "like_default_test.test_non_like2"
+ Column |         Type          | Modifiers | Storage  | Stats target | Description 
+--------+-----------------------+-----------+----------+--------------+-------------
+ id     | integer               |           | plain    |              | 
+ name   | character varying(25) |           | extended |              | 
 Indexes:
     "test_non_like2_id_idx" btree (id) TABLESPACE pg_default
+Has OIDs: no
+Options: orientation=row, compression=no
 
 create table test_part_like1 (like test_part including all);
-\d test_part_like1
- Table "like_default_test.test_part_like1"
- Column |         Type          | Modifiers 
---------+-----------------------+-----------
- id     | integer               | 
- name   | character varying(25) | 
+\d+ test_part_like1
+                     Table "like_default_test.test_part_like1"
+ Column |         Type          | Modifiers | Storage  | Stats target | Description 
+--------+-----------------------+-----------+----------+--------------+-------------
+ id     | integer               |           | plain    |              | 
+ name   | character varying(25) |           | extended |              | 
 Indexes:
     "test_part_like1_id_tableoid_idx" btree (id) TABLESPACE pg_default
 Partition By RANGE(id)
 Number of partitions: 5 (View pg_partition to check each partition range.)
+Has OIDs: no
+Options: orientation=row, compression=no
 
 create table test_part_like2 like test_part including all;
-\d test_part_like2
- Table "like_default_test.test_part_like2"
- Column |         Type          | Modifiers 
---------+-----------------------+-----------
- id     | integer               | 
- name   | character varying(25) | 
+\d+ test_part_like2
+                     Table "like_default_test.test_part_like2"
+ Column |         Type          | Modifiers | Storage  | Stats target | Description 
+--------+-----------------------+-----------+----------+--------------+-------------
+ id     | integer               |           | plain    |              | 
+ name   | character varying(25) |           | extended |              | 
 Indexes:
     "test_part_like2_id_tableoid_idx" btree (id) TABLESPACE pg_default
 Partition By RANGE(id)
 Number of partitions: 5 (View pg_partition to check each partition range.)
+Has OIDs: no
+Options: orientation=row, compression=no
 
 drop table if exists test_non_like1, test_non_like2, test_part_like1, test_part_like2;
 
 create table test_non_like1 (like test_non including all excluding indexes);
-\d test_non_like1
-  Table "like_default_test.test_non_like1"
- Column |         Type          | Modifiers 
---------+-----------------------+-----------
- id     | integer               | 
- name   | character varying(25) | 
+\d+ test_non_like1
+                      Table "like_default_test.test_non_like1"
+ Column |         Type          | Modifiers | Storage  | Stats target | Description 
+--------+-----------------------+-----------+----------+--------------+-------------
+ id     | integer               |           | plain    |              | 
+ name   | character varying(25) |           | extended |              | 
+Has OIDs: no
+Options: orientation=row, compression=no
 
 create table test_non_like2 like test_non including all excluding indexes;
-\d test_non_like2
-  Table "like_default_test.test_non_like2"
- Column |         Type          | Modifiers 
---------+-----------------------+-----------
- id     | integer               | 
- name   | character varying(25) | 
+\d+ test_non_like2
+                      Table "like_default_test.test_non_like2"
+ Column |         Type          | Modifiers | Storage  | Stats target | Description 
+--------+-----------------------+-----------+----------+--------------+-------------
+ id     | integer               |           | plain    |              | 
+ name   | character varying(25) |           | extended |              | 
+Has OIDs: no
+Options: orientation=row, compression=no
 
 create table test_part_like1 (like test_part including all excluding indexes);
-\d test_part_like1
- Table "like_default_test.test_part_like1"
- Column |         Type          | Modifiers 
---------+-----------------------+-----------
- id     | integer               | 
- name   | character varying(25) | 
+\d+ test_part_like1
+                     Table "like_default_test.test_part_like1"
+ Column |         Type          | Modifiers | Storage  | Stats target | Description 
+--------+-----------------------+-----------+----------+--------------+-------------
+ id     | integer               |           | plain    |              | 
+ name   | character varying(25) |           | extended |              | 
 Partition By RANGE(id)
 Number of partitions: 5 (View pg_partition to check each partition range.)
+Has OIDs: no
+Options: orientation=row, compression=no
 
 create table test_part_like2 like test_part including all excluding indexes;
-\d test_part_like2
- Table "like_default_test.test_part_like2"
- Column |         Type          | Modifiers 
---------+-----------------------+-----------
- id     | integer               | 
- name   | character varying(25) | 
+\d+ test_part_like2
+                     Table "like_default_test.test_part_like2"
+ Column |         Type          | Modifiers | Storage  | Stats target | Description 
+--------+-----------------------+-----------+----------+--------------+-------------
+ id     | integer               |           | plain    |              | 
+ name   | character varying(25) |           | extended |              | 
 Partition By RANGE(id)
 Number of partitions: 5 (View pg_partition to check each partition range.)
+Has OIDs: no
+Options: orientation=row, compression=no
 
 drop table if exists test_non_like1, test_non_like2, test_part_like1, test_part_like2;
 
 create table test_non_like1 (like test_non including all excluding partition);
-\d test_non_like1
-  Table "like_default_test.test_non_like1"
- Column |         Type          | Modifiers 
---------+-----------------------+-----------
- id     | integer               | 
- name   | character varying(25) | 
+\d+ test_non_like1
+                      Table "like_default_test.test_non_like1"
+ Column |         Type          | Modifiers | Storage  | Stats target | Description 
+--------+-----------------------+-----------+----------+--------------+-------------
+ id     | integer               |           | plain    |              | 
+ name   | character varying(25) |           | extended |              | 
 Indexes:
     "test_non_like1_id_idx" btree (id) TABLESPACE pg_default
+Has OIDs: no
+Options: orientation=row, compression=no
 
 create table test_non_like2 like test_non including all excluding partition;
-\d test_non_like2
-  Table "like_default_test.test_non_like2"
- Column |         Type          | Modifiers 
---------+-----------------------+-----------
- id     | integer               | 
- name   | character varying(25) | 
+\d+ test_non_like2
+                      Table "like_default_test.test_non_like2"
+ Column |         Type          | Modifiers | Storage  | Stats target | Description 
+--------+-----------------------+-----------+----------+--------------+-------------
+ id     | integer               |           | plain    |              | 
+ name   | character varying(25) |           | extended |              | 
 Indexes:
     "test_non_like2_id_idx" btree (id) TABLESPACE pg_default
+Has OIDs: no
+Options: orientation=row, compression=no
 
 create table test_part_like1 (like test_part including all excluding partition);
 ERROR:  non-partitioned table does not support global partitioned indexes 
-\d test_part_like1
+\d+ test_part_like1
 create table test_part_like2 like test_part including all excluding partition;
 ERROR:  non-partitioned table does not support global partitioned indexes 
-\d test_part_like2
+\d+ test_part_like2
 drop table if exists test_non_like1, test_non_like2, test_part_like1, test_part_like2;
 NOTICE:  table "test_part_like1" does not exist, skipping
 NOTICE:  table "test_part_like2" does not exist, skipping
 
 create table test_non_like1 (like test_non including all excluding partition excluding indexes);
-\d test_non_like1
-  Table "like_default_test.test_non_like1"
- Column |         Type          | Modifiers 
---------+-----------------------+-----------
- id     | integer               | 
- name   | character varying(25) | 
+\d+ test_non_like1
+                      Table "like_default_test.test_non_like1"
+ Column |         Type          | Modifiers | Storage  | Stats target | Description 
+--------+-----------------------+-----------+----------+--------------+-------------
+ id     | integer               |           | plain    |              | 
+ name   | character varying(25) |           | extended |              | 
+Has OIDs: no
+Options: orientation=row, compression=no
 
 create table test_non_like2 like test_non including all excluding partition excluding indexes;
-\d test_non_like2
-  Table "like_default_test.test_non_like2"
- Column |         Type          | Modifiers 
---------+-----------------------+-----------
- id     | integer               | 
- name   | character varying(25) | 
+\d+ test_non_like2
+                      Table "like_default_test.test_non_like2"
+ Column |         Type          | Modifiers | Storage  | Stats target | Description 
+--------+-----------------------+-----------+----------+--------------+-------------
+ id     | integer               |           | plain    |              | 
+ name   | character varying(25) |           | extended |              | 
+Has OIDs: no
+Options: orientation=row, compression=no
 
 create table test_part_like1 (like test_part including all excluding partition excluding indexes);
-\d test_part_like1
- Table "like_default_test.test_part_like1"
- Column |         Type          | Modifiers 
---------+-----------------------+-----------
- id     | integer               | 
- name   | character varying(25) | 
+\d+ test_part_like1
+                     Table "like_default_test.test_part_like1"
+ Column |         Type          | Modifiers | Storage  | Stats target | Description 
+--------+-----------------------+-----------+----------+--------------+-------------
+ id     | integer               |           | plain    |              | 
+ name   | character varying(25) |           | extended |              | 
+Has OIDs: no
+Options: orientation=row, compression=no
 
 create table test_part_like2 like test_part including all excluding partition excluding indexes;
-\d test_part_like2
- Table "like_default_test.test_part_like2"
- Column |         Type          | Modifiers 
---------+-----------------------+-----------
- id     | integer               | 
- name   | character varying(25) | 
+\d+ test_part_like2
+                     Table "like_default_test.test_part_like2"
+ Column |         Type          | Modifiers | Storage  | Stats target | Description 
+--------+-----------------------+-----------+----------+--------------+-------------
+ id     | integer               |           | plain    |              | 
+ name   | character varying(25) |           | extended |              | 
+Has OIDs: no
+Options: orientation=row, compression=no
 
 drop table if exists test_non_like1, test_non_like2, test_part_like1, test_part_like2;
 
 create table test_non_like1 (like test_non excluding indexes);
-\d test_non_like1
-  Table "like_default_test.test_non_like1"
- Column |         Type          | Modifiers 
---------+-----------------------+-----------
- id     | integer               | 
- name   | character varying(25) | 
+\d+ test_non_like1
+                      Table "like_default_test.test_non_like1"
+ Column |         Type          | Modifiers | Storage  | Stats target | Description 
+--------+-----------------------+-----------+----------+--------------+-------------
+ id     | integer               |           | plain    |              | 
+ name   | character varying(25) |           | extended |              | 
+Has OIDs: no
+Options: orientation=row, compression=no
 
 create table test_non_like2 like test_non excluding indexes;
-\d test_non_like2
-  Table "like_default_test.test_non_like2"
- Column |         Type          | Modifiers 
---------+-----------------------+-----------
- id     | integer               | 
- name   | character varying(25) | 
+\d+ test_non_like2
+                      Table "like_default_test.test_non_like2"
+ Column |         Type          | Modifiers | Storage  | Stats target | Description 
+--------+-----------------------+-----------+----------+--------------+-------------
+ id     | integer               |           | plain    |              | 
+ name   | character varying(25) |           | extended |              | 
+Has OIDs: no
+Options: orientation=row, compression=no
 
 create table test_part_like1 (like test_part excluding indexes);
-\d test_part_like1
- Table "like_default_test.test_part_like1"
- Column |         Type          | Modifiers 
---------+-----------------------+-----------
- id     | integer               | 
- name   | character varying(25) | 
+\d+ test_part_like1
+                     Table "like_default_test.test_part_like1"
+ Column |         Type          | Modifiers | Storage  | Stats target | Description 
+--------+-----------------------+-----------+----------+--------------+-------------
+ id     | integer               |           | plain    |              | 
+ name   | character varying(25) |           | extended |              | 
+Has OIDs: no
+Options: orientation=row, compression=no
 
 create table test_part_like2 like test_part excluding indexes;
-\d test_part_like2
- Table "like_default_test.test_part_like2"
- Column |         Type          | Modifiers 
---------+-----------------------+-----------
- id     | integer               | 
- name   | character varying(25) | 
+\d+ test_part_like2
+                     Table "like_default_test.test_part_like2"
+ Column |         Type          | Modifiers | Storage  | Stats target | Description 
+--------+-----------------------+-----------+----------+--------------+-------------
+ id     | integer               |           | plain    |              | 
+ name   | character varying(25) |           | extended |              | 
 Partition By RANGE(id)
 Number of partitions: 5 (View pg_partition to check each partition range.)
+Has OIDs: no
+Options: orientation=row, compression=no
 
 drop table if exists test_non_like1, test_non_like2, test_part_like1, test_part_like2;
 
 create table test_non_like1 (like test_non excluding partition);
-\d test_non_like1
-  Table "like_default_test.test_non_like1"
- Column |         Type          | Modifiers 
---------+-----------------------+-----------
- id     | integer               | 
- name   | character varying(25) | 
+\d+ test_non_like1
+                      Table "like_default_test.test_non_like1"
+ Column |         Type          | Modifiers | Storage  | Stats target | Description 
+--------+-----------------------+-----------+----------+--------------+-------------
+ id     | integer               |           | plain    |              | 
+ name   | character varying(25) |           | extended |              | 
+Has OIDs: no
+Options: orientation=row, compression=no
 
 create table test_non_like2 like test_non excluding partition;
-\d test_non_like2
-  Table "like_default_test.test_non_like2"
- Column |         Type          | Modifiers 
---------+-----------------------+-----------
- id     | integer               | 
- name   | character varying(25) | 
+\d+ test_non_like2
+                      Table "like_default_test.test_non_like2"
+ Column |         Type          | Modifiers | Storage  | Stats target | Description 
+--------+-----------------------+-----------+----------+--------------+-------------
+ id     | integer               |           | plain    |              | 
+ name   | character varying(25) |           | extended |              | 
 Indexes:
     "test_non_like2_id_idx" btree (id) TABLESPACE pg_default
+Has OIDs: no
+Options: orientation=row, compression=no
 
 create table test_part_like1 (like test_part excluding partition);
-\d test_part_like1
- Table "like_default_test.test_part_like1"
- Column |         Type          | Modifiers 
---------+-----------------------+-----------
- id     | integer               | 
- name   | character varying(25) | 
+\d+ test_part_like1
+                     Table "like_default_test.test_part_like1"
+ Column |         Type          | Modifiers | Storage  | Stats target | Description 
+--------+-----------------------+-----------+----------+--------------+-------------
+ id     | integer               |           | plain    |              | 
+ name   | character varying(25) |           | extended |              | 
+Has OIDs: no
+Options: orientation=row, compression=no
 
 create table test_part_like2 like test_part excluding partition;
 ERROR:  non-partitioned table does not support global partitioned indexes 
-\d test_part_like2
+\d+ test_part_like2
 drop table if exists test_non_like1, test_non_like2, test_part_like1, test_part_like2;
 NOTICE:  table "test_part_like2" does not exist, skipping
 
 create table test_non_like1 (like test_non excluding partition excluding indexes);
-\d test_non_like1
-  Table "like_default_test.test_non_like1"
- Column |         Type          | Modifiers 
---------+-----------------------+-----------
- id     | integer               | 
- name   | character varying(25) | 
+\d+ test_non_like1
+                      Table "like_default_test.test_non_like1"
+ Column |         Type          | Modifiers | Storage  | Stats target | Description 
+--------+-----------------------+-----------+----------+--------------+-------------
+ id     | integer               |           | plain    |              | 
+ name   | character varying(25) |           | extended |              | 
+Has OIDs: no
+Options: orientation=row, compression=no
 
 create table test_non_like2 like test_non excluding partition excluding indexes;
-\d test_non_like2
-  Table "like_default_test.test_non_like2"
- Column |         Type          | Modifiers 
---------+-----------------------+-----------
- id     | integer               | 
- name   | character varying(25) | 
+\d+ test_non_like2
+                      Table "like_default_test.test_non_like2"
+ Column |         Type          | Modifiers | Storage  | Stats target | Description 
+--------+-----------------------+-----------+----------+--------------+-------------
+ id     | integer               |           | plain    |              | 
+ name   | character varying(25) |           | extended |              | 
+Has OIDs: no
+Options: orientation=row, compression=no
 
 create table test_part_like1 (like test_part excluding partition excluding indexes);
-\d test_part_like1
- Table "like_default_test.test_part_like1"
- Column |         Type          | Modifiers 
---------+-----------------------+-----------
- id     | integer               | 
- name   | character varying(25) | 
+\d+ test_part_like1
+                     Table "like_default_test.test_part_like1"
+ Column |         Type          | Modifiers | Storage  | Stats target | Description 
+--------+-----------------------+-----------+----------+--------------+-------------
+ id     | integer               |           | plain    |              | 
+ name   | character varying(25) |           | extended |              | 
+Has OIDs: no
+Options: orientation=row, compression=no
 
 create table test_part_like2 like test_part excluding partition excluding indexes;
-\d test_part_like2
- Table "like_default_test.test_part_like2"
- Column |         Type          | Modifiers 
---------+-----------------------+-----------
- id     | integer               | 
- name   | character varying(25) | 
+\d+ test_part_like2
+                     Table "like_default_test.test_part_like2"
+ Column |         Type          | Modifiers | Storage  | Stats target | Description 
+--------+-----------------------+-----------+----------+--------------+-------------
+ id     | integer               |           | plain    |              | 
+ name   | character varying(25) |           | extended |              | 
+Has OIDs: no
+Options: orientation=row, compression=no
 
 drop table if exists test_non_like1, test_non_like2, test_part_like1, test_part_like2;
 
 create table test_non_like1 (like test_non excluding all);
-\d test_non_like1
-  Table "like_default_test.test_non_like1"
- Column |         Type          | Modifiers 
---------+-----------------------+-----------
- id     | integer               | 
- name   | character varying(25) | 
+\d+ test_non_like1
+                      Table "like_default_test.test_non_like1"
+ Column |         Type          | Modifiers | Storage  | Stats target | Description 
+--------+-----------------------+-----------+----------+--------------+-------------
+ id     | integer               |           | plain    |              | 
+ name   | character varying(25) |           | extended |              | 
+Has OIDs: no
+Options: orientation=row, compression=no
 
 create table test_non_like2 like test_non excluding all;
-\d test_non_like2
-  Table "like_default_test.test_non_like2"
- Column |         Type          | Modifiers 
---------+-----------------------+-----------
- id     | integer               | 
- name   | character varying(25) | 
+\d+ test_non_like2
+                      Table "like_default_test.test_non_like2"
+ Column |         Type          | Modifiers | Storage  | Stats target | Description 
+--------+-----------------------+-----------+----------+--------------+-------------
+ id     | integer               |           | plain    |              | 
+ name   | character varying(25) |           | extended |              | 
+Has OIDs: no
+Options: orientation=row, compression=no
 
 create table test_part_like1 (like test_part excluding all);
-\d test_part_like1
- Table "like_default_test.test_part_like1"
- Column |         Type          | Modifiers 
---------+-----------------------+-----------
- id     | integer               | 
- name   | character varying(25) | 
+\d+ test_part_like1
+                     Table "like_default_test.test_part_like1"
+ Column |         Type          | Modifiers | Storage  | Stats target | Description 
+--------+-----------------------+-----------+----------+--------------+-------------
+ id     | integer               |           | plain    |              | 
+ name   | character varying(25) |           | extended |              | 
+Has OIDs: no
+Options: orientation=row, compression=no
 
 create table test_part_like2 like test_part excluding all;
-\d test_part_like2
- Table "like_default_test.test_part_like2"
- Column |         Type          | Modifiers 
---------+-----------------------+-----------
- id     | integer               | 
- name   | character varying(25) | 
+\d+ test_part_like2
+                     Table "like_default_test.test_part_like2"
+ Column |         Type          | Modifiers | Storage  | Stats target | Description 
+--------+-----------------------+-----------+----------+--------------+-------------
+ id     | integer               |           | plain    |              | 
+ name   | character varying(25) |           | extended |              | 
+Has OIDs: no
+Options: orientation=row, compression=no
 
 drop table if exists test_non_like1, test_non_like2, test_part_like1, test_part_like2;
 
 create table test_non_like1 (like test_non excluding all including partition);
 ERROR:  could not specify "INCLUDING PARTITION" for non-partitioned-table relation:"test_non"
-\d test_non_like1
+\d+ test_non_like1
 create table test_non_like2 like test_non excluding all including partition;
 ERROR:  could not specify "INCLUDING PARTITION" for non-partitioned-table relation:"test_non"
-\d test_non_like2
+\d+ test_non_like2
 create table test_part_like1 (like test_part excluding all including partition);
-\d test_part_like1
- Table "like_default_test.test_part_like1"
- Column |         Type          | Modifiers 
---------+-----------------------+-----------
- id     | integer               | 
- name   | character varying(25) | 
+\d+ test_part_like1
+                     Table "like_default_test.test_part_like1"
+ Column |         Type          | Modifiers | Storage  | Stats target | Description 
+--------+-----------------------+-----------+----------+--------------+-------------
+ id     | integer               |           | plain    |              | 
+ name   | character varying(25) |           | extended |              | 
 Partition By RANGE(id)
 Number of partitions: 5 (View pg_partition to check each partition range.)
+Has OIDs: no
+Options: orientation=row, compression=no
 
 create table test_part_like2 like test_part excluding all including partition;
-\d test_part_like2
- Table "like_default_test.test_part_like2"
- Column |         Type          | Modifiers 
---------+-----------------------+-----------
- id     | integer               | 
- name   | character varying(25) | 
+\d+ test_part_like2
+                     Table "like_default_test.test_part_like2"
+ Column |         Type          | Modifiers | Storage  | Stats target | Description 
+--------+-----------------------+-----------+----------+--------------+-------------
+ id     | integer               |           | plain    |              | 
+ name   | character varying(25) |           | extended |              | 
 Partition By RANGE(id)
 Number of partitions: 5 (View pg_partition to check each partition range.)
+Has OIDs: no
+Options: orientation=row, compression=no
 
 drop table if exists test_non_like1, test_non_like2, test_part_like1, test_part_like2;
 NOTICE:  table "test_non_like1" does not exist, skipping
 NOTICE:  table "test_non_like2" does not exist, skipping
 
 create table test_non_like1 (like test_non excluding all including indexes);
-\d test_non_like1
-  Table "like_default_test.test_non_like1"
- Column |         Type          | Modifiers 
---------+-----------------------+-----------
- id     | integer               | 
- name   | character varying(25) | 
+\d+ test_non_like1
+                      Table "like_default_test.test_non_like1"
+ Column |         Type          | Modifiers | Storage  | Stats target | Description 
+--------+-----------------------+-----------+----------+--------------+-------------
+ id     | integer               |           | plain    |              | 
+ name   | character varying(25) |           | extended |              | 
 Indexes:
     "test_non_like1_id_idx" btree (id) TABLESPACE pg_default
+Has OIDs: no
+Options: orientation=row, compression=no
 
 create table test_non_like2 like test_non excluding all including indexes;
-\d test_non_like2
-  Table "like_default_test.test_non_like2"
- Column |         Type          | Modifiers 
---------+-----------------------+-----------
- id     | integer               | 
- name   | character varying(25) | 
+\d+ test_non_like2
+                      Table "like_default_test.test_non_like2"
+ Column |         Type          | Modifiers | Storage  | Stats target | Description 
+--------+-----------------------+-----------+----------+--------------+-------------
+ id     | integer               |           | plain    |              | 
+ name   | character varying(25) |           | extended |              | 
 Indexes:
     "test_non_like2_id_idx" btree (id) TABLESPACE pg_default
+Has OIDs: no
+Options: orientation=row, compression=no
 
 create table test_part_like1 (like test_part excluding all including indexes);
 ERROR:  non-partitioned table does not support global partitioned indexes 
-\d test_part_like1
+\d+ test_part_like1
 create table test_part_like2 like test_part excluding all including indexes;
 ERROR:  non-partitioned table does not support global partitioned indexes 
-\d test_part_like2
+\d+ test_part_like2
 drop table if exists test_non_like1, test_non_like2, test_part_like1, test_part_like2;
 NOTICE:  table "test_part_like1" does not exist, skipping
 NOTICE:  table "test_part_like2" does not exist, skipping
 
 create table test_non_like1 (like test_non excluding all including partition including indexes);
 ERROR:  could not specify "INCLUDING PARTITION" for non-partitioned-table relation:"test_non"
-\d test_non_like1
+\d+ test_non_like1
 create table test_non_like2 like test_non excluding all including partition including indexes;
 ERROR:  could not specify "INCLUDING PARTITION" for non-partitioned-table relation:"test_non"
-\d test_non_like2
+\d+ test_non_like2
 create table test_part_like1 (like test_part excluding all including partition including indexes);
-\d test_part_like1
- Table "like_default_test.test_part_like1"
- Column |         Type          | Modifiers 
---------+-----------------------+-----------
- id     | integer               | 
- name   | character varying(25) | 
+\d+ test_part_like1
+                     Table "like_default_test.test_part_like1"
+ Column |         Type          | Modifiers | Storage  | Stats target | Description 
+--------+-----------------------+-----------+----------+--------------+-------------
+ id     | integer               |           | plain    |              | 
+ name   | character varying(25) |           | extended |              | 
 Indexes:
     "test_part_like1_id_tableoid_idx" btree (id) TABLESPACE pg_default
 Partition By RANGE(id)
 Number of partitions: 5 (View pg_partition to check each partition range.)
+Has OIDs: no
+Options: orientation=row, compression=no
 
 create table test_part_like2 like test_part excluding all including partition including indexes;
-\d test_part_like2
- Table "like_default_test.test_part_like2"
- Column |         Type          | Modifiers 
---------+-----------------------+-----------
- id     | integer               | 
- name   | character varying(25) | 
+\d+ test_part_like2
+                     Table "like_default_test.test_part_like2"
+ Column |         Type          | Modifiers | Storage  | Stats target | Description 
+--------+-----------------------+-----------+----------+--------------+-------------
+ id     | integer               |           | plain    |              | 
+ name   | character varying(25) |           | extended |              | 
 Indexes:
     "test_part_like2_id_tableoid_idx" btree (id) TABLESPACE pg_default
 Partition By RANGE(id)
 Number of partitions: 5 (View pg_partition to check each partition range.)
+Has OIDs: no
+Options: orientation=row, compression=no
 
 drop table if exists test_non_like1, test_non_like2, test_part_like1, test_part_like2;
 NOTICE:  table "test_non_like1" does not exist, skipping
