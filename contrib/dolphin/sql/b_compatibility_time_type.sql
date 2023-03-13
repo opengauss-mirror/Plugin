@@ -603,6 +603,46 @@ DROP TABLE t_NO_ZERO_DATE_datetime;
 DROP TABLE t_NO_ZERO_DATE_timestamp;
 RESET dolphin.sql_mode;
 
+drop table if exists t_date;
+drop table if exists t_datetime;
+create table t_date(a date);
+create table t_datetime(a datetime);
+
+reset dolphin.sql_mode;
+insert into t_date values('0000-00-00');
+insert into t_datetime values('0000-00-00');
+insert ignore into t_date values('0000-00-00');
+insert ignore into t_datetime values('0000-00-00');
+select * from t_date;
+select * from t_datetime;
+
+set dolphin.sql_mode = 'no_zero_date';
+insert into t_date values('0000-00-00');
+insert into t_datetime values('0000-00-00');
+insert ignore into t_date values('0000-00-00');
+insert ignore into t_datetime values('0000-00-00');
+select * from t_date;
+select * from t_datetime;
+
+set dolphin.sql_mode = 'sql_mode_strict';
+insert into t_date values('0000-00-00');
+insert into t_datetime values('0000-00-00');
+insert ignore into t_date values('0000-00-00');
+insert ignore into t_datetime values('0000-00-00');
+select * from t_date;
+select * from t_datetime;
+
+set dolphin.sql_mode = '';
+insert into t_date values('0000-00-00');
+insert into t_datetime values('0000-00-00');
+insert ignore into t_date values('0000-00-00');
+insert ignore into t_datetime values('0000-00-00');
+select * from t_date;
+select * from t_datetime;
+
+drop table if exists t_date;
+drop table if exists t_datetime;
+
 \c postgres
 DROP DATABASE b_time_type;
 DROP TABLESPACE b_time_type_example;
