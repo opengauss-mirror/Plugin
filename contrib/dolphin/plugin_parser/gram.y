@@ -34907,10 +34907,10 @@ target_list:
 			| target_list ',' target_el				{ $$ = lappend($1, $3); }
 		;
 
-target_el:	a_expr AS ColLabel
+target_el:	a_expr AS DolphinColLabel
 				{
 					$$ = makeNode(ResTarget);
-					$$->name = $3;
+					$$->name = $3->str;
 					$$->indirection = NIL;
 					$$->val = (Node *)$1;
 					$$->location = @1;
@@ -34923,17 +34923,17 @@ target_el:	a_expr AS ColLabel
 			 * as an infix expression, which we accomplish by assigning
 			 * IDENT a precedence higher than POSTFIXOP.
 			 */
-			| a_expr normal_ident
+			| a_expr IDENT
 				{
 					$$ = makeNode(ResTarget);
-					$$->name = $2;
+					$$->name = $2->str;
 					$$->indirection = NIL;
 					$$->val = (Node *)$1;
 					$$->location = @1;
                                         if (IsConnectByRootIdent($1)) {
-                                           Node* cr = (Node*) makeColumnRef($2, NIL, @1, yyscanner);
+                                           Node* cr = (Node*) makeColumnRef($2->str, NIL, @1, yyscanner);
                                            Node* n = MakeConnectByRootNode((ColumnRef*) cr, @1);
-                                           $$->name = MakeConnectByRootColName(NULL, $2);
+                                           $$->name = MakeConnectByRootColName(NULL, $2->str);
                                            $$->val = (Node*) n;
                                         }
 				}
