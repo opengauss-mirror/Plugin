@@ -72,9 +72,12 @@ create table test_time(a time, b int);
 insert into test_time values('10:10:10',1),('11:11:11',1),('12:12:12',2),('13:13:13',2);
 select any_value(a),b from test_time group by b;
 
+set timezone to 'PRC';
 create table test_timetz(a timetz, b int);
 insert into test_timetz values('10:10:10',1),('11:11:11',1),('12:12:12',2),('13:13:13',2);
 select any_value(a),b from test_timetz group by b;
+reset timezone;
+show timezone;
 
 --test bool type
 create table test_bool(a bool, b int);
