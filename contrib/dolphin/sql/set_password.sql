@@ -1,5 +1,6 @@
 create schema test_set_password;
 set current_schema to 'test_set_password';
+set test_user_host to on;
 set password = 'abc@1234';
 set password for current_user() = 'abc@2345';
 create user user1 password 'abc@1234';

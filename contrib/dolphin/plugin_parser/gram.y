@@ -2646,7 +2646,7 @@ VariableSetStmt:
                         	{
                         		$$ = MakeSetPasswdStmt(GetUserNameFromId(GetUserId()), $4, $5);
                         	}
-                        | SET PASSWORD FOR user '=' opt_password opt_replace
+                        | SET PASSWORD FOR UserId '=' opt_password opt_replace
                         	{
                         		$$ = MakeSetPasswdStmt($4, $6, $7);
                         	}
