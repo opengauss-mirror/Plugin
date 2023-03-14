@@ -361,3 +361,35 @@ void SaveCachedInputStmtParamTypes(int32 stmt_id, InputStmtParam* value)
                                                                      &stmt_id, HASH_ENTER, NULL);
     entry->value = value;
 }
+
+static void InitSendBlobHashTable(int size)
+{
+    HASHCTL info = {0};
+    info.keysize = sizeof(Oid);
+    info.entrysize = sizeof(HashEntryBlob);
+    info.hash = oid_hash;
+    info.hcxt = u_sess->cache_mem_cxt; 
+    GetSessionContext()->b_sendBlobHash = hash_create("Dolphin Micro Type Oid Lookup Table", size, &info,
+                                                HASH_ELEM | HASH_FUNCTION | HASH_CONTEXT);
+}
+
+const char* GetCachedParamBlob(int32 param_id) {
+    if (GetSessionContext()->b_sendBlobHash == NULL) {
+        InitSendBlobHashTable(16);
+    }
+
+    bool found = false;
+    HashEntryBlob *entry = (HashEntryBlob *)hash_search(GetSessionContext()->b_sendBlobHash,
+                                                                     &param_id, HASH_FIND, &found);
+    return found ? entry->value : NULL;
+}
+
+void SaveCachedParamBlob(int32 param_id, char* value) {
+    if (GetSessionContext()->b_sendBlobHash == NULL) {
+        InitSendBlobHashTable(16);
+    }
+
+    HashEntryBlob *entry = (HashEntryBlob *)hash_search(GetSessionContext()->b_sendBlobHash,
+                                                                     &param_id, HASH_ENTER, NULL);
+    entry->value = value;
+}

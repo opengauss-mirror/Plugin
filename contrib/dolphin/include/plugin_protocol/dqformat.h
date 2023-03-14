@@ -86,7 +86,7 @@ typedef struct proto_tm {
 typedef struct com_stmt_param {
     proto_data_type type;
     union {
-        char *text;
+        const char *text;
         uint64 i8;
         uint32 i4;        
         // uint16 i2; 
@@ -158,5 +158,7 @@ void send_com_stmt_prepare_ok_packet(StringInfo buf, int statementId, int column
 com_stmt_exec_request* read_com_stmt_exec_request(StringInfo buf);
 
 void send_binary_protocol_resultset_row(StringInfo buf, SPITupleTable *SPI_tuptable);
+
+void read_send_long_data_request(StringInfo buf);
 
 #endif /* DQ_FORMAT_H */

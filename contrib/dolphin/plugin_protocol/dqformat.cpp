@@ -26,6 +26,7 @@
 #include "utils/date.h"
 #include "utils/geo_decls.h"
 #include "utils/varbit.h"
+#include "utils/bytea.h"
 
 #include "plugin_utils/year.h"
 #include "plugin_utils/date.h"
@@ -382,15 +383,19 @@ com_stmt_exec_request* read_com_stmt_exec_request(StringInfo buf)
                         dq_get_int4(buf, &parameters[i].value.f.i4);
                         break;
                     }
+                    case DOLPHIN_TYPE_LONG_BLOB:
+                    case DOLPHIN_TYPE_MEDIUM_BLOB:
+                    case DOLPHIN_TYPE_BLOB:
+                    case DOLPHIN_TYPE_TINY_BLOB: {
+                        parameters[i].value.text = GetCachedParamBlob(i);
+                        parameters[i].type = TYPE_STRING;
+                        break;
+                    }
                     case DOLPHIN_TYPE_STRING:
                     case DOLPHIN_TYPE_VARCHAR:
                     case DOLPHIN_TYPE_VAR_STRING:
                     case DOLPHIN_TYPE_ENUM:
                     case DOLPHIN_TYPE_SET:
-                    case DOLPHIN_TYPE_LONG_BLOB:
-                    case DOLPHIN_TYPE_MEDIUM_BLOB:
-                    case DOLPHIN_TYPE_BLOB:
-                    case DOLPHIN_TYPE_TINY_BLOB:
                     case DOLPHIN_TYPE_GEOMETRY:
                     case DOLPHIN_TYPE_BIT:
                     case DOLPHIN_TYPE_DECIMAL:
@@ -399,20 +404,6 @@ com_stmt_exec_request* read_com_stmt_exec_request(StringInfo buf)
                         switch (item->dolphin_type_id) {
                             case DOLPHIN_TYPE_BIT: {
                                 parameters[i].type = TYPE_HEX;
-                                break;
-                            }
-                            case DOLPHIN_TYPE_BLOB: {
-                                if (item->og_type_oid == TEXTOID) {
-                                    parameters[i].type = TYPE_STRING;
-                                }
-                                break;
-                            }
-
-                            // todo blob type would be verified in next phase. 
-                            case DOLPHIN_TYPE_TINY_BLOB:
-                            case DOLPHIN_TYPE_GEOMETRY:
-                            case DOLPHIN_TYPE_LONG_BLOB:
-                            case DOLPHIN_TYPE_MEDIUM_BLOB: {
                                 break;
                             }
                             default: {
@@ -583,13 +574,18 @@ void send_binary_protocol_resultset_row(StringInfo buf, SPITupleTable *SPI_tupta
                 case DOLPHIN_TYPE_STRING:
                 case DOLPHIN_TYPE_VARCHAR:
                 case DOLPHIN_TYPE_VAR_STRING:
-                case DOLPHIN_TYPE_JSON:
+                case DOLPHIN_TYPE_JSON: {
+                    char *val = TextDatumGetCString(binval);
+                    dq_append_string_lenenc(buf, val);
+                    break;
+                }
                 case DOLPHIN_TYPE_LONG_BLOB:
                 case DOLPHIN_TYPE_MEDIUM_BLOB:
                 case DOLPHIN_TYPE_BLOB:
                 case DOLPHIN_TYPE_TINY_BLOB: {
-                    char *val = TextDatumGetCString(binval);
-                    dq_append_string_lenenc(buf, val);
+                    u_sess->attr.attr_common.bytea_output = BYTEA_OUTPUT_ESCAPE;
+                    char *val = DatumGetCString(DirectFunctionCall1(byteaout, binval));
+                    dq_append_string_lenenc(buf, val); 
                     break;
                 }
                 case DOLPHIN_TYPE_BIT: {
@@ -694,4 +690,21 @@ void send_binary_protocol_resultset_row(StringInfo buf, SPITupleTable *SPI_tupta
         }
         dq_putmessage(buf->data, buf->len);
     }
+}
+
+void read_send_long_data_request(StringInfo buf)
+{
+    uint32 statement_id;
+    uint32 param_id;
+
+    dq_get_int4(buf, &statement_id);
+    dq_get_int2(buf, &param_id);
+    char *payload = dq_get_string_eof(buf);
+
+    MemoryContext oldcontext = MemoryContextSwitchTo(u_sess->cache_mem_cxt);
+    char *value = pstrdup(payload);
+    (void)MemoryContextSwitchTo(oldcontext);
+    pfree(payload);
+
+    SaveCachedParamBlob(param_id, value);
 }

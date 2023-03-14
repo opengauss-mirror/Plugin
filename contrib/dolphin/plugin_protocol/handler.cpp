@@ -164,6 +164,10 @@ int dolphin_process_command(StringInfo buf)
 
             break;
         }
+        case COM_STMT_SEND_LONG_DATA: {
+            read_send_long_data_request(buf);
+            break;
+        }
         default:
            // COM_CREATE_DB, COM_DROP_DB have deprecated by mysql-server
            ereport(ERROR, (errcode(ERRCODE_INTERNAL_ERROR), errmsg("dolphin server protocol not supported."))); 

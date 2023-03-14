@@ -269,10 +269,18 @@ typedef struct HashEntryStmtParamType {
     const InputStmtParam* value;
 } HashEntryStmtParamType;
 
+typedef struct HashEntryBlob {
+    int32 param_id;
+    const char* value;
+} HashEntryBlob;
+
 extern void InitTypoid2DolphinMacroHtab();
 extern const TypeItem* GetItemByTypeOid(Oid oid);
 
 extern const InputStmtParam* GetCachedInputStmtParamTypes(int32 stmt_id);
 extern void SaveCachedInputStmtParamTypes(int32 stmt_id, InputStmtParam* value);
+
+extern const char* GetCachedParamBlob(int32 param_id);
+extern void SaveCachedParamBlob(int32 param_id, char* value);
 
 #endif /* proto_com.h */
