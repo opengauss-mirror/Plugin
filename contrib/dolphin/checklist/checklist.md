@@ -2,6 +2,8 @@
 |文件夹   |文件名   |对应内核文件路径   |
 | :------------ | :------------ | :------------ |
 |plugin_executor|execQual.cpp|src\gausskernel\runtime\executor\execQual.cpp|
+|plugin_executor|functions.cpp  |src\gausskernel\runtime\executor\functions.cpp |
+|plugin_optimizer\util|clauses.cpp |src\gausskernel\optimizer\util\clauses.cpp |
 |plugin_parser|analyze.cpp   |src\common\backend\parser\analyze.cpp   |
 |plugin_parser|gram.y   |src\common\backend\parser\gram.y   |
 |plugin_parser|hint_gram.y   |src\common\backend\parser\hint_gram.y   |
@@ -94,6 +96,7 @@
 |plugin_utils\adt|varlena.cpp   |src\common\backend\utils\adt\varlena.cpp   |
 |plugin_utils\adt|version.cpp   |src\common\backend\utils\adt\version.cpp   |
 |plugin_utils\adt|windowfuncs.cpp   |src\common\backend\utils\adt\windowfuncs.cpp   |
+|plugin_utils\fmgr|fmgr.cpp |src\common\backend\utils\fmgr\fmgr.cpp|
 |plugin_utils\mb|mbutils.cpp   |src\common\backend\utils\mb\mbutils.cpp   |
 |plugin_vector|date.inl   |src\gausskernel\runtime\vecexecutor\vecprimitive\date.inl   |
 |plugin_vector|float.inl   |src\gausskernel\runtime\vecexecutor\vecprimitive\float.inl   |
@@ -138,8 +141,10 @@
 |plugin_mb|pg_wchar.h  |src\include\mb\pg_wchar.h   |
 |plugin_commands|copy.h  |src\include\commands\copy.h   |
 |plugin_commands|defrem.h  |src\include\commands\defrem.h   |
+|plugin_executor|functions.h |src\include\executor\functions.h |
 |plugin_nodes|parsenodes_common.h  |src\include\nodes\parsenodes_common.h   |
 |plugin_nodes|parsenodes.h  |src\include\nodes\parsenodes.h   |
+|plugin_optimizer|clauses.h |src\include\optimizer\clauses.h    |
 |plugin_parser|kwlookup.h  |src\include\parser\kwlookup.h   |
 |plugin_parser|analyze.h  |src\include\parser\analyze.h   |
 |plugin_parser|backslash_quotes.h  |src\include\parser\backslash_quotes.h   |
@@ -170,6 +175,7 @@
 |plugin_storage|hash.inl  |src\include\access\hash.inl   |
 |plugin_utils|date.h  |src\include\utils\date.h   |
 |plugin_utils|datetime.h  |src\include\utils\datetime.h  |
+|plugin_utils|fmgr.h    |src\include\fmgr.h |
 |plugin_utils|timestamp.h  |src\include\utils\timestamp.h   |
 |plugin_utils|plpgsql.h  |src\include\utils\plpgsql.h   |
 |plugin_vector|vecfunc.h  |src\include\vecexecutor\vecfunc.h   |

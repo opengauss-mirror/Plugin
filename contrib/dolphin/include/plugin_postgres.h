@@ -2,7 +2,7 @@
 #define PLUGIN_POSTGRES_H
 
 #include "nodes/pg_list.h"
-#include "fmgr.h"
+#include "plugin_utils/fmgr.h"
 
 #define ENABLE_B_CMPT_MODE (GetSessionContext()->enableBCmptMode)
 
