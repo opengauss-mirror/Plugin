@@ -56,7 +56,10 @@ PG_KEYWORD("forward", K_FORWARD)
 PG_KEYWORD("found", K_FOUND) 
 PG_KEYWORD("function", K_FUNCTION)
 PG_KEYWORD("handler", K_HANDLER) 
-PG_KEYWORD("hint", K_HINT) 
+PG_KEYWORD("hint", K_HINT)
+#ifdef DOLPHIN
+PG_KEYWORD("ignore", K_IGNORE)
+#endif
 PG_KEYWORD("immediate", K_IMMEDIATE) 
 PG_KEYWORD("index", K_INDEX) 
 PG_KEYWORD("info", K_INFO) 
