@@ -2,13 +2,13 @@ create schema like_default_test;
 set current_schema to 'like_default_test';
 
 create table test_nv (name national varchar(10));
-\d test_nv
+\d+ test_nv
 drop table if exists test_nv;
 create table test_nv (id int, name national varchar(10));
-\d test_nv
+\d+ test_nv
 drop table if exists test_nv;
 create table test_nv (id int, name nvarchar(10));
-\d test_nv
+\d+ test_nv
 drop table if exists test_nv;
 
 
@@ -23,336 +23,336 @@ partition by range(id)
     partition p5 values less than(MAXVALUE)
 );
 create table test_non_like1 (like test_non);
-\d test_non_like1
+\d+ test_non_like1
 create table test_non_like2 like test_non;
-\d test_non_like2
+\d+ test_non_like2
 create table test_part_like1 (like test_part);
-\d test_part_like1
+\d+ test_part_like1
 create table test_part_like2 like test_part;
-\d test_part_like2
+\d+ test_part_like2
 drop table if exists test_non_like1, test_non_like2, test_part_like1, test_part_like2;
 
 create table if not exists test_non_like1 (like test_non);
-\d test_non_like1
+\d+ test_non_like1
 create table if not exists test_non_like2 like test_non;
-\d test_non_like2
+\d+ test_non_like2
 create table if not exists test_part_like1 (like test_part);
-\d test_part_like1
+\d+ test_part_like1
 create table if not exists test_part_like2 like test_part;
-\d test_part_like2
+\d+ test_part_like2
 drop table if exists test_non_like1, test_non_like2, test_part_like1, test_part_like2;
 
 create table test_non_like1 (like test_non including indexes);
-\d test_non_like1
+\d+ test_non_like1
 create table test_non_like2 like test_non including indexes;
-\d test_non_like2
+\d+ test_non_like2
 create table test_part_like1 (like test_part including indexes);
-\d test_part_like1
+\d+ test_part_like1
 create table test_part_like2 like test_part including indexes;
-\d test_part_like2
+\d+ test_part_like2
 drop table if exists test_non_like1, test_non_like2, test_part_like1, test_part_like2;
 
 create table test_non_like1 (like test_non including partition);
-\d test_non_like1
+\d+ test_non_like1
 create table test_non_like2 like test_non including partition;
-\d test_non_like2
+\d+ test_non_like2
 create table test_part_like1 (like test_part including partition);
-\d test_part_like1
+\d+ test_part_like1
 create table test_part_like2 like test_part including partition;
-\d test_part_like2
+\d+ test_part_like2
 drop table if exists test_non_like1, test_non_like2, test_part_like1, test_part_like2;
 
 create table test_non_like1 (like test_non including partition including indexes);
-\d test_non_like1
+\d+ test_non_like1
 create table test_non_like2 like test_non including partition including indexes;
-\d test_non_like2
+\d+ test_non_like2
 create table test_part_like1 (like test_part including partition including indexes);
-\d test_part_like1
+\d+ test_part_like1
 create table test_part_like2 like test_part including partition including indexes;
-\d test_part_like2
+\d+ test_part_like2
 drop table if exists test_non_like1, test_non_like2, test_part_like1, test_part_like2;
 
 create table test_non_like1 (like test_non including all);
-\d test_non_like1
+\d+ test_non_like1
 create table test_non_like2 like test_non including all;
-\d test_non_like2
+\d+ test_non_like2
 create table test_part_like1 (like test_part including all);
-\d test_part_like1
+\d+ test_part_like1
 create table test_part_like2 like test_part including all;
-\d test_part_like2
+\d+ test_part_like2
 drop table if exists test_non_like1, test_non_like2, test_part_like1, test_part_like2;
 
 create table test_non_like1 (like test_non including all excluding indexes);
-\d test_non_like1
+\d+ test_non_like1
 create table test_non_like2 like test_non including all excluding indexes;
-\d test_non_like2
+\d+ test_non_like2
 create table test_part_like1 (like test_part including all excluding indexes);
-\d test_part_like1
+\d+ test_part_like1
 create table test_part_like2 like test_part including all excluding indexes;
-\d test_part_like2
+\d+ test_part_like2
 drop table if exists test_non_like1, test_non_like2, test_part_like1, test_part_like2;
 
 create table test_non_like1 (like test_non including all excluding partition);
-\d test_non_like1
+\d+ test_non_like1
 create table test_non_like2 like test_non including all excluding partition;
-\d test_non_like2
+\d+ test_non_like2
 create table test_part_like1 (like test_part including all excluding partition);
-\d test_part_like1
+\d+ test_part_like1
 create table test_part_like2 like test_part including all excluding partition;
-\d test_part_like2
+\d+ test_part_like2
 drop table if exists test_non_like1, test_non_like2, test_part_like1, test_part_like2;
 
 create table test_non_like1 (like test_non including all excluding partition excluding indexes);
-\d test_non_like1
+\d+ test_non_like1
 create table test_non_like2 like test_non including all excluding partition excluding indexes;
-\d test_non_like2
+\d+ test_non_like2
 create table test_part_like1 (like test_part including all excluding partition excluding indexes);
-\d test_part_like1
+\d+ test_part_like1
 create table test_part_like2 like test_part including all excluding partition excluding indexes;
-\d test_part_like2
+\d+ test_part_like2
 drop table if exists test_non_like1, test_non_like2, test_part_like1, test_part_like2;
 
 create table test_non_like1 (like test_non excluding indexes);
-\d test_non_like1
+\d+ test_non_like1
 create table test_non_like2 like test_non excluding indexes;
-\d test_non_like2
+\d+ test_non_like2
 create table test_part_like1 (like test_part excluding indexes);
-\d test_part_like1
+\d+ test_part_like1
 create table test_part_like2 like test_part excluding indexes;
-\d test_part_like2
+\d+ test_part_like2
 drop table if exists test_non_like1, test_non_like2, test_part_like1, test_part_like2;
 
 create table test_non_like1 (like test_non excluding partition);
-\d test_non_like1
+\d+ test_non_like1
 create table test_non_like2 like test_non excluding partition;
-\d test_non_like2
+\d+ test_non_like2
 create table test_part_like1 (like test_part excluding partition);
-\d test_part_like1
+\d+ test_part_like1
 create table test_part_like2 like test_part excluding partition;
-\d test_part_like2
+\d+ test_part_like2
 drop table if exists test_non_like1, test_non_like2, test_part_like1, test_part_like2;
 
 create table test_non_like1 (like test_non excluding reloptions);
-\d test_non_like1
+\d+ test_non_like1
 create table test_non_like2 like test_non excluding reloptions;
-\d test_non_like2
+\d+ test_non_like2
 create table test_part_like1 (like test_part excluding reloptions);
-\d test_part_like1
+\d+ test_part_like1
 create table test_part_like2 like test_part excluding reloptions;
-\d test_part_like2
+\d+ test_part_like2
 drop table if exists test_non_like1, test_non_like2, test_part_like1, test_part_like2;
 
 create table test_non_like1 (like test_non excluding partition excluding indexes);
-\d test_non_like1
+\d+ test_non_like1
 create table test_non_like2 like test_non excluding partition excluding indexes;
-\d test_non_like2
+\d+ test_non_like2
 create table test_part_like1 (like test_part excluding partition excluding indexes);
-\d test_part_like1
+\d+ test_part_like1
 create table test_part_like2 like test_part excluding partition excluding indexes;
-\d test_part_like2
+\d+ test_part_like2
 drop table if exists test_non_like1, test_non_like2, test_part_like1, test_part_like2;
 
 create table test_non_like1 (like test_non excluding all);
-\d test_non_like1
+\d+ test_non_like1
 create table test_non_like2 like test_non excluding all;
-\d test_non_like2
+\d+ test_non_like2
 create table test_part_like1 (like test_part excluding all);
-\d test_part_like1
+\d+ test_part_like1
 create table test_part_like2 like test_part excluding all;
-\d test_part_like2
+\d+ test_part_like2
 drop table if exists test_non_like1, test_non_like2, test_part_like1, test_part_like2;
 
 create table test_non_like1 (like test_non excluding all including partition);
-\d test_non_like1
+\d+ test_non_like1
 create table test_non_like2 like test_non excluding all including partition;
-\d test_non_like2
+\d+ test_non_like2
 create table test_part_like1 (like test_part excluding all including partition);
-\d test_part_like1
+\d+ test_part_like1
 create table test_part_like2 like test_part excluding all including partition;
-\d test_part_like2
+\d+ test_part_like2
 drop table if exists test_non_like1, test_non_like2, test_part_like1, test_part_like2;
 
 create table test_non_like1 (like test_non excluding all including indexes);
-\d test_non_like1
+\d+ test_non_like1
 create table test_non_like2 like test_non excluding all including indexes;
-\d test_non_like2
+\d+ test_non_like2
 create table test_part_like1 (like test_part excluding all including indexes);
-\d test_part_like1
+\d+ test_part_like1
 create table test_part_like2 like test_part excluding all including indexes;
-\d test_part_like2
+\d+ test_part_like2
 drop table if exists test_non_like1, test_non_like2, test_part_like1, test_part_like2;
 
 create table test_non_like1 (like test_non excluding all including partition including indexes);
-\d test_non_like1
+\d+ test_non_like1
 create table test_non_like2 like test_non excluding all including partition including indexes;
-\d test_non_like2
+\d+ test_non_like2
 create table test_part_like1 (like test_part excluding all including partition including indexes);
-\d test_part_like1
+\d+ test_part_like1
 create table test_part_like2 like test_part excluding all including partition including indexes;
-\d test_part_like2
+\d+ test_part_like2
 drop table if exists test_non_like1, test_non_like2, test_part_like1, test_part_like2;
 
 create index test_non_id_idx on test_non(id);
 create index test_part_id_idx on test_part(id);
 
 create table test_non_like1 (like test_non);
-\d test_non_like1
+\d+ test_non_like1
 create table test_non_like2 like test_non;
-\d test_non_like2
+\d+ test_non_like2
 create table test_part_like1 (like test_part);
-\d test_part_like1
+\d+ test_part_like1
 create table test_part_like2 like test_part;
-\d test_part_like2
+\d+ test_part_like2
 drop table if exists test_non_like1, test_non_like2, test_part_like1, test_part_like2;
 
 create table if not exists test_non_like1 (like test_non);
-\d test_non_like1
+\d+ test_non_like1
 create table if not exists test_non_like2 like test_non;
-\d test_non_like2
+\d+ test_non_like2
 create table if not exists test_part_like1 (like test_part);
-\d test_part_like1
+\d+ test_part_like1
 create table if not exists test_part_like2 like test_part;
-\d test_part_like2
+\d+ test_part_like2
 drop table if exists test_non_like1, test_non_like2, test_part_like1, test_part_like2;
 
 create table test_non_like1 (like test_non including indexes);
-\d test_non_like1
+\d+ test_non_like1
 create table test_non_like2 like test_non including indexes;
-\d test_non_like2
+\d+ test_non_like2
 create table test_part_like1 (like test_part including indexes);
-\d test_part_like1
+\d+ test_part_like1
 create table test_part_like2 like test_part including indexes;
-\d test_part_like2
+\d+ test_part_like2
 drop table if exists test_non_like1, test_non_like2, test_part_like1, test_part_like2;
 
 create table test_non_like1 (like test_non including partition);
-\d test_non_like1
+\d+ test_non_like1
 create table test_non_like2 like test_non including partition;
-\d test_non_like2
+\d+ test_non_like2
 create table test_part_like1 (like test_part including partition);
-\d test_part_like1
+\d+ test_part_like1
 create table test_part_like2 like test_part including partition;
-\d test_part_like2
+\d+ test_part_like2
 drop table if exists test_non_like1, test_non_like2, test_part_like1, test_part_like2;
 
 create table test_non_like1 (like test_non including partition including indexes);
-\d test_non_like1
+\d+ test_non_like1
 create table test_non_like2 like test_non including partition including indexes;
-\d test_non_like2
+\d+ test_non_like2
 create table test_part_like1 (like test_part including partition including indexes);
-\d test_part_like1
+\d+ test_part_like1
 create table test_part_like2 like test_part including partition including indexes;
-\d test_part_like2
+\d+ test_part_like2
 drop table if exists test_non_like1, test_non_like2, test_part_like1, test_part_like2;
 
 create table test_non_like1 (like test_non including all);
-\d test_non_like1
+\d+ test_non_like1
 create table test_non_like2 like test_non including all;
-\d test_non_like2
+\d+ test_non_like2
 create table test_part_like1 (like test_part including all);
-\d test_part_like1
+\d+ test_part_like1
 create table test_part_like2 like test_part including all;
-\d test_part_like2
+\d+ test_part_like2
 drop table if exists test_non_like1, test_non_like2, test_part_like1, test_part_like2;
 
 create table test_non_like1 (like test_non including all excluding indexes);
-\d test_non_like1
+\d+ test_non_like1
 create table test_non_like2 like test_non including all excluding indexes;
-\d test_non_like2
+\d+ test_non_like2
 create table test_part_like1 (like test_part including all excluding indexes);
-\d test_part_like1
+\d+ test_part_like1
 create table test_part_like2 like test_part including all excluding indexes;
-\d test_part_like2
+\d+ test_part_like2
 drop table if exists test_non_like1, test_non_like2, test_part_like1, test_part_like2;
 
 create table test_non_like1 (like test_non including all excluding partition);
-\d test_non_like1
+\d+ test_non_like1
 create table test_non_like2 like test_non including all excluding partition;
-\d test_non_like2
+\d+ test_non_like2
 create table test_part_like1 (like test_part including all excluding partition);
-\d test_part_like1
+\d+ test_part_like1
 create table test_part_like2 like test_part including all excluding partition;
-\d test_part_like2
+\d+ test_part_like2
 drop table if exists test_non_like1, test_non_like2, test_part_like1, test_part_like2;
 
 create table test_non_like1 (like test_non including all excluding partition excluding indexes);
-\d test_non_like1
+\d+ test_non_like1
 create table test_non_like2 like test_non including all excluding partition excluding indexes;
-\d test_non_like2
+\d+ test_non_like2
 create table test_part_like1 (like test_part including all excluding partition excluding indexes);
-\d test_part_like1
+\d+ test_part_like1
 create table test_part_like2 like test_part including all excluding partition excluding indexes;
-\d test_part_like2
+\d+ test_part_like2
 drop table if exists test_non_like1, test_non_like2, test_part_like1, test_part_like2;
 
 create table test_non_like1 (like test_non excluding indexes);
-\d test_non_like1
+\d+ test_non_like1
 create table test_non_like2 like test_non excluding indexes;
-\d test_non_like2
+\d+ test_non_like2
 create table test_part_like1 (like test_part excluding indexes);
-\d test_part_like1
+\d+ test_part_like1
 create table test_part_like2 like test_part excluding indexes;
-\d test_part_like2
+\d+ test_part_like2
 drop table if exists test_non_like1, test_non_like2, test_part_like1, test_part_like2;
 
 create table test_non_like1 (like test_non excluding partition);
-\d test_non_like1
+\d+ test_non_like1
 create table test_non_like2 like test_non excluding partition;
-\d test_non_like2
+\d+ test_non_like2
 create table test_part_like1 (like test_part excluding partition);
-\d test_part_like1
+\d+ test_part_like1
 create table test_part_like2 like test_part excluding partition;
-\d test_part_like2
+\d+ test_part_like2
 drop table if exists test_non_like1, test_non_like2, test_part_like1, test_part_like2;
 
 create table test_non_like1 (like test_non excluding partition excluding indexes);
-\d test_non_like1
+\d+ test_non_like1
 create table test_non_like2 like test_non excluding partition excluding indexes;
-\d test_non_like2
+\d+ test_non_like2
 create table test_part_like1 (like test_part excluding partition excluding indexes);
-\d test_part_like1
+\d+ test_part_like1
 create table test_part_like2 like test_part excluding partition excluding indexes;
-\d test_part_like2
+\d+ test_part_like2
 drop table if exists test_non_like1, test_non_like2, test_part_like1, test_part_like2;
 
 create table test_non_like1 (like test_non excluding all);
-\d test_non_like1
+\d+ test_non_like1
 create table test_non_like2 like test_non excluding all;
-\d test_non_like2
+\d+ test_non_like2
 create table test_part_like1 (like test_part excluding all);
-\d test_part_like1
+\d+ test_part_like1
 create table test_part_like2 like test_part excluding all;
-\d test_part_like2
+\d+ test_part_like2
 drop table if exists test_non_like1, test_non_like2, test_part_like1, test_part_like2;
 
 create table test_non_like1 (like test_non excluding all including partition);
-\d test_non_like1
+\d+ test_non_like1
 create table test_non_like2 like test_non excluding all including partition;
-\d test_non_like2
+\d+ test_non_like2
 create table test_part_like1 (like test_part excluding all including partition);
-\d test_part_like1
+\d+ test_part_like1
 create table test_part_like2 like test_part excluding all including partition;
-\d test_part_like2
+\d+ test_part_like2
 drop table if exists test_non_like1, test_non_like2, test_part_like1, test_part_like2;
 
 create table test_non_like1 (like test_non excluding all including indexes);
-\d test_non_like1
+\d+ test_non_like1
 create table test_non_like2 like test_non excluding all including indexes;
-\d test_non_like2
+\d+ test_non_like2
 create table test_part_like1 (like test_part excluding all including indexes);
-\d test_part_like1
+\d+ test_part_like1
 create table test_part_like2 like test_part excluding all including indexes;
-\d test_part_like2
+\d+ test_part_like2
 drop table if exists test_non_like1, test_non_like2, test_part_like1, test_part_like2;
 
 create table test_non_like1 (like test_non excluding all including partition including indexes);
-\d test_non_like1
+\d+ test_non_like1
 create table test_non_like2 like test_non excluding all including partition including indexes;
-\d test_non_like2
+\d+ test_non_like2
 create table test_part_like1 (like test_part excluding all including partition including indexes);
-\d test_part_like1
+\d+ test_part_like1
 create table test_part_like2 like test_part excluding all including partition including indexes;
-\d test_part_like2
+\d+ test_part_like2
 drop table if exists test_non_like1, test_non_like2, test_part_like1, test_part_like2;
 
 drop table if exists test_non, test_part;
