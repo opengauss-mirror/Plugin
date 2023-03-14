@@ -38,7 +38,7 @@ void CheckSpaceAndDotInternal(bool errorOK, int c, char* digitAfterDot, const ch
 {
     bool isFirstDot = true;
     if (!errorOK) {
-        while (*(*ptr) && *(*ptr) != c && ((isspace((unsigned char)*(*ptr))) || (*(*ptr) == '.' && isFirstDot) || (isdigit((unsigned char)*(*ptr))))) {
+        while (*(*ptr) && *(*ptr) != c && ((*(*ptr) == '.' && isFirstDot) || (isdigit((unsigned char)*(*ptr))))) {
             if (*(*ptr) == '.') {
                 isFirstDot = false;
                 *digitAfterDot = *((*ptr) + 1);

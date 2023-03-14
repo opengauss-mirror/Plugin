@@ -745,6 +745,24 @@ insert into test_notnull_double_strict(b) values(null);
 insert into test_notnull_numeric_strict(b) values(null);
 
 
+--test some bug fix
+create table test_space_to_int1(a tinyint);
+insert into test_space_to_int1 values('34 55');
+create table test_space_to_int2(a smallint);
+insert into test_space_to_int2 values('34 55');
+create table test_space_to_int4(a int);
+insert into test_space_to_int4 values('34 55');
+create table test_space_to_int8(a bigint);
+insert into test_space_to_int8 values('34 55');
+set dolphin.sql_mode = '';
+insert into test_space_to_int1 values('34 55');
+insert into test_space_to_int2 values('34 55');
+insert into test_space_to_int4 values('34 55');
+insert into test_space_to_int8 values('34 55');
+select * from test_space_to_int1;
+select * from test_space_to_int2;
+select * from test_space_to_int4;
+select * from test_space_to_int8;
 
 drop schema sql_mode_strict cascade;
 reset current_schema;

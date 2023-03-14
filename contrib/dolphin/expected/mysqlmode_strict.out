@@ -2192,8 +2192,66 @@ DETAIL:  Failing row contains (null, null).
 insert into test_notnull_numeric_strict(b) values(null);
 ERROR:  null value in column "b" violates not-null constraint
 DETAIL:  Failing row contains (null, null).
+--test some bug fix
+create table test_space_to_int1(a tinyint);
+insert into test_space_to_int1 values('34 55');
+ERROR:  invalid input syntax for integer: "34 55"
+LINE 1: insert into test_space_to_int1 values('34 55');
+                                              ^
+CONTEXT:  referenced column: a
+create table test_space_to_int2(a smallint);
+insert into test_space_to_int2 values('34 55');
+ERROR:  invalid input syntax for integer: "34 55"
+LINE 1: insert into test_space_to_int2 values('34 55');
+                                              ^
+CONTEXT:  referenced column: a
+create table test_space_to_int4(a int);
+insert into test_space_to_int4 values('34 55');
+ERROR:  invalid input syntax for integer: "34 55"
+LINE 1: insert into test_space_to_int4 values('34 55');
+                                              ^
+CONTEXT:  referenced column: a
+create table test_space_to_int8(a bigint);
+insert into test_space_to_int8 values('34 55');
+ERROR:  invalid input syntax for type bigint: "34 55"
+LINE 1: insert into test_space_to_int8 values('34 55');
+                                              ^
+CONTEXT:  referenced column: a
+set dolphin.sql_mode = '';
+insert into test_space_to_int1 values('34 55');
+insert into test_space_to_int2 values('34 55');
+insert into test_space_to_int4 values('34 55');
+insert into test_space_to_int8 values('34 55');
+WARNING:  invalid input syntax for type bigint: "34 55"
+LINE 1: insert into test_space_to_int8 values('34 55');
+                                              ^
+CONTEXT:  referenced column: a
+select * from test_space_to_int1;
+ a  
+----
+ 34
+(1 row)
+
+select * from test_space_to_int2;
+ a  
+----
+ 34
+(1 row)
+
+select * from test_space_to_int4;
+ a  
+----
+ 34
+(1 row)
+
+select * from test_space_to_int8;
+ a  
+----
+ 34
+(1 row)
+
 drop schema sql_mode_strict cascade;
-NOTICE:  drop cascades to 51 other objects
+NOTICE:  drop cascades to 55 other objects
 DETAIL:  drop cascades to table test_tint
 drop cascades to table test_sint
 drop cascades to table test_int
@@ -2245,4 +2303,8 @@ drop cascades to table test_notnull_text_strict
 drop cascades to table test_notnull_real_strict
 drop cascades to table test_notnull_double_strict
 drop cascades to table test_notnull_numeric_strict
+drop cascades to table test_space_to_int1
+drop cascades to table test_space_to_int2
+drop cascades to table test_space_to_int4
+drop cascades to table test_space_to_int8
 reset current_schema;
