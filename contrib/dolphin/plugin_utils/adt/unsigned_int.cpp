@@ -3921,6 +3921,14 @@ Datum uint4_uint8_eq(PG_FUNCTION_ARGS)
     PG_RETURN_BOOL(arg1 == arg2);
 }
 
+Datum uint8_uint4_eq(PG_FUNCTION_ARGS)
+{
+    uint64 arg1 = PG_GETARG_UINT64(0);
+    uint32 arg2 = PG_GETARG_UINT32(1);
+
+    PG_RETURN_BOOL(arg1 == arg2);
+}
+
 Datum uint4_uint8_lt(PG_FUNCTION_ARGS)
 {
     uint32 arg1 = PG_GETARG_UINT32(0);
