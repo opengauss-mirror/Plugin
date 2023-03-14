@@ -25,6 +25,7 @@ import java.util.Properties;
 import java.sql.Time;
 import java.sql.Timestamp;
 import java.math.BigDecimal;
+import java.sql.Blob;
 
 public class MySQLJdbcPrepareTest {
     private static String host;
@@ -115,11 +116,14 @@ public class MySQLJdbcPrepareTest {
     
             p1.setTimestamp(21, Timestamp.valueOf("2023-03-07 16:16:16.666"));
             p1.setObject(22, Timestamp.valueOf("2023-03-07 16:16:16.666"));
+
+            Blob blob = connection.createBlob();
+            blob.setBytes(1, "blob".getBytes());
             
-            p1.setObject(23, null); // support blob type in next phase.
-            p1.setObject(24, null);
-            p1.setObject(25, null);
-            p1.setObject(26, null);
+            p1.setBlob(23, blob);
+            p1.setBlob(24, blob);
+            p1.setBlob(25, blob);
+            p1.setBlob(26, blob);
             
             p1.setObject(27, "(1000,0)");
             p1.setObject(28, "(1000,0,200,3)");
