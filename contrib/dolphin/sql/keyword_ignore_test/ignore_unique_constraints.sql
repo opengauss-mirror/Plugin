@@ -177,5 +177,52 @@ insert into t_ignore values(2);
 update ignore t_ignore set num = 1 where num = 2;
 select * from t_ignore;
 
+-- test for procedure/function using INSERT/UPDATE IGNORE, to check whether IGNORE is valid for plpgsql
+-- procedure
+create table ignore_proc_test(id int unique, name text);
+create or replace procedure insert_ignore_unique_proc()
+as
+begin
+insert ignore into ignore_proc_test values(1,'aaa'),(2,'ccc');
+end;
+/
+select insert_ignore_unique_proc();
+select * from ignore_proc_test;
+select insert_ignore_unique_proc();
+select * from ignore_proc_test;
+
+create or replace procedure update_ignore_unique_proc()
+as
+begin
+update ignore ignore_proc_test set id = 1 where id = 2;
+end;
+/
+select update_ignore_unique_proc();
+select * from ignore_proc_test;
+
+-- function
+create table ignore_func_test(id int unique, name text);
+delimiter |
+create or replace function insert_ignore_unique_func() returns int
+begin
+insert ignore into ignore_func_test values(1,'aaa'),(2,'ccc');
+return 1;
+end|
+delimiter ;
+select insert_ignore_unique_func();
+select * from ignore_func_test;
+select insert_ignore_unique_func();
+select * from ignore_func_test;
+
+delimiter |
+create or replace function update_ignore_unique_func() returns int
+begin
+update ignore ignore_func_test set id = 1 where id = 2;
+return 1;
+end|
+delimiter ;
+select update_ignore_unique_func();
+select * from ignore_func_test;
+
 drop schema sql_ignore_unique_test cascade;
 reset current_schema;
