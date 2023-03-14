@@ -22,7 +22,7 @@ SELECT
   JSON_ARRAYAGG(Name) AS "City/Name"
 FROM City
 GROUP BY State;
-      state      |                       City/Name                        
+      State      |                       City/Name                        
 -----------------+--------------------------------------------------------
  West Australia  | ["Perth"]
  Queensland      | ["Brisbane", "Gold Coast", "Townsville", "Cairns"]
@@ -38,7 +38,7 @@ SELECT
   JSON_ARRAYAGG(Population) AS "City/Population"
 FROM City
 GROUP BY State;
-      state      |          City/Population          
+      State      |          City/Population          
 -----------------+-----------------------------------
  West Australia  | [1096829]
  Queensland      | [1291117, 311932, 109914, 92273]

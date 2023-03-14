@@ -134,7 +134,7 @@ create algorithm=merge view algorithm_v as
            algorithm = temptable as temptable 
         from algorithm;
 select * from algorithm_v;
- algorithm | undefined | temptable 
+ algorithm | UNDEFINED | temptable 
 -----------+-----------+-----------
  t         | t         | t
  t         | t         | t
