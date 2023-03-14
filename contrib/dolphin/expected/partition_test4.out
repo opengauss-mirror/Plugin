@@ -608,6 +608,303 @@ select * from b_range_hash_t01 partition(m2);
  51 |  3 | 4
 (1 row)
 
+--test some cases about partition expr key
+create table part_key_range_t1(col1 date, col2 int) partition by range(year(col1))
+(
+    partition p1 values less than(2000),
+    partition p2 values less than(3000)
+);
+select pg_get_tabledef('part_key_range_t1');
+                         pg_get_tabledef                         
+-----------------------------------------------------------------
+ SET search_path = partition_test4;                             +
+ CREATE TABLE part_key_range_t1 (                               +
+     col1 date,                                                 +
+     col2 integer                                               +
+ )                                                              +
+ WITH (orientation=row, compression=no)                         +
+ PARTITION BY RANGE (year((col1)::timestamp without time zone)) +
+ (                                                              +
+     PARTITION p1 VALUES LESS THAN (2000) TABLESPACE pg_default,+
+     PARTITION p2 VALUES LESS THAN (3000) TABLESPACE pg_default +
+ )                                                              +
+ ENABLE ROW MOVEMENT;
+(1 row)
+
+alter table part_key_range_t1 add partition p3 values less than(4000);
+select pg_get_tabledef('part_key_range_t1');
+                         pg_get_tabledef                         
+-----------------------------------------------------------------
+ SET search_path = partition_test4;                             +
+ CREATE TABLE part_key_range_t1 (                               +
+     col1 date,                                                 +
+     col2 integer                                               +
+ )                                                              +
+ WITH (orientation=row, compression=no)                         +
+ PARTITION BY RANGE (year((col1)::timestamp without time zone)) +
+ (                                                              +
+     PARTITION p1 VALUES LESS THAN (2000) TABLESPACE pg_default,+
+     PARTITION p2 VALUES LESS THAN (3000) TABLESPACE pg_default,+
+     PARTITION p3 VALUES LESS THAN (4000) TABLESPACE pg_default +
+ )                                                              +
+ ENABLE ROW MOVEMENT;
+(1 row)
+
+alter table part_key_range_t1 split partition p1 into (partition m1 values less than(1000), partition m2 values less than(2000));
+select pg_get_tabledef('part_key_range_t1');
+                         pg_get_tabledef                         
+-----------------------------------------------------------------
+ SET search_path = partition_test4;                             +
+ CREATE TABLE part_key_range_t1 (                               +
+     col1 date,                                                 +
+     col2 integer                                               +
+ )                                                              +
+ WITH (orientation=row, compression=no)                         +
+ PARTITION BY RANGE (year((col1)::timestamp without time zone)) +
+ (                                                              +
+     PARTITION m1 VALUES LESS THAN (1000) TABLESPACE pg_default,+
+     PARTITION m2 VALUES LESS THAN (2000) TABLESPACE pg_default,+
+     PARTITION p2 VALUES LESS THAN (3000) TABLESPACE pg_default,+
+     PARTITION p3 VALUES LESS THAN (4000) TABLESPACE pg_default +
+ )                                                              +
+ ENABLE ROW MOVEMENT;
+(1 row)
+
+alter table part_key_range_t1 merge partitions m1,m2 into partition p1;
+select pg_get_tabledef('part_key_range_t1');
+                         pg_get_tabledef                         
+-----------------------------------------------------------------
+ SET search_path = partition_test4;                             +
+ CREATE TABLE part_key_range_t1 (                               +
+     col1 date,                                                 +
+     col2 integer                                               +
+ )                                                              +
+ WITH (orientation=row, compression=no)                         +
+ PARTITION BY RANGE (year((col1)::timestamp without time zone)) +
+ (                                                              +
+     PARTITION p1 VALUES LESS THAN (2000) TABLESPACE pg_default,+
+     PARTITION p2 VALUES LESS THAN (3000) TABLESPACE pg_default,+
+     PARTITION p3 VALUES LESS THAN (4000) TABLESPACE pg_default +
+ )                                                              +
+ ENABLE ROW MOVEMENT;
+(1 row)
+
+alter table part_key_range_t1 reorganize partition p1,p2 into (partition m1 values less than(1000),partition m2 values less than(3000));
+select pg_get_tabledef('part_key_range_t1');
+                         pg_get_tabledef                         
+-----------------------------------------------------------------
+ SET search_path = partition_test4;                             +
+ CREATE TABLE part_key_range_t1 (                               +
+     col1 date,                                                 +
+     col2 integer                                               +
+ )                                                              +
+ WITH (orientation=row, compression=no)                         +
+ PARTITION BY RANGE (year((col1)::timestamp without time zone)) +
+ (                                                              +
+     PARTITION m1 VALUES LESS THAN (1000) TABLESPACE pg_default,+
+     PARTITION m2 VALUES LESS THAN (3000) TABLESPACE pg_default,+
+     PARTITION p3 VALUES LESS THAN (4000) TABLESPACE pg_default +
+ )                                                              +
+ ENABLE ROW MOVEMENT;
+(1 row)
+
+create table part_key_range_t2(col1 date, col2 int) partition by range(to_days(col1))
+(
+    partition p1 values less than(60000),
+    partition p2 values less than(80000)
+);
+select pg_get_tabledef('part_key_range_t2');
+                          pg_get_tabledef                          
+-------------------------------------------------------------------
+ SET search_path = partition_test4;                               +
+ CREATE TABLE part_key_range_t2 (                                 +
+     col1 date,                                                   +
+     col2 integer                                                 +
+ )                                                                +
+ WITH (orientation=row, compression=no)                           +
+ PARTITION BY RANGE (to_days((col1)::timestamp without time zone))+
+ (                                                                +
+     PARTITION p1 VALUES LESS THAN (60000) TABLESPACE pg_default, +
+     PARTITION p2 VALUES LESS THAN (80000) TABLESPACE pg_default  +
+ )                                                                +
+ ENABLE ROW MOVEMENT;
+(1 row)
+
+alter table part_key_range_t2 add partition p3 values less than(90000);
+select pg_get_tabledef('part_key_range_t2');
+                          pg_get_tabledef                          
+-------------------------------------------------------------------
+ SET search_path = partition_test4;                               +
+ CREATE TABLE part_key_range_t2 (                                 +
+     col1 date,                                                   +
+     col2 integer                                                 +
+ )                                                                +
+ WITH (orientation=row, compression=no)                           +
+ PARTITION BY RANGE (to_days((col1)::timestamp without time zone))+
+ (                                                                +
+     PARTITION p1 VALUES LESS THAN (60000) TABLESPACE pg_default, +
+     PARTITION p2 VALUES LESS THAN (80000) TABLESPACE pg_default, +
+     PARTITION p3 VALUES LESS THAN (90000) TABLESPACE pg_default  +
+ )                                                                +
+ ENABLE ROW MOVEMENT;
+(1 row)
+
+alter table part_key_range_t2 split partition p1 into (partition m1 values less than(50000), partition m2 values less than(60000));
+select pg_get_tabledef('part_key_range_t2');
+                          pg_get_tabledef                          
+-------------------------------------------------------------------
+ SET search_path = partition_test4;                               +
+ CREATE TABLE part_key_range_t2 (                                 +
+     col1 date,                                                   +
+     col2 integer                                                 +
+ )                                                                +
+ WITH (orientation=row, compression=no)                           +
+ PARTITION BY RANGE (to_days((col1)::timestamp without time zone))+
+ (                                                                +
+     PARTITION m1 VALUES LESS THAN (50000) TABLESPACE pg_default, +
+     PARTITION m2 VALUES LESS THAN (60000) TABLESPACE pg_default, +
+     PARTITION p2 VALUES LESS THAN (80000) TABLESPACE pg_default, +
+     PARTITION p3 VALUES LESS THAN (90000) TABLESPACE pg_default  +
+ )                                                                +
+ ENABLE ROW MOVEMENT;
+(1 row)
+
+alter table part_key_range_t2 merge partitions m1,m2 into partition p1;
+select pg_get_tabledef('part_key_range_t2');
+                          pg_get_tabledef                          
+-------------------------------------------------------------------
+ SET search_path = partition_test4;                               +
+ CREATE TABLE part_key_range_t2 (                                 +
+     col1 date,                                                   +
+     col2 integer                                                 +
+ )                                                                +
+ WITH (orientation=row, compression=no)                           +
+ PARTITION BY RANGE (to_days((col1)::timestamp without time zone))+
+ (                                                                +
+     PARTITION p1 VALUES LESS THAN (60000) TABLESPACE pg_default, +
+     PARTITION p2 VALUES LESS THAN (80000) TABLESPACE pg_default, +
+     PARTITION p3 VALUES LESS THAN (90000) TABLESPACE pg_default  +
+ )                                                                +
+ ENABLE ROW MOVEMENT;
+(1 row)
+
+alter table part_key_range_t2 reorganize partition p1,p2 into (partition m1 values less than(70000),partition m2 values less than(80000));
+select pg_get_tabledef('part_key_range_t2');
+                          pg_get_tabledef                          
+-------------------------------------------------------------------
+ SET search_path = partition_test4;                               +
+ CREATE TABLE part_key_range_t2 (                                 +
+     col1 date,                                                   +
+     col2 integer                                                 +
+ )                                                                +
+ WITH (orientation=row, compression=no)                           +
+ PARTITION BY RANGE (to_days((col1)::timestamp without time zone))+
+ (                                                                +
+     PARTITION m1 VALUES LESS THAN (70000) TABLESPACE pg_default, +
+     PARTITION m2 VALUES LESS THAN (80000) TABLESPACE pg_default, +
+     PARTITION p3 VALUES LESS THAN (90000) TABLESPACE pg_default  +
+ )                                                                +
+ ENABLE ROW MOVEMENT;
+(1 row)
+
+create table part_key_list_t1(col1 date, col2 int) partition by list(year(col1))
+(
+    partition p1 values(2000),
+    partition p2 values(3000)
+);
+select pg_get_tabledef('part_key_list_t1');
+                        pg_get_tabledef                        
+---------------------------------------------------------------
+ SET search_path = partition_test4;                           +
+ CREATE TABLE part_key_list_t1 (                              +
+     col1 date,                                               +
+     col2 integer                                             +
+ )                                                            +
+ WITH (orientation=row, compression=no)                       +
+ PARTITION BY LIST (year((col1)::timestamp without time zone))+
+ (                                                            +
+     PARTITION p1 VALUES (2000) TABLESPACE pg_default,        +
+     PARTITION p2 VALUES (3000) TABLESPACE pg_default         +
+ )                                                            +
+ ENABLE ROW MOVEMENT;
+(1 row)
+
+alter table part_key_list_t1 add partition p3 values(4000);
+select pg_get_tabledef('part_key_list_t1');
+                        pg_get_tabledef                        
+---------------------------------------------------------------
+ SET search_path = partition_test4;                           +
+ CREATE TABLE part_key_list_t1 (                              +
+     col1 date,                                               +
+     col2 integer                                             +
+ )                                                            +
+ WITH (orientation=row, compression=no)                       +
+ PARTITION BY LIST (year((col1)::timestamp without time zone))+
+ (                                                            +
+     PARTITION p1 VALUES (2000) TABLESPACE pg_default,        +
+     PARTITION p2 VALUES (3000) TABLESPACE pg_default,        +
+     PARTITION p3 VALUES (4000) TABLESPACE pg_default         +
+ )                                                            +
+ ENABLE ROW MOVEMENT;
+(1 row)
+
+create table part_key_list_t2(col1 date, col2 int) partition by list(to_days(col1))
+(
+    partition p1 values(60000),
+    partition p2 values(80000)
+);
+select pg_get_tabledef('part_key_list_t2');
+                         pg_get_tabledef                          
+------------------------------------------------------------------
+ SET search_path = partition_test4;                              +
+ CREATE TABLE part_key_list_t2 (                                 +
+     col1 date,                                                  +
+     col2 integer                                                +
+ )                                                               +
+ WITH (orientation=row, compression=no)                          +
+ PARTITION BY LIST (to_days((col1)::timestamp without time zone))+
+ (                                                               +
+     PARTITION p1 VALUES (60000) TABLESPACE pg_default,          +
+     PARTITION p2 VALUES (80000) TABLESPACE pg_default           +
+ )                                                               +
+ ENABLE ROW MOVEMENT;
+(1 row)
+
+alter table part_key_list_t2 add partition p3 values(90000);
+select pg_get_tabledef('part_key_list_t2');
+                         pg_get_tabledef                          
+------------------------------------------------------------------
+ SET search_path = partition_test4;                              +
+ CREATE TABLE part_key_list_t2 (                                 +
+     col1 date,                                                  +
+     col2 integer                                                +
+ )                                                               +
+ WITH (orientation=row, compression=no)                          +
+ PARTITION BY LIST (to_days((col1)::timestamp without time zone))+
+ (                                                               +
+     PARTITION p1 VALUES (60000) TABLESPACE pg_default,          +
+     PARTITION p2 VALUES (80000) TABLESPACE pg_default,          +
+     PARTITION p3 VALUES (90000) TABLESPACE pg_default           +
+ )                                                               +
+ ENABLE ROW MOVEMENT;
+(1 row)
+
+create table part_key_t1 (col1 date, col2 date) partition by range( year(col2) )
+subpartition by hash( to_days(col1) )
+(
+    partition p1 values less than (2000)
+    (
+        SUBPARTITION p1sub1,
+        SUBPARTITION p1sub2
+    ),
+    partition p2 values less than (3000)
+    (
+        SUBPARTITION p2sub1,
+        SUBPARTITION p2sub2
+    )
+);
+alter table part_key_t1 add partition p3 values less than(4000);
+alter table part_key_t1 reorganize partition p1,p2 into (partition m1 values less than(1000), partition m2 values less than(3000));
 --test some error cases
 create table b_range_hash_t05(c1 int primary key,c2 int,c3 text)
 with (segment=on)
@@ -716,7 +1013,7 @@ partition p3 values less than (maxvalue)
 );
 NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "b_range_mt2_pkey" for table "b_range_mt2"
 drop schema partition_test4 cascade;
-NOTICE:  drop cascades to 13 other objects
+NOTICE:  drop cascades to 18 other objects
 DETAIL:  drop cascades to table test_range_subpart
 drop cascades to table test_range_part
 drop cascades to table test_list_part
@@ -725,6 +1022,11 @@ drop cascades to table test_no_part
 drop cascades to table test_part_ustore
 drop cascades to table test_part_segment
 drop cascades to table b_range_hash_t01
+drop cascades to table part_key_range_t1
+drop cascades to table part_key_range_t2
+drop cascades to table part_key_list_t1
+drop cascades to table part_key_list_t2
+drop cascades to table part_key_t1
 drop cascades to table b_range_hash_t05
 drop cascades to table b_interval_t1
 drop cascades to table b_range_range_t01
