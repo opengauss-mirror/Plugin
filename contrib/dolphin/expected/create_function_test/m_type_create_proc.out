@@ -348,8 +348,171 @@ call doempty();
  
 (1 row)
 
+-- test declare continue handler
+set enable_set_variable_b_format = on;
+delimiter //
+CREATE or replace PROCEDURE proc_set_test(a int, b int)
+begin
+declare result int;
+DECLARE CONTINUE HANDLER FOR SQLEXCEPTION set @sum = 1;
+set @x1 = 1;
+result := a/b;
+set @x1 = 2;
+end;
+//
+delimiter ;
+set @sum = 0;
+set @x1 = 0;
+call proc_set_test(1,0);
+ proc_set_test 
+---------------
+ 
+(1 row)
+
+select @sum;
+ @sum 
+------
+    1
+(1 row)
+
+select @x1;
+ @x1 
+-----
+   2
+(1 row)
+
+delimiter //
+CREATE or replace PROCEDURE proc_set_test(a int, b int)
+begin
+declare result int;
+declare DIVISION_ZERO condition for SQLSTATE "22012";
+DECLARE CONTINUE HANDLER FOR DIVISION_ZERO set @sum = 1;
+set @x1 = 1;
+result := a/b;
+set @x1 = 2;
+end;
+//
+delimiter ;
+set @sum = 0;
+set @x1 = 0;
+call proc_set_test(1,0);
+ proc_set_test 
+---------------
+ 
+(1 row)
+
+select @sum;
+ @sum 
+------
+    1
+(1 row)
+
+select @x1;
+ @x1 
+-----
+   2
+(1 row)
+
+create table company(name varchar(100), loc varchar(100), no integer PRIMARY KEY);
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "company_pkey" for table "company"
+insert into company values ('macrosoft',    'usa',          001);
+insert into company values ('oracle',       'usa',          002);
+insert into company values ('backberry',    'canada',       003);
+delimiter //
+create or replace procedure test_cursor_handler() 
+begin
+  declare company_name    varchar(100);
+  declare company_loc varchar(100);
+  declare company_no  integer;
+  DECLARE CONTINUE HANDLER FOR unique_violation set @x = 1;
+  declare c1_all cursor is --cursor without args 
+      select name, loc, no from company order by 1, 2, 3;
+  if not c1_all%isopen then
+      open c1_all;
+  end if;
+  loop
+      fetch c1_all into company_name, company_loc, company_no;
+      exit when c1_all%notfound;
+      insert into company values (company_name,company_loc,company_no);
+      raise notice '% : % : %',company_name,company_loc,company_no;
+  end loop;
+  if c1_all%isopen then
+      close c1_all;
+  end if;
+end;
+//
+delimiter ;
+set @x=0;
+call test_cursor_handler();
+ test_cursor_handler 
+---------------------
+ 
+(1 row)
+
+select @x;
+ @x 
+----
+  1
+(1 row)
+
+create table declare_handler_t_continue (i INT PRIMARY KEY, j INT);
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "declare_handler_t_continue_pkey" for table "declare_handler_t_continue"
+CREATE OR REPLACE PROCEDURE proc_continue_sqlexception()  IS
+BEGIN
+    DECLARE CONTINUE HANDLER FOR unique_violation set @x1 = 1;
+    DECLARE CONTINUE HANDLER FOR not found set @x2 = 2;
+    DECLARE CONTINUE HANDLER FOR SQLEXCEPTION set @x3 = 3;
+
+    create table t_rowcompress_pglz_compresslevel(id int) with (compresstype=1,compress_level=2);
+    INSERT INTO declare_handler_t_continue VALUES (1, 1);
+    INSERT INTO declare_handler_t_continue VALUES (1, 1);
+    INSERT INTO declare_handler_t_continue VALUES (3, 1);
+    set @x4 = 4;
+END;
+/
+set @x1=0;
+set @x2=0;
+set @x3=0;
+set @x4=0;
+call proc_continue_sqlexception();
+ proc_continue_sqlexception 
+----------------------------
+ 
+(1 row)
+
+select * from declare_handler_t_continue;
+ i | j 
+---+---
+ 1 | 1
+ 3 | 1
+(2 rows)
+
+select @x1;
+ @x1 
+-----
+   1
+(1 row)
+
+select @x2;
+ @x2 
+-----
+   2
+(1 row)
+
+select @x3;
+ @x3 
+-----
+   0
+(1 row)
+
+select @x4;
+ @x4 
+-----
+   4
+(1 row)
+
 drop schema m_create_proc_type cascade;
-NOTICE:  drop cascades to 18 other objects
+NOTICE:  drop cascades to 23 other objects
 DETAIL:  drop cascades to function p()
 drop cascades to function proc1()
 drop cascades to table item
@@ -368,4 +531,9 @@ drop cascades to function doiterate(integer)
 drop cascades to function dorepeat(integer)
 drop cascades to function docase(integer)
 drop cascades to function doempty()
+drop cascades to function proc_set_test(integer,integer)
+drop cascades to table company
+drop cascades to function test_cursor_handler()
+drop cascades to table declare_handler_t_continue
+drop cascades to function proc_continue_sqlexception()
 reset current_schema;
