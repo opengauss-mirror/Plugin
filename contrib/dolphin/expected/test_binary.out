@@ -535,6 +535,294 @@ insert into test34 values('a');
 ERROR:  The input length:1 exceeds the maximum length:0.
 CONTEXT:  referenced column: a
 insert into test34 values('');
+SELECT 'ab'::binary = 'ab';
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT 'ab'::binary < 'ab';
+ ?column? 
+----------
+ f
+(1 row)
+
+SELECT 'ab'::binary <= 'ab';
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT 'ab'::binary > 'ab';
+ ?column? 
+----------
+ f
+(1 row)
+
+SELECT 'ab'::binary >= 'ab';
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT 'ab'::binary <> 'ab';
+ ?column? 
+----------
+ f
+(1 row)
+
+SELECT 'ab' = 'ab'::binary;
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT 'ab' < 'ab'::binary;
+ ?column? 
+----------
+ f
+(1 row)
+
+SELECT 'ab' <= 'ab'::binary;
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT 'ab' > 'ab'::binary;
+ ?column? 
+----------
+ f
+(1 row)
+
+SELECT 'ab' >= 'ab'::binary;
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT 'ab' <> 'ab'::binary;
+ ?column? 
+----------
+ f
+(1 row)
+
+SELECT 'ab'::binary = 'ab'::binary;
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT 'ab'::binary < 'ab'::binary;
+ ?column? 
+----------
+ f
+(1 row)
+
+SELECT 'ab'::binary <= 'ab'::binary;
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT 'ab'::binary > 'ab'::binary;
+ ?column? 
+----------
+ f
+(1 row)
+
+SELECT 'ab'::binary >= 'ab'::binary;
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT 'ab'::binary <> 'ab'::binary;
+ ?column? 
+----------
+ f
+(1 row)
+
+SELECT 'ab'::binary = 'ab'::varbinary(2);
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT 'ab'::binary < 'ab'::varbinary(2);
+ ?column? 
+----------
+ f
+(1 row)
+
+SELECT 'ab'::binary <= 'ab'::varbinary(2);
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT 'ab'::binary > 'ab'::varbinary(2);
+ ?column? 
+----------
+ f
+(1 row)
+
+SELECT 'ab'::binary >= 'ab'::varbinary(2);
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT 'ab'::binary <> 'ab'::varbinary(2);
+ ?column? 
+----------
+ f
+(1 row)
+
+SELECT 'ab'::varbinary(2) = 'ab';
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT 'ab'::varbinary(2) < 'ab';
+ ?column? 
+----------
+ f
+(1 row)
+
+SELECT 'ab'::varbinary(2) <= 'ab';
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT 'ab'::varbinary(2) > 'ab';
+ ?column? 
+----------
+ f
+(1 row)
+
+SELECT 'ab'::varbinary(2) >= 'ab';
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT 'ab'::varbinary(2) <> 'ab';
+ ?column? 
+----------
+ f
+(1 row)
+
+SELECT 'ab' = 'ab'::varbinary(2);
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT 'ab' < 'ab'::varbinary(2);
+ ?column? 
+----------
+ f
+(1 row)
+
+SELECT 'ab' <= 'ab'::varbinary(2);
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT 'ab' > 'ab'::varbinary(2);
+ ?column? 
+----------
+ f
+(1 row)
+
+SELECT 'ab' >= 'ab'::varbinary(2);
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT 'ab' <> 'ab'::varbinary(2);
+ ?column? 
+----------
+ f
+(1 row)
+
+SELECT 'ab'::varbinary(2) = 'ab'::varbinary(2);
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT 'ab'::varbinary(2) < 'ab'::varbinary(2);
+ ?column? 
+----------
+ f
+(1 row)
+
+SELECT 'ab'::varbinary(2) <= 'ab'::varbinary(2);
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT 'ab'::varbinary(2) > 'ab'::varbinary(2);
+ ?column? 
+----------
+ f
+(1 row)
+
+SELECT 'ab'::varbinary(2) >= 'ab'::varbinary(2);
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT 'ab'::varbinary(2) <> 'ab'::varbinary(2);
+ ?column? 
+----------
+ f
+(1 row)
+
+SELECT 'ab'::varbinary(2) = 'ab'::binary;
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT 'ab'::varbinary(2) < 'ab'::binary;
+ ?column? 
+----------
+ f
+(1 row)
+
+SELECT 'ab'::varbinary(2) <= 'ab'::binary;
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT 'ab'::varbinary(2) > 'ab'::binary;
+ ?column? 
+----------
+ f
+(1 row)
+
+SELECT 'ab'::varbinary(2) >= 'ab'::binary;
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT 'ab'::varbinary(2) <> 'ab'::binary;
+ ?column? 
+----------
+ f
+(1 row)
+
 drop schema test_binary cascade;
 NOTICE:  drop cascades to 4 other objects
 DETAIL:  drop cascades to table test_bytea

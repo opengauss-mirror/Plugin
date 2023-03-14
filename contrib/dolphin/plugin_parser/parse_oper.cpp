@@ -97,7 +97,7 @@ static void TransformDolphinType(Oid& type, int32& typmod);
 static bool IsNumericCatalogByOid(Oid oid);
 static int32 GetTypmod(Oid typeoid, Node* node);
 static Oid TransformDolphinOperator(TransformOperatorInformation* info);
-static Node* CreateCastForDateType(
+static Node* CreateCastForType(
     ParseState *pstate, Oid sourceType, Node *node, HeapTuple tup, int location, bool isLeft);
 #endif
 
@@ -484,6 +484,11 @@ bool IsDatetimeType(Oid typeoid)
     }
 }
 
+bool IsBlobClassType(Oid typeoid)
+{
+    return typeoid == BLOBOID || typeoid == TINYBLOBOID || typeoid == MEDIUMBLOBOID || typeoid == LONGBLOBOID;
+}
+
 static bool IsDolphinUnsignedIntType(Oid typeoid)
 {
     if (typeoid == BITOID) {
@@ -524,6 +529,13 @@ Operator oper(ParseState* pstate, List* opname, Oid ltypeId, Oid rtypeId, bool n
     }
 
 #ifdef DOLPHIN
+    /* Use BLOB like a pseudo types */
+    if (IsBlobClassType(ltypeId)) {
+        ltypeId = BLOBOID;
+    }
+    if (IsBlobClassType(rtypeId)) {
+        rtypeId = BLOBOID;
+    }
     /**
      * If GUC parameter b_compatibility_mode is true,
      * and the expression is adding a string constant and an interval,
@@ -546,9 +558,9 @@ Operator oper(ParseState* pstate, List* opname, Oid ltypeId, Oid rtypeId, bool n
         } else if (ltypeId == BOOLOID && rtypeId == UNKNOWNOID) {
             rtypeId = TEXTOID;
         } else if (ltypeId == BLOBOID && rtypeId == UNKNOWNOID) {
-            rtypeId = RAWOID;
+            rtypeId = BLOBOID;
         } else if (ltypeId == UNKNOWNOID && rtypeId == BLOBOID) {
-            rtypeId = RAWOID;
+            rtypeId = BLOBOID;
         }
     }
     /**
@@ -937,8 +949,8 @@ Expr* make_op(ParseState* pstate, List* opname, Node* ltree, Node* rtree, Node* 
         if (!HeapTupleIsValid(tup)) {
             tup = oper(pstate, opname, ltypeId, rtypeId, false, location, inNumeric);
         } else {
-            newLeftTree = CreateCastForDateType(pstate, ltypeId, ltree, tup, location, true);
-            newRightTree = CreateCastForDateType(pstate, rtypeId, rtree, tup, location, false);
+            newLeftTree = CreateCastForType(pstate, ltypeId, ltree, tup, location, true);
+            newRightTree = CreateCastForType(pstate, rtypeId, rtree, tup, location, false);
         }
 #else
         tup = oper(pstate, opname, ltypeId, rtypeId, false, location, inNumeric);
@@ -1467,10 +1479,10 @@ Oid binary_oper_exact_extern(List* opname, Oid arg1, Oid arg2, bool use_a_style_
     return binary_oper_exact(opname, arg1, arg2, use_a_style_coercion);
 }
 
-static Node* CreateCastForDateType(
+static Node* CreateCastForType(
     ParseState* pstate, Oid sourceType, Node* node, HeapTuple tup, int location, bool isLeft)
 {
-    if (!IsDatetimeType(sourceType) && sourceType != DATEOID && sourceType != YEAROID) {
+    if (!IsDatetimeType(sourceType) && sourceType != DATEOID && sourceType != YEAROID && sourceType != JSONOID) {
         return node;
     }
     Form_pg_operator op = (Form_pg_operator)GETSTRUCT(tup);
