@@ -3154,6 +3154,11 @@ CREATE FUNCTION pg_catalog.uint4_uint8_eq (
 uint4,uint8
 ) RETURNS bool LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'uint4_uint8_eq';
 
+DROP FUNCTION IF EXISTS pg_catalog.uint8_uint4_eq(uint8,uint4) CASCADE;
+CREATE FUNCTION pg_catalog.uint8_uint4_eq (
+uint8,uint4
+) RETURNS bool LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'uint8_uint4_eq';
+
 DROP FUNCTION IF EXISTS pg_catalog.uint4_uint8_lt(uint4,uint8) CASCADE;
 CREATE FUNCTION pg_catalog.uint4_uint8_lt (
 uint4,uint8
@@ -3177,9 +3182,18 @@ uint4,uint8
 CREATE OPERATOR pg_catalog.=(
 leftarg = uint4, rightarg = uint8, procedure = uint4_uint8_eq,
 restrict = eqsel, join = eqjoinsel,
+commutator=operator(pg_catalog.=),
 HASHES, MERGES
 );
 COMMENT ON OPERATOR pg_catalog.=(uint4, uint8) IS 'uint4_uint8_eq';
+
+CREATE OPERATOR pg_catalog.=(
+leftarg = uint8, rightarg = uint4, procedure = uint8_uint4_eq,
+restrict = eqsel, join = eqjoinsel,
+commutator=operator(pg_catalog.=),
+HASHES, MERGES
+);
+COMMENT ON OPERATOR pg_catalog.=(uint8, uint4) IS 'uint8_uint4_eq';
 
 CREATE OPERATOR pg_catalog.<(
 leftarg = uint4, rightarg = uint8, procedure = uint4_uint8_lt
@@ -3696,7 +3710,8 @@ CREATE OPERATOR CLASS uint8_ops
         OPERATOR        1       = ,
         OPERATOR        1       =(uint8, int8),
         OPERATOR        1       =(int8, uint8),
-        FUNCTION        1       hashuint8(uint8);    
+        OPERATOR        1       =(uint8, uint4),
+        FUNCTION        1       hashuint8(uint8);
 
 -- << and >> operator
 DROP FUNCTION IF EXISTS pg_catalog.uint1shr(uint1,int4) CASCADE;

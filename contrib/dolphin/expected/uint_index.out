@@ -1038,16 +1038,17 @@ explain(costs off, verbose)select * from t4 where a = 1::uint2;
          Index Cond: (t4.a = '1'::uint8)
 (5 rows)
 
+set enable_seqscan to off;
 explain(costs off, verbose)select * from t4 where a = 1::uint4;
-               QUERY PLAN                
------------------------------------------
+            QUERY PLAN             
+-----------------------------------
  Bitmap Heap Scan on uint_index.t4
    Output: a
-   Recheck Cond: (t4.a = '1'::uint8)
+   Filter: (t4.a = '1'::uint4)
    ->  Bitmap Index Scan on idx4
-         Index Cond: (t4.a = '1'::uint8)
-(5 rows)
+(4 rows)
 
+set enable_seqscan to on;
 explain(costs off, verbose)select * from t4 where a = 1::uint8;
                QUERY PLAN                
 -----------------------------------------
@@ -1277,16 +1278,18 @@ explain(costs off, verbose)select * from t4 where a = 1::uint2;
          Index Cond: (t4.a = '1'::uint8)
 (5 rows)
 
+set enable_seqscan to off;
 explain(costs off, verbose)select * from t4 where a = 1::uint4;
                QUERY PLAN                
 -----------------------------------------
  Bitmap Heap Scan on uint_index.t4
    Output: a
-   Recheck Cond: (t4.a = '1'::uint8)
+   Recheck Cond: (t4.a = '1'::uint4)
    ->  Bitmap Index Scan on idx4
-         Index Cond: (t4.a = '1'::uint8)
+         Index Cond: (t4.a = '1'::uint4)
 (5 rows)
 
+set enable_seqscan to on;
 explain(costs off, verbose)select * from t4 where a = 1::uint8;
                QUERY PLAN                
 -----------------------------------------

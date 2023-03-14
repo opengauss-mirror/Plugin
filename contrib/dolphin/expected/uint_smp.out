@@ -266,147 +266,147 @@ insert into join_1 select generate_series(1, 150000);
 insert into join_2 select generate_series(1, 150000);
 set query_dop = 2;
 explain(costs off, verbose) select * from join_1 join join_2;
-                     QUERY PLAN                     
-----------------------------------------------------
- Nested Loop
+                   QUERY PLAN                    
+-------------------------------------------------
+ Streaming(type: LOCAL GATHER dop: 1/2)
    Output: join_1.a, join_2.a
-   ->  Streaming(type: LOCAL GATHER dop: 1/2)
-         Output: join_1.a
-         ->  Seq Scan on uint_smp.join_1
-               Output: join_1.a
-   ->  Materialize
-         Output: join_2.a
-         ->  Streaming(type: LOCAL GATHER dop: 1/2)
+   ->  Nested Loop
+         Output: join_1.a, join_2.a
+         ->  Streaming(type: BROADCAST dop: 2/2)
                Output: join_2.a
                ->  Seq Scan on uint_smp.join_2
                      Output: join_2.a
+         ->  Materialize
+               Output: join_1.a
+               ->  Seq Scan on uint_smp.join_1
+                     Output: join_1.a
 (12 rows)
 
 explain(costs off, verbose) select * from join_1 join join_2 on join_1.a = join_2.a;
-                     QUERY PLAN                     
-----------------------------------------------------
- Hash Join
+                   QUERY PLAN                    
+-------------------------------------------------
+ Streaming(type: LOCAL GATHER dop: 1/2)
    Output: join_1.a, join_2.a
-   Hash Cond: (join_1.a = join_2.a)
-   ->  Streaming(type: LOCAL GATHER dop: 1/2)
-         Output: join_1.a
-         ->  Seq Scan on uint_smp.join_1
+   ->  Hash Join
+         Output: join_1.a, join_2.a
+         Hash Cond: (join_1.a = join_2.a)
+         ->  Streaming(type: BROADCAST dop: 2/2)
                Output: join_1.a
-   ->  Hash
-         Output: join_2.a
-         ->  Streaming(type: LOCAL GATHER dop: 1/2)
+               ->  Seq Scan on uint_smp.join_1
+                     Output: join_1.a
+         ->  Hash
                Output: join_2.a
                ->  Seq Scan on uint_smp.join_2
                      Output: join_2.a
 (13 rows)
 
 explain(costs off, verbose) select * from join_1 left join join_2 on join_1.a = join_2.a;
-                     QUERY PLAN                     
-----------------------------------------------------
- Hash Left Join
+                   QUERY PLAN                    
+-------------------------------------------------
+ Streaming(type: LOCAL GATHER dop: 1/2)
    Output: join_1.a, join_2.a
-   Hash Cond: (join_1.a = join_2.a)
-   ->  Streaming(type: LOCAL GATHER dop: 1/2)
-         Output: join_1.a
-         ->  Seq Scan on uint_smp.join_1
-               Output: join_1.a
-   ->  Hash
-         Output: join_2.a
-         ->  Streaming(type: LOCAL GATHER dop: 1/2)
+   ->  Hash Right Join
+         Output: join_1.a, join_2.a
+         Hash Cond: (join_2.a = join_1.a)
+         ->  Streaming(type: BROADCAST dop: 2/2)
                Output: join_2.a
                ->  Seq Scan on uint_smp.join_2
                      Output: join_2.a
+         ->  Hash
+               Output: join_1.a
+               ->  Seq Scan on uint_smp.join_1
+                     Output: join_1.a
 (13 rows)
 
 explain(costs off, verbose) select * from join_1 right join join_2 on join_1.a = join_2.a;
-                     QUERY PLAN                     
-----------------------------------------------------
- Hash Right Join
+                   QUERY PLAN                    
+-------------------------------------------------
+ Streaming(type: LOCAL GATHER dop: 1/2)
    Output: join_1.a, join_2.a
-   Hash Cond: (join_1.a = join_2.a)
-   ->  Streaming(type: LOCAL GATHER dop: 1/2)
-         Output: join_1.a
-         ->  Seq Scan on uint_smp.join_1
+   ->  Hash Right Join
+         Output: join_1.a, join_2.a
+         Hash Cond: (join_1.a = join_2.a)
+         ->  Streaming(type: BROADCAST dop: 2/2)
                Output: join_1.a
-   ->  Hash
-         Output: join_2.a
-         ->  Streaming(type: LOCAL GATHER dop: 1/2)
+               ->  Seq Scan on uint_smp.join_1
+                     Output: join_1.a
+         ->  Hash
                Output: join_2.a
                ->  Seq Scan on uint_smp.join_2
                      Output: join_2.a
 (13 rows)
 
 explain(costs off, verbose) select * from join_1 inner join join_2 on join_1.a = join_2.a;
-                     QUERY PLAN                     
-----------------------------------------------------
- Hash Join
+                   QUERY PLAN                    
+-------------------------------------------------
+ Streaming(type: LOCAL GATHER dop: 1/2)
    Output: join_1.a, join_2.a
-   Hash Cond: (join_1.a = join_2.a)
-   ->  Streaming(type: LOCAL GATHER dop: 1/2)
-         Output: join_1.a
-         ->  Seq Scan on uint_smp.join_1
+   ->  Hash Join
+         Output: join_1.a, join_2.a
+         Hash Cond: (join_1.a = join_2.a)
+         ->  Streaming(type: BROADCAST dop: 2/2)
                Output: join_1.a
-   ->  Hash
-         Output: join_2.a
-         ->  Streaming(type: LOCAL GATHER dop: 1/2)
+               ->  Seq Scan on uint_smp.join_1
+                     Output: join_1.a
+         ->  Hash
                Output: join_2.a
                ->  Seq Scan on uint_smp.join_2
                      Output: join_2.a
 (13 rows)
 
 explain(costs off, verbose) select /*+ nestloop(join_1 join_2)*/ * from join_1 left join join_2 on join_1.a = join_2.a;
-                     QUERY PLAN                     
-----------------------------------------------------
- Nested Loop Left Join
+                      QUERY PLAN                       
+-------------------------------------------------------
+ Streaming(type: LOCAL GATHER dop: 1/2)
    Output: join_1.a, join_2.a
-   Join Filter: (join_1.a = join_2.a)
-   ->  Streaming(type: LOCAL GATHER dop: 1/2)
-         Output: join_1.a
+   ->  Nested Loop Left Join
+         Output: join_1.a, join_2.a
+         Join Filter: (join_1.a = join_2.a)
          ->  Seq Scan on uint_smp.join_1
                Output: join_1.a
-   ->  Materialize
-         Output: join_2.a
-         ->  Streaming(type: LOCAL GATHER dop: 1/2)
+         ->  Materialize
                Output: join_2.a
-               ->  Seq Scan on uint_smp.join_2
+               ->  Streaming(type: BROADCAST dop: 2/2)
                      Output: join_2.a
+                     ->  Seq Scan on uint_smp.join_2
+                           Output: join_2.a
 (13 rows)
 
 explain(costs off, verbose) select /*+ hashjoin(join_1 join_2)*/ * from join_1 left join join_2 on join_1.a = join_2.a;
-                     QUERY PLAN                     
-----------------------------------------------------
- Hash Left Join
+                   QUERY PLAN                    
+-------------------------------------------------
+ Streaming(type: LOCAL GATHER dop: 1/2)
    Output: join_1.a, join_2.a
-   Hash Cond: (join_1.a = join_2.a)
-   ->  Streaming(type: LOCAL GATHER dop: 1/2)
-         Output: join_1.a
-         ->  Seq Scan on uint_smp.join_1
-               Output: join_1.a
-   ->  Hash
-         Output: join_2.a
-         ->  Streaming(type: LOCAL GATHER dop: 1/2)
+   ->  Hash Right Join
+         Output: join_1.a, join_2.a
+         Hash Cond: (join_2.a = join_1.a)
+         ->  Streaming(type: BROADCAST dop: 2/2)
                Output: join_2.a
                ->  Seq Scan on uint_smp.join_2
                      Output: join_2.a
+         ->  Hash
+               Output: join_1.a
+               ->  Seq Scan on uint_smp.join_1
+                     Output: join_1.a
 (13 rows)
 
 explain(costs off, verbose) select /*+ mergejoin(join_1 join_2)*/ * from join_1 left join join_2 on join_1.a = join_2.a;
 WARNING:  unused hint: MergeJoin(join_1 join_2)
-                     QUERY PLAN                     
-----------------------------------------------------
- Hash Left Join
+                   QUERY PLAN                    
+-------------------------------------------------
+ Streaming(type: LOCAL GATHER dop: 1/2)
    Output: join_1.a, join_2.a
-   Hash Cond: (join_1.a = join_2.a)
-   ->  Streaming(type: LOCAL GATHER dop: 1/2)
-         Output: join_1.a
-         ->  Seq Scan on uint_smp.join_1
-               Output: join_1.a
-   ->  Hash
-         Output: join_2.a
-         ->  Streaming(type: LOCAL GATHER dop: 1/2)
+   ->  Hash Right Join
+         Output: join_1.a, join_2.a
+         Hash Cond: (join_2.a = join_1.a)
+         ->  Streaming(type: BROADCAST dop: 2/2)
                Output: join_2.a
                ->  Seq Scan on uint_smp.join_2
                      Output: join_2.a
+         ->  Hash
+               Output: join_1.a
+               ->  Seq Scan on uint_smp.join_1
+                     Output: join_1.a
 (13 rows)
 
 drop schema uint_smp cascade;
