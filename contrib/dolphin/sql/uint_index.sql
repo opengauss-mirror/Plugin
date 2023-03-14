@@ -181,7 +181,9 @@ analyze t4;
 
 explain(costs off, verbose)select * from t4 where a = 1::uint1;
 explain(costs off, verbose)select * from t4 where a = 1::uint2;
+set enable_seqscan to off;
 explain(costs off, verbose)select * from t4 where a = 1::uint4;
+set enable_seqscan to on;
 explain(costs off, verbose)select * from t4 where a = 1::uint8;
 explain(costs off, verbose)select * from t4 where a = 1::int1;
 explain(costs off, verbose)select * from t4 where a = 1::int2;
@@ -212,7 +214,9 @@ analyze t4;
 
 explain(costs off, verbose)select * from t4 where a = 1::uint1;
 explain(costs off, verbose)select * from t4 where a = 1::uint2;
+set enable_seqscan to off;
 explain(costs off, verbose)select * from t4 where a = 1::uint4;
+set enable_seqscan to on;
 explain(costs off, verbose)select * from t4 where a = 1::uint8;
 explain(costs off, verbose)select * from t4 where a = 1::int1;
 explain(costs off, verbose)select * from t4 where a = 1::int2;

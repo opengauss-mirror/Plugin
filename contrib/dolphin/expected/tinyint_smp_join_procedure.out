@@ -75,17 +75,17 @@ insert into join_1 select a % 128 from t2;
 insert into join_2 select a % 128 from t2;
 set query_dop = 2;
 explain(costs off, verbose) select * from join_1 join join_2;
-                     QUERY PLAN                     
-----------------------------------------------------
- Nested Loop
+                    QUERY PLAN                    
+--------------------------------------------------
+ Streaming(type: LOCAL GATHER dop: 1/2)
    Output: join_1.a, join_2.a
-   ->  Streaming(type: LOCAL GATHER dop: 1/2)
-         Output: join_1.a
-         ->  Seq Scan on tinyint_smp.join_1
+   ->  Nested Loop
+         Output: join_1.a, join_2.a
+         ->  Streaming(type: BROADCAST dop: 2/2)
                Output: join_1.a
-   ->  Materialize
-         Output: join_2.a
-         ->  Streaming(type: LOCAL GATHER dop: 1/2)
+               ->  Seq Scan on tinyint_smp.join_1
+                     Output: join_1.a
+         ->  Materialize
                Output: join_2.a
                ->  Seq Scan on tinyint_smp.join_2
                      Output: join_2.a
