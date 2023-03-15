@@ -46,7 +46,7 @@ int dophin_conn_handshake(Port* port)
     next_seqid = 0;
 
     // send handshakev10 packet
-    network_mysqld_auth_challenge *challenge = make_mysqld_handshakev10_packet(scramble); 
+    network_mysqld_auth_challenge *challenge = make_mysqld_handshakev10_packet(scramble);
     send_auth_challenge_packet(buf, challenge);
     
     // flush send buffer data to client

@@ -105,11 +105,6 @@ int dolphin_process_command(StringInfo buf)
         }
         case COM_QUIT: {
             proc_exit(0);
-            // Port *port = u_sess->proc_cxt.MyProcPort;
-            // if (port->sock >= 0) {
-            //     StreamClose(port->sock);
-            // }
-            // ereport(ERROR, (errcode(ERRCODE_INTERNAL_ERROR), errmsg("response of COM_QUIT packet."))); 
             break;
         }
         case COM_INIT_DB: {

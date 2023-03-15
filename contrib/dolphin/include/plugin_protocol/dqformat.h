@@ -29,7 +29,7 @@
 #include "commands/prepare.h"
 
 #define C(x) x, sizeof(x) - 1
-#define param_isnull(PARAM, BITS) ((BITS)[PARAM / 8] & (1 << ((PARAM) % 8)))
+#define param_isnull(PARAM, BITS) ((BITS)[(PARAM) / 8] & (1 << ((PARAM) % 8)))
 
 typedef enum {
     NETWORK_MYSQLD_PROTOCOL_VERSION_41
@@ -88,8 +88,7 @@ typedef struct com_stmt_param {
     union {
         const char *text;
         uint64 i8;
-        uint32 i4;        
-        // uint16 i2; 
+        int32 i4;
         uint8 i1;
         union {
             float4 f4;
@@ -101,7 +100,6 @@ typedef struct com_stmt_param {
         } d;
         proto_tm tm;
     } value;
-    // char *value;
 } com_stmt_param;
 
 typedef struct com_stmt_exec_request {
@@ -112,7 +110,7 @@ typedef struct com_stmt_exec_request {
     char *null_bitmap;
     uint32 param_count;
     com_stmt_param *parameter_values;
-} com_stmt_exec_request; 
+} com_stmt_exec_request;
 
 typedef struct {
     uint64 affected_rows;

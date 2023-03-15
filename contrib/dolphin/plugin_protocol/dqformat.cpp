@@ -31,7 +31,7 @@
 #include "plugin_utils/year.h"
 #include "plugin_utils/date.h"
 
-#define PRINTABLE_CHARS_COUNT 62 
+#define PRINTABLE_CHARS_COUNT 62
 #define HANDSHAKE_RESPONSE_RESERVED_BYTES 23
 
 #define AUTH_PLUGIN_DATA_PART_1 8
@@ -42,7 +42,8 @@
 #define DEFAULLT_DATA_FIELD_LEN 100
 #define DOLPHIN_BLOB_LENGTH 65535
 
-static char PRINTABLE_CHARS[PRINTABLE_CHARS_COUNT + 1] = "1234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+static char PRINTABLE_CHARS[PRINTABLE_CHARS_COUNT + 1] =
+                                "1234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
 network_mysqld_auth_challenge* make_mysqld_handshakev10_packet(char *scramble)
 {
@@ -51,7 +52,7 @@ network_mysqld_auth_challenge* make_mysqld_handshakev10_packet(char *scramble)
     challenge->auth_plugin_name = pstrdup("mysql_native_password");
     challenge->server_version_str = pstrdup("5.7.38-dophin-server");
     challenge->charset = 0x21;  /* utf8_general_ci */
-    challenge->server_status = SERVER_STATUS_AUTOCOMMIT; 
+    challenge->server_status = SERVER_STATUS_AUTOCOMMIT;
     challenge->thread_id = gs_atomic_add_32(&g_proto_ctx.connect_id, 1);
 
     // generate a random challenge
@@ -60,13 +61,13 @@ network_mysqld_auth_challenge* make_mysqld_handshakev10_packet(char *scramble)
         ereport(ERROR, (errmsg("Failed to Generate the random number,errcode:%d", retval)));
     }
 
-    // translate random string to printable chars 
+    // translate random string to printable chars
     int index;
     for (int i = 0; i < AUTH_PLUGIN_DATA_LEN; i++) {
-        index = (unsigned char)challenge->auth_plugin_data[i] % PRINTABLE_CHARS_COUNT; 
-        challenge->auth_plugin_data[i] = PRINTABLE_CHARS[index]; 
+        index = (unsigned char)challenge->auth_plugin_data[i] % PRINTABLE_CHARS_COUNT;
+        challenge->auth_plugin_data[i] = PRINTABLE_CHARS[index];
     }
-    challenge->auth_plugin_data[AUTH_PLUGIN_DATA_LEN] = 0x00; 
+    challenge->auth_plugin_data[AUTH_PLUGIN_DATA_LEN] = 0x00;
 
     errno_t rc = memcpy_s(scramble, AUTH_PLUGIN_DATA_LEN + 1, challenge->auth_plugin_data, AUTH_PLUGIN_DATA_LEN);
     securec_check(rc, "\0", "\0");
