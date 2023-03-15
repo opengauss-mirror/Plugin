@@ -511,6 +511,7 @@ static void processFunctionRecordOutParam(int varno, Oid funcoid, int* outparam)
 %token <keyword>	K_HANDLER
 %token <keyword>	K_HINT
 %token <keyword>	K_IF
+%token <keyword>	K_IGNORE
 %token <keyword>	K_IMMEDIATE
 %token <keyword>    K_INSTANTIATION
 %token <keyword>	K_IN
@@ -9410,7 +9411,9 @@ make_execsql_stmt(int firsttoken, int location)
 
         if (tok == K_INTO)
         {
-            if (prev_tok == K_INSERT || prev_tok == K_REPLACE || (prev_tok == COMMENTSTRING && (prev_prev_tok == K_INSERT || prev_prev_tok == K_REPLACE))) {
+            if (prev_tok == K_INSERT || prev_tok == K_REPLACE ||
+            	(prev_tok == COMMENTSTRING && (prev_prev_tok == K_INSERT || prev_prev_tok == K_REPLACE)) ||
+            	prev_tok == K_IGNORE) {
                 insert_stmt = true;
                 continue;	/* INSERT INTO is not an INTO-target */
             }
