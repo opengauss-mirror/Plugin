@@ -52,7 +52,9 @@
 #include "miscadmin.h"
 #include "nodes/makefuncs.h"
 #include "nodes/nodeFuncs.h"
-#include "optimizer/planner.h"
+#include "plugin_utils/fmgr.h"
+#include "plugin_commands/mysqlmode.h"
+#include "plugin_optimizer/planner.h"
 #include "parser/parse_coerce.h"
 #include "pgstat.h"
 #include "utils/acl.h"
@@ -156,6 +158,10 @@ static Datum ExecEvalGroupingIdExpr(
 bool func_has_refcursor_args(Oid Funcid, FunctionCallInfoData* fcinfo);
 extern struct varlena *heap_tuple_fetch_and_copy(Relation rel, struct varlena *attr, bool needcheck);
 static void check_huge_clob_paramter(FunctionCallInfoData* fcinfo, bool is_have_huge_clob);
+
+#ifdef DOLPHIN
+static Datum GetBmodeCoercibleDatum(Oid sourceOid, Oid targetOid, Datum datum, AttrNumber fieldnum);
+#endif
 
 THR_LOCAL PLpgSQL_execstate* plpgsql_estate = NULL;
 
@@ -5167,6 +5173,33 @@ static Datum ExecEvalFieldSelect(FieldSelectState* fstate, ExprContext* econtext
        *isNull = true;
        return (Datum)0;
    }
+   
+#ifdef DOLPHIN
+    if (fselect->resulttype == attr->atttypid) {
+        /* heap_getattr needs a HeapTuple not a bare HeapTupleHeader */
+        tmptup.t_len = HeapTupleHeaderGetDatumLength(tuple);
+        tmptup.t_data = tuple;
+
+        result = tableam_tops_tuple_getattr(&tmptup, fieldnum, tupDesc, isNull);
+        return result;
+    }
+
+    if (ENABLE_B_CMPT_MODE) {
+        tmptup.t_len = HeapTupleHeaderGetDatumLength(tuple);
+        tmptup.t_data = tuple;
+
+        result = tableam_tops_tuple_getattr(&tmptup, fieldnum, tupDesc, isNull);
+        result = GetBmodeCoercibleDatum(attr->atttypid, fselect->resulttype, result, fieldnum);
+    } else {
+        ereport(ERROR,
+            (errcode(ERRCODE_DATATYPE_MISMATCH),
+                errmsg("attribute %d has wrong type", fieldnum),
+                errdetail("Table has type %s, but query expects %s.",
+                    format_type_be(attr->atttypid),
+                    format_type_be(fselect->resulttype))));
+    }
+    return result;
+#else
 
    /* Check for type mismatch --- possible after ALTER COLUMN TYPE? */
    /* As in ExecEvalScalarVar, we should but can't check typmod */
@@ -5184,7 +5217,104 @@ static Datum ExecEvalFieldSelect(FieldSelectState* fstate, ExprContext* econtext
 
    result = tableam_tops_tuple_getattr(&tmptup, fieldnum, tupDesc, isNull);
    return result;
+#endif
 }
+
+#ifdef DOLPHIN
+static Datum GetBmodeCoercibleDatum(Oid sourceOid, Oid targetOid, Datum datum, AttrNumber fieldnum)
+{
+    bool isOutRange = false;
+
+    if (sourceOid == INT8OID) {
+        int64 dt = DatumGetInt64(datum);
+        switch (targetOid) {
+            case INT4OID:
+                if (dt >= PG_INT32_MIN && dt <= PG_INT32_MAX) {
+                    PG_RETURN_INT32((int32)dt);
+                }
+                isOutRange = true;
+                break;
+            case INT2OID:
+                if (dt >= SHRT_MIN && dt <= SHRT_MAX) {
+                    PG_RETURN_INT16((int16)dt);
+                }
+                isOutRange = true;
+                break;
+            case INT1OID:
+                if (dt >= CHAR_MIN && dt <= CHAR_MAX) {
+                    PG_RETURN_INT8((int8)dt);
+                }
+                isOutRange = true;
+                break;
+            default:
+                break;
+        }
+    } else if (sourceOid == INT4OID) {
+            int32 dt = DatumGetInt32(datum);
+            switch (targetOid) {
+                case INT2OID:
+                    if (dt >= SHRT_MIN && dt <= SHRT_MAX) {
+                        PG_RETURN_INT16((int16)dt);
+                    }
+                    isOutRange = true;
+                    break;
+                case INT1OID:
+                    if (dt >= CHAR_MIN && dt <= CHAR_MAX) {
+                        PG_RETURN_INT8((int8)dt);
+                    }
+                    isOutRange = true;
+                    break;
+                default:
+                    break;
+            }
+    } else if (sourceOid == UINT8OID) {
+        uint64 dt = DatumGetUInt64(datum);
+        if (targetOid == UINT4OID) {
+            if (dt <= UINT_MAX) {
+                PG_RETURN_UINT32((uint32)dt);
+            }
+            isOutRange = true;
+        } else if (targetOid == UINT2OID) {
+            if (dt <= USHRT_MAX) {
+                PG_RETURN_UINT16((uint16)dt);
+            }
+            isOutRange = true;
+        } else if (targetOid == UINT1OID) {
+            if (dt <= UCHAR_MAX) {
+                PG_RETURN_UINT8((uint8)dt);
+            }
+            isOutRange = true;
+        }
+    } else if (sourceOid == UINT4OID) {
+        uint32 dt = DatumGetUInt32(datum);
+        if (targetOid == UINT2OID) {
+            if (dt <= USHRT_MAX) {
+                PG_RETURN_UINT16((uint16)dt);
+            }
+            isOutRange = true;
+        } else if (targetOid == UINT1OID) {
+            if (dt <= UCHAR_MAX) {
+                PG_RETURN_UINT8((uint8)dt);
+            }
+            isOutRange = true;
+        }
+    }
+
+    if (isOutRange) {
+        ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE),
+            errmsg("%s out of range", format_type_be(targetOid))));
+    }
+
+    ereport(ERROR,
+        (errcode(ERRCODE_DATATYPE_MISMATCH),
+            errmsg("attribute %d has wrong type", fieldnum),
+            errdetail("Table has type %s, but query expects %s.",
+                format_type_be(sourceOid),
+                format_type_be(targetOid))));
+
+    return (Datum)NULL; /* silence compiler */
+}
+#endif
 
 /* ----------------------------------------------------------------
 *		ExecEvalFieldStore
