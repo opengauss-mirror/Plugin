@@ -20,7 +20,7 @@
 #ifndef INT8_H
 #define INT8_H
 
-#include "fmgr.h"
+#include "plugin_utils/fmgr.h"
 
 extern bool scanint8(const char* str, bool errorOK, int64* result);
 

@@ -10,6 +10,7 @@ optimizer_util = plugin_optimizer/util
 pl = plugin_pl/plpgsql/src
 adt = $(utils)/adt
 mb = $(utils)/mb
+fmgr = $(utils)/fmgr
 vector = plugin_vector
 storage = plugin_storage
 catalog = plugin_catalog
@@ -54,7 +55,9 @@ OBJS += $(vector)/vecfuncache.o
 
 OBJS += $(mb)/mbutils.o
 
-OBJS += $(executor)/execQual.o
+OBJS += $(fmgr)/fmgr.o
+
+OBJS += $(executor)/execQual.o $(executor)/functions.o
 
 OBJS += $(storage)/hashfunc.o
 
@@ -62,7 +65,7 @@ OBJS += $(plan)/pgxcplan_single.o $(plan)/planner.o $(plan)/streamwalker.o $(pla
 
 OBJS += $(prep)/prepunion.o
 
-OBJS += $(optimizer_util)/plancat.o $(optimizer_util)/relnode.o
+OBJS += $(optimizer_util)/plancat.o $(optimizer_util)/relnode.o $(optimizer_util)/clauses.o
 
 OBJS += $(commands)/functioncmds.o $(commands)/foreigncmds.o $(commands)/copy.o $(commands)/schemacmds.o
 

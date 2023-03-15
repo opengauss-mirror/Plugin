@@ -35,7 +35,7 @@ ifneq "$(MAKECMDGOALS)" "clean"
   endif
 endif
 
-OBJS = execQual.o
+OBJS = execQual.o functions.o
        
 
 override CPPFLAGS += -D__STDC_FORMAT_MACROS

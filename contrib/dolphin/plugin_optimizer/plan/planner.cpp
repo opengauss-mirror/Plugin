@@ -39,7 +39,7 @@
 #ifdef OPTIMIZER_DEBUG
 #include "nodes/print.h"
 #endif
-#include "optimizer/clauses.h"
+#include "plugin_optimizer/clauses.h"
 #include "optimizer/cost.h"
 #include "optimizer/dynsmp.h"
 #include "optimizer/nodegroups.h"
