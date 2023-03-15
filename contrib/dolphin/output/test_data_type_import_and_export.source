@@ -1,0 +1,2345 @@
+--数据类型测试用例
+drop database if exists dump_data_type_db;
+NOTICE:  database "dump_data_type_db" does not exist, skipping
+drop database if exists restore_data_type_db;
+NOTICE:  database "restore_data_type_db" does not exist, skipping
+create database dump_data_type_db with dbcompatibility = 'B';
+create database restore_data_type_db with dbcompatibility = 'B';
+\c dump_data_type_db
+--数值类型
+create table value_type_001(c tinyint(10));
+insert into value_type_001 values(-128);
+insert into value_type_001 values(127);
+create table value_type_002(c tinyint(10) unsigned);
+insert into value_type_002 values(0);
+insert into value_type_002 values(255);
+create table value_type_003(c tinyint(10) zerofill);
+insert into value_type_003 values(0);
+insert into value_type_003 values(255);
+create table value_type_004(c tinyint(10) unsigned zerofill);
+insert into value_type_004 values(0);
+insert into value_type_004 values(255);
+create table value_type_005(c smallint(10)) with (orientation = column);
+insert into value_type_005 values(-32768);
+insert into value_type_005 values(32767);
+create table value_type_006(c smallint(10) unsigned);
+insert into value_type_006 values(0);
+insert into value_type_006 values(65535);
+create table value_type_007(c smallint(10) zerofill);
+insert into value_type_007 values(0);
+insert into value_type_007 values(65535);
+create table value_type_008(c smallint(10) unsigned zerofill);
+insert into value_type_008 values(0);
+insert into value_type_008 values(65535);
+create unlogged table value_type_009(c integer(10));
+insert into value_type_009 values(-2147483648);
+insert into value_type_009 values(2147483647);
+create table value_type_010(c integer(10) unsigned);
+insert into value_type_010 values(0);
+insert into value_type_010 values(4294967295);
+create table value_type_011(c integer(10) zerofill);
+insert into value_type_011 values(0);
+insert into value_type_011 values(4294967295);
+create table value_type_012(c integer(10) unsigned zerofill);
+insert into value_type_012 values(0);
+insert into value_type_012 values(4294967295);
+create table value_type_013(c mediumint(10));
+insert into value_type_013 values(-2147483648);
+insert into value_type_013 values(2147483647);
+create table value_type_014(c mediumint(10) unsigned);
+insert into value_type_014 values(0);
+insert into value_type_014 values(4294967295);
+create table value_type_015(c mediumint(10) zerofill);
+insert into value_type_015 values(0);
+insert into value_type_015 values(4294967295);
+create table value_type_016(c mediumint(10) unsigned zerofill);
+insert into value_type_016 values(0);
+insert into value_type_016 values(4294967295);
+create table value_type_017(c bigint(10));
+insert into value_type_017 values(-9223372036854775808);
+insert into value_type_017 values(9223372036854775807);
+create table value_type_018(c bigint(10) unsigned);
+insert into value_type_018 values(0);
+insert into value_type_018 values(18446744073709551615);
+create table value_type_019(c bigint(10) zerofill);
+insert into value_type_019 values(0);
+insert into value_type_019 values(18446744073709551615);
+create table value_type_020(c bigint(10) unsigned zerofill);
+insert into value_type_020 values(0);
+insert into value_type_020 values(18446744073709551615);
+create table value_type_021(c numeric) with (storage_type = ustore);;
+create table value_type_022(c numeric(10));
+create table value_type_023(c numeric(10,2));
+create table value_type_024(c dec);
+create table value_type_025(c dec(10));
+create table value_type_026(c dec(10,2));
+create table value_type_027(c decimal);
+create table value_type_028(c decimal(10));
+create table value_type_029(c decimal(10,2));
+create table value_type_030(c fixed);
+create table value_type_031(c fixed(10));
+create table value_type_032(c fixed(10,2));
+create table value_type_033(c float(10));
+create table value_type_034(c float(10,2));
+create table value_type_035(c float4(10));
+create table value_type_036(c float4(10,2));
+create table value_type_037(c double);
+create table value_type_038(c double(10,2));
+create table value_type_039(c real(10,2));
+create table value_type_040(c double precision(10,2));
+--字符类型
+create table character_type_001(c national varchar(10));
+create table character_type_002(c nvarchar);
+create table character_type_003(c text(10));
+create table character_type_004(c tinytext(10));
+create table character_type_005(c mediumint(10));
+create table character_type_006(c longtext(10));
+--布尔类型
+create table bool_type_001(c bool);
+--时间日期类型
+create table time_date_type_001(c date);
+create table time_date_type_002(c time);
+create table time_date_type_003(c time(6));
+create table time_date_type_004(c datetime);
+create table time_date_type_005(c datetime(6));
+create table time_date_type_006(c timestamp);
+create table time_date_type_007(c timestamp(6));
+create table time_date_type_008(c year);
+create table time_date_type_009(c year(2));
+create table time_date_type_010(c year(4));
+--位串类型
+create table bitstring_type_001(c bit);
+create table bitstring_type_002(c bit(10));
+create table bitstring_type_003(c bit varying(10));
+--枚举类型
+create table enum_type_001(name varchar(40), gender enum('male','female'));
+--二进制类型
+create table binary_type_001(c blob);
+create table binary_type_002(c tinyblob);
+create table binary_type_003(c mediumblob);
+create table binary_type_004(c longblob);
+create table binary_type_005(c binary);
+create table binary_type_006(c varbinary);
+\d value_type_001
+Table "public.value_type_001"
+ Column |  Type   | Modifiers 
+--------+---------+-----------
+ c      | tinyint | 
+
+\d value_type_002
+Table "public.value_type_002"
+ Column | Type  | Modifiers 
+--------+-------+-----------
+ c      | uint1 | 
+
+\d value_type_003
+Table "public.value_type_003"
+ Column | Type  | Modifiers 
+--------+-------+-----------
+ c      | uint1 | 
+
+\d value_type_004
+Table "public.value_type_004"
+ Column | Type  | Modifiers 
+--------+-------+-----------
+ c      | uint1 | 
+
+\d value_type_005
+ Table "public.value_type_005"
+ Column |   Type   | Modifiers 
+--------+----------+-----------
+ c      | smallint | 
+
+\d value_type_006
+Table "public.value_type_006"
+ Column | Type  | Modifiers 
+--------+-------+-----------
+ c      | uint2 | 
+
+\d value_type_007
+Table "public.value_type_007"
+ Column | Type  | Modifiers 
+--------+-------+-----------
+ c      | uint2 | 
+
+\d value_type_008
+Table "public.value_type_008"
+ Column | Type  | Modifiers 
+--------+-------+-----------
+ c      | uint2 | 
+
+\d value_type_009
+Unlogged table "public.value_type_009"
+ Column |  Type   | Modifiers 
+--------+---------+-----------
+ c      | integer | 
+
+\d value_type_010
+Table "public.value_type_010"
+ Column | Type  | Modifiers 
+--------+-------+-----------
+ c      | uint4 | 
+
+\d value_type_011
+Table "public.value_type_011"
+ Column | Type  | Modifiers 
+--------+-------+-----------
+ c      | uint4 | 
+
+\d value_type_012
+Table "public.value_type_012"
+ Column | Type  | Modifiers 
+--------+-------+-----------
+ c      | uint4 | 
+
+\d value_type_013
+Table "public.value_type_013"
+ Column |  Type   | Modifiers 
+--------+---------+-----------
+ c      | integer | 
+
+\d value_type_014
+Table "public.value_type_014"
+ Column | Type  | Modifiers 
+--------+-------+-----------
+ c      | uint4 | 
+
+\d value_type_015
+Table "public.value_type_015"
+ Column | Type  | Modifiers 
+--------+-------+-----------
+ c      | uint4 | 
+
+\d value_type_016
+Table "public.value_type_016"
+ Column | Type  | Modifiers 
+--------+-------+-----------
+ c      | uint4 | 
+
+\d value_type_017
+Table "public.value_type_017"
+ Column |  Type  | Modifiers 
+--------+--------+-----------
+ c      | bigint | 
+
+\d value_type_018
+Table "public.value_type_018"
+ Column | Type  | Modifiers 
+--------+-------+-----------
+ c      | uint8 | 
+
+\d value_type_019
+Table "public.value_type_019"
+ Column | Type  | Modifiers 
+--------+-------+-----------
+ c      | uint8 | 
+
+\d value_type_020
+Table "public.value_type_020"
+ Column | Type  | Modifiers 
+--------+-------+-----------
+ c      | uint8 | 
+
+\d value_type_021
+   Table "public.value_type_021"
+ Column |     Type      | Modifiers 
+--------+---------------+-----------
+ c      | numeric(10,0) | 
+
+\d value_type_022
+   Table "public.value_type_022"
+ Column |     Type      | Modifiers 
+--------+---------------+-----------
+ c      | numeric(10,0) | 
+
+\d value_type_023
+   Table "public.value_type_023"
+ Column |     Type      | Modifiers 
+--------+---------------+-----------
+ c      | numeric(10,2) | 
+
+\d value_type_024
+   Table "public.value_type_024"
+ Column |     Type      | Modifiers 
+--------+---------------+-----------
+ c      | numeric(10,0) | 
+
+\d value_type_025
+   Table "public.value_type_025"
+ Column |     Type      | Modifiers 
+--------+---------------+-----------
+ c      | numeric(10,0) | 
+
+\d value_type_026
+   Table "public.value_type_026"
+ Column |     Type      | Modifiers 
+--------+---------------+-----------
+ c      | numeric(10,2) | 
+
+\d value_type_027
+   Table "public.value_type_027"
+ Column |     Type      | Modifiers 
+--------+---------------+-----------
+ c      | numeric(10,0) | 
+
+\d value_type_028
+   Table "public.value_type_028"
+ Column |     Type      | Modifiers 
+--------+---------------+-----------
+ c      | numeric(10,0) | 
+
+\d value_type_029
+   Table "public.value_type_029"
+ Column |     Type      | Modifiers 
+--------+---------------+-----------
+ c      | numeric(10,2) | 
+
+\d value_type_030
+   Table "public.value_type_030"
+ Column |     Type      | Modifiers 
+--------+---------------+-----------
+ c      | numeric(10,0) | 
+
+\d value_type_031
+   Table "public.value_type_031"
+ Column |     Type      | Modifiers 
+--------+---------------+-----------
+ c      | numeric(10,0) | 
+
+\d value_type_032
+   Table "public.value_type_032"
+ Column |     Type      | Modifiers 
+--------+---------------+-----------
+ c      | numeric(10,2) | 
+
+\d value_type_033
+Table "public.value_type_033"
+ Column | Type | Modifiers 
+--------+------+-----------
+ c      | real | 
+
+\d value_type_034
+   Table "public.value_type_034"
+ Column |     Type      | Modifiers 
+--------+---------------+-----------
+ c      | numeric(10,2) | 
+
+\d value_type_035
+Table "public.value_type_035"
+ Column | Type | Modifiers 
+--------+------+-----------
+ c      | real | 
+
+\d value_type_036
+   Table "public.value_type_036"
+ Column |     Type      | Modifiers 
+--------+---------------+-----------
+ c      | numeric(10,2) | 
+
+\d value_type_037
+     Table "public.value_type_037"
+ Column |       Type       | Modifiers 
+--------+------------------+-----------
+ c      | double precision | 
+
+\d value_type_038
+   Table "public.value_type_038"
+ Column |     Type      | Modifiers 
+--------+---------------+-----------
+ c      | numeric(10,2) | 
+
+\d value_type_039
+   Table "public.value_type_039"
+ Column |     Type      | Modifiers 
+--------+---------------+-----------
+ c      | numeric(10,2) | 
+
+\d value_type_040
+   Table "public.value_type_040"
+ Column |     Type      | Modifiers 
+--------+---------------+-----------
+ c      | numeric(10,2) | 
+
+\d character_type_001
+ Table "public.character_type_001"
+ Column |     Type      | Modifiers 
+--------+---------------+-----------
+ c      | nvarchar2(10) | 
+
+\d character_type_002
+Table "public.character_type_002"
+ Column |   Type    | Modifiers 
+--------+-----------+-----------
+ c      | nvarchar2 | 
+
+\d character_type_003
+Table "public.character_type_003"
+ Column | Type | Modifiers 
+--------+------+-----------
+ c      | text | 
+
+\d character_type_004
+Table "public.character_type_004"
+ Column | Type | Modifiers 
+--------+------+-----------
+ c      | text | 
+
+\d character_type_005
+Table "public.character_type_005"
+ Column |  Type   | Modifiers 
+--------+---------+-----------
+ c      | integer | 
+
+\d character_type_006
+Table "public.character_type_006"
+ Column | Type | Modifiers 
+--------+------+-----------
+ c      | text | 
+
+\d bool_type_001
+ Table "public.bool_type_001"
+ Column |  Type   | Modifiers 
+--------+---------+-----------
+ c      | boolean | 
+
+\d time_date_type_001
+Table "public.time_date_type_001"
+ Column | Type | Modifiers 
+--------+------+-----------
+ c      | date | 
+
+\d time_date_type_002
+       Table "public.time_date_type_002"
+ Column |           Type            | Modifiers 
+--------+---------------------------+-----------
+ c      | time(0) without time zone | 
+
+\d time_date_type_003
+       Table "public.time_date_type_003"
+ Column |           Type            | Modifiers 
+--------+---------------------------+-----------
+ c      | time(6) without time zone | 
+
+\d time_date_type_004
+          Table "public.time_date_type_004"
+ Column |              Type              | Modifiers 
+--------+--------------------------------+-----------
+ c      | timestamp(0) without time zone | 
+
+\d time_date_type_005
+          Table "public.time_date_type_005"
+ Column |              Type              | Modifiers 
+--------+--------------------------------+-----------
+ c      | timestamp(6) without time zone | 
+
+\d time_date_type_006
+        Table "public.time_date_type_006"
+ Column |            Type             | Modifiers 
+--------+-----------------------------+-----------
+ c      | timestamp(0) with time zone | 
+
+\d time_date_type_007
+        Table "public.time_date_type_007"
+ Column |            Type             | Modifiers 
+--------+-----------------------------+-----------
+ c      | timestamp(6) with time zone | 
+
+\d time_date_type_008
+Table "public.time_date_type_008"
+ Column | Type | Modifiers 
+--------+------+-----------
+ c      | year | 
+
+\d time_date_type_009
+Table "public.time_date_type_009"
+ Column |  Type   | Modifiers 
+--------+---------+-----------
+ c      | year(2) | 
+
+\d time_date_type_010
+Table "public.time_date_type_010"
+ Column |  Type   | Modifiers 
+--------+---------+-----------
+ c      | year(4) | 
+
+\d bitstring_type_001
+Table "public.bitstring_type_001"
+ Column |  Type  | Modifiers 
+--------+--------+-----------
+ c      | bit(1) | 
+
+\d bitstring_type_002
+Table "public.bitstring_type_002"
+ Column |  Type   | Modifiers 
+--------+---------+-----------
+ c      | bit(10) | 
+
+\d bitstring_type_003
+  Table "public.bitstring_type_003"
+ Column |      Type       | Modifiers 
+--------+-----------------+-----------
+ c      | bit varying(10) | 
+
+\d enum_type_001
+                  Table "public.enum_type_001"
+ Column |                    Type                    | Modifiers 
+--------+--------------------------------------------+-----------
+ name   | character varying(40)                      | 
+ gender | enum_type_001_gender_2200_anonymous_enum_1 | 
+
+\d binary_type_001
+Table "public.binary_type_001"
+ Column | Type | Modifiers 
+--------+------+-----------
+ c      | blob | 
+
+\d binary_type_002
+Table "public.binary_type_002"
+ Column |   Type   | Modifiers 
+--------+----------+-----------
+ c      | tinyblob | 
+
+\d binary_type_003
+ Table "public.binary_type_003"
+ Column |    Type    | Modifiers 
+--------+------------+-----------
+ c      | mediumblob | 
+
+\d binary_type_004
+Table "public.binary_type_004"
+ Column |   Type   | Modifiers 
+--------+----------+-----------
+ c      | longblob | 
+
+\d binary_type_005
+  Table "public.binary_type_005"
+ Column |    Type     | Modifiers 
+--------+-------------+-----------
+ c      | "binary"(1) | 
+
+\d binary_type_006
+   Table "public.binary_type_006"
+ Column |      Type      | Modifiers 
+--------+----------------+-----------
+ c      | "varbinary"(1) | 
+
+show create table value_type_001;
+     Table      |              Create Table               
+----------------+-----------------------------------------
+ value_type_001 | SET search_path = public;              +
+                | CREATE TABLE value_type_001 (          +
+                |     c tinyint                          +
+                | )                                      +
+                | WITH (orientation=row, compression=no);
+(1 row)
+
+show create table value_type_002;
+     Table      |              Create Table               
+----------------+-----------------------------------------
+ value_type_002 | SET search_path = public;              +
+                | CREATE TABLE value_type_002 (          +
+                |     c uint1                            +
+                | )                                      +
+                | WITH (orientation=row, compression=no);
+(1 row)
+
+show create table value_type_003;
+     Table      |              Create Table               
+----------------+-----------------------------------------
+ value_type_003 | SET search_path = public;              +
+                | CREATE TABLE value_type_003 (          +
+                |     c uint1                            +
+                | )                                      +
+                | WITH (orientation=row, compression=no);
+(1 row)
+
+show create table value_type_004;
+     Table      |              Create Table               
+----------------+-----------------------------------------
+ value_type_004 | SET search_path = public;              +
+                | CREATE TABLE value_type_004 (          +
+                |     c uint1                            +
+                | )                                      +
+                | WITH (orientation=row, compression=no);
+(1 row)
+
+show create table value_type_005;
+     Table      |                Create Table                 
+----------------+---------------------------------------------
+ value_type_005 | SET search_path = public;                  +
+                | CREATE TABLE value_type_005 (              +
+                |     c smallint                             +
+                | )                                          +
+                | WITH (orientation=column, compression=low);
+(1 row)
+
+show create table value_type_006;
+     Table      |              Create Table               
+----------------+-----------------------------------------
+ value_type_006 | SET search_path = public;              +
+                | CREATE TABLE value_type_006 (          +
+                |     c uint2                            +
+                | )                                      +
+                | WITH (orientation=row, compression=no);
+(1 row)
+
+show create table value_type_007;
+     Table      |              Create Table               
+----------------+-----------------------------------------
+ value_type_007 | SET search_path = public;              +
+                | CREATE TABLE value_type_007 (          +
+                |     c uint2                            +
+                | )                                      +
+                | WITH (orientation=row, compression=no);
+(1 row)
+
+show create table value_type_008;
+     Table      |              Create Table               
+----------------+-----------------------------------------
+ value_type_008 | SET search_path = public;              +
+                | CREATE TABLE value_type_008 (          +
+                |     c uint2                            +
+                | )                                      +
+                | WITH (orientation=row, compression=no);
+(1 row)
+
+show create table value_type_009;
+     Table      |              Create Table               
+----------------+-----------------------------------------
+ value_type_009 | SET search_path = public;              +
+                | CREATE UNLOGGED TABLE value_type_009 ( +
+                |     c integer                          +
+                | )                                      +
+                | WITH (orientation=row, compression=no);
+(1 row)
+
+show create table value_type_010;
+     Table      |              Create Table               
+----------------+-----------------------------------------
+ value_type_010 | SET search_path = public;              +
+                | CREATE TABLE value_type_010 (          +
+                |     c uint4                            +
+                | )                                      +
+                | WITH (orientation=row, compression=no);
+(1 row)
+
+show create table value_type_011;
+     Table      |              Create Table               
+----------------+-----------------------------------------
+ value_type_011 | SET search_path = public;              +
+                | CREATE TABLE value_type_011 (          +
+                |     c uint4                            +
+                | )                                      +
+                | WITH (orientation=row, compression=no);
+(1 row)
+
+show create table value_type_012;
+     Table      |              Create Table               
+----------------+-----------------------------------------
+ value_type_012 | SET search_path = public;              +
+                | CREATE TABLE value_type_012 (          +
+                |     c uint4                            +
+                | )                                      +
+                | WITH (orientation=row, compression=no);
+(1 row)
+
+show create table value_type_013;
+     Table      |              Create Table               
+----------------+-----------------------------------------
+ value_type_013 | SET search_path = public;              +
+                | CREATE TABLE value_type_013 (          +
+                |     c integer                          +
+                | )                                      +
+                | WITH (orientation=row, compression=no);
+(1 row)
+
+show create table value_type_014;
+     Table      |              Create Table               
+----------------+-----------------------------------------
+ value_type_014 | SET search_path = public;              +
+                | CREATE TABLE value_type_014 (          +
+                |     c uint4                            +
+                | )                                      +
+                | WITH (orientation=row, compression=no);
+(1 row)
+
+show create table value_type_015;
+     Table      |              Create Table               
+----------------+-----------------------------------------
+ value_type_015 | SET search_path = public;              +
+                | CREATE TABLE value_type_015 (          +
+                |     c uint4                            +
+                | )                                      +
+                | WITH (orientation=row, compression=no);
+(1 row)
+
+show create table value_type_016;
+     Table      |              Create Table               
+----------------+-----------------------------------------
+ value_type_016 | SET search_path = public;              +
+                | CREATE TABLE value_type_016 (          +
+                |     c uint4                            +
+                | )                                      +
+                | WITH (orientation=row, compression=no);
+(1 row)
+
+show create table value_type_017;
+     Table      |              Create Table               
+----------------+-----------------------------------------
+ value_type_017 | SET search_path = public;              +
+                | CREATE TABLE value_type_017 (          +
+                |     c bigint                           +
+                | )                                      +
+                | WITH (orientation=row, compression=no);
+(1 row)
+
+show create table value_type_018;
+     Table      |              Create Table               
+----------------+-----------------------------------------
+ value_type_018 | SET search_path = public;              +
+                | CREATE TABLE value_type_018 (          +
+                |     c uint8                            +
+                | )                                      +
+                | WITH (orientation=row, compression=no);
+(1 row)
+
+show create table value_type_019;
+     Table      |              Create Table               
+----------------+-----------------------------------------
+ value_type_019 | SET search_path = public;              +
+                | CREATE TABLE value_type_019 (          +
+                |     c uint8                            +
+                | )                                      +
+                | WITH (orientation=row, compression=no);
+(1 row)
+
+show create table value_type_020;
+     Table      |              Create Table               
+----------------+-----------------------------------------
+ value_type_020 | SET search_path = public;              +
+                | CREATE TABLE value_type_020 (          +
+                |     c uint8                            +
+                | )                                      +
+                | WITH (orientation=row, compression=no);
+(1 row)
+
+show create table value_type_021;
+     Table      |                         Create Table                         
+----------------+--------------------------------------------------------------
+ value_type_021 | SET search_path = public;                                   +
+                | CREATE TABLE value_type_021 (                               +
+                |     c numeric(10,0)                                         +
+                | )                                                           +
+                | WITH (orientation=row, storage_type=ustore, compression=no);
+(1 row)
+
+show create table value_type_022;
+     Table      |              Create Table               
+----------------+-----------------------------------------
+ value_type_022 | SET search_path = public;              +
+                | CREATE TABLE value_type_022 (          +
+                |     c numeric(10,0)                    +
+                | )                                      +
+                | WITH (orientation=row, compression=no);
+(1 row)
+
+show create table value_type_023;
+     Table      |              Create Table               
+----------------+-----------------------------------------
+ value_type_023 | SET search_path = public;              +
+                | CREATE TABLE value_type_023 (          +
+                |     c numeric(10,2)                    +
+                | )                                      +
+                | WITH (orientation=row, compression=no);
+(1 row)
+
+show create table value_type_024;
+     Table      |              Create Table               
+----------------+-----------------------------------------
+ value_type_024 | SET search_path = public;              +
+                | CREATE TABLE value_type_024 (          +
+                |     c numeric(10,0)                    +
+                | )                                      +
+                | WITH (orientation=row, compression=no);
+(1 row)
+
+show create table value_type_025;
+     Table      |              Create Table               
+----------------+-----------------------------------------
+ value_type_025 | SET search_path = public;              +
+                | CREATE TABLE value_type_025 (          +
+                |     c numeric(10,0)                    +
+                | )                                      +
+                | WITH (orientation=row, compression=no);
+(1 row)
+
+show create table value_type_026;
+     Table      |              Create Table               
+----------------+-----------------------------------------
+ value_type_026 | SET search_path = public;              +
+                | CREATE TABLE value_type_026 (          +
+                |     c numeric(10,2)                    +
+                | )                                      +
+                | WITH (orientation=row, compression=no);
+(1 row)
+
+show create table value_type_027;
+     Table      |              Create Table               
+----------------+-----------------------------------------
+ value_type_027 | SET search_path = public;              +
+                | CREATE TABLE value_type_027 (          +
+                |     c numeric(10,0)                    +
+                | )                                      +
+                | WITH (orientation=row, compression=no);
+(1 row)
+
+show create table value_type_028;
+     Table      |              Create Table               
+----------------+-----------------------------------------
+ value_type_028 | SET search_path = public;              +
+                | CREATE TABLE value_type_028 (          +
+                |     c numeric(10,0)                    +
+                | )                                      +
+                | WITH (orientation=row, compression=no);
+(1 row)
+
+show create table value_type_029;
+     Table      |              Create Table               
+----------------+-----------------------------------------
+ value_type_029 | SET search_path = public;              +
+                | CREATE TABLE value_type_029 (          +
+                |     c numeric(10,2)                    +
+                | )                                      +
+                | WITH (orientation=row, compression=no);
+(1 row)
+
+show create table value_type_030;
+     Table      |              Create Table               
+----------------+-----------------------------------------
+ value_type_030 | SET search_path = public;              +
+                | CREATE TABLE value_type_030 (          +
+                |     c numeric(10,0)                    +
+                | )                                      +
+                | WITH (orientation=row, compression=no);
+(1 row)
+
+show create table value_type_031;
+     Table      |              Create Table               
+----------------+-----------------------------------------
+ value_type_031 | SET search_path = public;              +
+                | CREATE TABLE value_type_031 (          +
+                |     c numeric(10,0)                    +
+                | )                                      +
+                | WITH (orientation=row, compression=no);
+(1 row)
+
+show create table value_type_032;
+     Table      |              Create Table               
+----------------+-----------------------------------------
+ value_type_032 | SET search_path = public;              +
+                | CREATE TABLE value_type_032 (          +
+                |     c numeric(10,2)                    +
+                | )                                      +
+                | WITH (orientation=row, compression=no);
+(1 row)
+
+show create table value_type_033;
+     Table      |              Create Table               
+----------------+-----------------------------------------
+ value_type_033 | SET search_path = public;              +
+                | CREATE TABLE value_type_033 (          +
+                |     c real                             +
+                | )                                      +
+                | WITH (orientation=row, compression=no);
+(1 row)
+
+show create table value_type_034;
+     Table      |              Create Table               
+----------------+-----------------------------------------
+ value_type_034 | SET search_path = public;              +
+                | CREATE TABLE value_type_034 (          +
+                |     c numeric(10,2)                    +
+                | )                                      +
+                | WITH (orientation=row, compression=no);
+(1 row)
+
+show create table value_type_035;
+     Table      |              Create Table               
+----------------+-----------------------------------------
+ value_type_035 | SET search_path = public;              +
+                | CREATE TABLE value_type_035 (          +
+                |     c real                             +
+                | )                                      +
+                | WITH (orientation=row, compression=no);
+(1 row)
+
+show create table value_type_036;
+     Table      |              Create Table               
+----------------+-----------------------------------------
+ value_type_036 | SET search_path = public;              +
+                | CREATE TABLE value_type_036 (          +
+                |     c numeric(10,2)                    +
+                | )                                      +
+                | WITH (orientation=row, compression=no);
+(1 row)
+
+show create table value_type_037;
+     Table      |              Create Table               
+----------------+-----------------------------------------
+ value_type_037 | SET search_path = public;              +
+                | CREATE TABLE value_type_037 (          +
+                |     c double precision                 +
+                | )                                      +
+                | WITH (orientation=row, compression=no);
+(1 row)
+
+show create table value_type_038;
+     Table      |              Create Table               
+----------------+-----------------------------------------
+ value_type_038 | SET search_path = public;              +
+                | CREATE TABLE value_type_038 (          +
+                |     c numeric(10,2)                    +
+                | )                                      +
+                | WITH (orientation=row, compression=no);
+(1 row)
+
+show create table value_type_039;
+     Table      |              Create Table               
+----------------+-----------------------------------------
+ value_type_039 | SET search_path = public;              +
+                | CREATE TABLE value_type_039 (          +
+                |     c numeric(10,2)                    +
+                | )                                      +
+                | WITH (orientation=row, compression=no);
+(1 row)
+
+show create table value_type_040;
+     Table      |              Create Table               
+----------------+-----------------------------------------
+ value_type_040 | SET search_path = public;              +
+                | CREATE TABLE value_type_040 (          +
+                |     c numeric(10,2)                    +
+                | )                                      +
+                | WITH (orientation=row, compression=no);
+(1 row)
+
+show create table character_type_001;
+       Table        |              Create Table               
+--------------------+-----------------------------------------
+ character_type_001 | SET search_path = public;              +
+                    | CREATE TABLE character_type_001 (      +
+                    |     c nvarchar2(10)                    +
+                    | )                                      +
+                    | WITH (orientation=row, compression=no);
+(1 row)
+
+show create table character_type_002;
+       Table        |              Create Table               
+--------------------+-----------------------------------------
+ character_type_002 | SET search_path = public;              +
+                    | CREATE TABLE character_type_002 (      +
+                    |     c nvarchar2                        +
+                    | )                                      +
+                    | WITH (orientation=row, compression=no);
+(1 row)
+
+show create table character_type_003;
+       Table        |              Create Table               
+--------------------+-----------------------------------------
+ character_type_003 | SET search_path = public;              +
+                    | CREATE TABLE character_type_003 (      +
+                    |     c text                             +
+                    | )                                      +
+                    | WITH (orientation=row, compression=no);
+(1 row)
+
+show create table character_type_004;
+       Table        |              Create Table               
+--------------------+-----------------------------------------
+ character_type_004 | SET search_path = public;              +
+                    | CREATE TABLE character_type_004 (      +
+                    |     c text                             +
+                    | )                                      +
+                    | WITH (orientation=row, compression=no);
+(1 row)
+
+show create table character_type_005;
+       Table        |              Create Table               
+--------------------+-----------------------------------------
+ character_type_005 | SET search_path = public;              +
+                    | CREATE TABLE character_type_005 (      +
+                    |     c integer                          +
+                    | )                                      +
+                    | WITH (orientation=row, compression=no);
+(1 row)
+
+show create table character_type_006;
+       Table        |              Create Table               
+--------------------+-----------------------------------------
+ character_type_006 | SET search_path = public;              +
+                    | CREATE TABLE character_type_006 (      +
+                    |     c text                             +
+                    | )                                      +
+                    | WITH (orientation=row, compression=no);
+(1 row)
+
+show create table bool_type_001;
+     Table     |              Create Table               
+---------------+-----------------------------------------
+ bool_type_001 | SET search_path = public;              +
+               | CREATE TABLE bool_type_001 (           +
+               |     c boolean                          +
+               | )                                      +
+               | WITH (orientation=row, compression=no);
+(1 row)
+
+show create table time_date_type_001;
+       Table        |              Create Table               
+--------------------+-----------------------------------------
+ time_date_type_001 | SET search_path = public;              +
+                    | CREATE TABLE time_date_type_001 (      +
+                    |     c date                             +
+                    | )                                      +
+                    | WITH (orientation=row, compression=no);
+(1 row)
+
+show create table time_date_type_002;
+       Table        |              Create Table               
+--------------------+-----------------------------------------
+ time_date_type_002 | SET search_path = public;              +
+                    | CREATE TABLE time_date_type_002 (      +
+                    |     c time(0) without time zone        +
+                    | )                                      +
+                    | WITH (orientation=row, compression=no);
+(1 row)
+
+show create table time_date_type_003;
+       Table        |              Create Table               
+--------------------+-----------------------------------------
+ time_date_type_003 | SET search_path = public;              +
+                    | CREATE TABLE time_date_type_003 (      +
+                    |     c time(6) without time zone        +
+                    | )                                      +
+                    | WITH (orientation=row, compression=no);
+(1 row)
+
+show create table time_date_type_004;
+       Table        |              Create Table               
+--------------------+-----------------------------------------
+ time_date_type_004 | SET search_path = public;              +
+                    | CREATE TABLE time_date_type_004 (      +
+                    |     c timestamp(0) without time zone   +
+                    | )                                      +
+                    | WITH (orientation=row, compression=no);
+(1 row)
+
+show create table time_date_type_005;
+       Table        |              Create Table               
+--------------------+-----------------------------------------
+ time_date_type_005 | SET search_path = public;              +
+                    | CREATE TABLE time_date_type_005 (      +
+                    |     c timestamp(6) without time zone   +
+                    | )                                      +
+                    | WITH (orientation=row, compression=no);
+(1 row)
+
+show create table time_date_type_006;
+       Table        |              Create Table               
+--------------------+-----------------------------------------
+ time_date_type_006 | SET search_path = public;              +
+                    | CREATE TABLE time_date_type_006 (      +
+                    |     c timestamp(0) with time zone      +
+                    | )                                      +
+                    | WITH (orientation=row, compression=no);
+(1 row)
+
+show create table time_date_type_007;
+       Table        |              Create Table               
+--------------------+-----------------------------------------
+ time_date_type_007 | SET search_path = public;              +
+                    | CREATE TABLE time_date_type_007 (      +
+                    |     c timestamp(6) with time zone      +
+                    | )                                      +
+                    | WITH (orientation=row, compression=no);
+(1 row)
+
+show create table time_date_type_008;
+       Table        |              Create Table               
+--------------------+-----------------------------------------
+ time_date_type_008 | SET search_path = public;              +
+                    | CREATE TABLE time_date_type_008 (      +
+                    |     c year                             +
+                    | )                                      +
+                    | WITH (orientation=row, compression=no);
+(1 row)
+
+show create table time_date_type_009;
+       Table        |              Create Table               
+--------------------+-----------------------------------------
+ time_date_type_009 | SET search_path = public;              +
+                    | CREATE TABLE time_date_type_009 (      +
+                    |     c year(2)                          +
+                    | )                                      +
+                    | WITH (orientation=row, compression=no);
+(1 row)
+
+show create table time_date_type_010;
+       Table        |              Create Table               
+--------------------+-----------------------------------------
+ time_date_type_010 | SET search_path = public;              +
+                    | CREATE TABLE time_date_type_010 (      +
+                    |     c year(4)                          +
+                    | )                                      +
+                    | WITH (orientation=row, compression=no);
+(1 row)
+
+show create table bitstring_type_001;
+       Table        |              Create Table               
+--------------------+-----------------------------------------
+ bitstring_type_001 | SET search_path = public;              +
+                    | CREATE TABLE bitstring_type_001 (      +
+                    |     c bit(1)                           +
+                    | )                                      +
+                    | WITH (orientation=row, compression=no);
+(1 row)
+
+show create table bitstring_type_002;
+       Table        |              Create Table               
+--------------------+-----------------------------------------
+ bitstring_type_002 | SET search_path = public;              +
+                    | CREATE TABLE bitstring_type_002 (      +
+                    |     c bit(10)                          +
+                    | )                                      +
+                    | WITH (orientation=row, compression=no);
+(1 row)
+
+show create table bitstring_type_003;
+       Table        |              Create Table               
+--------------------+-----------------------------------------
+ bitstring_type_003 | SET search_path = public;              +
+                    | CREATE TABLE bitstring_type_003 (      +
+                    |     c bit varying(10)                  +
+                    | )                                      +
+                    | WITH (orientation=row, compression=no);
+(1 row)
+
+show create table enum_type_001;
+     Table     |                     Create Table                      
+---------------+-------------------------------------------------------
+ enum_type_001 | SET search_path = public;                            +
+               | CREATE TABLE enum_type_001 (                         +
+               |     name character varying(40),                      +
+               |     gender enum_type_001_gender_2200_anonymous_enum_1+
+               | )                                                    +
+               | WITH (orientation=row, compression=no);
+(1 row)
+
+show create table binary_type_001;
+      Table      |              Create Table               
+-----------------+-----------------------------------------
+ binary_type_001 | SET search_path = public;              +
+                 | CREATE TABLE binary_type_001 (         +
+                 |     c blob                             +
+                 | )                                      +
+                 | WITH (orientation=row, compression=no);
+(1 row)
+
+show create table binary_type_002;
+      Table      |              Create Table               
+-----------------+-----------------------------------------
+ binary_type_002 | SET search_path = public;              +
+                 | CREATE TABLE binary_type_002 (         +
+                 |     c tinyblob                         +
+                 | )                                      +
+                 | WITH (orientation=row, compression=no);
+(1 row)
+
+show create table binary_type_003;
+      Table      |              Create Table               
+-----------------+-----------------------------------------
+ binary_type_003 | SET search_path = public;              +
+                 | CREATE TABLE binary_type_003 (         +
+                 |     c mediumblob                       +
+                 | )                                      +
+                 | WITH (orientation=row, compression=no);
+(1 row)
+
+show create table binary_type_004;
+      Table      |              Create Table               
+-----------------+-----------------------------------------
+ binary_type_004 | SET search_path = public;              +
+                 | CREATE TABLE binary_type_004 (         +
+                 |     c longblob                         +
+                 | )                                      +
+                 | WITH (orientation=row, compression=no);
+(1 row)
+
+show create table binary_type_005;
+      Table      |              Create Table               
+-----------------+-----------------------------------------
+ binary_type_005 | SET search_path = public;              +
+                 | CREATE TABLE binary_type_005 (         +
+                 |     c "binary"(1)                      +
+                 | )                                      +
+                 | WITH (orientation=row, compression=no);
+(1 row)
+
+show create table binary_type_006;
+      Table      |              Create Table               
+-----------------+-----------------------------------------
+ binary_type_006 | SET search_path = public;              +
+                 | CREATE TABLE binary_type_006 (         +
+                 |     c "varbinary"(1)                   +
+                 | )                                      +
+                 | WITH (orientation=row, compression=no);
+(1 row)
+
+\! @abs_bindir@/gs_dump dump_data_type_db -p @portstring@ -f @abs_bindir@/dump_data_type.sql -F p >/dev/null 2>&1; echo $?
+0
+drop table value_type_001;
+drop table value_type_002;
+drop table value_type_003;
+drop table value_type_004;
+drop table value_type_005;
+drop table value_type_006;
+drop table value_type_007;
+drop table value_type_008;
+drop table value_type_009;
+drop table value_type_010;
+drop table value_type_011;
+drop table value_type_012;
+drop table value_type_013;
+drop table value_type_014;
+drop table value_type_015;
+drop table value_type_016;
+drop table value_type_017;
+drop table value_type_018;
+drop table value_type_019;
+drop table value_type_020;
+drop table value_type_021;
+drop table value_type_022;
+drop table value_type_023;
+drop table value_type_024;
+drop table value_type_025;
+drop table value_type_026;
+drop table value_type_027;
+drop table value_type_028;
+drop table value_type_029;
+drop table value_type_030;
+drop table value_type_031;
+drop table value_type_032;
+drop table value_type_033;
+drop table value_type_034;
+drop table value_type_035;
+drop table value_type_036;
+drop table value_type_037;
+drop table value_type_038;
+drop table value_type_039;
+drop table value_type_040;
+drop table character_type_001;
+drop table character_type_002;
+drop table character_type_003;
+drop table character_type_004;
+drop table character_type_005;
+drop table character_type_006;
+drop table bool_type_001;
+drop table time_date_type_001;
+drop table time_date_type_002;
+drop table time_date_type_003;
+drop table time_date_type_004;
+drop table time_date_type_005;
+drop table time_date_type_006;
+drop table time_date_type_007;
+drop table time_date_type_008;
+drop table time_date_type_009;
+drop table time_date_type_010;
+drop table bitstring_type_001;
+drop table bitstring_type_002;
+drop table bitstring_type_003;
+drop table enum_type_001;
+drop table binary_type_001;
+drop table binary_type_002;
+drop table binary_type_003;
+drop table binary_type_004;
+drop table binary_type_005;
+drop table binary_type_006;
+\! @abs_bindir@/gsql restore_data_type_db -p @portstring@ -f @abs_bindir@/dump_data_type.sql > /dev/null 2>&1 ; echo $?
+0
+\c restore_data_type_db
+\d value_type_001
+Table "public.value_type_001"
+ Column |  Type   | Modifiers 
+--------+---------+-----------
+ c      | tinyint | 
+
+\d value_type_002
+Table "public.value_type_002"
+ Column | Type  | Modifiers 
+--------+-------+-----------
+ c      | uint1 | 
+
+\d value_type_003
+Table "public.value_type_003"
+ Column | Type  | Modifiers 
+--------+-------+-----------
+ c      | uint1 | 
+
+\d value_type_004
+Table "public.value_type_004"
+ Column | Type  | Modifiers 
+--------+-------+-----------
+ c      | uint1 | 
+
+\d value_type_005
+ Table "public.value_type_005"
+ Column |   Type   | Modifiers 
+--------+----------+-----------
+ c      | smallint | 
+
+\d value_type_006
+Table "public.value_type_006"
+ Column | Type  | Modifiers 
+--------+-------+-----------
+ c      | uint2 | 
+
+\d value_type_007
+Table "public.value_type_007"
+ Column | Type  | Modifiers 
+--------+-------+-----------
+ c      | uint2 | 
+
+\d value_type_008
+Table "public.value_type_008"
+ Column | Type  | Modifiers 
+--------+-------+-----------
+ c      | uint2 | 
+
+\d value_type_009
+Unlogged table "public.value_type_009"
+ Column |  Type   | Modifiers 
+--------+---------+-----------
+ c      | integer | 
+
+\d value_type_010
+Table "public.value_type_010"
+ Column | Type  | Modifiers 
+--------+-------+-----------
+ c      | uint4 | 
+
+\d value_type_011
+Table "public.value_type_011"
+ Column | Type  | Modifiers 
+--------+-------+-----------
+ c      | uint4 | 
+
+\d value_type_012
+Table "public.value_type_012"
+ Column | Type  | Modifiers 
+--------+-------+-----------
+ c      | uint4 | 
+
+\d value_type_013
+Table "public.value_type_013"
+ Column |  Type   | Modifiers 
+--------+---------+-----------
+ c      | integer | 
+
+\d value_type_014
+Table "public.value_type_014"
+ Column | Type  | Modifiers 
+--------+-------+-----------
+ c      | uint4 | 
+
+\d value_type_015
+Table "public.value_type_015"
+ Column | Type  | Modifiers 
+--------+-------+-----------
+ c      | uint4 | 
+
+\d value_type_016
+Table "public.value_type_016"
+ Column | Type  | Modifiers 
+--------+-------+-----------
+ c      | uint4 | 
+
+\d value_type_017
+Table "public.value_type_017"
+ Column |  Type  | Modifiers 
+--------+--------+-----------
+ c      | bigint | 
+
+\d value_type_018
+Table "public.value_type_018"
+ Column | Type  | Modifiers 
+--------+-------+-----------
+ c      | uint8 | 
+
+\d value_type_019
+Table "public.value_type_019"
+ Column | Type  | Modifiers 
+--------+-------+-----------
+ c      | uint8 | 
+
+\d value_type_020
+Table "public.value_type_020"
+ Column | Type  | Modifiers 
+--------+-------+-----------
+ c      | uint8 | 
+
+\d value_type_021
+   Table "public.value_type_021"
+ Column |     Type      | Modifiers 
+--------+---------------+-----------
+ c      | numeric(10,0) | 
+
+\d value_type_022
+   Table "public.value_type_022"
+ Column |     Type      | Modifiers 
+--------+---------------+-----------
+ c      | numeric(10,0) | 
+
+\d value_type_023
+   Table "public.value_type_023"
+ Column |     Type      | Modifiers 
+--------+---------------+-----------
+ c      | numeric(10,2) | 
+
+\d value_type_024
+   Table "public.value_type_024"
+ Column |     Type      | Modifiers 
+--------+---------------+-----------
+ c      | numeric(10,0) | 
+
+\d value_type_025
+   Table "public.value_type_025"
+ Column |     Type      | Modifiers 
+--------+---------------+-----------
+ c      | numeric(10,0) | 
+
+\d value_type_026
+   Table "public.value_type_026"
+ Column |     Type      | Modifiers 
+--------+---------------+-----------
+ c      | numeric(10,2) | 
+
+\d value_type_027
+   Table "public.value_type_027"
+ Column |     Type      | Modifiers 
+--------+---------------+-----------
+ c      | numeric(10,0) | 
+
+\d value_type_028
+   Table "public.value_type_028"
+ Column |     Type      | Modifiers 
+--------+---------------+-----------
+ c      | numeric(10,0) | 
+
+\d value_type_029
+   Table "public.value_type_029"
+ Column |     Type      | Modifiers 
+--------+---------------+-----------
+ c      | numeric(10,2) | 
+
+\d value_type_030
+   Table "public.value_type_030"
+ Column |     Type      | Modifiers 
+--------+---------------+-----------
+ c      | numeric(10,0) | 
+
+\d value_type_031
+   Table "public.value_type_031"
+ Column |     Type      | Modifiers 
+--------+---------------+-----------
+ c      | numeric(10,0) | 
+
+\d value_type_032
+   Table "public.value_type_032"
+ Column |     Type      | Modifiers 
+--------+---------------+-----------
+ c      | numeric(10,2) | 
+
+\d value_type_033
+Table "public.value_type_033"
+ Column | Type | Modifiers 
+--------+------+-----------
+ c      | real | 
+
+\d value_type_034
+   Table "public.value_type_034"
+ Column |     Type      | Modifiers 
+--------+---------------+-----------
+ c      | numeric(10,2) | 
+
+\d value_type_035
+Table "public.value_type_035"
+ Column | Type | Modifiers 
+--------+------+-----------
+ c      | real | 
+
+\d value_type_036
+   Table "public.value_type_036"
+ Column |     Type      | Modifiers 
+--------+---------------+-----------
+ c      | numeric(10,2) | 
+
+\d value_type_037
+     Table "public.value_type_037"
+ Column |       Type       | Modifiers 
+--------+------------------+-----------
+ c      | double precision | 
+
+\d value_type_038
+   Table "public.value_type_038"
+ Column |     Type      | Modifiers 
+--------+---------------+-----------
+ c      | numeric(10,2) | 
+
+\d value_type_039
+   Table "public.value_type_039"
+ Column |     Type      | Modifiers 
+--------+---------------+-----------
+ c      | numeric(10,2) | 
+
+\d value_type_040
+   Table "public.value_type_040"
+ Column |     Type      | Modifiers 
+--------+---------------+-----------
+ c      | numeric(10,2) | 
+
+\d character_type_001
+ Table "public.character_type_001"
+ Column |     Type      | Modifiers 
+--------+---------------+-----------
+ c      | nvarchar2(10) | 
+
+\d character_type_002
+Table "public.character_type_002"
+ Column |   Type    | Modifiers 
+--------+-----------+-----------
+ c      | nvarchar2 | 
+
+\d character_type_003
+Table "public.character_type_003"
+ Column | Type | Modifiers 
+--------+------+-----------
+ c      | text | 
+
+\d character_type_004
+Table "public.character_type_004"
+ Column | Type | Modifiers 
+--------+------+-----------
+ c      | text | 
+
+\d character_type_005
+Table "public.character_type_005"
+ Column |  Type   | Modifiers 
+--------+---------+-----------
+ c      | integer | 
+
+\d character_type_006
+Table "public.character_type_006"
+ Column | Type | Modifiers 
+--------+------+-----------
+ c      | text | 
+
+\d bool_type_001
+ Table "public.bool_type_001"
+ Column |  Type   | Modifiers 
+--------+---------+-----------
+ c      | boolean | 
+
+\d time_date_type_001
+Table "public.time_date_type_001"
+ Column | Type | Modifiers 
+--------+------+-----------
+ c      | date | 
+
+\d time_date_type_002
+       Table "public.time_date_type_002"
+ Column |           Type            | Modifiers 
+--------+---------------------------+-----------
+ c      | time(0) without time zone | 
+
+\d time_date_type_003
+       Table "public.time_date_type_003"
+ Column |           Type            | Modifiers 
+--------+---------------------------+-----------
+ c      | time(6) without time zone | 
+
+\d time_date_type_004
+          Table "public.time_date_type_004"
+ Column |              Type              | Modifiers 
+--------+--------------------------------+-----------
+ c      | timestamp(0) without time zone | 
+
+\d time_date_type_005
+          Table "public.time_date_type_005"
+ Column |              Type              | Modifiers 
+--------+--------------------------------+-----------
+ c      | timestamp(6) without time zone | 
+
+\d time_date_type_006
+        Table "public.time_date_type_006"
+ Column |            Type             | Modifiers 
+--------+-----------------------------+-----------
+ c      | timestamp(0) with time zone | 
+
+\d time_date_type_007
+        Table "public.time_date_type_007"
+ Column |            Type             | Modifiers 
+--------+-----------------------------+-----------
+ c      | timestamp(6) with time zone | 
+
+\d time_date_type_008
+Table "public.time_date_type_008"
+ Column | Type | Modifiers 
+--------+------+-----------
+ c      | year | 
+
+\d time_date_type_009
+Table "public.time_date_type_009"
+ Column |  Type   | Modifiers 
+--------+---------+-----------
+ c      | year(2) | 
+
+\d time_date_type_010
+Table "public.time_date_type_010"
+ Column |  Type   | Modifiers 
+--------+---------+-----------
+ c      | year(4) | 
+
+\d bitstring_type_001
+Table "public.bitstring_type_001"
+ Column |  Type  | Modifiers 
+--------+--------+-----------
+ c      | bit(1) | 
+
+\d bitstring_type_002
+Table "public.bitstring_type_002"
+ Column |  Type   | Modifiers 
+--------+---------+-----------
+ c      | bit(10) | 
+
+\d bitstring_type_003
+  Table "public.bitstring_type_003"
+ Column |      Type       | Modifiers 
+--------+-----------------+-----------
+ c      | bit varying(10) | 
+
+\d enum_type_001
+                  Table "public.enum_type_001"
+ Column |                    Type                    | Modifiers 
+--------+--------------------------------------------+-----------
+ name   | character varying(40)                      | 
+ gender | enum_type_001_gender_2200_anonymous_enum_1 | 
+
+\d binary_type_001
+Table "public.binary_type_001"
+ Column | Type | Modifiers 
+--------+------+-----------
+ c      | blob | 
+
+\d binary_type_002
+Table "public.binary_type_002"
+ Column |   Type   | Modifiers 
+--------+----------+-----------
+ c      | tinyblob | 
+
+\d binary_type_003
+ Table "public.binary_type_003"
+ Column |    Type    | Modifiers 
+--------+------------+-----------
+ c      | mediumblob | 
+
+\d binary_type_004
+Table "public.binary_type_004"
+ Column |   Type   | Modifiers 
+--------+----------+-----------
+ c      | longblob | 
+
+\d binary_type_005
+  Table "public.binary_type_005"
+ Column |    Type     | Modifiers 
+--------+-------------+-----------
+ c      | "binary"(1) | 
+
+\d binary_type_006
+   Table "public.binary_type_006"
+ Column |      Type      | Modifiers 
+--------+----------------+-----------
+ c      | "varbinary"(1) | 
+
+show create table value_type_001;
+     Table      |              Create Table               
+----------------+-----------------------------------------
+ value_type_001 | SET search_path = public;              +
+                | CREATE TABLE value_type_001 (          +
+                |     c tinyint                          +
+                | )                                      +
+                | WITH (orientation=row, compression=no);
+(1 row)
+
+show create table value_type_002;
+     Table      |              Create Table               
+----------------+-----------------------------------------
+ value_type_002 | SET search_path = public;              +
+                | CREATE TABLE value_type_002 (          +
+                |     c uint1                            +
+                | )                                      +
+                | WITH (orientation=row, compression=no);
+(1 row)
+
+show create table value_type_003;
+     Table      |              Create Table               
+----------------+-----------------------------------------
+ value_type_003 | SET search_path = public;              +
+                | CREATE TABLE value_type_003 (          +
+                |     c uint1                            +
+                | )                                      +
+                | WITH (orientation=row, compression=no);
+(1 row)
+
+show create table value_type_004;
+     Table      |              Create Table               
+----------------+-----------------------------------------
+ value_type_004 | SET search_path = public;              +
+                | CREATE TABLE value_type_004 (          +
+                |     c uint1                            +
+                | )                                      +
+                | WITH (orientation=row, compression=no);
+(1 row)
+
+show create table value_type_005;
+     Table      |                Create Table                 
+----------------+---------------------------------------------
+ value_type_005 | SET search_path = public;                  +
+                | CREATE TABLE value_type_005 (              +
+                |     c smallint                             +
+                | )                                          +
+                | WITH (orientation=column, compression=low);
+(1 row)
+
+show create table value_type_006;
+     Table      |              Create Table               
+----------------+-----------------------------------------
+ value_type_006 | SET search_path = public;              +
+                | CREATE TABLE value_type_006 (          +
+                |     c uint2                            +
+                | )                                      +
+                | WITH (orientation=row, compression=no);
+(1 row)
+
+show create table value_type_007;
+     Table      |              Create Table               
+----------------+-----------------------------------------
+ value_type_007 | SET search_path = public;              +
+                | CREATE TABLE value_type_007 (          +
+                |     c uint2                            +
+                | )                                      +
+                | WITH (orientation=row, compression=no);
+(1 row)
+
+show create table value_type_008;
+     Table      |              Create Table               
+----------------+-----------------------------------------
+ value_type_008 | SET search_path = public;              +
+                | CREATE TABLE value_type_008 (          +
+                |     c uint2                            +
+                | )                                      +
+                | WITH (orientation=row, compression=no);
+(1 row)
+
+show create table value_type_009;
+     Table      |              Create Table               
+----------------+-----------------------------------------
+ value_type_009 | SET search_path = public;              +
+                | CREATE UNLOGGED TABLE value_type_009 ( +
+                |     c integer                          +
+                | )                                      +
+                | WITH (orientation=row, compression=no);
+(1 row)
+
+show create table value_type_010;
+     Table      |              Create Table               
+----------------+-----------------------------------------
+ value_type_010 | SET search_path = public;              +
+                | CREATE TABLE value_type_010 (          +
+                |     c uint4                            +
+                | )                                      +
+                | WITH (orientation=row, compression=no);
+(1 row)
+
+show create table value_type_011;
+     Table      |              Create Table               
+----------------+-----------------------------------------
+ value_type_011 | SET search_path = public;              +
+                | CREATE TABLE value_type_011 (          +
+                |     c uint4                            +
+                | )                                      +
+                | WITH (orientation=row, compression=no);
+(1 row)
+
+show create table value_type_012;
+     Table      |              Create Table               
+----------------+-----------------------------------------
+ value_type_012 | SET search_path = public;              +
+                | CREATE TABLE value_type_012 (          +
+                |     c uint4                            +
+                | )                                      +
+                | WITH (orientation=row, compression=no);
+(1 row)
+
+show create table value_type_013;
+     Table      |              Create Table               
+----------------+-----------------------------------------
+ value_type_013 | SET search_path = public;              +
+                | CREATE TABLE value_type_013 (          +
+                |     c integer                          +
+                | )                                      +
+                | WITH (orientation=row, compression=no);
+(1 row)
+
+show create table value_type_014;
+     Table      |              Create Table               
+----------------+-----------------------------------------
+ value_type_014 | SET search_path = public;              +
+                | CREATE TABLE value_type_014 (          +
+                |     c uint4                            +
+                | )                                      +
+                | WITH (orientation=row, compression=no);
+(1 row)
+
+show create table value_type_015;
+     Table      |              Create Table               
+----------------+-----------------------------------------
+ value_type_015 | SET search_path = public;              +
+                | CREATE TABLE value_type_015 (          +
+                |     c uint4                            +
+                | )                                      +
+                | WITH (orientation=row, compression=no);
+(1 row)
+
+show create table value_type_016;
+     Table      |              Create Table               
+----------------+-----------------------------------------
+ value_type_016 | SET search_path = public;              +
+                | CREATE TABLE value_type_016 (          +
+                |     c uint4                            +
+                | )                                      +
+                | WITH (orientation=row, compression=no);
+(1 row)
+
+show create table value_type_017;
+     Table      |              Create Table               
+----------------+-----------------------------------------
+ value_type_017 | SET search_path = public;              +
+                | CREATE TABLE value_type_017 (          +
+                |     c bigint                           +
+                | )                                      +
+                | WITH (orientation=row, compression=no);
+(1 row)
+
+show create table value_type_018;
+     Table      |              Create Table               
+----------------+-----------------------------------------
+ value_type_018 | SET search_path = public;              +
+                | CREATE TABLE value_type_018 (          +
+                |     c uint8                            +
+                | )                                      +
+                | WITH (orientation=row, compression=no);
+(1 row)
+
+show create table value_type_019;
+     Table      |              Create Table               
+----------------+-----------------------------------------
+ value_type_019 | SET search_path = public;              +
+                | CREATE TABLE value_type_019 (          +
+                |     c uint8                            +
+                | )                                      +
+                | WITH (orientation=row, compression=no);
+(1 row)
+
+show create table value_type_020;
+     Table      |              Create Table               
+----------------+-----------------------------------------
+ value_type_020 | SET search_path = public;              +
+                | CREATE TABLE value_type_020 (          +
+                |     c uint8                            +
+                | )                                      +
+                | WITH (orientation=row, compression=no);
+(1 row)
+
+show create table value_type_021;
+     Table      |                         Create Table                         
+----------------+--------------------------------------------------------------
+ value_type_021 | SET search_path = public;                                   +
+                | CREATE TABLE value_type_021 (                               +
+                |     c numeric(10,0)                                         +
+                | )                                                           +
+                | WITH (orientation=row, storage_type=ustore, compression=no);
+(1 row)
+
+show create table value_type_022;
+     Table      |              Create Table               
+----------------+-----------------------------------------
+ value_type_022 | SET search_path = public;              +
+                | CREATE TABLE value_type_022 (          +
+                |     c numeric(10,0)                    +
+                | )                                      +
+                | WITH (orientation=row, compression=no);
+(1 row)
+
+show create table value_type_023;
+     Table      |              Create Table               
+----------------+-----------------------------------------
+ value_type_023 | SET search_path = public;              +
+                | CREATE TABLE value_type_023 (          +
+                |     c numeric(10,2)                    +
+                | )                                      +
+                | WITH (orientation=row, compression=no);
+(1 row)
+
+show create table value_type_024;
+     Table      |              Create Table               
+----------------+-----------------------------------------
+ value_type_024 | SET search_path = public;              +
+                | CREATE TABLE value_type_024 (          +
+                |     c numeric(10,0)                    +
+                | )                                      +
+                | WITH (orientation=row, compression=no);
+(1 row)
+
+show create table value_type_025;
+     Table      |              Create Table               
+----------------+-----------------------------------------
+ value_type_025 | SET search_path = public;              +
+                | CREATE TABLE value_type_025 (          +
+                |     c numeric(10,0)                    +
+                | )                                      +
+                | WITH (orientation=row, compression=no);
+(1 row)
+
+show create table value_type_026;
+     Table      |              Create Table               
+----------------+-----------------------------------------
+ value_type_026 | SET search_path = public;              +
+                | CREATE TABLE value_type_026 (          +
+                |     c numeric(10,2)                    +
+                | )                                      +
+                | WITH (orientation=row, compression=no);
+(1 row)
+
+show create table value_type_027;
+     Table      |              Create Table               
+----------------+-----------------------------------------
+ value_type_027 | SET search_path = public;              +
+                | CREATE TABLE value_type_027 (          +
+                |     c numeric(10,0)                    +
+                | )                                      +
+                | WITH (orientation=row, compression=no);
+(1 row)
+
+show create table value_type_028;
+     Table      |              Create Table               
+----------------+-----------------------------------------
+ value_type_028 | SET search_path = public;              +
+                | CREATE TABLE value_type_028 (          +
+                |     c numeric(10,0)                    +
+                | )                                      +
+                | WITH (orientation=row, compression=no);
+(1 row)
+
+show create table value_type_029;
+     Table      |              Create Table               
+----------------+-----------------------------------------
+ value_type_029 | SET search_path = public;              +
+                | CREATE TABLE value_type_029 (          +
+                |     c numeric(10,2)                    +
+                | )                                      +
+                | WITH (orientation=row, compression=no);
+(1 row)
+
+show create table value_type_030;
+     Table      |              Create Table               
+----------------+-----------------------------------------
+ value_type_030 | SET search_path = public;              +
+                | CREATE TABLE value_type_030 (          +
+                |     c numeric(10,0)                    +
+                | )                                      +
+                | WITH (orientation=row, compression=no);
+(1 row)
+
+show create table value_type_031;
+     Table      |              Create Table               
+----------------+-----------------------------------------
+ value_type_031 | SET search_path = public;              +
+                | CREATE TABLE value_type_031 (          +
+                |     c numeric(10,0)                    +
+                | )                                      +
+                | WITH (orientation=row, compression=no);
+(1 row)
+
+show create table value_type_032;
+     Table      |              Create Table               
+----------------+-----------------------------------------
+ value_type_032 | SET search_path = public;              +
+                | CREATE TABLE value_type_032 (          +
+                |     c numeric(10,2)                    +
+                | )                                      +
+                | WITH (orientation=row, compression=no);
+(1 row)
+
+show create table value_type_033;
+     Table      |              Create Table               
+----------------+-----------------------------------------
+ value_type_033 | SET search_path = public;              +
+                | CREATE TABLE value_type_033 (          +
+                |     c real                             +
+                | )                                      +
+                | WITH (orientation=row, compression=no);
+(1 row)
+
+show create table value_type_034;
+     Table      |              Create Table               
+----------------+-----------------------------------------
+ value_type_034 | SET search_path = public;              +
+                | CREATE TABLE value_type_034 (          +
+                |     c numeric(10,2)                    +
+                | )                                      +
+                | WITH (orientation=row, compression=no);
+(1 row)
+
+show create table value_type_035;
+     Table      |              Create Table               
+----------------+-----------------------------------------
+ value_type_035 | SET search_path = public;              +
+                | CREATE TABLE value_type_035 (          +
+                |     c real                             +
+                | )                                      +
+                | WITH (orientation=row, compression=no);
+(1 row)
+
+show create table value_type_036;
+     Table      |              Create Table               
+----------------+-----------------------------------------
+ value_type_036 | SET search_path = public;              +
+                | CREATE TABLE value_type_036 (          +
+                |     c numeric(10,2)                    +
+                | )                                      +
+                | WITH (orientation=row, compression=no);
+(1 row)
+
+show create table value_type_037;
+     Table      |              Create Table               
+----------------+-----------------------------------------
+ value_type_037 | SET search_path = public;              +
+                | CREATE TABLE value_type_037 (          +
+                |     c double precision                 +
+                | )                                      +
+                | WITH (orientation=row, compression=no);
+(1 row)
+
+show create table value_type_038;
+     Table      |              Create Table               
+----------------+-----------------------------------------
+ value_type_038 | SET search_path = public;              +
+                | CREATE TABLE value_type_038 (          +
+                |     c numeric(10,2)                    +
+                | )                                      +
+                | WITH (orientation=row, compression=no);
+(1 row)
+
+show create table value_type_039;
+     Table      |              Create Table               
+----------------+-----------------------------------------
+ value_type_039 | SET search_path = public;              +
+                | CREATE TABLE value_type_039 (          +
+                |     c numeric(10,2)                    +
+                | )                                      +
+                | WITH (orientation=row, compression=no);
+(1 row)
+
+show create table value_type_040;
+     Table      |              Create Table               
+----------------+-----------------------------------------
+ value_type_040 | SET search_path = public;              +
+                | CREATE TABLE value_type_040 (          +
+                |     c numeric(10,2)                    +
+                | )                                      +
+                | WITH (orientation=row, compression=no);
+(1 row)
+
+show create table character_type_001;
+       Table        |              Create Table               
+--------------------+-----------------------------------------
+ character_type_001 | SET search_path = public;              +
+                    | CREATE TABLE character_type_001 (      +
+                    |     c nvarchar2(10)                    +
+                    | )                                      +
+                    | WITH (orientation=row, compression=no);
+(1 row)
+
+show create table character_type_002;
+       Table        |              Create Table               
+--------------------+-----------------------------------------
+ character_type_002 | SET search_path = public;              +
+                    | CREATE TABLE character_type_002 (      +
+                    |     c nvarchar2                        +
+                    | )                                      +
+                    | WITH (orientation=row, compression=no);
+(1 row)
+
+show create table character_type_003;
+       Table        |              Create Table               
+--------------------+-----------------------------------------
+ character_type_003 | SET search_path = public;              +
+                    | CREATE TABLE character_type_003 (      +
+                    |     c text                             +
+                    | )                                      +
+                    | WITH (orientation=row, compression=no);
+(1 row)
+
+show create table character_type_004;
+       Table        |              Create Table               
+--------------------+-----------------------------------------
+ character_type_004 | SET search_path = public;              +
+                    | CREATE TABLE character_type_004 (      +
+                    |     c text                             +
+                    | )                                      +
+                    | WITH (orientation=row, compression=no);
+(1 row)
+
+show create table character_type_005;
+       Table        |              Create Table               
+--------------------+-----------------------------------------
+ character_type_005 | SET search_path = public;              +
+                    | CREATE TABLE character_type_005 (      +
+                    |     c integer                          +
+                    | )                                      +
+                    | WITH (orientation=row, compression=no);
+(1 row)
+
+show create table character_type_006;
+       Table        |              Create Table               
+--------------------+-----------------------------------------
+ character_type_006 | SET search_path = public;              +
+                    | CREATE TABLE character_type_006 (      +
+                    |     c text                             +
+                    | )                                      +
+                    | WITH (orientation=row, compression=no);
+(1 row)
+
+show create table bool_type_001;
+     Table     |              Create Table               
+---------------+-----------------------------------------
+ bool_type_001 | SET search_path = public;              +
+               | CREATE TABLE bool_type_001 (           +
+               |     c boolean                          +
+               | )                                      +
+               | WITH (orientation=row, compression=no);
+(1 row)
+
+show create table time_date_type_001;
+       Table        |              Create Table               
+--------------------+-----------------------------------------
+ time_date_type_001 | SET search_path = public;              +
+                    | CREATE TABLE time_date_type_001 (      +
+                    |     c date                             +
+                    | )                                      +
+                    | WITH (orientation=row, compression=no);
+(1 row)
+
+show create table time_date_type_002;
+       Table        |              Create Table               
+--------------------+-----------------------------------------
+ time_date_type_002 | SET search_path = public;              +
+                    | CREATE TABLE time_date_type_002 (      +
+                    |     c time(0) without time zone        +
+                    | )                                      +
+                    | WITH (orientation=row, compression=no);
+(1 row)
+
+show create table time_date_type_003;
+       Table        |              Create Table               
+--------------------+-----------------------------------------
+ time_date_type_003 | SET search_path = public;              +
+                    | CREATE TABLE time_date_type_003 (      +
+                    |     c time(6) without time zone        +
+                    | )                                      +
+                    | WITH (orientation=row, compression=no);
+(1 row)
+
+show create table time_date_type_004;
+       Table        |              Create Table               
+--------------------+-----------------------------------------
+ time_date_type_004 | SET search_path = public;              +
+                    | CREATE TABLE time_date_type_004 (      +
+                    |     c timestamp(0) without time zone   +
+                    | )                                      +
+                    | WITH (orientation=row, compression=no);
+(1 row)
+
+show create table time_date_type_005;
+       Table        |              Create Table               
+--------------------+-----------------------------------------
+ time_date_type_005 | SET search_path = public;              +
+                    | CREATE TABLE time_date_type_005 (      +
+                    |     c timestamp(6) without time zone   +
+                    | )                                      +
+                    | WITH (orientation=row, compression=no);
+(1 row)
+
+show create table time_date_type_006;
+       Table        |              Create Table               
+--------------------+-----------------------------------------
+ time_date_type_006 | SET search_path = public;              +
+                    | CREATE TABLE time_date_type_006 (      +
+                    |     c timestamp(0) with time zone      +
+                    | )                                      +
+                    | WITH (orientation=row, compression=no);
+(1 row)
+
+show create table time_date_type_007;
+       Table        |              Create Table               
+--------------------+-----------------------------------------
+ time_date_type_007 | SET search_path = public;              +
+                    | CREATE TABLE time_date_type_007 (      +
+                    |     c timestamp(6) with time zone      +
+                    | )                                      +
+                    | WITH (orientation=row, compression=no);
+(1 row)
+
+show create table time_date_type_008;
+       Table        |              Create Table               
+--------------------+-----------------------------------------
+ time_date_type_008 | SET search_path = public;              +
+                    | CREATE TABLE time_date_type_008 (      +
+                    |     c year                             +
+                    | )                                      +
+                    | WITH (orientation=row, compression=no);
+(1 row)
+
+show create table time_date_type_009;
+       Table        |              Create Table               
+--------------------+-----------------------------------------
+ time_date_type_009 | SET search_path = public;              +
+                    | CREATE TABLE time_date_type_009 (      +
+                    |     c year(2)                          +
+                    | )                                      +
+                    | WITH (orientation=row, compression=no);
+(1 row)
+
+show create table time_date_type_010;
+       Table        |              Create Table               
+--------------------+-----------------------------------------
+ time_date_type_010 | SET search_path = public;              +
+                    | CREATE TABLE time_date_type_010 (      +
+                    |     c year(4)                          +
+                    | )                                      +
+                    | WITH (orientation=row, compression=no);
+(1 row)
+
+show create table bitstring_type_001;
+       Table        |              Create Table               
+--------------------+-----------------------------------------
+ bitstring_type_001 | SET search_path = public;              +
+                    | CREATE TABLE bitstring_type_001 (      +
+                    |     c bit(1)                           +
+                    | )                                      +
+                    | WITH (orientation=row, compression=no);
+(1 row)
+
+show create table bitstring_type_002;
+       Table        |              Create Table               
+--------------------+-----------------------------------------
+ bitstring_type_002 | SET search_path = public;              +
+                    | CREATE TABLE bitstring_type_002 (      +
+                    |     c bit(10)                          +
+                    | )                                      +
+                    | WITH (orientation=row, compression=no);
+(1 row)
+
+show create table bitstring_type_003;
+       Table        |              Create Table               
+--------------------+-----------------------------------------
+ bitstring_type_003 | SET search_path = public;              +
+                    | CREATE TABLE bitstring_type_003 (      +
+                    |     c bit varying(10)                  +
+                    | )                                      +
+                    | WITH (orientation=row, compression=no);
+(1 row)
+
+show create table enum_type_001;
+     Table     |                     Create Table                      
+---------------+-------------------------------------------------------
+ enum_type_001 | SET search_path = public;                            +
+               | CREATE TABLE enum_type_001 (                         +
+               |     name character varying(40),                      +
+               |     gender enum_type_001_gender_2200_anonymous_enum_1+
+               | )                                                    +
+               | WITH (orientation=row, compression=no);
+(1 row)
+
+show create table binary_type_001;
+      Table      |              Create Table               
+-----------------+-----------------------------------------
+ binary_type_001 | SET search_path = public;              +
+                 | CREATE TABLE binary_type_001 (         +
+                 |     c blob                             +
+                 | )                                      +
+                 | WITH (orientation=row, compression=no);
+(1 row)
+
+show create table binary_type_002;
+      Table      |              Create Table               
+-----------------+-----------------------------------------
+ binary_type_002 | SET search_path = public;              +
+                 | CREATE TABLE binary_type_002 (         +
+                 |     c tinyblob                         +
+                 | )                                      +
+                 | WITH (orientation=row, compression=no);
+(1 row)
+
+show create table binary_type_003;
+      Table      |              Create Table               
+-----------------+-----------------------------------------
+ binary_type_003 | SET search_path = public;              +
+                 | CREATE TABLE binary_type_003 (         +
+                 |     c mediumblob                       +
+                 | )                                      +
+                 | WITH (orientation=row, compression=no);
+(1 row)
+
+show create table binary_type_004;
+      Table      |              Create Table               
+-----------------+-----------------------------------------
+ binary_type_004 | SET search_path = public;              +
+                 | CREATE TABLE binary_type_004 (         +
+                 |     c longblob                         +
+                 | )                                      +
+                 | WITH (orientation=row, compression=no);
+(1 row)
+
+show create table binary_type_005;
+      Table      |              Create Table               
+-----------------+-----------------------------------------
+ binary_type_005 | SET search_path = public;              +
+                 | CREATE TABLE binary_type_005 (         +
+                 |     c "binary"(1)                      +
+                 | )                                      +
+                 | WITH (orientation=row, compression=no);
+(1 row)
+
+show create table binary_type_006;
+      Table      |              Create Table               
+-----------------+-----------------------------------------
+ binary_type_006 | SET search_path = public;              +
+                 | CREATE TABLE binary_type_006 (         +
+                 |     c "varbinary"(1)                   +
+                 | )                                      +
+                 | WITH (orientation=row, compression=no);
+(1 row)
+
+\c postgres
+drop database if exists restore_data_type_db;
+drop database if exists dump_data_type_db;

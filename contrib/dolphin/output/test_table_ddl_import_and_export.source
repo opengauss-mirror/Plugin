@@ -1,0 +1,2262 @@
+--create table部分
+drop database if exists dump_table_db;
+NOTICE:  database "dump_table_db" does not exist, skipping
+drop database if exists restore_table_db;
+NOTICE:  database "restore_table_db" does not exist, skipping
+create database dump_table_db with dbcompatibility = 'B';
+create database restore_table_db with dbcompatibility = 'B';
+\c dump_table_db
+--指定engine名字
+create table t_create_table_001(c int) engine = InnoDB;
+--指定compression设置压缩参数
+create table t_create_table_002(c int) compression = pglz;
+--row_format支持default
+create table t_create_table_003(c int) row_format = default;
+WARNING:  ROW_FORMAT for TABLE is not supported for current version. skipped
+--支持表级、字段级character和collate的语法兼容
+create table t_create_table_004(c text character set test_character_set);
+WARNING:  test_character_set is not a valid encoding name. default value set
+create table t_create_table_005(c text charset test_charset);
+WARNING:  test_charset is not a valid encoding name. default value set
+create table t_create_table_006(c text collate utf8mb4_bin);
+create table t_create_table_007(c int) character set utf8;
+create table t_create_table_008(c int) charset utf8;
+create table t_create_table_009(c int) collate utf8mb4_general_ci;
+create table t_create_table_010(c int) character set utf8 collate utf8mb4_general_ci;
+--like子句无需加括号
+create table t_create_table_011(c int);
+create table t_create_table_012 like t_create_table_011;
+create table t_create_table_013 like t_create_table_011;
+create table if not exists t_create_table_014 like t_create_table_011;
+create table if not exists t_create_table_015 like t_create_table_011;
+--table option无序
+create table t_create_table_016(c int) charset utf8 engine = InnoDB;
+create table t_create_table_017(c int) engine = InnoDB charset utf8;
+create table t_create_table_018(c int) for materialized view nocompress compression = pglz for materialized view compression = zstd;
+--指定timestamp类型为on update current_timestamp
+create table t_create_table_019(c int, t timestamp on update current_timestamp);
+--支持create table创建索引
+create table t_create_table_020(c1 char(64), c2 varchar(64), c3 varchar2(64), index(c1(64), c2(64), c3(64)));
+create unlogged table t_create_table_021(c1 nvarchar(64), c2 nvarchar2(64), c3 text, index using btree(c1(64), c2(64), c3(2676)));
+create table t_create_table_022(c1 clob, c2 blob, c3 raw, c4 bytea, index using ubtree(c1(1), c2(2676), c3(1), c4(2676))) with (storage_type = ustore);
+create table t_create_table_023(c int, index(c));
+create table t_create_table_024(c int, index create_index_001(c)) with (orientation = column);
+create table t_create_table_025(c1 int, c2 int, index create_index_002 using btree(c1 desc, c2 asc));
+create table t_create_table_026(c int, index create_index_003 using hash(c));
+create table t_create_table_027(c tsquery, index using gist(c));
+create table t_create_table_028(c tsvector, index using gin(c));
+create table t_create_table_029(c int, index using btree(c desc), index create_index_004 using hash(c));
+create table t_create_table_030(c1 int, c2 int, index create_index_005 using btree(c1), index create_index_006 using hash(c2));
+--create table [as] select
+create table t_create_table_031(a int, b text);
+insert into t_create_table_031 values(1, '1'), (2, '2'), (3, '3'), (4, '4');
+create table t_create_table_032 select * from t_create_table_031;
+select count(*) from t_create_table_032;
+ count 
+-------
+     4
+(1 row)
+
+create table t_create_table_033 select * from t_create_table_031 limit 0, 2;
+select count(*) from t_create_table_033;
+ count 
+-------
+     2
+(1 row)
+
+create table t_create_table_034 (select * from t_create_table_031 limit 0, 2);
+select count(*) from t_create_table_034;
+ count 
+-------
+     2
+(1 row)
+
+create table t_create_table_035(c) select * from t_create_table_031;
+select count(*) from t_create_table_035;
+ count 
+-------
+     4
+(1 row)
+
+create table t_create_table_036(col1, col2) select * from t_create_table_031 limit 0, 2;
+select count(*) from t_create_table_036;
+ count 
+-------
+     2
+(1 row)
+
+\d t_create_table_001;
+Table "public.t_create_table_001"
+ Column |  Type   | Modifiers 
+--------+---------+-----------
+ c      | integer | 
+
+\d t_create_table_002;
+Table "public.t_create_table_002"
+ Column |  Type   | Modifiers 
+--------+---------+-----------
+ c      | integer | 
+
+\d t_create_table_003;
+Table "public.t_create_table_003"
+ Column |  Type   | Modifiers 
+--------+---------+-----------
+ c      | integer | 
+
+\d t_create_table_004;
+     Table "public.t_create_table_004"
+ Column | Type |         Modifiers          
+--------+------+----------------------------
+ c      | text | collate utf8mb4_general_ci
+
+\d t_create_table_005;
+     Table "public.t_create_table_005"
+ Column | Type |         Modifiers          
+--------+------+----------------------------
+ c      | text | collate utf8mb4_general_ci
+
+\d t_create_table_006;
+  Table "public.t_create_table_006"
+ Column | Type |      Modifiers      
+--------+------+---------------------
+ c      | text | collate utf8mb4_bin
+
+\d t_create_table_007;
+Table "public.t_create_table_007"
+ Column |  Type   | Modifiers 
+--------+---------+-----------
+ c      | integer | 
+
+\d t_create_table_008;
+Table "public.t_create_table_008"
+ Column |  Type   | Modifiers 
+--------+---------+-----------
+ c      | integer | 
+
+\d t_create_table_009;
+Table "public.t_create_table_009"
+ Column |  Type   | Modifiers 
+--------+---------+-----------
+ c      | integer | 
+
+\d t_create_table_010;
+Table "public.t_create_table_010"
+ Column |  Type   | Modifiers 
+--------+---------+-----------
+ c      | integer | 
+
+\d t_create_table_011;
+Table "public.t_create_table_011"
+ Column |  Type   | Modifiers 
+--------+---------+-----------
+ c      | integer | 
+
+\d t_create_table_012;
+Table "public.t_create_table_012"
+ Column |  Type   | Modifiers 
+--------+---------+-----------
+ c      | integer | 
+
+\d t_create_table_013;
+Table "public.t_create_table_013"
+ Column |  Type   | Modifiers 
+--------+---------+-----------
+ c      | integer | 
+
+\d t_create_table_014;
+Table "public.t_create_table_014"
+ Column |  Type   | Modifiers 
+--------+---------+-----------
+ c      | integer | 
+
+\d t_create_table_015;
+Table "public.t_create_table_015"
+ Column |  Type   | Modifiers 
+--------+---------+-----------
+ c      | integer | 
+
+\d t_create_table_016;
+Table "public.t_create_table_016"
+ Column |  Type   | Modifiers 
+--------+---------+-----------
+ c      | integer | 
+
+\d t_create_table_017;
+Table "public.t_create_table_017"
+ Column |  Type   | Modifiers 
+--------+---------+-----------
+ c      | integer | 
+
+\d t_create_table_018;
+Table "public.t_create_table_018"
+ Column |  Type   | Modifiers 
+--------+---------+-----------
+ c      | integer | 
+
+\d t_create_table_019;
+                         Table "public.t_create_table_019"
+ Column |            Type             |                  Modifiers                  
+--------+-----------------------------+---------------------------------------------
+ c      | integer                     | 
+ t      | timestamp(0) with time zone | on update b_db_statement_start_timestamp(0)
+
+\d t_create_table_020;
+     Table "public.t_create_table_020"
+ Column |         Type          | Modifiers 
+--------+-----------------------+-----------
+ c1     | character(64)         | 
+ c2     | character varying(64) | 
+ c3     | character varying(64) | 
+Indexes:
+    "t_create_table_020_expr_expr1_expr2_idx" btree (c1(64), c2(64), c3(64)) TABLESPACE pg_default
+
+\d t_create_table_021;
+Unlogged table "public.t_create_table_021"
+ Column |     Type      | Modifiers 
+--------+---------------+-----------
+ c1     | nvarchar2(64) | 
+ c2     | nvarchar2(64) | 
+ c3     | text          | 
+Indexes:
+    "t_create_table_021_expr_expr1_expr2_idx" btree (c1(64), c2(64), c3(2676)) TABLESPACE pg_default
+
+\d t_create_table_022;
+Table "public.t_create_table_022"
+ Column | Type  | Modifiers 
+--------+-------+-----------
+ c1     | clob  | 
+ c2     | blob  | 
+ c3     | raw   | 
+ c4     | bytea | 
+Indexes:
+    "t_create_table_022_expr_expr1_expr2_expr3_idx" ubtree (c1(1), c2(2676), c3(1), c4(2676)) WITH (storage_type=USTORE) TABLESPACE pg_default
+
+\d t_create_table_023;
+Table "public.t_create_table_023"
+ Column |  Type   | Modifiers 
+--------+---------+-----------
+ c      | integer | 
+Indexes:
+    "t_create_table_023_c_idx" btree (c) TABLESPACE pg_default
+
+\d t_create_table_024;
+Table "public.t_create_table_024"
+ Column |  Type   | Modifiers 
+--------+---------+-----------
+ c      | integer | 
+Indexes:
+    "create_index_001" psort (c) TABLESPACE pg_default
+
+\d t_create_table_025;
+Table "public.t_create_table_025"
+ Column |  Type   | Modifiers 
+--------+---------+-----------
+ c1     | integer | 
+ c2     | integer | 
+Indexes:
+    "create_index_002" btree (c1 DESC, c2) TABLESPACE pg_default
+
+\d t_create_table_026;
+Table "public.t_create_table_026"
+ Column |  Type   | Modifiers 
+--------+---------+-----------
+ c      | integer | 
+Indexes:
+    "create_index_003" hash (c) TABLESPACE pg_default
+
+\d t_create_table_027;
+Table "public.t_create_table_027"
+ Column |  Type   | Modifiers 
+--------+---------+-----------
+ c      | tsquery | 
+Indexes:
+    "t_create_table_027_c_idx" gist (c) TABLESPACE pg_default
+
+\d t_create_table_028;
+Table "public.t_create_table_028"
+ Column |   Type   | Modifiers 
+--------+----------+-----------
+ c      | tsvector | 
+Indexes:
+    "t_create_table_028_c_idx" gin (c) TABLESPACE pg_default
+
+\d t_create_table_029;
+Table "public.t_create_table_029"
+ Column |  Type   | Modifiers 
+--------+---------+-----------
+ c      | integer | 
+Indexes:
+    "create_index_004" hash (c) TABLESPACE pg_default
+    "t_create_table_029_c_idx" btree (c DESC) TABLESPACE pg_default
+
+\d t_create_table_030;
+Table "public.t_create_table_030"
+ Column |  Type   | Modifiers 
+--------+---------+-----------
+ c1     | integer | 
+ c2     | integer | 
+Indexes:
+    "create_index_005" btree (c1) TABLESPACE pg_default
+    "create_index_006" hash (c2) TABLESPACE pg_default
+
+\d t_create_table_031;
+Table "public.t_create_table_031"
+ Column |  Type   | Modifiers 
+--------+---------+-----------
+ a      | integer | 
+ b      | text    | 
+
+\d t_create_table_032;
+Table "public.t_create_table_032"
+ Column |  Type   | Modifiers 
+--------+---------+-----------
+ a      | integer | 
+ b      | text    | 
+
+\d t_create_table_033;
+Table "public.t_create_table_033"
+ Column |  Type   | Modifiers 
+--------+---------+-----------
+ a      | integer | 
+ b      | text    | 
+
+\d t_create_table_034;
+Table "public.t_create_table_034"
+ Column |  Type   | Modifiers 
+--------+---------+-----------
+ a      | integer | 
+ b      | text    | 
+
+\d t_create_table_035;
+Table "public.t_create_table_035"
+ Column |  Type   | Modifiers 
+--------+---------+-----------
+ c      | integer | 
+ b      | text    | 
+
+\d t_create_table_036;
+Table "public.t_create_table_036"
+ Column |  Type   | Modifiers 
+--------+---------+-----------
+ col1   | integer | 
+ col2   | text    | 
+
+show create table t_create_table_001;
+       Table        |              Create Table               
+--------------------+-----------------------------------------
+ t_create_table_001 | SET search_path = public;              +
+                    | CREATE TABLE t_create_table_001 (      +
+                    |     c integer                          +
+                    | )                                      +
+                    | WITH (orientation=row, compression=no);
+(1 row)
+
+show create table t_create_table_002;
+       Table        |              Create Table               
+--------------------+-----------------------------------------
+ t_create_table_002 | SET search_path = public;              +
+                    | CREATE TABLE t_create_table_002 (      +
+                    |     c integer                          +
+                    | )                                      +
+                    | WITH (orientation=row, compresstype=1);
+(1 row)
+
+show create table t_create_table_003;
+       Table        |              Create Table               
+--------------------+-----------------------------------------
+ t_create_table_003 | SET search_path = public;              +
+                    | CREATE TABLE t_create_table_003 (      +
+                    |     c integer                          +
+                    | )                                      +
+                    | WITH (orientation=row, compression=no);
+(1 row)
+
+show create table t_create_table_004;
+       Table        |                        Create Table                        
+--------------------+------------------------------------------------------------
+ t_create_table_004 | SET search_path = public;                                 +
+                    | CREATE TABLE t_create_table_004 (                         +
+                    |     c text CHARACTER SET "UTF8" COLLATE utf8mb4_general_ci+
+                    | )                                                         +
+                    | WITH (orientation=row, compression=no);
+(1 row)
+
+show create table t_create_table_005;
+       Table        |                        Create Table                        
+--------------------+------------------------------------------------------------
+ t_create_table_005 | SET search_path = public;                                 +
+                    | CREATE TABLE t_create_table_005 (                         +
+                    |     c text CHARACTER SET "UTF8" COLLATE utf8mb4_general_ci+
+                    | )                                                         +
+                    | WITH (orientation=row, compression=no);
+(1 row)
+
+show create table t_create_table_006;
+       Table        |                    Create Table                     
+--------------------+-----------------------------------------------------
+ t_create_table_006 | SET search_path = public;                          +
+                    | CREATE TABLE t_create_table_006 (                  +
+                    |     c text CHARACTER SET "UTF8" COLLATE utf8mb4_bin+
+                    | )                                                  +
+                    | WITH (orientation=row, compression=no);
+(1 row)
+
+show create table t_create_table_007;
+       Table        |                     Create Table                      
+--------------------+-------------------------------------------------------
+ t_create_table_007 | SET search_path = public;                            +
+                    | CREATE TABLE t_create_table_007 (                    +
+                    |     c integer                                        +
+                    | )                                                    +
+                    | CHARACTER SET = "UTF8" COLLATE = "utf8mb4_general_ci"+
+                    | WITH (orientation=row, compression=no);
+(1 row)
+
+show create table t_create_table_008;
+       Table        |                     Create Table                      
+--------------------+-------------------------------------------------------
+ t_create_table_008 | SET search_path = public;                            +
+                    | CREATE TABLE t_create_table_008 (                    +
+                    |     c integer                                        +
+                    | )                                                    +
+                    | CHARACTER SET = "UTF8" COLLATE = "utf8mb4_general_ci"+
+                    | WITH (orientation=row, compression=no);
+(1 row)
+
+show create table t_create_table_009;
+       Table        |                     Create Table                      
+--------------------+-------------------------------------------------------
+ t_create_table_009 | SET search_path = public;                            +
+                    | CREATE TABLE t_create_table_009 (                    +
+                    |     c integer                                        +
+                    | )                                                    +
+                    | CHARACTER SET = "UTF8" COLLATE = "utf8mb4_general_ci"+
+                    | WITH (orientation=row, compression=no);
+(1 row)
+
+show create table t_create_table_010;
+       Table        |                     Create Table                      
+--------------------+-------------------------------------------------------
+ t_create_table_010 | SET search_path = public;                            +
+                    | CREATE TABLE t_create_table_010 (                    +
+                    |     c integer                                        +
+                    | )                                                    +
+                    | CHARACTER SET = "UTF8" COLLATE = "utf8mb4_general_ci"+
+                    | WITH (orientation=row, compression=no);
+(1 row)
+
+show create table t_create_table_011;
+       Table        |              Create Table               
+--------------------+-----------------------------------------
+ t_create_table_011 | SET search_path = public;              +
+                    | CREATE TABLE t_create_table_011 (      +
+                    |     c integer                          +
+                    | )                                      +
+                    | WITH (orientation=row, compression=no);
+(1 row)
+
+show create table t_create_table_012;
+       Table        |              Create Table               
+--------------------+-----------------------------------------
+ t_create_table_012 | SET search_path = public;              +
+                    | CREATE TABLE t_create_table_012 (      +
+                    |     c integer                          +
+                    | )                                      +
+                    | WITH (orientation=row, compression=no);
+(1 row)
+
+show create table t_create_table_013;
+       Table        |              Create Table               
+--------------------+-----------------------------------------
+ t_create_table_013 | SET search_path = public;              +
+                    | CREATE TABLE t_create_table_013 (      +
+                    |     c integer                          +
+                    | )                                      +
+                    | WITH (orientation=row, compression=no);
+(1 row)
+
+show create table t_create_table_014;
+       Table        |              Create Table               
+--------------------+-----------------------------------------
+ t_create_table_014 | SET search_path = public;              +
+                    | CREATE TABLE t_create_table_014 (      +
+                    |     c integer                          +
+                    | )                                      +
+                    | WITH (orientation=row, compression=no);
+(1 row)
+
+show create table t_create_table_015;
+       Table        |              Create Table               
+--------------------+-----------------------------------------
+ t_create_table_015 | SET search_path = public;              +
+                    | CREATE TABLE t_create_table_015 (      +
+                    |     c integer                          +
+                    | )                                      +
+                    | WITH (orientation=row, compression=no);
+(1 row)
+
+show create table t_create_table_016;
+       Table        |                     Create Table                      
+--------------------+-------------------------------------------------------
+ t_create_table_016 | SET search_path = public;                            +
+                    | CREATE TABLE t_create_table_016 (                    +
+                    |     c integer                                        +
+                    | )                                                    +
+                    | CHARACTER SET = "UTF8" COLLATE = "utf8mb4_general_ci"+
+                    | WITH (orientation=row, compression=no);
+(1 row)
+
+show create table t_create_table_017;
+       Table        |                     Create Table                      
+--------------------+-------------------------------------------------------
+ t_create_table_017 | SET search_path = public;                            +
+                    | CREATE TABLE t_create_table_017 (                    +
+                    |     c integer                                        +
+                    | )                                                    +
+                    | CHARACTER SET = "UTF8" COLLATE = "utf8mb4_general_ci"+
+                    | WITH (orientation=row, compression=no);
+(1 row)
+
+show create table t_create_table_018;
+       Table        |              Create Table               
+--------------------+-----------------------------------------
+ t_create_table_018 | SET search_path = public;              +
+                    | CREATE TABLE t_create_table_018 (      +
+                    |     c integer                          +
+                    | )                                      +
+                    | WITH (orientation=row, compresstype=2);
+(1 row)
+
+show create table t_create_table_019;
+       Table        |                           Create Table                           
+--------------------+------------------------------------------------------------------
+ t_create_table_019 | SET search_path = public;                                       +
+                    | CREATE TABLE t_create_table_019 (                               +
+                    |     c integer,                                                  +
+                    |     t timestamp(0) with time zone ON UPDATE CURRENT_TIMESTAMP(0)+
+                    | )                                                               +
+                    | WITH (orientation=row, compression=no);
+(1 row)
+
+show create table t_create_table_020;
+       Table        |                                                              Create Table                                                              
+--------------------+----------------------------------------------------------------------------------------------------------------------------------------
+ t_create_table_020 | SET search_path = public;                                                                                                             +
+                    | CREATE TABLE t_create_table_020 (                                                                                                     +
+                    |     c1 character(64),                                                                                                                 +
+                    |     c2 character varying(64),                                                                                                         +
+                    |     c3 character varying(64)                                                                                                          +
+                    | )                                                                                                                                     +
+                    | WITH (orientation=row, compression=no);                                                                                               +
+                    | CREATE INDEX t_create_table_020_expr_expr1_expr2_idx ON t_create_table_020 USING btree (c1(64), c2(64), c3(64)) TABLESPACE pg_default;
+(1 row)
+
+show create table t_create_table_021;
+       Table        |                                                               Create Table                                                               
+--------------------+------------------------------------------------------------------------------------------------------------------------------------------
+ t_create_table_021 | SET search_path = public;                                                                                                               +
+                    | CREATE UNLOGGED TABLE t_create_table_021 (                                                                                              +
+                    |     c1 nvarchar2(64),                                                                                                                   +
+                    |     c2 nvarchar2(64),                                                                                                                   +
+                    |     c3 text                                                                                                                             +
+                    | )                                                                                                                                       +
+                    | WITH (orientation=row, compression=no);                                                                                                 +
+                    | CREATE INDEX t_create_table_021_expr_expr1_expr2_idx ON t_create_table_021 USING btree (c1(64), c2(64), c3(2676)) TABLESPACE pg_default;
+(1 row)
+
+show create table t_create_table_022;
+       Table        |                                                                                    Create Table                                                                                    
+--------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ t_create_table_022 | SET search_path = public;                                                                                                                                                         +
+                    | CREATE TABLE t_create_table_022 (                                                                                                                                                 +
+                    |     c1 clob,                                                                                                                                                                      +
+                    |     c2 blob,                                                                                                                                                                      +
+                    |     c3 raw,                                                                                                                                                                       +
+                    |     c4 bytea                                                                                                                                                                      +
+                    | )                                                                                                                                                                                 +
+                    | WITH (orientation=row, storage_type=ustore, compression=no);                                                                                                                      +
+                    | CREATE INDEX t_create_table_022_expr_expr1_expr2_expr3_idx ON t_create_table_022 USING ubtree (c1(1), c2(2676), c3(1), c4(2676)) WITH (storage_type=USTORE) TABLESPACE pg_default;
+(1 row)
+
+show create table t_create_table_023;
+       Table        |                                            Create Table                                            
+--------------------+----------------------------------------------------------------------------------------------------
+ t_create_table_023 | SET search_path = public;                                                                         +
+                    | CREATE TABLE t_create_table_023 (                                                                 +
+                    |     c integer                                                                                     +
+                    | )                                                                                                 +
+                    | WITH (orientation=row, compression=no);                                                           +
+                    | CREATE INDEX t_create_table_023_c_idx ON t_create_table_023 USING btree (c) TABLESPACE pg_default;
+(1 row)
+
+show create table t_create_table_024;
+       Table        |                                        Create Table                                        
+--------------------+--------------------------------------------------------------------------------------------
+ t_create_table_024 | SET search_path = public;                                                                 +
+                    | CREATE TABLE t_create_table_024 (                                                         +
+                    |     c integer                                                                             +
+                    | )                                                                                         +
+                    | WITH (orientation=column, compression=low);                                               +
+                    | CREATE INDEX create_index_001 ON t_create_table_024 USING psort (c) TABLESPACE pg_default;
+(1 row)
+
+show create table t_create_table_025;
+       Table        |                                             Create Table                                             
+--------------------+------------------------------------------------------------------------------------------------------
+ t_create_table_025 | SET search_path = public;                                                                           +
+                    | CREATE TABLE t_create_table_025 (                                                                   +
+                    |     c1 integer,                                                                                     +
+                    |     c2 integer                                                                                      +
+                    | )                                                                                                   +
+                    | WITH (orientation=row, compression=no);                                                             +
+                    | CREATE INDEX create_index_002 ON t_create_table_025 USING btree (c1 DESC, c2) TABLESPACE pg_default;
+(1 row)
+
+show create table t_create_table_026;
+       Table        |                                       Create Table                                        
+--------------------+-------------------------------------------------------------------------------------------
+ t_create_table_026 | SET search_path = public;                                                                +
+                    | CREATE TABLE t_create_table_026 (                                                        +
+                    |     c integer                                                                            +
+                    | )                                                                                        +
+                    | WITH (orientation=row, compression=no);                                                  +
+                    | CREATE INDEX create_index_003 ON t_create_table_026 USING hash (c) TABLESPACE pg_default;
+(1 row)
+
+show create table t_create_table_027;
+       Table        |                                           Create Table                                            
+--------------------+---------------------------------------------------------------------------------------------------
+ t_create_table_027 | SET search_path = public;                                                                        +
+                    | CREATE TABLE t_create_table_027 (                                                                +
+                    |     c tsquery                                                                                    +
+                    | )                                                                                                +
+                    | WITH (orientation=row, compression=no);                                                          +
+                    | CREATE INDEX t_create_table_027_c_idx ON t_create_table_027 USING gist (c) TABLESPACE pg_default;
+(1 row)
+
+show create table t_create_table_028;
+       Table        |                                           Create Table                                           
+--------------------+--------------------------------------------------------------------------------------------------
+ t_create_table_028 | SET search_path = public;                                                                       +
+                    | CREATE TABLE t_create_table_028 (                                                               +
+                    |     c tsvector                                                                                  +
+                    | )                                                                                               +
+                    | WITH (orientation=row, compression=no);                                                         +
+                    | CREATE INDEX t_create_table_028_c_idx ON t_create_table_028 USING gin (c) TABLESPACE pg_default;
+(1 row)
+
+show create table t_create_table_029;
+       Table        |                                              Create Table                                               
+--------------------+---------------------------------------------------------------------------------------------------------
+ t_create_table_029 | SET search_path = public;                                                                              +
+                    | CREATE TABLE t_create_table_029 (                                                                      +
+                    |     c integer                                                                                          +
+                    | )                                                                                                      +
+                    | WITH (orientation=row, compression=no);                                                                +
+                    | CREATE INDEX create_index_004 ON t_create_table_029 USING hash (c) TABLESPACE pg_default;              +
+                    | CREATE INDEX t_create_table_029_c_idx ON t_create_table_029 USING btree (c DESC) TABLESPACE pg_default;
+(1 row)
+
+show create table t_create_table_030;
+       Table        |                                        Create Table                                         
+--------------------+---------------------------------------------------------------------------------------------
+ t_create_table_030 | SET search_path = public;                                                                  +
+                    | CREATE TABLE t_create_table_030 (                                                          +
+                    |     c1 integer,                                                                            +
+                    |     c2 integer                                                                             +
+                    | )                                                                                          +
+                    | WITH (orientation=row, compression=no);                                                    +
+                    | CREATE INDEX create_index_006 ON t_create_table_030 USING hash (c2) TABLESPACE pg_default; +
+                    | CREATE INDEX create_index_005 ON t_create_table_030 USING btree (c1) TABLESPACE pg_default;
+(1 row)
+
+show create table t_create_table_031;
+       Table        |              Create Table               
+--------------------+-----------------------------------------
+ t_create_table_031 | SET search_path = public;              +
+                    | CREATE TABLE t_create_table_031 (      +
+                    |     a integer,                         +
+                    |     b text                             +
+                    | )                                      +
+                    | WITH (orientation=row, compression=no);
+(1 row)
+
+show create table t_create_table_032;
+       Table        |              Create Table               
+--------------------+-----------------------------------------
+ t_create_table_032 | SET search_path = public;              +
+                    | CREATE TABLE t_create_table_032 (      +
+                    |     a integer,                         +
+                    |     b text                             +
+                    | )                                      +
+                    | WITH (orientation=row, compression=no);
+(1 row)
+
+show create table t_create_table_033;
+       Table        |              Create Table               
+--------------------+-----------------------------------------
+ t_create_table_033 | SET search_path = public;              +
+                    | CREATE TABLE t_create_table_033 (      +
+                    |     a integer,                         +
+                    |     b text                             +
+                    | )                                      +
+                    | WITH (orientation=row, compression=no);
+(1 row)
+
+show create table t_create_table_034;
+       Table        |              Create Table               
+--------------------+-----------------------------------------
+ t_create_table_034 | SET search_path = public;              +
+                    | CREATE TABLE t_create_table_034 (      +
+                    |     a integer,                         +
+                    |     b text                             +
+                    | )                                      +
+                    | WITH (orientation=row, compression=no);
+(1 row)
+
+show create table t_create_table_035;
+       Table        |              Create Table               
+--------------------+-----------------------------------------
+ t_create_table_035 | SET search_path = public;              +
+                    | CREATE TABLE t_create_table_035 (      +
+                    |     c integer,                         +
+                    |     b text                             +
+                    | )                                      +
+                    | WITH (orientation=row, compression=no);
+(1 row)
+
+show create table t_create_table_036;
+       Table        |              Create Table               
+--------------------+-----------------------------------------
+ t_create_table_036 | SET search_path = public;              +
+                    | CREATE TABLE t_create_table_036 (      +
+                    |     col1 integer,                      +
+                    |     col2 text                          +
+                    | )                                      +
+                    | WITH (orientation=row, compression=no);
+(1 row)
+
+--alter table测试
+--支持修改row_format
+create table t_alter_table_001(c int) row_format = default;
+WARNING:  ROW_FORMAT for TABLE is not supported for current version. skipped
+alter table t_alter_table_001 row_format = dynamic;
+WARNING:  ROW_FORMAT for TABLE is not supported for current version. skipped
+create table t_alter_table_002(c int) row_format = default;
+WARNING:  ROW_FORMAT for TABLE is not supported for current version. skipped
+alter table t_alter_table_002 row_format = compressed;
+WARNING:  ROW_FORMAT for TABLE is not supported for current version. skipped
+create table t_alter_table_003(c int) row_format = default;
+WARNING:  ROW_FORMAT for TABLE is not supported for current version. skipped
+alter table t_alter_table_003 row_format = compact;
+WARNING:  ROW_FORMAT for TABLE is not supported for current version. skipped
+create table t_alter_table_004(c int) row_format = dynamic;
+WARNING:  ROW_FORMAT for TABLE is not supported for current version. skipped
+alter table t_alter_table_004 row_format = default;
+WARNING:  ROW_FORMAT for TABLE is not supported for current version. skipped
+--支持重命名表中rename增加as关键字
+create table t_altertable005(c int);
+alter table t_altertable005 rename as t_alter_table_005;
+--支持禁用和启用非唯一索引
+create table t_alter_table_006(c int, index using btree(c));
+alter table t_alter_table_006 disable keys;
+create table t_alter_table_007(c int, index using hash(c));
+alter table t_alter_table_007 enable keys;
+--删除索引
+create table t_alter_table_008(c int, index alter_index_001 using btree(c));
+alter table t_alter_table_008 drop index alter_index_001;
+create table t_alter_table_009(c int, index alter_index_002 using hash(c));
+alter table t_alter_table_009 drop key alter_index_002;
+--重建表
+create table t_alter_table_010(c int);
+alter table t_alter_table_010 force;
+create table t_alter_table_011(c int, index using hash(c));
+alter table t_alter_table_011 force;
+--删除外键约束
+create table t_alter_table_012(c int primary key);
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "t_alter_table_012_pkey" for table "t_alter_table_012"
+create table t_alter_table_013(c int not null, constraint fk_symbol foreign key(c) references t_alter_table_012(c));
+alter table t_alter_table_013 drop foreign key fk_symbol;
+--删除主键
+create table t_alter_table_014(c int primary key);
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "t_alter_table_014_pkey" for table "t_alter_table_014"
+alter table t_alter_table_014 drop primary key;
+--修改索引名
+create table t_alter_table_015(c int, index idx1 using btree(c));
+create table t_alter_table_016(c int, index idx2 using hash(c));
+create table t_alter_table_017(c tsvector, index idx3 using gin(c));
+create table t_alter_table_018(c tsquery, index idx4 using gist(c));
+alter table t_alter_table_015 rename index idx1 to alter_index_003;
+alter table t_alter_table_016 rename key idx2 to alter_index_004;
+alter table t_alter_table_017 rename index idx3 to alter_index_005;
+alter table t_alter_table_018 rename key idx4 to alter_index_006;
+--timestamp列增加/删除on update current_timestamp
+create table t_alter_table_019(c timestamp);
+alter table t_alter_table_019 modify c timestamp on update current_timestamp;
+create table t_alter_table_020(c timestamp on update current_timestamp);
+alter table t_alter_table_020 modify c timestamp;
+--创建索引
+create table t_alter_table_021(c char(64));
+alter table t_alter_table_021 add index(c(64));
+create table t_alter_table_022(c1 varchar(64), c2 varchar2(64));
+alter table t_alter_table_022 add key(c1(64), c2(64));
+create unlogged table t_alter_table_023(c1 nvarchar(64), c2 nvarchar2(64));
+alter table t_alter_table_023 add index using btree(c1(64), c2(64));
+create table t_alter_table_024(c text);
+alter table t_alter_table_024 add key using btree(c(2676));
+create table t_alter_table_025(c1 clob, c2 blob) with (storage_type = ustore);
+alter table t_alter_table_025 add index using ubtree(c1(1), c2(2676));
+create table t_alter_table_026(c1 raw, c2 bytea) with (storage_type = ustore);
+alter table t_alter_table_026 add key using ubtree(c1(1), c2(2676));
+create table t_alter_table_027(c int);
+alter table t_alter_table_027 add index(c);
+create table t_alter_table_028(c int) with (orientation = column);
+alter table t_alter_table_028 add key(c);
+create table t_alter_table_029(c1 int, c2 int);
+alter table t_alter_table_029 add index using btree(c1 desc, c2 asc);
+create table t_alter_table_030(c int);
+alter table t_alter_table_030 add key using hash(c);
+create table t_alter_table_031(c tsquery);
+alter table t_alter_table_031 add index using gist(c);
+create table t_alter_table_032(c tsvector);
+alter table t_alter_table_032 add key using gin(c);
+create table t_alter_table_033(c int);
+alter table t_alter_table_033 add index using btree(c desc), add key using hash(c);
+create table t_alter_table_034(c1 int, c2 int);
+alter table t_alter_table_034 add index using btree(c1), add key using hash(c2);
+\d t_alter_table_001;
+Table "public.t_alter_table_001"
+ Column |  Type   | Modifiers 
+--------+---------+-----------
+ c      | integer | 
+
+\d t_alter_table_002;
+Table "public.t_alter_table_002"
+ Column |  Type   | Modifiers 
+--------+---------+-----------
+ c      | integer | 
+
+\d t_alter_table_003;
+Table "public.t_alter_table_003"
+ Column |  Type   | Modifiers 
+--------+---------+-----------
+ c      | integer | 
+
+\d t_alter_table_004;
+Table "public.t_alter_table_004"
+ Column |  Type   | Modifiers 
+--------+---------+-----------
+ c      | integer | 
+
+\d t_alter_table_005;
+Table "public.t_alter_table_005"
+ Column |  Type   | Modifiers 
+--------+---------+-----------
+ c      | integer | 
+
+\d t_alter_table_006;
+Table "public.t_alter_table_006"
+ Column |  Type   | Modifiers 
+--------+---------+-----------
+ c      | integer | 
+Indexes:
+    "t_alter_table_006_c_idx" btree (c) TABLESPACE pg_default UNUSABLE
+
+\d t_alter_table_007;
+Table "public.t_alter_table_007"
+ Column |  Type   | Modifiers 
+--------+---------+-----------
+ c      | integer | 
+Indexes:
+    "t_alter_table_007_c_idx" hash (c) TABLESPACE pg_default
+
+\d t_alter_table_008;
+Table "public.t_alter_table_008"
+ Column |  Type   | Modifiers 
+--------+---------+-----------
+ c      | integer | 
+
+\d t_alter_table_009;
+Table "public.t_alter_table_009"
+ Column |  Type   | Modifiers 
+--------+---------+-----------
+ c      | integer | 
+
+\d t_alter_table_010;
+Table "public.t_alter_table_010"
+ Column |  Type   | Modifiers 
+--------+---------+-----------
+ c      | integer | 
+
+\d t_alter_table_011;
+Table "public.t_alter_table_011"
+ Column |  Type   | Modifiers 
+--------+---------+-----------
+ c      | integer | 
+Indexes:
+    "t_alter_table_011_c_idx" hash (c) TABLESPACE pg_default
+
+\d t_alter_table_012;
+Table "public.t_alter_table_012"
+ Column |  Type   | Modifiers 
+--------+---------+-----------
+ c      | integer | not null
+Indexes:
+    "t_alter_table_012_pkey" PRIMARY KEY, btree (c) TABLESPACE pg_default
+
+describe t_alter_table_012;
+ Field |  Type   | Null | Key | Default | Extra 
+-------+---------+------+-----+---------+-------
+ c     | integer | NO   | PRI | NULL    | 
+(1 row)
+
+desc t_alter_table_012;
+ Field |  Type   | Null | Key | Default | Extra 
+-------+---------+------+-----+---------+-------
+ c     | integer | NO   | PRI | NULL    | 
+(1 row)
+
+explain t_alter_table_012;
+ Field |  Type   | Null | Key | Default | Extra 
+-------+---------+------+-----+---------+-------
+ c     | integer | NO   | PRI | NULL    | 
+(1 row)
+
+\d t_alter_table_013;
+Table "public.t_alter_table_013"
+ Column |  Type   | Modifiers 
+--------+---------+-----------
+ c      | integer | not null
+
+\d t_alter_table_014;
+Table "public.t_alter_table_014"
+ Column |  Type   | Modifiers 
+--------+---------+-----------
+ c      | integer | not null
+
+\d t_alter_table_015;
+Table "public.t_alter_table_015"
+ Column |  Type   | Modifiers 
+--------+---------+-----------
+ c      | integer | 
+Indexes:
+    "alter_index_003" btree (c) TABLESPACE pg_default
+
+\d t_alter_table_016;
+Table "public.t_alter_table_016"
+ Column |  Type   | Modifiers 
+--------+---------+-----------
+ c      | integer | 
+Indexes:
+    "alter_index_004" hash (c) TABLESPACE pg_default
+
+\d t_alter_table_017;
+Table "public.t_alter_table_017"
+ Column |   Type   | Modifiers 
+--------+----------+-----------
+ c      | tsvector | 
+Indexes:
+    "alter_index_005" gin (c) TABLESPACE pg_default
+
+\d t_alter_table_018;
+Table "public.t_alter_table_018"
+ Column |  Type   | Modifiers 
+--------+---------+-----------
+ c      | tsquery | 
+Indexes:
+    "alter_index_006" gist (c) TABLESPACE pg_default
+
+\d t_alter_table_019;
+                          Table "public.t_alter_table_019"
+ Column |            Type             |                  Modifiers                  
+--------+-----------------------------+---------------------------------------------
+ c      | timestamp(0) with time zone | on update b_db_statement_start_timestamp(0)
+
+\d t_alter_table_020;
+         Table "public.t_alter_table_020"
+ Column |            Type             | Modifiers 
+--------+-----------------------------+-----------
+ c      | timestamp(0) with time zone | 
+
+\d t_alter_table_021;
+  Table "public.t_alter_table_021"
+ Column |     Type      | Modifiers 
+--------+---------------+-----------
+ c      | character(64) | 
+Indexes:
+    "t_alter_table_021_expr_idx" btree (c(64)) TABLESPACE pg_default
+
+\d t_alter_table_022;
+      Table "public.t_alter_table_022"
+ Column |         Type          | Modifiers 
+--------+-----------------------+-----------
+ c1     | character varying(64) | 
+ c2     | character varying(64) | 
+Indexes:
+    "t_alter_table_022_expr_expr1_idx" btree (c1(64), c2(64)) TABLESPACE pg_default
+
+\d t_alter_table_023;
+Unlogged table "public.t_alter_table_023"
+ Column |     Type      | Modifiers 
+--------+---------------+-----------
+ c1     | nvarchar2(64) | 
+ c2     | nvarchar2(64) | 
+Indexes:
+    "t_alter_table_023_expr_expr1_idx" btree (c1(64), c2(64)) TABLESPACE pg_default
+
+\d t_alter_table_024;
+Table "public.t_alter_table_024"
+ Column | Type | Modifiers 
+--------+------+-----------
+ c      | text | 
+Indexes:
+    "t_alter_table_024_expr_idx" btree (c(2676)) TABLESPACE pg_default
+
+\d t_alter_table_025;
+Table "public.t_alter_table_025"
+ Column | Type | Modifiers 
+--------+------+-----------
+ c1     | clob | 
+ c2     | blob | 
+Indexes:
+    "t_alter_table_025_expr_expr1_idx" ubtree (c1(1), c2(2676)) WITH (storage_type=USTORE) TABLESPACE pg_default
+
+\d t_alter_table_026;
+Table "public.t_alter_table_026"
+ Column | Type  | Modifiers 
+--------+-------+-----------
+ c1     | raw   | 
+ c2     | bytea | 
+Indexes:
+    "t_alter_table_026_expr_expr1_idx" ubtree (c1(1), c2(2676)) WITH (storage_type=USTORE) TABLESPACE pg_default
+
+\d t_alter_table_027;
+Table "public.t_alter_table_027"
+ Column |  Type   | Modifiers 
+--------+---------+-----------
+ c      | integer | 
+Indexes:
+    "t_alter_table_027_c_idx" btree (c) TABLESPACE pg_default
+
+\d t_alter_table_028;
+Table "public.t_alter_table_028"
+ Column |  Type   | Modifiers 
+--------+---------+-----------
+ c      | integer | 
+Indexes:
+    "t_alter_table_028_c_idx" psort (c) TABLESPACE pg_default
+
+\d t_alter_table_029;
+Table "public.t_alter_table_029"
+ Column |  Type   | Modifiers 
+--------+---------+-----------
+ c1     | integer | 
+ c2     | integer | 
+Indexes:
+    "t_alter_table_029_c1_c2_idx" btree (c1 DESC, c2) TABLESPACE pg_default
+
+\d t_alter_table_030;
+Table "public.t_alter_table_030"
+ Column |  Type   | Modifiers 
+--------+---------+-----------
+ c      | integer | 
+Indexes:
+    "t_alter_table_030_c_idx" hash (c) TABLESPACE pg_default
+
+\d t_alter_table_031;
+Table "public.t_alter_table_031"
+ Column |  Type   | Modifiers 
+--------+---------+-----------
+ c      | tsquery | 
+Indexes:
+    "t_alter_table_031_c_idx" gist (c) TABLESPACE pg_default
+
+\d t_alter_table_032;
+Table "public.t_alter_table_032"
+ Column |   Type   | Modifiers 
+--------+----------+-----------
+ c      | tsvector | 
+Indexes:
+    "t_alter_table_032_c_idx" gin (c) TABLESPACE pg_default
+
+\d t_alter_table_033;
+Table "public.t_alter_table_033"
+ Column |  Type   | Modifiers 
+--------+---------+-----------
+ c      | integer | 
+Indexes:
+    "t_alter_table_033_c_idx" btree (c DESC) TABLESPACE pg_default
+    "t_alter_table_033_c_idx1" hash (c) TABLESPACE pg_default
+
+\d t_alter_table_034;
+Table "public.t_alter_table_034"
+ Column |  Type   | Modifiers 
+--------+---------+-----------
+ c1     | integer | 
+ c2     | integer | 
+Indexes:
+    "t_alter_table_034_c1_idx" btree (c1) TABLESPACE pg_default
+    "t_alter_table_034_c2_idx" hash (c2) TABLESPACE pg_default
+
+--其他table语法测试
+--checksum table测试
+create table t_checksum_table_001(c int);
+checksum table t_checksum_table_001;
+            Table            | Checksum 
+-----------------------------+----------
+ public.t_checksum_table_001 | 0
+(1 row)
+
+create table t_checksum_table_002(c int, index using btree(c));
+checksum table t_checksum_table_002 quick;
+            Table            | Checksum 
+-----------------------------+----------
+ public.t_checksum_table_002 | 
+(1 row)
+
+create table t_checksum_table_003(c int) with (orientation = column);
+checksum table t_checksum_table_003 extended;
+            Table            | Checksum 
+-----------------------------+----------
+ public.t_checksum_table_003 | 0
+(1 row)
+
+create table t_checksum_table_004(c int) with (storage_type = ustore);
+create table t_checksum_table_005(c int) with (segment = on);
+checksum table t_checksum_table_004, t_checksum_table_005;
+            Table            | Checksum 
+-----------------------------+----------
+ public.t_checksum_table_004 | 0
+ public.t_checksum_table_005 | 0
+(2 rows)
+
+--rename table测试
+create table renametable001(c int);
+rename table renametable001 to t_rename_table_001;
+create schema test_rename_table;
+create table test_rename_table.renametable001(c int);
+rename table test_rename_table.renametable001 to test_rename_table.t_rename_table_001;
+--analyze table测试
+create table t_analyze_table_001(a int);
+analyze table t_analyze_table_001;
+           Table            |   Op    | Msg_type | Msg_text 
+----------------------------+---------+----------+----------
+ public.t_analyze_table_001 | analyze | status   | OK
+(1 row)
+
+create table t_analyze_table_002(a int) with (orientation = column);
+analyze no_write_to_binlog table t_analyze_table_002;
+           Table            |   Op    | Msg_type | Msg_text 
+----------------------------+---------+----------+----------
+ public.t_analyze_table_002 | analyze | status   | OK
+(1 row)
+
+create table t_analyze_table_003(a int) with (storage_type = ustore);
+analyze local table t_analyze_table_003;
+           Table            |   Op    | Msg_type | Msg_text 
+----------------------------+---------+----------+----------
+ public.t_analyze_table_003 | analyze | status   | OK
+(1 row)
+
+--optimize table测试
+create table t_optimize_table_001(a text);
+optimize table t_optimize_table_001;
+\! @abs_bindir@/gs_dump dump_table_db -p @portstring@ -f @abs_bindir@/dump_table.sql -F p >/dev/null 2>&1; echo $?
+0
+drop table t_create_table_001;
+drop table t_create_table_002;
+drop table t_create_table_003;
+drop table t_create_table_004;
+drop table t_create_table_005;
+drop table t_create_table_006;
+drop table t_create_table_007;
+drop table t_create_table_008;
+drop table t_create_table_009;
+drop table t_create_table_010;
+drop table t_create_table_011;
+drop table t_create_table_012;
+drop table t_create_table_013;
+drop table t_create_table_014;
+drop table t_create_table_015;
+drop table t_create_table_016;
+drop table t_create_table_017;
+drop table t_create_table_018;
+drop table t_create_table_019;
+drop table t_create_table_020;
+drop table t_create_table_021;
+drop table t_create_table_022;
+drop table t_create_table_023;
+drop table t_create_table_024;
+drop table t_create_table_025;
+drop table t_create_table_026;
+drop table t_create_table_027;
+drop table t_create_table_028;
+drop table t_create_table_029;
+drop table t_create_table_030;
+drop table t_create_table_031;
+drop table t_create_table_032;
+drop table t_create_table_033;
+drop table t_create_table_034;
+drop table t_create_table_035;
+drop table t_create_table_036;
+drop table t_alter_table_001;
+drop table t_alter_table_002;
+drop table t_alter_table_003;
+drop table t_alter_table_004;
+drop table t_alter_table_005;
+drop table t_alter_table_006;
+drop table t_alter_table_007;
+drop table t_alter_table_008;
+drop table t_alter_table_009;
+drop table t_alter_table_010;
+drop table t_alter_table_011;
+drop table t_alter_table_012;
+drop table t_alter_table_013;
+drop table t_alter_table_014;
+drop table t_alter_table_015;
+drop table t_alter_table_016;
+drop table t_alter_table_017;
+drop table t_alter_table_018;
+drop table t_alter_table_019;
+drop table t_alter_table_020;
+drop table t_alter_table_021;
+drop table t_alter_table_022;
+drop table t_alter_table_023;
+drop table t_alter_table_024;
+drop table t_alter_table_025;
+drop table t_alter_table_026;
+drop table t_alter_table_027;
+drop table t_alter_table_028;
+drop table t_alter_table_029;
+drop table t_alter_table_030;
+drop table t_alter_table_031;
+drop table t_alter_table_032;
+drop table t_alter_table_033;
+drop table t_alter_table_034;
+drop table t_checksum_table_001;
+drop table t_checksum_table_002;
+drop table t_checksum_table_003;
+drop table t_checksum_table_004;
+drop table t_checksum_table_005;
+drop table t_rename_table_001;
+drop table test_rename_table.t_rename_table_001;
+drop table t_analyze_table_001;
+drop table t_analyze_table_002;
+drop table t_analyze_table_003;
+\! @abs_bindir@/gsql restore_table_db -p @portstring@ -f @abs_bindir@/dump_table.sql >/dev/null 2>&1; echo $?
+0
+\c restore_table_db
+\d t_create_table_001;
+Table "public.t_create_table_001"
+ Column |  Type   | Modifiers 
+--------+---------+-----------
+ c      | integer | 
+
+\d t_create_table_002;
+Table "public.t_create_table_002"
+ Column |  Type   | Modifiers 
+--------+---------+-----------
+ c      | integer | 
+
+\d t_create_table_003;
+Table "public.t_create_table_003"
+ Column |  Type   | Modifiers 
+--------+---------+-----------
+ c      | integer | 
+
+\d t_create_table_004;
+     Table "public.t_create_table_004"
+ Column | Type |         Modifiers          
+--------+------+----------------------------
+ c      | text | collate utf8mb4_general_ci
+
+\d t_create_table_005;
+     Table "public.t_create_table_005"
+ Column | Type |         Modifiers          
+--------+------+----------------------------
+ c      | text | collate utf8mb4_general_ci
+
+\d t_create_table_006;
+  Table "public.t_create_table_006"
+ Column | Type |      Modifiers      
+--------+------+---------------------
+ c      | text | collate utf8mb4_bin
+
+\d t_create_table_007;
+Table "public.t_create_table_007"
+ Column |  Type   | Modifiers 
+--------+---------+-----------
+ c      | integer | 
+
+\d t_create_table_008;
+Table "public.t_create_table_008"
+ Column |  Type   | Modifiers 
+--------+---------+-----------
+ c      | integer | 
+
+\d t_create_table_009;
+Table "public.t_create_table_009"
+ Column |  Type   | Modifiers 
+--------+---------+-----------
+ c      | integer | 
+
+\d t_create_table_010;
+Table "public.t_create_table_010"
+ Column |  Type   | Modifiers 
+--------+---------+-----------
+ c      | integer | 
+
+\d t_create_table_011;
+Table "public.t_create_table_011"
+ Column |  Type   | Modifiers 
+--------+---------+-----------
+ c      | integer | 
+
+\d t_create_table_012;
+Table "public.t_create_table_012"
+ Column |  Type   | Modifiers 
+--------+---------+-----------
+ c      | integer | 
+
+\d t_create_table_013;
+Table "public.t_create_table_013"
+ Column |  Type   | Modifiers 
+--------+---------+-----------
+ c      | integer | 
+
+\d t_create_table_014;
+Table "public.t_create_table_014"
+ Column |  Type   | Modifiers 
+--------+---------+-----------
+ c      | integer | 
+
+\d t_create_table_015;
+Table "public.t_create_table_015"
+ Column |  Type   | Modifiers 
+--------+---------+-----------
+ c      | integer | 
+
+\d t_create_table_016;
+Table "public.t_create_table_016"
+ Column |  Type   | Modifiers 
+--------+---------+-----------
+ c      | integer | 
+
+\d t_create_table_017;
+Table "public.t_create_table_017"
+ Column |  Type   | Modifiers 
+--------+---------+-----------
+ c      | integer | 
+
+\d t_create_table_018;
+Table "public.t_create_table_018"
+ Column |  Type   | Modifiers 
+--------+---------+-----------
+ c      | integer | 
+
+\d t_create_table_019;
+                         Table "public.t_create_table_019"
+ Column |            Type             |                  Modifiers                  
+--------+-----------------------------+---------------------------------------------
+ c      | integer                     | 
+ t      | timestamp(0) with time zone | on update b_db_statement_start_timestamp(0)
+
+\d t_create_table_020;
+     Table "public.t_create_table_020"
+ Column |         Type          | Modifiers 
+--------+-----------------------+-----------
+ c1     | character(64)         | 
+ c2     | character varying(64) | 
+ c3     | character varying(64) | 
+Indexes:
+    "t_create_table_020_expr_expr1_expr2_idx" btree (c1(64), c2(64), c3(64)) TABLESPACE pg_default
+
+\d t_create_table_021;
+Unlogged table "public.t_create_table_021"
+ Column |     Type      | Modifiers 
+--------+---------------+-----------
+ c1     | nvarchar2(64) | 
+ c2     | nvarchar2(64) | 
+ c3     | text          | 
+Indexes:
+    "t_create_table_021_expr_expr1_expr2_idx" btree (c1(64), c2(64), c3(2676)) TABLESPACE pg_default
+
+\d t_create_table_022;
+Table "public.t_create_table_022"
+ Column | Type  | Modifiers 
+--------+-------+-----------
+ c1     | clob  | 
+ c2     | blob  | 
+ c3     | raw   | 
+ c4     | bytea | 
+Indexes:
+    "t_create_table_022_expr_expr1_expr2_expr3_idx" ubtree (c1(1), c2(2676), c3(1), c4(2676)) WITH (storage_type=ustore) TABLESPACE pg_default
+
+\d t_create_table_023;
+Table "public.t_create_table_023"
+ Column |  Type   | Modifiers 
+--------+---------+-----------
+ c      | integer | 
+Indexes:
+    "t_create_table_023_c_idx" btree (c) TABLESPACE pg_default
+
+\d t_create_table_024;
+Table "public.t_create_table_024"
+ Column |  Type   | Modifiers 
+--------+---------+-----------
+ c      | integer | 
+Indexes:
+    "create_index_001" psort (c) TABLESPACE pg_default
+
+\d t_create_table_025;
+Table "public.t_create_table_025"
+ Column |  Type   | Modifiers 
+--------+---------+-----------
+ c1     | integer | 
+ c2     | integer | 
+Indexes:
+    "create_index_002" btree (c1 DESC, c2) TABLESPACE pg_default
+
+\d t_create_table_026;
+Table "public.t_create_table_026"
+ Column |  Type   | Modifiers 
+--------+---------+-----------
+ c      | integer | 
+Indexes:
+    "create_index_003" hash (c) TABLESPACE pg_default
+
+\d t_create_table_027;
+Table "public.t_create_table_027"
+ Column |  Type   | Modifiers 
+--------+---------+-----------
+ c      | tsquery | 
+Indexes:
+    "t_create_table_027_c_idx" gist (c) TABLESPACE pg_default
+
+\d t_create_table_028;
+Table "public.t_create_table_028"
+ Column |   Type   | Modifiers 
+--------+----------+-----------
+ c      | tsvector | 
+Indexes:
+    "t_create_table_028_c_idx" gin (c) TABLESPACE pg_default
+
+\d t_create_table_029;
+Table "public.t_create_table_029"
+ Column |  Type   | Modifiers 
+--------+---------+-----------
+ c      | integer | 
+Indexes:
+    "create_index_004" hash (c) TABLESPACE pg_default
+    "t_create_table_029_c_idx" btree (c DESC) TABLESPACE pg_default
+
+\d t_create_table_030;
+Table "public.t_create_table_030"
+ Column |  Type   | Modifiers 
+--------+---------+-----------
+ c1     | integer | 
+ c2     | integer | 
+Indexes:
+    "create_index_005" btree (c1) TABLESPACE pg_default
+    "create_index_006" hash (c2) TABLESPACE pg_default
+
+\d t_create_table_031;
+Table "public.t_create_table_031"
+ Column |  Type   | Modifiers 
+--------+---------+-----------
+ a      | integer | 
+ b      | text    | 
+
+\d t_create_table_032;
+Table "public.t_create_table_032"
+ Column |  Type   | Modifiers 
+--------+---------+-----------
+ a      | integer | 
+ b      | text    | 
+
+\d t_create_table_033;
+Table "public.t_create_table_033"
+ Column |  Type   | Modifiers 
+--------+---------+-----------
+ a      | integer | 
+ b      | text    | 
+
+\d t_create_table_034;
+Table "public.t_create_table_034"
+ Column |  Type   | Modifiers 
+--------+---------+-----------
+ a      | integer | 
+ b      | text    | 
+
+\d t_create_table_035;
+Table "public.t_create_table_035"
+ Column |  Type   | Modifiers 
+--------+---------+-----------
+ c      | integer | 
+ b      | text    | 
+
+\d t_create_table_036;
+Table "public.t_create_table_036"
+ Column |  Type   | Modifiers 
+--------+---------+-----------
+ col1   | integer | 
+ col2   | text    | 
+
+show create table t_create_table_001;
+       Table        |              Create Table               
+--------------------+-----------------------------------------
+ t_create_table_001 | SET search_path = public;              +
+                    | CREATE TABLE t_create_table_001 (      +
+                    |     c integer                          +
+                    | )                                      +
+                    | WITH (orientation=row, compression=no);
+(1 row)
+
+show create table t_create_table_002;
+       Table        |              Create Table               
+--------------------+-----------------------------------------
+ t_create_table_002 | SET search_path = public;              +
+                    | CREATE TABLE t_create_table_002 (      +
+                    |     c integer                          +
+                    | )                                      +
+                    | WITH (orientation=row, compresstype=1);
+(1 row)
+
+show create table t_create_table_003;
+       Table        |              Create Table               
+--------------------+-----------------------------------------
+ t_create_table_003 | SET search_path = public;              +
+                    | CREATE TABLE t_create_table_003 (      +
+                    |     c integer                          +
+                    | )                                      +
+                    | WITH (orientation=row, compression=no);
+(1 row)
+
+show create table t_create_table_004;
+       Table        |                        Create Table                        
+--------------------+------------------------------------------------------------
+ t_create_table_004 | SET search_path = public;                                 +
+                    | CREATE TABLE t_create_table_004 (                         +
+                    |     c text CHARACTER SET "UTF8" COLLATE utf8mb4_general_ci+
+                    | )                                                         +
+                    | WITH (orientation=row, compression=no);
+(1 row)
+
+show create table t_create_table_005;
+       Table        |                        Create Table                        
+--------------------+------------------------------------------------------------
+ t_create_table_005 | SET search_path = public;                                 +
+                    | CREATE TABLE t_create_table_005 (                         +
+                    |     c text CHARACTER SET "UTF8" COLLATE utf8mb4_general_ci+
+                    | )                                                         +
+                    | WITH (orientation=row, compression=no);
+(1 row)
+
+show create table t_create_table_006;
+       Table        |                    Create Table                     
+--------------------+-----------------------------------------------------
+ t_create_table_006 | SET search_path = public;                          +
+                    | CREATE TABLE t_create_table_006 (                  +
+                    |     c text CHARACTER SET "UTF8" COLLATE utf8mb4_bin+
+                    | )                                                  +
+                    | WITH (orientation=row, compression=no);
+(1 row)
+
+show create table t_create_table_007;
+       Table        |                     Create Table                      
+--------------------+-------------------------------------------------------
+ t_create_table_007 | SET search_path = public;                            +
+                    | CREATE TABLE t_create_table_007 (                    +
+                    |     c integer                                        +
+                    | )                                                    +
+                    | CHARACTER SET = "UTF8" COLLATE = "utf8mb4_general_ci"+
+                    | WITH (orientation=row, compression=no);
+(1 row)
+
+show create table t_create_table_008;
+       Table        |                     Create Table                      
+--------------------+-------------------------------------------------------
+ t_create_table_008 | SET search_path = public;                            +
+                    | CREATE TABLE t_create_table_008 (                    +
+                    |     c integer                                        +
+                    | )                                                    +
+                    | CHARACTER SET = "UTF8" COLLATE = "utf8mb4_general_ci"+
+                    | WITH (orientation=row, compression=no);
+(1 row)
+
+show create table t_create_table_009;
+       Table        |                     Create Table                      
+--------------------+-------------------------------------------------------
+ t_create_table_009 | SET search_path = public;                            +
+                    | CREATE TABLE t_create_table_009 (                    +
+                    |     c integer                                        +
+                    | )                                                    +
+                    | CHARACTER SET = "UTF8" COLLATE = "utf8mb4_general_ci"+
+                    | WITH (orientation=row, compression=no);
+(1 row)
+
+show create table t_create_table_010;
+       Table        |                     Create Table                      
+--------------------+-------------------------------------------------------
+ t_create_table_010 | SET search_path = public;                            +
+                    | CREATE TABLE t_create_table_010 (                    +
+                    |     c integer                                        +
+                    | )                                                    +
+                    | CHARACTER SET = "UTF8" COLLATE = "utf8mb4_general_ci"+
+                    | WITH (orientation=row, compression=no);
+(1 row)
+
+show create table t_create_table_011;
+       Table        |              Create Table               
+--------------------+-----------------------------------------
+ t_create_table_011 | SET search_path = public;              +
+                    | CREATE TABLE t_create_table_011 (      +
+                    |     c integer                          +
+                    | )                                      +
+                    | WITH (orientation=row, compression=no);
+(1 row)
+
+show create table t_create_table_012;
+       Table        |              Create Table               
+--------------------+-----------------------------------------
+ t_create_table_012 | SET search_path = public;              +
+                    | CREATE TABLE t_create_table_012 (      +
+                    |     c integer                          +
+                    | )                                      +
+                    | WITH (orientation=row, compression=no);
+(1 row)
+
+show create table t_create_table_013;
+       Table        |              Create Table               
+--------------------+-----------------------------------------
+ t_create_table_013 | SET search_path = public;              +
+                    | CREATE TABLE t_create_table_013 (      +
+                    |     c integer                          +
+                    | )                                      +
+                    | WITH (orientation=row, compression=no);
+(1 row)
+
+show create table t_create_table_014;
+       Table        |              Create Table               
+--------------------+-----------------------------------------
+ t_create_table_014 | SET search_path = public;              +
+                    | CREATE TABLE t_create_table_014 (      +
+                    |     c integer                          +
+                    | )                                      +
+                    | WITH (orientation=row, compression=no);
+(1 row)
+
+show create table t_create_table_015;
+       Table        |              Create Table               
+--------------------+-----------------------------------------
+ t_create_table_015 | SET search_path = public;              +
+                    | CREATE TABLE t_create_table_015 (      +
+                    |     c integer                          +
+                    | )                                      +
+                    | WITH (orientation=row, compression=no);
+(1 row)
+
+show create table t_create_table_016;
+       Table        |                     Create Table                      
+--------------------+-------------------------------------------------------
+ t_create_table_016 | SET search_path = public;                            +
+                    | CREATE TABLE t_create_table_016 (                    +
+                    |     c integer                                        +
+                    | )                                                    +
+                    | CHARACTER SET = "UTF8" COLLATE = "utf8mb4_general_ci"+
+                    | WITH (orientation=row, compression=no);
+(1 row)
+
+show create table t_create_table_017;
+       Table        |                     Create Table                      
+--------------------+-------------------------------------------------------
+ t_create_table_017 | SET search_path = public;                            +
+                    | CREATE TABLE t_create_table_017 (                    +
+                    |     c integer                                        +
+                    | )                                                    +
+                    | CHARACTER SET = "UTF8" COLLATE = "utf8mb4_general_ci"+
+                    | WITH (orientation=row, compression=no);
+(1 row)
+
+show create table t_create_table_018;
+       Table        |              Create Table               
+--------------------+-----------------------------------------
+ t_create_table_018 | SET search_path = public;              +
+                    | CREATE TABLE t_create_table_018 (      +
+                    |     c integer                          +
+                    | )                                      +
+                    | WITH (orientation=row, compresstype=2);
+(1 row)
+
+show create table t_create_table_019;
+       Table        |                           Create Table                           
+--------------------+------------------------------------------------------------------
+ t_create_table_019 | SET search_path = public;                                       +
+                    | CREATE TABLE t_create_table_019 (                               +
+                    |     c integer,                                                  +
+                    |     t timestamp(0) with time zone ON UPDATE CURRENT_TIMESTAMP(0)+
+                    | )                                                               +
+                    | WITH (orientation=row, compression=no);
+(1 row)
+
+show create table t_create_table_020;
+       Table        |                                                              Create Table                                                              
+--------------------+----------------------------------------------------------------------------------------------------------------------------------------
+ t_create_table_020 | SET search_path = public;                                                                                                             +
+                    | CREATE TABLE t_create_table_020 (                                                                                                     +
+                    |     c1 character(64),                                                                                                                 +
+                    |     c2 character varying(64),                                                                                                         +
+                    |     c3 character varying(64)                                                                                                          +
+                    | )                                                                                                                                     +
+                    | WITH (orientation=row, compression=no);                                                                                               +
+                    | CREATE INDEX t_create_table_020_expr_expr1_expr2_idx ON t_create_table_020 USING btree (c1(64), c2(64), c3(64)) TABLESPACE pg_default;
+(1 row)
+
+show create table t_create_table_021;
+       Table        |                                                               Create Table                                                               
+--------------------+------------------------------------------------------------------------------------------------------------------------------------------
+ t_create_table_021 | SET search_path = public;                                                                                                               +
+                    | CREATE UNLOGGED TABLE t_create_table_021 (                                                                                              +
+                    |     c1 nvarchar2(64),                                                                                                                   +
+                    |     c2 nvarchar2(64),                                                                                                                   +
+                    |     c3 text                                                                                                                             +
+                    | )                                                                                                                                       +
+                    | WITH (orientation=row, compression=no);                                                                                                 +
+                    | CREATE INDEX t_create_table_021_expr_expr1_expr2_idx ON t_create_table_021 USING btree (c1(64), c2(64), c3(2676)) TABLESPACE pg_default;
+(1 row)
+
+show create table t_create_table_022;
+       Table        |                                                                                    Create Table                                                                                    
+--------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ t_create_table_022 | SET search_path = public;                                                                                                                                                         +
+                    | CREATE TABLE t_create_table_022 (                                                                                                                                                 +
+                    |     c1 clob,                                                                                                                                                                      +
+                    |     c2 blob,                                                                                                                                                                      +
+                    |     c3 raw,                                                                                                                                                                       +
+                    |     c4 bytea                                                                                                                                                                      +
+                    | )                                                                                                                                                                                 +
+                    | WITH (orientation=row, storage_type=ustore, compression=no);                                                                                                                      +
+                    | CREATE INDEX t_create_table_022_expr_expr1_expr2_expr3_idx ON t_create_table_022 USING ubtree (c1(1), c2(2676), c3(1), c4(2676)) WITH (storage_type=ustore) TABLESPACE pg_default;
+(1 row)
+
+show create table t_create_table_023;
+       Table        |                                            Create Table                                            
+--------------------+----------------------------------------------------------------------------------------------------
+ t_create_table_023 | SET search_path = public;                                                                         +
+                    | CREATE TABLE t_create_table_023 (                                                                 +
+                    |     c integer                                                                                     +
+                    | )                                                                                                 +
+                    | WITH (orientation=row, compression=no);                                                           +
+                    | CREATE INDEX t_create_table_023_c_idx ON t_create_table_023 USING btree (c) TABLESPACE pg_default;
+(1 row)
+
+show create table t_create_table_024;
+       Table        |                                        Create Table                                        
+--------------------+--------------------------------------------------------------------------------------------
+ t_create_table_024 | SET search_path = public;                                                                 +
+                    | CREATE TABLE t_create_table_024 (                                                         +
+                    |     c integer                                                                             +
+                    | )                                                                                         +
+                    | WITH (orientation=column, compression=low);                                               +
+                    | CREATE INDEX create_index_001 ON t_create_table_024 USING psort (c) TABLESPACE pg_default;
+(1 row)
+
+show create table t_create_table_025;
+       Table        |                                             Create Table                                             
+--------------------+------------------------------------------------------------------------------------------------------
+ t_create_table_025 | SET search_path = public;                                                                           +
+                    | CREATE TABLE t_create_table_025 (                                                                   +
+                    |     c1 integer,                                                                                     +
+                    |     c2 integer                                                                                      +
+                    | )                                                                                                   +
+                    | WITH (orientation=row, compression=no);                                                             +
+                    | CREATE INDEX create_index_002 ON t_create_table_025 USING btree (c1 DESC, c2) TABLESPACE pg_default;
+(1 row)
+
+show create table t_create_table_026;
+       Table        |                                       Create Table                                        
+--------------------+-------------------------------------------------------------------------------------------
+ t_create_table_026 | SET search_path = public;                                                                +
+                    | CREATE TABLE t_create_table_026 (                                                        +
+                    |     c integer                                                                            +
+                    | )                                                                                        +
+                    | WITH (orientation=row, compression=no);                                                  +
+                    | CREATE INDEX create_index_003 ON t_create_table_026 USING hash (c) TABLESPACE pg_default;
+(1 row)
+
+show create table t_create_table_027;
+       Table        |                                           Create Table                                            
+--------------------+---------------------------------------------------------------------------------------------------
+ t_create_table_027 | SET search_path = public;                                                                        +
+                    | CREATE TABLE t_create_table_027 (                                                                +
+                    |     c tsquery                                                                                    +
+                    | )                                                                                                +
+                    | WITH (orientation=row, compression=no);                                                          +
+                    | CREATE INDEX t_create_table_027_c_idx ON t_create_table_027 USING gist (c) TABLESPACE pg_default;
+(1 row)
+
+show create table t_create_table_028;
+       Table        |                                           Create Table                                           
+--------------------+--------------------------------------------------------------------------------------------------
+ t_create_table_028 | SET search_path = public;                                                                       +
+                    | CREATE TABLE t_create_table_028 (                                                               +
+                    |     c tsvector                                                                                  +
+                    | )                                                                                               +
+                    | WITH (orientation=row, compression=no);                                                         +
+                    | CREATE INDEX t_create_table_028_c_idx ON t_create_table_028 USING gin (c) TABLESPACE pg_default;
+(1 row)
+
+show create table t_create_table_029;
+       Table        |                                              Create Table                                               
+--------------------+---------------------------------------------------------------------------------------------------------
+ t_create_table_029 | SET search_path = public;                                                                              +
+                    | CREATE TABLE t_create_table_029 (                                                                      +
+                    |     c integer                                                                                          +
+                    | )                                                                                                      +
+                    | WITH (orientation=row, compression=no);                                                                +
+                    | CREATE INDEX t_create_table_029_c_idx ON t_create_table_029 USING btree (c DESC) TABLESPACE pg_default;+
+                    | CREATE INDEX create_index_004 ON t_create_table_029 USING hash (c) TABLESPACE pg_default;
+(1 row)
+
+show create table t_create_table_030;
+       Table        |                                        Create Table                                         
+--------------------+---------------------------------------------------------------------------------------------
+ t_create_table_030 | SET search_path = public;                                                                  +
+                    | CREATE TABLE t_create_table_030 (                                                          +
+                    |     c1 integer,                                                                            +
+                    |     c2 integer                                                                             +
+                    | )                                                                                          +
+                    | WITH (orientation=row, compression=no);                                                    +
+                    | CREATE INDEX create_index_006 ON t_create_table_030 USING hash (c2) TABLESPACE pg_default; +
+                    | CREATE INDEX create_index_005 ON t_create_table_030 USING btree (c1) TABLESPACE pg_default;
+(1 row)
+
+show create table t_create_table_031;
+       Table        |              Create Table               
+--------------------+-----------------------------------------
+ t_create_table_031 | SET search_path = public;              +
+                    | CREATE TABLE t_create_table_031 (      +
+                    |     a integer,                         +
+                    |     b text                             +
+                    | )                                      +
+                    | WITH (orientation=row, compression=no);
+(1 row)
+
+show create table t_create_table_032;
+       Table        |              Create Table               
+--------------------+-----------------------------------------
+ t_create_table_032 | SET search_path = public;              +
+                    | CREATE TABLE t_create_table_032 (      +
+                    |     a integer,                         +
+                    |     b text                             +
+                    | )                                      +
+                    | WITH (orientation=row, compression=no);
+(1 row)
+
+show create table t_create_table_033;
+       Table        |              Create Table               
+--------------------+-----------------------------------------
+ t_create_table_033 | SET search_path = public;              +
+                    | CREATE TABLE t_create_table_033 (      +
+                    |     a integer,                         +
+                    |     b text                             +
+                    | )                                      +
+                    | WITH (orientation=row, compression=no);
+(1 row)
+
+show create table t_create_table_034;
+       Table        |              Create Table               
+--------------------+-----------------------------------------
+ t_create_table_034 | SET search_path = public;              +
+                    | CREATE TABLE t_create_table_034 (      +
+                    |     a integer,                         +
+                    |     b text                             +
+                    | )                                      +
+                    | WITH (orientation=row, compression=no);
+(1 row)
+
+show create table t_create_table_035;
+       Table        |              Create Table               
+--------------------+-----------------------------------------
+ t_create_table_035 | SET search_path = public;              +
+                    | CREATE TABLE t_create_table_035 (      +
+                    |     c integer,                         +
+                    |     b text                             +
+                    | )                                      +
+                    | WITH (orientation=row, compression=no);
+(1 row)
+
+show create table t_create_table_036;
+       Table        |              Create Table               
+--------------------+-----------------------------------------
+ t_create_table_036 | SET search_path = public;              +
+                    | CREATE TABLE t_create_table_036 (      +
+                    |     col1 integer,                      +
+                    |     col2 text                          +
+                    | )                                      +
+                    | WITH (orientation=row, compression=no);
+(1 row)
+
+select count(*) from t_create_table_032;
+ count 
+-------
+     4
+(1 row)
+
+select count(*) from t_create_table_033;
+ count 
+-------
+     2
+(1 row)
+
+select count(*) from t_create_table_034;
+ count 
+-------
+     2
+(1 row)
+
+select count(*) from t_create_table_035;
+ count 
+-------
+     4
+(1 row)
+
+select count(*) from t_create_table_036;
+ count 
+-------
+     2
+(1 row)
+
+\d t_alter_table_001;
+Table "public.t_alter_table_001"
+ Column |  Type   | Modifiers 
+--------+---------+-----------
+ c      | integer | 
+
+\d t_alter_table_002;
+Table "public.t_alter_table_002"
+ Column |  Type   | Modifiers 
+--------+---------+-----------
+ c      | integer | 
+
+\d t_alter_table_003;
+Table "public.t_alter_table_003"
+ Column |  Type   | Modifiers 
+--------+---------+-----------
+ c      | integer | 
+
+\d t_alter_table_004;
+Table "public.t_alter_table_004"
+ Column |  Type   | Modifiers 
+--------+---------+-----------
+ c      | integer | 
+
+\d t_alter_table_005;
+Table "public.t_alter_table_005"
+ Column |  Type   | Modifiers 
+--------+---------+-----------
+ c      | integer | 
+
+\d t_alter_table_006;
+Table "public.t_alter_table_006"
+ Column |  Type   | Modifiers 
+--------+---------+-----------
+ c      | integer | 
+Indexes:
+    "t_alter_table_006_c_idx" btree (c) TABLESPACE pg_default UNUSABLE
+
+\d t_alter_table_007;
+Table "public.t_alter_table_007"
+ Column |  Type   | Modifiers 
+--------+---------+-----------
+ c      | integer | 
+Indexes:
+    "t_alter_table_007_c_idx" hash (c) TABLESPACE pg_default
+
+\d t_alter_table_008;
+Table "public.t_alter_table_008"
+ Column |  Type   | Modifiers 
+--------+---------+-----------
+ c      | integer | 
+
+\d t_alter_table_009;
+Table "public.t_alter_table_009"
+ Column |  Type   | Modifiers 
+--------+---------+-----------
+ c      | integer | 
+
+\d t_alter_table_010;
+Table "public.t_alter_table_010"
+ Column |  Type   | Modifiers 
+--------+---------+-----------
+ c      | integer | 
+
+\d t_alter_table_011;
+Table "public.t_alter_table_011"
+ Column |  Type   | Modifiers 
+--------+---------+-----------
+ c      | integer | 
+Indexes:
+    "t_alter_table_011_c_idx" hash (c) TABLESPACE pg_default
+
+\d t_alter_table_012;
+Table "public.t_alter_table_012"
+ Column |  Type   | Modifiers 
+--------+---------+-----------
+ c      | integer | not null
+Indexes:
+    "t_alter_table_012_pkey" PRIMARY KEY, btree (c) TABLESPACE pg_default
+
+describe t_alter_table_012;
+ Field |  Type   | Null | Key | Default | Extra 
+-------+---------+------+-----+---------+-------
+ c     | integer | NO   | PRI | NULL    | 
+(1 row)
+
+desc t_alter_table_012;
+ Field |  Type   | Null | Key | Default | Extra 
+-------+---------+------+-----+---------+-------
+ c     | integer | NO   | PRI | NULL    | 
+(1 row)
+
+explain t_alter_table_012;
+ Field |  Type   | Null | Key | Default | Extra 
+-------+---------+------+-----+---------+-------
+ c     | integer | NO   | PRI | NULL    | 
+(1 row)
+
+\d t_alter_table_013;
+Table "public.t_alter_table_013"
+ Column |  Type   | Modifiers 
+--------+---------+-----------
+ c      | integer | not null
+
+\d t_alter_table_014;
+Table "public.t_alter_table_014"
+ Column |  Type   | Modifiers 
+--------+---------+-----------
+ c      | integer | not null
+
+\d t_alter_table_015;
+Table "public.t_alter_table_015"
+ Column |  Type   | Modifiers 
+--------+---------+-----------
+ c      | integer | 
+Indexes:
+    "alter_index_003" btree (c) TABLESPACE pg_default
+
+\d t_alter_table_016;
+Table "public.t_alter_table_016"
+ Column |  Type   | Modifiers 
+--------+---------+-----------
+ c      | integer | 
+Indexes:
+    "alter_index_004" hash (c) TABLESPACE pg_default
+
+\d t_alter_table_017;
+Table "public.t_alter_table_017"
+ Column |   Type   | Modifiers 
+--------+----------+-----------
+ c      | tsvector | 
+Indexes:
+    "alter_index_005" gin (c) TABLESPACE pg_default
+
+\d t_alter_table_018;
+Table "public.t_alter_table_018"
+ Column |  Type   | Modifiers 
+--------+---------+-----------
+ c      | tsquery | 
+Indexes:
+    "alter_index_006" gist (c) TABLESPACE pg_default
+
+\d t_alter_table_019;
+                          Table "public.t_alter_table_019"
+ Column |            Type             |                  Modifiers                  
+--------+-----------------------------+---------------------------------------------
+ c      | timestamp(0) with time zone | on update b_db_statement_start_timestamp(0)
+
+\d t_alter_table_020;
+         Table "public.t_alter_table_020"
+ Column |            Type             | Modifiers 
+--------+-----------------------------+-----------
+ c      | timestamp(0) with time zone | 
+
+\d t_alter_table_021;
+  Table "public.t_alter_table_021"
+ Column |     Type      | Modifiers 
+--------+---------------+-----------
+ c      | character(64) | 
+Indexes:
+    "t_alter_table_021_expr_idx" btree (c(64)) TABLESPACE pg_default
+
+\d t_alter_table_022;
+      Table "public.t_alter_table_022"
+ Column |         Type          | Modifiers 
+--------+-----------------------+-----------
+ c1     | character varying(64) | 
+ c2     | character varying(64) | 
+Indexes:
+    "t_alter_table_022_expr_expr1_idx" btree (c1(64), c2(64)) TABLESPACE pg_default
+
+\d t_alter_table_023;
+Unlogged table "public.t_alter_table_023"
+ Column |     Type      | Modifiers 
+--------+---------------+-----------
+ c1     | nvarchar2(64) | 
+ c2     | nvarchar2(64) | 
+Indexes:
+    "t_alter_table_023_expr_expr1_idx" btree (c1(64), c2(64)) TABLESPACE pg_default
+
+\d t_alter_table_024;
+Table "public.t_alter_table_024"
+ Column | Type | Modifiers 
+--------+------+-----------
+ c      | text | 
+Indexes:
+    "t_alter_table_024_expr_idx" btree (c(2676)) TABLESPACE pg_default
+
+\d t_alter_table_025;
+Table "public.t_alter_table_025"
+ Column | Type | Modifiers 
+--------+------+-----------
+ c1     | clob | 
+ c2     | blob | 
+Indexes:
+    "t_alter_table_025_expr_expr1_idx" ubtree (c1(1), c2(2676)) WITH (storage_type=ustore) TABLESPACE pg_default
+
+\d t_alter_table_026;
+Table "public.t_alter_table_026"
+ Column | Type  | Modifiers 
+--------+-------+-----------
+ c1     | raw   | 
+ c2     | bytea | 
+Indexes:
+    "t_alter_table_026_expr_expr1_idx" ubtree (c1(1), c2(2676)) WITH (storage_type=ustore) TABLESPACE pg_default
+
+\d t_alter_table_027;
+Table "public.t_alter_table_027"
+ Column |  Type   | Modifiers 
+--------+---------+-----------
+ c      | integer | 
+Indexes:
+    "t_alter_table_027_c_idx" btree (c) TABLESPACE pg_default
+
+\d t_alter_table_028;
+Table "public.t_alter_table_028"
+ Column |  Type   | Modifiers 
+--------+---------+-----------
+ c      | integer | 
+Indexes:
+    "t_alter_table_028_c_idx" psort (c) TABLESPACE pg_default
+
+\d t_alter_table_029;
+Table "public.t_alter_table_029"
+ Column |  Type   | Modifiers 
+--------+---------+-----------
+ c1     | integer | 
+ c2     | integer | 
+Indexes:
+    "t_alter_table_029_c1_c2_idx" btree (c1 DESC, c2) TABLESPACE pg_default
+
+\d t_alter_table_030;
+Table "public.t_alter_table_030"
+ Column |  Type   | Modifiers 
+--------+---------+-----------
+ c      | integer | 
+Indexes:
+    "t_alter_table_030_c_idx" hash (c) TABLESPACE pg_default
+
+\d t_alter_table_031;
+Table "public.t_alter_table_031"
+ Column |  Type   | Modifiers 
+--------+---------+-----------
+ c      | tsquery | 
+Indexes:
+    "t_alter_table_031_c_idx" gist (c) TABLESPACE pg_default
+
+\d t_alter_table_032;
+Table "public.t_alter_table_032"
+ Column |   Type   | Modifiers 
+--------+----------+-----------
+ c      | tsvector | 
+Indexes:
+    "t_alter_table_032_c_idx" gin (c) TABLESPACE pg_default
+
+\d t_alter_table_033;
+Table "public.t_alter_table_033"
+ Column |  Type   | Modifiers 
+--------+---------+-----------
+ c      | integer | 
+Indexes:
+    "t_alter_table_033_c_idx" btree (c DESC) TABLESPACE pg_default
+    "t_alter_table_033_c_idx1" hash (c) TABLESPACE pg_default
+
+\d t_alter_table_034;
+Table "public.t_alter_table_034"
+ Column |  Type   | Modifiers 
+--------+---------+-----------
+ c1     | integer | 
+ c2     | integer | 
+Indexes:
+    "t_alter_table_034_c1_idx" btree (c1) TABLESPACE pg_default
+    "t_alter_table_034_c2_idx" hash (c2) TABLESPACE pg_default
+
+checksum table t_checksum_table_001;
+            Table            | Checksum 
+-----------------------------+----------
+ public.t_checksum_table_001 | 0
+(1 row)
+
+checksum table t_checksum_table_002 quick;
+            Table            | Checksum 
+-----------------------------+----------
+ public.t_checksum_table_002 | 
+(1 row)
+
+checksum table t_checksum_table_003 extended;
+            Table            | Checksum 
+-----------------------------+----------
+ public.t_checksum_table_003 | 0
+(1 row)
+
+checksum table t_checksum_table_004, t_checksum_table_005;
+            Table            | Checksum 
+-----------------------------+----------
+ public.t_checksum_table_004 | 0
+ public.t_checksum_table_005 | 0
+(2 rows)
+
+\d t_rename_table_001
+Table "public.t_rename_table_001"
+ Column |  Type   | Modifiers 
+--------+---------+-----------
+ c      | integer | 
+
+\d test_rename_table.t_rename_table_001
+Table "test_rename_table.t_rename_table_001"
+ Column |  Type   | Modifiers 
+--------+---------+-----------
+ c      | integer | 
+
+analyze table t_analyze_table_001;
+           Table            |   Op    | Msg_type | Msg_text 
+----------------------------+---------+----------+----------
+ public.t_analyze_table_001 | analyze | status   | OK
+(1 row)
+
+analyze no_write_to_binlog table t_analyze_table_002;
+           Table            |   Op    | Msg_type | Msg_text 
+----------------------------+---------+----------+----------
+ public.t_analyze_table_002 | analyze | status   | OK
+(1 row)
+
+analyze local table t_analyze_table_003;
+           Table            |   Op    | Msg_type | Msg_text 
+----------------------------+---------+----------+----------
+ public.t_analyze_table_003 | analyze | status   | OK
+(1 row)
+
+optimize table t_optimize_table_001;
+\c postgres
+drop database if exists restore_table_db;
+drop database if exists dump_table_db;

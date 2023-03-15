@@ -1,0 +1,86 @@
+--create trigger测试
+drop database if exists dump_trigger_db;
+NOTICE:  database "dump_trigger_db" does not exist, skipping
+drop database if exists restore_trigger_db;
+NOTICE:  database "restore_trigger_db" does not exist, skipping
+create database dump_trigger_db with dbcompatibility = 'B';
+create database restore_trigger_db with dbcompatibility = 'B';
+\c dump_trigger_db
+--test definer,if not exists
+create table t_create_trigger_001(c int);
+create table t_create_trigger_002(c int);
+create user test_trigger_definer with sysadmin password 'Test@123';
+NOTICE:  The iteration value of password is not recommended.Setting the iteration value too small reduces the security of the password, and setting it too large results in performance degradation.
+grant all on t_create_trigger_001, t_create_trigger_002 to test_trigger_definer;
+create definer = test_trigger_definer trigger if not exists trigger001
+after insert on t_create_trigger_001
+for each row
+begin
+        insert into t_create_trigger_002(c) values(3);
+end;
+/
+--drop trigger测试
+create table t_drop_trigger_001(c int);
+create table t_drop_trigger_002(c int);
+grant all on t_drop_trigger_001, t_drop_trigger_002 to test_trigger_definer;
+create definer = test_trigger_definer trigger if not exists trigger002
+after insert on t_drop_trigger_001
+for each row
+begin
+        insert into t_drop_trigger_002 values(3);
+end;
+/
+drop trigger if exists trigger002;
+select tgname from pg_trigger order by tgname;
+   tgname   
+------------
+ trigger001
+(1 row)
+
+show lc_collate;
+ lc_collate 
+------------
+ C
+(1 row)
+
+show create trigger trigger001;
+  Trigger   |                                               sql_mode                                               |                                                 SQL Original Statement                                                 | character_set_client | collation_connection | Database Collation 
+------------+------------------------------------------------------------------------------------------------------+------------------------------------------------------------------------------------------------------------------------+----------------------+----------------------+--------------------
+ trigger001 | sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date,pad_char_to_full_length | CREATE DEFINER = test_trigger_definer TRIGGER trigger001 AFTER INSERT ON t_create_trigger_001 FOR EACH ROW    DECLARE +| UTF8                 | C                    | C
+            |                                                                                                      | begin                                                                                                                 +|                      |                      | 
+            |                                                                                                      |         insert into t_create_trigger_002(c) values(3);                                                                +|                      |                      | 
+            |                                                                                                      | end;                                                                                                                   |                      |                      | 
+(1 row)
+
+--导入导出
+\! @abs_bindir@/gs_dump dump_trigger_db -p @portstring@ -f @abs_bindir@/dump_trigger.tar -F t >/dev/null 2>&1; echo $?
+0
+drop trigger if exists trigger001;
+\! @abs_bindir@/gs_restore -d restore_trigger_db -p @portstring@ @abs_bindir@/dump_trigger.tar >/dev/null 2>&1; echo $?
+0
+\c restore_trigger_db
+select tgname from pg_trigger order by tgname;
+   tgname   
+------------
+ trigger001
+(1 row)
+
+show lc_collate;
+ lc_collate 
+------------
+ C
+(1 row)
+
+show create trigger trigger001;
+  Trigger   |                                               sql_mode                                               |                                                 SQL Original Statement                                                 | character_set_client | collation_connection | Database Collation 
+------------+------------------------------------------------------------------------------------------------------+------------------------------------------------------------------------------------------------------------------------+----------------------+----------------------+--------------------
+ trigger001 | sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date,pad_char_to_full_length | CREATE DEFINER = test_trigger_definer TRIGGER trigger001 AFTER INSERT ON t_create_trigger_001 FOR EACH ROW    DECLARE +| UTF8                 | C                    | C
+            |                                                                                                      | begin                                                                                                                 +|                      |                      | 
+            |                                                                                                      |         insert into t_create_trigger_002(c) values(3);                                                                +|                      |                      | 
+            |                                                                                                      | end;                                                                                                                   |                      |                      | 
+(1 row)
+
+\c postgres
+drop database if exists restore_trigger_db;
+drop database if exists dump_trigger_db;
+drop user test_trigger_definer;

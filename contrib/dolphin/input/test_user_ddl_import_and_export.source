@@ -1,0 +1,57 @@
+--create user测试
+drop database if exists dump_create_user_db;
+drop database if exists restore_create_user_db;
+create database dump_create_user_db with dbcompatibility = 'B';
+create database restore_create_user_db with dbcompatibility = 'B';
+\c dump_create_user_db
+
+\c postgres
+create user if not exists user1 password 'Test@123';
+create user if not exists user2 identified by 'Test@123';
+
+select usename from pg_user where usename like 'user%' order by usename;
+
+--导入导出
+\! @abs_bindir@/gs_dumpall -p @portstring@ -f @abs_bindir@/dumpall_create_user.sql >/dev/null 2>&1; echo $?
+drop user if exists user1;
+drop user if exists user2;
+\! @abs_bindir@/gsql restore_create_user_db -p @portstring@ -f @abs_bindir@/dumpall_create_user.sql >/dev/null 2>&1; echo $?
+\c restore_create_user_db
+
+select usename from pg_user where usename like 'user%' order by usename;
+
+\c postgres
+drop database if exists restore_create_user_db;
+drop database if exists dump_create_user_db;
+drop user if exists user1;
+drop user if exists user2;
+
+--rename user测试
+drop database if exists dump_rename_user_db;
+drop database if exists restore_rename_user_db;
+create database dump_rename_user_db with dbcompatibility = 'B';
+create database restore_rename_user_db with dbcompatibility = 'B';
+\c dump_rename_user_db
+
+create user if not exists user1 password 'Test@123';
+create user if not exists user2 identified by 'Test@123';
+rename user user1 to user001;
+rename user user2 to user002;
+rename user user001 to user1, user002 to user2;
+
+select usename from pg_user where usename like 'user%' order by usename;
+
+--导入导出
+\! @abs_bindir@/gs_dumpall -p @portstring@ -f @abs_bindir@/dumpall_rename_user.sql >/dev/null 2>&1; echo $?
+drop user if exists user1;
+drop user if exists user2;
+\! @abs_bindir@/gsql restore_rename_user_db -p @portstring@ -f @abs_bindir@/dumpall_rename_user.sql >/dev/null 2>&1; echo $?
+\c restore_rename_user_db
+
+select usename from pg_user where usename like 'user%' order by usename;
+
+\c postgres
+drop database if exists restore_rename_user_db;
+drop database if exists dump_rename_user_db;
+drop user if exists user1;
+drop user if exists user2;

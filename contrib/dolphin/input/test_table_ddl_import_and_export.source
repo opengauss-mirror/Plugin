@@ -1,0 +1,516 @@
+--create table部分
+drop database if exists dump_table_db;
+drop database if exists restore_table_db;
+create database dump_table_db with dbcompatibility = 'B';
+create database restore_table_db with dbcompatibility = 'B';
+\c dump_table_db
+
+--指定engine名字
+create table t_create_table_001(c int) engine = InnoDB;
+
+--指定compression设置压缩参数
+create table t_create_table_002(c int) compression = pglz;
+
+--row_format支持default
+create table t_create_table_003(c int) row_format = default;
+
+--支持表级、字段级character和collate的语法兼容
+create table t_create_table_004(c text character set test_character_set);
+create table t_create_table_005(c text charset test_charset);
+create table t_create_table_006(c text collate utf8mb4_bin);
+create table t_create_table_007(c int) character set utf8;
+create table t_create_table_008(c int) charset utf8;
+create table t_create_table_009(c int) collate utf8mb4_general_ci;
+create table t_create_table_010(c int) character set utf8 collate utf8mb4_general_ci;
+
+--like子句无需加括号
+create table t_create_table_011(c int);
+create table t_create_table_012 like t_create_table_011;
+create table t_create_table_013 like t_create_table_011;
+create table if not exists t_create_table_014 like t_create_table_011;
+create table if not exists t_create_table_015 like t_create_table_011;
+
+--table option无序
+create table t_create_table_016(c int) charset utf8 engine = InnoDB;
+create table t_create_table_017(c int) engine = InnoDB charset utf8;
+create table t_create_table_018(c int) for materialized view nocompress compression = pglz for materialized view compression = zstd;
+
+--指定timestamp类型为on update current_timestamp
+create table t_create_table_019(c int, t timestamp on update current_timestamp);
+
+--支持create table创建索引
+create table t_create_table_020(c1 char(64), c2 varchar(64), c3 varchar2(64), index(c1(64), c2(64), c3(64)));
+create unlogged table t_create_table_021(c1 nvarchar(64), c2 nvarchar2(64), c3 text, index using btree(c1(64), c2(64), c3(2676)));
+create table t_create_table_022(c1 clob, c2 blob, c3 raw, c4 bytea, index using ubtree(c1(1), c2(2676), c3(1), c4(2676))) with (storage_type = ustore);
+create table t_create_table_023(c int, index(c));
+create table t_create_table_024(c int, index create_index_001(c)) with (orientation = column);
+create table t_create_table_025(c1 int, c2 int, index create_index_002 using btree(c1 desc, c2 asc));
+create table t_create_table_026(c int, index create_index_003 using hash(c));
+create table t_create_table_027(c tsquery, index using gist(c));
+create table t_create_table_028(c tsvector, index using gin(c));
+create table t_create_table_029(c int, index using btree(c desc), index create_index_004 using hash(c));
+create table t_create_table_030(c1 int, c2 int, index create_index_005 using btree(c1), index create_index_006 using hash(c2));
+
+--create table [as] select
+create table t_create_table_031(a int, b text);
+insert into t_create_table_031 values(1, '1'), (2, '2'), (3, '3'), (4, '4');
+create table t_create_table_032 select * from t_create_table_031;
+select count(*) from t_create_table_032;
+create table t_create_table_033 select * from t_create_table_031 limit 0, 2;
+select count(*) from t_create_table_033;
+create table t_create_table_034 (select * from t_create_table_031 limit 0, 2);
+select count(*) from t_create_table_034;
+create table t_create_table_035(c) select * from t_create_table_031;
+select count(*) from t_create_table_035;
+create table t_create_table_036(col1, col2) select * from t_create_table_031 limit 0, 2;
+select count(*) from t_create_table_036;
+
+\d t_create_table_001;
+\d t_create_table_002;
+\d t_create_table_003;
+\d t_create_table_004;
+\d t_create_table_005;
+\d t_create_table_006;
+\d t_create_table_007;
+\d t_create_table_008;
+\d t_create_table_009;
+\d t_create_table_010;
+\d t_create_table_011;
+\d t_create_table_012;
+\d t_create_table_013;
+\d t_create_table_014;
+\d t_create_table_015;
+\d t_create_table_016;
+\d t_create_table_017;
+\d t_create_table_018;
+\d t_create_table_019;
+\d t_create_table_020;
+\d t_create_table_021;
+\d t_create_table_022;
+\d t_create_table_023;
+\d t_create_table_024;
+\d t_create_table_025;
+\d t_create_table_026;
+\d t_create_table_027;
+\d t_create_table_028;
+\d t_create_table_029;
+\d t_create_table_030;
+\d t_create_table_031;
+\d t_create_table_032;
+\d t_create_table_033;
+\d t_create_table_034;
+\d t_create_table_035;
+\d t_create_table_036;
+
+show create table t_create_table_001;
+show create table t_create_table_002;
+show create table t_create_table_003;
+show create table t_create_table_004;
+show create table t_create_table_005;
+show create table t_create_table_006;
+show create table t_create_table_007;
+show create table t_create_table_008;
+show create table t_create_table_009;
+show create table t_create_table_010;
+show create table t_create_table_011;
+show create table t_create_table_012;
+show create table t_create_table_013;
+show create table t_create_table_014;
+show create table t_create_table_015;
+show create table t_create_table_016;
+show create table t_create_table_017;
+show create table t_create_table_018;
+show create table t_create_table_019;
+show create table t_create_table_020;
+show create table t_create_table_021;
+show create table t_create_table_022;
+show create table t_create_table_023;
+show create table t_create_table_024;
+show create table t_create_table_025;
+show create table t_create_table_026;
+show create table t_create_table_027;
+show create table t_create_table_028;
+show create table t_create_table_029;
+show create table t_create_table_030;
+show create table t_create_table_031;
+show create table t_create_table_032;
+show create table t_create_table_033;
+show create table t_create_table_034;
+show create table t_create_table_035;
+show create table t_create_table_036;
+
+--alter table测试
+--支持修改row_format
+create table t_alter_table_001(c int) row_format = default;
+alter table t_alter_table_001 row_format = dynamic;
+create table t_alter_table_002(c int) row_format = default;
+alter table t_alter_table_002 row_format = compressed;
+create table t_alter_table_003(c int) row_format = default;
+alter table t_alter_table_003 row_format = compact;
+create table t_alter_table_004(c int) row_format = dynamic;
+alter table t_alter_table_004 row_format = default;
+
+--支持重命名表中rename增加as关键字
+create table t_altertable005(c int);
+alter table t_altertable005 rename as t_alter_table_005;
+
+--支持禁用和启用非唯一索引
+create table t_alter_table_006(c int, index using btree(c));
+alter table t_alter_table_006 disable keys;
+create table t_alter_table_007(c int, index using hash(c));
+alter table t_alter_table_007 enable keys;
+
+--删除索引
+create table t_alter_table_008(c int, index alter_index_001 using btree(c));
+alter table t_alter_table_008 drop index alter_index_001;
+create table t_alter_table_009(c int, index alter_index_002 using hash(c));
+alter table t_alter_table_009 drop key alter_index_002;
+
+--重建表
+create table t_alter_table_010(c int);
+alter table t_alter_table_010 force;
+create table t_alter_table_011(c int, index using hash(c));
+alter table t_alter_table_011 force;
+
+--删除外键约束
+create table t_alter_table_012(c int primary key);
+create table t_alter_table_013(c int not null, constraint fk_symbol foreign key(c) references t_alter_table_012(c));
+alter table t_alter_table_013 drop foreign key fk_symbol;
+
+--删除主键
+create table t_alter_table_014(c int primary key);
+alter table t_alter_table_014 drop primary key;
+
+--修改索引名
+create table t_alter_table_015(c int, index idx1 using btree(c));
+create table t_alter_table_016(c int, index idx2 using hash(c));
+create table t_alter_table_017(c tsvector, index idx3 using gin(c));
+create table t_alter_table_018(c tsquery, index idx4 using gist(c));
+alter table t_alter_table_015 rename index idx1 to alter_index_003;
+alter table t_alter_table_016 rename key idx2 to alter_index_004;
+alter table t_alter_table_017 rename index idx3 to alter_index_005;
+alter table t_alter_table_018 rename key idx4 to alter_index_006;
+
+--timestamp列增加/删除on update current_timestamp
+create table t_alter_table_019(c timestamp);
+alter table t_alter_table_019 modify c timestamp on update current_timestamp;
+create table t_alter_table_020(c timestamp on update current_timestamp);
+alter table t_alter_table_020 modify c timestamp;
+
+--创建索引
+create table t_alter_table_021(c char(64));
+alter table t_alter_table_021 add index(c(64));
+create table t_alter_table_022(c1 varchar(64), c2 varchar2(64));
+alter table t_alter_table_022 add key(c1(64), c2(64));
+create unlogged table t_alter_table_023(c1 nvarchar(64), c2 nvarchar2(64));
+alter table t_alter_table_023 add index using btree(c1(64), c2(64));
+create table t_alter_table_024(c text);
+alter table t_alter_table_024 add key using btree(c(2676));
+create table t_alter_table_025(c1 clob, c2 blob) with (storage_type = ustore);
+alter table t_alter_table_025 add index using ubtree(c1(1), c2(2676));
+create table t_alter_table_026(c1 raw, c2 bytea) with (storage_type = ustore);
+alter table t_alter_table_026 add key using ubtree(c1(1), c2(2676));
+create table t_alter_table_027(c int);
+alter table t_alter_table_027 add index(c);
+create table t_alter_table_028(c int) with (orientation = column);
+alter table t_alter_table_028 add key(c);
+create table t_alter_table_029(c1 int, c2 int);
+alter table t_alter_table_029 add index using btree(c1 desc, c2 asc);
+create table t_alter_table_030(c int);
+alter table t_alter_table_030 add key using hash(c);
+create table t_alter_table_031(c tsquery);
+alter table t_alter_table_031 add index using gist(c);
+create table t_alter_table_032(c tsvector);
+alter table t_alter_table_032 add key using gin(c);
+create table t_alter_table_033(c int);
+alter table t_alter_table_033 add index using btree(c desc), add key using hash(c);
+create table t_alter_table_034(c1 int, c2 int);
+alter table t_alter_table_034 add index using btree(c1), add key using hash(c2);
+
+\d t_alter_table_001;
+\d t_alter_table_002;
+\d t_alter_table_003;
+\d t_alter_table_004;
+\d t_alter_table_005;
+\d t_alter_table_006;
+\d t_alter_table_007;
+\d t_alter_table_008;
+\d t_alter_table_009;
+\d t_alter_table_010;
+\d t_alter_table_011;
+\d t_alter_table_012;
+describe t_alter_table_012;
+desc t_alter_table_012;
+explain t_alter_table_012;
+\d t_alter_table_013;
+\d t_alter_table_014;
+\d t_alter_table_015;
+\d t_alter_table_016;
+\d t_alter_table_017;
+\d t_alter_table_018;
+\d t_alter_table_019;
+\d t_alter_table_020;
+\d t_alter_table_021;
+\d t_alter_table_022;
+\d t_alter_table_023;
+\d t_alter_table_024;
+\d t_alter_table_025;
+\d t_alter_table_026;
+\d t_alter_table_027;
+\d t_alter_table_028;
+\d t_alter_table_029;
+\d t_alter_table_030;
+\d t_alter_table_031;
+\d t_alter_table_032;
+\d t_alter_table_033;
+\d t_alter_table_034;
+
+--其他table语法测试
+--checksum table测试
+create table t_checksum_table_001(c int);
+checksum table t_checksum_table_001;
+create table t_checksum_table_002(c int, index using btree(c));
+checksum table t_checksum_table_002 quick;
+create table t_checksum_table_003(c int) with (orientation = column);
+checksum table t_checksum_table_003 extended;
+create table t_checksum_table_004(c int) with (storage_type = ustore);
+create table t_checksum_table_005(c int) with (segment = on);
+checksum table t_checksum_table_004, t_checksum_table_005;
+
+--rename table测试
+create table renametable001(c int);
+rename table renametable001 to t_rename_table_001;
+create schema test_rename_table;
+create table test_rename_table.renametable001(c int);
+rename table test_rename_table.renametable001 to test_rename_table.t_rename_table_001;
+
+--analyze table测试
+create table t_analyze_table_001(a int);
+analyze table t_analyze_table_001;
+create table t_analyze_table_002(a int) with (orientation = column);
+analyze no_write_to_binlog table t_analyze_table_002;
+create table t_analyze_table_003(a int) with (storage_type = ustore);
+analyze local table t_analyze_table_003;
+
+--optimize table测试
+create table t_optimize_table_001(a text);
+optimize table t_optimize_table_001;
+
+\! @abs_bindir@/gs_dump dump_table_db -p @portstring@ -f @abs_bindir@/dump_table.sql -F p >/dev/null 2>&1; echo $?
+drop table t_create_table_001;
+drop table t_create_table_002;
+drop table t_create_table_003;
+drop table t_create_table_004;
+drop table t_create_table_005;
+drop table t_create_table_006;
+drop table t_create_table_007;
+drop table t_create_table_008;
+drop table t_create_table_009;
+drop table t_create_table_010;
+drop table t_create_table_011;
+drop table t_create_table_012;
+drop table t_create_table_013;
+drop table t_create_table_014;
+drop table t_create_table_015;
+drop table t_create_table_016;
+drop table t_create_table_017;
+drop table t_create_table_018;
+drop table t_create_table_019;
+drop table t_create_table_020;
+drop table t_create_table_021;
+drop table t_create_table_022;
+drop table t_create_table_023;
+drop table t_create_table_024;
+drop table t_create_table_025;
+drop table t_create_table_026;
+drop table t_create_table_027;
+drop table t_create_table_028;
+drop table t_create_table_029;
+drop table t_create_table_030;
+drop table t_create_table_031;
+drop table t_create_table_032;
+drop table t_create_table_033;
+drop table t_create_table_034;
+drop table t_create_table_035;
+drop table t_create_table_036;
+
+drop table t_alter_table_001;
+drop table t_alter_table_002;
+drop table t_alter_table_003;
+drop table t_alter_table_004;
+drop table t_alter_table_005;
+drop table t_alter_table_006;
+drop table t_alter_table_007;
+drop table t_alter_table_008;
+drop table t_alter_table_009;
+drop table t_alter_table_010;
+drop table t_alter_table_011;
+drop table t_alter_table_012;
+drop table t_alter_table_013;
+drop table t_alter_table_014;
+drop table t_alter_table_015;
+drop table t_alter_table_016;
+drop table t_alter_table_017;
+drop table t_alter_table_018;
+drop table t_alter_table_019;
+drop table t_alter_table_020;
+drop table t_alter_table_021;
+drop table t_alter_table_022;
+drop table t_alter_table_023;
+drop table t_alter_table_024;
+drop table t_alter_table_025;
+drop table t_alter_table_026;
+drop table t_alter_table_027;
+drop table t_alter_table_028;
+drop table t_alter_table_029;
+drop table t_alter_table_030;
+drop table t_alter_table_031;
+drop table t_alter_table_032;
+drop table t_alter_table_033;
+drop table t_alter_table_034;
+
+drop table t_checksum_table_001;
+drop table t_checksum_table_002;
+drop table t_checksum_table_003;
+drop table t_checksum_table_004;
+drop table t_checksum_table_005;
+drop table t_rename_table_001;
+drop table test_rename_table.t_rename_table_001;
+drop table t_analyze_table_001;
+drop table t_analyze_table_002;
+drop table t_analyze_table_003;
+\! @abs_bindir@/gsql restore_table_db -p @portstring@ -f @abs_bindir@/dump_table.sql >/dev/null 2>&1; echo $?
+\c restore_table_db
+
+\d t_create_table_001;
+\d t_create_table_002;
+\d t_create_table_003;
+\d t_create_table_004;
+\d t_create_table_005;
+\d t_create_table_006;
+\d t_create_table_007;
+\d t_create_table_008;
+\d t_create_table_009;
+\d t_create_table_010;
+\d t_create_table_011;
+\d t_create_table_012;
+\d t_create_table_013;
+\d t_create_table_014;
+\d t_create_table_015;
+\d t_create_table_016;
+\d t_create_table_017;
+\d t_create_table_018;
+\d t_create_table_019;
+\d t_create_table_020;
+\d t_create_table_021;
+\d t_create_table_022;
+\d t_create_table_023;
+\d t_create_table_024;
+\d t_create_table_025;
+\d t_create_table_026;
+\d t_create_table_027;
+\d t_create_table_028;
+\d t_create_table_029;
+\d t_create_table_030;
+\d t_create_table_031;
+\d t_create_table_032;
+\d t_create_table_033;
+\d t_create_table_034;
+\d t_create_table_035;
+\d t_create_table_036;
+
+show create table t_create_table_001;
+show create table t_create_table_002;
+show create table t_create_table_003;
+show create table t_create_table_004;
+show create table t_create_table_005;
+show create table t_create_table_006;
+show create table t_create_table_007;
+show create table t_create_table_008;
+show create table t_create_table_009;
+show create table t_create_table_010;
+show create table t_create_table_011;
+show create table t_create_table_012;
+show create table t_create_table_013;
+show create table t_create_table_014;
+show create table t_create_table_015;
+show create table t_create_table_016;
+show create table t_create_table_017;
+show create table t_create_table_018;
+show create table t_create_table_019;
+show create table t_create_table_020;
+show create table t_create_table_021;
+show create table t_create_table_022;
+show create table t_create_table_023;
+show create table t_create_table_024;
+show create table t_create_table_025;
+show create table t_create_table_026;
+show create table t_create_table_027;
+show create table t_create_table_028;
+show create table t_create_table_029;
+show create table t_create_table_030;
+show create table t_create_table_031;
+show create table t_create_table_032;
+show create table t_create_table_033;
+show create table t_create_table_034;
+show create table t_create_table_035;
+show create table t_create_table_036;
+
+select count(*) from t_create_table_032;
+select count(*) from t_create_table_033;
+select count(*) from t_create_table_034;
+select count(*) from t_create_table_035;
+select count(*) from t_create_table_036;
+
+\d t_alter_table_001;
+\d t_alter_table_002;
+\d t_alter_table_003;
+\d t_alter_table_004;
+\d t_alter_table_005;
+\d t_alter_table_006;
+\d t_alter_table_007;
+\d t_alter_table_008;
+\d t_alter_table_009;
+\d t_alter_table_010;
+\d t_alter_table_011;
+\d t_alter_table_012;
+describe t_alter_table_012;
+desc t_alter_table_012;
+explain t_alter_table_012;
+\d t_alter_table_013;
+\d t_alter_table_014;
+\d t_alter_table_015;
+\d t_alter_table_016;
+\d t_alter_table_017;
+\d t_alter_table_018;
+\d t_alter_table_019;
+\d t_alter_table_020;
+\d t_alter_table_021;
+\d t_alter_table_022;
+\d t_alter_table_023;
+\d t_alter_table_024;
+\d t_alter_table_025;
+\d t_alter_table_026;
+\d t_alter_table_027;
+\d t_alter_table_028;
+\d t_alter_table_029;
+\d t_alter_table_030;
+\d t_alter_table_031;
+\d t_alter_table_032;
+\d t_alter_table_033;
+\d t_alter_table_034;
+
+checksum table t_checksum_table_001;
+checksum table t_checksum_table_002 quick;
+checksum table t_checksum_table_003 extended;
+checksum table t_checksum_table_004, t_checksum_table_005;
+\d t_rename_table_001
+\d test_rename_table.t_rename_table_001
+analyze table t_analyze_table_001;
+analyze no_write_to_binlog table t_analyze_table_002;
+analyze local table t_analyze_table_003;
+optimize table t_optimize_table_001;
+
+\c postgres
+drop database if exists restore_table_db;
+drop database if exists dump_table_db;

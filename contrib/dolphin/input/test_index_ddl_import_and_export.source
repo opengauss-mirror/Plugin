@@ -1,0 +1,149 @@
+--create index测试
+drop database if exists dump_index_db;
+drop database if exists restore_index_db;
+create database dump_index_db with dbcompatibility = 'B';
+create database restore_index_db with dbcompatibility = 'B';
+\c dump_index_db
+
+create table t_create_index_001(c int);
+create index index001 using hash on t_create_index_001(c);
+create table t_create_index_002(c int) with (orientation = column);
+create index index002 using btree on t_create_index_002(c);
+create table t_create_index_003(c point);
+create index index003 using gist on t_create_index_003(c);
+create table t_create_index_004(c tsvector);
+create index index004 using gin on t_create_index_004(c);
+create table t_create_index_005(col1 int, col2 int)
+partition by range(col1)
+(
+	partition p1 values less than (1000),
+	partition p2 values less than (2000),
+	partition p3 values less than (4000)
+);
+create index index005 using btree on t_create_index_005(col1);
+create table t_create_index_006(col1 date, col2 int)
+partition by range(col1)
+interval('1 day')
+(
+	partition p1 values less than ('2019-02-01 00:00:00'),
+	partition p2 values less than ('2019-02-02 00:00:00'),
+	partition p3 values less than ('2019-02-03 00:00:00')
+);
+create index index006 using btree on t_create_index_006(col1);
+create table t_create_index_007(col1 int, col2 int)
+partition by list(col1)
+(
+	partition p1 values in (1000),
+	partition p2 values in (2000),
+	partition p3 values in (4000)
+);
+create index index007 using btree on t_create_index_007(col1);
+create table t_create_index_008(col1 int, col2 int)
+partition by hash(col1)
+(
+	partition p1,
+	partition p2,
+	partition p3
+);
+create index index008 using btree on t_create_index_008(col1);
+create table t_create_index_009(col1 int, col2 int)
+partition by range(col1) subpartition by range(col2)
+(
+	partition p1 values less than (1000)
+	(
+		subpartition p11 values less than (500),
+		subpartition p12 values less than (1000)
+	),
+	partition p2 values less than (2000)
+	(
+		subpartition p21 values less than (1500),
+		subpartition p22 values less than (2000)
+	),
+	partition p3 values less than (4000)
+	(
+		subpartition p31 values less than (3000),
+		subpartition p32 values less than (4000)
+	)
+);
+create index index009 using btree on t_create_index_009(col1);
+create table t_create_index_010(col1 int, col2 int);
+create index index010 on t_create_index_010(col1);
+
+--前缀索引
+create table t_create_index_011 
+(
+    c1 char(64),
+    c2 varchar(64),
+    c3 varchar2(64),
+    c4 nvarchar(64),
+    c5 nvarchar2(64),
+    c6 text,
+    c7 clob,
+    c8 blob,
+    c9 raw,
+    c10 bytea
+);
+create index index011 on t_create_index_011(c1(1));
+create index index012 on t_create_index_011(c2(1));
+create index index013 on t_create_index_011(c3(1));
+create index index014 on t_create_index_011(c4(1));
+create index index015 on t_create_index_011(c5(1));
+create index index016 on t_create_index_011(c6(2676));
+create index index017 on t_create_index_011(c7(2676));
+create index index018 on t_create_index_011(c8(2676));
+create index index019 on t_create_index_011(c9(2676));
+create index index020 on t_create_index_011(c10(2676));
+create unlogged table t_create_index_012(c text);
+create index index021 using btree on t_create_index_012(c(2676));
+create table t_create_index_013(c text) with (storage_type = ustore);
+create index index022 using ubtree on t_create_index_013(c(2676));
+
+\d t_create_index_001;
+\d t_create_index_002;
+\d t_create_index_003;
+\d t_create_index_004;
+\d t_create_index_005;
+\d t_create_index_006;
+\d t_create_index_007;
+\d t_create_index_008;
+\d t_create_index_009;
+\d t_create_index_010;
+\d t_create_index_011;
+\d t_create_index_012;
+\d t_create_index_013;
+
+--导入导出
+\! @abs_bindir@/gs_dump dump_index_db -p @portstring@ -f @abs_bindir@/dump_index.sql -F p >/dev/null 2>&1; echo $?
+drop table t_create_index_001;
+drop table t_create_index_002;
+drop table t_create_index_003;
+drop table t_create_index_004;
+drop table t_create_index_005;
+drop table t_create_index_006;
+drop table t_create_index_007;
+drop table t_create_index_008;
+drop table t_create_index_009;
+drop table t_create_index_010;
+drop table t_create_index_011;
+drop table t_create_index_012;
+drop table t_create_index_013;
+\! @abs_bindir@/gsql restore_index_db -p @portstring@ -f @abs_bindir@/dump_index.sql >/dev/null 2>&1; echo $?
+\c restore_index_db
+
+\d t_create_index_001;
+\d t_create_index_002;
+\d t_create_index_003;
+\d t_create_index_004;
+\d t_create_index_005;
+\d t_create_index_006;
+\d t_create_index_007;
+\d t_create_index_008;
+\d t_create_index_009;
+\d t_create_index_010;
+\d t_create_index_011;
+\d t_create_index_012;
+\d t_create_index_013;
+
+\c postgres
+drop database if exists restore_index_db;
+drop database if exists dump_index_db;

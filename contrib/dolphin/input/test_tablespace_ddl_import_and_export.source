@@ -1,0 +1,71 @@
+--create tablespace测试
+drop database if exists dump_create_tablespace_db;
+drop database if exists restore_create_tablespace_db;
+create database dump_create_tablespace_db with dbcompatibility = 'B';
+create database restore_create_tablespace_db with dbcompatibility = 'B';
+\c dump_create_tablespace_db
+
+create tablespace createtablespace001 add datafile 'test1.ibd' engine = InnoDB;
+create tablespace createtablespace002 add datafile 'test2.ibd';
+select spcname, spcoptions from pg_tablespace where spcname like 'createtablespace%' order by spcname;
+
+--导入导出
+\! @abs_bindir@/gs_dumpall -p @portstring@ -f @abs_bindir@/dumpall_create_tablespace.sql >/dev/null 2>&1; echo $?
+drop tablespace if exists createtablespace001;
+drop tablespace if exists createtablespace002;
+\! @abs_bindir@/gsql restore_create_tablespace_db -p @portstring@ -f @abs_bindir@/dumpall_create_tablespace.sql >/dev/null 2>&1; echo $?
+\c restore_create_tablespace_db
+
+select spcname, spcoptions from pg_tablespace where spcname like 'createtablespace%' order by spcname;
+
+\c postgres
+drop database if exists restore_create_tablespace_db;
+drop database if exists dump_create_tablespace_db;
+
+--alter tablespace测试
+drop database if exists dump_alter_tablespace_db;
+drop database if exists restore_alter_tablespace_db;
+create database dump_alter_tablespace_db with dbcompatibility = 'B';
+create database restore_alter_tablespace_db with dbcompatibility = 'B';
+\c dump_alter_tablespace_db
+
+create tablespace t_alter_tablespace_001 add datafile 'test3.ibd';
+alter tablespace t_alter_tablespace_001 rename to altertablespace001 engine = InnoDB;
+create tablespace t_alter_tablespace_002 add datafile 'test4.ibd';
+alter tablespace t_alter_tablespace_002 rename to altertablespace002 wait;
+select spcname, spcoptions from pg_tablespace where spcname like 'altertablespace%' order by spcname;
+
+--导入导出
+\! @abs_bindir@/gs_dumpall -p @portstring@ -f @abs_bindir@/dumpall_alter_tablespace.sql >/dev/null 2>&1; echo $?
+drop tablespace if exists altertablespace001;
+drop tablespace if exists altertablespace002;
+\! @abs_bindir@/gsql restore_alter_tablespace_db -p @portstring@ -f @abs_bindir@/dumpall_alter_tablespace.sql >/dev/null 2>&1; echo $?
+\c restore_alter_tablespace_db
+
+select spcname, spcoptions from pg_tablespace where spcname like 'altertablespace%' order by spcname;
+
+\c postgres
+drop database if exists restore_alter_tablespace_db;
+drop database if exists dump_alter_tablespace_db;
+
+--drop tablespace测试
+drop database if exists dump_drop_tablespace_db;
+drop database if exists restore_drop_tablespace_db;
+create database dump_drop_tablespace_db with dbcompatibility = 'B';
+create database restore_drop_tablespace_db with dbcompatibility = 'B';
+\c dump_drop_tablespace_db
+
+create tablespace droptablespace001 add datafile 'test5.ibd' engine = InnoDB;
+drop tablespace if exists droptablespace001 engine = InnoDB;
+select spcname, spcoptions from pg_tablespace where spcname like 'droptablespace%' order by spcname;
+
+--导入导出
+\! @abs_bindir@/gs_dumpall -p @portstring@ -f @abs_bindir@/dumpall_drop_tablespace.sql >/dev/null 2>&1; echo $?
+\! @abs_bindir@/gsql restore_drop_tablespace_db -p @portstring@ -f @abs_bindir@/dumpall_drop_tablespace.sql >/dev/null 2>&1; echo $?
+\c restore_drop_tablespace_db
+
+select spcname, spcoptions from pg_tablespace where spcname like 'droptablespace%' order by spcname;
+
+\c postgres
+drop database if exists restore_drop_tablespace_db;
+drop database if exists dump_drop_tablespace_db;

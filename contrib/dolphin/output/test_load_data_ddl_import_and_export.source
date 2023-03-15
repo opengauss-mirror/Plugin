@@ -1,0 +1,259 @@
+--load data语法测试
+drop database if exists dump_load_data_db;
+NOTICE:  database "dump_load_data_db" does not exist, skipping
+drop database if exists restore_load_data_db;
+NOTICE:  database "restore_load_data_db" does not exist, skipping
+create database dump_load_data_db with dbcompatibility = 'B';
+create database restore_load_data_db with dbcompatibility = 'B';
+\c dump_load_data_db
+create table t_load_data_001(a int, b int);
+load data infile '@abs_builddir@/data/load1.csv' into table t_load_data_001;
+select * from t_load_data_001 order by (a, b);
+ a | b 
+---+---
+ 1 | 3
+ 1 | 5
+ 3 | 4
+ 4 | 5
+(4 rows)
+
+--prefix
+create table t_load_data_002(a int, b int);
+load data infile '@abs_builddir@/data/load2.csv' into table t_load_data_002 lines starting by 'hello';
+select * from t_load_data_002 order by (a, b);
+ a | b 
+---+---
+ 1 | 3
+ 1 | 5
+(2 rows)
+
+--file terminated
+create table t_load_data_003(a int, b int);
+load data infile '@abs_builddir@/data/load3.csv' into table t_load_data_003 fields terminated by 'delimiter' lines starting by 'hello';
+select * from t_load_data_003 order by (a, b);
+ a | b 
+---+---
+ 1 | 3
+ 1 | 5
+(2 rows)
+
+--lines terminanted
+create table t_load_data_004(a int, b int);
+load data infile '@abs_builddir@/data/load4.csv' into table t_load_data_004 columns terminated by 'delimiter' lines starting by 'hello' terminated by '#';
+select * from t_load_data_004 order by (a, b);
+ a | b 
+---+---
+ 1 | 3
+ 1 | 5
+(2 rows)
+
+--enclosed by
+create table t_load_data_005(a int, b int);
+load data infile '@abs_builddir@/data/load5.csv' into table t_load_data_005 columns enclosed by '''' terminated by 'delimiter' lines starting by 'hello' terminated by '#';
+select * from t_load_data_005 order by (a, b);
+ a | b 
+---+---
+ 1 | 3
+ 1 | 5
+(2 rows)
+
+--ecasped by
+create table t_load_data_006(a int, b int);
+load data infile '@abs_builddir@/data/load5.csv' into table t_load_data_006 columns enclosed by '''' terminated by 'delimiter' escaped by E'\\' lines starting by 'hello' terminated by '#';
+select * from t_load_data_006 order by (a, b);
+ a | b 
+---+---
+ 1 | 3
+ 1 | 5
+(2 rows)
+
+--ignore
+create table t_load_data_007(a int primary key, b char unique);
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "t_load_data_007_pkey" for table "t_load_data_007"
+NOTICE:  CREATE TABLE / UNIQUE will create implicit index "t_load_data_007_b_key" for table "t_load_data_007"
+insert into t_load_data_007 values(1, 'a'), (2, 'b');
+load data infile '@abs_builddir@/data/load6.csv' ignore into table t_load_data_007;
+select * from t_load_data_007 order by (a, b);
+ a | b 
+---+---
+ 1 | a
+ 2 | b
+ 3 | c
+(3 rows)
+
+--replace
+create table t_load_data_008(a int primary key, b char unique);
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "t_load_data_008_pkey" for table "t_load_data_008"
+NOTICE:  CREATE TABLE / UNIQUE will create implicit index "t_load_data_008_b_key" for table "t_load_data_008"
+insert into t_load_data_008 values(1, 'a'), (2, 'b');
+load data infile '@abs_builddir@/data/load6.csv' ignore into table t_load_data_008;
+load data infile '@abs_builddir@/data/load6.csv' replace into table t_load_data_008;
+select * from t_load_data_008 order by (a, b);
+ a | b 
+---+---
+ 1 | b
+ 3 | c
+(2 rows)
+
+create table t_load_data_009(a int primary key, b char unique) with (storage_type = ustore);
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "t_load_data_009_pkey" for table "t_load_data_009"
+NOTICE:  CREATE TABLE / UNIQUE will create implicit index "t_load_data_009_b_key" for table "t_load_data_009"
+insert into t_load_data_009 values(1, 'a'), (2, 'b');
+load data infile '@abs_builddir@/data/load6.csv' ignore into table t_load_data_009;
+select * from t_load_data_009 order by (a, b);
+ a | b 
+---+---
+ 1 | a
+ 2 | b
+ 3 | c
+(3 rows)
+
+create table t_load_data_010(a int primary key, b char unique) with (storage_type = ustore);
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "t_load_data_010_pkey" for table "t_load_data_010"
+NOTICE:  CREATE TABLE / UNIQUE will create implicit index "t_load_data_010_b_key" for table "t_load_data_010"
+insert into t_load_data_010 values(1, 'a'), (2, 'b');
+load data infile '@abs_builddir@/data/load6.csv' ignore into table t_load_data_010;
+load data infile '@abs_builddir@/data/load6.csv' replace into table t_load_data_010;
+select * from t_load_data_010 order by (a, b);
+ a | b 
+---+---
+ 1 | b
+ 3 | c
+(2 rows)
+
+create table t_load_data_011(a int primary key, b char unique) with (segment = on);
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "t_load_data_011_pkey" for table "t_load_data_011"
+NOTICE:  CREATE TABLE / UNIQUE will create implicit index "t_load_data_011_b_key" for table "t_load_data_011"
+insert into t_load_data_011 values(1, 'a'), (2, 'b');
+load data infile '@abs_builddir@/data/load6.csv' ignore into table t_load_data_011;
+select * from t_load_data_011 order by (a, b);
+ a | b 
+---+---
+ 1 | a
+ 2 | b
+ 3 | c
+(3 rows)
+
+create table t_load_data_012(a int primary key, b char unique) with (segment = on);
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "t_load_data_012_pkey" for table "t_load_data_012"
+NOTICE:  CREATE TABLE / UNIQUE will create implicit index "t_load_data_012_b_key" for table "t_load_data_012"
+insert into t_load_data_012 values(1, 'a'), (2, 'b');
+load data infile '@abs_builddir@/data/load6.csv' ignore into table t_load_data_012;
+load data infile '@abs_builddir@/data/load6.csv' replace into table t_load_data_012;
+select * from t_load_data_012 order by (a, b);
+ a | b 
+---+---
+ 1 | b
+ 3 | c
+(2 rows)
+
+--导入导出
+\! @abs_bindir@/gs_dump dump_load_data_db -p @portstring@ -f @abs_bindir@/dump_load_data.tar -F t >/dev/null 2>&1; echo $?
+0
+drop table t_load_data_001;
+drop table t_load_data_002;
+drop table t_load_data_003;
+drop table t_load_data_004;
+drop table t_load_data_005;
+drop table t_load_data_006;
+drop table t_load_data_007;
+drop table t_load_data_008;
+drop table t_load_data_009;
+drop table t_load_data_010;
+drop table t_load_data_011;
+drop table t_load_data_012;
+\! @abs_bindir@/gs_restore -d restore_load_data_db -p @portstring@ @abs_bindir@/dump_load_data.tar >/dev/null 2>&1; echo $?
+0
+\c restore_load_data_db
+select * from t_load_data_001 order by (a, b);
+ a | b 
+---+---
+ 1 | 3
+ 1 | 5
+ 3 | 4
+ 4 | 5
+(4 rows)
+
+select * from t_load_data_002 order by (a, b);
+ a | b 
+---+---
+ 1 | 3
+ 1 | 5
+(2 rows)
+
+select * from t_load_data_003 order by (a, b);
+ a | b 
+---+---
+ 1 | 3
+ 1 | 5
+(2 rows)
+
+select * from t_load_data_004 order by (a, b);
+ a | b 
+---+---
+ 1 | 3
+ 1 | 5
+(2 rows)
+
+select * from t_load_data_005 order by (a, b);
+ a | b 
+---+---
+ 1 | 3
+ 1 | 5
+(2 rows)
+
+select * from t_load_data_006 order by (a, b);
+ a | b 
+---+---
+ 1 | 3
+ 1 | 5
+(2 rows)
+
+select * from t_load_data_007 order by (a, b);
+ a | b 
+---+---
+ 1 | a
+ 2 | b
+ 3 | c
+(3 rows)
+
+select * from t_load_data_008 order by (a, b);
+ a | b 
+---+---
+ 1 | b
+ 3 | c
+(2 rows)
+
+select * from t_load_data_009 order by (a, b);
+ a | b 
+---+---
+ 1 | a
+ 2 | b
+ 3 | c
+(3 rows)
+
+select * from t_load_data_010 order by (a, b);
+ a | b 
+---+---
+ 1 | b
+ 3 | c
+(2 rows)
+
+select * from t_load_data_011 order by (a, b);
+ a | b 
+---+---
+ 1 | a
+ 2 | b
+ 3 | c
+(3 rows)
+
+select * from t_load_data_012 order by (a, b);
+ a | b 
+---+---
+ 1 | b
+ 3 | c
+(2 rows)
+
+\c postgres
+drop database if exists restore_load_data_db;
+drop database if exists dump_load_data_db;

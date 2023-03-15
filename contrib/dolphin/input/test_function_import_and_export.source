@@ -1,0 +1,636 @@
+--对象测试用例
+--函数/存储过程
+drop database if exists dump_function_db;
+drop database if exists restore_function_db;
+create database dump_function_db with dbcompatibility = 'B';
+create database restore_function_db with dbcompatibility 'B';
+\c dump_function_db
+create user function_definer password 'Test@123';
+
+--时间类型相关函数
+create definer = function_definer procedure test_makedate
+(
+	date1 out date,
+	date2 out date,
+	date3 out date
+)
+IS
+	BEGIN
+		select makedate(2022, 31) into date1;
+		select makedate(0, 31) into date2;
+		select makedate(70, 32) into date3;
+	END;
+/
+
+create definer = function_definer procedure test_maketime(time1 out time)
+IS
+	BEGIN
+		select maketime(10, 10, 10) into time1;
+	END;
+/
+
+create definer = function_definer procedure test_period_add(value out int8)
+IS
+	BEGIN
+		select period_add(202201, 2) into value;
+	END;
+/
+
+create definer = function_definer procedure test_period_diff(diff out int8)
+IS
+	BEGIN
+		select period_diff(202201, 202003) into diff;
+	END;
+/
+
+create definer = function_definer procedure test_sec_to_time(time1 out time)
+IS	
+	BEGIN
+		select sec_to_time(4396) into time1;
+	END;
+/
+
+create definer = function_definer procedure test_subdate
+(
+	date1 out text,
+	date2 out text,
+	time1 out time,
+	time2 out time
+)
+IS
+	BEGIN
+		select subdate('2022-01-01', interval 31 day) into date1;
+		select subdate('2022-01-01', 31) into date2;
+		select subdate(time'10:15:20', interval '1' day) into time1;
+		select subdate(time'10:15:20', 1) into time2;
+	END;
+/
+
+create definer = function_definer procedure test_subtime
+(
+	time1 out text,
+	time2 out text
+)
+IS
+	BEGIN
+		select subtime('11:22:33', '10:20:30') into time1;
+		select subtime('2020-03-04 11:22:33', '-10:20:30') into time2;
+	END;
+/
+
+create definer = function_definer procedure test_time
+(
+	time1 out text,
+	datetime1 out text
+)
+IS
+	BEGIN
+		select time('25:25:25') into time1;
+		select time('2022-1-1 1:1:1.1111116') into datetime1;
+	END;
+/
+
+create definer = function_definer procedure test_time_format(time1 out text)
+IS
+	BEGIN
+		select time_format('100:59:59', '%H|%k|%T|%I') into time1;
+	END;
+/
+
+create definer = function_definer procedure test_timediff
+(
+	time1 out time,
+	time2 out time
+)
+IS
+	BEGIN
+		select timediff(time'23:59:59', time'01:01:01') into time1;
+		select timediff(datetime'2008-12-31 23:59:59', datetime'2008-12-30 01:01:01') into time2;
+	END;
+/
+
+create definer = function_definer procedure test_timestamp
+(
+	datetime1 out datetime,
+	datetime2 out datetime
+)
+IS	
+	BEGIN
+		select timestamp('2022-01-01') into datetime1;
+		select timestamp('20000229', '100:00:00') into datetime2;
+	END;
+/
+
+create definer = function_definer procedure test_timestampadd(datetime1 out text)
+IS	
+	BEGIN
+		select timestampadd(day, 1, '2022-09-01') into datetime1;
+	END;
+/
+
+create definer = function_definer procedure test_to_days(days out int8)
+IS	
+	BEGIN
+		select to_days('0000-01-01') into days;
+	END;
+/
+
+create definer = function_definer procedure test_to_seconds(seconds out int8)
+IS	
+	BEGIN
+		select to_seconds('2022-09-01') into seconds;
+	END;
+/
+
+create definer = function_definer procedure test_unix_timestamp
+(
+	secondNum1 out numeric,
+	secondNum2 out numeric
+)
+IS
+	BEGIN
+		select unix_timestamp() into secondNum1;
+		select unix_timestamp('2022-09-01') into secondNum2;
+	END;
+/
+
+create definer = function_definer procedure test_utc_date(date1 out date)
+IS
+	BEGIN
+		select utc_date() into date1;
+	END;
+/
+
+create definer = function_definer procedure test_utc_time
+(
+	time1 out time,
+	time2 out time
+)
+IS
+	BEGIN
+		select utc_time() into time1;
+		select utc_time(6) into time2;
+	END;
+/
+
+create definer = function_definer procedure test_utc_timestamp
+(
+	datetime1 out datetime,
+	datetime2 out datetime
+)
+IS
+	BEGIN
+		select utc_timestamp() into datetime1;
+		select utc_timestamp(6) into datetime2;
+	END;
+/
+
+--日期处理函数
+create definer = function_definer procedure test_curdate(curdate out date)
+IS
+	BEGIN
+		select curdate() into curdate;
+	END;
+/
+
+create definer = function_definer procedure test_current_time
+(
+	time1 out time,
+	time2 out time,
+	time3 out time
+)
+IS
+	BEGIN
+		select current_time into time1;
+		select current_time() into time2;
+		select current_time(3) into time3;
+	END;
+/
+
+create definer = function_definer procedure test_curtime
+(
+	time1 out time,
+	time2 out time
+)
+IS
+	BEGIN
+		select curtime() into time1;
+		select curtime(3) into time2;
+	END;
+/
+
+create definer = function_definer procedure test_current_timestamp
+(
+	datetime1 out datetime,
+	datetime2 out datetime,
+	datetime3 out datetime
+)
+IS
+	BEGIN
+		select current_timestamp into datetime1;
+		select current_timestamp() into datetime2;
+		select current_timestamp(3) into datetime3;
+	END;
+/
+
+create definer = function_definer procedure test_localtime
+(
+	datetime1 out datetime,
+	datetime2 out datetime,
+	datetime3 out datetime
+)
+IS
+	BEGIN
+		select localtime into datetime1;
+		select localtime() into datetime2;
+		select localtime(3) into datetime3;
+	END;
+/
+
+create definer = function_definer procedure test_localtimestamp
+(
+	datetime1 out datetime,
+	datetime2 out datetime,
+	datetime3 out datetime
+)
+IS
+	BEGIN
+		select localtimestamp into datetime1;
+		select localtimestamp() into datetime2;
+		select localtimestamp(3) into datetime3;
+	END;
+/
+
+create definer = function_definer procedure test_now
+(
+	datetime1 out datetime,
+	datetime2 out datetime
+)
+IS
+	BEGIN
+		select now() into datetime1;
+		select now(3) into datetime2;
+	END;
+/
+
+create definer = function_definer procedure test_sysdate
+(
+	datetime1 out datetime,
+	datetime2 out datetime
+)
+IS
+	BEGIN
+		select sysdate() into datetime1;
+		select sysdate(3) into datetime2;
+	END;
+/
+
+create definer = function_definer procedure test_date(date1 out text)
+IS
+	BEGIN
+		select date('2021-11-12') into date1;
+	END;
+/
+
+create definer = function_definer procedure test_day(day out integer)
+IS
+	BEGIN
+		select day('2021-11-12') into day;
+	END;
+
+create definer = function_definer procedure test_dayname(dayname out text)
+IS
+	BEGIN
+		select dayname('2000-1-1') into dayname;
+	END;
+/
+
+create definer = function_definer procedure test_last_day(lastday out date)
+IS
+	BEGIN
+		set dolphin.b_compatibility_mode = true;
+		select last_day('2021-1-30') into lastday;
+	END;
+/
+
+create definer = function_definer procedure test_month(month out integer)
+IS
+	BEGIN
+		select month('2021-11-12') into month;
+	END;
+/
+
+create definer = function_definer procedure test_monthname(monthname out text)
+IS
+	BEGIN
+		select monthname('2000-1-1') into monthname;
+	END;
+/
+
+create definer = function_definer procedure test_time_to_sec(seconds out integer)
+IS
+	BEGIN
+		select time_to_sec('838:59:59') into seconds;
+	END;
+/
+
+create definer = function_definer procedure test_week
+(
+	week1 out integer,
+	week2 out integer
+)
+IS
+	BEGIN
+		select week('2000-1-1') into week1;
+		select week('2000-1-1', 2) into week2;
+	END;
+/
+
+create definer = function_definer procedure test_yearweek
+(
+	yearweek1 out bigint,
+	yearweek2 out bigint
+)
+IS
+	BEGIN
+		select yearweek('1987-01-01') into yearweek1;
+		select yearweek('1987-01-01', 0) into yearweek2;
+	END;
+/
+
+create definer = function_definer procedure test_adddate
+(
+	adddate1 out datetime,
+	adddate2 out time,
+	adddate3 out date,
+	adddate4 out datetime
+)
+IS
+	BEGIN
+		select adddate('2021-11-12', interval 1 second) into adddate1;
+		select adddate(time'12:12:12', interval 1 day) into adddate2;
+		select adddate('2021-11-12', 1) into adddate3;
+		select adddate(time'12:12:12', 1) into adddate4;
+	END;
+/
+
+create definer = function_definer procedure test_addtime(addtime out text)
+IS
+	BEGIN
+		select addtime('11:22:33', '10:20:30') into addtime;
+	END;
+/
+
+create definer = function_definer procedure test_convert_tz(convert_tz out datetime)
+IS
+	BEGIN
+		select convert_tz('2004-01-01 12:00:00', 'GMT', 'MET') into convert_tz;
+	END;
+/
+
+create definer = function_definer procedure test_date_add
+(
+	date1 out date,
+	datetime1 out datetime,
+	datetime2 out datetime
+)
+IS
+	BEGIN
+		select date_add('2022-01-01', interval 31 day) into date1;
+		select date_add('2022-01-01 01:01:01', interval 1 year) into datetime1;
+		select date_add('2022-01-01', interval 1 second) into datetime2;
+	END;
+/
+
+create definer = function_definer procedure test_date_sub
+(
+	date1 out date,
+	datetime1 out datetime,
+	datetime2 out datetime
+)
+IS
+	BEGIN
+		select date_sub('2022-01-01', interval 31 day) into date1;
+		select date_sub('2022-01-01 01:01:01', interval 1 year) into datetime1;
+		select date_sub('2022-01-01', interval 1 second) into datetime2;
+	END;
+/
+
+create definer = function_definer procedure test_datediff(datediff out integer)
+IS
+	BEGIN
+		select datediff('2001-01-01', '321-02-02') into datediff;
+	END;
+/
+
+create definer = function_definer procedure test_from_days(from_days out date)
+IS
+	BEGIN
+		select from_days(1000) into from_days;
+	END;
+/
+
+show lc_collate;
+show create procedure test_makedate;
+show create procedure test_maketime;
+show create procedure test_period_add;
+show create procedure test_period_diff;
+show create procedure test_sec_to_time;
+show create procedure test_subdate;
+show create procedure test_subtime;
+show create procedure test_time;
+show create procedure test_time_format;
+show create procedure test_timediff;
+show create procedure test_timestamp;
+show create procedure test_timestampadd;
+show create procedure test_to_days;
+show create procedure test_to_seconds;
+show create procedure test_unix_timestamp;
+show create procedure test_utc_date;
+show create procedure test_utc_time;
+show create procedure test_utc_timestamp;
+show create procedure test_curdate;
+show create procedure test_current_time;
+show create procedure test_current_timestamp;
+show create procedure test_localtime;
+show create procedure test_localtimestamp;
+show create procedure test_now;
+show create procedure test_sysdate;
+show create procedure test_date;
+show create procedure test_day;
+show create procedure test_dayname;
+show create procedure test_last_day;
+show create procedure test_month;
+show create procedure test_monthname;
+show create procedure test_time_to_sec;
+show create procedure test_week;
+show create procedure test_yearweek;
+show create procedure test_adddate;
+show create procedure test_addtime;
+show create procedure test_convert_tz;
+show create procedure test_date_add;
+show create procedure test_date_sub;
+show create procedure test_datediff;
+show create procedure test_from_days;
+
+set datestyle = 'iso, ymd';
+show datestyle;
+set time zone "Asia/Shanghai";
+call test_makedate(date1, date2, date3);
+call test_maketime(time1);
+call test_period_add(value);
+call test_period_diff(diff);
+call test_sec_to_time(time1);
+call test_subdate(date1, date2, time1, time2);
+call test_subtime(time1, time2);
+call test_time(time1, datetime1);
+call test_time_format(time1);
+call test_timediff(time1, time2);
+call test_timestamp(datetime1, datetime2);
+call test_timestampadd(datetime1);
+call test_to_days(days);
+call test_to_seconds(seconds);
+call test_date(date1);
+call test_day(day);
+call test_dayname(dayname);
+call test_last_day(lastday);
+call test_month(month);
+call test_monthname(monthname);
+call test_time_to_sec(seconds);
+call test_week(week1, week2);
+call test_yearweek(yearweek1, yearweek2);
+call test_adddate(adddate1, adddate2, adddate3, adddate4);
+call test_addtime(addtime);
+call test_convert_tz(convert_tz);
+call test_date_add(date1, datetime1, datetime2);
+call test_date_sub(date1, datetime1, datetime2);
+call test_datediff(datediff);
+call test_from_days(from_days);
+
+--导入导出
+\! @abs_bindir@/gs_dump dump_function_db -p @portstring@ -f @abs_bindir@/dump_function.tar -F t >/dev/null 2>&1; echo $?
+drop procedure test_makedate;
+drop procedure test_maketime;
+drop procedure test_period_add;
+drop procedure test_period_diff;
+drop procedure test_sec_to_time;
+drop procedure test_subdate;
+drop procedure test_subtime;
+drop procedure test_time;
+drop procedure test_time_format;
+drop procedure test_timediff;
+drop procedure test_timestamp;
+drop procedure test_timestampadd;
+drop procedure test_to_days;
+drop procedure test_to_seconds;
+drop procedure test_unix_timestamp;
+drop procedure test_utc_date;
+drop procedure test_utc_time;
+drop procedure test_utc_timestamp;
+drop procedure test_curdate;
+drop procedure test_current_time;
+drop procedure test_current_timestamp;
+drop procedure test_localtime;
+drop procedure test_localtimestamp;
+drop procedure test_now;
+drop procedure test_sysdate;
+drop procedure test_date;
+drop procedure test_day;
+drop procedure test_dayname;
+drop procedure test_last_day;
+drop procedure test_month;
+drop procedure test_monthname;
+drop procedure test_time_to_sec;
+drop procedure test_week;
+drop procedure test_yearweek;
+drop procedure test_adddate;
+drop procedure test_addtime;
+drop procedure test_convert_tz;
+drop procedure test_date_add;
+drop procedure test_date_sub;
+drop procedure test_datediff;
+drop procedure test_from_days;
+\! @abs_bindir@/gs_restore -d restore_function_db -p @portstring@ @abs_bindir@/dump_function.tar >/dev/null 2>&1; echo $?
+\c restore_function_db
+
+show lc_collate;
+show create procedure test_makedate;
+show create procedure test_maketime;
+show create procedure test_period_add;
+show create procedure test_period_diff;
+show create procedure test_sec_to_time;
+show create procedure test_subdate;
+show create procedure test_subtime;
+show create procedure test_time;
+show create procedure test_time_format;
+show create procedure test_timediff;
+show create procedure test_timestamp;
+show create procedure test_timestampadd;
+show create procedure test_to_days;
+show create procedure test_to_seconds;
+show create procedure test_unix_timestamp;
+show create procedure test_utc_date;
+show create procedure test_utc_time;
+show create procedure test_utc_timestamp;
+show create procedure test_curdate;
+show create procedure test_current_time;
+show create procedure test_current_timestamp;
+show create procedure test_localtime;
+show create procedure test_localtimestamp;
+show create procedure test_now;
+show create procedure test_sysdate;
+show create procedure test_date;
+show create procedure test_day;
+show create procedure test_dayname;
+show create procedure test_last_day;
+show create procedure test_month;
+show create procedure test_monthname;
+show create procedure test_time_to_sec;
+show create procedure test_week;
+show create procedure test_yearweek;
+show create procedure test_adddate;
+show create procedure test_addtime;
+show create procedure test_convert_tz;
+show create procedure test_date_add;
+show create procedure test_date_sub;
+show create procedure test_datediff;
+show create procedure test_from_days;
+
+set datestyle = 'iso, ymd';
+show datestyle;
+set time zone "Asia/Shanghai";
+call test_makedate(date1, date2, date3);
+call test_maketime(time1);
+call test_period_add(value);
+call test_period_diff(diff);
+call test_sec_to_time(time1);
+call test_subdate(date1, date2, time1, time2);
+call test_subtime(time1, time2);
+call test_time(time1, datetime1);
+call test_time_format(time1);
+call test_timediff(time1, time2);
+call test_timestamp(datetime1, datetime2);
+call test_timestampadd(datetime1);
+call test_to_days(days);
+call test_to_seconds(seconds);
+call test_date(date1);
+call test_day(day);
+call test_dayname(dayname);
+call test_last_day(lastday);
+call test_month(month);
+call test_monthname(monthname);
+call test_time_to_sec(seconds);
+call test_week(week1, week2);
+call test_yearweek(yearweek1, yearweek2);
+call test_adddate(adddate1, adddate2, adddate3, adddate4);
+call test_addtime(addtime);
+call test_convert_tz(convert_tz);
+call test_date_add(date1, datetime1, datetime2);
+call test_date_sub(date1, datetime1, datetime2);
+call test_datediff(datediff);
+call test_from_days(from_days);
+
+\c postgres
+drop database if exists restore_function_db;
+drop database if exists dump_function_db;
+drop user if exists function_definer;

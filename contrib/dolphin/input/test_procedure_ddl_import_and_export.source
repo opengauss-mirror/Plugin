@@ -1,0 +1,472 @@
+--create procedure测试
+drop database if exists dump_procedure_db;
+drop database if exists restore_procedure_db;
+create database dump_procedure_db with dbcompatibility = 'B';
+create database restore_procedure_db with dbcompatibility = 'B';
+\c dump_procedure_db
+
+create user test_procedure_definer password 'Test@123';
+
+--test language sql
+delimiter //;
+create definer = test_procedure_definer procedure create_procedure_001() language plpgsql
+BEGIN
+END;
+//
+delimiter ;//
+
+--test [not] deterministic
+delimiter //;
+create definer = test_procedure_definer procedure create_procedure_002() deterministic
+BEGIN
+END;
+//
+delimiter ;//
+
+delimiter //;
+create definer = test_procedure_definer procedure create_procedure_003() not deterministic
+BEGIN
+END;
+//
+delimiter ;//
+
+--test contains sql
+delimiter //;
+create definer = test_procedure_definer procedure create_procedure_004() contains sql
+BEGIN
+END;
+//
+delimiter ;//
+
+--no sql
+delimiter //;
+create definer = test_procedure_definer procedure create_procedure_005() no sql
+BEGIN
+END;
+//
+delimiter ;//
+
+--test reads sql data
+delimiter //;
+create definer = test_procedure_definer procedure create_procedure_006() reads sql data
+BEGIN
+END;
+//
+delimiter ;//
+
+--test modifies sql data
+delimiter //;
+create definer = test_procedure_definer procedure create_procedure_007() modifies sql data
+BEGIN
+END;
+//
+delimiter ;//
+
+--test sql security
+delimiter //;
+create definer = test_procedure_definer procedure create_procedure_008() sql security definer
+BEGIN
+END;
+//
+delimiter ;//
+
+delimiter //;
+create definer = test_procedure_definer procedure create_procedure_009() sql security invoker
+BEGIN
+END;
+//
+delimiter ;//
+
+--test definer
+delimiter //;
+create definer = test_procedure_definer procedure create_procedure_010()
+BEGIN
+END;
+//
+delimiter ;//
+
+--test select
+create table t_create_procedure_select(c int);
+insert into t_create_procedure_select values(1);
+insert into t_create_procedure_select values(2);
+insert into t_create_procedure_select values(3);
+create definer = test_procedure_definer procedure create_procedure_011() select c from t_create_procedure_select order by c;
+
+--test repeat
+delimiter //;
+create definer = test_procedure_definer procedure create_procedure_012(c int)
+AS
+DECLARE
+        i int = 0;
+BEGIN
+        repeat
+                i = i + 1;
+                until i > c
+        end repeat;
+END;
+//
+delimiter ;//
+call create_procedure_012(10);
+
+delimiter //;
+create definer = test_procedure_definer procedure create_procedure_013(c int)
+AS
+DECLARE
+        i int = 0;
+BEGIN
+        <<label>> repeat
+                i = i + 1;
+                until i > c
+        end repeat label;
+END;
+//
+delimiter ;//
+
+--test return
+delimiter //;
+create definer = test_procedure_definer procedure create_procedure_014()
+BEGIN
+        return;
+END;
+//
+delimiter ;//
+
+delimiter //;
+create definer = test_procedure_definer procedure create_procedure_015(c out int)
+BEGIN
+        return c;
+END;
+//
+delimiter ;//
+call create_procedure_015(10);
+
+--test declare cursor
+create table company(name varchar(100), loc varchar(100), no integer);
+insert into company values('macrosoft', 'usa', 001);
+insert into company values('oracle', 'usa', 002);
+insert into company values('backbery', 'canada', 003);
+create definer = test_procedure_definer procedure create_procedure_016
+as
+        company_name varchar(100);
+        company_loc varchar(100);
+        company_no integer;
+begin
+        declare c1_all cursor is
+                select name, loc, no from company order by 1, 2, 3;
+        if not c1_all%isopen then open c1_all;
+        end if;
+        loop
+                fetch c1_all into company_name, company_loc, company_no;
+                exit when c1_all%notfound;
+                raise notice '% : % : %', company_name, company_loc, company_no;
+        end loop;
+        if c1_all%isopen then
+                close c1_all;
+        end if;
+end;
+/
+
+--test declare condition
+create definer = test_procedure_definer procedure create_procedure_017
+AS
+BEGIN
+        declare DISVISION_ZERO condition for 1;
+        raise notice 'declare condition successed';
+END;
+/
+
+--test do statement
+create definer = test_procedure_definer procedure create_procedure_018
+AS
+DECLARE
+        x,y,z int =1;
+BEGIN
+        y := 2;
+        z := 4;
+        do x + x;
+        do y * z;
+        do x + x, y * z;
+        do sin(x);
+        do pg_sleep(1);
+END;
+/
+
+--test iterate label
+create definer = test_procedure_definer procedure create_procedure_019(c int)
+AS
+BEGIN
+        label1: loop
+        c := c + 1;
+        if c < 10 then iterate label1;
+        end if;
+        leave label1;
+        end loop label1;
+        raise notice 'c:%', c;
+END;
+/
+
+create definer = test_procedure_definer procedure create_procedure_020(c int)
+AS
+BEGIN
+        loop
+                c := c + 1;
+                if c < 10 then iterate;
+                end if;
+                leave;
+        end loop;
+        raise notice 'c:%', c;
+END;
+/
+
+--test case when condition
+create definer = test_procedure_definer procedure create_procedure_021(c int)
+AS
+BEGIN
+        case c
+                when 1 then raise notice 'one';
+                when 2 then raise notice'two';
+                when 3 then raise notice 'three';
+                else
+                        raise notice 'more than three';
+        end case;
+END;
+/
+
+--test while
+create definer = test_procedure_definer procedure create_procedure_022(c int)
+AS
+BEGIN
+        while c < 10
+                do c := c + 1;
+        end while;
+        raise notice 'c:%', c;
+END;
+/
+
+create definer = test_procedure_definer procedure create_procedure_023(c int)
+AS
+BEGIN
+        label: while c < 10
+                do c := c + 1;
+        end while label;
+        raise notice 'c:%', c;
+END;
+/
+
+show lc_collate;
+show create procedure create_procedure_001;
+show create procedure create_procedure_002;
+show create procedure create_procedure_003;
+show create procedure create_procedure_004;
+show create procedure create_procedure_005;
+show create procedure create_procedure_006;
+show create procedure create_procedure_007;
+show create procedure create_procedure_008;
+show create procedure create_procedure_009;
+show create procedure create_procedure_010;
+show create procedure create_procedure_011;
+show create procedure create_procedure_012;
+show create procedure create_procedure_013;
+show create procedure create_procedure_014;
+show create procedure create_procedure_015;
+show create procedure create_procedure_016;
+show create procedure create_procedure_017;
+show create procedure create_procedure_018;
+show create procedure create_procedure_019;
+show create procedure create_procedure_020;
+show create procedure create_procedure_021;
+show create procedure create_procedure_022;
+show create procedure create_procedure_023;
+
+call create_procedure_001();
+call create_procedure_002();
+call create_procedure_003();
+call create_procedure_004();
+call create_procedure_005();
+call create_procedure_006();
+call create_procedure_007();
+call create_procedure_008();
+call create_procedure_009();
+call create_procedure_010();
+select create_procedure_011();
+call create_procedure_012(10);
+call create_procedure_013(10);
+call create_procedure_014();
+call create_procedure_015(10);
+call create_procedure_016();
+call create_procedure_017();
+call create_procedure_018();
+call create_procedure_019(5);
+call create_procedure_020(5);
+call create_procedure_021(5);
+call create_procedure_022(5);
+call create_procedure_023(5);
+
+--alter procedure测试
+--test language sql
+delimiter //;
+create definer = test_procedure_definer procedure alter_procedure_001() language plpgsql
+BEGIN
+END;
+//
+delimiter ;//
+alter procedure alter_procedure_001 language sql;
+
+--test contains sql
+delimiter //;
+create definer = test_procedure_definer procedure alter_procedure_002() contains sql
+BEGIN
+END;
+//
+delimiter ;//
+alter procedure alter_procedure_002 contains sql;
+
+--no sql
+delimiter //;
+create definer = test_procedure_definer procedure alter_procedure_003() no sql
+BEGIN
+END;
+//
+delimiter ;//
+alter procedure alter_procedure_003 no sql;
+
+--test reads sql data
+delimiter //;
+create definer = test_procedure_definer procedure alter_procedure_004() reads sql data
+BEGIN
+END;
+//
+delimiter ;//
+alter procedure alter_procedure_004 reads sql data;
+
+--test modifies sql data
+delimiter //;
+create definer = test_procedure_definer procedure alter_procedure_005() modifies sql data
+BEGIN
+END;
+//
+delimiter ;//
+alter procedure alter_procedure_005 modifies sql data;
+
+--test sql security
+delimiter //;
+create definer = test_procedure_definer procedure alter_procedure_006() sql security definer
+BEGIN
+END;
+//
+delimiter ;//
+alter procedure alter_procedure_006 sql security invoker;
+
+delimiter //;
+create definer = test_procedure_definer procedure alter_procedure_007() sql security invoker
+BEGIN
+END;
+//
+delimiter ;//
+alter procedure alter_procedure_007 sql security definer;
+
+\df+ alter_procedure_001;
+\df+ alter_procedure_002;
+\df+ alter_procedure_003;
+\df+ alter_procedure_004;
+\df+ alter_procedure_005;
+\df+ alter_procedure_006;
+\df+ alter_procedure_007;
+
+--导入导出
+\! @abs_bindir@/gs_dump dump_procedure_db -p @portstring@ -f @abs_bindir@/dump_procedure.tar -F t >/dev/null 2>&1; echo $?
+drop procedure create_procedure_001;
+drop procedure create_procedure_002;
+drop procedure create_procedure_003;
+drop procedure create_procedure_004;
+drop procedure create_procedure_005;
+drop procedure create_procedure_006;
+drop procedure create_procedure_007;
+drop procedure create_procedure_008;
+drop procedure create_procedure_009;
+drop procedure create_procedure_010;
+drop procedure create_procedure_011;
+drop procedure create_procedure_012;
+drop procedure create_procedure_013;
+drop procedure create_procedure_014;
+drop procedure create_procedure_015;
+drop procedure create_procedure_016;
+drop procedure create_procedure_017;
+drop procedure create_procedure_018;
+drop procedure create_procedure_019;
+drop procedure create_procedure_020;
+drop procedure create_procedure_021;
+drop procedure create_procedure_022;
+drop procedure create_procedure_023;
+
+drop procedure alter_procedure_001;
+drop procedure alter_procedure_002;
+drop procedure alter_procedure_003;
+drop procedure alter_procedure_004;
+drop procedure alter_procedure_005;
+drop procedure alter_procedure_006;
+drop procedure alter_procedure_007;
+\! @abs_bindir@/gs_restore -d restore_procedure_db -p @portstring@ @abs_bindir@/dump_procedure.tar >/dev/null 2>&1; echo $?
+\c restore_procedure_db
+
+show lc_collate;
+show create procedure create_procedure_001;
+show create procedure create_procedure_002;
+show create procedure create_procedure_003;
+show create procedure create_procedure_004;
+show create procedure create_procedure_005;
+show create procedure create_procedure_006;
+show create procedure create_procedure_007;
+show create procedure create_procedure_008;
+show create procedure create_procedure_009;
+show create procedure create_procedure_010;
+show create procedure create_procedure_011;
+show create procedure create_procedure_012;
+show create procedure create_procedure_013;
+show create procedure create_procedure_014;
+show create procedure create_procedure_015;
+show create procedure create_procedure_016;
+show create procedure create_procedure_017;
+show create procedure create_procedure_018;
+show create procedure create_procedure_019;
+show create procedure create_procedure_020;
+show create procedure create_procedure_021;
+show create procedure create_procedure_022;
+show create procedure create_procedure_023;
+
+call create_procedure_001();
+call create_procedure_002();
+call create_procedure_003();
+call create_procedure_004();
+call create_procedure_005();
+call create_procedure_006();
+call create_procedure_007();
+call create_procedure_008();
+call create_procedure_009();
+call create_procedure_010();
+select create_procedure_011();
+call create_procedure_012(10);
+call create_procedure_013(10);
+call create_procedure_014();
+call create_procedure_015(10);
+call create_procedure_016();
+call create_procedure_017();
+call create_procedure_018();
+call create_procedure_019(5);
+call create_procedure_020(5);
+call create_procedure_021(5);
+call create_procedure_022(5);
+call create_procedure_023(5);
+
+\df+ alter_procedure_001;
+\df+ alter_procedure_002;
+\df+ alter_procedure_003;
+\df+ alter_procedure_004;
+\df+ alter_procedure_005;
+\df+ alter_procedure_006;
+\df+ alter_procedure_007;
+
+\c postgres
+drop database if exists restore_procedure_db;
+drop database if exists dump_procedure_db;
+drop user test_procedure_definer;

@@ -1,0 +1,194 @@
+--create view测试
+drop database if exists dump_view_db;
+drop database if exists restore_view_db;
+create database dump_view_db with dbcompatibility = 'B';
+create database restore_view_db with dbcompatibility = 'B';
+\c dump_view_db
+
+create table t_create_view_001(c int);
+create table t_create_view_002(c int) with (orientation = column);
+create table t_create_view_003(col1 int, col2 int) with (storage_type = ustore);
+create table t_create_view_004(col1 int, col2 int) with (segment = on);
+create unlogged table t_create_view_005(col1 int, col2 int);
+create table t_create_view_006(col1 int, col2 int)
+partition by range(col1)
+(       
+	partition p1 values less than (1000),
+	partition p2 values less than (2000),
+	partition p3 values less than (4000)
+);
+create user viewdefiner001 password 'Test@123';
+create table t_create_view_007(col1 date, col2 int)
+partition by range(col1)
+interval('1 day')
+(
+	partition p1 values less than ('2019-02-01 00:00:00'),
+	partition p2 values less than ('2019-02-02 00:00:00'),
+	partition p3 values less than ('2019-02-03 00:00:00')
+);
+create table t_create_view_008(col1 int, col2 int)
+partition by list(col1)
+(
+	partition p1 values in (1000),
+	partition p2 values in (2000),
+	partition p3 values in (4000)
+);
+create table t_create_view_009(col1 int, col2 int)
+partition by hash(col1)
+(
+	partition p1,
+	partition p2,
+	partition p3
+);
+create table t_create_view_010(col1 int, col2 int)
+partition by range(col1) subpartition by range(col2)
+(
+	partition p1 values less than (1000)
+	(
+		subpartition p11 values less than (500),
+		subpartition p12 values less than (1000)
+	),
+	partition p2 values less than (2000)
+	(
+		subpartition p21 values less than (1500),
+		subpartition p22 values less than (2000)
+	),
+	partition p3 values less than (4000)
+	(
+		subpartition p31 values less than (3000),
+		subpartition p32 values less than (4000)
+	)
+);
+grant proxy on current_user() to viewdefiner001;
+create or replace definer = viewdefiner001 view view001(c) as select c from t_create_view_001 order by c;
+create or replace definer = viewdefiner001 view view002(c) as select c from t_create_view_002 order by c;
+create or replace definer = viewdefiner001 view view003(col1, col2) as select col1, col2 from t_create_view_003 order by (col1, col2);
+create or replace definer = viewdefiner001 view view004(col1, col2) as select col1, col2 from t_create_view_004 order by (col1, col2);
+create or replace definer = viewdefiner001 view view005(col1, col2) as select col1, col2 from t_create_view_005 order by (col1, col2);
+create or replace definer = viewdefiner001 view view006(col1, col2) as select * from t_create_view_006 partition(p1, p2, p3) order by (col1, col2);
+create or replace definer = viewdefiner001 view view007(col1, col2) as select * from t_create_view_007 partition(p1, p2, p3) order by (col1, col2);
+create or replace definer = viewdefiner001 view view008(col1, col2) as select * from t_create_view_008 partition(p1, p2, p3) order by (col1, col2);
+create or replace definer = viewdefiner001 view view009(col1, col2) as select * from t_create_view_009 partition(p1, p2, p3) order by (col1, col2);
+create or replace definer = viewdefiner001 view view010(col1, col2) as select * from t_create_view_010 partition(p1, p2, p3) order by (col1, col2);
+
+show lc_collate;
+show create view view001;
+show create view view002;
+show create view view003;
+show create view view004;
+show create view view005;
+show create view view006;
+show create view view007;
+show create view view008;
+show create view view009;
+show create view view010;
+
+\dv view001;
+\dv view002;
+\dv view003;
+\dv view004;
+\dv view005;
+\dv view006;
+\dv view007;
+\dv view008;
+\dv view009;
+\dv view010;
+
+--alter view测试
+--修改视图definer
+create user viewdefiner002 password 'Test@123';
+grant proxy on current_user() to viewdefiner002;
+create table t_alter_view_001(c int);
+create or replace definer = viewdefiner001 view view011(c) as select c from t_alter_view_001;
+alter definer = viewdefiner002 view view011(c) as select c from t_alter_view_001;
+\dv view011;
+
+--修改视图定义
+create table t_alter_view_002(col1 int, col2 int);
+create table t_alter_view_003(col1 int, col2 int, col3 int);
+create or replace definer = viewdefiner001 view view012(col1, col2) as select col1, col2 from t_alter_view_002;
+alter view view012(col1, col2, col3) as select * from t_alter_view_003;
+\dv view012;
+
+\dv view011;
+\dv view012;
+
+--drop view测试
+--create view后删除
+--不指定用户
+create table t_drop_view_001(c int);
+create or replace view view013(c) as select c from t_drop_view_001;
+drop view view013;
+--指定用户
+create table t_drop_view_002(c int);
+create or replace definer = viewdefiner001 view view014(c) as select c from t_drop_view_002;
+drop view view014;
+--alter view后删除
+--不修改用户
+create table t_drop_view_003(col1 int);
+create table t_drop_view_004(col1 int, col2 int);
+create or replace view view015(col1) as select col1 from t_drop_view_003;
+alter view view015(col1, col2) as select * from t_drop_view_004;
+drop view view015;
+--修改用户
+create table t_drop_view_005(c int);
+create or replace definer = viewdefiner001 view view016(c) as select c from t_drop_view_005;
+alter definer = viewdefiner002 view view016(c) as select c from t_drop_view_005;
+drop view view016;
+
+\dv view013;
+\dv view014;
+\dv view015;
+\dv view016;
+
+--导入导出
+\! @abs_bindir@/gs_dump dump_view_db -p @portstring@ -f @abs_bindir@/dump_view.sql -F p >/dev/null 2>&1; echo $?
+drop view if exists view001;
+drop view if exists view002;
+drop view if exists view003;
+drop view if exists view004;
+drop view if exists view005;
+drop view if exists view006;
+drop view if exists view007;
+drop view if exists view008;
+drop view if exists view009;
+drop view if exists view010;
+drop view if exists view011;
+drop view if exists view012;
+\! @abs_bindir@/gsql restore_view_db -p @portstring@ -f @abs_bindir@/dump_view.sql >/dev/null 2>&1; echo $?
+\c restore_view_db
+
+show lc_collate;
+show create view view001;
+show create view view002;
+show create view view003;
+show create view view004;
+show create view view005;
+show create view view006;
+show create view view007;
+show create view view008;
+show create view view009;
+show create view view010;
+
+\dv view001;
+\dv view002;
+\dv view003;
+\dv view004;
+\dv view005;
+\dv view006;
+\dv view007;
+\dv view008;
+\dv view009;
+\dv view010;
+\dv view011;
+\dv view012;
+\dv view013;
+\dv view014;
+\dv view015;
+\dv view016;
+
+\c postgres
+drop database if exists restore_view_db;
+drop database if exists dump_view_db;
+drop user if exists viewdefiner001;
+drop user if exists viewdefiner002;
