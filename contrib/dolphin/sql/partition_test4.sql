@@ -221,6 +221,8 @@ create table part_key_list_t1(col1 date, col2 int) partition by list(year(col1))
 select pg_get_tabledef('part_key_list_t1');
 alter table part_key_list_t1 add partition p3 values(4000);
 select pg_get_tabledef('part_key_list_t1');
+alter table part_key_list_t1 reorganize partition p1,p2 into (partition m1 values(1000,3000),partition m2 values(2000,5000));
+select pg_get_tabledef('part_key_list_t1');
 
 create table part_key_list_t2(col1 date, col2 int) partition by list(to_days(col1))
 (
@@ -229,6 +231,8 @@ create table part_key_list_t2(col1 date, col2 int) partition by list(to_days(col
 );
 select pg_get_tabledef('part_key_list_t2');
 alter table part_key_list_t2 add partition p3 values(90000);
+select pg_get_tabledef('part_key_list_t2');
+alter table part_key_list_t2 reorganize partition p1,p2 into (partition m1 values(10000,80000),partition m2 values(60000,50000));
 select pg_get_tabledef('part_key_list_t2');
 
 create table part_key_t1 (col1 date, col2 date) partition by range( year(col2) )
