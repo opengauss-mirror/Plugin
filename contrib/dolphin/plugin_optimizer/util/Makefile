@@ -19,7 +19,7 @@ ifneq "$(MAKECMDGOALS)" "clean"
 endif
 
 
-OBJS = plancat.o relnode.o
+OBJS = plancat.o relnode.o clauses.o
 
 include $(top_srcdir)/src/gausskernel/common.mk
 

@@ -13,7 +13,7 @@
 #ifndef FMGRTAB_H
 #define FMGRTAB_H
 
-#include "fmgr.h"
+#include "plugin_utils/fmgr.h"
 #include "catalog/genbki.h"
 #include "catalog/pg_proc.h"
 #include "c.h"

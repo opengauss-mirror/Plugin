@@ -18,7 +18,7 @@ ifneq "$(MAKECMDGOALS)" "clean"
   endif
 endif
 OBJS        = fmgrtab.o
-SUBDIRS     = adt mb
+SUBDIRS     = adt mb fmgr
 
 # location of Catalog.pm
 catalogdir  = $(top_builddir)/src/common/backend/catalog
