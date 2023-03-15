@@ -25,7 +25,6 @@
 #include "catalog/pg_proc.h"
 #include "catalog/pg_type.h"
 #include "client_logic/client_logic_proc.h"
-#include "plugin_executor/functions.h"
 #include "funcapi.h"
 #include "miscadmin.h"
 #include "nodes/makefuncs.h"
@@ -34,6 +33,8 @@
 #include "parser/parse_coerce.h"
 #include "parser/parse_func.h"
 #include "parser/parse_relation.h"
+#include "plugin_executor/functions.h"
+#include "plugin_commands/mysqlmode.h"
 #include "storage/proc.h"
 #include "tcop/utility.h"
 #include "utils/builtins.h"
@@ -1553,6 +1554,33 @@ void check_if_exist_client_logic_type(List *tlist, Oid ret_type)
     return;
 }
 
+#ifdef DOLPHIN
+static bool IsBmodeCoercible(Oid sourceOid, Oid targetOid)
+{
+    if (!ENABLE_B_CMPT_MODE) {
+        return false;
+    }
+
+    if (sourceOid == INT8OID) {
+        return targetOid == INT4OID ||
+               targetOid == INT2OID ||
+               targetOid == INT1OID;
+    } else if (sourceOid == INT4OID) {
+        return targetOid == INT2OID ||
+               targetOid == INT1OID;
+    } else if (sourceOid == UINT8OID) {
+        return targetOid == UINT4OID ||
+               targetOid == UINT2OID ||
+               targetOid == UINT1OID;
+    } else if (sourceOid == UINT4OID) {
+        return targetOid == UINT2OID ||
+               targetOid == UINT1OID;
+    }
+
+    return false;
+}
+#endif
+
 /*
  * check_sql_fn_retval() -- check return value of a list of sql parse trees.
  *
@@ -1698,12 +1726,31 @@ bool check_sql_fn_retval(Oid func_id, Oid ret_type, List* query_tree_list, bool*
             if (IsClientLogicType(res_type) && IsBinaryCoercible(exprTypmod((Node*)tle->expr), ret_type)) {
                 add_rettype_orig(func_id, ret_type, res_type);
             } else {
-                if (IsClientLogicType(res_type)) {
-                    res_type = exprTypmod((Node*)tle->expr);
+#ifdef DOLPHIN
+                Node* coerce = nullptr;
+                if (IsBmodeCoercible(res_type, ret_type)) {
+                    coerce = coerce_to_target_type(NULL, /* no UNKNOWN params here */
+                                                   (Node*)tle->expr,
+                                                   res_type, ret_type, 
+                                                   0, /* targettypmod */
+                                                   COERCION_ASSIGNMENT,
+                                                   COERCE_IMPLICIT_CAST,
+                                                   -1);
                 }
-                ereport(ERROR, (errcode(ERRCODE_INVALID_FUNCTION_DEFINITION),
-                    errmsg("return type mismatch in function declared to return %s", format_type_be(ret_type)),
-                    errdetail("Actual return type is %s.", format_type_be(res_type))));
+
+                if (coerce) {
+                    tle->expr = (Expr*)coerce;
+                } else {
+#endif
+                    if (IsClientLogicType(res_type)) {
+                        res_type = exprTypmod((Node*)tle->expr);
+                    }
+                    ereport(ERROR, (errcode(ERRCODE_INVALID_FUNCTION_DEFINITION),
+                        errmsg("return type mismatch in function declared to return %s", format_type_be(ret_type)),
+                        errdetail("Actual return type is %s.", format_type_be(res_type))));
+#ifdef DOLPHIN
+                }
+#endif
             }
         }
         if (modify_target_list != NULL && res_type != ret_type) {
