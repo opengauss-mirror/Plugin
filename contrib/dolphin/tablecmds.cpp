@@ -28318,11 +28318,12 @@ static void ATExecReorganizePartition(Relation partTableRel, AlterTableCmd* cmd)
         for (int i = 0; i < partitionKey->dim1; i++) {
             partKeyPosList = lappend_int(partKeyPosList, partitionKey->values[i] - 1);
         }
-        CompareListValue(partKeyPosList, (RelationGetDescr(partTableRel))->attrs, destPartDefList);
+        bool partkeyIsFunc = IsPartKeyFunc(partTableRel, false, false);
+        CompareListValue(partKeyPosList, (RelationGetDescr(partTableRel))->attrs, destPartDefList, partkeyIsFunc);
         list_free_ext(partKeyPosList);
         foreach (cell, destPartDefList) {
             /* check new adding partitions behind the last partition */
-            CheckPartitionValueConflictForAddPartition(partTableRel, (Node*)lfirst(cell));
+            CheckPartitionValueConflictForAddPartition(partTableRel, (Node*)lfirst(cell), partkeyIsFunc);
             /* check constraint for subpartition */
             CheckSubpartitionForAddPartition(partTableRel, (Node*)lfirst(cell));
         } 

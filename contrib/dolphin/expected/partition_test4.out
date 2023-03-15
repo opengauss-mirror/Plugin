@@ -848,6 +848,25 @@ select pg_get_tabledef('part_key_list_t1');
  ENABLE ROW MOVEMENT;
 (1 row)
 
+alter table part_key_list_t1 reorganize partition p1,p2 into (partition m1 values(1000,3000),partition m2 values(2000,5000));
+select pg_get_tabledef('part_key_list_t1');
+                        pg_get_tabledef                        
+---------------------------------------------------------------
+ SET search_path = partition_test4;                           +
+ CREATE TABLE part_key_list_t1 (                              +
+     col1 date,                                               +
+     col2 integer                                             +
+ )                                                            +
+ WITH (orientation=row, compression=no)                       +
+ PARTITION BY LIST (year((col1)::timestamp without time zone))+
+ (                                                            +
+     PARTITION m1 VALUES (1000,3000) TABLESPACE pg_default,   +
+     PARTITION m2 VALUES (2000,5000) TABLESPACE pg_default,   +
+     PARTITION p3 VALUES (4000) TABLESPACE pg_default         +
+ )                                                            +
+ ENABLE ROW MOVEMENT;
+(1 row)
+
 create table part_key_list_t2(col1 date, col2 int) partition by list(to_days(col1))
 (
     partition p1 values(60000),
@@ -884,6 +903,25 @@ select pg_get_tabledef('part_key_list_t2');
  (                                                               +
      PARTITION p1 VALUES (60000) TABLESPACE pg_default,          +
      PARTITION p2 VALUES (80000) TABLESPACE pg_default,          +
+     PARTITION p3 VALUES (90000) TABLESPACE pg_default           +
+ )                                                               +
+ ENABLE ROW MOVEMENT;
+(1 row)
+
+alter table part_key_list_t2 reorganize partition p1,p2 into (partition m1 values(10000,80000),partition m2 values(60000,50000));
+select pg_get_tabledef('part_key_list_t2');
+                         pg_get_tabledef                          
+------------------------------------------------------------------
+ SET search_path = partition_test4;                              +
+ CREATE TABLE part_key_list_t2 (                                 +
+     col1 date,                                                  +
+     col2 integer                                                +
+ )                                                               +
+ WITH (orientation=row, compression=no)                          +
+ PARTITION BY LIST (to_days((col1)::timestamp without time zone))+
+ (                                                               +
+     PARTITION m1 VALUES (10000,80000) TABLESPACE pg_default,    +
+     PARTITION m2 VALUES (60000,50000) TABLESPACE pg_default,    +
      PARTITION p3 VALUES (90000) TABLESPACE pg_default           +
  )                                                               +
  ENABLE ROW MOVEMENT;
