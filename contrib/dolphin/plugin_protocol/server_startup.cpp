@@ -373,23 +373,40 @@ static void InitSendBlobHashTable(int size)
                                                 HASH_ELEM | HASH_FUNCTION | HASH_CONTEXT);
 }
 
-const char* GetCachedParamBlob(int32 param_id) {
+const char* GetCachedParamBlob(uint32 stmt_id) {
     if (GetSessionContext()->b_sendBlobHash == NULL) {
         InitSendBlobHashTable(16);
     }
 
     bool found = false;
     HashEntryBlob *entry = (HashEntryBlob *)hash_search(GetSessionContext()->b_sendBlobHash,
-                                                                     &param_id, HASH_FIND, &found);
-    return found ? entry->value : NULL;
+                                                                     &stmt_id, HASH_FIND, &found);
+    return found ? entry->value->data[entry->value->cursor++] : NULL;
 }
 
-void SaveCachedParamBlob(int32 param_id, char* value) {
+void SaveCachedParamBlob(uint32 stmt_id, char *data) {
     if (GetSessionContext()->b_sendBlobHash == NULL) {
         InitSendBlobHashTable(16);
     }
 
+    bool found = false;
     HashEntryBlob *entry = (HashEntryBlob *)hash_search(GetSessionContext()->b_sendBlobHash,
-                                                                     &param_id, HASH_ENTER, NULL);
-    entry->value = value;
+                                                                   &stmt_id, HASH_ENTER, &found);
+
+    MemoryContext oldcontext = MemoryContextSwitchTo(u_sess->cache_mem_cxt);
+    if (!found) {
+        BlobParams *blob = (BlobParams *)palloc0(sizeof(BlobParams));
+        entry->value = blob;
+    }
+
+    entry->value->count++;
+    if (entry->value->data) {
+        entry->value->data = (const char **)repalloc(entry->value->data, entry->value->count * sizeof(char **));
+    } else {
+        entry->value->data = (const char **)palloc0(entry->value->count * sizeof(char **)); 
+    }
+    
+    entry->value->data[entry->value->count - 1] = pstrdup(data);
+
+    MemoryContextSwitchTo(oldcontext);
 }

@@ -387,7 +387,7 @@ com_stmt_exec_request* read_com_stmt_exec_request(StringInfo buf)
                     case DOLPHIN_TYPE_MEDIUM_BLOB:
                     case DOLPHIN_TYPE_BLOB:
                     case DOLPHIN_TYPE_TINY_BLOB: {
-                        parameters[i].value.text = GetCachedParamBlob(i);
+                        parameters[i].value.text = GetCachedParamBlob(req->statement_id);
                         parameters[i].type = TYPE_STRING;
                         break;
                     }
@@ -700,11 +700,5 @@ void read_send_long_data_request(StringInfo buf)
     dq_get_int4(buf, &statement_id);
     dq_get_int2(buf, &param_id);
     char *payload = dq_get_string_eof(buf);
-
-    MemoryContext oldcontext = MemoryContextSwitchTo(u_sess->cache_mem_cxt);
-    char *value = pstrdup(payload);
-    (void)MemoryContextSwitchTo(oldcontext);
-    pfree(payload);
-
-    SaveCachedParamBlob(param_id, value);
+    SaveCachedParamBlob(statement_id, payload);
 }

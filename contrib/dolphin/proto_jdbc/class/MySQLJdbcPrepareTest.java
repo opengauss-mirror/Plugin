@@ -50,7 +50,7 @@ public class MySQLJdbcPrepareTest {
         info.setProperty("user", user);
         info.setProperty("password", password);
     
-        try (Connection connection = DriverManager.getConnection("jdbc:mysql://?useServerPrepStmts=true&cachePrepStmts=true&serverTimezone=UTC&useSSL=false", info);
+        try (Connection connection = DriverManager.getConnection("jdbc:mysql://?useServerPrepStmts=true&serverTimezone=UTC&useSSL=false", info);
              Statement statement = connection.createStatement()) {
             ResultSet resultSet;
             ResultSetMetaData resultSetMetaData;
@@ -147,6 +147,11 @@ public class MySQLJdbcPrepareTest {
                     System.out.println(resultSetMetaData.getColumnName(i) + ":" +resultSetMetaData.getColumnTypeName(i) + ":" + out);
                 }
             }
+
+            p1.clearParameters();
+            p1.close();
+            p2.clearParameters();
+            p2.close();
         }
     }
 }

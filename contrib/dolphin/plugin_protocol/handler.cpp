@@ -30,15 +30,16 @@
 #include "plugin_protocol/dqformat.h"
 #include "plugin_protocol/handler.h"
 
-// #define param_isnull(ATT, BITS) (!((BITS)[(uint32)(int32)(ATT) >> 3] & (1 << ((ATT)&0x07))))
-
 static int execute_text_protocol_sql(const char* sql);
 static int execute_com_stmt_prepare(const char *sql);
 static int execute_binary_protocol_req(com_stmt_exec_request *request);
+static void execute_com_stmt_close(StringInfo buf);
+static void execute_com_stmt_reset(StringInfo buf);
 static void execute_show_variables();
 static void execute_show_transaction_read_only();
 static void execute_com_field_list(char *tableName);
 static void execute_fetch_server_config();
+
 
 void dophin_send_ready_for_query(CommandDest dest)
 {
@@ -134,7 +135,7 @@ int dolphin_process_command(StringInfo buf)
                 execute_fetch_server_config();
             } else if (strcasestr(sql, "show variables")) {
                 execute_show_variables();
-            } else if (strncasecmp(sql, "SET", 3) == 0) {
+            } else if (strncasecmp(sql, "SET character_set_results", 25) == 0) {
                 send_general_ok_packet();
             } else if (strcasestr(sql, "select @@session.transaction_read_only")) {
                 execute_show_transaction_read_only();
@@ -155,17 +156,23 @@ int dolphin_process_command(StringInfo buf)
         case COM_STMT_PREPARE: {
             char *sql = dq_get_string_eof(buf);
             execute_com_stmt_prepare(sql);
-
             break;
         }
         case COM_STMT_EXECUTE: {
             com_stmt_exec_request *req = read_com_stmt_exec_request(buf);
             execute_binary_protocol_req(req);
-
             break;
         }
         case COM_STMT_SEND_LONG_DATA: {
             read_send_long_data_request(buf);
+            break;
+        }
+        case COM_STMT_RESET: {
+            execute_com_stmt_reset(buf);
+            break;
+        }
+        case COM_STMT_CLOSE: {
+            execute_com_stmt_close(buf);
             break;
         }
         default:
@@ -377,6 +384,33 @@ int execute_binary_protocol_req(com_stmt_exec_request *request)
     finish_xact_command();
 
     return 0;
+}
+
+void execute_com_stmt_reset(StringInfo buf)
+{
+    uint32 statement_id;   
+    dq_get_int4(buf, &statement_id);
+    if (GetSessionContext()->b_sendBlobHash) {
+        (void)hash_search(GetSessionContext()->b_sendBlobHash, (void*)&statement_id, HASH_REMOVE, NULL);
+    }
+    if (GetSessionContext()->b_stmtInputTypeHash) {
+        (void)hash_search(GetSessionContext()->b_stmtInputTypeHash, (void*)&statement_id, HASH_REMOVE, NULL);
+    }
+    send_general_ok_packet();
+}
+
+void execute_com_stmt_close(StringInfo buf)
+{
+    uint32 statement_id;   
+    char stmt_name[NAMEDATALEN];
+    dq_get_int4(buf, &statement_id);
+    int rc = snprintf_s(stmt_name, NAMEDATALEN + 1, NAMEDATALEN, "p%d", statement_id);
+    securec_check_ss(rc, "\0", "\0");
+
+    StringInfo sql = makeStringInfo();
+    appendStringInfo(sql, "DEALLOCATE %s", stmt_name);
+    execute_text_protocol_sql(sql->data);
+    DestroyStringInfo(sql);
 }
 
 void execute_com_field_list(char *tableName)
