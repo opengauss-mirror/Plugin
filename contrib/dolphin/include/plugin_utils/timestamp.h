@@ -56,10 +56,12 @@ do {                                                                            
 #define IZONE_BOUND2 INT64CONST(46800000000) /* 13:00:00 */
 #define TIMESTAMP_ZERO (-211810291200000000)
 
-#define NORMAL_DATE 0
+#define NORMAL_DATE 0   /* enable normal date, mainly work in lldiv_decode_tm_with_sql_mode */
 #define ENABLE_ZERO_DAY 1
 #define ENABLE_ZERO_MONTH 2
-#define ENABLE_ZERO_DATE 4  /* enable date like 0000-00-00 */
+#define ENABLE_ZERO_DATE 0  /* enable date like 0000-00-00, work in cstring_to_datetime */
+#define NO_ZERO_DATE_SET() (SQL_MODE_NO_ZERO_DATE() ? TIME_NO_ZERO_DATE : ENABLE_ZERO_DATE)
+
 
 #define DTK_DATE_TIME 5
 #define IS_ZERO_NUMBER_DATE(quot, rem) (quot == 0 && rem >= 0 && rem < 99999950)
@@ -113,8 +115,8 @@ extern int NumberTimestamp(char *str, pg_tm *tm, fsec_t *fsec, unsigned int date
 extern int NumberTimestamp(char *str, pg_tm *tm, fsec_t *fsec);
 #endif
 extern bool datetime_in_no_ereport(const char *str, Timestamp *datetime);
-extern bool datetime_sub_days(Timestamp datetime, int days, Timestamp *result);
-extern bool datetime_sub_interval(Timestamp datetime, Interval *span, Timestamp *result);
+extern bool datetime_sub_days(Timestamp datetime, int days, Timestamp *result, bool is_add_func = false);
+extern bool datetime_sub_interval(Timestamp datetime, Interval *span, Timestamp *result, bool is_add_func = false);
 
 #ifdef DOLPHIN
 Oid convert_to_datetime_time(Datum value, Oid valuetypid, Timestamp *datetime, TimeADT *time);
