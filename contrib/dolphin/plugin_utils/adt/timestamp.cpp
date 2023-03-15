@@ -6437,7 +6437,7 @@ void check_b_format_datetime_range_with_ereport(Timestamp &datetime)
  * @Description: Subtract days from a datetime, giving a new datetime and assign it to result.
  * @return: false if parameter datetime or result out of range, otherwise true
  */
-bool datetime_sub_days(Timestamp datetime, int days, Timestamp *result)
+bool datetime_sub_days(Timestamp datetime, int days, Timestamp *result, bool is_add_func)
 {
     Interval span;
     if (datetime < B_FORMAT_TIMESTAMP_MIN_VALUE || datetime > B_FORMAT_TIMESTAMP_MAX_VALUE)
@@ -6447,7 +6447,7 @@ bool datetime_sub_days(Timestamp datetime, int days, Timestamp *result)
     span.day = days;
     *result = timestamp_mi_interval(datetime, &span);
     if (*result < B_FORMAT_TIMESTAMP_FIRST_YEAR || *result > B_FORMAT_TIMESTAMP_MAX_VALUE) {
-        if (*result < B_FORMAT_TIMESTAMP_FIRST_YEAR && !SQL_MODE_NO_ZERO_DATE() && SQL_MODE_STRICT()) {
+        if (*result < B_FORMAT_TIMESTAMP_FIRST_YEAR && is_add_func) {
             struct pg_tm tt, *tm = &tt;
             fsec_t fsec;
             timestamp2tm(*result, NULL, tm, &fsec, NULL, NULL);
@@ -6466,7 +6466,7 @@ bool datetime_sub_days(Timestamp datetime, int days, Timestamp *result)
  * @Description: Subtract an interval from a datetime, giving a new datetime and assign it to result.
  * @return: false if parameter datetime or result out of range, otherwise true
  */
-bool datetime_sub_interval(Timestamp datetime, Interval *span, Timestamp *result)
+bool datetime_sub_interval(Timestamp datetime, Interval *span, Timestamp *result, bool is_add_func)
 {
     if (datetime < B_FORMAT_TIMESTAMP_MIN_VALUE || datetime > B_FORMAT_TIMESTAMP_MAX_VALUE)
         return false;
@@ -6479,7 +6479,7 @@ bool datetime_sub_interval(Timestamp datetime, Interval *span, Timestamp *result
         return true;
 
     if (*result < B_FORMAT_TIMESTAMP_FIRST_YEAR) {
-        if (!SQL_MODE_NO_ZERO_DATE() && SQL_MODE_STRICT()) {
+        if (is_add_func) {
             struct pg_tm tt, *tm = &tt;
             fsec_t fsec;
             timestamp2tm(*result, NULL, tm, &fsec, NULL, NULL);
@@ -7586,7 +7586,7 @@ void datetime_in_with_flag_internal(const char *str, struct pg_tm *result_tm, fs
 
     errno_t rc = memset_s(tm, sizeof(struct pg_tm), 0, sizeof(struct pg_tm));
     securec_check(rc, "\0", "\0");
-    cstring_to_datetime(str, TIME_NO_ZERO_DATE, tm_type, tm, fsec, nano, warnings, &null_func_result);
+    cstring_to_datetime(str, date_flag, tm_type, tm, fsec, nano, warnings, &null_func_result);
     if (warnings || null_func_result || tm_type == DTK_NONE) {
         int errlevel = (SQL_MODE_STRICT() || null_func_result || tm_type == DTK_NONE) ? ERROR : WARNING;
         if (errlevel == ERROR) {
@@ -7639,15 +7639,10 @@ Datum dayname_text(PG_FUNCTION_ARGS)
     fsec_t fsec;
     Datum result;
 
-    if (!datetime_in_with_sql_mode(date_str, result_tm, &fsec, NORMAL_DATE)) {
+    if (!datetime_in_with_sql_mode(date_str, result_tm, &fsec, TIME_NO_ZERO_DATE)) {
         PG_RETURN_NULL();
     }
-    if (!zero_date_tm(result_tm)) {
-        dayname_internal(result_tm, &result);
-    } else {
-        MyLocale *locale = MyLocaleSearch(GetSessionContext()->lc_time_names);
-        result = DirectFunctionCall1(textin, CStringGetDatum(locale->day_names[5]));    //0000-00-00 is saturday
-    }
+    dayname_internal(result_tm, &result);
     PG_RETURN_DATUM(result);
 }
 
@@ -7707,7 +7702,7 @@ Datum monthname_text(PG_FUNCTION_ARGS)
     fsec_t fsec;
     Datum result;
     
-    if (!datetime_in_with_sql_mode(date_str, result_tm, &fsec, NORMAL_DATE) || result_tm->tm_mon == 0) {
+    if (!datetime_in_with_sql_mode(date_str, result_tm, &fsec, NO_ZERO_DATE_SET()) || result_tm->tm_mon == 0) {
         PG_RETURN_NULL();
     }
     monthname_internal(result_tm, &result);
@@ -7743,7 +7738,7 @@ Datum month_text(PG_FUNCTION_ARGS)
     struct pg_tm result_tt, *result_tm = &result_tt;
     fsec_t fsec;
 
-    if (!datetime_in_with_sql_mode(date_str, result_tm, &fsec, NORMAL_DATE)) {
+    if (!datetime_in_with_sql_mode(date_str, result_tm, &fsec, NO_ZERO_DATE_SET())) {
         PG_RETURN_NULL();
     }
     PG_RETURN_INT32(result_tm->tm_mon);
@@ -7780,21 +7775,16 @@ static inline void b_last_day_internal(struct pg_tm *result_tm, DateADT *result)
  */
 Datum last_day_text(PG_FUNCTION_ARGS)
 {
-    int errlevel = (SQL_MODE_STRICT() ? ERROR : WARNING);
     char *date_str = text_to_cstring(PG_GETARG_TEXT_PP(0));
     struct pg_tm result_tt, *result_tm = &result_tt;
     fsec_t fsec;
     DateADT result;
 
-    if (!datetime_in_with_sql_mode(date_str, result_tm, &fsec, NORMAL_DATE)) {
+    if (!datetime_in_with_sql_mode(date_str, result_tm, &fsec, TIME_NO_ZERO_DATE)) {
         PG_RETURN_NULL();
     }
-    if (!zero_date_tm(result_tm)) {
-        b_last_day_internal(result_tm, &result);
-        PG_RETURN_DATEADT(result);
-    }
-    ereport(errlevel, (errcode(DTERR_BAD_FORMAT), errmsg("Incorrect datetime value: \'0000-00-00\'")));
-    PG_RETURN_NULL();
+    b_last_day_internal(result_tm, &result);
+    PG_RETURN_DATEADT(result);
 }
 
 Datum last_day_numeric(PG_FUNCTION_ARGS)
@@ -7822,7 +7812,7 @@ Datum b_db_date_text(PG_FUNCTION_ARGS)
     struct pg_tm result_tt, *result_tm = &result_tt;
     fsec_t fsec;
 
-    if (!datetime_in_with_sql_mode(date_str, result_tm, &fsec, NORMAL_DATE)) {
+    if (!datetime_in_with_sql_mode(date_str, result_tm, &fsec, NO_ZERO_DATE_SET())) {
         PG_RETURN_NULL();
     }
     PG_RETURN_DATEADT(date2j(result_tm->tm_year, result_tm->tm_mon, result_tm->tm_mday) - POSTGRES_EPOCH_JDATE);
@@ -7835,7 +7825,7 @@ Datum b_db_date_numeric(PG_FUNCTION_ARGS)
     struct pg_tm result_tt, *result_tm = &result_tt;
 
     Numeric_to_lldiv(num, &div);
-    if (IS_ZERO_NUMBER_DATE(div.quot, div.rem) && !SQL_MODE_NO_ZERO_DATE() && SQL_MODE_STRICT()) {
+    if (IS_ZERO_NUMBER_DATE(div.quot, div.rem)) {
         PG_RETURN_DATEADT(DATE_ALL_ZERO_VALUE);
     }
     if (!lldiv_decode_tm_with_sql_mode(num, &div, result_tm, NORMAL_DATE)) {
@@ -7855,7 +7845,7 @@ Datum dayofmonth_text(PG_FUNCTION_ARGS)
     fsec_t fsec;
 
     char *date_str = text_to_cstring(raw_text);
-    if (!datetime_in_with_sql_mode(date_str, result_tm, &fsec, NORMAL_DATE)) {
+    if (!datetime_in_with_sql_mode(date_str, result_tm, &fsec, NO_ZERO_DATE_SET())) {
         PG_RETURN_NULL();
     }
     PG_RETURN_INT32(result_tm->tm_mday);
@@ -8000,7 +7990,6 @@ static inline void week_internal(struct pg_tm *result_tm, int32 *week, int64 mod
 
 Datum week_text(PG_FUNCTION_ARGS)
 {
-    int errlevel = (SQL_MODE_STRICT() ? ERROR : WARNING);
     struct pg_tm result_tt, *result_tm = &result_tt;
     fsec_t fsec;
     int32 week;
@@ -8017,14 +8006,7 @@ Datum week_text(PG_FUNCTION_ARGS)
         mode = PG_GETARG_INT64(1);
     }
 
-    if (!datetime_in_with_sql_mode(date_str, result_tm, &fsec, NORMAL_DATE)) {
-        PG_RETURN_NULL();
-    }
-    /* When date is truncated to '0000-00-00', MSQ's week() return an invalid vaulue.
-       Here we raise an error.
-    */
-    if (zero_date_tm(result_tm)) {
-        ereport(errlevel, (errcode(DTERR_BAD_FORMAT), errmsg("Truncated incorrect datetime value: \"%s\"", date_str)));
+    if (!datetime_in_with_sql_mode(date_str, result_tm, &fsec, TIME_NO_ZERO_DATE)) {
         PG_RETURN_NULL();
     }
     week_internal(result_tm, &week, mode, NULL);
@@ -8060,7 +8042,6 @@ Datum week_numeric(PG_FUNCTION_ARGS)
 
 Datum yearweek_text(PG_FUNCTION_ARGS)
 {
-    int errlevel = (SQL_MODE_STRICT() ? ERROR : WARNING);
     struct pg_tm result_tt, *result_tm = &result_tt;
     fsec_t fsec;
     int32 week;
@@ -8076,14 +8057,7 @@ Datum yearweek_text(PG_FUNCTION_ARGS)
     }
 
     char *date_str = text_to_cstring(PG_GETARG_TEXT_PP(0));
-    if (!datetime_in_with_sql_mode(date_str, result_tm, &fsec, NORMAL_DATE)) {
-        PG_RETURN_NULL();
-    }
-    /* When date is truncated to '0000-00-00', MSQ's yearweek() return an invalid vaulue.
-       Here we raise an error.
-    */
-    if (zero_date_tm(result_tm)) {
-        ereport(errlevel,(errcode(DTERR_BAD_FORMAT), errmsg("Incorrect datetime value: \'0000-00-00\'")));
+    if (!datetime_in_with_sql_mode(date_str, result_tm, &fsec, TIME_NO_ZERO_DATE)) {
         PG_RETURN_NULL();
     }
     week_internal(result_tm, &week, mode, &year);
@@ -8163,8 +8137,8 @@ Datum timestampdiff_datetime_tt(PG_FUNCTION_ARGS)
     Timestamp datetime1, datetime2;
     int64 result;
 
-    if (!datetime_in_with_sql_mode(str1, tm1, &fsec1, NORMAL_DATE) || 
-        !datetime_in_with_sql_mode(str2, tm2, &fsec2, NORMAL_DATE)) {
+    if (!datetime_in_with_sql_mode(str1, tm1, &fsec1, TIME_NO_ZERO_DATE) ||
+        !datetime_in_with_sql_mode(str2, tm2, &fsec2, TIME_NO_ZERO_DATE)) {
         PG_RETURN_NULL();
     }
     tm2timestamp(tm1, fsec1, NULL, &datetime1);
@@ -8219,7 +8193,7 @@ Datum timestampdiff_datetime_tn(PG_FUNCTION_ARGS)
 
     Numeric_to_lldiv(num, &div);
 
-    if (!datetime_in_with_sql_mode(str, tm1, &fsec1, NORMAL_DATE) || 
+    if (!datetime_in_with_sql_mode(str, tm1, &fsec1, TIME_NO_ZERO_DATE) || 
         !lldiv_decode_datetime(num, &div, tm2, &fsec2, NORMAL_DATE, &date_type)) {
         PG_RETURN_NULL();
     }
@@ -8275,7 +8249,7 @@ Datum timestampdiff_time_before_t(PG_FUNCTION_ARGS)
     Timestamp datetime1, datetime2;
     int64 result;
 
-    if (!datetime_in_with_sql_mode(str, tm, &fsec, NORMAL_DATE)) {
+    if (!datetime_in_with_sql_mode(str, tm, &fsec, TIME_NO_ZERO_DATE)) {
         PG_RETURN_NULL();
     }
     tm2timestamp(tm, fsec, NULL, &datetime1);
@@ -8541,7 +8515,7 @@ Datum convert_tz_t(PG_FUNCTION_ARGS)
     int from_ok = tz_type(str2);
     int to_ok = tz_type(str3);
     
-    if (!datetime_in_with_sql_mode(str1, tm, &fsec, NORMAL_DATE) || from_ok == -1 || to_ok == -1) {
+    if (!datetime_in_with_sql_mode(str1, tm, &fsec, TIME_NO_ZERO_DATE) || from_ok == -1 || to_ok == -1) {
         PG_RETURN_NULL();
     }
     tm2timestamp(tm, fsec, NULL, &raw_datetime);
@@ -8604,7 +8578,7 @@ bool datetime_add_interval(Timestamp datetime, Interval *span, Timestamp *result
     span->month = -span->month;
     span->day = -span->day;
     span->time = -span->time;
-    return datetime_sub_interval(datetime, span, result);
+    return datetime_sub_interval(datetime, span, result, true);
 }
 
 /**
@@ -9145,7 +9119,7 @@ Datum date_format_text(PG_FUNCTION_ARGS)
 
     /* convert date_text and format_text into string from text */
     text_to_cstring_buffer(date_text, buf, MAXDATELEN);
-    if (!datetime_in_with_sql_mode(buf, tm, &fsec, NORMAL_DATE)) {
+    if (!datetime_in_with_sql_mode(buf, tm, &fsec, NO_ZERO_DATE_SET())) {
         PG_RETURN_NULL();
     }
 
@@ -9177,7 +9151,11 @@ Datum date_format_numeric(PG_FUNCTION_ARGS)
     int date_type = 0;
 
     Numeric_to_lldiv(num, &div);
-    if (!lldiv_decode_datetime(num, &div, tm, &fsec, NORMAL_DATE, &date_type)) {
+    if (IS_ZERO_NUMBER_DATE(div.quot, div.rem)) {
+        errno_t rc = memset_s(tm, sizeof(*tm), 0, sizeof(*tm));
+        securec_check(rc, "\0", "\0");
+        fsec = 0;
+    } else if (!lldiv_decode_datetime(num, &div, tm, &fsec, NORMAL_DATE, &date_type)) {
         PG_RETURN_NULL();
     }
 
@@ -9473,16 +9451,24 @@ static inline bool week_year_to_date(struct pg_tm *tm, bool sunday_first_without
 static inline bool final_range_check(int return_type, struct pg_tm *tm, fsec_t *fsec)
 {
     int dterr = 0;
+    bool no_zero_date_set = SQL_MODE_NO_ZERO_DATE();
     if (return_type == DTK_DATE || return_type == DTK_DATE_TIME) {
-        dterr = ValidateDateForBDatabase(false, tm);
-        if (dterr)
-            return false;
+        if (!tm->tm_year && !tm->tm_mon && !tm->tm_mday) {  // case of '0000-00-00 xxx'
+            if (no_zero_date_set)
+                return false;
+        } else {
+            dterr = ValidateDateForBDatabase(false, tm);
+            if (dterr)
+                return false;
+        }
         if (return_type == DTK_DATE_TIME) {
             dterr =  ValidateTimeForBDatabase(true, tm, fsec);
             if (dterr)
                 return false;
         }
     } else if (return_type == DTK_TIME) {
+        if (no_zero_date_set)
+            return false;
         dterr = ValidateTimeForBDatabase(true, tm, fsec);
         if (dterr)
             return false;
