@@ -537,6 +537,7 @@ static SelectStmt *MakeFunctionSelect(char *funcCall, List* args, core_yyscan_t 
 static SelectStmt *MakeShowGrantStmt(char *arg, int location, core_yyscan_t yyscanner);
 static List* handleCreateDolphinFuncOptions(List* input_options);
 static char* appendString(char* source, char* target, int offset);
+static inline void ChangeBpcharCastType(TypeName* typname);
 %}
 
 %define api.pure
@@ -3283,7 +3284,10 @@ set_expr_extension:
 					}
 				}
 			| b_expr TYPECAST Typename
-				{ $$ = makeTypeCast($1, $3, @2); }
+				{
+					ChangeBpcharCastType($3);
+					$$ = makeTypeCast($1, $3, @2);
+				}
 			| '@' b_expr
 				{ $$ = (Node *) makeSimpleA_Expr(AEXPR_OP, "@", NULL, $2, @1); }
 			| b_expr '+' b_expr
@@ -31400,7 +31404,10 @@ a_expr:		c_expr									{ $$ = $1; }
                                     $$ = (Node *)funcNode;
                                 }
 			| a_expr TYPECAST Typename
-					{ $$ = makeTypeCast($1, $3, @2); }
+				{
+					ChangeBpcharCastType($3);
+					$$ = makeTypeCast($1, $3, @2);
+				}
 			| a_expr COLLATE collate_name
 				{
 					CollateClause *n = makeNode(CollateClause);
@@ -32178,7 +32185,10 @@ a_expr:		c_expr									{ $$ = $1; }
 b_expr:		c_expr
 				{ $$ = $1; }
 			| b_expr TYPECAST Typename
-				{ $$ = makeTypeCast($1, $3, @2); }
+				{
+					ChangeBpcharCastType($3);
+					$$ = makeTypeCast($1, $3, @2);
+				}
 			| '+' b_expr					%prec UMINUS
 				{ $$ = (Node *) makeSimpleA_Expr(AEXPR_OP, "+", NULL, $2, @1); }
 			| '-' b_expr					%prec UMINUS
@@ -33514,10 +33524,14 @@ func_expr_common_subexpr:
 					$$ = (Node *)n;
 				}
 			| CAST '(' a_expr AS Typename ')'
-				{ $$ = makeTypeCast($3, $5, @1); }
+				{
+					ChangeBpcharCastType($5);
+					$$ = makeTypeCast($3, $5, @1);
+				}
 			| CAST '(' a_expr AS Character charset ')'
 				{
 					$5->charset = $6;
+					ChangeBpcharCastType($5);
 					$$ = makeTypeCast($3, $5, @1);
 				}
 			| CAST '(' a_expr AS UNSIGNED ')'
@@ -39638,6 +39652,18 @@ static char* appendString(char* source, char* target, int offset)
 	appendBinaryStringInfo(&result_info, target, offset);
 	appendStringInfo(&result_info, "%s%s", source, target + offset);
 	return result_info.data;
+}
+
+static inline void ChangeBpcharCastType(TypeName* typname)
+{
+	if (!ENABLE_B_CMPT_MODE) {
+		return;
+	}
+
+	if (lnext(list_head(typname->names)) != NULL &&
+		strcmp(((Value*)lsecond(typname->names))->val.str, "bpchar") == 0) {
+		((Value*)lsecond(typname->names))->val.str = "varchar";
+	}
 }
 
 /*

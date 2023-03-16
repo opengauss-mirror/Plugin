@@ -378,7 +378,7 @@ drop table testforint2_p5;
 
 ---drop database
 set dolphin.b_compatibility_mode = 0;
-set dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat';
+set dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,pad_char_to_full_length';
 drop schema test_op_and cascade;
 reset current_schema;
 

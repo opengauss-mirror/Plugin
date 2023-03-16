@@ -29,6 +29,7 @@
 
 #include "funcapi.h"
 #include "plugin_postgres.h"
+#include "plugin_commands/mysqlmode.h"
 
 static int SB_MatchText(char* t, int tlen, char* p, int plen, pg_locale_t locale, bool locale_is_c);
 static text* SB_do_like_escape(text*, text*);
@@ -210,9 +211,11 @@ static inline int Generic_Text_IC_like(text* str, text* pat, Oid collation,bool 
         plen = (VARSIZE(pat) - VARHDRSZ);
         str = DatumGetTextP(DirectFunctionCall1Coll(lower, collation, PointerGetDatum(str)));
         s = VARDATA(str);
-        if (ifbpchar)
+#ifdef DOLPHIN
+        if (ifbpchar && !SQL_MODE_PAD_CHAR_TO_FULL_LENGTH())
             slen = bcTruelen(str);
         else
+#endif
             slen = (VARSIZE(str) - VARHDRSZ);
         if (GetDatabaseEncoding() == PG_UTF8)
             return UTF8_MatchText(s, slen, p, plen, 0, true);
@@ -246,7 +249,7 @@ static inline int Generic_Text_IC_like(text* str, text* pat, Oid collation,bool 
         plen = VARSIZE_ANY_EXHDR(pat);
         s = VARDATA_ANY(str);
 #ifdef DOLPHIN
-        slen = ifbpchar ? bcTruelen(str) : VARSIZE_ANY_EXHDR(str);
+        slen = (ifbpchar && !SQL_MODE_PAD_CHAR_TO_FULL_LENGTH()) ? bcTruelen(str) : VARSIZE_ANY_EXHDR(str);
 #else
         slen = VARSIZE_ANY_EXHDR(str);
 #endif
@@ -571,7 +574,11 @@ Datum bpchartextlike(PG_FUNCTION_ARGS)
     int slen, plen;
 
     s = VARDATA_ANY(str);
+#ifdef DOLPHIN
+    slen = SQL_MODE_PAD_CHAR_TO_FULL_LENGTH() ? VARSIZE_ANY_EXHDR(str) : bcTruelen(str);
+#else
     slen = bcTruelen(str);
+#endif
     p = VARDATA_ANY(pat);
     plen = VARSIZE_ANY_EXHDR(pat);
 
@@ -594,7 +601,11 @@ Datum bpchartextnlike(PG_FUNCTION_ARGS)
     p = VARDATA_ANY(pat);
     plen = VARSIZE_ANY_EXHDR(pat);
 
+#ifdef DOLPHIN
+    result = (generic_match_text_with_collation(s, slen, p, plen, PG_GET_COLLATION()) != LIKE_TRUE);
+#else
     result = (generic_match_text_with_collation(s, slen, p, plen, PG_GET_COLLATION()) == LIKE_FALSE);
+#endif
 
     PG_RETURN_BOOL(result);
 }

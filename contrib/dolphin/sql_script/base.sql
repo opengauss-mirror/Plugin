@@ -227,6 +227,7 @@ DROP FUNCTION IF EXISTS pg_catalog.varchar_int1(varchar) CASCADE;
 DROP FUNCTION IF EXISTS pg_catalog.varchar_int2(varchar) CASCADE;
 DROP FUNCTION IF EXISTS pg_catalog.bpchar_int1(char) CASCADE;
 DROP FUNCTION IF EXISTS pg_catalog.bpchar_int2(char) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.bpchar_text(bpchar) CASCADE;
 
 CREATE FUNCTION pg_catalog.varchar_int1 (
 varchar
@@ -244,10 +245,21 @@ CREATE FUNCTION pg_catalog.bpchar_int2 (
 char
 ) RETURNS smallint LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'bpchar_int2';
 
+CREATE FUNCTION pg_catalog.bpchar_text (
+bpchar
+) RETURNS text LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'bpchar_text';
+
 CREATE CAST (varchar AS tinyint) WITH FUNCTION varchar_int1(varchar) AS IMPLICIT;
 CREATE CAST (char AS tinyint) WITH FUNCTION bpchar_int1(char) AS IMPLICIT;
 CREATE CAST (varchar AS smallint) WITH FUNCTION varchar_int2(varchar) AS IMPLICIT;
 CREATE CAST (char AS smallint) WITH FUNCTION bpchar_int2(char) AS IMPLICIT;
+do $$
+begin
+update pg_catalog.pg_cast set castfunc = (select oid from pg_proc where proname = 'bpchar_text'), castowner = 10 where castsource = 1042 and casttarget = 25;
+update pg_catalog.pg_cast set castfunc = (select oid from pg_proc where proname = 'bpchar_text'), castowner = 10 where castsource = 1042 and casttarget = 1043;
+update pg_catalog.pg_cast set castfunc = (select oid from pg_proc where proname = 'bpchar_text'), castowner = 10 where castsource = 1042 and casttarget = 3969;
+end
+$$;
 
 create or replace function pg_catalog.get_index_columns(OUT namespace name, OUT indexrelid oid, OUT indrelid oid, OUT indisunique bool, OUT indisusable bool, OUT seq_in_index int2, OUT attrnum int2, OUT collation int2) returns setof record
 as $$

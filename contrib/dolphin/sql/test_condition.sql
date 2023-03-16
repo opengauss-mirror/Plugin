@@ -1,6 +1,6 @@
 create schema db_test_condition;
 set current_schema to 'db_test_condition';
-set dolphin.sql_mode = '';
+set dolphin.sql_mode = 'pad_char_to_full_length';
 create table test_bccf (t1 int ,t2 float, t3 char, t4 text);
 insert into test_bccf values(1,3,null,null);
 insert into test_bccf values(null,null,'c',null);

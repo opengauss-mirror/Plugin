@@ -4,19 +4,21 @@
 #include "plugin_postgres.h"
 #include "utils/builtins.h"
 
-#define OPT_SQL_MODE_DEFAULT 1
-#define OPT_SQL_MODE_STRICT 2
-#define OPT_SQL_MODE_FULL_GROUP 4
-#define OPT_SQL_MODE_PIPES_AS_CONCAT 8
-#define OPT_SQL_MODE_ANSI_QUOTES 16
-#define OPT_SQL_MODE_NO_ZERO_DATE 32
-#define OPT_SQL_MODE_MAX 6
+#define OPT_SQL_MODE_DEFAULT (1 << 0)
+#define OPT_SQL_MODE_STRICT (1 << 1)
+#define OPT_SQL_MODE_FULL_GROUP (1 << 2)
+#define OPT_SQL_MODE_PIPES_AS_CONCAT (1 << 3)
+#define OPT_SQL_MODE_ANSI_QUOTES (1 << 4)
+#define OPT_SQL_MODE_NO_ZERO_DATE (1 << 5)
+#define OPT_SQL_MODE_PAD_CHAR_TO_FULL_LENGTH (1 << 6)
+#define OPT_SQL_MODE_MAX 7
 #define SQL_MODE_STRICT() (GetSessionContext()->sqlModeFlags & OPT_SQL_MODE_STRICT)
 #define SQL_MODE_FULL_GROUP() (GetSessionContext()->sqlModeFlags & OPT_SQL_MODE_FULL_GROUP)
 #define PG_RETURN_INT8(x) return Int8GetDatum(x)
 #define SQL_MODE_PIPES_AS_CONCAT() (GetSessionContext()->sqlModeFlags & OPT_SQL_MODE_PIPES_AS_CONCAT)
 #define SQL_MODE_ANSI_QUOTES() (GetSessionContext()->sqlModeFlags & OPT_SQL_MODE_ANSI_QUOTES)
 #define SQL_MODE_NO_ZERO_DATE() (GetSessionContext()->sqlModeFlags & OPT_SQL_MODE_NO_ZERO_DATE)
+#define SQL_MODE_PAD_CHAR_TO_FULL_LENGTH() (GetSessionContext()->sqlModeFlags & OPT_SQL_MODE_PAD_CHAR_TO_FULL_LENGTH)
 
 extern int32 PgAtoiInternal(char* s, int size, int c, bool sqlModeStrict, bool can_ignore, bool isUnsigned = false);
 extern int16 PgStrtoint16Internal(const char* s, bool sqlModeStrict, bool can_ignore);
