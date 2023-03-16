@@ -3927,7 +3927,7 @@ select * from test7 union select * from test6;
 select * from test7 union select * from test7;
  num 
 -----
-  
+ 
 (1 row)
 
 select * from test7 union select * from test8;
@@ -3946,7 +3946,7 @@ select * from test7 union select * from test9;
 select * from test7 union select * from test10;
  num 
 -----
-  
+ 
 (1 row)
 
 select * from test7 union select * from test11;
@@ -3964,7 +3964,7 @@ select * from test7 union select * from test12;
 select * from test7 union select * from test13;
  num 
 -----
-  
+ 
 (1 row)
 
 select * from test7 union select * from test14;
@@ -4068,19 +4068,19 @@ select * from test7 union select * from test27;
 select * from test7 union select * from test28;
  num 
 -----
-  
+ 
 (1 row)
 
 select * from test7 union select * from test29;
  num 
 -----
-  
+ 
 (1 row)
 
 select * from test7 union select * from test30;
  num 
 -----
-  
+ 
 (1 row)
 
 select * from test7 union select * from test31;
