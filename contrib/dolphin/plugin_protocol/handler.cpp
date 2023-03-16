@@ -30,6 +30,8 @@
 #include "plugin_protocol/dqformat.h"
 #include "plugin_protocol/handler.h"
 
+#define CHAR_SET_RESULTS_LEN 25
+
 static int execute_text_protocol_sql(const char* sql);
 static int execute_com_stmt_prepare(const char *client_sql);
 static int execute_binary_protocol_req(com_stmt_exec_request *request);
@@ -130,7 +132,7 @@ int dolphin_process_command(StringInfo buf)
                 execute_fetch_server_config();
             } else if (strcasestr(sql, "show variables")) {
                 execute_show_variables();
-            } else if (strncasecmp(sql, "SET character_set_results", 25) == 0) {
+            } else if (strncasecmp(sql, "SET character_set_results", CHAR_SET_RESULTS_LEN) == 0) {
                 send_general_ok_packet();
             } else if (strcasestr(sql, "select @@session.transaction_read_only")) {
                 execute_show_transaction_read_only();
@@ -442,8 +444,8 @@ void execute_com_field_list(char *tableName)
             pfree(field);
         }
 
-       /* EOF packet at end of all rows*/
-       send_network_eof_packet(buf);
+        /* EOF packet at end of all rows*/
+        send_network_eof_packet(buf);
     }
     
     DestroyStringInfo(sql);

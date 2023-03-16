@@ -339,8 +339,8 @@ static void InitStmtParamTypesTable()
     info.entrysize = sizeof(HashEntryStmtParamType);
     info.hash = oid_hash;
     info.hcxt = u_sess->cache_mem_cxt;
-    GetSessionContext()->b_stmtInputTypeHash = hash_create("Dolphin Micro Type Oid Lookup Table", PARAM_TYPE_PER_SESSION, &info,
-                                                            HASH_ELEM | HASH_FUNCTION | HASH_CONTEXT);
+    GetSessionContext()->b_stmtInputTypeHash = hash_create("Dolphin stmt input type Table",
+        PARAM_TYPE_PER_SESSION, &info, HASH_ELEM | HASH_FUNCTION | HASH_CONTEXT);
 }
 
 const InputStmtParam* GetCachedInputStmtParamTypes(int32 stmt_id)
@@ -351,7 +351,7 @@ const InputStmtParam* GetCachedInputStmtParamTypes(int32 stmt_id)
 
     bool found = false;
     HashEntryStmtParamType *entry = (HashEntryStmtParamType *)hash_search(GetSessionContext()->b_stmtInputTypeHash,
-                                                                            &stmt_id, HASH_FIND, &found);
+                                                                          &stmt_id, HASH_FIND, &found);
     return found ? entry->value : NULL;
 }
 
@@ -362,7 +362,7 @@ void SaveCachedInputStmtParamTypes(int32 stmt_id, InputStmtParam* value)
     }
 
     HashEntryStmtParamType *entry = (HashEntryStmtParamType *)hash_search(GetSessionContext()->b_stmtInputTypeHash,
-                                                                            &stmt_id, HASH_ENTER, NULL);
+                                                                          &stmt_id, HASH_ENTER, NULL);
     entry->value = value;
 }
 
@@ -373,8 +373,8 @@ static void InitSendBlobHashTable()
     info.entrysize = sizeof(HashEntryBlob);
     info.hash = oid_hash;
     info.hcxt = u_sess->cache_mem_cxt;
-    GetSessionContext()->b_sendBlobHash = hash_create("Dolphin Micro Type Oid Lookup Table", BLOB_PARAM_PER_SESSION, &info,
-                                                        HASH_ELEM | HASH_FUNCTION | HASH_CONTEXT);
+    GetSessionContext()->b_sendBlobHash = hash_create("Dolphin send blob Table", BLOB_PARAM_PER_SESSION, &info,
+                                                      HASH_ELEM | HASH_FUNCTION | HASH_CONTEXT);
 }
 
 const char* GetCachedParamBlob(uint32 stmt_id)
