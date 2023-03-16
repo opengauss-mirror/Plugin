@@ -35,6 +35,8 @@
 #include "plugin_postgres.h"
 
 #define DOLPHINE_DEFAULT_SERVER_NAME "Dolphin-Server"
+#define PARAM_TYPE_PER_SESSION 16 /* initial table size */
+#define BLOB_PARAM_PER_SESSION 16 /* initial table size */
 
 /* Global variables */
 dolphin_proto_ctx g_proto_ctx;
@@ -95,6 +97,8 @@ pthread_mutex_t gMarcoHashLock;
 const int b_ntype_items = sizeof(b_type_items) / sizeof(TypeItem);
 static const TypeItem* TypoidHashTableAccess(HASHACTION action, Oid oid, const TypeItem* item);
 static void InitDolphinMicroHashTable(int size);
+static void InitSendBlobHashTable();
+static void InitStmtParamTypesTable();
 
 static void AssignDatabaseName(const char* newval, void* extra);
 
@@ -325,73 +329,75 @@ static void InitDolphinMicroHashTable(int size)
     info.hash = oid_hash;
     info.hcxt = g_instance.instance_context;
     b_typoid2DolphinMarcoHash = hash_create("Dolphin Micro Type Oid Lookup Table", size, &info,
-                                                HASH_ELEM | HASH_FUNCTION | HASH_CONTEXT);
+                                            HASH_ELEM | HASH_FUNCTION | HASH_CONTEXT);
 }
 
-static void InitStmtParamTypesTable(int size)
+static void InitStmtParamTypesTable()
 {
     HASHCTL info = {0};
     info.keysize = sizeof(Oid);
     info.entrysize = sizeof(HashEntryStmtParamType);
     info.hash = oid_hash;
-    info.hcxt = u_sess->cache_mem_cxt; 
-    GetSessionContext()->b_stmtInputTypeHash = hash_create("Dolphin Micro Type Oid Lookup Table", size, &info,
-                                                HASH_ELEM | HASH_FUNCTION | HASH_CONTEXT);
+    info.hcxt = u_sess->cache_mem_cxt;
+    GetSessionContext()->b_stmtInputTypeHash = hash_create("Dolphin Micro Type Oid Lookup Table", PARAM_TYPE_PER_SESSION, &info,
+                                                            HASH_ELEM | HASH_FUNCTION | HASH_CONTEXT);
 }
 
 const InputStmtParam* GetCachedInputStmtParamTypes(int32 stmt_id)
 {
     if (GetSessionContext()->b_stmtInputTypeHash == NULL) {
-        InitStmtParamTypesTable(16);
+        InitStmtParamTypesTable();
     }
 
     bool found = false;
     HashEntryStmtParamType *entry = (HashEntryStmtParamType *)hash_search(GetSessionContext()->b_stmtInputTypeHash,
-                                                                     &stmt_id, HASH_FIND, &found);
+                                                                            &stmt_id, HASH_FIND, &found);
     return found ? entry->value : NULL;
 }
 
 void SaveCachedInputStmtParamTypes(int32 stmt_id, InputStmtParam* value)
 {
     if (GetSessionContext()->b_stmtInputTypeHash == NULL) {
-        InitStmtParamTypesTable(16);
+        InitStmtParamTypesTable();
     }
 
     HashEntryStmtParamType *entry = (HashEntryStmtParamType *)hash_search(GetSessionContext()->b_stmtInputTypeHash,
-                                                                     &stmt_id, HASH_ENTER, NULL);
+                                                                            &stmt_id, HASH_ENTER, NULL);
     entry->value = value;
 }
 
-static void InitSendBlobHashTable(int size)
+static void InitSendBlobHashTable()
 {
     HASHCTL info = {0};
     info.keysize = sizeof(Oid);
     info.entrysize = sizeof(HashEntryBlob);
     info.hash = oid_hash;
-    info.hcxt = u_sess->cache_mem_cxt; 
-    GetSessionContext()->b_sendBlobHash = hash_create("Dolphin Micro Type Oid Lookup Table", size, &info,
-                                                HASH_ELEM | HASH_FUNCTION | HASH_CONTEXT);
+    info.hcxt = u_sess->cache_mem_cxt;
+    GetSessionContext()->b_sendBlobHash = hash_create("Dolphin Micro Type Oid Lookup Table", BLOB_PARAM_PER_SESSION, &info,
+                                                        HASH_ELEM | HASH_FUNCTION | HASH_CONTEXT);
 }
 
-const char* GetCachedParamBlob(uint32 stmt_id) {
+const char* GetCachedParamBlob(uint32 stmt_id)
+{
     if (GetSessionContext()->b_sendBlobHash == NULL) {
-        InitSendBlobHashTable(16);
+        InitSendBlobHashTable();
     }
 
     bool found = false;
     HashEntryBlob *entry = (HashEntryBlob *)hash_search(GetSessionContext()->b_sendBlobHash,
-                                                                     &stmt_id, HASH_FIND, &found);
+                                                        &stmt_id, HASH_FIND, &found);
     return found ? entry->value->data[entry->value->cursor++] : NULL;
 }
 
-void SaveCachedParamBlob(uint32 stmt_id, char *data) {
+void SaveCachedParamBlob(uint32 stmt_id, char *data)
+{
     if (GetSessionContext()->b_sendBlobHash == NULL) {
-        InitSendBlobHashTable(16);
+        InitSendBlobHashTable();
     }
 
     bool found = false;
     HashEntryBlob *entry = (HashEntryBlob *)hash_search(GetSessionContext()->b_sendBlobHash,
-                                                                   &stmt_id, HASH_ENTER, &found);
+                                                        &stmt_id, HASH_ENTER, &found);
 
     MemoryContext oldcontext = MemoryContextSwitchTo(u_sess->cache_mem_cxt);
     if (!found) {
@@ -403,7 +409,7 @@ void SaveCachedParamBlob(uint32 stmt_id, char *data) {
     if (entry->value->data) {
         entry->value->data = (const char **)repalloc(entry->value->data, entry->value->count * sizeof(char **));
     } else {
-        entry->value->data = (const char **)palloc0(entry->value->count * sizeof(char **)); 
+        entry->value->data = (const char **)palloc0(entry->value->count * sizeof(char **));
     }
     
     entry->value->data[entry->value->count - 1] = pstrdup(data);

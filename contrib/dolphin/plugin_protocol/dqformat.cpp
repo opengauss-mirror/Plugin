@@ -42,12 +42,22 @@
 #define DEFAULLT_DATA_FIELD_LEN 100
 #define DOLPHIN_BLOB_LENGTH 65535
 
+#define PROTO_DATE_LEN 4
+#define PROTO_DATETIME_LEN 7
+#define PROTO_DATETIMESTAMP_LEN 11
+#define PROTO_TIME_LEN 8
+#define PROTE_TIMESTATMP_LEN 12
+
+static void fill_null_bitmap(HeapTuple spi_tuple, TupleDesc spi_tupdesc, bits8 *null_bitmap);
+static void append_data_by_dolphin_type(const TypeItem *item, Datum binval, StringInfo buf);
+
 static char PRINTABLE_CHARS[PRINTABLE_CHARS_COUNT + 1] =
                                 "1234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
 network_mysqld_auth_challenge* make_mysqld_handshakev10_packet(char *scramble)
 {
-    network_mysqld_auth_challenge *challenge = (network_mysqld_auth_challenge*) palloc0(sizeof(network_mysqld_auth_challenge));
+    network_mysqld_auth_challenge *challenge = 
+                                    (network_mysqld_auth_challenge*) palloc0(sizeof(network_mysqld_auth_challenge));
     challenge->capabilities = DOPHIN_DEFAULT_FLAGS;
     challenge->auth_plugin_name = pstrdup("mysql_native_password");
     challenge->server_version_str = pstrdup("5.7.38-dophin-server");
@@ -116,7 +126,7 @@ void send_auth_challenge_packet(StringInfo buf, network_mysqld_auth_challenge *s
 
 network_mysqld_auth_request* read_login_request(StringInfo buf)
 {
-    network_mysqld_auth_request *auth = (network_mysqld_auth_request*) palloc0(sizeof(network_mysqld_auth_request)); 
+    network_mysqld_auth_request *auth = (network_mysqld_auth_request*) palloc0(sizeof(network_mysqld_auth_request));
 
     dq_get_int4(buf, &auth->client_capabilities);
     dq_get_int4(buf, &auth->max_packet_size);
@@ -137,14 +147,14 @@ network_mysqld_auth_request* read_login_request(StringInfo buf)
 
     if ((DOPHIN_DEFAULT_FLAGS & CLIENT_CONNECT_WITH_DB) &&
         (auth->client_capabilities & CLIENT_CONNECT_WITH_DB)) {
-       auth->schema = dq_get_string_null(buf); 
+        auth->schema = dq_get_string_null(buf);
     }
 
     if ((DOPHIN_DEFAULT_FLAGS & CLIENT_PLUGIN_AUTH) && (auth->client_capabilities & CLIENT_PLUGIN_AUTH)) {
-        auth->auth_plugin_name = dq_get_string_null(buf); 
+        auth->auth_plugin_name = dq_get_string_null(buf);
     }
 
-    return auth; 
+    return auth;
 }
 
 network_mysqld_ok_packet_t* make_ok_packet(uint64 affected_rows, uint64 insert_id, char *msg)
@@ -300,16 +310,16 @@ void send_column_definition41_packet(StringInfo buf, dolphin_column_definition *
 
 void send_com_stmt_prepare_ok_packet(StringInfo buf, int statementId, int columns, int params)
 {
-   resetStringInfo(buf); 
+    resetStringInfo(buf);
 
-   dq_append_int1(buf, 0x00);
-   dq_append_int4(buf, statementId);
-   dq_append_int2(buf, columns);
-   dq_append_int2(buf, params);
-   dq_append_int1(buf, 0x00);
-   dq_append_int2(buf, 0x00);
+    dq_append_int1(buf, 0x00);
+    dq_append_int4(buf, statementId);
+    dq_append_int2(buf, columns);
+    dq_append_int2(buf, params);
+    dq_append_int1(buf, 0x00);
+    dq_append_int2(buf, 0x00);
 
-   dq_putmessage(buf->data, buf->len);
+    dq_putmessage(buf->data, buf->len);
 }
 
 com_stmt_exec_request* read_com_stmt_exec_request(StringInfo buf)
@@ -325,11 +335,11 @@ com_stmt_exec_request* read_com_stmt_exec_request(StringInfo buf)
     securec_check_ss(rc, "\0", "\0");
 
     PreparedStatement *pstmt = FetchPreparedStatement(stmt_name, true, true);
-    int param_count = pstmt->plansource->num_params; 
+    int param_count = pstmt->plansource->num_params;
 
     if (param_count > 0) {
         int len = (param_count + 7) / 8;
-        req->null_bitmap = dq_get_string_len(buf, len); 
+        req->null_bitmap = dq_get_string_len(buf, len);
         dq_get_int1(buf, &req->new_params_bind_flag);
     }
 
@@ -348,153 +358,325 @@ com_stmt_exec_request* read_com_stmt_exec_request(StringInfo buf)
         }
 
         com_stmt_param *parameters = (com_stmt_param *)palloc0(sizeof(com_stmt_param) * param_count);
-        const InputStmtParam *stmt_param = GetCachedInputStmtParamTypes(req->statement_id); 
+        const InputStmtParam *stmt_param = GetCachedInputStmtParamTypes(req->statement_id);
         for (int i = 0; i < param_count; i++) {
-            if (!param_isnull(i, req->null_bitmap)) {
-                switch (stmt_param->itypes[i]) {
-                    case DOLPHIN_TYPE_LONG:
-                    case DOLPHIN_TYPE_INT24: {
-                        parameters[i].type = TYPE_INT4;
-                        dq_get_int4(buf, &parameters[i].value.i4);
-                        break;
-                    }
-                    case DOLPHIN_TYPE_LONGLONG: {
-                        parameters[i].type = TYPE_INT8;
-                        dq_get_int8(buf, &parameters[i].value.i8);
-                        break;
-                    }
-                    case DOLPHIN_TYPE_SHORT:
-                    case DOLPHIN_TYPE_YEAR: {
-                        parameters[i].type = TYPE_INT2;
-                        dq_get_int2(buf, &parameters[i].value.i4);
-                        break;
-                    }
-                    case DOLPHIN_TYPE_TINY: {
-                        parameters[i].type = TYPE_INT1;
-                        dq_get_int1(buf, &parameters[i].value.i1);
-                        break;
-                    }
-                    case DOLPHIN_TYPE_DOUBLE: {
-                        parameters[i].type = TYPE_DOUBLE;
-                        dq_get_int8(buf, &parameters[i].value.d.i8);
-                        break;
-                    }
-                    case DOLPHIN_TYPE_FLOAT: {
-                        parameters[i].type = TYPE_FLOAT;
-                        dq_get_int4(buf, &parameters[i].value.f.i4);
-                        break;
-                    }
-                    case DOLPHIN_TYPE_LONG_BLOB:
-                    case DOLPHIN_TYPE_MEDIUM_BLOB:
-                    case DOLPHIN_TYPE_BLOB:
-                    case DOLPHIN_TYPE_TINY_BLOB: {
-                        parameters[i].value.text = GetCachedParamBlob(req->statement_id);
-                        parameters[i].type = TYPE_STRING;
-                        break;
-                    }
-                    case DOLPHIN_TYPE_STRING:
-                    case DOLPHIN_TYPE_VARCHAR:
-                    case DOLPHIN_TYPE_VAR_STRING:
-                    case DOLPHIN_TYPE_ENUM:
-                    case DOLPHIN_TYPE_SET:
-                    case DOLPHIN_TYPE_GEOMETRY:
-                    case DOLPHIN_TYPE_BIT:
-                    case DOLPHIN_TYPE_DECIMAL:
-                    case DOLPHIN_TYPE_NEWDECIMAL: {
-                        const TypeItem* item = GetItemByTypeOid(pstmt->plansource->param_types[i]);
-                        switch (item->dolphin_type_id) {
-                            case DOLPHIN_TYPE_BIT: {
-                                parameters[i].type = TYPE_HEX;
-                                break;
-                            }
-                            default: {
-                                parameters[i].type = TYPE_STRING;
-                                break;
-                            }
-                        }
-                        parameters[i].value.text = dq_get_string_lenenc(buf);
-                        break;
-                    }
-                    case DOLPHIN_TYPE_DATE:
-                    case DOLPHIN_TYPE_TIMESTAMP:
-                    case DOLPHIN_TYPE_DATETIME: {
-                        parameters[i].type = TYPE_STRING; 
-                        uint8 len;
-                        proto_tm tm;
-                        dq_get_int1(buf, &len);
-                        StringInfo text = makeStringInfo();
-                        if (len == 4) {
-                            dq_get_int2(buf, &tm.year);
-                            dq_get_int1(buf, &tm.month);
-                            dq_get_int1(buf, &tm.day);
-                            appendStringInfo(text, "%d-%d-%d", tm.year, tm.month, tm.day);
-                            parameters[i].value.text = text->data;
-                        } else if (len == 7) {
-                            dq_get_int2(buf, &tm.year);
-                            dq_get_int1(buf, &tm.month);
-                            dq_get_int1(buf, &tm.day); 
-                            dq_get_int1(buf, &tm.hour);
-                            dq_get_int1(buf, &tm.minute);
-                            dq_get_int1(buf, &tm.second);
-                            appendStringInfo(text, "%d-%d-%d %d:%d:%d", tm.year, tm.month, tm.day, tm.hour, tm.minute, tm.second);
-                            parameters[i].value.text = text->data;
-                        } else if (len == 11) {
-                            dq_get_int2(buf, &tm.year);
-                            dq_get_int1(buf, &tm.month);
-                            dq_get_int1(buf, &tm.day); 
-                            dq_get_int1(buf, &tm.hour);
-                            dq_get_int1(buf, &tm.minute);
-                            dq_get_int1(buf, &tm.second);
-                            dq_get_int4(buf, &tm.microsecond);
-                            appendStringInfo(text, "%d-%d-%d %d:%d:%d.%u", tm.year, tm.month, tm.day, tm.hour, tm.minute, tm.second, tm.microsecond); 
-                            parameters[i].value.text =  text->data;
-                        }
-                        break;
-                    }
-                    case DOLPHIN_TYPE_TIME: {
-                        parameters[i].type = TYPE_STRING; 
-                        uint8 len;
-                        proto_tm tm;
-                        dq_get_int1(buf, &len);
-                        StringInfo text = makeStringInfo();
-                        if (len == 8) {
-                            dq_get_int1(buf, &tm.is_negative);
-                            dq_get_int4(buf, &tm.days);
-                            dq_get_int1(buf, &tm.hour);
-                            dq_get_int1(buf, &tm.minute);
-                            dq_get_int1(buf, &tm.second); 
-                            if (tm.is_negative) {
-                                appendStringInfo(text, "-%d:%d:%d", tm.hour, tm.minute, tm.second); 
-                            } else {
-                                appendStringInfo(text, "%d:%d:%d", tm.hour, tm.minute, tm.second); 
-                            }
-                            parameters[i].value.text = text->data;
-                        } else if (len == 12) {
-                            dq_get_int1(buf, &tm.is_negative);
-                            dq_get_int4(buf, &tm.days);
-                            dq_get_int1(buf, &tm.hour);
-                            dq_get_int1(buf, &tm.minute);
-                            dq_get_int1(buf, &tm.second);
-                            dq_get_int4(buf, &tm.microsecond);  
-                            if (tm.is_negative) {
-                                appendStringInfo(text, "-%d:%d:%d.%u", tm.hour, tm.minute, tm.second, tm.microsecond); 
-                            } else {
-                                appendStringInfo(text, "%d:%d:%d.%u", tm.hour, tm.minute, tm.second, tm.microsecond); 
-                            }
-                            parameters[i].value.text = text->data;
-                        }
-                        break;
-                    }
-                    default:
-                        break;
+            if (param_isnull(i, req->null_bitmap)) continue;
+            switch (stmt_param->itypes[i]) {
+                case DOLPHIN_TYPE_LONG:
+                case DOLPHIN_TYPE_INT24: {
+                    parameters[i].type = TYPE_INT4;
+                    dq_get_int4(buf, &parameters[i].value.i4);
+                    break;
                 }
-            } 
+                case DOLPHIN_TYPE_LONGLONG: {
+                    parameters[i].type = TYPE_INT8;
+                    dq_get_int8(buf, &parameters[i].value.i8);
+                    break;
+                }
+                case DOLPHIN_TYPE_SHORT:
+                case DOLPHIN_TYPE_YEAR: {
+                    parameters[i].type = TYPE_INT2;
+                    dq_get_int2(buf, &parameters[i].value.i4);
+                    break;
+                }
+                case DOLPHIN_TYPE_TINY: {
+                    parameters[i].type = TYPE_INT1;
+                    dq_get_int1(buf, &parameters[i].value.i1);
+                    break;
+                }
+                case DOLPHIN_TYPE_DOUBLE: {
+                    parameters[i].type = TYPE_DOUBLE;
+                    dq_get_int8(buf, &parameters[i].value.d.i8);
+                    break;
+                }
+                case DOLPHIN_TYPE_FLOAT: {
+                    parameters[i].type = TYPE_FLOAT;
+                    dq_get_int4(buf, &parameters[i].value.f.i4);
+                    break;
+                }
+                case DOLPHIN_TYPE_LONG_BLOB:
+                case DOLPHIN_TYPE_MEDIUM_BLOB:
+                case DOLPHIN_TYPE_BLOB:
+                case DOLPHIN_TYPE_TINY_BLOB: {
+                    parameters[i].value.text = GetCachedParamBlob(req->statement_id);
+                    parameters[i].type = TYPE_STRING;
+                    break;
+                }
+                case DOLPHIN_TYPE_STRING:
+                case DOLPHIN_TYPE_VARCHAR:
+                case DOLPHIN_TYPE_VAR_STRING:
+                case DOLPHIN_TYPE_ENUM:
+                case DOLPHIN_TYPE_SET:
+                case DOLPHIN_TYPE_GEOMETRY:
+                case DOLPHIN_TYPE_BIT:
+                case DOLPHIN_TYPE_DECIMAL:
+                case DOLPHIN_TYPE_NEWDECIMAL: {
+                    const TypeItem* item = GetItemByTypeOid(pstmt->plansource->param_types[i]);
+                    switch (item->dolphin_type_id) {
+                        case DOLPHIN_TYPE_BIT: {
+                            parameters[i].type = TYPE_HEX;
+                            break;
+                        }
+                        default: {
+                            parameters[i].type = TYPE_STRING;
+                            break;
+                        }
+                    }
+                    parameters[i].value.text = dq_get_string_lenenc(buf);
+                    break;
+                }
+                case DOLPHIN_TYPE_DATE:
+                case DOLPHIN_TYPE_TIMESTAMP:
+                case DOLPHIN_TYPE_DATETIME: {
+                    parameters[i].type = TYPE_STRING;
+                    uint8 len;
+                    proto_tm tm;
+                    dq_get_int1(buf, &len);
+                    StringInfo text = makeStringInfo();
+                    if (len == PROTO_DATE_LEN) {
+                        dq_get_int2(buf, &tm.year);
+                        dq_get_int1(buf, &tm.month);
+                        dq_get_int1(buf, &tm.day);
+                        appendStringInfo(text, "%d-%d-%d", tm.year, tm.month, tm.day);
+                        parameters[i].value.text = text->data;
+                    } else if (len == PROTO_DATETIME_LEN) {
+                        dq_get_int2(buf, &tm.year);
+                        dq_get_int1(buf, &tm.month);
+                        dq_get_int1(buf, &tm.day);
+                        dq_get_int1(buf, &tm.hour);
+                        dq_get_int1(buf, &tm.minute);
+                        dq_get_int1(buf, &tm.second);
+                        appendStringInfo(text, "%d-%d-%d %d:%d:%d",
+                                            tm.year, tm.month, tm.day, tm.hour, tm.minute, tm.second);
+                        parameters[i].value.text = text->data;
+                    } else if (len == PROTO_DATETIMESTAMP_LEN) {
+                        dq_get_int2(buf, &tm.year);
+                        dq_get_int1(buf, &tm.month);
+                        dq_get_int1(buf, &tm.day);
+                        dq_get_int1(buf, &tm.hour);
+                        dq_get_int1(buf, &tm.minute);
+                        dq_get_int1(buf, &tm.second);
+                        dq_get_int4(buf, &tm.microsecond);
+                        appendStringInfo(text, "%d-%d-%d %d:%d:%d.%u",
+                                            tm.year, tm.month, tm.day, tm.hour, tm.minute, tm.second, tm.microsecond);
+                        parameters[i].value.text =  text->data;
+                    }
+                    break;
+                }
+                case DOLPHIN_TYPE_TIME: {
+                    parameters[i].type = TYPE_STRING;
+                    uint8 len;
+                    proto_tm tm;
+                    dq_get_int1(buf, &len);
+                    StringInfo text = makeStringInfo();
+                    if (len == PROTO_TIME_LEN) {
+                        dq_get_int1(buf, &tm.is_negative);
+                        dq_get_int4(buf, &tm.days);
+                        dq_get_int1(buf, &tm.hour);
+                        dq_get_int1(buf, &tm.minute);
+                        dq_get_int1(buf, &tm.second);
+                        if (tm.is_negative) {
+                            appendStringInfo(text, "-%d:%d:%d", tm.hour, tm.minute, tm.second);
+                        } else {
+                            appendStringInfo(text, "%d:%d:%d", tm.hour, tm.minute, tm.second); 
+                        }
+                        parameters[i].value.text = text->data;
+                    } else if (len == PROTE_TIMESTATMP_LEN) {
+                        dq_get_int1(buf, &tm.is_negative);
+                        dq_get_int4(buf, &tm.days);
+                        dq_get_int1(buf, &tm.hour);
+                        dq_get_int1(buf, &tm.minute);
+                        dq_get_int1(buf, &tm.second);
+                        dq_get_int4(buf, &tm.microsecond);
+                        if (tm.is_negative) {
+                            appendStringInfo(text, "-%d:%d:%d.%u", tm.hour, tm.minute, tm.second, tm.microsecond);
+                        } else {
+                            appendStringInfo(text, "%d:%d:%d.%u", tm.hour, tm.minute, tm.second, tm.microsecond);
+                        }
+                        parameters[i].value.text = text->data;
+                    }
+                    break;
+                }
+                default:
+                    break;
+            }
         }
         req->parameter_values = parameters;
         req->param_count = param_count;
     }    
 
     return req;
+}
+
+static void fill_null_bitmap(HeapTuple spi_tuple, TupleDesc spi_tupdesc, bits8 *null_bitmap)
+{
+    if (HeapTupleHasNulls(spi_tuple)) {
+        for (int j = 0; j < spi_tupdesc->natts; j++) {
+            if (att_isnull(j, spi_tuple->t_data->t_bits)) {
+                int byte_pos = (j + 2) / 8;
+                int bit_pos = (j + 2) % 8;
+                null_bitmap[byte_pos] |= 1 << bit_pos;
+            }
+        }
+    }    
+}
+
+static void append_data_by_dolphin_type(const TypeItem *item, Datum binval, StringInfo buf)
+{
+    switch (item->dolphin_type_id) {
+        case DOLPHIN_TYPE_LONG:
+        case DOLPHIN_TYPE_INT24: {
+            int32 val = DatumGetInt32(binval);
+            dq_append_int4(buf, val);
+            break;
+        }
+        case DOLPHIN_TYPE_LONGLONG: {
+            int64 val = DatumGetInt64(binval);
+            dq_append_int8(buf, val);
+            break;
+        }
+        case DOLPHIN_TYPE_SHORT: {
+            int16 val = DatumGetInt16(binval);
+            dq_append_int2(buf, val);
+            break;
+        }
+        case DOLPHIN_TYPE_YEAR: {
+            int16 year = DatumGetInt16(binval);
+            int16 val = year >= 0 ? YearADT_to_Year(year) : YearADT_to_Year(-year) % 100;
+            dq_append_int2(buf, val);
+            break;
+        }
+        case DOLPHIN_TYPE_TINY: {
+            int8 val = DatumGetInt8(binval);
+            dq_append_int1(buf, val);
+            break;
+        }
+        case DOLPHIN_TYPE_DOUBLE: {
+            int64 num = DatumGetInt64(binval);
+            dq_append_int8(buf, num);
+            break;
+        }
+        case DOLPHIN_TYPE_FLOAT: {
+            int32 num = DatumGetInt32(binval);
+            dq_append_int4(buf, num);
+            break;
+        }
+        case DOLPHIN_TYPE_STRING:
+        case DOLPHIN_TYPE_VARCHAR:
+        case DOLPHIN_TYPE_VAR_STRING:
+        case DOLPHIN_TYPE_JSON: {
+            char *val = TextDatumGetCString(binval);
+            dq_append_string_lenenc(buf, val);
+            break;
+        }
+        case DOLPHIN_TYPE_LONG_BLOB:
+        case DOLPHIN_TYPE_MEDIUM_BLOB:
+        case DOLPHIN_TYPE_BLOB:
+        case DOLPHIN_TYPE_TINY_BLOB: {
+            u_sess->attr.attr_common.bytea_output = BYTEA_OUTPUT_ESCAPE;
+            char *val = DatumGetCString(DirectFunctionCall1(byteaout, binval));
+            dq_append_string_lenenc(buf, val);
+            break;
+        }
+        case DOLPHIN_TYPE_BIT: {
+            char *val = DatumGetCString(DirectFunctionCall1(bit_out, binval));
+            dq_append_string_lenenc(buf, val);
+            break;
+        }
+        case DOLPHIN_TYPE_GEOMETRY: {
+            char *val;
+            if (item->og_type_oid == POINTOID) {
+                val = DatumGetCString(DirectFunctionCall1(point_out, binval));
+            } else if (item->og_type_oid == LINEOID) {
+                val = DatumGetCString(DirectFunctionCall1(line_out, binval));
+            } else if (item->og_type_oid == POLYGONOID) {
+                val = DatumGetCString(DirectFunctionCall1(poly_out, binval));
+            }
+            dq_append_string_lenenc(buf, val);
+            break;
+        }
+        case DOLPHIN_TYPE_DECIMAL:
+        case DOLPHIN_TYPE_NEWDECIMAL: {
+            char *val = DatumGetCString(DirectFunctionCall1(numeric_out, binval));
+            dq_append_string_lenenc(buf, val);
+            break;
+        }
+        case DOLPHIN_TYPE_ENUM: {
+            char *val = DatumGetCString(DirectFunctionCall1(enum_out, binval));
+            dq_append_string_lenenc(buf, val);
+            break;
+        }
+        case DOLPHIN_TYPE_SET: {
+            char *val = DatumGetCString(DirectFunctionCall1(set_out, binval));
+            dq_append_string_lenenc(buf, val);
+            break;
+        }
+        case DOLPHIN_TYPE_DATE: {
+            struct pg_tm tt, *tm = &tt;
+            DateADT date = DatumGetDateADT(binval);
+            j2date(date + POSTGRES_EPOCH_JDATE, &(tm->tm_year), &(tm->tm_mon), &(tm->tm_mday));
+            dq_append_int1(buf, 0x04);
+            dq_append_int2(buf, tm->tm_year);
+            dq_append_int1(buf, tm->tm_mon);
+            dq_append_int1(buf, tm->tm_mday);
+            break;
+        }
+
+        case DOLPHIN_TYPE_TIMESTAMP: {
+            TimestampTz val = DatumGetTimestampTz(binval);
+            int tz;
+            struct pg_tm tt, *tm = &tt;
+            fsec_t fsec;
+            const char* tzn = NULL;
+            timestamp2tm(val, &tz, tm, &fsec, &tzn, NULL);
+
+            dq_append_int1(buf, 0x0b);
+            dq_append_int2(buf, tm->tm_year);
+            dq_append_int1(buf, tm->tm_mon);
+            dq_append_int1(buf, tm->tm_mday);
+            dq_append_int1(buf, tm->tm_hour);
+            dq_append_int1(buf, tm->tm_min);
+            dq_append_int1(buf, tm->tm_sec);
+            dq_append_int4(buf, fsec);
+            break;
+        }
+        case DOLPHIN_TYPE_DATETIME: {
+            Timestamp val = DatumGetTimestamp(binval);
+            struct pg_tm tt, *tm = &tt;
+            fsec_t fsec;
+            timestamp2tm(val, NULL, tm, &fsec, NULL, NULL);
+            dq_append_int1(buf, 0x0b);
+            dq_append_int2(buf, tm->tm_year);
+            dq_append_int1(buf, tm->tm_mon);
+            dq_append_int1(buf, tm->tm_mday);
+            dq_append_int1(buf, tm->tm_hour);
+            dq_append_int1(buf, tm->tm_min);
+            dq_append_int1(buf, tm->tm_sec);
+            dq_append_int4(buf, fsec);
+            break;
+        }
+        case DOLPHIN_TYPE_TIME: {
+            TimeADT val = DatumGetTimeADT(binval);
+            struct pg_tm tt, *tm = &tt;
+            fsec_t fsec;
+            time2tm(val, tm, &fsec);
+
+            dq_append_int1(buf, 0x0c);
+            val > 0 ? dq_append_int1(buf, 0x00) : dq_append_int1(buf, 0x01);
+            dq_append_int4(buf, 0x00);
+            dq_append_int1(buf, tm->tm_hour);
+            dq_append_int1(buf, tm->tm_min);
+            dq_append_int1(buf, tm->tm_sec);
+            dq_append_int4(buf, fsec);
+
+            break;
+        }
+        case DOLPHIN_TYPE_NULL: {
+            break;
+        }
+        default:
+            break;
+    }
 }
 
 void send_binary_protocol_resultset_row(StringInfo buf, SPITupleTable *SPI_tuptable)
@@ -505,7 +687,7 @@ void send_binary_protocol_resultset_row(StringInfo buf, SPITupleTable *SPI_tupta
     for (uint32 i = 0; i < SPI_processed; i++) {
         resetStringInfo(buf);
 
-        // [0x00] packet header 
+        // [0x00] packet header
         dq_append_int1(buf, 0x00);
 
         HeapTuple spi_tuple = SPI_tuptable->vals[i];
@@ -513,15 +695,7 @@ void send_binary_protocol_resultset_row(StringInfo buf, SPITupleTable *SPI_tupta
         // NULL bitmap, length= (column_count + 7 + 2) / 8
         int len = (spi_tupdesc->natts + 7 + 2) / 8;
         bits8 null_bitmap[len] = {0x00};
-        if (HeapTupleHasNulls(spi_tuple)) {
-            for (int j = 0; j < spi_tupdesc->natts; j++) {
-                if (att_isnull(j, spi_tuple->t_data->t_bits)) {
-                    int byte_pos = (j + 2) / 8;
-                    int bit_pos = (j + 2) % 8;
-                    null_bitmap[byte_pos] |= 1 << bit_pos;
-                }
-            }
-        }
+        fill_null_bitmap(spi_tuple, spi_tupdesc, null_bitmap);
         
         for (int k = 0; k < len; k++) {
             dq_append_int1(buf, null_bitmap[k]);
@@ -533,161 +707,8 @@ void send_binary_protocol_resultset_row(StringInfo buf, SPITupleTable *SPI_tupta
             Datum binval = SPI_getbinval(spi_tuple, spi_tupdesc, (int)m + 1, &isnull);
             if (isnull) continue;
             // it's better to reuse dolphin_column_definition here
-            const TypeItem* item = GetItemByTypeOid(attrs[m].atttypid);
-            switch (item->dolphin_type_id) {
-                case DOLPHIN_TYPE_LONG:
-                case DOLPHIN_TYPE_INT24: {
-                    int32 val = DatumGetInt32(binval);
-                    dq_append_int4(buf, val);
-                    break;
-                }
-                case DOLPHIN_TYPE_LONGLONG: {
-                    int64 val = DatumGetInt64(binval);
-                    dq_append_int8(buf, val);
-                    break;
-                }
-                case DOLPHIN_TYPE_SHORT: {
-                    int16 val = DatumGetInt16(binval);
-                    dq_append_int2(buf, val);
-                    break;
-                }
-                case DOLPHIN_TYPE_YEAR: {
-                    int16 year = DatumGetInt16(binval);
-                    int16 val = year >= 0 ? YearADT_to_Year(year) : YearADT_to_Year(-year) % 100;
-                    dq_append_int2(buf, val);
-                    break; 
-                }
-                case DOLPHIN_TYPE_TINY: {
-                    int8 val = DatumGetInt8(binval);
-                    dq_append_int1(buf, val);
-                    break;
-                }
-                case DOLPHIN_TYPE_DOUBLE: {
-                    int64 num = DatumGetInt64(binval);
-                    dq_append_int8(buf, num);
-                    break;
-                }
-                case DOLPHIN_TYPE_FLOAT: {
-                    int32 num = DatumGetInt32(binval);
-                    dq_append_int4(buf, num);
-                    break;
-                }
-                case DOLPHIN_TYPE_STRING:
-                case DOLPHIN_TYPE_VARCHAR:
-                case DOLPHIN_TYPE_VAR_STRING:
-                case DOLPHIN_TYPE_JSON: {
-                    char *val = TextDatumGetCString(binval);
-                    dq_append_string_lenenc(buf, val);
-                    break;
-                }
-                case DOLPHIN_TYPE_LONG_BLOB:
-                case DOLPHIN_TYPE_MEDIUM_BLOB:
-                case DOLPHIN_TYPE_BLOB:
-                case DOLPHIN_TYPE_TINY_BLOB: {
-                    u_sess->attr.attr_common.bytea_output = BYTEA_OUTPUT_ESCAPE;
-                    char *val = DatumGetCString(DirectFunctionCall1(byteaout, binval));
-                    dq_append_string_lenenc(buf, val); 
-                    break;
-                }
-                case DOLPHIN_TYPE_BIT: {
-                    char *val = DatumGetCString(DirectFunctionCall1(bit_out, binval));
-                    dq_append_string_lenenc(buf, val); 
-                    break;
-                }
-                case DOLPHIN_TYPE_GEOMETRY: {
-                    char *val;
-                    if (item->og_type_oid == POINTOID) {
-                        val = DatumGetCString(DirectFunctionCall1(point_out, binval));
-                    } else if (item->og_type_oid == LINEOID) {
-                        val = DatumGetCString(DirectFunctionCall1(line_out, binval));
-                    } else if (item->og_type_oid == POLYGONOID) {
-                        val = DatumGetCString(DirectFunctionCall1(poly_out, binval)); 
-                    }
-                    dq_append_string_lenenc(buf, val); 
-                    break;
-                }
-                case DOLPHIN_TYPE_DECIMAL:
-                case DOLPHIN_TYPE_NEWDECIMAL: {
-                    char *val = DatumGetCString(DirectFunctionCall1(numeric_out, binval));
-                    dq_append_string_lenenc(buf, val); 
-                    break;
-                }
-                case DOLPHIN_TYPE_ENUM: {
-                    char *val = DatumGetCString(DirectFunctionCall1(enum_out, binval));
-                    dq_append_string_lenenc(buf, val);
-                    break;
-                }
-                case DOLPHIN_TYPE_SET: {
-                    char *val = DatumGetCString(DirectFunctionCall1(set_out, binval));
-                    dq_append_string_lenenc(buf, val); 
-                    break;
-                }
-                case DOLPHIN_TYPE_DATE: {
-                    struct pg_tm tt, *tm = &tt;
-                    DateADT date = DatumGetDateADT(binval);
-                    j2date(date + POSTGRES_EPOCH_JDATE, &(tm->tm_year), &(tm->tm_mon), &(tm->tm_mday));
-                    dq_append_int1(buf, 0x04);
-                    dq_append_int2(buf, tm->tm_year);
-                    dq_append_int1(buf, tm->tm_mon);
-                    dq_append_int1(buf, tm->tm_mday);
-                    break;
-                }
-
-                case DOLPHIN_TYPE_TIMESTAMP: {
-                    TimestampTz val = DatumGetTimestampTz(binval);
-                    int tz;
-                    struct pg_tm tt, *tm = &tt;
-                    fsec_t fsec;
-                    const char* tzn = NULL;
-                    timestamp2tm(val, &tz, tm, &fsec, &tzn, NULL);
-
-                    dq_append_int1(buf, 0x0b);
-                    dq_append_int2(buf, tm->tm_year);
-                    dq_append_int1(buf, tm->tm_mon);
-                    dq_append_int1(buf, tm->tm_mday);
-                    dq_append_int1(buf, tm->tm_hour);
-                    dq_append_int1(buf, tm->tm_min);
-                    dq_append_int1(buf, tm->tm_sec);
-                    dq_append_int4(buf, fsec);
-                    break;
-                }
-                case DOLPHIN_TYPE_DATETIME: {
-                    Timestamp val = DatumGetTimestamp(binval);
-                    struct pg_tm tt, *tm = &tt;
-                    fsec_t fsec;
-                    timestamp2tm(val, NULL, tm, &fsec, NULL, NULL);
-                    dq_append_int1(buf, 0x0b);
-                    dq_append_int2(buf, tm->tm_year);
-                    dq_append_int1(buf, tm->tm_mon);
-                    dq_append_int1(buf, tm->tm_mday);
-                    dq_append_int1(buf, tm->tm_hour);
-                    dq_append_int1(buf, tm->tm_min);
-                    dq_append_int1(buf, tm->tm_sec);
-                    dq_append_int4(buf, fsec);
-                    break;
-                }
-                case DOLPHIN_TYPE_TIME: {
-                    TimeADT val = DatumGetTimeADT(binval);
-                    struct pg_tm tt, *tm = &tt;
-                    fsec_t fsec;
-                    time2tm(val, tm, &fsec);
-
-                    dq_append_int1(buf, 0x0c);
-                    val > 0 ? dq_append_int1(buf, 0x00) : dq_append_int1(buf, 0x01);
-                    dq_append_int4(buf, 0x00);
-                    dq_append_int1(buf, tm->tm_hour);
-                    dq_append_int1(buf, tm->tm_min);
-                    dq_append_int1(buf, tm->tm_sec);
-                    dq_append_int4(buf, fsec);
-
-                    break;
-                }
-                case DOLPHIN_TYPE_NULL: {
-                    break;
-                }
-                default:
-                    break;
-            }
+            const TypeItem *item = GetItemByTypeOid(attrs[m].atttypid);
+            append_data_by_dolphin_type(item, binval, buf);
         }
         dq_putmessage(buf->data, buf->len);
     }

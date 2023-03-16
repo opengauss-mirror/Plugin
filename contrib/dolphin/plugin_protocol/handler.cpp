@@ -31,7 +31,7 @@
 #include "plugin_protocol/handler.h"
 
 static int execute_text_protocol_sql(const char* sql);
-static int execute_com_stmt_prepare(const char *sql);
+static int execute_com_stmt_prepare(const char *client_sql);
 static int execute_binary_protocol_req(com_stmt_exec_request *request);
 static void execute_com_stmt_close(StringInfo buf);
 static void execute_com_stmt_reset(StringInfo buf);
@@ -171,8 +171,8 @@ int dolphin_process_command(StringInfo buf)
             break;
         }
         default:
-           // COM_CREATE_DB, COM_DROP_DB have deprecated by mysql-server
-           ereport(ERROR, (errcode(ERRCODE_INTERNAL_ERROR), errmsg("dolphin server protocol not supported."))); 
+            // COM_CREATE_DB, COM_DROP_DB have deprecated by mysql-server
+            ereport(ERROR, (errcode(ERRCODE_INTERNAL_ERROR), errmsg("dolphin server protocol not supported.")));
     }
     return 0;
 }
@@ -241,7 +241,7 @@ int execute_com_stmt_prepare(const char *client_sql)
     PreparedStatement *pstmt = FetchPreparedStatement(stmt_name, true, true);
     Query *query = (Query *)linitial(pstmt->plansource->query_list);
     int column_count = list_length(query->targetList);
-    int param_count = pstmt->plansource->num_params; 
+    int param_count = pstmt->plansource->num_params;
 
     StringInfo buf = makeStringInfo();
     send_com_stmt_prepare_ok_packet(buf, statement_id, column_count, param_count);
@@ -249,7 +249,7 @@ int execute_com_stmt_prepare(const char *client_sql)
     for (int i = 0; i < param_count; i++) {
         dolphin_column_definition* param_field = make_dolphin_column_definition("?");
         const TypeItem* item = GetItemByTypeOid(pstmt->plansource->param_types[i]);
-        param_field->type = item->dolphin_type_id; 
+        param_field->type = item->dolphin_type_id;
         param_field->charsetnr = item->charset_flag;
         send_column_definition41_packet(buf, param_field);
     }
@@ -292,7 +292,7 @@ int execute_binary_protocol_req(com_stmt_exec_request *request)
                 if (request->parameter_values[i].value.text) {
                     appendStringInfo(sql, "'%s'", request->parameter_values[i].value.text);
                 } else {
-                    appendStringInfo(sql, "(null)"); 
+                    appendStringInfo(sql, "(null)");
                 }
                 
                 break;
@@ -313,13 +313,13 @@ int execute_binary_protocol_req(com_stmt_exec_request *request)
             case TYPE_FLOAT: {
                 appendStringInfo(sql, "%f", request->parameter_values[i].value.f.f4);
                 break;
-            } 
+            }
             case TYPE_DOUBLE: {
                 appendStringInfo(sql, "%lf", request->parameter_values[i].value.d.f8);
                 break;
-            } 
+            }
             case TYPE_HEX: {
-                appendStringInfo(sql, "x'");  
+                appendStringInfo(sql, "x'");
                 for (uint j = 0; j < strlen(request->parameter_values[i].value.text); j++) {
                     appendStringInfo(sql, "%x", request->parameter_values[i].value.text[j]);
                 }
@@ -327,7 +327,7 @@ int execute_binary_protocol_req(com_stmt_exec_request *request)
                 break;
             }
             default:
-                break; 
+                break;
         }
         
         if (i < request->param_count - 1) {
@@ -341,7 +341,7 @@ int execute_binary_protocol_req(com_stmt_exec_request *request)
 
     if (SPI_tuptable) {
         TupleDesc spi_tupdesc = SPI_tuptable->tupdesc;
-        int natts = spi_tupdesc->natts; 
+        int natts = spi_tupdesc->natts;
         Form_pg_attribute attrs = spi_tupdesc->attrs;
 
         // FIELD_COUNT packet
@@ -383,7 +383,7 @@ int execute_binary_protocol_req(com_stmt_exec_request *request)
 
 void execute_com_stmt_reset(StringInfo buf)
 {
-    uint32 statement_id;   
+    uint32 statement_id;
     dq_get_int4(buf, &statement_id);
     if (GetSessionContext()->b_sendBlobHash) {
         (void)hash_search(GetSessionContext()->b_sendBlobHash, (void*)&statement_id, HASH_REMOVE, NULL);
@@ -396,7 +396,7 @@ void execute_com_stmt_reset(StringInfo buf)
 
 void execute_com_stmt_close(StringInfo buf)
 {
-    uint32 statement_id;   
+    uint32 statement_id;
     char stmt_name[NAMEDATALEN];
     dq_get_int4(buf, &statement_id);
     int rc = snprintf_s(stmt_name, NAMEDATALEN + 1, NAMEDATALEN, "p%d", statement_id);
@@ -436,17 +436,17 @@ void execute_com_field_list(char *tableName)
             char *name = SPI_getvalue(spi_tuple, spi_tupdesc, SPI_fnumber(spi_tupdesc, "Field"));
             char *default_value = SPI_getvalue(spi_tuple, spi_tupdesc, SPI_fnumber(spi_tupdesc, "Default"));
             dolphin_column_definition *field = make_dolphin_column_definition(name, tableName);
-            field->default_value = default_value; 
+            field->default_value = default_value;
             send_column_definition41_packet(buf, field);
 
             pfree(field);
         }
 
        /* EOF packet at end of all rows*/
-       send_network_eof_packet(buf); 
+       send_network_eof_packet(buf);
     }
     
-    DestroyStringInfo(sql); 
+    DestroyStringInfo(sql);
     DestroyStringInfo(buf);
 
     SPI_STACK_LOG("finish", NULL, NULL);

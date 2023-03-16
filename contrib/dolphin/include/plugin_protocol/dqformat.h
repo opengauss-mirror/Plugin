@@ -88,7 +88,7 @@ typedef struct com_stmt_param {
     union {
         const char *text;
         uint64 i8;
-        int32 i4;
+        uint32 i4;
         uint8 i1;
         union {
             float4 f4;
