@@ -446,7 +446,7 @@ static com_stmt_param* make_stmt_parameters_bytype(int param_count, PreparedStat
                     dq_get_int1(buf, &tm.minute);
                     dq_get_int1(buf, &tm.second);
                     const char* fmt = tm.is_negative ? "-%d:%d:%d" : "%d:%d:%d";
-                    appendStringInfo(text, fmt, tm.hour, tm.minute, tm.second); 
+                    appendStringInfo(text, fmt, tm.hour, tm.minute, tm.second);
                     parameters[i].value.text = text->data;
                 } else if (len == PROTE_TIMESTATMP_LEN) {
                     dq_get_int1(buf, &tm.is_negative);
