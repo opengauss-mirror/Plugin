@@ -892,7 +892,13 @@ Node* transformColumnRef(ParseState* pstate, ColumnRef* cref)
                  * keyword, to avoid breaking a lot of applications that
                  * have used VALUE as a column name in the past.)
                  */
-                if (pstate->p_value_substitute != NULL && strcmp(colname, "value") == 0) {
+                if (pstate->p_value_substitute != NULL &&
+#ifdef DOLPHIN
+                    strcasecmp(colname, "value") == 0
+#else
+                    strcmp(colname, "value") == 0
+#endif
+                    ) {
                     node = (Node*)copyObject(pstate->p_value_substitute);
 
                     /*
