@@ -297,7 +297,7 @@ insert into test_prefix_key_len
 select length(fchar),length(ftext),length(fbytea) from test_prefix_key_len;
  length | length | length 
 --------+--------+--------
-   4000 |   4000 |   4000
+   4096 |   4000 |   4000
 (1 row)
 
 select lengthb(fchar),lengthb(ftext),octet_length(fbytea) from test_prefix_key_len;
@@ -506,7 +506,7 @@ insert into test_prefix_key_len
 select length(fchar),length(ftext),length(fbytea) from test_prefix_key_len;
  length | length | length 
 --------+--------+--------
-   4000 |   4000 |   4000
+   4096 |   4000 |   4000
 (1 row)
 
 select lengthb(fchar),lengthb(ftext),octet_length(fbytea) from test_prefix_key_len;

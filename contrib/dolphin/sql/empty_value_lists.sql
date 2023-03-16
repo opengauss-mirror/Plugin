@@ -87,7 +87,7 @@ insert into test40 values(),();
 insert into test41 values(),();
 
 --not strict_all_tables mode
-set dolphin.sql_mode = '';
+set dolphin.sql_mode = 'pad_char_to_full_length';
 insert into test1 values(),();
 select *from test1;
 insert into test2 values(),();
