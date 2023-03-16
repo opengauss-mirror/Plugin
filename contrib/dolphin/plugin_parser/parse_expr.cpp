@@ -3179,7 +3179,6 @@ static Node* transformCollateClause(ParseState* pstate, CollateClause* c)
     }
     newc->collOid = LookupCollation(pstate, c->collname, c->location);
     newc->location = c->location;
-    check_binary_collation(newc->collOid, argtype);
 
     return (Node*)newc;
 }
