@@ -52,6 +52,7 @@ select json_objectagg('["a", ["b", "c"], "d"]', '[]');
 select json_objectagg('{"a": 1}', null);
 select json_objectagg('{"b": [1, 2]}', '{"c":{"c1":[11,null]}}');
 select json_objectagg('', null);
+select json_objectagg(1, 341522654875451.12345678901234567890123456789012345678901234567890);
 
 --test for json key
 create temp table json_table(a json, b text);

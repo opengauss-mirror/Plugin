@@ -1,6 +1,12 @@
 create schema test_json_length;
 set current_schema to 'test_json_length';
 --同时含NULL和错误
+select json_length('', '$');
+ERROR:  Invalid JSON text in argument 1 to function json_length.
+CONTEXT:  referenced column: json_length
+select json_length('哈', '$[0]');
+ERROR:  Invalid JSON text in argument 1 to function json_length.
+CONTEXT:  referenced column: json_length
 select json_length(NULL,'$..');
  json_length 
 -------------
