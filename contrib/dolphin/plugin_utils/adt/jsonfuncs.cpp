@@ -5047,18 +5047,7 @@ static void json_regular_format(StringInfo result, cJSON *json)
             if (json->valuedouble == (double)(json->valueint)) {
                 appendStringInfo(result, "%d", json->valueint);
             } else {
-                errno_t sprintf_rc = 0;
-                char *cJSON_double = (char *)palloc(64 * sizeof(char));
-                int pos;
-                sprintf_rc = sprintf_s(cJSON_double, 64, "%.15f", json->valuedouble);
-                securec_check_ss_c(sprintf_rc, "\0", "\0");
-                pos = strlen(cJSON_double) - 1;
-                while (cJSON_double[pos] == '0') {
-                    cJSON_double[pos] = '\0';
-                    pos--;
-                }
-
-                appendStringInfo(result, "%s", cJSON_double);
+                appendStringInfo(result, "%s", cJSON_Print(json));
             }
             break;
         }
@@ -6039,6 +6028,10 @@ Datum json_length(PG_FUNCTION_ARGS)
         cJSON_ResultWrapper *res = NULL;
 
         root = cJSON_ParseWithOpts(data, 0, 1);
+        if (!root) {
+            ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+                            errmsg("Invalid JSON text in argument 1 to function json_length.")));
+        }
         res = cJSON_CreateResultWrapper();
         if (containsAsterisk(path) > 0) {
             ereport(ERROR,

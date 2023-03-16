@@ -37,9 +37,19 @@
 #include "plugin_parser/scansup.h"
 #include "plugin_utils/json.h"
 #include "plugin_utils/jsonapi.h"
+#include <wchar.h>
+#define UNICODE_LEN 5        /* u0123 ,without \ */
+#define UNICODE_NUM_LEN 4    /* 0123, without \u */
+#define UNICODE_STR_LEN 6    /* \u0123 */
+#define UNICODE_ESCAPE_LEN 2 /*just \u without 0123*/
+#define HEXADECIMAL 16       /*represents hexadecimal*/
 
+static bool is_valid_unicode_escape_sequence(char *str);
+static bool is_valid_unicode_escape(char *str);
+static char *unescape_unicode(const char *str);
 static void DelChar(char *inStr, char *outStr, int &a, int &b);
 static void CheckSign(char *inStr, int &x);
+static void CheckSingleSign(char *inStr, int &x);
 static void depth_object_field(JsonLexContext *lex, JsonSemAction *sem, int &depth);
 static void depth_array_element(JsonLexContext *lex, JsonSemAction *sem, int &depth);
 static void depth_object(JsonLexContext *lex, JsonSemAction *sem, int &depth);
@@ -2118,18 +2128,18 @@ static const char *type_case(JsonTokenType tok, bool flag)
 {
     switch (tok) {
         case JSON_TOKEN_OBJECT_START:
-            return flag ? "OBJECT":"object";
+            return flag ? "OBJECT" : "object";
         case JSON_TOKEN_ARRAY_START:
-            return flag ? "ARRAY":"array";
+            return flag ? "ARRAY" : "array";
         case JSON_TOKEN_STRING:
-            return flag ? "STRING":"string";
+            return flag ? "STRING" : "string";
         case JSON_TOKEN_NUMBER:
-            return flag ? "NUMBER":"number";
+            return flag ? "NUMBER" : "number";
         case JSON_TOKEN_TRUE:
         case JSON_TOKEN_FALSE:
-            return flag ? "BOOLEAN":"boolean";
+            return flag ? "BOOLEAN" : "boolean";
         case JSON_TOKEN_NULL:
-            return flag ? "NULL":"null";
+            return flag ? "NULL" : "null";
         case JSON_TOKEN_INTEGER:
             return "INTEGER";
         case JSON_TOKEN_DOUBLE:
@@ -2366,6 +2376,64 @@ Datum json_quote(PG_FUNCTION_ARGS)
     PG_RETURN_TEXT_P(cstring_to_text_with_len(result->data, result->len));
 }
 
+static bool is_valid_unicode_escape_sequence(char *str)
+{
+    int i;
+    for (i = 0; i < UNICODE_NUM_LEN; i++) {
+        char c = str[i];
+        if (c == '\0' || !((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F'))) {
+            return false;
+        }
+    }
+    return true;
+}
+
+static bool is_valid_unicode_escape(char *str)
+{
+    int len = strlen(str);
+    int i = 0;
+    while (i < len) {
+        if (str[i] == '\\' && str[i + 1] == 'u') {
+            if (!is_valid_unicode_escape_sequence(str + i + UNICODE_ESCAPE_LEN)) {
+                return false;
+            }
+            i += UNICODE_STR_LEN;
+            continue;
+        }
+        i++;
+    }
+    return true;
+}
+
+static char *unescape_unicode(const char *str)
+{
+    size_t len = strlen(str);
+    char *buffer = (char *)palloc0(len + 1);
+    errno_t rc = EOK;
+    int bufferTail = 0;
+    for (size_t i = 0; i < len; i++) {
+        if (str[i] == '\\' && str[i + 1] == 'u') {
+            char hex[5];
+            rc = strncpy_s(hex, sizeof(hex), str + i + UNICODE_ESCAPE_LEN, UNICODE_NUM_LEN);
+            securec_check(rc, "\0", "\0");
+            wchar_t wc = (wchar_t)strtoul(hex, NULL, HEXADECIMAL);
+            char utf8[5] = {0};
+            if (int(wcrtomb(utf8, wc, NULL)) == -1) {
+                ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+                                errmsg("Incorrent hex digit after \\u escape in string")));
+            }
+            rc = strcat_s(buffer, len + 1, utf8);
+            securec_check(rc, "\0", "\0");
+            bufferTail += strlen(utf8);
+            i += UNICODE_LEN;
+        } else {
+            buffer[bufferTail++] = str[i];
+        }
+    }
+
+    return buffer;
+}
+
 static void DelChar(char *inStr, char *outStr, int &a, int &b)
 {
     char *tmp;
@@ -2377,8 +2445,11 @@ static void DelChar(char *inStr, char *outStr, int &a, int &b)
             tep++;
             a++;
         }
-        if (*tep == '\\') {
-            b++;
+        if ((*tep == '\\') && (*(tep + 1) != '\\') && (*(tep - 1) != '\\')) {
+            if ((*(tep + 1) == 'u') || (*(tep + 1) == 't') || (*(tep + 1) == 'b') || (*(tep + 1) == 'f') ||
+                (*(tep + 1) == 'n') || (*(tep + 1) == 'r')) {
+                b = 1;
+            }
         }
         *tmp = *tep;
         tmp++;
@@ -2387,6 +2458,7 @@ static void DelChar(char *inStr, char *outStr, int &a, int &b)
         tep++;
     }
 }
+
 static void CheckSign(char *inStr, int &x)
 {
     char *tmp;
@@ -2403,7 +2475,7 @@ static void CheckSign(char *inStr, int &x)
     }
 }
 
-void CheckSingleSign(char *inStr, int &x)
+static void CheckSingleSign(char *inStr, int &x)
 {
     char *tmp;
     tmp = inStr;
@@ -2436,6 +2508,10 @@ Datum json_unquote(PG_FUNCTION_ARGS)
         ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
                         errmsg("Invalid data type for JSON data in argument 1 to function json_unquote")));
     }
+    if (!is_valid_unicode_escape(str)) {
+        ereport(ERROR,
+                (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("Incorrent hex digit after \\u escape in string")));
+    }
     char *str1 = NULL;
     str1 = (char *)palloc(strlen(str) + 10);
     int a = 0;
@@ -2460,12 +2536,14 @@ Datum json_unquote(PG_FUNCTION_ARGS)
                                 errmsg("Invalid data type for JSON data in argument 1 to function json_unquote")));
             } else {
                 char *str2 = scanstr(str1);
-                char *str3 = scanstr(str2);
-                result = cstring_to_text(str3);
+                char *str3 = unescape_unicode(str2);
+                char *str4 = scanstr(str3);
+                result = cstring_to_text(str4);
             }
         } else if (x == 0 || x == 1) {
-            char *str2 = scanstr(str);
-            result = cstring_to_text(str2);
+            char *str2 = unescape_unicode(str);
+            char *str3 = scanstr(str2);
+            result = cstring_to_text(str3);
         } else {
             pfree(str1);
             ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE),

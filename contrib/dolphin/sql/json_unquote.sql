@@ -25,6 +25,11 @@ select json_unquote('ab\\tc"');
 select json_unquote('\t"abc"');
 select json_unquote('\\t"abc"');
 select json_unquote('a\\t"bc"');
+SELECT JSON_UNQUOTE('"\\t\\u0032"');
+select json_unquote('"\\u0032a"');
+select json_unquote('" \\u554a kbhjfuk..."');
+select json_unquote('"abcd\\t kjh \\u554 kbhjfuk"');
+
 
 create table data(name VARCHAR(20) PRIMARY KEY);
 insert into data (name) value(json_unquote('"sjy"'));
