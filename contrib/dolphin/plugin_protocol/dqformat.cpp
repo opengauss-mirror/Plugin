@@ -49,7 +49,7 @@
 #define PROTE_TIMESTATMP_LEN 12
 
 static com_stmt_param* make_stmt_parameters_bytype(int param_count, PreparedStatement *pstmt,
-     com_stmt_exec_request *req, StringInfo buf);
+                                                   com_stmt_exec_request *req, StringInfo buf);
 static void fill_null_bitmap(HeapTuple spi_tuple, TupleDesc spi_tupdesc, bits8 *null_bitmap);
 static void append_data_by_dolphin_type(const TypeItem *item, Datum binval, StringInfo buf);
 
@@ -325,7 +325,7 @@ void send_com_stmt_prepare_ok_packet(StringInfo buf, int statementId, int column
 }
 
 static com_stmt_param* make_stmt_parameters_bytype(int param_count, PreparedStatement *pstmt,
-     com_stmt_exec_request *req, StringInfo buf)
+                                                   com_stmt_exec_request *req, StringInfo buf)
 {
     com_stmt_param *parameters = (com_stmt_param *)palloc0(sizeof(com_stmt_param) * param_count);
     const InputStmtParam *stmt_param = GetCachedInputStmtParamTypes(req->statement_id);
@@ -445,11 +445,8 @@ static com_stmt_param* make_stmt_parameters_bytype(int param_count, PreparedStat
                     dq_get_int1(buf, &tm.hour);
                     dq_get_int1(buf, &tm.minute);
                     dq_get_int1(buf, &tm.second);
-                    if (tm.is_negative) {
-                        appendStringInfo(text, "-%d:%d:%d", tm.hour, tm.minute, tm.second);
-                    } else {
-                        appendStringInfo(text, "%d:%d:%d", tm.hour, tm.minute, tm.second);
-                    }
+                    const char* fmt = tm.is_negative ? "-%d:%d:%d" : "%d:%d:%d";
+                    appendStringInfo(text, fmt, tm.hour, tm.minute, tm.second); 
                     parameters[i].value.text = text->data;
                 } else if (len == PROTE_TIMESTATMP_LEN) {
                     dq_get_int1(buf, &tm.is_negative);
@@ -458,11 +455,8 @@ static com_stmt_param* make_stmt_parameters_bytype(int param_count, PreparedStat
                     dq_get_int1(buf, &tm.minute);
                     dq_get_int1(buf, &tm.second);
                     dq_get_int4(buf, &tm.microsecond);
-                    if (tm.is_negative) {
-                        appendStringInfo(text, "-%d:%d:%d.%u", tm.hour, tm.minute, tm.second, tm.microsecond);
-                    } else {
-                        appendStringInfo(text, "%d:%d:%d.%u", tm.hour, tm.minute, tm.second, tm.microsecond);
-                    }
+                    const char* fmt = tm.is_negative ? "-%d:%d:%d.%u" : "%d:%d:%d.%u";
+                    appendStringInfo(text, fmt, tm.hour, tm.minute, tm.second, tm.microsecond);
                     parameters[i].value.text = text->data;
                 }
                 break;
@@ -471,7 +465,7 @@ static com_stmt_param* make_stmt_parameters_bytype(int param_count, PreparedStat
                 break;
         }
     }
-    return parameters; 
+    return parameters;
 }
 
 com_stmt_exec_request* read_com_stmt_exec_request(StringInfo buf)
