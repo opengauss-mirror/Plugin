@@ -849,7 +849,7 @@ SelectStmt *makeShowStatusQuery(bool globalMode, Node *likeWhereOpt, bool isLike
 
     List *tl = (List *)list_make1(plpsMakeNormalColumn(NULL, "variable_name", "Variable_name"));
     tl = lappend(tl, plpsMakeNormalColumn(NULL, "value", "Value"));
-    List *fl = list_make1(makeFuncRange("show_status",list_make1(makeBoolAConst(globalMode, -1))));
+    List *fl = list_make1(makeFuncRange("show_status", list_make1(makeBoolAConst(globalMode, -1))));
 
     wc = isLikeExpr && likeWhereOpt != NULL
              ? (Node *)makeSimpleA_Expr(AEXPR_OP, "~~", plpsMakeColumnRef(NULL, "variable_name"), likeWhereOpt, -1)
