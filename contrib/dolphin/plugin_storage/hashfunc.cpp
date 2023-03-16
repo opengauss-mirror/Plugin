@@ -30,6 +30,8 @@
 
 #include "plugin_storage/hash.h"
 #include "utils/lsyscache.h"
+#include "catalog/gs_utf8_collation.h"
+
 #ifdef PGXC
 #include "catalog/pg_type.h"
 #include "utils/builtins.h"
@@ -50,11 +52,13 @@
     ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("unsupported proc in single node mode.")))
 #endif
 
+#ifdef DOLPHIN
 extern int CheckAddedType(Oid typoid);
 extern "C" Datum hashuint1(PG_FUNCTION_ARGS);
 extern "C" Datum hashuint2(PG_FUNCTION_ARGS);
 extern "C" Datum hashuint4(PG_FUNCTION_ARGS);
 extern "C" Datum hashuint8(PG_FUNCTION_ARGS);
+#endif
 
 /* Note: this is used for both "char" and boolean datatypes */
 Datum hashchar(PG_FUNCTION_ARGS)
@@ -175,9 +179,15 @@ Datum hashtext(PG_FUNCTION_ARGS)
 {
     text *key = PG_GETARG_TEXT_PP(0);
     Datum result;
+    Oid collid = PG_GET_COLLATION();
 
     FUNC_CHECK_HUGE_POINTER(false, key, "hashtext()");
 
+    if (is_b_format_collation(collid)) {
+        result = hash_text_by_builtin_colltions((unsigned char *)VARDATA_ANY(key), VARSIZE_ANY_EXHDR(key), collid);
+        PG_FREE_IF_COPY(key, 0);
+        return result;
+    }
 #ifdef PGXC
     if (g_instance.attr.attr_sql.string_hash_compatible) {
         result = hash_any((unsigned char *)VARDATA_ANY(key), bcTruelen(key));
@@ -610,6 +620,7 @@ Datum hash_uint32(uint32 k)
 
 #ifdef PGXC
 
+#ifdef DOLPHIN
 #define HASH_FUNCTION_LENGTH 5
 static const PGFunction hashFunction[HASH_FUNCTION_LENGTH] = {hashuint1, hashuint2, hashuint4, hashuint8, year_hash};
 
@@ -626,6 +637,7 @@ Datum compute_hash_default(Oid type, Datum value, char locator)
     /* Keep compiler silent */
     return (Datum)0;
 }
+#endif
 
 uint32 hashValueCombination(uint32 hashValue, Oid colType, Datum val, bool allIsNull, char locatorType)
 {
@@ -1472,7 +1484,7 @@ static Datum getBucketInternal(Datum array, char flag, int bucketcnt, bool *allI
 
     for (i = 0; i < tupdesc->natts; i++) {
         Datum val = heap_getattr(tuple, i + 1, tupdesc, &isnull);
-        Oid colType = tupdesc->attrs[i]->atttypid;
+        Oid colType = tupdesc->attrs[i].atttypid;
         if (!isnull) {
             hashValue = hashValueCombination(hashValue, colType, val, *allIsNull, flag);
             *allIsNull = false;

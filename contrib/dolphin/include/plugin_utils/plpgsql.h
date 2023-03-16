@@ -1085,6 +1085,7 @@ typedef struct PLpgSQL_execstate { /* Runtime execution data	*/
 
     Datum retval;
     bool retisnull;
+    bool is_flt_frame; /* Indicates whether it is a flattened expr frame */
     Oid rettype; /* type of current retval */
     Datum paramval;
     bool paramisnull;
@@ -1566,7 +1567,11 @@ extern PLpgSQL_function* plpgsql_compile(FunctionCallInfo fcinfo, bool forValida
 extern void delete_function(PLpgSQL_function* func, bool fromPackage = false);
 extern PLpgSQL_function* plpgsql_compile_nohashkey(FunctionCallInfo fcinfo); /* parse trigger func */
 extern PLpgSQL_function* plpgsql_compile_inline(char* proc_source);
+#ifdef DOLPHIN
 extern void b_plpgsql_parser_setup(struct ParseState* pstate, PLpgSQL_expr* expr);
+#else
+extern void plpgsql_parser_setup(struct ParseState* pstate, PLpgSQL_expr* expr);
+#endif
 extern void plpgsql_parser_setup_bind(struct ParseState* pstate, List** expr);
 extern void plpgsql_parser_setup_describe(struct ParseState* pstate, List** expr);
 
@@ -1627,9 +1632,16 @@ extern Node* plpgsql_check_match_var(Node* node, ParseState* pstate, ColumnRef* 
  * Functions in pl_handler.c
  * ----------
  */
+#ifdef DOLPHIN
 extern "C" DLL_PUBLIC Datum b_plpgsql_call_handler(PG_FUNCTION_ARGS);
 extern "C" DLL_PUBLIC Datum b_plpgsql_inline_handler(PG_FUNCTION_ARGS);
 extern "C" DLL_PUBLIC Datum b_plpgsql_validator(PG_FUNCTION_ARGS);
+#else
+extern "C" void _PG_init(void);
+extern "C" Datum plpgsql_call_handler(PG_FUNCTION_ARGS);
+extern "C" Datum plpgsql_inline_handler(PG_FUNCTION_ARGS);
+extern "C" Datum plpgsql_validator(PG_FUNCTION_ARGS);
+#endif
 extern "C" PLpgSQL_package* plpgsql_package_validator(Oid packageOid, bool isSpec, bool isCreate=false);
 extern void record_pkg_function_dependency(PLpgSQL_package* pkg, List** invalItems, Oid funcid, Oid pkgid);
 extern void DecreasePackageUseCount(PLpgSQL_function* func);

@@ -75,10 +75,12 @@
 #define MAX_CHARA_REMINDERS_LEN 10
 #define CONV_MAX_CHAR_LEN 65 //max 64bit and 1 sign bit
 #define MYSQL_SUPPORT_MINUS_MAX_LENGTH 65
+#define MAX_UINT32_STR "0xffffffff"
+
+static long convert_bit_to_int (PG_FUNCTION_ARGS, int idx);
 #endif
 static int getResultPostionReverse(text* textStr, text* textStrToSearch, int32 beginIndex, int occurTimes);
 static int getResultPostion(text* textStr, text* textStrToSearch, int32 beginIndex, int occurTimes);
-static long convert_bit_to_int (PG_FUNCTION_ARGS, int idx);
 
 typedef struct varlena unknown;
 typedef struct varlena VarString;
@@ -128,7 +130,6 @@ typedef struct {
  * that we feel comfortable putting it on the stack
  */
 #define TEXTBUFLEN 1024
-#define MAX_UINT32_STR "0xffffffff"
 
 #define DatumGetUnknownP(X) ((unknown*)PG_DETOAST_DATUM(X))
 #define DatumGetUnknownPCopy(X) ((unknown*)PG_DETOAST_DATUM_COPY(X))
@@ -1013,6 +1014,31 @@ Datum bytea_string_agg_finalfn(PG_FUNCTION_ARGS)
         PG_RETURN_NULL();
 }
 
+Oid binary_need_transform_typeid(Oid typeoid, Oid* collation)
+{
+    Oid new_typid = typeoid;
+    if (*collation == BINARY_COLLATION_OID) {
+        /* use switch case stmt for extension in feature */
+        switch (typeoid) {
+            /* binary type no need to transform */
+            case BLOBOID:
+                break;
+            /* string type need to transform to binary type */
+            case TEXTOID:
+                new_typid = BLOBOID;
+                break;
+            default:
+                ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+                        errmsg("Un-support feature"),
+                        errdetail("type %s cannot be set to binary collation currently", get_typename(typeoid))));
+                break;
+        }
+        /* binary collation in attribute level collation no need to be set. */
+        *collation = InvalidOid;
+    }
+    return new_typid;
+}
+
 /*
  *		textin			- converts "..." to internal representation
  */
@@ -1480,13 +1506,16 @@ Datum text_substr_null(PG_FUNCTION_ARGS)
     fun_mblen = *pg_wchar_table[GetDatabaseEncoding()].mblen;
 
     is_compress = (VARATT_IS_COMPRESSED(DatumGetPointer(str)) || VARATT_IS_EXTERNAL(DatumGetPointer(str)));
-
+#ifdef DOLPHIN
     /*
      * To ensure M* compatibility, replace the function template
      * with the function template whose orclcompat is true.
      */
     baseIdx = 6 + (int)is_compress + (eml - 1) * 8;
-
+#else
+    // orclcompat is false withlen is true
+    baseIdx = 2 + (int)is_compress + (eml - 1) * 8;
+#endif
     result = (*substr_Array[baseIdx])(str, start, length, &is_null, fun_mblen);
 
     if (is_null == true)
@@ -1508,8 +1537,13 @@ Datum text_substr_no_len_null(PG_FUNCTION_ARGS)
     fun_mblen = *pg_wchar_table[GetDatabaseEncoding()].mblen;
 
     is_compress = (VARATT_IS_COMPRESSED(DatumGetPointer(str)) || VARATT_IS_EXTERNAL(DatumGetPointer(str)));
+#ifdef DOLPHIN
     // orclcompat is false withlen is false
     baseIdx = 4 + (int)is_compress + (eml - 1) * 8;
+#else
+    // orclcompat is false withlen is false
+    baseIdx = (int)is_compress + (eml - 1) * 8;
+#endif
     result = (*substr_Array[baseIdx])(str, start, 0, &is_null, fun_mblen);
 
     if (is_null == true)
@@ -2435,6 +2469,7 @@ Datum texteq(PG_FUNCTION_ARGS)
      * of the strings are unequal; which might save us from having to detoast
      * one or both values.
      */
+#ifdef DOLPHIN
     text *targ1 = DatumGetTextPP(arg1);
     text *targ2 = DatumGetTextPP(arg2);
  
@@ -2449,7 +2484,21 @@ Datum texteq(PG_FUNCTION_ARGS)
         PG_FREE_IF_COPY(targ1, 0);
         PG_FREE_IF_COPY(targ2, 1);
     }
+#else
+    len1 = toast_raw_datum_size(arg1);
+    len2 = toast_raw_datum_size(arg2);
+    if (len1 != len2)
+        result = false;
+    else {
+        text* targ1 = DatumGetTextPP(arg1);
+        text* targ2 = DatumGetTextPP(arg2);
 
+        result = (memcmp(VARDATA_ANY(targ1), VARDATA_ANY(targ2), len1 - VARHDRSZ) == 0);
+
+        PG_FREE_IF_COPY(targ1, 0);
+        PG_FREE_IF_COPY(targ2, 1);
+    }
+#endif
     PG_RETURN_BOOL(result);
 }
 
@@ -2471,6 +2520,7 @@ Datum textne(PG_FUNCTION_ARGS)
     }
 
     /* See comment in texteq() */
+#ifdef DOLPHIN
     text *targ1 = DatumGetTextPP(arg1);
     text *targ2 = DatumGetTextPP(arg2);
  
@@ -2484,7 +2534,21 @@ Datum textne(PG_FUNCTION_ARGS)
         PG_FREE_IF_COPY(targ1, 0);
         PG_FREE_IF_COPY(targ2, 1);
     }
+#else
+    len1 = toast_raw_datum_size(arg1);
+    len2 = toast_raw_datum_size(arg2);
+    if (len1 != len2)
+        result = true;
+    else {
+        text* targ1 = DatumGetTextPP(arg1);
+        text* targ2 = DatumGetTextPP(arg2);
 
+        result = (memcmp(VARDATA_ANY(targ1), VARDATA_ANY(targ2), len1 - VARHDRSZ) != 0);
+
+        PG_FREE_IF_COPY(targ1, 0);
+        PG_FREE_IF_COPY(targ2, 1);
+    }
+#endif
     PG_RETURN_BOOL(result);
 }
 
@@ -2496,6 +2560,7 @@ static void vtextne_internal(ScalarVector* arg1, uint8* pflags1, ScalarVector* a
     ScalarVector* vresult, uint8* pflagRes, Size len, text* targ, int idx)
 {
     if (BOTH_NOT_NULL(pflags1[idx], pflags2[idx])) {
+#ifdef DOLPHIN
         Size len1;
         Size len2;
         text* targ1 = NULL;
@@ -2520,7 +2585,18 @@ static void vtextne_internal(ScalarVector* arg1, uint8* pflags1, ScalarVector* a
             bool result = memcmp(VARDATA_ANY(targ1), VARDATA_ANY(targ2), len1) != 0;
             vresult->m_vals[idx] = BoolGetDatum(result);
         }
-
+#else
+        Size len1 = m_const1 ? len : toast_raw_datum_size(arg1->m_vals[idx]);
+        Size len2 = m_const2 ? len : toast_raw_datum_size(arg2->m_vals[idx]);
+        if (len1 != len2)
+            vresult->m_vals[idx] = BoolGetDatum(true);
+        else {
+            text* targ1 = m_const1 ? targ : DatumGetTextPP(arg1->m_vals[idx]);
+            text* targ2 = m_const2 ? targ : DatumGetTextPP(arg2->m_vals[idx]);
+            bool result = memcmp(VARDATA_ANY(targ1), VARDATA_ANY(targ2), len1 - VARHDRSZ) != 0;
+            vresult->m_vals[idx] = BoolGetDatum(result);
+        }
+#endif
         // Since pflagRes can be resued by the other Batch, the pflagRes must be
         // set not null here if both two args are not null.
         //
@@ -2545,12 +2621,22 @@ ScalarVector* vtextne(PG_FUNCTION_ARGS)
     text* targ = NULL;
 
     if (arg1->m_const && NOT_NULL(pflags1[0])) {
+#ifdef DOLPHIN
         targ = DatumGetTextPP(arg1->m_vals[0]);
         len = bcTruelen(targ);
+#else
+        len = toast_raw_datum_size(arg1->m_vals[0]);
+        targ = DatumGetTextPP(arg1->m_vals[0]);
+#endif
     }
     if (arg2->m_const && NOT_NULL(pflags2[0])) {
+#ifdef DOLPHIN
         targ = DatumGetTextPP(arg2->m_vals[0]);
         len = bcTruelen(targ);
+#else
+        len = toast_raw_datum_size(arg2->m_vals[0]);
+        targ = DatumGetTextPP(arg2->m_vals[0]);
+#endif
     }
 
     /*
@@ -3457,10 +3543,13 @@ static int internal_text_pattern_compare(text* arg1, text* arg2)
 {
     int result;
     int len1, len2;
-
+#ifdef DOLPHIN
     len1 = bcTruelen(arg1);
     len2 = bcTruelen(arg2);
-
+#else
+    len1 = VARSIZE_ANY_EXHDR(arg1);
+    len2 = VARSIZE_ANY_EXHDR(arg2);
+#endif
     result = memcmp(VARDATA_ANY(arg1), VARDATA_ANY(arg2), Min(len1, len2));
     if (result != 0)
         return result;
@@ -3737,13 +3826,24 @@ Datum bytea_substr_orclcompat(PG_FUNCTION_ARGS)
     int32 total = 0;
 
     total = toast_raw_datum_size(str) - VARHDRSZ;
-
+#ifdef DOLPHIN
     /* 
      * Set length to 0 so that an empty bytea can be returned later.
      */
     if ((length < 0) || (start > total) || (start + total < 0) || (start == 0)) {
         length = 0;
     }
+#else
+    if ((length < 0) || (start > total) || (start + total < 0)) {
+        if (u_sess->attr.attr_sql.sql_compatibility == A_FORMAT ||
+            u_sess->attr.attr_sql.sql_compatibility == B_FORMAT)
+            PG_RETURN_NULL();
+        else {
+            result = PG_STR_GET_BYTEA("");
+            PG_RETURN_BYTEA_P(result);
+        }
+    }
+#endif
     /*
      * the param length_not_specified is false,
      * the param length is used
@@ -3767,7 +3867,11 @@ Datum bytea_substr_no_len_orclcompat(PG_FUNCTION_ARGS)
     int32 total = 0;
 
     total = toast_raw_datum_size(str) - VARHDRSZ;
-    if ((start > total) || (start + total < 0) || start == 0) {
+    if ((start > total) || (start + total < 0)
+#ifdef DOLPHIN
+        || start == 0
+#endif
+    ) {
         if (u_sess->attr.attr_sql.sql_compatibility == A_FORMAT)
             PG_RETURN_NULL();
         else {
@@ -4381,7 +4485,6 @@ Datum byteaeq(PG_FUNCTION_ARGS)
     Datum arg2 = PG_GETARG_DATUM(1);
     bool result = false;
     Size len1, len2;
-
     /*
      * We can use a fast path for unequal lengths, which might save us from
      * having to detoast one or both values.
@@ -7542,7 +7645,7 @@ Datum text_format(PG_FUNCTION_ARGS)
     else
         PG_RETURN_TEXT_P(result);
 }
-
+#ifdef DOLPHIN
 /*
  * Check whether a cstring can transform to float8
  */
@@ -7637,6 +7740,7 @@ Datum db_b_format(PG_FUNCTION_ARGS)
     int precision = PG_GETARG_INT32(1);
     PG_RETURN_TEXT_P(cstring_to_text(db_b_format_transfer(ch_value, precision, "en_US")));
 }
+#endif
 
 /*
  * Parse contiguous digits as a decimal number.
