@@ -843,6 +843,22 @@ SelectStmt *makeShowVariablesQuery(bool globalMode, Node *likeWhereOpt, bool isL
     return stmt;
 }
 
+SelectStmt *makeShowStatusQuery(bool globalMode, Node *likeWhereOpt, bool isLikeExpr)
+{
+    Node *wc = NULL;
+
+    List *tl = (List *)list_make1(plpsMakeNormalColumn(NULL, "variable_name", "Variable_name"));
+    tl = lappend(tl, plpsMakeNormalColumn(NULL, "value", "Value"));
+    List *fl = list_make1(makeFuncRange("show_status",list_make1(makeBoolAConst(globalMode, -1))));
+
+    wc = isLikeExpr && likeWhereOpt != NULL
+             ? (Node *)makeSimpleA_Expr(AEXPR_OP, "~~", plpsMakeColumnRef(NULL, "variable_name"), likeWhereOpt, -1)
+             : likeWhereOpt;
+
+    SelectStmt *stmt = plpsMakeSelectStmt(tl, fl, wc, NIL);
+    return stmt;
+}
+
 Node* plpsMakeTargetNode(Node* val, char* name)
 {
     ResTarget* rt = makeNode(ResTarget);

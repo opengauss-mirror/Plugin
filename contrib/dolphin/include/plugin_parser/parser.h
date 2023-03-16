@@ -70,6 +70,7 @@ SelectStmt *MakeShowCollationQuery(List *args, Node *likeWhereOpt, bool isLikeEx
 
 SelectStmt* makeShowIndexQuery(char *schemaName, char *tableName, Node *whereClause);
 SelectStmt *makeShowVariablesQuery(bool globalMode, Node *likeWhereOpt, bool isLikeExpr);
+SelectStmt *makeShowStatusQuery(bool globalMode, Node *likeWhereOpt, bool isLikeExpr);
 SelectStmt *findCreateClass(RangeVar *classrel, int mode);
 SelectStmt *findCreateProc(char *schemaName, char *name, int model);
 SelectStmt *findCreateTrigger(RangeVar *trel);
