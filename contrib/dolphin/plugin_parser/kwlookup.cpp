@@ -91,7 +91,7 @@ int ScanKeywordLookup(const char *str, const ScanKeywordList *keywords)
 	}
 	if (*kw != '\0') {
 		return -1;
-	}
+    }
 	/* Success! */
 	return h;
 }
