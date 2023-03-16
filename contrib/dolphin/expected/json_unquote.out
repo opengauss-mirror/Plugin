@@ -138,6 +138,27 @@ select json_unquote('a\\t"bc"');
  a\t"bc"
 (1 row)
 
+SELECT JSON_UNQUOTE('"\\t\\u0032"');
+ json_unquote 
+--------------
+         2
+(1 row)
+
+select json_unquote('"\\u0032a"');
+ json_unquote 
+--------------
+ 2a
+(1 row)
+
+select json_unquote('" \\u554a kbhjfuk..."');
+  json_unquote  
+----------------
+  啊 kbhjfuk...
+(1 row)
+
+select json_unquote('"abcd\\t kjh \\u554 kbhjfuk"');
+ERROR:  Incorrent hex digit after \u escape in string
+CONTEXT:  referenced column: json_unquote
 create table data(name VARCHAR(20) PRIMARY KEY);
 NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "data_pkey" for table "data"
 insert into data (name) value(json_unquote('"sjy"'));
