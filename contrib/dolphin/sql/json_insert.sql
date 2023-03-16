@@ -57,6 +57,8 @@ SELECT JSON_INSERT(json_build_object('name', 'Lihua'), '$.age', 43);
 select JSON_INSERT(json_build_object('name', 'Lihua'), '$.b', json_build_object('mm', 43));
 select json_build_object('ob',JSON_INSERT('{"a": 43}', '$.b', 66));
 
+select JSON_INSERT('{"a": 43}', '$.b', 341522654875451.12345678901234567890123456789012345678901234567890);
+
 -- test for table
 create temp table test (
     textjson json

@@ -46,6 +46,7 @@ insert into time_table values(20211001, 2);
 insert into time_table values(20221204, 3);
 select json_arrayagg(b) from time_table;
 select json_arrayagg(a) from time_table;
+select json_arrayagg(341522654875451.12345678901234567890123456789012345678901234567890);
 
 drop schema json_arrayagg_test cascade;
 reset json_arrayagg_test;
