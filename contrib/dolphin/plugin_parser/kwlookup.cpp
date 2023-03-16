@@ -89,13 +89,9 @@ int ScanKeywordLookup(const char *str, const ScanKeywordList *keywords)
         len--;
 #endif
 	}
-	if (*kw != '\0'
-#ifdef DOLPHIN
-        && len != 0
-#endif
-    )
+	if (*kw != '\0') {
 		return -1;
-
+    }
 	/* Success! */
 	return h;
 }
