@@ -42,7 +42,7 @@ static int SB_IMatchText(char* t, int tlen, char* p, int plen, pg_locale_t local
 
 static int Generic_Text_IC_like(text* str, text* pat, Oid collation, bool ifbpchar=false);
 
-
+#ifdef DOLPHIN
 PG_FUNCTION_INFO_V1_PUBLIC(booltextlike);
 extern "C" DLL_PUBLIC Datum booltextlike(PG_FUNCTION_ARGS);
 
@@ -66,7 +66,7 @@ extern "C" DLL_PUBLIC Datum bitotherlike(PG_FUNCTION_ARGS);
 
 PG_FUNCTION_INFO_V1_PUBLIC(bitothernlike);
 extern "C" DLL_PUBLIC Datum bitothernlike(PG_FUNCTION_ARGS);
-
+#endif
 
 /* --------------------
  * Support routine for MatchText. Compares given multibyte streams
@@ -185,7 +185,7 @@ int GenericMatchText(char* s, int slen, char* p, int plen)
 
 int generic_match_text_with_collation(char* s, int slen, char* p, int plen, Oid collation)
 {
-    if (collation == UTF8MB4_GENERAL_CI_COLLATION_OID || collation == UTF8MB4_UNICODE_CI_COLLATION_OID) {
+    if (IS_UTF8_GENERAL_COLLATION(collation)) {
         return matchtext_utf8mb4((unsigned char*)s, slen, (unsigned char*)p, plen);
     }
 
@@ -334,6 +334,7 @@ Datum textnlike(PG_FUNCTION_ARGS)
     PG_RETURN_BOOL(result);
 }
 
+#ifdef DOLPHIN
 Datum bitotherlike(PG_FUNCTION_ARGS)
 {
     bool result = false;
@@ -345,6 +346,7 @@ Datum bitothernlike(PG_FUNCTION_ARGS)
     bool result = true;
     PG_RETURN_BOOL(result);
 }
+#endif
 
 Datum bytealike(PG_FUNCTION_ARGS)
 {
@@ -557,6 +559,7 @@ Datum like_escape_bytea(PG_FUNCTION_ARGS)
     PG_RETURN_BYTEA_P((bytea*)result);
 }
 
+#ifdef DOLPHIN
 Datum bpchartextlike(PG_FUNCTION_ARGS)
 {
     BpChar* str = PG_GETARG_TEXT_PP(0);
@@ -734,3 +737,4 @@ Datum bpchartexticnlike(PG_FUNCTION_ARGS)
 
     PG_RETURN_BOOL(result);
 }
+#endif
