@@ -71,6 +71,12 @@ select json_array();
  []
 (1 row)
 
+select json_array(1,341522654875451.12345678901234567890123456789012345678901234567890);
+                               json_array                                
+-------------------------------------------------------------------------
+ [1, 341522654875451.12345678901234567890123456789012345678901234567890]
+(1 row)
+
 create table dataa(name VARCHAR(20) PRIMARY KEY);
 NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "dataa_pkey" for table "dataa"
 insert into dataa(name) value(json_array('sjy'));

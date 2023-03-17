@@ -26,6 +26,7 @@ select json_replace('{"x":3}','$','{"a":2}');
 select json_replace('{"x":3}','$','{"a":2}','$',2);
 select json_replace('{"x":3}','$','{"a":2}'::json,'$.a',3);
 select json_replace('{"x":3}','$','{"a":2}'::json,'$',null);
+select json_replace('{"x": 1}', '$.x', 341522654875451.12345678901234567890123456789012345678901234567890);
 
 -- test for Non-Existent Path
 SELECT JSON_REPLACE('{"Name": "Homer", "Age": 39}', '$.Gender', 'Male');

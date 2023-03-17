@@ -38,6 +38,7 @@ select JSON_ARRAY_APPEND('[1, [2, 3]]', ' ', 4);
 select JSON_ARRAY_APPEND('[1, [2, 3]]'::varchar(20), '$[1]', null);
 select JSON_ARRAY_APPEND('[1, [2, 3]]'::bpchar, '$[1]', null);
 select JSON_ARRAY_APPEND('[1, [2, 3]]', '$[0]', null);
+select json_array_append('[1]', '$[0]', 341522654875451.12345678901234567890123456789012345678901234567890);
 
 drop schema test_json_array_append cascade;
 reset current_schema;

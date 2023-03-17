@@ -99,6 +99,14 @@ typedef enum {
     cJSON_JsonPath_Any
 } cJSON_JsonPathType;
 
+/*
+ * working state for json_objectagg()
+ */
+typedef struct ObjectState {
+    MemoryContext mcontext;
+    cJSON *root;
+} ObjectState;
+
 typedef struct cJSON_JsonPath {
     struct cJSON_JsonPath *next;
     cJSON_JsonPathType type;
@@ -160,6 +168,7 @@ static cJSON *cJSON_ResultWrapperToArray(cJSON_ResultWrapper *res);
 static void cJSON_SwapItemValue(cJSON *item1, cJSON *item2);
 static cJSON_bool cJSON_ArrayAppend(cJSON *root, cJSON_JsonPath *jp, cJSON *value);
 static cJSON_bool cJSON_JsonInsert(cJSON *root, cJSON_JsonPath *jp, cJSON *value);
+static cJSON *get_json_value(Oid valtype, Datum arg, bool typIsVarlena, Oid typOutput);
 static bool cJSON_JsonReplace(cJSON *root, cJSON_JsonPath *jp, cJSON *value, bool &invalidPath);
 static bool cJSON_JsonRemove(cJSON *root, cJSON_JsonPath *jp, bool *invalidPath);
 static bool cJSON_JsonArrayInsert(cJSON *root, cJSON_JsonPath *jp, cJSON *value, bool *invlidPath, bool *isArray);
@@ -440,6 +449,9 @@ extern "C" DLL_PUBLIC Datum json_set(PG_FUNCTION_ARGS);
 
 PG_FUNCTION_INFO_V1_PUBLIC(json_length);
 extern "C" DLL_PUBLIC Datum json_length(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1_PUBLIC(json_objectagg_mysql_transfn);
+extern "C" DLL_PUBLIC Datum json_objectagg_mysql_transfn(PG_FUNCTION_ARGS);
 
 PG_FUNCTION_INFO_V1_PUBLIC(json_objectagg_finalfn);
 extern "C" DLL_PUBLIC Datum json_objectagg_finalfn(PG_FUNCTION_ARGS);
@@ -4789,9 +4801,7 @@ Datum json_keys(PG_FUNCTION_ARGS)
         appendStringInfo(result, "\"%s\"", keys[pos[i]]);
     }
     appendStringInfoChar(result, ']');
-    if (pos != NULL) {
-        pfree(pos);
-    }
+    pfree(pos);
     pfree(keys);
     cJSON_Delete(root);
     PG_RETURN_TEXT_P(cstring_to_text_with_len(result->data, result->len));
@@ -4803,16 +4813,14 @@ Datum json_array_append(PG_FUNCTION_ARGS)
     Oid valtype;
     Oid typOutput;
     Datum arg = 0;
+    StringInfo result = NULL;
     bool typIsVarlena = false;
     char *pathString = NULL;
-    char *valueString = NULL;
     cJSON *root = NULL;
     cJSON *value = NULL;
     cJSON_JsonPath *jp = NULL;
-    text *res = NULL;
-    char *s = NULL;
     int error_pos = -1;
-    TYPCATEGORY tcategory;
+
     if (nargs < 3 || nargs % 2 == 0) {
         ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("Invalid arg number")));
     }
@@ -4848,25 +4856,7 @@ Datum json_array_append(PG_FUNCTION_ARGS)
         } else {
             valtype = get_fn_expr_argtype(fcinfo->flinfo, i + 1);
             arg = PG_GETARG_DATUM(i + 1);
-            getTypeOutputInfo(valtype, &typOutput, &typIsVarlena);
-            valueString = OidOutputFunctionCall(typOutput, arg);
-            tcategory = get_value_type(valtype, typOutput);
-            switch (tcategory) {
-                case TYPCATEGORY_JSON:
-                case TYPCATEGORY_JSON_CAST:
-                case TYPCATEGORY_ARRAY:
-                case TYPCATEGORY_COMPOSITE:
-                case TYPCATEGORY_NUMERIC:
-                    value = cJSON_Parse(valueString);
-                    break;
-                case TYPCATEGORY_BOOLEAN:
-                    value = cJSON_CreateBool(DatumGetBool(arg));
-                    break;
-                default:
-                    value = cJSON_CreateString(valueString);
-                    break;
-            }
-            pfree(valueString);
+            value = get_json_value(valtype, arg, typIsVarlena, typOutput);
         }
         if (jp->next == NULL && jp->type == cJSON_JsonPath_Start) {
             if (cJSON_IsArray(root)) {
@@ -4895,12 +4885,11 @@ Datum json_array_append(PG_FUNCTION_ARGS)
         }
         cJSON_DeleteJsonPath(jp);
     }
-    cJSON_SortObject(root);
-    s = cJSON_PrintUnformatted(root);
-    res = formatJsondoc(s);
+    result = makeStringInfo();
+    json_regular_format(result, root);
     cJSON_Delete(root);
-    pfree(s);
-    PG_RETURN_TEXT_P(res);
+
+    PG_RETURN_TEXT_P(cstring_to_text_with_len(result->data, result->len));
 }
 
 Datum json_append(PG_FUNCTION_ARGS)
@@ -5044,7 +5033,9 @@ static void json_regular_format(StringInfo result, cJSON *json)
             break;
         }
         case cJSON_Number: {
-            if (json->valuedouble == (double)(json->valueint)) {
+            if (json->valuestring != NULL) {
+                appendStringInfoString(result, json->valuestring);
+            } else if (json->valuedouble == (double)(json->valueint)) {
                 appendStringInfo(result, "%d", json->valueint);
             } else {
                 appendStringInfo(result, "%s", cJSON_Print(json));
@@ -5511,19 +5502,16 @@ Datum json_insert(PG_FUNCTION_ARGS)
     cJSON *root = NULL;
     cJSON *value = NULL;
     cJSON_JsonPath *jp = NULL;
-    text *res = NULL;
-    char *s = NULL;
+    StringInfo result = NULL;
     Oid valtype;
     Oid typOutput;
     Datum arg = 0;
     bool typIsVarlena = false;
     int error_pos = -1;
-    TYPCATEGORY tcategory;
 
     if (nargs < 3 || nargs % 2 == 0) {
-        ereport(ERROR,
-                (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("Incorrect parameter count in the call to native "
-                                                                  "function 'JSON_INSERT'")));
+        ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+                        errmsg("Incorrect parameter count in the call to native function 'JSON_INSERT'")));
     }
     if (PG_ARGISNULL(0)) {
         PG_RETURN_NULL();
@@ -5551,9 +5539,8 @@ Datum json_insert(PG_FUNCTION_ARGS)
         if (cJSON_JsonPathCanMatchMany(jp)) {
             cJSON_DeleteJsonPath(jp);
             cJSON_Delete(root);
-            ereport(ERROR,
-                    (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("In this situation, path expressions may not "
-                                                                      "contain the * and ** tokens.")));
+            ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+                            errmsg("In this situation, path expressions may not contain the * and ** tokens.")));
         }
         /* process json to add */
         if (PG_ARGISNULL(i + 1)) {
@@ -5561,55 +5548,69 @@ Datum json_insert(PG_FUNCTION_ARGS)
         } else {
             valtype = get_fn_expr_argtype(fcinfo->flinfo, i + 1);
             arg = PG_GETARG_DATUM(i + 1);
-            getTypeOutputInfo(valtype, &typOutput, &typIsVarlena);
-            data = OidOutputFunctionCall(typOutput, arg);
-            tcategory = get_value_type(valtype, typOutput);
-            switch (tcategory) {
-                case TYPCATEGORY_JSON:
-                case TYPCATEGORY_JSON_CAST:
-                case TYPCATEGORY_ARRAY:
-                case TYPCATEGORY_COMPOSITE:
-                case TYPCATEGORY_NUMERIC:
-                    value = cJSON_Parse(data);
-                    break;
-                case TYPCATEGORY_BOOLEAN:
-                    value = cJSON_CreateBool(DatumGetBool(arg));
-                    break;
-                default:
-                    value = cJSON_CreateString(data);
-                    break;
-            }
-            pfree(data);
+            value = get_json_value(valtype, arg, typIsVarlena, typOutput);
         }
         if (!cJSON_JsonInsert(root, jp, value)) {
             cJSON_Delete(value);  // when value is not inserted, delete it
         };
         cJSON_DeleteJsonPath(jp);
     }
-    cJSON_SortObject(root);
-    s = cJSON_PrintUnformatted(root);
-    res = formatJsondoc(s);
+    result = makeStringInfo();
+    json_regular_format(result, root);
     cJSON_Delete(root);
-    pfree(s);
-    PG_RETURN_TEXT_P(res);
+    PG_RETURN_TEXT_P(cstring_to_text_with_len(result->data, result->len));
+}
+
+static cJSON *get_json_value(Oid valtype, Datum arg, bool typIsVarlena, Oid typOutput)
+{
+    bool is_number = false;
+    cJSON *value = NULL;
+    char *valueString = NULL;
+    TYPCATEGORY tcategory;
+
+    getTypeOutputInfo(valtype, &typOutput, &typIsVarlena);
+    valueString = OidOutputFunctionCall(typOutput, arg);
+    tcategory = get_value_type(valtype, typOutput);
+    switch (tcategory) {
+        case TYPCATEGORY_JSON:
+        case TYPCATEGORY_JSON_CAST:
+        case TYPCATEGORY_ARRAY:
+        case TYPCATEGORY_COMPOSITE:
+            value = cJSON_Parse(valueString);
+            break;
+        case TYPCATEGORY_NUMERIC:
+            value = cJSON_Parse(valueString);
+            value->valuestring = valueString;
+            is_number = true;
+            break;
+        case TYPCATEGORY_BOOLEAN:
+            value = cJSON_CreateBool(DatumGetBool(arg));
+            break;
+        default:
+            value = cJSON_CreateString(valueString);
+            break;
+    }
+    if (!is_number) {
+        pfree(valueString);
+    }
+
+    return value;
 }
 
 Datum json_replace(PG_FUNCTION_ARGS)
 {
     int nargs = PG_NARGS();
     char *pathString = NULL;
-    char *valueString = NULL;
     cJSON *root = NULL;
     cJSON *value = NULL;
     cJSON_JsonPath *jp = NULL;
     Oid valtype;
-    Oid typOutput;
     Datum arg = 0;
-    bool typIsVarlena = false;
     bool invalidPath = false;
     StringInfo result = NULL;
     int error_pos = -1;
-    TYPCATEGORY tcategory;
+    bool typIsVarlena = false;
+    Oid typOutput;
 
     if (nargs < 3 || nargs % 2 == 0) {
         ereport(ERROR,
@@ -5647,25 +5648,7 @@ Datum json_replace(PG_FUNCTION_ARGS)
         } else {
             valtype = get_fn_expr_argtype(fcinfo->flinfo, i + 1);
             arg = PG_GETARG_DATUM(i + 1);
-            getTypeOutputInfo(valtype, &typOutput, &typIsVarlena);
-            valueString = OidOutputFunctionCall(typOutput, arg);
-            tcategory = get_value_type(valtype, typOutput);
-            switch (tcategory) {
-                case TYPCATEGORY_JSON:
-                case TYPCATEGORY_JSON_CAST:
-                case TYPCATEGORY_ARRAY:
-                case TYPCATEGORY_COMPOSITE:
-                case TYPCATEGORY_NUMERIC:
-                    value = cJSON_Parse(valueString);
-                    break;
-                case TYPCATEGORY_BOOLEAN:
-                    value = cJSON_CreateBool(DatumGetBool(arg));
-                    break;
-                default:
-                    value = cJSON_CreateString(valueString);
-                    break;
-            }
-            pfree(valueString);
+            value = get_json_value(valtype, arg, typIsVarlena, typOutput);
         }
         if (jp->next == NULL || (!cJSON_IsArray(root) && jp->next->next == NULL &&
                                  jp->next->type == cJSON_JsonPath_Index && jp->next->index == 0)) {
@@ -5766,7 +5749,6 @@ Datum json_array_insert(PG_FUNCTION_ARGS)
 {
     int nargs = PG_NARGS();
     char *pathString = NULL;
-    char *valueString = NULL;
     cJSON *root = NULL;
     cJSON *value = NULL;
     cJSON_JsonPath *jp = NULL;
@@ -5778,7 +5760,6 @@ Datum json_array_insert(PG_FUNCTION_ARGS)
     bool isArray = false;
     StringInfo result = NULL;
     int error_pos = -1;
-    TYPCATEGORY tcategory;
 
     if (nargs < 3 || nargs % 2 == 0) {
         ereport(ERROR,
@@ -5822,25 +5803,7 @@ Datum json_array_insert(PG_FUNCTION_ARGS)
         } else {
             valtype = get_fn_expr_argtype(fcinfo->flinfo, i + 1);
             arg = PG_GETARG_DATUM(i + 1);
-            getTypeOutputInfo(valtype, &typOutput, &typIsVarlena);
-            valueString = OidOutputFunctionCall(typOutput, arg);
-            tcategory = get_value_type(valtype, typOutput);
-            switch (tcategory) {
-                case TYPCATEGORY_JSON:
-                case TYPCATEGORY_JSON_CAST:
-                case TYPCATEGORY_ARRAY:
-                case TYPCATEGORY_COMPOSITE:
-                case TYPCATEGORY_NUMERIC:
-                    value = cJSON_Parse(valueString);
-                    break;
-                case TYPCATEGORY_BOOLEAN:
-                    value = cJSON_CreateBool(DatumGetBool(arg));
-                    break;
-                default:
-                    value = cJSON_CreateString(valueString);
-                    break;
-            }
-            pfree(valueString);
+            value = get_json_value(valtype, arg, typIsVarlena, typOutput);
         }
         if (!cJSON_JsonArrayInsert(root, jp, value, &invalidPath, &isArray)) {
             cJSON_Delete(value);  // when value is not inserted, delete it
@@ -5871,24 +5834,20 @@ Datum json_set(PG_FUNCTION_ARGS)
 {
     int nargs = PG_NARGS();
     char *pathString = NULL;
-    char *valueString = NULL;
     cJSON *root = NULL;
     cJSON *value = NULL;
     cJSON_JsonPath *jp = NULL;
-    text *res = NULL;
-    char *s = NULL;
     Oid valtype;
     Oid typOutput;
     Datum arg = 0;
     bool typIsVarlena = false;
     bool invalidPath = false;
     int error_pos = -1;
-    TYPCATEGORY tcategory;
+    StringInfo result = NULL;
 
     if (nargs < 3 || nargs % 2 == 0) {
-        ereport(ERROR,
-                (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("Incorrect parameter count in the call to native "
-                                                                  "function 'JSON_SET'")));
+        ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+                        errmsg("Incorrect parameter count in the call to native function 'JSON_SET'")));
     }
     if (PG_ARGISNULL(0)) {
         cJSON_Delete(root);
@@ -5921,25 +5880,7 @@ Datum json_set(PG_FUNCTION_ARGS)
         } else {
             valtype = get_fn_expr_argtype(fcinfo->flinfo, i + 1);
             arg = PG_GETARG_DATUM(i + 1);
-            getTypeOutputInfo(valtype, &typOutput, &typIsVarlena);
-            valueString = OidOutputFunctionCall(typOutput, arg);
-            tcategory = get_value_type(valtype, typOutput);
-            switch (tcategory) {
-                case TYPCATEGORY_JSON:
-                case TYPCATEGORY_JSON_CAST:
-                case TYPCATEGORY_ARRAY:
-                case TYPCATEGORY_COMPOSITE:
-                case TYPCATEGORY_NUMERIC:
-                    value = cJSON_Parse(valueString);
-                    break;
-                case TYPCATEGORY_BOOLEAN:
-                    value = cJSON_CreateBool(DatumGetBool(arg));
-                    break;
-                default:
-                    value = cJSON_CreateString(valueString);
-                    break;
-            }
-            pfree(valueString);
+            value = get_json_value(valtype, arg, typIsVarlena, typOutput);
         }
         if (jp->next == NULL || (!cJSON_IsArray(root) && jp->next->next == NULL &&
                                  jp->next->type == cJSON_JsonPath_Index && jp->next->index == 0)) {
@@ -5953,19 +5894,17 @@ Datum json_set(PG_FUNCTION_ARGS)
             if (invalidPath) {
                 cJSON_DeleteJsonPath(jp);
                 cJSON_Delete(root);
-                ereport(ERROR,
-                        (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("In this situation, path expressions may not "
-                                                                          "contain the * and ** tokens.")));
+                ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+                                errmsg("In this situation, path expressions may not contain the * and ** tokens.")));
             }
         };
         cJSON_DeleteJsonPath(jp);
     }
-    cJSON_SortObject(root);
-    s = cJSON_PrintUnformatted(root);
-    res = formatJsondoc(s);
+    result = makeStringInfo();
+    json_regular_format(result, root);
     cJSON_Delete(root);
-    pfree(s);
-    PG_RETURN_TEXT_P(res);
+
+    PG_RETURN_TEXT_P(cstring_to_text_with_len(result->data, result->len));
 }
 
 static void length_object_field_start(void *state, char *fname, bool isnull)
@@ -6075,25 +6014,104 @@ Datum json_length(PG_FUNCTION_ARGS)
     PG_RETURN_INT32(result);
 }
 
+Datum json_objectagg_mysql_transfn(PG_FUNCTION_ARGS)
+{
+    Oid val_type;
+    MemoryContext aggcontext, oldcontext, cur_context;
+    ObjectState *state = NULL;
+    cJSON *value = NULL;
+    Datum arg;
+    Oid typOutput;
+    bool typIsVarlena = false;
+    char *keyString = NULL;
+    const char *bool_val;
+    TYPCATEGORY tcategory;
+    int bool_num_len = 1;
+    int bool_key_size = 2;
+    errno_t rc = 0;
+
+    if (!AggCheckCallContext(fcinfo, &aggcontext)) {
+        /* cannot be called directly because of internal-type argument */
+        elog(ERROR, "json_agg_transfn called in non-aggregate context");
+    }
+
+    state = PG_ARGISNULL(0) ? NULL : (ObjectState *)PG_GETARG_POINTER(0);
+    if (state == NULL) {
+        /*
+         * Make this StringInfo in a context where it will persist for the
+         * duration off the aggregate call. It's only needed for this initial
+         * piece, as the StringInfo routines make sure they use the right
+         * context to enlarge the object if necessary.
+         */
+        cur_context = AllocSetContextCreate(aggcontext, "JSON_OBJECTAGG", ALLOCSET_DEFAULT_MINSIZE,
+                                            ALLOCSET_DEFAULT_INITSIZE, ALLOCSET_DEFAULT_MAXSIZE);
+        oldcontext = MemoryContextSwitchTo(cur_context);
+        state = (ObjectState *)palloc(sizeof(ObjectState));
+        state->mcontext = cur_context;
+        state->root = cJSON_CreateObject();
+    } else {
+        oldcontext = MemoryContextSwitchTo(state->mcontext);
+    }
+
+    if (PG_ARGISNULL(1)) {
+        ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("field name must not be null")));
+    }
+    /*
+     * turn a constant (more or less literal) value that's of unknown type
+     * into text. Unknowns come in as a cstring pointer.
+     */
+    val_type = get_fn_expr_argtype(fcinfo->flinfo, 1);
+    arg = PG_GETARG_DATUM(1);
+    getTypeOutputInfo(val_type, &typOutput, &typIsVarlena);
+    tcategory = get_value_type(val_type, typOutput);
+    if (tcategory == TYPCATEGORY_BOOLEAN) {
+        keyString = (char *)palloc(bool_key_size * sizeof(char));
+        bool_val = DatumGetBool(arg) ? "1" : "0";
+        rc = strncpy_s(keyString, bool_key_size, bool_val, bool_num_len);
+        securec_check(rc, "\0", "\0");
+    } else {
+        keyString = OidOutputFunctionCall(typOutput, arg);
+    }
+    /* process the value */
+    if (PG_ARGISNULL(ARG_2)) {
+        value = cJSON_CreateNull();
+    } else {
+        val_type = get_fn_expr_argtype(fcinfo->flinfo, ARG_2);
+        arg = PG_GETARG_DATUM(2);
+        value = get_json_value(val_type, arg, typIsVarlena, typOutput);
+    }
+    cJSON_AddItemToObject(state->root, keyString, value);
+    pfree(keyString);
+    MemoryContextSwitchTo(oldcontext);
+
+    PG_RETURN_POINTER(state);
+}
+
 Datum json_objectagg_finalfn(PG_FUNCTION_ARGS)
 {
-    StringInfo state;
-    cJSON *root = NULL;
+    ObjectState *state = NULL;
+    StringInfo result;
 
     /* cannot be called directly because of internal-type argument */
     Assert(AggCheckCallContext(fcinfo, NULL));
-    state = PG_ARGISNULL(0) ? NULL : (StringInfo)PG_GETARG_POINTER(0);
+    state = PG_ARGISNULL(0) ? NULL : (ObjectState *)PG_GETARG_POINTER(0);
     if (state == NULL) {
         PG_RETURN_NULL();
     }
 
-    appendStringInfoString(state, " }");
-    root = cJSON_Parse(state->data);
-    resetStringInfo(state);
-    json_regular_format(state, root);
-    cJSON_Delete(root);
+    result = makeStringInfo();
+    json_regular_format(result, state->root);
+    if (state->root != NULL) {
+        cJSON_Delete(state->root);
+    }
 
-    PG_RETURN_TEXT_P(cstring_to_text_with_len(state->data, state->len));
+    /*
+     * Make the result.  We cannot release the ObjectState because
+     * sometimes aggregate final functions are re-executed.  Rather, it is
+     * nodeAgg.c's responsibility to reset the aggcontext when it's safe to do
+     * so.
+     */
+    PG_RETURN_TEXT_P(cstring_to_text_with_len(result->data, result->len));
 }
 
 Datum json_storage_size(PG_FUNCTION_ARGS)

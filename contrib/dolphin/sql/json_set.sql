@@ -20,6 +20,7 @@ select json_set('{"s":2}','$**.s',4);
 select json_set('{"s":3}',null,4);
 select json_set('{"s":3}','$.s',null);
 select json_set('{"s":3}','$.s','d');
+select json_set('{"s":3}','$.s',341522654875451.12345678901234567890123456789012345678901234567890);
 
 create table dataa(name VARCHAR(20) PRIMARY KEY);
 insert into dataa (name) value(json_set('{"s":1}','$.s',3,'$.w',5));

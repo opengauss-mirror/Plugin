@@ -83,6 +83,12 @@ select json_arrayagg(a) from time_table;
  ["08-22-2020", "10-01-2021", "12-04-2022"]
 (1 row)
 
+select json_arrayagg(341522654875451.12345678901234567890123456789012345678901234567890);
+                            json_arrayagg                             
+----------------------------------------------------------------------
+ [341522654875451.12345678901234567890123456789012345678901234567890]
+(1 row)
+
 drop schema json_arrayagg_test cascade;
 NOTICE:  drop cascades to table city
 reset json_arrayagg_test;

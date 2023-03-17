@@ -2,6 +2,8 @@ create schema test_json_length;
 set current_schema to 'test_json_length';
 
 --同时含NULL和错误
+select json_length('', '$');
+select json_length('哈', '$[0]');
 select json_length(NULL,'$..');
 select json_length(1,NULL);
 
