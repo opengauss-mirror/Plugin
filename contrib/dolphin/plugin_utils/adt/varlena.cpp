@@ -1018,6 +1018,22 @@ Oid binary_need_transform_typeid(Oid typeoid, Oid* collation)
 {
     Oid new_typid = typeoid;
     if (*collation == BINARY_COLLATION_OID) {
+#ifdef DOLPHIN
+        /* string type need to transform to binary type */
+        if (typeoid == TEXTOID) {
+            new_typid = BLOBOID;
+        } else if (typeoid == BPCHAROID) {
+            new_typid = BINARYOID;
+        } else if (typeoid == VARCHAROID) {
+            new_typid = VARBINARYOID;
+        } else if (typeoid == BLOBOID || typeoid == BINARYOID || typeoid == VARBINARYOID ||
+                   typeoid == TINYBLOBOID || typeoid == MEDIUMBLOBOID || typeoid == LONGBLOBOID) {
+            /* binary string type no need to transform */
+        } else {
+            ereport(WARNING, (errmsg("this type can't set to binary collation. default value set")));
+            *collation = DEFAULT_COLLATION_OID;
+        }
+#else
         /* use switch case stmt for extension in feature */
         switch (typeoid) {
             /* binary type no need to transform */
@@ -1035,6 +1051,7 @@ Oid binary_need_transform_typeid(Oid typeoid, Oid* collation)
         }
         /* binary collation in attribute level collation no need to be set. */
         *collation = InvalidOid;
+#endif
     }
     return new_typid;
 }
