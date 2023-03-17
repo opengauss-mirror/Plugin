@@ -13,6 +13,7 @@ select json_array(1,2,3,4,true,null);
 select json_array(1,255,3,414564);
 select json_array(1,2,adjiw,4);
 select json_array();
+select json_array(1,341522654875451.12345678901234567890123456789012345678901234567890);
 
 create table dataa(name VARCHAR(20) PRIMARY KEY);
 insert into dataa(name) value(json_array('sjy'));

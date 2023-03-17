@@ -56,6 +56,7 @@ select json_merge_patch('[1,2,3]','[]');
 select json_merge_patch('[]','[1,2,3]');
 select json_merge_patch(1,null);
 select json_merge_patch(1,null,'1');
+select json_merge_patch('["a",1,{"a":"abc"}]','["b",341522654875451.12345678901234567890123456789012345678901234567,{"b":"bcd"}]');
 
 create table test (
     doc1 text,

@@ -145,6 +145,12 @@ select json_replace('{"x":3}','$','{"a":2}'::json,'$',null);
  null
 (1 row)
 
+select json_replace('{"x": 1}', '$.x', 341522654875451.12345678901234567890123456789012345678901234567890);
+                               json_replace                                
+---------------------------------------------------------------------------
+ {"x": 341522654875451.12345678901234567890123456789012345678901234567890}
+(1 row)
+
 -- test for Non-Existent Path
 SELECT JSON_REPLACE('{"Name": "Homer", "Age": 39}', '$.Gender', 'Male');
          json_replace         

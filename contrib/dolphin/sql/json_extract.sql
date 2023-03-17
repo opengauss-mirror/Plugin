@@ -36,6 +36,8 @@ select json_extract('["a", ["b", "c"], {"d":"1"}]', NULL, '$[2]') as extra;
 
 select json_extract(1, null);
 
+select json_extract('{"a": 341522654875451.12345678901234567890123456789012345678901234567}', '$.a');
+
 create temp table test (
     textjson json
 );
