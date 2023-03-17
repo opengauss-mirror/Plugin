@@ -2151,8 +2151,12 @@ select * from t1;
 
 drop table if exists t1 cascade;
 drop table if exists t2 cascade;
+SET check_function_bodies=off;
+CREATE FUNCTION monot_incr(int) RETURNS bool LANGUAGE sql AS ' select $1 > max(a) from tst_dom_constr; ';
+CREATE DOMAIN monot_int AS int CHECK (monot_incr(VALUE));
+reset check_function_bodies;
 drop schema column_name_case_test cascade;
-NOTICE:  drop cascades to 37 other objects
+NOTICE:  drop cascades to 39 other objects
 DETAIL:  drop cascades to table a1
 drop cascades to table a2
 drop cascades to table warehouse_t22
@@ -2190,4 +2194,6 @@ drop cascades to function func7()
 drop cascades to table tf1
 drop cascades to function tfun3()
 drop cascades to function func8()
+drop cascades to function monot_incr(integer)
+drop cascades to type monot_int
 reset current_schema;

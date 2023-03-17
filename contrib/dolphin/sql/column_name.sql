@@ -1270,6 +1270,10 @@ select * from t1;
 drop table if exists t1 cascade;
 drop table if exists t2 cascade;
 
+SET check_function_bodies=off;
+CREATE FUNCTION monot_incr(int) RETURNS bool LANGUAGE sql AS ' select $1 > max(a) from tst_dom_constr; ';
+CREATE DOMAIN monot_int AS int CHECK (monot_incr(VALUE));
+reset check_function_bodies;
 
 drop schema column_name_case_test cascade;
 reset current_schema;
