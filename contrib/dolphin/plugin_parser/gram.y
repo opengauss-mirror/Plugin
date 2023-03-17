@@ -4027,23 +4027,15 @@ VariableShowStmt:
 		    SelectStmt *n = MakeShowCollationQuery(NIL, $3->like_or_where, $3->is_like);
 		    $$ = (Node *) n;
 		}
-		| SHOW_STATUS
+		| SHOW opt_global STATUS OptLikeOrWhere
 		{
-			SelectStmt *n = makeNode(SelectStmt);
-			/* Make Target List */
-			ColumnRef *columnRef = makeNode(ColumnRef);
-			columnRef->fields = list_make1(makeNode(A_Star));
-			ResTarget *resTarget = makeNode(ResTarget);
-			resTarget->val = (Node *)columnRef;
-			n->targetList = list_make1(resTarget);
-
-			/* Make RageFunction Call */
-			FuncCall *funcCall = makeNode(FuncCall);
-			funcCall->funcname = SystemFuncName("show_status");
-			RangeFunction *rangeFunction = makeNode(RangeFunction);
-			rangeFunction->funccallnode = (Node *)funcCall;
-			n->fromClause = list_make1(rangeFunction);
-			$$ = (Node *)n;
+			SelectStmt *n = makeShowStatusQuery($2, $4->like_or_where, $4->is_like);
+			$$ = (Node *) n;
+		}
+		| SHOW_STATUS OptLikeOrWhere
+		{
+			SelectStmt *n = makeShowStatusQuery(FALSE, $2->like_or_where, $2->is_like);
+			$$ = (Node *) n;
 		}
 		;
 
