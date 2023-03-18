@@ -2453,6 +2453,7 @@ CreateSchemaStmt:
 					n->authid = NULL;
 					n->hasBlockChain = $7;
 					n->schemaElts = $8;
+					n->charset = PG_INVALID_ENCODING;
 					$$ = (Node *)n;
 				}
 			| CREATE SCHEMA IF_P NOT EXISTS OptSchemaName AUTHORIZATION RoleId OptBlockchainWith OptSchemaEltList
@@ -2467,6 +2468,7 @@ CreateSchemaStmt:
 					n->authid = $8;
 					n->hasBlockChain = $9;
 					n->schemaElts = $10;
+					n->charset = PG_INVALID_ENCODING;
 					$$ = (Node *)n;
 				}
 			| CREATE SCHEMA DolphinColId CharsetCollate
@@ -2478,6 +2480,17 @@ CreateSchemaStmt:
 					n->schemaElts = NULL;
 					n->charset = $4->charset;
 					n->collate = $4->collate;
+					$$ = (Node *)n;
+				}
+			| CREATE SCHEMA IF_P NOT EXISTS DolphinColId CharsetCollate
+				{
+					CreateSchemaStmt *n = makeNode(CreateSchemaStmt);
+					n->schemaname = GetDolphinSchemaName($6->str, $6->is_quoted);
+					n->authid = NULL;
+					n->hasBlockChain = false;
+					n->schemaElts = NULL;
+					n->charset = $7->charset;
+					n->collate = $7->collate;
 					$$ = (Node *)n;
 				}
 		;
@@ -24644,6 +24657,7 @@ CreatedbStmt:
 						n->schemaname = $3;
 						n->authid = NULL;
 						n->missing_ok = FALSE;
+						n->charset = PG_INVALID_ENCODING;
 						$$ = (Node *)n;
 					}
 				}
@@ -24670,6 +24684,7 @@ CreatedbStmt:
 						n->schemaname = $6;
 						n->authid = NULL;
 						n->missing_ok = TRUE;
+						n->charset = PG_INVALID_ENCODING;
 						$$ = (Node *)n;
 					}
 				}
