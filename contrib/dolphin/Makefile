@@ -59,7 +59,7 @@ OBJS += $(fmgr)/fmgr.o
 
 OBJS += $(executor)/execQual.o $(executor)/functions.o
 
-OBJS += $(storage)/hashfunc.o
+OBJS += $(storage)/hashfunc.o $(storage)/tupdesc.o
 
 OBJS += $(plan)/pgxcplan_single.o $(plan)/planner.o $(plan)/streamwalker.o $(plan)/initsplan.o $(plan)/planmain.o
 
