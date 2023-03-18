@@ -120,6 +120,7 @@
 |plugin_optimizer\util|plancat.cpp   |src\gausskernel\optimizer\util\plancat.cpp  |
 |plugin_optimizer\util|relnode.cpp   |src\gausskernel\optimizer\util\relnode.cpp  |
 |plugin_storage|hashfunc.cpp   |src\gausskernel\storage\access\hash\hashfunc.cpp  |
+|plugin_storage|tupdesc.cpp   |src\gausskernel\storage\access\common\tupdesc.cpp  |
 |plugin_pl\plpgsql\src|gram.y   |src\common\pl\plpgsql\src\gram.y  |
 |plugin_pl\plpgsql\src|pl_scanner.cpp   |src\common\pl\plpgsql\src\pl_scanner.cpp  |
 |plugin_pl\plpgsql\src|pl_handler.cpp   |src\common\pl\plpgsql\src\pl_handler.cpp  |

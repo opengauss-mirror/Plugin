@@ -99,5 +99,14 @@ alter table test_binary1 add column f5 varbinary collate 'binary';
 alter table test_binary1 add column f6 text collate 'binary';
 alter table test_binary1 add column f7 int collate 'binary';
 
+drop table if exists test_binary2;
+create table test_binary2(c1 text, c2 varchar(10), c3 char(10), c4 tinytext) collate 'binary';
+alter table test_binary2 add column c5 text;
+alter table test_binary2 add column c6 varchar(10);
+alter table test_binary2 add column c6 varchar(10) collate 'utf8mb4_bin';
+alter table test_binary2 add column c7 char(10);
+alter table test_binary2 add column c8 tinytext;
+select pg_get_tabledef('test_binary2');
+
 drop schema test_charset cascade;
 reset current_schema;
