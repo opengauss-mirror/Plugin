@@ -810,18 +810,11 @@ int base_yylex(YYSTYPE* lvalp, YYLTYPE* llocp, core_yyscan_t yyscanner)
                     break;
             }
             break;
-        case CREATE:
-            GetSessionContext()->dolphin_kw_mask |= B_KWMASK_CREATE;
-            break;
-        case TRIGGER:
-            GetSessionContext()->dolphin_kw_mask |= B_KWMASK_TRIGGER;
-            break;
         case BEGIN_P:
-            /*use delimiter and is create trigger grammar we should use mysql style*/
-            if (GetSessionContext()->dolphin_kw_mask == B_KWMASK_CREATE_TRIGGER &&
-                    (strcmp(";", u_sess->attr.attr_common.delimiter_name) != 0 ||
-                        GetSessionContext()->enableBCmptMode))
+            if (GetSessionContext()->dolphin_kw_mask == B_KWMASK_CREATE_TRIGGER) {
                 cur_token = BEGIN_B_BLOCK;
+                GetSessionContext()->dolphin_kw_mask = 0;
+            }
             break;
         case LOCK_P:
             /*

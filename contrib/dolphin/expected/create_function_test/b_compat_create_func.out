@@ -654,6 +654,45 @@ SELECT ID into test_table_030a FROM test_table_030 WHERE NAME = canshu;
 return test_table_030a;
 END |
 DELIMITER ;
+--test trigger
+drop function if exists f_create_function_0033;
+NOTICE:  function f_create_function_0033() does not exist, skipping
+delimiter |
+create function f_create_function_0033() returns trigger
+begin
+insert into t_create_function_0033 values(new.id1, new.id2, new.id3);
+return new;
+end|
+delimiter ;
+CREATE TABLE test_trigger_src_tbl(id1 INT, id2 INT, id3 INT);
+CREATE TABLE test_trigger_des_tbl(id1 INT, id2 INT, id3 INT);
+delimiter /
+CREATE OR REPLACE FUNCTION tri_insert_funcx() RETURNS TRIGGER 
+BEGIN
+INSERT INTO test_trigger_des_tbl VALUES(NEW.id1, NEW.id2, NEW.id3);
+RETURN NEW;
+END
+/
+delimiter ;
+CREATE TRIGGER insert_triggerx
+BEFORE INSERT ON test_trigger_src_tbl
+FOR EACH ROW
+EXECUTE PROCEDURE tri_insert_funcx();
+insert into test_trigger_src_tbl values(1,2,3);
+select * from test_trigger_src_tbl;
+ id1 | id2 | id3 
+-----+-----+-----
+   1 |   2 |   3
+(1 row)
+
+select * from test_trigger_des_tbl;
+ id1 | id2 | id3 
+-----+-----+-----
+   1 |   2 |   3
+(1 row)
+
+drop table test_trigger_src_tbl cascade;
+drop table test_trigger_des_tbl cascade;
 select test_function_030('aaa');
  test_function_030 
 -------------------
@@ -686,7 +725,7 @@ ERROR:  there is no parameter $1
 LINE 1: select :while;
                ^
 drop schema b_compat_create_func cascade;
-NOTICE:  drop cascades to 18 other objects
+NOTICE:  drop cascades to 20 other objects
 DETAIL:  drop cascades to table test11
 drop cascades to function func_ddl_0011(integer,integer)
 drop cascades to function simplecompare(integer,integer)
@@ -705,4 +744,6 @@ drop cascades to function func(integer)
 drop cascades to table t1
 drop cascades to function proc1()
 drop cascades to table t_create_begin_end_func_no_return
+drop cascades to function f_create_function_0033()
+drop cascades to function tri_insert_funcx()
 reset current_schema;
