@@ -18,6 +18,6 @@ ifneq "$(MAKECMDGOALS)" "clean"
   endif
 endif
 
-OBJS = hashfunc.o
+OBJS = hashfunc.o tupdesc.o
 
 include $(top_builddir)/src/gausskernel/common.mk

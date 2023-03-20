@@ -204,6 +204,33 @@ alter table test_binary1 add column f7 int collate 'binary';
 ERROR:  collations are not supported by type integer
 LINE 1: alter table test_binary1 add column f7 int collate 'binary';
                                                    ^
+drop table if exists test_binary2;
+NOTICE:  table "test_binary2" does not exist, skipping
+create table test_binary2(c1 text, c2 varchar(10), c3 char(10), c4 tinytext) collate 'binary';
+alter table test_binary2 add column c5 text;
+alter table test_binary2 add column c6 varchar(10);
+alter table test_binary2 add column c6 varchar(10) collate 'utf8mb4_bin';
+ERROR:  column "c6" of relation "test_binary2" already exists
+alter table test_binary2 add column c7 char(10);
+alter table test_binary2 add column c8 tinytext;
+select pg_get_tabledef('test_binary2');
+                          pg_get_tabledef                           
+--------------------------------------------------------------------
+ SET search_path = test1;                                          +
+ CREATE TABLE test_binary2 (                                       +
+     c1 blob CHARACTER SET "SQL_ASCII" COLLATE "binary",           +
+     c2 "varbinary"(10) CHARACTER SET "SQL_ASCII" COLLATE "binary",+
+     c3 "binary"(10) CHARACTER SET "SQL_ASCII" COLLATE "binary",   +
+     c4 blob CHARACTER SET "SQL_ASCII" COLLATE "binary",           +
+     c5 blob CHARACTER SET "SQL_ASCII" COLLATE "binary",           +
+     c6 "varbinary"(10) CHARACTER SET "SQL_ASCII" COLLATE "binary",+
+     c7 "binary"(10) CHARACTER SET "SQL_ASCII" COLLATE "binary",   +
+     c8 blob CHARACTER SET "SQL_ASCII" COLLATE "binary"            +
+ )                                                                 +
+ CHARACTER SET = "SQL_ASCII" COLLATE = "binary"                    +
+ WITH (orientation=row, compression=no);
+(1 row)
+
 drop schema test_charset cascade;
 NOTICE:  drop cascades to 6 other objects
 DETAIL:  drop cascades to table test_charset.test_collate0
