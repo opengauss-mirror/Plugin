@@ -35,6 +35,7 @@
 static int execute_text_protocol_sql(const char* sql);
 static int execute_com_stmt_prepare(const char *client_sql);
 static int execute_binary_protocol_req(com_stmt_exec_request *request);
+static void remove_cached_stmt_data(uint32 *statement_id);
 static void execute_com_stmt_close(StringInfo buf);
 static void execute_com_stmt_reset(StringInfo buf);
 static void execute_show_variables();
@@ -383,16 +384,21 @@ int execute_binary_protocol_req(com_stmt_exec_request *request)
     return 0;
 }
 
+void remove_cached_stmt_data(uint32 *statement_id)
+{
+    if (GetSessionContext()->b_sendBlobHash) {
+        (void)hash_search(GetSessionContext()->b_sendBlobHash, (void*)statement_id, HASH_REMOVE, NULL);
+    }
+    if (GetSessionContext()->b_stmtInputTypeHash) {
+        (void)hash_search(GetSessionContext()->b_stmtInputTypeHash, (void*)statement_id, HASH_REMOVE, NULL);
+    }
+}
+
 void execute_com_stmt_reset(StringInfo buf)
 {
     uint32 statement_id;
     dq_get_int4(buf, &statement_id);
-    if (GetSessionContext()->b_sendBlobHash) {
-        (void)hash_search(GetSessionContext()->b_sendBlobHash, (void*)&statement_id, HASH_REMOVE, NULL);
-    }
-    if (GetSessionContext()->b_stmtInputTypeHash) {
-        (void)hash_search(GetSessionContext()->b_stmtInputTypeHash, (void*)&statement_id, HASH_REMOVE, NULL);
-    }
+    remove_cached_stmt_data(&statement_id);
     send_general_ok_packet();
 }
 
@@ -406,8 +412,26 @@ void execute_com_stmt_close(StringInfo buf)
 
     StringInfo sql = makeStringInfo();
     appendStringInfo(sql, "DEALLOCATE %s", stmt_name);
-    execute_text_protocol_sql(sql->data);
+
+    start_xact_command();
+
+    SPI_STACK_LOG("connect", NULL, NULL);
+    if ((rc = SPI_connect()) != SPI_OK_CONNECT) {
+        ereport(ERROR, (errcode(ERRCODE_INTERNAL_ERROR),
+            errmsg("dolphin SPI_connect failed: %s", SPI_result_code_string(rc)),
+            errdetail("SPI_connect failed"),
+            errcause("System error."),
+            erraction("Check whether the snapshot retry is successful")));
+    }
+
+    rc = SPI_execute(sql->data, false, 0);
+
     DestroyStringInfo(sql);
+    SPI_STACK_LOG("finish", NULL, NULL);
+    SPI_finish();
+    finish_xact_command();
+
+    remove_cached_stmt_data(&statement_id);
 }
 
 void execute_com_field_list(char *tableName)
