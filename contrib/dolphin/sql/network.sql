@@ -6,6 +6,12 @@ select is_ipv4(ip1),is_ipv4(ip2),is_ipv4(ip3),is_ipv4(ip4),is_ipv4(ip5) from tes
 select is_ipv6(ip1),is_ipv6(ip2),is_ipv6(ip3),is_ipv6(ip4),is_ipv6(ip5) from test;
 select is_ipv4('127.0.0.1'),is_ipv4('127.0.0.1'::inet),is_ipv4('127.0.0.1'::cidr),is_ipv4('127.0.0.1'::cstring),is_ipv4('127.0.0.1'::char(20));
 select is_ipv6('fe80::1'),is_ipv6('fe80::1'::inet),is_ipv6('fe80::1'::cidr),is_ipv6('fe80::1'::cstring),is_ipv6('fe80::1'::char(20));
+set dolphin.sql_mode = '';
+select is_ipv4(ip1),is_ipv4(ip2),is_ipv4(ip3),is_ipv4(ip4),is_ipv4(ip5) from test;
+select is_ipv6(ip1),is_ipv6(ip2),is_ipv6(ip3),is_ipv6(ip4),is_ipv6(ip5) from test;
+select is_ipv4('127.0.0.1'),is_ipv4('127.0.0.1'::inet),is_ipv4('127.0.0.1'::cidr),is_ipv4('127.0.0.1'::cstring),is_ipv4('127.0.0.1'::char(20));
+select is_ipv6('fe80::1'),is_ipv6('fe80::1'::inet),is_ipv6('fe80::1'::cidr),is_ipv6('fe80::1'::cstring),is_ipv6('fe80::1'::char(20));
+reset dolphin.sql_mode;
 select is_ipv4('0.0.0.0');
 select is_ipv4('0.0.0.256');
 select is_ipv4('255.255.255.255');

@@ -211,6 +211,18 @@ Datum bpcharin(PG_FUNCTION_ARGS)
     PG_RETURN_BPCHAR_P(result);
 }
 
+#ifdef DOLPHIN
+void trim_trailing_space(char* str)
+{
+    char* p = NULL;
+
+    p = str + strlen(str);
+    for (p--; p >= str && *p == ' '; p--) {
+        *p = '\0';
+    }
+}
+#endif
+
 /*
  * Convert a CHARACTER value to a C string.
  *
@@ -221,7 +233,17 @@ Datum bpcharout(PG_FUNCTION_ARGS)
 {
     Datum txt = PG_GETARG_DATUM(0);
 
+#ifdef DOLPHIN
+    char* result = TextDatumGetCString(txt);
+
+    if (!SQL_MODE_PAD_CHAR_TO_FULL_LENGTH()) {
+        trim_trailing_space(result);
+    }
+
+    PG_RETURN_CSTRING(result);
+#else
     PG_RETURN_CSTRING(TextDatumGetCString(txt));
+#endif
 }
 
 /*
@@ -712,8 +734,13 @@ Datum bpcharlen(PG_FUNCTION_ARGS)
     BpChar* arg = PG_GETARG_BPCHAR_PP(0);
     int len;
 
+#ifdef DOLPHIN
     /* get number of bytes, ignoring trailing spaces */
-    len = bcTruelen(arg);
+    if (SQL_MODE_PAD_CHAR_TO_FULL_LENGTH()) {
+        len = VARSIZE_ANY_EXHDR(arg);
+    } else
+#endif
+        len = bcTruelen(arg);
 
     /* in multibyte encoding, convert to number of characters */
     if (pg_database_encoding_max_length() != 1)
@@ -1987,5 +2014,18 @@ Datum char_bool(PG_FUNCTION_ARGS)
     tmp = atof(a1p);
 
     PG_RETURN_BOOL(tmp ? true : false);
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(bpchar_text);
+extern "C" DLL_PUBLIC Datum bpchar_text(PG_FUNCTION_ARGS);
+
+Datum bpchar_text(PG_FUNCTION_ARGS)
+{
+    Datum txt = PG_GETARG_DATUM(0);
+    char* tmp = DatumGetCString(DirectFunctionCall1(bpcharout, txt));
+    Datum result = DirectFunctionCall1(textin, CStringGetDatum(tmp));
+    pfree_ext(tmp);
+
+    PG_RETURN_DATUM(result);
 }
 #endif

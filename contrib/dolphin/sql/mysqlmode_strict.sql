@@ -1,6 +1,6 @@
 create schema sql_mode_strict;
 set current_schema to 'sql_mode_strict';
-set dolphin.sql_mode = '';
+set dolphin.sql_mode = 'pad_char_to_full_length';
 
 create table test_tint(a tinyint);
 create table test_sint(a smallint);

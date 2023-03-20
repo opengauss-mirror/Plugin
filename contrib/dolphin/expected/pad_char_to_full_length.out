@@ -1,0 +1,295 @@
+create schema pad_char_to_full_length;
+set current_schema to 'pad_char_to_full_length';
+create table t (name char(100));
+insert into t values('test');
+insert into t values('test    ');
+insert into t values('    test');
+select * from t;
+                                                 name                                                 
+------------------------------------------------------------------------------------------------------
+ test                                                                                                
+ test                                                                                                
+     test                                                                                            
+(3 rows)
+
+select concat(name, 't') from t;
+                                                concat                                                 
+-------------------------------------------------------------------------------------------------------
+ test                                                                                                t
+ test                                                                                                t
+     test                                                                                            t
+(3 rows)
+
+select char_length(name), length(name) from t;
+ char_length | length 
+-------------+--------
+         100 |    100
+         100 |    100
+         100 |    100
+(3 rows)
+
+select name::text, name::varchar, name::nvarchar2 from t;
+                                                 name                                                 |                                                 name                                                 |                                                 name                                                 
+------------------------------------------------------------------------------------------------------+------------------------------------------------------------------------------------------------------+------------------------------------------------------------------------------------------------------
+ test                                                                                                 | test                                                                                                 | test                                                                                                
+ test                                                                                                 | test                                                                                                 | test                                                                                                
+     test                                                                                             |     test                                                                                             |     test                                                                                            
+(3 rows)
+
+select * from t where name = 'test        ';
+                                                 name                                                 
+------------------------------------------------------------------------------------------------------
+ test                                                                                                
+ test                                                                                                
+(2 rows)
+
+select * from t where name != 'test        ';
+                                                 name                                                 
+------------------------------------------------------------------------------------------------------
+     test                                                                                            
+(1 row)
+
+select * from t where name < 'test        ';
+                                                 name                                                 
+------------------------------------------------------------------------------------------------------
+     test                                                                                            
+(1 row)
+
+select * from t where name <= 'test        ';
+                                                 name                                                 
+------------------------------------------------------------------------------------------------------
+ test                                                                                                
+ test                                                                                                
+     test                                                                                            
+(3 rows)
+
+select * from t where name > 'test        ';
+ name 
+------
+(0 rows)
+
+select * from t where name >= 'test        ';
+                                                 name                                                 
+------------------------------------------------------------------------------------------------------
+ test                                                                                                
+ test                                                                                                
+(2 rows)
+
+select * from t where name regexp 'test        %';
+ name 
+------
+(0 rows)
+
+select * from t where name like 'test        %';
+                                                 name                                                 
+------------------------------------------------------------------------------------------------------
+ test                                                                                                
+ test                                                                                                
+(2 rows)
+
+select * from t where name not like 'test        %';
+                                                 name                                                 
+------------------------------------------------------------------------------------------------------
+ test                                                                                                
+ test                                                                                                
+     test                                                                                            
+(3 rows)
+
+select * from t where name like 'Test        %';
+ name 
+------
+(0 rows)
+
+select * from t where name not like 'Test        %';
+                                                 name                                                 
+------------------------------------------------------------------------------------------------------
+ test                                                                                                
+ test                                                                                                
+     test                                                                                            
+(3 rows)
+
+select cast('a' as char(10)), 'a'::char(10);
+   bpchar   |   bpchar   
+------------+------------
+ a          | a         
+(1 row)
+
+set dolphin.b_compatibility_mode = true;
+select * from t where name like 'test        %';
+                                                 name                                                 
+------------------------------------------------------------------------------------------------------
+ test                                                                                                
+ test                                                                                                
+(2 rows)
+
+select * from t where name not like 'test        %';
+                                                 name                                                 
+------------------------------------------------------------------------------------------------------
+     test                                                                                            
+(1 row)
+
+select * from t where name like 'Test        %';
+                                                 name                                                 
+------------------------------------------------------------------------------------------------------
+ test                                                                                                
+ test                                                                                                
+(2 rows)
+
+select * from t where name not like 'Test        %';
+                                                 name                                                 
+------------------------------------------------------------------------------------------------------
+     test                                                                                            
+(1 row)
+
+select cast('a' as char(10)), 'a'::char(10);
+ varchar | varchar 
+---------+---------
+ a       | a
+(1 row)
+
+set dolphin.b_compatibility_mode = false;
+set dolphin.sql_mode = '';
+select * from t;
+   name   
+----------
+ test
+ test
+     test
+(3 rows)
+
+select concat(name, 't') from t;
+  concat   
+-----------
+ testt
+ testt
+     testt
+(3 rows)
+
+select char_length(name), length(name) from t;
+ char_length | length 
+-------------+--------
+           4 |      4
+           4 |      4
+           8 |      8
+(3 rows)
+
+select name::text, name::varchar, name::nvarchar2 from t;
+   name   |   name   |   name   
+----------+----------+----------
+ test     | test     | test
+ test     | test     | test
+     test |     test |     test
+(3 rows)
+
+select * from t where name = 'test        ';
+ name 
+------
+ test
+ test
+(2 rows)
+
+select * from t where name != 'test        ';
+   name   
+----------
+     test
+(1 row)
+
+select * from t where name < 'test        ';
+   name   
+----------
+     test
+(1 row)
+
+select * from t where name <= 'test        ';
+   name   
+----------
+ test
+ test
+     test
+(3 rows)
+
+select * from t where name > 'test        ';
+ name 
+------
+(0 rows)
+
+select * from t where name >= 'test        ';
+ name 
+------
+ test
+ test
+(2 rows)
+
+select * from t where name regexp 'test        %';
+ name 
+------
+(0 rows)
+
+select * from t where name like 'test        %';
+ name 
+------
+(0 rows)
+
+select * from t where name not like 'test        %';
+   name   
+----------
+ test
+ test
+     test
+(3 rows)
+
+select * from t where name like 'Test        %';
+ name 
+------
+(0 rows)
+
+select * from t where name not like 'Test        %';
+   name   
+----------
+ test
+ test
+     test
+(3 rows)
+
+select cast('a   ' as char(10)), 'a     '::char(10);
+ bpchar | bpchar 
+--------+--------
+ a      | a
+(1 row)
+
+set dolphin.b_compatibility_mode = true;
+select * from t where name like 'test        %';
+ name 
+------
+(0 rows)
+
+select * from t where name not like 'test        %';
+   name   
+----------
+ test
+ test
+     test
+(3 rows)
+
+select * from t where name like 'Test        %';
+ name 
+------
+(0 rows)
+
+select * from t where name not like 'Test        %';
+   name   
+----------
+ test
+ test
+     test
+(3 rows)
+
+select cast('a    ' as char(10)), 'a    '::char(10);
+ varchar | varchar 
+---------+---------
+ a       | a    
+(1 row)
+
+drop schema pad_char_to_full_length cascade;
+NOTICE:  drop cascades to table t
+reset current_schema;

@@ -36,7 +36,7 @@ alter table alter_table_tbl1 drop column key, drop key alter_table_tbl_b_ind;
 
 drop table alter_table_tbl1, alter_table_tbl2;
 
-set dolphin.sql_mode='pipes_as_concat';
+set dolphin.sql_mode='pipes_as_concat,pad_char_to_full_length';
 
 create table table_ddl_0030_01(col1 int primary key,col2 varchar(20));
 create table table_ddl_0030_02(col1 int,col2 int);
