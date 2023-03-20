@@ -14336,15 +14336,21 @@ CreateTrigStmt:
 
 triggerbody_subprogram_or_single:
 			{
-				if (yychar == YYEOF || yychar == YYEMPTY)
+				if (yychar == YYEOF || yychar == YYEMPTY) 
 				{
 					base_yy_extra_type *yyextra = pg_yyget_extra(yyscanner);
 					int count = strlen(yyextra->core_yy_extra.scanbuf);
 					GetSessionContext()->single_line_trigger_begin = count;
-				}
+				} 
 				else
+				{
 					GetSessionContext()->single_line_trigger_begin = yylloc;
-				
+				}
+				if (strcmp(";", u_sess->attr.attr_common.delimiter_name) != 0 ||
+					GetSessionContext()->enableBCmptMode)
+				{
+					GetSessionContext()->dolphin_kw_mask = B_KWMASK_CREATE_TRIGGER;
+				}
 			} trigger_body_stmt
 				{
 					Node* node = (Node*)$2;
