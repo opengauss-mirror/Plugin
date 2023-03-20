@@ -943,6 +943,30 @@ subpartition by hash( to_days(col1) )
 );
 alter table part_key_t1 add partition p3 values less than(4000);
 alter table part_key_t1 reorganize partition p1,p2 into (partition m1 values less than(1000), partition m2 values less than(3000));
+create table b_range_at1(c1 date,c2 int)
+partition by range(TO_SECONDS(c1)) (
+partition p1 values less than(63838026063),
+partition p2 values less than(63838026065),
+partition p3 values less than(63838026067)
+);
+select pg_get_tabledef('b_range_at1');
+                            pg_get_tabledef                             
+------------------------------------------------------------------------
+ SET search_path = partition_test4;                                    +
+ CREATE TABLE b_range_at1 (                                            +
+     c1 date,                                                          +
+     c2 integer                                                        +
+ )                                                                     +
+ WITH (orientation=row, compression=no)                                +
+ PARTITION BY RANGE (to_seconds(c1))                                   +
+ (                                                                     +
+     PARTITION p1 VALUES LESS THAN (63838026063) TABLESPACE pg_default,+
+     PARTITION p2 VALUES LESS THAN (63838026065) TABLESPACE pg_default,+
+     PARTITION p3 VALUES LESS THAN (63838026067) TABLESPACE pg_default +
+ )                                                                     +
+ ENABLE ROW MOVEMENT;
+(1 row)
+
 --test some error cases
 create table b_range_hash_t05(c1 int primary key,c2 int,c3 text)
 with (segment=on)
@@ -1051,7 +1075,7 @@ partition p3 values less than (maxvalue)
 );
 NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "b_range_mt2_pkey" for table "b_range_mt2"
 drop schema partition_test4 cascade;
-NOTICE:  drop cascades to 18 other objects
+NOTICE:  drop cascades to 19 other objects
 DETAIL:  drop cascades to table test_range_subpart
 drop cascades to table test_range_part
 drop cascades to table test_list_part
@@ -1065,6 +1089,7 @@ drop cascades to table part_key_range_t2
 drop cascades to table part_key_list_t1
 drop cascades to table part_key_list_t2
 drop cascades to table part_key_t1
+drop cascades to table b_range_at1
 drop cascades to table b_range_hash_t05
 drop cascades to table b_interval_t1
 drop cascades to table b_range_range_t01
