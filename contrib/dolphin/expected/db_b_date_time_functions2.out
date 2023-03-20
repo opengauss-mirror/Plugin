@@ -135,6 +135,12 @@ insert into test values('monthname(20210001)', monthname(20210001));
 ERROR:  Incorrect datetime value: "20210001"
 CONTEXT:  referenced column: result
 insert into test values('monthname(0)', monthname(0));
+set dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes';
+insert into test values('monthname(''0000-00-00'')', monthname('0000-00-00'));
+set dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date';
+insert into test values('monthname(''0000-00-00'')', monthname('0000-00-00'));
+ERROR:  Incorrect datetime value: "0000-00-00"
+CONTEXT:  referenced column: result
 -- 非严格模式，参数不合法，报warning，返回NULL或者对应值
 set dolphin.sql_mode = 'sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date';
 insert into test values('monthname(''10000-1-1'')', monthname('10000-1-1'));
@@ -373,6 +379,12 @@ insert into test values('month(20210000)', month(20210000));
 ERROR:  Incorrect datetime value: "20210000"
 CONTEXT:  referenced column: result
 insert into test values('month(0)', month(0));
+set dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes';
+insert into test values('month(''0000-00-00'')', month('0000-00-00'));
+set dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date';
+insert into test values('month(''0000-00-00'')', month('0000-00-00'));
+ERROR:  Incorrect datetime value: "0000-00-00"
+CONTEXT:  referenced column: result
 -- 非严格模式，参数不合法，报warning，返回NULL或者对应值
 set dolphin.sql_mode = 'sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date';
 insert into test values('month(''10000-1-1'')', month('10000-1-1'));
@@ -549,8 +561,6 @@ insert into test values('date(''2021-0-0'')', date('2021-0-0'));
 ERROR:  Incorrect datetime value: "2021-0-0"
 CONTEXT:  referenced column: result
 insert into test values('date(0)', date(0));
-ERROR:  Incorrect datetime value: "0"
-CONTEXT:  referenced column: result
 insert into test values('date(20210031)', date(20210031));
 ERROR:  Incorrect datetime value: "20210031"
 CONTEXT:  referenced column: result
@@ -560,6 +570,12 @@ CONTEXT:  referenced column: result
 insert into test values('date(20210100)', date(20210100));
 ERROR:  Incorrect datetime value: "20210100"
 CONTEXT:  referenced column: result
+set dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date';
+insert into test values('date(''0000-00-00'')', date('0000-00-00'));
+ERROR:  Incorrect datetime value: "0000-00-00"
+CONTEXT:  referenced column: result
+set dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes';
+insert into test values('date(''0000-00-00'')', date('0000-00-00'));
 -- 非严格模式，参数不合法，报warning，返回NULL或者对应值
 set dolphin.sql_mode = 'sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date';
 insert into test values('date(''10000-1-1'')', date('10000-1-1'));
@@ -643,6 +659,12 @@ insert into test values('day(20210000)', day(20210000));
 ERROR:  Incorrect datetime value: "20210000"
 CONTEXT:  referenced column: result
 insert into test values('day(0)', day(0));
+set dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date';
+insert into test values('day(''0000-00-00'')', day('0000-00-00'));
+ERROR:  Incorrect datetime value: "0000-00-00"
+CONTEXT:  referenced column: result
+set dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes';
+insert into test values('day(''0000-00-00'')', day('0000-00-00'));
 -- 非严格模式，参数不合法，报warning，返回NULL或者对应值
 set dolphin.sql_mode = 'sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date';
 insert into test values('day(''10000-1-1'')', day('10000-1-1'));
@@ -1079,6 +1101,7 @@ insert into test values('yearweek(''0000-12-31 22:59:59.9999995'', 0)', yearweek
 select * from test order by funcname;
                        funcname                       |   result   
 ------------------------------------------------------+------------
+ date('0000-00-00')                                   | 0000-00-00
  date('0000-1-1 00:00:00')                            | 0000-01-01
  date('0000-1-1 23:59:59.9999995')                    | 0000-01-02
  date('0000-1-1')                                     | 0000-01-01
@@ -1092,6 +1115,7 @@ select * from test order by funcname;
  date('9999-12-31 23:59:59.9999995')                  | 
  date('9999-12-31')                                   | 9999-12-31
  date(-1)                                             | 
+ date(0)                                              | 0000-00-00
  date(100000101)                                      | 
  date(101)                                            | 2000-01-01
  date(20211112235959.999999)                          | 2021-11-12
@@ -1103,6 +1127,7 @@ select * from test order by funcname;
  date(cast('9999-12-31 12:12:12' as datetime))        | 9999-12-31
  date(date'0000-1-1')                                 | 0000-01-01
  date(null)                                           | 
+ day('0000-00-00')                                    | 0
  day('0000-1-1 00:00:00')                             | 1
  day('0000-1-1 23:59:59.9999995')                     | 2
  day('0000-1-1')                                      | 1
@@ -1196,6 +1221,7 @@ select * from test order by funcname;
  last_day(cast('9999-12-31 12:12:12' as datetime))    | 9999-12-31
  last_day(date'0000-1-1')                             | 0000-01-31
  last_day(null)                                       | 
+ month('0000-00-00')                                  | 0
  month('0000-1-1 00:00:00')                           | 1
  month('0000-1-1 23:59:59.9999995')                   | 1
  month('0000-1-1')                                    | 1
@@ -1230,6 +1256,7 @@ select * from test order by funcname;
  month(cast('9999-12-31 12:12:12' as datetime))       | 12
  month(date'0000-1-1')                                | 1
  month(null)                                          | 
+ monthname('0000-00-00')                              | 
  monthname('0000-1-1 00:00:00')                       | January
  monthname('0000-1-1 23:59:59.9999995')               | January
  monthname('0000-1-1')                                | January
@@ -1400,7 +1427,7 @@ select * from test order by funcname;
  yearweek(null)                                       | 
  yearweek(null, 0)                                    | 
  yearweek(null, null)                                 | 
-(321 rows)
+(326 rows)
 
 drop table test;
 \c contrib_regression

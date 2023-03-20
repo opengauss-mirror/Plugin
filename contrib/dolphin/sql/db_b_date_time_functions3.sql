@@ -261,17 +261,9 @@ insert into test values('adddate(''9999-12-31 23:00:00'', INTERVAL 1 hour)', add
 insert into test values('adddate(time''838:59:59'', INTERVAL 1 second)', adddate(time'838:59:59', INTERVAL 1 second));
 insert into test values('adddate(time''-838:59:59'', INTERVAL -1 second)', adddate(time'-838:59:59', INTERVAL -1 second));
 
--- 结果小于'0001-1-1 00:00:00'时，在dolphin.sql_mode中含有'sql_mode_strict'和'no_zero_date'时，函数报错
-set dolphin.sql_mode = 'sql_mode_strict,no_zero_date';
+-- 结果小于'0001-1-1 00:00:00'时，结果中日期部分置为'0000-00-00'，时间部分为相应值。
 insert into test values('adddate(''0001-1-1'', INTERVAL -1 day)', adddate('0001-1-1', INTERVAL -1 day));
-insert into test values('adddate(''0001-1-1 00:00:00'', INTERVAL -1 second)', adddate('0001-1-1 00:00:00', INTERVAL -1 second));
--- 结果小于'0001-1-1 00:00:00'时，在dolphin.sql_mode中不含'sql_mode_strict'，但含有'no_zero_date'时，函数报warning，返回null
-set dolphin.sql_mode = 'no_zero_date';
-insert into test values('adddate(''0001-1-1'', INTERVAL -1 day)', adddate('0001-1-1', INTERVAL -1 day));
-insert into test values('adddate(''0001-1-1 00:00:00'', INTERVAL -1 second)', adddate('0001-1-1 00:00:00', INTERVAL -1 second));
--- 结果小于'0001-1-1 00:00:00'时，在dolphin.sql_mode中含有'sql_mode_strict'，但不含'no_zero_date'时，函数将日期部分置为'0000-00-00'
-set dolphin.sql_mode = 'sql_mode_strict';
-insert into test values('adddate(''0001-1-1'', INTERVAL -1 day)', adddate('0001-1-1', INTERVAL -1 day));
+insert into test values('adddate(''0001-1-1'', -1)', adddate('0001-1-1', -1));
 insert into test values('adddate(''0001-1-1 00:00:00'', INTERVAL -1 second)', adddate('0001-1-1 00:00:00', INTERVAL -1 second));
 
 -- test date_add(date/datetime/time, INTERVAL)
@@ -349,16 +341,7 @@ insert into test values('date_add(''9999-12-31 23:00:00'', INTERVAL 1 hour)', da
 insert into test values('date_add(time''838:59:59'', INTERVAL 1 second)', date_add(time'838:59:59', INTERVAL 1 second));
 insert into test values('date_add(time''-838:59:59'', INTERVAL -1 second)', date_add(time'-838:59:59', INTERVAL -1 second));
 
--- 结果小于'0001-1-1 00:00:00'时，在dolphin.sql_mode中含有'sql_mode_strict'和'no_zero_date'时，函数报错
-set dolphin.sql_mode = 'sql_mode_strict,no_zero_date';
-insert into test values('date_add(''0001-1-1'', INTERVAL -1 day)', date_add('0001-1-1', INTERVAL -1 day));
-insert into test values('date_add(''0001-1-1 00:00:00'', INTERVAL -1 second)', date_add('0001-1-1 00:00:00', INTERVAL -1 second));
--- 结果小于'0001-1-1 00:00:00'时，在dolphin.sql_mode中不含'sql_mode_strict'，但含有'no_zero_date'时，函数报warning，返回null
-set dolphin.sql_mode = 'no_zero_date';
-insert into test values('date_add(''0001-1-1'', INTERVAL -1 day)', date_add('0001-1-1', INTERVAL -1 day));
-insert into test values('date_add(''0001-1-1 00:00:00'', INTERVAL -1 second)', date_add('0001-1-1 00:00:00', INTERVAL -1 second));
--- 结果小于'0001-1-1 00:00:00'时，在dolphin.sql_mode中含有'sql_mode_strict'，但不含'no_zero_date'时，函数将日期部分置为'0000-00-00'
-set dolphin.sql_mode = 'sql_mode_strict';
+-- 结果小于'0001-1-1 00:00:00'时，结果中日期部分置为'0000-00-00'，时间部分为相应值。
 insert into test values('date_add(''0001-1-1'', INTERVAL -1 day)', date_add('0001-1-1', INTERVAL -1 day));
 insert into test values('date_add(''0001-1-1 00:00:00'', INTERVAL -1 second)', date_add('0001-1-1 00:00:00', INTERVAL -1 second));
 
@@ -438,16 +421,7 @@ insert into test values('date_sub(''9999-12-31 23:00:00'', INTERVAL -1 hour)', d
 insert into test values('date_sub(time''838:59:59'', INTERVAL -1 second)', date_sub(time'838:59:59', INTERVAL -1 second));
 insert into test values('date_sub(time''-838:59:59'', INTERVAL 1 second)', date_sub(time'-838:59:59', INTERVAL 1 second));
 
--- 结果小于'0001-1-1 00:00:00'时，在dolphin.sql_mode中含有'sql_mode_strict'和'no_zero_date'时，函数报错
-set dolphin.sql_mode = 'sql_mode_strict,no_zero_date';
-insert into test values('date_sub(''0001-1-1'', INTERVAL 1 day)', date_sub('0001-1-1', INTERVAL 1 day));
-insert into test values('date_sub(''0001-1-1 00:00:00'', INTERVAL 1 second)', date_sub('0001-1-1 00:00:00', INTERVAL 1 second));
--- 结果小于'0001-1-1 00:00:00'时，在dolphin.sql_mode中不含'sql_mode_strict'，但含有'no_zero_date'时，函数报warning，返回null
-set dolphin.sql_mode = 'no_zero_date';
-insert into test values('date_sub(''0001-1-1'', INTERVAL 1 day)', date_sub('0001-1-1', INTERVAL 1 day));
-insert into test values('date_sub(''0001-1-1 00:00:00'', INTERVAL 1 second)', date_sub('0001-1-1 00:00:00', INTERVAL 1 second));
--- 结果小于'0001-1-1 00:00:00'时，在dolphin.sql_mode中含有'sql_mode_strict'，但不含'no_zero_date'时，函数将日期部分置为'0000-00-00'
-set dolphin.sql_mode = 'sql_mode_strict';
+-- 结果小于'0001-1-1 00:00:00'时，结果中日期部分置为'0000-00-00'，时间部分为相应值。
 insert into test values('date_sub(''0001-1-1'', INTERVAL 1 day)', date_sub('0001-1-1', INTERVAL 1 day));
 insert into test values('date_sub(''0001-1-1 00:00:00'', INTERVAL 1 second)', date_sub('0001-1-1 00:00:00', INTERVAL 1 second));
 

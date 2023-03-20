@@ -3977,13 +3977,13 @@ bool time_in_no_ereport(const char *str, TimeADT *time)
  * @Description: Subtract days from a date, giving a new date and assign it to result.
  * @return: false if parameter date or result out of range, otherwise true
  */
-bool date_sub_days(DateADT date, int days, DateADT *result)
+bool date_sub_days(DateADT date, int days, DateADT *result, bool is_add_func)
 {
     if (date < B_FORMAT_DATEADT_MIN_VALUE || date > B_FORMAT_DATEADT_MAX_VALUE)
         return false;
     *result = date - days;
     if (*result < B_FORMAT_DATEADT_FIRST_YEAR || *result > B_FORMAT_DATEADT_MAX_VALUE) {
-        if (*result < B_FORMAT_DATEADT_FIRST_YEAR && !SQL_MODE_NO_ZERO_DATE() && SQL_MODE_STRICT()) {
+        if (*result < B_FORMAT_DATEADT_FIRST_YEAR && is_add_func) {
             *result = DATE_ALL_ZERO_VALUE;
             return true;
         }
@@ -3997,7 +3997,7 @@ bool date_sub_days(DateADT date, int days, DateADT *result)
  * @Description: Subtract an interval from a date, giving a new date and assign it to result.
  * @return: false if parameter date or result out of range, otherwise true
  */
-bool date_sub_interval(DateADT date, Interval *span, DateADT *result)
+bool date_sub_interval(DateADT date, Interval *span, DateADT *result, bool is_add_func)
 {
     if (date < B_FORMAT_DATEADT_MIN_VALUE || date > B_FORMAT_DATEADT_MAX_VALUE)
         return false;
@@ -4011,12 +4011,13 @@ bool date_sub_interval(DateADT date, Interval *span, DateADT *result)
         return true;
 
     if (*result < B_FORMAT_DATEADT_FIRST_YEAR) {
-        if (!SQL_MODE_NO_ZERO_DATE() && SQL_MODE_STRICT()) {
+        if (is_add_func) {
             *result = DATE_ALL_ZERO_VALUE;
             return true;
         }
         return false;
     }
+    
     return true;
 }
 
@@ -4273,7 +4274,7 @@ Datum subdate_datetime_days_text(PG_FUNCTION_ARGS)
     if (is_date_format(expr)) {
         DateADT date, result;
         date = DatumGetDateADT(DirectFunctionCall1(date_in, CStringGetDatum(expr)));
-        if (date_sub_days(date, days, &result)) {
+        if (date_sub_days(date, days, &result, false)) {
             /* The variable datetime or result does not exceed the specified range*/
             return DirectFunctionCall1(date_text, result);
         }
@@ -4692,8 +4693,8 @@ Datum datediff_t_t(PG_FUNCTION_ARGS)
     struct pg_tm tt2, *tm2 = &tt2;
     fsec_t fsec1, fsec2;
 
-    if (!datetime_in_with_sql_mode(str1, tm1, &fsec1, NORMAL_DATE) || 
-        !datetime_in_with_sql_mode(str2, tm2, &fsec2, NORMAL_DATE)) {
+    if (!datetime_in_with_sql_mode(str1, tm1, &fsec1, TIME_NO_ZERO_DATE) ||
+        !datetime_in_with_sql_mode(str2, tm2, &fsec2, TIME_NO_ZERO_DATE)) {
         PG_RETURN_NULL();
     }
 
@@ -4710,7 +4711,7 @@ Datum datediff_t_n(PG_FUNCTION_ARGS)
     fsec_t fsec;
 
     Numeric_to_lldiv(num, &div);
-    if (!datetime_in_with_sql_mode(str, tm1, &fsec, NORMAL_DATE) || 
+    if (!datetime_in_with_sql_mode(str, tm1, &fsec, TIME_NO_ZERO_DATE) ||
         !lldiv_decode_tm_with_sql_mode(num, &div, tm2, NORMAL_DATE)) {
         PG_RETURN_NULL();
     }
@@ -4742,7 +4743,7 @@ Datum datediff_time_t(PG_FUNCTION_ARGS)
     fsec_t fsec1, fsec2;
     Timestamp datetime1;
 
-    if (!datetime_in_with_sql_mode(str2, tm2, &fsec2, NORMAL_DATE)) {
+    if (!datetime_in_with_sql_mode(str2, tm2, &fsec2, TIME_NO_ZERO_DATE)) {
         PG_RETURN_NULL();
     }
 
@@ -4845,7 +4846,7 @@ bool date_add_interval(DateADT date, Interval *span, DateADT *result)
     span->month = -span->month;
     span->day = -span->day;
     span->time = -span->time;
-    return date_sub_interval(date, span, result);
+    return date_sub_interval(date, span, result, true);
 }
 
 /**
@@ -4862,21 +4863,21 @@ Datum adddate_datetime_days_t(PG_FUNCTION_ARGS)
     int tm_type = DTK_NONE;
 
     expr = text_to_cstring(tmp);
-    if (!datetime_in_with_sql_mode_internal(expr, tm, &fsec, tm_type, NORMAL_DATE)) {
+    if (!datetime_in_with_sql_mode_internal(expr, tm, &fsec, tm_type, TIME_NO_ZERO_DATE)) {
         PG_RETURN_NULL();
     }
 
     if (tm_type == DTK_DATE) {
         DateADT date, result;
         date = date2j(tm->tm_year, tm->tm_mon, tm->tm_mday) - POSTGRES_EPOCH_JDATE;
-        if (date_sub_days(date, -days, &result)) {
+        if (date_sub_days(date, -days, &result, true)) {
             /* The variable datetime or result does not exceed the specified range*/
             return DirectFunctionCall1(date_text, result);
         }
     } else {
         Timestamp datetime, result;
         tm2timestamp(tm, fsec, NULL, &datetime);
-        if (datetime_sub_days(datetime, -days, &result)) {
+        if (datetime_sub_days(datetime, -days, &result, true)) {
             /* The variable datetime or result does not exceed the specified range*/
             return DirectFunctionCall1(datetime_text, result);
         }
@@ -4905,14 +4906,14 @@ Datum adddate_datetime_days_n(PG_FUNCTION_ARGS)
     if (date_type == DTK_DATE) {
         DateADT date, result;
         date = date2j(tm->tm_year, tm->tm_mon, tm->tm_mday) - POSTGRES_EPOCH_JDATE;
-        if (date_sub_days(date, -days, &result)) {
+        if (date_sub_days(date, -days, &result, true)) {
             /* The variable datetime or result does not exceed the specified range*/
             return DirectFunctionCall1(date_text, result);
         }
     } else {
         Timestamp datetime, result;
         tm2timestamp(tm, fsec, NULL, &datetime);
-        if (datetime_sub_days(datetime, -days, &result)) {
+        if (datetime_sub_days(datetime, -days, &result, true)) {
             /* The variable datetime or result does not exceed the specified range*/
             return DirectFunctionCall1(datetime_text, result);
         }
@@ -4937,7 +4938,7 @@ Datum adddate_datetime_interval_t(PG_FUNCTION_ARGS)
     int tm_type = DTK_NONE;
 
     expr = text_to_cstring(tmp);
-    if (!datetime_in_with_sql_mode_internal(expr, tm, &fsec, tm_type, NORMAL_DATE)) {
+    if (!datetime_in_with_sql_mode_internal(expr, tm, &fsec, tm_type, TIME_NO_ZERO_DATE)) {
         PG_RETURN_NULL();
     }
 
@@ -5410,7 +5411,7 @@ Datum b_extract_text(PG_FUNCTION_ARGS)
     char *lowunits = downcase_truncate_identifier(VARDATA_ANY(units), VARSIZE_ANY_EXHDR(units), false);
     resolve_units(lowunits, &enum_unit);
     if (find_type(enum_unit)) {
-        if (!datetime_in_with_sql_mode(str, tm, &fsec, NORMAL_DATE)) {
+        if (!datetime_in_with_sql_mode(str, tm, &fsec, NO_ZERO_DATE_SET())) {
             PG_RETURN_NULL();
         }
     } else {

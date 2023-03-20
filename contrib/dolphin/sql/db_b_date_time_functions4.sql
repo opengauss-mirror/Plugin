@@ -103,6 +103,10 @@ insert into test values('extract(microsecond FROM 0)', extract(microsecond FROM 
 insert into test values('extract(microsecond from 99991231235959.999999)', extract(microsecond from 99991231235959.999999));
 -- 特异
 insert into test values('extract(hour from null)', extract(hour from null));
+set dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date';
+insert into test values('extract(YEAR FROM ''0000-00-00'')', extract(YEAR FROM '0000-00-00'));
+set dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes';
+insert into test values('extract(YEAR FROM ''0000-00-00'')', extract(YEAR FROM '0000-00-00'));
 
 -- 非严格模式，参数不合法，报warning，返回NULL或者对应值
 set dolphin.sql_mode = 'sql_mode_full_group,pipes_as_concat,ansi_quotes';
@@ -188,7 +192,7 @@ insert into test values('date_format(cast(''2001-01-09 12:12:12'' as datetime),'
 insert into test values('date_format(20010101,''%Y'')', date_format(20010101,'%Y'));
 insert into test values('date_format(20010101121212,''%Y %m %d %T'')', date_format(20010101121212,'%Y %m %d %T'));
 insert into test values('date_format(20010101,''%Y'')', date_format(20010101,'%Y'));
-insert into test values('date_format(101,''%Y %y %m %d %U %u %V %v %X %x'')', date_format(100,'%Y %y %m %d %U %u %V %v %X %x'));
+insert into test values('date_format(101,''%Y %y %m %d %U %u %V %v %X %x'')', date_format(101,'%Y %y %m %d %U %u %V %v %X %x'));
 -- 特异
 insert into test values('date_format(null, ''%Y'')', date_format(null, '%Y'));
 insert into test values('date_format(''2021-11-12'', null)', date_format('2021-11-12', null));
@@ -196,6 +200,11 @@ insert into test values('date_format(null, null)', date_format(null, null));
 insert into test values('date_format(''2021-0-12 12:12:12'', ''%Y %m %d %T'')', date_format('2021-0-12 12:12:12', '%Y %m %d %T'));
 insert into test values('date_format(''2021-1-0 12:12:12'', ''%Y %m %d %T'')', date_format('2021-1-0 12:12:12', '%Y %m %d %T'));
 insert into test values('date_format(''2021-0-0 12:12:12'', ''%Y %m %d %T'')', date_format('2021-0-0 12:12:12', '%Y %m %d %T'));
+insert into test values('date_format(0, ''%Y %m %d'')', date_format(0, '%Y %m %d'));
+set dolphin.sql_mode = 'sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date';
+insert into test values('date_format(''0000-00-00'', ''%Y %m %d'')', date_format('0000-00-00', '%Y %m %d'));
+set dolphin.sql_mode = 'sql_mode_full_group,pipes_as_concat,ansi_quotes';
+insert into test values('date_format(''0000-00-00'', ''%Y %m %d'')', date_format('0000-00-00', '%Y %m %d'));
 
 -- 非严格模式，参数不合法，报warning，返回NULL或者对应值
 set dolphin.sql_mode = 'sql_mode_full_group,pipes_as_concat,ansi_quotes';
@@ -300,6 +309,7 @@ insert into test values('str_to_date(''2021-11-12 12:12:12.123456'', ''%Y-%m-%d 
 insert into test values('str_to_date(''9999-12-31 23:59:59.999999'', ''%Y-%m-%d %T.%f'')', str_to_date('9999-12-31 23:59:59.999999', '%Y-%m-%d %T.%f'));
 insert into test values('str_to_date(''0000-1-1 00:00:00.000000'', ''%Y-%m-%d %T.%f'')', str_to_date('0000-1-1 00:00:00.000000', '%Y-%m-%d %T.%f'));
 -- 功能-返回time
+set dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes';
 insert into test values('str_to_date(''0'', ''%H'')', str_to_date('0', '%H'));
 insert into test values('str_to_date(''23'', ''%H'')', str_to_date('23', '%H'));
 insert into test values('str_to_date(''12'', ''%h'')', str_to_date('12', '%h'));
@@ -320,6 +330,10 @@ insert into test values('str_to_date(''0000 1 1 00:00:00'', ''%Y %m %d %T'')', s
 insert into test values('str_to_date(''9999 12 31 23:59:59.999999'', ''%Y %m %d %T.%f'')', str_to_date('9999 12 31 23:59:59.999999', '%Y %m %d %T.%f'));
 -- 特异
 insert into test values('str_to_date(null, ''%Y %m %d'')', str_to_date(null, '%Y %m %d'));
+set dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date';
+insert into test values('str_to_date(''0000-00-00'', ''%Y-%m-%d'')', str_to_date('0000-00-00', '%Y-%m-%d'));
+set dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes';
+insert into test values('str_to_date(''0000-00-00'', ''%Y-%m-%d'')', str_to_date('0000-00-00', '%Y-%m-%d'));
 
 -- 非严格模式，参数不合法，报warning，返回NULL或者对应值
 set dolphin.sql_mode = 'sql_mode_full_group,pipes_as_concat,ansi_quotes';

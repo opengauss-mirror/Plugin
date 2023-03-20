@@ -95,6 +95,10 @@ insert into test values('monthname(null)', monthname(null));
 insert into test values('monthname(''2021-00-01'')', monthname('2021-00-01'));
 insert into test values('monthname(20210001)', monthname(20210001));
 insert into test values('monthname(0)', monthname(0));
+set dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes';
+insert into test values('monthname(''0000-00-00'')', monthname('0000-00-00'));
+set dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date';
+insert into test values('monthname(''0000-00-00'')', monthname('0000-00-00'));
 
 -- 非严格模式，参数不合法，报warning，返回NULL或者对应值
 set dolphin.sql_mode = 'sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date';
@@ -223,6 +227,10 @@ insert into test values('month(20210001)', month(20210001));
 insert into test values('month(20210100)', month(20210100));
 insert into test values('month(20210000)', month(20210000));
 insert into test values('month(0)', month(0));
+set dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes';
+insert into test values('month(''0000-00-00'')', month('0000-00-00'));
+set dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date';
+insert into test values('month(''0000-00-00'')', month('0000-00-00'));
 
 -- 非严格模式，参数不合法，报warning，返回NULL或者对应值
 set dolphin.sql_mode = 'sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date';
@@ -338,6 +346,10 @@ insert into test values('date(0)', date(0));
 insert into test values('date(20210031)', date(20210031));
 insert into test values('date(20210100)', date(20210100));
 insert into test values('date(20210100)', date(20210100));
+set dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date';
+insert into test values('date(''0000-00-00'')', date('0000-00-00'));
+set dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes';
+insert into test values('date(''0000-00-00'')', date('0000-00-00'));
 
 -- 非严格模式，参数不合法，报warning，返回NULL或者对应值
 set dolphin.sql_mode = 'sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date';
@@ -388,6 +400,10 @@ insert into test values('day(20210001)', day(20210001));
 insert into test values('day(20210100)', day(20210100));
 insert into test values('day(20210000)', day(20210000));
 insert into test values('day(0)', day(0));
+set dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date';
+insert into test values('day(''0000-00-00'')', day('0000-00-00'));
+set dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes';
+insert into test values('day(''0000-00-00'')', day('0000-00-00'));
 
 -- 非严格模式，参数不合法，报warning，返回NULL或者对应值
 set dolphin.sql_mode = 'sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date';
