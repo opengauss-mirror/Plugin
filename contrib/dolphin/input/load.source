@@ -205,5 +205,14 @@ select * from t10;
 delete t10;
 load data infile '@abs_builddir@/data/load_quote2.csv' into table t10 fields terminated by ',' enclosed by '"' escaped by '"' lines terminated by '#';
 select * from t10;
+
+--test copy of colname
+drop table if exists memos cascade;
+create table memos (Id integer,COnTEXT text,tsColA varchar);
+copy memos(CONTEXT,tsColA) from '@abs_builddir@/data/column_copy.csv'DELIMITERS ',';
+select * from memos;
+copy memos(CONTEXt,tSColA) from '@abs_builddir@/data/column_copy.csv'DELIMITERS ',';
+select * from memos;
+
 \c postgres
 drop database if exists load;
