@@ -10,6 +10,9 @@ drop database if exists test2;
 
 set dolphin.b_compatibility_mode = on;
 create database test3;
+select nspcollation from pg_namespace where nspname='test3';
+create table test3.test33(a varchar(10));
+drop table test3.test33;
 create database test4 encoding 'utf8';
 create database test5 charset 'utf8';
 create database test6 with charset 'utf8';
@@ -72,6 +75,9 @@ create table test_collate7(c1 text, c2 text collate 'utf8mb4_bin');
 create table test_collate8(c1 text) charset 'utf8';
 create table test_collate9(c1 text) charset 'aaa';
 create table test_collate10(c1 text);
+
+create schema if not exists sch_ddl_0078 character set = utf8 collate utf8_unicode_ci;
+drop schema sch_ddl_0078;
 
 --test binary
 set dolphin.b_compatibility_mode = true;
