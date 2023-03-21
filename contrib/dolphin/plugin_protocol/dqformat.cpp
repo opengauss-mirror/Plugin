@@ -91,10 +91,8 @@ void send_auth_challenge_packet(StringInfo buf, network_mysqld_auth_challenge *s
 {
     uint i;
 
-    resetStringInfo(buf);
-
     dq_append_int1(buf, 0x0a);
-    dq_append_string_null(buf, shake->server_version_str); 
+    dq_append_string_null(buf, shake->server_version_str);
     dq_append_int4(buf, shake->thread_id);
     dq_append_string_len(buf, shake->auth_plugin_data, AUTH_PLUGIN_DATA_PART_1);
     dq_append_int1(buf, 0x00); /* filler */

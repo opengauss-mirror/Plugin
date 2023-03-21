@@ -98,6 +98,7 @@ int dophin_read_command(StringInfo buf)
 int dolphin_process_command(StringInfo buf)
 {
     GetSessionContext()->enableBCmptMode = true;
+    u_sess->attr.attr_common.enable_set_variable_b_format = true;
 
     uint8 command = pq_getmsgbyte(buf);
 

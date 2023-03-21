@@ -74,6 +74,8 @@ int dophin_conn_handshake(Port* port)
         u_sess->attr.attr_common.namespace_search_path = search_path->data; 
     } 
 
+    pfree(challenge->auth_plugin_name);
+    pfree(challenge->server_version_str);
     pfree(challenge);
     pfree(authreq);
     DestroyStringInfo(buf);
