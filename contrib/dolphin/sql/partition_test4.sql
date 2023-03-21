@@ -252,6 +252,14 @@ subpartition by hash( to_days(col1) )
 alter table part_key_t1 add partition p3 values less than(4000);
 alter table part_key_t1 reorganize partition p1,p2 into (partition m1 values less than(1000), partition m2 values less than(3000));
 
+create table b_range_at1(c1 date,c2 int)
+partition by range(TO_SECONDS(c1)) (
+partition p1 values less than(63838026063),
+partition p2 values less than(63838026065),
+partition p3 values less than(63838026067)
+);
+select pg_get_tabledef('b_range_at1');
+
 --test some error cases
 create table b_range_hash_t05(c1 int primary key,c2 int,c3 text)
 with (segment=on)

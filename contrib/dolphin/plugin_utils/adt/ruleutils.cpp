@@ -978,7 +978,7 @@ void GetPartitionExprKeySrc(StringInfo buf, Datum* datum, char* relname, Oid tab
     if (partkeyexpr->type == T_OpExpr)
         (*iPartboundary)[0] = ((OpExpr*)partkeyexpr)->opresulttype;
     else if (partkeyexpr->type == T_FuncExpr)
-        (*iPartboundary)[0] = ((FuncExpr*)partkeyexpr)->funcresulttype;
+        (*iPartboundary)[0] = INT8OID;
     else
         ereport(ERROR,
             (errcode(ERRCODE_NODE_ID_MISSMATCH),
