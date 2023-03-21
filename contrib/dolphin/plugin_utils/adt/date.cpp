@@ -3983,7 +3983,7 @@ bool date_sub_days(DateADT date, int days, DateADT *result, bool is_add_func)
         return false;
     *result = date - days;
     if (*result < B_FORMAT_DATEADT_FIRST_YEAR || *result > B_FORMAT_DATEADT_MAX_VALUE) {
-        if (*result < B_FORMAT_DATEADT_FIRST_YEAR && is_add_func) {
+        if (*result >= B_FORMAT_DATEADT_MIN_VALUE && *result < B_FORMAT_DATEADT_FIRST_YEAR && is_add_func) {
             *result = DATE_ALL_ZERO_VALUE;
             return true;
         }
