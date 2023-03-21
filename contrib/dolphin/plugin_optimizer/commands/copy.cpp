@@ -171,6 +171,8 @@ extern void EnableDoingCommandRead();
 extern void DisableDoingCommandRead();
 extern void getOBSOptions(ObsCopyOptions* obs_copy_options, List* options);
 extern int32 get_relation_data_width(Oid relid, Oid partitionid, int32* attr_widths, bool vectorized = false);
+extern int namestrcasecmp(Name name, const char* str);
+
 
 /* DestReceiver for COPY (SELECT) TO */
 typedef struct {
@@ -8653,7 +8655,11 @@ List* CopyGetAttnums(TupleDesc tupDesc, Relation rel, List* attnamelist)
             for (i = 0; i < tupDesc->natts; i++) {
                 if (tupDesc->attrs[i].attisdropped)
                     continue;
+#ifdef DOLPHIN
+                if (namestrcasecmp(&(tupDesc->attrs[i].attname), name) == 0) {
+#else
                 if (namestrcmp(&(tupDesc->attrs[i].attname), name) == 0) {
+#endif
                     if (ISGENERATEDCOL(tupDesc, i)) {
                         ereport(ERROR, (errmodule(MOD_GEN_COL), errcode(ERRCODE_INVALID_COLUMN_REFERENCE),
                             errmsg("column \"%s\" is a generated column", name),
@@ -8695,7 +8701,11 @@ void SetFixedAlignment(TupleDesc tupDesc, Relation rel, FixFormatter* formatter,
         for (int j = 0; j < tupDesc->natts; j++) {
             if (tupDesc->attrs[j].attisdropped)
                 continue;
+#ifdef DOLPHIN
+            if (namestrcasecmp(&(tupDesc->attrs[j].attname), name) == 0) {
+#else
             if (namestrcmp(&(tupDesc->attrs[j].attname), name) == 0) {
+#endif
                 attr = &tupDesc->attrs[j];
                 break;
             }
@@ -10660,7 +10670,11 @@ static void CopyGetWhenExprAttFieldno(CopyState cstate, LoadWhenExpr *when, List
         for (int i = 0; i < tupDesc->natts; i++) {
             if (tupDesc->attrs[i].attisdropped)
                 continue;
+#ifdef DOLPHIN
+            if (namestrcasecmp(&(tupDesc->attrs[i].attname), when->attname) == 0) {
+#else
             if (namestrcmp(&(tupDesc->attrs[i].attname), when->attname) == 0) {
+#endif
                 when->attnum = tupDesc->attrs[i].attnum; /* based 1 */
                 return;
             }
@@ -10774,7 +10788,11 @@ static int CopyGetColumnListIndex(CopyState cstate, List *attnamelist, const cha
         for (int i = 0; i < tupDesc->natts; i++) {
             if (tupDesc->attrs[i].attisdropped)
                 continue;
+#ifdef DOLPHIN
+            if (namestrcasecmp(&(tupDesc->attrs[i].attname), colname) == 0) {
+#else
             if (namestrcmp(&(tupDesc->attrs[i].attname), colname) == 0) {
+#endif
                 return tupDesc->attrs[i].attnum; /* based 1 */
             }
         }
