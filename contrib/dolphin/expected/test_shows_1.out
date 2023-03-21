@@ -107,8 +107,8 @@ show full tables;
 show tables from tst_schema1;
  Tables_in_tst_schema1 
 -----------------------
- tst_t1
  t_t2
+ tst_t1
  tst_v1
 (3 rows)
 
