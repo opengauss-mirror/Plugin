@@ -146,10 +146,10 @@ static void addNewPartitionTuplesForPartition(Relation pg_partition_rel,
     Oid relid, Oid reltablespace,
     Oid bucketOid, PartitionState* partTableState, Oid ownerid, 
     Datum reloptions, const TupleDesc tupledesc, char strategy, StorageType storage_type, LOCKMODE partLockMode,
-    bool partkeyexprIsNull = true, bool partkeyIsFunc = false);
+    PartitionExprKeyInfo *partExprKeyInfo = NULL);
 static void addNewPartitionTupleForTable(Relation pg_partition_rel, const char* relname, const Oid reloid,
     const Oid reltablespaceid, const TupleDesc reltupledesc, const PartitionState* partTableState, Oid ownerid,
-    Datum reloptions, bool partkeyexprIsNull = true, bool partkeyIsFunc = false);
+    Datum reloptions, PartitionExprKeyInfo *partExprKeyInfo = NULL);
 
 static void addNewPartitionTupleForValuePartitionedTable(Relation pg_partition_rel, const char* relname,
     const Oid reloid, const Oid reltablespaceid, const TupleDesc reltupledesc, const PartitionState* partTableState,
@@ -2813,12 +2813,11 @@ Oid heap_create_with_catalog(const char *relname, Oid relnamespace, Oid reltable
 
     /* Get uids info from reloptions */
     relhasuids = StdRdOptionsHasUids(hreloptions, relkind);
-    bool partkeyexprIsNull = true;
+    PartitionExprKeyInfo partExprKeyInfo = PartitionExprKeyInfo();
     bool subpartkeyexprIsNull = true;
-    bool partkeyIsFunc = false;
     bool subpartkeyIsFunc = false;
     if (partTableState) {
-        partkeyexprIsNull = CheckPartitionExprKey(partTableState->partitionKey, partTableState->partitionStrategy, &partkeyIsFunc);
+        partExprKeyInfo.partkeyexprIsNull = CheckPartitionExprKey(partTableState->partitionKey, partTableState->partitionStrategy, &(partExprKeyInfo.partkeyIsFunc));
         if (partTableState->subPartitionState)
             subpartkeyexprIsNull = CheckPartitionExprKey(partTableState->subPartitionState->partitionKey, 
                                                          partTableState->subPartitionState->partitionStrategy, &subpartkeyIsFunc);
@@ -3031,9 +3030,10 @@ Oid heap_create_with_catalog(const char *relname, Oid relnamespace, Oid reltable
                 partTableState,                             /*partition schema of partitioned table*/
                 ownerid,                                    /*partitioned table's owner id*/
                 reloptions,
-                partkeyexprIsNull,
-                partkeyIsFunc);
+                &partExprKeyInfo);
 
+            partExprKeyInfo.partkeyexprIsNull = subpartkeyexprIsNull;
+            partExprKeyInfo.partkeyIsFunc = subpartkeyIsFunc;
             /* add partition entry to pg_partition */
             addNewPartitionTuplesForPartition(pg_partition_desc, /*RelationData pointer for pg_partition*/
                 relid,                                           /*partitioned table's oid in pg_class*/
@@ -3046,8 +3046,7 @@ Oid heap_create_with_catalog(const char *relname, Oid relnamespace, Oid reltable
                 partTableState->partitionStrategy,
                 storage_type,
                 partLockMode,
-                subpartkeyexprIsNull,
-                subpartkeyIsFunc);
+                &partExprKeyInfo);
         }
     }
 
@@ -6106,8 +6105,8 @@ void GetNewPartitionOidAndNewPartrelfileOid(List *subPartitionDefState, Oid *new
  */
 Oid heapAddRangePartition(Relation pgPartRel, Oid partTableOid, Oid partTablespace, Oid bucketOid,
     RangePartitionDefState *newPartDef, Oid ownerid, Datum reloptions, const bool *isTimestamptz,
-    StorageType storage_type, LOCKMODE partLockMode, int2vector* subpartition_key, bool isSubpartition, bool partkeyexprIsNull,
-    bool partkeyIsFunc)
+    StorageType storage_type, LOCKMODE partLockMode, int2vector* subpartition_key, bool isSubpartition,
+    PartitionExprKeyInfo *partExprKeyInfo)
 {
     Datum boundaryValue = (Datum)0;
     Oid newPartitionOid = InvalidOid;
@@ -6197,8 +6196,11 @@ Oid heapAddRangePartition(Relation pgPartRel, Oid partTableOid, Oid partTablespa
     partTupleInfo.pkey = subpartition_key;
     partTupleInfo.boundaries = boundaryValue;
     partTupleInfo.reloptions = reloptions;
-    partTupleInfo.partkeyexprIsNull = partkeyexprIsNull;
-    partTupleInfo.partkeyIsFunc = partkeyIsFunc;
+    if (partExprKeyInfo) {
+        partTupleInfo.partexprkeyinfo.partkeyexprIsNull = partExprKeyInfo->partkeyexprIsNull;
+        partTupleInfo.partexprkeyinfo.partkeyIsFunc = partExprKeyInfo->partkeyIsFunc;
+        partTupleInfo.partexprkeyinfo.partExprKeyStr = partExprKeyInfo->partExprKeyStr;
+    }
 
     /* step 3: insert into pg_partition tuple */
     addNewPartitionTuple(pgPartRel, newPartition, &partTupleInfo);
@@ -6429,8 +6431,8 @@ Oid HeapAddIntervalPartition(Relation pgPartRel, Relation rel, Oid partTableOid,
 
 Oid HeapAddListPartition(Relation pgPartRel, Oid partTableOid, Oid partTablespace, Oid bucketOid,
     ListPartitionDefState* newListPartDef, Oid ownerid, Datum reloptions, const bool* isTimestamptz,
-    StorageType storage_type, int2vector* subpartition_key, bool isSubpartition, bool partkeyexprIsNull,
-    bool partkeyIsFunc)
+    StorageType storage_type, int2vector* subpartition_key, bool isSubpartition,
+    PartitionExprKeyInfo *partExprKeyInfo)
 {
     Datum boundaryValue = (Datum)0;
     Oid newListPartitionOid = InvalidOid;
@@ -6509,8 +6511,11 @@ Oid HeapAddListPartition(Relation pgPartRel, Oid partTableOid, Oid partTablespac
     partTupleInfo.pkey = subpartition_key;
     partTupleInfo.boundaries = boundaryValue;
     partTupleInfo.reloptions = reloptions;
-    partTupleInfo.partkeyexprIsNull = partkeyexprIsNull;
-    partTupleInfo.partkeyIsFunc = partkeyIsFunc;
+    if (partExprKeyInfo) {
+        partTupleInfo.partexprkeyinfo.partkeyexprIsNull = partExprKeyInfo->partkeyexprIsNull;
+        partTupleInfo.partexprkeyinfo.partkeyIsFunc = partExprKeyInfo->partkeyIsFunc;
+        partTupleInfo.partexprkeyinfo.partExprKeyStr = partExprKeyInfo->partExprKeyStr;
+    }
 
     /* step 3: insert into pg_partition tuple */
     addNewPartitionTuple(pgPartRel, newListPartition, &partTupleInfo);
@@ -6731,8 +6736,8 @@ Oid AddNewIntervalPartition(Relation rel, void* insertTuple, int *partitionno, b
 
 Oid HeapAddHashPartition(Relation pgPartRel, Oid partTableOid, Oid partTablespace, Oid bucketOid,
     HashPartitionDefState* newHashPartDef, Oid ownerid, Datum reloptions, const bool* isTimestamptz,
-    StorageType storage_type, int2vector* subpartition_key, bool isSubpartition, bool partkeyexprIsNull,
-    bool partkeyIsFunc)
+    StorageType storage_type, int2vector* subpartition_key, bool isSubpartition,
+    PartitionExprKeyInfo *partExprKeyInfo)
 {
     Datum boundaryValue = (Datum)0;
     Oid newHashPartitionOid = InvalidOid;
@@ -6822,8 +6827,11 @@ Oid HeapAddHashPartition(Relation pgPartRel, Oid partTableOid, Oid partTablespac
     partTupleInfo.pkey = subpartition_key;
     partTupleInfo.boundaries = boundaryValue;
     partTupleInfo.reloptions = reloptions;
-    partTupleInfo.partkeyexprIsNull = partkeyexprIsNull;
-    partTupleInfo.partkeyIsFunc = partkeyIsFunc;
+    if (partExprKeyInfo) {
+        partTupleInfo.partexprkeyinfo.partkeyexprIsNull = partExprKeyInfo->partkeyexprIsNull;
+        partTupleInfo.partexprkeyinfo.partkeyIsFunc = partExprKeyInfo->partkeyIsFunc;
+        partTupleInfo.partexprkeyinfo.partExprKeyStr = partExprKeyInfo->partExprKeyStr;
+    }
 
     /* step 3: insert into pg_partition tuple */
     addNewPartitionTuple(pgPartRel, newHashPartition, &partTupleInfo);
@@ -6936,7 +6944,7 @@ static void addNewPartitionTupleForValuePartitionedTable(Relation pg_partition_r
  */
 static void addNewPartitionTupleForTable(Relation pg_partition_rel, const char* relname, const Oid reloid,
     const Oid reltablespaceid, const TupleDesc reltupledesc, const PartitionState* partTableState, Oid ownerid,
-    Datum reloptions, bool partkeyexprIsNull, bool partkeyIsFunc)
+    Datum reloptions, PartitionExprKeyInfo *partExprKeyInfo)
 {
     Datum interval = (Datum)0;
     Datum transition_point = (Datum)0;
@@ -7013,10 +7021,13 @@ static void addNewPartitionTupleForTable(Relation pg_partition_rel, const char* 
     partTupleInfo.boundaries = (Datum)0;
     partTupleInfo.transitionPoint = transition_point;
     partTupleInfo.reloptions = newOptions;
-    partTupleInfo.partkeyexprIsNull = partkeyexprIsNull;
-    partTupleInfo.partkeyIsFunc = partkeyIsFunc;
     partTupleInfo.partitionno = -list_length(partTableState->partitionList);
     partTupleInfo.subpartitionno = INVALID_PARTITION_NO;
+    if (partExprKeyInfo) {
+        partTupleInfo.partexprkeyinfo.partkeyexprIsNull = partExprKeyInfo->partkeyexprIsNull;
+        partTupleInfo.partexprkeyinfo.partkeyIsFunc = partExprKeyInfo->partkeyIsFunc;
+        partTupleInfo.partexprkeyinfo.partExprKeyStr = partExprKeyInfo->partExprKeyStr;
+    }
 
     /*step 2: insert into pg_partition tuple*/
     addNewPartitionTuple(pg_partition_rel, new_partition, &partTupleInfo);
@@ -7250,8 +7261,7 @@ Oid GetPartTablespaceOidForSubpartition(Oid reltablespace, const char* partTable
  */
 static void addNewPartitionTuplesForPartition(Relation pg_partition_rel, Oid relid,
     Oid reltablespace, Oid bucketOid, PartitionState* partTableState, Oid ownerid, Datum reloptions,
-    const TupleDesc tupledesc, char strategy, StorageType storage_type, LOCKMODE partLockMode, bool partkeyexprIsNull,
-    bool partkeyIsFunc)
+    const TupleDesc tupledesc, char strategy, StorageType storage_type, LOCKMODE partLockMode, PartitionExprKeyInfo *partExprKeyInfo)
 {
     int partKeyNum = list_length(partTableState->partitionKey);
     bool isTimestamptzForPartKey[partKeyNum];
@@ -7298,8 +7308,7 @@ static void addNewPartitionTuplesForPartition(Relation pg_partition_rel, Oid rel
                 storage_type,
                 subpartition_key_attr_no,
                 false,
-                partkeyexprIsNull,
-                partkeyIsFunc);
+                partExprKeyInfo);
 
             Oid partTablespaceOid =
                 GetPartTablespaceOidForSubpartition(reltablespace, partitionDefState->tablespacename);
@@ -7328,8 +7337,7 @@ static void addNewPartitionTuplesForPartition(Relation pg_partition_rel, Oid rel
                 storage_type,
                 subpartition_key_attr_no,
                 false,
-                partkeyexprIsNull,
-                partkeyIsFunc);
+                partExprKeyInfo);
 
             Oid partTablespaceOid =
                 GetPartTablespaceOidForSubpartition(reltablespace, partitionDefState->tablespacename);
@@ -7359,8 +7367,7 @@ static void addNewPartitionTuplesForPartition(Relation pg_partition_rel, Oid rel
                 partLockMode,
                 subpartition_key_attr_no,
                 false,
-                partkeyexprIsNull,
-                partkeyIsFunc);
+                partExprKeyInfo);
 
             Oid partTablespaceOid =
                 GetPartTablespaceOidForSubpartition(reltablespace, partitionDefState->tablespacename);
