@@ -860,5 +860,20 @@ select * from test order by funcname;
 (281 rows)
 
 drop table test;
+-- fix bug
+CREATE TABLE memos (
+ID integer,
+CONTEXT text
+);
+insert into memos values(1,'2022/05/26 20:30');
+insert into memos values(2,'2022/05/27 20:30');
+select DATE_add(CONtext,INTERVAL 31 DAY) from memos;
+      date_add       
+---------------------
+ 2022-06-26 20:30:00
+ 2022-06-27 20:30:00
+(2 rows)
+
+drop table if exists memos;
 drop schema b_datetime_func_test4 cascade;
 reset current_schema;
