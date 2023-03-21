@@ -1,5 +1,11 @@
 create schema b_compat_create_func;
 set current_schema to 'b_compat_create_func';
+DROP ROLE if EXISTS us1;
+NOTICE:  role "us1" does not exist, skipping
+CREATE ROLE us1 IDENTIFIED BY 'Aa@123456';
+NOTICE:  The iteration value of password is not recommended.Setting the iteration value too small reduces the security of the password, and setting it too large results in performance degradation.
+GRANT ALL ON SCHEMA b_compat_create_func TO us1;
+SET ROLE us1 PASSWORD 'Aa@123456';
 create function func(n int) returns varchar(50) return (select n+1);
 select func(100);
  func 
@@ -115,6 +121,19 @@ select currval('a');
  currval 
 ---------
      999
+(1 row)
+
+show create function currval;
+ Function |                                 Create Function                                  |                                               sql_mode                                               | character_set_client | collation_connection | Database Collation 
+----------+----------------------------------------------------------------------------------+------------------------------------------------------------------------------------------------------+----------------------+----------------------+--------------------
+ currval  | CREATE DEFINER = us1 FUNCTION b_compat_create_func.currval(seq_name varchar(50))+| sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date,pad_char_to_full_length | UTF8                 | en_US.UTF-8          | en_US.UTF-8
+          |  RETURN integer NOT FENCED NOT SHIPPABLE                                        +|                                                                                                      |                      |                      | 
+          |     BEGIN      declare value integer;                                           +|                                                                                                      |                      |                      | 
+          |     set value = 0;                                                              +|                                                                                                      |                      |                      | 
+          |     select current_value into value from test11 where name = seq_name;          +|                                                                                                      |                      |                      | 
+          |     return value;                                                               +|                                                                                                      |                      |                      | 
+          | end ;                                                                           +|                                                                                                      |                      |                      | 
+          |                                                                                  |                                                                                                      |                      |                      | 
 (1 row)
 
 drop function if exists currval(varchar(50));
@@ -747,3 +766,5 @@ drop cascades to table t_create_begin_end_func_no_return
 drop cascades to function f_create_function_0033()
 drop cascades to function tri_insert_funcx()
 reset current_schema;
+reset role;
+drop role us1;

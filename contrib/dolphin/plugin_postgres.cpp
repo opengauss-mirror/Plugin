@@ -652,6 +652,7 @@ void init_session_vars(void)
     cxt->enableBCmptMode = false;
     cxt->lockNameList = NIL;
     cxt->scan_from_pl = false;
+    cxt->is_b_declare = false;
     cxt->default_database_name = NULL;
     cxt->paramIdx = 0;
     cxt->isUpsert = false;

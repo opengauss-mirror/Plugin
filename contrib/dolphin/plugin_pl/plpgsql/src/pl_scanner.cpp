@@ -1052,7 +1052,7 @@ static int plpgsql_parse_declare(int* loc)
         int tok3 = -1;
         tok2 = internal_yylex(&aux2);
         tok3 = internal_yylex(&aux3);
-        if (tok3 != IDENT) {
+        if (tok3 != IDENT && !GetSessionContext()->is_b_declare) {
             push_back_token(tok3, &aux3);
             push_back_token(tok2, &aux2);
             push_back_token(tok1, &aux1);
@@ -1082,10 +1082,18 @@ static int plpgsql_parse_declare(int* loc)
             /* get the declare attribute location */
             *loc = aux1.lloc;
             plpgsql_yylval = aux1.lval;
+        } else if (GetSessionContext()->is_b_declare) {
+            u_sess->plsql_cxt.curr_compile_context->plpgsql_IdentifierLookup = IDENTIFIER_LOOKUP_DECLARE;
+            token = T_DECLARE;
+            push_back_token(tok3, &aux3);
+            push_back_token(tok2, &aux2);
+            /* get the declare attribute location */
+            *loc = aux1.lloc;
+            plpgsql_yylval = aux1.lval;
         } else {
-                push_back_token(tok3, &aux3);
-                push_back_token(tok2, &aux2);
-                push_back_token(tok1, &aux1);
+            push_back_token(tok3, &aux3);
+            push_back_token(tok2, &aux2);
+            push_back_token(tok1, &aux1);
         }
     } else {
         push_back_token(tok1, &aux1);

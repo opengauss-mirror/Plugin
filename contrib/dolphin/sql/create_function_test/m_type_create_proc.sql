@@ -1,5 +1,9 @@
 create schema m_create_proc_type;
 set current_schema to 'm_create_proc_type';
+DROP ROLE if EXISTS us2;
+CREATE ROLE us2 IDENTIFIED BY 'Aa@123456';
+GRANT ALL ON SCHEMA m_create_proc_type TO us2;
+SET ROLE us2 PASSWORD 'Aa@123456';
 
 --test create procedure 
 delimiter //
@@ -141,7 +145,7 @@ end//
 
  delimiter ;
 
-
+show create procedure testpro_m6;
 
 
  delimiter //
@@ -260,7 +264,7 @@ BEGIN
 declare
 i int = p1;
 <<label>>
-case i
+case 
 when i > 10 then raise notice '%','big';
 when i < 1 then raise notice '%','small';
 else  raise notice '%','good';
@@ -382,7 +386,8 @@ select @x2;
 select @x3;
 select @x4;
 
-
 drop schema m_create_proc_type cascade;
 reset current_schema;
 
+reset role;
+drop role us2;
